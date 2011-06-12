@@ -1,0 +1,61 @@
+/**
+
+\page SequencePlayer
+
+\section introduction Overview
+
+This component plays motion patterns.
+
+<table>
+<tr><th>implementation_id</th><td>SequencePlayer</td></tr>
+<tr><th>category</th><td>example</td></tr>
+</table>
+
+\section dataports Data Ports
+
+\subsection inports Input Ports
+
+<table>
+<tr><th>port name</th><th>data type</th><th>unit</th><th>description</th></tr>
+<tr><td>qInit</td><td>RTC::TimedDoubleSeq</td><td>[rad]</td><td>initial joint angles</td></tr>
+<tr><td>basePosInit</td><td>RTC::TimedPoint3D</td><td>[m]</td><td>initial position of the base link</td></tr>
+<tr><td>baseRpyInit</td><td>RTC::TimedOrientation3D</td><td>[rad]</td><td>initial Roll-Pitch-Yaw angles of the base link</td></tr>
+</table>
+
+\subsection outports Output Ports
+
+<table>
+<tr><th>port name</th><th>data type</th><th>unit</th><th>description</th></tr>
+<tr><td>qRef</td><td>RTC::TimedDoubleSeq</td><td>[rad]</td><td>reference joint angles</td></tr>
+<tr><td>accRef</td><td>RTC::TimedAcceleration3D</td><td>[m]</td><td>reference acceleration</td></tr>
+<tr><td>zmpRef</td><td>RTC::TimedPoint3D</td><td>[m]</td><td>reference ZMP</td></tr>
+<tr><td>basePos</td><td>RTC::TimedPoint3D</td><td>[m]</td><td>reference position of the base link</td></tr>
+<tr><td>baseRpy</td><td>RTC::TimedOrientation3D</td><td>[rad]</td><td>reference Roll-Pitch-Yaw angles of the base link</td></tr>
+</table>
+
+\section serviceports Service Ports
+
+\subsection provider Service Providers
+
+<table>
+<tr><th>port name</th><th>interface name</th><th>service type</th><th>IDL</th><th>description</th></tr>
+<tr><td>SequencePlayerService</td><td>service0</td><td>SequencePlayerService</td><td>\ref OpenHRP::SequencePlayerService</td><td></td></tr>
+</table>
+
+\subsection consumer Service Consumers
+
+N/A
+
+\section configuration Configuration Variables
+
+N/A
+
+\section conf Configuration File
+
+<table>
+<tr><th>key</th><th>type</th><th>unit</th><th>description</th></tr>
+<tr><td>dt</td><td>double</td><td>[s]</td><td>sampling time</td></tr>
+<tr><td>model</td><td>std::string</td><td></td><td>URL of a VRML model</td></tr>
+</table>
+
+ */

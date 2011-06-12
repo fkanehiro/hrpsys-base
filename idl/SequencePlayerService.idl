@@ -1,0 +1,105 @@
+/**
+ * @file SequencePlayerService.idl
+ * @brief Services for the sequence player interface
+ */
+module OpenHRP
+{
+  typedef sequence<double> dSequence;
+  typedef sequence<dSequence> dSequenceSequence;
+  typedef sequence<boolean> bSequence;
+  
+  interface SequencePlayerService
+  {
+    
+    /**
+     * @brief Wait until the last goal posture is sent to the robot
+     */
+    void waitInterpolation();
+    
+    /**
+     * @brief Interpolate all joint angles on robot using duration specified by \em tm. Returns without waiting for whole sequence to be sent to robot.
+     * @param jvs sequence of joint angles
+     * @param tm duration
+     * @return true joint angles are set successfully, false otherwise
+     */
+    boolean setJointAngles(in dSequence jvs, in double tm);
+
+    /**
+     * @brief Interpolate joint angles on robot using duration specified by \em tm. Returns without waiting for whole sequence to be sent to robot.
+     * @param jvs sequence of joint angles
+     * @param mask binary vector which selects joints to be interpolated
+     * @param tm duration
+     * @return true joint angles are set successfully, false otherwise
+     */
+    boolean setJointAnglesWithMask(in dSequence jvs, in bSequence mask,
+				   in double tm);
+    
+    /**
+     * @brief Interpolate just one joint angle specified by \em jname using duration \em tm. Function returns without waiting for interpolation to finish
+     * @param jname joint name
+     * @param jv joint angle
+     * @param tm duration
+     * @return true if set successuflly, false otherwise 
+     */
+    boolean setJointAngle(in string jname, in double jv, in double tm);
+
+    /**
+     * @brief Interpolate position of the base link. Function returns without waiting for interpolation to finish
+     * @param pos position of the base link
+     * @param tm duration
+     * @return true if set successfully, false otherwise
+     */
+    boolean setBasePos(in dSequence pos, in double tm);
+    
+    /**
+     * @brief Interpolate Roll-Pitch-Yaw angles of the base link. Function returns without waiting for interpolation to finish
+     * @param rpy Roll-Pitch-Yaw angles of the base link
+     * @param tm duration
+     * @return true if set successfully, false otherwise
+     */
+    boolean setBaseRpy(in dSequence rpy, in double tm);
+    
+    /**
+     * @brief Interpolate ZMP. Function returns without waiting for interpolation to finish
+     * @param zmp ZMP
+     * @param tm duration
+     * @return true if set successfully, false otherwise
+     */
+    boolean setZmp(in dSequence zmp, in double tm);
+    
+    /**
+     * @brief Utility functions to check whether intepolation is going on. Functions return immediately
+     * @return true if interpolation queue is empty, false otherwise
+     */
+    boolean isEmpty();
+
+    /**
+     * @brief load pattern files and start to playback.
+     * @param basename basename of the pattern files. \<basename\>.pos, \<basename\>.zmp, \<basename\>.waist and \<basename\>.gsens are used. 
+     * @param tm Duration to the initial posture in \<basename\>.pos
+     */
+    void loadPattern(in string basename, in double tm);
+
+    /**
+     * @brief playback a pattern 
+     * @param pos sequence of joint angles
+     * @param rpy sequence of Roll-Pitch-Yaw angles of the base link
+     * @param zmp sequence of ZMP
+     * @param tm duration
+     */
+    void playPattern(in dSequenceSequence pos, 
+		     in dSequenceSequence rpy,
+		     in dSequenceSequence zmp, 
+		     in double tm);
+
+    /**
+     * @brief clear pattern data in playback queue. This function returns after the queue becomes empty.
+     */
+    void clear();
+
+    /**
+     * @brief clear pattern data in playback queue. This function returns immediately
+     */
+    void clearNoWait();
+  };
+};

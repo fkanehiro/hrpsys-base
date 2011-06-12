@@ -1,0 +1,36 @@
+/**
+ * @file ExecutionProfileService.idl
+ * @brief Services for the execution profile interface
+ */
+#include <OpenRTM.idl>
+
+module OpenHRP
+{
+  interface ExecutionProfileService : OpenRTM::ExtTrigExecutionContextService
+  {
+    /**
+     * @brief execution profile
+     */
+    struct Profile
+    {
+      double max_period;              ///< maximum of execution period
+      double min_period;              ///< minimum of execution period
+      double avg_period;              ///< average of execution period
+      double max_total_process;       ///< maximum of processing period
+      sequence<double> max_processes; ///< array of maximums of processing period of each component
+      long count;                     ///< the number of execution
+      long timeover;                  ///< the number of execution periods which were longer than expected execution period
+    };
+    
+    /**
+     * @brief get execution profile
+     * @return execution profile
+     */
+    Profile getProfile();
+
+    /**
+     * @brief reset execution profile
+     */
+    void resetProfile();
+  };
+};

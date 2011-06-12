@@ -1,0 +1,64 @@
+/**
+
+\page DataLogger
+
+\section introduction Overview
+
+This component logs data from input data ports and save them to files.
+
+Input data ports can be created dynamically by calling
+OpenHRP::DataLoggerService::add(). Default length of the logged data
+is 4000 and it can be changed by calling
+OpenHRP::DataLoggerService::maxLength(). Since the logged data are
+stored in a ring buffer, only the newer data are maintained when the
+buffer becomes full. The logged data can be saved to files by calling
+OpenHRP::DataLoggerService::save(). Data for each input data port is
+save to a file named basename.data_port_name. Each line of the log
+file starts with time the data is received and the data follows.
+Currently, the following data types are supported.
+RTC::TimedDoubleSeq, RTC::TimedLongSeq, RTC::TimedPoint3D,
+RTC::TimedAcceleration3D, RTC::TimedAngularVelocity3D,
+RTC::TimedOrientation3D, RTC::TimedVelocity2D and RTC::Pose3D.
+
+<table>
+<tr><th>implementation_id</th><td>DataLogger</td></tr>
+<tr><th>category</th><td>example</td></tr>
+</table>
+
+\section dataports Data Ports
+
+\subsection inports Input Ports
+
+<table>
+<tr><th>port name</th><th>data type</th><th>unit</th><th>description</th></tr>
+<tr><td>emergencySignal</td><td>RTC::TimedLong</td><td></td><td>Emergency signal. When this port receives emergency signal, OpenHRP::DataLoggerService::save() is called automatically.</td></tr>
+</table>
+
+Other ports are created dynamically by calling OpenHRP::DataLoggerService::add().
+
+\subsection outports Output Ports
+
+N/A
+
+\section serviceports Service Ports
+
+\subsection provider Service Providers
+
+<table>
+<tr><th>port name</th><th>interface name</th><th>service type</th><th>IDL</th><th>description</th></tr>
+<tr><td>DataLoggerService</td><td>service0</td><td>DataLoggerService</td><td>\ref OpenHRP::DataLoggerService</td><td></td></tr>
+</table>
+
+\subsection consumer Service Consumers
+
+N/A
+
+\section configuration Configuration Variables
+
+N/A
+
+\section conf Configuration File
+
+N/A
+
+ */

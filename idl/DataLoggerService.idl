@@ -1,0 +1,36 @@
+/**
+ * @file DataLoggerService.idl
+ * @brief Services for the data logger interface
+ */
+module OpenHRP
+{
+  interface DataLoggerService
+  {
+    /**
+     * @brief add a data input port 
+     * @param type data type of the port
+     * @param name name of the port
+     * @return true if the port is added successfully, false otherwise
+     */
+    boolean add(in string type, in string name);
+
+    /**
+     * @brief save data 
+     * @param basename basename of log files. Names of input data ports are used as file extensions
+     * @return true if log files are saved successfully, false otherwise
+     */
+    boolean save(in string basename); 
+
+    /**
+     * @brief clear data
+     * @return true cleared successfully, false otherwise
+     */
+    boolean clear();
+
+    /**
+     * @brief set maximum log length
+     * @param len maximum log length
+     */
+    void maxLength(in unsigned long len);
+  };
+};

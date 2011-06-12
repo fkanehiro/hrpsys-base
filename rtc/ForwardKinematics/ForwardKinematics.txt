@@ -1,0 +1,56 @@
+/**
+
+\page ForwardKinematics
+
+\section introduction Overview
+
+This component computes forward kinematics of the robot and provides positions and orientations of links.
+
+<table>
+<tr><th>implementation_id</th><td>ForwardKinematics</td></tr>
+<tr><th>category</th><td>example</td></tr>
+</table>
+
+\section dataports Data Ports
+
+\subsection inports Input Ports
+
+<table>
+<tr><th>port name</th><th>data type</th><th>unit</th><th>description</th></tr>
+<tr><td>q</td><td>RTC::TimedDoubleSeq</td><td>[rad]</td><td>measured joint angles</td></tr>
+<tr><td>basePos</td><td>RTC::TimedPoint3D</td><td>[m]</td><td>measured position of the base link</td></tr>
+<tr><td>baseRpy</td><td>RTC::TimedOrientation3D</td><td>[rad]</td><td>Roll-Pitch-Yaw angles of the base link</td></tr>
+<tr><td>qRef</td><td>RTC::TimedDoubleSeq</td><td>[rad]</td><td>reference joint angles</td></tr>
+<tr><td>basePosRef</td><td>RTC::TimedPoint3D</td><td>[m]</td><td>reference position of the base link</td></tr>
+<tr><td>baseRpyRef</td><td>RTC::TimedOrientation3D</td><td>[rad]</td><td>reference Roll-Pitch-Yaw angles of the base link</td></tr>
+</table>
+
+\subsection outports Output Ports
+
+N/A
+
+\section serviceports Service Ports
+
+\subsection provider Service Providers
+
+<table>
+<tr><th>port name</th><th>interface name</th><th>service type</th><th>IDL</th><th>description</th></tr>
+<tr><td>ForwardKinematicsService</td><td>service0</td><td>ForwardKinematicsService</td><td>\ref OpenHRP::ForwardKinematicsService</td><td></td></tr>
+</table>
+
+\subsection consumer Service Consumers
+
+N/A
+
+\section configuration Configuration Variables
+
+N/A
+
+\section conf Configuration File
+
+<table>
+<tr><th>key</th><th>type</th><th>unit</th><th>description</th></tr>
+<tr><td>model</td><td>std::string</td><td></td><td>URL of the robot model</td></tr>
+</table>
+
+ */

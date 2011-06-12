@@ -1,0 +1,57 @@
+/**
+
+\page StateHolder
+
+\section introduction Overview
+
+This component memorize references(joint angles, position/orientation of the base link) from input data ports and provide them to other components
+
+<table>
+<tr><th>implementation_id</th><td>StateHolder</td></tr>
+<tr><th>category</th><td>example</td></tr>
+</table>
+
+\section dataports Data Ports
+
+\subsection inports Input Ports
+
+<table>
+<tr><th>port name</th><th>data type</th><th>unit</th><th>description</th></tr>
+<tr><td>currentQIn</td><td>RTC::TimedDoubleSeq</td><td>[rad]</td><td>measured joint angles</td></tr>
+<tr><td>qIn</td><td>RTC::TimedDoubleSeq</td><td>[rad]</td><td>reference joint angles</td></tr>
+<tr><td>basePosIn</td><td>RTC::TimedPoint3D</td><td>[m]</td><td>reference position of the base link</td></tr>
+<tr><td>baseRpyIn</td><td>RTC::TimedOrientation3D</td><td>[rad]</td><td>Roll-Pitch-Yaw angles of the base link</td></tr>
+</table>
+
+\subsection outports Output Ports
+
+<table>
+<tr><th>port name</th><th>data type</th><th>unit</th><th>description</th></tr>
+<tr><td>qOut</td><td>RTC::TimedDoubleSeq</td><td>[rad]</td><td>reference joint angles</td></tr>
+<tr><td>basePosOut</td><td>RTC::TimedPoint3D</td><td>[m]</td><td>reference position of the base link</td></tr>
+<tr><td>baseRpyOut</td><td>RTC::TimedOrientation3D</td><td>[rad]</td><td>reference Roll-Pitch-Yaw angles of the base link</td></tr>
+</table>
+
+\section serviceports Service Ports
+
+\subsection provider Service Providers
+
+<table>
+<tr><th>port name</th><th>interface name</th><th>service type</th><th>IDL</th><th>description</th></tr>
+<tr><td>StateHolderService</td><td>service0</td><td>StateHolderService</td><td>\ref OpenHRP::StateHolderService</td><td></td></tr>
+<tr><td>TimeKeeperService</td><td>service1</td><td>TimeKeeperService</td><td>\ref OpenHRP::TimeKeeperService</td><td></td></tr>
+</table>
+
+\subsection consumer Service Consumers
+
+N/A
+
+\section configuration Configuration Variables
+
+N/A
+
+\section conf Configuration File
+
+N/A
+
+ */

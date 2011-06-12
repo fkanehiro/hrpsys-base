@@ -1,0 +1,69 @@
+/**
+
+\page RobotHardware
+
+\section introduction Overview
+
+This component reads sensors and write commands to actuators.
+
+<table>
+<tr><th>implementation_id</th><td>RobotHardware</td></tr>
+<tr><th>category</th><td>example</td></tr>
+</table>
+
+\section dataports Data Ports
+
+\subsection inports Input Ports
+
+<table>
+<tr><th>port name</th><th>data type</th><th>unit</th><th>description</th></tr>
+<tr><td>qRef</td><td>RTC::TimedDoubleSeq</td><td>[rad]</td><td>joint angle commands</td></tr>
+</table>
+
+\subsection outports Output Ports
+
+Output data ports for gyros, accelerometers and force/torque sensors are created automatically based on information read from a VRML model. 
+<table>
+<tr><th>port name</th><th>data type</th><th>unit</th><th>description</th></tr>
+<tr><td>q</td><td>RTC::TimedDoubleSeq</td><td>[rad]</td><td>measured joint angles</td></tr>
+<tr><td>servoState</td><td>RTC::TimedLongSeq</td><td>[rad]</td><td>status of joint servo</td></tr>
+<tr><td>emergencySignal</td><td>RTC::TimedLong</td><td>[rad]</td><td>Emergency signal</td></tr>
+<tr><td>name of gyro defined in a VRML model</td><td>RTC::TimedAngularVelocity3D</td><td>[rad/s]</td><td>angular velocities</td></tr>
+<tr><td>name of accelerometer defined in a VRML model</td><td>RTC::TimedAcceleration3D</td><td>[rad/(s^2)]</td><td>acceleration</td></tr>
+<tr><td>name of force/torque sensor defined in a VRML model</td><td>RTC::TimedDoubleSeq</td><td>[N],[Nm]</td><td>force/torque</td></tr>
+</table>
+
+\section serviceports Service Ports
+
+\subsection provider Service Providers
+
+<table>
+<tr><th>port name</th><th>interface name</th><th>service type</th><th>IDL</th><th>description</th></tr>
+<tr><td>RobotHardwareService</td><td>service0</td><td>RobotHardwareService</td><td>\ref OpenHRP::RobotHardwareService</td><td></td></tr>
+</table>
+
+\subsection consumer Service Consumers
+
+N/A
+
+\section configuration Configuration Variables
+
+<table>
+<tr><th>key</th><th>type</th><th>unit</th><th>description</th></tr>
+<tr><td>isDemoMode</td><td>int</td><td></td><td>1:demo mode, 0:otherwise. When the robot is in demo mode, joint servo error limits and force limits are not checked.</td></tr>
+<tr><td>servoErrorLimit</td><td>std::vector<double></td><td>[rad]</td><td>joint servo error limits. If any servo error exceeds its limit, all joint servos are turned off. When 0 is set, servo error is not checked</td></tr>
+<tr><td>fzLimitRatio</td><td>double<double></td><td></td><td>force limit. If force in Z direction exceeds this limit, all joint servos are turned off. The limit is given by a ratio to weight of the robot.
+</td></tr>
+</table>
+
+\section conf Configuration File
+
+<table>
+<tr><th>key</th><th>type</th><th>unit</th><th>description</th></tr>
+<tr><td>model</td><td>std::string</td><td></td><td>URL of a VRML model</td></tr>
+<tr><td>sensor_id.right_leg_force_sensor</td><td>unsigned int</td><td></td><td>ID of a force/torque sensor whose Z force is checked to detect emergency</td></tr>
+<tr><td>sensor_id.leg_leg_force_sensor</td><td>unsigned int</td><td></td><td>ID of a force/torque sensor whose Z force is checked to detect emergency</td></tr>
+</table>
+
+
+ */

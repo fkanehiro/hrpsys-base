@@ -1,0 +1,34 @@
+/**
+ * @file ForwardKinematicsService.idl
+ * @brief Services for the forward kinematics interface
+ */
+#include "BasicDataType.idl"
+
+module OpenHRP
+{
+  interface ForwardKinematicsService
+  {
+    /** 
+	@brief select a link its position of the actual model coincides with that of the reference model.
+	@param linkname link name
+	@return true if selected successfully, false otherwise
+    */
+    boolean selectBaseLink(in string linkname);
+
+    /**
+       @brief get link pose of the reference model. The reference model is computed from reference joint angles and reference position/orientation of the root link.
+       @param linkname link name
+       @param pose homogeneous matrix of the link in the global coordinates
+       @return true if gotten successfully, false otherwise
+    */
+    boolean getReferencePose(in string linkname, out RTC::TimedDoubleSeq pose);
+
+    /**
+       @brief get link pose of the actual model. The actual model is computed from current joint angles.
+       @param linkname link name
+       @param pose homogeneous matrix of the link in the global coordinates
+       @return true if gotten successfully, false otherwise
+    */
+    boolean getCurrentPose(in string linkname, out RTC::TimedDoubleSeq pose);
+  };
+};

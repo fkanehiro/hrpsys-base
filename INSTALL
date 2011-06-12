@@ -1,0 +1,40 @@
+1. Requirements
+   *Ubuntu 8.04LTS or 10.04LTS
+   *OpenHRP 3.1.1 or later
+   *Jython
+
+2. Install
+
+2.1 Preparation
+   Since SDOPackage.idl(usually installed under /usr/include/rtm/idl as a part
+   of OpenRTM-aist) can't be compiled with idlj, modify the following two lines.
+   a. comment out line 40: 
+      #define TypeCode CORBA::TypeCode -> //#define TypeCode CORBA::TypeCode
+   b. add namespace "CORBA::" to line 123: 
+      TypeCode code; -> CORBA::TypeCode code;
+
+2.2 RT components and utilities
+   % mkdir build
+   % cd build
+   % cmake ..
+   % make
+   % (sudo) make install
+
+2.3 Eclipse plugin to monitor the robot status
+   a. Launch Eclipse
+   b. Import the plugin project placed under "plugin" directory
+   c. Eclipse automatically starts to compile the plugin
+   d. Export the compiled plugin(jar file) to your Eclipse plugin directory
+   e. Restart Eclipse with "-clean" option
+
+3. Running an example
+   a. Open a new terminal
+   b. % cd <install prefix>/share/hrpsys/samples/PA10
+      % ./hrpsys.sh
+   c. Launch Eclipse
+   d. Open "GrxUI" perspective
+   e. From "GrxUI" menu of Eclipse, load a project file "PA10.xml" placed under
+      <install prefix>/share/hrpsys/samples/PA10. A manipulator PA10 will 
+      appear in 3DView.
+   f. Select a python script item, "sample.py" in ItemView.
+   g. Press "exec script" button in JythonPrompt view. PA10 will change its joint angles.

@@ -1,0 +1,45 @@
+/**
+
+\page WavPlayer
+
+\section introduction Overview
+
+This component plays wav files.
+
+<table>
+<tr><th>implementation_id</th><td>WavPlayer</td></tr>
+<tr><th>category</th><td>example</td></tr>
+</table>
+
+\section dataports Data Ports
+
+\subsection inports Input Ports
+
+N/A
+
+\subsection outports Output Ports
+
+N/A
+
+\section serviceports Service Ports
+
+\subsection provider Service Providers
+
+<table>
+<tr><th>port name</th><th>interface name</th><th>service type</th><th>IDL</th><th>description</th></tr>
+<tr><td>WavPlayerService</td><td>service0</td><td>WavPlayerService</td><td>\ref OpenHRP::WavPlayerService</td><td></td></tr>
+</table>
+
+\subsection consumer Service Consumers
+
+N/A
+
+\section configuration Configuration Variables
+
+N/A
+
+\section conf Configuration File
+
+N/A
+
+ */

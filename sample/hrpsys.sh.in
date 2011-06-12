@@ -1,0 +1,8 @@
+#!/bin/bash
+
+export LD_LIBRARY_PATH=@CMAKE_INSTALL_PREFIX@/lib
+
+while :; do
+    rtcd -f rtc.conf.robot
+done
+

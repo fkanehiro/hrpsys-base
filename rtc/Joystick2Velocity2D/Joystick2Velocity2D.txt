@@ -1,0 +1,54 @@
+/**
+
+\page Joystick2Velocity2D
+
+\section introduction Overview
+
+This component converts data from a joystick to a velocity command on 2D plane.
+
+<table>
+<tr><th>implementation_id</th><td>Joystick2Velocity2D</td></tr>
+<tr><th>category</th><td>example</td></tr>
+</table>
+
+\section dataports Data Ports
+
+\subsection inports Input Ports
+
+<table>
+<tr><th>port name</th><th>data type</th><th>unit</th><th>description</th></tr>
+<tr><td>axes</td><td>RTC::TimedFloatSeq</td><td></td><td>status of sticks([-1:1])</td></tr>
+</table>
+
+\subsection outports Output Ports
+
+<table>
+<tr><th>port name</th><th>data type</th><th>unit</th><th>description</th></tr>
+<tr><td>vel</td><td>RTC::TimedVelocity2D</td><td>[m/s],[rad/s]</td><td>velocity command</td></tr>
+</table>
+
+\section serviceports Service Ports
+
+\subsection provider Service Providers
+
+N/A
+
+\subsection consumer Service Consumers
+
+N/A
+
+\section configuration Configuration Variables
+
+<table>
+<tr><th>name</th><th>type</th><th>unit</th><th>default value</th><th>description</th></tr>
+<tr><td>debugLevel</td><td>int</td><td></td><td>0</td><td>verbose level of debug messages</td></tr>
+<tr><td>axesIds</td><td>std::vector<int></td><td></td><td>0,1,2</td><td>indices of sticks which correspond to vx,vy,va</td></tr>
+<tr><td>scales</td><td>std::vector<double></td><td>[m/s],[rad/s]</td><td>1.0,1.0,1.0</td><td>coefficients of velocities</td></tr>
+<tr><td>neutrals</td><td>std::vector<double></td><td>[m/s],[rad/s]</td><td>0.0,0.0,0.0</td><td>velocities when sticks are at neutral positions</td></tr>
+</table>
+
+\section conf Configuration File
+
+N/A
+
+ */

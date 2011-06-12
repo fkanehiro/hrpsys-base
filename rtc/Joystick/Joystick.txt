@@ -1,0 +1,50 @@
+/**
+
+\page Joystick
+
+\section introduction Overview
+
+This component reads status of sticks of buttons of a joystick
+
+<table>
+<tr><th>implementation_id</th><td>Joystick</td></tr>
+<tr><th>category</th><td>example</td></tr>
+</table>
+
+\section dataports Data Ports
+
+\subsection inports Input Ports
+
+N/A
+
+\subsection outports Output Ports
+
+<table>
+<tr><th>port name</th><th>data type</th><th>unit</th><th>description</th></tr>
+<tr><td>Axes</td><td>RTC::TimedFloatSeq</td><td></td><td>status of sticks</td></tr>
+<tr><td>Buttons</td><td>RTC::TimedBooleanSeq</td><td></td><td>status of buttons</td></tr>
+</table>
+
+\section serviceports Service Ports
+
+\subsection provider Service Providers
+
+N/A
+
+\subsection consumer Service Consumers
+
+N/A
+
+\section configuration Configuration Variables
+
+<table>
+<tr><th>name</th><th>type</th><th>unit</th><th>default value</th><th>description</th></tr>
+<tr><td>device</td><td>std::string</td><td></td><td>"/dev/input/js1"</td><td>device file of a joystick</td></tr>
+</table>
+
+
+\section conf Configuration File
+
+N/A
+
+ */

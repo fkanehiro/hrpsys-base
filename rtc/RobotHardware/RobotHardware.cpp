@@ -1,0 +1,323 @@
+// -*- C++ -*-
+/*!
+ * @file  RobotHardware.cpp
+ * @brief null component
+ * $Date$
+ *
+ * $Id$
+ */
+
+#include <rtm/CorbaNaming.h>
+#include "RobotHardware.h"
+#include "robot.h"
+#include "VectorConvert.h"
+
+#include <hrpModel/Sensor.h>
+#include <hrpModel/ModelLoaderUtil.h>
+
+using namespace OpenHRP;
+using namespace hrp;
+
+// Module specification
+// <rtc-template block="module_spec">
+static const char* robothardware_spec[] =
+  {
+    "implementation_id", "RobotHardware",
+    "type_name",         "RobotHardware",
+    "description",       "RobotHardware",
+    "version",           "1.0",
+    "vendor",            "AIST",
+    "category",          "example",
+    "activity_type",     "DataFlowComponent",
+    "max_instance",      "1",
+    "language",          "C++",
+    "lang_type",         "compile",
+    // Configuration variables
+    "conf.default.isDemoMode", "0",
+    "conf.default.fzLimitRatio", "2.0",
+    "conf.default.servoErrorLimit", ",",
+
+    ""
+  };
+// </rtc-template>
+
+RobotHardware::RobotHardware(RTC::Manager* manager)
+  : RTC::DataFlowComponentBase(manager),
+    // <rtc-template block="initializer">
+    m_isDemoMode(0),
+    m_qRefIn("qRef", m_qRef),
+    m_qOut("q", m_q),
+    m_servoStateOut("servoState", m_servoState),
+    m_emergencySignalOut("emergencySignal", m_emergencySignal),
+    m_RobotHardwareServicePort("RobotHardwareService"),
+    // </rtc-template>
+	dummy(0)
+{
+}
+
+RobotHardware::~RobotHardware()
+{
+}
+
+
+RTC::ReturnCode_t RobotHardware::onInitialize()
+{
+  // Registration: InPort/OutPort/Service
+  // <rtc-template block="registration">
+  
+  addInPort("qRef", m_qRefIn);
+
+  addOutPort("q", m_qOut);
+  addOutPort("servoState", m_servoStateOut);
+  addOutPort("emergencySignal", m_emergencySignalOut);
+
+  // Set service provider to Ports
+    m_RobotHardwareServicePort.registerProvider("service0", "RobotHardwareService", m_service0);
+  
+  // Set service consumers to Ports
+  
+  // Set CORBA Service Ports
+  addPort(m_RobotHardwareServicePort);
+  
+  // </rtc-template>
+
+  m_robot = new robot();
+
+  // <rtc-template block="bind_config">
+  // Bind variables and configuration variable
+  bindParameter("isDemoMode", m_isDemoMode, "0");  
+  bindParameter("servoErrorLimit", m_robot->m_servoErrorLimit, ",");
+  bindParameter("fzLimitRatio", m_robot->m_fzLimitRatio, "2");
+  
+  // </rtc-template>
+
+  RTC::Properties& prop = getProperties();
+
+  RTC::Manager& rtcManager = RTC::Manager::instance();
+  std::string nameServer = rtcManager.getConfig()["corba.nameservers"];
+  int comPos = nameServer.find(",");
+  if (comPos < 0){
+      comPos = nameServer.length();
+  }
+  nameServer = nameServer.substr(0, comPos);
+  RTC::CorbaNaming naming(rtcManager.getORB(), nameServer.c_str());
+  if (!loadBodyFromModelLoader(m_robot, prop["model"].c_str(), 
+                               CosNaming::NamingContext::_duplicate(naming.getRootContext())
+          )){
+      std::cerr << "failed to load model[" << prop["model"] << "]" 
+                << std::endl;
+  }
+
+  std::vector<std::string> keys = prop.propertyNames();
+  for (unsigned int i=0; i<keys.size(); i++){
+      m_robot->setProperty(keys[i].c_str(), prop[keys[i]].c_str());
+  } 
+  std::cout << "dof = " << m_robot->numJoints() << std::endl;
+  if (!m_robot->init()) return RTC::RTC_ERROR;
+
+  m_service0.setRobot(m_robot);
+
+  m_q.data.length(m_robot->numJoints());
+  m_servoState.data.length(m_robot->numJoints());
+  m_qRef.data.length(m_robot->numJoints());
+
+  int ngyro = m_robot->numSensors(Sensor::RATE_GYRO);
+  std::cout << "the number of gyros = " << ngyro << std::endl;
+  m_rate.resize(ngyro);
+  m_rateOut.resize(ngyro);
+  for (unsigned int i=0; i<m_rate.size(); i++){
+      Sensor *s = m_robot->sensor(Sensor::RATE_GYRO, i);
+      std::cout << s->name << std::endl;
+      m_rateOut[i] = new OutPort<TimedAngularVelocity3D>(s->name.c_str(), m_rate[i]);
+      registerOutPort(s->name.c_str(), *m_rateOut[i]);
+  }
+
+  int nacc = m_robot->numSensors(Sensor::ACCELERATION);
+  std::cout << "the number of accelerometers = " << nacc << std::endl;
+  m_acc.resize(nacc);
+  m_accOut.resize(nacc);
+  for (unsigned int i=0; i<m_acc.size(); i++){
+      Sensor *s = m_robot->sensor(Sensor::ACCELERATION, i);
+      std::cout << s->name << std::endl;
+      m_accOut[i] = new OutPort<TimedAcceleration3D>(s->name.c_str(), m_acc[i]);
+      registerOutPort(s->name.c_str(), *m_accOut[i]);
+  }
+
+  int nforce = m_robot->numSensors(Sensor::FORCE);
+  std::cout << "the number of force sensors = " << nforce << std::endl;
+  m_force.resize(nforce);
+  m_forceOut.resize(nforce);
+  for (unsigned int i=0; i<m_force.size(); i++){
+      Sensor *s = m_robot->sensor(Sensor::FORCE, i);
+      std::cout << s->name << std::endl;
+      m_forceOut[i] = new OutPort<TimedDoubleSeq>(s->name.c_str(), m_force[i]);
+      m_force[i].data.length(6);
+      registerOutPort(s->name.c_str(), *m_forceOut[i]);
+  }
+
+  return RTC::RTC_OK;
+}
+
+
+/*
+RTC::ReturnCode_t RobotHardware::onFinalize()
+{
+  return RTC::RTC_OK;
+}
+*/
+
+/*
+RTC::ReturnCode_t RobotHardware::onStartup(RTC::UniqueId ec_id)
+{
+  return RTC::RTC_OK;
+}
+*/
+
+/*
+RTC::ReturnCode_t RobotHardware::onShutdown(RTC::UniqueId ec_id)
+{
+  return RTC::RTC_OK;
+}
+*/
+
+/*
+RTC::ReturnCode_t RobotHardware::onActivated(RTC::UniqueId ec_id)
+{
+  return RTC::RTC_OK;
+}
+*/
+
+/*
+RTC::ReturnCode_t RobotHardware::onDeactivated(RTC::UniqueId ec_id)
+{
+  return RTC::RTC_OK;
+}
+*/
+
+RTC::ReturnCode_t RobotHardware::onExecute(RTC::UniqueId ec_id)
+{
+    //std::cout << "RobotHardware:onExecute(" << ec_id << ")" << std::endl;
+  if (!m_isDemoMode){
+      robot::emg_reason reason;
+      int id;
+      if (m_robot->checkEmergency(reason, id)){
+          if (reason == robot::EMG_SERVO_ERROR){
+              m_robot->servo("all", false);
+              m_emergencySignal.data = reason;
+              m_emergencySignalOut.write();
+          }
+      }
+  }    
+
+  if (m_qRefIn.isNew()){
+      m_qRefIn.read();
+      //std::cout << "RobotHardware: qRef[21] = " << m_qRef.data[21] << std::endl;
+      // output to iob
+      m_robot->writeJointCommands(m_qRef.data.get_buffer());
+  }
+
+  // read from iob
+  m_robot->readJointAngles(m_q.data.get_buffer());  
+  for (unsigned int i=0; i<m_rate.size(); i++){
+      double rate[3];
+      m_robot->readGyroSensor(i, rate);
+      m_rate[i].data.avx = rate[0];
+      m_rate[i].data.avy = rate[1];
+      m_rate[i].data.avz = rate[2];
+  }
+
+  for (unsigned int i=0; i<m_acc.size(); i++){
+      double acc[3];
+      m_robot->readAccelerometer(i, acc);
+      m_acc[i].data.ax = acc[0];
+      m_acc[i].data.ay = acc[1];
+      m_acc[i].data.az = acc[2];
+  }
+
+  for (unsigned int i=0; i<m_force.size(); i++){
+      m_robot->readForceSensor(i, m_force[i].data.get_buffer());
+  }
+  
+  for (unsigned int i=0; i<m_servoState.data.length(); i++){
+      int status = 0, v;
+      v = m_robot->readCalibState(i);
+      status |= v<< OpenHRP::RobotHardwareService::CALIB_STATE_SHIFT;
+      v = m_robot->readPowerState(i);
+      status |= v<< OpenHRP::RobotHardwareService::POWER_STATE_SHIFT;
+      v = m_robot->readServoState(i);
+      status |= v<< OpenHRP::RobotHardwareService::SERVO_STATE_SHIFT;
+      v = m_robot->readServoAlarm(i);
+      status |= v<< OpenHRP::RobotHardwareService::SERVO_ALARM_SHIFT;
+      v = m_robot->readDriverTemperature(i);
+      status |= v<< OpenHRP::RobotHardwareService::DRIVER_TEMP_SHIFT;
+      m_servoState.data[i] = status;
+  }
+  
+  m_robot->oneStep();
+
+  m_qOut.write();
+  m_servoStateOut.write();
+  for (unsigned int i=0; i<m_rateOut.size(); i++){
+      m_rateOut[i]->write();
+  }
+  for (unsigned int i=0; i<m_accOut.size(); i++){
+      m_accOut[i]->write();
+  }
+  for (unsigned int i=0; i<m_forceOut.size(); i++){
+      m_forceOut[i]->write();
+  }
+
+  return RTC::RTC_OK;
+}
+
+/*
+RTC::ReturnCode_t RobotHardware::onAborting(RTC::UniqueId ec_id)
+{
+  return RTC::RTC_OK;
+}
+*/
+
+/*
+RTC::ReturnCode_t RobotHardware::onError(RTC::UniqueId ec_id)
+{
+  return RTC::RTC_OK;
+}
+*/
+
+/*
+RTC::ReturnCode_t RobotHardware::onReset(RTC::UniqueId ec_id)
+{
+  return RTC::RTC_OK;
+}
+*/
+
+/*
+RTC::ReturnCode_t RobotHardware::onStateUpdate(RTC::UniqueId ec_id)
+{
+  return RTC::RTC_OK;
+}
+*/
+
+/*
+RTC::ReturnCode_t RobotHardware::onRateChanged(RTC::UniqueId ec_id)
+{
+  return RTC::RTC_OK;
+}
+*/
+
+
+
+extern "C"
+{
+
+  void RobotHardwareInit(RTC::Manager* manager)
+  {
+    RTC::Properties profile(robothardware_spec);
+    manager->registerFactory(profile,
+                             RTC::Create<RobotHardware>,
+                             RTC::Delete<RobotHardware>);
+  }
+
+};
+
+

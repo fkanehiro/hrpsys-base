@@ -1,0 +1,13 @@
+corba.nameservers: localhost:2809
+naming.formats: %n.rtc
+logger.enable: YES
+logger.log_level: ERROR
+logger.file_name: stdout
+exec_cxt.periodic.rate: 0.5
+
+manager.modules.load_path: @CMAKE_INSTALL_PREFIX@/lib
+manager.shutdown_onrtcs: NO
+manager.is_master: YES
+
+example.NullComponent.config_file: NullComponent.conf
+

@@ -1,0 +1,13 @@
+
+This software(hrpsys-base) is distributed under "Eclipse Public License" (EPL) 
+v1.0, and you are allowed to use hrpsys-base, only if you agree with these 
+license conditions. Further, it is considered that you agreed with our 
+license conditions whenever you download, use or distribute this software.
+
+Please visit Eclipse Foundation website for more details abour "Eclipse 
+Public License" v1.0.(FAQ of EPL can be viewed at,
+http://www.eclipse.org/legal/eplfaq.php#EPLVERSION)
+
+In case any other uses of this software, such as building a derivative 
+binary package and distributing for proprietary use, please consult National 
+Institute of Advanced Industrial Science and Technology (AIST) in advance. 

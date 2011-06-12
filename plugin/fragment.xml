@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.2"?>
+<fragment>
+   <extension
+         point="org.eclipse.ui.views">
+      <view
+            class="com.generalrobotix.ui.view.GrxRobotHardwareClientViewPart"
+            id="com.generalrobotix.ui.view.GrxRobotHardwareClientViewPart"
+            category="com.generalrobotix.ui.view"
+            name="RobotHardware RTC Client">
+      </view>
+   </extension>
+   
+      <extension
+         point="org.eclipse.ui.actionSets">
+      <actionSet
+            id="com.generalrobotix.ui.actionSet"
+            label="GrxUI Actions"
+            visible="false">
+         <menu
+               id="GrxUIMenu"
+               label="&amp;GrxUI">
+            <separator
+                  name="GrxUIGroup">
+            </separator>
+         </menu>
+         <action
+               class="com.generalrobotix.ui.actions.ServoOnOff"
+               icon="resources/images/robot_servo_start.png"
+               id="com.generalrobotix.ui.actions.ServoOnOff"
+               label="Servo On/Off"
+               toolbarPath="GrxUIGroup"
+               tooltip="Servo On/Off">
+         </action>
+               </actionSet>
+   </extension>
+</fragment>
