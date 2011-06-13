@@ -18,7 +18,7 @@ install(FILES
   ${CMAKE_CURRENT_BINARY_DIR}/rtc.conf.robot
   ${CMAKE_CURRENT_BINARY_DIR}/PA10.conf
   ${CMAKE_CURRENT_BINARY_DIR}/PA10.xml
-  sample.py
+  PA10.py
   DESTINATION share/hrpsys/samples/PA10)
 
 
