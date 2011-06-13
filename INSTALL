@@ -20,8 +20,14 @@
    % make
    % (sudo) make install
 
-2.3 Eclipse plugin to monitor the robot status
+2.3 Eclipse settings
    a. Launch Eclipse
+   b. Select "Window"->"Preferences"
+   c. Click "GRXUI"
+   d. Set "<jython directory>/Lib:<install prefix>/share/hrpsys/jython:<install prefix>/share/hrpsys/jar" to "Jython Lib directory"
+
+2.4 Eclipse plugin to monitor the robot status
+   a. Launch Eclipse(GrxUI Eclipse plugin must be installed in advance)
    b. Import the plugin project placed under "plugin" directory
    c. Eclipse automatically starts to compile the plugin
    d. Export the compiled plugin(jar file) to your Eclipse plugin directory
