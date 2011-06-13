@@ -36,5 +36,5 @@
    e. From "GrxUI" menu of Eclipse, load a project file "PA10.xml" placed under
       <install prefix>/share/hrpsys/samples/PA10. A manipulator PA10 will 
       appear in 3DView.
-   f. Select a python script item, "sample.py" in ItemView.
+   f. Select a python script item, "PA10.py" in ItemView.
    g. Press "exec script" button in JythonPrompt view. PA10 will change its joint angles.
