@@ -34,9 +34,9 @@
             <property name="gravity" value="9.8 "/>
             <property name="method" value="RUNGE_KUTTA"/>
         </item>
-        <item class="com.generalrobotix.ui.item.GrxPythonScriptItem" name="walkdemo" select="false" url="@CMAKE_INSTALL_PREFIX@/share/hrpsys/samples/PA10/sample.py">
-            <property name="name" value="sample"/>
-            <property name="url" value="@CMAKE_INSTALL_PREFIX@/share/hrpsys/samples/PA10/sample.py"/>
+        <item class="com.generalrobotix.ui.item.GrxPythonScriptItem" name="walkdemo" select="false" url="@CMAKE_INSTALL_PREFIX@/share/hrpsys/samples/PA10/PA10.py">
+            <property name="name" value="PA10"/>
+            <property name="url" value="@CMAKE_INSTALL_PREFIX@/share/hrpsys/samples/PA10/PA10.py"/>
         </item>
         <view class="com.generalrobotix.ui.view.GrxRobotStatView" name="Robot State">
             <property name="jcolumnWidth9" value="50"/>
