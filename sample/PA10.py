@@ -100,7 +100,7 @@ def setupLogger():
 def demo():
     init()
     setupLogger()
-    seq_svc.setJointAngles([0.1]*9, 3.0)
+    seq_svc.setJointAngles([0.5]*7+[0,0], 3.0)
     seq_svc.waitInterpolation()
     goInitial(3.0)
     seq_svc.waitInterpolation()
