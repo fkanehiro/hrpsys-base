@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<grxui>
+    <mode name="Simulation">
+        <item class="com.generalrobotix.ui.item.GrxWorldStateItem" name="newworldstate0" select="true">
+            <property name="logTimeStep" value="0.0010 "/>
+            <property name="totalTime" value="60.0 "/>
+            <property name="timeStep" value="0.0010 "/>
+            <property name="gravity" value="9.8 "/>
+            <property name="method" value="RUNGE_KUTTA"/>
+        </item>
+        <item class="com.generalrobotix.ui.item.GrxModelItem" name="HRP4Cmain" select="true" url="@CMAKE_INSTALL_PREFIX@/share/hrpsys/samples/HRP-4C/HRP4Cmain.wrl">
+            <property name="L_ANKLE_P.angle" value="0.0 "/>
+            <property name="L_ANKLE_P.mode" value="HighGain "/>
+            <property name="L_ANKLE_R.angle" value="0.0 "/>
+            <property name="L_ANKLE_R.mode" value="HighGain "/>
+            <property name="EYEBROW_P.angle" value="0.0 "/>
+            <property name="EYEBROW_P.mode" value="HighGain "/>
+            <property name="R_HIP_R.angle" value="0.0 "/>
+            <property name="R_HIP_R.mode" value="HighGain "/>
+            <property name="R_HIP_P.angle" value="0.0 "/>
+            <property name="R_HIP_P.mode" value="HighGain "/>
+            <property name="R_HIP_Y.angle" value="0.0 "/>
+            <property name="R_HIP_Y.mode" value="HighGain "/>
+            <property name="L_ELBOW_P.angle" value="0.0 "/>
+            <property name="L_ELBOW_P.mode" value="HighGain "/>
+            <property name="WAIST.rotation" value="0.0 1.0 0.0 0.0 "/>
+            <property name="R_WRIST_R.angle" value="0.0 "/>
+            <property name="R_WRIST_R.mode" value="HighGain "/>
+            <property name="R_WRIST_Y.angle" value="0.0 "/>
+            <property name="R_WRIST_Y.mode" value="HighGain "/>
+            <property name="setupDirectory" value="@CMAKE_INSTALL_PREFIX@/share/hrpsys/samples/HRP-4C"/>
+            <property name="R_KNEE_P.angle" value="0.0 "/>
+            <property name="R_KNEE_P.mode" value="HighGain "/>
+            <property name="R_SHOULDER_P.angle" value="0.0 "/>
+            <property name="R_SHOULDER_P.mode" value="HighGain "/>
+            <property name="R_SHOULDER_R.angle" value="0.0 "/>
+            <property name="R_SHOULDER_R.mode" value="HighGain "/>
+            <property name="R_SHOULDER_Y.angle" value="0.0 "/>
+            <property name="R_SHOULDER_Y.mode" value="HighGain "/>
+            <property name="MOUTH_P.angle" value="0.0 "/>
+            <property name="MOUTH_P.mode" value="HighGain "/>
+            <property name="LOWERLIP_P.angle" value="0.0 "/>
+            <property name="LOWERLIP_P.mode" value="HighGain "/>
+            <property name="L_WRIST_R.angle" value="0.0 "/>
+            <property name="L_WRIST_R.mode" value="HighGain "/>
+            <property name="R_HAND_J1.angle" value="0.0 "/>
+            <property name="R_HAND_J1.mode" value="HighGain "/>
+            <property name="R_HAND_J0.angle" value="0.0 "/>
+            <property name="R_HAND_J0.mode" value="HighGain "/>
+            <property name="L_WRIST_Y.angle" value="0.0 "/>
+            <property name="L_WRIST_Y.mode" value="HighGain "/>
+            <property name="CHEST_P.angle" value="0.0 "/>
+            <property name="CHEST_P.mode" value="HighGain "/>
+            <property name="CHEST_R.angle" value="0.0 "/>
+            <property name="CHEST_R.mode" value="HighGain "/>
+            <property name="CHEST_Y.angle" value="0.0 "/>
+            <property name="CHEST_Y.mode" value="HighGain "/>
+            <property name="UPPERLIP_P.angle" value="0.0 "/>
+            <property name="UPPERLIP_P.mode" value="HighGain "/>
+            <property name="L_TOE_P.angle" value="0.0 "/>
+            <property name="L_TOE_P.mode" value="HighGain "/>
+            <property name="R_ANKLE_R.angle" value="0.0 "/>
+            <property name="R_ANKLE_R.mode" value="HighGain "/>
+            <property name="R_ANKLE_P.angle" value="0.0 "/>
+            <property name="R_ANKLE_P.mode" value="HighGain "/>
+            <property name="WAIST.translation" value="0.0 0.0 0.7829999923706055 "/>
+            <property name="EYE_P.angle" value="0.0 "/>
+            <property name="EYE_P.mode" value="HighGain "/>
+            <property name="NECK_P.angle" value="0.0 "/>
+            <property name="NECK_P.mode" value="HighGain "/>
+            <property name="NECK_R.angle" value="0.0 "/>
+            <property name="NECK_R.mode" value="HighGain "/>
+            <property name="EYE_Y.angle" value="0.0 "/>
+            <property name="EYE_Y.mode" value="HighGain "/>
+            <property name="NECK_Y.angle" value="0.0 "/>
+            <property name="NECK_Y.mode" value="HighGain "/>
+            <property name="R_ELBOW_P.angle" value="0.0 "/>
+            <property name="R_ELBOW_P.mode" value="HighGain "/>
+            <property name="L_SHOULDER_P.angle" value="0.0 "/>
+            <property name="L_SHOULDER_P.mode" value="HighGain "/>
+            <property name="L_SHOULDER_R.angle" value="0.0 "/>
+            <property name="L_SHOULDER_R.mode" value="HighGain "/>
+            <property name="L_SHOULDER_Y.angle" value="0.0 "/>
+            <property name="L_SHOULDER_Y.mode" value="HighGain "/>
+            <property name="L_HIP_P.angle" value="0.0 "/>
+            <property name="L_HIP_P.mode" value="HighGain "/>
+            <property name="L_HIP_R.angle" value="0.0 "/>
+            <property name="L_HIP_R.mode" value="HighGain "/>
+            <property name="R_TOE_P.angle" value="0.0 "/>
+            <property name="R_TOE_P.mode" value="HighGain "/>
+            <property name="controller" value="HRP-4C"/>
+            <property name="L_HIP_Y.angle" value="0.0 "/>
+            <property name="L_HIP_Y.mode" value="HighGain "/>
+            <property name="CHEEK_P.angle" value="0.0 "/>
+            <property name="CHEEK_P.mode" value="HighGain "/>
+            <property name="isRobot" value="true"/>
+            <property name="L_HAND_J1.angle" value="0.0 "/>
+            <property name="L_HAND_J1.mode" value="HighGain "/>
+            <property name="controlTime" value="0.001"/>
+            <property name="L_KNEE_P.angle" value="0.0 "/>
+            <property name="L_KNEE_P.mode" value="HighGain "/>
+            <property name="L_HAND_J0.angle" value="0.0 "/>
+            <property name="L_HAND_J0.mode" value="HighGain "/>
+            <property name="setupCommand" value="HRP-4C$(BIN_SFX)"/>
+            <property name="EYELID_P.angle" value="0.0 "/>
+            <property name="EYELID_P.mode" value="HighGain "/>
+        </item>
+        <item class="com.generalrobotix.ui.item.GrxModelItem" name="longfloor" select="true" url="$(PROJECT_DIR)/../model/longfloor.wrl">
+            <property name="isRobot" value="false"/>
+            <property name="WAIST.rotation" value="0.0 1.0 0.0 0.0 "/>
+            <property name="WAIST.translation" value="0.0 0.0 -0.10000000149011612 "/>
+        </item>
+        <item class="com.generalrobotix.ui.item.GrxCollisionPairItem" name="CP#longfloor_#HRP4Cmain_" select="true">
+            <property name="springConstant" value="0 0 0 0 0 0"/>
+            <property name="slidingFriction" value="0.5"/>
+            <property name="jointName2" value=""/>
+            <property name="jointName1" value=""/>
+            <property name="damperConstant" value="0 0 0 0 0 0"/>
+            <property name="objectName2" value="HRP4Cmain"/>
+            <property name="objectName1" value="longfloor"/>
+            <property name="springDamperModel" value="false"/>
+            <property name="staticFriction" value="0.5"/>
+        </item>
+        <item class="com.generalrobotix.ui.item.GrxPythonScriptItem" name="HRP-4C" select="false" url="@CMAKE_INSTALL_PREFIX@/share/hrpsys/samples/HRP-4C/HRP-4C.py">
+        </item>
+        <view class="com.generalrobotix.ui.view.GrxLoggerView" name="Logger View" select="false">
+            <property name="showFrameRateSlider" value="true"/>
+        </view>
+        <view class="com.generalrobotix.ui.view.Grx3DView" name="3DView" select="false">
+            <property name="corbaServer" value="true"/>
+            <property name="view.eye" value="2.0 2.0 0.8"/>
+            <property name="view.upward" value="0.0 0.0 1.0"/>
+            <property name="view.lookat" value="0.0 0.0 0.8"/>
+        </view>
+    
+        <windowconfig>
+            <window fullScreen="false" height="923" root="true" width="1207" x="419" y="257">
+                <layout position="Center" splitratio="0.601">
+                    <layout position="Center" splitratio="0.314">
+                        <layout position="Center" splitratio="0.313">
+                            <layout position="Center" splitratio="0.0">
+                                <tab name="Jython Prompt" select="true"/>
+                                <tab name="NameService Monitor"/>
+                                <tab name="Process Manager"/>
+                            </layout>
+                            <layout position="West" splitratio="0.0">
+                                <tab name="Item View" select="true"/>
+                            </layout>
+                        </layout>
+                        <layout position="South" splitratio="0.0">
+                            <tab name="3DView" select="true"/>
+                            <tab name="OpenHRP"/>
+                            <tab name="Text Editor"/>
+                        </layout>
+                    </layout>
+                    <layout position="East" splitratio="0.0">
+                        <tab name="Graph"/>
+                        <tab name="Robot State" select="true"/>
+                        <tab name="Property"/>
+                    </layout>
+                </layout>
+            </window>
+        </windowconfig>
+    </mode>
+</grxui>
