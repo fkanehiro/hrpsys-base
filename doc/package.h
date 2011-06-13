@@ -22,6 +22,7 @@ To use jython scripts to create RT components, connect ports and get/set propert
   <ul>
     <li>\ref DataLogger</li>
     <li>\ref ForwardKinematics</li>
+    <li>\ref HGcontroller</li>
     <li>\ref Joystick</li>
     <li>\ref Joystick2Velocity2D</li>
     <li>\ref Joystick2PanTiltAngles</li>

@@ -38,5 +38,6 @@ endif()
 add_subdirectory(Joystick2Velocity2D)
 add_subdirectory(Joystick2PanTiltAngles)
 add_subdirectory(ForwardKinematics)
+add_subdirectory(HGcontroller)
 
 
