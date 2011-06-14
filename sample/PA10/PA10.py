@@ -4,6 +4,9 @@ from rtm import *
 from OpenHRP import *
 from OpenHRP.RobotHardwareServicePackage import *
 
+import waitInput
+from waitInput import *
+
 import socket
 import time
 
