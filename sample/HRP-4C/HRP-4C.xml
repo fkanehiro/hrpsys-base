@@ -178,7 +178,7 @@
             <property name="springDamperModel" value="false"/>
             <property name="staticFriction" value="0.5"/>
         </item>
-        <item class="com.generalrobotix.ui.item.GrxPythonScriptItem" name="HRP-4C" select="true" url="$(CURRENT_DIR)/HRP-4C.py">
+        <item class="com.generalrobotix.ui.item.GrxPythonScriptItem" name="HRP4C" select="true" url="$(CURRENT_DIR)/HRP4C.py">
         </item>
         <view class="com.generalrobotix.ui.view.GrxLoggerView" name="Logger View">
             <property name="showFrameRateSlider" value="true"/>
