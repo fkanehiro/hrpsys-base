@@ -4,11 +4,11 @@
         <item class="com.generalrobotix.ui.item.GrxSimulationItem" name="simulationItem" select="true">
             <property name="integrate" value="true"/>
             <property name="viewsimulate" value="false"/>
-            <property name="totalTime" value="15.0 "/>
+            <property name="totalTime" value="20.0 "/>
             <property name="timeStep" value="0.0050 "/>
             <property name="realTime" value="false"/>
             <property name="gravity" value="9.8 "/>
-            <property name="method" value="RUNGE_KUTTA"/>
+            <property name="method" value="EULER"/>
         </item>
         <item class="com.generalrobotix.ui.item.GrxModelItem" name="HRP4Cmain" select="true" url="$(CURRENT_DIR)/HRP4Cmain.wrl">
             <property name="NECK_R.angle" value="0.0 "/>
