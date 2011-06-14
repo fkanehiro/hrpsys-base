@@ -1,0 +1,2 @@
+model: file://@CMAKE_INSTALL_PREFIX@/share/hrpsys/samples/HRP-4C/HRP4Cmain.wrl
+dt: 0.005
