@@ -1,10 +1,3 @@
-# shared object file suffix
-if(APPLE)
-  set(SO_SFX "dylib")
-else()
-  set(SO_SFX "so")
-endif()
-
 configure_file(hrpsys.sh.in ${CMAKE_CURRENT_BINARY_DIR}/hrpsys.sh)
 configure_file(rtc.conf.robot.in ${CMAKE_CURRENT_BINARY_DIR}/rtc.conf.robot)
 configure_file(PA10.conf.in ${CMAKE_CURRENT_BINARY_DIR}/PA10.conf)

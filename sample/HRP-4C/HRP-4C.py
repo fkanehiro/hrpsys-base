@@ -2,25 +2,16 @@ import rtm
 
 from rtm import *
 from OpenHRP import *
-from OpenHRP.RobotHardwareServicePackage import *
-
-import socket
-import time
 
 def connectComps():
     connectPorts(bridge.port("q"), seq.port("qInit"))
     #
     connectPorts(seq.port("qRef"), hgc.port("qIn"))
     #
-    connectPorts(hgc.port("qOut"),  bridge.port("qRef"))
-    connectPorts(hgc.port("dqOut"),  bridge.port("dqRef"))
-    connectPorts(hgc.port("ddqOut"),  bridge.port("ddqRef"))
-    #
 
 def activateComps():
-#    rtm.serializeComponents([seq, hgc])
+    rtm.serializeComponents([bridge, seq])
     seq.start()
-#    hgc.start()
 
 def createComps():
     global bridge, seq, seq_svc, hgc
@@ -31,8 +22,7 @@ def createComps():
     seq = ms.create("SequencePlayer", "seq")
     seq_svc = SequencePlayerServiceHelper.narrow(seq.service("service0"))
 
-    ms.load("HGcontroller")
-    hgc = ms.create("HGcontroller", "hgc")
+    hgc = findRTC("HGcontroller0")
 
 def init():
     global ms
@@ -49,14 +39,10 @@ def init():
     activateComps()
     print "initialized successfully"
 
-def loadPattern(basename, tm=3.0):
+def loadPattern(basename, tm=1.0):
     seq_svc.loadPattern(basename, tm)
     seq_svc.waitInterpolation()
 
-def demo():
-    init()
-    loadPattern("/home/kanehiro/openrtp/share/hrpsys/samples/HRP-4C/walk2m")
-
-demo()
-#init()
+init()
+loadPattern("data/walk2m")
 
