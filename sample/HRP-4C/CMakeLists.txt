@@ -8,7 +8,7 @@ install(PROGRAMS
 install(FILES
   HRP-4C.xml
   ${CMAKE_CURRENT_BINARY_DIR}/rtc.conf
-  HRP-4C.py
+  HRP4C.py
   ${CMAKE_CURRENT_BINARY_DIR}/HRP-4C.conf
   DESTINATION share/hrpsys/samples/HRP-4C)
 
