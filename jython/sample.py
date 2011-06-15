@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import rtm
 
 global mgr, rtc1, rtc2
