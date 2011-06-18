@@ -7,7 +7,7 @@
 #include <cstdio>
 #include "js.h"
 
-joystick::joystick(const char *dev) : m_fd(-1), m_lastEventIndex(0), m_lastEvent(EVENT_NONE)
+joystick::joystick(const char *dev) : m_fd(-1)
 {
     if ((m_fd = open(dev, O_RDONLY|O_NONBLOCK)) < 0){
         perror("open");
@@ -37,21 +37,6 @@ joystick::~joystick()
     }
 }
 
-bool joystick::is_open() const
-{
-    return m_fd >= 0;
-}
-
-unsigned int joystick::nButtons() const
-{
-    return m_buttons.size();
-}
-
-unsigned int joystick::nAxes() const
-{
-    return m_axes.size();
-}
-
 bool joystick::readEvent()
 {
     js_event e;
@@ -78,30 +63,10 @@ bool joystick::readEvent()
             fval = (float)e.value/MAX_VALUE_16BIT;
             //printf("%d:%x\n", e.number, e.value);
             m_axes[e.number] = fval;
-            m_lastEvent = joystick::EVENT_AXIS;
-            m_lastEventIndex = e.number;
         }else{
             // button 
             m_buttons[e.number] = e.value==0 ? false : true;
-            m_lastEvent = joystick::EVENT_BUTTON;
-            m_lastEventIndex = e.number;
         }
     }
     return true;
-}
-
-void joystick::getLastEvent(joystick::event &o_event, int &o_index) const
-{
-    o_event = m_lastEvent;
-    o_index = m_lastEventIndex;
-}
-
-bool joystick::getButtonState(int i_index) const
-{
-    return m_buttons[i_index];
-}
-
-float joystick::getAxisState(int i_index) const
-{
-    return m_axes[i_index];
 }

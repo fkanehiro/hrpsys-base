@@ -118,6 +118,7 @@ RTC::ReturnCode_t Joystick::onActivated(RTC::UniqueId ec_id)
     }
     return RTC::RTC_OK;
   }else{
+    std::cerr << "Joystick device(" << m_device << ") is not opened" << std::endl;
     return RTC::RTC_ERROR;  
   }
 }
