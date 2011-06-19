@@ -196,6 +196,7 @@ RTC::ReturnCode_t StateHolder::onExecute(RTC::UniqueId ec_id)
 
     m_basePose.data.position = m_basePos.data;
     m_basePose.data.orientation = m_baseRpy.data;
+    setTimestamp(m_basePose);
     m_basePoseOut.write();
 
     if (m_timeCount > 0){

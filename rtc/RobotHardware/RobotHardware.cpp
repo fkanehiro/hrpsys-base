@@ -218,6 +218,7 @@ RTC::ReturnCode_t RobotHardware::onExecute(RTC::UniqueId ec_id)
 
   // read from iob
   m_robot->readJointAngles(m_q.data.get_buffer());  
+  setTimestamp(m_q);
   for (unsigned int i=0; i<m_rate.size(); i++){
       double rate[3];
       m_robot->readGyroSensor(i, rate);
