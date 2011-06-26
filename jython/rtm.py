@@ -450,6 +450,7 @@ def connectPorts(outP, inPs, subscription="flush", dataflow="Push", bufferlength
 		con_prof_holder.value = con_prof
 		if inP.connect(con_prof_holder) != ReturnCode_t.RTC_OK:
 			print "failed to connect"
+			continue
 		# confirm connection
 		if isConnected(outP, inP) == False:
 			print "connet() returned RTC_OK, but not connected"
