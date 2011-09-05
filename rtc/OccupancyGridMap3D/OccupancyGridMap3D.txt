@@ -1,0 +1,57 @@
+/**
+
+\page OccupancyGridMap3D
+
+\section introduction Overview
+
+3D occupancy grid map component. This component is implemented using OctoMap(http://octomap.sourceforge.net/).
+
+<table>
+<tr><th>implementation_id</th><td>OccupancyGridMap3D</td></tr>
+<tr><th>category</th><td>example</td></tr>
+<tr><th>initialize function</th><td>OccupancyGridMap3DInit</td></tr>
+</table>
+
+\section dataports Data Ports
+
+\subsection inports Input Ports
+
+<table>
+<tr><th>port name</th><th>data type</th><th>unit</th><th>description</th></tr>
+<tr><td>cloud</td><td>RTC::PointCloud</td><td></td><td>point cloud given in the sensor coordinates</td></tr>
+<tr><td>pose</td><td>RTC::Pose3D</td><td></td><td>sensor coordinates</td></tr>
+<tr><td>update</td><td>RTC::TimedLong</td><td></td><td>true to update the map, false otherwise</td></tr>
+</table>
+
+\subsection outports Output Ports
+
+N/A
+
+\section serviceports Service Ports
+
+\subsection provider Service Providers
+
+<table>
+<tr><th>port name</th><th>interface name</th><th>service type</th><th>IDL</th><th>description</th></tr>
+<tr><td>OGMap3DService</td><td>service1</td><td>OGMap3DService</td><td>\ref OpenHRP::OGMap3DService</td><td></td></tr>
+</table>
+
+\subsection consumer Service Consumers
+
+N/A
+
+\section configuration Configuration Variables
+
+<table>
+<tr><th>name</th><th>type</th><th>unit</th><th>default value</th><th>description</th></tr>
+<tr><td>accumulate</td><td>int</td><td></td><td>1</td><td>true to accumulate, false otherwise</td></tr>
+<tr><td>resolution</td><td>double</td><td>[m]</td><td>0.1</td><td>size of voxel</td></tr>
+<tr><td>occupiedThd</td><td>double</td><td></td><td>0.5</td><td>threshold to decide a voxel as occupied</td></tr>
+<tr><td>initialMap</td><td>std::string</td><td></td><td></td><td>path of initial map</td></tr>
+</table>
+
+\section conf Configuration File
+
+N/A
+
+ */

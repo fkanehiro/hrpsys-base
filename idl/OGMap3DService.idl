@@ -1,0 +1,33 @@
+#include "InterfaceDataTypes.idl"
+
+module OpenHRP
+{
+  
+  struct AABB
+  {
+    RTC::Point3D	pos;		/// position of the corner which has smallest x,y and z values
+    RTC::Size3D 	size;		/// length along x,y and z axes
+  };
+
+  struct OGMap3D
+  {
+    double 		resolution;	/// resolution of voxels
+    RTC::Point3D 	pos;		/// position of the corner which has smallest x, y and z values
+    short 		nx;		/// the number of voxels along X axis
+    short 		ny;		/// the number of voxels along Y axis
+    short 		nz;		/// the number of voxels along Z axis
+    RTC::OGMapCells 	cells;		/// voxel state
+  };
+
+  // voxel states
+  const octet gridEmpty = 0;
+  const octet gridOccupied = 1;
+  const octet gridFloor = 2;
+  const octet gridUnknown = 3;
+
+  interface OGMap3DService
+  {
+    OGMap3D getOGMap3D(in AABB region);
+  };
+};
+

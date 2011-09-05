@@ -38,4 +38,8 @@ add_subdirectory(Joystick2PanTiltAngles)
 add_subdirectory(ForwardKinematics)
 add_subdirectory(HGcontroller)
 
-
+# Octomap
+find_package(Octomap)
+if (OCTOMAP_FOUND)
+  add_subdirectory(OccupancyGridMap3D)
+endif()

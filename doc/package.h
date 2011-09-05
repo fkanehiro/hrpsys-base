@@ -27,6 +27,7 @@ To use jython scripts to create RT components, connect ports and get/set propert
     <li>\ref Joystick2Velocity2D</li>
     <li>\ref Joystick2PanTiltAngles</li>
     <li>\ref NullComponent</li>
+    <li>\ref OccupancyGridMap3D</li>
     <li>\ref RobotHardware</li>
     <li>\ref SequencePlayer</li>
     <li>\ref StateHolder</li>
@@ -37,6 +38,7 @@ To use jython scripts to create RT components, connect ports and get/set propert
     <li>\ref OpenHRP::DataLoggerService</li>
     <li>\ref OpenHRP::ExecutionProfileService</li>
     <li>\ref OpenHRP::ForwardKinematicsService</li>
+    <li>\ref OpenHRP::OGMap3DService</li>
     <li>\ref OpenHRP::RobotHardwareService</li>
     <li>\ref OpenHRP::SequencePlayerService</li>
     <li>\ref OpenHRP::StateHolderService</li>

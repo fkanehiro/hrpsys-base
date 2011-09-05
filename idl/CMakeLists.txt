@@ -6,6 +6,7 @@ set(idl_files
   SequencePlayerService.idl 
   ForwardKinematicsService.idl
   ExecutionProfileService.idl
+  OGMap3DService.idl
   )
 
 install(FILES ${idl_files} DESTINATION share/hrpsys/idl)

@@ -473,6 +473,7 @@ INPUT		      =  @CMAKE_CURRENT_SOURCE_DIR@/package.h \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/Joystick2Velocity2D \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/Joystick2PanTiltAngles \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/NullComponent \
+		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/OccupancyGridMap3D \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/RobotHardware \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/SequencePlayer \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/StateHolder \

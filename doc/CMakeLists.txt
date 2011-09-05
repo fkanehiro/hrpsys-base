@@ -6,6 +6,7 @@ set(input_files package.h
 		      ../rtc/Joystick2Velocity2D/Joystick2Velocity2D.txt
 		      ../rtc/Joystick2PanTiltAngles/Joystick2PanTiltAngles.txt
 		      ../rtc/NullComponent/NullComponent.txt
+		      ../rtc/OccupancyGridMap3D/OccupancyGridMap3D.txt
 		      ../rtc/RobotHardware/RobotHardware.txt
 		      ../rtc/SequencePlayer/SequencePlayer.txt
 		      ../rtc/StateHolder/StateHolder.txt
