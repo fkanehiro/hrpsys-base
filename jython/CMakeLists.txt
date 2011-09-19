@@ -8,6 +8,7 @@ add_custom_command(
   COMMAND ${IDLJ} ${idlj_flags} -I. -I${OPENRTM_DIR}/include/rtm/idl ${OPENRTM_DIR}/include/rtm/idl/Manager.idl
   COMMAND ${IDLJ} ${idlj_flags} -I. -I${OPENRTM_DIR}/include/rtm/idl ${OPENRTM_DIR}/include/rtm/idl/OpenRTM.idl
   COMMAND ${IDLJ} ${idlj_flags} -I. -I${OPENRTM_DIR}/include/rtm/idl ${OPENRTM_DIR}/include/rtm/idl/DataPort.idl
+  COMMAND ${IDLJ} ${idlj_flags} -I. -I${OPENRTM_DIR}/include/rtm/idl ${OPENRTM_DIR}/include/rtm/idl/InterfaceDataTypes.idl
   COMMAND ${JAVAC} ${javac_flags} src/*/*.java
   COMMAND ${JAR} cf ${jarfile} OpenRTM RTC RTM _SDOPackage
 )
