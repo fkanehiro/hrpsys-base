@@ -104,6 +104,7 @@ class ForwardKinematics
 
   ::CORBA::Boolean getReferencePose(const char* linkname, RTC::TimedDoubleSeq_out pose);
   ::CORBA::Boolean getCurrentPose(const char* linkname, RTC::TimedDoubleSeq_out pose);
+  ::CORBA::Boolean getRelativeCurrentPosition(const char* linknameFrom, const char *linknameTo, const OpenHRP::ForwardKinematicsService::position target, OpenHRP::ForwardKinematicsService::position result);
   ::CORBA::Boolean selectBaseLink(const char* linkname);
   
  protected:

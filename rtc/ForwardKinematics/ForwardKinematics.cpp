@@ -289,6 +289,20 @@ RTC::ReturnCode_t ForwardKinematics::onRateChanged(RTC::UniqueId ec_id)
     return true;
 }
 
+::CORBA::Boolean ForwardKinematics::getRelativeCurrentPosition(const char* linknameFrom, const char* linknameTo, const OpenHRP::ForwardKinematicsService::position target, OpenHRP::ForwardKinematicsService::position result)
+{
+    Guard guard(m_bodyMutex);
+    hrp::Link *from = m_actBody->link(linknameFrom);
+    hrp::Link *to = m_actBody->link(linknameTo);
+    if (!from || !to) return false;
+    hrp::Vector3 targetPrel(target[0], target[1], target[2]);
+    hrp::Vector3 targetPabs(to->p+to->R*targetPrel);
+    hrp::Matrix33 Rt(trans(from->R));
+    hrp::Vector3 p(Rt*(targetPabs - from->p));
+    result[ 0]=p(0);result[ 1]=p(1);result[ 2]=p(2);
+    return true;
+}
+
 ::CORBA::Boolean ForwardKinematics::selectBaseLink(const char* linkname)
 {
     Guard guard(m_bodyMutex);

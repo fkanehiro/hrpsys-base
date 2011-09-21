@@ -25,6 +25,7 @@ public:
     ::CORBA::Boolean selectBaseLink(const char* lnkname);
     ::CORBA::Boolean getReferencePose(const char* linkname, RTC::TimedDoubleSeq_out pose);
     ::CORBA::Boolean getCurrentPose(const char* linkname, RTC::TimedDoubleSeq_out pose);
+    ::CORBA::Boolean getRelativeCurrentPosition(const char* linkname1, const char *linkname2, const OpenHRP::ForwardKinematicsService::position target, OpenHRP::ForwardKinematicsService::position result);
 private:
     ForwardKinematics *m_comp;
 };

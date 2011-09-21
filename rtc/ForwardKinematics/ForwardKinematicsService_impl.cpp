@@ -29,3 +29,8 @@ void ForwardKinematicsService_impl::setComp(ForwardKinematics *i_comp)
 {
     return m_comp->getCurrentPose(linkname, pose);
 }
+
+::CORBA::Boolean ForwardKinematicsService_impl::getRelativeCurrentPosition(const char* linknameFrom, const char *linknameTo, const OpenHRP::ForwardKinematicsService::position target, OpenHRP::ForwardKinematicsService::position result)
+{
+    return m_comp->getRelativeCurrentPosition(linknameFrom, linknameTo, target, result);
+}

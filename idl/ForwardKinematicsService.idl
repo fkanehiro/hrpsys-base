@@ -8,6 +8,7 @@ module OpenHRP
 {
   interface ForwardKinematicsService
   {
+    typedef double position[3];
     /** 
 	@brief select a link its position of the actual model coincides with that of the reference model.
 	@param linkname link name
@@ -30,5 +31,17 @@ module OpenHRP
        @return true if gotten successfully, false otherwise
     */
     boolean getCurrentPose(in string linkname, out RTC::TimedDoubleSeq pose);
+
+    /**
+       @brief get current position of a point on a link expressed in the other link frame
+       @param linknameFrom the result is computed w.r.t. this link
+       @param linknameTo the point is fixed on this link
+       @param target position of the point wrt linknameTo
+       @param result relative position of the point
+       @return true if gotten successfully, false otherwise
+     */
+    boolean getRelativeCurrentPosition(in string linknameFrom, in string linknameTo,
+				       in position target,
+				       out position result);
   };
 };
