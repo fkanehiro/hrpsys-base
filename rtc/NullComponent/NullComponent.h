@@ -19,6 +19,7 @@
 
 // Service implementation headers
 // <rtc-template block="service_impl_h">
+#include "NullService_impl.h"
 
 // </rtc-template>
 
@@ -122,11 +123,13 @@ class NullComponent
 
   // Service declaration
   // <rtc-template block="service_declare">
+  RTC::CorbaPort m_NullServicePort;
   
   // </rtc-template>
 
   // Consumer declaration
   // <rtc-template block="consumer_declare">
+  NullService_impl m_NullService;
   
   // </rtc-template>
 

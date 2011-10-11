@@ -1,4 +1,6 @@
-set(comp_sources NullComponent.cpp)
+generate_stub_skel(NullService)
+
+set(comp_sources NullComponent.cpp NullServiceSk.cpp NullService_impl.cpp)
 add_library(NullComponent SHARED ${comp_sources})
 target_link_libraries(NullComponent ${OPENRTM_LIBRARIES})
 set_target_properties(NullComponent PROPERTIES PREFIX "")

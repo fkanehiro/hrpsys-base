@@ -1,0 +1,12 @@
+#ifndef __NULL_SERVICE_IDL__
+#define __NULL_SERVICE_IDL__
+
+module OpenHRP
+{
+  interface NullService
+  {
+    void echo(in string msg);
+  };
+};
+
+#endif

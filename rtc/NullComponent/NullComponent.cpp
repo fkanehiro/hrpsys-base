@@ -38,6 +38,7 @@ NullComponent::NullComponent(RTC::Manager* manager)
     // <rtc-template block="initializer">
     m_dataIn("dataIn", m_data),
     m_dataOut("dataOut", m_data),
+    m_NullServicePort("NullService"),
     // </rtc-template>
 	dummy(0)
 {
@@ -70,10 +71,12 @@ RTC::ReturnCode_t NullComponent::onInitialize()
   addOutPort("dataOut", m_dataOut);
   
   // Set service provider to Ports
+  m_NullServicePort.registerProvider("service0", "NullService", m_NullService);
   
   // Set service consumers to Ports
   
   // Set CORBA Service Ports
+  addPort(m_NullServicePort);
   
   // </rtc-template>
 

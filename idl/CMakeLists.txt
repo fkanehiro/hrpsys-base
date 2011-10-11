@@ -7,6 +7,7 @@ set(idl_files
   ForwardKinematicsService.idl
   ExecutionProfileService.idl
   OGMap3DService.idl
+  NullService.idl
   )
 
 install(FILES ${idl_files} DESTINATION share/hrpsys/idl)

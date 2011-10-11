@@ -31,7 +31,10 @@ This component is a very simple RT component to learn how to develop.
 
 \subsection provider Service Providers
 
-N/A
+<table>
+<tr><th>port name</th><th>interface name</th><th>service type</th><th>IDL</th><th>description</th></tr>
+<tr><td>NullService</td><td>service0</td><td>NullService</td><td>\ref OpenHRP::NullService</td><td></td></tr>
+</table>
 
 \subsection consumer Service Consumers
 
