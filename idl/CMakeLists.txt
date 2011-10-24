@@ -8,6 +8,7 @@ set(idl_files
   ExecutionProfileService.idl
   OGMap3DService.idl
   NullService.idl
+  Img.idl
   )
 
 install(FILES ${idl_files} DESTINATION share/hrpsys/idl)

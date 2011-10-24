@@ -1,0 +1,81 @@
+/* version 1.0 */
+
+#ifndef IMG_IDL
+#define IMG_IDL
+
+#include <BasicDataType.idl>
+
+module Img {
+
+/* vector and matrix type */
+typedef double Vec3[3];
+typedef double Mat44[4][4];
+
+/* image */
+enum ColorFormat
+{
+  CF_UNKNOWN, CF_GRAY, CF_RGB
+};
+
+struct ImageData
+{
+  long width;
+  long height;
+
+  ColorFormat format;
+  sequence<octet> raw_data;
+};
+
+
+/* camera image */
+struct CameraIntrinsicParameter
+{
+  double matrix_element[5];
+  sequence<double> distortion_coefficient;
+};
+
+struct CameraImage
+{
+  RTC::Time captured_time;
+  ImageData image;
+  CameraIntrinsicParameter intrinsic;
+  Mat44 extrinsic;
+};
+
+struct TimedCameraImage
+{
+  RTC::Time tm;
+  CameraImage data;
+  long error_code;
+};
+
+
+/* stereo camera image */
+struct MultiCameraImage
+{
+  sequence<CameraImage> image_seq;
+  long camera_set_id;
+};
+
+struct TimedMultiCameraImage
+{
+  RTC::Time tm;
+  MultiCameraImage data;
+  long error_code;
+};
+
+
+/* interfaces */
+/* stereo image capture */
+interface CameraCaptureService {
+  oneway void take_one_frame();
+  /*
+  oneway void take_multi_frames(in long num);
+  */
+  oneway void start_continuous();
+  oneway void stop_continuous();
+};
+
+}; /* module */
+
+#endif /* IMG_IDL */
