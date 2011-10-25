@@ -130,14 +130,21 @@ RTC::ReturnCode_t JpegDecoder::onExecute(RTC::UniqueId ec_id)
 
       cv::Mat image = cv::imdecode(cv::Mat(buf), 1);
 
-      std::cout << "(" << image.cols << "," << image.rows << ")" << std::endl; 
-      m_decoded.data.image.raw_data.length(image.cols*image.rows);
+      m_decoded.data.image.raw_data.length(image.cols*image.rows*3);
       m_decoded.data.image.width = image.cols;
       m_decoded.data.image.height = image.rows;
       m_decoded.data.image.format = Img::CF_RGB;
-      memcpy(m_decoded.data.image.raw_data.get_buffer(),
-             image.data,
-             m_decoded.data.image.raw_data.length());
+      unsigned char *src = image.data;
+      unsigned char *dst = m_decoded.data.image.raw_data.get_buffer();
+      for (int i=0; i<image.rows; i++){
+          for (int j=0; j<image.cols; j++){
+              // BGR -> RGB
+              *dst++ = src[2];
+              *dst++ = src[1];
+              *dst++ = src[0];
+              src+=3;
+          }
+      }
 
       m_decodedOut.write();
   }
