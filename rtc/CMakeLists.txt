@@ -37,6 +37,7 @@ macro(generate_stub_skel_pkg idl_basename package_path)
 #    COMMAND omniidl -bpython -C../../python ${idl_file}
     COMMAND ${IDLJ} ${idlj_flags} -I${OPENRTM_DIR}/include/rtm/idl ${idl_file}
     COMMAND mkdir -p ${CMAKE_CURRENT_BINARY_DIR}/cls
+    COMMAND mkdir -p ${CMAKE_CURRENT_BINARY_DIR}/cls/${package_path}
     COMMAND ${JAVAC} ${javac_flags} src/${package_path}*.java
     COMMAND ${JAR} cf ${jarfile} -C ${CMAKE_CURRENT_BINARY_DIR}/cls ${package_path}.
     DEPENDS ${idl_file}
