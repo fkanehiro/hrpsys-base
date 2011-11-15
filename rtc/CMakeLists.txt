@@ -64,6 +64,7 @@ add_subdirectory(Joystick2PanTiltAngles)
 add_subdirectory(ForwardKinematics)
 add_subdirectory(HGcontroller)
 add_subdirectory(JpegDecoder)
+add_subdirectory(VideoCapture)
 
 # Octomap
 find_package(Octomap)

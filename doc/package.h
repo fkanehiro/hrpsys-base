@@ -26,11 +26,13 @@ To use jython scripts to create RT components, connect ports and get/set propert
     <li>\ref Joystick</li>
     <li>\ref Joystick2Velocity2D</li>
     <li>\ref Joystick2PanTiltAngles</li>
+    <li>\ref JpegDecoder</li>
     <li>\ref NullComponent</li>
     <li>\ref OccupancyGridMap3D</li>
     <li>\ref RobotHardware</li>
     <li>\ref SequencePlayer</li>
     <li>\ref StateHolder</li>
+    <li>\ref VideoCapture</li>
     <li>\ref WavPlayer</li>
   </ul>
   <li>Services provided by basic RT components</li>
