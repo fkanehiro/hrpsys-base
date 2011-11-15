@@ -28,6 +28,7 @@ public:
   void playPattern(const dSequenceSequence& pos, const dSequenceSequence& rpy, const dSequenceSequence& zmp, ::CORBA::Double tm);
   void clear();
   void clearNoWait();
+  CORBA::Boolean setInterpolationMode(OpenHRP::SequencePlayerService::interpolationMode i_mode_);
   //
   void player(SequencePlayer *i_player);
 private:

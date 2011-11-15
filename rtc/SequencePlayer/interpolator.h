@@ -30,6 +30,7 @@ public:
 #define DEFAULT_AVG_VEL	(0.5) // [rad/s]
   double calc_interpolation_time(const double *g, 
 				 double avg_vel=DEFAULT_AVG_VEL);
+  bool setInterpolationMode (interpolation_mode i_mode_);
   double delay;
 private:
   interpolation_mode imode;

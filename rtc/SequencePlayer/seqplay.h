@@ -33,6 +33,7 @@ public:
     void push(const double *i_q, const double *i_zmp, const double *i_acc,
               const double *i_p, const double *i_rpy, bool immediate=true);
     void sync();
+    bool setInterpolationMode(interpolator::interpolation_mode i_mode_);
 private:
     void pop_back();
     enum {Q, ZMP, ACC, P, RPY, NINTERPOLATOR};

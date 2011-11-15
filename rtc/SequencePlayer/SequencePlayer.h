@@ -113,6 +113,7 @@ class SequencePlayer
   bool setZmp(const double *zmp, double tm);
   void loadPattern(const char *basename, double time); 
   void playPattern(const OpenHRP::dSequenceSequence& pos, const OpenHRP::dSequenceSequence& rpy, const OpenHRP::dSequenceSequence& zmp, ::CORBA::Double tm);
+  bool setInterpolationMode(OpenHRP::SequencePlayerService::interpolationMode i_mode_);
 
  protected:
   // Configuration variable declaration

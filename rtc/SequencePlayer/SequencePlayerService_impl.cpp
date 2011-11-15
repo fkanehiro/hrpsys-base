@@ -87,6 +87,10 @@ void SequencePlayerService_impl::clearNoWait()
   m_player->setClearFlag();
 }
 
+CORBA::Boolean SequencePlayerService_impl::setInterpolationMode(OpenHRP::SequencePlayerService::interpolationMode i_mode_)
+{
+  return m_player->setInterpolationMode(i_mode_);
+}
 
 void SequencePlayerService_impl::player(SequencePlayer *i_player)
 {

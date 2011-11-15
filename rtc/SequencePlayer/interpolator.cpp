@@ -94,6 +94,13 @@ double interpolator::calc_interpolation_time(const double *newg,
   return remain_t;
 }
 
+bool interpolator::setInterpolationMode (interpolation_mode i_mode_)
+{
+    if (i_mode_ != LINEAR && i_mode_ != HOFFARBIB) return false;
+    imode = i_mode_;
+    return true;
+};
+
 void interpolator::go(const double *newg, double time, bool immediate)
 {
   int i;

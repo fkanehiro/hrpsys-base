@@ -10,6 +10,11 @@ module OpenHRP
   
   interface SequencePlayerService
   {
+
+    enum  interpolationMode {
+      LINEAR, 	///< linear interpolation
+      HOFFARBIB ///< minimum jerk interpolation by Hoff & Arbib
+    };
     
     /**
      * @brief Wait until the last goal posture is sent to the robot
@@ -101,5 +106,12 @@ module OpenHRP
      * @brief clear pattern data in playback queue. This function returns immediately
      */
     void clearNoWait();
+
+    /**
+     * @brief set interpolation mode.
+     * @param i_mode_ new interpolation mode
+     * @return true if set successfully, false otherwise
+     */
+    boolean setInterpolationMode(in interpolationMode i_mode_);
   };
 };

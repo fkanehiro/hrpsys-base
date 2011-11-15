@@ -357,6 +357,18 @@ void SequencePlayer::playPattern(const dSequenceSequence& pos, const dSequenceSe
     m_seq->sync();
 }
 
+bool SequencePlayer::setInterpolationMode(OpenHRP::SequencePlayerService::interpolationMode i_mode_)
+{
+    interpolator::interpolation_mode new_mode;
+    if (i_mode_ == OpenHRP::SequencePlayerService::LINEAR){
+        new_mode = interpolator::LINEAR;
+    }else if (i_mode_ == OpenHRP::SequencePlayerService::HOFFARBIB){
+        new_mode = interpolator::HOFFARBIB;
+    }else{
+        return false;
+    }
+    return m_seq->setInterpolationMode(new_mode);
+}
 
 extern "C"
 {

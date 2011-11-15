@@ -272,3 +272,14 @@ void seqplay::push(const double *i_q, const double *i_zmp,
 	if (i_rpy) interpolators[RPY]->push(i_rpy, false);
 	if (immediate) sync();
 }
+
+bool seqplay::setInterpolationMode (interpolator::interpolation_mode i_mode_)
+{
+    if (i_mode_ != interpolator::LINEAR && i_mode_ != interpolator::HOFFARBIB) return false;
+
+	bool ret=true; 
+	for (unsigned int i=0; i<NINTERPOLATOR; i++){
+		ret &= interpolators[i]->setInterpolationMode(i_mode_);
+	}
+	return ret;
+}
