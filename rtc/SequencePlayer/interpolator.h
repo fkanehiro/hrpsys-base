@@ -31,6 +31,8 @@ public:
   double calc_interpolation_time(const double *g, 
 				 double avg_vel=DEFAULT_AVG_VEL);
   bool setInterpolationMode (interpolation_mode i_mode_);
+  void setGoal(const double *g, double time);
+  void interpolate();
   double delay;
 private:
   interpolation_mode imode;
@@ -39,6 +41,7 @@ private:
   int dim;
   double dt;
   double *x, *v, *a, *g;
+  double remain_t;
 
   void hoffarbib(double &remain_t, double goal,
 		 double &xx, double &vv, double &aa);

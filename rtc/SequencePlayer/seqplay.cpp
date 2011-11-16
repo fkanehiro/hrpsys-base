@@ -38,13 +38,13 @@ void seqplay::goHalfSitting(double tm)
     if (tm == 0){
         tm = (double)angle_interpolator->calc_interpolation_time(get_half_sitting_posture());
     }
-    angle_interpolator->go(get_half_sitting_posture(), tm);
+    angle_interpolator->setGoal(get_half_sitting_posture(), tm);
 #ifdef INITIAL_ZMP_REF_X
     double zmp[]={INITIAL_ZMP_REF_X, 0, INITIAL_ZMP_REF_Z};
 #else
     double zmp[] = {0,0,0};
 #endif
-    zmp_interpolator->go(zmp, tm);
+    zmp_interpolator->setGoal(zmp, tm);
 #ifdef INITIAL_ZMP_REF_Z
     double waist_pos[]={ref_state.basePosAtt.px, 
                         ref_state.basePosAtt.py,
@@ -52,11 +52,11 @@ void seqplay::goHalfSitting(double tm)
 #else
     double waist_pos[] = {0,0,0};
 #endif
-    waist_pos_interpolator->go(waist_pos, tm);
+    waist_pos_interpolator->setGoal(waist_pos, tm);
     double p[3], rpy[3];
     OpenHRP::convTransformToPosRpy(ref_state.basePosAtt, p, rpy);
     double initial_rpy[3]={0,0,rpy[2]};
-    waist_rpy_interpolator->go(initial_rpy, tm);
+    waist_rpy_interpolator->setGoal(initial_rpy, tm);
 }
 
 void seqplay::goInitial(double tm)
@@ -64,19 +64,19 @@ void seqplay::goInitial(double tm)
     if (tm == 0){
         tm = (double)angle_interpolator->calc_interpolation_time(get_initial_posture());
     }
-    angle_interpolator->go(get_initial_posture(), tm);
+    angle_interpolator->setGoal(get_initial_posture(), tm);
 #ifdef WAIST_HEIGHT
     double zmp[] = {0,0,-WAIST_HEIGHT};
     double pos[] = {ref_state.basePosAtt.px,
                     ref_state.basePosAtt.py,
                     WAIST_HEIGHT};
-    waist_pos_interpolator->go(pos, tm);
+    waist_pos_interpolator->setGoal(pos, tm);
 #elif defined(INITIAL_ZMP_REF_Z)
     double zmp[] = {0,0, INITIAL_ZMP_REF_Z};
 #else
     double zmp[] = {0,0,0};
 #endif
-    zmp_interpolator->go(zmp, tm);
+    zmp_interpolator->setGoal(zmp, tm);
 }
 #endif
 
@@ -94,16 +94,16 @@ void seqplay::setReferenceState(const ::CharacterState& ref, double tm)
     if (tm == 0){
         tm = (double)angle_interpolator->calc_interpolation_time(ref.angle);
     }
-    if (ref.angle.length()>0) angle_interpolator->go(ref.angle, tm, false);
+    if (ref.angle.length()>0) angle_interpolator->setGoal(ref.angle, tm, false);
     if (ref.velocity.length()>0)
-        velocity_interpolator->go(ref.velocity, tm, false);
-    if (ref.zmp.length()>0) zmp_interpolator->go(ref.zmp, tm, false);
+        velocity_interpolator->setGoal(ref.velocity, tm, false);
+    if (ref.zmp.length()>0) zmp_interpolator->setGoal(ref.zmp, tm, false);
     if (ref.accel.length()>0 && ref.accel[0].length() == 3)
-        acc_interpolator->go(ref.accel[0], tm, false);
+        acc_interpolator->setGoal(ref.accel[0], tm, false);
     double p[3], rpy[3];
     OpenHRP::convTransformToPosRpy(ref.basePosAtt, p, rpy);
-    waist_pos_interpolator->go(p, tm, false);
-    waist_rpy_interpolator->go(rpy, tm, false);
+    waist_pos_interpolator->setGoal(p, tm, false);
+    waist_rpy_interpolator->setGoal(rpy, tm, false);
 
     sync();
 }
@@ -121,7 +121,7 @@ void seqplay::setJointAngles(const double *jvs, double tm)
 	if (tm == 0){
 		interpolators[Q]->set(jvs);
 	}else{
-		interpolators[Q]->go(jvs, tm);
+		interpolators[Q]->setGoal(jvs, tm);
 	}
 }
 
@@ -130,7 +130,7 @@ void seqplay::setZmp(const double *i_zmp, double i_tm)
 	if (i_tm == 0){
 		interpolators[ZMP]->set(i_zmp);
 	}else{
-		interpolators[ZMP]->go(i_zmp, i_tm);
+		interpolators[ZMP]->setGoal(i_zmp, i_tm);
 	}
 }
 
@@ -139,7 +139,7 @@ void seqplay::setBasePos(const double *i_pos, double i_tm)
 	if (i_tm == 0){
 		interpolators[P]->set(i_pos);
 	}else{
-		interpolators[P]->go(i_pos, i_tm);
+		interpolators[P]->setGoal(i_pos, i_tm);
 	}
 }
 
@@ -148,7 +148,7 @@ void seqplay::setBaseRpy(const double *i_rpy, double i_tm)
 	if (i_tm == 0){
 		interpolators[RPY]->set(i_rpy);
 	}else{
-		interpolators[RPY]->go(i_rpy, i_tm);
+		interpolators[RPY]->setGoal(i_rpy, i_tm);
 	}
 }
 
@@ -157,7 +157,7 @@ void seqplay::setBaseAcc(const double *i_acc, double i_tm)
 	if (i_tm == 0){
 		interpolators[ACC]->set(i_acc);
 	}else{
-		interpolators[ACC]->go(i_acc, i_tm);
+		interpolators[ACC]->setGoal(i_acc, i_tm);
 	}
 }
 
@@ -166,7 +166,7 @@ void seqplay::setJointAngle(unsigned int i_rank, double jv, double tm)
     dvector pos(m_dof);
     interpolators[Q]->get(&pos[0], false);
     pos[i_rank] = jv;
-    interpolators[Q]->go(&pos[0], tm);
+    interpolators[Q]->setGoal(&pos[0], tm);
 }
 
 void seqplay::clear(double i_timeLimit)

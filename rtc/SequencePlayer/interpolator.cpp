@@ -19,6 +19,7 @@ interpolator::interpolator(int dim_, double dt_, interpolation_mode imode_)
     g[i] = x[i] = v[i] = a[i] = 0.0;
   }
   delay = 0;
+  remain_t = 0;
 }
 
 interpolator::~interpolator()
@@ -101,26 +102,38 @@ bool interpolator::setInterpolationMode (interpolation_mode i_mode_)
     return true;
 };
 
+void interpolator::setGoal(const double *newg, double time)
+{
+    memcpy(g, newg, sizeof(double)*dim);
+    remain_t = time;
+}
+
+void interpolator::interpolate()
+{
+    if (remain_t <= 0) return;
+
+    double tm;
+    for (int i=0; i<dim; i++){
+        tm = remain_t;
+        switch(imode){
+        case LINEAR:
+            linear_interpolation(tm, g[i], x[i], v[i], a[i]);
+            break;
+        case HOFFARBIB:
+            hoffarbib(tm, g[i], x[i], v[i], a[i]);
+            break;
+        }
+    }
+    push(x);
+    remain_t = tm;
+}
+
 void interpolator::go(const double *newg, double time, bool immediate)
 {
-  int i;
-  double remain_t = time, rm_t=-1;
-  if (remain_t == 0) remain_t = calc_interpolation_time(newg);
-  while(remain_t>0){
-    for (i=0; i<dim; i++){
-      rm_t = remain_t;
-      switch(imode){
-      case LINEAR:
-	linear_interpolation(rm_t, newg[i], x[i], v[i], a[i]);
-	break;
-      case HOFFARBIB:
-	hoffarbib(rm_t, newg[i], x[i], v[i], a[i]);
-	break;
-      }
-    }
-    push(x, false);
-    remain_t = rm_t;
-  }
+  if (time == 0) time = calc_interpolation_time(newg);
+  setGoal(newg, time);
+  
+  while(remain_t>0) interpolate();
   if (immediate) sync();
 }
 
@@ -210,25 +223,24 @@ double *interpolator::front()
 
 void interpolator::get(double *a, bool popp)
 {
+  interpolate();
+
   if (length!=0){
     double *&vs = q.front();
     if (vs == NULL) {
       cerr << "interpolator::get vs = NULL, q.size() = " << q.size() 
 	   << ", length = " << length << endl;
     }
-    memcpy(g, vs, sizeof(double)*dim);
+    memcpy(a, vs, sizeof(double)*dim);
     if (popp) pop();
+  }else{
+    memcpy(a, g, sizeof(double)*dim);
   }
-  memcpy(a, g, sizeof(double)*dim);
 }
 
 bool interpolator::isEmpty()
 {
-  if (length==0){
-    return true;
-  }else{
-    return false;
-  }
+    return length==0 && remain_t <= 0;
 }
 
 double interpolator::remain_time()

@@ -302,6 +302,8 @@ void SequencePlayer::loadPattern(const char *basename, double tm)
 
 bool SequencePlayer::setInitialState()
 {
+    if (!m_seq->isEmpty()) return true;
+
     if (m_qInit.data.length() == 0){
         std::cerr << "can't determine initial posture" << std::endl;
         return false;
