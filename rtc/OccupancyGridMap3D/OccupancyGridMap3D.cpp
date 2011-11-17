@@ -91,7 +91,7 @@ RTC::ReturnCode_t OccupancyGridMap3D::onInitialize()
   
   // </rtc-template>
 
-  RTC::Properties& prop = getProperties();
+  //RTC::Properties& prop = getProperties();
 
   char cwd[PATH_MAX];
   char *p = getcwd(cwd, PATH_MAX);
@@ -254,8 +254,9 @@ OpenHRP::OGMap3D* OccupancyGridMap3D::getOGMap3D(const OpenHRP::AABB& region)
                     p.z() = map->pos.z + k*size;
                     OcTreeNode *result = m_map->search(p);
                     if (result){
-                        if (result->getOccupancy() > m_occupiedThd){
-                            map->cells[rank++] = OpenHRP::gridOccupied;
+                        double p = result->getOccupancy();
+                        if (p >= m_occupiedThd){
+                            map->cells[rank++] = p*0xfe;
                             no++;
                         }else{
                             map->cells[rank++] = OpenHRP::gridEmpty;
@@ -268,8 +269,10 @@ OpenHRP::OGMap3D* OccupancyGridMap3D::getOGMap3D(const OpenHRP::AABB& region)
                 }
             }
         }
+#if 0
         std::cout << "occupied/empty/unknown = " << no << "/" << ne << "/" 
                   << nu << std::endl;
+#endif
     }
     return map;
 }

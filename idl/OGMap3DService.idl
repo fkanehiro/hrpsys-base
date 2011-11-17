@@ -20,10 +20,9 @@ module OpenHRP
   };
 
   // voxel states
-  const octet gridEmpty = 0;
-  const octet gridOccupied = 1;
-  const octet gridFloor = 2;
-  const octet gridUnknown = 3;
+  // 0x00 - 0xfe : occupied probability
+  const octet gridEmpty   = 0x00;
+  const octet gridUnknown = 0xff;
 
   interface OGMap3DService
   {
