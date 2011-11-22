@@ -38,15 +38,15 @@
 3. Running examples
 
 3.1 Monitoring a manipulator "PA10"
-   a. Open a new terminal
-   b. % cd <install prefix>/share/hrpsys/samples/PA10
-      % ./hrpsys.sh
-   c. Launch Eclipse
-   d. Open "GrxUI" perspective
-   e. From "GrxUI" menu of Eclipse, load a project file "PA10.xml" placed under
+   a. Launch Eclipse
+   b. Open "GrxUI" perspective
+   c. From "GrxUI" menu of Eclipse, load a project file "PA10.xml" placed under
       <install prefix>/share/hrpsys/samples/PA10. A manipulator PA10 will 
       appear in 3DView.
-   f. Select a python script item, "PA10.py" in ItemView.
+   d. Open a new terminal
+   e. % cd <install prefix>/share/hrpsys/samples/PA10
+      % ./hrpsys.sh
+   f. Go back to GrxUI and select a python script item, "PA10.py" in ItemView.
    g. Press "exec script" button in JythonPrompt view. PA10 will change its joint angles.
 
 3.2 Simulation of a cybernetic human "HRP-4C"
