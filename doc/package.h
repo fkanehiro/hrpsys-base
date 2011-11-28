@@ -7,7 +7,7 @@ Basic RT components and utilities to control robots using <a href=http://www.ope
 
 \section requirements System requirements
 
-<a href=http://www.ubuntu.com>ubuntu</a> 8.04LTS and 10.04LTS are supported. <br>
+<a href=http://www.ubuntu.com>ubuntu</a> 10.04LTS is supported. <br>
 <a href=http://www.openrtp.jp/openhrp3>%OpenHRP</a> version 3.1.1 or later is required.
 To use jython scripts to create RT components, connect ports and get/set properties, <a href=http://www.jython.org>Jython</a> is also required.
 
