@@ -341,20 +341,17 @@ bool SequencePlayer::setInitialState()
     }
 }
 
-void SequencePlayer::playPattern(const dSequenceSequence& pos, const dSequenceSequence& rpy, const dSequenceSequence& zmp, ::CORBA::Double tm)
+void SequencePlayer::playPattern(const dSequenceSequence& pos, const dSequenceSequence& rpy, const dSequenceSequence& zmp, const dSequence& tm)
 {
     if (!setInitialState()) return;
 
-    const double *q=NULL, *z=NULL, *a=NULL, *p=NULL, *e=NULL;
+    const double *q=NULL, *z=NULL, *a=NULL, *p=NULL, *e=NULL; double t=0;
     for (unsigned int i=0; i<pos.length(); i++){
         q = pos[i].get_buffer();
         if (i < zmp.length()) z = zmp[i].get_buffer();
         if (i < rpy.length()) e = rpy[i].get_buffer();
-        if (i==0){
-            m_seq->go(q, z, a, p, e, tm, false);
-        }else{
-            m_seq->push(q, z, a, p, e, false);
-        }
+        if (i < tm.length()) t = tm[i];
+        m_seq->go(q, z, a, p, e, t, false);
     }
     m_seq->sync();
 }

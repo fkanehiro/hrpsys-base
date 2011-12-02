@@ -90,12 +90,12 @@ module OpenHRP
      * @param pos sequence of joint angles
      * @param rpy sequence of Roll-Pitch-Yaw angles of the base link
      * @param zmp sequence of ZMP
-     * @param tm duration
+     * @param tm sequence of duration beetween postures
      */
     void playPattern(in dSequenceSequence pos, 
 		     in dSequenceSequence rpy,
 		     in dSequenceSequence zmp, 
-		     in double tm);
+		     in dSequence tm);
 
     /**
      * @brief clear pattern data in playback queue. This function returns after the queue becomes empty.

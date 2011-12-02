@@ -97,7 +97,7 @@ void SequencePlayerService_impl::player(SequencePlayer *i_player)
   m_player = i_player;
 } 
 
-void SequencePlayerService_impl::playPattern(const dSequenceSequence& pos, const dSequenceSequence& rpy, const dSequenceSequence& zmp, ::CORBA::Double tm)
+void SequencePlayerService_impl::playPattern(const dSequenceSequence& pos, const dSequenceSequence& rpy, const dSequenceSequence& zmp, const dSequence& tm)
 {
     m_player->playPattern(pos, rpy, zmp, tm);
 }

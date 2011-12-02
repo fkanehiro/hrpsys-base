@@ -25,7 +25,7 @@ public:
   CORBA::Boolean setZmp(const dSequence& zmp, CORBA::Double tm);
   CORBA::Boolean isEmpty();
   void loadPattern(const char* basename, CORBA::Double tm);
-  void playPattern(const dSequenceSequence& pos, const dSequenceSequence& rpy, const dSequenceSequence& zmp, ::CORBA::Double tm);
+  void playPattern(const dSequenceSequence& pos, const dSequenceSequence& rpy, const dSequenceSequence& zmp, const dSequence& tm);
   void clear();
   void clearNoWait();
   CORBA::Boolean setInterpolationMode(OpenHRP::SequencePlayerService::interpolationMode i_mode_);
