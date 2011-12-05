@@ -387,7 +387,7 @@ int write_dio(unsigned short buf)
 
 int open_iob(void)
 {
-    std::cout << "dummy IOB is opended" << std::endl;
+    std::cout << "dummy IOB is opened" << std::endl;
     for (int i=0; i<number_of_joints(); i++){
         command[i] = 0.0;
         power[i] = OFF;
