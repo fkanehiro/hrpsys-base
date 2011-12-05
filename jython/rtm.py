@@ -405,7 +405,7 @@ def dataTypeOfPort(port):
 # \param dataflow dataflow type. "Push" or "Pull"
 # \param bufferlength length of data buffer
 #
-def connectPorts(outP, inPs, subscription="flush", dataflow="Push", bufferlength=1):
+def connectPorts(outP, inPs, subscription="flush", dataflow="Push", bufferlength=1, rate=1000):
 	if not isinstance(inPs, list):
 		inPs = [inPs]
 	for inP in inPs: 
@@ -445,7 +445,13 @@ def connectPorts(outP, inPs, subscription="flush", dataflow="Push", bufferlength
 		a4.insert_string(str(bufferlength))
 		nv4.value = a4
 		#
-		con_prof.properties = [nv1, nv2, nv3, nv4]
+		nv5 = NameValue()
+		nv5.name = "dataport.publisher.push_rate"
+		a5 = orb.create_any()
+		a5.insert_string(str(rate))
+		nv5.value = a5
+		#
+		con_prof.properties = [nv1, nv2, nv3, nv4, nv5]
 		con_prof_holder = ConnectorProfileHolder()
 		con_prof_holder.value = con_prof
 		if inP.connect(con_prof_holder) != ReturnCode_t.RTC_OK:
