@@ -404,6 +404,7 @@ def dataTypeOfPort(port):
 # \param subscription subscription type. "flush", "new" or "periodic"
 # \param dataflow dataflow type. "Push" or "Pull"
 # \param bufferlength length of data buffer
+# \param rate rate[Hz] for subscription type "periodic"
 #
 def connectPorts(outP, inPs, subscription="flush", dataflow="Push", bufferlength=1, rate=1000):
 	if not isinstance(inPs, list):
