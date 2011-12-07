@@ -106,6 +106,7 @@ RTC::ReturnCode_t Joystick::onShutdown(RTC::UniqueId ec_id)
 
 RTC::ReturnCode_t Joystick::onActivated(RTC::UniqueId ec_id)
 {
+  std::cout << "Joystick::onActivated(" << ec_id << ")" << std::endl;
   m_js = new joystick(m_device.c_str());
   if (m_js->is_open()){
     m_axes.data.length(m_js->nAxes());
@@ -126,6 +127,7 @@ RTC::ReturnCode_t Joystick::onActivated(RTC::UniqueId ec_id)
 
 RTC::ReturnCode_t Joystick::onDeactivated(RTC::UniqueId ec_id)
 {
+  std::cout << "Joystick::onDeactivated(" << ec_id << ")" << std::endl;
   delete m_js;
   return RTC::RTC_OK;
 }
