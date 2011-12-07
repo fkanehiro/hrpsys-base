@@ -180,9 +180,14 @@ RTC::ReturnCode_t OccupancyGridMap3D::onExecute(RTC::UniqueId ec_id)
             relP[2] = m_cloud.points[i].point.z;
             absP = p + R*relP;
             //if (i%320==160)std::cout << i/320 << ", abs:(" << absP[0] << ", " << absP[1] << ", " << absP[2] << "), rel:(" << relP[0] << ", " << relP[1] << ", " << relP[2] << ")" << std::endl;
+#ifdef USE_ONLY_GRIDS
             point3d p(((int)(absP[0]/res))*res,
                       ((int)(absP[1]/res))*res,
                       ((int)(absP[2]/res))*res);
+#else
+            point3d p(absP[0], absP[1], absP[2]);
+#endif
+            //printf("%4d:%6.3f %6.3f %6.3f\n", i, p.x(), p.y(), p.z());
             if (m_accumulate){
                 m_map->updateNode(p, true);
             }else{
@@ -234,9 +239,15 @@ OpenHRP::OGMap3D* OccupancyGridMap3D::getOGMap3D(const OpenHRP::AABB& region)
     OpenHRP::OGMap3D *map = new OpenHRP::OGMap3D;
     double size = m_map->getResolution();
     map->resolution = size;
-    map->pos.x = ((int)(region.pos.x/size))*size+size/2;
-    map->pos.y = ((int)(region.pos.y/size))*size+size/2;
-    map->pos.z = ((int)(region.pos.z/size))*size+size/2;
+#ifdef USE_ONLY_GRIDS
+    map->pos.x = ((int)(region.pos.x/size))*size;
+    map->pos.y = ((int)(region.pos.y/size))*size;
+    map->pos.z = ((int)(region.pos.z/size))*size;
+#else
+    map->pos.x = region.pos.x;
+    map->pos.y = region.pos.y;
+    map->pos.z = region.pos.z;
+#endif
     map->nx = region.size.l/size;
     map->ny = region.size.w/size;
     map->nz = region.size.h/size;
@@ -254,14 +265,15 @@ OpenHRP::OGMap3D* OccupancyGridMap3D::getOGMap3D(const OpenHRP::AABB& region)
                     p.z() = map->pos.z + k*size;
                     OcTreeNode *result = m_map->search(p);
                     if (result){
-                        double p = result->getOccupancy();
-                        if (p >= m_occupiedThd){
-                            map->cells[rank++] = p*0xfe;
+                        double prob = result->getOccupancy();
+                        if (prob >= m_occupiedThd){
+                            map->cells[rank++] = prob*0xfe;
                             no++;
                         }else{
                             map->cells[rank++] = OpenHRP::gridEmpty;
                             ne++;
                         }
+                        //printf("%6.3f %6.3f %6.3f:%d\n", p.x(), p.y(), p.z(),map->cells[rank-1]);
                     }else{
                         map->cells[rank++] = OpenHRP::gridUnknown;
                         nu++;
