@@ -114,8 +114,7 @@ class ForwardKinematics
   // </rtc-template>
 
   TimedDoubleSeq m_q;
-  TimedPoint3D m_basePos;
-  TimedOrientation3D m_baseRpy;
+  TimedOrientation3D m_sensorRpy;
   TimedDoubleSeq m_qRef;
   TimedPoint3D m_basePosRef;
   TimedOrientation3D m_baseRpyRef;
@@ -123,8 +122,7 @@ class ForwardKinematics
   // DataInPort declaration
   // <rtc-template block="inport_declare">
   InPort<TimedDoubleSeq> m_qIn;
-  InPort<TimedPoint3D> m_basePosIn;
-  InPort<TimedOrientation3D> m_baseRpyIn;
+  InPort<TimedOrientation3D> m_sensorRpyIn;
   InPort<TimedDoubleSeq> m_qRefIn;
   InPort<TimedPoint3D> m_basePosRefIn;
   InPort<TimedOrientation3D> m_baseRpyRefIn;
@@ -156,9 +154,10 @@ class ForwardKinematics
  private:
   int dummy;
   hrp::BodyPtr m_refBody, m_actBody;
-  hrp::Link *m_refLink, *m_actLink;
+  hrp::Link *m_refLink, *m_actLink, *m_sensorAttachedLink;
   coil::Mutex m_bodyMutex;
   Time m_tm;
+  std::string m_sensorAttachedLinkName;
 };
 
 

@@ -30,6 +30,7 @@ static const char* nullcomponent_spec[] =
     "language",          "C++",
     "lang_type",         "compile",
     // Configuration variables
+    "conf.default.sensorAttachedLink", "",
 
     ""
   };
@@ -39,8 +40,7 @@ ForwardKinematics::ForwardKinematics(RTC::Manager* manager)
   : RTC::DataFlowComponentBase(manager),
     // <rtc-template block="initializer">
     m_qIn("q", m_q),
-    m_basePosIn("basePos", m_basePos),
-    m_baseRpyIn("baseRpy", m_baseRpy),
+    m_sensorRpyIn("sensorRpy", m_sensorRpy),
     m_qRefIn("qRef", m_qRef),
     m_basePosRefIn("basePosRef", m_basePosRef),
     m_baseRpyRefIn("baseRpyRef", m_baseRpyRef),
@@ -61,6 +61,8 @@ RTC::ReturnCode_t ForwardKinematics::onInitialize()
   std::cout << m_profile.instance_name << ": onInitialize()" << std::endl;
   // <rtc-template block="bind_config">
   // Bind variables and configuration variable
+  coil::Properties& ref = getProperties();
+  bindParameter("sensorAttachedLink", m_sensorAttachedLinkName, ref["conf.default.sensorAttachedLink"].c_str());
   
   // </rtc-template>
 
@@ -68,8 +70,7 @@ RTC::ReturnCode_t ForwardKinematics::onInitialize()
   // <rtc-template block="registration">
   // Set InPort buffers
   addInPort("q", m_qIn);
-  addInPort("basePos", m_basePosIn);
-  addInPort("baseRpy", m_baseRpyIn);
+  addInPort("sensorRpy", m_sensorRpyIn);
   addInPort("qRef", m_qRefIn);
   addInPort("basePosRef", m_basePosRefIn);
   addInPort("baseRpyRef", m_baseRpyRefIn);
@@ -104,15 +105,10 @@ RTC::ReturnCode_t ForwardKinematics::onInitialize()
                 << std::endl;
   }
   m_actBody = new hrp::Body(*m_refBody);
-  hrp::Link *l = m_actBody->rootLink();
-  l->p[0] = l->p[1] = l->p[2] = 0.0;
-  l->R(0,0) = 1.0; l->R(0,1) = 0.0; l->R(0,2) = 0.0; 
-  l->R(1,0) = 0.0; l->R(1,1) = 1.0; l->R(1,2) = 0.0; 
-  l->R(2,0) = 0.0; l->R(2,1) = 0.0; l->R(2,2) = 1.0; 
 
   m_refLink = m_refBody->rootLink();
   m_actLink = m_actBody->rootLink();
-  
+
   return RTC::RTC_OK;
 }
 
@@ -142,6 +138,16 @@ RTC::ReturnCode_t ForwardKinematics::onShutdown(RTC::UniqueId ec_id)
 RTC::ReturnCode_t ForwardKinematics::onActivated(RTC::UniqueId ec_id)
 {
   std::cout << m_profile.instance_name<< ": onActivated(" << ec_id << ")" << std::endl;
+  if (m_sensorAttachedLinkName == ""){
+    m_sensorAttachedLink = NULL;
+  }else{
+    m_sensorAttachedLink = m_actBody->link(m_sensorAttachedLinkName);
+    if (!m_sensorAttachedLink){
+      std::cerr << "can't find a link named " << m_sensorAttachedLinkName 
+		<< std::endl;
+      return RTC::RTC_ERROR;
+    }
+  }
   return RTC::RTC_OK;
 }
 
@@ -166,22 +172,23 @@ RTC::ReturnCode_t ForwardKinematics::onExecute(RTC::UniqueId ec_id)
       }
   }
 
-  if (m_basePosIn.isNew()){
-      m_basePosIn.read();
-      hrp::Link *root = m_actBody->rootLink();
-      root->p[0] = m_basePos.data.x;
-      root->p[1] = m_basePos.data.y;
-      root->p[2] = m_basePos.data.z;
-  }
-      
-  if (m_baseRpyIn.isNew()) {
-      m_baseRpyIn.read();
+  if (m_sensorRpyIn.isNew()) {
+      m_sensorRpyIn.read();
       hrp::Vector3 rpy;
-      rpy[0] = m_baseRpy.data.r;
-      rpy[1] = m_baseRpy.data.p;
+      rpy[0] = m_sensorRpy.data.r;
+      rpy[1] = m_sensorRpy.data.p;
       // use reference yaw angle instead of estimated one
       rpy[2] = m_baseRpyRef.data.y;
-      m_actBody->rootLink()->R = hrp::rotFromRpy(rpy);
+      hrp::Matrix33 sensorR = hrp::rotFromRpy(rpy);
+      if (m_sensorAttachedLink){
+	hrp::Matrix33 sensor2base(trans(m_sensorAttachedLink->R)*m_actBody->rootLink()->R);
+	hrp::Matrix33 baseR(sensorR*sensor2base);
+	// to prevent numerical error
+	hrp::Vector3 baseRpy = hrp::rpyFromRot(baseR);
+	m_actBody->rootLink()->R = hrp::rotFromRpy(baseRpy);
+      }else{
+	m_actBody->rootLink()->R = sensorR;
+      }
   }
 
   if (m_qRefIn.isNew()) {

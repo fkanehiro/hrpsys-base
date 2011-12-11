@@ -18,8 +18,7 @@ This component computes forward kinematics of the robot and provides positions a
 <table>
 <tr><th>port name</th><th>data type</th><th>unit</th><th>description</th></tr>
 <tr><td>q</td><td>RTC::TimedDoubleSeq</td><td>[rad]</td><td>measured joint angles</td></tr>
-<tr><td>basePos</td><td>RTC::TimedPoint3D</td><td>[m]</td><td>measured position of the base link</td></tr>
-<tr><td>baseRpy</td><td>RTC::TimedOrientation3D</td><td>[rad]</td><td>Roll-Pitch-Yaw angles of the base link</td></tr>
+<tr><td>sensorRpy</td><td>RTC::TimedOrientation3D</td><td>[rad]</td><td>Roll-Pitch-Yaw angles of the link to which an intertia sensor is attached</td></tr>
 <tr><td>qRef</td><td>RTC::TimedDoubleSeq</td><td>[rad]</td><td>reference joint angles</td></tr>
 <tr><td>basePosRef</td><td>RTC::TimedPoint3D</td><td>[m]</td><td>reference position of the base link</td></tr>
 <tr><td>baseRpyRef</td><td>RTC::TimedOrientation3D</td><td>[rad]</td><td>reference Roll-Pitch-Yaw angles of the base link</td></tr>
@@ -44,7 +43,10 @@ N/A
 
 \section configuration Configuration Variables
 
-N/A
+<table>
+<tr><th>name</th><th>type</th><th>unit</th><th>default value</th><th>description</th></tr>
+<tr><td>sensorAttachedLink</td><td>std::string</td><td></td><td>""</td><td>name of the link to which the inertia sensor is attached. If this variable is not set, the root link is used as the sensor attached link.</td></tr>
+</table>
 
 \section conf Configuration File
 
