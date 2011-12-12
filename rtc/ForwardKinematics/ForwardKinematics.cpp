@@ -174,17 +174,16 @@ RTC::ReturnCode_t ForwardKinematics::onExecute(RTC::UniqueId ec_id)
 
   if (m_sensorRpyIn.isNew()) {
       m_sensorRpyIn.read();
-      hrp::Vector3 rpy;
-      rpy[0] = m_sensorRpy.data.r;
-      rpy[1] = m_sensorRpy.data.p;
-      // use reference yaw angle instead of estimated one
-      rpy[2] = m_baseRpyRef.data.y;
-      hrp::Matrix33 sensorR = hrp::rotFromRpy(rpy);
+      hrp::Matrix33 sensorR = hrp::rotFromRpy(m_sensorRpy.data.r,
+                                              m_sensorRpy.data.p,
+                                              m_sensorRpy.data.y);
       if (m_sensorAttachedLink){
 	hrp::Matrix33 sensor2base(trans(m_sensorAttachedLink->R)*m_actBody->rootLink()->R);
 	hrp::Matrix33 baseR(sensorR*sensor2base);
 	// to prevent numerical error
 	hrp::Vector3 baseRpy = hrp::rpyFromRot(baseR);
+        // use reference yaw angle instead of estimated one
+        baseRpy[2] = m_baseRpyRef.data.y;
 	m_actBody->rootLink()->R = hrp::rotFromRpy(baseRpy);
       }else{
 	m_actBody->rootLink()->R = sensorR;
