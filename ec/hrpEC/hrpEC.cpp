@@ -104,14 +104,16 @@ int art_enter(art_prio_t prio, art_flags_t flag, unsigned long period)
 #ifndef __APPLE__
     if (sched_setscheduler(0, SCHED_FIFO, &param) == -1) {
 	perror("sched_setscheduler");
+        std::cerr << "If you are running this program on normal linux kernel for debug purpose, you can ignore the error message displayed above. If not, this program must have superuser privilege." << std::endl;
 	//return -1;
+    }else{
+        /* Lock memory */
+        if(mlockall(MCL_CURRENT|MCL_FUTURE) == -1) {
+            perror("mlockall failed");
+        }
     }
 #endif
 
-    /* Lock memory */
-    if(mlockall(MCL_CURRENT|MCL_FUTURE) == -1) {
-      perror("mlockall failed");
-    }
 
     /* Pre-fault our stack */
     stack_prefault();
