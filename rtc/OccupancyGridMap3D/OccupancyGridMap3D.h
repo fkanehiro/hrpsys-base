@@ -17,6 +17,7 @@
 #include <rtm/DataOutPort.h>
 #include <rtm/idl/BasicDataTypeSkel.h>
 #include <rtm/idl/InterfaceDataTypes.hh>
+#include <rtcpcl/idl/pointcloud.hh>
 
 namespace octomap{
     class OcTree;
@@ -110,13 +111,13 @@ class OccupancyGridMap3D
   
   // </rtc-template>
 
-  PointCloud m_cloud;
+  PointCloudTypes::PointCloud m_cloud;
   TimedPose3D m_pose;  
   TimedLong m_update;
 
   // DataInPort declaration
   // <rtc-template block="inport_declare">
-  InPort<PointCloud> m_cloudIn;
+  InPort<PointCloudTypes::PointCloud> m_cloudIn;
   InPort<TimedPose3D> m_poseIn;
   InPort<TimedLong> m_updateIn;
   
@@ -146,11 +147,12 @@ class OccupancyGridMap3D
 
  private:
   octomap::OcTree *m_map;
-  bool m_accumulate;
+  bool m_scan;
   double m_occupiedThd, m_resolution;
   std::string m_initialMap;
   std::string m_cwd;
   coil::Mutex m_mutex;
+  int m_debugLevel;
   int dummy;
 };
 

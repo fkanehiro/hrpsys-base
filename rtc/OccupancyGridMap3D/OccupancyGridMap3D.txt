@@ -18,7 +18,7 @@
 
 <table>
 <tr><th>port name</th><th>data type</th><th>unit</th><th>description</th></tr>
-<tr><td>cloud</td><td>RTC::PointCloud</td><td></td><td>point cloud given in the sensor coordinates</td></tr>
+<tr><td>cloud</td><td>PointCloudTypes::PointCloud</td><td></td><td>point cloud given in the sensor coordinates</td></tr>
 <tr><td>pose</td><td>RTC::Pose3D</td><td></td><td>sensor coordinates</td></tr>
 <tr><td>update</td><td>RTC::TimedLong</td><td></td><td>true to update the map, false otherwise</td></tr>
 </table>
@@ -44,10 +44,11 @@ N/A
 
 <table>
 <tr><th>name</th><th>type</th><th>unit</th><th>default value</th><th>description</th></tr>
-<tr><td>accumulate</td><td>int</td><td></td><td>1</td><td>true to accumulate, false otherwise</td></tr>
+<tr><td>scan</td><td>int</td><td></td><td>1</td><td>true to scan, false otherwise</td></tr>
 <tr><td>resolution</td><td>double</td><td>[m]</td><td>0.1</td><td>size of voxel</td></tr>
 <tr><td>occupiedThd</td><td>double</td><td></td><td>0.5</td><td>threshold to decide a voxel as occupied</td></tr>
 <tr><td>initialMap</td><td>std::string</td><td></td><td></td><td>path of initial map</td></tr>
+<tr><td>debugLevel</td><td>int</td><td></td><td></td><td>debug level</td></tr>
 </table>
 
 \section conf Configuration File

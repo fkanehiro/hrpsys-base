@@ -10,7 +10,6 @@
 #include "OccupancyGridMap3D.h"
 #include "hrpUtil/Tvmet3d.h"
 #include <octomap/octomap.h>
-#include <octomap/OcTreeLabeled.h>
 
 typedef coil::Guard<coil::Mutex> Guard;
 
@@ -31,10 +30,11 @@ static const char* occupancygridmap3d_spec[] =
     "language",          "C++",
     "lang_type",         "compile",
     // Configuration variables
-    "conf.default.accumulate", "1",
+    "conf.default.scan", "0",
     "conf.default.occupiedThd", "0.5",
     "conf.default.resolution", "0.1",
     "conf.default.initialMap", "",
+    "conf.default.debugLevel", "0",
     ""
   };
 // </rtc-template>
@@ -49,7 +49,6 @@ OccupancyGridMap3D::OccupancyGridMap3D(RTC::Manager* manager)
     // </rtc-template>
     m_service0(this),
     m_map(NULL),
-    m_accumulate(true),
     dummy(0)
 {
 }
@@ -65,10 +64,11 @@ RTC::ReturnCode_t OccupancyGridMap3D::onInitialize()
   std::cout << m_profile.instance_name << ": onInitialize()" << std::endl;
   // <rtc-template block="bind_config">
   // Bind variables and configuration variable
-  bindParameter("accumulate", m_accumulate, "1");
+  bindParameter("scan", m_scan, "0");
   bindParameter("occupiedThd", m_occupiedThd, "0.5");
   bindParameter("resolution", m_resolution, "0.1");
   bindParameter("initialMap", m_initialMap, "");
+  bindParameter("debugLevel", m_debugLevel, "0");
   
   // </rtc-template>
 
@@ -99,6 +99,13 @@ RTC::ReturnCode_t OccupancyGridMap3D::onInitialize()
   m_cwd += "/";
 
   m_update.data = 1;
+
+  m_pose.data.position.x = 0; 
+  m_pose.data.position.y = 0; 
+  m_pose.data.position.z = 1.5; 
+  m_pose.data.orientation.r = 0;
+  m_pose.data.orientation.p = M_PI/2;
+  m_pose.data.orientation.y = 0;
  
   return RTC::RTC_OK;
 }
@@ -150,7 +157,8 @@ RTC::ReturnCode_t OccupancyGridMap3D::onDeactivated(RTC::UniqueId ec_id)
 RTC::ReturnCode_t OccupancyGridMap3D::onExecute(RTC::UniqueId ec_id)
 {
     //std::cout << "OccupancyGrid3D::onExecute(" << ec_id << ")" << std::endl;
-    if (m_cloudIn.isNew())   m_cloudIn.read();
+    coil::TimeValue t1(coil::gettimeofday());
+
     if (m_poseIn.isNew())    m_poseIn.read();
     if (m_updateIn.isNew())  m_updateIn.read();
 
@@ -170,14 +178,26 @@ RTC::ReturnCode_t OccupancyGridMap3D::onExecute(RTC::UniqueId ec_id)
     //std::cout << "R:" << R << std::endl;
 
     hrp::Vector3 absP, relP; 
+#ifdef USE_ONLY_GRIDS
     double res = m_map->getResolution();
+#endif
     point3d sensorP(p[0], p[1], p[2]);
-    {
+    if (m_cloudIn.isNew()){
+        m_cloudIn.read();
         Guard guard(m_mutex);
-        for (unsigned int i=0; i<m_cloud.points.length(); i++){
-            relP[0] = m_cloud.points[i].point.x;
-            relP[1] = m_cloud.points[i].point.y;
-            relP[2] = m_cloud.points[i].point.z;
+        if (strcmp(m_cloud.type, "xyz")){
+            std::cout << "point type(" << m_cloud.type 
+                      << ") is not supported" << std::endl;
+            return RTC::RTC_ERROR;
+        }
+        float *ptr = (float *)m_cloud.data.get_buffer();
+        for (unsigned int i=0; i<m_cloud.height*m_cloud.width; i++, ptr+=4){
+            if (isnan(ptr[0])) continue;
+            relP[0] = ptr[0];
+            relP[1] = ptr[1];
+            relP[2] = ptr[2];
+            //std::cout << "relP:" << relP << std::endl;
+
             absP = p + R*relP;
             //if (i%320==160)std::cout << i/320 << ", abs:(" << absP[0] << ", " << absP[1] << ", " << absP[2] << "), rel:(" << relP[0] << ", " << relP[1] << ", " << relP[2] << ")" << std::endl;
 #ifdef USE_ONLY_GRIDS
@@ -188,12 +208,19 @@ RTC::ReturnCode_t OccupancyGridMap3D::onExecute(RTC::UniqueId ec_id)
             point3d p(absP[0], absP[1], absP[2]);
 #endif
             //printf("%4d:%6.3f %6.3f %6.3f\n", i, p.x(), p.y(), p.z());
-            if (m_accumulate){
-                m_map->updateNode(p, true);
-            }else{
+            if (m_scan){
                 m_map->insertRay(sensorP, p);
+            }else{
+                m_map->updateNode(p, true);
             }
         }
+    }
+
+    coil::TimeValue t2(coil::gettimeofday());
+    if (m_debugLevel > 0){
+        coil::TimeValue dt = t2-t1;
+        std::cout << "OccupancyGridMap3D::onExecute() : " 
+                  << dt.sec()*1e3+dt.usec()/1e3 << "[ms]" << std::endl;
     }
 
     return RTC::RTC_OK;
