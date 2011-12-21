@@ -191,7 +191,7 @@ RTC::ReturnCode_t OccupancyGridMap3D::onExecute(RTC::UniqueId ec_id)
             return RTC::RTC_ERROR;
         }
         float *ptr = (float *)m_cloud.data.get_buffer();
-        for (unsigned int i=0; i<m_cloud.height*m_cloud.width; i++, ptr+=4){
+        for (unsigned int i=0; i<m_cloud.data.length()/16; i++, ptr+=4){
             if (isnan(ptr[0])) continue;
             relP[0] = ptr[0];
             relP[1] = ptr[1];
