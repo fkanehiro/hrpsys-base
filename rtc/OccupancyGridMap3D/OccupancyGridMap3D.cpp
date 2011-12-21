@@ -30,7 +30,6 @@ static const char* occupancygridmap3d_spec[] =
     "language",          "C++",
     "lang_type",         "compile",
     // Configuration variables
-    "conf.default.scan", "0",
     "conf.default.occupiedThd", "0.5",
     "conf.default.resolution", "0.1",
     "conf.default.initialMap", "",
@@ -64,7 +63,6 @@ RTC::ReturnCode_t OccupancyGridMap3D::onInitialize()
   std::cout << m_profile.instance_name << ": onInitialize()" << std::endl;
   // <rtc-template block="bind_config">
   // Bind variables and configuration variable
-  bindParameter("scan", m_scan, "0");
   bindParameter("occupiedThd", m_occupiedThd, "0.5");
   bindParameter("resolution", m_resolution, "0.1");
   bindParameter("initialMap", m_initialMap, "");
@@ -103,8 +101,8 @@ RTC::ReturnCode_t OccupancyGridMap3D::onInitialize()
   m_pose.data.position.x = 0; 
   m_pose.data.position.y = 0; 
   m_pose.data.position.z = 1.5; 
-  m_pose.data.orientation.r = 0;
-  m_pose.data.orientation.p = M_PI/2;
+  m_pose.data.orientation.r = -M_PI/2;
+  m_pose.data.orientation.p = 0;
   m_pose.data.orientation.y = 0;
  
   return RTC::RTC_OK;
@@ -177,11 +175,6 @@ RTC::ReturnCode_t OccupancyGridMap3D::onExecute(RTC::UniqueId ec_id)
     //std::cout << "p:" << p << std::endl;
     //std::cout << "R:" << R << std::endl;
 
-    hrp::Vector3 absP, relP; 
-#ifdef USE_ONLY_GRIDS
-    double res = m_map->getResolution();
-#endif
-    point3d sensorP(p[0], p[1], p[2]);
     if (m_cloudIn.isNew()){
         m_cloudIn.read();
         Guard guard(m_mutex);
@@ -191,29 +184,19 @@ RTC::ReturnCode_t OccupancyGridMap3D::onExecute(RTC::UniqueId ec_id)
             return RTC::RTC_ERROR;
         }
         float *ptr = (float *)m_cloud.data.get_buffer();
+        Pointcloud cloud;
         for (unsigned int i=0; i<m_cloud.data.length()/16; i++, ptr+=4){
             if (isnan(ptr[0])) continue;
-            relP[0] = ptr[0];
-            relP[1] = ptr[1];
-            relP[2] = ptr[2];
-            //std::cout << "relP:" << relP << std::endl;
-
-            absP = p + R*relP;
-            //if (i%320==160)std::cout << i/320 << ", abs:(" << absP[0] << ", " << absP[1] << ", " << absP[2] << "), rel:(" << relP[0] << ", " << relP[1] << ", " << relP[2] << ")" << std::endl;
-#ifdef USE_ONLY_GRIDS
-            point3d p(((int)(absP[0]/res))*res,
-                      ((int)(absP[1]/res))*res,
-                      ((int)(absP[2]/res))*res);
-#else
-            point3d p(absP[0], absP[1], absP[2]);
-#endif
-            //printf("%4d:%6.3f %6.3f %6.3f\n", i, p.x(), p.y(), p.z());
-            if (m_scan){
-                m_map->insertRay(sensorP, p);
-            }else{
-                m_map->updateNode(p, true);
-            }
+            cloud.push_back(point3d(ptr[0],ptr[1],ptr[2]));
         }
+        point3d sensor(0,0,0);
+        pose6d frame(m_pose.data.position.x,
+                     m_pose.data.position.y,
+                     m_pose.data.position.z, 
+                     m_pose.data.orientation.r,
+                     m_pose.data.orientation.p,
+                     m_pose.data.orientation.y);
+        m_map->insertScan(cloud, sensor, frame);
     }
 
     coil::TimeValue t2(coil::gettimeofday());
@@ -283,7 +266,7 @@ OpenHRP::OGMap3D* OccupancyGridMap3D::getOGMap3D(const OpenHRP::AABB& region)
     map->cells.length(map->nx*map->ny*map->nz);
     {
         int no=0, ne=0, nu=0;
-        Guard guard(m_mutex);
+        //Guard guard(m_mutex);
         for (int i=0; i<map->nx; i++){
             p.x() = map->pos.x + i*size;
             for (int j=0; j<map->ny; j++){

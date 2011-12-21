@@ -147,7 +147,6 @@ class OccupancyGridMap3D
 
  private:
   octomap::OcTree *m_map;
-  bool m_scan;
   double m_occupiedThd, m_resolution;
   std::string m_initialMap;
   std::string m_cwd;
