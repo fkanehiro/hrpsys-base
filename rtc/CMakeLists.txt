@@ -73,6 +73,7 @@ endif()
 
 # Octomap
 find_package(Octomap)
-if (OCTOMAP_FOUND)
+pkg_check_modules(RTCPCL rtcpcl)
+if (OCTOMAP_FOUND AND RTCPCL_FOUND)
   add_subdirectory(OccupancyGridMap3D)
 endif()
