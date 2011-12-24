@@ -66,9 +66,9 @@ add_subdirectory(HGcontroller)
 find_package(OpenCV)
 if (OpenCV_FOUND)
   add_subdirectory(JpegDecoder)
-endif()
-if (NOT APPLE)
-   add_subdirectory(VideoCapture)
+  if (NOT APPLE)
+    add_subdirectory(VideoCapture)
+  endif()
 endif()
 
 # Octomap
