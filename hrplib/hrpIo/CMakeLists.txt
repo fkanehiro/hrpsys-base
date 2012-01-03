@@ -1,4 +1,5 @@
 add_library(hrpIo SHARED iob.cpp)
+target_link_libraries(hrpIo rt)
 
 set(target hrpIo)
 
