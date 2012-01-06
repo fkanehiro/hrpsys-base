@@ -11,12 +11,14 @@ interpolator::interpolator(int dim_, double dt_, interpolation_mode imode_)
   dim = dim_;
   dt = dt_;
   length = 0;
-  g = new double[dim];
+  gx = new double[dim];
+  gv = new double[dim];
+  ga = new double[dim];
   x = new double[dim];
   v = new double[dim];
   a = new double[dim];
   for (int i=0; i<dim; i++){
-    g[i] = x[i] = v[i] = a[i] = 0.0;
+    gx[i] = gv[i] = ga[i] = x[i] = v[i] = a[i] = 0.0;
   }
   delay = 0;
   remain_t = 0;
@@ -25,7 +27,9 @@ interpolator::interpolator(int dim_, double dt_, interpolation_mode imode_)
 interpolator::~interpolator()
 {
   clear();
-  delete [] g;
+  delete [] gx;
+  delete [] gv;
+  delete [] ga;
   delete [] x;
   delete [] v;
   delete [] a;
@@ -39,37 +43,40 @@ void interpolator::clear()
 }
 
 // 1dof interpolator
-void interpolator::hoffarbib(double &remain_t, double goal,
+void interpolator::hoffarbib(double &remain_t,
+			     double gx, double gv, double ga,
 			     double &xx, double &vv, double &aa)
 {
   double da;
   double rm_t = remain_t + delay;
 #define EPS 1e-6
   if (rm_t > dt+EPS){
-    da = -9*aa/rm_t - 36*vv/(rm_t*rm_t)
-      + 60*(goal-xx)/(rm_t*rm_t*rm_t);
+    da = -9*(aa-ga*1/3.0)/rm_t - 36*(vv+gv*2/3.0)/(rm_t*rm_t)
+      + 60*(gx-xx)/(rm_t*rm_t*rm_t);
     aa += da*dt;
     vv += aa*dt;
     xx += vv*dt;
     remain_t -= dt;
   }else{
-    aa = vv = 0;
-    xx = goal;
+    aa = ga;
+    vv = gv;
+    xx = gx;
     remain_t = 0;
   }
 }
 
-void interpolator::linear_interpolation(double &remain_t, double goal,
+void interpolator::linear_interpolation(double &remain_t,
+					double gx, double gv, double ga,
 					double &xx, double &vv, double &aa)
 {
   if (remain_t > dt+EPS){
     aa = 0;
-    vv = (goal-xx)/remain_t;
+    vv = (gx-xx)/remain_t;
     xx += vv*dt;
     remain_t -= dt;
   }else{
     aa = vv = 0;
-    xx = goal;
+    xx = gx;
     remain_t = 0;
   }
 }
@@ -86,7 +93,7 @@ double interpolator::calc_interpolation_time(const double *newg,
   double remain_t;
   double max_diff = 0, diff;
   for (int i=0; i<dim; i++){
-    diff = fabs(newg[i]-g[i]);
+    diff = fabs(newg[i]-gx[i]);
     if (diff > max_diff) max_diff = diff;
   }
   remain_t = max_diff/avg_vel;
@@ -104,7 +111,14 @@ bool interpolator::setInterpolationMode (interpolation_mode i_mode_)
 
 void interpolator::setGoal(const double *newg, double time)
 {
-    memcpy(g, newg, sizeof(double)*dim);
+    setGoal(newg, NULL, time);
+}
+
+void interpolator::setGoal(const double *newg, const double *newv, double time)
+{
+    memcpy(gx, newg, sizeof(double)*dim);
+    if ( newv != NULL ) memcpy(gv, newv, sizeof(double)*dim);
+    else { for(int i = 0; i < dim; i++) { gv[i] = 0; } }
     remain_t = time;
 }
 
@@ -117,10 +131,10 @@ void interpolator::interpolate()
         tm = remain_t;
         switch(imode){
         case LINEAR:
-            linear_interpolation(tm, g[i], x[i], v[i], a[i]);
+            linear_interpolation(tm, gx[i], gv[i], ga[i], x[i], v[i], a[i]);
             break;
         case HOFFARBIB:
-            hoffarbib(tm, g[i], x[i], v[i], a[i]);
+            hoffarbib(tm, gx[i], gv[i], ga[i], x[i], v[i], a[i]);
             break;
         }
     }
@@ -130,8 +144,13 @@ void interpolator::interpolate()
 
 void interpolator::go(const double *newg, double time, bool immediate)
 {
+  go(newg, NULL, time, immediate);
+}
+
+void interpolator::go(const double *newg, const double *newv, double time, bool immediate)
+{
   if (time == 0) time = calc_interpolation_time(newg);
-  setGoal(newg, time);
+  setGoal(newg, newv, time);
   
   while(remain_t>0) interpolate();
   if (immediate) sync();
@@ -199,7 +218,7 @@ void interpolator::pop_back()
     if (length > 0){
       memcpy(x, q.back(), sizeof(double)*dim);
     }else{
-      memcpy(x, g, sizeof(double)*dim);
+      memcpy(x, gx, sizeof(double)*dim);
     }
   }
 }
@@ -207,8 +226,8 @@ void interpolator::pop_back()
 void interpolator::set(const double *angle)
 {
   for (int i=0; i<dim; i++){
-    g[i] = x[i] = angle[i];
-    v[i] = a[i] = 0;
+    gx[i] = x[i] = angle[i];
+    gv[i] = ga[i] = v[i] = a[i] = 0;
   }
 }
 
@@ -217,7 +236,7 @@ double *interpolator::front()
   if (length!=0){
     return q.front();
   }else{
-    return g;
+    return gx;
   }
 }
 
@@ -234,7 +253,7 @@ void interpolator::get(double *a, bool popp)
     memcpy(a, vs, sizeof(double)*dim);
     if (popp) pop();
   }else{
-    memcpy(a, g, sizeof(double)*dim);
+    memcpy(a, gx, sizeof(double)*dim);
   }
 }
 

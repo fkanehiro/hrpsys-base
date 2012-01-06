@@ -16,7 +16,8 @@ public:
   double *front();
   void get(double *a, bool popp=true);
   void set(const double *a);
-  void go(const double *g, double time, bool immediate=true);
+  void go(const double *gx, const double *gv, double time, bool immediate=true);
+  void go(const double *gx, double time, bool immediate=true);
   void pop();
   void pop_back();
   void clear();
@@ -31,7 +32,8 @@ public:
   double calc_interpolation_time(const double *g, 
 				 double avg_vel=DEFAULT_AVG_VEL);
   bool setInterpolationMode (interpolation_mode i_mode_);
-  void setGoal(const double *g, double time);
+  void setGoal(const double *gx, const double *gv, double time);
+  void setGoal(const double *gx, double time);
   void interpolate();
   double delay;
 private:
@@ -40,12 +42,15 @@ private:
   int length;
   int dim;
   double dt;
-  double *x, *v, *a, *g;
+  double *x, *v, *a;
+  double *gx, *gv, *ga;
   double remain_t;
 
-  void hoffarbib(double &remain_t, double goal,
+  void hoffarbib(double &remain_t,
+		 double gx, double gv, double ga,
 		 double &xx, double &vv, double &aa);
-  void linear_interpolation(double &remain_t, double goal,
+  void linear_interpolation(double &remain_t,
+			    double gx, double gv, double ga,
 			    double &xx, double &vv, double &aa);
 };
 

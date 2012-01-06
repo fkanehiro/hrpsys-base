@@ -346,14 +346,44 @@ void SequencePlayer::playPattern(const dSequenceSequence& pos, const dSequenceSe
     if (!setInitialState()) return;
 
     const double *q=NULL, *z=NULL, *a=NULL, *p=NULL, *e=NULL; double t=0;
+    unsigned int len = (pos.length()>0?pos[0].length():0);
+    double *v = new double[len];
     for (unsigned int i=0; i<pos.length(); i++){
         q = pos[i].get_buffer();
+	if (i < pos.length() - 1 ) {
+	  double t0, t1;
+	  if (tm.length() == pos.length()) {
+	    t0 = tm[i]; t1 = tm[i+1];
+	  } else {
+	    t0 = t1 = tm[0];
+	  }
+          const double *q_next = pos[i+1].get_buffer();
+          const double *q_prev 
+              = i==0 ? m_qInit.data.get_buffer() : pos[i-1].get_buffer();
+	  for (unsigned int j = 0; j < len; j++) {
+	    double d0, d1, v0, v1;
+	    d0 = (q[j] - q_prev[j]);
+	    d1 = (q_next[j] - q[j]);
+	    v0 = d0/t0;
+	    v1 = d1/t1;
+	    if ( v0 * v1 >= 0 ) {
+	      v[j] = 0.5 * (v0 + v1);
+	    } else {
+	      v[j] = 0;
+	    }
+	  }
+	} else {
+	  for (unsigned int j = 0; j < len; j++) { v[j] = 0.0; }
+	}
         if (i < zmp.length()) z = zmp[i].get_buffer();
         if (i < rpy.length()) e = rpy[i].get_buffer();
         if (i < tm.length()) t = tm[i];
-        m_seq->go(q, z, a, p, e, t, false);
+        m_seq->go(q, z, a, p, e,
+		  v, NULL, NULL, NULL, NULL,
+		  t, false);
     }
     m_seq->sync();
+    delete [] v;
 }
 
 bool SequencePlayer::setInterpolationMode(OpenHRP::SequencePlayerService::interpolationMode i_mode_)

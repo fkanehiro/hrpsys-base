@@ -30,6 +30,11 @@ public:
     void go(const double *i_q, const double *i_zmp, const double *i_acc,
             const double *i_p, const double *i_rpy, double i_time, 
             bool immediate=true);
+    void go(const double *i_q, const double *i_zmp, const double *i_acc,
+            const double *i_p, const double *i_rpy,
+	    const double *ii_q, const double *ii_zmp, const double *ii_acc,
+            const double *ii_p, const double *ii_rpy,
+            double i_time, bool immediate=true);
     void push(const double *i_q, const double *i_zmp, const double *i_acc,
               const double *i_p, const double *i_rpy, bool immediate=true);
     void sync();

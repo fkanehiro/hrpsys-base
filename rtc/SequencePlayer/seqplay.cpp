@@ -252,11 +252,22 @@ void seqplay::go(const double *i_q, const double *i_zmp, const double *i_acc,
 				 const double *i_p, const double *i_rpy, double i_time, 
 				 bool immediate)
 {
-	if (i_q) interpolators[Q]->go(i_q, i_time, false);
-	if (i_zmp) interpolators[ZMP]->go(i_zmp, i_time, false);
-	if (i_acc) interpolators[ACC]->go(i_acc, i_time, false);
-	if (i_p) interpolators[P]->go(i_p, i_time, false);
-	if (i_rpy) interpolators[RPY]->go(i_rpy, i_time, false);
+	go(i_q, i_zmp, i_acc, i_p, i_rpy,
+	   NULL, NULL, NULL, NULL, NULL,
+	   i_time, immediate);
+}
+
+void seqplay::go(const double *i_q, const double *i_zmp, const double *i_acc,
+				 const double *i_p, const double *i_rpy,
+				 const double *ii_q, const double *ii_zmp, const double *ii_acc,
+				 const double *ii_p, const double *ii_rpy,
+				 double i_time,	 bool immediate)
+{
+	if (i_q) interpolators[Q]->go(i_q, ii_q, i_time, false);
+	if (i_zmp) interpolators[ZMP]->go(i_zmp, ii_zmp, i_time, false);
+	if (i_acc) interpolators[ACC]->go(i_acc, ii_acc, i_time, false);
+	if (i_p) interpolators[P]->go(i_p, ii_p, i_time, false);
+	if (i_rpy) interpolators[RPY]->go(i_rpy, ii_rpy, i_time, false);
 	if (immediate) sync();
 }
 
