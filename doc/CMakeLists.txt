@@ -9,7 +9,9 @@ set(input_files package.h
 		      ../rtc/OccupancyGridMap3D/OccupancyGridMap3D.txt
 		      ../rtc/RobotHardware/RobotHardware.txt
 		      ../rtc/SequencePlayer/SequencePlayer.txt
+		      ../rtc/Simulator/Simulator.txt
 		      ../rtc/StateHolder/StateHolder.txt
+		      ../rtc/Viewer/Viewer.txt
 		      ../rtc/WavPlayer/WavPlayer.txt
 		      ../hrplib/hrpIo/iob.h
 		      ../idl/DataLoggerService.idl

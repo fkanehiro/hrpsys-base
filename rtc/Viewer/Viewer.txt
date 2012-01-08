@@ -1,0 +1,46 @@
+/**
+
+\page Viewer
+
+\section introduction Overview
+
+This component is a scene viewer.
+
+<table>
+<tr><th>implementation_id</th><td>Viewer</td></tr>
+<tr><th>category</th><td>example</td></tr>
+</table>
+
+\section dataports Data Ports
+
+\subsection inports Input Ports
+
+<table>
+<tr><th>port name</th><th>data type</th><th>unit</th><th>description</th></tr>
+<tr><td>state</td><td>OpenHRP::SceneState</td><td></td><td></td></tr>
+</table>
+
+\subsection outports Output Ports
+
+\section serviceports Service Ports
+
+\subsection provider Service Providers
+
+N/A
+
+\subsection consumer Service Consumers
+
+N/A
+
+\section configuration Configuration Variables
+
+<table>
+<tr><th>name</th><th>type</th><th>unit</th><th>default value</th><th>description</th></tr>
+<tr><td>project</td><td>std::string</td><td></td><td></td><td>OpenHRP project file</td></tr>
+</table>
+
+\section conf Configuration File
+
+N/A
+
+ */

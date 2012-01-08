@@ -31,7 +31,9 @@ To use jython scripts to create RT components, connect ports and get/set propert
     <li>\ref OccupancyGridMap3D</li>
     <li>\ref RobotHardware</li>
     <li>\ref SequencePlayer</li>
+    <li>\ref Simulator</li>
     <li>\ref StateHolder</li>
+    <li>\ref Viewer</li>
     <li>\ref VideoCapture</li>
     <li>\ref WavPlayer</li>
   </ul>

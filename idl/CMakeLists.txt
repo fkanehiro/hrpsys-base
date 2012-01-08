@@ -9,6 +9,7 @@ set(idl_files
   OGMap3DService.idl
   NullService.idl
   Img.idl
+  HRPDataTypes.idl
   )
 
 install(FILES ${idl_files} DESTINATION share/hrpsys/idl)

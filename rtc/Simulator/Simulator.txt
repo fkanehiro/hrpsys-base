@@ -1,0 +1,47 @@
+/**
+
+\page Simulator
+
+\section introduction Overview
+
+This component is a dynamics simulator.
+
+<table>
+<tr><th>implementation_id</th><td>Simulator</td></tr>
+<tr><th>category</th><td>example</td></tr>
+</table>
+
+\section dataports Data Ports
+
+\subsection inports Input Ports
+
+
+\subsection outports Output Ports
+
+<table>
+<tr><th>port name</th><th>data type</th><th>unit</th><th>description</th></tr>
+<tr><td>state</td><td>OpenHRP::SceneState</td><td></td><td></td></tr>
+</table>
+
+\section serviceports Service Ports
+
+\subsection provider Service Providers
+
+N/A
+
+\subsection consumer Service Consumers
+
+N/A
+
+\section configuration Configuration Variables
+
+<table>
+<tr><th>name</th><th>type</th><th>unit</th><th>default value</th><th>description</th></tr>
+<tr><td>project</td><td>std::string</td><td></td><td></td><td>OpenHRP project file</td></tr>
+</table>
+
+\section conf Configuration File
+
+N/A
+
+ */

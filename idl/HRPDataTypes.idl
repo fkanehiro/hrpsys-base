@@ -1,0 +1,17 @@
+#include "ExtendedDataTypes.idl"
+
+module OpenHRP
+{
+  struct RobotState
+  {
+    string name;
+    RTC::Pose3D basePose;
+    sequence<double> q;
+  };
+
+  typedef sequence<RobotState> RobotStateSeq;
+  struct SceneState
+  {
+    RobotStateSeq states;
+  };
+};
