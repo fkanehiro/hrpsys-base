@@ -172,8 +172,8 @@ RTC::ReturnCode_t SequencePlayer::onExecute(RTC::UniqueId ec_id)
     if (m_seq->isEmpty()){
         m_clearFlag = false;
         if (m_waitFlag){
-            sem_post(&m_waitSem);
             m_waitFlag = false;
+            sem_post(&m_waitSem);
         }
     }else{
         double zmp[3], acc[3], pos[3], rpy[3];

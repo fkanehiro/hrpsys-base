@@ -14,14 +14,20 @@ interpolator::interpolator(int dim_, double dt_, interpolation_mode imode_)
   gx = new double[dim];
   gv = new double[dim];
   ga = new double[dim];
+  a0 = new double[dim];
+  a1 = new double[dim];
+  a2 = new double[dim];
+  a3 = new double[dim];
+  a4 = new double[dim];
+  a5 = new double[dim];
   x = new double[dim];
   v = new double[dim];
   a = new double[dim];
   for (int i=0; i<dim; i++){
     gx[i] = gv[i] = ga[i] = x[i] = v[i] = a[i] = 0.0;
   }
-  delay = 0;
   remain_t = 0;
+  target_t = 0;
 }
 
 interpolator::~interpolator()
@@ -30,6 +36,12 @@ interpolator::~interpolator()
   delete [] gx;
   delete [] gv;
   delete [] ga;
+  delete [] a0;
+  delete [] a1;
+  delete [] a2;
+  delete [] a3;
+  delete [] a4;
+  delete [] a5;
   delete [] x;
   delete [] v;
   delete [] a;
@@ -44,29 +56,24 @@ void interpolator::clear()
 
 // 1dof interpolator
 void interpolator::hoffarbib(double &remain_t,
-			     double gx, double gv, double ga,
+			     double a0, double a1, double a2, 
+			     double a3, double a4, double a5, 
 			     double &xx, double &vv, double &aa)
 {
-  double da;
-  double rm_t = remain_t + delay;
 #define EPS 1e-6
-  if (rm_t > dt+EPS){
-    da = -9*(aa-ga*1/3.0)/rm_t - 36*(vv+gv*2/3.0)/(rm_t*rm_t)
-      + 60*(gx-xx)/(rm_t*rm_t*rm_t);
-    aa += da*dt;
-    vv += aa*dt;
-    xx += vv*dt;
+  if (remain_t > dt+EPS){
     remain_t -= dt;
   }else{
-    aa = ga;
-    vv = gv;
-    xx = gx;
     remain_t = 0;
   }
+  double t = target_t - remain_t;
+  xx=a0+a1*t+a2*t*t+a3*t*t*t+a4*t*t*t*t+a5*t*t*t*t*t;
+  vv=a1+2*a2*t+3*a3*t*t+4*a4*t*t*t+5*a5*t*t*t*t;
+  aa=2*a2+6*a3*t+12*a4*t*t+20*a5*t*t*t;
 }
 
 void interpolator::linear_interpolation(double &remain_t,
-					double gx, double gv, double ga,
+					double gx,
 					double &xx, double &vv, double &aa)
 {
   if (remain_t > dt+EPS){
@@ -119,7 +126,21 @@ void interpolator::setGoal(const double *newg, const double *newv, double time)
     memcpy(gx, newg, sizeof(double)*dim);
     if ( newv != NULL ) memcpy(gv, newv, sizeof(double)*dim);
     else { for(int i = 0; i < dim; i++) { gv[i] = 0; } }
-    remain_t = time;
+    target_t = remain_t = time;
+
+    double A,B,C;
+    for (int i=0; i<dim; i++){
+        A=(gx[i]-(x[i]+v[i]*target_t+(a[i]/2.0)*target_t*target_t))/(target_t*target_t*target_t);
+        B=(gv[i]-(v[i]+a[i]*target_t))/(target_t*target_t);
+        C=(ga[i]-a[i])/target_t;
+
+        a0[i]=x[i];
+        a1[i]=v[i];
+        a2[i]=a[i]/2.0;
+        a3[i]=10*A-4*B+0.5*C;
+        a4[i]=(-15*A+7*B-C)/target_t;
+        a5[i]=(6*A-3*B+0.5*C)/(target_t*target_t);
+    }
 }
 
 void interpolator::interpolate()
@@ -131,10 +152,14 @@ void interpolator::interpolate()
         tm = remain_t;
         switch(imode){
         case LINEAR:
-            linear_interpolation(tm, gx[i], gv[i], ga[i], x[i], v[i], a[i]);
+            linear_interpolation(tm,
+				 gx[i],
+				 x[i], v[i], a[i]);
             break;
         case HOFFARBIB:
-            hoffarbib(tm, gx[i], gv[i], ga[i], x[i], v[i], a[i]);
+            hoffarbib(tm,
+		      a0[i], a1[i], a2[i], a3[i], a4[i], a5[i],
+		      x[i], v[i], a[i]);
             break;
         }
     }

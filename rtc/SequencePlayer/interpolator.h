@@ -35,7 +35,6 @@ public:
   void setGoal(const double *gx, const double *gv, double time);
   void setGoal(const double *gx, double time);
   void interpolate();
-  double delay;
 private:
   interpolation_mode imode;
   deque<double *> q;
@@ -44,13 +43,15 @@ private:
   double dt;
   double *x, *v, *a;
   double *gx, *gv, *ga;
-  double remain_t;
+  double target_t, remain_t;
+  double *a0, *a1, *a2, *a3, *a4, *a5;
 
   void hoffarbib(double &remain_t,
-		 double gx, double gv, double ga,
+		 double a0, double a1, double a2,
+		 double a3, double a4, double a5,
 		 double &xx, double &vv, double &aa);
   void linear_interpolation(double &remain_t,
-			    double gx, double gv, double ga,
+			    double gx,
 			    double &xx, double &vv, double &aa);
 };
 
