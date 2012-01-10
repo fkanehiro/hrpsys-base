@@ -121,12 +121,13 @@ void interpolator::setGoal(const double *newg, double time)
     setGoal(newg, NULL, time);
 }
 
-void interpolator::setGoal(const double *newg, const double *newv, double time)
+void interpolator::setGoal(const double *newg, const double *newv, double time,
+                           bool online)
 {
     memcpy(gx, newg, sizeof(double)*dim);
     if ( newv != NULL ) memcpy(gv, newv, sizeof(double)*dim);
     else { for(int i = 0; i < dim; i++) { gv[i] = 0; } }
-    target_t = remain_t = time;
+    target_t = time;
 
     double A,B,C;
     for (int i=0; i<dim; i++){
@@ -141,9 +142,10 @@ void interpolator::setGoal(const double *newg, const double *newv, double time)
         a4[i]=(-15*A+7*B-C)/target_t;
         a5[i]=(6*A-3*B+0.5*C)/(target_t*target_t);
     }
+    if (online) remain_t = time; // interpolation will start
 }
 
-void interpolator::interpolate()
+void interpolator::interpolate(double& remain_t)
 {
     if (remain_t <= 0) return;
 
@@ -175,9 +177,11 @@ void interpolator::go(const double *newg, double time, bool immediate)
 void interpolator::go(const double *newg, const double *newv, double time, bool immediate)
 {
   if (time == 0) time = calc_interpolation_time(newg);
-  setGoal(newg, newv, time);
+  setGoal(newg, newv, time, false);
   
-  while(remain_t>0) interpolate();
+  do{
+      interpolate(time);
+  }while(time>0);
   if (immediate) sync();
 }
 
@@ -267,7 +271,7 @@ double *interpolator::front()
 
 void interpolator::get(double *a, bool popp)
 {
-  interpolate();
+  interpolate(remain_t);
 
   if (length!=0){
     double *&vs = q.front();

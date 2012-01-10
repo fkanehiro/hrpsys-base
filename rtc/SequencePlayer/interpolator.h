@@ -32,9 +32,10 @@ public:
   double calc_interpolation_time(const double *g, 
 				 double avg_vel=DEFAULT_AVG_VEL);
   bool setInterpolationMode (interpolation_mode i_mode_);
-  void setGoal(const double *gx, const double *gv, double time);
+  void setGoal(const double *gx, const double *gv, double time,
+               bool online=true);
   void setGoal(const double *gx, double time);
-  void interpolate();
+  void interpolate(double& remain_t);
 private:
   interpolation_mode imode;
   deque<double *> q;
