@@ -27,6 +27,7 @@ module OpenHRP
   interface OGMap3DService
   {
     OGMap3D getOGMap3D(in AABB region);
+    void save(in string filename);
   };
 };
 

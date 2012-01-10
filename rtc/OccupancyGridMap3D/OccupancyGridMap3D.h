@@ -104,6 +104,7 @@ class OccupancyGridMap3D
   // virtual RTC::ReturnCode_t onRateChanged(RTC::UniqueId ec_id);
 
   OpenHRP::OGMap3D* getOGMap3D(const OpenHRP::AABB& region);
+  void save(const char *filename);
 
  protected:
   // Configuration variable declaration

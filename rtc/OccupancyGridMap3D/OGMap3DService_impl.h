@@ -22,6 +22,7 @@ public:
   virtual ~OGMap3DService_impl();
 
   OpenHRP::OGMap3D* getOGMap3D(const OpenHRP::AABB& region);
+  void save(const char *filename);
 
 private:
   OccupancyGridMap3D *m_comp;

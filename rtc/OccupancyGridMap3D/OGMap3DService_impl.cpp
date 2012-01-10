@@ -16,3 +16,8 @@ OpenHRP::OGMap3D* OGMap3DService_impl::getOGMap3D(const OpenHRP::AABB& region)
 {
     return m_comp->getOGMap3D(region);
 }
+
+void OGMap3DService_impl::save(const char *filename)
+{
+    m_comp->save(filename);
+}

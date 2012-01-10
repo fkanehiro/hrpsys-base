@@ -299,6 +299,12 @@ OpenHRP::OGMap3D* OccupancyGridMap3D::getOGMap3D(const OpenHRP::AABB& region)
     return map;
 }
 
+void OccupancyGridMap3D::save(const char *filename)
+{
+    Guard guard(m_mutex);
+    m_map->writeBinary(filename);
+}
+
 extern "C"
 {
 
