@@ -48,7 +48,7 @@ class Viewer
   /**
      \brief Destructor
   */
-  ~Viewer();
+  virtual ~Viewer();
 
   // The initialize action (on CREATED->ALIVE transition)
   // formaer rtc_init_entry()

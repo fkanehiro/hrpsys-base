@@ -51,7 +51,7 @@ class SequencePlayer
 {
  public:
   SequencePlayer(RTC::Manager* manager);
-  ~SequencePlayer();
+  virtual ~SequencePlayer();
 
   // The initialize action (on CREATED->ALIVE transition)
   // formaer rtc_init_entry()

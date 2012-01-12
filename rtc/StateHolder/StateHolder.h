@@ -47,7 +47,7 @@ class StateHolder
   /**
      \brief Destructor
   */
-  ~StateHolder();
+  virtual ~StateHolder();
 
   // The initialize action (on CREATED->ALIVE transition)
   // formaer rtc_init_entry()

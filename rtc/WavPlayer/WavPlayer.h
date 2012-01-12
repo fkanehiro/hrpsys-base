@@ -45,7 +45,7 @@ class WavPlayer
   /**
      \brief Destructor
   */
-  ~WavPlayer();
+  virtual ~WavPlayer();
 
   // The initialize action (on CREATED->ALIVE transition)
   // formaer rtc_init_entry()

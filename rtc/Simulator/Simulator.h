@@ -50,7 +50,7 @@ class Simulator
   /**
      \brief Destructor
   */
-  ~Simulator();
+  virtual ~Simulator();
 
   // The initialize action (on CREATED->ALIVE transition)
   // formaer rtc_init_entry()

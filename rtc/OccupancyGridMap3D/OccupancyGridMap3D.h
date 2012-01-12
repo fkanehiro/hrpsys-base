@@ -53,7 +53,7 @@ class OccupancyGridMap3D
   /**
      \brief Destructor
   */
-  ~OccupancyGridMap3D();
+  virtual ~OccupancyGridMap3D();
 
   // The initialize action (on CREATED->ALIVE transition)
   // formaer rtc_init_entry()

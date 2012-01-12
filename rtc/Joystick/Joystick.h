@@ -51,7 +51,7 @@ class Joystick
   /*!
    * @brief destructor
    */
-  ~Joystick();
+  virtual ~Joystick();
 
   // <rtc-template block="public_attribute">
   

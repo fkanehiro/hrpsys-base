@@ -45,7 +45,7 @@ class Joystick2PanTiltAngles
   /**
      \brief Destructor
   */
-  ~Joystick2PanTiltAngles();
+  virtual ~Joystick2PanTiltAngles();
 
   // The initialize action (on CREATED->ALIVE transition)
   // formaer rtc_init_entry()

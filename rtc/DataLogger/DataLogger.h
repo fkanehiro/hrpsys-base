@@ -59,7 +59,7 @@ class DataLogger
   /**
      \brief Destructor
   */
-  ~DataLogger();
+  virtual ~DataLogger();
 
   // The initialize action (on CREATED->ALIVE transition)
   // formaer rtc_init_entry()

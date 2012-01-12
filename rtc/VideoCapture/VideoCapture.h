@@ -46,7 +46,7 @@ class VideoCapture
   /**
      \brief Destructor
   */
-  ~VideoCapture();
+  virtual ~VideoCapture();
 
   // The initialize action (on CREATED->ALIVE transition)
   // formaer rtc_init_entry()

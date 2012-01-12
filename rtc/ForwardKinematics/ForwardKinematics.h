@@ -52,7 +52,7 @@ class ForwardKinematics
   /**
      \brief Destructor
   */
-  ~ForwardKinematics();
+  virtual ~ForwardKinematics();
 
   // The initialize action (on CREATED->ALIVE transition)
   // formaer rtc_init_entry()
