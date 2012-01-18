@@ -8,7 +8,6 @@
  */
 
 #include "OccupancyGridMap3D.h"
-#include "hrpUtil/Tvmet3d.h"
 #include <octomap/octomap.h>
 
 typedef coil::Guard<coil::Mutex> Guard;
@@ -34,6 +33,7 @@ static const char* occupancygridmap3d_spec[] =
     "conf.default.resolution", "0.1",
     "conf.default.initialMap", "",
     "conf.default.debugLevel", "0",
+    "conf.default.historyMaxLength", "100",
     ""
   };
 // </rtc-template>
@@ -63,10 +63,17 @@ RTC::ReturnCode_t OccupancyGridMap3D::onInitialize()
   std::cout << m_profile.instance_name << ": onInitialize()" << std::endl;
   // <rtc-template block="bind_config">
   // Bind variables and configuration variable
-  bindParameter("occupiedThd", m_occupiedThd, "0.5");
-  bindParameter("resolution", m_resolution, "0.1");
-  bindParameter("initialMap", m_initialMap, "");
-  bindParameter("debugLevel", m_debugLevel, "0");
+  RTC::Properties& prop = getProperties();
+  bindParameter("occupiedThd", m_occupiedThd, 
+                prop["conf.default.occupiedThd"].c_str());
+  bindParameter("resolution", m_resolution, 
+                prop["conf.default.resolution"].c_str());
+  bindParameter("initialMap", m_initialMap, 
+                prop["conf.default.initialMap"].c_str());
+  bindParameter("debugLevel", m_debugLevel, 
+                prop["conf.default.debugLevel"].c_str());
+  bindParameter("historyMaxLength", m_historyMaxLength, 
+                prop["conf.default.historyMaxLength"].c_str());
   
   // </rtc-template>
 
@@ -89,7 +96,6 @@ RTC::ReturnCode_t OccupancyGridMap3D::onInitialize()
   
   // </rtc-template>
 
-  //RTC::Properties& prop = getProperties();
 
   char cwd[PATH_MAX];
   char *p = getcwd(cwd, PATH_MAX);
@@ -98,12 +104,12 @@ RTC::ReturnCode_t OccupancyGridMap3D::onInitialize()
 
   m_update.data = 1;
 
-  m_pose.data.position.x = 0; 
-  m_pose.data.position.y = 0; 
-  m_pose.data.position.z = 1.5; 
-  m_pose.data.orientation.r = -M_PI/2;
-  m_pose.data.orientation.p = 0;
-  m_pose.data.orientation.y = 0;
+  m_sensorP[0] = 0; 
+  m_sensorP[1] = 0; 
+  m_sensorP[2] = 1.5; 
+  m_sensorRpy[0] = -M_PI/2;
+  m_sensorRpy[1] = 0;
+  m_sensorRpy[2] = 0;
  
   return RTC::RTC_OK;
 }
@@ -152,31 +158,71 @@ RTC::ReturnCode_t OccupancyGridMap3D::onDeactivated(RTC::UniqueId ec_id)
   return RTC::RTC_OK;
 }
 
+void interpolatePose(const TimedPose3D& poseOld, 
+                     const TimedPose3D& poseNew,
+                     const PointCloudTypes::Time& tm,
+                     hrp::Vector3 &p, hrp::Vector3 &rpy)
+{
+    double dt = (poseNew.tm.sec - poseOld.tm.sec)*1000
+        + (poseNew.tm.nsec - poseOld.tm.nsec)/1000;
+    double dt1 = (tm.sec - poseOld.tm.sec)*1000
+        + (tm.nsec - poseOld.tm.nsec)/1000;
+    double ratio = dt1/dt;
+    p[0] = ratio*poseNew.data.position.x + (1-ratio)*poseOld.data.position.x;
+    p[1] = ratio*poseNew.data.position.y + (1-ratio)*poseOld.data.position.y;
+    p[2] = ratio*poseNew.data.position.z + (1-ratio)*poseOld.data.position.z;
+    rpy[0] = ratio*poseNew.data.orientation.r + (1-ratio)*poseOld.data.orientation.r;
+    rpy[1] = ratio*poseNew.data.orientation.p + (1-ratio)*poseOld.data.orientation.p;
+    rpy[2] = ratio*poseNew.data.orientation.y + (1-ratio)*poseOld.data.orientation.y;
+}
+
+void OccupancyGridMap3D::computeSensorPose(const PointCloudTypes::Time& tm,
+                                           hrp::Vector3 &p, hrp::Vector3 &rpy)
+{
+    if (m_poseHistory.size()<2) {
+        std::cerr << "sensor pose history doesn't have enough length" 
+                  << std::endl;
+        return;
+    }
+
+    TimedPose3D poseOld, poseNew;
+    do {
+        poseOld = m_poseHistory.front();
+        m_poseHistory.pop_front();
+    }while(m_poseHistory.size() > 0
+           && tm.sec >= m_poseHistory.front().tm.sec
+           && tm.nsec >= m_poseHistory.front().tm.nsec);
+
+    if (m_poseHistory.size() == 0){
+        std::cerr << "can't find pose history" << std::endl;
+        return;
+    }else{
+        poseNew = m_poseHistory.front();
+    }
+    interpolatePose(poseOld, poseNew, tm, p, rpy);
+}
+
 RTC::ReturnCode_t OccupancyGridMap3D::onExecute(RTC::UniqueId ec_id)
 {
     //std::cout << "OccupancyGrid3D::onExecute(" << ec_id << ")" << std::endl;
     coil::TimeValue t1(coil::gettimeofday());
 
-    if (m_poseIn.isNew())    m_poseIn.read();
+    while (m_poseIn.isNew()){
+        m_poseIn.read();
+        m_poseHistory.push_back(m_pose);
+        if (m_poseHistory.size() > m_historyMaxLength){
+            m_poseHistory.pop_front();
+        }
+    }
     if (m_updateIn.isNew())  m_updateIn.read();
 
     if (!m_update.data) {
         return RTC::RTC_OK;
     }
 
-    hrp::Matrix33 R;
-    hrp::Vector3 p;
-    p[0] = m_pose.data.position.x; 
-    p[1] = m_pose.data.position.y; 
-    p[2] = m_pose.data.position.z; 
-    R = hrp::rotFromRpy(m_pose.data.orientation.r,
-                        m_pose.data.orientation.p,
-                        m_pose.data.orientation.y);
-    //std::cout << "p:" << p << std::endl;
-    //std::cout << "R:" << R << std::endl;
-
     if (m_cloudIn.isNew()){
         m_cloudIn.read();
+        computeSensorPose(m_cloud.tm, m_sensorP, m_sensorRpy);
         Guard guard(m_mutex);
         if (strcmp(m_cloud.type, "xyz")){
             std::cout << "point type(" << m_cloud.type 
@@ -190,12 +236,8 @@ RTC::ReturnCode_t OccupancyGridMap3D::onExecute(RTC::UniqueId ec_id)
             cloud.push_back(point3d(ptr[0],ptr[1],ptr[2]));
         }
         point3d sensor(0,0,0);
-        pose6d frame(m_pose.data.position.x,
-                     m_pose.data.position.y,
-                     m_pose.data.position.z, 
-                     m_pose.data.orientation.r,
-                     m_pose.data.orientation.p,
-                     m_pose.data.orientation.y);
+        pose6d frame(m_sensorP[0], m_sensorP[1], m_sensorP[2], 
+                     m_sensorRpy[0], m_sensorRpy[1], m_sensorRpy[2]);
         m_map->insertScan(cloud, sensor, frame);
     }
 

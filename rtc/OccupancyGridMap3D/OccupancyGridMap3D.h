@@ -18,6 +18,8 @@
 #include <rtm/idl/BasicDataTypeSkel.h>
 #include <rtm/idl/InterfaceDataTypes.hh>
 #include <rtcpcl/idl/pointcloud.hh>
+#include <hrpUtil/Tvmet3d.h>
+#include <deque>
 
 namespace octomap{
     class OcTree;
@@ -147,12 +149,17 @@ class OccupancyGridMap3D
   // </rtc-template>
 
  private:
+  void computeSensorPose(const PointCloudTypes::Time& tm, 
+                         hrp::Vector3 &p, hrp::Vector3 &rpy);
   octomap::OcTree *m_map;
+  std::deque<TimedPose3D> m_poseHistory;  
   double m_occupiedThd, m_resolution;
   std::string m_initialMap;
   std::string m_cwd;
   coil::Mutex m_mutex;
   int m_debugLevel;
+  unsigned int m_historyMaxLength;
+  hrp::Vector3 m_sensorP, m_sensorRpy;
   int dummy;
 };
 
