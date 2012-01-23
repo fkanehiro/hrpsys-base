@@ -124,8 +124,11 @@ class OccupancyGridMap3D
   
   // </rtc-template>
 
+  TimedLong m_updateSignal;
+
   // DataOutPort declaration
   // <rtc-template block="outport_declare">
+  OutPort<TimedLong> m_updateOut;
   
   // </rtc-template>
 

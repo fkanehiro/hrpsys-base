@@ -44,6 +44,7 @@ OccupancyGridMap3D::OccupancyGridMap3D(RTC::Manager* manager)
     m_cloudIn("cloud", m_cloud),
     m_poseIn("pose", m_pose),
     m_updateIn("update", m_update),
+    m_updateOut("updateSignal", m_updateSignal),
     m_OGMap3DServicePort("OGMap3DService"),
     // </rtc-template>
     m_service0(this),
@@ -78,6 +79,7 @@ RTC::ReturnCode_t OccupancyGridMap3D::onInitialize()
   addInPort("update", m_updateIn);
 
   // Set OutPort buffer
+  addOutPort("updateSignal", m_updateOut);
   
   // Set service provider to Ports
   m_OGMap3DServicePort.registerProvider("service1", "OGMap3DService", m_service0);
@@ -104,6 +106,8 @@ RTC::ReturnCode_t OccupancyGridMap3D::onInitialize()
   m_pose.data.orientation.r = -M_PI/2;
   m_pose.data.orientation.p = 0;
   m_pose.data.orientation.y = 0;
+
+  m_updateSignal.data = 0;
  
   return RTC::RTC_OK;
 }
@@ -197,6 +201,7 @@ RTC::ReturnCode_t OccupancyGridMap3D::onExecute(RTC::UniqueId ec_id)
                      m_pose.data.orientation.p,
                      m_pose.data.orientation.y);
         m_map->insertScan(cloud, sensor, frame);
+        m_updateOut.write();
     }
 
     coil::TimeValue t2(coil::gettimeofday());
