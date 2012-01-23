@@ -180,27 +180,29 @@ RTC::ReturnCode_t OccupancyGridMap3D::onExecute(RTC::UniqueId ec_id)
     //std::cout << "R:" << R << std::endl;
 
     if (m_cloudIn.isNew()){
-        m_cloudIn.read();
-        Guard guard(m_mutex);
-        if (strcmp(m_cloud.type, "xyz")){
-            std::cout << "point type(" << m_cloud.type 
-                      << ") is not supported" << std::endl;
-            return RTC::RTC_ERROR;
-        }
-        float *ptr = (float *)m_cloud.data.get_buffer();
-        Pointcloud cloud;
-        for (unsigned int i=0; i<m_cloud.data.length()/16; i++, ptr+=4){
-            if (isnan(ptr[0])) continue;
-            cloud.push_back(point3d(ptr[0],ptr[1],ptr[2]));
-        }
-        point3d sensor(0,0,0);
-        pose6d frame(m_pose.data.position.x,
-                     m_pose.data.position.y,
-                     m_pose.data.position.z, 
-                     m_pose.data.orientation.r,
-                     m_pose.data.orientation.p,
-                     m_pose.data.orientation.y);
-        m_map->insertScan(cloud, sensor, frame);
+        do{
+            m_cloudIn.read();
+            Guard guard(m_mutex);
+            if (strcmp(m_cloud.type, "xyz")){
+                std::cout << "point type(" << m_cloud.type 
+                          << ") is not supported" << std::endl;
+                return RTC::RTC_ERROR;
+            }
+            float *ptr = (float *)m_cloud.data.get_buffer();
+            Pointcloud cloud;
+            for (unsigned int i=0; i<m_cloud.data.length()/16; i++, ptr+=4){
+                if (isnan(ptr[0])) continue;
+                cloud.push_back(point3d(ptr[0],ptr[1],ptr[2]));
+            }
+            point3d sensor(0,0,0);
+            pose6d frame(m_pose.data.position.x,
+                         m_pose.data.position.y,
+                         m_pose.data.position.z, 
+                         m_pose.data.orientation.r,
+                         m_pose.data.orientation.p,
+                         m_pose.data.orientation.y);
+            m_map->insertScan(cloud, sensor, frame);
+        }while(m_cloudIn.isNew());
         m_updateOut.write();
     }
 
