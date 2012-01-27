@@ -249,10 +249,9 @@ void interpolator::pop_back()
     }else{
       memcpy(x, gx, sizeof(double)*dim);
     }
-  }
-
-  if (remain_t > 0)
+  } else if (remain_t > 0) {
     remain_t = 0;
+  }
 }
 
 void interpolator::set(const double *angle)
