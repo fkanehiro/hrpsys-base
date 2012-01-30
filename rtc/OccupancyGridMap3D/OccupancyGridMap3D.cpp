@@ -142,6 +142,7 @@ RTC::ReturnCode_t OccupancyGridMap3D::onActivated(RTC::UniqueId ec_id)
     // Working directories of threads which calls onInitialize() and onActivate() are different on MacOS
     // Assume path of initial map is given by a relative path to working directory of the thread which calls onInitialize()
     m_map = new OcTree(m_cwd+m_initialMap);
+    m_updateOut.write();
   }else{
     m_map = new OcTree(m_resolution);
   }
@@ -161,23 +162,14 @@ RTC::ReturnCode_t OccupancyGridMap3D::onExecute(RTC::UniqueId ec_id)
     //std::cout << "OccupancyGrid3D::onExecute(" << ec_id << ")" << std::endl;
     coil::TimeValue t1(coil::gettimeofday());
 
-    if (m_poseIn.isNew())    m_poseIn.read();
     if (m_updateIn.isNew())  m_updateIn.read();
 
     if (!m_update.data) {
+        // suspend updating map
+        while (m_poseIn.isNew()) m_poseIn.read();
+        while (m_cloudIn.isNew()) m_cloudIn.read();
         return RTC::RTC_OK;
     }
-
-    hrp::Matrix33 R;
-    hrp::Vector3 p;
-    p[0] = m_pose.data.position.x; 
-    p[1] = m_pose.data.position.y; 
-    p[2] = m_pose.data.position.z; 
-    R = hrp::rotFromRpy(m_pose.data.orientation.r,
-                        m_pose.data.orientation.p,
-                        m_pose.data.orientation.y);
-    //std::cout << "p:" << p << std::endl;
-    //std::cout << "R:" << R << std::endl;
 
     if (m_cloudIn.isNew()){
         do{
@@ -195,6 +187,7 @@ RTC::ReturnCode_t OccupancyGridMap3D::onExecute(RTC::UniqueId ec_id)
                 cloud.push_back(point3d(ptr[0],ptr[1],ptr[2]));
             }
             point3d sensor(0,0,0);
+            if (m_poseIn.isNew()) m_poseIn.read();
             pose6d frame(m_pose.data.position.x,
                          m_pose.data.position.y,
                          m_pose.data.position.z, 
@@ -205,6 +198,7 @@ RTC::ReturnCode_t OccupancyGridMap3D::onExecute(RTC::UniqueId ec_id)
         }while(m_cloudIn.isNew());
         m_updateOut.write();
     }
+    while(m_poseIn.isNew()) m_poseIn.read();
 
     coil::TimeValue t2(coil::gettimeofday());
     if (m_debugLevel > 0){
