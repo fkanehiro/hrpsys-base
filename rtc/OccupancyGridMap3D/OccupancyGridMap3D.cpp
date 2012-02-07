@@ -250,18 +250,43 @@ OpenHRP::OGMap3D* OccupancyGridMap3D::getOGMap3D(const OpenHRP::AABB& region)
     OpenHRP::OGMap3D *map = new OpenHRP::OGMap3D;
     double size = m_map->getResolution();
     map->resolution = size;
+
+    double min[3];
+    m_map->getMetricMin(min[0],min[1],min[2]);
+    double max[3];
+    m_map->getMetricMax(max[0],max[1],max[2]);
+    double s[3];
+    s[0] = region.pos.x;
+    s[1] = region.pos.y;
+    s[2] = region.pos.z;
+    double e[3];
+    e[0] = region.pos.x + region.size.l;
+    e[1] = region.pos.y + region.size.w;
+    e[2] = region.pos.z + region.size.h;
+    double l[3];
+    
+    for (int i=0; i<3; i++){
+        if (e[i] < min[i] || s[i] > max[i]){ // no overlap
+            s[i] = e[i] = 0;
+        }else{
+            if (s[i] < min[i]) s[i] = min[i];
+            if (e[i] > max[i]) e[i] = max[i];
+        } 
+        l[i] = e[i] - s[i];
+    }
+
 #ifdef USE_ONLY_GRIDS
-    map->pos.x = ((int)(region.pos.x/size))*size;
-    map->pos.y = ((int)(region.pos.y/size))*size;
-    map->pos.z = ((int)(region.pos.z/size))*size;
+    map->pos.x = ((int)(s[0]/size))*size;
+    map->pos.y = ((int)(s[1]/size))*size;
+    map->pos.z = ((int)(s[2]/size))*size;
 #else
-    map->pos.x = region.pos.x;
-    map->pos.y = region.pos.y;
-    map->pos.z = region.pos.z;
+    map->pos.x = s[0];
+    map->pos.y = s[1];
+    map->pos.z = s[2];
 #endif
-    map->nx = region.size.l/size;
-    map->ny = region.size.w/size;
-    map->nz = region.size.h/size;
+    map->nx = l[0]/size;
+    map->ny = l[1]/size;
+    map->nz = l[2]/size;
     int rank=0;
     point3d p;
     map->cells.length(map->nx*map->ny*map->nz);
