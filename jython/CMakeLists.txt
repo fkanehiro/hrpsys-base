@@ -5,10 +5,10 @@ set(jarfile ${CMAKE_CURRENT_BINARY_DIR}/openrtm.jar)
 
 add_custom_command(
   OUTPUT ${jarfile}
-  COMMAND ${IDLJ} ${idlj_flags} -I. -I${OPENRTM_DIR}/include/rtm/idl ${OPENRTM_DIR}/include/rtm/idl/Manager.idl
-  COMMAND ${IDLJ} ${idlj_flags} -I. -I${OPENRTM_DIR}/include/rtm/idl ${OPENRTM_DIR}/include/rtm/idl/OpenRTM.idl
-  COMMAND ${IDLJ} ${idlj_flags} -I. -I${OPENRTM_DIR}/include/rtm/idl ${OPENRTM_DIR}/include/rtm/idl/DataPort.idl
-  COMMAND ${IDLJ} ${idlj_flags} -I. -I${OPENRTM_DIR}/include/rtm/idl ${OPENRTM_DIR}/include/rtm/idl/InterfaceDataTypes.idl
+  COMMAND ${IDLJ} ${idlj_flags} -I. -I${OPENRTM_IDL_DIR} ${OPENRTM_IDL_DIR}/Manager.idl
+  COMMAND ${IDLJ} ${idlj_flags} -I. -I${OPENRTM_IDL_DIR} ${OPENRTM_IDL_DIR}/OpenRTM.idl
+  COMMAND ${IDLJ} ${idlj_flags} -I. -I${OPENRTM_IDL_DIR} ${OPENRTM_IDL_DIR}/DataPort.idl
+  COMMAND ${IDLJ} ${idlj_flags} -I. -I${OPENRTM_IDL_DIR} ${OPENRTM_IDL_DIR}/InterfaceDataTypes.idl
   COMMAND ${JAVAC} ${javac_flags} src/*/*.java
   COMMAND ${JAR} cf ${jarfile} OpenRTM RTC RTM _SDOPackage
 )
