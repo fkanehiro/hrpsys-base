@@ -100,6 +100,20 @@ class RTcomponent:
 		return None		
 
 	##
+	# \brief show list of property names and values
+	# \param self this object
+	def properties(self):
+		cfg = self.ref.get_configuration()
+		cfgsets = cfg.get_configuration_sets()
+		if len(cfgsets) == 0:
+			print "configuration set is not found"
+			return
+		cfgset = cfgsets[0]
+		for d in cfgset.configuration_data:
+			print d.name,":",d.value.extract_string()
+		
+
+	##
 	# \brief activate this component
 	# \param self this object
 	# \param ec execution context used to activate this component
@@ -456,7 +470,7 @@ def connectPorts(outP, inPs, subscription="flush", dataflow="Push", bufferlength
 		con_prof_holder = ConnectorProfileHolder()
 		con_prof_holder.value = con_prof
 		if inP.connect(con_prof_holder) != ReturnCode_t.RTC_OK:
-			print "failed to connect"
+			print "failed to connect(",outP.get_port_profile().name,'<->',inP.get_port_profile().name,")"
 			continue
 		# confirm connection
 		if isConnected(outP, inP) == False:
@@ -653,11 +667,15 @@ def setConfiguration(rtc, nvlist):
 	for nv in nvlist:
 		name = nv[0]
 		value = nv[1]
+		found = False
 		for d in cfgset.configuration_data:
 			if d.name == name:
 				d.value.insert_string(value)
 				cfg.set_configuration_set_values(cfgset)
+				found = True
 				break;
+		if not found:
+			print "no such property(",name,")"
 	cfg.activate_configuration_set('default')
 
 initCORBA()
