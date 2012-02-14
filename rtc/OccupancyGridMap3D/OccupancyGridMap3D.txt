@@ -25,7 +25,11 @@
 
 \subsection outports Output Ports
 
-N/A
+<table>
+<tr><th>port name</th><th>data type</th><th>unit</th><th>description</th></tr>
+<tr><td>updateSignal</td><td>RTC::TimedLong</td><td></td><td>signal to notify the map is updated(The value has no meaning)</td></tr>
+</table>
+
 
 \section serviceports Service Ports
 
