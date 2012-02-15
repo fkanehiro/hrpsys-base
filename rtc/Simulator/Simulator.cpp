@@ -146,7 +146,7 @@ RTC::ReturnCode_t Simulator::onActivated(RTC::UniqueId ec_id)
             for (std::map<std::string, JointItem>::iterator it2=it->second.joint.begin();
                  it2 != it->second.joint.end(); it2++){
                 hrp::Link *link = body->link(it2->first);
-                link->isHighGainMode = it2->second.isHighGain;
+                if (link) link->isHighGainMode = it2->second.isHighGain;
             }
             m_world.addBody(body);
             body->createPorts(this);
@@ -209,6 +209,7 @@ RTC::ReturnCode_t Simulator::onActivated(RTC::UniqueId ec_id)
         for (std::map<std::string, JointItem>::iterator it2=it->second.joint.begin();
              it2 != it->second.joint.end(); it2++){
             hrp::Link *link = body->link(it2->first);
+            if (!link) continue;
             if (link->isRoot()){
                 link->p = it2->second.translation;
                 link->R = it2->second.rotation;
