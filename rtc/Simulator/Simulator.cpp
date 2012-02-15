@@ -114,6 +114,8 @@ RTC::ReturnCode_t Simulator::onActivated(RTC::UniqueId ec_id)
     Project prj;
     if (!prj.parse(m_project)) return RTC::RTC_ERROR;
 
+    m_kinematicsOnly = prj.kinematicsOnly();
+
     m_world.clearBodies();
     m_world.constraintForceSolver.clearCollisionCheckLinkPairs();
     m_world.setCurrentTime(0.0);
@@ -252,10 +254,16 @@ RTC::ReturnCode_t Simulator::onExecute(RTC::UniqueId ec_id)
     // input command
     for (unsigned int i=0; i<m_bodies.size(); i++) m_bodies[i]->input();
 
-    m_world.constraintForceSolver.clearExternalForces();
+    if (m_kinematicsOnly){
+        for(int i=0; i < m_world.numBodies(); ++i){
+            m_world.body(i)->calcForwardKinematics();
+        }
+    }else{
+        m_world.constraintForceSolver.clearExternalForces();
     
-    OpenHRP::CollisionSequence collision;
-    m_world.calcNextState(collision);
+        OpenHRP::CollisionSequence collision;
+        m_world.calcNextState(collision);
+    }
     
     return RTC::RTC_OK;
 }

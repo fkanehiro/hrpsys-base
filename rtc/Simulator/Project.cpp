@@ -45,6 +45,8 @@ bool Project::parse(const std::string& filename)
           while ( cur_node ) {
               if ( cur_node->type == XML_ELEMENT_NODE ) {
                   if ( xmlStrEqual(xmlGetProp(cur_node, (xmlChar *)"name"),(xmlChar *)"integrate") ) {
+                      m_kinematicsOnly = std::string((char *)(xmlGetProp(cur_node, (xmlChar *)"value"))) == "false";
+                      
                   } else if ( xmlStrEqual(xmlGetProp(cur_node, (xmlChar *)"name"),(xmlChar *)"viewsimulate") ) {
                   } else if ( xmlStrEqual(xmlGetProp(cur_node, (xmlChar *)"name"),(xmlChar *)"totalTime") ) {
                       //totalTime = atof((char *)(xmlGetProp(cur_node, (xmlChar *)"value")));

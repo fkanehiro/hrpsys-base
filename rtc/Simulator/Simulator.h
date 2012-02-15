@@ -138,6 +138,7 @@ class Simulator
   hrp::World<hrp::ConstraintForceSolver> m_world;
   std::vector<RTCBodyPtr> m_bodies;
   std::string m_project;
+  bool m_kinematicsOnly;
   int dummy;
 };
 

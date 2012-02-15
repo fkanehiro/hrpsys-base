@@ -48,11 +48,13 @@ public:
     bool parse(const std::string &filename);
     double timeStep() { return m_timeStep; }
     bool isEuler() { return m_isEuler; }
+    bool kinematicsOnly() { return m_kinematicsOnly; }
     std::map<std::string, ModelItem>& models(){ return m_models; }
     std::vector<CollisionPairItem>& collisionPairs() { return m_collisionPairs; }
 private:
     double m_timeStep;
     bool m_isEuler;
+    bool m_kinematicsOnly;
     std::map<std::string, ModelItem> m_models;
     std::vector<CollisionPairItem> m_collisionPairs;
 };
