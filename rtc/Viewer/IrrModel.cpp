@@ -196,9 +196,15 @@ GLlink::GLlink(ISceneNode *i_parent, ISceneManager *i_mgr, s32 i_id,
                 }else{
                     p = normalIndices[j]*3;
                 }
-                normal.X =  normals[p];
-                normal.Y = -normals[p+1]; //left-handed->right-handed
-                normal.Z =  normals[p+2];
+                if (normals){
+                    normal.X =  normals[p];
+                    normal.Y = -normals[p+1]; //left-handed->right-handed
+                    normal.Z =  normals[p+2];
+                }else{
+                    normal.X = 0;
+                    normal.Y = 0;
+                    normal.Z = 1;
+                }
             }
             for(int k=0; k < 3; ++k){
                 if (ai.normalPerVertex){
