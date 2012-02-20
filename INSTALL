@@ -1,8 +1,11 @@
 1. Requirements
-   *Ubuntu 8.04LTS or 10.04LTS
-   *OpenHRP 3.1.1 or later
+   *Ubuntu 10.04LTS
+   *OpenHRP 3.1.2 or later
    *Jython
    *(Optional)Octomap(http://octomap.sourceforge.net/)
+   *(Optional)Irrlicht(apt-get install libirrlicht-dev)
+   *(Optional)OpenCV(apt-get install libcv-dev libcvaux-dev libhighgui-dev)
+   *(Optional)libxml2(apt-get install libxml2-dev)
    *(Optional)rtcpcl(https://github.com/gbiggs/rtcpcl)
 
 2. Install
