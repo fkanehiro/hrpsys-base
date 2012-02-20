@@ -76,7 +76,7 @@ if (OpenCV_FOUND)
 endif()
 
 # Octomap
-find_package(Octomap)
+pkg_check_modules(OCTOMAP octomap)
 pkg_check_modules(RTCPCL rtcpcl)
 if (OCTOMAP_FOUND AND RTCPCL_FOUND)
   add_subdirectory(OccupancyGridMap3D)
