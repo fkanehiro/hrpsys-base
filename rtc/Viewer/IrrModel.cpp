@@ -166,7 +166,12 @@ GLlink::GLlink(ISceneNode *i_parent, ISceneManager *i_mgr, s32 i_id,
         //std::cout << "numTriangles = " << numTriangles << std::endl;
         
         video::SColor color(0xffffffff);
-        if (ai.materialIndex >= 0){ 
+        if (ai.colors.length()){
+            color.set(0xff, 
+                      0xff*ai.colors[0], 
+                      0xff*ai.colors[1], 
+                      0xff*ai.colors[2]);
+        }else if (ai.materialIndex >= 0){ 
             const MaterialInfo& mi = mis[ai.materialIndex];
             color.set(0xff, 
                       0xff*mi.diffuseColor[0], 
