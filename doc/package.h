@@ -16,10 +16,11 @@ To use jython scripts to create RT components, connect ports and get/set propert
 <ul>
   <li>Eclipse plugin<br>
   This plugin extends GrxUI(Graphical User Interface of OpenHRP3) and enables to monitor the robot status on GrxUI communicating with RT components \ref RobotHardware and \ref StateHolder.</li>
-  <li>\ref rtm.py "Jython library"<br>
+  <li>\ref rtm.py "Jython and CPython library"<br>
   This library helps to create/delete and activate/deactivate RT components and connect/disconnect ports.</li>
   <li>Basic RT components</li>
   <ul>
+    <li>\ref CollisionDetector</li>
     <li>\ref DataLogger</li>
     <li>\ref ForwardKinematics</li>
     <li>\ref HGcontroller</li>
