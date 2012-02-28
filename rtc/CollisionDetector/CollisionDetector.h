@@ -116,6 +116,8 @@ class CollisionDetector
 
   // DataOutPort declaration
   // <rtc-template block="outport_declare">
+  TimedDoubleSeq m_qRef;
+  OutPort<TimedDoubleSeq> m_qRefOut;
   
   // </rtc-template>
 
@@ -138,6 +140,7 @@ class CollisionDetector
  private:
   GLscene *m_scene;
   GLbody *m_body;
+  bool use_viewer;
   hrp::BodyPtr m_robot;
   std::vector<hrp::ColdetLinkPairPtr> m_pair;
   int dummy;

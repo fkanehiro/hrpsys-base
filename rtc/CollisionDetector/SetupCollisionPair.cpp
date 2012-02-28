@@ -20,14 +20,16 @@
 
 std::vector<hrp::ColdetLinkPairPtr> m_pair;
 std::vector<std::string> blacklist;
+hrp::BodyPtr m_robot;
 
-bool checkCollisionForAllJointRange(hrp::BodyPtr m_robot, int i, hrp::JointPathPtr jointPath, hrp::ColdetLinkPairPtr collisionPair)
+bool checkCollisionForAllJointRange(int i, hrp::JointPathPtr jointPath, std::vector<hrp::ColdetLinkPairPtr> &collisionPairs)
 {
     if ( i >= jointPath->numJoints() ) return false;
+    if ( collisionPairs.size() == 0 ) return true;
     hrp::Link *l = jointPath->joint(i);
 
     if ( l->jointType == hrp::Link::FIXED_JOINT ) {
-	checkCollisionForAllJointRange(m_robot, i+1, jointPath, collisionPair);
+	checkCollisionForAllJointRange(i+1, jointPath, collisionPairs);
     } else {
 	double step = (l->ulimit - l->llimit)/2;
 	for(float angle = l->llimit; angle <= l->ulimit; angle += step)
@@ -37,17 +39,17 @@ bool checkCollisionForAllJointRange(hrp::BodyPtr m_robot, int i, hrp::JointPathP
 	    m_robot->updateLinkColdetModelPositions();
 
 	    //std::cerr << "    " << collisionPair->link(0)->name << ":" << collisionPair->link(1)->name << " ";
-	    //for(int j = 0; j < jointPath->numJoints();j++) std::cerr << rad2deg(jointPath->joint(j)->q) << " ";
+	    //for(int j = 0; j < jointPath->numJoints(); j++) std::cerr << rad2deg(jointPath->joint(j)->q) << " ";
 	    // std::cerr << "id = " << i << "/" << jointPath->numJoints() << ", " << l->name << " " << rad2deg(angle) << " (" << rad2deg(l->llimit) << "," << rad2deg(l->ulimit) << ") " << collisionPair->detectIntersection() << " " << collisionPair->link(0)->name << ":" << collisionPair->link(1)->name << std::endl;
-	    if ( collisionPair->detectIntersection() ) {
-		//std::cerr << "collision!!!!!!!!!!!" << std::endl;
-		return true;
+	    for(std::vector<hrp::ColdetLinkPairPtr>::iterator it = collisionPairs.begin(); it != collisionPairs.end(); ) {
+		if ( (*it)->detectIntersection() ) {
+		    std::cerr << "Find collision for " << (*it)->link(0)->name << " " << (*it)->link(1)->name << std::endl;
+		    it = collisionPairs.erase(it);
+		    continue;
+		}
+		it++;
 	    }
-	    //std::cerr << std::endl;
-	    if ( checkCollisionForAllJointRange(m_robot, i+1, jointPath, collisionPair) )
-	    {
-		return true;
-	    }
+	    checkCollisionForAllJointRange(i+1, jointPath, collisionPairs);
 	}
     }
     return false;
@@ -60,7 +62,11 @@ bool checkBlackListJoint(hrp::Link *l) {
     return false;
 }
 
-void setupCollisionLinkPair(hrp::BodyPtr m_robot)
+bool compare_joint_path_length(const hrp::ColdetLinkPairPtr& p1, const hrp::ColdetLinkPairPtr& p2) {
+    return (m_robot->getJointPath(p1->link(0),p1->link(1))->numJoints()) > (m_robot->getJointPath(p2->link(0),p2->link(1))->numJoints());
+}
+
+void setupCollisionLinkPair()
 {
     std::vector<hrp::ColdetLinkPairPtr> tmp_pair;
 
@@ -84,11 +90,11 @@ void setupCollisionLinkPair(hrp::BodyPtr m_robot)
 	    }
 	}
     }
-    
+
     std::cerr << "Initial collision pair size " << tmp_pair.size() << std::endl;
     std::vector<hrp::ColdetLinkPairPtr>::iterator it;
     // Remove collision pair if the pair always collides
-    std::cerr << "step 0: Remove collision pair if adjacent pair" << std::endl;
+    std::cerr << "step 0: Remove collision pair if they are adjacent pair" << std::endl;
     it = tmp_pair.begin();
     while ( it != tmp_pair.end() ) {
 	hrp::JointPathPtr jointPath = m_robot->getJointPath((*it)->link(0),(*it)->link(1));
@@ -115,7 +121,7 @@ void setupCollisionLinkPair(hrp::BodyPtr m_robot)
 	it++;
     }
     //
-    std::cerr << "step 1: Remove collision pair if adjacent pair" << std::endl;
+    std::cerr << "step 1: Remove complex (2 or 3 distance) collision pair if they never/always collide" << std::endl;
     it = tmp_pair.begin();
     while ( it != tmp_pair.end() ) {
 	hrp::JointPathPtr jointPath = m_robot->getJointPath((*it)->link(0),(*it)->link(1));
@@ -147,19 +153,74 @@ void setupCollisionLinkPair(hrp::BodyPtr m_robot)
     }
     std::cerr << "  Remove always/never collide pair for a length of 1,2,3 ... " << tmp_pair.size() << std::endl;
 
-
-    // copy collisin pair from tmp_pair to m_pair if the pair has collide posture
-    std::cerr << "step 3: Remove collision pair if they never collide" << std::endl;
+    // setup data structure for check collision pair
+    // pair_tree[<pair:L1,L2,L3,L4>, [ <pair:L1,L2,L3,L4>, <pair:L1,L2,L3>, <pair:L1,L2> ]]
+    // pair_tree[<pair:L2,L3,L4,L5>, [ <pair:L2,L3,L4,L5>, <pair:L2,L3,L4>, <pair:L2,L3> ]]
+    std::map<hrp::ColdetLinkPairPtr, std::vector<hrp::ColdetLinkPairPtr> > pair_tree;
+    std::sort(tmp_pair.begin(), tmp_pair.end(), compare_joint_path_length);
     int i = 0;
     it = tmp_pair.begin();
     while ( it != tmp_pair.end() ) {
-	hrp::JointPathPtr jointPath = m_robot->getJointPath((*it)->link(0),(*it)->link(1));
-	bool collide = checkCollisionForAllJointRange(m_robot, 0, jointPath, *it);
-	std::cerr << "  " << i << "/" << tmp_pair.size() << "  pair (" << jointPath->numJoints() << ") " <<  (*it)->link(0)->name << "/" << (*it)->link(1)->name << " collision:" << collide << std::endl;
-	if ( collide ) {
-	    m_pair.push_back(*it);
+	hrp::JointPathPtr jointPath1 = m_robot->getJointPath((*it)->link(0),(*it)->link(1));
+	//std::cerr << "  " << i << "/" << tmp_pair.size() << "  pair (" << jointPath1->numJoints() << ") " << (*it)->link(0)->name << " " << (*it)->link(1)->name <<std::endl;
+	// check if JointPath1 is included in some of the pair_tree (jointPath2)
+	bool is_new_key = true;
+	for (std::map<hrp::ColdetLinkPairPtr, std::vector<hrp::ColdetLinkPairPtr> >::iterator ii=pair_tree.begin(); ii != pair_tree.end(); ++ii) {
+	    hrp::JointPathPtr jointPath2 = m_robot->getJointPath(((*ii).first)->link(0),((*ii).first)->link(1));
+	    // check if JointPath1 is included in jointPath2
+	    bool find_key = true;
+	    for (int j = 0; j < jointPath1->numJoints() ; j++ ) {
+		if ( jointPath1->joint(j)->name != jointPath2->joint(j)->name ) {
+		    find_key = false;
+		    break;
+		}
+	    }
+	    if ( find_key ) {
+		(*ii).second.push_back(*it);
+		is_new_key = false;
+	    }
+	}
+	if (is_new_key) {
+	    pair_tree[*it] = std::vector<hrp::ColdetLinkPairPtr>(1,*it)
+;
 	}
 	it++; i++;
+    }
+    // remove non-collisin pair from tmp_pair
+    std::cerr << "step 2: Remove collision pair if they never collide" << std::endl;
+    i = 0;
+    for (std::map<hrp::ColdetLinkPairPtr, std::vector<hrp::ColdetLinkPairPtr> >::iterator ii=pair_tree.begin(); ii != pair_tree.end(); ++ii) {
+	hrp::ColdetLinkPairPtr key_pair = (*ii).first;
+	std::vector<hrp::ColdetLinkPairPtr> sub_pairs = (*ii).second;
+	hrp::JointPathPtr jointPath = m_robot->getJointPath(key_pair->link(0),key_pair->link(1));
+	std::sort(sub_pairs.begin(), sub_pairs.end(), compare_joint_path_length);
+	//
+	std::cerr << "  " << i << "/" << tmp_pair.size() << "  pair (" << jointPath->numJoints() << ") " << (*ii).first->link(0)->name << " " << (*ii).first->link(1)->name <<std::endl;
+	i += (*ii).second.size();
+	for(std::vector<hrp::ColdetLinkPairPtr>::iterator it = sub_pairs.begin(); it != sub_pairs.end(); it++ ) {
+	    hrp::JointPathPtr jointPath = m_robot->getJointPath((*it)->link(0),(*it)->link(1));
+	    for ( int j = 0; j < jointPath->numJoints(); j++ ) {
+		std::cerr << jointPath->joint(j)->name << " ";
+	    }
+	    std::cerr << std::endl;
+	}
+	// rmeove non-collision pair from sub_paris
+	checkCollisionForAllJointRange(0, jointPath, sub_pairs);
+	for(std::vector<hrp::ColdetLinkPairPtr>::iterator p = sub_pairs.begin(); p != sub_pairs.end(); p++ ) {
+	    for(std::vector<hrp::ColdetLinkPairPtr>::iterator it = tmp_pair.begin(); it != tmp_pair.end(); ) {
+		if ( (*p)->link(0) == (*it)->link(0) &&  (*p)->link(1) == (*it)->link(1) ) {
+		    tmp_pair.erase(it);
+		    continue;
+		}
+		it++;
+	    }
+	    //tmp_pair.erase(it); // does not work???
+	}
+    }
+    it = tmp_pair.begin();
+    while ( it != tmp_pair.end() ) {
+	m_pair.push_back(*it);
+	it++;
     }
     std::cerr << "Reduced collision pair size " << m_pair.size() << std::endl;
 }
@@ -182,24 +243,22 @@ int main (int argc, char** argv)
 	}
     }
     if (argc < 2) {
-	std::cerr << "usage: " << argv[0] << " --model <model file> <blacklist : R_HAND_J0 L_HAND_J0 EYEBROW_P EYELID_P EYE_Y EYE_P MOUSE_P UPPERLIP_P LOWERLIP_P CHEEK_P>" << std::endl;
+	std::cerr << "usage: " << argv[0] << " --model <model file> <blacklist : R_HAND_J0 L_HAND_J0 EYEBROW_P EYELID_P EYE_Y EYE_P MOUTH_P UPPERLIP_P LOWERLIP_P CHEEK_P>" << std::endl;
 	exit(1);
     }
 
-    hrp::BodyPtr m_robot = new hrp::Body();
+    m_robot = new hrp::Body();
     OpenHRP::BodyInfo_var binfo = hrp::loadBodyInfo(url.c_str(), argc, argv);
     if (CORBA::is_nil(binfo)){
-        std::cerr << "failed to load model[" << url << "]" << std::endl;
-        return 1;
+	std::cerr << "failed to load model[" << url << "]" << std::endl;
+	return 1;
     }
-    
     if (!loadBodyFromBodyInfo(m_robot, binfo)) {
-        std::cerr << "failed to load model[" << url << "]" << std::endl;
-        return 1;
+	std::cerr << "failed to load model[" << url << "]" << std::endl;
+	return 1;
     }
-
     setupCollisionModel(m_robot, url.c_str(), binfo);
-    setupCollisionLinkPair(m_robot);
+    setupCollisionLinkPair();
 
     std::string fname = "/tmp/"+m_robot->name()+"collision_pair.conf";
     std::ofstream ofs(fname.c_str());

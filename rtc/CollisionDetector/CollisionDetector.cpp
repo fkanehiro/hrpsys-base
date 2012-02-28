@@ -47,11 +47,12 @@ CollisionDetector::CollisionDetector(RTC::Manager* manager)
     : RTC::DataFlowComponentBase(manager),
       // <rtc-template block="initializer">
       m_qIn("q", m_q),
+      m_qRefOut("qRef", m_qRef),
       // </rtc-template>
+      use_viewer(false),
       m_robot(NULL),
       dummy(0)
 {
-    m_scene = new GLscene();
 }
 
 CollisionDetector::~CollisionDetector()
@@ -74,6 +75,7 @@ RTC::ReturnCode_t CollisionDetector::onInitialize()
     addInPort("q", m_qIn);
 
     // Set OutPort buffer
+    addOutPort("qRef", m_qRefOut);
   
     // Set service provider to Ports
   
@@ -232,9 +234,16 @@ RTC::ReturnCode_t CollisionDetector::onActivated(RTC::UniqueId ec_id)
     nameServer = nameServer.substr(0, comPos);
     RTC::CorbaNaming naming(rtcManager.getORB(), nameServer.c_str());
 
-    m_scene->init();
-
     RTC::Properties& prop = getProperties();
+
+    if ( prop["collision_viewer"] == "true" ) {
+	use_viewer = true;
+    }
+
+    if ( use_viewer ) {
+	m_scene = new GLscene();
+	m_scene->init();
+    }
 
     m_robot = new hrp::Body();
     OpenHRP::BodyInfo_var binfo;
@@ -268,8 +277,13 @@ RTC::ReturnCode_t CollisionDetector::onActivated(RTC::UniqueId ec_id)
 	return RTC::RTC_ERROR;
     }
 
-    m_body = m_scene->addBody(m_robot);
-    m_scene->draw();
+    if ( use_viewer ) {
+	m_body = m_scene->addBody(m_robot);
+	m_scene->draw();
+    }
+
+    // allocate memory for outPorts
+    m_qRef.data.length(0);
 
     return RTC::RTC_OK;
 }
@@ -278,8 +292,10 @@ RTC::ReturnCode_t CollisionDetector::onDeactivated(RTC::UniqueId ec_id)
 {
     std::cout << m_profile.instance_name<< ": onDeactivated(" << ec_id << ")" << std::endl;
 
-    delete m_body;
-    delete m_scene;
+    if ( use_viewer ) {
+	delete m_body;
+	delete m_scene;
+    }
 
     return RTC::RTC_OK;
 }
@@ -297,24 +313,47 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
 	}
 	m_robot->calcForwardKinematics();
 	m_robot->updateLinkColdetModelPositions();
-	m_body->setPosture(posture);
+	if ( use_viewer ) m_body->setPosture(posture);
 
+	bool safe_posture = true;
 	coil::TimeValue tm1 = coil::gettimeofday();
 	for (unsigned int i = 0; i < m_pair.size(); i++){
 	    hrp::ColdetLinkPairPtr p = m_pair[i];
+#if 1
+	    if ( p->detectIntersection() ) {
+		safe_posture = false;
+		hrp::JointPathPtr jointPath = m_robot->getJointPath(p->link(0),p->link(1));
+		std::cerr << i << "/" << m_pair.size() << " pair: " << p->link(0)->name << "/" << p->link(1)->name << "(" << jointPath->numJoints() << ")" << std::endl;
+	    }
+#else
 	    double point0[3], point1[3];
 	    double d = p->computeDistance(point0, point1);
 	    if ( d <= 0.05 ) {
+		safe_posture = false;
 		hrp::JointPathPtr jointPath = m_robot->getJointPath(p->link(0),p->link(1));
 		std::cerr << i << "/" << m_pair.size() << " pair: " << p->link(0)->name << "/" << p->link(1)->name << "(" << jointPath->numJoints() << "), distance = " << d << std::endl;
 	    }
+#endif
 	}
 	coil::TimeValue tm2 = coil::gettimeofday();
 	std::cerr << "check collisions for for " << m_pair.size() << " pairs in " << (tm2.sec()-tm1.sec())*1000+(tm2.usec()-tm1.usec())/1000 << "[msec]" << std::endl;
 
+	if ( safe_posture ) {
+	    if ( m_qRef.data.length() == 0 ) { // not initialized
+		m_qRef.data.length(m_q.data.length());
+	    }
+	    for( int i = 0; i < m_qRef.data.length(); i++ ) {
+		m_qRef.data[i] = m_q.data[i];
+	    }
+	}
+
+
+	if ( m_qRef.data.length() != 0 ) { // initialized
+	    m_qRefOut.write();
+	}
     }
 
-    m_scene->draw();
+    if ( use_viewer ) m_scene->draw();
 
     return RTC::RTC_OK;
 }
