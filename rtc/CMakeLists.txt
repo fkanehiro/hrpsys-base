@@ -86,3 +86,8 @@ find_package(Irrlicht)
 if (IRRLICHT_FOUND AND LIBXML2_FOUND)
   add_subdirectory(Viewer)
 endif()
+
+find_package(QuickHull)
+if (QHULL_FOUND AND IRRLICHT_FOUND)
+  add_subdirectory(CollisionDetector)
+endif()
