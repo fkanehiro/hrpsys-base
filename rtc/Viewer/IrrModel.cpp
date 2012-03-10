@@ -185,6 +185,21 @@ GLlink::GLlink(ISceneNode *i_parent, ISceneManager *i_mgr, s32 i_id,
         SMeshBuffer* mb = reinterpret_cast<SMeshBuffer*>(mesh->getMeshBuffer(mesh->getMeshBufferCount()-1));
         u32 vCount = mb->getVertexCount();
         
+        const DblArray12& tfm = tsi.transformMatrix;
+        CMatrix4<f32> cmat;
+        for (int i=0; i<3; i++){
+            for (int j=0; j<4; j++){
+                cmat[j*4+i] = tfm[i*4+j];
+            }
+        }
+        cmat[3] = cmat[7] = cmat[11] = 0.0; cmat[15] = 1.0;
+        vector3df pos = cmat.getTranslation();
+        pos.Y *= -1;
+        vector3df rpy = cmat.getRotationDegrees();
+        rpy.X *= -1;
+        rpy.Z *= -1;
+        vector3df scale = cmat.getScale();
+
         const float *textureCoordinate = NULL;
         if (ai.textureIndex >= 0){
             textureCoordinate = ai.textureCoordinate.get_buffer();
@@ -220,9 +235,9 @@ GLlink::GLlink(ISceneNode *i_parent, ISceneManager *i_mgr, s32 i_id,
                 }
                 long orgVertexIndex = si.triangles[j * 3 + k];
                 int p = orgVertexIndex * 3;
-                vertex.X =  vertices[p];
-                vertex.Y = -vertices[p+1]; // left-handed -> right-handed
-                vertex.Z =  vertices[p+2];
+                vertex.X =  scale.X*vertices[p];
+                vertex.Y = -scale.Y*vertices[p+1]; // left-handed -> right-handed
+                vertex.Z =  scale.Z*vertices[p+2];
                 //std::cout << vertices[p] <<"," << vertices[p+1] << "," << vertices[p+2] << std::endl;
                 vector2df texc;
                 if (textureCoordinate){
@@ -253,25 +268,14 @@ GLlink::GLlink(ISceneNode *i_parent, ISceneManager *i_mgr, s32 i_id,
         
         mesh->drop();
         
-        const DblArray12& tfm = tsi.transformMatrix;
-        CMatrix4<f32> cmat;
-        for (int i=0; i<3; i++){
-            for (int j=0; j<4; j++){
-                cmat[j*4+i] = tfm[i*4+j];
-            }
-        }
-        cmat[3] = cmat[7] = cmat[11] = 0.0; cmat[15] = 1.0;
-        vector3df pos = cmat.getTranslation();
-        pos.Y *= -1;
-        vector3df rpy = cmat.getRotationDegrees();
-        rpy.X *= -1;
-        rpy.Z *= -1;
+        vector3df noscale(1,1,1);
         
         IMeshSceneNode *node 
             = i_mgr->addMeshSceneNode(mesh, this, -1,
                                       pos, 
                                       rpy,
-                                      cmat.getScale());
+                                      noscale
+                );
         
         if (ai.textureIndex >= 0){
             const TextureInfo& ti = txs[ai.textureIndex];
