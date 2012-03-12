@@ -11,6 +11,8 @@
 #include "hrpUtil/Tvmet3d.h"
 #include <octomap/octomap.h>
 
+#define KDEBUG 0
+
 typedef coil::Guard<coil::Mutex> Guard;
 
 using namespace octomap;
@@ -174,28 +176,49 @@ RTC::ReturnCode_t OccupancyGridMap3D::onExecute(RTC::UniqueId ec_id)
     if (m_cloudIn.isNew()){
         do{
             m_cloudIn.read();
+            if (m_poseIn.isNew()) m_poseIn.read();
             Guard guard(m_mutex);
-            if (strcmp(m_cloud.type, "xyz")
-                && strcmp(m_cloud.type, "xyzrgb")){
+            float *ptr = (float *)m_cloud.data.get_buffer();
+            if (strcmp(m_cloud.type, "xyz")==0 
+                || strcmp(m_cloud.type, "xyzrgb")==0){
+                Pointcloud cloud;
+                for (unsigned int i=0; i<m_cloud.data.length()/16; i++, ptr+=4){
+                    if (isnan(ptr[0])) continue;
+                    cloud.push_back(point3d(ptr[0],ptr[1],ptr[2]));
+                }
+                point3d sensor(0,0,0);
+                pose6d frame(m_pose.data.position.x,
+                             m_pose.data.position.y,
+                             m_pose.data.position.z, 
+                             m_pose.data.orientation.r,
+                             m_pose.data.orientation.p,
+                             m_pose.data.orientation.y);
+                m_map->insertScan(cloud, sensor, frame);
+            }else if (strcmp(m_cloud.type, "xyzv")==0){
+                hrp::Matrix33 R;
+                hrp::Vector3 p;
+                p[0] = m_pose.data.position.x; 
+                p[1] = m_pose.data.position.y; 
+                p[2] = m_pose.data.position.z; 
+                R = hrp::rotFromRpy(m_pose.data.orientation.r,
+                                    m_pose.data.orientation.p,
+                                    m_pose.data.orientation.y);
+                int ocnum = 0;
+                int emnum = 0;
+                for (unsigned int i=0; i<m_cloud.data.length()/16; i++, ptr+=4){
+                    if (isnan(ptr[0])) continue;
+                    hrp::Vector3 peye(ptr[0],ptr[1],ptr[2]);
+                    hrp::Vector3 pworld(R*peye+p);
+                    point3d pog(pworld[0],pworld[1],pworld[2]);
+                    m_map->updateNode(pog, ptr[3]>0.0?true:false, false);
+                    ptr[3]>0.0?ocnum++:emnum++;
+                }
+                if(KDEBUG) std::cout << m_profile.instance_name << ": " << ocnum << " " << emnum << " " << p << std::endl;
+            }else{
                 std::cout << "point type(" << m_cloud.type 
                           << ") is not supported" << std::endl;
                 return RTC::RTC_ERROR;
             }
-            float *ptr = (float *)m_cloud.data.get_buffer();
-            Pointcloud cloud;
-            for (unsigned int i=0; i<m_cloud.data.length()/16; i++, ptr+=4){
-                if (isnan(ptr[0])) continue;
-                cloud.push_back(point3d(ptr[0],ptr[1],ptr[2]));
-            }
-            point3d sensor(0,0,0);
-            if (m_poseIn.isNew()) m_poseIn.read();
-            pose6d frame(m_pose.data.position.x,
-                         m_pose.data.position.y,
-                         m_pose.data.position.z, 
-                         m_pose.data.orientation.r,
-                         m_pose.data.orientation.p,
-                         m_pose.data.orientation.y);
-            m_map->insertScan(cloud, sensor, frame);
         }while(m_cloudIn.isNew());
         m_updateOut.write();
     }
@@ -256,6 +279,10 @@ OpenHRP::OGMap3D* OccupancyGridMap3D::getOGMap3D(const OpenHRP::AABB& region)
     m_map->getMetricMin(min[0],min[1],min[2]);
     double max[3];
     m_map->getMetricMax(max[0],max[1],max[2]);
+    for (int i=0; i<3; i++){
+        min[i] -= size; 
+        max[i] += size; 
+    }
     double s[3];
     s[0] = region.pos.x;
     s[1] = region.pos.y;
