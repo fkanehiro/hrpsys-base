@@ -242,8 +242,8 @@ GLlink::GLlink(ISceneNode *i_parent, ISceneManager *i_mgr, s32 i_id,
                 vector2df texc;
                 if (textureCoordinate){
                     
-                    texc.X = textureCoordinate[ai.textureCoordIndices[j*3+k]*2];
-                    texc.Y = textureCoordinate[ai.textureCoordIndices[j*3+k]*2+1];
+                    texc.X =  textureCoordinate[ai.textureCoordIndices[j*3+k]*2];
+                    texc.Y = -textureCoordinate[ai.textureCoordIndices[j*3+k]*2+1];
                 }
                 // redundant vertices
                 mb->Vertices.push_back(video::S3DVertex(vertex,normal,color, texc));
