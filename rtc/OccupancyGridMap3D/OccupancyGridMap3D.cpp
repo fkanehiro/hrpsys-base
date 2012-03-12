@@ -175,7 +175,8 @@ RTC::ReturnCode_t OccupancyGridMap3D::onExecute(RTC::UniqueId ec_id)
         do{
             m_cloudIn.read();
             Guard guard(m_mutex);
-            if (strcmp(m_cloud.type, "xyz")){
+            if (strcmp(m_cloud.type, "xyz")
+                && strcmp(m_cloud.type, "xyzrgb")){
                 std::cout << "point type(" << m_cloud.type 
                           << ") is not supported" << std::endl;
                 return RTC::RTC_ERROR;
