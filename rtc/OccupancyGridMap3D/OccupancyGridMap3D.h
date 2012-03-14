@@ -150,9 +150,10 @@ class OccupancyGridMap3D
   // </rtc-template>
 
  private:
-  octomap::OcTree *m_map;
+  octomap::OcTree *m_map, *m_knownMap;
   double m_occupiedThd, m_resolution;
   std::string m_initialMap;
+  std::string m_knownMapPath;
   std::string m_cwd;
   coil::Mutex m_mutex;
   int m_debugLevel;

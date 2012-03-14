@@ -35,6 +35,7 @@ static const char* occupancygridmap3d_spec[] =
     "conf.default.occupiedThd", "0.5",
     "conf.default.resolution", "0.1",
     "conf.default.initialMap", "",
+    "conf.default.knownMap", "",
     "conf.default.debugLevel", "0",
     ""
   };
@@ -51,6 +52,7 @@ OccupancyGridMap3D::OccupancyGridMap3D(RTC::Manager* manager)
     // </rtc-template>
     m_service0(this),
     m_map(NULL),
+    m_knownMap(NULL),
     dummy(0)
 {
 }
@@ -69,6 +71,7 @@ RTC::ReturnCode_t OccupancyGridMap3D::onInitialize()
   bindParameter("occupiedThd", m_occupiedThd, "0.5");
   bindParameter("resolution", m_resolution, "0.1");
   bindParameter("initialMap", m_initialMap, "");
+  bindParameter("knownMap", m_knownMapPath, "");
   bindParameter("debugLevel", m_debugLevel, "0");
   
   // </rtc-template>
@@ -140,12 +143,27 @@ RTC::ReturnCode_t OccupancyGridMap3D::onActivated(RTC::UniqueId ec_id)
 {
   std::cout << m_profile.instance_name<< ": onActivated(" << ec_id << ")" << std::endl;
 
+  if (m_knownMapPath != ""){
+      m_knownMap = new OcTree(m_cwd+m_knownMapPath);
+      m_updateOut.write();
+  }
+
   if (m_initialMap != ""){
     // Working directories of threads which calls onInitialize() and onActivate() are different on MacOS
     // Assume path of initial map is given by a relative path to working directory of the thread which calls onInitialize()
     m_map = new OcTree(m_cwd+m_initialMap);
-    m_updateOut.write();
+    if (m_map->getResolution() != m_knownMap->getResolution()){
+        std::cerr << "Warning: resolutions of initial and known maps are different(" << m_map->getResolution() << "<->" << m_knownMap->getResolution() << ")" << std::endl;
+        delete m_map;
+        m_map = new OcTree(m_knownMap->getResolution());
+    }else{
+        m_updateOut.write();
+    }
   }else{
+    if (m_knownMap && m_knownMap->getResolution() != m_resolution){
+        std::cerr << "Warning: resolution is changed to that of the known map(" << m_resolution << "->" << m_knownMap->getResolution() << ")" << std::endl;
+        m_resolution = m_knownMap->getResolution();
+    }
     m_map = new OcTree(m_resolution);
   }
 
@@ -156,6 +174,7 @@ RTC::ReturnCode_t OccupancyGridMap3D::onDeactivated(RTC::UniqueId ec_id)
 {
   std::cout << m_profile.instance_name<< ": onDeactivated(" << ec_id << ")" << std::endl;
   delete m_map;
+  if (m_knownMap) delete m_knownMap;
   return RTC::RTC_OK;
 }
 
@@ -283,6 +302,21 @@ OpenHRP::OGMap3D* OccupancyGridMap3D::getOGMap3D(const OpenHRP::AABB& region)
         min[i] -= size; 
         max[i] += size; 
     }
+
+    if (m_knownMap){
+        double kmin[3];
+        m_knownMap->getMetricMin(kmin[0],kmin[1],kmin[2]);
+        double kmax[3];
+        m_knownMap->getMetricMax(kmax[0],kmax[1],kmax[2]);
+        for (int i=0; i<3; i++){
+            kmin[i] -= size; 
+            kmax[i] += size; 
+            if (kmin[i] < min[i]) min[i] = kmin[i]; 
+            if (kmax[i] > max[i]) max[i] = kmax[i]; 
+        }
+        
+    }
+
     double s[3];
     s[0] = region.pos.x;
     s[1] = region.pos.y;
@@ -331,17 +365,27 @@ OpenHRP::OGMap3D* OccupancyGridMap3D::getOGMap3D(const OpenHRP::AABB& region)
                     if (result){
                         double prob = result->getOccupancy();
                         if (prob >= m_occupiedThd){
-                            map->cells[rank++] = prob*0xfe;
+                            map->cells[rank] = prob*0xfe;
                             no++;
                         }else{
-                            map->cells[rank++] = OpenHRP::gridEmpty;
+                            map->cells[rank] = OpenHRP::gridEmpty;
                             ne++;
                         }
                         //printf("%6.3f %6.3f %6.3f:%d\n", p.x(), p.y(), p.z(),map->cells[rank-1]);
                     }else{
-                        map->cells[rank++] = OpenHRP::gridUnknown;
+                        map->cells[rank] = OpenHRP::gridUnknown;
                         nu++;
                     }
+                    if (m_knownMap){
+                        OcTreeNode *result = m_knownMap->search(p);
+                        if (result){
+                            double prob = result->getOccupancy();
+                            if (prob >= m_occupiedThd){
+                                map->cells[rank] = prob*0xfe;
+                            }
+                        }
+                    }
+                    rank++;
                 }
             }
         }
