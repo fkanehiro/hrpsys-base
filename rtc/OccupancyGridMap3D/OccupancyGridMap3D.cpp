@@ -280,6 +280,8 @@ RTC::ReturnCode_t OccupancyGridMap3D::onRateChanged(RTC::UniqueId ec_id)
 
 OpenHRP::OGMap3D* OccupancyGridMap3D::getOGMap3D(const OpenHRP::AABB& region)
 {
+    coil::TimeValue t1(coil::gettimeofday());
+
     OpenHRP::OGMap3D *map = new OpenHRP::OGMap3D;
     double size = m_map->getResolution();
     map->resolution = size;
@@ -384,6 +386,13 @@ OpenHRP::OGMap3D* OccupancyGridMap3D::getOGMap3D(const OpenHRP::AABB& region)
                   << nu << std::endl;
 #endif
     }
+    coil::TimeValue t2(coil::gettimeofday());
+    if (m_debugLevel > 0){
+        coil::TimeValue dt = t2-t1;
+        std::cout << "OccupancyGridMap3D::getOGMap3D() : " 
+                  << dt.sec()*1e3+dt.usec()/1e3 << "[ms]" << std::endl;
+    }
+
     return map;
 }
 
