@@ -152,18 +152,8 @@ RTC::ReturnCode_t OccupancyGridMap3D::onActivated(RTC::UniqueId ec_id)
     // Working directories of threads which calls onInitialize() and onActivate() are different on MacOS
     // Assume path of initial map is given by a relative path to working directory of the thread which calls onInitialize()
     m_map = new OcTree(m_cwd+m_initialMap);
-    if (m_map->getResolution() != m_knownMap->getResolution()){
-        std::cerr << "Warning: resolutions of initial and known maps are different(" << m_map->getResolution() << "<->" << m_knownMap->getResolution() << ")" << std::endl;
-        delete m_map;
-        m_map = new OcTree(m_knownMap->getResolution());
-    }else{
-        m_updateOut.write();
-    }
+    m_updateOut.write();
   }else{
-    if (m_knownMap && m_knownMap->getResolution() != m_resolution){
-        std::cerr << "Warning: resolution is changed to that of the known map(" << m_resolution << "->" << m_knownMap->getResolution() << ")" << std::endl;
-        m_resolution = m_knownMap->getResolution();
-    }
     m_map = new OcTree(m_resolution);
   }
 
