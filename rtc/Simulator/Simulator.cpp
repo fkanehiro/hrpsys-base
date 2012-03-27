@@ -31,6 +31,7 @@ static const char* component_spec[] =
     "lang_type",         "compile",
     // Configuration variables
     "conf.default.project", "",
+    "conf.default.kinematics_only", "false",
     ""
 };
 // </rtc-template>
@@ -56,6 +57,7 @@ RTC::ReturnCode_t Simulator::onInitialize()
     // <rtc-template block="bind_config">
     // Bind variables and configuration variable
     bindParameter("project", m_project, "");  
+    bindParameter("kinematics_only", m_kinematicsOnly, false);  
   
     // </rtc-template>
 
@@ -114,7 +116,9 @@ RTC::ReturnCode_t Simulator::onActivated(RTC::UniqueId ec_id)
     Project prj;
     if (!prj.parse(m_project)) return RTC::RTC_ERROR;
 
-    m_kinematicsOnly = prj.kinematicsOnly();
+    if ( m_kinematicsOnly == false ) {
+	m_kinematicsOnly = prj.kinematicsOnly();
+    }
 
     m_world.clearBodies();
     m_world.constraintForceSolver.clearCollisionCheckLinkPairs();
