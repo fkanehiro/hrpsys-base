@@ -1,4 +1,4 @@
-generate_stub_skel(DataLoggerService)
+generate_stub_skel(DataLoggerService "OpenHRP")
 
 set(comp_sources DataLogger.cpp DataLoggerService_impl.cpp DataLoggerServiceSk.cpp )
 add_library(DataLogger SHARED ${comp_sources})

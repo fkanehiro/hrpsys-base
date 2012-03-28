@@ -12,6 +12,7 @@ set(input_files package.h
 		      ../rtc/Simulator/Simulator.txt
 		      ../rtc/StateHolder/StateHolder.txt
 		      ../rtc/Viewer/Viewer.txt
+		      ../rtc/VirtualCamera/VirtualCamera.txt
 		      ../rtc/WavPlayer/WavPlayer.txt
 		      ../hrplib/hrpIo/iob.h
 		      ../idl/DataLoggerService.idl

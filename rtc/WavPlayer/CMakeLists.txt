@@ -1,4 +1,4 @@
-generate_stub_skel(WavPlayerService)
+generate_stub_skel(WavPlayerService "OpenHRP")
 
 set(comp_sources WavPlayer.cpp WavPlayerService_impl.cpp WavPlayerServiceSk.cpp) 
 add_library(WavPlayer SHARED ${comp_sources})

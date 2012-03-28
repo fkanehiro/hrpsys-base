@@ -1,4 +1,4 @@
-generate_stub_skel(HRPDataTypes)
+generate_stub_skel(HRPDataTypes "OpenHRP")
 
 set(comp_sources Simulator.cpp Project.cpp RTCBody.cpp HRPDataTypesSk.cpp HRPDataTypesDynSk.cpp)
 include_directories(${LIBXML2_INCLUDE_DIR})

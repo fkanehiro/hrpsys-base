@@ -1,4 +1,4 @@
-generate_stub_skel(RobotHardwareService)
+generate_stub_skel(RobotHardwareService "OpenHRP")
 
 set(comp_source  robot.cpp RobotHardware.cpp RobotHardwareService_impl.cpp RobotHardwareServiceSk.cpp)
 add_library(RobotHardware SHARED ${comp_source} )

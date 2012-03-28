@@ -36,6 +36,7 @@ To use jython scripts to create RT components, connect ports and get/set propert
     <li>\ref StateHolder</li>
     <li>\ref Viewer</li>
     <li>\ref VideoCapture</li>
+    <li>\ref VirtualCamera</li>
     <li>\ref WavPlayer</li>
   </ul>
   <li>Services provided by basic RT components</li>

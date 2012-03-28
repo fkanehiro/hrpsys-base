@@ -2,7 +2,7 @@ include_directories(${OCTOMAP_INCLUDE_DIR})
 link_directories(${OCTOMAP_DIR}/lib)
 
 
-generate_stub_skel(OGMap3DService)
+generate_stub_skel(OGMap3DService "OpenHRP")
 
 set(comp_sources OccupancyGridMap3D.cpp OGMap3DService_impl.cpp OGMap3DServiceSk.cpp)
 add_library(OccupancyGridMap3D SHARED ${comp_sources})

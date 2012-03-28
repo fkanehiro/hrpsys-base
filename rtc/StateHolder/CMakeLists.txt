@@ -1,5 +1,5 @@
-generate_stub_skel(StateHolderService)
-generate_stub_skel(TimeKeeperService)
+generate_stub_skel(StateHolderService "OpenHRP")
+generate_stub_skel(TimeKeeperService "OpenHRP")
 
 set(comp_sources StateHolder.cpp StateHolderService_impl.cpp StateHolderServiceSk.cpp TimeKeeperService_impl.cpp TimeKeeperServiceSk.cpp)
 add_library(StateHolder SHARED ${comp_sources})

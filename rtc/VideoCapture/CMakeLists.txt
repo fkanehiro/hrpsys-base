@@ -1,4 +1,4 @@
-generate_stub_skel_pkg(Img "Img/")
+generate_stub_skel(Img "Img")
 
 find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})

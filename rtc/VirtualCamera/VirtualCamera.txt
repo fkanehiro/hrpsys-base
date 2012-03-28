@@ -1,0 +1,69 @@
+/**
+
+\page VirtualCamera
+
+\section introduction Overview
+
+This component simulates a camera and/or a range finder.
+
+<table>
+<tr><th>名称</th><td>VirtualCamera</td></tr>
+<tr><th>カテゴリ</th><td>example</td></tr>
+<tr><th>初期化関数名</th><td>VirtualCameraInit</td></tr>
+</table>
+
+\section dataports Data Ports
+
+\subsection inports Input Ports
+
+<table>
+<tr><th>port name</th><th>data type</th><th>unit</th><th>description</th></tr>
+<tr><td>state</td><td>OpenHRP::SceneState</td><td>[rad,m]</td><td>scene state</td></tr>
+<tr><td>q</td><td>RTC::TimedDoubleSeq</td><td>[rad]</td><td>Joint angles(This port is generated when the component is activated)</td></tr>
+<tr><td>poseBase</td><td>RTC::TimedPose3D</td><td>[m],[rad]</td><td>position/orientation of the root link(This port is generated when the component is activated)</td></tr>
+</table>
+
+\subsection outports Output Ports
+
+<table>
+<tr><th>port name</th><th>data type</th><th>unit</th><th>description</th></tr>
+<tr><td>image</td><td>RTC::CameraImage</td><td></td><td>camera image</td></tr>
+<tr><td>range</td><td>RTC::RangeData</td><td></td><td>range data</td></tr>
+<tr><td>poseSensor</td><td>RTC::Pose3D</td><td></td><td>position/orientation of the sensor</td></tr>
+<tr><td>cloud</td><td>PointCloudTypes::PointCloud</td><td></td><td>point cloud</td></tr>
+</table>
+
+\section serviceports Service Ports
+
+\subsection provider Service Providers
+
+N/A
+
+\subsection consumer Service Consumers
+
+N/A
+
+\section configuration Configuration Variables
+
+<table>
+<tr><th>name</th><th>type</th><th>unit</th><th>default value</th><th>description</th></tr>
+<tr><td>ranger.maxAngle</td><td>double</td><td>[rad]</td><td>0.25</td><td>maximum scan angle of the range sensor</td></tr>
+<tr><td>ranger.minAngle</td><td>double</td><td>[rad]</td><td>-0.25</td><td>minimum scan angle of the range sensor</td></tr>
+<tr><td>ranger.angularRes</td><td>double</td><td>[rad]</td><td>0.01</td><td>scan resolution of the range sensor</td></tr>
+<tr><td>ranger.maxRange</td><td>double</td><td>[m]</td><td>5.0</td><td>maximum distance</td></tr>
+<tr><td>ranger.minRange</td><td>double</td><td>[m]</td><td>5.0</td><td>minimum distance</td></tr>
+<tr><td>generateRange</td><td>int</td><td></td><td>1</td><td>enable/disable range data generation</td></tr>
+<tr><td>generatePointCloud</td><td>int</td><td></td><td>0</td><td>enable/disable point cloud generation</td></tr>
+<tr><td>generatePointCloudStep</td><td>int</td><td></td><td>1</td><td>sub-sampling step of point cloud</td></tr>
+<tr><td>generateMovie</td><td>int</td><td></td><td>0</td><td>enable/disable camera image generation</td></tr>
+<tr><td>debugLevel</td><td>int</td><td></td><td>0</td><td>debug level</td></tr>
+<tr><td>project</td><td>std::string</td><td></td><td>""</td><td>project file. This variable must be set before the component is activated.</td></tr>
+<tr><td>camera</td><td>std::string</td><td></td><td>""</td><td>name of the body and the camera(ex. body_name:camera_name). This variable must be set before the component is activated.</td></tr>
+<tr><td>pcFormat</td><td>std::string</td><td></td><td>"xyz"</td><td>output format of point cloud. xyz or xyzrgb</td></tr>
+</table>
+
+\section conf Configuration File
+
+N/A
+
+ */

@@ -1,4 +1,4 @@
-generate_stub_skel(NullService)
+generate_stub_skel(NullService "OpenHRP")
 
 set(comp_sources NullComponent.cpp NullServiceSk.cpp NullService_impl.cpp)
 add_library(NullComponent SHARED ${comp_sources})

@@ -1,4 +1,4 @@
-generate_stub_skel(SequencePlayerService)
+generate_stub_skel(SequencePlayerService "OpenHRP")
 
 set(comp_sources interpolator.cpp timeUtil.cpp seqplay.cpp SequencePlayer.cpp SequencePlayerService_impl.cpp SequencePlayerServiceSk.cpp )
 add_library(SequencePlayer SHARED ${comp_sources})

@@ -481,6 +481,7 @@ INPUT		      =  @CMAKE_CURRENT_SOURCE_DIR@/package.h \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/StateHolder \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/VideoCapture \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/Viewer \
+		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/VirtualCamera \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/WavPlayer \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../hrplib/hrpIo/iob.h \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../idl \

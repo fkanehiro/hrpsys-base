@@ -1,4 +1,4 @@
-generate_stub_skel(HRPDataTypes)
+generate_stub_skel(HRPDataTypes "OpenHRP")
 
 set(comp_sources Viewer.cpp IrrModel.cpp Project.cpp RTCGLbody.cpp HRPDataTypesSk.cpp HRPDataTypesDynSk.cpp)
 include_directories(${LIBXML2_INCLUDE_DIR})

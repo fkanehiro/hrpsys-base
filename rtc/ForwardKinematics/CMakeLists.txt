@@ -1,4 +1,4 @@
-generate_stub_skel(ForwardKinematicsService)
+generate_stub_skel(ForwardKinematicsService "OpenHRP")
 
 set(comp_sources ForwardKinematics.cpp ForwardKinematicsServiceSk.cpp ForwardKinematicsService_impl.cpp)
 add_library(ForwardKinematics SHARED ${comp_sources})

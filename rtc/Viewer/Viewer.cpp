@@ -178,6 +178,7 @@ RTC::ReturnCode_t Viewer::onExecute(RTC::UniqueId ec_id)
             }
         }
     }
+
     for (std::map<std::string, RTCGLbody *>::iterator it=m_bodies.begin();
          it != m_bodies.end(); it++){
         it->second->input();
