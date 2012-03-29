@@ -65,6 +65,6 @@ if (QHULL_FOUND AND IRRLICHT_FOUND)
   add_subdirectory(CollisionDetector)
 endif()
 
-if (IRRLICHT_FOUND AND RTCPCL_FOUND AND LIBXML2_FOUND)
+if (IRRLICHT_FOUND AND LIBXML2_FOUND)
   add_subdirectory(VirtualCamera)
 endif()

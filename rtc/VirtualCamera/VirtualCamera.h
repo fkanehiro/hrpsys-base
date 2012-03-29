@@ -18,7 +18,9 @@
 #include <rtm/idl/BasicDataTypeSkel.h>
 #include <rtm/idl/InterfaceDataTypes.hh>
 // RTCPCL
+#ifdef HAVE_RTCPCL
 #include <rtcpcl/idl/pointcloud.hh>
+#endif /* HAVE_RTCPCL */
 //Open CV headder
 #include <cv.h>
 #include <highgui.h>
@@ -123,14 +125,18 @@ class VirtualCamera
 
   Img::TimedCameraImage m_image;
   RangeData m_range;  
+#ifdef HAVE_RTCPCL
   PointCloudTypes::PointCloud m_cloud;
+#endif /* HAVE_RTCPCL */
   TimedPose3D m_poseSensor;
 
   // DataOutPort declaration
   // <rtc-template block="outport_declare">
   OutPort<Img::TimedCameraImage> m_imageOut;
   OutPort<RangeData> m_rangeOut;
+#ifdef HAVE_RTCPCL
   OutPort<PointCloudTypes::PointCloud> m_cloudOut;
+#endif /* HAVE_RTCPCL */
   OutPort<TimedPose3D> m_poseSensorOut;
   
   // </rtc-template>
@@ -152,20 +158,25 @@ class VirtualCamera
 
  private:
   void setupRangeData();  
+#ifdef HAVE_RTCPCL
   void setupPointCloud();  
-  int dummy;
+#endif /* HAVE_RTCPCL */
   GLscene *m_scene;
   GLcamera *m_camera;
-  bool m_generateRange, m_generatePointCloud;
-  bool m_generateMovie, m_isGeneratingMovie;
+  bool m_generateRange;
+#ifdef HAVE_RTCPCL
+  bool m_generatePointCloud;
   int m_generatePointCloudStep;
+  std::string m_pcFormat;
+#endif /* HAVE_RTCPCL */
+  bool m_generateMovie, m_isGeneratingMovie;
   int m_debugLevel;
   CvVideoWriter *m_videoWriter;
   IplImage *m_cvImage;
   std::string m_projectName;
   std::string m_cameraName;
-  std::string m_pcFormat;
   std::map<std::string, RTCGLbody *> m_bodies;
+  int dummy;
 };
 
 

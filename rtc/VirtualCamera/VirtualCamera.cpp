@@ -41,11 +41,13 @@ static const char* virtualcamera_spec[] =
     "conf.default.ranger.maxRange", "5.0",
     "conf.default.ranger.minRange", "0.5",
     "conf.default.generateRange", "1",
+#ifdef HAVE_RTCPCL
     "conf.default.generatePointCloud", "0",
-    "conf.default.generateMovie", "0",
     "conf.default.generatePointCloudStep", "1",
-    "conf.default.debugLevel", "0",
     "conf.default.pcFormat", "xyz",
+#endif
+    "conf.default.generateMovie", "0",
+    "conf.default.debugLevel", "0",
     "conf.default.project", "",
     "conf.default.camera", "",
 
@@ -59,19 +61,14 @@ VirtualCamera::VirtualCamera(RTC::Manager* manager)
       m_sceneStateIn("state", m_sceneState),
       m_imageOut("image", m_image),
       m_rangeOut("range", m_range),
+#ifdef HAVE_RTCPCL
       m_cloudOut("cloud", m_cloud),
+#endif /* HAVE_RTCPCL */
       m_poseSensorOut("poseSensor", m_poseSensor),
       // </rtc-template>
-      dummy(0),
-#if 0
-      m_scene(GLscene::getInstance()),
-#endif
       m_camera(NULL),
-      m_generateRange(true),
-      m_generatePointCloud(false),
-      m_generateMovie(false),
       m_isGeneratingMovie(false),
-      m_debugLevel(0)
+      dummy(0)
 {
     m_scene = new GLscene();
 }
@@ -94,13 +91,15 @@ RTC::ReturnCode_t VirtualCamera::onInitialize()
     bindParameter("ranger.maxRange",    m_range.config.maxRange, "5.0");
     bindParameter("ranger.minRange",    m_range.config.minRange, "0.5");
     bindParameter("generateRange",      m_generateRange, "1");
+#ifdef HAVE_RTCPCL
     bindParameter("generatePointCloud", m_generatePointCloud, "0");
     bindParameter("generatePointCloudStep",  m_generatePointCloudStep, "1");
+    bindParameter("pcFormat", 	      m_pcFormat, ref["conf.default.pcFormat"].c_str());
+#endif /* HAVE_RTCPCL */
     bindParameter("generateMovie",      m_generateMovie, "0");
     bindParameter("debugLevel",         m_debugLevel, "0");
     bindParameter("project", 	      m_projectName, ref["conf.default.project"].c_str());
     bindParameter("camera", 	      m_cameraName, ref["conf.default.camera"].c_str());
-    bindParameter("pcFormat", 	      m_pcFormat, ref["conf.default.pcFormat"].c_str());
   
     // </rtc-template>
 
@@ -112,7 +111,9 @@ RTC::ReturnCode_t VirtualCamera::onInitialize()
     // Set OutPort buffer
     addOutPort("image", m_imageOut);
     addOutPort("range", m_rangeOut);
+#ifdef HAVE_RTCPCL
     addOutPort("cloud", m_cloudOut);
+#endif /* HAVE_RTCPCL */
     addOutPort("poseSensor", m_poseSensorOut);
   
     // Set service provider to Ports
@@ -339,7 +340,9 @@ RTC::ReturnCode_t VirtualCamera::onExecute(RTC::UniqueId ec_id)
     coil::TimeValue t2(coil::gettimeofday());
     if (m_generateRange) setupRangeData();
     coil::TimeValue t3(coil::gettimeofday());
+#ifdef HAVE_RTCPCL
     if (m_generatePointCloud) setupPointCloud();
+#endif /* HAVE_RTCPCL */
     coil::TimeValue t4(coil::gettimeofday());
     if (m_generateMovie){
         if (!m_isGeneratingMovie){
@@ -373,7 +376,9 @@ RTC::ReturnCode_t VirtualCamera::onExecute(RTC::UniqueId ec_id)
 
     m_imageOut.write();
     m_rangeOut.write();
+#ifdef HAVE_RTCPCL
     m_cloudOut.write();
+#endif /* HAVE_RTCPCL */
     m_poseSensorOut.write();
 
     coil::TimeValue t5(coil::gettimeofday());
@@ -390,10 +395,12 @@ RTC::ReturnCode_t VirtualCamera::onExecute(RTC::UniqueId ec_id)
             dt = t3 - t2;
             std::cout << ", range2d:" << dt.sec()*1e3+dt.usec()/1e3;
         }
+#ifdef HAVE_RTCPCL
         if (m_generatePointCloud){
             dt = t4 - t3;
             std::cout << ", range3d:" << dt.sec()*1e3+dt.usec()/1e3;
         }
+#endif /* HAVE_RTCPCL */
         std::cout << "[ms]" << std::endl;
     }
 
@@ -458,6 +465,7 @@ void VirtualCamera::setupRangeData()
     }
 }
 
+#ifdef HAVE_RTCPCL
 void VirtualCamera::setupPointCloud()
 {
     int w = m_camera->width();
@@ -536,6 +544,7 @@ void VirtualCamera::setupPointCloud()
     }
     m_cloud.data.length(npoints*m_cloud.point_step);
 }
+#endif /* HAVE_RTCPCL */
 /*
   RTC::ReturnCode_t VirtualCamera::onAborting(RTC::UniqueId ec_id)
   {
