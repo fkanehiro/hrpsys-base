@@ -11,8 +11,8 @@
 #include <rtm/CorbaNaming.h>
 #include <hrpModel/Link.h>
 #include <hrpModel/JointPath.h>
-#include <hrpUtil/Tvmet3d.h>
-#include <hrpUtil/Tvmet4d.h>
+#include <hrpUtil/Eigen3d.h>
+#include <hrpUtil/Eigen4d.h>
 #include <hrpCollision/ColdetModel.h>
 
 #include "IrrModel.h"

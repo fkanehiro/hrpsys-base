@@ -42,8 +42,6 @@ endif()
 # OpenRTM-aist(>= 1.0.0)    
 find_package(OpenRTM REQUIRED)
 
-include_directories(${OPENHRP_INCLUDE_DIRS})
-
 # OpenHRP
 find_package(OpenHRP REQUIRED)
 

@@ -8,7 +8,7 @@
  */
 
 #include "StateHolder.h"
-#include <hrpUtil/Tvmet3d.h>
+#include <hrpUtil/Eigen3d.h>
 
 // Module specification
 // <rtc-template block="module_spec">

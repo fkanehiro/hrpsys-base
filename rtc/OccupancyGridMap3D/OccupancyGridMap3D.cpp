@@ -8,7 +8,7 @@
  */
 
 #include "OccupancyGridMap3D.h"
-#include "hrpUtil/Tvmet3d.h"
+#include "hrpUtil/Eigen3d.h"
 #include <octomap/octomap.h>
 
 #define KDEBUG 0
