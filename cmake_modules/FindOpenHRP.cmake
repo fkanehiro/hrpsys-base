@@ -33,6 +33,18 @@ else()
 endif()
 
 execute_process(
+  COMMAND pkg-config --cflags-only-I openhrp3.1
+  OUTPUT_VARIABLE OPENHRP_INCLUDE_DIRS
+  RESULT_VARIABLE RESULT
+  OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+if(RESULT EQUAL 0)
+  string(REGEX REPLACE "-I" ";" OPENHRP_INCLUDE_DIRS ${OPENHRP_INCLUDE_DIRS})
+else()
+  set(OPENHRP_FOUND FALSE)
+endif()
+
+execute_process(
   COMMAND pkg-config --libs openhrp3.1
   OUTPUT_VARIABLE OPENHRP_LIBRARIES
   RESULT_VARIABLE RESULT

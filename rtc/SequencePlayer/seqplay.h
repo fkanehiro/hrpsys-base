@@ -2,7 +2,7 @@
 #define __SEQPLAY_H__
 
 #include <fstream>
-#include <hrpUtil/uBlasCommonTypes.h>
+#include <hrpUtil/EigenTypes.h>
 #include "interpolator.h"
 #include "timeUtil.h"
 

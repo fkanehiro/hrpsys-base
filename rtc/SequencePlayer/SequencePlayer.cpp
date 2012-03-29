@@ -316,7 +316,7 @@ bool SequencePlayer::setInitialState()
 
         Link *root = m_robot->rootLink();
 
-        root->p = m_basePosInit.data.x,
+        root->p << m_basePosInit.data.x,
             m_basePosInit.data.y,
             m_basePosInit.data.z;
         m_seq->setBasePos(root->p.data());

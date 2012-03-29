@@ -122,7 +122,7 @@ GLlink::GLlink(ISceneNode *i_parent, ISceneManager *i_mgr, s32 i_id,
                           180/M_PI*rpy[1],
                           -180/M_PI*rpy[2]));
     
-    m_axis = i_li.jointAxis[0], i_li.jointAxis[1], i_li.jointAxis[2];
+    m_axis << i_li.jointAxis[0], i_li.jointAxis[1], i_li.jointAxis[2];
     
     CORBA::String_var jointType = i_li.jointType;
     const std::string jt( jointType );

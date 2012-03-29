@@ -178,7 +178,7 @@ RTC::ReturnCode_t ForwardKinematics::onExecute(RTC::UniqueId ec_id)
                                               m_sensorRpy.data.p,
                                               m_sensorRpy.data.y);
       if (m_sensorAttachedLink){
-	hrp::Matrix33 sensor2base(trans(m_sensorAttachedLink->R)*m_actBody->rootLink()->R);
+        hrp::Matrix33 sensor2base(m_sensorAttachedLink->R.transpose()*m_actBody->rootLink()->R);
 	hrp::Matrix33 baseR(sensorR*sensor2base);
 	// to prevent numerical error
 	hrp::Vector3 baseRpy = hrp::rpyFromRot(baseR);
@@ -303,7 +303,7 @@ RTC::ReturnCode_t ForwardKinematics::onRateChanged(RTC::UniqueId ec_id)
     if (!from || !to) return false;
     hrp::Vector3 targetPrel(target[0], target[1], target[2]);
     hrp::Vector3 targetPabs(to->p+to->R*targetPrel);
-    hrp::Matrix33 Rt(trans(from->R));
+    hrp::Matrix33 Rt(from->R.transpose());
     hrp::Vector3 p(Rt*(targetPabs - from->p));
     result[ 0]=p(0);result[ 1]=p(1);result[ 2]=p(2);
     return true;
