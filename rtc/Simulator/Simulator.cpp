@@ -57,7 +57,7 @@ RTC::ReturnCode_t Simulator::onInitialize()
     // <rtc-template block="bind_config">
     // Bind variables and configuration variable
     bindParameter("project", m_project, "");  
-    bindParameter("kinematics_only", m_kinematicsOnly, false);  
+    bindParameter("kinematics_only", m_kinematicsOnly, "false");
   
     // </rtc-template>
 
@@ -268,7 +268,7 @@ RTC::ReturnCode_t Simulator::onExecute(RTC::UniqueId ec_id)
         OpenHRP::CollisionSequence collision;
         m_world.calcNextState(collision);
     }
-    
+
     return RTC::RTC_OK;
 }
 
