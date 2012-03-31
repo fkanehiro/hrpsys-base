@@ -33,12 +33,14 @@ void RTCBody::createPorts(RTC::DataFlowComponentBase *comp)
         }
     }
 
-    if (m_highgain){
-        comp->addInPort("qCmd", m_qCmdIn);
-        comp->addInPort("dqCmd", m_dqCmdIn);
-        comp->addInPort("ddqCmd", m_ddqCmdIn);
-    }else{
-        comp->addInPort("tau", m_tauIn);
+    if (numJoints()){
+        if (m_highgain){
+            comp->addInPort("qCmd", m_qCmdIn);
+            comp->addInPort("dqCmd", m_dqCmdIn);
+            comp->addInPort("ddqCmd", m_ddqCmdIn);
+        }else{
+            comp->addInPort("tau", m_tauIn);
+        }
     }
 
     // output ports
