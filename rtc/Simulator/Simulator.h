@@ -19,6 +19,7 @@
 
 #include <hrpModel/ConstraintForceSolver.h>
 #include <hrpModel/World.h>
+#include <hrpUtil/OnlineViewerUtil.h>
 
 #include "HRPDataTypes.hh"
 #include "RTCBody.h"
@@ -139,6 +140,9 @@ class Simulator
   std::vector<RTCBodyPtr> m_bodies;
   std::string m_project;
   bool m_kinematicsOnly;
+  bool m_useOLV;
+  OpenHRP::OnlineViewer_var m_olv;
+  OpenHRP::WorldState m_state;
   int dummy;
 };
 

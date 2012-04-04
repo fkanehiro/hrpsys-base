@@ -7,7 +7,7 @@
 #include <hrpModel/Config.h>
 #include "Project.h"
 
-Project::Project() : m_timeStep(0.001), m_isEuler(true)
+Project::Project() : m_timeStep(0.001), m_isEuler(true), m_kinematicsOnly(false)
 {
 }
 

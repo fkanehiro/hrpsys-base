@@ -12,6 +12,7 @@
 #include "Simulator.h"
 #include <hrpCorba/OpenHRPCommon.hh>
 #include <hrpModel/ModelLoaderUtil.h>
+#include <hrpModel/OnlineViewerUtil.h>
 #include <hrpModel/Link.h>
 #include "Project.h"
 
@@ -31,7 +32,8 @@ static const char* component_spec[] =
     "lang_type",         "compile",
     // Configuration variables
     "conf.default.project", "",
-    "conf.default.kinematics_only", "false",
+    "conf.default.kinematics_only", "0",
+    "conf.default.useOLV", "0",
     ""
 };
 // </rtc-template>
@@ -57,7 +59,8 @@ RTC::ReturnCode_t Simulator::onInitialize()
     // <rtc-template block="bind_config">
     // Bind variables and configuration variable
     bindParameter("project", m_project, "");  
-    bindParameter("kinematics_only", m_kinematicsOnly, "false");
+    bindParameter("kinematics_only", m_kinematicsOnly, "0");  
+    bindParameter("useOLV", m_useOLV, "0");  
   
     // </rtc-template>
 
@@ -119,6 +122,7 @@ RTC::ReturnCode_t Simulator::onActivated(RTC::UniqueId ec_id)
     if ( m_kinematicsOnly == false ) {
 	m_kinematicsOnly = prj.kinematicsOnly();
     }
+    std::cout << "kinematics_only : " << m_kinematicsOnly << std::endl;
 
     m_world.clearBodies();
     m_world.constraintForceSolver.clearCollisionCheckLinkPairs();
@@ -140,6 +144,11 @@ RTC::ReturnCode_t Simulator::onActivated(RTC::UniqueId ec_id)
     nameServer = nameServer.substr(0, comPos);
     RTC::CorbaNaming naming(rtcManager.getORB(), nameServer.c_str());
 
+    std::cout << "m_useOLV:" << m_useOLV << std::endl;
+    if (m_useOLV){
+        m_olv = hrp::getOnlineViewer(CosNaming::NamingContext::_duplicate(naming.getRootContext()));
+    }
+
     for (std::map<std::string, ModelItem>::iterator it=prj.models().begin();
          it != prj.models().end(); it++){
         RTCBodyPtr body = new RTCBody();
@@ -158,7 +167,16 @@ RTC::ReturnCode_t Simulator::onActivated(RTC::UniqueId ec_id)
             body->createPorts(this);
             m_bodies.push_back(body);
         }
+        if (m_useOLV){
+            m_olv->load(it->first.c_str(), it->second.url.c_str());
+        }
     }
+    if (m_useOLV){
+        m_olv->clearLog();
+        initWorldState(m_state, m_world); 
+    }
+
+
     for (unsigned int i=0; i<prj.collisionPairs().size(); i++){
         const CollisionPairItem &cpi = prj.collisionPairs()[i];
         int bodyIndex1 = m_world.bodyIndex(cpi.objectName1);
@@ -262,6 +280,7 @@ RTC::ReturnCode_t Simulator::onExecute(RTC::UniqueId ec_id)
         for(int i=0; i < m_world.numBodies(); ++i){
             m_world.body(i)->calcForwardKinematics();
         }
+        m_world.setCurrentTime(m_world.currentTime() + m_world.timeStep());
     }else{
         m_world.constraintForceSolver.clearExternalForces();
     
@@ -269,6 +288,10 @@ RTC::ReturnCode_t Simulator::onExecute(RTC::UniqueId ec_id)
         m_world.calcNextState(collision);
     }
 
+    if (m_useOLV){
+        getWorldState(m_state, m_world);
+        m_olv->update( m_state );
+    }
     return RTC::RTC_OK;
 }
 
