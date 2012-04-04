@@ -38,6 +38,8 @@ N/A
 <table>
 <tr><th>name</th><th>type</th><th>unit</th><th>default value</th><th>description</th></tr>
 <tr><td>project</td><td>std::string</td><td></td><td></td><td>OpenHRP project file</td></tr>
+<tr><td>kinematics_only</td><td>bool</td><td></td><td>false</td><td>set true to compute only forward kinematics</td></tr>
+<tr><td>useOLV</td><td>bool</td><td></td><td></td>false<td>set true to use OnlineViewer server as a viewer</td></tr>
 </table>
 
 \section conf Configuration File
