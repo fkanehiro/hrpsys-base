@@ -13,6 +13,7 @@ class Simulator
 public:
     void init(Project &prj, BodyFactory &factory, GLscene *i_scene);
     bool oneStep();
+    void stopSimulation();
 
     hrp::World<hrp::ConstraintForceSolver> world;
     GLscene *scene;

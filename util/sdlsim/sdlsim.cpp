@@ -107,13 +107,16 @@ int main(int argc, char* argv[])
               << prj.totalTime() << std::endl;
 
     if (display){
-        SDL_CreateThread(threadMain, (void *)&simulator);
+        SDL_Thread *thread;
+        thread = SDL_CreateThread(threadMain, (void *)&simulator);
         while(1) {
             //std::cerr << "t = " << world.currentTime() << std::endl;
             if (!window.processEvents()) break;
             window.draw();
             window.swapBuffers();
         }
+        simulator.stopSimulation();
+        SDL_WaitThread(thread, NULL);
     }else{
         threadMain(&simulator);
     }

@@ -54,4 +54,9 @@ bool Simulator::oneStep(){
     }
 }
 
+void Simulator::stopSimulation()
+{
+    totalTime = world.currentTime();
+}
+
 
