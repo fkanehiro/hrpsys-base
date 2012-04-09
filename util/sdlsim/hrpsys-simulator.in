@@ -4,6 +4,7 @@ import popen2
 import sys
 import time
 import os
+import waitInput
 
 sys.path.append(os.getcwd())
 
