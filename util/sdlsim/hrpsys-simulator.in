@@ -10,18 +10,18 @@ sys.path.append(os.getcwd())
 
 argc = len(sys.argv)
 
-if argc < 3:
-    print "Usage: hrpsys-simulator project.xml script.py"
+if argc < 2:
+    print "Usage: hrpsys-simulator project.xml [script.py]"
     sys.exit(1)
 
 project = sys.argv[1]
-script  = sys.argv[2]
 cmd = "sdlsim",project
 popen2.Popen3(cmd)
 time.sleep(1)
 
-print script
-execfile(script)
+if argc > 2:
+   script  = sys.argv[2]
+   execfile(script)
 
 
 
