@@ -1,0 +1,26 @@
+#!@CMAKE_INSTALL_PREFIX@/bin/hrpsyspy
+
+import popen2
+import sys
+import time
+import os
+
+sys.path.append(os.getcwd())
+
+argc = len(sys.argv)
+
+if argc < 3:
+    print "Usage: hrpsys-simulator project.xml script.py"
+    sys.exit(1)
+
+project = sys.argv[1]
+script  = sys.argv[2]
+cmd = "sdlsim",project
+popen2.Popen3(cmd)
+time.sleep(1)
+
+print script
+execfile(script)
+
+
+
