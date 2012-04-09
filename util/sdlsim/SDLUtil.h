@@ -13,7 +13,6 @@ private:
     int width, height;
     double aspect;
     double pan, tilt, radius;
-    int button;
     bool isShiftPressed, isControlPressed;
     double xCenter, yCenter, zCenter;
 };

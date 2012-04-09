@@ -14,7 +14,6 @@ SDLwindow::SDLwindow(GLscene* i_scene) :
     width(640), height(480),
     aspect(((double)width)/height),
     pan(M_PI/4), tilt(M_PI/16), radius(5),
-    button(-1),
     isShiftPressed(false), isControlPressed(false),
     xCenter(0), yCenter(0), zCenter(0.8)
 {
@@ -105,7 +104,6 @@ bool SDLwindow::processEvents()
             break;
             
         case SDL_MOUSEBUTTONDOWN:
-            button = event.button.button;
             switch(event.button.button){
             case SDL_BUTTON_LEFT:
                 break;
@@ -114,14 +112,14 @@ bool SDLwindow::processEvents()
             case SDL_BUTTON_RIGHT:
                 break;
             case SDL_BUTTON_WHEELUP:
+                radius *= 1.1;
                 break;
             case SDL_BUTTON_WHEELDOWN:
+                radius *= 0.9;
+                if (radius < 0.1) radius = 0.1; 
                 break;
             }
-            break;
-            
         case SDL_MOUSEBUTTONUP:
-            button = -1;
             switch(event.button.button){
             case SDL_BUTTON_LEFT:
                 break;
@@ -139,7 +137,7 @@ bool SDLwindow::processEvents()
         {
             int dx = event.motion.xrel;
             int dy = event.motion.yrel;
-            if (button == SDL_BUTTON_LEFT){
+            if (event.motion.state&SDL_BUTTON(SDL_BUTTON_LEFT)){
                 if (isShiftPressed){
                     radius *= (1+ 0.1*dy);
                     if (radius < 0.1) radius = 0.1; 
@@ -149,7 +147,7 @@ bool SDLwindow::processEvents()
                     if (tilt >  M_PI/2) tilt =  M_PI/2;
                     if (tilt < -M_PI/2) tilt = -M_PI/2;
                 }
-            }else if (button == SDL_BUTTON_RIGHT){
+            }else if (event.motion.state&SDL_BUTTON(SDL_BUTTON_RIGHT)){
                 xCenter += sin(pan)*dx*0.01;
                 yCenter -= cos(pan)*dx*0.01;
                 zCenter += dy*0.01;
@@ -173,7 +171,7 @@ void SDLwindow::draw()
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     gluPerspective(30,aspect, 0.1, 100);
-    
+
     double xEye = xCenter + radius*cos(tilt)*cos(pan);
     double yEye = yCenter + radius*cos(tilt)*sin(pan);
     double zEye = zCenter + radius*sin(tilt);
