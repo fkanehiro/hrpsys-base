@@ -1,12 +1,16 @@
 #!@CMAKE_INSTALL_PREFIX@/bin/hrpsyspy
 
-import popen2
 import sys
 import time
 import os
 import waitInput
+import thread
 
 sys.path.append(os.getcwd())
+
+def runSimulator(prj):
+    cmd = "sdlsim "+prj
+    os.system(cmd)
 
 argc = len(sys.argv)
 
@@ -15,8 +19,8 @@ if argc < 2:
     sys.exit(1)
 
 project = sys.argv[1]
-cmd = "sdlsim",project
-popen2.Popen3(cmd)
+args = (project,)
+thread.start_new_thread(runSimulator, args)
 time.sleep(1)
 
 if argc > 2:
