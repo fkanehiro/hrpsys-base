@@ -23,7 +23,6 @@ void Simulator::init(Project &prj, BodyFactory &factory, GLscene *i_scene){
         pair.linkName2 = CORBA::string_dup(link1->name.c_str());
     }
 
-    if (scene) scene->reserveLog(prj.totalTime()/prj.timeStep()+2);
     for (int i=0; i<world.numBodies(); i++){
         bodies.push_back((BodyRTC *)world.body(i).get());
     }
@@ -99,15 +98,12 @@ bool Simulator::oneStep(){
     tm_dynamics.end();
     
     if (world.currentTime() > totalTime){
-        std::cout << "controller:" << tm_control.totalTime() 
-                  << "[s], " << tm_control.averageTime()*1000 
-                  << "[ms/frame]" << std::endl;
-        std::cout << "collision :" << tm_collision.totalTime() 
-                  << "[s], " << tm_collision.averageTime()*1000 
-                  << "[ms/frame]" << std::endl;
-        std::cout << "dynamics  :" << tm_dynamics.totalTime() 
-                  << "[s], " << tm_dynamics.averageTime()*1000 
-                  << "[ms/frame]" << std::endl;
+        printf("controller:%8.3f[s], %8.3f[ms/frame]\n",
+               tm_control.totalTime(), tm_control.averageTime()*1000);
+        printf("collision :%8.3f[s], %8.3f[ms/frame]\n",
+               tm_collision.totalTime(), tm_collision.averageTime()*1000);
+        printf("dynamics  :%8.3f[s], %8.3f[ms/frame]\n",
+               tm_dynamics.totalTime(), tm_dynamics.averageTime()*1000);
         return false;
     }else{
         return true;

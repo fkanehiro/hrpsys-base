@@ -5,6 +5,7 @@
 #include <hrpUtil/Eigen3d.h>
 #include <vector>
 #include <map>
+#include <deque>
 //Open CV header
 #include <cv.h>
 #include <highgui.h>
@@ -94,7 +95,6 @@ public:
     GLcamera *getCamera();
     void addState(const SceneState &state);
     void clearLog();
-    void reserveLog(unsigned int len);
     void play();
     void record();
     void prev(int delta=1);
@@ -117,7 +117,7 @@ private:
     std::map<std::string, GLbody *> m_nameBodyMap; 
     std::vector<GLbody *> m_bodies; 
     GLcamera *m_camera, *m_default_camera;
-    std::vector<SceneState> m_log;
+    std::deque<SceneState> m_log;
     bool m_isPlaying, m_isNewStateAdded, m_isRecording;
     int m_index;
     double m_initT;

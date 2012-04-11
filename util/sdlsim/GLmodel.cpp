@@ -618,11 +618,6 @@ void GLscene::clearLog()
     m_index = -1;
 }
 
-void GLscene::reserveLog(unsigned int len)
-{
-    m_log.reserve(len);
-}
-
 void GLscene::play()
 {
     if (m_log.size() == 0) return;
