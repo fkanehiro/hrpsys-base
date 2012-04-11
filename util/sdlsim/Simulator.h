@@ -4,6 +4,7 @@
 #include <hrpUtil/TimeMeasure.h>
 #include "Project.h"
 #include "ProjectUtil.h"
+#include "SceneState.h"
 
 class GLscene;
 class BodyRTC;
@@ -22,7 +23,7 @@ private:
     std::vector<BodyRTC *> bodies; 
     std::vector<ClockReceiver> receivers;
     std::vector<hrp::ColdetLinkPairPtr> pairs;
-    OpenHRP::WorldState state;
+    SceneState state;
     double totalTime;
     TimeMeasure tm_dynamics, tm_control, tm_collision;
 };

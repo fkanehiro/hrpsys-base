@@ -205,8 +205,12 @@ GLlink::GLlink(const LinkInfo &i_li, BodyInfo_var i_binfo) : m_parent(NULL), m_j
         
 void GLlink::draw(){
     glPushMatrix();
-    glMultMatrixd(m_absTrans);
+    glMultMatrixd(m_trans);
+    glMultMatrixd(m_T_j);
     glCallList(m_list);
+    for (unsigned int i=0; i<m_children.size(); i++){
+        m_children[i]->draw();
+    }
     glPopMatrix();
 }
 
@@ -304,10 +308,25 @@ void GLbody::setPosture(double *i_angles, double *i_pos, double *i_rpy){
     }
 }
 
-void GLbody::draw(){
+void GLbody::setPosture(const dvector& i_q, const Vector3& i_p,
+                        const Matrix33& i_R)
+{
+    double tform[16];
+    tform[ 0]=i_R(0,0);tform[ 1]=i_R(1,0);tform[ 2]=i_R(2,0);tform[ 3]=0;
+    tform[ 4]=i_R(0,1);tform[ 5]=i_R(1,1);tform[ 6]=i_R(2,1);tform[ 7]=0;
+    tform[ 8]=i_R(0,2);tform[ 9]=i_R(1,2);tform[10]=i_R(2,2);tform[11]=0;
+    tform[12]=i_p[0];tform[13]=i_p[1];tform[14]=i_p[2];tform[15]=1;
+    m_root->setTransform(tform);
     for (unsigned int i=0; i<m_links.size(); i++){
-        m_links[i]->draw();
+        int id = m_links[i]->jointId();
+        if (id >= 0){
+            m_links[i]->setQ(i_q[id]);
+        }
     }
+}
+
+void GLbody::draw(){
+    m_root->draw();
 }
 
 GLcamera *GLbody::findCamera(const char *i_name){
@@ -324,47 +343,25 @@ GLlink *GLbody::link(unsigned int i)
     return m_links[i];
 }
 
-void setWorldState(std::map<std::string, GLbody *>& models,
-                   const WorldState& state)
+void setSceneState(std::vector<GLbody *>& bodies,
+                   const SceneState& state)
 { 
-    for (unsigned int i=0; i<state.characterPositions.length(); i++){
-        const CharacterPosition& cpos = state.characterPositions[i];
-        std::string cname(cpos.characterName);
-        GLbody *body = models[cname];
-        if (!body) {
-            //std::cerr << "can't find a body named " << cname << std::endl;
-            continue;
-        }
-        for (unsigned int j=0; j<cpos.linkPositions.length(); j++){
-            const LinkPosition &lp = cpos.linkPositions[j];
-            double T[] = {lp.R[0], lp.R[3], lp.R[6],0,
-                          lp.R[1], lp.R[4], lp.R[7],0,
-                          lp.R[2], lp.R[5], lp.R[8],0,
-                          lp.p[0], lp.p[1], lp.p[2],1};
-#if 0
-            for (int i=0; i<4; i++){
-                for (int j=0; j<4; j++){
-                    printf("%6.3f ", T[i*4+j]);
-                }
-                printf("\n");
-            }
-            printf("\n");
-#endif
-            body->link(j)->setAbsTransform(T);
-        }
+    for (unsigned int i=0; i<state.bodyStates.size(); i++){
+        const BodyState& bstate = state.bodyStates[i];
+        GLbody *body = bodies[i];
+        body->setPosture(bstate.q, bstate.p, bstate.R);
     }
 }
 
-
-
 void GLscene::addBody(const std::string &i_name, GLbody *i_body){
     //std::cout <<"addBody(" << i_name << "," << i_body << ")" << std::endl;
-    m_bodies[i_name] = i_body;
+    m_nameBodyMap[i_name] = i_body;
+    m_bodies.push_back(i_body);
 }
 
 GLbody *GLscene::findBody(const std::string &i_name)
 {
-    return m_bodies[i_name];
+    return m_nameBodyMap[i_name];
 }
 
 void drawString(const char *str)
@@ -395,17 +392,15 @@ void GLscene::draw(){
         m_isNewStateAdded = false;
     }
     
-    if (m_index >= 0) setWorldState(m_bodies, m_log[m_index]);
+    if (m_index >= 0) setSceneState(m_bodies, m_log[m_index]);
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
     // robots
-    std::map<std::string, GLbody *>::iterator it;
+    std::vector<GLbody *>::iterator it;
     for (it=m_bodies.begin(); it!=m_bodies.end(); it++){
-        if (it->second){
-            it->second->draw();
-        }
+        (*it)->draw();
     }
 
     glDisable(GL_LIGHTING);
@@ -611,7 +606,7 @@ GLcamera *GLscene::getCamera()
     return m_camera;
 }
 
-void GLscene::addState(const WorldState& state)
+void GLscene::addState(const SceneState& state)
 {
     m_log.push_back(state);
     m_isNewStateAdded = true;

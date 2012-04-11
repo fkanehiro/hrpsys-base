@@ -1,4 +1,3 @@
-#include <hrpModel/OnlineViewerUtil.h>
 #include "Simulator.h"
 #include "GLmodel.h"
 #include "BodyRTC.h"
@@ -7,9 +6,23 @@ void Simulator::init(Project &prj, BodyFactory &factory, GLscene *i_scene){
     initWorld(prj, factory, world, pairs);
     initRTS(prj, receivers);
     std::cout << "number of receivers:" << receivers.size() << std::endl;
-    initWorldState(state, world, pairs);
     totalTime = prj.totalTime();
     scene = i_scene;
+
+    OpenHRP::CollisionSequence& collisions = state.collisions;
+
+    collisions.length(pairs.size());
+    for(size_t colIndex=0; colIndex < pairs.size(); ++colIndex){
+        hrp::ColdetLinkPairPtr linkPair = pairs[colIndex];
+        hrp::Link *link0 = linkPair->link(0);
+        hrp::Link *link1 = linkPair->link(1);
+        OpenHRP::LinkPair& pair = collisions[colIndex].pair;
+        pair.charName1 = CORBA::string_dup(link0->body->name().c_str());
+        pair.charName2 = CORBA::string_dup(link1->body->name().c_str());
+        pair.linkName1 = CORBA::string_dup(link0->name.c_str());
+        pair.linkName2 = CORBA::string_dup(link1->name.c_str());
+    }
+
     if (scene) scene->reserveLog(prj.totalTime()/prj.timeStep()+2);
     for (int i=0; i<world.numBodies(); i++){
         bodies.push_back((BodyRTC *)world.body(i).get());
@@ -80,7 +93,7 @@ bool Simulator::oneStep(){
     world.calcNextState(state.collisions);
     
     if (scene){
-        getWorldState(state, world);
+        state.set(world);
         scene->addState(state);
     }
     tm_dynamics.end();
@@ -89,7 +102,7 @@ bool Simulator::oneStep(){
         std::cout << "controller:" << tm_control.totalTime() 
                   << "[s], " << tm_control.averageTime()*1000 
                   << "[ms/frame]" << std::endl;
-        std::cout << "collision:" << tm_collision.totalTime() 
+        std::cout << "collision :" << tm_collision.totalTime() 
                   << "[s], " << tm_collision.averageTime()*1000 
                   << "[ms/frame]" << std::endl;
         std::cout << "dynamics  :" << tm_dynamics.totalTime() 

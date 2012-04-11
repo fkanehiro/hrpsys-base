@@ -9,6 +9,8 @@ set(target sdlsim)
 add_executable(sdlsim 
   GLmodel.cpp 
   BodyRTC.cpp
+  BodyState.cpp
+  SceneState.cpp
   OpenRTMUtil.cpp
   Project.cpp
   ProjectUtil.cpp

@@ -8,6 +8,7 @@
 //Open CV header
 #include <cv.h>
 #include <highgui.h>
+#include "SceneState.h"
 
 class GLlink;
 
@@ -42,15 +43,10 @@ public:
     GLlink(const OpenHRP::LinkInfo &i_li, OpenHRP::BodyInfo_var i_binfo);
 
     void draw();
-
     void setParent(GLlink *i_parent);
-
     void addChild(GLlink *i_child);
-
     void setQ(double i_q);
-
     void setTransform(double i_trans[16]);
-
     int jointId();
 
     GLcamera *findCamera(const char *i_name);
@@ -73,10 +69,13 @@ public:
     GLbody(OpenHRP::BodyInfo_var i_binfo);
     ~GLbody();
     void setPosture(double *i_angles, double *i_pos, double *i_rpy);
+    void setPosture(const hrp::dvector& i_q, const hrp::Vector3& i_p,
+                    const hrp::Matrix33& i_R);
     void draw();
     GLcamera *findCamera(const char *i_name);
     GLlink *link(unsigned int i);
     int numLinks() { return m_links.size(); }
+    GLlink *rootLink() { return m_root; }
 private:
     GLlink *m_root;
     std::vector<GLlink *> m_links;
@@ -93,7 +92,7 @@ public:
     void init();
     void setCamera(GLcamera *i_camera);
     GLcamera *getCamera();
-    void addState(const OpenHRP::WorldState &state);
+    void addState(const SceneState &state);
     void clearLog();
     void reserveLog(unsigned int len);
     void play();
@@ -115,9 +114,10 @@ private:
     ~GLscene();
 
     static GLscene *m_scene;
-    std::map<std::string, GLbody *> m_bodies; 
+    std::map<std::string, GLbody *> m_nameBodyMap; 
+    std::vector<GLbody *> m_bodies; 
     GLcamera *m_camera, *m_default_camera;
-    std::vector<OpenHRP::WorldState> m_log;
+    std::vector<SceneState> m_log;
     bool m_isPlaying, m_isNewStateAdded, m_isRecording;
     int m_index;
     double m_initT;
