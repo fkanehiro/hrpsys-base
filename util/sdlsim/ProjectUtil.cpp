@@ -6,7 +6,8 @@
 #include "OpenRTMUtil.h"
 
 void initWorld(Project& prj, BodyFactory &factory, 
-               hrp::World<hrp::ConstraintForceSolver>& world)
+               hrp::World<hrp::ConstraintForceSolver>& world,
+               std::vector<hrp::ColdetLinkPairPtr> &pairs)
 {
     world.setTimeStep(prj.timeStep());
     if(prj.isEuler()){
@@ -66,6 +67,7 @@ void initWorld(Project& prj, BodyFactory &factory,
                         world.constraintForceSolver.addCollisionCheckLinkPair
                             (bodyIndex1, link1, bodyIndex2, link2, 
                              cpi.staticFriction, cpi.slidingFriction, 0.01, 0.0);
+                        pairs.push_back(new hrp::ColdetLinkPair(link1, link2));
                     }
                 }
             }
@@ -97,7 +99,6 @@ void initWorld(Project& prj, BodyFactory &factory,
         body->calcForwardKinematics();
     }
     world.initialize();
-    world.constraintForceSolver.useBuiltinCollisionDetector(true);
 }
 
 void initRTS(Project &prj, std::vector<ClockReceiver>& receivers)
