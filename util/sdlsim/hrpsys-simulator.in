@@ -1,4 +1,4 @@
-#!@CMAKE_INSTALL_PREFIX@/bin/hrpsyspy
+#!/bin/bash @CMAKE_INSTALL_PREFIX@/bin/hrpsyspy
 
 import sys
 import time
