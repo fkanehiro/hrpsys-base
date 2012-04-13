@@ -3,8 +3,9 @@
 import sys
 import time
 import os
-import waitInput
 import thread
+
+execfile("@CMAKE_INSTALL_PREFIX@/share/hrpsys/jython/waitInput.py")
 
 sys.path.append(os.getcwd())
 
