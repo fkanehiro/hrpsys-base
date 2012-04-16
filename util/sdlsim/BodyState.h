@@ -10,6 +10,9 @@ public:
     hrp::dvector q;
     hrp::Vector3 p;
     hrp::Matrix33 R;
+    std::vector<hrp::Vector3> acc;
+    std::vector<hrp::Vector3> rate;
+    std::vector<hrp::dvector6> force;
 };
 
 #endif

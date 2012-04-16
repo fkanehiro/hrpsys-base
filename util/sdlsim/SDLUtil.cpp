@@ -22,10 +22,10 @@ SDLwindow::SDLwindow(GLscene* i_scene) :
     helpcommand.push_back("h: help");
     instructions.push_back("q: quit");
     instructions.push_back("p: play/stop");
-    instructions.push_back("+: faster");
-    instructions.push_back("-: slower");
+    instructions.push_back("f: faster");
+    instructions.push_back("s: slower");
     instructions.push_back("r: record movie");
-    instructions.push_back("s: show robot state");
+    instructions.push_back("t: toggle robot state");
     scene->setMessages(helpcommand);
 }
 
@@ -74,13 +74,13 @@ bool SDLwindow::processEvents()
             case SDLK_p:
                 scene->play(); 
                 break;
-            case SDLK_s:
+            case SDLK_t:
                 scene->toggleRobotState(); 
                 break;
-            case SDLK_KP_PLUS:
+            case SDLK_f:
                 scene->faster();
                 break;
-            case SDLK_KP_MINUS:
+            case SDLK_s:
                 scene->slower();
                 break;
             case SDLK_r:
@@ -181,6 +181,7 @@ bool SDLwindow::processEvents()
             SDL_SetVideoMode(width,height,32,SDL_HWSURFACE | SDL_GL_DOUBLEBUFFER | SDL_OPENGL | SDL_RESIZABLE);
             glViewport(0, 0, width, height);
             aspect = ((double)width)/height;
+            scene->setScreenSize(width, height);
             break;
         }
     }

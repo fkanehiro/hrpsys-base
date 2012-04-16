@@ -286,15 +286,12 @@ GLbody::GLbody(BodyInfo_var i_binfo){
         m_links[i]->computeAbsTransform(T);
         m_links[i]->setAbsTransform(T);
     }
-    int maxJointId = -1;
-    for (unsigned int i=0; i<m_links.size(); i++){
-        if (m_links[i]->jointId() > maxJointId){
-            maxJointId = m_links[i]->jointId();
-        }
-    }
-    m_joints.resize(maxJointId+1);
+
     for (unsigned int i=0; i<m_links.size(); i++){
         if (m_links[i]->jointId() >=0){
+            if (m_links[i]->jointId() >= m_joints.size()) {
+                m_joints.resize(m_links[i]->jointId()+1);
+            }
             m_joints[m_links[i]->jointId()] = m_links[i];
         }
     }
@@ -486,19 +483,66 @@ void GLscene::draw(){
     }
     if (m_showingRobotState){
         GLbody *body = NULL;
+        BodyState *bstate = NULL;
         for (unsigned int i=0; i<m_bodies.size(); i++){
             if (m_bodies[i]->numJoints()){
                 body = m_bodies[i];
+                bstate = &m_log[m_index].bodyStates[i];
                 break;
             }
         }
+#define HEIGHT_STEP 12
+        int width = m_width - 350;
+        int height = m_height-HEIGHT_STEP;
+        char buf[256];
         for (int i=0; i<body->numJoints(); i++){
             GLlink *l = body->joint(i);
             if (l){
-                char buf[256];
                 sprintf(buf, "%2d %15s %8.3f", i, l->name().c_str(),
                         l->q()*180/M_PI);
-                glRasterPos2f(m_width-250, m_height-13*(i+1));
+                glRasterPos2f(width, height);
+                height -= HEIGHT_STEP;
+                drawString2(buf);
+            }
+        }
+        if (bstate->acc.size()){
+            glRasterPos2f(width, height);
+            height -= HEIGHT_STEP;
+            drawString2("acc:");
+            for (unsigned int i=0; i<bstate->acc.size(); i++){
+                sprintf(buf, "  %8.4f %8.4f %8.4f",
+                        bstate->acc[i][0], bstate->acc[i][1], bstate->acc[i][2]);
+                glRasterPos2f(width, height);
+                height -= HEIGHT_STEP;
+                drawString2(buf);
+            }
+        }
+        if (bstate->rate.size()){
+            glRasterPos2f(width, height);
+            height -= HEIGHT_STEP;
+            drawString2("rate:");
+            for (unsigned int i=0; i<bstate->rate.size(); i++){
+                sprintf(buf, "  %8.4f %8.4f %8.4f",
+                        bstate->rate[i][0], bstate->rate[i][1], bstate->rate[i][2]);
+                glRasterPos2f(width, height);
+                height -= HEIGHT_STEP;
+                drawString2(buf);
+            }
+        }
+        if (bstate->force.size()){
+            glRasterPos2f(width, height);
+            height -= HEIGHT_STEP;
+            drawString2("force/torque:");
+            for (unsigned int i=0; i<bstate->force.size(); i++){
+                sprintf(buf, "  %6.1f %6.1f %6.1f %6.2f %6.2f %6.2f",
+                        bstate->force[i][0], 
+                        bstate->force[i][1], 
+                        bstate->force[i][2],
+                        bstate->force[i][3], 
+                        bstate->force[i][4], 
+                        bstate->force[i][5]);
+                glRasterPos2f(width, height);
+                height -= HEIGHT_STEP;
                 drawString2(buf);
             }
         }
