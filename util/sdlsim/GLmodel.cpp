@@ -460,6 +460,10 @@ void GLscene::draw(){
     glRasterPos2f(10, m_height-30);
     sprintf(buf, "Playback x%6.3f", m_playRatio);
     drawString(buf);
+    for (unsigned int i=0; i<m_msgs.size(); i++){
+        glRasterPos2f(10, (m_msgs.size()-i)*15);
+        drawString(m_msgs[i].c_str());
+    }
     glPopMatrix();
 
     glEnable(GL_LIGHTING);

@@ -15,5 +15,7 @@ private:
     double pan, tilt, radius;
     bool isShiftPressed, isControlPressed;
     double xCenter, yCenter, zCenter;
+    bool showingHelp;
+    std::vector<std::string> helpcommand, instructions;
 };
 

@@ -107,6 +107,7 @@ public:
     void faster();
     void slower();
     void setScreenSize(int w, int h);
+    void setMessages(const std::vector<std::string>& i_msgs) { m_msgs = i_msgs;}
 
     static GLscene *getInstance();
 private:
@@ -126,6 +127,7 @@ private:
     int m_width, m_height;
     CvVideoWriter *m_videoWriter;
     IplImage *m_cvImage;
+    std::vector<std::string> m_msgs; 
 };
 
 void mulTrans(const double i_m1[16], const double i_m2[16], double o_m[16]);

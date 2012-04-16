@@ -1,13 +1,14 @@
 #include <math.h>
 #ifdef __APPLE__
 #include <OpenGL/glu.h>
+#include <GLUT/glut.h>
 #else
 #include <GL/glu.h>
+#include <GL/glut.h>
 #endif
 #include <SDL.h>
 #include "GLmodel.h"
 #include "SDLUtil.h"
-
 
 SDLwindow::SDLwindow(GLscene* i_scene) :
     scene(i_scene),
@@ -15,8 +16,16 @@ SDLwindow::SDLwindow(GLscene* i_scene) :
     aspect(((double)width)/height),
     pan(M_PI/4), tilt(M_PI/16), radius(5),
     isShiftPressed(false), isControlPressed(false),
-    xCenter(0), yCenter(0), zCenter(0.8)
+    xCenter(0), yCenter(0), zCenter(0.8),
+    showingHelp(false)
 {
+    helpcommand.push_back("h: help");
+    instructions.push_back("q: quit");
+    instructions.push_back("p: play/stop");
+    instructions.push_back("+: faster");
+    instructions.push_back("-: slower");
+    instructions.push_back("r: record movie");
+    scene->setMessages(helpcommand);
 }
 
 bool SDLwindow::init()
@@ -51,6 +60,14 @@ bool SDLwindow::processEvents()
             //printf("%d\n", event.key.keysym.sym);
             int delta = isShiftPressed ? 10 : 1;
             switch(event.key.keysym.sym){
+            case SDLK_h:
+                if (showingHelp){
+                    scene->setMessages(helpcommand);
+                }else{
+                    scene->setMessages(instructions);
+                }
+                showingHelp = !showingHelp;
+                break;
             case SDLK_q:
                 return false;
             case SDLK_p:
@@ -164,6 +181,13 @@ bool SDLwindow::processEvents()
         }
     }
     return true;
+}
+
+static void drawString(const char *str)
+{
+    for (unsigned int i=0; i<strlen(str); i++){
+        glutBitmapCharacter(GLUT_BITMAP_9_BY_15, str[i]);
+    }
 }
 
 void SDLwindow::draw()
