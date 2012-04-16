@@ -166,6 +166,7 @@ GLlink::GLlink(const LinkInfo &i_li, BodyInfo_var i_binfo) : m_parent(NULL), m_j
     Vector3 axis;
     Matrix33 R;
     
+    m_name = i_li.name;
     for (int i=0; i<3; i++){
         m_axis[i] = i_li.jointAxis[i];
         axis[i] = i_li.rotation[i];
@@ -224,6 +225,7 @@ void GLlink::addChild(GLlink *i_child){
 }
 
 void GLlink::setQ(double i_q){
+    m_q = i_q;
     Matrix33 R;
     hrp::calcRodrigues(R, m_axis, i_q);
     m_T_j[ 0]=R(0,0);m_T_j[ 1]=R(1,0);m_T_j[ 2]=R(2,0);m_T_j[3]=0; 
@@ -283,6 +285,18 @@ GLbody::GLbody(BodyInfo_var i_binfo){
         double T[16];
         m_links[i]->computeAbsTransform(T);
         m_links[i]->setAbsTransform(T);
+    }
+    int maxJointId = -1;
+    for (unsigned int i=0; i<m_links.size(); i++){
+        if (m_links[i]->jointId() > maxJointId){
+            maxJointId = m_links[i]->jointId();
+        }
+    }
+    m_joints.resize(maxJointId+1);
+    for (unsigned int i=0; i<m_links.size(); i++){
+        if (m_links[i]->jointId() >=0){
+            m_joints[m_links[i]->jointId()] = m_links[i];
+        }
     }
 }
 
@@ -368,6 +382,12 @@ void drawString(const char *str)
 {
     for (unsigned int i=0; i<strlen(str); i++){
         glutBitmapCharacter(GLUT_BITMAP_9_BY_15, str[i]);
+    }
+}
+void drawString2(const char *str)
+{
+    for (unsigned int i=0; i<strlen(str); i++){
+        glutBitmapCharacter(GLUT_BITMAP_8_BY_13, str[i]);
     }
 }
 
@@ -464,6 +484,25 @@ void GLscene::draw(){
         glRasterPos2f(10, (m_msgs.size()-i)*15);
         drawString(m_msgs[i].c_str());
     }
+    if (m_showingRobotState){
+        GLbody *body = NULL;
+        for (unsigned int i=0; i<m_bodies.size(); i++){
+            if (m_bodies[i]->numJoints()){
+                body = m_bodies[i];
+                break;
+            }
+        }
+        for (int i=0; i<body->numJoints(); i++){
+            GLlink *l = body->joint(i);
+            if (l){
+                char buf[256];
+                sprintf(buf, "%2d %15s %8.3f", i, l->name().c_str(),
+                        l->q()*180/M_PI);
+                glRasterPos2f(m_width-250, m_height-13*(i+1));
+                drawString2(buf);
+            }
+        }
+    }
     glPopMatrix();
 
     glEnable(GL_LIGHTING);
@@ -522,7 +561,8 @@ GLscene::GLscene()
       m_isPlaying(false), 
       m_isNewStateAdded(false), 
       m_isRecording(false), 
-      m_index(-1), m_playRatio(1.0), m_width(DEFAULT_W), m_height(DEFAULT_H)
+      m_index(-1), m_playRatio(1.0), m_width(DEFAULT_W), m_height(DEFAULT_H),
+      m_showingRobotState(false)
 {
     m_default_camera = new GLcamera(DEFAULT_W, DEFAULT_H, 1.0, 100.0, 40*M_PI/180);
     double T[] = {0,1,0,0,

@@ -25,6 +25,7 @@ SDLwindow::SDLwindow(GLscene* i_scene) :
     instructions.push_back("+: faster");
     instructions.push_back("-: slower");
     instructions.push_back("r: record movie");
+    instructions.push_back("s: show robot state");
     scene->setMessages(helpcommand);
 }
 
@@ -72,6 +73,9 @@ bool SDLwindow::processEvents()
                 return false;
             case SDLK_p:
                 scene->play(); 
+                break;
+            case SDLK_s:
+                scene->toggleRobotState(); 
                 break;
             case SDLK_KP_PLUS:
                 scene->faster();

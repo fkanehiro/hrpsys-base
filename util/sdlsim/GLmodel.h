@@ -47,8 +47,10 @@ public:
     void setParent(GLlink *i_parent);
     void addChild(GLlink *i_child);
     void setQ(double i_q);
+    double q() { return m_q; }
     void setTransform(double i_trans[16]);
     int jointId();
+    const std::string& name() { return m_name; }
 
     GLcamera *findCamera(const char *i_name);
 
@@ -57,6 +59,8 @@ public:
 
 private:
     GLlink *m_parent;
+    std::string m_name;
+    double m_q;
     std::vector<GLlink *> m_children;
     std::vector<GLcamera *> m_cameras;
     hrp::Vector3 m_axis;
@@ -77,9 +81,12 @@ public:
     GLlink *link(unsigned int i);
     int numLinks() { return m_links.size(); }
     GLlink *rootLink() { return m_root; }
+    GLlink *joint(unsigned int i) { return m_joints[i]; }
+    int numJoints() { return m_joints.size(); }
 private:
     GLlink *m_root;
     std::vector<GLlink *> m_links;
+    std::vector<GLlink *> m_joints;
 };
 
 class GLscene
@@ -108,6 +115,7 @@ public:
     void slower();
     void setScreenSize(int w, int h);
     void setMessages(const std::vector<std::string>& i_msgs) { m_msgs = i_msgs;}
+    void toggleRobotState() { m_showingRobotState = !m_showingRobotState; }
 
     static GLscene *getInstance();
 private:
@@ -128,6 +136,7 @@ private:
     CvVideoWriter *m_videoWriter;
     IplImage *m_cvImage;
     std::vector<std::string> m_msgs; 
+    bool m_showingRobotState;
 };
 
 void mulTrans(const double i_m1[16], const double i_m2[16], double o_m[16]);
