@@ -52,7 +52,7 @@ if(UNIX)
     add_definitions(${OPENHRP_DEFINITIONS})
 endif()
 
-include_directories(${PROJECT_SOURCE_DIR}/hrplib)
+include_directories(${PROJECT_SOURCE_DIR}/lib)
 
 set(JAVAC javac)
 set(JAR jar)
@@ -91,7 +91,7 @@ include(CPack)
 
 add_subdirectory(jython)
 add_subdirectory(python)
-add_subdirectory(hrplib)
+add_subdirectory(lib)
 add_subdirectory(ec)
 add_subdirectory(rtc)
 add_subdirectory(doc)

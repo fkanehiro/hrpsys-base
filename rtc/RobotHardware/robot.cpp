@@ -6,7 +6,7 @@
 #include <hrpModel/Sensor.h>
 #include <hrpModel/Link.h>
 #include "defs.h"
-#include "hrpIo/iob.h"
+#include "io/iob.h"
 #include "robot.h"
 
 #define CALIB_COUNT	(10*200)

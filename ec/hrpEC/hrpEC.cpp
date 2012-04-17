@@ -2,7 +2,7 @@
 
 #include "hrpEC.h"
 #include <rtm/ECFactory.h>
-#include "hrpIo/iob.h"
+#include "io/iob.h"
 
 #include <iostream>
 

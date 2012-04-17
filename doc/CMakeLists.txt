@@ -14,7 +14,7 @@ set(input_files package.h
 		      ../rtc/Viewer/Viewer.txt
 		      ../rtc/VirtualCamera/VirtualCamera.txt
 		      ../rtc/WavPlayer/WavPlayer.txt
-		      ../hrplib/hrpIo/iob.h
+		      ../lib/io/iob.h
 		      ../idl/DataLoggerService.idl
 		      ../idl/ExecutionProfileService.idl
 		      ../idl/ForwardKinematicsService.idl
