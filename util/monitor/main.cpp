@@ -1,6 +1,4 @@
 #include <fstream>
-#include <boost/bind.hpp>
-#include <boost/function.hpp>
 #include <rtm/Manager.h>
 #include <rtm/CorbaNaming.h>
 #include <hrpModel/ModelLoaderUtil.h>
@@ -9,20 +7,14 @@
 #else
 #include <GL/glut.h>
 #endif
-#include <SDL_thread.h>
 #include "SDLUtil.h"
 #include "GLmodel.h"
 #include "util/Project.h"
-#include "OpenRTMUtil.h"
+#include "Monitor.h"
 
 using namespace std;
 using namespace hrp;
 using namespace OpenHRP;
-
-int threadMain(void *arg)
-{
-
-}
 
 int main(int argc, char* argv[]) 
 {
@@ -47,16 +39,15 @@ int main(int argc, char* argv[])
     nameServer = nameServer.substr(0, comPos);
     RTC::CorbaNaming naming(manager->getORB(), nameServer.c_str());
 
-    ModelLoader_var modelloader = getModelLoader(CosNaming::NamingContext::_duplicate(naming.getRootContext()));
     //==================== Viewer setup ===============
-    GLscene *scene = NULL;
     glutInit(&argc, argv); // for bitmap fonts
-    scene = GLscene::getInstance();
+    GLscene *scene = GLscene::getInstance();
 
     SDLwindow window(scene);
     window.init();
     scene->init();
     
+    ModelLoader_var modelloader = getModelLoader(CosNaming::NamingContext::_duplicate(naming.getRootContext()));
     for (std::map<std::string, ModelItem>::iterator it=prj.models().begin();
          it != prj.models().end(); it++){
         OpenHRP::BodyInfo_var binfo
@@ -69,15 +60,18 @@ int main(int argc, char* argv[])
     std::cout << "timestep = " << prj.timeStep() << ", total time = " 
               << prj.totalTime() << std::endl;
 
-    SDL_Thread *thread;
-    thread = SDL_CreateThread(threadMain, NULL);
+    Monitor monitor;
+    monitor.start();
+
     while(1) {
         //std::cerr << "t = " << world.currentTime() << std::endl;
-        if (!window.processEvents()) break;
+        if (!window.processEvents()) {
+            monitor.stop();
+            break;
+        }
         window.draw();
         window.swapBuffers();
     }
-    SDL_WaitThread(thread, NULL);
 
     manager->shutdown();
 
