@@ -1,7 +1,4 @@
-find_package(LibXml2)
-if (LIBXML2_FOUND)
-  add_subdirectory(ProjectGenerator)
-endif()
+add_subdirectory(ProjectGenerator)
 
 include(FindPkgConfig)
 pkg_check_modules(OpenCV opencv)

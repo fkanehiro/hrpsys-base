@@ -9,7 +9,7 @@
 
 #include <rtm/CorbaNaming.h>
 
-#include "Project.h"
+#include "util/Project.h"
 #include "IrrModel.h"
 #include "RTCGLbody.h"
 #include "Viewer.h"

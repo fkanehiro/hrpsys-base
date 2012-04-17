@@ -2,7 +2,7 @@
 #include <hrpModel/World.h>
 #include <hrpModel/ConstraintForceSolver.h>
 #include <hrpUtil/TimeMeasure.h>
-#include "Project.h"
+#include "util/Project.h"
 #include "ProjectUtil.h"
 #include "SceneState.h"
 

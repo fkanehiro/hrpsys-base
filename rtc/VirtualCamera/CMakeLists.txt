@@ -6,14 +6,23 @@ find_package(OpenCV REQUIRED)
 
 include_directories(${OpenCV_INCLUDE_DIRS})
 include_directories(${LIBXML2_INCLUDE_DIR})
-set(comp_sources VirtualCamera.cpp IrrModel.cpp Project.cpp ImgSk.cpp ImgDynSk.cpp HRPDataTypesSk.cpp HRPDataTypesDynSk.cpp RTCGLbody.cpp)
+set(comp_sources VirtualCamera.cpp IrrModel.cpp ImgSk.cpp ImgDynSk.cpp HRPDataTypesSk.cpp HRPDataTypesDynSk.cpp RTCGLbody.cpp)
 
 add_library(VirtualCamera SHARED ${comp_sources})
-target_link_libraries(VirtualCamera ${OPENHRP_LIBRARIES} ${OPENGL_LIBRARIES} ${IRRLICHT_LIBRARIES} ${OpenCV_LIBRARIES} ${LIBXML2_LIBRARIES} rtcpcl_pointcloud_type)
+set(libraries
+  ${OPENHRP_LIBRARIES}
+  hrpsysUtil
+  ${OPENGL_LIBRARIES} 
+  ${IRRLICHT_LIBRARIES} 
+  ${OpenCV_LIBRARIES} 
+  ${LIBXML2_LIBRARIES} 
+  rtcpcl_pointcloud_type
+  )
+target_link_libraries(VirtualCamera ${libraries})
 set_target_properties(VirtualCamera PROPERTIES PREFIX "")
 
 add_executable(VirtualCameraComp VirtualCameraComp.cpp ${comp_sources})
-target_link_libraries(VirtualCameraComp ${OPENHRP_LIBRARIES} ${OPENGL_LIBRARIES} ${IRRLICHT_LIBRARIES} ${OpenCV_LIBRARIES} ${LIBXML2_LIBRARIES} rtcpcl_pointcloud_type)
+target_link_libraries(VirtualCameraComp ${libraries})
 
 set(target VirtualCamera VirtualCameraComp)
 

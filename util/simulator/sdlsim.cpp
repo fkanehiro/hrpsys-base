@@ -13,7 +13,7 @@
 #include "Simulator.h"
 #include "SDLUtil.h"
 #include "GLmodel.h"
-#include "Project.h"
+#include "util/Project.h"
 #include "OpenRTMUtil.h"
 #include "BodyRTC.h"
 

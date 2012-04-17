@@ -89,6 +89,8 @@ endif()
 
 include(CPack)
 
+find_package(LibXml2 REQUIRED)
+
 add_subdirectory(jython)
 add_subdirectory(python)
 add_subdirectory(lib)

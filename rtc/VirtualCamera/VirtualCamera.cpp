@@ -14,7 +14,7 @@
 #endif
 #include <rtm/CorbaNaming.h>
 #include <hrpModel/ModelLoaderUtil.h>
-#include "Project.h"
+#include "util/Project.h"
 #include "VectorConvert.h"
 #include "VirtualCamera.h"
 #include "RTCGLbody.h"

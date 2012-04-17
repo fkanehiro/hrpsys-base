@@ -12,7 +12,6 @@ add_executable(sdlsim
   BodyState.cpp
   SceneState.cpp
   OpenRTMUtil.cpp
-  Project.cpp
   ProjectUtil.cpp
   SDLUtil.cpp
   Simulator.cpp
@@ -21,11 +20,12 @@ add_executable(sdlsim
 
 target_link_libraries(sdlsim 
   ${OPENHRP_LIBRARIES} 
+  hrpsysUtil
   ${OpenCV_LIBRARIES} 
   ${OPENGL_LIBRARIES} 
   ${GLUT_LIBRARIES} 
   ${SDL_LIBRARY} 
-  ${LIBXML2_LIBRARIES})
+  )
 
 install(TARGETS ${target}
   RUNTIME DESTINATION bin
