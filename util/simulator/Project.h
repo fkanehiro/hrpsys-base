@@ -30,7 +30,7 @@ public:
 class JointItem {
 public:
     JointItem() : 
-        angle(0), isHighGain(false), NumOfAABB(-1), 
+        angle(0), isHighGain(false), NumOfAABB(0), 
         translation(hrp::Vector3::Zero()), 
         rotation(hrp::Matrix33::Identity()){}
     double angle;

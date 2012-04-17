@@ -22,18 +22,16 @@ using namespace hrp;
 using namespace OpenHRP;
 
 hrp::BodyPtr createBody(const std::string& name, const ModelItem& mitem,
-                        RTC::CorbaNaming *naming)
+                        ModelLoader_ptr modelloader)
 {
     std::cout << "createBody(" << name << "," << mitem.url << ")" << std::endl;
     RTC::Manager& manager = RTC::Manager::instance();
     std::string args = "BodyRTC?instance_name="+name;
     BodyRTCPtr body = (BodyRTC *)manager.createComponent(args.c_str());
-    ModelLoader_var modelloader = getModelLoader(CosNaming::NamingContext::_duplicate(naming->getRootContext()));
     ModelLoader::ModelLoadOption mlopt;
     mlopt.readImage = false;
     mlopt.AABBtype = OpenHRP::ModelLoader::AABB_NUM;
     mlopt.AABBdata.length(mitem.joint.size());
-    std::cout << "mitem.joint.size() = " << mitem.joint.size() << std::endl;
      std::map<std::string, JointItem>::const_iterator it;
     int i=0;
     for (it = mitem.joint.begin(); it != mitem.joint.end(); it++){
@@ -89,6 +87,7 @@ int main(int argc, char* argv[])
     nameServer = nameServer.substr(0, comPos);
     RTC::CorbaNaming naming(manager->getORB(), nameServer.c_str());
 
+    ModelLoader_var modelloader = getModelLoader(CosNaming::NamingContext::_duplicate(naming.getRootContext()));
     //==================== Viewer setup ===============
     GLscene *scene = NULL;
     if (display){
@@ -103,15 +102,14 @@ int main(int argc, char* argv[])
         for (std::map<std::string, ModelItem>::iterator it=prj.models().begin();
              it != prj.models().end(); it++){
             OpenHRP::BodyInfo_var binfo
-                = loadBodyInfo(it->second.url.c_str(), 
-                               CosNaming::NamingContext::_duplicate(naming.getRootContext()));
+                = modelloader->loadBodyInfo(it->second.url.c_str());
             GLbody *body = new GLbody(binfo);
             scene->addBody(it->first, body);
         }
     }
 
     //================= setup World ======================
-    BodyFactory factory = boost::bind(createBody, _1, _2, &naming);
+    BodyFactory factory = boost::bind(createBody, _1, _2, modelloader);
     Simulator simulator;
     simulator.init(prj, factory, scene);
 
