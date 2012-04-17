@@ -12,6 +12,7 @@ add_library(hrpsysUtil SHARED ${sources})
 
 target_link_libraries(hrpsysUtil
   ${LIBXML2_LIBRARIES}
+  ${OPENHRP_LIBRARIES}
   )
 
 set(target hrpsysUtil)
