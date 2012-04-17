@@ -1,24 +1,15 @@
+#ifndef __GLMODEL_H__
+#define __GLMODEL_H__
+
 #include <hrpCorba/ModelLoader.hh>
 #include <hrpUtil/Eigen3d.h>
 #include <vector>
-#include <deque>
 #include <map>
-//Open CV headder
+#include <deque>
+//Open CV header
 #include <cv.h>
 #include <highgui.h>
-#ifdef __APPLE__
-typedef struct{
-    pthread_cond_t cond;
-    pthread_mutex_t mutex;
-    int count;
-} unnamed_sem_t;
-#define sem_t unnamed_sem_t
-#define sem_init(x,y,z) { pthread_cond_init(&((x)->cond), NULL); pthread_mutex_init(&((x)->mutex), NULL); (x)->count = z;}
-#define sem_wait(x) { pthread_mutex_lock(&((x)->mutex)); if ((x)->count <= 0) pthread_cond_wait(&((x)->cond), &((x)->mutex)); (x)->count--; pthread_mutex_unlock(&((x)->mutex)); }
-#define sem_post(x) { pthread_mutex_lock(&((x)->mutex)); (x)->count++; pthread_cond_signal(&((x)->cond)); pthread_mutex_unlock(&((x)->mutex)); }
-#else
-#include <semaphore.h>
-#endif
+#include "SceneState.h"
 
 class GLlink;
 
@@ -53,16 +44,13 @@ public:
     GLlink(const OpenHRP::LinkInfo &i_li, OpenHRP::BodyInfo_var i_binfo);
 
     void draw();
-
     void setParent(GLlink *i_parent);
-
     void addChild(GLlink *i_child);
-
     void setQ(double i_q);
-
+    double q() { return m_q; }
     void setTransform(double i_trans[16]);
-
     int jointId();
+    const std::string& name() { return m_name; }
 
     GLcamera *findCamera(const char *i_name);
 
@@ -71,6 +59,8 @@ public:
 
 private:
     GLlink *m_parent;
+    std::string m_name;
+    double m_q;
     std::vector<GLlink *> m_children;
     std::vector<GLcamera *> m_cameras;
     hrp::Vector3 m_axis;
@@ -82,26 +72,27 @@ class GLbody
 {
 public:
     GLbody(OpenHRP::BodyInfo_var i_binfo);
-
     ~GLbody();
-
     void setPosture(double *i_angles, double *i_pos, double *i_rpy);
-
+    void setPosture(const hrp::dvector& i_q, const hrp::Vector3& i_p,
+                    const hrp::Matrix33& i_R);
     void draw();
-
     GLcamera *findCamera(const char *i_name);
-
     GLlink *link(unsigned int i);
+    int numLinks() { return m_links.size(); }
+    GLlink *rootLink() { return m_root; }
+    GLlink *joint(unsigned int i) { return m_joints[i]; }
+    int numJoints() { return m_joints.size(); }
 private:
     GLlink *m_root;
     std::vector<GLlink *> m_links;
+    std::vector<GLlink *> m_joints;
 };
 
 class GLscene
 {
 public:
     void addBody(const std::string& i_name, GLbody *i_body);
-    void addBody(const std::string& i_name, OpenHRP::BodyInfo_var i_binfo);
     GLbody *findBody(const std::string& i_name);
     void draw();
     void save(const char *i_fname);
@@ -109,7 +100,7 @@ public:
     void init();
     void setCamera(GLcamera *i_camera);
     GLcamera *getCamera();
-    void addState(const OpenHRP::WorldState &state);
+    void addState(const SceneState &state);
     void clearLog();
     void play();
     void record();
@@ -124,6 +115,7 @@ public:
     void slower();
     void setScreenSize(int w, int h);
     void setMessages(const std::vector<std::string>& i_msgs) { m_msgs = i_msgs;}
+    void toggleRobotState() { m_showingRobotState = !m_showingRobotState; }
 
     static GLscene *getInstance();
 private:
@@ -131,9 +123,10 @@ private:
     ~GLscene();
 
     static GLscene *m_scene;
-    std::map<std::string, GLbody *> m_bodies; 
+    std::map<std::string, GLbody *> m_nameBodyMap; 
+    std::vector<GLbody *> m_bodies; 
     GLcamera *m_camera, *m_default_camera;
-    std::deque<OpenHRP::WorldState> m_log;
+    std::deque<SceneState> m_log;
     bool m_isPlaying, m_isNewStateAdded, m_isRecording;
     int m_index;
     double m_initT;
@@ -143,11 +136,10 @@ private:
     CvVideoWriter *m_videoWriter;
     IplImage *m_cvImage;
     std::vector<std::string> m_msgs; 
-    sem_t m_sem;
-    std::string m_newBodyName;
-    OpenHRP::BodyInfo_var m_newBodyInfo;
-    bool m_isNewBody;
+    bool m_showingRobotState;
 };
 
 void mulTrans(const double i_m1[16], const double i_m2[16], double o_m[16]);
 void printMatrix(double mat[16]);
+
+#endif
