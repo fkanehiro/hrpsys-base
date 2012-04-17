@@ -19,7 +19,7 @@ void initWorld(Project& prj, BodyFactory &factory,
     // add bodies
     for (std::map<std::string, ModelItem>::iterator it=prj.models().begin();
          it != prj.models().end(); it++){
-        hrp::BodyPtr body = factory(it->second.rtcName == "" ? it->first : it->second.rtcName, it->second.url);
+        hrp::BodyPtr body = factory(it->second.rtcName == "" ? it->first : it->second.rtcName, it->second);
         if (body){
             body->setName(it->first);
             for (std::map<std::string, JointItem>::iterator it2=it->second.joint.begin();

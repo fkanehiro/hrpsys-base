@@ -104,6 +104,7 @@ bool Simulator::oneStep(){
                tm_collision.totalTime(), tm_collision.averageTime()*1000);
         printf("dynamics  :%8.3f[s], %8.3f[ms/frame]\n",
                tm_dynamics.totalTime(), tm_dynamics.averageTime()*1000);
+        fflush(stdout);
         return false;
     }else{
         return true;

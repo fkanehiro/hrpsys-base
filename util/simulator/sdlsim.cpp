@@ -21,17 +21,29 @@ using namespace std;
 using namespace hrp;
 using namespace OpenHRP;
 
-hrp::BodyPtr createBody(const std::string& name, const std::string& url,
+hrp::BodyPtr createBody(const std::string& name, const ModelItem& mitem,
                         RTC::CorbaNaming *naming)
 {
-    std::cout << "createBody(" << name << "," << url << ")" << std::endl;
+    std::cout << "createBody(" << name << "," << mitem.url << ")" << std::endl;
     RTC::Manager& manager = RTC::Manager::instance();
     std::string args = "BodyRTC?instance_name="+name;
     BodyRTCPtr body = (BodyRTC *)manager.createComponent(args.c_str());
-    if (!loadBodyFromModelLoader(body, url.c_str(), 
-                                 CosNaming::NamingContext::_duplicate(naming->getRootContext()),
-                                 true)){
-        std::cerr << "failed to load model[" << url << "]" << std::endl;
+    ModelLoader_var modelloader = getModelLoader(CosNaming::NamingContext::_duplicate(naming->getRootContext()));
+    ModelLoader::ModelLoadOption mlopt;
+    mlopt.readImage = false;
+    mlopt.AABBtype = OpenHRP::ModelLoader::AABB_NUM;
+    mlopt.AABBdata.length(mitem.joint.size());
+    std::cout << "mitem.joint.size() = " << mitem.joint.size() << std::endl;
+     std::map<std::string, JointItem>::const_iterator it;
+    int i=0;
+    for (it = mitem.joint.begin(); it != mitem.joint.end(); it++){
+        //mlopt.AABBdata[i++] = it->second.NumOfAABB;
+        mlopt.AABBdata[i++] = 1;
+    }
+    //BodyInfo_var binfo = modelloader->getBodyInfoEx(mitem.url.c_str(), mlopt);
+    BodyInfo_var binfo = modelloader->getBodyInfo(mitem.url.c_str());
+    if (!loadBodyFromBodyInfo(body, binfo, true)){
+        std::cerr << "failed to load model[" << mitem.url << "]" << std::endl;
         manager.deleteComponent(body.get());
         return hrp::BodyPtr();
     }else{

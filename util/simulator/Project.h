@@ -29,6 +29,10 @@ public:
 
 class JointItem {
 public:
+    JointItem() : 
+        angle(0), isHighGain(false), NumOfAABB(-1), 
+        translation(hrp::Vector3::Zero()), 
+        rotation(hrp::Matrix33::Identity()){}
     double angle;
     bool isHighGain;
     int NumOfAABB;

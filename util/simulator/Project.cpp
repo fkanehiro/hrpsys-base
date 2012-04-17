@@ -129,6 +129,10 @@ bool Project::parse(const std::string& filename)
                       std::string name = std::string((char *)xmlGetProp(cur_node, (xmlChar *)"name"));
                       name.erase(name.rfind(".mode"));
                       m.joint[name].isHighGain = xmlStrEqual(xmlGetProp(cur_node, (xmlChar *)"value"), (xmlChar *)"HighGain");
+                  } else if ( std::string((char *)xmlGetProp(cur_node, (xmlChar *)"name")).rfind(".NumOfAABB") != std::string::npos ) {
+                      std::string name = std::string((char *)xmlGetProp(cur_node, (xmlChar *)"name"));
+                      name.erase(name.rfind(".NumOfAABB"));
+                      m.joint[name].NumOfAABB = atof((char *)(xmlGetProp(cur_node, (xmlChar *)"value")));
                   } else if ( std::string((char *)xmlGetProp(cur_node, (xmlChar *)"name")).rfind(".translation") != std::string::npos ) {
                       std::string name = std::string((char *)xmlGetProp(cur_node, (xmlChar *)"name"));
                       name.erase(name.rfind(".translation"));

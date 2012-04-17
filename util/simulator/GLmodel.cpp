@@ -66,7 +66,7 @@ void compileShape(OpenHRP::BodyInfo_var i_binfo,
                 }else{
                     p = normalIndices[j]*3;
                 }
-                glNormal3fv(normals+p);
+                if (p < ai.normals.length()) glNormal3fv(normals+p);
             }
             for(int k=0; k < 3; ++k){
                 if (ai.normalPerVertex){

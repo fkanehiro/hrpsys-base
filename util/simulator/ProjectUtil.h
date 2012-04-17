@@ -6,7 +6,7 @@
 #include "Project.h"
 #include "OpenRTMUtil.h"
 
-typedef boost::function2<hrp::BodyPtr, const std::string&, const std::string&> BodyFactory;
+typedef boost::function2<hrp::BodyPtr, const std::string&, const ModelItem&> BodyFactory;
 
 void initWorld(Project& prj, BodyFactory &factory, 
                hrp::World<hrp::ConstraintForceSolver>& world,
