@@ -15,6 +15,7 @@ using namespace hrp;
 #define DEFAULT_W 640
 #define DEFAULT_H 480
 #define DEFAULT_FPS 10
+#define MAX_LOG_LENGTH 5000
 
 void compileShape(OpenHRP::BodyInfo_var i_binfo,
                   const TransformedShapeIndexSequence& tsis)
@@ -303,7 +304,16 @@ GLbody::~GLbody(){
     }
 }
 
-void GLbody::setPosture(double *i_angles, double *i_pos, double *i_rpy){
+void GLbody::setPosture(const double *i_angles){
+    for (unsigned int i=0; i<m_links.size(); i++){
+        int id = m_links[i]->jointId();
+        if (id >= 0){
+            m_links[i]->setQ(i_angles[id]);
+        }
+    }
+}
+
+void GLbody::setPosture(const double *i_angles, double *i_pos, double *i_rpy){
     double tform[16];
     Matrix33 R = rotFromRpy(i_rpy[0], i_rpy[1], i_rpy[2]);
     tform[ 0]=R(0,0);tform[ 1]=R(1,0);tform[ 2]=R(2,0);tform[ 3]=0;
@@ -311,12 +321,7 @@ void GLbody::setPosture(double *i_angles, double *i_pos, double *i_rpy){
     tform[ 8]=R(0,2);tform[ 9]=R(1,2);tform[10]=R(2,2);tform[11]=0;
     tform[12]=i_pos[0];tform[13]=i_pos[1];tform[14]=i_pos[2];tform[15]=1;
     m_root->setTransform(tform);
-    for (unsigned int i=0; i<m_links.size(); i++){
-        int id = m_links[i]->jointId();
-        if (id >= 0){
-            m_links[i]->setQ(i_angles[id]);
-        }
-    }
+    setPosture(i_angles);
 }
 
 void GLbody::setPosture(const dvector& i_q, const Vector3& i_p,
@@ -354,14 +359,10 @@ GLlink *GLbody::link(unsigned int i)
     return m_links[i];
 }
 
-void setSceneState(std::vector<GLbody *>& bodies,
-                   const SceneState& state)
+void setRobotState(GLbody * body,
+                   const OpenHRP::RobotHardwareService::RobotState& state)
 { 
-    for (unsigned int i=0; i<state.bodyStates.size(); i++){
-        const BodyState& bstate = state.bodyStates[i];
-        GLbody *body = bodies[i];
-        body->setPosture(bstate.q, bstate.p, bstate.R);
-    }
+    if (state.angle.length()) body->setPosture(state.angle.get_buffer());
 }
 
 void GLscene::addBody(const std::string &i_name, GLbody *i_body){
@@ -388,7 +389,52 @@ void drawString2(const char *str)
     }
 }
 
+void white(){
+    glColor3d(1.0,1.0,1.0);
+}
+
+void red(){
+    glColor3d(1.0,0.0,0.0);
+}
+
+void yellow(){
+    glColor3d(1.0,1.0,0.0);
+}
+
+void green(){
+    glColor3d(0.0,1.0,0.0);
+}
+
+void blue(){
+    glColor3d(0.0,0.0,1.0);
+}
+
+void black(){
+    glColor3d(0.0,0.0,0.0);
+}
+
+bool isCalibrated(int s) { 
+    return s & OpenHRP::RobotHardwareService::CALIB_STATE_MASK; 
+}
+bool isPowerOn(int s) { 
+    return s & OpenHRP::RobotHardwareService::POWER_STATE_MASK; 
+}
+bool isServoOn(int s) { 
+    return s & OpenHRP::RobotHardwareService::SERVO_STATE_MASK; 
+}
+int servoAlarm(int s){
+    return (s & OpenHRP::RobotHardwareService::SERVO_ALARM_MASK)>>OpenHRP::RobotHardwareService::SERVO_ALARM_SHIFT; 
+}
+int temperature(int s){
+    return (s & OpenHRP::RobotHardwareService::DRIVER_TEMP_MASK)>>OpenHRP::RobotHardwareService::DRIVER_TEMP_SHIFT; 
+}
+
 void GLscene::draw(){
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    double fps = 1.0/((tv.tv_sec - m_lastDraw.tv_sec)+(tv.tv_usec - m_lastDraw.tv_usec)/1e6);
+    m_lastDraw = tv;
+
     if (m_isPlaying){
         // compute time to draw
         struct timeval tv;
@@ -403,13 +449,13 @@ void GLscene::draw(){
                 m_index++;
             }
         }
-    } else if (m_isNewStateAdded){
+    } else if (m_isNewStateAdded && m_index == m_log.size()-2){
         // draw newest state
         m_index = m_log.size() - 1;
         m_isNewStateAdded = false;
     }
     
-    if (m_index >= 0) setSceneState(m_bodies, m_log[m_index]);
+    if (m_index >= 0) setRobotState(m_bodies[0], m_log[m_index].state);
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
@@ -420,10 +466,10 @@ void GLscene::draw(){
         (*it)->draw();
     }
 
+    // floor grids
     glDisable(GL_LIGHTING);
     glBegin(GL_LINES);
 
-    // floor grids
     glColor3f(1,1,1);
     double s[3], e[3];
     s[2] = e[2] = 0;
@@ -439,23 +485,6 @@ void GLscene::draw(){
         glVertex3dv(s);
         glVertex3dv(e);
     }
-
-    // lines
-    if (m_index >=0){
-        glColor3f(1,0,0);
-        const CollisionSequence &cs = m_log[m_index].collisions;
-        for (unsigned int i=0; i<cs.length(); i++){
-            const CollisionPointSequence& cps = cs[i].points; 
-            for (unsigned int j=0; j<cps.length(); j++){
-                glVertex3dv(cps[j].position);
-                for (int k=0; k<3; k++){
-                    e[k] = cps[j].position[k] + cps[j].normal[k]*(cps[j].idepth*10+0.1);
-                }
-                glVertex3dv(e);
-            }
-        }
-    }
-
     glEnd();
 
     // draw texts
@@ -469,7 +498,8 @@ void GLscene::draw(){
     glRasterPos2f(10, m_height-15);
     char buf[256];
     if (m_index >= 0){
-        sprintf(buf, "Time:%6.3f[s]" , m_log[m_index].time);
+        double dt = m_log[m_index].time - m_log[0].time;
+        sprintf(buf, "Time:%6.3f[s]" , dt);
     }else{
         sprintf(buf, "Time:------[s]");
     }
@@ -477,76 +507,14 @@ void GLscene::draw(){
     glRasterPos2f(10, m_height-30);
     sprintf(buf, "Playback x%6.3f", m_playRatio);
     drawString(buf);
+    glRasterPos2f(10, m_height-45);
+    sprintf(buf, "FPS %2.0f", fps);
+    drawString(buf);
     for (unsigned int i=0; i<m_msgs.size(); i++){
         glRasterPos2f(10, (m_msgs.size()-i)*15);
         drawString(m_msgs[i].c_str());
     }
-    if (m_showingRobotState){
-        GLbody *body = NULL;
-        BodyState *bstate = NULL;
-        for (unsigned int i=0; i<m_bodies.size(); i++){
-            if (m_bodies[i]->numJoints()){
-                body = m_bodies[i];
-                bstate = &m_log[m_index].bodyStates[i];
-                break;
-            }
-        }
-#define HEIGHT_STEP 12
-        int width = m_width - 350;
-        int height = m_height-HEIGHT_STEP;
-        char buf[256];
-        for (int i=0; i<body->numJoints(); i++){
-            GLlink *l = body->joint(i);
-            if (l){
-                sprintf(buf, "%2d %15s %8.3f", i, l->name().c_str(),
-                        l->q()*180/M_PI);
-                glRasterPos2f(width, height);
-                height -= HEIGHT_STEP;
-                drawString2(buf);
-            }
-        }
-        if (bstate->acc.size()){
-            glRasterPos2f(width, height);
-            height -= HEIGHT_STEP;
-            drawString2("acc:");
-            for (unsigned int i=0; i<bstate->acc.size(); i++){
-                sprintf(buf, "  %8.4f %8.4f %8.4f",
-                        bstate->acc[i][0], bstate->acc[i][1], bstate->acc[i][2]);
-                glRasterPos2f(width, height);
-                height -= HEIGHT_STEP;
-                drawString2(buf);
-            }
-        }
-        if (bstate->rate.size()){
-            glRasterPos2f(width, height);
-            height -= HEIGHT_STEP;
-            drawString2("rate:");
-            for (unsigned int i=0; i<bstate->rate.size(); i++){
-                sprintf(buf, "  %8.4f %8.4f %8.4f",
-                        bstate->rate[i][0], bstate->rate[i][1], bstate->rate[i][2]);
-                glRasterPos2f(width, height);
-                height -= HEIGHT_STEP;
-                drawString2(buf);
-            }
-        }
-        if (bstate->force.size()){
-            glRasterPos2f(width, height);
-            height -= HEIGHT_STEP;
-            drawString2("force/torque:");
-            for (unsigned int i=0; i<bstate->force.size(); i++){
-                sprintf(buf, "  %6.1f %6.1f %6.1f %6.2f %6.2f %6.2f",
-                        bstate->force[i][0], 
-                        bstate->force[i][1], 
-                        bstate->force[i][2],
-                        bstate->force[i][3], 
-                        bstate->force[i][4], 
-                        bstate->force[i][5]);
-                glRasterPos2f(width, height);
-                height -= HEIGHT_STEP;
-                drawString2(buf);
-            }
-        }
-    }
+    showRobotState();
     glPopMatrix();
 
     glEnable(GL_LIGHTING);
@@ -569,6 +537,134 @@ void GLscene::draw(){
         }
         //printf("t:%6.3f, %4d\n", m_initT, m_index);
         m_initT += 1.0/DEFAULT_FPS;
+    }
+}
+
+void GLscene::showRobotState()
+{
+    if (m_index < 0) return;
+
+    OpenHRP::RobotHardwareService::RobotState &rstate = m_log[m_index].state;
+    if (m_showingRobotState){
+        GLbody *body = m_bodies[0];
+#define HEIGHT_STEP 12
+        int width = m_width - 410;
+        int height = m_height-HEIGHT_STEP;
+        char buf[256];
+        for (int i=0; i<body->numJoints(); i++){
+            GLlink *l = body->joint(i);
+            if (l){
+                int ss = rstate.servoState[i];
+                int x = width;
+                // joint ID
+                sprintf(buf, "%2d",i);
+                if (!isCalibrated(ss)){
+                    yellow();
+                }else if(isServoOn(ss)){
+                    red();
+                }
+                glRasterPos2f(x, height);
+                drawString2(buf);
+                white();
+                x += 8*3;
+                // power status
+                if (isPowerOn(ss)) blue();
+                glRasterPos2f(x, height);
+                drawString2("o");
+                if (isPowerOn(ss)) white();
+                x += 8*2;
+                // joint name, current angle, command angle and torque
+                sprintf(buf, "%13s %8.3f %8.3f %6.1f", 
+                        l->name().c_str(), 
+                        rstate.angle[i]*180/M_PI,
+                        rstate.command[i]*180/M_PI,
+                        rstate.torque[i]*180/M_PI);
+                glRasterPos2f(x, height);
+                drawString2(buf);
+                x += 8*(14+9+9+7);
+                // servo alarms
+                sprintf(buf, "%03x", servoAlarm(ss));
+                glRasterPos2f(x, height);
+                drawString2(buf);
+                x += 8*4;
+                // driver temperature
+                int temp = temperature(ss);
+                if (!temp){
+                    sprintf(buf, "--", temp);
+                }else{
+                    sprintf(buf, "%2d", temp);
+                }
+                if (temp >= 60) red();
+                glRasterPos2f(x, height);
+                drawString2(buf);
+                if (temp >= 60) white();
+                x += 8*3;
+                
+                height -= HEIGHT_STEP;
+            }
+        }
+        if (rstate.accel.length()){
+            glRasterPos2f(width, height);
+            height -= HEIGHT_STEP;
+            drawString2("acc:");
+            for (unsigned int i=0; i<rstate.accel.length(); i++){
+                sprintf(buf, "  %8.4f %8.4f %8.4f",
+                        rstate.accel[i][0], rstate.accel[i][1], rstate.accel[i][2]);
+                glRasterPos2f(width, height);
+                height -= HEIGHT_STEP;
+                drawString2(buf);
+            }
+        }
+        if (rstate.rateGyro.length()){
+            glRasterPos2f(width, height);
+            height -= HEIGHT_STEP;
+            drawString2("rate:");
+            for (unsigned int i=0; i<rstate.rateGyro.length(); i++){
+                sprintf(buf, "  %8.4f %8.4f %8.4f",
+                        rstate.rateGyro[i][0], rstate.rateGyro[i][1], rstate.rateGyro[i][2]);
+                glRasterPos2f(width, height);
+                height -= HEIGHT_STEP;
+                drawString2(buf);
+            }
+        }
+        if (rstate.force.length()){
+            glRasterPos2f(width, height);
+            height -= HEIGHT_STEP;
+            drawString2("force/torque:");
+            for (unsigned int i=0; i<rstate.force.length(); i++){
+                sprintf(buf, "  %6.1f %6.1f %6.1f %6.2f %6.2f %6.2f",
+                        rstate.force[i][0], 
+                        rstate.force[i][1], 
+                        rstate.force[i][2],
+                        rstate.force[i][3], 
+                        rstate.force[i][4], 
+                        rstate.force[i][5]);
+                glRasterPos2f(width, height);
+                height -= HEIGHT_STEP;
+                drawString2(buf);
+            }
+        }
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glEnable(GL_BLEND);
+        glColor4f(0.0,0.0,0.0, 0.5);
+        glRectf(width,0,m_width,m_height);
+        glDisable(GL_BLEND);
+    }else{
+        // !m_showingRobotState
+        bool servo=false, power=false;
+        for (unsigned int i=0; i<rstate.servoState.length(); i++){
+            if (isServoOn(rstate.servoState[i])) servo = true;
+            if (isPowerOn(rstate.servoState[i])) power = true;
+        }
+        struct timeval tv;
+        gettimeofday(&tv, NULL);
+        double dt = tv.tv_sec + tv.tv_usec/1e6 - m_log[m_log.size()-1].time;
+        if (dt < 1.0) green(); else black();
+        glRectf(m_width-115,m_height-45,m_width-85,m_height-15);
+        if (power) blue(); else black();
+        glRectf(m_width- 80,m_height-45,m_width-50,m_height-15);
+        if (servo) red(); else black();
+        glRectf(m_width- 45,m_height-45,m_width-15,m_height-15);
     }
 }
 
@@ -694,9 +790,10 @@ GLcamera *GLscene::getCamera()
     return m_camera;
 }
 
-void GLscene::addState(const SceneState& state)
+void GLscene::addState(const TimedRobotState& state)
 {
     m_log.push_back(state);
+    if (m_log.size() > MAX_LOG_LENGTH) m_log.pop_front();
     m_isNewStateAdded = true;
 }
 

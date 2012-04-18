@@ -9,7 +9,7 @@
 //Open CV header
 #include <cv.h>
 #include <highgui.h>
-#include "SceneState.h"
+#include "TimedRobotState.h"
 
 class GLlink;
 
@@ -73,7 +73,8 @@ class GLbody
 public:
     GLbody(OpenHRP::BodyInfo_var i_binfo);
     ~GLbody();
-    void setPosture(double *i_angles, double *i_pos, double *i_rpy);
+    void setPosture(const double *i_angles);
+    void setPosture(const double *i_angles, double *i_pos, double *i_rpy);
     void setPosture(const hrp::dvector& i_q, const hrp::Vector3& i_p,
                     const hrp::Matrix33& i_R);
     void draw();
@@ -100,7 +101,7 @@ public:
     void init();
     void setCamera(GLcamera *i_camera);
     GLcamera *getCamera();
-    void addState(const SceneState &state);
+    void addState(const TimedRobotState &state);
     void clearLog();
     void play();
     void record();
@@ -121,16 +122,17 @@ public:
 private:
     GLscene();
     ~GLscene();
+    void showRobotState();
 
     static GLscene *m_scene;
     std::map<std::string, GLbody *> m_nameBodyMap; 
     std::vector<GLbody *> m_bodies; 
     GLcamera *m_camera, *m_default_camera;
-    std::deque<SceneState> m_log;
+    std::deque<TimedRobotState> m_log;
     bool m_isPlaying, m_isNewStateAdded, m_isRecording;
     int m_index;
     double m_initT;
-    struct timeval m_startT;
+    struct timeval m_startT, m_lastDraw;
     double m_playRatio;
     int m_width, m_height;
     CvVideoWriter *m_videoWriter;

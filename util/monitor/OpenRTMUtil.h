@@ -6,6 +6,8 @@
 int connectPorts(RTC::PortService_ptr outPort, RTC::PortService_ptr inPort);
 void activateRtc(RTC::RtcBase* pRtc);
 void deactivateRtc(RTC::RtcBase* pRtc);
+const char *getServiceIOR(RTC::RTObject_var rtc, 
+                          const char *sname);
 
 class ClockReceiver
 {

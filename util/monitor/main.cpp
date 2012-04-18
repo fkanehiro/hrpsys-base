@@ -1,6 +1,5 @@
 #include <fstream>
-#include <rtm/Manager.h>
-#include <rtm/CorbaNaming.h>
+#include <iostream>
 #include <hrpModel/ModelLoaderUtil.h>
 #ifdef __APPLE__
 #include <GLUT/glut.h>
@@ -18,26 +17,48 @@ using namespace OpenHRP;
 
 int main(int argc, char* argv[]) 
 {
+    if (argc < 2){
+        std::cerr << "Usage:" << argv[0] << " project.xml" << std::endl;
+        return 1;
+    }
+
     Project prj;
     if (!prj.parse(argv[1])){
         std::cerr << "failed to parse " << argv[1] << std::endl;
         return 1;
     }
 
-    //================= OpenRTM =========================
-    RTC::Manager* manager;
-    manager = RTC::Manager::init(argc, argv);
-    manager->init(argc, argv);
-    manager->activateManager();
-    manager->runManager(true);
+    //================= CORBA =========================
+    CORBA::ORB_var orb;
+    CosNaming::NamingContext_var namingContext;
+ 
+    try {
+	orb = CORBA::ORB_init(argc, argv);
 
-    std::string nameServer = manager->getConfig()["corba.nameservers"];
-    int comPos = nameServer.find(",");
-    if (comPos < 0){
-        comPos = nameServer.length();
+	CORBA::Object_var obj;
+	obj = orb->resolve_initial_references("RootPOA");
+	PortableServer::POA_var poa = PortableServer::POA::_narrow(obj);
+	if(CORBA::is_nil(poa)){
+	    throw std::string("error: failed to narrow root POA.");
+	}
+	
+	PortableServer::POAManager_var poaManager = poa->the_POAManager();
+	if(CORBA::is_nil(poaManager)){
+	    throw std::string("error: failed to narrow root POA manager.");
+	}
+	
+	obj = orb->resolve_initial_references("NameService");
+	namingContext = CosNaming::NamingContext::_narrow(obj);
+	if(CORBA::is_nil(namingContext)){
+	    throw std::string("error: failed to narrow naming context.");
+	}
+	
+	poaManager->activate();
+    }catch (CORBA::SystemException& ex) {
+        std::cerr << ex._rep_id() << std::endl;
+    }catch (const std::string& error){
+        std::cerr << error << std::endl;
     }
-    nameServer = nameServer.substr(0, comPos);
-    RTC::CorbaNaming naming(manager->getORB(), nameServer.c_str());
 
     //==================== Viewer setup ===============
     glutInit(&argc, argv); // for bitmap fonts
@@ -47,7 +68,7 @@ int main(int argc, char* argv[])
     window.init();
     scene->init();
     
-    ModelLoader_var modelloader = getModelLoader(CosNaming::NamingContext::_duplicate(naming.getRootContext()));
+    ModelLoader_var modelloader = getModelLoader(namingContext);
     for (std::map<std::string, ModelItem>::iterator it=prj.models().begin();
          it != prj.models().end(); it++){
         OpenHRP::BodyInfo_var binfo
@@ -56,24 +77,27 @@ int main(int argc, char* argv[])
         scene->addBody(it->first, body);
     }
 
-    //================= setup World ======================
-    std::cout << "timestep = " << prj.timeStep() << ", total time = " 
-              << prj.totalTime() << std::endl;
+    //================= monitor ======================
+    Monitor monitor(orb, namingContext);
+    //monitor.start();
 
-    Monitor monitor;
-    monitor.start();
-
+    int cnt=0;
     while(1) {
-        //std::cerr << "t = " << world.currentTime() << std::endl;
         if (!window.processEvents()) {
-            monitor.stop();
+            //monitor.stop();
             break;
         }
+        monitor.run();
         window.draw();
         window.swapBuffers();
     }
 
-    manager->shutdown();
+    try {
+	orb->destroy();
+    }
+    catch(...){
+
+    }
 
     return 0;
 }

@@ -60,3 +60,40 @@ void deactivateRtc(RTC::RtcBase* pRtc)
         }
     }
 }
+
+const char *getServiceIOR(RTC::RTObject_var rtc, 
+                          const char *sname)
+{
+    const char *ior = NULL;
+
+    RTC::PortServiceList ports;
+    ports = *(rtc->get_ports());
+
+    RTC::ComponentProfile* cprof;
+    cprof = rtc->get_component_profile();
+    std::string portname = std::string(cprof->instance_name) + "." + sname;
+
+    for(unsigned int i=0; i < ports.length(); i++)
+        {
+            RTC::PortService_var port = ports[i];
+            RTC::PortProfile* prof = port->get_port_profile();
+            if(std::string(prof->name) == portname)
+                {
+                    RTC::ConnectorProfile connProfile;
+                    connProfile.name = "noname";
+                    connProfile.connector_id = "";
+                    connProfile.ports.length(1);
+                    connProfile.ports[0] = port;
+                    connProfile.properties = NULL;
+                    port->connect(connProfile);
+
+                    connProfile.properties[0].value >>= ior;
+
+                    port->disconnect(connProfile.connector_id);
+
+                    return ior;
+                }
+        }
+
+    return ior;
+}
