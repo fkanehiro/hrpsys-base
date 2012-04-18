@@ -225,7 +225,6 @@ void GLlink::addChild(GLlink *i_child){
 }
 
 void GLlink::setQ(double i_q){
-    m_q = i_q;
     Matrix33 R;
     hrp::calcRodrigues(R, m_axis, i_q);
     m_T_j[ 0]=R(0,0);m_T_j[ 1]=R(1,0);m_T_j[ 2]=R(2,0);m_T_j[3]=0; 
@@ -303,7 +302,16 @@ GLbody::~GLbody(){
     }
 }
 
-void GLbody::setPosture(double *i_angles, double *i_pos, double *i_rpy){
+void GLbody::setPosture(const double *i_angles){
+    for (unsigned int i=0; i<m_links.size(); i++){
+        int id = m_links[i]->jointId();
+        if (id >= 0){
+            m_links[i]->setQ(i_angles[id]);
+        }
+    }
+}
+
+void GLbody::setPosture(const double *i_angles, double *i_pos, double *i_rpy){
     double tform[16];
     Matrix33 R = rotFromRpy(i_rpy[0], i_rpy[1], i_rpy[2]);
     tform[ 0]=R(0,0);tform[ 1]=R(1,0);tform[ 2]=R(2,0);tform[ 3]=0;
@@ -311,12 +319,7 @@ void GLbody::setPosture(double *i_angles, double *i_pos, double *i_rpy){
     tform[ 8]=R(0,2);tform[ 9]=R(1,2);tform[10]=R(2,2);tform[11]=0;
     tform[12]=i_pos[0];tform[13]=i_pos[1];tform[14]=i_pos[2];tform[15]=1;
     m_root->setTransform(tform);
-    for (unsigned int i=0; i<m_links.size(); i++){
-        int id = m_links[i]->jointId();
-        if (id >= 0){
-            m_links[i]->setQ(i_angles[id]);
-        }
-    }
+    setPosture(i_angles);
 }
 
 void GLbody::setPosture(const dvector& i_q, const Vector3& i_p,
@@ -408,7 +411,7 @@ void GLscene::draw(){
                 m_index++;
             }
         }
-    } else if (m_isNewStateAdded){
+    } else if (m_isNewStateAdded && m_index == m_log.size()-2){
         // draw newest state
         m_index = m_log.size() - 1;
         m_isNewStateAdded = false;
@@ -489,6 +492,44 @@ void GLscene::draw(){
         glRasterPos2f(10, (m_msgs.size()-i)*15);
         drawString(m_msgs[i].c_str());
     }
+    showRobotState();
+    if (m_showSlider){
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glEnable(GL_BLEND);
+        glColor4f(0.0,0.0,0.0, 0.5);
+        glRectf(SLIDER_SIDE_MARGIN,10,m_width-SLIDER_SIDE_MARGIN,20);
+        if (m_log.size()>1){
+            int x = ((double)m_index)/(m_log.size()-1)*(m_width-20)+10;
+            glRectf(x-5,5,x+5,25);
+        }
+        glDisable(GL_BLEND);
+    }
+    glPopMatrix();
+    glEnable(GL_LIGHTING);
+
+    if(m_isRecording){
+        while(m_initT > m_log[m_index].time){
+            if (m_index+1 >= (int)m_log.size()){
+                m_isRecording = false;
+                break;
+            }else{
+                m_index++;
+            }
+        } 
+        char *dst = m_cvImage->imageData;
+        capture(dst);
+        cvWriteFrame(m_videoWriter, m_cvImage);
+        if (!m_isRecording){
+            cvReleaseVideoWriter(&m_videoWriter);
+            cvReleaseImage(&m_cvImage);
+        }
+        //printf("t:%6.3f, %4d\n", m_initT, m_index);
+        m_initT += 1.0/DEFAULT_FPS;
+    }
+}
+
+void GLscene::showRobotState()
+{
     if (m_showingRobotState){
         GLbody *body = NULL;
         BodyState *bstate = NULL;
@@ -507,7 +548,7 @@ void GLscene::draw(){
             GLlink *l = body->joint(i);
             if (l){
                 sprintf(buf, "%2d %15s %8.3f", i, l->name().c_str(),
-                        l->q()*180/M_PI);
+                        bstate->q[i]*180/M_PI);
                 glRasterPos2f(width, height);
                 height -= HEIGHT_STEP;
                 drawString2(buf);
@@ -563,39 +604,6 @@ void GLscene::draw(){
             glRectf(width,0,m_width,m_height);
         }
         glDisable(GL_BLEND);
-    }
-    if (m_showSlider){
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        glEnable(GL_BLEND);
-        glColor4f(0.0,0.0,0.0, 0.5);
-        glRectf(SLIDER_SIDE_MARGIN,10,m_width-SLIDER_SIDE_MARGIN,20);
-        if (m_log.size()>1){
-            int x = ((double)m_index)/(m_log.size()-1)*(m_width-20)+10;
-            glRectf(x-5,5,x+5,25);
-        }
-        glDisable(GL_BLEND);
-    }
-    glPopMatrix();
-    glEnable(GL_LIGHTING);
-
-    if(m_isRecording){
-        while(m_initT > m_log[m_index].time){
-            if (m_index+1 >= (int)m_log.size()){
-                m_isRecording = false;
-                break;
-            }else{
-                m_index++;
-            }
-        } 
-        char *dst = m_cvImage->imageData;
-        capture(dst);
-        cvWriteFrame(m_videoWriter, m_cvImage);
-        if (!m_isRecording){
-            cvReleaseVideoWriter(&m_videoWriter);
-            cvReleaseImage(&m_cvImage);
-        }
-        //printf("t:%6.3f, %4d\n", m_initT, m_index);
-        m_initT += 1.0/DEFAULT_FPS;
     }
 }
 

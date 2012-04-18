@@ -9,13 +9,18 @@ static int threadMain(void *arg)
     while(monitor->run());
 }
 
-Monitor::Monitor(CORBA::ORB_var orb, CosNaming::NamingContext_var cxt) :
+Monitor::Monitor(CORBA::ORB_var orb, const std::string &i_hostname,
+                 int i_port, int i_interval) :
     m_orb(orb),
-    m_naming(cxt),
     m_flagExit(false),
     m_rhCompName("RobotHardware0"),
-    m_shCompName("StateHolder0")
+    m_shCompName("StateHolder0"),
+    m_interval(i_interval)
 {
+    char buf[128];
+    sprintf(buf, "%s:%d", i_hostname.c_str(), i_port);
+    RTC::CorbaNaming naming(orb, buf);
+    m_naming = CosNaming::NamingContext::_duplicate(naming.getRootContext());
 }
 
 void Monitor::start()

@@ -50,7 +50,6 @@ public:
     void setParent(GLlink *i_parent);
     void addChild(GLlink *i_child);
     void setQ(double i_q);
-    double q() { return m_q; }
     void setTransform(double i_trans[16]);
     int jointId();
     const std::string& name() { return m_name; }
@@ -63,7 +62,6 @@ public:
 private:
     GLlink *m_parent;
     std::string m_name;
-    double m_q;
     std::vector<GLlink *> m_children;
     std::vector<GLcamera *> m_cameras;
     hrp::Vector3 m_axis;

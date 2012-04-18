@@ -8,7 +8,8 @@
 #include "Project.h"
 
 Project::Project() : 
-    m_timeStep(0.001), m_totalTime(1.0), m_gravity(9.8), m_isEuler(true), m_kinematicsOnly(false)
+    m_timeStep(0.001), m_totalTime(1.0), m_gravity(9.8), m_isEuler(true), m_kinematicsOnly(false),
+    m_robotHost("localhost"), m_robotPort(2809), m_interval(100)
 {
 }
 
@@ -211,6 +212,46 @@ bool Project::parse(const std::string& filename)
   /* Cleanup Xpath Data */
   xmlXPathFreeObject(xpathObj);
   xmlXPathFreeContext(xpathCtx);
+
+  {
+  /* Create xpath evaluation context */
+  xmlXPathContextPtr xpathCtx = xmlXPathNewContext(doc);
+  if ( xpathCtx == NULL ) {
+      std::cerr << "unable to create new XPath context" << std::endl;
+      xmlFreeDoc(doc);
+      return false;
+  }
+
+  xmlXPathObjectPtr xpathObj = xmlXPathEvalExpression(BAD_CAST "/grxui/mode/view", xpathCtx);
+  if ( xmlXPathNodeSetIsEmpty(xpathObj->nodesetval) ) {
+      std::cerr << "unable to find <mode>" << std::endl;
+  }
+
+  int size;
+  size = xpathObj->nodesetval->nodeNr;
+
+  for (int i = 0; i < size; i++ ) {
+      xmlNodePtr node = xpathObj->nodesetval->nodeTab[i];
+      //std::cerr << i << " class:" << xmlGetProp(node, (xmlChar *)"class") << std::endl;
+      if ( xmlStrEqual( xmlGetProp(node, (xmlChar *)"class"), (xmlChar *)"com.generalrobotix.ui.view.GrxRobotHardwareClientView")  ) {
+          xmlNodePtr cur_node = node->children;
+          while ( cur_node ) {
+              if ( cur_node->type == XML_ELEMENT_NODE ) {
+                  if ( xmlStrEqual(xmlGetProp(cur_node, (xmlChar *)"name"),(xmlChar *)"robotHost") ) {
+                      m_robotHost = (char *)(xmlGetProp(cur_node, (xmlChar *)"value"));
+                  }else if ( xmlStrEqual(xmlGetProp(cur_node, (xmlChar *)"name"),(xmlChar *)"robotHost") ) {
+                      m_robotPort = atoi((char *)(xmlGetProp(cur_node, (xmlChar *)"value")));
+                  }else if ( xmlStrEqual(xmlGetProp(cur_node, (xmlChar *)"name"),(xmlChar *)"interval") ) {
+                      m_interval = atoi((char *)(xmlGetProp(cur_node, (xmlChar *)"value")));
+                  }
+              }
+              cur_node = cur_node->next;
+          }
+      }
+  }
+  xmlXPathFreeObject(xpathObj);
+  xmlXPathFreeContext(xpathCtx);
+  }
 
   /* free the document */
   xmlFreeDoc(doc);

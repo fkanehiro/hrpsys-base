@@ -72,6 +72,9 @@ public:
     std::map<std::string, ModelItem>& models(){ return m_models; }
     std::vector<CollisionPairItem>& collisionPairs() { return m_collisionPairs; }
     RTSItem &RTS() { return m_rts; }
+    const std::string& robotHost() { return m_robotHost; }
+    int robotPort() { return m_robotPort; }
+    int interval() { return m_interval; }
 private:
     double m_timeStep;
     double m_totalTime;
@@ -81,5 +84,7 @@ private:
     std::map<std::string, ModelItem> m_models;
     std::vector<CollisionPairItem> m_collisionPairs;
     RTSItem m_rts;
+    std::string m_robotHost;
+    int m_robotPort, m_interval;
 };
 #endif

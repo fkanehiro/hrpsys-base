@@ -226,7 +226,6 @@ void GLlink::addChild(GLlink *i_child){
 }
 
 void GLlink::setQ(double i_q){
-    m_q = i_q;
     Matrix33 R;
     hrp::calcRodrigues(R, m_axis, i_q);
     m_T_j[ 0]=R(0,0);m_T_j[ 1]=R(1,0);m_T_j[ 2]=R(2,0);m_T_j[3]=0; 

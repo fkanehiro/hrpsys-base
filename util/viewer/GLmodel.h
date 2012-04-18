@@ -1,9 +1,12 @@
+#ifndef __GLMODEL_H__
+#define __GLMODEL_H__
+
 #include <hrpCorba/ModelLoader.hh>
 #include <hrpUtil/Eigen3d.h>
 #include <vector>
 #include <deque>
 #include <map>
-//Open CV headder
+//Open CV header
 #include <cv.h>
 #include <highgui.h>
 #ifdef __APPLE__
@@ -56,16 +59,12 @@ public:
     GLlink(const OpenHRP::LinkInfo &i_li, OpenHRP::BodyInfo_var i_binfo);
 
     void draw();
-
     void setParent(GLlink *i_parent);
-
     void addChild(GLlink *i_child);
-
     void setQ(double i_q);
-
     void setTransform(double i_trans[16]);
-
     int jointId();
+    const std::string& name() { return m_name; }
 
     GLcamera *findCamera(const char *i_name);
 
@@ -74,6 +73,7 @@ public:
 
 private:
     GLlink *m_parent;
+    std::string m_name;
     std::vector<GLlink *> m_children;
     std::vector<GLcamera *> m_cameras;
     hrp::Vector3 m_axis;
@@ -85,19 +85,19 @@ class GLbody
 {
 public:
     GLbody(OpenHRP::BodyInfo_var i_binfo);
-
     ~GLbody();
-
     void setPosture(double *i_angles, double *i_pos, double *i_rpy);
-
     void draw();
-
     GLcamera *findCamera(const char *i_name);
-
     GLlink *link(unsigned int i);
+    int numLinks() { return m_links.size(); }
+    GLlink *rootLink() { return m_root; }
+    GLlink *joint(unsigned int i) { return m_joints[i]; }
+    int numJoints() { return m_joints.size(); }
 private:
     GLlink *m_root;
     std::vector<GLlink *> m_links;
+    std::vector<GLlink *> m_joints;
 };
 
 class GLscene
@@ -128,12 +128,14 @@ public:
     void slower();
     void setScreenSize(int w, int h);
     void setMessages(const std::vector<std::string>& i_msgs) { m_msgs = i_msgs;}
+    void toggleRobotState() { m_showingRobotState = !m_showingRobotState; }
     void showSlider(bool flag) { m_showSlider = flag; }
 
     static GLscene *getInstance();
 private:
     GLscene();
     ~GLscene();
+    void showRobotState();
 
     static GLscene *m_scene;
     std::map<std::string, GLbody *> m_bodies; 
@@ -148,7 +150,7 @@ private:
     CvVideoWriter *m_videoWriter;
     IplImage *m_cvImage;
     std::vector<std::string> m_msgs; 
-    bool m_showSlider;
+    bool m_showingRobotState, m_showSlider;
     sem_t m_sem;
     std::string m_newBodyName;
     OpenHRP::BodyInfo_var m_newBodyInfo;
@@ -157,3 +159,5 @@ private:
 
 void mulTrans(const double i_m1[16], const double i_m2[16], double o_m[16]);
 void printMatrix(double mat[16]);
+
+#endif

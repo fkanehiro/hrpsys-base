@@ -78,16 +78,16 @@ int main(int argc, char* argv[])
     }
 
     //================= monitor ======================
-    Monitor monitor(orb, namingContext);
-    //monitor.start();
+    Monitor monitor(orb, prj.robotHost(), prj.robotPort(), prj.interval());
+    monitor.start();
 
     int cnt=0;
     while(1) {
         if (!window.processEvents()) {
-            //monitor.stop();
+            monitor.stop();
             break;
         }
-        monitor.run();
+        //monitor.run();
         window.draw();
         window.swapBuffers();
     }

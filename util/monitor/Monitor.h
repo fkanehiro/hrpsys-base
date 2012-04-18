@@ -6,7 +6,8 @@
 class Monitor
 {
 public:
-    Monitor(CORBA::ORB_var orb, CosNaming::NamingContext_var cxt);
+    Monitor(CORBA::ORB_var orb, const std::string &i_hostname,
+            int i_port, int i_interval);
     void start();
     void stop();
     bool run();
@@ -20,4 +21,5 @@ private:
     OpenHRP::RobotHardwareService_var m_rhService;
     OpenHRP::StateHolderService_var   m_shService;
     TimedRobotState m_rstate;
+    int m_interval;
 };

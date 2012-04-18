@@ -166,6 +166,7 @@ GLlink::GLlink(const LinkInfo &i_li, BodyInfo_var i_binfo) : m_parent(NULL), m_j
     Vector3 axis;
     Matrix33 R;
     
+    m_name = i_li.name;
     for (int i=0; i<3; i++){
         m_axis[i] = i_li.jointAxis[i];
         axis[i] = i_li.rotation[i];
@@ -279,6 +280,15 @@ GLbody::GLbody(BodyInfo_var i_binfo){
         double T[16];
         m_links[i]->computeAbsTransform(T);
         m_links[i]->setAbsTransform(T);
+    }
+
+    for (unsigned int i=0; i<m_links.size(); i++){
+        if (m_links[i]->jointId() >=0){
+            if (m_links[i]->jointId() >= m_joints.size()) {
+                m_joints.resize(m_links[i]->jointId()+1);
+            }
+            m_joints[m_links[i]->jointId()] = m_links[i];
+        }
     }
 }
 

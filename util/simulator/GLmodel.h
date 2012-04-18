@@ -4,8 +4,8 @@
 #include <hrpCorba/ModelLoader.hh>
 #include <hrpUtil/Eigen3d.h>
 #include <vector>
-#include <map>
 #include <deque>
+#include <map>
 //Open CV header
 #include <cv.h>
 #include <highgui.h>
@@ -50,7 +50,6 @@ public:
     void setParent(GLlink *i_parent);
     void addChild(GLlink *i_child);
     void setQ(double i_q);
-    double q() { return m_q; }
     void setTransform(double i_trans[16]);
     int jointId();
     const std::string& name() { return m_name; }
@@ -63,7 +62,6 @@ public:
 private:
     GLlink *m_parent;
     std::string m_name;
-    double m_q;
     std::vector<GLlink *> m_children;
     std::vector<GLcamera *> m_cameras;
     hrp::Vector3 m_axis;
@@ -76,7 +74,8 @@ class GLbody
 public:
     GLbody(OpenHRP::BodyInfo_var i_binfo);
     ~GLbody();
-    void setPosture(double *i_angles, double *i_pos, double *i_rpy);
+    void setPosture(const double *i_angles);
+    void setPosture(const double *i_angles, double *i_pos, double *i_rpy);
     void setPosture(const hrp::dvector& i_q, const hrp::Vector3& i_p,
                     const hrp::Matrix33& i_R);
     void draw();
@@ -126,6 +125,7 @@ public:
 private:
     GLscene();
     ~GLscene();
+    void showRobotState();
 
     static GLscene *m_scene;
     std::map<std::string, GLbody *> m_nameBodyMap; 
