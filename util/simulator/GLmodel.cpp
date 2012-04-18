@@ -389,6 +389,11 @@ void drawString2(const char *str)
 }
 
 void GLscene::draw(){
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    double fps = 1.0/((tv.tv_sec - m_lastDraw.tv_sec)+(tv.tv_usec - m_lastDraw.tv_usec)/1e6);
+    m_lastDraw = tv;
+
     if (m_isPlaying){
         // compute time to draw
         struct timeval tv;
@@ -476,6 +481,9 @@ void GLscene::draw(){
     drawString(buf);
     glRasterPos2f(10, m_height-30);
     sprintf(buf, "Playback x%6.3f", m_playRatio);
+    drawString(buf);
+    glRasterPos2f(10, m_height-45);
+    sprintf(buf, "FPS %2.0f", fps);
     drawString(buf);
     for (unsigned int i=0; i<m_msgs.size(); i++){
         glRasterPos2f(10, (m_msgs.size()-i)*15);

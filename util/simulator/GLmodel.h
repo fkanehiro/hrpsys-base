@@ -130,7 +130,7 @@ private:
     bool m_isPlaying, m_isNewStateAdded, m_isRecording;
     int m_index;
     double m_initT;
-    struct timeval m_startT;
+    struct timeval m_startT, m_lastDraw;
     double m_playRatio;
     int m_width, m_height;
     CvVideoWriter *m_videoWriter;

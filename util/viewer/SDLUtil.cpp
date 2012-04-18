@@ -36,6 +36,7 @@ bool SDLwindow::init()
     }
 
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER,1);
+    SDL_GL_SetAttribute(SDL_GL_SWAP_CONTROL,1);
     SDL_Surface *screen;
     screen=SDL_SetVideoMode(width,height,32,SDL_HWSURFACE | SDL_GL_DOUBLEBUFFER | SDL_OPENGL | SDL_RESIZABLE);
     if(!screen) {
