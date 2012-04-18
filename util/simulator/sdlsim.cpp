@@ -14,7 +14,7 @@
 #include "SDLUtil.h"
 #include "GLmodel.h"
 #include "util/Project.h"
-#include "OpenRTMUtil.h"
+#include "util/OpenRTMUtil.h"
 #include "BodyRTC.h"
 
 using namespace std;

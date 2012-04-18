@@ -4,7 +4,7 @@
 #include <hrpModel/ConstraintForceSolver.h>
 #include <hrpModel/ColdetLinkPair.h>
 #include "util/Project.h"
-#include "OpenRTMUtil.h"
+#include "util/OpenRTMUtil.h"
 
 typedef boost::function2<hrp::BodyPtr, const std::string&, const ModelItem&> BodyFactory;
 

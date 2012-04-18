@@ -3,7 +3,6 @@
 #include <rtm/RTObject.h>
 #include <hrpModel/Link.h>
 #include "ProjectUtil.h"
-#include "OpenRTMUtil.h"
 
 void initWorld(Project& prj, BodyFactory &factory, 
                hrp::World<hrp::ConstraintForceSolver>& world,

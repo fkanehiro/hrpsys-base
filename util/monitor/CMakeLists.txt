@@ -9,8 +9,6 @@ generate_stub_skel(StateHolderService "OpenHRP")
 
 add_executable(hrpsys-monitor 
   GLmodel.cpp 
-  OpenRTMUtil.cpp
-  ProjectUtil.cpp
   SDLUtil.cpp
   Monitor.cpp
   main.cpp

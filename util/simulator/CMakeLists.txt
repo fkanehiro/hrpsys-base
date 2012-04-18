@@ -11,7 +11,6 @@ add_executable(sdlsim
   BodyRTC.cpp
   BodyState.cpp
   SceneState.cpp
-  OpenRTMUtil.cpp
   ProjectUtil.cpp
   SDLUtil.cpp
   Simulator.cpp

@@ -1,6 +1,6 @@
 #include <rtm/CorbaNaming.h>
 #include "Monitor.h"
-#include "OpenRTMUtil.h"
+#include "util/OpenRTMUtil.h"
 #include "GLmodel.h"
 
 static int threadMain(void *arg)

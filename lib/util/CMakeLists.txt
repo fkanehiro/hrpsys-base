@@ -1,9 +1,11 @@
 set(sources
   Project.cpp
+  OpenRTMUtil.cpp
   )
 
 set(headers
   Project.h
+  OpenRTMUtil.h
   )
 
 include_directories(${LIBXML2_INCLUDE_DIR})
