@@ -106,7 +106,7 @@ bool Monitor::run()
         m_rstate.time = tv.tv_sec + tv.tv_usec/1e6; 
         GLscene::getInstance()->addState(m_rstate);
     }
-    usleep(1000*100);
+    usleep(1000*m_interval);
 
     return !m_flagExit;
 }
