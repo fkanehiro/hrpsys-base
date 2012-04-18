@@ -466,10 +466,10 @@ void GLscene::draw(){
         (*it)->draw();
     }
 
-    // floor grids
     glDisable(GL_LIGHTING);
     glBegin(GL_LINES);
 
+    // floor grids
     glColor3f(1,1,1);
     double s[3], e[3];
     s[2] = e[2] = 0;
@@ -515,8 +515,18 @@ void GLscene::draw(){
         drawString(m_msgs[i].c_str());
     }
     showRobotState();
+    if (m_showSlider){
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glEnable(GL_BLEND);
+        glColor4f(0.0,0.0,0.0, 0.5);
+        glRectf(SLIDER_SIDE_MARGIN,10,m_width-SLIDER_SIDE_MARGIN,20);
+        if (m_log.size()>1){
+            int x = ((double)m_index)/(m_log.size()-1)*(m_width-20)+10;
+            glRectf(x-5,5,x+5,25);
+        }
+        glDisable(GL_BLEND);
+    }
     glPopMatrix();
-
     glEnable(GL_LIGHTING);
 
     if(m_isRecording){
@@ -647,7 +657,11 @@ void GLscene::showRobotState()
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glEnable(GL_BLEND);
         glColor4f(0.0,0.0,0.0, 0.5);
-        glRectf(width,0,m_width,m_height);
+        if (m_showSlider){
+            glRectf(width,SLIDER_AREA_HEIGHT,m_width,m_height);
+        }else{
+            glRectf(width,0,m_width,m_height);
+        }
         glDisable(GL_BLEND);
     }else{
         // !m_showingRobotState
@@ -859,6 +873,13 @@ void GLscene::tail()
 {
     m_index = m_log.size()-1;
     if (m_index < 0) m_index = 0;
+}
+
+void GLscene::move(double ratio)
+{
+    if (m_log.size()){ 
+        m_index = (m_log.size()-1)*ratio;
+    }
 }
 
 bool GLscene::isPlaying()

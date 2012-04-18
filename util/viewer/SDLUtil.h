@@ -9,6 +9,7 @@ public:
     void draw();
     void swapBuffers();
 private:
+    double sliderRatio(double x);
     GLscene *scene;
     int width, height;
     double aspect;

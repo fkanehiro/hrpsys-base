@@ -20,6 +20,9 @@ typedef struct{
 #include <semaphore.h>
 #endif
 
+#define SLIDER_AREA_HEIGHT 30
+#define SLIDER_SIDE_MARGIN 10
+
 class GLlink;
 
 class GLcamera
@@ -117,6 +120,7 @@ public:
     void next(int delta=1);
     void head();
     void tail();
+    void move(double ratio);
     bool isNewStateAdded();
     bool isPlaying();
     bool isRecording();
@@ -124,6 +128,7 @@ public:
     void slower();
     void setScreenSize(int w, int h);
     void setMessages(const std::vector<std::string>& i_msgs) { m_msgs = i_msgs;}
+    void showSlider(bool flag) { m_showSlider = flag; }
 
     static GLscene *getInstance();
 private:
@@ -143,6 +148,7 @@ private:
     CvVideoWriter *m_videoWriter;
     IplImage *m_cvImage;
     std::vector<std::string> m_msgs; 
+    bool m_showSlider;
     sem_t m_sem;
     std::string m_newBodyName;
     OpenHRP::BodyInfo_var m_newBodyInfo;

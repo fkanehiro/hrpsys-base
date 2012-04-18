@@ -491,6 +491,17 @@ void GLscene::draw(){
         glRasterPos2f(10, (m_msgs.size()-i)*15);
         drawString(m_msgs[i].c_str());
     }
+    if (m_showSlider){
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glEnable(GL_BLEND);
+        glColor4f(0.0,0.0,0.0, 0.5);
+        glRectf(SLIDER_SIDE_MARGIN,10,m_width-SLIDER_SIDE_MARGIN,20);
+        if (m_log.size()>1){
+            int x = ((double)m_index)/(m_log.size()-1)*(m_width-20)+10;
+            glRectf(x-5,5,x+5,25);
+        }
+        glDisable(GL_BLEND);
+    }
     glPopMatrix();
 
     glEnable(GL_LIGHTING);
@@ -708,6 +719,13 @@ void GLscene::tail()
 {
     m_index = m_log.size()-1;
     if (m_index < 0) m_index = 0;
+}
+
+void GLscene::move(double ratio)
+{
+    if (m_log.size()){ 
+        m_index = (m_log.size()-1)*ratio;
+    }
 }
 
 bool GLscene::isPlaying()

@@ -50,6 +50,14 @@ bool SDLwindow::init()
     return true;
 }
 
+double SDLwindow::sliderRatio(double x)
+{
+    double ratio = (x - SLIDER_SIDE_MARGIN)/(width - SLIDER_SIDE_MARGIN*2);
+    if (ratio < 0.0) ratio = 0.0;
+    if (ratio > 1.0) ratio = 1.0;
+    return ratio;
+}
+
 bool SDLwindow::processEvents()
 {
     SDL_Event event;
@@ -128,6 +136,9 @@ bool SDLwindow::processEvents()
         case SDL_MOUSEBUTTONDOWN:
             switch(event.button.button){
             case SDL_BUTTON_LEFT:
+                if (event.button.y > height-SLIDER_AREA_HEIGHT){
+                    scene->move(sliderRatio(event.button.x));
+                }
                 break;
             case SDL_BUTTON_MIDDLE:
                 break;
@@ -164,16 +175,21 @@ bool SDLwindow::processEvents()
                     radius *= (1+ 0.1*dy);
                     if (radius < 0.1) radius = 0.1; 
                 }else{
-                    pan  -= 0.05*dx;
-                    tilt += 0.05*dy;
-                    if (tilt >  M_PI/2) tilt =  M_PI/2;
-                    if (tilt < -M_PI/2) tilt = -M_PI/2;
+                    if (event.motion.y > height-SLIDER_AREA_HEIGHT){
+                        scene->move(sliderRatio(event.motion.x));
+                    }else{
+                        pan  -= 0.05*dx;
+                        tilt += 0.05*dy;
+                        if (tilt >  M_PI/2) tilt =  M_PI/2;
+                        if (tilt < -M_PI/2) tilt = -M_PI/2;
+                    }
                 }
             }else if (event.motion.state&SDL_BUTTON(SDL_BUTTON_RIGHT)){
                 xCenter += sin(pan)*dx*0.01;
                 yCenter -= cos(pan)*dx*0.01;
                 zCenter += dy*0.01;
             }
+            scene->showSlider(event.motion.y > height-SLIDER_AREA_HEIGHT);
         }
         break;
         case SDL_VIDEORESIZE:

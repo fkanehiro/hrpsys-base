@@ -11,6 +11,9 @@
 #include <highgui.h>
 #include "SceneState.h"
 
+#define SLIDER_AREA_HEIGHT 30
+#define SLIDER_SIDE_MARGIN 10
+
 class GLlink;
 
 class GLcamera
@@ -108,6 +111,7 @@ public:
     void next(int delta=1);
     void head();
     void tail();
+    void move(double ratio);
     bool isNewStateAdded();
     bool isPlaying();
     bool isRecording();
@@ -116,6 +120,7 @@ public:
     void setScreenSize(int w, int h);
     void setMessages(const std::vector<std::string>& i_msgs) { m_msgs = i_msgs;}
     void toggleRobotState() { m_showingRobotState = !m_showingRobotState; }
+    void showSlider(bool flag) { m_showSlider = flag; }
 
     static GLscene *getInstance();
 private:
@@ -136,7 +141,7 @@ private:
     CvVideoWriter *m_videoWriter;
     IplImage *m_cvImage;
     std::vector<std::string> m_msgs; 
-    bool m_showingRobotState;
+    bool m_showingRobotState, m_showSlider;
 };
 
 void mulTrans(const double i_m1[16], const double i_m2[16], double o_m[16]);
