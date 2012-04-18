@@ -21,7 +21,7 @@ SDLwindow::SDLwindow(GLscene* i_scene) :
 {
     helpcommand.push_back("h: help");
     instructions.push_back("q: quit");
-    instructions.push_back("p: play/stop");
+    instructions.push_back("SPACE: play/stop");
     instructions.push_back("f: faster");
     instructions.push_back("s: slower");
     instructions.push_back("r: record movie");
@@ -79,7 +79,7 @@ bool SDLwindow::processEvents()
                 break;
             case SDLK_q:
                 return false;
-            case SDLK_p:
+            case SDLK_SPACE:
                 scene->play(); 
                 break;
             case SDLK_f:
