@@ -522,7 +522,7 @@ void GLscene::draw(){
             cvReleaseImage(&m_cvImage);
         }
         //printf("t:%6.3f, %4d\n", m_initT, m_index);
-        m_initT += 1.0/DEFAULT_FPS;
+        m_initT += 1.0/DEFAULT_FPS*m_playRatio;
     }
 }
 
