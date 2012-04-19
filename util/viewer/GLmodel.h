@@ -136,6 +136,7 @@ private:
     GLscene();
     ~GLscene();
     void showRobotState();
+    void setIndex(int i);
 
     static GLscene *m_scene;
     std::map<std::string, GLbody *> m_bodies; 
@@ -150,7 +151,7 @@ private:
     CvVideoWriter *m_videoWriter;
     IplImage *m_cvImage;
     std::vector<std::string> m_msgs; 
-    bool m_showingRobotState, m_showSlider;
+    bool m_showingRobotState, m_showSlider, m_atLast;
     sem_t m_sem;
     std::string m_newBodyName;
     OpenHRP::BodyInfo_var m_newBodyInfo;

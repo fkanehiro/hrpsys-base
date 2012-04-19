@@ -126,6 +126,7 @@ private:
     GLscene();
     ~GLscene();
     void showRobotState();
+    void setIndex(int i);
 
     static GLscene *m_scene;
     std::map<std::string, GLbody *> m_nameBodyMap; 
@@ -141,7 +142,7 @@ private:
     CvVideoWriter *m_videoWriter;
     IplImage *m_cvImage;
     std::vector<std::string> m_msgs; 
-    bool m_showingRobotState, m_showSlider;
+    bool m_showingRobotState, m_showSlider, m_atLast;
 };
 
 void mulTrans(const double i_m1[16], const double i_m2[16], double o_m[16]);

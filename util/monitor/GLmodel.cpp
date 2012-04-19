@@ -1,12 +1,12 @@
 #include <cstdio>
 #include <iostream>
 #include <fstream>
-#include <sys/time.h>
 #ifdef __APPLE__
 #include <GLUT/glut.h>
 #else
 #include <GL/glut.h>
 #endif
+#include <sys/time.h>
 #include "GLmodel.h"
 
 using namespace OpenHRP;
@@ -441,16 +441,15 @@ void GLscene::draw(){
         double drawT = m_initT + ((tv.tv_sec - m_startT.tv_sec) + (tv.tv_usec - m_startT.tv_usec)*1e-6)*m_playRatio;
         //
         while(drawT > m_log[m_index].time){
-            if (m_index+1 >= (int)m_log.size()){
+            setIndex(m_index+1);
+            if (m_atLast) {
                 m_isPlaying = false;
                 break;
-            }else{
-                m_index++;
             }
         }
-    } else if (m_isNewStateAdded && m_index == m_log.size()-2){
+    } else if (m_isNewStateAdded && m_atLast){
         // draw newest state
-        m_index = m_log.size() - 1;
+        setIndex(m_log.size() - 1);
         m_isNewStateAdded = false;
     }
     
@@ -530,11 +529,10 @@ void GLscene::draw(){
 
     if(m_isRecording){
         while(m_initT > m_log[m_index].time){
-            if (m_index+1 >= (int)m_log.size()){
+            setIndex(m_index+1);
+            if (m_atLast) {
                 m_isRecording = false;
                 break;
-            }else{
-                m_index++;
             }
         } 
         char *dst = m_cvImage->imageData;
@@ -715,7 +713,7 @@ GLscene::GLscene()
       m_isNewStateAdded(false), 
       m_isRecording(false), 
       m_index(-1), m_playRatio(1.0), m_width(DEFAULT_W), m_height(DEFAULT_H),
-      m_showingRobotState(false)
+      m_showingRobotState(false), m_showSlider(false), m_atLast(true)
 {
     m_default_camera = new GLcamera(DEFAULT_W, DEFAULT_H, 1.0, 100.0, 40*M_PI/180);
     double T[] = {0,1,0,0,
@@ -822,9 +820,7 @@ void GLscene::play()
 
     if (!m_isPlaying){
         m_isPlaying = true;
-        if (m_index+1 == (int)m_log.size()){
-            m_index = 0;
-        }
+        if (m_atLast) setIndex(0);
         m_initT = m_log[m_index].time;
         gettimeofday(&m_startT, NULL);
     }else{
@@ -836,7 +832,7 @@ void GLscene::record()
 {
     if (m_log.size() == 0) return;
 
-    m_index = 0;
+    setIndex(0);
     m_videoWriter = cvCreateVideoWriter(
         "olv.avi",
         CV_FOURCC('D','I','V','X'),
@@ -851,34 +847,39 @@ void GLscene::record()
 
 void GLscene::prev(int delta)
 {
-    if (!m_log.size()) return;
-
-    m_index -= delta;
-    if (m_index < 0) m_index = 0;
+    setIndex(m_index - delta);
 }
 
 void GLscene::next(int delta)
 {
-    m_index += delta;
-    if (m_index >= (int)m_log.size()) m_index = m_log.size()-1;
+    setIndex(m_index+delta);
 }
 
 void GLscene::head()
 {
-    m_index = 0;
+    setIndex(0);
 }
 
 void GLscene::tail()
 {
-    m_index = m_log.size()-1;
-    if (m_index < 0) m_index = 0;
+    if (!m_log.empty()) setIndex(m_log.size()-1);
 }
 
 void GLscene::move(double ratio)
 {
     if (m_log.size()){ 
-        m_index = (m_log.size()-1)*ratio;
+        setIndex(ratio*(m_log.size()-1));
     }
+}
+
+void GLscene::setIndex(int i)
+{
+    if (m_log.empty()) return;
+
+    m_index = i;
+    if (m_index < 0) m_index = 0;
+    if (m_index >= m_log.size()) m_index = m_log.size()-1;
+    m_atLast = m_index == m_log.size()-1; 
 }
 
 bool GLscene::isPlaying()
