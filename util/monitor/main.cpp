@@ -6,9 +6,10 @@
 #else
 #include <GL/glut.h>
 #endif
+#include "util/Project.h"
+#include "util/GLbody.h"
 #include "SDLUtil.h"
 #include "GLmodel.h"
-#include "util/Project.h"
 #include "Monitor.h"
 
 using namespace std;

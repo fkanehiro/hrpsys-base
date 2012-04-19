@@ -4,6 +4,8 @@
 #else
 #include <GL/glut.h>
 #endif
+#include "util/GLlink.h"
+#include "util/GLbody.h"
 #include "OnlineViewer_impl.h"
 #include "GLmodel.h"
 #include "SDLUtil.h"
@@ -55,6 +57,8 @@ int main(int argc, char *argv[])
         GLscene *scene = NULL;
         glutInit(&argc, argv);
         scene = GLscene::getInstance();
+        GLlink::useAbsTransformToDraw();
+        GLbody::useAbsTransformToDraw();
 
         SDLwindow window(scene);
         window.init();

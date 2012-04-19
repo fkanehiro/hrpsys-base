@@ -14,82 +14,8 @@
 #define SLIDER_AREA_HEIGHT 30
 #define SLIDER_SIDE_MARGIN 10
 
-class GLlink;
-
-class GLcamera
-{
-public:
-    GLcamera(const OpenHRP::SensorInfo &i_si, OpenHRP::BodyInfo_var i_binfo,
-             GLlink *i_link);
-    GLcamera(int i_width, int i_height, double i_near, double i_far, double i_fovy);
-    const std::string& name() const;
-    void setView();
-    void computeAbsTransform(double o_trans[16]);
-    void setTransform(double i_trans[16]);
-    void getAbsTransform(double o_trans[16]);
-    double near() { return m_near; }
-    double far() { return m_far; }
-    double fovy() { return m_fovy; }
-    int width() { return m_width; }
-    int height() { return m_height; }
-    void getDepthOfLine(int i_row, float *o_depth);
-private:
-    std::string m_name;
-    double m_trans[16], m_absTrans[16];
-    GLlink *m_link;
-    double m_near, m_far, m_fovy;
-    int m_width, m_height;
-};
-
-class GLlink
-{
-public:
-    GLlink(const OpenHRP::LinkInfo &i_li, OpenHRP::BodyInfo_var i_binfo);
-
-    void draw();
-    void setParent(GLlink *i_parent);
-    void addChild(GLlink *i_child);
-    void setQ(double i_q);
-    void setTransform(double i_trans[16]);
-    int jointId();
-    const std::string& name() { return m_name; }
-
-    GLcamera *findCamera(const char *i_name);
-
-    void computeAbsTransform(double o_trans[16]);
-    void setAbsTransform(double o_trans[16]);
-
-private:
-    GLlink *m_parent;
-    std::string m_name;
-    std::vector<GLlink *> m_children;
-    std::vector<GLcamera *> m_cameras;
-    hrp::Vector3 m_axis;
-    double m_trans[16], m_T_j[16], m_absTrans[16];
-    int m_list, m_jointId;
-};
-
-class GLbody
-{
-public:
-    GLbody(OpenHRP::BodyInfo_var i_binfo);
-    ~GLbody();
-    void setPosture(const double *i_angles);
-    void setPosture(const double *i_angles, double *i_pos, double *i_rpy);
-    void setPosture(const hrp::dvector& i_q, const hrp::Vector3& i_p,
-                    const hrp::Matrix33& i_R);
-    void draw();
-    GLcamera *findCamera(const char *i_name);
-    GLlink *link(unsigned int i);
-    int numLinks() { return m_links.size(); }
-    GLlink *rootLink() { return m_root; }
-    GLlink *joint(unsigned int i) { return m_joints[i]; }
-    int numJoints() { return m_joints.size(); }
-private:
-    GLlink *m_root;
-    std::vector<GLlink *> m_links;
-    std::vector<GLlink *> m_joints;
-};
+class GLcamera;
+class GLbody;
 
 class GLscene
 {

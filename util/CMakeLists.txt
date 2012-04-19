@@ -2,7 +2,6 @@ add_subdirectory(ProjectGenerator)
 
 include(FindPkgConfig)
 pkg_check_modules(OpenCV opencv)
-find_package(OpenGL)
 find_package(GLUT)
 if (OpenCV_FOUND AND OPENGL_FOUND AND GLUT_FOUND AND SDL_FOUND)
   add_subdirectory(simulator)

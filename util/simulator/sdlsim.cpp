@@ -10,11 +10,12 @@
 #include <GL/glut.h>
 #endif
 #include <SDL_thread.h>
+#include "util/GLbody.h"
+#include "util/Project.h"
+#include "util/OpenRTMUtil.h"
 #include "Simulator.h"
 #include "SDLUtil.h"
 #include "GLmodel.h"
-#include "util/Project.h"
-#include "util/OpenRTMUtil.h"
 #include "BodyRTC.h"
 
 using namespace std;
