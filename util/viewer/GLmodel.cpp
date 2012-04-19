@@ -376,7 +376,7 @@ void GLscene::addBody(const std::string &i_name, BodyInfo_var i_binfo){
     m_newBodyName = i_name;
     m_newBodyInfo = i_binfo;
     m_isNewBody = true;
-    sem_wait(&m_sem);
+    SDL_SemWait(m_sem);
 }
 
 GLbody *GLscene::findBody(const std::string &i_name)
@@ -401,7 +401,7 @@ void GLscene::draw(){
         GLbody *body = new GLbody(m_newBodyInfo);
         addBody(m_newBodyName, body);
         m_isNewBody = false;
-        sem_post(&m_sem);
+        SDL_SemPost(m_sem);
     }
 
     if (m_isPlaying){
@@ -581,6 +581,7 @@ GLscene::GLscene()
 
 GLscene::~GLscene()
 {
+    SDL_DestroySemaphore(m_sem);
     delete m_default_camera;
 }
 
@@ -609,7 +610,7 @@ void GLscene::init()
     glLightfv(GL_LIGHT0, GL_POSITION, light0pos);
     glLightfv(GL_LIGHT1, GL_POSITION, light1pos);
 
-    sem_init(&m_sem, 0, 0);
+    m_sem = SDL_CreateSemaphore(0);
 }
 
 void GLscene::save(const char *i_fname)

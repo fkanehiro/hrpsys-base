@@ -11,7 +11,12 @@ static int threadMain(void *arg)
 ThreadedObject::ThreadedObject() : 
     m_thread(NULL), m_isPausing(false), m_isRunning(false)
 {
-    sem_init(&m_sem, 0, 0);
+    m_sem = SDL_CreateSemaphore(0);
+}
+
+ThreadedObject::~ThreadedObject()
+{
+    SDL_DestroySemaphore(m_sem);
 }
 
 void ThreadedObject::pause(){
@@ -20,7 +25,7 @@ void ThreadedObject::pause(){
 
 void ThreadedObject::resume(){
     m_isPausing = false;
-    sem_post(&m_sem);
+    SDL_SemPost(m_sem);
 }
 
 bool ThreadedObject::isPausing(){
@@ -33,7 +38,7 @@ bool ThreadedObject::isRunning(){
 
 bool ThreadedObject::oneStep(){
     if (m_isPausing){
-        sem_wait(&m_sem); 
+        SDL_SemWait(m_sem); 
     }
     return true;
 }

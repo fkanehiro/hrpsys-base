@@ -9,7 +9,7 @@
 //Open CV header
 #include <cv.h>
 #include <highgui.h>
-#include "util/semaphore.h"
+#include <SDL/SDL_thread.h>
 
 #define SLIDER_AREA_HEIGHT 30
 #define SLIDER_SIDE_MARGIN 10
@@ -140,7 +140,7 @@ private:
     IplImage *m_cvImage;
     std::vector<std::string> m_msgs; 
     bool m_showingRobotState, m_showSlider, m_atLast;
-    sem_t m_sem;
+    SDL_sem *m_sem;
     std::string m_newBodyName;
     OpenHRP::BodyInfo_var m_newBodyInfo;
     bool m_isNewBody;

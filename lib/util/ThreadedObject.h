@@ -2,12 +2,12 @@
 #define __THREADED_OBJECT__
 
 #include <SDL/SDL_thread.h>
-#include "semaphore.h"
 
 class ThreadedObject
 {
 public:
     ThreadedObject();
+    ~ThreadedObject();
     void start();
     void stop();
     void pause();
@@ -18,7 +18,7 @@ public:
 private:
     bool m_isPausing, m_isRunning;
     SDL_Thread *m_thread;
-    sem_t m_sem;
+    SDL_sem *m_sem;
 };
 
 #endif

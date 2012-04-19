@@ -7,7 +7,6 @@ set(sources
 set(headers
   Project.h
   OpenRTMUtil.h
-  semaphore.h
   ThreadedObject.h
   )
 
