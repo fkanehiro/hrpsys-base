@@ -2,6 +2,7 @@
 #define __HRPSYS_UTIL_SEMAPHORE_H__
 
 #ifdef __APPLE__
+#include <pthread.h>
 typedef struct{
     pthread_cond_t cond;
     pthread_mutex_t mutex;
