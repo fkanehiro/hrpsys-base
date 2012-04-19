@@ -50,12 +50,6 @@ hrp::BodyPtr createBody(const std::string& name, const ModelItem& mitem,
     }
 }
 
-int threadMain(void *arg)
-{
-    Simulator *simulator = (Simulator *)arg;
-    while(simulator->oneStep());
-}
-
 int main(int argc, char* argv[]) 
 {
     bool display = true;
@@ -117,18 +111,16 @@ int main(int argc, char* argv[])
               << prj.totalTime() << std::endl;
 
     if (display){
-        SDL_Thread *thread;
-        thread = SDL_CreateThread(threadMain, (void *)&simulator);
+        simulator.start();
         while(1) {
             //std::cerr << "t = " << world.currentTime() << std::endl;
             if (!window.processEvents()) break;
             window.draw();
             window.swapBuffers();
         }
-        simulator.stopSimulation();
-        SDL_WaitThread(thread, NULL);
+        simulator.stop();
     }else{
-        threadMain(&simulator);
+        while (simulator.oneStep());
     }
 
     manager->shutdown();

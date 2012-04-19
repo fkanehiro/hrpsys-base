@@ -2,6 +2,16 @@
 #include "GLmodel.h"
 #include "BodyRTC.h"
 
+static int threadMain(void *arg)
+{
+    Simulator *simulator = (Simulator *)arg;
+    while(simulator->oneStep());
+}
+
+Simulator::Simulator() : m_thread(NULL)
+{
+}
+
 void Simulator::init(Project &prj, BodyFactory &factory, GLscene *i_scene){
     initWorld(prj, factory, world, pairs);
     initRTS(prj, receivers);
@@ -111,9 +121,17 @@ bool Simulator::oneStep(){
     }
 }
 
-void Simulator::stopSimulation()
+void Simulator::start()
+{
+    if (m_thread) return;
+    m_thread = SDL_CreateThread(threadMain, (void *)this);
+}
+
+void Simulator::stop()
 {
     totalTime = world.currentTime();
+    SDL_WaitThread(m_thread, NULL);
+    m_thread = NULL;
 }
 
 
