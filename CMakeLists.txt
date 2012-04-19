@@ -90,6 +90,7 @@ endif()
 include(CPack)
 
 find_package(LibXml2 REQUIRED)
+find_package(SDL REQUIRED)
 
 set(idl_flags -bcxx -Wbuse_quotes -Wbh=.hh -Wbs=Sk.cpp -Wba -Wbd=DynSk.cpp -I${OPENRTM_IDL_DIR})
 
