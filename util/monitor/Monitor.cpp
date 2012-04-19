@@ -3,16 +3,9 @@
 #include "util/OpenRTMUtil.h"
 #include "GLmodel.h"
 
-static int threadMain(void *arg)
-{
-    Monitor *monitor = (Monitor *)arg;
-    while(monitor->run());
-}
-
 Monitor::Monitor(CORBA::ORB_var orb, const std::string &i_hostname,
                  int i_port, int i_interval) :
     m_orb(orb),
-    m_flagExit(false),
     m_rhCompName("RobotHardware0"),
     m_shCompName("StateHolder0"),
     m_interval(i_interval)
@@ -23,19 +16,10 @@ Monitor::Monitor(CORBA::ORB_var orb, const std::string &i_hostname,
     m_naming = CosNaming::NamingContext::_duplicate(naming.getRootContext());
 }
 
-void Monitor::start()
+bool Monitor::oneStep()
 {
-    m_thread = SDL_CreateThread(threadMain, (void *)this);
-}
+    ThreadedObject::oneStep();
 
-void Monitor::stop()
-{
-    m_flagExit = true;
-    SDL_WaitThread(m_thread, NULL);
-}
-
-bool Monitor::run()
-{
     // RobotHardwareService
     if (CORBA::is_nil(m_rhService)){
         try{
@@ -108,7 +92,7 @@ bool Monitor::run()
     }
     usleep(1000*m_interval);
 
-    return !m_flagExit;
+    return true;
 }
 
 bool Monitor::isConnected()

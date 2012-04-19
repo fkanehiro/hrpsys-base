@@ -84,11 +84,13 @@ int main(int argc, char* argv[])
     ModelLoader_var modelloader = getModelLoader(CosNaming::NamingContext::_duplicate(naming.getRootContext()));
     //==================== Viewer setup ===============
     GLscene *scene = NULL;
+    Simulator simulator;
+
     if (display){
         glutInit(&argc, argv);
         scene = GLscene::getInstance();
     }
-    SDLwindow window(scene);
+    SDLwindow window(scene, &simulator);
     if (display){
         window.init();
         scene->init();
@@ -102,9 +104,8 @@ int main(int argc, char* argv[])
         }
     }
 
-    //================= setup World ======================
+    //================= setup Simulator ======================
     BodyFactory factory = boost::bind(createBody, _1, _2, modelloader);
-    Simulator simulator;
     simulator.init(prj, factory, scene);
 
     std::cout << "timestep = " << prj.timeStep() << ", total time = " 

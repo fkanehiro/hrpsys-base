@@ -60,11 +60,14 @@ int main(int argc, char* argv[])
         std::cerr << error << std::endl;
     }
 
+    //================= monitor ======================
+    Monitor monitor(orb, prj.robotHost(), prj.robotPort(), prj.interval());
+
     //==================== Viewer setup ===============
     glutInit(&argc, argv); // for bitmap fonts
     GLscene *scene = GLscene::getInstance();
 
-    SDLwindow window(scene);
+    SDLwindow window(scene, &monitor);
     window.init();
     scene->init();
     
@@ -77,20 +80,14 @@ int main(int argc, char* argv[])
         scene->addBody(it->first, body);
     }
 
-    //================= monitor ======================
-    Monitor monitor(orb, prj.robotHost(), prj.robotPort(), prj.interval());
     monitor.start();
-
     int cnt=0;
     while(1) {
-        if (!window.processEvents()) {
-            monitor.stop();
-            break;
-        }
-        //monitor.run();
+        if (!window.processEvents()) break;
         window.draw();
         window.swapBuffers();
     }
+    monitor.stop();
 
     try {
 	orb->destroy();

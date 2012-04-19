@@ -1,9 +1,10 @@
 class GLscene;
+class ThreadedObject;
 
 class SDLwindow
 {
 public:
-    SDLwindow(GLscene *i_scene);
+    SDLwindow(GLscene *i_scene, ThreadedObject *i_throbj=NULL);
     bool init();
     bool processEvents();
     void draw();
@@ -11,6 +12,7 @@ public:
 private:
     double sliderRatio(double x);
     GLscene *scene;
+    ThreadedObject *throbj;
     int width, height;
     double aspect;
     double pan, tilt, radius;

@@ -1,15 +1,8 @@
-#include <SDL/SDL_thread.h>
 #include "Simulator.h"
 #include "GLmodel.h"
 #include "BodyRTC.h"
 
-static int threadMain(void *arg)
-{
-    Simulator *simulator = (Simulator *)arg;
-    while(simulator->oneStep());
-}
-
-Simulator::Simulator() : m_thread(NULL)
+Simulator::Simulator()
 {
 }
 
@@ -80,6 +73,7 @@ void Simulator::checkCollision(OpenHRP::CollisionSequence &collisions)
 }
 
 bool Simulator::oneStep(){
+    ThreadedObject::oneStep();
     tm_control.begin();
     for (unsigned int i=0; i<bodies.size(); i++){
         bodies[i]->writeDataPorts();
@@ -120,19 +114,6 @@ bool Simulator::oneStep(){
     }else{
         return true;
     }
-}
-
-void Simulator::start()
-{
-    if (m_thread) return;
-    m_thread = SDL_CreateThread(threadMain, (void *)this);
-}
-
-void Simulator::stop()
-{
-    totalTime = world.currentTime();
-    SDL_WaitThread(m_thread, NULL);
-    m_thread = NULL;
 }
 
 

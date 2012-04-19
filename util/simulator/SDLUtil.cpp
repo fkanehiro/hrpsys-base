@@ -7,11 +7,12 @@
 #include <GL/glut.h>
 #endif
 #include <SDL.h>
+#include "util/ThreadedObject.h"
 #include "GLmodel.h"
 #include "SDLUtil.h"
 
-SDLwindow::SDLwindow(GLscene* i_scene) :
-    scene(i_scene),
+SDLwindow::SDLwindow(GLscene* i_scene, ThreadedObject* i_throbj) :
+    scene(i_scene), throbj(i_throbj),
     width(640), height(480),
     aspect(((double)width)/height),
     pan(M_PI/4), tilt(M_PI/16), radius(5),
@@ -26,6 +27,9 @@ SDLwindow::SDLwindow(GLscene* i_scene) :
     instructions.push_back("s: slower");
     instructions.push_back("r: record movie");
     instructions.push_back("t: toggle robot state");
+    if (throbj){
+        instructions.push_back("p: pause/resume background thread");
+    }
     scene->setMessages(helpcommand);
 }
 
@@ -80,6 +84,15 @@ bool SDLwindow::processEvents()
                 break;
             case SDLK_q:
                 return false;
+            case SDLK_p:
+                if (throbj){
+                    if (throbj->isPausing()){
+                        throbj->resume();
+                    }else{
+                        throbj->pause();
+                    }
+                }
+                break;
             case SDLK_SPACE:
                 scene->play(); 
                 break;
