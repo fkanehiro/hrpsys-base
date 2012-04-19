@@ -6,6 +6,7 @@ set(sources
 set(headers
   Project.h
   OpenRTMUtil.h
+  semaphore.h
   )
 
 include_directories(${LIBXML2_INCLUDE_DIR})

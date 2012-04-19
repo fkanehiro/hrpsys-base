@@ -2,13 +2,13 @@
 #include <hrpModel/World.h>
 #include <hrpModel/ConstraintForceSolver.h>
 #include <hrpUtil/TimeMeasure.h>
-#include <SDL/SDL.h>
 #include "util/Project.h"
 #include "ProjectUtil.h"
 #include "SceneState.h"
 
 class GLscene;
 class BodyRTC;
+class SDL_Thread;
 
 class Simulator
 {

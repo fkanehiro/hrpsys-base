@@ -1,3 +1,4 @@
+#include <SDL/SDL_thread.h>
 #include "Simulator.h"
 #include "GLmodel.h"
 #include "BodyRTC.h"
