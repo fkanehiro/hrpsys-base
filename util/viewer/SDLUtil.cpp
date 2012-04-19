@@ -134,6 +134,9 @@ bool SDLwindow::processEvents()
             case SDL_BUTTON_LEFT:
                 if (event.button.y > height-SLIDER_AREA_HEIGHT){
                     scene->move(sliderRatio(event.button.x));
+                    buttonPressedInSliderArea = true;
+                }else{
+                    buttonPressedInSliderArea = false;
                 }
                 break;
             case SDL_BUTTON_MIDDLE:
@@ -171,7 +174,7 @@ bool SDLwindow::processEvents()
                     radius *= (1+ 0.1*dy);
                     if (radius < 0.1) radius = 0.1; 
                 }else{
-                    if (event.motion.y > height-SLIDER_AREA_HEIGHT){
+                    if (buttonPressedInSliderArea){
                         scene->move(sliderRatio(event.motion.x));
                     }else{
                         pan  -= 0.05*dx;

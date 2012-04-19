@@ -16,7 +16,7 @@ private:
     double pan, tilt, radius;
     bool isShiftPressed, isControlPressed;
     double xCenter, yCenter, zCenter;
-    bool showingHelp;
+    bool showingHelp, buttonPressedInSliderArea;
     std::vector<std::string> helpcommand, instructions;
 };
 

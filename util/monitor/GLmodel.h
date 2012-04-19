@@ -4,8 +4,8 @@
 #include <hrpCorba/ModelLoader.hh>
 #include <hrpUtil/Eigen3d.h>
 #include <vector>
-#include <map>
 #include <deque>
+#include <map>
 //Open CV header
 #include <cv.h>
 #include <highgui.h>
