@@ -52,6 +52,7 @@ void ThreadedObject::start()
 
 void ThreadedObject::stop()
 {
+    if (m_isPausing) resume();
     m_isRunning = false;
     SDL_WaitThread(m_thread, NULL);
     m_thread = NULL;
