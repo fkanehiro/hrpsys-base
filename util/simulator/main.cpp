@@ -13,9 +13,9 @@
 #include "util/GLbody.h"
 #include "util/Project.h"
 #include "util/OpenRTMUtil.h"
+#include "util/SDLUtil.h"
 #include "Simulator.h"
-#include "SDLUtil.h"
-#include "GLmodel.h"
+#include "GLscene.h"
 #include "BodyRTC.h"
 
 using namespace std;
@@ -84,30 +84,30 @@ int main(int argc, char* argv[])
 
     ModelLoader_var modelloader = getModelLoader(CosNaming::NamingContext::_duplicate(naming.getRootContext()));
     //==================== Viewer setup ===============
-    GLscene *scene = NULL;
+    LogManager<SceneState> log;
+    GLscene scene(&log);
     Simulator simulator;
 
     if (display){
         glutInit(&argc, argv);
-        scene = GLscene::getInstance();
     }
-    SDLwindow window(scene, &simulator);
+    SDLwindow window(&scene, &log, &simulator);
     if (display){
         window.init();
-        scene->init();
+        scene.init();
 
         for (std::map<std::string, ModelItem>::iterator it=prj.models().begin();
              it != prj.models().end(); it++){
             OpenHRP::BodyInfo_var binfo
                 = modelloader->loadBodyInfo(it->second.url.c_str());
             GLbody *body = new GLbody(binfo);
-            scene->addBody(it->first, body);
+            scene.addBody(it->first, body);
         }
     }
 
     //================= setup Simulator ======================
     BodyFactory factory = boost::bind(createBody, _1, _2, modelloader);
-    simulator.init(prj, factory, scene);
+    simulator.init(prj, factory, &scene, &log);
 
     std::cout << "timestep = " << prj.timeStep() << ", total time = " 
               << prj.totalTime() << std::endl;

@@ -1,3 +1,4 @@
+#include <iostream>
 #include <cstdio>
 #include <math.h>
 #include <GL/glut.h>
@@ -15,8 +16,8 @@ static void drawString(const char *str)
 
 GLsceneBase::GLsceneBase(LogManagerBase *i_log) : 
     m_width(DEFAULT_W), m_height(DEFAULT_H),
-    m_showingRobotState(false), m_showSlider(false),
-    m_log(i_log)
+    m_showingStatus(false), m_showSlider(false),
+    m_log(i_log), m_videoWriter(NULL), m_cvImage(NULL) 
 {
     m_default_camera = new GLcamera(DEFAULT_W, DEFAULT_H, 1.0, 100.0, 40*M_PI/180);
     double T[] = {0,1,0,0,
@@ -161,6 +162,7 @@ void GLsceneBase::draw()
         glVertex3dv(s);
         glVertex3dv(e);
     }
+    drawAdditionalLines();
     glEnd();
 
     // draw texts

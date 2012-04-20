@@ -1,6 +1,7 @@
 #ifndef __LOG_MANAGER_H__
 #define __LOG_MANAGER_H__
 
+#include <iostream>
 #include <sys/time.h>
 #include <deque>
 #include "LogManagerBase.h"
@@ -30,12 +31,13 @@ public:
     }
     bool isNewStateAdded() { return m_isNewStateAdded; }
     double currentTime() { 
-        if (!m_log.empty()){
+        if (!m_log.empty() && m_index>=0){
             return m_log[m_index].time - m_log[0].time;
         }else{
             return -1;
         }
     }
+    int index() { return m_index; }
     double time(int i) { return m_log[i].time; }
     void faster(){
         m_playRatio *= 2;

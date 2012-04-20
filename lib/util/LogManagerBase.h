@@ -21,6 +21,7 @@ public:
     virtual unsigned int length() = 0;
     virtual double currentTime() = 0;
     virtual int updateIndex() = 0;
+    virtual int index() = 0;
     bool isPlaying(){ return m_isPlaying; }
     bool isRecording(){ return m_isRecording; }
     double playRatio() { return m_playRatio; }

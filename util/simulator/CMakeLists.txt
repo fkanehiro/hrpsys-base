@@ -7,14 +7,13 @@ include_directories(${SDL_INCLUDE_DIR})
 set(target sdlsim)
 
 add_executable(sdlsim 
-  GLmodel.cpp 
+  GLscene.cpp 
   BodyRTC.cpp
   BodyState.cpp
   SceneState.cpp
   ProjectUtil.cpp
-  SDLUtil.cpp
   Simulator.cpp
-  sdlsim.cpp
+  main.cpp
   )
 
 target_link_libraries(sdlsim 

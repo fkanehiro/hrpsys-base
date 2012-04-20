@@ -7,6 +7,7 @@ set(sources
   GLlink.cpp
   GLbody.cpp
   GLsceneBase.cpp
+  SDLUtil.cpp
   )
 
 set(headers
@@ -20,6 +21,7 @@ set(headers
   GLsceneBase.h
   LogManagerBase.h
   LogManager.h
+  SDLUtil.h
   )
 
 include_directories(${LIBXML2_INCLUDE_DIR})

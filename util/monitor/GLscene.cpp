@@ -12,17 +12,11 @@
 #include "util/GLbody.h"
 #include "util/LogManager.h"
 #include "TimedRobotState.h"
-#include "GLmodel.h"
+#include "GLscene.h"
 
 using namespace OpenHRP;
 using namespace hrp;
 
-void drawString(const char *str)
-{
-    for (unsigned int i=0; i<strlen(str); i++){
-        glutBitmapCharacter(GLUT_BITMAP_9_BY_15, str[i]);
-    }
-}
 void drawString2(const char *str)
 {
     for (unsigned int i=0; i<strlen(str); i++){
@@ -72,6 +66,8 @@ int temperature(int s){
 
 void GLscene::updateScene()
 {
+    if (m_log->index()<0) return;
+
     LogManager<TimedRobotState> *lm 
         = (LogManager<TimedRobotState> *)m_log;
     OpenHRP::RobotHardwareService::RobotState &rstate = lm->state().state;
@@ -82,12 +78,13 @@ void GLscene::updateScene()
 
 void GLscene::showStatus()
 {
-    //if (m_index < 0) return;
+    if (m_log->index()<0) return;
 
     LogManager<TimedRobotState> *lm 
         = (LogManager<TimedRobotState> *)m_log;
     OpenHRP::RobotHardwareService::RobotState &rstate = lm->state().state;
-    if (m_showingRobotState){
+
+    if (m_showingStatus){
         GLbody *body = m_bodies[0];
 #define HEIGHT_STEP 12
         int width = m_width - 410;

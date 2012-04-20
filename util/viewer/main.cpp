@@ -6,13 +6,11 @@
 #endif
 #include "util/GLlink.h"
 #include "util/GLbody.h"
+#include "util/SDLUtil.h"
 #include "OnlineViewer_impl.h"
-#include "GLmodel.h"
-#include "SDLUtil.h"
+#include "GLscene.h"
 
 using namespace OpenHRP;
-
-void glmain(int argc, char *argv[]);
 
 int main(int argc, char *argv[])
 {
@@ -35,7 +33,12 @@ int main(int argc, char *argv[])
 	    throw std::string("error: failed to narrow root POA manager.");
 	}
 	
-	OnlineViewer_impl* OnlineViewerImpl = new OnlineViewer_impl(orb, poa);
+        glutInit(&argc, argv);
+        LogManager<OpenHRP::WorldState> log;
+        GLscene scene(&log);
+
+	OnlineViewer_impl* OnlineViewerImpl 
+            = new OnlineViewer_impl(orb, poa, &scene, &log);
 	poa->activate_object(OnlineViewerImpl);
 	OnlineViewer_var OnlineViewer = OnlineViewerImpl->_this();
 	OnlineViewerImpl->_remove_ref();
@@ -54,15 +57,12 @@ int main(int argc, char *argv[])
 
 	poaManager->activate();
 
-        GLscene *scene = NULL;
-        glutInit(&argc, argv);
-        scene = GLscene::getInstance();
         GLlink::useAbsTransformToDraw();
         GLbody::useAbsTransformToDraw();
 
-        SDLwindow window(scene);
+        SDLwindow window(&scene, &log);
         window.init();
-        scene->init();
+        scene.init();
 	
         while(1) {
             if (!window.processEvents()) break;

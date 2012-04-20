@@ -1,26 +1,16 @@
-#include "OnlineViewer_impl.h"
-#include "GLmodel.h"
+#include <cstdio>
 #include <iostream>
 #include <hrpModel/ModelLoaderUtil.h>
-#include <cstdio>
+#include "OnlineViewer_impl.h"
+#include "GLscene.h"
 
 using namespace OpenHRP;
 
-
-#if 0
-    if (event&ADD_BODY){
-        GLbody *body = new GLbody(binfo);
-        scene->addBody(name, body);
-        event &= ~ADD_BODY;
-        sem_post(&sem);
-    }
-#endif
-    
-OnlineViewer_impl::OnlineViewer_impl(CORBA::ORB_ptr orb, PortableServer::POA_ptr poa)
+OnlineViewer_impl::OnlineViewer_impl(CORBA::ORB_ptr orb, PortableServer::POA_ptr poa, GLscene *i_scene, LogManager<OpenHRP::WorldState> *i_log)
     :
     orb(CORBA::ORB::_duplicate(orb)),
     poa(PortableServer::POA::_duplicate(poa)),
-    scene(GLscene::getInstance())
+    scene(i_scene), log(i_log)
 {
 }
 
@@ -35,7 +25,7 @@ PortableServer::POA_ptr OnlineViewer_impl::_default_POA()
 		
 void OnlineViewer_impl::update(const WorldState& state)
 {
-    scene->addState(state);
+    log->add(state);
 }
 
 void OnlineViewer_impl::load(const char* name_, const char* url)
@@ -49,7 +39,7 @@ void OnlineViewer_impl::load(const char* name_, const char* url)
 
 void OnlineViewer_impl::clearLog()
 {
-    scene->clearLog();
+    log->clear();
 }
 
 void OnlineViewer_impl::clearData()

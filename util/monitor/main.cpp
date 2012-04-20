@@ -8,8 +8,8 @@
 #endif
 #include "util/Project.h"
 #include "util/GLbody.h"
-#include "SDLUtil.h"
-#include "GLmodel.h"
+#include "util/SDLUtil.h"
+#include "GLscene.h"
 #include "Monitor.h"
 
 using namespace hrp;

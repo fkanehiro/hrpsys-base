@@ -5,8 +5,7 @@ include_directories(${SDL_INCLUDE_DIR})
 set(target hrpsys-viewer)
 
 add_executable(hrpsys-viewer 
-  GLmodel.cpp 
-  SDLUtil.cpp
+  GLscene.cpp 
   OnlineViewer_impl.cpp
   main.cpp
   )

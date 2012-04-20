@@ -8,8 +8,7 @@ generate_stub_skel(RobotHardwareService "OpenHRP")
 generate_stub_skel(StateHolderService "OpenHRP")
 
 add_executable(hrpsys-monitor 
-  GLmodel.cpp 
-  SDLUtil.cpp
+  GLscene.cpp 
   Monitor.cpp
   main.cpp
   RobotHardwareServiceSk.cpp 

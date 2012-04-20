@@ -1,7 +1,7 @@
 #include <rtm/CorbaNaming.h>
 #include "Monitor.h"
 #include "util/OpenRTMUtil.h"
-#include "GLmodel.h"
+#include "GLscene.h"
 
 Monitor::Monitor(CORBA::ORB_var orb, const std::string &i_hostname,
                  int i_port, int i_interval, LogManager<TimedRobotState> *i_log) :

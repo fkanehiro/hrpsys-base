@@ -1,12 +1,14 @@
 #include "Simulator.h"
-#include "GLmodel.h"
+#include "GLscene.h"
 #include "BodyRTC.h"
 
 Simulator::Simulator()
 {
 }
 
-void Simulator::init(Project &prj, BodyFactory &factory, GLscene *i_scene){
+void Simulator::init(Project &prj, BodyFactory &factory, 
+                     GLscene *i_scene, LogManager<SceneState> *i_log){
+    log = i_log;
     initWorld(prj, factory, world, pairs);
     initRTS(prj, receivers);
     std::cout << "number of receivers:" << receivers.size() << std::endl;
@@ -98,7 +100,7 @@ bool Simulator::oneStep(){
     
     if (scene){
         state.set(world);
-        scene->addState(state);
+        log->add(state);
     }
     tm_dynamics.end();
     

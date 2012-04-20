@@ -33,15 +33,16 @@ public:
     void setMessages(const std::vector<std::string>& i_msgs) { m_msgs = i_msgs;}
     void showSlider(bool flag) { m_showSlider = flag; }
     void setScreenSize(int w, int h);
-    void toggleRobotState() { m_showingRobotState = !m_showingRobotState; }
+    void toggleRobotState() { m_showingStatus = !m_showingStatus; }
     void draw();
     virtual void showStatus() {}
+    virtual void drawAdditionalLines() {}
     virtual void updateScene()=0;
 protected:
     std::map<std::string, GLbody *> m_nameBodyMap; 
     std::vector<GLbody *> m_bodies; 
     std::vector<std::string> m_msgs; 
-    bool m_showingRobotState, m_showSlider;
+    bool m_showingStatus, m_showSlider;
     int m_width, m_height;
     GLcamera *m_camera, *m_default_camera;
     struct timeval m_lastDraw;
