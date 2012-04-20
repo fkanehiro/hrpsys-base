@@ -1,17 +1,20 @@
-class GLscene;
+class GLsceneBase;
 class ThreadedObject;
+class LogManagerBase;
 
 class SDLwindow
 {
 public:
-    SDLwindow(GLscene *i_scene, ThreadedObject *i_throbj=NULL);
+    SDLwindow(GLsceneBase *i_scene, LogManagerBase *i_lm, 
+              ThreadedObject *i_throbj=NULL);
     bool init();
     bool processEvents();
     void draw();
     void swapBuffers();
 private:
     double sliderRatio(double x);
-    GLscene *scene;
+    GLsceneBase *scene;
+    LogManagerBase *log;
     ThreadedObject *throbj;
     int width, height;
     double aspect;

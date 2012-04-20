@@ -8,11 +8,13 @@
 #endif
 #include <SDL.h>
 #include "util/ThreadedObject.h"
-#include "GLmodel.h"
+#include "util/LogManagerBase.h"
+#include "util/GLsceneBase.h"
 #include "SDLUtil.h"
 
-SDLwindow::SDLwindow(GLscene* i_scene, ThreadedObject* i_throbj) :
-    scene(i_scene), throbj(i_throbj),
+SDLwindow::SDLwindow(GLsceneBase* i_scene, LogManagerBase *i_log,
+                     ThreadedObject* i_throbj) :
+    scene(i_scene), log(i_log), throbj(i_throbj),
     width(640), height(480),
     aspect(((double)width)/height),
     pan(M_PI/4), tilt(M_PI/16), radius(5),
@@ -94,32 +96,32 @@ bool SDLwindow::processEvents()
                 }
                 break;
             case SDLK_SPACE:
-                scene->play(); 
+                log->play(); 
                 break;
             case SDLK_t:
                 scene->toggleRobotState(); 
                 break;
             case SDLK_f:
-                scene->faster();
+                log->faster();
                 break;
             case SDLK_s:
-                scene->slower();
+                log->slower();
                 break;
             case SDLK_r:
-                scene->record();
+                log->record();
                 break;
             case SDLK_RIGHT:
                 if (isControlPressed){
-                    scene->tail();
+                    log->tail();
                 }else{
-                    scene->next(delta);
+                    log->next(delta);
                 }
                 break;
             case SDLK_LEFT:
                 if (isControlPressed){
-                    scene->head();
+                    log->head();
                 }else{
-                    scene->prev(delta);
+                    log->prev(delta);
                 }
                 break;
             case SDLK_LSHIFT:
@@ -150,7 +152,7 @@ bool SDLwindow::processEvents()
             switch(event.button.button){
             case SDL_BUTTON_LEFT:
                 if (event.button.y > height-SLIDER_AREA_HEIGHT){
-                    scene->move(sliderRatio(event.button.x));
+                    log->move(sliderRatio(event.button.x));
                     buttonPressedInSliderArea = true;
                 }else{
                     buttonPressedInSliderArea = false;
@@ -192,7 +194,7 @@ bool SDLwindow::processEvents()
                     if (radius < 0.1) radius = 0.1; 
                 }else{
                     if (buttonPressedInSliderArea){
-                        scene->move(sliderRatio(event.motion.x));
+                        log->move(sliderRatio(event.motion.x));
                     }else{
                         pan  -= 0.05*dx;
                         tilt += 0.05*dy;
@@ -243,7 +245,7 @@ void SDLwindow::draw()
               0,0,1);
     
     glClear(GL_COLOR_BUFFER_BIT| GL_DEPTH_BUFFER_BIT);
-    
+
     scene->draw();
 }
 

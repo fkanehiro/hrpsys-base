@@ -4,11 +4,12 @@
 #include "GLmodel.h"
 
 Monitor::Monitor(CORBA::ORB_var orb, const std::string &i_hostname,
-                 int i_port, int i_interval) :
+                 int i_port, int i_interval, LogManager<TimedRobotState> *i_log) :
     m_orb(orb),
     m_rhCompName("RobotHardware0"),
     m_shCompName("StateHolder0"),
-    m_interval(i_interval)
+    m_interval(i_interval),
+    m_log(i_log)
 {
     char buf[128];
     sprintf(buf, "%s:%d", i_hostname.c_str(), i_port);
@@ -88,7 +89,7 @@ bool Monitor::oneStep()
         struct timeval tv;
         gettimeofday(&tv, NULL);
         m_rstate.time = tv.tv_sec + tv.tv_usec/1e6; 
-        GLscene::getInstance()->addState(m_rstate);
+        m_log->add(m_rstate);
     }
     usleep(1000*m_interval);
 

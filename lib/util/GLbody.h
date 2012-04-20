@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <hrpCorba/ModelLoader.hh>
+#include <hrpUtil/Eigen3d.h>
 
 class GLcamera;
 class GLlink;

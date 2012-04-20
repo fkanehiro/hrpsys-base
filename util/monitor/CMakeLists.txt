@@ -17,12 +17,7 @@ add_executable(hrpsys-monitor
   )
 
 target_link_libraries(hrpsys-monitor 
-  ${OPENHRP_LIBRARIES} 
   hrpsysUtil
-  ${OpenCV_LIBRARIES} 
-  ${OPENGL_LIBRARIES} 
-  ${GLUT_LIBRARIES} 
-  ${SDL_LIBRARY} 
   )
 
 install(TARGETS ${target}

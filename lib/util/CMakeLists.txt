@@ -6,6 +6,7 @@ set(sources
   GLcamera.cpp
   GLlink.cpp
   GLbody.cpp
+  GLsceneBase.cpp
   )
 
 set(headers
@@ -16,10 +17,14 @@ set(headers
   GLcamera.h
   GLlink.h
   GLbody.h
+  GLsceneBase.h
+  LogManagerBase.h
+  LogManager.h
   )
 
 include_directories(${LIBXML2_INCLUDE_DIR})
 include_directories(${SDL_INCLUDE_DIR})
+include_directories(${OpenCV_INCLUDE_DIRS})
 
 add_library(hrpsysUtil SHARED ${sources})
 
@@ -27,7 +32,9 @@ target_link_libraries(hrpsysUtil
   ${LIBXML2_LIBRARIES}
   ${OPENHRP_LIBRARIES}
   ${OPENGL_LIBRARIES} 
+  ${OpenCV_LIBRARIES} 
   ${SDL_LIBRARY} 
+  ${GLUT_LIBRARIES} 
   )
 
 set(target hrpsysUtil)

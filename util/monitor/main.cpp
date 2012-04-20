@@ -12,7 +12,6 @@
 #include "GLmodel.h"
 #include "Monitor.h"
 
-using namespace std;
 using namespace hrp;
 using namespace OpenHRP;
 
@@ -61,24 +60,29 @@ int main(int argc, char* argv[])
         std::cerr << error << std::endl;
     }
 
+    //================= logger ======================
+    LogManager<TimedRobotState> log; 
+    log.enableRingBuffer(5000);
+
     //================= monitor ======================
-    Monitor monitor(orb, prj.robotHost(), prj.robotPort(), prj.interval());
-
-    //==================== Viewer setup ===============
+    Monitor monitor(orb, 
+                    prj.robotHost(), prj.robotPort(), prj.interval(),
+                    &log);
+    //==================== viewer ===============
     glutInit(&argc, argv); // for bitmap fonts
-    GLscene *scene = GLscene::getInstance();
+    GLscene scene(&log);
 
-    SDLwindow window(scene, &monitor);
+    SDLwindow window(&scene, &log, &monitor);
     window.init();
-    scene->init();
-    
+    scene.init();
+
     ModelLoader_var modelloader = getModelLoader(namingContext);
     for (std::map<std::string, ModelItem>::iterator it=prj.models().begin();
          it != prj.models().end(); it++){
         OpenHRP::BodyInfo_var binfo
             = modelloader->loadBodyInfo(it->second.url.c_str());
         GLbody *body = new GLbody(binfo);
-        scene->addBody(it->first, body);
+        scene.addBody(it->first, body);
     }
 
     monitor.start();
