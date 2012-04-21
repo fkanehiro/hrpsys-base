@@ -11,12 +11,7 @@ add_executable(hrpsys-viewer
   )
 
 target_link_libraries(hrpsys-viewer 
-  ${OPENHRP_LIBRARIES} 
   hrpsysUtil
-  ${OpenCV_LIBRARIES} 
-  ${OPENGL_LIBRARIES} 
-  ${GLUT_LIBRARIES} 
-  ${SDL_LIBRARY} 
   )
 
 install(TARGETS ${target}
