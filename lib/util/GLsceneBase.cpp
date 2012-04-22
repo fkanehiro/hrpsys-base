@@ -1,7 +1,11 @@
 #include <iostream>
 #include <cstdio>
 #include <math.h>
+#ifdef __APPLE__
+#include <GLUT/glut.h>
+#else
 #include <GL/glut.h>
+#endif
 #include "GLcamera.h"
 #include "GLbody.h"
 #include "GLsceneBase.h"

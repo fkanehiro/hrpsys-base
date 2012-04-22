@@ -2,7 +2,11 @@
 #include <iostream>
 #include <fstream>
 #include <sys/time.h>
+#ifdef __APPLE__
+#include <OpenGL/gl.h>
+#else
 #include <GL/gl.h>
+#endif
 #include "util/GLcamera.h"
 #include "util/GLlink.h"
 #include "util/GLbody.h"
