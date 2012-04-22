@@ -7,6 +7,7 @@ class SDLwindow
 public:
     SDLwindow(GLsceneBase *i_scene, LogManagerBase *i_lm, 
               ThreadedObject *i_throbj=NULL);
+    ~SDLwindow();
     bool init();
     bool processEvents();
     void draw();

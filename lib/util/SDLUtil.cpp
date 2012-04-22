@@ -35,6 +35,11 @@ SDLwindow::SDLwindow(GLsceneBase* i_scene, LogManagerBase *i_log,
     scene->setMessages(helpcommand);
 }
 
+SDLwindow::~SDLwindow()
+{
+    SDL_Quit();
+}
+
 bool SDLwindow::init()
 {
     if(SDL_Init(SDL_INIT_VIDEO)<0) {
