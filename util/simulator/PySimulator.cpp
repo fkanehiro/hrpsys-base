@@ -1,0 +1,136 @@
+#include <fstream>
+#include <boost/bind.hpp>
+#include <boost/function.hpp>
+#include <boost/python.hpp>
+
+#include <rtm/Manager.h>
+#include <rtm/CorbaNaming.h>
+#include <hrpModel/ModelLoaderUtil.h>
+#ifdef __APPLE__
+#include <GLUT/glut.h>
+#else
+#include <GL/glut.h>
+#endif
+#include <SDL_thread.h>
+#include "util/GLbody.h"
+#include "util/Project.h"
+#include "util/OpenRTMUtil.h"
+#include "util/SDLUtil.h"
+#include "Simulator.h"
+#include "GLscene.h"
+#include "BodyRTC.h"
+
+using namespace std;
+using namespace hrp;
+using namespace OpenHRP;
+
+hrp::BodyPtr createBody(const std::string& name, const ModelItem& mitem,
+                        ModelLoader_ptr modelloader)
+{
+    std::cout << "createBody(" << name << "," << mitem.url << ")" << std::endl;
+    RTC::Manager& manager = RTC::Manager::instance();
+    std::string args = "BodyRTC?instance_name="+name;
+    BodyRTCPtr body = (BodyRTC *)manager.createComponent(args.c_str());
+    ModelLoader::ModelLoadOption mlopt;
+    mlopt.readImage = false;
+    mlopt.AABBtype = OpenHRP::ModelLoader::AABB_NUM;
+    mlopt.AABBdata.length(mitem.joint.size());
+     std::map<std::string, JointItem>::const_iterator it;
+    int i=0;
+    for (it = mitem.joint.begin(); it != mitem.joint.end(); it++){
+        //mlopt.AABBdata[i++] = it->second.NumOfAABB;
+        mlopt.AABBdata[i++] = 1;
+    }
+    //BodyInfo_var binfo = modelloader->getBodyInfoEx(mitem.url.c_str(), mlopt);
+    BodyInfo_var binfo = modelloader->getBodyInfo(mitem.url.c_str());
+    if (!loadBodyFromBodyInfo(body, binfo, true)){
+        std::cerr << "failed to load model[" << mitem.url << "]" << std::endl;
+        manager.deleteComponent(body.get());
+        return hrp::BodyPtr();
+    }else{
+        body->createDataPorts();
+        return body;
+    }
+}
+
+int simulate(std::string fname) 
+{
+    bool display = true, realtime = false;
+
+    Project prj;
+    if (!prj.parse(fname)){
+        std::cerr << "failed to parse " << fname << std::endl;
+        return 1;
+    }
+
+    //================= OpenRTM =========================
+    RTC::Manager* manager;
+    int argc = 1;
+    char *argv[] = {"dummy"};
+    manager = RTC::Manager::init(argc, argv);
+    manager->init(argc, argv);
+    BodyRTC::moduleInit(manager);
+    manager->activateManager();
+    manager->runManager(true);
+
+    std::string nameServer = manager->getConfig()["corba.nameservers"];
+    int comPos = nameServer.find(",");
+    if (comPos < 0){
+        comPos = nameServer.length();
+    }
+    nameServer = nameServer.substr(0, comPos);
+    RTC::CorbaNaming naming(manager->getORB(), nameServer.c_str());
+
+    ModelLoader_var modelloader = getModelLoader(CosNaming::NamingContext::_duplicate(naming.getRootContext()));
+    //==================== Viewer setup ===============
+    LogManager<SceneState> log;
+    GLscene scene(&log);
+    Simulator simulator;
+
+    if (display){
+        glutInit(&argc, argv);
+    }
+    SDLwindow window(&scene, &log, &simulator);
+    if (display){
+        window.init();
+        scene.init();
+
+        for (std::map<std::string, ModelItem>::iterator it=prj.models().begin();
+             it != prj.models().end(); it++){
+            OpenHRP::BodyInfo_var binfo
+                = modelloader->loadBodyInfo(it->second.url.c_str());
+            GLbody *body = new GLbody(binfo);
+            scene.addBody(it->first, body);
+        }
+    }
+
+    //================= setup Simulator ======================
+    BodyFactory factory = boost::bind(createBody, _1, _2, modelloader);
+    simulator.init(prj, factory, &scene, &log);
+    simulator.realTime(realtime);
+
+    std::cout << "timestep = " << prj.timeStep() << ", total time = " 
+              << prj.totalTime() << std::endl;
+
+    if (display){
+        simulator.start();
+        while(1) {
+            //std::cerr << "t = " << world.currentTime() << std::endl;
+            if (!window.processEvents()) break;
+            window.draw();
+            window.swapBuffers();
+        }
+        simulator.stop();
+    }else{
+        while (simulator.oneStep());
+    }
+
+    manager->shutdown();
+
+    return 0;
+}
+
+BOOST_PYTHON_MODULE( simulator )
+{
+    boost::python::def( "simulate", simulate );
+}
