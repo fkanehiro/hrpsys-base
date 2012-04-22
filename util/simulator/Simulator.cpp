@@ -2,7 +2,7 @@
 #include "GLscene.h"
 #include "BodyRTC.h"
 
-Simulator::Simulator()
+Simulator::Simulator() : adjustTime(false)
 {
 }
 
@@ -76,6 +76,28 @@ void Simulator::checkCollision(OpenHRP::CollisionSequence &collisions)
 
 bool Simulator::oneStep(){
     ThreadedObject::oneStep();
+
+    if (!world.currentTime()) gettimeofday(&beginTime, NULL);
+    if (adjustTime){
+        struct timeval tv;
+        gettimeofday(&tv, NULL);
+        startTimes.push_back(tv);
+        if (startTimes.size() > 1.0/world.timeStep()){
+            startTimes.pop_front();
+        }
+        if (startTimes.size() >= 2){
+            const struct timeval& first = startTimes.front();
+            const struct timeval& last  = startTimes.back();
+            int realT = (last.tv_sec - first.tv_sec)*1e6
+                + (last.tv_usec - first.tv_usec);
+            int simT = world.timeStep()*(startTimes.size()-1)*1e6;
+            int usec = simT - realT;
+            if (usec > 1000){
+                usleep(usec);
+            }
+        }
+    }
+
     tm_control.begin();
     for (unsigned int i=0; i<bodies.size(); i++){
         bodies[i]->writeDataPorts();
@@ -105,6 +127,12 @@ bool Simulator::oneStep(){
     tm_dynamics.end();
     
     if (world.currentTime() > totalTime){
+        struct timeval endTime;
+        gettimeofday(&endTime, NULL);
+        double realT = (endTime.tv_sec - beginTime.tv_sec)
+            + (endTime.tv_usec - beginTime.tv_usec)/1e6;
+        printf("total     :%8.3f[s], %8.3f[sim/real]\n",
+               realT, totalTime/realT);
         printf("controller:%8.3f[s], %8.3f[ms/frame]\n",
                tm_control.totalTime(), tm_control.averageTime()*1000);
         printf("collision :%8.3f[s], %8.3f[ms/frame]\n",

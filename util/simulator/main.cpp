@@ -53,10 +53,12 @@ hrp::BodyPtr createBody(const std::string& name, const ModelItem& mitem,
 
 int main(int argc, char* argv[]) 
 {
-    bool display = true;
+    bool display = true, realtime=false;
     for (int i=0; i<argc; i++){
         if (strcmp("-nodisplay",argv[i])==0){
             display = false;
+        }else if(strcmp("-realtime", argv[i])==0){
+            realtime = true;
         }
     }
 
@@ -108,6 +110,7 @@ int main(int argc, char* argv[])
     //================= setup Simulator ======================
     BodyFactory factory = boost::bind(createBody, _1, _2, modelloader);
     simulator.init(prj, factory, &scene, &log);
+    simulator.realTime(realtime);
 
     std::cout << "timestep = " << prj.timeStep() << ", total time = " 
               << prj.totalTime() << std::endl;

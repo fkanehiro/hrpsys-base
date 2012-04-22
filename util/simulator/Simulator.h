@@ -20,6 +20,7 @@ public:
               GLscene *i_scene, LogManager<SceneState> *i_log);
     bool oneStep();
     void checkCollision(OpenHRP::CollisionSequence &collisions);
+    void realTime(bool flag) { adjustTime = flag; }
 private:
     hrp::World<hrp::ConstraintForceSolver> world;
     GLscene *scene;
@@ -30,4 +31,7 @@ private:
     SceneState state;
     double totalTime;
     TimeMeasure tm_dynamics, tm_control, tm_collision;
+    bool adjustTime;
+    std::deque<struct timeval> startTimes;
+    struct timeval beginTime;
 };
