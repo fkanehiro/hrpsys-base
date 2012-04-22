@@ -70,8 +70,16 @@ int main(int argc, char* argv[])
 
     //================= OpenRTM =========================
     RTC::Manager* manager;
-    manager = RTC::Manager::init(argc, argv);
-    manager->init(argc, argv);
+    int rtmargc=0;
+    std::vector<char *> rtmargv;
+    for (int i=1; i<argc; i++){
+        if (strcmp(argv[i], "-nodisplay") && strcmp(argv[i], "-realtime")){
+            rtmargv.push_back(argv[i]);
+            rtmargc++;
+        }
+    }
+    manager = RTC::Manager::init(rtmargc, rtmargv.data());
+    manager->init(rtmargc, rtmargv.data());
     BodyRTC::moduleInit(manager);
     manager->activateManager();
     manager->runManager(true);
