@@ -8,6 +8,8 @@
 //Open CV header
 #include <cv.h>
 #include <highgui.h>
+#include <SDL/SDL_thread.h>
+#include <hrpCorba/ModelLoader.hh>
 
 class GLbody;
 class GLcamera;
@@ -24,6 +26,7 @@ public:
     GLsceneBase(LogManagerBase *i_log);
     virtual ~GLsceneBase();
     void addBody(const std::string& i_name, GLbody *i_body);
+    void addBody(const std::string &i_name, OpenHRP::BodyInfo_var i_binfo);
     GLbody *findBody(const std::string& i_name);
     void save(const char *i_fname);
     void capture(char *o_image);
@@ -49,6 +52,10 @@ protected:
     CvVideoWriter *m_videoWriter;
     IplImage *m_cvImage;
     LogManagerBase *m_log;
+    SDL_sem *m_sem;
+    std::string m_newBodyName;
+    OpenHRP::BodyInfo_var m_newBodyInfo;
+    bool m_isNewBody;
 };
 
 #endif

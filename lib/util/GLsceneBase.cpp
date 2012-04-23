@@ -21,7 +21,7 @@ static void drawString(const char *str)
 GLsceneBase::GLsceneBase(LogManagerBase *i_log) : 
     m_width(DEFAULT_W), m_height(DEFAULT_H),
     m_showingStatus(false), m_showSlider(false),
-    m_log(i_log), m_videoWriter(NULL), m_cvImage(NULL) 
+    m_log(i_log), m_videoWriter(NULL), m_cvImage(NULL), m_isNewBody(false) 
 {
     m_default_camera = new GLcamera(DEFAULT_W, DEFAULT_H, 1.0, 100.0, 40*M_PI/180);
     double T[] = {0,1,0,0,
@@ -30,10 +30,12 @@ GLsceneBase::GLsceneBase(LogManagerBase *i_log) :
                   4,0,0.8,1};
     m_default_camera->setTransform(T);
     m_camera = m_default_camera;
+    m_sem = SDL_CreateSemaphore(0);
 }
 
 GLsceneBase::~GLsceneBase()
 {
+    SDL_DestroySemaphore(m_sem);
     delete m_default_camera;
 }
 
@@ -47,6 +49,13 @@ void GLsceneBase::addBody(const std::string &i_name, GLbody *i_body){
     //std::cout <<"addBody(" << i_name << "," << i_body << ")" << std::endl;
     m_nameBodyMap[i_name] = i_body;
     m_bodies.push_back(i_body);
+}
+
+void GLsceneBase::addBody(const std::string &i_name, OpenHRP::BodyInfo_var i_binfo){
+    m_newBodyName = i_name;
+    m_newBodyInfo = i_binfo;
+    m_isNewBody = true;
+    SDL_SemWait(m_sem);
 }
 
 GLbody *GLsceneBase::findBody(const std::string &i_name)
@@ -133,6 +142,13 @@ void GLsceneBase::draw()
     gettimeofday(&tv, NULL);
     double fps = 1.0/((tv.tv_sec - m_lastDraw.tv_sec)+(tv.tv_usec - m_lastDraw.tv_usec)/1e6);
     m_lastDraw = tv;
+
+    if (m_isNewBody){
+        GLbody *body = new GLbody(m_newBodyInfo);
+        GLsceneBase::addBody(m_newBodyName, body);
+        m_isNewBody = false;
+        SDL_SemPost(m_sem);
+    }
 
     int index = m_log->updateIndex();
     
