@@ -98,15 +98,17 @@ public:
         //================= setup Simulator ======================
         BodyFactory factory = boost::bind(createBody, _1, _2, modelloader);
         simulator.init(prj, factory, &log);
-        //simulator.realTime(realtime);
         
         std::cout << "timestep = " << prj.timeStep() << ", total time = " 
                   << prj.totalTime() << std::endl;
     }
     void simulate(double time=0){
-        if (time) simulator.totalTime(time);
+        simulator.totalTime(simulator.currentTime()+time);
         while(simulator.oneStep());
     }
+    void realTime(bool flag){
+        simulator.realTime(flag);
+    } 
 private:  
     LogManager<SceneState> log;
     GLscene scene;
@@ -120,5 +122,6 @@ BOOST_PYTHON_MODULE( simulator )
     boost::python::class_<PySimulator>("Simulator")
         .def("init", &PySimulator::init)
         .def("simulate", &PySimulator::simulate)
+        .def("realTime", &PySimulator::realTime)
         ;
 }

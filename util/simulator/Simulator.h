@@ -21,6 +21,7 @@ public:
     void checkCollision(OpenHRP::CollisionSequence &collisions);
     void realTime(bool flag) { adjustTime = flag; }
     void totalTime(double time) { m_totalTime = time; }
+    double currentTime() { return world.currentTime(); }
 private:
     hrp::World<hrp::ConstraintForceSolver> world;
     LogManager<SceneState> *log;
