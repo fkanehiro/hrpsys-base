@@ -1,8 +1,10 @@
+#include "ThreadedObject.h"
+
 class GLsceneBase;
 class ThreadedObject;
 class LogManagerBase;
 
-class SDLwindow
+class SDLwindow : public ThreadedObject
 {
 public:
     SDLwindow(GLsceneBase *i_scene, LogManagerBase *i_lm, 
@@ -12,6 +14,7 @@ public:
     bool processEvents();
     void draw();
     void swapBuffers();
+    bool oneStep();
 private:
     double sliderRatio(double x);
     GLsceneBase *scene;

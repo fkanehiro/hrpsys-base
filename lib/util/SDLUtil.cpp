@@ -258,3 +258,21 @@ void SDLwindow::swapBuffers()
 {
     SDL_GL_SwapBuffers();
 }
+
+bool SDLwindow::oneStep()
+{
+    static bool firsttime = true;
+    if (firsttime){
+        // this part must be executed in the thread where draw() is called
+        int argc=1;
+        char *argv[] = {(char *)"dummy"};
+        glutInit(&argc, argv);
+        init();
+        scene->init();
+        firsttime = false;
+    }
+    if (!processEvents()) return false;
+    draw();
+    swapBuffers();
+    return true;
+}
