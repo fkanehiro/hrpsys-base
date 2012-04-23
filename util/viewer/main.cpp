@@ -4,6 +4,7 @@
 #else
 #include <GL/glut.h>
 #endif
+#include <SDL/SDL_timer.h>
 #include "util/GLlink.h"
 #include "util/GLbody.h"
 #include "util/SDLUtil.h"
@@ -33,7 +34,6 @@ int main(int argc, char *argv[])
 	    throw std::string("error: failed to narrow root POA manager.");
 	}
 	
-        glutInit(&argc, argv);
         LogManager<OpenHRP::WorldState> log;
         GLscene scene(&log);
 
@@ -61,14 +61,8 @@ int main(int argc, char *argv[])
         GLbody::useAbsTransformToDraw();
 
         SDLwindow window(&scene, &log);
-        window.init();
-        scene.init();
 	
-        while(1) {
-            if (!window.processEvents()) break;
-            window.draw();
-            window.swapBuffers();
-        }
+        while(window.oneStep());
 
     }
     catch (CORBA::SystemException& ex) {

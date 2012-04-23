@@ -69,12 +69,10 @@ int main(int argc, char* argv[])
                     prj.robotHost(), prj.robotPort(), prj.interval(),
                     &log);
     //==================== viewer ===============
-    glutInit(&argc, argv); // for bitmap fonts
     GLscene scene(&log);
 
     SDLwindow window(&scene, &log, &monitor);
     window.init();
-    scene.init();
 
     ModelLoader_var modelloader = getModelLoader(namingContext);
     for (std::map<std::string, ModelItem>::iterator it=prj.models().begin();
@@ -87,11 +85,7 @@ int main(int argc, char* argv[])
 
     monitor.start();
     int cnt=0;
-    while(1) {
-        if (!window.processEvents()) break;
-        window.draw();
-        window.swapBuffers();
-    }
+    while(window.oneStep());
     monitor.stop();
 
     try {

@@ -27,5 +27,6 @@ private:
     double xCenter, yCenter, zCenter;
     bool showingHelp, buttonPressedInSliderArea;
     std::vector<std::string> helpcommand, instructions;
+    bool initialized; 
 };
 

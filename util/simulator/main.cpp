@@ -98,14 +98,9 @@ int main(int argc, char* argv[])
     GLscene scene(&log);
     Simulator simulator;
 
-    if (display){
-        glutInit(&argc, argv);
-    }
     SDLwindow window(&scene, &log, &simulator);
     if (display){
         window.init();
-        scene.init();
-
         for (std::map<std::string, ModelItem>::iterator it=prj.models().begin();
              it != prj.models().end(); it++){
             OpenHRP::BodyInfo_var binfo
@@ -125,12 +120,7 @@ int main(int argc, char* argv[])
 
     if (display){
         simulator.start();
-        while(1) {
-            //std::cerr << "t = " << world.currentTime() << std::endl;
-            if (!window.processEvents()) break;
-            window.draw();
-            window.swapBuffers();
-        }
+        while(window.oneStep());
         simulator.stop();
     }else{
         while (simulator.oneStep());

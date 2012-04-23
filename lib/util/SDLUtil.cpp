@@ -20,7 +20,7 @@ SDLwindow::SDLwindow(GLsceneBase* i_scene, LogManagerBase *i_log,
     pan(M_PI/4), tilt(M_PI/16), radius(5),
     isShiftPressed(false), isControlPressed(false),
     xCenter(0), yCenter(0), zCenter(0.8),
-    showingHelp(false)
+    showingHelp(false), initialized(false)
 {
     helpcommand.push_back("h: help");
     instructions.push_back("q: quit");
@@ -42,6 +42,10 @@ SDLwindow::~SDLwindow()
 
 bool SDLwindow::init()
 {
+    int argc=1;
+    char *argv[] = {(char *)"dummy"};
+    glutInit(&argc, argv); // for bitmap fonts
+
     if(SDL_Init(SDL_INIT_VIDEO)<0) {
         fprintf(stderr,"failed to initialize SDL.\n");
         return false;
@@ -58,6 +62,10 @@ bool SDLwindow::init()
     }
     SDL_WM_SetCaption("sdlsim", NULL);
     SDL_EnableKeyRepeat(SDL_DEFAULT_REPEAT_DELAY,SDL_DEFAULT_REPEAT_INTERVAL);
+
+    scene->init();
+
+    initialized = true;
     return true;
 }
 
@@ -261,18 +269,17 @@ void SDLwindow::swapBuffers()
 
 bool SDLwindow::oneStep()
 {
-    static bool firsttime = true;
-    if (firsttime){
-        // this part must be executed in the thread where draw() is called
-        int argc=1;
-        char *argv[] = {(char *)"dummy"};
-        glutInit(&argc, argv);
+    if (!initialized){
+        // init() must be executed in the thread where draw() is called
         init();
-        scene->init();
-        firsttime = false;
     }
+    double startT = SDL_GetTicks();
     if (!processEvents()) return false;
     draw();
     swapBuffers();
+    double dt = SDL_GetTicks() - startT;
+    if (dt < 1000.0/30){
+        SDL_Delay(1000.0/30 - dt);
+    }
     return true;
 }
