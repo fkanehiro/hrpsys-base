@@ -53,84 +53,72 @@ hrp::BodyPtr createBody(const std::string& name, const ModelItem& mitem,
     }
 }
 
-int simulate(std::string fname) 
+class PySimulator
 {
-    bool display = true, realtime = false;
-
-    Project prj;
-    if (!prj.parse(fname)){
-        std::cerr << "failed to parse " << fname << std::endl;
-        return 1;
+public:
+    PySimulator() 
+        : scene(&log), window(&scene, &log, &simulator){
+        int argc = 1;
+        char *argv[] = {(char *)"dummy"};
+        manager = RTC::Manager::init(argc, argv);
+        manager->init(argc, argv);
+        BodyRTC::moduleInit(manager);
+        manager->activateManager();
+        manager->runManager(true);
+        window.start();
     }
-
-    //================= OpenRTM =========================
-    RTC::Manager* manager;
-    int argc = 1;
-    char *argv[] = {"dummy"};
-    manager = RTC::Manager::init(argc, argv);
-    manager->init(argc, argv);
-    BodyRTC::moduleInit(manager);
-    manager->activateManager();
-    manager->runManager(true);
-
-    std::string nameServer = manager->getConfig()["corba.nameservers"];
-    int comPos = nameServer.find(",");
-    if (comPos < 0){
-        comPos = nameServer.length();
+    ~PySimulator(){
+        window.stop();
+        manager->shutdown();
     }
-    nameServer = nameServer.substr(0, comPos);
-    RTC::CorbaNaming naming(manager->getORB(), nameServer.c_str());
-
-    ModelLoader_var modelloader = getModelLoader(CosNaming::NamingContext::_duplicate(naming.getRootContext()));
-    //==================== Viewer setup ===============
-    LogManager<SceneState> log;
-    GLscene scene(&log);
-    Simulator simulator;
-
-    if (display){
-        glutInit(&argc, argv);
-    }
-    SDLwindow window(&scene, &log, &simulator);
-    if (display){
-        window.init();
-        scene.init();
-
+    void init(std::string fname){
+        Project prj;
+        if (!prj.parse(fname)){
+            std::cerr << "failed to parse " << fname << std::endl;
+            return;
+        }
+        
+        RTC::Manager* manager = &RTC::Manager::instance();
+        std::string nameServer = manager->getConfig()["corba.nameservers"];
+        int comPos = nameServer.find(",");
+        if (comPos < 0){
+            comPos = nameServer.length();
+        }
+        nameServer = nameServer.substr(0, comPos);
+        RTC::CorbaNaming naming(manager->getORB(), nameServer.c_str());
+        
+        ModelLoader_var modelloader = getModelLoader(CosNaming::NamingContext::_duplicate(naming.getRootContext()));
+        //==================== Viewer setup ===============
         for (std::map<std::string, ModelItem>::iterator it=prj.models().begin();
              it != prj.models().end(); it++){
             OpenHRP::BodyInfo_var binfo
                 = modelloader->loadBodyInfo(it->second.url.c_str());
-            GLbody *body = new GLbody(binfo);
-            scene.addBody(it->first, body);
+            scene.addBody(it->first, binfo);
         }
+        //================= setup Simulator ======================
+        BodyFactory factory = boost::bind(createBody, _1, _2, modelloader);
+        simulator.init(prj, factory, &log);
+        //simulator.realTime(realtime);
+        
+        std::cout << "timestep = " << prj.timeStep() << ", total time = " 
+                  << prj.totalTime() << std::endl;
     }
-
-    //================= setup Simulator ======================
-    BodyFactory factory = boost::bind(createBody, _1, _2, modelloader);
-    simulator.init(prj, factory, &scene, &log);
-    simulator.realTime(realtime);
-
-    std::cout << "timestep = " << prj.timeStep() << ", total time = " 
-              << prj.totalTime() << std::endl;
-
-    if (display){
-        simulator.start();
-        while(1) {
-            //std::cerr << "t = " << world.currentTime() << std::endl;
-            if (!window.processEvents()) break;
-            window.draw();
-            window.swapBuffers();
-        }
-        simulator.stop();
-    }else{
-        while (simulator.oneStep());
+    void simulate(double time=0){
+        if (time) simulator.totalTime(time);
+        while(simulator.oneStep());
     }
-
-    manager->shutdown();
-
-    return 0;
-}
+private:  
+    LogManager<SceneState> log;
+    GLscene scene;
+    Simulator simulator;
+    SDLwindow window;
+    RTC::Manager* manager;
+};
 
 BOOST_PYTHON_MODULE( simulator )
 {
-    boost::python::def( "simulate", simulate );
+    boost::python::class_<PySimulator>("Simulator")
+        .def("init", &PySimulator::init)
+        .def("simulate", &PySimulator::simulate)
+        ;
 }

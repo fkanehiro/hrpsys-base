@@ -1,5 +1,4 @@
 #include "Simulator.h"
-#include "GLscene.h"
 #include "BodyRTC.h"
 
 Simulator::Simulator() : adjustTime(false)
@@ -7,13 +6,12 @@ Simulator::Simulator() : adjustTime(false)
 }
 
 void Simulator::init(Project &prj, BodyFactory &factory, 
-                     GLscene *i_scene, LogManager<SceneState> *i_log){
+                     LogManager<SceneState> *i_log){
     log = i_log;
     initWorld(prj, factory, world, pairs);
     initRTS(prj, receivers);
     std::cout << "number of receivers:" << receivers.size() << std::endl;
-    totalTime = prj.totalTime();
-    scene = i_scene;
+    m_totalTime = prj.totalTime();
 
     OpenHRP::CollisionSequence& collisions = state.collisions;
 
@@ -120,19 +118,19 @@ bool Simulator::oneStep(){
     world.constraintForceSolver.clearExternalForces();
     world.calcNextState(state.collisions);
     
-    if (scene){
+    if (log){
         state.set(world);
         log->add(state);
     }
     tm_dynamics.end();
     
-    if (world.currentTime() > totalTime){
+    if (world.currentTime() > m_totalTime){
         struct timeval endTime;
         gettimeofday(&endTime, NULL);
         double realT = (endTime.tv_sec - beginTime.tv_sec)
             + (endTime.tv_usec - beginTime.tv_usec)/1e6;
         printf("total     :%8.3f[s], %8.3f[sim/real]\n",
-               realT, totalTime/realT);
+               realT, m_totalTime/realT);
         printf("controller:%8.3f[s], %8.3f[ms/frame]\n",
                tm_control.totalTime(), tm_control.averageTime()*1000);
         printf("collision :%8.3f[s], %8.3f[ms/frame]\n",

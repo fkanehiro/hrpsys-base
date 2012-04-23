@@ -8,7 +8,6 @@
 #include "ProjectUtil.h"
 #include "SceneState.h"
 
-class GLscene;
 class BodyRTC;
 class SDL_Thread;
 
@@ -17,19 +16,19 @@ class Simulator : public ThreadedObject
 public:
     Simulator();
     void init(Project &prj, BodyFactory &factory, 
-              GLscene *i_scene, LogManager<SceneState> *i_log);
+              LogManager<SceneState> *i_log);
     bool oneStep();
     void checkCollision(OpenHRP::CollisionSequence &collisions);
     void realTime(bool flag) { adjustTime = flag; }
+    void totalTime(double time) { m_totalTime = time; }
 private:
     hrp::World<hrp::ConstraintForceSolver> world;
-    GLscene *scene;
     LogManager<SceneState> *log;
     std::vector<BodyRTC *> bodies; 
     std::vector<ClockReceiver> receivers;
     std::vector<hrp::ColdetLinkPairPtr> pairs;
     SceneState state;
-    double totalTime;
+    double m_totalTime;
     TimeMeasure tm_dynamics, tm_control, tm_collision;
     bool adjustTime;
     std::deque<struct timeval> startTimes;

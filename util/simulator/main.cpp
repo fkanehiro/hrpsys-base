@@ -117,7 +117,7 @@ int main(int argc, char* argv[])
 
     //================= setup Simulator ======================
     BodyFactory factory = boost::bind(createBody, _1, _2, modelloader);
-    simulator.init(prj, factory, &scene, &log);
+    simulator.init(prj, factory, &log);
     simulator.realTime(realtime);
 
     std::cout << "timestep = " << prj.timeStep() << ", total time = " 
