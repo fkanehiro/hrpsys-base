@@ -18,13 +18,6 @@ using namespace hrp;
 
 void GLscene::updateScene()
 { 
-    if (m_isNewBody){
-        GLbody *body = new GLbody(m_newBodyInfo);
-        GLsceneBase::addBody(m_newBodyName, body);
-        m_isNewBody = false;
-        SDL_SemPost(m_sem);
-    }
-
     if (m_log->index()<0) return;
 
     LogManager<OpenHRP::WorldState> *lm 
@@ -58,13 +51,6 @@ void GLscene::updateScene()
     }
 }
 
-void GLscene::addBody(const std::string &i_name, BodyInfo_var i_binfo){
-    m_newBodyName = i_name;
-    m_newBodyInfo = i_binfo;
-    m_isNewBody = true;
-    SDL_SemWait(m_sem);
-}
-
 void GLscene::drawAdditionalLines()
 {
     if (m_log->index()<0) return;
@@ -89,12 +75,10 @@ void GLscene::drawAdditionalLines()
 }
 
 GLscene::GLscene(LogManagerBase *i_log) 
-  : GLsceneBase(i_log), m_isNewBody(false)
+  : GLsceneBase(i_log)
 {
-    m_sem = SDL_CreateSemaphore(0);
 }
 
 GLscene::~GLscene()
 {
-    SDL_DestroySemaphore(m_sem);
 }
