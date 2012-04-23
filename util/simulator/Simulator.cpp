@@ -30,6 +30,11 @@ void Simulator::init(Project &prj, BodyFactory &factory,
     for (int i=0; i<world.numBodies(); i++){
         bodies.push_back((BodyRTC *)world.body(i).get());
     }
+
+    if (log){
+        state.set(world);
+        log->add(state);
+    }
 }
 
 void Simulator::checkCollision(OpenHRP::CollisionSequence &collisions)
