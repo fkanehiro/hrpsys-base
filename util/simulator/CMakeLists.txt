@@ -3,7 +3,8 @@ configure_file(hrpsys-simulator.in ${CMAKE_CURRENT_BINARY_DIR}/hrpsys-simulator)
 include_directories(${OpenCV_INCLUDE_DIRS})
 include_directories(${LIBXML2_INCLUDE_DIR})
 include_directories(${SDL_INCLUDE_DIR})
-include_directories(/usr/include/python2.6)
+find_package(PythonLibs)
+include_directories(${PYTHON_INCLUDE_DIRS})
 
 set(target sdlsim)
 
@@ -33,8 +34,10 @@ add_library(simulator SHARED
 target_link_libraries(simulator 
   boost_python 
   hrpsysUtil
+  ${PYTHON_LIBRARIES}
   )
 set_target_properties(simulator PROPERTIES PREFIX "")
+set_target_properties(simulator PROPERTIES SUFFIX ".so")
 
 install(TARGETS ${target}
   RUNTIME DESTINATION bin
