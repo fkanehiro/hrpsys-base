@@ -23,24 +23,27 @@ using namespace hrp;
 using namespace OpenHRP;
 
 hrp::BodyPtr createBody(const std::string& name, const ModelItem& mitem,
-                        ModelLoader_ptr modelloader)
+                        ModelLoader_ptr modelloader, bool usebbox)
 {
     std::cout << "createBody(" << name << "," << mitem.url << ")" << std::endl;
     RTC::Manager& manager = RTC::Manager::instance();
     std::string args = "BodyRTC?instance_name="+name;
     BodyRTCPtr body = (BodyRTC *)manager.createComponent(args.c_str());
-    ModelLoader::ModelLoadOption mlopt;
-    mlopt.readImage = false;
-    mlopt.AABBtype = OpenHRP::ModelLoader::AABB_NUM;
-    mlopt.AABBdata.length(mitem.joint.size());
-     std::map<std::string, JointItem>::const_iterator it;
-    int i=0;
-    for (it = mitem.joint.begin(); it != mitem.joint.end(); it++){
-        //mlopt.AABBdata[i++] = it->second.NumOfAABB;
-        mlopt.AABBdata[i++] = 1;
+    BodyInfo_var binfo;
+    if (usebbox){
+        ModelLoader::ModelLoadOption mlopt;
+        mlopt.readImage = false;
+        mlopt.AABBtype = OpenHRP::ModelLoader::AABB_NUM;
+        mlopt.AABBdata.length(mitem.joint.size());
+        std::map<std::string, JointItem>::const_iterator it;
+        int i=0;
+        for (it = mitem.joint.begin(); it != mitem.joint.end(); it++){
+            mlopt.AABBdata[i++] = 1;
+        }
+        binfo = modelloader->getBodyInfoEx(mitem.url.c_str(), mlopt);
+    }else{
+        binfo = modelloader->getBodyInfo(mitem.url.c_str());
     }
-    //BodyInfo_var binfo = modelloader->getBodyInfoEx(mitem.url.c_str(), mlopt);
-    BodyInfo_var binfo = modelloader->getBodyInfo(mitem.url.c_str());
     if (!loadBodyFromBodyInfo(body, binfo, true)){
         std::cerr << "failed to load model[" << mitem.url << "]" << std::endl;
         manager.deleteComponent(body.get());
@@ -53,12 +56,14 @@ hrp::BodyPtr createBody(const std::string& name, const ModelItem& mitem,
 
 int main(int argc, char* argv[]) 
 {
-    bool display = true, realtime=false;
+    bool display = true, realtime=false, usebbox=false;
     for (int i=0; i<argc; i++){
         if (strcmp("-nodisplay",argv[i])==0){
             display = false;
         }else if(strcmp("-realtime", argv[i])==0){
             realtime = true;
+        }else if(strcmp("-usebbox", argv[i])==0){
+            usebbox = true;
         }
     }
 
@@ -73,7 +78,10 @@ int main(int argc, char* argv[])
     int rtmargc=0;
     std::vector<char *> rtmargv;
     for (int i=1; i<argc; i++){
-        if (strcmp(argv[i], "-nodisplay") && strcmp(argv[i], "-realtime")){
+        if (strcmp(argv[i], "-nodisplay") 
+            && strcmp(argv[i], "-realtime")
+            && strcmp(argv[i], "-usebbox")
+            ){
             rtmargv.push_back(argv[i]);
             rtmargc++;
         }
@@ -111,7 +119,7 @@ int main(int argc, char* argv[])
     }
 
     //================= setup Simulator ======================
-    BodyFactory factory = boost::bind(createBody, _1, _2, modelloader);
+    BodyFactory factory = boost::bind(createBody, _1, _2, modelloader,usebbox);
     simulator.init(prj, factory, &log);
     simulator.realTime(realtime);
 

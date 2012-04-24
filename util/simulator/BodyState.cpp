@@ -37,5 +37,5 @@ void BodyState::set(BodyPtr i_body)
     for(int id=0; id < n; ++id){
         AccelSensor* sensor = i_body->sensor<AccelSensor>(id);
         setVector3(sensor->dv, acc[id]);
-    }		
+    }
 }
