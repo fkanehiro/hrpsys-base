@@ -67,6 +67,7 @@ add_custom_target(StubPython ALL DEPENDS ${pythonstubs})
 
 set(target hrpsysBaseStub)
 add_library(${target} SHARED ${sources})
+target_link_libraries(${target} ${OPENRTM_LIBRARIES})
 
 install(TARGETS ${target}
 	LIBRARY DESTINATION lib CONFIGURATIONS Release Debug

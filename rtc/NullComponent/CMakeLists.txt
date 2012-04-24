@@ -1,5 +1,5 @@
 set(comp_sources NullComponent.cpp NullService_impl.cpp)
-set(libs ${OPENRTM_LIBRARIES} hrpsysBaseStub)
+set(libs hrpsysBaseStub)
 add_library(NullComponent SHARED ${comp_sources})
 target_link_libraries(NullComponent ${libs})
 set_target_properties(NullComponent PROPERTIES PREFIX "")

@@ -1,5 +1,5 @@
 set(comp_sources DataLogger.cpp DataLoggerService_impl.cpp)
-set(libs ${OPENRTM_LIBRARIES} hrpsysBaseStub)
+set(libs hrpsysBaseStub)
 add_library(DataLogger SHARED ${comp_sources})
 target_link_libraries(DataLogger ${libs})
 set_target_properties(DataLogger PROPERTIES PREFIX "")

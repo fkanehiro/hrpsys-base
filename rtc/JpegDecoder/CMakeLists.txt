@@ -2,7 +2,7 @@ find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})
 
 set(comp_sources JpegDecoder.cpp)
-set(libs ${OPENRTM_LIBRARIES} ${OpenCV_LIBRARIES} hrpsysBaseStub)
+set(libs ${OpenCV_LIBRARIES} hrpsysBaseStub)
 add_library(JpegDecoder SHARED ${comp_sources})
 target_link_libraries(JpegDecoder ${libs})
 set_target_properties(JpegDecoder PROPERTIES PREFIX "")

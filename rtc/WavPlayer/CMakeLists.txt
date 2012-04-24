@@ -1,5 +1,5 @@
 set(comp_sources WavPlayer.cpp WavPlayerService_impl.cpp) 
-set(libs ${OPENRTM_LIBRARIES} hrpsysBaseStub)
+set(libs hrpsysBaseStub)
 add_library(WavPlayer SHARED ${comp_sources})
 target_link_libraries(WavPlayer ${libs})
 set_target_properties(WavPlayer PROPERTIES PREFIX "")
