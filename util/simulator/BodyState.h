@@ -12,7 +12,7 @@ public:
     hrp::Matrix33 R;
     std::vector<hrp::Vector3> acc;
     std::vector<hrp::Vector3> rate;
-    std::vector<hrp::dvector6> force;
+    std::vector<hrp::dvector6, Eigen::aligned_allocator<hrp::dvector6> > force;
 };
 
 #endif
