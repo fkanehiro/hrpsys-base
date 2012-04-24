@@ -1,22 +1,20 @@
-generate_stub_skel(Img "Img/")
-generate_stub_skel(HRPDataTypes "OpenHRP")
-
 find_package(OpenGL REQUIRED)
 find_package(OpenCV REQUIRED)
 
 include_directories(${OpenCV_INCLUDE_DIRS})
 include_directories(${LIBXML2_INCLUDE_DIR})
-set(comp_sources VirtualCamera.cpp IrrModel.cpp ImgSk.cpp ImgDynSk.cpp HRPDataTypesSk.cpp HRPDataTypesDynSk.cpp RTCGLbody.cpp)
+set(comp_sources VirtualCamera.cpp IrrModel.cpp RTCGLbody.cpp)
 
 add_library(VirtualCamera SHARED ${comp_sources})
 set(libraries
-  ${OPENHRP_LIBRARIES}
-  hrpsysUtil
   ${OPENGL_LIBRARIES} 
   ${IRRLICHT_LIBRARIES} 
   ${OpenCV_LIBRARIES} 
   ${LIBXML2_LIBRARIES} 
+  ${OPENHRP_LIBRARIES}
   rtcpcl_pointcloud_type
+  hrpsysUtil
+  hrpsysBaseStub
   )
 target_link_libraries(VirtualCamera ${libraries})
 set_target_properties(VirtualCamera PROPERTIES PREFIX "")

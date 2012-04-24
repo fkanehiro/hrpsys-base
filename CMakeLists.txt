@@ -54,6 +54,8 @@ endif()
 
 include_directories(${PROJECT_SOURCE_DIR}/lib)
 
+include_directories(${CMAKE_BINARY_DIR}/idl)
+
 set(JAVAC javac)
 set(JAR jar)
 set(JAR jar)
@@ -125,10 +127,10 @@ endmacro()
 
 add_subdirectory(jython)
 add_subdirectory(python)
+add_subdirectory(idl)
 add_subdirectory(lib)
 add_subdirectory(ec)
 add_subdirectory(rtc)
 add_subdirectory(doc)
-add_subdirectory(idl)
 add_subdirectory(util)
 add_subdirectory(sample)

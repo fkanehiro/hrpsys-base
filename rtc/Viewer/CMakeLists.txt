@@ -1,13 +1,12 @@
-generate_stub_skel(HRPDataTypes "OpenHRP")
-
-set(comp_sources Viewer.cpp IrrModel.cpp RTCGLbody.cpp HRPDataTypesSk.cpp HRPDataTypesDynSk.cpp)
+set(comp_sources Viewer.cpp IrrModel.cpp RTCGLbody.cpp)
 include_directories(${LIBXML2_INCLUDE_DIR})
 add_library(Viewer SHARED ${comp_sources})
 set(libraries
-  ${OPENHRP_LIBRARIES}
-  hrpsysUtil
   ${IRRLICHT_LIBRARIES}
   ${LIBXML2_LIBRARIES}  
+  ${OPENHRP_LIBRARIES}
+  hrpsysUtil
+  hrpsysBaseStub
   )
 target_link_libraries(Viewer ${libraries})
 set_target_properties(Viewer PROPERTIES PREFIX "")

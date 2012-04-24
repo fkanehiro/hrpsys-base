@@ -1,12 +1,11 @@
-generate_stub_skel(HRPDataTypes "OpenHRP")
-
-set(comp_sources Simulator.cpp RTCBody.cpp HRPDataTypesSk.cpp HRPDataTypesDynSk.cpp)
+set(comp_sources Simulator.cpp RTCBody.cpp)
 include_directories(${LIBXML2_INCLUDE_DIR})
 add_library(Simulator SHARED ${comp_sources})
 set(libraries
+  ${LIBXML2_LIBRARIES}
   ${OPENHRP_LIBRARIES} 
   hrpsysUtil 
-  ${LIBXML2_LIBRARIES}
+  hrpsysBaseStub
   )
 target_link_libraries(Simulator ${libraries})
 set_target_properties(Simulator PROPERTIES PREFIX "")
