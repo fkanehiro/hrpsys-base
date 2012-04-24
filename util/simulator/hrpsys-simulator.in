@@ -13,7 +13,6 @@ def runSimulator(*args):
     cmd = "sdlsim "
     for arg in args:
         cmd += str(arg)+" "
-    print cmd    
     os.system(cmd)
 
 argc = len(sys.argv)
