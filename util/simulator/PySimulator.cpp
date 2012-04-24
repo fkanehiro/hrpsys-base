@@ -102,9 +102,16 @@ public:
         std::cout << "timestep = " << prj.timeStep() << ", total time = " 
                   << prj.totalTime() << std::endl;
     }
-    void simulate(double time=0){
+    void simulate(double time){
         simulator.totalTime(simulator.currentTime()+time);
         while(simulator.oneStep());
+    }
+    void start(double time){
+        simulator.totalTime(simulator.currentTime()+time);
+        simulator.start();
+    }
+    void stop(){
+        simulator.stop();
     }
     void realTime(bool flag){
         simulator.realTime(flag);
@@ -123,5 +130,7 @@ BOOST_PYTHON_MODULE( simulator )
         .def("init", &PySimulator::init)
         .def("simulate", &PySimulator::simulate)
         .def("realTime", &PySimulator::realTime)
+        .def("start", &PySimulator::start)
+        .def("stop", &PySimulator::stop)
         ;
 }
