@@ -113,6 +113,9 @@ public:
     void stop(){
         simulator.stop();
     }
+    void wait(){
+        simulator.wait();
+    }
     void realTime(bool flag){
         simulator.realTime(flag);
     } 
@@ -132,5 +135,6 @@ BOOST_PYTHON_MODULE( simulator )
         .def("realTime", &PySimulator::realTime)
         .def("start", &PySimulator::start)
         .def("stop", &PySimulator::stop)
+        .def("wait", &PySimulator::wait)
         ;
 }

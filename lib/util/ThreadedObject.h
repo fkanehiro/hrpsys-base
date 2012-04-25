@@ -12,6 +12,7 @@ public:
     void stop();
     void pause();
     void resume();
+    void wait();
     bool isPausing();
     bool isRunning();
     virtual bool oneStep();
