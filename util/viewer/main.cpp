@@ -5,6 +5,7 @@
 #include <GL/glut.h>
 #endif
 #include <SDL/SDL_timer.h>
+#include <hrpModel/ModelLoaderUtil.h>
 #include "util/GLlink.h"
 #include "util/GLbody.h"
 #include "util/SDLUtil.h"
@@ -61,6 +62,12 @@ int main(int argc, char *argv[])
         GLbody::useAbsTransformToDraw();
 
         SDLwindow window(&scene, &log);
+        window.init();
+
+        if (argc == 2){
+            GLbody *body = new GLbody(hrp::loadBodyInfo(argv[1], orb));
+            scene.addBody("model", body); 
+        }
 	
         while(window.oneStep());
 
