@@ -125,6 +125,12 @@ macro(generate_stub_skel idl_basename package_path)
 
 endmacro()
 
+configure_file(hrpsys-base.pc.in ${CMAKE_CURRENT_BINARY_DIR}/hrpsys-base.pc @ONLY)
+install(FILES
+  ${CMAKE_CURRENT_BINARY_DIR}/hrpsys-base.pc
+  DESTINATION lib/pkgconfig)
+
+
 add_subdirectory(jython)
 add_subdirectory(python)
 add_subdirectory(idl)

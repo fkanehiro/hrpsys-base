@@ -1,0 +1,19 @@
+prefix=@CMAKE_INSTALL_PREFIX@
+exec_prefix=${prefix}/bin
+libdir=${prefix}/lib
+includedir=${prefix}/include/hrpsys/idl
+link_shared_files=-lhmc2
+link_static_files=@PKG_CONF_LINK_STATIC_FILES@
+link_depend_dirs=@PKG_CONF_LINK_DEPEND_DIRS@
+link_depend_files=@PKG_CONF_LINK_DEPEND_FILES@
+link_depend_options=@PKG_CONF_LINK_DEPEND_OPTS@
+cflag_defs=
+cflag_options=@PKG_CONF_CXXFLAG_OPTIONS@
+
+Name: hrpsys-base
+Description: Basic RT components and utilities to control robots using OpenRTM
+Requires: openhrp3.1
+Version: 3.1
+Libs: ${link_depend_dirs} -L${libdir} ${link_shared_files} ${link_depend_options} ${link_depend_files} 
+Libs.private: ${link_static_files}
+Cflags: ${cflag_defs} ${cflag_options} -I${includedir}
