@@ -1,4 +1,5 @@
 #include <iostream>
+#include <math.h>
 #ifdef __APPLE__
 #include <OpenGL/gl.h>
 #else
@@ -16,11 +17,12 @@ void compileShape(OpenHRP::BodyInfo_var i_binfo,
     MaterialInfoSequence_var mis = i_binfo->materials();
     for (unsigned int l=0; l<tsis.length(); l++){
         const TransformedShapeIndex &tsi = tsis[l];
-        double tform[16];
+        double tform[16], scale[3];
         for (int i=0; i<3; i++){
             for (int j=0; j<4; j++){
                 tform[j*4+i] = tsi.transformMatrix[i*4+j];
             }
+            scale[i] = sqrt(tform[i]*tform[i]+tform[i+4]*tform[i+4]+tform[i+8]*tform[i+8]);
         }
         tform[3] = tform[7] = tform[11] = 0.0; tform[15] = 1.0;
         
@@ -50,6 +52,7 @@ void compileShape(OpenHRP::BodyInfo_var i_binfo,
         }else{
             std::cout << "no material" << std::endl;
         }
+
         for(int j=0; j < numTriangles; ++j){
             if (!ai.normalPerVertex){
                 int p;
@@ -58,7 +61,11 @@ void compileShape(OpenHRP::BodyInfo_var i_binfo,
                 }else{
                     p = normalIndices[j]*3;
                 }
-                if (p < ai.normals.length()) glNormal3fv(normals+p);
+                if (p < ai.normals.length()){
+                    glNormal3f(normals[p  ]*scale[0],
+                               normals[p+1]*scale[1],
+                               normals[p+2]*scale[2]);
+                }
             }
             for(int k=0; k < 3; ++k){
                 if (ai.normalPerVertex){
