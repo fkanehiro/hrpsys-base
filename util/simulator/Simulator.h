@@ -5,7 +5,7 @@
 #include "util/Project.h"
 #include "util/ThreadedObject.h"
 #include "util/LogManager.h"
-#include "ProjectUtil.h"
+#include "util/ProjectUtil.h"
 #include "SceneState.h"
 
 class BodyRTC;

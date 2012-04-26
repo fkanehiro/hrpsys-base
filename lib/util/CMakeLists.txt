@@ -1,5 +1,6 @@
 set(sources
   Project.cpp
+  ProjectUtil.cpp
   OpenRTMUtil.cpp
   ThreadedObject.cpp
   GLutil.cpp
@@ -12,6 +13,7 @@ set(sources
 
 set(headers
   Project.h
+  ProjectUtil.h
   OpenRTMUtil.h
   ThreadedObject.h
   GLutil.h

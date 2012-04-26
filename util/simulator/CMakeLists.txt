@@ -13,7 +13,6 @@ add_executable(sdlsim
   BodyRTC.cpp
   BodyState.cpp
   SceneState.cpp
-  ProjectUtil.cpp
   Simulator.cpp
   main.cpp
   )
@@ -27,7 +26,6 @@ add_library(simulator SHARED
   BodyRTC.cpp
   BodyState.cpp
   SceneState.cpp
-  ProjectUtil.cpp
   Simulator.cpp
   PySimulator.cpp)
 

@@ -8,6 +8,10 @@ void initWorld(Project& prj, BodyFactory &factory,
                hrp::World<hrp::ConstraintForceSolver>& world,
                std::vector<hrp::ColdetLinkPairPtr> &pairs)
 {
+    world.clearBodies();
+    world.constraintForceSolver.clearCollisionCheckLinkPairs();
+    world.setCurrentTime(0.0);
+    
     world.setTimeStep(prj.timeStep());
     if(prj.isEuler()){
         world.setEulerMethod();
