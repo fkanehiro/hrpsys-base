@@ -56,7 +56,7 @@ hrp::BodyPtr createBody(const std::string& name, const ModelItem& mitem,
 
 int main(int argc, char* argv[]) 
 {
-    bool display = true, realtime=false, usebbox=false;
+    bool display = true, realtime=false, usebbox=false, endless=false;
     for (int i=0; i<argc; i++){
         if (strcmp("-nodisplay",argv[i])==0){
             display = false;
@@ -64,6 +64,8 @@ int main(int argc, char* argv[])
             realtime = true;
         }else if(strcmp("-usebbox", argv[i])==0){
             usebbox = true;
+        }else if(strcmp("-endless", argv[i])==0){
+            endless = true;
         }
     }
 
@@ -81,6 +83,7 @@ int main(int argc, char* argv[])
         if (strcmp(argv[i], "-nodisplay") 
             && strcmp(argv[i], "-realtime")
             && strcmp(argv[i], "-usebbox")
+            && strcmp(argv[i], "-endless")
             ){
             rtmargv.push_back(argv[i]);
             rtmargc++;
@@ -122,6 +125,10 @@ int main(int argc, char* argv[])
     BodyFactory factory = boost::bind(createBody, _1, _2, modelloader,usebbox);
     simulator.init(prj, factory, &log);
     simulator.realTime(realtime);
+    if (endless){
+        simulator.totalTime(0);
+        log.enableRingBuffer(50000);
+    }
 
     std::cout << "timestep = " << prj.timeStep() << ", total time = " 
               << prj.totalTime() << std::endl;

@@ -129,7 +129,7 @@ bool Simulator::oneStep(){
     }
     tm_dynamics.end();
     
-    if (world.currentTime() > m_totalTime){
+    if (m_totalTime && world.currentTime() > m_totalTime){
         struct timeval endTime;
         gettimeofday(&endTime, NULL);
         double realT = (endTime.tv_sec - beginTime.tv_sec)
