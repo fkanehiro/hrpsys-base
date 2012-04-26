@@ -9,6 +9,7 @@ set(sources
   GLbody.cpp
   GLsceneBase.cpp
   SDLUtil.cpp
+  BodyRTC.cpp
   )
 
 set(headers
@@ -25,6 +26,7 @@ set(headers
   LogManager.h
   SDLUtil.h
   VectorConvert.h
+  BodyRTC.h
   )
 
 include_directories(${LIBXML2_INCLUDE_DIR})

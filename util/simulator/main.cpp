@@ -14,9 +14,9 @@
 #include "util/Project.h"
 #include "util/OpenRTMUtil.h"
 #include "util/SDLUtil.h"
+#include "util/BodyRTC.h"
 #include "Simulator.h"
 #include "GLscene.h"
-#include "BodyRTC.h"
 
 using namespace std;
 using namespace hrp;

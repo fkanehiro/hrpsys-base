@@ -10,7 +10,6 @@ set(target sdlsim)
 
 add_executable(sdlsim 
   GLscene.cpp 
-  BodyRTC.cpp
   BodyState.cpp
   SceneState.cpp
   Simulator.cpp
@@ -23,7 +22,6 @@ target_link_libraries(sdlsim
 
 add_library(simulator SHARED 
   GLscene.cpp 
-  BodyRTC.cpp
   BodyState.cpp
   SceneState.cpp
   Simulator.cpp
