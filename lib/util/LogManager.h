@@ -15,7 +15,11 @@ public:
     }
     void add(const T& state){
         m_log.push_back(state);
-        if (m_maxLogLength > 0 && m_log.size() > m_maxLogLength) m_log.pop_front();
+        if (m_log.size() == 1) m_offsetT = state.time;
+        if (m_maxLogLength > 0 && m_log.size() > m_maxLogLength) {
+            m_log.pop_front();
+            if (m_index >= 1) m_index--;
+        }
         m_isNewStateAdded = true;
     }
     void clear(){
@@ -32,7 +36,7 @@ public:
     bool isNewStateAdded() { return m_isNewStateAdded; }
     double currentTime() { 
         if (!m_log.empty() && m_index>=0){
-            return m_log[m_index].time - m_log[0].time;
+            return m_log[m_index].time - m_offsetT;
         }else{
             return -1;
         }
@@ -123,5 +127,6 @@ protected:
     double m_initT;
     struct timeval m_startT;
     int m_maxLogLength;
+    double m_offsetT;
 };
 #endif
