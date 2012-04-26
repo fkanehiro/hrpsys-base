@@ -22,6 +22,7 @@ set(headers
   LogManagerBase.h
   LogManager.h
   SDLUtil.h
+  VectorConvert.h
   )
 
 include_directories(${LIBXML2_INCLUDE_DIR})
