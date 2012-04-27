@@ -119,6 +119,12 @@ public:
     void realTime(bool flag){
         simulator.realTime(flag);
     } 
+    void endless(bool flag){
+        if (flag){
+            simulator.totalTime(0);
+            log.enableRingBuffer(50000);
+        }
+    } 
 private:  
     LogManager<SceneState> log;
     GLscene scene;
@@ -133,6 +139,7 @@ BOOST_PYTHON_MODULE( simulator )
         .def("init", &PySimulator::init)
         .def("simulate", &PySimulator::simulate)
         .def("realTime", &PySimulator::realTime)
+        .def("endless", &PySimulator::endless)
         .def("start", &PySimulator::start)
         .def("stop", &PySimulator::stop)
         .def("wait", &PySimulator::wait)
