@@ -268,6 +268,7 @@ RTC::ReturnCode_t Simulator::onExecute(RTC::UniqueId ec_id)
 {
     //std::cout << m_profile.instance_name<< ": onExecute(" << ec_id << ")" << std::endl;
     // output current state
+    m_sceneState.time = m_world.currentTime();
     for (unsigned int i=0; i<m_bodies.size(); i++){
         m_bodies[i]->output(m_sceneState.states[i]);
     }
