@@ -152,7 +152,7 @@ void RTCBody::output(OpenHRP::RobotState& state)
     m_pos.data.z = root->p[2];
     state.basePose.position = m_pos.data;
     
-    Vector3 rpy(rpyFromRot(root->R));
+    Vector3 rpy(rpyFromRot(root->attitude()));
     m_rpy.data.r = rpy[0];
     m_rpy.data.p = rpy[1];
     m_rpy.data.y = rpy[2];
