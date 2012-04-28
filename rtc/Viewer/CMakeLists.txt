@@ -1,4 +1,5 @@
-set(comp_sources Viewer.cpp IrrModel.cpp RTCGLbody.cpp)
+set(comp_sources Viewer.cpp GLscene.cpp RTCGLbody.cpp)
+include_directories(${OpenCV_INCLUDE_DIRS})
 include_directories(${LIBXML2_INCLUDE_DIR})
 add_library(Viewer SHARED ${comp_sources})
 set(libraries

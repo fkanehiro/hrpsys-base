@@ -56,14 +56,24 @@ void GLbody::setPosture(const double *i_angles){
     }
 }
 
+void GLbody::setPosition(double x, double y, double z)
+{
+    double *tform = m_root->getTransform();
+    tform[12] = x; tform[13] = y; tform[14] = z; 
+}
+
+void GLbody::setOrientation(double r, double p, double y)
+{
+    double *tform = m_root->getTransform();
+    Matrix33 R = rotFromRpy(r, p, y);
+    tform[ 0]=R(0,0);tform[ 1]=R(1,0);tform[ 2]=R(2,0);
+    tform[ 4]=R(0,1);tform[ 5]=R(1,1);tform[ 6]=R(2,1);
+    tform[ 8]=R(0,2);tform[ 9]=R(1,2);tform[10]=R(2,2);
+}
+
 void GLbody::setPosture(const double *i_angles, double *i_pos, double *i_rpy){
-    double tform[16];
-    Matrix33 R = rotFromRpy(i_rpy[0], i_rpy[1], i_rpy[2]);
-    tform[ 0]=R(0,0);tform[ 1]=R(1,0);tform[ 2]=R(2,0);tform[ 3]=0;
-    tform[ 4]=R(0,1);tform[ 5]=R(1,1);tform[ 6]=R(2,1);tform[ 7]=0;
-    tform[ 8]=R(0,2);tform[ 9]=R(1,2);tform[10]=R(2,2);tform[11]=0;
-    tform[12]=i_pos[0];tform[13]=i_pos[1];tform[14]=i_pos[2];tform[15]=1;
-    m_root->setTransform(tform);
+    setPosition(i_pos[0], i_pos[1], i_pos[2]); 
+    setOrientation(i_rpy[0], i_rpy[1], i_rpy[2]); 
     setPosture(i_angles);
 }
 

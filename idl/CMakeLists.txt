@@ -13,6 +13,8 @@ set(idl_files
   HRPDataTypes.idl
   )
 
+set(idl_flags -bcxx -Wbuse_quotes -Wbh=.hh -Wbs=Sk.cpp -Wba -Wbd=DynSk.cpp -I${OPENRTM_IDL_DIR})
+
 macro(generate_cpp_stub idl_basename)
   set(idl_file ${CMAKE_CURRENT_SOURCE_DIR}/${idl_basename}.idl)
   add_custom_command(

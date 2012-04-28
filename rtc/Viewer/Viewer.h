@@ -16,6 +16,8 @@
 #include <rtm/DataInPort.h>
 #include <rtm/DataOutPort.h>
 #include <rtm/idl/BasicDataTypeSkel.h>
+#include "util/LogManager.h"
+#include "util/SDLUtil.h"
 #include "HRPDataTypes.hh"
 
 class RTCGLbody;
@@ -137,6 +139,8 @@ class Viewer
   GLscene *m_scene;
   std::map<std::string, RTCGLbody *> m_bodies;
   std::string m_project;
+  LogManager<OpenHRP::SceneState> m_log;
+  SDLwindow m_window;
   int dummy;
 };
 

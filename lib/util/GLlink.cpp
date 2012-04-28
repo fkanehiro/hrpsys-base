@@ -36,6 +36,17 @@ GLlink::GLlink(const LinkInfo &i_li, BodyInfo_var i_binfo) : m_parent(NULL), m_j
     m_trans[12]=i_li.translation[0];m_trans[13]=i_li.translation[1];
     m_trans[14]=i_li.translation[2];m_trans[15]=1; 
     
+    CORBA::String_var jointType = i_li.jointType;
+    const std::string jt( jointType );
+    if(jt == "fixed" ){
+        m_jointType = FIXED_JOINT;
+    } else if(jt == "free" ){
+        m_jointType = FREE_JOINT;
+    } else if(jt == "rotate" ){
+        m_jointType = ROTATIONAL_JOINT;
+    } else if(jt == "slide" ){
+        m_jointType = SLIDE_JOINT;
+    }
     
     m_list = glGenLists(1);
     //std::cout << i_li.name << std::endl;

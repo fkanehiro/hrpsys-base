@@ -14,6 +14,8 @@ public:
     GLbody(OpenHRP::BodyInfo_var i_binfo);
     ~GLbody();
     void setPosture(const double *i_angles);
+    void setPosition(double x, double y, double z);
+    void setOrientation(double r, double p, double y);
     void setPosture(const double *i_angles, double *i_pos, double *i_rpy);
     void setPosture(const hrp::dvector& i_q, const hrp::Vector3& i_p,
                     const hrp::Matrix33& i_R);

@@ -11,6 +11,11 @@ class GLcamera;
 class GLlink
 {
 public:
+    typedef enum {FREE_JOINT, 
+                  FIXED_JOINT, 
+                  ROTATIONAL_JOINT, 
+                  SLIDE_JOINT} JointType;
+
     GLlink(const OpenHRP::LinkInfo &i_li, OpenHRP::BodyInfo_var i_binfo);
 
     void draw();
@@ -18,6 +23,7 @@ public:
     void addChild(GLlink *i_child);
     void setQ(double i_q);
     void setTransform(double i_trans[16]);
+    double *getTransform() { return m_trans; } 
     int jointId();
     const std::string& name() { return m_name; }
 
@@ -25,6 +31,7 @@ public:
 
     void computeAbsTransform(double o_trans[16]);
     void setAbsTransform(double o_trans[16]);
+    JointType jointType() { return m_jointType; }
     static void useAbsTransformToDraw();
 
 private:
@@ -36,5 +43,6 @@ private:
     hrp::Vector3 m_axis;
     double m_trans[16], m_T_j[16], m_absTrans[16];
     int m_list, m_jointId;
+    JointType m_jointType;
 };
 #endif

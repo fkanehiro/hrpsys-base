@@ -10,7 +10,9 @@
 #include <rtm/CorbaNaming.h>
 
 #include "util/Project.h"
-#include "IrrModel.h"
+#include <hrpModel/ModelLoaderUtil.h>
+#include "util/GLbody.h"
+#include "GLscene.h"
 #include "RTCGLbody.h"
 #include "Viewer.h"
 
@@ -39,9 +41,10 @@ Viewer::Viewer(RTC::Manager* manager)
       // <rtc-template block="initializer">
       m_sceneStateIn("state", m_sceneState),
       // </rtc-template>
+      m_scene(new GLscene(&m_log)),
+      m_window(m_scene, &m_log),
       dummy(0)
 {
-    m_scene = new GLscene();
 }
 
 Viewer::~Viewer()
@@ -123,7 +126,7 @@ RTC::ReturnCode_t Viewer::onActivated(RTC::UniqueId ec_id)
     Project prj;
     if (!prj.parse(m_project)) return RTC::RTC_ERROR;
 
-    m_scene->init();
+    m_window.init();
 
     for (std::map<std::string, ModelItem>::iterator it=prj.models().begin();
          it != prj.models().end(); it++){
@@ -134,7 +137,9 @@ RTC::ReturnCode_t Viewer::onActivated(RTC::UniqueId ec_id)
             std::cerr << "failed to load model[" << it->second.url.c_str() << "]" 
                       << std::endl;
         }else{
-            m_bodies[it->first] = new RTCGLbody(m_scene->addBody(binfo), this);
+            GLbody *body = new GLbody(binfo);
+            m_scene->addBody(it->first.c_str(), body);
+            m_bodies[it->first] = new RTCGLbody(body, this);
         }
     }
 
@@ -184,7 +189,9 @@ RTC::ReturnCode_t Viewer::onExecute(RTC::UniqueId ec_id)
         it->second->input();
     }
 
-    m_scene->draw();
+    m_window.processEvents();
+    m_window.draw();
+    m_window.swapBuffers();
 
     return RTC::RTC_OK;
 }
