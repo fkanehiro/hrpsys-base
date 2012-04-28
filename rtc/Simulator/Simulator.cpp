@@ -236,7 +236,7 @@ RTC::ReturnCode_t Simulator::onActivated(RTC::UniqueId ec_id)
             if (!link) continue;
             if (link->isRoot()){
                 link->p = it2->second.translation;
-                link->R = it2->second.rotation;
+                link->setAttitude(it2->second.rotation);
             }else{
                 link->q = it2->second.angle;
             }
