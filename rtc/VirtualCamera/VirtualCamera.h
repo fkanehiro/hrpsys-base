@@ -23,9 +23,11 @@
 #include <cv.h>
 #include <highgui.h>
 //
+#include "util/LogManager.h"
+#include "util/SDLUtil.h"
 #include "Img.hh"
 #include "HRPDataTypes.hh"
-class GLscene;
+#include "GLscene.h"
 class GLcamera;
 class RTCGLbody;
 
@@ -154,7 +156,9 @@ class VirtualCamera
   void setupRangeData();  
   void setupPointCloud();  
   int dummy;
-  GLscene *m_scene;
+  GLscene m_scene;
+  LogManager<OpenHRP::SceneState> m_log;
+  SDLwindow m_window;
   GLcamera *m_camera;
   bool m_generateRange, m_generatePointCloud;
   bool m_generateMovie, m_isGeneratingMovie;

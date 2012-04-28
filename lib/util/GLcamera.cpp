@@ -42,7 +42,7 @@ GLcamera::GLcamera(const SensorInfo &i_si, OpenHRP::BodyInfo_var i_binfo,
     m_height = i_si.specValues[5];
 }
 
-GLcamera::GLcamera(int i_width, int i_height, double i_near, double i_far, double i_fovy) : m_near(i_near), m_far(i_far), m_fovy(i_fovy), m_width(i_width), m_height(i_height)
+GLcamera::GLcamera(int i_width, int i_height, double i_near, double i_far, double i_fovy) : m_near(i_near), m_far(i_far), m_fovy(i_fovy), m_width(i_width), m_height(i_height), m_link(NULL)
 {
 }
 
@@ -62,26 +62,41 @@ void GLcamera::computeAbsTransform(double o_trans[16]){
 
 void GLcamera::setView()
 {
-    computeAbsTransform(m_absTrans);
-    
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     gluPerspective(fovy()*180/M_PI, 
                    (double)width() / (double)height(), 
                    near(), far());
-    gluLookAt(m_absTrans[12], m_absTrans[13], m_absTrans[14], 
-              m_absTrans[12]-m_absTrans[8], 
-              m_absTrans[13]-m_absTrans[9], 
-              m_absTrans[14]-m_absTrans[10],
-              m_absTrans[4], m_absTrans[5], m_absTrans[6]);
+    if (m_link){
+        computeAbsTransform(m_absTrans);
+        gluLookAt(m_absTrans[12], m_absTrans[13], m_absTrans[14], 
+                  m_absTrans[12]-m_absTrans[8], 
+                  m_absTrans[13]-m_absTrans[9], 
+                  m_absTrans[14]-m_absTrans[10],
+                  m_absTrans[4], m_absTrans[5], m_absTrans[6]);
+    }else{
+        gluLookAt(m_viewPoint[0], m_viewPoint[1], m_viewPoint[2], 
+                  m_viewTarget[0], m_viewTarget[1], m_viewTarget[2], 
+                  0,0,1);
+    }
+}
+
+void GLcamera::setViewPoint(double x, double y, double z)
+{
+    m_viewPoint[0] = x; m_viewPoint[1] = y; m_viewPoint[2] = z;
+}
+
+void GLcamera::setViewTarget(double x, double y, double z)
+{
+    m_viewTarget[0] = x; m_viewTarget[1] = y; m_viewTarget[2] = z;
 }
 
 void GLcamera::setTransform(double i_trans[16]){
     memcpy(m_trans, i_trans, sizeof(double)*16);
 }
 
-void GLcamera::getAbsTransform(double o_trans[16]){
-    memcpy(o_trans, m_absTrans, sizeof(double)*16);
+double *GLcamera::getAbsTransform(){
+    return m_absTrans;
 }
 
 void GLcamera::getDepthOfLine(int i_row, float *o_depth)

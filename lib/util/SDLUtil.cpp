@@ -10,6 +10,7 @@
 #include "util/ThreadedObject.h"
 #include "util/LogManagerBase.h"
 #include "util/GLsceneBase.h"
+#include "util/GLcamera.h"
 #include "SDLUtil.h"
 
 SDLwindow::SDLwindow(GLsceneBase* i_scene, LogManagerBase *i_log,
@@ -40,8 +41,11 @@ SDLwindow::~SDLwindow()
     SDL_Quit();
 }
 
-bool SDLwindow::init()
+bool SDLwindow::init(int w, int h, bool resizable)
 {
+    if (w) width = w;
+    if (h) height = h;
+
     int argc=1;
     char *argv[] = {(char *)"dummy"};
     glutInit(&argc, argv); // for bitmap fonts
@@ -54,7 +58,9 @@ bool SDLwindow::init()
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER,1);
     SDL_GL_SetAttribute(SDL_GL_SWAP_CONTROL,1);
     SDL_Surface *screen;
-    screen=SDL_SetVideoMode(width,height,32,SDL_HWSURFACE | SDL_GL_DOUBLEBUFFER | SDL_OPENGL | SDL_RESIZABLE);
+    int flag = SDL_HWSURFACE | SDL_GL_DOUBLEBUFFER | SDL_OPENGL;
+    if (resizable) flag |= SDL_RESIZABLE;
+    screen=SDL_SetVideoMode(width,height,32,flag);
     if(!screen) {
         fprintf(stderr,"failed to set video mode to %dx%dx32.\n",width,height);
         SDL_Quit();
@@ -245,17 +251,25 @@ static void drawString(const char *str)
 
 void SDLwindow::draw()
 {
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    gluPerspective(30,aspect, 0.1, 100);
-
     double xEye = xCenter + radius*cos(tilt)*cos(pan);
     double yEye = yCenter + radius*cos(tilt)*sin(pan);
     double zEye = zCenter + radius*sin(tilt);
     
+#if 0
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    gluPerspective(30,aspect, 0.1, 100);
+
     gluLookAt(xEye, yEye, zEye,
               xCenter, yCenter, zCenter,
               0,0,1);
+#else
+    if (scene->getDefaultCamera() == scene->getCamera()){
+        scene->getCamera()->setViewPoint(xEye, yEye, zEye);
+        scene->getCamera()->setViewTarget(xCenter, yCenter, zCenter);
+    }
+    scene->getCamera()->setView();
+#endif
     
     glClear(GL_COLOR_BUFFER_BIT| GL_DEPTH_BUFFER_BIT);
 

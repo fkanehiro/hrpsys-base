@@ -16,9 +16,11 @@
 #include <hrpModel/ModelLoaderUtil.h>
 #include "util/Project.h"
 #include "util/VectorConvert.h"
+#include "util/GLcamera.h"
+#include "util/GLbody.h"
 #include "VirtualCamera.h"
 #include "RTCGLbody.h"
-#include "IrrModel.h"
+#include "GLscene.h"
 
 // Module specification
 // <rtc-template block="module_spec">
@@ -63,9 +65,8 @@ VirtualCamera::VirtualCamera(RTC::Manager* manager)
       m_poseSensorOut("poseSensor", m_poseSensor),
       // </rtc-template>
       dummy(0),
-#if 0
-      m_scene(GLscene::getInstance()),
-#endif
+      m_scene(&m_log),
+      m_window(&m_scene, &m_log),
       m_camera(NULL),
       m_generateRange(true),
       m_generatePointCloud(false),
@@ -73,7 +74,8 @@ VirtualCamera::VirtualCamera(RTC::Manager* manager)
       m_isGeneratingMovie(false),
       m_debugLevel(0)
 {
-    m_scene = new GLscene();
+    m_scene.showFloorGrid(false);
+    m_scene.showInfo(false);
 }
 
 VirtualCamera::~VirtualCamera()
@@ -227,11 +229,12 @@ RTC::ReturnCode_t VirtualCamera::onActivated(RTC::UniqueId ec_id)
         binfos.push_back(std::make_pair(it->first, binfo));
     }
 
-    m_scene->init(w,h);
+    m_window.init(w,h,false);
     RTCGLbody *robot=NULL;
     for (unsigned int i=0; i<binfos.size(); i++){
-        RTCGLbody *body = new RTCGLbody(m_scene->addBody(binfos[i].second),
-                                        this);
+        GLbody *glb = new GLbody(binfos[i].second);
+        m_scene.addBody(binfos[i].first, glb);
+        RTCGLbody *body = new RTCGLbody(glb, this);
         m_bodies[binfos[i].first] = body;
         if (binfos[i].first == bodyName){
             robot = body;
@@ -246,7 +249,7 @@ RTC::ReturnCode_t VirtualCamera::onActivated(RTC::UniqueId ec_id)
                   << cameraName << ")" << std::endl;
         return RTC::RTC_ERROR;
     }
-    m_scene->setCamera(m_camera);
+    m_scene.setCamera(m_camera);
 
     m_image.data.image.width = m_camera->width();
     m_image.data.image.height = m_camera->height();
@@ -304,22 +307,12 @@ RTC::ReturnCode_t VirtualCamera::onExecute(RTC::UniqueId ec_id)
     }
 
     coil::TimeValue t6(coil::gettimeofday());
-    m_scene->draw();
-#if 0
+    m_window.draw();
+    m_window.swapBuffers();
     capture(m_camera->width(), m_camera->height(), m_image.data.image.raw_data.get_buffer());
-#else
-    irr::scene::ISceneManager *smgr = m_scene->getSceneManager();
-    irr::video::IVideoDriver *driver = smgr->getVideoDriver();
-    irr::video::IImage *image = driver->createScreenShot();
-    unsigned char *pixel = (unsigned char *)image->lock();
-    memcpy(m_image.data.image.raw_data.get_buffer(), pixel, m_image.data.image.width*m_image.data.image.height*3);
-    image->unlock();
-    image->drop();
-#endif
     coil::TimeValue t7(coil::gettimeofday());
 
-    double T[16];
-    m_camera->getAbsTransform(T);
+    double *T = m_camera->getAbsTransform();
     hrp::Vector3 p;
     p[0] = T[12];
     p[1] = T[13];

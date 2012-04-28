@@ -21,14 +21,12 @@ static void drawString(const char *str)
 GLsceneBase::GLsceneBase(LogManagerBase *i_log) : 
     m_width(DEFAULT_W), m_height(DEFAULT_H),
     m_showingStatus(false), m_showSlider(false),
-    m_log(i_log), m_videoWriter(NULL), m_cvImage(NULL), m_isNewBody(false) 
+    m_log(i_log), m_videoWriter(NULL), m_cvImage(NULL), m_isNewBody(false),
+    m_showFloorGrid(true), m_showInfo(true)
 {
     m_default_camera = new GLcamera(DEFAULT_W, DEFAULT_H, 1.0, 100.0, 40*M_PI/180);
-    double T[] = {0,1,0,0,
-                  0,0,1,0,
-                  1,0,0,0,
-                  4,0,0.8,1};
-    m_default_camera->setTransform(T);
+    m_default_camera->setViewPoint(4,0,0.8);
+    m_default_camera->setViewTarget(0,0,0.8);
     m_camera = m_default_camera;
     m_sem = SDL_CreateSemaphore(0);
 }
@@ -75,6 +73,11 @@ void GLsceneBase::setCamera(GLcamera *i_camera)
 GLcamera *GLsceneBase::getCamera()
 {
     return m_camera;
+}
+
+GLcamera *GLsceneBase::getDefaultCamera()
+{
+    return m_default_camera;
 }
 
 void GLsceneBase::save(const char *i_fname)
@@ -136,6 +139,61 @@ void GLsceneBase::init()
     glLightfv(GL_LIGHT1, GL_POSITION, light1pos);
 }
 
+void GLsceneBase::showFloorGrid(bool flag)
+{
+    m_showFloorGrid = flag;
+}
+
+void GLsceneBase::drawFloorGrid()
+{
+    // floor grids
+    glColor3f(1,1,1);
+    double s[3], e[3];
+    s[2] = e[2] = 0;
+    s[0] = 10; e[0] = -10;
+    for (int i=-10;i<=10; i++){
+        s[1] = e[1] = i;
+        glVertex3dv(s);
+        glVertex3dv(e);
+    }
+    s[1] = 10; e[1] = -10;
+    for (int i=-10;i<=10; i++){
+        s[0] = e[0] = i;
+        glVertex3dv(s);
+        glVertex3dv(e);
+    }
+}
+
+void GLsceneBase::showInfo(bool flag)
+{
+    m_showInfo = flag;
+}
+
+void GLsceneBase::drawInfo(double fps)
+{
+    glColor3d(1.0,1.0,1.0);
+    glRasterPos2f(10, m_height-15);
+    char buf[256];
+    double tm = m_log->currentTime();
+    if (tm >= 0){
+        sprintf(buf, "Time:%6.3f[s]" , tm);
+    }else{
+        sprintf(buf, "Time:------[s]");
+    }
+    drawString(buf);
+    glRasterPos2f(10, m_height-30);
+    sprintf(buf, "Playback x%6.3f", m_log->playRatio());
+    drawString(buf);
+    glRasterPos2f(10, m_height-45);
+    sprintf(buf, "FPS %2.0f", fps);
+    drawString(buf);
+    for (unsigned int i=0; i<m_msgs.size(); i++){
+        glRasterPos2f(10, (m_msgs.size()-i)*15);
+        drawString(m_msgs[i].c_str());
+    }
+    showStatus();
+}
+
 void GLsceneBase::draw()
 {
     struct timeval tv;
@@ -166,22 +224,7 @@ void GLsceneBase::draw()
     glDisable(GL_LIGHTING);
     glBegin(GL_LINES);
 
-    // floor grids
-    glColor3f(1,1,1);
-    double s[3], e[3];
-    s[2] = e[2] = 0;
-    s[0] = 10; e[0] = -10;
-    for (int i=-10;i<=10; i++){
-        s[1] = e[1] = i;
-        glVertex3dv(s);
-        glVertex3dv(e);
-    }
-    s[1] = 10; e[1] = -10;
-    for (int i=-10;i<=10; i++){
-        s[0] = e[0] = i;
-        glVertex3dv(s);
-        glVertex3dv(e);
-    }
+    if (m_showFloorGrid) drawFloorGrid();
     drawAdditionalLines();
     glEnd();
 
@@ -192,27 +235,7 @@ void GLsceneBase::draw()
     glPushMatrix();
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
-    glColor3d(1.0,1.0,1.0);
-    glRasterPos2f(10, m_height-15);
-    char buf[256];
-    double tm = m_log->currentTime();
-    if (tm >= 0){
-        sprintf(buf, "Time:%6.3f[s]" , tm);
-    }else{
-        sprintf(buf, "Time:------[s]");
-    }
-    drawString(buf);
-    glRasterPos2f(10, m_height-30);
-    sprintf(buf, "Playback x%6.3f", m_log->playRatio());
-    drawString(buf);
-    glRasterPos2f(10, m_height-45);
-    sprintf(buf, "FPS %2.0f", fps);
-    drawString(buf);
-    for (unsigned int i=0; i<m_msgs.size(); i++){
-        glRasterPos2f(10, (m_msgs.size()-i)*15);
-        drawString(m_msgs[i].c_str());
-    }
-    showStatus();
+    if (m_showInfo) drawInfo(fps);
     if (m_showSlider){
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glEnable(GL_BLEND);

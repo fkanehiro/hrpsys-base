@@ -33,6 +33,7 @@ public:
     void init();
     void setCamera(GLcamera *i_camera);
     GLcamera *getCamera();
+    GLcamera *getDefaultCamera();
     void setMessages(const std::vector<std::string>& i_msgs) { m_msgs = i_msgs;}
     void showSlider(bool flag) { m_showSlider = flag; }
     void setScreenSize(int w, int h);
@@ -41,7 +42,12 @@ public:
     virtual void showStatus() {}
     virtual void drawAdditionalLines() {}
     virtual void updateScene()=0;
+    void showFloorGrid(bool flag);
+    void showInfo(bool flag);
 protected:
+    void drawFloorGrid();
+    void drawInfo(double fps);
+
     std::map<std::string, GLbody *> m_nameBodyMap; 
     std::vector<GLbody *> m_bodies; 
     std::vector<std::string> m_msgs; 
@@ -56,6 +62,7 @@ protected:
     std::string m_newBodyName;
     OpenHRP::BodyInfo_var m_newBodyInfo;
     bool m_isNewBody;
+    bool m_showFloorGrid, m_showInfo;
 };
 
 #endif

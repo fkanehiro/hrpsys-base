@@ -1,17 +1,9 @@
-find_package(OpenGL REQUIRED)
-find_package(OpenCV REQUIRED)
-
 include_directories(${OpenCV_INCLUDE_DIRS})
 include_directories(${LIBXML2_INCLUDE_DIR})
-set(comp_sources VirtualCamera.cpp IrrModel.cpp RTCGLbody.cpp)
+set(comp_sources VirtualCamera.cpp GLscene.cpp RTCGLbody.cpp)
 
 add_library(VirtualCamera SHARED ${comp_sources})
 set(libraries
-  ${OPENGL_LIBRARIES} 
-  ${IRRLICHT_LIBRARIES} 
-  ${OpenCV_LIBRARIES} 
-  ${LIBXML2_LIBRARIES} 
-  ${OPENHRP_LIBRARIES}
   rtcpcl_pointcloud_type
   hrpsysUtil
   hrpsysBaseStub

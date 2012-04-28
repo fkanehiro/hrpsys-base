@@ -10,7 +10,7 @@ public:
     SDLwindow(GLsceneBase *i_scene, LogManagerBase *i_lm, 
               ThreadedObject *i_throbj=NULL);
     ~SDLwindow();
-    bool init();
+    bool init(int w=0, int h=0, bool resizable=true);
     bool processEvents();
     void draw();
     void swapBuffers();
