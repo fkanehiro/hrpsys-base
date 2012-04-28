@@ -114,8 +114,12 @@ int main(int argc, char* argv[])
         window.init();
         for (std::map<std::string, ModelItem>::iterator it=prj.models().begin();
              it != prj.models().end(); it++){
+            OpenHRP::ModelLoader::ModelLoadOption opt;
+            opt.readImage = true;
+            opt.AABBdata.length(0);
+            opt.AABBtype = OpenHRP::ModelLoader::AABB_NUM;
             OpenHRP::BodyInfo_var binfo
-                = modelloader->loadBodyInfo(it->second.url.c_str());
+                = modelloader->loadBodyInfoEx(it->second.url.c_str(), opt);
             GLbody *body = new GLbody(binfo);
             scene.addBody(it->first, body);
         }

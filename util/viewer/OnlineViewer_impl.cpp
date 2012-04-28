@@ -32,7 +32,12 @@ void OnlineViewer_impl::load(const char* name_, const char* url)
 {
     if (!scene->findBody(name_)){
         std::cout << "load(" << url << ")" << std::endl;
-        BodyInfo_var binfo = hrp::loadBodyInfo(url, orb);
+        OpenHRP::ModelLoader_var ml = hrp::getModelLoader(orb);
+        OpenHRP::ModelLoader::ModelLoadOption opt;
+        opt.readImage = true;
+        opt.AABBdata.length(0);
+        opt.AABBtype = OpenHRP::ModelLoader::AABB_NUM;
+        BodyInfo_var binfo = ml->getBodyInfoEx(url, opt);
         scene->addBody(name_, binfo);
     }
 }

@@ -30,12 +30,53 @@ void compileShape(OpenHRP::BodyInfo_var i_binfo,
         glMultMatrixd(tform);
         //printMatrix(tform);
         
-        glBegin(GL_TRIANGLES);
         short index = tsi.shapeIndex;
         ShapeInfo& si = sis[index];
         const float *vertices = si.vertices.get_buffer();
         const LongSequence& triangles = si.triangles;
         const AppearanceInfo& ai = ais[si.appearanceIndex];
+        const float *texcoord=NULL;
+        const long int *texindices;
+        if (ai.textureIndex >=0){
+            TextureInfo &ti = (*i_binfo->textures())[ai.textureIndex];
+            if (ti.image.length()==0){
+                std::cerr<< "texture image(" << ti.url << ") is not loaded"
+                         << std::endl;
+            }else if (ti.numComponents != 3){
+                std::cerr << "texture image which has "
+                          << ti.numComponents << " is not supported"
+                          << std::endl;
+            }else{
+                texcoord = ai.textureCoordinate.get_buffer();
+                texindices = ai.textureCoordIndices.get_buffer();
+                GLuint tex;
+                glGenTextures(1, &tex);
+                glBindTexture(GL_TEXTURE_2D, tex);
+                
+                glTexParameteri(GL_TEXTURE_2D, 
+                                GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D, 
+                                GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                if (ti.repeatS){
+                    glTexParameteri(GL_TEXTURE_2D, 
+                                    GL_TEXTURE_WRAP_S, GL_REPEAT);
+                }else{
+                    glTexParameteri(GL_TEXTURE_2D, 
+                                    GL_TEXTURE_WRAP_S, GL_CLAMP);
+                }
+                if (ti.repeatT){
+                    glTexParameteri(GL_TEXTURE_2D,
+                                    GL_TEXTURE_WRAP_T, GL_REPEAT);
+                }else{
+                    glTexParameteri(GL_TEXTURE_2D,
+                                    GL_TEXTURE_WRAP_T, GL_CLAMP);
+                }
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, ti.width, ti.height, 0,
+                             GL_RGB, GL_UNSIGNED_BYTE, ti.image.get_buffer());
+                glEnable(GL_TEXTURE_2D);
+            }
+        }
+        glBegin(GL_TRIANGLES);
         const float *normals = ai.normals.get_buffer();
         //std::cout << "length of normals = " << ai.normals.length() << std::endl;
         const LongSequence& normalIndices = ai.normalIndices;
@@ -68,16 +109,34 @@ void compileShape(OpenHRP::BodyInfo_var i_binfo,
                 }
             }
             for(int k=0; k < 3; ++k){
+                int vi = j*3+k;
                 if (ai.normalPerVertex){
-                    int p = normalIndices[j*3+k]*3;
-                    glNormal3fv(normals+p);
+                    int p;
+                    if (normalIndices.length() == 0){
+                        p = vi*3;
+                    }else{
+                        p = normalIndices[vi]*3;
+                    }
+                    glNormal3f(normals[p  ]*scale[0],
+                               normals[p+1]*scale[1],
+                               normals[p+2]*scale[2]);
                 }
-                long orgVertexIndex = si.triangles[j * 3 + k];
-                int p = orgVertexIndex * 3;
+                if (texcoord){
+                    glTexCoord2d(texcoord[texindices[vi]*2],
+                                 texcoord[texindices[vi]*2+1]);
+#if 0
+                    std::cout << texindices[j*3+k] << "," 
+                              << texcoord[texindices[vi]*2]  << ","
+                              << texcoord[texindices[vi]*2+1] << std::endl;
+#endif
+                }
+                long vertexIndex = si.triangles[vi];
+                int p = vertexIndex * 3;
                 glVertex3fv(vertices+p);
             }
         }
         glEnd();
+        if (texcoord) glDisable(GL_TEXTURE_2D);
         glPopMatrix();
     }
 }

@@ -65,10 +65,14 @@ int main(int argc, char *argv[])
         window.init();
 
         if (argc == 2){
-            GLbody *body = new GLbody(hrp::loadBodyInfo(argv[1], orb));
+            OpenHRP::ModelLoader_var ml = hrp::getModelLoader(namingContext);
+            OpenHRP::ModelLoader::ModelLoadOption opt;
+            opt.readImage = true;
+            opt.AABBdata.length(0);
+            opt.AABBtype = OpenHRP::ModelLoader::AABB_NUM;
+            GLbody *body = new GLbody(ml->getBodyInfoEx(argv[1], opt));
             scene.addBody("model", body); 
         }
-	
         while(window.oneStep());
 
     }
