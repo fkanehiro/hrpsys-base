@@ -159,8 +159,8 @@ RTC::ReturnCode_t VirtualCamera::onActivated(RTC::UniqueId ec_id)
 
     RTC::Manager& rtcManager = RTC::Manager::instance();
     RTC::CorbaNaming naming(rtcManager.getORB(), "localhost:2809");
-    CORBA::Object_ptr ml = naming.resolve("ModelLoader");
-    if (!CORBA::is_nil(ml)){
+    CORBA::Object_ptr obj = naming.resolve("ModelLoader");
+    if (!CORBA::is_nil(obj)){
         std::cout << "found ModelLoader on localhost:2809" << std::endl;
     }else{
         std::string nameServer = rtcManager.getConfig()["corba.nameservers"];
@@ -193,12 +193,16 @@ RTC::ReturnCode_t VirtualCamera::onActivated(RTC::UniqueId ec_id)
 
     std::vector<std::pair<std::string, OpenHRP::BodyInfo_var> > binfos;
     int w=0, h=0;
+    OpenHRP::ModelLoader_var ml = hrp::getModelLoader(CosNaming::NamingContext::_duplicate(naming.getRootContext()));
     for (std::map<std::string, ModelItem>::iterator it=prj.models().begin();
          it != prj.models().end(); it++){
 
         OpenHRP::BodyInfo_var binfo;
-        binfo = hrp::loadBodyInfo(it->second.url.c_str(), 
-                                  CosNaming::NamingContext::_duplicate(naming.getRootContext()));
+        OpenHRP::ModelLoader::ModelLoadOption opt;
+        opt.readImage = true;
+        opt.AABBdata.length(0);
+        opt.AABBtype = OpenHRP::ModelLoader::AABB_NUM;
+        binfo = ml->getBodyInfoEx(it->second.url.c_str(), opt);
         if (CORBA::is_nil(binfo)){
             std::cerr << "failed to load model[" << it->second.url << "]" 
                       << std::endl;
