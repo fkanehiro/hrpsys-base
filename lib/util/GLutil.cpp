@@ -2,8 +2,10 @@
 #include <math.h>
 #ifdef __APPLE__
 #include <OpenGL/gl.h>
+#include <OpenGL/glu.h>
 #else
 #include <GL/gl.h>
+#include <GL/glu.h>
 #endif
 #include "GLutil.h"
 
@@ -42,10 +44,6 @@ void compileShape(OpenHRP::BodyInfo_var i_binfo,
             if (ti.image.length()==0){
                 std::cerr<< "texture image(" << ti.url << ") is not loaded"
                          << std::endl;
-            }else if (ti.numComponents != 3){
-                std::cerr << "texture image which has "
-                          << ti.numComponents << " is not supported"
-                          << std::endl;
             }else{
                 texcoord = ai.textureCoordinate.get_buffer();
                 texindices = ai.textureCoordIndices.get_buffer();
@@ -53,10 +51,6 @@ void compileShape(OpenHRP::BodyInfo_var i_binfo,
                 glGenTextures(1, &tex);
                 glBindTexture(GL_TEXTURE_2D, tex);
                 
-                glTexParameteri(GL_TEXTURE_2D, 
-                                GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-                glTexParameteri(GL_TEXTURE_2D, 
-                                GL_TEXTURE_MIN_FILTER, GL_LINEAR);
                 if (ti.repeatS){
                     glTexParameteri(GL_TEXTURE_2D, 
                                     GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -71,8 +65,26 @@ void compileShape(OpenHRP::BodyInfo_var i_binfo,
                     glTexParameteri(GL_TEXTURE_2D,
                                     GL_TEXTURE_WRAP_T, GL_CLAMP);
                 }
-                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, ti.width, ti.height, 0,
-                             GL_RGB, GL_UNSIGNED_BYTE, ti.image.get_buffer());
+                int format;
+                if (ti.numComponents == 3){
+                    format = GL_RGB;
+                }else if (ti.numComponents == 4){
+                    format = GL_RGBA;
+                }else{
+                    std::cerr << "texture image which has "
+                              << ti.numComponents << " is not supported"
+                              << std::endl;
+                }
+                glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+                gluBuild2DMipmaps(GL_TEXTURE_2D, 3, ti.width, ti.height, 
+                                  format, GL_UNSIGNED_BYTE, ti.image.get_buffer());
+
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, 
+                                GL_LINEAR_MIPMAP_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, 
+                                GL_LINEAR);
+                glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+
                 glEnable(GL_TEXTURE_2D);
             }
         }
