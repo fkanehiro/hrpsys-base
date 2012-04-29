@@ -135,9 +135,10 @@ void compileShape(OpenHRP::BodyInfo_var i_binfo,
                 }
                 if (texcoord){
                     glTexCoord2d(texcoord[texindices[vi]*2],
-                                 texcoord[texindices[vi]*2+1]);
+                                 -texcoord[texindices[vi]*2+1]);
 #if 0
-                    std::cout << texindices[j*3+k] << "," 
+                    std::cout << "tri:" << j << ", index:" 
+                              << texindices[j*3+k] << "," 
                               << texcoord[texindices[vi]*2]  << ","
                               << texcoord[texindices[vi]*2+1] << std::endl;
 #endif
