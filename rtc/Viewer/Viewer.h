@@ -19,9 +19,9 @@
 #include "util/LogManager.h"
 #include "util/SDLUtil.h"
 #include "HRPDataTypes.hh"
+#include "GLscene.h"
 
 class RTCGLbody;
-class GLscene;
 
 // Service implementation headers
 // <rtc-template block="service_impl_h">
@@ -136,7 +136,7 @@ class Viewer
   // </rtc-template>
 
  private:
-  GLscene *m_scene;
+  GLscene m_scene;
   std::map<std::string, RTCGLbody *> m_bodies;
   std::string m_project;
   LogManager<OpenHRP::SceneState> m_log;

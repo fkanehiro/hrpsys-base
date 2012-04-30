@@ -57,13 +57,13 @@ void GLscene::updateScene()
     OpenHRP::SceneState &ss = lm->state();
     for (unsigned int i=0; i<ss.states.length(); i++){
         OpenHRP::RobotState &rs = ss.states[i];
-        double pos[] = {rs.basePose.position.x,
-                        rs.basePose.position.y,
-                        rs.basePose.position.z};
-        double rpy[] = {rs.basePose.orientation.r,
-                        rs.basePose.orientation.p,
-                        rs.basePose.orientation.y};
-        m_bodies[i]->setPosture(rs.q.get_buffer(), pos, rpy);
+        m_bodies[i]->setPosition(rs.basePose.position.x,
+                          rs.basePose.position.y,
+                          rs.basePose.position.z);
+        m_bodies[i]->setOrientation(rs.basePose.orientation.r,
+                             rs.basePose.orientation.p,
+                             rs.basePose.orientation.y);
+        m_bodies[i]->setPosture(rs.q.get_buffer());
     }
 }
 

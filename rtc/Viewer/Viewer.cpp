@@ -41,10 +41,11 @@ Viewer::Viewer(RTC::Manager* manager)
       // <rtc-template block="initializer">
       m_sceneStateIn("state", m_sceneState),
       // </rtc-template>
-      m_scene(new GLscene(&m_log)),
-      m_window(m_scene, &m_log),
+      m_scene(&m_log),
+      m_window(&m_scene, &m_log),
       dummy(0)
 {
+    m_log.enableRingBuffer(1);
 }
 
 Viewer::~Viewer()
@@ -138,7 +139,7 @@ RTC::ReturnCode_t Viewer::onActivated(RTC::UniqueId ec_id)
                       << std::endl;
         }else{
             GLbody *body = new GLbody(binfo);
-            m_scene->addBody(it->first.c_str(), body);
+            m_scene.addBody(it->first.c_str(), body);
             m_bodies[it->first] = new RTCGLbody(body, this);
         }
     }
@@ -167,21 +168,7 @@ RTC::ReturnCode_t Viewer::onExecute(RTC::UniqueId ec_id)
         do{
             m_sceneStateIn.read();
         }while(m_sceneStateIn.isNew());
-        for (unsigned int i=0; i<m_sceneState.states.length(); i++){
-            const OpenHRP::RobotState& state = m_sceneState.states[i];
-            std::string name(state.name);
-            RTCGLbody *rtcglb=m_bodies[name];
-            if (rtcglb){
-                GLbody *body = rtcglb->body();
-                body->setPosition(state.basePose.position.x,
-                                  state.basePose.position.y,
-                                  state.basePose.position.z);
-                body->setOrientation(state.basePose.orientation.r,
-                                     state.basePose.orientation.p,
-                                     state.basePose.orientation.y);
-                body->setPosture(state.q.get_buffer());
-            }
-        }
+        m_log.add(m_sceneState);
     }
 
     for (std::map<std::string, RTCGLbody *>::iterator it=m_bodies.begin();
