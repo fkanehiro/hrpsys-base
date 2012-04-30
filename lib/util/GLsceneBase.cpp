@@ -35,6 +35,9 @@ GLsceneBase::~GLsceneBase()
 {
     SDL_DestroySemaphore(m_sem);
     delete m_default_camera;
+    for (unsigned int i=0; i<m_bodies.size(); i++){
+        delete m_bodies[i];
+    }
 }
 
 

@@ -54,7 +54,7 @@ GLlink::GLlink(const LinkInfo &i_li, BodyInfo_var i_binfo) : m_parent(NULL), m_j
     
     glNewList(m_list, GL_COMPILE);
     
-    compileShape(i_binfo, i_li.shapeIndices);
+    m_textures = compileShape(i_binfo, i_li.shapeIndices);
 
     const SensorInfoSequence& sensors = i_li.sensors;
     for (unsigned int i=0; i<sensors.length(); i++){
@@ -68,6 +68,17 @@ GLlink::GLlink(const LinkInfo &i_li, BodyInfo_var i_binfo) : m_parent(NULL), m_j
         
     glEndList();
     
+}
+
+GLlink::~GLlink()
+{
+    for (unsigned int i=0; i<m_cameras.size(); i++){
+        delete m_cameras[i];
+    }
+    for (unsigned int i=0; i<m_textures.size(); i++){
+        glDeleteTextures(1, &m_textures[i]);
+    }
+    glDeleteLists(m_list, 1);
 }
         
 void GLlink::draw(){

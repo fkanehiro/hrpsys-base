@@ -3,6 +3,7 @@
 
 #include <string>
 #include <vector>
+#include <GL/gl.h>
 #include <hrpCorba/ModelLoader.hh>
 #include <hrpUtil/Eigen3d.h>
 
@@ -17,7 +18,7 @@ public:
                   SLIDE_JOINT} JointType;
 
     GLlink(const OpenHRP::LinkInfo &i_li, OpenHRP::BodyInfo_var i_binfo);
-
+    ~GLlink();
     void draw();
     void setParent(GLlink *i_parent);
     void addChild(GLlink *i_child);
@@ -44,5 +45,6 @@ private:
     double m_trans[16], m_T_j[16], m_absTrans[16];
     int m_list, m_jointId;
     JointType m_jointType;
+    std::vector<GLuint> m_textures;
 };
 #endif

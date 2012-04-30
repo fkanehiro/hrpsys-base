@@ -11,9 +11,10 @@
 
 using namespace OpenHRP;
 
-void compileShape(OpenHRP::BodyInfo_var i_binfo,
-                  const TransformedShapeIndexSequence& tsis)
+std::vector<GLuint> compileShape(OpenHRP::BodyInfo_var i_binfo,
+                              const TransformedShapeIndexSequence& tsis)
 {
+    std::vector<GLuint> textures;
     ShapeInfoSequence_var sis = i_binfo->shapes();
     AppearanceInfoSequence_var ais = i_binfo->appearances();
     MaterialInfoSequence_var mis = i_binfo->materials();
@@ -49,6 +50,7 @@ void compileShape(OpenHRP::BodyInfo_var i_binfo,
                 texindices = ai.textureCoordIndices.get_buffer();
                 GLuint tex;
                 glGenTextures(1, &tex);
+                textures.push_back(tex);
                 glBindTexture(GL_TEXTURE_2D, tex);
                 
                 if (ti.repeatS){
@@ -152,6 +154,7 @@ void compileShape(OpenHRP::BodyInfo_var i_binfo,
         if (texcoord) glDisable(GL_TEXTURE_2D);
         glPopMatrix();
     }
+    return textures;
 }
 
 void mulTrans(const double i_m1[16], const double i_m2[16], double o_m[16])
