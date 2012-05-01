@@ -39,7 +39,7 @@ std::vector<GLuint> compileShape(OpenHRP::BodyInfo_var i_binfo,
         const LongSequence& triangles = si.triangles;
         const AppearanceInfo& ai = ais[si.appearanceIndex];
         const float *texcoord=NULL;
-        const long int *texindices;
+        const CORBA::Long *texindices;
         if (ai.textureIndex >=0){
             TextureInfo &ti = (*i_binfo->textures())[ai.textureIndex];
             if (ti.image.length()==0){
