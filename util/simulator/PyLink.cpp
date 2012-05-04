@@ -10,10 +10,27 @@ void PyLink::setPosition(PyObject *v)
 
 void PyLink::setOrientation(PyObject *v)
 {
-    if (PySequence_Size(v) != 9) return;
     hrp::Matrix33 R;
-    for (int i=0; i<9; i++) {
-        R(i/3, i%3) = boost::python::extract<double>(PySequence_GetItem(v, i));
+    int n = PySequence_Size(v);
+    if (n == 9){
+        for (int i=0; i<9; i++) {
+            R(i/3, i%3) = boost::python::extract<double>(PySequence_GetItem(v, i));
+        }
+    }else if (n == 4){
+        hrp::Vector3 axis;
+        for (int i=0; i<3; i++) {
+            axis(i) = boost::python::extract<double>(PySequence_GetItem(v, i));
+        }
+        double angle = boost::python::extract<double>(PySequence_GetItem(v, 3));
+        hrp::calcRodrigues(R, axis, angle);
+    }else if (n == 3){
+        double rpy[3];
+        for (int i=0; i<3; i++) {
+            rpy[i] = boost::python::extract<double>(PySequence_GetItem(v, i));
+        }
+        hrp::calcRotFromRpy(R, rpy[0], rpy[1], rpy[2]);
+    }else{
+        return;
     }
     setAttitude(R);
 }
