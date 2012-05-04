@@ -8,7 +8,7 @@ using namespace RTC;
 
 // Module specification
 // <rtc-template block="module_spec">
-const char* BodyRTC::bodyext_spec[] =
+const char* BodyRTC::bodyrtc_spec[] =
 {
     "implementation_id", "BodyRTC",
     "type_name",         "BodyRTC",
@@ -33,6 +33,16 @@ BodyRTC::BodyRTC(RTC::Manager* manager)
       dummy(0)
 {
     //std::cout << "constructor of BodyRTC"  << std::endl;
+}
+
+BodyRTC::BodyRTC(const BodyRTC& i_body) 
+    : Body(i_body),
+      DataFlowComponentBase(&RTC::Manager::instance()),
+      m_tauIn("tau", m_tau),
+      m_qOut("q", m_q),
+      dummy(0)
+{
+    std::cout << "BodyRTC::BodyRTC(const BodyRTC&) is called" << std::endl;
 }
 
 BodyRTC::~BodyRTC(void)
@@ -155,7 +165,7 @@ void DummyDelete(RTC::RTObject_impl* rtc)
 
 void BodyRTC::moduleInit(RTC::Manager* manager)
 {
-    coil::Properties profile(bodyext_spec);
+    coil::Properties profile(bodyrtc_spec);
     manager->registerFactory(profile,
                              RTC::Create<BodyRTC>,
                              DummyDelete<BodyRTC>

@@ -25,7 +25,10 @@ add_library(simulator SHARED
   BodyState.cpp
   SceneState.cpp
   Simulator.cpp
-  PySimulator.cpp)
+  PySimulator.cpp
+  PyBody.cpp
+  PyLink.cpp
+  )
 
 target_link_libraries(simulator 
   boost_python 

@@ -2,7 +2,8 @@
 #include <boost/bind.hpp>
 #include <boost/function.hpp>
 #include <boost/python.hpp>
-
+#include <boost/foreach.hpp>
+#include <boost/range/value_type.hpp>
 #include <rtm/Manager.h>
 #include <rtm/CorbaNaming.h>
 #include <hrpModel/ModelLoaderUtil.h>
@@ -16,21 +17,24 @@
 #include "util/Project.h"
 #include "util/OpenRTMUtil.h"
 #include "util/SDLUtil.h"
-#include "util/BodyRTC.h"
 #include "Simulator.h"
 #include "GLscene.h"
+#include "PyBody.h"
+#include "PyLink.h"
 
 using namespace std;
 using namespace hrp;
 using namespace OpenHRP;
 
+static hrp::Link *createLink() { return new PyLink(); }
 hrp::BodyPtr createBody(const std::string& name, const ModelItem& mitem,
                         ModelLoader_ptr modelloader)
 {
     std::cout << "createBody(" << name << "," << mitem.url << ")" << std::endl;
     RTC::Manager& manager = RTC::Manager::instance();
-    std::string args = "BodyRTC?instance_name="+name;
-    BodyRTCPtr body = (BodyRTC *)manager.createComponent(args.c_str());
+    std::string args = "PyBody?instance_name="+name;
+    PyBody *pybody = (PyBody *)manager.createComponent(args.c_str());
+    hrp::BodyPtr body = hrp::BodyPtr(pybody);
     ModelLoader::ModelLoadOption mlopt;
     mlopt.readImage = false;
     mlopt.AABBtype = OpenHRP::ModelLoader::AABB_NUM;
@@ -45,10 +49,10 @@ hrp::BodyPtr createBody(const std::string& name, const ModelItem& mitem,
     BodyInfo_var binfo = modelloader->getBodyInfo(mitem.url.c_str());
     if (!loadBodyFromBodyInfo(body, binfo, true)){
         std::cerr << "failed to load model[" << mitem.url << "]" << std::endl;
-        manager.deleteComponent(body.get());
+        manager.deleteComponent(pybody);
         return hrp::BodyPtr();
     }else{
-        body->createDataPorts();
+        pybody->createDataPorts();
         return body;
     }
 }
@@ -57,12 +61,12 @@ class PySimulator
 {
 public:
     PySimulator() 
-        : scene(&log), window(&scene, &log, &simulator){
+        : scene(&log), simulator(&log), window(&scene, &log, &simulator){
         int argc = 1;
         char *argv[] = {(char *)"dummy"};
         manager = RTC::Manager::init(argc, argv);
         manager->init(argc, argv);
-        BodyRTC::moduleInit(manager);
+        PyBody::moduleInit(manager);
         manager->activateManager();
         manager->runManager(true);
         window.start();
@@ -71,7 +75,35 @@ public:
         window.stop();
         manager->shutdown();
     }
-    void init(std::string fname){
+    PyBody* loadBody(std::string name, std::string url){
+        RTC::Manager* manager = &RTC::Manager::instance();
+        std::string nameServer = manager->getConfig()["corba.nameservers"];
+        int comPos = nameServer.find(",");
+        if (comPos < 0){
+            comPos = nameServer.length();
+        }
+        nameServer = nameServer.substr(0, comPos);
+        RTC::CorbaNaming naming(manager->getORB(), nameServer.c_str());
+        
+        ModelLoader_var modelloader = getModelLoader(CosNaming::NamingContext::_duplicate(naming.getRootContext()));
+        OpenHRP::BodyInfo_var binfo
+            = modelloader->loadBodyInfo(url.c_str());
+        scene.addBody(name, binfo);
+        std::string args = "PyBody?instance_name="+name;
+        PyBody *pybody = (PyBody *)manager->createComponent(args.c_str());
+        hrp::BodyPtr body = hrp::BodyPtr(pybody);
+        if (!loadBodyFromBodyInfo(body, binfo, true, createLink)){
+            std::cerr << "failed to load model[" << url << "]" << std::endl;
+            manager->deleteComponent(pybody);
+            return NULL;
+        }else{
+            pybody->createDataPorts();
+            body->setName(name);
+            simulator.addBody(body);
+            return pybody;
+        }
+    }
+    void loadProject(std::string fname){
         Project prj;
         if (!prj.parse(fname)){
             std::cerr << "failed to parse " << fname << std::endl;
@@ -97,14 +129,17 @@ public:
         }
         //================= setup Simulator ======================
         BodyFactory factory = boost::bind(createBody, _1, _2, modelloader);
-        simulator.init(prj, factory, &log);
+        simulator.init(prj, factory);
         
         std::cout << "timestep = " << prj.timeStep() << ", total time = " 
                   << prj.totalTime() << std::endl;
     }
+    void simulate(){
+        while(simulator.oneStep());
+    }
     void simulate(double time){
         simulator.totalTime(simulator.currentTime()+time);
-        while(simulator.oneStep());
+        simulate();
     }
     void start(double time){
         simulator.totalTime(simulator.currentTime()+time);
@@ -125,6 +160,12 @@ public:
             log.enableRingBuffer(50000);
         }
     } 
+    void setTimeStep(double t){
+        simulator.timeStep(t);
+    }
+    double getTimeStep(){
+        return simulator.timeStep();
+    }
 private:  
     LogManager<SceneState> log;
     GLscene scene;
@@ -135,13 +176,38 @@ private:
 
 BOOST_PYTHON_MODULE( simulator )
 {
-    boost::python::class_<PySimulator>("Simulator")
-        .def("init", &PySimulator::init)
-        .def("simulate", &PySimulator::simulate)
+    using namespace boost::python;
+
+    class_<PySimulator>("Simulator")
+        .def("loadBody", &PySimulator::loadBody, return_value_policy<manage_new_object>())
+        .def("loadProject", &PySimulator::loadProject)
+        .def("simulate", (void(PySimulator::*)())&PySimulator::simulate)
+        .def("simulate", (void(PySimulator::*)(double))&PySimulator::simulate)
         .def("realTime", &PySimulator::realTime)
         .def("endless", &PySimulator::endless)
         .def("start", &PySimulator::start)
         .def("stop", &PySimulator::stop)
         .def("wait", &PySimulator::wait)
+        .add_property("timeStep", 
+                      &PySimulator::getTimeStep, &PySimulator::setTimeStep)
+        ;
+
+    class_<PyBody>("Body", no_init)
+        .def("calcForwardKinematics", &PyBody::calcForwardKinematics)
+        .def("rootLink", &PyBody::rootLink, return_internal_reference<>())
+        .def("link", &PyBody::link, return_internal_reference<>())
+        .def("links", &PyBody::links)
+        .def("joint", &PyBody::joint, return_internal_reference<>())
+        .def("joints", &PyBody::joints)
+        .add_property("name", &PyBody::getName, &PyBody::setName)
+        .add_property("p", &PyBody::getPosition, &PyBody::setPosition)
+        .add_property("R", &PyBody::getOrientation, &PyBody::setOrientation)
+        .add_property("q", &PyBody::getPosture, &PyBody::setPosture)
+        ;
+
+    class_<PyLink>("Link", no_init)
+        .add_property("p", &PyLink::getPosition, &PyLink::setPosition)
+        .add_property("R", &PyLink::getOrientation, &PyLink::setOrientation)
+        .add_property("q", &PyLink::getPosture, &PyLink::setPosture)
         ;
 }

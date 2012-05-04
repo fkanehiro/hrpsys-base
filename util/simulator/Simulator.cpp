@@ -1,13 +1,18 @@
 #include "Simulator.h"
 #include "util/BodyRTC.h"
 
-Simulator::Simulator() : adjustTime(false)
+Simulator::Simulator(LogManager<SceneState> *i_log) 
+  : log(i_log), adjustTime(false)
 {
 }
 
-void Simulator::init(Project &prj, BodyFactory &factory, 
-                     LogManager<SceneState> *i_log){
-    log = i_log;
+void Simulator::addBody(hrp::BodyPtr i_body)
+{
+    world.addBody(i_body);
+    bodies.push_back((BodyRTC *)i_body.get());
+}
+
+void Simulator::init(Project &prj, BodyFactory &factory){
     initWorld(prj, factory, world, pairs);
     initRTS(prj, receivers);
     std::cout << "number of receivers:" << receivers.size() << std::endl;

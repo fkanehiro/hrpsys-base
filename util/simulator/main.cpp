@@ -107,7 +107,7 @@ int main(int argc, char* argv[])
     //==================== Viewer setup ===============
     LogManager<SceneState> log;
     GLscene scene(&log);
-    Simulator simulator;
+    Simulator simulator(&log);
 
     SDLwindow window(&scene, &log, &simulator);
     if (display){
@@ -127,7 +127,7 @@ int main(int argc, char* argv[])
 
     //================= setup Simulator ======================
     BodyFactory factory = boost::bind(createBody, _1, _2, modelloader,usebbox);
-    simulator.init(prj, factory, &log);
+    simulator.init(prj, factory);
     simulator.realTime(realtime);
     if (endless){
         simulator.totalTime(0);

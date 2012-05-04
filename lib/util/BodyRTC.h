@@ -15,8 +15,6 @@ class BodyRTC : public hrp::Body, public RTC::DataFlowComponentBase
 {
 public:
     BodyRTC(RTC::Manager* manager = &RTC::Manager::instance());
-    BodyRTC(const char* url, RTC::Manager* manager = &RTC::Manager::instance());
-    BodyRTC(const Body&, RTC::Manager* manager = &RTC::Manager::instance());
     BodyRTC(const BodyRTC&);
     virtual ~BodyRTC(void);
 
@@ -35,7 +33,7 @@ public:
     static void moduleInit(RTC::Manager*);
 
 private:
-    static const char* bodyext_spec[];
+    static const char* bodyrtc_spec[];
 
     // DataInPort
     RTC::TimedDoubleSeq m_tau;
