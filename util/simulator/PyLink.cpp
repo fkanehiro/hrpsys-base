@@ -85,6 +85,49 @@ void PyLink::setRotation(PyObject *v)
     notifyChanged();
 }
 
+PyObject *PyLink::getRelPosition()
+{
+    boost::python::list retval;
+    VectorToPyList(b, retval);
+    return boost::python::incref(retval.ptr());
+}
+
+void PyLink::setRelPosition(PyObject *v)
+{
+    if (PySequence_Size(v) != 3) return;
+    PyListToVector(v, b);
+    notifyChanged();
+}
+
+PyObject *PyLink::getRelRotation()
+{
+    boost::python::list retval;
+    Matrix33ToPyList(Rs, retval);
+    return boost::python::incref(retval.ptr());
+}
+
+void PyLink::setRelRotation(PyObject *v)
+{
+    int n = PySequence_Size(v);
+    if (n == 9){
+        PyListToMatrix33(v, Rs);
+    }else if (n == 4){
+        hrp::Vector3 axis;
+        for (int i=0; i<3; i++) {
+            axis(i) = boost::python::extract<double>(PySequence_GetItem(v, i));
+        }
+        double angle = boost::python::extract<double>(PySequence_GetItem(v, 3));
+        hrp::calcRodrigues(Rs, axis, angle);
+    }else if (n == 3){
+        hrp::Vector3 rpy;
+        PyListToVector(v, rpy);
+        hrp::calcRotFromRpy(Rs, rpy[0], rpy[1], rpy[2]);
+    }else{
+        return;
+    }
+    notifyChanged();
+}
+
 double PyLink::getPosture()
 {
     return q;
@@ -107,6 +150,32 @@ void PyLink::setCoM(PyObject *v)
 {
     if (PySequence_Size(v) != 3) return;
     PyListToVector(v, c);
+}
+
+PyObject *PyLink::getRotationAxis()
+{
+    boost::python::list retval;
+    VectorToPyList(a, retval);
+    return boost::python::incref(retval.ptr());
+}
+
+void PyLink::setRotationAxis(PyObject *v)
+{
+    if (PySequence_Size(v) != 3) return;
+    PyListToVector(v, a);
+}
+
+PyObject *PyLink::getTranslationAxis()
+{
+    boost::python::list retval;
+    VectorToPyList(d, retval);
+    return boost::python::incref(retval.ptr());
+}
+
+void PyLink::setTranslationAxis(PyObject *v)
+{
+    if (PySequence_Size(v) != 3) return;
+    PyListToVector(v, d);
 }
 
 PyObject *PyLink::getInertia()

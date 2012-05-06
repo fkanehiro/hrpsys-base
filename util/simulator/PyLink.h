@@ -26,6 +26,10 @@ public:
     void setLinVel(PyObject *v);
     PyObject *getAngVel();
     void setAngVel(PyObject *v);
+    PyObject *getRotationAxis();
+    void setRotationAxis(PyObject *v);
+    PyObject *getTranslationAxis();
+    void setTranslationAxis(PyObject *v);
     PyLink *createLink();
     PyLink *getParent();
     PyObject *getChildren();
