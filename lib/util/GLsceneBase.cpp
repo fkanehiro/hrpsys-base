@@ -22,7 +22,7 @@ GLsceneBase::GLsceneBase(LogManagerBase *i_log) :
     m_width(DEFAULT_W), m_height(DEFAULT_H),
     m_showingStatus(false), m_showSlider(false),
     m_log(i_log), m_videoWriter(NULL), m_cvImage(NULL), m_isNewBody(false),
-    m_showFloorGrid(true), m_showInfo(true)
+    m_showFloorGrid(true), m_showInfo(true), m_clearRequested(false)
 {
     m_default_camera = new GLcamera(DEFAULT_W, DEFAULT_H, 1.0, 100.0, 40*M_PI/180);
     m_default_camera->setViewPoint(4,0,0.8);
@@ -204,6 +204,12 @@ void GLsceneBase::draw()
     double fps = 1.0/((tv.tv_sec - m_lastDraw.tv_sec)+(tv.tv_usec - m_lastDraw.tv_usec)/1e6);
     m_lastDraw = tv;
 
+    if (m_clearRequested) {
+        clearBodies();
+        m_clearRequested = false;
+        SDL_SemPost(m_sem);
+    }
+
     if (m_isNewBody){
         GLbody *body = new GLbody(m_newBodyInfo);
         GLsceneBase::addBody(m_newBodyName, body);
@@ -275,4 +281,19 @@ void GLsceneBase::draw()
             m_cvImage = NULL;
         }
     }
+}
+
+void GLsceneBase::clear()
+{
+    m_clearRequested = true;
+    SDL_SemWait(m_sem);
+}
+
+void GLsceneBase::clearBodies()
+{
+    m_nameBodyMap.clear();
+    for (unsigned int i=0; i<m_bodies.size(); i++){
+        delete m_bodies[i];
+    }
+    m_bodies.clear();
 }

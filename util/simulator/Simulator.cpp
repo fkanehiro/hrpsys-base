@@ -36,6 +36,11 @@ void Simulator::init(Project &prj, BodyFactory &factory){
         bodies.push_back((BodyRTC *)world.body(i).get());
     }
 
+    appendLog();
+}
+
+void Simulator::appendLog()
+{
     if (log){
         state.set(world);
         log->add(state);
@@ -128,10 +133,7 @@ bool Simulator::oneStep(){
     world.constraintForceSolver.clearExternalForces();
     world.calcNextState(state.collisions);
     
-    if (log){
-        state.set(world);
-        log->add(state);
-    }
+    appendLog();
     tm_dynamics.end();
     
     if (m_totalTime && world.currentTime() > m_totalTime){
@@ -154,4 +156,77 @@ bool Simulator::oneStep(){
     }
 }
 
+void Simulator::clear()
+{
+    RTC::Manager* manager = &RTC::Manager::instance();
+    for (unsigned int i=0; i<bodies.size(); i++){
+        bodies[i]->exit();
+    }
+    manager->cleanupComponents();
+    world.clearBodies();
+    world.constraintForceSolver.clearCollisionCheckLinkPairs();
+    world.setCurrentTime(0.0);
+    bodies.clear();
+}
 
+int Simulator::numBodies()
+{
+    return bodies.size();
+}
+
+BodyRTC* Simulator::body(int i)
+{
+    if (i>=0 && i<bodies.size()){
+        return bodies[i];
+    }else{
+        return NULL;
+    }
+}
+
+void Simulator::addCollisionCheckPair(BodyRTC *bodyPtr1, BodyRTC *bodyPtr2)
+{
+    int bodyIndex1 = world.bodyIndex(bodyPtr1->name());
+    int bodyIndex2 = world.bodyIndex(bodyPtr2->name());
+
+    std::vector<hrp::Link*> links1;
+    const hrp::LinkTraverse& traverse1 = bodyPtr1->linkTraverse();
+    links1.resize(traverse1.numLinks());
+    std::copy(traverse1.begin(), traverse1.end(), links1.begin());
+    
+    std::vector<hrp::Link*> links2;
+    const hrp::LinkTraverse& traverse2 = bodyPtr2->linkTraverse();
+    links2.resize(traverse2.numLinks());
+    std::copy(traverse2.begin(), traverse2.end(), links2.begin());
+    
+    for(size_t j=0; j < links1.size(); ++j){
+        for(size_t k=0; k < links2.size(); ++k){
+            hrp::Link* link1 = links1[j];
+            hrp::Link* link2 = links2[k];
+            
+            if(link1 && link2 && link1 != link2){
+                world.constraintForceSolver.addCollisionCheckLinkPair
+                    (bodyIndex1, link1, bodyIndex2, link2, 
+                     0.5, 0.5, 0.01, 0.0);
+                pairs.push_back(new hrp::ColdetLinkPair(link1, link2));
+            }
+        }
+    }
+
+    OpenHRP::CollisionSequence& collisions = state.collisions;
+    collisions.length(pairs.size());
+    for(size_t colIndex=0; colIndex < pairs.size(); ++colIndex){
+        hrp::ColdetLinkPairPtr linkPair = pairs[colIndex];
+        hrp::Link *link0 = linkPair->link(0);
+        hrp::Link *link1 = linkPair->link(1);
+        OpenHRP::LinkPair& pair = collisions[colIndex].pair;
+        pair.charName1 = CORBA::string_dup(link0->body->name().c_str());
+        pair.charName2 = CORBA::string_dup(link1->body->name().c_str());
+        pair.linkName1 = CORBA::string_dup(link0->name.c_str());
+        pair.linkName2 = CORBA::string_dup(link1->name.c_str());
+    }
+}
+
+void Simulator::initialize()
+{
+    world.initialize();
+}

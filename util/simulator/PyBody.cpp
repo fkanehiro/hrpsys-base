@@ -1,10 +1,8 @@
-#ifndef __PYBODY_H__
-#define __PYBODY_H__
-
 #include <boost/python.hpp>
 #include <boost/foreach.hpp>
 #include <boost/range/value_type.hpp>
 #include <hrpModel/Link.h>
+#include "PySimulator.h"
 #include "PyLink.h"
 #include "PyBody.h"
 
@@ -25,12 +23,13 @@ const char* PyBody::pybody_spec[] =
     ""
 };
 
-PyBody::PyBody(RTC::Manager* manager) : BodyRTC(manager)
+PyBody::PyBody(RTC::Manager* manager) : BodyRTC(manager), simulator(NULL)
 {
 }
 
 PyBody::~PyBody() 
 {
+    //std::cout << "~PyBody()" << std::endl;
 }
 
 void PyBody::setPosition(PyObject *v)
@@ -38,9 +37,9 @@ void PyBody::setPosition(PyObject *v)
     rootLink()->setPosition(v);
 }
 
-void PyBody::setOrientation(PyObject *v)
+void PyBody::setRotation(PyObject *v)
 {
-    rootLink()->setOrientation(v);
+    rootLink()->setRotation(v);
 }
 
 void PyBody::setPosture(PyObject *v)
@@ -50,6 +49,7 @@ void PyBody::setPosture(PyObject *v)
         hrp::Link *j = joint(i);
         if (j) j->q = boost::python::extract<double>(PySequence_GetItem(v, i));
     }
+    notifyChanged(KINEMATICS);
 }
 
 PyObject *PyBody::getPosition()
@@ -57,9 +57,9 @@ PyObject *PyBody::getPosition()
     return rootLink()->getPosition();
 }
 
-PyObject *PyBody::getOrientation()
+PyObject *PyBody::getRotation()
 {
-    return rootLink()->getOrientation();
+    return rootLink()->getRotation();
 }
 
 PyObject *PyBody::getPosture()
@@ -122,6 +122,34 @@ void PyBody::setName(std::string name)
     Body::setName(name);
 }
 
+PyObject *PyBody::calcCM()
+{
+    hrp::Vector3 cm = Body::calcCM();
+    boost::python::list retval;
+    for (int i=0; i<3; i++){
+        retval.append(boost::python::object(cm[i]));
+    }
+    return boost::python::incref(retval.ptr());
+}
+
+void PyBody::notifyChanged(int change)
+{
+    switch(change){
+    case STRUCTURE:
+        updateLinkTree();
+        break;
+    case KINEMATICS:
+        calcForwardKinematics();
+        simulator->notifyChanged();
+        break;
+    }
+}
+
+void PyBody::setListener(PySimulator *i_sim)
+{
+    simulator = i_sim;
+}
+
 template <class _Delete>
 void DummyDelete(RTC::RTObject_impl* rtc)
 {
@@ -136,5 +164,3 @@ void PyBody::moduleInit(RTC::Manager* manager)
                              //RTC::Delete<PyBody>
         );
 }
-
-#endif

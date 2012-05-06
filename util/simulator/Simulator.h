@@ -24,6 +24,12 @@ public:
     void timeStep(double time) { world.setTimeStep(time); }
     double timeStep() { return world.timeStep(); }
     void addBody(hrp::BodyPtr i_body);
+    void clear();
+    void appendLog();
+    int numBodies();
+    BodyRTC *body(int i);
+    void addCollisionCheckPair(BodyRTC *b1, BodyRTC *b2);
+    void initialize();
 private:
     hrp::World<hrp::ConstraintForceSolver> world;
     LogManager<SceneState> *log;

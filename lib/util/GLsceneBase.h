@@ -31,6 +31,7 @@ public:
     void save(const char *i_fname);
     void capture(char *o_image);
     void init();
+    void clear();
     void setCamera(GLcamera *i_camera);
     GLcamera *getCamera();
     GLcamera *getDefaultCamera();
@@ -47,6 +48,7 @@ public:
 protected:
     void drawFloorGrid();
     void drawInfo(double fps);
+    void clearBodies();
 
     std::map<std::string, GLbody *> m_nameBodyMap; 
     std::vector<GLbody *> m_bodies; 
@@ -63,6 +65,7 @@ protected:
     OpenHRP::BodyInfo_var m_newBodyInfo;
     bool m_isNewBody;
     bool m_showFloorGrid, m_showInfo;
+    bool m_clearRequested;
 };
 
 #endif
