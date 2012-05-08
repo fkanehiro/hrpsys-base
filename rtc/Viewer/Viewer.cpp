@@ -12,6 +12,7 @@
 #include "util/Project.h"
 #include <hrpModel/ModelLoaderUtil.h>
 #include "util/GLbody.h"
+#include "util/GLlink.h"
 #include "GLscene.h"
 #include "RTCGLbody.h"
 #include "Viewer.h"
@@ -140,7 +141,7 @@ RTC::ReturnCode_t Viewer::onActivated(RTC::UniqueId ec_id)
         }else{
             GLbody *glbody = new GLbody();
             hrp::BodyPtr body(glbody);
-            hrp::loadBodyFromBodyInfo(body, binfo);
+            hrp::loadBodyFromBodyInfo(body, binfo, false, GLlinkFactory);
             glbody->setDrawInfo(binfo);
             body->setName(it->first);
             m_scene.WorldBase::addBody(body);
