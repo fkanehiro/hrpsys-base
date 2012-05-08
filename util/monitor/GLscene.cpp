@@ -72,7 +72,7 @@ void GLscene::updateScene()
         = (LogManager<TimedRobotState> *)m_log;
     OpenHRP::RobotHardwareService::RobotState &rstate = lm->state().state;
     if (rstate.angle.length()){
-        m_bodies[0]->setPosture(rstate.angle.get_buffer());
+        ((GLbody *)body(0).get())->setPosture(rstate.angle.get_buffer());
     }
 }
 
@@ -85,13 +85,13 @@ void GLscene::showStatus()
     OpenHRP::RobotHardwareService::RobotState &rstate = lm->state().state;
 
     if (m_showingStatus){
-        GLbody *body = m_bodies[0];
+        GLbody *glbody = (GLbody *)body(0).get();
 #define HEIGHT_STEP 12
         int width = m_width - 410;
         int height = m_height-HEIGHT_STEP;
         char buf[256];
-        for (int i=0; i<body->numJoints(); i++){
-            GLlink *l = body->joint(i);
+        for (int i=0; i<glbody->numJoints(); i++){
+            hrp::Link *l = glbody->joint(i);
             if (l){
                 int ss = rstate.servoState[i];
                 int x = width;
@@ -114,7 +114,7 @@ void GLscene::showStatus()
                 x += 8*2;
                 // joint name, current angle, command angle and torque
                 sprintf(buf, "%13s %8.3f %8.3f %6.1f", 
-                        l->name().c_str(), 
+                        l->name.c_str(), 
                         rstate.angle[i]*180/M_PI,
                         rstate.command[i]*180/M_PI,
                         rstate.torque[i]*180/M_PI);

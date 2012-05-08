@@ -11,6 +11,7 @@
 #endif
 #include <SDL_thread.h>
 #include "util/GLbody.h"
+#include "util/GLlink.h"
 #include "util/Project.h"
 #include "util/OpenRTMUtil.h"
 #include "util/SDLUtil.h"
@@ -120,8 +121,12 @@ int main(int argc, char* argv[])
             opt.AABBtype = OpenHRP::ModelLoader::AABB_NUM;
             OpenHRP::BodyInfo_var binfo
                 = modelloader->loadBodyInfoEx(it->second.url.c_str(), opt);
-            GLbody *body = new GLbody(binfo);
-            scene.addBody(it->first, body);
+            GLbody *glbody = new GLbody();
+            hrp::BodyPtr body(glbody);
+            hrp::loadBodyFromBodyInfo(body, binfo, false, GLlinkFactory);
+            glbody->setDrawInfo(binfo);
+            body->setName(it->first);
+            scene.WorldBase::addBody(body);
         }
     }
 

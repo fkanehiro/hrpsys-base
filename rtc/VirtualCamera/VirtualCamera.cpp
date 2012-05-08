@@ -236,12 +236,16 @@ RTC::ReturnCode_t VirtualCamera::onActivated(RTC::UniqueId ec_id)
     m_window.init(w,h,false);
     RTCGLbody *robot=NULL;
     for (unsigned int i=0; i<binfos.size(); i++){
-        GLbody *glb = new GLbody(binfos[i].second);
-        m_scene.addBody(binfos[i].first, glb);
-        RTCGLbody *body = new RTCGLbody(glb, this);
-        m_bodies[binfos[i].first] = body;
+        GLbody *glbody = new GLbody();
+        hrp::BodyPtr body(glbody);
+        hrp::loadBodyFromBodyInfo(body, binfos[i].second);
+        glbody->setDrawInfo(binfos[i].second);
+        body->setName(binfos[i].first);
+        m_scene.WorldBase::addBody(body);
+        RTCGLbody *rtcglbody = new RTCGLbody(glbody, this);
+        m_bodies[binfos[i].first] = rtcglbody;
         if (binfos[i].first == bodyName){
-            robot = body;
+            robot = rtcglbody;
         }
     }
     if (!robot) {

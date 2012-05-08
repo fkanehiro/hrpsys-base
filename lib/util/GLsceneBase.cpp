@@ -6,8 +6,10 @@
 #else
 #include <GL/glut.h>
 #endif
+#include <hrpModel/ModelLoaderUtil.h>
 #include "GLcamera.h"
 #include "GLbody.h"
+#include "GLlink.h"
 #include "GLsceneBase.h"
 #include "LogManagerBase.h"
 
@@ -35,9 +37,6 @@ GLsceneBase::~GLsceneBase()
 {
     SDL_DestroySemaphore(m_sem);
     delete m_default_camera;
-    for (unsigned int i=0; i<m_bodies.size(); i++){
-        delete m_bodies[i];
-    }
 }
 
 
@@ -46,22 +45,11 @@ void GLsceneBase::setScreenSize(int w, int h){
     m_height = h;
 }
 
-void GLsceneBase::addBody(const std::string &i_name, GLbody *i_body){
-    //std::cout <<"addBody(" << i_name << "," << i_body << ")" << std::endl;
-    m_nameBodyMap[i_name] = i_body;
-    m_bodies.push_back(i_body);
-}
-
 void GLsceneBase::addBody(const std::string &i_name, OpenHRP::BodyInfo_var i_binfo){
     m_newBodyName = i_name;
     m_newBodyInfo = i_binfo;
     m_isNewBody = true;
     SDL_SemWait(m_sem);
-}
-
-GLbody *GLsceneBase::findBody(const std::string &i_name)
-{
-    return m_nameBodyMap[i_name];
 }
 
 void GLsceneBase::setCamera(GLcamera *i_camera)
@@ -211,8 +199,12 @@ void GLsceneBase::draw()
     }
 
     if (m_isNewBody){
-        GLbody *body = new GLbody(m_newBodyInfo);
-        GLsceneBase::addBody(m_newBodyName, body);
+        GLbody *glbody = new GLbody();
+        glbody->setName(m_newBodyName);
+        hrp::BodyPtr body(glbody);
+        hrp::loadBodyFromBodyInfo(body, m_newBodyInfo, false, GLlinkFactory);
+        glbody->setDrawInfo(m_newBodyInfo);
+        WorldBase::addBody(body);
         m_isNewBody = false;
         SDL_SemPost(m_sem);
     }
@@ -225,9 +217,8 @@ void GLsceneBase::draw()
     glLoadIdentity();
 
     // robots
-    std::vector<GLbody *>::iterator it;
-    for (it=m_bodies.begin(); it!=m_bodies.end(); it++){
-        (*it)->draw();
+    for (int i=0; i<numBodies(); i++){
+        ((GLbody *)body(i).get())->draw();
     }
 
     glDisable(GL_LIGHTING);
@@ -289,11 +280,3 @@ void GLsceneBase::clear()
     SDL_SemWait(m_sem);
 }
 
-void GLsceneBase::clearBodies()
-{
-    m_nameBodyMap.clear();
-    for (unsigned int i=0; i<m_bodies.size(); i++){
-        delete m_bodies[i];
-    }
-    m_bodies.clear();
-}

@@ -1,3 +1,4 @@
+#include <iostream>
 #ifdef __APPLE__
 #include <OpenGL/gl.h>
 #else
@@ -17,13 +18,15 @@ void GLlink::useAbsTransformToDraw()
     m_useAbsTransformToDraw = true;
 }
 
-GLlink::GLlink(const LinkInfo &i_li, BodyInfo_var i_binfo) : m_parent(NULL), m_jointId(i_li.jointId){
+GLlink::GLlink()
+{
+}
+
+void GLlink::setDrawInfo(const LinkInfo &i_li, BodyInfo_var i_binfo){
     Vector3 axis;
     Matrix33 R;
     
-    m_name = i_li.name;
     for (int i=0; i<3; i++){
-        m_axis[i] = i_li.jointAxis[i];
         axis[i] = i_li.rotation[i];
     }
     setQ(0);
@@ -35,25 +38,11 @@ GLlink::GLlink(const LinkInfo &i_li, BodyInfo_var i_binfo) : m_parent(NULL), m_j
     m_trans[ 8]=R(0,2);m_trans[ 9]=R(1,2);m_trans[10]=R(2,2);m_trans[11]=0; 
     m_trans[12]=i_li.translation[0];m_trans[13]=i_li.translation[1];
     m_trans[14]=i_li.translation[2];m_trans[15]=1; 
-    
-    CORBA::String_var jointType = i_li.jointType;
-    const std::string jt( jointType );
-    if(jt == "fixed" ){
-        m_jointType = FIXED_JOINT;
-    } else if(jt == "free" ){
-        m_jointType = FREE_JOINT;
-    } else if(jt == "rotate" ){
-        m_jointType = ROTATIONAL_JOINT;
-    } else if(jt == "slide" ){
-        m_jointType = SLIDE_JOINT;
-    }
+
+    computeAbsTransform(m_absTrans);
     
     m_list = glGenLists(1);
-    //std::cout << i_li.name << std::endl;
-    //printMatrix(m_trans);
-    
     glNewList(m_list, GL_COMPILE);
-    
     m_textures = compileShape(i_binfo, i_li.shapeIndices);
 
     const SensorInfoSequence& sensors = i_li.sensors;
@@ -91,25 +80,18 @@ void GLlink::draw(){
     }
     glCallList(m_list);
     if (!m_useAbsTransformToDraw){
-        for (unsigned int i=0; i<m_children.size(); i++){
-            m_children[i]->draw();
+        hrp::Link *l = child;
+        while (l){
+            ((GLlink *)l)->draw();
+            l = l->sibling;
         }
     }
     glPopMatrix();
 }
 
-void GLlink::setParent(GLlink *i_parent){
-    m_parent = i_parent;
-}
-
-void GLlink::addChild(GLlink *i_child){
-    i_child->setParent(this);
-    m_children.push_back(i_child);
-}
-
 void GLlink::setQ(double i_q){
     Matrix33 R;
-    hrp::calcRodrigues(R, m_axis, i_q);
+    hrp::calcRodrigues(R, a, i_q);
     m_T_j[ 0]=R(0,0);m_T_j[ 1]=R(1,0);m_T_j[ 2]=R(2,0);m_T_j[3]=0; 
     m_T_j[ 4]=R(0,1);m_T_j[ 5]=R(1,1);m_T_j[ 6]=R(2,1);m_T_j[7]=0; 
     m_T_j[ 8]=R(0,2);m_T_j[ 9]=R(1,2);m_T_j[10]=R(2,2);m_T_j[11]=0;
@@ -126,10 +108,6 @@ void GLlink::setAbsTransform(double i_trans[16]){
     memcpy(m_absTrans, i_trans, sizeof(double)*16);
 }
 
-int GLlink::jointId(){
-    return m_jointId;
-}
-
 GLcamera *GLlink::findCamera(const char *i_name){
     std::string name(i_name);
     for (unsigned int i=0; i<m_cameras.size(); i++){
@@ -139,13 +117,17 @@ GLcamera *GLlink::findCamera(const char *i_name){
 }
 
 void GLlink::computeAbsTransform(double o_trans[16]){
-    if (m_parent){
+    if (parent){
         double trans1[16], trans2[16];
         mulTrans(m_T_j, m_trans, trans1);
-        m_parent->computeAbsTransform(trans2);
+        ((GLlink *)parent)->computeAbsTransform(trans2);
         mulTrans(trans1, trans2, o_trans);
     }else{
         memcpy(o_trans, m_trans, sizeof(double)*16);
     }
 }
 
+hrp::Link *GLlinkFactory()
+{
+    return new GLlink();
+}

@@ -10,6 +10,8 @@
 #include <highgui.h>
 #include <SDL/SDL_thread.h>
 #include <hrpCorba/ModelLoader.hh>
+#include <hrpModel/ConstraintForceSolver.h>
+#include <hrpModel/World.h>
 
 class GLbody;
 class GLcamera;
@@ -20,14 +22,12 @@ class LogManagerBase;
 #define SLIDER_AREA_HEIGHT 30
 #define SLIDER_SIDE_MARGIN 10
 
-class GLsceneBase
+class GLsceneBase : public hrp::World<hrp::ConstraintForceSolver>
 {
 public:
     GLsceneBase(LogManagerBase *i_log);
     virtual ~GLsceneBase();
-    void addBody(const std::string& i_name, GLbody *i_body);
     void addBody(const std::string &i_name, OpenHRP::BodyInfo_var i_binfo);
-    GLbody *findBody(const std::string& i_name);
     void save(const char *i_fname);
     void capture(char *o_image);
     void init();
@@ -48,10 +48,7 @@ public:
 protected:
     void drawFloorGrid();
     void drawInfo(double fps);
-    void clearBodies();
 
-    std::map<std::string, GLbody *> m_nameBodyMap; 
-    std::vector<GLbody *> m_bodies; 
     std::vector<std::string> m_msgs; 
     bool m_showingStatus, m_showSlider;
     int m_width, m_height;

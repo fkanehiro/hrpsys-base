@@ -8,6 +8,7 @@
 #endif
 #include "util/Project.h"
 #include "util/GLbody.h"
+#include "util/GLlink.h"
 #include "util/SDLUtil.h"
 #include "GLscene.h"
 #include "Monitor.h"
@@ -83,8 +84,12 @@ int main(int argc, char* argv[])
         opt.AABBtype = OpenHRP::ModelLoader::AABB_NUM;
         OpenHRP::BodyInfo_var binfo
             = modelloader->getBodyInfoEx(it->second.url.c_str(), opt);
-        GLbody *body = new GLbody(binfo);
-        scene.addBody(it->first, body);
+        GLbody *glbody = new GLbody();
+        hrp::BodyPtr body(glbody);
+        hrp::loadBodyFromBodyInfo(body, binfo, false, GLlinkFactory);
+        glbody->setDrawInfo(binfo);
+        body->setName(it->first);
+        scene.WorldBase::addBody(body);
     }
 
     monitor.start();

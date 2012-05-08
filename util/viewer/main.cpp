@@ -70,8 +70,13 @@ int main(int argc, char *argv[])
             opt.readImage = true;
             opt.AABBdata.length(0);
             opt.AABBtype = OpenHRP::ModelLoader::AABB_NUM;
-            GLbody *body = new GLbody(ml->getBodyInfoEx(argv[1], opt));
-            scene.addBody("model", body); 
+            GLbody *glbody = new GLbody();
+            OpenHRP::BodyInfo_var binfo = ml->getBodyInfoEx(argv[1], opt);
+            hrp::BodyPtr body(glbody);
+            hrp::loadBodyFromBodyInfo(body, binfo, false, GLlinkFactory);
+            glbody->setDrawInfo(binfo);
+            body->setName("model");
+            scene.WorldBase::addBody(body);
         }
         while(window.oneStep());
 

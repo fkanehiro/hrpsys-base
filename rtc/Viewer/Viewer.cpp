@@ -138,9 +138,13 @@ RTC::ReturnCode_t Viewer::onActivated(RTC::UniqueId ec_id)
             std::cerr << "failed to load model[" << it->second.url.c_str() << "]" 
                       << std::endl;
         }else{
-            GLbody *body = new GLbody(binfo);
-            m_scene.addBody(it->first.c_str(), body);
-            m_bodies[it->first] = new RTCGLbody(body, this);
+            GLbody *glbody = new GLbody();
+            hrp::BodyPtr body(glbody);
+            hrp::loadBodyFromBodyInfo(body, binfo);
+            glbody->setDrawInfo(binfo);
+            body->setName(it->first);
+            m_scene.WorldBase::addBody(body);
+            m_bodies[it->first] = new RTCGLbody(glbody, this);
         }
     }
 

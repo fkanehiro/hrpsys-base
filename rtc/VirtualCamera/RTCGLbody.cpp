@@ -11,7 +11,7 @@ RTCGLbody::RTCGLbody(GLbody *i_body, RTC::DataFlowComponentBase *comp) :
     m_poseBaseIn("poseBase", m_poseBase)
 {
     if (m_body->numJoints() > 0) comp->addInPort("q", m_qIn);
-    if (m_body->rootLink()->jointType() == GLlink::FREE_JOINT){
+    if (m_body->rootLink()->jointType == hrp::Link::FREE_JOINT){
         comp->addInPort("pos", m_posIn);
         comp->addInPort("rpy", m_rpyIn);
         comp->addInPort("poseBase", m_poseBaseIn);

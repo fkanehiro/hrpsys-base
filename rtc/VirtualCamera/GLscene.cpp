@@ -63,7 +63,7 @@ void GLscene::updateScene()
         double rpy[] = {rs.basePose.orientation.r,
                         rs.basePose.orientation.p,
                         rs.basePose.orientation.y};
-        m_bodies[i]->setPosture(rs.q.get_buffer(), pos, rpy);
+        ((GLbody *)body(i).get())->setPosture(rs.q.get_buffer(), pos, rpy);
     }
 }
 
@@ -76,11 +76,11 @@ void GLscene::showStatus()
     OpenHRP::SceneState &sstate = lm->state();
 
     if (m_showingStatus){
-        GLbody *body = NULL;
+        GLbody *glbody = NULL;
         OpenHRP::RobotState *rstate = NULL;
-        for (unsigned int i=0; i<m_bodies.size(); i++){
-            if (m_bodies[i]->numJoints()){
-                body = m_bodies[i];
+        for (unsigned int i=0; i<numBodies(); i++){
+            if (body(i)->numJoints()){
+                glbody = (GLbody *)body(i).get();
                 rstate = &sstate.states[i];
                 break;
             }
@@ -89,8 +89,8 @@ void GLscene::showStatus()
         int width = m_width - 410;
         int height = m_height-HEIGHT_STEP;
         char buf[256];
-        for (int i=0; i<body->numJoints(); i++){
-            GLlink *l = body->joint(i);
+        for (int i=0; i<glbody->numJoints(); i++){
+            hrp::Link *l = glbody->joint(i);
             if (l){
                 int x = width;
                 // joint ID
@@ -101,7 +101,7 @@ void GLscene::showStatus()
                 x += 8*3;
                 // joint name, current angle
                 sprintf(buf, "%13s %8.3f", 
-                        l->name().c_str(), 
+                        l->name.c_str(), 
                         rstate->q[i]*180/M_PI);
                 glRasterPos2f(x, height);
                 drawString2(buf);

@@ -26,8 +26,8 @@ void GLscene::updateScene()
     for (unsigned int i=0; i<state.characterPositions.length(); i++){
         const CharacterPosition& cpos = state.characterPositions[i];
         std::string cname(cpos.characterName);
-        GLbody *body = m_nameBodyMap[cname];
-        if (!body) {
+        GLbody *glbody = (GLbody *)body(cname).get();
+        if (!glbody) {
             //std::cerr << "can't find a body named " << cname << std::endl;
             continue;
         }
@@ -46,7 +46,7 @@ void GLscene::updateScene()
             }
             printf("\n");
 #endif
-            body->link(j)->setAbsTransform(T);
+            ((GLlink *)glbody->link(j))->setAbsTransform(T);
         }
     }
 }

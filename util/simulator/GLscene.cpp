@@ -27,8 +27,8 @@ void GLscene::updateScene()
     
     for (unsigned int i=0; i<state.bodyStates.size(); i++){
         const BodyState& bstate = state.bodyStates[i];
-        GLbody *body = m_bodies[i];
-        body->setPosture(bstate.q, bstate.p, bstate.R);
+        GLbody *glbody = (GLbody *)body(i).get();
+        glbody->setPosture(bstate.q, bstate.p, bstate.R);
     }
 }
 
@@ -69,11 +69,11 @@ void GLscene::showStatus()
     SceneState &state = lm->state();
 
     if (m_showingStatus){
-        GLbody *body = NULL;
+        GLbody *glbody = NULL;
         BodyState *bstate = NULL;
-        for (unsigned int i=0; i<m_bodies.size(); i++){
-            if (m_bodies[i]->numJoints()){
-                body = m_bodies[i];
+        for (unsigned int i=0; i<numBodies(); i++){
+            if (body(i)->numJoints()){
+                glbody = (GLbody *)body(i).get();
                 bstate = &state.bodyStates[i];
                 break;
             }
@@ -82,10 +82,10 @@ void GLscene::showStatus()
         int width = m_width - 350;
         int height = m_height-HEIGHT_STEP;
         char buf[256];
-        for (int i=0; i<body->numJoints(); i++){
-            GLlink *l = body->joint(i);
+        for (int i=0; i<glbody->numJoints(); i++){
+            GLlink *l = (GLlink *)glbody->joint(i);
             if (l){
-                sprintf(buf, "%2d %15s %8.3f", i, l->name().c_str(),
+                sprintf(buf, "%2d %15s %8.3f", i, l->name.c_str(),
                         bstate->q[i]*180/M_PI);
                 glRasterPos2f(width, height);
                 height -= HEIGHT_STEP;

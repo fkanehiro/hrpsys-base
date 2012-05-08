@@ -30,7 +30,7 @@ void OnlineViewer_impl::update(const WorldState& state)
 
 void OnlineViewer_impl::load(const char* name_, const char* url)
 {
-    if (!scene->findBody(name_)){
+    if (!scene->body(name_)){
         std::cout << "load(" << url << ")" << std::endl;
         OpenHRP::ModelLoader_var ml = hrp::getModelLoader(orb);
         OpenHRP::ModelLoader::ModelLoadOption opt;
