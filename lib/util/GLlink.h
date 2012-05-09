@@ -23,7 +23,7 @@ public:
 
     GLlink();
     ~GLlink();
-    void setDrawInfo(const OpenHRP::LinkInfo &i_li, OpenHRP::BodyInfo_var i_binfo);
+    void setDrawInfo(const OpenHRP::LinkInfo &i_li, OpenHRP::ShapeSetInfo_ptr i_ssinfo);
     void draw();
     void setQ(double i_q);
     void setTransform(double i_trans[16]);

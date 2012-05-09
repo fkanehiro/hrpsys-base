@@ -11,7 +11,7 @@
 using namespace OpenHRP;
 using namespace hrp;
 
-GLcamera::GLcamera(const SensorInfo &i_si, OpenHRP::BodyInfo_var i_binfo,
+GLcamera::GLcamera(const SensorInfo &i_si, OpenHRP::ShapeSetInfo_ptr i_ssinfo,
                    GLlink *i_link) : m_name(i_si.name), m_link(i_link) {
     
     Matrix33 R;
@@ -31,7 +31,7 @@ GLcamera::GLcamera(const SensorInfo &i_si, OpenHRP::BodyInfo_var i_binfo,
     // display list
     glPushMatrix();
     glMultMatrixd(m_trans);
-    compileShape(i_binfo, i_si.shapeIndices);
+    compileShape(i_ssinfo, i_si.shapeIndices);
     glPopMatrix();
     
 

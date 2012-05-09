@@ -55,8 +55,9 @@ hrp::BodyPtr createBody(const std::string& name, const ModelItem& mitem,
     }
 }
 
-PySimulator::PySimulator() 
-    : scene(&log), simulator(&log), window(&scene, &log, &simulator){
+PySimulator::PySimulator() : 
+    Simulator(&log), scene(&log), window(&scene, &log, this)
+{
     int argc = 1;
     char *argv[] = {(char *)"dummy"};
     manager = RTC::Manager::init(argc, argv);
@@ -97,7 +98,7 @@ PyBody* PySimulator::loadBody(std::string name, std::string url){
     }else{
         pybody->createDataPorts();
         body->setName(name);
-        simulator.addBody(body);
+        addBody(body);
         return pybody;
     }
 }
@@ -128,7 +129,7 @@ void PySimulator::loadProject(std::string fname){
     }
     //================= setup Simulator ======================
     BodyFactory factory = boost::bind(::createBody, _1, _2, modelloader);
-    simulator.init(prj, factory);
+    init(prj, factory);
     
     std::cout << "timestep = " << prj.timeStep() << ", total time = " 
               << prj.totalTime() << std::endl;
@@ -136,57 +137,37 @@ void PySimulator::loadProject(std::string fname){
 
 void PySimulator::simulate()
 {
-    while(simulator.oneStep());
+    while(oneStep());
 }
 
 void PySimulator::simulate(double time)
 {
-    simulator.totalTime(simulator.currentTime()+time);
+    totalTime(currentTime()+time);
     simulate();
 }
 
 void PySimulator::start(double time)
 {
-    simulator.totalTime(simulator.currentTime()+time);
-    simulator.start();
-}
-
-void PySimulator::stop()
-{
-    simulator.stop();
-}
-
-void PySimulator::wait()
-{
-    simulator.wait();
+    totalTime(currentTime()+time);
+    Simulator::start();
 }
 
 void PySimulator::realTime(bool flag)
 {
-    simulator.realTime(flag);
+    realTime(flag);
 } 
 
 void PySimulator::endless(bool flag)
 {
     if (flag){
-        simulator.totalTime(0);
+        totalTime(0);
         log.enableRingBuffer(50000);
     }
 } 
 
-void PySimulator::setTimeStep(double t)
-{
-    simulator.timeStep(t);
-}
-
-double PySimulator::getTimeStep()
-{
-    return simulator.timeStep();
-}
-
 void PySimulator::clear()
 {
-    simulator.clear();
+    clear();
     scene.clear();
 }
 
@@ -202,7 +183,7 @@ void PySimulator::pause()
 
 void PySimulator::notifyChanged()
 {
-    simulator.appendLog();
+    appendLog();
 }
 
 PyBody *PySimulator::createBody(std::string name)
@@ -216,7 +197,7 @@ PyBody *PySimulator::createBody(std::string name)
     pybody->setRootLink(root);
     
     hrp::BodyPtr body = hrp::BodyPtr(pybody);
-    simulator.addBody(body);
+    addBody(body);
 
     return pybody;
 }
@@ -224,32 +205,12 @@ PyBody *PySimulator::createBody(std::string name)
 PyObject *PySimulator::bodies()
 {
     boost::python::list retval;
-    for (int i=0; i<simulator.numBodies(); i++){
-        PyBody *b = (PyBody *)simulator.body(i);
+    for (int i=0; i<numBodies(); i++){
+        PyBody *b = dynamic_cast<PyBody *>(body(i).get());
         //retval.append(boost::python::object(b));
         retval.append(b);
     }
     return boost::python::incref(retval.ptr());
-}
-
-void PySimulator::addCollisionCheckPair(PyBody *b1, PyBody *b2)
-{
-    simulator.addCollisionCheckPair(b1, b2);
-}
-
-bool PySimulator::oneStep()
-{
-    return simulator.oneStep();
-}
-
-double PySimulator::time()
-{
-    return simulator.currentTime();
-}
-
-void PySimulator::initialize()
-{
-    simulator.initialize();
 }
 
 BOOST_PYTHON_MODULE( simulator )
@@ -275,8 +236,8 @@ BOOST_PYTHON_MODULE( simulator )
         .def("bodies", &PySimulator::bodies)
         .def("initialize", &PySimulator::initialize)
         .add_property("timeStep", 
-                      &PySimulator::getTimeStep, &PySimulator::setTimeStep)
-        .add_property("time", &PySimulator::time)
+                      &PySimulator::timeStep, &PySimulator::setTimeStep)
+        .add_property("time", &PySimulator::currentTime)
         ;
 
     class_<PyBody>("Body", no_init)

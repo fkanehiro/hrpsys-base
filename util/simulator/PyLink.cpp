@@ -193,7 +193,7 @@ void PyLink::setInertia(PyObject *v)
 
 void PyLink::notifyChanged()
 {
-    PyBody *pybody = (PyBody *)body;
+    PyBody *pybody = dynamic_cast<PyBody *>(body);
     pybody->notifyChanged(PyBody::KINEMATICS);
 }
 
@@ -227,7 +227,7 @@ PyLink* PyLink::createLink()
 {
     PyLink *l = new PyLink();
     addChild(l);
-    PyBody *pybody = (PyBody *)body;
+    PyBody *pybody = dynamic_cast<PyBody *>(body);
     pybody->notifyChanged(PyBody::STRUCTURE);
     return l;
 }

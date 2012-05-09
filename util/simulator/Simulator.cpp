@@ -6,14 +6,8 @@ Simulator::Simulator(LogManager<SceneState> *i_log)
 {
 }
 
-void Simulator::addBody(hrp::BodyPtr i_body)
-{
-    world.addBody(i_body);
-    bodies.push_back((BodyRTC *)i_body.get());
-}
-
 void Simulator::init(Project &prj, BodyFactory &factory){
-    initWorld(prj, factory, world, pairs);
+    initWorld(prj, factory, *this, pairs);
     initRTS(prj, receivers);
     std::cout << "number of receivers:" << receivers.size() << std::endl;
     m_totalTime = prj.totalTime();
@@ -32,17 +26,13 @@ void Simulator::init(Project &prj, BodyFactory &factory){
         pair.linkName2 = CORBA::string_dup(link1->name.c_str());
     }
 
-    for (int i=0; i<world.numBodies(); i++){
-        bodies.push_back((BodyRTC *)world.body(i).get());
-    }
-
     appendLog();
 }
 
 void Simulator::appendLog()
 {
     if (log){
-        state.set(world);
+        state.set(*this);
         log->add(state);
     }
 }
@@ -90,12 +80,12 @@ void Simulator::checkCollision(OpenHRP::CollisionSequence &collisions)
 bool Simulator::oneStep(){
     ThreadedObject::oneStep();
 
-    if (!world.currentTime()) gettimeofday(&beginTime, NULL);
+    if (!currentTime()) gettimeofday(&beginTime, NULL);
     if (adjustTime){
         struct timeval tv;
         gettimeofday(&tv, NULL);
         startTimes.push_back(tv);
-        if (startTimes.size() > 1.0/world.timeStep()){
+        if (startTimes.size() > 1.0/timeStep()){
             startTimes.pop_front();
         }
         if (startTimes.size() >= 2){
@@ -103,7 +93,7 @@ bool Simulator::oneStep(){
             const struct timeval& last  = startTimes.back();
             int realT = (last.tv_sec - first.tv_sec)*1e6
                 + (last.tv_usec - first.tv_usec);
-            int simT = world.timeStep()*(startTimes.size()-1)*1e6;
+            int simT = timeStep()*(startTimes.size()-1)*1e6;
             int usec = simT - realT;
             if (usec > 1000){
                 usleep(usec);
@@ -112,16 +102,18 @@ bool Simulator::oneStep(){
     }
 
     tm_control.begin();
-    for (unsigned int i=0; i<bodies.size(); i++){
-        bodies[i]->writeDataPorts();
+    for (unsigned int i=0; i<numBodies(); i++){
+        BodyRTC *bodyrtc = dynamic_cast<BodyRTC *>(body(i).get());
+        bodyrtc->writeDataPorts();
     }
     
-    for (unsigned int i=0; i<bodies.size(); i++){
-        bodies[i]->readDataPorts();
+    for (unsigned int i=0; i<numBodies(); i++){
+        BodyRTC *bodyrtc = dynamic_cast<BodyRTC *>(body(i).get());
+        bodyrtc->readDataPorts();
     }
     
     for (unsigned int i=0; i<receivers.size(); i++){
-        receivers[i].tick(world.timeStep());
+        receivers[i].tick(timeStep());
     }
     tm_control.end();
 
@@ -130,13 +122,13 @@ bool Simulator::oneStep(){
     tm_collision.end();
 
     tm_dynamics.begin();
-    world.constraintForceSolver.clearExternalForces();
-    world.calcNextState(state.collisions);
+    constraintForceSolver.clearExternalForces();
+    calcNextState(state.collisions);
     
     appendLog();
     tm_dynamics.end();
     
-    if (m_totalTime && world.currentTime() > m_totalTime){
+    if (m_totalTime && currentTime() > m_totalTime){
         struct timeval endTime;
         gettimeofday(&endTime, NULL);
         double realT = (endTime.tv_sec - beginTime.tv_sec)
@@ -159,34 +151,20 @@ bool Simulator::oneStep(){
 void Simulator::clear()
 {
     RTC::Manager* manager = &RTC::Manager::instance();
-    for (unsigned int i=0; i<bodies.size(); i++){
-        bodies[i]->exit();
+    for (unsigned int i=0; i<numBodies(); i++){
+        BodyRTC *bodyrtc = dynamic_cast<BodyRTC *>(body(i).get());
+        bodyrtc->exit();
     }
     manager->cleanupComponents();
-    world.clearBodies();
-    world.constraintForceSolver.clearCollisionCheckLinkPairs();
-    world.setCurrentTime(0.0);
-    bodies.clear();
-}
-
-int Simulator::numBodies()
-{
-    return bodies.size();
-}
-
-BodyRTC* Simulator::body(int i)
-{
-    if (i>=0 && i<bodies.size()){
-        return bodies[i];
-    }else{
-        return NULL;
-    }
+    clearBodies();
+    constraintForceSolver.clearCollisionCheckLinkPairs();
+    setCurrentTime(0.0);
 }
 
 void Simulator::addCollisionCheckPair(BodyRTC *bodyPtr1, BodyRTC *bodyPtr2)
 {
-    int bodyIndex1 = world.bodyIndex(bodyPtr1->name());
-    int bodyIndex2 = world.bodyIndex(bodyPtr2->name());
+    int bodyIndex1 = bodyIndex(bodyPtr1->name());
+    int bodyIndex2 = bodyIndex(bodyPtr2->name());
 
     std::vector<hrp::Link*> links1;
     const hrp::LinkTraverse& traverse1 = bodyPtr1->linkTraverse();
@@ -204,7 +182,7 @@ void Simulator::addCollisionCheckPair(BodyRTC *bodyPtr1, BodyRTC *bodyPtr2)
             hrp::Link* link2 = links2[k];
             
             if(link1 && link2 && link1 != link2){
-                world.constraintForceSolver.addCollisionCheckLinkPair
+                constraintForceSolver.addCollisionCheckLinkPair
                     (bodyIndex1, link1, bodyIndex2, link2, 
                      0.5, 0.5, 0.01, 0.0);
                 pairs.push_back(new hrp::ColdetLinkPair(link1, link2));
@@ -224,9 +202,4 @@ void Simulator::addCollisionCheckPair(BodyRTC *bodyPtr1, BodyRTC *bodyPtr2)
         pair.linkName1 = CORBA::string_dup(link0->name.c_str());
         pair.linkName2 = CORBA::string_dup(link1->name.c_str());
     }
-}
-
-void Simulator::initialize()
-{
-    world.initialize();
 }

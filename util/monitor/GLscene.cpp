@@ -72,7 +72,8 @@ void GLscene::updateScene()
         = (LogManager<TimedRobotState> *)m_log;
     OpenHRP::RobotHardwareService::RobotState &rstate = lm->state().state;
     if (rstate.angle.length()){
-        ((GLbody *)body(0).get())->setPosture(rstate.angle.get_buffer());
+        GLbody *glbody = dynamic_cast<GLbody *>(body(0).get());
+        glbody->setPosture(rstate.angle.get_buffer());
     }
 }
 
@@ -85,7 +86,7 @@ void GLscene::showStatus()
     OpenHRP::RobotHardwareService::RobotState &rstate = lm->state().state;
 
     if (m_showingStatus){
-        GLbody *glbody = (GLbody *)body(0).get();
+        GLbody *glbody = dynamic_cast<GLbody *>(body(0).get());
 #define HEIGHT_STEP 12
         int width = m_width - 410;
         int height = m_height-HEIGHT_STEP;

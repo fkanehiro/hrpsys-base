@@ -57,13 +57,14 @@ void GLscene::updateScene()
     OpenHRP::SceneState &ss = lm->state();
     for (unsigned int i=0; i<ss.states.length(); i++){
         OpenHRP::RobotState &rs = ss.states[i];
-        ((GLbody *)body(i).get())->setPosition(rs.basePose.position.x,
-                                         rs.basePose.position.y,
-                                         rs.basePose.position.z);
-        ((GLbody *)body(i).get())->setOrientation(rs.basePose.orientation.r,
-                                            rs.basePose.orientation.p,
-                                            rs.basePose.orientation.y);
-        ((GLbody *)body(i).get())->setPosture(rs.q.get_buffer());
+        GLbody *glbody = dynamic_cast<GLbody *>(body(i).get());
+        glbody->setPosition(rs.basePose.position.x,
+                            rs.basePose.position.y,
+                            rs.basePose.position.z);
+        glbody->setOrientation(rs.basePose.orientation.r,
+                               rs.basePose.orientation.p,
+                               rs.basePose.orientation.y);
+        glbody->setPosture(rs.q.get_buffer());
     }
 }
 
@@ -80,7 +81,7 @@ void GLscene::showStatus()
         OpenHRP::RobotState *rstate = NULL;
         for (unsigned int i=0; i<numBodies(); i++){
             if (body(i)->numJoints()){
-                glbody = (GLbody *)body(i).get();
+                glbody = dynamic_cast<GLbody *>(body(i).get());
                 rstate = &sstate.states[i];
                 break;
             }

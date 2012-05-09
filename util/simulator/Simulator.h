@@ -11,7 +11,8 @@
 class BodyRTC;
 class SDL_Thread;
 
-class Simulator : public ThreadedObject
+class Simulator : virtual public hrp::World<hrp::ConstraintForceSolver>,
+    public ThreadedObject
 {
 public:
     Simulator(LogManager<SceneState> *i_log);
@@ -20,20 +21,11 @@ public:
     void checkCollision(OpenHRP::CollisionSequence &collisions);
     void realTime(bool flag) { adjustTime = flag; }
     void totalTime(double time) { m_totalTime = time; }
-    double currentTime() { return world.currentTime(); }
-    void timeStep(double time) { world.setTimeStep(time); }
-    double timeStep() { return world.timeStep(); }
-    void addBody(hrp::BodyPtr i_body);
     void clear();
     void appendLog();
-    int numBodies();
-    BodyRTC *body(int i);
     void addCollisionCheckPair(BodyRTC *b1, BodyRTC *b2);
-    void initialize();
 private:
-    hrp::World<hrp::ConstraintForceSolver> world;
     LogManager<SceneState> *log;
-    std::vector<BodyRTC *> bodies; 
     std::vector<ClockReceiver> receivers;
     std::vector<hrp::ColdetLinkPairPtr> pairs;
     SceneState state;

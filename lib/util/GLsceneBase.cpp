@@ -218,7 +218,9 @@ void GLsceneBase::draw()
 
     // robots
     for (int i=0; i<numBodies(); i++){
-        ((GLbody *)body(i).get())->draw();
+        GLbody *glbody = dynamic_cast<GLbody *>(body(i).get());
+        if (!glbody) std::cout << "dynamic_cast failed" << std::endl;
+        glbody->draw();
     }
 
     glDisable(GL_LIGHTING);

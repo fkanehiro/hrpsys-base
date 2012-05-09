@@ -11,7 +11,7 @@
 #include <rtm/idl/BasicDataTypeSkel.h>
 #include <rtm/idl/ExtendedDataTypesSkel.h>
 
-class BodyRTC : public hrp::Body, public RTC::DataFlowComponentBase
+class BodyRTC : virtual public hrp::Body, public RTC::DataFlowComponentBase
 {
 public:
     BodyRTC(RTC::Manager* manager = &RTC::Manager::instance());

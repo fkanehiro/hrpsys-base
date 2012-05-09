@@ -26,7 +26,7 @@ void GLscene::updateScene()
     for (unsigned int i=0; i<state.characterPositions.length(); i++){
         const CharacterPosition& cpos = state.characterPositions[i];
         std::string cname(cpos.characterName);
-        GLbody *glbody = (GLbody *)body(cname).get();
+        GLbody *glbody = dynamic_cast<GLbody *>(body(cname).get());
         if (!glbody) {
             //std::cerr << "can't find a body named " << cname << std::endl;
             continue;

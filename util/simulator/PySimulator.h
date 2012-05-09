@@ -7,7 +7,7 @@
 
 class PyBody;
 
-class PySimulator
+class PySimulator : public Simulator
 {
 public:
     PySimulator();
@@ -18,25 +18,16 @@ public:
     void simulate();
     void simulate(double time);
     void start(double time);
-    void stop();
-    void wait();
     void realTime(bool flag);
     void endless(bool flag);
-    void setTimeStep(double t);
-    double getTimeStep();
     void clear();
     void play();
     void pause();
     void notifyChanged();
     PyObject *bodies();
-    void addCollisionCheckPair(PyBody *b1, PyBody *b2);
-    bool oneStep();
-    double time();
-    void initialize();
 private:  
     LogManager<SceneState> log;
     GLscene scene;
-    Simulator simulator;
     SDLwindow window;
     RTC::Manager* manager;
 };

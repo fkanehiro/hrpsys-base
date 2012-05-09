@@ -22,7 +22,7 @@ GLlink::GLlink()
 {
 }
 
-void GLlink::setDrawInfo(const LinkInfo &i_li, BodyInfo_var i_binfo){
+void GLlink::setDrawInfo(const LinkInfo &i_li, ShapeSetInfo_ptr i_ssinfo){
     Vector3 axis;
     Matrix33 R;
     
@@ -43,7 +43,7 @@ void GLlink::setDrawInfo(const LinkInfo &i_li, BodyInfo_var i_binfo){
     
     m_list = glGenLists(1);
     glNewList(m_list, GL_COMPILE);
-    m_textures = compileShape(i_binfo, i_li.shapeIndices);
+    m_textures = compileShape(i_ssinfo, i_li.shapeIndices);
 
     const SensorInfoSequence& sensors = i_li.sensors;
     for (unsigned int i=0; i<sensors.length(); i++){
@@ -51,7 +51,7 @@ void GLlink::setDrawInfo(const LinkInfo &i_li, BodyInfo_var i_binfo){
         std::string type(si.type);
         if (type == "Vision"){
             //std::cout << si.name << std::endl;
-            m_cameras.push_back(new GLcamera(si,i_binfo, this));
+            m_cameras.push_back(new GLcamera(si,i_ssinfo, this));
         }
     }
         

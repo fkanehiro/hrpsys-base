@@ -1,10 +1,11 @@
 #include <boost/python.hpp>
 #include "util/BodyRTC.h"
+#include "util/GLbody.h"
 
 class PyLink;
 class PySimulator;
 
-class PyBody : public BodyRTC
+class PyBody : public BodyRTC, public GLbody
 {
 public:
     enum{STRUCTURE, KINEMATICS}; 

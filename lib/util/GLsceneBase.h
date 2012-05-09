@@ -22,7 +22,7 @@ class LogManagerBase;
 #define SLIDER_AREA_HEIGHT 30
 #define SLIDER_SIDE_MARGIN 10
 
-class GLsceneBase : public hrp::World<hrp::ConstraintForceSolver>
+class GLsceneBase : virtual public hrp::World<hrp::ConstraintForceSolver>
 {
 public:
     GLsceneBase(LogManagerBase *i_log);

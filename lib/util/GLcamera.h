@@ -9,7 +9,7 @@ class GLlink;
 class GLcamera
 {
 public:
-    GLcamera(const OpenHRP::SensorInfo &i_si, OpenHRP::BodyInfo_var i_binfo,
+    GLcamera(const OpenHRP::SensorInfo &i_si, OpenHRP::ShapeSetInfo_ptr i_ssinfo,
              GLlink *i_link);
     GLcamera(int i_width, int i_height, double i_near, double i_far, double i_fovy);
     const std::string& name() const;

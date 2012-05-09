@@ -2,9 +2,9 @@
 #define __PYLINK_H__
 
 #include <boost/python.hpp>
-#include <hrpModel/Link.h>
+#include "util/GLlink.h"
 
-class PyLink : public hrp::Link
+class PyLink : public GLlink
 {
 public:
     ~PyLink();

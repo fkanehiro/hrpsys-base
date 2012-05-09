@@ -27,7 +27,7 @@ void GLscene::updateScene()
     
     for (unsigned int i=0; i<state.bodyStates.size(); i++){
         const BodyState& bstate = state.bodyStates[i];
-        GLbody *glbody = (GLbody *)body(i).get();
+        GLbody *glbody = dynamic_cast<GLbody *>(body(i).get());
         glbody->setPosture(bstate.q, bstate.p, bstate.R);
     }
 }
@@ -73,7 +73,7 @@ void GLscene::showStatus()
         BodyState *bstate = NULL;
         for (unsigned int i=0; i<numBodies(); i++){
             if (body(i)->numJoints()){
-                glbody = (GLbody *)body(i).get();
+                glbody = dynamic_cast<GLbody *>(body(i).get());
                 bstate = &state.bodyStates[i];
                 break;
             }

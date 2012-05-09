@@ -8,7 +8,7 @@
 class GLcamera;
 class GLlink;
 
-class GLbody : public hrp::Body
+class GLbody : virtual public hrp::Body
 {
 public:
     GLbody();
