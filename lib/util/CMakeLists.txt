@@ -5,6 +5,7 @@ set(sources
   ThreadedObject.cpp
   GLutil.cpp
   GLcamera.cpp
+  GLshape.cpp
   GLlink.cpp
   GLbody.cpp
   GLsceneBase.cpp
@@ -19,6 +20,7 @@ set(headers
   ThreadedObject.h
   GLutil.h
   GLcamera.h
+  GLshape.h
   GLlink.h
   GLbody.h
   GLsceneBase.h

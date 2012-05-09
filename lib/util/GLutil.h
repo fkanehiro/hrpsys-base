@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <hrpCorba/ModelLoader.hh>
+#include <GL/gl.h>
 
 std::vector<GLuint> compileShape(OpenHRP::ShapeSetInfo_ptr i_binfo,
                                  const OpenHRP::TransformedShapeIndexSequence& tsis);

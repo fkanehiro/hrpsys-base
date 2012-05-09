@@ -12,6 +12,7 @@
 #include <hrpModel/Link.h>
 
 class GLcamera;
+class GLshape;
 
 class GLlink : public hrp::Link
 {
@@ -39,8 +40,7 @@ private:
     static bool m_useAbsTransformToDraw;
     std::vector<GLcamera *> m_cameras;
     double m_trans[16], m_T_j[16], m_absTrans[16];
-    int m_list;
-    std::vector<GLuint> m_textures;
+    std::vector<GLshape *> m_shapes;
 };
 
 hrp::Link *GLlinkFactory();

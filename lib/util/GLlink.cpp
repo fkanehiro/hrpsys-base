@@ -7,6 +7,7 @@
 #include "GLutil.h"
 #include "GLcamera.h"
 #include "GLlink.h"
+#include "GLshape.h"
 
 using namespace OpenHRP;
 using namespace hrp;
@@ -40,10 +41,10 @@ void GLlink::setDrawInfo(const LinkInfo &i_li, ShapeSetInfo_ptr i_ssinfo){
     m_trans[14]=i_li.translation[2];m_trans[15]=1; 
 
     computeAbsTransform(m_absTrans);
-    
-    m_list = glGenLists(1);
-    glNewList(m_list, GL_COMPILE);
-    m_textures = compileShape(i_ssinfo, i_li.shapeIndices);
+
+    GLshape *shape = new GLshape();
+    m_shapes.push_back(shape);
+    shape->setDrawInfo(i_ssinfo, i_li.shapeIndices);
 
     const SensorInfoSequence& sensors = i_li.sensors;
     for (unsigned int i=0; i<sensors.length(); i++){
@@ -54,20 +55,16 @@ void GLlink::setDrawInfo(const LinkInfo &i_li, ShapeSetInfo_ptr i_ssinfo){
             m_cameras.push_back(new GLcamera(si,i_ssinfo, this));
         }
     }
-        
-    glEndList();
-    
 }
 
 GLlink::~GLlink()
 {
+    for (size_t i=0; i<m_shapes.size(); i++){
+        delete m_shapes[i];
+    }
     for (unsigned int i=0; i<m_cameras.size(); i++){
         delete m_cameras[i];
     }
-    for (unsigned int i=0; i<m_textures.size(); i++){
-        glDeleteTextures(1, &m_textures[i]);
-    }
-    glDeleteLists(m_list, 1);
 }
         
 void GLlink::draw(){
@@ -78,7 +75,12 @@ void GLlink::draw(){
         glMultMatrixd(m_trans);
         glMultMatrixd(m_T_j);
     }
-    glCallList(m_list);
+    for (size_t i=0; i<m_shapes.size(); i++){
+        m_shapes[i]->draw();
+    }
+    for (size_t i=0; i<m_cameras.size(); i++){
+        m_cameras[i]->draw();
+    }
     if (!m_useAbsTransformToDraw){
         hrp::Link *l = child;
         while (l){

@@ -7,6 +7,7 @@
 #include "GLutil.h"
 #include "GLlink.h"
 #include "GLcamera.h"
+#include "GLshape.h"
 
 using namespace OpenHRP;
 using namespace hrp;
@@ -28,12 +29,9 @@ GLcamera::GLcamera(const SensorInfo &i_si, OpenHRP::ShapeSetInfo_ptr i_ssinfo,
     m_trans[12]=i_si.translation[0];m_trans[13]=i_si.translation[1];
     m_trans[14]=i_si.translation[2];m_trans[15]=1; 
 
-    // display list
-    glPushMatrix();
-    glMultMatrixd(m_trans);
-    compileShape(i_ssinfo, i_si.shapeIndices);
-    glPopMatrix();
-    
+    GLshape *shape = new GLshape();
+    m_shapes.push_back(shape);
+    shape->setDrawInfo(i_ssinfo, i_si.shapeIndices);
 
     m_near = i_si.specValues[0];
     m_far  = i_si.specValues[1];
@@ -45,6 +43,26 @@ GLcamera::GLcamera(const SensorInfo &i_si, OpenHRP::ShapeSetInfo_ptr i_ssinfo,
 GLcamera::GLcamera(int i_width, int i_height, double i_near, double i_far, double i_fovy) : m_near(i_near), m_far(i_far), m_fovy(i_fovy), m_width(i_width), m_height(i_height), m_link(NULL)
 {
 }
+
+GLcamera::~GLcamera()
+{
+    for (size_t i=0; i<m_shapes.size(); i++){
+        delete m_shapes[i];
+    }
+}
+
+void GLcamera::draw()
+{
+    // display list
+    glPushMatrix();
+    glMultMatrixd(m_trans);
+    for (size_t i=0; i<m_shapes.size(); i++){
+        m_shapes[i]->draw();
+    }
+    glPopMatrix();
+}    
+
+
 
 const std::string& GLcamera::name() const {
     return m_name;
