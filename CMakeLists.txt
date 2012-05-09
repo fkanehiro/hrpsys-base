@@ -25,8 +25,6 @@ else()
 endif()
 
 
-option(USE_ART "Use ART-Linux as operating system of the robot" OFF)
-
 # commands
 if(UNIX)
   set(RMDIR rm -fr)
