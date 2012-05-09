@@ -11,7 +11,7 @@
 
 using namespace OpenHRP;
 
-std::vector<GLuint> compileShape(OpenHRP::BodyInfo_var i_binfo,
+std::vector<GLuint> compileShape(OpenHRP::ShapeSetInfo_ptr i_binfo,
                               const TransformedShapeIndexSequence& tsis)
 {
     std::vector<GLuint> textures;
