@@ -27,6 +27,10 @@ namespace RTC
 
     OpenHRP::ExecutionProfileService::Profile *getProfile();
     void resetProfile();
+    //
+    bool enterRT();
+    bool exitRT();
+    bool waitForNextPeriod();
   private:
     OpenHRP::ExecutionProfileService::Profile m_profile;
     struct timeval m_tv;
