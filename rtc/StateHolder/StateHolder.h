@@ -10,6 +10,7 @@
 #ifndef NULL_COMPONENT_H
 #define NULL_COMPONENT_H
 
+#include <boost/interprocess/sync/interprocess_semaphore.hpp>
 #include <rtm/Manager.h>
 #include <rtm/DataFlowComponentBase.h>
 #include <rtm/CorbaPort.h>
@@ -17,7 +18,6 @@
 #include <rtm/DataOutPort.h>
 #include <rtm/idl/BasicDataTypeSkel.h>
 #include <rtm/idl/ExtendedDataTypesSkel.h>
-#include <semaphore.h>
 
 // Service implementation headers
 // <rtc-template block="service_impl_h">
@@ -152,10 +152,11 @@ class StateHolder
   // </rtc-template>
 
  private:
-  int dummy, m_timeCount;
-  sem_t m_waitSem, m_timeSem;
+  int m_timeCount;
+  boost::interprocess::interprocess_semaphore m_waitSem, m_timeSem;
   bool m_requestGoActual;
   double m_dt;
+  int dummy;
 };
 
 

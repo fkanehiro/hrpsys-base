@@ -46,13 +46,13 @@ SequencePlayer::SequencePlayer(RTC::Manager* manager)
       m_baseRpyOut("baseRpy", m_baseRpy),
       m_SequencePlayerServicePort("SequencePlayerService"),
       // </rtc-template>
-      dummy(0),
-      m_robot(NULL)
+      m_waitSem(0),
+      m_robot(NULL),
+      dummy(0)
 {
     m_service0.player(this);
     m_clearFlag = false;
     m_waitFlag = false;
-    sem_init(&m_waitSem, 0, 0);
 }
 
 SequencePlayer::~SequencePlayer()
@@ -173,7 +173,7 @@ RTC::ReturnCode_t SequencePlayer::onExecute(RTC::UniqueId ec_id)
         m_clearFlag = false;
         if (m_waitFlag){
             m_waitFlag = false;
-            sem_post(&m_waitSem);
+            m_waitSem.post();
         }
     }else{
         double zmp[3], acc[3], pos[3], rpy[3];
@@ -246,7 +246,7 @@ void SequencePlayer::setClearFlag()
 void SequencePlayer::waitInterpolation()
 {
     m_waitFlag = true;
-    sem_wait(&m_waitSem);
+    m_waitSem.wait();
 }
 
 bool SequencePlayer::setJointAngle(short id, double angle, double tm)

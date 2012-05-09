@@ -2,8 +2,8 @@
 #define __ROBOT_H__
 
 #include <boost/array.hpp>
+#include <boost/interprocess/sync/interprocess_semaphore.hpp>
 #include <hrpModel/Body.h>
-#include "osWrapper.h"
 
 /**
    \brief 
@@ -214,7 +214,7 @@ private:
     int m_lLegForceSensorId, m_rLegForceSensorId;
     std::map<std::string, std::vector<int> > m_jointGroups;
 
-    sem_t wait_sem;
+    boost::interprocess::interprocess_semaphore wait_sem;
 };
 
 #endif
