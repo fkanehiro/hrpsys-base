@@ -212,7 +212,7 @@ RTC::ReturnCode_t Simulator::onActivated(RTC::UniqueId ec_id)
                     if(link1 && link2 && link1 != link2){
                         m_world.constraintForceSolver.addCollisionCheckLinkPair
                             (bodyIndex1, link1, bodyIndex2, link2, 
-                             cpi.staticFriction, cpi.slidingFriction, 0.01, 0.0);
+                             cpi.staticFriction, cpi.slidingFriction, 0.01, 0.0, 0.0);
                     }
                 }
             }

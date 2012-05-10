@@ -184,7 +184,7 @@ void Simulator::addCollisionCheckPair(BodyRTC *bodyPtr1, BodyRTC *bodyPtr2)
             if(link1 && link2 && link1 != link2){
                 constraintForceSolver.addCollisionCheckLinkPair
                     (bodyIndex1, link1, bodyIndex2, link2, 
-                     0.5, 0.5, 0.01, 0.0);
+                     0.5, 0.5, 0.01, 0.0, 0.0);
                 pairs.push_back(new hrp::ColdetLinkPair(link1, link2));
             }
         }
