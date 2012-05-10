@@ -124,10 +124,12 @@ std::vector<GLuint> compileShape(OpenHRP::ShapeSetInfo_ptr i_binfo,
             }
             for(int k=0; k < 3; ++k){
                 int vi = j*3+k;
+                long vertexIndex = si.triangles[vi];
+                int p = vertexIndex * 3;
                 if (ai.normalPerVertex){
                     int p;
                     if (normalIndices.length() == 0){
-                        p = vi*3;
+                        p = vertexIndex*3;
                     }else{
                         p = normalIndices[vi]*3;
                     }
@@ -145,8 +147,6 @@ std::vector<GLuint> compileShape(OpenHRP::ShapeSetInfo_ptr i_binfo,
                               << texcoord[texindices[vi]*2+1] << std::endl;
 #endif
                 }
-                long vertexIndex = si.triangles[vi];
-                int p = vertexIndex * 3;
                 glVertex3fv(vertices+p);
             }
         }
