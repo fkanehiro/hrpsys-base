@@ -26,7 +26,7 @@ GLsceneBase::GLsceneBase(LogManagerBase *i_log) :
     m_log(i_log), m_videoWriter(NULL), m_cvImage(NULL), m_isNewBody(false),
     m_showFloorGrid(true), m_showInfo(true), m_clearRequested(false)
 {
-    m_default_camera = new GLcamera(DEFAULT_W, DEFAULT_H, 1.0, 100.0, 40*M_PI/180);
+    m_default_camera = new GLcamera(DEFAULT_W, DEFAULT_H, 0.1, 100.0, 30*M_PI/180);
     m_default_camera->setViewPoint(4,0,0.8);
     m_default_camera->setViewTarget(0,0,0.8);
     m_camera = m_default_camera;
