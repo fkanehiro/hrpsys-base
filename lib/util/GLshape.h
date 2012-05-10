@@ -1,7 +1,11 @@
 #ifndef __GLSHAPE_H__
 #define __GLSHAPE_H__
 
+#ifdef __APPLE__
+#include <OpenGL/gl.h>
+#else
 #include <GL/gl.h>
+#endif
 #include <vector>
 #include <boost/intrusive_ptr.hpp>
 #include <hrpCorba/ModelLoader.hh>

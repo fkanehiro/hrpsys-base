@@ -3,7 +3,11 @@
 
 #include <vector>
 #include <hrpCorba/ModelLoader.hh>
+#ifdef __APPLE__
+#include <OpenGL/gl.h>
+#else
 #include <GL/gl.h>
+#endif
 
 std::vector<GLuint> compileShape(OpenHRP::ShapeSetInfo_ptr i_binfo,
                                  const OpenHRP::TransformedShapeIndexSequence& tsis);
