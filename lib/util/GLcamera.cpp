@@ -121,3 +121,9 @@ void GLcamera::getDepthOfLine(int i_row, float *o_depth)
 {
     glReadPixels(0, i_row, width(), 1, GL_DEPTH_COMPONENT, GL_FLOAT, o_depth);
 }
+
+void GLcamera::setViewSize(int w, int h)
+{
+    m_width = w;
+    m_height = h;
+}

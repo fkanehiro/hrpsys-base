@@ -28,6 +28,7 @@ public:
     void getDepthOfLine(int i_row, float *o_depth);
     void setViewPoint(double x, double y, double z);
     void setViewTarget(double x, double y, double z);
+    void setViewSize(int w, int h);
     void draw();
 private:
     std::string m_name;

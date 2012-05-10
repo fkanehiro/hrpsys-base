@@ -43,6 +43,7 @@ GLsceneBase::~GLsceneBase()
 void GLsceneBase::setScreenSize(int w, int h){
     m_width = w;
     m_height = h;
+    m_camera->setViewSize(w,h);
 }
 
 void GLsceneBase::addBody(const std::string &i_name, OpenHRP::BodyInfo_var i_binfo){
