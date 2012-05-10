@@ -66,7 +66,7 @@ bool SDLwindow::init(int w, int h, bool resizable)
         SDL_Quit();
         return false;
     }
-    SDL_WM_SetCaption("sdlsim", NULL);
+    SDL_WM_SetCaption("hrpsys viewer", NULL);
     SDL_EnableKeyRepeat(SDL_DEFAULT_REPEAT_DELAY,SDL_DEFAULT_REPEAT_INTERVAL);
 
     scene->init();
