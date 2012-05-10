@@ -81,6 +81,9 @@ int main(int argc, char *argv[])
         while(window.oneStep());
 
     }
+    catch(OpenHRP::ModelLoader::ModelLoaderException ex){
+        std::cerr << ex.description << std::endl;
+    }
     catch (CORBA::SystemException& ex) {
         std::cerr << ex._rep_id() << std::endl;
     }
