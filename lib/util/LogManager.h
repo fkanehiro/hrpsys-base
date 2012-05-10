@@ -25,6 +25,7 @@ public:
     void clear(){
         m_log.clear();
         m_index = -1;
+        m_atLast = true;
     }
     void prev(int delta=1){ setIndex(m_index - delta); }
     void next(int delta=1){ setIndex(m_index + delta); }
