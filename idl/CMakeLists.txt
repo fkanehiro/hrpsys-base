@@ -34,15 +34,6 @@ macro(generate_java_stub idl_basename)
     )
 endmacro()
 
-macro(generate_python_stub idl_basename)
-  set(idl_file ${CMAKE_CURRENT_SOURCE_DIR}/${idl_basename}.idl)
-  add_custom_command(
-    OUTPUT ${idl_basename}_idl.py OpenHRP OpenHRP__POA Img Img__POA
-    COMMAND omniidl -bpython -I${OPENRTM_IDL_DIR} ${idl_file}
-    DEPENDS ${idl_file}
-    )
-endmacro()
-
 foreach(idl_file ${idl_files})
   get_filename_component(idl_basename ${idl_file} NAME_WE)
   generate_cpp_stub(${idl_basename})
@@ -50,8 +41,6 @@ foreach(idl_file ${idl_files})
   list(APPEND headers ${CMAKE_CURRENT_BINARY_DIR}/${idl_basename}.hh)
   generate_java_stub(${idl_basename})
   list(APPEND compiled ${idl_basename}.compiled)
-  generate_python_stub(${idl_basename})
-  list(APPEND pythonstubs ${CMAKE_CURRENT_BINARY_DIR}/${idl_basename}_idl.py)
 endforeach()
 
 set(jarfile ${CMAKE_CURRENT_BINARY_DIR}/hrpsysBaseStub.jar)
@@ -65,7 +54,6 @@ add_custom_command(
   DEPENDS ${compiled}
   )
 add_custom_target(StubJava ALL DEPENDS ${jarfile})
-add_custom_target(StubPython ALL DEPENDS ${pythonstubs})
 
 set(target hrpsysBaseStub)
 add_library(${target} SHARED ${sources})
@@ -76,13 +64,7 @@ install(TARGETS ${target}
 )
 
 install(FILES ${jarfile} DESTINATION share/hrpsys/jar)
-install(FILES ${pythonstubs} DESTINATION share/hrpsys/python)
-install(DIRECTORY 
-  ${CMAKE_CURRENT_BINARY_DIR}/OpenHRP
-  ${CMAKE_CURRENT_BINARY_DIR}/OpenHRP__POA
-  ${CMAKE_CURRENT_BINARY_DIR}/Img
-  ${CMAKE_CURRENT_BINARY_DIR}/Img__POA
-  DESTINATION share/hrpsys/python)
+install(CODE "execute_process(COMMAND omniidl -bpython -C${CMAKE_INSTALL_PREFIX}/share/hrpsys/python -I${OPENRTM_IDL_DIR} ${idl_files} WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})")
 install(FILES ${headers} DESTINATION include/hrpsys/idl)
 install(FILES ${idl_files} DESTINATION share/hrpsys/idl)
 
