@@ -9,6 +9,7 @@
 #include "util/Project.h"
 #include "util/GLbody.h"
 #include "util/GLlink.h"
+#include "util/GLutil.h"
 #include "util/SDLUtil.h"
 #include "GLscene.h"
 #include "Monitor.h"
@@ -87,7 +88,7 @@ int main(int argc, char* argv[])
         GLbody *glbody = new GLbody();
         hrp::BodyPtr body(glbody);
         hrp::loadBodyFromBodyInfo(body, binfo, false, GLlinkFactory);
-        glbody->setDrawInfo(binfo);
+        loadShapeFromBodyInfo(glbody, binfo);
         body->setName(it->first);
         scene.WorldBase::addBody(body);
     }

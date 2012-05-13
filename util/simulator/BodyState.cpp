@@ -8,7 +8,7 @@ void BodyState::set(BodyPtr i_body)
 {
     Link *root = i_body->rootLink();
     p = root->p;
-    R = root->R;
+    R = root->attitude();
     q.resize(i_body->numJoints());
     for (int i=0; i<i_body->numJoints(); i++){
         Link *joint =  i_body->joint(i);

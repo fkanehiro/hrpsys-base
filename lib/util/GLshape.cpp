@@ -1,34 +1,219 @@
+#include <iostream>
+#include <GL/glu.h>
 #include "GLutil.h"
 #include "GLshape.h"
+#include "GLtexture.h"
 
-GLshape::GLshape() : m_list(0)
+GLshape::GLshape() : m_texture(NULL), m_requestCompile(false), m_shininess(0.2), m_list(0)
 {
     for (int i=0; i<16; i++) m_trans[i] = 0.0;
     m_trans[0] = m_trans[5] = m_trans[10] = m_trans[15] = 1.0;
+    for (int i=0; i<4; i++) m_specular[i] = 0;
 }
 
 GLshape::~GLshape()
 {
-    for (unsigned int i=0; i<m_textures.size(); i++){
-        glDeleteTextures(1, &m_textures[i]);
+    if (m_texture){
+        if (m_texture->image.size()) glDeleteTextures(1, &m_textureId);
+        delete m_texture;
     }
     if (m_list) glDeleteLists(m_list, 1);
-}
-
-void GLshape::setDrawInfo(OpenHRP::ShapeSetInfo_ptr i_ssinfo, 
-                          const OpenHRP::TransformedShapeIndexSequence &i_tsis)
-{
-    m_list = glGenLists(1);
-    glNewList(m_list, GL_COMPILE);
-    m_textures = compileShape(i_ssinfo, i_tsis);
-    glEndList();
 }
 
 void GLshape::draw()
 {
     glPushMatrix();
     glMultMatrixd(m_trans);
+    if (m_requestCompile){
+        doCompile();
+        m_requestCompile = false;
+    } 
     glCallList(m_list);
     glPopMatrix();
 }
 
+void GLshape::setVertices(int nvertices, const float *vertices)
+{
+    for (size_t i=0; i<nvertices; i++){
+        m_vertices.push_back(Eigen::Vector3f(vertices[i*3  ], 
+                                             vertices[i*3+1], 
+                                             vertices[i*3+2]));
+    }
+}
+
+void GLshape::setTriangles(int ntriangles, const long int *vertexIndices)
+{
+    for (size_t i=0; i<ntriangles; i++){
+        m_triangles.push_back(Eigen::Vector3i(vertexIndices[i*3  ],
+                                              vertexIndices[i*3+1],
+                                              vertexIndices[i*3+2]));
+    }
+}
+
+void GLshape::setNormals(int nnormal, const float *normals)
+{
+    for (size_t i=0; i<nnormal; i++){
+        m_normals.push_back(Eigen::Vector3f(normals[i*3  ],
+                                            normals[i*3+1],
+                                            normals[i*3+2]));
+    }
+}
+
+void GLshape::setDiffuseColor(float r, float g, float b, float a)
+{
+    m_diffuse[0] = r; m_diffuse[1] = g; m_diffuse[2] = b; m_diffuse[3] = a; 
+}
+
+void GLshape::setNormalPerVertex(bool flag)
+{
+    m_normalPerVertex = flag;
+}
+
+void GLshape::setNormalIndices(int len, const long int *normalIndices)
+{
+    m_normalIndices.resize(len);
+    for (size_t i=0; i<len; i++){
+        m_normalIndices[i] = normalIndices[i];
+    }
+}
+
+void GLshape::setTextureCoordinates(int ncoords, const float *coordinates)
+{
+    for (size_t i=0; i<ncoords; i++){
+        m_textureCoordinates.push_back(Eigen::Vector2f(coordinates[i*2  ],
+                                                       coordinates[i*2+1]));
+    }
+}
+
+void GLshape::setTextureCoordIndices(int len, const long int *coordIndices)
+{
+    m_textureCoordIndices.resize(len);
+    for (size_t i=0; i<len; i++){
+        m_textureCoordIndices[i] = coordIndices[i];
+    }
+}
+
+void GLshape::setTexture(GLtexture *texture)
+{
+    m_texture = texture;
+}
+
+void GLshape::compile()
+{
+    m_requestCompile = true;
+}
+
+void GLshape::doCompile()
+{
+    //std::cout << "doCompile" << std::endl;
+    m_list = glGenLists(1);
+    glNewList(m_list, GL_COMPILE);
+
+    double scale[3];
+    for (int i=0; i<3; i++){
+        scale[i] = sqrt(m_trans[i]*m_trans[i]
+                        +m_trans[i+4]*m_trans[i+4]
+                        +m_trans[i+8]*m_trans[i+8]);
+    }
+
+    bool drawTexture = false;
+    if (m_texture){
+        if (m_texture->image.size()==0){
+            std::cerr<< "texture image(" << m_texture->url << ") is not loaded"
+                     << std::endl;
+        }else{
+            drawTexture = true;
+            glGenTextures(1, &m_textureId);
+            glBindTexture(GL_TEXTURE_2D, m_textureId);
+            
+            if (m_texture->repeatS){
+                glTexParameteri(GL_TEXTURE_2D, 
+                                GL_TEXTURE_WRAP_S, GL_REPEAT);
+            }else{
+                glTexParameteri(GL_TEXTURE_2D, 
+                                GL_TEXTURE_WRAP_S, GL_CLAMP);
+            }
+            if (m_texture->repeatT){
+                glTexParameteri(GL_TEXTURE_2D,
+                                GL_TEXTURE_WRAP_T, GL_REPEAT);
+            }else{
+                glTexParameteri(GL_TEXTURE_2D,
+                                GL_TEXTURE_WRAP_T, GL_CLAMP);
+            }
+            int format;
+            if (m_texture->numComponents == 3){
+                format = GL_RGB;
+            }else if (m_texture->numComponents == 4){
+                format = GL_RGBA;
+            }else{
+                std::cerr << "texture image which has "
+                          << m_texture->numComponents << " is not supported"
+                          << std::endl;
+            }
+            glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+            gluBuild2DMipmaps(GL_TEXTURE_2D, 3, 
+                              m_texture->width, m_texture->height, 
+                              format, GL_UNSIGNED_BYTE, 
+                              &m_texture->image[0]);
+            
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, 
+                            GL_LINEAR_MIPMAP_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, 
+                            GL_LINEAR);
+            glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+            
+            glEnable(GL_TEXTURE_2D);
+        }
+    }
+    
+    glBegin(GL_TRIANGLES);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, m_diffuse);
+    //glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR,            m_specular);
+    glMaterialf (GL_FRONT_AND_BACK, GL_SHININESS,           m_shininess);
+    for(size_t j=0; j < m_triangles.size(); ++j){
+        if (!m_normalPerVertex){
+            long int p;
+            if (m_normalIndices.size() == 0){
+                p = j;
+            }else{
+                p = m_normalIndices[j];
+            }
+            if (p < m_normals.size()){
+                const Eigen::Vector3f &n = m_normals[p];
+                glNormal3f(scale[0]*n[0], scale[1]*n[1], scale[2]*n[2]);
+            }
+        }
+        for(int k=0; k < 3; ++k){
+            long vertexIndex = m_triangles[j][k];
+            if (m_normalPerVertex){
+                int p;
+                if (m_normalIndices.size() == 0){
+                    p = vertexIndex;
+                }else{
+                    p = m_normalIndices[j*3+k];
+                }
+                const Eigen::Vector3f &n = m_normals[p];
+                glNormal3f(scale[0]*n[0], scale[1]*n[1], scale[2]*n[2]);
+            }
+            if (drawTexture){
+                long int texCoordIndex = m_textureCoordIndices[j*3+k];
+                glTexCoord2d(m_textureCoordinates[texCoordIndex][0],
+                             -m_textureCoordinates[texCoordIndex][1]);
+            }
+            glVertex3fv(m_vertices[vertexIndex].data());
+            }
+        }
+    glEnd();
+    if (drawTexture) glDisable(GL_TEXTURE_2D);
+    glEndList();
+}
+
+void GLshape::setShininess(float s)
+{
+    m_shininess = s;
+}
+
+void GLshape::setSpecularColor(float r, float g, float b)
+{
+    m_specular[0] = r; m_specular[1] = g; m_specular[2] = b; 
+}

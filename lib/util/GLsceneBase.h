@@ -27,7 +27,6 @@ class GLsceneBase : virtual public hrp::World<hrp::ConstraintForceSolver>
 public:
     GLsceneBase(LogManagerBase *i_log);
     virtual ~GLsceneBase();
-    void addBody(const std::string &i_name, OpenHRP::BodyInfo_var i_binfo);
     void save(const char *i_fname);
     void capture(char *o_image);
     void init();
@@ -58,9 +57,6 @@ protected:
     IplImage *m_cvImage;
     LogManagerBase *m_log;
     SDL_sem *m_sem;
-    std::string m_newBodyName;
-    OpenHRP::BodyInfo_var m_newBodyInfo;
-    bool m_isNewBody;
     bool m_showFloorGrid, m_showInfo;
     bool m_clearRequested;
 };

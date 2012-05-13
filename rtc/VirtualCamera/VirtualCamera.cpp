@@ -19,6 +19,7 @@
 #include "util/GLcamera.h"
 #include "util/GLbody.h"
 #include "util/GLlink.h"
+#include "util/GLutil.h"
 #include "VirtualCamera.h"
 #include "RTCGLbody.h"
 #include "GLscene.h"
@@ -240,7 +241,7 @@ RTC::ReturnCode_t VirtualCamera::onActivated(RTC::UniqueId ec_id)
         GLbody *glbody = new GLbody();
         hrp::BodyPtr body(glbody);
         hrp::loadBodyFromBodyInfo(body, binfos[i].second, false, GLlinkFactory);
-        glbody->setDrawInfo(binfos[i].second);
+        loadShapeFromBodyInfo(glbody, binfos[i].second);
         body->setName(binfos[i].first);
         m_scene.WorldBase::addBody(body);
         RTCGLbody *rtcglbody = new RTCGLbody(glbody, this);

@@ -1,6 +1,9 @@
 #include <cstdio>
 #include <iostream>
 #include <hrpModel/ModelLoaderUtil.h>
+#include "util/GLbody.h"
+#include "util/GLlink.h"
+#include "util/GLutil.h"
 #include "OnlineViewer_impl.h"
 #include "GLscene.h"
 
@@ -38,7 +41,12 @@ void OnlineViewer_impl::load(const char* name_, const char* url)
         opt.AABBdata.length(0);
         opt.AABBtype = OpenHRP::ModelLoader::AABB_NUM;
         BodyInfo_var binfo = ml->getBodyInfoEx(url, opt);
-        scene->addBody(name_, binfo);
+        GLbody *glbody = new GLbody();
+        hrp::BodyPtr body(glbody);
+        hrp::loadBodyFromBodyInfo(body, binfo, false, GLlinkFactory);
+        body->setName(name_);
+        loadShapeFromBodyInfo(glbody, binfo);
+        scene->addBody(body);
     }
 }
 

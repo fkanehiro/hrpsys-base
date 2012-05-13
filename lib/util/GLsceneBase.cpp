@@ -10,6 +10,7 @@
 #include "GLcamera.h"
 #include "GLbody.h"
 #include "GLlink.h"
+#include "GLutil.h"
 #include "GLsceneBase.h"
 #include "LogManagerBase.h"
 
@@ -23,7 +24,7 @@ static void drawString(const char *str)
 GLsceneBase::GLsceneBase(LogManagerBase *i_log) : 
     m_width(DEFAULT_W), m_height(DEFAULT_H),
     m_showingStatus(false), m_showSlider(false),
-    m_log(i_log), m_videoWriter(NULL), m_cvImage(NULL), m_isNewBody(false),
+    m_log(i_log), m_videoWriter(NULL), m_cvImage(NULL), 
     m_showFloorGrid(true), m_showInfo(true), m_clearRequested(false)
 {
     m_default_camera = new GLcamera(DEFAULT_W, DEFAULT_H, 0.1, 100.0, 30*M_PI/180);
@@ -44,13 +45,6 @@ void GLsceneBase::setScreenSize(int w, int h){
     m_width = w;
     m_height = h;
     m_camera->setViewSize(w,h);
-}
-
-void GLsceneBase::addBody(const std::string &i_name, OpenHRP::BodyInfo_var i_binfo){
-    m_newBodyName = i_name;
-    m_newBodyInfo = i_binfo;
-    m_isNewBody = true;
-    SDL_SemWait(m_sem);
 }
 
 void GLsceneBase::setCamera(GLcamera *i_camera)
@@ -129,6 +123,8 @@ void GLsceneBase::init()
     glLightfv(GL_LIGHT1, GL_SPECULAR, white);
     glLightfv(GL_LIGHT0, GL_POSITION, light0pos);
     glLightfv(GL_LIGHT1, GL_POSITION, light1pos);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glEnable(GL_BLEND);
 }
 
 void GLsceneBase::showFloorGrid(bool flag)
@@ -199,17 +195,6 @@ void GLsceneBase::draw()
         SDL_SemPost(m_sem);
     }
 
-    if (m_isNewBody){
-        GLbody *glbody = new GLbody();
-        glbody->setName(m_newBodyName);
-        hrp::BodyPtr body(glbody);
-        hrp::loadBodyFromBodyInfo(body, m_newBodyInfo, false, GLlinkFactory);
-        glbody->setDrawInfo(m_newBodyInfo);
-        WorldBase::addBody(body);
-        m_isNewBody = false;
-        SDL_SemPost(m_sem);
-    }
-
     int index = m_log->updateIndex();
     
     updateScene();
@@ -240,8 +225,6 @@ void GLsceneBase::draw()
     glLoadIdentity();
     if (m_showInfo) drawInfo(fps);
     if (m_showSlider){
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        glEnable(GL_BLEND);
         glColor4f(0.0,0.0,0.0, 0.5);
         glRectf(SLIDER_SIDE_MARGIN,10,m_width-SLIDER_SIDE_MARGIN,20);
         unsigned int len = m_log->length();
@@ -249,7 +232,6 @@ void GLsceneBase::draw()
             int x = ((double)index)/(len-1)*(m_width-20)+10;
             glRectf(x-5,5,x+5,25);
         }
-        glDisable(GL_BLEND);
     }
     glPopMatrix();
     glEnable(GL_LIGHTING);

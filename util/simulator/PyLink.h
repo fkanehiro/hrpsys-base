@@ -7,6 +7,7 @@
 class PyLink : public GLlink
 {
 public:
+    PyLink();
     ~PyLink();
     PyObject *getPosition();
     void setPosition(PyObject *v);
@@ -30,8 +31,10 @@ public:
     void setRotationAxis(PyObject *v);
     PyObject *getTranslationAxis();
     void setTranslationAxis(PyObject *v);
-    PyLink *createLink();
+    PyLink *addChildLink(std::string name);
     PyLink *getParent();
+    void addShapeFromFile(std::string url);
+    void addCube(double x, double y, double z); 
     PyObject *getChildren();
     void setJointType(std::string type);
     std::string getJointType();

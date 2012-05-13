@@ -39,11 +39,13 @@ void Simulator::appendLog()
 
 void Simulator::checkCollision(OpenHRP::CollisionSequence &collisions)
 {
+    for (int i=0; i<numBodies(); i++){
+        body(i)->updateLinkColdetModelPositions();
+    }
     for(size_t colIndex=0; colIndex < pairs.size(); ++colIndex){
         hrp::ColdetLinkPairPtr linkPair = pairs[colIndex];
         OpenHRP::Collision& collision = collisions[colIndex];
         OpenHRP::CollisionPointSequence* pCollisionPoints = &collision.points;
-        linkPair->updatePositions();
         std::vector<hrp::collision_data>& cdata = linkPair->detectCollisions();
             
         if(cdata.empty()){

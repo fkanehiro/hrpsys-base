@@ -29,9 +29,10 @@ GLcamera::GLcamera(const SensorInfo &i_si, OpenHRP::ShapeSetInfo_ptr i_ssinfo,
     m_trans[12]=i_si.translation[0];m_trans[13]=i_si.translation[1];
     m_trans[14]=i_si.translation[2];m_trans[15]=1; 
 
-    GLshape *shape = new GLshape();
-    m_shapes.push_back(shape);
-    shape->setDrawInfo(i_ssinfo, i_si.shapeIndices);
+    for (size_t i=0; i<i_si.shapeIndices.length(); i++){
+        GLshape *shape = createShape(i_ssinfo, i_si.shapeIndices[i]);
+        m_shapes.push_back(shape);
+    }
 
     m_near = i_si.specValues[0];
     m_far  = i_si.specValues[1];
@@ -107,10 +108,6 @@ void GLcamera::setViewPoint(double x, double y, double z)
 void GLcamera::setViewTarget(double x, double y, double z)
 {
     m_viewTarget[0] = x; m_viewTarget[1] = y; m_viewTarget[2] = z;
-}
-
-void GLcamera::setTransform(double i_trans[16]){
-    memcpy(m_trans, i_trans, sizeof(double)*16);
 }
 
 double *GLcamera::getAbsTransform(){

@@ -2,7 +2,6 @@
 #include "GLlink.h"
 #include "GLbody.h"
 
-using namespace OpenHRP;
 using namespace hrp;
 
 bool GLbody::m_useAbsTransformToDraw = false;
@@ -14,20 +13,6 @@ void GLbody::useAbsTransformToDraw()
 
 GLbody::GLbody()
 {
-}
-
-void GLbody::setDrawInfo(BodyInfo_var i_binfo){
-    LinkInfoSequence_var lis = i_binfo->links();
-    
-    for (unsigned int i=0; i<lis->length(); i++){
-        hrp::Link *l = link(std::string(lis[i].name));
-        if (l){
-            ((GLlink *)l)->setDrawInfo(lis[i], i_binfo);
-        }else{
-            std::cout << "can't find a link named " << lis[i].name 
-                      << std::endl;
-        }
-    }
 }
 
 GLbody::~GLbody(){
@@ -64,12 +49,11 @@ void GLbody::setPosture(const double *i_angles, double *i_pos, double *i_rpy){
 void GLbody::setPosture(const dvector& i_q, const Vector3& i_p,
                         const Matrix33& i_R)
 {
-    double tform[16];
+    double *tform = ((GLlink *)rootLink())->getTransform();
     tform[ 0]=i_R(0,0);tform[ 1]=i_R(1,0);tform[ 2]=i_R(2,0);tform[ 3]=0;
     tform[ 4]=i_R(0,1);tform[ 5]=i_R(1,1);tform[ 6]=i_R(2,1);tform[ 7]=0;
     tform[ 8]=i_R(0,2);tform[ 9]=i_R(1,2);tform[10]=i_R(2,2);tform[11]=0;
     tform[12]=i_p[0];tform[13]=i_p[1];tform[14]=i_p[2];tform[15]=1;
-    ((GLlink *)rootLink())->setTransform(tform);
     setPosture(i_q.data());
 }
 

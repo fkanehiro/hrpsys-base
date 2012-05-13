@@ -4,11 +4,12 @@
 #include <string>
 #include <vector>
 #include <hrpCorba/ModelLoader.hh>
+#include "GLcoordinates.h"
 
 class GLlink;
 class GLshape;
 
-class GLcamera
+class GLcamera : public GLcoordinates
 {
 public:
     GLcamera(const OpenHRP::SensorInfo &i_si, OpenHRP::ShapeSetInfo_ptr i_ssinfo,
@@ -18,7 +19,6 @@ public:
     const std::string& name() const;
     void setView();
     void computeAbsTransform(double o_trans[16]);
-    void setTransform(double i_trans[16]);
     double *getAbsTransform();
     double near() { return m_near; }
     double far() { return m_far; }
@@ -32,7 +32,7 @@ public:
     void draw();
 private:
     std::string m_name;
-    double m_trans[16], m_absTrans[16];
+    double m_absTrans[16];
     GLlink *m_link;
     double m_near, m_far, m_fovy;
     int m_width, m_height;

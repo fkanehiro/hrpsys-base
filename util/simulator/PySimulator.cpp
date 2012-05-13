@@ -14,6 +14,8 @@
 #endif
 #include <SDL_thread.h>
 #include "util/GLbody.h"
+#include "util/GLlink.h"
+#include "util/GLutil.h"
 #include "util/Project.h"
 #include "util/OpenRTMUtil.h"
 #include "PyBody.h"
@@ -26,7 +28,7 @@ using namespace OpenHRP;
 
 static hrp::Link *createLink() { return new PyLink(); }
 hrp::BodyPtr createBody(const std::string& name, const ModelItem& mitem,
-                        ModelLoader_ptr modelloader)
+                        ModelLoader_ptr modelloader, GLscene *scene)
 {
     std::cout << "createBody(" << name << "," << mitem.url << ")" << std::endl;
     RTC::Manager& manager = RTC::Manager::instance();
@@ -45,12 +47,14 @@ hrp::BodyPtr createBody(const std::string& name, const ModelItem& mitem,
     }
     //BodyInfo_var binfo = modelloader->getBodyInfoEx(mitem.url.c_str(), mlopt);
     BodyInfo_var binfo = modelloader->getBodyInfo(mitem.url.c_str());
-    if (!loadBodyFromBodyInfo(body, binfo, true)){
+    if (!loadBodyFromBodyInfo(body, binfo, true, GLlinkFactory)){
         std::cerr << "failed to load model[" << mitem.url << "]" << std::endl;
         manager.deleteComponent(pybody);
         return hrp::BodyPtr();
     }else{
         pybody->createDataPorts();
+        loadShapeFromBodyInfo(pybody, binfo);
+        scene->addBody(body);
         return body;
     }
 }
@@ -86,7 +90,6 @@ PyBody* PySimulator::loadBody(std::string name, std::string url){
     ModelLoader_var modelloader = getModelLoader(CosNaming::NamingContext::_duplicate(naming.getRootContext()));
     OpenHRP::BodyInfo_var binfo
         = modelloader->loadBodyInfo(url.c_str());
-    scene.addBody(name, binfo);
     std::string args = "PyBody?instance_name="+name;
     PyBody *pybody = (PyBody *)manager->createComponent(args.c_str());
     pybody->setListener(this);
@@ -99,6 +102,8 @@ PyBody* PySimulator::loadBody(std::string name, std::string url){
         pybody->createDataPorts();
         body->setName(name);
         addBody(body);
+        loadShapeFromBodyInfo(pybody, binfo);
+        scene.addBody(body);
         return pybody;
     }
 }
@@ -120,15 +125,9 @@ void PySimulator::loadProject(std::string fname){
     RTC::CorbaNaming naming(manager->getORB(), nameServer.c_str());
     
     ModelLoader_var modelloader = getModelLoader(CosNaming::NamingContext::_duplicate(naming.getRootContext()));
-    //==================== Viewer setup ===============
-    for (std::map<std::string, ModelItem>::iterator it=prj.models().begin();
-         it != prj.models().end(); it++){
-        OpenHRP::BodyInfo_var binfo
-            = modelloader->loadBodyInfo(it->second.url.c_str());
-        scene.addBody(it->first, binfo);
-    }
     //================= setup Simulator ======================
-    BodyFactory factory = boost::bind(::createBody, _1, _2, modelloader);
+    BodyFactory factory = boost::bind(::createBody, _1, _2, modelloader, 
+                                      &scene);
     init(prj, factory);
     
     std::cout << "timestep = " << prj.timeStep() << ", total time = " 
@@ -194,10 +193,12 @@ PyBody *PySimulator::createBody(std::string name)
     pybody->setListener(this);
     pybody->setName(name);
     PyLink *root = new PyLink();
+    root->name = "root";
     pybody->setRootLink(root);
     
     hrp::BodyPtr body = hrp::BodyPtr(pybody);
     addBody(body);
+    scene.addBody(body);
 
     return pybody;
 }
@@ -212,6 +213,12 @@ PyObject *PySimulator::bodies()
     }
     return boost::python::incref(retval.ptr());
 }
+
+void PySimulator::addCollisionCheckPair(PyBody *b1, PyBody *b2)
+{
+    Simulator::addCollisionCheckPair(b1, b2);
+}
+
 
 BOOST_PYTHON_MODULE( simulator )
 {
@@ -259,9 +266,12 @@ BOOST_PYTHON_MODULE( simulator )
         ;
 
     class_<PyLink>("Link", no_init)
-        .def("createLink", &PyLink::createLink, return_internal_reference<>()) 
+        .def("addChildLink", &PyLink::addChildLink, return_internal_reference<>()) 
+        .def("addShapeFromFile", &PyLink::addShapeFromFile)
+        .def("addCube", &PyLink::addCube)
         .def("parent", &PyLink::getParent, return_internal_reference<>())
         .def("children", &PyLink::getChildren)
+        .def("showAxes", &PyLink::showAxes)
         .def_readwrite("name", &PyLink::name)
         .def_readwrite("jointId", &PyLink::jointId)
         .def_readwrite("m", &PyLink::m)

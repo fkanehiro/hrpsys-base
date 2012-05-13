@@ -24,6 +24,7 @@ public:
     void play();
     void pause();
     void notifyChanged();
+    void addCollisionCheckPair(PyBody *b1, PyBody *b2);
     PyObject *bodies();
 private:  
     LogManager<SceneState> log;

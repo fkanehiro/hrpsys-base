@@ -8,6 +8,7 @@
 #include <hrpModel/ModelLoaderUtil.h>
 #include "util/GLlink.h"
 #include "util/GLbody.h"
+#include "util/GLutil.h"
 #include "util/SDLUtil.h"
 #include "OnlineViewer_impl.h"
 #include "GLscene.h"
@@ -61,9 +62,6 @@ int main(int argc, char *argv[])
         GLlink::useAbsTransformToDraw();
         GLbody::useAbsTransformToDraw();
 
-        SDLwindow window(&scene, &log);
-        window.init();
-
         if (argc == 2){
             OpenHRP::ModelLoader_var ml = hrp::getModelLoader(namingContext);
             OpenHRP::ModelLoader::ModelLoadOption opt;
@@ -71,13 +69,21 @@ int main(int argc, char *argv[])
             opt.AABBdata.length(0);
             opt.AABBtype = OpenHRP::ModelLoader::AABB_NUM;
             GLbody *glbody = new GLbody();
-            OpenHRP::BodyInfo_var binfo = ml->getBodyInfoEx(argv[1], opt);
+            std::string url = argv[1];
+            if (argv[1][0] != '/'){
+                std::string cwd = get_current_dir_name();
+                url = cwd + '/' + url;
+            }
             hrp::BodyPtr body(glbody);
-            hrp::loadBodyFromBodyInfo(body, binfo, false, GLlinkFactory);
-            glbody->setDrawInfo(binfo);
             body->setName("model");
+            OpenHRP::BodyInfo_var binfo = ml->getBodyInfoEx(url.c_str(), opt);
+            hrp::loadBodyFromBodyInfo(body, binfo, false, GLlinkFactory);
+            loadShapeFromBodyInfo(glbody, binfo);
             scene.WorldBase::addBody(body);
         }
+        SDLwindow window(&scene, &log);
+        window.init();
+
         while(window.oneStep());
 
     }

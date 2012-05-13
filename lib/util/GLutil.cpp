@@ -7,9 +7,16 @@
 #include <GL/gl.h>
 #include <GL/glu.h>
 #endif
+#include <hrpUtil/Eigen3d.h>
+#include "GLshape.h"
+#include "GLbody.h"
+#include "GLlink.h"
+#include "GLcamera.h"
+#include "GLtexture.h"
 #include "GLutil.h"
 
 using namespace OpenHRP;
+using namespace hrp;
 
 std::vector<GLuint> compileShape(OpenHRP::ShapeSetInfo_ptr i_binfo,
                               const TransformedShapeIndexSequence& tsis)
@@ -166,6 +173,157 @@ void mulTrans(const double i_m1[16], const double i_m2[16], double o_m[16])
                 v += i_m1[i*4+k]*i_m2[j+k*4];
             }
             o_m[i*4+j] = v;
+        }
+    }
+}
+
+void loadTextureFromTextureInfo(GLtexture *texture, TextureInfo &ti)
+{
+    texture->repeatS = ti.repeatS;
+    texture->repeatT = ti.repeatT;
+    texture->numComponents = ti.numComponents;
+    texture->url = ti.url;
+    texture->width = ti.width;
+    texture->height = ti.height;
+    texture->image.resize(ti.image.length());
+    memcpy(&texture->image[0], ti.image.get_buffer(), ti.image.length());
+}
+
+GLshape *createShape(OpenHRP::ShapeSetInfo_ptr i_ssinfo, 
+                     const OpenHRP::TransformedShapeIndex &i_tsi)
+{
+    GLshape *shape = new GLshape();
+
+    ShapeInfoSequence_var sis = i_ssinfo->shapes();
+    AppearanceInfoSequence_var ais = i_ssinfo->appearances();
+    MaterialInfoSequence_var mis = i_ssinfo->materials();
+    shape->setTransform(i_tsi.transformMatrix);
+    ShapeInfo& si = sis[i_tsi.shapeIndex];
+    shape->setVertices(si.vertices.length()/3, si.vertices.get_buffer());
+    shape->setTriangles(si.triangles.length()/3, si.triangles.get_buffer());
+    const AppearanceInfo& ai = ais[si.appearanceIndex];
+    shape->setNormals(ai.normals.length()/3, ai.normals.get_buffer());
+    shape->setNormalIndices(ai.normalIndices.length(), ai.normalIndices.get_buffer()); 
+    shape->setTextureCoordinates(ai.textureCoordinate.length()/2, 
+                                 ai.textureCoordinate.get_buffer());
+    shape->setTextureCoordIndices(ai.textureCoordIndices.length(),
+                                  ai.textureCoordIndices.get_buffer());
+    if (ai.textureIndex >=0){
+        TextureInfo &ti = (*i_ssinfo->textures())[ai.textureIndex];
+        GLtexture *texture = new GLtexture();
+        loadTextureFromTextureInfo(texture, ti);
+        shape->setTexture(texture);
+    }
+    if (ai.colors.length()){
+        shape->setDiffuseColor(ai.colors[0], ai.colors[1], ai.colors[2], 1.0);
+    }else if (ai.materialIndex >= 0){ 
+        const MaterialInfo& mi = mis[ai.materialIndex];
+        shape->setDiffuseColor(mi.diffuseColor[0], mi.diffuseColor[1], mi.diffuseColor[2], 1.0-mi.transparency);
+        shape->setShininess(mi.shininess);
+        shape->setSpecularColor(mi.specularColor[0], mi.specularColor[1], mi.specularColor[2]);
+    }else{
+        std::cout << "no material" << std::endl;
+    }
+    shape->setNormalPerVertex(ai.normalPerVertex);
+    shape->compile();
+
+    return shape;
+}
+
+
+GLshape *createCube(double x, double y, double z)
+{
+    GLshape *shape = new GLshape();
+    double hx = x/2, hy = y/2, hz = z/2;
+    float vertices[] = {hx,hy,hz,
+                        -hx,hy,hz,
+                        -hx,-hy,hz,
+                        hx,-hy,hz,
+                        hx,hy,-hz,
+                        -hx,hy,-hz,
+                        -hx,-hy,-hz,
+                        hx,-hy,-hz};
+    long int triangles[] = {0,2,3,//+z
+                            0,1,2,//+z
+                            4,3,7,//+x
+                            4,0,3,//+x
+                            0,4,5,//+y
+                            5,1,0,//+y
+                            1,5,6,//-x
+                            1,6,2,//-x
+                            2,6,7,//-y
+                            2,7,3,//-y
+                            7,6,4,//-z
+                            5,4,6};//-z
+    float normals[] = {1,0,0,
+                       0,1,0,
+                       0,0,1,
+                       -1,0,0,
+                       0,-1,0,
+                       0,0,-1};
+    long int normalIndices[] = {2,2,0,0,1,1,3,3,4,4,5,5};
+    shape->setVertices(8, vertices);
+    shape->setTriangles(12, triangles);
+    shape->setNormals(6, normals);
+    shape->setNormalIndices(12, normalIndices);
+    shape->setDiffuseColor(0.8, 0.8, 0.8, 1.0);
+    shape->setNormalPerVertex(false);
+    shape->compile();
+                
+    return shape;
+}
+
+void loadShapeFromBodyInfo(GLbody *body, BodyInfo_var i_binfo)
+{
+    LinkInfoSequence_var lis = i_binfo->links();
+    
+    for (unsigned int i=0; i<lis->length(); i++){
+        hrp::Link *l = body->link(std::string(lis[i].name));
+        if (l){
+            loadShapeFromLinkInfo((GLlink *)l, lis[i], i_binfo);
+        }else{
+            std::cout << "can't find a link named " << lis[i].name 
+                      << std::endl;
+        }
+    }
+}
+
+void loadShapeFromSceneInfo(GLlink *link, SceneInfo_var i_sinfo)
+{
+    TransformedShapeIndexSequence_var tsis = i_sinfo->shapeIndices();
+    for (size_t i = 0; i<tsis->length(); i++){
+        GLshape *shape = createShape(i_sinfo, tsis[i]);
+        link->addShape(shape);
+    }
+}
+
+void loadShapeFromLinkInfo(GLlink *link, const LinkInfo &i_li, ShapeSetInfo_ptr i_ssinfo){
+    Vector3 axis;
+    Matrix33 R;
+    
+    for (int i=0; i<3; i++) axis[i] = i_li.rotation[i];
+    hrp::calcRodrigues(R, axis, i_li.rotation[3]);
+
+    double trans[16];
+    trans[ 0]=R(0,0);trans[ 1]=R(0,1);trans[ 2]=R(0,2);trans[3]=i_li.translation[0]; 
+    trans[ 4]=R(1,0);trans[ 5]=R(1,1);trans[ 6]=R(1,2);trans[7]=i_li.translation[1]; 
+    trans[ 8]=R(2,0);trans[ 9]=R(2,1);trans[10]=R(2,2);trans[11]=i_li.translation[2]; 
+    link->setTransform(trans);
+    link->setQ(0);
+    link->computeAbsTransform();
+
+    for (size_t i = 0; i<i_li.shapeIndices.length(); i++){
+        GLshape *shape = createShape(i_ssinfo, i_li.shapeIndices[i]);
+        link->addShape(shape);
+    }
+
+    const SensorInfoSequence& sensors = i_li.sensors;
+    for (unsigned int i=0; i<sensors.length(); i++){
+        const SensorInfo& si = sensors[i];
+        std::string type(si.type);
+        if (type == "Vision"){
+            //std::cout << si.name << std::endl;
+            link->addCamera(new GLcamera(si,i_ssinfo, link));
         }
     }
 }

@@ -1,6 +1,14 @@
 #include <iostream>
+#include <rtm/Manager.h>
+#include <rtm/CorbaNaming.h>
+#include <hrpModel/ModelLoaderUtil.h>
+#include <util/GLutil.h>
 #include "PyLink.h"
 #include "PyBody.h"
+
+PyLink::PyLink()
+{
+}
 
 PyLink::~PyLink()
 {
@@ -95,7 +103,13 @@ PyObject *PyLink::getRelPosition()
 void PyLink::setRelPosition(PyObject *v)
 {
     if (PySequence_Size(v) != 3) return;
-    PyListToVector(v, b);
+    if (parent){
+        PyListToVector(v, b);
+        GLcoordinates::setPosition(b);
+    }else{
+        PyListToVector(v, p);
+        GLcoordinates::setPosition(p);
+    }
     notifyChanged();
 }
 
@@ -125,6 +139,7 @@ void PyLink::setRelRotation(PyObject *v)
     }else{
         return;
     }
+    GLcoordinates::setRotation(Rs);
     notifyChanged();
 }
 
@@ -136,6 +151,7 @@ double PyLink::getPosture()
 void PyLink::setPosture(double v)
 {
     q = v;
+    setQ(q);
     notifyChanged();
 }
 
@@ -156,6 +172,7 @@ PyObject *PyLink::getRotationAxis()
 {
     boost::python::list retval;
     VectorToPyList(a, retval);
+    notifyChanged();
     return boost::python::incref(retval.ptr());
 }
 
@@ -223,13 +240,41 @@ void PyLink::setAngVel(PyObject *v)
     PyListToVector(v, w);
 }
 
-PyLink* PyLink::createLink()
+PyLink* PyLink::addChildLink(std::string name)
 {
     PyLink *l = new PyLink();
+    l->name = name;
     addChild(l);
     PyBody *pybody = dynamic_cast<PyBody *>(body);
     pybody->notifyChanged(PyBody::STRUCTURE);
     return l;
+}
+
+void PyLink::addShapeFromFile(std::string url)
+{
+    RTC::Manager* manager = &RTC::Manager::instance();
+    std::string nameServer = manager->getConfig()["corba.nameservers"];
+    int comPos = nameServer.find(",");
+    if (comPos < 0){
+        comPos = nameServer.length();
+    }
+    nameServer = nameServer.substr(0, comPos);
+    RTC::CorbaNaming naming(manager->getORB(), nameServer.c_str());
+    
+    OpenHRP::ModelLoader_var modelloader = hrp::getModelLoader(CosNaming::NamingContext::_duplicate(naming.getRootContext()));
+    OpenHRP::ModelLoader::ModelLoadOption opt;
+    opt.readImage = true;
+    opt.AABBdata.length(0);
+    opt.AABBtype = OpenHRP::ModelLoader::AABB_NUM;
+    OpenHRP::BodyInfo_var binfo = modelloader->getBodyInfoEx(url.c_str(), opt);
+    OpenHRP::LinkInfoSequence_var lis = binfo->links();
+    loadShapeFromLinkInfo(this, lis[0], binfo);
+}
+
+void PyLink::addCube(double x, double y, double z)
+{
+    GLshape *shape = createCube(x,y,z);
+    addShape(shape);
 }
 
 PyLink *PyLink::getParent()

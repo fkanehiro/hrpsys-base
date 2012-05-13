@@ -2,7 +2,6 @@
 #define __GLBODY_H__
 
 #include <vector>
-#include <hrpCorba/ModelLoader.hh>
 #include <hrpModel/Body.h>
 
 class GLcamera;
@@ -13,7 +12,6 @@ class GLbody : virtual public hrp::Body
 public:
     GLbody();
     ~GLbody();
-    void setDrawInfo(OpenHRP::BodyInfo_var i_binfo);
     void setPosture(const double *i_angles);
     void setPosition(double x, double y, double z);
     void setOrientation(double r, double p, double y);

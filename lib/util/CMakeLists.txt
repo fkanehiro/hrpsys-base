@@ -4,6 +4,7 @@ set(sources
   OpenRTMUtil.cpp
   ThreadedObject.cpp
   GLutil.cpp
+  GLcoordinates.cpp
   GLcamera.cpp
   GLshape.cpp
   GLlink.cpp

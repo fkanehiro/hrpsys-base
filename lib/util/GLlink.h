@@ -8,39 +8,36 @@
 #else
 #include <GL/gl.h>
 #endif
-#include <hrpCorba/ModelLoader.hh>
 #include <hrpModel/Link.h>
+#include "GLcoordinates.h"
 
 class GLcamera;
 class GLshape;
 
-class GLlink : public hrp::Link
+class GLlink : public hrp::Link, public GLcoordinates
 {
 public:
-    typedef enum {FREE_JOINT, 
-                  FIXED_JOINT, 
-                  ROTATIONAL_JOINT, 
-                  SLIDE_JOINT} JointType;
-
     GLlink();
     ~GLlink();
-    void setDrawInfo(const OpenHRP::LinkInfo &i_li, OpenHRP::ShapeSetInfo_ptr i_ssinfo);
     void draw();
     void setQ(double i_q);
-    void setTransform(double i_trans[16]);
-    double *getTransform() { return m_trans; } 
 
     GLcamera *findCamera(const char *i_name);
 
+    void computeAbsTransform();
     void computeAbsTransform(double o_trans[16]);
     void setAbsTransform(double o_trans[16]);
+    void addShape(GLshape *shape);
+    void addCamera(GLcamera *camera);
+    void showAxes(bool flag);
     static void useAbsTransformToDraw();
 
 private:
     static bool m_useAbsTransformToDraw;
     std::vector<GLcamera *> m_cameras;
-    double m_trans[16], m_T_j[16], m_absTrans[16];
+    double m_T_j[16], m_absTrans[16];
     std::vector<GLshape *> m_shapes;
+    bool m_showAxes;
 };
 
 hrp::Link *GLlinkFactory();
