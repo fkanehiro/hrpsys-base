@@ -21,15 +21,15 @@ public:
     ~GLshape();
     void draw();
     void setVertices(int nvertices, const float *vertices);
-    void setTriangles(int ntriangles, const long int *vertexIndices);
+    void setTriangles(int ntriangles, const int *vertexIndices);
     void setNormals(int nnormal, const float *normals);
-    void setNormalIndices(int len, const long int *normalIndices);
+    void setNormalIndices(int len, const int *normalIndices);
     void setDiffuseColor(float r, float g, float b, float a);
     void setSpecularColor(float r, float g, float b);
     void setShininess(float s);
     void setNormalPerVertex(bool flag);
     void setTextureCoordinates(int len, const float *coordinates);
-    void setTextureCoordIndices(int len, const long int *coordinates);
+    void setTextureCoordIndices(int len, const int *coordinates);
     void setTexture(GLtexture *texture);
     void compile();
 private:

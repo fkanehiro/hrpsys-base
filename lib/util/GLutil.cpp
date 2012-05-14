@@ -104,6 +104,14 @@ std::vector<GLuint> compileShape(OpenHRP::ShapeSetInfo_ptr i_binfo,
         //std::cout << "length of normalIndices = " << normalIndices.length() << std::endl;
         const int numTriangles = triangles.length() / 3;
         //std::cout << "numTriangles = " << numTriangles << std::endl;
+#if 1
+        std::cout << std::endl;
+        std::cout << "normalPerVertex = " << ai.normalPerVertex << std::endl;
+        std::cout << "numTriangles = " << numTriangles << std::endl;
+        std::cout << "numVertices = " << si.vertices.length()/3 << std::endl;
+        std::cout << "length of normalIndices = " << normalIndices.length() << std::endl;
+        std::cout << "length of normals = " << ai.normals.length()/3 << std::endl;
+#endif
         if (ai.colors.length()){
             glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, 
                          ai.colors.get_buffer());
@@ -200,14 +208,16 @@ GLshape *createShape(OpenHRP::ShapeSetInfo_ptr i_ssinfo,
     shape->setTransform(i_tsi.transformMatrix);
     ShapeInfo& si = sis[i_tsi.shapeIndex];
     shape->setVertices(si.vertices.length()/3, si.vertices.get_buffer());
-    shape->setTriangles(si.triangles.length()/3, si.triangles.get_buffer());
+    shape->setTriangles(si.triangles.length()/3, 
+                        (int *)si.triangles.get_buffer());
     const AppearanceInfo& ai = ais[si.appearanceIndex];
     shape->setNormals(ai.normals.length()/3, ai.normals.get_buffer());
-    shape->setNormalIndices(ai.normalIndices.length(), ai.normalIndices.get_buffer()); 
+    shape->setNormalIndices(ai.normalIndices.length(), 
+                            (int *)ai.normalIndices.get_buffer()); 
     shape->setTextureCoordinates(ai.textureCoordinate.length()/2, 
                                  ai.textureCoordinate.get_buffer());
     shape->setTextureCoordIndices(ai.textureCoordIndices.length(),
-                                  ai.textureCoordIndices.get_buffer());
+                                  (int *)ai.textureCoordIndices.get_buffer());
     if (ai.textureIndex >=0){
         TextureInfo &ti = (*i_ssinfo->textures())[ai.textureIndex];
         GLtexture *texture = new GLtexture();
@@ -243,25 +253,25 @@ GLshape *createCube(double x, double y, double z)
                         -hx,hy,-hz,
                         -hx,-hy,-hz,
                         hx,-hy,-hz};
-    long int triangles[] = {0,2,3,//+z
-                            0,1,2,//+z
-                            4,3,7,//+x
-                            4,0,3,//+x
-                            0,4,5,//+y
-                            5,1,0,//+y
-                            1,5,6,//-x
-                            1,6,2,//-x
-                            2,6,7,//-y
-                            2,7,3,//-y
-                            7,6,4,//-z
-                            5,4,6};//-z
+    int triangles[] = {0,2,3,//+z
+                       0,1,2,//+z
+                       4,3,7,//+x
+                       4,0,3,//+x
+                       0,4,5,//+y
+                       5,1,0,//+y
+                       1,5,6,//-x
+                       1,6,2,//-x
+                       2,6,7,//-y
+                       2,7,3,//-y
+                       7,6,4,//-z
+                       5,4,6};//-z
     float normals[] = {1,0,0,
                        0,1,0,
                        0,0,1,
                        -1,0,0,
                        0,-1,0,
                        0,0,-1};
-    long int normalIndices[] = {2,2,0,0,1,1,3,3,4,4,5,5};
+    int normalIndices[] = {2,2,0,0,1,1,3,3,4,4,5,5};
     shape->setVertices(8, vertices);
     shape->setTriangles(12, triangles);
     shape->setNormals(6, normals);

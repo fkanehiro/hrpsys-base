@@ -41,7 +41,7 @@ void GLshape::setVertices(int nvertices, const float *vertices)
     }
 }
 
-void GLshape::setTriangles(int ntriangles, const long int *vertexIndices)
+void GLshape::setTriangles(int ntriangles, const int *vertexIndices)
 {
     for (size_t i=0; i<ntriangles; i++){
         m_triangles.push_back(Eigen::Vector3i(vertexIndices[i*3  ],
@@ -69,7 +69,7 @@ void GLshape::setNormalPerVertex(bool flag)
     m_normalPerVertex = flag;
 }
 
-void GLshape::setNormalIndices(int len, const long int *normalIndices)
+void GLshape::setNormalIndices(int len, const int *normalIndices)
 {
     m_normalIndices.resize(len);
     for (size_t i=0; i<len; i++){
@@ -85,7 +85,7 @@ void GLshape::setTextureCoordinates(int ncoords, const float *coordinates)
     }
 }
 
-void GLshape::setTextureCoordIndices(int len, const long int *coordIndices)
+void GLshape::setTextureCoordIndices(int len, const int *coordIndices)
 {
     m_textureCoordIndices.resize(len);
     for (size_t i=0; i<len; i++){
@@ -172,7 +172,7 @@ void GLshape::doCompile()
     glMaterialf (GL_FRONT_AND_BACK, GL_SHININESS,           m_shininess);
     for(size_t j=0; j < m_triangles.size(); ++j){
         if (!m_normalPerVertex){
-            long int p;
+            int p;
             if (m_normalIndices.size() == 0){
                 p = j;
             }else{
@@ -196,7 +196,7 @@ void GLshape::doCompile()
                 glNormal3f(scale[0]*n[0], scale[1]*n[1], scale[2]*n[2]);
             }
             if (drawTexture){
-                long int texCoordIndex = m_textureCoordIndices[j*3+k];
+                int texCoordIndex = m_textureCoordIndices[j*3+k];
                 glTexCoord2d(m_textureCoordinates[texCoordIndex][0],
                              -m_textureCoordinates[texCoordIndex][1]);
             }
