@@ -321,7 +321,7 @@ def findRTCmanager(hostname=None, rnc=None):
 		try:
 			cxt = findObject(hostname, "host_cxt", rnc)
 		except:
-			hostname = gethostbyaddr(hostname)[0]
+			hostname = socket.gethostbyaddr(hostname)[0]
 			cxt = findObject(hostname, "host_cxt", rnc)
 		obj = findObject("manager","mgr",cxt)
 		return RTCmanager(ManagerHelper.narrow(obj))
