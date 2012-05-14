@@ -1,3 +1,4 @@
+#include <sys/param.h>
 #include <iostream>
 #ifdef __APPLE__
 #include <GLUT/glut.h>
@@ -71,7 +72,8 @@ int main(int argc, char *argv[])
             GLbody *glbody = new GLbody();
             std::string url = argv[1];
             if (argv[1][0] != '/'){
-                std::string cwd = get_current_dir_name();
+	        char buf[MAXPATHLEN];
+                std::string cwd = getcwd(buf, MAXPATHLEN);
                 url = cwd + '/' + url;
             }
             hrp::BodyPtr body(glbody);

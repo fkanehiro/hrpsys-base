@@ -1,5 +1,9 @@
 #include <iostream>
+#ifdef __APPLE__
+#include <OpenGL/glu.h>
+#else
 #include <GL/glu.h>
+#endif
 #include "GLutil.h"
 #include "GLshape.h"
 #include "GLtexture.h"
