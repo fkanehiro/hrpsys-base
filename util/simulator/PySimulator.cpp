@@ -60,21 +60,44 @@ hrp::BodyPtr createBody(const std::string& name, const ModelItem& mitem,
 }
 
 PySimulator::PySimulator() : 
-    Simulator(&log), scene(&log), window(&scene, &log, this)
+    manager(NULL), Simulator(&log), scene(&log), window(&scene, &log, this)
 {
-    int argc = 1;
+}
+
+PySimulator::~PySimulator(){
+    window.stop();
+    if (manager) manager->shutdown();
+}
+
+void PySimulator::initViewer()
+{
+    window.start();
+}
+
+void PySimulator::initRTCmanager()
+{
+    int argc=1;
     char *argv[] = {(char *)"dummy"};
+    initRTCmanager(argc, argv);
+}
+
+void PySimulator::initRTCmanager(int argc, char **argv)
+{
     manager = RTC::Manager::init(argc, argv);
     manager->init(argc, argv);
     PyBody::moduleInit(manager);
     manager->activateManager();
     manager->runManager(true);
-    window.start();
 }
 
-PySimulator::~PySimulator(){
-    window.stop();
-    manager->shutdown();
+void PySimulator::initRTCmanager(PyObject *pyo)
+{
+    std::vector<char *> args(PySequence_Size(pyo)+1);
+    args[0] = (char *)"dummy";
+    for (int i=0; i<PySequence_Size(pyo); i++) {
+        args[i+1] = boost::python::extract<char *>(PySequence_GetItem(pyo, i));
+    }
+    initRTCmanager(args.size(), &args[0]);
 }
 
 PyBody* PySimulator::loadBody(std::string name, std::string url){
@@ -225,6 +248,9 @@ BOOST_PYTHON_MODULE( simulator )
     using namespace boost::python;
 
     class_<PySimulator>("Simulator")
+        .def("initRTCmanager", (void (PySimulator::*)())&PySimulator::initRTCmanager)
+        .def("initRTCmanager", (void (PySimulator::*)(PyObject *))&PySimulator::initRTCmanager)
+        .def("initViewer", &PySimulator::initViewer)
         .def("loadBody", &PySimulator::loadBody, return_internal_reference<>())
         .def("createBody", &PySimulator::createBody, return_internal_reference<>())
         .def("addCollisionCheckPair", &PySimulator::addCollisionCheckPair)

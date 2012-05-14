@@ -12,6 +12,10 @@ class PySimulator : public Simulator
 public:
     PySimulator();
     ~PySimulator();
+    void initRTCmanager();
+    void initRTCmanager(PyObject *pyo);
+    void initRTCmanager(int argc, char **argv);
+    void initViewer();
     PyBody* loadBody(std::string name, std::string url);
     PyBody* createBody(std::string name);
     void loadProject(std::string fname);
