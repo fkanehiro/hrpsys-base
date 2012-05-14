@@ -318,7 +318,11 @@ def findRTCmanager(hostname=None, rnc=None):
 	if not hostname:
 		hostname = nshost
 	try:
-		cxt = findObject(hostname, "host_cxt", rnc)
+		try:
+			cxt = findObject(hostname, "host_cxt", rnc)
+		except:
+			hostname = gethostbyaddr(hostname)[0]
+			cxt = findObject(hostname, "host_cxt", rnc)
 		obj = findObject("manager","mgr",cxt)
 		return RTCmanager(ManagerHelper.narrow(obj))
 	except:
