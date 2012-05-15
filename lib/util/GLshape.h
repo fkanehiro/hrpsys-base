@@ -27,7 +27,8 @@ public:
     void setDiffuseColor(float r, float g, float b, float a);
     void setSpecularColor(float r, float g, float b);
     void setShininess(float s);
-    void setNormalPerVertex(bool flag);
+    void normalPerVertex(bool flag);
+    void solid(bool flag);
     void setTextureCoordinates(int len, const float *coordinates);
     void setTextureCoordIndices(int len, const int *coordinates);
     void setTexture(GLtexture *texture);
@@ -41,6 +42,7 @@ private:
     Eigen::VectorXi m_normalIndices, m_textureCoordIndices;
     float m_diffuse[4], m_specular[4], m_shininess;
     bool m_normalPerVertex;
+    bool m_solid;
     GLtexture *m_texture;
     bool m_requestCompile;
     int m_list;

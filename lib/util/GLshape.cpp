@@ -68,9 +68,14 @@ void GLshape::setDiffuseColor(float r, float g, float b, float a)
     m_diffuse[0] = r; m_diffuse[1] = g; m_diffuse[2] = b; m_diffuse[3] = a; 
 }
 
-void GLshape::setNormalPerVertex(bool flag)
+void GLshape::normalPerVertex(bool flag)
 {
     m_normalPerVertex = flag;
+}
+
+void GLshape::solid(bool flag)
+{
+    m_solid = flag;
 }
 
 void GLshape::setNormalIndices(int len, const int *normalIndices)
@@ -113,6 +118,11 @@ void GLshape::doCompile()
     m_list = glGenLists(1);
     glNewList(m_list, GL_COMPILE);
 
+    if (m_solid){
+        glEnable(GL_CULL_FACE);
+    }else{
+        glDisable(GL_CULL_FACE);
+    }
     double scale[3];
     for (int i=0; i<3; i++){
         scale[i] = sqrt(m_trans[i]*m_trans[i]

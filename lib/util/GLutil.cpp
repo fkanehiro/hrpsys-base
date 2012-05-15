@@ -234,7 +234,8 @@ GLshape *createShape(OpenHRP::ShapeSetInfo_ptr i_ssinfo,
     }else{
         std::cout << "no material" << std::endl;
     }
-    shape->setNormalPerVertex(ai.normalPerVertex);
+    shape->normalPerVertex(ai.normalPerVertex);
+    shape->solid(ai.solid);
     shape->compile();
 
     return shape;
@@ -277,7 +278,8 @@ GLshape *createCube(double x, double y, double z)
     shape->setNormals(6, normals);
     shape->setNormalIndices(12, normalIndices);
     shape->setDiffuseColor(0.8, 0.8, 0.8, 1.0);
-    shape->setNormalPerVertex(false);
+    shape->normalPerVertex(false);
+    shape->solid(true);
     shape->compile();
                 
     return shape;
