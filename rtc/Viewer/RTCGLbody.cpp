@@ -34,8 +34,8 @@ void RTCGLbody::input()
     }
     if (m_rpyIn.isNew()){
         while (m_rpyIn.isNew()) m_rpyIn.read();
-        m_body->setOrientation(m_rpy.data.r,
-                               m_rpy.data.p,
-                               m_rpy.data.y);
+        m_body->setRotation(m_rpy.data.r,
+                            m_rpy.data.p,
+                            m_rpy.data.y);
     }
 }

@@ -32,17 +32,17 @@ void RTCGLbody::input()
     }
     if (m_rpyIn.isNew()){
         while (m_rpyIn.isNew()) m_rpyIn.read();
-        m_body->setOrientation(m_rpy.data.r,
-                               m_rpy.data.p,
-                               m_rpy.data.y);
+        m_body->setRotation(m_rpy.data.r,
+                            m_rpy.data.p,
+                            m_rpy.data.y);
     }
     if (m_poseBaseIn.isNew()){
         while (m_poseBaseIn.isNew()) m_poseBaseIn.read();
         m_body->setPosition(m_poseBase.data.position.x,
                             m_poseBase.data.position.y,
                             m_poseBase.data.position.z);
-        m_body->setOrientation(m_poseBase.data.orientation.r,
-                               m_poseBase.data.orientation.p,
-                               m_poseBase.data.orientation.y);
+        m_body->setRotation(m_poseBase.data.orientation.r,
+                            m_poseBase.data.orientation.p,
+                            m_poseBase.data.orientation.y);
     }
 }

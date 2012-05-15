@@ -27,22 +27,22 @@ void GLbody::setPosture(const double *i_angles){
 
 void GLbody::setPosition(double x, double y, double z)
 {
-    double *tform = ((GLlink *)rootLink())->getTransform();
-    tform[12] = x; tform[13] = y; tform[14] = z; 
+    ((GLlink *)rootLink())->setPosition(x,y,z);
 }
 
-void GLbody::setOrientation(double r, double p, double y)
+void GLbody::setRotation(double r, double p, double y)
 {
-    double *tform = ((GLlink *)rootLink())->getTransform();
-    Matrix33 R = rotFromRpy(r, p, y);
-    tform[ 0]=R(0,0);tform[ 1]=R(1,0);tform[ 2]=R(2,0);
-    tform[ 4]=R(0,1);tform[ 5]=R(1,1);tform[ 6]=R(2,1);
-    tform[ 8]=R(0,2);tform[ 9]=R(1,2);tform[10]=R(2,2);
+    ((GLlink *)rootLink())->setRotation(r,p,y);
+}
+
+void GLbody::setRotation(const double *R)
+{
+    ((GLlink *)rootLink())->setRotation(R);
 }
 
 void GLbody::setPosture(const double *i_angles, double *i_pos, double *i_rpy){
     setPosition(i_pos[0], i_pos[1], i_pos[2]); 
-    setOrientation(i_rpy[0], i_rpy[1], i_rpy[2]); 
+    setRotation(i_rpy[0], i_rpy[1], i_rpy[2]); 
     setPosture(i_angles);
 }
 

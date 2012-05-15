@@ -303,9 +303,9 @@ RTC::ReturnCode_t VirtualCamera::onExecute(RTC::UniqueId ec_id)
                 body->setPosition(state.basePose.position.x,
                                   state.basePose.position.y,
                                   state.basePose.position.z);
-                body->setOrientation(state.basePose.orientation.r,
-                                     state.basePose.orientation.p,
-                                     state.basePose.orientation.y);
+                body->setRotation(state.basePose.orientation.r,
+                                  state.basePose.orientation.p,
+                                  state.basePose.orientation.y);
                 body->setPosture(state.q.get_buffer());
             }
         }

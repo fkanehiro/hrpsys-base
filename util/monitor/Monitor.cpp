@@ -71,12 +71,7 @@ bool Monitor::oneStep()
         OpenHRP::StateHolderService::Command_var com;
         try{
             m_shService->getCommand(com); 
-            if (m_rstate.state.command.length() != com->jointRefs.length()){
-                m_rstate.state.command.length(com->jointRefs.length());
-            }
-            memcpy(m_rstate.state.command.get_buffer(),
-                   com->jointRefs.get_buffer(),
-                   sizeof(double)*com->jointRefs.length());
+            m_rstate.command = com;
             stateUpdate = true;
         }catch(...){
             std::cout << "exception in getCommand()" << std::endl;

@@ -13,12 +13,17 @@ void GLcoordinates::setTransform(const double i_trans[12]){
             m_trans[j*4+i] = i_trans[i*4+j];// transposition for GL
         }
     }
-    m_trans[3] = m_trans[7] = m_trans[11] = 0.0; m_trans[15] = 1.0;
 }
 
-void GLcoordinates::setPosition(const hrp::Vector3 &p)
+void GLcoordinates::setPosition(double x, double y, double z)
 {
-    m_trans[12] = p[0]; m_trans[13] = p[1]; m_trans[14] = p[2];
+    m_trans[12] = x; m_trans[13] = y; m_trans[14] = z;
+}
+
+void GLcoordinates::setRotation(double r, double p, double y)
+{
+    hrp::Matrix33 R = hrp::rotFromRpy(r,p,y);
+    setRotation(R);
 }
 
 void GLcoordinates::setRotation(const hrp::Matrix33 &R)
@@ -26,6 +31,15 @@ void GLcoordinates::setRotation(const hrp::Matrix33 &R)
     for (int i=0; i<3; i++){
         for (int j=0; j<3; j++){
             m_trans[i*4+j] = R(j,i);
+        }
+    }
+}
+
+void GLcoordinates::setRotation(const double *R)
+{
+    for (int i=0; i<3; i++){
+        for (int j=0; j<3; j++){
+            m_trans[j*4+i] = R[i*3+j];
         }
     }
 }

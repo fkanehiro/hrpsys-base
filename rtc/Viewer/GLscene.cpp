@@ -61,9 +61,9 @@ void GLscene::updateScene()
         glbody->setPosition(rs.basePose.position.x,
                             rs.basePose.position.y,
                             rs.basePose.position.z);
-        glbody->setOrientation(rs.basePose.orientation.r,
-                               rs.basePose.orientation.p,
-                               rs.basePose.orientation.y);
+        glbody->setRotation(rs.basePose.orientation.r,
+                            rs.basePose.orientation.p,
+                            rs.basePose.orientation.y);
         glbody->setPosture(rs.q.get_buffer());
     }
 }

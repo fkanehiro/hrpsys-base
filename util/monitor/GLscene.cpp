@@ -70,10 +70,13 @@ void GLscene::updateScene()
 
     LogManager<TimedRobotState> *lm 
         = (LogManager<TimedRobotState> *)m_log;
-    OpenHRP::RobotHardwareService::RobotState &rstate = lm->state().state;
-    if (rstate.angle.length()){
+    OpenHRP::StateHolderService::Command &com = lm->state().command;
+    if (com.jointRefs.length()){
         GLbody *glbody = dynamic_cast<GLbody *>(body(0).get());
-        glbody->setPosture(rstate.angle.get_buffer());
+        double *tform = com.baseTransform.get_buffer();
+        glbody->setPosition(tform);
+        glbody->setRotation(tform+3);
+        glbody->setPosture(com.jointRefs.get_buffer());
     }
 }
 
