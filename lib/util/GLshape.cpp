@@ -8,7 +8,9 @@
 #include "GLshape.h"
 #include "GLtexture.h"
 
-GLshape::GLshape() : m_texture(NULL), m_requestCompile(false), m_shininess(0.2), m_list(0)
+bool GLshape::m_wireFrameMode = false;
+
+GLshape::GLshape() : m_texture(NULL), m_requestCompile(false), m_shininess(0.2), m_shadingList(0), m_wireFrameList(0)
 {
     for (int i=0; i<16; i++) m_trans[i] = 0.0;
     m_trans[0] = m_trans[5] = m_trans[10] = m_trans[15] = 1.0;
@@ -21,7 +23,8 @@ GLshape::~GLshape()
         if (m_texture->image.size()) glDeleteTextures(1, &m_textureId);
         delete m_texture;
     }
-    if (m_list) glDeleteLists(m_list, 1);
+    if (m_shadingList) glDeleteLists(m_shadingList, 1);
+    if (m_wireFrameList) glDeleteLists(m_wireFrameList, 1);
 }
 
 void GLshape::draw()
@@ -29,10 +32,11 @@ void GLshape::draw()
     glPushMatrix();
     glMultMatrixd(m_trans);
     if (m_requestCompile){
-        doCompile();
+        m_shadingList = doCompile(false);
+        m_wireFrameList = doCompile(true);
         m_requestCompile = false;
     } 
-    glCallList(m_list);
+    glCallList(m_wireFrameMode ? m_wireFrameList : m_shadingList);
     glPopMatrix();
 }
 
@@ -112,11 +116,11 @@ void GLshape::compile()
     m_requestCompile = true;
 }
 
-void GLshape::doCompile()
+int GLshape::doCompile(bool isWireFrameMode)
 {
     //std::cout << "doCompile" << std::endl;
-    m_list = glGenLists(1);
-    glNewList(m_list, GL_COMPILE);
+    int list = glGenLists(1);
+    glNewList(list, GL_COMPILE);
 
     if (m_solid){
         glEnable(GL_CULL_FACE);
@@ -131,7 +135,7 @@ void GLshape::doCompile()
     }
 
     bool drawTexture = false;
-    if (m_texture){
+    if (!isWireFrameMode && m_texture){
         if (m_texture->image.size()==0){
             std::cerr<< "texture image(" << m_texture->url << ") is not loaded"
                      << std::endl;
@@ -180,11 +184,12 @@ void GLshape::doCompile()
         }
     }
     
-    glBegin(GL_TRIANGLES);
+    if (!isWireFrameMode) glBegin(GL_TRIANGLES);
     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, m_diffuse);
     //glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR,            m_specular);
     glMaterialf (GL_FRONT_AND_BACK, GL_SHININESS,           m_shininess);
     for(size_t j=0; j < m_triangles.size(); ++j){
+        if (isWireFrameMode) glBegin(GL_LINE_LOOP);
         if (!m_normalPerVertex){
             int p;
             if (m_normalIndices.size() == 0){
@@ -215,11 +220,14 @@ void GLshape::doCompile()
                              -m_textureCoordinates[texCoordIndex][1]);
             }
             glVertex3fv(m_vertices[vertexIndex].data());
-            }
         }
-    glEnd();
+        if (isWireFrameMode) glEnd(); // GL_LINE_LOOP
+    }
+    if (!isWireFrameMode) glEnd(); // GL_TRIANGLES
     if (drawTexture) glDisable(GL_TEXTURE_2D);
     glEndList();
+
+    return list;
 }
 
 void GLshape::setShininess(float s)
@@ -231,3 +239,14 @@ void GLshape::setSpecularColor(float r, float g, float b)
 {
     m_specular[0] = r; m_specular[1] = g; m_specular[2] = b; 
 }
+
+void GLshape::wireFrameMode(bool flag)
+{
+    m_wireFrameMode = flag;
+}
+
+bool GLshape::isWireFrameMode()
+{
+    return m_wireFrameMode;
+}
+

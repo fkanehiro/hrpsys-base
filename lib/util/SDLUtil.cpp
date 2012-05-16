@@ -11,6 +11,7 @@
 #include "util/LogManagerBase.h"
 #include "util/GLsceneBase.h"
 #include "util/GLcamera.h"
+#include "util/GLshape.h"
 #include "SDLUtil.h"
 
 SDLwindow::SDLwindow(GLsceneBase* i_scene, LogManagerBase *i_log,
@@ -30,6 +31,7 @@ SDLwindow::SDLwindow(GLsceneBase* i_scene, LogManagerBase *i_log,
     instructions.push_back("s: slower");
     instructions.push_back("r: record movie");
     instructions.push_back("t: toggle robot state");
+    instructions.push_back("w: toggle wire frame mode");
     if (throbj){
         instructions.push_back("p: pause/resume background thread");
     }
@@ -128,6 +130,9 @@ bool SDLwindow::processEvents()
                 break;
             case SDLK_r:
                 log->record();
+                break;
+            case SDLK_w:
+                GLshape::wireFrameMode(!GLshape::isWireFrameMode());
                 break;
             case SDLK_RIGHT:
                 if (isControlPressed){

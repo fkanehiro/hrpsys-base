@@ -33,8 +33,10 @@ public:
     void setTextureCoordIndices(int len, const int *coordinates);
     void setTexture(GLtexture *texture);
     void compile();
+    static void wireFrameMode(bool flag);
+    static bool isWireFrameMode();
 private:
-    void doCompile();
+    int doCompile(bool isWireFrameMode);
 
     std::vector<Eigen::Vector3f> m_vertices, m_normals;
     std::vector<Eigen::Vector2f, Eigen::aligned_allocator<Eigen::Vector2f> > m_textureCoordinates;
@@ -45,8 +47,9 @@ private:
     bool m_solid;
     GLtexture *m_texture;
     bool m_requestCompile;
-    int m_list;
+    int m_shadingList, m_wireFrameList;
     GLuint m_textureId;
+    static bool m_wireFrameMode;
 };
 
 #endif
