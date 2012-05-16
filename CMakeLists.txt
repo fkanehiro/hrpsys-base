@@ -94,7 +94,7 @@ find_package(LibXml2 REQUIRED)
 find_package(SDL REQUIRED)
 find_package(OpenGL REQUIRED)
 include(FindPkgConfig)
-pkg_check_modules(OpenCV opencv)
+pkg_check_modules(OpenCV REQUIRED opencv)
 find_package(GLUT REQUIRED)
 
 configure_file(hrpsys-base.pc.in ${CMAKE_CURRENT_BINARY_DIR}/hrpsys-base.pc @ONLY)
