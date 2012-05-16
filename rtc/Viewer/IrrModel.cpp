@@ -227,13 +227,18 @@ GLlink::GLlink(ISceneNode *i_parent, ISceneManager *i_mgr, s32 i_id,
                 }
             }
             for(int k=0; k < 3; ++k){
-                if (ai.normalPerVertex){
-                    int p = normalIndices[j*3+k]*3;
-                    normal.X =  normals[p];
-                    normal.Y = -normals[p+1]; //left-handed -> right-handed
-                    normal.Z =  normals[p+2];
-                }
                 long orgVertexIndex = si.triangles[j * 3 + k];
+                if (ai.normalPerVertex){
+		    int p;
+		    if (normalIndices.length()){
+		        p = normalIndices[j*3+k]*3;
+		    }else{
+		        p = orgVertexIndex*3;
+		    }
+		    normal.X =  normals[p];
+		    normal.Y = -normals[p+1]; //left-handed -> right-handed
+		    normal.Z =  normals[p+2];
+                }
                 int p = orgVertexIndex * 3;
                 vertex.X =  scale.X*vertices[p];
                 vertex.Y = -scale.Y*vertices[p+1]; // left-handed -> right-handed
