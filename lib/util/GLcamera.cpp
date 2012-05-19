@@ -124,3 +124,8 @@ void GLcamera::setViewSize(int w, int h)
     m_width = w;
     m_height = h;
 }
+
+GLlink *GLcamera::link()
+{
+    return m_link;
+}

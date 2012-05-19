@@ -196,6 +196,13 @@ void GLsceneBase::drawInfo(double fps)
     glRasterPos2f(10, m_height-45);
     sprintf(buf, "FPS %2.0f", fps);
     drawString(buf);
+    if (m_camera != m_default_camera){
+        sprintf(buf, "Camera: %s.%s", 
+                m_camera->link()->body->name().c_str(), 
+                m_camera->name().c_str());
+        glRasterPos2f(10, m_height-60);
+        drawString(buf);
+    }
     for (unsigned int i=0; i<m_msgs.size(); i++){
         glRasterPos2f(10, (m_msgs.size()-i)*15);
         drawString(m_msgs[i].c_str());

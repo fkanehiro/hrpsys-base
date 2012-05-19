@@ -30,6 +30,7 @@ public:
     void setViewTarget(double x, double y, double z);
     void setViewSize(int w, int h);
     void draw();
+    GLlink *link();
 private:
     std::string m_name;
     double m_absTrans[16];
