@@ -100,6 +100,10 @@ void GLlink::computeAbsTransform(){
 }
 
 void GLlink::computeAbsTransform(double o_trans[16]){
+    if (m_useAbsTransformToDraw){
+        memcpy(o_trans, m_absTrans, sizeof(double)*16);
+        return;
+    }
     if (parent){
         double trans1[16], trans2[16];
         mulTrans(m_T_j, m_trans, trans1);
