@@ -130,3 +130,7 @@ hrp::Link *GLlinkFactory()
     return new GLlink();
 }
 
+const std::vector<GLcamera *>& GLlink::cameras()
+{
+    return m_cameras;
+}

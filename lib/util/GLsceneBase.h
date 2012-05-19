@@ -32,6 +32,7 @@ public:
     void init();
     void clear();
     void setCamera(GLcamera *i_camera);
+    void nextCamera();
     GLcamera *getCamera();
     GLcamera *getDefaultCamera();
     void setMessages(const std::vector<std::string>& i_msgs) { m_msgs = i_msgs;}

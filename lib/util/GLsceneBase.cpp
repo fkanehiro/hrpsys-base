@@ -56,6 +56,27 @@ void GLsceneBase::setCamera(GLcamera *i_camera)
     glViewport(0, 0, m_camera->width(), m_camera->height());
 }
 
+void GLsceneBase::nextCamera()
+{
+    bool found = m_camera == m_default_camera ? true : false;
+    for (int i=0; i<numBodies(); i++){
+        hrp::BodyPtr b = body(i);
+        for (int j=0; j<b->numLinks(); j++){
+            GLlink *l = dynamic_cast<GLlink *>(b->link(j));
+            const std::vector<GLcamera *>& cameras = l->cameras();
+            for (size_t k=0; k<cameras.size(); k++){
+                if (cameras[k] == m_camera){
+                    found = true;
+                }else if(found){
+                    m_camera = cameras[k];
+                    return;
+                }
+            }
+        } 
+    }
+    m_camera = m_default_camera;
+}
+
 GLcamera *GLsceneBase::getCamera()
 {
     return m_camera;
@@ -191,6 +212,7 @@ void GLsceneBase::draw()
 
     if (m_clearRequested) {
         clearBodies();
+        m_camera = m_default_camera;
         m_clearRequested = false;
         SDL_SemPost(m_sem);
     }

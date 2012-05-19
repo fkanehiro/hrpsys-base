@@ -30,6 +30,7 @@ public:
     void addShape(GLshape *shape);
     void addCamera(GLcamera *camera);
     void showAxes(bool flag);
+    const std::vector<GLcamera *>& cameras();
     static void useAbsTransformToDraw();
 
 private:
