@@ -139,7 +139,6 @@ class Simulator
   std::vector<RTCBodyPtr> m_bodies;
   std::string m_project;
   bool m_kinematicsOnly;
-  std::string str_kinematicsOnly;
   int dummy;
 };
 
