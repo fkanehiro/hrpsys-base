@@ -57,7 +57,7 @@ RTC::ReturnCode_t Simulator::onInitialize()
     // <rtc-template block="bind_config">
     // Bind variables and configuration variable
     bindParameter("project", m_project, "");  
-    bindParameter("kinematics_only", m_kinematicsOnly, false);  
+    bindParameter("kinematics_only", str_kinematicsOnly, "false");
   
     // </rtc-template>
 
@@ -116,6 +116,7 @@ RTC::ReturnCode_t Simulator::onActivated(RTC::UniqueId ec_id)
     Project prj;
     if (!prj.parse(m_project)) return RTC::RTC_ERROR;
 
+    std::stringstream s(str_kinematicsOnly); s >> std::boolalpha >> m_kinematicsOnly;
     if ( m_kinematicsOnly == false ) {
 	m_kinematicsOnly = prj.kinematicsOnly();
     }
