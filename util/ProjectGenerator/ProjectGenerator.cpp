@@ -72,7 +72,7 @@ int main (int argc, char** argv)
       xmlTextWriterWriteAttribute(writer, BAD_CAST "class", BAD_CAST "com.generalrobotix.ui.item.GrxSimulationItem");
       xmlTextWriterWriteAttribute(writer, BAD_CAST "name", BAD_CAST "simulationItem");
       {
-	xmlTextWriterWriteProperty(writer, "integrate", "false");
+	xmlTextWriterWriteProperty(writer, "integrate", "true");
 	xmlTextWriterWriteProperty(writer, "timeStep", "0.0050");
 	xmlTextWriterWriteProperty(writer, "method", "EULER");
       }
