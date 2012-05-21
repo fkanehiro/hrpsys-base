@@ -60,9 +60,6 @@ int main(int argc, char *argv[])
 
 	poaManager->activate();
 
-        GLlink::useAbsTransformToDraw();
-        GLbody::useAbsTransformToDraw();
-
         if (argc == 2){
             OpenHRP::ModelLoader_var ml = hrp::getModelLoader(namingContext);
             OpenHRP::ModelLoader::ModelLoadOption opt;
@@ -83,6 +80,10 @@ int main(int argc, char *argv[])
             loadShapeFromBodyInfo(glbody, binfo);
             scene.WorldBase::addBody(body);
         }
+
+        GLlink::useAbsTransformToDraw();
+        GLbody::useAbsTransformToDraw();
+
         SDLwindow window(&scene, &log);
         window.init();
 
