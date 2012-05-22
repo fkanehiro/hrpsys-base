@@ -189,7 +189,7 @@ void PySimulator::endless(bool flag)
 
 void PySimulator::clear()
 {
-    clear();
+    Simulator::clear();
     scene.clear();
 }
 
