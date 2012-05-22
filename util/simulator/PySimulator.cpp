@@ -62,6 +62,13 @@ hrp::BodyPtr createBody(const std::string& name, const ModelItem& mitem,
 PySimulator::PySimulator() : 
     manager(NULL), Simulator(&log), scene(&log), window(&scene, &log, this)
 {
+    initRTCmanager();
+}
+
+PySimulator::PySimulator(PyObject *pyo) : 
+    manager(NULL), Simulator(&log), scene(&log), window(&scene, &log, this)
+{
+    initRTCmanager(pyo);
 }
 
 PySimulator::~PySimulator(){
@@ -251,8 +258,7 @@ BOOST_PYTHON_MODULE( simulator )
     using namespace boost::python;
 
     class_<PySimulator>("Simulator")
-        .def("initRTCmanager", (void (PySimulator::*)())&PySimulator::initRTCmanager)
-        .def("initRTCmanager", (void (PySimulator::*)(PyObject *))&PySimulator::initRTCmanager)
+        .def(init<PyObject *>())
         .def("initViewer", &PySimulator::initViewer)
         .def("loadBody", &PySimulator::loadBody, return_internal_reference<>())
         .def("createBody", &PySimulator::createBody, return_internal_reference<>())

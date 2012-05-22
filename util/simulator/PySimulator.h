@@ -11,6 +11,7 @@ class PySimulator : public Simulator
 {
 public:
     PySimulator();
+    PySimulator(PyObject *pyo);
     ~PySimulator();
     void initRTCmanager();
     void initRTCmanager(PyObject *pyo);
