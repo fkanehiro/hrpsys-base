@@ -16,7 +16,7 @@ def activateComps():
 def createComps():
     global bridge, seq, seq_svc, hgc
 
-    bridge = findRTC("HRP-4C(Robot)0")
+    bridge = findRTC("HRP4C(Robot)0")
 
     ms.load("SequencePlayer")
     seq = ms.create("SequencePlayer", "seq")

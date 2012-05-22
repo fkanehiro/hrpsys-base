@@ -6,5 +6,5 @@ else()
 endif()
 
 add_subdirectory(PA10)
-add_subdirectory(HRP-4C)
+add_subdirectory(HRP4C)
 

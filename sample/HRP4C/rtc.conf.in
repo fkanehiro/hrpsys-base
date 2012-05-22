@@ -11,4 +11,4 @@ manager.modules.load_path: @CMAKE_INSTALL_PREFIX@/lib
 manager.modules.preload: HGcontroller.@SO_SFX@
 manager.components.precreate: HGcontroller
 exec_cxt.periodic.type: SynchExtTriggerEC
-example.SequencePlayer.config_file: HRP-4C.conf
+example.SequencePlayer.config_file: HRP4C.conf

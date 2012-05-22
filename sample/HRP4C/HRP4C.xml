@@ -41,7 +41,7 @@
             <property name="L_HIP_Y.angle" value="0.0 "/>
             <property name="L_SHOULDER_P.NumOfAABB" value="1"/>
             <property name="L_HIP_P.NumOfAABB" value="1"/>
-            <property name="setupCommand" value="HRP-4C$(BIN_SFX)"/>
+            <property name="setupCommand" value="HRP4C$(BIN_SFX)"/>
             <property name="EYEBROW_P.NumOfAABB" value="1"/>
             <property name="R_HIP_R.angle" value="0.0 "/>
             <property name="R_SHOULDER_Y.NumOfAABB" value="1"/>
@@ -76,7 +76,7 @@
             <property name="L_SHOULDER_R.angle" value="0.0 "/>
             <property name="L_KNEE_P.angle" value="0.0 "/>
             <property name="R_WRIST_Y.NumOfAABB" value="1"/>
-            <property name="controller" value="HRP-4C"/>
+            <property name="controller" value="HRP4C"/>
             <property name="R_SHOULDER_P.NumOfAABB" value="1"/>
             <property name="R_HIP_Y.NumOfAABB" value="1"/>
             <property name="L_SHOULDER_P.angle" value="0.0 "/>
@@ -219,7 +219,7 @@
             <property name="showScale" value="true"/>
         </view>
     <perspective editorAreaTrimState="2" editorAreaVisible="0" fixed="0" version="0.016">
-<descriptor descriptor="com.generalrobotix.ui.grxui.GrxUIPerspectiveFactory" id="com.generalrobotix.ui.grxui.GrxUIPerspectiveFactory.project" label="HRP-4C"/>
+<descriptor descriptor="com.generalrobotix.ui.grxui.GrxUIPerspectiveFactory" id="com.generalrobotix.ui.grxui.GrxUIPerspectiveFactory.project" label="HRP4C"/>
 <window height="1392" width="1353" x="928" y="24"/>
 <alwaysOnActionSet id="org.eclipse.ui.externaltools.ExternalToolsSet"/>
 <alwaysOnActionSet id="org.eclipse.search.searchActionSet"/>

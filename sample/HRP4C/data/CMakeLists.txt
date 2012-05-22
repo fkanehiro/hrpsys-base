@@ -5,5 +5,5 @@ install(FILES
   rotate_waist.pos
   bow.pos
   hear.pos
-  DESTINATION share/hrpsys/samples/HRP-4C/data)
+  DESTINATION share/hrpsys/samples/HRP4C/data)
   
