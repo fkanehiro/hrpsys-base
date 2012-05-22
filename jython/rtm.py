@@ -271,7 +271,7 @@ def initCORBA():
 	
 	args = string.split(System.getProperty("NS_OPT"))
 	nshost = System.getProperty("NS_OPT").split(':')[2]
-	if nshost == "localhost":
+	if nshost == "localhost" or nshost == "127.0.0.1":
 		nshost = socket.gethostname()
 	print 'nshost =',nshost
 	orb = ORB.init(args, props)
