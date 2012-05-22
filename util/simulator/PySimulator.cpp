@@ -190,6 +190,7 @@ void PySimulator::endless(bool flag)
 void PySimulator::clear()
 {
     Simulator::clear();
+    log.clear();
     scene.clear();
 }
 

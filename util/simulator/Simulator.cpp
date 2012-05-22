@@ -161,6 +161,8 @@ void Simulator::clear()
     clearBodies();
     constraintForceSolver.clearCollisionCheckLinkPairs();
     setCurrentTime(0.0);
+    pairs.clear();
+    receivers.clear();
 }
 
 void Simulator::addCollisionCheckPair(BodyRTC *bodyPtr1, BodyRTC *bodyPtr2)
