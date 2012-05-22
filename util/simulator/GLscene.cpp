@@ -78,6 +78,7 @@ void GLscene::showStatus()
                 break;
             }
         }
+        if (!glbody) return;
 #define HEIGHT_STEP 12
         int width = m_width - 350;
         int height = m_height-HEIGHT_STEP;
