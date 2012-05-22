@@ -132,6 +132,8 @@ PyBody* PySimulator::loadBody(std::string name, std::string url){
 }
 
 void PySimulator::loadProject(std::string fname){
+    clear();
+
     Project prj;
     if (!prj.parse(fname)){
         std::cerr << "failed to parse " << fname << std::endl;
