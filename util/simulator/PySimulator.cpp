@@ -200,7 +200,7 @@ void PySimulator::clear()
 {
     Simulator::clear();
     log.clear();
-    scene.clear();
+    if (window.isRunning()) scene.requestClear();
 }
 
 void PySimulator::play()
@@ -252,6 +252,15 @@ void PySimulator::addCollisionCheckPair(PyBody *b1, PyBody *b2)
     Simulator::addCollisionCheckPair(b1, b2);
 }
 
+void PySimulator::capture(std::string fname)
+{
+    scene.requestCapture(fname.c_str());
+}
+
+unsigned int PySimulator::logLength()
+{
+    return log.length();
+}
 
 BOOST_PYTHON_MODULE( simulator )
 {
@@ -275,6 +284,8 @@ BOOST_PYTHON_MODULE( simulator )
         .def("clear", &PySimulator::clear)
         .def("play", &PySimulator::play)
         .def("pause", &PySimulator::pause)
+        .def("capture", &PySimulator::capture)
+        .def("logLength", &PySimulator::logLength)
         .def("bodies", &PySimulator::bodies)
         .def("initialize", &PySimulator::initialize)
         .add_property("timeStep", 

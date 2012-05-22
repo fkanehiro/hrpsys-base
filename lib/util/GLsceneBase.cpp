@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <cstdio>
 #include <math.h>
 #ifdef __APPLE__
@@ -25,7 +26,7 @@ GLsceneBase::GLsceneBase(LogManagerBase *i_log) :
     m_width(DEFAULT_W), m_height(DEFAULT_H),
     m_showingStatus(false), m_showSlider(false),
     m_log(i_log), m_videoWriter(NULL), m_cvImage(NULL), 
-    m_showFloorGrid(true), m_showInfo(true), m_clearRequested(false)
+    m_showFloorGrid(true), m_showInfo(true), m_request(REQ_NONE)
 {
     m_default_camera = new GLcamera(DEFAULT_W, DEFAULT_H, 0.1, 100.0, 30*M_PI/180);
     m_default_camera->setViewPoint(4,0,0.8);
@@ -89,21 +90,19 @@ GLcamera *GLsceneBase::getDefaultCamera()
 
 void GLsceneBase::save(const char *i_fname)
 {
-#if 0
-    int w, h;
-    glfwGetWindowSize(&w,&h);
-    unsigned char *buffer = new unsigned char[w*h*3];
+    char pixels[m_width*m_height*3];
 
-    capture(buffer);
-    std::ofstream ofs("test.ppm", std::ios::out | std::ios::trunc | std::ios::binary );
+    glReadBuffer(GL_BACK);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    glReadPixels(0,0, m_width,m_height,GL_RGB,GL_UNSIGNED_BYTE, pixels);
+
+    std::ofstream ofs(i_fname, std::ios::out | std::ios::trunc | std::ios::binary );
     char buf[10];
-    sprintf(buf, "%d %d", w, h);
+    sprintf(buf, "%d %d", m_width, m_height);
     ofs << "P6" << std::endl << buf << std::endl << "255" << std::endl;
-    for (int i=h-1; i>=0; i--){
-        ofs.write((char *)(buffer+i*w*3), w*3);
+    for (int i=m_height-1; i>=0; i--){
+        ofs.write((char *)(pixels+i*m_width*3), m_width*3);
     }
-    delete [] buffer;
-#endif
 }
 
 void GLsceneBase::capture(char *o_buffer)
@@ -217,10 +216,10 @@ void GLsceneBase::draw()
     double fps = 1.0/((tv.tv_sec - m_lastDraw.tv_sec)+(tv.tv_usec - m_lastDraw.tv_usec)/1e6);
     m_lastDraw = tv;
 
-    if (m_clearRequested) {
+    if (m_request == REQ_CLEAR) {
         clearBodies();
         m_camera = m_default_camera;
-        m_clearRequested = false;
+        m_request = REQ_NONE;
         SDL_SemPost(m_sem);
     }
 
@@ -286,11 +285,23 @@ void GLsceneBase::draw()
             m_cvImage = NULL;
         }
     }
+    if (m_request == REQ_CAPTURE){
+        save(m_fname.c_str());
+        m_request = REQ_NONE;
+        SDL_SemPost(m_sem);
+    }
 }
 
-void GLsceneBase::clear()
+void GLsceneBase::requestClear()
 {
-    m_clearRequested = true;
+    m_request = REQ_CLEAR;
+    SDL_SemWait(m_sem);
+}
+
+void GLsceneBase::requestCapture(const char *i_fname)
+{
+    m_fname = i_fname;
+    m_request = REQ_CAPTURE;
     SDL_SemWait(m_sem);
 }
 

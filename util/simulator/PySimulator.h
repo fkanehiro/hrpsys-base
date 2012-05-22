@@ -30,6 +30,8 @@ public:
     void pause();
     void notifyChanged();
     void addCollisionCheckPair(PyBody *b1, PyBody *b2);
+    void capture(std::string);
+    unsigned int logLength();
     PyObject *bodies();
 private:  
     LogManager<SceneState> log;

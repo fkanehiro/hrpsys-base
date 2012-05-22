@@ -30,7 +30,8 @@ public:
     void save(const char *i_fname);
     void capture(char *o_image);
     void init();
-    void clear();
+    void requestClear();
+    void requestCapture(const char *i_fname);
     void setCamera(GLcamera *i_camera);
     void nextCamera();
     GLcamera *getCamera();
@@ -46,6 +47,8 @@ public:
     void showFloorGrid(bool flag);
     void showInfo(bool flag);
 protected:
+    enum {REQ_NONE, REQ_CLEAR, REQ_CAPTURE};
+
     void drawFloorGrid();
     void drawInfo(double fps);
 
@@ -59,7 +62,8 @@ protected:
     LogManagerBase *m_log;
     SDL_sem *m_sem;
     bool m_showFloorGrid, m_showInfo;
-    bool m_clearRequested;
+    int m_request;
+    std::string m_fname;
 };
 
 #endif

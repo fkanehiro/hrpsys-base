@@ -60,6 +60,27 @@ void GLcamera::draw()
     for (size_t i=0; i<m_shapes.size(); i++){
         m_shapes[i]->draw();
     }
+#if 0
+    glDisable(GL_LIGHTING);
+    glBegin(GL_LINES);
+    double t = tan(m_fovy/2);
+    double xf = t*m_far*m_width/m_height, yf = t*m_far;
+    glVertex3f( xf,  yf, -m_far); glVertex3f(-xf,  yf, -m_far);
+    glVertex3f(-xf,  yf, -m_far); glVertex3f(-xf, -yf, -m_far);
+    glVertex3f(-xf, -yf, -m_far); glVertex3f( xf, -yf, -m_far);
+    glVertex3f( xf, -yf, -m_far); glVertex3f( xf,  yf, -m_far); 
+    double xn = t*m_near*m_width/m_height, yn = t*m_near;
+    glVertex3f( xn,  yn, -m_near); glVertex3f(-xn,  yn, -m_near);
+    glVertex3f(-xn,  yn, -m_near); glVertex3f(-xn, -yn, -m_near);
+    glVertex3f(-xn, -yn, -m_near); glVertex3f( xn, -yn, -m_near);
+    glVertex3f( xn, -yn, -m_near); glVertex3f( xn,  yn, -m_near);
+    glVertex3f( xn,  yn, -m_near); glVertex3f( xf,  yf, -m_far);
+    glVertex3f(-xn,  yn, -m_near); glVertex3f(-xf,  yf, -m_far);
+    glVertex3f(-xn, -yn, -m_near); glVertex3f(-xf, -yf, -m_far);
+    glVertex3f( xn, -yn, -m_near); glVertex3f( xf, -yf, -m_far);
+    glEnd();
+    glEnable(GL_LIGHTING);
+#endif
     glPopMatrix();
 }    
 
