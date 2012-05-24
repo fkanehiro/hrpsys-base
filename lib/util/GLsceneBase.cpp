@@ -70,6 +70,7 @@ void GLsceneBase::nextCamera()
                     found = true;
                 }else if(found){
                     m_camera = cameras[k];
+                    m_camera->setViewSize(m_width, m_height);
                     return;
                 }
             }
