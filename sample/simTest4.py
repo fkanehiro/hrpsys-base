@@ -3,7 +3,6 @@ import commands
 
 openhrp_dir = commands.getoutput("pkg-config --variable=prefix openhrp3.1")
 model_dir="file://"+openhrp_dir+"/share/OpenHRP-3.1/sample/model/"
-box2 = "file://"+openhrp_dir+"/share/OpenHRP-3.1/sample/model/box2.wrl"
 
 sim = hrpsys.Simulator()
 sim.initViewer()
