@@ -217,8 +217,7 @@ void GLsceneBase::draw()
     m_lastDraw = tv;
 
     if (m_request == REQ_CLEAR) {
-        clearBodies();
-        m_camera = m_default_camera;
+        clear();
         m_request = REQ_NONE;
         SDL_SemPost(m_sem);
     }
@@ -305,3 +304,8 @@ void GLsceneBase::requestCapture(const char *i_fname)
     SDL_SemWait(m_sem);
 }
 
+void GLsceneBase::clear()
+{
+    clearBodies();
+    m_camera = m_default_camera;
+}

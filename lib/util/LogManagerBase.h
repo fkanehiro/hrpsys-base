@@ -22,6 +22,7 @@ public:
     virtual double currentTime() = 0;
     virtual int updateIndex() = 0;
     virtual int index() = 0;
+    virtual void clear() = 0;
     bool isPlaying(){ return m_isPlaying; }
     bool isRecording(){ return m_isRecording; }
     double playRatio() { return m_playRatio; }

@@ -32,7 +32,8 @@ SDLwindow::SDLwindow(GLsceneBase* i_scene, LogManagerBase *i_log,
     instructions.push_back("r: record movie");
     instructions.push_back("t: toggle robot state");
     instructions.push_back("w: toggle wire frame mode");
-    instructions.push_back("c: select next camera");
+    instructions.push_back("n: select next camera");
+    instructions.push_back("c: clear scene");
     if (throbj){
         instructions.push_back("p: pause/resume background thread");
     }
@@ -135,8 +136,12 @@ bool SDLwindow::processEvents()
             case SDLK_w:
                 GLshape::wireFrameMode(!GLshape::isWireFrameMode());
                 break;
-            case SDLK_c:
+            case SDLK_n:
                 scene->nextCamera();
+                break;
+            case SDLK_c:
+                log->clear();
+                scene->clear();
                 break;
             case SDLK_RIGHT:
                 if (isControlPressed){
