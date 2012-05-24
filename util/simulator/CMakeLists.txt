@@ -20,7 +20,7 @@ target_link_libraries(sdlsim
   hrpsysUtil
   )
 
-add_library(simulator SHARED 
+add_library(hrpsys SHARED 
   GLscene.cpp 
   BodyState.cpp
   SceneState.cpp
@@ -30,19 +30,19 @@ add_library(simulator SHARED
   PyLink.cpp
   )
 
-target_link_libraries(simulator 
+target_link_libraries(hrpsys 
   boost_python 
   hrpsysUtil
   ${PYTHON_LIBRARIES}
   )
-set_target_properties(simulator PROPERTIES PREFIX "")
-set_target_properties(simulator PROPERTIES SUFFIX ".so")
+set_target_properties(hrpsys PROPERTIES PREFIX "")
+set_target_properties(hrpsys PROPERTIES SUFFIX ".so")
 
 install(TARGETS ${target}
   RUNTIME DESTINATION bin
   )
 
-install(TARGETS simulator
+install(TARGETS hrpsys
   LIBRARY DESTINATION share/hrpsys/python CONFIGURATIONS Release Debug
 )
 

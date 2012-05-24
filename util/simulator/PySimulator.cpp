@@ -262,7 +262,7 @@ unsigned int PySimulator::logLength()
     return log.length();
 }
 
-BOOST_PYTHON_MODULE( simulator )
+BOOST_PYTHON_MODULE( hrpsys )
 {
     using namespace boost::python;
 
