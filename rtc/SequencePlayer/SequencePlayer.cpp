@@ -251,10 +251,22 @@ void SequencePlayer::waitInterpolation()
 
 bool SequencePlayer::setJointAngle(short id, double angle, double tm)
 {
+    if (!setInitialState()) return false;
     dvector q(m_robot->numJoints());
     m_seq->getJointAngles(q.data());
     q[id] = angle;
-    return setJointAngles(q.data(), tm);
+    for (int i=0; i<m_robot->numJoints(); i++){
+        hrp::Link *j = m_robot->joint(i);
+        if (j) j->q = q[i];
+    }
+    m_robot->calcForwardKinematics();
+    hrp::Vector3 absZmp = m_robot->calcCM();
+    absZmp[2] = 0;
+    hrp::Link *root = m_robot->rootLink();
+    hrp::Vector3 relZmp = root->R.transpose()*(absZmp - root->p);
+    m_seq->setJointAngles(q.data(), tm);
+    m_seq->setZmp(relZmp.data(), tm);
+    return true;
 }
 
 bool SequencePlayer::setJointAngles(const double *angles, double tm)
