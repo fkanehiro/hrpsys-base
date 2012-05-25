@@ -251,15 +251,26 @@ void SequencePlayer::waitInterpolation()
 
 bool SequencePlayer::setJointAngle(short id, double angle, double tm)
 {
-    if (!setInitialState()) return false;
-    m_seq->setJointAngle(id, angle, tm);
-    return true;
+    dvector q(m_robot->numJoints());
+    m_seq->getJointAngles(q.data());
+    q[id] = angle;
+    return setJointAngles(q.data(), tm);
 }
 
 bool SequencePlayer::setJointAngles(const double *angles, double tm)
 {
     if (!setInitialState()) return false;
+    for (int i=0; i<m_robot->numJoints(); i++){
+        hrp::Link *j = m_robot->joint(i);
+        if (j) j->q = angles[i];
+    }
+    m_robot->calcForwardKinematics();
+    hrp::Vector3 absZmp = m_robot->calcCM();
+    absZmp[2] = 0;
+    hrp::Link *root = m_robot->rootLink();
+    hrp::Vector3 relZmp = root->R.transpose()*(absZmp - root->p);
     m_seq->setJointAngles(angles, tm);
+    m_seq->setZmp(relZmp.data(), tm);
     return true;
 }
 
@@ -327,11 +338,11 @@ bool SequencePlayer::setInitialState()
         m_seq->setBaseRpy(rpy);
         calcRotFromRpy(root->R, rpy[0], rpy[1], rpy[2]);
 
-#if 0
+#if 1
         m_robot->calcForwardKinematics();
         Vector3 com = m_robot->calcCM();
         com[2] = 0.0;
-        Vector3 local_com(trans(root->R)*(com - root->p));
+        Vector3 local_com(root->R.transpose()*(com - root->p));
         double zmp[] = {local_com[0], local_com[1], local_com[2]};
         m_seq->setZmp(zmp);
 #endif
