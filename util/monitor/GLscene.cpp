@@ -71,12 +71,22 @@ void GLscene::updateScene()
     LogManager<TimedRobotState> *lm 
         = (LogManager<TimedRobotState> *)m_log;
     OpenHRP::StateHolderService::Command &com = lm->state().command;
-    if (com.jointRefs.length()){
-        GLbody *glbody = dynamic_cast<GLbody *>(body(0).get());
+    GLbody *glbody = dynamic_cast<GLbody *>(body(0).get());
+    if (com.jointRefs.length() == glbody->numJoints()){
         double *tform = com.baseTransform.get_buffer();
         glbody->setPosition(tform);
         glbody->setRotation(tform+3);
         glbody->setPosture(com.jointRefs.get_buffer());
+        hrp::Link *root = glbody->rootLink();
+        root->p << tform[0], tform[1], tform[2];
+        root->R << tform[3], tform[4], tform[5],
+            tform[6], tform[7], tform[8],
+            tform[9], tform[10], tform[11];
+        for (int i=0; i<glbody->numJoints(); i++){
+            hrp::Link *j = glbody->joint(i);
+            if (j) j->q = com.jointRefs[i];
+        }
+        glbody->calcForwardKinematics();
     }
 }
 
@@ -225,6 +235,24 @@ void printMatrix(double mat[16])
     }
 }
 
+static void drawCross(const Vector3& p)
+{
+#define LINE_HLEN 0.5
+    float v[3];
+    v[0] = p[0]+LINE_HLEN; v[1] = p[1]; v[2] = p[2]+0.001;
+    glVertex3fv(v);
+    v[0] = p[0]-LINE_HLEN;
+    glVertex3fv(v);
+    v[0] = p[0]; v[1] = p[1]+LINE_HLEN; v[2] = p[2]+0.001;
+    glVertex3fv(v);
+    v[1] = p[1]-LINE_HLEN;
+    glVertex3fv(v);
+    v[0] = p[0]; v[1] = p[1]; v[2] = p[2]+0.001;
+    glVertex3fv(v);
+    v[2] = p[2]+LINE_HLEN;
+    glVertex3fv(v);
+}
+
 void GLscene::drawAdditionalLines()
 {
     if (m_log->index()<0) return;
@@ -236,27 +264,14 @@ void GLscene::drawAdditionalLines()
     if (com.zmp.length() != 3) return;
 
     Vector3 relZmp(com.zmp[0], com.zmp[1], com.zmp[2]);
-    Vector3 rootP(com.baseTransform[0], com.baseTransform[1], com.baseTransform[2]);
-    Matrix33 rootR;
-    rootR << com.baseTransform[3], com.baseTransform[4], com.baseTransform[5], 
-        com.baseTransform[6], com.baseTransform[7], com.baseTransform[8], 
-        com.baseTransform[9], com.baseTransform[10], com.baseTransform[11]; 
-    Vector3 absZmp = rootR*relZmp + rootP;
-    float v[3];
-    glColor3f(1,0,1);
+    hrp::Link *root = body(0)->rootLink();
+    Vector3 absZmp = root->R*relZmp + root->p;
+    Vector3 projectedCom = body(0)->calcCM();
+    projectedCom[2] = 0;
     glBegin(GL_LINES);
-#define LINE_HLEN 0.5
-    v[0] = absZmp[0]+LINE_HLEN; v[1] = absZmp[1]; v[2] = absZmp[2]+0.001;
-    glVertex3fv(v);
-    v[0] = absZmp[0]-LINE_HLEN;
-    glVertex3fv(v);
-    v[0] = absZmp[0]; v[1] = absZmp[1]+LINE_HLEN; v[2] = absZmp[2]+0.001;
-    glVertex3fv(v);
-    v[1] = absZmp[1]-LINE_HLEN;
-    glVertex3fv(v);
-    v[0] = absZmp[0]; v[1] = absZmp[1]; v[2] = absZmp[2]+0.001;
-    glVertex3fv(v);
-    v[2] = absZmp[2]+LINE_HLEN;
-    glVertex3fv(v);
+    glColor3f(1,0,1);
+    drawCross(absZmp);
+    glColor3f(0,1,1);
+    drawCross(projectedCom);
     glEnd();
 }
