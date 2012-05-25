@@ -225,3 +225,38 @@ void printMatrix(double mat[16])
     }
 }
 
+void GLscene::drawAdditionalLines()
+{
+    if (m_log->index()<0) return;
+
+    LogManager<TimedRobotState> *lm 
+        = (LogManager<TimedRobotState> *)m_log;
+    OpenHRP::StateHolderService::Command &com = lm->state().command;
+
+    if (com.zmp.length() != 3) return;
+
+    Vector3 relZmp(com.zmp[0], com.zmp[1], com.zmp[2]);
+    Vector3 rootP(com.baseTransform[0], com.baseTransform[1], com.baseTransform[2]);
+    Matrix33 rootR;
+    rootR << com.baseTransform[3], com.baseTransform[4], com.baseTransform[5], 
+        com.baseTransform[6], com.baseTransform[7], com.baseTransform[8], 
+        com.baseTransform[9], com.baseTransform[10], com.baseTransform[11]; 
+    Vector3 absZmp = rootR*relZmp + rootP;
+    float v[3];
+    glColor3f(1,0,1);
+    glBegin(GL_LINES);
+#define LINE_HLEN 0.5
+    v[0] = absZmp[0]+LINE_HLEN; v[1] = absZmp[1]; v[2] = absZmp[2]+0.001;
+    glVertex3fv(v);
+    v[0] = absZmp[0]-LINE_HLEN;
+    glVertex3fv(v);
+    v[0] = absZmp[0]; v[1] = absZmp[1]+LINE_HLEN; v[2] = absZmp[2]+0.001;
+    glVertex3fv(v);
+    v[1] = absZmp[1]-LINE_HLEN;
+    glVertex3fv(v);
+    v[0] = absZmp[0]; v[1] = absZmp[1]; v[2] = absZmp[2]+0.001;
+    glVertex3fv(v);
+    v[2] = absZmp[2]+LINE_HLEN;
+    glVertex3fv(v);
+    glEnd();
+}
