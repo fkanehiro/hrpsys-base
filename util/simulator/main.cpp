@@ -136,7 +136,7 @@ int main(int argc, char* argv[])
     simulator.init(prj, factory);
     simulator.realTime(realtime);
     if (endless){
-        simulator.totalTime(0);
+        simulator.setTotalTime(0);
         log.enableRingBuffer(50000);
     }
 

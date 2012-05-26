@@ -73,6 +73,7 @@ PySimulator::PySimulator(PyObject *pyo) :
 
 PySimulator::~PySimulator(){
     window.stop();
+    clear();
     if (manager) manager->shutdown();
 }
 
@@ -173,13 +174,13 @@ void PySimulator::simulate()
 
 void PySimulator::simulate(double time)
 {
-    totalTime(currentTime()+time);
+    setTotalTime(currentTime()+time);
     simulate();
 }
 
 void PySimulator::start(double time)
 {
-    totalTime(currentTime()+time);
+    setTotalTime(currentTime()+time);
     Simulator::start();
 }
 
@@ -191,7 +192,7 @@ void PySimulator::realTime(bool flag)
 void PySimulator::endless(bool flag)
 {
     if (flag){
-        totalTime(0);
+        setTotalTime(0);
         log.enableRingBuffer(50000);
     }
 } 
@@ -291,6 +292,8 @@ BOOST_PYTHON_MODULE( hrpsys )
         .add_property("timeStep", 
                       &PySimulator::timeStep, &PySimulator::setTimeStep)
         .add_property("time", &PySimulator::currentTime)
+        .add_property("totalTime", 
+                      &PySimulator::totalTime, &PySimulator::setTotalTime)
         ;
 
     class_<PyBody>("Body", no_init)

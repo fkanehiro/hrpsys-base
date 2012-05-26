@@ -20,7 +20,8 @@ public:
     bool oneStep();
     void checkCollision(OpenHRP::CollisionSequence &collisions);
     void realTime(bool flag) { adjustTime = flag; }
-    void totalTime(double time) { m_totalTime = time; }
+    void setTotalTime(double time) { m_totalTime = time; }
+    double totalTime() { return m_totalTime; }
     void clear();
     void appendLog();
     void addCollisionCheckPair(BodyRTC *b1, BodyRTC *b2);
