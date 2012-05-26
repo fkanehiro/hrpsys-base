@@ -300,7 +300,7 @@ PyObject *PyLink::shapes()
 {
     boost::python::list retval;
     for (size_t i=0; i<m_shapes.size(); i++){
-        retval.append(boost::python::object((PyShape *)m_shapes[i]));
+        retval.append(boost::python::ptr((PyShape *)m_shapes[i]));
     }
     return boost::python::incref(retval.ptr());
 }

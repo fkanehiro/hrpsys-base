@@ -93,7 +93,7 @@ PyObject *PyBody::links()
     boost::python::list retval;
     for (int i=0; i<numLinks(); i++){
         PyLink *l = (PyLink *)Body::link(i);
-        retval.append(boost::python::object(l));
+        retval.append(boost::python::ptr(l));
     }
     return boost::python::incref(retval.ptr());
 }
@@ -107,7 +107,7 @@ PyObject *PyBody::joints()
     boost::python::list retval;
     for (int i=0; i<numJoints(); i++){
         PyLink *l = (PyLink *)Body::joint(i);
-        retval.append(boost::python::object(l));
+        retval.append(boost::python::ptr(l));
     }
     return boost::python::incref(retval.ptr());
 }

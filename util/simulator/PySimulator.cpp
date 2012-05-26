@@ -243,8 +243,7 @@ PyObject *PySimulator::bodies()
     boost::python::list retval;
     for (int i=0; i<numBodies(); i++){
         PyBody *b = dynamic_cast<PyBody *>(body(i).get());
-        //retval.append(boost::python::object(b));
-        retval.append(b);
+        retval.append(boost::python::ptr(b));
     }
     return boost::python::incref(retval.ptr());
 }
