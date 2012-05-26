@@ -10,7 +10,7 @@ execfile("@CMAKE_INSTALL_PREFIX@/share/hrpsys/jython/waitInput.py")
 sys.path.append(os.getcwd())
 
 def runSimulator(*args):
-    cmd = "sdlsim "
+    cmd = "hrpsys-simulator "
     for arg in args:
         cmd += str(arg)+" "
     os.system(cmd)
