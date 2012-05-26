@@ -8,11 +8,6 @@
 #include "PyShape.h"
 #include "PyUtil.h"
 
-static GLshape *createPyShape()
-{
-    return new PyShape();
-}
-
 PyLink::PyLink()
 {
 }

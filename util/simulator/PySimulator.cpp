@@ -54,7 +54,7 @@ hrp::BodyPtr createBody(const std::string& name, const ModelItem& mitem,
         return hrp::BodyPtr();
     }else{
         pybody->createDataPorts();
-        loadShapeFromBodyInfo(pybody, binfo);
+        loadShapeFromBodyInfo(pybody, binfo, createPyShape);
         scene->addBody(body);
         return body;
     }
@@ -134,7 +134,7 @@ PyBody* PySimulator::loadBody(std::string name, std::string url){
         pybody->createDataPorts();
         body->setName(name);
         addBody(body);
-        loadShapeFromBodyInfo(pybody, binfo);
+        loadShapeFromBodyInfo(pybody, binfo, createPyShape);
         scene.addBody(body);
         return pybody;
     }

@@ -46,3 +46,8 @@ void PyShape::setRelRotation(PyObject *v)
     }
     GLcoordinates::setRotation(Rs);
 }
+
+GLshape *createPyShape()
+{
+    return new PyShape();
+}

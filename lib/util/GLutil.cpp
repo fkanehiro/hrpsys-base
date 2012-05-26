@@ -218,10 +218,15 @@ void loadShape(GLshape *shape,
     shape->setTextureCoordIndices(ai.textureCoordIndices.length(),
                                   (int *)ai.textureCoordIndices.get_buffer());
     if (ai.textureIndex >=0){
-        TextureInfo &ti = (*i_ssinfo->textures())[ai.textureIndex];
-        GLtexture *texture = new GLtexture();
-        loadTextureFromTextureInfo(texture, ti);
-        shape->setTexture(texture);
+        if (i_ssinfo->textures()->length() <= ai.textureIndex){
+            std::cerr << "invalid texture index(" << ai.textureIndex << ")"
+                      << std::endl;
+        }else{
+            TextureInfo &ti = (*i_ssinfo->textures())[ai.textureIndex];
+            GLtexture *texture = new GLtexture();
+            loadTextureFromTextureInfo(texture, ti);
+            shape->setTexture(texture);
+        }
     }
     if (ai.colors.length()){
         shape->setDiffuseColor(ai.colors[0], ai.colors[1], ai.colors[2], 1.0);
@@ -279,14 +284,15 @@ void loadCube(GLshape *shape, double x, double y, double z)
     shape->compile();
 }
 
-void loadShapeFromBodyInfo(GLbody *body, BodyInfo_var i_binfo)
+void loadShapeFromBodyInfo(GLbody *body, BodyInfo_var i_binfo,
+                           GLshape *(*shapeFactory)())
 {
     LinkInfoSequence_var lis = i_binfo->links();
     
     for (unsigned int i=0; i<lis->length(); i++){
         hrp::Link *l = body->link(std::string(lis[i].name));
         if (l){
-            loadShapeFromLinkInfo((GLlink *)l, lis[i], i_binfo);
+            loadShapeFromLinkInfo((GLlink *)l, lis[i], i_binfo, shapeFactory);
         }else{
             std::cout << "can't find a link named " << lis[i].name 
                       << std::endl;
