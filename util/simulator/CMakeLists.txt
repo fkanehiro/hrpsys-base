@@ -7,9 +7,9 @@ include_directories(${SDL_INCLUDE_DIR})
 find_package(PythonLibs)
 include_directories(${PYTHON_INCLUDE_DIRS})
 
-set(target sdlsim)
+set(target hrpsys-simulator)
 
-add_executable(sdlsim 
+add_executable(hrpsys-simulator 
   GLscene.cpp 
   BodyState.cpp
   SceneState.cpp
@@ -17,7 +17,7 @@ add_executable(sdlsim
   main.cpp
   )
 
-target_link_libraries(sdlsim 
+target_link_libraries(hrpsys-simulator 
   hrpsysUtil
   )
 
