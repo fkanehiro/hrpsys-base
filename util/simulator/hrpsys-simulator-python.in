@@ -1,0 +1,32 @@
+#!/usr/bin/ipython
+
+import sys
+import os
+import hrpsys
+
+execfile("@CMAKE_INSTALL_PREFIX@/share/hrpsys/python/waitInput.py")
+
+sys.path.append(os.getcwd())
+
+argc = len(sys.argv)
+
+if argc < 2:
+    print "Usage: hrpsys-simulator project.xml [script.py]"
+else:    
+    project = sys.argv[1]
+
+    if argc >= 3 and sys.argv[2][(len(sys.argv[2])-3):] == ".py":
+	script = sys.argv[2]
+    else:
+	script = None
+
+    sim = hrpsys.Simulator()
+    sim.initViewer()
+    sim.loadProject(project)
+    sim.start(sim.totalTime)
+
+    if script != None:
+	execfile(script)
+
+
+

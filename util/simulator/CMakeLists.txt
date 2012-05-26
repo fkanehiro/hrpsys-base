@@ -1,4 +1,5 @@
-configure_file(hrpsys-simulator.in ${CMAKE_CURRENT_BINARY_DIR}/hrpsys-simulator)
+configure_file(hrpsys-simulator-jython.in ${CMAKE_CURRENT_BINARY_DIR}/hrpsys-simulator-jython)
+configure_file(hrpsys-simulator-python.in ${CMAKE_CURRENT_BINARY_DIR}/hrpsys-simulator-python)
 
 include_directories(${OpenCV_INCLUDE_DIRS})
 include_directories(${LIBXML2_INCLUDE_DIR})
@@ -46,6 +47,8 @@ install(TARGETS hrpsys
   LIBRARY DESTINATION share/hrpsys/python CONFIGURATIONS Release Debug
 )
 
-install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/hrpsys-simulator 
+install(PROGRAMS 
+  ${CMAKE_CURRENT_BINARY_DIR}/hrpsys-simulator-jython
+  ${CMAKE_CURRENT_BINARY_DIR}/hrpsys-simulator-python
   DESTINATION bin
   )  
