@@ -30,7 +30,8 @@ GLcamera::GLcamera(const SensorInfo &i_si, OpenHRP::ShapeSetInfo_ptr i_ssinfo,
     m_trans[14]=i_si.translation[2];m_trans[15]=1; 
 
     for (size_t i=0; i<i_si.shapeIndices.length(); i++){
-        GLshape *shape = createShape(i_ssinfo, i_si.shapeIndices[i]);
+        GLshape *shape = new GLshape();
+        loadShape(shape, i_ssinfo, i_si.shapeIndices[i]);
         m_shapes.push_back(shape);
     }
 

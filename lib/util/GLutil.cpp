@@ -197,11 +197,10 @@ void loadTextureFromTextureInfo(GLtexture *texture, TextureInfo &ti)
     memcpy(&texture->image[0], ti.image.get_buffer(), ti.image.length());
 }
 
-GLshape *createShape(OpenHRP::ShapeSetInfo_ptr i_ssinfo, 
-                     const OpenHRP::TransformedShapeIndex &i_tsi)
+void loadShape(GLshape *shape, 
+               OpenHRP::ShapeSetInfo_ptr i_ssinfo, 
+               const OpenHRP::TransformedShapeIndex &i_tsi)
 {
-    GLshape *shape = new GLshape();
-
     ShapeInfoSequence_var sis = i_ssinfo->shapes();
     AppearanceInfoSequence_var ais = i_ssinfo->appearances();
     MaterialInfoSequence_var mis = i_ssinfo->materials();
@@ -237,14 +236,11 @@ GLshape *createShape(OpenHRP::ShapeSetInfo_ptr i_ssinfo,
     shape->normalPerVertex(ai.normalPerVertex);
     shape->solid(ai.solid);
     shape->compile();
-
-    return shape;
 }
 
 
-GLshape *createCube(double x, double y, double z)
+void loadCube(GLshape *shape, double x, double y, double z)
 {
-    GLshape *shape = new GLshape();
     double hx = x/2, hy = y/2, hz = z/2;
     float vertices[] = {hx,hy,hz,
                         -hx,hy,hz,
@@ -281,8 +277,6 @@ GLshape *createCube(double x, double y, double z)
     shape->normalPerVertex(false);
     shape->solid(true);
     shape->compile();
-                
-    return shape;
 }
 
 void loadShapeFromBodyInfo(GLbody *body, BodyInfo_var i_binfo)
@@ -300,16 +294,18 @@ void loadShapeFromBodyInfo(GLbody *body, BodyInfo_var i_binfo)
     }
 }
 
-void loadShapeFromSceneInfo(GLlink *link, SceneInfo_var i_sinfo)
+void loadShapeFromSceneInfo(GLlink *link, SceneInfo_var i_sinfo, 
+                            GLshape *(*shapeFactory)())
 {
     TransformedShapeIndexSequence_var tsis = i_sinfo->shapeIndices();
     for (size_t i = 0; i<tsis->length(); i++){
-        GLshape *shape = createShape(i_sinfo, tsis[i]);
+        GLshape *shape = shapeFactory ? shapeFactory() : new GLshape();
+        loadShape(shape, i_sinfo, tsis[i]);
         link->addShape(shape);
     }
 }
 
-void loadShapeFromLinkInfo(GLlink *link, const LinkInfo &i_li, ShapeSetInfo_ptr i_ssinfo){
+void loadShapeFromLinkInfo(GLlink *link, const LinkInfo &i_li, ShapeSetInfo_ptr i_ssinfo, GLshape *(*shapeFactory)()){
     Vector3 axis;
     Matrix33 R;
     
@@ -325,7 +321,8 @@ void loadShapeFromLinkInfo(GLlink *link, const LinkInfo &i_li, ShapeSetInfo_ptr 
     link->computeAbsTransform();
 
     for (size_t i = 0; i<i_li.shapeIndices.length(); i++){
-        GLshape *shape = createShape(i_ssinfo, i_li.shapeIndices[i]);
+        GLshape *shape = shapeFactory ? shapeFactory() : new GLshape();
+        loadShape(shape, i_ssinfo, i_li.shapeIndices[i]);
         link->addShape(shape);
     }
 

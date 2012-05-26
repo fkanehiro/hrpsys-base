@@ -4,6 +4,8 @@
 #include <boost/python.hpp>
 #include "util/GLlink.h"
 
+class PyShape;
+
 class PyLink : public GLlink
 {
 public:
@@ -34,10 +36,11 @@ public:
     PyLink *addChildLink(std::string name);
     PyLink *getParent();
     void addShapeFromFile(std::string url);
-    void addCube(double x, double y, double z); 
+    PyShape *addCube(double x, double y, double z); 
     PyObject *getChildren();
     void setJointType(std::string type);
     std::string getJointType();
+    PyObject *shapes();
 private:
     void notifyChanged();
 };

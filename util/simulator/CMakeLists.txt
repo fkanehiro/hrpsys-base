@@ -29,6 +29,7 @@ add_library(hrpsys SHARED
   PySimulator.cpp
   PyBody.cpp
   PyLink.cpp
+  PyShape.cpp
   )
 
 target_link_libraries(hrpsys 

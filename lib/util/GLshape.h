@@ -35,7 +35,7 @@ public:
     void compile();
     static void wireFrameMode(bool flag);
     static bool isWireFrameMode();
-private:
+protected:
     int doCompile(bool isWireFrameMode);
 
     std::vector<Eigen::Vector3f> m_vertices, m_normals;

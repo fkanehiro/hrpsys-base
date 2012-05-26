@@ -20,6 +20,7 @@
 #include "util/OpenRTMUtil.h"
 #include "PyBody.h"
 #include "PyLink.h"
+#include "PyShape.h"
 #include "PySimulator.h"
 
 using namespace std;
@@ -317,10 +318,11 @@ BOOST_PYTHON_MODULE( hrpsys )
     class_<PyLink>("Link", no_init)
         .def("addChildLink", &PyLink::addChildLink, return_internal_reference<>()) 
         .def("addShapeFromFile", &PyLink::addShapeFromFile)
-        .def("addCube", &PyLink::addCube)
+        .def("addCube", &PyLink::addCube, return_internal_reference<>())
         .def("parent", &PyLink::getParent, return_internal_reference<>())
         .def("children", &PyLink::getChildren)
         .def("showAxes", &PyLink::showAxes)
+        .def("shapes", &PyLink::shapes)
         .def_readwrite("name", &PyLink::name)
         .def_readwrite("jointId", &PyLink::jointId)
         .def_readwrite("m", &PyLink::m)
@@ -342,5 +344,10 @@ BOOST_PYTHON_MODULE( hrpsys )
         .add_property("v", &PyLink::getLinVel, &PyLink::setLinVel)
         .add_property("w", &PyLink::getAngVel, &PyLink::setAngVel)
         .add_property("jointType", &PyLink::getJointType, &PyLink::setJointType)
+        ;
+
+    class_<PyShape>("Shape", no_init)
+        .add_property("b", &PyShape::getRelPosition, &PyShape::setRelPosition)
+        .add_property("Rs", &PyShape::getRelRotation, &PyShape::setRelRotation)
         ;
 }

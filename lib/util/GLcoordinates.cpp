@@ -15,6 +15,11 @@ void GLcoordinates::setTransform(const double i_trans[12]){
     }
 }
 
+hrp::Vector3 GLcoordinates::getPosition()
+{
+    return hrp::Vector3(m_trans[12], m_trans[13], m_trans[14]);
+}
+
 void GLcoordinates::setPosition(double x, double y, double z)
 {
     m_trans[12] = x; m_trans[13] = y; m_trans[14] = z;
@@ -24,6 +29,17 @@ void GLcoordinates::setRotation(double r, double p, double y)
 {
     hrp::Matrix33 R = hrp::rotFromRpy(r,p,y);
     setRotation(R);
+}
+
+hrp::Matrix33 GLcoordinates::getRotation()
+{
+    hrp::Matrix33 R;
+    for (int i=0; i<3; i++){
+        for (int j=0; j<3; j++){
+            R(j,i) = m_trans[i*4+j];
+        }
+    }
+    return R;
 }
 
 void GLcoordinates::setRotation(const hrp::Matrix33 &R)

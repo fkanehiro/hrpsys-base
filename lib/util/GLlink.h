@@ -33,7 +33,7 @@ public:
     const std::vector<GLcamera *>& cameras();
     static void useAbsTransformToDraw();
 
-private:
+protected:
     static bool m_useAbsTransformToDraw;
     std::vector<GLcamera *> m_cameras;
     double m_T_j[16], m_absTrans[16];
