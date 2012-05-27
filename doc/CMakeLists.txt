@@ -1,4 +1,4 @@
-set(input_files package.h
+set(input_files package.h utilities.h
 		      ../jython/rtm.py
 		      ../rtc/DataLogger/DataLogger.txt
 		      ../rtc/ForwardKinematics/ForwardKinematics.txt

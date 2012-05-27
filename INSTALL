@@ -26,13 +26,13 @@
    % make
    % (sudo) make install
 
-2.3 Eclipse settings
+2.3 (Optional) Eclipse settings
    a. Launch Eclipse
    b. Select "Window"->"Preferences"
    c. Click "GRXUI"
    d. Set "<jython directory>/Lib:<install prefix>/share/hrpsys/jython:<install prefix>/share/hrpsys/jar" to "Jython Lib directory"
 
-2.4 Eclipse plugin to monitor the robot status
+2.4 (Optional) Eclipse plugin to monitor the robot status
    a. Launch Eclipse
    b. Import GrxUI plugin project included in OpenHRP3
    c. Import the plugin project placed under "plugin" directory
@@ -43,6 +43,14 @@
 3. Running examples
 
 3.1 Monitoring a manipulator "PA10"
+
+3.1.1 (Recommended) without Eclipse
+   a. Open three terminals in <install prefix>/share/hrpsys/samples/PA10
+   b. terminal1: % hrpsys-monitor PA10.xml
+   c. terminal2: % ./hrpsys.sh
+   d. terminal3: % hrpsysjy PA10.py
+
+3.1.2 (Optional, Section 2.3 and 2.4 are required) with Eclipse
    a. Launch Eclipse
    b. Open "GrxUI" perspective
    c. From "GrxUI" menu of Eclipse, load a project file "PA10.xml" placed under
@@ -55,13 +63,21 @@
    g. Press "exec script" button in JythonPrompt view. PA10 will change its joint angles.
 
 3.2 Simulation of a cybernetic human "HRP-4C"
+
+3.2.1 (Recommended) without Eclipse
+   a. Get a VRML model from http://unit.aist.go.jp/is/humanoid/hrp-4c/hrp-4c.html
+   b. Extract the downloaded zip file at <install prefix>/share/hrpsys/samples
+   c. % cd <install prefix>/share/hrpsys/samples/HRP4C
+   d. % hrpsys-simulator-jython HRP4C.xml HRP4C.py
+
+3.2.2 (Optional, Section 2.3 and 2.4 are required) with Eclipse
    a. Get a VRML model from http://unit.aist.go.jp/is/humanoid/hrp-4c/hrp-4c.html
    b. Extract the downloaded zip file at <install prefix>/share/hrpsys/samples
    c. Launch Eclipse
    d. Open "GrxUI" perspective
-   e. From "GrxUI" menu of Eclipse, load a project file "HRP-4C.xml" placed 
-      under <install prefix>/share/hrpsys/samples/HRP-4C. A cybernetic human
+   e. From "GrxUI" menu of Eclipse, load a project file "HRP4C.xml" placed 
+      under <install prefix>/share/hrpsys/samples/HRP4C. A cybernetic human
       "HRP-4C" will appear in 3DView.
    f. Start simulation
-   e. Execute a script "HRP-4C.py"
+   e. Execute a script "HRP4C.py"
 
