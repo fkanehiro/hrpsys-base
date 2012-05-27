@@ -1,3 +1,4 @@
+#include <sys/param.h>
 #include <iostream>
 
 #include <libxml/parser.h>
@@ -102,7 +103,9 @@ bool Project::parse(const std::string& filename)
           std::string path = "file://";
           path += (char *)xmlGetProp(node, (xmlChar *)"url");
           if ( path.find("$(CURRENT_DIR)") != std::string::npos ) {
-              path.replace(path.find("$(CURRENT_DIR)"),14, filename.substr(0, filename.find_last_of("/")));
+              char buf[MAXPATHLEN];
+              getcwd(buf, MAXPATHLEN);
+              path.replace(path.find("$(CURRENT_DIR)"),14, buf);
           }
           if ( path.find("$(PROJECT_DIR)") != std::string::npos ) {
               std::string shdir = OPENHRP_SHARE_DIR;
