@@ -78,21 +78,31 @@ bool Project::parse(const std::string& filename)
                   std::string value = (char *)xmlGetProp(cur_node, (xmlChar *)"value");
                   //std::cout << name << "," << value << std::endl;
 
-                  int pos = name.find('.');
-                  if (pos < 0){
-                      std::cerr << "unknown property name:" << name 
-                                << std::endl; 
-                  }else{
-                      std::string comp = name.substr(0,pos);
-                      std::string cat = name.substr(pos+1);
-                      if (cat == "factory"){
-                          m_rts.components[comp].path = value;
-                          int pos = value.find_last_of("/");
-                          m_rts.components[comp].name = value.substr(pos+1);
-                      }else if (cat == "period") {
-                          m_rts.components[comp].period = atof(value.c_str());
+                  if (name == "connection"){
+                      int pos = value.find(':');
+                      if (pos < 0){
+                          std::cerr << "can't find a separator(:) in " 
+                                    << value << std::endl; 
                       }else{
-                          m_rts.connections.push_back(std::make_pair(name, value));
+                          std::string p1 = value.substr(0,pos);
+                          std::string p2 = value.substr(pos+1);
+                          m_rts.connections.push_back(std::make_pair(p1, p2));
+                      }
+                  }else{
+                      int pos = name.find('.');
+                      if (pos < 0){
+                          std::cerr << "unknown property name:" << name 
+                                    << std::endl; 
+                      }else{
+                          std::string comp = name.substr(0,pos);
+                          std::string cat = name.substr(pos+1);
+                          if (cat == "factory"){
+                              m_rts.components[comp].path = value;
+                              int pos = value.find_last_of("/");
+                              m_rts.components[comp].name = value.substr(pos+1);
+                          }else if (cat == "period") {
+                              m_rts.components[comp].period = atof(value.c_str());
+                          }
                       }
                   }
               }
