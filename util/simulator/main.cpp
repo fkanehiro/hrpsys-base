@@ -51,6 +51,11 @@ hrp::BodyPtr createBody(const std::string& name, const ModelItem& mitem,
         manager.deleteComponent(body.get());
         return hrp::BodyPtr();
     }else{
+        for (std::map<std::string, JointItem>::const_iterator it2=mitem.joint.begin();
+             it2 != mitem.joint.end(); it2++){
+            hrp::Link *link = body->link(it2->first);
+            if (link) link->isHighGainMode = it2->second.isHighGain;
+        }
         body->createDataPorts();
         return body;
     }

@@ -25,11 +25,6 @@ void initWorld(Project& prj, BodyFactory &factory,
         hrp::BodyPtr body = factory(it->second.rtcName == "" ? it->first : it->second.rtcName, it->second);
         if (body){
             body->setName(it->first);
-            for (std::map<std::string, JointItem>::iterator it2=it->second.joint.begin();
-                 it2 != it->second.joint.end(); it2++){
-                hrp::Link *link = body->link(it2->first);
-                if (link) link->isHighGainMode = it2->second.isHighGain;
-            }
             world.addBody(body);
         }
     }

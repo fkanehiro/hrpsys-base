@@ -37,7 +37,9 @@ private:
 
     // DataInPort
     RTC::TimedDoubleSeq m_tau;
+    RTC::TimedDoubleSeq m_qRef, m_dqRef, m_ddqRef;
     RTC::InPort<RTC::TimedDoubleSeq> m_tauIn;
+    RTC::InPort<RTC::TimedDoubleSeq> m_qRefIn, m_dqRefIn, m_ddqRefIn;
 
     // DataOutPort
     RTC::TimedDoubleSeq m_q;

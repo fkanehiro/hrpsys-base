@@ -29,6 +29,9 @@ BodyRTC::BodyRTC(RTC::Manager* manager)
     : Body(),
       DataFlowComponentBase(manager),
       m_tauIn("tau", m_tau),
+      m_qRefIn("qRef", m_qRef),
+      m_dqRefIn("dqRef", m_dqRef),
+      m_ddqRefIn("ddqRef", m_ddqRef),
       m_qOut("q", m_q),
       dummy(0)
 {
@@ -39,6 +42,9 @@ BodyRTC::BodyRTC(const BodyRTC& i_body)
     : Body(i_body),
       DataFlowComponentBase(&RTC::Manager::instance()),
       m_tauIn("tau", m_tau),
+      m_qRefIn("qRef", m_qRef),
+      m_dqRefIn("dqRef", m_dqRef),
+      m_ddqRefIn("ddqRef", m_ddqRef),
       m_qOut("q", m_q),
       dummy(0)
 {
@@ -53,8 +59,31 @@ BodyRTC::~BodyRTC(void)
 void BodyRTC::createDataPorts()
 {
     if (numJoints()){
-        m_tau.data.length(numJoints());
-        addInPort("tau", m_tauIn);
+        bool isHighGainMode = false;
+        for (int i=0;i<numJoints(); i++){
+            hrp::Link *j = joint(i);
+            if (j && j->isHighGainMode){
+                isHighGainMode = true;
+                break;
+            }
+        }
+        if (isHighGainMode){
+            std::cout << name() << ": high-gain mode" << std::endl;
+            m_qRef.data.length(numJoints());
+            m_dqRef.data.length(numJoints());
+            m_ddqRef.data.length(numJoints());
+            for (int i=0; i<numJoints(); i++){
+                m_qRef.data[i] = m_dqRef.data[i] = m_ddqRef.data[i] = 0;
+            }
+            addInPort("qRef", m_qRefIn); 
+            addInPort("dqRef", m_dqRefIn); 
+            addInPort("ddqRef", m_ddqRefIn); 
+        }else{
+            std::cout << name() << ": toque-given mode" << std::endl;
+            m_tau.data.length(numJoints());
+            for (int i=0; i<numJoints(); i++) m_tau.data[i] = 0;
+            addInPort("tau", m_tauIn);
+        }
 
         m_q.data.length(numJoints());
         addOutPort("q", m_qOut);
@@ -144,14 +173,47 @@ void BodyRTC::writeDataPorts()
 
 void BodyRTC::readDataPorts()
 {
-    if (numJoints() && m_tauIn.isNew()){
+    if(m_tauIn.isNew()){
         do {
             m_tauIn.read();
         }while (m_tauIn.isNew());
         for (int i=0; i<numJoints(); i++){
             Link *l = joint(i);
             if (l){
-                l->u = m_tau.data[l->jointId];
+                l->u = m_tau.data[i];
+            }
+        }
+    }
+    if (m_qRefIn.isNew()){
+        do {
+            m_qRefIn.read();
+        }while(m_qRefIn.isNew());
+        for (int i=0; i<numJoints(); i++){
+            Link *l = joint(i);
+            if (l){
+                l->q = m_qRef.data[i];
+            }
+        }
+    }
+    if (m_dqRefIn.isNew()){
+        do {
+            m_dqRefIn.read();
+        }while(m_dqRefIn.isNew());
+        for (int i=0; i<numJoints(); i++){
+            Link *l = joint(i);
+            if (l){
+                l->dq = m_dqRef.data[i];
+            }
+        }
+    }
+    if (m_ddqRefIn.isNew()){
+        do {
+            m_ddqRefIn.read();
+        }while(m_ddqRefIn.isNew());
+        for (int i=0; i<numJoints(); i++){
+            Link *l = joint(i);
+            if (l){
+                l->ddq = m_ddqRef.data[i];
             }
         }
     }
