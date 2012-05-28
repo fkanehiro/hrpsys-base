@@ -38,19 +38,6 @@ BodyRTC::BodyRTC(RTC::Manager* manager)
     //std::cout << "constructor of BodyRTC"  << std::endl;
 }
 
-BodyRTC::BodyRTC(const BodyRTC& i_body) 
-    : Body(i_body),
-      DataFlowComponentBase(&RTC::Manager::instance()),
-      m_tauIn("tau", m_tau),
-      m_qRefIn("qRef", m_qRef),
-      m_dqRefIn("dqRef", m_dqRef),
-      m_ddqRefIn("ddqRef", m_ddqRef),
-      m_qOut("q", m_q),
-      dummy(0)
-{
-    std::cout << "BodyRTC::BodyRTC(const BodyRTC&) is called" << std::endl;
-}
-
 BodyRTC::~BodyRTC(void)
 {
     //std::cout << "destructor of BodyRTC"  << std::endl;

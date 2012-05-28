@@ -272,7 +272,7 @@ BOOST_PYTHON_MODULE( hrpsys )
 {
     using namespace boost::python;
 
-    class_<PySimulator>("Simulator")
+    class_<PySimulator, boost::noncopyable>("Simulator")
         .def(init<PyObject *>())
         .def("initViewer", &PySimulator::initViewer)
         .def("loadBody", &PySimulator::loadBody, return_internal_reference<>())
@@ -301,7 +301,7 @@ BOOST_PYTHON_MODULE( hrpsys )
                       &PySimulator::totalTime, &PySimulator::setTotalTime)
         ;
 
-    class_<PyBody>("Body", no_init)
+    class_<PyBody, boost::noncopyable>("Body", no_init)
         .def("calcForwardKinematics", &PyBody::calcForwardKinematics)
         .def("rootLink", &PyBody::rootLink, return_internal_reference<>())
         .def("link", &PyBody::link, return_internal_reference<>())
@@ -319,7 +319,7 @@ BOOST_PYTHON_MODULE( hrpsys )
         .add_property("q", &PyBody::getPosture, &PyBody::setPosture)
         ;
 
-    class_<PyLink>("Link", no_init)
+    class_<PyLink, boost::noncopyable>("Link", no_init)
         .def("addChildLink", &PyLink::addChildLink, return_internal_reference<>()) 
         .def("addShapeFromFile", &PyLink::addShapeFromFile)
         .def("addCube", &PyLink::addCube, return_internal_reference<>())
@@ -350,7 +350,7 @@ BOOST_PYTHON_MODULE( hrpsys )
         .add_property("jointType", &PyLink::getJointType, &PyLink::setJointType)
         ;
 
-    class_<PyShape>("Shape", no_init)
+    class_<PyShape, boost::noncopyable>("Shape", no_init)
         .add_property("b", &PyShape::getRelPosition, &PyShape::setRelPosition)
         .add_property("Rs", &PyShape::getRelRotation, &PyShape::setRelRotation)
         ;

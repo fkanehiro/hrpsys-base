@@ -15,7 +15,6 @@ class BodyRTC : virtual public hrp::Body, public RTC::DataFlowComponentBase
 {
 public:
     BodyRTC(RTC::Manager* manager = &RTC::Manager::instance());
-    BodyRTC(const BodyRTC&);
     virtual ~BodyRTC(void);
 
     RTC::ReturnCode_t onActivated(RTC::UniqueId ec_id){
