@@ -14,7 +14,7 @@ from RTM import *
 from OpenRTM import *
 from _SDOPackage import *
 
-import string, math, socket, time
+import string, math, socket, time, sys
 
 ##
 # \brief root naming context
@@ -681,5 +681,13 @@ def setConfiguration(rtc, nvlist):
 		if not found:
 			print "no such property(",name,")"
 	cfg.activate_configuration_set('default')
+
+##
+# \brief narrow ior
+# \param ior ior
+# \param klass class name 
+# \param package package where the class is defined
+def narrow(ior, klass, package="OpenHRP"):
+	return getattr(sys.modules[package], klass+"Helper").narrow(ior)
 
 initCORBA()

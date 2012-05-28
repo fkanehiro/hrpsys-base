@@ -556,4 +556,12 @@ def setConfiguration(rtc, nvlist):
 				break;
 	cfg.activate_configuration_set('default')
 
+##
+# \brief narrow ior
+# \param ior ior
+# \param klass class name 
+# \param package package where the class is defined
+def narrow(ior, klass, package="OpenHRP"):
+	return ior._narrow(getattr(sys.modules[package], klass))
+
 initCORBA()
