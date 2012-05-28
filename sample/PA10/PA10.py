@@ -2,7 +2,6 @@ import rtm
 
 from rtm import *
 from OpenHRP import *
-from OpenHRP.RobotHardwareServicePackage import *
 
 import waitInput
 from waitInput import *
@@ -30,16 +29,16 @@ def createComps():
 
     ms.load("SequencePlayer")
     seq = ms.create("SequencePlayer", "seq")
-    seq_svc = SequencePlayerServiceHelper.narrow(seq.service("service0"))
+    seq_svc = narrow(seq.service("service0"), "SequencePlayerService")
 
     ms.load("StateHolder")
     sh = ms.create("StateHolder", "StateHolder0")
-    sh_svc = StateHolderServiceHelper.narrow(sh.service("service0"))
-    tk_svc = TimeKeeperServiceHelper.narrow(sh.service("service1"))
+    sh_svc = narrow(sh.service("service0"), "StateHolderService")
+    tk_svc = narrow(sh.service("service1"), "TimeKeeperService")
 
     ms.load("DataLogger")
     log = ms.create("DataLogger", "log")
-    log_svc = DataLoggerServiceHelper.narrow(log.service("service0"))
+    log_svc = narrow(log.service("service0"), "DataLoggerService")
     
 def init():
     global ms, rh, rh_svc, servo, ep_svc, simulation_mode
@@ -50,9 +49,9 @@ def init():
         ms.restart()
 
     rh = rtm.findRTC("RobotHardware0")
-    rh_svc = RobotHardwareServiceHelper.narrow(rh.service("service0"))
+    rh_svc = narrow(rh.service("service0"), "RobotHardwareService")
     servo = rh
-    ep_svc = ExecutionProfileServiceHelper.narrow(rh.ec)
+    ep_svc = narrow(rh.ec, "ExecutionProfileService")
     simulation_mode = 0
 
     ms = rtm.findRTCmanager()
