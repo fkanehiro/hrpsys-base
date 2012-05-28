@@ -152,7 +152,15 @@ void initRTS(Project &prj, std::vector<ClockReceiver>& receivers)
         std::string port2 = it->second;
 
         RTC::RTObject_impl* rtc1 = manager.getComponent(comp1.c_str());
+        if (!rtc1){
+            std::cerr << "can't find a component named " << comp1 << std::endl;
+            return;
+        }
         RTC::RTObject_impl* rtc2 = manager.getComponent(comp2.c_str());
+        if (!rtc2){
+            std::cerr << "can't find a component named " << comp2 << std::endl;
+            return;
+        }
         RTC::PortServiceList_var ports1 = rtc1->get_ports();
         RTC::PortServiceList_var ports2 = rtc2->get_ports();
 
@@ -167,6 +175,7 @@ void initRTS(Project &prj, std::vector<ClockReceiver>& receivers)
         }
         if (!portObj1) {
             std::cerr << "can't find a port named " << port1 << std::endl;
+            return; 
         }
         for(CORBA::ULong i = 0; i < ports2->length(); ++i ){
             RTC::PortProfile_var profile = ports2[i]->get_port_profile();
@@ -178,6 +187,7 @@ void initRTS(Project &prj, std::vector<ClockReceiver>& receivers)
         }
         if (!portObj2) {
             std::cerr << "can't find a port named " << port2 << std::endl;
+            return;
         }
         connectPorts(portObj1, portObj2);
     }
