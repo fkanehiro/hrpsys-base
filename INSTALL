@@ -68,7 +68,7 @@
    a. Get a VRML model from http://unit.aist.go.jp/is/humanoid/hrp-4c/hrp-4c.html
    b. Extract the downloaded zip file at <install prefix>/share/hrpsys/samples
    c. % cd <install prefix>/share/hrpsys/samples/HRP4C
-   d. % hrpsys-simulator-jython HRP4C.xml HRP4C.py
+   d. % hrpsys-simulator-python HRP4C.xml HRP4C.py
 
 3.2.2 (Optional, Section 2.3 and 2.4 are required) with Eclipse
    a. Get a VRML model from http://unit.aist.go.jp/is/humanoid/hrp-4c/hrp-4c.html

@@ -20,7 +20,7 @@ def createComps():
 
     ms.load("SequencePlayer")
     seq = ms.create("SequencePlayer", "seq")
-    seq_svc = SequencePlayerServiceHelper.narrow(seq.service("service0"))
+    seq_svc = narrow(seq.service("service0"),"SequencePlayerService")
 
     hgc = findRTC("HGcontroller0")
 

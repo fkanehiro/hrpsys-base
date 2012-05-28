@@ -1,6 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <grxui>
     <mode name="Simulation">
+        <item class="com.generalrobotix.ui.item.GrxRTSItem" name="untitled" select="true">
+	    <property name="HRP4C(Robot)0.period" value="0.005"/>  
+	    <property name="HGcontroller0.period" value="0.005"/>  
+	    <property name="connection" value="HGcontroller0.qOut:HRP4C(Robot)0.qRef"/>
+	    <property name="connection" value="HGcontroller0.dqOut:HRP4C(Robot)0.dqRef"/>
+	    <property name="connection" value="HGcontroller0.ddqOut:HRP4C(Robot)0.ddqRef"/>
+        </item>
         <item class="com.generalrobotix.ui.item.GrxSimulationItem" name="simulationItem" select="true">
             <property name="integrate" value="true"/>
             <property name="viewsimulate" value="false"/>
@@ -11,6 +18,7 @@
             <property name="method" value="EULER"/>
         </item>
         <item class="com.generalrobotix.ui.item.GrxModelItem" name="HRP4Cmain" select="true" url="$(CURRENT_DIR)/HRP4Cmain.wrl">
+            <property name="rtcName" value="HRP4C(Robot)0"/>
             <property name="NECK_R.angle" value="0.0 "/>
             <property name="R_HAND_J1.mode" value="HighGain"/>
             <property name="NECK_R.mode" value="HighGain"/>
