@@ -47,8 +47,10 @@
 3.1.1 (Recommended) without Eclipse
    a. Open three terminals in <install prefix>/share/hrpsys/samples/PA10
    b. terminal1: % hrpsys-monitor PA10.xml
+      A manipulator PA10 will be displayed
    c. terminal2: % ./hrpsys.sh
    d. terminal3: % hrpsysjy PA10.py
+      PA10 will change its joint angles.
 
 3.1.2 (Optional, Section 2.3 and 2.4 are required) with Eclipse
    a. Launch Eclipse
@@ -66,18 +68,22 @@
 
 3.2.1 (Recommended) without Eclipse
    a. Get a VRML model from http://unit.aist.go.jp/is/humanoid/hrp-4c/hrp-4c.html
-   b. Extract the downloaded zip file at <install prefix>/share/hrpsys/samples
-   c. % cd <install prefix>/share/hrpsys/samples/HRP4C
-   d. % hrpsys-simulator-python HRP4C.xml HRP4C.py
+   b. % cd <install prefix>/share/hrpsys/samples/HRP4C
+   c. % unzip <download>/HRP-4C.zip -d /tmp
+   d. % (sudo) cp -r  /tmp/HRP-4C/* .
+   e. % hrpsys-simulator-python HRP4C.xml HRP4C.py
+      A cybernetic human "HRP-4C" will be displayed and walk.
 
 3.2.2 (Optional, Section 2.3 and 2.4 are required) with Eclipse
    a. Get a VRML model from http://unit.aist.go.jp/is/humanoid/hrp-4c/hrp-4c.html
-   b. Extract the downloaded zip file at <install prefix>/share/hrpsys/samples
-   c. Launch Eclipse
-   d. Open "GrxUI" perspective
-   e. From "GrxUI" menu of Eclipse, load a project file "HRP4C.xml" placed 
+   b. % cd <install prefix>/share/hrpsys/samples/HRP4C
+   c. % unzip <download>/HRP-4C.zip -d /tmp
+   d. % (sudo) cp -r  /tmp/HRP-4C/* .
+   e. Launch Eclipse
+   f. Open "GrxUI" perspective
+   g. From "GrxUI" menu of Eclipse, load a project file "HRP4C.xml" placed 
       under <install prefix>/share/hrpsys/samples/HRP4C. A cybernetic human
       "HRP-4C" will appear in 3DView.
-   f. Start simulation
-   e. Execute a script "HRP4C.py"
+   h. Start simulation
+   i. Execute a script "HRP4C.py"
 
