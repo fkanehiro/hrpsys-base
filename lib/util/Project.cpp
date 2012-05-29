@@ -110,12 +110,18 @@ bool Project::parse(const std::string& filename)
           }
       } else if ( xmlStrEqual( xmlGetProp(node, (xmlChar *)"class"), (xmlChar *)"com.generalrobotix.ui.item.GrxModelItem")  ) {
           //std::cerr << "GrxModelItem name:" << xmlGetProp(node, (xmlChar *)"name") << ", url:" << xmlGetProp(node, (xmlChar *)"url") << std::endl;
-          std::string path = "file://";
-          path += (char *)xmlGetProp(node, (xmlChar *)"url");
+          std::string path = (char *)xmlGetProp(node, (xmlChar *)"url");
           if ( path.find("$(CURRENT_DIR)") != std::string::npos ) {
-              char buf[MAXPATHLEN];
-              getcwd(buf, MAXPATHLEN);
-              path.replace(path.find("$(CURRENT_DIR)"),14, buf);
+              if (filename.find_last_of("/") != std::string::npos){
+                  path.replace(path.find("$(CURRENT_DIR)"),14, 
+                               filename.substr(0, filename.find_last_of("/")));
+              }else{
+                  path.replace(path.find("$(CURRENT_DIR)"),15, ""); 
+              }
+              if (path[0] != '/'){
+                  char buf[MAXPATHLEN];
+                  path = std::string(getcwd(buf, MAXPATHLEN))+"/"+path;
+              }
           }
           if ( path.find("$(PROJECT_DIR)") != std::string::npos ) {
               std::string shdir = OPENHRP_SHARE_DIR;
@@ -123,7 +129,7 @@ bool Project::parse(const std::string& filename)
               path.replace(path.find("$(PROJECT_DIR)"),14, pjdir);
           }
           ModelItem m;
-          m.url = path;
+          m.url = std::string("file://")+path;
           xmlNodePtr cur_node = node->children;
           while ( cur_node ) {
               if ( cur_node->type == XML_ELEMENT_NODE ) {
