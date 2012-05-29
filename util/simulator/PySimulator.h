@@ -33,6 +33,7 @@ public:
     void capture(std::string);
     unsigned int logLength();
     PyObject *bodies();
+    PyBody *body(std::string name);
 private:  
     LogManager<SceneState> log;
     GLscene scene;

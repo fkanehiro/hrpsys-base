@@ -247,7 +247,7 @@ PyObject *PySimulator::bodies()
 {
     boost::python::list retval;
     for (int i=0; i<numBodies(); i++){
-        PyBody *b = dynamic_cast<PyBody *>(body(i).get());
+        PyBody *b = dynamic_cast<PyBody *>(Simulator::body(i).get());
         retval.append(boost::python::ptr(b));
     }
     return boost::python::incref(retval.ptr());
@@ -266,6 +266,11 @@ void PySimulator::capture(std::string fname)
 unsigned int PySimulator::logLength()
 {
     return log.length();
+}
+
+PyBody *PySimulator::body(std::string name)
+{
+    return dynamic_cast<PyBody *>(Simulator::body(name).get());
 }
 
 BOOST_PYTHON_MODULE( hrpsys )
@@ -292,6 +297,7 @@ BOOST_PYTHON_MODULE( hrpsys )
         .def("pause", &PySimulator::pause)
         .def("capture", &PySimulator::capture)
         .def("logLength", &PySimulator::logLength)
+        .def("body", &PySimulator::body, return_internal_reference<>())
         .def("bodies", &PySimulator::bodies)
         .def("initialize", &PySimulator::initialize)
         .add_property("timeStep", 
