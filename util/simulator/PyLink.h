@@ -41,6 +41,8 @@ public:
     void setJointType(std::string type);
     std::string getJointType();
     PyObject *shapes();
+    int getJointId();
+    void setJointId(int id);
 private:
     void notifyChanged();
 };

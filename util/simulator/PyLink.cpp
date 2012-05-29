@@ -304,3 +304,15 @@ PyObject *PyLink::shapes()
     }
     return boost::python::incref(retval.ptr());
 }
+
+int PyLink::getJointId()
+{
+    return jointId; 
+}
+
+void PyLink::setJointId(int id)
+{
+    jointId = id;
+    PyBody *pybody = dynamic_cast<PyBody *>(body);
+    pybody->notifyChanged(PyBody::STRUCTURE);
+}

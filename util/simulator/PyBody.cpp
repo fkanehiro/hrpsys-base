@@ -137,6 +137,7 @@ void PyBody::notifyChanged(int change)
     switch(change){
     case STRUCTURE:
         updateLinkTree();
+        createDataPorts();
         break;
     case KINEMATICS:
         calcForwardKinematics();
