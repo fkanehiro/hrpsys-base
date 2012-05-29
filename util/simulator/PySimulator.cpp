@@ -353,5 +353,6 @@ BOOST_PYTHON_MODULE( hrpsys )
     class_<PyShape, boost::noncopyable>("Shape", no_init)
         .add_property("b", &PyShape::getRelPosition, &PyShape::setRelPosition)
         .add_property("Rs", &PyShape::getRelRotation, &PyShape::setRelRotation)
+        .add_property("diffuse", &PyShape::getDiffuseColor, &PyShape::setDiffuseColor)
         ;
 }

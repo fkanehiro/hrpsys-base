@@ -47,6 +47,23 @@ void PyShape::setRelRotation(PyObject *v)
     GLcoordinates::setRotation(Rs);
 }
 
+PyObject *PyShape::getDiffuseColor()
+{
+    boost::python::list retval;
+    for (int i=0; i<4; i++) retval.append(m_diffuse[i]);
+    return boost::python::incref(retval.ptr());
+}
+
+void PyShape::setDiffuseColor(PyObject *v)
+{
+    if (PySequence_Size(v) != 4) return;
+
+    for (int i=0; i<PySequence_Size(v); i++) {
+        m_diffuse[i] = boost::python::extract<double>(PySequence_GetItem(v, i));
+    }
+    compile();
+}
+
 GLshape *createPyShape()
 {
     return new PyShape();

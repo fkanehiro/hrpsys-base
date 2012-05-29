@@ -11,6 +11,8 @@ public:
     void setRelPosition(PyObject *v);
     PyObject *getRelRotation();
     void setRelRotation(PyObject *v);
+    PyObject *getDiffuseColor();
+    void setDiffuseColor(PyObject *v);
 private:
 };
 
