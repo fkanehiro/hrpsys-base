@@ -118,6 +118,16 @@ void GLshape::compile()
 
 int GLshape::doCompile(bool isWireFrameMode)
 {
+    if (isWireFrameMode){
+        if (m_wireFrameList) glDeleteLists(m_wireFrameList, 1);
+    }else{
+        if (m_texture){
+            if (m_texture->image.size()) glDeleteTextures(1, &m_textureId);
+            delete m_texture;
+        }
+        if (m_shadingList) glDeleteLists(m_shadingList, 1);
+    }
+
     //std::cout << "doCompile" << std::endl;
     int list = glGenLists(1);
     glNewList(list, GL_COMPILE);
