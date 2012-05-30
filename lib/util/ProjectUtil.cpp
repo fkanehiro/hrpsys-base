@@ -142,7 +142,7 @@ void initRTS(Project &prj, std::vector<ClockReceiver>& receivers)
     // make connections
     for (std::vector<std::pair<std::string, std::string> >::iterator it
              = rts.connections.begin(); it != rts.connections.end(); it++){
-        std::cout << "making connections between "
+        std::cout << "making a connection between "
                   << it->first << " and " << it->second << std::endl;
         int pos1 = it->first.find('.');
         std::string comp1 = it->first.substr(0, pos1);
