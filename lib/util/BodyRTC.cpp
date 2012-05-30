@@ -33,6 +33,7 @@ BodyRTC::BodyRTC(RTC::Manager* manager)
       m_dqRefIn("dqRef", m_dqRef),
       m_ddqRefIn("ddqRef", m_ddqRef),
       m_qOut("q", m_q),
+      m_basePoseOut("basePose", m_basePose),
       dummy(0)
 {
     //std::cout << "constructor of BodyRTC"  << std::endl;
@@ -74,6 +75,7 @@ void BodyRTC::createDataPorts()
 
         m_q.data.length(numJoints());
         addOutPort("q", m_qOut);
+        addOutPort("basePose", m_basePoseOut);
     }
 
     int ngyro = numSensors(Sensor::RATE_GYRO);
@@ -124,6 +126,16 @@ void BodyRTC::writeDataPorts()
     }
 
     Link *root = rootLink();
+
+    m_basePose.data.position.x = root->p[0];
+    m_basePose.data.position.y = root->p[1];
+    m_basePose.data.position.z = root->p[2];
+    hrp::Vector3 rpy;
+    rpy = rpyFromRot(root->R);
+    m_basePose.data.orientation.r = rpy[0];
+    m_basePose.data.orientation.p = rpy[1];
+    m_basePose.data.orientation.y = rpy[2];
+    m_basePoseOut.write();
 
     int n = numSensors(Sensor::FORCE);
     for(int id = 0; id < n; ++id){
