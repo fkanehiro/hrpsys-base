@@ -12,7 +12,6 @@ s1.diffuse = [1,0,0,1]
 child = root.addChildLink("child")
 child.b = [0,0.5,0]
 child.jointType = "rotate"
-child.jointId = 0
 child.a = [1,0,0]
 child.m = 1.0
 child.c = [0,0.5,0]
