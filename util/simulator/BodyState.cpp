@@ -9,12 +9,9 @@ void BodyState::set(BodyPtr i_body)
     Link *root = i_body->rootLink();
     p = root->p;
     R = root->attitude();
-    q.resize(i_body->numJoints());
-    for (int i=0; i<i_body->numJoints(); i++){
-        Link *joint =  i_body->joint(i);
-        if (joint){
-            q[i] = joint->q;
-        }
+    q.resize(i_body->numLinks());
+    for (int i=0; i<i_body->numLinks(); i++){
+        q[i] = i_body->link(i)->q;
     }
     int n;
     n = i_body->numSensors(Sensor::FORCE);
@@ -37,5 +34,12 @@ void BodyState::set(BodyPtr i_body)
     for(int id=0; id < n; ++id){
         AccelSensor* sensor = i_body->sensor<AccelSensor>(id);
         setVector3(sensor->dv, acc[id]);
+    }
+
+    n = i_body->numSensors(Sensor::RANGE);
+    range.resize(n);
+    for(int id=0; id < n; ++id){
+        RangeSensor* sensor = i_body->sensor<RangeSensor>(id);
+        range[id] = sensor->distances;
     }
 }

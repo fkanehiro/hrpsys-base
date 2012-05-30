@@ -13,6 +13,7 @@ public:
     std::vector<hrp::Vector3> acc;
     std::vector<hrp::Vector3> rate;
     std::vector<hrp::dvector6, Eigen::aligned_allocator<hrp::dvector6> > force;
+    std::vector<std::vector<double> > range;
 };
 
 #endif

@@ -19,9 +19,8 @@ GLbody::~GLbody(){
 }
 
 void GLbody::setPosture(const double *i_angles){
-    for (unsigned int i=0; i<numJoints(); i++){
-        hrp::Link *j = joint(i);
-        if (j) ((GLlink *)j)->setQ(i_angles[i]);
+    for (unsigned int i=0; i<numLinks(); i++){
+        ((GLlink *)link(i))->setQ(i_angles[i]);
     }
 }
 
