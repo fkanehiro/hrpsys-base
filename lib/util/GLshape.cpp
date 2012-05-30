@@ -173,10 +173,6 @@ int GLshape::doCompile(bool isWireFrameMode)
                 format = GL_RGB;
             }else if (m_texture->numComponents == 4){
                 format = GL_RGBA;
-            }else{
-                std::cerr << "texture image which has "
-                          << m_texture->numComponents << " is not supported"
-                          << std::endl;
             }
             glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
             gluBuild2DMipmaps(GL_TEXTURE_2D, 3, 

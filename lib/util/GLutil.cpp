@@ -185,16 +185,25 @@ void mulTrans(const double i_m1[16], const double i_m2[16], double o_m[16])
     }
 }
 
-void loadTextureFromTextureInfo(GLtexture *texture, TextureInfo &ti)
+bool loadTextureFromTextureInfo(GLtexture *texture, TextureInfo &ti)
 {
     texture->repeatS = ti.repeatS;
     texture->repeatT = ti.repeatT;
     texture->numComponents = ti.numComponents;
+    if (texture->numComponents != 3 && texture->numComponents != 4){
+        std::cerr << "texture image which has "
+                  << texture->numComponents 
+                  << " components is not supported"
+                  << std::endl;
+        std::cerr << "url = " << texture->url << std::endl;
+        return false;
+    }
     texture->url = ti.url;
     texture->width = ti.width;
     texture->height = ti.height;
     texture->image.resize(ti.image.length());
     memcpy(&texture->image[0], ti.image.get_buffer(), ti.image.length());
+    return true;
 }
 
 void loadShape(GLshape *shape, 
@@ -224,8 +233,11 @@ void loadShape(GLshape *shape,
         }else{
             TextureInfo &ti = (*i_ssinfo->textures())[ai.textureIndex];
             GLtexture *texture = new GLtexture();
-            loadTextureFromTextureInfo(texture, ti);
-            shape->setTexture(texture);
+            if (loadTextureFromTextureInfo(texture, ti)){
+                shape->setTexture(texture);
+            }else{
+                delete texture;
+            }
         }
     }
     if (ai.colors.length()){
