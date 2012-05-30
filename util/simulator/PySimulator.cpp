@@ -47,7 +47,13 @@ hrp::BodyPtr createBody(const std::string& name, const ModelItem& mitem,
         mlopt.AABBdata[i++] = 1;
     }
     //BodyInfo_var binfo = modelloader->getBodyInfoEx(mitem.url.c_str(), mlopt);
-    BodyInfo_var binfo = modelloader->getBodyInfo(mitem.url.c_str());
+    BodyInfo_var binfo;
+    try{
+        binfo = modelloader->getBodyInfo(mitem.url.c_str());
+    }catch(OpenHRP::ModelLoader::ModelLoaderException ex){
+        std::cerr << ex.description << std::endl;
+        return hrp::BodyPtr();
+    }
     if (!loadBodyFromBodyInfo(body, binfo, true, GLlinkFactory)){
         std::cerr << "failed to load model[" << mitem.url << "]" << std::endl;
         manager.deleteComponent(pybody);
@@ -125,8 +131,13 @@ PyBody* PySimulator::loadBody(std::string name, std::string url){
     RTC::CorbaNaming naming(manager->getORB(), nameServer.c_str());
     
     ModelLoader_var modelloader = getModelLoader(CosNaming::NamingContext::_duplicate(naming.getRootContext()));
-    OpenHRP::BodyInfo_var binfo
-        = modelloader->loadBodyInfo(url.c_str());
+    OpenHRP::BodyInfo_var binfo;
+    try{
+        binfo = modelloader->loadBodyInfo(url.c_str());
+    }catch(OpenHRP::ModelLoader::ModelLoaderException ex){
+        std::cerr << ex.description << std::endl;
+        return NULL;
+    }
     std::string args = "PyBody?instance_name="+name;
     PyBody *pybody = (PyBody *)manager->createComponent(args.c_str());
     pybody->setListener(this);
