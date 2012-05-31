@@ -351,6 +351,27 @@ void loadShapeFromLinkInfo(GLlink *link, const LinkInfo &i_li, ShapeSetInfo_ptr 
         if (type == "Vision"){
             //std::cout << si.name << std::endl;
             link->addCamera(new GLcamera(si,i_ssinfo, link));
+        }else{
+            Vector3 p;
+            p[0] = si.translation[0];
+            p[1] = si.translation[1];
+            p[2] = si.translation[2];
+            Matrix33 R;
+            Vector3 axis;
+            axis[0] = si.rotation[0];
+            axis[1] = si.rotation[1];
+            axis[2] = si.rotation[2];
+            hrp::calcRodrigues(R, axis, si.rotation[3]);
+    
+            for (size_t i=0; i<si.shapeIndices.length(); i++){
+                GLshape *shape = shapeFactory ? shapeFactory() : new GLshape();
+                loadShape(shape, i_ssinfo, si.shapeIndices[i]);
+                Vector3 newp = R*shape->getPosition()+p;
+                shape->setPosition(newp[0], newp[1], newp[2]);
+                Matrix33 newR = R*shape->getRotation();
+                shape->setRotation(newR);
+                link->addShape(shape);
+            }
         }
     }
 }
