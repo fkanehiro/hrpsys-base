@@ -11,6 +11,7 @@ private:
     void drawAdditionalLines();
     void showStatus();
     void updateScene();
+    void drawSensorOutput(hrp::Body *i_body, hrp::Sensor *i_sensor);
 };
 
 #endif

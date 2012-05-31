@@ -4,7 +4,10 @@
 #else
 #include <GL/gl.h>
 #endif
+#include <hrpModel/Body.h>
+#include <hrpModel/Sensor.h>
 #include "GLutil.h"
+#include "GLbody.h"
 #include "GLcamera.h"
 #include "GLlink.h"
 #include "GLshape.h"
@@ -49,6 +52,24 @@ void GLlink::draw(){
     }
     for (size_t i=0; i<m_cameras.size(); i++){
         m_cameras[i]->draw();
+    }
+    for (size_t i=0; i<sensors.size(); i++){
+        Sensor *s = sensors[i];
+        if (s->type == Sensor::RANGE){
+            double T[16];
+            for (int i=0; i<3; i++){
+                for (int j=0; j<3; j++){
+                    T[i*4+j] = s->localR(j,i);
+                }
+            }
+            T[12] = s->localPos[0]; T[13] = s->localPos[1]; T[14] = s->localPos[2];
+            T[3] = T[7] = T[11] = 0.0; T[15] = 1.0;
+            glPushMatrix();
+            glMultMatrixd(T);
+            GLbody *glb = dynamic_cast<GLbody *>(body);
+            glb->drawSensor(s);
+            glPopMatrix();
+        }
     }
     if (m_showAxes){
         glDisable(GL_LIGHTING);

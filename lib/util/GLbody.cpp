@@ -74,3 +74,12 @@ GLcamera *GLbody::findCamera(const char *i_name){
     return NULL;
 }
 
+void GLbody::drawSensor(Sensor *sensor)
+{
+    if (m_sensorDrawCallback) m_sensorDrawCallback(this, sensor);
+}
+
+void GLbody::setSensorDrawCallback(boost::function2<void, hrp::Body *, hrp::Sensor *> f)
+{
+    m_sensorDrawCallback = f;
+}

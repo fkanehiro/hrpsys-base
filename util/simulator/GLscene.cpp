@@ -7,6 +7,8 @@
 #else
 #include <GL/glut.h>
 #endif
+#include <boost/bind.hpp>
+#include <hrpModel/Sensor.h>
 #include "util/GLcamera.h"
 #include "util/GLlink.h"
 #include "util/GLbody.h"
@@ -29,6 +31,8 @@ void GLscene::updateScene()
         const BodyState& bstate = state.bodyStates[i];
         GLbody *glbody = dynamic_cast<GLbody *>(body(i).get());
         glbody->setPosture(bstate.q, bstate.p, bstate.R);
+        glbody->setSensorDrawCallback(boost::bind(&GLscene::drawSensorOutput,
+                                                  this, _1, _2));
     }
 }
 
@@ -146,4 +150,36 @@ void GLscene::showStatus()
     }
 }
 
+
+void GLscene::drawSensorOutput(Body *body, Sensor *sensor)
+{
+    if (m_log->index()<0) return;
+
+    LogManager<SceneState> *lm 
+        = (LogManager<SceneState> *)m_log;
+    SceneState &sstate = lm->state();
+    const BodyState &state = sstate.bodyStates[bodyIndex(body->name())];
+
+    if (sensor->type == Sensor::RANGE){
+        RangeSensor *range = dynamic_cast<RangeSensor *>(sensor);
+        const std::vector<double> distances = state.range[sensor->id];
+        if (distances.empty()) return;
+        int scan_half = (int)(range->scanAngle/2/range->scanStep);
+        double th;
+        Vector3 v;
+        v[1] = 0.0;
+        glDisable(GL_LIGHTING);
+        glBegin(GL_LINES);
+        glColor3f(1,0,0);
+        for (int i = -scan_half,j=0; i<= scan_half; i++,j++){
+            th = i*range->scanStep;
+            double d = distances[j] ? distances[j] : range->maxDistance;
+            v[0] = -d*sin(th); 
+            v[2] = -d*cos(th); 
+            glVertex3f(0,0,0); glVertex3f(v[0], v[1], v[2]);
+        }
+        glEnd();
+        glEnable(GL_LIGHTING);
+    }
+}
 
