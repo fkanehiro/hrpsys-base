@@ -33,6 +33,7 @@ BodyRTC::BodyRTC(RTC::Manager* manager)
       m_dqRefIn("dqRef", m_dqRef),
       m_ddqRefIn("ddqRef", m_ddqRef),
       m_qOut("q", m_q),
+      m_dqOut("dq", m_dq),
       m_basePoseOut("basePose", m_basePose),
       dummy(0)
 {
@@ -74,7 +75,9 @@ void BodyRTC::createDataPorts()
         }
 
         m_q.data.length(numJoints());
+        m_dq.data.length(numJoints());
         addOutPort("q", m_qOut);
+        addOutPort("dq", m_dqOut);
         addOutPort("basePose", m_basePoseOut);
     }
 
@@ -120,9 +123,11 @@ void BodyRTC::writeDataPorts()
             Link *l = joint(i);
             if (l){
                 m_q.data[l->jointId] = l->q;
+                m_dq.data[l->jointId] = l->dq;
             }
         }
         m_qOut.write();
+        m_dqOut.write();
     }
 
     Link *root = rootLink();

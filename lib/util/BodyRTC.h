@@ -41,13 +41,13 @@ private:
     RTC::InPort<RTC::TimedDoubleSeq> m_qRefIn, m_dqRefIn, m_ddqRefIn;
 
     // DataOutPort
-    RTC::TimedDoubleSeq m_q;
+    RTC::TimedDoubleSeq m_q, m_dq;
     RTC::TimedPose3D m_basePose;
     std::vector<RTC::TimedAcceleration3D> m_acc;
     std::vector<RTC::TimedAngularVelocity3D> m_rate;
     std::vector<RTC::TimedDoubleSeq> m_force;
 
-    RTC::OutPort<RTC::TimedDoubleSeq> m_qOut;
+    RTC::OutPort<RTC::TimedDoubleSeq> m_qOut, m_dqOut;
     RTC::OutPort<RTC::TimedPose3D> m_basePoseOut;
     std::vector<RTC::OutPort<RTC::TimedAcceleration3D> *> m_accOut;
     std::vector<RTC::OutPort<RTC::TimedAngularVelocity3D> *> m_rateOut;
