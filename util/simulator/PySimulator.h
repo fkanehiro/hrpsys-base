@@ -34,6 +34,8 @@ public:
     unsigned int logLength();
     PyObject *bodies();
     PyBody *getBody(std::string name);
+    bool showSensors();
+    void setShowSensors(bool flag);
 private:  
     LogManager<SceneState> log;
     GLscene scene;

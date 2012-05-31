@@ -19,6 +19,12 @@
 using namespace OpenHRP;
 using namespace hrp;
 
+GLscene::GLscene(LogManagerBase *i_log) : 
+    GLsceneBase(i_log), 
+    m_showSensors(false)
+{
+}
+
 void GLscene::updateScene()
 { 
     if (m_log->index()<0) return;
@@ -31,8 +37,12 @@ void GLscene::updateScene()
         const BodyState& bstate = state.bodyStates[i];
         GLbody *glbody = dynamic_cast<GLbody *>(body(i).get());
         glbody->setPosture(bstate.q, bstate.p, bstate.R);
-        glbody->setSensorDrawCallback(boost::bind(&GLscene::drawSensorOutput,
-                                                  this, _1, _2));
+        if (m_showSensors){
+            glbody->setSensorDrawCallback(
+                boost::bind(&GLscene::drawSensorOutput, this, _1, _2));
+        }else{
+            glbody->setSensorDrawCallback(NULL);
+        }
     }
 }
 
@@ -180,6 +190,37 @@ void GLscene::drawSensorOutput(Body *body, Sensor *sensor)
         }
         glEnd();
         glEnable(GL_LIGHTING);
+    }else if(sensor->type == Sensor::VISION){
+        VisionSensor *v = dynamic_cast<VisionSensor *>(sensor);
+        double far = v->far, near = v->near;
+        glDisable(GL_LIGHTING);
+        glBegin(GL_LINES);
+        double t = tan(v->fovy/2);
+        double xf = t*far*v->width/v->height, yf = t*far;
+        glVertex3f( xf,  yf, -far); glVertex3f(-xf,  yf, -far);
+        glVertex3f(-xf,  yf, -far); glVertex3f(-xf, -yf, -far);
+        glVertex3f(-xf, -yf, -far); glVertex3f( xf, -yf, -far);
+        glVertex3f( xf, -yf, -far); glVertex3f( xf,  yf, -far); 
+        double xn = t*near*v->width/v->height, yn = t*near;
+        glVertex3f( xn,  yn, -near); glVertex3f(-xn,  yn, -near);
+        glVertex3f(-xn,  yn, -near); glVertex3f(-xn, -yn, -near);
+        glVertex3f(-xn, -yn, -near); glVertex3f( xn, -yn, -near);
+        glVertex3f( xn, -yn, -near); glVertex3f( xn,  yn, -near);
+        glVertex3f( xn,  yn, -near); glVertex3f( xf,  yf, -far);
+        glVertex3f(-xn,  yn, -near); glVertex3f(-xf,  yf, -far);
+        glVertex3f(-xn, -yn, -near); glVertex3f(-xf, -yf, -far);
+        glVertex3f( xn, -yn, -near); glVertex3f( xf, -yf, -far);
+        glEnd();
+        glEnable(GL_LIGHTING);
     }
 }
 
+void GLscene::showSensors(bool flag)
+{
+    m_showSensors = flag;
+}
+
+bool GLscene::showSensors()
+{
+    return m_showSensors;
+}

@@ -64,6 +64,7 @@ hrp::BodyPtr createBody(const std::string& name, const ModelItem& mitem,
 int main(int argc, char* argv[]) 
 {
     bool display = true, realtime=false, usebbox=false, endless=false;
+    bool showsensors = false;
     for (int i=0; i<argc; i++){
         if (strcmp("-nodisplay",argv[i])==0){
             display = false;
@@ -73,6 +74,8 @@ int main(int argc, char* argv[])
             usebbox = true;
         }else if(strcmp("-endless", argv[i])==0){
             endless = true;
+        }else if(strcmp("-showsensors", argv[i])==0){
+            showsensors = true;
         }
     }
 
@@ -91,6 +94,7 @@ int main(int argc, char* argv[])
             && strcmp(argv[i], "-realtime")
             && strcmp(argv[i], "-usebbox")
             && strcmp(argv[i], "-endless")
+            && strcmp(argv[i], "-showsensors")
             ){
             rtmargv.push_back(argv[i]);
             rtmargc++;
@@ -114,6 +118,7 @@ int main(int argc, char* argv[])
     //==================== Viewer setup ===============
     LogManager<SceneState> log;
     GLscene scene(&log);
+    scene.showSensors(showsensors);
     Simulator simulator(&log);
 
     SDLwindow window(&scene, &log, &simulator);

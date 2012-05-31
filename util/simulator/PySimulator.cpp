@@ -66,6 +66,7 @@ hrp::BodyPtr createBody(const std::string& name, const ModelItem& mitem,
         }
         pybody->createDataPorts();
         loadShapeFromBodyInfo(pybody, binfo, createPyShape);
+        body->setName(name);
         scene->addBody(body);
         return body;
     }
@@ -288,6 +289,16 @@ PyBody *PySimulator::getBody(std::string name)
     return dynamic_cast<PyBody *>(body(name).get());
 }
 
+bool PySimulator::showSensors()
+{
+    return scene.showSensors();
+}
+
+void PySimulator::setShowSensors(bool flag)
+{
+    scene.showSensors(flag);
+}
+
 BOOST_PYTHON_MODULE( hrpsys )
 {
     using namespace boost::python;
@@ -320,6 +331,8 @@ BOOST_PYTHON_MODULE( hrpsys )
         .add_property("time", &PySimulator::currentTime)
         .add_property("totalTime", 
                       &PySimulator::totalTime, &PySimulator::setTotalTime)
+        .add_property("showSensors", 
+                      &PySimulator::showSensors, &PySimulator::setShowSensors)
         ;
 
     class_<PyBody, boost::noncopyable>("Body", no_init)
