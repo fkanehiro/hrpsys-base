@@ -23,8 +23,20 @@ else:
 	script = None
 
     sim = hrpsys.Simulator()
-    sim.initViewer()
+    nodisplay = False
+    usebbox = False
+    for arg in sys.argv:
+        if arg == "realtime":
+            sim.realTime(True)
+        elif arg == "endless":
+            sim.endless(True)
+        elif arg == "nodisplay":
+            nodisplay = True
+        elif arg == "showsensors":
+            sim.showSensors = True
     sim.loadProject(project)
+    if not nodisplay:
+        sim.initViewer()
     sim.start(sim.totalTime)
 
     if script != None:

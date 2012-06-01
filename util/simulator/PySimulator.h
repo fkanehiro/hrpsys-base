@@ -23,7 +23,6 @@ public:
     void simulate();
     void simulate(double time);
     void start(double time);
-    void realTime(bool flag);
     void endless(bool flag);
     void clear();
     void play();

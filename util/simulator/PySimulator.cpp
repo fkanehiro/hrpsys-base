@@ -206,11 +206,6 @@ void PySimulator::start(double time)
     Simulator::start();
 }
 
-void PySimulator::realTime(bool flag)
-{
-    realTime(flag);
-} 
-
 void PySimulator::endless(bool flag)
 {
     if (flag){
