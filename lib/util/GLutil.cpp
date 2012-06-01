@@ -187,17 +187,19 @@ void mulTrans(const double i_m1[16], const double i_m2[16], double o_m[16])
 
 bool loadTextureFromTextureInfo(GLtexture *texture, TextureInfo &ti)
 {
+    if (ti.image.length() == 0){
+        std::cerr << "texture image is not loaded(" << ti.url << std::endl;
+        return false;
+    }else if (ti.numComponents != 3 && ti.numComponents != 4){
+        std::cerr << "texture image which has "
+                  << ti.numComponents 
+                  << " components is not supported(" << ti.url << ")"
+                  << std::endl;
+        return false;
+    }
     texture->repeatS = ti.repeatS;
     texture->repeatT = ti.repeatT;
     texture->numComponents = ti.numComponents;
-    if (texture->numComponents != 3 && texture->numComponents != 4){
-        std::cerr << "texture image which has "
-                  << texture->numComponents 
-                  << " components is not supported"
-                  << std::endl;
-        std::cerr << "url = " << texture->url << std::endl;
-        return false;
-    }
     texture->url = ti.url;
     texture->width = ti.width;
     texture->height = ti.height;
