@@ -10,6 +10,7 @@ set(sources
   GLlink.cpp
   GLbody.cpp
   GLsceneBase.cpp
+  GLbodyRTC.cpp
   SDLUtil.cpp
   BodyRTC.cpp
   BVutil.cpp
