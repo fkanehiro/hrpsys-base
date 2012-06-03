@@ -35,11 +35,14 @@ public:
     PyBody *getBody(std::string name);
     bool showSensors();
     void setShowSensors(bool flag);
+    void reset();
+    void setUseBBox(bool flag);
 private:  
     LogManager<SceneState> log;
     GLscene scene;
     SDLwindow window;
     RTC::Manager* manager;
+    bool useBBox;
 };
 
 #endif

@@ -18,6 +18,7 @@
 #include "util/GLutil.h"
 #include "util/Project.h"
 #include "util/OpenRTMUtil.h"
+#include "util/BVutil.h"
 #include "PyBody.h"
 #include "PyLink.h"
 #include "PyShape.h"
@@ -29,24 +30,14 @@ using namespace OpenHRP;
 
 static hrp::Link *createLink() { return new PyLink(); }
 hrp::BodyPtr createBody(const std::string& name, const ModelItem& mitem,
-                        ModelLoader_ptr modelloader, GLscene *scene)
+                        ModelLoader_ptr modelloader, GLscene *scene,
+                        bool usebbox)
 {
     std::cout << "createBody(" << name << "," << mitem.url << ")" << std::endl;
     RTC::Manager& manager = RTC::Manager::instance();
     std::string args = "PyBody?instance_name="+name;
     PyBody *pybody = (PyBody *)manager.createComponent(args.c_str());
     hrp::BodyPtr body = hrp::BodyPtr(pybody);
-    ModelLoader::ModelLoadOption mlopt;
-    mlopt.readImage = false;
-    mlopt.AABBtype = OpenHRP::ModelLoader::AABB_NUM;
-    mlopt.AABBdata.length(mitem.joint.size());
-     std::map<std::string, JointItem>::const_iterator it;
-    int i=0;
-    for (it = mitem.joint.begin(); it != mitem.joint.end(); it++){
-        //mlopt.AABBdata[i++] = it->second.NumOfAABB;
-        mlopt.AABBdata[i++] = 1;
-    }
-    //BodyInfo_var binfo = modelloader->getBodyInfoEx(mitem.url.c_str(), mlopt);
     BodyInfo_var binfo;
     try{
         binfo = modelloader->getBodyInfo(mitem.url.c_str());
@@ -59,6 +50,7 @@ hrp::BodyPtr createBody(const std::string& name, const ModelItem& mitem,
         manager.deleteComponent(pybody);
         return hrp::BodyPtr();
     }else{
+        if (usebbox) convertToAABB(body);
         for (std::map<std::string, JointItem>::const_iterator it2=mitem.joint.begin();
              it2 != mitem.joint.end(); it2++){
             hrp::Link *link = body->link(it2->first);
@@ -73,13 +65,15 @@ hrp::BodyPtr createBody(const std::string& name, const ModelItem& mitem,
 }
 
 PySimulator::PySimulator() : 
-    manager(NULL), Simulator(&log), scene(&log), window(&scene, &log, this)
+    manager(NULL), Simulator(&log), scene(&log), window(&scene, &log, this),
+    useBBox(false)
 {
     initRTCmanager();
 }
 
 PySimulator::PySimulator(PyObject *pyo) : 
-    manager(NULL), Simulator(&log), scene(&log), window(&scene, &log, this)
+    manager(NULL), Simulator(&log), scene(&log), window(&scene, &log, this),
+    useBBox(false)
 {
     initRTCmanager(pyo);
 }
@@ -148,6 +142,7 @@ PyBody* PySimulator::loadBody(std::string name, std::string url){
         manager->deleteComponent(pybody);
         return NULL;
     }else{
+        if (useBBox) convertToAABB(body);
         pybody->createDataPorts();
         body->setName(name);
         addBody(body);
@@ -178,7 +173,7 @@ void PySimulator::loadProject(std::string fname){
     ModelLoader_var modelloader = getModelLoader(CosNaming::NamingContext::_duplicate(naming.getRootContext()));
     //================= setup Simulator ======================
     BodyFactory factory = boost::bind(::createBody, _1, _2, modelloader, 
-                                      &scene);
+                                      &scene, useBBox);
     init(prj, factory);
     for (int i=0; i<numBodies(); i++){
         PyBody *pybody = dynamic_cast<PyBody *>(body(i).get());
@@ -294,6 +289,22 @@ void PySimulator::setShowSensors(bool flag)
     scene.showSensors(flag);
 }
 
+void PySimulator::reset()
+{
+    log.clear();
+    setCurrentTime(0.0);
+    for (int i=0; i<numBodies(); i++){
+        body(i)->initializeConfiguration();
+    }
+    checkCollision();
+    appendLog();
+}
+
+void PySimulator::setUseBBox(bool flag)
+{
+    useBBox = flag;
+}
+
 BOOST_PYTHON_MODULE( hrpsys )
 {
     using namespace boost::python;
@@ -309,11 +320,13 @@ BOOST_PYTHON_MODULE( hrpsys )
         .def("simulate", (void(PySimulator::*)())&PySimulator::simulate)
         .def("simulate", (void(PySimulator::*)(double))&PySimulator::simulate)
         .def("realTime", &PySimulator::realTime)
+        .def("useBBox", &PySimulator::setUseBBox)
         .def("endless", &PySimulator::endless)
         .def("start", &PySimulator::start)
         .def("stop", &PySimulator::stop)
         .def("wait", &PySimulator::wait)
         .def("clear", &PySimulator::clear)
+        .def("reset", &PySimulator::reset)
         .def("play", &PySimulator::play)
         .def("pause", &PySimulator::pause)
         .def("capture", &PySimulator::capture)
