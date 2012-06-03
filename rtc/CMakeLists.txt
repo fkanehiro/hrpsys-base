@@ -47,8 +47,7 @@ endif()
 pkg_check_modules(OCTOMAP octomap)
 pkg_check_modules(RTCPCL rtcpcl)
 
-find_package(QuickHull)
-if (QHULL_FOUND AND IRRLICHT_FOUND)
+if (IRRLICHT_FOUND)
   add_subdirectory(CollisionDetector)
 endif()
 

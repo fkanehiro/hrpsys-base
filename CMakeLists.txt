@@ -102,6 +102,7 @@ if (NOT OpenCV_FOUND)
   endif()
 endif()
 find_package(GLUT REQUIRED)
+find_package(QuickHull REQUIRED)
 
 configure_file(hrpsys-base.pc.in ${CMAKE_CURRENT_BINARY_DIR}/hrpsys-base.pc @ONLY)
 install(FILES

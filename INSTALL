@@ -5,6 +5,7 @@
    *libxml2(apt-get install libxml2-dev)
    *SDL(apt-get install libsdl1.2-dev)
    *OpenCV(apt-get install libcv-dev libcvaux-dev libhighgui-dev)
+   *QuickHull(apt-get install libqhull-dev)
    *(Optional)Octomap(http://octomap.sourceforge.net/)
    *(Optional)Irrlicht(apt-get install libirrlicht-dev)
    *(Optional)rtcpcl(https://github.com/gbiggs/rtcpcl)

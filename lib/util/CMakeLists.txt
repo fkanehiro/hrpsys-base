@@ -12,6 +12,7 @@ set(sources
   GLsceneBase.cpp
   SDLUtil.cpp
   BodyRTC.cpp
+  BVutil.cpp
   )
 
 set(headers
@@ -45,6 +46,7 @@ target_link_libraries(hrpsysUtil
   ${OpenCV_LIBRARIES} 
   ${SDL_LIBRARY} 
   ${GLUT_LIBRARIES} 
+  ${QHULL_LIBRARIES}
   )
 
 set(target hrpsysUtil)
