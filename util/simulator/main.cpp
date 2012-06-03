@@ -10,13 +10,13 @@
 #include <GL/glut.h>
 #endif
 #include <SDL_thread.h>
-#include "util/GLbody.h"
+#include "util/GLbodyRTC.h"
 #include "util/GLlink.h"
 #include "util/GLutil.h"
 #include "util/Project.h"
 #include "util/OpenRTMUtil.h"
 #include "util/SDLUtil.h"
-#include "util/BodyRTC.h"
+#include "util/BVutil.h"
 #include "Simulator.h"
 #include "GLscene.h"
 
@@ -25,38 +25,36 @@ using namespace hrp;
 using namespace OpenHRP;
 
 hrp::BodyPtr createBody(const std::string& name, const ModelItem& mitem,
-                        ModelLoader_ptr modelloader, bool usebbox)
+                        ModelLoader_ptr modelloader, GLscene *scene,
+                        bool usebbox)
 {
     std::cout << "createBody(" << name << "," << mitem.url << ")" << std::endl;
     RTC::Manager& manager = RTC::Manager::instance();
-    std::string args = "BodyRTC?instance_name="+name;
-    BodyRTCPtr body = (BodyRTC *)manager.createComponent(args.c_str());
+    std::string args = "GLbodyRTC?instance_name="+name;
+    GLbodyRTC *glbodyrtc = (GLbodyRTC *)manager.createComponent(args.c_str());
+    hrp::BodyPtr body = hrp::BodyPtr(glbodyrtc);
     BodyInfo_var binfo;
-    if (usebbox){
-        ModelLoader::ModelLoadOption mlopt;
-        mlopt.readImage = false;
-        mlopt.AABBtype = OpenHRP::ModelLoader::AABB_NUM;
-        mlopt.AABBdata.length(mitem.joint.size());
-        std::map<std::string, JointItem>::const_iterator it;
-        int i=0;
-        for (it = mitem.joint.begin(); it != mitem.joint.end(); it++){
-            mlopt.AABBdata[i++] = 1;
-        }
-        binfo = modelloader->getBodyInfoEx(mitem.url.c_str(), mlopt);
-    }else{
+    try{
         binfo = modelloader->getBodyInfo(mitem.url.c_str());
+    }catch(OpenHRP::ModelLoader::ModelLoaderException ex){
+        std::cerr << ex.description << std::endl;
+        return hrp::BodyPtr();
     }
-    if (!loadBodyFromBodyInfo(body, binfo, true)){
+    if (!loadBodyFromBodyInfo(body, binfo, true, GLlinkFactory)){
         std::cerr << "failed to load model[" << mitem.url << "]" << std::endl;
-        manager.deleteComponent(body.get());
+        manager.deleteComponent(glbodyrtc);
         return hrp::BodyPtr();
     }else{
+        if (usebbox) convertToAABB(body);
         for (std::map<std::string, JointItem>::const_iterator it2=mitem.joint.begin();
              it2 != mitem.joint.end(); it2++){
             hrp::Link *link = body->link(it2->first);
             if (link) link->isHighGainMode = it2->second.isHighGain;
         }
-        body->createDataPorts();
+        glbodyrtc->createDataPorts();
+        loadShapeFromBodyInfo(glbodyrtc, binfo);
+        body->setName(name);
+        scene->addBody(body);
         return body;
     }
 }
@@ -102,7 +100,7 @@ int main(int argc, char* argv[])
     }
     manager = RTC::Manager::init(rtmargc, rtmargv.data());
     manager->init(rtmargc, rtmargv.data());
-    BodyRTC::moduleInit(manager);
+    GLbodyRTC::moduleInit(manager);
     manager->activateManager();
     manager->runManager(true);
 
@@ -122,27 +120,10 @@ int main(int argc, char* argv[])
     Simulator simulator(&log);
 
     SDLwindow window(&scene, &log, &simulator);
-    if (display){
-        window.init();
-        for (std::map<std::string, ModelItem>::iterator it=prj.models().begin();
-             it != prj.models().end(); it++){
-            OpenHRP::ModelLoader::ModelLoadOption opt;
-            opt.readImage = true;
-            opt.AABBdata.length(0);
-            opt.AABBtype = OpenHRP::ModelLoader::AABB_NUM;
-            OpenHRP::BodyInfo_var binfo
-                = modelloader->loadBodyInfoEx(it->second.url.c_str(), opt);
-            GLbody *glbody = new GLbody();
-            hrp::BodyPtr body(glbody);
-            hrp::loadBodyFromBodyInfo(body, binfo, false, GLlinkFactory);
-            loadShapeFromBodyInfo(glbody, binfo);
-            body->setName(it->first);
-            scene.WorldBase::addBody(body);
-        }
-    }
+    if (display) window.init();
 
     //================= setup Simulator ======================
-    BodyFactory factory = boost::bind(createBody, _1, _2, modelloader,usebbox);
+    BodyFactory factory = boost::bind(createBody, _1, _2, modelloader, &scene, usebbox);
     simulator.init(prj, factory);
     simulator.realTime(realtime);
     if (endless){
