@@ -37,6 +37,11 @@ void Simulator::appendLog()
     }
 }
 
+void Simulator::checkCollision()
+{
+    checkCollision(state.collisions);
+}
+
 void Simulator::checkCollision(OpenHRP::CollisionSequence &collisions)
 {
     for (int i=0; i<numBodies(); i++){

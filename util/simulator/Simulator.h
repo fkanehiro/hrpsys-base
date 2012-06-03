@@ -19,6 +19,7 @@ public:
     void init(Project &prj, BodyFactory &factory);
     bool oneStep();
     void checkCollision(OpenHRP::CollisionSequence &collisions);
+    void checkCollision();
     void realTime(bool flag) { adjustTime = flag; }
     void setTotalTime(double time) { m_totalTime = time; }
     double totalTime() { return m_totalTime; }
