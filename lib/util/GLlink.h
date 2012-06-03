@@ -17,6 +17,8 @@ class GLshape;
 class GLlink : public hrp::Link, public GLcoordinates
 {
 public:
+    enum {DM_SOLID, DM_WIREFRAME, DM_COLLISION, DM_NUM};
+
     GLlink();
     ~GLlink();
     void draw();
@@ -32,9 +34,11 @@ public:
     void showAxes(bool flag);
     const std::vector<GLcamera *>& cameras();
     static void useAbsTransformToDraw();
-
+    static int drawMode();
+    static void drawMode(int i_mode);
 protected:
     static bool m_useAbsTransformToDraw;
+    static int m_drawMode;
     std::vector<GLcamera *> m_cameras;
     double m_T_j[16], m_absTrans[16];
     std::vector<GLshape *> m_shapes;

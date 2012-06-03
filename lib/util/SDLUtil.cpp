@@ -11,7 +11,7 @@
 #include "util/LogManagerBase.h"
 #include "util/GLsceneBase.h"
 #include "util/GLcamera.h"
-#include "util/GLshape.h"
+#include "util/GLlink.h"
 #include "SDLUtil.h"
 
 SDLwindow::SDLwindow(GLsceneBase* i_scene, LogManagerBase *i_log,
@@ -31,7 +31,7 @@ SDLwindow::SDLwindow(GLsceneBase* i_scene, LogManagerBase *i_log,
     instructions.push_back("s: slower");
     instructions.push_back("r: record movie");
     instructions.push_back("t: toggle robot state");
-    instructions.push_back("w: toggle wire frame mode");
+    instructions.push_back("d: rotate draw mode");
     instructions.push_back("n: select next camera");
     instructions.push_back("c: clear scene");
     if (throbj){
@@ -133,9 +133,13 @@ bool SDLwindow::processEvents()
             case SDLK_r:
                 log->record();
                 break;
-            case SDLK_w:
-                GLshape::wireFrameMode(!GLshape::isWireFrameMode());
+            case SDLK_d:
+            {
+                int drawMode = GLlink::drawMode()+1;
+                if (drawMode == GLlink::DM_NUM) drawMode=0;
+                GLlink::drawMode(drawMode);
                 break;
+            }
             case SDLK_n:
                 scene->nextCamera();
                 break;

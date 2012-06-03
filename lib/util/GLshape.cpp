@@ -5,10 +5,9 @@
 #include <GL/glu.h>
 #endif
 #include "GLutil.h"
+#include "GLlink.h"
 #include "GLshape.h"
 #include "GLtexture.h"
-
-bool GLshape::m_wireFrameMode = false;
 
 GLshape::GLshape() : m_texture(NULL), m_requestCompile(false), m_shininess(0.2), m_shadingList(0), m_wireFrameList(0)
 {
@@ -27,7 +26,7 @@ GLshape::~GLshape()
     if (m_wireFrameList) glDeleteLists(m_wireFrameList, 1);
 }
 
-void GLshape::draw()
+void GLshape::draw(int i_mode)
 {
     glPushMatrix();
     glMultMatrixd(m_trans);
@@ -36,7 +35,7 @@ void GLshape::draw()
         m_wireFrameList = doCompile(true);
         m_requestCompile = false;
     } 
-    glCallList(m_wireFrameMode ? m_wireFrameList : m_shadingList);
+    glCallList(i_mode == GLlink::DM_SOLID ? m_shadingList : m_wireFrameList);
     glPopMatrix();
 }
 
@@ -242,13 +241,4 @@ void GLshape::setSpecularColor(float r, float g, float b)
     m_specular[0] = r; m_specular[1] = g; m_specular[2] = b; 
 }
 
-void GLshape::wireFrameMode(bool flag)
-{
-    m_wireFrameMode = flag;
-}
-
-bool GLshape::isWireFrameMode()
-{
-    return m_wireFrameMode;
-}
 

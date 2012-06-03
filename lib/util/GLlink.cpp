@@ -16,6 +16,7 @@ using namespace OpenHRP;
 using namespace hrp;
 
 bool GLlink::m_useAbsTransformToDraw = false;
+int GLlink::m_drawMode = GLlink::DM_SOLID;
 
 void GLlink::useAbsTransformToDraw()
 {
@@ -47,11 +48,32 @@ void GLlink::draw(){
         glMultMatrixd(m_trans);
         glMultMatrixd(m_T_j);
     }
-    for (size_t i=0; i<m_shapes.size(); i++){
-        m_shapes[i]->draw();
-    }
-    for (size_t i=0; i<m_cameras.size(); i++){
-        m_cameras[i]->draw();
+    if (m_drawMode != DM_COLLISION){
+        for (size_t i=0; i<m_shapes.size(); i++){
+            m_shapes[i]->draw(m_drawMode);
+        }
+        for (size_t i=0; i<m_cameras.size(); i++){
+            m_cameras[i]->draw(m_drawMode);
+        }
+    }else{
+        if (coldetModel && coldetModel->getNumTriangles()){
+            Eigen::Vector3f n, v[3];
+            int vindex[3];
+            glBegin(GL_TRIANGLES);
+            for (int i=0; i<coldetModel->getNumTriangles(); i++){
+                coldetModel->getTriangle(i, vindex[0], vindex[1], vindex[2]);
+                for (int j=0; j<3; j++){
+                    coldetModel->getVertex(vindex[j], v[j][0], v[j][1], v[j][2]);
+                }
+                n = (v[1]-v[0]).cross(v[2]-v[0]);
+                n.normalize();
+                glNormal3fv(n.data());
+                for (int j=0; j<3; j++){
+                    glVertex3fv(v[j].data());
+                }
+            }
+            glEnd();
+        }
     }
     for (size_t i=0; i<sensors.size(); i++){
         Sensor *s = sensors[i];
@@ -157,3 +179,14 @@ const std::vector<GLcamera *>& GLlink::cameras()
 {
     return m_cameras;
 }
+
+int GLlink::drawMode()
+{
+    return m_drawMode;
+}
+
+void GLlink::drawMode(int i_mode)
+{
+    m_drawMode = i_mode;
+}
+

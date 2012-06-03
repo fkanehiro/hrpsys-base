@@ -29,7 +29,7 @@ public:
     void setViewPoint(double x, double y, double z);
     void setViewTarget(double x, double y, double z);
     void setViewSize(int w, int h);
-    void draw();
+    void draw(int i_mode);
     GLlink *link();
 private:
     std::string m_name;

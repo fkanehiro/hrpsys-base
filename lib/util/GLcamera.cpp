@@ -53,13 +53,13 @@ GLcamera::~GLcamera()
     }
 }
 
-void GLcamera::draw()
+void GLcamera::draw(int i_mode)
 {
     // display list
     glPushMatrix();
     glMultMatrixd(m_trans);
     for (size_t i=0; i<m_shapes.size(); i++){
-        m_shapes[i]->draw();
+        m_shapes[i]->draw(i_mode);
     }
     glPopMatrix();
 }    

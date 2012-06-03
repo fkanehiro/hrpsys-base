@@ -19,7 +19,7 @@ class GLshape : public GLcoordinates
 public:
     GLshape();
     ~GLshape();
-    void draw();
+    void draw(int i_mode);
     void setVertices(int nvertices, const float *vertices);
     void setTriangles(int ntriangles, const int *vertexIndices);
     void setNormals(int nnormal, const float *normals);
@@ -33,8 +33,6 @@ public:
     void setTextureCoordIndices(int len, const int *coordinates);
     void setTexture(GLtexture *texture);
     void compile();
-    static void wireFrameMode(bool flag);
-    static bool isWireFrameMode();
 protected:
     int doCompile(bool isWireFrameMode);
 
@@ -49,7 +47,6 @@ protected:
     bool m_requestCompile;
     int m_shadingList, m_wireFrameList;
     GLuint m_textureId;
-    static bool m_wireFrameMode;
 };
 
 #endif
