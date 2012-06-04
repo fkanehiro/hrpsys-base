@@ -70,9 +70,9 @@ void GLscene::updateScene()
 
     LogManager<TimedRobotState> *lm 
         = (LogManager<TimedRobotState> *)m_log;
-    OpenHRP::StateHolderService::Command &com = lm->state().command;
     GLbody *glbody = dynamic_cast<GLbody *>(body(0).get());
-    if (com.jointRefs.length() == glbody->numJoints()){
+    OpenHRP::StateHolderService::Command &com = lm->state().command;
+    if (com.baseTransform.length() == 12){
         double *tform = com.baseTransform.get_buffer();
         glbody->setPosition(tform);
         glbody->setRotation(tform+3);
@@ -81,15 +81,18 @@ void GLscene::updateScene()
         root->R << tform[3], tform[4], tform[5],
             tform[6], tform[7], tform[8],
             tform[9], tform[10], tform[11];
+    }
+    OpenHRP::RobotHardwareService::RobotState &rstate = lm->state().state;
+    if (rstate.command.length() == glbody->numJoints()){
         for (int i=0; i<glbody->numJoints(); i++){
             GLlink *j = (GLlink *)glbody->joint(i);
             if (j){
-                j->q = com.jointRefs[i];
-                j->setQ(com.jointRefs[i]);
+                j->q = rstate.command[i];
+                j->setQ(rstate.command[i]);
             }
         }
-        glbody->calcForwardKinematics();
     }
+    glbody->calcForwardKinematics();
 }
 
 void GLscene::showStatus()
