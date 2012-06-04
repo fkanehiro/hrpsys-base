@@ -80,8 +80,16 @@ int main(int argc, char* argv[])
     Monitor monitor(orb, 
                     rhview.hostname, rhview.port, rhview.interval,
                     &log);
-    if (rhname) monitor.setRobotHardwareName(rhname);
-    if (shname) monitor.setStateHolderName(shname);
+    if (rhname) {
+        monitor.setRobotHardwareName(rhname);
+    }else{
+        monitor.setRobotHardwareName(rhview.RobotHardwareName.c_str());
+    }
+    if (shname) {
+        monitor.setStateHolderName(shname);
+    }else{
+        monitor.setStateHolderName(rhview.StateHolderName.c_str());
+    }
     //==================== viewer ===============
     GLscene scene(&log);
 

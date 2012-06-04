@@ -262,9 +262,9 @@ bool Project::parse(const std::string& filename)
                   }else if ( xmlStrEqual(xmlGetProp(cur_node, (xmlChar *)"name"),(xmlChar *)"interval") ) {
                       m_rhview.interval = atoi((char *)(xmlGetProp(cur_node, (xmlChar *)"value")));
                   }else if ( xmlStrEqual(xmlGetProp(cur_node, (xmlChar *)"name"),(xmlChar *)"stateProvider") ) {
-                      m_rhview.RobotHardwareName = atoi((char *)(xmlGetProp(cur_node, (xmlChar *)"value")));
+                      m_rhview.RobotHardwareName = (char *)(xmlGetProp(cur_node, (xmlChar *)"value"));
                   }else if ( xmlStrEqual(xmlGetProp(cur_node, (xmlChar *)"name"),(xmlChar *)"StateHolderRTC") ) {
-                      m_rhview.StateHolderName = atoi((char *)(xmlGetProp(cur_node, (xmlChar *)"value")));
+                      m_rhview.StateHolderName = (char *)(xmlGetProp(cur_node, (xmlChar *)"value"));
                   }
               }
               cur_node = cur_node->next;
