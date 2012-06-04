@@ -115,7 +115,8 @@ void GLlink::draw(){
 
 void GLlink::setQ(double i_q){
     Matrix33 R;
-    hrp::calcRodrigues(R, a, i_q);
+    Vector3 aLocal(Rs.transpose()*a);
+    hrp::calcRodrigues(R, aLocal, i_q);
     m_T_j[ 0]=R(0,0);m_T_j[ 1]=R(1,0);m_T_j[ 2]=R(2,0);m_T_j[3]=0; 
     m_T_j[ 4]=R(0,1);m_T_j[ 5]=R(1,1);m_T_j[ 6]=R(2,1);m_T_j[7]=0; 
     m_T_j[ 8]=R(0,2);m_T_j[ 9]=R(1,2);m_T_j[10]=R(2,2);m_T_j[11]=0;
