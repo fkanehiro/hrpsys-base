@@ -76,15 +76,17 @@ void GLscene::updateScene()
         double *tform = com.baseTransform.get_buffer();
         glbody->setPosition(tform);
         glbody->setRotation(tform+3);
-        glbody->setPosture(com.jointRefs.get_buffer());
         hrp::Link *root = glbody->rootLink();
         root->p << tform[0], tform[1], tform[2];
         root->R << tform[3], tform[4], tform[5],
             tform[6], tform[7], tform[8],
             tform[9], tform[10], tform[11];
         for (int i=0; i<glbody->numJoints(); i++){
-            hrp::Link *j = glbody->joint(i);
-            if (j) j->q = com.jointRefs[i];
+            GLlink *j = (GLlink *)glbody->joint(i);
+            if (j){
+                j->q = com.jointRefs[i];
+                j->setQ(com.jointRefs[i]);
+            }
         }
         glbody->calcForwardKinematics();
     }
