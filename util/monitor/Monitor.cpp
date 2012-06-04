@@ -45,6 +45,7 @@ bool Monitor::oneStep()
             CosNaming::Name name;
             name.length(1);
             name[0].id = CORBA::string_dup(m_shCompName.c_str());
+            std::cout << m_shCompName << std::endl;
             name[0].kind = CORBA::string_dup("rtc");
             CORBA::Object_var obj = m_naming->resolve(name);
             RTC::RTObject_var rtc = RTC::RTObject::_narrow(obj);
@@ -94,4 +95,15 @@ bool Monitor::oneStep()
 bool Monitor::isConnected()
 {
     return !CORBA::is_nil(m_rhService);
+}
+
+void Monitor::setRobotHardwareName(const char *i_name)
+{
+    m_rhCompName = i_name;
+}
+
+void Monitor::setStateHolderName(const char *i_name)
+{
+    m_shCompName = i_name;
+    std::cout << m_shCompName << std::endl;
 }

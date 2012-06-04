@@ -9,8 +9,7 @@
 #include "Project.h"
 
 Project::Project() : 
-    m_timeStep(0.001), m_totalTime(1.0), m_gravity(9.8), m_isEuler(true), m_kinematicsOnly(false),
-    m_robotHost("localhost"), m_robotPort(2809), m_interval(100)
+    m_timeStep(0.001), m_totalTime(1.0), m_gravity(9.8), m_isEuler(true), m_kinematicsOnly(false)
 {
 }
 
@@ -257,11 +256,15 @@ bool Project::parse(const std::string& filename)
           while ( cur_node ) {
               if ( cur_node->type == XML_ELEMENT_NODE ) {
                   if ( xmlStrEqual(xmlGetProp(cur_node, (xmlChar *)"name"),(xmlChar *)"robotHost") ) {
-                      m_robotHost = (char *)(xmlGetProp(cur_node, (xmlChar *)"value"));
-                  }else if ( xmlStrEqual(xmlGetProp(cur_node, (xmlChar *)"name"),(xmlChar *)"robotHost") ) {
-                      m_robotPort = atoi((char *)(xmlGetProp(cur_node, (xmlChar *)"value")));
+                      m_rhview.hostname = (char *)(xmlGetProp(cur_node, (xmlChar *)"value"));
+                  }else if ( xmlStrEqual(xmlGetProp(cur_node, (xmlChar *)"name"),(xmlChar *)"robotPort") ) {
+                      m_rhview.port = atoi((char *)(xmlGetProp(cur_node, (xmlChar *)"value")));
                   }else if ( xmlStrEqual(xmlGetProp(cur_node, (xmlChar *)"name"),(xmlChar *)"interval") ) {
-                      m_interval = atoi((char *)(xmlGetProp(cur_node, (xmlChar *)"value")));
+                      m_rhview.interval = atoi((char *)(xmlGetProp(cur_node, (xmlChar *)"value")));
+                  }else if ( xmlStrEqual(xmlGetProp(cur_node, (xmlChar *)"name"),(xmlChar *)"stateProvider") ) {
+                      m_rhview.RobotHardwareName = atoi((char *)(xmlGetProp(cur_node, (xmlChar *)"value")));
+                  }else if ( xmlStrEqual(xmlGetProp(cur_node, (xmlChar *)"name"),(xmlChar *)"StateHolderRTC") ) {
+                      m_rhview.StateHolderName = atoi((char *)(xmlGetProp(cur_node, (xmlChar *)"value")));
                   }
               }
               cur_node = cur_node->next;

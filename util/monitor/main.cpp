@@ -30,6 +30,15 @@ int main(int argc, char* argv[])
         return 1;
     }
 
+    char *rhname = NULL, *shname = NULL;
+    for (int i = 2; i<argc; i++){
+        if (strcmp(argv[i], "-rh")==0){
+            rhname = argv[++i];
+        }else if(strcmp(argv[i], "-sh")==0){
+            shname = argv[++i];
+        }
+    }
+
     //================= CORBA =========================
     CORBA::ORB_var orb;
     CosNaming::NamingContext_var namingContext;
@@ -67,9 +76,12 @@ int main(int argc, char* argv[])
     log.enableRingBuffer(5000);
 
     //================= monitor ======================
+    RobotHardwareClientView rhview = prj.RobotHardwareClient();
     Monitor monitor(orb, 
-                    prj.robotHost(), prj.robotPort(), prj.interval(),
+                    rhview.hostname, rhview.port, rhview.interval,
                     &log);
+    if (rhname) monitor.setRobotHardwareName(rhname);
+    if (shname) monitor.setStateHolderName(shname);
     //==================== viewer ===============
     GLscene scene(&log);
 

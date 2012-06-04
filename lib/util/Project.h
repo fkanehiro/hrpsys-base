@@ -60,6 +60,16 @@ public:
     std::vector<std::pair<std::string, std::string> > connections;
 };
 
+class RobotHardwareClientView
+{
+public:
+    RobotHardwareClientView() : 
+        hostname("localhost"), RobotHardwareName("RobotHardware0"),
+        StateHolderName("StateHolder0"), port(2809), interval(100){}
+    std::string hostname, RobotHardwareName, StateHolderName;
+    int port, interval;
+};
+
 class Project{
 public:
     Project();
@@ -72,9 +82,7 @@ public:
     std::map<std::string, ModelItem>& models(){ return m_models; }
     std::vector<CollisionPairItem>& collisionPairs() { return m_collisionPairs; }
     RTSItem &RTS() { return m_rts; }
-    const std::string& robotHost() { return m_robotHost; }
-    int robotPort() { return m_robotPort; }
-    int interval() { return m_interval; }
+    RobotHardwareClientView &RobotHardwareClient() { return m_rhview; }
 private:
     double m_timeStep;
     double m_totalTime;
@@ -84,7 +92,6 @@ private:
     std::map<std::string, ModelItem> m_models;
     std::vector<CollisionPairItem> m_collisionPairs;
     RTSItem m_rts;
-    std::string m_robotHost;
-    int m_robotPort, m_interval;
+    RobotHardwareClientView m_rhview;
 };
 #endif

@@ -11,6 +11,8 @@ public:
             int i_port, int i_interval, LogManager<TimedRobotState> *i_log);
     bool oneStep();
     bool isConnected();
+    void setRobotHardwareName(const char *i_name);
+    void setStateHolderName(const char *i_name);
 private:
     CORBA::ORB_var m_orb;
     CosNaming::NamingContext_var m_naming;
