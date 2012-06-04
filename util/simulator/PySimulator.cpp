@@ -40,7 +40,11 @@ hrp::BodyPtr createBody(const std::string& name, const ModelItem& mitem,
     hrp::BodyPtr body = hrp::BodyPtr(pybody);
     BodyInfo_var binfo;
     try{
-        binfo = modelloader->getBodyInfo(mitem.url.c_str());
+        OpenHRP::ModelLoader::ModelLoadOption opt;
+        opt.readImage = true;
+        opt.AABBdata.length(0);
+        opt.AABBtype = OpenHRP::ModelLoader::AABB_NUM;
+        binfo = modelloader->getBodyInfoEx(mitem.url.c_str(), opt);
     }catch(OpenHRP::ModelLoader::ModelLoaderException ex){
         std::cerr << ex.description << std::endl;
         return hrp::BodyPtr();
