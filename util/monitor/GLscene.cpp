@@ -93,6 +93,17 @@ void GLscene::updateScene()
         }
     }
     glbody->calcForwardKinematics();
+    glbody->updateLinkColdetModelPositions();
+    for (int i=0; i<glbody->numLinks(); i++){
+        ((GLlink *)glbody->link(i))->highlight(false);
+    }
+    for (size_t i=0; i<m_pairs.size(); i++){
+        if (m_pairs[i]->checkCollision()){
+            ((GLlink *)m_pairs[i]->link(0))->highlight(true);
+            ((GLlink *)m_pairs[i]->link(1))->highlight(true);
+            std::cout << m_pairs[i]->link(0)->name << "<->" << m_pairs[i]->link(1)->name << std::endl;
+        }
+    }
 }
 
 void GLscene::showStatus()
@@ -279,4 +290,10 @@ void GLscene::drawAdditionalLines()
     glColor3f(0,1,1);
     drawCross(projectedCom);
     glEnd();
+}
+
+
+void GLscene::setCollisionCheckPairs(const std::vector<hrp::ColdetLinkPairPtr> &i_pairs)
+{
+    m_pairs = i_pairs;
 }

@@ -1,12 +1,14 @@
 #include <fstream>
 #include <iostream>
+#include <boost/bind.hpp>
 #include <hrpModel/ModelLoaderUtil.h>
+#include <hrpModel/ColdetLinkPair.h>
 #ifdef __APPLE__
 #include <GLUT/glut.h>
 #else
 #include <GL/glut.h>
 #endif
-#include "util/Project.h"
+#include "util/ProjectUtil.h"
 #include "util/GLbody.h"
 #include "util/GLlink.h"
 #include "util/GLutil.h"
@@ -16,6 +18,28 @@
 
 using namespace hrp;
 using namespace OpenHRP;
+
+hrp::BodyPtr createBody(const std::string& name, const ModelItem& mitem,
+                        ModelLoader_ptr modelloader)
+{
+    BodyInfo_var binfo;
+    try{
+        OpenHRP::ModelLoader::ModelLoadOption opt;
+        opt.readImage = true;
+        opt.AABBdata.length(0);
+        opt.AABBtype = OpenHRP::ModelLoader::AABB_NUM;
+        binfo = modelloader->getBodyInfoEx(mitem.url.c_str(), opt);
+    }catch(OpenHRP::ModelLoader::ModelLoaderException ex){
+        std::cerr << ex.description << std::endl;
+        return hrp::BodyPtr();
+    }
+    GLbody *glbody = new GLbody();
+    hrp::BodyPtr body(glbody);
+    hrp::loadBodyFromBodyInfo(body, binfo, true, GLlinkFactory);
+    loadShapeFromBodyInfo(glbody, binfo);
+    body->setName(name);
+    return body;
+}
 
 int main(int argc, char* argv[]) 
 {
@@ -96,22 +120,11 @@ int main(int argc, char* argv[])
     SDLwindow window(&scene, &log, &monitor);
     window.init();
 
+    std::vector<hrp::ColdetLinkPairPtr> pairs;
     ModelLoader_var modelloader = getModelLoader(namingContext);
-    for (std::map<std::string, ModelItem>::iterator it=prj.models().begin();
-         it != prj.models().end(); it++){
-        OpenHRP::ModelLoader::ModelLoadOption opt;
-        opt.readImage = true;
-        opt.AABBdata.length(0);
-        opt.AABBtype = OpenHRP::ModelLoader::AABB_NUM;
-        OpenHRP::BodyInfo_var binfo
-            = modelloader->getBodyInfoEx(it->second.url.c_str(), opt);
-        GLbody *glbody = new GLbody();
-        hrp::BodyPtr body(glbody);
-        hrp::loadBodyFromBodyInfo(body, binfo, false, GLlinkFactory);
-        loadShapeFromBodyInfo(glbody, binfo);
-        body->setName(it->first);
-        scene.WorldBase::addBody(body);
-    }
+    BodyFactory factory = boost::bind(createBody, _1, _2, modelloader);
+    initWorld(prj, factory, scene, pairs);
+    scene.setCollisionCheckPairs(pairs);
 
     monitor.start();
     int cnt=0;

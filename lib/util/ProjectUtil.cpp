@@ -61,7 +61,8 @@ void initWorld(Project& prj, BodyFactory &factory,
                     hrp::Link* link1 = links1[j];
                     hrp::Link* link2 = links2[k];
 
-                    if(link1 && link2 && link1 != link2){
+                    if(link1 && link2 && link1 != link2 
+                       && link1->parent != link2 && link1 != link2->parent){
                         world.constraintForceSolver.addCollisionCheckLinkPair
                             (bodyIndex1, link1, bodyIndex2, link2, 
                              cpi.staticFriction, cpi.slidingFriction, 0.01, 0.0, 0.0);
