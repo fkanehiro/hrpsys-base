@@ -32,6 +32,7 @@ public:
     void addShape(GLshape *shape);
     void addCamera(GLcamera *camera);
     void showAxes(bool flag);
+    void highlight(bool flag);
     const std::vector<GLcamera *>& cameras();
     static void useAbsTransformToDraw();
     static int drawMode();
@@ -42,7 +43,7 @@ protected:
     std::vector<GLcamera *> m_cameras;
     double m_T_j[16], m_absTrans[16];
     std::vector<GLshape *> m_shapes;
-    bool m_showAxes;
+    bool m_showAxes, m_highlight;
 };
 
 hrp::Link *GLlinkFactory();

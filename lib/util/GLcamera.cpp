@@ -130,3 +130,10 @@ GLlink *GLcamera::link()
 {
     return m_link;
 }
+
+void GLcamera::highlight(bool flag)
+{
+    for (size_t i=0; i<m_shapes.size(); i++){
+        m_shapes[i]->highlight(flag);
+    }
+}

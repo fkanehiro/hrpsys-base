@@ -33,6 +33,7 @@ public:
     void setTextureCoordIndices(int len, const int *coordinates);
     void setTexture(GLtexture *texture);
     void compile();
+    void highlight(bool flag);
 protected:
     int doCompile(bool isWireFrameMode);
 
@@ -47,6 +48,7 @@ protected:
     bool m_requestCompile;
     int m_shadingList, m_wireFrameList;
     GLuint m_textureId;
+    bool m_highlight;
 };
 
 #endif

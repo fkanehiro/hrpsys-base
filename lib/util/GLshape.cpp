@@ -9,7 +9,7 @@
 #include "GLshape.h"
 #include "GLtexture.h"
 
-GLshape::GLshape() : m_texture(NULL), m_requestCompile(false), m_shininess(0.2), m_shadingList(0), m_wireFrameList(0)
+GLshape::GLshape() : m_texture(NULL), m_requestCompile(false), m_shininess(0.2), m_shadingList(0), m_wireFrameList(0), m_highlight(false)
 {
     for (int i=0; i<16; i++) m_trans[i] = 0.0;
     m_trans[0] = m_trans[5] = m_trans[10] = m_trans[15] = 1.0;
@@ -140,55 +140,55 @@ int GLshape::doCompile(bool isWireFrameMode)
     }
 
     bool drawTexture = false;
-    if (!isWireFrameMode && m_texture){
-        if (m_texture->image.size()==0){
-            std::cerr<< "texture image(" << m_texture->url << ") is not loaded"
-                     << std::endl;
+    if (!isWireFrameMode && m_texture && !m_highlight){
+        drawTexture = true;
+        glGenTextures(1, &m_textureId);
+        glBindTexture(GL_TEXTURE_2D, m_textureId);
+        
+        if (m_texture->repeatS){
+            glTexParameteri(GL_TEXTURE_2D, 
+                            GL_TEXTURE_WRAP_S, GL_REPEAT);
         }else{
-            drawTexture = true;
-            glGenTextures(1, &m_textureId);
-            glBindTexture(GL_TEXTURE_2D, m_textureId);
-            
-            if (m_texture->repeatS){
-                glTexParameteri(GL_TEXTURE_2D, 
-                                GL_TEXTURE_WRAP_S, GL_REPEAT);
-            }else{
-                glTexParameteri(GL_TEXTURE_2D, 
-                                GL_TEXTURE_WRAP_S, GL_CLAMP);
-            }
-            if (m_texture->repeatT){
-                glTexParameteri(GL_TEXTURE_2D,
-                                GL_TEXTURE_WRAP_T, GL_REPEAT);
-            }else{
-                glTexParameteri(GL_TEXTURE_2D,
-                                GL_TEXTURE_WRAP_T, GL_CLAMP);
-            }
-            int format;
-            if (m_texture->numComponents == 3){
-                format = GL_RGB;
-            }else if (m_texture->numComponents == 4){
-                format = GL_RGBA;
-            }
-            glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-            gluBuild2DMipmaps(GL_TEXTURE_2D, 3, 
-                              m_texture->width, m_texture->height, 
-                              format, GL_UNSIGNED_BYTE, 
-                              &m_texture->image[0]);
-            
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, 
-                            GL_LINEAR_MIPMAP_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, 
-                            GL_LINEAR);
-            glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-            
-            glEnable(GL_TEXTURE_2D);
+            glTexParameteri(GL_TEXTURE_2D, 
+                            GL_TEXTURE_WRAP_S, GL_CLAMP);
         }
+        if (m_texture->repeatT){
+            glTexParameteri(GL_TEXTURE_2D,
+                            GL_TEXTURE_WRAP_T, GL_REPEAT);
+        }else{
+            glTexParameteri(GL_TEXTURE_2D,
+                            GL_TEXTURE_WRAP_T, GL_CLAMP);
+        }
+        int format;
+        if (m_texture->numComponents == 3){
+            format = GL_RGB;
+        }else if (m_texture->numComponents == 4){
+            format = GL_RGBA;
+        }
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        gluBuild2DMipmaps(GL_TEXTURE_2D, 3, 
+                          m_texture->width, m_texture->height, 
+                          format, GL_UNSIGNED_BYTE, 
+                          &m_texture->image[0]);
+        
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, 
+                        GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, 
+                        GL_LINEAR);
+        glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+        
+        glEnable(GL_TEXTURE_2D);
     }
     
     if (!isWireFrameMode) glBegin(GL_TRIANGLES);
-    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, m_diffuse);
-    //glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR,            m_specular);
-    glMaterialf (GL_FRONT_AND_BACK, GL_SHININESS,           m_shininess);
+    if (m_highlight){
+        float red[] = {1,0,0,1};
+        glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, red);
+    }else{
+        glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, m_diffuse);
+        //glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR,            m_specular);
+        glMaterialf (GL_FRONT_AND_BACK, GL_SHININESS,           m_shininess);
+    }
     for(size_t j=0; j < m_triangles.size(); ++j){
         if (isWireFrameMode) glBegin(GL_LINE_LOOP);
         if (!m_normalPerVertex){
@@ -242,3 +242,8 @@ void GLshape::setSpecularColor(float r, float g, float b)
 }
 
 
+void GLshape::highlight(bool flag)
+{
+    if (m_highlight != flag) compile();
+    m_highlight = flag;
+}

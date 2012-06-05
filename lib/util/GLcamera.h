@@ -31,6 +31,7 @@ public:
     void setViewSize(int w, int h);
     void draw(int i_mode);
     GLlink *link();
+    void highlight(bool flag);
 private:
     std::string m_name;
     double m_absTrans[16];

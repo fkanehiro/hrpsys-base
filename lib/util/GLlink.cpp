@@ -23,7 +23,7 @@ void GLlink::useAbsTransformToDraw()
     m_useAbsTransformToDraw = true;
 }
 
-GLlink::GLlink() : m_showAxes(false)
+GLlink::GLlink() : m_showAxes(false), m_highlight(false)
 {
     Rs = hrp::Matrix33::Identity();
     R  = hrp::Matrix33::Identity();
@@ -59,6 +59,13 @@ void GLlink::draw(){
         if (coldetModel && coldetModel->getNumTriangles()){
             Eigen::Vector3f n, v[3];
             int vindex[3];
+            if (m_highlight){
+                float red[] = {1,0,0,1};
+                glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, red);
+            }else{
+                float gray[] = {0.8,0.8,0.8,1};
+                glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, gray);
+            }
             glBegin(GL_TRIANGLES);
             for (int i=0; i<coldetModel->getNumTriangles(); i++){
                 coldetModel->getTriangle(i, vindex[0], vindex[1], vindex[2]);
@@ -191,3 +198,13 @@ void GLlink::drawMode(int i_mode)
     m_drawMode = i_mode;
 }
 
+void GLlink::highlight(bool flag)
+{
+    m_highlight = flag;
+    for (size_t i=0; i<m_shapes.size(); i++){
+        m_shapes[i]->highlight(flag);
+    }
+    for (size_t i=0; i<m_cameras.size(); i++){
+        m_cameras[i]->highlight(flag);
+    }
+}
