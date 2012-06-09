@@ -10,6 +10,7 @@
 #include <rtm/DataOutPort.h>
 #include <rtm/idl/BasicDataTypeSkel.h>
 #include <rtm/idl/ExtendedDataTypesSkel.h>
+#include "Img.hh"
 
 class BodyRTC : virtual public hrp::Body, public RTC::DataFlowComponentBase
 {
@@ -46,12 +47,16 @@ private:
     std::vector<RTC::TimedAcceleration3D> m_acc;
     std::vector<RTC::TimedAngularVelocity3D> m_rate;
     std::vector<RTC::TimedDoubleSeq> m_force;
+    std::vector<RTC::TimedDoubleSeq> m_range;
+    std::vector<Img::TimedCameraImage> m_image;
 
     RTC::OutPort<RTC::TimedDoubleSeq> m_qOut, m_dqOut;
     RTC::OutPort<RTC::TimedPose3D> m_basePoseOut;
     std::vector<RTC::OutPort<RTC::TimedAcceleration3D> *> m_accOut;
     std::vector<RTC::OutPort<RTC::TimedAngularVelocity3D> *> m_rateOut;
     std::vector<RTC::OutPort<RTC::TimedDoubleSeq> *> m_forceOut;
+    std::vector<RTC::OutPort<RTC::TimedDoubleSeq> *> m_rangeOut;
+    std::vector<RTC::OutPort<Img::TimedCameraImage> *> m_imageOut;
 
     int dummy;
 };

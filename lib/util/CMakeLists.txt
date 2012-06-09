@@ -41,6 +41,7 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 add_library(hrpsysUtil SHARED ${sources})
 
 target_link_libraries(hrpsysUtil
+  hrpsysBaseStub
   ${LIBXML2_LIBRARIES}
   ${OPENHRP_LIBRARIES}
   ${OPENGL_LIBRARIES} 

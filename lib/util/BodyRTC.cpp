@@ -114,6 +114,33 @@ void BodyRTC::createDataPorts()
         m_force[i].data.length(6);
         addOutPort(s->name.c_str(), *m_forceOut[i]);
     }
+
+    int nrange = numSensors(Sensor::RANGE);
+    m_range.resize(nrange);
+    m_rangeOut.resize(nrange);
+    for (size_t i=0; i<m_range.size(); i++){
+        Sensor *s = sensor(Sensor::RANGE, i);
+        m_rangeOut[i] = new OutPort<TimedDoubleSeq>(s->name.c_str(), m_range[i]);
+        addOutPort(s->name.c_str(), *m_rangeOut[i]);
+    }
+
+    int ncamera = numSensors(Sensor::VISION);
+    for (int i=0; i<ncamera; i++){
+        Sensor *s = sensor(Sensor::VISION, i);
+        VisionSensor *vs = dynamic_cast<VisionSensor *>(s);
+        if (vs->imageType == VisionSensor::COLOR 
+            || vs->imageType == VisionSensor::MONO
+            || vs->imageType == VisionSensor::COLOR_DEPTH
+            || vs->imageType == VisionSensor::MONO_DEPTH){
+            m_image.resize(m_image.size()+1);
+            m_imageOut.push_back(new OutPort<Img::TimedCameraImage>(s->name.c_str(), m_image[i]));
+            addOutPort(s->name.c_str(), *m_imageOut.back());
+        }
+        if (vs->imageType == VisionSensor::DEPTH
+            || vs->imageType == VisionSensor::COLOR_DEPTH
+            || vs->imageType == VisionSensor::MONO_DEPTH){
+        }
+    }
 }
 
 void BodyRTC::writeDataPorts()
