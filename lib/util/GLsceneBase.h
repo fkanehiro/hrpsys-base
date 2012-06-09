@@ -42,6 +42,8 @@ public:
     void setScreenSize(int w, int h);
     void toggleRobotState() { m_showingStatus = !m_showingStatus; }
     void draw();
+    void drawObjects();
+    void setView();
     virtual void showStatus() {}
     virtual void drawAdditionalLines() {}
     virtual void updateScene()=0;

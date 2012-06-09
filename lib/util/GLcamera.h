@@ -6,6 +6,7 @@
 #include <hrpCorba/ModelLoader.hh>
 #include "GLcoordinates.h"
 
+class GLsceneBase;
 class GLlink;
 class GLshape;
 
@@ -25,14 +26,17 @@ public:
     double fovy() { return m_fovy; }
     int width() { return m_width; }
     int height() { return m_height; }
-    void getDepthOfLine(int i_row, float *o_depth);
     void setViewPoint(double x, double y, double z);
     void setViewTarget(double x, double y, double z);
-    void setViewSize(int w, int h);
     void draw(int i_mode);
     GLlink *link();
     void highlight(bool flag);
+    void render(GLsceneBase *i_scene);
+    unsigned char *rgbImage();
 private:
+    void initFramebuffer( void );
+    void initRenderbuffer( void );
+    void initTexture( void );
     std::string m_name;
     double m_absTrans[16];
     GLlink *m_link;
@@ -40,6 +44,8 @@ private:
     int m_width, m_height;
     double m_viewPoint[3], m_viewTarget[3];
     std::vector<GLshape *> m_shapes;
+    GLuint m_frameBuffer, m_renderBuffer, m_texture;
+    unsigned char *m_rgbImage;
 };
 
 #endif

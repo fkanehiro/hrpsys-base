@@ -2,6 +2,7 @@
 #include <fstream>
 #include <cstdio>
 #include <math.h>
+#include <GL/glew.h>
 #ifdef __APPLE__
 #include <GLUT/glut.h>
 #else
@@ -45,7 +46,6 @@ GLsceneBase::~GLsceneBase()
 void GLsceneBase::setScreenSize(int w, int h){
     m_width = w;
     m_height = h;
-    m_camera->setViewSize(w,h);
 }
 
 void GLsceneBase::setCamera(GLcamera *i_camera)
@@ -53,7 +53,6 @@ void GLsceneBase::setCamera(GLcamera *i_camera)
     if (!i_camera) return;
 
     m_camera = i_camera;
-    //glfwSetWindowSize(m_camera->width(), m_camera->height());
     glViewport(0, 0, m_camera->width(), m_camera->height());
 }
 
@@ -70,7 +69,6 @@ void GLsceneBase::nextCamera()
                     found = true;
                 }else if(found){
                     m_camera = cameras[k];
-                    m_camera->setViewSize(m_width, m_height);
                     return;
                 }
             }
@@ -127,6 +125,8 @@ void GLsceneBase::init()
     GLfloat light0pos[] = { 0.0, 4.0, 6.0, 1.0 };
     GLfloat light1pos[] = { 6.0, 4.0, 0.0, 1.0 };
     GLfloat white[] = { 0.6, 0.6, 0.6, 1.0 };
+
+    glewInit();
 
     //glClearColor(0.4, 0.4, 0.55, 1.0);
     glClearColor(0.2, 0.2, 0.5, 1.0);
@@ -210,6 +210,16 @@ void GLsceneBase::drawInfo(double fps)
     showStatus();
 }
 
+void GLsceneBase::drawObjects()
+{
+    // robots
+    for (int i=0; i<numBodies(); i++){
+        GLbody *glbody = dynamic_cast<GLbody *>(body(i).get());
+        if (!glbody) std::cout << "dynamic_cast failed" << std::endl;
+        glbody->draw();
+    }
+}
+
 void GLsceneBase::draw()
 {
     struct timeval tv;
@@ -230,12 +240,7 @@ void GLsceneBase::draw()
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
-    // robots
-    for (int i=0; i<numBodies(); i++){
-        GLbody *glbody = dynamic_cast<GLbody *>(body(i).get());
-        if (!glbody) std::cout << "dynamic_cast failed" << std::endl;
-        glbody->draw();
-    }
+    drawObjects();
 
     glDisable(GL_LIGHTING);
     glBegin(GL_LINES);
@@ -309,4 +314,10 @@ void GLsceneBase::clear()
 {
     clearBodies();
     m_camera = m_default_camera;
+}
+
+void GLsceneBase::setView()
+{
+    glViewport(0,0,m_width, m_height);
+    m_camera->setView();
 }

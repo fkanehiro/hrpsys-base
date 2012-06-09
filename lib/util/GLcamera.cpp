@@ -1,3 +1,7 @@
+#include <iostream>
+#include <fstream>
+#include <cstdio>
+#include <GL/glew.h>
 #ifdef __APPLE__
 #include <OpenGL/glu.h>
 #else
@@ -5,6 +9,7 @@
 #endif
 #include <hrpUtil/Eigen3d.h>
 #include "GLutil.h"
+#include "GLsceneBase.h"
 #include "GLlink.h"
 #include "GLcamera.h"
 #include "GLshape.h"
@@ -13,7 +18,10 @@ using namespace OpenHRP;
 using namespace hrp;
 
 GLcamera::GLcamera(const SensorInfo &i_si, OpenHRP::ShapeSetInfo_ptr i_ssinfo,
-                   GLlink *i_link) : m_name(i_si.name), m_link(i_link) {
+                   GLlink *i_link) : 
+    m_name(i_si.name), m_link(i_link),
+    m_frameBuffer(0), m_renderBuffer(0), m_texture(0)
+{
     
     Matrix33 R;
     Vector3 axis;
@@ -40,10 +48,12 @@ GLcamera::GLcamera(const SensorInfo &i_si, OpenHRP::ShapeSetInfo_ptr i_ssinfo,
     m_fovy = i_si.specValues[2];
     m_width  = i_si.specValues[4];
     m_height = i_si.specValues[5];
+    m_rgbImage = new unsigned char[m_width*m_height*3]; 
 }
 
 GLcamera::GLcamera(int i_width, int i_height, double i_near, double i_far, double i_fovy) : m_near(i_near), m_far(i_far), m_fovy(i_fovy), m_width(i_width), m_height(i_height), m_link(NULL)
 {
+    m_rgbImage = NULL;
 }
 
 GLcamera::~GLcamera()
@@ -51,6 +61,7 @@ GLcamera::~GLcamera()
     for (size_t i=0; i<m_shapes.size(); i++){
         delete m_shapes[i];
     }
+    if (m_rgbImage) delete [] m_rgbImage;
 }
 
 void GLcamera::draw(int i_mode)
@@ -115,17 +126,6 @@ double *GLcamera::getAbsTransform(){
     return m_absTrans;
 }
 
-void GLcamera::getDepthOfLine(int i_row, float *o_depth)
-{
-    glReadPixels(0, i_row, width(), 1, GL_DEPTH_COMPONENT, GL_FLOAT, o_depth);
-}
-
-void GLcamera::setViewSize(int w, int h)
-{
-    m_width = w;
-    m_height = h;
-}
-
 GLlink *GLcamera::link()
 {
     return m_link;
@@ -137,3 +137,75 @@ void GLcamera::highlight(bool flag)
         m_shapes[i]->highlight(flag);
     }
 }
+
+void GLcamera::render(GLsceneBase *i_scene)
+{
+    if (!m_frameBuffer){
+        initTexture();
+        initRenderbuffer();
+        initFramebuffer();
+    }
+    /* switch to framebuffer object */
+    glBindFramebufferEXT( GL_FRAMEBUFFER_EXT, m_frameBuffer );
+
+    glViewport( 0, 0, m_width, m_height );
+
+    setView();
+
+    glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+    i_scene->drawObjects();
+
+    glFlush();
+
+    glBindTexture( GL_TEXTURE_2D, m_texture );
+    glGetTexImage( GL_TEXTURE_2D, 0, GL_RGB, GL_UNSIGNED_BYTE, m_rgbImage);
+#if 0
+    std::ofstream ofs("test.ppm", std::ios::out | std::ios::trunc | std::ios::binary );
+    char buf[10];
+    sprintf(buf, "%d %d", m_width, m_height);
+    ofs << "P6" << std::endl << buf << std::endl << "255" << std::endl;
+    for (int i=m_height; i>=0; i--){
+        ofs.write((char *)(m_rgbImage+i*m_width*3), m_width*3);
+    }
+#endif    
+    /* switch to default buffer */
+    glBindFramebufferEXT( GL_FRAMEBUFFER_EXT, 0 );
+}
+
+void GLcamera::initTexture( void )
+{
+    glPixelStorei( GL_UNPACK_ALIGNMENT, 1 );
+    glGenTextures( 1, &m_texture );
+    glBindTexture( GL_TEXTURE_2D, m_texture );
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT );
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT );
+    glTexEnvf( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL );
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+    glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, m_width, m_height,
+                  0, GL_RGBA, GL_UNSIGNED_BYTE, 0 );
+}
+
+void GLcamera::initFramebuffer( void )
+{
+    glGenFramebuffersEXT( 1, &m_frameBuffer );
+    glBindFramebufferEXT( GL_FRAMEBUFFER_EXT, m_frameBuffer );
+
+    glFramebufferTexture2DEXT( GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT,
+                               GL_TEXTURE_2D, m_texture, 0 );
+    glFramebufferRenderbufferEXT( GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT,
+                                  GL_RENDERBUFFER_EXT, m_renderBuffer );
+
+    glBindFramebufferEXT( GL_FRAMEBUFFER_EXT, 0 );
+}
+
+void GLcamera::initRenderbuffer( void )
+{
+    glGenRenderbuffersEXT( 1, &m_renderBuffer );
+    glBindRenderbufferEXT( GL_RENDERBUFFER_EXT, m_renderBuffer );
+    glRenderbufferStorageEXT( GL_RENDERBUFFER_EXT, GL_DEPTH_COMPONENT,
+                              m_width, m_height );
+}
+
+
+

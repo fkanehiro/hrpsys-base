@@ -48,6 +48,7 @@ target_link_libraries(hrpsysUtil
   ${SDL_LIBRARY} 
   ${GLUT_LIBRARIES} 
   ${QHULL_LIBRARIES}
+  GLEW
   )
 
 set(target hrpsysUtil)

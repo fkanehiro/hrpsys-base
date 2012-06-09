@@ -273,25 +273,20 @@ void SDLwindow::draw()
     double yEye = yCenter + radius*cos(tilt)*sin(pan);
     double zEye = zCenter + radius*sin(tilt);
     
-#if 0
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    gluPerspective(30,aspect, 0.1, 100);
-
-    gluLookAt(xEye, yEye, zEye,
-              xCenter, yCenter, zCenter,
-              0,0,1);
-#else
     if (scene->getDefaultCamera() == scene->getCamera()){
         scene->getCamera()->setViewPoint(xEye, yEye, zEye);
         scene->getCamera()->setViewTarget(xCenter, yCenter, zCenter);
     }
-    scene->getCamera()->setView();
-#endif
+    scene->setView();
     
     glClear(GL_COLOR_BUFFER_BIT| GL_DEPTH_BUFFER_BIT);
 
     scene->draw();
+#if 0
+    if (scene->getDefaultCamera() != scene->getCamera()){
+        scene->getCamera()->render(scene);
+    }
+#endif
 }
 
 void SDLwindow::swapBuffers()
