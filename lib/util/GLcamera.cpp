@@ -8,6 +8,7 @@
 #include <GL/glu.h>
 #endif
 #include <hrpUtil/Eigen3d.h>
+#include <hrpModel/Sensor.h>
 #include "GLutil.h"
 #include "GLsceneBase.h"
 #include "GLlink.h"
@@ -48,12 +49,12 @@ GLcamera::GLcamera(const SensorInfo &i_si, OpenHRP::ShapeSetInfo_ptr i_ssinfo,
     m_fovy = i_si.specValues[2];
     m_width  = i_si.specValues[4];
     m_height = i_si.specValues[5];
-    m_rgbImage = new unsigned char[m_width*m_height*3]; 
+
+    m_sensor = m_link->body->sensor<VisionSensor>(i_si.id);
 }
 
-GLcamera::GLcamera(int i_width, int i_height, double i_near, double i_far, double i_fovy) : m_near(i_near), m_far(i_far), m_fovy(i_fovy), m_width(i_width), m_height(i_height), m_link(NULL)
+GLcamera::GLcamera(int i_width, int i_height, double i_near, double i_far, double i_fovy) : m_near(i_near), m_far(i_far), m_fovy(i_fovy), m_width(i_width), m_height(i_height), m_link(NULL), m_sensor(NULL)
 {
-    m_rgbImage = NULL;
 }
 
 GLcamera::~GLcamera()
@@ -61,7 +62,6 @@ GLcamera::~GLcamera()
     for (size_t i=0; i<m_shapes.size(); i++){
         delete m_shapes[i];
     }
-    if (m_rgbImage) delete [] m_rgbImage;
 }
 
 void GLcamera::draw(int i_mode)
@@ -93,10 +93,14 @@ void GLcamera::computeAbsTransform(double o_trans[16]){
 
 void GLcamera::setView()
 {
+    setView(width(), height());
+}
+void GLcamera::setView(int w, int h)
+{
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     gluPerspective(fovy()*180/M_PI, 
-                   (double)width() / (double)height(), 
+                   (double)w / (double)h, 
                    near(), far());
     if (m_link){
         computeAbsTransform(m_absTrans);
@@ -153,21 +157,51 @@ void GLcamera::render(GLsceneBase *i_scene)
     setView();
 
     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
     i_scene->drawObjects();
 
     glFlush();
 
     glBindTexture( GL_TEXTURE_2D, m_texture );
-    glGetTexImage( GL_TEXTURE_2D, 0, GL_RGB, GL_UNSIGNED_BYTE, m_rgbImage);
-#if 0
-    std::ofstream ofs("test.ppm", std::ios::out | std::ios::trunc | std::ios::binary );
-    char buf[10];
-    sprintf(buf, "%d %d", m_width, m_height);
-    ofs << "P6" << std::endl << buf << std::endl << "255" << std::endl;
-    for (int i=m_height; i>=0; i--){
-        ofs.write((char *)(m_rgbImage+i*m_width*3), m_width*3);
+    if (m_sensor->imageType != VisionSensor::NONE 
+        && m_sensor->imageType != VisionSensor::DEPTH){
+        unsigned char rgb[m_width*m_height*3];
+        glGetTexImage( GL_TEXTURE_2D, 0, GL_RGB, GL_UNSIGNED_BYTE, rgb);
+
+        if (m_sensor->imageType == VisionSensor::COLOR
+            || m_sensor->imageType == VisionSensor::COLOR_DEPTH){
+            if (m_sensor->image.size() != m_width*m_height*3){
+                std::cerr << "invalid image length" << std::endl;
+            }else{
+                unsigned char *src=rgb;
+                unsigned char *dst=&m_sensor->image[m_width*(m_height-1)*3];
+                for (int i=0; i<m_height; i++){
+                    memcpy(dst, src, m_width*3);
+                    src += m_width*3;
+                    dst -= m_width*3;
+                }
+                m_sensor->isUpdated = true;
+            }
+        }else if (m_sensor->imageType == VisionSensor::MONO
+                  || m_sensor->imageType == VisionSensor::MONO_DEPTH){
+            if (m_sensor->image.size() != m_width*m_height){
+                std::cerr << "invalid image length" << std::endl;
+            }else{
+                unsigned char *src=rgb;
+                unsigned char *dst=&m_sensor->image[m_width*(m_height-1)];
+                for (int i=0; i<m_height; i++){
+                    for (int j=0; j<m_width; j++){
+                        *dst = 0.299*src[0] + 0.587*src[1] + 0.114*src[2];
+                        dst++;
+                        src+=3;
+                    }
+                    dst -= m_width*2;
+                }
+                m_sensor->isUpdated = true;
+            }
+        }
     }
-#endif    
     /* switch to default buffer */
     glBindFramebufferEXT( GL_FRAMEBUFFER_EXT, 0 );
 }
@@ -207,5 +241,8 @@ void GLcamera::initRenderbuffer( void )
                               m_width, m_height );
 }
 
-
+VisionSensor *GLcamera::sensor()
+{
+    return m_sensor;
+}
 

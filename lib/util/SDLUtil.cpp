@@ -250,7 +250,6 @@ bool SDLwindow::processEvents()
             width = event.resize.w;
             height = event.resize.h;
             SDL_SetVideoMode(width,height,32,SDL_HWSURFACE | SDL_GL_DOUBLEBUFFER | SDL_OPENGL | SDL_RESIZABLE);
-            glViewport(0, 0, width, height);
             scene->setScreenSize(width, height);
             break;
         }
@@ -280,11 +279,6 @@ void SDLwindow::draw()
     glClear(GL_COLOR_BUFFER_BIT| GL_DEPTH_BUFFER_BIT);
 
     scene->draw();
-#if 0
-    if (scene->getDefaultCamera() != scene->getCamera()){
-        scene->getCamera()->render(scene);
-    }
-#endif
 }
 
 void SDLwindow::swapBuffers()

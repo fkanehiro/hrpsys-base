@@ -30,6 +30,7 @@ public:
     void save(const char *i_fname);
     void capture(char *o_image);
     void init();
+    void initLights();
     void clear();
     void requestClear();
     void requestCapture(const char *i_fname);

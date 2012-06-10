@@ -9,6 +9,7 @@
 #include <GL/glut.h>
 #endif
 #include <hrpModel/ModelLoaderUtil.h>
+#include <hrpModel/Sensor.h>
 #include "GLcamera.h"
 #include "GLbody.h"
 #include "GLlink.h"
@@ -53,7 +54,6 @@ void GLsceneBase::setCamera(GLcamera *i_camera)
     if (!i_camera) return;
 
     m_camera = i_camera;
-    glViewport(0, 0, m_camera->width(), m_camera->height());
 }
 
 void GLsceneBase::nextCamera()
@@ -118,22 +118,11 @@ void GLsceneBase::capture(char *o_buffer)
     }
 }
 
-void GLsceneBase::init()
+void GLsceneBase::initLights()
 {
-    setCamera(m_default_camera);
-
     GLfloat light0pos[] = { 0.0, 4.0, 6.0, 1.0 };
     GLfloat light1pos[] = { 6.0, 4.0, 0.0, 1.0 };
     GLfloat white[] = { 0.6, 0.6, 0.6, 1.0 };
-
-    glewInit();
-
-    //glClearColor(0.4, 0.4, 0.55, 1.0);
-    glClearColor(0.2, 0.2, 0.5, 1.0);
-    glEnable(GL_DEPTH_TEST);
-
-    glEnable(GL_CULL_FACE);
-    glCullFace(GL_BACK);
 
     glEnable(GL_LIGHTING);
     glEnable(GL_LIGHT0);
@@ -144,6 +133,22 @@ void GLsceneBase::init()
     glLightfv(GL_LIGHT1, GL_SPECULAR, white);
     glLightfv(GL_LIGHT0, GL_POSITION, light0pos);
     glLightfv(GL_LIGHT1, GL_POSITION, light1pos);
+}
+
+void GLsceneBase::init()
+{
+    setCamera(m_default_camera);
+
+    glewInit();
+    initLights();
+
+    //glClearColor(0.4, 0.4, 0.55, 1.0);
+    glClearColor(0.2, 0.2, 0.5, 1.0);
+    glEnable(GL_DEPTH_TEST);
+
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
+
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_BLEND);
 }
@@ -295,6 +300,22 @@ void GLsceneBase::draw()
         m_request = REQ_NONE;
         SDL_SemPost(m_sem);
     }
+
+    // offscreen redering
+    for (int i=0; i<numBodies(); i++){
+        hrp::BodyPtr b = body(i);
+        for (int j=0; j<b->numLinks(); j++){
+            GLlink *l = dynamic_cast<GLlink *>(b->link(j));
+            const std::vector<GLcamera *>& cameras = l->cameras();
+            for (size_t k=0; k<cameras.size(); k++){
+                hrp::VisionSensor *s = cameras[k]->sensor();
+                if (s->nextUpdateTime < m_log->currentTime()){
+                    cameras[k]->render(this);
+                    s->nextUpdateTime += 1.0/s->frameRate;
+                } 
+            }
+        } 
+    }
 }
 
 void GLsceneBase::requestClear()
@@ -319,5 +340,5 @@ void GLsceneBase::clear()
 void GLsceneBase::setView()
 {
     glViewport(0,0,m_width, m_height);
-    m_camera->setView();
+    m_camera->setView(m_width, m_height);
 }

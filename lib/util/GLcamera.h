@@ -9,6 +9,9 @@
 class GLsceneBase;
 class GLlink;
 class GLshape;
+namespace hrp{
+    class VisionSensor;
+};
 
 class GLcamera : public GLcoordinates
 {
@@ -18,6 +21,7 @@ public:
     GLcamera(int i_width, int i_height, double i_near, double i_far, double i_fovy);
     ~GLcamera();
     const std::string& name() const;
+    void setView(int w, int h);
     void setView();
     void computeAbsTransform(double o_trans[16]);
     double *getAbsTransform();
@@ -32,7 +36,7 @@ public:
     GLlink *link();
     void highlight(bool flag);
     void render(GLsceneBase *i_scene);
-    unsigned char *rgbImage();
+    hrp::VisionSensor *sensor();
 private:
     void initFramebuffer( void );
     void initRenderbuffer( void );
@@ -45,7 +49,7 @@ private:
     double m_viewPoint[3], m_viewTarget[3];
     std::vector<GLshape *> m_shapes;
     GLuint m_frameBuffer, m_renderBuffer, m_texture;
-    unsigned char *m_rgbImage;
+    hrp::VisionSensor *m_sensor;
 };
 
 #endif

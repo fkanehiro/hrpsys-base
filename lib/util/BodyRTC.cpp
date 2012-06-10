@@ -125,20 +125,33 @@ void BodyRTC::createDataPorts()
     }
 
     int ncamera = numSensors(Sensor::VISION);
-    for (int i=0; i<ncamera; i++){
-        Sensor *s = sensor(Sensor::VISION, i);
-        VisionSensor *vs = dynamic_cast<VisionSensor *>(s);
-        if (vs->imageType == VisionSensor::COLOR 
-            || vs->imageType == VisionSensor::MONO
-            || vs->imageType == VisionSensor::COLOR_DEPTH
-            || vs->imageType == VisionSensor::MONO_DEPTH){
-            m_image.resize(m_image.size()+1);
-            m_imageOut.push_back(new OutPort<Img::TimedCameraImage>(s->name.c_str(), m_image[i]));
-            addOutPort(s->name.c_str(), *m_imageOut.back());
+    m_image.resize(ncamera);
+    m_imageOut.resize(ncamera);
+    for (int id=0; id<ncamera; id++){
+        VisionSensor *s = sensor<VisionSensor>(id);
+        if (!s) continue;
+        if (s->imageType == VisionSensor::COLOR 
+            || s->imageType == VisionSensor::COLOR_DEPTH){
+            m_image[id].data.image.width = s->width;
+            m_image[id].data.image.height = s->height;
+            m_image[id].data.image.format = Img::CF_RGB;
+            int len = s->width*s->height*3;
+            m_image[id].data.image.raw_data.length(len);
+            m_imageOut[id] = new OutPort<Img::TimedCameraImage>(s->name.c_str(), m_image[id]);
+            addOutPort(s->name.c_str(), *m_imageOut[id]);
+        }else if(s->imageType == VisionSensor::MONO
+                 || s->imageType == VisionSensor::MONO_DEPTH){
+            m_image[id].data.image.width = s->width;
+            m_image[id].data.image.height = s->height;
+            m_image[id].data.image.format = Img::CF_GRAY;
+            int len = s->width*s->height;
+            m_image[id].data.image.raw_data.length(len);
+            m_imageOut[id] = new OutPort<Img::TimedCameraImage>(s->name.c_str(), m_image[id]);
+            addOutPort(s->name.c_str(), *m_imageOut[id]);
         }
-        if (vs->imageType == VisionSensor::DEPTH
-            || vs->imageType == VisionSensor::COLOR_DEPTH
-            || vs->imageType == VisionSensor::MONO_DEPTH){
+        if (s->imageType == VisionSensor::DEPTH
+            || s->imageType == VisionSensor::COLOR_DEPTH
+            || s->imageType == VisionSensor::MONO_DEPTH){
         }
     }
 }
@@ -199,6 +212,60 @@ void BodyRTC::writeDataPorts()
     }		
     for (unsigned int i=0; i<m_accOut.size(); i++){
         m_accOut[i]->write();
+    }
+
+    n = numSensors(Sensor::RANGE);
+    for (int id=0; id < n; ++id){
+        RangeSensor *s = sensor<RangeSensor>(id);
+        if (s->isUpdated){
+            m_range[id].data.length(s->distances.size());
+            memcpy(m_range[id].data.get_buffer(), &(s->distances[0]), 
+                   sizeof(double)*s->distances.size());
+            m_rangeOut[id]->write();
+            s->isUpdated = false;
+        }
+    }
+
+    n = numSensors(Sensor::VISION);
+    for (int id=0; id < n; ++id){
+        VisionSensor *s = sensor<VisionSensor>(id);
+        if (s->isUpdated){
+            if (s->imageType == VisionSensor::COLOR 
+                || s->imageType == VisionSensor::MONO
+                || s->imageType == VisionSensor::COLOR_DEPTH 
+                || s->imageType == VisionSensor::MONO_DEPTH){
+                if (m_image[id].data.image.raw_data.length() != s->image.size()){
+                    std::cerr << "BodyRTC: mismatch image length " 
+                              << m_image[id].data.image.raw_data.length()
+                              << "<->" << s->image.size() << std::endl;
+                }else{
+                    memcpy(m_image[id].data.image.raw_data.get_buffer(), 
+                           &s->image[0], s->image.size());
+                    m_imageOut[id]->write();
+#if 0
+                    char filename[20];
+                    sprintf(filename, "camera%d.ppm", s->id);
+                    std::ofstream ofs(filename, std::ios::out | std::ios::trunc | std::ios::binary );
+                    char buf[10];
+                    unsigned char *pixels = &s->image[0];
+                    sprintf(buf, "%d %d", s->width, s->height);
+                    if (s->imageType == VisionSensor::COLOR
+                        || s->imageType == VisionSensor::COLOR_DEPTH){
+                        ofs << "P6";
+                    }else{ 
+                        ofs << "P5";
+                    }
+                    ofs << std::endl << buf << std::endl << "255" << std::endl;
+                    ofs.write((char *)pixels, s->image.size());
+#endif    
+                }
+            }else if (s->imageType == VisionSensor::DEPTH
+                      || s->imageType == VisionSensor::COLOR_DEPTH 
+                      || s->imageType == VisionSensor::MONO_DEPTH){
+                // TODO : generate point cloud
+            }
+            s->isUpdated = false;
+        }
     }
 }
 
