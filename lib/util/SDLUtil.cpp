@@ -18,7 +18,6 @@ SDLwindow::SDLwindow(GLsceneBase* i_scene, LogManagerBase *i_log,
                      ThreadedObject* i_throbj) :
     scene(i_scene), log(i_log), throbj(i_throbj),
     width(640), height(480),
-    aspect(((double)width)/height),
     pan(M_PI/4), tilt(M_PI/16), radius(5),
     isShiftPressed(false), isControlPressed(false),
     xCenter(0), yCenter(0), zCenter(0.8),
@@ -252,7 +251,6 @@ bool SDLwindow::processEvents()
             height = event.resize.h;
             SDL_SetVideoMode(width,height,32,SDL_HWSURFACE | SDL_GL_DOUBLEBUFFER | SDL_OPENGL | SDL_RESIZABLE);
             glViewport(0, 0, width, height);
-            aspect = ((double)width)/height;
             scene->setScreenSize(width, height);
             break;
         }

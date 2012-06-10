@@ -21,7 +21,6 @@ private:
     LogManagerBase *log;
     ThreadedObject *throbj;
     int width, height;
-    double aspect;
     double pan, tilt, radius;
     bool isShiftPressed, isControlPressed;
     double xCenter, yCenter, zCenter;
