@@ -52,7 +52,9 @@ Note:NameSever and openhrp-model-loader must be running
 
 visualize a model file and work as a OnlineViewer server
 
-hrpsys-viewer [model file]
+hrpsys-viewer [model file] [-s size]
+
+-s specify initial window size
 
 Note:NameSever and openhrp-model-loader must be running
 

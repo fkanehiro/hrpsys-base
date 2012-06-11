@@ -73,6 +73,7 @@ bool SDLwindow::init(int w, int h, bool resizable)
     SDL_EnableKeyRepeat(SDL_DEFAULT_REPEAT_DELAY,SDL_DEFAULT_REPEAT_INTERVAL);
 
     scene->init();
+    scene->setScreenSize(width, height);
 
     initialized = true;
     return true;
