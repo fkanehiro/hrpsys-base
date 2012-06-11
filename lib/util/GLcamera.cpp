@@ -167,7 +167,7 @@ void GLcamera::render(GLsceneBase *i_scene)
     if (m_sensor->imageType != VisionSensor::NONE 
         && m_sensor->imageType != VisionSensor::DEPTH){
         unsigned char rgb[m_width*m_height*3];
-        glGetTexImage( GL_TEXTURE_2D, 0, GL_RGB, GL_UNSIGNED_BYTE, rgb);
+        glReadPixels(0,0, m_width, m_height, GL_RGB, GL_UNSIGNED_BYTE, rgb);
 
         if (m_sensor->imageType == VisionSensor::COLOR
             || m_sensor->imageType == VisionSensor::COLOR_DEPTH){
