@@ -67,6 +67,7 @@ int main(int argc, char* argv[])
 {
     bool display = true, realtime=false, usebbox=false, endless=false;
     bool showsensors = false;
+    int wsize = 0;
     for (int i=0; i<argc; i++){
         if (strcmp("-nodisplay",argv[i])==0){
             display = false;
@@ -78,6 +79,8 @@ int main(int argc, char* argv[])
             endless = true;
         }else if(strcmp("-showsensors", argv[i])==0){
             showsensors = true;
+        }else if(strcmp("-s", argv[i])==0){
+            wsize = atoi(argv[++i]);
         }
     }
 
@@ -124,7 +127,7 @@ int main(int argc, char* argv[])
     Simulator simulator(&log);
 
     SDLwindow window(&scene, &log, &simulator);
-    if (display) window.init();
+    if (display) window.init(wsize, wsize);
 
     //================= setup Simulator ======================
     BodyFactory factory = boost::bind(createBody, _1, _2, modelloader, &scene, usebbox);

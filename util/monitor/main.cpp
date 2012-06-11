@@ -55,11 +55,14 @@ int main(int argc, char* argv[])
     }
 
     char *rhname = NULL, *shname = NULL;
+    int wsize = 0;
     for (int i = 2; i<argc; i++){
         if (strcmp(argv[i], "-rh")==0){
             rhname = argv[++i];
         }else if(strcmp(argv[i], "-sh")==0){
             shname = argv[++i];
+        }else if(strcmp(argv[i], "-s")==0){
+            wsize = atoi(argv[++i]);
         }
     }
 
@@ -118,7 +121,7 @@ int main(int argc, char* argv[])
     GLscene scene(&log);
 
     SDLwindow window(&scene, &log, &monitor);
-    window.init();
+    window.init(wsize, wsize);
 
     std::vector<hrp::ColdetLinkPairPtr> pairs;
     ModelLoader_var modelloader = getModelLoader(namingContext);

@@ -17,6 +17,7 @@ hrpsys-simulator [project file] [options]
 -usebbox use bounding boxes instead of actual geometries<br>
 -endless never finish simulation<br>
 -showsensor show sensor output<br>
+-s size specify initial window size<br>
 
 Note:NameSever and openhrp-model-loader must be running
 
@@ -33,6 +34,7 @@ hrpsys-simulator-jython [project file] [jython script] [options]
 -usebbox use bounding boxes instead of actual geometries<br>
 -endless never finish simulation<br>
 -showsensor show sensor output<br>
+-s size specify initial window size<br>
 
 \section hrpsys-simulator-python hrpsys-simulator-python
 
@@ -62,10 +64,11 @@ Note:NameSever and openhrp-model-loader must be running
 
 monitor robot's status
 
-hrpsys-monitor [project file] [-rh rtcName] [-sh rtcName]
+hrpsys-monitor [project file] [-rh rtcName] [-sh rtcName] [-s size]
 
 -rh name of %RTC which provides OpenHRP::RobotHardwareService (default:RobotHardware0)<br>
 -sh name of %RTC which provides OpenHRP::StateHolderService (default:StateHolder0)<br>
+-s initial window size<br>
 
 Note:NameSever and openhrp-model-loader must be running
 
