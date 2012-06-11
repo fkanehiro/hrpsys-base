@@ -202,6 +202,24 @@ void GLcamera::render(GLsceneBase *i_scene)
             }
         }
     }
+    if (m_sensor->imageType == VisionSensor::DEPTH
+        || m_sensor->imageType == VisionSensor::COLOR_DEPTH
+        || m_sensor->imageType == VisionSensor::MONO_DEPTH){
+        if (m_sensor->depth.size() != m_width*m_height){
+            std::cerr << "invalid depth length" << std::endl;
+        }else{
+            float depth[m_width*m_height];
+            glReadPixels(0,0,m_width, m_height, GL_DEPTH_COMPONENT, GL_FLOAT,
+                         depth);
+            float *src = depth, *dst = &m_sensor->depth[m_width*(m_height-1)];
+            for (int i=0; i<m_height; i++){
+                memcpy(dst, src, m_width*sizeof(float));
+                src += m_width;
+                dst -= m_width;
+            }
+            m_sensor->isUpdated = true;
+        }
+    }
     /* switch to default buffer */
     glBindFramebufferEXT( GL_FRAMEBUFFER_EXT, 0 );
 }
