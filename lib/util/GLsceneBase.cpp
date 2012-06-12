@@ -284,16 +284,16 @@ void GLsceneBase::draw()
             cvSize(m_width, m_height),
             IPL_DEPTH_8U, 3);
     }
-    if(!m_log->isRecording() && m_videoWriter){
+    if(m_videoWriter){
         char *dst = m_cvImage->imageData;
         capture(dst);
         cvWriteFrame(m_videoWriter, m_cvImage);
-        if (!m_log->isRecording()){
-            cvReleaseVideoWriter(&m_videoWriter);
-            cvReleaseImage(&m_cvImage);
-            m_videoWriter = NULL;
-            m_cvImage = NULL;
-        }
+    }
+    if (!m_log->isRecording() && m_videoWriter){
+        cvReleaseVideoWriter(&m_videoWriter);
+        cvReleaseImage(&m_cvImage);
+        m_videoWriter = NULL;
+        m_cvImage = NULL;
     }
     if (m_request == REQ_CAPTURE){
         save(m_fname.c_str());
