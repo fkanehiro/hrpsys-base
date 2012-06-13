@@ -309,6 +309,7 @@ void GLsceneBase::draw()
             const std::vector<GLcamera *>& cameras = l->cameras();
             for (size_t k=0; k<cameras.size(); k++){
                 hrp::VisionSensor *s = cameras[k]->sensor();
+                if (!s->isEnabled) continue;
                 if (s->nextUpdateTime < m_log->currentTime()){
                     cameras[k]->render(this);
                     s->nextUpdateTime += 1.0/s->frameRate;
