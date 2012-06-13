@@ -14,6 +14,7 @@ set(sources
   SDLUtil.cpp
   BodyRTC.cpp
   BVutil.cpp
+  PortHandler.cpp
   )
 
 set(headers
