@@ -25,6 +25,7 @@ macro(generate_stub_skel idl_basename package_path)
 
 endmacro()
 
+add_subdirectory(CameraImageViewer)
 add_subdirectory(NullComponent)
 add_subdirectory(RobotHardware)
 add_subdirectory(StateHolder)
