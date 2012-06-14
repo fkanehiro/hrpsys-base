@@ -61,7 +61,7 @@ int main(int argc, char* argv[])
             rhname = argv[++i];
         }else if(strcmp(argv[i], "-sh")==0){
             shname = argv[++i];
-        }else if(strcmp(argv[i], "-s")==0){
+        }else if(strcmp(argv[i], "-size")==0){
             wsize = atoi(argv[++i]);
         }
     }

@@ -82,7 +82,7 @@ int main(int argc, char *argv[])
         }
         int wsize=0;
         for (int i=1; i<argc; i++){
-            if (strcmp(argv[i], "-s")==0){
+            if (strcmp(argv[i], "-size")==0){
                 wsize = atoi(argv[++i]);
             }
         }

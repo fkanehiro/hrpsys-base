@@ -79,7 +79,7 @@ int main(int argc, char* argv[])
             endless = true;
         }else if(strcmp("-showsensors", argv[i])==0){
             showsensors = true;
-        }else if(strcmp("-s", argv[i])==0){
+        }else if(strcmp("-size", argv[i])==0){
             wsize = atoi(argv[++i]);
         }
     }
@@ -100,6 +100,7 @@ int main(int argc, char* argv[])
             && strcmp(argv[i], "-usebbox")
             && strcmp(argv[i], "-endless")
             && strcmp(argv[i], "-showsensors")
+            && strcmp(argv[i], "-size")
             ){
             rtmargv.push_back(argv[i]);
             rtmargc++;
