@@ -127,9 +127,15 @@ RTC::ReturnCode_t CameraImageViewer::onExecute(RTC::UniqueId ec_id)
                                              m_image.data.image.height),
                                       IPL_DEPTH_8U, 3);
         }
-        memcpy(m_cvImage->imageData, m_image.data.image.raw_data.get_buffer(),
-               m_image.data.image.raw_data.length());
+        // RGB -> BGR
+        char *dst = m_cvImage->imageData;
+        for (int i=0; i<m_image.data.image.width*m_image.data.image.height; i++){
+            dst[i*3  ] = m_image.data.image.raw_data[i*3+2]; 
+            dst[i*3+1] = m_image.data.image.raw_data[i*3+1]; 
+            dst[i*3+2] = m_image.data.image.raw_data[i*3  ]; 
+        }
         cvShowImage("Image",m_cvImage);
+        cvWaitKey(10);
     }
 
     return RTC::RTC_OK;
