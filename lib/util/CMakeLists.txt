@@ -51,6 +51,7 @@ target_link_libraries(hrpsysUtil
   ${GLUT_LIBRARIES} 
   ${QHULL_LIBRARIES}
   GLEW
+  boost_thread
   )
 
 set(target hrpsysUtil)

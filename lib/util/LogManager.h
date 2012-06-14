@@ -4,6 +4,7 @@
 #include <iostream>
 #include <sys/time.h>
 #include <deque>
+#include <boost/thread/thread.hpp>
 #include "LogManagerBase.h"
 
 template<class T>
@@ -14,6 +15,7 @@ public:
         m_maxLogLength(0){
     }
     void add(const T& state){
+        boost::mutex::scoped_lock lock(m_mutex);
         m_log.push_back(state);
         if (m_log.size() == 1) m_offsetT = state.time;
         if (m_maxLogLength > 0 && m_log.size() > m_maxLogLength) {
@@ -23,6 +25,7 @@ public:
         m_isNewStateAdded = true;
     }
     void clear(){
+        boost::mutex::scoped_lock lock(m_mutex);
         m_log.clear();
         m_index = -1;
         m_atLast = true;
@@ -30,12 +33,15 @@ public:
     void prev(int delta=1){ setIndex(m_index - delta); }
     void next(int delta=1){ setIndex(m_index + delta); }
     void head(){ setIndex(0); }
-    void tail(){ if (!m_log.empty()) setIndex(m_log.size()-1); } 
+    void tail(){ 
+        if (!m_log.empty()) setIndex(m_log.size()-1); 
+    } 
     void move(double ratio){
         if (m_log.size()) setIndex(ratio*(m_log.size()-1));
     }
     bool isNewStateAdded() { return m_isNewStateAdded; }
     double currentTime() { 
+        boost::mutex::scoped_lock lock(m_mutex);
         if (!m_log.empty() && m_index>=0){
             return m_log[m_index].time - m_offsetT;
         }else{
@@ -43,8 +49,12 @@ public:
         }
     }
     int index() { return m_index; }
-    double time(int i) { return m_log[i].time; }
+    double time(int i) { 
+        boost::mutex::scoped_lock lock(m_mutex);
+        return m_log[i].time; 
+    }
     void faster(){
+        boost::mutex::scoped_lock lock(m_mutex);
         m_playRatio *= 2;
         if (m_isPlaying){
             m_initT = m_log[m_index].time;
@@ -52,6 +62,7 @@ public:
         }
     }
     void slower(){
+        boost::mutex::scoped_lock lock(m_mutex);
         m_playRatio /= 2;
         if (m_isPlaying){
             m_initT = m_log[m_index].time;
@@ -109,11 +120,18 @@ public:
         }
         return m_index;
     }
-    T& state() { return m_log[m_index]; }
+    T& state() { 
+        boost::mutex::scoped_lock lock(m_mutex);
+        return m_log[m_index]; 
+    }
     void enableRingBuffer(int len) { m_maxLogLength = len; }
-    unsigned int length() { return m_log.size(); }
+    unsigned int length() { 
+        boost::mutex::scoped_lock lock(m_mutex);
+        return m_log.size(); 
+    }
 protected:
     void setIndex(int i){
+        boost::mutex::scoped_lock lock(m_mutex);
         if (m_log.empty()) return;
         
         m_index = i;
@@ -129,5 +147,6 @@ protected:
     struct timeval m_startT;
     int m_maxLogLength;
     double m_offsetT;
+    boost::mutex m_mutex; 
 };
 #endif
