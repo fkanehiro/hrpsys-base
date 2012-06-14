@@ -41,28 +41,31 @@ void GLshape::draw(int i_mode)
 
 void GLshape::setVertices(int nvertices, const float *vertices)
 {
+    m_vertices.resize(nvertices);
     for (size_t i=0; i<nvertices; i++){
-        m_vertices.push_back(Eigen::Vector3f(vertices[i*3  ], 
-                                             vertices[i*3+1], 
-                                             vertices[i*3+2]));
+        m_vertices[i] = Eigen::Vector3f(vertices[i*3  ], 
+					vertices[i*3+1], 
+					vertices[i*3+2]);
     }
 }
 
 void GLshape::setTriangles(int ntriangles, const int *vertexIndices)
 {
+    m_triangles.resize(ntriangles);
     for (size_t i=0; i<ntriangles; i++){
-        m_triangles.push_back(Eigen::Vector3i(vertexIndices[i*3  ],
-                                              vertexIndices[i*3+1],
-                                              vertexIndices[i*3+2]));
+        m_triangles[i] = Eigen::Vector3i(vertexIndices[i*3  ],
+					 vertexIndices[i*3+1],
+					 vertexIndices[i*3+2]);
     }
 }
 
 void GLshape::setNormals(int nnormal, const float *normals)
 {
+    m_normals.resize(nnormal);
     for (size_t i=0; i<nnormal; i++){
-        m_normals.push_back(Eigen::Vector3f(normals[i*3  ],
-                                            normals[i*3+1],
-                                            normals[i*3+2]));
+        m_normals[i] = Eigen::Vector3f(normals[i*3  ],
+				       normals[i*3+1],
+				       normals[i*3+2]);
     }
 }
 
@@ -91,9 +94,10 @@ void GLshape::setNormalIndices(int len, const int *normalIndices)
 
 void GLshape::setTextureCoordinates(int ncoords, const float *coordinates)
 {
+    m_textureCoordinates.resize(ncoords);
     for (size_t i=0; i<ncoords; i++){
-        m_textureCoordinates.push_back(Eigen::Vector2f(coordinates[i*2  ],
-                                                       coordinates[i*2+1]));
+        m_textureCoordinates[i] = Eigen::Vector2f(coordinates[i*2  ],
+						  coordinates[i*2+1]);
     }
 }
 
