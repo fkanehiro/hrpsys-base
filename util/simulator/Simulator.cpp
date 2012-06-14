@@ -148,6 +148,17 @@ bool Simulator::oneStep(){
                tm_collision.totalTime(), tm_collision.averageTime()*1000);
         printf("dynamics  :%8.3f[s], %8.3f[ms/frame]\n",
                tm_dynamics.totalTime(), tm_dynamics.averageTime()*1000);
+        for (int i=0; i<numBodies(); i++){
+            hrp::BodyPtr body = this->body(i);
+            int ntri=0;
+            for (int j=0; j<body->numLinks(); j++){
+                hrp::Link *l = body->link(j);
+                if (l && l->coldetModel){
+                    ntri += l->coldetModel->getNumTriangles();
+                }
+            }
+            printf("num of triangles : %s : %d\n", body->name().c_str(), ntri);
+        }
         fflush(stdout);
         return false;
     }else{
