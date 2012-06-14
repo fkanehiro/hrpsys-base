@@ -23,6 +23,7 @@ public:
     void realTime(bool flag) { adjustTime = flag; }
     void setTotalTime(double time) { m_totalTime = time; }
     double totalTime() { return m_totalTime; }
+    void setLogTimeStep(double time) { m_logTimeStep = time; }
     void clear();
     void appendLog();
     void addCollisionCheckPair(BodyRTC *b1, BodyRTC *b2);
@@ -31,7 +32,7 @@ private:
     std::vector<ClockReceiver> receivers;
     std::vector<hrp::ColdetLinkPairPtr> pairs;
     SceneState state;
-    double m_totalTime;
+    double m_totalTime, m_logTimeStep, m_nextLogTime;
     TimeMeasure tm_dynamics, tm_control, tm_collision;
     bool adjustTime;
     std::deque<struct timeval> startTimes;

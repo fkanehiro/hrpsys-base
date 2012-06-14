@@ -11,6 +11,7 @@ void Simulator::init(Project &prj, BodyFactory &factory){
     initRTS(prj, receivers);
     std::cout << "number of receivers:" << receivers.size() << std::endl;
     m_totalTime = prj.totalTime();
+    m_logTimeStep = prj.logTimeStep();
 
     OpenHRP::CollisionSequence& collisions = state.collisions;
 
@@ -26,14 +27,16 @@ void Simulator::init(Project &prj, BodyFactory &factory){
         pair.linkName2 = CORBA::string_dup(link1->name.c_str());
     }
 
+    m_nextLogTime = 0;
     appendLog();
 }
 
 void Simulator::appendLog()
 {
-    if (log){
+    if (log && currentTime() >= m_nextLogTime){
         state.set(*this);
         log->add(state);
+        m_nextLogTime += m_logTimeStep;
     }
 }
 

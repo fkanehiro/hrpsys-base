@@ -76,6 +76,7 @@ public:
     bool parse(const std::string &filename);
     double timeStep() { return m_timeStep; }
     double totalTime() { return m_totalTime; }
+    double logTimeStep() { return m_logTimeStep; }
     double gravity() { return m_gravity; }
     bool isEuler() { return m_isEuler; }
     bool kinematicsOnly() { return m_kinematicsOnly; }
@@ -84,7 +85,7 @@ public:
     RTSItem &RTS() { return m_rts; }
     RobotHardwareClientView &RobotHardwareClient() { return m_rhview; }
 private:
-    double m_timeStep;
+    double m_timeStep, m_logTimeStep;
     double m_totalTime;
     double m_gravity;
     bool m_isEuler;

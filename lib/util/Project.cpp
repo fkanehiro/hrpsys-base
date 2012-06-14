@@ -9,7 +9,7 @@
 #include "Project.h"
 
 Project::Project() : 
-    m_timeStep(0.001), m_totalTime(1.0), m_gravity(9.8), m_isEuler(true), m_kinematicsOnly(false)
+    m_timeStep(0.001), m_logTimeStep(0.01), m_totalTime(1.0), m_gravity(9.8), m_isEuler(true), m_kinematicsOnly(false)
 {
 }
 
@@ -181,7 +181,7 @@ bool Project::parse(const std::string& filename)
           while ( cur_node ) {
               if ( cur_node->type == XML_ELEMENT_NODE ) {
                   if ( xmlStrEqual(xmlGetProp(cur_node, (xmlChar *)"name"),(xmlChar *)"logTimeStep") ) {
-                      //logTimeStep = atof((char *)(xmlGetProp(cur_node, (xmlChar *)"value")));
+                      m_logTimeStep = atof((char *)(xmlGetProp(cur_node, (xmlChar *)"value")));
                   } else if ( xmlStrEqual(xmlGetProp(cur_node, (xmlChar *)"name"),(xmlChar *)"timeStep") ) {
                       m_timeStep = atof((char *)(xmlGetProp(cur_node, (xmlChar *)"value")));
                   } else if ( xmlStrEqual(xmlGetProp(cur_node, (xmlChar *)"name"),(xmlChar *)"totalTime") ) {
