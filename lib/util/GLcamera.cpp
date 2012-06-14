@@ -159,7 +159,7 @@ void GLcamera::render(GLsceneBase *i_scene)
     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
-    i_scene->drawObjects();
+    i_scene->drawObjects(false);
 
     glFlush();
 

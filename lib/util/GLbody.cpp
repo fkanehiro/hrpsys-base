@@ -83,3 +83,8 @@ void GLbody::setSensorDrawCallback(boost::function2<void, hrp::Body *, hrp::Sens
 {
     m_sensorDrawCallback = f;
 }
+
+boost::function2<void, hrp::Body *, hrp::Sensor *> GLbody::getSensorDrawCallback()
+{
+    return m_sensorDrawCallback;
+}

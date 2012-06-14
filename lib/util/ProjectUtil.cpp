@@ -1,6 +1,7 @@
 #include <iostream>
 #include <rtm/Manager.h>
 #include <rtm/RTObject.h>
+#include <rtm/CorbaNaming.h>
 #include <hrpModel/Link.h>
 #include "ProjectUtil.h"
 
@@ -98,6 +99,29 @@ void initWorld(Project& prj, BodyFactory &factory,
         body->calcForwardKinematics();
     }
     world.initialize();
+}
+
+RTC::RTObject *findRTC(const std::string &rtcName)
+{
+    RTC::Manager& manager = RTC::Manager::instance();
+    std::string nameServer = manager.getConfig()["corba.nameservers"];
+    int comPos = nameServer.find(",");
+    if (comPos < 0){
+        comPos = nameServer.length();
+    }
+    nameServer = nameServer.substr(0, comPos);
+    RTC::CorbaNaming naming(manager.getORB(), nameServer.c_str());
+    CosNaming::Name name;
+    name.length(1);
+    name[0].id = CORBA::string_dup(rtcName.c_str());
+    name[0].kind = CORBA::string_dup("rtc");
+    CORBA::Object_ptr obj = naming.resolve(name);
+    if (obj){
+        RTC::RTObject_var rtc =  RTC::RTObject::_narrow(obj);
+        //return rtc;
+    }else{
+        return NULL;
+    }
 }
 
 void initRTS(Project &prj, std::vector<ClockReceiver>& receivers)

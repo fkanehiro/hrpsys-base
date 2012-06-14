@@ -28,6 +28,7 @@ public:
     void drawSensor(hrp::Sensor *i_sensor);
     GLcamera *findCamera(const char *i_name);
     void setSensorDrawCallback(boost::function2<void, hrp::Body *, hrp::Sensor *> f);
+    boost::function2<void, hrp::Body *, hrp::Sensor *> getSensorDrawCallback();
     static void useAbsTransformToDraw();
 
 private:

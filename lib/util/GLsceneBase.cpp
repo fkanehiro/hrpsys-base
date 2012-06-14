@@ -215,13 +215,20 @@ void GLsceneBase::drawInfo(double fps)
     showStatus();
 }
 
-void GLsceneBase::drawObjects()
+void GLsceneBase::drawObjects(bool showSensors)
 {
     // robots
+    boost::function2<void, hrp::Body *, hrp::Sensor *> callback;
     for (int i=0; i<numBodies(); i++){
         GLbody *glbody = dynamic_cast<GLbody *>(body(i).get());
         if (!glbody) std::cout << "dynamic_cast failed" << std::endl;
+        if (!showSensors) {
+            callback = glbody->getSensorDrawCallback();
+            glbody->setSensorDrawCallback(NULL);
+        }
         glbody->draw();
+        if (!showSensors) glbody->setSensorDrawCallback(callback);
+
     }
 }
 

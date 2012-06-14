@@ -194,6 +194,7 @@ void GLscene::drawSensorOutput(Body *body, Sensor *sensor)
         VisionSensor *v = dynamic_cast<VisionSensor *>(sensor);
         double far = v->far, near = v->near;
         glDisable(GL_LIGHTING);
+        glColor3f(1,1,1);
         glBegin(GL_LINES);
         double t = tan(v->fovy/2);
         double xf = t*far*v->width/v->height, yf = t*far;
