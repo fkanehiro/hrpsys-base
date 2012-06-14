@@ -198,6 +198,16 @@ void loadShapeFromSceneInfo(GLlink *link, SceneInfo_var i_sinfo,
     }
 }
 
+void loadShapeFromLinkInfo(GLlink *link, 
+                           const OpenHRP::LinkInfo &i_li, 
+                           OpenHRP::ShapeSetInfo_ptr i_ssinfo,
+                           GLshape *(*shapeFactory)())
+{
+    shapeLoader loader;
+    loader.setShapeSetInfo(i_ssinfo);
+    loader.loadShapeFromLinkInfo(link, i_li, shapeFactory);
+}
+
 void shapeLoader::loadShapeFromLinkInfo(GLlink *link, const LinkInfo &i_li, GLshape *(*shapeFactory)()){
     Vector3 axis;
     Matrix33 R;
