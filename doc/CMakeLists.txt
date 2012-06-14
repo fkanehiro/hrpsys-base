@@ -1,5 +1,6 @@
 set(input_files package.h utilities.h
 		      ../jython/rtm.py
+		      ../rtc/CameraImageViewer/CameraImageViewer.txt
 		      ../rtc/DataLogger/DataLogger.txt
 		      ../rtc/ForwardKinematics/ForwardKinematics.txt
 		      ../rtc/Joystick/Joystick.txt

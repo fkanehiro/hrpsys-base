@@ -467,6 +467,7 @@ WARN_LOGFILE           =
 INPUT		      =  @CMAKE_CURRENT_SOURCE_DIR@/package.h \
 		      @CMAKE_CURRENT_SOURCE_DIR@/utilities.h \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../jython/rtm.py \
+		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/CameraImageViewer \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/DataLogger \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/ForwardKinematics \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/HGcontroller \

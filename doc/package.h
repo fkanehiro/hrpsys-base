@@ -19,6 +19,7 @@ To use python scripts to create RT components, connect ports and get/set propert
   This library helps to create/delete and activate/deactivate RT components and connect/disconnect ports.</li>
   <li>Basic RT components</li>
   <ul>
+    <li>\ref CameraImageViewer</li>
     <li>\ref CollisionDetector</li>
     <li>\ref DataLogger</li>
     <li>\ref ForwardKinematics</li>
