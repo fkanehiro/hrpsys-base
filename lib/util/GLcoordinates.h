@@ -16,6 +16,7 @@ public:
         m_trans[12] = p[0]; m_trans[13] = p[1]; m_trans[14] = p[2];
     }
     void setRotation(double r, double p, double y);
+    void setRotation(double ax, double ay, double az, double th);
     hrp::Matrix33 getRotation();
     void setRotation(const hrp::Matrix33 &R);
     void setRotation(const double *R);

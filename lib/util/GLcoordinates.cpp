@@ -31,6 +31,14 @@ void GLcoordinates::setRotation(double r, double p, double y)
     setRotation(R);
 }
 
+void GLcoordinates::setRotation(double ax, double ay, double az, double th)
+{
+    hrp::Vector3 axis(ax, ay, az);
+    hrp::Matrix33 R;
+    hrp::calcRodrigues(R, axis, th);
+    setRotation(R);
+}
+
 hrp::Matrix33 GLcoordinates::getRotation()
 {
     hrp::Matrix33 R;
