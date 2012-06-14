@@ -18,6 +18,43 @@
 using namespace OpenHRP;
 using namespace hrp;
 
+class shapeLoader{
+public:
+    void setShapeSetInfo(ShapeSetInfo_ptr i_ssinfo);
+    void loadShapeFromBodyInfo(GLbody *body, BodyInfo_var i_binfo, GLshape *(*shapeFactory)());
+    void loadShapeFromLinkInfo(GLlink *link, const LinkInfo &i_li, GLshape *(*shapeFactory)());
+    void loadShape(GLshape *shape, 
+                   const OpenHRP::TransformedShapeIndex &i_tsi);
+    void loadCamera(GLcamera *camera, const OpenHRP::SensorInfo &i_si); 
+    ShapeInfoSequence_var sis;
+    AppearanceInfoSequence_var ais;
+    MaterialInfoSequence_var mis;
+    TextureInfoSequence_var txs;
+};
+
+void shapeLoader::setShapeSetInfo(ShapeSetInfo_ptr i_ssinfo)
+{
+    sis = i_ssinfo->shapes();
+    ais = i_ssinfo->appearances();
+    mis = i_ssinfo->materials(); 
+    txs = i_ssinfo->textures();
+}
+
+void shapeLoader::loadShapeFromBodyInfo(GLbody *body, BodyInfo_var i_binfo,
+                                        GLshape *(*shapeFactory)())
+{
+    LinkInfoSequence_var lis = i_binfo->links();
+    for (unsigned int i=0; i<lis->length(); i++){
+        hrp::Link *l = body->link(std::string(lis[i].name));
+        if (l){
+	    loadShapeFromLinkInfo((GLlink *)l, lis[i], shapeFactory);
+        }else{
+            std::cout << "can't find a link named " << lis[i].name 
+                      << std::endl;
+        }
+    }
+}
+
 void mulTrans(const double i_m1[16], const double i_m2[16], double o_m[16])
 {
     for (int i=0; i<4; i++){
@@ -54,13 +91,9 @@ bool loadTextureFromTextureInfo(GLtexture *texture, TextureInfo &ti)
     return true;
 }
 
-void loadShape(GLshape *shape, 
-               OpenHRP::ShapeSetInfo_ptr i_ssinfo, 
-               const OpenHRP::TransformedShapeIndex &i_tsi)
+void shapeLoader::loadShape(GLshape *shape, 
+                            const OpenHRP::TransformedShapeIndex &i_tsi)
 {
-    ShapeInfoSequence_var sis = i_ssinfo->shapes();
-    AppearanceInfoSequence_var ais = i_ssinfo->appearances();
-    MaterialInfoSequence_var mis = i_ssinfo->materials();
     shape->setTransform(i_tsi.transformMatrix);
     ShapeInfo& si = sis[i_tsi.shapeIndex];
     shape->setVertices(si.vertices.length()/3, si.vertices.get_buffer());
@@ -75,11 +108,11 @@ void loadShape(GLshape *shape,
     shape->setTextureCoordIndices(ai.textureCoordIndices.length(),
                                   (int *)ai.textureCoordIndices.get_buffer());
     if (ai.textureIndex >=0){
-        if (i_ssinfo->textures()->length() <= ai.textureIndex){
+        if (txs->length() <= ai.textureIndex){
             std::cerr << "invalid texture index(" << ai.textureIndex << ")"
                       << std::endl;
         }else{
-            TextureInfo &ti = (*i_ssinfo->textures())[ai.textureIndex];
+            TextureInfo &ti = txs[ai.textureIndex];
             GLtexture *texture = new GLtexture();
             if (loadTextureFromTextureInfo(texture, ti)){
                 shape->setTexture(texture);
@@ -147,31 +180,25 @@ void loadCube(GLshape *shape, double x, double y, double z)
 void loadShapeFromBodyInfo(GLbody *body, BodyInfo_var i_binfo,
                            GLshape *(*shapeFactory)())
 {
-    LinkInfoSequence_var lis = i_binfo->links();
-    
-    for (unsigned int i=0; i<lis->length(); i++){
-        hrp::Link *l = body->link(std::string(lis[i].name));
-        if (l){
-            loadShapeFromLinkInfo((GLlink *)l, lis[i], i_binfo, shapeFactory);
-        }else{
-            std::cout << "can't find a link named " << lis[i].name 
-                      << std::endl;
-        }
-    }
+    shapeLoader loader;
+    loader.setShapeSetInfo(i_binfo);
+    loader.loadShapeFromBodyInfo(body, i_binfo, shapeFactory);
 }
 
 void loadShapeFromSceneInfo(GLlink *link, SceneInfo_var i_sinfo, 
                             GLshape *(*shapeFactory)())
 {
+    shapeLoader loader;
+    loader.setShapeSetInfo(i_sinfo);
     TransformedShapeIndexSequence_var tsis = i_sinfo->shapeIndices();
     for (size_t i = 0; i<tsis->length(); i++){
         GLshape *shape = shapeFactory ? shapeFactory() : new GLshape();
-        loadShape(shape, i_sinfo, tsis[i]);
+        loader.loadShape(shape, tsis[i]);
         link->addShape(shape);
     }
 }
 
-void loadShapeFromLinkInfo(GLlink *link, const LinkInfo &i_li, ShapeSetInfo_ptr i_ssinfo, GLshape *(*shapeFactory)()){
+void shapeLoader::loadShapeFromLinkInfo(GLlink *link, const LinkInfo &i_li, GLshape *(*shapeFactory)()){
     Vector3 axis;
     Matrix33 R;
     
@@ -188,7 +215,7 @@ void loadShapeFromLinkInfo(GLlink *link, const LinkInfo &i_li, ShapeSetInfo_ptr 
 
     for (size_t i = 0; i<i_li.shapeIndices.length(); i++){
         GLshape *shape = shapeFactory ? shapeFactory() : new GLshape();
-        loadShape(shape, i_ssinfo, i_li.shapeIndices[i]);
+        loadShape(shape, i_li.shapeIndices[i]);
         link->addShape(shape);
     }
 
@@ -198,7 +225,12 @@ void loadShapeFromLinkInfo(GLlink *link, const LinkInfo &i_li, ShapeSetInfo_ptr 
         std::string type(si.type);
         if (type == "Vision"){
             //std::cout << si.name << std::endl;
-            link->addCamera(new GLcamera(si,i_ssinfo, link));
+            GLcamera *camera = new GLcamera(si.specValues[4], si.specValues[5],
+                                            si.specValues[0], si.specValues[1],
+                                            si.specValues[2],
+                                            link, si.id);
+            loadCamera(camera, si);
+            link->addCamera(camera);
         }else{
             Vector3 p;
             p[0] = si.translation[0];
@@ -213,7 +245,7 @@ void loadShapeFromLinkInfo(GLlink *link, const LinkInfo &i_li, ShapeSetInfo_ptr 
     
             for (size_t i=0; i<si.shapeIndices.length(); i++){
                 GLshape *shape = shapeFactory ? shapeFactory() : new GLshape();
-                loadShape(shape, i_ssinfo, si.shapeIndices[i]);
+                loadShape(shape, si.shapeIndices[i]);
                 Vector3 newp = R*shape->getPosition()+p;
                 shape->setPosition(newp[0], newp[1], newp[2]);
                 Matrix33 newR = R*shape->getRotation();
@@ -224,3 +256,17 @@ void loadShapeFromLinkInfo(GLlink *link, const LinkInfo &i_li, ShapeSetInfo_ptr 
     }
 }
 
+void shapeLoader::loadCamera(GLcamera *i_camera, const SensorInfo &i_si)
+{
+    i_camera->name(std::string(i_si.name));
+    i_camera->setPosition(i_si.translation[0], i_si.translation[1],
+                          i_si.translation[2]);
+    i_camera->setRotation(i_si.rotation[0], i_si.rotation[1],
+                          i_si.rotation[2], i_si.rotation[3]);
+
+    for (size_t i=0; i<i_si.shapeIndices.length(); i++){
+        GLshape *shape = new GLshape();
+        loadShape(shape, i_si.shapeIndices[i]);
+        i_camera->addShape(shape);
+    }
+}

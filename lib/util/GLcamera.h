@@ -3,7 +3,6 @@
 
 #include <string>
 #include <vector>
-#include <hrpCorba/ModelLoader.hh>
 #include "GLcoordinates.h"
 
 class GLsceneBase;
@@ -16,9 +15,9 @@ namespace hrp{
 class GLcamera : public GLcoordinates
 {
 public:
-    GLcamera(const OpenHRP::SensorInfo &i_si, OpenHRP::ShapeSetInfo_ptr i_ssinfo,
-             GLlink *i_link);
-    GLcamera(int i_width, int i_height, double i_near, double i_far, double i_fovy);
+    GLcamera(int i_width, int i_height, 
+             double i_near, double i_far, double i_fovy, 
+             GLlink *i_link=NULL, int i_id=-1);
     ~GLcamera();
     const std::string& name() const;
     void setView(int w, int h);
@@ -37,6 +36,8 @@ public:
     void highlight(bool flag);
     void render(GLsceneBase *i_scene);
     hrp::VisionSensor *sensor();
+    void addShape(GLshape *i_shape);
+    void name(const std::string &i_name);
 private:
     void initFramebuffer( void );
     void initRenderbuffer( void );

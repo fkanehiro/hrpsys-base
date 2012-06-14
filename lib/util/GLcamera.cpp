@@ -18,43 +18,16 @@
 using namespace OpenHRP;
 using namespace hrp;
 
-GLcamera::GLcamera(const SensorInfo &i_si, OpenHRP::ShapeSetInfo_ptr i_ssinfo,
-                   GLlink *i_link) : 
-    m_name(i_si.name), m_link(i_link),
-    m_frameBuffer(0), m_renderBuffer(0), m_texture(0)
+GLcamera::GLcamera(int i_width, int i_height, 
+                   double i_near, double i_far, double i_fovy,
+                   GLlink *i_link, int i_id) : 
+    m_near(i_near), m_far(i_far), 
+    m_fovy(i_fovy), m_width(i_width), m_height(i_height), 
+    m_link(i_link), 
+    m_frameBuffer(0), m_renderBuffer(0), m_texture(0),
+    m_sensor(NULL)
 {
-    
-    Matrix33 R;
-    Vector3 axis;
-    axis[0] = i_si.rotation[0];
-    axis[1] = i_si.rotation[1];
-    axis[2] = i_si.rotation[2];
-    
-    hrp::calcRodrigues(R, axis, i_si.rotation[3]);
-    
-    m_trans[ 0]=R(0,0);m_trans[ 1]=R(1,0);m_trans[ 2]=R(2,0);m_trans[3]=0; 
-    m_trans[ 4]=R(0,1);m_trans[ 5]=R(1,1);m_trans[ 6]=R(2,1);m_trans[7]=0; 
-    m_trans[ 8]=R(0,2);m_trans[ 9]=R(1,2);m_trans[10]=R(2,2);m_trans[11]=0; 
-    m_trans[12]=i_si.translation[0];m_trans[13]=i_si.translation[1];
-    m_trans[14]=i_si.translation[2];m_trans[15]=1; 
-
-    for (size_t i=0; i<i_si.shapeIndices.length(); i++){
-        GLshape *shape = new GLshape();
-        loadShape(shape, i_ssinfo, i_si.shapeIndices[i]);
-        m_shapes.push_back(shape);
-    }
-
-    m_near = i_si.specValues[0];
-    m_far  = i_si.specValues[1];
-    m_fovy = i_si.specValues[2];
-    m_width  = i_si.specValues[4];
-    m_height = i_si.specValues[5];
-
-    m_sensor = m_link->body->sensor<VisionSensor>(i_si.id);
-}
-
-GLcamera::GLcamera(int i_width, int i_height, double i_near, double i_far, double i_fovy) : m_near(i_near), m_far(i_far), m_fovy(i_fovy), m_width(i_width), m_height(i_height), m_link(NULL), m_sensor(NULL)
-{
+    if (m_link) m_sensor = m_link->body->sensor<VisionSensor>(i_id);
 }
 
 GLcamera::~GLcamera()
@@ -79,6 +52,10 @@ void GLcamera::draw(int i_mode)
 
 const std::string& GLcamera::name() const {
     return m_name;
+}
+
+void GLcamera::name(const std::string &i_name){
+    m_name = i_name;
 }
 
 void GLcamera::computeAbsTransform(double o_trans[16]){
@@ -264,3 +241,7 @@ VisionSensor *GLcamera::sensor()
     return m_sensor;
 }
 
+void GLcamera::addShape(GLshape *i_shape)
+{
+    m_shapes.push_back(i_shape);
+}
