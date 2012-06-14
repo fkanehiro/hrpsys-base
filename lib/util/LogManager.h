@@ -30,13 +30,24 @@ public:
         m_index = -1;
         m_atLast = true;
     }
-    void prev(int delta=1){ setIndex(m_index - delta); }
-    void next(int delta=1){ setIndex(m_index + delta); }
-    void head(){ setIndex(0); }
+    void prev(int delta=1){ 
+        boost::mutex::scoped_lock lock(m_mutex);
+        setIndex(m_index - delta); 
+    }
+    void next(int delta=1){ 
+        boost::mutex::scoped_lock lock(m_mutex);
+        setIndex(m_index + delta); 
+    }
+    void head(){ 
+        boost::mutex::scoped_lock lock(m_mutex);
+        setIndex(0); 
+    }
     void tail(){ 
+        boost::mutex::scoped_lock lock(m_mutex);
         if (!m_log.empty()) setIndex(m_log.size()-1); 
     } 
     void move(double ratio){
+        boost::mutex::scoped_lock lock(m_mutex);
         if (m_log.size()) setIndex(ratio*(m_log.size()-1));
     }
     bool isNewStateAdded() { return m_isNewStateAdded; }
@@ -70,6 +81,7 @@ public:
         }
     }
     bool record(){
+        boost::mutex::scoped_lock lock(m_mutex);
         if (m_log.empty()) return false;
 
         setIndex(0);
@@ -78,6 +90,7 @@ public:
         return true;
     }
     void play(){
+        boost::mutex::scoped_lock lock(m_mutex);
         if (m_log.empty()) return;
 
         if (!m_isPlaying){
@@ -90,6 +103,7 @@ public:
         }
     }
     int updateIndex(){
+        boost::mutex::scoped_lock lock(m_mutex);
         if (m_isPlaying){
             // compute time to draw
             struct timeval tv;
@@ -131,7 +145,6 @@ public:
     }
 protected:
     void setIndex(int i){
-        boost::mutex::scoped_lock lock(m_mutex);
         if (m_log.empty()) return;
         
         m_index = i;
