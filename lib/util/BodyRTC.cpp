@@ -2,6 +2,7 @@
 #include <hrpModel/Sensor.h>
 #include <hrpModel/Link.h>
 #include "BodyRTC.h"
+#include "PortHandler.h"
 
 using namespace hrp;
 using namespace RTC;
@@ -43,6 +44,12 @@ BodyRTC::BodyRTC(RTC::Manager* manager)
 BodyRTC::~BodyRTC(void)
 {
     //std::cout << "destructor of BodyRTC"  << std::endl;
+    for (size_t i=0; i<m_inports.size(); i++){
+        delete m_inports[i];
+    }
+    for (size_t i=0; i<m_outports.size(); i++){
+        delete m_outports[i];
+    }
 }
 
 void BodyRTC::createDataPorts()
@@ -315,6 +322,103 @@ void BodyRTC::readDataPorts()
             }
         }
     }
+}
+
+void parsePortConfig(const std::string &config, 
+                     std::string &name, std::string &type,
+                     std::vector<std::string> &elements)
+{
+    std::string::size_type pos = 0, start=0; 
+    pos = config.find(':', start);
+    if (pos == std::string::npos){
+        std::cerr << "can't find the first separator in [" << config << "]" 
+                  << std::endl;
+        return;
+    }
+    name = config.substr(start, pos);
+    start = pos;
+    pos = config.find(':', start);
+    if (pos == std::string::npos){
+        std::cerr << "can't find the second separator in [" << config << "]" 
+                  << std::endl;
+        return;
+    }
+    type = config.substr(start, pos);
+    // todo : parse elements
+}
+
+void getJointList(hrp::BodyPtr body, const std::vector<std::string> &elements,
+                  std::vector<hrp::Link *> &joints)
+{
+    if (elements.size() == 0){
+        for (int i=0; i<body->numJoints(); i++){
+            joints.push_back(body->joint(i));
+        }
+    }else{
+        for (size_t i=0; i<elements.size(); i++){
+            joints.push_back(body->link(elements[i]));
+        }
+    }
+}
+
+void BodyRTC::createInPort(const std::string &config)
+{
+    std::string name, type;
+    std::vector<std::string> elements;
+    parsePortConfig(config, name, type, elements);
+    if (type == "JOINT_VALUE"){
+        std::vector<hrp::Link *> joints;
+        getJointList(this, elements, joints);
+        m_inports.push_back(new JointValueInPortHandler(this, name.c_str(), joints));
+    }else if(type == "JOINT_VELOCITY"){
+        std::vector<hrp::Link *> joints;
+        getJointList(this, elements, joints);
+        m_inports.push_back(new JointVelocityInPortHandler(this, name.c_str(), joints));
+    }else if(type == "JOINT_ACCELERATION"){
+        std::vector<hrp::Link *> joints;
+        getJointList(this, elements, joints);
+        m_inports.push_back(new JointAccelerationInPortHandler(this, name.c_str(), joints));
+    }else if(type == "JOINT_TORQUE"){
+        std::vector<hrp::Link *> joints;
+        getJointList(this, elements, joints);
+        m_inports.push_back(new JointTorqueInPortHandler(this, name.c_str(), joints));
+    }else if(type == "ABS_TRANSFORM"){
+    }else if(type == "ABS_VELOCITY"){
+    }else if(type == "ABS_ACCELERATION"){
+    }
+}
+
+void BodyRTC::createOutPort(const std::string &config)
+{
+    std::string name, type;
+    std::vector<std::string> elements;
+    parsePortConfig(config, name, type, elements);
+    if (type == "JOINT_VALUE"){
+        std::vector<hrp::Link *> joints;
+        getJointList(this, elements, joints);
+        m_outports.push_back(new JointValueOutPortHandler(this, name.c_str(), joints));
+    }else if(type == "JOINT_VELOCITY"){
+        std::vector<hrp::Link *> joints;
+        getJointList(this, elements, joints);
+        m_outports.push_back(new JointVelocityOutPortHandler(this, name.c_str(), joints));
+    }else if(type == "JOINT_ACCELERATION"){
+        std::vector<hrp::Link *> joints;
+        getJointList(this, elements, joints);
+        m_outports.push_back(new JointAccelerationOutPortHandler(this, name.c_str(), joints));
+    }else if(type == "JOINT_TORQUE"){
+        std::vector<hrp::Link *> joints;
+        getJointList(this, elements, joints);
+        m_outports.push_back(new JointTorqueOutPortHandler(this, name.c_str(), joints));
+    }else if(type == "ABS_TRANSFORM"){
+    }else if(type == "ABS_VELOCITY"){
+    }else if(type == "ABS_ACCELERATION"){
+    }else if(type == "FORCE_SENSOR"){
+    }else if(type == "RATE_GYRO_SENSOR"){
+    }else if(type == "ACCELERATION_SENSOR"){
+    }else if(type == "RANGE_SENSOR"){
+    }else if(type == "VISION_SENSOR"){
+    }
+
 }
 
 template <class _Delete>

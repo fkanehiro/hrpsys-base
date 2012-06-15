@@ -140,6 +140,10 @@ bool Project::parse(const std::string& filename)
                       //controlTimeStep = atof((char *)(xmlGetProp(cur_node, (xmlChar *)"value")));
                   } else if ( xmlStrEqual(xmlGetProp(cur_node, (xmlChar *)"name"),(xmlChar *)"rtcName") ) {
                       m.rtcName = (char *)xmlGetProp(cur_node, (xmlChar *)"value");
+                  } else if ( xmlStrEqual(xmlGetProp(cur_node, (xmlChar *)"name"),(xmlChar *)"inport") ) {
+                      m.inports.push_back(std::make_pair((char *)xmlGetProp(cur_node, (xmlChar *)"name"),  (char *)xmlGetProp(cur_node, (xmlChar *)"value")));
+                  } else if ( xmlStrEqual(xmlGetProp(cur_node, (xmlChar *)"name"),(xmlChar *)"outport") ) {
+                      m.outports.push_back(std::make_pair((char *)xmlGetProp(cur_node, (xmlChar *)"name"),  (char *)xmlGetProp(cur_node, (xmlChar *)"value")));
                   } else if ( std::string((char *)xmlGetProp(cur_node, (xmlChar *)"name")).rfind(".angle") != std::string::npos ) {
                       std::string name = std::string((char *)xmlGetProp(cur_node, (xmlChar *)"name"));
                       name.erase(name.rfind(".angle"));

@@ -133,6 +133,30 @@ public:
                               const char *i_portName,
                               const std::vector<hrp::Link *> &i_joints);
     void update();
+private:
+    hrp::Link *m_link;
+};
+
+class TransformInPortHandler : public InPortHandler<RTC::TimedPose3D>
+{
+public:
+    TransformInPortHandler(RTC::DataFlowComponentBase *i_rtc,
+                           const char *i_portName,
+                           hrp::Link *i_link);
+    void update();
+private:
+    hrp::Link *m_link;
+};
+
+class TransformOutPortHandler : public OutPortHandler<RTC::TimedPose3D>
+{
+public:
+    TransformOutPortHandler(RTC::DataFlowComponentBase *i_rtc,
+                            const char *i_portName,
+                            hrp::Link *i_link);
+    void update();
+private:
+    hrp::Link *m_link;
 };
 
 template<class T, class S>

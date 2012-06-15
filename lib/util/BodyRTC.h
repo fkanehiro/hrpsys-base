@@ -12,6 +12,8 @@
 #include <rtm/idl/ExtendedDataTypesSkel.h>
 #include "Img.hh"
 
+class PortHandler;
+
 class BodyRTC : virtual public hrp::Body, public RTC::DataFlowComponentBase
 {
 public:
@@ -28,6 +30,8 @@ public:
     }
 
     void createDataPorts();
+    void createInPort(const std::string &config);
+    void createOutPort(const std::string &config);
     void writeDataPorts();
     void readDataPorts();
     static void moduleInit(RTC::Manager*);
@@ -58,6 +62,8 @@ private:
     std::vector<RTC::OutPort<RTC::TimedDoubleSeq> *> m_rangeOut;
     std::vector<RTC::OutPort<Img::TimedCameraImage> *> m_imageOut;
 
+    std::vector<PortHandler *> m_inports;
+    std::vector<PortHandler *> m_outports;
     int dummy;
 };
 

@@ -308,4 +308,31 @@ void VisionSensorPortHandler::update()
     }
 }
 
+TransformInPortHandler::TransformInPortHandler(
+    RTC::DataFlowComponentBase *i_rtc,
+    const char *i_portName,
+    hrp::Link *i_link) :
+    InPortHandler<RTC::TimedPose3D>(i_rtc, i_portName),
+    m_link(i_link)
+{
+}
+
+void TransformInPortHandler::update()
+{
+}
+
+TransformOutPortHandler::TransformOutPortHandler(
+    RTC::DataFlowComponentBase *i_rtc,
+    const char *i_portName,
+    hrp::Link *i_link) :
+    OutPortHandler<RTC::TimedPose3D>(i_rtc, i_portName),
+    m_link(i_link)
+{
+}
+
+void TransformOutPortHandler::update()
+{
+}
+
+
 
