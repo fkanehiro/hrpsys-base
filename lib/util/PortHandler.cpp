@@ -380,11 +380,59 @@ AbsTransformOutPortHandler::AbsTransformOutPortHandler(
     OutPortHandler<RTC::TimedDoubleSeq>(i_rtc, i_portName),
     m_link(i_link)
 {
+    m_data.data.length(12);
 }
 
 void AbsTransformOutPortHandler::update()
 {
+    m_data.data[0] = m_link->p[0];
+    m_data.data[1] = m_link->p[1];
+    m_data.data[2] = m_link->p[2];
+    hrp::Matrix33 R;
+    R = m_link->attitude();
+    m_data.data[3] = R(0,0);m_data.data[ 4] = R(0,1);m_data.data[ 5] = R(0,2);
+    m_data.data[6] = R(1,0);m_data.data[ 7] = R(1,1);m_data.data[ 8] = R(1,2);
+    m_data.data[9] = R(2,0);m_data.data[10] = R(2,1);m_data.data[11] = R(2,2);
+    m_port.write();
 }
 
 
+AbsVelocityOutPortHandler::AbsVelocityOutPortHandler(
+    RTC::DataFlowComponentBase *i_rtc,
+    const char *i_portName,
+    hrp::Link *i_link) :
+    OutPortHandler<RTC::TimedDoubleSeq>(i_rtc, i_portName),
+    m_link(i_link)
+{
+    m_data.data.length(6);
+}
+
+void AbsVelocityOutPortHandler::update(){
+    m_data.data[0] = m_link->v(0);
+    m_data.data[1] = m_link->v(1);
+    m_data.data[2] = m_link->v(2);
+    m_data.data[3] = m_link->w(0);
+    m_data.data[4] = m_link->w(1);
+    m_data.data[5] = m_link->w(2);
+}
+
+AbsAccelerationOutPortHandler::AbsAccelerationOutPortHandler(
+    RTC::DataFlowComponentBase *i_rtc,
+    const char *i_portName,
+    hrp::Link *i_link) :
+    OutPortHandler<RTC::TimedDoubleSeq>(i_rtc, i_portName),
+    m_link(i_link)
+{
+    m_data.data.length(6);
+}
+
+void AbsAccelerationOutPortHandler::update()
+{
+    m_data.data[0] = m_link->dv(0);
+    m_data.data[1] = m_link->dv(1);
+    m_data.data[2] = m_link->dv(2);
+    m_data.data[3] = m_link->dw(0);
+    m_data.data[4] = m_link->dw(1);
+    m_data.data[5] = m_link->dw(2);
+}
 

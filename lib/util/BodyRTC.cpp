@@ -92,7 +92,7 @@ void parsePortConfig(const std::string &config,
     type = config.substr(start);
 }
 
-void getJointList(hrp::BodyPtr body, const std::vector<std::string> &elements,
+bool getJointList(hrp::BodyPtr body, const std::vector<std::string> &elements,
                   std::vector<hrp::Link *> &joints)
 {
     if (elements.size() == 0){
@@ -101,9 +101,17 @@ void getJointList(hrp::BodyPtr body, const std::vector<std::string> &elements,
         }
     }else{
         for (size_t i=0; i<elements.size(); i++){
-            joints.push_back(body->link(elements[i]));
+            hrp::Link *j = body->link(elements[i]);
+            if (j){
+                joints.push_back(j);
+            }else{
+                std::cerr << "can't find a joint(" << elements[i] << ")"
+                          << std::endl;
+                return false;
+            }
         }
     }
+    return true;
 }
 
 void BodyRTC::createInPort(const std::string &config)
@@ -113,34 +121,50 @@ void BodyRTC::createInPort(const std::string &config)
     parsePortConfig(config, name, type, elements);
     if (type == "JOINT_VALUE"){
         std::vector<hrp::Link *> joints;
-        getJointList(this, elements, joints);
-        m_inports.push_back(new JointValueInPortHandler(this, name.c_str(), joints));
+        if (getJointList(this, elements, joints)){
+            m_inports.push_back(
+                new JointValueInPortHandler(this, name.c_str(), joints));
+        }
     }else if(type == "JOINT_VELOCITY"){
         std::vector<hrp::Link *> joints;
-        getJointList(this, elements, joints);
-        m_inports.push_back(new JointVelocityInPortHandler(this, name.c_str(), joints));
+        if (getJointList(this, elements, joints)){
+            m_inports.push_back(
+                new JointVelocityInPortHandler(this, name.c_str(), joints));
+        }
     }else if(type == "JOINT_ACCELERATION"){
         std::vector<hrp::Link *> joints;
-        getJointList(this, elements, joints);
-        m_inports.push_back(new JointAccelerationInPortHandler(this, name.c_str(), joints));
+        if (getJointList(this, elements, joints)){
+            m_inports.push_back(
+                new JointAccelerationInPortHandler(this, name.c_str(),joints));
+        }
     }else if(type == "JOINT_TORQUE"){
         std::vector<hrp::Link *> joints;
-        getJointList(this, elements, joints);
-        m_inports.push_back(new JointTorqueInPortHandler(this, name.c_str(), joints));
+        if (getJointList(this, elements, joints)){
+            m_inports.push_back(
+                new JointTorqueInPortHandler(this, name.c_str(), joints));
+        }
     }else if(type == "EXTERNAL_FORCE"){
         std::cout << "EXTERNAL_FORCE is not implemented yet" << std::endl;
     }else if(type == "ABS_TRANSFORM"){
         std::vector<hrp::Link *> joints;
-        getJointList(this, elements, joints);
-        m_inports.push_back(new AbsTransformInPortHandler(this, name.c_str(), joints[0]));
+        if (getJointList(this, elements, joints) && joints.size() == 1){
+            m_inports.push_back(
+                new AbsTransformInPortHandler(this, name.c_str(), joints[0]));
+        }
     }else if(type == "ABS_VELOCITY"){
         std::vector<hrp::Link *> joints;
-        getJointList(this, elements, joints);
-        m_inports.push_back(new AbsVelocityInPortHandler(this, name.c_str(), joints[0]));
+        if (getJointList(this, elements, joints) && joints.size() == 1){
+            m_inports.push_back(
+                new AbsVelocityInPortHandler(this, name.c_str(), joints[0]));
+        }
     }else if(type == "ABS_ACCELERATION"){
         std::vector<hrp::Link *> joints;
-        getJointList(this, elements, joints);
-        m_inports.push_back(new AbsAccelerationInPortHandler(this, name.c_str(), joints[0]));
+        if (getJointList(this, elements, joints) && joints.size() == 1){
+            m_inports.push_back(
+                new AbsAccelerationInPortHandler(this,name.c_str(),joints[0]));
+        }
+    }else{
+        std::cerr << "unknown InPort data type(" << type << ")" << std::endl;
     }
 }
 
@@ -151,40 +175,143 @@ void BodyRTC::createOutPort(const std::string &config)
     parsePortConfig(config, name, type, elements);
     if (type == "JOINT_VALUE"){
         std::vector<hrp::Link *> joints;
-        getJointList(this, elements, joints);
-        m_outports.push_back(new JointValueOutPortHandler(this, name.c_str(), joints));
+        if (getJointList(this, elements, joints)){
+            m_outports.push_back(
+                new JointValueOutPortHandler(this, name.c_str(), joints));
+        }
     }else if(type == "JOINT_VELOCITY"){
         std::vector<hrp::Link *> joints;
-        getJointList(this, elements, joints);
-        m_outports.push_back(new JointVelocityOutPortHandler(this, name.c_str(), joints));
+        if (getJointList(this, elements, joints)){
+            m_outports.push_back(
+                new JointVelocityOutPortHandler(this, name.c_str(), joints));
+        }
     }else if(type == "JOINT_ACCELERATION"){
         std::vector<hrp::Link *> joints;
-        getJointList(this, elements, joints);
-        m_outports.push_back(new JointAccelerationOutPortHandler(this, name.c_str(), joints));
+        if (getJointList(this, elements, joints)){
+            m_outports.push_back(
+                new JointAccelerationOutPortHandler(this,name.c_str(),joints));
+        }
     }else if(type == "JOINT_TORQUE"){
         std::vector<hrp::Link *> joints;
-        getJointList(this, elements, joints);
-        m_outports.push_back(new JointTorqueOutPortHandler(this, name.c_str(), joints));
+        if (getJointList(this, elements, joints)){
+            m_outports.push_back(
+                new JointTorqueOutPortHandler(this, name.c_str(), joints));
+        }
     }else if(type == "ABS_TRANSFORM"){
+        if (elements.size()!=1){
+            std::cerr << "link name is not specified for port " << name 
+                      << std::endl;
+            return;
+        }
+        hrp::Link *l=this->link(elements[0]);
+        if (l){
+            m_outports.push_back(
+                new AbsTransformOutPortHandler(this, name.c_str(), l));
+        }else{
+            std::cerr << "can't find a link(" << elements[0] << ")" 
+                      << std::endl;
+        }
     }else if(type == "ABS_VELOCITY"){
+        if (elements.size()!=1){
+            std::cerr << "link name is not specified for port " << name
+                      << std::endl;
+            return;
+        }
+        hrp::Link *l=this->link(elements[0]);
+        if (l){
+            m_outports.push_back(
+                new AbsVelocityOutPortHandler(this, name.c_str(), l));
+        }else{
+            std::cerr << "can't find a link(" << elements[0] << ")" 
+                      << std::endl;
+        }
     }else if(type == "ABS_ACCELERATION"){
+        if (elements.size()!=1){
+            std::cerr << "link name is not specified for port " << name
+                      << std::endl;
+            return;
+        }
+        hrp::Link *l=this->link(elements[0]);
+        if (l){
+            m_outports.push_back(
+                new AbsAccelerationOutPortHandler(this, name.c_str(), l));
+        }else{
+            std::cerr << "can't find a link(" << elements[0] << ")" 
+                      << std::endl;
+        }
     }else if(type == "FORCE_SENSOR"){
-        m_outports.push_back(new ForceSensorPortHandler(this, name.c_str(),
-                                                        this->sensor<ForceSensor>(elements[0])));
+        if (elements.size()!=1){
+            std::cerr << "sensor name is not specified for port" << name 
+                      << std::endl;
+            return;
+        }
+        ForceSensor *s = this->sensor<ForceSensor>(elements[0]);
+        if (!s){
+            std::cerr << "can't find a sensor(" << elements[0] << ")" 
+                      << std::endl;
+            return;
+        }
+        m_outports.push_back(new ForceSensorPortHandler(this, name.c_str(),s));
+                                                        
     }else if(type == "RATE_GYRO_SENSOR"){
+        if (elements.size()!=1){
+            std::cerr << "sensor name is not specified for port " << name
+                      << std::endl;
+            return;
+        }
+        RateGyroSensor *s = this->sensor<RateGyroSensor>(elements[0]);
+        if (!s){
+            std::cerr << "can't find a sensor(" << elements[0] << ")" 
+                      << std::endl;
+            return;
+        }
         m_outports.push_back(new RateGyroSensorPortHandler(this, name.c_str(),
-                                                           this->sensor<RateGyroSensor>(elements[0])));
+                                                           s));
     }else if(type == "ACCELERATION_SENSOR"){
-        m_outports.push_back(new AccelSensorPortHandler(this, name.c_str(),
-                                                        this->sensor<AccelSensor>(elements[0])));
+        if (elements.size()!=1){
+            std::cerr << "sensor name is not specified for port " << name
+                      << std::endl;
+            return;
+        }
+        AccelSensor *s = this->sensor<AccelSensor>(elements[0]);
+        if (!s){
+            std::cerr << "can't find a sensor(" << elements[0] << ")" 
+                      << std::endl;
+            return;
+        }
+        m_outports.push_back(new AccelSensorPortHandler(this, name.c_str(),s));
+                                                        
     }else if(type == "RANGE_SENSOR"){
-        m_outports.push_back(new RangeSensorPortHandler(this, name.c_str(),
-                                                        this->sensor<RangeSensor>(elements[0])));
+        if (elements.size()!=1){
+            std::cerr << "sensor name is not specified for port " << name 
+                      << std::endl;
+            return;
+        }
+        RangeSensor *s = this->sensor<RangeSensor>(elements[0]);
+        if (!s){
+            std::cerr << "can't find a sensor(" << elements[0] << ")" 
+                      << std::endl;
+            return;
+        }
+        m_outports.push_back(new RangeSensorPortHandler(this, name.c_str(),s));
+                                                        
     }else if(type == "VISION_SENSOR"){
-        m_outports.push_back(new VisionSensorPortHandler(this, name.c_str(),
-                                                         this->sensor<VisionSensor>(elements[0])));
+        if (elements.size()!=1){
+            std::cerr << "sensor name is not specified for port " << name
+                      << std::endl;
+            return;
+        }
+        VisionSensor *s = this->sensor<VisionSensor>(elements[0]);
+        if (!s){
+            std::cerr << "can't find a sensor(" << elements[0] << ")" 
+                      << std::endl;
+            return;
+        }
+        m_outports.push_back(new VisionSensorPortHandler(this,name.c_str(),s));
     }else if(type == "CONSTRAINT_FORCE"){
         std::cout << "CONSTRAINT_FORCE is not implemented yet" << std::endl;
+    }else{
+        std::cerr << "unknown InPort data type(" << type << ")" << std::endl;
     }
 
 }

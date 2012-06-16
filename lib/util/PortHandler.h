@@ -34,7 +34,8 @@ template<class T>
 class OutPortHandler : public PortHandler
 {
 public:
-    OutPortHandler(RTC::DataFlowComponentBase *i_rtc, const char *i_portName) : 
+    OutPortHandler(RTC::DataFlowComponentBase *i_rtc,
+                   const char *i_portName) : 
         m_port(i_portName, m_data){
         i_rtc->addOutPort(i_portName, m_port);
     }
@@ -181,12 +182,35 @@ private:
     hrp::Link *m_link;
 };
 
+class AbsVelocityOutPortHandler : public OutPortHandler<RTC::TimedDoubleSeq>
+{
+public:
+    AbsVelocityOutPortHandler(RTC::DataFlowComponentBase *i_rtc,
+                              const char *i_portName,
+                              hrp::Link *i_link);
+    void update();
+private:
+    hrp::Link *m_link;
+};
+
+class AbsAccelerationOutPortHandler : 
+    public OutPortHandler<RTC::TimedDoubleSeq>
+{
+public:
+    AbsAccelerationOutPortHandler(RTC::DataFlowComponentBase *i_rtc,
+                                  const char *i_portName,
+                                  hrp::Link *i_link);
+    void update();
+private:
+    hrp::Link *m_link;
+};
+
 template<class T, class S>
 class SensorPortHandler : public OutPortHandler<S>
 {
 public:
-    SensorPortHandler(RTC::DataFlowComponentBase *i_rtc, const char *i_portName,
-                      T *i_sensor) : 
+    SensorPortHandler(RTC::DataFlowComponentBase *i_rtc, 
+                      const char *i_portName, T *i_sensor) : 
         OutPortHandler<S>(i_rtc, i_portName),
         m_sensor(i_sensor){
     }
@@ -194,7 +218,8 @@ protected:
     T *m_sensor;
 };
 
-class ForceSensorPortHandler : public SensorPortHandler<hrp::ForceSensor, RTC::TimedDoubleSeq>
+class ForceSensorPortHandler : 
+    public SensorPortHandler<hrp::ForceSensor, RTC::TimedDoubleSeq>
 {
 public:
     ForceSensorPortHandler(RTC::DataFlowComponentBase *i_rtc, 
@@ -203,37 +228,45 @@ public:
     void update();
 };
 
-class RateGyroSensorPortHandler : public SensorPortHandler<hrp::RateGyroSensor, RTC::TimedAngularVelocity3D>
+class RateGyroSensorPortHandler : 
+    public SensorPortHandler<hrp::RateGyroSensor, RTC::TimedAngularVelocity3D>
 {
 public:
-    RateGyroSensorPortHandler(RTC::DataFlowComponentBase *i_rtc, const char *i_portName,
-                           hrp::RateGyroSensor *i_sensor);
+    RateGyroSensorPortHandler(RTC::DataFlowComponentBase *i_rtc, 
+                              const char *i_portName,
+                              hrp::RateGyroSensor *i_sensor);
     void update();
 private:        
 };
 
-class AccelSensorPortHandler : public SensorPortHandler<hrp::AccelSensor, RTC::TimedAcceleration3D>
+class AccelSensorPortHandler : 
+    public SensorPortHandler<hrp::AccelSensor, RTC::TimedAcceleration3D>
 {
 public:
-    AccelSensorPortHandler(RTC::DataFlowComponentBase *i_rtc, const char *i_portName,
+    AccelSensorPortHandler(RTC::DataFlowComponentBase *i_rtc, 
+                           const char *i_portName,
                            hrp::AccelSensor *i_sensor);
     void update();
 private:        
 };
 
-class RangeSensorPortHandler : public SensorPortHandler<hrp::RangeSensor, RTC::TimedDoubleSeq>
+class RangeSensorPortHandler : 
+    public SensorPortHandler<hrp::RangeSensor, RTC::TimedDoubleSeq>
 {
 public:
-    RangeSensorPortHandler(RTC::DataFlowComponentBase *i_rtc, const char *i_portName,
+    RangeSensorPortHandler(RTC::DataFlowComponentBase *i_rtc, 
+                           const char *i_portName,
                            hrp::RangeSensor *i_sensor);
     void update();
 private:        
 };
 
-class VisionSensorPortHandler : public SensorPortHandler<hrp::VisionSensor, Img::TimedCameraImage>
+class VisionSensorPortHandler : 
+    public SensorPortHandler<hrp::VisionSensor, Img::TimedCameraImage>
 {
 public:
-    VisionSensorPortHandler(RTC::DataFlowComponentBase *i_rtc, const char *i_portName,
+    VisionSensorPortHandler(RTC::DataFlowComponentBase *i_rtc, 
+                            const char *i_portName,
                            hrp::VisionSensor *i_sensor);
     void update();
 private:        
