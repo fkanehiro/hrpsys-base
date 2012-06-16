@@ -137,23 +137,45 @@ private:
     hrp::Link *m_link;
 };
 
-class TransformInPortHandler : public InPortHandler<RTC::TimedPose3D>
+class AbsTransformInPortHandler : public InPortHandler<RTC::TimedDoubleSeq>
 {
 public:
-    TransformInPortHandler(RTC::DataFlowComponentBase *i_rtc,
-                           const char *i_portName,
-                           hrp::Link *i_link);
+    AbsTransformInPortHandler(RTC::DataFlowComponentBase *i_rtc,
+                              const char *i_portName,
+                              hrp::Link *i_link);
     void update();
 private:
     hrp::Link *m_link;
 };
 
-class TransformOutPortHandler : public OutPortHandler<RTC::TimedPose3D>
+class AbsVelocityInPortHandler : public InPortHandler<RTC::TimedDoubleSeq>
 {
 public:
-    TransformOutPortHandler(RTC::DataFlowComponentBase *i_rtc,
-                            const char *i_portName,
-                            hrp::Link *i_link);
+    AbsVelocityInPortHandler(RTC::DataFlowComponentBase *i_rtc,
+                             const char *i_portName,
+                             hrp::Link *i_link);
+    void update();
+private:
+    hrp::Link *m_link;
+};
+
+class AbsAccelerationInPortHandler : public InPortHandler<RTC::TimedDoubleSeq>
+{
+public:
+    AbsAccelerationInPortHandler(RTC::DataFlowComponentBase *i_rtc,
+                                 const char *i_portName,
+                                 hrp::Link *i_link);
+    void update();
+private:
+    hrp::Link *m_link;
+};
+
+class AbsTransformOutPortHandler : public OutPortHandler<RTC::TimedDoubleSeq>
+{
+public:
+    AbsTransformOutPortHandler(RTC::DataFlowComponentBase *i_rtc,
+                               const char *i_portName,
+                               hrp::Link *i_link);
     void update();
 private:
     hrp::Link *m_link;

@@ -20,7 +20,6 @@ public:
     PyObject *getPosture();
     void setPosture(PyObject *v);
     std::string getName();
-    void setName(std::string name);
     void calcForwardKinematics();
     PyLink *rootLink();
     PyLink *link(std::string name);

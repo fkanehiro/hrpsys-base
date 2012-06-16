@@ -117,11 +117,6 @@ std::string PyBody::getName()
     return Body::name();
 }
 
-void PyBody::setName(std::string name)
-{
-    Body::setName(name);
-}
-
 PyObject *PyBody::calcCM()
 {
     hrp::Vector3 cm = Body::calcCM();
@@ -137,7 +132,6 @@ void PyBody::notifyChanged(int change)
     switch(change){
     case STRUCTURE:
         updateLinkTree();
-        createDataPorts();
         break;
     case KINEMATICS:
         calcForwardKinematics();

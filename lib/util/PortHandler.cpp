@@ -308,29 +308,81 @@ void VisionSensorPortHandler::update()
     }
 }
 
-TransformInPortHandler::TransformInPortHandler(
+AbsTransformInPortHandler::AbsTransformInPortHandler(
     RTC::DataFlowComponentBase *i_rtc,
     const char *i_portName,
     hrp::Link *i_link) :
-    InPortHandler<RTC::TimedPose3D>(i_rtc, i_portName),
+    InPortHandler<RTC::TimedDoubleSeq>(i_rtc, i_portName),
     m_link(i_link)
 {
 }
 
-void TransformInPortHandler::update()
+void AbsTransformInPortHandler::update()
 {
+    if (m_port.isNew()){
+        do{
+            m_port.read();
+        }while(m_port.isNew());
+        m_link->p << m_data.data[0], m_data.data[1], m_data.data[2];
+        hrp::Matrix33 R;
+        R << m_data.data[3], m_data.data[4], m_data.data[5],
+            m_data.data[6], m_data.data[7], m_data.data[8],
+            m_data.data[9], m_data.data[10], m_data.data[11];
+        m_link->setSegmentAttitude(R);
+    }
 }
 
-TransformOutPortHandler::TransformOutPortHandler(
+AbsVelocityInPortHandler::AbsVelocityInPortHandler(
     RTC::DataFlowComponentBase *i_rtc,
     const char *i_portName,
     hrp::Link *i_link) :
-    OutPortHandler<RTC::TimedPose3D>(i_rtc, i_portName),
+    InPortHandler<RTC::TimedDoubleSeq>(i_rtc, i_portName),
     m_link(i_link)
 {
 }
 
-void TransformOutPortHandler::update()
+void AbsVelocityInPortHandler::update()
+{
+    if (m_port.isNew()){
+        do{
+            m_port.read();
+        }while(m_port.isNew());
+        m_link->v << m_data.data[0], m_data.data[1], m_data.data[2];
+        m_link->w << m_data.data[3], m_data.data[4], m_data.data[5];
+        m_link->vo = m_link->v - m_link->w.cross(m_link->p);
+    }
+}
+
+AbsAccelerationInPortHandler::AbsAccelerationInPortHandler(
+    RTC::DataFlowComponentBase *i_rtc,
+    const char *i_portName,
+    hrp::Link *i_link) :
+    InPortHandler<RTC::TimedDoubleSeq>(i_rtc, i_portName),
+    m_link(i_link)
+{
+}
+
+void AbsAccelerationInPortHandler::update()
+{
+    if (m_port.isNew()){
+        do{
+            m_port.read();
+        }while(m_port.isNew());
+        m_link->dv << m_data.data[0], m_data.data[1], m_data.data[2];
+        m_link->dw << m_data.data[3], m_data.data[4], m_data.data[5];
+    }
+}
+
+AbsTransformOutPortHandler::AbsTransformOutPortHandler(
+    RTC::DataFlowComponentBase *i_rtc,
+    const char *i_portName,
+    hrp::Link *i_link) :
+    OutPortHandler<RTC::TimedDoubleSeq>(i_rtc, i_portName),
+    m_link(i_link)
+{
+}
+
+void AbsTransformOutPortHandler::update()
 {
 }
 

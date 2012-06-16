@@ -45,8 +45,8 @@ public:
     std::string url;
     std::map<std::string,JointItem> joint;
     std::string rtcName;
-    std::vector<std::pair<std::string, std::string> > inports;
-    std::vector<std::pair<std::string, std::string> > outports;
+    std::vector<std::string > inports;
+    std::vector<std::string > outports;
 };
 
 class RTSItem {

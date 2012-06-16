@@ -12,6 +12,7 @@ void Simulator::init(Project &prj, BodyFactory &factory){
     std::cout << "number of receivers:" << receivers.size() << std::endl;
     m_totalTime = prj.totalTime();
     m_logTimeStep = prj.logTimeStep();
+    m_kinematicsOnly = prj.kinematicsOnly();
 
     OpenHRP::CollisionSequence& collisions = state.collisions;
 
@@ -133,7 +134,14 @@ bool Simulator::oneStep(){
 
     tm_dynamics.begin();
     constraintForceSolver.clearExternalForces();
-    calcNextState(state.collisions);
+    if (m_kinematicsOnly){
+        for (int i=0; i<numBodies(); i++){
+            body(i)->calcForwardKinematics();
+        }
+        currentTime_ += timeStep();
+    }else{
+        calcNextState(state.collisions);
+    }
     
     appendLog();
     tm_dynamics.end();
@@ -225,4 +233,9 @@ void Simulator::addCollisionCheckPair(BodyRTC *bodyPtr1, BodyRTC *bodyPtr2)
         pair.linkName1 = CORBA::string_dup(link0->name.c_str());
         pair.linkName2 = CORBA::string_dup(link1->name.c_str());
     }
+}
+
+void Simulator::kinematicsOnly(bool flag)
+{
+    m_kinematicsOnly = flag;
 }

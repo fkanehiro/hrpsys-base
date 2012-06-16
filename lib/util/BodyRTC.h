@@ -29,7 +29,6 @@ public:
         return RTC::RTC_OK;
     }
 
-    void createDataPorts();
     void createInPort(const std::string &config);
     void createOutPort(const std::string &config);
     void writeDataPorts();
@@ -40,29 +39,9 @@ private:
     static const char* bodyrtc_spec[];
 
     // DataInPort
-    RTC::TimedDoubleSeq m_tau;
-    RTC::TimedDoubleSeq m_qRef, m_dqRef, m_ddqRef;
-    RTC::InPort<RTC::TimedDoubleSeq> m_tauIn;
-    RTC::InPort<RTC::TimedDoubleSeq> m_qRefIn, m_dqRefIn, m_ddqRefIn;
+    std::vector<PortHandler *> m_inports;
 
     // DataOutPort
-    RTC::TimedDoubleSeq m_q, m_dq;
-    RTC::TimedPose3D m_basePose;
-    std::vector<RTC::TimedAcceleration3D> m_acc;
-    std::vector<RTC::TimedAngularVelocity3D> m_rate;
-    std::vector<RTC::TimedDoubleSeq> m_force;
-    std::vector<RTC::TimedDoubleSeq> m_range;
-    std::vector<Img::TimedCameraImage> m_image;
-
-    RTC::OutPort<RTC::TimedDoubleSeq> m_qOut, m_dqOut;
-    RTC::OutPort<RTC::TimedPose3D> m_basePoseOut;
-    std::vector<RTC::OutPort<RTC::TimedAcceleration3D> *> m_accOut;
-    std::vector<RTC::OutPort<RTC::TimedAngularVelocity3D> *> m_rateOut;
-    std::vector<RTC::OutPort<RTC::TimedDoubleSeq> *> m_forceOut;
-    std::vector<RTC::OutPort<RTC::TimedDoubleSeq> *> m_rangeOut;
-    std::vector<RTC::OutPort<Img::TimedCameraImage> *> m_imageOut;
-
-    std::vector<PortHandler *> m_inports;
     std::vector<PortHandler *> m_outports;
     int dummy;
 };

@@ -55,7 +55,12 @@ hrp::BodyPtr createBody(const std::string& name, const ModelItem& mitem,
             hrp::Link *link = body->link(it2->first);
             if (link) link->isHighGainMode = it2->second.isHighGain;
         }
-        glbodyrtc->createDataPorts();
+        for (size_t i=0; i<mitem.inports.size(); i++){
+            glbodyrtc->createInPort(mitem.inports[i]);
+        }
+        for (size_t i=0; i<mitem.outports.size(); i++){
+            glbodyrtc->createOutPort(mitem.outports[i]);
+        }
         loadShapeFromBodyInfo(glbodyrtc, binfo);
         body->setName(name);
         scene->addBody(body);

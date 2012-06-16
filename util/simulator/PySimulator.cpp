@@ -60,7 +60,12 @@ hrp::BodyPtr createBody(const std::string& name, const ModelItem& mitem,
             hrp::Link *link = body->link(it2->first);
             if (link) link->isHighGainMode = it2->second.isHighGain;
         }
-        pybody->createDataPorts();
+        for (size_t i=0; i<mitem.inports.size(); i++){
+            pybody->createInPort(mitem.inports[i]);
+        }
+        for (size_t i=0; i<mitem.outports.size(); i++){
+            pybody->createOutPort(mitem.outports[i]);
+        }
         loadShapeFromBodyInfo(pybody, binfo, createPyShape);
         body->setName(name);
         scene->addBody(body);
@@ -147,7 +152,6 @@ PyBody* PySimulator::loadBody(std::string name, std::string url){
         return NULL;
     }else{
         if (useBBox) convertToAABB(body);
-        pybody->createDataPorts();
         body->setName(name);
         addBody(body);
         loadShapeFromBodyInfo(pybody, binfo, createPyShape);
@@ -359,6 +363,8 @@ BOOST_PYTHON_MODULE( hrpsys )
         .def("totalMass", &PyBody::totalMass)
         .def("numJoints", &PyBody::numJoints)
         .def("numLinks", &PyBody::numLinks)
+        .def("creteInPort", &PyBody::createInPort)
+        .def("creteOutPort", &PyBody::createOutPort)
         .add_property("name", &PyBody::getName, &PyBody::setName)
         .add_property("p", &PyBody::getPosition, &PyBody::setPosition)
         .add_property("R", &PyBody::getRotation, &PyBody::setRotation)
