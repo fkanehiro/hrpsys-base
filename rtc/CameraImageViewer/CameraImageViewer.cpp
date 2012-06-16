@@ -123,16 +123,42 @@ RTC::ReturnCode_t CameraImageViewer::onExecute(RTC::UniqueId ec_id)
             m_imageIn.read();
         }while(m_imageIn.isNew());
         if (!m_cvImage){
-            m_cvImage = cvCreateImage(cvSize(m_image.data.image.width,
-                                             m_image.data.image.height),
-                                      IPL_DEPTH_8U, 3);
+            switch (m_image.data.image.format){
+            case Img::CF_RGB:
+                m_cvImage = cvCreateImage(cvSize(m_image.data.image.width,
+                                                 m_image.data.image.height),
+                                          IPL_DEPTH_8U, 3);
+                break;
+            case Img::CF_GRAY:
+                m_cvImage = cvCreateImage(cvSize(m_image.data.image.width,
+                                                 m_image.data.image.height),
+                                          IPL_DEPTH_8U, 1);
+                break;
+            default:
+                std::cerr << "unsupported color format(" 
+                          << m_image.data.image.format << ")" << std::endl;
+                return RTC::RTC_ERROR;
+            }
         }
-        // RGB -> BGR
-        char *dst = m_cvImage->imageData;
-        for (int i=0; i<m_image.data.image.width*m_image.data.image.height; i++){
-            dst[i*3  ] = m_image.data.image.raw_data[i*3+2]; 
-            dst[i*3+1] = m_image.data.image.raw_data[i*3+1]; 
-            dst[i*3+2] = m_image.data.image.raw_data[i*3  ]; 
+        switch(m_image.data.image.format){
+        case Img::CF_RGB:
+        {
+            // RGB -> BGR
+            char *dst = m_cvImage->imageData;
+            for (int i=0; i<m_image.data.image.raw_data.length(); i+=3){
+                dst[i  ] = m_image.data.image.raw_data[i+2]; 
+                dst[i+1] = m_image.data.image.raw_data[i+1]; 
+                dst[i+2] = m_image.data.image.raw_data[i  ]; 
+            }
+            break;
+        }
+        case Img::CF_GRAY:
+            memcpy(m_cvImage->imageData, 
+                   m_image.data.image.raw_data.get_buffer(),
+                   m_image.data.image.raw_data.length());
+            break;
+        default:
+            break;
         }
         cvShowImage("Image",m_cvImage);
         cvWaitKey(10);
