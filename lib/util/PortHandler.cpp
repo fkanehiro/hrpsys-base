@@ -378,21 +378,35 @@ AbsTransformOutPortHandler::AbsTransformOutPortHandler(
     const char *i_portName,
     hrp::Link *i_link) :
     OutPortHandler<RTC::TimedDoubleSeq>(i_rtc, i_portName),
-    m_link(i_link)
+    m_link(i_link), m_sensor(NULL)
+{
+    m_data.data.length(12);
+}
+
+AbsTransformOutPortHandler::AbsTransformOutPortHandler(
+    RTC::DataFlowComponentBase *i_rtc,
+    const char *i_portName,
+    hrp::Sensor *i_sensor) :
+    OutPortHandler<RTC::TimedDoubleSeq>(i_rtc, i_portName),
+    m_link(NULL), m_sensor(i_sensor)
 {
     m_data.data.length(12);
 }
 
 void AbsTransformOutPortHandler::update()
 {
-    m_data.data[0] = m_link->p[0];
-    m_data.data[1] = m_link->p[1];
-    m_data.data[2] = m_link->p[2];
+    hrp::Vector3 p;
     hrp::Matrix33 R;
-    R = m_link->attitude();
-    m_data.data[3] = R(0,0);m_data.data[ 4] = R(0,1);m_data.data[ 5] = R(0,2);
-    m_data.data[6] = R(1,0);m_data.data[ 7] = R(1,1);m_data.data[ 8] = R(1,2);
-    m_data.data[9] = R(2,0);m_data.data[10] = R(2,1);m_data.data[11] = R(2,2);
+    if (m_link){
+        p = m_link->p;
+        R = m_link->attitude();
+    }else{
+        hrp::Link *parent = m_sensor->link;
+        p = parent->R*m_sensor->localPos+parent->p;
+        R = parent->R*m_sensor->localR;
+    }
+    hrp::setVector3(p, m_data.data);
+    hrp::setMatrix33ToRowMajorArray(R, m_data.data, 3);
     m_port.write();
 }
 

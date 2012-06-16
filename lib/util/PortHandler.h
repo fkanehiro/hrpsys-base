@@ -177,9 +177,13 @@ public:
     AbsTransformOutPortHandler(RTC::DataFlowComponentBase *i_rtc,
                                const char *i_portName,
                                hrp::Link *i_link);
+    AbsTransformOutPortHandler(RTC::DataFlowComponentBase *i_rtc,
+                               const char *i_portName,
+                               hrp::Sensor *i_sensor);
     void update();
 private:
     hrp::Link *m_link;
+    hrp::Sensor *m_sensor;
 };
 
 class AbsVelocityOutPortHandler : public OutPortHandler<RTC::TimedDoubleSeq>
