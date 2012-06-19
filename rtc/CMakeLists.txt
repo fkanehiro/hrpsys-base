@@ -46,15 +46,12 @@ endif()
 
 # Octomap
 pkg_check_modules(OCTOMAP octomap)
-pkg_check_modules(RTCPCL rtcpcl)
 
 if (IRRLICHT_FOUND)
   add_subdirectory(CollisionDetector)
 endif()
 
-if (RTCPCL_FOUND)
-  add_subdirectory(VirtualCamera)
-  if (OCTOMAP_FOUND)
-    add_subdirectory(OccupancyGridMap3D)
-  endif()
+add_subdirectory(VirtualCamera)
+if (OCTOMAP_FOUND)
+  add_subdirectory(OccupancyGridMap3D)
 endif()

@@ -1,7 +1,7 @@
 include_directories(${OCTOMAP_INCLUDE_DIR})
 link_directories(${OCTOMAP_DIR}/lib)
 set(comp_sources OccupancyGridMap3D.cpp OGMap3DService_impl.cpp)
-set(libs ${OPENHRP_LIBRARIES} ${OCTOMAP_LIBRARIES} rtcpcl_pointcloud_type hrpsysBaseStub)
+set(libs ${OPENHRP_LIBRARIES} ${OCTOMAP_LIBRARIES} hrpsysBaseStub)
 add_library(OccupancyGridMap3D SHARED ${comp_sources})
 target_link_libraries(OccupancyGridMap3D ${libs})
 set_target_properties(OccupancyGridMap3D PROPERTIES PREFIX "")

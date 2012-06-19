@@ -17,8 +17,6 @@
 #include <rtm/DataOutPort.h>
 #include <rtm/idl/BasicDataTypeSkel.h>
 #include <rtm/idl/InterfaceDataTypes.hh>
-// RTCPCL
-#include <rtcpcl/idl/pointcloud.hh>
 //Open CV headder
 #include <cv.h>
 #include <highgui.h>
@@ -27,6 +25,7 @@
 #include "util/SDLUtil.h"
 #include "Img.hh"
 #include "HRPDataTypes.hh"
+#include "pointcloud.hh"
 #include "GLscene.h"
 class GLcamera;
 class RTCGLbody;

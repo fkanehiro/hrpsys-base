@@ -11,6 +11,7 @@ set(idl_files
   TimeKeeperService.idl
   Img.idl
   HRPDataTypes.idl
+  pointcloud.idl
   )
 
 set(idl_flags -bcxx -Wbuse_quotes -Wbh=.hh -Wbs=Sk.cpp -Wba -Wbd=DynSk.cpp -I${OPENRTM_IDL_DIR})

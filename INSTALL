@@ -9,17 +9,23 @@
    *GLEW(apt-get install libglew-dev)
    *(Optional)Octomap(http://octomap.sourceforge.net/)
    *(Optional)Irrlicht(apt-get install libirrlicht-dev)
-   *(Optional)rtcpcl(https://github.com/gbiggs/rtcpcl)
 
 2. Install
 
 2.1 Preparation
+
+2.1.1 Edit SDOPackage.idl
    Since SDOPackage.idl(usually installed under /usr/include/rtm/idl as a part
    of OpenRTM-aist) can't be compiled with idlj, modify the following two lines.
    a. comment out line 40: 
       #define TypeCode CORBA::TypeCode -> //#define TypeCode CORBA::TypeCode
    b. add namespace "CORBA::" to line 123: 
       TypeCode code; -> CORBA::TypeCode code;
+
+2.1.2 Install required packages using apt-get
+   Please install required packages shown above. The following is an example
+   for ubuntu10.04LTS
+   %sudo apt-get install jython libxml2-dev libsdl-dev libcv-dev libcvaux-dev libhighgui-dev libqhull-dev libglew-dev
 
 2.2 RT components and utilities
    % mkdir build

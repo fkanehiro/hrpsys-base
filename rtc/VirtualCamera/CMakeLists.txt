@@ -4,7 +4,6 @@ set(comp_sources VirtualCamera.cpp GLscene.cpp RTCGLbody.cpp)
 
 add_library(VirtualCamera SHARED ${comp_sources})
 set(libraries
-  rtcpcl_pointcloud_type
   hrpsysUtil
   hrpsysBaseStub
   )
