@@ -2,6 +2,7 @@
 #define __PORT_HANDLER_H__
 
 #include "BodyRTC.h"
+#include "pointcloud.hh"
 
 namespace hrp{
     class ForceSensor;
@@ -276,5 +277,16 @@ public:
 private:        
 };
 
+class PointCloudPortHandler :
+    public SensorPortHandler<hrp::VisionSensor, PointCloudTypes::PointCloud>
+{
+public:
+    PointCloudPortHandler(RTC::DataFlowComponentBase *i_rtc, 
+                          const char *i_portName,
+                          hrp::VisionSensor *i_sensor);
+    void update();
+private:        
+    std::string m_pcFormat;
+};
 
 #endif

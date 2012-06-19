@@ -261,10 +261,6 @@ VisionSensorPortHandler::VisionSensorPortHandler(
         int len = m_sensor->width*m_sensor->height;
         m_data.data.image.raw_data.length(len);
     }
-    if (m_sensor->imageType == VisionSensor::DEPTH
-        || m_sensor->imageType == VisionSensor::COLOR_DEPTH
-        || m_sensor->imageType == VisionSensor::MONO_DEPTH){
-    }
 }
 
 void VisionSensorPortHandler::update()
@@ -299,13 +295,82 @@ void VisionSensorPortHandler::update()
                 ofs.write((char *)pixels, m_sensor->image.size());
 #endif    
             }
-        }else if (m_sensor->imageType == VisionSensor::DEPTH
-                  || m_sensor->imageType == VisionSensor::COLOR_DEPTH 
-                  || m_sensor->imageType == VisionSensor::MONO_DEPTH){
-            // TODO : generate point cloud
         }
         m_sensor->isUpdated = false;
     }
+}
+
+PointCloudPortHandler::PointCloudPortHandler(
+    RTC::DataFlowComponentBase *i_rtc, 
+    const char *i_portName,
+    VisionSensor *i_sensor) : 
+    SensorPortHandler<VisionSensor, PointCloudTypes::PointCloud>(i_rtc, i_portName, i_sensor)
+{
+    i_sensor->isEnabled = true;
+    switch(m_sensor->imageType){
+    case VisionSensor::DEPTH:
+        m_pcFormat = "xyz"; break;
+    case VisionSensor::COLOR_DEPTH:
+        m_pcFormat = "xyzrgb"; break;
+    case VisionSensor::MONO_DEPTH:
+        m_pcFormat = "xyz"; break;
+    default:
+        break;
+    }
+    m_data.width = m_sensor->width;
+    m_data.height = m_sensor->height;
+    m_data.type = m_pcFormat.c_str();
+
+    bool colored = false;
+    if (m_pcFormat == "xyz"){
+        m_data.fields.length(3);
+    }else if (m_pcFormat == "xyzrgb"){
+        m_data.fields.length(6);
+        colored = true;
+    }else{
+        std::cerr << "unknown point cloud format:[" << m_pcFormat << "]" << std::endl;
+    }
+    m_data.fields[0].name = "x";
+    m_data.fields[0].offset = 0;
+    m_data.fields[0].data_type = PointCloudTypes::FLOAT32;
+    m_data.fields[0].count = 4;
+    m_data.fields[1].name = "y";
+    m_data.fields[1].offset = 4;
+    m_data.fields[1].data_type = PointCloudTypes::FLOAT32;
+    m_data.fields[1].count = 4;
+    m_data.fields[2].name = "z";
+    m_data.fields[2].offset = 8;
+    m_data.fields[2].data_type = PointCloudTypes::FLOAT32;
+    m_data.fields[2].count = 4;
+    if (m_pcFormat == "xyzrgb"){
+        m_data.fields[3].name = "r";
+        m_data.fields[3].offset = 12;
+        m_data.fields[3].data_type = PointCloudTypes::UINT8;
+        m_data.fields[3].count = 1;
+        m_data.fields[4].name = "g";
+        m_data.fields[4].offset = 13;
+        m_data.fields[4].data_type = PointCloudTypes::UINT8;
+        m_data.fields[4].count = 1;
+        m_data.fields[5].name = "b";
+        m_data.fields[5].offset = 14;
+        m_data.fields[5].data_type = PointCloudTypes::UINT8;
+        m_data.fields[5].count = 1;
+    }
+    m_data.is_bigendian = false;
+    m_data.point_step = 16;
+    m_data.is_dense = true;
+    m_data.row_step = m_data.point_step*m_sensor->width;
+}
+
+void PointCloudPortHandler::update()
+{
+    if (m_sensor->isUpdated){
+        m_data.data.length(m_sensor->depth.size());
+        memcpy(m_data.data.get_buffer(), &m_sensor->depth[0],
+               m_sensor->depth.size());
+        m_port.write();
+    }
+    m_sensor->isUpdated = false;
 }
 
 AbsTransformInPortHandler::AbsTransformInPortHandler(

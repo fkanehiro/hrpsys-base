@@ -320,6 +320,19 @@ void BodyRTC::createOutPort(const std::string &config)
             return;
         }
         m_outports.push_back(new VisionSensorPortHandler(this,name.c_str(),s));
+    }else if(type == "POINT_CLOUD"){
+        if (elements.size()!=1){
+            std::cerr << "sensor name is not specified for port " << name
+                      << std::endl;
+            return;
+        }
+        VisionSensor *s = this->sensor<VisionSensor>(elements[0]);
+        if (!s){
+            std::cerr << "can't find a sensor(" << elements[0] << ")" 
+                      << std::endl;
+            return;
+        }
+        m_outports.push_back(new PointCloudPortHandler(this,name.c_str(),s));
     }else if(type == "CONSTRAINT_FORCE"){
         std::cout << "CONSTRAINT_FORCE is not implemented yet" << std::endl;
     }else{

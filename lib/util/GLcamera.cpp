@@ -182,20 +182,45 @@ void GLcamera::render(GLsceneBase *i_scene)
     if (m_sensor->imageType == VisionSensor::DEPTH
         || m_sensor->imageType == VisionSensor::COLOR_DEPTH
         || m_sensor->imageType == VisionSensor::MONO_DEPTH){
-        if (m_sensor->depth.size() != m_width*m_height){
-            std::cerr << "invalid depth length" << std::endl;
-        }else{
-            float depth[m_width*m_height];
-            glReadPixels(0,0,m_width, m_height, GL_DEPTH_COMPONENT, GL_FLOAT,
-                         depth);
-            float *src = depth, *dst = &m_sensor->depth[m_width*(m_height-1)];
-            for (int i=0; i<m_height; i++){
-                memcpy(dst, src, m_width*sizeof(float));
-                src += m_width;
-                dst -= m_width;
+        float depth[m_width*m_height];
+        glReadPixels(0,0,m_width, m_height, GL_DEPTH_COMPONENT, GL_FLOAT,
+                     depth);
+        // depth -> point cloud
+        int w = m_sensor->width;
+        int h = m_sensor->height;
+        m_sensor->depth.resize(w*h*16);// will be shrinked later
+        double far = m_sensor->far;
+        double near = m_sensor->near;
+        double fovx = 2*atan(w*tan(m_sensor->fovy/2)/h);
+        double zs = w/(2*tan(fovx/2));
+        unsigned int npoints=0;
+        float *ptr = (float *)&m_sensor->depth[0];
+        unsigned char *rgb = &m_sensor->image[0];
+        bool colored = m_sensor->imageType == VisionSensor::COLOR_DEPTH;
+        int step = 1;
+        for (int i=0; i<h; i+=step){
+            for (int j=0; j<w; j+=step){
+                float d = depth[i*w+j];
+                if (d == 1.0) {
+                    continue;
+                }
+                ptr[2] = far*near/(d*(far-near)-far);
+                ptr[0] = -(j-w/2)*ptr[2]/zs;
+                ptr[1] = -(i-h/2)*ptr[2]/zs;
+                if (colored){
+                    unsigned char *c = (unsigned char *)(ptr + 3);
+                    int offset = ((h-1-i)*w+j)*3;
+                    c[0] = rgb[offset];
+                    c[1] = rgb[offset+1];
+                    c[2] = rgb[offset+2];
+                }
+                ptr += 4;
+                npoints++;
             }
-            m_sensor->isUpdated = true;
         }
+        m_sensor->depth.resize(npoints*16);
+        
+        m_sensor->isUpdated = true;
     }
     /* switch to default buffer */
     glBindFramebufferEXT( GL_FRAMEBUFFER_EXT, 0 );

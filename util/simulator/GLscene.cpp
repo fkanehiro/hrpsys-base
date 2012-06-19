@@ -212,6 +212,26 @@ void GLscene::drawSensorOutput(Body *body, Sensor *sensor)
         glVertex3f(-xn, -yn, -near); glVertex3f(-xf, -yf, -far);
         glVertex3f( xn, -yn, -near); glVertex3f( xf, -yf, -far);
         glEnd();
+        if (v->imageType == VisionSensor::DEPTH 
+            || v->imageType == VisionSensor::COLOR_DEPTH 
+            || v->imageType == VisionSensor::MONO_DEPTH){
+            bool colored = v->imageType == VisionSensor::COLOR_DEPTH;
+            glBegin(GL_POINTS);
+            float *ptr = (float *)&v->depth[0];
+            for (int i=0; i<v->depth.size()/16; i++){
+                glVertex3f(ptr[0], ptr[1], ptr[2]);
+                if (colored){
+                    ptr += 3;
+                    unsigned char *rgb = (unsigned char *)ptr;
+                    glColor3f(rgb[0]/255.0, rgb[1]/255.0, rgb[2]/255.0);
+                    ptr++;
+                }else{
+                    ptr += 4;
+                }
+            }
+            glEnd();
+        } 
+
         glEnable(GL_LIGHTING);
     }
 }
