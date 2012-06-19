@@ -101,6 +101,8 @@ if (NOT OpenCV_FOUND)
     message(FATAL_ERROR "opencv not found")
   endif()
 endif()
+include_directories(${OpenCV_INCLUDE_DIRS})
+link_directories(${OpenCV_LIBRARY_DIRS})
 find_package(GLUT REQUIRED)
 find_package(QuickHull REQUIRED)
 

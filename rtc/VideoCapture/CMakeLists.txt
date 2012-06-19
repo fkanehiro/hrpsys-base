@@ -1,6 +1,3 @@
-find_package(OpenCV REQUIRED)
-include_directories(${OpenCV_INCLUDE_DIRS})
-
 set(comp_sources VideoCapture.cpp camera.cpp)
 set(libs ${OPENRTM_LIBRARIES} ${OpenCV_LIBRARIES} hrpsysBaseStub)
 add_library(VideoCapture SHARED ${comp_sources})

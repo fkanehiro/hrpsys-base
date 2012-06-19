@@ -38,6 +38,7 @@ set(headers
 include_directories(${LIBXML2_INCLUDE_DIR})
 include_directories(${SDL_INCLUDE_DIR})
 include_directories(${OpenCV_INCLUDE_DIRS})
+link_directories(${OpenCV_LIBRARY_DIRS})
 
 add_library(hrpsysUtil SHARED ${sources})
 
