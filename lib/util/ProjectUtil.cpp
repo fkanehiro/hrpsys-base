@@ -101,7 +101,7 @@ void initWorld(Project& prj, BodyFactory &factory,
     world.initialize();
 }
 
-RTC::RTObject *findRTC(const std::string &rtcName)
+RTC::RTObject_var findRTC(const std::string &rtcName)
 {
     RTC::Manager& manager = RTC::Manager::instance();
     std::string nameServer = manager.getConfig()["corba.nameservers"];
@@ -117,8 +117,7 @@ RTC::RTObject *findRTC(const std::string &rtcName)
     name[0].kind = CORBA::string_dup("rtc");
     CORBA::Object_ptr obj = naming.resolve(name);
     if (obj){
-        RTC::RTObject_var rtc =  RTC::RTObject::_narrow(obj);
-        //return rtc;
+        return RTC::RTObject::_narrow(obj);
     }else{
         return NULL;
     }
@@ -176,12 +175,12 @@ void initRTS(Project &prj, std::vector<ClockReceiver>& receivers)
         std::string comp2 = it->second.substr(0, pos2);
         std::string port2 = it->second;
 
-        RTC::RTObject_impl* rtc1 = manager.getComponent(comp1.c_str());
+        RTC::RTObject_var rtc1 = findRTC(comp1);
         if (!rtc1){
             std::cerr << "can't find a component named " << comp1 << std::endl;
             return;
         }
-        RTC::RTObject_impl* rtc2 = manager.getComponent(comp2.c_str());
+        RTC::RTObject_var rtc2 = findRTC(comp2);
         if (!rtc2){
             std::cerr << "can't find a component named " << comp2 << std::endl;
             return;
