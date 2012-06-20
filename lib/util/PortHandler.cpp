@@ -377,7 +377,7 @@ AbsTransformInPortHandler::AbsTransformInPortHandler(
     RTC::DataFlowComponentBase *i_rtc,
     const char *i_portName,
     hrp::Link *i_link) :
-    InPortHandler<RTC::TimedDoubleSeq>(i_rtc, i_portName),
+    InPortHandler<RTC::TimedPose3D>(i_rtc, i_portName),
     m_link(i_link)
 {
 }
@@ -388,11 +388,13 @@ void AbsTransformInPortHandler::update()
         do{
             m_port.read();
         }while(m_port.isNew());
-        m_link->p << m_data.data[0], m_data.data[1], m_data.data[2];
-        hrp::Matrix33 R;
-        R << m_data.data[3], m_data.data[4], m_data.data[5],
-            m_data.data[6], m_data.data[7], m_data.data[8],
-            m_data.data[9], m_data.data[10], m_data.data[11];
+        m_link->p << 
+            m_data.data.position.x, 
+            m_data.data.position.y, 
+            m_data.data.position.z;
+        hrp::Matrix33 R = hrp::rotFromRpy(m_data.data.orientation.r,
+                                          m_data.data.orientation.p,
+                                          m_data.data.orientation.y);
         m_link->setSegmentAttitude(R);
     }
 }
@@ -442,20 +444,18 @@ AbsTransformOutPortHandler::AbsTransformOutPortHandler(
     RTC::DataFlowComponentBase *i_rtc,
     const char *i_portName,
     hrp::Link *i_link) :
-    OutPortHandler<RTC::TimedDoubleSeq>(i_rtc, i_portName),
+    OutPortHandler<RTC::TimedPose3D>(i_rtc, i_portName),
     m_link(i_link), m_sensor(NULL)
 {
-    m_data.data.length(12);
 }
 
 AbsTransformOutPortHandler::AbsTransformOutPortHandler(
     RTC::DataFlowComponentBase *i_rtc,
     const char *i_portName,
     hrp::Sensor *i_sensor) :
-    OutPortHandler<RTC::TimedDoubleSeq>(i_rtc, i_portName),
+    OutPortHandler<RTC::TimedPose3D>(i_rtc, i_portName),
     m_link(NULL), m_sensor(i_sensor)
 {
-    m_data.data.length(12);
 }
 
 void AbsTransformOutPortHandler::update()
@@ -470,8 +470,13 @@ void AbsTransformOutPortHandler::update()
         p = parent->R*m_sensor->localPos+parent->p;
         R = parent->R*m_sensor->localR;
     }
-    hrp::setVector3(p, m_data.data);
-    hrp::setMatrix33ToRowMajorArray(R, m_data.data, 3);
+    m_data.data.position.x = p[0];
+    m_data.data.position.y = p[1];
+    m_data.data.position.z = p[2];
+    hrp::Vector3 rpy = rpyFromRot(R);
+    m_data.data.orientation.r = rpy[0];
+    m_data.data.orientation.p = rpy[1];
+    m_data.data.orientation.y = rpy[2];
     m_port.write();
 }
 

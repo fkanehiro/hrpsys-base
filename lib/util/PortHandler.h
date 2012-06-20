@@ -139,7 +139,7 @@ private:
     hrp::Link *m_link;
 };
 
-class AbsTransformInPortHandler : public InPortHandler<RTC::TimedDoubleSeq>
+class AbsTransformInPortHandler : public InPortHandler<RTC::TimedPose3D>
 {
 public:
     AbsTransformInPortHandler(RTC::DataFlowComponentBase *i_rtc,
@@ -172,7 +172,7 @@ private:
     hrp::Link *m_link;
 };
 
-class AbsTransformOutPortHandler : public OutPortHandler<RTC::TimedDoubleSeq>
+class AbsTransformOutPortHandler : public OutPortHandler<RTC::TimedPose3D>
 {
 public:
     AbsTransformOutPortHandler(RTC::DataFlowComponentBase *i_rtc,
