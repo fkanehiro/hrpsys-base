@@ -13,6 +13,13 @@
 
 #define KDEBUG 0
 
+#ifdef __APPLE__
+inline bool isnan(double x)
+{
+  return (x != x);
+}
+#endif
+
 typedef coil::Guard<coil::Mutex> Guard;
 
 using namespace octomap;
