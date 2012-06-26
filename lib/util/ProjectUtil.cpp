@@ -23,9 +23,11 @@ void initWorld(Project& prj, BodyFactory &factory,
     // add bodies
     for (std::map<std::string, ModelItem>::iterator it=prj.models().begin();
          it != prj.models().end(); it++){
-        hrp::BodyPtr body = factory(it->second.rtcName == "" ? it->first : it->second.rtcName, it->second);
+        const std::string name
+            = it->second.rtcName == "" ? it->first : it->second.rtcName; 
+        hrp::BodyPtr body = factory(name, it->second);
         if (body){
-            body->setName(it->first);
+            body->setName(name);
             world.addBody(body);
         }
     }
@@ -33,7 +35,21 @@ void initWorld(Project& prj, BodyFactory &factory,
     for (unsigned int i=0; i<prj.collisionPairs().size(); i++){
         const CollisionPairItem &cpi = prj.collisionPairs()[i];
         int bodyIndex1 = world.bodyIndex(cpi.objectName1);
+        if (bodyIndex1 < 0){
+            // different name is used for RTC
+            if (prj.models().find(cpi.objectName1) != prj.models().end()){
+                bodyIndex1 
+                    = world.bodyIndex(prj.models()[cpi.objectName1].rtcName);
+            }
+        }
         int bodyIndex2 = world.bodyIndex(cpi.objectName2);
+        if (bodyIndex2 < 0){
+            // different name is used for RTC
+            if (prj.models().find(cpi.objectName2) != prj.models().end()){
+                bodyIndex2 
+                    = world.bodyIndex(prj.models()[cpi.objectName2].rtcName);
+            }
+        }
 
         if(bodyIndex1 >= 0 && bodyIndex2 >= 0){
             hrp::BodyPtr bodyPtr1 = world.body(bodyIndex1);
@@ -84,7 +100,9 @@ void initWorld(Project& prj, BodyFactory &factory,
         
     for (std::map<std::string, ModelItem>::iterator it=prj.models().begin();
          it != prj.models().end(); it++){
-        hrp::BodyPtr body = world.body(it->first);
+        const std::string name
+            = it->second.rtcName == "" ? it->first : it->second.rtcName; 
+        hrp::BodyPtr body = world.body(name);
         for (std::map<std::string, JointItem>::iterator it2=it->second.joint.begin();
              it2 != it->second.joint.end(); it2++){
             hrp::Link *link = body->link(it2->first);
