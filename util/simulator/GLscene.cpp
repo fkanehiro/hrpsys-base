@@ -168,6 +168,11 @@ void GLscene::drawSensorOutput(Body *body, Sensor *sensor)
     LogManager<SceneState> *lm 
         = (LogManager<SceneState> *)m_log;
     SceneState &sstate = lm->state();
+    if (bodyIndex(body->name())<0){
+        std::cerr << "invalid bodyIndex(" << bodyIndex(body->name()) 
+                  << ") for " << body->name() << std::endl;
+        return;
+    } 
     const BodyState &state = sstate.bodyStates[bodyIndex(body->name())];
 
     if (sensor->type == Sensor::RANGE){
