@@ -19,6 +19,7 @@ hrpsys-simulator [project file] [options]
 -showsensor show sensor output<br>
 -size size specify initial window size<br>
 -no-default-lights turn off default lights<br>
+-max-edge-length divide large triangles which have longer edges than this value<br>
 
 Note:NameSever and openhrp-model-loader must be running
 
@@ -59,6 +60,7 @@ hrpsys-viewer [model file] [-size size]
 
 -size specify initial window size<br>
 -no-default-lights turn off default lights<br>
+-max-edge-length divide large triangles which have longer edges than this value<br>
 
 Note:NameSever and openhrp-model-loader must be running
 

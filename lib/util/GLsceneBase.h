@@ -52,6 +52,8 @@ public:
     void showFloorGrid(bool flag);
     bool showFloorGrid();
     void showInfo(bool flag);
+    void addBody(hrp::BodyPtr i_body);
+    void maxEdgeLen(double i_len);
 protected:
     enum {REQ_NONE, REQ_CLEAR, REQ_CAPTURE};
 
@@ -70,6 +72,7 @@ protected:
     bool m_showFloorGrid, m_showInfo;
     int m_request;
     std::string m_fname;
+    double m_maxEdgeLen;
 };
 
 #endif

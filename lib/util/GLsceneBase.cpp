@@ -29,7 +29,8 @@ GLsceneBase::GLsceneBase(LogManagerBase *i_log) :
     m_width(DEFAULT_W), m_height(DEFAULT_H),
     m_showingStatus(false), m_showSlider(false),
     m_log(i_log), m_videoWriter(NULL), m_cvImage(NULL), 
-    m_showFloorGrid(true), m_showInfo(true), m_request(REQ_NONE)
+    m_showFloorGrid(true), m_showInfo(true), m_request(REQ_NONE), 
+    m_maxEdgeLen(0)
 {
     m_default_camera = new GLcamera(DEFAULT_W, DEFAULT_H, 0.1, 100.0, 30*M_PI/180);
     m_default_camera->setViewPoint(4,0,0.8);
@@ -365,4 +366,18 @@ void GLsceneBase::setView()
 {
     glViewport(0,0,m_width, m_height);
     m_camera->setView(m_width, m_height);
+}
+
+void GLsceneBase::addBody(hrp::BodyPtr i_body)
+{
+    if (m_maxEdgeLen){
+        GLbody *glbody = dynamic_cast<GLbody *>(i_body.get());
+        if (glbody) glbody->divideLargeTriangles(m_maxEdgeLen);
+    }
+    WorldBase::addBody(i_body);
+}
+
+void GLsceneBase::maxEdgeLen(double i_len)
+{
+    m_maxEdgeLen = i_len;
 }

@@ -33,6 +33,7 @@ public:
     void addCamera(GLcamera *camera);
     void showAxes(bool flag);
     void highlight(bool flag);
+    void divideLargeTriangles(double maxEdgeLen);
     const std::vector<GLcamera *>& cameras();
     static void useAbsTransformToDraw();
     static int drawMode();

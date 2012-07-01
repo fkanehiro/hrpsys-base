@@ -1,4 +1,5 @@
 #include <iostream>
+#include <deque>
 #ifdef __APPLE__
 #include <OpenGL/glu.h>
 #else
@@ -250,4 +251,114 @@ void GLshape::highlight(bool flag)
 {
     if (m_highlight != flag) compile();
     m_highlight = flag;
+}
+
+void GLshape::divideLargeTriangles(double maxEdgeLen)
+{
+    std::vector<Eigen::Vector3i> new_triangles;
+    std::vector<int> new_normalIndices, new_textureCoordIndices;
+    
+    double scale[3];
+    for (int i=0; i<3; i++){
+        scale[i] = sqrt(m_trans[i]*m_trans[i]
+                        +m_trans[i+4]*m_trans[i+4]
+                        +m_trans[i+8]*m_trans[i+8]);
+    }
+    //std::cout << "normal per vertex:" << m_normalPerVertex << std::endl;
+    for (size_t i=0; i<m_triangles.size(); i++){
+        std::deque<Eigen::Vector3i> dq_triangles;
+        dq_triangles.push_back(m_triangles[i]);
+        std::deque<Eigen::Vector3i> dq_normals;
+        Eigen::Vector3i n;
+        if (m_normalPerVertex){
+            for (int j=0; j<3; j++){
+                if (m_normalIndices.size() == 0){
+                    n[j] = m_triangles[i][j];
+                }else{
+                    n[j] = m_normalIndices[i*3+j];
+                }
+            }
+        }else{
+            if (m_normalIndices.size() == 0){
+                n[0] = i;
+            }else{
+                n[0] = m_normalIndices[i];
+            }
+        }
+        dq_normals.push_back(n);
+        std::deque<Eigen::Vector3i> dq_textureCoordIndices;
+        if (m_texture){
+            dq_textureCoordIndices.push_back(
+                Eigen::Vector3i(m_textureCoordIndices[i*3],
+                                m_textureCoordIndices[i*3+1],
+                                m_textureCoordIndices[i*3+2]));
+        }
+        while(dq_triangles.size()){
+            Eigen::Vector3i tri = dq_triangles.front();
+            dq_triangles.pop_front();
+            Eigen::Vector3i n = dq_normals.front();
+            dq_normals.pop_front();
+            Eigen::Vector3i tc;
+            if (m_texture){
+                tc = dq_textureCoordIndices.front();
+                dq_textureCoordIndices.pop_front();
+            }
+            //
+            double l[3];
+            for (int j=0; j<3; j++){
+                Eigen::Vector3f e = m_vertices[tri[j]] - m_vertices[tri[(j+1)%3]];
+                for (int k=0; k<3; k++) e[k] *= scale[k];
+                l[j] = e.norm();
+            }
+            int maxidx;
+            if (l[0] > l[1]){
+                maxidx = l[0] > l[2] ? 0 : 2;
+            }else{
+                maxidx = l[1] > l[2] ? 1 : 2;
+            }
+            if (l[maxidx] <= maxEdgeLen){
+                new_triangles.push_back(tri);
+                if (m_normalPerVertex){
+                    for (int j=0; j<3; j++) new_normalIndices.push_back(n[j]);
+                }else{
+                    new_normalIndices.push_back(n[0]);
+                }
+                for (int j=0; j<3; j++) new_textureCoordIndices.push_back(tc[j]);
+            }else{
+                int vnew = m_vertices.size();
+                m_vertices.push_back(
+                    (m_vertices[tri[maxidx]]+m_vertices[tri[(maxidx+1)%3]])/2);
+                dq_triangles.push_back(
+                    Eigen::Vector3i(tri[maxidx], vnew, tri[(maxidx+2)%3]));
+                dq_triangles.push_back(
+                    Eigen::Vector3i(vnew,tri[(maxidx+1)%3],tri[(maxidx+2)%3]));
+                if (m_normalPerVertex){
+                    int nnew = m_normals.size();
+                    m_normals.push_back(
+                        (m_normals[n[maxidx]]+m_normals[n[(maxidx+1)%3]])/2);
+                    dq_normals.push_back(
+                        Eigen::Vector3i(n[maxidx], nnew, n[(maxidx+2)%3]));
+                    dq_normals.push_back(
+                        Eigen::Vector3i(nnew,n[(maxidx+1)%3],n[(maxidx+2)%3]));
+                }else{
+                    dq_normals.push_back(n);
+                    dq_normals.push_back(n);
+                }
+                if (m_texture){
+                    int tcnew = m_textureCoordinates.size();
+                    m_textureCoordinates.push_back(
+                        (m_textureCoordinates[tc[maxidx]]
+                         +m_textureCoordinates[tc[(maxidx+1)%3]])/2);
+                    dq_textureCoordIndices.push_back(
+                        Eigen::Vector3i(tc[maxidx], tcnew, tc[(maxidx+2)%3]));
+                    dq_textureCoordIndices.push_back(
+                        Eigen::Vector3i(tcnew, tc[(maxidx+1)%3], tc[(maxidx+2)%3]));
+                }
+            }
+        }
+    }
+            
+    m_triangles = new_triangles;
+    m_normalIndices = new_normalIndices;
+    m_textureCoordIndices = new_textureCoordIndices;
 }

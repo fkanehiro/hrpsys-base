@@ -74,6 +74,7 @@ int main(int argc, char* argv[])
     bool showsensors = false;
     int wsize = 0;
     bool useDefaultLights = true;
+    double maxEdgeLen = 0;
     for (int i=0; i<argc; i++){
         if (strcmp("-nodisplay",argv[i])==0){
             display = false;
@@ -89,6 +90,8 @@ int main(int argc, char* argv[])
             wsize = atoi(argv[++i]);
         }else if(strcmp("-no-default-lights", argv[i])==0){
             useDefaultLights = false;
+        }else if(strcmp("-max-edge-length", argv[i])==0){
+            maxEdgeLen = atof(argv[++i]);
         }
     }
 
@@ -110,6 +113,7 @@ int main(int argc, char* argv[])
             && strcmp(argv[i], "-showsensors")
             && strcmp(argv[i], "-size")
             && strcmp(argv[i], "-no-default-lights")
+            && strcmp(argv[i], "-max-edge-length")
             ){
             rtmargv.push_back(argv[i]);
             rtmargc++;
@@ -134,6 +138,7 @@ int main(int argc, char* argv[])
     LogManager<SceneState> log;
     GLscene scene(&log);
     scene.showSensors(showsensors);
+    scene.maxEdgeLen(maxEdgeLen);
     Simulator simulator(&log);
 
     SDLwindow window(&scene, &log, &simulator);

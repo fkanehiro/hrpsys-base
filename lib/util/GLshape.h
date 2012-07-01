@@ -34,13 +34,14 @@ public:
     void setTexture(GLtexture *texture);
     void compile();
     void highlight(bool flag);
+    void divideLargeTriangles(double maxEdgeLen);
 protected:
     int doCompile(bool isWireFrameMode);
 
     std::vector<Eigen::Vector3f> m_vertices, m_normals;
     std::vector<Eigen::Vector2f, Eigen::aligned_allocator<Eigen::Vector2f> > m_textureCoordinates;
     std::vector<Eigen::Vector3i> m_triangles;
-    Eigen::VectorXi m_normalIndices, m_textureCoordIndices;
+    std::vector<int> m_normalIndices, m_textureCoordIndices;
     float m_diffuse[4], m_specular[4], m_shininess;
     bool m_normalPerVertex;
     bool m_solid;

@@ -60,6 +60,17 @@ int main(int argc, char *argv[])
 
 	poaManager->activate();
 
+        int wsize=0;
+        bool useDefaultLights=true;
+        for (int i=1; i<argc; i++){
+            if (strcmp(argv[i], "-size")==0){
+                wsize = atoi(argv[++i]);
+            }else if(strcmp(argv[i], "-max-edge-length")==0){
+                scene.maxEdgeLen(atof(argv[++i]));
+            }else if(strcmp(argv[i], "-no-default-lights")==0){
+                useDefaultLights=false;
+            }
+        }
         if (argc >= 2 && argv[1][0] != '-'){
             OpenHRP::ModelLoader_var ml = hrp::getModelLoader(namingContext);
             OpenHRP::ModelLoader::ModelLoadOption opt;
@@ -78,16 +89,7 @@ int main(int argc, char *argv[])
             OpenHRP::BodyInfo_var binfo = ml->getBodyInfoEx(url.c_str(), opt);
             hrp::loadBodyFromBodyInfo(body, binfo, false, GLlinkFactory);
             loadShapeFromBodyInfo(glbody, binfo);
-            scene.WorldBase::addBody(body);
-        }
-        int wsize=0;
-        bool useDefaultLights=true;
-        for (int i=1; i<argc; i++){
-            if (strcmp(argv[i], "-size")==0){
-                wsize = atoi(argv[++i]);
-            }else if(strcmp(argv[i], "-no-default-lights")==0){
-                useDefaultLights=false;
-            }
+            scene.addBody(body);
         }
 
         GLlink::useAbsTransformToDraw();

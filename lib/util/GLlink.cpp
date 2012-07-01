@@ -248,3 +248,10 @@ void GLlink::highlight(bool flag)
         m_cameras[i]->highlight(flag);
     }
 }
+
+void GLlink::divideLargeTriangles(double maxEdgeLen)
+{
+    for (size_t i=0; i<m_shapes.size(); i++){
+        m_shapes[i]->divideLargeTriangles(maxEdgeLen);
+    }
+}
