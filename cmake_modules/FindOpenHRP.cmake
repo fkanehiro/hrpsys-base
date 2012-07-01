@@ -1,7 +1,7 @@
 set(OPENHRP_FOUND TRUE)
 
 execute_process(
-  COMMAND pkg-config --version openhrp3.1
+  COMMAND pkg-config --modversion openhrp3.1
   OUTPUT_VARIABLE OPENHRP_VERSION
   RESULT_VARIABLE RESULT
   OUTPUT_STRIP_TRAILING_WHITESPACE)
