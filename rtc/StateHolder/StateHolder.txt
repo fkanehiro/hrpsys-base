@@ -21,6 +21,7 @@ This component memorize references(joint angles, position/orientation of the bas
 <tr><td>qIn</td><td>RTC::TimedDoubleSeq</td><td>[rad]</td><td>reference joint angles</td></tr>
 <tr><td>basePosIn</td><td>RTC::TimedPoint3D</td><td>[m]</td><td>reference position of the base link</td></tr>
 <tr><td>baseRpyIn</td><td>RTC::TimedOrientation3D</td><td>[rad]</td><td>Roll-Pitch-Yaw angles of the base link</td></tr>
+<tr><td>zmpIn</td><td>RTC::TimedPoint3D</td><td>[m]</td><td>ZMP(Zero Moment Point) w.r.t. the base link</td></tr>
 </table>
 
 \subsection outports Output Ports
@@ -30,6 +31,7 @@ This component memorize references(joint angles, position/orientation of the bas
 <tr><td>qOut</td><td>RTC::TimedDoubleSeq</td><td>[rad]</td><td>reference joint angles</td></tr>
 <tr><td>basePosOut</td><td>RTC::TimedPoint3D</td><td>[m]</td><td>reference position of the base link</td></tr>
 <tr><td>baseRpyOut</td><td>RTC::TimedOrientation3D</td><td>[rad]</td><td>reference Roll-Pitch-Yaw angles of the base link</td></tr>
+<tr><td>zmpOut</td><td>RTC::TimedPoint3D</td><td>[m]</td><td>ZMP(Zero Moment Point) w.r.t. the base link</td></tr>
 </table>
 
 \section serviceports Service Ports

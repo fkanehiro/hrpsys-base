@@ -1,12 +1,11 @@
-generate_stub_skel(DataLoggerService "OpenHRP")
-
-set(comp_sources DataLogger.cpp DataLoggerService_impl.cpp DataLoggerServiceSk.cpp )
+set(comp_sources DataLogger.cpp DataLoggerService_impl.cpp)
+set(libs hrpsysBaseStub)
 add_library(DataLogger SHARED ${comp_sources})
-target_link_libraries(DataLogger ${OPENRTM_LIBRARIES})
+target_link_libraries(DataLogger ${libs})
 set_target_properties(DataLogger PROPERTIES PREFIX "")
 
 add_executable(DataLoggerComp DataLoggerComp.cpp ${comp_sources})
-target_link_libraries(DataLoggerComp ${OPENRTM_LIBRARIES})
+target_link_libraries(DataLoggerComp ${libs})
 
 set(target DataLogger DataLoggerComp)
 

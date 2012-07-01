@@ -14,7 +14,7 @@ from RTM import *
 from OpenRTM import *
 from _SDOPackage import *
 
-import string, math, socket, time
+import string, math, socket, time, sys
 
 ##
 # \brief root naming context
@@ -271,7 +271,7 @@ def initCORBA():
 	
 	args = string.split(System.getProperty("NS_OPT"))
 	nshost = System.getProperty("NS_OPT").split(':')[2]
-	if nshost == "localhost":
+	if nshost == "localhost" or nshost == "127.0.0.1":
 		nshost = socket.gethostname()
 	print 'nshost =',nshost
 	orb = ORB.init(args, props)
@@ -318,7 +318,11 @@ def findRTCmanager(hostname=None, rnc=None):
 	if not hostname:
 		hostname = nshost
 	try:
-		cxt = findObject(hostname, "host_cxt", rnc)
+		try:
+			cxt = findObject(hostname, "host_cxt", rnc)
+		except:
+			hostname = socket.gethostbyaddr(hostname)[0]
+			cxt = findObject(hostname, "host_cxt", rnc)
 		obj = findObject("manager","mgr",cxt)
 		return RTCmanager(ManagerHelper.narrow(obj))
 	except:
@@ -677,5 +681,13 @@ def setConfiguration(rtc, nvlist):
 		if not found:
 			print "no such property(",name,")"
 	cfg.activate_configuration_set('default')
+
+##
+# \brief narrow ior
+# \param ior ior
+# \param klass class name 
+# \param package package where the class is defined
+def narrow(ior, klass, package="OpenHRP"):
+	return getattr(sys.modules[package], klass+"Helper").narrow(ior)
 
 initCORBA()

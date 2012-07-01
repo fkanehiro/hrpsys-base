@@ -10,7 +10,7 @@
 #include <rtm/CorbaNaming.h>
 #include "RobotHardware.h"
 #include "robot.h"
-#include "VectorConvert.h"
+#include "util/VectorConvert.h"
 
 #include <hrpModel/Sensor.h>
 #include <hrpModel/ModelLoaderUtil.h>

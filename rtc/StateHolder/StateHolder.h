@@ -10,6 +10,7 @@
 #ifndef NULL_COMPONENT_H
 #define NULL_COMPONENT_H
 
+#include <boost/interprocess/sync/interprocess_semaphore.hpp>
 #include <rtm/Manager.h>
 #include <rtm/DataFlowComponentBase.h>
 #include <rtm/CorbaPort.h>
@@ -17,7 +18,6 @@
 #include <rtm/DataOutPort.h>
 #include <rtm/idl/BasicDataTypeSkel.h>
 #include <rtm/idl/ExtendedDataTypesSkel.h>
-#include <semaphore.h>
 
 // Service implementation headers
 // <rtc-template block="service_impl_h">
@@ -111,6 +111,7 @@ class StateHolder
   InPort<TimedDoubleSeq> m_qIn;
   InPort<TimedPoint3D> m_basePosIn;
   InPort<TimedOrientation3D> m_baseRpyIn;
+  InPort<TimedPoint3D> m_zmpIn;
 
   // DataInPort declaration
   // <rtc-template block="inport_declare">
@@ -124,11 +125,13 @@ class StateHolder
   TimedOrientation3D m_baseRpy;
   TimedDoubleSeq m_baseTform;
   TimedPose3D m_basePose;
+  TimedPoint3D m_zmp;
   OutPort<TimedDoubleSeq> m_qOut;
   OutPort<TimedPoint3D> m_basePosOut;
   OutPort<TimedOrientation3D> m_baseRpyOut;
   OutPort<TimedDoubleSeq> m_baseTformOut;
   OutPort<TimedPose3D> m_basePoseOut;
+  OutPort<TimedPoint3D> m_zmpOut;
 
   // </rtc-template>
 
@@ -152,10 +155,11 @@ class StateHolder
   // </rtc-template>
 
  private:
-  int dummy, m_timeCount;
-  sem_t m_waitSem, m_timeSem;
+  int m_timeCount;
+  boost::interprocess::interprocess_semaphore m_waitSem, m_timeSem;
   bool m_requestGoActual;
   double m_dt;
+  int dummy;
 };
 
 

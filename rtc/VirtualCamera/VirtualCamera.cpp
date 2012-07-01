@@ -14,11 +14,15 @@
 #endif
 #include <rtm/CorbaNaming.h>
 #include <hrpModel/ModelLoaderUtil.h>
-#include "Project.h"
-#include "VectorConvert.h"
+#include "util/Project.h"
+#include "util/VectorConvert.h"
+#include "util/GLcamera.h"
+#include "util/GLbody.h"
+#include "util/GLlink.h"
+#include "util/GLutil.h"
 #include "VirtualCamera.h"
 #include "RTCGLbody.h"
-#include "IrrModel.h"
+#include "GLscene.h"
 
 // Module specification
 // <rtc-template block="module_spec">
@@ -41,11 +45,9 @@ static const char* virtualcamera_spec[] =
     "conf.default.ranger.maxRange", "5.0",
     "conf.default.ranger.minRange", "0.5",
     "conf.default.generateRange", "1",
-#ifdef HAVE_RTCPCL
     "conf.default.generatePointCloud", "0",
     "conf.default.generatePointCloudStep", "1",
     "conf.default.pcFormat", "xyz",
-#endif
     "conf.default.generateMovie", "0",
     "conf.default.debugLevel", "0",
     "conf.default.project", "",
@@ -61,16 +63,21 @@ VirtualCamera::VirtualCamera(RTC::Manager* manager)
       m_sceneStateIn("state", m_sceneState),
       m_imageOut("image", m_image),
       m_rangeOut("range", m_range),
-#ifdef HAVE_RTCPCL
       m_cloudOut("cloud", m_cloud),
-#endif /* HAVE_RTCPCL */
       m_poseSensorOut("poseSensor", m_poseSensor),
       // </rtc-template>
+      m_scene(&m_log),
+      m_window(&m_scene, &m_log),
       m_camera(NULL),
+      m_generateRange(true),
+      m_generatePointCloud(false),
+      m_generateMovie(false),
       m_isGeneratingMovie(false),
+      m_debugLevel(0),
       dummy(0)
 {
-    m_scene = new GLscene();
+    m_scene.showFloorGrid(false);
+    m_scene.showInfo(false);
 }
 
 VirtualCamera::~VirtualCamera()
@@ -91,11 +98,9 @@ RTC::ReturnCode_t VirtualCamera::onInitialize()
     bindParameter("ranger.maxRange",    m_range.config.maxRange, "5.0");
     bindParameter("ranger.minRange",    m_range.config.minRange, "0.5");
     bindParameter("generateRange",      m_generateRange, "1");
-#ifdef HAVE_RTCPCL
     bindParameter("generatePointCloud", m_generatePointCloud, "0");
     bindParameter("generatePointCloudStep",  m_generatePointCloudStep, "1");
     bindParameter("pcFormat", 	      m_pcFormat, ref["conf.default.pcFormat"].c_str());
-#endif /* HAVE_RTCPCL */
     bindParameter("generateMovie",      m_generateMovie, "0");
     bindParameter("debugLevel",         m_debugLevel, "0");
     bindParameter("project", 	      m_projectName, ref["conf.default.project"].c_str());
@@ -111,9 +116,7 @@ RTC::ReturnCode_t VirtualCamera::onInitialize()
     // Set OutPort buffer
     addOutPort("image", m_imageOut);
     addOutPort("range", m_rangeOut);
-#ifdef HAVE_RTCPCL
     addOutPort("cloud", m_cloudOut);
-#endif /* HAVE_RTCPCL */
     addOutPort("poseSensor", m_poseSensorOut);
   
     // Set service provider to Ports
@@ -158,8 +161,8 @@ RTC::ReturnCode_t VirtualCamera::onActivated(RTC::UniqueId ec_id)
 
     RTC::Manager& rtcManager = RTC::Manager::instance();
     RTC::CorbaNaming naming(rtcManager.getORB(), "localhost:2809");
-    CORBA::Object_ptr ml = naming.resolve("ModelLoader");
-    if (!CORBA::is_nil(ml)){
+    CORBA::Object_ptr obj = naming.resolve("ModelLoader");
+    if (!CORBA::is_nil(obj)){
         std::cout << "found ModelLoader on localhost:2809" << std::endl;
     }else{
         std::string nameServer = rtcManager.getConfig()["corba.nameservers"];
@@ -192,12 +195,16 @@ RTC::ReturnCode_t VirtualCamera::onActivated(RTC::UniqueId ec_id)
 
     std::vector<std::pair<std::string, OpenHRP::BodyInfo_var> > binfos;
     int w=0, h=0;
+    OpenHRP::ModelLoader_var ml = hrp::getModelLoader(CosNaming::NamingContext::_duplicate(naming.getRootContext()));
     for (std::map<std::string, ModelItem>::iterator it=prj.models().begin();
          it != prj.models().end(); it++){
 
         OpenHRP::BodyInfo_var binfo;
-        binfo = hrp::loadBodyInfo(it->second.url.c_str(), 
-                                  CosNaming::NamingContext::_duplicate(naming.getRootContext()));
+        OpenHRP::ModelLoader::ModelLoadOption opt;
+        opt.readImage = true;
+        opt.AABBdata.length(0);
+        opt.AABBtype = OpenHRP::ModelLoader::AABB_NUM;
+        binfo = ml->getBodyInfoEx(it->second.url.c_str(), opt);
         if (CORBA::is_nil(binfo)){
             std::cerr << "failed to load model[" << it->second.url << "]" 
                       << std::endl;
@@ -228,14 +235,19 @@ RTC::ReturnCode_t VirtualCamera::onActivated(RTC::UniqueId ec_id)
         binfos.push_back(std::make_pair(it->first, binfo));
     }
 
-    m_scene->init(w,h);
+    m_window.init(w,h,false);
     RTCGLbody *robot=NULL;
     for (unsigned int i=0; i<binfos.size(); i++){
-        RTCGLbody *body = new RTCGLbody(m_scene->addBody(binfos[i].second),
-                                        this);
-        m_bodies[binfos[i].first] = body;
+        GLbody *glbody = new GLbody();
+        hrp::BodyPtr body(glbody);
+        hrp::loadBodyFromBodyInfo(body, binfos[i].second, false, GLlinkFactory);
+        loadShapeFromBodyInfo(glbody, binfos[i].second);
+        body->setName(binfos[i].first);
+        m_scene.WorldBase::addBody(body);
+        RTCGLbody *rtcglbody = new RTCGLbody(glbody, this);
+        m_bodies[binfos[i].first] = rtcglbody;
         if (binfos[i].first == bodyName){
-            robot = body;
+            robot = rtcglbody;
         }
     }
     if (!robot) {
@@ -247,7 +259,7 @@ RTC::ReturnCode_t VirtualCamera::onActivated(RTC::UniqueId ec_id)
                   << cameraName << ")" << std::endl;
         return RTC::RTC_ERROR;
     }
-    m_scene->setCamera(m_camera);
+    m_scene.setCamera(m_camera);
 
     m_image.data.image.width = m_camera->width();
     m_image.data.image.height = m_camera->height();
@@ -291,9 +303,9 @@ RTC::ReturnCode_t VirtualCamera::onExecute(RTC::UniqueId ec_id)
                 body->setPosition(state.basePose.position.x,
                                   state.basePose.position.y,
                                   state.basePose.position.z);
-                body->setOrientation(state.basePose.orientation.r,
-                                     state.basePose.orientation.p,
-                                     state.basePose.orientation.y);
+                body->setRotation(state.basePose.orientation.r,
+                                  state.basePose.orientation.p,
+                                  state.basePose.orientation.y);
                 body->setPosture(state.q.get_buffer());
             }
         }
@@ -305,22 +317,12 @@ RTC::ReturnCode_t VirtualCamera::onExecute(RTC::UniqueId ec_id)
     }
 
     coil::TimeValue t6(coil::gettimeofday());
-    m_scene->draw();
-#if 0
+    m_window.draw();
+    m_window.swapBuffers();
     capture(m_camera->width(), m_camera->height(), m_image.data.image.raw_data.get_buffer());
-#else
-    irr::scene::ISceneManager *smgr = m_scene->getSceneManager();
-    irr::video::IVideoDriver *driver = smgr->getVideoDriver();
-    irr::video::IImage *image = driver->createScreenShot();
-    unsigned char *pixel = (unsigned char *)image->lock();
-    memcpy(m_image.data.image.raw_data.get_buffer(), pixel, m_image.data.image.width*m_image.data.image.height*3);
-    image->unlock();
-    image->drop();
-#endif
     coil::TimeValue t7(coil::gettimeofday());
 
-    double T[16];
-    m_camera->getAbsTransform(T);
+    double *T = m_camera->getAbsTransform();
     hrp::Vector3 p;
     p[0] = T[12];
     p[1] = T[13];
@@ -340,9 +342,7 @@ RTC::ReturnCode_t VirtualCamera::onExecute(RTC::UniqueId ec_id)
     coil::TimeValue t2(coil::gettimeofday());
     if (m_generateRange) setupRangeData();
     coil::TimeValue t3(coil::gettimeofday());
-#ifdef HAVE_RTCPCL
     if (m_generatePointCloud) setupPointCloud();
-#endif /* HAVE_RTCPCL */
     coil::TimeValue t4(coil::gettimeofday());
     if (m_generateMovie){
         if (!m_isGeneratingMovie){
@@ -376,9 +376,7 @@ RTC::ReturnCode_t VirtualCamera::onExecute(RTC::UniqueId ec_id)
 
     m_imageOut.write();
     m_rangeOut.write();
-#ifdef HAVE_RTCPCL
     m_cloudOut.write();
-#endif /* HAVE_RTCPCL */
     m_poseSensorOut.write();
 
     coil::TimeValue t5(coil::gettimeofday());
@@ -395,12 +393,10 @@ RTC::ReturnCode_t VirtualCamera::onExecute(RTC::UniqueId ec_id)
             dt = t3 - t2;
             std::cout << ", range2d:" << dt.sec()*1e3+dt.usec()/1e3;
         }
-#ifdef HAVE_RTCPCL
         if (m_generatePointCloud){
             dt = t4 - t3;
             std::cout << ", range3d:" << dt.sec()*1e3+dt.usec()/1e3;
         }
-#endif /* HAVE_RTCPCL */
         std::cout << "[ms]" << std::endl;
     }
 
@@ -465,7 +461,6 @@ void VirtualCamera::setupRangeData()
     }
 }
 
-#ifdef HAVE_RTCPCL
 void VirtualCamera::setupPointCloud()
 {
     int w = m_camera->width();
@@ -544,7 +539,6 @@ void VirtualCamera::setupPointCloud()
     }
     m_cloud.data.length(npoints*m_cloud.point_step);
 }
-#endif /* HAVE_RTCPCL */
 /*
   RTC::ReturnCode_t VirtualCamera::onAborting(RTC::UniqueId ec_id)
   {

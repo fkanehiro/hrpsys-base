@@ -6,7 +6,7 @@
 #include <hrpModel/Sensor.h>
 #include <hrpModel/Link.h>
 #include "defs.h"
-#include "hrpIo/iob.h"
+#include "io/iob.h"
 #include "robot.h"
 
 #define CALIB_COUNT	(10*200)
@@ -17,7 +17,7 @@
 
 using namespace hrp;
 
-robot::robot() : m_fzLimitRatio(0), m_maxZmpError(DEFAULT_MAX_ZMP_ERROR)
+robot::robot() : m_fzLimitRatio(0), m_maxZmpError(DEFAULT_MAX_ZMP_ERROR), wait_sem(0)
 {
     m_rLegForceSensorId = m_lLegForceSensorId = -1;
 }
@@ -32,8 +32,6 @@ bool robot::init()
 
     calib_counter = -1;
     calib_result = 0;
-
-    sem_init(&wait_sem, 0, 0);
 
     pgain.resize(numJoints());
     dgain.resize(numJoints());
@@ -135,7 +133,7 @@ void robot::startInertiaSensorCalibration()
 
     calib_counter=CALIB_COUNT;
 
-    sem_wait(&wait_sem);
+    wait_sem.wait();
 }
 
 void robot::calibrateInertiaSensorOneStep()
@@ -192,7 +190,7 @@ void robot::calibrateInertiaSensorOneStep()
             }
 #endif
 
-            sem_post(&wait_sem);
+            wait_sem.post();
         }
     }
 }

@@ -1,4 +1,4 @@
-find_package(LibXml2)
-if (LIBXML2_FOUND)
-  add_subdirectory(ProjectGenerator)
-endif()
+add_subdirectory(ProjectGenerator)
+add_subdirectory(simulator)
+add_subdirectory(viewer)
+add_subdirectory(monitor)

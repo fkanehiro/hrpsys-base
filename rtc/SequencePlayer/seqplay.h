@@ -2,7 +2,7 @@
 #define __SEQPLAY_H__
 
 #include <fstream>
-#include <hrpUtil/uBlasCommonTypes.h>
+#include <hrpUtil/EigenTypes.h>
 #include "interpolator.h"
 #include "timeUtil.h"
 
@@ -17,6 +17,7 @@ public:
     bool isEmpty() const;
     //
     void setJointAngles(const double *i_qRef, double i_tm=0.0);
+    void getJointAngles(double *i_qRef);
     void setZmp(const double *i_zmp, double i_tm=0.0);
     void setBasePos(const double *i_pos, double i_tm=0.0);
     void setBaseRpy(const double *i_rpy, double i_tm=0.0);

@@ -298,9 +298,13 @@ def findRTCmanager(hostname=socket.gethostname(), rnc=None):
 def findRTC(name, rnc=None):
 	try:
 		obj = findObject(name, "rtc", rnc)
-		return RTcomponent(obj._narrow(RTC.RTObject))
+		rtc = RTcomponent(obj._narrow(RTC.RTObject))
+		cxts = rtc.ref.get_participating_contexts()
+		if len(cxts) > 0:
+			rtc.ec = cxts[0]
+		return rtc
 	except:
-		print "exception in findRTC("+name+")"
+		return None
 
 ##
 # \brief get a port of RT component
@@ -342,11 +346,9 @@ def serializeComponents(rtcs):
 # \retval False not connected
 def isConnected(outP, inP):
 	op = outP.get_port_profile()
-	iname = inP.get_port_profile().name
 	for con_prof in op.connector_profiles:
 		ports = con_prof.ports
-		pname = ports[1].get_port_profile().name
-		if len(ports) == 2 and pname == iname:
+		if len(ports) == 2 and outP._is_equivalent(ports[0]) and inP._is_equivalent(ports[1]):
 			return True
 	return False
 	
@@ -384,7 +386,7 @@ def dataTypeOfPort(port):
 # \param dataflow dataflow type. "Push" or "Pull"
 # \param bufferlength length of data buffer
 #
-def connectPorts(outP, inPs, subscription="flush", dataflow="Push", bufferlength=1):
+def connectPorts(outP, inPs, subscription="flush", dataflow="Push", bufferlength=1, rate=1000):
 	if not isinstance(inPs, list):
 		inPs = [inPs]
 	for inP in inPs: 
@@ -402,8 +404,10 @@ def connectPorts(outP, inPs, subscription="flush", dataflow="Push", bufferlength
 					   any.to_any(subscription))
 		nv4 = SDOPackage.NameValue("dataport.buffer.length", 
 					   any.to_any(str(bufferlength)))
+		nv5 = SDOPackage.NameValue("dataport.publisher.push_rate", 
+					   any.to_any(str(rate)))
 		con_prof = RTC.ConnectorProfile("connector0", "", [outP, inP], 
-						[nv1, nv2, nv3, nv4])
+						[nv1, nv2, nv3, nv4, nv5])
 		ret,prof = inP.connect(con_prof)
 		if ret != RTC.RTC_OK:
 			print "failed to connect"
@@ -555,5 +559,13 @@ def setConfiguration(rtc, nvlist):
 				cfg.set_configuration_set_values(cfgset)
 				break;
 	cfg.activate_configuration_set('default')
+
+##
+# \brief narrow ior
+# \param ior ior
+# \param klass class name 
+# \param package package where the class is defined
+def narrow(ior, klass, package="OpenHRP"):
+	return ior._narrow(getattr(sys.modules[package], klass))
 
 initCORBA()

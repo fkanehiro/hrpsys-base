@@ -1,15 +1,11 @@
-generate_stub_skel(Img "Img")
-
-find_package(OpenCV REQUIRED)
-include_directories(${OpenCV_INCLUDE_DIRS})
-
-set(comp_sources VideoCapture.cpp ImgSk.cpp ImgDynSk.cpp camera.cpp)
+set(comp_sources VideoCapture.cpp camera.cpp)
+set(libs ${OPENRTM_LIBRARIES} ${OpenCV_LIBRARIES} hrpsysBaseStub)
 add_library(VideoCapture SHARED ${comp_sources})
-target_link_libraries(VideoCapture ${OPENRTM_LIBRARIES} ${OpenCV_LIBRARIES})
+target_link_libraries(VideoCapture ${libs})
 set_target_properties(VideoCapture PROPERTIES PREFIX "")
 
 add_executable(VideoCaptureComp VideoCaptureComp.cpp ${comp_sources})
-target_link_libraries(VideoCaptureComp ${OPENRTM_LIBRARIES} ${OpenCV_LIBRARIES})
+target_link_libraries(VideoCaptureComp ${libs})
 
 set(target VideoCapture VideoCaptureComp)
 

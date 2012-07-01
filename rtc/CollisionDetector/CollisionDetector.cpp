@@ -7,11 +7,12 @@
  * $Id$
  */
 
+#include <iomanip>
 #include <rtm/CorbaNaming.h>
 #include <hrpModel/Link.h>
 #include <hrpModel/JointPath.h>
-#include <hrpUtil/Tvmet3d.h>
-#include <hrpUtil/Tvmet4d.h>
+#include <hrpUtil/Eigen3d.h>
+#include <hrpUtil/Eigen4d.h>
 #include <hrpCollision/ColdetModel.h>
 
 #include "IrrModel.h"
@@ -132,14 +133,14 @@ RTC::ReturnCode_t setupCollisionModel(hrp::BodyPtr m_robot, const char *url, Ope
 	hrp::Matrix44 Rs44; // inv
 	hrp::Matrix33 Rs33 = m_robot->link(i)->Rs;
 
-	Rs44 = Rs33(0,0),Rs33(0,1), Rs33(0,2), 0,
+	Rs44 << Rs33(0,0),Rs33(0,1), Rs33(0,2), 0,
 	    Rs33(1,0),Rs33(1,1), Rs33(1,2), 0,
 	    Rs33(2,0),Rs33(2,1), Rs33(2,2), 0,
 	    0.0,      0.0,       0.0,    1.0;
 	for (unsigned int l=0; l<tsis.length(); l++) {
 	    const OpenHRP::DblArray12& M = tsis[l].transformMatrix;
 	    hrp::Matrix44 T0;
-	    T0 = M[0], M[1], M[2],  M[3],
+	    T0 << M[0], M[1], M[2],  M[3],
 		M[4], M[5], M[6],  M[7],
 		M[8], M[9], M[10], M[11],
 		0.0,  0.0,  0.0,   1.0;

@@ -33,12 +33,14 @@ void RTCBody::createPorts(RTC::DataFlowComponentBase *comp)
         }
     }
 
-    if (m_highgain){
-        comp->addInPort("qCmd", m_qCmdIn);
-        comp->addInPort("dqCmd", m_dqCmdIn);
-        comp->addInPort("ddqCmd", m_ddqCmdIn);
-    }else{
-        comp->addInPort("tau", m_tauIn);
+    if (numJoints()){
+        if (m_highgain){
+            comp->addInPort("qCmd", m_qCmdIn);
+            comp->addInPort("dqCmd", m_dqCmdIn);
+            comp->addInPort("ddqCmd", m_ddqCmdIn);
+        }else{
+            comp->addInPort("tau", m_tauIn);
+        }
     }
 
     // output ports
@@ -150,7 +152,7 @@ void RTCBody::output(OpenHRP::RobotState& state)
     m_pos.data.z = root->p[2];
     state.basePose.position = m_pos.data;
     
-    Vector3 rpy(rpyFromRot(root->R));
+    Vector3 rpy(rpyFromRot(root->attitude()));
     m_rpy.data.r = rpy[0];
     m_rpy.data.p = rpy[1];
     m_rpy.data.y = rpy[2];

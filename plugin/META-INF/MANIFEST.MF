@@ -5,6 +5,5 @@ Bundle-SymbolicName: com.generalrobotix.ui.view.GrxRobotHardwareClientView;singl
 Bundle-Version: 3.1
 Bundle-Vendor: AIST
 Fragment-Host: com.generalrobotix.ui.grxui;bundle-version="0.9.8"
-Bundle-ClassPath: RobotHardwareService.jar,
- StateHolderService.jar,
+Bundle-ClassPath: hrpsysBaseStub.jar,
  robothardwareserviceclient.jar

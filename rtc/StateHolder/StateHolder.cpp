@@ -8,7 +8,7 @@
  */
 
 #include "StateHolder.h"
-#include <hrpUtil/Tvmet3d.h>
+#include <hrpUtil/Eigen3d.h>
 
 // Module specification
 // <rtc-template block="module_spec">
@@ -37,21 +37,24 @@ StateHolder::StateHolder(RTC::Manager* manager)
     m_qIn("qIn", m_q),
     m_basePosIn("basePosIn", m_basePos),
     m_baseRpyIn("baseRpyIn", m_baseRpy),
+    m_zmpIn("zmpIn", m_zmp),
     m_qOut("qOut", m_q),
     m_basePosOut("basePosOut", m_basePos),
     m_baseRpyOut("baseRpyOut", m_baseRpy),
     m_baseTformOut("baseTformOut", m_baseTform),
     m_basePoseOut("basePoseOut", m_basePose),
+    m_zmpOut("zmpOut", m_zmp),
     m_StateHolderServicePort("StateHolderService"),
     m_TimeKeeperServicePort("TimeKeeperService"),
     // </rtc-template>
-    dummy(0), m_timeCount(0)
+    m_timeCount(0),
+    m_waitSem(0),
+    m_timeSem(0),
+    dummy(0)
 {
 
   m_service0.setComponent(this);
   m_service1.setComponent(this);
-  sem_init(&m_waitSem, 0, 0);
-  sem_init(&m_timeSem, 0, 0);
   m_requestGoActual = false;
 
   m_basePos.data.x = m_basePos.data.y = m_basePos.data.z = 0.0;
@@ -65,6 +68,7 @@ StateHolder::StateHolder(RTC::Manager* manager)
   m_basePose.data.orientation.r = 0;
   m_basePose.data.orientation.p = 0;
   m_basePose.data.orientation.y = 0;
+  m_zmp.data.x = m_zmp.data.y = m_zmp.data.z = 0.0;
 }
 
 StateHolder::~StateHolder()
@@ -87,6 +91,7 @@ RTC::ReturnCode_t StateHolder::onInitialize()
     addInPort("qIn", m_qIn);
     addInPort("basePosIn", m_basePosIn);
     addInPort("baseRpyIn", m_baseRpyIn);
+    addInPort("zmpIn", m_zmpIn);
   
   // Set OutPort buffer
     addOutPort("qOut", m_qOut);
@@ -94,6 +99,7 @@ RTC::ReturnCode_t StateHolder::onInitialize()
     addOutPort("baseRpyOut", m_baseRpyOut);
     addOutPort("baseTformOut", m_baseTformOut);
     addOutPort("basePoseOut", m_basePoseOut);
+    addOutPort("zmpOut", m_zmpOut);
   
   // Set service provider to Ports
   m_StateHolderServicePort.registerProvider("service0", "StateHolderService", m_service0);
@@ -171,7 +177,7 @@ RTC::ReturnCode_t StateHolder::onExecute(RTC::UniqueId ec_id)
 
     if (m_requestGoActual){
         m_requestGoActual = false;
-        sem_post(&m_waitSem); 
+        m_waitSem.post();
     }
 
     if (m_basePosIn.isNew()){
@@ -183,6 +189,11 @@ RTC::ReturnCode_t StateHolder::onExecute(RTC::UniqueId ec_id)
         m_baseRpyIn.read();
     }
     m_baseRpyOut.write();
+
+    if (m_zmpIn.isNew()){
+        m_zmpIn.read();
+    }
+    m_zmpOut.write();
 
     double *a = m_baseTform.data.get_buffer();
     a[0] = m_basePos.data.x;
@@ -201,7 +212,7 @@ RTC::ReturnCode_t StateHolder::onExecute(RTC::UniqueId ec_id)
 
     if (m_timeCount > 0){
         m_timeCount--;
-        if (m_timeCount == 0) sem_post(&m_timeSem);
+        if (m_timeCount == 0) m_timeSem.post();
     }
 
     return RTC::RTC_OK;
@@ -247,7 +258,7 @@ void StateHolder::goActual()
 {
     std::cout << "StateHolder::goActual()" << std::endl;
     m_requestGoActual = true;
-    sem_wait(&m_waitSem);
+    m_waitSem.wait();
 }
 
 void StateHolder::getCommand(StateHolderService::Command &com)
@@ -261,12 +272,14 @@ void StateHolder::getCommand(StateHolderService::Command &com)
     hrp::Matrix33 R = hrp::rotFromRpy(m_baseRpy.data.r, m_baseRpy.data.p, m_baseRpy.data.y);
     double *a = com.baseTransform.get_buffer();
     hrp::setMatrix33ToRowMajorArray(R, a, 3);
+    com.zmp.length(3);
+    com.zmp[0] = m_zmp.data.x; com.zmp[1] = m_zmp.data.y; com.zmp[2] = m_zmp.data.z; 
 }
 
 void StateHolder::wait(CORBA::Double tm)
 {
     m_timeCount = tm/m_dt;
-    sem_wait(&m_timeSem);
+    m_timeSem.wait();
 }
  
 extern "C"

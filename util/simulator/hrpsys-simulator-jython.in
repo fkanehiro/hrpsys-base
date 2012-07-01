@@ -1,0 +1,38 @@
+#!/bin/bash @CMAKE_INSTALL_PREFIX@/bin/hrpsysjy
+
+import sys
+import time
+import os
+import thread
+
+execfile("@CMAKE_INSTALL_PREFIX@/share/hrpsys/jython/waitInput.py")
+
+sys.path.append(os.getcwd())
+
+def runSimulator(*args):
+    cmd = "hrpsys-simulator "
+    for arg in args:
+        cmd += str(arg)+" "
+    os.system(cmd)
+
+argc = len(sys.argv)
+
+if argc < 2:
+    print "Usage: hrpsys-simulator project.xml [script.py] [options for sdlsim]"
+    sys.exit(1)
+
+if sys.argv[2][(len(sys.argv[2])-3):] == ".py":
+    script = sys.argv[2]
+    args = (sys.argv[1],)+tuple(sys.argv[3:])
+else:
+    script = None
+    args = tuple(sys.argv[1:])
+
+thread.start_new_thread(runSimulator, args)
+time.sleep(1)
+
+if script != None:
+   execfile(script)
+
+
+

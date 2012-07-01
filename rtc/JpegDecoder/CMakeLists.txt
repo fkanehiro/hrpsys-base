@@ -1,15 +1,11 @@
-generate_stub_skel(Img "Img")
-
-find_package(OpenCV REQUIRED)
-include_directories(${OpenCV_INCLUDE_DIRS})
-
-set(comp_sources JpegDecoder.cpp ImgSk.cpp ImgDynSk.cpp)
+set(comp_sources JpegDecoder.cpp)
+set(libs ${OpenCV_LIBRARIES} hrpsysBaseStub)
 add_library(JpegDecoder SHARED ${comp_sources})
-target_link_libraries(JpegDecoder ${OPENRTM_LIBRARIES} ${OpenCV_LIBRARIES})
+target_link_libraries(JpegDecoder ${libs})
 set_target_properties(JpegDecoder PROPERTIES PREFIX "")
 
 add_executable(JpegDecoderComp JpegDecoderComp.cpp ${comp_sources})
-target_link_libraries(JpegDecoderComp ${OPENRTM_LIBRARIES} ${OpenCV_LIBRARIES})
+target_link_libraries(JpegDecoderComp ${libs})
 
 set(target JpegDecoder JpegDecoderComp)
 

@@ -17,7 +17,7 @@
 #include <rtm/DataOutPort.h>
 #include <rtm/idl/BasicDataTypeSkel.h>
 #include <rtm/idl/InterfaceDataTypes.hh>
-#include <rtcpcl/idl/pointcloud.hh>
+#include "pointcloud.hh"
 
 namespace octomap{
     class OcTree;

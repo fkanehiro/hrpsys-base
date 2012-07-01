@@ -1,5 +1,6 @@
-#include <hrpUtil/Tvmet3d.h>
-#include <hrpUtil/Tvmet4d.h>
+#include <iostream>
+#include <hrpUtil/Eigen3d.h>
+#include <hrpUtil/Eigen4d.h>
 #include "IrrModel.h"
 
 using namespace irr;
@@ -124,7 +125,7 @@ GLlink::GLlink(ISceneNode *i_parent, ISceneManager *i_mgr, s32 i_id,
                           180/M_PI*rpy[1],
                           -180/M_PI*rpy[2]));
     
-    m_axis = i_li.jointAxis[0], i_li.jointAxis[1], i_li.jointAxis[2];
+    m_axis << i_li.jointAxis[0], i_li.jointAxis[1], i_li.jointAxis[2];
     
     CORBA::String_var jointType = i_li.jointType;
     const std::string jt( jointType );
@@ -320,7 +321,7 @@ GLlink::GLlink(ISceneNode *i_parent, ISceneManager *i_mgr, s32 i_id,
                            180/M_PI*rpyFromRot(i_link->Rs)[1],
                           -180/M_PI*rpyFromRot(i_link->Rs)[2]));
     
-    m_axis =-i_link->a[0], i_link->a[1],-i_link->a[2];
+    m_axis << -i_link->a[0], i_link->a[1],-i_link->a[2];
     
     switch ( i_link->jointType ) {
     case hrp::Link::FIXED_JOINT:

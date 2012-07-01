@@ -11,7 +11,7 @@
 #include <hrpModel/Link.h>
 #include <hrpModel/ModelLoaderUtil.h>
 #include "SequencePlayer.h"
-#include "VectorConvert.h"
+#include "util/VectorConvert.h"
 
 // Module specification
 // <rtc-template block="module_spec">
@@ -46,13 +46,13 @@ SequencePlayer::SequencePlayer(RTC::Manager* manager)
       m_baseRpyOut("baseRpy", m_baseRpy),
       m_SequencePlayerServicePort("SequencePlayerService"),
       // </rtc-template>
-      dummy(0),
-      m_robot(NULL)
+      m_waitSem(0),
+      m_robot(NULL),
+      dummy(0)
 {
     m_service0.player(this);
     m_clearFlag = false;
     m_waitFlag = false;
-    sem_init(&m_waitSem, 0, 0);
 }
 
 SequencePlayer::~SequencePlayer()
@@ -173,7 +173,7 @@ RTC::ReturnCode_t SequencePlayer::onExecute(RTC::UniqueId ec_id)
         m_clearFlag = false;
         if (m_waitFlag){
             m_waitFlag = false;
-            sem_post(&m_waitSem);
+            m_waitSem.post();
         }
     }else{
         double zmp[3], acc[3], pos[3], rpy[3];
@@ -246,20 +246,43 @@ void SequencePlayer::setClearFlag()
 void SequencePlayer::waitInterpolation()
 {
     m_waitFlag = true;
-    sem_wait(&m_waitSem);
+    m_waitSem.wait();
 }
 
 bool SequencePlayer::setJointAngle(short id, double angle, double tm)
 {
     if (!setInitialState()) return false;
-    m_seq->setJointAngle(id, angle, tm);
+    dvector q(m_robot->numJoints());
+    m_seq->getJointAngles(q.data());
+    q[id] = angle;
+    for (int i=0; i<m_robot->numJoints(); i++){
+        hrp::Link *j = m_robot->joint(i);
+        if (j) j->q = q[i];
+    }
+    m_robot->calcForwardKinematics();
+    hrp::Vector3 absZmp = m_robot->calcCM();
+    absZmp[2] = 0;
+    hrp::Link *root = m_robot->rootLink();
+    hrp::Vector3 relZmp = root->R.transpose()*(absZmp - root->p);
+    m_seq->setJointAngles(q.data(), tm);
+    m_seq->setZmp(relZmp.data(), tm);
     return true;
 }
 
 bool SequencePlayer::setJointAngles(const double *angles, double tm)
 {
     if (!setInitialState()) return false;
+    for (int i=0; i<m_robot->numJoints(); i++){
+        hrp::Link *j = m_robot->joint(i);
+        if (j) j->q = angles[i];
+    }
+    m_robot->calcForwardKinematics();
+    hrp::Vector3 absZmp = m_robot->calcCM();
+    absZmp[2] = 0;
+    hrp::Link *root = m_robot->rootLink();
+    hrp::Vector3 relZmp = root->R.transpose()*(absZmp - root->p);
     m_seq->setJointAngles(angles, tm);
+    m_seq->setZmp(relZmp.data(), tm);
     return true;
 }
 
@@ -316,7 +339,7 @@ bool SequencePlayer::setInitialState()
 
         Link *root = m_robot->rootLink();
 
-        root->p = m_basePosInit.data.x,
+        root->p << m_basePosInit.data.x,
             m_basePosInit.data.y,
             m_basePosInit.data.z;
         m_seq->setBasePos(root->p.data());
@@ -327,11 +350,11 @@ bool SequencePlayer::setInitialState()
         m_seq->setBaseRpy(rpy);
         calcRotFromRpy(root->R, rpy[0], rpy[1], rpy[2]);
 
-#if 0
+#if 1
         m_robot->calcForwardKinematics();
         Vector3 com = m_robot->calcCM();
         com[2] = 0.0;
-        Vector3 local_com(trans(root->R)*(com - root->p));
+        Vector3 local_com(root->R.transpose()*(com - root->p));
         double zmp[] = {local_com[0], local_com[1], local_com[2]};
         m_seq->setZmp(zmp);
 #endif

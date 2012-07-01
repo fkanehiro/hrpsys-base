@@ -1,2 +1,5 @@
-install(FILES rtm.py DESTINATION share/hrpsys/python)
+configure_file(hrpsyspy.in ${CMAKE_CURRENT_BINARY_DIR}/hrpsyspy)
+
+install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/hrpsyspy DESTINATION bin)
+install(FILES rtm.py waitInput.py DESTINATION share/hrpsys/python)
 

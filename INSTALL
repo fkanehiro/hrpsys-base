@@ -1,22 +1,31 @@
 1. Requirements
    *Ubuntu 10.04LTS
-   *OpenHRP 3.1.2 or later
-   *Jython
+   *OpenHRP 3.1.3 or later
+   *Jython(apt-get install jython)
+   *libxml2(apt-get install libxml2-dev)
+   *SDL(apt-get install libsdl-dev)
+   *OpenCV(apt-get install libcv-dev libcvaux-dev libhighgui-dev)
+   *QuickHull(apt-get install libqhull-dev)
+   *GLEW(apt-get install libglew-dev)
    *(Optional)Octomap(http://octomap.sourceforge.net/)
    *(Optional)Irrlicht(apt-get install libirrlicht-dev)
-   *(Optional)OpenCV(apt-get install libcv-dev libcvaux-dev libhighgui-dev)
-   *(Optional)libxml2(apt-get install libxml2-dev)
-   *(Optional)rtcpcl(https://github.com/gbiggs/rtcpcl)
 
 2. Install
 
 2.1 Preparation
+
+2.1.1 Edit SDOPackage.idl
    Since SDOPackage.idl(usually installed under /usr/include/rtm/idl as a part
    of OpenRTM-aist) can't be compiled with idlj, modify the following two lines.
    a. comment out line 40: 
       #define TypeCode CORBA::TypeCode -> //#define TypeCode CORBA::TypeCode
    b. add namespace "CORBA::" to line 123: 
       TypeCode code; -> CORBA::TypeCode code;
+
+2.1.2 Install required packages using apt-get
+   Please install required packages shown above. The following is an example
+   for ubuntu10.04LTS
+   %sudo apt-get install jython libxml2-dev libsdl-dev libcv-dev libcvaux-dev libhighgui-dev libqhull-dev libglew-dev
 
 2.2 RT components and utilities
    % mkdir build
@@ -25,13 +34,13 @@
    % make
    % (sudo) make install
 
-2.3 Eclipse settings
+2.3 (Optional) Eclipse settings
    a. Launch Eclipse
    b. Select "Window"->"Preferences"
    c. Click "GRXUI"
    d. Set "<jython directory>/Lib:<install prefix>/share/hrpsys/jython:<install prefix>/share/hrpsys/jar" to "Jython Lib directory"
 
-2.4 Eclipse plugin to monitor the robot status
+2.4 (Optional) Eclipse plugin to monitor the robot status
    a. Launch Eclipse
    b. Import GrxUI plugin project included in OpenHRP3
    c. Import the plugin project placed under "plugin" directory
@@ -42,6 +51,16 @@
 3. Running examples
 
 3.1 Monitoring a manipulator "PA10"
+
+3.1.1 (Recommended) without Eclipse
+   a. Open three terminals in <install prefix>/share/hrpsys/samples/PA10
+   b. terminal1: % hrpsys-monitor PA10.xml
+      A manipulator PA10 will be displayed
+   c. terminal2: % ./hrpsys.sh
+   d. terminal3: % hrpsysjy PA10.py
+      PA10 will change its joint angles.
+
+3.1.2 (Optional, Section 2.3 and 2.4 are required) with Eclipse
    a. Launch Eclipse
    b. Open "GrxUI" perspective
    c. From "GrxUI" menu of Eclipse, load a project file "PA10.xml" placed under
@@ -54,13 +73,25 @@
    g. Press "exec script" button in JythonPrompt view. PA10 will change its joint angles.
 
 3.2 Simulation of a cybernetic human "HRP-4C"
+
+3.2.1 (Recommended) without Eclipse
    a. Get a VRML model from http://unit.aist.go.jp/is/humanoid/hrp-4c/hrp-4c.html
-   b. Extract the downloaded zip file at <install prefix>/share/hrpsys/samples
-   c. Launch Eclipse
-   d. Open "GrxUI" perspective
-   e. From "GrxUI" menu of Eclipse, load a project file "HRP-4C.xml" placed 
-      under <install prefix>/share/hrpsys/samples/HRP-4C. A cybernetic human
+   b. % cd <install prefix>/share/hrpsys/samples/HRP4C
+   c. % unzip <download>/HRP-4C.zip -d /tmp
+   d. % (sudo) cp -r  /tmp/HRP-4C/* .
+   e. % hrpsys-simulator-python HRP4C.xml HRP4C.py
+      A cybernetic human "HRP-4C" will be displayed and walk.
+
+3.2.2 (Optional, Section 2.3 and 2.4 are required) with Eclipse
+   a. Get a VRML model from http://unit.aist.go.jp/is/humanoid/hrp-4c/hrp-4c.html
+   b. % cd <install prefix>/share/hrpsys/samples/HRP4C
+   c. % unzip <download>/HRP-4C.zip -d /tmp
+   d. % (sudo) cp -r  /tmp/HRP-4C/* .
+   e. Launch Eclipse
+   f. Open "GrxUI" perspective
+   g. From "GrxUI" menu of Eclipse, load a project file "HRP4C.xml" placed 
+      under <install prefix>/share/hrpsys/samples/HRP4C. A cybernetic human
       "HRP-4C" will appear in 3DView.
-   f. Start simulation
-   e. Execute a script "HRP-4C.py"
+   h. Start simulation
+   i. Execute a script "HRP4C.py"
 

@@ -9,8 +9,12 @@
 
 #include <rtm/CorbaNaming.h>
 
-#include "Project.h"
-#include "IrrModel.h"
+#include "util/Project.h"
+#include <hrpModel/ModelLoaderUtil.h>
+#include "util/GLbody.h"
+#include "util/GLlink.h"
+#include "util/GLutil.h"
+#include "GLscene.h"
 #include "RTCGLbody.h"
 #include "Viewer.h"
 
@@ -39,9 +43,11 @@ Viewer::Viewer(RTC::Manager* manager)
       // <rtc-template block="initializer">
       m_sceneStateIn("state", m_sceneState),
       // </rtc-template>
+      m_scene(&m_log),
+      m_window(&m_scene, &m_log),
       dummy(0)
 {
-    m_scene = new GLscene();
+    m_log.enableRingBuffer(1);
 }
 
 Viewer::~Viewer()
@@ -123,7 +129,7 @@ RTC::ReturnCode_t Viewer::onActivated(RTC::UniqueId ec_id)
     Project prj;
     if (!prj.parse(m_project)) return RTC::RTC_ERROR;
 
-    m_scene->init();
+    m_window.init();
 
     for (std::map<std::string, ModelItem>::iterator it=prj.models().begin();
          it != prj.models().end(); it++){
@@ -134,7 +140,13 @@ RTC::ReturnCode_t Viewer::onActivated(RTC::UniqueId ec_id)
             std::cerr << "failed to load model[" << it->second.url.c_str() << "]" 
                       << std::endl;
         }else{
-            m_bodies[it->first] = new RTCGLbody(m_scene->addBody(binfo), this);
+            GLbody *glbody = new GLbody();
+            hrp::BodyPtr body(glbody);
+            hrp::loadBodyFromBodyInfo(body, binfo, false, GLlinkFactory);
+            loadShapeFromBodyInfo(glbody, binfo);
+            body->setName(it->first);
+            m_scene.WorldBase::addBody(body);
+            m_bodies[it->first] = new RTCGLbody(glbody, this);
         }
     }
 
@@ -162,21 +174,7 @@ RTC::ReturnCode_t Viewer::onExecute(RTC::UniqueId ec_id)
         do{
             m_sceneStateIn.read();
         }while(m_sceneStateIn.isNew());
-        for (unsigned int i=0; i<m_sceneState.states.length(); i++){
-            const OpenHRP::RobotState& state = m_sceneState.states[i];
-            std::string name(state.name);
-            RTCGLbody *rtcglb=m_bodies[name];
-            if (rtcglb){
-                GLbody *body = rtcglb->body();
-                body->setPosition(state.basePose.position.x,
-                                  state.basePose.position.y,
-                                  state.basePose.position.z);
-                body->setOrientation(state.basePose.orientation.r,
-                                     state.basePose.orientation.p,
-                                     state.basePose.orientation.y);
-                body->setPosture(state.q.get_buffer());
-            }
-        }
+        m_log.add(m_sceneState);
     }
 
     for (std::map<std::string, RTCGLbody *>::iterator it=m_bodies.begin();
@@ -184,7 +182,9 @@ RTC::ReturnCode_t Viewer::onExecute(RTC::UniqueId ec_id)
         it->second->input();
     }
 
-    m_scene->draw();
+    m_window.processEvents();
+    m_window.draw();
+    m_window.swapBuffers();
 
     return RTC::RTC_OK;
 }

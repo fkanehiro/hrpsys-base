@@ -1,5 +1,6 @@
 // -*- mode: c++; indent-tabs-mode: t; tab-width: 4; c-basic-offset: 4; -*-
 
+#include <iostream>
 #include "seqplay.h"
 
 #define deg2rad(x)	((x)*M_PI/180)
@@ -125,6 +126,12 @@ void seqplay::setJointAngles(const double *jvs, double tm)
 	}
 }
 
+void seqplay::getJointAngles(double *jvs)
+{
+    interpolators[Q]->get(jvs, false);
+}
+
+
 void seqplay::setZmp(const double *i_zmp, double i_tm)
 {
 	if (i_tm == 0){
@@ -163,10 +170,10 @@ void seqplay::setBaseAcc(const double *i_acc, double i_tm)
 
 void seqplay::setJointAngle(unsigned int i_rank, double jv, double tm)
 {
-    dvector pos(m_dof);
-    interpolators[Q]->get(&pos[0], false);
+    double pos[m_dof];
+	getJointAngles(pos);
     pos[i_rank] = jv;
-    interpolators[Q]->setGoal(&pos[0], tm);
+    interpolators[Q]->setGoal(pos, tm);
 }
 
 void seqplay::clear(double i_timeLimit)

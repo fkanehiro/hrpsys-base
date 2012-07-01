@@ -465,7 +465,9 @@ WARN_LOGFILE           =
 # with spaces.
 
 INPUT		      =  @CMAKE_CURRENT_SOURCE_DIR@/package.h \
+		      @CMAKE_CURRENT_SOURCE_DIR@/utilities.h \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../jython/rtm.py \
+		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/CameraImageViewer \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/DataLogger \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/ForwardKinematics \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/HGcontroller \
@@ -483,7 +485,7 @@ INPUT		      =  @CMAKE_CURRENT_SOURCE_DIR@/package.h \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/Viewer \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/VirtualCamera \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/WavPlayer \
-		      @CMAKE_CURRENT_SOURCE_DIR@/../hrplib/hrpIo/iob.h \
+		      @CMAKE_CURRENT_SOURCE_DIR@/../lib/io/iob.h \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../idl \
 		      @OPENRTM_DIR@/include/rtm/idl \
 		      @OPENRTM_DIR@/include/rtm/idl/device_interfaces

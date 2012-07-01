@@ -1,6 +1,7 @@
 #include <rtm/DataFlowComponentBase.h>
+#include "util/GLbody.h"
+#include "util/GLlink.h"
 #include "RTCGLbody.h"
-#include "IrrModel.h"
 
 RTCGLbody::RTCGLbody(GLbody *i_body, RTC::DataFlowComponentBase *comp) : 
     m_body(i_body),
@@ -10,7 +11,7 @@ RTCGLbody::RTCGLbody(GLbody *i_body, RTC::DataFlowComponentBase *comp) :
     m_poseBaseIn("poseBase", m_poseBase)
 {
     if (m_body->numJoints() > 0) comp->addInPort("q", m_qIn);
-    if (m_body->rootLink()->jointType() == GLlink::FREE_JOINT){
+    if (m_body->rootLink()->jointType == hrp::Link::FREE_JOINT){
         comp->addInPort("pos", m_posIn);
         comp->addInPort("rpy", m_rpyIn);
         comp->addInPort("poseBase", m_poseBaseIn);
@@ -31,17 +32,17 @@ void RTCGLbody::input()
     }
     if (m_rpyIn.isNew()){
         while (m_rpyIn.isNew()) m_rpyIn.read();
-        m_body->setOrientation(m_rpy.data.r,
-                               m_rpy.data.p,
-                               m_rpy.data.y);
+        m_body->setRotation(m_rpy.data.r,
+                            m_rpy.data.p,
+                            m_rpy.data.y);
     }
     if (m_poseBaseIn.isNew()){
         while (m_poseBaseIn.isNew()) m_poseBaseIn.read();
         m_body->setPosition(m_poseBase.data.position.x,
                             m_poseBase.data.position.y,
                             m_poseBase.data.position.z);
-        m_body->setOrientation(m_poseBase.data.orientation.r,
-                               m_poseBase.data.orientation.p,
-                               m_poseBase.data.orientation.y);
+        m_body->setRotation(m_poseBase.data.orientation.r,
+                            m_poseBase.data.orientation.p,
+                            m_poseBase.data.orientation.y);
     }
 }

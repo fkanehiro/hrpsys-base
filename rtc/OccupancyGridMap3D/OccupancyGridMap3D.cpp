@@ -8,10 +8,17 @@
  */
 
 #include "OccupancyGridMap3D.h"
-#include "hrpUtil/Tvmet3d.h"
+#include "hrpUtil/Eigen3d.h"
 #include <octomap/octomap.h>
 
 #define KDEBUG 0
+
+#ifdef __APPLE__
+inline bool isnan(double x)
+{
+  return (x != x);
+}
+#endif
 
 typedef coil::Guard<coil::Mutex> Guard;
 

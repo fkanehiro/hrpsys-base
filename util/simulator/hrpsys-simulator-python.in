@@ -1,0 +1,48 @@
+#!/usr/bin/ipython
+
+import sys
+import os
+
+sys.path.append("@CMAKE_INSTALL_PREFIX@/share/hrpsys/python")
+import hrpsys
+
+execfile("@CMAKE_INSTALL_PREFIX@/share/hrpsys/python/waitInput.py")
+
+sys.path.append(os.getcwd())
+
+argc = len(sys.argv)
+
+if argc < 2:
+    print "Usage: hrpsys-simulator project.xml [script.py]"
+else:    
+    project = sys.argv[1]
+
+    if argc >= 3 and sys.argv[2][(len(sys.argv[2])-3):] == ".py":
+	script = sys.argv[2]
+    else:
+	script = None
+
+    sim = hrpsys.Simulator()
+    nodisplay = False
+    usebbox = False
+    for arg in sys.argv:
+        if arg == "realtime":
+            sim.realTime(True)
+        elif arg == "endless":
+            sim.endless(True)
+        elif arg == "nodisplay":
+            nodisplay = True
+        elif arg == "showsensors":
+            sim.showSensors = True
+        elif arg == "usebbox":
+            sim.useBBox(True)
+    sim.loadProject(project)
+    if not nodisplay:
+        sim.initViewer()
+    sim.start(sim.totalTime)
+
+    if script != None:
+	execfile(script)
+
+
+

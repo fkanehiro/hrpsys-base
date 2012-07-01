@@ -1,12 +1,11 @@
-generate_stub_skel(ForwardKinematicsService "OpenHRP")
-
-set(comp_sources ForwardKinematics.cpp ForwardKinematicsServiceSk.cpp ForwardKinematicsService_impl.cpp)
+set(comp_sources ForwardKinematics.cpp ForwardKinematicsService_impl.cpp)
+set(libs ${OPENHRP_LIBRARIES} hrpsysBaseStub)
 add_library(ForwardKinematics SHARED ${comp_sources})
-target_link_libraries(ForwardKinematics ${OPENRTM_LIBRARIES} ${OPENHRP_LIBRARIES})
+target_link_libraries(ForwardKinematics ${libs})
 set_target_properties(ForwardKinematics PROPERTIES PREFIX "")
 
 add_executable(ForwardKinematicsComp ForwardKinematicsComp.cpp ${comp_sources})
-target_link_libraries(ForwardKinematicsComp ${OPENRTM_LIBRARIES} ${OPENHRP_LIBRARIES})
+target_link_libraries(ForwardKinematicsComp ${libs})
 
 set(target ForwardKinematics ForwardKinematicsComp)
 

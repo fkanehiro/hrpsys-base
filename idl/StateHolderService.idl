@@ -19,6 +19,7 @@ module OpenHRP
     struct Command{
       DblSequence jointRefs;     ///< reference joint angles[rad]
       DblSequence baseTransform; ///< reference transform of the base link
+      DblSequence zmp;           ///< reference zmp[m] w.r.t. the base link
     };
 
     /**

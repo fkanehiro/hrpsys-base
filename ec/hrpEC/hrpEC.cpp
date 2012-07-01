@@ -2,13 +2,10 @@
 
 #include "hrpEC.h"
 #include <rtm/ECFactory.h>
-#include "hrpIo/iob.h"
+#include "io/iob.h"
 
 #include <iostream>
 
-#ifdef USE_ART
-#include <linux/art_task.h>
-#else
 #include <stdio.h>
 #include <errno.h>
 #include <sched.h>
@@ -144,131 +141,33 @@ int art_wait(void)
     return 0;
 }
 
-#endif
-
 namespace RTC
 {
-    hrpExecutionContext::hrpExecutionContext()
-        : PeriodicExecutionContext()
+    bool hrpExecutionContext::waitForNextPeriod()
     {
-        resetProfile();
-    }
-
-    hrpExecutionContext::~hrpExecutionContext()
-    {
-        close_iob();
-    }
-
-
-    int hrpExecutionContext::svc(void)
-    {
-        if (open_iob() == FALSE){
-            std::cerr << "open_iob: failed to open" << std::endl;
-            return 0;
-        } 
-        if (lock_iob() == FALSE){
-            std::cerr << "failed to lock iob" << std::endl;
-            close_iob();
-            return 0;
+        if (wait_for_iob_signal()){
+            perror("wait_for_iob_signal()");
+            return false;
         }
-        double period_sec = (m_period.sec()+m_period.usec()/1e6);
-	int nsubstep = number_of_substeps();
-        std::cout << "period = " << period_sec*1e3*nsubstep << "[ms]" << std::endl;
-        if (art_enter(ART_PRIO_MAX-1, ART_TASK_PERIODIC, period_sec*1e6) == -1){
+        return true;
+    }
+    bool hrpExecutionContext::enterRT()
+    {
+        double period_usec = m_period.sec()*1e6+m_period.usec();
+        if (art_enter(ART_PRIO_MAX-1, ART_TASK_PERIODIC, period_usec) == -1){
             perror("art_enter");
             close_iob();
-            return 0;
+            return false;
         }
-        do{
-#ifdef USE_ART
-            while(1){
-                if (art_wait() == -1){
-                    perror("art_wait");
-                    return 0;
-                }
-                if (read_iob_frame() % nsubstep == 0) break;
-            }
-#else
-	    if (wait_for_iob_signal()){
-	        perror("wait_for_iob_signal()");
-	    }
-#endif
-            struct timeval tv;
-            gettimeofday(&tv, NULL);
-            if (m_profile.count > 0){
-#define DELTA_SEC(start, end) end.tv_sec - start.tv_sec + (end.tv_usec - start.tv_usec)/1e6;
-                double dt = DELTA_SEC(m_tv, tv);
-                if (dt > m_profile.max_period) m_profile.max_period = dt;
-                if (dt < m_profile.min_period) m_profile.min_period = dt;
-                m_profile.avg_period = (m_profile.avg_period*m_profile.count + dt)/(m_profile.count+1);
-            }
-            m_profile.count++;
-            m_tv = tv;
-
-            invoke_worker iw;
-            struct timeval tbegin, tend;
-	    std::vector<double> processes(m_comps.size());
-            gettimeofday(&tbegin, NULL);
-            for (unsigned int i=0; i< m_comps.size(); i++){
-                iw(m_comps[i]);
-                gettimeofday(&tend, NULL);
-                double dt = DELTA_SEC(tbegin, tend);
-                processes[i] = dt;
-                tbegin = tend;
-            }
-
-            gettimeofday(&tv, NULL);
-            double dt = DELTA_SEC(m_tv, tv);
-            if (dt > m_profile.max_total_process) m_profile.max_total_process = dt;
-	    if (m_profile.max_processes.length() != processes.size()){
-	        m_profile.max_processes.length(processes.size());
-		for (unsigned int i=0; i<m_profile.max_processes.length(); i++){
-		    m_profile.max_processes[i] = 0.0;
-		}
-	    }
-	    for (unsigned int i=0; i<m_profile.max_processes.length(); i++){
-	        if (m_profile.max_processes[i] < processes[i]){
-		    m_profile.max_processes[i] = processes[i];
-		}
-	    }
-            if (dt > period_sec*nsubstep){
-  	        m_profile.timeover++; 
-#ifdef NDEBUG
-                fprintf(stderr, "Timeover: processing time = %4.1f[ms]\n", dt*1e3);
-                for (unsigned int i=0; i< processes.size(); i++){
-                    fprintf(stderr, "%4.1f, ", processes[i]*1e3);
-                }
-                fprintf(stderr, "\n");
-#endif
-            }
-
-        } while (m_running);
+        return true;
+    }
+    bool hrpExecutionContext::exitRT()
+    {
         if (art_exit() == -1){
             perror("art_exit");
-            return 0;
+            return false;
         }
-        unlock_iob();
-        close_iob();
-
-        return 0;
-    }
-
-    OpenHRP::ExecutionProfileService::Profile *hrpExecutionContext::getProfile()
-    {
-        OpenHRP::ExecutionProfileService::Profile *ret 
-            = new OpenHRP::ExecutionProfileService::Profile;
-        *ret = m_profile;
-        return ret;
-    }
-
-    void hrpExecutionContext::resetProfile()
-    {
-        m_profile.max_period = m_profile.avg_period = 0;
-        m_profile.min_period = 1.0; // enough long 
-        m_profile.max_total_process = 0;
-	for( unsigned int i = 0 ; i < m_profile.max_processes.length() ; i++ )
-	    m_profile.max_processes[i] = 0;
-        m_profile.count = m_profile.timeover = 0;
+        return true;
     }
 };
 

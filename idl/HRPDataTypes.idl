@@ -12,6 +12,7 @@ module OpenHRP
   typedef sequence<RobotState> RobotStateSeq;
   struct SceneState
   {
+    double time;
     RobotStateSeq states;
   };
 };
