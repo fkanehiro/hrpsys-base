@@ -70,20 +70,33 @@ hrp::BodyPtr createBody(const std::string& name, const ModelItem& mitem,
 
 int main(int argc, char* argv[]) 
 {
-    bool display = true, realtime=false, usebbox=false, endless=false;
+    bool display = true, usebbox=false;
     bool showsensors = false;
     int wsize = 0;
     bool useDefaultLights = true;
     double maxEdgeLen = 0;
-    for (int i=0; i<argc; i++){
+
+    if (argc < 0){
+        std::cerr << "Usage:" << argv[0] << " [project file] [options]"
+                  << std::endl;
+        return 1;
+    }
+
+    Project prj;
+    if (!prj.parse(argv[1])){
+        std::cerr << "failed to parse " << argv[1] << std::endl;
+        return 1;
+    }
+
+    for (int i=2; i<argc; i++){
         if (strcmp("-nodisplay",argv[i])==0){
             display = false;
         }else if(strcmp("-realtime", argv[i])==0){
-            realtime = true;
+            prj.realTime(true);
         }else if(strcmp("-usebbox", argv[i])==0){
             usebbox = true;
         }else if(strcmp("-endless", argv[i])==0){
-            endless = true;
+            prj.totalTime(0);
         }else if(strcmp("-showsensors", argv[i])==0){
             showsensors = true;
         }else if(strcmp("-size", argv[i])==0){
@@ -93,12 +106,6 @@ int main(int argc, char* argv[])
         }else if(strcmp("-max-edge-length", argv[i])==0){
             maxEdgeLen = atof(argv[++i]);
         }
-    }
-
-    Project prj;
-    if (!prj.parse(argv[1])){
-        std::cerr << "failed to parse " << argv[1] << std::endl;
-        return 1;
     }
 
     //================= OpenRTM =========================
@@ -152,9 +159,7 @@ int main(int argc, char* argv[])
     //================= setup Simulator ======================
     BodyFactory factory = boost::bind(createBody, _1, _2, modelloader, &scene, usebbox);
     simulator.init(prj, factory);
-    simulator.realTime(realtime);
-    if (endless){
-        simulator.setTotalTime(0);
+    if (!prj.totalTime()){
         log.enableRingBuffer(50000);
     }
 

@@ -86,10 +86,13 @@ public:
     bool parse(const std::string &filename);
     double timeStep() { return m_timeStep; }
     double totalTime() { return m_totalTime; }
+    void totalTime(double time) { m_totalTime = time; }
     double logTimeStep() { return m_logTimeStep; }
     double gravity() { return m_gravity; }
     bool isEuler() { return m_isEuler; }
     bool kinematicsOnly() { return m_kinematicsOnly; }
+    bool realTime() { return m_realTime; }
+    void realTime(bool flag) { m_realTime = flag; }
     std::map<std::string, ModelItem>& models(){ return m_models; }
     std::vector<CollisionPairItem>& collisionPairs() { return m_collisionPairs; }
     RTSItem &RTS() { return m_rts; }
@@ -101,6 +104,7 @@ private:
     double m_gravity;
     bool m_isEuler;
     bool m_kinematicsOnly;
+    bool m_realTime;
     std::map<std::string, ModelItem> m_models;
     std::vector<CollisionPairItem> m_collisionPairs;
     RTSItem m_rts;

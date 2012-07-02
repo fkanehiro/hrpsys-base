@@ -13,6 +13,7 @@ void Simulator::init(Project &prj, BodyFactory &factory){
     m_totalTime = prj.totalTime();
     m_logTimeStep = prj.logTimeStep();
     m_kinematicsOnly = prj.kinematicsOnly();
+    realTime(prj.realTime());
 
     OpenHRP::CollisionSequence& collisions = state.collisions;
 

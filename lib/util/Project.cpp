@@ -23,7 +23,7 @@ ThreeDView::ThreeDView() : showScale(true), showCoM(false){
 }
 
 Project::Project() : 
-    m_timeStep(0.001), m_logTimeStep(0.01), m_totalTime(1.0), m_gravity(9.8), m_isEuler(true), m_kinematicsOnly(false)
+    m_timeStep(0.001), m_logTimeStep(0.01), m_totalTime(1.0), m_gravity(9.8), m_isEuler(true), m_kinematicsOnly(false), m_realTime(false)
 {
 }
 
@@ -69,6 +69,7 @@ bool Project::parse(const std::string& filename)
                   } else if ( xmlStrEqual(xmlGetProp(cur_node, (xmlChar *)"name"),(xmlChar *)"timeStep") ) {
                       m_timeStep = atof((char *)(xmlGetProp(cur_node, (xmlChar *)"value")));
                   } else if ( xmlStrEqual(xmlGetProp(cur_node, (xmlChar *)"name"),(xmlChar *)"realTime") ) {
+                      m_realTime = std::string((char *)(xmlGetProp(cur_node, (xmlChar *)"value"))) == "true";
                   } else if ( xmlStrEqual(xmlGetProp(cur_node, (xmlChar *)"name"),(xmlChar *)"gravity") ) {
                       m_gravity = atof((char *)(xmlGetProp(cur_node, (xmlChar *)"value")));
                   } else if ( xmlStrEqual(xmlGetProp(cur_node, (xmlChar *)"name"),(xmlChar *)"method") ) {
