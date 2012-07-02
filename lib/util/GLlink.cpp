@@ -127,7 +127,7 @@ void GLlink::draw(){
             glLightf(lid, GL_CONSTANT_ATTENUATION,  l->attenuation[0]);
             glLightf(lid, GL_LINEAR_ATTENUATION,    l->attenuation[1]);
             glLightf(lid, GL_QUADRATIC_ATTENUATION, l->attenuation[2]);
-            //glLightf(lid, GL_SPOT_EXPONENT, 20);
+            glLightf(lid, GL_SPOT_EXPONENT, 20);
             glLightf(lid, GL_SPOT_CUTOFF, l->cutOffAngle*180/M_PI);
             GLfloat dir[] = {l->direction[0], l->direction[1], l->direction[2]};
             glLightfv(lid, GL_SPOT_DIRECTION, dir);
