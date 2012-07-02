@@ -151,7 +151,11 @@ void initRTS(Project &prj, std::vector<ClockReceiver>& receivers)
              = rts.components.begin(); it != rts.components.end(); it++){
         std::string path = it->second.path;
         if (path == "") continue;
+#ifdef __APPLE__
+        path += ".dylib";
+#else
         path += ".so";
+#endif
         std::cout << "loading " << path << std::endl; 
         std::string initfunc = it->second.name + "Init";
         manager.load(path.c_str(), initfunc.c_str());
