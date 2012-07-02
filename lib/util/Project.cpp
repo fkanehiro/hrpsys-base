@@ -8,6 +8,20 @@
 #include <hrpModel/Config.h>
 #include "Project.h"
 
+ThreeDView::ThreeDView() : showScale(true), showCoM(false){ 
+    double r = 5.0, pan = M_PI/4, tilt = M_PI/16;
+    double cp = cos(pan), sp = sin(pan);
+    double ct = cos(tilt), st = sin(tilt);
+    
+    hrp::Matrix33 Rp = hrp::rotFromRpy(0,pan,0);
+    hrp::Matrix33 Rt = hrp::rotFromRpy(-tilt, 0, 0);
+    hrp::Matrix33 R = hrp::rotFromRpy(0, M_PI/2,0)*hrp::rotFromRpy(0, 0, M_PI/2)*Rp*Rt;
+    T[ 0] = R(0,0); T[ 1] = R(0,1); T[ 2] = R(0,2); T[ 3] = r*cp*ct; 
+    T[ 4] = R(1,0); T[ 5] = R(1,1); T[ 6] = R(1,2); T[ 7] = r*sp*ct;
+    T[ 8] = R(2,0); T[ 9] = R(2,1); T[10] = R(2,2); T[11] = r*st;
+    T[12] =      0; T[13] =      0; T[14] =      0; T[15] = 1.0;
+}
+
 Project::Project() : 
     m_timeStep(0.001), m_logTimeStep(0.01), m_totalTime(1.0), m_gravity(9.8), m_isEuler(true), m_kinematicsOnly(false)
 {
@@ -269,6 +283,23 @@ bool Project::parse(const std::string& filename)
                       m_rhview.RobotHardwareName = (char *)(xmlGetProp(cur_node, (xmlChar *)"value"));
                   }else if ( xmlStrEqual(xmlGetProp(cur_node, (xmlChar *)"name"),(xmlChar *)"StateHolderRTC") ) {
                       m_rhview.StateHolderName = (char *)(xmlGetProp(cur_node, (xmlChar *)"value"));
+                  }
+              }
+              cur_node = cur_node->next;
+          }
+      } else if ( xmlStrEqual( xmlGetProp(node, (xmlChar *)"class"), (xmlChar *)"com.generalrobotix.ui.view.Grx3DView")  ) {
+          xmlNodePtr cur_node = node->children;
+          while ( cur_node ) {
+              if ( cur_node->type == XML_ELEMENT_NODE ) {
+                  if ( xmlStrEqual(xmlGetProp(cur_node, (xmlChar *)"name"),(xmlChar *)"showScale") ) {
+                      m_3dview.showScale = std::string((char *)(xmlGetProp(cur_node, (xmlChar *)"value"))) == "true";
+                  }else if ( xmlStrEqual(xmlGetProp(cur_node, (xmlChar *)"name"),(xmlChar *)"showCoM") ) {
+                      m_3dview.showCoM = std::string((char *)(xmlGetProp(cur_node, (xmlChar *)"value"))) == "true";
+                  }else if ( xmlStrEqual(xmlGetProp(cur_node, (xmlChar *)"name"),(xmlChar *)"eyeHomePosition") ) {
+                      sscanf(((char *)xmlGetProp(cur_node, (xmlChar *)"value")),"%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf ", 
+                             &m_3dview.T[0],&m_3dview.T[1],&m_3dview.T[2],&m_3dview.T[3],
+                             &m_3dview.T[4],&m_3dview.T[5],&m_3dview.T[6],&m_3dview.T[7],
+                             &m_3dview.T[8],&m_3dview.T[9],&m_3dview.T[10],&m_3dview.T[11]);
                   }
               }
               cur_node = cur_node->next;

@@ -307,3 +307,21 @@ bool SDLwindow::oneStep()
     }
     return true;
 }
+
+void SDLwindow::setView(double T[16])
+{
+    // compute radius, pan,tilt,xCenter and yCenter from T assuming zCenter = 0
+    pan = atan2(T[6], T[2]); // atan2(Rzy,Rzx)
+    tilt = atan2(T[10], sqrt(T[2]*T[2]+T[6]*T[6]));
+    double len;
+    if (fabs(T[10]) < 1e-8){
+        len = 5;
+    }else{
+        len = -T[11]/T[10]; // Pz/Rzz
+    }
+    radius = fabs(len);
+    xCenter = T[3]+T[2]*len;
+    yCenter = T[7]+T[6]*len;
+    zCenter = 0;
+}
+

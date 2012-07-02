@@ -72,6 +72,14 @@ public:
     int port, interval;
 };
 
+class ThreeDView
+{
+public:
+    ThreeDView();
+    bool showScale, showCoM;  
+    double T[16];
+};
+
 class Project{
 public:
     Project();
@@ -86,6 +94,7 @@ public:
     std::vector<CollisionPairItem>& collisionPairs() { return m_collisionPairs; }
     RTSItem &RTS() { return m_rts; }
     RobotHardwareClientView &RobotHardwareClient() { return m_rhview; }
+    ThreeDView &view() { return m_3dview; }
 private:
     double m_timeStep, m_logTimeStep;
     double m_totalTime;
@@ -96,5 +105,6 @@ private:
     std::vector<CollisionPairItem> m_collisionPairs;
     RTSItem m_rts;
     RobotHardwareClientView m_rhview;
+    ThreeDView m_3dview;
 };
 #endif

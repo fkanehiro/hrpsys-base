@@ -145,6 +145,8 @@ int main(int argc, char* argv[])
     if (display){
         window.init(wsize, wsize);
         if (!useDefaultLights) scene.turnOffLights();
+        window.setView(prj.view().T);
+        scene.showFloorGrid(prj.view().showScale);
     }
 
     //================= setup Simulator ======================
