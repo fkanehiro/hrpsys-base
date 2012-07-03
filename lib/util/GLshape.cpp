@@ -27,7 +27,7 @@ GLshape::~GLshape()
     if (m_wireFrameList) glDeleteLists(m_wireFrameList, 1);
 }
 
-void GLshape::draw(int i_mode)
+size_t GLshape::draw(int i_mode)
 {
     glPushMatrix();
     glMultMatrixd(m_trans);
@@ -38,6 +38,7 @@ void GLshape::draw(int i_mode)
     } 
     glCallList(i_mode == GLlink::DM_SOLID ? m_shadingList : m_wireFrameList);
     glPopMatrix();
+    return m_triangles.size();
 }
 
 void GLshape::setVertices(int nvertices, const float *vertices)

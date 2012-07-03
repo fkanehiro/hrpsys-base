@@ -31,7 +31,7 @@ public:
     int height() { return m_height; }
     void setViewPoint(double x, double y, double z);
     void setViewTarget(double x, double y, double z);
-    void draw(int i_mode);
+    size_t draw(int i_mode);
     GLlink *link();
     void highlight(bool flag);
     void render(GLsceneBase *i_scene);

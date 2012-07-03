@@ -24,7 +24,7 @@ public:
     void setPosture(const double *i_angles, double *i_pos, double *i_rpy);
     void setPosture(const hrp::dvector& i_q, const hrp::Vector3& i_p,
                     const hrp::Matrix33& i_R);
-    void draw();
+    size_t draw();
     void drawSensor(hrp::Sensor *i_sensor);
     GLcamera *findCamera(const char *i_name);
     void setSensorDrawCallback(boost::function2<void, hrp::Body *, hrp::Sensor *> f);

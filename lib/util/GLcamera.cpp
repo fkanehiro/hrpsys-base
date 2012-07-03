@@ -37,15 +37,16 @@ GLcamera::~GLcamera()
     }
 }
 
-void GLcamera::draw(int i_mode)
+size_t GLcamera::draw(int i_mode)
 {
-    // display list
+    size_t ntri = 0;
     glPushMatrix();
     glMultMatrixd(m_trans);
     for (size_t i=0; i<m_shapes.size(); i++){
-        m_shapes[i]->draw(i_mode);
+        ntri += m_shapes[i]->draw(i_mode);
     }
     glPopMatrix();
+    return ntri;
 }    
 
 

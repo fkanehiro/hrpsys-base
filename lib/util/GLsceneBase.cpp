@@ -214,10 +214,11 @@ void GLsceneBase::showInfo(bool flag)
     m_showInfo = flag;
 }
 
-void GLsceneBase::drawInfo(double fps)
+void GLsceneBase::drawInfo(double fps, size_t ntri)
 {
     glColor3d(1.0,1.0,1.0);
-    glRasterPos2f(10, m_height-15);
+    int h = m_height-15;
+    glRasterPos2f(10, h);
     char buf[256];
     double tm = m_log->currentTime();
     if (tm >= 0){
@@ -226,17 +227,20 @@ void GLsceneBase::drawInfo(double fps)
         sprintf(buf, "Time:------[s]");
     }
     drawString(buf);
-    glRasterPos2f(10, m_height-30);
+    h -= 15;
+    glRasterPos2f(10, h);
     sprintf(buf, "Playback x%6.3f", m_log->playRatio());
     drawString(buf);
-    glRasterPos2f(10, m_height-45);
-    sprintf(buf, "FPS %2.0f", fps);
+    h -= 15;
+    glRasterPos2f(10, h);
+    sprintf(buf, "FPS %2.0f(%6dtris)", fps, ntri);
     drawString(buf);
     if (m_camera != m_default_camera){
         sprintf(buf, "Camera: %s.%s", 
                 m_camera->link()->body->name().c_str(), 
                 m_camera->name().c_str());
-        glRasterPos2f(10, m_height-60);
+        h -= 15;
+        glRasterPos2f(10, h);
         drawString(buf);
     }
     for (unsigned int i=0; i<m_msgs.size(); i++){
@@ -246,9 +250,9 @@ void GLsceneBase::drawInfo(double fps)
     showStatus();
 }
 
-void GLsceneBase::drawObjects(bool showSensors)
+size_t GLsceneBase::drawObjects(bool showSensors)
 {
-    // robots
+    size_t ntri = 0;
     boost::function2<void, hrp::Body *, hrp::Sensor *> callback;
     for (int i=0; i<numBodies(); i++){
         GLbody *glbody = dynamic_cast<GLbody *>(body(i).get());
@@ -257,10 +261,11 @@ void GLsceneBase::drawObjects(bool showSensors)
             callback = glbody->getSensorDrawCallback();
             glbody->setSensorDrawCallback(NULL);
         }
-        glbody->draw();
+        ntri += glbody->draw();
         if (!showSensors) glbody->setSensorDrawCallback(callback);
 
     }
+    return ntri;
 }
 
 void GLsceneBase::draw()
@@ -283,7 +288,7 @@ void GLsceneBase::draw()
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
-    drawObjects();
+    size_t ntri = drawObjects();
 
     glDisable(GL_LIGHTING);
     glBegin(GL_LINES);
@@ -299,7 +304,7 @@ void GLsceneBase::draw()
     glPushMatrix();
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
-    if (m_showInfo) drawInfo(fps);
+    if (m_showInfo) drawInfo(fps, ntri);
     if (m_showSlider){
         glColor4f(0.0,0.0,0.0, 0.5);
         glRectf(SLIDER_SIDE_MARGIN,10,m_width-SLIDER_SIDE_MARGIN,20);

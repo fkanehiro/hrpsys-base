@@ -41,7 +41,8 @@ GLlink::~GLlink()
     }
 }
         
-void GLlink::draw(){
+size_t GLlink::draw(){
+    size_t ntri=0;
     glPushMatrix();
     if (m_useAbsTransformToDraw){
         glMultMatrixd(m_absTrans);
@@ -51,13 +52,14 @@ void GLlink::draw(){
     }
     if (m_drawMode != DM_COLLISION){
         for (size_t i=0; i<m_shapes.size(); i++){
-            m_shapes[i]->draw(m_drawMode);
+            ntri += m_shapes[i]->draw(m_drawMode);
         }
         for (size_t i=0; i<m_cameras.size(); i++){
-            m_cameras[i]->draw(m_drawMode);
+            ntri += m_cameras[i]->draw(m_drawMode);
         }
     }else{
         if (coldetModel && coldetModel->getNumTriangles()){
+            ntri = coldetModel->getNumTriangles();
             Eigen::Vector3f n, v[3];
             int vindex[3];
             if (m_highlight){
@@ -153,11 +155,12 @@ void GLlink::draw(){
     if (!m_useAbsTransformToDraw){
         hrp::Link *l = child;
         while (l){
-            ((GLlink *)l)->draw();
+            ntri += ((GLlink *)l)->draw();
             l = l->sibling;
         }
     }
     glPopMatrix();
+    return ntri;
 }
 
 void GLlink::setQ(double i_q){

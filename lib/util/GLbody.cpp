@@ -56,13 +56,14 @@ void GLbody::setPosture(const dvector& i_q, const Vector3& i_p,
     setPosture(i_q.data());
 }
 
-void GLbody::draw(){
+size_t GLbody::draw(){
+    size_t ntri=0;
     if (m_useAbsTransformToDraw){
         for (unsigned int i=0; i<numLinks(); i++){
-            ((GLlink *)link(i))->draw();
+            ntri += ((GLlink *)link(i))->draw();
         }
     }else{
-        ((GLlink *)rootLink())->draw(); // drawn recursively
+        ntri = ((GLlink *)rootLink())->draw(); // drawn recursively
     }
 }
 

@@ -21,7 +21,7 @@ public:
 
     GLlink();
     ~GLlink();
-    void draw();
+    size_t draw();
     void setQ(double i_q);
 
     GLcamera *findCamera(const char *i_name);

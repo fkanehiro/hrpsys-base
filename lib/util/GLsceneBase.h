@@ -45,7 +45,7 @@ public:
     void setScreenSize(int w, int h);
     void toggleRobotState() { m_showingStatus = !m_showingStatus; }
     void draw();
-    void drawObjects(bool showSensors=true);
+    size_t drawObjects(bool showSensors=true);
     void setView();
     virtual void showStatus() {}
     virtual void drawAdditionalLines() {}
@@ -59,7 +59,7 @@ protected:
     enum {REQ_NONE, REQ_CLEAR, REQ_CAPTURE};
 
     void drawFloorGrid();
-    void drawInfo(double fps);
+    void drawInfo(double fps, size_t ntri);
 
     std::vector<std::string> m_msgs; 
     bool m_showingStatus, m_showSlider;

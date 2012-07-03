@@ -19,7 +19,7 @@ class GLshape : public GLcoordinates
 public:
     GLshape();
     ~GLshape();
-    void draw(int i_mode);
+    size_t draw(int i_mode);
     void setVertices(int nvertices, const float *vertices);
     void setTriangles(int ntriangles, const int *vertexIndices);
     void setNormals(int nnormal, const float *normals);

@@ -327,5 +327,8 @@ void SDLwindow::setView(double T[16])
     xCenter = T[3]+T[2]*len;
     yCenter = T[7]+T[6]*len;
     zCenter = 0;
+    std::cout << "pan:" << pan << ", tilt:" << tilt << ", radius:" << radius
+              << ", xCenter:" << xCenter << ", yCenter:" << yCenter << std::endl;
+    std::cout << "zaxis:" << T[2] << "," << T[6] << "," << T[10] << std::endl;
 }
 
