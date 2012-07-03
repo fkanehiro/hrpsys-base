@@ -146,6 +146,7 @@ int main(int argc, char* argv[])
     GLscene scene(&log);
     scene.showSensors(showsensors);
     scene.maxEdgeLen(maxEdgeLen);
+    scene.showCollision(prj.view().showCollision);
     Simulator simulator(&log);
 
     SDLwindow window(&scene, &log, &simulator);

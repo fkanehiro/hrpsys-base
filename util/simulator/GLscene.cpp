@@ -21,7 +21,8 @@ using namespace hrp;
 
 GLscene::GLscene(LogManagerBase *i_log) : 
     GLsceneBase(i_log), 
-    m_showSensors(false)
+    m_showSensors(false),
+    m_showCollision(true)
 {
 }
 
@@ -55,7 +56,7 @@ static void drawString2(const char *str)
 
 void GLscene::drawAdditionalLines()
 {
-    if (m_log->index()<0) return;
+    if (!m_showCollision || m_log->index()<0) return;
 
     LogManager<SceneState> *lm 
         = (LogManager<SceneState> *)m_log;
@@ -249,4 +250,14 @@ void GLscene::showSensors(bool flag)
 bool GLscene::showSensors()
 {
     return m_showSensors;
+}
+
+void GLscene::showCollision(bool flag)
+{
+    m_showCollision = flag;
+}
+
+bool GLscene::showCollision()
+{
+    return m_showCollision;
 }

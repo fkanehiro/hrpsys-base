@@ -77,7 +77,7 @@ class ThreeDView
 {
 public:
     ThreeDView();
-    bool showScale, showCoM;  
+    bool showScale, showCoM, showCollision;  
     double T[16];
 };
 
