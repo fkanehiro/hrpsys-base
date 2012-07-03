@@ -34,6 +34,7 @@ SDLwindow::SDLwindow(GLsceneBase* i_scene, LogManagerBase *i_log,
     instructions.push_back("n: select next camera");
     instructions.push_back("c: clear scene");
     instructions.push_back("g: toggle floor grid");
+    instructions.push_back("l: toggle default lights");
     if (throbj){
         instructions.push_back("p: pause/resume background thread");
     }
@@ -150,6 +151,9 @@ bool SDLwindow::processEvents()
                 break;
             case SDLK_g:
                 scene->showFloorGrid(!scene->showFloorGrid());
+                break;
+            case SDLK_l:
+                scene->defaultLights(!scene->defaultLights());
                 break;
             case SDLK_RIGHT:
                 if (isControlPressed){

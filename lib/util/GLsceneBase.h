@@ -31,7 +31,8 @@ public:
     void capture(char *o_image);
     void init();
     void initLights();
-    void turnOffLights();
+    void defaultLights(bool flag);
+    bool defaultLights();
     void clear();
     void requestClear();
     void requestCapture(const char *i_fname);
@@ -69,7 +70,7 @@ protected:
     IplImage *m_cvImage;
     LogManagerBase *m_log;
     SDL_sem *m_sem;
-    bool m_showFloorGrid, m_showInfo;
+    bool m_showFloorGrid, m_showInfo, m_defaultLights;
     int m_request;
     std::string m_fname;
     double m_maxEdgeLen;

@@ -29,7 +29,8 @@ GLsceneBase::GLsceneBase(LogManagerBase *i_log) :
     m_width(DEFAULT_W), m_height(DEFAULT_H),
     m_showingStatus(false), m_showSlider(false),
     m_log(i_log), m_videoWriter(NULL), m_cvImage(NULL), 
-    m_showFloorGrid(true), m_showInfo(true), m_request(REQ_NONE), 
+    m_showFloorGrid(true), m_showInfo(true), m_defaultLights(true),
+    m_request(REQ_NONE), 
     m_maxEdgeLen(0)
 {
     m_default_camera = new GLcamera(DEFAULT_W, DEFAULT_H, 0.1, 100.0, 30*M_PI/180);
@@ -140,10 +141,23 @@ void GLsceneBase::initLights()
     glLightfv(GL_LIGHT1, GL_POSITION, light1pos);
 }
 
-void GLsceneBase::turnOffLights()
+void GLsceneBase::defaultLights(bool flag)
 {
-    glDisable(GL_LIGHT0);
-    glDisable(GL_LIGHT1);
+    if (m_defaultLights == flag) return;
+
+    m_defaultLights = flag;
+    if (flag){
+        glEnable(GL_LIGHT0);
+        glEnable(GL_LIGHT1);
+    }else{
+        glDisable(GL_LIGHT0);
+        glDisable(GL_LIGHT1);
+    }
+}
+
+bool GLsceneBase::defaultLights()
+{
+    return m_defaultLights;
 }
 
 void GLsceneBase::init()

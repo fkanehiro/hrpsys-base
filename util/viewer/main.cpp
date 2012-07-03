@@ -97,7 +97,7 @@ int main(int argc, char *argv[])
 
         SDLwindow window(&scene, &log);
         window.init(wsize, wsize);
-        if (!useDefaultLights) scene.turnOffLights();
+        if (!useDefaultLights) scene.defaultLights(false);
 
         while(window.oneStep());
 

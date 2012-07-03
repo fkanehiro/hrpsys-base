@@ -152,7 +152,7 @@ int main(int argc, char* argv[])
     SDLwindow window(&scene, &log, &simulator);
     if (display){
         window.init(wsize, wsize);
-        if (!useDefaultLights) scene.turnOffLights();
+        if (!useDefaultLights) scene.defaultLights(false);
         window.setView(prj.view().T);
         scene.showFloorGrid(prj.view().showScale);
     }
