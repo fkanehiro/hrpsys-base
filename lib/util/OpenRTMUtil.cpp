@@ -1,3 +1,4 @@
+#include <rtm/CorbaNaming.h>
 #include "OpenRTMUtil.h"
 
 int connectPorts(RTC::PortService_ptr outPort, RTC::PortService_ptr inPort)
@@ -97,3 +98,49 @@ const char *getServiceIOR(RTC::RTObject_var rtc,
 
     return ior;
 }
+
+void setConfiguration(RTC::RTObject_var rtc, 
+                      const std::string& name, const std::string& value)
+{
+    SDOPackage::Configuration_ptr cfg = rtc->get_configuration();
+    SDOPackage::ConfigurationSetList_var cfgsets 
+        = cfg->get_configuration_sets();
+    if (cfgsets->length()==0){
+        std::cerr << "configuration set is not found" << std::endl;
+        return;
+    }
+    SDOPackage::ConfigurationSet& cfgset = cfgsets[0];
+    SDOPackage::NVList& nv = cfgset.configuration_data;
+    for (size_t i=0; i<nv.length(); i++){
+        if (std::string(nv[i].name) == name){
+            nv[i].value <<= value.c_str();
+            cfg->set_configuration_set_values(cfgset);
+            cfg->activate_configuration_set("default");
+            return;
+        }
+    }
+    std::cerr << "can't find property(" << name << ")" << std::endl;
+}
+
+RTC::RTObject_var findRTC(const std::string &rtcName)
+{
+    RTC::Manager& manager = RTC::Manager::instance();
+    std::string nameServer = manager.getConfig()["corba.nameservers"];
+    int comPos = nameServer.find(",");
+    if (comPos < 0){
+        comPos = nameServer.length();
+    }
+    nameServer = nameServer.substr(0, comPos);
+    RTC::CorbaNaming naming(manager.getORB(), nameServer.c_str());
+    CosNaming::Name name;
+    name.length(1);
+    name[0].id = CORBA::string_dup(rtcName.c_str());
+    name[0].kind = CORBA::string_dup("rtc");
+    try{
+        CORBA::Object_ptr obj = naming.resolve(name);
+        return RTC::RTObject::_narrow(obj);
+    }catch(...){
+        return NULL;
+    }
+}
+

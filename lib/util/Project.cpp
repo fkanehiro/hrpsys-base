@@ -110,13 +110,16 @@ bool Project::parse(const std::string& filename)
                       }else{
                           std::string comp = name.substr(0,pos);
                           std::string cat = name.substr(pos+1);
+                          RTSItem::rtc &rtc = m_rts.components[comp];
                           if (cat == "factory"){
-                              m_rts.components[comp].path = value;
+                              rtc.path = value;
                               int pos = value.find_last_of("/");
-                              m_rts.components[comp].name = value.substr(pos+1);
+                              rtc.name = value.substr(pos+1);
                           }else if (cat == "period") {
-                              m_rts.components[comp].period = atof(value.c_str());
-                          }
+                              rtc.period = atof(value.c_str());
+                          }else{
+                              rtc.configuration.push_back(std::make_pair(cat, value));
+                          } 
                       }
                   }
               }

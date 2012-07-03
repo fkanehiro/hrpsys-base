@@ -8,6 +8,9 @@ void activateRtc(RTC::RtcBase* pRtc);
 void deactivateRtc(RTC::RtcBase* pRtc);
 const char *getServiceIOR(RTC::RTObject_var rtc, 
                           const char *sname);
+void setConfiguration(RTC::RTObject_var rtc, 
+                      const std::string& name, const std::string& value);
+RTC::RTObject_var findRTC(const std::string &rtcName);
 
 class ClockReceiver
 {

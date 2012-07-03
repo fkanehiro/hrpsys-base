@@ -1,7 +1,6 @@
 #include <iostream>
 #include <rtm/Manager.h>
 #include <rtm/RTObject.h>
-#include <rtm/CorbaNaming.h>
 #include <hrpModel/Link.h>
 #include "ProjectUtil.h"
 
@@ -119,28 +118,6 @@ void initWorld(Project& prj, BodyFactory &factory,
     world.initialize();
 }
 
-RTC::RTObject_var findRTC(const std::string &rtcName)
-{
-    RTC::Manager& manager = RTC::Manager::instance();
-    std::string nameServer = manager.getConfig()["corba.nameservers"];
-    int comPos = nameServer.find(",");
-    if (comPos < 0){
-        comPos = nameServer.length();
-    }
-    nameServer = nameServer.substr(0, comPos);
-    RTC::CorbaNaming naming(manager.getORB(), nameServer.c_str());
-    CosNaming::Name name;
-    name.length(1);
-    name[0].id = CORBA::string_dup(rtcName.c_str());
-    name[0].kind = CORBA::string_dup("rtc");
-    try{
-        CORBA::Object_ptr obj = naming.resolve(name);
-        return RTC::RTObject::_narrow(obj);
-    }catch(...){
-        return NULL;
-    }
-}
-
 void initRTS(Project &prj, std::vector<ClockReceiver>& receivers)
 {
     RTC::Manager& manager = RTC::Manager::instance();
@@ -170,8 +147,12 @@ void initRTS(Project &prj, std::vector<ClockReceiver>& receivers)
                 continue;
             }                
             std::cout << "creating " << it->first << std::endl;
-            std::string args = it->second.name + "?instance_name=" + it->first; 
+            std::string args = it->second.name + "?instance_name=" + it->first;
             rtc = manager.createComponent(args.c_str());
+        }
+        if (!rtc){
+            std::cerr << "failed to create RTC(" << it->first << ")" << std::endl;
+            continue;
         }
         RTC::ExecutionContextList_var eclist = rtc->get_owned_contexts();
         for(CORBA::ULong i=0; i < eclist->length(); ++i){
@@ -182,6 +163,14 @@ void initRTS(Project &prj, std::vector<ClockReceiver>& receivers)
                     receivers.push_back(ClockReceiver(execContext, it->second.period));
                     execContext->activate_component(rtc->getObjRef());
                 }
+            }
+        }
+        // set configuration
+        {
+            RTC::RTObject_var rtc = findRTC(it->first);
+            for (size_t i=0; i<it->second.configuration.size(); i++){
+                setConfiguration(rtc, it->second.configuration[i].first,
+                                 it->second.configuration[i].second);
             }
         }
     }

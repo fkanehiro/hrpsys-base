@@ -57,6 +57,7 @@ public:
         std::string name;
         std::string path;
         double period;
+        std::vector<std::pair<std::string, std::string> > configuration;
     };
     std::map<std::string, rtc> components;
     std::vector<std::pair<std::string, std::string> > connections;
