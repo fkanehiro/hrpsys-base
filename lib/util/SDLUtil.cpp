@@ -314,21 +314,27 @@ bool SDLwindow::oneStep()
 
 void SDLwindow::setView(double T[16])
 {
-    // compute radius, pan,tilt,xCenter and yCenter from T assuming zCenter = 0
     pan = atan2(T[6], T[2]); // atan2(Rzy,Rzx)
     tilt = atan2(T[10], sqrt(T[2]*T[2]+T[6]*T[6]));
     double len;
-    if (fabs(T[10]) < 1e-8){
-        len = 5;
+    if (fabs(T[10]) < 1e-8){ // view line is parallel to xy plane
+        if (fabs(T[2]) < 1e-8){
+            double alpha = T[7]/T[6];
+            xCenter = T[3]-alpha*T[2];
+            yCenter = 0;
+        }else{
+            double alpha = T[3]/T[2];
+            xCenter = 0;
+            yCenter = T[7]-alpha*T[6];
+        }
+        zCenter = T[11];
     }else{
         len = -T[11]/T[10]; // Pz/Rzz
+        xCenter = T[3]+T[2]*len;
+        yCenter = T[7]+T[6]*len;
+        zCenter = 0;
     }
-    radius = fabs(len);
-    xCenter = T[3]+T[2]*len;
-    yCenter = T[7]+T[6]*len;
-    zCenter = 0;
-    std::cout << "pan:" << pan << ", tilt:" << tilt << ", radius:" << radius
-              << ", xCenter:" << xCenter << ", yCenter:" << yCenter << std::endl;
-    std::cout << "zaxis:" << T[2] << "," << T[6] << "," << T[10] << std::endl;
+#define SQR(x) ((x)*(x))
+    radius = sqrt(SQR(xCenter - T[3])+SQR(yCenter - T[7])+SQR(zCenter - T[11]));
 }
 
