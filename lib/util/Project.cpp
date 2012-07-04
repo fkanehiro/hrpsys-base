@@ -19,7 +19,7 @@ ThreeDView::ThreeDView() :
     hrp::Matrix33 R  = hrp::rotFromRpy(0, M_PI/2,0)*hrp::rotFromRpy(0, 0, M_PI/2)*Rp*Rt;
     T[ 0] = R(0,0); T[ 1] = R(0,1); T[ 2] = R(0,2); T[ 3] = r*cp*ct; 
     T[ 4] = R(1,0); T[ 5] = R(1,1); T[ 6] = R(1,2); T[ 7] = r*sp*ct;
-    T[ 8] = R(2,0); T[ 9] = R(2,1); T[10] = R(2,2); T[11] = r*st;
+    T[ 8] = R(2,0); T[ 9] = R(2,1); T[10] = R(2,2); T[11] = r*st + 0.8;
     T[12] =      0; T[13] =      0; T[14] =      0; T[15] = 1.0;
 }
 
