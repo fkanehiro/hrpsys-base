@@ -65,6 +65,7 @@ size_t GLbody::draw(){
     }else{
         ntri = ((GLlink *)rootLink())->draw(); // drawn recursively
     }
+    return ntri;
 }
 
 GLcamera *GLbody::findCamera(const char *i_name){
