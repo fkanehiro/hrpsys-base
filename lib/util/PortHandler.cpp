@@ -225,7 +225,7 @@ RangeSensorPortHandler::RangeSensorPortHandler(
     RTC::DataFlowComponentBase *i_rtc, 
     const char *i_portName,
     RangeSensor *i_sensor) : 
-    SensorPortHandler<RangeSensor, RTC::TimedDoubleSeq>(i_rtc, i_portName, i_sensor)
+    SensorPortHandler<RangeSensor, RTC::RangeData>(i_rtc, i_portName, i_sensor)
 {
     i_sensor->isEnabled = true;
 }
@@ -233,10 +233,10 @@ RangeSensorPortHandler::RangeSensorPortHandler(
 void RangeSensorPortHandler::update()
 {
     if (m_sensor->isUpdated){
-        if (m_data.data.length() != m_sensor->distances.size()){
-            m_data.data.length(m_sensor->distances.size());
+        if (m_data.ranges.length() != m_sensor->distances.size()){
+            m_data.ranges.length(m_sensor->distances.size());
         }
-        memcpy(m_data.data.get_buffer(), &(m_sensor->distances[0]), 
+        memcpy(m_data.ranges.get_buffer(), &(m_sensor->distances[0]), 
                sizeof(double)*m_sensor->distances.size());
         m_port.write();
         m_sensor->isUpdated = false;

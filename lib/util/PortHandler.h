@@ -1,6 +1,7 @@
 #ifndef __PORT_HANDLER_H__
 #define __PORT_HANDLER_H__
 
+#include <rtm/idl/InterfaceDataTypes.hh>
 #include "BodyRTC.h"
 #include "pointcloud.hh"
 
@@ -256,7 +257,7 @@ private:
 };
 
 class RangeSensorPortHandler : 
-    public SensorPortHandler<hrp::RangeSensor, RTC::TimedDoubleSeq>
+    public SensorPortHandler<hrp::RangeSensor, RTC::RangeData>
 {
 public:
     RangeSensorPortHandler(RTC::DataFlowComponentBase *i_rtc, 
