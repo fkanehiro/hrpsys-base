@@ -141,6 +141,10 @@ int main(int argc, char* argv[])
     RTC::CorbaNaming naming(manager->getORB(), nameServer.c_str());
 
     ModelLoader_var modelloader = getModelLoader(CosNaming::NamingContext::_duplicate(naming.getRootContext()));
+    if (CORBA::is_nil(modelloader)){
+        std::cerr << "openhrp-model-loader is not running" << std::endl;
+        return 1;
+    }
     //==================== Viewer setup ===============
     LogManager<SceneState> log;
     GLscene scene(&log);

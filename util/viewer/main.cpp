@@ -73,6 +73,10 @@ int main(int argc, char *argv[])
         }
         if (argc >= 2 && argv[1][0] != '-'){
             OpenHRP::ModelLoader_var ml = hrp::getModelLoader(namingContext);
+            if (CORBA::is_nil(ml)){
+                std::cerr << "openhrp-model-loader is not running" << std::endl;
+                return 1;
+            }
             OpenHRP::ModelLoader::ModelLoadOption opt;
             opt.readImage = true;
             opt.AABBdata.length(0);

@@ -125,6 +125,10 @@ int main(int argc, char* argv[])
 
     std::vector<hrp::ColdetLinkPairPtr> pairs;
     ModelLoader_var modelloader = getModelLoader(namingContext);
+    if (CORBA::is_nil(modelloader)){
+        std::cerr << "openhrp-model-loader is not running" << std::endl;
+        return 1;
+    }
     BodyFactory factory = boost::bind(createBody, _1, _2, modelloader);
     initWorld(prj, factory, scene, pairs);
     scene.setCollisionCheckPairs(pairs);
