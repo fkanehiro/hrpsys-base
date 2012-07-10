@@ -26,6 +26,7 @@ public:
     }
     void clear(){
         boost::mutex::scoped_lock lock(m_mutex);
+        m_isPlaying = false;
         m_log.clear();
         m_index = -1;
         m_atLast = true;
