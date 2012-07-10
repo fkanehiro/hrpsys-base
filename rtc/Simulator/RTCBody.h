@@ -43,6 +43,6 @@ private:
     bool m_highgain;
 };
 
-typedef boost::intrusive_ptr<RTCBody> RTCBodyPtr;
+typedef boost::shared_ptr<RTCBody> RTCBodyPtr;
 
 #endif

@@ -25,8 +25,8 @@ public:
     void removeForceSensorOffset();
     CORBA::Boolean addJointGroup(const char* gname, const OpenHRP::RobotHardwareService::StrSequence& jnames);
     //
-    void setRobot(boost::intrusive_ptr<robot>& i_robot) { m_robot = i_robot; }
+    void setRobot(boost::shared_ptr<robot>& i_robot) { m_robot = i_robot; }
 private:
-    boost::intrusive_ptr<robot> m_robot;
+    boost::shared_ptr<robot> m_robot;
 };
 #endif

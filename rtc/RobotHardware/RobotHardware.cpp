@@ -81,7 +81,7 @@ RTC::ReturnCode_t RobotHardware::onInitialize()
   
   // </rtc-template>
 
-  m_robot = new robot();
+  m_robot = boost::shared_ptr<robot>(new robot());
 
   // <rtc-template block="bind_config">
   // Bind variables and configuration variable

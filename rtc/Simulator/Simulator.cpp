@@ -151,7 +151,7 @@ RTC::ReturnCode_t Simulator::onActivated(RTC::UniqueId ec_id)
 
     for (std::map<std::string, ModelItem>::iterator it=prj.models().begin();
          it != prj.models().end(); it++){
-        RTCBodyPtr body = new RTCBody();
+        RTCBodyPtr body(new RTCBody());
         if (!loadBodyFromModelLoader(body, it->second.url.c_str(), 
                                      CosNaming::NamingContext::_duplicate(naming.getRootContext()),
                                      true)){

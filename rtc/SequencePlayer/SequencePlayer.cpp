@@ -47,7 +47,7 @@ SequencePlayer::SequencePlayer(RTC::Manager* manager)
       m_SequencePlayerServicePort("SequencePlayerService"),
       // </rtc-template>
       m_waitSem(0),
-      m_robot(NULL),
+      m_robot(hrp::BodyPtr()),
       dummy(0)
 {
     m_service0.player(this);
@@ -95,7 +95,7 @@ RTC::ReturnCode_t SequencePlayer::onInitialize()
     double dt;
     coil::stringTo(dt, prop["dt"].c_str());
 
-    m_robot = new Body();
+    m_robot = hrp::BodyPtr(new Body());
 
     RTC::Manager& rtcManager = RTC::Manager::instance();
     std::string nameServer = rtcManager.getConfig()["corba.nameservers"];

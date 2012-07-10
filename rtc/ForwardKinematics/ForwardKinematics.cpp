@@ -90,7 +90,7 @@ RTC::ReturnCode_t ForwardKinematics::onInitialize()
 
   RTC::Properties& prop = getProperties();
 
-  m_refBody = new hrp::Body();
+  m_refBody = hrp::BodyPtr(new hrp::Body());
   RTC::Manager& rtcManager = RTC::Manager::instance();
   std::string nameServer = rtcManager.getConfig()["corba.nameservers"];
   int comPos = nameServer.find(",");
@@ -104,7 +104,7 @@ RTC::ReturnCode_t ForwardKinematics::onInitialize()
       std::cerr << "failed to load model[" << prop["model"] << "]" 
                 << std::endl;
   }
-  m_actBody = new hrp::Body(*m_refBody);
+  m_actBody = hrp::BodyPtr(new hrp::Body(*m_refBody));
 
   m_refLink = m_refBody->rootLink();
   m_actLink = m_actBody->rootLink();

@@ -92,7 +92,7 @@ void parsePortConfig(const std::string &config,
     type = config.substr(start);
 }
 
-bool getJointList(hrp::BodyPtr body, const std::vector<std::string> &elements,
+bool getJointList(hrp::Body *body, const std::vector<std::string> &elements,
                   std::vector<hrp::Link *> &joints)
 {
     if (elements.size() == 0){

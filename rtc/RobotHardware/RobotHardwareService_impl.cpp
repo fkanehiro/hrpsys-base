@@ -5,7 +5,7 @@
 using namespace OpenHRP;
 using namespace hrp;
 
-RobotHardwareService_impl::RobotHardwareService_impl() : m_robot(NULL) 
+RobotHardwareService_impl::RobotHardwareService_impl() : m_robot(boost::shared_ptr<robot>()) 
 {
 }
 

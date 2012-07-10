@@ -89,7 +89,7 @@ int main (int argc, char** argv)
 	xmlTextWriterWriteAttribute(writer, BAD_CAST "name", BAD_CAST name.c_str());
 	xmlTextWriterWriteAttribute(writer, BAD_CAST "url", BAD_CAST filename.c_str());
 
-	hrp::BodyPtr body = new hrp::Body();
+	hrp::BodyPtr body(new hrp::Body());
 	if (!loadBodyFromModelLoader(body, filename.c_str(),
 				     CosNaming::NamingContext::_duplicate(naming.getRootContext()),
 				     true)){

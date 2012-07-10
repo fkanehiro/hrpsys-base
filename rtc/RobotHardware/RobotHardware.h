@@ -152,7 +152,7 @@ class RobotHardware
 
  private:
   int dummy;
-  boost::intrusive_ptr<robot> m_robot;
+  boost::shared_ptr<robot> m_robot;
 };
 
 
