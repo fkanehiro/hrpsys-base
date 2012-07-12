@@ -60,12 +60,14 @@ class RTcomponent:
 		return p
 
 	##
-	# \brief get IOR of service
+	# \brief get IOR of the service
 	# \param self this object
-	# \param name name of service
+	# \param instance_name instance name of the service
+	# \param type_name type name of hte service
+	# \param port_name port name which provides the service
 	# \return IOR of the service
-	def service(self, name):
-		return findService(self.ref, name)
+	def service(self, instance_name, type_name="", port_name=""):
+		return findService(self, port_name, type_name, instance_name)
 
 	##
 	# \brief update default configuration set
@@ -627,13 +629,23 @@ def readDataPort(port, timeout = 1.0):
 ##
 # \brief get a service of RT component
 # \param rtc IOR of RT component
-# \param svcname name of the service
+# \param port_name port name of the port which provides the service
+# \param type_name type name of the service
+# \param instance_name name of the service
 # \return IOR of the service
 #
-def findService(rtc, svcname):
-	prof = rtc.get_component_profile()
-	#print "RTC name:",prof.instance_name
-	port_prof = prof.port_profiles
+def findService(rtc, port_name, type_name, instance_name):
+	if port_name == "":
+		prof = rtc.ref.get_component_profile()
+	        #print "RTC name:",prof.instance_name
+		port_prof = prof.port_profiles
+	else:
+		p = rtc.port(port_name)
+		if p == None:
+			print "can't find a port named",port_name
+			return None
+		else:
+			port_prof = [p.get_port_profile()]
 	port = None
 	for pp in port_prof:
 		#print "name:",pp.name
@@ -641,8 +653,11 @@ def findService(rtc, svcname):
 		for aif in ifs:
 			#print "IF name:",aif.instance_name
 			#print "IF type:",aif.type_name
-			if aif.instance_name == svcname:
+			if aif.instance_name == instance_name and (type_name == "" or aif.type_name == type_name):
 				port = pp.port_ref
+	if port == None:
+		print "can't find a service named",instance_name
+		return None
         #print port
 	con_prof = ConnectorProfile()	
 	con_prof.name = "noname"
