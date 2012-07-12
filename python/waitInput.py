@@ -9,12 +9,15 @@ def waitInputConfirm(msg):
     ret = askokcancel("waitInputConfirm", msg)
     if ret == False:
         raise StandardError, "script is canceled"
+    root.destroy()
     return True
 
 def waitInputSelect(msg):
     root = Tk()
     root.withdraw()
-    return askyesno("waitInputSelect", msg)
+    ret = askyesno("waitInputSelect", msg)
+    root.destroy()
+    return ret
 
 class commandPanel:
     def __init__(self, frame, wimf, label, cmd, isFirst):
