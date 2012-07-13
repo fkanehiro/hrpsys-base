@@ -7,6 +7,20 @@
 
 namespace RTC
 {
+    hrpExecutionContext::hrpExecutionContext()
+        : PeriodicExecutionContext(), 
+          m_priority(ART_PRIO_MAX-1)
+    {
+        resetProfile();
+        rtclog.setName("hrpEC");
+        coil::Properties& prop(Manager::instance().getConfig());
+        
+        // Priority
+        getProperty(prop, "exec_cxt.periodic.priority", m_priority);
+        getProperty(prop, "exec_cxt.periodic.art.priority", m_priority);
+        RTC_DEBUG(("Priority: %d", m_priority));
+    }
+
     bool hrpExecutionContext::waitForNextPeriod()
     {
 	int nsubstep = number_of_substeps();
@@ -22,9 +36,8 @@ namespace RTC
     bool hrpExecutionContext::enterRT()
     {
         double period_usec = m_period.sec()*1e6+m_period.usec();
-        if (art_enter(ART_PRIO_MAX-1, ART_TASK_PERIODIC, period_usec) == -1){
+        if (art_enter(m_priority, ART_TASK_PERIODIC, period_usec) == -1){
             perror("art_enter");
-            close_iob();
             return false;
         }
         return true;
