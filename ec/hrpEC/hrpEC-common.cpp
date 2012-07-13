@@ -3,15 +3,8 @@
 
 namespace RTC
 {
-    hrpExecutionContext::hrpExecutionContext()
-        : PeriodicExecutionContext()
-    {
-        resetProfile();
-    }
-
     hrpExecutionContext::~hrpExecutionContext()
     {
-        close_iob();
     }
     int hrpExecutionContext::svc(void)
     {
@@ -26,10 +19,19 @@ namespace RTC
         }
         double period_sec = (m_period.sec()+m_period.usec()/1e6);
 	int nsubstep = number_of_substeps();
-        std::cout << "period = " << period_sec*1e3*nsubstep << "[ms]" << std::endl;
-        if (!enterRT()) return 0;
+        std::cout << "period = " << period_sec*1e3*nsubstep 
+                  << "[ms], priority = " << m_priority << std::endl;
+        if (!enterRT()){
+            unlock_iob();
+            close_iob();
+            return 0;
+        }
         do{
-            if (!waitForNextPeriod()) return 0;
+            if (!waitForNextPeriod()){
+                unlock_iob();
+                close_iob();
+                return 0;
+            }
             struct timeval tv;
             gettimeofday(&tv, NULL);
             if (m_profile.count > 0){
@@ -80,7 +82,7 @@ namespace RTC
             }
 
         } while (m_running);
-        if (!exitRT()) return 0;
+        exitRT();
         unlock_iob();
         close_iob();
 

@@ -32,8 +32,21 @@ namespace RTC
     bool exitRT();
     bool waitForNextPeriod();
   private:
+    template <class T>
+    void getProperty(coil::Properties& prop, const char* key, T& value)
+    {
+    if (prop.findNode(key) != 0)
+      {
+        T tmp;
+        if (coil::stringTo(tmp, prop[key].c_str()))
+          {
+            value = tmp;
+          }
+      }
+    }
     OpenHRP::ExecutionProfileService::Profile m_profile;
     struct timeval m_tv;
+    int m_priority;
   };
 };
 
