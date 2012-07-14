@@ -140,7 +140,7 @@ class waitInputMenuFrame:
         p.add(self.cbSequential)
         panel1.add(p, BorderLayout.SOUTH)
         self.setupPage()
-        self.tabPane.addTab("Local", panel1)
+        self.tabPane.addTab("Local", JScrollPane(panel1))
         
         gmenu = menu[0]
         panel2 = JPanel()
@@ -164,7 +164,7 @@ class waitInputMenuFrame:
                 cp = commandPanel(self, label, content, False)
                 p = cp.panel
             panel2.add(p)
-        self.tabPane.addTab("Global", panel2)
+        self.tabPane.addTab("Global", JScrollPane(panel2))
         
         panel3 = JPanel()
         self.taHistory = JTextArea()
