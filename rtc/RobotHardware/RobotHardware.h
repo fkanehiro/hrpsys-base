@@ -116,6 +116,7 @@ class RobotHardware
   // </rtc-template>
 
   TimedDoubleSeq m_q;
+  TimedDoubleSeq m_tau;
   std::vector<TimedAcceleration3D> m_acc;
   std::vector<TimedAngularVelocity3D> m_rate;
   std::vector<TimedDoubleSeq> m_force;
@@ -125,6 +126,7 @@ class RobotHardware
   // DataOutPort declaration
   // <rtc-template block="outport_declare">
   OutPort<TimedDoubleSeq> m_qOut;
+  OutPort<TimedDoubleSeq> m_tauOut;
   std::vector<OutPort<TimedAcceleration3D> *> m_accOut;
   std::vector<OutPort<TimedAngularVelocity3D> *> m_rateOut;
   std::vector<OutPort<TimedDoubleSeq> *> m_forceOut;
