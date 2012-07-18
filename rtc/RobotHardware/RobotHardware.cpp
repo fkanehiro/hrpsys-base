@@ -197,6 +197,11 @@ RTC::ReturnCode_t RobotHardware::onDeactivated(RTC::UniqueId ec_id)
 RTC::ReturnCode_t RobotHardware::onExecute(RTC::UniqueId ec_id)
 {
     //std::cout << "RobotHardware:onExecute(" << ec_id << ")" << std::endl;
+  coil::TimeValue coiltm(coil::gettimeofday());
+  Time tm; 
+  tm.sec  = coiltm.sec();
+  tm.nsec = coiltm.usec() * 1000;
+
   if (!m_isDemoMode){
       robot::emg_reason reason;
       int id;
@@ -218,13 +223,14 @@ RTC::ReturnCode_t RobotHardware::onExecute(RTC::UniqueId ec_id)
 
   // read from iob
   m_robot->readJointAngles(m_q.data.get_buffer());  
-  setTimestamp(m_q);
+  m_q.tm = tm;
   for (unsigned int i=0; i<m_rate.size(); i++){
       double rate[3];
       m_robot->readGyroSensor(i, rate);
       m_rate[i].data.avx = rate[0];
       m_rate[i].data.avy = rate[1];
       m_rate[i].data.avz = rate[2];
+      m_rate[i].tm = tm;
   }
 
   for (unsigned int i=0; i<m_acc.size(); i++){
@@ -233,10 +239,12 @@ RTC::ReturnCode_t RobotHardware::onExecute(RTC::UniqueId ec_id)
       m_acc[i].data.ax = acc[0];
       m_acc[i].data.ay = acc[1];
       m_acc[i].data.az = acc[2];
+      m_acc[i].tm = tm;
   }
 
   for (unsigned int i=0; i<m_force.size(); i++){
       m_robot->readForceSensor(i, m_force[i].data.get_buffer());
+      m_force[i].tm = tm;
   }
   
   for (unsigned int i=0; i<m_servoState.data.length(); i++){
@@ -253,6 +261,7 @@ RTC::ReturnCode_t RobotHardware::onExecute(RTC::UniqueId ec_id)
       status |= v<< OpenHRP::RobotHardwareService::DRIVER_TEMP_SHIFT;
       m_servoState.data[i] = status;
   }
+  m_servoState.tm = tm;
   
   m_robot->oneStep();
 
