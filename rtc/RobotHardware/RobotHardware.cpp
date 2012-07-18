@@ -47,6 +47,7 @@ RobotHardware::RobotHardware(RTC::Manager* manager)
     m_isDemoMode(0),
     m_qRefIn("qRef", m_qRef),
     m_qOut("q", m_q),
+    m_tauOut("tau", m_tau),
     m_servoStateOut("servoState", m_servoState),
     m_emergencySignalOut("emergencySignal", m_emergencySignal),
     m_RobotHardwareServicePort("RobotHardwareService"),
@@ -68,6 +69,7 @@ RTC::ReturnCode_t RobotHardware::onInitialize()
   addInPort("qRef", m_qRefIn);
 
   addOutPort("q", m_qOut);
+  addOutPort("tau", m_tauOut);
   addOutPort("servoState", m_servoStateOut);
   addOutPort("emergencySignal", m_emergencySignalOut);
 
@@ -118,6 +120,7 @@ RTC::ReturnCode_t RobotHardware::onInitialize()
   m_service0.setRobot(m_robot);
 
   m_q.data.length(m_robot->numJoints());
+  m_tau.data.length(m_robot->numJoints());
   m_servoState.data.length(m_robot->numJoints());
   m_qRef.data.length(m_robot->numJoints());
 
@@ -224,6 +227,8 @@ RTC::ReturnCode_t RobotHardware::onExecute(RTC::UniqueId ec_id)
   // read from iob
   m_robot->readJointAngles(m_q.data.get_buffer());  
   m_q.tm = tm;
+  m_robot->readJointTorques(m_tau.data.get_buffer());
+  m_tau.tm = tm;
   for (unsigned int i=0; i<m_rate.size(); i++){
       double rate[3];
       m_robot->readGyroSensor(i, rate);
@@ -266,6 +271,7 @@ RTC::ReturnCode_t RobotHardware::onExecute(RTC::UniqueId ec_id)
   m_robot->oneStep();
 
   m_qOut.write();
+  m_tauOut.write();
   m_servoStateOut.write();
   for (unsigned int i=0; i<m_rateOut.size(); i++){
       m_rateOut[i]->write();
