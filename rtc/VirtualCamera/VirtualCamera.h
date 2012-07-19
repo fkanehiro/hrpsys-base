@@ -115,10 +115,16 @@ class VirtualCamera
   // </rtc-template>
 
   OpenHRP::SceneState m_sceneState;
+  RTC::TimedPoint3D m_basePos;
+  RTC::TimedOrientation3D m_baseRpy;
+  RTC::TimedDoubleSeq m_q;
 
   // DataInPort declaration
   // <rtc-template block="inport_declare">
   InPort<OpenHRP::SceneState> m_sceneStateIn;
+  InPort<RTC::TimedPoint3D> m_basePosIn;
+  InPort<RTC::TimedOrientation3D> m_baseRpyIn;
+  InPort<RTC::TimedDoubleSeq> m_qIn;
   
   // </rtc-template>
 

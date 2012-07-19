@@ -61,6 +61,9 @@ VirtualCamera::VirtualCamera(RTC::Manager* manager)
     : RTC::DataFlowComponentBase(manager),
       // <rtc-template block="initializer">
       m_sceneStateIn("state", m_sceneState),
+      m_basePosIn("basePos", m_basePos),
+      m_baseRpyIn("baseRpy", m_baseRpy),
+      m_qIn("q", m_q),
       m_imageOut("image", m_image),
       m_rangeOut("range", m_range),
       m_cloudOut("cloud", m_cloud),
@@ -112,6 +115,9 @@ RTC::ReturnCode_t VirtualCamera::onInitialize()
     // <rtc-template block="registration">
     // Set InPort buffers
     addInPort("state", m_sceneStateIn);
+    addInPort("basePos", m_basePosIn);
+    addInPort("baseRpy", m_baseRpyIn);
+    addInPort("q", m_qIn);
 
     // Set OutPort buffer
     addOutPort("image", m_imageOut);
@@ -309,6 +315,25 @@ RTC::ReturnCode_t VirtualCamera::onExecute(RTC::UniqueId ec_id)
                 body->setPosture(state.q.get_buffer());
             }
         }
+    }
+    GLbody *body = dynamic_cast<GLbody *>(m_camera->link()->body);
+    if (m_basePosIn.isNew()){
+        do{
+            m_basePosIn.read();
+        }while(m_basePosIn.isNew());
+        body->setPosition(m_basePos.data.x, m_basePos.data.y, m_basePos.data.z);
+    }
+    if (m_baseRpyIn.isNew()){
+        do{
+            m_baseRpyIn.read();
+        }while(m_baseRpyIn.isNew());
+        body->setRotation(m_baseRpy.data.r, m_baseRpy.data.p, m_baseRpy.data.y);
+    }
+    if (m_qIn.isNew()){
+        do{
+            m_qIn.read();
+        }while(m_qIn.isNew());
+        body->setPosture(m_q.data.get_buffer());
     }
 
     for (std::map<std::string, RTCGLbody *>::iterator it=m_bodies.begin();
