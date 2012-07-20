@@ -122,6 +122,11 @@ RTC::ReturnCode_t CameraImageViewer::onExecute(RTC::UniqueId ec_id)
         do {
             m_imageIn.read();
         }while(m_imageIn.isNew());
+        if (m_cvImage && (m_image.data.image.width != m_cvImage->width 
+                          || m_image.data.image.height != m_cvImage->height)){
+            cvReleaseImage(&m_cvImage);
+            m_cvImage = NULL;
+        }
         if (!m_cvImage){
             switch (m_image.data.image.format){
             case Img::CF_RGB:
