@@ -51,7 +51,7 @@ CollisionDetector::CollisionDetector(RTC::Manager* manager)
       m_qRefOut("qRef", m_qRef),
       // </rtc-template>
       use_viewer(false),
-      m_robot(NULL),
+      m_robot(hrp::BodyPtr()),
       dummy(0)
 {
 }
@@ -246,7 +246,7 @@ RTC::ReturnCode_t CollisionDetector::onActivated(RTC::UniqueId ec_id)
 	m_scene->init();
     }
 
-    m_robot = new hrp::Body();
+    m_robot = hrp::BodyPtr(new hrp::Body());
     OpenHRP::BodyInfo_var binfo;
     binfo = hrp::loadBodyInfo(prop["model"].c_str(),
 			      CosNaming::NamingContext::_duplicate(naming.getRootContext()));

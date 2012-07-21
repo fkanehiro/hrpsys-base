@@ -247,7 +247,7 @@ int main (int argc, char** argv)
 	exit(1);
     }
 
-    m_robot = new hrp::Body();
+    m_robot = hrp::BodyPtr(new hrp::Body());
     OpenHRP::BodyInfo_var binfo = hrp::loadBodyInfo(url.c_str(), argc, argv);
     if (CORBA::is_nil(binfo)){
 	std::cerr << "failed to load model[" << url << "]" << std::endl;
