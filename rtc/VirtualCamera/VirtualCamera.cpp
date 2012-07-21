@@ -400,8 +400,8 @@ RTC::ReturnCode_t VirtualCamera::onExecute(RTC::UniqueId ec_id)
     }
 
     m_imageOut.write();
-    m_rangeOut.write();
-    m_cloudOut.write();
+    if (m_generateRange) m_rangeOut.write();
+    if (m_generatePointCloud) m_cloudOut.write();
     m_poseSensorOut.write();
 
     coil::TimeValue t5(coil::gettimeofday());
