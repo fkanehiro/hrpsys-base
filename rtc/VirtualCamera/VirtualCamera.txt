@@ -47,11 +47,11 @@ N/A
 
 <table>
 <tr><th>name</th><th>type</th><th>unit</th><th>default value</th><th>description</th></tr>
-<tr><td>ranger.maxAngle</td><td>double</td><td>[rad]</td><td>0.25</td><td>maximum scan angle of the range sensor</td></tr>
-<tr><td>ranger.minAngle</td><td>double</td><td>[rad]</td><td>-0.25</td><td>minimum scan angle of the range sensor</td></tr>
-<tr><td>ranger.angularRes</td><td>double</td><td>[rad]</td><td>0.01</td><td>scan resolution of the range sensor</td></tr>
-<tr><td>ranger.maxRange</td><td>double</td><td>[m]</td><td>5.0</td><td>maximum distance</td></tr>
-<tr><td>ranger.minRange</td><td>double</td><td>[m]</td><td>5.0</td><td>minimum distance</td></tr>
+<tr><td>rangerMaxAngle</td><td>double</td><td>[rad]</td><td>0.25</td><td>maximum scan angle of the range sensor</td></tr>
+<tr><td>rangerMinAngle</td><td>double</td><td>[rad]</td><td>-0.25</td><td>minimum scan angle of the range sensor</td></tr>
+<tr><td>rangerAngularRes</td><td>double</td><td>[rad]</td><td>0.01</td><td>scan resolution of the range sensor</td></tr>
+<tr><td>rangerMaxRange</td><td>double</td><td>[m]</td><td>5.0</td><td>maximum distance</td></tr>
+<tr><td>rangerMinRange</td><td>double</td><td>[m]</td><td>5.0</td><td>minimum distance</td></tr>
 <tr><td>generateRange</td><td>int</td><td></td><td>1</td><td>enable/disable range data generation</td></tr>
 <tr><td>generatePointCloud</td><td>int</td><td></td><td>0</td><td>enable/disable point cloud generation</td></tr>
 <tr><td>generatePointCloudStep</td><td>int</td><td></td><td>1</td><td>sub-sampling step of point cloud</td></tr>

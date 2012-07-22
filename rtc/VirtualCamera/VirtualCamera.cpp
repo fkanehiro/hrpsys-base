@@ -39,11 +39,11 @@ static const char* virtualcamera_spec[] =
     "language",          "C++",
     "lang_type",         "compile",
     // Configuration variables
-    "conf.default.ranger.maxAngle", "0.25",
-    "conf.default.ranger.minAngle", "-0.25",
-    "conf.default.ranger.angularRes", "0.01",
-    "conf.default.ranger.maxRange", "5.0",
-    "conf.default.ranger.minRange", "0.5",
+    "conf.default.rangerMaxAngle", "0.25",
+    "conf.default.rangerMinAngle", "-0.25",
+    "conf.default.rangerAngularRes", "0.01",
+    "conf.default.rangerMaxRange", "5.0",
+    "conf.default.rangerMinRange", "0.5",
     "conf.default.generateRange", "1",
     "conf.default.generatePointCloud", "0",
     "conf.default.generatePointCloudStep", "1",
@@ -95,11 +95,11 @@ RTC::ReturnCode_t VirtualCamera::onInitialize()
     // <rtc-template block="bind_config">
     // Bind variables and configuration variable
     RTC::Properties& ref = getProperties();
-    bindParameter("ranger.maxAngle",    m_range.config.maxAngle, "0.25");
-    bindParameter("ranger.minAngle",    m_range.config.minAngle, "-0.25");
-    bindParameter("ranger.angularRes",  m_range.config.angularRes, "0.01");
-    bindParameter("ranger.maxRange",    m_range.config.maxRange, "5.0");
-    bindParameter("ranger.minRange",    m_range.config.minRange, "0.5");
+    bindParameter("rangerMaxAngle",    m_range.config.maxAngle, "0.25");
+    bindParameter("rangerMinAngle",    m_range.config.minAngle, "-0.25");
+    bindParameter("rangerAngularRes",  m_range.config.angularRes, "0.01");
+    bindParameter("rangerMaxRange",    m_range.config.maxRange, "5.0");
+    bindParameter("rangerMinRange",    m_range.config.minRange, "0.5");
     bindParameter("generateRange",      m_generateRange, "1");
     bindParameter("generatePointCloud", m_generatePointCloud, "0");
     bindParameter("generatePointCloudStep",  m_generatePointCloudStep, "1");
