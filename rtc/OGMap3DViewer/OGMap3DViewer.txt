@@ -1,0 +1,63 @@
+/**
+
+\page OGMap3DViewer
+
+\section introduction Overview
+
+This component visualizes point cloud data.
+
+<table>
+<tr><th>implementation_id</th><td>OGMap3DViewer</td></tr>
+<tr><th>category</th><td>example</td></tr>
+</table>
+
+\section dataports Data Ports
+
+\subsection inports Input Ports
+
+<table>
+<tr><th>port name</th><th>data type</th><th>unit</th><th>description</th></tr>
+<tr><td>q</td><td>RTC::TimedDoubleSeq</td><td>[rad]</td><td>joint angles</td></tr>
+<tr><td>p</td><td>RTC::TimedPoint3D</td><td>[m]</td><td>position of the base link</td></tr>
+<tr><td>rpy</td><td>RTC::TimedOrientation3D</td><td>[rad]</td><td>Roll-Pitch-Yaw angles of the base link</td></tr>
+</table>
+
+\subsection outports Output Ports
+
+N/A
+
+\section serviceports Service Ports
+
+\subsection provider Service Providers
+
+N/A
+
+\subsection consumer Service Consumers
+
+<table>
+<tr><th>port name</th><th>interface name</th><th>service type</th><th>IDL</th><th>description</th></tr>
+<tr><td>OGMap3DService</td><td>service1</td><td>OGMapService</td><td>\ref OpenHRP::OGMap3DService</td><td></td></tr>
+</table>
+
+\section configuration Configuration Variables
+
+<table>
+<tr><th>name</th><th>type</th><th>unit</th><th>default</th><th>description</th></tr>
+<tr><td>generateImageSequence</td><td>int</td><td></td><td>0</td><td>turn on/off caputure function</td></tr>
+<tr><td>generateMovie</td><td>int</td><td></td><td>0</td><td>turn on/off movie generation</td></tr>
+<tr><td>xSize</td><td>double</td><td>[m]</td><td>4</td><td>length of the cube along X axis</td></tr>
+<tr><td>ySize</td><td>double</td><td>[m]</td><td>4</td><td>length of the cube along Y axis</td></tr>
+<tr><td>zSize</td><td>double</td><td>[m]</td><td>4</td><td>length of the cube along Z axis</td></tr>
+<tr><td>xOrigin</td><td>double</td><td>[m]</td><td>0</td><td>X component of the origin</td></tr>
+<tr><td>yOrigin</td><td>double</td><td>[m]</td><td>0</td><td>Y component of the origin</td></tr>
+<tr><td>zOrigin</td><td>double</td><td>[m]</td><td>0</td><td>Z component of the origin</td></tr>
+</table>
+
+\section conf Configuration File
+
+<table>
+<tr><th>key</th><th>type</th><th>unit</th><th>description</th></tr>
+<tr><td>model</td><td>double</td><td>[m]</td><td>url of VRML model of the robot</td></tr>
+</table>
+
+ */

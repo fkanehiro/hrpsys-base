@@ -1,0 +1,48 @@
+/**
+
+\page Range2PointCloud
+
+\section introduction Overview
+
+This component converts range data into point cloud data.
+
+<table>
+<tr><th>implementation_id</th><td>Range2PointCloud</td></tr>
+<tr><th>category</th><td>example</td></tr>
+</table>
+
+\section dataports Data Ports
+
+\subsection inports Input Ports
+
+<table>
+<tr><th>port name</th><th>data type</th><th>unit</th><th>description</th></tr>
+<tr><td>range</td><td>RTC::RangeData</td><td>[m]</td><td>range data</td></tr>
+</table>
+
+\subsection outports Output Ports
+
+<table>
+<tr><th>port name</th><th>data type</th><th>unit</th><th>description</th></tr>
+<tr><td>cloud</td><td>PointCloudTypes::PointCloud</td><td>[m]</td><td>point cloud data</td></tr>
+</table>
+
+\section serviceports Service Ports
+
+\subsection provider Service Providers
+
+N/A
+
+\subsection consumer Service Consumers
+
+N/A
+
+\section configuration Configuration Variables
+
+N/A
+
+\section conf Configuration File
+
+N/A
+
+ */

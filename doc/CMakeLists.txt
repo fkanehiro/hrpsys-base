@@ -8,6 +8,7 @@ set(input_files package.h utilities.h
 		      ../rtc/Joystick2PanTiltAngles/Joystick2PanTiltAngles.txt
 		      ../rtc/NullComponent/NullComponent.txt
 		      ../rtc/OccupancyGridMap3D/OccupancyGridMap3D.txt
+		      ../rtc/OGMap3DViewer/OGMap3DViewer.txt
 		      ../rtc/RobotHardware/RobotHardware.txt
 		      ../rtc/SequencePlayer/SequencePlayer.txt
 		      ../rtc/Simulator/Simulator.txt

@@ -477,6 +477,7 @@ INPUT		      =  @CMAKE_CURRENT_SOURCE_DIR@/package.h \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/JpegDecoder \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/NullComponent \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/OccupancyGridMap3D \
+		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/OGMap3DViewer \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/RobotHardware \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/SequencePlayer \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/Simulator \

@@ -37,6 +37,7 @@ add_subdirectory(Joystick2Velocity2D)
 add_subdirectory(Joystick2PanTiltAngles)
 add_subdirectory(ForwardKinematics)
 add_subdirectory(HGcontroller)
+add_subdirectory(Range2PointCloud)
 add_subdirectory(Simulator)
 add_subdirectory(Viewer)
 add_subdirectory(JpegDecoder)
@@ -47,8 +48,10 @@ endif()
 # Octomap
 pkg_check_modules(OCTOMAP octomap)
 
+find_package(Irrlicht)
 if (IRRLICHT_FOUND)
   add_subdirectory(CollisionDetector)
+  add_subdirectory(OGMap3DViewer)
 endif()
 
 add_subdirectory(VirtualCamera)

@@ -30,6 +30,7 @@ To use python scripts to create RT components, connect ports and get/set propert
     <li>\ref JpegDecoder</li>
     <li>\ref NullComponent</li>
     <li>\ref OccupancyGridMap3D</li>
+    <li>\ref OGMap3DViewer</li>
     <li>\ref RobotHardware</li>
     <li>\ref SequencePlayer</li>
     <li>\ref Simulator</li>
