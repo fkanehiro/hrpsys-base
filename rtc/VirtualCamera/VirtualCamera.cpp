@@ -444,18 +444,18 @@ void VirtualCamera::setupRangeData()
     unsigned int nrange = round((rc.maxAngle - rc.minAngle)/rc.angularRes)+1;
     //std::cout << "nrange = " << nrange << std::endl;
     m_range.ranges.length(nrange);
-#define THETA(x) (atan(((x)-w/2)*2*tan(fovx/2)/w))
+#define THETA(x) (-atan(((x)-w/2)*2*tan(fovx/2)/w))
 #define RANGE(d,th) (-far*near/((d)*(far-near)-far)/cos(th))
-    double dth, alpha, th, th_old = THETA(0);
-    double r, r_old = RANGE(depth[0], th_old);
-    int idx = 1;
+    double dth, alpha, th, th_old = THETA(w-1);
+    double r, r_old = RANGE(depth[w-1], th_old);
+    int idx = w-2;
     double angle;
     for (unsigned int i=0; i<nrange; i++){
         angle = rc.minAngle + rc.angularRes*i;
-        while(idx < w){
+        while(idx >= 0){
             th = THETA(idx);
             r = RANGE(depth[idx], th);
-            idx++;
+            idx--;
             if (th > angle){
                 //std::cout << idx << ":" << th << std::endl;
                 dth = th - th_old;
