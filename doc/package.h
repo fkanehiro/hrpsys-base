@@ -8,7 +8,7 @@ Basic RT components and utilities to control robots using <a href=http://www.ope
 \section requirements System requirements
 
 <a href=http://www.ubuntu.com>ubuntu</a> 10.04LTS is supported. <br>
-<a href=http://www.openrtp.jp/openhrp3>%OpenHRP</a> version 3.1.3 or later is required.<br>
+<a href=http://www.openrtp.jp/openhrp3>%OpenHRP</a> version 3.1.4 or later is required.<br>
 To use jython scripts to create RT components, connect ports and get/set properties, <a href=http://www.jython.org>Jython</a> is also required.<br>
 To use python scripts to create RT components, connect ports and get/set properties, <a href=http://www.openrtm.org>OpenRTM-aist-python</a> is also required.<br>
 
@@ -31,6 +31,7 @@ To use python scripts to create RT components, connect ports and get/set propert
     <li>\ref NullComponent</li>
     <li>\ref OccupancyGridMap3D</li>
     <li>\ref OGMap3DViewer</li>
+    <li>\ref Range2PointCloud</li>
     <li>\ref RobotHardware</li>
     <li>\ref SequencePlayer</li>
     <li>\ref Simulator</li>

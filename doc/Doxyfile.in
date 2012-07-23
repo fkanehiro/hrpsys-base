@@ -31,7 +31,7 @@ PROJECT_NAME           = "Basic RT components and utilities"
 # This could be handy for archiving the generated documentation or 
 # if some version control system is used.
 
-PROJECT_NUMBER         = @CPACK_PACKAGE_VERSION_MAJOR@.@CPACK_PACKAGE_VERSION_MINOR@
+PROJECT_NUMBER         = @CPACK_PACKAGE_VERSION_MAJOR@.@CPACK_PACKAGE_VERSION_MINOR@.@CPACK_PACKAGE_VERSION_PATCH@
 
 # The OUTPUT_DIRECTORY tag is used to specify the (relative or absolute) 
 # base path where the generated documentation will be put. 
@@ -478,6 +478,7 @@ INPUT		      =  @CMAKE_CURRENT_SOURCE_DIR@/package.h \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/NullComponent \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/OccupancyGridMap3D \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/OGMap3DViewer \
+		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/Range2PointCloud \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/RobotHardware \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/SequencePlayer \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/Simulator \
