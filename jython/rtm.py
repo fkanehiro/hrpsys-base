@@ -303,7 +303,7 @@ def getRootNamingContext(corbaloc):
 # \param rnc root naming context. If it is not specified, global variable rootnc is used
 # \return IOR of the object
 # 
-def findObject(name, kind, rnc=None):
+def findObject(name, kind="", rnc=None):
 	nc = NameComponent(name,kind)
 	path = [nc]
 	if not rnc:
