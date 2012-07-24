@@ -73,7 +73,22 @@ int main(int argc, char* argv[])
     bool display = true, realtime=false, usebbox=false, endless=false;
     bool showsensors = false;
     int wsize = 0;
-    for (int i=0; i<argc; i++){
+    bool exitOnFinish = false;
+    bool record = false;
+
+    if (argc < 0){
+        std::cerr << "Usage:" << argv[0] << " [project file] [options]"
+                  << std::endl;
+        return 1;
+    }
+
+    Project prj;
+    if (!prj.parse(argv[1])){
+        std::cerr << "failed to parse " << argv[1] << std::endl;
+        return 1;
+    }
+
+    for (int i=2; i<argc; i++){
         if (strcmp("-nodisplay",argv[i])==0){
             display = false;
         }else if(strcmp("-realtime", argv[i])==0){
@@ -86,13 +101,12 @@ int main(int argc, char* argv[])
             showsensors = true;
         }else if(strcmp("-size", argv[i])==0){
             wsize = atoi(argv[++i]);
+        }else if(strcmp("-exit-on-finish", argv[i])==0){
+            exitOnFinish = true;
+        }else if(strcmp("-record", argv[i])==0){
+            record = true;
+            exitOnFinish = true;
         }
-    }
-
-    Project prj;
-    if (!prj.parse(argv[1])){
-        std::cerr << "failed to parse " << argv[1] << std::endl;
-        return 1;
     }
 
     //================= OpenRTM =========================
@@ -106,6 +120,8 @@ int main(int argc, char* argv[])
             && strcmp(argv[i], "-endless")
             && strcmp(argv[i], "-showsensors")
             && strcmp(argv[i], "-size")
+            && strcmp(argv[i], "-exit-on-finish")
+            && strcmp(argv[i], "-record")
             ){
             rtmargv.push_back(argv[i]);
             rtmargc++;
@@ -149,8 +165,16 @@ int main(int argc, char* argv[])
 
     if (display){
         simulator.start();
-        while(window.oneStep());
+        while(window.oneStep()){
+            if (exitOnFinish && !simulator.isRunning()) break;
+        };
         simulator.stop();
+        if (record){
+            log.record();
+            while(window.oneStep()){
+                if (!log.isRecording()) break;
+            }
+        }
     }else{
         while (simulator.oneStep());
     }

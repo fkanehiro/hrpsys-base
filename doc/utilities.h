@@ -18,6 +18,7 @@ hrpsys-simulator [project file] [options]
 -endless never finish simulation<br>
 -showsensor show sensor output<br>
 -size size specify initial window size<br>
+-exit-on-finish exit this program when the simulation finishes
 
 Note:NameSever and openhrp-model-loader must be running
 

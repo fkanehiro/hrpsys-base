@@ -16,6 +16,7 @@ public:
     bool isPausing();
     bool isRunning();
     virtual bool oneStep();
+    void notifyFinish();
 private:
     bool m_isPausing, m_isRunning;
     SDL_Thread *m_thread;
