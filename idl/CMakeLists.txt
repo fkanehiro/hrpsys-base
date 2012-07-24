@@ -14,6 +14,19 @@ set(idl_files
   pointcloud.idl
   )
 
+set(openhrp_idl_files
+  ClockGenerator.idl
+  CollisionDetector.idl
+  Controller.idl
+  DynamicsSimulator.idl
+  ModelLoader.idl
+  OnlineViewer.idl
+  OpenHRPCommon.idl
+  PathPlanner.idl
+  ViewSimulator.idl  
+  World.idl
+  )
+
 set(idl_flags -bcxx -Wbuse_quotes -Wbh=.hh -Wbs=Sk.cpp -Wba -Wbd=DynSk.cpp -I${OPENRTM_IDL_DIR})
 
 macro(generate_cpp_stub idl_basename)
@@ -66,6 +79,7 @@ install(TARGETS ${target}
 
 install(FILES ${jarfile} DESTINATION share/hrpsys/jar)
 install(CODE "execute_process(COMMAND omniidl -bpython -C${CMAKE_INSTALL_PREFIX}/share/hrpsys/python -I${OPENRTM_IDL_DIR} ${idl_files} WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})")
+install(CODE "execute_process(COMMAND omniidl -bpython -C${CMAKE_INSTALL_PREFIX}/share/hrpsys/python -I${OPENRTM_IDL_DIR} ${openhrp_idl_files} WORKING_DIRECTORY ${OPENHRP_DIR}/share/OpenHRP-3.1/idl/OpenHRP)")
 install(FILES ${headers} DESTINATION include/hrpsys/idl)
 install(FILES ${idl_files} DESTINATION share/hrpsys/idl)
 
