@@ -20,6 +20,7 @@ hrpsys-simulator [project file] [options]
 -size size specify initial window size<br>
 -no-default-lights turn off default lights<br>
 -max-edge-length divide large triangles which have longer edges than this value<br>
+-exit-on-finish exit this program when the simulation finishes
 
 Note:NameSever and openhrp-model-loader must be running
 

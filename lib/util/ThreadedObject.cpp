@@ -6,6 +6,7 @@ static int threadMain(void *arg)
     while(throbj->isRunning()){
         if (!throbj->oneStep()) break;
     }
+    throbj->notifyFinish();
 }
 
 ThreadedObject::ThreadedObject() : 
@@ -61,4 +62,9 @@ void ThreadedObject::wait()
 {
     SDL_WaitThread(m_thread, NULL);
     m_thread = NULL;
+}
+
+void ThreadedObject::notifyFinish()
+{
+    m_isRunning = false;
 }
