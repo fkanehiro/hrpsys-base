@@ -76,6 +76,7 @@ int main(int argc, char* argv[])
     bool useDefaultLights = true;
     double maxEdgeLen = 0;
     bool exitOnFinish = false;
+    bool record = false;
 
     if (argc < 0){
         std::cerr << "Usage:" << argv[0] << " [project file] [options]"
@@ -108,6 +109,9 @@ int main(int argc, char* argv[])
             maxEdgeLen = atof(argv[++i]);
         }else if(strcmp("-exit-on-finish", argv[i])==0){
             exitOnFinish = true;
+        }else if(strcmp("-record", argv[i])==0){
+            record = true;
+            exitOnFinish = true;
         }
     }
 
@@ -125,6 +129,7 @@ int main(int argc, char* argv[])
             && strcmp(argv[i], "-no-default-lights")
             && strcmp(argv[i], "-max-edge-length")
             && strcmp(argv[i], "-exit-on-finish")
+            && strcmp(argv[i], "-record")
             ){
             rtmargv.push_back(argv[i]);
             rtmargc++;
@@ -181,6 +186,12 @@ int main(int argc, char* argv[])
             if (exitOnFinish && !simulator.isRunning()) break;
         };
         simulator.stop();
+        if (record){
+            log.record();
+            while(window.oneStep()){
+                if (!log.isRecording()) break;
+            }
+        }
     }else{
         while (simulator.oneStep());
     }

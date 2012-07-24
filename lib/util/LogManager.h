@@ -85,11 +85,12 @@ public:
         boost::mutex::scoped_lock lock(m_mutex);
         if (m_log.empty()) return false;
 
-        setIndex(0);
+        if (m_atLast) setIndex(0);
         m_initT = m_log[0].time;
         m_isRecording = true;
         return true;
     }
+    bool isRecording() { return m_isRecording; }
     void play(){
         boost::mutex::scoped_lock lock(m_mutex);
         if (m_log.empty()) return;
