@@ -61,11 +61,20 @@ public:
      */
     bool loadGain(const char *fname = "PDgains.sav");
 
+    /**
+       \brief start inertia sensor calibration and wait until finish
+    */
     void startInertiaSensorCalibration();
-    void calibrateInertiaSensorOneStep();
 
     /**
-       \brief
+       \brief initialize joint angle
+       \param name joint name, part name or all
+       \param option options for initialization
+     */
+    void initializeJointAngle(const char *name, const char *option);
+
+    /**
+       \brief all processings for one sampling period
      */
     void oneStep();
 
@@ -185,6 +194,11 @@ public:
     double m_maxZmpError;
 private:
     /**
+       \brief calibrate inertia sensor for one sampling period
+     */
+    void calibrateInertiaSensorOneStep();
+
+    /**
        \brief check if a calibration process is running or not
        \true if one of calibration processes is running, false otherwise
      */
@@ -196,14 +210,9 @@ private:
     void gain_control();
     void gain_control(int id);
 
-    int calib_counter, calib_result;
+    int calib_counter;
     std::vector<double> gain_counter;
 
-    /*
-    std::vector<double[3]> gyro_sum;
-    std::vector<double[3]> accel_sum;
-    std::vector<double[3]> att_sum;
-    */
     std::vector< boost::array<double,3> > gyro_sum;
     std::vector< boost::array<double,3> > accel_sum;
     std::vector< boost::array<double,3> > att_sum;
@@ -213,6 +222,8 @@ private:
 
     int m_lLegForceSensorId, m_rLegForceSensorId;
     std::map<std::string, std::vector<int> > m_jointGroups;
+    bool m_calibRequested;
+    std::string m_calibJointName, m_calibOptions;
 
     boost::interprocess::interprocess_semaphore wait_sem;
 };

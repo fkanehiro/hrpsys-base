@@ -611,9 +611,17 @@ extern "C"{
 
     /**
      * @brief get the period of signals issued by wait_for_iob_signal()
-     @ @return the period of signals[ns]
+     * @return the period of signals[ns]
      */
     long get_signal_period();
+
+    /**
+     * @brief initialize joint angle
+     * @param name joint name, part name or "all"
+     * @param option string of joint angle initialization
+     * @param TRUE if initialized successfully, FALSE otherwise
+     */
+    int initializeJointAngle(const char *name, const char *option);
     //@}
 
 #ifdef __cplusplus

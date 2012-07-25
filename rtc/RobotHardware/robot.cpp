@@ -17,7 +17,7 @@
 
 using namespace hrp;
 
-robot::robot() : m_fzLimitRatio(0), m_maxZmpError(DEFAULT_MAX_ZMP_ERROR), wait_sem(0)
+robot::robot() : m_fzLimitRatio(0), m_maxZmpError(DEFAULT_MAX_ZMP_ERROR), m_calibRequested(false), wait_sem(0)
 {
     m_rLegForceSensorId = m_lLegForceSensorId = -1;
 }
@@ -31,7 +31,6 @@ bool robot::init()
     }
 
     calib_counter = -1;
-    calib_result = 0;
 
     pgain.resize(numJoints());
     dgain.resize(numJoints());
@@ -136,6 +135,14 @@ void robot::startInertiaSensorCalibration()
     wait_sem.wait();
 }
 
+void robot::initializeJointAngle(const char *name, const char *option)
+{
+    m_calibJointName = name;
+    m_calibOptions   = option;
+    m_calibRequested = true;
+    wait_sem.wait();
+}
+
 void robot::calibrateInertiaSensorOneStep()
 {
     if (calib_counter>0) {
@@ -217,6 +224,12 @@ void robot::oneStep()
 {
     calibrateInertiaSensorOneStep();
     gain_control();
+    if (m_calibRequested){
+        ::initializeJointAngle(m_calibJointName.c_str(), 
+                               m_calibOptions.c_str());
+        m_calibRequested = false;
+        wait_sem.post();
+    }
 }
 
 bool robot::servo(const char *jname, bool turnon)
