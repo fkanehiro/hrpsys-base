@@ -167,6 +167,18 @@ public:
     void readJointCommands(double *o_commands);
 
     /**
+       \brief get length of extra servo states
+       \return length of extra servo states
+    */
+    size_t lengthOfExtraServoState();
+
+    /**
+       \brief read extra servo states
+       \param state array of long where extra servo states are stored
+    */
+    void readExtraServoState(long *state);
+
+    /**
        \brief reasons of emergency
      */
     typedef enum {EMG_SERVO_ERROR, EMG_FZ} emg_reason;

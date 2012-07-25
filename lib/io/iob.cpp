@@ -592,6 +592,16 @@ int wait_for_iob_signal()
     return 0;
 }
 
+size_t length_of_extra_servo_state()
+{
+    return 0;
+}
+
+int read_extra_servo_state(long *state)
+{
+    return TRUE;
+}
+
 int set_signal_period(long period_ns)
 {
     g_period_ns = period_ns;
