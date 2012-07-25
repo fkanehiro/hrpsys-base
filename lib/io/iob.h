@@ -400,6 +400,19 @@ extern "C"{
      */
     int read_calib_state(int id, int *s);
 
+    /**
+     * @brief get length of extra servo states
+     * @return length of extra servo states
+     */
+    size_t length_of_extra_servo_state();
+
+    /**
+     * @brief read extra servo states
+     * @param state array of long where extra servo states are stored
+     * @return TRUE if read successfully, FALSE otherwise
+     */
+    int read_extra_servo_state(long *state);
+
     //@}
 
     /**

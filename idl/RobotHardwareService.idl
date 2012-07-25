@@ -20,6 +20,7 @@ module OpenHRP
     typedef sequence<double> DblSequence;
     typedef sequence<long>   LongSequence;
     typedef sequence<string> StrSequence;
+    typedef sequence<LongSequence>  LongSequenceSequence;
 
     typedef double DblArray3[3];
     typedef double DblArray6[6];
@@ -36,7 +37,7 @@ module OpenHRP
       DblSequence		command;///< reference joint angles[rad]
       DblSequence		torque; ///< joint torques[Nm]
       /**
-       * @brief servo statuses(32bit)
+       * @brief servo statuses(32bit+extra states)
        * 
        * 0: calib status ( 1 => done )\n 
        * 1: servo status ( 1 => on )\n
@@ -45,7 +46,7 @@ module OpenHRP
        * 19-23: unused
        * 24-31: driver temperature (deg)
        */
-      LongSequence		servoState;
+      LongSequenceSequence		servoState;
       
       sequence<DblSequence6>	force;    ///< forces[N] and torques[Nm]
       sequence<DblSequence3>	rateGyro; ///< angular velocities[rad/s]

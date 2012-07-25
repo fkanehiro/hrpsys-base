@@ -17,6 +17,7 @@
 #include <rtm/DataOutPort.h>
 #include <rtm/idl/BasicDataTypeSkel.h>
 #include <rtm/idl/ExtendedDataTypesSkel.h>
+#include "HRPDataTypes.hh"
 
 #include <hrpModel/Body.h>
 
@@ -120,7 +121,7 @@ class RobotHardware
   std::vector<TimedAcceleration3D> m_acc;
   std::vector<TimedAngularVelocity3D> m_rate;
   std::vector<TimedDoubleSeq> m_force;
-  TimedLongSeq m_servoState;
+  OpenHRP::TimedLongSeqSeq m_servoState;
   TimedLong m_emergencySignal;
 
   // DataOutPort declaration
@@ -130,7 +131,7 @@ class RobotHardware
   std::vector<OutPort<TimedAcceleration3D> *> m_accOut;
   std::vector<OutPort<TimedAngularVelocity3D> *> m_rateOut;
   std::vector<OutPort<TimedDoubleSeq> *> m_forceOut;
-  OutPort<TimedLongSeq> m_servoStateOut;
+  OutPort<OpenHRP::TimedLongSeqSeq> m_servoStateOut;
   OutPort<TimedLong> m_emergencySignalOut;
 
   // </rtc-template>

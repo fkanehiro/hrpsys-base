@@ -123,7 +123,7 @@ void GLscene::showStatus()
         for (int i=0; i<glbody->numJoints(); i++){
             hrp::Link *l = glbody->joint(i);
             if (l){
-                int ss = rstate.servoState[i];
+                int ss = rstate.servoState[i][0];
                 int x = width;
                 // joint ID
                 sprintf(buf, "%2d",i);
@@ -226,8 +226,8 @@ void GLscene::showStatus()
         // !m_showingRobotState
         bool servo=false, power=false;
         for (unsigned int i=0; i<rstate.servoState.length(); i++){
-            if (isServoOn(rstate.servoState[i])) servo = true;
-            if (isPowerOn(rstate.servoState[i])) power = true;
+            if (isServoOn(rstate.servoState[i][0])) servo = true;
+            if (isPowerOn(rstate.servoState[i][0])) power = true;
         }
         struct timeval tv;
         gettimeofday(&tv, NULL);

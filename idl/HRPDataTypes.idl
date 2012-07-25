@@ -15,4 +15,10 @@ module OpenHRP
     double time;
     RobotStateSeq states;
   };
+
+  struct TimedLongSeqSeq
+  {
+    RTC::Time tm;
+    sequence<sequence<long> > data;
+  };
 };

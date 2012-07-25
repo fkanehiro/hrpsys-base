@@ -609,7 +609,7 @@ public class GrxRobotHardwareClientView extends GrxBaseView {
 			wsx.collisions = null;
 			wsx.setSensorState(robotType_, ss);
 			wsx.setTargetState(robotType_, robotStateH_.value.command);
-			wsx.setServoState(robotType_, robotStateH_.value.servoState);
+			wsx.setServoState(robotType_, robotStateH_.value.servoState[0]);
 			wsx.setPowerState(robotType_, robotStateH_.value.voltage, robotStateH_.value.current);
 			currentItem_.addValue(wsx.time, wsx);
 			currentItem_.setPosition(currentItem_.getLogSize()-1);
@@ -731,9 +731,9 @@ public class GrxRobotHardwareClientView extends GrxBaseView {
 		final int SERVO_STATE_MASK = 0x2;
 		if(hwCtrl_ != null) {
 			hwCtrl_.getStatus(robotStateH_);
-			int[] state = robotStateH_.value.servoState;
+			int[][] state = robotStateH_.value.servoState;
 			for (int i=0; i<currentModel_.getDOF(); i++) {
-				if ((state[i]&SERVO_STATE_MASK) != 0) {
+				if ((state[i][0]&SERVO_STATE_MASK) != 0) {
 					return true;
 				}
 			}

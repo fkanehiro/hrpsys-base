@@ -539,3 +539,14 @@ bool robot::addJointGroup(const char *gname, const std::vector<std::string>& jna
     m_jointGroups[gname] = jids;
     return ret;
 }
+
+size_t robot::lengthOfExtraServoState()
+{
+    return length_of_extra_servo_state();
+}
+
+void robot::readExtraServoState(long *state)
+{
+    read_extra_servo_state(state);
+}
+
