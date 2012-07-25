@@ -592,12 +592,12 @@ int wait_for_iob_signal()
     return 0;
 }
 
-size_t length_of_extra_servo_state()
+size_t length_of_extra_servo_state(int id)
 {
     return 0;
 }
 
-int read_extra_servo_state(long *state)
+int read_extra_servo_state(int id, long *state)
 {
     return TRUE;
 }

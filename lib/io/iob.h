@@ -402,16 +402,18 @@ extern "C"{
 
     /**
      * @brief get length of extra servo states
+     * @param id joint id
      * @return length of extra servo states
      */
-    size_t length_of_extra_servo_state();
+    size_t length_of_extra_servo_state(int id);
 
     /**
      * @brief read extra servo states
+     * @param id joint id
      * @param state array of long where extra servo states are stored
      * @return TRUE if read successfully, FALSE otherwise
      */
-    int read_extra_servo_state(long *state);
+    int read_extra_servo_state(int id, long *state);
 
     //@}
 

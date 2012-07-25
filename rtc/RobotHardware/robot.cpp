@@ -540,13 +540,13 @@ bool robot::addJointGroup(const char *gname, const std::vector<std::string>& jna
     return ret;
 }
 
-size_t robot::lengthOfExtraServoState()
+size_t robot::lengthOfExtraServoState(int id)
 {
-    return length_of_extra_servo_state();
+    return length_of_extra_servo_state(id);
 }
 
-void robot::readExtraServoState(long *state)
+void robot::readExtraServoState(int id, long *state)
 {
-    read_extra_servo_state(state);
+    read_extra_servo_state(id, state);
 }
 

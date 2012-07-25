@@ -253,7 +253,7 @@ RTC::ReturnCode_t RobotHardware::onExecute(RTC::UniqueId ec_id)
   }
   
   for (unsigned int i=0; i<m_servoState.data.length(); i++){
-      size_t len = m_robot->lengthOfExtraServoState()+1;
+      size_t len = m_robot->lengthOfExtraServoState(i)+1;
       m_servoState.data[i].length(len);
       int status = 0, v;
       v = m_robot->readCalibState(i);
@@ -267,7 +267,7 @@ RTC::ReturnCode_t RobotHardware::onExecute(RTC::UniqueId ec_id)
       v = m_robot->readDriverTemperature(i);
       status |= v<< OpenHRP::RobotHardwareService::DRIVER_TEMP_SHIFT;
       m_servoState.data[i][0] = status;
-      m_robot->readExtraServoState(m_servoState.data[i].get_buffer()+1);
+      m_robot->readExtraServoState(i, m_servoState.data[i].get_buffer()+1);
   }
   m_servoState.tm = tm;
   
