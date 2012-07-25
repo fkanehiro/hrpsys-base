@@ -35,7 +35,8 @@ namespace RTC
     }
     bool hrpExecutionContext::enterRT()
     {
-        double period_usec = m_period.sec()*1e6+m_period.usec();
+        unsigned long period_usec 
+            = (m_period.sec()*1e6+m_period.usec())/number_of_substeps();
         if (art_enter(m_priority, ART_TASK_PERIODIC, period_usec) == -1){
             perror("art_enter");
             return false;

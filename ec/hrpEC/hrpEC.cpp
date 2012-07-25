@@ -43,9 +43,13 @@ namespace RTC
 
     bool hrpExecutionContext::waitForNextPeriod()
     {
-        if (wait_for_iob_signal()){
-            perror("wait_for_iob_signal()");
-            return false;
+        int nsubstep = number_of_substeps();
+        while(1){
+            if (wait_for_iob_signal()){
+                perror("wait_for_iob_signal()");
+                return false;
+            }
+            if (read_iob_frame() % nsubstep == 0) break;
         }
         return true;
     }
