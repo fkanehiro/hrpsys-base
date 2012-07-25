@@ -168,15 +168,17 @@ public:
 
     /**
        \brief get length of extra servo states
+       \param id joint id
        \return length of extra servo states
     */
-    size_t lengthOfExtraServoState();
+    size_t lengthOfExtraServoState(int id);
 
     /**
        \brief read extra servo states
+       \param id joint id
        \param state array of long where extra servo states are stored
     */
-    void readExtraServoState(long *state);
+    void readExtraServoState(int id, long *state);
 
     /**
        \brief reasons of emergency
