@@ -88,6 +88,10 @@ void RobotHardwareService_impl::removeForceSensorOffset()
     m_robot->removeForceSensorOffset();
 }
 
+void RobotHardwareService_impl::initializeJointAngle(const char* name, const char* option)
+{
+    m_robot->initializeJointAngle(name, option);
+}
 
 void RobotHardwareService_impl::setServoErrorLimit(const char *jname, double limit)
 {

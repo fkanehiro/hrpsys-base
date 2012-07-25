@@ -601,3 +601,9 @@ long get_signal_period()
 {
     return g_period_ns;
 }
+
+int initializeJointAngle(const char *name, const char *option)
+{
+    sleep(3);
+    return TRUE;
+}

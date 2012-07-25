@@ -23,6 +23,7 @@ public:
     void setServoErrorLimit(const char *jname, double limit);
     void calibrateInertiaSensor();
     void removeForceSensorOffset();
+    void initializeJointAngle(const char* name, const char* option);
     CORBA::Boolean addJointGroup(const char* gname, const OpenHRP::RobotHardwareService::StrSequence& jnames);
     //
     void setRobot(boost::shared_ptr<robot>& i_robot) { m_robot = i_robot; }
