@@ -595,10 +595,26 @@ extern "C"{
      * @return the number of substeps
      */
     int number_of_substeps(); 
-    //@}
 
-  
+    /**
+     * @brief wait until iob signal is issued
+     * @return TRUE if signal is received successfully, FALSE otherwise
+     */
     int wait_for_iob_signal();
+
+    /**
+     * @brief set the period of signals issued by wait_for_iob_signal()
+     * @param period_ns the period of signals[ns]
+     * @return TRUE if set successfully, FALSE otherwise
+     */
+    int set_signal_period(long period_ns);
+
+    /**
+     * @brief get the period of signals issued by wait_for_iob_signal()
+     @ @return the period of signals[ns]
+     */
+    long get_signal_period();
+    //@}
 
 #ifdef __cplusplus
 }

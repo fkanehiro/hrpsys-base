@@ -17,10 +17,13 @@ namespace RTC
             close_iob();
             return 0;
         }
-        double period_sec = (m_period.sec()+m_period.usec()/1e6);
+        long period_nsec = (m_period.sec()*1e9+m_period.usec()*1e3);
+        double period_sec = period_nsec/1e9;
 	int nsubstep = number_of_substeps();
-        std::cout << "period = " << period_sec*1e3*nsubstep 
+        set_signal_period(period_nsec/nsubstep);
+        std::cout << "period = " << get_signal_period()*nsubstep/1e6
                   << "[ms], priority = " << m_priority << std::endl;
+
         if (!enterRT()){
             unlock_iob();
             close_iob();

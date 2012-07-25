@@ -591,3 +591,13 @@ int wait_for_iob_signal()
     }
     return 0;
 }
+
+int set_signal_period(long period_ns)
+{
+    g_period_ns = period_ns;
+}
+
+long get_signal_period()
+{
+    return g_period_ns;
+}
