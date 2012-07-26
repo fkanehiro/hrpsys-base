@@ -410,10 +410,10 @@ extern "C"{
     /**
      * @brief read extra servo states
      * @param id joint id
-     * @param state array of long where extra servo states are stored
+     * @param state array of int where extra servo states are stored
      * @return TRUE if read successfully, FALSE otherwise
      */
-    int read_extra_servo_state(int id, long *state);
+    int read_extra_servo_state(int id, int *state);
 
     //@}
 
