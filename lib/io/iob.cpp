@@ -597,7 +597,7 @@ size_t length_of_extra_servo_state(int id)
     return 0;
 }
 
-int read_extra_servo_state(int id, long *state)
+int read_extra_servo_state(int id, int *state)
 {
     return TRUE;
 }
@@ -605,6 +605,7 @@ int read_extra_servo_state(int id, long *state)
 int set_signal_period(long period_ns)
 {
     g_period_ns = period_ns;
+    return TRUE;
 }
 
 long get_signal_period()

@@ -545,7 +545,7 @@ size_t robot::lengthOfExtraServoState(int id)
     return length_of_extra_servo_state(id);
 }
 
-void robot::readExtraServoState(int id, long *state)
+void robot::readExtraServoState(int id, int *state)
 {
     read_extra_servo_state(id, state);
 }

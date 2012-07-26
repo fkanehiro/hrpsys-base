@@ -47,7 +47,7 @@ void RobotHardwareService_impl::getStatus(OpenHRP::RobotHardwareService::RobotSt
         v = m_robot->readDriverTemperature(i);
         status |= v<< OpenHRP::RobotHardwareService::DRIVER_TEMP_SHIFT;
         rs->servoState[i][0] = status;
-        m_robot->readExtraServoState(i, rs->servoState[i].get_buffer()+1);
+        m_robot->readExtraServoState(i, (int *)(rs->servoState[i].get_buffer()+1));
     }
 
     rs->rateGyro.length(m_robot->numSensors(Sensor::RATE_GYRO));

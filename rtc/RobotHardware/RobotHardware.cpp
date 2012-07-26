@@ -267,7 +267,7 @@ RTC::ReturnCode_t RobotHardware::onExecute(RTC::UniqueId ec_id)
       v = m_robot->readDriverTemperature(i);
       status |= v<< OpenHRP::RobotHardwareService::DRIVER_TEMP_SHIFT;
       m_servoState.data[i][0] = status;
-      m_robot->readExtraServoState(i, m_servoState.data[i].get_buffer()+1);
+      m_robot->readExtraServoState(i, (int *)(m_servoState.data[i].get_buffer()+1));
   }
   m_servoState.tm = tm;
   

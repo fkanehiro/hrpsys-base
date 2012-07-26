@@ -176,9 +176,9 @@ public:
     /**
        \brief read extra servo states
        \param id joint id
-       \param state array of long where extra servo states are stored
+       \param state array of int where extra servo states are stored
     */
-    void readExtraServoState(int id, long *state);
+    void readExtraServoState(int id, int *state);
 
     /**
        \brief reasons of emergency
