@@ -3,7 +3,7 @@ naming.formats: %n.rtc
 logger.enable: YES
 logger.log_level: NORMAL
 logger.file_name: stdout
-exec_cxt.periodic.rate: 1000
+exec_cxt.periodic.rate: 1000000
 manager.shutdown_onrtcs: NO
 manager.is_master: YES
 
