@@ -13,14 +13,20 @@ namespace hrp{
     class VisionSensor;
 };
 
-class PortHandler
+class InPortHandlerBase
 {
 public:
     virtual void update()=0;
 };
 
+class OutPortHandlerBase
+{
+public:
+    virtual void update(double time)=0;
+};
+
 template<class T>
-class InPortHandler : public PortHandler
+class InPortHandler : public InPortHandlerBase
 {
 public:
     InPortHandler(RTC::DataFlowComponentBase *i_rtc, const char *i_portName) : 
@@ -33,13 +39,18 @@ protected:
 };
 
 template<class T>
-class OutPortHandler : public PortHandler
+class OutPortHandler : public OutPortHandlerBase
 {
 public:
     OutPortHandler(RTC::DataFlowComponentBase *i_rtc,
                    const char *i_portName) : 
         m_port(i_portName, m_data){
         i_rtc->addOutPort(i_portName, m_port);
+    }
+    void write(double time){
+        m_data.tm.sec = time;
+        m_data.tm.nsec = (time - m_data.tm.sec)*1e9;
+        m_port.write();
     }
 protected:
     T m_data;
@@ -81,7 +92,7 @@ public:
     JointValueOutPortHandler(RTC::DataFlowComponentBase *i_rtc, 
                              const char *i_portName,
                              const std::vector<hrp::Link *> &i_joints);
-    void update();
+    void update(double time);
 };
 
 class JointVelocityInPortHandler : public JointInPortHandler
@@ -99,7 +110,7 @@ public:
     JointVelocityOutPortHandler(RTC::DataFlowComponentBase *i_rtc, 
                                 const char *i_portName,
                                 const std::vector<hrp::Link *> &i_joints);
-    void update();
+    void update(double time);
 };
 
 class JointAccelerationInPortHandler : public JointInPortHandler
@@ -117,7 +128,7 @@ public:
     JointAccelerationOutPortHandler(RTC::DataFlowComponentBase *i_rtc, 
                                     const char *i_portName,
                                     const std::vector<hrp::Link *> &i_joints);
-    void update();
+    void update(double time);
 };
 
 class JointTorqueInPortHandler : public JointInPortHandler
@@ -135,7 +146,7 @@ public:
     JointTorqueOutPortHandler(RTC::DataFlowComponentBase *i_rtc, 
                               const char *i_portName,
                               const std::vector<hrp::Link *> &i_joints);
-    void update();
+    void update(double time);
 private:
     hrp::Link *m_link;
 };
@@ -182,7 +193,7 @@ public:
     AbsTransformOutPortHandler(RTC::DataFlowComponentBase *i_rtc,
                                const char *i_portName,
                                hrp::Sensor *i_sensor);
-    void update();
+    void update(double time);
 private:
     hrp::Link *m_link;
     hrp::Sensor *m_sensor;
@@ -194,7 +205,7 @@ public:
     AbsVelocityOutPortHandler(RTC::DataFlowComponentBase *i_rtc,
                               const char *i_portName,
                               hrp::Link *i_link);
-    void update();
+    void update(double time);
 private:
     hrp::Link *m_link;
 };
@@ -206,7 +217,7 @@ public:
     AbsAccelerationOutPortHandler(RTC::DataFlowComponentBase *i_rtc,
                                   const char *i_portName,
                                   hrp::Link *i_link);
-    void update();
+    void update(double time);
 private:
     hrp::Link *m_link;
 };
@@ -231,7 +242,7 @@ public:
     ForceSensorPortHandler(RTC::DataFlowComponentBase *i_rtc, 
                            const char *i_portName,
                            hrp::ForceSensor *i_sensor);
-    void update();
+    void update(double time);
 };
 
 class RateGyroSensorPortHandler : 
@@ -241,7 +252,7 @@ public:
     RateGyroSensorPortHandler(RTC::DataFlowComponentBase *i_rtc, 
                               const char *i_portName,
                               hrp::RateGyroSensor *i_sensor);
-    void update();
+    void update(double time);
 private:        
 };
 
@@ -252,7 +263,7 @@ public:
     AccelSensorPortHandler(RTC::DataFlowComponentBase *i_rtc, 
                            const char *i_portName,
                            hrp::AccelSensor *i_sensor);
-    void update();
+    void update(double time);
 private:        
 };
 
@@ -263,7 +274,7 @@ public:
     RangeSensorPortHandler(RTC::DataFlowComponentBase *i_rtc, 
                            const char *i_portName,
                            hrp::RangeSensor *i_sensor);
-    void update();
+    void update(double time);
 private:        
 };
 
@@ -274,7 +285,7 @@ public:
     VisionSensorPortHandler(RTC::DataFlowComponentBase *i_rtc, 
                             const char *i_portName,
                            hrp::VisionSensor *i_sensor);
-    void update();
+    void update(double time);
 private:        
 };
 
@@ -285,7 +296,7 @@ public:
     PointCloudPortHandler(RTC::DataFlowComponentBase *i_rtc, 
                           const char *i_portName,
                           hrp::VisionSensor *i_sensor);
-    void update();
+    void update(double time);
 private:        
     std::string m_pcFormat;
 };

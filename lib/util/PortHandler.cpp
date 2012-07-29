@@ -52,12 +52,12 @@ JointValueOutPortHandler::JointValueOutPortHandler(
 {
 }
 
-void JointValueOutPortHandler::update()
+void JointValueOutPortHandler::update(double time)
 {
     for (size_t i=0; i<m_joints.size(); i++){
         if (m_joints[i]) m_data.data[i] = m_joints[i]->q;
     }
-    m_port.write();
+    write(time);
 }
 
 JointVelocityInPortHandler::JointVelocityInPortHandler(
@@ -88,12 +88,12 @@ JointVelocityOutPortHandler::JointVelocityOutPortHandler(
 {
 }
 
-void JointVelocityOutPortHandler::update()
+void JointVelocityOutPortHandler::update(double time)
 {
     for (size_t i=0; i<m_joints.size(); i++){
         if (m_joints[i]) m_data.data[i] = m_joints[i]->dq;
     }
-    m_port.write();
+    write(time);
 }
 
 JointAccelerationInPortHandler::JointAccelerationInPortHandler(
@@ -124,12 +124,12 @@ JointAccelerationOutPortHandler::JointAccelerationOutPortHandler(
 {
 }
 
-void JointAccelerationOutPortHandler::update()
+void JointAccelerationOutPortHandler::update(double time)
 {
     for (size_t i=0; i<m_joints.size(); i++){
         if (m_joints[i]) m_data.data[i] = m_joints[i]->ddq;
     }
-    m_port.write();
+    write(time);
 }
 
 JointTorqueInPortHandler::JointTorqueInPortHandler(
@@ -165,12 +165,12 @@ JointTorqueOutPortHandler::JointTorqueOutPortHandler(
 {
 }
 
-void JointTorqueOutPortHandler::update()
+void JointTorqueOutPortHandler::update(double time)
 {
     for (size_t i=0; i<m_joints.size(); i++){
         if (m_joints[i]) m_data.data[i] = m_joints[i]->u;
     }
-    m_port.write();
+    write(time);
 }
 
 ForceSensorPortHandler::ForceSensorPortHandler(
@@ -182,11 +182,11 @@ ForceSensorPortHandler::ForceSensorPortHandler(
     m_data.data.length(6);
 }
 
-void ForceSensorPortHandler::update()
+void ForceSensorPortHandler::update(double time)
 {
     setVector3(m_sensor->f,   m_data.data, 0);
     setVector3(m_sensor->tau, m_data.data, 3);
-    m_port.write();
+    write(time);
 }
 
 RateGyroSensorPortHandler::RateGyroSensorPortHandler(
@@ -197,12 +197,12 @@ RateGyroSensorPortHandler::RateGyroSensorPortHandler(
 {
 }
 
-void RateGyroSensorPortHandler::update()
+void RateGyroSensorPortHandler::update(double time)
 {
     m_data.data.avx = m_sensor->w[0];
     m_data.data.avy = m_sensor->w[1];
     m_data.data.avz = m_sensor->w[2];
-    m_port.write();
+    write(time);
 }
 
 AccelSensorPortHandler::AccelSensorPortHandler(
@@ -213,12 +213,12 @@ AccelSensorPortHandler::AccelSensorPortHandler(
 {
 }
 
-void AccelSensorPortHandler::update()
+void AccelSensorPortHandler::update(double time)
 {
     m_data.data.ax = m_sensor->dv[0];
     m_data.data.ay = m_sensor->dv[1];
     m_data.data.az = m_sensor->dv[2];
-    m_port.write();
+    write(time);
 }
 
 RangeSensorPortHandler::RangeSensorPortHandler(
@@ -230,7 +230,7 @@ RangeSensorPortHandler::RangeSensorPortHandler(
     i_sensor->isEnabled = true;
 }
 
-void RangeSensorPortHandler::update()
+void RangeSensorPortHandler::update(double time)
 {
     if (m_sensor->isUpdated){
         if (m_data.ranges.length() != m_sensor->distances.size()){
@@ -238,7 +238,7 @@ void RangeSensorPortHandler::update()
         }
         memcpy(m_data.ranges.get_buffer(), &(m_sensor->distances[0]), 
                sizeof(double)*m_sensor->distances.size());
-        m_port.write();
+        write(time);
         m_sensor->isUpdated = false;
     }
 }
@@ -268,7 +268,7 @@ VisionSensorPortHandler::VisionSensorPortHandler(
     }
 }
 
-void VisionSensorPortHandler::update()
+void VisionSensorPortHandler::update(double time)
 {
     if (m_sensor->isUpdated){
         if (m_sensor->imageType == VisionSensor::COLOR 
@@ -282,7 +282,7 @@ void VisionSensorPortHandler::update()
             }else{
                 memcpy(m_data.data.image.raw_data.get_buffer(), 
                        &m_sensor->image[0], m_sensor->image.size());
-                m_port.write();
+                write(time);
 #if 0
                 char filename[20];
                 sprintf(filename, "camera%d.ppm", m_sensor->id);
@@ -367,13 +367,13 @@ PointCloudPortHandler::PointCloudPortHandler(
     m_data.row_step = m_data.point_step*m_sensor->width;
 }
 
-void PointCloudPortHandler::update()
+void PointCloudPortHandler::update(double time)
 {
     if (m_sensor->isUpdated){
         m_data.data.length(m_sensor->depth.size());
         memcpy(m_data.data.get_buffer(), &m_sensor->depth[0],
                m_sensor->depth.size());
-        m_port.write();
+        write(time);
     }
     m_sensor->isUpdated = false;
 }
@@ -463,7 +463,7 @@ AbsTransformOutPortHandler::AbsTransformOutPortHandler(
 {
 }
 
-void AbsTransformOutPortHandler::update()
+void AbsTransformOutPortHandler::update(double time)
 {
     hrp::Vector3 p;
     hrp::Matrix33 R;
@@ -482,7 +482,7 @@ void AbsTransformOutPortHandler::update()
     m_data.data.orientation.r = rpy[0];
     m_data.data.orientation.p = rpy[1];
     m_data.data.orientation.y = rpy[2];
-    m_port.write();
+    write(time);
 }
 
 
@@ -496,7 +496,7 @@ AbsVelocityOutPortHandler::AbsVelocityOutPortHandler(
     m_data.data.length(6);
 }
 
-void AbsVelocityOutPortHandler::update(){
+void AbsVelocityOutPortHandler::update(double time){
     m_data.data[0] = m_link->v(0);
     m_data.data[1] = m_link->v(1);
     m_data.data[2] = m_link->v(2);
@@ -515,7 +515,7 @@ AbsAccelerationOutPortHandler::AbsAccelerationOutPortHandler(
     m_data.data.length(6);
 }
 
-void AbsAccelerationOutPortHandler::update()
+void AbsAccelerationOutPortHandler::update(double time)
 {
     m_data.data[0] = m_link->dv(0);
     m_data.data[1] = m_link->dv(1);

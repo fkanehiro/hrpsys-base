@@ -45,10 +45,10 @@ BodyRTC::~BodyRTC(void)
     }
 }
 
-void BodyRTC::writeDataPorts()
+void BodyRTC::writeDataPorts(double time)
 {
     for (size_t i=0; i<m_outports.size(); i++){
-        m_outports[i]->update();
+        m_outports[i]->update(time);
     }
 }
 
