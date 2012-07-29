@@ -115,7 +115,7 @@ bool Simulator::oneStep(){
     tm_control.begin();
     for (unsigned int i=0; i<numBodies(); i++){
         BodyRTC *bodyrtc = dynamic_cast<BodyRTC *>(body(i).get());
-        bodyrtc->writeDataPorts();
+        bodyrtc->writeDataPorts(currentTime());
     }
     
     for (unsigned int i=0; i<numBodies(); i++){
