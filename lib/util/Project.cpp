@@ -1,5 +1,6 @@
 #include <sys/param.h>
 #include <iostream>
+#include <boost/algorithm/string.hpp>
 
 #include <libxml/parser.h>
 #include <libxml/xmlreader.h>
@@ -175,6 +176,11 @@ bool Project::parse(const std::string& filename)
                       std::string name = std::string((char *)xmlGetProp(cur_node, (xmlChar *)"name"));
                       name.erase(name.rfind(".NumOfAABB"));
                       m.joint[name].NumOfAABB = atof((char *)(xmlGetProp(cur_node, (xmlChar *)"value")));
+                  } else if ( std::string((char *)xmlGetProp(cur_node, (xmlChar *)"name")).rfind(".collisionShape") != std::string::npos ) {
+                      std::string name = std::string((char *)xmlGetProp(cur_node, (xmlChar *)"name"));
+                      name.erase(name.rfind(".collisionShape"));
+                      m.joint[name].collisionShape = (char *)(xmlGetProp(cur_node, (xmlChar *)"value"));
+                      boost::trim(m.joint[name].collisionShape);
                   } else if ( std::string((char *)xmlGetProp(cur_node, (xmlChar *)"name")).rfind(".translation") != std::string::npos ) {
                       std::string name = std::string((char *)xmlGetProp(cur_node, (xmlChar *)"name"));
                       name.erase(name.rfind(".translation"));

@@ -49,12 +49,22 @@ hrp::BodyPtr createBody(const std::string& name, const ModelItem& mitem,
         manager.deleteComponent(glbodyrtc);
         return hrp::BodyPtr();
     }else{
-        if (usebbox) convertToAABB(body);
         for (std::map<std::string, JointItem>::const_iterator it2=mitem.joint.begin();
              it2 != mitem.joint.end(); it2++){
             hrp::Link *link = body->link(it2->first);
             if (link) link->isHighGainMode = it2->second.isHighGain;
+            if (it2->second.collisionShape == ""){
+                // do nothing
+            }else if (it2->second.collisionShape == "convex hull"){
+                convertToConvexHull(link);
+            }else if (it2->second.collisionShape == "AABB"){
+                convertToAABB(link);
+            }else{
+                std::cerr << "unknown value of collisionShape property:" 
+                          << it2->second.collisionShape << std::endl;
+            }
         }
+        if (usebbox) convertToAABB(body);
         for (size_t i=0; i<mitem.inports.size(); i++){
             glbodyrtc->createInPort(mitem.inports[i]);
         }

@@ -38,6 +38,7 @@ public:
     int NumOfAABB;
     hrp::Vector3 translation;
     hrp::Matrix33 rotation;
+    std::string collisionShape;
 };
 
 class ModelItem {
