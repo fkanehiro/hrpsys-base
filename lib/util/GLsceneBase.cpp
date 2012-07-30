@@ -31,7 +31,8 @@ GLsceneBase::GLsceneBase(LogManagerBase *i_log) :
     m_log(i_log), m_videoWriter(NULL), m_cvImage(NULL), 
     m_showFloorGrid(true), m_showInfo(true), m_defaultLights(true),
     m_request(REQ_NONE), 
-    m_maxEdgeLen(0)
+    m_maxEdgeLen(0),
+    m_targetObject(-1)
 {
     m_default_camera = new GLcamera(DEFAULT_W, DEFAULT_H, 0.1, 100.0, 30*M_PI/180);
     m_default_camera->setViewPoint(4,0,0.8);
@@ -80,6 +81,12 @@ void GLsceneBase::nextCamera()
         } 
     }
     m_camera = m_default_camera;
+}
+
+void GLsceneBase::nextObject()
+{
+    m_targetObject++;
+    if (m_targetObject == numBodies()) m_targetObject = -1;
 }
 
 GLcamera *GLsceneBase::getCamera()
@@ -243,6 +250,12 @@ void GLsceneBase::drawInfo(double fps, size_t ntri)
         glRasterPos2f(10, h);
         drawString(buf);
     }
+    if (m_targetObject >=0 && m_targetObject < numBodies()){
+        sprintf(buf, "Target: %s", targetObject()->name().c_str());
+        h -= 15;
+        glRasterPos2f(10, h);
+        drawString(buf);
+    }
     for (unsigned int i=0; i<m_msgs.size(); i++){
         glRasterPos2f(10, (m_msgs.size()-i)*15);
         drawString(m_msgs[i].c_str());
@@ -399,4 +412,13 @@ void GLsceneBase::addBody(hrp::BodyPtr i_body)
 void GLsceneBase::maxEdgeLen(double i_len)
 {
     m_maxEdgeLen = i_len;
+}
+
+hrp::BodyPtr GLsceneBase::targetObject()
+{
+    if (m_targetObject >= 0 && m_targetObject < numBodies()){
+        return body(m_targetObject);
+    }else{
+        return hrp::BodyPtr();
+    }
 }

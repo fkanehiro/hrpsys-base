@@ -25,6 +25,11 @@ void GLcoordinates::setPosition(double x, double y, double z)
     m_trans[12] = x; m_trans[13] = y; m_trans[14] = z;
 }
 
+void GLcoordinates::getPosition(double& x, double& y, double& z)
+{
+    x = m_trans[12]; y = m_trans[13]; z = m_trans[14];
+}
+
 void GLcoordinates::setRotation(double r, double p, double y)
 {
     hrp::Matrix33 R = hrp::rotFromRpy(r,p,y);

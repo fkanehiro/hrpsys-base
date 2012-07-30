@@ -35,6 +35,7 @@ SDLwindow::SDLwindow(GLsceneBase* i_scene, LogManagerBase *i_log,
     instructions.push_back("c: clear scene");
     instructions.push_back("g: toggle floor grid");
     instructions.push_back("l: toggle default lights");
+    instructions.push_back("o: rotate target object");
     if (throbj){
         instructions.push_back("p: pause/resume background thread");
     }
@@ -144,6 +145,9 @@ bool SDLwindow::processEvents()
             }
             case SDLK_n:
                 scene->nextCamera();
+                break;
+            case SDLK_o:
+                scene->nextObject();
                 break;
             case SDLK_c:
                 log->clear();
@@ -281,7 +285,15 @@ void SDLwindow::draw()
     
     if (scene->getDefaultCamera() == scene->getCamera()){
         scene->getCamera()->setViewPoint(xEye, yEye, zEye);
-        scene->getCamera()->setViewTarget(xCenter, yCenter, zCenter);
+        hrp::BodyPtr target = scene->targetObject();
+        if (target){
+            GLlink *root = (GLlink *)target->rootLink();
+            double x,y,z;
+            root->getPosition(x,y,z);
+            scene->getCamera()->setViewTarget(x,y,z);
+        }else{
+            scene->getCamera()->setViewTarget(xCenter, yCenter, zCenter);
+        }
     }
     scene->setView();
     

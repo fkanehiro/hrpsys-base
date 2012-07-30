@@ -38,6 +38,7 @@ public:
     void requestCapture(const char *i_fname);
     void setCamera(GLcamera *i_camera);
     void nextCamera();
+    void nextObject();
     GLcamera *getCamera();
     GLcamera *getDefaultCamera();
     void setMessages(const std::vector<std::string>& i_msgs) { m_msgs = i_msgs;}
@@ -55,6 +56,7 @@ public:
     void showInfo(bool flag);
     void addBody(hrp::BodyPtr i_body);
     void maxEdgeLen(double i_len);
+    hrp::BodyPtr targetObject();
 protected:
     enum {REQ_NONE, REQ_CLEAR, REQ_CAPTURE};
 
@@ -74,6 +76,7 @@ protected:
     int m_request;
     std::string m_fname;
     double m_maxEdgeLen;
+    int m_targetObject;
 };
 
 #endif
