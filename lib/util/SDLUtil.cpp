@@ -279,21 +279,25 @@ static void drawString(const char *str)
 
 void SDLwindow::draw()
 {
-    double xEye = xCenter + radius*cos(tilt)*cos(pan);
-    double yEye = yCenter + radius*cos(tilt)*sin(pan);
-    double zEye = zCenter + radius*sin(tilt);
-    
     if (scene->getDefaultCamera() == scene->getCamera()){
-        scene->getCamera()->setViewPoint(xEye, yEye, zEye);
         hrp::BodyPtr target = scene->targetObject();
+        double yaw = pan;
+        double x,y,z;
         if (target){
             GLlink *root = (GLlink *)target->rootLink();
-            double x,y,z;
             root->getPosition(x,y,z);
-            scene->getCamera()->setViewTarget(x,y,z);
+            hrp::Matrix33 R;
+            root->getRotation(R);
+            hrp::Vector3 rpy = hrp::rpyFromRot(R);
+            yaw += rpy[2];
         }else{
-            scene->getCamera()->setViewTarget(xCenter, yCenter, zCenter);
+            x = xCenter; y = yCenter; z = zCenter;
         }
+        double xEye = x + radius*cos(tilt)*cos(yaw);
+        double yEye = y + radius*cos(tilt)*sin(yaw);
+        double zEye = z + radius*sin(tilt);
+        scene->getCamera()->setViewTarget(x,y,z);
+        scene->getCamera()->setViewPoint(xEye, yEye, zEye);
     }
     scene->setView();
     

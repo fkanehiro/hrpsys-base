@@ -21,6 +21,7 @@ public:
     hrp::Matrix33 getRotation();
     void setRotation(const hrp::Matrix33 &R);
     void setRotation(const double *R);
+    void getRotation(hrp::Matrix33 &R);
 protected:
     double m_trans[16];
 };

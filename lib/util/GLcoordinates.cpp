@@ -73,3 +73,12 @@ void GLcoordinates::setRotation(const double *R)
     }
 }
 
+void GLcoordinates::getRotation(hrp::Matrix33 &R)
+{
+    for (int i=0; i<3; i++){
+        for (int j=0; j<3; j++){
+            R(j,i) = m_trans[i*4+j];
+        }
+    }
+}
+
