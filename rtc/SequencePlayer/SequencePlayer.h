@@ -159,6 +159,7 @@ class SequencePlayer
   boost::interprocess::interprocess_semaphore m_waitSem;
   hrp::BodyPtr m_robot;
   int dummy;
+  coil::Mutex m_mutex;
 };
 
 
