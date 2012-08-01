@@ -13,6 +13,8 @@
 #include "SequencePlayer.h"
 #include "util/VectorConvert.h"
 
+typedef coil::Guard<coil::Mutex> Guard;
+
 // Module specification
 // <rtc-template block="module_spec">
 static const char* sequenceplayer_spec[] =
@@ -176,6 +178,8 @@ RTC::ReturnCode_t SequencePlayer::onExecute(RTC::UniqueId ec_id)
             m_waitSem.post();
         }
     }else{
+	Guard guard(m_mutex);
+
         double zmp[3], acc[3], pos[3], rpy[3];
         m_seq->get(m_qRef.data.get_buffer(), zmp, acc, pos, rpy);
         m_zmpRef.data.x = zmp[0];
@@ -251,6 +255,7 @@ void SequencePlayer::waitInterpolation()
 
 bool SequencePlayer::setJointAngle(short id, double angle, double tm)
 {
+    Guard guard(m_mutex);
     if (!setInitialState()) return false;
     dvector q(m_robot->numJoints());
     m_seq->getJointAngles(q.data());
@@ -271,6 +276,7 @@ bool SequencePlayer::setJointAngle(short id, double angle, double tm)
 
 bool SequencePlayer::setJointAngles(const double *angles, double tm)
 {
+    Guard guard(m_mutex);
     if (!setInitialState()) return false;
     for (int i=0; i<m_robot->numJoints(); i++){
         hrp::Link *j = m_robot->joint(i);
@@ -289,7 +295,10 @@ bool SequencePlayer::setJointAngles(const double *angles, double tm)
 bool SequencePlayer::setJointAngles(const double *angles, const bool *mask, 
                                     double tm)
 {
+    Guard guard(m_mutex);
+
     if (!setInitialState()) return false;
+
     double pose[m_robot->numJoints()];
     for (int i=0; i<m_robot->numJoints(); i++){
         pose[i] = mask[i] ? angles[i] : m_qInit.data[i];
@@ -300,24 +309,28 @@ bool SequencePlayer::setJointAngles(const double *angles, const bool *mask,
 
 bool SequencePlayer::setBasePos(const double *pos, double tm)
 {
+    Guard guard(m_mutex);
     m_seq->setBasePos(pos, tm);
     return true;
 }
 
 bool SequencePlayer::setBaseRpy(const double *rpy, double tm)
 {
+    Guard guard(m_mutex);
     m_seq->setBaseRpy(rpy, tm);
     return true;
 }
 
 bool SequencePlayer::setZmp(const double *zmp, double tm)
 {
+    Guard guard(m_mutex);
     m_seq->setZmp(zmp, tm);
     return true;
 }
 
 void SequencePlayer::loadPattern(const char *basename, double tm)
 {
+    Guard guard(m_mutex);
     if (setInitialState()){
         m_seq->loadPattern(basename, tm);
     }
@@ -366,6 +379,7 @@ bool SequencePlayer::setInitialState()
 
 void SequencePlayer::playPattern(const dSequenceSequence& pos, const dSequenceSequence& rpy, const dSequenceSequence& zmp, const dSequence& tm)
 {
+    Guard guard(m_mutex);
     if (!setInitialState()) return;
 
     const double *q=NULL, *z=NULL, *a=NULL, *p=NULL, *e=NULL; double t=0;
@@ -411,6 +425,7 @@ void SequencePlayer::playPattern(const dSequenceSequence& pos, const dSequenceSe
 
 bool SequencePlayer::setInterpolationMode(OpenHRP::SequencePlayerService::interpolationMode i_mode_)
 {
+    Guard guard(m_mutex);
     interpolator::interpolation_mode new_mode;
     if (i_mode_ == OpenHRP::SequencePlayerService::LINEAR){
         new_mode = interpolator::LINEAR;
