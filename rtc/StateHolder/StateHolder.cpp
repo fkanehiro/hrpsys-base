@@ -160,6 +160,11 @@ RTC::ReturnCode_t StateHolder::onDeactivated(RTC::UniqueId ec_id)
 RTC::ReturnCode_t StateHolder::onExecute(RTC::UniqueId ec_id)
 {
     //std::cout << "StateHolder::onExecute(" << ec_id << ")" << std::endl;
+    coil::TimeValue coiltm(coil::gettimeofday());
+    RTC::Time tm;
+    tm.sec = coiltm.sec();
+    tm.nsec = coiltm.usec()*1000;
+
     if (m_currentQIn.isNew()){
         m_currentQIn.read();
     }
@@ -171,10 +176,6 @@ RTC::ReturnCode_t StateHolder::onExecute(RTC::UniqueId ec_id)
         m_q = m_currentQ;
     }
 
-    if (m_q.data.length() > 0){
-        m_qOut.write();
-    }
-
     if (m_requestGoActual){
         m_requestGoActual = false;
         m_waitSem.post();
@@ -183,17 +184,14 @@ RTC::ReturnCode_t StateHolder::onExecute(RTC::UniqueId ec_id)
     if (m_basePosIn.isNew()){
         m_basePosIn.read();
     }
-    m_basePosOut.write();
 
     if (m_baseRpyIn.isNew()){
         m_baseRpyIn.read();
     }
-    m_baseRpyOut.write();
 
     if (m_zmpIn.isNew()){
         m_zmpIn.read();
     }
-    m_zmpOut.write();
 
     double *a = m_baseTform.data.get_buffer();
     a[0] = m_basePos.data.x;
@@ -203,11 +201,26 @@ RTC::ReturnCode_t StateHolder::onExecute(RTC::UniqueId ec_id)
                                       m_baseRpy.data.p, 
                                       m_baseRpy.data.y); 
     hrp::setMatrix33ToRowMajorArray(R, a, 3);
-    m_baseTformOut.write();
 
     m_basePose.data.position = m_basePos.data;
     m_basePose.data.orientation = m_baseRpy.data;
-    setTimestamp(m_basePose);
+
+    // put timestamps
+    m_q.tm         = tm;
+    m_baseTform.tm = tm; 
+    m_basePos.tm   = tm; 
+    m_baseRpy.tm   = tm; 
+    m_zmp.tm       = tm; 
+    m_basePose.tm  = tm;
+
+    // write
+    if (m_q.data.length() > 0){
+        m_qOut.write();
+    }
+    m_baseTformOut.write();
+    m_basePosOut.write();
+    m_baseRpyOut.write();
+    m_zmpOut.write();
     m_basePoseOut.write();
 
     if (m_timeCount > 0){
