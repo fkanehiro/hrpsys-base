@@ -31,7 +31,8 @@ void initWorld(Project& prj, BodyFactory &factory,
             world.addBody(body);
             // <-- for OpenRTM-1.0.0 bug
             RTC::Manager& manager = RTC::Manager::instance();
-            if ( manager.getComponents().back()->getInstanceName() != name )
+            if ( manager.getComponents().size() 
+                 &&manager.getComponents().back()->getInstanceName() != name )
                 manager.getComponents().back()->setInstanceName(name.c_str());
             // -->
         }
