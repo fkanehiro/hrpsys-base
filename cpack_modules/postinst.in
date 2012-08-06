@@ -1,0 +1,9 @@
+#!/bin/bash
+set -e
+if [ "$1" = "configure" ]; then
+  mkdir -p @CPACK_PACKAGING_INSTALL_PREFIX@/share/hrpsys/python
+  cd @CPACK_PACKAGING_INSTALL_PREFIX@/share/hrpsys/idl
+  omniidl -bpython -C@CPACK_PACKAGING_INSTALL_PREFIX@/share/hrpsys/python -I@OPENRTM_IDL_DIR@ *.idl 
+  cd @CPACK_PACKAGING_INSTALL_PREFIX@/share/hrpsys/python
+  python -m compileall .
+fi
