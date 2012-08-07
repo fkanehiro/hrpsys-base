@@ -88,6 +88,7 @@ PySimulator::PySimulator(PyObject *pyo) :
 }
 
 PySimulator::~PySimulator(){
+    stop();
     window.stop();
     clear();
     if (manager) manager->shutdown();
