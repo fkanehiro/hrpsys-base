@@ -25,11 +25,12 @@ else:
     sim = hrpsys.Simulator()
     nodisplay = False
     usebbox = False
+    endless = False
     for arg in sys.argv:
         if arg == "realtime":
             sim.realTime(True)
         elif arg == "endless":
-            sim.endless(True)
+            endless = True
         elif arg == "nodisplay":
             nodisplay = True
         elif arg == "showsensors":
@@ -37,6 +38,8 @@ else:
         elif arg == "usebbox":
             sim.useBBox(True)
     sim.loadProject(project)
+    if endless:
+        sim.endless(True)
     if not nodisplay:
         sim.initViewer()
     sim.start(sim.totalTime)
