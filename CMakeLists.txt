@@ -47,7 +47,6 @@ include_directories(${CMAKE_BINARY_DIR}/idl)
 
 set(JAVAC javac)
 set(JAR jar)
-set(JAR jar)
 set(IDLJ idlj)
 set(idlj_flags -fclient -fserver -emitAll -td src)
 set(javac_flags -target 1.5 -d . -sourcepath src)
