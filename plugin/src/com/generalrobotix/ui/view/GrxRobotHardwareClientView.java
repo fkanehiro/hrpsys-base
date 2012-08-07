@@ -609,7 +609,11 @@ public class GrxRobotHardwareClientView extends GrxBaseView {
 			wsx.collisions = null;
 			wsx.setSensorState(robotType_, ss);
 			wsx.setTargetState(robotType_, robotStateH_.value.command);
-			wsx.setServoState(robotType_, robotStateH_.value.servoState[0]);
+			int [] sstate = new int[robotStateH_.value.servoState.length];
+			for (int i=0; i<sstate.length; i++){
+			    sstate[i] = robotStateH_.value.servoState[i][0];
+			}
+			wsx.setServoState(robotType_, sstate);
 			wsx.setPowerState(robotType_, robotStateH_.value.voltage, robotStateH_.value.current);
 			currentItem_.addValue(wsx.time, wsx);
 			currentItem_.setPosition(currentItem_.getLogSize()-1);
