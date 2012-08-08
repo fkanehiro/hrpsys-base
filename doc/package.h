@@ -26,6 +26,7 @@ To use python scripts to create RT components, connect ports and get/set propert
     <li>\ref HGcontroller</li>
     <li>\ref Joystick</li>
     <li>\ref Joystick2Velocity2D</li>
+    <li>\ref Joystick2Velocity3D</li>
     <li>\ref Joystick2PanTiltAngles</li>
     <li>\ref JpegDecoder</li>
     <li>\ref NullComponent</li>

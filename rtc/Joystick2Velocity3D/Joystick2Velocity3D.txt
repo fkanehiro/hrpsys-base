@@ -1,0 +1,55 @@
+/**
+
+\page Joystick2Velocity3D
+
+\section introduction Overview
+
+This component converts data from a joystick to a liner velocity command.
+
+<table>
+<tr><th>implementation_id</th><td>Joystick2Velocity3D</td></tr>
+<tr><th>category</th><td>example</td></tr>
+</table>
+
+\section dataports Data Ports
+
+\subsection inports Input Ports
+
+<table>
+<tr><th>port name</th><th>data type</th><th>unit</th><th>description</th></tr>
+<tr><td>axes</td><td>RTC::TimedFloatSeq</td><td></td><td>status of sticks([-1:1])</td></tr>
+<tr><td>buttons</td><td>RTC::TimedBooleanSeq</td><td></td><td>status of buttons</td></tr>
+</table>
+
+\subsection outports Output Ports
+
+<table>
+<tr><th>port name</th><th>data type</th><th>unit</th><th>description</th></tr>
+<tr><td>vel</td><td>RTC::TimedVelocity3D</td><td>[m/s],[rad/s]</td><td>velocity command</td></tr>
+</table>
+
+\section serviceports Service Ports
+
+\subsection provider Service Providers
+
+N/A
+
+\subsection consumer Service Consumers
+
+N/A
+
+\section configuration Configuration Variables
+
+<table>
+<tr><th>name</th><th>type</th><th>unit</th><th>default value</th><th>description</th></tr>
+<tr><td>debugLevel</td><td>int</td><td></td><td>0</td><td>verbose level of debug messages</td></tr>
+<tr><td>axesIds</td><td>std::vector<int></td><td></td><td>0,1,2</td><td>indices of sticks which correspond to vx,vy,vz</td></tr>
+<tr><td>scalesTranslation</td><td>std::vector<double></td><td>[m/s]</td><td>1.0,1.0,1.0</td><td>coefficients of linear velocities</td></tr>
+<tr><td>scalesRotation</td><td>std::vector<double></td><td>[m/s]</td><td>1.0,1.0,1.0</td><td>coefficients of angular velocities</td></tr>
+</table>
+
+\section conf Configuration File
+
+N/A
+
+ */

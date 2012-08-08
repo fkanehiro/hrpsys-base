@@ -5,6 +5,7 @@ set(input_files package.h utilities.h
 		      ../rtc/ForwardKinematics/ForwardKinematics.txt
 		      ../rtc/Joystick/Joystick.txt
 		      ../rtc/Joystick2Velocity2D/Joystick2Velocity2D.txt
+		      ../rtc/Joystick2Velocity3D/Joystick2Velocity3D.txt
 		      ../rtc/Joystick2PanTiltAngles/Joystick2PanTiltAngles.txt
 		      ../rtc/NullComponent/NullComponent.txt
 		      ../rtc/OccupancyGridMap3D/OccupancyGridMap3D.txt
