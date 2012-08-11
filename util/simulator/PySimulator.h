@@ -19,7 +19,7 @@ public:
     void initViewer();
     PyBody* loadBody(std::string name, std::string url);
     PyBody* createBody(std::string name);
-    void loadProject(std::string fname);
+    bool loadProject(std::string fname);
     void simulate();
     void simulate(double time);
     void start(double time);

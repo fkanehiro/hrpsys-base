@@ -37,15 +37,15 @@ else:
             sim.showSensors = True
         elif arg == "usebbox":
             sim.useBBox(True)
-    sim.loadProject(project)
-    if endless:
-        sim.endless(True)
-    if not nodisplay:
-        sim.initViewer()
-    sim.start(sim.totalTime)
+    if sim.loadProject(project):
+        if endless:
+            sim.endless(True)
+        if not nodisplay:
+            sim.initViewer()
+        sim.start(sim.totalTime)
 
-    if script != None:
-	execfile(script)
+        if script != None:
+            execfile(script)
 
 
 

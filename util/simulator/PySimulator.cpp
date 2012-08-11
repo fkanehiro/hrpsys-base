@@ -161,13 +161,13 @@ PyBody* PySimulator::loadBody(std::string name, std::string url){
     }
 }
 
-void PySimulator::loadProject(std::string fname){
+bool PySimulator::loadProject(std::string fname){
     clear();
 
     Project prj;
     if (!prj.parse(fname)){
         std::cerr << "failed to parse " << fname << std::endl;
-        return;
+        return false;
     }
     
     RTC::Manager* manager = &RTC::Manager::instance();
@@ -191,6 +191,7 @@ void PySimulator::loadProject(std::string fname){
     
     std::cout << "timestep = " << prj.timeStep() << ", total time = " 
               << prj.totalTime() << std::endl;
+    return true;
 }
 
 void PySimulator::simulate()
