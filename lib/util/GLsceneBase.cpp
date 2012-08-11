@@ -132,8 +132,8 @@ void GLsceneBase::capture(char *o_buffer)
 
 void GLsceneBase::initLights()
 {
-    GLfloat light0pos[] = { 4.0, 6.0, 6.0, 1.0 };
-    GLfloat light1pos[] = { -4.0, -6.0, -6.0, 1.0 };
+    GLfloat light0pos[] = { 40.0, 60.0, 60.0, 1.0 };
+    GLfloat light1pos[] = { -40.0, -60.0, -60.0, 1.0 };
     GLfloat light0col[] = { 0.9, 0.9, 1.0, 1.0 };
     GLfloat light1col[] = { 0.5, 0.4, 0.4, 1.0 };
 
