@@ -77,7 +77,7 @@ install(TARGETS ${target}
 	LIBRARY DESTINATION lib CONFIGURATIONS Release Debug
 )
 
-install(FILES ${jarfile} DESTINATION share/hrpsys/jar)
+install(FILES ${jarfile} DESTINATION share/java)
 install(CODE "execute_process(COMMAND omniidl -bpython -C${CMAKE_INSTALL_PREFIX}/share/hrpsys/python -I${OPENRTM_IDL_DIR} ${idl_files} WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})")
 install(CODE "execute_process(COMMAND omniidl -bpython -C${CMAKE_INSTALL_PREFIX}/share/hrpsys/python -I${OPENRTM_IDL_DIR} ${openhrp_idl_files} WORKING_DIRECTORY ${OPENHRP_DIR}/share/OpenHRP-3.1/idl/OpenHRP)")
 install(CODE "execute_process(COMMAND python -m compileall . WORKING_DIRECTORY ${CMAKE_INSTALL_PREFIX}/share/hrpsys/python)")

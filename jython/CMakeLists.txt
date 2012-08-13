@@ -16,6 +16,6 @@ add_custom_command(
 add_custom_target(OpenRTMStub ALL DEPENDS ${jarfile})
 
 install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/hrpsysjy DESTINATION bin)
-install(FILES ${jarfile} DESTINATION share/hrpsys/jar)
+install(FILES ${jarfile} DESTINATION share/java)
 install(FILES rtm.py waitInput.py poseEditor.py DESTINATION share/hrpsys/jython)
 install(FILES sample.py NullComponent.conf ${CMAKE_CURRENT_BINARY_DIR}/rtc.conf DESTINATION share/hrpsys/samples)
