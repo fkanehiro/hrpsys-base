@@ -16,6 +16,7 @@ public:
     void swapBuffers();
     bool oneStep();
     void setView(double T[16]);
+    void setSize(int w, int h);
 private:
     double sliderRatio(double x);
     GLsceneBase *scene;

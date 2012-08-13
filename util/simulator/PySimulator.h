@@ -37,6 +37,7 @@ public:
     void setShowSensors(bool flag);
     void reset();
     void setUseBBox(bool flag);
+    void setWindowSize(int s);
 private:  
     LogManager<SceneState> log;
     GLscene scene;

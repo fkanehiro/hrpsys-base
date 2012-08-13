@@ -354,3 +354,8 @@ void SDLwindow::setView(double T[16])
     radius = sqrt(SQR(xCenter - T[3])+SQR(yCenter - T[7])+SQR(zCenter - T[11]));
 }
 
+void SDLwindow::setSize(int w, int h)
+{
+    width = w; 
+    height = h;
+}

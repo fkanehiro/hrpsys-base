@@ -315,6 +315,11 @@ void PySimulator::setUseBBox(bool flag)
     useBBox = flag;
 }
 
+void PySimulator::setWindowSize(int s)
+{
+    window.setSize(s,s);
+}
+
 BOOST_PYTHON_MODULE( hrpsys )
 {
     using namespace boost::python;
@@ -331,6 +336,7 @@ BOOST_PYTHON_MODULE( hrpsys )
         .def("simulate", (void(PySimulator::*)(double))&PySimulator::simulate)
         .def("realTime", &PySimulator::realTime)
         .def("useBBox", &PySimulator::setUseBBox)
+        .def("windowSize", &PySimulator::setWindowSize)
         .def("endless", &PySimulator::endless)
         .def("start", &PySimulator::start)
         .def("stop", &PySimulator::stop)

@@ -50,6 +50,7 @@ realtime execute simulation in real-time<br>
 usebbox use bounding boxes instead of actual geometries<br>
 endless never finish simulation<br>
 showsensor show sensor output<br>
+size [size] set window size<br>
 
 Note:NameSever and openhrp-model-loader must be running
 

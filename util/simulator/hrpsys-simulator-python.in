@@ -26,17 +26,20 @@ else:
     nodisplay = False
     usebbox = False
     endless = False
-    for arg in sys.argv:
-        if arg == "realtime":
+    for i in range(len(sys.argv)):
+        if sys.argv[i] == "realtime":
             sim.realTime(True)
-        elif arg == "endless":
+        elif sys.argv[i] == "endless":
             endless = True
-        elif arg == "nodisplay":
+        elif sys.argv[i] == "nodisplay":
             nodisplay = True
-        elif arg == "showsensors":
+        elif sys.argv[i] == "showsensors":
             sim.showSensors = True
-        elif arg == "usebbox":
+        elif sys.argv[i] == "usebbox":
             sim.useBBox(True)
+	elif sys.argv[i] == "size":
+	    sim.windowSize(int(sys.argv[i+1]))
+	    i = i+1
     if sim.loadProject(project):
         if endless:
             sim.endless(True)
