@@ -1,7 +1,7 @@
 #!/bin/bash
 
 export NS_OPT="-ORBInitRef NameService=corbaloc:iiop:localhost:2809/NameService" 
-export JARPATH=@CMAKE_INSTALL_PREFIX@/share/hrpsys/jar
+export JARPATH=@CMAKE_INSTALL_PREFIX@/share/java
 
 for j in $(ls $JARPATH/*.jar); do
     export CLASSPATH=$j:$CLASSPATH
