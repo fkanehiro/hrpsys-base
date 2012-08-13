@@ -38,7 +38,7 @@
    a. Launch Eclipse
    b. Select "Window"->"Preferences"
    c. Click "GRXUI"
-   d. Set "<jython directory>/Lib:<install prefix>/share/hrpsys/jython:<install prefix>/share/hrpsys/jar" to "Jython Lib directory"
+   d. Set "<jython directory>/Lib:<install prefix>/share/hrpsys/jython:<install prefix>/share/java" to "Jython Lib directory"
 
 2.4 (Optional) Eclipse plugin to monitor the robot status
    a. Launch Eclipse
