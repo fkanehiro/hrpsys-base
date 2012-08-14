@@ -3,10 +3,10 @@
 import sys
 import os
 
-sys.path.append("@CMAKE_INSTALL_PREFIX@/share/hrpsys/python")
+sys.path.append("@python_dist_pkg_dir@")
 import hrpsys
 
-execfile("@CMAKE_INSTALL_PREFIX@/share/hrpsys/python/waitInput.py")
+execfile("@python_dist_pkg_dir@/waitInput.py")
 
 sys.path.append(os.getcwd())
 

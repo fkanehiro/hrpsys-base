@@ -82,7 +82,6 @@ if(UNIX)
   set(CPACK_PACKAGING_INSTALL_PREFIX "/usr" CACHE PATH "The root directory of the package")
 endif()
 include(CPack)
-configure_file(cpack_modules/postinst.in ${CMAKE_CURRENT_BINARY_DIR}/postinst)
 
 find_package(LibXml2 REQUIRED)
 find_package(SDL REQUIRED)
@@ -99,6 +98,12 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 link_directories(${OpenCV_LIBRARY_DIRS})
 find_package(GLUT REQUIRED)
 find_package(QuickHull REQUIRED)
+
+execute_process(
+  COMMAND python -c "from distutils import sysconfig; print sysconfig.get_config_var(\"VERSION\")"
+  OUTPUT_VARIABLE PYTHON_VERSION
+  OUTPUT_STRIP_TRAILING_WHITESPACE)
+set(python_dist_pkg_dir ${CMAKE_INSTALL_PREFIX}/lib/python${PYTHON_VERSION}/dist-packages)
 
 configure_file(hrpsys-base.pc.in ${CMAKE_CURRENT_BINARY_DIR}/hrpsys-base.pc @ONLY)
 install(FILES

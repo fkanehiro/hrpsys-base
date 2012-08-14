@@ -1,6 +1,6 @@
 #!/bin/bash
 
-export PYTHONPATH=@CMAKE_INSTALL_PREFIX@/share/hrpsys/python:$PYTHONPATH
+export PYTHONPATH=@python_dist_pkg_dir@:$PYTHONPATH
 
 ipython $@
 

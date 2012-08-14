@@ -29,6 +29,10 @@ set(openhrp_idl_files
 
 set(idl_flags -bcxx -Wbuse_quotes -Wbh=.hh -Wbs=Sk.cpp -Wba -Wbd=DynSk.cpp -I${OPENRTM_IDL_DIR})
 
+string(REGEX REPLACE ";" " " idl_files2 "${idl_files}")
+string(REGEX REPLACE ";" " " openhrp_idl_files2 "${openhrp_idl_files}")
+configure_file(${PROJECT_SOURCE_DIR}/cpack_modules/postinst.in ${PROJECT_BINARY_DIR}/postinst)
+
 macro(generate_cpp_stub idl_basename)
   set(idl_file ${CMAKE_CURRENT_SOURCE_DIR}/${idl_basename}.idl)
   add_custom_command(
@@ -78,9 +82,9 @@ install(TARGETS ${target}
 )
 
 install(FILES ${jarfile} DESTINATION share/java)
-install(CODE "execute_process(COMMAND omniidl -bpython -C${CMAKE_INSTALL_PREFIX}/share/hrpsys/python -I${OPENRTM_IDL_DIR} ${idl_files} WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})")
-install(CODE "execute_process(COMMAND omniidl -bpython -C${CMAKE_INSTALL_PREFIX}/share/hrpsys/python -I${OPENRTM_IDL_DIR} ${openhrp_idl_files} WORKING_DIRECTORY ${OPENHRP_DIR}/share/OpenHRP-3.1/idl/OpenHRP)")
-install(CODE "execute_process(COMMAND python -m compileall . WORKING_DIRECTORY ${CMAKE_INSTALL_PREFIX}/share/hrpsys/python)")
+install(CODE "execute_process(COMMAND omniidl -bpython -C${python_dist_pkg_dir} -I${OPENRTM_IDL_DIR} ${idl_files} WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})")
+install(CODE "execute_process(COMMAND omniidl -bpython -C${python_dist_pkg_dir} -I${OPENRTM_IDL_DIR} ${openhrp_idl_files} WORKING_DIRECTORY ${OPENHRP_DIR}/share/OpenHRP-3.1/idl/OpenHRP)")
+install(CODE "execute_process(COMMAND python -m compileall . WORKING_DIRECTORY ${python_dist_pkg_dir})")
 install(FILES ${headers} DESTINATION include/hrpsys/idl)
 install(FILES ${idl_files} DESTINATION share/hrpsys/idl)
 

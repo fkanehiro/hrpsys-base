@@ -1,9 +1,11 @@
 #!/bin/bash
 set -e
 if [ "$1" = "configure" ]; then
-  mkdir -p @CPACK_PACKAGING_INSTALL_PREFIX@/share/hrpsys/python
+  mkdir -p @python_dist_pkg_dir@
+  cd @OPENHRP_DIR@/share/OpenHRP-3.1/idl/OpenHRP
+  omniidl -bpython -C@python_dist_pkg_dir@ -I@OPENRTM_IDL_DIR@ @openhrp_idl_files2@
   cd @CPACK_PACKAGING_INSTALL_PREFIX@/share/hrpsys/idl
-  omniidl -bpython -C@CPACK_PACKAGING_INSTALL_PREFIX@/share/hrpsys/python -I@OPENRTM_IDL_DIR@ *.idl 
-  cd @CPACK_PACKAGING_INSTALL_PREFIX@/share/hrpsys/python
+  omniidl -bpython -C@python_dist_pkg_dir@ -I@OPENRTM_IDL_DIR@ @idl_files2@
+  cd @python_dist_pkg_dir@
   python -m compileall .
 fi
