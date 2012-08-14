@@ -23,12 +23,13 @@ else:
 	script = None
 
     sim = hrpsys.Simulator()
+    realtime = False
     nodisplay = False
     usebbox = False
     endless = False
     for i in range(len(sys.argv)):
         if sys.argv[i] == "realtime":
-            sim.realTime(True)
+	    realtime = True
         elif sys.argv[i] == "endless":
             endless = True
         elif sys.argv[i] == "nodisplay":
@@ -41,6 +42,8 @@ else:
 	    sim.windowSize(int(sys.argv[i+1]))
 	    i = i+1
     if sim.loadProject(project):
+        if realtime:
+            sim.realTime(True)
         if endless:
             sim.endless(True)
         if not nodisplay:
