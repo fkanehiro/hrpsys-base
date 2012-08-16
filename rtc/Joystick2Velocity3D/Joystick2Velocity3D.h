@@ -112,11 +112,11 @@ class Joystick2Velocity3D
   
   // </rtc-template>
 
-  TimedVelocity3D m_vel;
+  TimedVelocity3D m_vel, m_mirroredVel;
 
   // DataOutPort declaration
   // <rtc-template block="outport_declare">
-  OutPort<TimedVelocity3D> m_velOut;
+  OutPort<TimedVelocity3D> m_velOut, m_mirroredVelOut;
   
   // </rtc-template>
 

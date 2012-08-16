@@ -40,6 +40,7 @@ Joystick2Velocity3D::Joystick2Velocity3D(RTC::Manager* manager)
     m_axesIn("axes", m_axes),
     m_buttonsIn("buttons", m_buttons),
     m_velOut("vel", m_vel),
+    m_mirroredVelOut("mirroredVel", m_mirroredVel),
     // </rtc-template>
     dummy(0),
     m_debugLevel(0)
@@ -80,9 +81,12 @@ RTC::ReturnCode_t Joystick2Velocity3D::onInitialize()
   addInPort("axes", m_axesIn);
   addInPort("buttons", m_buttonsIn);
   addOutPort("vel", m_velOut);
+  addOutPort("mirroredVel", m_mirroredVelOut);
 
   m_vel.data.vx = m_vel.data.vy = m_vel.data.vz = 0;
   m_vel.data.vr = m_vel.data.vp = m_vel.data.va = 0;
+  m_mirroredVel.data.vx = m_mirroredVel.data.vy = m_mirroredVel.data.vz = 0;
+  m_mirroredVel.data.vr = m_mirroredVel.data.vp = m_mirroredVel.data.va = 0;
   m_axes.data.length(4);
   for (unsigned int i=0; i<m_axes.data.length(); i++){
       m_axes.data[i] = 0.0;
@@ -141,11 +145,21 @@ RTC::ReturnCode_t Joystick2Velocity3D::onExecute(RTC::UniqueId ec_id)
       m_vel.data.vr = m_scalesRotation[0]*m_axes.data[m_axesIds[0]];
       m_vel.data.vp = m_scalesRotation[1]*m_axes.data[m_axesIds[1]];
       m_vel.data.va = m_scalesRotation[2]*m_axes.data[m_axesIds[2]];
+      //
+      m_mirroredVel.data.vx = m_mirroredVel.data.vy = m_mirroredVel.data.vz = 0.0;
+      m_mirroredVel.data.vr = -m_vel.data.vr;
+      m_mirroredVel.data.vp =  m_vel.data.vp;
+      m_mirroredVel.data.va = -m_vel.data.va;
   }else{
       m_vel.data.vx = m_scalesTranslation[0]*m_axes.data[m_axesIds[0]];
       m_vel.data.vy = m_scalesTranslation[1]*m_axes.data[m_axesIds[1]];
       m_vel.data.vz = m_scalesTranslation[2]*m_axes.data[m_axesIds[2]];
       m_vel.data.vr = m_vel.data.vp = m_vel.data.va = 0.0;
+      //
+      m_mirroredVel.data.vx =  m_vel.data.vx;
+      m_mirroredVel.data.vy = -m_vel.data.vy;
+      m_mirroredVel.data.vz =  m_vel.data.vz;
+      m_mirroredVel.data.vr = m_mirroredVel.data.vp = m_mirroredVel.data.va = 0.0;
   }
   if (m_debugLevel > 0) {
       printf("velocity command: %5.2f %5.2f %5.2f %5.2f %5.2f %5.2f\n", 
@@ -153,6 +167,7 @@ RTC::ReturnCode_t Joystick2Velocity3D::onExecute(RTC::UniqueId ec_id)
              m_vel.data.vr, m_vel.data.vp, m_vel.data.va);
   }
   m_velOut.write();
+  m_mirroredVelOut.write();
 
   return RTC::RTC_OK;
 }
