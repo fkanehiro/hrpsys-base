@@ -22,6 +22,11 @@ robot::robot() : m_fzLimitRatio(0), m_maxZmpError(DEFAULT_MAX_ZMP_ERROR), m_cali
     m_rLegForceSensorId = m_lLegForceSensorId = -1;
 }
 
+robot::~robot()
+{
+    close_iob();
+}
+
 bool robot::init()
 {
     int i;

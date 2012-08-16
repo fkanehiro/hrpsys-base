@@ -17,6 +17,11 @@ public:
     robot();
 
     /**
+       \brief destructor
+    */
+    ~robot();
+
+    /**
        \brief
      */
     bool init();
