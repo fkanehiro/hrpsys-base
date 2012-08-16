@@ -332,26 +332,10 @@ void SDLwindow::setView(double T[16])
 {
     pan = atan2(T[6], T[2]); // atan2(Rzy,Rzx)
     tilt = atan2(T[10], sqrt(T[2]*T[2]+T[6]*T[6]));
-    double len;
-    if (fabs(T[10]) < 1e-8){ // view line is parallel to xy plane
-        if (fabs(T[2]) < 1e-8){
-            double alpha = T[7]/T[6];
-            xCenter = T[3]-alpha*T[2];
-            yCenter = 0;
-        }else{
-            double alpha = T[3]/T[2];
-            xCenter = 0;
-            yCenter = T[7]-alpha*T[6];
-        }
-        zCenter = T[11];
-    }else{
-        len = -T[11]/T[10]; // Pz/Rzz
-        xCenter = T[3]+T[2]*len;
-        yCenter = T[7]+T[6]*len;
-        zCenter = 0;
-    }
-#define SQR(x) ((x)*(x))
-    radius = sqrt(SQR(xCenter - T[3])+SQR(yCenter - T[7])+SQR(zCenter - T[11]));
+    radius = 5.0;
+    xCenter = -radius * T[ 2] + T[ 3];
+    yCenter = -radius * T[ 6] + T[ 7];
+    zCenter = -radius * T[10] + T[11];
 }
 
 void SDLwindow::setSize(int w, int h)
