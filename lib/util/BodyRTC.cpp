@@ -203,25 +203,24 @@ void BodyRTC::createOutPort(const std::string &config)
                       << std::endl;
             return;
         }
-        const std::string& name = elements[0];
-        hrp::Link *l=this->link(name);
+        hrp::Link *l=this->link(elements[0]);
         if (l){
             m_outports.push_back(
                 new AbsTransformOutPortHandler(this, name.c_str(), l));
             return;
         }
         hrp::Sensor *s;
-        s = this->sensor<AccelSensor>(name);
-        if (!s) s = this->sensor<RateGyroSensor>(name);
-        if (!s) s = this->sensor<ForceSensor>(name);
-        if (!s) s = this->sensor<RangeSensor>(name);
-        if (!s) s = this->sensor<VisionSensor>(name);
+        s = this->sensor<AccelSensor>(elements[0]);
+        if (!s) s = this->sensor<RateGyroSensor>(elements[0]);
+        if (!s) s = this->sensor<ForceSensor>(elements[0]);
+        if (!s) s = this->sensor<RangeSensor>(elements[0]);
+        if (!s) s = this->sensor<VisionSensor>(elements[0]);
         if (s){
             m_outports.push_back(
                 new AbsTransformOutPortHandler(this, name.c_str(), s));
             return;
         }
-        std::cerr << "can't find a link(or a sensor)(" << name << ")" 
+        std::cerr << "can't find a link(or a sensor)(" << elements[0] << ")" 
                   << std::endl;
     }else if(type == "ABS_VELOCITY"){
         if (elements.size()!=1){
