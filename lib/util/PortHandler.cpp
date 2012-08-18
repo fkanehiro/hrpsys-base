@@ -320,6 +320,8 @@ PointCloudPortHandler::PointCloudPortHandler(
     case VisionSensor::MONO_DEPTH:
         m_pcFormat = "xyz"; break;
     default:
+        std::cout << "VisionSensor " << m_sensor->name
+                  << " doesn't have distance measuring function" << std::endl;
         break;
     }
     m_data.width = m_sensor->width;
