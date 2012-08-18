@@ -212,10 +212,10 @@ bool SDLwindow::processEvents()
             case SDL_BUTTON_RIGHT:
                 break;
             case SDL_BUTTON_WHEELUP:
-                radius *= 1.1;
+                radius *= 0.9;
                 break;
             case SDL_BUTTON_WHEELDOWN:
-                radius *= 0.9;
+                radius *= 1.1;
                 if (radius < 0.1) radius = 0.1; 
                 break;
             }
