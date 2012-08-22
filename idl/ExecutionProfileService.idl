@@ -31,7 +31,15 @@ module OpenHRP
       long count;                     ///< the number of execution
       long timeover;                  ///< the number of execution periods which were longer than expected execution period
     };
-    
+
+    /**
+     *  @brief exception raised by ExecutionProfileService
+     */
+    exception ExecutionProfileServiceException
+    {
+      string  description; ///< description of exception
+    };
+
     /**
      * @brief get execution profile
      * @return execution profile
@@ -40,9 +48,10 @@ module OpenHRP
 
     /**
      * @brief get execution profile
+     * @param obj object driven by this execution context
      * @return execution profile
      */
-    ComponentProfile getComponentProfile(in RTC::LightweightRTObject obj);
+    ComponentProfile getComponentProfile(in RTC::LightweightRTObject obj) raises(ExecutionProfileServiceException);
 
     /**
      * @brief reset execution profile

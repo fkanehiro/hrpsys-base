@@ -115,6 +115,7 @@ namespace RTC
                 return m_profile.profiles[i];
             }
         }
+        throw OpenHRP::ExecutionProfileService::ExecutionProfileServiceException("no such component");
     }
 
     void hrpExecutionContext::resetProfile()
