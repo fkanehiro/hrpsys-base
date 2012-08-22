@@ -26,6 +26,7 @@ namespace RTC
     virtual int svc(void);
 
     OpenHRP::ExecutionProfileService::Profile *getProfile();
+    OpenHRP::ExecutionProfileService::ComponentProfile getComponentProfile(RTC::LightweightRTObject_ptr obj);
     void resetProfile();
     //
     bool enterRT();
