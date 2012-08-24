@@ -240,6 +240,8 @@ bool Project::parse(const std::string& filename)
                       c.staticFriction = atof((char *)(xmlGetProp(cur_node, (xmlChar *)"value")));
                   } else if ( xmlStrEqual(xmlGetProp(cur_node, (xmlChar *)"name"),(xmlChar *)"cullingThresh") ) {
                       c.cullingThresh = atof((char *)(xmlGetProp(cur_node, (xmlChar *)"value")));
+                  } else if ( xmlStrEqual(xmlGetProp(cur_node, (xmlChar *)"name"),(xmlChar *)"Restitution") ) {
+                      c.restitution = atof((char *)(xmlGetProp(cur_node, (xmlChar *)"value")));
                   } else if ( xmlStrEqual(xmlGetProp(cur_node, (xmlChar *)"name"),(xmlChar *)"sprintDamperModel") ) {
                       c.sprintDamperModel = (char *)(xmlGetProp(cur_node, (xmlChar *)"value"));
                   } else {

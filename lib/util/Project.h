@@ -15,6 +15,7 @@ public:
     double slidingFriction;
     double staticFriction;
     double cullingThresh;
+    double restitution;
     std::string sprintDamperModel;
 
     CollisionPairItem() {

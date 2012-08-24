@@ -88,7 +88,8 @@ void initWorld(Project& prj, BodyFactory &factory,
                        && link1->parent != link2 && link1 != link2->parent){
                         world.constraintForceSolver.addCollisionCheckLinkPair
                             (bodyIndex1, link1, bodyIndex2, link2, 
-                             cpi.staticFriction, cpi.slidingFriction, 0.01, 0.0, 0.0);
+                             cpi.staticFriction, cpi.slidingFriction, 
+                             cpi.cullingThresh, cpi.restitution, 0.0);
                         pairs.push_back(new hrp::ColdetLinkPair(link1, link2));
                     }
                 }
