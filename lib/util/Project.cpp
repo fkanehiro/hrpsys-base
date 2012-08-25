@@ -193,6 +193,18 @@ bool Project::parse(const std::string& filename)
                       float x, y, z, w;
                       sscanf(((char *)xmlGetProp(cur_node, (xmlChar *)"value")),"%f %f %f %f", &x, &y, &z, &w);
                       hrp::calcRodrigues(m.joint[name].rotation, hrp::Vector3(x, y, z), w);
+                  } else if ( std::string((char *)xmlGetProp(cur_node, (xmlChar *)"name")).rfind(".velocity") != std::string::npos ) {
+                      std::string name = std::string((char *)xmlGetProp(cur_node, (xmlChar *)"name"));
+                      name.erase(name.rfind(".velocity"));
+                      float x, y, z;
+                      sscanf(((char *)xmlGetProp(cur_node, (xmlChar *)"value")),"%f %f %f", &x, &y, &z);
+                      m.joint[name].linearVelocity << x, y, z; 
+                  } else if ( std::string((char *)xmlGetProp(cur_node, (xmlChar *)"name")).rfind(".angularVelocity") != std::string::npos ) {
+                      std::string name = std::string((char *)xmlGetProp(cur_node, (xmlChar *)"name"));
+                      name.erase(name.rfind(".angularVelocity"));
+                      float x, y, z;
+                      sscanf(((char *)xmlGetProp(cur_node, (xmlChar *)"value")),"%f %f %f", &x, &y, &z);
+                      m.joint[name].angularVelocity << x, y, z; 
                   } else {
 #if 0
                       std::cerr << "Unknown tag : " << cur_node->name << " "

@@ -117,6 +117,9 @@ void initWorld(Project& prj, BodyFactory &factory,
             if (link->isRoot()){
                 link->p = it2->second.translation;
                 link->setAttitude(it2->second.rotation);
+                link->v = it2->second.linearVelocity;
+                link->w = it2->second.angularVelocity;
+                link->vo = link->v - link->w.cross(link->p);
             }else{
                 link->q = it2->second.angle;
             }

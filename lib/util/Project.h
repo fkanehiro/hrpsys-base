@@ -33,12 +33,15 @@ public:
     JointItem() : 
         angle(0), isHighGain(false), NumOfAABB(0), 
         translation(hrp::Vector3::Zero()), 
-        rotation(hrp::Matrix33::Identity()){}
+        rotation(hrp::Matrix33::Identity()),
+        linearVelocity(hrp::Vector3::Zero()),
+        angularVelocity(hrp::Vector3::Zero()){}
     double angle;
     bool isHighGain;
     int NumOfAABB;
     hrp::Vector3 translation;
     hrp::Matrix33 rotation;
+    hrp::Vector3 linearVelocity, angularVelocity;
     std::string collisionShape;
 };
 
