@@ -9,6 +9,16 @@ module OpenHRP
   interface ExecutionProfileService : OpenRTM::ExtTrigExecutionContextService
   {
     /**
+     * @brief execution profile of a component
+     */
+    struct ComponentProfile
+    {
+      long count;
+      double max_process;
+      double avg_process;
+    };
+    
+    /**
      * @brief execution profile
      */
     struct Profile
@@ -16,17 +26,32 @@ module OpenHRP
       double max_period;              ///< maximum of execution period
       double min_period;              ///< minimum of execution period
       double avg_period;              ///< average of execution period
-      double max_total_process;       ///< maximum of processing period
-      sequence<double> max_processes; ///< array of maximums of processing period of each component
+      double max_process;             ///< maximum of processing period
+      sequence<ComponentProfile> profiles; ///< array of profiles of components
       long count;                     ///< the number of execution
       long timeover;                  ///< the number of execution periods which were longer than expected execution period
     };
-    
+
+    /**
+     *  @brief exception raised by ExecutionProfileService
+     */
+    exception ExecutionProfileServiceException
+    {
+      string  description; ///< description of exception
+    };
+
     /**
      * @brief get execution profile
      * @return execution profile
      */
     Profile getProfile();
+
+    /**
+     * @brief get execution profile
+     * @param obj object driven by this execution context
+     * @return execution profile
+     */
+    ComponentProfile getComponentProfile(in RTC::LightweightRTObject obj) raises(ExecutionProfileServiceException);
 
     /**
      * @brief reset execution profile

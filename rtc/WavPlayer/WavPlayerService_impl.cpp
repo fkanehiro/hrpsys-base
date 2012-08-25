@@ -17,7 +17,7 @@ void WavPlayerService_impl::playWav(const char *filename)
     char buf[256];
     sprintf(buf, "aplay %s", filename);
     std::cout << "cmd = [" << buf << "]" << std::endl;
-    system(buf);
+    int ret = system(buf);
 }
 
 void *thread_main(void *args)
@@ -26,7 +26,7 @@ void *thread_main(void *args)
     char buf[256];
     sprintf(buf, "aplay %s", filename);
     std::cout << "cmd = [" << buf << "]" << std::endl;
-    system(buf);
+    int ret = system(buf);
     return NULL;
 }
 

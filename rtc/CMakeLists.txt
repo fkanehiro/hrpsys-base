@@ -32,3 +32,10 @@ add_subdirectory(VirtualCamera)
 if (OCTOMAP_FOUND)
   add_subdirectory(OccupancyGridMap3D)
 endif()
+
+set(EXTRA_RTC_DIRS "" CACHE PATH "directories of extra RTCs")
+foreach(rtc_dir ${EXTRA_RTC_DIRS})
+  add_subdirectory(${rtc_dir} ${rtc_dir})
+endforeach()
+
+

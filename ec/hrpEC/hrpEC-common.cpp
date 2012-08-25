@@ -61,17 +61,25 @@ namespace RTC
 
             gettimeofday(&tv, NULL);
             double dt = DELTA_SEC(m_tv, tv);
-            if (dt > m_profile.max_total_process) m_profile.max_total_process = dt;
-	    if (m_profile.max_processes.length() != processes.size()){
-	        m_profile.max_processes.length(processes.size());
-		for (unsigned int i=0; i<m_profile.max_processes.length(); i++){
-		    m_profile.max_processes[i] = 0.0;
+            if (dt > m_profile.max_process) m_profile.max_process = dt;
+	    if (m_profile.profiles.length() != processes.size()){
+	        m_profile.profiles.length(processes.size());
+		for (unsigned int i=0; i<m_profile.profiles.length(); i++){
+		    m_profile.profiles[i].count = 0;
+		    m_profile.profiles[i].avg_process = 0;
+		    m_profile.profiles[i].max_process = 0;
 		}
 	    }
-	    for (unsigned int i=0; i<m_profile.max_processes.length(); i++){
-	        if (m_profile.max_processes[i] < processes[i]){
-		    m_profile.max_processes[i] = processes[i];
-		}
+	    for (unsigned int i=0; i<m_profile.profiles.length(); i++){
+                LifeCycleState lcs = get_component_state(m_comps[i]._ref);
+                OpenHRP::ExecutionProfileService::ComponentProfile &prof 
+                    = m_profile.profiles[i];
+                double dt = processes[i];
+                prof.count++;
+                if (lcs == ACTIVE_STATE){
+                    prof.avg_process = (prof.avg_process*prof.count + dt)/prof.count;
+                }
+	        if (prof.max_process < dt) prof.max_process = dt;
 	    }
             if (dt > period_sec*nsubstep){
   	        m_profile.timeover++; 
@@ -100,13 +108,26 @@ namespace RTC
         return ret;
     }
 
+    OpenHRP::ExecutionProfileService::ComponentProfile hrpExecutionContext::getComponentProfile(RTC::LightweightRTObject_ptr obj)
+    {
+        for (size_t i=0; i<m_comps.size(); i++){
+            if (m_comps[i]._ref->_is_equivalent(obj)){
+                return m_profile.profiles[i];
+            }
+        }
+        throw OpenHRP::ExecutionProfileService::ExecutionProfileServiceException("no such component");
+    }
+
     void hrpExecutionContext::resetProfile()
     {
         m_profile.max_period = m_profile.avg_period = 0;
         m_profile.min_period = 1.0; // enough long 
-        m_profile.max_total_process = 0;
-	for( unsigned int i = 0 ; i < m_profile.max_processes.length() ; i++ )
-	    m_profile.max_processes[i] = 0;
+        m_profile.max_process = 0.0;
+	for( unsigned int i = 0 ; i < m_profile.profiles.length() ; i++ ){
+            m_profile.profiles[i].count       = 0;
+	    m_profile.profiles[i].avg_process = 0;
+	    m_profile.profiles[i].max_process = 0;
+        }
         m_profile.count = m_profile.timeover = 0;
     }
 };
