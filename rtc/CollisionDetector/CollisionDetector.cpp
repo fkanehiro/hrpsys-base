@@ -163,7 +163,7 @@ RTC::ReturnCode_t setupCollisionModel(hrp::BodyPtr m_robot, const char *url, Ope
 	}
 
 	hrp::ColdetModelPtr coldetModel(new hrp::ColdetModel());
-	coldetModel->setName(i_li.name);
+	coldetModel->setName(std::string(i_li.name));
 	// qhull
 	int vertexIndex = 0;
 	int triangleIndex = 0;
@@ -185,7 +185,6 @@ RTC::ReturnCode_t setupCollisionModel(hrp::BodyPtr m_robot, const char *url, Ope
 		index[p] = vertexIndex;
 		coldetModel->setVertex(vertexIndex++, points[p*3+0], points[p*3+1], points[p*3+2]);
 	    }
-	    coldetModel->initNeighbor(numTriangles);
 	    facetT *facet;
 	    num = qh num_facets;;
 	    {
@@ -201,7 +200,6 @@ RTC::ReturnCode_t setupCollisionModel(hrp::BodyPtr m_robot, const char *url, Ope
 			j++;
 		    }
 		    coldetModel->setTriangle(triangleIndex, p[0], p[1], p[2]);
-		    coldetModel->setNeighborTriangle(triangleIndex++, p[0], p[1], p[2]);
 		}
 	    }
 	} // qh_new_qhull

@@ -31,7 +31,7 @@ void convertToAABB(hrp::Link *i_link)
     const Vector3 &c = boundingBoxData[0];
     const Vector3 &s = boundingBoxData[1];
     ColdetModelPtr coldetModel(new ColdetModel());
-    coldetModel->setName(i_link->name.c_str());
+    coldetModel->setName(std::string(i_link->name.c_str()));
     coldetModel->setPrimitiveType(ColdetModel::SP_BOX);
     coldetModel->setNumPrimitiveParams(3);
     for (int i=0; i<3; i++){
@@ -62,13 +62,11 @@ void convertToAABB(hrp::Link *i_link)
                        2,7,3,
                        7,6,4,
                        5,4,6};
-    coldetModel->initNeighbor(numTriangles);
     for(int j=0; j < numTriangles; ++j){
         int t0 = triangles[j*3];
         int t1 = triangles[j*3+1];
         int t2 = triangles[j*3+2];
         coldetModel->setTriangle(j, t0, t1, t2);
-        coldetModel->setNeighborTriangle(j, t0, t1, t2);
     }
     coldetModel->build();
     i_link->coldetModel = coldetModel;
@@ -121,7 +119,6 @@ void convertToConvexHull(hrp::Link *i_link)
         index[p] = vertexIndex;
         coldetModel->setVertex(vertexIndex++, points[p*3+0], points[p*3+1], points[p*3+2]);
     }
-    coldetModel->initNeighbor(qh num_facets);
     facetT *facet;
     int num = qh num_facets;
     int triangleIndex = 0;
@@ -137,8 +134,7 @@ void convertToConvexHull(hrp::Link *i_link)
             }
             j++;
         }
-        coldetModel->setTriangle(triangleIndex, p[0], p[1], p[2]);
-        coldetModel->setNeighborTriangle(triangleIndex++, p[0], p[1], p[2]);
+        coldetModel->setTriangle(triangleIndex++, p[0], p[1], p[2]);
     }
 
     coldetModel->build();
