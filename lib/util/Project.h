@@ -24,6 +24,7 @@ public:
         slidingFriction = 0.5;
         staticFriction = 0.5;
         cullingThresh = 0.01;
+        restitution = 0.0;
         sprintDamperModel = "false";
     }
 };
