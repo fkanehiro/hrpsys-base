@@ -47,6 +47,7 @@ endif()
 # Octomap
 pkg_check_modules(OCTOMAP octomap)
 
+find_package(Irrlicht)
 if (IRRLICHT_FOUND)
   add_subdirectory(CollisionDetector)
 endif()
