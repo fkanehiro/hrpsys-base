@@ -1,0 +1,41 @@
+/**
+ * @file ImpedanceController.idl
+ * @brief Services for the impedance interface
+ */
+module OpenHRP
+{
+  
+  interface ImpedanceControllerService
+  {
+
+    struct impedanceParam {
+      string name;
+      string base_name;
+      string target_name;
+      double M_p;
+      double D_p;
+      double K_p;
+      double M_r;
+      double D_r;
+      double K_r;
+      double sr_gain;
+      double avoid_gain;
+      double reference_gain;
+      double manipulability_limit;
+    };
+    
+
+    /**
+     * @brief set impedance mode.
+     * @param i_mode_ new impedance mode
+     * @return true if set successfully, false otherwise
+     */
+    boolean setImpedanceControllerParam(in impedanceParam i_param);
+
+    /**
+     * @brief remove impedance mode.
+     * @return true if set successfully, false otherwise
+     */
+    boolean deleteImpedanceController(in string name);
+  };
+};
