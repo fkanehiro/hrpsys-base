@@ -1,5 +1,5 @@
 /**
- * @file ImpedanceController.idl
+ * @file ImpedanceControllerService.idl
  * @brief Services for the impedance interface
  */
 module OpenHRP
@@ -26,14 +26,15 @@ module OpenHRP
     
 
     /**
-     * @brief set impedance mode.
-     * @param i_mode_ new impedance mode
+     * @brief set impedance parameters.
+     * @param i_param new impedance parameters
      * @return true if set successfully, false otherwise
      */
     boolean setImpedanceControllerParam(in impedanceParam i_param);
 
     /**
-     * @brief remove impedance mode.
+     * @brief remove impedance parameters.
+     * @param name name of the impedance parameter set
      * @return true if set successfully, false otherwise
      */
     boolean deleteImpedanceController(in string name);

@@ -22,6 +22,7 @@ set(input_files package.h utilities.h
 		      ../idl/DataLoggerService.idl
 		      ../idl/ExecutionProfileService.idl
 		      ../idl/ForwardKinematicsService.idl
+		      ../idl/ImpedanceControllerService.idl
 		      ../idl/RobotHardwareService.idl
 		      ../idl/SequencePlayerService.idl
 		      ../idl/StateHolderService.idl
