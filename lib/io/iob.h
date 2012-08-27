@@ -634,7 +634,7 @@ extern "C"{
      * @brief initialize joint angle
      * @param name joint name, part name or "all"
      * @param option string of joint angle initialization
-     * @param TRUE if initialized successfully, FALSE otherwise
+     * @return TRUE if initialized successfully, FALSE otherwise
      */
     int initializeJointAngle(const char *name, const char *option);
     //@}

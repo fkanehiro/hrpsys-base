@@ -24,6 +24,7 @@ To use python scripts to create RT components, connect ports and get/set propert
     <li>\ref DataLogger</li>
     <li>\ref ForwardKinematics</li>
     <li>\ref HGcontroller</li>
+    <li>\ref ImpedanceController</li>
     <li>\ref Joystick</li>
     <li>\ref Joystick2Velocity2D</li>
     <li>\ref Joystick2PanTiltAngles</li>
@@ -44,6 +45,7 @@ To use python scripts to create RT components, connect ports and get/set propert
     <li>\ref OpenHRP::DataLoggerService</li>
     <li>\ref OpenHRP::ExecutionProfileService</li>
     <li>\ref OpenHRP::ForwardKinematicsService</li>
+    <li>\ref OpenHRP::ImpedanceControllerService</li>
     <li>\ref OpenHRP::OGMap3DService</li>
     <li>\ref OpenHRP::RobotHardwareService</li>
     <li>\ref OpenHRP::SequencePlayerService</li>
