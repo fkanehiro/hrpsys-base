@@ -583,4 +583,10 @@ def setConfiguration(rtc, nvlist):
 def narrow(ior, klass, package="OpenHRP"):
 	return ior._narrow(getattr(sys.modules[package], klass))
 
+##
+# \brief check if jython or python
+# \return True if jython
+def isJython():
+	return sys.version.count("GCC") == 0
+
 initCORBA()
