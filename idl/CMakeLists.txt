@@ -12,6 +12,7 @@ set(idl_files
   Img.idl
   HRPDataTypes.idl
   pointcloud.idl
+  ImpedanceControllerService.idl
   )
 
 set(openhrp_idl_files
