@@ -31,7 +31,8 @@ void initWorld(Project& prj, BodyFactory &factory,
             world.addBody(body);
             // <-- for OpenRTM-1.0.0 bug
             RTC::Manager& manager = RTC::Manager::instance();
-            if ( manager.getComponents().back()->getInstanceName() != name )
+            if ( manager.getComponents().size() 
+                 &&manager.getComponents().back()->getInstanceName() != name )
                 manager.getComponents().back()->setInstanceName(name.c_str());
             // -->
         }
@@ -105,9 +106,14 @@ void initWorld(Project& prj, BodyFactory &factory,
         
     for (std::map<std::string, ModelItem>::iterator it=prj.models().begin();
          it != prj.models().end(); it++){
-        const std::string name
-            = it->second.rtcName == "" ? it->first : it->second.rtcName; 
-        hrp::BodyPtr body = world.body(name);
+        hrp::BodyPtr body;
+        if (it->second.rtcName != "") body = world.body(it->second.rtcName);
+        if (!body) body = world.body(it->first);
+        if (!body){
+            std::cerr << "can't find a body named " << it->first << " or "
+                      << it->second.rtcName << std::endl;
+            continue;
+        }
         for (std::map<std::string, JointItem>::iterator it2=it->second.joint.begin();
              it2 != it->second.joint.end(); it2++){
             hrp::Link *link = body->link(it2->first);
