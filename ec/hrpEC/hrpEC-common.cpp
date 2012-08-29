@@ -75,9 +75,8 @@ namespace RTC
                 OpenHRP::ExecutionProfileService::ComponentProfile &prof 
                     = m_profile.profiles[i];
                 double dt = processes[i];
-                prof.count++;
                 if (lcs == ACTIVE_STATE){
-                    prof.avg_process = (prof.avg_process*prof.count + dt)/prof.count;
+                    prof.avg_process = (prof.avg_process*prof.count + dt)/(++prof.count);
                 }
 	        if (prof.max_process < dt) prof.max_process = dt;
 	    }
