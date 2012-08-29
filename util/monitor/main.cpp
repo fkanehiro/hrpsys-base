@@ -44,7 +44,7 @@ hrp::BodyPtr createBody(const std::string& name, const ModelItem& mitem,
 int main(int argc, char* argv[]) 
 {
     if (argc < 2){
-        std::cerr << "Usage:" << argv[0] << " project.xml" << std::endl;
+        std::cerr << "Usage:" << argv[0] << " project.xml [-rh RobotHardwareComponent] [-sh StateHolder component] [-size size]" << std::endl;
         return 1;
     }
 
