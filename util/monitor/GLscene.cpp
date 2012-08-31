@@ -82,13 +82,12 @@ void GLscene::updateScene()
             tform[6], tform[7], tform[8],
             tform[9], tform[10], tform[11];
     }
-    OpenHRP::RobotHardwareService::RobotState &rstate = lm->state().state;
-    if (rstate.command.length() == glbody->numJoints()){
+    if (com.jointRefs.length() == glbody->numJoints()){
         for (int i=0; i<glbody->numJoints(); i++){
             GLlink *j = (GLlink *)glbody->joint(i);
             if (j){
-                j->q = rstate.command[i];
-                j->setQ(rstate.command[i]);
+                j->q = com.jointRefs[i];
+                j->setQ(com.jointRefs[i]);
             }
         }
     }
