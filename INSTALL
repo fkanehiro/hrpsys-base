@@ -63,7 +63,7 @@
 3.1.2 (Optional, Section 2.3 and 2.4 are required) with Eclipse
    a. Launch Eclipse
    b. Open "GrxUI" perspective
-   c. From "GrxUI" menu of Eclipse, load a project file "PA10.xml" placed under
+   c. From "GrxUI" menu of Eclipse, load a project file "PA10monitor.xml" placed under
       <install prefix>/share/hrpsys/samples/PA10. A manipulator PA10 will 
       appear in 3DView.
    d. Open a new terminal
@@ -76,7 +76,7 @@
 
 3.2.1 (Recommended) without Eclipse
    a. Open two terminals in <install prefix>/share/hrpsys/samples/PA10
-   b. terminal1: % hrpsys-simulator PA10.xml -realtime -endless
+   b. terminal1: % hrpsys-simulator PA10simulation.xml -realtime -endless
       A manipulator PA10 will be displayed
    c. terminal2: % hrpsysjy PA10.py
       PA10 will change its joint angles.
