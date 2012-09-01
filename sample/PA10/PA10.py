@@ -41,17 +41,16 @@ def createComps():
     log_svc = narrow(log.service("service0"), "DataLoggerService")
     
 def init():
-    global ms, rh, rh_svc, servo, ep_svc, simulation_mode
+    global ms, rh, rh_svc, ep_svc, simulation_mode
 
     ms = rtm.findRTCmanager()
-
-    if rtm.findRTC("RobotHardware0") and waitInputSelect("Restart Manager?") == 1:
-        ms.restart()
-
     rh = rtm.findRTC("RobotHardware0")
-    rh_svc = narrow(rh.service("service0"), "RobotHardwareService")
-    servo = rh
-    ep_svc = narrow(rh.ec, "ExecutionProfileService")
+    if rh:
+        rh_svc = narrow(rh.service("service0"), "RobotHardwareService")
+        ep_svc = narrow(rh.ec, "ExecutionProfileService")
+    else:
+        rh = rtm.findRTC("PA10Controller(Robot)0")
+        simulation_mode = 1
     simulation_mode = 0
 
     ms = rtm.findRTCmanager()
@@ -65,11 +64,6 @@ def init():
     print "activating components"
     activateComps()
     print "initialized successfully"
-
-def seqtest():
-    seq_svc.loadPattern("/home/hrp2user/etc/test", 1.0)
-    seq_svc.waitInterpolation()
-
 
 def goInitial(tm=3.0):
     seq_svc.setJointAngles([0]*9, tm)
@@ -95,14 +89,13 @@ def loadPattern(basename, tm=3.0):
 def setupLogger():
     log_svc.add("TimedDoubleSeq", "pos")
     log_svc.add("TimedLongSeq", "servoState")
-    connectPorts(rh.port("servoState"),log.port("servoState"))
     log.owned_ecs[0].start()
     log.start(log.owned_ecs[0])
 
 def demo():
     init()
     setupLogger()
-    seq_svc.setJointAngles([0.5]*7+[0,0], 3.0)
+    seq_svc.setJointAngles([0,0.7,0,2.5,0,1.5,0,0,0], 3.0)
     seq_svc.waitInterpolation()
     goInitial(3.0)
     seq_svc.waitInterpolation()

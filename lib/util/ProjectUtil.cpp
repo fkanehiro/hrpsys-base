@@ -132,6 +132,9 @@ void initWorld(Project& prj, BodyFactory &factory,
         body->calcForwardKinematics();
     }
     world.initialize();
+#if 0
+    world.constraintForceSolver.useBuiltinCollisionDetector(true);
+#endif
 }
 
 void initRTS(Project &prj, std::vector<ClockReceiver>& receivers)

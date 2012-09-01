@@ -129,9 +129,11 @@ bool Simulator::oneStep(){
     }
     tm_control.end();
 
+#if 1
     tm_collision.begin();
     checkCollision(state.collisions);
     tm_collision.end();
+#endif
 
     tm_dynamics.begin();
     constraintForceSolver.clearExternalForces();

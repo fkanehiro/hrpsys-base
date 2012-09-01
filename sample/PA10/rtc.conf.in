@@ -8,8 +8,6 @@ manager.shutdown_onrtcs: NO
 manager.is_master: YES
 
 manager.modules.load_path: @CMAKE_INSTALL_PREFIX@/lib
-manager.modules.preload: hrpEC.@SO_SFX@,RobotHardware.@SO_SFX@
-manager.components.precreate: RobotHardware
 example.RobotHardware.config_file: RobotHardware.conf
 example.SequencePlayer.config_file: PA10.conf
 example.StateHolder.config_file: PA10.conf

@@ -1,30 +1,43 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <grxui>
     <mode name="Simulation">
+        <item class="com.generalrobotix.ui.item.GrxRTSItem" name="untitled" select="true">
+	    <property name="PA10Controller(Robot)0.period" value="0.005"/>  
+	    <property name="HGcontroller0.period" value="0.005"/>  
+	    <property name="HGcontroller0.factory" value="HGcontroller"/>  
+	    <property name="connection" value="HGcontroller0.qOut:PA10Controller(Robot)0.qRef"/>
+	    <property name="connection" value="HGcontroller0.dqOut:PA10Controller(Robot)0.dqRef"/>
+	    <property name="connection" value="HGcontroller0.ddqOut:PA10Controller(Robot)0.ddqRef"/>
+        </item>
         <item class="com.generalrobotix.ui.item.GrxModelItem" name="pa10" select="true" url="$(PROJECT_DIR)/../model/PA10/pa10.main.wrl">
-            <property name="J3.mode" value="Torque"/>
-            <property name="HAND_L.mode" value="Torque"/>
+	    <property name="rtcName" value="PA10Controller(Robot)0"/>
+	    <property name="inport" value="qRef:JOINT_VALUE"/> 
+	    <property name="inport" value="dqRef:JOINT_VELOCITY"/> 
+	    <property name="inport" value="ddqRef:JOINT_ACCELERATION"/> 
+	    <property name="outport" value="q:JOINT_VALUE"/>
+            <property name="J3.mode" value="HighGain"/>
+            <property name="HAND_L.mode" value="HighGain"/>
             <property name="J5.angle" value="0.0 "/>
-            <property name="J4.mode" value="Torque"/>
+            <property name="J4.mode" value="HighGain"/>
             <property name="J4.angle" value="0.0 "/>
             <property name="BASE.translation" value="0.0 0.0 0.0 "/>
-            <property name="J5.mode" value="Torque"/>
+            <property name="J5.mode" value="HighGain"/>
             <property name="BASE.velocity" value="0.0 0.0 0.0 "/>
             <property name="J1.angle" value="0.0 "/>
-            <property name="J6.mode" value="Torque"/>
+            <property name="J6.mode" value="HighGain"/>
             <property name="isRobot" value="true"/>
             <property name="J7.angle" value="0.0 "/>
-            <property name="J7.mode" value="Torque"/>
+            <property name="J7.mode" value="HighGain"/>
             <property name="J6.angle" value="0.0 "/>
             <property name="HAND_L.angle" value="0.0 "/>
             <property name="BASE.rotation" value="0.0 1.0 0.0 0.0 "/>
             <property name="HAND_R.angle" value="0.0 "/>
             <property name="J3.angle" value="0.0 "/>
-            <property name="J1.mode" value="Torque"/>
+            <property name="J1.mode" value="HighGain"/>
             <property name="BASE.angularVelocity" value="0.0 0.0 0.0 "/>
             <property name="J2.angle" value="0.0 "/>
-            <property name="HAND_R.mode" value="Torque"/>
-            <property name="J2.mode" value="Torque"/>
+            <property name="HAND_R.mode" value="HighGain"/>
+            <property name="J2.mode" value="HighGain"/>
         </item>
         <item class="com.generalrobotix.ui.item.GrxWorldStateItem" name="newworldstate0" select="true">
             <property name="logTimeStep" value="0.0010 "/>
