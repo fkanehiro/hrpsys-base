@@ -333,7 +333,7 @@ def serializeComponents(rtcs):
 		return
 	ec = rtcs[0].ec
 	for rtc in rtcs[1:]:
-		if ec != rtc.ec: 
+		if not ec._is_equivalent(rtc.ec): 
 			rtc.ec.stop()
 			if ec.add_component(rtc.ref) == RTC.RTC_OK:
 				rtc.ec = ec
