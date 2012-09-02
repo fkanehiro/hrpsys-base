@@ -14,6 +14,9 @@
 #include <hrpUtil/Eigen4d.h>
 #include <hrpCollision/ColdetModel.h>
 #include "CollisionDetector.h"
+extern "C" {
+#include <qhull/qhull_a.h>
+}
 
 #define deg2rad(x)	((x)*M_PI/180)
 #define rad2deg(x)      ((x)*180/M_PI)
@@ -21,6 +24,112 @@
 std::vector<hrp::ColdetLinkPairPtr> m_pair;
 std::vector<std::string> blacklist;
 hrp::BodyPtr m_robot;
+
+RTC::ReturnCode_t setupCollisionModel(hrp::BodyPtr m_robot, const char *url, OpenHRP::BodyInfo_var binfo) {
+    // do qhull
+    OpenHRP::ShapeInfoSequence_var sis = binfo->shapes();
+    OpenHRP::LinkInfoSequence_var lis = binfo->links();
+    for(int i = 0; i < m_robot->numLinks(); i++ ) {
+	const OpenHRP::LinkInfo& i_li = lis[i];
+	const OpenHRP::TransformedShapeIndexSequence& tsis = i_li.shapeIndices;
+	// setup
+	int numTriangles = 0;
+	for (unsigned int l=0; l<tsis.length(); l++) {
+	    OpenHRP::ShapeInfo& si = sis[tsis[l].shapeIndex];
+	    const OpenHRP::LongSequence& triangles = si.triangles;
+	    numTriangles += triangles.length();
+	}
+	double points[numTriangles*3];
+	int points_i = 0;
+	hrp::Matrix44 Rs44; // inv
+	hrp::Matrix33 Rs33 = m_robot->link(i)->Rs;
+
+	Rs44 << Rs33(0,0),Rs33(0,1), Rs33(0,2), 0,
+	    Rs33(1,0),Rs33(1,1), Rs33(1,2), 0,
+	    Rs33(2,0),Rs33(2,1), Rs33(2,2), 0,
+	    0.0,      0.0,       0.0,    1.0;
+	for (unsigned int l=0; l<tsis.length(); l++) {
+	    const OpenHRP::DblArray12& M = tsis[l].transformMatrix;
+	    hrp::Matrix44 T0;
+	    T0 << M[0], M[1], M[2],  M[3],
+		M[4], M[5], M[6],  M[7],
+		M[8], M[9], M[10], M[11],
+		0.0,  0.0,  0.0,   1.0;
+	    hrp::Matrix44 T(Rs44 * T0);
+	    const OpenHRP::ShapeInfo& si = sis[tsis[l].shapeIndex];
+	    const OpenHRP::LongSequence& triangles = si.triangles;
+	    const float *vertices = si.vertices.get_buffer();
+
+	    for(unsigned int j=0; j < triangles.length() / 3; ++j){
+		for(int k=0; k < 3; ++k){
+		    long orgVertexIndex = si.triangles[j * 3 + k];
+		    int p = orgVertexIndex * 3;
+
+		    hrp::Vector4 v(T * hrp::Vector4(vertices[p+0], vertices[p+1], vertices[p+2], 1.0));
+		    points[points_i++] =  v[0];
+		    points[points_i++] =  v[1];
+		    points[points_i++] =  v[2];
+		}
+	    }
+	}
+
+	hrp::ColdetModelPtr coldetModel(new hrp::ColdetModel());
+	coldetModel->setName(std::string(i_li.name));
+	// qhull
+	int vertexIndex = 0;
+	int triangleIndex = 0;
+	int num = 0;
+	char flags[250];
+	boolT ismalloc = False;
+	sprintf(flags,"qhull Qt Tc");
+	if (! qh_new_qhull (3,numTriangles,points,ismalloc,flags,NULL,stderr) ) {
+
+	    qh_triangulate();
+	    qh_vertexneighbors();
+
+	    vertexT *vertex,**vertexp;
+	    coldetModel->setNumVertices(qh num_vertices);
+	    coldetModel->setNumTriangles(qh num_facets);
+	    int index[qh num_vertices];
+	    FORALLvertices {
+		int p = qh_pointid(vertex->point);
+		index[p] = vertexIndex;
+		coldetModel->setVertex(vertexIndex++, points[p*3+0], points[p*3+1], points[p*3+2]);
+	    }
+	    facetT *facet;
+	    num = qh num_facets;;
+	    {
+		FORALLfacets {
+		    int j = 0, p[3];
+		    setT *vertices = qh_facet3vertex (facet);
+		    FOREACHvertexreverse12_ (vertices) {
+			if (j<3) {
+			    p[j] = index[qh_pointid(vertex->point)];
+			} else {
+			    fprintf(stderr, "extra vertex %d\n",j);
+			}
+			j++;
+		    }
+		    coldetModel->setTriangle(triangleIndex++, p[0], p[1], p[2]);
+		}
+	    }
+	} // qh_new_qhull
+
+        coldetModel->build();
+	m_robot->link(i)->coldetModel =  coldetModel;
+
+	qh_freeqhull(!qh_ALL);
+	int curlong, totlong;
+	qh_memfreeshort (&curlong, &totlong);
+	if (curlong || totlong) {
+	    fprintf(stderr, "convhulln: did not free %d bytes of long memory (%d pieces)\n", totlong, curlong);
+	}
+	//
+	std::cerr << std::setw(16) << i_li.name << " reduce triangles from " << std::setw(5) << numTriangles << " to " << std::setw(4) << num << std::endl;
+    }
+
+    return RTC::RTC_OK;
+}
 
 bool checkCollisionForAllJointRange(int i, hrp::JointPathPtr jointPath, std::vector<hrp::ColdetLinkPairPtr> &collisionPairs)
 {

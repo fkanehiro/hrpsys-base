@@ -81,14 +81,6 @@ int main (int argc, char** argv)
 	   it != inputs.end();
 	   it++) {
 	std::string filename = *it;
-	std::string name = filename.substr(filename.find_last_of('/')+1);
-	name = name.substr(0,name.size()-4);
-
-	xmlTextWriterStartElement(writer, BAD_CAST "item");
-	xmlTextWriterWriteAttribute(writer, BAD_CAST "class", BAD_CAST "com.generalrobotix.ui.item.GrxModelItem");
-	xmlTextWriterWriteAttribute(writer, BAD_CAST "name", BAD_CAST name.c_str());
-	xmlTextWriterWriteAttribute(writer, BAD_CAST "url", BAD_CAST filename.c_str());
-
 	hrp::BodyPtr body(new hrp::Body());
 	if (!loadBodyFromModelLoader(body, filename.c_str(),
 				     CosNaming::NamingContext::_duplicate(naming.getRootContext()),
@@ -96,29 +88,99 @@ int main (int argc, char** argv)
 	  std::cerr << "failed to load model[n" << filename << "]" << std::endl;
 	  return 1;
 	}
-	name = body->rootLink()->name;
-	xmlTextWriterWriteProperty(writer, name+".NumOfAABB", "1");
+	std::string name = body->name();
+
+	xmlTextWriterStartElement(writer, BAD_CAST "item");
+	xmlTextWriterWriteAttribute(writer, BAD_CAST "class", BAD_CAST "com.generalrobotix.ui.item.GrxRTSItem");
+	xmlTextWriterWriteAttribute(writer, BAD_CAST "name", BAD_CAST name.c_str());
+	xmlTextWriterWriteAttribute(writer, BAD_CAST "select", BAD_CAST "true");
+
+	xmlTextWriterWriteProperty(writer, name+"Controller(Robot)0.period", "0.005");
+	xmlTextWriterWriteProperty(writer, "HGcontroller0.period", "0.005");
+	xmlTextWriterWriteProperty(writer, "HGcontroller0.factory", "HGcontroller");
+	xmlTextWriterWriteProperty(writer, "connection", "HGcontroller0.qOut:"+name+"Controller(Robot)0.qRef");
+	xmlTextWriterWriteProperty(writer, "connection", "HGcontroller0.dqOut:"+name+"Controller(Robot)0.dqRef");
+	xmlTextWriterWriteProperty(writer, "connection", "HGcontroller0.ddqOut:"+name+"Controller(Robot)0.ddqRef");
+	xmlTextWriterEndElement(writer); // item
+
+
+	xmlTextWriterStartElement(writer, BAD_CAST "item");
+	xmlTextWriterWriteAttribute(writer, BAD_CAST "class", BAD_CAST "com.generalrobotix.ui.item.GrxModelItem");
+	xmlTextWriterWriteAttribute(writer, BAD_CAST "name", BAD_CAST name.c_str());
+	xmlTextWriterWriteAttribute(writer, BAD_CAST "url", BAD_CAST filename.c_str());
+
+	xmlTextWriterWriteProperty(writer, "rtcName", name + "Controller(Robot)0");
+	xmlTextWriterWriteProperty(writer, "inport", "qRef:JOINT_VALUE");
+	xmlTextWriterWriteProperty(writer, "inport", "dqRef:JOINT_VELOCITY");
+	xmlTextWriterWriteProperty(writer, "inport", "ddqRef:JOINT_ACCELERATION");
+	xmlTextWriterWriteProperty(writer, "outport", "q:JOINT_VALUE");
+	//
+	std::string root_name = body->rootLink()->name;
+	xmlTextWriterWriteProperty(writer, root_name+".NumOfAABB", "1");
 	std::ostringstream os;
 	os << body->rootLink()->p[0] << "  "
 	   << body->rootLink()->p[1] << "  "
 	   << body->rootLink()->p[2] + 0.1; // 10cm margin
-	xmlTextWriterWriteProperty(writer, name+".translation", os.str());
+	xmlTextWriterWriteProperty(writer, root_name+".translation", os.str());
 
-	xmlTextWriterWriteProperty(writer, name+".rotation", "0.0 0.0 1.0 0.0");
+	xmlTextWriterWriteProperty(writer, root_name+".rotation", "0.0 0.0 1.0 0.0");
 	if ( ! body->isStaticModel() ) {
-	  xmlTextWriterWriteProperty(writer, name+".mode", "Torque");
+	  xmlTextWriterWriteProperty(writer, root_name+".mode", "Torque");
 	  xmlTextWriterWriteProperty(writer, "controller", basename(output));
 	}
 	for(int i = 0; i < body->numJoints(); i++){
 	  if ( body->joint(i)->index > 0 ) {
 	    std::cerr << body->joint(i)->jointId << std::endl;
-	    name = body->joint(i)->name;
-	    xmlTextWriterWriteProperty(writer, name+".angle", "0.0");
-	    xmlTextWriterWriteProperty(writer, name+".mode", "HighGain");
-	    xmlTextWriterWriteProperty(writer, name+".NumOfAABB", "1");
+	    std::string joint_name = body->joint(i)->name;
+	    xmlTextWriterWriteProperty(writer, joint_name+".angle", "0.0");
+	    xmlTextWriterWriteProperty(writer, joint_name+".mode", "HighGain");
+	    xmlTextWriterWriteProperty(writer, joint_name+".NumOfAABB", "1");
 	  }
 	}
 	xmlTextWriterEndElement(writer); // item
+
+	//
+	xmlTextWriterStartElement(writer, BAD_CAST "item");
+	xmlTextWriterWriteAttribute(writer, BAD_CAST "class", BAD_CAST "com.generalrobotix.ui.item.GrxCollisionPairItem");
+	xmlTextWriterWriteAttribute(writer, BAD_CAST "name", BAD_CAST std::string("CP#"+name).c_str());
+	xmlTextWriterWriteAttribute(writer, BAD_CAST "select", BAD_CAST "true");
+	{
+	  xmlTextWriterWriteProperty(writer, "springConstant", "0 0 0 0 0 0");
+	  xmlTextWriterWriteProperty(writer, "slidingFriction", "0.5");
+	  xmlTextWriterWriteProperty(writer, "jointName2", "");
+	  xmlTextWriterWriteProperty(writer, "jointName1", "");
+	  xmlTextWriterWriteProperty(writer, "damperConstant", "0 0 0 0 0 0");
+	  xmlTextWriterWriteProperty(writer, "objectName2", name);
+	  xmlTextWriterWriteProperty(writer, "objectName1", name);
+	  xmlTextWriterWriteProperty(writer, "springDamperModel", "false");
+	  xmlTextWriterWriteProperty(writer, "staticFriction", "0.5");
+	}
+	xmlTextWriterEndElement(writer); // item
+
+	xmlTextWriterStartElement(writer, BAD_CAST "view");
+	xmlTextWriterWriteAttribute(writer, BAD_CAST "class", BAD_CAST "com.generalrobotix.ui.view.GrxRobotHardwareClientView");
+	xmlTextWriterWriteAttribute(writer, BAD_CAST "name", BAD_CAST "RobotHardware RTC Client");
+	xmlTextWriterWriteProperty(writer, "robotHost", "localhost");
+	xmlTextWriterWriteProperty(writer, "StateHolderRTC", "StateHolder0");
+	xmlTextWriterWriteProperty(writer, "interval", "100");
+	xmlTextWriterWriteProperty(writer, "RobotHardwareServiceRTC", "RobotHardware0");
+	xmlTextWriterWriteProperty(writer, "robotPort", "2809");
+	xmlTextWriterWriteProperty(writer, "ROBOT", name.c_str());
+	xmlTextWriterEndElement(writer); // item
+
+	xmlTextWriterStartElement(writer, BAD_CAST "view");
+	xmlTextWriterWriteAttribute(writer, BAD_CAST "class", BAD_CAST "com.generalrobotix.ui.view.Grx3DView");
+	xmlTextWriterWriteAttribute(writer, BAD_CAST "name", BAD_CAST "3DView");
+	xmlTextWriterWriteProperty(writer, "view.mode", "Room");
+	xmlTextWriterWriteProperty(writer, "showCoM", "false");
+	xmlTextWriterWriteProperty(writer, "showCoMonFloor", "false");
+	xmlTextWriterWriteProperty(writer, "showDistance", "false");
+	xmlTextWriterWriteProperty(writer, "showIntersection", "false");
+	xmlTextWriterWriteProperty(writer, "eyeHomePosition", "-0.70711 -0 0.70711 2 0.70711 -0 0.70711 2 0 1 0 0.8 0 0 0 1 ");
+	xmlTextWriterWriteProperty(writer, "showCollision", "true");
+	xmlTextWriterWriteProperty(writer, "showActualState", "true");
+	xmlTextWriterWriteProperty(writer, "showScale", "true");
+	xmlTextWriterEndElement(writer); // view
       }
 
       {
@@ -152,11 +214,22 @@ int main (int argc, char** argv)
 
   xmlFreeTextWriter(writer);
 
-  std::string conf_file = output.substr(0,output.find_last_of('.'))+".conf";
-  std::fstream s(conf_file.c_str(), std::ios::out);
+  {
+      std::string conf_file = output.substr(0,output.find_last_of('.'))+".conf";
+      std::fstream s(conf_file.c_str(), std::ios::out);
   
-  s << "model: file://" << inputs[0] << std::endl;
-  s << "dt: 0.005" << std::endl;
+      s << "model: file://" << inputs[0] << std::endl;
+      s << "dt: 0.005" << std::endl;
+  }
+
+  {
+      std::string conf_file = output.substr(0,output.find_last_of('.'))+".RobotHardware.conf";
+      std::fstream s(conf_file.c_str(), std::ios::out);
+  
+      s << "model: file://" << inputs[0] << std::endl;
+      s << "exec_cxt.periodic.type: hrpExecutionContext" << std::endl;
+      s << "sexec_cxt.periodic.rate: 200" << std::endl;
+  }
 
   return 0;
 }

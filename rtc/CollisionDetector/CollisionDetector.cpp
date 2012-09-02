@@ -14,13 +14,12 @@
 #include <hrpUtil/Eigen3d.h>
 #include <hrpUtil/Eigen4d.h>
 #include <hrpCollision/ColdetModel.h>
+#include "util/GLbody.h"
+#include "util/GLutil.h"
+#include "util/BVutil.h"
 
-#include "IrrModel.h"
 #include "CollisionDetector.h"
 
-extern "C" {
-#include <qhull/qhull_a.h>
-}
 #define deg2rad(x)	((x)*M_PI/180)
 #define rad2deg(x)      ((x)*180/M_PI)
 
@@ -50,10 +49,14 @@ CollisionDetector::CollisionDetector(RTC::Manager* manager)
       m_qIn("q", m_q),
       m_qRefOut("qRef", m_qRef),
       // </rtc-template>
+      m_glbody(NULL),
       use_viewer(false),
       m_robot(hrp::BodyPtr()),
+      m_scene(&m_log),
+      m_window(&m_scene, &m_log),
       dummy(0)
 {
+    m_log.enableRingBuffer(1);
 }
 
 CollisionDetector::~CollisionDetector()
@@ -114,112 +117,6 @@ RTC::ReturnCode_t CollisionDetector::onInitialize()
   }
 */
 
-RTC::ReturnCode_t setupCollisionModel(hrp::BodyPtr m_robot, const char *url, OpenHRP::BodyInfo_var binfo) {
-    // do qhull
-    OpenHRP::ShapeInfoSequence_var sis = binfo->shapes();
-    OpenHRP::LinkInfoSequence_var lis = binfo->links();
-    for(int i = 0; i < m_robot->numLinks(); i++ ) {
-	const OpenHRP::LinkInfo& i_li = lis[i];
-	const OpenHRP::TransformedShapeIndexSequence& tsis = i_li.shapeIndices;
-	// setup
-	int numTriangles = 0;
-	for (unsigned int l=0; l<tsis.length(); l++) {
-	    OpenHRP::ShapeInfo& si = sis[tsis[l].shapeIndex];
-	    const OpenHRP::LongSequence& triangles = si.triangles;
-	    numTriangles += triangles.length();
-	}
-	double points[numTriangles*3];
-	int points_i = 0;
-	hrp::Matrix44 Rs44; // inv
-	hrp::Matrix33 Rs33 = m_robot->link(i)->Rs;
-
-	Rs44 << Rs33(0,0),Rs33(0,1), Rs33(0,2), 0,
-	    Rs33(1,0),Rs33(1,1), Rs33(1,2), 0,
-	    Rs33(2,0),Rs33(2,1), Rs33(2,2), 0,
-	    0.0,      0.0,       0.0,    1.0;
-	for (unsigned int l=0; l<tsis.length(); l++) {
-	    const OpenHRP::DblArray12& M = tsis[l].transformMatrix;
-	    hrp::Matrix44 T0;
-	    T0 << M[0], M[1], M[2],  M[3],
-		M[4], M[5], M[6],  M[7],
-		M[8], M[9], M[10], M[11],
-		0.0,  0.0,  0.0,   1.0;
-	    hrp::Matrix44 T(Rs44 * T0);
-	    const OpenHRP::ShapeInfo& si = sis[tsis[l].shapeIndex];
-	    const OpenHRP::LongSequence& triangles = si.triangles;
-	    const float *vertices = si.vertices.get_buffer();
-
-	    for(unsigned int j=0; j < triangles.length() / 3; ++j){
-		for(int k=0; k < 3; ++k){
-		    long orgVertexIndex = si.triangles[j * 3 + k];
-		    int p = orgVertexIndex * 3;
-
-		    hrp::Vector4 v(T * hrp::Vector4(vertices[p+0], vertices[p+1], vertices[p+2], 1.0));
-		    points[points_i++] =  v[0];
-		    points[points_i++] =  v[1];
-		    points[points_i++] =  v[2];
-		}
-	    }
-	}
-
-	hrp::ColdetModelPtr coldetModel(new hrp::ColdetModel());
-	coldetModel->setName(std::string(i_li.name));
-	// qhull
-	int vertexIndex = 0;
-	int triangleIndex = 0;
-	int num = 0;
-	char flags[250];
-	boolT ismalloc = False;
-	sprintf(flags,"qhull Qt Tc");
-	if (! qh_new_qhull (3,numTriangles,points,ismalloc,flags,NULL,stderr) ) {
-
-	    qh_triangulate();
-	    qh_vertexneighbors();
-
-	    vertexT *vertex,**vertexp;
-	    coldetModel->setNumVertices(qh num_vertices);
-	    coldetModel->setNumTriangles(qh num_facets);
-	    int index[qh num_vertices];
-	    FORALLvertices {
-		int p = qh_pointid(vertex->point);
-		index[p] = vertexIndex;
-		coldetModel->setVertex(vertexIndex++, points[p*3+0], points[p*3+1], points[p*3+2]);
-	    }
-	    facetT *facet;
-	    num = qh num_facets;;
-	    {
-		FORALLfacets {
-		    int j = 0, p[3];
-		    setT *vertices = qh_facet3vertex (facet);
-		    FOREACHvertexreverse12_ (vertices) {
-			if (j<3) {
-			    p[j] = index[qh_pointid(vertex->point)];
-			} else {
-			    fprintf(stderr, "extra vertex %d\n",j);
-			}
-			j++;
-		    }
-		    coldetModel->setTriangle(triangleIndex, p[0], p[1], p[2]);
-		}
-	    }
-	} // qh_new_qhull
-
-        coldetModel->build();
-	m_robot->link(i)->coldetModel =  coldetModel;
-
-	qh_freeqhull(!qh_ALL);
-	int curlong, totlong;
-	qh_memfreeshort (&curlong, &totlong);
-	if (curlong || totlong) {
-	    fprintf(stderr, "convhulln: did not free %d bytes of long memory (%d pieces)\n", totlong, curlong);
-	}
-	//
-	std::cerr << std::setw(16) << i_li.name << " reduce triangles from " << std::setw(5) << numTriangles << " to " << std::setw(4) << num << std::endl;
-    }
-
-    return RTC::RTC_OK;
-}
-
 RTC::ReturnCode_t CollisionDetector::onActivated(RTC::UniqueId ec_id)
 {
     std::cout << m_profile.instance_name<< ": onActivated(" << ec_id << ")" << std::endl;
@@ -239,12 +136,8 @@ RTC::ReturnCode_t CollisionDetector::onActivated(RTC::UniqueId ec_id)
 	use_viewer = true;
     }
 
-    if ( use_viewer ) {
-	m_scene = new GLscene();
-	m_scene->init();
-    }
-
-    m_robot = hrp::BodyPtr(new hrp::Body());
+    m_glbody = new GLbody();
+    m_robot = hrp::BodyPtr(m_glbody);
     OpenHRP::BodyInfo_var binfo;
     binfo = hrp::loadBodyInfo(prop["model"].c_str(),
 			      CosNaming::NamingContext::_duplicate(naming.getRootContext()));
@@ -253,11 +146,12 @@ RTC::ReturnCode_t CollisionDetector::onActivated(RTC::UniqueId ec_id)
 		  << std::endl;
 	return RTC::RTC_ERROR;
     }
-    if (!loadBodyFromBodyInfo(m_robot, binfo)) {
+    if (!loadBodyFromBodyInfo(m_robot, binfo, true, GLlinkFactory)) {
 	std::cerr << "failed to load model[" << prop["model"] << "]" << std::endl;
 	return RTC::RTC_ERROR;
     }
-    setupCollisionModel(m_robot, prop["model"].c_str(), binfo);
+    loadShapeFromBodyInfo(m_glbody, binfo);
+    convertToConvexHull(m_robot);
 
     if ( prop["collision_pair"] != "" ) {
 	std::cerr << "prop[collision_pair] ->" << prop["collision_pair"] << std::endl;
@@ -276,10 +170,7 @@ RTC::ReturnCode_t CollisionDetector::onActivated(RTC::UniqueId ec_id)
 	return RTC::RTC_ERROR;
     }
 
-    if ( use_viewer ) {
-	m_body = m_scene->addBody(m_robot);
-	m_scene->draw();
-    }
+    m_scene.addBody(m_robot);
 
     // allocate memory for outPorts
     m_qRef.data.length(0);
@@ -291,28 +182,25 @@ RTC::ReturnCode_t CollisionDetector::onDeactivated(RTC::UniqueId ec_id)
 {
     std::cout << m_profile.instance_name<< ": onDeactivated(" << ec_id << ")" << std::endl;
 
-    if ( use_viewer ) {
-	delete m_body;
-	delete m_scene;
-    }
-
     return RTC::RTC_OK;
 }
 
 RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
 {
-
     if (m_qIn.isNew()) {
 	m_qIn.read();
 
 	assert(m_q.data.length() == m_robot->numJoints());
+        for (int i=0; i<m_glbody->numLinks(); i++){
+            ((GLlink *)m_glbody->link(i))->highlight(false);
+        }
+        
 	double posture[m_q.data.length()];
 	for ( int i = 0; i < m_robot->numJoints(); i++ ){
 	    m_robot->joint(i)->q = posture[i] = m_q.data[i];
 	}
 	m_robot->calcForwardKinematics();
 	m_robot->updateLinkColdetModelPositions();
-	if ( use_viewer ) m_body->setPosture(posture);
 
 	bool safe_posture = true;
 	coil::TimeValue tm1 = coil::gettimeofday();
@@ -323,6 +211,8 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
 		safe_posture = false;
 		hrp::JointPathPtr jointPath = m_robot->getJointPath(p->link(0),p->link(1));
 		std::cerr << i << "/" << m_pair.size() << " pair: " << p->link(0)->name << "/" << p->link(1)->name << "(" << jointPath->numJoints() << ")" << std::endl;
+                ((GLlink *)p->link(0))->highlight(true);
+                ((GLlink *)p->link(1))->highlight(true);
 	    }
 #else
 	    double point0[3], point1[3];
@@ -336,6 +226,12 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
 	}
 	coil::TimeValue tm2 = coil::gettimeofday();
 	std::cerr << "check collisions for for " << m_pair.size() << " pairs in " << (tm2.sec()-tm1.sec())*1000+(tm2.usec()-tm1.usec())/1000 << "[msec]" << std::endl;
+
+        TimedPosture tp;
+        tp.time = 0;
+        tp.posture.resize(m_q.data.length());
+        for (size_t i=0; i<tp.posture.size(); i++) tp.posture[i] = m_q.data[i];
+        m_log.add(tp);
 
 	if ( safe_posture ) {
 	    if ( m_qRef.data.length() == 0 ) { // not initialized
@@ -352,7 +248,7 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
 	}
     }
 
-    if ( use_viewer ) m_scene->draw();
+    if ( use_viewer ) m_window.oneStep();
 
     return RTC::RTC_OK;
 }
