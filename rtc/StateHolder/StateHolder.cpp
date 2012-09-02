@@ -8,7 +8,9 @@
  */
 
 #include "StateHolder.h"
+#include <rtm/CorbaNaming.h>
 #include <hrpUtil/Eigen3d.h>
+#include <hrpModel/ModelLoaderUtil.h>
 
 // Module specification
 // <rtc-template block="module_spec">
@@ -57,18 +59,6 @@ StateHolder::StateHolder(RTC::Manager* manager)
   m_service1.setComponent(this);
   m_requestGoActual = false;
 
-  m_basePos.data.x = m_basePos.data.y = m_basePos.data.z = 0.0;
-  m_baseRpy.data.r = m_baseRpy.data.p = m_baseRpy.data.y = 0.0;
-  m_baseTform.data.length(12);
-  for (int i=0; i<12; i++) m_baseTform.data[i] = 0.0;
-  m_baseTform.data[3] = m_baseTform.data[7] = m_baseTform.data[11] = 0.0;
-  m_basePose.data.position.x = 0;
-  m_basePose.data.position.y = 0;
-  m_basePose.data.position.z = 0;
-  m_basePose.data.orientation.r = 0;
-  m_basePose.data.orientation.p = 0;
-  m_basePose.data.orientation.y = 0;
-  m_zmp.data.x = m_zmp.data.y = m_zmp.data.z = 0.0;
 }
 
 StateHolder::~StateHolder()
@@ -116,7 +106,38 @@ RTC::ReturnCode_t StateHolder::onInitialize()
   RTC::Properties& prop = getProperties();
   coil::stringTo(m_dt, prop["dt"].c_str());
   std::cout << "StateHolder: dt = " << m_dt << std::endl;
-
+  RTC::Manager& rtcManager = RTC::Manager::instance();
+  std::string nameServer = rtcManager.getConfig()["corba.nameservers"];
+  int comPos = nameServer.find(",");
+  if (comPos < 0){
+      comPos = nameServer.length();
+  }
+  nameServer = nameServer.substr(0, comPos);
+  RTC::CorbaNaming naming(rtcManager.getORB(), nameServer.c_str());
+  OpenHRP::BodyInfo_var binfo;
+  binfo = hrp::loadBodyInfo(prop["model"].c_str(),
+                            CosNaming::NamingContext::_duplicate(naming.getRootContext()));
+  OpenHRP::LinkInfoSequence_var lis = binfo->links();
+  const OpenHRP::LinkInfo& li = lis[0];
+  hrp::Vector3 p, axis;
+  p << li.translation[0], li.translation[1], li.translation[2];
+  axis << li.rotation[0], li.rotation[1], li.rotation[2];
+  hrp::Matrix33 R = hrp::rodrigues(axis, li.rotation[3]);
+  hrp::Vector3 rpy = hrp::rpyFromRot(R);
+  
+  m_baseTform.data.length(12);
+  double *T = m_baseTform.data.get_buffer();
+  T[0] = R(0,0); T[1] = R(0,1); T[ 2] = R(0,2); T[ 3] = p[0];
+  T[4] = R(0,0); T[5] = R(0,1); T[ 6] = R(0,2); T[ 7] = p[1];
+  T[8] = R(0,0); T[9] = R(0,1); T[10] = R(0,2); T[11] = p[2];
+  m_basePos.data.x = m_basePose.data.position.x = p[0];
+  m_basePos.data.y = m_basePose.data.position.y = p[1];
+  m_basePos.data.z = m_basePose.data.position.z = p[2];
+  m_baseRpy.data.r = m_basePose.data.orientation.r = rpy[0];
+  m_baseRpy.data.p = m_basePose.data.orientation.p = rpy[1];
+  m_baseRpy.data.y = m_basePose.data.orientation.y = rpy[2];
+  m_zmp.data.x = m_zmp.data.y = m_zmp.data.z = 0.0;
+  
   return RTC::RTC_OK;
 }
 
