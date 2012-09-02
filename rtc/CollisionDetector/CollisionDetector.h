@@ -19,9 +19,10 @@
 #include <hrpModel/Body.h>
 #include <hrpModel/ColdetLinkPair.h>
 #include <hrpModel/ModelLoaderUtil.h>
-
-class GLbody;
-class GLscene;
+#include "GLscene.h"
+#include "util/SDLUtil.h"
+#include "util/LogManager.h"
+#include "TimedPosture.h"
 
 // Service implementation headers
 // <rtc-template block="service_impl_h">
@@ -138,8 +139,10 @@ class CollisionDetector
   // </rtc-template>
 
  private:
-  GLscene *m_scene;
-  GLbody *m_body;
+  GLscene m_scene;
+  LogManager<TimedPosture> m_log; 
+  SDLwindow m_window;
+  GLbody *m_glbody;
   bool use_viewer;
   hrp::BodyPtr m_robot;
   std::vector<hrp::ColdetLinkPairPtr> m_pair;
@@ -150,7 +153,6 @@ class CollisionDetector
 extern "C"
 {
   void CollisionDetectorInit(RTC::Manager* manager);
-  RTC::ReturnCode_t setupCollisionModel(hrp::BodyPtr m_robot, const char *url, OpenHRP::BodyInfo_var binfo);
 };
 
 #endif // COLLISION_DETECTOR_H
