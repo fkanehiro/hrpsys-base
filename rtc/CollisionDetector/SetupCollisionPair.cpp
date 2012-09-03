@@ -7,6 +7,7 @@
  * $Id$
  */
 
+#include <iomanip>
 #include <hrpModel/Link.h>
 #include <hrpModel/ModelLoaderUtil.h>
 #include <hrpModel/JointPath.h>
