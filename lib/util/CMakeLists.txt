@@ -33,6 +33,7 @@ set(headers
   SDLUtil.h
   VectorConvert.h
   BodyRTC.h
+  BVutil.h
   )
 
 include_directories(${LIBXML2_INCLUDE_DIR})
