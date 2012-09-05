@@ -399,7 +399,7 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
             // break if dq(j) is nan/nil
             bool dq_check = true;
             for(int j=0; j < n; ++j){
-                if ( isnan(dq(j)) || isinf(dq(j)) ) {
+                if ( std::isnan(dq(j)) || std::isinf(dq(j)) ) {
                     dq_check = false;
                     break;
                 }
