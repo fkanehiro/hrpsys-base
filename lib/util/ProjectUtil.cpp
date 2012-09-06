@@ -1,6 +1,7 @@
 #include <iostream>
 #include <rtm/Manager.h>
 #include <rtm/RTObject.h>
+#include <rtm/DataFlowComponentBase.h>
 #include <hrpModel/Link.h>
 #include "ProjectUtil.h"
 #include "BVutil.h"
@@ -30,10 +31,11 @@ void initWorld(Project& prj, BodyFactory &factory,
             body->setName(name);
             world.addBody(body);
             // <-- for OpenRTM-1.0.0 bug
-            RTC::Manager& manager = RTC::Manager::instance();
-            if ( manager.getComponents().size() 
-                 &&manager.getComponents().back()->getInstanceName() != name )
-                manager.getComponents().back()->setInstanceName(name.c_str());
+            RTC::DataFlowComponentBase *rtc
+                = dynamic_cast<RTC::DataFlowComponentBase *>(body.get());
+            if (rtc && rtc->getInstanceName() != name){
+                rtc->setInstanceName(name.c_str());
+            }
             // -->
         }
     }
