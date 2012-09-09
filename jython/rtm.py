@@ -124,7 +124,7 @@ class RTcomponent:
 			ec = self.ec
 		if ec != None:
 			ec.activate_component(self.ref)
-			while self.isInactive():
+			while self.isInactive(ec):
 				time.sleep(0.01)
 
 	##
@@ -136,7 +136,7 @@ class RTcomponent:
 			ec = self.ec
 		if ec != None:
 			ec.deactivate_component(self.ref)
-			while self.isActive():
+			while self.isActive(ec):
 				time.sleep(0.01)
 
 	##
@@ -154,17 +154,19 @@ class RTcomponent:
 
 	##
 	# \brief check the main execution context is active or not
+	# \param ec execution context
         # \retval 1 this component is active
         # \retval 0 this component is not active
-        def isActive(self):
-		return LifeCycleState.ACTIVE_STATE == self.getLifeCycleState()
+        def isActive(self, ec=None):
+		return LifeCycleState.ACTIVE_STATE == self.getLifeCycleState(ec)
 
 	##
 	# \brief check the main execution context is inactive or not
+	# \param ec execution context
         # \retval 1 this component is inactive
         # \retval 0 this component is not inactive
-        def isInactive(self):
-		return LifeCycleState.INACTIVE_STATE == self.getLifeCycleState()
+        def isInactive(self, ec=None):
+		return LifeCycleState.INACTIVE_STATE == self.getLifeCycleState(ec)
 
 	##
 	# \brief get instance name
@@ -366,14 +368,16 @@ def findPort(rtc, name):
 ##
 # \brief set up execution context of the first RTC so that RTCs are executed sequentially
 # \param rtcs sequence of RTCs
+# \param stopEC whether stop owned ECs of slave components
 #
-def serializeComponents(rtcs):
+def serializeComponents(rtcs, stopEC=True):
 	if len(rtcs) < 2:
 		return
 	ec = rtcs[0].ec
 	for rtc in rtcs[1:]:
 		if ec != rtc.ec: 
-			rtc.ec.stop()
+			if stopEC:
+				rtc.ec.stop()
 			if ec.add_component(rtc.ref) == ReturnCode_t.RTC_OK:
 				rtc.ec = ec
 			else:
