@@ -190,55 +190,52 @@ RTC::ReturnCode_t OccupancyGridMap3D::onExecute(RTC::UniqueId ec_id)
     }
 
     if (m_cloudIn.isNew()){
-        do{
-            m_cloudIn.read();
-            if (m_poseIn.isNew()) m_poseIn.read();
-            Guard guard(m_mutex);
-            float *ptr = (float *)m_cloud.data.get_buffer();
-            if (strcmp(m_cloud.type, "xyz")==0 
-                || strcmp(m_cloud.type, "xyzrgb")==0){
-                Pointcloud cloud;
-                for (unsigned int i=0; i<m_cloud.data.length()/16; i++, ptr+=4){
-                    if (isnan(ptr[0])) continue;
-                    cloud.push_back(point3d(ptr[0],ptr[1],ptr[2]));
-                }
-                point3d sensor(0,0,0);
-                pose6d frame(m_pose.data.position.x,
-                             m_pose.data.position.y,
-                             m_pose.data.position.z, 
-                             m_pose.data.orientation.r,
-                             m_pose.data.orientation.p,
-                             m_pose.data.orientation.y);
-                m_map->insertScan(cloud, sensor, frame);
-            }else if (strcmp(m_cloud.type, "xyzv")==0){
-                hrp::Matrix33 R;
-                hrp::Vector3 p;
-                p[0] = m_pose.data.position.x; 
-                p[1] = m_pose.data.position.y; 
-                p[2] = m_pose.data.position.z; 
-                R = hrp::rotFromRpy(m_pose.data.orientation.r,
-                                    m_pose.data.orientation.p,
-                                    m_pose.data.orientation.y);
-                int ocnum = 0;
-                int emnum = 0;
-                for (unsigned int i=0; i<m_cloud.data.length()/16; i++, ptr+=4){
-                    if (isnan(ptr[0])) continue;
-                    hrp::Vector3 peye(ptr[0],ptr[1],ptr[2]);
-                    hrp::Vector3 pworld(R*peye+p);
-                    point3d pog(pworld[0],pworld[1],pworld[2]);
-                    m_map->updateNode(pog, ptr[3]>0.0?true:false, false);
-                    ptr[3]>0.0?ocnum++:emnum++;
-                }
-                if(KDEBUG) std::cout << m_profile.instance_name << ": " << ocnum << " " << emnum << " " << p << std::endl;
-            }else{
-                std::cout << "point type(" << m_cloud.type 
-                          << ") is not supported" << std::endl;
-                return RTC::RTC_ERROR;
+        while (m_cloudIn.isNew()) m_cloudIn.read();
+        while (m_poseIn.isNew())  m_poseIn.read();
+        Guard guard(m_mutex);
+        float *ptr = (float *)m_cloud.data.get_buffer();
+        if (strcmp(m_cloud.type, "xyz")==0 
+            || strcmp(m_cloud.type, "xyzrgb")==0){
+            Pointcloud cloud;
+            for (unsigned int i=0; i<m_cloud.data.length()/16; i++, ptr+=4){
+                if (isnan(ptr[0])) continue;
+                cloud.push_back(point3d(ptr[0],ptr[1],ptr[2]));
             }
-        }while(m_cloudIn.isNew());
+            point3d sensor(0,0,0);
+            pose6d frame(m_pose.data.position.x,
+                         m_pose.data.position.y,
+                         m_pose.data.position.z, 
+                         m_pose.data.orientation.r,
+                         m_pose.data.orientation.p,
+                         m_pose.data.orientation.y);
+            m_map->insertScan(cloud, sensor, frame);
+        }else if (strcmp(m_cloud.type, "xyzv")==0){
+            hrp::Matrix33 R;
+            hrp::Vector3 p;
+            p[0] = m_pose.data.position.x; 
+            p[1] = m_pose.data.position.y; 
+            p[2] = m_pose.data.position.z; 
+            R = hrp::rotFromRpy(m_pose.data.orientation.r,
+                                m_pose.data.orientation.p,
+                                m_pose.data.orientation.y);
+            int ocnum = 0;
+            int emnum = 0;
+            for (unsigned int i=0; i<m_cloud.data.length()/16; i++, ptr+=4){
+                if (isnan(ptr[0])) continue;
+                hrp::Vector3 peye(ptr[0],ptr[1],ptr[2]);
+                hrp::Vector3 pworld(R*peye+p);
+                point3d pog(pworld[0],pworld[1],pworld[2]);
+                m_map->updateNode(pog, ptr[3]>0.0?true:false, false);
+                ptr[3]>0.0?ocnum++:emnum++;
+            }
+            if(KDEBUG) std::cout << m_profile.instance_name << ": " << ocnum << " " << emnum << " " << p << std::endl;
+        }else{
+            std::cout << "point type(" << m_cloud.type 
+                      << ") is not supported" << std::endl;
+            return RTC::RTC_ERROR;
+        }
         m_updateOut.write();
     }
-    while(m_poseIn.isNew()) m_poseIn.read();
 
     coil::TimeValue t2(coil::gettimeofday());
     if (m_debugLevel > 0){
@@ -287,6 +284,7 @@ RTC::ReturnCode_t OccupancyGridMap3D::onRateChanged(RTC::UniqueId ec_id)
 
 OpenHRP::OGMap3D* OccupancyGridMap3D::getOGMap3D(const OpenHRP::AABB& region)
 {
+    Guard guard(m_mutex);
     coil::TimeValue t1(coil::gettimeofday());
 
     OpenHRP::OGMap3D *map = new OpenHRP::OGMap3D;
