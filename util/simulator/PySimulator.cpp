@@ -188,6 +188,7 @@ bool PySimulator::loadProject(std::string fname){
         PyBody *pybody = dynamic_cast<PyBody *>(body(i).get());
         pybody->setListener(this);
     }
+    window.setView(prj.view().T);
     
     std::cout << "timestep = " << prj.timeStep() << ", total time = " 
               << prj.totalTime() << std::endl;
