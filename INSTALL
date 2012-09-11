@@ -1,6 +1,7 @@
 1. Requirements
    *Ubuntu 10.04LTS
    *OpenHRP 3.1.3 or later
+   *OpenRTM-aist-python
    *Jython(apt-get install jython)
    *libxml2(apt-get install libxml2-dev)
    *SDL(apt-get install libsdl-dev)
@@ -25,7 +26,7 @@
 2.1.2 Install required packages using apt-get
    Please install required packages shown above. The following is an example
    for ubuntu10.04LTS
-   %sudo apt-get install jython libxml2-dev libsdl-dev libcv-dev libcvaux-dev libhighgui-dev libqhull-dev libglew-dev
+   %sudo apt-get install openrtm-aist-python jython libxml2-dev libsdl-dev libcv-dev libcvaux-dev libhighgui-dev libqhull-dev libglew-dev
 
 2.2 RT components and utilities
    % mkdir build
