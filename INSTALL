@@ -26,7 +26,7 @@
 2.1.2 Install required packages using apt-get
    Please install required packages shown above. The following is an example
    for ubuntu10.04LTS
-   %sudo apt-get install openrtm-aist-python jython libxml2-dev libsdl-dev libcv-dev libcvaux-dev libhighgui-dev libqhull-dev libglew-dev
+   %sudo apt-get install jython libxml2-dev libsdl-dev libcv-dev libcvaux-dev libhighgui-dev libqhull-dev libglew-dev
 
 2.2 RT components and utilities
    % mkdir build
@@ -89,7 +89,8 @@
    b. % cd <install prefix>/share/hrpsys/samples/HRP4C
    c. % unzip <download>/HRP-4C.zip -d /tmp
    d. % (sudo) cp -r  /tmp/HRP-4C/* .
-   e. % hrpsys-simulator-python HRP4C.xml HRP4C.py
+   e. change the right of the wrl files : % (sudo) chmod 644 HRP4Cmain.wrl 
+   f. % hrpsys-simulator-python HRP4C.xml HRP4C.py
       A cybernetic human "HRP-4C" will be displayed and walk.
 
 3.3.2 (Optional, Section 2.3 and 2.4 are required) with Eclipse
@@ -97,11 +98,12 @@
    b. % cd <install prefix>/share/hrpsys/samples/HRP4C
    c. % unzip <download>/HRP-4C.zip -d /tmp
    d. % (sudo) cp -r  /tmp/HRP-4C/* .
-   e. Launch Eclipse
-   f. Open "GrxUI" perspective
-   g. From "GrxUI" menu of Eclipse, load a project file "HRP4C.xml" placed 
+   e. change the right of the wrl files : % (sudo) chmod 644 HRP4Cmain.wrl 
+   f. Launch Eclipse
+   g. Open "GrxUI" perspective
+   h. From "GrxUI" menu of Eclipse, load a project file "HRP4C.xml" placed 
       under <install prefix>/share/hrpsys/samples/HRP4C. A cybernetic human
       "HRP-4C" will appear in 3DView.
-   h. Start simulation
-   i. Execute a script "HRP4C.py"
+   i. Start simulation
+   j. Execute a script "HRP4C.py"
 
