@@ -42,6 +42,7 @@ static const char* impedancecontroller_spec[] =
 ImpedanceController::ImpedanceController(RTC::Manager* manager)
     : RTC::DataFlowComponentBase(manager),
       // <rtc-template block="initializer">
+      m_qCurrentIn("qCurrent", m_qCurrent),
       m_qRefIn("qRef", m_qRef),
       m_qOut("q", m_q),
       m_ImpedanceControllerServicePort("ImpedanceControllerService"),
@@ -63,6 +64,7 @@ RTC::ReturnCode_t ImpedanceController::onInitialize()
     // Registration: InPort/OutPort/Service
     // <rtc-template block="registration">
     // Set InPort buffers
+    addInPort("qCurrent", m_qCurrentIn);
     addInPort("qRef", m_qRefIn);
 
     // Set OutPort buffer
@@ -167,6 +169,9 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
         }
     }
 
+    if (m_qCurrentIn.isNew()) {
+        m_qCurrentIn.read();
+    }
     if (m_qRefIn.isNew()) {
         m_qRefIn.read();
     }
@@ -205,10 +210,14 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
             ImpedanceParam& param = it->second;
             param.target_p0 = m_robot->link(param.target_name)->p;
             param.target_r0 = hrp::omegaFromRot(m_robot->link(param.target_name)->R);
-	  }
-	  // back to impedance robot model
-	  for ( int i = 0; i < m_robot->numJoints(); i++ ){
-	    m_robot->joint(i)->q = qorg[i]; 
+          }
+          // back to impedance robot model (only for controlled joint)
+	  for ( std::map<std::string, ImpedanceParam>::iterator it = m_impedance_param.begin(); it != m_impedance_param.end(); it++ ) {
+            ImpedanceParam& param = it->second;
+            for ( int j = 0; j < param.manip->numJoints(); j++ ){
+              int i = param.manip->id(j);
+              m_robot->joint(i)->q = qorg[i];
+            }
 	  }
 	  m_robot->calcForwardKinematics();
 
@@ -221,17 +230,10 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
 
 	  if ( param.transition_count > 0 ) {
 	    hrp::JointPathExPtr manip = param.manip;
-	    for ( int i = 0; i < m_robot->numJoints(); i++ ) {
-	      // check if m_robot->joint(i) included in manip
-	      hrp::Link* joint =  NULL;
-	      for ( int j = 0; j < manip->numJoints(); j++ ) {
-		if ( m_robot->joint(i) == manip->joint(j) ) {
-		  joint = manip->joint(j);
-		}
-	      }
-	      if ( joint ) {
-		joint->q = ( m_qRef.data[i] - joint->q ) * ( 1.0 / param.transition_count ) + joint->q;
-	      }
+	    for ( int j = 0; j < manip->numJoints(); j++ ) {
+              int i = manip->id(j); // index in robot model
+	      hrp::Link* joint =  m_robot->joint(i);
+              joint->q = ( m_qRef.data[i] - joint->q ) * ( 1.0 / param.transition_count ) + joint->q;
 	    }
 	    param.transition_count --;
 
@@ -386,13 +388,8 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
 	    //
 	    // qref - qcurr
 	    for(int j=0; j < n; ++j) { u[j] = 0; }
-	    for ( int i = 0; i < m_robot->numJoints(); i++ ) {
-	      // check if m_robot->joint(i) included in manip
-	      for ( int j = 0; j < manip->numJoints(); j++ ) {
-		if ( m_robot->joint(i) == manip->joint(j) ) {
-		  u[j] = ( m_qRef.data[i] - manip->joint(j)->q );
-		}
-	      }
+	    for ( int j = 0; j < manip->numJoints(); j++ ) {
+              u[j] = ( m_qRef.data[manip->id(j)] - manip->joint(j)->q );
 	    }
 	    dq = dq + Jnull * ( param.reference_gain *  u );
 
@@ -454,6 +451,15 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
 	    param.current_r2 = param.current_r1;
 	    param.current_r1 = param.current_r0 + vel_r;
 	    param.target_r1 = param.target_r0;
+
+            // generate smooth motion just after mpedance started
+            for(int j=0; j < n; ++j){
+              int i = manip->id(j);
+              if ( param.transition_count < 0 ) {
+                manip->joint(j)->q = ( manip->joint(j)->q  - m_qCurrent.data[i] ) * (-1.0 / param.transition_count) + m_qCurrent.data[i];
+                param.transition_count++;
+              }
+            }
 
 	  } // else
         } // for
@@ -553,12 +559,6 @@ bool ImpedanceController::setImpedanceControllerParam(OpenHRP::ImpedanceControll
 	  return false;
 	}
 
-	// reference model
-	for ( int i = 0; i < m_robot->numJoints(); i++ ){
-	  m_robot->joint(i)->q = m_qRef.data[i];
-	}
-	m_robot->calcForwardKinematics();
-
 	// set param
 	ImpedanceParam p;
 	p.base_name = base_name;
@@ -586,7 +586,26 @@ bool ImpedanceController::setImpedanceControllerParam(OpenHRP::ImpedanceControll
 	p.force_offset_r = hrp::Vector3(m_force[force_id].data[3], m_force[force_id].data[4], m_force[force_id].data[5]);
 
 	// joint path
-	p.manip = hrp::JointPathExPtr(new hrp::JointPathEx(m_robot->link(p.base_name), m_robot->link(p.target_name)));
+	p.manip = hrp::JointPathExPtr(new hrp::JointPathEx(m_robot, m_robot->link(p.base_name), m_robot->link(p.target_name)));
+
+        if ( ! p.manip ) {
+          std::cerr << "invalid joint path from " << p.base_name << " to " << p.target_name << std::endl;
+          return false;
+        }
+
+	// update reference model
+        for (int i = 0; i < m_robot->numJoints(); i++ ) {
+          // if other controller is already taken the joint, do not update the reference model
+          bool update = true;
+          for ( std::map<std::string, ImpedanceParam>::iterator it = m_impedance_param.begin(); it != m_impedance_param.end(); it++ ) {
+            ImpedanceParam& param = it->second;
+            for ( int j = 0; j < param.manip->numJoints(); j++ ){
+              if ( i == param.manip->id(j) ) update = false;
+            }
+          }
+          if ( update ) m_robot->joint(i)->q = m_qCurrent.data[i];
+        }
+	m_robot->calcForwardKinematics();
 
 	m_impedance_param[name] = p;
 
@@ -598,7 +617,7 @@ bool ImpedanceController::setImpedanceControllerParam(OpenHRP::ImpedanceControll
     m_impedance_param[name].avoid_gain = i_param_.avoid_gain;
     m_impedance_param[name].reference_gain = i_param_.reference_gain;
     m_impedance_param[name].manipulability_limit = i_param_.manipulability_limit;
-    m_impedance_param[name].transition_count = 0;
+    m_impedance_param[name].transition_count = -2/m_dt; // when start impedance, count up to 0
 
     m_impedance_param[name].M_p = i_param_.M_p;
     m_impedance_param[name].D_p = i_param_.D_p;
@@ -632,7 +651,7 @@ bool ImpedanceController::deleteImpedanceController(std::string i_name_)
     }
      
     std::cerr << "Delete impedance parameters " << i_name_ << std::endl;
-    m_impedance_param[i_name_].transition_count = 1000;
+    m_impedance_param[i_name_].transition_count = m_dt; // when stop impedance, count down to 0
 
     // wait for transition count
     while ( m_impedance_param[i_name_].transition_count > 0) {

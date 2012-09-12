@@ -99,6 +99,8 @@ class ImpedanceController
 
   // DataInPort declaration
   // <rtc-template block="inport_declare">
+  TimedDoubleSeq m_qCurrent;
+  InPort<TimedDoubleSeq> m_qCurrentIn;
   TimedDoubleSeq m_qRef;
   InPort<TimedDoubleSeq> m_qRefIn;
   std::vector<TimedDoubleSeq> m_force;
