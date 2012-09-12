@@ -15,8 +15,6 @@ void Simulator::init(Project &prj, BodyFactory &factory){
     m_kinematicsOnly = prj.kinematicsOnly();
     realTime(prj.realTime());
 
-    OpenHRP::CollisionSequence& collisions = state.collisions;
-
     collisions.length(pairs.size());
     for(size_t colIndex=0; colIndex < pairs.size(); ++colIndex){
         hrp::ColdetLinkPairPtr linkPair = pairs[colIndex];
@@ -36,7 +34,7 @@ void Simulator::init(Project &prj, BodyFactory &factory){
 void Simulator::appendLog()
 {
     if (log && currentTime() >= m_nextLogTime){
-        state.set(*this);
+        state.set(*this, collisions);
         log->add(state);
         m_nextLogTime += m_logTimeStep;
     }
@@ -44,7 +42,7 @@ void Simulator::appendLog()
 
 void Simulator::checkCollision()
 {
-    checkCollision(state.collisions);
+    checkCollision(collisions);
 }
 
 void Simulator::checkCollision(OpenHRP::CollisionSequence &collisions)
@@ -131,7 +129,7 @@ bool Simulator::oneStep(){
 
 #if 1
     tm_collision.begin();
-    checkCollision(state.collisions);
+    checkCollision(collisions);
     tm_collision.end();
 #endif
 
@@ -143,7 +141,7 @@ bool Simulator::oneStep(){
         }
         currentTime_ += timeStep();
     }else{
-        calcNextState(state.collisions);
+        calcNextState(collisions);
     }
     
     appendLog();
@@ -224,7 +222,6 @@ void Simulator::addCollisionCheckPair(BodyRTC *bodyPtr1, BodyRTC *bodyPtr2)
         }
     }
 
-    OpenHRP::CollisionSequence& collisions = state.collisions;
     collisions.length(pairs.size());
     for(size_t colIndex=0; colIndex < pairs.size(); ++colIndex){
         hrp::ColdetLinkPairPtr linkPair = pairs[colIndex];

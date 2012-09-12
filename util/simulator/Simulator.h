@@ -32,6 +32,7 @@ private:
     LogManager<SceneState> *log;
     std::vector<ClockReceiver> receivers;
     std::vector<hrp::ColdetLinkPairPtr> pairs;
+    OpenHRP::CollisionSequence collisions;
     SceneState state;
     double m_totalTime, m_logTimeStep, m_nextLogTime;
     TimeMeasure tm_dynamics, tm_control, tm_collision;

@@ -64,16 +64,13 @@ void GLscene::drawAdditionalLines()
 
     glColor3f(1,0,0);
     double e[3];
-    const CollisionSequence &cs = state.collisions;
-    for (unsigned int i=0; i<cs.length(); i++){
-        const CollisionPointSequence& cps = cs[i].points; 
-        for (unsigned int j=0; j<cps.length(); j++){
-            glVertex3dv(cps[j].position);
-            for (int k=0; k<3; k++){
-                e[k] = cps[j].position[k] + cps[j].normal[k]*(cps[j].idepth*10+0.1);
-            }
-            glVertex3dv(e);
+    const std::vector<CollisionInfo> &cs = state.collisions;
+    for (unsigned int i=0; i<cs.size(); i++){
+        for (int k=0; k<3; k++){
+            e[k] = cs[i].position[k] + cs[i].normal[k]*(cs[i].idepth*10+0.1);
         }
+        glVertex3dv(cs[i].position);
+        glVertex3dv(e);
     }
 }
 
