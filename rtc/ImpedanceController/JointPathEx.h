@@ -21,10 +21,8 @@ namespace hrp {
     bool setSRGain(double g) { sr_gain = g; }
     double getManipulabilityLimit() { return manipulability_limit; }
     bool setManipulabilityLimit(double l) { manipulability_limit = l; }
-    int id(int i) { return ids[i]; }
   protected:
         std::vector<Link*> joints;
-        std::vector<int> ids;
         std::vector<double> avoid_weight_gain;
 	double sr_gain, manipulability_limit;
     };

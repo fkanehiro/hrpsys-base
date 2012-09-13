@@ -115,6 +115,12 @@ RTC::ReturnCode_t ImpedanceController::onInitialize()
     }
 
     unsigned int dof = m_robot->numJoints();
+    for ( int i = 0 ; i < dof; i++ ){
+      if ( i != m_robot->joint(i)->jointId ) {
+        std::cerr << "jointId is not equal to the index number" << std::endl;
+        return RTC::RTC_ERROR;
+      }
+    }
 
     // allocate memory for outPorts
     m_q.data.length(dof);
@@ -215,7 +221,7 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
 	  for ( std::map<std::string, ImpedanceParam>::iterator it = m_impedance_param.begin(); it != m_impedance_param.end(); it++ ) {
             ImpedanceParam& param = it->second;
             for ( int j = 0; j < param.manip->numJoints(); j++ ){
-              int i = param.manip->id(j);
+              int i = param.manip->joint(j)->jointId;
               m_robot->joint(i)->q = qorg[i];
             }
 	  }
@@ -231,7 +237,7 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
 	  if ( param.transition_count > 0 ) {
 	    hrp::JointPathExPtr manip = param.manip;
 	    for ( int j = 0; j < manip->numJoints(); j++ ) {
-              int i = manip->id(j); // index in robot model
+              int i = manip->joint(j)->jointId; // index in robot model
 	      hrp::Link* joint =  m_robot->joint(i);
               joint->q = ( m_qRef.data[i] - joint->q ) * ( 1.0 / param.transition_count ) + joint->q;
 	    }
@@ -389,7 +395,7 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
 	    // qref - qcurr
 	    for(int j=0; j < n; ++j) { u[j] = 0; }
 	    for ( int j = 0; j < manip->numJoints(); j++ ) {
-              u[j] = ( m_qRef.data[manip->id(j)] - manip->joint(j)->q );
+              u[j] = ( m_qRef.data[manip->joint(j)->jointId] - manip->joint(j)->q );
 	    }
 	    dq = dq + Jnull * ( param.reference_gain *  u );
 
@@ -454,7 +460,7 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
 
             // generate smooth motion just after mpedance started
             for(int j=0; j < n; ++j){
-              int i = manip->id(j);
+              int i = manip->joint(j)->jointId;
               if ( param.transition_count < 0 ) {
                 manip->joint(j)->q = ( manip->joint(j)->q  - m_qCurrent.data[i] ) * (-1.0 / param.transition_count) + m_qCurrent.data[i];
                 param.transition_count++;
@@ -600,7 +606,7 @@ bool ImpedanceController::setImpedanceControllerParam(OpenHRP::ImpedanceControll
           for ( std::map<std::string, ImpedanceParam>::iterator it = m_impedance_param.begin(); it != m_impedance_param.end(); it++ ) {
             ImpedanceParam& param = it->second;
             for ( int j = 0; j < param.manip->numJoints(); j++ ){
-              if ( i == param.manip->id(j) ) update = false;
+              if ( i == param.manip->joint(j)->jointId ) update = false;
             }
           }
           if ( update ) m_robot->joint(i)->q = m_qCurrent.data[i];

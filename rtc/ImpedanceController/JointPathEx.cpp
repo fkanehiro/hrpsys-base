@@ -64,15 +64,6 @@ JointPathEx::JointPathEx(BodyPtr& robot, Link* base, Link* end) : JointPath(base
   for (int i = 0 ; i < numJoints(); i++ ) {
     joints.push_back(joint(i));
   }
-  ids.resize(numJoints());
-  for ( int i = 0; i < robot->numJoints(); i++ ) {
-    // check if m_robot->joint(i) included in manip
-    for ( int j = 0; j < numJoints(); j++ ) {
-        if ( robot->joint(i) == joint(j) ) {
-          ids[j] = i;
-        }
-    }
-  }
   sr_gain = 1.0;
   manipulability_limit = 0.1;
 
