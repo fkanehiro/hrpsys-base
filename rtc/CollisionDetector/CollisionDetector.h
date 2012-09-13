@@ -23,6 +23,7 @@
 #include "util/SDLUtil.h"
 #include "util/LogManager.h"
 #include "TimedPosture.h"
+#include "interpolator.h"
 
 // Service implementation headers
 // <rtc-template block="service_impl_h">
@@ -110,15 +111,17 @@ class CollisionDetector
 
   // DataInPort declaration
   // <rtc-template block="inport_declare">
-  TimedDoubleSeq m_q;
-  InPort<TimedDoubleSeq> m_qIn;
+  TimedDoubleSeq m_qRef;
+  InPort<TimedDoubleSeq> m_qRefIn;
+  TimedDoubleSeq m_qCurrent;
+  InPort<TimedDoubleSeq> m_qCurrentIn;
   
   // </rtc-template>
 
   // DataOutPort declaration
   // <rtc-template block="outport_declare">
-  TimedDoubleSeq m_qRef;
-  OutPort<TimedDoubleSeq> m_qRefOut;
+  TimedDoubleSeq m_q;
+  OutPort<TimedDoubleSeq> m_qOut;
   
   // </rtc-template>
 
@@ -143,10 +146,18 @@ class CollisionDetector
   LogManager<TimedPosture> m_log; 
   SDLwindow m_window;
   GLbody *m_glbody;
-  bool use_viewer;
+  bool m_use_viewer;
   hrp::BodyPtr m_robot;
   std::vector<hrp::ColdetLinkPairPtr> m_pair;
+  bool m_safe_posture;
+  int m_recover_time;
+  double m_dt;
   int dummy;
+  //
+  double* m_recover_jointdata;
+  interpolator* m_interpolator;
+  double i_dt;
+  int default_recover_time;
 };
 
 

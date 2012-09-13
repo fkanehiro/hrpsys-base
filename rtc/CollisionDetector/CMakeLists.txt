@@ -1,5 +1,6 @@
-set(comp_sources CollisionDetector.cpp GLscene.cpp)
-include_directories(${LIBXML2_INCLUDE_DIR} ${QHULL_INCLUDE_DIR})
+set(seq_dir ${PROJECT_SOURCE_DIR}/rtc/SequencePlayer)
+set(comp_sources ${seq_dir}/interpolator.cpp CollisionDetector.cpp GLscene.cpp)
+include_directories(${LIBXML2_INCLUDE_DIR} ${QHULL_INCLUDE_DIR} ${seq_dir})
 add_library(CollisionDetector SHARED ${comp_sources})
 target_link_libraries(CollisionDetector hrpsysUtil)
 set_target_properties(CollisionDetector PROPERTIES PREFIX "")
