@@ -111,6 +111,17 @@ RTC::ReturnCode_t SoftErrorLimiter::onInitialize()
   std::cout << "dof = " << m_robot->numJoints() << std::endl;
   if (!m_robot->init()) return RTC::RTC_ERROR;
   m_service0.setRobot(m_robot);
+  m_servoState.data.length(m_robot->numJoints());
+  for(int i = 0; i < m_robot->numJoints(); i++) {
+    m_servoState.data[i].length(1);
+    int status = 0;
+    status |= 1<< OpenHRP::RobotHardwareService::CALIB_STATE_SHIFT;
+    status |= 1<< OpenHRP::RobotHardwareService::POWER_STATE_SHIFT;
+    status |= 1<< OpenHRP::RobotHardwareService::SERVO_STATE_SHIFT;
+    status |= 0<< OpenHRP::RobotHardwareService::SERVO_ALARM_SHIFT;
+    status |= 0<< OpenHRP::RobotHardwareService::DRIVER_TEMP_SHIFT;
+    m_servoState.data[i][0] = status;
+  }
 
   return RTC::RTC_OK;
 }
