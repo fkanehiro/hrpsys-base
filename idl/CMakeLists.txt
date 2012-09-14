@@ -13,6 +13,7 @@ set(idl_files
   HRPDataTypes.idl
   pointcloud.idl
   ImpedanceControllerService.idl
+  SoftErrorLimiterService.idl
   )
 
 set(openhrp_idl_files
