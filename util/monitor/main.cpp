@@ -44,7 +44,7 @@ hrp::BodyPtr createBody(const std::string& name, const ModelItem& mitem,
 int main(int argc, char* argv[]) 
 {
     if (argc < 2){
-        std::cerr << "Usage:" << argv[0] << " project.xml [-rh RobotHardwareComponent] [-sh StateHolder component] [-size size]" << std::endl;
+        std::cerr << "Usage:" << argv[0] << " project.xml [-rh RobotHardwareComponent] [-sh StateHolder component] [-size size] [-bg r g b]" << std::endl;
         return 1;
     }
 
@@ -56,6 +56,7 @@ int main(int argc, char* argv[])
 
     char *rhname = NULL, *shname = NULL;
     int wsize = 0;
+    float bgColor[] = {0,0,0};
     for (int i = 2; i<argc; i++){
         if (strcmp(argv[i], "-rh")==0){
             rhname = argv[++i];
@@ -63,6 +64,10 @@ int main(int argc, char* argv[])
             shname = argv[++i];
         }else if(strcmp(argv[i], "-size")==0){
             wsize = atoi(argv[++i]);
+        }else if(strcmp(argv[i], "-bg")==0){
+            bgColor[0] = atof(argv[++i]);
+            bgColor[1] = atof(argv[++i]);
+            bgColor[2] = atof(argv[++i]);
         }
     }
 
@@ -119,6 +124,7 @@ int main(int argc, char* argv[])
     }
     //==================== viewer ===============
     GLscene scene(&log);
+    scene.setBackGroundColor(bgColor);
 
     SDLwindow window(&scene, &log, &monitor);
     window.init(wsize, wsize);

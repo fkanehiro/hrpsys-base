@@ -100,6 +100,7 @@ int main(int argc, char* argv[])
         return 1;
     }
 
+    float bgColor[]={0,0,0};
     for (int i=2; i<argc; i++){
         if (strcmp("-nodisplay",argv[i])==0){
             display = false;
@@ -122,6 +123,10 @@ int main(int argc, char* argv[])
         }else if(strcmp("-record", argv[i])==0){
             record = true;
             exitOnFinish = true;
+        }else if(strcmp("-bg", argv[i])==0){
+            bgColor[0] = atof(argv[++i]);
+            bgColor[1] = atof(argv[++i]);
+            bgColor[2] = atof(argv[++i]);
         }
     }
 
@@ -140,6 +145,7 @@ int main(int argc, char* argv[])
             && strcmp(argv[i], "-max-edge-length")
             && strcmp(argv[i], "-exit-on-finish")
             && strcmp(argv[i], "-record")
+            && strcmp(argv[i], "-bg")
             ){
             rtmargv.push_back(argv[i]);
             rtmargc++;
@@ -167,6 +173,7 @@ int main(int argc, char* argv[])
     //==================== Viewer setup ===============
     LogManager<SceneState> log;
     GLscene scene(&log);
+    scene.setBackGroundColor(bgColor);
     scene.showSensors(showsensors);
     scene.maxEdgeLen(maxEdgeLen);
     scene.showCollision(prj.view().showCollision);

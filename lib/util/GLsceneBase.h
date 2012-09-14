@@ -57,6 +57,7 @@ public:
     void addBody(hrp::BodyPtr i_body);
     void maxEdgeLen(double i_len);
     hrp::BodyPtr targetObject();
+    void setBackGroundColor(float rgb[3]);
 protected:
     enum {REQ_NONE, REQ_CLEAR, REQ_CAPTURE};
 
@@ -77,6 +78,7 @@ protected:
     std::string m_fname;
     double m_maxEdgeLen;
     int m_targetObject;
+    float m_bgColor[3];
 };
 
 #endif

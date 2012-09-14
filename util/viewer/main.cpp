@@ -18,6 +18,15 @@ using namespace OpenHRP;
 
 int main(int argc, char *argv[])
 {
+    float bgColor[3];
+    for (int i=1; i<argc; i++){
+        if (strcmp(argv[i], "-bg")==0){
+            bgColor[0] = atof(argv[++i]);
+            bgColor[1] = atof(argv[++i]);
+            bgColor[2] = atof(argv[++i]);
+        }
+    }
+
     CORBA::ORB_var orb = CORBA::ORB::_nil();
   
     try {
@@ -39,6 +48,7 @@ int main(int argc, char *argv[])
 	
         LogManager<OpenHRP::WorldState> log;
         GLscene scene(&log);
+        scene.setBackGroundColor(bgColor);
 
 	OnlineViewer_impl* OnlineViewerImpl 
             = new OnlineViewer_impl(orb, poa, &scene, &log);

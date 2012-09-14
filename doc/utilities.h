@@ -38,6 +38,7 @@ hrpsys-simulator-jython [project file] [jython script] [options]
 -endless never finish simulation<br>
 -showsensor show sensor output<br>
 -size size specify initial window size<br>
+-bg r g b background color
 
 \section hrpsys-simulator-python hrpsys-simulator-python
 
@@ -51,6 +52,7 @@ usebbox use bounding boxes instead of actual geometries<br>
 endless never finish simulation<br>
 showsensor show sensor output<br>
 size [size] set window size<br>
+bg [r] [g] [b] background color
 
 Note:NameSever and openhrp-model-loader must be running
 
@@ -75,6 +77,7 @@ hrpsys-monitor [project file] [-rh rtcName] [-sh rtcName] [-size size]
 -rh name of %RTC which provides OpenHRP::RobotHardwareService (default:RobotHardware0)<br>
 -sh name of %RTC which provides OpenHRP::StateHolderService (default:StateHolder0)<br>
 -size initial window size<br>
+-bg r g b background color
 
 Note:NameSever and openhrp-model-loader must be running
 

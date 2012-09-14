@@ -39,6 +39,7 @@ GLsceneBase::GLsceneBase(LogManagerBase *i_log) :
     m_default_camera->setViewTarget(0,0,0.8);
     m_camera = m_default_camera;
     m_sem = SDL_CreateSemaphore(0);
+    m_bgColor[0] = m_bgColor[1] = m_bgColor[2] = 0.0;
 
     hrp::Light::nextId = 2;
 }
@@ -174,9 +175,7 @@ void GLsceneBase::init()
     glewInit();
     initLights();
 
-    //glClearColor(0.4, 0.4, 0.55, 1.0);
-    //glClearColor(0.2, 0.2, 0.5, 1.0);
-    glClearColor(0.0, 0.0, 0.0, 1.0);
+    glClearColor(m_bgColor[0], m_bgColor[1], m_bgColor[2], 0.0);
     glEnable(GL_DEPTH_TEST);
 
     glEnable(GL_CULL_FACE);
@@ -421,4 +420,9 @@ hrp::BodyPtr GLsceneBase::targetObject()
     }else{
         return hrp::BodyPtr();
     }
+}
+
+void GLsceneBase::setBackGroundColor(float rgb[3])
+{
+    for (int i=0; i<3; i++) m_bgColor[i] = rgb[i];
 }
