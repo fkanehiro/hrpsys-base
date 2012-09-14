@@ -367,7 +367,6 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
 	    //manip->calcInverseKinematics2Loop(vel_p, vel_r, dq);
 
 	    hrp::dvector v(6);
-	    vel_r = hrp::Vector3(0,0,0);
 	    v << vel_p, vel_r;
 	    hrp::dvector dq(n);
 	    dq = Jinv * v; // dq = pseudoInverse(J) * v
