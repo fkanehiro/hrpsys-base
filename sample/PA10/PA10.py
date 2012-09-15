@@ -14,7 +14,7 @@ def connectComps():
     #
     connectPorts(seq.port("qRef"), sh.port("qIn"))
     #
-    connectPorts(sh.port("qOut"),  [seq.port("qInit"), rh.port("qRef")])
+    connectPorts(sh.port("qOut"),  [seq.port("qInit"), qRefPort])
     #
 
 def activateComps():
@@ -41,15 +41,17 @@ def createComps():
     log_svc = narrow(log.service("service0"), "DataLoggerService")
     
 def init():
-    global ms, rh, rh_svc, ep_svc, simulation_mode
+    global ms, rh, rh_svc, ep_svc, simulation_mode, qRefPort
 
     ms = rtm.findRTCmanager()
     rh = rtm.findRTC("RobotHardware0")
     if rh:
         rh_svc = narrow(rh.service("service0"), "RobotHardwareService")
         ep_svc = narrow(rh.ec, "ExecutionProfileService")
+        qRefPort = rh.port("qRef")
     else:
         rh = rtm.findRTC("PA10Controller(Robot)0")
+        qRefPort = rtm.findRTC("HGcontroller0").port("qIn")
         simulation_mode = 1
     simulation_mode = 0
 
