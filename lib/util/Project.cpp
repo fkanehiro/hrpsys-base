@@ -10,7 +10,7 @@
 #include "Project.h"
 
 ThreeDView::ThreeDView() : 
-    showScale(true), showCoM(false), showCollision(true){ 
+    showScale(true), showCoM(false), showCoMonFloor(false), showCollision(true){ 
     double r = 5.0, pan = M_PI/4, tilt = M_PI/16;
     double cp = cos(pan), sp = sin(pan);
     double ct = cos(tilt), st = sin(tilt);
@@ -320,6 +320,8 @@ bool Project::parse(const std::string& filename)
                       m_3dview.showScale = std::string((char *)(xmlGetProp(cur_node, (xmlChar *)"value"))) == "true";
                   }else if ( xmlStrEqual(xmlGetProp(cur_node, (xmlChar *)"name"),(xmlChar *)"showCoM") ) {
                       m_3dview.showCoM = std::string((char *)(xmlGetProp(cur_node, (xmlChar *)"value"))) == "true";
+                  }else if ( xmlStrEqual(xmlGetProp(cur_node, (xmlChar *)"name"),(xmlChar *)"showCoMonFloor") ) {
+                      m_3dview.showCoMonFloor = std::string((char *)(xmlGetProp(cur_node, (xmlChar *)"value"))) == "true";
                   }else if ( xmlStrEqual(xmlGetProp(cur_node, (xmlChar *)"name"),(xmlChar *)"showCollision") ) {
                       m_3dview.showCollision = std::string((char *)(xmlGetProp(cur_node, (xmlChar *)"value"))) == "true";
                   }else if ( xmlStrEqual(xmlGetProp(cur_node, (xmlChar *)"name"),(xmlChar *)"eyeHomePosition") ) {

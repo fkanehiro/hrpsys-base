@@ -281,13 +281,15 @@ void GLscene::drawAdditionalLines()
     Vector3 relZmp(com.zmp[0], com.zmp[1], com.zmp[2]);
     hrp::Link *root = body(0)->rootLink();
     Vector3 absZmp = root->R*relZmp + root->p;
-    Vector3 projectedCom = body(0)->calcCM();
-    projectedCom[2] = 0;
     glBegin(GL_LINES);
     glColor3f(1,0,1);
     drawCross(absZmp);
-    glColor3f(0,1,1);
-    drawCross(projectedCom);
+    if (m_showCoMonFloor){
+        Vector3 projectedCom = body(0)->calcCM();
+        projectedCom[2] = 0;
+        glColor3f(0,1,1);
+        drawCross(projectedCom);
+    }
     glEnd();
 }
 
@@ -295,4 +297,9 @@ void GLscene::drawAdditionalLines()
 void GLscene::setCollisionCheckPairs(const std::vector<hrp::ColdetLinkPairPtr> &i_pairs)
 {
     m_pairs = i_pairs;
+}
+
+void GLscene::showCoMonFloor(bool flag)
+{
+    m_showCoMonFloor = flag;
 }

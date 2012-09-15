@@ -125,6 +125,7 @@ int main(int argc, char* argv[])
     //==================== viewer ===============
     GLscene scene(&log);
     scene.setBackGroundColor(bgColor);
+    scene.showCoMonFloor(prj.view().showCoMonFloor);
 
     SDLwindow window(&scene, &log, &monitor);
     window.init(wsize, wsize);

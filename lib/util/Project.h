@@ -83,7 +83,7 @@ class ThreeDView
 {
 public:
     ThreeDView();
-    bool showScale, showCoM, showCollision;  
+    bool showScale, showCoM, showCoMonFloor, showCollision;  
     double T[16];
 };
 
