@@ -267,6 +267,44 @@ bool Project::parse(const std::string& filename)
               cur_node = cur_node->next;
           }
           m_collisionPairs.push_back(c);
+      } else if ( xmlStrEqual ( xmlGetProp(node, (xmlChar *)"class"), (xmlChar *)"com.generalrobotix.ui.item.GrxExtraJointItem")  ) {
+          ExtraJointItem c;
+          xmlNodePtr cur_node = node->children;
+          while ( cur_node ) {
+              if ( cur_node->type == XML_ELEMENT_NODE ) {
+                  if ( xmlStrEqual(xmlGetProp(cur_node, (xmlChar *)"name"),(xmlChar *)"object1Name") ) {
+                      c.object1Name = (char *)(xmlGetProp(cur_node, (xmlChar *)"value"));
+                  } else if ( xmlStrEqual(xmlGetProp(cur_node, (xmlChar *)"name"),(xmlChar *)"object2Name") ) {
+                      c.object2Name = (char *)(xmlGetProp(cur_node, (xmlChar *)"value"));
+                  } else if ( xmlStrEqual(xmlGetProp(cur_node, (xmlChar *)"name"),(xmlChar *)"link1Name") ) {
+                      c.link1Name = (char *)(xmlGetProp(cur_node, (xmlChar *)"value"));
+                  } else if ( xmlStrEqual(xmlGetProp(cur_node, (xmlChar *)"name"),(xmlChar *)"link2Name") ) {
+                      c.link2Name = (char *)(xmlGetProp(cur_node, (xmlChar *)"value"));
+                  } else if ( xmlStrEqual(xmlGetProp(cur_node, (xmlChar *)"name"),(xmlChar *)"jointType") ) {
+                      c.jointType = (char *)(xmlGetProp(cur_node, (xmlChar *)"value"));
+                  } else if ( xmlStrEqual(xmlGetProp(cur_node, (xmlChar *)"name"),(xmlChar *)"jointAxis") ) {
+                      float x, y, z;
+                      sscanf(((char *)xmlGetProp(cur_node, (xmlChar *)"value")),"%f %f %f", &x, &y, &z);
+                      c.jointAxis[0] = x; c.jointAxis[1] = y; c.jointAxis[2] = z;
+                  } else if ( xmlStrEqual(xmlGetProp(cur_node, (xmlChar *)"name"),(xmlChar *)"link1LocalPos") ) {
+                      float x, y, z;
+                      sscanf(((char *)xmlGetProp(cur_node, (xmlChar *)"value")),"%f %f %f", &x, &y, &z);
+                      c.link1LocalPos[0] = x; c.link1LocalPos[1] = y; c.link1LocalPos[2] = z;
+                  } else if ( xmlStrEqual(xmlGetProp(cur_node, (xmlChar *)"name"),(xmlChar *)"link2LocalPos") ) {
+                      float x, y, z;
+                      sscanf(((char *)xmlGetProp(cur_node, (xmlChar *)"value")),"%f %f %f", &x, &y, &z);
+                      c.link2LocalPos[0] = x; c.link2LocalPos[1] = y; c.link2LocalPos[2] = z;
+                  } else {
+#if 0
+                      std::cerr << "Unknown tag : " << cur_node->name << " "
+                                << ", name=" << xmlGetProp(cur_node, (xmlChar *)"name")
+                                << ", value=" << xmlGetProp(cur_node, (xmlChar *)"value") << std::endl;
+#endif
+                  }
+              }
+              cur_node = cur_node->next;
+          }
+          m_extraJoints.push_back(c);
       }
   }
 

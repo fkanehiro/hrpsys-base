@@ -46,6 +46,17 @@ public:
     std::string collisionShape;
 };
 
+class ExtraJointItem {
+public:
+    ExtraJointItem() :
+        jointAxis(0,0,1), 
+        link1LocalPos(0,0,0), link2LocalPos(0,0,0), 
+        jointType("xyz"){}
+    hrp::Vector3 jointAxis;
+    hrp::Vector3 link1LocalPos, link2LocalPos;
+    std::string object1Name, object2Name, link1Name, link2Name, jointType;
+};
+
 class ModelItem {
 public:
     std::string url;
@@ -102,6 +113,7 @@ public:
     void realTime(bool flag) { m_realTime = flag; }
     std::map<std::string, ModelItem>& models(){ return m_models; }
     std::vector<CollisionPairItem>& collisionPairs() { return m_collisionPairs; }
+    std::vector<ExtraJointItem>& extraJoints() { return m_extraJoints; }
     RTSItem &RTS() { return m_rts; }
     RobotHardwareClientView &RobotHardwareClient() { return m_rhview; }
     ThreeDView &view() { return m_3dview; }
@@ -114,6 +126,7 @@ private:
     bool m_realTime;
     std::map<std::string, ModelItem> m_models;
     std::vector<CollisionPairItem> m_collisionPairs;
+    std::vector<ExtraJointItem> m_extraJoints;
     RTSItem m_rts;
     RobotHardwareClientView m_rhview;
     ThreeDView m_3dview;

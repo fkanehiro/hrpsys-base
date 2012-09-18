@@ -99,6 +99,50 @@ void initWorld(Project& prj, BodyFactory &factory,
         }
     }
 
+    for (unsigned int i=0; i<prj.extraJoints().size(); i++){
+        const ExtraJointItem &ej = prj.extraJoints()[i];
+        int bodyIndex1 = world.bodyIndex(ej.object1Name);
+        if (bodyIndex1 < 0){
+            // different name is used for RTC
+            if (prj.models().find(ej.object1Name) != prj.models().end()){
+                bodyIndex1 
+                    = world.bodyIndex(prj.models()[ej.object1Name].rtcName);
+            }
+        }
+        int bodyIndex2 = world.bodyIndex(ej.object2Name);
+        if (bodyIndex2 < 0){
+            // different name is used for RTC
+            if (prj.models().find(ej.object2Name) != prj.models().end()){
+                bodyIndex2 
+                    = world.bodyIndex(prj.models()[ej.object2Name].rtcName);
+            }
+        }
+
+        if(bodyIndex1 >= 0 && bodyIndex2 >= 0){
+            hrp::BodyPtr bodyPtr1 = world.body(bodyIndex1);
+            hrp::BodyPtr bodyPtr2 = world.body(bodyIndex2);
+
+            hrp::Link *link1 = bodyPtr1->link(ej.link1Name);
+            hrp::Link *link2 = bodyPtr2->link(ej.link2Name);
+
+            int jtype;
+            if (ej.jointType == "xyz"){
+                jtype = 0;
+            }else if (ej.jointType == "xy"){
+                jtype = 1;
+            }else if (ej.jointType == "z"){
+                jtype = 2;
+            }
+
+            if (link1 && link2){
+                world.constraintForceSolver.addExtraJoint(
+                    bodyIndex1, link1, bodyIndex2, link2, 
+                    ej.link1LocalPos.data(), ej.link2LocalPos.data(), 
+                    jtype, ej.jointAxis.data());
+            }
+        }
+    }
+
     world.enableSensors(true);
 
     int nBodies = world.numBodies();
