@@ -7,6 +7,7 @@ set(input_files package.h utilities.h
 		      ../rtc/Joystick2Velocity2D/Joystick2Velocity2D.txt
 		      ../rtc/Joystick2Velocity3D/Joystick2Velocity3D.txt
 		      ../rtc/Joystick2PanTiltAngles/Joystick2PanTiltAngles.txt
+		      ../rtc/JpegDecoder/JpegDecoder.txt
 		      ../rtc/NullComponent/NullComponent.txt
 		      ../rtc/OccupancyGridMap3D/OccupancyGridMap3D.txt
 		      ../rtc/OGMap3DViewer/OGMap3DViewer.txt
@@ -14,9 +15,12 @@ set(input_files package.h utilities.h
 		      ../rtc/RobotHardware/RobotHardware.txt
 		      ../rtc/SequencePlayer/SequencePlayer.txt
 		      ../rtc/Simulator/Simulator.txt
+		      ../rtc/SoftErrorLimiter/SoftErrorLimiter.txt
 		      ../rtc/StateHolder/StateHolder.txt
+		      ../rtc/VideoCapture/VideoCapture.txt
 		      ../rtc/Viewer/Viewer.txt
 		      ../rtc/VirtualCamera/VirtualCamera.txt
+		      ../rtc/VirtualForceSensor/VirtualForceSensor.txt
 		      ../rtc/WavPlayer/WavPlayer.txt
 		      ../lib/io/iob.h
 		      ../idl/DataLoggerService.idl

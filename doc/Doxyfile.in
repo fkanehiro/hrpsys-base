@@ -468,6 +468,7 @@ INPUT		      =  @CMAKE_CURRENT_SOURCE_DIR@/package.h \
 		      @CMAKE_CURRENT_SOURCE_DIR@/utilities.h \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../jython/rtm.py \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/CameraImageViewer \
+		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/CollisionDetector \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/DataLogger \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/ForwardKinematics \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/HGcontroller \
@@ -483,6 +484,7 @@ INPUT		      =  @CMAKE_CURRENT_SOURCE_DIR@/package.h \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/RobotHardware \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/SequencePlayer \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/Simulator \
+		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/SoftErrorLimiter \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/StateHolder \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/VideoCapture \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/Viewer \

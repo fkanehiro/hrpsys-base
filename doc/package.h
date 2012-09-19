@@ -37,10 +37,12 @@ To use python scripts to create RT components, connect ports and get/set propert
     <li>\ref RobotHardware</li>
     <li>\ref SequencePlayer</li>
     <li>\ref Simulator</li>
+    <li>\ref SoftErrorLimiter</li>
     <li>\ref StateHolder</li>
-    <li>\ref Viewer</li>
     <li>\ref VideoCapture</li>
+    <li>\ref Viewer</li>
     <li>\ref VirtualCamera</li>
+    <li>\ref VirtualForceSensor</li>
     <li>\ref WavPlayer</li>
   </ul>
   <li>Services provided by basic RT components</li>
@@ -52,6 +54,7 @@ To use python scripts to create RT components, connect ports and get/set propert
     <li>\ref OpenHRP::OGMap3DService</li>
     <li>\ref OpenHRP::RobotHardwareService</li>
     <li>\ref OpenHRP::SequencePlayerService</li>
+    <li>\ref OpenHRP::SeftErrorLimiterService</li>
     <li>\ref OpenHRP::StateHolderService</li>
     <li>\ref OpenHRP::TimeKeeperService</li>
     <li>\ref OpenHRP::WavPlayerService</li>
