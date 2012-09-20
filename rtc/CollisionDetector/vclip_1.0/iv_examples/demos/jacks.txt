@@ -1,0 +1,12 @@
+../ptrees/jack.pt
+
+*
+
+0.8
+
+jack
+jack
+jack
+jack
+jack
+jack

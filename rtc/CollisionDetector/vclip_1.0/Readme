@@ -1,0 +1,20 @@
+V-Clip Library Distribution, version 1.0
+
+Contents:
+
+Makefile	Makefile for all targets
+Readme		this file
+doc		documentation
+examples	example programs that don't require Inventor
+include		header files for V-Clip
+iv_examples	example programs that require Inventor
+lib		where the V-Clip library is put
+ptrees		sample PolyTree files
+src		source code for V-Clip
+
+
+Follow the two steps listed in the Makefile, and then do a make in
+this directory to build the V-Clip library(s) and example programs.
+Readme files in the various directories give more information.  This
+distribution was developed using SGI's 7.1 C++ compiler for IRIX 6.2.
+

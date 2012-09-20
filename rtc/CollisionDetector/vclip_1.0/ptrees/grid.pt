@@ -1,0 +1,55 @@
+atomic unit-cube
+ne0	+0.5	+0.5	-0.5
+nw0	-0.5	+0.5	-0.5
+sw0	-0.5	-0.5	-0.5
+se0	+0.5	-0.5	-0.5
+ne1	+0.5	+0.5	+0.5
+nw1	-0.5	+0.5	+0.5
+sw1	-0.5	-0.5	+0.5
+se1	+0.5	-0.5	+0.5
+*
+bottom	sw0 nw0 ne0 se0
+top	sw1 se1 ne1 nw1
+south	sw0 se0 se1 sw1
+north	ne1 ne0 nw0 nw1
+east	se0 ne0 ne1 se1
+west	sw0 sw1 nw1 nw0
+*
+
+compound 2-cubes
+{
+	{trans -1 0 0} unit-cube
+	{trans +1 0 0} unit-cube
+}
+
+compound 4-cubes
+{
+	{trans 0 -1 0} 2-cubes
+	{trans 0 +1 0} 2-cubes
+}
+
+compound 8-cubes
+{
+	{trans -2 0 0} 4-cubes
+	{trans +2 0 0} 4-cubes
+}
+
+compound 16-cubes
+{
+	{trans 0 -2 0} 8-cubes
+	{trans 0 +2 0} 8-cubes
+}
+
+compound 32-cubes
+{
+	{trans -4 0 0} 16-cubes
+	{trans +4 0 0} 16-cubes
+}
+
+compound 64-cubes
+{
+	{trans 0 -4 0} 32-cubes
+	{trans 0 +4 0} 32-cubes
+}
+
+

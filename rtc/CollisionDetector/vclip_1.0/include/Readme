@@ -1,0 +1,12 @@
+mv.h
+
+Headers for matrix and vector classes, plus a few other things.
+V-Clip uses a very small subset of the functionality here, but they
+might be useful in other applications.
+
+
+vclip.h
+
+Headers for vclip.C and PolyTree.C.  Applications should include this file.
+
+

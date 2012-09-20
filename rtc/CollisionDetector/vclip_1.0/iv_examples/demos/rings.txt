@@ -1,0 +1,9 @@
+../ptrees/ring.pt
+
+*
+
+0.3
+
+ring
+ring
+ring

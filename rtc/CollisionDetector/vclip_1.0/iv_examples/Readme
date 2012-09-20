@@ -1,0 +1,60 @@
+Example Programs that require the Inventor library
+
+
+
+*** inventorize
+
+This program reads in a specified PolyTree file, and then writes an
+ascii Inventor description of the last PolyTree defined in that file
+to standard output.  Any standard Inventor viewer can be used to view
+the model.  For example, try:
+
+	% inventorize ../ptrees/jack.pt > jack.iv
+	% ivview jack.iv
+
+
+
+*** vcdemo
+
+This program provides the best demonstration of the V-Clip algorithm
+in action.  It takes no command line arguments.  Run it, and open one
+of the demo files in the demo directory.  These files are all of the
+format:
+
+	PolyTree file 1
+	PolyTree file 2
+	...
+	PolyTree file N
+	*
+
+	orbit scale factor
+
+	PolyTree 1
+	PolyTree 2
+	...
+	PolyTree N
+
+The PolyTree files are read in (pathnames should be relative to the
+executable's directory), and the specified PolyTrees are instantiated.
+They are displayed along with the closest points between all pairs.
+The PolyTrees can be clicked and dragged and also made to
+automatically follow cyclic trajectories.  Closest points are
+maintained in real time using V-Clip.  The PolyTrees turn different
+colors, based on how many other PolyTrees are penetrating them.  The
+color sequence (actually, a material sequence) is defined in
+materials.iv.  The orbit scale factor controls the size of the orbits
+that the PolyTrees automatically follow, relative to the size of the
+PolyTrees themselves.  Smaller values keep the PolyTrees huddled
+together; larger values make them move farther faster.
+
+NOTE!  Interactively translating and rotating selected objects is ok,
+but rescaling them is not.  This is because rescaling creates a
+discrepency between the graphical models and the geometric models used
+by V-Clip.  Do not manipulate the rescaling handles on the corners of
+the selection cube.  To remove the rescaling handles completely,
+execute this command before running vcdemo:
+
+	% setenv SO_DRAGGER_DIR .
+
+This will cause the file ./transformBoxDragger.iv to be read, which
+will remove the rescaling handles from the selection cube.

@@ -1,0 +1,9 @@
+../ptrees/sixspike.pt
+
+*
+
+0.5
+
+six-spike
+six-spike
+six-spike

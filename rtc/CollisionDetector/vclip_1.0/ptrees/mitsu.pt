@@ -1,0 +1,24 @@
+atomic diamond
+bot0	 0   0           -0.1
+rgt0	+0.5 0.866025403 -0.1
+top0	 0   1.732050808 -0.1
+lft0	-0.5 0.866025403 -0.1
+bot1	 0   0           +0.1
+rgt1	+0.5 0.866025403 +0.1
+top1	 0   1.732050808 +0.1
+lft1	-0.5 0.866025403 +0.1
+*
+back	bot0 lft0 top0 rgt0
+front	bot1 rgt1 top1 lft1
+ne	rgt0 top0 top1 rgt1
+nw	top0 lft0 lft1 top1
+sw	lft0 bot0 bot1 lft1
+se	bot0 rgt0 rgt1 bot1
+*
+
+compound mitsu-logo
+{
+	{ }		diamond
+	{rot +120 +k}	diamond
+	{rot -120 +k}	diamond
+}

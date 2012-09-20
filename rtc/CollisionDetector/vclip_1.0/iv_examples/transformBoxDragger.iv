@@ -1,0 +1,17 @@
+#Inventor V2.0 ascii
+
+# This file modifies the underlying dragger geometry of
+# SoTransformBoxManip by removing the handles on the corners.  These
+# handles normally provide the ability to rescale selected graphical
+# objects, but since we want the graphics to always match the geometric
+# data structures used by V-Clip, we disallow this rescaling.  The
+# selected objects can be translated and rotated in the normal manner.
+
+# Don't forget to set environment variable SO_DRAGGER_DIR to this
+# directory, so this file can be found.  See pages 411-418 in Inventor
+# Mentor for more details.
+
+
+DEF transformBoxScalerScaler Separator { }
+
+DEF transformBoxScalerScalerActive Separator { }

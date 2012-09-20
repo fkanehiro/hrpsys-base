@@ -1,0 +1,15 @@
+mv.C
+
+Matrix and vector classes, plus a few other things.  V-Clip uses a
+very small subset of the functionality here, but they might be useful
+in other applications.
+
+
+PolyTree.C
+
+Functions for building and manipulating Polyhedra and PolyTrees.
+
+
+vclip.C
+
+The V-Clip algorithm itself.

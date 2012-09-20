@@ -1,0 +1,41 @@
+Example programs that do not require the Inventor library
+
+
+
+*** print
+
+This program prints out the contents of the PolyTree library
+after loading a PolyTree file.  For example, try:
+
+	% print ../ptrees/simple.pt
+
+
+
+*** allpairs
+
+This program reads a file of the format:
+
+	PolyTree file 1
+	PolyTree file 2
+	...
+	PolyTree file N
+	*
+	body 1 spec
+	body 2 spec
+	...
+	body M spec
+	*
+
+It then reads the specified PolyTree files, and then instantiates the
+specified bodies.  Each body specification is the name of a defined
+PolyTree and its pose in space.  V-Clip is then run on all pairs of
+bodies.  For each pair, V-Clip returns the signed distance between the
+objects, and the closest points between the object.  The coordinates
+of each closest point are printed first in the local PolyTree frame,
+followed by a slash, and then in the common global frame.  For
+example, try:
+
+	% allpairs ap1.txt
+
+
+

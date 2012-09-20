@@ -25,6 +25,9 @@
 #include "TimedPosture.h"
 #include "interpolator.h"
 
+#include "VclipLinkPair.h"
+#include "CollisionDetectorService_impl.h"
+
 // Service implementation headers
 // <rtc-template block="service_impl_h">
 
@@ -102,6 +105,8 @@ class CollisionDetector
   // no corresponding operation exists in OpenRTm-aist-0.2.0
   // virtual RTC::ReturnCode_t onRateChanged(RTC::UniqueId ec_id);
 
+  bool setTolerance(const char *i_link_pair_name, double i_tolerance);
+
 
  protected:
   // Configuration variable declaration
@@ -127,11 +132,13 @@ class CollisionDetector
 
   // CORBA Port declaration
   // <rtc-template block="corbaport_declare">
+  RTC::CorbaPort m_CollisionDetectorServicePort;
   
   // </rtc-template>
 
   // Service declaration
   // <rtc-template block="service_declare">
+  CollisionDetectorService_impl m_service0;
   
   // </rtc-template>
 
@@ -140,15 +147,18 @@ class CollisionDetector
 
   
   // </rtc-template>
+  void setupVClipModel(hrp::BodyPtr i_body);
+  void setupVClipModel(hrp::Link *i_link);
 
  private:
   GLscene m_scene;
   LogManager<TimedPosture> m_log; 
   SDLwindow m_window;
   GLbody *m_glbody;
+  std::vector<Vclip::Polyhedron *> m_VclipLinks;
   bool m_use_viewer;
   hrp::BodyPtr m_robot;
-  std::vector<hrp::ColdetLinkPairPtr> m_pair;
+  std::map<std::string, VclipLinkPairPtr> m_pair;
   bool m_safe_posture;
   int m_recover_time;
   double m_dt;

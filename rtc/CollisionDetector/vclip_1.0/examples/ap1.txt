@@ -1,0 +1,11 @@
+../ptrees/simple.pt
+
+*
+
+tetra		{}
+unit-cube	{trans 1.1 1.1 1.1}
+unit-cube	{rot 30 1 -1 0}
+unit-cube	{trans -10 -10 -10 rot 30 j}
+
+*
+

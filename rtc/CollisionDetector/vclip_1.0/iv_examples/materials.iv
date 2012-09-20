@@ -1,0 +1,34 @@
+#Inventor V2.1 ascii
+
+# For the vcdemo program, the material used when rendering an object
+# is based on how many other objects are penetrating it.  This file
+# defines the material sequence used.  The first material is used when
+# no other objects are penetrating, the second is used when one other
+# objects is penetrating, and so on.  The last material is used
+# whenever (n-1) or more other objects are penetrating, where n is the
+# number of material defined here.
+
+
+Material {
+    diffuseColor   0.2 0.0 0.8
+    specularColor  0.2 0.0 0.8
+}
+
+
+Material {
+    diffuseColor   1.0 0.0 0.0
+    specularColor  1.0 0.0 0.0
+}
+
+
+Material {
+    diffuseColor   1.0 1.0 0.0
+    specularColor  1.0 1.0 0.0
+}
+
+
+Material {
+    diffuseColor   1.0 1.0 1.0
+    specularColor  1.0 1.0 1.0
+}
+
