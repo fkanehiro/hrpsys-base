@@ -16,6 +16,7 @@
 
 using namespace OpenHRP;
 using namespace hrp;
+using namespace CollisionDetectorComponent;
 
 void GLscene::updateScene()
 {
