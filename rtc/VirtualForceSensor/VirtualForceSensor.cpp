@@ -179,9 +179,10 @@ RTC::ReturnCode_t VirtualForceSensor::onExecute(RTC::UniqueId ec_id)
     // reference model
     for ( int i = 0; i < m_robot->numJoints(); i++ ){
       m_robot->joint(i)->q = m_qCurrent.data[i];
-      m_robot->joint(i)->u = m_tau.data[i];
     }
     m_robot->calcForwardKinematics();
+    m_robot->calcCM();
+    m_robot->rootLink()->calcSubMassCM();
 
     std::map<std::string, hrp::JointPathPtr>::iterator it = m_sensors.begin();
     int i = 0;
@@ -196,20 +197,43 @@ RTC::ReturnCode_t VirtualForceSensor::onExecute(RTC::UniqueId ec_id)
       hrp::dvector torque(n);
       hrp::dvector force(6);
 
+      hrp::Vector3 g(0, 0, 9.8);
+#if 0
       std::cerr << "sensor torque  : ";
       for (int j = 0; j < n; j++) {
-        torque[j] = path->joint(j)->u;
-        std::cerr << " " << torque[j] ;
+        std::cerr << " " << m_tau.data[path->joint(j)->jointId] ;
       }
       std::cerr << std::endl;
+      // subm*g x (submwc/subm - p) . R*a
+      std::cerr << "  calc torque  : ";
+      for (int j = 0; j < n; j++) {
+          std::cerr << " " << (path->joint(j)->subm*g).cross(path->joint(j)->submwc/path->joint(j)->subm - path->joint(j)->p).dot(path->joint(j)->R*path->joint(j)->a);
+      }
+      std::cerr << std::endl;
+#endif
 
-      std::cerr << "result force : ";
+      for (int j = 0; j < n; j++) {
+        torque[j] = m_tau.data[path->joint(j)->jointId] -
+            (path->joint(j)->subm*g).cross(path->joint(j)->submwc/path->joint(j)->subm - path->joint(j)->p).dot(path->joint(j)->R*path->joint(j)->a);
+      }
       force = Jinv * torque;
       for ( int j = 0; j < 6; j ++ ) {
         m_force[i].data[j] = force[j];
+      }
+
+#if 0
+      std::cerr << "        torque : ";
+      for (int j = 0; j < n; j++) {
+        std::cerr << " " << torque[j];
+      }
+      std::cerr << std::endl;
+      std::cerr << " result force  : ";
+      for ( int j = 0; j < 6; j ++ ) {
         std::cerr << " " << force[j] ;
       }
       std::cerr << std::endl;
+#endif
+
       m_forceOut[i]->write();
 
       it++; i++;
