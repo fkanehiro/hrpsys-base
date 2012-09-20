@@ -151,7 +151,7 @@ class CollisionDetector
   void setupVClipModel(hrp::Link *i_link);
 
  private:
-  GLscene m_scene;
+  CollisionDetectorComponent::GLscene m_scene;
   LogManager<TimedPosture> m_log; 
   SDLwindow m_window;
   GLbody *m_glbody;
