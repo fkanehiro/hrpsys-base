@@ -23,10 +23,12 @@ set(input_files package.h utilities.h
 		      ../rtc/VirtualForceSensor/VirtualForceSensor.txt
 		      ../rtc/WavPlayer/WavPlayer.txt
 		      ../lib/io/iob.h
+		      ../idl/CollisionDetectorService.idl
 		      ../idl/DataLoggerService.idl
 		      ../idl/ExecutionProfileService.idl
 		      ../idl/ForwardKinematicsService.idl
 		      ../idl/ImpedanceControllerService.idl
+		      ../idl/OGMap3DService.idl
 		      ../idl/RobotHardwareService.idl
 		      ../idl/SequencePlayerService.idl
 		      ../idl/StateHolderService.idl

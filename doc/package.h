@@ -47,6 +47,7 @@ To use python scripts to create RT components, connect ports and get/set propert
   </ul>
   <li>Services provided by basic RT components</li>
   <ul>
+    <li>\ref OpenHRP::CollisionDetectorService</li>
     <li>\ref OpenHRP::DataLoggerService</li>
     <li>\ref OpenHRP::ExecutionProfileService</li>
     <li>\ref OpenHRP::ForwardKinematicsService</li>

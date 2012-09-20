@@ -1,0 +1,18 @@
+/**
+ * @file CollisionDetectorService.idl
+ * @brief Services for the collision detector
+ */
+module OpenHRP
+{
+  
+  interface CollisionDetectorService
+  {
+
+    /**
+     * @brief set tolerance value for collision detector
+     * @param link_pair_name, tolerance torelance value
+     * @return void
+     */
+    boolean setTolerance(in string link_par_name, in double tolerance);
+  };
+};

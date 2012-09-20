@@ -1,0 +1,87 @@
+# This file demonstrates how to specify a compound PolyTree with a
+# nested description.  Only the underlying atomic PolyTrees are
+# referred to by name in the description of PolyTree ring.  The
+# arrqangement of the hierarchy is specified by the poses and
+# groupings within curly brackets in ring's description.  There is no
+# limit to the depth of the nesting.
+
+# Compare this file to ring.pt, which specifies an identical geometry
+# for PolyTree ring, but builds up the geometry in stages.  The
+# approach used in ring.pt has the advantages that it is easier to
+# read and that it is more memory efficient (more instances of
+# Polyhedra can be shared).  However, specifying PolyTrees as in this
+# file may be more convenient at times.
+
+# When nested descriptions are used, there are some PolyTree nodes
+# without explicit names.  These are given the name "<internal node>".
+
+
+atomic ring-ortho-seg
+ne0	+1.883	+0.924	-.5
+nw0	-1.883	+0.924	-.5
+sw0	-1.5	 0	-.5
+se0	+1.5	 0	-.5
+ne1	+1.883	+0.924	+.5
+nw1	-1.883	+0.924	+.5
+sw1	-1.5	 0	+.5
+se1	+1.5	 0	+.5
+*
+bottom	sw0 nw0 ne0 se0
+top	sw1 se1 ne1 nw1
+south	sw0 se0 se1 sw1
+north	ne1 ne0 nw0 nw1
+east	se0 ne0 ne1 se1
+west	sw0 sw1 nw1 nw0
+*
+
+atomic ring-diag-seg
+ne0	+1.924	-1.617	-.5
+nw0	-1.617	+1.924	-.5
+sw0	-2	+1	-.5
+se0	+1	-2	-.5
+ne1	+1.924	-1.617	+.5
+nw1	-1.617	+1.924	+.5
+sw1	-2	+1	+.5
+se1	+1	-2	+.5
+*
+bottom	sw0 nw0 ne0 se0
+top	sw1 se1 ne1 nw1
+south	sw0 se0 se1 sw1
+north	ne1 ne0 nw0 nw1
+east	se0 ne0 ne1 se1
+west	sw0 sw1 nw1 nw0
+*
+
+
+compound ring {
+  {}
+    {
+      {} 
+        {
+          {trans   0 4.5 0} ring-ortho-seg
+          {trans 3.5 3.5 0} ring-diag-seg
+        }
+
+      {rot 90 k}
+        {
+          {trans   0 4.5 0} ring-ortho-seg
+          {trans 3.5 3.5 0} ring-diag-seg
+        }
+    }
+
+  {rot 180 k}
+    {
+      {}
+        {
+          {trans   0 4.5 0} ring-ortho-seg
+          {trans 3.5 3.5 0} ring-diag-seg
+        }
+      {rot 90 k}
+        {
+          {trans   0 4.5 0} ring-ortho-seg
+          {trans 3.5 3.5 0} ring-diag-seg
+        }
+    }
+
+}
+

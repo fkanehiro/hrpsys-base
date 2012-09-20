@@ -1,0 +1,10 @@
+../ptrees/sphere.pt
+
+*
+
+1.0
+
+sphere
+sphere
+sphere
+sphere

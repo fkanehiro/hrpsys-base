@@ -1,0 +1,14 @@
+../ptrees/platonics.pt
+../ptrees/ring.pt
+
+*
+
+1.0
+
+tetrahedron
+cube
+octahedron
+icosahedron
+ring
+ring
+

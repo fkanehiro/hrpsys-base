@@ -1,0 +1,51 @@
+atomic ring-ortho-seg
+ne0	+1.883	+0.924	-.5
+nw0	-1.883	+0.924	-.5
+sw0	-1.5	 0	-.5
+se0	+1.5	 0	-.5
+ne1	+1.883	+0.924	+.5
+nw1	-1.883	+0.924	+.5
+sw1	-1.5	 0	+.5
+se1	+1.5	 0	+.5
+*
+bottom	sw0 nw0 ne0 se0
+top	sw1 se1 ne1 nw1
+south	sw0 se0 se1 sw1
+north	ne1 ne0 nw0 nw1
+east	se0 ne0 ne1 se1
+west	sw0 sw1 nw1 nw0
+*
+
+atomic ring-diag-seg
+ne0	+1.924	-1.617	-.5
+nw0	-1.617	+1.924	-.5
+sw0	-2	+1	-.5
+se0	+1	-2	-.5
+ne1	+1.924	-1.617	+.5
+nw1	-1.617	+1.924	+.5
+sw1	-2	+1	+.5
+se1	+1	-2	+.5
+*
+bottom	sw0 nw0 ne0 se0
+top	sw1 se1 ne1 nw1
+south	sw0 se0 se1 sw1
+north	ne1 ne0 nw0 nw1
+east	se0 ne0 ne1 se1
+west	sw0 sw1 nw1 nw0
+*
+
+compound quarter-ring {
+  {trans   0 4.5 0} ring-ortho-seg
+  {trans 3.5 3.5 0} ring-diag-seg
+}
+
+compound half-ring {
+  {}		quarter-ring
+  {rot 90 k}	quarter-ring
+}
+
+compound ring {
+  {}		half-ring
+  {rot 180 k}	half-ring
+}
+

@@ -1,0 +1,22 @@
+Sample PolyTree Files
+---------------------
+
+These files are used by the example programs and also serve as
+models for using the default geometry reader described in the user's
+manual.
+
+grid.pt			unconnected grids of cubes
+jack.pt			child's jack
+mitsu.pt		beloved corporate logo
+platonics.pt		platonic solids
+platonics2.pt		platonic solids with faces automatically computed
+ring.pt			boxy ring made of eight segments
+ring2.pt		alternate way of defining the same ring
+simple.pt		some very simple shapes
+sixspike.pt		pointy thing
+sphere.pt		high resolution unit sphere
+
+If the Qhull library is not linked into the V-Clip library, then only
+the files platonics.pt and sphere.pt may be read without a runtime
+error.  The other files require Qhull, either to build compound
+PolyTrees or to automatically generate faces of atomic PolyTrees.

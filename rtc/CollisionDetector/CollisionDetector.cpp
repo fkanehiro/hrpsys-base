@@ -49,6 +49,7 @@ CollisionDetector::CollisionDetector(RTC::Manager* manager)
       m_qRefIn("qRef", m_qRef),
       m_qCurrentIn("qCurrent", m_qCurrent),
       m_qOut("q", m_q),
+      m_CollisionDetectorServicePort("CollisionDetectorService"),
       // </rtc-template>
       m_glbody(NULL),
       m_use_viewer(false),
@@ -57,6 +58,7 @@ CollisionDetector::CollisionDetector(RTC::Manager* manager)
       m_window(&m_scene, &m_log),
       dummy(0)
 {
+    m_service0.collision(this);
     m_log.enableRingBuffer(1);
 }
 
@@ -84,10 +86,12 @@ RTC::ReturnCode_t CollisionDetector::onInitialize()
     addOutPort("q", m_qOut);
   
     // Set service provider to Ports
+    m_CollisionDetectorServicePort.registerProvider("service0", "CollisionDetectorService", m_service0);
   
     // Set service consumers to Ports
   
     // Set CORBA Service Ports
+    addPort(m_CollisionDetectorServicePort);
   
     // </rtc-template>
 
@@ -156,8 +160,9 @@ RTC::ReturnCode_t CollisionDetector::onActivated(RTC::UniqueId ec_id)
 	return RTC::RTC_ERROR;
     }
     loadShapeFromBodyInfo(m_glbody, binfo);
-    //convertToConvexHull(m_robot);
+    convertToConvexHull(m_robot);
     //convertToAABB(m_robot);
+    setupVClipModel(m_robot);
 
     if ( prop["collision_pair"] != "" ) {
 	std::cerr << "prop[collision_pair] ->" << prop["collision_pair"] << std::endl;
@@ -167,8 +172,8 @@ RTC::ReturnCode_t CollisionDetector::onActivated(RTC::UniqueId ec_id)
 	    size_t pos = tmp.find_first_of(':');
 	    std::string name1 = tmp.substr(0, pos), name2 = tmp.substr(pos+1);
 	    std::cerr << "check collisions between " << m_robot->link(name1)->name << " and " <<  m_robot->link(name2)->name << std::endl;
-	    m_pair.push_back(new hrp::ColdetLinkPair(m_robot->link(name1), m_robot->link(name2))); // tolerance
-            //m_pair.push_back(new hrp::ColdetLinkPair(m_robot->link(name1), m_robot->link(name2), 200)); // tolerance
+	    m_pair[tmp] = new VclipLinkPair(m_robot->link(name1), m_VclipLinks[m_robot->link(name1)->index],
+                                            m_robot->link(name2), m_VclipLinks[m_robot->link(name2)->index], 0);
 	}
     }
 
@@ -177,7 +182,9 @@ RTC::ReturnCode_t CollisionDetector::onActivated(RTC::UniqueId ec_id)
 	return RTC::RTC_ERROR;
     }
 
-    m_scene.addBody(m_robot);
+    if ( m_use_viewer ) {
+      m_scene.addBody(m_robot);
+    }
 
     // allocate memory for outPorts
     m_q.data.length(m_robot->numJoints());
@@ -226,13 +233,14 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
 	m_robot->updateLinkColdetModelPositions();
         m_safe_posture = true;
 	coil::TimeValue tm1 = coil::gettimeofday();
-	for (unsigned int i = 0; i < m_pair.size(); i++){
-	    hrp::ColdetLinkPairPtr p = m_pair[i];
+        std::map<std::string, VclipLinkPairPtr>::iterator it = m_pair.begin();
+	for (unsigned int i = 0; it != m_pair.end(); i++, it++){
+	    VclipLinkPairPtr p = it->second;
 #if 1
 	    if ( p->checkCollision()) {
               m_safe_posture = false;
               hrp::JointPathPtr jointPath = m_robot->getJointPath(p->link(0),p->link(1));
-              //std::cerr << i << "/" << m_pair.size() << " pair: " << p->link(0)->name << "/" << p->link(1)->name << "(" << jointPath->numJoints() << ")" << std::endl;
+              std::cerr << i << "/" << m_pair.size() << " pair: " << p->link(0)->name << "/" << p->link(1)->name << "(" << jointPath->numJoints() << ")" << std::endl;
               if ( m_use_viewer ) {
                 ((GLlink *)p->link(0))->highlight(true);
                 ((GLlink *)p->link(1))->highlight(true);
@@ -245,6 +253,10 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
 		m_safe_posture = false;
 		hrp::JointPathPtr jointPath = m_robot->getJointPath(p->link(0),p->link(1));
 		std::cerr << i << "/" << m_pair.size() << " pair: " << p->link(0)->name << "/" << p->link(1)->name << "(" << jointPath->numJoints() << "), distance = " << d << std::endl;
+              if ( m_use_viewer ) {
+                ((GLlink *)p->link(0))->highlight(true);
+                ((GLlink *)p->link(1))->highlight(true);
+              }
 	    }
 #endif
 	}
@@ -337,7 +349,45 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
   }
 */
 
+bool CollisionDetector::setTolerance(const char *i_link_pair_name, double i_tolerance) {
+    if (strcmp(i_link_pair_name, "all") == 0 || strcmp(i_link_pair_name, "ALL") == 0){
+        for ( std::map<std::string, VclipLinkPairPtr>::iterator it = m_pair.begin();  it != m_pair.end(); it++){
+            it->second->setTolerance(i_tolerance);
+        }
+    }else if ( m_pair.find(std::string(i_link_pair_name)) != m_pair.end() ) {
+        m_pair[std::string(i_link_pair_name)]->setTolerance(i_tolerance);
+    }else{
+        return false;
+    }
+    return true;
+}
 
+void CollisionDetector::setupVClipModel(hrp::BodyPtr i_body)
+{
+    m_VclipLinks.resize(i_body->numLinks());
+    std::cerr << i_body->numLinks() << std::endl;
+    for (int i=0; i<i_body->numLinks(); i++) {
+      assert(i_body->link(i)->index == i);
+      setupVClipModel(i_body->link(i));
+    }
+}
+
+
+void CollisionDetector::setupVClipModel(hrp::Link *i_link)
+{
+    Vclip::Polyhedron* i_vclip_model = new Vclip::Polyhedron();
+    int n = i_link->coldetModel->getNumVertices();
+    float v[3];
+    Vclip::VertFaceName vertName;
+    for (int i = 0; i < n; i ++ ) {
+        i_link->coldetModel->getVertex(i, v[0], v[1], v[2]);
+        sprintf(vertName, "v%d", i);
+        i_vclip_model->addVertex(vertName, Vclip::Vect3(v[0], v[1], v[2]));
+    }
+    i_vclip_model->buildHull();
+    i_vclip_model->check();
+    m_VclipLinks[i_link->index] = i_vclip_model;
+}
 
 extern "C"
 {

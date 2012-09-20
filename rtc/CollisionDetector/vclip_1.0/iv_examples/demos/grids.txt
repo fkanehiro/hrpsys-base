@@ -1,0 +1,10 @@
+../ptrees/grid.pt
+
+*
+
+0.5
+
+16-cubes
+16-cubes
+64-cubes
+64-cubes

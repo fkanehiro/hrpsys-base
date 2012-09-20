@@ -1,0 +1,12 @@
+../ptrees/platonics.pt
+
+*
+
+1.0
+
+tetrahedron
+cube
+octahedron
+dodecahedron
+icosahedron
+

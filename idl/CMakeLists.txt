@@ -14,6 +14,7 @@ set(idl_files
   pointcloud.idl
   ImpedanceControllerService.idl
   SoftErrorLimiterService.idl
+  CollisionDetectorService.idl
   )
 
 set(openhrp_idl_files
