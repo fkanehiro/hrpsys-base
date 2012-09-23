@@ -658,7 +658,7 @@ int Polyhedron::edgeFaceTest(const Feature *&e, const Feature *&f,
 
 #define MAX_ITERS 5000
 
-const char *ptree1name, *ptree2name;
+const char *ptree1name="", *ptree2name="";
 
 Real Polyhedron::vclip(const Polyhedron *const poly1, 
 		       const Polyhedron *const poly2, 
@@ -720,8 +720,8 @@ Real Polyhedron::vclip(const Polyhedron *const poly1,
     ofstream ofs("vclipCrash", ios::app);
     ofs << "(" << ptree1name << "," << ptree2name << ")" << endl;
     ofs << feat1->name() << '\n' << feat2->name() << '\n' << '*';
-    for (i = 0; i < sizeof(VclipPose); i++) ofs << ((char *) &X12)[i];
-    for (i = 0; i < sizeof(VclipPose); i++) ofs << ((char *) &X21)[i];
+    //for (i = 0; i < sizeof(VclipPose); i++) ofs << ((char *) &X12)[i];
+    //for (i = 0; i < sizeof(VclipPose); i++) ofs << ((char *) &X21)[i];
     ofs << '\n' << "X12\n" << X12 << '\n' << "X21\n" << X21 << endl;
     ofs << " ***** " << endl;
     ofs.close();

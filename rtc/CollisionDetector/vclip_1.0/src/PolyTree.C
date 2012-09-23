@@ -39,7 +39,7 @@
 #include <iostream>
 #include <stdlib.h>
 #include <fstream>
-#include <strstream>
+#include <sstream>
 #include <iomanip>
 #include <ctype.h>
 #include <string.h>
@@ -610,7 +610,7 @@ int Polyhedron::buildHull()
   static vector<coordT> array      (MAX_VERTS_PER_HULL * 3);
   static vector<Vertex *> hullVerts(MAX_VERTS_PER_HULL);
   static vector<int> vertUsed      (MAX_VERTS_PER_HULL);
-#undef MAX_VERTS_PER_HULL 1000
+#undef MAX_VERTS_PER_HULL
 
   //cout << "invoking qhull...   " << flush;
 
@@ -1029,7 +1029,7 @@ Polyhedron *readPolyhedron(istream &is)
     if (*faceName == '-') sprintf(faceName, "f%d", faceCounter++);
 
     is.get(s, LONG_STR_SZ, '\n'); is.get(c);  // read line & ending '\n'
-    istrstream line(s);                       // create input stream
+    istringstream line(s);                       // create input stream
     facelist.clear();
     while (1) {
       if ((line >> vertName).fail()) break;
