@@ -35,3 +35,19 @@ void GLscene::updateScene()
         }
     }
 }
+
+void GLscene::drawAdditionalLines()
+{
+    if (m_log->index()<0) return;
+
+    LogManager<TimedPosture> *lm 
+        = (LogManager<TimedPosture> *)m_log;
+    TimedPosture &tp = lm->state();
+
+    glColor3f(1,0,0);
+    for (unsigned int i=0; i<tp.lines.size(); i++){
+        const std::pair<hrp::Vector3, hrp::Vector3>& line = tp.lines[i];
+        glVertex3dv(line.first.data());
+        glVertex3dv(line.second.data());
+    }
+}

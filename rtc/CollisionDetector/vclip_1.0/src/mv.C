@@ -37,7 +37,7 @@
 
 
 #include <math.h>
-#include <strstream>
+#include <sstream>
 #include <string.h>
 #include "mv.h"
 
@@ -618,7 +618,7 @@ istream& Se3::read(istream &is)
       return is;
     }
   }
-  std::istrstream iss(buffer);
+  std::istringstream iss(buffer);
 
   
   while (!((iss >> tok).fail())) {

@@ -38,7 +38,6 @@ static const char* component_spec[] =
     "language",          "C++",
     "lang_type",         "compile",
     // Configuration variables
-    "conf.default.project", "",
     ""
 };
 // </rtc-template>
@@ -210,6 +209,9 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
     if (m_qRefIn.isNew()) {
 	m_qRefIn.read();
 
+        TimedPosture tp;
+        tp.time = 0;
+
 	assert(m_qRef.data.length() == m_robot->numJoints());
         if ( m_use_viewer ) {
           for (int i=0; i<m_glbody->numLinks(); i++){
@@ -230,26 +232,15 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
         }
         //collision check process in case of angle set above
 	m_robot->calcForwardKinematics();
-	m_robot->updateLinkColdetModelPositions();
         m_safe_posture = true;
 	coil::TimeValue tm1 = coil::gettimeofday();
         std::map<std::string, VclipLinkPairPtr>::iterator it = m_pair.begin();
 	for (unsigned int i = 0; it != m_pair.end(); i++, it++){
 	    VclipLinkPairPtr p = it->second;
-#if 1
-	    if ( p->checkCollision()) {
-              m_safe_posture = false;
-              hrp::JointPathPtr jointPath = m_robot->getJointPath(p->link(0),p->link(1));
-              std::cerr << i << "/" << m_pair.size() << " pair: " << p->link(0)->name << "/" << p->link(1)->name << "(" << jointPath->numJoints() << ")" << std::endl;
-              if ( m_use_viewer ) {
-                ((GLlink *)p->link(0))->highlight(true);
-                ((GLlink *)p->link(1))->highlight(true);
-              }
-	    }
-#else
-	    double point0[3], point1[3];
-	    double d = p->computeDistance(point0, point1);
-	    if ( d <= 0.05 ) {
+            hrp::Vector3 point0(0,0,0), point1(0,0,0);
+	    double d = p->computeDistance(point0.data(), point1.data());
+            tp.lines.push_back(std::make_pair(point0, point1));
+	    if ( d <= p->getTolerance() ) {
 		m_safe_posture = false;
 		hrp::JointPathPtr jointPath = m_robot->getJointPath(p->link(0),p->link(1));
 		std::cerr << i << "/" << m_pair.size() << " pair: " << p->link(0)->name << "/" << p->link(1)->name << "(" << jointPath->numJoints() << "), distance = " << d << std::endl;
@@ -258,7 +249,6 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
                 ((GLlink *)p->link(1))->highlight(true);
               }
 	    }
-#endif
 	}
         //     mode : m_safe_posture : recover_time  : set as q
         // safe     :           true :            0  : qRef
@@ -304,10 +294,8 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
         //
         m_qOut.write();
 
-        TimedPosture tp;
-        tp.time = 0;
         tp.posture.resize(m_qRef.data.length());
-        for (size_t i=0; i<tp.posture.size(); i++) tp.posture[i] = m_qRef.data[i];
+        for (size_t i=0; i<tp.posture.size(); i++) tp.posture[i] = m_q.data[i];
         m_log.add(tp);
     }
     if ( m_use_viewer ) m_window.oneStep();
