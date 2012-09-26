@@ -168,6 +168,11 @@ RTC::ReturnCode_t VirtualForceSensor::onExecute(RTC::UniqueId ec_id)
 {
   //std::cout << m_profile.instance_name<< ": onExecute(" << ec_id << ")" << std::endl;
 
+  coil::TimeValue coiltm(coil::gettimeofday());
+  RTC::Time tm;
+  tm.sec = coiltm.sec();
+  tm.nsec = coiltm.usec()*1000;
+
   if (m_qCurrentIn.isNew()) {
     m_qCurrentIn.read();
   }
@@ -234,6 +239,7 @@ RTC::ReturnCode_t VirtualForceSensor::onExecute(RTC::UniqueId ec_id)
       std::cerr << std::endl;
 #endif
 
+      m_force[i].tm = tm; // put timestamp
       m_forceOut[i]->write();
 
       it++; i++;
