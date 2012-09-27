@@ -32,11 +32,20 @@ add_library(hrpsys SHARED
   PyShape.cpp
   )
 
-target_link_libraries(hrpsys 
-  boost_python 
-  hrpsysUtil
-  ${PYTHON_LIBRARIES}
-  )
+if (NOT APPLE)
+   target_link_libraries(hrpsys 
+     boost_python
+     hrpsysUtil
+     ${PYTHON_LIBRARIES}
+     )
+else()
+   target_link_libraries(hrpsys 
+     boost_python-mt
+     hrpsysUtil
+     ${PYTHON_LIBRARIES}
+     )
+endif()
+
 set_target_properties(hrpsys PROPERTIES PREFIX "")
 set_target_properties(hrpsys PROPERTIES SUFFIX ".so")
 
