@@ -84,6 +84,9 @@ int Polyhedron::vertVertTest(const Feature *&v1, const Feature *&v2,
 			     const VclipPose &X12, const VclipPose &X21,
 			     Vect3 &cp1, Vect3 &cp2, Real &dist)
 {
+#if 1
+    std::cout << "vertVertTest" << std::endl;
+#endif
   const list<VertConeNode> *cone;
   list<VertConeNode>::const_iterator cni;
   Vect3 xcoords;
@@ -118,6 +121,9 @@ int Polyhedron::vertFaceTest(const Feature *&v, const Feature *&f,
 			     const VclipPose &Xvf, const list<Face> &allFaces,
 			     Vect3 &cpv, Vect3 &cpf, Real &dist)
 {
+#if 1
+    std::cout << "vertFaceTest - 1 " << std::endl;
+#endif
   int update;
   const Edge *e;
   const list<VertConeNode> *vcone;
@@ -142,6 +148,9 @@ int Polyhedron::vertFaceTest(const Feature *&v, const Feature *&f,
     }
   if (update) return CONTINUE;
 
+#if 1
+  std::cout << "vertFaceTest - 2 :" << d << std::endl;
+#endif
 
   // check that none of the edges of v point toward f
   if ((d = F(f)->plane.dist(xv.coords)) == 0) {
@@ -149,6 +158,9 @@ int Polyhedron::vertFaceTest(const Feature *&v, const Feature *&f,
     cpf = xv.coords;
     return PENETRATION;
   }
+#if 1
+  std::cout << "vertFaceTest - 2.1 :" << d << std::endl;
+#endif
   vcone = &V(v)->cone;
   FOR_EACH(*vcone, vcni) {
     e = vcni->nbr;
@@ -170,6 +182,9 @@ int Polyhedron::vertFaceTest(const Feature *&v, const Feature *&f,
     return DISJOINT;
   }
 
+#if 1
+  std::cout << "vertFaceTest - 3 :" << d << std::endl;
+#endif
   // v is in local min on back side of f's cone
   FOR_EACH(allFaces, facei)
     if ((d2 = facei->plane.dist(xv.coords)) > d) {
@@ -189,6 +204,9 @@ int Polyhedron::vertEdgeTest(const Feature *&v, const Feature *&e,
 			     const VclipPose &Xve, const VclipPose &Xev,
 			     Vect3 &cpv, Vect3 &cpe, Real &dist)
 {
+#if 1
+    std::cout << "vertEdgeTest" << std::endl;
+#endif
   const Feature *minNbr, *maxNbr;
   list<VertConeNode>::const_iterator cni;
   Real min, max, lambda, dt, dh;
@@ -459,6 +477,9 @@ int Polyhedron::edgeFaceTest(const Feature *&e, const Feature *&f,
 			     XformedGeom &xe, const VclipPose &Xef, 
 			     Vect3 &cpe, Vect3 &cpf, Real &dist)
 {
+#if 1
+    std::cout << "edgeFaceTest" << std::endl;
+#endif
   enum Code {INSIDE, OUTSIDE, MIN, MAX};
 
   int i, intersect;
@@ -504,6 +525,9 @@ int Polyhedron::edgeFaceTest(const Feature *&e, const Feature *&f,
       }
   }
 
+#if 1
+  std::cout << 1 << std::endl;
+#endif
   if (chopCn || min > max) {
 
     if (chopCn) cn = chopCn;
@@ -608,6 +632,9 @@ int Polyhedron::edgeFaceTest(const Feature *&e, const Feature *&f,
                              ((s->left == f) ? s->tail : s->head) ;
     return CONTINUE;
   }
+#if 1
+  std::cout << 2 << std::endl;
+#endif
 
   // edge intersects faces cone - check derivatives
 
@@ -615,6 +642,9 @@ int Polyhedron::edgeFaceTest(const Feature *&e, const Feature *&f,
   dh = F(f)->plane.dist(xe.head);
   dmin = (minCn) ? (dt + min * (dh - dt)) : dt;
   dmax = (maxCn) ? (dt + max * (dh - dt)) : dh;
+#if 1
+  std::cout << "dmin:" << dmin << ", dmax:" << dmax << std::endl;
+#endif
   if (dmin <= 0) {
     if (dmax >= 0) {
       dist = dmin; 
@@ -631,7 +661,11 @@ int Polyhedron::edgeFaceTest(const Feature *&e, const Feature *&f,
     cpf.displace(F(f)->plane.normal(), -dmax);
     return PENETRATION;
   }
-
+#if 1
+  else if (dmax == dmin){
+  }
+  std::cout << 3 << std::endl;
+#endif
   // at this point, dmin & dmax are both +ve or both -ve
   if (dmin > 0 && dt <= dh || dmin < 0 && dt >= dh)
     if (minCn) f = minCn->nbr; 
@@ -645,6 +679,9 @@ int Polyhedron::edgeFaceTest(const Feature *&e, const Feature *&f,
       xe.coords = xe.head;
       xe.feat = e = E(e)->head;
     }
+#if 1
+  std::cout << 4 << ":" << dist << std::endl;
+#endif
   
   return CONTINUE;
 }
@@ -669,6 +706,9 @@ Real Polyhedron::vclip(const Polyhedron *const poly1,
   int result;
   Real dist;
   XformedGeom xg1, xg2;
+#if 1
+  std::string f1name, f2name, f1name_old, f2name_old, f1name_next, f2name_next;
+#endif
 
   int loop = 0;
 
@@ -676,6 +716,9 @@ Real Polyhedron::vclip(const Polyhedron *const poly1,
 
   dist = 0.0;
   do {
+#if 1
+      std::cout << loop << ":" << feat1->name() << ',' << feat2->name();
+#endif
 
     switch ((feat1->type() << 2) + feat2->type()) {
 
@@ -709,6 +752,19 @@ Real Polyhedron::vclip(const Polyhedron *const poly1,
       cerr << "\ninvalid feature pair combination in vclip" << endl;
       exit(1);
     }
+#if 1
+    std::cout << "," << dist << std::endl;
+    f1name_old = f1name;
+    f2name_old = f2name;
+    f1name = f1name_next;
+    f2name = f2name_next;
+    f1name_next = feat1->name();
+    f2name_next = feat2->name();
+    if (f1name_next == f1name_old && f2name_next == f2name_old) {
+        std::cout << "found loop" << std::endl;
+        break;
+    }
+#endif
 
     if (loop++ == MAX_ITERS) break;
 

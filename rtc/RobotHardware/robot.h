@@ -199,6 +199,14 @@ public:
     bool checkEmergency(emg_reason &o_reason, int &o_id);
 
     /**
+       \brief set the parcentage to the default servo gain
+       \param name joint name, part name or "all"
+       \param percentage to joint servo gain[0-100]
+       \return true if set successfully, false otherwise 
+     */
+    bool setServoGainPercentage(const char *i_jname, double i_percentage);
+
+    /**
        \brief set servo error limit value for specific joint or joint group
        \param i_jname joint name or joint group name
        \param i_limit new limit value[rad]
@@ -236,8 +244,8 @@ private:
     std::vector< boost::array<double,3> > accel_sum;
     std::vector< boost::array<double,3> > att_sum;
 
-    std::vector<double> pgain;
-    std::vector<double> dgain;
+    std::vector<double> pgain, old_pgain, default_pgain;
+    std::vector<double> dgain, old_dgain, default_dgain;
 
     int m_lLegForceSensorId, m_rLegForceSensorId;
     std::map<std::string, std::vector<int> > m_jointGroups;

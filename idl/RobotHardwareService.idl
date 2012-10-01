@@ -82,6 +82,13 @@ module OpenHRP
     boolean servo(in string name, in SwitchStatus _ss);
 
     /**
+     * @brief set the parcentage to the default servo gain
+     * @param name joint name, part name or "all"
+     * @param percentage to joint servo gain[0-100]
+     */
+    void setServoGainPercentage(in string name, in double percentage);
+
+    /**
      * @brief set the maximum joint servo error angle
      * @param name joint name, part name or "all"
      * @param limit the maximum joint servo error angle[rad]
