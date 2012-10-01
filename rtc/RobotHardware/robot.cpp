@@ -39,10 +39,19 @@ bool robot::init()
 
     pgain.resize(numJoints());
     dgain.resize(numJoints());
+    old_pgain.resize(numJoints());
+    old_dgain.resize(numJoints());
+    default_pgain.resize(numJoints());
+    default_dgain.resize(numJoints());
     for (int i=0; i<numJoints(); i++){
         pgain[i] = dgain[i] = 0.0;
+        old_pgain[i] = old_dgain[i] = 0.0;
     } 
     loadGain();
+    for (int i=0; i<numJoints(); i++){
+        pgain[i] = default_pgain[i];
+        dgain[i] = default_dgain[i];
+    }
 
     m_servoErrorLimit.resize(numJoints());
     for (int i=0; i<numJoints(); i++){
@@ -97,9 +106,9 @@ bool robot::loadGain(const char *fname)
 
     double dummy;
     for (int i=0; i<numJoints(); i++){
-        strm >> pgain[i];
+        strm >> default_pgain[i];
         strm >> dummy;
-        strm >> dgain[i];
+        strm >> default_dgain[i];
     }
     strm.close();
     return true;
@@ -212,8 +221,8 @@ void robot::gain_control(int i)
     double new_pgain=0,new_dgain=0;
     if (gain_counter[i] < GAIN_COUNT){
         gain_counter[i]++;
-        new_pgain = pgain[i]*gain_counter[i]/GAIN_COUNT;
-        new_dgain = dgain[i]*gain_counter[i]/GAIN_COUNT;
+        new_pgain = (pgain[i]-old_pgain[i])*gain_counter[i]/GAIN_COUNT + old_pgain[i];
+        new_dgain = (dgain[i]-old_dgain[i])*gain_counter[i]/GAIN_COUNT + old_dgain[i];
         write_pgain(i, new_pgain);
         write_dgain(i, new_dgain);
     }
@@ -484,6 +493,34 @@ bool robot::checkEmergency(emg_reason &o_reason, int &o_id)
         }
     } 
     return false;
+}
+
+bool robot::setServoGainPercentage(const char *i_jname, double i_percentage)
+{
+    if ( i_percentage < 0 && 100 < i_percentage ) {
+        return false;
+    }
+    Link *l = NULL;
+    if (strcmp(i_jname, "all") == 0 || strcmp(i_jname, "ALL") == 0){
+        for (int i=0; i<numJoints(); i++){
+            old_pgain[i] = pgain[i]; pgain[i] = default_pgain[i] * i_percentage/100.0;
+            old_dgain[i] = dgain[i]; dgain[i] = default_dgain[i] * i_percentage/100.0;
+            gain_counter[i] = 0;
+        }
+    }else if ((l = link(i_jname))){
+        old_pgain[l->jointId] = pgain[l->jointId]; pgain[l->jointId] = default_pgain[l->jointId] * i_percentage/100.0;
+        old_dgain[l->jointId] = dgain[l->jointId]; dgain[l->jointId] = default_dgain[l->jointId] * i_percentage/100.0;
+        gain_counter[l->jointId] = 0;
+    }else{
+        const std::vector<int> jgroup = m_jointGroups[i_jname];
+        if (jgroup.size()==0) return false;
+        for (unsigned int i=0; i<jgroup.size(); i++){
+            old_pgain[jgroup[i]] = pgain[jgroup[i]]; pgain[jgroup[i]] = default_pgain[jgroup[i]] * i_percentage/100.0;
+            old_dgain[jgroup[i]] = dgain[jgroup[i]]; dgain[jgroup[i]] = default_dgain[jgroup[i]] * i_percentage/100.0;
+            gain_counter[jgroup[i]] = 0;
+        }
+    }
+    return true;
 }
 
 bool robot::setServoErrorLimit(const char *i_jname, double i_limit)
