@@ -3,6 +3,7 @@ set(input_files package.h utilities.h
 		      ../rtc/CameraImageViewer/CameraImageViewer.txt
 		      ../rtc/DataLogger/DataLogger.txt
 		      ../rtc/ForwardKinematics/ForwardKinematics.txt
+		      ../rtc/HGcontroller/HGcontroller.txt
 		      ../rtc/Joystick/Joystick.txt
 		      ../rtc/Joystick2Velocity2D/Joystick2Velocity2D.txt
 		      ../rtc/Joystick2Velocity3D/Joystick2Velocity3D.txt
@@ -27,6 +28,7 @@ set(input_files package.h utilities.h
 		      ../idl/DataLoggerService.idl
 		      ../idl/ExecutionProfileService.idl
 		      ../idl/ForwardKinematicsService.idl
+		      ../idl/GraspControllerService.idl
 		      ../idl/ImpedanceControllerService.idl
 		      ../idl/OGMap3DService.idl
 		      ../idl/RobotHardwareService.idl
