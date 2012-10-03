@@ -104,14 +104,36 @@ RTC::ReturnCode_t ImpedanceController::onInitialize()
                   << std::endl;
     }
 
-    int nforce = m_robot->numSensors(hrp::Sensor::FORCE);
+    coil::vstring virtual_force_sensor = coil::split(prop["virtual_force_sensor"], ",");
+    int npforce = m_robot->numSensors(hrp::Sensor::FORCE);
+    int nvforce = virtual_force_sensor.size()/10;
+    int nforce  = npforce + nvforce;
     m_force.resize(nforce);
     m_forceIn.resize(nforce);
-    for (unsigned int i=0; i<m_force.size(); i++){
+    for (unsigned int i=0; i<npforce; i++){
         hrp::Sensor *s = m_robot->sensor(hrp::Sensor::FORCE, i);
         m_forceIn[i] = new InPort<TimedDoubleSeq>(s->name.c_str(), m_force[i]);
         m_force[i].data.length(6);
         registerInPort(s->name.c_str(), *m_forceIn[i]);
+        std::cerr << s->name << std::endl;
+    }
+    for (unsigned int i=0; i<nvforce; i++){
+        std::string name = virtual_force_sensor[i*10+0];
+        VirtualForceSensorParam p;
+        hrp::dvector tr(7);
+        for (int j = 0; j < 7; j++ ) {
+          coil::stringTo(tr[j], virtual_force_sensor[i*10+3+j].c_str());
+        }
+        p.p = hrp::Vector3(tr[0], tr[1], tr[2]);
+        p.R = (Eigen::Quaternion<double>(tr[3], tr[4], tr[5], tr[6])).toRotationMatrix();
+        m_sensors[name] = p;
+        std::cerr << "virtual force sensor : " << name << std::endl;
+        std::cerr << "                T, R : " << p.p[0] << " " << p.p[1] << " " << p.p[2] << std::endl << p.R << std::endl;
+
+        m_forceIn[i+npforce] = new InPort<TimedDoubleSeq>(name.c_str(), m_force[i+npforce]);
+        m_force[i+npforce].data.length(6);
+        registerInPort(name.c_str(), *m_forceIn[i+npforce]);
+        std::cerr << name << std::endl;
     }
 
     unsigned int dof = m_robot->numJoints();
@@ -266,8 +288,21 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
                     hrp::ForceSensor* sensor = m_robot->sensor<hrp::ForceSensor>(sensor_name);
                     hrp::Vector3 data_p(m_force[i].data[0], m_force[i].data[1], m_force[i].data[2]);
                     hrp::Vector3 data_r(m_force[i].data[3], m_force[i].data[4], m_force[i].data[5]);
-                    force_p = sensor->link->R * sensor->localR * (data_p - param.force_offset_p);
-                    force_r = sensor->link->R * sensor->localR * (data_r - param.force_offset_r);
+                    if ( sensor ) {
+                      force_p = sensor->link->R * sensor->localR * (data_p - param.force_offset_p);
+                      force_r = sensor->link->R * sensor->localR * (data_r - param.force_offset_r);
+                    } else if ( m_sensors.find(sensor_name) !=  m_sensors.end()) {
+                      force_p = (data_p - param.force_offset_p);
+                      force_r = (data_r - param.force_offset_r);
+                      if ( DEBUG ) {
+                        std::cerr << "force : " << force_p[0] << " " << force_p[1] << " " << force_p[2] << std::endl;
+                        std::cerr << "force : " << force_r[0] << " " << force_r[1] << " " << force_r[2] << std::endl;
+                      }
+                      force_p = target->R * m_sensors[sensor_name].R * (data_p - param.force_offset_p);
+                      force_r = target->R * m_sensors[sensor_name].R * (data_r - param.force_offset_r);
+                    } else {
+                      std::cerr << "unknwon force param" << std::endl;
+                    }
                 }
             }
             if ( DEBUG ) {

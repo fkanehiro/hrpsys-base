@@ -144,7 +144,12 @@ class ImpedanceController
     int transition_count;
     hrp::JointPathExPtr manip;
   };
+  struct VirtualForceSensorParam {
+    hrp::Vector3 p;
+    hrp::Matrix33 R;
+  };
   std::map<std::string, ImpedanceParam> m_impedance_param;
+  std::map<std::string, VirtualForceSensorParam> m_sensors;
   double m_dt;
   hrp::BodyPtr m_robot;
   int dummy;
