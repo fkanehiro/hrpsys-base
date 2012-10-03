@@ -1,0 +1,24 @@
+/**
+ * @file GraspControllerService.idl
+ * @brief Services for the robot hardware interface
+ */
+module OpenHRP
+{
+  interface GraspControllerService
+  {
+    /**
+     * @brief start grasp control
+     * @param name garap joint grup name, part name or "all"
+     * @param target_error joint servo error angle[rad]
+     * @return true if started successfully, false otherwise
+     */
+    boolean startGrasp(in string name, in double target_error);
+
+    /**
+     * @brief stop grasp control
+     * @param name garap joint grup name, part name or "all"
+     * @return true if stopped successfully, false otherwise
+     */
+    boolean stopGrasp(in string name);
+  };
+};
