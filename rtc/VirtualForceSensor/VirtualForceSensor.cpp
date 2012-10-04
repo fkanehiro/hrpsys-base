@@ -34,6 +34,7 @@ static const char* virtualforcesensor_spec[] =
 VirtualForceSensor::VirtualForceSensor(RTC::Manager* manager)
   : RTC::DataFlowComponentBase(manager),
     // <rtc-template block="initializer">
+    m_qRefIn("qRef", m_qRef),
     m_qCurrentIn("qCurrent", m_qCurrent),
     m_tauIn("tau", m_tau),
     //m_VirtualForceSensorServicePort("VirtualForceSensorService"),
@@ -59,6 +60,7 @@ RTC::ReturnCode_t VirtualForceSensor::onInitialize()
   // Registration: InPort/OutPort/Service
   // <rtc-template block="registration">
   // Set InPort buffers
+  addInPort("qRef", m_qRefIn);
   addInPort("qCurrent", m_qCurrentIn);
   addInPort("tau", m_tauIn);
 
@@ -94,23 +96,27 @@ RTC::ReturnCode_t VirtualForceSensor::onInitialize()
 		<< std::endl;
   }
 
-  // <name>, <base>, <target>, 0, 0, 0,  0, 0, 0, 1
+  // virtual_force_sensor: <name>, <base>, <target>, 0, 0, 0,  0, 0, 0, 1
   coil::vstring virtual_force_sensor = coil::split(prop["virtual_force_sensor"], ",");
   for(int i = 0; i < virtual_force_sensor.size()/10; i++ ){
     std::string name = virtual_force_sensor[i*10+0];
-    std::string base = virtual_force_sensor[i*10+1];
-    std::string target = virtual_force_sensor[i*10+2];
+    VirtualForceSensorParam p;
+    p.base_name = virtual_force_sensor[i*10+1];
+    p.target_name = virtual_force_sensor[i*10+2];
     hrp::dvector tr(7);
     for (int j = 0; j < 7; j++ ) {
       coil::stringTo(tr[j], virtual_force_sensor[i*10+3+j].c_str());
     }
+    p.p = hrp::Vector3(tr[0], tr[1], tr[2]);
+    p.R = (Eigen::Quaternion<double>(tr[3], tr[4], tr[5], tr[6])).toRotationMatrix();
     std::cerr << "virtual force sensor : " << name << std::endl;
-    std::cerr << "                base : " << base << std::endl;
-    std::cerr << "              target : " << target << std::endl;
-    std::cerr << "                T, R : " << tr[0] << " " << tr[1] << " "<< tr[2] << ", " << tr[3] << " " << tr[4] << " " << tr[5] << " " << tr[6] << " " << std::endl;
-    m_sensors[name] = hrp::JointPathPtr(new hrp::JointPath(m_robot->link(base), m_robot->link(target)));
-    if ( m_sensors[name]->numJoints() == 0 ) {
-      std::cerr << "ERROR : Unknown link path " << base << " " << target << std::endl;
+    std::cerr << "                base : " << p.base_name << std::endl;
+    std::cerr << "              target : " << p.target_name << std::endl;
+    std::cerr << "                T, R : " << p.p[0] << " " << p.p[1] << " " << p.p[2] << std::endl << p.R << std::endl;
+    p.path = hrp::JointPathPtr(new hrp::JointPath(m_robot->link(p.base_name), m_robot->link(p.target_name)));
+    m_sensors[name] = p;
+    if ( m_sensors[name].path->numJoints() == 0 ) {
+      std::cerr << "ERROR : Unknown link path " << m_sensors[name].base_name << " " << m_sensors[name].target_name  << std::endl;
       return RTC::RTC_ERROR;
     }
   }
@@ -118,12 +124,28 @@ RTC::ReturnCode_t VirtualForceSensor::onInitialize()
   m_force.resize(nforce);
   m_forceOut.resize(nforce);
   int i = 0;
-  std::map<std::string, hrp::JointPathPtr>::iterator it = m_sensors.begin();
+  std::map<std::string, VirtualForceSensorParam>::iterator it = m_sensors.begin();
   while ( it != m_sensors.end() ) {
     m_forceOut[i] = new OutPort<TimedDoubleSeq>((*it).first.c_str(), m_force[i]);
     m_force[i].data.length(6);
     registerOutPort((*it).first.c_str(), *m_forceOut[i]);
     it++; i++;
+  }
+
+  // set additional parameters for force calc
+  m_error_to_torque_gain.resize(m_robot->numJoints());
+  m_error_dead_zone.resize(m_robot->numJoints());
+  coil::vstring error_to_torque_gain = coil::split(prop["error_to_torque_gain"], ",");  // gain for error to calculate torque
+  assert(m_error_to_torque_gain.size() == error_to_torque_gain.size());
+  coil::vstring error_dead_zone = coil::split(prop["error_dead_zone"], ",");   // dead zone of qCurrent - qRef in state of neutral
+  assert(m_error_dead_zone.size() == error_dead_zone.size());
+  std::cerr << "set virtual force sensor params" << std::endl;
+  for (int i = 0; i < m_robot->numJoints(); i++ ) {
+    coil::stringTo(m_error_to_torque_gain[i], error_to_torque_gain[i].c_str());
+    coil::stringTo(m_error_dead_zone[i], error_dead_zone[i].c_str());
+    std::cerr << m_robot->joint(i)->name << " : ";
+    std::cerr << " gain " << m_error_to_torque_gain[i];
+    std::cerr << " dead_zone " << m_error_dead_zone[i] << std::endl;
   }
 
   return RTC::RTC_OK;
@@ -173,13 +195,18 @@ RTC::ReturnCode_t VirtualForceSensor::onExecute(RTC::UniqueId ec_id)
   tm.sec = coiltm.sec();
   tm.nsec = coiltm.usec()*1000;
 
+  if (m_qRefIn.isNew()) {
+    m_qRefIn.read();
+  }
+
   if (m_qCurrentIn.isNew()) {
     m_qCurrentIn.read();
   }
   if (m_tauIn.isNew()) {
     m_tauIn.read();
   }
-  if ( m_qCurrent.data.length() ==  m_robot->numJoints() &&
+  if ( m_qRef.data.length() ==  m_robot->numJoints() &&
+       m_qCurrent.data.length() ==  m_robot->numJoints() &&
        m_tau.data.length() ==  m_robot->numJoints() ) {
     // reference model
     for ( int i = 0; i < m_robot->numJoints(); i++ ){
@@ -189,18 +216,21 @@ RTC::ReturnCode_t VirtualForceSensor::onExecute(RTC::UniqueId ec_id)
     m_robot->calcCM();
     m_robot->rootLink()->calcSubMassCM();
 
-    std::map<std::string, hrp::JointPathPtr>::iterator it = m_sensors.begin();
+    std::map<std::string, VirtualForceSensorParam>::iterator it = m_sensors.begin();
     int i = 0;
     while ( it != m_sensors.end() ) {
 
-      hrp::JointPathPtr path = (*it).second;
+      hrp::JointPathPtr path = (*it).second.path;
       int n = path->numJoints();
       hrp::dmatrix J(6, n);
-      hrp::dmatrix Jinv(6, n);
       path->calcJacobian(J);
-      hrp::calcPseudoInverse(J.transpose(), Jinv);
       hrp::dvector torque(n);
       hrp::dvector force(6);
+
+      // subm*g x (submwc/subm - p) . R*a
+#define joint_torque(i) (path->joint(i)->subm*g).cross(path->joint(i)->submwc/path->joint(i)->subm - path->joint(i)->p).dot(path->joint(i)->R*path->joint(i)->a)
+#define joint_error(i) (m_qCurrent.data[path->joint(i)->jointId]-m_qRef.data[path->joint(i)->jointId])
+#define error2torque(i, offset) ((joint_error(i) > 0) ? (fmax(joint_error(i)-offset,0) * m_error_to_torque_gain[path->joint(i)->jointId]) : (fmin(joint_error(i)+offset,0) * m_error_to_torque_gain[path->joint(i)->jointId]))
 
       hrp::Vector3 g(0, 0, 9.8);
 #if 0
@@ -209,21 +239,66 @@ RTC::ReturnCode_t VirtualForceSensor::onExecute(RTC::UniqueId ec_id)
         std::cerr << " " << m_tau.data[path->joint(j)->jointId] ;
       }
       std::cerr << std::endl;
-      // subm*g x (submwc/subm - p) . R*a
       std::cerr << "  calc torque  : ";
       for (int j = 0; j < n; j++) {
-          std::cerr << " " << (path->joint(j)->subm*g).cross(path->joint(j)->submwc/path->joint(j)->subm - path->joint(j)->p).dot(path->joint(j)->R*path->joint(j)->a);
+        std::cerr << " " << joint_torque(j);
+      }
+      std::cerr << std::endl;
+#endif
+      
+      for (int j = 0; j < n; j++) {
+        // torque calculation from electric current
+        //torque[j] = m_tau.data[path->joint(j)->jointId] -
+        
+        // torque calclation from error of joint angle
+        if ( m_error_to_torque_gain[path->joint(j)->jointId] == 0.0
+             || fabs(joint_error(j)) < m_error_dead_zone[path->joint(j)->jointId] ) {
+          torque[j] = 0;
+        } else {
+          torque[j] = error2torque(j, fabs(m_error_dead_zone[path->joint(j)->jointId])) - joint_torque(j);
+        }
+        
+      }
+#if 0
+      std::cerr << "row gear torque: ";
+      for (int j = 0; j < n; j++) {
+        std::cerr << " " << joint_error(j);
+      }
+      std::cerr << std::endl;
+
+      std::cerr << "  gear torque  : ";
+      for (int j = 0; j < n; j++) {
+        std::cerr << " " << torque[j];
+      }
+      std::cerr << std::endl;
+#endif
+      for(int k = 0; k < torque.size(); k++){
+        if(k == 3){
+          torque[k] = 2.0;
+        }else{
+          torque[k] = 0.0;
+        }
+      }
+
+      force = J * torque;
+#if 0
+      std::cerr << "    raw force  : ";
+      for ( int j = 0; j < 6; j ++ ) {
+        std::cerr << " " << force[j] ;
       }
       std::cerr << std::endl;
 #endif
 
-      for (int j = 0; j < n; j++) {
-        torque[j] = m_tau.data[path->joint(j)->jointId] -
-            (path->joint(j)->subm*g).cross(path->joint(j)->submwc/path->joint(j)->subm - path->joint(j)->p).dot(path->joint(j)->R*path->joint(j)->a);
+      hrp::dvector force_p(3), force_r(3);
+      for ( int j = 0; j < 3; j ++ ) {
+        force_p[j] = force[j];
+        force_r[j] = force[j+3];
       }
-      force = Jinv * torque;
-      for ( int j = 0; j < 6; j ++ ) {
-        m_force[i].data[j] = force[j];
+      force_p = (*it).second.R * path->endLink()->R.transpose() * force_p;
+      force_r = (*it).second.R * path->endLink()->R.transpose() * force_r;
+      for ( int j = 0; j < 3; j ++ ) {
+        m_force[i].data[j+0] = force_p[j];
+        m_force[i].data[j+3] = force_r[j];
       }
 
 #if 0
@@ -234,7 +309,7 @@ RTC::ReturnCode_t VirtualForceSensor::onExecute(RTC::UniqueId ec_id)
       std::cerr << std::endl;
       std::cerr << " result force  : ";
       for ( int j = 0; j < 6; j ++ ) {
-        std::cerr << " " << force[j] ;
+        std::cerr << " " << m_force[i].data[j] ;
       }
       std::cerr << std::endl;
 #endif
