@@ -20,6 +20,7 @@
 #include <hrpModel/Body.h>
 #include <hrpModel/Link.h>
 #include <hrpModel/JointPath.h>
+#include <hrpUtil/EigenTypes.h>
 
 // Service implementation headers
 // <rtc-template block="service_impl_h">
@@ -104,11 +105,13 @@ class VirtualForceSensor
   // <rtc-template block="config_declare">
   
   // </rtc-template>
+  TimedDoubleSeq m_qRef;
   TimedDoubleSeq m_qCurrent;
   TimedDoubleSeq m_tau;
 
   // DataInPort declaration
   // <rtc-template block="inport_declare">
+  InPort<TimedDoubleSeq> m_qRefIn;
   InPort<TimedDoubleSeq> m_qCurrentIn;
   InPort<TimedDoubleSeq> m_tauIn;
   
@@ -144,7 +147,15 @@ class VirtualForceSensor
   // </rtc-template>
 
  private:
-  std::map<std::string, hrp::JointPathPtr> m_sensors;
+  struct VirtualForceSensorParam {
+    std::string base_name, target_name;
+    hrp::Vector3 p;
+    hrp::Matrix33 R;
+    hrp::JointPathPtr path;
+  };
+  std::map<std::string, VirtualForceSensorParam> m_sensors;
+  std::vector<double> m_error_to_torque_gain;
+  std::vector<double> m_error_dead_zone;
   double m_dt;
   hrp::BodyPtr m_robot;
   int dummy;
