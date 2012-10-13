@@ -223,7 +223,9 @@ RTC::ReturnCode_t VirtualForceSensor::onExecute(RTC::UniqueId ec_id)
       hrp::JointPathPtr path = (*it).second.path;
       int n = path->numJoints();
       hrp::dmatrix J(6, n);
+      hrp::dmatrix Jtinv(6, n);
       path->calcJacobian(J);
+      hrp::calcPseudoInverse(J.transpose(), Jtinv);
       hrp::dvector torque(n);
       hrp::dvector force(6);
 
@@ -288,6 +290,9 @@ RTC::ReturnCode_t VirtualForceSensor::onExecute(RTC::UniqueId ec_id)
       }
       std::cerr << std::endl;
 #endif
+
+      force = Jtinv * torque;
+      // force = J * torque;
 
       hrp::dvector force_p(3), force_r(3);
       for ( int j = 0; j < 3; j ++ ) {
