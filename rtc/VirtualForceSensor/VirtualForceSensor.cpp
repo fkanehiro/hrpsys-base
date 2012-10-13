@@ -274,13 +274,6 @@ RTC::ReturnCode_t VirtualForceSensor::onExecute(RTC::UniqueId ec_id)
       }
       std::cerr << std::endl;
 #endif
-      for(int k = 0; k < torque.size(); k++){
-        if(k == 3){
-          torque[k] = 2.0;
-        }else{
-          torque[k] = 0.0;
-        }
-      }
 
       force = J * torque;
 #if 0
