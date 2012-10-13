@@ -168,6 +168,7 @@ class CollisionDetector
   interpolator* m_interpolator;
   double i_dt;
   int default_recover_time;
+  unsigned int m_debugLevel;
 };
 
 

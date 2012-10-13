@@ -35,6 +35,7 @@ static const char* softerrorlimiter_spec[] =
     "language",          "C++",
     "lang_type",         "compile",
     // Configuration variables
+    "conf.default.debugLevel", "0",
     ""
   };
 // </rtc-template>
@@ -48,6 +49,7 @@ GraspController::GraspController(RTC::Manager* manager)
     m_qOut("qOut", m_q),
     m_GraspControllerServicePort("GraspControllerService"),
     // </rtc-template>
+    m_debugLevel(0),
     dummy(0)
 {
   m_service0.grasp(this);
@@ -64,6 +66,7 @@ RTC::ReturnCode_t GraspController::onInitialize()
   std::cout << m_profile.instance_name << ": onInitialize()" << std::endl;
   // <rtc-template block="bind_config">
   // Bind variables and configuration variable
+  bindParameter("debugLevel", m_debugLevel, "0");
   
   // </rtc-template>
 
@@ -151,14 +154,16 @@ RTC::ReturnCode_t GraspController::onInitialize()
     m_grasp_param[grasp_name] = grasp_param;
   }
   //
-  std::map<std::string, GraspParam >::iterator it = m_grasp_param.begin();
-  while ( it != m_grasp_param.end() ) {
-    std::cerr << it->first << " : ";
-    for ( int i = 0 ; i < it->second.joints.size(); i++ ) {
-      std::cerr << "id = " << it->second.joints[i].id << ", dir = " << it->second.joints[i].dir << ", ";
+  if ( m_debugLevel ) {
+    std::map<std::string, GraspParam >::iterator it = m_grasp_param.begin();
+    while ( it != m_grasp_param.end() ) {
+      std::cerr << it->first << " : ";
+      for ( int i = 0 ; i < it->second.joints.size(); i++ ) {
+        std::cerr << "id = " << it->second.joints[i].id << ", dir = " << it->second.joints[i].dir << ", ";
+      }
+      std::cerr << std::endl;
+      it++;
     }
-    std::cerr << std::endl;
-    it++;
   }
 
 

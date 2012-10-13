@@ -154,6 +154,7 @@ class GraspController
   std::map<std::string, GraspParam > m_grasp_param;
   hrp::BodyPtr m_robot;
   double m_dt;
+  unsigned int m_debugLevel;
   int dummy;
 };
 

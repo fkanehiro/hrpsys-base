@@ -158,6 +158,7 @@ class VirtualForceSensor
   std::vector<double> m_error_dead_zone;
   double m_dt;
   hrp::BodyPtr m_robot;
+  unsigned int m_debugLevel;
   int dummy;
 };
 
