@@ -33,6 +33,7 @@ static const char* softerrorlimiter_spec[] =
     "language",          "C++",
     "lang_type",         "compile",
     // Configuration variables
+    "conf.default.debugLevel", "0",
     ""
   };
 // </rtc-template>
@@ -47,6 +48,7 @@ SoftErrorLimiter::SoftErrorLimiter(RTC::Manager* manager)
     m_servoStateOut("servoStateOut", m_servoState),
     m_SoftErrorLimiterServicePort("SoftErrorLimiterService"),
     // </rtc-template>
+    m_debugLevel(0),
 	dummy(0)
 {
   init_beep();
@@ -65,6 +67,7 @@ RTC::ReturnCode_t SoftErrorLimiter::onInitialize()
   std::cout << m_profile.instance_name << ": onInitialize()" << std::endl;
   // <rtc-template block="bind_config">
   // Bind variables and configuration variable
+  bindParameter("debugLevel", m_debugLevel, "0");
   
   // </rtc-template>
 

@@ -152,8 +152,9 @@ class ImpedanceController
   std::map<std::string, VirtualForceSensorParam> m_sensors;
   double m_dt;
   hrp::BodyPtr m_robot;
-  int dummy;
   coil::Mutex m_mutex;
+  unsigned int m_debugLevel;
+  int dummy;
 };
 
 

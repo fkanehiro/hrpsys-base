@@ -34,7 +34,7 @@ static const char* impedancecontroller_spec[] =
         "language",          "C++",
         "lang_type",         "compile",
         // Configuration variables
-
+        "conf.default.debugLevel", "0",
         ""
     };
 // </rtc-template>
@@ -48,6 +48,7 @@ ImpedanceController::ImpedanceController(RTC::Manager* manager)
       m_ImpedanceControllerServicePort("ImpedanceControllerService"),
       // </rtc-template>
       m_robot(hrp::BodyPtr()),
+      m_debugLevel(0),
       dummy(0)
 {
     m_service0.impedance(this);
@@ -61,6 +62,8 @@ ImpedanceController::~ImpedanceController()
 RTC::ReturnCode_t ImpedanceController::onInitialize()
 {
     std::cout << "ImpedanceController::onInitialize()" << std::endl;
+    bindParameter("debugLevel", m_debugLevel, "0");
+
     // Registration: InPort/OutPort/Service
     // <rtc-template block="registration">
     // Set InPort buffers
@@ -185,12 +188,13 @@ RTC::ReturnCode_t ImpedanceController::onActivated(RTC::UniqueId ec_id)
   }
 */
 
-//#define DEBUG true
-#define DEBUG false
-
+#define DEBUGP ((m_debugLevel==1 && loop%200==0) || m_debugLevel > 1 )
 RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
 {
     //std::cout << "ImpedanceController::onExecute(" << ec_id << ")" << std::endl;
+    static int loop = 0;
+    loop ++;
+
     for (unsigned int i=0; i<m_forceIn.size(); i++){
         if ( m_forceIn[i]->isNew() ) {
             m_forceIn[i]->read();
@@ -205,7 +209,7 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
     }
     if ( m_qRef.data.length() ==  m_robot->numJoints() ) {
 
-        if ( DEBUG ) {
+        if ( DEBUGP ) {
             std::cerr << "qRef  : ";
             for ( int i = 0; i <  m_qRef.data.length(); i++ ){
                 std::cerr << " " << m_qRef.data[i];
@@ -294,7 +298,7 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
                     } else if ( m_sensors.find(sensor_name) !=  m_sensors.end()) {
                       force_p = (data_p - param.force_offset_p);
                       force_r = (data_r - param.force_offset_r);
-                      if ( DEBUG ) {
+                      if ( DEBUGP ) {
                         std::cerr << "force : " << force_p[0] << " " << force_p[1] << " " << force_p[2] << std::endl;
                         std::cerr << "force : " << force_r[0] << " " << force_r[1] << " " << force_r[2] << std::endl;
                       }
@@ -305,7 +309,7 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
                     }
                 }
             }
-            if ( DEBUG ) {
+            if ( DEBUGP ) {
                 std::cerr << "force : " << force_p[0] << " " << force_p[1] << " " << force_p[2] << std::endl;
                 std::cerr << "force : " << force_r[0] << " " << force_r[1] << " " << force_r[2] << std::endl;
             }
@@ -330,14 +334,14 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
             // currnet_p1(prev_coords0) = current_p0(move_coords) + vel_p
             // target_p1(target_coords1) = target_p0(target_coords0)
 
-            if ( DEBUG ) {
+            if ( DEBUGP ) {
                 std::cerr << "cur0  : " << param.current_p0[0] << " " << param.current_p0[1] << " " << param.current_p0[2] << std::endl;
                 std::cerr << "cur1  : " << param.current_p1[0] << " " << param.current_p1[1] << " " << param.current_p1[2] << std::endl;
                 std::cerr << "cur2  : " << param.current_p2[0] << " " << param.current_p2[1] << " " << param.current_p2[2] << std::endl;
                 std::cerr << "tgt0  : " << param.target_p0[0] << " " << param.target_p0[1] << " " << param.target_p0[2] << std::endl;
                 std::cerr << "tgt1  : " << param.target_p1[0] << " " << param.target_p1[1] << " " << param.target_p1[2] << std::endl;
             }
-            if ( DEBUG ) {
+            if ( DEBUGP ) {
                 std::cerr << "cur0  : " << param.current_r0[0] << " " << param.current_r0[1] << " " << param.current_r0[2] << std::endl;
                 std::cerr << "cur1  : " << param.current_r1[0] << " " << param.current_r1[1] << " " << param.current_r1[2] << std::endl;
                 std::cerr << "cur2  : " << param.current_r2[0] << " " << param.current_r2[1] << " " << param.current_r2[2] << std::endl;
@@ -355,13 +359,13 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
             vel_rot1 = param.current_r1 - param.current_r2;
             dif_target_rot = param.target_r0 - param.target_r1;
 
-            if ( DEBUG ) {
+            if ( DEBUGP ) {
                 std::cerr << "dif_p : " << dif_pos[0] << " " << dif_pos[1] << " " << dif_pos[2] << std::endl;
                 std::cerr << "vel_p0: " << vel_pos0[0] << " " << vel_pos0[1] << " " << vel_pos0[2] << std::endl;
                 std::cerr << "vel_p1: " << vel_pos1[0] << " " << vel_pos1[1] << " " << vel_pos1[2] << std::endl;
                 std::cerr << "dif_t : " << dif_target_pos[0] << " " << dif_target_pos[1] << " " << dif_target_pos[2] << std::endl;
             }
-            if ( DEBUG ) {
+            if ( DEBUGP ) {
                 std::cerr << "dif_r : " << dif_rot[0] << " " << dif_rot[1] << " " << dif_rot[2] << std::endl;
                 std::cerr << "vel_r0: " << vel_rot0[0] << " " << vel_rot0[1] << " " << vel_rot0[2] << std::endl;
                 std::cerr << "vel_r1: " << vel_rot1[0] << " " << vel_rot1[1] << " " << vel_rot1[2] << std::endl;
@@ -382,7 +386,7 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
                       + param.K_r * ( dif_rot * m_dt * m_dt  ) ) /
                 (param.M_r + (param.D_r * m_dt) + (param.K_r * m_dt * m_dt));
 
-            if ( DEBUG ) {
+            if ( DEBUGP ) {
                 std::cerr << "vel_p : " << vel_p[0] << " " << vel_p[1] << " " << vel_p[2] << std::endl;
                 std::cerr << "vel_r : " << vel_r[0] << " " << vel_r[1] << " " << vel_r[2] << std::endl;
             }
@@ -420,7 +424,7 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
 	      if ( r > 0 ) { r = r*r; } else { r = - r*r; }
 	      u[j] += r;
 	    }
-	    if ( DEBUG ) {
+	    if ( DEBUGP ) {
 	      std::cerr << "    u : " << u;
 	      std::cerr << "  dqb : " << Jnull * u;
 	    }
@@ -449,14 +453,14 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
                 max_speed = std::max(max_speed, fabs(dq(j)));
             }
 	    if ( max_speed > 0.2*0.5 ) { // 0.5 safety margin
-                if ( DEBUG ) {
+                if ( DEBUGP ) {
                     std::cerr << "spdlmt: ";
                     for(int j=0; j < n; ++j) { std::cerr << dq(j) << " "; } std::cerr << std::endl;
                 }
                 for(int j=0; j < n; ++j) {
                     dq(j) = dq(j) * 0.2*0.5 / max_speed;
                 }
-                if ( DEBUG ) {
+                if ( DEBUGP ) {
                     std::cerr << "spdlmt: ";
                     for(int j=0; j < n; ++j) { std::cerr << dq(j) << " "; } std::cerr << std::endl;
                 }
@@ -509,7 +513,7 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
                 m_q.data[i] = m_robot->joint(i)->q;
             }
             m_qOut.write();
-            if ( DEBUG ) {
+            if ( DEBUGP ) {
                 std::cerr << "q     : ";
                 for ( int i = 0; i < m_q.data.length(); i++ ){
                     std::cerr << " " << m_q.data[i];

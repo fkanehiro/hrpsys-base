@@ -27,6 +27,7 @@ static const char* virtualforcesensor_spec[] =
     "language",          "C++",
     "lang_type",         "compile",
     // Configuration variables
+    "conf.default.debugLevel", "0",
     ""
   };
 // </rtc-template>
@@ -39,6 +40,7 @@ VirtualForceSensor::VirtualForceSensor(RTC::Manager* manager)
     m_tauIn("tau", m_tau),
     //m_VirtualForceSensorServicePort("VirtualForceSensorService"),
     // </rtc-template>
+    m_debugLevel(0),
     dummy(0)
 {
 }
@@ -54,6 +56,7 @@ RTC::ReturnCode_t VirtualForceSensor::onInitialize()
   std::cout << m_profile.instance_name << ": onInitialize()" << std::endl;
   // <rtc-template block="bind_config">
   // Bind variables and configuration variable
+  bindParameter("debugLevel", m_debugLevel, "0");
   
   // </rtc-template>
 
@@ -186,9 +189,12 @@ RTC::ReturnCode_t VirtualForceSensor::onDeactivated(RTC::UniqueId ec_id)
   return RTC::RTC_OK;
 }
 
+#define DEBUGP ((m_debugLevel==1 && loop%200==0) || m_debugLevel > 1 )
 RTC::ReturnCode_t VirtualForceSensor::onExecute(RTC::UniqueId ec_id)
 {
   //std::cout << m_profile.instance_name<< ": onExecute(" << ec_id << ")" << std::endl;
+  static int loop = 0;
+  loop ++;
 
   coil::TimeValue coiltm(coil::gettimeofday());
   RTC::Time tm;
@@ -223,7 +229,9 @@ RTC::ReturnCode_t VirtualForceSensor::onExecute(RTC::UniqueId ec_id)
       hrp::JointPathPtr path = (*it).second.path;
       int n = path->numJoints();
       hrp::dmatrix J(6, n);
+      hrp::dmatrix Jtinv(6, n);
       path->calcJacobian(J);
+      hrp::calcPseudoInverse(J.transpose(), Jtinv);
       hrp::dvector torque(n);
       hrp::dvector force(6);
 
@@ -233,18 +241,19 @@ RTC::ReturnCode_t VirtualForceSensor::onExecute(RTC::UniqueId ec_id)
 #define error2torque(i, offset) ((joint_error(i) > 0) ? (fmax(joint_error(i)-offset,0) * m_error_to_torque_gain[path->joint(i)->jointId]) : (fmin(joint_error(i)+offset,0) * m_error_to_torque_gain[path->joint(i)->jointId]))
 
       hrp::Vector3 g(0, 0, 9.8);
-#if 0
-      std::cerr << "sensor torque  : ";
-      for (int j = 0; j < n; j++) {
-        std::cerr << " " << m_tau.data[path->joint(j)->jointId] ;
+      if ( DEBUGP ) {
+        std::cerr << "  sensor name  : " << it->first << std::endl;
+        std::cerr << "sensor torque  : ";
+        for (int j = 0; j < n; j++) {
+          std::cerr << " " << m_tau.data[path->joint(j)->jointId] ;
+        }
+        std::cerr << std::endl;
+        std::cerr << "  calc torque  : ";
+        for (int j = 0; j < n; j++) {
+          std::cerr << " " << joint_torque(j);
+        }
+        std::cerr << std::endl;
       }
-      std::cerr << std::endl;
-      std::cerr << "  calc torque  : ";
-      for (int j = 0; j < n; j++) {
-        std::cerr << " " << joint_torque(j);
-      }
-      std::cerr << std::endl;
-#endif
       
       for (int j = 0; j < n; j++) {
         // torque calculation from electric current
@@ -259,35 +268,30 @@ RTC::ReturnCode_t VirtualForceSensor::onExecute(RTC::UniqueId ec_id)
         }
         
       }
-#if 0
-      std::cerr << "row gear torque: ";
-      for (int j = 0; j < n; j++) {
-        std::cerr << " " << joint_error(j);
-      }
-      std::cerr << std::endl;
-
-      std::cerr << "  gear torque  : ";
-      for (int j = 0; j < n; j++) {
-        std::cerr << " " << torque[j];
-      }
-      std::cerr << std::endl;
-#endif
-      for(int k = 0; k < torque.size(); k++){
-        if(k == 3){
-          torque[k] = 2.0;
-        }else{
-          torque[k] = 0.0;
+      if ( DEBUGP ) {
+        std::cerr << "row gear torque: ";
+        for (int j = 0; j < n; j++) {
+          std::cerr << " " << joint_error(j);
         }
+        std::cerr << std::endl;
+
+        std::cerr << "  gear torque  : ";
+        for (int j = 0; j < n; j++) {
+          std::cerr << " " << torque[j];
+        }
+        std::cerr << std::endl;
       }
 
-      force = J * torque;
-#if 0
-      std::cerr << "    raw force  : ";
-      for ( int j = 0; j < 6; j ++ ) {
-        std::cerr << " " << force[j] ;
+      force = Jtinv * torque;
+      // force = J * torque;
+
+      if ( DEBUGP ) {
+        std::cerr << "    raw force  : ";
+        for ( int j = 0; j < 6; j ++ ) {
+          std::cerr << " " << force[j] ;
+        }
+        std::cerr << std::endl;
       }
-      std::cerr << std::endl;
-#endif
 
       hrp::dvector force_p(3), force_r(3);
       for ( int j = 0; j < 3; j ++ ) {
@@ -301,18 +305,18 @@ RTC::ReturnCode_t VirtualForceSensor::onExecute(RTC::UniqueId ec_id)
         m_force[i].data[j+3] = force_r[j];
       }
 
-#if 0
-      std::cerr << "        torque : ";
-      for (int j = 0; j < n; j++) {
-        std::cerr << " " << torque[j];
+      if ( DEBUGP ) {
+        std::cerr << "        torque : ";
+        for (int j = 0; j < n; j++) {
+          std::cerr << " " << torque[j];
+        }
+        std::cerr << std::endl;
+        std::cerr << " result force  : ";
+        for ( int j = 0; j < 6; j ++ ) {
+          std::cerr << " " << m_force[i].data[j] ;
+        }
+        std::cerr << std::endl;
       }
-      std::cerr << std::endl;
-      std::cerr << " result force  : ";
-      for ( int j = 0; j < 6; j ++ ) {
-        std::cerr << " " << m_force[i].data[j] ;
-      }
-      std::cerr << std::endl;
-#endif
 
       m_force[i].tm = tm; // put timestamp
       m_forceOut[i]->write();

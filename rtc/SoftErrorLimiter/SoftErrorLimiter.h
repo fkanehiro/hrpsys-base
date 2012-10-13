@@ -141,6 +141,7 @@ class SoftErrorLimiter
 
  private:
   boost::shared_ptr<robot> m_robot;
+  unsigned int m_debugLevel;
   int dummy;
 };
 

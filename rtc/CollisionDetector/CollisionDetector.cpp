@@ -38,6 +38,7 @@ static const char* component_spec[] =
     "language",          "C++",
     "lang_type",         "compile",
     // Configuration variables
+    "conf.default.debugLevel", "0",
     ""
 };
 // </rtc-template>
@@ -55,6 +56,7 @@ CollisionDetector::CollisionDetector(RTC::Manager* manager)
       m_robot(hrp::BodyPtr()),
       m_scene(&m_log),
       m_window(&m_scene, &m_log),
+      m_debugLevel(0),
       dummy(0)
 {
     m_service0.collision(this);
@@ -72,6 +74,7 @@ RTC::ReturnCode_t CollisionDetector::onInitialize()
     std::cout << m_profile.instance_name << ": onInitialize()" << std::endl;
     // <rtc-template block="bind_config">
     // Bind variables and configuration variable
+    bindParameter("debugLevel", m_debugLevel, "0");
   
     // </rtc-template>
 
@@ -204,8 +207,11 @@ RTC::ReturnCode_t CollisionDetector::onDeactivated(RTC::UniqueId ec_id)
     return RTC::RTC_OK;
 }
 
+#define DEBUGP ((m_debugLevel==1 && loop%200==0) || m_debugLevel > 1 )
 RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
 {
+    static int loop = 0;
+    loop++;
     if (m_qRefIn.isNew()) {
 	m_qRefIn.read();
 
@@ -286,11 +292,11 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
           m_interpolator->get(m_recover_jointdata);
 #endif
         }
-#if 0
-	std::cerr << "check collisions for for " << m_pair.size() << " pairs in " << (tm2.sec()-tm1.sec())*1000+(tm2.usec()-tm1.usec())/1000.0 
-                  << " [msec], safe = " << m_safe_posture << ", time = " << m_recover_time << " " << m_q.data[0] << " " << m_q.data[1] 
-                  << " " << m_q.data[2] << " " << m_q.data[3] << " " << m_q.data[4] << " " << m_q.data[5] << " " << m_q.data[6] << std::endl;
-#endif
+        if ( DEBUGP ) {
+          std::cerr << "check collisions for for " << m_pair.size() << " pairs in " << (tm2.sec()-tm1.sec())*1000+(tm2.usec()-tm1.usec())/1000.0 
+                    << " [msec], safe = " << m_safe_posture << ", time = " << m_recover_time << " " << m_q.data[0] << " " << m_q.data[1] 
+                    << " " << m_q.data[2] << " " << m_q.data[3] << " " << m_q.data[4] << " " << m_q.data[5] << " " << m_q.data[6] << std::endl;
+        }
         //
         m_qOut.write();
 
