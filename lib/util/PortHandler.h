@@ -184,6 +184,17 @@ private:
     hrp::Link *m_link;
 };
 
+class FrameRateInPortHandler : public InPortHandler<RTC::TimedDouble>
+{
+public:
+    FrameRateInPortHandler(RTC::DataFlowComponentBase *i_rtc,
+                           const char *i_portName,
+                           hrp::VisionSensor *i_sensor);
+    void update();
+private:
+    hrp::VisionSensor *m_sensor;
+};
+
 class AbsTransformOutPortHandler : public OutPortHandler<RTC::TimedPose3D>
 {
 public:

@@ -163,6 +163,14 @@ void BodyRTC::createInPort(const std::string &config)
             m_inports.push_back(
                 new AbsAccelerationInPortHandler(this,name.c_str(),joints[0]));
         }
+    }else if(type == "FRAME_RATE"){
+        VisionSensor *s = this->sensor<VisionSensor>(elements[0]);
+        if (!s){
+            std::cerr << "can't find a sensor(" << elements[0] << ")" 
+                      << std::endl;
+            return;
+        }
+        m_inports.push_back(new FrameRateInPortHandler(this,name.c_str(),s));
     }else{
         std::cerr << "unknown InPort data type(" << type << ")" << std::endl;
     }

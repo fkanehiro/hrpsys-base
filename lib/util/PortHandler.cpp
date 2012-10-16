@@ -447,6 +447,25 @@ void AbsAccelerationInPortHandler::update()
     }
 }
 
+FrameRateInPortHandler::FrameRateInPortHandler(
+    RTC::DataFlowComponentBase *i_rtc,
+    const char *i_portName,
+    hrp::VisionSensor *i_sensor) :
+    InPortHandler<RTC::TimedDouble>(i_rtc, i_portName),
+    m_sensor(i_sensor)
+{
+}
+
+void FrameRateInPortHandler::update()
+{
+    if (m_port.isNew()){
+        do {
+            m_port.read();
+        }while(m_port.isNew());
+        m_sensor->frameRate = m_data.data;
+    }
+}
+
 AbsTransformOutPortHandler::AbsTransformOutPortHandler(
     RTC::DataFlowComponentBase *i_rtc,
     const char *i_portName,
