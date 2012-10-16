@@ -212,11 +212,23 @@ bool SDLwindow::processEvents()
             case SDL_BUTTON_RIGHT:
                 break;
             case SDL_BUTTON_WHEELUP:
-                radius *= 0.9;
+                if (isShiftPressed){
+                    xCenter -= 0.2*cos(tilt)*cos(pan);
+                    yCenter -= 0.2*cos(tilt)*sin(pan);
+                    zCenter -= 0.2*sin(tilt);
+                }else{
+                    radius *= 0.9;
+                    if (radius < 0.1) radius = 0.1; 
+                }
                 break;
             case SDL_BUTTON_WHEELDOWN:
-                radius *= 1.1;
-                if (radius < 0.1) radius = 0.1; 
+                if (isShiftPressed) {
+                    xCenter += 0.2*cos(tilt)*cos(pan);
+                    yCenter += 0.2*cos(tilt)*sin(pan);
+                    zCenter += 0.2*sin(tilt);
+                }else{
+                    radius *= 1.1;
+                }
                 break;
             }
         case SDL_MOUSEBUTTONUP:
