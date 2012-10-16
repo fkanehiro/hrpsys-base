@@ -36,6 +36,7 @@ SDLwindow::SDLwindow(GLsceneBase* i_scene, LogManagerBase *i_log,
     instructions.push_back("g: toggle floor grid");
     instructions.push_back("l: toggle default lights");
     instructions.push_back("o: rotate target object");
+    instructions.push_back("v: view center of objects");
     if (throbj){
         instructions.push_back("p: pause/resume background thread");
     }
@@ -158,6 +159,14 @@ bool SDLwindow::processEvents()
                 break;
             case SDLK_l:
                 scene->defaultLights(!scene->defaultLights());
+                break;
+            case SDLK_v:
+                {
+                    hrp::Vector3 center = scene->center();
+                    xCenter = center[0];
+                    yCenter = center[1];
+                    zCenter = center[2];
+                }
                 break;
             case SDLK_RIGHT:
                 if (isControlPressed){

@@ -58,6 +58,7 @@ public:
     void maxEdgeLen(double i_len);
     hrp::BodyPtr targetObject();
     void setBackGroundColor(float rgb[3]);
+    hrp::Vector3 center();
 protected:
     enum {REQ_NONE, REQ_CLEAR, REQ_CAPTURE};
 

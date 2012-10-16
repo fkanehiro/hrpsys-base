@@ -426,3 +426,21 @@ void GLsceneBase::setBackGroundColor(float rgb[3])
 {
     for (int i=0; i<3; i++) m_bgColor[i] = rgb[i];
 }
+
+hrp::Vector3 GLsceneBase::center()
+{
+    hrp::Vector3 mi,ma,min,max;
+    for (int i=0; i<numBodies(); i++){
+        GLbody *glbody = dynamic_cast<GLbody *>(body(i).get());
+        glbody->computeAABB(mi,ma);
+        if (i==0){
+            min = mi; max = ma;
+        }else{
+            for (int j=0; j<3; j++){
+                if (min[j] > mi[j]) min[j] = mi[j];
+                if (max[j] < ma[j]) max[j] = ma[j];
+            }
+        }
+    }
+    return (min+max)/2;
+}

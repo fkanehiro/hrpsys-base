@@ -35,6 +35,8 @@ public:
     void compile();
     void highlight(bool flag);
     void divideLargeTriangles(double maxEdgeLen);
+    void computeAABB(const hrp::Vector3& i_p, const hrp::Matrix33& i_R,
+                     hrp::Vector3& o_min, hrp::Vector3& o_max);
 protected:
     int doCompile(bool isWireFrameMode);
 

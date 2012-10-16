@@ -30,6 +30,7 @@ public:
     void setSensorDrawCallback(boost::function2<void, hrp::Body *, hrp::Sensor *> f);
     boost::function2<void, hrp::Body *, hrp::Sensor *> getSensorDrawCallback();
     void divideLargeTriangles(double maxEdgeLen);
+    void computeAABB(hrp::Vector3& o_min, hrp::Vector3& o_max);
     static void useAbsTransformToDraw();
 
 private:

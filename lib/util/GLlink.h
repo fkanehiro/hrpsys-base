@@ -35,6 +35,7 @@ public:
     void highlight(bool flag);
     void divideLargeTriangles(double maxEdgeLen);
     const std::vector<GLcamera *>& cameras();
+    void computeAABB(hrp::Vector3& o_min, hrp::Vector3& o_max);
     static void useAbsTransformToDraw();
     static int drawMode();
     static void drawMode(int i_mode);

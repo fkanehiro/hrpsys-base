@@ -258,3 +258,31 @@ void GLlink::divideLargeTriangles(double maxEdgeLen)
         m_shapes[i]->divideLargeTriangles(maxEdgeLen);
     }
 }
+
+void GLlink::computeAABB(hrp::Vector3& o_min, hrp::Vector3& o_max)
+{
+    if (m_useAbsTransformToDraw){
+        hrp::Vector3 mi, ma, p(m_absTrans[12], m_absTrans[13], m_absTrans[14]);
+        hrp::Matrix33 R;
+        for (int i=0; i<3; i++){
+            for (int j=0; j<3; j++){
+                R(j,i) = m_absTrans[i*4+j];
+            }
+        }
+        for (size_t i=0; i<m_shapes.size(); i++){
+            m_shapes[i]->computeAABB(p, R, mi, ma);
+            if (i==0){
+                o_min = mi; o_max = ma;
+            }else{
+                for (int j=0; j<3; j++){
+                    if (o_min[j] > mi[j]) o_min[j] = mi[j];
+                    if (o_max[j] < ma[j]) o_max[j] = ma[j];
+                }
+            }
+        }
+    }else{
+        // TODO: implement
+        //glMultMatrixd(m_trans);
+        //glMultMatrixd(m_T_j);
+    }
+}

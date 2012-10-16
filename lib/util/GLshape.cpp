@@ -363,3 +363,27 @@ void GLshape::divideLargeTriangles(double maxEdgeLen)
     m_normalIndices = new_normalIndices;
     m_textureCoordIndices = new_textureCoordIndices;
 }
+
+void GLshape::computeAABB(const hrp::Vector3& i_p, const hrp::Matrix33& i_R,
+                          hrp::Vector3& o_min, hrp::Vector3& o_max)
+{
+    hrp::Vector3 relP = getPosition();
+    hrp::Matrix33 relR;
+    getRotation(relR);
+    hrp::Vector3 p = i_p + i_R*relP;
+    hrp::Matrix33 R = i_R*relR;
+    hrp::Vector3 v;
+    for (size_t i=0; i<m_vertices.size(); i++){
+        v = R*hrp::Vector3(m_vertices[i][0],m_vertices[i][1],m_vertices[i][2]);
+        if (i==0){
+            o_min = v; o_max = v;
+        }else{
+            for (int j=0; j<3; j++){
+                if (o_min[j] > v[j]) o_min[j] = v[j];
+                if (o_max[j] < v[j]) o_max[j] = v[j];
+            }
+        }
+    }
+    o_min += p;
+    o_max += p;
+}

@@ -98,3 +98,23 @@ void GLbody::divideLargeTriangles(double maxEdgeLen)
         l->divideLargeTriangles(maxEdgeLen);
     }
 }
+
+void GLbody::computeAABB(hrp::Vector3& o_min, hrp::Vector3& o_max)
+{
+    if (m_useAbsTransformToDraw){
+        hrp::Vector3 mi, ma;
+        for (unsigned int i=0; i<numLinks(); i++){
+            ((GLlink *)link(i))->computeAABB(mi,ma);
+            if (i==0){
+                o_min = mi; o_max = ma;
+            }else{
+                for (int j=0; j<3; j++){
+                    if (o_min[j] > mi[j]) o_min[j] = mi[j];
+                    if (o_max[j] < ma[j]) o_max[j] = ma[j];
+                }
+            }
+        }
+    }else{
+        // TODO implement
+    }
+}
