@@ -195,6 +195,17 @@ private:
     hrp::VisionSensor *m_sensor;
 };
 
+class LightSwitchInPortHandler : public InPortHandler<RTC::TimedBoolean>
+{
+public:
+    LightSwitchInPortHandler(RTC::DataFlowComponentBase *i_rtc,
+                             const char *i_portName,
+                             hrp::Light *i_light);
+    void update();
+private:
+    hrp::Light *m_light;
+};
+
 class AbsTransformOutPortHandler : public OutPortHandler<RTC::TimedPose3D>
 {
 public:

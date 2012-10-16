@@ -103,7 +103,11 @@ size_t GLlink::draw(){
     }
     for (size_t i=0; i<lights.size(); i++){
         Light *l = lights[i];
-        if (!l->on) continue;
+        int lid = GL_LIGHT0+l->id; 
+        if (!l->on){
+            glDisable(lid);
+            continue;
+        }
         double T[16];
         for (int j=0; j<3; j++){
             for (int k=0; k<3; k++){
@@ -115,7 +119,6 @@ size_t GLlink::draw(){
         glPushMatrix();
         glMultMatrixd(T);
         glEnable(GL_LIGHTING);
-        int lid = GL_LIGHT0+l->id; 
         glEnable(lid);
         GLfloat pos[] = {0,0,0,1};
         glLightfv(lid, GL_POSITION, pos);

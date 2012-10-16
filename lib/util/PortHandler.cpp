@@ -1,5 +1,6 @@
 #include <hrpModel/Link.h>
 #include <hrpModel/Sensor.h>
+#include <hrpModel/Light.h>
 #include "PortHandler.h"
 
 using namespace hrp;
@@ -463,6 +464,25 @@ void FrameRateInPortHandler::update()
             m_port.read();
         }while(m_port.isNew());
         m_sensor->frameRate = m_data.data;
+    }
+}
+
+LightSwitchInPortHandler::LightSwitchInPortHandler(
+    RTC::DataFlowComponentBase *i_rtc,
+    const char *i_portName,
+    hrp::Light *i_light) :
+    InPortHandler<RTC::TimedBoolean>(i_rtc, i_portName),
+    m_light(i_light)
+{
+}
+
+void LightSwitchInPortHandler::update()
+{
+    if (m_port.isNew()){
+        do {
+            m_port.read();
+        }while(m_port.isNew());
+        m_light->on = m_data.data;
     }
 }
 
