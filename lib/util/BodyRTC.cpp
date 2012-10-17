@@ -171,7 +171,7 @@ void BodyRTC::createInPort(const std::string &config)
             return;
         }
         m_inports.push_back(new FrameRateInPortHandler(this,name.c_str(),s));
-    }else if(type == "SWITE_SWITCH"){
+    }else if(type == "LIGHT_SWITCH"){
         Light *l = this->light(elements[0]);
         if (!l){
             std::cerr << "can't find a light(" << elements[0] << ")" 
