@@ -1,6 +1,7 @@
 // -*- mode: c++; indent-tabs-mode: t; tab-width: 4; c-basic-offset: 4; -*-
 
 #include <iostream>
+#include <unistd.h>
 #include "seqplay.h"
 
 #define deg2rad(x)	((x)*M_PI/180)
