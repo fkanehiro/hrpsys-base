@@ -1,4 +1,4 @@
-set(comp_sources VirtualForceSensor.cpp)
+set(comp_sources IIRFilter.cpp VirtualForceSensor.cpp)
 set(libs hrpModel-3.1 hrpUtil-3.1 hrpsysBaseStub)
 add_library(VirtualForceSensor SHARED ${comp_sources})
 target_link_libraries(VirtualForceSensor ${libs})
