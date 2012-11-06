@@ -22,6 +22,8 @@
 #include <hrpModel/JointPath.h>
 #include <hrpUtil/EigenTypes.h>
 
+#include "IIRFilter.h"
+
 // Service implementation headers
 // <rtc-template block="service_impl_h">
 
@@ -107,13 +109,15 @@ class VirtualForceSensor
   // </rtc-template>
   TimedDoubleSeq m_qRef;
   TimedDoubleSeq m_qCurrent;
-  TimedDoubleSeq m_tau;
-
+  TimedDoubleSeq m_tauIn;
+  TimedDoubleSeq m_tauOut;
+  
   // DataInPort declaration
   // <rtc-template block="inport_declare">
   InPort<TimedDoubleSeq> m_qRefIn;
   InPort<TimedDoubleSeq> m_qCurrentIn;
-  InPort<TimedDoubleSeq> m_tauIn;
+  InPort<TimedDoubleSeq> m_tauInIn;
+  OutPort<TimedDoubleSeq> m_tauOutOut;
   
   // </rtc-template>
 
@@ -156,10 +160,12 @@ class VirtualForceSensor
   std::map<std::string, VirtualForceSensorParam> m_sensors;
   std::vector<double> m_error_to_torque_gain;
   std::vector<double> m_error_dead_zone;
+  std::vector<double> m_torque_offset;
   double m_dt;
   hrp::BodyPtr m_robot;
   unsigned int m_debugLevel;
   int dummy;
+  std::vector<IIRFilter> m_filters;
 };
 
 
