@@ -1,5 +1,6 @@
 set(common_libs ${OPENRTM_LIBRARIES} hrpIo hrpsysBaseStub)
 
+link_directories(${LIBIO_DIR})
 if (EXISTS /usr/lib/art_syscalls.o)
   add_library(hrpEC-art SHARED hrpEC-art.cpp hrpEC-common.cpp /usr/lib/art_syscalls.o)
   target_link_libraries(hrpEC-art ${common_libs})
