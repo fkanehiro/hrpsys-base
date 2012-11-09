@@ -53,11 +53,10 @@ void GLscene::updateScene()
 
 void GLscene::drawAdditionalLines()
 {
-    if (m_log->index()<0) return;
-
     LogManager<OpenHRP::WorldState> *lm 
         = (LogManager<OpenHRP::WorldState> *)m_log;
-    OpenHRP::WorldState &state = lm->state();
+    OpenHRP::WorldState state;
+    if (!lm->state(state)) return;
 
     glColor3f(1,0,0);
     double e[3];

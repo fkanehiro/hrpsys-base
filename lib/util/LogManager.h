@@ -138,7 +138,20 @@ public:
     }
     T& state() { 
         boost::mutex::scoped_lock lock(m_mutex);
+        if (m_index < 0 || m_index >= m_log.size()){
+            std::cerr << "invalid index:" << m_index << "," << m_log.size()
+                      << std::endl;
+        }
         return m_log[m_index]; 
+    }
+    bool state(T& o_state){
+        boost::mutex::scoped_lock lock(m_mutex);
+        if (m_index < 0 || m_index >= m_log.size()){
+            return false;
+        }else{
+            o_state = m_log[m_index]; 
+            return true;
+        }
     }
     void enableRingBuffer(int len) { m_maxLogLength = len; }
     unsigned int length() { 
