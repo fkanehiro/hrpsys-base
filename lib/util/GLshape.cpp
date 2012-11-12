@@ -76,6 +76,16 @@ void GLshape::setDiffuseColor(float r, float g, float b, float a)
     m_diffuse[0] = r; m_diffuse[1] = g; m_diffuse[2] = b; m_diffuse[3] = a; 
 }
 
+void GLshape::setColors(int ncolors, const float *colors)
+{
+    m_colors.resize(ncolors);
+    for (size_t i=0; i<ncolors; i++){
+        m_colors[i] = Eigen::Vector3f(colors[i*3  ], 
+                                      colors[i*3+1], 
+                                      colors[i*3+2]);
+    }
+}
+
 void GLshape::normalPerVertex(bool flag)
 {
     m_normalPerVertex = flag;
@@ -232,6 +242,20 @@ int GLshape::doCompile(bool isWireFrameMode)
     }
     if (!isWireFrameMode) glEnd(); // GL_TRIANGLES
     if (drawTexture) glDisable(GL_TEXTURE_2D);
+
+    // point cloud
+    if (!m_triangles.size()&&m_vertices.size()){
+        glPointSize(3);
+        glDisable(GL_LIGHTING);
+        glBegin(GL_POINTS);
+        for (size_t i=0; i<m_vertices.size(); i++){
+            if (m_colors.size()>=m_vertices.size()) 
+                glColor3fv(m_colors[i].data());
+            glVertex3fv(m_vertices[i].data());
+        }
+        glEnd();
+        glEnable(GL_LIGHTING);
+    }
     glEndList();
 
     return list;

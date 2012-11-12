@@ -27,6 +27,7 @@ public:
     void setDiffuseColor(float r, float g, float b, float a);
     void setSpecularColor(float r, float g, float b);
     void setShininess(float s);
+    void setColors(int ncolors, const float *colors);
     void normalPerVertex(bool flag);
     void solid(bool flag);
     void setTextureCoordinates(int len, const float *coordinates);
@@ -40,7 +41,7 @@ public:
 protected:
     int doCompile(bool isWireFrameMode);
 
-    std::vector<Eigen::Vector3f> m_vertices, m_normals;
+    std::vector<Eigen::Vector3f> m_vertices, m_normals, m_colors;
     std::vector<Eigen::Vector2f, Eigen::aligned_allocator<Eigen::Vector2f> > m_textureCoordinates;
     std::vector<Eigen::Vector3i> m_triangles;
     std::vector<int> m_normalIndices, m_textureCoordIndices;
