@@ -1,8 +1,6 @@
 #ifndef __LOG_MANAGER_BASE_H__
 #define __LOG_MANAGER_BASE_H__
 
-#define DEFAULT_FPS 10
-
 class LogManagerBase
 {
 public:
@@ -10,7 +8,7 @@ public:
         m_isPlaying(false), m_isRecording(false), m_playRatio(1.0){}
     virtual ~LogManagerBase(){}
     virtual void play() = 0;
-    virtual bool record() = 0;
+    virtual bool record(double i_fps) = 0;
     virtual void faster() = 0;
     virtual void slower() = 0;
     virtual void head() = 0; 
@@ -23,11 +21,13 @@ public:
     virtual int updateIndex() = 0;
     virtual int index() = 0;
     virtual void clear() = 0;
+    virtual double time() = 0;
     bool isPlaying(){ return m_isPlaying; }
     bool isRecording(){ return m_isRecording; }
     double playRatio() { return m_playRatio; }
+    double fps() { return m_fps; }
 protected:
     bool m_isPlaying, m_isRecording;
-    double m_playRatio;
+    double m_playRatio, m_fps;
 };
 #endif

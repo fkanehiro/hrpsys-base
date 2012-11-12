@@ -32,7 +32,8 @@ GLsceneBase::GLsceneBase(LogManagerBase *i_log) :
     m_showFloorGrid(true), m_showInfo(true), m_defaultLights(true),
     m_request(REQ_NONE), 
     m_maxEdgeLen(0),
-    m_targetObject(-1)
+    m_targetObject(-1),
+    m_isCapturing(false)
 {
     m_default_camera = new GLcamera(DEFAULT_W, DEFAULT_H, 0.1, 100.0, 30*M_PI/180);
     m_default_camera->setViewPoint(4,0,0.8);
@@ -329,11 +330,11 @@ void GLsceneBase::draw()
     glPopMatrix();
     glEnable(GL_LIGHTING);
 
-    if (m_log->isRecording() && !m_videoWriter){
+    if (m_log->isRecording() && !m_isCapturing && !m_videoWriter){
         m_videoWriter = cvCreateVideoWriter(
             "olv.avi",
             CV_FOURCC('D','I','V','X'),
-            DEFAULT_FPS,
+            m_log->fps(),
             cvSize(m_width, m_height));
         m_cvImage = cvCreateImage(
             cvSize(m_width, m_height),
@@ -344,11 +345,19 @@ void GLsceneBase::draw()
         capture(dst);
         cvWriteFrame(m_videoWriter, m_cvImage);
     }
-    if (!m_log->isRecording() && m_videoWriter){
-        cvReleaseVideoWriter(&m_videoWriter);
-        cvReleaseImage(&m_cvImage);
-        m_videoWriter = NULL;
-        m_cvImage = NULL;
+    if(m_isCapturing){
+        char fname[64];
+        sprintf(fname, "capture%05.2f.png", m_log->time());
+        save(fname);
+    }
+    if (!m_log->isRecording()){
+        if (m_videoWriter){
+            cvReleaseVideoWriter(&m_videoWriter);
+            cvReleaseImage(&m_cvImage);
+            m_videoWriter = NULL;
+            m_cvImage = NULL;
+        }
+        if (m_isCapturing) m_isCapturing = false;
     }
     if (m_request == REQ_CAPTURE){
         save(m_fname.c_str());

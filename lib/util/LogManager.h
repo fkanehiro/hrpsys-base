@@ -81,13 +81,14 @@ public:
             gettimeofday(&m_startT, NULL);
         }
     }
-    bool record(){
+    bool record(double i_fps){
         boost::mutex::scoped_lock lock(m_mutex);
         if (m_log.empty()) return false;
 
         if (m_atLast) setIndex(0);
         m_initT = m_log[0].time;
         m_isRecording = true;
+        m_fps = i_fps;
         return true;
     }
     bool isRecording() { return m_isRecording; }
@@ -132,7 +133,7 @@ public:
                     break;
                 }
             } 
-            m_initT += 1.0/DEFAULT_FPS*m_playRatio;
+            m_initT += 1.0/m_fps*m_playRatio;
         }
         return m_index;
     }
@@ -157,6 +158,14 @@ public:
     unsigned int length() { 
         boost::mutex::scoped_lock lock(m_mutex);
         return m_log.size(); 
+    }
+    double time() {
+        boost::mutex::scoped_lock lock(m_mutex);
+        if (m_log.size() < m_index && m_index >= 0){
+            return -1;
+        }else{
+            return m_log[m_index].time;
+        }
     }
 protected:
     void setIndex(int i){

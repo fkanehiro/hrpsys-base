@@ -14,6 +14,7 @@
 #include "util/GLlink.h"
 #include "SDLUtil.h"
 
+
 SDLwindow::SDLwindow(GLsceneBase* i_scene, LogManagerBase *i_log,
                      ThreadedObject* i_throbj) :
     scene(i_scene), log(i_log), throbj(i_throbj),
@@ -111,6 +112,10 @@ bool SDLwindow::processEvents()
                 }
                 showingHelp = !showingHelp;
                 break;
+            case SDLK_i:
+                log->record(1);
+                scene->capture();
+                break;
             case SDLK_q:
                 return false;
             case SDLK_p:
@@ -135,7 +140,7 @@ bool SDLwindow::processEvents()
                 log->slower();
                 break;
             case SDLK_r:
-                log->record();
+                log->record(10);
                 break;
             case SDLK_d:
             {

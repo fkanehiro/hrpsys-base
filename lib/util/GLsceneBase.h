@@ -59,6 +59,7 @@ public:
     hrp::BodyPtr targetObject();
     void setBackGroundColor(float rgb[3]);
     hrp::Vector3 center();
+    void capture() { m_isCapturing = true; }
 protected:
     enum {REQ_NONE, REQ_CLEAR, REQ_CAPTURE};
 
@@ -80,6 +81,7 @@ protected:
     double m_maxEdgeLen;
     int m_targetObject;
     float m_bgColor[3];
+    bool m_isCapturing;
 };
 
 #endif

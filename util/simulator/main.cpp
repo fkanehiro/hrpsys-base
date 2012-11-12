@@ -205,7 +205,7 @@ int main(int argc, char* argv[])
         };
         simulator.stop();
         if (record){
-            log.record();
+            log.record(10);
             while(window.oneStep()){
                 if (!log.isRecording()) break;
             }
