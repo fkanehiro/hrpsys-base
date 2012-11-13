@@ -51,6 +51,7 @@ private:
     std::vector<GLshape *> m_shapes;
     GLuint m_frameBuffer, m_renderBuffer, m_texture;
     hrp::VisionSensor *m_sensor;
+    unsigned char *m_colorBuffer;
 };
 
 #endif

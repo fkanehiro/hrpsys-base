@@ -25,7 +25,7 @@ GLcamera::GLcamera(int i_width, int i_height,
     m_fovy(i_fovy), m_width(i_width), m_height(i_height), 
     m_link(i_link), 
     m_frameBuffer(0), m_renderBuffer(0), m_texture(0),
-    m_sensor(NULL)
+    m_sensor(NULL), m_colorBuffer(NULL)
 {
     if (m_link) m_sensor = m_link->body->sensor<VisionSensor>(i_id);
 }
@@ -35,6 +35,7 @@ GLcamera::~GLcamera()
     for (size_t i=0; i<m_shapes.size(); i++){
         delete m_shapes[i];
     }
+    if (m_colorBuffer) delete [] m_colorBuffer;
 }
 
 size_t GLcamera::draw(int i_mode)
@@ -147,15 +148,17 @@ void GLcamera::render(GLsceneBase *i_scene)
     glBindTexture( GL_TEXTURE_2D, m_texture );
     if (m_sensor->imageType != VisionSensor::NONE 
         && m_sensor->imageType != VisionSensor::DEPTH){
-        unsigned char rgb[m_width*m_height*3];
-        glReadPixels(0,0, m_width, m_height, GL_RGB, GL_UNSIGNED_BYTE, rgb);
+        if (!m_colorBuffer) {
+            m_colorBuffer = new unsigned char[m_width*m_height*3];
+        }
+        glReadPixels(0,0, m_width, m_height, GL_RGB, GL_UNSIGNED_BYTE, m_colorBuffer);
 
         if (m_sensor->imageType == VisionSensor::COLOR
             || m_sensor->imageType == VisionSensor::COLOR_DEPTH){
             if (m_sensor->image.size() != m_width*m_height*3){
                 std::cerr << "invalid image length" << std::endl;
             }else{
-                unsigned char *src=rgb;
+                unsigned char *src=m_colorBuffer;
                 unsigned char *dst=&m_sensor->image[m_width*(m_height-1)*3];
                 for (int i=0; i<m_height; i++){
                     memcpy(dst, src, m_width*3);
@@ -169,7 +172,7 @@ void GLcamera::render(GLsceneBase *i_scene)
             if (m_sensor->image.size() != m_width*m_height){
                 std::cerr << "invalid image length" << std::endl;
             }else{
-                unsigned char *src=rgb;
+                unsigned char *src=m_colorBuffer;
                 unsigned char *dst=&m_sensor->image[m_width*(m_height-1)];
                 for (int i=0; i<m_height; i++){
                     for (int j=0; j<m_width; j++){
