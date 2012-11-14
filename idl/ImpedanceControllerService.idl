@@ -7,6 +7,7 @@ module OpenHRP
   
   interface ImpedanceControllerService
   {
+    typedef sequence<double, 3> DblSequence3;
 
     struct impedanceParam {
       string name;
@@ -18,6 +19,10 @@ module OpenHRP
       double M_r;
       double D_r;
       double K_r;
+      DblSequence3 ref_force;
+      DblSequence3 force_gain;
+      DblSequence3 ref_moment;
+      DblSequence3 moment_gain;
       double sr_gain;
       double avoid_gain;
       double reference_gain;

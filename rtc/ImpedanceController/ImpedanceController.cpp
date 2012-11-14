@@ -293,15 +293,15 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
                     hrp::Vector3 data_p(m_force[i].data[0], m_force[i].data[1], m_force[i].data[2]);
                     hrp::Vector3 data_r(m_force[i].data[3], m_force[i].data[4], m_force[i].data[5]);
                     if ( sensor ) {
+                      // real force sensor
                       force_p = sensor->link->R * sensor->localR * (data_p - param.force_offset_p);
                       force_r = sensor->link->R * sensor->localR * (data_r - param.force_offset_r);
                     } else if ( m_sensors.find(sensor_name) !=  m_sensors.end()) {
-                      force_p = (data_p - param.force_offset_p);
-                      force_r = (data_r - param.force_offset_r);
                       if ( DEBUGP ) {
                         std::cerr << "force : " << force_p[0] << " " << force_p[1] << " " << force_p[2] << std::endl;
                         std::cerr << "force : " << force_r[0] << " " << force_r[1] << " " << force_r[2] << std::endl;
                       }
+                      // virtual force sensor
                       force_p = target->R * m_sensors[sensor_name].R * (data_p - param.force_offset_p);
                       force_r = target->R * m_sensors[sensor_name].R * (data_r - param.force_offset_r);
                     } else {
@@ -374,17 +374,21 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
             hrp::Vector3 vel_p, vel_r;
             //std::cerr << "MDK = " << param.M_p << " " << param.D_p << " " << param.K_p << std::endl;
             //std::cerr << "MDK = " << param.M_r << " " << param.D_r << " " << param.K_r << std::endl;
-	    vel_p = ( force_p * m_dt * m_dt
-                      + param.M_p * ( vel_pos1 - vel_pos0 )
-                      + param.D_p * ( dif_target_pos - vel_pos0 ) * m_dt
-                      + param.K_p * ( dif_pos * m_dt * m_dt  ) ) /
-                (param.M_p + (param.D_p * m_dt) + (param.K_p * m_dt * m_dt));
+            // std::cerr << "ref_force = " << param.ref_force[0] << " " << param.ref_force[1] << " " << param.ref_force[2] << std::endl;
+            // std::cerr << "ref_moment = " << param.ref_moment[0] << " " << param.ref_moment[1] << " " << param.ref_moment[2] << std::endl;
 
-	    vel_r = ( force_r * m_dt * m_dt
-                      + param.M_r * ( vel_rot1 - vel_rot0 )
-                      + param.D_r * ( dif_target_rot - vel_rot0 ) * m_dt
-                      + param.K_r * ( dif_rot * m_dt * m_dt  ) ) /
-                (param.M_r + (param.D_r * m_dt) + (param.K_r * m_dt * m_dt));
+            // ref_force/ref_moment and force_gain/moment_gain are expressed in global coordinates. 
+            vel_p = param.force_gain * ( ( (force_p - param.ref_force) * m_dt * m_dt
+                                           + param.M_p * ( vel_pos1 - vel_pos0 )
+                                           + param.D_p * ( dif_target_pos - vel_pos0 ) * m_dt
+                                           + param.K_p * ( dif_pos * m_dt * m_dt ) ) /
+                                         (param.M_p + (param.D_p * m_dt) + (param.K_p * m_dt * m_dt)) );
+
+            vel_r = param.moment_gain * ( ( (force_r - param.ref_moment) * m_dt * m_dt
+                                            + param.M_r * ( vel_rot1 - vel_rot0 )
+                                            + param.D_r * ( dif_target_rot - vel_rot0 ) * m_dt
+                                            + param.K_r * ( dif_rot * m_dt * m_dt  ) ) /
+                                          (param.M_r + (param.D_r * m_dt) + (param.K_r * m_dt * m_dt)) );
 
             if ( DEBUGP ) {
                 std::cerr << "vel_p : " << vel_p[0] << " " << vel_p[1] << " " << vel_p[2] << std::endl;
@@ -614,6 +618,11 @@ bool ImpedanceController::setImpedanceControllerParam(OpenHRP::ImpedanceControll
 	p.D_r = i_param_.D_r;
 	p.K_r = i_param_.K_r;
 
+    p.ref_force = hrp::Vector3(i_param_.ref_force[0], i_param_.ref_force[1], i_param_.ref_force[2]);
+    p.ref_moment = hrp::Vector3(i_param_.ref_moment[0], i_param_.ref_moment[1], i_param_.ref_moment[2]);
+    p.force_gain = hrp::Vector3(i_param_.force_gain[0], i_param_.force_gain[1], i_param_.force_gain[2]).asDiagonal();
+    p.moment_gain = hrp::Vector3(i_param_.moment_gain[0], i_param_.moment_gain[1], i_param_.moment_gain[2]).asDiagonal();
+    
 	p.target_p0 = m_robot->link(p.target_name)->p;
 	p.target_p1 = m_robot->link(p.target_name)->p;
 	p.target_r0 = hrp::omegaFromRot(m_robot->link(p.target_name)->R);
@@ -677,6 +686,10 @@ bool ImpedanceController::setImpedanceControllerParam(OpenHRP::ImpedanceControll
       std::cerr << "   target_name : " << param.target_name << std::endl;
       std::cerr << " K, D, M (pos) : " << param.K_p << " " << param.D_p << " " << param.M_p << std::endl;
       std::cerr << " K, D, M (rot) : " << param.K_r << " " << param.D_r << " " << param.M_r << std::endl;
+      std::cerr << "     ref_force : " << param.ref_force[0] << " " << param.ref_force[1] << " " << param.ref_force[2] << std::endl;
+      std::cerr << "    ref_moment : " << param.ref_moment[0] << " " << param.ref_moment[1] << " " << param.ref_moment[2] << std::endl;
+      std::cerr << "    force_gain : " << std::endl << param.force_gain << std::endl;
+      std::cerr << "   moment_gain : " << std::endl << param.moment_gain << std::endl;
       std::cerr << "   manip_limit : " << param.manipulability_limit << std::endl;
       std::cerr << "       sr_gain : " << param.sr_gain << std::endl;
       std::cerr << "    avoid_gain : " << param.avoid_gain << std::endl;

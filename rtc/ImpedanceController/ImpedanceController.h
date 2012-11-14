@@ -140,6 +140,8 @@ class ImpedanceController
     hrp::Vector3 force_offset_p, force_offset_r;
     double M_p, D_p, K_p;
     double M_r, D_r, K_r;
+    hrp::Vector3 ref_force, ref_moment;
+    hrp::Matrix33 force_gain, moment_gain;
     double sr_gain, avoid_gain, reference_gain, manipulability_limit;
     int transition_count;
     hrp::JointPathExPtr manip;
