@@ -102,6 +102,9 @@ class SequencePlayer
   void loadPattern(const char *basename, double time); 
   void playPattern(const OpenHRP::dSequenceSequence& pos, const OpenHRP::dSequenceSequence& rpy, const OpenHRP::dSequenceSequence& zmp, const OpenHRP::dSequence& tm);
   bool setInterpolationMode(OpenHRP::SequencePlayerService::interpolationMode i_mode_);
+  bool addJointGroup(const char *gname, const OpenHRP::SequencePlayerService::StrSequence& jnames);
+  bool removeJointGroup(const char *gname);
+  bool setJointAnglesOfGroup(const char *gname, const double *angles, double tm);
 
  protected:
   // Configuration variable declaration

@@ -29,6 +29,9 @@ public:
   void clear();
   void clearNoWait();
   CORBA::Boolean setInterpolationMode(OpenHRP::SequencePlayerService::interpolationMode i_mode_);
+  CORBA::Boolean addJointGroup(const char* gname, const OpenHRP::SequencePlayerService::StrSequence& jnames);
+  CORBA::Boolean removeJointGroup(const char* gname);
+  CORBA::Boolean setJointAnglesOfGroup(const char *gname, const dSequence& jvs, CORBA::Double tm);
   //
   void player(SequencePlayer *i_player);
 private:

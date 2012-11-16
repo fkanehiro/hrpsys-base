@@ -101,3 +101,18 @@ void SequencePlayerService_impl::playPattern(const dSequenceSequence& pos, const
 {
     m_player->playPattern(pos, rpy, zmp, tm);
 }
+
+CORBA::Boolean SequencePlayerService_impl::addJointGroup(const char* gname, const OpenHRP::SequencePlayerService::StrSequence& jnames)
+{
+    return m_player->addJointGroup(gname, jnames);
+}
+
+CORBA::Boolean SequencePlayerService_impl::removeJointGroup(const char* gname)
+{
+    return m_player->removeJointGroup(gname);
+}
+
+CORBA::Boolean SequencePlayerService_impl::setJointAnglesOfGroup(const char *gname, const dSequence& jvs, CORBA::Double tm)
+{
+    return m_player->setJointAnglesOfGroup(gname, jvs.get_buffer(), tm);
+}

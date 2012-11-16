@@ -36,6 +36,7 @@ public:
                bool online=true);
   void setGoal(const double *gx, double time);
   void interpolate(double& remain_t);
+  double deltaT() const { return dt; }
 private:
   interpolation_mode imode;
   deque<double *> q;

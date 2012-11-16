@@ -437,6 +437,34 @@ bool SequencePlayer::setInterpolationMode(OpenHRP::SequencePlayerService::interp
     return m_seq->setInterpolationMode(new_mode);
 }
 
+bool SequencePlayer::addJointGroup(const char *gname, const OpenHRP::SequencePlayerService::StrSequence& jnames)
+{
+    Guard guard(m_mutex);
+    std::vector<int> indices;
+    for (size_t i=0; i<jnames.length(); i++){
+        hrp::Link *l = m_robot->link(std::string(jnames[i]));
+        if (l){
+            indices.push_back(l->jointId);
+        }else{
+            return false;
+        }
+    }
+    return m_seq->addJointGroup(gname, indices);
+}
+
+bool SequencePlayer::removeJointGroup(const char *gname)
+{
+    Guard guard(m_mutex);
+    return m_seq->removeJointGroup(gname);
+}
+
+bool SequencePlayer::setJointAnglesOfGroup(const char *gname, const double *angles, double tm)
+{
+    Guard guard(m_mutex);
+    if (!m_seq->resetJointGroup(gname, m_qInit.data.get_buffer())) return false;
+    return m_seq->setJointAnglesOfGroup(gname, angles, tm);
+}
+
 extern "C"
 {
 

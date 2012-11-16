@@ -1,6 +1,7 @@
 // -*- mode: c++; indent-tabs-mode: t; tab-width: 4; c-basic-offset: 4; -*-
 
 #include <iostream>
+#include <unistd.h>
 #include "seqplay.h"
 
 #define deg2rad(x)	((x)*M_PI/180)
@@ -86,6 +87,12 @@ bool seqplay::isEmpty() const
 	for (unsigned int i=0; i<NINTERPOLATOR; i++){
 		if (!interpolators[i]->isEmpty()) return false;
 	}
+	std::map<std::string, groupInterpolator *>::const_iterator it;
+	for (it=groupInterpolators.begin(); it!=groupInterpolators.end(); it++){
+		groupInterpolator *gi = it->second;
+		if (gi && !gi->isEmpty()) return false;
+	}
+
 	return true;
 }
 
@@ -249,6 +256,11 @@ void seqplay::get(double *o_q, double *o_zmp, double *o_accel,
 				  double *o_basePos, double *o_baseRpy)
 {
 	interpolators[Q]->get(o_q);
+	std::map<std::string, groupInterpolator *>::iterator it;
+	for (it=groupInterpolators.begin(); it!=groupInterpolators.end(); it++){
+		groupInterpolator *gi = it->second;
+		if (gi)	gi->get(o_q);
+	}
 	interpolators[ZMP]->get(o_zmp);
 	interpolators[ACC]->get(o_accel);
 	interpolators[P]->get(o_basePos);
@@ -300,4 +312,46 @@ bool seqplay::setInterpolationMode (interpolator::interpolation_mode i_mode_)
 		ret &= interpolators[i]->setInterpolationMode(i_mode_);
 	}
 	return ret;
+}
+
+bool seqplay::addJointGroup(const char *gname, const std::vector<int>& indices)
+{
+	groupInterpolator *i = groupInterpolators[gname];
+	if (i) return false;
+	i = new groupInterpolator(indices, interpolators[Q]->deltaT());
+	groupInterpolators[gname] = i;
+}
+
+bool seqplay::removeJointGroup(const char *gname)
+{
+	groupInterpolator *i = groupInterpolators[gname];
+	if (i){
+		groupInterpolators[gname] = NULL;
+		delete i;
+		return true;
+	}else{
+		return false;
+	}
+}
+
+bool seqplay::resetJointGroup(const char *gname, const double *full)
+{
+	groupInterpolator *i = groupInterpolators[gname];
+	if (i){
+		i->set(full);
+		return true;
+	}else{
+		return false;
+	}
+}
+
+bool seqplay::setJointAnglesOfGroup(const char *gname, const double *i_qRef, double i_tm)
+{
+	groupInterpolator *i = groupInterpolators[gname];
+	if (i){
+		i->inter->go(i_qRef, i_tm);
+		return true;
+	}else{
+		return false;
+	}
 }
