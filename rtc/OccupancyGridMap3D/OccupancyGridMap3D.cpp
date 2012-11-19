@@ -12,6 +12,7 @@
 #include <octomap/octomap.h>
 
 #define KDEBUG 0
+//#define KDEBUG 1 // 121022
 
 #ifdef __APPLE__
 inline bool isnan(double x)
@@ -164,6 +165,25 @@ RTC::ReturnCode_t OccupancyGridMap3D::onActivated(RTC::UniqueId ec_id)
     m_map = new OcTree(m_resolution);
   }
 
+  if(KDEBUG){
+    std::cout << m_profile.instance_name << ": initial tree depth = " << m_map->getTreeDepth() << std::endl;
+    std::cout << m_profile.instance_name << ": initial tree size = " << m_map->size() << std::endl;
+    point3d p;
+    //    p.x() = 0.1; //0.05;
+    //    p.y() = 2.2; //2.15;
+    //    p.z() = 1.4; //1.45;
+    p.x() = -0.5; //-0.55;
+    p.y() = 3.0; //2.95;
+    p.z() = 0.5; //0.55;
+    OcTreeNode *result = m_map->search(p);
+    if (result){
+      double prob = result->getOccupancy();
+      std::cout << m_profile.instance_name << ": initial " << p << " " << prob << std::endl;
+    std::cout << m_profile.instance_name << ": second tree depth = " << m_map->getTreeDepth() << std::endl;
+    std::cout << m_profile.instance_name << ": second tree size = " << m_map->size() << std::endl;
+    }
+  }
+
   return RTC::RTC_OK;
 }
 
@@ -220,12 +240,159 @@ RTC::ReturnCode_t OccupancyGridMap3D::onExecute(RTC::UniqueId ec_id)
                                 m_pose.data.orientation.y);
             int ocnum = 0;
             int emnum = 0;
+#if KDEBUG
+	    point3d pp1,pp2,pp3,pp4,pp5;
+	    //	    pp1.x() = 0.1; //0.05;
+	    //	    pp1.y() = 2.2; //2.15;
+	    //	    pp1.z() = 1.4; //1.45;
+	    pp1.x() = -0.35;
+	    pp1.y() = 2.9;
+	    pp1.z() = 0.5;
+	    pp2.x() = -0.45; //-0.45;
+	    pp2.y() = 2.9; //2.95;
+	    pp2.z() = 0.5; //0.55;
+	    pp3.x() = -0.55; //-0.55;
+	    pp3.y() = 2.9; //2.95;
+	    pp3.z() = 0.5; //0.55;
+	    pp4.x() = -0.65; //-0.45;
+	    pp4.y() = 2.9; //3.05;
+	    pp4.z() = 0.5; //0.55;
+	    pp5.x() = -0.75; //-0.55;
+	    pp5.y() = 2.9; //3.05;
+	    pp5.z() = 0.5; //0.55;
+	    OcTreeNode *result1 = m_map->search(pp1);
+	    OcTreeKey result1_key;
+	    m_map->genKey(pp1, result1_key);
+	    OcTreeNode *result2 = m_map->search(pp2);
+	    OcTreeKey result2_key;
+	    m_map->genKey(pp2, result2_key);
+	    OcTreeNode *result3 = m_map->search(pp3);
+	    OcTreeKey result3_key;
+	    m_map->genKey(pp3, result3_key);
+	    OcTreeNode *result4 = m_map->search(pp4);
+	    OcTreeKey result4_key;
+	    m_map->genKey(pp4, result4_key);
+	    OcTreeNode *result5 = m_map->search(pp5);
+	    OcTreeKey result5_key;
+	    m_map->genKey(pp5, result5_key);
+	    double prob1,prob2,prob3,prob4,prob5;
+	    if (result1){
+	      prob1 = result1->getOccupancy();
+	      std::cout << m_profile.instance_name << ": " << pp1 << " original prob = " << prob1 << std::endl;
+	      std::cout << m_profile.instance_name << ": " << pp1 << " key = " << result1_key[0] << " " << result1_key[1] << " " << result1_key[2] << std::endl;
+	    }
+	    else
+	      std::cout << m_profile.instance_name << ": " << pp1 << " can not be searched." << std::endl;
+	    if (result2){
+	      prob2 = result2->getOccupancy();
+	      std::cout << m_profile.instance_name << ": " << pp2 << " original prob = " << prob2 << std::endl;
+	      std::cout << m_profile.instance_name << ": " << pp2 << " key = " << result2_key[0] << " " << result2_key[1] << " " << result2_key[2] << std::endl;
+	    }
+	    else
+	      std::cout << m_profile.instance_name << ": " << pp2 << " can not be searched." << std::endl;
+	    if (result3){
+	      prob3 = result3->getOccupancy();
+	      std::cout << m_profile.instance_name << ": " << pp3 << " original prob = " << prob3 << std::endl;
+	      std::cout << m_profile.instance_name << ": " << pp3 << " key = " << result3_key[0] << " " << result3_key[1] << " " << result3_key[2] << std::endl;
+	    }
+	    else
+	      std::cout << m_profile.instance_name << ": " << pp3 << " can not be searched." << std::endl;
+	    if (result4){
+	      prob4 = result4->getOccupancy();
+	      std::cout << m_profile.instance_name << ": " << pp4 << " original prob = " << prob4 << std::endl;
+	      std::cout << m_profile.instance_name << ": " << pp4 << " key = " << result4_key[0] << " " << result4_key[1] << " " << result4_key[2] << std::endl;
+	    }
+	    else
+	      std::cout << m_profile.instance_name << ": " << pp4 << " can not be searched." << std::endl;
+	    if (result5){
+	      prob5 = result5->getOccupancy();
+	      std::cout << m_profile.instance_name << ": " << pp5 << " original prob = " << prob5 << std::endl;
+	      std::cout << m_profile.instance_name << ": " << pp5 << " key = " << result5_key[0] << " " << result5_key[1] << " " << result5_key[2] << std::endl;
+	    }
+	    else
+	      std::cout << m_profile.instance_name << ": " << pp5 << " can not be searched." << std::endl;
+
+	    OcTreeNode *result;
+	    OcTreeKey result_key;
+	    double prob;
+	    point3d pp;
+	    pp.z() = 0.5;
+	    for(int i=0; i<5; i++){
+	      pp.x() = -0.3 - 0.1*i;
+	      for(int j=0; j<5; j++){
+		pp.y() = 2.8 + 0.1*j;
+		result = m_map->search(pp);
+		m_map->genKey(pp, result_key);
+		if(result){
+		  prob = result->getOccupancy();
+		  std::cout << m_profile.instance_name << ": " << pp << " original prob = " << prob << std::endl;
+		  std::cout << m_profile.instance_name << ": " << pp << " key = " << result_key[0] << " " << result_key[1] << " " << result_key[2] << std::endl;
+		}
+		else
+		  std::cout << m_profile.instance_name << ": " << pp << " can not be searched." << std::endl;
+	      }
+	    }
+#endif
             for (unsigned int i=0; i<m_cloud.data.length()/16; i++, ptr+=4){
                 if (isnan(ptr[0])) continue;
                 hrp::Vector3 peye(ptr[0],ptr[1],ptr[2]);
                 hrp::Vector3 pworld(R*peye+p);
                 point3d pog(pworld[0],pworld[1],pworld[2]);
-                m_map->updateNode(pog, ptr[3]>0.0?true:false, false);
+#if KDEBUG
+		OcTreeNode *target_node; // 121023
+		OcTreeKey target_key; // 121023
+		if((pworld[0]>(pp1.x()-0.1)&&pworld[0]<pp1.x()&&pworld[1]>pp1.y()&&pworld[1]<(pp1.y()+0.1)&&pworld[2]>pp1.z()&&pworld[2]<(pp1.z()+0.1)) ||
+		   (pworld[0]>(pp2.x()-0.1)&&pworld[0]<pp2.x()&&pworld[1]>pp2.y()&&pworld[1]<(pp2.y()+0.1)&&pworld[2]>pp2.z()&&pworld[2]<(pp2.z()+0.1)) ||
+		   (pworld[0]>(pp3.x()-0.1)&&pworld[0]<pp3.x()&&pworld[1]>pp3.y()&&pworld[1]<(pp3.y()+0.1)&&pworld[2]>pp3.z()&&pworld[2]<(pp3.z()+0.1))){
+		  target_node = m_map->search(pog); // 121023
+		  m_map->genKey(pog, target_key); // 121023
+		  if (target_node){
+		    double beforeprob = target_node->getOccupancy();
+		    std::cout << m_profile.instance_name << ": " << pog << " before prob = " << beforeprob << std::endl;
+		    std::cout << m_profile.instance_name << ": " << pog << " key = " << target_key[0] << " " << target_key[1] << " " << target_key[2] << std::endl;
+		  }
+		  else
+		    std::cout << m_profile.instance_name << ": " << pog << " can not be searched." << std::endl;
+		}
+#endif
+		//                m_map->updateNode(pog, ptr[3]>0.0?true:false, false);
+		OcTreeNode *updated_node = m_map->updateNode(pog, ptr[3]>0.0?true:false, false); // 121023
+#if KDEBUG
+#if 0
+		std::cout << m_profile.instance_name << ": tree depth = " << m_map->getTreeDepth() << std::endl;
+		std::cout << m_profile.instance_name << ": tree size = " << m_map->size() << std::endl;
+#endif
+		if((pworld[0]>(pp1.x()-0.1)&&pworld[0]<pp1.x()&&pworld[1]>pp1.y()&&pworld[1]<(pp1.y()+0.1)&&pworld[2]>pp1.z()&&pworld[2]<(pp1.z()+0.1)) ||
+		   (pworld[0]>(pp2.x()-0.1)&&pworld[0]<pp2.x()&&pworld[1]>pp2.y()&&pworld[1]<(pp2.y()+0.1)&&pworld[2]>pp2.z()&&pworld[2]<(pp2.z()+0.1)) ||
+		   (pworld[0]>(pp3.x()-0.1)&&pworld[0]<pp3.x()&&pworld[1]>pp3.y()&&pworld[1]<(pp3.y()+0.1)&&pworld[2]>pp3.z()&&pworld[2]<(pp3.z()+0.1))){
+		  target_node = m_map->search(pog); // 121023
+		  m_map->genKey(pog, target_key); // 121023
+		  if (target_node){
+		    double afterprob = target_node->getOccupancy();
+		    std::cout << m_profile.instance_name << ": " << pog << " after prob = " << afterprob << std::endl;
+		  }
+		  if (updated_node){
+		    double updatedprob = updated_node->getOccupancy();
+		    std::cout << m_profile.instance_name << ": " << pog << " updated prob = " << updatedprob << std::endl;
+		  }
+		  //		}
+		result2 = m_map->search(pp2);
+		m_map->genKey(pp2, result2_key);
+		if (result2){
+		  double newprob = result2->getOccupancy();
+		  //		  if(newprob != prob){ // wrong
+		  //		  if(!(abs(newprob - prob) < 0.0001)){ // wrong
+		  //		  if(!(fabs(newprob - prob2) < 0.0001)){ // correct 121023
+		    std::cout << m_profile.instance_name << ": " << pp2 << " updated prob = " << newprob << " by " << pog << " prob = " << prob2 << std::endl;
+		    std::cout << m_profile.instance_name << ": " << pp2 << " key = " << result2_key[0] << " " << result2_key[1] << " " << result2_key[2] << std::endl;
+		    std::cout << m_profile.instance_name << ": " << pp2 << " hasChildren = " << result2->hasChildren() << std::endl;
+		    prob2 = newprob;
+		    //		  }
+		}
+		else
+		  std::cout << m_profile.instance_name << ": " << pp2 << " can not be searched." << std::endl;
+		}
+#endif
                 ptr[3]>0.0?ocnum++:emnum++;
             }
             if(KDEBUG) std::cout << m_profile.instance_name << ": " << ocnum << " " << emnum << " " << p << std::endl;
@@ -339,9 +506,20 @@ OpenHRP::OGMap3D* OccupancyGridMap3D::getOGMap3D(const OpenHRP::AABB& region)
     map->pos.y = ((int)(s[1]/size))*size;
     map->pos.z = ((int)(s[2]/size))*size;
 #else
+#if 0
     map->pos.x = s[0];
     map->pos.y = s[1];
     map->pos.z = s[2];
+    if(KDEBUG){
+      std::cout << m_profile.instance_name << ": pos = " << map->pos.x << " " << map->pos.y << " " << map->pos.z << " " << std::endl;
+      map->pos.x += size/2.0;
+      map->pos.y += size/2.0;
+      map->pos.z += size/2.0;
+    }
+#endif      
+    map->pos.x = ((int)(s[0]/size)+0.5)*size; // 121024
+    map->pos.y = ((int)(s[1]/size)+0.5)*size; // 121024
+    map->pos.z = ((int)(s[2]/size)+0.5)*size; // 121024
 #endif
     map->nx = l[0]/size;
     map->ny = l[1]/size;
@@ -359,11 +537,13 @@ OpenHRP::OGMap3D* OccupancyGridMap3D::getOGMap3D(const OpenHRP::AABB& region)
                 for (int k=0; k<map->nz; k++){
                     p.z() = map->pos.z + k*size;
                     OcTreeNode *result = m_map->search(p);
-                    if (result){
+		    //                    if (result){
+                    if (result && !(result->hasChildren())){ // 121023
                         double prob = result->getOccupancy();
                         if (prob >= m_occupiedThd){
                             map->cells[rank] = prob*0xfe;
                             no++;
+			    //			    if(KDEBUG) std::cout << m_profile.instance_name << ": output " << p << " " << prob << std::endl;
                         }else{
                             map->cells[rank] = OpenHRP::gridEmpty;
                             ne++;
