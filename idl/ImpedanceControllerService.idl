@@ -43,5 +43,18 @@ module OpenHRP
      * @return true if set successfully, false otherwise
      */
     boolean deleteImpedanceController(in string name);
+
+    /**
+     * @brief wait to finish deleting the impedance param object.
+     * @param name name of the impedance parameter set
+     */
+    void waitDeletingImpedanceController(in string name);
+    
+    /**
+     * @brief remove impedance parameters and wait to finish deleting the impedance param object.
+     * @param name name of the impedance parameter set
+     * @return true if set successfully, false otherwise
+     */
+    boolean deleteImpedanceControllerAndWait(in string name);
   };
 };

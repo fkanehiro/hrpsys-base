@@ -90,6 +90,8 @@ class ImpedanceController
 
   bool setImpedanceControllerParam(OpenHRP::ImpedanceControllerService::impedanceParam i_param_);
   bool deleteImpedanceController(std::string i_name_);
+  void waitDeletingImpedanceController(std::string i_name_);
+  bool deleteImpedanceControllerAndWait(std::string i_name_);
 
  protected:
   // Configuration variable declaration
@@ -143,7 +145,7 @@ class ImpedanceController
     hrp::Vector3 ref_force, ref_moment;
     hrp::Matrix33 force_gain, moment_gain;
     double sr_gain, avoid_gain, reference_gain, manipulability_limit;
-    int transition_count;
+    int transition_count; // negative value when initing and positive value when deleting
     hrp::JointPathExPtr manip;
   };
   struct VirtualForceSensorParam {
