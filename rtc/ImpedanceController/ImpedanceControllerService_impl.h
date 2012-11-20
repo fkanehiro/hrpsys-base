@@ -18,6 +18,8 @@ public:
   //
   CORBA::Boolean setImpedanceControllerParam(const OpenHRP::ImpedanceControllerService::impedanceParam &i_param_);
   CORBA::Boolean deleteImpedanceController(const char *i_name_);
+  void waitDeletingImpedanceController(const char *i_name_);
+  CORBA::Boolean deleteImpedanceControllerAndWait(const char *i_name_);
   //
   void impedance(ImpedanceController *i_impedance);
 private:
