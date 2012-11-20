@@ -105,6 +105,7 @@ RTC::ReturnCode_t ImpedanceController::onInitialize()
                                  )){
         std::cerr << "failed to load model[" << prop["model"] << "]" 
                   << std::endl;
+        return RTC::RTC_ERROR;
     }
 
     coil::vstring virtual_force_sensor = coil::split(prop["virtual_force_sensor"], ",");
@@ -207,7 +208,8 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
     if (m_qRefIn.isNew()) {
         m_qRefIn.read();
     }
-    if ( m_qRef.data.length() ==  m_robot->numJoints() ) {
+    if ( m_qRef.data.length() ==  m_robot->numJoints() &&
+         m_qCurrent.data.length() ==  m_robot->numJoints() ) {
 
         if ( DEBUGP ) {
             std::cerr << "qRef  : ";
@@ -589,6 +591,14 @@ bool ImpedanceController::setImpedanceControllerParam(OpenHRP::ImpedanceControll
     // Lock Mutex
     Guard guard(m_mutex);
     
+    if ( m_qRef.data.length() !=  m_robot->numJoints() ) {
+        std::cerr << "m_qRef has wrong size, m_robot->numJoints() = " << m_robot->numJoints() << ", m_qRef.data.length() = " << m_qRef.data.length() << std::endl;
+        return false;
+    }
+    if ( m_qCurrent.data.length() !=  m_robot->numJoints() ) {
+        std::cerr << "m_qCurrent has wrong size, m_robot->numJoints() = " << m_robot->numJoints() << ", m_qCurrent.data.length() = " << m_qCurrent.data.length() << std::endl;
+        return false;
+    }
     // error check
     int force_id = -1;
     bool updateparam_flag = false;
