@@ -140,7 +140,7 @@ bool SDLwindow::processEvents()
                 log->slower();
                 break;
             case SDLK_r:
-                log->record(10);
+                log->record(20);
                 break;
             case SDLK_d:
             {
