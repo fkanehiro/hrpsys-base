@@ -23,6 +23,11 @@
 	    <property name="inport" value="dqRef:JOINT_VELOCITY"/> 
 	    <property name="inport" value="ddqRef:JOINT_ACCELERATION"/> 
 	    <property name="outport" value="q:JOINT_VALUE"/>
+ 	    <property name="outport" value="tau:JOINT_TORQUE"/>
+ 	    <property name="outport" value="lfsensor:lfsensor:FORCE_SENSOR"/>
+ 	    <property name="outport" value="rfsensor:rfsensor:FORCE_SENSOR"/>
+ 	    <property name="outport" value="rate:gyrometer:RATE_GYRO_SENSOR"/>
+ 	    <property name="outport" value="acc:gsensor:ACCELERATION_SENSOR"/>
             <property name="NECK_R.angle" value="0.0 "/>
             <property name="R_HAND_J1.mode" value="HighGain"/>
             <property name="NECK_R.mode" value="HighGain"/>

@@ -11,6 +11,7 @@
 #include <rtm/CorbaNaming.h>
 #include <hrpModel/Body.h>
 #include <hrpModel/Link.h>
+#include <hrpModel/Sensor.h>
 #include <hrpModel/ModelLoaderUtil.h>
 #include <libxml/encoding.h>
 #include <libxml/xmlwriter.h>
@@ -74,6 +75,7 @@ int main (int argc, char** argv)
       {
 	xmlTextWriterWriteProperty(writer, "integrate", "true");
 	xmlTextWriterWriteProperty(writer, "timeStep", "0.0050");
+        xmlTextWriterWriteProperty(writer, "totalTime", "2000000.0");
 	xmlTextWriterWriteProperty(writer, "method", "EULER");
       }
       xmlTextWriterEndElement(writer); // item
@@ -85,7 +87,7 @@ int main (int argc, char** argv)
 	if (!loadBodyFromModelLoader(body, filename.c_str(),
 				     CosNaming::NamingContext::_duplicate(naming.getRootContext()),
 				     true)){
-	  std::cerr << "failed to load model[n" << filename << "]" << std::endl;
+	  std::cerr << "failed to load model[" << filename << "]" << std::endl;
 	  return 1;
 	}
 	std::string name = body->name();
@@ -95,12 +97,12 @@ int main (int argc, char** argv)
 	xmlTextWriterWriteAttribute(writer, BAD_CAST "name", BAD_CAST name.c_str());
 	xmlTextWriterWriteAttribute(writer, BAD_CAST "select", BAD_CAST "true");
 
-	xmlTextWriterWriteProperty(writer, name+"Controller(Robot)0.period", "0.005");
+	xmlTextWriterWriteProperty(writer, name+"(Robot)0.period", "0.005");
 	xmlTextWriterWriteProperty(writer, "HGcontroller0.period", "0.005");
 	xmlTextWriterWriteProperty(writer, "HGcontroller0.factory", "HGcontroller");
-	xmlTextWriterWriteProperty(writer, "connection", "HGcontroller0.qOut:"+name+"Controller(Robot)0.qRef");
-	xmlTextWriterWriteProperty(writer, "connection", "HGcontroller0.dqOut:"+name+"Controller(Robot)0.dqRef");
-	xmlTextWriterWriteProperty(writer, "connection", "HGcontroller0.ddqOut:"+name+"Controller(Robot)0.ddqRef");
+	xmlTextWriterWriteProperty(writer, "connection", "HGcontroller0.qOut:"+name+"(Robot)0.qRef");
+	xmlTextWriterWriteProperty(writer, "connection", "HGcontroller0.dqOut:"+name+"(Robot)0.dqRef");
+	xmlTextWriterWriteProperty(writer, "connection", "HGcontroller0.ddqOut:"+name+"(Robot)0.ddqRef");
 	xmlTextWriterEndElement(writer); // item
 
 
@@ -109,11 +111,52 @@ int main (int argc, char** argv)
 	xmlTextWriterWriteAttribute(writer, BAD_CAST "name", BAD_CAST name.c_str());
 	xmlTextWriterWriteAttribute(writer, BAD_CAST "url", BAD_CAST filename.c_str());
 
-	xmlTextWriterWriteProperty(writer, "rtcName", name + "Controller(Robot)0");
+	xmlTextWriterWriteProperty(writer, "rtcName", name + "(Robot)0");
 	xmlTextWriterWriteProperty(writer, "inport", "qRef:JOINT_VALUE");
 	xmlTextWriterWriteProperty(writer, "inport", "dqRef:JOINT_VELOCITY");
 	xmlTextWriterWriteProperty(writer, "inport", "ddqRef:JOINT_ACCELERATION");
 	xmlTextWriterWriteProperty(writer, "outport", "q:JOINT_VALUE");
+    xmlTextWriterWriteProperty(writer, "outport", "tau:JOINT_TORQUE");
+
+    // set outport for sensros
+    int nforce = body->numSensors(hrp::Sensor::FORCE);
+    for (unsigned int i=0; i<nforce; i++){
+        hrp::Sensor *s = body->sensor(hrp::Sensor::FORCE, i);
+        // port name and sensor name is same in case of ForceSensor
+        xmlTextWriterWriteProperty(writer, "outport", s->name + ":" + s->name + ":FORCE_SENSOR");
+        std::cerr << s->name << std::endl;
+    }
+    int ngyro = body->numSensors(hrp::Sensor::RATE_GYRO);
+    if(ngyro == 1){
+      // port is named with no number when there is only one gyro
+      hrp::Sensor *s = body->sensor(hrp::Sensor::RATE_GYRO, 0);
+      xmlTextWriterWriteProperty(writer, "outport", "rate:" + s->name + ":RATE_GYRO_SENSOR");
+      std::cerr << s->name << std::endl;
+    }else{
+      for (unsigned int i=0; i<ngyro; i++){
+        hrp::Sensor *s = body->sensor(hrp::Sensor::RATE_GYRO, i);
+        std::stringstream str_strm;
+        str_strm << "rate" << i << ":" + s->name << ":RATE_GYRO_SENSOR";
+        xmlTextWriterWriteProperty(writer, "outport", str_strm.str());
+        std::cerr << s->name << std::endl;
+      }
+    }
+    int nacc = body->numSensors(hrp::Sensor::ACCELERATION);
+    if(nacc == 1){
+      // port is named with no number when there is only one acc
+      hrp::Sensor *s = body->sensor(hrp::Sensor::ACCELERATION, 0);      
+      xmlTextWriterWriteProperty(writer, "outport", "acc:" + s->name + ":ACCELERATION_SENSOR");
+      std::cerr << s->name << std::endl;
+    }else{
+      for (unsigned int i=0; i<nacc; i++){
+        hrp::Sensor *s = body->sensor(hrp::Sensor::ACCELERATION, i);
+        std::stringstream str_strm;
+        str_strm << "acc" << i << ":" << s->name << ":ACCELERATION_SENSOR";
+        xmlTextWriterWriteProperty(writer, "outport", str_strm.str());
+        std::cerr << s->name << std::endl;
+      }
+    }
+    
 	//
 	std::string root_name = body->rootLink()->name;
 	xmlTextWriterWriteProperty(writer, root_name+".NumOfAABB", "1");
