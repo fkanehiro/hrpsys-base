@@ -38,12 +38,15 @@ public:
     void reset();
     void setUseBBox(bool flag);
     void setWindowSize(int s);
+    void setMaxLogLength(double len);
+    double maxLogLength();
 private:  
     LogManager<SceneState> log;
     GLscene scene;
     SDLwindow window;
     RTC::Manager* manager;
     bool useBBox;
+    double maxLogLen;
 };
 
 #endif

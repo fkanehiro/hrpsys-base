@@ -88,6 +88,7 @@ int main(int argc, char* argv[])
     double maxEdgeLen = 0;
     bool exitOnFinish = false;
     bool record = false;
+    double maxLogLen = 60;
 
     if (argc < 0){
         std::cerr << "Usage:" << argv[0] << " [project file] [options]"
@@ -119,6 +120,8 @@ int main(int argc, char* argv[])
             useDefaultLights = false;
         }else if(strcmp("-max-edge-length", argv[i])==0){
             maxEdgeLen = atof(argv[++i]);
+        }else if(strcmp("-max-log-length", argv[i])==0){
+            maxLogLen = atof(argv[++i]);
         }else if(strcmp("-exit-on-finish", argv[i])==0){
             exitOnFinish = true;
         }else if(strcmp("-record", argv[i])==0){
@@ -144,6 +147,7 @@ int main(int argc, char* argv[])
             && strcmp(argv[i], "-size")
             && strcmp(argv[i], "-no-default-lights")
             && strcmp(argv[i], "-max-edge-length")
+            && strcmp(argv[i], "-max-log-length")
             && strcmp(argv[i], "-exit-on-finish")
             && strcmp(argv[i], "-record")
             && strcmp(argv[i], "-bg")
@@ -192,7 +196,7 @@ int main(int argc, char* argv[])
     BodyFactory factory = boost::bind(createBody, _1, _2, modelloader, &scene, usebbox);
     simulator.init(prj, factory);
     if (!prj.totalTime()){
-        log.enableRingBuffer(50000);
+        log.enableRingBuffer(maxLogLen/prj.timeStep());
     }
 
     std::cout << "timestep = " << prj.timeStep() << ", total time = " 

@@ -36,6 +36,8 @@ else:
             nodisplay = True
         elif sys.argv[i] == "showsensors":
             sim.showSensors = True
+        elif sys.argv[i] == "max-log-length":
+            sim.maxLogLength = float(sys.argv[i+1])
         elif sys.argv[i] == "usebbox":
             sim.useBBox(True)
 	elif sys.argv[i] == "size":

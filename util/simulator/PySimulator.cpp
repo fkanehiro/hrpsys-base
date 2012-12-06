@@ -86,7 +86,7 @@ hrp::BodyPtr createBody(const std::string& name, const ModelItem& mitem,
 
 PySimulator::PySimulator() : 
     manager(NULL), Simulator(&log), scene(&log), window(&scene, &log, this),
-    useBBox(false)
+    useBBox(false), maxLogLen(60)
 {
     initRTCmanager();
 }
@@ -227,7 +227,7 @@ void PySimulator::endless(bool flag)
 {
     if (flag){
         setTotalTime(0);
-        log.enableRingBuffer(50000);
+        log.enableRingBuffer(maxLogLen/timeStep());
     }
 } 
 
@@ -311,6 +311,16 @@ void PySimulator::setShowSensors(bool flag)
     scene.showSensors(flag);
 }
 
+void PySimulator::setMaxLogLength(double len)
+{
+    maxLogLen = len;
+}
+
+double PySimulator::maxLogLength()
+{
+    return maxLogLen;
+}
+
 void PySimulator::reset()
 {
     log.clear();
@@ -369,6 +379,8 @@ BOOST_PYTHON_MODULE( hrpsys )
                       &PySimulator::totalTime, &PySimulator::setTotalTime)
         .add_property("showSensors", 
                       &PySimulator::showSensors, &PySimulator::setShowSensors)
+        .add_property("maxLogLength", 
+                      &PySimulator::maxLogLength, &PySimulator::setMaxLogLength)
         ;
 
     class_<PyBody, boost::noncopyable>("Body", no_init)

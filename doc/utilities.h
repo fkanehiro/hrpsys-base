@@ -16,10 +16,11 @@ hrpsys-simulator [project file] [options]
 -realtime execute simulation in real-time<br>
 -usebbox use bounding boxes instead of actual geometries<br>
 -endless never finish simulation<br>
--showsensor show sensor output<br>
+-showsensors show sensor output<br>
 -size size specify initial window size<br>
 -no-default-lights turn off default lights<br>
--max-edge-length divide large triangles which have longer edges than this value<br>
+-max-edge-length length[m] divide large triangles which have longer edges than this value<br>
+-max-log-length length[s] set length of ring buffer<br>
 -exit-on-finish exit this program when the simulation finishes
 
 Note:NameSever and openhrp-model-loader must be running
@@ -36,9 +37,10 @@ hrpsys-simulator-jython [project file] [jython script] [options]
 -realtime execute simulation in real-time<br>
 -usebbox use bounding boxes instead of actual geometries<br>
 -endless never finish simulation<br>
--showsensor show sensor output<br>
+-showsensors show sensor output<br>
 -size size specify initial window size<br>
 -bg r g b background color
+-max-log-length length[s] set length of ring buffer<br>
 
 \section hrpsys-simulator-python hrpsys-simulator-python
 
@@ -50,9 +52,10 @@ nodisplay execute simulation without display<br>
 realtime execute simulation in real-time<br>
 usebbox use bounding boxes instead of actual geometries<br>
 endless never finish simulation<br>
-showsensor show sensor output<br>
+showsensors show sensor output<br>
 size [size] set window size<br>
 bg [r] [g] [b] background color
+max-log-length length[s] set length of ring buffer<br>
 
 Note:NameSever and openhrp-model-loader must be running
 
