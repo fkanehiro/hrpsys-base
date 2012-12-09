@@ -96,6 +96,13 @@ bool seqplay::isEmpty() const
 	return true;
 }
 
+bool seqplay::isEmpty(const char *gname)
+{
+	groupInterpolator *i = groupInterpolators[gname];
+	if (!i) return true;
+	return i->isEmpty();
+}
+
 #if 0
 void seqplay::setReferenceState(const ::CharacterState& ref, double tm)
 {

@@ -17,6 +17,7 @@ public:
     ~seqplay();
     //
     bool isEmpty() const;
+    bool isEmpty(const char *gname);
     //
     void setJointAngles(const double *i_qRef, double i_tm=0.0);
     void getJointAngles(double *i_qRef);
@@ -68,9 +69,9 @@ private:
             double v[indices.size()];
             for (size_t i=0; i<indices.size(); i++){
                 v[i] = full[indices[i]];
-                std::cout << v[i] << " ";
+                //std::cout << v[i] << " ";
             }
-            std::cout << std::endl;
+            //std::cout << std::endl;
             inter->set(v);
         }
         bool isEmpty() { return inter->isEmpty(); } 

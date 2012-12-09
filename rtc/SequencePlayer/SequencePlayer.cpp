@@ -170,7 +170,14 @@ RTC::ReturnCode_t SequencePlayer::onExecute(RTC::UniqueId ec_id)
     if (m_qInitIn.isNew()) m_qInitIn.read();
     if (m_basePosInitIn.isNew()) m_basePosInitIn.read();
     if (m_baseRpyInitIn.isNew()) m_baseRpyInitIn.read();
-    
+
+    if (m_gname != "" && m_seq->isEmpty(m_gname.c_str())){
+        if (m_waitFlag){
+            m_gname = "";
+            m_waitFlag = false;
+            m_waitSem.post();
+        }
+    }
     if (m_seq->isEmpty()){
         m_clearFlag = false;
         if (m_waitFlag){
@@ -252,6 +259,14 @@ void SequencePlayer::waitInterpolation()
     m_waitFlag = true;
     m_waitSem.wait();
 }
+
+bool SequencePlayer::waitInterpolationOfGroup(const char *gname)
+{
+    m_gname = gname;
+    m_waitFlag = true;
+    m_waitSem.wait();
+}
+
 
 bool SequencePlayer::setJointAngle(short id, double angle, double tm)
 {

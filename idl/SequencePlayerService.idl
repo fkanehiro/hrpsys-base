@@ -23,6 +23,12 @@ module OpenHRP
     void waitInterpolation();
     
     /**
+     * @brief Wait until the last goal posture is sent to the robot
+     * @param gname name of the joint group
+     */
+    boolean waitInterpolationOfGroup(in string gname);
+    
+    /**
      * @brief Interpolate all joint angles on robot using duration specified by \em tm. Returns without waiting for whole sequence to be sent to robot.
      * @param jvs sequence of joint angles
      * @param tm duration

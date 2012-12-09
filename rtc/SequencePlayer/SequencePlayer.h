@@ -93,6 +93,7 @@ class SequencePlayer
   hrp::BodyPtr robot() { return m_robot;}  
   void setClearFlag();
   void waitInterpolation();
+  bool waitInterpolationOfGroup(const char *gname);
   bool setJointAngle(short id, double angle, double tm);
   bool setJointAngles(const double *angles, double tm);
   bool setJointAngles(const double *angles, const bool *mask, double tm);
@@ -161,6 +162,7 @@ class SequencePlayer
   bool m_clearFlag, m_waitFlag;
   boost::interprocess::interprocess_semaphore m_waitSem;
   hrp::BodyPtr m_robot;
+  std::string m_gname;
   int dummy;
   coil::Mutex m_mutex;
 };

@@ -17,6 +17,7 @@ public:
   virtual ~SequencePlayerService_impl();
   //
   void waitInterpolation();
+  CORBA::Boolean waitInterpolationOfGroup(const char *gname);
   CORBA::Boolean setJointAngles(const dSequence& jvs, CORBA::Double tm);
   CORBA::Boolean setJointAnglesWithMask(const dSequence& jvs, const bSequence& mask, CORBA::Double tm);
   CORBA::Boolean setJointAngle(const char *jname, CORBA::Double jv, CORBA::Double tm);

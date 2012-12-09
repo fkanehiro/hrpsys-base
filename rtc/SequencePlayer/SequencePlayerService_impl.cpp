@@ -16,6 +16,11 @@ void SequencePlayerService_impl::waitInterpolation()
   m_player->waitInterpolation();
 }
 
+CORBA::Boolean SequencePlayerService_impl::waitInterpolationOfGroup(const char *gname)
+{
+    return m_player->waitInterpolationOfGroup(gname);
+}
+
 CORBA::Boolean SequencePlayerService_impl::setJointAngles(const dSequence& jvs, CORBA::Double tm)
 {
   if (jvs.length() != (unsigned int)(m_player->robot()->numJoints())) return false;  
