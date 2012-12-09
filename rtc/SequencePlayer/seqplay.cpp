@@ -327,6 +327,7 @@ bool seqplay::addJointGroup(const char *gname, const std::vector<int>& indices)
 	if (i) return false;
 	i = new groupInterpolator(indices, interpolators[Q]->deltaT());
 	groupInterpolators[gname] = i;
+	return true;
 }
 
 bool seqplay::removeJointGroup(const char *gname)
