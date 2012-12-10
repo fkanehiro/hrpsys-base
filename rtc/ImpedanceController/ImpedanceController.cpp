@@ -534,6 +534,10 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
             }
 
         }
+    } else {
+        std::cerr << "ImpedanceController is not working..." << std::endl;
+        std::cerr << "         m_qRef " << m_qRef.data.length() << std::endl;
+        std::cerr << "     m_qCurrent " << m_qCurrent.data.length() << std::endl;
     }
     return RTC::RTC_OK;
 }
