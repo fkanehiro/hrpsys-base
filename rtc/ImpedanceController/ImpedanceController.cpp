@@ -534,6 +534,10 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
             }
 
         }
+    } else {
+        std::cerr << "ImpedanceController is not working..." << std::endl;
+        std::cerr << "         m_qRef " << m_qRef.data.length() << std::endl;
+        std::cerr << "     m_qCurrent " << m_qCurrent.data.length() << std::endl;
     }
     return RTC::RTC_OK;
 }
@@ -707,8 +711,8 @@ bool ImpedanceController::setImpedanceControllerParam(OpenHRP::ImpedanceControll
       std::cerr << "          name : " << it->first << std::endl;
       std::cerr << "     base_name : " << param.base_name << std::endl;
       std::cerr << "   target_name : " << param.target_name << std::endl;
-      std::cerr << " K, D, M (pos) : " << param.K_p << " " << param.D_p << " " << param.M_p << std::endl;
-      std::cerr << " K, D, M (rot) : " << param.K_r << " " << param.D_r << " " << param.M_r << std::endl;
+      std::cerr << " M, D, K (pos) : " << param.M_p << " " << param.D_p << " " << param.K_p << std::endl;
+      std::cerr << " M, D, K (rot) : " << param.M_r << " " << param.D_r << " " << param.K_r << std::endl;
       std::cerr << "     ref_force : " << param.ref_force[0] << " " << param.ref_force[1] << " " << param.ref_force[2] << std::endl;
       std::cerr << "    ref_moment : " << param.ref_moment[0] << " " << param.ref_moment[1] << " " << param.ref_moment[2] << std::endl;
       std::cerr << "    force_gain : " << std::endl << param.force_gain << std::endl;
