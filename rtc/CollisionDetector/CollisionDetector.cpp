@@ -187,11 +187,6 @@ RTC::ReturnCode_t CollisionDetector::onActivated(RTC::UniqueId ec_id)
 	}
     }
 
-    if ( m_pair.size() == 0 ) {
-	std::cerr << "failed to setup collisions" << std::endl;
-	return RTC::RTC_ERROR;
-    }
-
     if ( m_use_viewer ) {
       m_scene.addBody(m_robot);
     }
@@ -304,6 +299,9 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
           std::cerr << "check collisions for for " << m_pair.size() << " pairs in " << (tm2.sec()-tm1.sec())*1000+(tm2.usec()-tm1.usec())/1000.0 
                     << " [msec], safe = " << m_safe_posture << ", time = " << m_recover_time << " " << m_q.data[0] << " " << m_q.data[1] 
                     << " " << m_q.data[2] << " " << m_q.data[3] << " " << m_q.data[4] << " " << m_q.data[5] << " " << m_q.data[6] << std::endl;
+        }
+        if ( m_pair.size() == 0 && ( DEBUGP || loop % 100 == 1) ) {
+            std::cerr << "ImpedanceController is not working... not collision pair is defined, define collision_pair in configuration file" << std::endl;
         }
         //
         m_qOut.write();
