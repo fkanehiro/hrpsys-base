@@ -165,6 +165,9 @@ RTC::ReturnCode_t SoftErrorLimiter::onDeactivated(RTC::UniqueId ec_id)
 RTC::ReturnCode_t SoftErrorLimiter::onExecute(RTC::UniqueId ec_id)
 {
   //std::cout << m_profile.instance_name<< ": onExecute(" << ec_id << ")" << std::endl;
+  static int loop = 0;
+  loop ++;
+
   if (m_qRefIn.isNew()) {
     m_qRefIn.read();
   }
@@ -202,10 +205,12 @@ RTC::ReturnCode_t SoftErrorLimiter::onExecute(RTC::UniqueId ec_id)
     m_servoStateOut.write();
   } else {
     start_beep(3136);
-    std::cerr << "SoftErrorLimiter is not working..." << std::endl;
-    std::cerr << "         m_qRef " << m_qRef.data.length() << std::endl;
-    std::cerr << "     m_qCurrent " << m_qCurrent.data.length() << std::endl;
-    std::cerr << "   m_servoState " << m_servoState.data.length() << std::endl;
+    if ( loop % 100 == 1 ) {
+        std::cerr << "SoftErrorLimiter is not working..." << std::endl;
+        std::cerr << "         m_qRef " << m_qRef.data.length() << std::endl;
+        std::cerr << "     m_qCurrent " << m_qCurrent.data.length() << std::endl;
+        std::cerr << "   m_servoState " << m_servoState.data.length() << std::endl;
+    }
   }
 
   return RTC::RTC_OK;
