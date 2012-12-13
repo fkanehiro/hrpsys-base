@@ -359,7 +359,7 @@ bool CollisionDetector::setTolerance(const char *i_link_pair_name, double i_tole
 void CollisionDetector::setupVClipModel(hrp::BodyPtr i_body)
 {
     m_VclipLinks.resize(i_body->numLinks());
-    std::cerr << i_body->numLinks() << std::endl;
+    //std::cerr << i_body->numLinks() << std::endl;
     for (int i=0; i<i_body->numLinks(); i++) {
       assert(i_body->link(i)->index == i);
       setupVClipModel(i_body->link(i));
