@@ -173,6 +173,14 @@ RTC::ReturnCode_t CollisionDetector::onActivated(RTC::UniqueId ec_id)
 	while (getline(iss, tmp, ' ')) {
 	    size_t pos = tmp.find_first_of(':');
 	    std::string name1 = tmp.substr(0, pos), name2 = tmp.substr(pos+1);
+            if ( m_robot->link(name1)==NULL ) {
+                std::cerr << "Could not find robot link " << name1 << std::endl;
+                continue;
+            }
+            if ( m_robot->link(name2)==NULL ) {
+                std::cerr << "Could not find robot link " << name2 << std::endl;
+                continue;
+            }
 	    std::cerr << "check collisions between " << m_robot->link(name1)->name << " and " <<  m_robot->link(name2)->name << std::endl;
 	    m_pair[tmp] = new VclipLinkPair(m_robot->link(name1), m_VclipLinks[m_robot->link(name1)->index],
                                             m_robot->link(name2), m_VclipLinks[m_robot->link(name2)->index], 0);
