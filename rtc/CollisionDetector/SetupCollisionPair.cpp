@@ -214,6 +214,8 @@ void setupCollisionLinkPair()
 	    hrp::Link *l = jointPath->joint(0);
 	    bool always_collide = true; // true if always collide
 	    bool never_collide = true;  // true if never collide ( crrect )
+            l->llimit = -M_PI;l->ulimit = M_PI;
+            std::cerr << l->name << " ulimit - " << l->llimit << " " << l->ulimit << std::endl;
 	    for(float angle = l->llimit; angle <= l->ulimit; angle += deg2rad(5)) {
 		l->q = angle;
 		m_robot->calcForwardKinematics(false,false);
