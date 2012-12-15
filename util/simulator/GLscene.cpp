@@ -95,11 +95,16 @@ void GLscene::showStatus()
         int width = m_width - 350;
         int height = m_height-HEIGHT_STEP;
         char buf[256];
+        double q[glbody->numJoints()];
+        for (int i=0; i<glbody->numLinks(); i++){
+            Link* l = glbody->link(i);
+            if (l->jointId >= 0) q[l->jointId] = bstate->q[i];
+        }
         for (int i=0; i<glbody->numJoints(); i++){
             GLlink *l = (GLlink *)glbody->joint(i);
             if (l){
                 sprintf(buf, "%2d %15s %8.3f", i, l->name.c_str(),
-                        bstate->q[i]*180/M_PI);
+                        q[i]*180/M_PI);
                 glRasterPos2f(width, height);
                 height -= HEIGHT_STEP;
                 drawString2(buf);
