@@ -174,6 +174,14 @@ bool checkBlackListJoint(hrp::Link *l) {
     return false;
 }
 
+bool checkBlackListJointPair(hrp::Link *l1, hrp::Link *l2) {
+    for(std::vector<std::string>::iterator it = blacklist.begin(); it != blacklist.end(); it++ ) {
+	    if ((l1->name + ":" + l2->name) == (*it) ||
+	        (l2->name + ":" + l1->name) == (*it)) return true;
+    }
+    return false;
+}
+
 bool compare_joint_path_length(const hrp::ColdetLinkPairPtr& p1, const hrp::ColdetLinkPairPtr& p2) {
     return (m_robot->getJointPath(p1->link(0),p1->link(1))->numJoints()) > (m_robot->getJointPath(p2->link(0),p2->link(1))->numJoints());
 }
@@ -196,7 +204,7 @@ void setupCollisionLinkPair()
 	for (int j=i+1; j<m_robot->numLinks(); j++) {
 	    hrp::Link *l2 = m_robot->link(j);
 	    if ( l1->coldetModel && l2->coldetModel
-		 &&  (!(checkBlackListJoint(l1) ||  checkBlackListJoint(l2)))
+		 &&  (!(checkBlackListJoint(l1) ||  checkBlackListJoint(l2) || checkBlackListJointPair(l1, l2)))
 		) {
 		tmp_pair.push_back(new hrp::ColdetLinkPair(l1, l2));
 	    }
