@@ -241,6 +241,7 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
         }
         //collision check process in case of angle set above
 	m_robot->calcForwardKinematics();
+        bool last_safe_posture = m_safe_posture;
         m_safe_posture = true;
 	coil::TimeValue tm1 = coil::gettimeofday();
         std::map<std::string, VclipLinkPairPtr>::iterator it = m_pair.begin();
@@ -251,8 +252,10 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
             tp.lines.push_back(std::make_pair(point0, point1));
 	    if ( d <= p->getTolerance() ) {
 		m_safe_posture = false;
-		hrp::JointPathPtr jointPath = m_robot->getJointPath(p->link(0),p->link(1));
-		std::cerr << i << "/" << m_pair.size() << " pair: " << p->link(0)->name << "/" << p->link(1)->name << "(" << jointPath->numJoints() << "), distance = " << d << std::endl;
+                if ( loop%200==0 || last_safe_posture ) {
+                    hrp::JointPathPtr jointPath = m_robot->getJointPath(p->link(0),p->link(1));
+                    std::cerr << i << "/" << m_pair.size() << " pair: " << p->link(0)->name << "/" << p->link(1)->name << "(" << jointPath->numJoints() << "), distance = " << d << std::endl;
+                }
               if ( m_use_viewer ) {
                 ((GLlink *)p->link(0))->highlight(true);
                 ((GLlink *)p->link(1))->highlight(true);
