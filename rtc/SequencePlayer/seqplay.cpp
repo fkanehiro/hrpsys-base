@@ -266,7 +266,13 @@ void seqplay::get(double *o_q, double *o_zmp, double *o_accel,
 	std::map<std::string, groupInterpolator *>::iterator it;
 	for (it=groupInterpolators.begin(); it!=groupInterpolators.end(); it++){
 		groupInterpolator *gi = it->second;
-		if (gi)	gi->get(o_q);
+		if (gi){
+			gi->get(o_q);
+			if (gi->state == groupInterpolator::removed){
+				groupInterpolators.erase(it);
+				delete gi;
+			}
+		}
 	}
 	interpolators[ZMP]->get(o_zmp);
 	interpolators[ACC]->get(o_accel);
@@ -330,12 +336,11 @@ bool seqplay::addJointGroup(const char *gname, const std::vector<int>& indices)
 	return true;
 }
 
-bool seqplay::removeJointGroup(const char *gname)
+bool seqplay::removeJointGroup(const char *gname, double time)
 {
 	groupInterpolator *i = groupInterpolators[gname];
 	if (i){
-		groupInterpolators[gname] = NULL;
-		delete i;
+		i->remove(time);
 		return true;
 	}else{
 		return false;
@@ -357,7 +362,17 @@ bool seqplay::setJointAnglesOfGroup(const char *gname, const double *i_qRef, dou
 {
 	groupInterpolator *i = groupInterpolators[gname];
 	if (i){
-		i->inter->go(i_qRef, i_tm);
+		if (i->state == groupInterpolator::created){
+			double q[m_dof];
+			interpolators[Q]->get(q);
+			std::map<std::string, groupInterpolator *>::iterator it;
+			for (it=groupInterpolators.begin(); it!=groupInterpolators.end(); it++){
+				groupInterpolator *gi = it->second;
+				if (gi)	gi->get(q);
+			}
+			i->set(q);
+		}
+		i->go(i_qRef, i_tm);
 		return true;
 	}else{
 		return false;

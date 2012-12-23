@@ -27,7 +27,7 @@ public:
     void setBaseAcc(const double *i_acc, double i_tm=0.0);
     //
     bool addJointGroup(const char *gname, const std::vector<int>& indices);
-    bool removeJointGroup(const char *gname);
+    bool removeJointGroup(const char *gname, double time=2.5);
     bool setJointAnglesOfGroup(const char *gname, const double *i_qRef, double i_tm=0.0);
     bool resetJointGroup(const char *gname, const double *full);
     //
@@ -52,13 +52,23 @@ private:
     class groupInterpolator{
     public:
         groupInterpolator(const std::vector<int>& i_indices, double i_dt)
-            : indices(i_indices){
+            : indices(i_indices), state(created){
             inter = new interpolator(i_indices.size(), i_dt);
         }
         ~groupInterpolator(){
             delete inter;
         }
         void get(double *full){
+            if (state == created) return;
+            if (state == removing){
+                double v[indices.size()];
+                for (size_t i=0; i<indices.size(); i++){
+                    v[i] = full[indices[i]];
+                }
+                inter->setGoal(v, time2remove);
+                time2remove -= inter->deltaT();
+                if (time2remove <= 0) state = removed;
+            }
             double v[indices.size()];
             inter->get(v);
             for (size_t i=0; i<indices.size(); i++){
@@ -75,8 +85,20 @@ private:
             inter->set(v);
         }
         bool isEmpty() { return inter->isEmpty(); } 
+        void go(const double *g, double tm){
+            inter->go(g, tm);
+            state = working;
+        }
+        void remove(double time){
+            state = removing;
+            time2remove = time;
+        }
+
         interpolator *inter;
         std::vector<int> indices;
+        typedef enum { created, working, removing, removed } gi_state;
+        gi_state state;
+        double time2remove;
     };
     void pop_back();
     enum {Q, ZMP, ACC, P, RPY, NINTERPOLATOR};
