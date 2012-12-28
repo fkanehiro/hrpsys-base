@@ -189,6 +189,7 @@ RTC::ReturnCode_t CollisionDetector::onActivated(RTC::UniqueId ec_id)
 
     if ( m_use_viewer ) {
       m_scene.addBody(m_robot);
+      GLlink::drawMode(GLlink::DM_COLLISION);
     }
 
     // allocate memory for outPorts
