@@ -162,8 +162,12 @@ RTC::ReturnCode_t CollisionDetector::onActivated(RTC::UniqueId ec_id)
 	return RTC::RTC_ERROR;
     }
     loadShapeFromBodyInfo(m_glbody, binfo);
-    convertToConvexHull(m_robot);
-    //convertToAABB(m_robot);
+    if ( prop["collision_model"] == "AABB" ) {
+        convertToAABB(m_robot);
+    } else if ( prop["collision_model"] == "convex hull" ||
+                prop["collision_model"] == "" ) { // set convex hull as default
+        convertToConvexHull(m_robot);
+    }
     setupVClipModel(m_robot);
 
     if ( prop["collision_pair"] != "" ) {
