@@ -113,5 +113,12 @@ module OpenHRP
      * @return true if set successfully, false otherwise
      */
     boolean setInterpolationMode(in interpolationMode i_mode_);
+
+
+    /**
+     * @brief set to output data port by value of input data port
+     * @return true if set successfully, false otherwise
+     */
+    boolean setInitialState();
   };
 };

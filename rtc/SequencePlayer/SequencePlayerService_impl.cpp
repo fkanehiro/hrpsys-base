@@ -92,6 +92,11 @@ CORBA::Boolean SequencePlayerService_impl::setInterpolationMode(OpenHRP::Sequenc
   return m_player->setInterpolationMode(i_mode_);
 }
 
+CORBA::Boolean SequencePlayerService_impl::setInitialState(void)
+{
+  return m_player->setInitialState();
+}
+
 void SequencePlayerService_impl::player(SequencePlayer *i_player)
 {
   m_player = i_player;

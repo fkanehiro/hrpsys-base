@@ -29,6 +29,7 @@ public:
   void clear();
   void clearNoWait();
   CORBA::Boolean setInterpolationMode(OpenHRP::SequencePlayerService::interpolationMode i_mode_);
+  CORBA::Boolean setInitialState();
   //
   void player(SequencePlayer *i_player);
 private:

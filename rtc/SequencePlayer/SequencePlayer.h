@@ -102,7 +102,8 @@ class SequencePlayer
   void loadPattern(const char *basename, double time); 
   void playPattern(const OpenHRP::dSequenceSequence& pos, const OpenHRP::dSequenceSequence& rpy, const OpenHRP::dSequenceSequence& zmp, const OpenHRP::dSequence& tm);
   bool setInterpolationMode(OpenHRP::SequencePlayerService::interpolationMode i_mode_);
-
+  bool setInitialState();
+  
  protected:
   // Configuration variable declaration
   // <rtc-template block="config_declare">
@@ -153,7 +154,6 @@ class SequencePlayer
   // </rtc-template>
 
  private:
-  bool setInitialState();  
   seqplay *m_seq;
   bool m_clearFlag, m_waitFlag;
   boost::interprocess::interprocess_semaphore m_waitSem;
