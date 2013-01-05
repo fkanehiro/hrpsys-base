@@ -665,18 +665,6 @@ bool ImpedanceController::setImpedanceControllerParam(OpenHRP::ImpedanceControll
     p.force_gain = hrp::Vector3(i_param_.force_gain[0], i_param_.force_gain[1], i_param_.force_gain[2]).asDiagonal();
     p.moment_gain = hrp::Vector3(i_param_.moment_gain[0], i_param_.moment_gain[1], i_param_.moment_gain[2]).asDiagonal();
     
-	p.target_p0 = m_robot->link(p.target_name)->p;
-	p.target_p1 = m_robot->link(p.target_name)->p;
-	p.target_r0 = hrp::omegaFromRot(m_robot->link(p.target_name)->R);
-	p.target_r1 = hrp::omegaFromRot(m_robot->link(p.target_name)->R);
-
-	p.current_p0 = m_robot->link(p.target_name)->p;
-	p.current_p1 = m_robot->link(p.target_name)->p;
-	p.current_p2 = m_robot->link(p.target_name)->p;
-	p.current_r0 = hrp::omegaFromRot(m_robot->link(p.target_name)->R);
-	p.current_r1 = hrp::omegaFromRot(m_robot->link(p.target_name)->R);
-	p.current_r2 = hrp::omegaFromRot(m_robot->link(p.target_name)->R);
-
 	p.force_offset_p = hrp::Vector3(m_force[force_id].data[0], m_force[force_id].data[1], m_force[force_id].data[2]);
 	p.force_offset_r = hrp::Vector3(m_force[force_id].data[3], m_force[force_id].data[4], m_force[force_id].data[5]);
 
@@ -703,6 +691,18 @@ bool ImpedanceController::setImpedanceControllerParam(OpenHRP::ImpedanceControll
 	m_robot->calcForwardKinematics();
 
         p.transition_joint_q.resize(m_robot->numJoints());
+
+	p.target_p0 = m_robot->link(p.target_name)->p;
+	p.target_p1 = m_robot->link(p.target_name)->p;
+	p.target_r0 = hrp::omegaFromRot(m_robot->link(p.target_name)->R);
+	p.target_r1 = hrp::omegaFromRot(m_robot->link(p.target_name)->R);
+
+	p.current_p0 = m_robot->link(p.target_name)->p;
+	p.current_p1 = m_robot->link(p.target_name)->p;
+	p.current_p2 = m_robot->link(p.target_name)->p;
+	p.current_r0 = hrp::omegaFromRot(m_robot->link(p.target_name)->R);
+	p.current_r1 = hrp::omegaFromRot(m_robot->link(p.target_name)->R);
+	p.current_r2 = hrp::omegaFromRot(m_robot->link(p.target_name)->R);
 
 	m_impedance_param[name] = p;
 
