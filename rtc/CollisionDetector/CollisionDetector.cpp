@@ -204,6 +204,10 @@ RTC::ReturnCode_t CollisionDetector::onActivated(RTC::UniqueId ec_id)
     default_recover_time = 2.5/m_dt;
     m_recover_jointdata = (double *)malloc(sizeof(double)*m_robot->numJoints());
     m_interpolator = new interpolator(m_robot->numJoints(), i_dt);
+
+    for(int i=0; i<m_robot->numJoints(); i++){
+      m_q.data[i] = 0;
+    }
     return RTC::RTC_OK;
 }
 
