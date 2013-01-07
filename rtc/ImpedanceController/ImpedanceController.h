@@ -146,6 +146,7 @@ class ImpedanceController
     hrp::Matrix33 force_gain, moment_gain;
     double sr_gain, avoid_gain, reference_gain, manipulability_limit;
     int transition_count; // negative value when initing and positive value when deleting
+    hrp::dvector transition_joint_q;
     hrp::JointPathExPtr manip;
   };
   struct VirtualForceSensorParam {

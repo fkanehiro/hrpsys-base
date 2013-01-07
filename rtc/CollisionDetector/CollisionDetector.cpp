@@ -162,8 +162,12 @@ RTC::ReturnCode_t CollisionDetector::onActivated(RTC::UniqueId ec_id)
 	return RTC::RTC_ERROR;
     }
     loadShapeFromBodyInfo(m_glbody, binfo);
-    convertToConvexHull(m_robot);
-    //convertToAABB(m_robot);
+    if ( prop["collision_model"] == "AABB" ) {
+        convertToAABB(m_robot);
+    } else if ( prop["collision_model"] == "convex hull" ||
+                prop["collision_model"] == "" ) { // set convex hull as default
+        convertToConvexHull(m_robot);
+    }
     setupVClipModel(m_robot);
 
     if ( prop["collision_pair"] != "" ) {
@@ -173,19 +177,23 @@ RTC::ReturnCode_t CollisionDetector::onActivated(RTC::UniqueId ec_id)
 	while (getline(iss, tmp, ' ')) {
 	    size_t pos = tmp.find_first_of(':');
 	    std::string name1 = tmp.substr(0, pos), name2 = tmp.substr(pos+1);
+            if ( m_robot->link(name1)==NULL ) {
+                std::cerr << "Could not find robot link " << name1 << std::endl;
+                continue;
+            }
+            if ( m_robot->link(name2)==NULL ) {
+                std::cerr << "Could not find robot link " << name2 << std::endl;
+                continue;
+            }
 	    std::cerr << "check collisions between " << m_robot->link(name1)->name << " and " <<  m_robot->link(name2)->name << std::endl;
 	    m_pair[tmp] = new VclipLinkPair(m_robot->link(name1), m_VclipLinks[m_robot->link(name1)->index],
                                             m_robot->link(name2), m_VclipLinks[m_robot->link(name2)->index], 0);
 	}
     }
 
-    if ( m_pair.size() == 0 ) {
-	std::cerr << "failed to setup collisions" << std::endl;
-	return RTC::RTC_ERROR;
-    }
-
     if ( m_use_viewer ) {
       m_scene.addBody(m_robot);
+      GLlink::drawMode(GLlink::DM_COLLISION);
     }
 
     // allocate memory for outPorts
@@ -196,6 +204,10 @@ RTC::ReturnCode_t CollisionDetector::onActivated(RTC::UniqueId ec_id)
     default_recover_time = 2.5/m_dt;
     m_recover_jointdata = (double *)malloc(sizeof(double)*m_robot->numJoints());
     m_interpolator = new interpolator(m_robot->numJoints(), i_dt);
+
+    for(int i=0; i<m_robot->numJoints(); i++){
+      m_q.data[i] = 0;
+    }
     return RTC::RTC_OK;
 }
 
@@ -238,6 +250,7 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
         }
         //collision check process in case of angle set above
 	m_robot->calcForwardKinematics();
+        bool last_safe_posture = m_safe_posture;
         m_safe_posture = true;
 	coil::TimeValue tm1 = coil::gettimeofday();
         std::map<std::string, VclipLinkPairPtr>::iterator it = m_pair.begin();
@@ -248,8 +261,10 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
             tp.lines.push_back(std::make_pair(point0, point1));
 	    if ( d <= p->getTolerance() ) {
 		m_safe_posture = false;
-		hrp::JointPathPtr jointPath = m_robot->getJointPath(p->link(0),p->link(1));
-		std::cerr << i << "/" << m_pair.size() << " pair: " << p->link(0)->name << "/" << p->link(1)->name << "(" << jointPath->numJoints() << "), distance = " << d << std::endl;
+                if ( loop%200==0 || last_safe_posture ) {
+                    hrp::JointPathPtr jointPath = m_robot->getJointPath(p->link(0),p->link(1));
+                    std::cerr << i << "/" << m_pair.size() << " pair: " << p->link(0)->name << "/" << p->link(1)->name << "(" << jointPath->numJoints() << "), distance = " << d << std::endl;
+                }
               if ( m_use_viewer ) {
                 ((GLlink *)p->link(0))->highlight(true);
                 ((GLlink *)p->link(1))->highlight(true);
@@ -296,6 +311,9 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
           std::cerr << "check collisions for for " << m_pair.size() << " pairs in " << (tm2.sec()-tm1.sec())*1000+(tm2.usec()-tm1.usec())/1000.0 
                     << " [msec], safe = " << m_safe_posture << ", time = " << m_recover_time << " " << m_q.data[0] << " " << m_q.data[1] 
                     << " " << m_q.data[2] << " " << m_q.data[3] << " " << m_q.data[4] << " " << m_q.data[5] << " " << m_q.data[6] << std::endl;
+        }
+        if ( m_pair.size() == 0 && ( DEBUGP || loop % 100 == 1) ) {
+            std::cerr << "CAUTION!! The robot is moving without checking self collision detection!!! please define collision_pair in configuration file" << std::endl;
         }
         //
         m_qOut.write();
@@ -359,7 +377,7 @@ bool CollisionDetector::setTolerance(const char *i_link_pair_name, double i_tole
 void CollisionDetector::setupVClipModel(hrp::BodyPtr i_body)
 {
     m_VclipLinks.resize(i_body->numLinks());
-    std::cerr << i_body->numLinks() << std::endl;
+    //std::cerr << i_body->numLinks() << std::endl;
     for (int i=0; i<i_body->numLinks(); i++) {
       assert(i_body->link(i)->index == i);
       setupVClipModel(i_body->link(i));
