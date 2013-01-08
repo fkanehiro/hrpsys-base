@@ -94,7 +94,6 @@ RTC::ReturnCode_t SequencePlayer::onInitialize()
     // </rtc-template>
 
     RTC::Properties& prop = getProperties();
-    double dt;
     coil::stringTo(dt, prop["dt"].c_str());
 
     m_robot = hrp::BodyPtr(new Body());
@@ -336,7 +335,7 @@ void SequencePlayer::loadPattern(const char *basename, double tm)
     }
 }
 
-bool SequencePlayer::setInitialState()
+bool SequencePlayer::setInitialState(double tm)
 {
     if (!m_seq->isEmpty()) return true;
 
@@ -344,7 +343,7 @@ bool SequencePlayer::setInitialState()
         std::cerr << "can't determine initial posture" << std::endl;
         return false;
     }else{
-        m_seq->setJointAngles(m_qInit.data.get_buffer());
+        m_seq->setJointAngles(m_qInit.data.get_buffer(), tm);
         for (int i=0; i<m_robot->numJoints(); i++){
             Link *l = m_robot->joint(i);
             l->q = m_qInit.data[i];
@@ -355,12 +354,12 @@ bool SequencePlayer::setInitialState()
         root->p << m_basePosInit.data.x,
             m_basePosInit.data.y,
             m_basePosInit.data.z;
-        m_seq->setBasePos(root->p.data());
+        m_seq->setBasePos(root->p.data(), tm);
 
         double rpy[] = {m_baseRpyInit.data.r,
                         m_baseRpyInit.data.p,
                         m_baseRpyInit.data.y};
-        m_seq->setBaseRpy(rpy);
+        m_seq->setBaseRpy(rpy, tm);
         calcRotFromRpy(root->R, rpy[0], rpy[1], rpy[2]);
 
 #if 1
@@ -369,10 +368,10 @@ bool SequencePlayer::setInitialState()
         com[2] = 0.0;
         Vector3 local_com(root->R.transpose()*(com - root->p));
         double zmp[] = {local_com[0], local_com[1], local_com[2]};
-        m_seq->setZmp(zmp);
+        m_seq->setZmp(zmp, tm);
 #endif
         double zero[] = {0,0,0};
-        m_seq->setBaseAcc(zero);
+        m_seq->setBaseAcc(zero, tm);
         return true;
     }
 }

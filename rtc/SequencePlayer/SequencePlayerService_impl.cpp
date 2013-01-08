@@ -92,9 +92,10 @@ CORBA::Boolean SequencePlayerService_impl::setInterpolationMode(OpenHRP::Sequenc
   return m_player->setInterpolationMode(i_mode_);
 }
 
-CORBA::Boolean SequencePlayerService_impl::setInitialState(void)
+CORBA::Boolean SequencePlayerService_impl::setInitialState()
 {
-  return m_player->setInitialState();
+  m_player->setInitialState();
+  return m_player->setInitialState(m_player->dt);
 }
 
 void SequencePlayerService_impl::player(SequencePlayer *i_player)

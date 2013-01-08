@@ -89,6 +89,7 @@ class SequencePlayer
   // no corresponding operation exists in OpenRTm-aist-0.2.0
   // virtual RTC::ReturnCode_t onRateChanged(RTC::UniqueId ec_id);
 
+  double dt;
   seqplay *player() { return m_seq; }
   hrp::BodyPtr robot() { return m_robot;}  
   void setClearFlag();
@@ -102,7 +103,7 @@ class SequencePlayer
   void loadPattern(const char *basename, double time); 
   void playPattern(const OpenHRP::dSequenceSequence& pos, const OpenHRP::dSequenceSequence& rpy, const OpenHRP::dSequenceSequence& zmp, const OpenHRP::dSequence& tm);
   bool setInterpolationMode(OpenHRP::SequencePlayerService::interpolationMode i_mode_);
-  bool setInitialState();
+  bool setInitialState(double tm=0.0);
   
  protected:
   // Configuration variable declaration
