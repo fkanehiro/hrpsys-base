@@ -44,8 +44,6 @@ public:
 	    const double *ii_q, const double *ii_zmp, const double *ii_acc,
             const double *ii_p, const double *ii_rpy,
             double i_time, bool immediate=true);
-    void push(const double *i_q, const double *i_zmp, const double *i_acc,
-              const double *i_p, const double *i_rpy, bool immediate=true);
     void sync();
     bool setInterpolationMode(interpolator::interpolation_mode i_mode_);
 private:
@@ -58,33 +56,42 @@ private:
         ~groupInterpolator(){
             delete inter;
         }
-        void get(double *full){
+        void get(double *full, double *dfull = NULL, bool popp=true){
             if (state == created) return;
             if (state == removing){
+                double x[indices.size()];
                 double v[indices.size()];
                 for (size_t i=0; i<indices.size(); i++){
-                    v[i] = full[indices[i]];
+                    x[i] = full[indices[i]];
+                    v[i] = dfull ? dfull[indices[i]] : 0;
                 }
-                inter->setGoal(v, time2remove);
+                inter->setGoal(x, v, time2remove);
                 time2remove -= inter->deltaT();
                 if (time2remove <= 0) state = removed;
             }
-            double v[indices.size()];
-            inter->get(v);
+            double x[indices.size()], v[indices.size()];
+            inter->get(x, v, popp);
             for (size_t i=0; i<indices.size(); i++){
-                full[indices[i]] = v[i];
+                full[indices[i]] = x[i];
+                if (dfull) dfull[indices[i]] = v[i];
             }
         }
-        void set(const double *full){
-            double v[indices.size()];
+        void set(const double *full, const double *dfull=NULL){
+            double x[indices.size()], v[indices.size()];
             for (size_t i=0; i<indices.size(); i++){
-                v[i] = full[indices[i]];
+                x[i] = full[indices[i]];
+                v[i] = dfull ? dfull[indices[i]] : 0;
                 //std::cout << v[i] << " ";
             }
             //std::cout << std::endl;
-            inter->set(v);
+            inter->set(x,v);
         }
-        bool isEmpty() { return inter->isEmpty(); } 
+        void extract(double *dst, const double *src){
+            for (size_t i=0; i<indices.size(); i++){
+                dst[i] = src[indices[i]];
+            }
+        }
+        bool isEmpty() { return inter->isEmpty() && state != removing; } 
         void go(const double *g, double tm){
             inter->go(g, tm);
             state = working;

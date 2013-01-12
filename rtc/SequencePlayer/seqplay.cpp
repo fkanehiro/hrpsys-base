@@ -262,17 +262,20 @@ void seqplay::pop_back()
 void seqplay::get(double *o_q, double *o_zmp, double *o_accel,
 				  double *o_basePos, double *o_baseRpy)
 {
-	interpolators[Q]->get(o_q);
+	double v[m_dof];
+	interpolators[Q]->get(o_q, v);
 	std::map<std::string, groupInterpolator *>::iterator it;
-	for (it=groupInterpolators.begin(); it!=groupInterpolators.end(); it++){
+	for (it=groupInterpolators.begin(); it!=groupInterpolators.end();){
 		groupInterpolator *gi = it->second;
 		if (gi){
-			gi->get(o_q);
+			gi->get(o_q, v);
 			if (gi->state == groupInterpolator::removed){
-				groupInterpolators.erase(it);
+				groupInterpolators.erase(it++);
 				delete gi;
+				continue;
 			}
 		}
+		++it;
 	}
 	interpolators[ZMP]->get(o_zmp);
 	interpolators[ACC]->get(o_accel);
@@ -300,19 +303,6 @@ void seqplay::go(const double *i_q, const double *i_zmp, const double *i_acc,
 	if (i_acc) interpolators[ACC]->go(i_acc, ii_acc, i_time, false);
 	if (i_p) interpolators[P]->go(i_p, ii_p, i_time, false);
 	if (i_rpy) interpolators[RPY]->go(i_rpy, ii_rpy, i_time, false);
-	if (immediate) sync();
-}
-
-void seqplay::push(const double *i_q, const double *i_zmp, 
-				   const double *i_acc,
-				   const double *i_p, const double *i_rpy, 
-				   bool immediate)
-{
-	if (i_q) interpolators[Q]->push(i_q, false);
-	if (i_zmp) interpolators[ZMP]->push(i_zmp, false);
-	if (i_acc) interpolators[ACC]->push(i_acc, false);
-	if (i_p) interpolators[P]->push(i_p, false);
-	if (i_rpy) interpolators[RPY]->push(i_rpy, false);
 	if (immediate) sync();
 }
 
@@ -363,14 +353,17 @@ bool seqplay::setJointAnglesOfGroup(const char *gname, const double *i_qRef, dou
 	groupInterpolator *i = groupInterpolators[gname];
 	if (i){
 		if (i->state == groupInterpolator::created){
-			double q[m_dof];
-			interpolators[Q]->get(q);
+			double q[m_dof], dq[m_dof];
+			interpolators[Q]->get(q, dq, false);
 			std::map<std::string, groupInterpolator *>::iterator it;
 			for (it=groupInterpolators.begin(); it!=groupInterpolators.end(); it++){
 				groupInterpolator *gi = it->second;
-				if (gi)	gi->get(q);
+				if (gi)	gi->get(q, dq, false);
 			}
-			i->set(q);
+			double x[i->indices.size()], v[i->indices.size()];
+			i->extract(x, q);
+			i->extract(v, dq);
+			i->inter->go(x,v,interpolators[Q]->deltaT());
 		}
 		i->go(i_qRef, i_tm);
 		return true;

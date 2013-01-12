@@ -265,6 +265,7 @@ bool SequencePlayer::waitInterpolationOfGroup(const char *gname)
     m_gname = gname;
     m_waitFlag = true;
     m_waitSem.wait();
+    return true;
 }
 
 
@@ -469,8 +470,13 @@ bool SequencePlayer::addJointGroup(const char *gname, const OpenHRP::SequencePla
 
 bool SequencePlayer::removeJointGroup(const char *gname)
 {
-    Guard guard(m_mutex);
-    return m_seq->removeJointGroup(gname);
+    if (!waitInterpolationOfGroup(gname)) return false;
+    bool ret;
+    {
+        Guard guard(m_mutex);
+        ret = m_seq->removeJointGroup(gname);
+    }
+    return ret;
 }
 
 bool SequencePlayer::setJointAnglesOfGroup(const char *gname, const double *angles, double tm)
