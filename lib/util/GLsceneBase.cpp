@@ -198,6 +198,8 @@ bool GLsceneBase::showFloorGrid()
 
 void GLsceneBase::drawFloorGrid()
 {
+    glBegin(GL_LINES);
+
     // floor grids
     glColor3f(1,1,1);
     double s[3], e[3];
@@ -214,6 +216,8 @@ void GLsceneBase::drawFloorGrid()
         glVertex3dv(s);
         glVertex3dv(e);
     }
+
+    glEnd();
 }
 
 void GLsceneBase::showInfo(bool flag)
@@ -304,11 +308,9 @@ void GLsceneBase::draw()
     size_t ntri = drawObjects();
 
     glDisable(GL_LIGHTING);
-    glBegin(GL_LINES);
 
     if (m_showFloorGrid) drawFloorGrid();
     drawAdditionalLines();
-    glEnd();
 
     // draw texts
     glMatrixMode(GL_PROJECTION);

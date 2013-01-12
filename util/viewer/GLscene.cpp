@@ -58,6 +58,7 @@ void GLscene::drawAdditionalLines()
     OpenHRP::WorldState state;
     if (!lm->state(state)) return;
 
+    glBegin(GL_LINES);
     glColor3f(1,0,0);
     double e[3];
     const CollisionSequence &cs = state.collisions;
@@ -71,6 +72,7 @@ void GLscene::drawAdditionalLines()
             glVertex3dv(e);
         }
     }
+    glEnd();
 }
 
 GLscene::GLscene(LogManagerBase *i_log) 

@@ -62,6 +62,7 @@ void GLscene::drawAdditionalLines()
         = (LogManager<SceneState> *)m_log;
     SceneState &state = lm->state();
 
+    glBegin(GL_LINES);
     glColor3f(1,0,0);
     double e[3];
     const std::vector<CollisionInfo> &cs = state.collisions;
@@ -72,6 +73,7 @@ void GLscene::drawAdditionalLines()
         glVertex3dv(cs[i].position);
         glVertex3dv(e);
     }
+    glEnd();
 }
 
 void GLscene::showStatus()
