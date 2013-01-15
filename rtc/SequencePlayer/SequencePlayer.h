@@ -93,6 +93,7 @@ class SequencePlayer
   hrp::BodyPtr robot() { return m_robot;}  
   void setClearFlag();
   void waitInterpolation();
+  bool waitInterpolationOfGroup(const char *gname);
   bool setJointAngle(short id, double angle, double tm);
   bool setJointAngles(const double *angles, double tm);
   bool setJointAngles(const double *angles, const bool *mask, double tm);
@@ -102,6 +103,9 @@ class SequencePlayer
   void loadPattern(const char *basename, double time); 
   void playPattern(const OpenHRP::dSequenceSequence& pos, const OpenHRP::dSequenceSequence& rpy, const OpenHRP::dSequenceSequence& zmp, const OpenHRP::dSequence& tm);
   bool setInterpolationMode(OpenHRP::SequencePlayerService::interpolationMode i_mode_);
+  bool addJointGroup(const char *gname, const OpenHRP::SequencePlayerService::StrSequence& jnames);
+  bool removeJointGroup(const char *gname);
+  bool setJointAnglesOfGroup(const char *gname, const double *angles, double tm);
 
  protected:
   // Configuration variable declaration
@@ -158,6 +162,7 @@ class SequencePlayer
   bool m_clearFlag, m_waitFlag;
   boost::interprocess::interprocess_semaphore m_waitSem;
   hrp::BodyPtr m_robot;
+  std::string m_gname;
   int dummy;
   coil::Mutex m_mutex;
 };
