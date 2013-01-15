@@ -181,13 +181,15 @@ RTC::ReturnCode_t StateHolder::onDeactivated(RTC::UniqueId ec_id)
 RTC::ReturnCode_t StateHolder::onExecute(RTC::UniqueId ec_id)
 {
     //std::cout << "StateHolder::onExecute(" << ec_id << ")" << std::endl;
-    coil::TimeValue coiltm(coil::gettimeofday());
     RTC::Time tm;
-    tm.sec = coiltm.sec();
-    tm.nsec = coiltm.usec()*1000;
 
     if (m_currentQIn.isNew()){
         m_currentQIn.read();
+        tm = m_currentQ.tm;
+    }else{
+        coil::TimeValue coiltm(coil::gettimeofday());
+        tm.sec = coiltm.sec();
+        tm.nsec = coiltm.usec()*1000;
     }
 
     if (m_qIn.isNew()){
