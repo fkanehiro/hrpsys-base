@@ -3,8 +3,9 @@
 
 module OpenHRP
 {
-  interface NullFilterService
+  interface TorqueFilterService
   {
+    void dummy(in string msg);
   };
 };
 
