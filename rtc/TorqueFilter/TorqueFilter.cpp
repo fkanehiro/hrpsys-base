@@ -115,39 +115,57 @@ RTC::ReturnCode_t TorqueFilter::onInitialize()
 
   // set gravity compensation flag
   coil::stringTo(m_is_gravity_compensation, prop["gravity_compensation"].c_str());
-  std::cerr << "gravity compensation: " << m_is_gravity_compensation << std::endl;
+  std::cerr <<  m_profile.instance_name << " : gravity compensation: " << m_is_gravity_compensation << std::endl;
   
   // set torque offset
   // offset = -(gear torque in neutral pose)
   m_torque_offset.resize(m_robot->numJoints());
   coil::vstring torque_offset = coil::split(prop["torque_offset"], ",");
-  assert(m_torque_offset.size() == torque_offset.size());
-  for(int i = 0; i < m_robot->numJoints(); i++){
-    coil::stringTo(m_torque_offset[i], torque_offset[i].c_str());
-    std::cerr << "offset[" << m_robot->joint(i)->name << "]: " << m_torque_offset[i] << std::endl;
+  if ( m_torque_offset.size() == torque_offset.size() ) {
+    for(int i = 0; i < m_robot->numJoints(); i++){
+        coil::stringTo(m_torque_offset[i], torque_offset[i].c_str());
+        std::cerr << "offset[" << m_robot->joint(i)->name << "]: " << m_torque_offset[i] << std::endl;
+    }
+  } else {
+      std::cerr <<  m_profile.instance_name << " : torque_offset is not set" << std::endl;
   }
   
   // make filter
   // filter_dim, fb_coeffs[0], ..., fb_coeffs[filter_dim], ff_coeffs[0], ..., ff_coeffs[filter_dim]
   coil::vstring torque_filter_params = coil::split(prop["torque_filter_params"], ","); // filter values
-  int filter_dim;
-  coil::stringTo(filter_dim, torque_filter_params[0].c_str());
+  int filter_dim = 0;
+  if ( torque_filter_params.size() > 0 ) {
+      coil::stringTo(filter_dim, torque_filter_params[0].c_str());
+  }
   std::cerr << "filter dim: " << filter_dim << std::endl;
-  // ex) 2dim butterworth filter sampling = 200[hz] cutoff = 5[hz]
-  // octave$ [a, b] = butter(2, 5/200)
-  // fb_coeffs[0] = 1.00000; <- b0
-  // fb_coeffs[1] = 1.88903; <- -b1
-  // fb_coeffs[2] = -0.89487; <- -b2
-  // ff_coeffs[0] = 0.0014603; <- a0
-  // ff_coeffs[1] = 0.0029206; <- a1
-  // ff_coeffs[2] = 0.0014603; <- a2
+  std::cerr << "filter dim: " << torque_filter_params.size() << std::endl;
   std::vector<double> fb_coeffs(filter_dim + 1);
   std::vector<double> ff_coeffs(filter_dim + 1);
-  for(int i = 0; i < filter_dim + 1; i++){
-    coil::stringTo(fb_coeffs[i], torque_filter_params[i + 1].c_str());
-    coil::stringTo(ff_coeffs[i], torque_filter_params[i + (filter_dim + 2)].c_str());    
-    std::cerr << "fb[" << i << "]: " << fb_coeffs[i] << std::endl;
-    std::cerr << "ff[" << i << "]: " << ff_coeffs[i] << std::endl;
+  if ( filter_dim*2 + 2 != torque_filter_params.size() ) {
+      // ex) 2dim butterworth filter sampling = 200[hz] cutoff = 5[hz]
+      // octave$ [a, b] = butter(2, 5/200)
+      // fb_coeffs[0] = 1.00000; <- b0
+      // fb_coeffs[1] = 1.88903; <- -b1
+      // fb_coeffs[2] = -0.89487; <- -b2
+      // ff_coeffs[0] = 0.0014603; <- a0
+      // ff_coeffs[1] = 0.0029206; <- a1
+      // ff_coeffs[2] = 0.0014603; <- a2
+      filter_dim = 2;
+      fb_coeffs.resize(filter_dim+1);
+      fb_coeffs[0] = 1.00000;
+      fb_coeffs[1] = 1.88903;
+      fb_coeffs[2] =-0.89487;
+      ff_coeffs.resize(filter_dim+1);
+      ff_coeffs[0] = 0.0014603;
+      ff_coeffs[1] = 0.0029206;
+      fb_coeffs[2] = 0.0014603;
+  } else {
+      for(int i = 0; i < filter_dim + 1; i++){
+          coil::stringTo(fb_coeffs[i], torque_filter_params[i + 1].c_str());
+          coil::stringTo(ff_coeffs[i], torque_filter_params[i + (filter_dim + 2)].c_str());    
+          std::cerr << "fb[" << i << "]: " << fb_coeffs[i] << std::endl;
+          std::cerr << "ff[" << i << "]: " << ff_coeffs[i] << std::endl;
+      }
   }
   for(int i = 0; i < m_robot->numJoints(); i++){
     m_filters.push_back(IIRFilter(filter_dim, fb_coeffs, ff_coeffs));
