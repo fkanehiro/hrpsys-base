@@ -1,0 +1,11 @@
+/**
+ * @file KalmanFilterService.idl
+ * @brief Services for the robot hardware interface
+ */
+module OpenHRP
+{
+  interface KalmanFilterService
+  {
+    boolean SetKalmanFilterParam(in double Q_angle, in double Q_rate, in double R_angle);
+  };
+};

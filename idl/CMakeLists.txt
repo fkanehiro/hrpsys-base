@@ -17,6 +17,7 @@ set(idl_files
   CollisionDetectorService.idl
   GraspControllerService.idl
   TorqueFilterService.idl
+  KalmanFilterService.idl
   )
 
 set(openhrp_idl_files
