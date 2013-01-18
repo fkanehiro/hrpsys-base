@@ -1,14 +1,14 @@
 // -*- C++ -*-
 /*!
- * @file  VirtualForceSensor.h
+ * @file  TorqueFilter.h
  * @brief null component
  * @date  $Date$
  *
  * $Id$
  */
 
-#ifndef VIRTUAL_FORCE_SENSOR_H
-#define VIRTUAL_FORCE_SENSOR_H
+#ifndef TORQUE_FILTER_H
+#define TORQUE_FILTER_H
 
 #include <rtm/Manager.h>
 #include <rtm/DataFlowComponentBase.h>
@@ -20,10 +20,12 @@
 #include <hrpModel/Body.h>
 #include <hrpModel/Link.h>
 #include <hrpModel/JointPath.h>
-#include <hrpUtil/EigenTypes.h>
 
 // Service implementation headers
 // <rtc-template block="service_impl_h">
+// #include "TorqueFilter_impl.h"
+
+#include "IIRFilter.h"
 
 // </rtc-template>
 
@@ -37,7 +39,7 @@ using namespace RTC;
 /**
    \brief sample RT component which has one data input port and one data output port
  */
-class VirtualForceSensor
+class TorqueFilter
   : public RTC::DataFlowComponentBase
 {
  public:
@@ -45,11 +47,11 @@ class VirtualForceSensor
      \brief Constructor
      \param manager pointer to the Manager
   */
-  VirtualForceSensor(RTC::Manager* manager);
+  TorqueFilter(RTC::Manager* manager);
   /**
      \brief Destructor
   */
-  virtual ~VirtualForceSensor();
+  virtual ~TorqueFilter();
 
   // The initialize action (on CREATED->ALIVE transition)
   // formaer rtc_init_entry()
@@ -105,10 +107,10 @@ class VirtualForceSensor
   // <rtc-template block="config_declare">
   
   // </rtc-template>
-  // TimedDoubleSeq m_qRef;
   TimedDoubleSeq m_qCurrent;
   TimedDoubleSeq m_tauIn;
-  
+  TimedDoubleSeq m_tauOut;
+
   // DataInPort declaration
   // <rtc-template block="inport_declare">
   InPort<TimedDoubleSeq> m_qCurrentIn;
@@ -118,13 +120,7 @@ class VirtualForceSensor
 
   // DataOutPort declaration
   // <rtc-template block="outport_declare">
-  std::vector<TimedDoubleSeq> m_force;
-  std::vector<OutPort<TimedDoubleSeq> *> m_forceOut;
-  
-  // </rtc-template>
-
-  // DataOutPort declaration
-  // <rtc-template block="outport_declare">
+  OutPort<TimedDoubleSeq> m_tauOutOut;
   
   // </rtc-template>
 
@@ -135,33 +131,30 @@ class VirtualForceSensor
 
   // Service declaration
   // <rtc-template block="service_declare">
-  //RTC::CorbaPort m_VirtualForceSensorServicePort;
+  //RTC::CorbaPort m_TorqueFilterServicePort;
   
   // </rtc-template>
 
   // Consumer declaration
   // <rtc-template block="consumer_declare">
-  //VirtualForceSensorService_impl m_VirtualForceSensorService;
+  //TorqueFilterService_impl m_TorqueFilterService;
   
   // </rtc-template>
 
  private:
-  struct VirtualForceSensorParam {
-    std::string base_name, target_name;
-    hrp::Vector3 p;
-    hrp::Matrix33 R;
-    hrp::JointPathPtr path;
-  };
-  std::map<std::string, VirtualForceSensorParam> m_sensors;
+
   double m_dt;
   hrp::BodyPtr m_robot;
   unsigned int m_debugLevel;
+  std::vector<double> m_torque_offset;
+  std::vector<IIRFilter> m_filters;
+  bool m_is_gravity_compensation;
 };
 
 
 extern "C"
 {
-  void VirtualForceSensorInit(RTC::Manager* manager);
+  void TorqueFilterInit(RTC::Manager* manager);
 };
 
-#endif // VIRTUAL_FORCE_SENSOR_H
+#endif // TORQUE_FILTER_H

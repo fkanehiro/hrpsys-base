@@ -1,0 +1,11 @@
+#ifndef __TORQUE_FILTER_SERVICE_IDL__
+#define __TORQUE_FILTER_SERVICE_IDL__
+
+module OpenHRP
+{
+  interface NullFilterService
+  {
+  };
+};
+
+#endif

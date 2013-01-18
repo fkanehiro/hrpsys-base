@@ -16,6 +16,7 @@ set(idl_files
   SoftErrorLimiterService.idl
   CollisionDetectorService.idl
   GraspControllerService.idl
+  TorqueFilterService.idl
   )
 
 set(openhrp_idl_files
