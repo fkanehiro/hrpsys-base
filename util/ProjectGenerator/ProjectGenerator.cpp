@@ -108,7 +108,7 @@ int main (int argc, char** argv)
 
 	xmlTextWriterStartElement(writer, BAD_CAST "item");
 	xmlTextWriterWriteAttribute(writer, BAD_CAST "class", BAD_CAST "com.generalrobotix.ui.item.GrxModelItem");
-	xmlTextWriterWriteAttribute(writer, BAD_CAST "name", BAD_CAST name.c_str());
+        xmlTextWriterWriteAttribute(writer, BAD_CAST "name", BAD_CAST (basename(*it).c_str()));
 	xmlTextWriterWriteAttribute(writer, BAD_CAST "url", BAD_CAST filename.c_str());
 
 	xmlTextWriterWriteProperty(writer, "rtcName", name + "(Robot)0");
