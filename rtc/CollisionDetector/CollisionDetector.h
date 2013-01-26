@@ -151,6 +151,15 @@ class CollisionDetector
   void setupVClipModel(hrp::Link *i_link);
 
  private:
+  class CollisionLinkPair {
+  public:
+      CollisionLinkPair(VclipLinkPairPtr i_pair) : point0(hrp::Vector3(0,0,0)), point1(hrp::Vector3(0,0,0)), distance(0) {
+          pair = i_pair;
+      }
+      VclipLinkPairPtr pair;
+      hrp::Vector3 point0, point1;
+      double distance;
+  };
   CollisionDetectorComponent::GLscene m_scene;
   LogManager<TimedPosture> m_log; 
   SDLwindow m_window;
@@ -158,13 +167,14 @@ class CollisionDetector
   std::vector<Vclip::Polyhedron *> m_VclipLinks;
   bool m_use_viewer;
   hrp::BodyPtr m_robot;
-  std::map<std::string, VclipLinkPairPtr> m_pair;
+  std::map<std::string, CollisionLinkPair *> m_pair;
+  int m_loop_for_check, m_collision_loop;
   bool m_safe_posture;
   int m_recover_time;
   double m_dt;
   int dummy;
   //
-  double* m_recover_jointdata;
+  double *m_recover_jointdata, *m_lastsafe_jointdata;
   interpolator* m_interpolator;
   double i_dt;
   int default_recover_time;
