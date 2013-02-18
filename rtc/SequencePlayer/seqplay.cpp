@@ -294,7 +294,8 @@ void seqplay::push(const double *i_q, const double *i_zmp,
 
 bool seqplay::setInterpolationMode (interpolator::interpolation_mode i_mode_)
 {
-    if (i_mode_ != interpolator::LINEAR && i_mode_ != interpolator::HOFFARBIB) return false;
+    if (i_mode_ != interpolator::LINEAR && i_mode_ != interpolator::HOFFARBIB &&
+		i_mode_ != interpolator::QUINTICSPLINE && i_mode_ != interpolator::CUBICSPLINE) return false;
 
 	bool ret=true; 
 	for (unsigned int i=0; i<NINTERPOLATOR; i++){

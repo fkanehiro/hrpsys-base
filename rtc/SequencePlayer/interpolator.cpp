@@ -111,7 +111,8 @@ double interpolator::calc_interpolation_time(const double *newg,
 
 bool interpolator::setInterpolationMode (interpolation_mode i_mode_)
 {
-    if (i_mode_ != LINEAR && i_mode_ != HOFFARBIB) return false;
+    if (i_mode_ != LINEAR && i_mode_ != HOFFARBIB &&
+        i_mode_ != QUINTICSPLINE && i_mode_ != CUBICSPLINE) return false;
     imode = i_mode_;
     return true;
 };
@@ -130,7 +131,10 @@ void interpolator::setGoal(const double *newg, const double *newv, double time,
     target_t = time;
 
     double A,B,C;
+    static int count = 0;
     for (int i=0; i<dim; i++){
+        switch(imode){
+        case HOFFARBIB:
         A=(gx[i]-(x[i]+v[i]*target_t+(a[i]/2.0)*target_t*target_t))/(target_t*target_t*target_t);
         B=(gv[i]-(v[i]+a[i]*target_t))/(target_t*target_t);
         C=(ga[i]-a[i])/target_t;
@@ -141,6 +145,26 @@ void interpolator::setGoal(const double *newg, const double *newv, double time,
         a3[i]=10*A-4*B+0.5*C;
         a4[i]=(-15*A+7*B-C)/target_t;
         a5[i]=(6*A-3*B+0.5*C)/(target_t*target_t);
+        break;
+        case QUINTICSPLINE:
+        a0[i]=x[i];
+        a1[i]=v[i];
+        a2[i]=0.5*a[i];
+        a3[i]=(-20*x[i] + 20*gx[i] - 3*a[i]*target_t*target_t + ga[i]*target_t*target_t -
+               12*v[i]*target_t - 8*gv[i]*target_t) / (2*target_t*target_t*target_t);
+        a4[i]=(30*x[i] - 30*gx[i] + 3*a[i]*target_t*target_t - 2*ga[i]*target_t*target_t +
+               16*v[i]*target_t + 14*gv[i]*target_t) / (2*target_t*target_t*target_t*target_t);
+        a5[i]=(-12*x[i] + 12*gx[i] - a[i]*target_t*target_t + ga[i]*target_t*target_t -
+               6*v[i]*target_t - 6*gv[i]*target_t) / (2*target_t*target_t*target_t*target_t*target_t);
+        break;
+        case CUBICSPLINE:
+        a0[i]=x[i];
+        a1[i]=v[i];
+        a2[i]=(-3*x[i] + 3*gx[i] - 2*v[i]*target_t - gv[i]*target_t) / (target_t*target_t);
+        a3[i]=( 2*x[i] - 2*gx[i] +   v[i]*target_t + gv[i]*target_t) / (target_t*target_t*target_t);
+        a4[i]=a[5]=0;
+        break;
+        }
     }
     if (online) remain_t = time; // interpolation will start
 }
@@ -159,6 +183,8 @@ void interpolator::interpolate(double& remain_t)
 				 x[i], v[i], a[i]);
             break;
         case HOFFARBIB:
+        case QUINTICSPLINE:
+        case CUBICSPLINE:
             hoffarbib(tm,
 		      a0[i], a1[i], a2[i], a3[i], a4[i], a5[i],
 		      x[i], v[i], a[i]);

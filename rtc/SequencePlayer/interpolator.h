@@ -9,7 +9,7 @@ using namespace std;
 class interpolator
 {
 public:
-  typedef enum {LINEAR, HOFFARBIB} interpolation_mode;
+  typedef enum {LINEAR, HOFFARBIB,QUINTICSPLINE,CUBICSPLINE} interpolation_mode;
   interpolator(int dim_, double dt_, interpolation_mode imode_=HOFFARBIB);
   ~interpolator();
   void push(const double *a, bool immediate=true);
