@@ -131,7 +131,6 @@ void interpolator::setGoal(const double *newg, const double *newv, double time,
     target_t = time;
 
     double A,B,C;
-    static int count = 0;
     for (int i=0; i<dim; i++){
         switch(imode){
         case HOFFARBIB:
