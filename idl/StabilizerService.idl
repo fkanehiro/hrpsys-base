@@ -1,0 +1,12 @@
+/**
+ * @file StabilizerService.idl
+ * @brief Services for the robot hardware interface
+ */
+module OpenHRP
+{
+  interface StabilizerService
+  {
+    boolean dummy();
+  };
+};
+
