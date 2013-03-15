@@ -139,18 +139,22 @@ RTC::ReturnCode_t Joystick2Velocity3D::onExecute(RTC::UniqueId ec_id)
 
   if (m_axesIn.isNew()) m_axesIn.read();
   if (m_buttonsIn.isNew()) m_buttonsIn.read();
-
+  
+  bool isPushed = false;
+  for( unsigned int i = 0 ; i < m_buttons.data.length() ; i++ )
+    isPushed |= m_buttons.data[i];
+  
   if (m_buttons.data[m_rotateModeButton]){
       m_vel.data.vx = m_vel.data.vy = m_vel.data.vz = 0.0;
-      m_vel.data.vr = m_scalesRotation[0]*m_axes.data[m_axesIds[0]];
-      m_vel.data.vp = m_scalesRotation[1]*m_axes.data[m_axesIds[1]];
-      m_vel.data.va = m_scalesRotation[2]*m_axes.data[m_axesIds[2]];
+      m_vel.data.vr = -m_scalesRotation[1]*m_axes.data[m_axesIds[1]];
+      m_vel.data.vp =  m_scalesRotation[0]*m_axes.data[m_axesIds[0]];
+      m_vel.data.va =  m_scalesRotation[2]*m_axes.data[m_axesIds[2]];
       //
       m_mirroredVel.data.vx = m_mirroredVel.data.vy = m_mirroredVel.data.vz = 0.0;
       m_mirroredVel.data.vr = -m_vel.data.vr;
       m_mirroredVel.data.vp =  m_vel.data.vp;
       m_mirroredVel.data.va = -m_vel.data.va;
-  }else{
+  }else if( !isPushed ){
       m_vel.data.vx = m_scalesTranslation[0]*m_axes.data[m_axesIds[0]];
       m_vel.data.vy = m_scalesTranslation[1]*m_axes.data[m_axesIds[1]];
       m_vel.data.vz = m_scalesTranslation[2]*m_axes.data[m_axesIds[2]];
