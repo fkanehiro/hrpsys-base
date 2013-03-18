@@ -190,7 +190,7 @@ void interpolator::interpolate(double& remain_t)
             break;
         }
     }
-    push(x);
+    push(x, v, a);
     remain_t = tm;
 }
 
@@ -244,11 +244,17 @@ void interpolator::load(string fname, double time_to_start, double scale,
   load(fname.c_str(), time_to_start, scale, immediate);
 }
 
-void interpolator::push(const double *a, bool immediate)
+void interpolator::push(const double *x, const double *v, const double *a, bool immediate)
 {
   double *p = new double[dim];
-  memcpy(p, a, sizeof(double)*dim);
+  double *dp = new double[dim];
+  double *ddp = new double[dim];
+  memcpy(p, x, sizeof(double)*dim);
+  memcpy(dp, v, sizeof(double)*dim);
+  memcpy(ddp, a, sizeof(double)*dim);
   q.push_back(p);
+  dq.push_back(dp);
+  ddq.push_back(ddp);
   if (immediate) sync();
 }
 
@@ -259,6 +265,12 @@ void interpolator::pop()
     double *&vs = q.front();
     delete [] vs;
     q.pop_front();
+    double *&dvs = dq.front();
+    delete [] dvs;
+    dq.pop_front();
+    double *&ddvs = ddq.front();
+    delete [] ddvs;
+    ddq.pop_front();
   }
 }
 
@@ -274,16 +286,37 @@ void interpolator::pop_back()
     }else{
       memcpy(x, gx, sizeof(double)*dim);
     }
+    double *&dvs = dq.back();
+    delete [] dvs;
+    dq.pop_back();
+    if (length > 0){
+      memcpy(v, dq.back(), sizeof(double)*dim);
+    }else{
+      memcpy(v, gv, sizeof(double)*dim);
+    }
+    double *&ddvs = ddq.back();
+    delete [] ddvs;
+    ddq.pop_back();
+    if (length > 0){
+      memcpy(a, ddq.back(), sizeof(double)*dim);
+    }else{
+      memcpy(a, ga, sizeof(double)*dim);
+    }
   } else if (remain_t > 0) {
     remain_t = 0;
   }
 }
 
-void interpolator::set(const double *angle)
+void interpolator::set(const double *x_, const double *v_)
 {
   for (int i=0; i<dim; i++){
-    gx[i] = x[i] = angle[i];
-    gv[i] = ga[i] = v[i] = a[i] = 0;
+    gx[i] = x[i] = x_[i];
+    if (v_){
+        gv[i] = v[i] = v_[i];
+    }else{
+        gv[i] = v[i] = 0;
+    }
+    ga[i] = a[i] = 0;
   }
 }
 
@@ -296,7 +329,17 @@ double *interpolator::front()
   }
 }
 
-void interpolator::get(double *a, bool popp)
+void interpolator::get(double *x, bool popp)
+{
+  get(x, NULL, NULL, popp);
+}
+
+void interpolator::get(double *x, double *v, bool popp)
+{
+  get(x, v, NULL, popp);
+}
+
+void interpolator::get(double *x, double *v, double *a, bool popp)
 {
   interpolate(remain_t);
 
@@ -306,10 +349,24 @@ void interpolator::get(double *a, bool popp)
       cerr << "interpolator::get vs = NULL, q.size() = " << q.size() 
 	   << ", length = " << length << endl;
     }
-    memcpy(a, vs, sizeof(double)*dim);
+    double *&dvs = dq.front();
+    if (dvs == NULL) {
+      cerr << "interpolator::get dvs = NULL, dq.size() = " << dq.size() 
+	   << ", length = " << length << endl;
+    }
+    double *&ddvs = ddq.front();
+    if (ddvs == NULL) {
+      cerr << "interpolator::get ddvs = NULL, ddq.size() = " << ddq.size() 
+	   << ", length = " << length << endl;
+    }
+    memcpy(x, vs, sizeof(double)*dim);
+    if ( v != NULL ) memcpy(v, dvs, sizeof(double)*dim);
+    if ( a != NULL ) memcpy(a, ddvs, sizeof(double)*dim);
     if (popp) pop();
   }else{
-    memcpy(a, gx, sizeof(double)*dim);
+    memcpy(x, gx, sizeof(double)*dim);
+    if ( v != NULL) memcpy(v, gv, sizeof(double)*dim);
+    if ( a != NULL) memcpy(a, ga, sizeof(double)*dim);
   }
 }
 

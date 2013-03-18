@@ -17,6 +17,7 @@ public:
   virtual ~SequencePlayerService_impl();
   //
   void waitInterpolation();
+  CORBA::Boolean waitInterpolationOfGroup(const char *gname);
   CORBA::Boolean setJointAngles(const dSequence& jvs, CORBA::Double tm);
   CORBA::Boolean setJointAnglesWithMask(const dSequence& jvs, const bSequence& mask, CORBA::Double tm);
   CORBA::Boolean setJointAngle(const char *jname, CORBA::Double jv, CORBA::Double tm);
@@ -30,6 +31,9 @@ public:
   void clearNoWait();
   CORBA::Boolean setInterpolationMode(OpenHRP::SequencePlayerService::interpolationMode i_mode_);
   CORBA::Boolean setInitialState();
+  CORBA::Boolean addJointGroup(const char* gname, const OpenHRP::SequencePlayerService::StrSequence& jnames);
+  CORBA::Boolean removeJointGroup(const char* gname);
+  CORBA::Boolean setJointAnglesOfGroup(const char *gname, const dSequence& jvs, CORBA::Double tm);
   //
   void player(SequencePlayer *i_player);
 private:

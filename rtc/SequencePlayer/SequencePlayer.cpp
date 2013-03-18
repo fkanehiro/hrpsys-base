@@ -169,7 +169,14 @@ RTC::ReturnCode_t SequencePlayer::onExecute(RTC::UniqueId ec_id)
     if (m_qInitIn.isNew()) m_qInitIn.read();
     if (m_basePosInitIn.isNew()) m_basePosInitIn.read();
     if (m_baseRpyInitIn.isNew()) m_baseRpyInitIn.read();
-    
+
+    if (m_gname != "" && m_seq->isEmpty(m_gname.c_str())){
+        if (m_waitFlag){
+            m_gname = "";
+            m_waitFlag = false;
+            m_waitSem.post();
+        }
+    }
     if (m_seq->isEmpty()){
         m_clearFlag = false;
         if (m_waitFlag){
@@ -251,6 +258,15 @@ void SequencePlayer::waitInterpolation()
     m_waitFlag = true;
     m_waitSem.wait();
 }
+
+bool SequencePlayer::waitInterpolationOfGroup(const char *gname)
+{
+    m_gname = gname;
+    m_waitFlag = true;
+    m_waitSem.wait();
+    return true;
+}
+
 
 bool SequencePlayer::setJointAngle(short id, double angle, double tm)
 {
@@ -434,6 +450,39 @@ bool SequencePlayer::setInterpolationMode(OpenHRP::SequencePlayerService::interp
         return false;
     }
     return m_seq->setInterpolationMode(new_mode);
+}
+
+bool SequencePlayer::addJointGroup(const char *gname, const OpenHRP::SequencePlayerService::StrSequence& jnames)
+{
+    Guard guard(m_mutex);
+    std::vector<int> indices;
+    for (size_t i=0; i<jnames.length(); i++){
+        hrp::Link *l = m_robot->link(std::string(jnames[i]));
+        if (l){
+            indices.push_back(l->jointId);
+        }else{
+            return false;
+        }
+    }
+    return m_seq->addJointGroup(gname, indices);
+}
+
+bool SequencePlayer::removeJointGroup(const char *gname)
+{
+    if (!waitInterpolationOfGroup(gname)) return false;
+    bool ret;
+    {
+        Guard guard(m_mutex);
+        ret = m_seq->removeJointGroup(gname);
+    }
+    return ret;
+}
+
+bool SequencePlayer::setJointAnglesOfGroup(const char *gname, const double *angles, double tm)
+{
+    Guard guard(m_mutex);
+    if (!m_seq->resetJointGroup(gname, m_qInit.data.get_buffer())) return false;
+    return m_seq->setJointAnglesOfGroup(gname, angles, tm);
 }
 
 extern "C"

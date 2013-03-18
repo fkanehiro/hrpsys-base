@@ -87,7 +87,20 @@ bool seqplay::isEmpty() const
 	for (unsigned int i=0; i<NINTERPOLATOR; i++){
 		if (!interpolators[i]->isEmpty()) return false;
 	}
+	std::map<std::string, groupInterpolator *>::const_iterator it;
+	for (it=groupInterpolators.begin(); it!=groupInterpolators.end(); it++){
+		groupInterpolator *gi = it->second;
+		if (gi && !gi->isEmpty()) return false;
+	}
+
 	return true;
+}
+
+bool seqplay::isEmpty(const char *gname)
+{
+	groupInterpolator *i = groupInterpolators[gname];
+	if (!i) return true;
+	return i->isEmpty();
 }
 
 #if 0
@@ -249,7 +262,21 @@ void seqplay::pop_back()
 void seqplay::get(double *o_q, double *o_zmp, double *o_accel,
 				  double *o_basePos, double *o_baseRpy)
 {
-	interpolators[Q]->get(o_q);
+	double v[m_dof];
+	interpolators[Q]->get(o_q, v);
+	std::map<std::string, groupInterpolator *>::iterator it;
+	for (it=groupInterpolators.begin(); it!=groupInterpolators.end();){
+		groupInterpolator *gi = it->second;
+		if (gi){
+			gi->get(o_q, v);
+			if (gi->state == groupInterpolator::removed){
+				groupInterpolators.erase(it++);
+				delete gi;
+				continue;
+			}
+		}
+		++it;
+	}
 	interpolators[ZMP]->get(o_zmp);
 	interpolators[ACC]->get(o_accel);
 	interpolators[P]->get(o_basePos);
@@ -279,19 +306,6 @@ void seqplay::go(const double *i_q, const double *i_zmp, const double *i_acc,
 	if (immediate) sync();
 }
 
-void seqplay::push(const double *i_q, const double *i_zmp, 
-				   const double *i_acc,
-				   const double *i_p, const double *i_rpy, 
-				   bool immediate)
-{
-	if (i_q) interpolators[Q]->push(i_q, false);
-	if (i_zmp) interpolators[ZMP]->push(i_zmp, false);
-	if (i_acc) interpolators[ACC]->push(i_acc, false);
-	if (i_p) interpolators[P]->push(i_p, false);
-	if (i_rpy) interpolators[RPY]->push(i_rpy, false);
-	if (immediate) sync();
-}
-
 bool seqplay::setInterpolationMode (interpolator::interpolation_mode i_mode_)
 {
     if (i_mode_ != interpolator::LINEAR && i_mode_ != interpolator::HOFFARBIB &&
@@ -302,4 +316,59 @@ bool seqplay::setInterpolationMode (interpolator::interpolation_mode i_mode_)
 		ret &= interpolators[i]->setInterpolationMode(i_mode_);
 	}
 	return ret;
+}
+
+bool seqplay::addJointGroup(const char *gname, const std::vector<int>& indices)
+{
+	groupInterpolator *i = groupInterpolators[gname];
+	if (i) return false;
+	i = new groupInterpolator(indices, interpolators[Q]->deltaT());
+	groupInterpolators[gname] = i;
+	return true;
+}
+
+bool seqplay::removeJointGroup(const char *gname, double time)
+{
+	groupInterpolator *i = groupInterpolators[gname];
+	if (i){
+		i->remove(time);
+		return true;
+	}else{
+		return false;
+	}
+}
+
+bool seqplay::resetJointGroup(const char *gname, const double *full)
+{
+	groupInterpolator *i = groupInterpolators[gname];
+	if (i){
+		i->set(full);
+		return true;
+	}else{
+		return false;
+	}
+}
+
+bool seqplay::setJointAnglesOfGroup(const char *gname, const double *i_qRef, double i_tm)
+{
+	groupInterpolator *i = groupInterpolators[gname];
+	if (i){
+		if (i->state == groupInterpolator::created){
+			double q[m_dof], dq[m_dof];
+			interpolators[Q]->get(q, dq, false);
+			std::map<std::string, groupInterpolator *>::iterator it;
+			for (it=groupInterpolators.begin(); it!=groupInterpolators.end(); it++){
+				groupInterpolator *gi = it->second;
+				if (gi)	gi->get(q, dq, false);
+			}
+			double x[i->indices.size()], v[i->indices.size()];
+			i->extract(x, q);
+			i->extract(v, dq);
+			i->inter->go(x,v,interpolators[Q]->deltaT());
+		}
+		i->go(i_qRef, i_tm);
+		return true;
+	}else{
+		return false;
+	}
 }

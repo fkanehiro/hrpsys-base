@@ -16,6 +16,11 @@ void SequencePlayerService_impl::waitInterpolation()
   m_player->waitInterpolation();
 }
 
+CORBA::Boolean SequencePlayerService_impl::waitInterpolationOfGroup(const char *gname)
+{
+    return m_player->waitInterpolationOfGroup(gname);
+}
+
 CORBA::Boolean SequencePlayerService_impl::setJointAngles(const dSequence& jvs, CORBA::Double tm)
 {
   if (jvs.length() != (unsigned int)(m_player->robot()->numJoints())) return false;  
@@ -106,4 +111,19 @@ void SequencePlayerService_impl::player(SequencePlayer *i_player)
 void SequencePlayerService_impl::playPattern(const dSequenceSequence& pos, const dSequenceSequence& rpy, const dSequenceSequence& zmp, const dSequence& tm)
 {
     m_player->playPattern(pos, rpy, zmp, tm);
+}
+
+CORBA::Boolean SequencePlayerService_impl::addJointGroup(const char* gname, const OpenHRP::SequencePlayerService::StrSequence& jnames)
+{
+    return m_player->addJointGroup(gname, jnames);
+}
+
+CORBA::Boolean SequencePlayerService_impl::removeJointGroup(const char* gname)
+{
+    return m_player->removeJointGroup(gname);
+}
+
+CORBA::Boolean SequencePlayerService_impl::setJointAnglesOfGroup(const char *gname, const dSequence& jvs, CORBA::Double tm)
+{
+    return m_player->setJointAnglesOfGroup(gname, jvs.get_buffer(), tm);
 }

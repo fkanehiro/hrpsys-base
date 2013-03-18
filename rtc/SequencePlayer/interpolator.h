@@ -12,10 +12,12 @@ public:
   typedef enum {LINEAR, HOFFARBIB,QUINTICSPLINE,CUBICSPLINE} interpolation_mode;
   interpolator(int dim_, double dt_, interpolation_mode imode_=HOFFARBIB);
   ~interpolator();
-  void push(const double *a, bool immediate=true);
+  void push(const double *x, const double *v, const double *a, bool immediate=true);
   double *front();
-  void get(double *a, bool popp=true);
-  void set(const double *a);
+  void get(double *x, bool popp=true);
+  void get(double *x, double *v, bool popp=true);
+  void get(double *x, double *v, double *a, bool popp=true);
+  void set(const double *x, const double *v=NULL);
   void go(const double *gx, const double *gv, double time, bool immediate=true);
   void go(const double *gx, double time, bool immediate=true);
   void pop();
@@ -36,9 +38,10 @@ public:
                bool online=true);
   void setGoal(const double *gx, double time);
   void interpolate(double& remain_t);
+  double deltaT() const { return dt; }
 private:
   interpolation_mode imode;
-  deque<double *> q;
+  deque<double *> q, dq, ddq;
   int length;
   int dim;
   double dt;
