@@ -64,7 +64,7 @@ public:
        \param fname name of the file where gains are stored
        \return true if gains are loaded successufully, false otherwise
      */
-    bool loadGain(const char *fname = "PDgains.sav");
+    bool loadGain();
 
     /**
        \brief start inertia sensor calibration and wait until finish
@@ -251,6 +251,7 @@ private:
     std::map<std::string, std::vector<int> > m_jointGroups;
     bool m_calibRequested;
     std::string m_calibJointName, m_calibOptions;
+    std::string m_pdgainsFilename;
 
     boost::interprocess::interprocess_semaphore wait_sem;
 };

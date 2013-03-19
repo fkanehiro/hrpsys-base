@@ -17,7 +17,7 @@
 
 using namespace hrp;
 
-robot::robot() : m_fzLimitRatio(0), m_maxZmpError(DEFAULT_MAX_ZMP_ERROR), m_calibRequested(false), wait_sem(0)
+robot::robot() : m_fzLimitRatio(0), m_maxZmpError(DEFAULT_MAX_ZMP_ERROR), m_calibRequested(false), m_pdgainsFilename("PDgains.sav"), wait_sem(0)
 {
     m_rLegForceSensorId = m_lLegForceSensorId = -1;
 }
@@ -97,11 +97,11 @@ void robot::removeForceSensorOffset()
     }
 }
 
-bool robot::loadGain(const char *fname)
+bool robot::loadGain()
 {
-    std::ifstream strm(fname);
+    std::ifstream strm(m_pdgainsFilename.c_str());
     if (!strm.is_open()) {
-        std::cerr << fname << " not found" << std::endl;
+        std::cerr << m_pdgainsFilename << " not found" << std::endl;
         return false;
     }
 
@@ -552,6 +552,8 @@ void robot::setProperty(const char *i_key, const char *i_value)
         iss >> m_rLegForceSensorId;
     }else if (key == "sensor_id.left_leg_force_sensor"){
         iss >> m_lLegForceSensorId;
+    }else if (key == "pdgains.file_name"){
+        iss >> m_pdgainsFilename;
     }else{
         isKnownKey = false;
     }
