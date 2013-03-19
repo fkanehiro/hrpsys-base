@@ -46,6 +46,7 @@ bool robot::init()
     for (int i=0; i<numJoints(); i++){
         pgain[i] = dgain[i] = 0.0;
         old_pgain[i] = old_dgain[i] = 0.0;
+        default_pgain[i] = default_dgain[i] = 0.0;
     } 
     loadGain();
     for (int i=0; i<numJoints(); i++){
