@@ -34,6 +34,7 @@ public:
   CORBA::Boolean addJointGroup(const char* gname, const OpenHRP::SequencePlayerService::StrSequence& jnames);
   CORBA::Boolean removeJointGroup(const char* gname);
   CORBA::Boolean setJointAnglesOfGroup(const char *gname, const dSequence& jvs, CORBA::Double tm);
+  CORBA::Boolean playPatternOfGroup(const char *gname, const dSequenceSequence& pos, const dSequence& tm);
   //
   void player(SequencePlayer *i_player);
 private:

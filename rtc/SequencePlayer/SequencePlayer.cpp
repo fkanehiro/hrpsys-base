@@ -485,6 +485,18 @@ bool SequencePlayer::setJointAnglesOfGroup(const char *gname, const double *angl
     return m_seq->setJointAnglesOfGroup(gname, angles, tm);
 }
 
+bool SequencePlayer::playPatternOfGroup(const char *gname, const dSequenceSequence& pos, const dSequence& tm)
+{
+    Guard guard(m_mutex);
+    if (!setInitialState()) return false;
+
+    std::vector<const double *> v_pos;
+    std::vector<double> v_tm;
+    for ( int i = 0; i < pos.length(); i++ ) v_pos.push_back(pos[i].get_buffer());
+    for ( int i = 0; i < tm.length() ; i++ ) v_tm.push_back(tm[i]);
+    return m_seq->playPatternOfGroup(gname, v_pos, v_tm, m_qInit.data.get_buffer(), pos.length()>0?pos[0].length():0);
+}
+
 extern "C"
 {
 

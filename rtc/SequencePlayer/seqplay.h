@@ -29,6 +29,8 @@ public:
     bool addJointGroup(const char *gname, const std::vector<int>& indices);
     bool removeJointGroup(const char *gname, double time=2.5);
     bool setJointAnglesOfGroup(const char *gname, const double *i_qRef, double i_tm=0.0);
+    bool playPatternOfGroup(const char *gname, std::vector<const double*> pos, std::vector<double> tm, const double *qInit, unsigned int len);
+
     bool resetJointGroup(const char *gname, const double *full);
     //
     void setJointAngle(unsigned int i_rank, double jv, double tm);

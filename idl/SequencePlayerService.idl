@@ -151,5 +151,14 @@ module OpenHRP
      */
     boolean setJointAnglesOfGroup(in string gname, in dSequence jvs, in double tm);
 
+    /**
+     * @brief play back apattern with joint group
+     * @param gname name of the joint group
+     * @param pos sequence of joint angles
+     * @param tm sequence of duration beetween postures
+     * @return true joint angles are set successfully, false otherwise
+     */
+    boolean playPatternOfGroup(in string gname, in dSequenceSequence pos, in dSequence tm);
+
   };
 };

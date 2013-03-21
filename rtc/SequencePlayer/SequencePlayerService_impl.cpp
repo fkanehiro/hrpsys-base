@@ -127,3 +127,8 @@ CORBA::Boolean SequencePlayerService_impl::setJointAnglesOfGroup(const char *gna
 {
     return m_player->setJointAnglesOfGroup(gname, jvs.get_buffer(), tm);
 }
+
+CORBA::Boolean SequencePlayerService_impl::playPatternOfGroup(const char *gname, const dSequenceSequence& pos, const dSequence& tm)
+{
+    return m_player->playPatternOfGroup(gname, pos, tm);
+}
