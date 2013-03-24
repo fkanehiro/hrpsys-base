@@ -25,6 +25,7 @@ public:
     void setBasePos(const double *i_pos, double i_tm=0.0);
     void setBaseRpy(const double *i_rpy, double i_tm=0.0);
     void setBaseAcc(const double *i_acc, double i_tm=0.0);
+    bool playPattern(std::vector<const double*> pos, std::vector<const double*> zmp, std::vector<const double*> rpy, std::vector<double> tm, const double *qInit, unsigned int len);
     //
     bool addJointGroup(const char *gname, const std::vector<int>& indices);
     bool removeJointGroup(const char *gname, double time=2.5);
