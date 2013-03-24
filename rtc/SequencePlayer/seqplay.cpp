@@ -190,7 +190,7 @@ void seqplay::setJointAngle(unsigned int i_rank, double jv, double tm)
     interpolators[Q]->setGoal(pos, tm);
 }
 
-bool seqplay::playPattern(std::vector<const double*> pos, std::vector<const double*> zmp, std::vector<const double*> rpy, std::vector<double> tm, const double *qInit, unsigned int len)
+void seqplay::playPattern(std::vector<const double*> pos, std::vector<const double*> zmp, std::vector<const double*> rpy, std::vector<double> tm, const double *qInit, unsigned int len)
 {
     const double *q=NULL, *z=NULL, *a=NULL, *p=NULL, *e=NULL; double t=0;
     double *v = new double[len];
