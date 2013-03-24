@@ -282,6 +282,8 @@ bool robot::servo(int jid, bool turnon)
 
     write_pgain(jid, 0);
     write_dgain(jid, 0);
+    old_pgain[jid] = 0;
+    old_dgain[jid] = 0;
     if (turnon){
         double angle;
         read_actual_angle(jid, &angle);
