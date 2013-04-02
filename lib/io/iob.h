@@ -603,7 +603,7 @@ extern "C"{
     /**
      * @brief
      */
-    int read_iob_frame();
+    unsigned long long read_iob_frame();
 
     /**
      * @brief

@@ -535,7 +535,7 @@ int read_torque_limit(int id, double *limit)
   return FALSE;
 }
 
-int read_iob_frame()
+unsigned long long read_iob_frame()
 {
     ++frame;
     if (frame == 5) frame = 0;
