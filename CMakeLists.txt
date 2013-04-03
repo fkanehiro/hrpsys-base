@@ -45,6 +45,10 @@ endif()
 include_directories(${PROJECT_SOURCE_DIR}/lib)
 include_directories(${CMAKE_BINARY_DIR}/idl)
 
+if(ENABLE_INSTALL_RPATH)
+  set(CMAKE_INSTALL_RPATH "$ORIGIN/../lib:$ORIGIN/../../../lib:${OPENHRP_LIBRARY_DIRS}")
+endif()
+
 set(JAVAC javac)
 set(JAR jar)
 set(IDLJ idlj)
