@@ -49,7 +49,14 @@ set(JAVAC javac)
 set(JAR jar)
 set(IDLJ idlj)
 set(idlj_flags -fclient -fserver -emitAll -td src)
-set(javac_flags -target 1.5 -d . -sourcepath src)
+if (NOT DEFINED Java_VERSION_MAJOR)
+  execute_process(COMMAND ${JAVAC} -version ERROR_VARIABLE jvar ERROR_STRIP_TRAILING_WHITESPACE)
+  STRING( REGEX REPLACE "javac " "" Java_VERSION_STRING "${jvar}" )
+  # following regex pulled from cmake-2.8 FindJava.cmake
+  STRING( REGEX REPLACE "([0-9]+).*"          "\\1" Java_VERSION_MAJOR "${Java_VERSION_STRING}" )
+  STRING( REGEX REPLACE "[0-9]+\\.([0-9]+).*" "\\1" Java_VERSION_MINOR "${Java_VERSION_STRING}" )
+endif()
+set(javac_flags -target ${Java_VERSION_MAJOR}.${Java_VERSION_MINOR} -d . -sourcepath src)
 
 if(NOT CMAKE_BUILD_TYPE)
   set(
