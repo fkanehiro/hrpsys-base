@@ -9,6 +9,16 @@ module OpenHRP
   {
 
     /**
+     * @brief start collision detector
+     * @return true if set successfully, false otherwise
+     */
+    boolean enableCollisionDetection();
+    /**
+     * @brief stop collision detector
+     * @return true if set successfully, false otherwise
+     */
+    boolean disableCollisionDetection();
+    /**
      * @brief set tolerance value for collision detector
      * @param link_pair_name name of link pair
      * @param tolerance tolerance

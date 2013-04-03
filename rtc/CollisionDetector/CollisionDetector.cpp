@@ -59,6 +59,7 @@ CollisionDetector::CollisionDetector(RTC::Manager* manager)
       m_scene(&m_log),
       m_window(&m_scene, &m_log),
       m_debugLevel(0),
+      m_enable(true),
       dummy(0)
 {
     m_service0.collision(this);
@@ -231,7 +232,10 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
 {
     static int loop = 0;
     loop++;
-    if (m_qRefIn.isNew()) {
+    if ( ! m_enable && ( DEBUGP || loop % 100 == 1) ) {
+        std::cerr << "CAUTION!! The robot is moving without checking self collision detection!!! please send enableCollisionDetection to CollisoinDetection RTC" << std::endl;
+    }
+    if (m_enable && m_qRefIn.isNew()) {
 	m_qRefIn.read();
 
         TimedPosture tp;

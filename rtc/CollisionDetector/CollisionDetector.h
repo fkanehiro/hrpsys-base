@@ -107,6 +107,8 @@ class CollisionDetector
 
   bool setTolerance(const char *i_link_pair_name, double i_tolerance);
 
+  bool enable()  { m_enable = true; }
+  bool disable() { m_enable = false; }
 
  protected:
   // Configuration variable declaration
@@ -179,6 +181,7 @@ class CollisionDetector
   double i_dt;
   int default_recover_time;
   unsigned int m_debugLevel;
+  bool m_enable;
 };
 
 

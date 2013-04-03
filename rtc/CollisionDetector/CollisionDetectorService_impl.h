@@ -16,6 +16,8 @@ public:
     CollisionDetectorService_impl();
     virtual ~CollisionDetectorService_impl();
     //
+    CORBA::Boolean enableCollisionDetection();
+    CORBA::Boolean disableCollisionDetection();
     CORBA::Boolean setTolerance(const char *i_link_pair_name, CORBA::Double d_tolerance);
     void collision(CollisionDetector *i_collision);
     //
