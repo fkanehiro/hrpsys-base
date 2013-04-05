@@ -234,6 +234,13 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
     loop++;
     if ( ! m_enable && ( DEBUGP || loop % 100 == 1) ) {
         std::cerr << "CAUTION!! The robot is moving without checking self collision detection!!! please send enableCollisionDetection to CollisoinDetection RTC" << std::endl;
+        if ( m_qRefIn.isNew()) {
+            m_qRefIn.read();
+            for ( int i = 0; i < m_q.data.length(); i++ ) {
+                m_q.data[i] = m_qRef.data[i];
+            }
+            m_qOut.write();
+        }
     }
     if (m_enable && m_qRefIn.isNew()) {
 	m_qRefIn.read();
