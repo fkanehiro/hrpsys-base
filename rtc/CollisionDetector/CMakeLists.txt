@@ -1,9 +1,5 @@
 set(seq_dir ${PROJECT_SOURCE_DIR}/rtc/SequencePlayer)
-set(comp_sources ${seq_dir}/interpolator.cpp CollisionDetector.cpp CollisionDetectorService_impl.cpp VclipLinkPair.cpp)
-if (USE_GLBODY)
-  set(comp_sources ${comp_sources} GLscene.cpp)
-    add_definitions(-DUSE_GLBODY)
-endif()
+set(comp_sources ${seq_dir}/interpolator.cpp CollisionDetector.cpp CollisionDetectorService_impl.cpp GLscene.cpp VclipLinkPair.cpp)
 set(vclip_dir vclip_1.0/)
 set(vclip_sources ${vclip_dir}/src/vclip.C ${vclip_dir}/src/PolyTree.C ${vclip_dir}/src/mv.C)
 
