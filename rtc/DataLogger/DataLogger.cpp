@@ -9,6 +9,10 @@
 
 #include "DataLogger.h"
 
+#ifdef __QNX__
+using std::sprintf;
+#endif
+
 typedef coil::Guard<coil::Mutex> Guard;
 
 // Module specification

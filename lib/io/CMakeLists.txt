@@ -2,7 +2,7 @@ set(headers
   iob.h)
 
 add_library(hrpIo SHARED iob.cpp)
-if (NOT APPLE)
+if (NOT APPLE AND NOT QNXNTO)
    target_link_libraries(hrpIo rt)
 endif()
 
