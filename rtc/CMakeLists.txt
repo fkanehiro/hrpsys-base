@@ -27,15 +27,15 @@ if (NOT APPLE)
   add_subdirectory(VideoCapture)
 endif()
 
-# Octomap
-pkg_check_modules(OCTOMAP octomap)
-
 find_package(Irrlicht)
 if (IRRLICHT_FOUND)
   add_subdirectory(OGMap3DViewer)
 endif()
 
 add_subdirectory(VirtualCamera)
+
+# Octomap
+pkg_check_modules(OCTOMAP octomap)
 if (OCTOMAP_FOUND)
   add_subdirectory(OccupancyGridMap3D)
 endif()
