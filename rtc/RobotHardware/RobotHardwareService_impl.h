@@ -26,6 +26,10 @@ public:
     void removeForceSensorOffset();
     void initializeJointAngle(const char* name, const char* option);
     CORBA::Boolean addJointGroup(const char* gname, const OpenHRP::RobotHardwareService::StrSequence& jnames);
+    CORBA::Boolean readDigitalInput(::OpenHRP::RobotHardwareService::OctSequence_out din);
+    CORBA::Long lengthDigitalInput();
+    CORBA::Boolean writeDigitalOutput(const ::OpenHRP::RobotHardwareService::OctSequence& dout);
+    CORBA::Long lengthDigitalOutput();
     //
     void setRobot(boost::shared_ptr<robot>& i_robot) { m_robot = i_robot; }
 private:

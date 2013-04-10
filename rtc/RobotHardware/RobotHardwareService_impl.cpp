@@ -115,3 +115,23 @@ CORBA::Boolean RobotHardwareService_impl::addJointGroup(const char* gname, const
     }
     return m_robot->addJointGroup(gname, joints);
 }
+
+CORBA::Boolean RobotHardwareService_impl::readDigitalInput(::OpenHRP::RobotHardwareService::OctSequence_out din)
+{
+    return m_robot->readDigitalInput((char *)(din->get_buffer()));
+}
+
+CORBA::Long RobotHardwareService_impl::lengthDigitalInput()
+{
+    return m_robot->lengthDigitalInput();
+}
+
+CORBA::Boolean RobotHardwareService_impl::writeDigitalOutput(const ::OpenHRP::RobotHardwareService::OctSequence& dout)
+{
+    return m_robot->writeDigitalOutput((const char *)(dout.get_buffer()));
+}
+
+CORBA::Long RobotHardwareService_impl::lengthDigitalOutput()
+{
+    return m_robot->lengthDigitalOutput();
+}

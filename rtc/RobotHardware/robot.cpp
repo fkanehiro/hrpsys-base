@@ -597,3 +597,22 @@ void robot::readExtraServoState(int id, int *state)
     read_extra_servo_state(id, state);
 }
 
+bool robot::readDigitalInput(char *o_din)
+{
+    return read_digital_input(o_din);
+}
+
+int robot::lengthDigitalInput()
+{
+    return length_digital_input();
+}
+
+bool robot::writeDigitalOutput(const char *i_dout)
+{
+    return write_digital_output(i_dout);
+}
+
+int robot::lengthDigitalOutput()
+{
+    return length_digital_output();
+}

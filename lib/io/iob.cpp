@@ -618,3 +618,24 @@ int initializeJointAngle(const char *name, const char *option)
     sleep(3);
     return TRUE;
 }
+
+int read_digital_input(char *dinput)
+{
+    return FALSE;
+}
+
+int length_digital_input()
+{
+    return 0;
+}
+
+int write_digital_output(const char *doutput)
+{
+    return FALSE;
+}
+
+int length_digital_output()
+{
+    return 0;
+}
+

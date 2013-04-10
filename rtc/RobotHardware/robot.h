@@ -219,6 +219,12 @@ public:
     std::vector<double> m_servoErrorLimit;  
     double m_fzLimitRatio;
     double m_maxZmpError;
+
+    bool readDigitalInput(char *o_din);
+    int lengthDigitalInput();
+    bool writeDigitalOutput(const char *i_dout);
+    int lengthDigitalOutput();
+
 private:
     /**
        \brief calibrate inertia sensor for one sampling period

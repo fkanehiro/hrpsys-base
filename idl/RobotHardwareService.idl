@@ -17,6 +17,7 @@ module OpenHRP
     const unsigned long DRIVER_TEMP_MASK = 0xff000000;
     const unsigned long DRIVER_TEMP_SHIFT = 24;
 
+    typedef sequence<octet>  OctSequence;
     typedef sequence<double> DblSequence;
     typedef sequence<long>   LongSequence;
     typedef sequence<string> StrSequence;
@@ -119,5 +120,22 @@ module OpenHRP
      * @return true if the group is added successfully, false otherwise
      */
     boolean addJointGroup(in string gname, in StrSequence jnames);
+
+
+    /**
+     * @brief get digital input to robot
+     * @param dOut will hold the input bits as an array of bytes
+     * @return true if applicable, false otherwise
+     */
+    boolean readDigitalInput(out OctSequence din);
+    long lengthDigitalInput();
+
+    /**
+     * @brief set digital output from robot
+     * @param dOut sends the output from the robot in a byte array
+     * @return true if applicable, false otherwise
+     */
+    boolean writeDigitalOutput(in OctSequence dout);
+    long lengthDigitalOutput();
   };
 };

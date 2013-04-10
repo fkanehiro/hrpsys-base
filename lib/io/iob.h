@@ -637,6 +637,32 @@ extern "C"{
      * @return TRUE if initialized successfully, FALSE otherwise
      */
     int initializeJointAngle(const char *name, const char *option);
+
+    /**
+     * @brief read_digital_input
+     * @param dinput digital input from environment
+     * @return TRUE if applicable, FALSE otherwise
+     */
+    int read_digital_input(char *dinput);
+
+    /**
+     * @brief get_digital_input_length
+     * @return length of bits in digital input
+     */
+    int length_digital_input();
+
+    /**
+     * @brief write_digital_output
+     * @param doutput set digital output to environment
+     * @return TRUE if applicable, FALSE otherwise
+     */
+    int write_digital_output(const char *doutput);
+
+    /**
+     * @brief get_digital_output_length
+     * @return length of bits in digital output
+     */
+    int length_digital_output();
     //@}
 
 #ifdef __cplusplus
