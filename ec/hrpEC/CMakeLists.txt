@@ -9,7 +9,7 @@ else()
   add_library(hrpEC SHARED hrpEC.cpp hrpEC-common.cpp)
 endif()
 
-if (APPLE)
+if (APPLE OR QNXNTO)
   target_link_libraries(hrpEC ${common_libs})
 else()
   target_link_libraries(hrpEC ${common_libs} rt)

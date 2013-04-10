@@ -26,7 +26,7 @@ static long g_period_ns=5000000;
 #define CHECK_GYRO_SENSOR_ID(id) if ((id) < 0 || (id) >= number_of_gyro_sensors()) return E_ID
 #define CHECK_ATTITUDE_SENSOR_ID(id) if ((id) < 0 || (id) >= number_of_attitude_sensors()) return E_ID
 
-#ifdef __APPLE__
+#if (defined __APPLE__) || (defined  __QNX__)
 typedef int clockid_t;
 #define CLOCK_MONOTONIC 0
 #include <mach/mach_time.h>  
