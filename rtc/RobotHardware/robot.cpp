@@ -61,8 +61,6 @@ bool robot::init()
 
 
 
-    if (open_iob() == FALSE) return false;
-
     set_number_of_joints(numJoints());
     set_number_of_force_sensors(numSensors(Sensor::FORCE));
     set_number_of_gyro_sensors(numSensors(Sensor::RATE_GYRO));
@@ -82,6 +80,8 @@ bool robot::init()
       std::cerr << "  accelerometer:" << numSensors(Sensor::ACCELERATION) << "(VRML), " << number_of_accelerometers() << "(IOB)"  << std::endl;
       return false;
     }
+
+    if (open_iob() == FALSE) return false;
 
     return true;
 }

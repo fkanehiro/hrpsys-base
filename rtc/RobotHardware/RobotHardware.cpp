@@ -85,14 +85,6 @@ RTC::ReturnCode_t RobotHardware::onInitialize()
 
   m_robot = boost::shared_ptr<robot>(new robot());
 
-  // <rtc-template block="bind_config">
-  // Bind variables and configuration variable
-  bindParameter("isDemoMode", m_isDemoMode, "0");  
-  bindParameter("servoErrorLimit", m_robot->m_servoErrorLimit, ",");
-  bindParameter("fzLimitRatio", m_robot->m_fzLimitRatio, "2");
-  
-  // </rtc-template>
-
   RTC::Properties& prop = getProperties();
 
   RTC::Manager& rtcManager = RTC::Manager::instance();
@@ -157,6 +149,14 @@ RTC::ReturnCode_t RobotHardware::onInitialize()
       m_force[i].data.length(6);
       registerOutPort(s->name.c_str(), *m_forceOut[i]);
   }
+
+  // <rtc-template block="bind_config">
+  // Bind variables and configuration variable
+  bindParameter("isDemoMode", m_isDemoMode, "0");  
+  bindParameter("servoErrorLimit", m_robot->m_servoErrorLimit, ",");
+  bindParameter("fzLimitRatio", m_robot->m_fzLimitRatio, "2");
+
+  // </rtc-template>
 
   return RTC::RTC_OK;
 }
