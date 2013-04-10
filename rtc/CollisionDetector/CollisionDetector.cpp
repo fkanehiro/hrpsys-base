@@ -53,11 +53,13 @@ CollisionDetector::CollisionDetector(RTC::Manager* manager)
       // </rtc-template>
       m_loop_for_check(0),
       m_collision_loop(1),
-      m_glbody(NULL),
-      m_use_viewer(false),
-      m_robot(hrp::BodyPtr()),
+#ifdef USE_GLBODY
       m_scene(&m_log),
       m_window(&m_scene, &m_log),
+      m_glbody(NULL),
+      m_use_viewer(false),
+#endif
+      m_robot(hrp::BodyPtr()),
       m_debugLevel(0),
       m_enable(true),
       dummy(0)
@@ -145,12 +147,17 @@ RTC::ReturnCode_t CollisionDetector::onActivated(RTC::UniqueId ec_id)
 
     coil::stringTo(m_dt, prop["dt"].c_str());
 
+
+#ifdef USE_GLBODY
     if ( prop["collision_viewer"] == "true" ) {
 	m_use_viewer = true;
     }
 
     m_glbody = new GLbody();
     m_robot = hrp::BodyPtr(m_glbody);
+#else
+    m_robot = hrp::BodyPtr(new hrp::Body());
+#endif
     //
     OpenHRP::BodyInfo_var binfo;
     binfo = hrp::loadBodyInfo(prop["model"].c_str(),
@@ -160,11 +167,18 @@ RTC::ReturnCode_t CollisionDetector::onActivated(RTC::UniqueId ec_id)
 		  << std::endl;
 	return RTC::RTC_ERROR;
     }
+#ifdef USE_GLBODY
     if (!loadBodyFromBodyInfo(m_robot, binfo, true, GLlinkFactory)) {
 	std::cerr << "failed to load model[" << prop["model"] << "]" << std::endl;
 	return RTC::RTC_ERROR;
     }
     loadShapeFromBodyInfo(m_glbody, binfo);
+#else
+    if (!loadBodyFromBodyInfo(m_robot, binfo, true)) {
+	std::cerr << "failed to load model[" << prop["model"] << "]" << std::endl;
+	return RTC::RTC_ERROR;
+    }
+#endif
     if ( prop["collision_model"] == "AABB" ) {
         convertToAABB(m_robot);
     } else if ( prop["collision_model"] == "convex hull" ||
@@ -197,10 +211,12 @@ RTC::ReturnCode_t CollisionDetector::onActivated(RTC::UniqueId ec_id)
     if ( prop["collision_loop"] != "" ) {
         coil::stringTo(m_collision_loop, prop["collision_loop"].c_str());
     }
+#ifdef USE_GLBODY
     if ( m_use_viewer ) {
       m_scene.addBody(m_robot);
       GLlink::drawMode(GLlink::DM_COLLISION);
     }
+#endif
 
     // allocate memory for outPorts
     m_q.data.length(m_robot->numJoints());
@@ -249,11 +265,13 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
         tp.time = 0;
 
 	assert(m_qRef.data.length() == m_robot->numJoints());
+#ifdef USE_GLBODY
         if ( m_use_viewer ) {
           for (int i=0; i<m_glbody->numLinks(); i++){
             ((GLlink *)m_glbody->link(i))->highlight(false);
           }
         }
+#endif
         //set robot model's angle for collision check(two types)
         //  1. current safe angle .. check based on qRef
         //  2. recovery or collision angle .. check based on q'(m_recover_jointdata)
@@ -299,10 +317,12 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
                         hrp::JointPathPtr jointPath = m_robot->getJointPath(p->link(0),p->link(1));
                         std::cerr << i << "/" << m_pair.size() << " pair: " << p->link(0)->name << "/" << p->link(1)->name << "(" << jointPath->numJoints() << "), distance = " << c->distance << std::endl;
                     }
+#ifdef USE_GLBODY
                     if ( m_use_viewer ) {
                         ((GLlink *)p->link(0))->highlight(true);
                         ((GLlink *)p->link(1))->highlight(true);
                     }
+#endif
                 }
             }
             if ( m_safe_posture ) {
@@ -364,7 +384,9 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
         for (size_t i=0; i<tp.posture.size(); i++) tp.posture[i] = m_q.data[i];
         m_log.add(tp);
     }
+#ifdef USE_GLBODY
     if ( m_use_viewer ) m_window.oneStep();
+#endif
     return RTC::RTC_OK;
 }
 

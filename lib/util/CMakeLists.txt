@@ -3,20 +3,25 @@ set(sources
   ProjectUtil.cpp
   OpenRTMUtil.cpp
   ThreadedObject.cpp
-  GLutil.cpp
-  GLcoordinates.cpp
-  GLcamera.cpp
-  GLshape.cpp
-  GLlink.cpp
-  GLbody.cpp
-  GLsceneBase.cpp
-  GLbodyRTC.cpp
-  SDLUtil.cpp
   BodyRTC.cpp
   BVutil.cpp
   PortHandler.cpp
   )
 
+if(USE_GLBODY)
+  set(sources
+    ${sources}
+    GLutil.cpp
+    GLcoordinates.cpp
+    GLcamera.cpp
+    GLshape.cpp
+    GLlink.cpp
+    GLbody.cpp
+    GLsceneBase.cpp
+    GLbodyRTC.cpp
+    SDLUtil.cpp
+    )
+endif()
 set(headers
   Project.h
   ProjectUtil.h
@@ -38,8 +43,10 @@ set(headers
 
 include_directories(${LIBXML2_INCLUDE_DIR})
 include_directories(${SDL_INCLUDE_DIR})
-include_directories(${OpenCV_INCLUDE_DIRS})
-link_directories(${OpenCV_LIBRARY_DIRS})
+if(USE_GLBODY)
+  include_directories(${OpenCV_INCLUDE_DIRS})
+  link_directories(${OpenCV_LIBRARY_DIRS})
+endif()
 
 add_library(hrpsysUtil SHARED ${sources})
 
@@ -52,7 +59,7 @@ target_link_libraries(hrpsysUtil
   ${SDL_LIBRARY} 
   ${GLUT_LIBRARIES} 
   ${QHULL_LIBRARIES}
-  GLEW
+  ${GLEW_LIBRARIES} 
   boost_thread-mt
   boost_system-mt
   )
