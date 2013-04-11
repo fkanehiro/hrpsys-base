@@ -660,10 +660,6 @@ bool ImpedanceController::setImpedanceControllerParam(OpenHRP::ImpedanceControll
 	p.D_r = i_param_.D_r;
 	p.K_r = i_param_.K_r;
 
-    p.ref_force = hrp::Vector3(i_param_.ref_force[0], i_param_.ref_force[1], i_param_.ref_force[2]);
-    p.ref_moment = hrp::Vector3(i_param_.ref_moment[0], i_param_.ref_moment[1], i_param_.ref_moment[2]);
-    p.force_gain = hrp::Vector3(i_param_.force_gain[0], i_param_.force_gain[1], i_param_.force_gain[2]).asDiagonal();
-    p.moment_gain = hrp::Vector3(i_param_.moment_gain[0], i_param_.moment_gain[1], i_param_.moment_gain[2]).asDiagonal();
     
 	p.force_offset_p = hrp::Vector3(m_force[force_id].data[0], m_force[force_id].data[1], m_force[force_id].data[2]);
 	p.force_offset_r = hrp::Vector3(m_force[force_id].data[3], m_force[force_id].data[4], m_force[force_id].data[5]);
@@ -703,6 +699,7 @@ bool ImpedanceController::setImpedanceControllerParam(OpenHRP::ImpedanceControll
 	p.current_r0 = hrp::omegaFromRot(m_robot->link(p.target_name)->R);
 	p.current_r1 = hrp::omegaFromRot(m_robot->link(p.target_name)->R);
 	p.current_r2 = hrp::omegaFromRot(m_robot->link(p.target_name)->R);
+        p.transition_count = -MAX_TRANSITION_COUNT; // when start impedance, count up to 0
 
 	m_impedance_param[name] = p;
 
@@ -714,7 +711,6 @@ bool ImpedanceController::setImpedanceControllerParam(OpenHRP::ImpedanceControll
     m_impedance_param[name].avoid_gain = i_param_.avoid_gain;
     m_impedance_param[name].reference_gain = i_param_.reference_gain;
     m_impedance_param[name].manipulability_limit = i_param_.manipulability_limit;
-    m_impedance_param[name].transition_count = -MAX_TRANSITION_COUNT; // when start impedance, count up to 0
 
     m_impedance_param[name].M_p = i_param_.M_p;
     m_impedance_param[name].D_p = i_param_.D_p;
@@ -722,6 +718,11 @@ bool ImpedanceController::setImpedanceControllerParam(OpenHRP::ImpedanceControll
     m_impedance_param[name].M_r = i_param_.M_r;
     m_impedance_param[name].D_r = i_param_.D_r;
     m_impedance_param[name].K_r = i_param_.K_r;
+
+    m_impedance_param[name].ref_force = hrp::Vector3(i_param_.ref_force[0], i_param_.ref_force[1], i_param_.ref_force[2]);
+    m_impedance_param[name].ref_moment = hrp::Vector3(i_param_.ref_moment[0], i_param_.ref_moment[1], i_param_.ref_moment[2]);
+    m_impedance_param[name].force_gain = hrp::Vector3(i_param_.force_gain[0], i_param_.force_gain[1], i_param_.force_gain[2]).asDiagonal();
+    m_impedance_param[name].moment_gain = hrp::Vector3(i_param_.moment_gain[0], i_param_.moment_gain[1], i_param_.moment_gain[2]).asDiagonal();
 
     for ( std::map<std::string, ImpedanceParam>::iterator it = m_impedance_param.begin(); it != m_impedance_param.end(); it++ ) {
       ImpedanceParam& param = it->second;
