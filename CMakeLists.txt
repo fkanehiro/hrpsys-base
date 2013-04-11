@@ -49,7 +49,8 @@ if(ENABLE_INSTALL_RPATH)
   set(CMAKE_INSTALL_RPATH "$ORIGIN/../lib:$ORIGIN/../../../lib:${OPENHRP_LIBRARY_DIRS}")
 endif()
 
-if (NOT QNXNTO)
+set(ENABLE_JAVA ON CACHE BOOL ON)
+if (ENABLE_JAVA)
   set(JAVAC javac)
   set(JAR jar)
   set(IDLJ idlj)
@@ -130,7 +131,7 @@ install(FILES
   ${CMAKE_CURRENT_BINARY_DIR}/hrpsys-base.pc
   DESTINATION lib/pkgconfig)
 
-if (NOT QNXNTO)
+if(ENABLE_JAVA)
   add_subdirectory(jython)
 endif()
 add_subdirectory(python)

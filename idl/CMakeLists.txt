@@ -64,7 +64,7 @@ foreach(idl_file ${idl_files})
   generate_cpp_stub(${idl_basename})
   list(APPEND sources ${idl_basename}Sk.cpp ${idl_basename}DynSk.cpp)
   list(APPEND headers ${CMAKE_CURRENT_BINARY_DIR}/${idl_basename}.hh)
-  if (NOT QNXNTO)
+  if(ENABLE_JAVA)
     generate_java_stub(${idl_basename})
   endif()
   list(APPEND compiled ${idl_basename}.compiled)
@@ -80,7 +80,7 @@ add_custom_command(
   COMMAND cp ${jarfile} ${CMAKE_SOURCE_DIR}/plugin
   DEPENDS ${compiled}
   )
-if (NOT QNXNTO)
+if(ENABLE_JAVA)
   add_custom_target(StubJava ALL DEPENDS ${jarfile})
 endif()
 
