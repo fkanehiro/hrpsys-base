@@ -66,6 +66,7 @@ JointPathEx::JointPathEx(BodyPtr& robot, Link* base, Link* end) : JointPath(base
   }
   sr_gain = 1.0;
   manipulability_limit = 0.1;
+  manipulability_gain = 0.05;
 
   avoid_weight_gain.resize(numJoints());
 }
@@ -125,7 +126,7 @@ bool JointPathEx::calcJacobianInverseNullspace(dmatrix &J, dmatrix &Jinv, dmatri
     double manipulability = sqrt((J*J.transpose()).determinant());
     double k = 0;
     if ( manipulability < manipulability_limit ) {
-	k = pow((1 - ( manipulability / manipulability_limit )), 2);
+	k = manipulability_gain * pow((1 - ( manipulability / manipulability_limit )), 2);
     }
     if ( DEBUG ) {
 	std::cerr << " manipulability = " <<  manipulability << " < " << manipulability_limit << ", k = " << k << " -> " << sr_gain * k << std::endl;

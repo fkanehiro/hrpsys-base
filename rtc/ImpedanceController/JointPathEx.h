@@ -21,10 +21,11 @@ namespace hrp {
     bool setSRGain(double g) { sr_gain = g; }
     double getManipulabilityLimit() { return manipulability_limit; }
     bool setManipulabilityLimit(double l) { manipulability_limit = l; }
+    bool setManipulabilityGain(double l) { manipulability_gain = l; }
   protected:
         std::vector<Link*> joints;
         std::vector<double> avoid_weight_gain;
-	double sr_gain, manipulability_limit;
+	double sr_gain, manipulability_limit, manipulability_gain;
     };
 
     typedef boost::shared_ptr<JointPathEx> JointPathExPtr;
