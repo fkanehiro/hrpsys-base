@@ -530,11 +530,11 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
 	    param.target_p1 = param.target_p0;
 
 	    param.current_r2 = param.current_r1;
-            if ( std::fabs(vel_r.norm() - 0.0) < ::std::numeric_limits<double>::epsilon() ) {
-              rotm3times(param.current_r1, param.current_r0,
-                         //hrp::rodorigues(vel_r.norm(), vel_r.normalized()) // does not work because of nan
-                         rotation_matrix(vel_r.norm(), vel_r.normalized())
-                         );
+            // if ( std::fabs(vel_r.norm() - 0.0) < ::std::numeric_limits<double>::epsilon() ) {
+            if ( vel_r.norm() != 0.0 ) {
+              hrp::Matrix33 tmpm;
+              rotm3times(tmpm, param.current_r0, rotation_matrix(vel_r.norm(), vel_r.normalized()));
+              param.current_r1 = tmpm;
             } else {
               param.current_r1 = param.current_r0;
             }
