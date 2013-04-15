@@ -4,6 +4,11 @@
 #include <pthread.h>
 #include "WavPlayerService_impl.h"
 
+#ifdef __QNX__
+using std::sprintf;
+using std::system;
+#endif
+
 WavPlayerService_impl::WavPlayerService_impl()
 {
 }

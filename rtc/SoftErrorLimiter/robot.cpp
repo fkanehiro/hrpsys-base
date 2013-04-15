@@ -2,6 +2,10 @@
 
 #define DEFAULT_ANGLE_ERROR_LIMIT (0.2 - 0.02) // [rad]
 
+#ifdef __QNX__
+using std::strcmp;
+#endif
+
 // robot model copy from RobotHardware
 robot::robot() {
 }

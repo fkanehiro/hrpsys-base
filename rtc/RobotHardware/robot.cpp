@@ -17,6 +17,12 @@
 
 using namespace hrp;
 
+#ifdef __QNX__
+using std::strcmp;
+using std::localtime;
+using std::sprintf;
+#endif
+
 robot::robot() : m_fzLimitRatio(0), m_maxZmpError(DEFAULT_MAX_ZMP_ERROR), m_calibRequested(false), m_pdgainsFilename("PDgains.sav"), wait_sem(0)
 {
     m_rLegForceSensorId = m_lLegForceSensorId = -1;

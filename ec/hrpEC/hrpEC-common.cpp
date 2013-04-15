@@ -1,6 +1,10 @@
 #include "hrpEC.h"
 #include "io/iob.h"
 
+#ifdef __QNX__
+using std::fprintf;
+#endif
+
 namespace RTC
 {
     hrpExecutionContext::~hrpExecutionContext()
