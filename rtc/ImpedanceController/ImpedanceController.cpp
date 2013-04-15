@@ -251,7 +251,7 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
 	  for ( std::map<std::string, ImpedanceParam>::iterator it = m_impedance_param.begin(); it != m_impedance_param.end(); it++ ) {
             ImpedanceParam& param = it->second;
             param.target_p0 = m_robot->link(param.target_name)->p;
-            param.target_r0 = hrp::omegaFromRot(m_robot->link(param.target_name)->R);
+            param.target_r0 = m_robot->link(param.target_name)->R;
           }
           // back to impedance robot model (only for controlled joint)
 	  for ( std::map<std::string, ImpedanceParam>::iterator it = m_impedance_param.begin(); it != m_impedance_param.end(); it++ ) {
@@ -297,7 +297,7 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
             assert(base);
 
             param.current_p0 = target->p;
-            param.current_r0 = hrp::omegaFromRot(target->R);
+            param.current_r0 = target->R;
 
             hrp::JointPathExPtr manip = param.manip;
             assert(manip);
@@ -360,23 +360,23 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
                 std::cerr << "tgt0  : " << param.target_p0[0] << " " << param.target_p0[1] << " " << param.target_p0[2] << std::endl;
                 std::cerr << "tgt1  : " << param.target_p1[0] << " " << param.target_p1[1] << " " << param.target_p1[2] << std::endl;
             }
-            if ( DEBUGP ) {
-                std::cerr << "cur0  : " << param.current_r0[0] << " " << param.current_r0[1] << " " << param.current_r0[2] << std::endl;
-                std::cerr << "cur1  : " << param.current_r1[0] << " " << param.current_r1[1] << " " << param.current_r1[2] << std::endl;
-                std::cerr << "cur2  : " << param.current_r2[0] << " " << param.current_r2[1] << " " << param.current_r2[2] << std::endl;
-                std::cerr << "tgt0  : " << param.target_r0[0] << " " << param.target_r0[1] << " " << param.target_r0[2] << std::endl;
-                std::cerr << "tgt1  : " << param.target_r1[0] << " " << param.target_r1[1] << " " << param.target_r1[2] << std::endl;
-            }
+            // if ( DEBUGP ) {
+            //     std::cerr << "cur0  : " << param.current_r0[0] << " " << param.current_r0[1] << " " << param.current_r0[2] << std::endl;
+            //     std::cerr << "cur1  : " << param.current_r1[0] << " " << param.current_r1[1] << " " << param.current_r1[2] << std::endl;
+            //     std::cerr << "cur2  : " << param.current_r2[0] << " " << param.current_r2[1] << " " << param.current_r2[2] << std::endl;
+            //     std::cerr << "tgt0  : " << param.target_r0[0] << " " << param.target_r0[1] << " " << param.target_r0[2] << std::endl;
+            //     std::cerr << "tgt1  : " << param.target_r1[0] << " " << param.target_r1[1] << " " << param.target_r1[2] << std::endl;
+            // }
 
             dif_pos  = param.target_p0 - param.current_p0;
             vel_pos0 = param.current_p0 - param.current_p1;
             vel_pos1 = param.current_p1 - param.current_p2;
             dif_target_pos = param.target_p0 - param.target_p1;
 
-            dif_rot  = param.target_r0 - param.current_r0;
-            vel_rot0 = param.current_r0 - param.current_r1;
-            vel_rot1 = param.current_r1 - param.current_r2;
-            dif_target_rot = param.target_r0 - param.target_r1;
+            calcDifferenceRotation(dif_rot, param.current_r0, param.target_r0);
+            calcDifferenceRotation(vel_rot0, param.current_r1, param.current_r0);
+            calcDifferenceRotation(vel_rot1, param.current_r2, param.current_r1);
+            calcDifferenceRotation(dif_target_rot, param.target_r1, param.target_r0);
 
             if ( DEBUGP ) {
                 std::cerr << "dif_p : " << dif_pos[0] << " " << dif_pos[1] << " " << dif_pos[2] << std::endl;
@@ -530,8 +530,15 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
 	    param.target_p1 = param.target_p0;
 
 	    param.current_r2 = param.current_r1;
-	    param.current_r1 = param.current_r0 + vel_r;
-	    param.target_r1 = param.target_r0;
+            if ( std::fabs(vel_r.norm() - 0.0) < ::std::numeric_limits<double>::epsilon() ) {
+              rotm3times(param.current_r1, param.current_r0,
+                         //hrp::rodorigues(vel_r.norm(), vel_r.normalized()) // does not work because of nan
+                         rotation_matrix(vel_r.norm(), vel_r.normalized())
+                         );
+            } else {
+              param.current_r1 = param.current_r0;
+            }
+            param.target_r1 = param.target_r0;
 
             if ( param.transition_count < 0 ) {
               param.transition_count++;
@@ -697,15 +704,15 @@ bool ImpedanceController::setImpedanceControllerParam(OpenHRP::ImpedanceControll
 
 	p.target_p0 = m_robot->link(p.target_name)->p;
 	p.target_p1 = m_robot->link(p.target_name)->p;
-	p.target_r0 = hrp::omegaFromRot(m_robot->link(p.target_name)->R);
-	p.target_r1 = hrp::omegaFromRot(m_robot->link(p.target_name)->R);
+        p.target_r0 = m_robot->link(p.target_name)->R;
+        p.target_r1 = m_robot->link(p.target_name)->R;
 
 	p.current_p0 = m_robot->link(p.target_name)->p;
 	p.current_p1 = m_robot->link(p.target_name)->p;
 	p.current_p2 = m_robot->link(p.target_name)->p;
-	p.current_r0 = hrp::omegaFromRot(m_robot->link(p.target_name)->R);
-	p.current_r1 = hrp::omegaFromRot(m_robot->link(p.target_name)->R);
-	p.current_r2 = hrp::omegaFromRot(m_robot->link(p.target_name)->R);
+	p.current_r0 = m_robot->link(p.target_name)->R;
+        p.current_r1 = m_robot->link(p.target_name)->R;
+        p.current_r2 = m_robot->link(p.target_name)->R;
         p.transition_count = -MAX_TRANSITION_COUNT; // when start impedance, count up to 0
 
 	m_impedance_param[name] = p;
