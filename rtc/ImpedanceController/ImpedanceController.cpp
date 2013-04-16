@@ -533,7 +533,7 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
             // if ( std::fabs(vel_r.norm() - 0.0) < ::std::numeric_limits<double>::epsilon() ) {
             if ( vel_r.norm() != 0.0 ) {
               hrp::Matrix33 tmpm;
-              rotm3times(tmpm, param.current_r0, rotation_matrix(vel_r.norm(), vel_r.normalized()));
+              rotm3times(tmpm, rotation_matrix(vel_r.norm(), vel_r.normalized()), param.current_r0);
               param.current_r1 = tmpm;
             } else {
               param.current_r1 = param.current_r0;
