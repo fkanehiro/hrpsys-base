@@ -96,12 +96,37 @@ class ImpedanceController
   // for calculation of rotation
   void calcDifferenceRotation(hrp::Vector3& ret_dif_rot, const hrp::Matrix33& self_rot, const hrp::Matrix33& target_rot)
   {
-    ret_dif_rot = self_rot * hrp::omegaFromRot(self_rot.transpose() * target_rot);
+    //ret_dif_rot = self_rot * hrp::omegaFromRot(self_rot.transpose() * target_rot);
+    ret_dif_rot = self_rot * hrp::Vector3(matrix_log(hrp::Matrix33(self_rot.transpose() * target_rot)));
+  }
+
+  hrp::Vector3 matrix_log(const hrp::Matrix33& m) {
+    hrp::Vector3 mlog;
+    double q0, th;
+    hrp::Vector3 q;
+    double norm;
+  
+    Eigen::Quaternion<double> eiq(m);
+    q0 = eiq.w();
+    q = eiq.vec();
+    norm = q.norm();
+    if (norm > 0) {
+      if ((q0 > 1.0e-10) || (q0 < -1.0e-10)) {
+	th = 2 * std::atan(norm / q0);
+      } else if (q0 > 0) {
+	th = M_PI / 2;
+      } else {
+	th = -M_PI / 2;
+      }
+      mlog = (th / norm) * q ;
+    } else {
+      mlog = hrp::Vector3::Zero();
+    }
+    return mlog;
   }
 
   // matrix product using quaternion normalization
-  void rotm3times (hrp::Matrix33 m12, const hrp::Matrix33& m1, const hrp::Matrix33& m2) {
-    double q1[4], q2[4], q3[4], q;
+  void rotm3times (hrp::Matrix33& m12, const hrp::Matrix33& m1, const hrp::Matrix33& m2) {
     Eigen::Quaternion<double> eiq1(m1);
     Eigen::Quaternion<double> eiq2(m2);
     Eigen::Quaternion<double> eiq3;
