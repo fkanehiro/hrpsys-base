@@ -38,6 +38,13 @@ module OpenHRP
     boolean setImpedanceControllerParam(in impedanceParam i_param);
 
     /**
+     * @brief get impedance parameters.
+     * @param name is name of the impedance parameter set and i_param output impedance parameters
+     * @return true if set successfully, false otherwise
+     */
+    boolean getImpedanceControllerParam(in string name, out impedanceParam i_param);
+
+    /**
      * @brief remove impedance parameters.
      * @param name name of the impedance parameter set
      * @return true if set successfully, false otherwise

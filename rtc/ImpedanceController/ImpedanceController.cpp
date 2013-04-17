@@ -759,6 +759,17 @@ bool ImpedanceController::setImpedanceControllerParam(OpenHRP::ImpedanceControll
     return true;
 }
 
+bool ImpedanceController::getImpedanceControllerParam(const std::string& i_name_, ImpedanceControllerService::impedanceParam& i_param_)
+{
+  i_param_.M_p = m_impedance_param[i_name_].M_p;
+  i_param_.D_p = m_impedance_param[i_name_].D_p;
+  i_param_.K_p = m_impedance_param[i_name_].K_p;
+  i_param_.M_r = m_impedance_param[i_name_].M_r;
+  i_param_.D_r = m_impedance_param[i_name_].D_r;
+  i_param_.K_r = m_impedance_param[i_name_].K_r;
+  return true;
+}
+
 bool ImpedanceController::deleteImpedanceController(std::string i_name_)
 {
     if ( m_impedance_param.find(i_name_) == m_impedance_param.end() ) {
