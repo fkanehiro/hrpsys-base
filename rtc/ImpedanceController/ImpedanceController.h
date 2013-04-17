@@ -175,6 +175,8 @@ class ImpedanceController
     return ret;
   }
 
+  bool checkImpedanceNameValidity (int& force_id, const std::string& name);
+
  protected:
   // Configuration variable declaration
   // <rtc-template block="config_declare">

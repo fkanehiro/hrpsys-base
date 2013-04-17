@@ -632,22 +632,10 @@ bool ImpedanceController::setImpedanceControllerParam(OpenHRP::ImpedanceControll
         std::cerr << "m_qCurrent has wrong size, m_robot->numJoints() = " << m_robot->numJoints() << ", m_qCurrent.data.length() = " << m_qCurrent.data.length() << std::endl;
         return false;
     }
-    // error check
-    int force_id = -1;
-    for (unsigned int i=0; i<m_forceIn.size(); i++){
-      if ( std::string(m_forceIn[i]->name()) == name ) {
-        force_id = i;
-        break;
-      }
-    }
-    if ( force_id < 0 ) {
-        std::cerr << "Could not found FORCE_SENSOR named " << name << std::endl;
-        return false;
-    }
 
-    if ( ! ( m_qRef.data.length() ==  m_robot->numJoints() ) ) {
-        std::cerr << "Could not found qRef." << std::endl;
-        return false;
+    int force_id = -1;
+    if ( !checkImpedanceNameValidity (force_id, name) ) {
+      return false;
     }
 
     if ( m_impedance_param.find(name) == m_impedance_param.end() ) {
@@ -760,6 +748,10 @@ bool ImpedanceController::setImpedanceControllerParam(OpenHRP::ImpedanceControll
 
 bool ImpedanceController::getImpedanceControllerParam(const std::string& i_name_, ImpedanceControllerService::impedanceParam& i_param_)
 {
+  int force_id = -1;
+  if ( !checkImpedanceNameValidity (force_id, i_name_) ) {
+    return false;
+  }
   i_param_.M_p = m_impedance_param[i_name_].M_p;
   i_param_.D_p = m_impedance_param[i_name_].D_p;
   i_param_.K_p = m_impedance_param[i_name_].K_p;
@@ -767,6 +759,23 @@ bool ImpedanceController::getImpedanceControllerParam(const std::string& i_name_
   i_param_.D_r = m_impedance_param[i_name_].D_r;
   i_param_.K_r = m_impedance_param[i_name_].K_r;
   return true;
+}
+
+bool ImpedanceController::checkImpedanceNameValidity (int& force_id, const std::string& name)
+{
+  // error check
+  force_id = -1;
+  for (unsigned int i=0; i<m_forceIn.size(); i++){
+    if ( std::string(m_forceIn[i]->name()) == name ) {
+      force_id = i;
+      break;
+    }
+  }
+  if ( force_id < 0 ) {
+    std::cerr << "Could not found FORCE_SENSOR named " << name << std::endl;
+    return false;
+  }
+
 }
 
 bool ImpedanceController::deleteImpedanceController(std::string i_name_)
