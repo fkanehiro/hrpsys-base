@@ -431,8 +431,6 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
 	    hrp::dmatrix Jinv(n, 6);
 	    hrp::dmatrix Jnull(n, n);
 	    
-	    manip->setSRGain(param.sr_gain);
-	    manip->setManipulabilityLimit(param.manipulability_limit);
 	    manip->calcJacobianInverseNullspace(J, Jinv, Jnull);
 	    //manip->calcInverseKinematics2Loop(vel_p, vel_r, dq);
 
@@ -712,6 +710,8 @@ bool ImpedanceController::setImpedanceControllerParam(OpenHRP::ImpedanceControll
     m_impedance_param[name].avoid_gain = i_param_.avoid_gain;
     m_impedance_param[name].reference_gain = i_param_.reference_gain;
     m_impedance_param[name].manipulability_limit = i_param_.manipulability_limit;
+    m_impedance_param[name].manip->setSRGain(m_impedance_param[name].sr_gain);
+    m_impedance_param[name].manip->setManipulabilityLimit(m_impedance_param[name].manipulability_limit);
 
     m_impedance_param[name].M_p = i_param_.M_p;
     m_impedance_param[name].D_p = i_param_.D_p;

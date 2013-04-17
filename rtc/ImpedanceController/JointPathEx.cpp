@@ -60,13 +60,11 @@ int hrp::calcSRInverse(const dmatrix& _a, dmatrix &_a_sr, double _sr_ratio, dmat
     //if (DEBUG) { dmatrix ii = _a * _a_sr; std::cerr << "    i :" << std::endl << ii; }
 }
 
-JointPathEx::JointPathEx(BodyPtr& robot, Link* base, Link* end) : JointPath(base, end) {
+JointPathEx::JointPathEx(BodyPtr& robot, Link* base, Link* end)
+  : JointPath(base, end), sr_gain(1.0), manipulability_limit(0.1), manipulability_gain(0.05) {
   for (int i = 0 ; i < numJoints(); i++ ) {
     joints.push_back(joint(i));
   }
-  sr_gain = 1.0;
-  manipulability_limit = 0.1;
-  manipulability_gain = 0.05;
 
   avoid_weight_gain.resize(numJoints());
 }
