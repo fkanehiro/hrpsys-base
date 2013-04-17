@@ -94,6 +94,67 @@ class ImpedanceController
   void waitDeletingImpedanceController(std::string i_name_);
   bool deleteImpedanceControllerAndWait(std::string i_name_);
 
+ protected:
+  // Configuration variable declaration
+  // <rtc-template block="config_declare">
+  
+  // </rtc-template>
+
+  // DataInPort declaration
+  // <rtc-template block="inport_declare">
+  TimedDoubleSeq m_qCurrent;
+  InPort<TimedDoubleSeq> m_qCurrentIn;
+  TimedDoubleSeq m_qRef;
+  InPort<TimedDoubleSeq> m_qRefIn;
+  std::vector<TimedDoubleSeq> m_force;
+  std::vector<InPort<TimedDoubleSeq> *> m_forceIn;
+  
+  // </rtc-template>
+
+  // DataOutPort declaration
+  // <rtc-template block="outport_declare">
+  TimedDoubleSeq m_q;
+  OutPort<TimedDoubleSeq> m_qOut;
+  
+  // </rtc-template>
+
+  // CORBA Port declaration
+  // <rtc-template block="corbaport_declare">
+  RTC::CorbaPort m_ImpedanceControllerServicePort;
+
+  // </rtc-template>
+
+  // Service declaration
+  // <rtc-template block="service_declare">
+  ImpedanceControllerService_impl m_service0;
+
+  // </rtc-template>
+
+  // Consumer declaration
+  // <rtc-template block="consumer_declare">
+  
+  // </rtc-template>
+
+ private:
+  struct ImpedanceParam{
+    std::string base_name, target_name;
+    hrp::Vector3 target_p0, target_p1, current_p0, current_p1, current_p2;
+    hrp::Matrix33 target_r0, target_r1, current_r0, current_r1, current_r2;
+    hrp::Vector3 force_offset_p, force_offset_r;
+    double M_p, D_p, K_p;
+    double M_r, D_r, K_r;
+    hrp::Vector3 ref_force, ref_moment;
+    hrp::Matrix33 force_gain, moment_gain;
+    double sr_gain, avoid_gain, reference_gain, manipulability_limit;
+    int transition_count; // negative value when initing and positive value when deleting
+    hrp::dvector transition_joint_q;
+    hrp::JointPathExPtr manip;
+  };
+  struct VirtualForceSensorParam {
+    hrp::Vector3 p;
+    hrp::Matrix33 R;
+  };
+
   // for calculation of rotation
   void calcDifferenceRotation(hrp::Vector3& ret_dif_rot, const hrp::Matrix33& self_rot, const hrp::Matrix33& target_rot)
   {
@@ -177,66 +238,8 @@ class ImpedanceController
 
   bool checkImpedanceNameValidity (int& force_id, const std::string& name);
 
- protected:
-  // Configuration variable declaration
-  // <rtc-template block="config_declare">
-  
-  // </rtc-template>
+  void copyImpedanceParam (OpenHRP::ImpedanceControllerService::impedanceParam& i_param_, const ImpedanceParam& param);
 
-  // DataInPort declaration
-  // <rtc-template block="inport_declare">
-  TimedDoubleSeq m_qCurrent;
-  InPort<TimedDoubleSeq> m_qCurrentIn;
-  TimedDoubleSeq m_qRef;
-  InPort<TimedDoubleSeq> m_qRefIn;
-  std::vector<TimedDoubleSeq> m_force;
-  std::vector<InPort<TimedDoubleSeq> *> m_forceIn;
-  
-  // </rtc-template>
-
-  // DataOutPort declaration
-  // <rtc-template block="outport_declare">
-  TimedDoubleSeq m_q;
-  OutPort<TimedDoubleSeq> m_qOut;
-  
-  // </rtc-template>
-
-  // CORBA Port declaration
-  // <rtc-template block="corbaport_declare">
-  RTC::CorbaPort m_ImpedanceControllerServicePort;
-
-  // </rtc-template>
-
-  // Service declaration
-  // <rtc-template block="service_declare">
-  ImpedanceControllerService_impl m_service0;
-
-  // </rtc-template>
-
-  // Consumer declaration
-  // <rtc-template block="consumer_declare">
-  
-  // </rtc-template>
-
- private:
-  struct ImpedanceParam{
-    std::string base_name, target_name;
-    hrp::Vector3 target_p0, target_p1, current_p0, current_p1, current_p2;
-    hrp::Matrix33 target_r0, target_r1, current_r0, current_r1, current_r2;
-    hrp::Vector3 force_offset_p, force_offset_r;
-    double M_p, D_p, K_p;
-    double M_r, D_r, K_r;
-    hrp::Vector3 ref_force, ref_moment;
-    hrp::Matrix33 force_gain, moment_gain;
-    double sr_gain, avoid_gain, reference_gain, manipulability_limit;
-    int transition_count; // negative value when initing and positive value when deleting
-    hrp::dvector transition_joint_q;
-    hrp::JointPathExPtr manip;
-  };
-  struct VirtualForceSensorParam {
-    hrp::Vector3 p;
-    hrp::Matrix33 R;
-  };
   std::map<std::string, ImpedanceParam> m_impedance_param;
   std::map<std::string, VirtualForceSensorParam> m_sensors;
   double m_dt;

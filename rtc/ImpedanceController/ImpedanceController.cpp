@@ -746,14 +746,8 @@ bool ImpedanceController::setImpedanceControllerParam(OpenHRP::ImpedanceControll
     return true;
 }
 
-bool ImpedanceController::getImpedanceControllerParam(const std::string& i_name_, ImpedanceControllerService::impedanceParam& i_param_)
+void ImpedanceController::copyImpedanceParam (ImpedanceControllerService::impedanceParam& i_param_, const ImpedanceParam& param)
 {
-  int force_id = -1;
-  if ( !checkImpedanceNameValidity (force_id, i_name_) ) {
-    return false;
-  }
-  ImpedanceParam& param = m_impedance_param[i_name_];
-  i_param_.name = i_name_.c_str();
   i_param_.base_name = param.base_name.c_str();
   i_param_.target_name = param.target_name.c_str();
   i_param_.M_p = param.M_p;
@@ -770,6 +764,20 @@ bool ImpedanceController::getImpedanceControllerParam(const std::string& i_name_
   i_param_.avoid_gain = param.avoid_gain;
   i_param_.reference_gain = param.reference_gain;
   i_param_.manipulability_limit = param.manipulability_limit;
+}
+
+bool ImpedanceController::getImpedanceControllerParam(const std::string& i_name_, ImpedanceControllerService::impedanceParam& i_param_)
+{
+  int force_id = -1;
+  if ( !checkImpedanceNameValidity (force_id, i_name_) ) {
+    return false;
+  }
+  i_param_.name = i_name_.c_str();
+  if ( m_impedance_param.find(i_name_) == m_impedance_param.end() ) { // if impedance param of i_name_ is not found, return default impedance parameter ;; default parameter is specified ImpedanceParam struct's default constructer
+    copyImpedanceParam(i_param_, ImpedanceParam());
+  } else {
+    copyImpedanceParam(i_param_, m_impedance_param[i_name_]);
+  }
   return true;
 }
 
