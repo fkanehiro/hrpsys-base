@@ -634,7 +634,6 @@ bool ImpedanceController::setImpedanceControllerParam(OpenHRP::ImpedanceControll
     }
     // error check
     int force_id = -1;
-    bool updateparam_flag = false;
     for (unsigned int i=0; i<m_forceIn.size(); i++){
       if ( std::string(m_forceIn[i]->name()) == name ) {
         force_id = i;
