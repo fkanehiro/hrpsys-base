@@ -795,7 +795,7 @@ bool ImpedanceController::checkImpedanceNameValidity (int& force_id, const std::
     std::cerr << "Could not found FORCE_SENSOR named " << name << std::endl;
     return false;
   }
-
+  return true;
 }
 
 bool ImpedanceController::deleteImpedanceController(std::string i_name_)
