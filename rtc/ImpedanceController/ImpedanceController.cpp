@@ -752,12 +752,24 @@ bool ImpedanceController::getImpedanceControllerParam(const std::string& i_name_
   if ( !checkImpedanceNameValidity (force_id, i_name_) ) {
     return false;
   }
-  i_param_.M_p = m_impedance_param[i_name_].M_p;
-  i_param_.D_p = m_impedance_param[i_name_].D_p;
-  i_param_.K_p = m_impedance_param[i_name_].K_p;
-  i_param_.M_r = m_impedance_param[i_name_].M_r;
-  i_param_.D_r = m_impedance_param[i_name_].D_r;
-  i_param_.K_r = m_impedance_param[i_name_].K_r;
+  ImpedanceParam& param = m_impedance_param[i_name_];
+  i_param_.name = i_name_.c_str();
+  i_param_.base_name = param.base_name.c_str();
+  i_param_.target_name = param.target_name.c_str();
+  i_param_.M_p = param.M_p;
+  i_param_.D_p = param.D_p;
+  i_param_.K_p = param.K_p;
+  i_param_.M_r = param.M_r;
+  i_param_.D_r = param.D_r;
+  i_param_.K_r = param.K_r;
+  memcpy(i_param_.ref_force.get_buffer(), param.ref_force.data(), sizeof(double) * 3);
+  for (size_t i = 0; i < 3; i++) i_param_.force_gain[i] = param.force_gain(i,i);
+  memcpy(i_param_.ref_moment.get_buffer(), param.ref_moment.data(), sizeof(double) * 3);
+  for (size_t i = 0; i < 3; i++) i_param_.moment_gain[i] = param.moment_gain(i,i);
+  i_param_.sr_gain = param.sr_gain;
+  i_param_.avoid_gain = param.avoid_gain;
+  i_param_.reference_gain = param.reference_gain;
+  i_param_.manipulability_limit = param.manipulability_limit;
   return true;
 }
 
