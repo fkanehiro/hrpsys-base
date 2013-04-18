@@ -138,10 +138,10 @@ RTC::ReturnCode_t TorqueFilter::onInitialize()
       coil::stringTo(filter_dim, torque_filter_params[0].c_str());
   }
   std::cerr << "filter dim: " << filter_dim << std::endl;
-  std::cerr << "filter dim: " << torque_filter_params.size() << std::endl;
+  std::cerr << "tf param size: " << torque_filter_params.size() << std::endl;
   std::vector<double> fb_coeffs(filter_dim + 1);
   std::vector<double> ff_coeffs(filter_dim + 1);
-  if ( filter_dim*2 + 2 != torque_filter_params.size() ) {
+  if ( (filter_dim + 1) * 2 + 1 != torque_filter_params.size() ) {
       // ex) 2dim butterworth filter sampling = 200[hz] cutoff = 5[hz]
       // octave$ [a, b] = butter(2, 5/200)
       // fb_coeffs[0] = 1.00000; <- b0
@@ -158,7 +158,7 @@ RTC::ReturnCode_t TorqueFilter::onInitialize()
       ff_coeffs.resize(filter_dim+1);
       ff_coeffs[0] = 0.0014603;
       ff_coeffs[1] = 0.0029206;
-      fb_coeffs[2] = 0.0014603;
+      ff_coeffs[2] = 0.0014603;
   } else {
       for(int i = 0; i < filter_dim + 1; i++){
           coil::stringTo(fb_coeffs[i], torque_filter_params[i + 1].c_str());
