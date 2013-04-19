@@ -35,6 +35,7 @@ int main (int argc, char** argv)
 {
   std::string output;
   std::vector<std::string> inputs;
+  std::string conf_file_option;
 
   for (int i = 1; i < argc; ++ i) {
     std::string arg(argv[i]);
@@ -43,6 +44,8 @@ int main (int argc, char** argv)
       if (++i < argc) output = argv[i];
     } else if ( arg == "-o" ) {
       ++i;
+    } else if ( arg == "--conf-file-option" ) {
+      if (++i < argc) conf_file_option = argv[i];
     } else if ( arg[0] == '-' ||  arg[0] == '_'  ) {
       std::cerr << argv[0] << " : Unknwon arguments " << arg << std::endl;
     } else {
@@ -263,6 +266,7 @@ int main (int argc, char** argv)
   
       s << "model: file://" << inputs[0] << std::endl;
       s << "dt: 0.005" << std::endl;
+      s << conf_file_option << std::endl;
   }
 
   {
