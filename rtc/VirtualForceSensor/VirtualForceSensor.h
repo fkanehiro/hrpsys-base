@@ -22,6 +22,8 @@
 #include <hrpModel/JointPath.h>
 #include <hrpUtil/EigenTypes.h>
 
+#include "VirtualForceSensorService_impl.h"
+
 // Service implementation headers
 // <rtc-template block="service_impl_h">
 
@@ -99,6 +101,7 @@ class VirtualForceSensor
   // no corresponding operation exists in OpenRTm-aist-0.2.0
   // virtual RTC::ReturnCode_t onRateChanged(RTC::UniqueId ec_id);
 
+  bool removeVirtualForceSensorOffset(std::string sensorName);
 
  protected:
   // Configuration variable declaration
@@ -135,13 +138,13 @@ class VirtualForceSensor
 
   // Service declaration
   // <rtc-template block="service_declare">
-  //RTC::CorbaPort m_VirtualForceSensorServicePort;
+  RTC::CorbaPort m_VirtualForceSensorServicePort;
   
   // </rtc-template>
 
   // Consumer declaration
   // <rtc-template block="consumer_declare">
-  //VirtualForceSensorService_impl m_VirtualForceSensorService;
+  VirtualForceSensorService_impl m_service0;
   
   // </rtc-template>
 
@@ -150,12 +153,17 @@ class VirtualForceSensor
     std::string base_name, target_name;
     hrp::Vector3 p;
     hrp::Matrix33 R;
+    hrp::Vector3 forceOffset;
+    hrp::Vector3 momentOffset;
     hrp::JointPathPtr path;
   };
   std::map<std::string, VirtualForceSensorParam> m_sensors;
   double m_dt;
   hrp::BodyPtr m_robot;
   unsigned int m_debugLevel;
+
+  bool calcRawVirtualForce(std::string sensorName, hrp::dvector &outputForce);
+  
 };
 
 

@@ -37,9 +37,11 @@ VirtualForceSensor::VirtualForceSensor(RTC::Manager* manager)
     // <rtc-template block="initializer">
     m_qCurrentIn("qCurrent", m_qCurrent),
     m_tauInIn("tauIn", m_tauIn),
+    m_VirtualForceSensorServicePort("VirtualForceSensorService"),
     // </rtc-template>
     m_debugLevel(0)
 {
+  m_service0.vfsensor(this);
 }
 
 VirtualForceSensor::~VirtualForceSensor()
@@ -66,12 +68,12 @@ RTC::ReturnCode_t VirtualForceSensor::onInitialize()
   // Set OutPort buffer
   
   // Set service provider to Ports
-  //m_VirtualForceSensorServicePort.registerProvider("service0", "VirtualForceSensorService", m_VirtualForceSensorService);
+  m_VirtualForceSensorServicePort.registerProvider("service0", "VirtualForceSensorService", m_service0);
   
   // Set service consumers to Ports
   
   // Set CORBA Service Ports
-  //addPort(m_VirtualForceSensorServicePort);
+  addPort(m_VirtualForceSensorServicePort);
   
   // </rtc-template>
 
@@ -108,6 +110,8 @@ RTC::ReturnCode_t VirtualForceSensor::onInitialize()
     }
     p.p = hrp::Vector3(tr[0], tr[1], tr[2]);
     p.R = (Eigen::Quaternion<double>(tr[6], tr[3], tr[4], tr[5])).toRotationMatrix(); // rtc: (x, y, z, w) but eigen: (w, x, y, z)
+    p.forceOffset = hrp::Vector3(0, 0, 0);
+    p.momentOffset = hrp::Vector3(0, 0, 0);
     std::cerr << "virtual force sensor : " << name << std::endl;
     std::cerr << "                base : " << p.base_name << std::endl;
     std::cerr << "              target : " << p.target_name << std::endl;
@@ -204,20 +208,9 @@ RTC::ReturnCode_t VirtualForceSensor::onExecute(RTC::UniqueId ec_id)
 
       hrp::JointPathPtr path = (*it).second.path;
       int n = path->numJoints();
-      hrp::dmatrix J(6, n);
-      hrp::dmatrix Jtinv(6, n);
-      path->calcJacobian(J);
-      hrp::calcPseudoInverse(J.transpose(), Jtinv);
-      // use sr inverse of J.transpose()
-      // hrp::dmatrix Jt = J.transpose();
-      // double manipulability = sqrt((Jt*J).determinant());
-      // hrp::calcPseudoInverse((Jt * J + 0.1 * hrp::dmatrix::Identity(n,n)), Jtinv);
-      hrp::dvector torque(n);
-      hrp::dvector force(6);
-     
       
       if ( DEBUGP ) {
-        std::cerr << "  sensor name  : " << it->first << std::endl;
+        std::cerr << "  sensor name  : " << (*it).first << std::endl;
         std::cerr << "sensor torque  : ";
         for (int j = 0; j < n; j++) {
           std::cerr << " " << m_tauIn.data[path->joint(j)->jointId] ;
@@ -225,20 +218,8 @@ RTC::ReturnCode_t VirtualForceSensor::onExecute(RTC::UniqueId ec_id)
         std::cerr << std::endl;
       }
 
-      for (int j = 0; j < n; j++) {
-        torque[j] = -m_tauIn.data[path->joint(j)->jointId]; // passive torque from external force
-      }
-      
-      if ( DEBUGP ) {
-        std::cerr << "  gear torque  : ";
-        for (int j = 0; j < n; j++) {
-          std::cerr << " " << torque[j];
-        }
-        std::cerr << std::endl;
-      }
-
-      force = Jtinv * torque;
-      // force = J * torque;
+      hrp::dvector force(6);
+      calcRawVirtualForce((*it).first, force);
 
       if ( DEBUGP ) {
         std::cerr << "    raw force  : ";
@@ -247,17 +228,25 @@ RTC::ReturnCode_t VirtualForceSensor::onExecute(RTC::UniqueId ec_id)
         }
         std::cerr << std::endl;
       }
-
+      
       hrp::dvector force_p(3), force_r(3);
       for ( int j = 0; j < 3; j ++ ) {
         force_p[j] = force[j];
         force_r[j] = force[j+3];
       }
-      force_p = (*it).second.R * path->endLink()->R.transpose() * force_p;
-      force_r = (*it).second.R * path->endLink()->R.transpose() * force_r;
+      force_p = force_p - (*it).second.forceOffset;
+      force_r = force_r - (*it).second.momentOffset;
       for ( int j = 0; j < 3; j ++ ) {
         m_force[i].data[j+0] = force_p[j];
         m_force[i].data[j+3] = force_r[j];
+      }
+
+      if ( DEBUGP ) {
+        std::cerr << "  output force  : ";
+        for (int j = 0; j < 6; j++) {
+          std::cerr << " " << m_force[i].data[j];
+        }
+        std::cerr << std::endl;
       }
 
       m_force[i].tm = tm; // put timestamp
@@ -326,7 +315,83 @@ RTC::ReturnCode_t VirtualForceSensor::onRateChanged(RTC::UniqueId ec_id)
 }
 */
 
+bool VirtualForceSensor::removeVirtualForceSensorOffset(std::string sensorName)
+{
+  std::map<std::string, VirtualForceSensorParam>::iterator it;
+  for (it = m_sensors.begin(); it != m_sensors.end(); it++) {
+    if ((*it).first != sensorName){
+      continue;
+    } else {
+      hrp::JointPathPtr path = (*it).second.path;
+      hrp::dvector force(6);
+      if(!calcRawVirtualForce(sensorName, force)){
+        return false;
+      }
+      hrp::Vector3 force_p, force_r;
+      for ( int i = 0; i < 3; i ++ ) {
+        force_p[i] = force[i];
+        force_r[i] = force[i+3];
+      }
+      (*it).second.forceOffset = force_p;
+      (*it).second.momentOffset = force_r;
+      return true;
+    }
+  }
+  std::cerr << "removeVirtualForceSensorOffset: No sensor " << sensorName << std::endl;
+  return false;
+}
 
+bool VirtualForceSensor::calcRawVirtualForce(std::string sensorName, hrp::dvector &outputForce)
+{
+  std::map<std::string, VirtualForceSensorParam>::iterator it;
+  for (it = m_sensors.begin(); it != m_sensors.end(); ++it) {
+    if ((*it).first != sensorName){
+      continue;
+    } else {
+      hrp::JointPathPtr path = (*it).second.path;
+      int n = path->numJoints();
+      hrp::dmatrix J(6, n);
+      hrp::dmatrix Jtinv(6, n);
+      path->calcJacobian(J);
+      hrp::calcPseudoInverse(J.transpose(), Jtinv);
+      // use sr inverse of J.transpose()
+      // hrp::dmatrix Jt = J.transpose();
+      // double manipulability = sqrt((Jt*J).determinant());
+      // hrp::calcPseudoInverse((Jt * J + 0.1 * hrp::dmatrix::Identity(n,n)), Jtinv);
+      hrp::dvector torque(n);
+      hrp::dvector force(6);
+          
+      // get gear torque
+      for (int i = 0; i < n; i++) {
+        torque[i] = -m_tauIn.data[path->joint(i)->jointId]; // passive torque from external force
+      }
+
+      // calc estimated force from torque vector
+      force = Jtinv * torque;
+      // force = J * torque;
+
+      // trans to worldcoords and set offset
+      hrp::dvector force_p(3), force_r(3);
+      for (int i = 0; i < 3; i++) {
+        force_p[i] = force[i];
+        force_r[i] = force[i + 3];
+      }
+      force_p = (*it).second.R * path->endLink()->R.transpose() * force_p;
+      force_r = (*it).second.R * path->endLink()->R.transpose() * force_r;
+      
+      outputForce.resize(6);
+      for(int i = 0; i < 3; i++) {
+        outputForce[i] = force_p[i];
+        outputForce[i + 3] = force_r[i];
+      }
+      return true;
+    }
+  }
+
+  std::cerr << "calcVirtualForce: No sensor " << sensorName << std::endl;
+  return false;
+  
+}
 
 extern "C"
 {

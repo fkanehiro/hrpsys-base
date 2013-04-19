@@ -1,0 +1,23 @@
+/**
+ * @file VirtualForceSensorService.idl
+ * @brief Services for the impedance interface
+ */
+
+#ifndef __SENSOR_CALIBRATOR_SERVICE_IDL__
+#define __SENSOR_CALIBRATOR_SERVICE_IDL__
+
+module OpenHRP
+{
+  
+  interface VirtualForceSensorService
+  {
+    /**
+     * @brief set virtual force sensor offset.
+     * @param sensroName is target virtual force sensor name
+     * @return true if set successfully, false otherwise
+     */
+    boolean removeVirtualForceSensorOffset(in string sensorName);
+  };
+};
+
+#endif

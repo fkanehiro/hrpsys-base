@@ -18,6 +18,7 @@ set(idl_files
   GraspControllerService.idl
   TorqueFilterService.idl
   KalmanFilterService.idl
+  VirtualForceSensorService.idl
   StabilizerService.idl
   )
 
