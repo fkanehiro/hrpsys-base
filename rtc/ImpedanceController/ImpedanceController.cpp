@@ -137,7 +137,7 @@ RTC::ReturnCode_t ImpedanceController::onInitialize()
           coil::stringTo(tr[j], virtual_force_sensor[i*10+3+j].c_str());
         }
         p.p = hrp::Vector3(tr[0], tr[1], tr[2]);
-        p.R = (Eigen::Quaternion<double>(tr[3], tr[4], tr[5], tr[6])).toRotationMatrix();
+        p.R = (Eigen::Quaternion<double>(tr[6], tr[3], tr[4], tr[5])).normalized().toRotationMatrix();
         m_sensors[name] = p;
         std::cerr << "virtual force sensor : " << name << std::endl;
         std::cerr << "                T, R : " << p.p[0] << " " << p.p[1] << " " << p.p[2] << std::endl << p.R << std::endl;
@@ -311,16 +311,24 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
                     hrp::ForceSensor* sensor = m_robot->sensor<hrp::ForceSensor>(sensor_name);
                     hrp::Vector3 data_p(m_force[i].data[0], m_force[i].data[1], m_force[i].data[2]);
                     hrp::Vector3 data_r(m_force[i].data[3], m_force[i].data[4], m_force[i].data[5]);
+                    if ( DEBUGP ) {
+                      std::cerr << "raw force : " << data_p[0] << " " << data_p[1] << " " << data_p[2] << std::endl;
+                      std::cerr << "raw moment : " << data_r[0] << " " << data_r[1] << " " << data_r[2] << std::endl;
+                    }
                     if ( sensor ) {
                       // real force sensor
                       force_p = sensor->link->R * sensor->localR * (data_p - param.force_offset_p);
                       force_r = sensor->link->R * sensor->localR * (data_r - param.force_offset_r);
                     } else if ( m_sensors.find(sensor_name) !=  m_sensors.end()) {
-                      if ( DEBUGP ) {
-                        std::cerr << "force : " << force_p[0] << " " << force_p[1] << " " << force_p[2] << std::endl;
-                        std::cerr << "force : " << force_r[0] << " " << force_r[1] << " " << force_r[2] << std::endl;
-                      }
                       // virtual force sensor
+
+                      if ( DEBUGP ) {
+                        std::cerr << " targetR: " << target->R << std::endl;
+                        std::cerr << " sensorR: " << m_sensors[sensor_name].R << std::endl;
+                        std::cerr << " forceOffset: " << param.force_offset_p << std::endl;
+                        std::cerr << " momentOffset: " << param.force_offset_r << std::endl;
+                      }
+                      
                       force_p = target->R * m_sensors[sensor_name].R * (data_p - param.force_offset_p);
                       force_r = target->R * m_sensors[sensor_name].R * (data_r - param.force_offset_r);
                     } else {
@@ -329,8 +337,8 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
                 }
             }
             if ( DEBUGP ) {
-                std::cerr << "force : " << force_p[0] << " " << force_p[1] << " " << force_p[2] << std::endl;
-                std::cerr << "force : " << force_r[0] << " " << force_r[1] << " " << force_r[2] << std::endl;
+                std::cerr << "world force : " << force_p[0] << " " << force_p[1] << " " << force_p[2] << std::endl;
+                std::cerr << "world moment : " << force_r[0] << " " << force_r[1] << " " << force_r[2] << std::endl;
             }
 
             hrp::Vector3 dif_pos = hrp::Vector3(0,0,0);
