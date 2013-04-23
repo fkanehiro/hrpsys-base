@@ -14,7 +14,12 @@ target_link_libraries(CollisionDetectorComp hrpsysUtil ${QHULL_LIBRARIES})
 
 add_executable(SetupCollisionPair SetupCollisionPair.cpp)
 target_link_libraries(SetupCollisionPair CollisionDetector ${OPENHRP_LIBRARIES} ${QHULL_LIBRARIES})
-set(target CollisionDetector CollisionDetectorComp SetupCollisionPair)
+
+add_executable(CollisionDetectorViewer CollisionDetectorViewer.cpp GLscene.cpp)
+target_link_libraries(CollisionDetectorViewer hrpsysUtil)
+set_target_properties (CollisionDetectorViewer PROPERTIES COMPILE_DEFINITIONS "USE_COLLISION_STATE")
+
+set(target CollisionDetector CollisionDetectorComp SetupCollisionPair CollisionDetectorViewer)
 
 install(TARGETS ${target}
   RUNTIME DESTINATION bin CONFIGURATIONS Release Debug
