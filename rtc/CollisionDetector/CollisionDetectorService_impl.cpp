@@ -24,6 +24,12 @@ CORBA::Boolean CollisionDetectorService_impl::setTolerance(const char *i_link_pa
     return m_collision->setTolerance(i_link_pair_name, d_tolerance);
 }
 
+CORBA::Boolean CollisionDetectorService_impl::getCollisionStatus(OpenHRP::CollisionDetectorService::CollisionState_out state)
+{
+    state = new OpenHRP::CollisionDetectorService::CollisionState;
+    return m_collision->getCollisionStatus(*state);
+}
+
 void CollisionDetectorService_impl::collision(CollisionDetector *i_collision)
 {
     m_collision = i_collision;

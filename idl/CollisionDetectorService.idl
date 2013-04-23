@@ -25,5 +25,26 @@ module OpenHRP
      * @return true if set successfully, false otherwise
      */
     boolean setTolerance(in string link_pair_name, in double tolerance);
+
+    /**
+     * @brief get collision detector status
+     * @param co collision detector state
+     * @return true if set successfully, false otherwise
+     */
+    typedef sequence<double>  DblSequence;
+    typedef sequence<boolean> BoolSequence;
+    typedef sequence<double, 3> DblSequence3;
+    typedef sequence<DblSequence3,2> Line;
+    struct CollisionState {
+        double                    time;
+        double                    computation_time;
+        boolean                   safe_posture;
+        double                    recover_time;
+        short                     loop_for_check;
+        sequence<double>          angle;  ///< current joint angles[rad]
+        sequence<boolean>         collide;///< true if the link is in collide
+        sequence<Line>            lines;
+    };
+    boolean getCollisionStatus(out CollisionState cs);
   };
 };

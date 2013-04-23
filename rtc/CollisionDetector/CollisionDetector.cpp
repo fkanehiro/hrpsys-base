@@ -202,6 +202,10 @@ RTC::ReturnCode_t CollisionDetector::onActivated(RTC::UniqueId ec_id)
       GLlink::drawMode(GLlink::DM_COLLISION);
     }
 
+    // setup collision state
+    m_state.angle.length(m_robot->numJoints());
+    m_state.collide.length(m_robot->numLinks());
+
     // allocate memory for outPorts
     m_q.data.length(m_robot->numJoints());
     m_recover_time = 0;
@@ -211,6 +215,7 @@ RTC::ReturnCode_t CollisionDetector::onActivated(RTC::UniqueId ec_id)
     m_recover_jointdata = new double[m_robot->numJoints()];
     m_lastsafe_jointdata = new double[m_robot->numJoints()];
     m_interpolator = new interpolator(m_robot->numJoints(), i_dt);
+    m_link_collision = new bool[m_robot->numLinks()];
 
     for(int i=0; i<m_robot->numJoints(); i++){
       m_q.data[i] = 0;
@@ -223,7 +228,8 @@ RTC::ReturnCode_t CollisionDetector::onDeactivated(RTC::UniqueId ec_id)
     std::cout << m_profile.instance_name<< ": onDeactivated(" << ec_id << ")" << std::endl;
     delete[] m_recover_jointdata;
     delete[] m_lastsafe_jointdata;
-    delete m_interpolator;
+    delete[] m_interpolator;
+    delete[] m_link_collision;
     return RTC::RTC_OK;
 }
 
@@ -246,7 +252,6 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
 	m_qRefIn.read();
 
         TimedPosture tp;
-        tp.time = 0;
 
 	assert(m_qRef.data.length() == m_robot->numJoints());
         if ( m_use_viewer ) {
@@ -254,6 +259,10 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
             ((GLlink *)m_glbody->link(i))->highlight(false);
           }
         }
+        for (int i=0; i<m_glbody->numLinks(); i++){
+            m_link_collision[m_glbody->link(i)->index] = false;
+        }
+
         //set robot model's angle for collision check(two types)
         //  1. current safe angle .. check based on qRef
         //  2. recovery or collision angle .. check based on q'(m_recover_jointdata)
@@ -299,6 +308,8 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
                         hrp::JointPathPtr jointPath = m_robot->getJointPath(p->link(0),p->link(1));
                         std::cerr << i << "/" << m_pair.size() << " pair: " << p->link(0)->name << "/" << p->link(1)->name << "(" << jointPath->numJoints() << "), distance = " << c->distance << std::endl;
                     }
+                    m_link_collision[p->link(0)->index] = true;
+                    m_link_collision[p->link(1)->index] = true;
                     if ( m_use_viewer ) {
                         ((GLlink *)p->link(0))->highlight(true);
                         ((GLlink *)p->link(1))->highlight(true);
@@ -363,6 +374,39 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
         tp.posture.resize(m_qRef.data.length());
         for (size_t i=0; i<tp.posture.size(); i++) tp.posture[i] = m_q.data[i];
         m_log.add(tp);
+
+        // set collisoin state
+        m_state.time = tm2;
+        for (int i = 0; i < m_robot->numJoints(); i++ ){
+            m_state.angle[i] = m_robot->joint(i)->q;
+        }
+
+        if ( m_loop_for_check == 0 ) {
+            for (int i = 0; i < m_robot->numLinks(); i++ ){
+                m_state.collide[i] = m_link_collision[i];
+            }
+
+            m_state.lines.length(tp.lines.size());
+            for(int i = 0; i < tp.lines.size(); i++ ){
+                const std::pair<hrp::Vector3, hrp::Vector3>& line = tp.lines[i];
+                double *v;
+                m_state.lines[i].length(2);
+                m_state.lines[i].get_buffer()[0].length(3);
+                v = m_state.lines[i].get_buffer()[0].get_buffer();
+                v[0] = line.first.data()[0];
+                v[1] = line.first.data()[1];
+                v[2] = line.first.data()[2];
+                m_state.lines[i].get_buffer()[1].length(3);
+                v = m_state.lines[i].get_buffer()[1].get_buffer();
+                v[0] = line.second.data()[0];
+                v[1] = line.second.data()[1];
+                v[2] = line.second.data()[2];
+            }
+        }
+         m_state.computation_time = (tm2-tm1)*1000.0;
+        m_state.safe_posture = m_safe_posture;
+        m_state.recover_time = m_recover_time;
+        m_state.loop_for_check = m_loop_for_check;
     }
     if ( m_use_viewer ) m_window.oneStep();
     return RTC::RTC_OK;
@@ -413,6 +457,12 @@ bool CollisionDetector::setTolerance(const char *i_link_pair_name, double i_tole
     }else{
         return false;
     }
+    return true;
+}
+
+bool CollisionDetector::getCollisionStatus(OpenHRP::CollisionDetectorService::CollisionState &state)
+{
+    state = m_state;
     return true;
 }
 

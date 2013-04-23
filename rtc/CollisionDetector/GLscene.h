@@ -15,6 +15,7 @@ public:
 private:
     void drawAdditionalLines();
     void updateScene();
+    void showStatus();
 };
 
 };

@@ -106,6 +106,7 @@ class CollisionDetector
   // virtual RTC::ReturnCode_t onRateChanged(RTC::UniqueId ec_id);
 
   bool setTolerance(const char *i_link_pair_name, double i_tolerance);
+  bool getCollisionStatus(OpenHRP::CollisionDetectorService::CollisionState &state);
 
   bool enable()  { m_enable = true; }
   bool disable() { m_enable = false; }
@@ -177,11 +178,13 @@ class CollisionDetector
   int dummy;
   //
   double *m_recover_jointdata, *m_lastsafe_jointdata;
+  bool *m_link_collision;
   interpolator* m_interpolator;
   double i_dt;
   int default_recover_time;
   unsigned int m_debugLevel;
   bool m_enable;
+  OpenHRP::CollisionDetectorService::CollisionState m_state;
 };
 
 
