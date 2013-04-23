@@ -109,7 +109,7 @@ RTC::ReturnCode_t VirtualForceSensor::onInitialize()
       coil::stringTo(tr[j], virtual_force_sensor[i*10+3+j].c_str());
     }
     p.p = hrp::Vector3(tr[0], tr[1], tr[2]);
-    p.R = (Eigen::Quaternion<double>(tr[6], tr[3], tr[4], tr[5])).toRotationMatrix(); // rtc: (x, y, z, w) but eigen: (w, x, y, z)
+    p.R = (Eigen::Quaternion<double>(tr[6], tr[3], tr[4], tr[5])).normalized().toRotationMatrix(); // rtc: (x, y, z, w) but eigen: (w, x, y, z)
     p.forceOffset = hrp::Vector3(0, 0, 0);
     p.momentOffset = hrp::Vector3(0, 0, 0);
     std::cerr << "virtual force sensor : " << name << std::endl;
@@ -370,14 +370,14 @@ bool VirtualForceSensor::calcRawVirtualForce(std::string sensorName, hrp::dvecto
       force = Jtinv * torque;
       // force = J * torque;
 
-      // trans to worldcoords and set offset
+      // trans to localcoords and set offset
       hrp::dvector force_p(3), force_r(3);
       for (int i = 0; i < 3; i++) {
         force_p[i] = force[i];
         force_r[i] = force[i + 3];
       }
-      force_p = (*it).second.R * path->endLink()->R.transpose() * force_p;
-      force_r = (*it).second.R * path->endLink()->R.transpose() * force_r;
+      force_p = (*it).second.R.transpose() * path->endLink()->R.transpose() * force_p;
+      force_r = (*it).second.R.transpose() * path->endLink()->R.transpose() * force_r;
       
       outputForce.resize(6);
       for(int i = 0; i < 3; i++) {
