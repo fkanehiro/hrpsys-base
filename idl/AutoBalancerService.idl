@@ -1,0 +1,80 @@
+/**
+ * @file AutoBalancerService.idl
+ * @brief Services for the autobalancer interface
+ */
+//#include "OpenHRPCommon.idl"
+module OpenHRP
+{
+  
+  interface AutoBalancerService
+  {
+    //typedef sequence<double, 3> DblSequence3;
+    //typedef sequence<double, 4> DblSequence4;
+    typedef double DblArray3[3];
+    typedef double DblArray4[4];
+    struct Footstep
+    {
+      DblArray3 pos; // foot position
+      DblArray4 rot; // foot orientation by quaternion
+      string leg; // leg name
+    };
+    typedef sequence<Footstep> FootstepSequence;
+
+    struct AutoBalancerLimbParam
+    {
+      string name;
+      string base_name;
+      string target_name;
+    };
+    typedef sequence<AutoBalancerLimbParam> AutoBalancerLimbParamSequence;
+
+    /**
+     * @brief go pos.
+     * @param i_x[m], i_y[m], i_th[deg]
+     * @return true if set successfully, false otherwise
+     */
+    boolean goPos(in double x, in double y, in double th);
+
+    /**
+     * @brief go velocity.
+     * @param i_vx[m/s], i_vy[m/s], i_vth[deg/s]
+     * @return true if set successfully, false otherwise
+     */
+    boolean goVelocity(in double vx, in double vy, in double vth);
+
+    /**
+     * @brief go stop.
+     * @param
+     * @return true if set successfully, false otherwise
+     */
+    boolean goStop();
+
+    /**
+     * @brief set footsteps.
+     * @param
+     * @return true if set successfully, false otherwise
+     */
+    boolean setFootSteps(in FootstepSequence fs);
+
+    /**
+     * @brief wait footsteps.
+     * @param
+     * @return true if set successfully, false otherwise
+     */
+    void waitFootSteps();
+
+    /**
+     * @brief start AutoBalancer Mode.
+     * @param
+     * @return true if set successfully, false otherwise
+     */
+    boolean startABC(in AutoBalancerLimbParamSequence alp);
+
+    /**
+     * @brief stop AutoBalancer Mode.
+     * @param
+     * @return true if set successfully, false otherwise
+     */
+    boolean stopABC();
+  };
+};
