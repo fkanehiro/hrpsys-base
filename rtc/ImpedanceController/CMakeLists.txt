@@ -1,4 +1,4 @@
-set(comp_sources ImpedanceController.cpp ImpedanceControllerService_impl.cpp JointPathEx.cpp)
+set(comp_sources ImpedanceController.cpp ImpedanceControllerService_impl.cpp JointPathEx.cpp RatsMatrix.cpp)
 set(libs hrpModel-3.1 hrpCollision-3.1 hrpUtil-3.1 hrpsysBaseStub)
 add_library(ImpedanceController SHARED ${comp_sources})
 target_link_libraries(ImpedanceController ${libs})

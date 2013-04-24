@@ -381,10 +381,10 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
             vel_pos1 = param.current_p1 - param.current_p2;
             dif_target_pos = param.target_p0 - param.target_p1;
 
-            calcDifferenceRotation(dif_rot, param.current_r0, param.target_r0);
-            calcDifferenceRotation(vel_rot0, param.current_r1, param.current_r0);
-            calcDifferenceRotation(vel_rot1, param.current_r2, param.current_r1);
-            calcDifferenceRotation(dif_target_rot, param.target_r1, param.target_r0);
+            rats::difference_rotation(dif_rot, param.current_r0, param.target_r0);
+            rats::difference_rotation(vel_rot0, param.current_r1, param.current_r0);
+            rats::difference_rotation(vel_rot1, param.current_r2, param.current_r1);
+            rats::difference_rotation(dif_target_rot, param.target_r1, param.target_r0);
 
             if ( DEBUGP ) {
                 std::cerr << "dif_p : " << dif_pos[0] << " " << dif_pos[1] << " " << dif_pos[2] << std::endl;
@@ -539,7 +539,7 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
             // if ( std::fabs(vel_r.norm() - 0.0) < ::std::numeric_limits<double>::epsilon() ) {
             if ( vel_r.norm() != 0.0 ) {
               hrp::Matrix33 tmpm;
-              rotm3times(tmpm, rotation_matrix(vel_r.norm(), vel_r.normalized()), param.current_r0);
+              rats::rotm3times(tmpm, rats::rotation_matrix(vel_r.norm(), vel_r.normalized()), param.current_r0);
               param.current_r1 = tmpm;
             } else {
               param.current_r1 = param.current_r0;

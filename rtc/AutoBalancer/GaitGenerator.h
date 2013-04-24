@@ -2,7 +2,7 @@
 #ifndef GAITGENERATOR_H
 #define GAITGENERATOR_H
 #include "PreviewController.h"
-#include "RatsMatrix.h"
+#include "../ImpedanceController/RatsMatrix.h"
 #include <vector>
 #include <queue>
 

@@ -20,6 +20,7 @@
 #include <rtm/idl/ExtendedDataTypesSkel.h>
 #include <hrpModel/Body.h>
 #include "JointPathEx.h"
+#include "RatsMatrix.h"
 // Service implementation headers
 // <rtc-template block="service_impl_h">
 #include "ImpedanceControllerService_impl.h"
@@ -161,87 +162,6 @@ class ImpedanceController
     hrp::Vector3 p;
     hrp::Matrix33 R;
   };
-
-  // for calculation of rotation
-  void calcDifferenceRotation(hrp::Vector3& ret_dif_rot, const hrp::Matrix33& self_rot, const hrp::Matrix33& target_rot)
-  {
-    //ret_dif_rot = self_rot * hrp::omegaFromRot(self_rot.transpose() * target_rot);
-    ret_dif_rot = self_rot * hrp::Vector3(matrix_log(hrp::Matrix33(self_rot.transpose() * target_rot)));
-  }
-
-  hrp::Vector3 matrix_log(const hrp::Matrix33& m) {
-    hrp::Vector3 mlog;
-    double q0, th;
-    hrp::Vector3 q;
-    double norm;
-  
-    Eigen::Quaternion<double> eiq(m);
-    q0 = eiq.w();
-    q = eiq.vec();
-    norm = q.norm();
-    if (norm > 0) {
-      if ((q0 > 1.0e-10) || (q0 < -1.0e-10)) {
-	th = 2 * std::atan(norm / q0);
-      } else if (q0 > 0) {
-	th = M_PI / 2;
-      } else {
-	th = -M_PI / 2;
-      }
-      mlog = (th / norm) * q ;
-    } else {
-      mlog = hrp::Vector3::Zero();
-    }
-    return mlog;
-  }
-
-  // matrix product using quaternion normalization
-  void rotm3times (hrp::Matrix33& m12, const hrp::Matrix33& m1, const hrp::Matrix33& m2) {
-    Eigen::Quaternion<double> eiq1(m1);
-    Eigen::Quaternion<double> eiq2(m2);
-    Eigen::Quaternion<double> eiq3;
-    eiq3 = eiq1 * eiq2;
-    eiq3.normalize();
-    m12 = eiq3.toRotationMatrix();
-  }
-
-  // copied from JSK codes ;; hrp::rodorigues(vel_r.norm(), vel_r.normalized()) does not work because of nan?
-  void rotation_matrix(hrp::Matrix33& rm, const double theta, const hrp::Vector3& axis) {
-    double cs, sn, vers, xv, yv, zv, xyv, yzv, zxv, xs, ys, zs;
-    hrp::Vector3 a;
-
-    (cs = std::cos(theta));
-    (sn = std::sin(theta));
-    (vers = (1 - cs));
-    if (axis.norm() > 0) {
-      a = axis.normalized();
-    } else {
-      a = hrp::Vector3(0,0,0);
-    }
-    (xv = ((a(0) * a(0)) * vers));
-    (yv = ((a(1) * a(1)) * vers));
-    (zv = ((a(2) * a(2)) * vers));
-    (xyv = ((a(0) * a(1)) * vers));
-    (yzv = ((a(1) * a(2)) * vers));
-    (zxv = ((a(2) * a(0)) * vers));
-    (xs = (a(0) * sn));
-    (ys = (a(1) * sn));
-    (zs = (a(2) * sn));
-    (rm(0, 0) = (xv + cs));
-    (rm(0, 1) = (xyv - zs));
-    (rm(0, 2) = (zxv + ys));
-    (rm(1, 0) = (xyv + zs));
-    (rm(1, 1) = (yv + cs));
-    (rm(1, 2) = (yzv - xs));
-    (rm(2, 0) = (zxv - ys));
-    (rm(2, 1) = (yzv + xs));
-    (rm(2, 2) = (zv + cs));
-  }
-
-  inline hrp::Matrix33 rotation_matrix(const double theta, const hrp::Vector3& axis) {
-    hrp::Matrix33 ret;
-    rotation_matrix(ret, theta, axis);
-    return ret;
-  }
 
   bool checkImpedanceNameValidity (int& force_id, const std::string& name);
 

@@ -20,7 +20,7 @@
 #include <rtm/idl/ExtendedDataTypesSkel.h>
 #include <hrpModel/Body.h>
 #include "../ImpedanceController/JointPathEx.h"
-#include "RatsMatrix.h"
+#include "../ImpedanceController/RatsMatrix.h"
 #include "GaitGenerator.h"
 // Service implementation headers
 // <rtc-template block="service_impl_h">
