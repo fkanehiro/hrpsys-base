@@ -20,6 +20,7 @@ set(idl_files
   KalmanFilterService.idl
   VirtualForceSensorService.idl
   StabilizerService.idl
+  AutoBalancerService.idl
   )
 
 set(openhrp_idl_files
