@@ -150,6 +150,7 @@ class AutoBalancer
   void solveLimbIK();
   void startABCparam(const ::OpenHRP::AutoBalancerService::AutoBalancerLimbParamSequence& alp);
   void stopABCparam();
+  void waitABCTransition();
   void fixLegToCoords (const std::string& leg, const rats::coordinates& coords);
   void startWalking ();
   void stopWalking ();

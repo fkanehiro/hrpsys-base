@@ -54,7 +54,7 @@ AutoBalancer::AutoBalancer(RTC::Manager* manager)
       m_qOut("q", m_q),
       m_AutoBalancerServicePort("AutoBalancerService"),
       // </rtc-template>
-      move_base_gain(0.05),
+      move_base_gain(0.1),
       m_robot(hrp::BodyPtr()),
       m_debugLevel(0),
       dummy(0)
@@ -556,6 +556,7 @@ bool AutoBalancer::startABC (const OpenHRP::AutoBalancerService::AutoBalancerLim
   if (control_mode == MODE_IDLE) {
     std::cerr << "START ABC" << std::endl;
     startABCparam(alp);
+    waitABCTransition();
     return true;
   } else {
     return false;
@@ -567,12 +568,18 @@ bool AutoBalancer::stopABC ()
   if (control_mode == MODE_ABC) {
     std::cerr << "STOP ABC" << std::endl;
     stopABCparam();
+    waitABCTransition();
     return true;
   } else {
     return false;
   }
 }
 
+void AutoBalancer::waitABCTransition()
+{
+  while (transition_count != 0) usleep(10);
+  usleep(10);
+}
 bool AutoBalancer::goPos(const double& x, const double& y, const double& th)
 {
   if (control_mode == MODE_ABC ) {
