@@ -45,7 +45,7 @@ int main (int argc, char** argv)
     } else if ( arg == "-o" ) {
       ++i;
     } else if ( arg == "--conf-file-option" ) {
-      if (++i < argc) conf_file_option = argv[i];
+      if (++i < argc) conf_file_option += std::string("\n") + argv[i];
     } else if ( arg[0] == '-' ||  arg[0] == '_'  ) {
       std::cerr << argv[0] << " : Unknwon arguments " << arg << std::endl;
     } else {
