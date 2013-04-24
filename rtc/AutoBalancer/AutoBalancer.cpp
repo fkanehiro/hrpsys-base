@@ -656,6 +656,7 @@ bool AutoBalancer::setFootSteps(const OpenHRP::AutoBalancerService::FootstepSequ
       }
     }
     std::cerr << "[AutoBalancer] : print footsteps " << std::endl;
+    gg->append_finalize_footstep();
     gg->print_footstep_list();
     startWalking();
   }
@@ -704,6 +705,38 @@ bool AutoBalancer::getAutoBalancerParam(OpenHRP::AutoBalancerService::AutoBalanc
   return true;
 };
 
+void AutoBalancer::copyRatscoords2Footstep(OpenHRP::AutoBalancerService::Footstep& out_fs, const rats::coordinates& in_fs)
+{
+  memcpy(out_fs.pos, in_fs.pos.data(), sizeof(double)*3);
+  Eigen::Quaternion<double> qt(in_fs.rot);
+  out_fs.rot[0] = qt.w();
+  out_fs.rot[1] = qt.x();
+  out_fs.rot[2] = qt.y();
+  out_fs.rot[3] = qt.z();
+};
+
+bool AutoBalancer::getFootstepParam(OpenHRP::AutoBalancerService::FootstepParam& i_param)
+{
+  copyRatscoords2Footstep(i_param.rleg_coords, coordinates(ikp[":rleg"].current_p0, ikp[":rleg"].current_r0));
+  copyRatscoords2Footstep(i_param.lleg_coords, coordinates(ikp[":lleg"].current_p0, ikp[":lleg"].current_r0));
+  copyRatscoords2Footstep(i_param.support_leg_coords, gg->get_support_leg_coords());
+  copyRatscoords2Footstep(i_param.swing_leg_coords, gg->get_swing_leg_coords());
+  copyRatscoords2Footstep(i_param.swing_leg_src_coords, gg->get_swing_leg_src_coords());
+  copyRatscoords2Footstep(i_param.swing_leg_dst_coords, gg->get_swing_leg_dst_coords());
+  copyRatscoords2Footstep(i_param.dst_foot_midcoords, gg->get_dst_foot_midcoords());
+  if (gg->get_support_leg() == ":rleg") {
+    i_param.support_leg = OpenHRP::AutoBalancerService::RLEG;
+  } else {
+    i_param.support_leg = OpenHRP::AutoBalancerService::LLEG;
+  }
+  switch ( gg->get_current_support_state() ) {
+  case 0: i_param.support_leg_with_both = OpenHRP::AutoBalancerService::BOTH; break;
+  case 1: i_param.support_leg_with_both = OpenHRP::AutoBalancerService::RLEG; break;
+  case 2: i_param.support_leg_with_both = OpenHRP::AutoBalancerService::LLEG; break;
+  default: break;
+  }
+  return true;
+};
 
 //
 extern "C"

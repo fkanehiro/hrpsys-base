@@ -100,6 +100,7 @@ class AutoBalancer
   bool getGaitGeneratorParam(OpenHRP::AutoBalancerService::GaitGeneratorParam& i_param);
   bool setAutoBalancerParam(const OpenHRP::AutoBalancerService::AutoBalancerParam& i_param);
   bool getAutoBalancerParam(OpenHRP::AutoBalancerService::AutoBalancerParam& i_param);
+  bool getFootstepParam(OpenHRP::AutoBalancerService::FootstepParam& i_param);
 
  protected:
   // Configuration variable declaration
@@ -154,6 +155,7 @@ class AutoBalancer
   void fixLegToCoords (const std::string& leg, const rats::coordinates& coords);
   void startWalking ();
   void stopWalking ();
+  void copyRatscoords2Footstep(OpenHRP::AutoBalancerService::Footstep& out_fs, const rats::coordinates& in_fs);
 
   // for gg
   typedef boost::shared_ptr<rats::gait_generator> ggPtr;

@@ -20,6 +20,25 @@ module OpenHRP
     };
     typedef sequence<Footstep> FootstepSequence;
 
+    enum SupportLegState {
+      RLEG,
+      LLEG,
+      BOTH
+    };
+
+    struct FootstepParam
+    {
+      Footstep rleg_coords;
+      Footstep lleg_coords;
+      Footstep support_leg_coords;
+      Footstep swing_leg_coords;
+      Footstep swing_leg_src_coords;
+      Footstep swing_leg_dst_coords;
+      Footstep dst_foot_midcoords;
+      SupportLegState support_leg;
+      SupportLegState support_leg_with_both;
+    };
+
     struct AutoBalancerLimbParam
     {
       string name;
@@ -119,5 +138,12 @@ module OpenHRP
      * @return true if set successfully, false otherwise
      */
     boolean getAutoBalancerParam(out AutoBalancerParam i_param);
+
+    /**
+     * @brief get footstep param parameters.
+     * @param i_param is output parameters
+     * @return true if set successfully, false otherwise
+     */
+    boolean getFootstepParam(out FootstepParam i_param);
   };
 };

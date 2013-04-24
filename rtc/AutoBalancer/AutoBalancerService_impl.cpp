@@ -70,6 +70,12 @@ CORBA::Boolean AutoBalancerService_impl::getAutoBalancerParam(OpenHRP::AutoBalan
   return m_autobalancer->getAutoBalancerParam(*i_param);
 };
 
+CORBA::Boolean AutoBalancerService_impl::getFootstepParam(OpenHRP::AutoBalancerService::FootstepParam_out i_param)
+{
+  i_param = new OpenHRP::AutoBalancerService::FootstepParam();
+  return m_autobalancer->getFootstepParam(*i_param);
+};
+
 void AutoBalancerService_impl::autobalancer(AutoBalancer *i_autobalancer)
 {
   m_autobalancer = i_autobalancer;
