@@ -124,17 +124,19 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     std::vector<hrp::Vector3> leg_pos;
     hrp::Vector3 leg_offset;
     coil::vstring leg_offset_str = coil::split(prop["abc_leg_offset"], ",");
-    for (size_t i = 0; i < 3; i++) coil::stringTo(leg_offset(i), leg_offset_str[i].c_str());
-    std::cerr << "OFFSET " << leg_offset(0) << " " << leg_offset(1) << " " << leg_offset(2) << std::endl;
-    leg_pos.push_back(hrp::Vector3(-1*leg_offset));
-    leg_pos.push_back(hrp::Vector3(leg_offset));
+    if (leg_offset_str.size() > 0) {
+      for (size_t i = 0; i < 3; i++) coil::stringTo(leg_offset(i), leg_offset_str[i].c_str());
+      std::cerr << "OFFSET " << leg_offset(0) << " " << leg_offset(1) << " " << leg_offset(2) << std::endl;
+      leg_pos.push_back(hrp::Vector3(-1*leg_offset));
+      leg_pos.push_back(hrp::Vector3(leg_offset));
 
-    gg = new rats::gait_generator(m_dt, leg_pos, 1e-3*150/*[m]*/, 1e-3*50/*[m]*/, 10/*[deg]*/);
-    gg_is_walking = gg_ending = gg_solved = false;
-    std::vector<hrp::Vector3> dzo;
-    dzo.push_back(hrp::Vector3::Zero());
-    dzo.push_back(hrp::Vector3::Zero());
-    gg->set_default_zmp_offsets(dzo);
+      gg = ggPtr(new rats::gait_generator(m_dt, leg_pos, 1e-3*150/*[m]*/, 1e-3*50/*[m]*/, 10/*[deg]*/));
+      gg_is_walking = gg_ending = gg_solved = false;
+      std::vector<hrp::Vector3> dzo;
+      dzo.push_back(hrp::Vector3::Zero());
+      dzo.push_back(hrp::Vector3::Zero());
+      gg->set_default_zmp_offsets(dzo);
+    }
     fix_leg_coords = coordinates();
 
     return RTC::RTC_OK;
@@ -144,8 +146,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
 
 RTC::ReturnCode_t AutoBalancer::onFinalize()
 {
-    delete gg;
-    return RTC::RTC_OK;
+  return RTC::RTC_OK;
 }
 
 /*
