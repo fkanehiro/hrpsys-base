@@ -489,7 +489,7 @@ void AutoBalancer::solveLimbIK ()
 
 void AutoBalancer::startABCparam(const OpenHRP::AutoBalancerService::AutoBalancerLimbParamSequence& alp)
 {
-  std::cerr << "abc start" << std::endl;
+  std::cerr << "[AutoBalancer] start auto balancer mode" << std::endl;
   transition_count = -MAX_TRANSITION_COUNT; // when start impedance, count up to 0
   Guard guard(m_mutex);
 
@@ -499,8 +499,15 @@ void AutoBalancer::startABCparam(const OpenHRP::AutoBalancerService::AutoBalance
     tmp.base_name = std::string(tmpalp.base_name);
     tmp.target_name = std::string(tmpalp.target_name);
     tmp.manip = hrp::JointPathExPtr(new hrp::JointPathEx(m_robot, m_robot->link(tmp.base_name), m_robot->link(tmp.target_name)));
+    memcpy(tmp.target2foot_offset_pos.data(), tmpalp.target2foot_offset_pos, sizeof(double)*3);
+    tmp.target2foot_offset_rot = (Eigen::Quaternion<double>(tmpalp.target2foot_offset_rot[0],
+                                                            tmpalp.target2foot_offset_rot[1],
+                                                            tmpalp.target2foot_offset_rot[2],
+                                                            tmpalp.target2foot_offset_rot[3])).normalized().toRotationMatrix();
     ikp.insert(std::pair<std::string, ABCIKparam>(std::string(tmpalp.name), tmp));
-    std::cerr << "ABC " << std::string(tmpalp.name) << " " << std::string(tmpalp.base_name) << " " << std::string(tmpalp.target_name) << std::endl;
+    std::cerr << "abc limb [" << std::string(tmpalp.name) << "]" << std::endl;
+    std::cerr << "     base_name : " << std::string(tmpalp.base_name) << ", target_name :" << std::string(tmpalp.target_name) << std::endl;
+    std::cerr << "     offset_pos : " << tmp.target2foot_offset_pos(0) << " " << tmp.target2foot_offset_pos(1) << " " << tmp.target2foot_offset_pos(2) << std::endl;
   }
 
   for ( int i = 0; i < m_robot->numJoints(); i++ ){
@@ -515,7 +522,7 @@ void AutoBalancer::startABCparam(const OpenHRP::AutoBalancerService::AutoBalance
 
 void AutoBalancer::stopABCparam()
 {
-  std::cerr << "abc stop" << std::endl;
+  std::cerr << "[AutoBalancer] stop auto balancer mode" << std::endl;
   Guard guard(m_mutex);
   mid_coords(fix_leg_coords, 0.5,
              coordinates(ikp[":rleg"].target_p0, ikp[":rleg"].target_r0),
@@ -567,7 +574,6 @@ void AutoBalancer::stopWalking ()
 bool AutoBalancer::startABC (const OpenHRP::AutoBalancerService::AutoBalancerLimbParamSequence& alp)
 {
   if (control_mode == MODE_IDLE) {
-    std::cerr << "START ABC" << std::endl;
     startABCparam(alp);
     waitABCTransition();
     return true;
@@ -579,7 +585,6 @@ bool AutoBalancer::startABC (const OpenHRP::AutoBalancerService::AutoBalancerLim
 bool AutoBalancer::stopABC ()
 {
   if (control_mode == MODE_ABC) {
-    std::cerr << "STOP ABC" << std::endl;
     stopABCparam();
     waitABCTransition();
     return true;
@@ -644,13 +649,13 @@ bool AutoBalancer::setFootSteps(const OpenHRP::AutoBalancerService::FootstepSequ
       if (leg == ":rleg" || leg == ":lleg") {
         memcpy(tmpfs.pos.data(), fs[i].pos, sizeof(double)*3);
         tmpfs.rot = (Eigen::Quaternion<double>(fs[i].rot[0], fs[i].rot[1], fs[i].rot[2], fs[i].rot[3])).normalized().toRotationMatrix(); // rtc: (x, y, z, w) but eigen: (w, x, y, z)
-        std::cerr << leg; tmpfs.print_eus_coordinates(std::cerr);
         gg->append_footstep_node(leg, tmpfs);
       } else {
         std::cerr << "no such target : " << leg << std::endl;
         return false;
       }
     }
+    std::cerr << "[AutoBalancer] : print footsteps " << std::endl;
     gg->print_footstep_list();
     startWalking();
   }

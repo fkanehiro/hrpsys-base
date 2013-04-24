@@ -140,8 +140,8 @@ class AutoBalancer
 
  private:
   struct ABCIKparam {
-    hrp::Vector3 target_p0, current_p0;
-    hrp::Matrix33 target_r0, current_r0;
+    hrp::Vector3 target_p0, current_p0, target2foot_offset_pos;
+    hrp::Matrix33 target_r0, current_r0, target2foot_offset_rot;
     std::string target_name, base_name;
     hrp::JointPathExPtr manip;
   };
