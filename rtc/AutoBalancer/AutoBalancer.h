@@ -96,6 +96,10 @@ class AutoBalancer
   void waitFootSteps();
   bool startABC(const OpenHRP::AutoBalancerService::AutoBalancerLimbParamSequence& alp);
   bool stopABC();
+  bool setGaitGeneratorParam(const OpenHRP::AutoBalancerService::GaitGeneratorParam& i_param);
+  bool getGaitGeneratorParam(OpenHRP::AutoBalancerService::GaitGeneratorParam& i_param);
+  bool setAutoBalancerParam(const OpenHRP::AutoBalancerService::AutoBalancerParam& i_param);
+  bool getAutoBalancerParam(OpenHRP::AutoBalancerService::AutoBalancerParam& i_param);
 
  protected:
   // Configuration variable declaration
@@ -142,7 +146,7 @@ class AutoBalancer
     hrp::JointPathExPtr manip;
   };
   void robotstateOrg2qRef();
-  bool solveLimbIKforLimb (ABCIKparam& param, const double transition_smooth_gain, const double cog_gain);
+  bool solveLimbIKforLimb (ABCIKparam& param, const double transition_smooth_gain);
   void solveLimbIK();
   void startABCparam(const ::OpenHRP::AutoBalancerService::AutoBalancerLimbParamSequence& alp);
   void stopABCparam();
@@ -164,7 +168,8 @@ class AutoBalancer
   hrp::Vector3 base_pos_org, target_base_pos;
   hrp::Matrix33 base_rot_org, target_base_rot;
   rats::coordinates fix_leg_coords;
-  double m_dt;
+  std::vector<hrp::Vector3> default_zmp_offsets;
+  double m_dt, move_base_gain;
   hrp::BodyPtr m_robot;
   coil::Mutex m_mutex;
   unsigned int m_debugLevel;

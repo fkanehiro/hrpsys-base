@@ -8,7 +8,7 @@ module OpenHRP
   
   interface AutoBalancerService
   {
-    //typedef sequence<double, 3> DblSequence3;
+    typedef sequence<double, 3> DblSequence3;
     //typedef sequence<double, 4> DblSequence4;
     typedef double DblArray3[3];
     typedef double DblArray4[4];
@@ -27,6 +27,19 @@ module OpenHRP
       string target_name;
     };
     typedef sequence<AutoBalancerLimbParam> AutoBalancerLimbParamSequence;
+
+    struct GaitGeneratorParam // parameters for GaitGenerator
+    {
+      double default_step_time; // step time [s]
+      double default_step_height; // step height [m]
+      sequence<double, 3> stride_parameter; // stride limitation of x[m], y[m], and theta[deg]
+    };
+
+    struct AutoBalancerParam // parameters for AutoBalancer
+    {
+      sequence<DblSequence3, 2> default_zmp_offsets; // zmp offset vectors[m] for :rleg and :lleg (<-please set by this order)
+      double move_base_gain;
+    };
 
     /**
      * @brief go pos.
@@ -76,5 +89,33 @@ module OpenHRP
      * @return true if set successfully, false otherwise
      */
     boolean stopABC();
+
+    /**
+     * @brief set GaitGenerator parameters
+     * @param i_param is input parameter
+     * @return true if set successfully, false otherwise
+     */
+    boolean setGaitGeneratorParam(in GaitGeneratorParam i_param);
+
+    /**
+     * @brief get impedance parameters.
+     * @param i_param is output parameters
+     * @return true if set successfully, false otherwise
+     */
+    boolean getGaitGeneratorParam(out GaitGeneratorParam i_param);
+
+    /**
+     * @brief set AutoBalancer parameters
+     * @param i_param is input parameter
+     * @return true if set successfully, false otherwise
+     */
+    boolean setAutoBalancerParam(in AutoBalancerParam i_param);
+
+    /**
+     * @brief get impedance parameters.
+     * @param i_param is output parameters
+     * @return true if set successfully, false otherwise
+     */
+    boolean getAutoBalancerParam(out AutoBalancerParam i_param);
   };
 };

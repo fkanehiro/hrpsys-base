@@ -44,6 +44,32 @@ CORBA::Boolean AutoBalancerService_impl::stopABC()
   return m_autobalancer->stopABC();
 };
 
+CORBA::Boolean AutoBalancerService_impl::setGaitGeneratorParam(const OpenHRP::AutoBalancerService::GaitGeneratorParam& i_param)
+{
+  return m_autobalancer->setGaitGeneratorParam(i_param);
+};
+
+CORBA::Boolean AutoBalancerService_impl::getGaitGeneratorParam(OpenHRP::AutoBalancerService::GaitGeneratorParam_out i_param)
+{
+  i_param = new OpenHRP::AutoBalancerService::GaitGeneratorParam();
+  i_param->stride_parameter.length(3);
+  return m_autobalancer->getGaitGeneratorParam(*i_param);
+};
+
+CORBA::Boolean AutoBalancerService_impl::setAutoBalancerParam(const OpenHRP::AutoBalancerService::AutoBalancerParam& i_param)
+{
+  return m_autobalancer->setAutoBalancerParam(i_param);
+};
+
+CORBA::Boolean AutoBalancerService_impl::getAutoBalancerParam(OpenHRP::AutoBalancerService::AutoBalancerParam_out i_param)
+{
+  i_param = new OpenHRP::AutoBalancerService::AutoBalancerParam();
+  i_param->default_zmp_offsets.length(2);
+  for (size_t i = 0; i < 2; i++)
+    i_param->default_zmp_offsets[i].length(3);
+  return m_autobalancer->getAutoBalancerParam(*i_param);
+};
+
 void AutoBalancerService_impl::autobalancer(AutoBalancer *i_autobalancer)
 {
   m_autobalancer = i_autobalancer;

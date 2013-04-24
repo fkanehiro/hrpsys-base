@@ -54,6 +54,7 @@ AutoBalancer::AutoBalancer(RTC::Manager* manager)
       m_qOut("q", m_q),
       m_AutoBalancerServicePort("AutoBalancerService"),
       // </rtc-template>
+      move_base_gain(0.05),
       m_robot(hrp::BodyPtr()),
       m_debugLevel(0),
       dummy(0)
@@ -132,10 +133,9 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
 
       gg = ggPtr(new rats::gait_generator(m_dt, leg_pos, 1e-3*150/*[m]*/, 1e-3*50/*[m]*/, 10/*[deg]*/));
       gg_is_walking = gg_ending = gg_solved = false;
-      std::vector<hrp::Vector3> dzo;
-      dzo.push_back(hrp::Vector3::Zero());
-      dzo.push_back(hrp::Vector3::Zero());
-      gg->set_default_zmp_offsets(dzo);
+      if (default_zmp_offsets.size() == 0)
+        default_zmp_offsets.push_back(hrp::Vector3::Zero());
+      gg->set_default_zmp_offsets(default_zmp_offsets);
     }
     fix_leg_coords = coordinates();
 
@@ -286,7 +286,7 @@ void AutoBalancer::fixLegToCoords (const std::string& leg, const coordinates& co
   m_robot->calcForwardKinematics();
 }
 
-bool AutoBalancer::solveLimbIKforLimb (ABCIKparam& param, const double transition_smooth_gain, const double cog_gain)
+bool AutoBalancer::solveLimbIKforLimb (ABCIKparam& param, const double transition_smooth_gain)
 {
   hrp::Link* base = m_robot->link(param.base_name);
   hrp::Link* target = m_robot->link(param.target_name);
@@ -308,8 +308,6 @@ bool AutoBalancer::solveLimbIKforLimb (ABCIKparam& param, const double transitio
   hrp::Vector3 vel_p, vel_r;
   vel_p = param.target_p0 - param.current_p0;
   rats::difference_rotation(vel_r, param.current_r0, param.target_r0);
-  vel_p *= 1 * cog_gain;
-  vel_r *= 1 * cog_gain;
   if ( transition_count < 0 ) {
     vel_p = vel_p * transition_smooth_gain;
     vel_r = vel_r * transition_smooth_gain;
@@ -428,17 +426,12 @@ void AutoBalancer::solveLimbIK ()
   hrp::Vector3 current_com = m_robot->calcCM();
   hrp::Vector3 dif_com = current_com - target_com;
   dif_com(2) = m_robot->rootLink()->p(2) - target_base_pos(2);
-  double cog_gain = 1 * transition_smooth_gain;
-  m_robot->rootLink()->p = m_robot->rootLink()->p + cog_gain * -0.05 * dif_com;
-  coordinates tmpc;
-  mid_coords(tmpc, 0.9,
-             coordinates(m_robot->rootLink()->p, base_rot_org),
-             coordinates(m_robot->rootLink()->p, target_base_rot));
-  m_robot->rootLink()->R = tmpc.rot;
+  m_robot->rootLink()->p = m_robot->rootLink()->p + -1 * move_base_gain * transition_smooth_gain * dif_com;
+  m_robot->rootLink()->R = target_base_rot;
   m_robot->calcForwardKinematics();
 
   for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
-    if (!solveLimbIKforLimb(it->second, transition_smooth_gain, cog_gain)) break;
+    if (!solveLimbIKforLimb(it->second, transition_smooth_gain)) break;
   }
   if ( transition_count < 0 ) {
     transition_count++;
@@ -550,8 +543,8 @@ void AutoBalancer::stopWalking ()
     // coordinates rc, lc;
     // rb->get_end_coords(rc, ":rleg");
     // rb->get_end_coords(lc, ":lleg");
-    // rc.translate(dzo[0]); /* :rleg */
-    // lc.translate(dzo[1]); /* :lleg */
+    // rc.translate(default_zmp_offsets[0]); /* :rleg */
+    // lc.translate(default_zmp_offsets[1]); /* :lleg */
     // target_cog = (rc.pos + lc.pos) / 2.0;
     /* sync */
     gg_ending = false;
@@ -651,6 +644,40 @@ void AutoBalancer::waitFootSteps()
   usleep(10);
   gg->set_offset_velocity_param(0,0,0);
 }
+
+bool AutoBalancer::setGaitGeneratorParam(const OpenHRP::AutoBalancerService::GaitGeneratorParam& i_param)
+{
+  gg->set_stride_parameters(i_param.stride_parameter[0], i_param.stride_parameter[1], i_param.stride_parameter[2]);
+  gg->set_default_step_time(i_param.default_step_time);
+  gg->set_default_step_height(i_param.default_step_height);
+  return true;
+};
+
+bool AutoBalancer::getGaitGeneratorParam(OpenHRP::AutoBalancerService::GaitGeneratorParam& i_param)
+{
+  gg->get_stride_parameters(i_param.stride_parameter[0], i_param.stride_parameter[1], i_param.stride_parameter[2]);
+  i_param.default_step_time = gg->get_default_step_time();
+  i_param.default_step_height = gg->get_default_step_height();
+  return true;
+};
+
+bool AutoBalancer::setAutoBalancerParam(const OpenHRP::AutoBalancerService::AutoBalancerParam& i_param)
+{
+  move_base_gain = i_param.move_base_gain;
+  for (size_t i = 0; i < 2; i++)
+    for (size_t j = 0; j < 3; j++)
+      default_zmp_offsets[i](j) = i_param.default_zmp_offsets[i][j];
+  return true;
+};
+
+bool AutoBalancer::getAutoBalancerParam(OpenHRP::AutoBalancerService::AutoBalancerParam& i_param)
+{
+  i_param.move_base_gain = move_base_gain;
+  for (size_t i = 0; i < 2; i++)
+    for (size_t j = 0; j < 3; j++)
+      i_param.default_zmp_offsets[i][j] = default_zmp_offsets[i](j);
+  return true;
+};
 
 
 //

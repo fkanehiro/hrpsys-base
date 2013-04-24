@@ -160,6 +160,7 @@ namespace rats
       const coordinates& get_swing_leg_src_coords() const { return swing_leg_src_coords; };
       const coordinates& get_swing_leg_dst_coords() const { return swing_leg_dst_coords; };
       leg_type get_support_leg() const { return support_leg;};
+      double get_default_step_height () const { return default_step_height;};
       void get_swing_support_mid_coords(coordinates& ret) const
       {
         coordinates tmp;
@@ -320,10 +321,17 @@ namespace rats
       return tmp;
     };
     void get_swing_support_mid_coords(coordinates& ret) const { lcg.get_swing_support_mid_coords(ret); };
+    void get_stride_parameters (double& _stride_x, double& _stride_y, double& _stride_theta)
+    {
+      _stride_x = footstep_param.stride_x;
+      _stride_y = footstep_param.stride_y;
+      _stride_theta = footstep_param.stride_theta;
+    };
     size_t get_gp_index() const { return lcg.get_gp_index(); };
     size_t get_gp_count() const { return lcg.get_gp_count(); };
     size_t get_current_support_state() const { return lcg.get_current_support_state();};
     double get_default_step_time () const { return default_step_time; };
+    double get_default_step_height () const { return lcg.get_default_step_height(); };
     /* return whether _leg is swinging leg or not
      * swinging leg -> swing_leg and not double support phase
      *                 landing_offset_ratio is mergin from double support period
