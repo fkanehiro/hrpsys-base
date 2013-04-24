@@ -122,19 +122,32 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     transition_count = 0;
     control_mode = MODE_IDLE;
     loop = 0;
-    std::vector<hrp::Vector3> leg_pos;
-    hrp::Vector3 leg_offset;
+
+    // setting from conf file
+    // GaitGenerator requires abc_leg_offset and abc_stride_parameter in robot conf file
+    // setting leg_pos from conf file
     coil::vstring leg_offset_str = coil::split(prop["abc_leg_offset"], ",");
+    std::vector<hrp::Vector3> leg_pos;
     if (leg_offset_str.size() > 0) {
+      hrp::Vector3 leg_offset;
       for (size_t i = 0; i < 3; i++) coil::stringTo(leg_offset(i), leg_offset_str[i].c_str());
-      std::cerr << "OFFSET " << leg_offset(0) << " " << leg_offset(1) << " " << leg_offset(2) << std::endl;
+      std::cerr << "[AutoBalancer] abc_leg_offset : " << leg_offset(0) << " " << leg_offset(1) << " " << leg_offset(2) << std::endl;
       leg_pos.push_back(hrp::Vector3(-1*leg_offset));
       leg_pos.push_back(hrp::Vector3(leg_offset));
-
-      gg = ggPtr(new rats::gait_generator(m_dt, leg_pos, 1e-3*150/*[m]*/, 1e-3*50/*[m]*/, 10/*[deg]*/));
+    }
+    // setting stride limitations from conf file
+    coil::vstring stride_param_str = coil::split(prop["abc_stride_parameter"], ",");
+    hrp::Vector3 stride_param;
+    if (stride_param_str.size() > 0) {
+      for (size_t i = 0; i < 3; i++) coil::stringTo(stride_param(i), stride_param_str[i].c_str());
+      std::cerr << "[AutoBalancer] abc_stride_parameter : " << stride_param(0) << " " << stride_param(1) << " " << stride_param(2) << std::endl;
+    }
+    if (leg_offset_str.size() > 0 && stride_param_str.size() > 0) {
+      gg = ggPtr(new rats::gait_generator(m_dt, leg_pos, stride_param(0)/*[m]*/, stride_param(1)/*[m]*/, stride_param(2)/*[deg]*/));
       gg_is_walking = gg_ending = gg_solved = false;
-      if (default_zmp_offsets.size() == 0)
-        default_zmp_offsets.push_back(hrp::Vector3::Zero());
+      if (default_zmp_offsets.size() == 0) {
+        for (size_t i = 0; i < 2; i++) default_zmp_offsets.push_back(hrp::Vector3::Zero());
+      }
       gg->set_default_zmp_offsets(default_zmp_offsets);
     }
     fix_leg_coords = coordinates();
