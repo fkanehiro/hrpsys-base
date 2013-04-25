@@ -133,13 +133,13 @@ int main (int argc, char** argv)
     if(ngyro == 1){
       // port is named with no number when there is only one gyro
       hrp::Sensor *s = body->sensor(hrp::Sensor::RATE_GYRO, 0);
-      xmlTextWriterWriteProperty(writer, "outport", "rate:" + s->name + ":RATE_GYRO_SENSOR");
+      xmlTextWriterWriteProperty(writer, "outport", s->name + ":" + s->name + ":RATE_GYRO_SENSOR");
       std::cerr << s->name << std::endl;
     }else{
       for (unsigned int i=0; i<ngyro; i++){
         hrp::Sensor *s = body->sensor(hrp::Sensor::RATE_GYRO, i);
         std::stringstream str_strm;
-        str_strm << "rate" << i << ":" + s->name << ":RATE_GYRO_SENSOR";
+        str_strm << s->name << i << ":" + s->name << ":RATE_GYRO_SENSOR";
         xmlTextWriterWriteProperty(writer, "outport", str_strm.str());
         std::cerr << s->name << std::endl;
       }
@@ -148,13 +148,13 @@ int main (int argc, char** argv)
     if(nacc == 1){
       // port is named with no number when there is only one acc
       hrp::Sensor *s = body->sensor(hrp::Sensor::ACCELERATION, 0);      
-      xmlTextWriterWriteProperty(writer, "outport", "acc:" + s->name + ":ACCELERATION_SENSOR");
+      xmlTextWriterWriteProperty(writer, "outport", s->name + ":" + s->name + ":ACCELERATION_SENSOR");
       std::cerr << s->name << std::endl;
     }else{
       for (unsigned int i=0; i<nacc; i++){
         hrp::Sensor *s = body->sensor(hrp::Sensor::ACCELERATION, i);
         std::stringstream str_strm;
-        str_strm << "acc" << i << ":" << s->name << ":ACCELERATION_SENSOR";
+        str_strm << s->name << i << ":" << s->name << ":ACCELERATION_SENSOR";
         xmlTextWriterWriteProperty(writer, "outport", str_strm.str());
         std::cerr << s->name << std::endl;
       }
