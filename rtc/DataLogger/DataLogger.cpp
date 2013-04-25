@@ -105,7 +105,7 @@ public:
             m_data.tm.sec = i_tv.sec();
             m_data.tm.nsec = i_tv.usec() * 1000; 
             m_log.push_back(m_data);
-            if (m_log.size() >= m_maxLength){
+            while (m_log.size() > m_maxLength){
                 m_log.pop_front();
             }
         }
