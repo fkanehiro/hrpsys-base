@@ -82,10 +82,27 @@ int main (int argc, char** argv)
 	xmlTextWriterWriteProperty(writer, "method", "EULER");
       }
       xmlTextWriterEndElement(writer); // item
+      // default WAIST offset
+      hrp::Vector3 WAIST_offset_pos = hrp::Vector3::Zero();
+      Eigen::AngleAxis<double> WAIST_offset_rot = Eigen::AngleAxis<double>(0, hrp::Vector3(0,0,1)); // rotation in VRML is represented by axis + angle
       for (std::vector<std::string>::iterator it = inputs.begin();
 	   it != inputs.end();
 	   it++) {
-	std::string filename = *it;
+        // argument for VRML supports following two mode:
+        //  1. xxx.wrl
+        //    To specify VRML file. WAIST offsets is 0 transformation.
+        //  2. xxx.wrl,0,0,0,0,0,1,0
+        //    To specify both VRML and WAIST offsets.
+        //    WAIST offset: for example, "0,0,0,0,0,1,0" -> position offset (3dof) + axis for rotation offset (3dof) + angle for rotation offset (1dof)
+        coil::vstring filename_arg_str = coil::split(*it, ",");
+	std::string filename = filename_arg_str[0];
+        if ( filename_arg_str.size () > 1 ){ // if WAIST offset is specified 
+          for (size_t i = 0; i < 3; i++) {
+            coil::stringTo(WAIST_offset_pos(i), filename_arg_str[i+1].c_str());
+            coil::stringTo(WAIST_offset_rot.axis()(i), filename_arg_str[i+1+3].c_str());
+          }
+          coil::stringTo(WAIST_offset_rot.angle(), filename_arg_str[1+3+3].c_str());
+        }
 	hrp::BodyPtr body(new hrp::Body());
 	if (!loadBodyFromModelLoader(body, filename.c_str(),
 				     CosNaming::NamingContext::_duplicate(naming.getRootContext()),
@@ -163,13 +180,21 @@ int main (int argc, char** argv)
 	//
 	std::string root_name = body->rootLink()->name;
 	xmlTextWriterWriteProperty(writer, root_name+".NumOfAABB", "1");
-	std::ostringstream os;
-	os << body->rootLink()->p[0] << "  "
-	   << body->rootLink()->p[1] << "  "
-	   << body->rootLink()->p[2] + 0.1; // 10cm margin
-	xmlTextWriterWriteProperty(writer, root_name+".translation", os.str());
 
-	xmlTextWriterWriteProperty(writer, root_name+".rotation", "0.0 0.0 1.0 0.0");
+        // write waist pos and rot by considering both VRML original WAIST and WAIST_offset_pos and WAIST_offset_rot from arguments
+	std::ostringstream os;
+	os << body->rootLink()->p[0] + WAIST_offset_pos(0) << "  "
+	   << body->rootLink()->p[1] + WAIST_offset_pos(1) << "  "
+	   << body->rootLink()->p[2] + WAIST_offset_pos(2); // 10cm margin
+	xmlTextWriterWriteProperty(writer, root_name+".translation", os.str());
+        os.str(""); // reset ostringstream
+        Eigen::AngleAxis<double> tmpAA = Eigen::AngleAxis<double>(hrp::Matrix33(body->rootLink()->R * WAIST_offset_rot.toRotationMatrix()));
+        os << tmpAA.axis()(0) << " "
+           << tmpAA.axis()(1) << " "
+           << tmpAA.axis()(2) << " "
+           << tmpAA.angle();
+        xmlTextWriterWriteProperty(writer, root_name+".rotation", os.str());
+
 	if ( ! body->isStaticModel() ) {
 	  xmlTextWriterWriteProperty(writer, root_name+".mode", "Torque");
 	  xmlTextWriterWriteProperty(writer, "controller", basename(output));
