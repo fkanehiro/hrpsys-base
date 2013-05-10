@@ -127,9 +127,11 @@ int main(int argc, char* argv[])
     GLlink::drawMode(GLlink::DM_COLLISION);
     scene.showFloorGrid(false);
 
+    log.enableRingBuffer(1);
+    OpenHRP::CollisionDetectorService_var coService;
+
     while(window.oneStep()) {
         //==================== collision detecter ===============
-        OpenHRP::CollisionDetectorService_var coService;
 
         if (CORBA::is_nil(coService)){
             try{
