@@ -97,7 +97,7 @@ RTC::ReturnCode_t VirtualForceSensor::onInitialize()
 		<< std::endl;
   }
 
-  // virtual_force_sensor: <name>, <base>, <target>, 0, 0, 0,  0, 0, 0, 1
+  // virtual_force_sensor: <name>, <base>, <target>, 0, 0, 0,  0, 0, 1, 0
   coil::vstring virtual_force_sensor = coil::split(prop["virtual_force_sensor"], ",");
   for(int i = 0; i < virtual_force_sensor.size()/10; i++ ){
     std::string name = virtual_force_sensor[i*10+0];
@@ -109,7 +109,7 @@ RTC::ReturnCode_t VirtualForceSensor::onInitialize()
       coil::stringTo(tr[j], virtual_force_sensor[i*10+3+j].c_str());
     }
     p.p = hrp::Vector3(tr[0], tr[1], tr[2]);
-    p.R = (Eigen::Quaternion<double>(tr[6], tr[3], tr[4], tr[5])).normalized().toRotationMatrix(); // rtc: (x, y, z, w) but eigen: (w, x, y, z)
+    p.R = Eigen::AngleAxis<double>(tr[6], hrp::Vector3(tr[3],tr[4],tr[5])).toRotationMatrix(); // rotation in VRML is represented by axis + angle
     p.forceOffset = hrp::Vector3(0, 0, 0);
     p.momentOffset = hrp::Vector3(0, 0, 0);
     std::cerr << "virtual force sensor : " << name << std::endl;
