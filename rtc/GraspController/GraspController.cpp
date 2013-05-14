@@ -235,7 +235,7 @@ RTC::ReturnCode_t GraspController::onExecute(RTC::UniqueId ec_id)
             if ( error < 0 ) m_q.data[i] = m_qRef.data[i] - diff;
             //std::cerr << "id = " << i << ", ref = " << m_qRef.data[i] << ", cur =" << m_qCurrent.data[i] << " error = " << error << ", diff = " << diff << ", q = " << m_q.data[i] << " (target = " << grasp_param.target_error << ", dir=" << grasp_param.joints[j].dir << ")" << std::endl;
           } else {
-            std::cerr << "GraspController is not working..., id = " << i << std::endl;
+            if (m_debugLevel==1) std::cerr << "GraspController is not working..., id = " << i << std::endl;
           }
         }
       } else if ( grasp_param.time > 1 ) { // stopping 
@@ -258,7 +258,7 @@ RTC::ReturnCode_t GraspController::onExecute(RTC::UniqueId ec_id)
 
     m_qOut.write();
   }else if ( m_qCurrent.data.length() == m_q.data.length() ) {
-    std::cerr << "GraspController in pass through mode..." << std::endl;
+    if (m_debugLevel==1) std::cerr << "GraspController in pass through mode..." << std::endl;
     m_qOut.write();
   } else {
     std::cerr << "GraspController is not working..." << std::endl;
