@@ -478,6 +478,59 @@ void CollisionDetector::setupVClipModel(hrp::BodyPtr i_body)
     }
 }
 
+bool CollisionDetector::checkIsSafeTransition(void)
+{
+    for ( int i = 0; i < m_q.data.length(); i++ ) {
+        if (abs(m_q.data[i] - m_qRef.data[i]) > 0.017) return false;
+    }
+    return true;
+}
+
+bool CollisionDetector::enable(void)
+{
+    if (m_enable){
+        return true;
+    }
+
+    if (!checkIsSafeTransition()){
+        std::cerr << "CollisionDetector cannot be enabled because of different reference joint angle" << std::endl;
+        return false;
+    }
+
+    // check collision
+    for ( int i = 0; i < m_robot->numJoints(); i++ ){
+        m_robot->joint(i)->q = m_qRef.data[i];
+    }
+    m_robot->calcForwardKinematics();
+    std::map<std::string, CollisionLinkPair *>::iterator it = m_pair.begin();
+    for (unsigned int i = 0; it != m_pair.end(); it++, i++){
+        CollisionLinkPair* c = it->second;
+        VclipLinkPairPtr p = c->pair;
+        c->distance = c->pair->computeDistance(c->point0.data(), c->point1.data());
+        if ( c->distance <= c->pair->getTolerance() ) {
+            hrp::JointPathPtr jointPath = m_robot->getJointPath(p->link(0),p->link(1));
+            std::cerr << "CollisionDetector cannot be enabled because of collision" << std::endl;
+            std::cerr << i << "/" << m_pair.size() << " pair: " << p->link(0)->name << "/" << p->link(1)->name << "(" << jointPath->numJoints() << "), distance = " << c->distance << std::endl;
+            return false;
+        }
+    }
+
+    m_safe_posture = true;
+    m_recover_time = 0;
+    m_loop_for_check = 0;
+    m_enable = true;
+    return true;
+}
+
+bool CollisionDetector::disable(void)
+{
+    if (!checkIsSafeTransition()){
+        std::cerr << "CollisionDetector cannot be disabled because of different reference joint angle" << std::endl;
+        return false;
+    }
+    m_enable = false;
+    return true;
+}
 
 void CollisionDetector::setupVClipModel(hrp::Link *i_link)
 {

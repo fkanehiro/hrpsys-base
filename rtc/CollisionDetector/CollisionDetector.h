@@ -108,8 +108,9 @@ class CollisionDetector
   bool setTolerance(const char *i_link_pair_name, double i_tolerance);
   bool getCollisionStatus(OpenHRP::CollisionDetectorService::CollisionState &state);
 
-  bool enable()  { m_enable = true; }
-  bool disable() { m_enable = false; }
+  bool checkIsSafeTransition(void);
+  bool enable(void);
+  bool disable(void);
 
  protected:
   // Configuration variable declaration
