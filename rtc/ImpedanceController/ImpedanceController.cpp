@@ -137,7 +137,7 @@ RTC::ReturnCode_t ImpedanceController::onInitialize()
           coil::stringTo(tr[j], virtual_force_sensor[i*10+3+j].c_str());
         }
         p.p = hrp::Vector3(tr[0], tr[1], tr[2]);
-        p.R = (Eigen::Quaternion<double>(tr[6], tr[3], tr[4], tr[5])).normalized().toRotationMatrix();
+        p.R = Eigen::AngleAxis<double>(tr[6], hrp::Vector3(tr[3],tr[4],tr[5])).toRotationMatrix(); // rotation in VRML is represented by axis + angle
         m_sensors[name] = p;
         std::cerr << "virtual force sensor : " << name << std::endl;
         std::cerr << "                T, R : " << p.p[0] << " " << p.p[1] << " " << p.p[2] << std::endl << p.R << std::endl;
