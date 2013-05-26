@@ -668,8 +668,8 @@ bool ImpedanceController::setImpedanceControllerParam(OpenHRP::ImpedanceControll
 	p.K_r = i_param_.K_r;
 
     
-	p.force_offset_p = hrp::Vector3(m_force[force_id].data[0], m_force[force_id].data[1], m_force[force_id].data[2]);
-	p.force_offset_r = hrp::Vector3(m_force[force_id].data[3], m_force[force_id].data[4], m_force[force_id].data[5]);
+        p.force_offset_p = hrp::Vector3(0,0,0);
+        p.force_offset_r = hrp::Vector3(0,0,0);
 
 	// joint path
 	p.manip = hrp::JointPathExPtr(new hrp::JointPathEx(m_robot, m_robot->link(p.base_name), m_robot->link(p.target_name)));
