@@ -405,17 +405,16 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
             // std::cerr << "ref_moment = " << param.ref_moment[0] << " " << param.ref_moment[1] << " " << param.ref_moment[2] << std::endl;
 
             // ref_force/ref_moment and force_gain/moment_gain are expressed in global coordinates. 
-            vel_p = param.force_gain * ( ( (force_p - param.ref_force) * m_dt * m_dt
-                                           + param.M_p * ( vel_pos1 - vel_pos0 )
-                                           + param.D_p * ( dif_target_pos - vel_pos0 ) * m_dt
-                                           + param.K_p * ( dif_pos * m_dt * m_dt ) ) /
-                                         (param.M_p + (param.D_p * m_dt) + (param.K_p * m_dt * m_dt)) );
-
-            vel_r = param.moment_gain * ( ( (force_r - param.ref_moment) * m_dt * m_dt
-                                            + param.M_r * ( vel_rot1 - vel_rot0 )
-                                            + param.D_r * ( dif_target_rot - vel_rot0 ) * m_dt
-                                            + param.K_r * ( dif_rot * m_dt * m_dt  ) ) /
-                                          (param.M_r + (param.D_r * m_dt) + (param.K_r * m_dt * m_dt)) );
+            vel_p =  ( param.force_gain * (force_p - param.ref_force) * m_dt * m_dt
+                       + param.M_p * ( vel_pos1 - vel_pos0 )
+                       + param.D_p * ( dif_target_pos - vel_pos0 ) * m_dt
+                       + param.K_p * ( dif_pos * m_dt * m_dt ) ) /
+                     (param.M_p + (param.D_p * m_dt) + (param.K_p * m_dt * m_dt));
+            vel_r =  ( param.moment_gain * (force_r - param.ref_moment) * m_dt * m_dt
+                       + param.M_r * ( vel_rot1 - vel_rot0 )
+                       + param.D_r * ( dif_target_rot - vel_rot0 ) * m_dt
+                       + param.K_r * ( dif_rot * m_dt * m_dt  ) ) /
+                     (param.M_r + (param.D_r * m_dt) + (param.K_r * m_dt * m_dt));
 
             // generate smooth motion just after impedance started
             if ( DEBUGP ) {
