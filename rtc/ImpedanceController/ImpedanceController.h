@@ -143,7 +143,6 @@ class ImpedanceController
     std::string base_name, target_name;
     hrp::Vector3 target_p0, target_p1, current_p0, current_p1, current_p2;
     hrp::Matrix33 target_r0, target_r1, current_r0, current_r1, current_r2;
-    hrp::Vector3 force_offset_p, force_offset_r;
     double M_p, D_p, K_p;
     double M_r, D_r, K_r;
     hrp::Vector3 ref_force, ref_moment;
@@ -164,13 +163,23 @@ class ImpedanceController
     hrp::Vector3 p;
     hrp::Matrix33 R;
   };
+  struct ForceMomentOffsetParam {
+    hrp::Vector3 force_offset, moment_offset, link_offset_centroid;
+    double link_offset_mass;
+
+    ForceMomentOffsetParam ()
+      : force_offset(hrp::Vector3::Zero()), moment_offset(hrp::Vector3::Zero()),
+        link_offset_centroid(hrp::Vector3::Zero()), link_offset_mass(0)
+    {};
+  };
 
   bool checkImpedanceNameValidity (int& force_id, const std::string& name);
-
   void copyImpedanceParam (OpenHRP::ImpedanceControllerService::impedanceParam& i_param_, const ImpedanceParam& param);
 
   std::map<std::string, ImpedanceParam> m_impedance_param;
+  std::map<std::string, ForceMomentOffsetParam> m_forcemoment_offset_param;
   std::map<std::string, VirtualForceSensorParam> m_sensors;
+  static const double grav = 9.80665; /* [m/s^2] */
   double m_dt;
   hrp::BodyPtr m_robot;
   coil::Mutex m_mutex;
