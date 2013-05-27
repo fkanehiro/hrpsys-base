@@ -28,7 +28,13 @@ module OpenHRP
       double reference_gain;
       double manipulability_limit;
     };
-    
+
+    struct forcemomentOffsetParam {
+      DblSequence3 force_offset;
+      DblSequence3 moment_offset;
+      DblSequence3 link_offset_centroid;
+      double link_offset_mass;
+    };
 
     /**
      * @brief set impedance parameters.
@@ -56,6 +62,20 @@ module OpenHRP
      * @param name name of the impedance parameter set
      */
     void waitDeletingImpedanceController(in string name);
+
+    /**
+     * @brief set offset parameters.
+     * @param i_param new offset parameters
+     * @return true if set successfully, false otherwise
+     */
+    boolean setForceMomentOffsetParam(in string name, in forcemomentOffsetParam i_param);
+
+    /**
+     * @brief get offset parameters.
+     * @param name is name of the offset parameter set and i_param output offset parameters
+     * @return true if set successfully, false otherwise
+     */
+    boolean getForceMomentOffsetParam(in string name, out forcemomentOffsetParam i_param);
     
     /**
      * @brief remove impedance parameters and wait to finish deleting the impedance param object.

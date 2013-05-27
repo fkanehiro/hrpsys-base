@@ -94,6 +94,8 @@ class ImpedanceController
   bool deleteImpedanceController(std::string i_name_);
   void waitDeletingImpedanceController(std::string i_name_);
   bool deleteImpedanceControllerAndWait(std::string i_name_);
+  bool setForceMomentOffsetParam(const std::string& i_name_, const OpenHRP::ImpedanceControllerService::forcemomentOffsetParam &i_param_);
+  bool getForceMomentOffsetParam(const std::string& i_name_, OpenHRP::ImpedanceControllerService::forcemomentOffsetParam& i_param_);
 
  protected:
   // Configuration variable declaration

@@ -847,6 +847,16 @@ bool ImpedanceController::deleteImpedanceControllerAndWait(std::string i_name_)
     return true;
 }
 
+bool ImpedanceController::setForceMomentOffsetParam(const std::string& i_name_, const ImpedanceControllerService::forcemomentOffsetParam& i_param_)
+{
+  return true;
+}
+
+bool ImpedanceController::getForceMomentOffsetParam(const std::string& i_name_, ImpedanceControllerService::forcemomentOffsetParam& i_param_)
+{
+  return true;
+}
+
 extern "C"
 {
 
