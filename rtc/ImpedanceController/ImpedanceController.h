@@ -184,6 +184,7 @@ class ImpedanceController
   std::map<std::string, ImpedanceParam> m_impedance_param;
   std::map<std::string, ForceMomentOffsetParam> m_forcemoment_offset_param;
   std::map<std::string, VirtualForceSensorParam> m_sensors;
+  std::map<std::string, hrp::Vector3> abs_forces, abs_moments;
   static const double grav = 9.80665; /* [m/s^2] */
   double m_dt;
   hrp::BodyPtr m_robot;

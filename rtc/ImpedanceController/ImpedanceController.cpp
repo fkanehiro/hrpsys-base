@@ -152,6 +152,10 @@ RTC::ReturnCode_t ImpedanceController::onInitialize()
         registerInPort(name.c_str(), *m_forceIn[i+npforce]);
         std::cerr << name << std::endl;
     }
+    for (unsigned int i=0; i<m_forceIn.size(); i++){
+      abs_forces.insert(std::pair<std::string, hrp::Vector3>(m_forceIn[i]->name(), hrp::Vector3::Zero()));
+      abs_moments.insert(std::pair<std::string, hrp::Vector3>(m_forceIn[i]->name(), hrp::Vector3::Zero()));
+    }
 
     unsigned int dof = m_robot->numJoints();
     for ( int i = 0 ; i < dof; i++ ){
@@ -216,7 +220,42 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
         }
     }
     if (m_qCurrentIn.isNew()) {
-        m_qCurrentIn.read();
+      m_qCurrentIn.read();
+      //
+      //updateRootLinkPosRot(m_rpy);
+      for (unsigned int i=0; i<m_forceIn.size(); i++){
+        assert(m_force[i].data.length()==6);
+        hrp::ForceSensor* sensor = m_robot->sensor<hrp::ForceSensor>(m_forceIn[i]->name());
+        hrp::Vector3 data_p(m_force[i].data[0], m_force[i].data[1], m_force[i].data[2]);
+        hrp::Vector3 data_r(m_force[i].data[3], m_force[i].data[4], m_force[i].data[5]);
+        if ( DEBUGP ) {
+          std::cerr << "raw force : " << data_p[0] << " " << data_p[1] << " " << data_p[2] << std::endl;
+          std::cerr << "raw moment : " << data_r[0] << " " << data_r[1] << " " << data_r[2] << std::endl;
+        }
+        if ( sensor ) {
+          // real force sensor
+          hrp::Matrix33 sensorR = sensor->link->R * sensor->localR;
+          hrp::Vector3 mg = hrp::Vector3(0,0, m_forcemoment_offset_param[sensor->name].link_offset_mass * grav * -1);
+          abs_forces[sensor->name] = sensorR * (data_p - m_forcemoment_offset_param[sensor->name].force_offset) - mg;
+          abs_moments[sensor->name] = sensorR * (data_r - m_forcemoment_offset_param[sensor->name].moment_offset) - hrp::Vector3(sensorR * m_forcemoment_offset_param[sensor->name].link_offset_centroid).cross(mg);
+        } else if ( m_sensors.find(sensor->name) !=  m_sensors.end()) {
+          // virtual force sensor
+          if ( DEBUGP ) {
+            //std::cerr << " targetR: " << target->R << std::endl;
+            std::cerr << " sensorR: " << m_sensors[sensor->name].R << std::endl;
+          }
+          // abs_forces[sensor->name] = target->R * m_sensors[sensor_name].R * data_p;
+          // abs_moments[sensor->name] = target->R * m_sensors[sensor_name].R * data_r;
+        } else {
+          std::cerr << "unknwon force param" << std::endl;
+        }
+        if ( DEBUGP ) {
+          hrp::Vector3& tmpf = abs_forces[sensor->name];
+          hrp::Vector3& tmpm = abs_moments[sensor->name];
+          std::cerr << "world force : " << tmpf[0] << " " << tmpf[1] << " " << tmpf[2] << std::endl;
+          std::cerr << "world moment : " << tmpm[0] << " " << tmpm[1] << " " << tmpm[2] << std::endl;
+        }
+      }
     }
     if (m_qRefIn.isNew()) {
         m_qRefIn.read();
@@ -316,43 +355,6 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
             assert(manip);
             const int n = manip->numJoints();
 
-            // force
-            hrp::Vector3 force_p, force_r;
-            for (unsigned int i=0; i<m_forceIn.size(); i++){
-                if ( std::string(m_forceIn[i]->name()) == sensor_name ) {
-                    assert(m_force[i].data.length()==6);
-                    hrp::ForceSensor* sensor = m_robot->sensor<hrp::ForceSensor>(sensor_name);
-                    hrp::Vector3 data_p(m_force[i].data[0], m_force[i].data[1], m_force[i].data[2]);
-                    hrp::Vector3 data_r(m_force[i].data[3], m_force[i].data[4], m_force[i].data[5]);
-                    if ( DEBUGP ) {
-                      std::cerr << "raw force : " << data_p[0] << " " << data_p[1] << " " << data_p[2] << std::endl;
-                      std::cerr << "raw moment : " << data_r[0] << " " << data_r[1] << " " << data_r[2] << std::endl;
-                    }
-                    if ( sensor ) {
-                      // real force sensor
-                      hrp::Matrix33 sensorR = sensor->link->R * sensor->localR;
-                      hrp::Vector3 mg = hrp::Vector3(0,0, m_forcemoment_offset_param[sensor->name].link_offset_mass * grav * -1);
-                      force_p = sensorR * (data_p - m_forcemoment_offset_param[sensor->name].force_offset) - mg;
-                      force_r = sensorR * (data_r - m_forcemoment_offset_param[sensor->name].moment_offset) - hrp::Vector3(sensorR * m_forcemoment_offset_param[sensor->name].link_offset_centroid).cross(mg);
-                    } else if ( m_sensors.find(sensor_name) !=  m_sensors.end()) {
-                      // virtual force sensor
-
-                      if ( DEBUGP ) {
-                        std::cerr << " targetR: " << target->R << std::endl;
-                        std::cerr << " sensorR: " << m_sensors[sensor_name].R << std::endl;
-                      }
-                      force_p = target->R * m_sensors[sensor_name].R * data_p;
-                      force_r = target->R * m_sensors[sensor_name].R * data_r;
-                    } else {
-                      std::cerr << "unknwon force param" << std::endl;
-                    }
-                }
-            }
-            if ( DEBUGP ) {
-                std::cerr << "world force : " << force_p[0] << " " << force_p[1] << " " << force_p[2] << std::endl;
-                std::cerr << "world moment : " << force_r[0] << " " << force_r[1] << " " << force_r[2] << std::endl;
-            }
-
             hrp::Vector3 dif_pos = hrp::Vector3(0,0,0);
             hrp::Vector3 vel_pos0 = hrp::Vector3(0,0,0);
             hrp::Vector3 vel_pos1 = hrp::Vector3(0,0,0);
@@ -417,12 +419,12 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
             // std::cerr << "ref_moment = " << param.ref_moment[0] << " " << param.ref_moment[1] << " " << param.ref_moment[2] << std::endl;
 
             // ref_force/ref_moment and force_gain/moment_gain are expressed in global coordinates. 
-            vel_p =  ( param.force_gain * (force_p - param.ref_force) * m_dt * m_dt
+            vel_p =  ( param.force_gain * (abs_forces[it->first] - param.ref_force) * m_dt * m_dt
                        + param.M_p * ( vel_pos1 - vel_pos0 )
                        + param.D_p * ( dif_target_pos - vel_pos0 ) * m_dt
                        + param.K_p * ( dif_pos * m_dt * m_dt ) ) /
                      (param.M_p + (param.D_p * m_dt) + (param.K_p * m_dt * m_dt));
-            vel_r =  ( param.moment_gain * (force_r - param.ref_moment) * m_dt * m_dt
+            vel_r =  ( param.moment_gain * (abs_moments[it->first] - param.ref_moment) * m_dt * m_dt
                        + param.M_r * ( vel_rot1 - vel_rot0 )
                        + param.D_r * ( dif_target_rot - vel_rot0 ) * m_dt
                        + param.K_r * ( dif_rot * m_dt * m_dt  ) ) /
