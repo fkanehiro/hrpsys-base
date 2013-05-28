@@ -143,9 +143,11 @@ RTC::ReturnCode_t ImpedanceController::onInitialize()
         }
         p.p = hrp::Vector3(tr[0], tr[1], tr[2]);
         p.R = Eigen::AngleAxis<double>(tr[6], hrp::Vector3(tr[3],tr[4],tr[5])).toRotationMatrix(); // rotation in VRML is represented by axis + angle
+        p.parent_link_name = virtual_force_sensor[i*10+2];
         m_sensors[name] = p;
         std::cerr << "virtual force sensor : " << name << std::endl;
         std::cerr << "                T, R : " << p.p[0] << " " << p.p[1] << " " << p.p[2] << std::endl << p.R << std::endl;
+        std::cerr << "              parent : " << p.parent_link_name << std::endl;
 
         m_forceIn[i+npforce] = new InPort<TimedDoubleSeq>(name.c_str(), m_force[i+npforce]);
         m_force[i+npforce].data.length(6);
@@ -244,8 +246,8 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
             //std::cerr << " targetR: " << target->R << std::endl;
             std::cerr << " sensorR: " << m_sensors[sensor->name].R << std::endl;
           }
-          // abs_forces[sensor->name] = target->R * m_sensors[sensor_name].R * data_p;
-          // abs_moments[sensor->name] = target->R * m_sensors[sensor_name].R * data_r;
+          abs_forces[sensor->name] = m_robot->link(m_sensors[sensor->name].parent_link_name)->R * m_sensors[sensor->name].R * data_p;
+          abs_moments[sensor->name] = m_robot->link(m_sensors[sensor->name].parent_link_name)->R * m_sensors[sensor->name].R * data_r;
         } else {
           std::cerr << "unknwon force param" << std::endl;
         }

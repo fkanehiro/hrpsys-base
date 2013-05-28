@@ -166,6 +166,7 @@ class ImpedanceController
   struct VirtualForceSensorParam {
     hrp::Vector3 p;
     hrp::Matrix33 R;
+    std::string parent_link_name;
   };
   struct ForceMomentOffsetParam {
     hrp::Vector3 force_offset, moment_offset, link_offset_centroid;
