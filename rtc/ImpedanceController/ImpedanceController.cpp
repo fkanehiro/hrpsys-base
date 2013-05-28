@@ -216,15 +216,20 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
     loop ++;
 
     // check dataport input
+    bool update_rpy = false;
     for (unsigned int i=0; i<m_forceIn.size(); i++){
         if ( m_forceIn[i]->isNew() ) {
             m_forceIn[i]->read();
         }
     }
+    if (m_rpyIn.isNew()) {
+      m_rpyIn.read();
+      update_rpy = true;
+    }
     if (m_qCurrentIn.isNew()) {
       m_qCurrentIn.read();
       //
-      //updateRootLinkPosRot(m_rpy);
+      if (update_rpy) updateRootLinkPosRot(m_rpy);
       for (unsigned int i=0; i<m_forceIn.size(); i++){
         if ( m_force[i].data.length()==6 ) {
           std::string sensor_name = m_forceIn[i]->name();
@@ -313,10 +318,7 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
               m_robot->joint(i)->q = qorg[i];
             }
 	  }
-          if (m_rpyIn.isNew()) {
-            m_rpyIn.read();
-            updateRootLinkPosRot(m_rpy);
-          }
+          if (update_rpy) updateRootLinkPosRot(m_rpy);
 	  m_robot->calcForwardKinematics();
 
 	}
