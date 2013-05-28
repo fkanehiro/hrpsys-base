@@ -111,6 +111,10 @@ class ImpedanceController
   InPort<TimedDoubleSeq> m_qRefIn;
   std::vector<TimedDoubleSeq> m_force;
   std::vector<InPort<TimedDoubleSeq> *> m_forceIn;
+  TimedOrientation3D m_rpy;
+  TimedOrientation3D m_rpyRef;
+  InPort<TimedOrientation3D> m_rpyIn;
+  InPort<TimedOrientation3D> m_rpyRefIn;
   
   // </rtc-template>
 
@@ -175,6 +179,7 @@ class ImpedanceController
 
   bool checkImpedanceNameValidity (int& force_id, const std::string& name);
   void copyImpedanceParam (OpenHRP::ImpedanceControllerService::impedanceParam& i_param_, const ImpedanceParam& param);
+  void updateRootLinkPosRot (TimedOrientation3D tmprpy);
 
   std::map<std::string, ImpedanceParam> m_impedance_param;
   std::map<std::string, ForceMomentOffsetParam> m_forcemoment_offset_param;

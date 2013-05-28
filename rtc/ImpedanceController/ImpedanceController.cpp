@@ -52,6 +52,8 @@ ImpedanceController::ImpedanceController(RTC::Manager* manager)
       // <rtc-template block="initializer">
       m_qCurrentIn("qCurrent", m_qCurrent),
       m_qRefIn("qRef", m_qRef),
+      m_rpyIn("rpy", m_rpy),
+      m_rpyRefIn("rpyRef", m_rpyRef),
       m_qOut("q", m_q),
       m_ImpedanceControllerServicePort("ImpedanceControllerService"),
       // </rtc-template>
@@ -77,6 +79,8 @@ RTC::ReturnCode_t ImpedanceController::onInitialize()
     // Set InPort buffers
     addInPort("qCurrent", m_qCurrentIn);
     addInPort("qRef", m_qRefIn);
+    addInPort("rpy", m_rpyIn);
+    addInPort("rpyRef", m_rpyRefIn);
 
     // Set OutPort buffer
     addOutPort("q", m_qOut);
@@ -205,12 +209,12 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
     static int loop = 0;
     loop ++;
 
+    // check dataport input
     for (unsigned int i=0; i<m_forceIn.size(); i++){
         if ( m_forceIn[i]->isNew() ) {
             m_forceIn[i]->read();
         }
     }
-
     if (m_qCurrentIn.isNew()) {
         m_qCurrentIn.read();
     }
@@ -246,6 +250,10 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
 	    qorg[i] = m_robot->joint(i)->q;
             m_robot->joint(i)->q = m_qRef.data[i];
 	  }
+          if (m_rpyRefIn.isNew()) {
+            m_rpyRefIn.read();
+            //updateRootLinkPosRot(m_rpyRef);
+          }
 	  m_robot->calcForwardKinematics();
 
 	  // set sequencer position to target_p0
@@ -262,6 +270,10 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
               m_robot->joint(i)->q = qorg[i];
             }
 	  }
+          if (m_rpyIn.isNew()) {
+            m_rpyIn.read();
+            updateRootLinkPosRot(m_rpy);
+          }
 	  m_robot->calcForwardKinematics();
 
 	}
@@ -768,6 +780,14 @@ void ImpedanceController::copyImpedanceParam (ImpedanceControllerService::impeda
   i_param_.avoid_gain = param.avoid_gain;
   i_param_.reference_gain = param.reference_gain;
   i_param_.manipulability_limit = param.manipulability_limit;
+}
+
+void ImpedanceController::updateRootLinkPosRot (TimedOrientation3D tmprpy)
+{
+  hrp::Sensor *sensor = m_robot->sensor(hrp::Sensor::ACCELERATION, 0);
+  hrp::Matrix33 tmpr;
+  rats::rotm3times(tmpr, hrp::Matrix33(sensor->link->R*sensor->localR).transpose(), m_robot->rootLink()->R);
+  rats::rotm3times(m_robot->rootLink()->R, hrp::rotFromRpy(tmprpy.data.r, tmprpy.data.p, tmprpy.data.y), tmpr);
 }
 
 bool ImpedanceController::getImpedanceControllerParam(const std::string& i_name_, ImpedanceControllerService::impedanceParam& i_param_)
