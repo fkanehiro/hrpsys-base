@@ -226,36 +226,38 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
       //
       //updateRootLinkPosRot(m_rpy);
       for (unsigned int i=0; i<m_forceIn.size(); i++){
-        assert(m_force[i].data.length()==6);
-        hrp::ForceSensor* sensor = m_robot->sensor<hrp::ForceSensor>(m_forceIn[i]->name());
-        hrp::Vector3 data_p(m_force[i].data[0], m_force[i].data[1], m_force[i].data[2]);
-        hrp::Vector3 data_r(m_force[i].data[3], m_force[i].data[4], m_force[i].data[5]);
-        if ( DEBUGP ) {
-          std::cerr << "raw force : " << data_p[0] << " " << data_p[1] << " " << data_p[2] << std::endl;
-          std::cerr << "raw moment : " << data_r[0] << " " << data_r[1] << " " << data_r[2] << std::endl;
-        }
-        if ( sensor ) {
-          // real force sensor
-          hrp::Matrix33 sensorR = sensor->link->R * sensor->localR;
-          hrp::Vector3 mg = hrp::Vector3(0,0, m_forcemoment_offset_param[sensor->name].link_offset_mass * grav * -1);
-          abs_forces[sensor->name] = sensorR * (data_p - m_forcemoment_offset_param[sensor->name].force_offset) - mg;
-          abs_moments[sensor->name] = sensorR * (data_r - m_forcemoment_offset_param[sensor->name].moment_offset) - hrp::Vector3(sensorR * m_forcemoment_offset_param[sensor->name].link_offset_centroid).cross(mg);
-        } else if ( m_sensors.find(sensor->name) !=  m_sensors.end()) {
-          // virtual force sensor
+        if ( m_force[i].data.length()==6 ) {
+          std::string sensor_name = m_forceIn[i]->name();
+          hrp::ForceSensor* sensor = m_robot->sensor<hrp::ForceSensor>(sensor_name);
+          hrp::Vector3 data_p(m_force[i].data[0], m_force[i].data[1], m_force[i].data[2]);
+          hrp::Vector3 data_r(m_force[i].data[3], m_force[i].data[4], m_force[i].data[5]);
           if ( DEBUGP ) {
-            //std::cerr << " targetR: " << target->R << std::endl;
-            std::cerr << " sensorR: " << m_sensors[sensor->name].R << std::endl;
+            std::cerr << "raw force : " << data_p[0] << " " << data_p[1] << " " << data_p[2] << std::endl;
+            std::cerr << "raw moment : " << data_r[0] << " " << data_r[1] << " " << data_r[2] << std::endl;
           }
-          abs_forces[sensor->name] = m_robot->link(m_sensors[sensor->name].parent_link_name)->R * m_sensors[sensor->name].R * data_p;
-          abs_moments[sensor->name] = m_robot->link(m_sensors[sensor->name].parent_link_name)->R * m_sensors[sensor->name].R * data_r;
-        } else {
-          std::cerr << "unknwon force param" << std::endl;
-        }
-        if ( DEBUGP ) {
-          hrp::Vector3& tmpf = abs_forces[sensor->name];
-          hrp::Vector3& tmpm = abs_moments[sensor->name];
-          std::cerr << "world force : " << tmpf[0] << " " << tmpf[1] << " " << tmpf[2] << std::endl;
-          std::cerr << "world moment : " << tmpm[0] << " " << tmpm[1] << " " << tmpm[2] << std::endl;
+          if ( sensor ) {
+            // real force sensor
+            hrp::Matrix33 sensorR = sensor->link->R * sensor->localR;
+            hrp::Vector3 mg = hrp::Vector3(0,0, m_forcemoment_offset_param[sensor_name].link_offset_mass * grav * -1);
+            abs_forces[sensor_name] = sensorR * (data_p - m_forcemoment_offset_param[sensor_name].force_offset) - mg;
+            abs_moments[sensor_name] = sensorR * (data_r - m_forcemoment_offset_param[sensor_name].moment_offset) - hrp::Vector3(sensorR * m_forcemoment_offset_param[sensor->name].link_offset_centroid).cross(mg);
+          } else if ( m_sensors.find(sensor_name) !=  m_sensors.end()) {
+            // virtual force sensor
+            if ( DEBUGP ) {
+              //std::cerr << " targetR: " << target->R << std::endl;
+              std::cerr << " sensorR: " << m_sensors[sensor_name].R << std::endl;
+            }
+            abs_forces[sensor_name] = m_robot->link(m_sensors[sensor_name].parent_link_name)->R * m_sensors[sensor_name].R * data_p;
+            abs_moments[sensor_name] = m_robot->link(m_sensors[sensor_name].parent_link_name)->R * m_sensors[sensor_name].R * data_r;
+          } else {
+            std::cerr << "unknwon force param" << std::endl;
+          }
+          if ( DEBUGP ) {
+            hrp::Vector3& tmpf = abs_forces[sensor_name];
+            hrp::Vector3& tmpm = abs_moments[sensor_name];
+            std::cerr << "world force : " << tmpf[0] << " " << tmpf[1] << " " << tmpf[2] << std::endl;
+            std::cerr << "world moment : " << tmpm[0] << " " << tmpm[1] << " " << tmpm[2] << std::endl;
+          }
         }
       }
     }
