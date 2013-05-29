@@ -41,15 +41,15 @@ static double switching_inpact_absorber(double force, double lower_th, double up
 Stabilizer::Stabilizer(RTC::Manager* manager)
   : RTC::DataFlowComponentBase(manager),
     // <rtc-template block="initializer">
-    m_qIn("q", m_q),
-    m_qRefIn("qRefIn", m_qRef),
+    m_qIn("qCurrent", m_q),
+    m_qRefIn("qRef", m_qRef),
     m_rpyIn("rpy", m_rpy),
     m_forceLIn("forceL", m_force[ST_LEFT]),
     m_forceRIn("forceR", m_force[ST_RIGHT]),
     m_zmpRefIn("zmpRef", m_zmpRef),
     m_accRefIn("accRef", m_accRef),
     m_rpyRefIn("rpyRef", m_rpyRef),
-    m_qRefOut("qRefOut", m_qRef),
+    m_qRefOut("q", m_qRef),
     m_StabilizerServicePort("StabilizerService"),
     m_isExecute(false),
     // </rtc-template>
@@ -102,7 +102,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   coil::stringTo(dt, prop["torque_controller_dt"].c_str());
   if ( ke == 0 || tc == 0 || dt == 0 ) {
     std::cerr << "Stabilizer: Torque controll parameter(ke,tc,dt) is not set" << std::endl;
-    return RTC::RTC_ERROR;
+    //return RTC::RTC_ERROR;
   }else{
     for (int i = 0; i < ST_NUM_LEGS; i++) {
       m_tau_pitch[i].setup(ke, tc, dt);
@@ -125,7 +125,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
     }
   }else{
     std::cerr << "Stabilizer: 3D-LIP feedback parameters are not set" << std::endl;
-    return RTC::RTC_ERROR;
+    //return RTC::RTC_ERROR;
   }
   if (m_debugLevel > 0) {
     for (int i = 0; i < 2; i++) { // x, y
@@ -211,12 +211,11 @@ RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
     m_forceLIn.read();
   }
 
-  if ( m_qRef.data.length() == m_q.data.length() &&
-       m_robot->numJoints() == m_q.data.length() ) {
+  if ( m_robot->numJoints() == m_qRef.data.length() ) {
 
     // update internal robot model
     for ( int i = 0; i < m_robot->numJoints(); i++ ){
-      m_robot->joint(i)->q = m_q.data[i];
+      m_robot->joint(i)->q = m_qRef.data[i];
     }
     m_robot->calcForwardKinematics();
 
