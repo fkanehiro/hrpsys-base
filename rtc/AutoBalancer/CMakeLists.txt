@@ -4,23 +4,16 @@ add_library(AutoBalancer SHARED ${comp_sources})
 target_link_libraries(AutoBalancer ${libs})
 set_target_properties(AutoBalancer PROPERTIES PREFIX "")
 
-#add_library(PreviewController SHARED PreviewController.cpp PreviewController.h)
-#target_link_libraries(PreviewController ${libs})
-#set_target_properties(PreviewController PROPERTIES PREFIX "")
+add_executable(testPreviewController testPreviewController.cpp ../ImpedanceController/RatsMatrix.cpp PreviewController.cpp)
+target_link_libraries(testPreviewController ${libs})
 
-#add_executable(TestPreviewController PreviewController.cpp PreviewController.h)
-#set_target_properties(TestPreviewController PROPERTIES COMPILE_FLAGS "-DHAVE_MAIN")
-#target_link_libraries(TestPreviewController ${libs})
-
-#add_executable(TestGaitGenerator GaitGenerator.cpp GaitGenerator.h PreviewController.h)
-#set_target_properties(TestGaitGenerator PROPERTIES COMPILE_FLAGS "-DHAVE_MAIN")
-#target_link_libraries(TestGaitGenerator ${libs} PreviewController)
+add_executable(testGaitGenerator testGaitGenerator.cpp ../ImpedanceController/RatsMatrix.cpp PreviewController.cpp GaitGenerator.cpp)
+target_link_libraries(testGaitGenerator ${libs})
 
 add_executable(AutoBalancerComp AutoBalancerComp.cpp ${comp_sources})
 target_link_libraries(AutoBalancerComp ${libs})
 
-#set(target AutoBalancer AutoBalancerComp TestPreviewController TestGaitGenerator)
-set(target AutoBalancer AutoBalancerComp)
+set(target AutoBalancer AutoBalancerComp testPreviewController testGaitGenerator)
 
 install(TARGETS ${target}
   RUNTIME DESTINATION bin CONFIGURATIONS Release Debug
