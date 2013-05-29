@@ -23,6 +23,7 @@ public:
 
 	void startStabilizer(void);
 	void stopStabilizer(void);
+	void stabilizer(Stabilizer *i_stabilizer);
 
 	bool dummy();
 private:

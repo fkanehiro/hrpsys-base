@@ -148,7 +148,7 @@ class Stabilizer
 
   // Consumer declaration
   // <rtc-template block="consumer_declare">
-  StabilizerService_impl m_StabilizerService;
+  StabilizerService_impl m_service0;
   
   // </rtc-template>
 

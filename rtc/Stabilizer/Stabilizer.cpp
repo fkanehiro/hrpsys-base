@@ -55,6 +55,7 @@ Stabilizer::Stabilizer(RTC::Manager* manager)
     // </rtc-template>
     m_debugLevel(1)
 {
+  m_service0.stabilizer(this);
 }
 
 Stabilizer::~Stabilizer()
@@ -85,7 +86,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   addOutPort("qRef", m_qRefOut);
   
   // Set service provider to Ports
-  m_StabilizerServicePort.registerProvider("service0", "StabilizerService", m_StabilizerService);
+  m_StabilizerServicePort.registerProvider("service0", "StabilizerService", m_service0);
   
   // Set service consumers to Ports
   

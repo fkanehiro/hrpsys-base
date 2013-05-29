@@ -26,3 +26,7 @@ bool StabilizerService_impl::dummy()
 	std::cout << "StabilizerService: " << std::endl;
 }
 
+void StabilizerService_impl::stabilizer(Stabilizer *i_stabilizer)
+{
+  m_stabilizer = i_stabilizer;
+} 
