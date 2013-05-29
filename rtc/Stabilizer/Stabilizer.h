@@ -99,6 +99,8 @@ class Stabilizer
   // no corresponding operation exists in OpenRTm-aist-0.2.0
   // virtual RTC::ReturnCode_t onRateChanged(RTC::UniqueId ec_id);
 
+  void startStabilizer(void);
+  void stopStabilizer(void);
 
  protected:
   // Configuration variable declaration
@@ -113,7 +115,7 @@ class Stabilizer
   RTC::TimedPoint3D m_zmpRef;
   RTC::TimedAcceleration3D m_accRef;
   RTC::TimedOrientation3D m_rpyRef;
-
+  
   // DataInPort declaration
   // <rtc-template block="inport_declare">
   RTC::InPort<RTC::TimedDoubleSeq> m_qIn;
@@ -124,7 +126,6 @@ class Stabilizer
   RTC::InPort<RTC::TimedPoint3D> m_zmpRefIn;
   RTC::InPort<RTC::TimedAcceleration3D> m_accRefIn;
   RTC::InPort<RTC::TimedOrientation3D> m_rpyRefIn;
-
   
   // </rtc-template>
 
@@ -166,7 +167,7 @@ class Stabilizer
   double m_torque_k[2], m_torque_d[2]; // 3D-LIP parameters (0: x, 1: y)
   hrp::BodyPtr m_robot;
   unsigned int m_debugLevel;
-
+  bool m_isExecute;
 };
 
 

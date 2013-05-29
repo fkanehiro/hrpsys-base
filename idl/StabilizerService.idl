@@ -6,6 +6,8 @@ module OpenHRP
 {
   interface StabilizerService
   {
+    void startStabilizer();
+    void stopStabilizer();
     boolean dummy();
   };
 };

@@ -4,6 +4,8 @@
 
 #include "StabilizerService.hh"
 
+class Stabilizer;
+
 class StabilizerService_impl
 	: public virtual POA_OpenHRP::StabilizerService,
 	  public virtual PortableServer::RefCountServantBase
@@ -19,8 +21,12 @@ public:
 	*/
 	virtual ~StabilizerService_impl();
 
+	void startStabilizer(void);
+	void stopStabilizer(void);
+
 	bool dummy();
 private:
+	Stabilizer *m_stabilizer;
 };
 
 #endif

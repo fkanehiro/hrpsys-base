@@ -51,6 +51,7 @@ Stabilizer::Stabilizer(RTC::Manager* manager)
     m_rpyRefIn("rpyRef", m_rpyRef),
     m_qRefOut("qRefOut", m_qRef),
     m_StabilizerServicePort("StabilizerService"),
+    m_isExecute(false),
     // </rtc-template>
     m_debugLevel(1)
 {
@@ -155,7 +156,6 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
 
   return RTC::RTC_OK;
 }
-
 
 
 /*
@@ -348,6 +348,16 @@ RTC::ReturnCode_t Stabilizer::onRateChanged(RTC::UniqueId ec_id)
   return RTC::RTC_OK;
 }
 */
+
+void Stabilizer::startStabilizer(void)
+{
+  m_isExecute = true;
+}
+
+void Stabilizer::stopStabilizer(void)
+{
+  m_isExecute = false;
+}
 
 static double limit(double value, double limit_value)
 {
