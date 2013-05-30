@@ -318,6 +318,7 @@ bool JointPathEx::calcInverseKinematics2(const Vector3& end_p, const Matrix33& e
     return converged;
 }
 
+// This should be merged with calcInverseKinematics2 and calcInverseKinematics2Loop
 void JointPathEx::solveLimbIK (const hrp::Vector3& _vel_p,
                                const hrp::Vector3& _vel_r,
                                const int transition_count,
