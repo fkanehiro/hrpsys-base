@@ -118,6 +118,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     m_qRef.data.length(m_robot->numJoints());
     m_q.data.length(m_robot->numJoints());
     qorg.resize(m_robot->numJoints());
+    qrefv.resize(m_robot->numJoints());
 
     transition_count = 0;
     control_mode = MODE_IDLE;
@@ -226,6 +227,7 @@ void AutoBalancer::robotstateOrg2qRef()
   for ( int i = 0; i < m_robot->numJoints(); i++ ){
     qorg[i] = m_robot->joint(i)->q;
     m_robot->joint(i)->q = m_qRef.data[i];
+    qrefv[i] = m_qRef.data[i];
   }
   m_robot->calcForwardKinematics();
   if ( ikp.size() > 0 ) {
@@ -308,114 +310,10 @@ bool AutoBalancer::solveLimbIKforLimb (ABCIKparam& param, const double transitio
   param.current_p0 = target->p;
   param.current_r0 = target->R;
 
-  hrp::JointPathExPtr manip = param.manip;
-  assert(manip);
-  const int n = manip->numJoints();
-  hrp::dmatrix J(6, n);
-  hrp::dmatrix Jinv(n, 6);
-  hrp::dmatrix Jnull(n, n);
-
-  manip->calcJacobianInverseNullspace(J, Jinv, Jnull);
-  //manip->calcInverseKinematics2Loop(vel_p, vel_r, dq);
-
   hrp::Vector3 vel_p, vel_r;
   vel_p = param.target_p0 - param.current_p0;
   rats::difference_rotation(vel_r, param.current_r0, param.target_r0);
-  if ( transition_count < 0 ) {
-    vel_p = vel_p * transition_smooth_gain;
-    vel_r = vel_r * transition_smooth_gain;
-  }
-
-  hrp::dvector v(6);
-  v << vel_p, vel_r;
-  if (DEBUGP) {
-    rats::print_vector(std::cerr, vel_r);
-  }
-  hrp::dvector dq(n);
-  dq = Jinv * v; // dq = pseudoInverse(J) * v
-
-  // dq = J#t a dx + ( I - J# J ) Jt b dx
-  // avoid-nspace-joint-limit: avoiding joint angle limit
-  //
-  // dH/dq = (((t_max + t_min)/2 - t) / ((t_max - t_min)/2)) ^2
-  hrp::dvector u(n);
-  for(int j=0; j < n; ++j) { u[j] = 0; }
-  for ( int j = 0; j < n ; j++ ) {
-    double jang = manip->joint(j)->q;
-    double jmax = manip->joint(j)->ulimit;
-    double jmin = manip->joint(j)->llimit;
-    double r = ((( (jmax + jmin) / 2.0) - jang) / ((jmax - jmin) / 2.0));
-    if ( r > 0 ) { r = r*r; } else { r = - r*r; }
-    u[j] += r;
-  }
-  if ( DEBUGP ) {
-    std::cerr << "    u : " << u;
-    std::cerr << "  dqb : " << Jnull * u;
-  }
-  if ( transition_count < 0 ) {
-    u = u * transition_smooth_gain;
-  }
-  dq = dq + Jnull * ( 0.001 *  u );
-  //
-  // qref - qcurr
-  for(int j=0; j < n; ++j) { u[j] = 0; }
-  for ( int j = 0; j < manip->numJoints(); j++ ) {
-    u[j] = ( m_qRef.data[manip->joint(j)->jointId] - manip->joint(j)->q );
-  }
-  if ( transition_count < 0 ) {
-    u = u * transition_smooth_gain;
-  }
-  dq = dq + Jnull * ( 0.01 *  u );
-
-  // break if dq(j) is nan/nil
-  bool dq_check = true;
-  for(int j=0; j < n; ++j){
-    if ( std::isnan(dq(j)) || std::isinf(dq(j)) ) {
-      dq_check = false;
-      break;
-    }
-  }
-  if ( ! dq_check ) return false;
-
-  // check max speed
-  double max_speed = 0;
-  for(int j=0; j < n; ++j){
-    max_speed = std::max(max_speed, fabs(dq(j)));
-  }
-  if ( max_speed > 0.2*0.5 ) { // 0.5 safety margin
-    if ( DEBUGP ) {
-      std::cerr << "spdlmt: ";
-      for(int j=0; j < n; ++j) { std::cerr << dq(j) << " "; } std::cerr << std::endl;
-    }
-    for(int j=0; j < n; ++j) {
-      dq(j) = dq(j) * 0.2*0.5 / max_speed;
-    }
-    if ( DEBUGP ) {
-      std::cerr << "spdlmt: ";
-      for(int j=0; j < n; ++j) { std::cerr << dq(j) << " "; } std::cerr << std::endl;
-    }
-  }
-
-  // update robot model
-  for(int j=0; j < n; ++j){
-    manip->joint(j)->q += dq(j);
-  }
-
-
-  // check limit
-  for(int j=0; j < n; ++j){
-    if ( manip->joint(j)->q > manip->joint(j)->ulimit) {
-      std::cerr << "Upper joint limit error " << manip->joint(j)->name << std::endl;
-      manip->joint(j)->q = manip->joint(j)->ulimit;
-    }
-    if ( manip->joint(j)->q < manip->joint(j)->llimit) {
-      std::cerr << "Lower joint limit error " << manip->joint(j)->name << std::endl;
-      manip->joint(j)->q = manip->joint(j)->llimit;
-    }
-    manip->joint(j)->q = std::max(manip->joint(j)->q, manip->joint(j)->llimit);
-  }
-
-  manip->calcForwardKinematics();
+  param.manip->solveLimbIK(vel_p, vel_r, transition_count, 0.001, 0.01, MAX_TRANSITION_COUNT, qrefv, DEBUGP);
   return true;
 }
 

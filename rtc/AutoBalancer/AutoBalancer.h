@@ -167,7 +167,7 @@ class AutoBalancer
   enum {MODE_IDLE, MODE_ABC, MODE_SYNC} control_mode;
   std::map<std::string, ABCIKparam> ikp;
   hrp::dvector transition_joint_q;
-  hrp::dvector qorg;
+  hrp::dvector qorg, qrefv;
   hrp::Vector3 base_pos_org, target_base_pos;
   hrp::Matrix33 base_rot_org, target_base_rot;
   rats::coordinates fix_leg_coords;

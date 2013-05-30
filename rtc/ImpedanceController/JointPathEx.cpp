@@ -324,7 +324,7 @@ void JointPathEx::solveLimbIK (const hrp::Vector3& _vel_p,
                                const int transition_count,
                                const double avoid_gain,
                                const double reference_gain,
-                               const int MAX_TRANSITION_COUNT,
+                               const double MAX_TRANSITION_COUNT,
                                const hrp::dvector& qrefv,
                                bool DEBUGP)
 {
