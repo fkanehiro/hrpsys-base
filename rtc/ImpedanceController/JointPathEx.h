@@ -22,6 +22,14 @@ namespace hrp {
     double getManipulabilityLimit() { return manipulability_limit; }
     bool setManipulabilityLimit(double l) { manipulability_limit = l; }
     bool setManipulabilityGain(double l) { manipulability_gain = l; }
+    void solveLimbIK (const hrp::Vector3& _vel_p,
+                      const hrp::Vector3& _vel_r,
+                      const int transition_count,
+                      const double avoid_gain,
+                      const double reference_gain,
+                      const int MAX_TRANSITION_COUNT,
+                      const hrp::dvector& qrefv,
+                      bool DEBUGP = false);
   protected:
         std::vector<Link*> joints;
         std::vector<double> avoid_weight_gain;

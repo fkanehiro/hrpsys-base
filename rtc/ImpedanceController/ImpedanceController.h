@@ -177,7 +177,6 @@ class ImpedanceController
         link_offset_centroid(hrp::Vector3::Zero()), link_offset_mass(0)
     {};
   };
-
   bool checkImpedanceNameValidity (int& force_id, const std::string& name);
   void copyImpedanceParam (OpenHRP::ImpedanceControllerService::impedanceParam& i_param_, const ImpedanceParam& param);
   void updateRootLinkPosRot (TimedOrientation3D tmprpy);
@@ -190,8 +189,10 @@ class ImpedanceController
   double m_dt;
   hrp::BodyPtr m_robot;
   coil::Mutex m_mutex;
+  hrp::dvector qrefv;
   unsigned int m_debugLevel;
   int dummy;
+  int loop;
 };
 
 

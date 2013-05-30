@@ -318,4 +318,123 @@ bool JointPathEx::calcInverseKinematics2(const Vector3& end_p, const Matrix33& e
     return converged;
 }
 
+void JointPathEx::solveLimbIK (const hrp::Vector3& _vel_p,
+                               const hrp::Vector3& _vel_r,
+                               const int transition_count,
+                               const double avoid_gain,
+                               const double reference_gain,
+                               const int MAX_TRANSITION_COUNT,
+                               const hrp::dvector& qrefv,
+                               bool DEBUGP)
+{
+            const int n = numJoints();
+            double transition_smooth_gain = 1.0;
+            if ( transition_count < 0 ) {
+                // (/ (log (/ (- 1 0.99) 0.99)) 0.5)
+                transition_smooth_gain = 1/(1+exp(-9.19*(((MAX_TRANSITION_COUNT + transition_count) / MAX_TRANSITION_COUNT) - 0.5)));
+                // vel_p = vel_p * transition_smooth_gain;
+                // vel_r = vel_r * transition_smooth_gain;
+            }
+
+#if 0
+            setBestEffortIKMode(true);
+            setMaxIKError(0.001);
+            calcInverseKinematics2(current_p0 + vel_p, target->R);
+#else
+	    hrp::dmatrix J(6, n);
+	    hrp::dmatrix Jinv(n, 6);
+	    hrp::dmatrix Jnull(n, n);
+	    
+	    calcJacobianInverseNullspace(J, Jinv, Jnull);
+	    //calcInverseKinematics2Loop(vel_p, vel_r, dq);
+
+	    hrp::dvector v(6);
+	    v << hrp::Vector3(transition_smooth_gain *_vel_p), hrp::Vector3(transition_smooth_gain *_vel_r);
+	    hrp::dvector dq(n);
+	    dq = Jinv * v; // dq = pseudoInverse(J) * v
+
+	    // dq = J#t a dx + ( I - J# J ) Jt b dx
+	    // avoid-nspace-joint-limit: avoiding joint angle limit
+	    //
+	    // dH/dq = (((t_max + t_min)/2 - t) / ((t_max - t_min)/2)) ^2
+	    hrp::dvector u(n);
+	    for(int j=0; j < n; ++j) { u[j] = 0; }
+	    for ( int j = 0; j < n ; j++ ) {
+	      double jang = joint(j)->q;
+	      double jmax = joint(j)->ulimit;
+	      double jmin = joint(j)->llimit;
+	      double r = ((( (jmax + jmin) / 2.0) - jang) / ((jmax - jmin) / 2.0));
+	      if ( r > 0 ) { r = r*r; } else { r = - r*r; }
+	      u[j] += r;
+	    }
+	    if ( DEBUGP ) {
+	      std::cerr << "    u : " << u;
+	      std::cerr << "  dqb : " << Jnull * u;
+	    }
+            if ( transition_count < 0 ) {
+              u = u * transition_smooth_gain;
+            }
+	    dq = dq + Jnull * ( avoid_gain *  u );
+	    //
+	    // qref - qcurr
+	    for(int j=0; j < n; ++j) { u[j] = 0; }
+	    for ( int j = 0; j < numJoints(); j++ ) {
+              u[j] = ( qrefv[joint(j)->jointId] - joint(j)->q );
+	    }
+            if ( transition_count < 0 ) {
+              u = u * transition_smooth_gain;
+            }
+	    dq = dq + Jnull * ( reference_gain *  u );
+
+            // break if dq(j) is nan/nil
+            bool dq_check = true;
+            for(int j=0; j < n; ++j){
+                if ( std::isnan(dq(j)) || std::isinf(dq(j)) ) {
+                    dq_check = false;
+                    break;
+                }
+            }
+            if ( ! dq_check ) return;
+
+            // check max speed
+            double max_speed = 0;
+            for(int j=0; j < n; ++j){
+                max_speed = std::max(max_speed, fabs(dq(j)));
+            }
+	    if ( max_speed > 0.2*0.5 ) { // 0.5 safety margin
+                if ( DEBUGP ) {
+                    std::cerr << "spdlmt: ";
+                    for(int j=0; j < n; ++j) { std::cerr << dq(j) << " "; } std::cerr << std::endl;
+                }
+                for(int j=0; j < n; ++j) {
+                    dq(j) = dq(j) * 0.2*0.5 / max_speed;
+                }
+                if ( DEBUGP ) {
+                    std::cerr << "spdlmt: ";
+                    for(int j=0; j < n; ++j) { std::cerr << dq(j) << " "; } std::cerr << std::endl;
+                }
+            }
+
+            // update robot model
+            for(int j=0; j < n; ++j){
+                joint(j)->q += dq(j);
+            }
+
+
+            // check limit
+            for(int j=0; j < n; ++j){
+                if ( joint(j)->q > joint(j)->ulimit) {
+                    std::cerr << "Upper joint limit error " << joint(j)->name << std::endl;
+                    joint(j)->q = joint(j)->ulimit;
+                }
+                if ( joint(j)->q < joint(j)->llimit) {
+                    std::cerr << "Lower joint limit error " << joint(j)->name << std::endl;
+                    joint(j)->q = joint(j)->llimit;
+                }
+                joint(j)->q = std::max(joint(j)->q, joint(j)->llimit);
+            }
+#endif
+
+            calcForwardKinematics();
+}
 
