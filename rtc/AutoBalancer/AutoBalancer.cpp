@@ -215,29 +215,26 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
         m_q.data[i] = m_robot->joint(i)->q;
       }
       m_qOut.write();
-      if ( DEBUGP ) {
-        std::cerr << "q     : ";
-        for ( int i = 0; i < m_q.data.length(); i++ ){
-          std::cerr << " " << m_q.data[i];
-        }
-        std::cerr << std::endl;
-      }
     }
-    // {
-    //   hrp::Vector3 refzmp;
-    //   if (gg_is_walking) {
-    //     refzmp = gg->get_refzmp();
-    //     m_zmpRef.data.x = refzmp(0);
-    //     m_zmpRef.data.y = refzmp(1);
-    //     m_zmpRef.data.z = refzmp(2);
-    //   } else {
-    //     refzmp = ((m_robot->link("L_ANKLE_R"))->p+(m_robot->link("R_ANKLE_R"))->p)/2;
-    //     m_zmpRef.data.x = refzmp(0);
-    //     m_zmpRef.data.y = refzmp(1);
-    //     m_zmpRef.data.z = refzmp(2);
-    //   }
-    //   m_zmpRefOut.write();
-    // }
+    hrp::Vector3 baseRpy = hrp::rpyFromRot(m_robot->rootLink()->R);
+    m_baseRpy.data.r = baseRpy(0);
+    m_baseRpy.data.p = baseRpy(1);
+    m_baseRpy.data.y = baseRpy(2);
+    m_baseRpyOut.write();
+    m_basePos.data.x = m_robot->rootLink()->p(0);
+    m_basePos.data.y = m_robot->rootLink()->p(1);
+    m_basePos.data.z = m_robot->rootLink()->p(2);
+    m_basePosOut.write();
+    hrp::Vector3 refzmp;
+    if (gg_is_walking) {
+      refzmp = gg->get_refzmp();
+    } else {
+      refzmp = ((m_robot->link("L_ANKLE_R"))->p+(m_robot->link("R_ANKLE_R"))->p)/2;
+    }
+    m_zmpRef.data.x = refzmp(0);
+    m_zmpRef.data.y = refzmp(1);
+    m_zmpRef.data.z = refzmp(2);
+    m_zmpRefOut.write();
     return RTC::RTC_OK;
 }
 
