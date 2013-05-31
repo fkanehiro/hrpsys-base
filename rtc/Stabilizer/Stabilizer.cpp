@@ -188,10 +188,10 @@ RTC::ReturnCode_t Stabilizer::onDeactivated(RTC::UniqueId ec_id)
 
 bool Stabilizer::calcZMP(hrp::Vector3& ret_zmp)
 {
-  double zmp_z = -1e10;
+  double zmp_z = 1e10;
   for (size_t i = 0; i < 2; i++) {
-    // if (zmp_z > target_foot_p[i](2))
-    //   zmp_z = target_foot_p[i](2);
+    if (zmp_z > target_foot_p[i](2))
+      zmp_z = target_foot_p[i](2);
   }
   double tmpzmpx = 0;
   double tmpzmpy = 0;
@@ -203,15 +203,15 @@ bool Stabilizer::calcZMP(hrp::Vector3& ret_zmp)
     rats::rotm3times(tmpR, sensor->link->R, sensor->localR);
     hrp::Vector3 nf = tmpR * hrp::Vector3(m_force[i].data[0], m_force[i].data[1], m_force[i].data[2]);
     hrp::Vector3 nm = tmpR * hrp::Vector3(m_force[i].data[3], m_force[i].data[4], m_force[i].data[5]);
-    tmpzmpx += nf(2) * fsp(0) * 1e-3 - 1e-3 * (fsp(2) - zmp_z) * nf(0) - nm(1);
-    tmpzmpy += nf(2) * fsp(1) * 1e-3 - 1e-3 * (fsp(2) - zmp_z) * nf(1) + nm(0);
+    tmpzmpx += nf(2) * fsp(0) - (fsp(2) - zmp_z) * nf(0) - nm(1);
+    tmpzmpy += nf(2) * fsp(1) - (fsp(2) - zmp_z) * nf(1) + nm(0);
     tmpfz += nf(2);
   }
   if (tmpfz < 50) {
     ret_zmp = act_zmp;
     return false; // in the air
   } else {
-    ret_zmp = hrp::Vector3(1e3 * tmpzmpx / tmpfz, 1e3 * tmpzmpy / tmpfz, zmp_z);
+    ret_zmp = hrp::Vector3(tmpzmpx / tmpfz, tmpzmpy / tmpfz, zmp_z);
     return true; // on ground
   }
 };
@@ -291,7 +291,7 @@ void Stabilizer::getTargetParameters ()
 
   /* return to the original state */
   // if ( !(control_mode == MODE_IDLE || control_mode == MODE_AIR) ){
-  if ( true ) {
+  if ( m_isExecute ) {
     for ( int i = 0; i < m_robot->numJoints(); i++ ) {
       m_robot->joint(i)->q = qorg[i];
     }
@@ -309,7 +309,6 @@ void Stabilizer::calcTPCC() {
          && m_isExecute ) {
       hrp::Vector3 uu = hrp::Vector3::Zero();
       calcZMP(act_zmp);
-      //hrp::Vector3 refzmp = (m_robot->link(target_name[0])->p + m_robot->link(target_name[1])->p)/2.0 + hrp::Vector3(0.01, 0, 0);
       hrp::Vector3 cog = m_robot->calcCM();
       hrp::Vector3 newcog = hrp::Vector3::Zero();
       for (size_t i = 0; i < 2; i++) {
