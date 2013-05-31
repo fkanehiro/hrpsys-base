@@ -6,6 +6,24 @@ module OpenHRP
 {
   interface StabilizerService
   {
+    typedef double DblArray2[2];
+
+    struct stParam {
+      // for TPCC
+      DblArray2 k_tpcc_p;
+      DblArray2 k_tpcc_x;
+      // for RUNST
+      DblArray2 k_run_b;
+      DblArray2 d_run_b;
+      DblArray2 tdfke;
+      DblArray2 tdftc;
+      double k_run_x;
+      double k_run_y;
+      double d_run_x;
+      double d_run_y;
+    };
+
+    void setParameter(in stParam i_param);
     void startStabilizer();
     void stopStabilizer();
     boolean dummy();

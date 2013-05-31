@@ -23,6 +23,8 @@
 // <rtc-template block="service_impl_h">
 #include "StabilizerService_impl.h"
 #include "TwoDofController.h"
+#include "../ImpedanceController/JointPathEx.h"
+#include "../ImpedanceController/RatsMatrix.h"
 
 // </rtc-template>
 
@@ -101,6 +103,12 @@ class Stabilizer
 
   void startStabilizer(void);
   void stopStabilizer(void);
+  void getCurrentParameters ();
+  void getTargetParameters ();
+  bool calcZMP(hrp::Vector3& ret_zmp);
+  void calcRUNST();
+  void calcTPCC();
+  void setParameter(const OpenHRP::StabilizerService::stParam& i_stp);
 
  protected:
   // Configuration variable declaration
@@ -115,6 +123,8 @@ class Stabilizer
   RTC::TimedPoint3D m_zmpRef;
   RTC::TimedAcceleration3D m_accRef;
   RTC::TimedOrientation3D m_rpyRef;
+  RTC::TimedPoint3D m_basePos;
+  RTC::TimedOrientation3D m_baseRpy;
   
   // DataInPort declaration
   // <rtc-template block="inport_declare">
@@ -126,6 +136,8 @@ class Stabilizer
   RTC::InPort<RTC::TimedPoint3D> m_zmpRefIn;
   RTC::InPort<RTC::TimedAcceleration3D> m_accRefIn;
   RTC::InPort<RTC::TimedOrientation3D> m_rpyRefIn;
+  RTC::InPort<RTC::TimedPoint3D> m_basePosIn;
+  RTC::InPort<RTC::TimedOrientation3D> m_baseRpyIn;
   
   // </rtc-template>
 
@@ -163,11 +175,30 @@ class Stabilizer
     ST_Y = 1
   };
   // members
-  TwoDofController m_tau_pitch[ST_NUM_LEGS], m_tau_roll[ST_NUM_LEGS];
-  double m_torque_k[2], m_torque_d[2]; // 3D-LIP parameters (0: x, 1: y)
+  hrp::JointPathExPtr manip2[2];
   hrp::BodyPtr m_robot;
   unsigned int m_debugLevel;
+  hrp::dvector transition_joint_q;
+  hrp::dvector qorg, qrefv;
+  std::vector<std::string> sensor_names;
+  double dt;
+  int transition_count, loop;
   bool m_isExecute;
+  hrp::Vector3 current_root_p;
+  hrp::Matrix33 current_root_R;
+  hrp::Vector3 target_foot_p[2];
+  hrp::Matrix33 target_foot_R[2];
+  hrp::Vector3 refzmp, refcog, refcog_vel;
+  // TPCC
+  double k_tpcc_p[2], k_tpcc_x[2];
+  hrp::Vector3 act_zmp, prefcog;
+  // RUN ST
+  TwoDofController m_tau_x[ST_NUM_LEGS], m_tau_y[ST_NUM_LEGS], m_f_z;
+  hrp::Vector3 pdr;
+  double m_torque_k[2], m_torque_d[2]; // 3D-LIP parameters (0: x, 1: y)
+  double pangx_ref, pangy_ref, pangx, pangy;
+  double k_run_b[2], d_run_b[2];
+  double rdx, rdy, rx, ry;
 };
 
 
