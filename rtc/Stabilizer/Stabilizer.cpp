@@ -48,8 +48,6 @@ Stabilizer::Stabilizer(RTC::Manager* manager)
     m_forceLIn("forceL", m_force[ST_LEFT]),
     m_forceRIn("forceR", m_force[ST_RIGHT]),
     m_zmpRefIn("zmpRef", m_zmpRef),
-    m_accRefIn("accRef", m_accRef),
-    m_rpyRefIn("rpyRef", m_rpyRef),
     m_qRefOut("q", m_qRef),
     m_StabilizerServicePort("StabilizerService"),
     m_basePosIn("basePosIn", m_basePos),
@@ -83,7 +81,6 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   addInPort("forceL", m_forceLIn);
   addInPort("rpy", m_rpyIn);
   addInPort("zmpRef", m_zmpRefIn);
-  addInPort("rpyRef", m_rpyRefIn);
   addInPort("basePosIn", m_basePosIn);
   addInPort("baseRpyIn", m_baseRpyIn);
 
@@ -100,7 +97,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   
   // </rtc-template>
   RTC::Properties& prop = getProperties();
-  dt = 0.005;
+  coil::stringTo(dt, prop["dt"].c_str());
 
   // parameters for corba
   RTC::Manager& rtcManager = RTC::Manager::instance();
@@ -235,9 +232,6 @@ RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
   if (m_rpyIn.isNew()) {
     m_rpyIn.read();
   }
-  if (m_rpyRefIn.isNew()) {
-    m_rpyRefIn.read();
-  }
   if (m_forceRIn.isNew()) {
     m_forceRIn.read();
   }
@@ -357,10 +351,10 @@ void Stabilizer::calcRUNST() {
     target_name.push_back("L_ANKLE_R");
     target_name.push_back("R_ANKLE_R");
 
-    double angvelx_ref = (m_rpyRef.data.r - pangx_ref)/dt;
-    double angvely_ref = (m_rpyRef.data.p - pangy_ref)/dt;
-    pangx_ref = m_rpyRef.data.r;
-    pangy_ref = m_rpyRef.data.p;
+    double angvelx_ref;// = (m_rpyRef.data.r - pangx_ref)/dt;
+    double angvely_ref;// = (m_rpyRef.data.p - pangy_ref)/dt;
+    //pangx_ref = m_rpyRef.data.r;
+    //pangy_ref = m_rpyRef.data.p;
     double angvelx = (m_rpy.data.r - pangx)/dt;
     double angvely = (m_rpy.data.r - pangy)/dt;
     pangx = m_rpy.data.r;
@@ -376,7 +370,7 @@ void Stabilizer::calcRUNST() {
     double orgjq = m_robot->joint(m_robot->link("L_ANKLE_P")->jointId)->q;
     //set root
     m_robot->rootLink()->p = hrp::Vector3(0,0,0);
-    m_robot->rootLink()->R = hrp::rotFromRpy(m_rpyRef.data.r,m_rpyRef.data.p,m_rpyRef.data.y);
+    //m_robot->rootLink()->R = hrp::rotFromRpy(m_rpyRef.data.r,m_rpyRef.data.p,m_rpyRef.data.y);
     m_robot->calcForwardKinematics();
     hrp::Vector3 target_root_p = m_robot->rootLink()->p;
     hrp::Matrix33 target_root_R = m_robot->rootLink()->R;
@@ -400,22 +394,22 @@ void Stabilizer::calcRUNST() {
         m_robot->joint(i)->q = qorg[i];
       }
       // set root
-      double rddx = k_run_b[0] * (m_rpyRef.data.r - m_rpy.data.r) + d_run_b[0] * (angvelx_ref - angvelx);
-      double rddy = k_run_b[1] * (m_rpyRef.data.p - m_rpy.data.p) + d_run_b[1] * (angvely_ref - angvely);
+      double rddx;// = k_run_b[0] * (m_rpyRef.data.r - m_rpy.data.r) + d_run_b[0] * (angvelx_ref - angvelx);
+      double rddy;// = k_run_b[1] * (m_rpyRef.data.p - m_rpy.data.p) + d_run_b[1] * (angvely_ref - angvely);
       rdx += rddx * dt;
       rx += rdx * dt;
       rdy += rddy * dt;
       ry += rdy * dt;
       //rx += rddx * dt;
       //ry += rddy * dt;
-      if (DEBUGP2) {
-        std::cerr << "REFRPY " <<  m_rpyRef.data.r << " " << m_rpyRef.data.p << std::endl;
-      }
-      if (DEBUGP2) {
-        std::cerr << "RPY " <<  m_rpy.data.r << " " << m_rpy.data.p << std::endl;
-        std::cerr << " rx " << rx << " " << rdx << " " << rddx << std::endl;
-        std::cerr << " ry " << ry << " " << rdy << " " << rddy << std::endl;
-      }
+      // if (DEBUGP2) {
+      //   std::cerr << "REFRPY " <<  m_rpyRef.data.r << " " << m_rpyRef.data.p << std::endl;
+      // }
+      // if (DEBUGP2) {
+      //   std::cerr << "RPY " <<  m_rpy.data.r << " " << m_rpy.data.p << std::endl;
+      //   std::cerr << " rx " << rx << " " << rdx << " " << rddx << std::endl;
+      //   std::cerr << " ry " << ry << " " << rdy << " " << rddy << std::endl;
+      // }
       hrp::Vector3 root_p_s;
       hrp::Matrix33 root_R_s;
       rats::rotm3times(root_R_s, hrp::rotFromRpy(rx, ry, 0), target_root_R);
