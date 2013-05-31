@@ -52,6 +52,9 @@ AutoBalancer::AutoBalancer(RTC::Manager* manager)
       // <rtc-template block="initializer">
       m_qRefIn("qRef", m_qRef),
       m_qOut("q", m_q),
+      m_zmpRefOut("zmpRef", m_zmpRef),
+      m_basePosOut("basePos", m_basePos),
+      m_baseRpyOut("baseRpy", m_baseRpy),
       m_AutoBalancerServicePort("AutoBalancerService"),
       // </rtc-template>
       move_base_gain(0.1),
@@ -79,6 +82,9 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
 
     // Set OutPort buffer
     addOutPort("q", m_qOut);
+    addOutPort("zmpRef", m_zmpRefOut);
+    addOutPort("basePos", m_basePosOut);
+    addOutPort("baseRpy", m_baseRpyOut);
   
     // Set service provider to Ports
     m_AutoBalancerServicePort.registerProvider("service0", "AutoBalancerService", m_service0);
@@ -217,6 +223,21 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
         std::cerr << std::endl;
       }
     }
+    // {
+    //   hrp::Vector3 refzmp;
+    //   if (gg_is_walking) {
+    //     refzmp = gg->get_refzmp();
+    //     m_zmpRef.data.x = refzmp(0);
+    //     m_zmpRef.data.y = refzmp(1);
+    //     m_zmpRef.data.z = refzmp(2);
+    //   } else {
+    //     refzmp = ((m_robot->link("L_ANKLE_R"))->p+(m_robot->link("R_ANKLE_R"))->p)/2;
+    //     m_zmpRef.data.x = refzmp(0);
+    //     m_zmpRef.data.y = refzmp(1);
+    //     m_zmpRef.data.z = refzmp(2);
+    //   }
+    //   m_zmpRefOut.write();
+    // }
     return RTC::RTC_OK;
 }
 
