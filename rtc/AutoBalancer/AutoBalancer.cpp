@@ -151,12 +151,12 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     }
     if (leg_offset_str.size() > 0 && stride_param_str.size() > 0) {
       gg = ggPtr(new rats::gait_generator(m_dt, leg_pos, stride_param(0)/*[m]*/, stride_param(1)/*[m]*/, stride_param(2)/*[deg]*/));
-      gg_is_walking = gg_ending = gg_solved = false;
       if (default_zmp_offsets.size() == 0) {
         for (size_t i = 0; i < 2; i++) default_zmp_offsets.push_back(hrp::Vector3::Zero());
       }
       gg->set_default_zmp_offsets(default_zmp_offsets);
     }
+    gg_is_walking = gg_ending = gg_solved = false;
     fix_leg_coords = coordinates();
 
     return RTC::RTC_OK;
