@@ -140,9 +140,11 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   sensor_names.push_back("lfsensor");
   sensor_names.push_back("rfsensor");
 
+  is_legged_robot = false;
   for (size_t i = 0; i < 2; i++) {
     if ( m_robot->sensor<hrp::ForceSensor>(sensor_names[i]) != NULL) {
       manip2[i] = hrp::JointPathExPtr(new hrp::JointPathEx(m_robot, m_robot->link("WAIST"), m_robot->sensor<hrp::ForceSensor>(sensor_names[i])->link));
+      is_legged_robot = true;
     }
   }
 
@@ -247,11 +249,13 @@ RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
   if (m_baseRpyIn.isNew()){
     m_baseRpyIn.read();
   }
-  getCurrentParameters();
-  getTargetParameters();
+  if (is_legged_robot) {
+    getCurrentParameters();
+    getTargetParameters();
 
-  //calcRUNST();
-  calcTPCC();
+    //calcRUNST();
+    calcTPCC();
+  }
   if ( m_robot->numJoints() == m_qRef.data.length() ) {
     for ( int i = 0; i < m_robot->numJoints(); i++ ){
       m_qRef.data[i] = m_robot->joint(i)->q;

@@ -179,7 +179,7 @@ class Stabilizer
   std::vector<std::string> sensor_names;
   double dt;
   int transition_count, loop;
-  bool m_isExecute;
+  bool m_isExecute, is_legged_robot;
   hrp::Vector3 current_root_p;
   hrp::Matrix33 current_root_R;
   hrp::Vector3 target_foot_p[2];
