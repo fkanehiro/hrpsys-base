@@ -196,8 +196,11 @@ bool Stabilizer::calcZMP(hrp::Vector3& ret_zmp)
 {
   double zmp_z = 1e10;
   for (size_t i = 0; i < 2; i++) {
-    if (zmp_z > target_foot_p[i](2))
-      zmp_z = target_foot_p[i](2);
+    hrp::ForceSensor* sensor = m_robot->sensor<hrp::ForceSensor>(sensor_names[i]);
+    if (sensor != NULL) {
+      if (zmp_z > sensor->link->p(2))
+        zmp_z = sensor->link->p(2);
+    }
   }
   double tmpzmpx = 0;
   double tmpzmpy = 0;
@@ -253,7 +256,8 @@ RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
 
   getCurrentParameters();
   bool on_ground = false;
-  if (is_legged_robot) on_ground = calcZMP(act_zmp);
+  if (is_legged_robot && ( m_force[ST_LEFT].data.length() > 0 && m_force[ST_RIGHT].data.length() > 0 ))
+    on_ground = calcZMP(act_zmp);
   getTargetParameters();
 
   if (is_legged_robot) {
