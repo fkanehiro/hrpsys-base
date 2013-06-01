@@ -250,10 +250,13 @@ RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
   if (m_baseRpyIn.isNew()){
     m_baseRpyIn.read();
   }
+
+  getCurrentParameters();
+  bool on_ground = false;
+  if (is_legged_robot) on_ground = calcZMP(act_zmp);
+  getTargetParameters();
+
   if (is_legged_robot) {
-    getCurrentParameters();
-    bool on_ground = calcZMP(act_zmp);
-    getTargetParameters();
     switch (control_mode) {
     case MODE_IDLE:
       // if (DEBUGP2) std::cerr << "IDLE"<< std::endl;
@@ -325,8 +328,11 @@ void Stabilizer::getTargetParameters ()
   prefcog = refcog;
 
   for (size_t i = 0; i < 2; i++) {
-    target_foot_p[i] = m_robot->sensor<hrp::ForceSensor>(sensor_names[i])->link->p;
-    target_foot_R[i] = m_robot->sensor<hrp::ForceSensor>(sensor_names[i])->link->R;
+    hrp::Sensor* sen = m_robot->sensor<hrp::ForceSensor>(sensor_names[i]);
+    if ( sen != NULL) {
+      target_foot_p[i] = sen->link->p;
+      target_foot_R[i] = sen->link->R;
+    }
   }
 
   /* return to the original state */
