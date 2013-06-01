@@ -52,7 +52,7 @@ Stabilizer::Stabilizer(RTC::Manager* manager)
     m_StabilizerServicePort("StabilizerService"),
     m_basePosIn("basePosIn", m_basePos),
     m_baseRpyIn("baseRpyIn", m_baseRpy),
-    m_isExecute(false),
+    control_mode(MODE_IDLE),
     // </rtc-template>
     m_debugLevel(0)
 {
@@ -148,6 +148,8 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
     }
   }
 
+
+  transition_joint_q.resize(m_robot->numJoints());
   qorg.resize(m_robot->numJoints());
   qrefv.resize(m_robot->numJoints());
   transition_count = 0;
@@ -245,16 +247,38 @@ RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
   if (m_basePosIn.isNew()){
     m_basePosIn.read();
   }
-
   if (m_baseRpyIn.isNew()){
     m_baseRpyIn.read();
   }
   if (is_legged_robot) {
     getCurrentParameters();
+    bool on_ground = calcZMP(act_zmp);
     getTargetParameters();
-
-    //calcRUNST();
-    calcTPCC();
+    switch (control_mode) {
+    case MODE_IDLE:
+      // if (DEBUGP2) std::cerr << "IDLE"<< std::endl;
+      break;
+    case MODE_AIR:
+      // if (DEBUGP2) std::cerr << "AIR"<< std::endl;
+      if ( transition_count == 0 && on_ground ) sync_2_st();
+      break;
+    case MODE_ST:
+      // if (DEBUGP2) std::cerr << "ST"<< std::endl;
+      //calcRUNST();
+      calcTPCC();
+      if ( transition_count == 0 && !on_ground ) control_mode = MODE_SYNC_TO_AIR;
+      break;
+    case MODE_SYNC_TO_IDLE:
+      // std::cerr << "SYNCIDLE"<< std::endl;
+      sync_2_idle();
+      control_mode = MODE_IDLE;
+      break;
+    case MODE_SYNC_TO_AIR:
+      // std::cerr << "SYNCAIR"<< std::endl;
+      sync_2_idle();
+      control_mode = MODE_AIR;
+      break;
+    }
   }
   if ( m_robot->numJoints() == m_qRef.data.length() ) {
     for ( int i = 0; i < m_robot->numJoints(); i++ ){
@@ -278,9 +302,19 @@ void Stabilizer::getCurrentParameters ()
 void Stabilizer::getTargetParameters ()
 {
   // update internal robot model
+  if (transition_count > 0) {
+    double transition_smooth_gain = 1/(1+exp(-9.19*(((MAX_TRANSITION_COUNT - transition_count) / MAX_TRANSITION_COUNT) - 0.5)));
+    for ( int i = 0; i < m_robot->numJoints(); i++ ){
+      m_robot->joint(i)->q = ( m_qRef.data[i] - transition_joint_q[i] ) * transition_smooth_gain + transition_joint_q[i];
+    }
+    transition_count--;
+  } else {
+    for ( int i = 0; i < m_robot->numJoints(); i++ ){
+      m_robot->joint(i)->q = m_qRef.data[i];
+    }
+  }
   for ( int i = 0; i < m_robot->numJoints(); i++ ){
-    m_robot->joint(i)->q = m_qRef.data[i];
-    qrefv[i] = m_qRef.data[i];
+    qrefv[i] = m_robot->joint(i)->q;
   }
   m_robot->rootLink()->p = hrp::Vector3(m_basePos.data.x, m_basePos.data.y, m_basePos.data.z);
   m_robot->rootLink()->R = hrp::rotFromRpy(m_baseRpy.data.r, m_baseRpy.data.p, m_baseRpy.data.y);
@@ -296,8 +330,7 @@ void Stabilizer::getTargetParameters ()
   }
 
   /* return to the original state */
-  // if ( !(control_mode == MODE_IDLE || control_mode == MODE_AIR) ){
-  if ( m_isExecute ) {
+  if ( !(control_mode == MODE_IDLE || control_mode == MODE_AIR) ) {
     for ( int i = 0; i < m_robot->numJoints(); i++ ) {
       m_robot->joint(i)->q = qorg[i];
     }
@@ -311,28 +344,31 @@ void Stabilizer::calcTPCC() {
   if ( m_robot->numJoints() == m_qRef.data.length() ) {
 
     // stabilizer loop
-    if ( ( m_force[ST_LEFT].data.length() > 0 && m_force[ST_RIGHT].data.length() > 0 )
-         && m_isExecute ) {
-      hrp::Vector3 uu = hrp::Vector3::Zero();
-      calcZMP(act_zmp);
-      hrp::Vector3 cog = m_robot->calcCM();
-      hrp::Vector3 newcog = hrp::Vector3::Zero();
-      for (size_t i = 0; i < 2; i++) {
-        uu(i) = refcog_vel(i) - k_tpcc_p[i] * (refzmp(i) - act_zmp(i)) + k_tpcc_x[i] * (refcog(i) - cog(i));
-        newcog(i) = uu(i) * dt + cog(i);
-      }
-
+    if ( ( m_force[ST_LEFT].data.length() > 0 && m_force[ST_RIGHT].data.length() > 0 ) ) {
       double transition_smooth_gain = 1.0;
       if ( transition_count < 0 ) {
         // (/ (log (/ (- 1 0.99) 0.99)) 0.5)
         transition_smooth_gain = 1/(1+exp(-9.19*(((MAX_TRANSITION_COUNT + transition_count) / MAX_TRANSITION_COUNT) - 0.5)));
       }
+      if ( transition_count < 0 ) {
+        transition_count++;
+      }
 
-      // IK
+      // Choi's feedback low
+      hrp::Vector3 uu = hrp::Vector3::Zero();
+      hrp::Vector3 cog = m_robot->calcCM();
+      hrp::Vector3 newcog = hrp::Vector3::Zero();
+      for (size_t i = 0; i < 2; i++) {
+        uu(i) = refcog_vel(i) - k_tpcc_p[i] * transition_smooth_gain * (refzmp(i) - act_zmp(i))
+                              + k_tpcc_x[i] * transition_smooth_gain * (refcog(i) - cog(i));
+        newcog(i) = uu(i) * dt + cog(i);
+      }
+
+      // solveIK
       for (size_t jj = 0; jj < 5; jj++) {
         hrp::Vector3 tmpcm = m_robot->calcCM();
         for (size_t i = 0; i < 2; i++) {
-          m_robot->rootLink()->p(i) = m_robot->rootLink()->p(i) + 0.9 * transition_smooth_gain * (newcog(i) - tmpcm(i));
+          m_robot->rootLink()->p(i) = m_robot->rootLink()->p(i) + 0.9 * (newcog(i) - tmpcm(i));
         }
         m_robot->calcForwardKinematics();
         for (size_t i = 0; i < 2; i++) {
@@ -342,9 +378,6 @@ void Stabilizer::calcTPCC() {
           rats::difference_rotation(vel_r, target->R, target_foot_R[i]);
           manip2[i]->solveLimbIK(vel_p, vel_r, transition_count, 0.001, 0.01, MAX_TRANSITION_COUNT, qrefv, false);
         }
-      }
-      if ( transition_count < 0 ) {
-        transition_count++;
       }
     }
   }
@@ -391,7 +424,6 @@ void Stabilizer::calcRUNST() {
 
     // stabilizer loop
     if ( ( m_force[ST_LEFT].data.length() > 0 && m_force[ST_RIGHT].data.length() > 0 )
-         && m_isExecute
          //( m_force[ST_LEFT].data[2] > m_robot->totalMass()/4 || m_force[ST_RIGHT].data[2] > m_robot->totalMass()/4 )
          ) {
 
@@ -578,21 +610,38 @@ RTC::ReturnCode_t Stabilizer::onRateChanged(RTC::UniqueId ec_id)
 }
 */
 
-void Stabilizer::startStabilizer(void)
+void Stabilizer::sync_2_st ()
 {
-  std::cerr << "START ST"  << std::endl;
   pangx_ref = pangy_ref = pangx = pangy = 0;
   rdx = rdy = rx = ry = 0;
   transition_count = -MAX_TRANSITION_COUNT;
   pdr = hrp::Vector3::Zero();
-  m_isExecute = true;
+  prefcog = m_robot->calcCM();
+  control_mode = MODE_ST;
+}
+
+void Stabilizer::sync_2_idle ()
+{
+  transition_count = MAX_TRANSITION_COUNT;
+  for (int i = 0; i < m_robot->numJoints(); i++ ) {
+    transition_joint_q[i] = m_robot->joint(i)->q;
+  }
+}
+
+void Stabilizer::startStabilizer(void)
+{
+  if ( transition_count == 0 && control_mode == MODE_IDLE ) {
+    std::cerr << "START ST"  << std::endl;
+    sync_2_st();
+  }
 }
 
 void Stabilizer::stopStabilizer(void)
 {
-  std::cerr << "STOP ST" << std::endl;
-  transition_count = MAX_TRANSITION_COUNT;
-  m_isExecute = false;
+  if ( transition_count == 0 && (control_mode == MODE_ST || control_mode == MODE_AIR) ) {
+    std::cerr << "STOP ST" << std::endl;
+    control_mode = MODE_SYNC_TO_IDLE;
+  }
 }
 
 void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)

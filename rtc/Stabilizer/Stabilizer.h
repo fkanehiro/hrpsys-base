@@ -105,6 +105,8 @@ class Stabilizer
   void stopStabilizer(void);
   void getCurrentParameters ();
   void getTargetParameters ();
+  void sync_2_st ();
+  void sync_2_idle();
   bool calcZMP(hrp::Vector3& ret_zmp);
   void calcRUNST();
   void calcTPCC();
@@ -170,16 +172,16 @@ class Stabilizer
     ST_X = 0,
     ST_Y = 1
   };
+  enum cmode {MODE_IDLE, MODE_AIR, MODE_ST, MODE_SYNC_TO_IDLE, MODE_SYNC_TO_AIR} control_mode;
   // members
   hrp::JointPathExPtr manip2[2];
   hrp::BodyPtr m_robot;
   unsigned int m_debugLevel;
-  hrp::dvector transition_joint_q;
-  hrp::dvector qorg, qrefv;
+  hrp::dvector transition_joint_q, qorg, qrefv;
   std::vector<std::string> sensor_names;
   double dt;
   int transition_count, loop;
-  bool m_isExecute, is_legged_robot;
+  bool is_legged_robot;
   hrp::Vector3 current_root_p;
   hrp::Matrix33 current_root_R;
   hrp::Vector3 target_foot_p[2];
