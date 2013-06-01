@@ -141,7 +141,9 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   sensor_names.push_back("rfsensor");
 
   for (size_t i = 0; i < 2; i++) {
-    manip2[i] = hrp::JointPathExPtr(new hrp::JointPathEx(m_robot, m_robot->link("WAIST"), m_robot->sensor<hrp::ForceSensor>(sensor_names[i])->link));
+    if ( m_robot->sensor<hrp::ForceSensor>(sensor_names[i]) != NULL) {
+      manip2[i] = hrp::JointPathExPtr(new hrp::JointPathEx(m_robot, m_robot->link("WAIST"), m_robot->sensor<hrp::ForceSensor>(sensor_names[i])->link));
+    }
   }
 
   qorg.resize(m_robot->numJoints());
