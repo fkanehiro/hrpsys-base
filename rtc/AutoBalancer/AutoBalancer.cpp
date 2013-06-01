@@ -229,7 +229,12 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
     if (gg_is_walking) {
       refzmp = gg->get_refzmp();
     } else {
-      refzmp = ((m_robot->link("L_ANKLE_R"))->p+(m_robot->link("R_ANKLE_R"))->p)/2;
+      if (ikp.size() >0) {
+        refzmp = (m_robot->link(ikp[":rleg"].target_name)->p+
+                  m_robot->link(ikp[":lleg"].target_name)->p)/2.0;
+      } else {
+        refzmp = hrp::Vector3(0,0,0);
+      }
     }
     m_zmpRef.data.x = refzmp(0);
     m_zmpRef.data.y = refzmp(1);
