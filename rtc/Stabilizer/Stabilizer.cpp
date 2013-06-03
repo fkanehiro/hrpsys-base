@@ -247,6 +247,9 @@ RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
   if (m_forceLIn.isNew()) {
     m_forceLIn.read();
   }
+  if (m_zmpRefIn.isNew()) {
+    m_zmpRefIn.read();
+  }
   if (m_basePosIn.isNew()){
     m_basePosIn.read();
   }
