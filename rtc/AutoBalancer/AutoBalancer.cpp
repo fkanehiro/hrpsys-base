@@ -159,6 +159,25 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     gg_is_walking = gg_ending = gg_solved = false;
     fix_leg_coords = coordinates();
 
+    std::vector<std::string> sensor_names;
+    sensor_names.push_back("lfsensor");
+    sensor_names.push_back("rfsensor");
+
+    for (size_t i = 0; i < sensor_names.size(); i++) {
+      std::cerr << "abc limb[" << sensor_names[i] << "]" << std::endl;
+      if ( m_robot->sensor<hrp::ForceSensor>(sensor_names[i]) != NULL) {
+        //assert(target);
+        //assert(base);
+        ABCIKparam tp;
+        tp.base_name = "WAIST";
+        tp.target_name = m_robot->sensor<hrp::ForceSensor>(sensor_names[i])->link->name;
+        tp.manip = hrp::JointPathExPtr(new hrp::JointPathEx(m_robot, m_robot->link(tp.base_name),
+                                                            m_robot->link(tp.target_name)));
+        ikp.insert(std::pair<std::string, ABCIKparam>(((sensor_names[i] == "rfsensor") ? ":rleg" : ":lleg") , tp));
+        //std::cerr << "  " << ikp[sensor_names[i]].target_link->name << " " << ikp[sensor_names[i]].base_link->name << std::endl;
+      }
+    }
+
     return RTC::RTC_OK;
 }
 
@@ -325,12 +344,8 @@ void AutoBalancer::fixLegToCoords (const std::string& leg, const coordinates& co
 
 bool AutoBalancer::solveLimbIKforLimb (ABCIKparam& param, const double transition_smooth_gain)
 {
-  hrp::Link* base = m_robot->link(param.base_name);
-  hrp::Link* target = m_robot->link(param.target_name);
-  assert(target);
-  assert(base);
-  param.current_p0 = target->p;
-  param.current_r0 = target->R;
+  param.current_p0 = m_robot->link(param.target_name)->p;
+  param.current_r0 = m_robot->link(param.target_name)->R;
 
   hrp::Vector3 vel_p, vel_r;
   vel_p = param.target_p0 - param.current_p0;
@@ -415,18 +430,13 @@ void AutoBalancer::startABCparam(const OpenHRP::AutoBalancerService::AutoBalance
 
   for (size_t i = 0; i < alp.length(); i++) {
     const OpenHRP::AutoBalancerService::AutoBalancerLimbParam& tmpalp = alp[i];
-    ABCIKparam tmp;
-    tmp.base_name = std::string(tmpalp.base_name);
-    tmp.target_name = std::string(tmpalp.target_name);
-    tmp.manip = hrp::JointPathExPtr(new hrp::JointPathEx(m_robot, m_robot->link(tmp.base_name), m_robot->link(tmp.target_name)));
+    ABCIKparam& tmp = ikp[std::string(tmpalp.name)];
     memcpy(tmp.target2foot_offset_pos.data(), tmpalp.target2foot_offset_pos, sizeof(double)*3);
     tmp.target2foot_offset_rot = (Eigen::Quaternion<double>(tmpalp.target2foot_offset_rot[0],
                                                             tmpalp.target2foot_offset_rot[1],
                                                             tmpalp.target2foot_offset_rot[2],
                                                             tmpalp.target2foot_offset_rot[3])).normalized().toRotationMatrix();
-    ikp.insert(std::pair<std::string, ABCIKparam>(std::string(tmpalp.name), tmp));
     std::cerr << "abc limb [" << std::string(tmpalp.name) << "]" << std::endl;
-    std::cerr << "     base_name : " << std::string(tmpalp.base_name) << ", target_name :" << std::string(tmpalp.target_name) << std::endl;
     std::cerr << "     offset_pos : " << tmp.target2foot_offset_pos(0) << " " << tmp.target2foot_offset_pos(1) << " " << tmp.target2foot_offset_pos(2) << std::endl;
   }
 
