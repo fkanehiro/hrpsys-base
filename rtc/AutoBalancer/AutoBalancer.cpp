@@ -225,17 +225,6 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
     m_basePos.data.y = m_robot->rootLink()->p(1);
     m_basePos.data.z = m_robot->rootLink()->p(2);
     m_basePosOut.write();
-    hrp::Vector3 refzmp;
-    if (gg_is_walking) {
-      refzmp = gg->get_refzmp();
-    } else {
-      if (ikp.size() >0) {
-        refzmp = (m_robot->link(ikp[":rleg"].target_name)->p+
-                  m_robot->link(ikp[":lleg"].target_name)->p)/2.0;
-      } else {
-        refzmp = hrp::Vector3(0,0,0);
-      }
-    }
     m_zmpRef.data.x = refzmp(0);
     m_zmpRef.data.y = refzmp(1);
     m_zmpRef.data.z = refzmp(2);
@@ -303,6 +292,16 @@ void AutoBalancer::robotstateOrg2qRef()
     if(transition_count <= 0){ // erase impedance param
       std::cerr << "Finished cleanup" << std::endl;
       control_mode = MODE_IDLE;
+    }
+  }
+  if (gg_is_walking) {
+    refzmp = gg->get_refzmp();
+  } else {
+    if (ikp.size() >0) {
+      refzmp = (m_robot->link(ikp[":rleg"].target_name)->p+
+                m_robot->link(ikp[":lleg"].target_name)->p)/2.0;
+    } else {
+      refzmp = hrp::Vector3(0,0,0);
     }
   }
 }

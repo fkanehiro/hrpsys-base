@@ -168,7 +168,7 @@ class AutoBalancer
   ggPtr gg;
   bool gg_is_walking, gg_ending, gg_solved;
   // for abc
-  hrp::Vector3 target_com;
+  hrp::Vector3 target_com, refzmp;
   int transition_count; // negative value when initing and positive value when deleting
   enum {MODE_IDLE, MODE_ABC, MODE_SYNC} control_mode;
   std::map<std::string, ABCIKparam> ikp;
