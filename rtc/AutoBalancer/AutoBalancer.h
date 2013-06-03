@@ -174,7 +174,7 @@ class AutoBalancer
   std::map<std::string, ABCIKparam> ikp;
   hrp::dvector transition_joint_q;
   hrp::dvector qorg, qrefv;
-  hrp::Vector3 base_pos_org, target_base_pos;
+  hrp::Vector3 base_pos_org, target_base_pos, prefzmp;
   hrp::Matrix33 base_rot_org, target_base_rot;
   rats::coordinates fix_leg_coords;
   std::vector<hrp::Vector3> default_zmp_offsets;
@@ -182,6 +182,7 @@ class AutoBalancer
   hrp::BodyPtr m_robot;
   coil::Mutex m_mutex;
   unsigned int m_debugLevel;
+  bool is_legged_robot;
   int dummy;
   int loop;
 };

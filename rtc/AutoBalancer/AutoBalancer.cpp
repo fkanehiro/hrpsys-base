@@ -163,6 +163,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     sensor_names.push_back("lfsensor");
     sensor_names.push_back("rfsensor");
 
+    is_legged_robot = false;
     for (size_t i = 0; i < sensor_names.size(); i++) {
       std::cerr << "abc limb[" << sensor_names[i] << "]" << std::endl;
       if ( m_robot->sensor<hrp::ForceSensor>(sensor_names[i]) != NULL) {
@@ -174,6 +175,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
         tp.manip = hrp::JointPathExPtr(new hrp::JointPathEx(m_robot, m_robot->link(tp.base_name),
                                                             m_robot->link(tp.target_name)));
         ikp.insert(std::pair<std::string, ABCIKparam>(((sensor_names[i] == "rfsensor") ? ":rleg" : ":lleg") , tp));
+        is_legged_robot = true;
         //std::cerr << "  " << ikp[sensor_names[i]].target_link->name << " " << ikp[sensor_names[i]].base_link->name << std::endl;
       }
     }
@@ -261,7 +263,7 @@ void AutoBalancer::robotstateOrg2qRef()
     qrefv[i] = m_qRef.data[i];
   }
   m_robot->calcForwardKinematics();
-  if ( ikp.size() > 0 ) {
+  if ( is_legged_robot ) {
     coordinates tmp_fix_coords;
     if ( gg_is_walking ) {
       //gg->set_default_zmp_offsets(tmpzo);
@@ -296,6 +298,7 @@ void AutoBalancer::robotstateOrg2qRef()
     }
   }
   if ( transition_count > 0 ) {
+    double transition_smooth_gain = 1/(1+exp(-9.19*(((MAX_TRANSITION_COUNT - transition_count) / MAX_TRANSITION_COUNT) - 0.5)));
     for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
       hrp::JointPathExPtr manip = it->second.manip;
       for ( int j = 0; j < manip->numJoints(); j++ ) {
@@ -303,7 +306,6 @@ void AutoBalancer::robotstateOrg2qRef()
         hrp::Link* joint =  m_robot->joint(i);
         // transition_smooth_gain moves from 0 to 1
         // (/ (log (/ (- 1 0.99) 0.99)) 0.5)
-        double transition_smooth_gain = 1/(1+exp(-9.19*(((MAX_TRANSITION_COUNT - transition_count) / MAX_TRANSITION_COUNT) - 0.5)));
         joint->q = ( m_qRef.data[i] - transition_joint_q[i] ) * transition_smooth_gain + transition_joint_q[i];
       }
     }
@@ -313,15 +315,20 @@ void AutoBalancer::robotstateOrg2qRef()
       control_mode = MODE_IDLE;
     }
   }
-  if (gg_is_walking) {
+  if (control_mode == MODE_IDLE) {
+    //refzmp = hrp::Vector3(0,0,0); // tempolary
+    if (is_legged_robot) refzmp = target_com;
+    else refzmp = hrp::Vector3(0,0,0);
+  } else if (gg_is_walking) {
     refzmp = gg->get_refzmp();
   } else {
-    if (ikp.size() >0) {
-      refzmp = (m_robot->link(ikp[":rleg"].target_name)->p+
-                m_robot->link(ikp[":lleg"].target_name)->p)/2.0;
-    } else {
-      refzmp = hrp::Vector3(0,0,0);
-    }
+    if (is_legged_robot) refzmp = target_com;
+    else refzmp = hrp::Vector3(0,0,0);
+  }
+  if ( transition_count > 0 ) {
+    double transition_smooth_gain = 1/(1+exp(-9.19*(((MAX_TRANSITION_COUNT - abs(transition_count)) / MAX_TRANSITION_COUNT) - 0.5)));
+    refzmp = transition_smooth_gain * refzmp + prefzmp;
+    prefzmp = refzmp;
   }
 }
 
@@ -462,6 +469,7 @@ void AutoBalancer::stopABCparam()
   for (int i = 0; i < m_robot->numJoints(); i++ ) {
     transition_joint_q[i] = m_robot->joint(i)->q;
   }
+  prefzmp = refzmp;
   control_mode = MODE_SYNC;
   gg_ending = gg_solved = gg_is_walking = false;
 }
