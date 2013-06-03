@@ -317,7 +317,8 @@ void AutoBalancer::robotstateOrg2qRef()
   }
   if (control_mode == MODE_IDLE) {
     //refzmp = hrp::Vector3(0,0,0); // tempolary
-    if (is_legged_robot) refzmp = target_com;
+    if (is_legged_robot) refzmp = (m_robot->link(ikp[":rleg"].target_name)->p+
+                                   m_robot->link(ikp[":lleg"].target_name)->p)/2.0;
     else refzmp = hrp::Vector3(0,0,0);
   } else if (gg_is_walking) {
     refzmp = gg->get_refzmp();
@@ -327,8 +328,7 @@ void AutoBalancer::robotstateOrg2qRef()
   }
   if ( transition_count > 0 ) {
     double transition_smooth_gain = 1/(1+exp(-9.19*(((MAX_TRANSITION_COUNT - abs(transition_count)) / MAX_TRANSITION_COUNT) - 0.5)));
-    refzmp = transition_smooth_gain * refzmp + prefzmp;
-    prefzmp = refzmp;
+    refzmp = transition_smooth_gain * ( refzmp - prefzmp ) + prefzmp;
   }
 }
 
