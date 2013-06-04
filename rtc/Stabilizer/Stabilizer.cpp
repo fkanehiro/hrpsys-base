@@ -384,7 +384,7 @@ void Stabilizer::calcTPCC() {
       {
         hrp::Matrix33 act_Rs(hrp::rotFromRpy(m_rpy.data.r, m_rpy.data.p, m_rpy.data.y));
         hrp::Matrix33 tmpm, act_Rb;
-        hrp::Sensor* sen = m_robot->sensor<hrp::ForceSensor>("gyrometer");
+        hrp::Sensor* sen = m_robot->sensor<hrp::RateGyroSensor>("gyrometer");
         rats::rotm3times(tmpm, hrp::Matrix33(sen->link->R * sen->localR).transpose(), m_robot->rootLink()->R);
         rats::rotm3times(act_Rb, act_Rs, tmpm);
         hrp::Vector3 act_rpy = hrp::rpyFromRot(act_Rb);
