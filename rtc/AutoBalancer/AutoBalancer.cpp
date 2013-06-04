@@ -266,7 +266,7 @@ void AutoBalancer::robotstateOrg2qRef()
   if ( is_legged_robot ) {
     coordinates tmp_fix_coords;
     if ( gg_is_walking ) {
-      //gg->set_default_zmp_offsets(tmpzo);
+      gg->set_default_zmp_offsets(default_zmp_offsets);
       gg_solved = gg->proc_one_tick(rats::gait_generator::CYCLOID);
       ikp[gg->get_support_leg()].target_p0 = gg->get_support_leg_coords().pos;
       ikp[gg->get_support_leg()].target_r0 = gg->get_support_leg_coords().rot;
@@ -293,8 +293,13 @@ void AutoBalancer::robotstateOrg2qRef()
       //lc.translate(tmpzo[1]); /* :lleg */
       //target_cog = (rc.pos + lc.pos) / 2.0;
       //target_com = hrp::Vector3::Zero();
-      target_com = (m_robot->link(ikp[":rleg"].target_name)->p+
-                    m_robot->link(ikp[":lleg"].target_name)->p)/2.0;
+      coordinates rc(m_robot->link(ikp[":rleg"].target_name)->p,
+                     m_robot->link(ikp[":rleg"].target_name)->R);
+      coordinates lc(m_robot->link(ikp[":lleg"].target_name)->p,
+                     m_robot->link(ikp[":lleg"].target_name)->R);
+      rc.translate(default_zmp_offsets[0]); /* :rleg */
+      lc.translate(default_zmp_offsets[1]); /* :lleg */
+      target_com = (rc.pos+lc.pos)/2.0;
     }
   }
   if ( transition_count > 0 ) {
@@ -631,6 +636,10 @@ bool AutoBalancer::setAutoBalancerParam(const OpenHRP::AutoBalancerService::Auto
   for (size_t i = 0; i < 2; i++)
     for (size_t j = 0; j < 3; j++)
       default_zmp_offsets[i](j) = i_param.default_zmp_offsets[i][j];
+  std::cerr << "move_base_gain: " << move_base_gain << std::endl;
+  std::cerr << "default_zmp_offsets: "
+            << default_zmp_offsets[0](0) << " " << default_zmp_offsets[0](1) << " " << default_zmp_offsets[0](2) << " "
+            << default_zmp_offsets[1](0) << " " << default_zmp_offsets[1](1) << " " << default_zmp_offsets[1](2) << std::endl;
   return true;
 };
 
