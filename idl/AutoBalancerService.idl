@@ -42,8 +42,6 @@ module OpenHRP
     struct AutoBalancerLimbParam
     {
       string name;
-      string base_name;
-      string target_name;
       DblArray3 target2foot_offset_pos;
       DblArray4 target2foot_offset_rot;
     };
