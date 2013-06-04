@@ -12,6 +12,8 @@ module OpenHRP
       // for TPCC
       DblArray2 k_tpcc_p;
       DblArray2 k_tpcc_x;
+      DblArray2 k_brot_p;
+      DblArray2 k_brot_tc;
       // for RUNST
       DblArray2 k_run_b;
       DblArray2 d_run_b;

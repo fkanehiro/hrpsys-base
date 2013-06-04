@@ -184,11 +184,12 @@ class Stabilizer
   bool is_legged_robot;
   hrp::Vector3 current_root_p;
   hrp::Matrix33 current_root_R;
+  hrp::Matrix33 target_root_R;
   hrp::Vector3 target_foot_p[2];
   hrp::Matrix33 target_foot_R[2];
   hrp::Vector3 refzmp, refcog, refcog_vel;
   // TPCC
-  double k_tpcc_p[2], k_tpcc_x[2];
+  double k_tpcc_p[2], k_tpcc_x[2], d_rpy[2], k_brot_p[2], k_brot_tc[2];
   hrp::Vector3 act_zmp, prefcog;
   // RUN ST
   TwoDofController m_tau_x[ST_NUM_LEGS], m_tau_y[ST_NUM_LEGS], m_f_z;

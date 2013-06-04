@@ -124,6 +124,8 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   for (int i = 0; i < ST_NUM_LEGS; i++) {
     k_tpcc_p[i] = 0.2;
     k_tpcc_x[i] = 4.0;
+    k_brot_p[i] = 0.1;
+    k_brot_tc[i] = 1.5;
   }
 
   // parameters for RUNST
@@ -327,7 +329,8 @@ void Stabilizer::getTargetParameters ()
     qrefv[i] = m_robot->joint(i)->q;
   }
   m_robot->rootLink()->p = hrp::Vector3(m_basePos.data.x, m_basePos.data.y, m_basePos.data.z);
-  m_robot->rootLink()->R = hrp::rotFromRpy(m_baseRpy.data.r, m_baseRpy.data.p, m_baseRpy.data.y);
+  target_root_R = hrp::rotFromRpy(m_baseRpy.data.r, m_baseRpy.data.p, m_baseRpy.data.y);
+  m_robot->rootLink()->R = target_root_R;
   m_robot->calcForwardKinematics();
   refzmp = hrp::Vector3(m_zmpRef.data.x, m_zmpRef.data.y, m_zmpRef.data.z);
   refcog = m_robot->calcCM();
@@ -375,6 +378,22 @@ void Stabilizer::calcTPCC() {
         uu(i) = refcog_vel(i) - k_tpcc_p[i] * transition_smooth_gain * (refzmp(i) - act_zmp(i))
                               + k_tpcc_x[i] * transition_smooth_gain * (refcog(i) - cog(i));
         newcog(i) = uu(i) * dt + cog(i);
+      }
+
+      //rpy control
+      {
+        hrp::Matrix33 act_Rs(hrp::rotFromRpy(m_rpy.data.r, m_rpy.data.p, m_rpy.data.y));
+        hrp::Matrix33 tmpm, act_Rb;
+        hrp::Sensor* sen = m_robot->sensor<hrp::ForceSensor>("gyrometer");
+        rats::rotm3times(tmpm, hrp::Matrix33(sen->link->R * sen->localR).transpose(), m_robot->rootLink()->R);
+        rats::rotm3times(act_Rb, act_Rs, tmpm);
+        hrp::Vector3 act_rpy = hrp::rpyFromRot(act_Rb);
+        hrp::Vector3 ref_rpy = hrp::rpyFromRot(target_root_R);
+        for (size_t i = 0; i < 2; i++) {
+          d_rpy[i] = transition_smooth_gain * (k_brot_p[i] * (ref_rpy(i) - act_rpy(i)) - 1/k_brot_tc[i] * d_rpy[i]) * dt + d_rpy[i];
+        }
+        rats::rotm3times(current_root_R, target_root_R, hrp::rotFromRpy(d_rpy[0], d_rpy[1], 0));
+        m_robot->rootLink()->R = current_root_R;
       }
 
       // solveIK
@@ -667,9 +686,12 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
     m_f_z.setup(i_stp.tdfke[1], i_stp.tdftc[1], dt);
     k_tpcc_p[i] = i_stp.k_tpcc_p[i];
     k_tpcc_x[i] = i_stp.k_tpcc_x[i];
+    k_brot_p[i] = i_stp.k_brot_p[i];
+    k_brot_tc[i] = i_stp.k_brot_tc[i];
     std::cerr << i << " k_run_b " << k_run_b[i] << " d_run_b " << d_run_b[i] << std::endl;
     std::cerr << i << " m_tau_xy " << i_stp.tdfke[i] << " " << i_stp.tdftc[i] << std::endl;
     std::cerr << i << " k_tpcc_p " << k_tpcc_p[i] << " k_tpcc_x " << k_tpcc_x[i] << std::endl;
+    std::cerr << i << " k_brot_p " << k_brot_p[i] << " k_brot_tc " << k_brot_tc[i] << std::endl;
   }
   m_torque_k[0] = i_stp.k_run_x;
   m_torque_k[1] = i_stp.k_run_y;
