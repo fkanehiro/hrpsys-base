@@ -35,7 +35,7 @@ int main (int argc, char** argv)
 {
   std::string output;
   std::vector<std::string> inputs;
-  std::string conf_file_option;
+  std::string conf_file_option, robothardware_conf_file_option;
 
   for (int i = 1; i < argc; ++ i) {
     std::string arg(argv[i]);
@@ -46,6 +46,8 @@ int main (int argc, char** argv)
       ++i;
     } else if ( arg == "--conf-file-option" ) {
       if (++i < argc) conf_file_option += std::string("\n") + argv[i];
+    } else if ( arg == "--robothardware-conf-file-option" ) {
+      if (++i < argc) robothardware_conf_file_option += std::string("\n") + argv[i];
     } else if ( arg[0] == '-' ||  arg[0] == '_'  ) {
       std::cerr << argv[0] << " : Unknwon arguments " << arg << std::endl;
     } else {
@@ -301,6 +303,7 @@ int main (int argc, char** argv)
       s << "model: file://" << inputs[0] << std::endl;
       s << "exec_cxt.periodic.type: hrpExecutionContext" << std::endl;
       s << "sexec_cxt.periodic.rate: 200" << std::endl;
+      s << robothardware_conf_file_option << std::endl;
   }
 
   return 0;
