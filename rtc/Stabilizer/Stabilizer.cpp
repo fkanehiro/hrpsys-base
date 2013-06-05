@@ -145,7 +145,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   is_legged_robot = false;
   for (size_t i = 0; i < 2; i++) {
     if ( m_robot->sensor<hrp::ForceSensor>(sensor_names[i]) != NULL) {
-      manip2[i] = hrp::JointPathExPtr(new hrp::JointPathEx(m_robot, m_robot->link("WAIST"), m_robot->sensor<hrp::ForceSensor>(sensor_names[i])->link));
+      manip2[i] = hrp::JointPathExPtr(new hrp::JointPathEx(m_robot, m_robot->rootLink(), m_robot->sensor<hrp::ForceSensor>(sensor_names[i])->link));
       is_legged_robot = true;
     }
   }

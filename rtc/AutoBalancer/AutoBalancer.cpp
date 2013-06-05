@@ -170,7 +170,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
         //assert(target);
         //assert(base);
         ABCIKparam tp;
-        tp.base_name = "WAIST";
+        tp.base_name = m_robot->rootLink()->name;
         tp.target_name = m_robot->sensor<hrp::ForceSensor>(sensor_names[i])->link->name;
         tp.manip = hrp::JointPathExPtr(new hrp::JointPathEx(m_robot, m_robot->link(tp.base_name),
                                                             m_robot->link(tp.target_name)));
