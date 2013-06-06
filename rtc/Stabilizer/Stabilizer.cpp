@@ -42,7 +42,7 @@ static double switching_inpact_absorber(double force, double lower_th, double up
 Stabilizer::Stabilizer(RTC::Manager* manager)
   : RTC::DataFlowComponentBase(manager),
     // <rtc-template block="initializer">
-    m_qIn("qCurrent", m_q),
+    m_qCurrentIn("qCurrent", m_qCurrent),
     m_qRefIn("qRef", m_qRef),
     m_rpyIn("rpy", m_rpy),
     m_forceLIn("forceL", m_force[ST_LEFT]),
@@ -75,7 +75,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   // Registration: InPort/OutPort/Service
   // <rtc-template block="registration">
   // Set InPort buffers
-  addInPort("q", m_qIn);
+  addInPort("qCurrent", m_qCurrentIn);
   addInPort("qRef", m_qRefIn);
   addInPort("forceR", m_forceRIn);
   addInPort("forceL", m_forceLIn);
@@ -150,7 +150,8 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
     }
   }
 
-
+  m_qCurrent.data.length(m_robot->numJoints());
+  m_qRef.data.length(m_robot->numJoints());
   transition_joint_q.resize(m_robot->numJoints());
   qorg.resize(m_robot->numJoints());
   qrefv.resize(m_robot->numJoints());
@@ -237,8 +238,11 @@ RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
   if (m_qRefIn.isNew()) {
     m_qRefIn.read();
   }
-  if (m_qIn.isNew()) {
-    m_qIn.read();
+  if (m_qCurrentIn.isNew()) {
+    m_qCurrentIn.read();
+    is_qCurrent = true;
+  } else {
+    is_qCurrent = false;
   }
   if (m_rpyIn.isNew()) {
     m_rpyIn.read();

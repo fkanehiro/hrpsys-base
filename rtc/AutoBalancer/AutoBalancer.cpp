@@ -51,6 +51,7 @@ AutoBalancer::AutoBalancer(RTC::Manager* manager)
     : RTC::DataFlowComponentBase(manager),
       // <rtc-template block="initializer">
       m_qRefIn("qRef", m_qRef),
+      m_qCurrentIn("qCurrent", m_qCurrent),
       m_qOut("q", m_q),
       m_zmpRefOut("zmpRef", m_zmpRef),
       m_basePosOut("basePos", m_basePos),
@@ -79,6 +80,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     // <rtc-template block="registration">
     // Set InPort buffers
     addInPort("qRef", m_qRefIn);
+    addInPort("qCurrent", m_qCurrentIn);
 
     // Set OutPort buffer
     addOutPort("q", m_qOut);
@@ -122,6 +124,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
 
     // allocate memory for outPorts
     m_qRef.data.length(m_robot->numJoints());
+    m_qCurrent.data.length(m_robot->numJoints());
     m_q.data.length(m_robot->numJoints());
     qorg.resize(m_robot->numJoints());
     qrefv.resize(m_robot->numJoints());
@@ -227,6 +230,12 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
     loop ++;
     if (m_qRefIn.isNew()) {
         m_qRefIn.read();
+    }
+    if (m_qCurrentIn.isNew()) {
+        m_qCurrentIn.read();
+        is_qCurrent = true;
+    } else {
+      is_qCurrent = false;
     }
     Guard guard(m_mutex);
     robotstateOrg2qRef();

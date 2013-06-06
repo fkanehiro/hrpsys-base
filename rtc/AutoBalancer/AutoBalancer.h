@@ -112,6 +112,8 @@ class AutoBalancer
   // <rtc-template block="inport_declare">
   TimedDoubleSeq m_qRef;
   InPort<TimedDoubleSeq> m_qRefIn;
+  TimedDoubleSeq m_qCurrent;
+  InPort<TimedDoubleSeq> m_qCurrentIn;
   
   // </rtc-template>
 
@@ -182,7 +184,7 @@ class AutoBalancer
   hrp::BodyPtr m_robot;
   coil::Mutex m_mutex;
   unsigned int m_debugLevel;
-  bool is_legged_robot;
+  bool is_legged_robot, is_qCurrent;
   int dummy;
   int loop;
 };

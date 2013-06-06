@@ -117,7 +117,7 @@ class Stabilizer
   // <rtc-template block="config_declare">
   
   // </rtc-template>
-  RTC::TimedDoubleSeq m_q;
+  RTC::TimedDoubleSeq m_qCurrent;
   RTC::TimedDoubleSeq m_qRef;
   RTC::TimedOrientation3D m_rpy;
   // RTC::TimedDoubleSeq m_forceR, m_forceL;
@@ -128,7 +128,7 @@ class Stabilizer
   
   // DataInPort declaration
   // <rtc-template block="inport_declare">
-  RTC::InPort<RTC::TimedDoubleSeq> m_qIn;
+  RTC::InPort<RTC::TimedDoubleSeq> m_qCurrentIn;
   RTC::InPort<RTC::TimedDoubleSeq> m_qRefIn;
   RTC::InPort<RTC::TimedOrientation3D> m_rpyIn;
   RTC::InPort<RTC::TimedDoubleSeq> m_forceRIn;
@@ -181,7 +181,7 @@ class Stabilizer
   std::vector<std::string> sensor_names;
   double dt;
   int transition_count, loop;
-  bool is_legged_robot;
+  bool is_legged_robot, is_qCurrent;
   hrp::Vector3 current_root_p;
   hrp::Matrix33 current_root_R;
   hrp::Matrix33 target_root_R;
