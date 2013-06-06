@@ -302,7 +302,7 @@ int main (int argc, char** argv)
   
       s << "model: file://" << inputs[0] << std::endl;
       s << "exec_cxt.periodic.type: hrpExecutionContext" << std::endl;
-      s << "sexec_cxt.periodic.rate: 200" << std::endl;
+      s << "exec_cxt.periodic.rate: 200" << std::endl;
       s << robothardware_conf_file_option << std::endl;
   }
 
