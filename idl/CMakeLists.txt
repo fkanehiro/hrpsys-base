@@ -94,7 +94,9 @@ install(TARGETS ${target}
 	LIBRARY DESTINATION lib CONFIGURATIONS Release Debug
 )
 
-install(FILES ${jarfile} DESTINATION share/java)
+if(COMPILE_JAVA_STUFF)
+  install(FILES ${jarfile} DESTINATION share/java)
+endif()
 install(CODE "execute_process(COMMAND omniidl -bpython -C${python_dist_pkg_dir} -I${OPENRTM_IDL_DIR} ${idl_files} WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})")
 install(CODE "execute_process(COMMAND omniidl -bpython -C${python_dist_pkg_dir} -I${OPENRTM_IDL_DIR} ${openhrp_idl_files} WORKING_DIRECTORY ${OPENHRP_DIR}/share/OpenHRP-3.1/idl/OpenHRP)")
 install(CODE "execute_process(COMMAND python -m compileall . WORKING_DIRECTORY ${python_dist_pkg_dir})")
