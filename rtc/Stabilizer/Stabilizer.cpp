@@ -339,33 +339,25 @@ void Stabilizer::calcTorque ()
   hrp::Vector3 root_t;
   m_robot->calcInverseDynamics(m_robot->rootLink(), root_f, root_t);
   // if (loop % 200 == 0) {
-  //   std::cerr << ":INVDYN (list "; rats::print_vector(std::cerr, ff, false);
-  //   std::cerr << " "; rats::print_vector(std::cerr, tt, false);
-  //   std::cerr << ")" << std::endl;
-  //   hrp::dvector tqv(m_robot->numJoints());
-  //   std::cerr << ":IV (list ";
-  //   for(int i = 0; i < m_robot->numJoints(); ++i){
-  //     //tqv[m_robot->joint(i)->jointId] = m_robot->joint(i)->u;
-  //     std::cerr << "(list :" << m_robot->joint(i)->name << " " <<  m_robot->joint(i)->u << ")";
-  //   }
-  //   std::cerr << ")" << std::endl;
-  //   //std::cerr << ":IV "; rats::print_vector(std::cerr, tqv);
-  //   // for (size_t j = 0; j < 2; j++) {
-  //   //   std::cerr << ":lp "; rats::print_vector(std::cerr, m_robot->sensor<hrp::ForceSensor>(sensor_names[j])->link->p);
-  //   // }
   //   std::cerr << ":mass " << m_robot->totalMass() << std::endl;
   //   std::cerr << ":cog "; rats::print_vector(std::cerr, m_robot->calcCM());
   //   for(int i = 0; i < m_robot->numJoints(); ++i){
-  //     //rats::print_vector(std::cerr, m_robot->link(i)->fext);
-  //     //rats::print_vector(std::cerr, m_robot->link(i)->tauext);
   //     std::cerr << "(list :" << m_robot->link(i)->name << " "
   //               << m_robot->joint(i)->jointId << " "
   //               << m_robot->link(i)->m << " ";
   //     hrp::Vector3 tmpc = m_robot->link(i)->p + m_robot->link(i)->R * m_robot->link(i)->c;
   //     rats::print_vector(std::cerr, tmpc, false);
-  //     //std::cerr << " " << m_robot->link(i)->u << " " << m_robot->link(i)->ddq << std::endl;;
+  //     std::cerr << " ";
+  //     rats::print_vector(std::cerr, m_robot->link(i)->c, false);
   //     std::cerr << ")" << std::endl;
   //   }
+  // }
+  // if (loop % 200 == 0) {
+  //   std::cerr << ":IV1 (list ";
+  //   for(int i = 0; i < m_robot->numJoints(); ++i){
+  //     std::cerr << "(list :" << m_robot->joint(i)->name << " " <<  m_robot->joint(i)->u << ")";
+  //   }
+  //   std::cerr << ")" << std::endl;
   // }
   hrp::dmatrix contact_mat, contact_mat_inv;
   std::vector<hrp::Vector3> contact_p;
@@ -378,9 +370,10 @@ void Stabilizer::calcTorque ()
   hrp::dvector contact_ft(2*6);
   contact_ft = contact_mat_inv * root_ft;
   // if (loop%200==0) {
-  //   std::cerr << ":ftv "; rats::print_vector(std::cerr, ftv);
-  //   std::cerr << ":aa "; rats::print_matrix(std::cerr, aa);
-  //   std::cerr << ":dv "; rats::print_vector(std::cerr, dv);
+  //   std::cerr << ":mass " << m_robot->totalMass() << std::endl;
+  //   // std::cerr << ":ftv "; rats::print_vector(std::cerr, ftv);
+  //   // std::cerr << ":aa "; rats::print_matrix(std::cerr, aa);
+  //   // std::cerr << ":dv "; rats::print_vector(std::cerr, dv);
   // }
   for (size_t j = 0; j < 2; j++) {
     hrp::JointPathEx jm = hrp::JointPathEx(m_robot, m_robot->rootLink(), m_robot->sensor<hrp::ForceSensor>(sensor_names[j])->link);
@@ -393,24 +386,23 @@ void Stabilizer::calcTorque ()
     // if (loop%200==0) {
     //   std::cerr << ":ft "; rats::print_vector(std::cerr, ft);
     //   std::cerr << ":JJ "; rats::print_matrix(std::cerr, JJ);
-    //   std::cerr << ":tmp "; rats::print_vector(std::cerr, tmp);
+    //   std::cerr << ":tq_from_extft "; rats::print_vector(std::cerr, tq_from_extft);
     // }
     for (size_t i = 0; i < jm.numJoints(); i++) jm.joint(i)->u -= tq_from_extft(i);
   }
   //hrp::dmatrix MM(6,m_robot->numJoints());
   //m_robot->calcMassMatrix(MM);
   // if (loop % 200 == 0) {
-  //   std::cerr << ":INVDYN2 (list "; rats::print_vector(std::cerr, ff, false);
-  //   std::cerr << " "; rats::print_vector(std::cerr, tt, false);
+  //   std::cerr << ":INVDYN2 (list "; rats::print_vector(std::cerr, root_f, false);
+  //   std::cerr << " "; rats::print_vector(std::cerr, root_t, false);
   //   std::cerr << ")" << std::endl;
-  //   hrp::dvector tqv(m_robot->numJoints());
-  //   // for(int i = 0; i < m_robot->numJoints(); ++i){
+  //   // hrp::dvector tqv(m_robot->numJoints());
+  //   // for(int i = 0; i < m_robot->numJoints(); ++i){p
   //   //   tqv[m_robot->joint(i)->jointId] = m_robot->joint(i)->u;
   //   // }
   //   // std::cerr << ":IV2 "; rats::print_vector(std::cerr, tqv);
   //   std::cerr << ":IV2 (list ";
   //   for(int i = 0; i < m_robot->numJoints(); ++i){
-  //     //tqv[m_robot->joint(i)->jointId] = m_robot->joint(i)->u;
   //     std::cerr << "(list :" << m_robot->joint(i)->name << " " <<  m_robot->joint(i)->u << ")";
   //   }
   //   std::cerr << ")" << std::endl;
@@ -462,10 +454,18 @@ void Stabilizer::getTargetParameters ()
 
   /* return to the original state */
   if ( !(control_mode == MODE_IDLE || control_mode == MODE_AIR) ) {
-    for ( int i = 0; i < m_robot->numJoints(); i++ ) {
-      m_robot->joint(i)->q = qorg[i];
+    for (size_t i = 0; i < 2; i++) {
+      for ( int j = 0; j < manip2[i]->numJoints(); j++ ){
+        int idx = manip2[i]->joint(j)->jointId;
+        m_robot->joint(idx)->q = qorg[idx];
+      }
     }
-    m_robot->rootLink()->p = current_root_p;
+    // for ( int i = 0; i < m_robot->numJoints(); i++ ) {
+    //   //m_robot->joint(i)->q = qorg[i];
+    // }
+    //m_robot->rootLink()->p = current_root_p;
+    m_robot->rootLink()->p(0) = current_root_p(0);
+    m_robot->rootLink()->p(1) = current_root_p(1);
     m_robot->rootLink()->R = current_root_R;
     m_robot->calcForwardKinematics();
   }
