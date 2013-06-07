@@ -66,6 +66,29 @@ namespace rats
     if (use_newline) strm << std::endl;
   }
 
+  void print_vector(std::ostream& strm, const hrp::dvector& vec, const bool use_newline)
+  {
+    strm << "#f(";
+    for (size_t i = 0; i < vec.size(); i++) strm << vec(i) << " ";
+    strm << ")";
+    if (use_newline) strm << std::endl;
+  }
+
+  void print_matrix(std::ostream& strm, const hrp::dmatrix& mat, const bool use_newline)
+  {
+    strm << "#2f(";
+    for (std::size_t i = 0; i < mat.rows(); ++i) {
+      strm << "(";
+      for (std::size_t j = 0; j < mat.cols(); ++j) {
+        strm << mat(i,j) << " ";
+      }
+      strm << ")";
+    }
+    strm << ")";
+
+    if (use_newline) strm << std::endl;
+  }
+
   void print_matrix(std::ostream& strm, const hrp::Matrix33& mat, const bool use_newline)
   {
     strm << "#2f(";

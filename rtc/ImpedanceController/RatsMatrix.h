@@ -18,7 +18,9 @@ namespace rats
   }
 
   void print_vector(std::ostream& strm, const hrp::Vector3& vec, const bool use_newline = true);
+  void print_vector(std::ostream& strm, const hrp::dvector& vec, const bool use_newline = true);
   void print_matrix(std::ostream& strm, const hrp::Matrix33& mat, const bool use_newline = true);
+  void print_matrix(std::ostream& strm, const hrp::dmatrix& mat, const bool use_newline = true);
   // matrix product using quaternion normalization
   void rotm3times (hrp::Matrix33& m12, const hrp::Matrix33& m1, const hrp::Matrix33& m2);
   void difference_rotation(hrp::Vector3& ret_dif_rot, const hrp::Matrix33& self_rot, const hrp::Matrix33& target_rot);
