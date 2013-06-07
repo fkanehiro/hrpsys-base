@@ -122,6 +122,7 @@ class Stabilizer
   // </rtc-template>
   RTC::TimedDoubleSeq m_qCurrent;
   RTC::TimedDoubleSeq m_qRef;
+  RTC::TimedDoubleSeq m_tau;
   RTC::TimedOrientation3D m_rpy;
   // RTC::TimedDoubleSeq m_forceR, m_forceL;
   RTC::TimedDoubleSeq m_force[2];
@@ -145,6 +146,7 @@ class Stabilizer
   // DataOutPort declaration
   // <rtc-template block="outport_declare">
   RTC::OutPort<RTC::TimedDoubleSeq> m_qRefOut;
+  RTC::OutPort<RTC::TimedDoubleSeq> m_tauOut;
   
   // </rtc-template>
 

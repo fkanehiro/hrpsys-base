@@ -48,10 +48,11 @@ Stabilizer::Stabilizer(RTC::Manager* manager)
     m_forceLIn("forceL", m_force[ST_LEFT]),
     m_forceRIn("forceR", m_force[ST_RIGHT]),
     m_zmpRefIn("zmpRef", m_zmpRef),
-    m_qRefOut("q", m_qRef),
     m_StabilizerServicePort("StabilizerService"),
     m_basePosIn("basePosIn", m_basePos),
     m_baseRpyIn("baseRpyIn", m_baseRpy),
+    m_qRefOut("q", m_qRef),
+    m_tauOut("tau", m_tau),
     control_mode(MODE_IDLE),
     // </rtc-template>
     m_debugLevel(0)
@@ -85,7 +86,8 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   addInPort("baseRpyIn", m_baseRpyIn);
 
   // Set OutPort buffer
-  addOutPort("qRef", m_qRefOut);
+  addOutPort("q", m_qRefOut);
+  addOutPort("tau", m_tauOut);
   
   // Set service provider to Ports
   m_StabilizerServicePort.registerProvider("service0", "StabilizerService", m_service0);
@@ -152,6 +154,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
 
   m_qCurrent.data.length(m_robot->numJoints());
   m_qRef.data.length(m_robot->numJoints());
+  m_tau.data.length(m_robot->numJoints());
   transition_joint_q.resize(m_robot->numJoints());
   qorg.resize(m_robot->numJoints());
   qrefv.resize(m_robot->numJoints());
@@ -300,8 +303,10 @@ RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
   if ( m_robot->numJoints() == m_qRef.data.length() ) {
     for ( int i = 0; i < m_robot->numJoints(); i++ ){
       m_qRef.data[i] = m_robot->joint(i)->q;
+      //m_tau.data[i] = m_robot->joint(i)->u;
     }
     m_qRefOut.write();
+    //m_tauOut.write();
   }
 
   return RTC::RTC_OK;
