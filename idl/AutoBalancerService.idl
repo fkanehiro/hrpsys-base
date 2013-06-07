@@ -51,6 +51,7 @@ module OpenHRP
     {
       double default_step_time; // step time [s]
       double default_step_height; // step height [m]
+      double default_double_support_ratio; // ratio
       sequence<double, 3> stride_parameter; // stride limitation of x[m], y[m], and theta[deg]
     };
 

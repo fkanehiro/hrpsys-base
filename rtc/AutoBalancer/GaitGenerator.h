@@ -332,6 +332,7 @@ namespace rats
     size_t get_current_support_state() const { return lcg.get_current_support_state();};
     double get_default_step_time () const { return default_step_time; };
     double get_default_step_height () const { return lcg.get_default_step_height(); };
+    double get_default_double_support_ratio () const { return default_double_support_ratio; };
     /* return whether _leg is swinging leg or not
      * swinging leg -> swing_leg and not double support phase
      *                 landing_offset_ratio is mergin from double support period
