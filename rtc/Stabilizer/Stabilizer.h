@@ -111,6 +111,9 @@ class Stabilizer
   void calcRUNST();
   void calcTPCC();
   void setParameter(const OpenHRP::StabilizerService::stParam& i_stp);
+  // funcitons for calc final torque output
+  void calcContactMatrix (hrp::dmatrix& tm, const std::vector<hrp::Vector3>& contact_p);
+  void calcTorque ();
 
  protected:
   // Configuration variable declaration
