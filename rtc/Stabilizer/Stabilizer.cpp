@@ -285,7 +285,7 @@ RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
       // if (DEBUGP2) std::cerr << "ST"<< std::endl;
       //calcRUNST();
       calcTPCC();
-      if ( transition_count == 0 && !on_ground ) control_mode = MODE_SYNC_TO_AIR;
+      //if ( transition_count == 0 && !on_ground ) control_mode = MODE_SYNC_TO_AIR;
       break;
     case MODE_SYNC_TO_IDLE:
       // std::cerr << "SYNCIDLE"<< std::endl;
