@@ -37,6 +37,7 @@ KalmanFilter::KalmanFilter(RTC::Manager* manager)
     m_rateIn("rate", m_rate),
     m_accIn("acc", m_acc),
     m_accRefIn("accRef", m_accRef),
+    m_rpyIn("rpyIn", m_rate),
     m_rpyOut("rpy", m_rpy),
     m_rpyRawOut("rpy_raw", m_rpyRaw),
     m_KalmanFilterServicePort("KalmanFilterService"),
@@ -68,6 +69,7 @@ RTC::ReturnCode_t KalmanFilter::onInitialize()
   addInPort("rate", m_rateIn);
   addInPort("acc", m_accIn);
   addInPort("accRef", m_accRefIn);
+  addInPort("rpyIn", m_rpyIn);
 
   // Set OutPort buffer
   addOutPort("rpy", m_rpyOut);
@@ -154,6 +156,14 @@ RTC::ReturnCode_t KalmanFilter::onExecute(RTC::UniqueId ec_id)
 {
     static int initialize = 0;
   //std::cerr << m_profile.instance_name<< ": onExecute(" << ec_id << ") " << std::endl;
+    if (m_rpyIn.isNew() ) {
+      m_rpyIn.read();
+      m_rpy.data.r = m_rate.data.avx;
+      m_rpy.data.p = m_rate.data.avy;
+      m_rpy.data.y = m_rate.data.avz;
+      m_rpyOut.write();
+      return RTC::RTC_OK;
+    }
   if (m_rateIn.isNew()){
     m_rateIn.read();
   }

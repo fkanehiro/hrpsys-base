@@ -174,6 +174,7 @@ class KalmanFilter
   InPort<TimedAngularVelocity3D> m_rateIn;
   InPort<TimedAcceleration3D> m_accIn;
   InPort<TimedAcceleration3D> m_accRefIn;
+  InPort<TimedAngularVelocity3D> m_rpyIn; // for dummy usage
   
   // </rtc-template>
 
