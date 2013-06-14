@@ -780,6 +780,8 @@ void Stabilizer::startStabilizer(void)
   if ( transition_count == 0 && control_mode == MODE_IDLE ) {
     std::cerr << "START ST"  << std::endl;
     sync_2_st();
+    waitSTTransition();
+    std::cerr << "START ST DONE"  << std::endl;
   }
 }
 
@@ -788,6 +790,8 @@ void Stabilizer::stopStabilizer(void)
   if ( transition_count == 0 && (control_mode == MODE_ST || control_mode == MODE_AIR) ) {
     std::cerr << "STOP ST" << std::endl;
     control_mode = MODE_SYNC_TO_IDLE;
+    waitSTTransition();
+    std::cerr << "STOP ST DONE"  << std::endl;
   }
 }
 
@@ -814,6 +818,12 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
   m_torque_d[1] = i_stp.d_run_y;
   std::cerr << " m_torque_k " << m_torque_k[0] << " m_torque_k " <<  m_torque_k[1] << std::endl;
   std::cerr << " m_torque_d " << m_torque_d[0] << " m_torque_d " <<  m_torque_d[1] << std::endl;
+}
+
+void Stabilizer::waitSTTransition()
+{
+  while (transition_count != 0) usleep(10);
+  usleep(10);
 }
 
 static double vlimit(double value, double llimit_value, double ulimit_value)
