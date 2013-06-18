@@ -761,6 +761,7 @@ void Stabilizer::sync_2_st ()
 {
   pangx_ref = pangy_ref = pangx = pangy = 0;
   rdx = rdy = rx = ry = 0;
+  d_rpy[0] = d_rpy[1] = 0;
   transition_count = -MAX_TRANSITION_COUNT;
   pdr = hrp::Vector3::Zero();
   prefcog = m_robot->calcCM();
