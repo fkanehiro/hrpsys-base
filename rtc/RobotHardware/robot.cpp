@@ -512,20 +512,26 @@ bool robot::setServoGainPercentage(const char *i_jname, double i_percentage)
     Link *l = NULL;
     if (strcmp(i_jname, "all") == 0 || strcmp(i_jname, "ALL") == 0){
         for (int i=0; i<numJoints(); i++){
-            old_pgain[i] = pgain[i]; pgain[i] = default_pgain[i] * i_percentage/100.0;
-            old_dgain[i] = dgain[i]; dgain[i] = default_dgain[i] * i_percentage/100.0;
+            if (!read_pgain(i, &old_pgain[i])) old_pgain[i] = pgain[i];
+            pgain[i] = default_pgain[i] * i_percentage/100.0;
+            if (!read_dgain(i, &old_dgain[i])) old_dgain[i] = dgain[i];
+            dgain[i] = default_dgain[i] * i_percentage/100.0;
             gain_counter[i] = 0;
         }
     }else if ((l = link(i_jname))){
-        old_pgain[l->jointId] = pgain[l->jointId]; pgain[l->jointId] = default_pgain[l->jointId] * i_percentage/100.0;
-        old_dgain[l->jointId] = dgain[l->jointId]; dgain[l->jointId] = default_dgain[l->jointId] * i_percentage/100.0;
+        if (!read_pgain(l->jointId, &old_pgain[l->jointId])) old_pgain[l->jointId] = pgain[l->jointId];
+        pgain[l->jointId] = default_pgain[l->jointId] * i_percentage/100.0;
+        if (!read_dgain(l->jointId, &old_dgain[l->jointId])) old_dgain[l->jointId] = dgain[l->jointId];
+        dgain[l->jointId] = default_dgain[l->jointId] * i_percentage/100.0;
         gain_counter[l->jointId] = 0;
     }else{
         const std::vector<int> jgroup = m_jointGroups[i_jname];
         if (jgroup.size()==0) return false;
         for (unsigned int i=0; i<jgroup.size(); i++){
-            old_pgain[jgroup[i]] = pgain[jgroup[i]]; pgain[jgroup[i]] = default_pgain[jgroup[i]] * i_percentage/100.0;
-            old_dgain[jgroup[i]] = dgain[jgroup[i]]; dgain[jgroup[i]] = default_dgain[jgroup[i]] * i_percentage/100.0;
+            if (!read_pgain(jgroup[i], &old_pgain[jgroup[i]])) old_pgain[jgroup[i]] = pgain[jgroup[i]];
+            pgain[jgroup[i]] = default_pgain[jgroup[i]] * i_percentage/100.0;
+            if (!read_dgain(jgroup[i], &old_dgain[jgroup[i]])) old_dgain[jgroup[i]] = dgain[jgroup[i]];
+            dgain[jgroup[i]] = default_dgain[jgroup[i]] * i_percentage/100.0;
             gain_counter[jgroup[i]] = 0;
         }
     }
