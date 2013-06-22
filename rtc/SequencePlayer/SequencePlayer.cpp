@@ -452,6 +452,8 @@ bool SequencePlayer::removeJointGroup(const char *gname)
 bool SequencePlayer::setJointAnglesOfGroup(const char *gname, const double *angles, double tm)
 {
     Guard guard(m_mutex);
+    if (!setInitialState()) return false;
+
     if (!m_seq->resetJointGroup(gname, m_qInit.data.get_buffer())) return false;
     return m_seq->setJointAnglesOfGroup(gname, angles, tm);
 }
