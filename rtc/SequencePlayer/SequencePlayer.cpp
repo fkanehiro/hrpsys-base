@@ -429,6 +429,7 @@ bool SequencePlayer::addJointGroup(const char *gname, const OpenHRP::SequencePla
         if (l){
             indices.push_back(l->jointId);
         }else{
+            std::cerr << "[addJointGroup] link name " << jnames[i] << "is not found" << std::endl;
             return false;
         }
     }

@@ -368,7 +368,10 @@ bool seqplay::setInterpolationMode (interpolator::interpolation_mode i_mode_)
 bool seqplay::addJointGroup(const char *gname, const std::vector<int>& indices)
 {
 	groupInterpolator *i = groupInterpolators[gname];
-	if (i) return false;
+	if (i) {
+		std::cerr << "[addJointGroup] group name " << gname << " is already installed" << std::endl;
+		return false;
+	}
 	i = new groupInterpolator(indices, interpolators[Q]->deltaT());
 	groupInterpolators[gname] = i;
 	return true;
@@ -381,6 +384,7 @@ bool seqplay::removeJointGroup(const char *gname, double time)
 		i->remove(time);
 		return true;
 	}else{
+		std::cerr << "[removeJointGroup] group name " << gname << " is not installed" << std::endl;
 		return false;
 	}
 }
@@ -392,6 +396,7 @@ bool seqplay::resetJointGroup(const char *gname, const double *full)
 		i->set(full);
 		return true;
 	}else{
+		std::cerr << "[resetJointGroup] group name " << gname << " is not installed" << std::endl;
 		return false;
 	}
 }
@@ -416,6 +421,7 @@ bool seqplay::setJointAnglesOfGroup(const char *gname, const double *i_qRef, dou
 		i->go(i_qRef, i_tm);
 		return true;
 	}else{
+		std::cerr << "[setJointAnglesOfGroup] group name " << gname << " is not installed" << std::endl;
 		return false;
 	}
 }
@@ -473,6 +479,7 @@ bool seqplay::playPatternOfGroup(const char *gname, std::vector<const double *> 
 
 		return true;
 	}else{
+		std::cerr << "[playPatternOfGroup] group name " << gname << " is not installed" << std::endl;
 		return false;
 	}
 }
