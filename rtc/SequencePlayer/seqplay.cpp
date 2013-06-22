@@ -466,7 +466,7 @@ bool seqplay::playPatternOfGroup(const char *gname, std::vector<const double *> 
 				for (unsigned int j = 0; j < len; j++) { v[j] = 0.0; }
 			}
 			if (l < tm.size()) t = tm[l];
-			i->go(q, t);
+			i->go(q, v, t);
 		}
 		sync();
 		delete [] v;

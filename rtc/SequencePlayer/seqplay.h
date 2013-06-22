@@ -99,6 +99,10 @@ private:
             inter->go(g, tm);
             state = working;
         }
+        void go(const double *g, const double *v, double tm){
+            inter->go(g, v, tm);
+            state = working;
+        }
         void remove(double time){
             state = removing;
             time2remove = time;
