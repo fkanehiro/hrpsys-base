@@ -422,6 +422,8 @@ bool SequencePlayer::setInterpolationMode(OpenHRP::SequencePlayerService::interp
 
 bool SequencePlayer::addJointGroup(const char *gname, const OpenHRP::SequencePlayerService::StrSequence& jnames)
 {
+    if (!waitInterpolationOfGroup(gname)) return false;
+
     Guard guard(m_mutex);
     std::vector<int> indices;
     for (size_t i=0; i<jnames.length(); i++){
