@@ -357,6 +357,11 @@ bool seqplay::setInterpolationMode (interpolator::interpolation_mode i_mode_)
 	for (unsigned int i=0; i<NINTERPOLATOR; i++){
 		ret &= interpolators[i]->setInterpolationMode(i_mode_);
 	}
+	std::map<std::string, groupInterpolator *>::const_iterator it;
+	for (it=groupInterpolators.begin(); it!=groupInterpolators.end(); it++){
+		groupInterpolator *gi = it->second;
+		ret &= gi->inter->setInterpolationMode(i_mode_);
+	}
 	return ret;
 }
 
