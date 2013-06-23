@@ -5,6 +5,7 @@
 #include <queue>
 #include <deque>
 #include <hrpUtil/Eigen3d.h>
+#include "util/Hrpsys.h"
 
 namespace rats
 {

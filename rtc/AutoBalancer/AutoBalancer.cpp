@@ -14,14 +14,8 @@
 #include "AutoBalancer.h"
 #include <hrpModel/JointPath.h>
 #include <hrpUtil/MatrixSolvers.h>
+#include "util/Hrpsys.h"
 
-#ifdef __QNX__
-using std::exp;
-using std::fabs;
-#else
-using std::isnan;
-using std::isinf;
-#endif
 
 #define MAX_TRANSITION_COUNT (2/m_dt)
 typedef coil::Guard<coil::Mutex> Guard;

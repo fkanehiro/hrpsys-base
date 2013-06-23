@@ -1,9 +1,7 @@
 #include <fstream>
+#include "util/Hrpsys.h"
 #include "timeUtil.h"
 
-#ifdef __QNX__
-#include <sys/syspage.h>
-#endif
 
 tick_t get_tick()
 {

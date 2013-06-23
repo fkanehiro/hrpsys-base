@@ -8,10 +8,8 @@
  */
 
 #include "DataLogger.h"
+#include "util/Hrpsys.h"
 
-#ifdef __QNX__
-using std::sprintf;
-#endif
 
 typedef coil::Guard<coil::Mutex> Guard;
 

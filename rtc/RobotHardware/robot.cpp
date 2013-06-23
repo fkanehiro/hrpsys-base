@@ -8,6 +8,7 @@
 #include "defs.h"
 #include "io/iob.h"
 #include "robot.h"
+#include "util/Hrpsys.h"
 
 #define CALIB_COUNT	(10*200)
 #define GAIN_COUNT	( 5*200)
@@ -17,11 +18,6 @@
 
 using namespace hrp;
 
-#ifdef __QNX__
-using std::strcmp;
-using std::localtime;
-using std::sprintf;
-#endif
 
 robot::robot() : m_fzLimitRatio(0), m_maxZmpError(DEFAULT_MAX_ZMP_ERROR), m_calibRequested(false), m_pdgainsFilename("PDgains.sav"), wait_sem(0)
 {
