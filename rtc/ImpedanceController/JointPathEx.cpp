@@ -390,7 +390,7 @@ void JointPathEx::solveLimbIK (const hrp::Vector3& _vel_p,
             // break if dq(j) is nan/nil
             bool dq_check = true;
             for(int j=0; j < n; ++j){
-                if ( std::isnan(dq(j)) || std::isinf(dq(j)) ) {
+                if ( isnan(dq(j)) || isinf(dq(j)) ) {
                     dq_check = false;
                     break;
                 }
