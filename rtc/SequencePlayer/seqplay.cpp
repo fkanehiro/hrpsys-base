@@ -430,6 +430,10 @@ bool seqplay::playPatternOfGroup(const char *gname, std::vector<const double *> 
 {
 	groupInterpolator *i = groupInterpolators[gname];
 	if (i){
+		if (len != i->indices.size() ) {
+			std::cerr << "[playPatternOfGroup] group name " << gname << " : size of manipulater is not equal to input. " << len << " /= " << i->indices.size() << std::endl;
+			return false;
+		}
 		if (i->state == groupInterpolator::created){
 			double q[m_dof], dq[m_dof];
 			interpolators[Q]->get(q, dq, false);
@@ -445,6 +449,10 @@ bool seqplay::playPatternOfGroup(const char *gname, std::vector<const double *> 
 		}
 		const double *q=NULL; double t=0;
 		double *v = new double[len];
+		double *qi = new double[len];
+		for (unsigned int j=0; j<len; j++){
+			qi[j] = qInit[i->indices[j]];
+		}
 		for (unsigned int l=0; l<pos.size(); l++){
 			q = pos[l];
 			if (l < pos.size() - 1 ) {
@@ -455,7 +463,7 @@ bool seqplay::playPatternOfGroup(const char *gname, std::vector<const double *> 
 					t0 = t1 = tm[0];
 				}
 				const double *q_next = pos[l+1];
-				const double *q_prev = l==0 ? qInit : pos[l-1];
+				const double *q_prev = l==0 ? qi : pos[l-1];
 				for (unsigned int j = 0; j < len; j++) {
 					double d0, d1, v0, v1;
 					d0 = (q[j] - q_prev[j]);
@@ -476,6 +484,7 @@ bool seqplay::playPatternOfGroup(const char *gname, std::vector<const double *> 
 		}
 		sync();
 		delete [] v;
+		delete [] qi;
 
 		return true;
 	}else{
