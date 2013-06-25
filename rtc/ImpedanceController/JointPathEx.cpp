@@ -177,6 +177,25 @@ bool JointPathEx::calcInverseKinematics2Loop(const Vector3& dp, const Vector3& o
         std::cerr << std::endl;
     }
 
+    // default servoErrorLimit in RobotHardware(DEFAULT_ANGLE_ERROR_LIMIT) = 0.2[rad]
+    double max_speed = 0;
+    for(int j=0; j < n; ++j){
+      max_speed = std::max(max_speed, fabs(dq(j)));
+    }
+    if ( max_speed > 0.2*0.5 ) { // 0.5 safety margin
+      if ( DEBUG ) {
+        std::cerr << "spdlmt: ";
+        for(int j=0; j < n; ++j) { std::cerr << dq(j) << " "; } std::cerr << std::endl;
+      }
+      for(int j=0; j < n; ++j) {
+        dq(j) = dq(j) * 0.2*0.5 / max_speed;
+      }
+      if ( DEBUG ) {
+        std::cerr << "spdlmt: ";
+        for(int j=0; j < n; ++j) { std::cerr << dq(j) << " "; } std::cerr << std::endl;
+      }
+    }
+
     return true;
 }
 
@@ -279,27 +298,6 @@ bool JointPathEx::calcInverseKinematics2(const Vector3& end_p, const Matrix33& e
 
     }
  
-    // default servoErrorLimit in RobotHardware(DEFAULT_ANGLE_ERROR_LIMIT) = 0.2[rad]
-    double max_speed = 0;
-    for(int j=0; j < n; ++j){
-      dq(j) = joints[j]->q - qorg[j];
-      max_speed = std::max(max_speed, fabs(dq(j)));
-    }
-    if ( max_speed > 0.2*0.5 ) { // 0.5 safety margin
-      if ( DEBUG ) {
-        std::cerr << "spdlmt: ";
-        for(int j=0; j < n; ++j) { std::cerr << dq(j) << " "; } std::cerr << std::endl;
-      }
-      for(int j=0; j < n; ++j) {
-        dq(j) = dq(j) * 0.2*0.5 / max_speed;
-        joints[j]->q = qorg[j] + dq(j);
-      }
-      if ( DEBUG ) {
-        std::cerr << "spdlmt: ";
-        for(int j=0; j < n; ++j) { std::cerr << dq(j) << " "; } std::cerr << std::endl;
-      }
-    }
-
     if ( converged ) {
       for(int j=0; j < n; ++j){
         if ( joints[j]->q > joints[j]->ulimit) {
