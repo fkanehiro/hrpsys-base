@@ -61,7 +61,7 @@ int hrp::calcSRInverse(const dmatrix& _a, dmatrix &_a_sr, double _sr_ratio, dmat
 }
 
 JointPathEx::JointPathEx(BodyPtr& robot, Link* base, Link* end)
-  : JointPath(base, end), sr_gain(1.0), manipulability_limit(0.1), manipulability_gain(0.05) {
+  : JointPath(base, end), sr_gain(1.0), manipulability_limit(0.1), manipulability_gain(0.001) {
   for (int i = 0 ; i < numJoints(); i++ ) {
     joints.push_back(joint(i));
   }
@@ -214,6 +214,8 @@ bool JointPathEx::calcInverseKinematics2(const Vector3& end_p, const Matrix33& e
         
       Vector3 dp(target->R.transpose() * (end_p - target->p));
       Vector3 omega(target->R * omegaFromRot(target->R.transpose() * end_R));
+      if ( dp.norm() > 0.1 ) dp = dp*0.1/dp.norm();
+      if ( omega.norm() > 0.5 ) omega = omega*0.5/omega.norm();
 
 
       if ( DEBUG ) {
