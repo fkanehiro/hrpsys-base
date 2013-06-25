@@ -6,6 +6,7 @@
 #include <hrpUtil/MatrixSolvers.h>
 
 #define deg2rad(x)((x)*M_PI/180)
+#define rad2deg(rad) (rad * 180 / M_PI)
 #define eps_eq(a, b, c)  (fabs((a)-(b)) <= c)
 
 std::ostream& operator<<(std::ostream& out, hrp::dmatrix &a) {
@@ -114,8 +115,11 @@ bool JointPathEx::calcJacobianInverseNullspace(dmatrix &J, dmatrix &Jinv, dmatri
         avoid_weight_gain[j] = r;
     }
     if ( DEBUG ) {
-        std::cerr << "    w : ";
-        for(int j = 0; j < n; j++ ) { std::cerr << w(j, j) << " "; }
+        std::cerr << " cost :";
+        for(int j = 0; j < n; j++ ) { std::cerr << std::setw(8) << std::setiosflags(std::ios::fixed) << std::setprecision(4) << avoid_weight_gain[j]; }
+        std::cerr << std::endl;
+        std::cerr << "    w :";
+        for(int j = 0; j < n; j++ ) { std::cerr << std::setw(8) << std::setiosflags(std::ios::fixed) << std::setprecision(4) << w(j, j); }
         std::cerr << std::endl;
     }
 
@@ -140,6 +144,13 @@ bool JointPathEx::calcJacobianInverseNullspace(dmatrix &J, dmatrix &Jinv, dmatri
 bool JointPathEx::calcInverseKinematics2Loop(const Vector3& dp, const Vector3& omega, dvector &dq) {
     const int n = numJoints();
 
+    if ( DEBUG ) {
+        std::cerr << "angle :";
+        for(int j=0; j < n; ++j){
+            std::cerr << std::setw(8) << std::setiosflags(std::ios::fixed) << std::setprecision(4) << rad2deg(joints[j]->q);
+        }
+        std::cerr << endl;
+    }
     dvector v(6);
     v << dp, omega;
 
@@ -157,10 +168,11 @@ bool JointPathEx::calcInverseKinematics2Loop(const Vector3& dp, const Vector3& o
             std::cerr << " " << v(j);
         }
         std::cerr << std::endl;
+        std::cerr << "    J :" << std::endl << J;
         std::cerr << " Jinv :" << std::endl << Jinv;
-        std::cerr << "   dq : ";
+        std::cerr << "   dq :";
         for(int j=0; j < n; ++j){
-            std::cerr << " " << dq(j);
+            std::cerr << std::setw(8) << std::setiosflags(std::ios::fixed) << std::setprecision(4) << rad2deg(dq(j));
         }
         std::cerr << std::endl;
     }
