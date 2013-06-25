@@ -52,7 +52,7 @@ int hrp::calcSRInverse(const dmatrix& _a, dmatrix &_a_sr, double _sr_ratio, dmat
 
     dmatrix at = _a.transpose();
     dmatrix a1(c, c);
-    hrp::calcPseudoInverse((_a * _w * at +  _sr_ratio * dmatrix::Identity(c,c)), a1);
+    a1 = (_a * _w * at +  _sr_ratio * dmatrix::Identity(c,c)).inverse();
 
     //if (DEBUG) { dmatrix aat = _a * at; std::cerr << " a*at :" << std::endl << aat; }
 
@@ -212,7 +212,7 @@ bool JointPathEx::calcInverseKinematics2(const Vector3& end_p, const Matrix33& e
         std::cerr << " iter : " << iter << " / " << MAX_IK_ITERATION << ", n = " << n << std::endl;
       }
         
-      Vector3 dp(end_p - target->p);
+      Vector3 dp(target->R.transpose() * (end_p - target->p));
       Vector3 omega(target->R * omegaFromRot(target->R.transpose() * end_R));
 
 
