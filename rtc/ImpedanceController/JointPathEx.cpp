@@ -225,7 +225,7 @@ bool JointPathEx::calcInverseKinematics2(const Vector3& end_p, const Matrix33& e
         std::cerr << " iter : " << iter << " / " << MAX_IK_ITERATION << ", n = " << n << std::endl;
       }
         
-      Vector3 dp(target->R.transpose() * (end_p - target->p));
+      Vector3 dp(end_p - target->p);
       Vector3 omega(target->R * omegaFromRot(target->R.transpose() * end_R));
       if ( dp.norm() > 0.1 ) dp = dp*0.1/dp.norm();
       if ( omega.norm() > 0.5 ) omega = omega*0.5/omega.norm();
