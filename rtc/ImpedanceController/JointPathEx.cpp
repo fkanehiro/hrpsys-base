@@ -107,7 +107,7 @@ bool JointPathEx::calcJacobianInverseNullspace(dmatrix &J, dmatrix &Jinv, dmatri
             if (isnan(r)) r = 0;
         }
 
-        if (( r - avoid_weight_gain[j] ) >= 0 || 1 ) { // ???
+        if (( r - avoid_weight_gain[j] ) >= 0 ) {
 	  w(j, j) = ( 1.0 / ( 1.0 + r) );
 	} else {
 	  w(j, j) = 1.0;
@@ -210,6 +210,7 @@ bool JointPathEx::calcInverseKinematics2(const Vector3& end_p, const Matrix33& e
 
     for(int i=0; i < n; ++i){
         qorg[i] = joints[i]->q;
+        avoid_weight_gain[i] = 100000000000000000000.0;
     }
 
     
