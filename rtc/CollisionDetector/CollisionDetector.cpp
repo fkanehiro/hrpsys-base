@@ -366,7 +366,7 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
                     << " [msec], safe = " << m_safe_posture << ", time = " << m_recover_time << " " << m_q.data[0] << " " << m_q.data[1] 
                     << " " << m_q.data[2] << " " << m_q.data[3] << " " << m_q.data[4] << " " << m_q.data[5] << " " << m_q.data[6] << std::endl;
         }
-        if ( m_pair.size() == 0 && ( DEBUGP || loop % 100 == 1) ) {
+        if ( m_pair.size() == 0 && ( DEBUGP || (loop % ((int)(5/m_dt))) == 1) ) {
             std::cerr << "CAUTION!! The robot is moving without checking self collision detection!!! please define collision_pair in configuration file" << std::endl;
         }
         //
