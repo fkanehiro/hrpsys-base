@@ -68,6 +68,10 @@ CORBA::Boolean SequencePlayerService_impl::setZmp(const dSequence& zmp, CORBA::D
     return m_player->setZmp(zmp.get_buffer(), tm);
 }
 
+CORBA::Boolean SequencePlayerService_impl::setTargetPose(const char* gname, const dSequence& xyz, const dSequence& rpy, CORBA::Double tm){
+    return m_player->setTargetPose(gname, xyz.get_buffer(), rpy.get_buffer(), tm);
+}
+
 CORBA::Boolean SequencePlayerService_impl::isEmpty()
 {
   return m_player->player()->isEmpty();

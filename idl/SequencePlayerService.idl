@@ -80,6 +80,16 @@ module OpenHRP
     boolean setZmp(in dSequence zmp, in double tm);
     
     /**
+     * @brief Interpolate X, Y, Z and Roll Pitch Yaw of the target joint/link group, wrt world coords Function returns without waiting for interpolation to finish
+     * @param gname name of the joint group
+     * @param xyz : X,Y,Z position of the target link
+     * @param rpy : Roll-Pitch-Yaw angles of the target link
+     * @param tm duration
+     * @return true if set successfully, false otherwise
+     */
+    boolean setTargetPose(in string name, in dSequence xyz, in dSequence rpy, in double tm);
+
+    /**
      * @brief Utility functions to check whether intepolation is going on. Functions return immediately
      * @return true if interpolation queue is empty, false otherwise
      */

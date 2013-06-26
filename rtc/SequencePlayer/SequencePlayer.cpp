@@ -12,6 +12,9 @@
 #include <hrpModel/ModelLoaderUtil.h>
 #include "SequencePlayer.h"
 #include "util/VectorConvert.h"
+#include <hrpModel/JointPath.h>
+#include <hrpUtil/MatrixSolvers.h>
+#include "../ImpedanceController/JointPathEx.h"
 
 typedef coil::Guard<coil::Mutex> Guard;
 
@@ -341,6 +344,84 @@ bool SequencePlayer::setZmp(const double *zmp, double tm)
     Guard guard(m_mutex);
     m_seq->setZmp(zmp, tm);
     return true;
+}
+
+bool SequencePlayer::setTargetPose(const char* gname, const double *xyz, const double *rpy, double tm)
+{
+    Guard guard(m_mutex);
+    // setup
+    std::vector<int> indices;
+    hrp::dvector start_av, end_av;
+    std::vector<hrp::dvector> avs;
+    if (! m_seq->getJointGroup(gname, indices) ) {
+        std::cerr << "[setTargetPose] Could not find joint group " << gname << std::endl;
+        return false;
+    }
+    start_av.resize(indices.size());
+    end_av.resize(indices.size());
+
+    std::cerr << std::endl;
+    if ( ! m_robot->joint(indices[0])->parent ) {
+        std::cerr << "[setTargetPose] " << m_robot->joint(indices[0])->name << " does not have parent" << std::endl;
+        return false;
+    }
+    string base_name = m_robot->joint(indices[0])->parent->name;
+    string target_name = m_robot->joint(indices[indices.size()-1])->name;
+    // prepare joint path
+    hrp::JointPathExPtr manip = hrp::JointPathExPtr(new hrp::JointPathEx(m_robot, m_robot->link(base_name), m_robot->link(target_name)));
+
+    // calc fk
+    for (int i=0; i<m_robot->numJoints(); i++){
+        hrp::Link *j = m_robot->joint(i);
+        if (j) j->q = m_qRef.data.get_buffer()[i];
+    }
+    m_robot->calcForwardKinematics();
+    for ( int i = 0; i < manip->numJoints(); i++ ){
+        start_av[i] = manip->joint(i)->q;
+    }
+
+    // interpolate & calc ik
+    int len = max((int)(tm/0.1),10);
+    std::vector<const double *> v_pos;
+    std::vector<double> v_tm;
+    v_pos.resize(len);
+    v_tm.resize(len);
+
+    // ik params
+    hrp::Vector3 start_p(m_robot->link(target_name)->p);
+    hrp::Matrix33 start_R(m_robot->link(target_name)->R);
+    hrp::Vector3 end_p(xyz[0], xyz[1], xyz[2]);
+    hrp::Matrix33 end_R = hrp::rotFromRpy(rpy[0], rpy[1], rpy[2]);
+    manip->setMaxIKError(0.005);
+
+    // do loop
+    for (int i = 0; i < len; i++ ) {
+        double a = (1+i)/(double)len;
+        hrp::Vector3 p = (1-a)*start_p + a*end_p;
+        hrp::Vector3 omega = hrp::omegaFromRot(start_R.transpose() * end_R);
+        hrp::Matrix33 R = start_R * rodrigues(omega.isZero()?omega:omega.normalized(), a*omega.norm());
+        bool ret = manip->calcInverseKinematics2(p, R);
+        if ( ! ret ) {
+            std::cerr << "[setTargetPose] IK failed" << std::endl;
+            return false;
+        }
+        v_pos[i] = (const double *)malloc(sizeof(double)*manip->numJoints());
+        for ( int j = 0; j < manip->numJoints(); j++ ){
+            ((double *)v_pos[i])[j] = manip->joint(j)->q;
+        }
+        v_tm[i] = tm/len;
+    }
+
+    // for debug
+    for(int i = 0; i < len; i++ ) {
+        std::cerr << v_tm[i] << ":";
+        for(int j = 0; j < start_av.size(); j++ ) {
+            std::cerr << v_pos[i][j] << " ";
+        }
+        std::cerr << std::endl;
+    }
+
+    return m_seq->playPatternOfGroup(gname, v_pos, v_tm, m_qInit.data.get_buffer(), v_pos.size()>0?indices.size():0);
 }
 
 void SequencePlayer::loadPattern(const char *basename, double tm)

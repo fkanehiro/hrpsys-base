@@ -377,6 +377,20 @@ bool seqplay::addJointGroup(const char *gname, const std::vector<int>& indices)
 	return true;
 }
 
+bool seqplay::getJointGroup(const char *gname, std::vector<int>& indices)
+{
+	groupInterpolator *i = groupInterpolators[gname];
+	if (i) {
+		for(unsigned j = 0; j < i->indices.size(); j++) {
+			indices.push_back(i->indices[j]);
+		}
+		return true;
+	}else{
+		std::cerr << "[getJointGroup] group name " << gname << " is not installed" << std::endl;
+		return false;
+	}
+}
+
 bool seqplay::removeJointGroup(const char *gname, double time)
 {
 	groupInterpolator *i = groupInterpolators[gname];
