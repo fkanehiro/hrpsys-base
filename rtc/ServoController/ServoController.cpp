@@ -42,6 +42,7 @@ ServoController::ServoController(RTC::Manager* manager)
     m_ServoControllerServicePort("ServoControllerService")
     // </rtc-template>
 {
+    m_service0.servo(this);
 }
 
 ServoController::~ServoController()
