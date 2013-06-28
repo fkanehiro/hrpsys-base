@@ -13,15 +13,8 @@ ServoControllerService_impl::~ServoControllerService_impl()
 {
 }
 
-CORBA::Boolean ServoControllerService_impl::setJointAngle(const char *jname, CORBA::Double jv, CORBA::Double tm)
+CORBA::Boolean ServoControllerService_impl::setJointAngle(const CORBA::Short id, CORBA::Double jv, CORBA::Double tm)
 {
-	hrp::BodyPtr r = m_servo->robot();
-	hrp::Link *l = r->link(jname);
-    if (!l){
-        std::cerr << "can't find(" << jname << ")" << std::endl;
-        return false;
-    }
-    int id = l->jointId;
 	return m_servo->setJointAngle(id, jv, tm);
 }
 
@@ -30,19 +23,8 @@ CORBA::Boolean ServoControllerService_impl::setJointAngles(const OpenHRP::ServoC
 	return m_servo->setJointAngles(jvs, tm);
 }
 
-CORBA::Boolean ServoControllerService_impl::getJointAngle(const char *jname, CORBA::Double &jv)
+CORBA::Boolean ServoControllerService_impl::getJointAngle(const CORBA::Short id, CORBA::Double &jv)
 {
-	int ret;
-	double angle;
-
-	hrp::BodyPtr r = m_servo->robot();
-	hrp::Link *l = r->link(jname);
-    if (!l){
-        std::cerr << "can't find(" << jname << ")" << std::endl;
-        return false;
-    }
-    int id = l->jointId;
-
 	return m_servo->getJointAngle(id, jv);
 }
 
@@ -51,9 +33,9 @@ CORBA::Boolean ServoControllerService_impl::getJointAngles(OpenHRP::ServoControl
 	return m_servo->getJointAngles(jvs);
 }
 
-CORBA::Boolean ServoControllerService_impl::addJointGroup(const char* gname, const OpenHRP::ServoControllerService::StrSequence& jnames)
+CORBA::Boolean ServoControllerService_impl::addJointGroup(const char* gname, const OpenHRP::ServoControllerService::iSequence& ids)
 {
-    return m_servo->addJointGroup(gname, jnames);
+    return m_servo->addJointGroup(gname, ids);
 }
 
 CORBA::Boolean ServoControllerService_impl::removeJointGroup(const char* gname)

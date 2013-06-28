@@ -6,7 +6,7 @@ module OpenHRP
 {
   interface ServoControllerService
   {
-    typedef sequence<string> StrSequence;
+    typedef sequence<short> iSequence;
     typedef sequence<double> dSequence;
 
     /**
@@ -16,7 +16,7 @@ module OpenHRP
      * @param tm duration
      * @return true if set successuflly, false otherwise
      */
-    boolean setJointAngle(in string jname, in double jv, in double tm);
+    boolean setJointAngle(in short id, in double jv, in double tm);
 
     /**
      * @brief Interpolate all joint angles on servo moters using duration specified by \em tm. Returns without waiting for whole sequence to be sent to robot.
@@ -32,7 +32,7 @@ module OpenHRP
      * @param jv joint angle
      * @return true if get successuflly, false otherwise
      */
-    boolean getJointAngle(in string jname, out double jv);
+    boolean getJointAngle(in short id, out double jv);
 
     /**
      * @brief Interpolate all joint angles on servo moters. Returns without waiting for whole sequence to be sent to robot.
@@ -47,7 +47,7 @@ module OpenHRP
      * @param jnames list of joint name
      * @return true if the group is added successfully, false otherwise
      */
-    boolean addJointGroup(in string gname, in StrSequence jnames);
+    boolean addJointGroup(in string gname, in iSequence ids);
 
     /**
      * @brief remove a joint group

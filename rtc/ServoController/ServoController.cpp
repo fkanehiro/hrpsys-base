@@ -124,23 +124,6 @@ RTC::ReturnCode_t ServoController::onInitialize()
 
   serial = new ServoSerial((char *)(devname.c_str()));
 
-  m_robot = hrp::BodyPtr(new hrp::Body());
-
-  RTC::Manager& rtcManager = RTC::Manager::instance();
-  std::string nameServer = rtcManager.getConfig()["corba.nameservers"];
-  int comPos = nameServer.find(",");
-  if (comPos < 0){
-      comPos = nameServer.length();
-  }
-  nameServer = nameServer.substr(0, comPos);
-  RTC::CorbaNaming naming(rtcManager.getORB(), nameServer.c_str());
-  if (!loadBodyFromModelLoader(m_robot, prop["model"].c_str(), 
-                               CosNaming::NamingContext::_duplicate(naming.getRootContext())
-                               )){
-      std::cerr << "failed to load model[" << prop["model"] << "]" 
-                << std::endl;
-  }
-
   return RTC::RTC_OK;
 }
 
@@ -273,17 +256,11 @@ bool ServoController::getJointAngles(OpenHRP::ServoControllerService::dSequence_
     return true;
 }
 
-bool ServoController::addJointGroup(const char *gname, const ::OpenHRP::ServoControllerService::StrSequence jnames)
+bool ServoController::addJointGroup(const char *gname, const ::OpenHRP::ServoControllerService::iSequence ids)
 {
     std::vector<int> indices;
-    for (size_t i=0; i<jnames.length(); i++){
-        hrp::Link *l = m_robot->link(std::string(jnames[i]));
-        if (l){
-            indices.push_back(l->jointId);
-        }else{
-            std::cerr << "[addJointGroup] link name " << jnames[i] << "is not found" << std::endl;
-            return false;
-        }
+    for (size_t i=0; i<ids.length(); i++){
+        indices.push_back(ids[i]);
     }
     joint_groups[gname] = indices;
 

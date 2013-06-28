@@ -17,7 +17,6 @@
 #include <rtm/DataOutPort.h>
 #include <rtm/idl/BasicDataTypeSkel.h>
 #include <rtm/idl/ExtendedDataTypesSkel.h>
-#include <hrpModel/Body.h>
 
 // Service implementation headers
 // <rtc-template block="service_impl_h">
@@ -99,12 +98,11 @@ class ServoController
   // no corresponding operation exists in OpenRTm-aist-0.2.0
   // virtual RTC::ReturnCode_t onRateChanged(RTC::UniqueId ec_id);
 
-  hrp::BodyPtr robot() { return m_robot;}
   bool setJointAngle(short id, double angle, double tm);
   bool setJointAngles(const OpenHRP::ServoControllerService::dSequence angles, double tm);
   bool getJointAngle(short id, double &angle);
   bool getJointAngles(OpenHRP::ServoControllerService::dSequence_out &angles);
-  bool addJointGroup(const char *gname, const OpenHRP::ServoControllerService::StrSequence jnames);
+  bool addJointGroup(const char *gname, const ::OpenHRP::ServoControllerService::iSequence ids);
   bool removeJointGroup(const char *gname);
   bool setJointAnglesOfGroup(const char *gname, const ::OpenHRP::ServoControllerService::dSequence angles, double tm);
 
@@ -145,7 +143,6 @@ class ServoController
   std::map<std::string, std::vector<int> > joint_groups;
   std::vector<int> servo_id;
   std::vector<double> servo_offset;
-  hrp::BodyPtr m_robot;
   ServoSerial* serial;
 };
 

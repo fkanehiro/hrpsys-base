@@ -23,12 +23,12 @@ public:
 	*/
 	virtual ~ServoControllerService_impl();
 
-	CORBA::Boolean setJointAngle(const char *jname, CORBA::Double jv, CORBA::Double tm);
+	CORBA::Boolean setJointAngle(const CORBA::Short id, CORBA::Double jv, CORBA::Double tm);
 	CORBA::Boolean setJointAngles(const OpenHRP::ServoControllerService::dSequence& jvs, CORBA::Double tm);
-	CORBA::Boolean getJointAngle(const char *jname, CORBA::Double &jv);
+	CORBA::Boolean getJointAngle(const CORBA::Short id, CORBA::Double &jv);
 	CORBA::Boolean getJointAngles(OpenHRP::ServoControllerService::dSequence_out jvs);
 
-    CORBA::Boolean addJointGroup(const char* gname, const OpenHRP::ServoControllerService::StrSequence& jnames);
+    CORBA::Boolean addJointGroup(const char* gname, const OpenHRP::ServoControllerService::iSequence& ids);
 	CORBA::Boolean removeJointGroup(const char* gname);
 	CORBA::Boolean setJointAnglesOfGroup(const char *gname, const OpenHRP::ServoControllerService::dSequence& jvs, CORBA::Double tm);
   void servo(ServoController *i_servo);
