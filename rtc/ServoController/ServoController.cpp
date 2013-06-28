@@ -299,6 +299,10 @@ bool ServoController::setJointAnglesOfGroup(const char *gname, const OpenHRP::Se
     return true;
 }
 
+bool ServoController::setMaxTorque(short id, short tq)
+{
+    serial->setMaxTorque(id, tq);
+}
 
 extern "C"
 {

@@ -65,5 +65,12 @@ module OpenHRP
      */
     boolean setJointAnglesOfGroup(in string gname, in dSequence jvs, in double tm);
 
+    /**
+     * @brief Interpolate just one joint max torque specified by \em id. Function returns without waiting for interpolation to finish
+     * @param id joint id
+     * @param tq joint max torque (percentage)
+     * @return true if set successuflly, false otherwise
+     */
+    boolean setMaxTorque(in short id, in short tq);
   };
 };

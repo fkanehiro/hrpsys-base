@@ -48,6 +48,11 @@ CORBA::Boolean ServoControllerService_impl::setJointAnglesOfGroup(const char *gn
     return m_servo->setJointAnglesOfGroup(gname, jvs, tm);
 }
 
+CORBA::Boolean ServoControllerService_impl::setMaxTorque(const CORBA::Short id, const CORBA::Short jv)
+{
+    return m_servo->setMaxTorque(id, jv);
+}
+
 void ServoControllerService_impl::servo(ServoController *i_servo)
 {
   m_servo = i_servo;

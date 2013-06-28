@@ -31,7 +31,10 @@ public:
     CORBA::Boolean addJointGroup(const char* gname, const OpenHRP::ServoControllerService::iSequence& ids);
 	CORBA::Boolean removeJointGroup(const char* gname);
 	CORBA::Boolean setJointAnglesOfGroup(const char *gname, const OpenHRP::ServoControllerService::dSequence& jvs, CORBA::Double tm);
-  void servo(ServoController *i_servo);
+
+	CORBA::Boolean setMaxTorque(const CORBA::Short id, const CORBA::Short jv);
+
+    void servo(ServoController *i_servo);
 private:
   ServoController *m_servo;
 };
