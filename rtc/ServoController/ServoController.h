@@ -137,7 +137,7 @@ class ServoController
 
   // Consumer declaration
   // <rtc-template block="consumer_declare">
-  ServoControllerService_impl m_ServoControllerService;
+  ServoControllerService_impl m_service0;
   
   // </rtc-template>
 

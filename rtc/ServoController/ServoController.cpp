@@ -66,7 +66,7 @@ RTC::ReturnCode_t ServoController::onInitialize()
   // Set OutPort buffer
   
   // Set service provider to Ports
-  m_ServoControllerServicePort.registerProvider("service0", "ServoControllerService", m_ServoControllerService);
+  m_ServoControllerServicePort.registerProvider("service0", "ServoControllerService", m_service0);
   
   // Set service consumers to Ports
   
