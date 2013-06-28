@@ -1,0 +1,69 @@
+/**
+ * @file ServoControllerService.idl
+ * @brief Services for the robot hardware interface
+ */
+module OpenHRP
+{
+  interface ServoControllerService
+  {
+    typedef sequence<string> StrSequence;
+    typedef sequence<double> dSequence;
+
+    /**
+     * @brief Interpolate just one joint angle specified by \em jname using duration \em tm. Function returns without waiting for interpolation to finish
+     * @param jname joint name
+     * @param jv joint angle
+     * @param tm duration
+     * @return true if set successuflly, false otherwise
+     */
+    boolean setJointAngle(in string jname, in double jv, in double tm);
+
+    /**
+     * @brief Interpolate all joint angles on servo moters using duration specified by \em tm. Returns without waiting for whole sequence to be sent to robot.
+     * @param jvs sequence of joint angles
+     * @param tm duration
+     * @return true joint angles are set successfully, false otherwise
+     */
+    boolean setJointAngles(in dSequence jvs, in double tm);
+
+    /**
+     * @brief Obttain just one joint angle specified by \em jname. Function returns without waiting for interpolation to finish
+     * @param jname joint name
+     * @param jv joint angle
+     * @return true if get successuflly, false otherwise
+     */
+    boolean getJointAngle(in string jname, out double jv);
+
+    /**
+     * @brief Interpolate all joint angles on servo moters. Returns without waiting for whole sequence to be sent to robot.
+     * @param jvs sequence of joint angles
+     * @return true joint angles are get successfully, false otherwise
+     */
+    boolean getJointAngles(out dSequence jvs);
+
+    /**
+     * @brief add a joint group
+     * @param gname name of the joint group
+     * @param jnames list of joint name
+     * @return true if the group is added successfully, false otherwise
+     */
+    boolean addJointGroup(in string gname, in StrSequence jnames);
+
+    /**
+     * @brief remove a joint group
+     * @param gname name of the joint group
+     * @return true if the group is removed successfully, false otherwise
+     */
+    boolean removeJointGroup(in string gname);
+
+    /**
+     * @brief Interpolate joint angles in a group  using duration specified by \em tm. Returns without waiting for whole sequence to be sent to robot.
+     * @param gname name of the joint group
+     * @param jvs sequence of joint angles
+     * @param tm duration
+     * @return true joint angles are set successfully, false otherwise
+     */
+    boolean setJointAnglesOfGroup(in string gname, in dSequence jvs, in double tm);
+
+  };
+};

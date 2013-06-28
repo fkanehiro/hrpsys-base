@@ -21,6 +21,7 @@ set(idl_files
   VirtualForceSensorService.idl
   StabilizerService.idl
   AutoBalancerService.idl
+  ServoControllerService.idl
   )
 
 set(openhrp_idl_files
