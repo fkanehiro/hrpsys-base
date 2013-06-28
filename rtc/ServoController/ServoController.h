@@ -144,6 +144,7 @@ class ServoController
   std::map<std::string, std::vector<int> > joint_groups;
   std::vector<int> servo_id;
   std::vector<double> servo_offset;
+  std::vector<double> servo_dir;
   ServoSerial* serial;
 };
 

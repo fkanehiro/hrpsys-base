@@ -122,6 +122,27 @@ RTC::ReturnCode_t ServoController::onInitialize()
   }
   std::cerr << std::endl;
 
+ // get servo.dir
+  coil::vstring servo_dirs = coil::split(prop["servo.dir"], ",");
+  if ( servo_dirs.size() == 0 ) {
+      servo_dir.assign(servo_ids.size(), 1);
+  } else {
+      servo_dir.assign(servo_dirs.size(), 1);
+  }
+  if ( servo_ids.size() != servo_dir.size() ) {
+      std::cerr << "\e[1;31m[ERROR] " <<  m_profile.instance_name << ": servo.id and servo.dir property must have same length\e[0m" << std::endl;
+      return RTC::RTC_ERROR;
+  }
+  for(int i = 0; i < servo_dirs.size(); i++) {
+      coil::stringTo(servo_dir[i], servo_dirs[i].c_str());
+  }
+
+  std::cout << m_profile.instance_name << ": servo_dir : ";
+  for(int i = 0; i < servo_dir.size(); i++) {
+      std::cerr << servo_dir[i] << " ";
+  }
+  std::cerr << std::endl;
+
   serial = new ServoSerial((char *)(devname.c_str()));
 
   return RTC::RTC_OK;
@@ -225,7 +246,7 @@ bool ServoController::setJointAngles(const OpenHRP::ServoControllerService::dSeq
     for( int i = 0; i < servo_id.size(); i++ ) {
         id[i] = servo_id[i];
         tms[i] = tm;
-        rad[i] = angles.get_buffer()[i]+servo_offset[i];
+        rad[i] = (angles.get_buffer()[i]*servo_dir[i]+servo_offset[i]);
     }
     if ( angles.length() != servo_id.size() ) {
         std::cerr << "[ERROR] " <<  m_profile.instance_name << ": size of servo.id(" << angles.length() << ") is not correct, expected" << servo_id.size() << std::endl;
