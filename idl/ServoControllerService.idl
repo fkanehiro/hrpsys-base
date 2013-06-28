@@ -10,8 +10,8 @@ module OpenHRP
     typedef sequence<double> dSequence;
 
     /**
-     * @brief Interpolate just one joint angle specified by \em jname using duration \em tm. Function returns without waiting for interpolation to finish
-     * @param jname joint name
+     * @brief Interpolate just one joint angle specified by \em id using duration \em tm. Function returns without waiting for interpolation to finish
+     * @param id joint id
      * @param jv joint angle
      * @param tm duration
      * @return true if set successuflly, false otherwise
@@ -27,8 +27,8 @@ module OpenHRP
     boolean setJointAngles(in dSequence jvs, in double tm);
 
     /**
-     * @brief Obttain just one joint angle specified by \em jname. Function returns without waiting for interpolation to finish
-     * @param jname joint name
+     * @brief Obttain just one joint angle specified by \em id. Function returns without waiting for interpolation to finish
+     * @param id joint id
      * @param jv joint angle
      * @return true if get successuflly, false otherwise
      */
@@ -44,7 +44,7 @@ module OpenHRP
     /**
      * @brief add a joint group
      * @param gname name of the joint group
-     * @param jnames list of joint name
+     * @param ids list of joint ids
      * @return true if the group is added successfully, false otherwise
      */
     boolean addJointGroup(in string gname, in iSequence ids);
