@@ -22,6 +22,10 @@ public:
 
   ServoSerial(char *devname)  {
     fd = open(devname, O_RDWR);
+    if (fd<0) {
+      char *pmesg = strerror(errno);
+      fprintf (stderr, "[ServoSerial] failed to open %s: %s\n", devname, pmesg);
+    }
 
     struct termios term;
     int res = tcgetattr(fd, &term);
