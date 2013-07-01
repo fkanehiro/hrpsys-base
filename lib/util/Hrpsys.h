@@ -22,4 +22,5 @@ using std::fopen;
 using std::fprintf;
 using std::fclose;
 using std::fflush;
+using std::toupper;
 #endif
