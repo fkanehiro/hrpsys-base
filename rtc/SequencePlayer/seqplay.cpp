@@ -98,6 +98,7 @@ bool seqplay::isEmpty() const
 
 bool seqplay::isEmpty(const char *gname)
 {
+	char *s = (char *)gname; while(*s) {*s=toupper(*s);s++;}
 	groupInterpolator *i = groupInterpolators[gname];
 	if (!i) return true;
 	return i->isEmpty();
@@ -367,6 +368,7 @@ bool seqplay::setInterpolationMode (interpolator::interpolation_mode i_mode_)
 
 bool seqplay::addJointGroup(const char *gname, const std::vector<int>& indices)
 {
+	char *s = (char *)gname; while(*s) {*s=toupper(*s);s++;}
 	groupInterpolator *i = groupInterpolators[gname];
 	if (i) {
 		std::cerr << "[addJointGroup] group name " << gname << " is already installed" << std::endl;
@@ -379,6 +381,7 @@ bool seqplay::addJointGroup(const char *gname, const std::vector<int>& indices)
 
 bool seqplay::getJointGroup(const char *gname, std::vector<int>& indices)
 {
+	char *s = (char *)gname; while(*s) {*s=toupper(*s);s++;}
 	groupInterpolator *i = groupInterpolators[gname];
 	if (i) {
 		for(unsigned j = 0; j < i->indices.size(); j++) {
@@ -393,6 +396,7 @@ bool seqplay::getJointGroup(const char *gname, std::vector<int>& indices)
 
 bool seqplay::removeJointGroup(const char *gname, double time)
 {
+	char *s = (char *)gname; while(*s) {*s=toupper(*s);s++;}
 	groupInterpolator *i = groupInterpolators[gname];
 	if (i){
 		i->remove(time);
@@ -405,6 +409,7 @@ bool seqplay::removeJointGroup(const char *gname, double time)
 
 bool seqplay::resetJointGroup(const char *gname, const double *full)
 {
+	char *s = (char *)gname; while(*s) {*s=toupper(*s);s++;}
 	groupInterpolator *i = groupInterpolators[gname];
 	if (i){
 		i->set(full);
@@ -417,6 +422,7 @@ bool seqplay::resetJointGroup(const char *gname, const double *full)
 
 bool seqplay::setJointAnglesOfGroup(const char *gname, const double *i_qRef, double i_tm)
 {
+	char *s = (char *)gname; while(*s) {*s=toupper(*s);s++;}
 	groupInterpolator *i = groupInterpolators[gname];
 	if (i){
 		if (i->state == groupInterpolator::created){
@@ -442,6 +448,7 @@ bool seqplay::setJointAnglesOfGroup(const char *gname, const double *i_qRef, dou
 
 bool seqplay::playPatternOfGroup(const char *gname, std::vector<const double *> pos, std::vector<double> tm, const double *qInit, unsigned int len)
 {
+	char *s = (char *)gname; while(*s) {*s=toupper(*s);s++;}
 	groupInterpolator *i = groupInterpolators[gname];
 	if (i){
 		if (len != i->indices.size() ) {

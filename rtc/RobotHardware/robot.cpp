@@ -261,6 +261,7 @@ bool robot::servo(const char *jname, bool turnon)
     }else if ((l = link(jname))){
         return servo(l->jointId, turnon);
     }else{
+        char *s = (char *)jname; while(*s) {*s=toupper(*s);s++;}
         const std::vector<int> jgroup = m_jointGroups[jname];
         if (jgroup.size() == 0) return false;
         bool ret = true;
@@ -521,6 +522,7 @@ bool robot::setServoGainPercentage(const char *i_jname, double i_percentage)
         dgain[l->jointId] = default_dgain[l->jointId] * i_percentage/100.0;
         gain_counter[l->jointId] = 0;
     }else{
+        char *s = (char *)i_jname; while(*s) {*s=toupper(*s);s++;}
         const std::vector<int> jgroup = m_jointGroups[i_jname];
         if (jgroup.size()==0) return false;
         for (unsigned int i=0; i<jgroup.size(); i++){
@@ -544,6 +546,7 @@ bool robot::setServoErrorLimit(const char *i_jname, double i_limit)
     }else if ((l = link(i_jname))){
         m_servoErrorLimit[l->jointId] = i_limit;
     }else{
+        char *s = (char *)i_jname; while(*s) {*s=toupper(*s);s++;}
         const std::vector<int> jgroup = m_jointGroups[i_jname];
         if (jgroup.size()==0) return false;
         for (unsigned int i=0; i<jgroup.size(); i++){
@@ -589,6 +592,7 @@ bool robot::names2ids(const std::vector<std::string> &i_names,
 
 bool robot::addJointGroup(const char *gname, const std::vector<std::string>& jnames)
 {
+    char *s = (char *)gname; while(*s) {*s=toupper(*s);s++;}
     std::vector<int> jids;
     bool ret = names2ids(jnames, jids);
     m_jointGroups[gname] = jids;
