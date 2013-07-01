@@ -297,7 +297,7 @@ def findRTCmanager(hostname=None, rnc=None):
                         mgr = RTCmanager(obj._narrow(RTM.Manager))
                 except:
                         mgr = None
-                        return mgr
+                return mgr
 
         def getManagerDirectly(hostname, mgr = None):
                 global orb
@@ -308,7 +308,7 @@ def findRTCmanager(hostname=None, rnc=None):
                         mgr = RTCmanager(obj._narrow(RTM.Manager))
                 except:
                         mgr = None
-                        return mgr
+                return mgr
 
         import CORBA
         # fqdn
