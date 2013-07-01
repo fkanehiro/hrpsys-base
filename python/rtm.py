@@ -285,13 +285,43 @@ def findObject(name, kind="", rnc=None):
 # \param rnc root naming context. If it is not specified, global variable rootnc is used
 # \return an object of RTCmanager
 #
-def findRTCmanager(hostname=socket.gethostname(), rnc=None):
-	try:
-		cxt = findObject(hostname, "host_cxt", rnc)
-		obj = findObject("manager","mgr",cxt)
-		return RTCmanager(obj._narrow(RTM.Manager))
-	except:
-		print "exception in findRTCmanager("+hostname+")"
+
+def findRTCmanager(hostname=None, rnc=None):
+        if not hostname:
+                hostname = nshost
+                cxt = None
+
+        def getManagerFromNS(hostname, mgr = None):
+                try:
+                        obj = findObject("manager","mgr", findObject(hostname, "host_cxt", rnc))
+                        mgr = RTCmanager(obj._narrow(RTM.Manager))
+                except:
+                        mgr = None
+                        return mgr
+
+        def getManagerDirectly(hostname, mgr = None):
+                global orb
+                corbaloc = "corbaloc:iiop:" + hostname + ":2810/manager"
+                print corbaloc
+                try:
+                        obj = orb.string_to_object(corbaloc)
+                        mgr = RTCmanager(obj._narrow(RTM.Manager))
+                except:
+                        mgr = None
+                        return mgr
+
+        import CORBA
+        # fqdn
+        mgr = None
+        hostnames = [hostname, hostname.split(".")[0],
+                     socket.gethostbyaddr(hostname)[0],
+                     socket.gethostbyaddr(hostname)[0].split(".")[0]]
+        for h in hostnames:
+                mgr = getManagerDirectly(h) or getManagerFromNS(h)
+                if mgr: return mgr
+        print "Manager not found"
+        return None
+
 
 ##
 # \brief get RT component
