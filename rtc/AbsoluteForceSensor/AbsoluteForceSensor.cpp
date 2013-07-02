@@ -101,15 +101,14 @@ RTC::ReturnCode_t AbsoluteForceSensor::onInitialize()
   int nforce = m_robot->numSensors(hrp::Sensor::FORCE);
   m_force.resize(nforce);
   m_forceOut.resize(nforce);
-  int i = 0;
-  //std::map<std::string, AbsoluteForceSensorParam>::iterator it = m_sensors.begin();
+  m_forceIn.resize(nforce);
   for (size_t i = 0; i < nforce; i++) {
     hrp::Sensor *s = m_robot->sensor(hrp::Sensor::FORCE, i);
-    m_forceOut[i] = new OutPort<TimedDoubleSeq>(s->name.c_str(), m_force[i]);
+    m_forceOut[i] = new OutPort<TimedDoubleSeq>(std::string("abs_"+s->name).c_str(), m_force[i]);
     m_forceIn[i] = new InPort<TimedDoubleSeq>(s->name.c_str(), m_force[i]);
     m_force[i].data.length(6);
     registerInPort(s->name.c_str(), *m_forceIn[i]);
-    registerOutPort(s->name.c_str(), *m_forceOut[i]);
+    registerOutPort(std::string("abs_"+s->name).c_str(), *m_forceOut[i]);
     m_forcemoment_offset_param.insert(std::pair<std::string, ForceMomentOffsetParam>(s->name, ForceMomentOffsetParam()));
   }
   return RTC::RTC_OK;
