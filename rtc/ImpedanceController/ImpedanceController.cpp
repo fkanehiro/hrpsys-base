@@ -237,10 +237,8 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
           }
           if ( sensor ) {
             // real force sensor
-            hrp::Matrix33 sensorR = sensor->link->R * sensor->localR;
-            hrp::Vector3 mg = hrp::Vector3(0,0, m_forcemoment_offset_param[sensor_name].link_offset_mass * grav * -1);
-            abs_forces[sensor_name] = sensorR * (data_p - m_forcemoment_offset_param[sensor_name].force_offset) - mg;
-            abs_moments[sensor_name] = sensorR * (data_r - m_forcemoment_offset_param[sensor_name].moment_offset) - hrp::Vector3(sensorR * m_forcemoment_offset_param[sensor->name].link_offset_centroid).cross(mg);
+            abs_forces[sensor_name] = data_p;
+            abs_moments[sensor_name] = data_r;
           } else if ( m_sensors.find(sensor_name) !=  m_sensors.end()) {
             // virtual force sensor
             if ( DEBUGP ) {
