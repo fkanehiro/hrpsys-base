@@ -9,11 +9,13 @@ import sys
 import string, math, socket
 import os
 import time
+import re
 
 ##
 # \brief root naming context
 #
 rootnc = None
+nshost = None
 
 ##
 # \brief wrapper class of RT component
@@ -244,7 +246,14 @@ def unbindObject(name, kind):
 # \brief initialize ORB 
 #
 def initCORBA():
-	global rootnc, orb
+	global rootnc, orb, nshost
+        try:
+                print sys.argv
+                n = sys.argv.index('-ORBInitRef')
+                nshost = re.match('NameService=corbaloc:iiop:(\w+):2809/NameService', sys.argv[n+1]).group(1)
+        except:
+                nshost = socket.gethostname()
+
 	orb = CORBA.ORB_init(sys.argv, CORBA.ORB_ID)
 
 	nameserver = orb.resolve_initial_references("NameService");
