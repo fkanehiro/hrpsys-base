@@ -302,7 +302,6 @@ def findRTCmanager(hostname=None, rnc=None):
         def getManagerDirectly(hostname, mgr = None):
                 global orb
                 corbaloc = "corbaloc:iiop:" + hostname + ":2810/manager"
-                print corbaloc
                 try:
                         obj = orb.string_to_object(corbaloc)
                         mgr = RTCmanager(obj._narrow(RTM.Manager))
