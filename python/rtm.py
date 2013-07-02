@@ -248,7 +248,6 @@ def unbindObject(name, kind):
 def initCORBA():
 	global rootnc, orb, nshost
         try:
-                print sys.argv
                 n = sys.argv.index('-ORBInitRef')
                 nshost = re.match('NameService=corbaloc:iiop:(\w+):2809/NameService', sys.argv[n+1]).group(1)
         except:
