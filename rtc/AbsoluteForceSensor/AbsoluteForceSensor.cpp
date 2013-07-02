@@ -168,6 +168,7 @@ RTC::ReturnCode_t AbsoluteForceSensor::onExecute(RTC::UniqueId ec_id)
     }
     //
     updateRootLinkPosRot(m_rpy);
+    m_robot->calcForwardKinematics();
     for (unsigned int i=0; i<m_forceIn.size(); i++){
       if ( m_force[i].data.length()==6 ) {
         std::string sensor_name = m_forceIn[i]->name();
@@ -175,6 +176,7 @@ RTC::ReturnCode_t AbsoluteForceSensor::onExecute(RTC::UniqueId ec_id)
         hrp::Vector3 data_p(m_force[i].data[0], m_force[i].data[1], m_force[i].data[2]);
         hrp::Vector3 data_r(m_force[i].data[3], m_force[i].data[4], m_force[i].data[5]);
         if ( DEBUGP ) {
+          std::cerr << "forces[" << m_forceIn[i]->name() << "]" << std::endl;;
           std::cerr << "raw force : " << data_p[0] << " " << data_p[1] << " " << data_p[2] << std::endl;
           std::cerr << "raw moment : " << data_r[0] << " " << data_r[1] << " " << data_r[2] << std::endl;
         }
