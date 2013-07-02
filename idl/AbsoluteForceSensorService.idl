@@ -1,0 +1,31 @@
+/**
+ * @file AbsoluteForceSensorService.idl
+ * @brief Services for the absolute force sensor interface
+ */
+module OpenHRP
+{
+  interface AbsoluteForceSensorService
+  {
+    typedef sequence<double, 3> DblSequence3;
+    struct forcemomentOffsetParam {
+      DblSequence3 force_offset;
+      DblSequence3 moment_offset;
+      DblSequence3 link_offset_centroid;
+      double link_offset_mass;
+    };
+
+    /**
+     * @brief set offset parameters.
+     * @param i_param new offset parameters
+     * @return true if set successfully, false otherwise
+     */
+    boolean setForceMomentOffsetParam(in string name, in forcemomentOffsetParam i_param);
+
+    /**
+     * @brief get offset parameters.
+     * @param name is name of the offset parameter set and i_param output offset parameters
+     * @return true if set successfully, false otherwise
+     */
+    boolean getForceMomentOffsetParam(in string name, out forcemomentOffsetParam i_param);
+  };
+};
