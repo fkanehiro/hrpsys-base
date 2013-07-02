@@ -152,7 +152,7 @@ class AbsoluteForceSensor
   // </rtc-template>
 
  private:
-  void updateRootLinkPosRot (TimedOrientation3D tmprpy);
+  void updateRootLinkPosRot (const hrp::Vector3& rpy);
   struct ForceMomentOffsetParam {
     hrp::Vector3 force_offset, moment_offset, link_offset_centroid;
     double link_offset_mass;

@@ -158,8 +158,12 @@ RTC::ReturnCode_t AbsoluteForceSensor::onExecute(RTC::UniqueId ec_id)
       m_forceIn[i]->read();
     }
   }
+  hrp::Vector3 rpy;
   if (m_rpyIn.isNew()) {
     m_rpyIn.read();
+    rpy = hrp::Vector3(m_rpy.data.r, m_rpy.data.p, m_rpy.data.y);
+  } else {
+    rpy = hrp::Vector3::Zero();
   }
   if (m_qCurrentIn.isNew()) {
     m_qCurrentIn.read();
@@ -167,7 +171,7 @@ RTC::ReturnCode_t AbsoluteForceSensor::onExecute(RTC::UniqueId ec_id)
       m_robot->joint(i)->q = m_qCurrent.data[i];
     }
     //
-    updateRootLinkPosRot(m_rpy);
+    updateRootLinkPosRot(rpy);
     m_robot->calcForwardKinematics();
     for (unsigned int i=0; i<m_forceIn.size(); i++){
       if ( m_force[i].data.length()==6 ) {
@@ -209,12 +213,14 @@ RTC::ReturnCode_t AbsoluteForceSensor::onExecute(RTC::UniqueId ec_id)
   return RTC::RTC_OK;
 }
 
-void AbsoluteForceSensor::updateRootLinkPosRot (TimedOrientation3D tmprpy)
+void AbsoluteForceSensor::updateRootLinkPosRot (const hrp::Vector3& rpy)
 {
-  hrp::Sensor *sensor = m_robot->sensor(hrp::Sensor::ACCELERATION, 0);
-  hrp::Matrix33 tmpr;
-  rats::rotm3times(tmpr, hrp::Matrix33(sensor->link->R*sensor->localR).transpose(), m_robot->rootLink()->R);
-  rats::rotm3times(m_robot->rootLink()->R, hrp::rotFromRpy(tmprpy.data.r, tmprpy.data.p, tmprpy.data.y), tmpr);
+  if ( m_robot->numSensors(hrp::Sensor::ACCELERATION) > 0) {
+    hrp::Sensor *sensor = m_robot->sensor(hrp::Sensor::ACCELERATION, 0);
+    hrp::Matrix33 tmpr;
+    rats::rotm3times(tmpr, hrp::Matrix33(sensor->link->R*sensor->localR).transpose(), m_robot->rootLink()->R);
+    rats::rotm3times(m_robot->rootLink()->R, hrp::rotFromRpy(rpy(0), rpy(1), rpy(2)), tmpr);
+  }
 }
 
 bool AbsoluteForceSensor::setForceMomentOffsetParam(const std::string& i_name_, const AbsoluteForceSensorService::forcemomentOffsetParam& i_param_)
