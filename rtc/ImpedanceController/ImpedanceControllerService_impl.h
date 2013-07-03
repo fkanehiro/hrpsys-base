@@ -21,8 +21,6 @@ public:
   CORBA::Boolean deleteImpedanceController(const char *i_name_);
   void waitDeletingImpedanceController(const char *i_name_);
   CORBA::Boolean deleteImpedanceControllerAndWait(const char *i_name_);
-  CORBA::Boolean setForceMomentOffsetParam(const char* i_name_, const OpenHRP::ImpedanceControllerService::forcemomentOffsetParam &i_param_);
-  CORBA::Boolean getForceMomentOffsetParam(const char *i_name_, OpenHRP::ImpedanceControllerService::forcemomentOffsetParam_out i_param_);
   //
   void impedance(ImpedanceController *i_impedance);
 private:

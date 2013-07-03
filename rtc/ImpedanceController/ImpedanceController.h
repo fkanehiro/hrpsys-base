@@ -94,8 +94,6 @@ class ImpedanceController
   bool deleteImpedanceController(std::string i_name_);
   void waitDeletingImpedanceController(std::string i_name_);
   bool deleteImpedanceControllerAndWait(std::string i_name_);
-  bool setForceMomentOffsetParam(const std::string& i_name_, const OpenHRP::ImpedanceControllerService::forcemomentOffsetParam &i_param_);
-  bool getForceMomentOffsetParam(const std::string& i_name_, OpenHRP::ImpedanceControllerService::forcemomentOffsetParam& i_param_);
 
  protected:
   // Configuration variable declaration
@@ -168,24 +166,13 @@ class ImpedanceController
     hrp::Matrix33 R;
     std::string parent_link_name;
   };
-  struct ForceMomentOffsetParam {
-    hrp::Vector3 force_offset, moment_offset, link_offset_centroid;
-    double link_offset_mass;
-
-    ForceMomentOffsetParam ()
-      : force_offset(hrp::Vector3::Zero()), moment_offset(hrp::Vector3::Zero()),
-        link_offset_centroid(hrp::Vector3::Zero()), link_offset_mass(0)
-    {};
-  };
   bool checkImpedanceNameValidity (int& force_id, const std::string& name);
   void copyImpedanceParam (OpenHRP::ImpedanceControllerService::impedanceParam& i_param_, const ImpedanceParam& param);
   void updateRootLinkPosRot (TimedOrientation3D tmprpy);
 
   std::map<std::string, ImpedanceParam> m_impedance_param;
-  std::map<std::string, ForceMomentOffsetParam> m_forcemoment_offset_param;
   std::map<std::string, VirtualForceSensorParam> m_sensors;
   std::map<std::string, hrp::Vector3> abs_forces, abs_moments;
-  static const double grav = 9.80665; /* [m/s^2] */
   double m_dt;
   hrp::BodyPtr m_robot;
   coil::Mutex m_mutex;

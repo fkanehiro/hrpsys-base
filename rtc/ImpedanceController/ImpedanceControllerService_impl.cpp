@@ -41,20 +41,6 @@ CORBA::Boolean ImpedanceControllerService_impl::deleteImpedanceControllerAndWait
   return m_impedance->deleteImpedanceControllerAndWait(std::string(i_name_));
 }
 
-CORBA::Boolean ImpedanceControllerService_impl::setForceMomentOffsetParam(const char* i_name_, const OpenHRP::ImpedanceControllerService::forcemomentOffsetParam &i_param_)
-{
-  return m_impedance->setForceMomentOffsetParam(std::string(i_name_), i_param_);
-}
-
-CORBA::Boolean ImpedanceControllerService_impl::getForceMomentOffsetParam(const char *i_name_, OpenHRP::ImpedanceControllerService::forcemomentOffsetParam_out i_param_)
-{
-  i_param_ = new OpenHRP::ImpedanceControllerService::forcemomentOffsetParam();
-  i_param_->force_offset.length(3);
-  i_param_->moment_offset.length(3);
-  i_param_->link_offset_centroid.length(3);
-  return m_impedance->getForceMomentOffsetParam(std::string(i_name_), *i_param_);
-}
-
 void ImpedanceControllerService_impl::impedance(ImpedanceController *i_impedance)
 {
   m_impedance = i_impedance;

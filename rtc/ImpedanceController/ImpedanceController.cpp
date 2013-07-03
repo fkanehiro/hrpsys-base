@@ -126,7 +126,6 @@ RTC::ReturnCode_t ImpedanceController::onInitialize()
         m_force[i].data.length(6);
         registerInPort(s->name.c_str(), *m_forceIn[i]);
         std::cerr << s->name << std::endl;
-        m_forcemoment_offset_param.insert(std::pair<std::string, ForceMomentOffsetParam>(s->name, ForceMomentOffsetParam()));
     }
     for (unsigned int i=0; i<nvforce; i++){
         std::string name = virtual_force_sensor[i*10+0];
@@ -756,34 +755,6 @@ bool ImpedanceController::deleteImpedanceControllerAndWait(std::string i_name_)
     waitDeletingImpedanceController(i_name_);
 
     return true;
-}
-
-bool ImpedanceController::setForceMomentOffsetParam(const std::string& i_name_, const ImpedanceControllerService::forcemomentOffsetParam& i_param_)
-{
-  if (m_forcemoment_offset_param.find(i_name_) != m_forcemoment_offset_param.end()) {
-    // std::cerr << "OK " << i_name_ << " in setForceMomentOffsetParam" << std::endl;
-    memcpy(m_forcemoment_offset_param[i_name_].force_offset.data(), i_param_.force_offset.get_buffer(), sizeof(double) * 3);
-    memcpy(m_forcemoment_offset_param[i_name_].moment_offset.data(), i_param_.moment_offset.get_buffer(), sizeof(double) * 3);
-    memcpy(m_forcemoment_offset_param[i_name_].link_offset_centroid.data(), i_param_.link_offset_centroid.get_buffer(), sizeof(double) * 3);
-    m_forcemoment_offset_param[i_name_].link_offset_mass = i_param_.link_offset_mass;
-  } else {
-    std::cerr << "No such limb " << i_name_ << " in setForceMomentOffsetParam" << std::endl;
-  }
-  return true;
-}
-
-bool ImpedanceController::getForceMomentOffsetParam(const std::string& i_name_, ImpedanceControllerService::forcemomentOffsetParam& i_param_)
-{
-  if (m_forcemoment_offset_param.find(i_name_) != m_forcemoment_offset_param.end()) {
-    // std::cerr << "OK " << i_name_ << " in getForceMomentOffsetParam" << std::endl;
-    memcpy(i_param_.force_offset.get_buffer(), m_forcemoment_offset_param[i_name_].force_offset.data(), sizeof(double) * 3);
-    memcpy(i_param_.moment_offset.get_buffer(), m_forcemoment_offset_param[i_name_].force_offset.data(), sizeof(double) * 3);
-    memcpy(i_param_.link_offset_centroid.get_buffer(), m_forcemoment_offset_param[i_name_].link_offset_centroid.data(), sizeof(double) * 3);
-    i_param_.link_offset_mass = m_forcemoment_offset_param[i_name_].link_offset_mass;
-  } else {
-    std::cerr << "No such limb " << i_name_ << " in getForceMomentOffsetParam" << std::endl;
-  }
-  return true;
 }
 
 extern "C"
