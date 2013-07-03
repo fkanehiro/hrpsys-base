@@ -80,8 +80,9 @@ RTC::ReturnCode_t ServoController::onInitialize()
   // get servo.devname
   std::string devname = prop["servo.devname"];
   if ( devname  == "" ) {
-      std::cerr << "\e[1;31m[ERROR] " <<  m_profile.instance_name << ": needs servo.devname property\e[0m" << std::endl;
-      return RTC::RTC_ERROR;
+      std::cerr << "\e[1;31m[WARNING] " <<  m_profile.instance_name << ": needs servo.devname property\e[0m" << std::endl;
+      std::cerr << "\e[1;31m[WARNING] " <<  m_profile.instance_name << ": running in dummy mode\e[0m" << std::endl;
+      return RTC::RTC_OK;
   }
 
   // get servo.id
@@ -173,6 +174,7 @@ RTC::ReturnCode_t ServoController::onShutdown(RTC::UniqueId ec_id)
 RTC::ReturnCode_t ServoController::onActivated(RTC::UniqueId ec_id)
 {
   std::cout << m_profile.instance_name<< ": onActivated(" << ec_id << ")" << std::endl;
+  if ( ! serial ) return RTC::RTC_OK;
 
   for (vector<int>::iterator it = servo_id.begin(); it != servo_id.end(); it++ ){
       serial->setTorqueOn(*it);
@@ -184,6 +186,7 @@ RTC::ReturnCode_t ServoController::onActivated(RTC::UniqueId ec_id)
 RTC::ReturnCode_t ServoController::onDeactivated(RTC::UniqueId ec_id)
 {
   std::cout << m_profile.instance_name<< ": onDeactivated(" << ec_id << ")" << std::endl;
+  if ( ! serial ) return RTC::RTC_OK;
 
   for (vector<int>::iterator it = servo_id.begin(); it != servo_id.end(); it++ ){
       serial->setTorqueOff(*it);
@@ -234,12 +237,15 @@ RTC::ReturnCode_t ServoController::onRateChanged(RTC::UniqueId ec_id)
 
 bool ServoController::setJointAngle(short id, double angle, double tm)
 {
+    if ( ! serial ) return true;
     serial->setPosition(id, angle, tm);
     return true;
 }
 
 bool ServoController::setJointAngles(const OpenHRP::ServoControllerService::dSequence angles, double tm)
 {
+    if ( ! serial ) return true;
+
     int id[servo_id.size()];
     double tms[servo_id.size()];
     double rad[servo_id.size()];
@@ -258,6 +264,8 @@ bool ServoController::setJointAngles(const OpenHRP::ServoControllerService::dSeq
 
 bool ServoController::getJointAngle(short id, double &angle)
 {
+    if ( ! serial ) return true;
+
     int ret;
     ret = serial->getPosition(id, &angle);
     if (ret < 0) return false;
@@ -266,6 +274,8 @@ bool ServoController::getJointAngle(short id, double &angle)
 
 bool ServoController::getJointAngles(OpenHRP::ServoControllerService::dSequence_out &angles)
 {
+    if ( ! serial ) return true;
+
     int ret;
 
     angles = new OpenHRP::ServoControllerService::dSequence();
@@ -279,6 +289,8 @@ bool ServoController::getJointAngles(OpenHRP::ServoControllerService::dSequence_
 
 bool ServoController::addJointGroup(const char *gname, const ::OpenHRP::ServoControllerService::iSequence ids)
 {
+    if ( ! serial ) return true;
+
     std::vector<int> indices;
     for (size_t i=0; i<ids.length(); i++){
         indices.push_back(ids[i]);
@@ -290,11 +302,15 @@ bool ServoController::addJointGroup(const char *gname, const ::OpenHRP::ServoCon
 
 bool ServoController::removeJointGroup(const char *gname)
 {
+    if ( ! serial ) return true;
+
     joint_groups.erase(gname);
 }
 
 bool ServoController::setJointAnglesOfGroup(const char *gname, const OpenHRP::ServoControllerService::dSequence angles, double tm)
 {
+    if ( ! serial ) return true;
+
     if ( joint_groups.find(gname) != joint_groups.end()) {
         int len = joint_groups[gname].size();
         if ( angles.length() != len ) {
@@ -322,6 +338,8 @@ bool ServoController::setJointAnglesOfGroup(const char *gname, const OpenHRP::Se
 
 bool ServoController::setMaxTorque(short id, short tq)
 {
+    if ( ! serial ) return true;
+
     serial->setMaxTorque(id, tq);
 }
 
