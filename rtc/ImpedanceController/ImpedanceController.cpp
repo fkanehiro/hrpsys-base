@@ -234,21 +234,22 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
             std::cerr << "raw force : " << data_p[0] << " " << data_p[1] << " " << data_p[2] << std::endl;
             std::cerr << "raw moment : " << data_r[0] << " " << data_r[1] << " " << data_r[2] << std::endl;
           }
+          hrp::Matrix33 sensorR;
           if ( sensor ) {
-            // real force sensor
-            abs_forces[sensor_name] = data_p;
-            abs_moments[sensor_name] = data_r;
+            // real force sensore
+            sensorR = sensor->link->R * sensor->localR;
           } else if ( m_sensors.find(sensor_name) !=  m_sensors.end()) {
             // virtual force sensor
             if ( DEBUGP ) {
               //std::cerr << " targetR: " << target->R << std::endl;
               std::cerr << " sensorR: " << m_sensors[sensor_name].R << std::endl;
             }
-            abs_forces[sensor_name] = m_robot->link(m_sensors[sensor_name].parent_link_name)->R * m_sensors[sensor_name].R * data_p;
-            abs_moments[sensor_name] = m_robot->link(m_sensors[sensor_name].parent_link_name)->R * m_sensors[sensor_name].R * data_r;
+            sensorR = m_robot->link(m_sensors[sensor_name].parent_link_name)->R * m_sensors[sensor_name].R;
           } else {
             std::cerr << "unknwon force param" << std::endl;
           }
+          abs_forces[sensor_name] = sensorR * data_p;
+          abs_moments[sensor_name] = sensorR * data_r;
           if ( DEBUGP ) {
             hrp::Vector3& tmpf = abs_forces[sensor_name];
             hrp::Vector3& tmpm = abs_moments[sensor_name];

@@ -104,11 +104,11 @@ RTC::ReturnCode_t AbsoluteForceSensor::onInitialize()
   m_forceIn.resize(nforce);
   for (size_t i = 0; i < nforce; i++) {
     hrp::Sensor *s = m_robot->sensor(hrp::Sensor::FORCE, i);
-    m_forceOut[i] = new OutPort<TimedDoubleSeq>(std::string("abs_"+s->name).c_str(), m_force[i]);
+    m_forceOut[i] = new OutPort<TimedDoubleSeq>(std::string("off_"+s->name).c_str(), m_force[i]);
     m_forceIn[i] = new InPort<TimedDoubleSeq>(s->name.c_str(), m_force[i]);
     m_force[i].data.length(6);
     registerInPort(s->name.c_str(), *m_forceIn[i]);
-    registerOutPort(std::string("abs_"+s->name).c_str(), *m_forceOut[i]);
+    registerOutPort(std::string("off_"+s->name).c_str(), *m_forceOut[i]);
     m_forcemoment_offset_param.insert(std::pair<std::string, ForceMomentOffsetParam>(s->name, ForceMomentOffsetParam()));
   }
   return RTC::RTC_OK;
@@ -188,18 +188,19 @@ RTC::ReturnCode_t AbsoluteForceSensor::onExecute(RTC::UniqueId ec_id)
           // real force sensor
           hrp::Matrix33 sensorR = sensor->link->R * sensor->localR;
           hrp::Vector3 mg = hrp::Vector3(0,0, m_forcemoment_offset_param[sensor_name].link_offset_mass * grav * -1);
-          hrp::Vector3 abs_force = sensorR * (data_p - m_forcemoment_offset_param[sensor_name].force_offset) - mg;
-          hrp::Vector3 abs_moment = sensorR * (data_r - m_forcemoment_offset_param[sensor_name].moment_offset) - hrp::Vector3(sensorR * m_forcemoment_offset_param[sensor->name].link_offset_centroid).cross(mg);
-          m_force[i].data[0] = abs_force(0);
-          m_force[i].data[1] = abs_force(1);
-          m_force[i].data[2] = abs_force(2);
+          // force and moments which do not include offsets
+          hrp::Vector3 off_force = sensorR * (data_p - m_forcemoment_offset_param[sensor_name].force_offset) - mg;
+          hrp::Vector3 off_moment = sensorR * (data_r - m_forcemoment_offset_param[sensor_name].moment_offset) - hrp::Vector3(sensorR * m_forcemoment_offset_param[sensor->name].link_offset_centroid).cross(mg);
+          // convert absolute force -> sensor local force
+          off_force = hrp::Vector3(sensorR.transpose() * off_force);
+          off_moment = hrp::Vector3(sensorR.transpose() * off_moment);
           for (size_t j = 0; j < 3; j++) {
-            m_force[i].data[j] = abs_force(j);
-            m_force[i].data[3+j] = abs_moment(j);
+            m_force[i].data[j] = off_force(j);
+            m_force[i].data[3+j] = off_moment(j);
           }
           if ( DEBUGP ) {
-            std::cerr << "world force : " << abs_force[0] << " " << abs_force[1] << " " << abs_force[2] << std::endl;
-            std::cerr << "world moment : " << abs_moment[0] << " " << abs_moment[1] << " " << abs_moment[2] << std::endl;
+            std::cerr << "off force : " << off_force[0] << " " << off_force[1] << " " << off_force[2] << std::endl;
+            std::cerr << "off moment : " << off_moment[0] << " " << off_moment[1] << " " << off_moment[2] << std::endl;
           }
         } else {
           std::cerr << "unknwon force param" << std::endl;
