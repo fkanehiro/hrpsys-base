@@ -35,7 +35,7 @@ int main (int argc, char** argv)
 {
   std::string output;
   std::vector<std::string> inputs;
-  std::string conf_file_option, robothardware_conf_file_option;
+  std::string conf_file_option, robothardware_conf_file_option, integrate("true");
 
   for (int i = 1; i < argc; ++ i) {
     std::string arg(argv[i]);
@@ -44,6 +44,8 @@ int main (int argc, char** argv)
       if (++i < argc) output = argv[i];
     } else if ( arg == "-o" ) {
       ++i;
+    } else if ( arg == "--integrate" ) {
+      if (++i < argc) integrate = argv[i];
     } else if ( arg == "--conf-file-option" ) {
       if (++i < argc) conf_file_option += std::string("\n") + argv[i];
     } else if ( arg == "--robothardware-conf-file-option" ) {
@@ -78,7 +80,7 @@ int main (int argc, char** argv)
       xmlTextWriterWriteAttribute(writer, BAD_CAST "class", BAD_CAST "com.generalrobotix.ui.item.GrxSimulationItem");
       xmlTextWriterWriteAttribute(writer, BAD_CAST "name", BAD_CAST "simulationItem");
       {
-	xmlTextWriterWriteProperty(writer, "integrate", "true");
+	xmlTextWriterWriteProperty(writer, "integrate", integrate);
 	xmlTextWriterWriteProperty(writer, "timeStep", "0.0050");
         xmlTextWriterWriteProperty(writer, "totalTime", "2000000.0");
 	xmlTextWriterWriteProperty(writer, "method", "EULER");
