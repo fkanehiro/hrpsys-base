@@ -34,7 +34,7 @@ std::string basename(const std::string name){
 int main (int argc, char** argv)
 {
   std::string output;
-  std::vector<std::string> inputs;
+  std::vector<std::string> inputs, filenames; // filenames is for conf file
   std::string conf_file_option, robothardware_conf_file_option, integrate("true");
 
   for (int i = 1; i < argc; ++ i) {
@@ -100,6 +100,7 @@ int main (int argc, char** argv)
         //    WAIST offset: for example, "0,0,0,0,0,1,0" -> position offset (3dof) + axis for rotation offset (3dof) + angle for rotation offset (1dof)
         coil::vstring filename_arg_str = coil::split(*it, ",");
 	std::string filename = filename_arg_str[0];
+        filenames.push_back(filename);
         if ( filename_arg_str.size () > 1 ){ // if WAIST offset is specified 
           for (size_t i = 0; i < 3; i++) {
             coil::stringTo(WAIST_offset_pos(i), filename_arg_str[i+1].c_str());
@@ -293,7 +294,7 @@ int main (int argc, char** argv)
       std::string conf_file = output.substr(0,output.find_last_of('.'))+".conf";
       std::fstream s(conf_file.c_str(), std::ios::out);
   
-      s << "model: file://" << inputs[0] << std::endl;
+      s << "model: file://" << filenames[0] << std::endl;
       s << "dt: 0.005" << std::endl;
       s << conf_file_option << std::endl;
   }
@@ -302,7 +303,7 @@ int main (int argc, char** argv)
       std::string conf_file = output.substr(0,output.find_last_of('.'))+".RobotHardware.conf";
       std::fstream s(conf_file.c_str(), std::ios::out);
   
-      s << "model: file://" << inputs[0] << std::endl;
+      s << "model: file://" << filenames[0] << std::endl;
       s << "exec_cxt.periodic.type: hrpExecutionContext" << std::endl;
       s << "exec_cxt.periodic.rate: 200" << std::endl;
       s << robothardware_conf_file_option << std::endl;
