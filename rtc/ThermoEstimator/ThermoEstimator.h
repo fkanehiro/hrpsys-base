@@ -7,8 +7,8 @@
  * $Id$
  */
 
-#ifndef TORQUE_FILTER_H
-#define TORQUE_FILTER_H
+#ifndef THERMO_ESTIMATOR_H
+#define THERMO_ESTIMATOR_H
 
 #include <rtm/Manager.h>
 #include <rtm/DataFlowComponentBase.h>

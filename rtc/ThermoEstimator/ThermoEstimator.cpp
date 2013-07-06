@@ -1,7 +1,12 @@
 // -*- C++ -*-
 /*!
  * @file  ThermoEstimator.cpp
- * @brief null component
+ * @brief motor thermo estimation  component
+ *
+ *  Design of High Torque and High Speed Leg Module for High Power Humanoid
+ *  Junichi Urata et al., IROS 2010, pp 4497 - 4502
+ *  Tnew = T + (((Re*K^2/C) * tau^2) - ((1/RC) * (T - Ta))) * dt
+ *
  * $Date$
  *
  * $Id$
@@ -41,7 +46,7 @@ ThermoEstimator::ThermoEstimator(RTC::Manager* manager)
     m_tauInIn("tauIn", m_tauIn),
     m_tempOutOut("tempOut", m_tempOut),
     // </rtc-template>
-    m_debugLevel(1)
+    m_debugLevel(0)
 {
 }
 
@@ -54,7 +59,7 @@ RTC::ReturnCode_t ThermoEstimator::onInitialize()
   std::cout << m_profile.instance_name << ": onInitialize()" << std::endl;
   // <rtc-template block="bind_config">
   // Bind variables and configuration variable
-  // bindParameter("debugLevel", m_debugLevel, "0");
+  bindParameter("debugLevel", m_debugLevel, "0");
   
   // </rtc-template>
 
@@ -98,7 +103,7 @@ RTC::ReturnCode_t ThermoEstimator::onInitialize()
   // init outport
   m_tempOut.data.length(m_robot->numJoints());
 
-  // set
+  // set tempreture of environment
   if (prop["ambient_tmp"] != "") {
     coil::stringTo(m_ambientTemp, prop["ambient_tmp"].c_str());
   } else {
@@ -183,28 +188,26 @@ RTC::ReturnCode_t ThermoEstimator::onExecute(RTC::UniqueId ec_id)
       }
       std::cerr << std::endl;
     }
+    if ( DEBUGP ) {
+      std::cerr << "estimation values: " << std::endl;
+    }
     for (int i = 0; i < numJoints; i++) {
       MotorHeatParam param = m_motorHeatParams[i];
       double tau, currentHeat, radiation;
-      // thermo estimation
+      // Thermo estimation
       // Tnew = T + (((Re*K^2/C) * tau^2) - ((1/RC) * (T - Ta))) * dt
-      // if (std::abs(m_tauIn.data[i]) > 15.0) {
-      //   tau = m_tauIn.data[i];
-      // } else {
-      //   tau = 0;
-      // }
       tau = m_tauIn.data[i];
       currentHeat = param.currentCoeffs * std::pow(tau, 2);
       radiation = -param.thermoCoeffs * (param.tempreture - m_ambientTemp);
       m_motorHeatParams[i].tempreture = param.tempreture + (currentHeat + radiation) * m_dt;
-      if (DEBUGP) {
-        std::cerr << m_motorHeatParams[i].tempreture << " = " << param.tempreture << " " << currentHeat << " " << radiation << std::endl;
+      if ( DEBUGP ) {
+        std::cerr << currentHeat << " "  << radiation << ", ";
       }
       // output
       m_tempOut.data[i] = m_motorHeatParams[i].tempreture;
     }
     if ( DEBUGP ) {
-      std::cerr << "  tempreture  : ";
+      std::cerr << std::endl << "tempreture  : ";
       for (int i = 0; i < numJoints; i++) {
         std::cerr << " " << m_motorHeatParams[i].tempreture;
       }
