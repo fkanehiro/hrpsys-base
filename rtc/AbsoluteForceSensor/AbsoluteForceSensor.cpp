@@ -94,8 +94,9 @@ RTC::ReturnCode_t AbsoluteForceSensor::onInitialize()
   if (!loadBodyFromModelLoader(m_robot, prop["model"].c_str(),
 			       CosNaming::NamingContext::_duplicate(naming.getRootContext())
 	  )){
-      std::cerr << "failed to load model[" << prop["model"] << "]"
-		<< std::endl;
+      std::cerr << "failed to load model[" << prop["model"] << "] in "
+                << m_profile.instance_name << std::endl;
+      return RTC::RTC_ERROR;
   }
 
   int nforce = m_robot->numSensors(hrp::Sensor::FORCE);

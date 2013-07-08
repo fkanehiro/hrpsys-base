@@ -101,8 +101,9 @@ RTC::ReturnCode_t ForwardKinematics::onInitialize()
   RTC::CorbaNaming naming(rtcManager.getORB(), nameServer.c_str());
   if (!loadBodyFromModelLoader(m_refBody, prop["model"].c_str(), 
                                CosNaming::NamingContext::_duplicate(naming.getRootContext()))){
-      std::cerr << "failed to load model[" << prop["model"] << "]" 
-                << std::endl;
+    std::cerr << "failed to load model[" << prop["model"] << "] in "
+              << m_profile.instance_name << std::endl;
+    return RTC::RTC_ERROR;
   }
   m_actBody = hrp::BodyPtr(new hrp::Body(*m_refBody));
 

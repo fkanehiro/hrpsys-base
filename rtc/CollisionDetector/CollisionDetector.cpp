@@ -161,8 +161,9 @@ RTC::ReturnCode_t CollisionDetector::onActivated(RTC::UniqueId ec_id)
 	return RTC::RTC_ERROR;
     }
     if (!loadBodyFromBodyInfo(m_robot, binfo, true, GLlinkFactory)) {
-	std::cerr << "failed to load model[" << prop["model"] << "]" << std::endl;
-	return RTC::RTC_ERROR;
+      std::cerr << "failed to load model[" << prop["model"] << "] in "
+                << m_profile.instance_name << std::endl;
+      return RTC::RTC_ERROR;
     }
     loadShapeFromBodyInfo(m_glbody, binfo);
     if ( prop["collision_model"] == "AABB" ) {

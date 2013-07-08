@@ -109,9 +109,9 @@ RTC::ReturnCode_t ImpedanceController::onInitialize()
     if (!loadBodyFromModelLoader(m_robot, prop["model"].c_str(), 
                                  CosNaming::NamingContext::_duplicate(naming.getRootContext())
                                  )){
-        std::cerr << "failed to load model[" << prop["model"] << "]" 
-                  << std::endl;
-        return RTC::RTC_ERROR;
+      std::cerr << "failed to load model[" << prop["model"] << "] in "
+                << m_profile.instance_name << std::endl;
+      return RTC::RTC_ERROR;
     }
 
     coil::vstring virtual_force_sensor = coil::split(prop["virtual_force_sensor"], ",");
