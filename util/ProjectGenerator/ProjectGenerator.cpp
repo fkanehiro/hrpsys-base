@@ -216,22 +216,23 @@ int main (int argc, char** argv)
 	xmlTextWriterEndElement(writer); // item
 
 	//
-	xmlTextWriterStartElement(writer, BAD_CAST "item");
-	xmlTextWriterWriteAttribute(writer, BAD_CAST "class", BAD_CAST "com.generalrobotix.ui.item.GrxCollisionPairItem");
-	xmlTextWriterWriteAttribute(writer, BAD_CAST "name", BAD_CAST std::string("CP#"+name).c_str());
-	xmlTextWriterWriteAttribute(writer, BAD_CAST "select", BAD_CAST "true");
-	{
-	  xmlTextWriterWriteProperty(writer, "springConstant", "0 0 0 0 0 0");
-	  xmlTextWriterWriteProperty(writer, "slidingFriction", "0.5");
-	  xmlTextWriterWriteProperty(writer, "jointName2", "");
-	  xmlTextWriterWriteProperty(writer, "jointName1", "");
-	  xmlTextWriterWriteProperty(writer, "damperConstant", "0 0 0 0 0 0");
-	  xmlTextWriterWriteProperty(writer, "objectName2", name);
-	  xmlTextWriterWriteProperty(writer, "objectName1", name);
-	  xmlTextWriterWriteProperty(writer, "springDamperModel", "false");
-	  xmlTextWriterWriteProperty(writer, "staticFriction", "0.5");
-	}
-	xmlTextWriterEndElement(writer); // item
+        // comment out self collision settings according to issues at http://code.google.com/p/hrpsys-base/issues/detail?id=122
+	// xmlTextWriterStartElement(writer, BAD_CAST "item");
+	// xmlTextWriterWriteAttribute(writer, BAD_CAST "class", BAD_CAST "com.generalrobotix.ui.item.GrxCollisionPairItem");
+	// xmlTextWriterWriteAttribute(writer, BAD_CAST "name", BAD_CAST std::string("CP#"+name).c_str());
+	// xmlTextWriterWriteAttribute(writer, BAD_CAST "select", BAD_CAST "true");
+	// {
+	//   xmlTextWriterWriteProperty(writer, "springConstant", "0 0 0 0 0 0");
+	//   xmlTextWriterWriteProperty(writer, "slidingFriction", "0.5");
+	//   xmlTextWriterWriteProperty(writer, "jointName2", "");
+	//   xmlTextWriterWriteProperty(writer, "jointName1", "");
+	//   xmlTextWriterWriteProperty(writer, "damperConstant", "0 0 0 0 0 0");
+	//   xmlTextWriterWriteProperty(writer, "objectName2", name);
+	//   xmlTextWriterWriteProperty(writer, "objectName1", name);
+	//   xmlTextWriterWriteProperty(writer, "springDamperModel", "false");
+	//   xmlTextWriterWriteProperty(writer, "staticFriction", "0.5");
+	// }
+	// xmlTextWriterEndElement(writer); // item
 
 	xmlTextWriterStartElement(writer, BAD_CAST "view");
 	xmlTextWriterWriteAttribute(writer, BAD_CAST "class", BAD_CAST "com.generalrobotix.ui.view.GrxRobotHardwareClientView");
