@@ -117,7 +117,7 @@ public:
     return 0;
   }
 
-  int setMaxTorque(int id, int percentage) {// #35
+  int setMaxTorque(int id, short percentage) {// #35
     unsigned char data[1];
     data[0] = percentage;
     sendPacket(0xFAAF, id, 0x00, 0x23, 1, 1, data);
@@ -181,6 +181,20 @@ public:
       return -1;
     }
     *duration = ((short)(data[5]<<8|data[4]));
+    return 0;
+  }
+
+  int getMaxTorque(int id, short *percentage) {
+    if (sendPacket(0xFAAF, id, 0x0B, 0x00, 0, 1, NULL)<0) {
+      clear_packet();
+      return -1;
+    }
+    unsigned char data[0x0C];
+    if (receivePacket(id, 0x1E, 0x0C, data) < 0) {
+      clear_packet();
+      return -1;
+    }
+    *percentage = (short)(data[5]);
     return 0;
   }
 

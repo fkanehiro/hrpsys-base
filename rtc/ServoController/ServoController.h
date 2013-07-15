@@ -105,7 +105,16 @@ class ServoController
   bool addJointGroup(const char *gname, const ::OpenHRP::ServoControllerService::iSequence ids);
   bool removeJointGroup(const char *gname);
   bool setJointAnglesOfGroup(const char *gname, const ::OpenHRP::ServoControllerService::dSequence angles, double tm);
-  bool setMaxTorque(short id, short tq);
+  bool setMaxTorque(short id, short percentage);
+  bool setReset(short id);
+  bool getDuration(short id, double &duration);
+  bool getSpeed(short id, double &speed);
+  bool getMaxTorque(short id, short &percentage);
+  bool getTorque(short id, double &torque);
+  bool getTemperature(short id, double &temperature);
+  bool getVoltage(short id, double &voltage);
+  bool servoOn();
+  bool servoOff();
 
  protected:
   // Configuration variable declaration

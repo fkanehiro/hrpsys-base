@@ -68,9 +68,66 @@ module OpenHRP
     /**
      * @brief Interpolate just one joint max torque specified by \em id. Function returns without waiting for interpolation to finish
      * @param id joint id
-     * @param tq joint max torque (percentage)
+     * @param percentage servo maxTorque(1~100[%])
      * @return true if set successuflly, false otherwise
      */
-    boolean setMaxTorque(in short id, in short tq);
+    boolean setMaxTorque(in short id, in short percentage);
+
+    /**
+     * @brief Reset servo settings
+     * @param id joint id
+     * @return true if set successuflly, false otherwise
+     */
+    boolean setReset(in short id);
+
+    /**
+     * @brief Get servo duration
+     * @param id joint id
+     * @param duration servo duration
+     * @return true if set successuflly, false otherwise
+     */
+    boolean getDuration(in short id, out double duration);
+
+    /**
+     * @brief Get servo speed
+     * @param id joint id
+     * @param speed servo speed
+     * @return true if set successuflly, false otherwise
+     */
+    boolean getSpeed(in short id, out double speed);
+
+    /**
+     * @brief Get servo maxTorque
+     * @param id joint id
+     * @param percentage servo maxTorque(1~100[%], per 1)
+     * @return true if set successuflly, false otherwise
+     */
+    boolean getMaxTorque(in short id, out short percentage);
+
+    /**
+     * @brief Get servo torque
+     * @param id joint id
+     * @param torque servo torque
+     * @return true if set successuflly, false otherwise
+     */
+    boolean getTorque(in short id, out double torque);
+
+    /**
+     * @brief Get servo temperature
+     * @param id joint id
+     * @param temperature servo temperature
+     * @return true if set successuflly, false otherwise
+     */
+    boolean getTemperature(in short id, out double temperature);
+
+    /**
+     * @brief Get servo voltage
+     * @param id joint id
+     * @param voltage servo voltage
+     * @return true if set successuflly, false otherwise
+     */
+    boolean getVoltage(in short id, out double voltage);
+    boolean servoOn();
+    boolean servoOff();
   };
 };

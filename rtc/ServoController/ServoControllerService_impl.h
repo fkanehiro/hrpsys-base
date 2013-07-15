@@ -28,13 +28,22 @@ public:
 	CORBA::Boolean getJointAngle(const CORBA::Short id, CORBA::Double &jv);
 	CORBA::Boolean getJointAngles(OpenHRP::ServoControllerService::dSequence_out jvs);
 
-    CORBA::Boolean addJointGroup(const char* gname, const OpenHRP::ServoControllerService::iSequence& ids);
+	CORBA::Boolean addJointGroup(const char* gname, const OpenHRP::ServoControllerService::iSequence& ids);
 	CORBA::Boolean removeJointGroup(const char* gname);
 	CORBA::Boolean setJointAnglesOfGroup(const char *gname, const OpenHRP::ServoControllerService::dSequence& jvs, CORBA::Double tm);
 
-	CORBA::Boolean setMaxTorque(const CORBA::Short id, const CORBA::Short jv);
+	CORBA::Boolean setMaxTorque(const CORBA::Short id, const CORBA::Short percentage);
+	CORBA::Boolean setReset(const CORBA::Short id);
+	CORBA::Boolean getDuration(const CORBA::Short id, CORBA::Double &duration);
+	CORBA::Boolean getSpeed(const CORBA::Short id, CORBA::Double &speed);
+	CORBA::Boolean getMaxTorque(const CORBA::Short id, CORBA::Short &percentage);
+	CORBA::Boolean getTorque(const CORBA::Short id, CORBA::Double &torque);
+	CORBA::Boolean getTemperature(const CORBA::Short id, CORBA::Double &temperature);
+	CORBA::Boolean getVoltage(const CORBA::Short id, CORBA::Double &voltage);
+	CORBA::Boolean servoOn();
+	CORBA::Boolean servoOff();
 
-    void servo(ServoController *i_servo);
+	void servo(ServoController *i_servo);
 private:
   ServoController *m_servo;
 };

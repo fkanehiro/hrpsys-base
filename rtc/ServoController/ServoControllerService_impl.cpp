@@ -48,10 +48,47 @@ CORBA::Boolean ServoControllerService_impl::setJointAnglesOfGroup(const char *gn
     return m_servo->setJointAnglesOfGroup(gname, jvs, tm);
 }
 
-CORBA::Boolean ServoControllerService_impl::setMaxTorque(const CORBA::Short id, const CORBA::Short jv)
+CORBA::Boolean ServoControllerService_impl::setMaxTorque(const CORBA::Short id, const CORBA::Short percentage)
 {
-    return m_servo->setMaxTorque(id, jv);
+    return m_servo->setMaxTorque(id, percentage);
 }
+CORBA::Boolean ServoControllerService_impl::setReset(const CORBA::Short id)
+{
+    return m_servo->setReset(id);
+}
+CORBA::Boolean ServoControllerService_impl::getDuration(const CORBA::Short id, CORBA::Double &duration)
+{
+    return m_servo->getDuration(id, duration);
+}
+CORBA::Boolean ServoControllerService_impl::getSpeed(const CORBA::Short id, CORBA::Double &speed)
+{
+    return m_servo->getSpeed(id, speed);
+}
+CORBA::Boolean ServoControllerService_impl::getMaxTorque(const CORBA::Short id, CORBA::Short &percentage)
+{
+    return m_servo->getMaxTorque(id, percentage);
+}
+CORBA::Boolean ServoControllerService_impl::getTorque(const CORBA::Short id, CORBA::Double &torque)
+{
+    return m_servo->getTorque(id, torque);
+}
+CORBA::Boolean ServoControllerService_impl::getTemperature(const CORBA::Short id, CORBA::Double &temperature)
+{
+    return m_servo->getTemperature(id, temperature);
+}
+CORBA::Boolean ServoControllerService_impl::getVoltage(const CORBA::Short id, CORBA::Double &voltage)
+{
+    return m_servo->getVoltage(id, voltage);
+}
+CORBA::Boolean ServoControllerService_impl::servoOn()
+{
+    return m_servo->servoOn();
+}
+CORBA::Boolean ServoControllerService_impl::servoOff()
+{
+    return m_servo->servoOff();
+}
+
 
 void ServoControllerService_impl::servo(ServoController *i_servo)
 {

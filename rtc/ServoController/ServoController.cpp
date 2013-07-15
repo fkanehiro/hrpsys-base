@@ -176,10 +176,6 @@ RTC::ReturnCode_t ServoController::onActivated(RTC::UniqueId ec_id)
   std::cout << m_profile.instance_name<< ": onActivated(" << ec_id << ")" << std::endl;
   if ( ! serial ) return RTC::RTC_OK;
 
-  for (vector<int>::iterator it = servo_id.begin(); it != servo_id.end(); it++ ){
-      serial->setTorqueOn(*it);
-  }
-
   return RTC::RTC_OK;
 }
 
@@ -187,10 +183,6 @@ RTC::ReturnCode_t ServoController::onDeactivated(RTC::UniqueId ec_id)
 {
   std::cout << m_profile.instance_name<< ": onDeactivated(" << ec_id << ")" << std::endl;
   if ( ! serial ) return RTC::RTC_OK;
-
-  for (vector<int>::iterator it = servo_id.begin(); it != servo_id.end(); it++ ){
-      serial->setTorqueOff(*it);
-  }
 
   return RTC::RTC_OK;
 }
@@ -266,8 +258,8 @@ bool ServoController::getJointAngle(short id, double &angle)
 {
     if ( ! serial ) return true;
 
-    int ret;
-    ret = serial->getPosition(id, &angle);
+    int ret = serial->getPosition(id, &angle);
+
     if (ret < 0) return false;
     return true;
 }
@@ -323,25 +315,127 @@ bool ServoController::setJointAnglesOfGroup(const char *gname, const OpenHRP::Se
         for( int i = 0; i < len; i++ ) {
             id[i] = joint_groups[gname][i];
             tms[i] = tm;
-            double offset;
+            double offset, dir;
             for( int j = 0; j < servo_id.size(); j++ ) {
                 if ( servo_id[j] == id[i]) {
                     offset = servo_offset[j];
+                    dir = servo_dir[j];
                 }
             }
-            rad[i] = angles.get_buffer()[i]+offset;
+            rad[i] = (angles.get_buffer()[i])*dir+offset;
         }
         serial->setPositions(servo_id.size(), id, rad, tms);
     }
     return true;
 }
 
-bool ServoController::setMaxTorque(short id, short tq)
+bool ServoController::setMaxTorque(short id, short percentage)
 {
     if ( ! serial ) return true;
 
-    serial->setMaxTorque(id, tq);
+    int ret = serial->setMaxTorque(id, percentage);
+
+    if (ret < 0) return false;
+    return true;
 }
+
+bool ServoController::setReset(short id)
+{
+    if ( ! serial ) return true;
+
+    int ret = serial->setReset(id);
+
+    if (ret < 0) return false;
+    return true;
+}
+
+bool ServoController::getDuration(short id, double &duration)
+{
+    if ( ! serial ) return true;
+
+    int ret = serial->getDuration(id, &duration);
+
+    if (ret < 0) return false;
+    return true;
+}
+
+bool ServoController::getSpeed(short id, double &speed)
+{
+    if ( ! serial ) return true;
+
+    int ret = serial->getSpeed(id, &speed);
+
+    if (ret < 0) return false;
+    return true;
+}
+
+bool ServoController::getMaxTorque(short id, short &percentage)
+{
+    if ( ! serial ) return true;
+
+    int ret = serial->getMaxTorque(id, &percentage);
+
+    if (ret < 0) return false;
+    return true;
+}
+
+bool ServoController::getTorque(short id, double &torque)
+{
+    if ( ! serial ) return true;
+
+    int ret = serial->getTorque(id, &torque);
+
+    if (ret < 0) return false;
+    return true;
+}
+
+bool ServoController::getTemperature(short id, double &temperature)
+{
+    if ( ! serial ) return true;
+
+    int ret = serial->getTemperature(id, &temperature);
+
+    if (ret < 0) return false;
+    return true;
+}
+
+bool ServoController::getVoltage(short id, double &voltage)
+{
+    if ( ! serial ) return true;
+
+    int ret = serial->getVoltage(id, &voltage);
+
+    if (ret < 0) return false;
+    return true;
+}
+
+bool ServoController::servoOn()
+{
+    if ( ! serial ) return true;
+
+    int ret;
+
+    for (vector<int>::iterator it = servo_id.begin(); it != servo_id.end(); it++ ){
+        ret = serial->setTorqueOn(*it);
+        if (ret < 0) return false;
+    }
+
+    return true;
+}
+
+bool ServoController::servoOff()
+{
+    if ( ! serial ) return true;
+
+    int ret;
+
+    for (vector<int>::iterator it = servo_id.begin(); it != servo_id.end(); it++ ){
+        ret = serial->setTorqueOff(*it);
+        if (ret < 0) return false;
+    }
+    return true;
+}
+
 
 extern "C"
 {
