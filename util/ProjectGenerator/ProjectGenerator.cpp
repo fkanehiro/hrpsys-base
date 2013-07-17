@@ -35,7 +35,7 @@ int main (int argc, char** argv)
 {
   std::string output;
   std::vector<std::string> inputs, filenames; // filenames is for conf file
-  std::string conf_file_option, robothardware_conf_file_option, integrate("true");
+  std::string conf_file_option, robothardware_conf_file_option, integrate("true"), dt("0.005");
 
   for (int i = 1; i < argc; ++ i) {
     std::string arg(argv[i]);
@@ -46,6 +46,8 @@ int main (int argc, char** argv)
       ++i;
     } else if ( arg == "--integrate" ) {
       if (++i < argc) integrate = argv[i];
+    } else if ( arg == "--dt" ) {
+      if (++i < argc) dt = argv[i];
     } else if ( arg == "--conf-file-option" ) {
       if (++i < argc) conf_file_option += std::string("\n") + argv[i];
     } else if ( arg == "--robothardware-conf-file-option" ) {
@@ -81,7 +83,7 @@ int main (int argc, char** argv)
       xmlTextWriterWriteAttribute(writer, BAD_CAST "name", BAD_CAST "simulationItem");
       {
 	xmlTextWriterWriteProperty(writer, "integrate", integrate);
-	xmlTextWriterWriteProperty(writer, "timeStep", "0.0050");
+	xmlTextWriterWriteProperty(writer, "timeStep", dt);
         xmlTextWriterWriteProperty(writer, "totalTime", "2000000.0");
 	xmlTextWriterWriteProperty(writer, "method", "EULER");
       }
@@ -122,8 +124,8 @@ int main (int argc, char** argv)
 	xmlTextWriterWriteAttribute(writer, BAD_CAST "name", BAD_CAST name.c_str());
 	xmlTextWriterWriteAttribute(writer, BAD_CAST "select", BAD_CAST "true");
 
-	xmlTextWriterWriteProperty(writer, name+"(Robot)0.period", "0.005");
-	xmlTextWriterWriteProperty(writer, "HGcontroller0.period", "0.005");
+	xmlTextWriterWriteProperty(writer, name+"(Robot)0.period", dt);
+	xmlTextWriterWriteProperty(writer, "HGcontroller0.period", dt);
 	xmlTextWriterWriteProperty(writer, "HGcontroller0.factory", "HGcontroller");
 	xmlTextWriterWriteProperty(writer, "connection", "HGcontroller0.qOut:"+name+"(Robot)0.qRef");
 	xmlTextWriterWriteProperty(writer, "connection", "HGcontroller0.dqOut:"+name+"(Robot)0.dqRef");
@@ -296,7 +298,7 @@ int main (int argc, char** argv)
       std::fstream s(conf_file.c_str(), std::ios::out);
   
       s << "model: file://" << filenames[0] << std::endl;
-      s << "dt: 0.005" << std::endl;
+      s << "dt: " << dt << std::endl;
       s << conf_file_option << std::endl;
   }
 
@@ -306,7 +308,7 @@ int main (int argc, char** argv)
   
       s << "model: file://" << filenames[0] << std::endl;
       s << "exec_cxt.periodic.type: hrpExecutionContext" << std::endl;
-      s << "exec_cxt.periodic.rate: 200" << std::endl;
+      s << "exec_cxt.periodic.rate: " << static_cast<size_t>(1/atof(dt.c_str())) << std::endl;
       s << robothardware_conf_file_option << std::endl;
   }
 
