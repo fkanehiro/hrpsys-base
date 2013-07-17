@@ -524,6 +524,7 @@ bool ImpedanceController::setImpedanceControllerParam(OpenHRP::ImpedanceControll
     std::string name = std::string(i_param_.name);
     std::string base_name = std::string(i_param_.base_name);
     std::string target_name = std::string(i_param_.target_name);
+    if (base_name == "") base_name = m_robot->rootLink()->name;
 
     // wait to finish deleting if the target impedance param has been deleted
     if(m_impedance_param.find(name) != m_impedance_param.end() 
