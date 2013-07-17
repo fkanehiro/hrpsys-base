@@ -30,12 +30,12 @@ namespace rats
     virtual ~riccati_equation() {};
     bool solve() {
       Eigen::Matrix<double, dim, dim> prev_P;
-      for (int i = 0; i < 2000; i++) {
+      for (int i = 0; i < 10000; i++) {
         R_btPb_inv = (1.0 / (R + (b.transpose() * P * b)(0,0)));
         Eigen::Matrix<double, dim, dim> tmp_pa(P * A);
         K = R_btPb_inv * b.transpose() * tmp_pa;
         prev_P = A.transpose() * tmp_pa + c.transpose() * Q * c - A.transpose() * P * b * K;
-        if ((abs((P - prev_P).array()) < 5.0e-5).all()) {
+        if ((abs((P - prev_P).array()) < 5.0e-10).all()) {
           A_minus_bKt = (A - b * K).transpose();
           return true;
         }
