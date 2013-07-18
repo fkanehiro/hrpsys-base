@@ -308,7 +308,7 @@ int main (int argc, char** argv)
   
       s << "model: file://" << filenames[0] << std::endl;
       s << "exec_cxt.periodic.type: hrpExecutionContext" << std::endl;
-      s << "exec_cxt.periodic.rate: " << static_cast<size_t>(1/atof(dt.c_str())) << std::endl;
+      s << "exec_cxt.periodic.rate: " << static_cast<size_t>(1/atof(dt.c_str())+0.5) << std::endl; // rounding to specify integer rate value
       s << robothardware_conf_file_option << std::endl;
   }
 
