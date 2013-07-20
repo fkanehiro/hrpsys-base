@@ -38,14 +38,21 @@ set(openhrp_idl_files
   World.idl
   )
 
+# add CMAKE_CURRENT_SOURCE_DIR to all files
+set(EXTRA_IDL_FILES "" CACHE PATH "directories of extra idls") # this must contain paths
+foreach(idl_file ${idl_files})
+  list(APPEND idl_files_path ${CMAKE_CURRENT_SOURCE_DIR}/${idl_file})
+endforeach()
+set(idl_files ${idl_files_path} ${EXTRA_IDL_FILES})
+message("HOGE ${idl_files}")
+
 set(idl_flags -bcxx -Wbuse_quotes -Wbh=.hh -Wbs=Sk.cpp -Wba -Wbd=DynSk.cpp -I${OPENRTM_IDL_DIR})
 
 string(REGEX REPLACE ";" " " idl_files2 "${idl_files}")
 string(REGEX REPLACE ";" " " openhrp_idl_files2 "${openhrp_idl_files}")
 configure_file(${PROJECT_SOURCE_DIR}/cpack_modules/postinst.in ${PROJECT_BINARY_DIR}/postinst)
 
-macro(generate_cpp_stub idl_basename)
-  set(idl_file ${CMAKE_CURRENT_SOURCE_DIR}/${idl_basename}.idl)
+macro(generate_cpp_stub idl_file idl_basename)
   add_custom_command(
     OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${idl_basename}.hh ${CMAKE_CURRENT_BINARY_DIR}/${idl_basename}Sk.cpp ${CMAKE_CURRENT_BINARY_DIR}/${idl_basename}DynSk.cpp
     COMMAND omniidl ${idl_flags} ${idl_file}
@@ -53,8 +60,7 @@ macro(generate_cpp_stub idl_basename)
     )
 endmacro()
 
-macro(generate_java_stub idl_basename)
-  set(idl_file ${CMAKE_CURRENT_SOURCE_DIR}/${idl_basename}.idl)
+macro(generate_java_stub idl_file idl_basename)
   add_custom_command(
     OUTPUT ${idl_basename}.compiled src
     COMMAND ${IDLJ} ${idlj_flags} -I${OPENRTM_IDL_DIR} ${idl_file}
@@ -65,11 +71,11 @@ endmacro()
 
 foreach(idl_file ${idl_files})
   get_filename_component(idl_basename ${idl_file} NAME_WE)
-  generate_cpp_stub(${idl_basename})
+  generate_cpp_stub(${idl_file} ${idl_basename})
   list(APPEND sources ${idl_basename}Sk.cpp ${idl_basename}DynSk.cpp)
   list(APPEND headers ${CMAKE_CURRENT_BINARY_DIR}/${idl_basename}.hh)
   if(COMPILE_JAVA_STUFF)
-    generate_java_stub(${idl_basename})
+    generate_java_stub(${idl_file} ${idl_basename})
   endif()
   list(APPEND compiled ${idl_basename}.compiled)
 endforeach()
