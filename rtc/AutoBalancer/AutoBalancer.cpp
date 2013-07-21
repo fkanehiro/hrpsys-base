@@ -488,6 +488,7 @@ void AutoBalancer::startWalking ()
   std::string init_support_leg (gg->get_footstep_front_leg() == ":rleg" ? ":lleg" : ":rleg");
   std::string init_swing_leg (gg->get_footstep_front_leg());
   coordinates spc, swc;
+  gg->set_default_zmp_offsets(default_zmp_offsets);
   gg->initialize_gait_parameter(cog,
                                 coordinates(ikp[init_support_leg].target_p0, ikp[init_support_leg].target_r0),
                                 coordinates(ikp[init_swing_leg].target_p0, ikp[init_swing_leg].target_r0));
