@@ -44,7 +44,6 @@ foreach(idl_file ${idl_files})
   list(APPEND idl_files_path ${CMAKE_CURRENT_SOURCE_DIR}/${idl_file})
 endforeach()
 set(idl_files ${idl_files_path} ${EXTRA_IDL_FILES})
-message("HOGE ${idl_files}")
 
 set(idl_flags -bcxx -Wbuse_quotes -Wbh=.hh -Wbs=Sk.cpp -Wba -Wbd=DynSk.cpp -I${OPENRTM_IDL_DIR})
 
