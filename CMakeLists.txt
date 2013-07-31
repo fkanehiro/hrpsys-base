@@ -98,6 +98,8 @@ endif()
 include(CPack)
 
 find_package(LibXml2 REQUIRED)
+find_package(QuickHull REQUIRED)
+find_package(Eigen REQUIRED)
 find_package(SDL)
 find_package(OpenGL)
 find_package(GLUT)
@@ -118,7 +120,7 @@ endif()
 
 include_directories(${OpenCV_INCLUDE_DIRS})
 link_directories(${OpenCV_LIBRARY_DIRS})
-find_package(QuickHull REQUIRED)
+include_directories(${Eigen_INCLUDE_DIRS})
 
 execute_process(
   COMMAND python -c "from distutils import sysconfig; print sysconfig.get_config_var(\"VERSION\")"
