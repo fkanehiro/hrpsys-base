@@ -449,8 +449,10 @@ def connectPorts(outP, inPs, subscription="flush", dataflow="Push", bufferlength
 					   any.to_any(str(bufferlength)))
 		nv5 = SDOPackage.NameValue("dataport.publisher.push_rate", 
 					   any.to_any(str(rate)))
+		nv6 = SDOPackage.NameValue("dataport.data_type", 
+					   any.to_any(dataTypeOfPort(outP)))
 		con_prof = RTC.ConnectorProfile("connector0", "", [outP, inP], 
-						[nv1, nv2, nv3, nv4, nv5])
+						[nv1, nv2, nv3, nv4, nv5, nv6])
 		ret,prof = inP.connect(con_prof)
 		if ret != RTC.RTC_OK:
 			print "failed to connect"
