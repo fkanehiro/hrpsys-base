@@ -586,7 +586,7 @@ def findService(rtc, port_name, type_name, instance_name):
 		for aif in ifs:
 			#print "IF name:",aif.instance_name
 			#print "IF type:",aif.type_name
-			if aif.instance_name == instance_name and (type_name == "" or aif.type_name == type_name):
+			if aif.instance_name == instance_name and (type_name == "" or aif.type_name == type_name) and aif.polarity == PROVIDED:
 				port = pp.port_ref
 	if port == None:
 		print "can't find a service named",instance_name
