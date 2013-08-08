@@ -21,6 +21,8 @@
 #include <hrpModel/Link.h>
 #include <hrpModel/JointPath.h>
 
+#include "MotorHeatParam.h"
+
 // Service implementation headers
 // <rtc-template block="service_impl_h">
 // #include "ThermoEstimator_impl.h"
@@ -138,22 +140,7 @@ class ThermoEstimator
   // </rtc-template>
 
  private:
-
-  // Tnew = T + (P - ((T - Ta) / R) * dt) / C
-  //      = T + ((Re*K^2/C) * tau^2) + ((1/RC) * (T - Ta) * dt)
-  // * P = Re * I^2 = Re * (K * tau)^2
-  struct MotorHeatParam {
-    double tempreture; // current tempreture
-    double currentCoeffs; // Re*K^2/C
-    double thermoCoeffs; // 1/RC
-    // default params for motor heat param
-    MotorHeatParam(){
-      tempreture = 30.0;
-      currentCoeffs = 0.00003;
-      thermoCoeffs = 0.001;
-    }
-  };
-  
+ 
   double m_dt;
   unsigned int m_debugLevel;
   hrp::BodyPtr m_robot; // for numJoints

@@ -20,14 +20,11 @@ TwoDofController::~TwoDofController() {
 }
 
 void TwoDofController::reset() {
-  pdq = 0;
+  integrated_diff = 0;
 }
 
 void TwoDofController::setup(double _ke, double _tc, double _dt) {
-  ke = _ke;
-  tc = _tc;
-  dt = _dt;
-  pdq = 0;
+  ke = _ke; tc = _tc; dt = _dt;
 }
 
 double TwoDofController::update (double _x, double _xd) {
@@ -36,20 +33,20 @@ double TwoDofController::update (double _x, double _xd) {
   // P = - ke/s
   // Gr = Q = 1 / (tc*s + 1)
 
+  double velocity; // velocity calcurated by 2 dof controller
+
+  // check parameters
+  if (!ke || !tc || !dt){
+    std::cerr << "ERROR: parameters are not set." << std::endl;
+    return 0;
+  }
+  
   // integrate (xd - x)
-  //integrated_diff += (_xd - _x) * dt;
+  integrated_diff += (_xd - _x) * dt;
 
   // 2 dof controller
-  double Q = 1/(tc*dt+1);
-  double Gr = 1/(tc*dt+1);
-  double P = (-ke/dt);
-  double Ca = 1/P * Q/(1-Q);
-  double Cb = Gr/ (1-Gr) * 1/P * 1/(1-Q);
+  velocity = (-_x + (_xd - _x) + (integrated_diff / tc)) / (-ke * tc);
 
-  double dv = -1 * Ca * _x + Cb * (_xd - _x);
-  //  std::cerr << "TDC " << dv << " " << Ca << " " << Cb << std::endl;
-  pdq += dv * dt;
-
-  return pdq;
+  return velocity * dt;
   
 }
