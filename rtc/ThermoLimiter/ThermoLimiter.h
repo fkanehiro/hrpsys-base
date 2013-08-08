@@ -1,14 +1,14 @@
 // -*- C++ -*-
 /*!
- * @file  ThermoEstimator.h
+ * @file  ThermoLimiter.h
  * @brief null component
  * @date  $Date$
  *
  * $Id$
  */
 
-#ifndef THERMO_ESTIMATOR_H
-#define THERMO_ESTIMATOR_H
+#ifndef THERMO_LIMITER_SERVICE_H
+#define THERMO_LIMITER_SERVICE_H
 
 #include <rtm/Manager.h>
 #include <rtm/DataFlowComponentBase.h>
@@ -21,11 +21,12 @@
 #include <hrpModel/Link.h>
 #include <hrpModel/JointPath.h>
 
-#include "MotorHeatParam.h"
+#include "../Stabilizer/TwoDofController.h"
+#include "../ThermoEstimator/MotorHeatParam.h"
 
 // Service implementation headers
 // <rtc-template block="service_impl_h">
-// #include "ThermoEstimator_impl.h"
+// #include "ThermoLimiterService_impl.h"
 
 // </rtc-template>
 
@@ -39,7 +40,7 @@ using namespace RTC;
 /**
    \brief sample RT component which has one data input port and one data output port
  */
-class ThermoEstimator
+class ThermoLimiter
   : public RTC::DataFlowComponentBase
 {
  public:
@@ -47,11 +48,11 @@ class ThermoEstimator
      \brief Constructor
      \param manager pointer to the Manager
   */
-  ThermoEstimator(RTC::Manager* manager);
+  ThermoLimiter(RTC::Manager* manager);
   /**
      \brief Destructor
   */
-  virtual ~ThermoEstimator();
+  virtual ~ThermoLimiter();
 
   // The initialize action (on CREATED->ALIVE transition)
   // formaer rtc_init_entry()
@@ -107,18 +108,24 @@ class ThermoEstimator
   // <rtc-template block="config_declare">
   
   // </rtc-template>
+  TimedDoubleSeq m_tempIn;
   TimedDoubleSeq m_tauIn;
-  TimedDoubleSeq m_tempOut;
-
+  TimedDoubleSeq m_qCurrentIn;
+  TimedDoubleSeq m_qRefIn;
+  TimedDoubleSeq m_qRefOut;
+  
   // DataInPort declaration
   // <rtc-template block="inport_declare">
+  InPort<TimedDoubleSeq> m_tempInIn;
   InPort<TimedDoubleSeq> m_tauInIn;
+  InPort<TimedDoubleSeq> m_qCurrentInIn;
+  InPort<TimedDoubleSeq> m_qRefInIn;
   
   // </rtc-template>
 
   // DataOutPort declaration
   // <rtc-template block="outport_declare">
-  OutPort<TimedDoubleSeq> m_tempOutOut;
+  OutPort<TimedDoubleSeq> m_qRefOutOut;
   
   // </rtc-template>
 
@@ -129,30 +136,33 @@ class ThermoEstimator
 
   // Service declaration
   // <rtc-template block="service_declare">
-  //RTC::CorbaPort m_ThermoEstimatorServicePort;
+  // RTC::CorbaPort m_ThermoLimiterServicePort;
   
   // </rtc-template>
 
   // Consumer declaration
   // <rtc-template block="consumer_declare">
-  //ThermoEstimatorService_impl m_ThermoEstimatorService;
+  // ThermoLimiterService_impl m_ThermoLimiterService;
   
   // </rtc-template>
 
  private:
- 
   double m_dt;
   unsigned int m_debugLevel;
-  hrp::BodyPtr m_robot; // for numJoints
-  double m_ambientTemp; // Ta
+  std::vector<double> m_motorTempretureLimit;
+  hrp::BodyPtr m_robot;
+  std::vector<TwoDofController> m_motorTwoDofControllers;
   std::vector<MotorHeatParam> m_motorHeatParams;
+
+  int sgn(double val);
+  bool limitTempreture(hrp::dvector &qRef);
   
 };
 
 
 extern "C"
 {
-  void ThermoEstimatorInit(RTC::Manager* manager);
+  void ThermoLimiterInit(RTC::Manager* manager);
 };
 
-#endif // TORQUE_FILTER_H
+#endif // NULL_COMPONENT_H

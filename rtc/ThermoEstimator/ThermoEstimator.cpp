@@ -195,6 +195,7 @@ RTC::ReturnCode_t ThermoEstimator::onExecute(RTC::UniqueId ec_id)
       MotorHeatParam param = m_motorHeatParams[i];
       double tau, currentHeat, radiation;
       // Thermo estimation
+      // from Design of High Torque and High Speed Leg Module for High Power Humanoid (Junichi Urata et al.)
       // Tnew = T + (((Re*K^2/C) * tau^2) - ((1/RC) * (T - Ta))) * dt
       tau = m_tauIn.data[i];
       currentHeat = param.currentCoeffs * std::pow(tau, 2);

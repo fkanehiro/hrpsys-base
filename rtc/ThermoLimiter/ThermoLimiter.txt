@@ -1,0 +1,56 @@
+/**
+
+\page NullComponent
+
+\section introduction Overview
+
+This component is a very simple RT component to learn how to develop.
+
+<table>
+<tr><th>implementation_id</th><td>NullComponent</td></tr>
+<tr><th>category</th><td>example</td></tr>
+</table>
+
+\section dataports Data Ports
+
+\subsection inports Input Ports
+
+<table>
+<tr><th>port name</th><th>data type</th><th>unit</th><th>description</th></tr>
+<tr><td>dataIn</td><td>RTC::TimedDouble</td><td></td><td></td></tr>
+</table>
+
+\subsection outports Output Ports
+
+<table>
+<tr><th>port name</th><th>data type</th><th>unit</th><th>description</th></tr>
+<tr><td>dataOut</td><td>RTC::TimedDouble</td><td></td><td></td></tr>
+</table>
+
+\section serviceports Service Ports
+
+\subsection provider Service Providers
+
+<table>
+<tr><th>port name</th><th>interface name</th><th>service type</th><th>IDL</th><th>description</th></tr>
+<tr><td>NullService</td><td>service0</td><td>NullService</td><td>\ref OpenHRP::NullService</td><td></td></tr>
+</table>
+
+\subsection consumer Service Consumers
+
+N/A
+
+\section configuration Configuration Variables
+
+<table>
+<tr><th>name</th><th>type</th><th>unit</th><th>default value</th><th>description</th></tr>
+<tr><td>string</td><td>std::string</td><td></td><td>testtest</td><td>example of string configuration variables</td></tr>
+<tr><td>intvec</td><td>std::vector<int></td><td></td><td>4,5,6,7</td><td>example of integer array configuration variables</td></tr>
+<tr><td>double</td><td>double<int></td><td></td><td>4.567</td><td>example of double precision configuration variable</td></tr>
+</table>
+
+\section conf Configuration File
+
+N/A
+
+ */
