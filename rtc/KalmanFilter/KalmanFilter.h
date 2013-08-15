@@ -42,6 +42,8 @@ public:
 
       H(0,0) = 1; H(0,1) = 0;
 
+      x(0) = 0; x(1) = 0;
+
       I = hrp::dmatrix::Identity(2,2);
   }
   void setF(double _f0, double _f1, double _f2, double _f3) { F(0,0) = _f0; F(0,1) = _f1; F(1,0) = _f2; F(1,1) = _f3;}
