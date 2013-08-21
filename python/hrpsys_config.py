@@ -145,15 +145,17 @@ class HrpsysConfigurator:
             connectPorts(self.sh.port("qOut"),  tmp_contollers[0].port("qRef"))
             for i in range(len(tmp_contollers)-1):
                 connectPorts(tmp_contollers[i].port("q"), tmp_contollers[i+1].port("qRef"))
-                if self.simulation_mode :
-                    connectPorts(tmp_contollers[-1].port("q"),  self.hgc.port("qIn"))
-                    connectPorts(self.hgc.port("qOut"), self.rh.port("qRef"))
-                else :
-                    connectPorts(tmp_contollers[-1].port("q"),  self.rh.port("qRef"))
+            if self.simulation_mode:
+                connectPorts(tmp_contollers[-1].port("q"),  self.hgc.port("qIn"))
+                connectPorts(self.hgc.port("qOut"), self.rh.port("qRef"))
+            else :
+                connectPorts(tmp_contollers[-1].port("q"),  self.rh.port("qRef"))
         else:
             if self.simulation_mode :
                 connectPorts(self.sh.port("qOut"),  self.hgc.port("qIn"))
                 connectPorts(self.hgc.port("qOut"), self.rh.port("qRef"))
+            else:
+                connectPorts(self.sh.port("qOut"),  self.rh.port("qRef"))
 
         # connection for kf
         if self.kf:
