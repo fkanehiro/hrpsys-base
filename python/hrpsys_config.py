@@ -431,6 +431,44 @@ class HrpsysConfigurator:
     def clearLog(self):
         self.log_svc.clear()
 
+    def lengthDigitalInput(self):
+        return self.rh_svc.lengthDigitalInput()
+
+    def lengthDigitalOutput(self):
+        return self.rh_svc.lengthDigitalOutput()
+
+    def writeDigitalOutput(self, dout):
+        doutLength = self.getLengthDigitalOutput()
+        if len(dout) < doutLength:
+            for i in range(doutLength-len(dout)):
+                dout.append(0)
+        outStr = ''
+        for i in range(0, len(dout), 8):
+            oneChar = 0
+            for j in range(8):
+                if dout[i+j]:
+                    oneChar += 1<<j
+            outStr = outStr + chr(oneChar)
+
+        #print 'dout: '
+        #for i in outStr:
+        #    print '0x%X, ', ord(i)
+        #print '\n'
+
+        # octet sequences are mapped to strings in omniorbpy
+        return self.rh_svc.writeDigitalOutput(outStr)
+
+    def readDigitalInput(self):
+        ret, din = self.rh_svc.readDigitalInput()
+        retList = []
+        for item in din:
+            for i in range(8):
+                if (ord(item)>>i)&1:
+                    retList.append(1)
+                else:
+                    retList.append(0)
+        return retList
+
     ###
     ### initialize
     ###
