@@ -173,15 +173,21 @@ class HrpsysConfigurator:
             connectPorts(self.rh.port("servoState"), self.el.port("servoStateIn"))
 
         # connection for sh, seq, fk
-        connectPorts(self.rh.port("q"), [self.sh.port("currentQIn"), self.fk.port("q")]) # connection for actual joint angles
-        connectPorts(self.sh.port("qOut"),  self.fk.port("qRef"))
-        connectPorts(self.seq.port("qRef"), self.sh.port("qIn"))
-        connectPorts(self.seq.port("basePos"), self.sh.port("basePosIn"))
-        connectPorts(self.seq.port("baseRpy"), self.sh.port("baseRpyIn"))
-        connectPorts(self.seq.port("zmpRef"),  self.sh.port("zmpIn"))
-        connectPorts(self.sh.port("basePosOut"), [self.seq.port("basePosInit"), self.fk.port("basePosRef")])
-        connectPorts(self.sh.port("baseRpyOut"), [self.seq.port("baseRpyInit"), self.fk.port("baseRpyRef")])
-        connectPorts(self.sh.port("qOut"), self.seq.port("qInit"))
+        if self.sh and self.seq:
+            connectPorts(self.rh.port("q"), self.sh.port("currentQIn")) # connection for actual joint angles
+            connectPorts(self.seq.port("qRef"), self.sh.port("qIn"))
+            connectPorts(self.seq.port("basePos"), self.sh.port("basePosIn"))
+            connectPorts(self.seq.port("baseRpy"), self.sh.port("baseRpyIn"))
+            connectPorts(self.seq.port("zmpRef"),  self.sh.port("zmpIn"))
+            connectPorts(self.sh.port("qOut"), self.seq.port("qInit"))
+            connectPorts(self.sh.port("basePosOut"), self.seq.port("basePosInit"))
+            connectPorts(self.sh.port("baseRpyOut"), self.seq.port("baseRpyInit"))
+
+        if self.sh and self.fk:
+            connectPorts(self.rh.port("q"), self.fk.port("q")) # connection for actual joint angles
+            connectPorts(self.sh.port("qOut"),  self.fk.port("qRef"))
+            connectPorts(self.sh.port("basePosOut"), self.fk.port("basePosRef"))
+            connectPorts(self.sh.port("baseRpyOut"), self.fk.port("baseRpyRef"))
 
         # connection for st
         if rtm.findPort(self.rh.ref, "lfsensor") and rtm.findPort(self.rh.ref, "rfsensor") and self.st:
@@ -303,6 +309,8 @@ class HrpsysConfigurator:
 
     # public method to configure default logger data ports
     def setupLogger(self):
+        if self.log == None:
+            return
         #
         for pn in ['q', 'tau']:
             self.connectLoggerPort(self.rh, pn)
