@@ -139,6 +139,9 @@ class HrpsysConfigurator:
 
     # public method
     def connectComps(self):
+        if self.rh == None or self.seq == None or self.sh == None or self.fk == None:
+            print self.configurator_name, "\e[1;31m connectComps : hrpsys requries rh, seq, sh and fk, please check rtcd.conf or rtcd arguments\e[0m"
+            return
         # connection for reference joint angles
         tmp_contollers = filter(lambda c : c != None, [self.ic, self.abc, self.st, self.co, self.el])
         if len(tmp_contollers) > 0:
@@ -303,6 +306,9 @@ class HrpsysConfigurator:
 
     # public method to configure default logger data ports
     def setupLogger(self):
+        if self.log == None:
+            print self.configurator_name, "\e[1;31m  setupLogger : self.log is not defined, please check rtcd.conf or rtcd arguments\e[0m"
+            return
         #
         for pn in ['q', 'tau']:
             self.connectLoggerPort(self.rh, pn)
