@@ -1,4 +1,4 @@
-corba.nameservers: localhost:2809
+corba.nameservers: localhost:15005
 naming.formats: %n.rtc
 logger.enable: YES
 logger.log_level: ERROR

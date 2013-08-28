@@ -249,7 +249,7 @@ def initCORBA():
 	global rootnc, orb, nshost
         try:
                 n = sys.argv.index('-ORBInitRef')
-                nshost = re.match('NameService=corbaloc:iiop:(\w+):2809/NameService', sys.argv[n+1]).group(1)
+                nshost = re.match('NameService=corbaloc:iiop:(\w+):15005/NameService', sys.argv[n+1]).group(1)
         except:
                 nshost = socket.gethostname()
 
