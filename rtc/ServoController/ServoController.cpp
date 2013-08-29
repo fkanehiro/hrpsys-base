@@ -230,7 +230,10 @@ RTC::ReturnCode_t ServoController::onRateChanged(RTC::UniqueId ec_id)
 bool ServoController::setJointAngle(short id, double angle, double tm)
 {
     if ( ! serial ) return true;
-    serial->setPosition(id, angle, tm);
+    double rad = angle * M_PI / 180;
+    for(int i=0; i<servo_id.size(); i++){
+      if(servo_id[i]==id) serial->setPosition(id,rad+servo_offset[i], tm);
+    }
     return true;
 }
 
@@ -259,6 +262,12 @@ bool ServoController::getJointAngle(short id, double &angle)
     if ( ! serial ) return true;
 
     int ret = serial->getPosition(id, &angle);
+    for(int i=0; i<servo_id.size(); i++){
+      if(servo_id[i]==id){
+        double servo_offset_angle = servo_offset[i] * 180 / M_PI;
+        angle -= servo_offset_angle;
+      }
+    }
 
     if (ret < 0) return false;
     return true;
