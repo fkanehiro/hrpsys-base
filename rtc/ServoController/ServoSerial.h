@@ -8,6 +8,10 @@
 #include <errno.h>
 #include <string.h>
 #include <math.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <sys/select.h>
 
 //http://www.futaba.co.jp/dbps_data/_material_/localhost/robot/servo/manuals/RS301CR_RS302CD_114.pdf
 
@@ -45,7 +49,8 @@ public:
     term.c_cflag |= CS8;               // 8 data bit
     term.c_cflag &= ~CSTOPB;           // 1 stop bit
     term.c_lflag = IEXTEN;
-    term.c_lflag &= ~ECHO;
+    term.c_lflag &= ~(ECHO | ECHOCTL | ECHONL);  // disable ECHO 
+
 
     term.c_cc[VMIN] = 1;
     term.c_cc[VTIME] = 0;
@@ -240,6 +245,18 @@ public:
     return 0;
   }
 
+  int getState(int id, unsigned char *data) {
+    if (sendPacket(0xFAAF, id, 0x05, 0x00, 0, 1, NULL)<0) {
+      clear_packet();
+      return -1;
+    }
+    if ( receivePacket(id, 0x1E, 30, data) < 0 ) {
+      clear_packet();
+      return -1;
+    }
+    return 0;
+  }
+
   int receivePacket(int id, int address, int length, unsigned char data[]){
     unsigned short header;
     unsigned char ids, flags, addr, len, count, sum;
@@ -336,12 +353,21 @@ public:
     unsigned char echo[8 + length*count];
     int ret2;
 
+    // wait at most 200 msec
+    fd_set set;
+    struct timeval timeout;
+    FD_ZERO(&set); /* clear the set */
+    FD_SET(fd, &set); /* add our file descriptor to the set */
+    timeout.tv_sec = 0;
+    timeout.tv_usec = 200*1000;
+    select(fd + 1, &set, NULL, NULL, &timeout);
+
     // wait at most 1msec
-    usleep(1000);
-    int oldf = fcntl(fd, F_GETFL, 0);
-    fcntl(fd, F_SETFL, oldf | O_NONBLOCK);
+    //usleep(1000);
+    //int oldf = fcntl(fd, F_GETFL, 0);
+    //fcntl(fd, F_SETFL, oldf | O_NONBLOCK);
     ret2 = read(fd, &echo, 8+length*count);
-    fcntl(fd, F_SETFL, oldf);
+    //fcntl(fd, F_SETFL, oldf);
 
     
     fprintf(stderr, "[ServoSerial] received: ");

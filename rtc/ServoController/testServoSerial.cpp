@@ -49,6 +49,7 @@ void usage() {
     printf("   t : getTorque\n");
     printf("   c : getTemperature\n");
     printf("   v : getVoltage\n");
+    printf("   S : getState\n");
 }
 
 int main() {
@@ -118,7 +119,10 @@ int main() {
             case 'G':
                 {int ids[8] = {2,3,4,5,6,7,8,9};
                  double angles[8];
-                 for(int i = 0; i < 8; i++ ) serial->getPosition(ids[i], &angles[i]);
+                 for(int i = 0; i < 8; i++ ) {
+                        while ( serial->getPosition(ids[i], &angles[i]) < 0 ) 
+                                usleep(1000);
+                }       
         	 fprintf(stderr, "angles = %f %f %f %f %f %f %f %f [deg]\n", angles[0],angles[1],angles[2],angles[3],angles[4],angles[5],angles[6],angles[7]);}
                 break;
             case 'd':
@@ -145,6 +149,16 @@ int main() {
                 double voltage;
                 serial->getVoltage(id, &voltage);
 		fprintf(stderr, "voltage = %f [V]\n", voltage);
+                break;
+            case 'S':
+                unsigned char data[30];
+                serial->getState(id, data);
+		fprintf(stderr, "state =");
+                for(int i = 0; i < 30; i++) {
+                        fprintf(stderr, " %02X", data[i]);
+                        if ( i % 10 == 9 ) fprintf(stderr, " : ");
+                }
+		fprintf(stderr, "\n");
                 break;
             }
             usage();
