@@ -361,13 +361,7 @@ public:
     timeout.tv_sec = 0;
     timeout.tv_usec = 200*1000;
     select(fd + 1, &set, NULL, NULL, &timeout);
-
-    // wait at most 1msec
-    //usleep(1000);
-    //int oldf = fcntl(fd, F_GETFL, 0);
-    //fcntl(fd, F_SETFL, oldf | O_NONBLOCK);
     ret2 = read(fd, &echo, 8+length*count);
-    //fcntl(fd, F_SETFL, oldf);
 
     
     fprintf(stderr, "[ServoSerial] received: ");
