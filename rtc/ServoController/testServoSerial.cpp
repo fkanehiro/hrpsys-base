@@ -69,6 +69,7 @@ int main() {
             case '8':
             case '9':
                 id = ch-'0';
+                serial->clear_packet();
                 break;
             case 'r':
                 serial->setReset(id);
