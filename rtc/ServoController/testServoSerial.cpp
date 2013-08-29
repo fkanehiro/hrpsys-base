@@ -38,9 +38,12 @@ void usage() {
     printf("   b : setTorqueBreak\n");
     printf("   p : setPosition to 90\n");
     printf("   P : setPosition to -90\n");
+    printf("   i : setPositions 90 to id 2 3 4 5 6 6 8\n");
+    printf("   I : setPositions -90 to id 2 3 4 5 6 6 8\n");
     printf("   m : setMaxTorque to 100\n");
     printf("   M : setMaxTorque to  50\n");
     printf("   g : getPosition\n");
+    printf("   G : getPositions\n");
     printf("   d : getDuration\n");
     printf("   s : getSpeed\n");
     printf("   t : getTorque\n");
@@ -89,6 +92,18 @@ int main() {
             case 'P':
 	        serial->setPosition(id, deg2rad(-90), 3);
                 break;
+            case 'i':
+                {int ids[8] = {2,3,4,5,6,7,8,9};
+                 double rads[8] = {90,90,90,90,90,90,90,90};
+                 double secs[8] = { 3, 3, 3, 3, 3, 3, 3, 3};
+	         serial->setPositions(8, ids, rads, secs);}
+                break;
+            case 'I':
+                {int ids[8] = {2,3,4,5,6,7,8,9};
+                 double rads[8] = {-90,-90,-90,-90,-90,-90,-90,-90};
+                 double secs[8] = { 3, 3, 3, 3, 3, 3, 3, 3};
+	         serial->setPositions(8, ids, rads, secs);}
+                break;
             case 'm':
                 serial->setMaxTorque(id, 100);
                 break;
@@ -99,6 +114,12 @@ int main() {
                 double angle;
                 serial->getPosition(id, &angle);
 		fprintf(stderr, "angle = %f [deg]\n", angle);
+                break;
+            case 'G':
+                {int ids[8] = {2,3,4,5,6,7,8,9};
+                 double angles[8];
+                 for(int i = 0; i < 8; i++ ) serial->getPosition(ids[i], &angles[i]);
+        	 fprintf(stderr, "angles = %f %f %f %f %f %f %f %f [deg]\n", angles[0],angles[1],angles[2],angles[3],angles[4],angles[5],angles[6],angles[7]);}
                 break;
             case 'd':
                 double duration;
