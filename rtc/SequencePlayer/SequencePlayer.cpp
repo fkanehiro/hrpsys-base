@@ -360,15 +360,16 @@ bool SequencePlayer::setTargetPose(const char* gname, const double *xyz, const d
     start_av.resize(indices.size());
     end_av.resize(indices.size());
 
-    std::cerr << std::endl;
+    //std::cerr << std::endl;
     if ( ! m_robot->joint(indices[0])->parent ) {
         std::cerr << "[setTargetPose] " << m_robot->joint(indices[0])->name << " does not have parent" << std::endl;
         return false;
     }
-    string base_name = m_robot->joint(indices[0])->parent->name;
+    string base_parent_name = m_robot->joint(indices[0])->parent->name;
+    string base_name = m_robot->joint(indices[0])->name;
     string target_name = m_robot->joint(indices[indices.size()-1])->name;
     // prepare joint path
-    hrp::JointPathExPtr manip = hrp::JointPathExPtr(new hrp::JointPathEx(m_robot, m_robot->link(base_name), m_robot->link(target_name)));
+    hrp::JointPathExPtr manip = hrp::JointPathExPtr(new hrp::JointPathEx(m_robot, m_robot->link(base_parent_name), m_robot->link(target_name)));
 
     // calc fk
     for (int i=0; i<m_robot->numJoints(); i++){
@@ -380,6 +381,7 @@ bool SequencePlayer::setTargetPose(const char* gname, const double *xyz, const d
         start_av[i] = manip->joint(i)->q;
     }
 
+    // xyz and rpy are relateive to root link, where as pos and rotatoin of manip->calcInverseKinematics are relative to base link
     // interpolate & calc ik
     int len = max((int)(tm/0.1),10);
     std::vector<const double *> v_pos;
@@ -391,7 +393,7 @@ bool SequencePlayer::setTargetPose(const char* gname, const double *xyz, const d
     hrp::Vector3 start_p(m_robot->link(target_name)->p);
     hrp::Matrix33 start_R(m_robot->link(target_name)->R);
     hrp::Vector3 end_p(xyz[0], xyz[1], xyz[2]);
-    hrp::Matrix33 end_R = hrp::rotFromRpy(rpy[0], rpy[1], rpy[2]);
+    hrp::Matrix33 end_R = m_robot->link(target_name)->Rs*hrp::rotFromRpy(rpy[0], rpy[1], rpy[2]);
     manip->setMaxIKError(0.005);
 
     // do loop
@@ -412,6 +414,7 @@ bool SequencePlayer::setTargetPose(const char* gname, const double *xyz, const d
         v_tm[i] = tm/len;
     }
 
+#if 0
     // for debug
     for(int i = 0; i < len; i++ ) {
         std::cerr << v_tm[i] << ":";
@@ -420,6 +423,7 @@ bool SequencePlayer::setTargetPose(const char* gname, const double *xyz, const d
         }
         std::cerr << std::endl;
     }
+#endif
 
     return m_seq->playPatternOfGroup(gname, v_pos, v_tm, m_qInit.data.get_buffer(), v_pos.size()>0?indices.size():0);
 }
