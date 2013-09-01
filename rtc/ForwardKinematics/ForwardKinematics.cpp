@@ -273,7 +273,7 @@ RTC::ReturnCode_t ForwardKinematics::onRateChanged(RTC::UniqueId ec_id)
     hrp::Link *l = m_refBody->link(linkname);
     if (!l) return false;
     const hrp::Vector3& p = l->p;
-    const hrp::Matrix33& R = l->R;
+    const hrp::Matrix33& R = l->attitude();
     pose->tm = m_tm;
     pose->data.length(16);
     pose->data[ 0]=R(0,0);pose->data[ 1]=R(0,1);pose->data[ 2]=R(0,2);pose->data[ 3]=p[0];
@@ -292,7 +292,7 @@ RTC::ReturnCode_t ForwardKinematics::onRateChanged(RTC::UniqueId ec_id)
     hrp::Vector3 dp(m_refLink->p - m_actLink->p);
 
     const hrp::Vector3 p(l->p + dp);
-    const hrp::Matrix33 &R = l->R;
+    const hrp::Matrix33 &R = l->attitude();
     pose->tm = m_tm;
     pose->data.length(16);
     pose->data[ 0]=R(0,0);pose->data[ 1]=R(0,1);pose->data[ 2]=R(0,2);pose->data[ 3]=p[0];
@@ -309,8 +309,8 @@ RTC::ReturnCode_t ForwardKinematics::onRateChanged(RTC::UniqueId ec_id)
     hrp::Link *to = m_actBody->link(linknameTo);
     if (!from || !to) return false;
     hrp::Vector3 targetPrel(target[0], target[1], target[2]);
-    hrp::Vector3 targetPabs(to->p+to->R*targetPrel);
-    hrp::Matrix33 Rt(from->R.transpose());
+    hrp::Vector3 targetPabs(to->p+to->attitude()*targetPrel);
+    hrp::Matrix33 Rt(from->attitude().transpose());
     hrp::Vector3 p(Rt*(targetPabs - from->p));
     result[ 0]=p(0);result[ 1]=p(1);result[ 2]=p(2);
     return true;
