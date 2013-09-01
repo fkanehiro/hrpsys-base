@@ -90,7 +90,6 @@ RTC::ReturnCode_t ForwardKinematics::onInitialize()
 
   RTC::Properties& prop = getProperties();
 
-  m_refBody = hrp::BodyPtr(new hrp::Body());
   RTC::Manager& rtcManager = RTC::Manager::instance();
   std::string nameServer = rtcManager.getConfig()["corba.nameservers"];
   int comPos = nameServer.find(",");
@@ -99,13 +98,20 @@ RTC::ReturnCode_t ForwardKinematics::onInitialize()
   }
   nameServer = nameServer.substr(0, comPos);
   RTC::CorbaNaming naming(rtcManager.getORB(), nameServer.c_str());
+  m_refBody = hrp::BodyPtr(new hrp::Body());
   if (!loadBodyFromModelLoader(m_refBody, prop["model"].c_str(), 
                                CosNaming::NamingContext::_duplicate(naming.getRootContext()))){
     std::cerr << "failed to load model[" << prop["model"] << "] in "
               << m_profile.instance_name << std::endl;
     return RTC::RTC_ERROR;
   }
-  m_actBody = hrp::BodyPtr(new hrp::Body(*m_refBody));
+  m_actBody = hrp::BodyPtr(new hrp::Body());
+  if (!loadBodyFromModelLoader(m_actBody, prop["model"].c_str(), 
+                               CosNaming::NamingContext::_duplicate(naming.getRootContext()))){
+    std::cerr << "failed to load model[" << prop["model"] << "] in "
+              << m_profile.instance_name << std::endl;
+    return RTC::RTC_ERROR;
+  }
 
   m_refLink = m_refBody->rootLink();
   m_actLink = m_actBody->rootLink();
