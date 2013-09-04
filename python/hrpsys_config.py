@@ -410,6 +410,23 @@ class HrpsysConfigurator:
     def getJointAngles(self):
         return [x*180.0/math.pi for x in self.sh_svc.getCommand().jointRefs]
 
+    def getCurrentPose(self,lname):
+        pose = self.fk_svc.getCurrentPose(lname)
+        if not pose[0] :
+            raise RuntimeError("Could not find reference : " + lname)
+        return pose[1].data
+
+    def getCurrentPosition(self,lname):
+        pose = self.getCurrentPose(lname)
+        return [pose[3],pose[7],pose[11]]
+
+    def getCurrentRotation(self,lname):
+        pose = self.getCurrentPose(lname)
+        return [pose[0:3],pose[4:7],pose[8:11]]
+
+    def getCurrentRPY(self,lname):
+        return euler_from_matrix(self.getCurrentRotation(lname),'sxyz')
+
     def getReferencePose(self,lname):
         pose = self.fk_svc.getReferencePose(lname)
         if not pose[0] :
