@@ -393,7 +393,7 @@ bool SequencePlayer::setTargetPose(const char* gname, const double *xyz, const d
     hrp::Vector3 start_p(m_robot->link(target_name)->p);
     hrp::Matrix33 start_R(m_robot->link(target_name)->R);
     hrp::Vector3 end_p(xyz[0], xyz[1], xyz[2]);
-    hrp::Matrix33 end_R = m_robot->link(target_name)->Rs*hrp::rotFromRpy(rpy[0], rpy[1], rpy[2]);
+    hrp::Matrix33 end_R = m_robot->link(target_name)->calcRfromAttitude(hrp::rotFromRpy(rpy[0], rpy[1], rpy[2]));
     manip->setMaxIKError(0.005);
 
     // do loop
