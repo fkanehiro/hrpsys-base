@@ -3,8 +3,8 @@
 import os
 import rtm
 
-#from rtm import *
-#ofrom OpenHRP import *
+from rtm import *
+from OpenHRP import *
 
 import socket
 import time
