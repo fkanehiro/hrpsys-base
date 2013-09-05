@@ -9,7 +9,10 @@
 
 #ifdef __QNX__
 #include <cmath>
+#include <cstdlib>
 #include <sys/syspage.h>
+#include <string.h>
+#include <stdio.h>
 using std::FILE;
 using std::exp;
 using std::fabs;
