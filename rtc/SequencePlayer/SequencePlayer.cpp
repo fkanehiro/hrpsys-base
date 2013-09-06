@@ -385,12 +385,6 @@ bool SequencePlayer::setTargetPose(const char* gname, const double *xyz, const d
     }
 
     // xyz and rpy are relateive to root link, where as pos and rotatoin of manip->calcInverseKinematics are relative to base link
-    // interpolate & calc ik
-    int len = max((int)(tm/0.1),10);
-    std::vector<const double *> v_pos;
-    std::vector<double> v_tm;
-    v_pos.resize(len);
-    v_tm.resize(len);
 
     // ik params
     hrp::Vector3 start_p(m_robot->link(target_name)->p);
@@ -398,6 +392,16 @@ bool SequencePlayer::setTargetPose(const char* gname, const double *xyz, const d
     hrp::Vector3 end_p(xyz[0], xyz[1], xyz[2]);
     hrp::Matrix33 end_R = m_robot->link(target_name)->calcRfromAttitude(hrp::rotFromRpy(rpy[0], rpy[1], rpy[2]));
     manip->setMaxIKError(0.005);
+
+    // interpolate & calc ik
+    int len = max(((start_p - end_p).norm() / 0.02 ), // 2cm
+                  ((hrp::omegaFromRot(start_R.transpose() * end_R).norm()) / 0.025)); // 2 deg
+    len = max(len, 1);
+
+    std::vector<const double *> v_pos;
+    std::vector<double> v_tm;
+    v_pos.resize(len);
+    v_tm.resize(len);
 
     // do loop
     for (int i = 0; i < len; i++ ) {
