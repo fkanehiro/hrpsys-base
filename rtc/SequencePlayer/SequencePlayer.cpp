@@ -33,6 +33,7 @@ static const char* sequenceplayer_spec[] =
         "language",          "C++",
         "lang_type",         "compile",
         // Configuration variables
+        "conf.default.debugLevel", "0",
 
         ""
     };
@@ -53,6 +54,7 @@ SequencePlayer::SequencePlayer(RTC::Manager* manager)
       // </rtc-template>
       m_waitSem(0),
       m_robot(hrp::BodyPtr()),
+      m_debugLevel(0),
       dummy(0)
 {
     m_service0.player(this);
@@ -94,6 +96,7 @@ RTC::ReturnCode_t SequencePlayer::onInitialize()
     // <rtc-template block="bind_config">
     // Bind variables and configuration variable
   
+    bindParameter("debugLevel", m_debugLevel, "0");
     // </rtc-template>
 
     RTC::Properties& prop = getProperties();
@@ -403,6 +406,13 @@ bool SequencePlayer::setTargetPose(const char* gname, const double *xyz, const d
         hrp::Vector3 omega = hrp::omegaFromRot(start_R.transpose() * end_R);
         hrp::Matrix33 R = start_R * rodrigues(omega.isZero()?omega:omega.normalized(), a*omega.norm());
         bool ret = manip->calcInverseKinematics2(p, R);
+
+        if ( m_debugLevel > 0 ) {
+            // for debug
+            std::cerr << "target pos/rot : " << i << "/" << a << " : "
+                      << p[0] << " " << p[1] << " " << p[2] << ","
+                      << omega[0] << " " << omega[1] << " " << omega[2] << std::endl;
+        }
         if ( ! ret ) {
             std::cerr << "[setTargetPose] IK failed" << std::endl;
             return false;
@@ -414,16 +424,16 @@ bool SequencePlayer::setTargetPose(const char* gname, const double *xyz, const d
         v_tm[i] = tm/len;
     }
 
-#if 0
-    // for debug
-    for(int i = 0; i < len; i++ ) {
-        std::cerr << v_tm[i] << ":";
-        for(int j = 0; j < start_av.size(); j++ ) {
-            std::cerr << v_pos[i][j] << " ";
+    if ( m_debugLevel > 0 ) {
+        // for debug
+        for(int i = 0; i < len; i++ ) {
+            std::cerr << v_tm[i] << ":";
+            for(int j = 0; j < start_av.size(); j++ ) {
+                std::cerr << v_pos[i][j] << " ";
+            }
+            std::cerr << std::endl;
         }
-        std::cerr << std::endl;
     }
-#endif
 
     return m_seq->playPatternOfGroup(gname, v_pos, v_tm, m_qInit.data.get_buffer(), v_pos.size()>0?indices.size():0);
 }

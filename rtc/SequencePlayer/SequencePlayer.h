@@ -166,6 +166,7 @@ class SequencePlayer
   boost::interprocess::interprocess_semaphore m_waitSem;
   hrp::BodyPtr m_robot;
   std::string m_gname;
+  unsigned int m_debugLevel;
   int dummy;
   coil::Mutex m_mutex;
 };
