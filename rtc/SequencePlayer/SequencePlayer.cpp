@@ -439,7 +439,14 @@ bool SequencePlayer::setTargetPose(const char* gname, const double *xyz, const d
         }
     }
 
-    return m_seq->playPatternOfGroup(gname, v_pos, v_tm, m_qInit.data.get_buffer(), v_pos.size()>0?indices.size():0);
+    bool ret = m_seq->playPatternOfGroup(gname, v_pos, v_tm, m_qInit.data.get_buffer(), v_pos.size()>0?indices.size():0);
+
+    // clean up memory, need to improve
+    for (int i = 0; i < len; i++ ) {
+        free((double *)v_pos[i]);
+    }
+
+    return ret;
 }
 
 void SequencePlayer::loadPattern(const char *basename, double tm)
