@@ -223,6 +223,21 @@ RTC::ReturnCode_t SoftErrorLimiter::onExecute(RTC::UniqueId ec_id)
     for ( int i = 0; i < m_qRef.data.length(); i++ ){
       int servo_state = (m_servoState.data[i][0] & OpenHRP::RobotHardwareService::SERVO_STATE_MASK) >> OpenHRP::RobotHardwareService::SERVO_STATE_SHIFT; // enum SwitchStatus {SWITCH_ON, SWITCH_OFF};
       double error = m_qRef.data[i] - m_qCurrent.data[i];
+      /*
+        From hrpModel/Body.h
+        inline Link* joint(int id) const
+           This function returns a link that has a given joint ID.
+           If there is no link that has a given joint ID,
+           the function returns a dummy link object whose ID is minus one.
+           The maximum id can be obtained by numJoints().
+
+         inline Link* link(int index) const
+           This function returns the link of a given index in the whole link sequence.
+           The order of the sequence corresponds to a link-tree traverse from the root link.
+           The size of the sequence can be obtained by numLinks().
+
+         So use m_robot->joint(i) for llimit/ulimit
+       */
       bool servo_limit_state =
           ((m_robot->joint(i)->llimit > m_qRef.data[i]) ||
            (m_robot->joint(i)->ulimit < m_qRef.data[i]));
