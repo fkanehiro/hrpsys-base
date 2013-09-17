@@ -14,6 +14,7 @@
 #include "RobotHardwareService.hh"
 
 #include <math.h>
+#include <vector>
 #define deg2rad(x)((x)*M_PI/180)
 
 #include "beep.h"
@@ -178,7 +179,22 @@ RTC::ReturnCode_t SoftErrorLimiter::onExecute(RTC::UniqueId ec_id)
     m_servoStateIn.read();
   }
 
+  /*
+    0x001 : 'SS_OVER_VOLTAGE',
+    0x002 : 'SS_OVER_LOAD',
+    0x004 : 'SS_OVER_VELOCITY',
+    0x008 : 'SS_OVER_CURRENT',
+    0x010 : 'SS_OVER_HEAT',
+    0x020 : 'SS_TORQUE_LIMIT',
+    0x040 : 'SS_VELOCITY_LIMIT',
+    0x080 : 'SS_FORWARD_LIMIT',
+    0x100 : 'SS_REVERSE_LIMIT',
+    0x200 : 'SS_POSITION_ERROR',
+    0x300 : 'SS_ENCODER_ERROR',
+    0x800 : 'SS_OTHER'
+  */
   bool soft_limit_error = false;
+  bool position_limit_error = false;
   if ( m_qRef.data.length() == m_qCurrent.data.length() &&
        m_qRef.data.length() == m_servoState.data.length() ) {
     for ( int i = 0; i < m_qRef.data.length(); i++ ){
@@ -192,12 +208,44 @@ RTC::ReturnCode_t SoftErrorLimiter::onExecute(RTC::UniqueId ec_id)
                   << ", servo_state = " <<  ( 1 ? "ON" : "OFF");
         m_qRef.data[i] = m_qCurrent.data[i] + ( error > 0 ? limit : -limit );
         std::cerr << ", q=" << m_qRef.data[i] << std::endl;
-        m_servoState.data[i][0] |= (0x200 << OpenHRP::RobotHardwareService::SERVO_ALARM_SHIFT);
+        m_servoState.data[i][0] |= (0x040 << OpenHRP::RobotHardwareService::SERVO_ALARM_SHIFT);
         soft_limit_error = true;
       }
     }
+
+    static std::vector<double> prev_angle;
+    if ( prev_angle.size() != m_qRef.data.length() ) { // initialize prev_angle
+      prev_angle.resize(m_qRef.data.length(), 0);
+      for ( int i = 0; i < m_qRef.data.length(); i++ ){
+        prev_angle[i] = m_qCurrent.data[i];
+      }
+    }
+    for ( int i = 0; i < m_qRef.data.length(); i++ ){
+      int servo_state = (m_servoState.data[i][0] & OpenHRP::RobotHardwareService::SERVO_STATE_MASK) >> OpenHRP::RobotHardwareService::SERVO_STATE_SHIFT; // enum SwitchStatus {SWITCH_ON, SWITCH_OFF};
+      double error = m_qRef.data[i] - m_qCurrent.data[i];
+      bool servo_limit_state =
+          ((m_robot->joint(i)->llimit > m_qRef.data[i]) ||
+           (m_robot->joint(i)->ulimit < m_qRef.data[i]));
+      if ( servo_state == 1 && servo_limit_state ) {
+        std::cerr << "position limit over " << m_robot->joint(i)->name << "(" << i << "), qRef=" << m_qRef.data[i]
+                  << ", llimit =" << m_robot->joint(i)->llimit
+                  << ", ulimit =" << m_robot->joint(i)->ulimit
+                  << ", servo_state = " <<  ( servo_state ? "ON" : "OFF")
+                  << ", prev_angle = " << prev_angle[i] << std::endl;
+        // fix joint angle
+        if ( m_robot->joint(i)->llimit > m_qRef.data[i] && prev_angle[i] > m_qRef.data[i] ) // ref < llimit and prev < ref -> OK
+          m_qRef.data[i] = prev_angle[i];
+        if ( m_robot->joint(i)->ulimit < m_qRef.data[i] && prev_angle[i] < m_qRef.data[i] ) // ulimit < ref and ref < prev -> OK
+          m_qRef.data[i] = prev_angle[i];
+        m_servoState.data[i][0] |= (0x200 << OpenHRP::RobotHardwareService::SERVO_ALARM_SHIFT);
+        position_limit_error = true;
+      }
+      prev_angle[i] = m_qRef.data[i];
+    }
     if ( soft_limit_error ) { // play beep
       start_beep(3136);
+    }else if ( position_limit_error ) { // play beep
+      start_beep(3520);
     } else {
       stop_beep();
     }
