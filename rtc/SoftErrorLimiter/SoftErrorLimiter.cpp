@@ -202,7 +202,7 @@ RTC::ReturnCode_t SoftErrorLimiter::onExecute(RTC::UniqueId ec_id)
       double error = m_qRef.data[i] - m_qCurrent.data[i];
       int servo_state = (m_servoState.data[i][0] & OpenHRP::RobotHardwareService::SERVO_STATE_MASK) >> OpenHRP::RobotHardwareService::SERVO_STATE_SHIFT; // enum SwitchStatus {SWITCH_ON, SWITCH_OFF};
       if ( servo_state == 1 && fabs(error) > limit ) {
-        std::cerr << "error limit over " << m_robot->link(i)->name << "(" << i << "), qRef=" << m_qRef.data[i]
+        std::cerr << "error limit over " << m_robot->joint(i)->name << "(" << i << "), qRef=" << m_qRef.data[i]
                   << ", qCurrent=" << m_qCurrent.data[i] << " "
                   << ", Error=" << error << " > " << limit << " (limit)"
                   << ", servo_state = " <<  ( 1 ? "ON" : "OFF");
