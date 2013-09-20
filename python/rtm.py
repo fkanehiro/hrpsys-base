@@ -16,6 +16,7 @@ import re
 #
 rootnc = None
 nshost = None
+nsport = None
 
 ##
 # \brief wrapper class of RT component
@@ -246,12 +247,23 @@ def unbindObject(name, kind):
 # \brief initialize ORB 
 #
 def initCORBA():
-	global rootnc, orb, nshost
+	global rootnc, orb, nshost, nsport
+
+        # from omniorb's document
+        #  When CORBA::ORB_init() is called, the value for each configuration parameter is searched for in the following order:
+        #  Command line arguments
+        #  Environment variables
+        # so init_CORBA will follow this order
+        # first check command line orgument
         try:
                 n = sys.argv.index('-ORBInitRef')
-                nshost = re.match('NameService=corbaloc:iiop:(\w+):\d+/NameService', sys.argv[n+1]).group(1)
+                (nshost,nsport) = re.match('NameService=corbaloc:iiop:(\w+):(\d+)/NameService', sys.argv[n+1]).group(1,2)
         except:
-                nshost = socket.gethostname()
+                if not nshost : nshost = socket.gethostname()
+                if not nsport : nsport = 15005
+
+        print "configuration ORB with ", nshost, ":", nsport
+        os.environ['ORBInitRef'] = 'NameService=corbaloc:iiop:{0}:{1}/NameService'.format(nshost,nsport)
 
 	orb = CORBA.ORB_init(sys.argv, CORBA.ORB_ID)
 
@@ -632,4 +644,5 @@ def narrow(ior, klass, package="OpenHRP"):
 def isJython():
 	return sys.version.count("GCC") == 0
 
-initCORBA()
+if __name__ == '__main__':
+        initCORBA()

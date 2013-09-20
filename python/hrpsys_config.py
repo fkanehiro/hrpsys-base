@@ -582,6 +582,7 @@ class HrpsysConfigurator:
         print self.configurator_name, '\033[32minitialized successfully\033[0m'
 
     def __init__(self, cname="[hrpsys.py] "):
+        initCORBA()
         self.configurator_name = cname
 
 
