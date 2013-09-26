@@ -1,6 +1,7 @@
 from omniORB import CORBA, any, cdrUnmarshal, cdrMarshal
 import CosNaming
 
+import OpenRTM_aist
 import RTC, OpenRTM, SDOPackage, RTM
 from OpenRTM import CdrData, OutPortCdr, InPortCdr
 from RTC import *
