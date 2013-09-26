@@ -240,6 +240,11 @@ int read_command_torques(double *torques)
     return FALSE;
 }
 
+int write_command_torques(const double *torques)
+{
+    return FALSE;
+}
+
 int read_command_angle(int id, double *angle)
 {
     CHECK_JOINT_ID(id);

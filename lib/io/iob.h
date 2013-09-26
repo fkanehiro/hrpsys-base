@@ -276,6 +276,14 @@ extern "C"{
     int read_command_torques(double *torques);
 
     /**
+     * @brief write array of command torques[Nm]
+     * @param torques	array of command torques[Nm]
+     * @retval TRUE this function is supported
+     * @retval FALSE otherwise
+     */
+    int write_command_torques(const double *torques);
+
+    /**
      * @brief read command angle[rad]
      * @param id	joint id
      * @param angle	command joint angle[rad]
