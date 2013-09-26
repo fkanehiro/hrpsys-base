@@ -374,7 +374,7 @@ int read_command_velocities(double *vels)
     return FALSE;
 }
 
-int write_command_velocities(double *vels)
+int write_command_velocities(const double *vels)
 {
     return FALSE;
 }

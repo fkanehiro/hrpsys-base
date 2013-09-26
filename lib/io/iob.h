@@ -386,7 +386,7 @@ extern "C"{
      * @retval TRUE this function is supported
      * @retval FALSE otherwise
      */
-    int write_command_velocities(double *vels);
+    int write_command_velocities(const double *vels);
 
     /**
      * @brief turn on/off joint servo
