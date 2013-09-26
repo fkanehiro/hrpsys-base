@@ -406,6 +406,16 @@ void robot::readJointCommands(double *o_commands)
     read_command_angles(o_commands);
 }
 
+void robot::writeTorqueCommands(const double *i_commands)
+{
+    write_command_torques(i_commands);
+}
+
+void robot::writeVelocityCommands(const double *i_commands)
+{
+    write_command_velocities(i_commands);
+}
+
 void robot::readPowerStatus(double &o_voltage, double &o_current)
 {
     read_power(&o_voltage, &o_current);

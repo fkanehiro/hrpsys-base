@@ -172,6 +172,18 @@ public:
     void readJointCommands(double *o_commands);
 
     /**
+       \brief write array of reference torques of joint servo
+       \param i_commands array of reference torques of joint servo[Nm]
+     */
+    void writeTorqueCommands(const double *i_commands);
+
+    /**
+       \brief write array of reference velocities of joint servo
+       \param i_commands array of reference velocities of joint servo[rad/s]
+     */
+    void writeVelocityCommands(const double *i_commands);
+
+    /**
        \brief get length of extra servo states
        \param id joint id
        \return length of extra servo states

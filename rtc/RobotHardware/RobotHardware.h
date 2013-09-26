@@ -113,6 +113,10 @@ class RobotHardware
   // <rtc-template block="inport_declare">
   TimedDoubleSeq m_qRef;
   InPort<TimedDoubleSeq> m_qRefIn;
+  TimedDoubleSeq m_dqRef;
+  InPort<TimedDoubleSeq> m_dqRefIn;
+  TimedDoubleSeq m_tauRef;
+  InPort<TimedDoubleSeq> m_tauRefIn;
   
   // </rtc-template>
 
