@@ -341,6 +341,14 @@ extern "C"{
     int write_dgain(int id, double gain);
 
     /**
+     * @brief read actual angular velocity[rad/s]
+     * @param id	joint id
+     * @param vel	angular velocity [rad/s]
+     * @return		TRUE or E_ID
+     */
+    int read_actual_velocity(int id, double *vel);
+
+    /**
      * @brief read command angular velocity[rad/s]
      * @param id	joint id
      * @param vel	angular velocity [rad/s]
@@ -355,6 +363,14 @@ extern "C"{
      * @return		TRUE or E_ID
      */
     int write_command_velocity(int id, double vel);
+
+    /**
+     * @brief read actual angular velocities[rad/s]
+     * @param vels	array of angular velocity [rad/s]
+     * @retval TRUE this function is supported
+     * @retval FALSE otherwise
+     */
+    int read_actual_velocities(double *vels);
 
     /**
      * @brief read command angular velocities[rad/s]

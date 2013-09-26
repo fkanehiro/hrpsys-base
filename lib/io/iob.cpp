@@ -349,12 +349,22 @@ int read_gauges(double *gauges)
     return FALSE;
 }
 
+int read_actual_velocity(int id, double *vel)
+{
+    return FALSE;
+}
+
 int read_command_velocity(int id, double *vel)
 {
     return FALSE;
 }
 
 int write_command_velocity(int id, double vel)
+{
+    return FALSE;
+}
+
+int read_actual_velocities(double *vels)
 {
     return FALSE;
 }
