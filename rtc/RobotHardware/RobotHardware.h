@@ -111,19 +111,45 @@ class RobotHardware
 
   // DataInPort declaration
   // <rtc-template block="inport_declare">
+
+  /**
+     \brief array of reference angles of joint with jointId
+  */
   TimedDoubleSeq m_qRef;
   InPort<TimedDoubleSeq> m_qRefIn;
+  /**
+     \brief array of reference velocities of joint with jointId
+  */
   TimedDoubleSeq m_dqRef;
   InPort<TimedDoubleSeq> m_dqRefIn;
+  /**
+     \brief array of reference torques of joint with jointId
+  */
   TimedDoubleSeq m_tauRef;
   InPort<TimedDoubleSeq> m_tauRefIn;
   
   // </rtc-template>
 
+  /**
+     \brief array of actual angles of joint with jointId
+  */
   TimedDoubleSeq m_q;
+  /**
+     \brief array of actual torques of joint with jointId
+  */
   TimedDoubleSeq m_tau;
+  /**
+     \brief vector of actual acceleration (vector length = number of acceleration sensors)
+  */
   std::vector<TimedAcceleration3D> m_acc;
+  /**
+     \brief vector of actual angular velocity (vector length = number of rate sensors)
+  */
   std::vector<TimedAngularVelocity3D> m_rate;
+  /**
+     \brief vector of actual 6D wrench (vector length = number of F/T sensors)
+            6D wrench vector = 3D force + 3D moment = fx, fy, fz, nx, ny, nz
+  */
   std::vector<TimedDoubleSeq> m_force;
   OpenHRP::TimedLongSeqSeq m_servoState;
   TimedLong m_emergencySignal;
