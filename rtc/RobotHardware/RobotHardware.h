@@ -135,6 +135,10 @@ class RobotHardware
   */
   TimedDoubleSeq m_q;
   /**
+     \brief array of actual velocities of joint with jointId
+  */
+  TimedDoubleSeq m_dq;
+  /**
      \brief array of actual torques of joint with jointId
   */
   TimedDoubleSeq m_tau;
@@ -157,6 +161,7 @@ class RobotHardware
   // DataOutPort declaration
   // <rtc-template block="outport_declare">
   OutPort<TimedDoubleSeq> m_qOut;
+  OutPort<TimedDoubleSeq> m_dqOut;
   OutPort<TimedDoubleSeq> m_tauOut;
   std::vector<OutPort<TimedAcceleration3D> *> m_accOut;
   std::vector<OutPort<TimedAngularVelocity3D> *> m_rateOut;

@@ -376,6 +376,11 @@ void robot::readJointAngles(double *o_angles)
     read_actual_angles(o_angles);
 }
 
+void robot::readJointVelocities(double *o_velocities)
+{
+    read_actual_velocities(o_velocities);
+}
+
 int robot::readJointTorques(double *o_torques)
 {
     return read_actual_torques(o_torques);

@@ -49,6 +49,7 @@ RobotHardware::RobotHardware(RTC::Manager* manager)
     m_dqRefIn("dqRef", m_dqRef),
     m_tauRefIn("tauRef", m_tauRef),
     m_qOut("q", m_q),
+    m_dqOut("dq", m_dq),
     m_tauOut("tau", m_tau),
     m_servoStateOut("servoState", m_servoState),
     m_emergencySignalOut("emergencySignal", m_emergencySignal),
@@ -73,6 +74,7 @@ RTC::ReturnCode_t RobotHardware::onInitialize()
   addInPort("tauRef", m_tauRefIn);
 
   addOutPort("q", m_qOut);
+  addOutPort("dq", m_dqOut);
   addOutPort("tau", m_tauOut);
   addOutPort("servoState", m_servoStateOut);
   addOutPort("emergencySignal", m_emergencySignalOut);
@@ -116,6 +118,7 @@ RTC::ReturnCode_t RobotHardware::onInitialize()
   m_service0.setRobot(m_robot);
 
   m_q.data.length(m_robot->numJoints());
+  m_dq.data.length(m_robot->numJoints());
   m_tau.data.length(m_robot->numJoints());
   m_servoState.data.length(m_robot->numJoints());
   m_qRef.data.length(m_robot->numJoints());
@@ -245,6 +248,8 @@ RTC::ReturnCode_t RobotHardware::onExecute(RTC::UniqueId ec_id)
   // read from iob
   m_robot->readJointAngles(m_q.data.get_buffer());  
   m_q.tm = tm;
+  m_robot->readJointVelocities(m_dq.data.get_buffer());  
+  m_dq.tm = tm;
   m_robot->readJointTorques(m_tau.data.get_buffer());
   m_tau.tm = tm;
   for (unsigned int i=0; i<m_rate.size(); i++){
@@ -292,6 +297,7 @@ RTC::ReturnCode_t RobotHardware::onExecute(RTC::UniqueId ec_id)
   m_robot->oneStep();
 
   m_qOut.write();
+  m_dqOut.write();
   m_tauOut.write();
   m_servoStateOut.write();
   for (unsigned int i=0; i<m_rateOut.size(); i++){

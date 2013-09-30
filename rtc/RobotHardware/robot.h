@@ -132,6 +132,12 @@ public:
     void readJointAngles(double *o_angles);
 
     /**
+       \brief read array of all joint velocities[rad/s]
+       \param o_angles array of all joint velocities
+     */
+    void readJointVelocities(double *o_velocities);
+
+    /**
        \brief read array of all joint torques[Nm]
        \param o_torques array of all joint torques
        \param TRUE if read successfully, FALSE otherwise
