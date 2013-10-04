@@ -21,4 +21,66 @@ module OpenHRP
     RTC::Time tm;
     sequence<sequence<long> > data;
   };
+
+
+  // Additional data type definisions disscussed in [openrtm-users 02915] mailing list.
+  // These should be commited in ExtendedDataTypes.idl
+
+  //------------------------------------------------------------
+  // data types
+  //------------------------------------------------------------
+
+  /*!
+   * @struct Quaternion
+   * @brief Orientation x, y, z, and w.
+   */
+  struct Quaternion
+  {
+    double x;
+    double y;
+    double z;
+    double w;
+  };
+
+  /*!
+   * @struct Wrench
+   * @brief Force[N] and Torque[Nm].
+   */
+  struct Wrench
+  {
+    RTC::Vector3D force;
+    RTC::Vector3D torque;
+  };
+
+  /*!
+   * @struct SpatialVelocity
+   * @brief AngularVelocity[rad/s] and velocity[m/s].
+   */
+  struct SpatialVelocity
+  {
+    RTC::AngularVelocity3D omega;
+    RTC::Velocity3D vel;
+  };
+
+  //------------------------------------------------------------
+  // Timed data types
+  //------------------------------------------------------------
+
+  struct TimedQuaternion
+  {
+    RTC::Time tm;
+    Quaternion data;
+  };
+
+  struct TimedWrench
+  {
+    RTC::Time tm;
+    Wrench data;
+  };
+
+  struct TimedSpatialVelocity
+  {
+    RTC::Time tm;
+    SpatialVelocity data;
+  };
 };
