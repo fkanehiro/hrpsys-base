@@ -128,7 +128,7 @@ execute_process(
   COMMAND python -c "from distutils import sysconfig; print sysconfig.get_config_var(\"VERSION\")"
   OUTPUT_VARIABLE PYTHON_VERSION
   OUTPUT_STRIP_TRAILING_WHITESPACE)
-set(python_dist_pkg_dir ${CMAKE_INSTALL_PREFIX}/lib/python${PYTHON_VERSION}/dist-packages/hrpsys)
+set(python_dist_pkg_dir ${CMAKE_INSTALL_PREFIX}/lib/python${PYTHON_VERSION}/dist-packages)
 
 configure_file(hrpsys-base.pc.in ${CMAKE_CURRENT_BINARY_DIR}/hrpsys-base.pc @ONLY)
 install(FILES
