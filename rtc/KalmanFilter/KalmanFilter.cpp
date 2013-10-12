@@ -9,6 +9,8 @@
 
 #include "KalmanFilter.h"
 #include "util/VectorConvert.h"
+#include <rtm/CorbaNaming.h>
+#include <hrpModel/ModelLoaderUtil.h>
 #include <math.h>
 
 // Module specification
@@ -42,6 +44,7 @@ KalmanFilter::KalmanFilter(RTC::Manager* manager)
     m_rpyRawOut("rpy_raw", m_rpyRaw),
     m_KalmanFilterServicePort("KalmanFilterService"),
     // </rtc-template>
+    m_robot(hrp::BodyPtr()),
     m_debugLevel(0),
     dummy(0)
 {
@@ -74,7 +77,7 @@ RTC::ReturnCode_t KalmanFilter::onInitialize()
   // Set OutPort buffer
   addOutPort("rpy", m_rpyOut);
   addOutPort("rpy_raw", m_rpyRawOut);
-  
+
   // Set service provider to Ports
   m_KalmanFilterServicePort.registerProvider("service0", "KalmanFilterService", m_service0);
   
@@ -85,11 +88,29 @@ RTC::ReturnCode_t KalmanFilter::onInitialize()
   
   // </rtc-template>
 
+  // Setup robot model
   RTC::Properties& prop = getProperties();
   if ( ! coil::stringTo(m_dt, prop["dt"].c_str()) ) {
       std::cerr << "KalmanFilter failed to prop[dt] " << prop["dt"] << "" 
                 << std::endl;
       return RTC::RTC_ERROR;
+  }
+
+  m_robot = hrp::BodyPtr(new hrp::Body());
+
+  RTC::Manager& rtcManager = RTC::Manager::instance();
+  std::string nameServer = rtcManager.getConfig()["corba.nameservers"];
+  int comPos = nameServer.find(",");
+  if (comPos < 0){
+      comPos = nameServer.length();
+  }
+  nameServer = nameServer.substr(0, comPos);
+  RTC::CorbaNaming naming(rtcManager.getORB(), nameServer.c_str());
+  if (!loadBodyFromModelLoader(m_robot, prop["model"].c_str(), 
+                               CosNaming::NamingContext::_duplicate(naming.getRootContext())
+                               )){
+      std::cerr << "failed to load model[" << prop["model"] << "]" 
+                << std::endl;
   }
 
   r_filter.setF(1, -m_dt, 0, 1);

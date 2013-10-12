@@ -17,6 +17,7 @@
 #include <rtm/DataOutPort.h>
 #include <rtm/idl/BasicDataTypeSkel.h>
 #include <rtm/idl/ExtendedDataTypesSkel.h>
+#include <hrpModel/Body.h>
 
 #include <hrpUtil/EigenTypes.h>
 namespace hrp{
@@ -207,6 +208,7 @@ class KalmanFilter
  private:
   double m_dt;
   KFilter r_filter, p_filter, y_filter;
+  hrp::BodyPtr m_robot;
   unsigned int m_debugLevel;
   int dummy;
 };

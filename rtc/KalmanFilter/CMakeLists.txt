@@ -1,5 +1,5 @@
 set(comp_sources KalmanFilter.cpp KalmanFilterService_impl.cpp)
-set(libs hrpsysBaseStub)
+set(libs hrpModel-3.1 hrpsysBaseStub)
 
 include_directories(${PROJECT_SOURCE_DIR}/rtc/KalmanFilter/kalman)
 
