@@ -256,6 +256,9 @@ class HrpsysConfigurator:
             connectPorts(self.abc.port("zmpRef"), self.st.port("zmpRef"))
             connectPorts(self.abc.port("baseRpy"), self.st.port("baseRpyIn"))
             connectPorts(self.abc.port("basePos"), self.st.port("basePosIn"))
+        if self.ic and self.abc:
+            for sen in filter(lambda x : x.type == "Force", self.sensors):
+                connectPorts(self.ic.port("ref_"+sen.name), self.abc.port("ref_"+sen.name))
 
         #  actual force sensors
         if self.afs and self.kf:
