@@ -120,6 +120,8 @@ class ImpedanceController
   // <rtc-template block="outport_declare">
   TimedDoubleSeq m_q;
   OutPort<TimedDoubleSeq> m_qOut;
+  std::vector<TimedDoubleSeq> m_ref_force;
+  std::vector<OutPort<TimedDoubleSeq> *> m_ref_forceOut;
   
   // </rtc-template>
 

@@ -120,11 +120,17 @@ RTC::ReturnCode_t ImpedanceController::onInitialize()
     int nforce  = npforce + nvforce;
     m_force.resize(nforce);
     m_forceIn.resize(nforce);
+    m_ref_force.resize(nforce);
+    m_ref_forceOut.resize(nforce);
     for (unsigned int i=0; i<npforce; i++){
         hrp::Sensor *s = m_robot->sensor(hrp::Sensor::FORCE, i);
         m_forceIn[i] = new InPort<TimedDoubleSeq>(s->name.c_str(), m_force[i]);
         m_force[i].data.length(6);
         registerInPort(s->name.c_str(), *m_forceIn[i]);
+        m_ref_force[i].data.length(6);
+        for (unsigned int j=0; j<6; j++) m_ref_force[i].data[j] = 0.0;
+        m_ref_forceOut[i] = new OutPort<TimedDoubleSeq>(std::string("ref_"+s->name).c_str(), m_ref_force[i]);
+        registerOutPort(std::string("ref_"+s->name).c_str(), *m_ref_forceOut[i]);
         std::cerr << s->name << std::endl;
     }
     for (unsigned int i=0; i<nvforce; i++){
@@ -145,6 +151,10 @@ RTC::ReturnCode_t ImpedanceController::onInitialize()
         m_forceIn[i+npforce] = new InPort<TimedDoubleSeq>(name.c_str(), m_force[i+npforce]);
         m_force[i+npforce].data.length(6);
         registerInPort(name.c_str(), *m_forceIn[i+npforce]);
+        m_ref_force[i+npforce].data.length(6);
+        for (unsigned int j=0; j<6; j++) m_ref_force[i].data[j] = 0.0;
+        m_ref_forceOut[i+npforce] = new OutPort<TimedDoubleSeq>(std::string("ref_"+name).c_str(), m_ref_force[i+npforce]);
+        registerOutPort(std::string("ref_"+name).c_str(), *m_ref_forceOut[i+npforce]);
         std::cerr << name << std::endl;
     }
     for (unsigned int i=0; i<m_forceIn.size(); i++){
@@ -471,7 +481,9 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
                 }
                 std::cerr << std::endl;
             }
-
+        }
+        for (size_t i = 0; i < m_ref_forceOut.size(); i++) {
+          m_ref_forceOut[i]->write();
         }
     } else {
         if ( DEBUGP || loop % 100 == 0 ) {
@@ -633,6 +645,16 @@ bool ImpedanceController::setImpedanceControllerParam(OpenHRP::ImpedanceControll
 
     m_impedance_param[name].ref_force = hrp::Vector3(i_param_.ref_force[0], i_param_.ref_force[1], i_param_.ref_force[2]);
     m_impedance_param[name].ref_moment = hrp::Vector3(i_param_.ref_moment[0], i_param_.ref_moment[1], i_param_.ref_moment[2]);
+    for (size_t ii = 0; ii < m_ref_forceOut.size(); ii++) {
+      std::string sensor_name = m_forceIn[ii]->name();
+      hrp::ForceSensor* sensor = m_robot->sensor<hrp::ForceSensor>(sensor_name);
+      if (std::string(sensor->name) == name) {
+        for (size_t j = 0; j < 3; j++) {
+          m_ref_force[ii].data[j] = m_impedance_param[name].ref_force[j];
+          m_ref_force[ii].data[j+3] = m_impedance_param[name].ref_moment[j];
+        }
+      }
+    }
     m_impedance_param[name].force_gain = hrp::Vector3(i_param_.force_gain[0], i_param_.force_gain[1], i_param_.force_gain[2]).asDiagonal();
     m_impedance_param[name].moment_gain = hrp::Vector3(i_param_.moment_gain[0], i_param_.moment_gain[1], i_param_.moment_gain[2]).asDiagonal();
 
