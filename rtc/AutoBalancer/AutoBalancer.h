@@ -114,6 +114,8 @@ class AutoBalancer
   InPort<TimedDoubleSeq> m_qRefIn;
   TimedDoubleSeq m_qCurrent;
   InPort<TimedDoubleSeq> m_qCurrentIn;
+  std::vector<TimedDoubleSeq> m_ref_force;
+  std::vector<InPort<TimedDoubleSeq> *> m_ref_forceIn;
   
   // </rtc-template>
 

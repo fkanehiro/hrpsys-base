@@ -177,6 +177,27 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
       }
     }
 
+    // ref force port
+    coil::vstring virtual_force_sensor = coil::split(prop["virtual_force_sensor"], ",");
+    int npforce = m_robot->numSensors(hrp::Sensor::FORCE);
+    int nvforce = virtual_force_sensor.size()/10;
+    int nforce  = npforce + nvforce;
+    m_ref_force.resize(nforce);
+    m_ref_forceIn.resize(nforce);
+    for (unsigned int i=0; i<npforce; i++){
+        hrp::Sensor *s = m_robot->sensor(hrp::Sensor::FORCE, i);
+        m_ref_forceIn[i] = new InPort<TimedDoubleSeq>(std::string("ref_"+s->name).c_str(), m_ref_force[i]);
+        m_ref_force[i].data.length(6);
+        registerInPort(std::string("ref_"+s->name).c_str(), *m_ref_forceIn[i]);
+        std::cerr << s->name << std::endl;
+    }
+    for (unsigned int i=0; i<nvforce; i++){
+        std::string name = virtual_force_sensor[i*10+0];
+        m_ref_forceIn[i+npforce] = new InPort<TimedDoubleSeq>(std::string("ref_"+name).c_str(), m_ref_force[i+npforce]);
+        m_ref_force[i+npforce].data.length(6);
+        registerInPort(std::string("ref_"+name).c_str(), *m_ref_forceIn[i+npforce]);
+    }
+
     return RTC::RTC_OK;
 }
 
@@ -230,6 +251,11 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
         is_qCurrent = true;
     } else {
       is_qCurrent = false;
+    }
+    for (unsigned int i=0; i<m_ref_forceIn.size(); i++){
+        if ( m_ref_forceIn[i]->isNew() ) {
+            m_ref_forceIn[i]->read();
+        }
     }
     Guard guard(m_mutex);
     robotstateOrg2qRef();
