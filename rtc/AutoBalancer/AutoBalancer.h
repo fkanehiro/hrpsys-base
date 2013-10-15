@@ -166,6 +166,9 @@ class AutoBalancer
   void startWalking ();
   void stopWalking ();
   void copyRatscoords2Footstep(OpenHRP::AutoBalancerService::Footstep& out_fs, const rats::coordinates& in_fs);
+  // static balance point offsetting
+  void static_balance_point_proc_one(hrp::Vector3& tmp_input_sbp, const double ref_com_height);
+  void calc_static_balance_point_from_forces(hrp::Vector3& sb_point, const hrp::Vector3& tmpcog, const double ref_com_height, std::vector<hrp::Vector3>& tmp_forces);
 
   // for gg
   typedef boost::shared_ptr<rats::gait_generator> ggPtr;
@@ -185,6 +188,12 @@ class AutoBalancer
   double m_dt, move_base_gain;
   hrp::BodyPtr m_robot;
   coil::Mutex m_mutex;
+
+  // static balance point offsetting
+  hrp::Vector3 sbp_offset, sbp_cog_offset;
+  enum {MODE_NO_FORCE, MODE_REF_FORCE} use_force;
+  std::vector<hrp::Vector3> ref_forces;
+
   unsigned int m_debugLevel;
   bool is_legged_robot, is_qCurrent;
   int dummy;

@@ -197,6 +197,12 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
         m_ref_force[i+npforce].data.length(6);
         registerInPort(std::string("ref_"+name).c_str(), *m_ref_forceIn[i+npforce]);
     }
+    for (unsigned int i=0; i<m_ref_forceIn.size(); i++){
+      ref_forces.push_back(hrp::Vector3(0,0,0));
+    }
+    sbp_offset = hrp::Vector3(0,0,0);
+    sbp_cog_offset = hrp::Vector3(0,0,0);
+    //use_force = MODE_REF_FORCE;
 
     return RTC::RTC_OK;
 }
@@ -306,6 +312,13 @@ void AutoBalancer::robotstateOrg2qRef()
       tmp_fix_coords = fix_leg_coords;
     }
     fixLegToCoords(":both", tmp_fix_coords);
+
+    /* update ref_forces ;; sp's absolute -> rmc's absolute */
+    for (size_t i = 0; i < m_ref_forceIn.size(); i++)
+      tmp_fix_coords.rotate_vector(ref_forces[i],
+                                   hrp::Vector3(m_ref_force[i].data[0], m_ref_force[i].data[1], m_ref_force[i].data[2]));
+    tmp_fix_coords.rotate_vector(sbp_offset, hrp::Vector3(sbp_offset));
+
     target_base_pos = m_robot->rootLink()->p;
     target_base_rot = m_robot->rootLink()->R;
     if (!gg_is_walking) {
@@ -412,8 +425,9 @@ void AutoBalancer::solveLimbIK ()
   m_robot->rootLink()->p = base_pos_org;
   m_robot->rootLink()->R = base_rot_org;
   m_robot->calcForwardKinematics();
-  hrp::Vector3 current_com = m_robot->calcCM();
-  hrp::Vector3 dif_com = current_com - target_com;
+  hrp::Vector3 tmp_input_sbp = hrp::Vector3(0,0,0);
+  static_balance_point_proc_one(tmp_input_sbp, refzmp(2));
+  hrp::Vector3 dif_com = tmp_input_sbp - target_com;
   dif_com(2) = m_robot->rootLink()->p(2) - target_base_pos(2);
   m_robot->rootLink()->p = m_robot->rootLink()->p + -1 * move_base_gain * transition_smooth_gain * dif_com;
   m_robot->rootLink()->R = target_base_rot;
@@ -715,6 +729,46 @@ bool AutoBalancer::getFootstepParam(OpenHRP::AutoBalancerService::FootstepParam&
   default: break;
   }
   return true;
+};
+
+void AutoBalancer::static_balance_point_proc_one(hrp::Vector3& tmp_input_sbp, const double ref_com_height)
+{
+  hrp::Vector3 target_sbp = hrp::Vector3(0, 0, 0);
+  hrp::Vector3 tmpcog = m_robot->calcCM();
+  switch ( use_force ) {
+  case MODE_REF_FORCE:
+    calc_static_balance_point_from_forces(target_sbp, tmpcog, ref_com_height, ref_forces);
+    tmp_input_sbp = target_sbp - sbp_offset;
+    sbp_cog_offset = tmp_input_sbp - tmpcog;
+    break;
+  case MODE_NO_FORCE:
+    tmp_input_sbp = tmpcog + sbp_cog_offset;
+    break;
+  default: break;
+  }
+};
+
+void AutoBalancer::calc_static_balance_point_from_forces(hrp::Vector3& sb_point, const hrp::Vector3& tmpcog, const double ref_com_height, std::vector<hrp::Vector3>& tmp_forces)
+{
+  double gravity = 9.8; // [m/s^2]
+  hrp::Vector3 denom, nume;
+  /* sb_point[m] = nume[kg * m/s^2 * m] / denom[kg * m/s^2] */
+  double mass = m_robot->totalMass();
+  for (size_t j = 0; j < 2; j++) {
+    nume(j) = mass * gravity * tmpcog(j);
+    denom(j) = mass * gravity;
+    for (size_t i = 0; i < m_ref_forceIn.size(); i++) {
+      std::string sensor_name = m_ref_forceIn[i]->name();
+      if ( sensor_name.find("hsensor") != std::string::npos ) { // tempolary to get arm force coords
+        hrp::Sensor *sensor = m_robot->sensor(hrp::Sensor::FORCE, i);
+        hrp::Vector3 fpos = sensor->link->p + (sensor->link->R) * sensor->localPos;
+        nume(j) += ( (fpos(2) - ref_com_height) * tmp_forces[i](j) - fpos(j) * tmp_forces[i](2) );
+        denom(j) -= tmp_forces[i](2);
+      }
+    }
+    sb_point(j) = nume(j) / denom(j);
+  }
+  sb_point(2) = ref_com_height;
 };
 
 //
