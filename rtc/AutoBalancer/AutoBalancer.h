@@ -155,6 +155,7 @@ class AutoBalancer
     hrp::Matrix33 target_r0, current_r0, target2foot_offset_rot;
     std::string target_name, base_name;
     hrp::JointPathExPtr manip;
+    bool is_active;
   };
   void robotstateOrg2qRef();
   bool solveLimbIKforLimb (ABCIKparam& param, const double transition_smooth_gain);
