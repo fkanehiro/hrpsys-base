@@ -558,10 +558,10 @@ void AutoBalancer::stopWalking ()
     /* sync */
   } else {
     /* overwrite sequencer's angle-vector when finishing steps */
-    gg_is_walking = false;
     fixLegToCoords(":both", fix_leg_coords);
     gg->clear_footstep_node_list();
     if (return_control_mode == MODE_IDLE) stopABCparam();
+    gg_is_walking = false;
     gg_ending = false;
   }
 }
@@ -657,7 +657,7 @@ bool AutoBalancer::setFootSteps(const OpenHRP::AutoBalancerService::FootstepSequ
 void AutoBalancer::waitFootSteps()
 {
   //while (gg_is_walking) usleep(10);
-  while ((gg_is_walking && gg_solved) || transition_count != 0 )
+  while (gg_is_walking || transition_count != 0 )
     usleep(10);
   usleep(10);
   gg->set_offset_velocity_param(0,0,0);
