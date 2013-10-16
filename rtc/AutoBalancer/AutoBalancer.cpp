@@ -440,7 +440,7 @@ void AutoBalancer::solveLimbIK ()
   if ( transition_count < 0 ) {
     transition_count++;
   }
-  //if (gg_is_walking && !gg_solved) stopWalking ();
+  if (gg_is_walking && !gg_solved) stopWalking ();
 }
 
 /*
@@ -513,7 +513,7 @@ void AutoBalancer::startABCparam(const OpenHRP::AutoBalancerService::AutoBalance
 void AutoBalancer::stopABCparam()
 {
   std::cerr << "[AutoBalancer] stop auto balancer mode" << std::endl;
-  Guard guard(m_mutex);
+  //Guard guard(m_mutex);
   mid_coords(fix_leg_coords, 0.5,
              coordinates(ikp[":rleg"].target_p0, ikp[":rleg"].target_r0),
              coordinates(ikp[":lleg"].target_p0, ikp[":lleg"].target_r0));
@@ -529,6 +529,15 @@ void AutoBalancer::stopABCparam()
 
 void AutoBalancer::startWalking ()
 {
+  if ( control_mode != MODE_ABC ) {
+    return_control_mode = control_mode;
+    OpenHRP::AutoBalancerService::AutoBalancerLimbParamSequence alps;
+    alps.length(2);
+    alps[0].name = ":rleg";
+    alps[1].name = ":lleg";
+    startABCparam(alps);
+    waitABCTransition();
+  }
   hrp::Vector3 cog(m_robot->calcCM());
   std::string init_support_leg (gg->get_footstep_front_leg() == ":rleg" ? ":lleg" : ":rleg");
   std::string init_swing_leg (gg->get_footstep_front_leg());
@@ -545,20 +554,14 @@ void AutoBalancer::startWalking ()
 void AutoBalancer::stopWalking ()
 {
   if (!gg_ending){
-    //gg_ending = true; // tmpolary
+    gg_ending = true; // tmpolary
     /* sync */
   } else {
     /* overwrite sequencer's angle-vector when finishing steps */
     gg_is_walking = false;
-    //rb->get_foot_midcoords(fix_leg_coords);
+    fixLegToCoords(":both", fix_leg_coords);
     gg->clear_footstep_node_list();
-    // coordinates rc, lc;
-    // rb->get_end_coords(rc, ":rleg");
-    // rb->get_end_coords(lc, ":lleg");
-    // rc.translate(default_zmp_offsets[0]); /* :rleg */
-    // lc.translate(default_zmp_offsets[1]); /* :lleg */
-    // target_cog = (rc.pos + lc.pos) / 2.0;
-    /* sync */
+    if (return_control_mode == MODE_IDLE) stopABCparam();
     gg_ending = false;
   }
 }
@@ -568,6 +571,7 @@ bool AutoBalancer::startABC (const OpenHRP::AutoBalancerService::AutoBalancerLim
   if (control_mode == MODE_IDLE) {
     startABCparam(alp);
     waitABCTransition();
+    return_control_mode = MODE_ABC;
     return true;
   } else {
     return false;
@@ -592,32 +596,27 @@ void AutoBalancer::waitABCTransition()
 }
 bool AutoBalancer::goPos(const double& x, const double& y, const double& th)
 {
-  if (control_mode == MODE_ABC ) {
-    coordinates foot_midcoords;
-    mid_coords(foot_midcoords, 0.5,
-               coordinates(ikp[":rleg"].target_p0, ikp[":rleg"].target_r0),
-               coordinates(ikp[":lleg"].target_p0, ikp[":lleg"].target_r0));
-    gg->go_pos_param_2_footstep_list(x, y, th, foot_midcoords);
-    gg->print_footstep_list();
-    startWalking();
-  }
+  coordinates foot_midcoords;
+  mid_coords(foot_midcoords, 0.5,
+             coordinates(ikp[":rleg"].target_p0, ikp[":rleg"].target_r0),
+             coordinates(ikp[":lleg"].target_p0, ikp[":lleg"].target_r0));
+  gg->go_pos_param_2_footstep_list(x, y, th, foot_midcoords);
+  gg->print_footstep_list();
+  startWalking();
   return 0;
 }
 
 bool AutoBalancer::goVelocity(const double& vx, const double& vy, const double& vth)
 {
-  if (control_mode == MODE_ABC ) {
-    //    if (gg_is_walking) {
-    if (gg_is_walking && gg_solved) {
-      gg->set_velocity_param(vx, vy, vth);
-    } else {
-      coordinates foot_midcoords;
-      mid_coords(foot_midcoords, 0.5,
-                 coordinates(ikp[":rleg"].target_p0, ikp[":rleg"].target_r0),
-                 coordinates(ikp[":lleg"].target_p0, ikp[":lleg"].target_r0));
-      gg->initialize_velocity_mode(foot_midcoords, vx, vy, vth);
-      startWalking();
-    }
+  if (gg_is_walking && gg_solved) {
+    gg->set_velocity_param(vx, vy, vth);
+  } else {
+    coordinates foot_midcoords;
+    mid_coords(foot_midcoords, 0.5,
+               coordinates(ikp[":rleg"].target_p0, ikp[":rleg"].target_r0),
+               coordinates(ikp[":lleg"].target_p0, ikp[":lleg"].target_r0));
+    gg->initialize_velocity_mode(foot_midcoords, vx, vy, vth);
+    startWalking();
   }
   return 0;
 }

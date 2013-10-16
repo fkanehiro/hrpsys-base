@@ -178,7 +178,7 @@ class AutoBalancer
   // for abc
   hrp::Vector3 target_com, refzmp;
   int transition_count; // negative value when initing and positive value when deleting
-  enum {MODE_IDLE, MODE_ABC, MODE_SYNC} control_mode;
+  enum {MODE_IDLE, MODE_ABC, MODE_SYNC} control_mode, return_control_mode;
   std::map<std::string, ABCIKparam> ikp;
   hrp::dvector transition_joint_q;
   hrp::dvector qorg, qrefv;
