@@ -33,12 +33,12 @@ set(openhrp_idl_files
   ModelLoader.idl
   OnlineViewer.idl
   OpenHRPCommon.idl
-  if(NOT QNXNTO)
-    PathPlanner.idl
-  endif()
-  ViewSimulator.idl  
+  ViewSimulator.idl
   World.idl
   )
+if(NOT QNXNTO)
+  list(APPEND openhrp_idl_files  PathPlanner.idl)
+endif()
 
 # add CMAKE_CURRENT_SOURCE_DIR to all files
 set(EXTRA_IDL_FILES "" CACHE PATH "directories of extra idls") # this must contain paths
