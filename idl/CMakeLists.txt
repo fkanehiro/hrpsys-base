@@ -33,7 +33,9 @@ set(openhrp_idl_files
   ModelLoader.idl
   OnlineViewer.idl
   OpenHRPCommon.idl
-  PathPlanner.idl
+  if(NOT QNXNTO)
+    PathPlanner.idl
+  endif()
   ViewSimulator.idl  
   World.idl
   )
