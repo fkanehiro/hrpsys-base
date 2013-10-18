@@ -663,7 +663,7 @@ extern "C"{
     int initializeJointAngle(const char *name, const char *option);
 
     /**
-     * @brief read_digital_input
+     * @brief read_digital_input, non-applicable bits are nop
      * @param dinput digital input from environment
      * @return TRUE if applicable, FALSE otherwise
      */
@@ -671,12 +671,12 @@ extern "C"{
 
     /**
      * @brief get_digital_input_length
-     * @return length of bits in digital input
+     * @return length of digital input in bytes
      */
     int length_digital_input();
 
     /**
-     * @brief write_digital_output
+     * @brief write_digital_output, non-applicable bits are nop
      * @param doutput set digital output to environment
      * @return TRUE if applicable, FALSE otherwise
      */
@@ -684,7 +684,7 @@ extern "C"{
 
     /**
      * @brief get_digital_output_length
-     * @return length of bits in digital output
+     * @return length of digital output in bytes
      */
     int length_digital_output();
     //@}
