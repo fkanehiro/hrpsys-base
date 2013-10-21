@@ -201,7 +201,8 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     }
     sbp_offset = hrp::Vector3(0,0,0);
     sbp_cog_offset = hrp::Vector3(0,0,0);
-    use_force = MODE_NO_FORCE;
+    //use_force = MODE_NO_FORCE;
+    use_force = MODE_REF_FORCE;
 
     return RTC::RTC_OK;
 }
