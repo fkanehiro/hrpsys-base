@@ -418,9 +418,11 @@ void AutoBalancer::solveLimbIK ()
   }
 
   for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
-    for ( int j = 0; j < it->second.manip->numJoints(); j++ ){
-      int i = it->second.manip->joint(j)->jointId;
-      m_robot->joint(i)->q = qorg[i];
+    if (it->second.is_active) {
+      for ( int j = 0; j < it->second.manip->numJoints(); j++ ){
+	int i = it->second.manip->joint(j)->jointId;
+	m_robot->joint(i)->q = qorg[i];
+      }
     }
   }
   m_robot->rootLink()->p = base_pos_org;
