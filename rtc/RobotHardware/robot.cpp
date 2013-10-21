@@ -639,6 +639,11 @@ bool robot::writeDigitalOutput(const char *i_dout)
     return write_digital_output(i_dout);
 }
 
+bool robot::writeDigitalOutputWithMask(const char *i_dout, const char *i_mask)
+{
+    return write_digital_output_with_mask(i_dout, i_mask);
+}
+
 int robot::lengthDigitalOutput()
 {
     return length_digital_output();

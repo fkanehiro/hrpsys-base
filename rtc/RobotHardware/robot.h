@@ -241,6 +241,7 @@ public:
     bool readDigitalInput(char *o_din);
     int lengthDigitalInput();
     bool writeDigitalOutput(const char *i_dout);
+    bool writeDigitalOutputWithMask(const char *i_dout, const char *i_mask);
     int lengthDigitalOutput();
 
 private:

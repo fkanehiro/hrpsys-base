@@ -143,6 +143,14 @@ module OpenHRP
     boolean writeDigitalOutput(in OctSequence dout);
 
     /**
+     * @brief set digital output from robot
+     * @param dOut sends the output from the robot in a byte array
+     * @param mask binary vector which selects output to be set
+     * @return true if applicable, false otherwise
+     */
+    boolean writeDigitalOutputWithMask(in OctSequence dout, in OctSequence mask);
+
+    /**
      * @brief get digital output length of robot, non-applicable bits are nop
      * @return length of digital output in bytes
      */

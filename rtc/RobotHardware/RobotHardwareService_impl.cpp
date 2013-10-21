@@ -131,6 +131,11 @@ CORBA::Boolean RobotHardwareService_impl::writeDigitalOutput(const ::OpenHRP::Ro
     return m_robot->writeDigitalOutput((const char *)(dout.get_buffer()));
 }
 
+CORBA::Boolean RobotHardwareService_impl::writeDigitalOutputWithMask(const ::OpenHRP::RobotHardwareService::OctSequence& dout, const ::OpenHRP::RobotHardwareService::OctSequence& mask)
+{
+    return m_robot->writeDigitalOutputWithMask((const char *)(dout.get_buffer()), (const char *)(mask.get_buffer()));
+}
+
 CORBA::Long RobotHardwareService_impl::lengthDigitalOutput()
 {
     return m_robot->lengthDigitalOutput();

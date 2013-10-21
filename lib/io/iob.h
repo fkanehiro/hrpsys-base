@@ -683,6 +683,14 @@ extern "C"{
     int write_digital_output(const char *doutput);
 
     /**
+     * @brief write_digital_output, non-applicable bits are nop
+     * @param doutput set digital output to environment
+     * @param mask binary vector which selects output to be set
+     * @return TRUE if applicable, FALSE otherwise
+     */
+    int write_digital_output_with_mask(const char *doutput, const char *dmask);
+
+    /**
      * @brief get_digital_output_length
      * @return length of digital output in bytes
      */

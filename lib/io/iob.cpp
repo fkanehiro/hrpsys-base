@@ -649,6 +649,11 @@ int write_digital_output(const char *doutput)
     return FALSE;
 }
 
+int write_digital_output_with_mask(const char *doutput, const char *mask)
+{
+    return FALSE;
+}
+
 int length_digital_output()
 {
     return 0;
