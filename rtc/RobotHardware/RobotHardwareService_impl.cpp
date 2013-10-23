@@ -118,6 +118,8 @@ CORBA::Boolean RobotHardwareService_impl::addJointGroup(const char* gname, const
 
 CORBA::Boolean RobotHardwareService_impl::readDigitalInput(::OpenHRP::RobotHardwareService::OctSequence_out din)
 {
+    din = new ::OpenHRP::RobotHardwareService::OctSequence();
+    din->length(lengthDigitalInput());
     return m_robot->readDigitalInput((char *)(din->get_buffer()));
 }
 
