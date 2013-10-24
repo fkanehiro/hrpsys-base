@@ -149,13 +149,13 @@ class ThermoLimiter
  private:
   double m_dt;
   unsigned int m_debugLevel;
-  std::vector<double> m_motorTempretureLimit;
+  std::vector<double> m_motorTemperatureLimit;
   hrp::BodyPtr m_robot;
   std::vector<TwoDofController> m_motorTwoDofControllers;
   std::vector<MotorHeatParam> m_motorHeatParams;
 
   int sgn(double val);
-  bool limitTempreture(hrp::dvector &qRef);
+  bool limitTemperature(hrp::dvector &qRef);
   
 };
 

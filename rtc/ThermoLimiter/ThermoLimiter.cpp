@@ -49,7 +49,7 @@ ThermoLimiter::ThermoLimiter(RTC::Manager* manager)
     m_qRefInIn("qRefIn", m_qRefIn),
     m_qCurrentInIn("qCurrentIn", m_qCurrentIn),
     m_qRefOutOut("qRefOut", m_qRefOut),
-    m_debugLevel(1)
+    m_debugLevel(0)
     // </rtc-template>
 {
 }
@@ -111,31 +111,31 @@ RTC::ReturnCode_t ThermoLimiter::onInitialize()
     std::cerr << "failed to load model[" << prop["model"] << "]"
               << std::endl;
   }
-  // set limit of motor tempreture
-  coil::vstring motorTempretureLimitFromConf = coil::split(prop["motor_tempreture_limit"], ",");
-  if (motorTempretureLimitFromConf.size() != m_robot->numJoints()) {
-    std::cerr <<  "[WARN]: size of motor_tempreture_limit is " << motorTempretureLimitFromConf.size() << ", not equal to " << m_robot->numJoints() << std::endl;
-    m_motorTempretureLimit.resize(m_robot->numJoints(), 100.0);
+  // set limit of motor temperature
+  coil::vstring motorTemperatureLimitFromConf = coil::split(prop["motor_temperature_limit"], ",");
+  if (motorTemperatureLimitFromConf.size() != m_robot->numJoints()) {
+    std::cerr <<  "[WARN]: size of motor_temperature_limit is " << motorTemperatureLimitFromConf.size() << ", not equal to " << m_robot->numJoints() << std::endl;
+    m_motorTemperatureLimit.resize(m_robot->numJoints(), 100.0);
   } else {
-    m_motorTempretureLimit.resize(m_robot->numJoints());
+    m_motorTemperatureLimit.resize(m_robot->numJoints());
     for (int i = 0; i < m_robot->numJoints(); i++) {
-      coil::stringTo(m_motorTempretureLimit[i], motorTempretureLimitFromConf[i].c_str());
+      coil::stringTo(m_motorTemperatureLimit[i], motorTemperatureLimitFromConf[i].c_str());
     }
   }
   if (m_debugLevel > 0) {
-    std::cerr <<  "motor_tempreture_limit: ";
-    for(std::vector<double>::iterator it = m_motorTempretureLimit.begin(); it != m_motorTempretureLimit.end(); ++it){
+    std::cerr <<  "motor_temperature_limit: ";
+    for(std::vector<double>::iterator it = m_motorTemperatureLimit.begin(); it != m_motorTemperatureLimit.end(); ++it){
       std::cerr << *it << " ";
     }
     std::cerr << std::endl;
   }
 
-  // set tempreture of environment
+  // set temperature of environment
   double ambientTemp = 25.0;
   if (prop["ambient_tmp"] != "") {
     coil::stringTo(ambientTemp, prop["ambient_tmp"].c_str());
   }
-  std::cerr <<  m_profile.instance_name << ": ambient tempreture: " << ambientTemp << std::endl;
+  std::cerr <<  m_profile.instance_name << ": ambient temperature: " << ambientTemp << std::endl;
 
   // set limit of motor heat parameters
   coil::vstring motorHeatParamsFromConf = coil::split(prop["motor_heat_params"], ",");
@@ -144,12 +144,12 @@ RTC::ReturnCode_t ThermoLimiter::onInitialize()
     std::cerr <<  "[WARN]: size of motor_heat_param is " << motorHeatParamsFromConf.size() << ", not equal to 2 * " << m_robot->numJoints() << std::endl;
     for (int i = 0; i < m_robot->numJoints(); i++) {
       m_motorHeatParams[i].defaultParams();
-      m_motorHeatParams[i].tempreture = ambientTemp;
+      m_motorHeatParams[i].temperature = ambientTemp;
     }
 
   } else {
     for (int i = 0; i < m_robot->numJoints(); i++) {
-      m_motorHeatParams[i].tempreture = ambientTemp;
+      m_motorHeatParams[i].temperature = ambientTemp;
       coil::stringTo(m_motorHeatParams[i].currentCoeffs, motorHeatParamsFromConf[2 * i].c_str());
       coil::stringTo(m_motorHeatParams[i].thermoCoeffs, motorHeatParamsFromConf[2 * i + 1].c_str());
     }
@@ -158,7 +158,7 @@ RTC::ReturnCode_t ThermoLimiter::onInitialize()
   if (m_debugLevel > 0) {
     std::cerr <<  "motor_heat_param: ";
     for(std::vector<MotorHeatParam>::iterator it = m_motorHeatParams.begin(); it != m_motorHeatParams.end(); ++it){
-      std::cerr << (*it).tempreture << "," << (*it).currentCoeffs << "," << (*it).thermoCoeffs << ", ";
+      std::cerr << (*it).temperature << "," << (*it).currentCoeffs << "," << (*it).thermoCoeffs << ", ";
     }
     std::cerr << std::endl;
   }
@@ -262,7 +262,7 @@ RTC::ReturnCode_t ThermoLimiter::onExecute(RTC::UniqueId ec_id)
       qRef[i] = m_qRefIn.data[i];
     }
     
-    isTempError = limitTempreture(qRef);
+    isTempError = limitTemperature(qRef);
 
     // call beep
     if (isTempError) {
@@ -332,7 +332,7 @@ int ThermoLimiter::sgn(double val)
   }
 }
 
-bool ThermoLimiter::limitTempreture(hrp::dvector &qRef)
+bool ThermoLimiter::limitTemperature(hrp::dvector &qRef)
 {
   static long loop = 0;
   loop++;
@@ -344,7 +344,7 @@ bool ThermoLimiter::limitTempreture(hrp::dvector &qRef)
 
   if ( m_tempIn.data.length() ==  m_robot->numJoints() ) {
     if (DEBUGP) {
-      std::cerr << "tempreture: ";
+      std::cerr << "temperature: ";
       for (int i = 0; i < numJoints; i++) {
         std::cerr << " " << m_tempIn.data[i];
       }
@@ -359,21 +359,16 @@ bool ThermoLimiter::limitTempreture(hrp::dvector &qRef)
         std::cerr << " " << m_qRefIn.data[i];
       }
       std::cerr << std::endl;
-
     }
 
     for (int i = 0; i < numJoints; i++) {
       temp = m_tempIn.data[i];
-      tempLimit = m_motorTempretureLimit[i];
-      // check temp limit error
-      if (temp > tempLimit){
-        isTempError = true;
-      }
+      tempLimit = m_motorTemperatureLimit[i];
 
-      // limit tempreture
+      // limit temperature
       // TODO: read coeffs from conf files
       double term = 120;
-      squareTauMax[i] = (((tempLimit - temp) / term) + m_motorHeatParams[i].thermoCoeffs * (temp - m_motorHeatParams[i].tempreture)) / m_motorHeatParams[i].currentCoeffs;
+      squareTauMax[i] = (((tempLimit - temp) / term) + m_motorHeatParams[i].thermoCoeffs * (temp - m_motorHeatParams[i].temperature)) / m_motorHeatParams[i].currentCoeffs;
 
       // determine distTau
       if (squareTauMax[i] < 0) {
@@ -382,6 +377,7 @@ bool ThermoLimiter::limitTempreture(hrp::dvector &qRef)
       } else {
         if (std::pow(m_tauIn.data[i], 2) > squareTauMax[i]) {
           std::cerr << "[WARN] tauMax over in Joint " << i << ": " << m_tauIn.data[i] << "^2 > " << squareTauMax[i] << std::endl;
+          isTempError = true; // in thermo emergency
           distTau[i] = sgn(m_tauIn.data[i]) * std::sqrt(squareTauMax[i]);
         } else {
           distTau[i] = m_tauIn.data[i];
