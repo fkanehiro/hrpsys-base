@@ -527,9 +527,9 @@ class HrpsysConfigurator:
         return self.rh_svc.lengthDigitalOutput()
 
     def writeDigitalOutput(self, dout):
-        doutLength = self.getLengthDigitalOutput()
-        if len(dout) < doutLength:
-            for i in range(doutLength-len(dout)):
+        doutBitLength = self.lengthDigitalOutput()*8
+        if len(dout) < doutBitLength:
+            for i in range(doutBitLength-len(dout)):
                 dout.append(0)
         outStr = ''
         for i in range(0, len(dout), 8):
@@ -539,13 +539,33 @@ class HrpsysConfigurator:
                     oneChar += 1<<j
             outStr = outStr + chr(oneChar)
 
-        #print 'dout: '
-        #for i in outStr:
-        #    print '0x%X, ', ord(i)
-        #print '\n'
-
         # octet sequences are mapped to strings in omniorbpy
         return self.rh_svc.writeDigitalOutput(outStr)
+
+    def writeDigitalOutputWithMask(self, dout, mask):
+        doutBitLength = self.lengthDigitalOutput()*8
+        if len(dout) < doutBitLength and \
+               len(mask) < doutBitLength and \
+               len(dout) == len(mask):
+            for i in range(doutBitLength-len(dout)):
+                dout.append(0)
+                mask.append(0)
+        outStr = ''
+        outMsk = ''
+        for i in range(0, len(dout), 8):
+            oneChar = 0
+            oneMask = 0
+            for j in range(8):
+                if dout[i+j]:
+                    oneChar += 1<<j
+                if mask[i+j]:
+                    oneMask += 1<<j
+            outStr = outStr + chr(oneChar)
+            outMsk = outMsk + chr(oneMask)
+
+        # octet sequences are mapped to strings in omniorbpy
+        return self.rh_svc.writeDigitalOutputWithMask(outStr, outMsk)
+
 
     def readDigitalInput(self):
         ret, din = self.rh_svc.readDigitalInput()
