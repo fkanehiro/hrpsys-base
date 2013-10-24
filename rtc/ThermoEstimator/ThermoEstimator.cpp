@@ -13,6 +13,7 @@
  */
 
 #include "ThermoEstimator.h"
+#include "RobotHardwareService.hh"
 #include <rtm/CorbaNaming.h>
 #include <hrpModel/ModelLoaderUtil.h>
 #include <hrpUtil/MatrixSolvers.h>
@@ -44,7 +45,9 @@ ThermoEstimator::ThermoEstimator(RTC::Manager* manager)
   : RTC::DataFlowComponentBase(manager),
     // <rtc-template block="initializer">
     m_tauInIn("tauIn", m_tauIn),
+    m_servoStateInIn("servoStateIn", m_servoStateIn),
     m_tempOutOut("tempOut", m_tempOut),
+    m_servoStateOutOut("servoStateOut", m_servoStateOut),    
     // </rtc-template>
     m_debugLevel(0)
 {
@@ -67,9 +70,11 @@ RTC::ReturnCode_t ThermoEstimator::onInitialize()
   // <rtc-template block="registration">
   // Set InPort buffers
   addInPort("tauIn", m_tauInIn);
+  addInPort("servoStateIn", m_servoStateInIn);
 
   // Set OutPort buffer
   addOutPort("tempOut", m_tempOutOut);
+  addOutPort("servoStateOut", m_servoStateOutOut);
   
   // Set service provider to Ports
   
@@ -102,14 +107,16 @@ RTC::ReturnCode_t ThermoEstimator::onInitialize()
 
   // init outport
   m_tempOut.data.length(m_robot->numJoints());
-
-  // set tempreture of environment
+  m_servoStateIn.data.length(m_robot->numJoints());
+  m_servoStateOut.data.length(m_robot->numJoints());
+  
+  // set temperature of environment
   if (prop["ambient_tmp"] != "") {
     coil::stringTo(m_ambientTemp, prop["ambient_tmp"].c_str());
   } else {
     m_ambientTemp = 25.0;
   }
-  std::cerr <<  m_profile.instance_name << ": ambient tempreture: " << m_ambientTemp << std::endl;
+  std::cerr <<  m_profile.instance_name << ": ambient temperature: " << m_ambientTemp << std::endl;
   
   // set motor heat parameters
   m_motorHeatParams.resize(m_robot->numJoints());
@@ -119,7 +126,7 @@ RTC::ReturnCode_t ThermoEstimator::onInitialize()
   } else {
     std::cerr <<  "motorHeatParams is " << std::endl;
     for (int i = 0; i < m_robot->numJoints(); i++) {
-      m_motorHeatParams[i].tempreture = m_ambientTemp;
+      m_motorHeatParams[i].temperature = m_ambientTemp;
       std::cerr << motorHeatParamsFromConf[2 * i].c_str() << " " << motorHeatParamsFromConf[2 * i + 1].c_str() << std::endl;
       coil::stringTo(m_motorHeatParams[i].currentCoeffs, motorHeatParamsFromConf[2 * i].c_str());
       coil::stringTo(m_motorHeatParams[i].thermoCoeffs, motorHeatParamsFromConf[2 * i + 1].c_str());
@@ -178,7 +185,7 @@ RTC::ReturnCode_t ThermoEstimator::onExecute(RTC::UniqueId ec_id)
   if (m_tauInIn.isNew()) {
     m_tauInIn.read();
   }
-
+  
   if ( m_tauIn.data.length() ==  m_robot->numJoints() ) {
     int numJoints = m_robot->numJoints();
     if ( DEBUGP ) {
@@ -199,20 +206,36 @@ RTC::ReturnCode_t ThermoEstimator::onExecute(RTC::UniqueId ec_id)
       // Tnew = T + (((Re*K^2/C) * tau^2) - ((1/RC) * (T - Ta))) * dt
       tau = m_tauIn.data[i];
       currentHeat = param.currentCoeffs * std::pow(tau, 2);
-      radiation = -param.thermoCoeffs * (param.tempreture - m_ambientTemp);
-      m_motorHeatParams[i].tempreture = param.tempreture + (currentHeat + radiation) * m_dt;
+      radiation = -param.thermoCoeffs * (param.temperature - m_ambientTemp);
+      m_motorHeatParams[i].temperature = param.temperature + (currentHeat + radiation) * m_dt;
       if ( DEBUGP ) {
         std::cerr << currentHeat << " "  << radiation << ", ";
       }
       // output
-      m_tempOut.data[i] = m_motorHeatParams[i].tempreture;
+      m_tempOut.data[i] = m_motorHeatParams[i].temperature;
     }
     if ( DEBUGP ) {
-      std::cerr << std::endl << "tempreture  : ";
+      std::cerr << std::endl << "temperature  : ";
       for (int i = 0; i < numJoints; i++) {
-        std::cerr << " " << m_motorHeatParams[i].tempreture;
+        std::cerr << " " << m_motorHeatParams[i].temperature;
       }
       std::cerr << std::endl;
+    }
+
+    // overwrite temperature in servoState
+    if ( m_servoStateInIn.isNew() && (m_servoStateIn.data.length() ==  m_robot->numJoints()) ) {
+      m_servoStateInIn.read();
+      for (unsigned int i = 0; i < m_servoStateIn.data.length(); i++){
+        size_t len = m_servoStateIn.data[i].length();
+        m_servoStateOut.data[i].length(len + 1); // expand extra_data for temperature
+        for (unsigned int j = 0; j < len; j++){
+          m_servoStateOut.data[i][j] = m_servoStateIn.data[i][j];
+        }
+        // servoStateOut is int, but extra data will be casted to float in HrpsysSeqStateROSBridge
+        float tmp_temperature = static_cast<float>(m_motorHeatParams[i].temperature);
+        std::memcpy(&(m_servoStateOut.data[i][len]), &tmp_temperature, sizeof(float));
+      }
+      m_servoStateOutOut.write();
     }
     m_tempOutOut.write();
   }

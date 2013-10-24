@@ -21,6 +21,7 @@
 #include <hrpModel/Link.h>
 #include <hrpModel/JointPath.h>
 
+#include "HRPDataTypes.hh"
 #include "MotorHeatParam.h"
 
 // Service implementation headers
@@ -109,16 +110,20 @@ class ThermoEstimator
   // </rtc-template>
   TimedDoubleSeq m_tauIn;
   TimedDoubleSeq m_tempOut;
+  OpenHRP::TimedLongSeqSeq m_servoStateIn;
+  OpenHRP::TimedLongSeqSeq m_servoStateOut;
 
   // DataInPort declaration
   // <rtc-template block="inport_declare">
   InPort<TimedDoubleSeq> m_tauInIn;
+  InPort<OpenHRP::TimedLongSeqSeq> m_servoStateInIn;
   
   // </rtc-template>
 
   // DataOutPort declaration
   // <rtc-template block="outport_declare">
   OutPort<TimedDoubleSeq> m_tempOutOut;
+  OutPort<OpenHRP::TimedLongSeqSeq> m_servoStateOutOut;
   
   // </rtc-template>
 

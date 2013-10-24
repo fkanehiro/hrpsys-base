@@ -19,7 +19,7 @@ class MotorHeatParam
   //      = T + ((Re*K^2/C) * tau^2) + ((1/RC) * (T - Ta) * dt)
   // * P = Re * I^2 = Re * (K * tau)^2
   
-  double tempreture; // current tempreture
+  double temperature; // current temperature
   double currentCoeffs; // Re*K^2/C
   double thermoCoeffs; // 1/RC
 
@@ -29,7 +29,7 @@ class MotorHeatParam
   
   // default params for motor heat param
   void defaultParams(){
-    tempreture = 30.0;
+    temperature = 30.0;
     currentCoeffs = 0.00003;
     thermoCoeffs = 0.001;
   } 
