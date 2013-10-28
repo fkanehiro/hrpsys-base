@@ -125,8 +125,10 @@ RTC::ReturnCode_t SequencePlayer::onInitialize()
 
     m_qInit.data.length(dof);
     for (unsigned int i=0; i<dof; i++) m_qInit.data[i] = 0.0;
-    m_basePosInit.data.x = m_basePosInit.data.y = m_basePosInit.data.z = 0.0; 
-    m_baseRpyInit.data.r = m_baseRpyInit.data.p = m_baseRpyInit.data.y = 0.0;
+    Link *root = m_robot->rootLink();
+    m_basePosInit.data.x = root->p[0]; m_basePosInit.data.y = root->p[1]; m_basePosInit.data.z = root->p[2];
+    hrp::Vector3 rpy = hrp::rpyFromRot(root->R);
+    m_baseRpyInit.data.r = rpy[0]; m_baseRpyInit.data.p = rpy[1]; m_baseRpyInit.data.y = rpy[2];
 
     // allocate memory for outPorts
     m_qRef.data.length(dof);
