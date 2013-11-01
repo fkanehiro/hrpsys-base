@@ -513,6 +513,31 @@ class HrpsysConfigurator:
     def setTargetPose(self, gname, pos, rpy, tm) :
         return self.seq_svc.setTargetPose(gname, pos, rpy, tm)
 
+    def setTargetPoseRelative(self, gname, eename, dx=0, dy=0, dz=0,
+dr=0, dp=0, dw=0, tm=10, wait=True):
+        '''
+        All d* arguments are in meter.
+        @param gname: Name of the link group.
+        @param eename: Name of the link.
+        '''
+        self.waitInterpolationOfGroup(gname)
+        #curPose = self.getCurrentPose(eename)
+        posRef = None
+        rpyRef = None
+        ret, tds = self.fk_svc.getCurrentPose(eename)
+        if ret:
+            posRef = numpy.array([tds.data[3], tds.data[7], tds.data[11]])
+            rpyRef = numpy.array(euler_from_matrix([tds.data[0:3],
+tds.data[4:7], tds.data[8:11]], 'sxyz'))
+            posRef += [dx, dy, dz]
+            rpyRef += [dr, dp, dw]
+            print posRef, rpyRef
+            ret = self.setTargetPose(gname, list(posRef), list(rpyRef), tm)
+            if ret and wait:
+                self.waitInterpolationOfGroup(gname)
+            return ret
+        return False
+
     def saveLog(self, fname='sample'):
         self.log_svc.save(fname)
         print self.configurator_name, "saved data to ",fname
