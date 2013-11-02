@@ -182,11 +182,21 @@ RTC::ReturnCode_t CollisionDetector::onActivated(RTC::UniqueId ec_id)
 	    size_t pos = tmp.find_first_of(':');
 	    std::string name1 = tmp.substr(0, pos), name2 = tmp.substr(pos+1);
             if ( m_robot->link(name1)==NULL ) {
-                std::cerr << "Could not find robot link " << name1 << std::endl;
+                std::cerr << "CollisionDetector: Could not find robot link " << name1 << std::endl;
+		std::cerr << " please choose one of following :";
+		for (int i=0; i < m_robot->numLinks(); i++) {
+		  std::cerr << " " << m_robot->link(i)->name;
+		}
+		std::cerr << std::endl;
                 continue;
             }
             if ( m_robot->link(name2)==NULL ) {
                 std::cerr << "Could not find robot link " << name2 << std::endl;
+		std::cerr << " please choose one of following :";
+		for (int i=0; i < m_robot->numLinks(); i++) {
+		  std::cerr << " " << m_robot->link(i)->name;
+		}
+		std::cerr << std::endl;
                 continue;
             }
 	    std::cerr << "check collisions between " << m_robot->link(name1)->name << " and " <<  m_robot->link(name2)->name << std::endl;
