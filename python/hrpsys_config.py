@@ -182,7 +182,17 @@ class HrpsysConfigurator:
     co = None
     co_svc = None
 
-    el = None # SoftErrorLimiter
+    # SoftErrorLimiter
+    el = None
+    el_svc = None
+
+    # ThermoEstimator
+    te = None
+    te_svc = None
+
+    # ThermoLimiter
+    tl = None
+    tl_svc = None
 
     # DataLogger
     log = None
@@ -206,7 +216,7 @@ class HrpsysConfigurator:
             print self.configurator_name, "\e[1;31m connectComps : hrpsys requries rh, seq, sh and fk, please check rtcd.conf or rtcd arguments\e[0m"
             return
         # connection for reference joint angles
-        tmp_contollers = filter(lambda c : c != None, [self.ic, self.abc, self.st, self.co, self.el])
+        tmp_contollers = filter(lambda c : c != None, [self.ic, self.abc, self.st, self.co, self.tl, self.el])
         if len(tmp_contollers) > 0:
             connectPorts(self.sh.port("qOut"),  tmp_contollers[0].port("qRef"))
             for i in range(len(tmp_contollers)-1):
@@ -235,8 +245,12 @@ class HrpsysConfigurator:
             connectPorts(self.seq.port("accRef"), self.kf.port("accRef"))
 
         # connection for rh
-        if self.rh.port("servoState") != None and self.el:
-            connectPorts(self.rh.port("servoState"), self.el.port("servoStateIn"))
+        if self.rh.port("servoState") != None:
+            if self.te and self.el:
+                connectPorts(self.rh.port("servoState"), self.te.port("servoStateIn"))
+                connectPorts(self.te.port("servoStateOut"), self.el.port("servoStateIn"))
+            elif self.el:
+                connectPorts(self.rh.port("servoState"), self.el.port("servoStateIn"))
 
         # connection for sh, seq, fk
         connectPorts(self.rh.port("q"), [self.sh.port("currentQIn"), self.fk.port("q")]) # connection for actual joint angles
@@ -290,6 +304,14 @@ class HrpsysConfigurator:
         # connection for co
         if self.co:
             connectPorts(self.rh.port("q"), self.co.port("qCurrent"))
+
+        # connection for te
+        if self.tf and self.te and self.tl:
+            connectPorts(self.tf.port("tauOut"), self.te.port("tauIn"))
+            connectPorts(self.tf.port("tauOut"), self.tl.port("tauIn"))
+            connectPorts(self.te.port("tempOut"), self.tl.port("tempIn"))
+            connectPorts(self.rh.port("q"), self.tl.port("qCurrentIn"))
+
         # connection for el
         if self.el:
             connectPorts(self.rh.port("q"), self.el.port("qCurrent"))
@@ -335,6 +357,8 @@ class HrpsysConfigurator:
             ['abc', "AutoBalancer"],
             ['st', "Stabilizer"],
             ['co', "CollisionDetector"],
+            #['te', "ThermoEstimator"],
+            #['tl', "ThermoLimiter"],
             ['el', "SoftErrorLimiter"],
             ['log', "DataLogger"]
             ]
