@@ -419,6 +419,7 @@ def disconnectPorts(outP, inP):
 		ports = con_prof.ports
 		pname = ports[1].get_port_profile().name
 		if len(ports) == 2 and pname == iname:
+                        print '[rtm.py]    Disconnect ' + inname + ' - ' + pname
 			outP.disconnect(con_prof.connector_id)
 	return
 
@@ -466,6 +467,7 @@ def connectPorts(outP, inPs, subscription="flush", dataflow="Push", bufferlength
 					   any.to_any(dataTypeOfPort(outP)))
 		con_prof = RTC.ConnectorProfile("connector0", "", [outP, inP], 
 						[nv1, nv2, nv3, nv4, nv5, nv6])
+                print '[rtm.py]    Connect ' + outP.get_port_profile().name + ' - ' + inP.get_port_profile().name
 		ret,prof = inP.connect(con_prof)
 		if ret != RTC.RTC_OK:
 			print "failed to connect"
