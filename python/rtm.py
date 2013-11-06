@@ -419,7 +419,7 @@ def disconnectPorts(outP, inP):
 		ports = con_prof.ports
 		pname = ports[1].get_port_profile().name
 		if len(ports) == 2 and pname == iname:
-                        print '[rtm.py]    Disconnect ' + inname + ' - ' + pname
+                        print '[rtm.py]    Disconnect ' + iname + ' - ' + pname
 			outP.disconnect(con_prof.connector_id)
 	return
 
