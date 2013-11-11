@@ -46,7 +46,7 @@ GraspController::GraspController(RTC::Manager* manager)
     m_qRefIn("qRef", m_qRef),
     m_qCurrentIn("qCurrent", m_qCurrent),
     m_qIn("qIn", m_q),
-    m_qOut("qOut", m_q),
+    m_qOut("q", m_q),
     m_GraspControllerServicePort("GraspControllerService"),
     // </rtc-template>
     m_debugLevel(0),
@@ -73,12 +73,12 @@ RTC::ReturnCode_t GraspController::onInitialize()
   // Registration: InPort/OutPort/Service
   // <rtc-template block="registration">
   // Set InPort buffers
-  addInPort("qRef", m_qRefIn);
+  addInPort("qRef", m_qRefIn); // for naming rule of hrpsys_config.py
   addInPort("qCurrent", m_qCurrentIn);
   addInPort("qIn", m_qIn);
   
   // Set OutPort buffer
-  addOutPort("qOut", m_qOut);
+  addOutPort("q", m_qOut); // for naming rule of hrpsys_config.py
   
   // Set service provider to Ports
   m_GraspControllerServicePort.registerProvider("service0", "GraspControllerService", m_service0);
@@ -216,7 +216,7 @@ RTC::ReturnCode_t GraspController::onExecute(RTC::UniqueId ec_id)
     m_qIn.read();
   }
 
-  if ( m_qRef.data.length() == m_qCurrent.data.length() ||
+  if ( m_qRef.data.length() == m_qCurrent.data.length() &&
        m_qRef.data.length() == m_q.data.length() ) {
 
     std::map<std::string, GraspParam >::iterator it = m_grasp_param.begin();

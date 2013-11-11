@@ -46,9 +46,9 @@ ThermoLimiter::ThermoLimiter(RTC::Manager* manager)
     // <rtc-template block="initializer">
     m_tempInIn("tempIn", m_tempIn),
     m_tauInIn("tauIn", m_tauIn),
-    m_qRefInIn("qRefIn", m_qRefIn),
+    m_qRefInIn("qRef", m_qRefIn),
     m_qCurrentInIn("qCurrentIn", m_qCurrentIn),
-    m_qRefOutOut("qRefOut", m_qRefOut),
+    m_qRefOutOut("q", m_qRefOut),
     m_debugLevel(0)
     // </rtc-template>
 {
@@ -65,9 +65,7 @@ RTC::ReturnCode_t ThermoLimiter::onInitialize()
   std::cout << m_profile.instance_name << ": onInitialize()" << std::endl;
   // <rtc-template block="bind_config">
   // Bind variables and configuration variable
-  // bindParameter("string", confstring, "testtest");
-  // bindParameter("intvec", confintvec, "4,5,6,7");
-  // bindParameter("double", confdouble, "4.567");
+  bindParameter("debugLevel", m_debugLevel, "0");
   
   // </rtc-template>
 
@@ -77,10 +75,10 @@ RTC::ReturnCode_t ThermoLimiter::onInitialize()
   addInPort("tempIn", m_tempInIn);
   addInPort("tauIn", m_tauInIn);
   addInPort("qCurrentIn", m_qCurrentInIn);
-  addInPort("qRefIn", m_qRefInIn);
+  addInPort("qRef", m_qRefInIn); // for naming rule of hrpsys_config.py
 
   // Set OutPort buffer
-  addOutPort("qRefOut", m_qRefOutOut);
+  addOutPort("q", m_qRefOutOut); // for naming rule of hrpsys_config.py
   
   // Set service provider to Ports
   // m_NullServicePort.registerProvider("service0", "NullService", m_NullService);

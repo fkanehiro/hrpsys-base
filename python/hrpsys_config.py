@@ -182,6 +182,10 @@ class HrpsysConfigurator:
     co = None
     co_svc = None
 
+    # GraspController
+    gc = None
+    gc_svc = None
+
     # SoftErrorLimiter
     el = None
     el_svc = None
@@ -216,7 +220,7 @@ class HrpsysConfigurator:
             print self.configurator_name, "\e[1;31m connectComps : hrpsys requries rh, seq, sh and fk, please check rtcd.conf or rtcd arguments\e[0m"
             return
         # connection for reference joint angles
-        tmp_contollers = filter(lambda c : c != None, [self.ic, self.abc, self.st, self.co, self.tl, self.el])
+        tmp_contollers = self.getJointAngleControllerList()
         if len(tmp_contollers) > 0:
             connectPorts(self.sh.port("qOut"),  tmp_contollers[0].port("qRef"))
             for i in range(len(tmp_contollers)-1):
@@ -251,6 +255,8 @@ class HrpsysConfigurator:
                 connectPorts(self.te.port("servoStateOut"), self.el.port("servoStateIn"))
             elif self.el:
                 connectPorts(self.rh.port("servoState"), self.el.port("servoStateIn"))
+            elif self.te:
+                connectPorts(self.rh.port("servoState"), self.te.port("servoStateIn"))
 
         # connection for sh, seq, fk
         connectPorts(self.rh.port("q"), [self.sh.port("currentQIn"), self.fk.port("q")]) # connection for actual joint angles
@@ -305,12 +311,34 @@ class HrpsysConfigurator:
         if self.co:
             connectPorts(self.rh.port("q"), self.co.port("qCurrent"))
 
+        # connection for gc
+        if self.gc:
+            connectPorts(self.rh.port("q"), self.gc.port("qCurrent")) # other connections
+            tmp_controller = self.getJointAngleControllerList()
+            index = tmp_controller.index(self.gc)
+            if index == 0:
+                connectPorts(self.sh.port("qOut"), self.gc.port("qIn"))
+            else:
+                connectPorts(tmp_controller[index - 1].port("q"), self.gc.port("qIn"))
+
         # connection for te
-        if self.tf and self.te and self.tl:
-            connectPorts(self.tf.port("tauOut"), self.te.port("tauIn"))
-            connectPorts(self.tf.port("tauOut"), self.tl.port("tauIn"))
-            connectPorts(self.te.port("tempOut"), self.tl.port("tempIn"))
+        if self.te:
+            if self.tf:
+                connectPorts(self.tf.port("tauOut"), self.te.port("tauIn"))
+            else:
+                connectPorts(self.rh.port("tau"), self.te.port("tauIn"))
+            # sevoStateIn is connected above
+            
+        # connection for tl
+        if self.tl:
+            if self.tf:
+                connectPorts(self.tf.port("tauOut"), self.tl.port("tauIn"))
+            else:
+                connectPorts(self.rh.port("tau"), self.tl.port("tauIn"))
+            if self.te:
+                connectPorts(self.te.port("tempOut"), self.tl.port("tempIn"))
             connectPorts(self.rh.port("q"), self.tl.port("qCurrentIn"))
+            # qRef is connected as joint angle controller
 
         # connection for el
         if self.el:
@@ -362,6 +390,10 @@ class HrpsysConfigurator:
             ['el', "SoftErrorLimiter"],
             ['log', "DataLogger"]
             ]
+
+    def getJointAngleControllerList(self):
+        controller_list = [self.ic, self.gc, self.abc, self.st, self.co, self.tl, self.el]
+        return filter(lambda c : c != None, controller_list) # only return existing controllers
 
     def getRTCInstanceList(self):
         ret = [self.rh]
