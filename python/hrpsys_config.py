@@ -443,6 +443,10 @@ class HrpsysConfigurator:
             self.connectLoggerPort(self.kf, 'rpy')
         if self.seq != None:
             self.connectLoggerPort(self.seq, 'qRef')
+        if self.sh != None:
+            self.connectLoggerPort(self.sh, 'qOut')
+            self.connectLoggerPort(self.sh, 'basePosOut')
+            self.connectLoggerPort(self.sh, 'baseRpyOut')
         if self.rh != None:
             self.connectLoggerPort(self.rh, 'emergencySignal')
 
