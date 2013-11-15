@@ -450,7 +450,7 @@ class HrpsysConfigurator:
         if self.rh != None:
             self.connectLoggerPort(self.rh, 'emergencySignal')
 
-    def waitForRTCManagerAndRoboHardware(self, robotname="Robot", managerhost=nshost):
+    def waitForRTCManager(self, managerhost=nshost):
         self.ms = None
         while self.ms == None :
             time.sleep(1);
@@ -459,6 +459,7 @@ class HrpsysConfigurator:
             self.ms = rtm.findRTCmanager(managerhost)
             print self.configurator_name, "wait for RTCmanager : ", managerhost
 
+    def waitForRoboHardware(self, robotname="Robot"):
         self.rh = None
         timeout_count = 0;
         # wait for simulator or RobotHardware setup which sometime takes a long time
@@ -479,6 +480,7 @@ class HrpsysConfigurator:
 
         print self.configurator_name, "findComps -> RobotHardware : ",self.rh
 
+    def checkSimulationMode(self):
         # distinguish real robot from simulation by using "servoState" port
         if rtm.findPort(self.rh.ref, "servoState") == None:
             self.hgc = findRTC("HGcontroller0")
@@ -489,6 +491,11 @@ class HrpsysConfigurator:
             self.ep_svc = narrow(self.rh.ec, "ExecutionProfileService")
 
         print self.configurator_name, "simulation_mode : ", self.simulation_mode
+
+    def waitForRTCManagerAndRoboHardware(self, robotname="Robot", managerhost=nshost):
+        waitForRTCManager(managerhost)
+        waitForRobotHardware(robotname)
+        checkSimulationMode()
 
     def findModelLoader(self):
         try:
