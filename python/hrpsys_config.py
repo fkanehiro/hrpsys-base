@@ -459,7 +459,7 @@ class HrpsysConfigurator:
             self.ms = rtm.findRTCmanager(managerhost)
             print self.configurator_name, "wait for RTCmanager : ", managerhost
 
-    def waitForRoboHardware(self, robotname="Robot"):
+    def waitForRobotHardware(self, robotname="Robot"):
         self.rh = None
         timeout_count = 0;
         # wait for simulator or RobotHardware setup which sometime takes a long time
@@ -493,9 +493,9 @@ class HrpsysConfigurator:
         print self.configurator_name, "simulation_mode : ", self.simulation_mode
 
     def waitForRTCManagerAndRoboHardware(self, robotname="Robot", managerhost=nshost):
-        waitForRTCManager(managerhost)
-        waitForRobotHardware(robotname)
-        checkSimulationMode()
+        self.waitForRTCManager(managerhost)
+        self.waitForRobotHardware(robotname)
+        self.checkSimulationMode()
 
     def findModelLoader(self):
         try:
