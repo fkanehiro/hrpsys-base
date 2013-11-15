@@ -211,19 +211,25 @@ void interpolator::go(const double *newg, const double *newv, double time, bool 
 }
 
 void interpolator::load(const char *fname, double time_to_start, double scale,
-			bool immediate)
+			bool immediate, size_t offset1, size_t offset2)
 {
   ifstream strm(fname);
   if (!strm.is_open()) {
     cerr << "file not found(" << fname << ")" << endl;
     return;
   }
-  double *vs, ptime=-1,time;
+  double *vs, ptime=-1,time, tmp;
   vs = new double[dim];
   strm >> time;
   while(strm.eof()==0){
+    for (int i=0; i<offset1; i++){
+      strm >> tmp;
+    }
     for (int i=0; i<dim; i++){
       strm >> vs[i];
+    }
+    for (int i=0; i<offset2; i++){
+      strm >> tmp;
     }
     if (ptime <0){
       go(vs, time_to_start, false);
@@ -239,9 +245,9 @@ void interpolator::load(const char *fname, double time_to_start, double scale,
 }
 
 void interpolator::load(string fname, double time_to_start, double scale,
-			bool immediate)
+			bool immediate, size_t offset1, size_t offset2)
 {
-  load(fname.c_str(), time_to_start, scale, immediate);
+  load(fname.c_str(), time_to_start, scale, immediate, offset1, offset2);
 }
 
 void interpolator::push(const double *x, const double *v, const double *a, bool immediate)

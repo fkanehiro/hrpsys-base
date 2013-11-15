@@ -272,13 +272,15 @@ void seqplay::loadPattern(const char *basename, double tm)
     string hip = basename; hip.append(".hip");
     if (access(hip.c_str(),0)==0){
         found = true;
-        interpolators[RPY]->load(hip, tm, scale, false);
+        interpolators[P]->load(hip, tm, scale, false, 0, 3);
+        interpolators[RPY]->load(hip, tm, scale, false, 3, 0);
         if (debug_level > 0) cout << hip;
     }else{
         hip = basename; hip.append(".waist");
         if (access(hip.c_str(),0)==0){
             found = true;
-            interpolators[RPY]->load(hip, tm, scale, false);
+            interpolators[P]->load(hip, tm, scale, false, 0, 3);
+            interpolators[RPY]->load(hip, tm, scale, false, 3, 0);
             if (debug_level > 0) cout << hip;
         }
     }

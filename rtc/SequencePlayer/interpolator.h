@@ -25,9 +25,9 @@ public:
   void clear();
   void sync();
   void load(string fname, double time_to_start=1.0, double scale=1.0,
-	    bool immediate=true);
+	    bool immediate=true, size_t offset1 = 0, size_t offset2 = 0);
   void load(const char *fname, double time_to_start=1.0, double scale=1.0,
-	    bool immediate=true);
+	    bool immediate=true, size_t offset1 = 0, size_t offset2 = 0);
   bool isEmpty();
   double remain_time();
 #define DEFAULT_AVG_VEL	(0.5) // [rad/s]
