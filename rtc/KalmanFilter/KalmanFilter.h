@@ -209,6 +209,7 @@ class KalmanFilter
   double m_dt;
   KFilter r_filter, p_filter, y_filter;
   hrp::BodyPtr m_robot;
+  hrp::Matrix33 m_sensorR;
   unsigned int m_debugLevel;
   int dummy;
 };
