@@ -138,8 +138,12 @@ RTC::ReturnCode_t KalmanFilter::onInitialize()
   m_rpy.data.p = 0;
   m_rpy.data.y = 0;
 
-  hrp::Sensor* sensor = m_robot->sensor(hrp::Sensor::ACCELERATION, 0);
-  m_sensorR = sensor->link->R * sensor->localR;
+  if (m_robot->numSensors(hrp::Sensor::ACCELERATION) > 0) {
+    hrp::Sensor* sensor = m_robot->sensor(hrp::Sensor::ACCELERATION, 0);
+    m_sensorR = sensor->link->R * sensor->localR;
+  } else {
+    m_sensorR = hrp::Matrix33::Identity();
+  }
 
   return RTC::RTC_OK;
 }
