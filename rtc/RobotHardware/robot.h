@@ -243,6 +243,7 @@ public:
     bool writeDigitalOutput(const char *i_dout);
     bool writeDigitalOutputWithMask(const char *i_dout, const char *i_mask);
     int lengthDigitalOutput();
+    bool readDigitalOutput(char *o_dout);
 
 private:
     /**

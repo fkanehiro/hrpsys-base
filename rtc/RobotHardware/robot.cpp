@@ -648,3 +648,9 @@ int robot::lengthDigitalOutput()
 {
     return length_digital_output();
 }
+
+bool robot::readDigitalOutput(char *o_dout)
+{
+    return read_digital_output(o_dout);
+}
+

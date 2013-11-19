@@ -155,5 +155,12 @@ module OpenHRP
      * @return length of digital output in bytes
      */
     long lengthDigitalOutput();
+
+    /**
+     * @brief get digital output to robot
+     * @param dOut will hold the input bits as an array of bytes
+     * @return true if applicable, false otherwise
+     */
+    boolean readDigitalOutput(out OctSequence dOut);
   };
 };

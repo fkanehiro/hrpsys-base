@@ -142,3 +142,10 @@ CORBA::Long RobotHardwareService_impl::lengthDigitalOutput()
 {
     return m_robot->lengthDigitalOutput();
 }
+
+CORBA::Boolean RobotHardwareService_impl::readDigitalOutput(::OpenHRP::RobotHardwareService::OctSequence_out dout)
+{
+    dout = new ::OpenHRP::RobotHardwareService::OctSequence();
+    dout->length(lengthDigitalOutput());
+    return m_robot->readDigitalOutput((char *)(dout->get_buffer()));
+}

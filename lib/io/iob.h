@@ -695,6 +695,13 @@ extern "C"{
      * @return length of digital output in bytes
      */
     int length_digital_output();
+
+    /**
+     * @brief read_digital_output, non-applicable bits are nop
+     * @param doutput digital output to environment
+     * @return TRUE if applicable, FALSE otherwise
+     */
+    int read_digital_output(char *doutput);
     //@}
 
 #ifdef __cplusplus

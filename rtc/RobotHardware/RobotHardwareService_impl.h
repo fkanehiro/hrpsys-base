@@ -31,6 +31,7 @@ public:
     CORBA::Boolean writeDigitalOutput(const ::OpenHRP::RobotHardwareService::OctSequence& dout);
     CORBA::Boolean writeDigitalOutputWithMask(const ::OpenHRP::RobotHardwareService::OctSequence& dout, const ::OpenHRP::RobotHardwareService::OctSequence& mask);
     CORBA::Long lengthDigitalOutput();
+    CORBA::Boolean readDigitalOutput(::OpenHRP::RobotHardwareService::OctSequence_out dout);
     //
     void setRobot(boost::shared_ptr<robot>& i_robot) { m_robot = i_robot; }
 private:
