@@ -35,7 +35,7 @@ int main (int argc, char** argv)
 {
   std::string output;
   std::vector<std::string> inputs, filenames; // filenames is for conf file
-  std::string conf_file_option, robothardware_conf_file_option, integrate("true"), dt("0.005"), timeStep(dt);
+  std::string conf_file_option, robothardware_conf_file_option, integrate("true"), dt("0.005"), timeStep(dt), joint_properties;
 
   for (int i = 1; i < argc; ++ i) {
     std::string arg(argv[i]);
@@ -54,6 +54,8 @@ int main (int argc, char** argv)
       if (++i < argc) conf_file_option += std::string("\n") + argv[i];
     } else if ( arg == "--robothardware-conf-file-option" ) {
       if (++i < argc) robothardware_conf_file_option += std::string("\n") + argv[i];
+    } else if ( arg == "--joint-properties" ) {
+      if (++i < argc) joint_properties = argv[i];
     } else if ( arg[0] == '-' ||  arg[0] == '_'  ) {
       std::cerr << argv[0] << " : Unknwon arguments " << arg << std::endl;
     } else {
@@ -208,13 +210,28 @@ int main (int argc, char** argv)
 	  xmlTextWriterWriteProperty(writer, root_name+".mode", "Torque");
 	  xmlTextWriterWriteProperty(writer, "controller", basename(output));
 	}
+
+        // store joint properties
+        //   [property 1],[value 1],....
+        //   ex. --joint-properties RARM_JOINT0.angle,0.0,RARM_JOINT2.mode,HighGain,...
+        coil::vstring joint_properties_arg_str = coil::split(joint_properties, ",");
+        std::map <std::string, std::string> joint_properties_map;
+        for (size_t i = 0; i < joint_properties_arg_str.size()/2; i++) {
+          joint_properties_map.insert(std::pair<std::string, std::string>(joint_properties_arg_str[i], joint_properties_arg_str[i+1]));
+        }
 	for(int i = 0; i < body->numJoints(); i++){
 	  if ( body->joint(i)->index > 0 ) {
 	    std::cerr << body->joint(i)->jointId << std::endl;
 	    std::string joint_name = body->joint(i)->name;
-	    xmlTextWriterWriteProperty(writer, joint_name+".angle", "0.0");
-	    xmlTextWriterWriteProperty(writer, joint_name+".mode", "HighGain");
-	    xmlTextWriterWriteProperty(writer, joint_name+".NumOfAABB", "1");
+            std::string j_property = joint_name+".angle";
+	    xmlTextWriterWriteProperty(writer, j_property,
+                                       (joint_properties_map.find(j_property) != joint_properties_map.end()) ? joint_properties_map[j_property] : "0.0");
+            j_property = joint_name+".mode";
+	    xmlTextWriterWriteProperty(writer, j_property,
+                                       (joint_properties_map.find(j_property) != joint_properties_map.end()) ? joint_properties_map[j_property] : "HighGain");
+            j_property = joint_name+".NumOfAABB";
+	    xmlTextWriterWriteProperty(writer, j_property,
+                                       (joint_properties_map.find(j_property) != joint_properties_map.end()) ? joint_properties_map[j_property] : "1");
 	  }
 	}
 	xmlTextWriterEndElement(writer); // item
