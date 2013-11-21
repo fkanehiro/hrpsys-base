@@ -217,7 +217,7 @@ int main (int argc, char** argv)
         coil::vstring joint_properties_arg_str = coil::split(joint_properties, ",");
         std::map <std::string, std::string> joint_properties_map;
         for (size_t i = 0; i < joint_properties_arg_str.size()/2; i++) {
-          joint_properties_map.insert(std::pair<std::string, std::string>(joint_properties_arg_str[i], joint_properties_arg_str[i+1]));
+          joint_properties_map.insert(std::pair<std::string, std::string>(joint_properties_arg_str[i*2], joint_properties_arg_str[i*2+1]));
         }
 	for(int i = 0; i < body->numJoints(); i++){
 	  if ( body->joint(i)->index > 0 ) {
