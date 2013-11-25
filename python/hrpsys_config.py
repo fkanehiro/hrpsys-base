@@ -605,6 +605,12 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
             return ret
         return False
 
+    def clear(self):
+        self.seq_svc.clear()
+
+    def clearOfGroup(self, gname, tm=0.0):
+        self.seq_svc.clearOfGroup(gname, tm)
+
     def saveLog(self, fname='sample'):
         self.log_svc.save(fname)
         print self.configurator_name, "saved data to ",fname
