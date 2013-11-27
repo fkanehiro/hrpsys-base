@@ -31,6 +31,7 @@ public:
     bool getJointGroup(const char *gname, std::vector<int>& indices);
     bool removeJointGroup(const char *gname, double time=2.5);
     bool setJointAnglesOfGroup(const char *gname, const double *i_qRef, double i_tm=0.0);
+    void clearOfGroup(const char *gname, double i_timeLimit);
     bool playPatternOfGroup(const char *gname, std::vector<const double*> pos, std::vector<double> tm, const double *qInit, unsigned int len);
 
     bool resetJointGroup(const char *gname, const double *full);
@@ -117,6 +118,14 @@ private:
         void remove(double time){
             state = removing;
             time2remove = time;
+        }
+        void clear(double i_timeLimit=0) {
+            tick_t t1 = get_tick();
+            while (!isEmpty()){
+		if (i_timeLimit > 0 
+			&& tick2sec(get_tick()-t1)>=i_timeLimit) break;
+		inter->pop_back();
+            }
         }
 
         interpolator *inter;

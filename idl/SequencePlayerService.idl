@@ -162,6 +162,14 @@ module OpenHRP
     boolean setJointAnglesOfGroup(in string gname, in dSequence jvs, in double tm);
 
     /**
+     * @brief clear pattern data with joint group
+     * @param gname name of the joint group
+     * @param tm duration toward termination
+     * @return true joint angles are set successfully, false otherwise
+     */
+    boolean clearOfGroup(in string gname, in double tm);
+
+    /**
      * @brief play back apattern with joint group
      * @param gname name of the joint group
      * @param pos sequence of joint angles

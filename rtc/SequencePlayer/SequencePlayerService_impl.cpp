@@ -23,14 +23,20 @@ CORBA::Boolean SequencePlayerService_impl::waitInterpolationOfGroup(const char *
 
 CORBA::Boolean SequencePlayerService_impl::setJointAngles(const dSequence& jvs, CORBA::Double tm)
 {
-  if (jvs.length() != (unsigned int)(m_player->robot()->numJoints())) return false;  
+  if (jvs.length() != (unsigned int)(m_player->robot()->numJoints())) {
+      std::cerr << __PRETTY_FUNCTION__ << " num of joint is differ, input:" << jvs.length() << ", robot:" << (unsigned int)(m_player->robot()->numJoints()) << std::endl;
+      return false;
+  }
   return m_player->setJointAngles(jvs.get_buffer(), tm);
 }
 
 CORBA::Boolean SequencePlayerService_impl::setJointAnglesWithMask(const dSequence& jvs, const bSequence& mask, CORBA::Double tm)
 {
     if (jvs.length() != (unsigned int)(m_player->robot()->numJoints())
-        || mask.length() != (unsigned int)(m_player->robot()->numJoints())) return false;  
+        || mask.length() != (unsigned int)(m_player->robot()->numJoints())) {
+        std::cerr << __PRETTY_FUNCTION__ << " num of joint is differ, input:" << jvs.length() << ", mask:" << mask.length() << ", robot" << (unsigned int)(m_player->robot()->numJoints()) << std::endl;
+        return false;
+    }
     return m_player->setJointAngles(jvs.get_buffer(), mask.get_buffer(), tm);
 }
 
@@ -89,6 +95,11 @@ void SequencePlayerService_impl::loadPattern(const char* basename, CORBA::Double
 void SequencePlayerService_impl::clear()
 {
   m_player->player()->clear();
+}
+
+CORBA::Boolean  SequencePlayerService_impl::clearOfGroup(const char *gname, CORBA::Double i_limitation)
+{
+    m_player->player()->clearOfGroup(gname, i_limitation);
 }
 
 void SequencePlayerService_impl::clearNoWait()

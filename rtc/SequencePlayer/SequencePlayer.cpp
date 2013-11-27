@@ -140,6 +140,9 @@ RTC::ReturnCode_t SequencePlayer::onInitialize()
 
 RTC::ReturnCode_t SequencePlayer::onFinalize()
 {
+    if ( m_debugLevel > 0 ) {
+        std::cerr << __PRETTY_FUNCTION__ << std::endl;
+    }
     return RTC::RTC_OK;
 }
 
@@ -173,7 +176,11 @@ RTC::ReturnCode_t SequencePlayer::onActivated(RTC::UniqueId ec_id)
 
 RTC::ReturnCode_t SequencePlayer::onExecute(RTC::UniqueId ec_id)
 {
-    //std::cout << "SequencePlayer::onExecute(" << ec_id << ")" << std::endl;
+    static int loop = 0;
+    loop++;
+    if ( m_debugLevel > 0 && loop % 1000 == 0) {
+        std::cerr << __PRETTY_FUNCTION__ << "(" << ec_id << ")" << std::endl;
+    }
     if (m_qInitIn.isNew()) m_qInitIn.read();
     if (m_basePosInitIn.isNew()) m_basePosInitIn.read();
     if (m_baseRpyInitIn.isNew()) m_baseRpyInitIn.read();
@@ -258,17 +265,26 @@ RTC::ReturnCode_t SequencePlayer::onExecute(RTC::UniqueId ec_id)
 
 void SequencePlayer::setClearFlag()
 {
+    if ( m_debugLevel > 0 ) {
+        std::cerr << __PRETTY_FUNCTION__ << std::endl;
+    }
     m_clearFlag = true;
 }
 
 void SequencePlayer::waitInterpolation()
 {
+    if ( m_debugLevel > 0 ) {
+        std::cerr << __PRETTY_FUNCTION__ << std::endl;
+    }
     m_waitFlag = true;
     m_waitSem.wait();
 }
 
 bool SequencePlayer::waitInterpolationOfGroup(const char *gname)
 {
+    if ( m_debugLevel > 0 ) {
+        std::cerr << __PRETTY_FUNCTION__ << std::endl;
+    }
     m_gname = gname;
     m_waitFlag = true;
     m_waitSem.wait();
@@ -278,6 +294,9 @@ bool SequencePlayer::waitInterpolationOfGroup(const char *gname)
 
 bool SequencePlayer::setJointAngle(short id, double angle, double tm)
 {
+    if ( m_debugLevel > 0 ) {
+        std::cerr << __PRETTY_FUNCTION__ << std::endl;
+    }
     Guard guard(m_mutex);
     if (!setInitialState()) return false;
     dvector q(m_robot->numJoints());
@@ -299,6 +318,9 @@ bool SequencePlayer::setJointAngle(short id, double angle, double tm)
 
 bool SequencePlayer::setJointAngles(const double *angles, double tm)
 {
+    if ( m_debugLevel > 0 ) {
+        std::cerr << __PRETTY_FUNCTION__ << std::endl;
+    }
     Guard guard(m_mutex);
     if (!setInitialState()) return false;
     for (int i=0; i<m_robot->numJoints(); i++){
@@ -318,6 +340,9 @@ bool SequencePlayer::setJointAngles(const double *angles, double tm)
 bool SequencePlayer::setJointAngles(const double *angles, const bool *mask, 
                                     double tm)
 {
+    if ( m_debugLevel > 0 ) {
+        std::cerr << __PRETTY_FUNCTION__ << std::endl;
+    }
     Guard guard(m_mutex);
 
     if (!setInitialState()) return false;
@@ -332,6 +357,9 @@ bool SequencePlayer::setJointAngles(const double *angles, const bool *mask,
 
 bool SequencePlayer::setBasePos(const double *pos, double tm)
 {
+    if ( m_debugLevel > 0 ) {
+        std::cerr << __PRETTY_FUNCTION__ << std::endl;
+    }
     Guard guard(m_mutex);
     m_seq->setBasePos(pos, tm);
     return true;
@@ -339,6 +367,9 @@ bool SequencePlayer::setBasePos(const double *pos, double tm)
 
 bool SequencePlayer::setBaseRpy(const double *rpy, double tm)
 {
+    if ( m_debugLevel > 0 ) {
+        std::cerr << __PRETTY_FUNCTION__ << std::endl;
+    }
     Guard guard(m_mutex);
     m_seq->setBaseRpy(rpy, tm);
     return true;
@@ -346,6 +377,9 @@ bool SequencePlayer::setBaseRpy(const double *rpy, double tm)
 
 bool SequencePlayer::setZmp(const double *zmp, double tm)
 {
+    if ( m_debugLevel > 0 ) {
+        std::cerr << __PRETTY_FUNCTION__ << std::endl;
+    }
     Guard guard(m_mutex);
     m_seq->setZmp(zmp, tm);
     return true;
@@ -353,6 +387,9 @@ bool SequencePlayer::setZmp(const double *zmp, double tm)
 
 bool SequencePlayer::setTargetPose(const char* gname, const double *xyz, const double *rpy, double tm)
 {
+    if ( m_debugLevel > 0 ) {
+        std::cerr << __PRETTY_FUNCTION__ << std::endl;
+    }
     Guard guard(m_mutex);
     // setup
     std::vector<int> indices;
@@ -453,6 +490,9 @@ bool SequencePlayer::setTargetPose(const char* gname, const double *xyz, const d
 
 void SequencePlayer::loadPattern(const char *basename, double tm)
 {
+    if ( m_debugLevel > 0 ) {
+        std::cerr << __PRETTY_FUNCTION__ << std::endl;
+    }
     Guard guard(m_mutex);
     if (setInitialState()){
         m_seq->loadPattern(basename, tm);
@@ -461,6 +501,9 @@ void SequencePlayer::loadPattern(const char *basename, double tm)
 
 bool SequencePlayer::setInitialState(double tm)
 {
+    if ( m_debugLevel > 0 ) {
+        std::cerr << __PRETTY_FUNCTION__ << "m_seq-isEmpty() " << m_seq->isEmpty() << ", m_Init.data.length() " << m_qInit.data.length() << std::endl;
+    }
     if (!m_seq->isEmpty()) return true;
 
     if (m_qInit.data.length() == 0){
@@ -502,6 +545,9 @@ bool SequencePlayer::setInitialState(double tm)
 
 void SequencePlayer::playPattern(const dSequenceSequence& pos, const dSequenceSequence& rpy, const dSequenceSequence& zmp, const dSequence& tm)
 {
+    if ( m_debugLevel > 0 ) {
+        std::cerr << __PRETTY_FUNCTION__ << std::endl;
+    }
     Guard guard(m_mutex);
     if (!setInitialState()) return;
 
@@ -516,6 +562,9 @@ void SequencePlayer::playPattern(const dSequenceSequence& pos, const dSequenceSe
 
 bool SequencePlayer::setInterpolationMode(OpenHRP::SequencePlayerService::interpolationMode i_mode_)
 {
+    if ( m_debugLevel > 0 ) {
+        std::cerr << __PRETTY_FUNCTION__ << std::endl;
+    }
     Guard guard(m_mutex);
     interpolator::interpolation_mode new_mode;
     if (i_mode_ == OpenHRP::SequencePlayerService::LINEAR){
@@ -530,6 +579,9 @@ bool SequencePlayer::setInterpolationMode(OpenHRP::SequencePlayerService::interp
 
 bool SequencePlayer::addJointGroup(const char *gname, const OpenHRP::SequencePlayerService::StrSequence& jnames)
 {
+    if ( m_debugLevel > 0 ) {
+        std::cerr << __PRETTY_FUNCTION__ << std::endl;
+    }
     if (!waitInterpolationOfGroup(gname)) return false;
 
     Guard guard(m_mutex);
@@ -559,6 +611,9 @@ bool SequencePlayer::removeJointGroup(const char *gname)
 
 bool SequencePlayer::setJointAnglesOfGroup(const char *gname, const double *angles, double tm)
 {
+    if ( m_debugLevel > 0 ) {
+        std::cerr << __PRETTY_FUNCTION__ << std::endl;
+    }
     Guard guard(m_mutex);
     if (!setInitialState()) return false;
 
@@ -568,6 +623,9 @@ bool SequencePlayer::setJointAnglesOfGroup(const char *gname, const double *angl
 
 bool SequencePlayer::playPatternOfGroup(const char *gname, const dSequenceSequence& pos, const dSequence& tm)
 {
+    if ( m_debugLevel > 0 ) {
+        std::cerr << __PRETTY_FUNCTION__ << std::endl;
+    }
     Guard guard(m_mutex);
     if (!setInitialState()) return false;
 

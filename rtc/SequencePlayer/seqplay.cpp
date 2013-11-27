@@ -448,6 +448,15 @@ bool seqplay::setJointAnglesOfGroup(const char *gname, const double *i_qRef, dou
 	}
 }
 
+void seqplay::clearOfGroup(const char *gname, double i_timeLimit)
+{
+	char *s = (char *)gname; while(*s) {*s=toupper(*s);s++;}
+	groupInterpolator *i = groupInterpolators[gname];
+	if (i){
+		i->clear(i_timeLimit);
+	}
+}
+
 bool seqplay::playPatternOfGroup(const char *gname, std::vector<const double *> pos, std::vector<double> tm, const double *qInit, unsigned int len)
 {
 	char *s = (char *)gname; while(*s) {*s=toupper(*s);s++;}
