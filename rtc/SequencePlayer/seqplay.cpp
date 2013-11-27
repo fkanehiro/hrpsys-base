@@ -438,9 +438,9 @@ bool seqplay::setJointAnglesOfGroup(const char *gname, const double *i_qRef, dou
 			double x[i->indices.size()], v[i->indices.size()];
 			i->extract(x, q);
 			i->extract(v, dq);
-			i->inter->go(x,v,interpolators[Q]->deltaT());
+			i->inter->setGoal(x,v,interpolators[Q]->deltaT());
 		}
-		i->go(i_qRef, i_tm);
+		i->setGoal(i_qRef, i_tm);
 		return true;
 	}else{
 		std::cerr << "[setJointAnglesOfGroup] group name " << gname << " is not installed" << std::endl;

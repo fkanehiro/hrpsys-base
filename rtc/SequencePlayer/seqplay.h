@@ -104,6 +104,16 @@ private:
             inter->go(g, v, tm);
             state = working;
         }
+        void setGoal(const double *g, double tm){
+            inter->setGoal(g, tm);
+            inter->sync();
+            state = working;
+        }
+        void setGoal(const double *g, const double *v, double tm){
+            inter->setGoal(g, v, tm);
+            inter->sync();
+            state = working;
+        }
         void remove(double time){
             state = removing;
             time2remove = time;
