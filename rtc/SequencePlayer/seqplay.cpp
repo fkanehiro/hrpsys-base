@@ -438,8 +438,10 @@ bool seqplay::setJointAnglesOfGroup(const char *gname, const double *i_qRef, dou
 			double x[i->indices.size()], v[i->indices.size()];
 			i->extract(x, q);
 			i->extract(v, dq);
-			i->inter->setGoal(x,v,interpolators[Q]->deltaT());
+			i->inter->go(x,v,interpolators[Q]->deltaT());
 		}
+		double x[i->indices.size()], v[i->indices.size()];
+		i->inter->get(x, v, false);
 		i->setGoal(i_qRef, i_tm);
 		return true;
 	}else{
