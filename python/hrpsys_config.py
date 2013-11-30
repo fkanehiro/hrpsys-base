@@ -416,13 +416,14 @@ class HrpsysConfigurator:
         else:
             return sum(map(lambda x : x.sensors, filter(lambda x : len(x.sensors) > 0, self.getBodyInfo(url)._get_links())), [])  # sum is for list flatten
 
-    def connectLoggerPort(self, artc, sen_name):
+    def connectLoggerPort(self, artc, sen_name, log_name=None):
+        log_name = log_name if log_name else sen_name
         if artc and rtm.findPort(artc.ref, sen_name) != None:
             sen_type = rtm.dataTypeOfPort(artc.port(sen_name)).split("/")[1].split(":")[0]
-            if rtm.findPort(self.log.ref, sen_name) == None:
-                print self.configurator_name, "  setupLogger : type =", sen_type, ", name = ", sen_name
-                self.log_svc.add(sen_type, sen_name)
-                connectPorts(artc.port(sen_name), self.log.port(sen_name))
+            if rtm.findPort(self.log.ref, log_name) == None:
+                print self.configurator_name, "  setupLogger : record type =", sen_type, ", name = ", sen_name, " to ", log_name
+                self.log_svc.add(sen_type, log_name)
+                connectPorts(artc.port(sen_name), self.log.port(log_name))
             else:
                 print self.configurator_name, "  setupLogger : ", sen_name, " arleady exists in DataLogger"
 
