@@ -415,6 +415,17 @@ bool seqplay::resetJointGroup(const char *gname, const double *full)
 	groupInterpolator *i = groupInterpolators[gname];
 	if (i){
 		i->set(full);
+		std::map<std::string, groupInterpolator *>::iterator it;
+        for (it=groupInterpolators.begin(); it!=groupInterpolators.end(); it++){
+			if ( it->first != std::string(gname) ) { // other 
+				groupInterpolator *gi = it->second;
+				if (gi && (gi->state == groupInterpolator::created || gi->state == groupInterpolator::working) && gi->inter->isEmpty()) {
+					gi->set(full);
+				}
+			}
+		}
+        // update for non working interpolators
+		
 		return true;
 	}else{
 		std::cerr << "[resetJointGroup] group name " << gname << " is not installed" << std::endl;
