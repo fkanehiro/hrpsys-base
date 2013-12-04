@@ -16,4 +16,4 @@ Requires: openhrp3.1
 Version: 3.1
 Libs: ${link_depend_dirs} -L${libdir} ${link_shared_files} ${link_depend_options} ${link_depend_files} 
 Libs.private: ${link_static_files}
-Cflags: ${cflag_defs} ${cflag_options} -I${includedir}
+Cflags: ${cflag_defs} ${cflag_options} ${includedir}
