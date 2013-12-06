@@ -6,7 +6,7 @@ import os
 sys.path.append("@python_dist_pkg_dir@")
 import hrpsys
 
-execfile("@python_dist_pkg_dir@/waitInput.py")
+execfile("@python_dist_pkg_dir@/hrpsys/waitInput.py")
 
 sys.path.append(os.getcwd())
 
