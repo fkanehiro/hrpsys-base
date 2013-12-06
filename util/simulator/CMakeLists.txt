@@ -21,7 +21,7 @@ target_link_libraries(hrpsys-simulator
   hrpsysUtil
   )
 
-add_library(hrpsys SHARED 
+add_library(hrpsysext SHARED 
   GLscene.cpp 
   BodyState.cpp
   SceneState.cpp
@@ -33,28 +33,28 @@ add_library(hrpsys SHARED
   )
 
 if (NOT APPLE)
-   target_link_libraries(hrpsys 
+   target_link_libraries(hrpsysext
      boost_python
      hrpsysUtil
      ${PYTHON_LIBRARIES}
      )
 else()
-   target_link_libraries(hrpsys 
+   target_link_libraries(hrpsysext 
      boost_python-mt
      hrpsysUtil
      ${PYTHON_LIBRARIES}
      )
 endif()
 
-set_target_properties(hrpsys PROPERTIES PREFIX "")
-set_target_properties(hrpsys PROPERTIES SUFFIX ".so")
+set_target_properties(hrpsysext PROPERTIES PREFIX "")
+set_target_properties(hrpsysext PROPERTIES SUFFIX ".so")
 
 install(TARGETS ${target}
   RUNTIME DESTINATION bin
   )
 
-install(TARGETS hrpsys
-  LIBRARY DESTINATION ${python_dist_pkg_dir} CONFIGURATIONS Release Debug
+install(TARGETS hrpsysext
+  LIBRARY DESTINATION ${python_dist_pkg_dir}/hrpsys CONFIGURATIONS Release Debug
 )
 
 install(PROGRAMS 

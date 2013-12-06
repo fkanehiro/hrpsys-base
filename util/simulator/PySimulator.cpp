@@ -342,7 +342,7 @@ void PySimulator::setWindowSize(int s)
     window.setSize(s,s);
 }
 
-BOOST_PYTHON_MODULE( hrpsys )
+BOOST_PYTHON_MODULE( hrpsysext )
 {
     using namespace boost::python;
 

@@ -3,8 +3,8 @@
 import sys
 import os
 
-sys.path.append("@python_dist_pkg_dir@")
-import hrpsys
+sys.path.append("@python_dist_pkg_dir@/hrpsys")
+import hrpsysext
 
 execfile("@python_dist_pkg_dir@/hrpsys/waitInput.py")
 
@@ -22,7 +22,7 @@ else:
     else:
 	script = None
 
-    sim = hrpsys.Simulator()
+    sim = hrpsysext.Simulator()
     realtime = False
     nodisplay = False
     usebbox = False
