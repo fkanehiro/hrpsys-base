@@ -53,6 +53,7 @@ Stabilizer::Stabilizer(RTC::Manager* manager)
     m_baseRpyIn("baseRpyIn", m_baseRpy),
     m_qRefOut("q", m_qRef),
     m_tauOut("tau", m_tau),
+    m_zmpOut("zmp", m_zmp),
     control_mode(MODE_IDLE),
     // </rtc-template>
     m_debugLevel(0)
@@ -88,6 +89,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   // Set OutPort buffer
   addOutPort("q", m_qRefOut);
   addOutPort("tau", m_tauOut);
+  addOutPort("zmp", m_zmpOut);
   
   // Set service provider to Ports
   m_StabilizerServicePort.registerProvider("service0", "StabilizerService", m_service0);
@@ -305,7 +307,11 @@ RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
       m_qRef.data[i] = m_robot->joint(i)->q;
       //m_tau.data[i] = m_robot->joint(i)->u;
     }
+    m_zmp.data.x = act_zmp(0);
+    m_zmp.data.y = act_zmp(1);
+    m_zmp.data.z = act_zmp(2);
     m_qRefOut.write();
+    m_zmpOut.write();
     //m_tauOut.write();
   }
 
