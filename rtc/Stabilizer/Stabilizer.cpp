@@ -272,6 +272,8 @@ RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
   bool on_ground = false;
   if (is_legged_robot && ( m_force[ST_LEFT].data.length() > 0 && m_force[ST_RIGHT].data.length() > 0 ))
     on_ground = calcZMP(act_zmp);
+  // convert absolute (in st) -> root-link relative
+  rel_act_zmp = m_robot->rootLink()->R.transpose() * (act_zmp - m_robot->rootLink()->p);
   getTargetParameters();
 
   if (is_legged_robot) {
@@ -307,10 +309,10 @@ RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
       m_qRef.data[i] = m_robot->joint(i)->q;
       //m_tau.data[i] = m_robot->joint(i)->u;
     }
-    m_zmp.data.x = act_zmp(0);
-    m_zmp.data.y = act_zmp(1);
-    m_zmp.data.z = act_zmp(2);
     m_qRefOut.write();
+    m_zmp.data.x = rel_act_zmp(0);
+    m_zmp.data.y = rel_act_zmp(1);
+    m_zmp.data.z = rel_act_zmp(2);
     m_zmpOut.write();
     //m_tauOut.write();
   }

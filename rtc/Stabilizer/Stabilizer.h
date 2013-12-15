@@ -198,7 +198,7 @@ class Stabilizer
   hrp::Vector3 refzmp, refcog, refcog_vel;
   // TPCC
   double k_tpcc_p[2], k_tpcc_x[2], d_rpy[2], k_brot_p[2], k_brot_tc[2];
-  hrp::Vector3 act_zmp, prefcog;
+  hrp::Vector3 act_zmp, rel_act_zmp, prefcog;
   // RUN ST
   TwoDofController m_tau_x[ST_NUM_LEGS], m_tau_y[ST_NUM_LEGS], m_f_z;
   hrp::Vector3 pdr;
