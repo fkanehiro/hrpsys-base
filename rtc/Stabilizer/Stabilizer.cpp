@@ -123,6 +123,33 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
     return RTC::RTC_ERROR;
   }
 
+  // setting from conf file
+  // :rleg,TARGET_LINK,BASE_LINK,x,y,z,rx,ry,rz,rth #<=pos + rot (axis+angle)
+  coil::vstring end_effectors_str = coil::split(prop["end_effectors"], ",");
+  if (end_effectors_str.size() > 0) {
+    size_t prop_num = 10;
+    size_t num = end_effectors_str.size()/prop_num;
+    for (size_t i = 0; i < num; i++) {
+      std::string ee_name, ee_target, ee_base;
+      coil::stringTo(ee_name, end_effectors_str[i*prop_num].c_str());
+      coil::stringTo(ee_target, end_effectors_str[i*prop_num+1].c_str());
+      coil::stringTo(ee_base, end_effectors_str[i*prop_num+2].c_str());
+      ee_trans eet;
+      for (size_t j = 0; j < 3; j++) {
+        coil::stringTo(eet.localp(j), end_effectors_str[i*prop_num+3+j].c_str());
+      }
+      double tmpv[4];
+      for (int j = 0; j < 4; j++ ) {
+        coil::stringTo(tmpv[j], end_effectors_str[i*prop_num+6+j].c_str());
+      }
+      eet.localR = Eigen::AngleAxis<double>(tmpv[3], hrp::Vector3(tmpv[0], tmpv[1], tmpv[2])).toRotationMatrix(); // rotation in VRML is represented by axis + angle
+      // manip2[i] = hrp::JointPathExPtr(new hrp::JointPathEx(m_robot, m_robot->link(ee_base),
+      //                                                      m_robot->link(ee_target)));
+      //ee_map.insert(std::pair<std::string, ee_trans>(ee_name , eet));
+      ee_map.insert(std::pair<std::string, ee_trans>(ee_target , eet));
+    }
+  }
+
   // parameters for TPCC
   act_zmp = hrp::Vector3(0,0,0);
   for (int i = 0; i < ST_NUM_LEGS; i++) {
@@ -206,8 +233,10 @@ bool Stabilizer::calcZMP(hrp::Vector3& ret_zmp)
   for (size_t i = 0; i < 2; i++) {
     hrp::ForceSensor* sensor = m_robot->sensor<hrp::ForceSensor>(sensor_names[i]);
     if (sensor != NULL) {
-      if (zmp_z > sensor->link->p(2))
-        zmp_z = sensor->link->p(2);
+      ee_trans& eet = ee_map[std::string(sensor->link->name)];
+      hrp::Vector3 zp = sensor->link->R * eet.localR * eet.localp + sensor->link->p;
+      if (zmp_z > zp(2))
+        zmp_z = zp(2);
     }
   }
   double tmpzmpx = 0;
