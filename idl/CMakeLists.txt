@@ -23,6 +23,7 @@ set(idl_files
   AutoBalancerService.idl
   AbsoluteForceSensorService.idl
   ServoControllerService.idl
+  TorqueControllerService.idl
   )
 
 set(openhrp_idl_files

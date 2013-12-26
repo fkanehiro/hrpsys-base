@@ -111,21 +111,19 @@ class ThermoLimiter
   TimedDoubleSeq m_tempIn;
   TimedDoubleSeq m_tauIn;
   TimedDoubleSeq m_qCurrentIn;
-  TimedDoubleSeq m_qRefIn;
-  TimedDoubleSeq m_qRefOut;
+  TimedDoubleSeq m_tauMaxOut;
   
   // DataInPort declaration
   // <rtc-template block="inport_declare">
   InPort<TimedDoubleSeq> m_tempInIn;
   InPort<TimedDoubleSeq> m_tauInIn;
   InPort<TimedDoubleSeq> m_qCurrentInIn;
-  InPort<TimedDoubleSeq> m_qRefInIn;
   
   // </rtc-template>
 
   // DataOutPort declaration
   // <rtc-template block="outport_declare">
-  OutPort<TimedDoubleSeq> m_qRefOutOut;
+  OutPort<TimedDoubleSeq> m_tauMaxOutOut;
   
   // </rtc-template>
 
@@ -154,9 +152,7 @@ class ThermoLimiter
   std::vector<TwoDofController> m_motorTwoDofControllers;
   std::vector<MotorHeatParam> m_motorHeatParams;
 
-  int sgn(double val);
-  bool limitTemperature(hrp::dvector &qRef);
-  
+  bool limitTemperature(hrp::dvector &tauMax);
 };
 
 

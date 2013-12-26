@@ -16,8 +16,6 @@
 #define DEBUGP ((m_debugLevel==1 && loop%200==0) || m_debugLevel > 1 )
 #define DQ_MAX 1.0
 
-static double vlimit(double value, double llimit, double ulimit);
-
 // Module specification
 // <rtc-template block="module_spec">
 static const char* thermolimiter_spec[] =
@@ -46,11 +44,9 @@ ThermoLimiter::ThermoLimiter(RTC::Manager* manager)
     // <rtc-template block="initializer">
     m_tempInIn("tempIn", m_tempIn),
     m_tauInIn("tauIn", m_tauIn),
-    m_qRefInIn("qRef", m_qRefIn),
     m_qCurrentInIn("qCurrentIn", m_qCurrentIn),
-    m_qRefOutOut("q", m_qRefOut),
+    m_tauMaxOutOut("tauMax", m_tauMaxOut),
     m_debugLevel(0)
-    // </rtc-template>
 {
 }
 
@@ -75,18 +71,15 @@ RTC::ReturnCode_t ThermoLimiter::onInitialize()
   addInPort("tempIn", m_tempInIn);
   addInPort("tauIn", m_tauInIn);
   addInPort("qCurrentIn", m_qCurrentInIn);
-  addInPort("qRef", m_qRefInIn); // for naming rule of hrpsys_config.py
 
   // Set OutPort buffer
-  addOutPort("q", m_qRefOutOut); // for naming rule of hrpsys_config.py
+  addOutPort("tauMax", m_tauMaxOutOut);
   
   // Set service provider to Ports
-  // m_NullServicePort.registerProvider("service0", "NullService", m_NullService);
   
   // Set service consumers to Ports
   
   // Set CORBA Service Ports
-  // addPort(m_NullServicePort);
   
   // </rtc-template>
 
@@ -179,13 +172,9 @@ RTC::ReturnCode_t ThermoLimiter::onInitialize()
       m_motorTwoDofControllers[i].setup(tdcParamK, tdcParamT, m_dt);
     }
   }
-  // for (std::vector<TwoDofController>::iterator it = m_motorTwoDofControllers.begin(); it != m_motorTwoDofControllers.end() ; ++it) {
-  //   (*it).setup(400.0, 0.04, m_dt);
-  //   // (*it).setup(400.0, 1.0, m_dt);
-  // }
 
   // allocate memory for outPorts
-  m_qRefOut.data.length(m_robot->numJoints());
+  m_tauMaxOut.data.length(m_robot->numJoints());
   
   return RTC::RTC_OK;
 }
@@ -236,9 +225,9 @@ RTC::ReturnCode_t ThermoLimiter::onExecute(RTC::UniqueId ec_id)
   tm.sec = coiltm.sec();
   tm.nsec = coiltm.usec()*1000;
   bool isTempError = false;
-  hrp::dvector qRef;
-  qRef.resize(m_robot->numJoints());
-  
+  hrp::dvector tauMax;
+  tauMax.resize(m_robot->numJoints());
+
   // update port
   if (m_tempInIn.isNew()) {
     m_tempInIn.read();
@@ -249,38 +238,21 @@ RTC::ReturnCode_t ThermoLimiter::onExecute(RTC::UniqueId ec_id)
   if (m_qCurrentInIn.isNew()) {
     m_qCurrentInIn.read();
   }
-  if (m_qRefInIn.isNew()) {
-    m_qRefInIn.read();
+
+  // calculate tauMax
+  isTempError = limitTemperature(tauMax);
+  // call beep
+  if (isTempError) {
+    start_beep(3136);
+  } else {
+    stop_beep();
   }
-
-  if (m_qRefIn.data.length() == m_robot->numJoints()) {
-
-    // copy buffer
-    for (int i = 0; i < m_robot->numJoints(); i++) {
-      qRef[i] = m_qRefIn.data[i];
-    }
-    
-    isTempError = limitTemperature(qRef);
-
-    // call beep
-    if (isTempError) {
-      start_beep(3136);
-    } else {
-      stop_beep();
-    }
-
-    // output restricted qRef
-    for (int i = 0; i < m_robot->numJoints(); i++) {
-      // if (i == 7) {
-      //   m_qRefOut.data[i] = qRef[i];
-      // } else {
-      //   m_qRefOut.data[i] = m_qRefIn.data[i];
-      // }
-      m_qRefOut.data[i] = qRef[i];
-    }
-    m_qRefOut.tm = tm;
-    m_qRefOutOut.write();
+  // output restricted tauMax
+  for (int i = 0; i < m_robot->numJoints(); i++) {
+    m_tauMaxOut.data[i] = tauMax[i];
   }
+  m_tauMaxOut.tm = tm;
+  m_tauMaxOutOut.write();
   return RTC::RTC_OK;
 }
 
@@ -319,18 +291,7 @@ RTC::ReturnCode_t ThermoLimiter::onRateChanged(RTC::UniqueId ec_id)
 }
 */
 
-int ThermoLimiter::sgn(double val)
-{
-  if (val > 0) {
-    return 1;
-  } else if (val < 0) {
-    return -1;
-  } else {
-    return 0;
-  }
-}
-
-bool ThermoLimiter::limitTemperature(hrp::dvector &qRef)
+bool ThermoLimiter::limitTemperature(hrp::dvector &tauMax)
 {
   static long loop = 0;
   loop++;
@@ -338,8 +299,12 @@ bool ThermoLimiter::limitTemperature(hrp::dvector &qRef)
   int numJoints = m_robot->numJoints();
   bool isTempError = false;
   double temp, tempLimit;
-  hrp::dvector squareTauMax(numJoints), distTau(numJoints), dq(numJoints);
+  hrp::dvector squareTauMax(numJoints);
 
+  if (DEBUGP) {
+    std::cerr << "[" << m_profile.instance_name << "]" << std::endl;
+  }
+  
   if ( m_tempIn.data.length() ==  m_robot->numJoints() ) {
     if (DEBUGP) {
       std::cerr << "temperature: ";
@@ -352,11 +317,6 @@ bool ThermoLimiter::limitTemperature(hrp::dvector &qRef)
         std::cerr << " " << m_tauIn.data[i];
       }
       std::cerr << std::endl;
-      std::cerr << "qIn: ";
-      for (int i = 0; i < numJoints; i++) {
-        std::cerr << " " << m_qRefIn.data[i];
-      }
-      std::cerr << std::endl;
     }
 
     for (int i = 0; i < numJoints; i++) {
@@ -364,62 +324,31 @@ bool ThermoLimiter::limitTemperature(hrp::dvector &qRef)
       tempLimit = m_motorTemperatureLimit[i];
 
       // limit temperature
-      // TODO: read coeffs from conf files
       double term = 120;
       squareTauMax[i] = (((tempLimit - temp) / term) + m_motorHeatParams[i].thermoCoeffs * (temp - m_motorHeatParams[i].temperature)) / m_motorHeatParams[i].currentCoeffs;
 
-      // determine distTau
+      // determine tauMax
       if (squareTauMax[i] < 0) {
         std::cerr << "[WARN] tauMax ** 2 = " << squareTauMax[i] << " < 0 in Joint " << i << std::endl;
-        distTau[i] = m_tauIn.data[i];
+        tauMax[i] = m_robot->joint(i)->climit;
       } else {
         if (std::pow(m_tauIn.data[i], 2) > squareTauMax[i]) {
           std::cerr << "[WARN] tauMax over in Joint " << i << ": " << m_tauIn.data[i] << "^2 > " << squareTauMax[i] << std::endl;
           isTempError = true; // in thermo emergency
-          distTau[i] = sgn(m_tauIn.data[i]) * std::sqrt(squareTauMax[i]);
-        } else {
-          distTau[i] = m_tauIn.data[i];
         }
+        tauMax[i] = std::sqrt(squareTauMax[i]);
       }
-      // torque control
-      dq[i] = m_motorTwoDofControllers[i].update(m_tauIn.data[i], distTau[i]);
-      // qRef[i] += vlimit(dq[i], -DQ_MAX, DQ_MAX);
-      qRef[i] -= dq[i]; // twoDofController: tau = -K(q - qRef)
     }
     if (DEBUGP) {
+      std::cerr << std::endl;
       std::cerr << "tauMax: ";
-      for (int i = 0; i < squareTauMax.size(); i++) {
-        std::cerr << std::sqrt(squareTauMax[i]) << " ";
-      }
-      std::cerr << std::endl;
-      std::cerr << "distTau: ";
-      for (int i = 0; i < distTau.size(); i++) {
-        std::cerr << distTau[i] << " ";
-      }
-      std::cerr << std::endl;
-      std::cerr << "dq: ";
-      for (int i = 0; i < dq.size(); i++) {
-        std::cerr << dq[i] << " ";
-      }
-      std::cerr << std::endl;
-      std::cerr << "qRef: ";
-      for (int i = 0; i < qRef.size(); i++) {
-        std::cerr << qRef[i] << " ";
+      for (int i = 0; i < tauMax.size(); i++) {
+        std::cerr << tauMax[i] << " ";
       }
       std::cerr << std::endl;
     }
   }
   return isTempError;
-}
-
-static double vlimit(double value, double llimit, double ulimit)
-{
-  if (value > ulimit) {
-    return ulimit;
-  } else if (value < llimit) {
-    return llimit;
-  }
-  return value;
 }
 
 extern "C"

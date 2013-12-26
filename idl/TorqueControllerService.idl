@@ -1,0 +1,58 @@
+/**
+ * @file TorqueControllerService.idl
+ * @brief Services for the torque control interface
+ */
+module OpenHRP
+{
+  
+  interface TorqueControllerService
+  {
+    typedef sequence<double> dSequence;    
+    typedef sequence<string> StrSequence;
+    
+    /**
+     * @brief start torque controller in specified joint
+     * @param jname: target joint name
+     * @return true if set successfully, false otherwise
+     */
+    boolean startTorqueControl(in string jname);
+
+    /**
+     * @brief start torque controller in specified joints
+     * @param jnames: target joint names
+     * @return true if set successfully, false otherwise
+     */
+    boolean startMultipleTorqueControls(in StrSequence jnames);
+    
+    /**
+     * @brief stop torque controller in specified joint
+     * @param jname: target joint name
+     * @return true if set successfully, false otherwise
+     */
+    boolean stopTorqueControl(in string jname);
+
+    /**
+     * @brief stop torque controller in specified joints
+     * @param jnames: target joint names
+     * @return true if set successfully, false otherwise
+     */
+    boolean stopMultipleTorqueControls(in StrSequence jnames);
+    
+    /**
+     * @brief set torque reference to torque controller in specified joint
+     * @param jname: target joint name
+     * @param tauRef: reference torque
+     * @return true if set successfully, false otherwise
+     */
+    boolean setReferenceTorque(in string jname, in double tauRef);
+
+    /**
+     * @brief set torque reference to torque controller in specified joint
+     * @param jname: target joint names
+     * @param tauRef: reference torques
+     * @return true if set all successfully, false otherwise
+     */
+    boolean setMultipleReferenceTorques(in StrSequence jnames, in dSequence tauRefs);
+    
+  };
+};

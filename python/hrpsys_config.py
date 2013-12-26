@@ -198,6 +198,10 @@ class HrpsysConfigurator:
     tl = None
     tl_svc = None
 
+    # TorqueController
+    tc = None
+    tc_svc = None
+
     # DataLogger
     log = None
     log_svc = None
@@ -340,6 +344,16 @@ class HrpsysConfigurator:
             connectPorts(self.rh.port("q"), self.tl.port("qCurrentIn"))
             # qRef is connected as joint angle controller
 
+        # connection for tc
+        if self.tc:
+            connectPorts(self.rh.port("q"), self.tc.port("qCurrent"))
+            if self.tf:
+                connectPorts(self.tf.port("tauOut"), self.tc.port("tauCurrent"))
+            else:
+                connectPorts(self.rh.port("tau"), self.tc.port("tauCurrent"))
+            if self.tl:
+                connectPorts(self.tl.port("tauMax"), self.tc.port("tauMax"))
+
         # connection for el
         if self.el:
             connectPorts(self.rh.port("q"), self.el.port("qCurrent"))
@@ -385,6 +399,7 @@ class HrpsysConfigurator:
             ['abc', "AutoBalancer"],
             ['st', "Stabilizer"],
             ['co', "CollisionDetector"],
+            ['tc', "TorqueController"],
             #['te', "ThermoEstimator"],
             #['tl', "ThermoLimiter"],
             ['el', "SoftErrorLimiter"],
@@ -392,7 +407,7 @@ class HrpsysConfigurator:
             ]
 
     def getJointAngleControllerList(self):
-        controller_list = [self.ic, self.gc, self.abc, self.st, self.co, self.tl, self.el]
+        controller_list = [self.ic, self.gc, self.abc, self.st, self.co, self.tc, self.el]
         return filter(lambda c : c != None, controller_list) # only return existing controllers
 
     def getRTCInstanceList(self):
