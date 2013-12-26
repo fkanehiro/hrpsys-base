@@ -31,6 +31,7 @@ namespace hrp {
                       const hrp::dvector& qrefv,
                       bool DEBUGP = false);
     void setMaxIKError(double epos, double erot);
+    void setMaxIKError(double e);
   protected:
         double maxIKPosErrorSqr, maxIKRotErrorSqr;
         std::vector<Link*> joints;
