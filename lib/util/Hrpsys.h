@@ -26,4 +26,5 @@ using std::fprintf;
 using std::fclose;
 using std::fflush;
 using std::toupper;
+using std::copysign;
 #endif
