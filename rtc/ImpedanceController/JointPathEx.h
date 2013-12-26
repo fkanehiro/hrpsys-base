@@ -30,7 +30,9 @@ namespace hrp {
                       const double MAX_TRANSITION_COUNT,
                       const hrp::dvector& qrefv,
                       bool DEBUGP = false);
+    void setMaxIKError(double epos, double erot);
   protected:
+        double maxIKPosErrorSqr, maxIKRotErrorSqr;
         std::vector<Link*> joints;
         std::vector<double> avoid_weight_gain;
 	double sr_gain, manipulability_limit, manipulability_gain;

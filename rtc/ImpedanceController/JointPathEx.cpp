@@ -61,13 +61,43 @@ int hrp::calcSRInverse(const dmatrix& _a, dmatrix &_a_sr, double _sr_ratio, dmat
     //if (DEBUG) { dmatrix ii = _a * _a_sr; std::cerr << "    i :" << std::endl << ii; }
 }
 
+// overwrite hrplib/hrpUtil/Eigen3d.cpp
+Vector3 omegaFromRotEx(const Matrix33& r)
+{
+    using ::std::numeric_limits;
+
+    double alpha = (r(0,0) + r(1,1) + r(2,2) - 1.0) / 2.0;
+
+    if(fabs(alpha - 1.0) < 1.0e-12) {   //th=0,2PI;
+        return Vector3::Zero();
+    } else {
+        double th = acos(alpha);
+        double s = sin(th);
+
+        if (s < numeric_limits<double>::epsilon()) {   //th=PI
+            return Vector3( sqrt((r(0,0)+1)*0.5)*th, sqrt((r(1,1)+1)*0.5)*th, sqrt((r(2,2)+1)*0.5)*th );
+        }
+
+        double k = -0.5 * th / s;
+
+        return Vector3( (r(1,2) - r(2,1)) * k,
+                        (r(2,0) - r(0,2)) * k,
+                        (r(0,1) - r(1,0)) * k );
+    }
+}
+
 JointPathEx::JointPathEx(BodyPtr& robot, Link* base, Link* end)
-  : JointPath(base, end), sr_gain(1.0), manipulability_limit(0.1), manipulability_gain(0.001) {
+    : JointPath(base, end), sr_gain(1.0), manipulability_limit(0.1), manipulability_gain(0.001), maxIKPosErrorSqr(1.0e-8), maxIKRotErrorSqr(1.0e-6) {
   for (int i = 0 ; i < numJoints(); i++ ) {
     joints.push_back(joint(i));
   }
 
   avoid_weight_gain.resize(numJoints());
+}
+
+void JointPathEx::setMaxIKError(double epos, double erot) {
+  maxIKPosErrorSqr = epos*epos;
+  maxIKRotErrorSqr = erot*erot;
 }
 
 bool JointPathEx::calcJacobianInverseNullspace(dmatrix &J, dmatrix &Jinv, dmatrix &Jnull) {
@@ -245,7 +275,7 @@ bool JointPathEx::calcInverseKinematics2(const Vector3& end_p, const Matrix33& e
       }
         
       Vector3 dp(end_p - target->p);
-      Vector3 omega(target->R * omegaFromRot(target->R.transpose() * end_R));
+      Vector3 omega(target->R * omegaFromRotEx(target->R.transpose() * end_R));
       if ( dp.norm() > 0.1 ) dp = dp*0.1/dp.norm();
       if ( omega.norm() > 0.5 ) omega = omega*0.5/omega.norm();
 
@@ -267,9 +297,8 @@ bool JointPathEx::calcInverseKinematics2(const Vector3& end_p, const Matrix33& e
           break;
         }
       } else {
-        const double errsqr = dp.dot(dp) + omega.dot(omega);
-        if ( DEBUG ) std::cerr << "  err : " << std::setw(18) << std::setiosflags(std::ios::fixed) << std::setprecision(14) << errsqr << " < " << maxIKErrorSqr << std::endl;
-        if(errsqr < maxIKErrorSqr){
+        if ( DEBUG ) std::cerr << "  err : " << std::setw(18) << std::setiosflags(std::ios::fixed) << std::setprecision(14) << sqrt(dp.dot(dp)) << " < " << sqrt(maxIKPosErrorSqr) << ", " << std::setw(18) << std::setiosflags(std::ios::fixed) << std::setprecision(14) << sqrt(omega.dot(omega)) << " < " << sqrt(maxIKRotErrorSqr) << std::endl;
+        if( (dp.dot(dp) < maxIKPosErrorSqr) && (omega.dot(omega) < maxIKRotErrorSqr) ) {
           converged = true;
           break;
         }
@@ -315,7 +344,7 @@ bool JointPathEx::calcInverseKinematics2(const Vector3& end_p, const Matrix33& e
     if(!converged){
       std::cerr << "IK Fail, iter = " << iter << std::endl;
       Vector3 dp(end_p - target->p);
-      Vector3 omega(target->R * omegaFromRot(target->R.transpose() * end_R));
+      Vector3 omega(target->R * omegaFromRotEx(target->R.transpose() * end_R));
       const double errsqr = dp.dot(dp) + omega.dot(omega);
       if(isBestEffortIKMode){
         std::cerr << "  err : fabs(" << errsqr << " - " << errsqr0 << ") = " << fabs(errsqr-errsqr0) << " < " << maxIKErrorSqr << " BestEffortIKMode" << std::endl;
