@@ -9,6 +9,7 @@
  */
 
 #include "MotorTorqueController.h"
+#include "util/Hrpsys.h"
 #include <iostream>
 #include <cmath>
 
