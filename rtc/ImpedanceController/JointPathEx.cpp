@@ -100,6 +100,12 @@ void JointPathEx::setMaxIKError(double epos, double erot) {
   maxIKRotErrorSqr = erot*erot;
 }
 
+void JointPathEx::setMaxIKError(double e)
+{
+    maxIKErrorSqr = e * e;
+}
+
+
 bool JointPathEx::calcJacobianInverseNullspace(dmatrix &J, dmatrix &Jinv, dmatrix &Jnull) {
     const int n = numJoints();
                 
