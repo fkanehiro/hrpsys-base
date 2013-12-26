@@ -111,6 +111,8 @@ class SequencePlayer
   bool setJointAnglesOfGroup(const char *gname, const double *angles, double tm);
   bool playPatternOfGroup(const char *gname, const OpenHRP::dSequenceSequence& pos, const OpenHRP::dSequence& tm);
 
+  void setMaxIKError(double pos, double rot);
+  void setMaxIKIteration(short iter);
  protected:
   // Configuration variable declaration
   // <rtc-template block="config_declare">
@@ -169,6 +171,8 @@ class SequencePlayer
   unsigned int m_debugLevel;
   int dummy;
   coil::Mutex m_mutex;
+  double m_error_pos, m_error_rot;
+  short m_iteration;
 };
 
 

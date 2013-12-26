@@ -147,3 +147,13 @@ CORBA::Boolean SequencePlayerService_impl::playPatternOfGroup(const char *gname,
 {
     return m_player->playPatternOfGroup(gname, pos, tm);
 }
+
+void SequencePlayerService_impl::setMaxIKError(CORBA::Double pos, CORBA::Double rot)
+{
+    return m_player->setMaxIKError(pos, rot);
+}
+
+void SequencePlayerService_impl::setMaxIKIteration(CORBA::Short iter)
+{
+    return m_player->setMaxIKIteration(iter);
+}

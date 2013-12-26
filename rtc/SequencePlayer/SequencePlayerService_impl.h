@@ -37,9 +37,10 @@ public:
   CORBA::Boolean setJointAnglesOfGroup(const char *gname, const dSequence& jvs, CORBA::Double tm);
   CORBA::Boolean clearOfGroup(const char *gname, CORBA::Double  i_timelimit);
   CORBA::Boolean playPatternOfGroup(const char *gname, const dSequenceSequence& pos, const dSequence& tm);
+  void setMaxIKError(CORBA::Double pos, CORBA::Double rot);
+  void setMaxIKIteration(CORBA::Short iter);
   //
   void player(SequencePlayer *i_player);
-private:
   SequencePlayer *m_player;
 };				 
 

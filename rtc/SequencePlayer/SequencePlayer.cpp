@@ -55,6 +55,9 @@ SequencePlayer::SequencePlayer(RTC::Manager* manager)
       m_waitSem(0),
       m_robot(hrp::BodyPtr()),
       m_debugLevel(0),
+      m_error_pos(0.0001),
+      m_error_rot(0.001),
+      m_iteration(50),
       dummy(0)
 {
     m_service0.player(this);
@@ -430,7 +433,8 @@ bool SequencePlayer::setTargetPose(const char* gname, const double *xyz, const d
     hrp::Matrix33 start_R(m_robot->link(target_name)->R);
     hrp::Vector3 end_p(xyz[0], xyz[1], xyz[2]);
     hrp::Matrix33 end_R = m_robot->link(target_name)->calcRfromAttitude(hrp::rotFromRpy(rpy[0], rpy[1], rpy[2]));
-    manip->setMaxIKError(0.0001,0.001);
+    manip->setMaxIKError(m_error_pos,m_error_rot);
+    manip->setMaxIKIteration(m_iteration);
 
     // interpolate & calc ik
     int len = max(((start_p - end_p).norm() / 0.02 ), // 2cm
@@ -635,6 +639,16 @@ bool SequencePlayer::playPatternOfGroup(const char *gname, const dSequenceSequen
     for ( int i = 0; i < tm.length() ; i++ ) v_tm.push_back(tm[i]);
     return m_seq->playPatternOfGroup(gname, v_pos, v_tm, m_qInit.data.get_buffer(), pos.length()>0?pos[0].length():0);
 }
+
+void SequencePlayer::setMaxIKError(double pos, double rot){
+    m_error_pos = pos;
+    m_error_rot = rot;
+}
+
+void SequencePlayer::setMaxIKIteration(short iter){
+    m_iteration= iter;
+}
+
 
 extern "C"
 {
