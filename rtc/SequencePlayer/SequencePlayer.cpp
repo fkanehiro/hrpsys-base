@@ -430,7 +430,7 @@ bool SequencePlayer::setTargetPose(const char* gname, const double *xyz, const d
     hrp::Matrix33 start_R(m_robot->link(target_name)->R);
     hrp::Vector3 end_p(xyz[0], xyz[1], xyz[2]);
     hrp::Matrix33 end_R = m_robot->link(target_name)->calcRfromAttitude(hrp::rotFromRpy(rpy[0], rpy[1], rpy[2]));
-    manip->setMaxIKError(0.005);
+    manip->setMaxIKError(0.0001,0.001);
 
     // interpolate & calc ik
     int len = max(((start_p - end_p).norm() / 0.02 ), // 2cm
