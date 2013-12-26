@@ -87,7 +87,7 @@ Vector3 omegaFromRotEx(const Matrix33& r)
 }
 
 JointPathEx::JointPathEx(BodyPtr& robot, Link* base, Link* end)
-    : JointPath(base, end), sr_gain(1.0), manipulability_limit(0.1), manipulability_gain(0.001), maxIKPosErrorSqr(1.0e-8), maxIKRotErrorSqr(1.0e-6) {
+    : JointPath(base, end), sr_gain(1.0), manipulability_limit(0.1), manipulability_gain(0.001), maxIKPosErrorSqr(1.0e-8), maxIKRotErrorSqr(1.0e-6), maxIKIteration(50) {
   for (int i = 0 ; i < numJoints(); i++ ) {
     joints.push_back(joint(i));
   }
@@ -105,6 +105,9 @@ void JointPathEx::setMaxIKError(double e)
     maxIKErrorSqr = e * e;
 }
 
+void JointPathEx::setMaxIKIteration(int iter) {
+    maxIKIteration = iter;
+}
 
 bool JointPathEx::calcJacobianInverseNullspace(dmatrix &J, dmatrix &Jinv, dmatrix &Jnull) {
     const int n = numJoints();
@@ -238,7 +241,7 @@ bool JointPathEx::calcInverseKinematics2Loop(const Vector3& dp, const Vector3& o
 
 bool JointPathEx::calcInverseKinematics2(const Vector3& end_p, const Matrix33& end_R)
 {
-    static const int MAX_IK_ITERATION = 50;
+    static const int MAX_IK_ITERATION = maxIKIteration;
     static const double LAMBDA = 0.9;
 
     LinkPath linkPath(baseLink(), endLink());

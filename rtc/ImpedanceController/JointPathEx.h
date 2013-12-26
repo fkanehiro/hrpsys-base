@@ -32,8 +32,10 @@ namespace hrp {
                       bool DEBUGP = false);
     void setMaxIKError(double epos, double erot);
     void setMaxIKError(double e);
+    void setMaxIKIteration(int iter);
   protected:
         double maxIKPosErrorSqr, maxIKRotErrorSqr;
+        int maxIKIteration;
         std::vector<Link*> joints;
         std::vector<double> avoid_weight_gain;
 	double sr_gain, manipulability_limit, manipulability_gain;
