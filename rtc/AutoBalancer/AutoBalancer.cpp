@@ -633,7 +633,6 @@ bool AutoBalancer::goStop ()
 
 bool AutoBalancer::setFootSteps(const OpenHRP::AutoBalancerService::FootstepSequence& fs)
 {
-  if (control_mode == MODE_ABC ) {
     coordinates tmpfs;
     std::cerr << "set_foot_steps" << std::endl;
 
@@ -653,7 +652,6 @@ bool AutoBalancer::setFootSteps(const OpenHRP::AutoBalancerService::FootstepSequ
     gg->append_finalize_footstep();
     gg->print_footstep_list();
     startWalking();
-  }
  return true;
 }
 
