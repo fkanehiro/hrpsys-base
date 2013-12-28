@@ -167,22 +167,22 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
         coil::stringTo(ee_name, end_effectors_str[i*prop_num].c_str());
         coil::stringTo(ee_target, end_effectors_str[i*prop_num+1].c_str());
         coil::stringTo(ee_base, end_effectors_str[i*prop_num+2].c_str());
-        ee_trans eet;
+        ABCIKparam tp;
         for (size_t j = 0; j < 3; j++) {
-          coil::stringTo(eet.localp(j), end_effectors_str[i*prop_num+3+j].c_str());
+          coil::stringTo(tp.target2foot_offset_pos(j), end_effectors_str[i*prop_num+3+j].c_str());
         }
         double tmpv[4];
         for (int j = 0; j < 4; j++ ) {
           coil::stringTo(tmpv[j], end_effectors_str[i*prop_num+6+j].c_str());
         }
-        eet.localR = Eigen::AngleAxis<double>(tmpv[3], hrp::Vector3(tmpv[0], tmpv[1], tmpv[2])).toRotationMatrix(); // rotation in VRML is represented by axis + angle
-        std::cerr << "abc limb[" << ee_name << "] " << ee_target << " " << ee_base << std::endl;
-        ABCIKparam tp;
+        tp.target2foot_offset_rot = Eigen::AngleAxis<double>(tmpv[3], hrp::Vector3(tmpv[0], tmpv[1], tmpv[2])).toRotationMatrix(); // rotation in VRML is represented by axis + angle
         tp.base_name = ee_base;
         tp.target_name = ee_target;
         tp.manip = hrp::JointPathExPtr(new hrp::JointPathEx(m_robot, m_robot->link(tp.base_name),
                                                             m_robot->link(tp.target_name)));
         ikp.insert(std::pair<std::string, ABCIKparam>(ee_name , tp));
+        std::cerr << "abc limb[" << ee_name << "] " << ee_target << " " << ee_base << std::endl;
+        std::cerr << "     offset_pos : " << tp.target2foot_offset_pos(0) << " " << tp.target2foot_offset_pos(1) << " " << tp.target2foot_offset_pos(2) << std::endl;
       }
     }
 
@@ -503,14 +503,8 @@ void AutoBalancer::startABCparam(const OpenHRP::AutoBalancerService::AutoBalance
   for (size_t i = 0; i < alp.length(); i++) {
     const OpenHRP::AutoBalancerService::AutoBalancerLimbParam& tmpalp = alp[i];
     ABCIKparam& tmp = ikp[std::string(tmpalp.name)];
-    memcpy(tmp.target2foot_offset_pos.data(), tmpalp.target2foot_offset_pos, sizeof(double)*3);
-    tmp.target2foot_offset_rot = (Eigen::Quaternion<double>(tmpalp.target2foot_offset_rot[0],
-                                                            tmpalp.target2foot_offset_rot[1],
-                                                            tmpalp.target2foot_offset_rot[2],
-                                                            tmpalp.target2foot_offset_rot[3])).normalized().toRotationMatrix();
     tmp.is_active = true;
     std::cerr << "abc limb [" << std::string(tmpalp.name) << "]" << std::endl;
-    std::cerr << "     offset_pos : " << tmp.target2foot_offset_pos(0) << " " << tmp.target2foot_offset_pos(1) << " " << tmp.target2foot_offset_pos(2) << std::endl;
   }
 
   for ( int i = 0; i < m_robot->numJoints(); i++ ){

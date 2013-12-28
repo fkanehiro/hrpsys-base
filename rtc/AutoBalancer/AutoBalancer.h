@@ -157,10 +157,6 @@ class AutoBalancer
     hrp::JointPathExPtr manip;
     bool is_active;
   };
-  struct ee_trans {
-    hrp::Vector3 localp;
-    hrp::Matrix33 localR;
-  };
   void robotstateOrg2qRef();
   bool solveLimbIKforLimb (ABCIKparam& param, const double transition_smooth_gain);
   void solveLimbIK();
