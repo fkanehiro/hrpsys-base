@@ -51,7 +51,7 @@ TorqueController::TorqueController(RTC::Manager* manager)
     m_qCurrentInIn("qCurrent", m_qCurrentIn),
     m_qRefOutOut("q", m_qRefOut),
     m_TorqueControllerServicePort("TorqueControllerService"),
-	m_debugLevel(1)
+    m_debugLevel(0)
 {
   m_service0.torque_controller(this);
 }
