@@ -158,14 +158,24 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
 
     // setting from conf file
     // :rleg,TARGET_LINK,BASE_LINK
-    coil::vstring end_effectors_str = coil::split(prop["abc_end_effectors"], ",");
+    coil::vstring end_effectors_str = coil::split(prop["end_effectors"], ",");
+    size_t prop_num = 10;
     if (end_effectors_str.size() > 0) {
-      size_t num = end_effectors_str.size()/3;
+      size_t num = end_effectors_str.size()/prop_num;
       for (size_t i = 0; i < num; i++) {
         std::string ee_name, ee_target, ee_base;
-        coil::stringTo(ee_name, end_effectors_str[i*3].c_str());
-        coil::stringTo(ee_target, end_effectors_str[i*3+1].c_str());
-        coil::stringTo(ee_base, end_effectors_str[i*3+2].c_str());
+        coil::stringTo(ee_name, end_effectors_str[i*prop_num].c_str());
+        coil::stringTo(ee_target, end_effectors_str[i*prop_num+1].c_str());
+        coil::stringTo(ee_base, end_effectors_str[i*prop_num+2].c_str());
+        ee_trans eet;
+        for (size_t j = 0; j < 3; j++) {
+          coil::stringTo(eet.localp(j), end_effectors_str[i*prop_num+3+j].c_str());
+        }
+        double tmpv[4];
+        for (int j = 0; j < 4; j++ ) {
+          coil::stringTo(tmpv[j], end_effectors_str[i*prop_num+6+j].c_str());
+        }
+        eet.localR = Eigen::AngleAxis<double>(tmpv[3], hrp::Vector3(tmpv[0], tmpv[1], tmpv[2])).toRotationMatrix(); // rotation in VRML is represented by axis + angle
         std::cerr << "abc limb[" << ee_name << "] " << ee_target << " " << ee_base << std::endl;
         ABCIKparam tp;
         tp.base_name = ee_base;
