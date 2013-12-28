@@ -226,8 +226,9 @@ RTC::ReturnCode_t TorqueController::onExecute(RTC::UniqueId ec_id)
     m_qRefOutOut.write();
   } else {
     std::cerr << "TorqueController input is not correct" << std::endl;
+    std::cerr << "numJoints: " << m_robot->numJoints() << std::endl;
     std::cerr << "qCurrent: " << m_qCurrentIn.data.length() << std::endl;
-    std::cerr << "qRef: " << m_qRefIn.data.length() << std::endl;
+    std::cerr << "qRefIn: " << m_qRefIn.data.length() << std::endl;
     std::cerr << std::endl;
   }
   return RTC::RTC_OK;
