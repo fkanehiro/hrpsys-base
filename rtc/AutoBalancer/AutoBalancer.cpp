@@ -633,26 +633,26 @@ bool AutoBalancer::goStop ()
 
 bool AutoBalancer::setFootSteps(const OpenHRP::AutoBalancerService::FootstepSequence& fs)
 {
-    coordinates tmpfs;
-    std::cerr << "set_foot_steps" << std::endl;
+  coordinates tmpfs;
+  std::cerr << "set_foot_steps" << std::endl;
 
-    gg->clear_footstep_node_list();
-    for (size_t i = 0; i < fs.length(); i++) {
-      std::string leg(fs[i].leg);
-      if (leg == ":rleg" || leg == ":lleg") {
-        memcpy(tmpfs.pos.data(), fs[i].pos, sizeof(double)*3);
-        tmpfs.rot = (Eigen::Quaternion<double>(fs[i].rot[0], fs[i].rot[1], fs[i].rot[2], fs[i].rot[3])).normalized().toRotationMatrix(); // rtc: (x, y, z, w) but eigen: (w, x, y, z)
-        gg->append_footstep_node(leg, tmpfs);
-      } else {
-        std::cerr << "no such target : " << leg << std::endl;
-        return false;
-      }
+  gg->clear_footstep_node_list();
+  for (size_t i = 0; i < fs.length(); i++) {
+    std::string leg(fs[i].leg);
+    if (leg == ":rleg" || leg == ":lleg") {
+      memcpy(tmpfs.pos.data(), fs[i].pos, sizeof(double)*3);
+      tmpfs.rot = (Eigen::Quaternion<double>(fs[i].rot[0], fs[i].rot[1], fs[i].rot[2], fs[i].rot[3])).normalized().toRotationMatrix(); // rtc: (x, y, z, w) but eigen: (w, x, y, z)
+      gg->append_footstep_node(leg, tmpfs);
+    } else {
+      std::cerr << "no such target : " << leg << std::endl;
+      return false;
     }
-    std::cerr << "[AutoBalancer] : print footsteps " << std::endl;
-    gg->append_finalize_footstep();
-    gg->print_footstep_list();
-    startWalking();
- return true;
+  }
+  std::cerr << "[AutoBalancer] : print footsteps " << std::endl;
+  gg->append_finalize_footstep();
+  gg->print_footstep_list();
+  startWalking();
+  return true;
 }
 
 void AutoBalancer::waitFootSteps()
