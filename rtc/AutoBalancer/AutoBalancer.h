@@ -156,6 +156,18 @@ class AutoBalancer
     std::string target_name, base_name;
     hrp::JointPathExPtr manip;
     bool is_active;
+    void getEndCoords(rats::coordinates& retc, const hrp::Vector3& _pos, const hrp::Matrix33& _rot)
+    {
+      retc.pos = _pos;
+      retc.rot = _rot;
+      retc.transform(rats::coordinates(target2foot_offset_pos, target2foot_offset_rot));
+    };
+    void getRobotEndCoords(rats::coordinates& retc, hrp::BodyPtr& _robot)
+    {
+      getEndCoords(retc, _robot->link(target_name)->p, _robot->link(target_name)->R);
+    };
+    void getTargetEndCoords(rats::coordinates& retc) { getEndCoords(retc, target_p0, target_r0); };
+    void getCurrentEndCoords(rats::coordinates& retc) { getEndCoords(retc, current_p0, current_r0); };
   };
   void robotstateOrg2qRef();
   bool solveLimbIKforLimb (ABCIKparam& param, const double transition_smooth_gain);
