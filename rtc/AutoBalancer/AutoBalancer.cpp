@@ -308,6 +308,7 @@ void AutoBalancer::robotstateOrg2qRef()
     qrefv[i] = m_qRef.data[i];
   }
   m_robot->calcForwardKinematics();
+  coordinates rc, lc;
   if ( ikp.find(":rleg") != ikp.end() && ikp.find(":lleg") != ikp.end() ) {
     coordinates tmp_fix_coords;
     if ( gg_is_walking ) {
@@ -344,21 +345,30 @@ void AutoBalancer::robotstateOrg2qRef()
         it->second.target_r0 = m_robot->link(it->second.target_name)->R;
       }
     }
+    ikp[":rleg"].getRobotEndCoords(rc, m_robot);
+    ikp[":lleg"].getRobotEndCoords(lc, m_robot);
+    rc.translate(default_zmp_offsets[0]); /* :rleg */
+    lc.translate(default_zmp_offsets[1]); /* :lleg */
     if (gg_is_walking) {
       target_com = gg->get_cog();
     } else {
-      //coordinates rc(target_coords[":rleg"]), lc(target_coords[":lleg"]);
-      //rc.translate(tmpzo[0]); /* :rleg */
-      //lc.translate(tmpzo[1]); /* :lleg */
-      //target_cog = (rc.pos + lc.pos) / 2.0;
-      //target_com = hrp::Vector3::Zero();
-      coordinates rc, lc;
-      ikp[":rleg"].getRobotEndCoords(rc, m_robot);
-      ikp[":lleg"].getRobotEndCoords(lc, m_robot);
-      rc.translate(default_zmp_offsets[0]); /* :rleg */
-      lc.translate(default_zmp_offsets[1]); /* :lleg */
       target_com = (rc.pos+lc.pos)/2.0;
     }
+  }
+  if (control_mode == MODE_IDLE) {
+    if ( ikp.find(":rleg") != ikp.end() && ikp.find(":lleg") != ikp.end() ) {
+      refzmp(0) = target_com(0);
+      refzmp(1) = target_com(1);
+      refzmp(2) = (rc.pos(2) + lc.pos(2)) / 2.0;
+    } else refzmp = hrp::Vector3(0,0,0);
+  } else if (gg_is_walking) {
+    refzmp = gg->get_refzmp();
+  } else {
+    if ( ikp.find(":rleg") != ikp.end() && ikp.find(":lleg") != ikp.end() ) {
+      refzmp(0) = target_com(0);
+      refzmp(1) = target_com(1);
+      refzmp(2) = (rc.pos(2) + lc.pos(2)) / 2.0;
+    } else refzmp = hrp::Vector3(0,0,0);
   }
   if ( transition_count > 0 ) {
     double transition_smooth_gain = 1/(1+exp(-9.19*(((MAX_TRANSITION_COUNT - transition_count) / MAX_TRANSITION_COUNT) - 0.5)));
@@ -377,19 +387,6 @@ void AutoBalancer::robotstateOrg2qRef()
       std::cerr << "Finished cleanup" << std::endl;
       control_mode = MODE_IDLE;
     }
-  }
-  if (control_mode == MODE_IDLE) {
-    //refzmp = hrp::Vector3(0,0,0); // tempolary
-    if ( ikp.find(":rleg") != ikp.end() && ikp.find(":lleg") != ikp.end() )
-      refzmp = (m_robot->link(ikp[":rleg"].target_name)->p+
-                m_robot->link(ikp[":lleg"].target_name)->p)/2.0;
-    else refzmp = hrp::Vector3(0,0,0);
-  } else if (gg_is_walking) {
-    refzmp = gg->get_refzmp();
-  } else {
-    if ( ikp.find(":rleg") != ikp.end() && ikp.find(":lleg") != ikp.end() )
-      refzmp = target_com;
-    else refzmp = hrp::Vector3(0,0,0);
   }
   if ( transition_count > 0 ) {
     double transition_smooth_gain = 1/(1+exp(-9.19*(((MAX_TRANSITION_COUNT - abs(transition_count)) / MAX_TRANSITION_COUNT) - 0.5)));
@@ -526,10 +523,6 @@ void AutoBalancer::stopABCparam()
 {
   std::cerr << "[AutoBalancer] stop auto balancer mode" << std::endl;
   //Guard guard(m_mutex);
-  coordinates rleg_endcoords, lleg_endcoords;
-  ikp[":rleg"].getTargetEndCoords(rleg_endcoords);
-  ikp[":lleg"].getTargetEndCoords(lleg_endcoords);
-  mid_coords(fix_leg_coords, 0.5, rleg_endcoords, lleg_endcoords);
   transition_count = MAX_TRANSITION_COUNT; // when start impedance, count up to 0
   transition_joint_q.resize(m_robot->numJoints());
   for (int i = 0; i < m_robot->numJoints(); i++ ) {
@@ -571,6 +564,10 @@ void AutoBalancer::stopWalking ()
     /* sync */
   } else {
     /* overwrite sequencer's angle-vector when finishing steps */
+    coordinates rleg_endcoords, lleg_endcoords;
+    ikp[":rleg"].getTargetEndCoords(rleg_endcoords);
+    ikp[":lleg"].getTargetEndCoords(lleg_endcoords);
+    mid_coords(fix_leg_coords, 0.5, rleg_endcoords, lleg_endcoords);
     fixLegToCoords(":both", fix_leg_coords);
     gg->clear_footstep_node_list();
     if (return_control_mode == MODE_IDLE) stopABCparam();
