@@ -69,7 +69,7 @@ RTC::ReturnCode_t TorqueController::onInitialize()
   // Bind variables and configuration variable
   // <rtc-template block="bind_config">
   // Bind variables and configuration variable
-  bindParameter("debugLevel", m_debugLevel, "1");
+  bindParameter("debugLevel", m_debugLevel, "0");
   
   // </rtc-template>
 
