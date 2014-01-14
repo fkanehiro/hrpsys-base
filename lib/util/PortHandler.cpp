@@ -566,3 +566,15 @@ void AbsAccelerationOutPortHandler::update(double time)
     m_data.data[5] = m_link->dw(2);
 }
 
+EmergencySignalPortHandler::EmergencySignalPortHandler(
+    RTC::DataFlowComponentBase *i_rtc,
+    const char *i_portName) :
+    OutPortHandler<RTC::TimedLong>(i_rtc, i_portName)
+{
+}
+
+void EmergencySignalPortHandler::update(double time)
+{
+    //m_data.data = EMG_SERVO_ERROR;
+}
+

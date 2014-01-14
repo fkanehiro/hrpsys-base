@@ -354,6 +354,7 @@ void BodyRTC::createOutPort(const std::string &config)
         std::cerr << "unknown InPort data type(" << type << ")" << std::endl;
     }
 
+    m_outports.push_back(new EmergencySignalPortHandler(this, "emergencySignal"));
 }
 
 template <class _Delete>

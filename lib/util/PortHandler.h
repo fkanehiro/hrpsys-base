@@ -323,4 +323,12 @@ private:
     std::string m_pcFormat;
 };
 
+class EmergencySignalPortHandler : public OutPortHandler<RTC::TimedLong>
+{
+public:
+    EmergencySignalPortHandler(RTC::DataFlowComponentBase *i_rtc, 
+                               const char *i_portName);
+    void update(double time);
+};
+
 #endif
