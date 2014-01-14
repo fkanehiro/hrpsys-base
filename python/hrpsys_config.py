@@ -464,7 +464,7 @@ class HrpsysConfigurator:
             self.connectLoggerPort(self.sh, 'basePosOut')
             self.connectLoggerPort(self.sh, 'baseRpyOut')
         if self.rh != None:
-            self.connectLoggerPort(self.rh, 'emergencySignal')
+            self.connectLoggerPort(self.rh, 'emergencySignal', 'emergencySignal')
 
     def waitForRTCManager(self, managerhost=nshost):
         self.ms = None
