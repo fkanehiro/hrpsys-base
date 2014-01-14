@@ -438,9 +438,9 @@ class HrpsysConfigurator:
             if rtm.findPort(self.log.ref, log_name) == None:
                 print self.configurator_name, "  setupLogger : record type =", sen_type, ", name = ", sen_name, " to ", log_name
                 self.log_svc.add(sen_type, log_name)
-                connectPorts(artc.port(sen_name), self.log.port(log_name))
             else:
                 print self.configurator_name, "  setupLogger : ", sen_name, " arleady exists in DataLogger"
+            connectPorts(artc.port(sen_name), self.log.port(log_name))
 
     # public method to configure default logger data ports
     def setupLogger(self):
