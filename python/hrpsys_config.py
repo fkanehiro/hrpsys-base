@@ -266,6 +266,7 @@ class HrpsysConfigurator:
         connectPorts(self.rh.port("q"), [self.sh.port("currentQIn"), self.fk.port("q")]) # connection for actual joint angles
         connectPorts(self.sh.port("qOut"),  self.fk.port("qRef"))
         connectPorts(self.seq.port("qRef"), self.sh.port("qIn"))
+        connectPorts(self.seq.port("tqRef"), self.sh.port("tqIn"))
         connectPorts(self.seq.port("basePos"), self.sh.port("basePosIn"))
         connectPorts(self.seq.port("baseRpy"), self.sh.port("baseRpyIn"))
         connectPorts(self.seq.port("zmpRef"),  self.sh.port("zmpIn"))
@@ -461,6 +462,7 @@ class HrpsysConfigurator:
             self.connectLoggerPort(self.seq, 'qRef')
         if self.sh != None:
             self.connectLoggerPort(self.sh, 'qOut')
+            self.connectLoggerPort(self.sh, 'tqOut')
             self.connectLoggerPort(self.sh, 'basePosOut')
             self.connectLoggerPort(self.sh, 'baseRpyOut')
         if self.rh != None:

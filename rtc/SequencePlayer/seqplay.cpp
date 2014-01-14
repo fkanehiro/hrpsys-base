@@ -13,6 +13,7 @@ seqplay::seqplay(unsigned int i_dof, double i_dt) : m_dof(i_dof)
     interpolators[ACC] = new interpolator(3, i_dt);
     interpolators[P] = new interpolator(3, i_dt);
     interpolators[RPY] = new interpolator(3, i_dt);
+    interpolators[TQ] = new interpolator(i_dof, i_dt);
     //
 
 #ifdef WAIST_HEIGHT
@@ -193,7 +194,7 @@ void seqplay::setJointAngle(unsigned int i_rank, double jv, double tm)
 
 void seqplay::playPattern(std::vector<const double*> pos, std::vector<const double*> zmp, std::vector<const double*> rpy, std::vector<double> tm, const double *qInit, unsigned int len)
 {
-    const double *q=NULL, *z=NULL, *a=NULL, *p=NULL, *e=NULL; double t=0;
+    const double *q=NULL, *z=NULL, *a=NULL, *p=NULL, *e=NULL, *tq=NULL; double t=0;
     double *v = new double[len];
     for (unsigned int i=0; i<pos.size(); i++){
         q = pos[i];
@@ -225,8 +226,8 @@ void seqplay::playPattern(std::vector<const double*> pos, std::vector<const doub
         if (i < zmp.size()) z = zmp[i];
         if (i < rpy.size()) e = rpy[i];
         if (i < tm.size()) t = tm[i];
-        go(q, z, a, p, e,
-		  v, NULL, NULL, NULL, NULL,
+        go(q, z, a, p, e, tq,
+		   v, NULL, NULL, NULL, NULL, NULL,
 		  t, false);
     }
     sync();
@@ -284,6 +285,13 @@ void seqplay::loadPattern(const char *basename, double tm)
             if (debug_level > 0) cout << hip;
         }
     }
+    if (debug_level > 0) cout << "torque = ";
+    string torque = basename; torque.append(".torque");
+    if (access(torque.c_str(),0)==0){
+        found = true;
+        interpolators[TQ]->load(torque, tm, scale, false);
+        if (debug_level > 0) cout << torque;
+    }
     if (debug_level > 0) cout << endl;
     if (!found) cerr << "pattern not found(" << basename << ")" << endl;
     //
@@ -305,7 +313,7 @@ void seqplay::pop_back()
 }
 
 void seqplay::get(double *o_q, double *o_zmp, double *o_accel,
-				  double *o_basePos, double *o_baseRpy)
+				  double *o_basePos, double *o_baseRpy, double *o_tq)
 {
 	double v[m_dof];
 	interpolators[Q]->get(o_q, v);
@@ -326,21 +334,22 @@ void seqplay::get(double *o_q, double *o_zmp, double *o_accel,
 	interpolators[ACC]->get(o_accel);
 	interpolators[P]->get(o_basePos);
 	interpolators[RPY]->get(o_baseRpy);
+	interpolators[TQ]->get(o_tq);
 }
 
 void seqplay::go(const double *i_q, const double *i_zmp, const double *i_acc,
-				 const double *i_p, const double *i_rpy, double i_time, 
+				 const double *i_p, const double *i_rpy, const double *i_tq, double i_time, 
 				 bool immediate)
 {
-	go(i_q, i_zmp, i_acc, i_p, i_rpy,
-	   NULL, NULL, NULL, NULL, NULL,
+	go(i_q, i_zmp, i_acc, i_p, i_rpy, i_tq,
+	   NULL, NULL, NULL, NULL, NULL, NULL,
 	   i_time, immediate);
 }
 
 void seqplay::go(const double *i_q, const double *i_zmp, const double *i_acc,
-				 const double *i_p, const double *i_rpy,
+				 const double *i_p, const double *i_rpy, const double *i_tq,
 				 const double *ii_q, const double *ii_zmp, const double *ii_acc,
-				 const double *ii_p, const double *ii_rpy,
+				 const double *ii_p, const double *ii_rpy, const double *ii_tq,
 				 double i_time,	 bool immediate)
 {
 	if (i_q) interpolators[Q]->go(i_q, ii_q, i_time, false);
@@ -348,6 +357,7 @@ void seqplay::go(const double *i_q, const double *i_zmp, const double *i_acc,
 	if (i_acc) interpolators[ACC]->go(i_acc, ii_acc, i_time, false);
 	if (i_p) interpolators[P]->go(i_p, ii_p, i_time, false);
 	if (i_rpy) interpolators[RPY]->go(i_rpy, ii_rpy, i_time, false);
+	if (i_tq) interpolators[TQ]->go(i_tq, ii_tq, i_time, false);
 	if (immediate) sync();
 }
 

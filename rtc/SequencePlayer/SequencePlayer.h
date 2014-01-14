@@ -134,6 +134,8 @@ class SequencePlayer
   // <rtc-template block="outport_declare">
   TimedDoubleSeq m_qRef;
   OutPort<TimedDoubleSeq> m_qRefOut;
+  TimedDoubleSeq m_tqRef;
+  OutPort<TimedDoubleSeq> m_tqRefOut;
   TimedPoint3D m_zmpRef;
   OutPort<TimedPoint3D> m_zmpRefOut;
   TimedAcceleration3D m_accRef;

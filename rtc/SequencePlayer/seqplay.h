@@ -40,14 +40,14 @@ public:
     void loadPattern(const char *i_basename, double i_tm);
     void clear(double i_timeLimit=0);
     void get(double *o_q, double *o_zmp, double *o_accel,
-	     double *o_basePos, double *o_baseRpy);
+	     double *o_basePos, double *o_baseRpy, double *o_tq);
     void go(const double *i_q, const double *i_zmp, const double *i_acc,
-            const double *i_p, const double *i_rpy, double i_time, 
+            const double *i_p, const double *i_rpy, const double *i_tq, double i_time, 
             bool immediate=true);
     void go(const double *i_q, const double *i_zmp, const double *i_acc,
-            const double *i_p, const double *i_rpy,
+            const double *i_p, const double *i_rpy, const double *i_tq,
 	    const double *ii_q, const double *ii_zmp, const double *ii_acc,
-            const double *ii_p, const double *ii_rpy,
+            const double *ii_p, const double *ii_rpy, const double *ii_tq,
             double i_time, bool immediate=true);
     void sync();
     bool setInterpolationMode(interpolator::interpolation_mode i_mode_);
@@ -135,7 +135,7 @@ private:
         double time2remove;
     };
     void pop_back();
-    enum {Q, ZMP, ACC, P, RPY, NINTERPOLATOR};
+    enum {Q, ZMP, ACC, P, RPY, TQ, NINTERPOLATOR};
     interpolator *interpolators[NINTERPOLATOR];
     std::map<std::string, groupInterpolator *> groupInterpolators; 
     int debug_level, m_dof;

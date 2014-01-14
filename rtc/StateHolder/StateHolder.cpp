@@ -37,10 +37,12 @@ StateHolder::StateHolder(RTC::Manager* manager)
     // <rtc-template block="initializer">
     m_currentQIn("currentQIn", m_currentQ),
     m_qIn("qIn", m_q),
+    m_tqIn("tqIn", m_tq),
     m_basePosIn("basePosIn", m_basePos),
     m_baseRpyIn("baseRpyIn", m_baseRpy),
     m_zmpIn("zmpIn", m_zmp),
     m_qOut("qOut", m_q),
+    m_tqOut("tqOut", m_tq),
     m_basePosOut("basePosOut", m_basePos),
     m_baseRpyOut("baseRpyOut", m_baseRpy),
     m_baseTformOut("baseTformOut", m_baseTform),
@@ -79,12 +81,14 @@ RTC::ReturnCode_t StateHolder::onInitialize()
   // Set InPort buffers
     addInPort("currentQIn", m_currentQIn);
     addInPort("qIn", m_qIn);
+    addInPort("tqIn", m_tqIn);
     addInPort("basePosIn", m_basePosIn);
     addInPort("baseRpyIn", m_baseRpyIn);
     addInPort("zmpIn", m_zmpIn);
   
   // Set OutPort buffer
     addOutPort("qOut", m_qOut);
+    addOutPort("tqOut", m_tqOut);
     addOutPort("basePosOut", m_basePosOut);
     addOutPort("baseRpyOut", m_baseRpyOut);
     addOutPort("baseTformOut", m_baseTformOut);
@@ -195,8 +199,12 @@ RTC::ReturnCode_t StateHolder::onExecute(RTC::UniqueId ec_id)
     if (m_qIn.isNew()){
         m_qIn.read();
     }
+    if (m_tqIn.isNew()){
+        m_tqIn.read();
+    }
     if (m_requestGoActual || (m_q.data.length() == 0 && m_currentQ.data.length() > 0)){
         m_q = m_currentQ;
+        if (m_q.data.length() != m_tq.data.length()) m_tq.data.length(m_q.data.length());
     }
 
     if (m_requestGoActual){
@@ -230,6 +238,7 @@ RTC::ReturnCode_t StateHolder::onExecute(RTC::UniqueId ec_id)
 
     // put timestamps
     m_q.tm         = tm;
+    m_tq.tm         = tm;
     m_baseTform.tm = tm; 
     m_basePos.tm   = tm; 
     m_baseRpy.tm   = tm; 
@@ -239,6 +248,9 @@ RTC::ReturnCode_t StateHolder::onExecute(RTC::UniqueId ec_id)
     // write
     if (m_q.data.length() > 0){
         m_qOut.write();
+    }
+    if (m_tq.data.length() > 0){
+        m_tqOut.write();
     }
     m_baseTformOut.write();
     m_basePosOut.write();

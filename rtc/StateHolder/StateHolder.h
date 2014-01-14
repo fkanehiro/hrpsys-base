@@ -109,6 +109,7 @@ class StateHolder
   TimedDoubleSeq m_currentQ;
   InPort<TimedDoubleSeq> m_currentQIn;
   InPort<TimedDoubleSeq> m_qIn;
+  InPort<TimedDoubleSeq> m_tqIn;
   InPort<TimedPoint3D> m_basePosIn;
   InPort<TimedOrientation3D> m_baseRpyIn;
   InPort<TimedPoint3D> m_zmpIn;
@@ -121,12 +122,14 @@ class StateHolder
   // DataOutPort declaration
   // <rtc-template block="outport_declare">
   TimedDoubleSeq m_q;
+  TimedDoubleSeq m_tq;
   TimedPoint3D m_basePos;
   TimedOrientation3D m_baseRpy;
   TimedDoubleSeq m_baseTform;
   TimedPose3D m_basePose;
   TimedPoint3D m_zmp;
   OutPort<TimedDoubleSeq> m_qOut;
+  OutPort<TimedDoubleSeq> m_tqOut;
   OutPort<TimedPoint3D> m_basePosOut;
   OutPort<TimedOrientation3D> m_baseRpyOut;
   OutPort<TimedDoubleSeq> m_baseTformOut;

@@ -46,6 +46,7 @@ SequencePlayer::SequencePlayer(RTC::Manager* manager)
       m_basePosInitIn("basePosInit", m_basePosInit),
       m_baseRpyInitIn("baseRpyInit", m_baseRpyInit),
       m_qRefOut("qRef", m_qRef),
+      m_tqRefOut("tqRef", m_tqRef),
       m_zmpRefOut("zmpRef", m_zmpRef),
       m_accRefOut("accRef", m_accRef),
       m_basePosOut("basePos", m_basePos),
@@ -82,6 +83,7 @@ RTC::ReturnCode_t SequencePlayer::onInitialize()
   
     // Set OutPort buffer
     addOutPort("qRef", m_qRefOut);
+    addOutPort("tqRef", m_tqRefOut);
     addOutPort("zmpRef", m_zmpRefOut);
     addOutPort("accRef", m_accRefOut);
     addOutPort("basePos", m_basePosOut);
@@ -135,6 +137,7 @@ RTC::ReturnCode_t SequencePlayer::onInitialize()
 
     // allocate memory for outPorts
     m_qRef.data.length(dof);
+    m_tqRef.data.length(dof);
 
     return RTC::RTC_OK;
 }
@@ -205,7 +208,7 @@ RTC::ReturnCode_t SequencePlayer::onExecute(RTC::UniqueId ec_id)
 	Guard guard(m_mutex);
 
         double zmp[3], acc[3], pos[3], rpy[3];
-        m_seq->get(m_qRef.data.get_buffer(), zmp, acc, pos, rpy);
+        m_seq->get(m_qRef.data.get_buffer(), zmp, acc, pos, rpy, m_tqRef.data.get_buffer());
         m_zmpRef.data.x = zmp[0];
         m_zmpRef.data.y = zmp[1];
         m_zmpRef.data.z = zmp[2];
@@ -219,6 +222,7 @@ RTC::ReturnCode_t SequencePlayer::onExecute(RTC::UniqueId ec_id)
         m_baseRpy.data.p = rpy[1];
         m_baseRpy.data.y = rpy[2];
         m_qRefOut.write();
+        m_tqRefOut.write();
         m_zmpRefOut.write();
         m_accRefOut.write();
         m_basePosOut.write();
