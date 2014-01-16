@@ -122,7 +122,7 @@ void GLsceneBase::capture(char *o_buffer)
 {
     glReadBuffer(GL_BACK);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    char buf[m_width*m_height*3];
+    char *buf  = new char[m_width*m_height*3];
     glReadPixels(0,0, m_width,m_height,GL_BGR,GL_UNSIGNED_BYTE, buf);
     char *dst = o_buffer, *src;
     for (int i=0; i<m_height; i++){
@@ -130,6 +130,7 @@ void GLsceneBase::capture(char *o_buffer)
         memcpy(dst, src, m_width*3);
         dst += m_width*3;
     }
+    delete [] buf;
 }
 
 void GLsceneBase::initLights()
