@@ -43,6 +43,7 @@ endif()
 
 # add CMAKE_CURRENT_SOURCE_DIR to all files
 set(EXTRA_IDL_FILES "" CACHE PATH "directories of extra idls") # this must contain paths
+set(idl_files2 ${idl_files})
 foreach(idl_file ${idl_files})
   list(APPEND idl_files_path ${CMAKE_CURRENT_SOURCE_DIR}/${idl_file})
 endforeach()
@@ -50,7 +51,7 @@ set(idl_files ${idl_files_path} ${EXTRA_IDL_FILES})
 
 set(idl_flags -bcxx -Wbuse_quotes -Wbh=.hh -Wbs=Sk.cpp -Wba -Wbd=DynSk.cpp -I${OPENRTM_IDL_DIR})
 
-string(REGEX REPLACE ";" " " idl_files2 "${idl_files}")
+string(REGEX REPLACE ";" " " idl_files2 "${idl_files2}")
 string(REGEX REPLACE ";" " " openhrp_idl_files2 "${openhrp_idl_files}")
 configure_file(${PROJECT_SOURCE_DIR}/cpack_modules/postinst.in ${PROJECT_BINARY_DIR}/postinst)
 
