@@ -446,7 +446,13 @@ def dataTypeOfPort(port):
 def connectPorts(outP, inPs, subscription="flush", dataflow="Push", bufferlength=1, rate=1000):
 	if not isinstance(inPs, list):
 		inPs = [inPs]
+        if not outP:
+                print '[rtm.py] \033[31m   Failed to connect %s to %s\033[0m'%(outP, [inP.get_port_profile().name if inP else inP for inP in inPs])
+                return
 	for inP in inPs: 
+                if not inP:
+                        print '[rtm.py] \033[31m   Failed to connect %s to %s\033[0m'%(outP.get_port_profile().name, inP)
+                        continue
 		if isConnected(outP, inP) == True:
 			print outP.get_port_profile().name,'and',inP.get_port_profile().name,'are already connected'
 			continue
