@@ -11,11 +11,11 @@
 
 // Module specification
 // <rtc-template block="module_spec">
-static const char* nullcomponent_spec[] =
+static const char* cameraimageviewercomponent_spec[] =
 {
     "implementation_id", "CameraImageViewer",
     "type_name",         "CameraImageViewer",
-    "description",       "null component",
+    "description",       "camera image viewer component",
     "version",           "1.0",
     "vendor",            "AIST",
     "category",          "example",
@@ -214,7 +214,7 @@ extern "C"
 
     void CameraImageViewerInit(RTC::Manager* manager)
     {
-        RTC::Properties profile(nullcomponent_spec);
+        RTC::Properties profile(cameraimageviewercomponent_spec);
         manager->registerFactory(profile,
                                  RTC::Create<CameraImageViewer>,
                                  RTC::Delete<CameraImageViewer>);
