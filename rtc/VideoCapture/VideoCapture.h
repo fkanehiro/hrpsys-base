@@ -113,6 +113,8 @@ class VideoCapture
   // <rtc-template block="outport_declare">
   Img::TimedMultiCameraImage m_MultiCameraImages;
   OutPort<Img::TimedMultiCameraImage> m_MultiCameraImagesOut;
+  Img::TimedCameraImage m_CameraImage;
+  OutPort<Img::TimedCameraImage> m_CameraImageOut;
   
   // </rtc-template>
 
