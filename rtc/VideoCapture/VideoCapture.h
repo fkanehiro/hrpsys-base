@@ -21,6 +21,7 @@
 
 // Service implementation headers
 // <rtc-template block="service_impl_h">
+#include "CameraCaptureService_impl.h"
 
 // </rtc-template>
 
@@ -97,6 +98,9 @@ class VideoCapture
   // virtual RTC::ReturnCode_t onRateChanged(RTC::UniqueId ec_id);
 
     void capture();
+  void take_one_frame();
+  void start_continuous();
+  void stop_continuous();
 
  protected:
   // Configuration variable declaration
@@ -125,15 +129,20 @@ class VideoCapture
 
   // Service declaration
   // <rtc-template block="service_declare">
+  RTC::CorbaPort m_CameraCaptureServicePort;
   
   // </rtc-template>
 
   // Consumer declaration
   // <rtc-template block="consumer_declare">
+  CameraCaptureService_impl m_CameraCaptureService;
   
   // </rtc-template>
 
  private:
+  typedef enum {SLEEP, ONESHOT, CONTINUOUS} mode;
+  mode m_mode;
+  std::string m_initialMode;
   std::vector < v4l_capture * > m_cameras;
 };
 

@@ -1,4 +1,4 @@
-set(comp_sources VideoCapture.cpp camera.cpp)
+set(comp_sources VideoCapture.cpp camera.cpp CameraCaptureService_impl.cpp)
 set(libs ${OPENRTM_LIBRARIES} ${OpenCV_LIBRARIES} hrpsysBaseStub)
 add_library(VideoCapture SHARED ${comp_sources})
 target_link_libraries(VideoCapture ${libs})

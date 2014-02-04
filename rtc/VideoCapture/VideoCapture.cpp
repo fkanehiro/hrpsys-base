@@ -24,6 +24,7 @@ static const char* videocapture_spec[] =
     "language",          "C++",
     "lang_type",         "compile",
     // Configuration variables
+    "conf.default.initialMode", "continuous",
 
     ""
   };
@@ -33,8 +34,11 @@ VideoCapture::VideoCapture(RTC::Manager* manager)
   : RTC::DataFlowComponentBase(manager),
     // <rtc-template block="initializer">
     m_MultiCameraImagesOut ("MultiCameraImages", m_MultiCameraImages),
-    m_CameraImageOut ("CameraImage", m_CameraImage)
+    m_CameraImageOut ("CameraImage", m_CameraImage),
+    m_CameraCaptureServicePort("CameraCaptureService"),
+    m_CameraCaptureService(this),
     // </rtc-template>
+    m_mode(CONTINUOUS)
 {
 }
 
@@ -54,6 +58,7 @@ RTC::ReturnCode_t VideoCapture::onInitialize()
 
   // <rtc-template block="bind_config">
   // Bind variables and configuration variable
+  bindParameter("initialMode", m_initialMode, "continuous");
   
   // </rtc-template>
 
@@ -69,10 +74,12 @@ RTC::ReturnCode_t VideoCapture::onInitialize()
   }
   
   // Set service provider to Ports
+  m_CameraCaptureServicePort.registerProvider("service0", "CameraCaptureService", m_CameraCaptureService);
   
   // Set service consumers to Ports
   
   // Set CORBA Service Ports
+  addPort(m_CameraCaptureServicePort);
   
   // </rtc-template>
 
@@ -128,6 +135,12 @@ RTC::ReturnCode_t VideoCapture::onShutdown(RTC::UniqueId ec_id)
 RTC::ReturnCode_t VideoCapture::onActivated(RTC::UniqueId ec_id)
 {
   std::cout << m_profile.instance_name<< ": onActivated(" << ec_id << ")" << std::endl;
+  if (m_initialMode == "continuous"){
+    m_mode = CONTINUOUS;
+  }else{
+    m_mode = ONESHOT;
+  }
+
   return RTC::RTC_OK;
 }
 
@@ -140,12 +153,17 @@ RTC::ReturnCode_t VideoCapture::onDeactivated(RTC::UniqueId ec_id)
 RTC::ReturnCode_t VideoCapture::onExecute(RTC::UniqueId ec_id)
 {
   //std::cout << m_profile.instance_name<< ": onExecute(" << ec_id << ")" << std::endl;
+  if (m_mode == SLEEP) return RTC::RTC_OK;
+
   capture();
   if (m_cameras.size() == 1){
     m_CameraImageOut.write();
   }else{
     m_MultiCameraImagesOut.write();
   }
+
+  if (m_mode == ONESHOT) m_mode = SLEEP;
+
   return RTC::RTC_OK;
 }
 
@@ -203,6 +221,20 @@ RTC::ReturnCode_t VideoCapture::onRateChanged(RTC::UniqueId ec_id)
 }
 */
 
+void VideoCapture::take_one_frame()
+{
+  m_mode = ONESHOT;
+}
+
+void VideoCapture::start_continuous()
+{
+  m_mode = CONTINUOUS;
+}
+
+void VideoCapture::stop_continuous()
+{
+  m_mode = SLEEP;
+}
 
 
 extern "C"
