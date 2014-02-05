@@ -128,22 +128,32 @@ RTC::ReturnCode_t JpegDecoder::onExecute(RTC::UniqueId ec_id)
       buf.resize(idat.raw_data.length());
       memcpy(&buf[0], (void *)&(idat.raw_data[0]), len);
 
-      cv::Mat image = cv::imdecode(cv::Mat(buf), 1);
+      int flags = (idat.format == Img::CF_GRAY_JPEG) ? CV_LOAD_IMAGE_GRAYSCALE : CV_LOAD_IMAGE_COLOR;
+      cv::Mat image = cv::imdecode(cv::Mat(buf), flags);
 
-      m_decoded.data.image.raw_data.length(image.cols*image.rows*3);
+      if (idat.format == Img::CF_GRAY_JPEG){
+	m_decoded.data.image.format = Img::CF_GRAY;
+	m_decoded.data.image.raw_data.length(image.cols*image.rows);
+      }else{
+	m_decoded.data.image.format = Img::CF_RGB;
+	m_decoded.data.image.raw_data.length(image.cols*image.rows*3);
+      }
       m_decoded.data.image.width = image.cols;
       m_decoded.data.image.height = image.rows;
-      m_decoded.data.image.format = Img::CF_RGB;
       unsigned char *src = image.data;
       unsigned char *dst = m_decoded.data.image.raw_data.get_buffer();
-      for (int i=0; i<image.rows; i++){
+      if (idat.format == Img::CF_GRAY_JPEG){
+	memcpy(dst, src, m_decoded.data.image.raw_data.length());
+      }else{
+	for (int i=0; i<image.rows; i++){
           for (int j=0; j<image.cols; j++){
-              // BGR -> RGB
-              *dst++ = src[2];
-              *dst++ = src[1];
-              *dst++ = src[0];
-              src+=3;
+	    // BGR -> RGB
+	    *dst++ = src[2];
+	    *dst++ = src[1];
+	    *dst++ = src[0];
+	    src+=3;
           }
+	}
       }
 
       m_decodedOut.write();

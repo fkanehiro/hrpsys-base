@@ -134,6 +134,7 @@ class JpegEncoder
   // </rtc-template>
 
  private:
+  int m_quality;
   int dummy;
 };
 
