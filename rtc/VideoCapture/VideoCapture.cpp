@@ -153,9 +153,10 @@ RTC::ReturnCode_t VideoCapture::onDeactivated(RTC::UniqueId ec_id)
 RTC::ReturnCode_t VideoCapture::onExecute(RTC::UniqueId ec_id)
 {
   //std::cout << m_profile.instance_name<< ": onExecute(" << ec_id << ")" << std::endl;
+  capture();
+
   if (m_mode == SLEEP) return RTC::RTC_OK;
 
-  capture();
   if (m_cameras.size() == 1){
     m_CameraImageOut.write();
   }else{
