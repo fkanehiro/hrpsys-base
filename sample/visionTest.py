@@ -4,13 +4,18 @@ rtm.nshost = "localhost"
 rtm.nsport = 2809
 rtm.initCORBA()
 
+from Img import *
+
 def capture():
+    global vc, civ, ccs
     mgr = rtm.findRTCmanager()
     mgr.load("VideoCapture")
     mgr.load("CameraImageViewer")
 
     vc  = mgr.create("VideoCapture")
     civ = mgr.create("CameraImageViewer")
+
+    ccs = rtm.narrow(vc.service("service0"), "CameraCaptureService", "Img")
 
     rtm.connectPorts(vc.port("CameraImage"), civ.port("imageIn"))
     rtm.serializeComponents([vc, civ])
