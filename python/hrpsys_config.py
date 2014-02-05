@@ -536,11 +536,11 @@ class HrpsysConfigurator:
         radangle = angle/180.0*math.pi
         return self.seq_svc.setJointAngle(jname, radangle, tm)
 
-    def setJointAngles(self, pose, tm):
-        angles = []
-        for item in pose:
-            angles.append(item/180.0*math.pi)
-        return self.seq_svc.setJointAngles(angles, tm)
+    def setJointAngles(self, angles, tm):
+        ret = []
+        for angle in angles:
+            angles.append(angle/180.0*math.pi)
+        return self.seq_svc.setJointAngles(ret, tm)
 
     def setJointAnglesOfGroup(self, gname, pose, tm, wait=True):
         angles = [x/180.0*math.pi for x in pose]
