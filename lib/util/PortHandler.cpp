@@ -229,6 +229,7 @@ RangeSensorPortHandler::RangeSensorPortHandler(
     SensorPortHandler<RangeSensor, RTC::RangeData>(i_rtc, i_portName, i_sensor)
 {
     i_sensor->isEnabled = true;
+    m_data.config.angularRes = i_sensor->scanStep;
 }
 
 void RangeSensorPortHandler::update(double time)
