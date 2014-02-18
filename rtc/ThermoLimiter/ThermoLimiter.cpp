@@ -23,7 +23,7 @@ static const char* thermolimiter_spec[] =
     "implementation_id", "ThermoLimiter",
     "type_name",         "ThermoLimiter",
     "description",       "null component",
-    "version",           "1.0",
+    "version",           HRPSYS_PACKAGE_VERSION,
     "vendor",            "AIST",
     "category",          "example",
     "activity_type",     "DataFlowComponent",

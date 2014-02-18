@@ -16,7 +16,7 @@ static const char* imagedata2cameraimage_spec[] =
     "implementation_id", "ImageData2CameraImage",
     "type_name",         "ImageData2CameraImage",
     "description",       "imagedata2cameraimage component",
-    "version",           "1.0",
+    "version",           HRPSYS_PACKAGE_VERSION,
     "vendor",            "AIST",
     "category",          "example",
     "activity_type",     "DataFlowComponent",

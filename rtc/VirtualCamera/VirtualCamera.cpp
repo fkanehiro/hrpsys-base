@@ -31,7 +31,7 @@ static const char* virtualcamera_spec[] =
     "implementation_id", "VirtualCamera",
     "type_name",         "VirtualCamera",
     "description",       "virtual camera component",
-    "version",           "1.0",
+    "version",           HRPSYS_PACKAGE_VERSION,
     "vendor",            "AIST",
     "category",          "example",
     "activity_type",     "DataFlowComponent",

@@ -19,7 +19,7 @@ static const char* stateholder_spec[] =
     "implementation_id", "StateHolder",
     "type_name",         "StateHolder",
     "description",       "state holder",
-    "version",           "1.0",
+    "version",           HRPSYS_PACKAGE_VERSION,
     "vendor",            "AIST",
     "category",          "example",
     "activity_type",     "DataFlowComponent",

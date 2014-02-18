@@ -189,7 +189,7 @@ static const char* nullcomponent_spec[] =
     "implementation_id", "OGMap3DViewer",
     "type_name",         "OGMap3DViewer",
     "description",       "null component",
-    "version",           "1.0",
+    "version",           HRPSYS_PACKAGE_VERSION,
     "vendor",            "AIST",
     "category",          "example",
     "activity_type",     "DataFlowComponent",

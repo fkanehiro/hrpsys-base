@@ -25,7 +25,7 @@ static const char* robothardware_spec[] =
     "implementation_id", "RobotHardware",
     "type_name",         "RobotHardware",
     "description",       "RobotHardware",
-    "version",           "1.0",
+    "version",           HRPSYS_PACKAGE_VERSION,
     "vendor",            "AIST",
     "category",          "example",
     "activity_type",     "DataFlowComponent",

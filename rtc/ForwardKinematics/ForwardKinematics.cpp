@@ -22,7 +22,7 @@ static const char* nullcomponent_spec[] =
     "implementation_id", "ForwardKinematics",
     "type_name",         "ForwardKinematics",
     "description",       "forward kinematics component",
-    "version",           "1.0",
+    "version",           HRPSYS_PACKAGE_VERSION,
     "vendor",            "AIST",
     "category",          "example",
     "activity_type",     "DataFlowComponent",

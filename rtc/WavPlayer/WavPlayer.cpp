@@ -16,7 +16,7 @@ static const char* wavplayer_spec[] =
     "implementation_id", "WavPlayer",
     "type_name",         "WavPlayer",
     "description",       "wave file player",
-    "version",           "1.0",
+    "version",           HRPSYS_PACKAGE_VERSION,
     "vendor",            "AIST",
     "category",          "example",
     "activity_type",     "DataFlowComponent",

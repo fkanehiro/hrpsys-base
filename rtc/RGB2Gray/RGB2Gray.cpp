@@ -18,7 +18,7 @@ static const char* jpegdecoder_spec[] =
     "implementation_id", "RGB2Gray",
     "type_name",         "RGB2Gray",
     "description",       "rgb2gray component",
-    "version",           "1.0",
+    "version",           HRPSYS_PACKAGE_VERSION,
     "vendor",            "AIST",
     "category",          "example",
     "activity_type",     "DataFlowComponent",

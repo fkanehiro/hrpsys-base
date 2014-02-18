@@ -16,7 +16,7 @@ static const char* hgcontroller_spec[] =
     "implementation_id", "HGcontroller",
     "type_name",         "HGcontroller",
     "description",       "high gain joint controller component for OpenHRP",
-    "version",           "1.0",
+    "version",           HRPSYS_PACKAGE_VERSION,
     "vendor",            "AIST",
     "category",          "example",
     "activity_type",     "DataFlowComponent",

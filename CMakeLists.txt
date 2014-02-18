@@ -135,6 +135,8 @@ install(FILES
   ${CMAKE_CURRENT_BINARY_DIR}/hrpsys-base.pc
   DESTINATION lib/pkgconfig)
 
+add_definitions(-DHRPSYS_PACKAGE_VERSION=\"\\"${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}\\"\")
+
 if(COMPILE_JAVA_STUFF)
   add_subdirectory(jython)
 endif()

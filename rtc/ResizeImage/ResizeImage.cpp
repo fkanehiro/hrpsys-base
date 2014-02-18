@@ -17,7 +17,7 @@ static const char* jpegdecoder_spec[] =
     "implementation_id", "ResizeImage",
     "type_name",         "ResizeImage",
     "description",       "resize image component",
-    "version",           "1.0",
+    "version",           HRPSYS_PACKAGE_VERSION,
     "vendor",            "AIST",
     "category",          "example",
     "activity_type",     "DataFlowComponent",

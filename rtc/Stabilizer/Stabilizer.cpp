@@ -22,7 +22,7 @@ static const char* stabilizer_spec[] =
     "implementation_id", "Stabilizer",
     "type_name",         "Stabilizer",
     "description",       "stabilizer",
-    "version",           "1.0",
+    "version",           HRPSYS_PACKAGE_VERSION,
     "vendor",            "AIST",
     "category",          "example",
     "activity_type",     "DataFlowComponent",

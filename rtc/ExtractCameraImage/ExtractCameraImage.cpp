@@ -16,7 +16,7 @@ static const char* extractcameraimage_spec[] =
     "implementation_id", "ExtractCameraImage",
     "type_name",         "ExtractCameraImage",
     "description",       "extractcameraimage component",
-    "version",           "1.0",
+    "version",           HRPSYS_PACKAGE_VERSION,
     "vendor",            "AIST",
     "category",          "example",
     "activity_type",     "DataFlowComponent",

@@ -22,7 +22,7 @@ static const char* kalmanfilter_spec[] =
     "implementation_id", "KalmanFilter",
     "type_name",         "KalmanFilter",
     "description",       "kalman filter",
-    "version",           "1.0",
+    "version",           HRPSYS_PACKAGE_VERSION,
     "vendor",            "AIST",
     "category",          "example",
     "activity_type",     "DataFlowComponent",

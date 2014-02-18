@@ -25,7 +25,7 @@ static const char* component_spec[] =
     "implementation_id", "Viewer",
     "type_name",         "Viewer",
     "description",       "viewer component",
-    "version",           "1.0",
+    "version",           HRPSYS_PACKAGE_VERSION,
     "vendor",            "AIST",
     "category",          "example",
     "activity_type",     "DataFlowComponent",

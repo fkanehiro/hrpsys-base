@@ -16,7 +16,7 @@ static const char* cameraimageviewercomponent_spec[] =
     "implementation_id", "CameraImageViewer",
     "type_name",         "CameraImageViewer",
     "description",       "camera image viewer component",
-    "version",           "1.0",
+    "version",           HRPSYS_PACKAGE_VERSION,
     "vendor",            "AIST",
     "category",          "example",
     "activity_type",     "DataFlowComponent",

@@ -32,7 +32,7 @@ static const char* occupancygridmap3d_spec[] =
     "implementation_id", "OccupancyGridMap3D",
     "type_name",         "OccupancyGridMap3D",
     "description",       "null component",
-    "version",           "1.0",
+    "version",           HRPSYS_PACKAGE_VERSION,
     "vendor",            "AIST",
     "category",          "example",
     "activity_type",     "DataFlowComponent",

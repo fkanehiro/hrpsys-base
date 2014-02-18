@@ -16,7 +16,7 @@ static const char* videocapture_spec[] =
     "implementation_id", "VideoCapture",
     "type_name",         "VideoCapture",
     "description",       "video capture component",
-    "version",           "1.0",
+    "version",           HRPSYS_PACKAGE_VERSION,
     "vendor",            "JSK",
     "category",          "example",
     "activity_type",     "DataFlowComponent",

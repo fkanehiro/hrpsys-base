@@ -17,7 +17,7 @@ static const char* joystick2velocity_spec[] =
     "implementation_id", "Joystick2Velocity2D",
     "type_name",         "Joystick2Velocity2D",
     "description",       "joystick output to velocity converter",
-    "version",           "1.0",
+    "version",           HRPSYS_PACKAGE_VERSION,
     "vendor",            "AIST",
     "category",          "example",
     "activity_type",     "DataFlowComponent",
