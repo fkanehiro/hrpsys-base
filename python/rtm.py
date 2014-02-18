@@ -266,10 +266,17 @@ def initCORBA():
         print "configuration ORB with ", nshost, ":", nsport
         os.environ['ORBInitRef'] = 'NameService=corbaloc:iiop:{0}:{1}/NameService'.format(nshost,nsport)
 
-	orb = CORBA.ORB_init(sys.argv, CORBA.ORB_ID)
+        try:
+                orb = CORBA.ORB_init(sys.argv, CORBA.ORB_ID)
+                nameserver = orb.resolve_initial_references("NameService");
+                rootnc = nameserver._narrow(CosNaming.NamingContext)
+        except omniORB.CORBA.ORB.InvalidName, e:
+                sys.exit('[ERROR] Invalid Name ('+str(e)+')')
+        except omniORB.CORBA.TRANSIENT, e:
+                sys.exit('[ERROR] Connaction Failed ('+str(e)+')')
+        except Exception as e:
+                print str(e)
 
-	nameserver = orb.resolve_initial_references("NameService");
-	rootnc = nameserver._narrow(CosNaming.NamingContext)
 	return None
 
 ##
