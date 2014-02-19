@@ -271,9 +271,11 @@ def initCORBA():
                 nameserver = orb.resolve_initial_references("NameService");
                 rootnc = nameserver._narrow(CosNaming.NamingContext)
         except omniORB.CORBA.ORB.InvalidName, e:
-                sys.exit('[ERROR] Invalid Name ('+str(e)+')')
+                sys.exit('[ERROR] Invalide Name (hostname={0}).\n'.format(nshost) +
+                         'Make sure the hostname is correct.\n' + str(e))
         except omniORB.CORBA.TRANSIENT, e:
-                sys.exit('[ERROR] Connaction Failed ('+str(e)+')')
+                sys.exit('[ERROR] Connection Failed with the Nameserver (hostname={0} port={1}).\n'.format(nshost, nsport) +
+                         'Make sure the hostname is correct and the Nameserver is running.\n' + str(e))
         except Exception as e:
                 print str(e)
 
