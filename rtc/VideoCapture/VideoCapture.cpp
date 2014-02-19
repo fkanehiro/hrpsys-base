@@ -138,7 +138,7 @@ RTC::ReturnCode_t VideoCapture::onActivated(RTC::UniqueId ec_id)
   if (m_initialMode == "continuous"){
     m_mode = CONTINUOUS;
   }else{
-    m_mode = ONESHOT;
+    m_mode = SLEEP;
   }
 
   return RTC::RTC_OK;
