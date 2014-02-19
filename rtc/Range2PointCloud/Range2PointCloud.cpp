@@ -142,40 +142,48 @@ RTC::ReturnCode_t Range2PointCloud::onDeactivated(RTC::UniqueId ec_id)
 RTC::ReturnCode_t Range2PointCloud::onExecute(RTC::UniqueId ec_id)
 {
     //std::cout << m_profile.instance_name<< ": onExecute(" << ec_id << ")" << std::endl;
-  if (m_rangeIn.isNew()){
-      do {
-          m_rangeIn.read();
-      }while(m_rangeIn.isNew()); 
-      if (m_sensorPoseIn.isNew()) m_sensorPoseIn.read();
-      m_cloud.width = m_range.ranges.length();
-      m_cloud.row_step = m_cloud.point_step*m_cloud.width;
-      m_cloud.data.length(m_cloud.width*m_cloud.point_step);// shrinked later
-      // range -> point cloud
-      int scan_half = m_range.ranges.length()/2;
-      float *ptr = (float *)m_cloud.data.get_buffer();
-      int npoint=0;
-      hrp::Vector3 relP, absP, sensorP(m_sensorPose.data.position.x,
-				       m_sensorPose.data.position.y,
-				       m_sensorPose.data.position.z);
-      hrp::Matrix33 sensorR = hrp::rotFromRpy(m_sensorPose.data.orientation.r,
-					      m_sensorPose.data.orientation.p,
-					      m_sensorPose.data.orientation.y);
-      for (int i=-scan_half; i<=scan_half; i++){
-          double th = i*m_range.config.angularRes;
-          double d = m_range.ranges[i+scan_half];
-          if (d==0) continue;
-	  relP << -d*sin(th), 0, -d*cos(th);
-	  absP = sensorP + sensorR*relP;
-          ptr[0] = absP[0];
-          ptr[1] = absP[1];
-          ptr[2] = absP[2];
-          //std::cout << "(" << i << "," << ptr[2] << "," << d << ")" << std::endl;
-          ptr+=4;
-          npoint++;
-      }
-      m_cloud.data.length(npoint*m_cloud.point_step);
-      m_cloudOut.write();
+  if (!m_rangeIn.isNew()) return RTC::RTC_OK;
+
+  m_cloud.width = 0;
+  int npoint=0;
+  int nlines=0;
+  while (m_rangeIn.isNew()){
+    nlines++;
+    m_rangeIn.read();
+    if (m_sensorPoseIn.isNew()) m_sensorPoseIn.read();
+    m_cloud.width += m_range.ranges.length();
+    m_cloud.row_step = m_cloud.point_step*m_cloud.width;
+    m_cloud.data.length(m_cloud.row_step);// shrinked later
+    // range -> point cloud
+    int scan_half = m_range.ranges.length()/2;
+    float *ptr = (float *)m_cloud.data.get_buffer() + npoint*4;
+    hrp::Vector3 relP, absP, sensorP(m_sensorPose.data.position.x,
+				     m_sensorPose.data.position.y,
+				     m_sensorPose.data.position.z);
+    hrp::Matrix33 sensorR = hrp::rotFromRpy(m_sensorPose.data.orientation.r,
+					    m_sensorPose.data.orientation.p,
+					    m_sensorPose.data.orientation.y);
+    for (int i=-scan_half; i<=scan_half; i++){
+      double th = i*m_range.config.angularRes;
+      double d = m_range.ranges[i+scan_half];
+      if (d==0) continue;
+      relP << -d*sin(th), 0, -d*cos(th);
+      absP = sensorP + sensorR*relP;
+      ptr[0] = absP[0];
+      ptr[1] = absP[1];
+      ptr[2] = absP[2];
+      //std::cout << "(" << i << "," << ptr[2] << "," << d << ")" << std::endl;
+      ptr+=4;
+      npoint++;
+    }
   }
+#if 0
+  std::cout << "Range2PointCloud: processed " << nlines << " lines, " 
+	    << npoint << " points" << std::endl;
+#endif
+  m_cloud.width = npoint;
+  m_cloud.data.length(npoint*m_cloud.point_step);
+  m_cloudOut.write();
 
   return RTC::RTC_OK;
 }
