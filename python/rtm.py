@@ -500,21 +500,35 @@ def data2cdr(data):
 	return cdrMarshal(any.to_any(data).typecode(), data, True)
 
 ##
+# \brief get class object from class name
+# \param fullname class name
+# \return class object
+#
+def classFromString(fullname):
+	component_path = fullname.split('.')
+	package_path   = component_path[:-1]
+	package_name   = ".".join(package_path)
+	class_name     = component_path[-1]
+	__import__(str(package_name))
+	return getattr(sys.modules[package_name],class_name)
+
+##
 # \brief convert data from CDR format
 # \param cdr in CDR format 
 # \param classname class name of the data
 # \return converted data
 #
 def cdr2data(cdr, classname):
-	return cdrUnmarshal(any.to_any(eval(classname)).typecode(), cdr, True)
+	return cdrUnmarshal(any.to_any(classFromString(classname)).typecode(), cdr, True)
 
 ##
 # \brief write data to a data port	
 # \param port reference of data port
 # \param data data to be written
-# \param tm after this time, a connection to write data is disconnected
+# \param tm If disconnect==True, a connection to write data is disconnected after this time
+# \param disconnect If True, a connection is disconnected after tm and if not, the connection must be disconnected by a user
 #
-def writeDataPort(port, data, tm=1.0):
+def writeDataPort(port, data, tm=1.0, disconnect=True):
 	nv1 = SDOPackage.NameValue("dataport.interface_type", 
 				   any.to_any("corba_cdr"))
 	nv2 = SDOPackage.NameValue("dataport.dataflow_type", 
@@ -535,8 +549,11 @@ def writeDataPort(port, data, tm=1.0):
 			cdr = data2cdr(data)
 			if inport.put(cdr) != OpenRTM.PORT_OK:
 				print "failed to put"
-			time.sleep(tm)
-			port.disconnect(prof.connector_id)
+			if disconnect:
+				time.sleep(tm)
+				port.disconnect(prof.connector_id)
+			else:
+				return prof.connector_id
 	return None		
 			
 		
@@ -576,8 +593,9 @@ def readDataPort(port, timeout = 1.0):
 					ret,data = outport.get()
 					if ret == OpenRTM.PORT_OK:
 						port.disconnect(prof.connector_id)
-						print classname
-						print eval(classname)
+						tokens = classname.split(':')
+						if len(tokens) == 3: # for 1.1?
+							classname = tokens[1].replace('/', '.')
 						return cdr2data(data, classname)
 				except:
 					pass
