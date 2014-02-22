@@ -358,7 +358,8 @@ bool JointPathEx::calcInverseKinematics2(const Vector3& end_p, const Matrix33& e
       if(isBestEffortIKMode){
         std::cerr << "  err : fabs(" << errsqr << " - " << errsqr0 << ") = " << fabs(errsqr-errsqr0) << " < " << maxIKErrorSqr << " BestEffortIKMode" << std::endl;
       } else {
-        std::cerr << "  err : " << errsqr << " ( " << dp[0] << " " << dp[1] << " " << dp[2] << ", " << omega[0] << " " << omega[1] << " " << omega[2] << ") < " << maxIKErrorSqr << std::endl;
+          std::cerr << "  err : " << dp.dot(dp) << " ( " << dp[0] << " " << dp[1] << " " << dp[2] << ") < " << maxIKPosErrorSqr << std::endl;
+          std::cerr << "      : " << omega.dot(omega) << " ( " << omega[0] << " " << omega[1] << " " << omega[2] << ") < " << maxIKRotErrorSqr << std::endl;
       }
       for(int i=0; i < n; ++i){
         joints[i]->q = qorg[i];
