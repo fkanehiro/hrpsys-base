@@ -595,7 +595,10 @@ class HrpsysConfigurator:
     def getReferenceRPY(self,lname):
         return euler_from_matrix(self.getReferenceRotation(lname),'sxyz')
 
-    def setTargetPose(self, gname, pos, rpy, tm) :
+    def setTargetPose(self, gname, pos, rpy, tm, frame_name=None) :
+        print gname, frame_name, pos, rpy, tm
+        if frame_name :
+            gname = gname + ':' + frame_name
         return self.seq_svc.setTargetPose(gname, pos, rpy, tm)
 
     def setTargetPoseRelative(self, gname, eename, dx=0, dy=0, dz=0,

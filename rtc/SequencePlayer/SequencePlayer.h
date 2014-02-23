@@ -101,7 +101,7 @@ class SequencePlayer
   bool setBasePos(const double *pos, double tm);
   bool setBaseRpy(const double *rpy, double tm);
   bool setZmp(const double *zmp, double tm);
-  bool setTargetPose(const char* gname, const double *xyz, const double *rpy, double tm);
+  bool setTargetPose(const char* gname, const double *xyz, const double *rpy, double tm, const char* frame_name);
   void loadPattern(const char *basename, double time); 
   void playPattern(const OpenHRP::dSequenceSequence& pos, const OpenHRP::dSequenceSequence& rpy, const OpenHRP::dSequenceSequence& zmp, const OpenHRP::dSequence& tm);
   bool setInterpolationMode(OpenHRP::SequencePlayerService::interpolationMode i_mode_);
