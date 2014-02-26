@@ -21,7 +21,7 @@ static const char* torquefilter_spec[] =
   "implementation_id", "TorqueFilter",
   "type_name",         "TorqueFilter",
   "description",       "null component",
-  "version",           "1.0",
+  "version",           HRPSYS_PACKAGE_VERSION,
   "vendor",            "AIST",
   "category",          "example",
   "activity_type",     "DataFlowComponent",

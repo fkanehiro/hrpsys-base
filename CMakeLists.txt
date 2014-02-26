@@ -80,7 +80,7 @@ set(CPACK_PACKAGE_VENDOR "AIST")
 set(CPACK_PACKAGE_CONTACT "Fumio Kanehiro <f-kanehiro@aist.go.jp>")
 set(CPACK_PACKAGE_VERSION_MAJOR 315)
 set(CPACK_PACKAGE_VERSION_MINOR 1)
-set(CPACK_PACKAGE_VERSION_PATCH 7)
+set(CPACK_PACKAGE_VERSION_PATCH 8)
 execute_process(
   COMMAND date +%Y%m%d%H%M
   OUTPUT_VARIABLE CPACK_PACKAGE_DATE
@@ -134,6 +134,8 @@ configure_file(hrpsys-base.pc.in ${CMAKE_CURRENT_BINARY_DIR}/hrpsys-base.pc @ONL
 install(FILES
   ${CMAKE_CURRENT_BINARY_DIR}/hrpsys-base.pc
   DESTINATION lib/pkgconfig)
+
+add_definitions(-DHRPSYS_PACKAGE_VERSION=\"\\"${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}\\"\")
 
 if(COMPILE_JAVA_STUFF)
   add_subdirectory(jython)

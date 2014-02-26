@@ -17,7 +17,7 @@ static const char* range2pointcloud_spec[] =
     "implementation_id", "Range2PointCloud",
     "type_name",         "Range2PointCloud",
     "description",       "range2pointcloud component",
-    "version",           "1.0",
+    "version",           HRPSYS_PACKAGE_VERSION,
     "vendor",            "AIST",
     "category",          "example",
     "activity_type",     "DataFlowComponent",

@@ -17,7 +17,7 @@ static const char* joystick_spec[] =
     "implementation_id", "Joystick",
     "type_name",         "Joystick",
     "description",       "Access a joystick control device.",
-    "version",           "1.0.0",
+    "version",           HRPSYS_PACKAGE_VERSION,
     "vendor",            "AIST",
     "category",          "Human input",
     "activity_type",     "PERIODIC",

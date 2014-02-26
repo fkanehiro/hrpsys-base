@@ -28,7 +28,7 @@ static const char* autobalancer_spec[] =
         "implementation_id", "AutoBalancer",
         "type_name",         "AutoBalancer",
         "description",       "autobalancer component",
-        "version",           "1.0",
+        "version",           HRPSYS_PACKAGE_VERSION,
         "vendor",            "AIST",
         "category",          "example",
         "activity_type",     "DataFlowComponent",

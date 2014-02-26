@@ -64,6 +64,16 @@ if(NOT OPENHRP_FOUND)
   set(OPENHRP_DIR NOT_FOUND)
 endif()
 
+execute_process(
+  COMMAND pkg-config --variable=idl_dir openhrp3.1
+  OUTPUT_VARIABLE OPENHRP_IDL_DIR
+  RESULT_VARIABLE RESULT
+  OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+if(NOT RESULT EQUAL 0)
+  set(OPENHRP_FOUND FALSE)
+endif()
+
 set(OPENHRP_DIR ${OPENHRP_DIR} CACHE PATH "The top directory of OpenHRP")
 
 if(OPENHRP_FOUND)

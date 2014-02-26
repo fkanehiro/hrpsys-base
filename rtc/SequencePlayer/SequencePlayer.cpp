@@ -25,7 +25,7 @@ static const char* sequenceplayer_spec[] =
         "implementation_id", "SequencePlayer",
         "type_name",         "SequencePlayer",
         "description",       "sequence player component",
-        "version",           "1.0",
+        "version",           HRPSYS_PACKAGE_VERSION,
         "vendor",            "AIST",
         "category",          "example",
         "activity_type",     "DataFlowComponent",
@@ -392,7 +392,7 @@ bool SequencePlayer::setZmp(const double *zmp, double tm)
     return true;
 }
 
-bool SequencePlayer::setTargetPose(const char* gname, const double *xyz, const double *rpy, double tm)
+bool SequencePlayer::setTargetPose(const char* gname, const double *xyz, const double *rpy, double tm, const char* frame_name)
 {
     if ( m_debugLevel > 0 ) {
         std::cerr << __PRETTY_FUNCTION__ << std::endl;
@@ -415,7 +415,6 @@ bool SequencePlayer::setTargetPose(const char* gname, const double *xyz, const d
         return false;
     }
     string base_parent_name = m_robot->joint(indices[0])->parent->name;
-    string base_name = m_robot->joint(indices[0])->name;
     string target_name = m_robot->joint(indices[indices.size()-1])->name;
     // prepare joint path
     hrp::JointPathExPtr manip = hrp::JointPathExPtr(new hrp::JointPathEx(m_robot, m_robot->link(base_parent_name), m_robot->link(target_name)));
@@ -437,6 +436,18 @@ bool SequencePlayer::setTargetPose(const char* gname, const double *xyz, const d
     hrp::Matrix33 start_R(m_robot->link(target_name)->R);
     hrp::Vector3 end_p(xyz[0], xyz[1], xyz[2]);
     hrp::Matrix33 end_R = m_robot->link(target_name)->calcRfromAttitude(hrp::rotFromRpy(rpy[0], rpy[1], rpy[2]));
+
+    // change start and end must be relative to the frame_name
+    if ( (frame_name != NULL) && (! m_robot->link(frame_name) ) ) {
+        std::cerr << "[setTargetPose] Could not find frame_name " << frame_name << std::endl;
+        return false;
+    } else if ( frame_name != NULL ) {
+        hrp::Vector3 frame_p(m_robot->link(frame_name)->p);
+        hrp::Matrix33 frame_R(m_robot->link(frame_name)->attitude());
+        // fix start/end references from root to frame;
+        end_p = frame_R * end_p + frame_p;
+        end_R = frame_R * end_R;
+    }
     manip->setMaxIKError(m_error_pos,m_error_rot);
     manip->setMaxIKIteration(m_iteration);
 

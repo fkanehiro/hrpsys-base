@@ -26,7 +26,7 @@ static const char* softerrorlimiter_spec[] =
     "implementation_id", "SoftErrorLimiter",
     "type_name",         "SoftErrorLimiter",
     "description",       "soft error limiter",
-    "version",           "1.0",
+    "version",           HRPSYS_PACKAGE_VERSION,
     "vendor",            "AIST",
     "category",          "example",
     "activity_type",     "DataFlowComponent",
