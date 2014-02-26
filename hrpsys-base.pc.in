@@ -1,6 +1,7 @@
 prefix=@CMAKE_INSTALL_PREFIX@
 exec_prefix=${prefix}/bin
 libdir=${prefix}/lib
+idldir=${prefix}/share/hrpsys/idl
 includedir=-I${prefix}/include/hrpsys -I${prefix}/include/hrpsys/idl
 link_shared_files=@PKG_CONF_LINK_SHARED_FILES@
 link_static_files=@PKG_CONF_LINK_STATIC_FILES@
