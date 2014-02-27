@@ -284,7 +284,7 @@ void seqplay::loadPattern(const char *basename, double tm)
             if (debug_level > 0) cout << hip;
         }
     }
-    if (debug_level > 0) cout << "torque = ";
+    if (debug_level > 0) cout << endl << "torque = ";
     string torque = basename; torque.append(".torque");
     if (access(torque.c_str(),0)==0){
         found = true;
