@@ -539,7 +539,7 @@ class HrpsysConfigurator:
     def setJointAngles(self, angles, tm):
         ret = []
         for angle in angles:
-            angles.append(angle/180.0*math.pi)
+            ret.append(angle/180.0*math.pi)
         return self.seq_svc.setJointAngles(ret, tm)
 
     def setJointAnglesOfGroup(self, gname, pose, tm, wait=True):
