@@ -386,6 +386,26 @@ class HrpsysConfigurator:
                 print self.configurator_name, "  eval : ", create_str
                 exec(create_str)
 
+    def findComp(self, compName, instanceName):
+        comp = rtm.findRTC(instanceName)
+        print self.configurator_name, " find Comp    : ", instanceName, " = ", comp
+        if comp == None:
+            raise RuntimeError("Cannot find component: " + instanceName + " (" + compName +")")
+        if comp.service("service0"):
+            comp_svc = narrow(comp.service("service0"), compName+"Service")
+            print self.configurator_name, " find CompSvc : ", instanceName + "_svc = ", comp_svc
+            return [comp, comp_svc]
+        else:
+            return [comp, None]
+
+    def findComps(self):
+        for rn in self.getRTCList():
+            rn2='self.'+rn[0]
+            if eval(rn2) == None:
+                create_str="[self."+rn[0]+", self."+rn[0]+"_svc] = self.findComp(\""+rn[1]+"\",\""+rn[0]+"\")"
+                print self.configurator_name, create_str
+                exec(create_str)
+
     # public method to configure all RTCs to be activated on rtcd
     def getRTCList(self):
         return [
