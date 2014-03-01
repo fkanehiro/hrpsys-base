@@ -390,7 +390,8 @@ class HrpsysConfigurator:
         comp = rtm.findRTC(instanceName)
         print self.configurator_name, " find Comp    : ", instanceName, " = ", comp
         if comp == None:
-            raise RuntimeError("Cannot find component: " + instanceName + " (" + compName +")")
+            print self.configurator_name, " Cannot find component: " + instanceName + " (" + compName +")"
+            return [None, None]
         if comp.service("service0"):
             comp_svc = narrow(comp.service("service0"), compName+"Service")
             print self.configurator_name, " find CompSvc : ", instanceName + "_svc = ", comp_svc
