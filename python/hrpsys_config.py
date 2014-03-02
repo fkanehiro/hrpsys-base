@@ -918,8 +918,11 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
         print self.configurator_name, "activating components"
         self.activateComps()
 
+        print self.configurator_name, "setup logger"
         self.setupLogger()
-        print self.configurator_name, "setup logger done"
+
+        print self.configurator_name, "setup joint groups"
+        self.setSelfGroups()
 
         print self.configurator_name, '\033[32minitialized successfully\033[0m'
 
