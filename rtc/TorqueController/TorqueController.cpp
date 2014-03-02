@@ -185,6 +185,8 @@ RTC::ReturnCode_t TorqueController::onDeactivated(RTC::UniqueId ec_id)
 
 RTC::ReturnCode_t TorqueController::onExecute(RTC::UniqueId ec_id)
 { 
+  static int loop = 0;
+  loop++;
   // make timestamp
   coil::TimeValue coiltm(coil::gettimeofday());
   hrp::dvector dq(m_robot->numJoints());
@@ -207,6 +209,7 @@ RTC::ReturnCode_t TorqueController::onExecute(RTC::UniqueId ec_id)
   }
 
   if (m_qRefIn.data.length() == m_robot->numJoints() &&
+      m_tauCurrentIn.data.length() == m_robot->numJoints() &&
       m_qCurrentIn.data.length() == m_robot->numJoints()) {
 
     // update model
@@ -225,11 +228,14 @@ RTC::ReturnCode_t TorqueController::onExecute(RTC::UniqueId ec_id)
     m_qRefOut.tm = tm;
     m_qRefOutOut.write();
   } else {
-    std::cerr << "TorqueController input is not correct" << std::endl;
-    std::cerr << "numJoints: " << m_robot->numJoints() << std::endl;
-    std::cerr << "qCurrent: " << m_qCurrentIn.data.length() << std::endl;
-    std::cerr << "qRefIn: " << m_qRefIn.data.length() << std::endl;
-    std::cerr << std::endl;
+    if ( loop % 100 == 1) {
+      std::cerr << "TorqueController input is not correct" << std::endl;
+      std::cerr << " numJoints: " << m_robot->numJoints() << std::endl;
+      std::cerr << "  qCurrent: " << m_qCurrentIn.data.length() << std::endl;
+      std::cerr << "    qRefIn: " << m_qRefIn.data.length() << std::endl;
+      std::cerr << "tauCurrent: " << m_tauCurrentIn.data.length() << std::endl;
+      std::cerr << std::endl;
+    }
   }
   return RTC::RTC_OK;
 }
@@ -324,6 +330,7 @@ void TorqueController::executeTorqueControl(hrp::dvector &dq)
     }
   } else {
     std::cerr << "TorqueController input is not correct" << std::endl;
+    std::cerr << "numJoints: " << m_robot->numJoints() << std::endl;
     std::cerr << "tauCurrent: " << m_tauCurrentIn.data.length() << std::endl;
     std::cerr << std::endl;
   }
