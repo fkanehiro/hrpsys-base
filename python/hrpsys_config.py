@@ -412,6 +412,11 @@ class HrpsysConfigurator:
 
     # public method to configure all RTCs to be activated on rtcd
     def getRTCList(self):
+        '''
+        @rtype [[str]]
+        @rerutrn List of available components. Each element consists of a list
+                 of abbreviated and full names of the component.
+        '''
         return [
             ['seq', "SequencePlayer"],
             ['sh', "StateHolder"],
@@ -551,6 +556,10 @@ class HrpsysConfigurator:
             time.sleep(3);
 
     def setSelfGroups(self):
+        '''
+        Set to the hrpsys.SequencePlayer the groups of links and joints that
+        are statically defined as member variables (Groups) within this class.
+        '''
         for item in self.Groups:
             self.seq_svc.addJointGroup(item[0], item[1])
 
@@ -558,19 +567,71 @@ class HrpsysConfigurator:
     ## service interface for RTC component
     ##
     def goActual(self):
+        '''
+        Reset reference joint agnles with actual joint angle values
+        '''
         self.sh_svc.goActual()
 
     def setJointAngle(self, jname, angle, tm):
+        '''
+        Set angle to the given joint.
+
+        NOTE-1: It's known that this method does not do anything after
+                some group operation is done.
+                TODO: at least need elaborated to warn users.
+
+        NOTE-2: that while this method does not check angle value range,
+        any joints could emit position limit over error, which has not yet
+        been thrown by hrpsys so that there's no way to catch on this client
+        side. Worthwhile opening an enhancement ticket for that at
+        hironx' designated issue tracker.
+
+        @type jname: str
+        @type angle: float
+        @param angle: In degree.
+        @type tm: float
+        @param tm: Time to complete.
+        '''
         radangle = angle/180.0*math.pi
         return self.seq_svc.setJointAngle(jname, radangle, tm)
 
     def setJointAngles(self, angles, tm):
+        '''
+        NOTE-1: that while this method does not check angle value range,
+        any joints could emit position limit over error, which has not yet
+        been thrown by hrpsys so that there's no way to catch on this client
+        side. Worthwhile opening an enhancement ticket for that at
+        hironx' designated issue tracker.
+
+        @type angles: float
+        @param angles: In degree.
+        @type tm: float
+        @param tm: Time to complete.
+        '''
         ret = []
         for angle in angles:
             ret.append(angle/180.0*math.pi)
         return self.seq_svc.setJointAngles(ret, tm)
 
     def setJointAnglesOfGroup(self, gname, pose, tm, wait=True):
+        '''
+        Note that while this method does not check angle value range,
+        any joints could emit position limit over error, which has not yet
+        been handled in hrpsys so that there's no way to catch on this client
+        class level. Please consider opening an enhancement ticket for that
+        at hironx' designated issue tracker.
+
+        @type gname: str
+        @param gname: Name of joint group.
+        @type pose: [float]
+        @param pose: list of positions and orientations
+        @type tm: float
+        @param tm: Time to complete.
+        @type wait: bool
+        @param wait: If true, SequencePlayer.waitInterpolationOfGroup gets run.
+                  (TODO: Elaborate what this means...Even after having taken
+                  a look at its source code I can't tell exactly what it means)
+        '''
         angles = [x/180.0*math.pi for x in pose]
         ret = self.seq_svc.setJointAnglesOfGroup(gname, angles, tm)
         if wait:
@@ -584,46 +645,128 @@ class HrpsysConfigurator:
         self.seq_svc.waitInterpolation()
 
     def waitInterpolationOfGroup(self, gname):
+        '''
+        Lets SequencePlayer wait until the movement currently happening to
+        finish.
+        @see: http://wiki.ros.org/joint_trajectory_action. This method
+              corresponds to JointTrajectoryGoal in ROS.
+
+        @type groupname: str
+        '''
         self.seq_svc.waitInterpolationOfGroup(gname)
 
     def getJointAngles(self):
         return [x*180.0/math.pi for x in self.sh_svc.getCommand().jointRefs]
 
     def getCurrentPose(self,lname):
+        '''
+        @type jointname: str
+        @rtype: List of float
+        @return: Rotational matrix and the position of the given joint in
+                 1-dimensional list, that is:
+
+                 [a11, a12, a13, x,
+                  a21, a22, a23, y,
+                  a31, a32, a33, z,
+                   0,   0,   0,  1]
+        '''
         pose = self.fk_svc.getCurrentPose(lname)
         if not pose[0] :
             raise RuntimeError("Could not find reference : " + lname)
         return pose[1].data
 
     def getCurrentPosition(self,lname):
+        '''
+        @type jointname: str
+        @rtype: List of float
+        @return: List of x, y, z positions about the specified joint.
+        '''
         pose = self.getCurrentPose(lname)
         return [pose[3],pose[7],pose[11]]
 
     def getCurrentRotation(self,lname):
+        '''
+        @type jointname: str
+        @rtype: List of float
+        @return: Rotational matrix of the given joint in 2-dimensional list,
+                 that is:
+                 [[a11, a12, a13],
+                  [a21, a22, a23],
+                  [a31, a32, a33]]
+        '''
         pose = self.getCurrentPose(lname)
         return [pose[0:3],pose[4:7],pose[8:11]]
 
     def getCurrentRPY(self,lname):
+        '''
+        @type jointname: str
+        @rtype: List of float
+        @return: List of orientation in rpy form about the specified joint.
+        '''
         return euler_from_matrix(self.getCurrentRotation(lname),'sxyz')
 
     def getReferencePose(self,lname):
+        '''
+        This returns reference(commanded) value, and getCurrentPose returns current(actual) value
+
+        @rtype: List of float
+        @return: Rotational matrix and the position of the given joint in
+                 1-dimensional list, that is:
+
+                 [a11, a12, a13, x,
+                  a21, a22, a23, y,
+                  a31, a32, a33, z,
+                   0,   0,   0,  1]
+        '''
         pose = self.fk_svc.getReferencePose(lname)
         if not pose[0] :
             raise RuntimeError("Could not find reference : " + lname)
         return pose[1].data
 
     def getReferencePosition(self,lname):
+        '''
+        @rtype: List of float
+        @return: List of angles (degree) of all joints, in the order defined
+                 in the member variable 'Groups' (eg. chest, head1, head2, ..).
+        '''
         pose = self.getReferencePose(lname)
         return [pose[3],pose[7],pose[11]]
 
     def getReferenceRotation(self,lname):
+        '''
+        This seturns reference(commanded) value, and getCurrentRotation returns current(actual) value
+
+        @type jointname: str
+        @rtype: List of float
+        @return: Rotational matrix of the given joint in 2-dimensional list,
+                 that is:
+                 [[a11, a12, a13],
+                  [a21, a22, a23],
+                  [a31, a32, a33]]
+        '''
         pose = self.getReferencePose(lname)
         return [pose[0:3],pose[4:7],pose[8:11]]
 
     def getReferenceRPY(self,lname):
+        '''
+        This seturns reference(commanded) value, and getCurrentRPY returns current(actual) value
+
+        @type jointname: str
+        @rtype: List of float
+        @return: List of orientation in rpy form about the specified joint.
+        '''
         return euler_from_matrix(self.getReferenceRotation(lname),'sxyz')
 
     def setTargetPose(self, gname, pos, rpy, tm, frame_name=None) :
+        '''
+        Set absolute pose to a joint.
+        All d* arguments are in meter.
+
+        @param gname: Name of the joint group.
+        @type pos: float
+        @type rpy: TODO: ??
+        @rtype: bool
+        '''
         print gname, frame_name, pos, rpy, tm
         if frame_name :
             gname = gname + ':' + frame_name
@@ -632,9 +775,12 @@ class HrpsysConfigurator:
     def setTargetPoseRelative(self, gname, eename, dx=0, dy=0, dz=0,
 dr=0, dp=0, dw=0, tm=10, wait=True):
         '''
+        Set angles to a joint group relative to its current pose.
         All d* arguments are in meter.
-        @param gname: Name of the link group.
+
+        @param gname: Name of the joint group.
         @param eename: Name of the link.
+        @rtype: bool
         '''
         self.waitInterpolationOfGroup(gname)
         #curPose = self.getCurrentPose(eename)
@@ -674,6 +820,12 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
         return self.rh_svc.lengthDigitalOutput()
 
     def writeDigitalOutput(self, dout):
+        '''
+        @type dout: [int]
+        @param dout: List of bits. Length might defer depending on
+                     robot's implementation.
+        @return: What RobotHardware.writeDigitalOutput returns (TODO: document)
+        '''
         doutBitLength = self.lengthDigitalOutput()*8
         if len(dout) < doutBitLength:
             for i in range(doutBitLength-len(dout)):
@@ -690,6 +842,14 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
         return self.rh_svc.writeDigitalOutput(outStr)
 
     def writeDigitalOutputWithMask(self, dout, mask):
+        '''
+        @type dout: [int]
+        @param dout: List of bits. Length might defer depending on robot's
+                     implementation.
+        @type mask: [int]
+        @param mask: List of masking bits. Length depends on that of dout.
+        @return: What RobotHardware.writeDigitalOutput returns (TODO: document)
+        '''
         doutBitLength = self.lengthDigitalOutput()*8
         if len(dout) < doutBitLength and \
                len(mask) < doutBitLength and \
@@ -715,6 +875,9 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
 
 
     def readDigitalInput(self):
+        '''
+        @return: TODO: elaborate
+        '''
         ret, din = self.rh_svc.readDigitalInput()
         retList = []
         for item in din:
@@ -726,9 +889,42 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
         return retList
 
     def getActualState(self):
+        '''
+        @return: This returns actual states of ther robot, which is defined in RobotHardware.idl
+        (https://hrpsys-base.googlecode.com/svn/trunk/idl/RobotHardwareService.idl)
+            /**
+             * @brief status of the robot
+             */
+            struct RobotState
+            {
+              DblSequence               angle;  ///< current joint angles[rad]
+              DblSequence               command;///< reference joint angles[rad]
+              DblSequence               torque; ///< joint torques[Nm]
+              /**
+               * @brief servo statuses(32bit+extra states)
+               *
+               * 0: calib status ( 1 => done )\n
+               * 1: servo status ( 1 => on )\n
+               * 2: power status ( 1 => supplied )\n
+               * 3-18: servo alarms (see @ref iob.h)\n
+               * 19-23: unused
+                       * 24-31: driver temperature (deg)
+               */
+              LongSequenceSequence              servoState;
+              sequence<DblSequence6>    force;    ///< forces[N] and torques[Nm]
+              sequence<DblSequence3>    rateGyro; ///< angular velocities[rad/s]
+              sequence<DblSequence3>    accel;    ///< accelerations[m/(s^2)]
+              double                    voltage;  ///< voltage of power supply[V]
+              double                    current;  ///< current[A]
+            };
+        '''
         return self.rh_svc.getStatus()
 
     def isCalibDone(self):
+        '''
+        Check whether joints have been calibrated.
+        @rtype bool
+        '''
         if self.simulation_mode:
             return True
         else:
@@ -739,6 +935,13 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
         return True
 
     def isServoOn(self, jname='any'):
+        '''
+        Check whether servo control has been turned on.
+        @type jname: str
+        @param jname: Name of a link (that can be obtained by "hiro.Groups"
+                      as lists of groups).
+        @rtype bool
+        '''
         if self.simulation_mode:
             return True
         else:
@@ -757,6 +960,12 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
         return False
 
     def flat2Groups(self, flatList):
+        '''
+        @type flatList: []
+        @param flatList: single dimension list with its length of 15
+        @rtype: [[]]
+        @return: 2-dimensional list of Groups.
+        '''
         retList = []
         index = 0
         for group in self.Groups:
@@ -766,6 +975,18 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
         return retList
 
     def servoOn(self, jname='all', destroy=1, tm=3):
+        '''
+        Turn on/off servos.
+        Joints need to be calibrated (otherwise error returns).
+
+        @type jname: str
+        @param jname: The value 'all' works iteratively for all servos.
+        @param destroy: Not used.
+        @type tm: float
+        @param tm: Second to complete.
+        @rtype: int
+        @return: 1 or -1 indicating success or failure, respectively.
+        '''
         # check joints are calibrated
         if not self.isCalibDone():
             waitInputConfirm('!! Calibrate Encoders with checkEncoders first !!\n\n')
@@ -803,6 +1024,14 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
         return 1
 
     def servoOff(self, jname='all', wait=True):
+        '''
+        @type jname: str
+        @param jname: The value 'all' works iteratively for all servos.
+        @type wait: bool
+        @rtype: int
+        @return: 1 = all arm servo off. 2 = all servo on arms and hands off.
+                -1 = Something wrong happened.
+        '''
         # do nothing for simulation
         if self.simulation_mode:
             print self.configurator_name, 'omit servo off'
@@ -901,6 +1130,15 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
     ###
 
     def init(self, robotname="Robot", url=""):
+        '''
+        Calls init from its superclass, which tries to connect RTCManager,
+        looks for ModelLoader, and starts necessary RTC components. Also runs
+        config, logger.
+        Also internally calls setSelfGroups().
+
+        @type robotname: str
+        @type url: str
+        '''
         print self.configurator_name, "waiting ModelLoader"
         self.waitForModelLoader()
         print self.configurator_name, "start hrpsys"
