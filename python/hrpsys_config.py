@@ -218,6 +218,9 @@ class HrpsysConfigurator:
     # sensors
     sensors = None
 
+    # for setSelfGroups
+    Groups = [] # [['torso', ['CHEST_JOINT0']], ['head', ['HEAD_JOINT0', 'HEAD_JOINT1']], ....]
+
     # public method
     def connectComps(self):
         if self.rh == None or self.seq == None or self.sh == None or self.fk == None:
@@ -547,6 +550,10 @@ class HrpsysConfigurator:
             print self.configurator_name, "wait for ModelLoader"
             time.sleep(3);
 
+    def setSelfGroups(self):
+        for item in self.Groups:
+            self.seq_svc.addJointGroup(item[0], item[1])
+
     ##
     ## service interface for RTC component
     ##
@@ -717,6 +724,177 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
                 else:
                     retList.append(0)
         return retList
+
+    def getActualState(self):
+        return self.rh_svc.getStatus()
+
+    def isCalibDone(self):
+        if self.simulation_mode:
+            return True
+        else:
+            rstt = self.rh_svc.getStatus()
+            for item in rstt.servoState:
+                if not item[0] & 1:
+                    return False
+        return True
+
+    def isServoOn(self, jname='any'):
+        if self.simulation_mode:
+            return True
+        else:
+            s_s = self.getActualState().servoState
+            if jname.lower() == 'any' or jname.lower() == 'all':
+                for s in s_s:
+                    # print self.configurator_name, 's = ', s
+                    if (s[0] & 2) == 0:
+                        return False
+            else:
+                jid = eval('self.' + jname)
+                print self.configurator_name, s_s[jid]
+                if s_s[jid][0] & 1 == 0:
+                    return False
+            return True
+        return False
+
+    def flat2Groups(self, flatList):
+        retList = []
+        index = 0
+        for group in self.Groups:
+            joint_num = len(group[1])
+            retList.append(flatList[index: index + joint_num])
+            index += joint_num
+        return retList
+
+    def servoOn(self, jname='all', destroy=1, tm=3):
+        # check joints are calibrated
+        if not self.isCalibDone():
+            waitInputConfirm('!! Calibrate Encoders with checkEncoders first !!\n\n')
+            return -1
+
+        # check servo state
+        if self.isServoOn():
+            return 1
+
+        # check jname is acceptable
+        if jname == '':
+            jname = 'all'
+
+        try:
+            waitInputConfirm(\
+                '!! Robot Motion Warning (SERVO_ON) !!\n\n'
+                'Confirm RELAY switched ON\n'
+                'Push [OK] to switch servo ON(%s).' % (jname))
+        except:  # ths needs to change
+            self.rh_svc.power('all', SWITCH_OFF)
+            raise
+
+        try:
+            self.goActual()
+            time.sleep(0.1)
+            self.rh_svc.servo(jname, SWITCH_ON)
+            time.sleep(2)
+            if not self.isServoOn(jname):
+                print self.configurator_name, 'servo on failed.'
+                raise
+        except:
+            print self.configurator_name, 'exception occured'
+
+
+        return 1
+
+    def servoOff(self, jname='all', wait=True):
+        # do nothing for simulation
+        if self.simulation_mode:
+            print self.configurator_name, 'omit servo off'
+            return 0
+
+        print 'Turn off Hand Servo'
+        if self.sc_svc:
+            self.sc_svc.servoOff()
+        # if the servos aren't on switch power off
+        if not self.isServoOn(jname):
+            if jname.lower() == 'all':
+                self.rh_svc.power('all', SWITCH_OFF)
+            return 1
+
+        # if jname is not set properly set to all -> is this safe?
+        if jname == '':
+            jname = 'all'
+
+        if wait:
+            waitInputConfirm(
+                '!! Robot Motion Warning (Servo OFF)!!\n\n'
+                'Push [OK] to servo OFF (%s).' % (jname))  # :
+
+        try:
+            self.rh_svc.servo('all', SWITCH_OFF)
+            time.sleep(0.2)
+            if jname == 'all':
+                self.rh_svc.power('all', SWITCH_OFF)
+
+            # turn off hand motors
+            print 'Turn off Hand Servo'
+            if self.sc_svc:
+                self.sc_svc.servoOff()
+
+            return 2
+        except:
+            print self.configurator_name, 'servo off: communication error'
+            return -1
+
+    def checkEncoders(self, jname='all', option=''):
+        '''
+        Run the encoder checking sequence for specified joints,
+        run goActual and turn on servos.
+
+        @type jname: str
+        @param jname: The value 'all' works iteratively for all servos.
+        @type option: str
+        @param option: Possible values are follows (w/o double quote):\
+                        "-overwrite": Overwrite calibration value.
+        '''
+        if self.isServoOn():
+            waitInputConfirm('Servo must be off for calibration')
+            return
+        # do not check encoders twice
+        elif self.isCalibDone():
+            waitInputConfirm('System has been calibrated')
+            return
+
+        self.rh_svc.power('all', SWITCH_ON)
+        msg = '!! Robot Motion Warning !!\n'\
+              'Turn Relay ON.\n'\
+              'Then Push [OK] to '
+        if option == '-overwrite':
+            msg = msg + 'calibrate(OVERWRITE MODE) '
+        else:
+            msg = msg + 'check '
+
+        if jname == 'all':
+            msg = msg + 'the Encoders of all.'
+        else:
+            msg = msg + 'the Encoder of the Joint "' + jname + '".'
+
+        try:
+            waitInputConfirm(msg)
+        except:
+            print "If you're connecting to the robot from remote, " + \
+                  "make sure tunnel X (eg. -X option with ssh)."
+            self.rh_svc.power('all', SWITCH_OFF)
+            return 0
+
+        print self.configurator_name, 'calib-joint ' + jname + ' ' + option
+        self.rh_svc.initializeJointAngle(jname, option)
+        print self.configurator_name, 'done'
+        self.rh_svc.power('all', SWITCH_OFF)
+        self.goActual()
+        time.sleep(0.1)
+        self.rh_svc.servo(jname, SWITCH_ON)
+
+        # turn on hand motors
+        print 'Turn on Hand Servo'
+        if self.sc_svc:
+            self.sc_svc.servoOn()
 
     ###
     ### initialize
