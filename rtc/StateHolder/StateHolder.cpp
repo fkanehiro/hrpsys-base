@@ -141,6 +141,32 @@ RTC::ReturnCode_t StateHolder::onInitialize()
   m_baseRpy.data.p = m_basePose.data.orientation.p = rpy[1];
   m_baseRpy.data.y = m_basePose.data.orientation.y = rpy[2];
   m_zmp.data.x = m_zmp.data.y = m_zmp.data.z = 0.0;
+
+  // wrench data ports
+  std::vector<std::string> fsensor_names;
+  for ( int k = 0; k < lis->length(); k++ ) {
+    OpenHRP::SensorInfoSequence& sensors = lis[k].sensors;
+    for ( int l = 0; l < sensors.length(); l++ ) {
+      if ( std::string(sensors[l].type) == "Force" ) {
+        fsensor_names.push_back(std::string(sensors[l].name));
+      }
+    }
+  }
+
+  int npforce = fsensor_names.size();
+  m_wrenches.resize(npforce);
+  m_wrenchesIn.resize(npforce);
+  m_wrenchesOut.resize(npforce);
+  for (unsigned int i=0; i<npforce; i++){
+    m_wrenchesIn[i] = new InPort<TimedDoubleSeq>(std::string(fsensor_names[i]+"In").c_str(), m_wrenches[i]);
+    m_wrenchesOut[i] = new OutPort<TimedDoubleSeq>(std::string(fsensor_names[i]+"Out").c_str(), m_wrenches[i]);
+    m_wrenches[i].data.length(6);
+    m_wrenches[i].data[0] = m_wrenches[i].data[1] = m_wrenches[i].data[2] = 0.0;
+    m_wrenches[i].data[3] = m_wrenches[i].data[4] = m_wrenches[i].data[5] = 0.0;
+    registerInPort(std::string(fsensor_names[i]+"In").c_str(), *m_wrenchesIn[i]);
+    registerOutPort(std::string(fsensor_names[i]+"Out").c_str(), *m_wrenchesOut[i]);
+  }
+
   
   return RTC::RTC_OK;
 }
@@ -224,6 +250,12 @@ RTC::ReturnCode_t StateHolder::onExecute(RTC::UniqueId ec_id)
         m_zmpIn.read();
     }
 
+    for (size_t i = 0; i < m_wrenchesIn.size(); i++) {
+      if ( m_wrenchesIn[i]->isNew() ) {
+        m_wrenchesIn[i]->read();
+      }
+    }
+
     double *a = m_baseTform.data.get_buffer();
     a[0] = m_basePos.data.x;
     a[1] = m_basePos.data.y;
@@ -244,6 +276,9 @@ RTC::ReturnCode_t StateHolder::onExecute(RTC::UniqueId ec_id)
     m_baseRpy.tm   = tm; 
     m_zmp.tm       = tm; 
     m_basePose.tm  = tm;
+    for (size_t i = 0; i < m_wrenches.size(); i++) {
+      m_wrenches[i].tm = tm;
+    }
 
     // write
     if (m_q.data.length() > 0){
@@ -257,6 +292,9 @@ RTC::ReturnCode_t StateHolder::onExecute(RTC::UniqueId ec_id)
     m_baseRpyOut.write();
     m_zmpOut.write();
     m_basePoseOut.write();
+    for (size_t i = 0; i < m_wrenchesOut.size(); i++) {
+      m_wrenchesOut[i]->write();
+    }
 
     if (m_timeCount > 0){
         m_timeCount--;

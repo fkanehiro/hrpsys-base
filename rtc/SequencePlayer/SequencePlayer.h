@@ -19,6 +19,7 @@
 #include <rtm/idl/BasicDataTypeSkel.h>
 #include <rtm/idl/ExtendedDataTypesSkel.h>
 #include <hrpModel/Body.h>
+#include <hrpModel/Sensor.h>
 #include "seqplay.h"
 
 // Service implementation headers
@@ -102,6 +103,7 @@ class SequencePlayer
   bool setBaseRpy(const double *rpy, double tm);
   bool setZmp(const double *zmp, double tm);
   bool setTargetPose(const char* gname, const double *xyz, const double *rpy, double tm, const char* frame_name);
+  bool setWrenches(const double *wrenches, double tm);
   void loadPattern(const char *basename, double time); 
   void playPattern(const OpenHRP::dSequenceSequence& pos, const OpenHRP::dSequenceSequence& rpy, const OpenHRP::dSequenceSequence& zmp, const OpenHRP::dSequence& tm);
   bool setInterpolationMode(OpenHRP::SequencePlayerService::interpolationMode i_mode_);
@@ -144,6 +146,9 @@ class SequencePlayer
   OutPort<TimedPoint3D> m_basePosOut;
   TimedOrientation3D m_baseRpy;
   OutPort<TimedOrientation3D> m_baseRpyOut;
+  std::vector<TimedDoubleSeq> m_wrenches;
+  std::vector<OutPort<TimedDoubleSeq> *> m_wrenchesOut;
+
   
   // </rtc-template>
 

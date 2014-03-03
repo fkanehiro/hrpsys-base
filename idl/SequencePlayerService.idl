@@ -78,6 +78,14 @@ module OpenHRP
      * @return true if set successfully, false otherwise
      */
     boolean setZmp(in dSequence zmp, in double tm);
+
+    /**
+     * @brief Interpolate Wrenches. Function returns without waiting for interpolation to finish
+     * @param wrenches Wrenches
+     * @param tm duration
+     * @return true if set successfully, false otherwise
+     */
+    boolean setWrenches(in dSequence wrenches, in double tm);
     
     /**
      * @brief Interpolate X, Y, Z and Roll Pitch Yaw of the target joint/link group, wrt world coords Function returns without waiting for interpolation to finish

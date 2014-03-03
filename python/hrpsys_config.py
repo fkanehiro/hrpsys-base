@@ -276,6 +276,8 @@ class HrpsysConfigurator:
         connectPorts(self.sh.port("basePosOut"), [self.seq.port("basePosInit"), self.fk.port("basePosRef")])
         connectPorts(self.sh.port("baseRpyOut"), [self.seq.port("baseRpyInit"), self.fk.port("baseRpyRef")])
         connectPorts(self.sh.port("qOut"), self.seq.port("qInit"))
+        for sen in filter(lambda x : x.type == "Force", self.sensors):
+            connectPorts(self.seq.port(sen.name+"Ref"), self.sh.port(sen.name+"In"))
 
         # connection for st
         if rtm.findPort(self.rh.ref, "lfsensor") and rtm.findPort(self.rh.ref, "rfsensor") and self.st:
@@ -496,6 +498,8 @@ class HrpsysConfigurator:
             self.connectLoggerPort(self.sh, 'baseRpyOut')
         if self.rh != None:
             self.connectLoggerPort(self.rh, 'emergencySignal', 'emergencySignal')
+        for sen in filter(lambda x : x.type == "Force", self.sensors):
+            self.connectLoggerPort(self.seq, sen.name+"Ref")
 
     def waitForRTCManager(self, managerhost=nshost):
         self.ms = None

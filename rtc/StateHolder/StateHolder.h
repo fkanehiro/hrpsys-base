@@ -113,6 +113,7 @@ class StateHolder
   InPort<TimedPoint3D> m_basePosIn;
   InPort<TimedOrientation3D> m_baseRpyIn;
   InPort<TimedPoint3D> m_zmpIn;
+  std::vector<InPort<TimedDoubleSeq> *> m_wrenchesIn;
 
   // DataInPort declaration
   // <rtc-template block="inport_declare">
@@ -128,6 +129,7 @@ class StateHolder
   TimedDoubleSeq m_baseTform;
   TimedPose3D m_basePose;
   TimedPoint3D m_zmp;
+  std::vector<TimedDoubleSeq> m_wrenches;
   OutPort<TimedDoubleSeq> m_qOut;
   OutPort<TimedDoubleSeq> m_tqOut;
   OutPort<TimedPoint3D> m_basePosOut;
@@ -135,6 +137,7 @@ class StateHolder
   OutPort<TimedDoubleSeq> m_baseTformOut;
   OutPort<TimedPose3D> m_basePoseOut;
   OutPort<TimedPoint3D> m_zmpOut;
+  std::vector<OutPort<TimedDoubleSeq> *> m_wrenchesOut;
 
   // </rtc-template>
 

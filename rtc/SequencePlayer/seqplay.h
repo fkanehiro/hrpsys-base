@@ -13,7 +13,7 @@ using namespace hrp;
 class seqplay
 {
 public:
-    seqplay(unsigned int i_dof, double i_dt);
+    seqplay(unsigned int i_dof, double i_dt, unsigned int i_fnum = 0);
     ~seqplay();
     //
     bool isEmpty() const;
@@ -25,6 +25,7 @@ public:
     void setBasePos(const double *i_pos, double i_tm=0.0);
     void setBaseRpy(const double *i_rpy, double i_tm=0.0);
     void setBaseAcc(const double *i_acc, double i_tm=0.0);
+    void setWrenches(const double *i_wrenches, double i_tm=0.0);
     void playPattern(std::vector<const double*> pos, std::vector<const double*> zmp, std::vector<const double*> rpy, std::vector<double> tm, const double *qInit, unsigned int len);
     //
     bool addJointGroup(const char *gname, const std::vector<int>& indices);
@@ -40,14 +41,14 @@ public:
     void loadPattern(const char *i_basename, double i_tm);
     void clear(double i_timeLimit=0);
     void get(double *o_q, double *o_zmp, double *o_accel,
-	     double *o_basePos, double *o_baseRpy, double *o_tq);
+	     double *o_basePos, double *o_baseRpy, double *o_tq, double *o_wrenches);
     void go(const double *i_q, const double *i_zmp, const double *i_acc,
-            const double *i_p, const double *i_rpy, const double *i_tq, double i_time, 
+            const double *i_p, const double *i_rpy, const double *i_tq, const double *i_wrenches, double i_time, 
             bool immediate=true);
     void go(const double *i_q, const double *i_zmp, const double *i_acc,
-            const double *i_p, const double *i_rpy, const double *i_tq,
+            const double *i_p, const double *i_rpy, const double *i_tq, const double *i_wrenches,
 	    const double *ii_q, const double *ii_zmp, const double *ii_acc,
-            const double *ii_p, const double *ii_rpy, const double *ii_tq,
+            const double *ii_p, const double *ii_rpy, const double *ii_tq, const double *ii_wrenches,
             double i_time, bool immediate=true);
     void sync();
     bool setInterpolationMode(interpolator::interpolation_mode i_mode_);
@@ -135,7 +136,7 @@ private:
         double time2remove;
     };
     void pop_back();
-    enum {Q, ZMP, ACC, P, RPY, TQ, NINTERPOLATOR};
+    enum {Q, ZMP, ACC, P, RPY, TQ, WRENCHES, NINTERPOLATOR};
     interpolator *interpolators[NINTERPOLATOR];
     std::map<std::string, groupInterpolator *> groupInterpolators; 
     int debug_level, m_dof;

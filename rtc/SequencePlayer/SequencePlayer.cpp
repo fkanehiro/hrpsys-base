@@ -126,7 +126,18 @@ RTC::ReturnCode_t SequencePlayer::onInitialize()
 
     unsigned int dof = m_robot->numJoints();
 
-    m_seq = new seqplay(dof, dt);
+    int npforce = m_robot->numSensors(hrp::Sensor::FORCE);
+    m_wrenches.resize(npforce);
+    m_wrenchesOut.resize(npforce);
+    for (unsigned int i=0; i<npforce; i++){
+      hrp::Sensor *s = m_robot->sensor(hrp::Sensor::FORCE, i);
+      m_wrenchesOut[i] = new OutPort<TimedDoubleSeq>(std::string(s->name+"Ref").c_str(), m_wrenches[i]);
+      m_wrenches[i].data.length(6);
+      registerOutPort(std::string(s->name+"Ref").c_str(), *m_wrenchesOut[i]);
+      std::cerr << s->name << std::endl;
+    }
+
+    m_seq = new seqplay(dof, dt, npforce);
 
     m_qInit.data.length(dof);
     for (unsigned int i=0; i<dof; i++) m_qInit.data[i] = 0.0;
@@ -207,8 +218,8 @@ RTC::ReturnCode_t SequencePlayer::onExecute(RTC::UniqueId ec_id)
     }else{
 	Guard guard(m_mutex);
 
-        double zmp[3], acc[3], pos[3], rpy[3];
-        m_seq->get(m_qRef.data.get_buffer(), zmp, acc, pos, rpy, m_tqRef.data.get_buffer());
+        double zmp[3], acc[3], pos[3], rpy[3], wrenches[6*m_wrenches.size()];
+        m_seq->get(m_qRef.data.get_buffer(), zmp, acc, pos, rpy, m_tqRef.data.get_buffer(), wrenches);
         m_zmpRef.data.x = zmp[0];
         m_zmpRef.data.y = zmp[1];
         m_zmpRef.data.z = zmp[2];
@@ -221,12 +232,24 @@ RTC::ReturnCode_t SequencePlayer::onExecute(RTC::UniqueId ec_id)
         m_baseRpy.data.r = rpy[0];
         m_baseRpy.data.p = rpy[1];
         m_baseRpy.data.y = rpy[2];
+        size_t force_i = 0;
+        for (size_t i = 0; i < m_wrenches.size(); i++) {
+          m_wrenches[i].data[0] = wrenches[force_i++];
+          m_wrenches[i].data[1] = wrenches[force_i++];
+          m_wrenches[i].data[2] = wrenches[force_i++];
+          m_wrenches[i].data[3] = wrenches[force_i++];
+          m_wrenches[i].data[4] = wrenches[force_i++];
+          m_wrenches[i].data[5] = wrenches[force_i++];
+        }
         m_qRefOut.write();
         m_tqRefOut.write();
         m_zmpRefOut.write();
         m_accRefOut.write();
         m_basePosOut.write();
         m_baseRpyOut.write();
+        for (size_t i = 0; i < m_wrenchesOut.size(); i++) {
+          m_wrenchesOut[i]->write();
+        }
 
         if (m_clearFlag){
             m_seq->clear(0.001);
@@ -389,6 +412,13 @@ bool SequencePlayer::setZmp(const double *zmp, double tm)
     }
     Guard guard(m_mutex);
     m_seq->setZmp(zmp, tm);
+    return true;
+}
+
+bool SequencePlayer::setWrenches(const double *wrenches, double tm)
+{
+    Guard guard(m_mutex);
+    m_seq->setWrenches(wrenches, tm);
     return true;
 }
 

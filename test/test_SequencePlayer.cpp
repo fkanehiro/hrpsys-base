@@ -46,10 +46,10 @@ public:
     }
 
     void testSetAngles(double *av) {
-        double q[9], zmp[3], acc[3], pos[3], rpy[3], tq[9];
+      double q[9], zmp[3], acc[3], pos[3], rpy[3], tq[9], wrenches[6];
 
         while (!m_seq->isEmpty()) {
-            m_seq->get(q, zmp, acc, pos, rpy, tq);
+          m_seq->get(q, zmp, acc, pos, rpy, tq, wrenches);
             for (int i = 0; i < 9; i++ ) {
                 // check if no over shoot
                 //std::cerr << i << " " << q[i] << " " << av[i] << std::endl;
@@ -83,7 +83,7 @@ TEST_F(test_SequencePlayer, setJointAnglesContiniously) {
     int loop = 10;
     double av[9] = {0,1,2,3,4,5,6,7,8}, av_old[9] = {0,0,0,0,0,0,0,0,0};
     double q[9], q_old[9], tq[9];
-    double zmp[3], acc[3], pos[3], rpy[3];
+    double zmp[3], acc[3], pos[3], rpy[3], wrenches[6];
 
     m_seq->setJointAngles(av, 1);
     while (!m_seq->isEmpty()) {
@@ -98,7 +98,7 @@ TEST_F(test_SequencePlayer, setJointAnglesContiniously) {
             loop--;
         }
         for (int i = 0; i < 9; i++ ) { q_old[i] = q[i]; }
-        m_seq->get(q, zmp, acc, pos, rpy, tq);
+        m_seq->get(q, zmp, acc, pos, rpy, tq, wrenches);
         for (int i = 0; i < 9; i++ ) {
             // check velocity
             //std::cerr << i << " " << av_old[i] << " " << q[i] << " " << av[i] << " " << (q[i] - q_old[i])/m_dt << std::endl;
@@ -133,8 +133,8 @@ TEST_F(test_SequencePlayer, playPattern) {
     m_seq->playPattern(avs, rpy, zmp, tm, qInit, 9);
     while (!m_seq->isEmpty()) {
         for (int i = 0; i < 9; i++ ) { q_old[i] = q[i]; }
-        double zmp[3], acc[3], pos[3], rpy[3];
-        m_seq->get(q, zmp, acc, pos, rpy, tq);
+        double zmp[3], acc[3], pos[3], rpy[3], wrenches[6];
+        m_seq->get(q, zmp, acc, pos, rpy, tq, wrenches);
         for (int i = 0; i < 9; i++ ) {
             // check velocity
             double vel = fabs(q[i] - q_old[i])/m_dt;
@@ -185,7 +185,7 @@ TEST_P(test_SequencePlayerOfGroup, setJointAnglesContiniously) {
     int loop = 10;
     double av[9] = {0,1,2,3,4,5,6,7,8}, av_old[9] = {0,0,0,0,0,0,0,0,0};
     double q[9], q_old[9], tq[9];
-    double zmp[3], acc[3], pos[3], rpy[3];
+    double zmp[3], acc[3], pos[3], rpy[3], wrenches[6];
 
     std::vector<int> indices = GetParam();
     std::cout << "indices";
@@ -216,7 +216,7 @@ TEST_P(test_SequencePlayerOfGroup, setJointAnglesContiniously) {
             loop--;
         }
         for (int i = 0; i < 9; i++ ) { q_old[i] = q[i]; }
-        m_seq->get(q, zmp, acc, pos, rpy, tq);
+        m_seq->get(q, zmp, acc, pos, rpy, tq, wrenches);
         for (int i = 0; i < 9; i++ ) {
             // check velocity
             //std::cerr << i << " " << av_old[i] << " " << q[i] << " " << av[i] << " " << (q[i] - q_old[i])/m_dt << std::endl;
@@ -279,8 +279,8 @@ TEST_P(test_SequencePlayerOfGroup, playPattern) {
     //m_seq->playPatternOfGroup("test", avs, tm, qInit, 9);
     while (!m_seq->isEmpty()) {
         for (int i = 0; i < 9; i++ ) { q_old[i] = q[i]; }
-        double zmp[3], acc[3], pos[3], rpy[3];
-        m_seq->get(q, zmp, acc, pos, rpy, tq);
+        double zmp[3], acc[3], pos[3], rpy[3], wrenches[6];
+        m_seq->get(q, zmp, acc, pos, rpy, tq, wrenches);
         for (int i = 0; i < 9; i++ ) {
             // check velocity
             double vel = fabs(q[i] - q_old[i])/m_dt;
