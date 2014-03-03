@@ -5,7 +5,7 @@
 using namespace std;
 #include "interpolator.h"
 
-interpolator::interpolator(int dim_, double dt_, interpolation_mode imode_)
+interpolator::interpolator(int dim_, double dt_, interpolation_mode imode_, double default_avg_vel_)
 {
   imode = imode_;
   dim = dim_;
@@ -28,6 +28,7 @@ interpolator::interpolator(int dim_, double dt_, interpolation_mode imode_)
   }
   remain_t = 0;
   target_t = 0;
+  default_avg_vel = default_avg_vel_;
 }
 
 interpolator::~interpolator()
@@ -94,8 +95,7 @@ void interpolator::sync()
   length = q.size();
 }
 
-double interpolator::calc_interpolation_time(const double *newg,
-					     double avg_vel)
+double interpolator::calc_interpolation_time(const double *newg)
 {
   double remain_t;
   double max_diff = 0, diff;
@@ -103,7 +103,7 @@ double interpolator::calc_interpolation_time(const double *newg,
     diff = fabs(newg[i]-gx[i]);
     if (diff > max_diff) max_diff = diff;
   }
-  remain_t = max_diff/avg_vel;
+  remain_t = max_diff/default_avg_vel;
 #define MIN_INTERPOLATION_TIME	(1.0)
   if (remain_t < MIN_INTERPOLATION_TIME) remain_t = MIN_INTERPOLATION_TIME;
   return remain_t;

@@ -14,7 +14,7 @@ seqplay::seqplay(unsigned int i_dof, double i_dt, unsigned int i_fnum) : m_dof(i
     interpolators[P] = new interpolator(3, i_dt);
     interpolators[RPY] = new interpolator(3, i_dt);
     interpolators[TQ] = new interpolator(i_dof, i_dt);
-    interpolators[WRENCHES] = new interpolator(6 * i_fnum, i_dt); // wrenches = 6 * [number of force sensors]
+    interpolators[WRENCHES] = new interpolator(6 * i_fnum, i_dt, interpolator::HOFFARBIB, 100); // wrenches = 6 * [number of force sensors]
     //
 
 #ifdef WAIST_HEIGHT

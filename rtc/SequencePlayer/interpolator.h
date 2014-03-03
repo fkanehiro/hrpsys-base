@@ -10,7 +10,7 @@ class interpolator
 {
 public:
   typedef enum {LINEAR, HOFFARBIB,QUINTICSPLINE,CUBICSPLINE} interpolation_mode;
-  interpolator(int dim_, double dt_, interpolation_mode imode_=HOFFARBIB);
+  interpolator(int dim_, double dt_, interpolation_mode imode_=HOFFARBIB, double default_avg_vel_=0.5); // default_avg_vel = [rad/s]
   ~interpolator();
   void push(const double *x, const double *v, const double *a, bool immediate=true);
   double *front();
@@ -30,9 +30,7 @@ public:
 	    bool immediate=true, size_t offset1 = 0, size_t offset2 = 0);
   bool isEmpty();
   double remain_time();
-#define DEFAULT_AVG_VEL	(0.5) // [rad/s]
-  double calc_interpolation_time(const double *g, 
-				 double avg_vel=DEFAULT_AVG_VEL);
+  double calc_interpolation_time(const double *g);
   bool setInterpolationMode (interpolation_mode i_mode_);
   void setGoal(const double *gx, const double *gv, double time,
                bool online=true);
@@ -49,6 +47,7 @@ private:
   double *gx, *gv, *ga;
   double target_t, remain_t;
   double *a0, *a1, *a2, *a3, *a4, *a5;
+  double default_avg_vel;
 
   void hoffarbib(double &remain_t,
 		 double a0, double a1, double a2,
