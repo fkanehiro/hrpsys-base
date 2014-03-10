@@ -390,7 +390,15 @@ class HrpsysConfigurator:
                 exec(create_str)
 
     def findComp(self, compName, instanceName):
-        comp = rtm.findRTC(instanceName)
+        timeout_count = 0;
+        comp = None
+        while comp == None and timeout_count < 10:
+            comp = rtm.findRTC(instanceName)
+            if comp != None:
+                break
+            print self.configurator_name, " find Comp wait for", instanceName
+            time.sleep(1)
+            timeout_count += 1
         print self.configurator_name, " find Comp    : ", instanceName, " = ", comp
         if comp == None:
             print self.configurator_name, " Cannot find component: " + instanceName + " (" + compName +")"
@@ -516,6 +524,8 @@ class HrpsysConfigurator:
             if not self.rh:
                 self.rh = rtm.findRTC(robotname)
             print self.configurator_name, "wait for", robotname, " : ",self.rh, "(timeout ", timeout_count, " < 10)"
+            if self.rh and self.rh.isActive() == None: # just in case rh is not ready...
+                self.rh = None
             timeout_count += 1
 
         if not self.rh:
@@ -525,7 +535,7 @@ class HrpsysConfigurator:
             print self.configurator_name, "Exitting.... ", robotname
             exit(1)
 
-        print self.configurator_name, "findComps -> RobotHardware : ",self.rh
+        print self.configurator_name, "findComps -> RobotHardware : ",self.rh, "isActive? = ", self.rh.isActive()
 
     def checkSimulationMode(self):
         # distinguish real robot from simulation by using "servoState" port
