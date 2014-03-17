@@ -151,42 +151,48 @@ int main (int argc, char** argv)
 
     // set outport for sensros
     int nforce = body->numSensors(hrp::Sensor::FORCE);
+    if ( nforce > 0 ) std::cerr << "hrp::Sensor::FORCE";
     for (unsigned int i=0; i<nforce; i++){
         hrp::Sensor *s = body->sensor(hrp::Sensor::FORCE, i);
         // port name and sensor name is same in case of ForceSensor
         xmlTextWriterWriteProperty(writer, "outport", s->name + ":" + s->name + ":FORCE_SENSOR");
-        std::cerr << s->name << std::endl;
+        std::cerr << " " << s->name;
     }
+    if ( nforce > 0 ) std::cerr << std::endl;
     int ngyro = body->numSensors(hrp::Sensor::RATE_GYRO);
+    if ( ngyro > 0 ) std::cerr << "hrp::Sensor::GYRO";
     if(ngyro == 1){
       // port is named with no number when there is only one gyro
       hrp::Sensor *s = body->sensor(hrp::Sensor::RATE_GYRO, 0);
       xmlTextWriterWriteProperty(writer, "outport", s->name + ":" + s->name + ":RATE_GYRO_SENSOR");
-      std::cerr << s->name << std::endl;
+      std::cerr << " " << s->name;
     }else{
       for (unsigned int i=0; i<ngyro; i++){
         hrp::Sensor *s = body->sensor(hrp::Sensor::RATE_GYRO, i);
         std::stringstream str_strm;
         str_strm << s->name << i << ":" + s->name << ":RATE_GYRO_SENSOR";
         xmlTextWriterWriteProperty(writer, "outport", str_strm.str());
-        std::cerr << s->name << std::endl;
+        std::cerr << " " << s->name;
       }
     }
+    if ( ngyro > 0 ) std::cerr << std::endl;
     int nacc = body->numSensors(hrp::Sensor::ACCELERATION);
+    if ( nacc > 0 ) std::cerr << "hrp::Sensor::ACCELERATION";
     if(nacc == 1){
       // port is named with no number when there is only one acc
       hrp::Sensor *s = body->sensor(hrp::Sensor::ACCELERATION, 0);      
       xmlTextWriterWriteProperty(writer, "outport", s->name + ":" + s->name + ":ACCELERATION_SENSOR");
-      std::cerr << s->name << std::endl;
+      std::cerr << " " << s->name;
     }else{
       for (unsigned int i=0; i<nacc; i++){
         hrp::Sensor *s = body->sensor(hrp::Sensor::ACCELERATION, i);
         std::stringstream str_strm;
         str_strm << s->name << i << ":" << s->name << ":ACCELERATION_SENSOR";
         xmlTextWriterWriteProperty(writer, "outport", str_strm.str());
-        std::cerr << s->name << std::endl;
+        std::cerr << " " << s->name;
       }
     }
+    if ( nacc > 0 ) std::cerr << std::endl;
     
 	//
 	std::string root_name = body->rootLink()->name;
@@ -219,9 +225,10 @@ int main (int argc, char** argv)
         for (size_t i = 0; i < joint_properties_arg_str.size()/2; i++) {
           joint_properties_map.insert(std::pair<std::string, std::string>(joint_properties_arg_str[i*2], joint_properties_arg_str[i*2+1]));
         }
+        if ( body->numJoints() > 0 ) std::cerr << "hrp::Joint";
 	for(int i = 0; i < body->numJoints(); i++){
 	  if ( body->joint(i)->index > 0 ) {
-	    std::cerr << body->joint(i)->jointId << std::endl;
+	    std::cerr << " " << body->joint(i)->name << "(" << body->joint(i)->jointId << ")";
 	    std::string joint_name = body->joint(i)->name;
             std::string j_property = joint_name+".angle";
 	    xmlTextWriterWriteProperty(writer, j_property,
@@ -235,6 +242,7 @@ int main (int argc, char** argv)
 	  }
 	}
 	xmlTextWriterEndElement(writer); // item
+        if ( body->numJoints() > 0 ) std::cerr << std::endl;
 
 	//
         // comment out self collision settings according to issues at http://code.google.com/p/hrpsys-base/issues/detail?id=122
