@@ -37,13 +37,15 @@ int main (int argc, char** argv)
   std::vector<std::string> inputs, filenames; // filenames is for conf file
   std::string conf_file_option, robothardware_conf_file_option, integrate("true"), dt("0.005"), timeStep(dt), joint_properties;
 
+  int rtmargc=0;
+  std::vector<char *> rtmargv;
+  rtmargv.push_back(argv[0]);
+  rtmargc++;
   for (int i = 1; i < argc; ++ i) {
     std::string arg(argv[i]);
     coil::normalize(arg);
     if ( arg == "--output" ) {
       if (++i < argc) output = argv[i];
-    } else if ( arg == "-o" ) {
-      ++i;
     } else if ( arg == "--integrate" ) {
       if (++i < argc) integrate = argv[i];
     } else if ( arg == "--dt" ) {
@@ -56,15 +58,19 @@ int main (int argc, char** argv)
       if (++i < argc) robothardware_conf_file_option += std::string("\n") + argv[i];
     } else if ( arg == "--joint-properties" ) {
       if (++i < argc) joint_properties = argv[i];
-    } else if ( arg[0] == '-' ||  arg[0] == '_'  ) {
-      std::cerr << argv[0] << " : Unknwon arguments " << arg << std::endl;
+    } else if ( arg.find("--gtest_output") == 0  ||arg.find("--text") == 0 || arg.find("__log") == 0 || arg.find("__name") == 0 ) { // skip
+    } else if ( arg[0] == '-'  ) {
+      rtmargv.push_back(argv[i]);
+      rtmargv.push_back(argv[i+1]);
+      rtmargc+=2;
+      ++i;
     } else {
       inputs.push_back(argv[i]);
     }
   }
 
   RTC::Manager* manager;
-  manager = RTC::Manager::init(argc, argv);
+  manager = RTC::Manager::init(rtmargc, rtmargv.data());
 
   std::string nameServer = manager->getConfig()["corba.nameservers"];
   int comPos = nameServer.find(",");
