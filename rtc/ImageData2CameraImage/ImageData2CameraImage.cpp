@@ -68,6 +68,7 @@ RTC::ReturnCode_t ImageData2CameraImage::onInitialize()
   // Set CORBA Service Ports
   
   // </rtc-template>
+  m_data.error_code = 0;
 
   return RTC::RTC_OK;
 }
