@@ -1,0 +1,45 @@
+/**
+
+\page RangeDataViewer
+
+\section introduction Overview
+
+This component visualizes Img::TimedRangeData
+
+<table>
+<tr><th>implementation_id</th><td>RangeDataViewer</td></tr>
+<tr><th>category</th><td>example</td></tr>
+</table>
+
+\section dataports Data Ports
+
+\subsection inports Input Ports
+
+<table>
+<tr><th>port name</th><th>data type</th><th>unit</th><th>description</th></tr>
+<tr><td>imageIn</td><td>Img::TimedRangeData</td><td></td><td>camera image</td></tr>
+</table>
+
+\subsection outports Output Ports
+
+N/A
+
+\section serviceports Service Ports
+
+\subsection provider Service Providers
+
+N/A
+
+\subsection consumer Service Consumers
+
+N/A
+
+\section configuration Configuration Variables
+
+N/A
+
+\section conf Configuration File
+
+N/A
+
+ */
