@@ -155,7 +155,6 @@ RTC::ReturnCode_t Range2PointCloud::onExecute(RTC::UniqueId ec_id)
     m_cloud.row_step = m_cloud.point_step*m_cloud.width;
     m_cloud.data.length(m_cloud.row_step);// shrinked later
     // range -> point cloud
-    int scan_half = m_range.ranges.length()/2;
     float *ptr = (float *)m_cloud.data.get_buffer() + npoint*4;
     hrp::Vector3 relP, absP, sensorP(m_sensorPose.data.position.x,
 				     m_sensorPose.data.position.y,
@@ -163,9 +162,9 @@ RTC::ReturnCode_t Range2PointCloud::onExecute(RTC::UniqueId ec_id)
     hrp::Matrix33 sensorR = hrp::rotFromRpy(m_sensorPose.data.orientation.r,
 					    m_sensorPose.data.orientation.p,
 					    m_sensorPose.data.orientation.y);
-    for (int i=-scan_half; i<=scan_half; i++){
-      double th = i*m_range.config.angularRes;
-      double d = m_range.ranges[i+scan_half];
+    for (unsigned int i=0; i<m_range.ranges.length(); i++){
+      double th = m_range.config.minAngle + i*m_range.config.angularRes;
+      double d = m_range.ranges[i];
       if (d==0) continue;
       relP << -d*sin(th), 0, -d*cos(th);
       absP = sensorP + sensorR*relP;
