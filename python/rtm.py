@@ -256,7 +256,7 @@ def initCORBA():
         #  Command line arguments
         #  Environment variables
         # so init_CORBA will follow this order
-        # first check command line orgument
+        # first check command line argument
         try:
                 n = sys.argv.index('-ORBInitRef')
                 (nshost,nsport) = re.match('NameService=corbaloc:iiop:(\w+):(\d+)/NameService', sys.argv[n+1]).group(1,2)
