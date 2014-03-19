@@ -2,6 +2,7 @@ from Tkinter import *
 from tkMessageBox import *
 import datetime
 import __builtin__
+import threading
 
 def waitInputConfirm(msg):
     root = Tk()
@@ -224,11 +225,16 @@ class waitInputMenuFrame(Frame):
         self.GlobalMenuPanel.pack_forget()
         self.HistoryPanel.pack()
         return True
-        
-def waitInputMenu(menu):
+
+def waitInputMenuMain(menu):
     f = waitInputMenuFrame(menu)
     f.pack()
     f.mainloop()
+    
+def waitInputMenu(menu):
+    thr = threading.Thread(target=waitInputMenuMain, args=(menu,))
+    thr.start()
+    return thr
 
 __builtin__.waitInputConfirm = waitInputConfirm
 __builtin__.waitInputSelect  = waitInputSelect
