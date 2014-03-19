@@ -229,7 +229,13 @@ RangeSensorPortHandler::RangeSensorPortHandler(
     SensorPortHandler<RangeSensor, RTC::RangeData>(i_rtc, i_portName, i_sensor)
 {
     i_sensor->isEnabled = true;
+    m_data.config.minAngle = -i_sensor->scanAngle/2;
+    m_data.config.maxAngle =  i_sensor->scanAngle/2;
     m_data.config.angularRes = i_sensor->scanStep;
+    m_data.config.minRange = 0;
+    m_data.config.maxRange = i_sensor->maxDistance;
+    m_data.config.rangeRes = 0;
+    m_data.config.frequency = i_sensor->scanRate;
 }
 
 void RangeSensorPortHandler::update(double time)
