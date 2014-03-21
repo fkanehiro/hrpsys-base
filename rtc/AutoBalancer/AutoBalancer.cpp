@@ -275,7 +275,16 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
     }
     Guard guard(m_mutex);
     robotstateOrg2qRef();
-    if (control_mode == MODE_ABC ) solveLimbIK();
+    if (control_mode == MODE_ABC ) {
+      solveLimbIK();
+    } else {
+      for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
+        if (it->first == ":rleg" || it->first == ":lleg") {
+          it->second.current_p0 = m_robot->link(it->second.target_name)->p;
+          it->second.current_r0 = m_robot->link(it->second.target_name)->R;
+        }
+      }
+    }
     if ( m_q.data.length() != 0 ) { // initialized
       for ( int i = 0; i < m_robot->numJoints(); i++ ){
         m_q.data[i] = m_robot->joint(i)->q;
