@@ -91,8 +91,8 @@ def loadPattern(basename, tm=3.0):
 def setupLogger():
     log_svc.add("TimedDoubleSeq", "pos")
     log_svc.add("TimedLongSeq", "servoState")
-    log.owned_ecs[0].start()
-    log.start(log.owned_ecs[0])
+    # log.owned_ecs[0].start()
+    # log.start(log.owned_ecs[0])
 
 def demo():
     init()
