@@ -43,6 +43,8 @@ def loadPattern(basename, tm=1.0):
     seq_svc.loadPattern(basename, tm)
     seq_svc.waitInterpolation()
 
-init()
-loadPattern("data/walk2m")
+if __name__ == '__main__':
+    initCORBA()
+    init()
+    loadPattern("data/walk2m")
 
