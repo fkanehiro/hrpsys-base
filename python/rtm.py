@@ -307,6 +307,8 @@ def findObject(name, kind="", rnc=None):
 	path = [nc]
 	if not rnc:
 		rnc = rootnc
+        if not rnc:
+                print "[ERROR] findObject(%r,kind=%r,rnc=%r) rootnc is not found"%(name,kind,rnc)
 	return rnc.resolve(path)
 
 ##
@@ -317,9 +319,13 @@ def findObject(name, kind="", rnc=None):
 #
 
 def findRTCmanager(hostname=None, rnc=None):
+        if not rootnc:
+                print "[ERROR] findRTCmanager(hostname=%r,rnc=%r) rootnc is not defined, need to call initCORBA()"%(hostname,rnc)
         if not hostname:
                 hostname = nshost
                 cxt = None
+        if not hostname:
+                hostname = socket.gethostname()
 
         def getManagerFromNS(hostname, mgr = None):
                 try:
