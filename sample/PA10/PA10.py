@@ -103,4 +103,8 @@ def demo():
     seq_svc.waitInterpolation()
     log_svc.save("/tmp/demo")
 
-demo()
+
+if __name__ == '__main__':
+    initCORBA()
+    demo()
+
