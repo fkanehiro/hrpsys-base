@@ -45,6 +45,7 @@ SequencePlayer::SequencePlayer(RTC::Manager* manager)
       m_qInitIn("qInit", m_qInit),
       m_basePosInitIn("basePosInit", m_basePosInit),
       m_baseRpyInitIn("baseRpyInit", m_baseRpyInit),
+      m_zmpRefInitIn("zmpRefInit", m_zmpRefInit),
       m_qRefOut("qRef", m_qRef),
       m_tqRefOut("tqRef", m_tqRef),
       m_zmpRefOut("zmpRef", m_zmpRef),
@@ -80,6 +81,7 @@ RTC::ReturnCode_t SequencePlayer::onInitialize()
     addInPort("qInit", m_qInitIn);
     addInPort("basePosInit", m_basePosInitIn);
     addInPort("baseRpyInit", m_baseRpyInitIn);
+    addInPort("zmpRefInit", m_zmpRefInitIn);
   
     // Set OutPort buffer
     addOutPort("qRef", m_qRefOut);
@@ -145,6 +147,7 @@ RTC::ReturnCode_t SequencePlayer::onInitialize()
     m_basePosInit.data.x = root->p[0]; m_basePosInit.data.y = root->p[1]; m_basePosInit.data.z = root->p[2];
     hrp::Vector3 rpy = hrp::rpyFromRot(root->R);
     m_baseRpyInit.data.r = rpy[0]; m_baseRpyInit.data.p = rpy[1]; m_baseRpyInit.data.y = rpy[2];
+    m_zmpRefInit.data.x = 0; m_zmpRefInit.data.y = 0; m_zmpRefInit.data.z = 0;
 
     // allocate memory for outPorts
     m_qRef.data.length(dof);
@@ -201,6 +204,7 @@ RTC::ReturnCode_t SequencePlayer::onExecute(RTC::UniqueId ec_id)
     if (m_qInitIn.isNew()) m_qInitIn.read();
     if (m_basePosInitIn.isNew()) m_basePosInitIn.read();
     if (m_baseRpyInitIn.isNew()) m_baseRpyInitIn.read();
+    if (m_zmpRefInitIn.isNew()) m_zmpRefInitIn.read();
 
     if (m_gname != "" && m_seq->isEmpty(m_gname.c_str())){
         if (m_waitFlag){
@@ -578,14 +582,8 @@ bool SequencePlayer::setInitialState(double tm)
         m_seq->setBaseRpy(rpy, tm);
         calcRotFromRpy(root->R, rpy[0], rpy[1], rpy[2]);
 
-#if 1
-        m_robot->calcForwardKinematics();
-        Vector3 com = m_robot->calcCM();
-        com[2] = 0.0;
-        Vector3 local_com(root->R.transpose()*(com - root->p));
-        double zmp[] = {local_com[0], local_com[1], local_com[2]};
+        double zmp[] = {m_zmpRefInit.data.x, m_zmpRefInit.data.y, m_zmpRefInit.data.z};
         m_seq->setZmp(zmp, tm);
-#endif
         double zero[] = {0,0,0};
         m_seq->setBaseAcc(zero, tm);
         return true;

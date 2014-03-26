@@ -276,6 +276,7 @@ class HrpsysConfigurator:
         connectPorts(self.sh.port("basePosOut"), [self.seq.port("basePosInit"), self.fk.port("basePosRef")])
         connectPorts(self.sh.port("baseRpyOut"), [self.seq.port("baseRpyInit"), self.fk.port("baseRpyRef")])
         connectPorts(self.sh.port("qOut"), self.seq.port("qInit"))
+        connectPorts(self.sh.port("zmpOut"), self.seq.port("zmpRefInit"))
         for sen in filter(lambda x : x.type == "Force", self.sensors):
             connectPorts(self.seq.port(sen.name+"Ref"), self.sh.port(sen.name+"In"))
 
@@ -507,6 +508,7 @@ class HrpsysConfigurator:
             self.connectLoggerPort(self.sh, 'tqOut')
             self.connectLoggerPort(self.sh, 'basePosOut')
             self.connectLoggerPort(self.sh, 'baseRpyOut')
+            self.connectLoggerPort(self.sh, 'zmpOut')
         if self.rh != None:
             self.connectLoggerPort(self.rh, 'emergencySignal', 'emergencySignal')
         for sen in filter(lambda x : x.type == "Force", self.sensors):

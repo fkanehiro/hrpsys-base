@@ -129,6 +129,8 @@ class SequencePlayer
   InPort<TimedPoint3D> m_basePosInitIn;
   TimedOrientation3D m_baseRpyInit;
   InPort<TimedOrientation3D> m_baseRpyInitIn;
+  TimedPoint3D m_zmpRefInit;
+  InPort<TimedPoint3D> m_zmpRefInitIn;
   
   // </rtc-template>
 
