@@ -148,8 +148,8 @@ void JointTorqueInPortHandler::update()
             m_port.read();
         }while(m_port.isNew());
         if (m_data.data.length() != m_joints.size()){
-            std::cerr << "JointTorqueInPortHandler: data length mismatch("
-                      << m_data.data.length() << "<->" << m_joints.size()
+            std::cerr << "JointTorqueInPortHandler: data length mismatch(length of input data:"
+                      << m_data.data.length() << "<->the number of joints:" << m_joints.size()
                       << ")" << std::endl;
         } 
         for (size_t i=0; i<m_joints.size(); i++){
