@@ -51,7 +51,7 @@ module OpenHRP
     {
       double default_step_time; // step time [s]
       double default_step_height; // step height [m]
-      double default_double_support_ratio; // ratio
+      double default_double_support_ratio; // ratio of double support period. ratio is included in (0, 1)
       sequence<double, 3> stride_parameter; // stride limitation of x[m], y[m], and theta[deg]
     };
 
@@ -62,84 +62,84 @@ module OpenHRP
     };
 
     /**
-     * @brief go pos.
-     * @param i_x[m], i_y[m], i_th[deg]
+     * @brief Walk to the goal position and orientation. Returns without waiting for whole steps to be executed.
+     * @param i_x[m], i_y[m], and i_th[deg] are goal x-y-position and z-orientation from the current mid-coords of right foot and left foot.
      * @return true if set successfully, false otherwise
      */
     boolean goPos(in double x, in double y, in double th);
 
     /**
-     * @brief go velocity.
-     * @param i_vx[m/s], i_vy[m/s], i_vth[deg/s]
+     * @brief Walk at the desired velocity. If the robot is stopping, the robot starts stepping. Returns without waiting for whole steps to be executed.
+     * @param i_vx[m/s], i_vy[m/s], and i_vth[deg/s] are velocity in the current mid-coords of right foot and left foot.
      * @return true if set successfully, false otherwise
      */
     boolean goVelocity(in double vx, in double vy, in double vth);
 
     /**
-     * @brief go stop.
+     * @brief Stop stepping.
      * @param
      * @return true if set successfully, false otherwise
      */
     boolean goStop();
 
     /**
-     * @brief set footsteps.
-     * @param
+     * @brief Set footsteps. Returns without waiting for whole steps to be executed.
+     * @param fs is sequence of FootStep structure.
      * @return true if set successfully, false otherwise
      */
     boolean setFootSteps(in FootstepSequence fs);
 
     /**
-     * @brief wait footsteps.
+     * @brief Wait for whole footsteps are executed.
      * @param
      * @return true if set successfully, false otherwise
      */
     void waitFootSteps();
 
     /**
-     * @brief start AutoBalancer Mode.
-     * @param
+     * @brief Start AutoBalancer mode in which the robot controls the COM.
+     * @param alp is sequence of limbs to fix. limbs are :rleg, :lleg, :rarm, and :larm
      * @return true if set successfully, false otherwise
      */
     boolean startABC(in AutoBalancerLimbParamSequence alp);
 
     /**
-     * @brief stop AutoBalancer Mode.
+     * @brief Stop AutoBalancer mode.
      * @param
      * @return true if set successfully, false otherwise
      */
     boolean stopABC();
 
     /**
-     * @brief set GaitGenerator parameters
+     * @brief Set GaitGenerator parameters
      * @param i_param is input parameter
      * @return true if set successfully, false otherwise
      */
     boolean setGaitGeneratorParam(in GaitGeneratorParam i_param);
 
     /**
-     * @brief get impedance parameters.
+     * @brief Get GaitGenerator parameters.
      * @param i_param is output parameters
      * @return true if set successfully, false otherwise
      */
     boolean getGaitGeneratorParam(out GaitGeneratorParam i_param);
 
     /**
-     * @brief set AutoBalancer parameters
+     * @brief Set AutoBalancer parameters
      * @param i_param is input parameter
      * @return true if set successfully, false otherwise
      */
     boolean setAutoBalancerParam(in AutoBalancerParam i_param);
 
     /**
-     * @brief get impedance parameters.
+     * @brief Get AutoBalancer parameters.
      * @param i_param is output parameters
      * @return true if set successfully, false otherwise
      */
     boolean getAutoBalancerParam(out AutoBalancerParam i_param);
 
     /**
-     * @brief get footstep param parameters.
+     * @brief Get footstep parameters.
      * @param i_param is output parameters
      * @return true if set successfully, false otherwise
      */
