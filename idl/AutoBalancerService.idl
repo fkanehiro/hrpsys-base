@@ -39,13 +39,7 @@ module OpenHRP
       SupportLegState support_leg_with_both;
     };
 
-    struct AutoBalancerLimbParam
-    {
-      string name;
-      DblArray3 target2foot_offset_pos;
-      DblArray4 target2foot_offset_rot;
-    };
-    typedef sequence<AutoBalancerLimbParam> AutoBalancerLimbParamSequence;
+    typedef sequence<string> StrSequence;
 
     struct GaitGeneratorParam // parameters for GaitGenerator
     {
@@ -98,17 +92,17 @@ module OpenHRP
 
     /**
      * @brief Start AutoBalancer mode in which the robot controls the COM.
-     * @param alp is sequence of limbs to fix. limbs are :rleg, :lleg, :rarm, and :larm
+     * @param limbs is sequence of limbs to fix. limbs are :rleg, :lleg, :rarm, and :larm
      * @return true if set successfully, false otherwise
      */
-    boolean startABC(in AutoBalancerLimbParamSequence alp);
+    boolean startAutoBalancer(in StrSequence limbs);
 
     /**
      * @brief Stop AutoBalancer mode.
      * @param
      * @return true if set successfully, false otherwise
      */
-    boolean stopABC();
+    boolean stopAutoBalancer();
 
     /**
      * @brief Set GaitGenerator parameters

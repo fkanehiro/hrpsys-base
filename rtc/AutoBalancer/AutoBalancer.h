@@ -94,8 +94,8 @@ class AutoBalancer
   bool goStop();
   bool setFootSteps(const OpenHRP::AutoBalancerService::FootstepSequence& fs);
   void waitFootSteps();
-  bool startABC(const OpenHRP::AutoBalancerService::AutoBalancerLimbParamSequence& alp);
-  bool stopABC();
+  bool startAutoBalancer(const ::OpenHRP::AutoBalancerService::StrSequence& limbs);
+  bool stopAutoBalancer();
   bool setGaitGeneratorParam(const OpenHRP::AutoBalancerService::GaitGeneratorParam& i_param);
   bool getGaitGeneratorParam(OpenHRP::AutoBalancerService::GaitGeneratorParam& i_param);
   bool setAutoBalancerParam(const OpenHRP::AutoBalancerService::AutoBalancerParam& i_param);
@@ -172,7 +172,7 @@ class AutoBalancer
   void robotstateOrg2qRef();
   bool solveLimbIKforLimb (ABCIKparam& param, const double transition_smooth_gain);
   void solveLimbIK();
-  void startABCparam(const ::OpenHRP::AutoBalancerService::AutoBalancerLimbParamSequence& alp);
+  void startABCparam(const ::OpenHRP::AutoBalancerService::StrSequence& limbs);
   void stopABCparam();
   void waitABCTransition();
   void fixLegToCoords (const std::string& leg, const rats::coordinates& coords);

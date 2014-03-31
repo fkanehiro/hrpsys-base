@@ -34,14 +34,14 @@ void AutoBalancerService_impl::waitFootSteps()
   return m_autobalancer->waitFootSteps();
 };
 
-CORBA::Boolean AutoBalancerService_impl::startABC(const OpenHRP::AutoBalancerService::AutoBalancerLimbParamSequence& alp)
+CORBA::Boolean AutoBalancerService_impl::startAutoBalancer(const OpenHRP::AutoBalancerService::StrSequence& limbs)
 {
-  return m_autobalancer->startABC(alp);
+  return m_autobalancer->startAutoBalancer(limbs);
 };
 
-CORBA::Boolean AutoBalancerService_impl::stopABC()
+CORBA::Boolean AutoBalancerService_impl::stopAutoBalancer()
 {
-  return m_autobalancer->stopABC();
+  return m_autobalancer->stopAutoBalancer();
 };
 
 CORBA::Boolean AutoBalancerService_impl::setGaitGeneratorParam(const OpenHRP::AutoBalancerService::GaitGeneratorParam& i_param)

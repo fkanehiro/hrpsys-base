@@ -502,7 +502,7 @@ void AutoBalancer::solveLimbIK ()
   }
 */
 
-void AutoBalancer::startABCparam(const OpenHRP::AutoBalancerService::AutoBalancerLimbParamSequence& alp)
+void AutoBalancer::startABCparam(const OpenHRP::AutoBalancerService::StrSequence& limbs)
 {
   std::cerr << "[AutoBalancer] start auto balancer mode" << std::endl;
   transition_count = -MAX_TRANSITION_COUNT; // when start impedance, count up to 0
@@ -511,11 +511,10 @@ void AutoBalancer::startABCparam(const OpenHRP::AutoBalancerService::AutoBalance
     it->second.is_active = false;
   }
 
-  for (size_t i = 0; i < alp.length(); i++) {
-    const OpenHRP::AutoBalancerService::AutoBalancerLimbParam& tmpalp = alp[i];
-    ABCIKparam& tmp = ikp[std::string(tmpalp.name)];
+  for (size_t i = 0; i < limbs.length(); i++) {
+    ABCIKparam& tmp = ikp[std::string(limbs[i])];
     tmp.is_active = true;
-    std::cerr << "abc limb [" << std::string(tmpalp.name) << "]" << std::endl;
+    std::cerr << "abc limb [" << std::string(limbs[i]) << "]" << std::endl;
   }
 
   for ( int i = 0; i < m_robot->numJoints(); i++ ){
@@ -546,11 +545,11 @@ void AutoBalancer::startWalking ()
 {
   if ( control_mode != MODE_ABC ) {
     return_control_mode = control_mode;
-    OpenHRP::AutoBalancerService::AutoBalancerLimbParamSequence alps;
-    alps.length(2);
-    alps[0].name = ":rleg";
-    alps[1].name = ":lleg";
-    startABCparam(alps);
+    OpenHRP::AutoBalancerService::StrSequence fix_limbs;
+    fix_limbs.length(2);
+    fix_limbs[0] = ":rleg";
+    fix_limbs[1] = ":lleg";
+    startABCparam(fix_limbs);
     waitABCTransition();
   }
   hrp::Vector3 cog(m_robot->calcCM());
@@ -585,10 +584,10 @@ void AutoBalancer::stopWalking ()
   }
 }
 
-bool AutoBalancer::startABC (const OpenHRP::AutoBalancerService::AutoBalancerLimbParamSequence& alp)
+bool AutoBalancer::startAutoBalancer (const OpenHRP::AutoBalancerService::StrSequence& limbs)
 {
   if (control_mode == MODE_IDLE) {
-    startABCparam(alp);
+    startABCparam(limbs);
     waitABCTransition();
     return_control_mode = MODE_ABC;
     return true;
@@ -597,7 +596,7 @@ bool AutoBalancer::startABC (const OpenHRP::AutoBalancerService::AutoBalancerLim
   }
 }
 
-bool AutoBalancer::stopABC ()
+bool AutoBalancer::stopAutoBalancer ()
 {
   if (control_mode == MODE_ABC) {
     stopABCparam();

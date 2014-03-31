@@ -20,8 +20,8 @@ public:
   CORBA::Boolean goStop();
   CORBA::Boolean setFootSteps(const OpenHRP::AutoBalancerService::FootstepSequence& fs);
   void waitFootSteps();
-  CORBA::Boolean startABC(const OpenHRP::AutoBalancerService::AutoBalancerLimbParamSequence& alp);
-  CORBA::Boolean stopABC();
+  CORBA::Boolean startAutoBalancer(const OpenHRP::AutoBalancerService::StrSequence& limbs);
+  CORBA::Boolean stopAutoBalancer();
   CORBA::Boolean setGaitGeneratorParam(const OpenHRP::AutoBalancerService::GaitGeneratorParam& i_param);
   CORBA::Boolean getGaitGeneratorParam(OpenHRP::AutoBalancerService::GaitGeneratorParam_out i_param);
   CORBA::Boolean setAutoBalancerParam(const OpenHRP::AutoBalancerService::AutoBalancerParam& i_param);
