@@ -1,13 +1,13 @@
 // -*- C++ -*-
 /*!
- * @file  AbsoluteForceSensor.cpp
+ * @file  RemoveForceSensorLinkOffset.cpp
  * @brief virtual force sensor component
  * $Date$
  *
  * $Id$
  */
 
-#include "AbsoluteForceSensor.h"
+#include "RemoveForceSensorLinkOffset.h"
 #include <rtm/CorbaNaming.h>
 #include <hrpModel/ModelLoaderUtil.h>
 #include <hrpUtil/MatrixSolvers.h>
@@ -15,10 +15,10 @@
 
 // Module specification
 // <rtc-template block="module_spec">
-static const char* absoluteforcesensor_spec[] =
+static const char* removeforcesensorlinkoffset_spec[] =
   {
-    "implementation_id", "AbsoluteForceSensor",
-    "type_name",         "AbsoluteForceSensor",
+    "implementation_id", "RemoveForceSensorLinkOffset",
+    "type_name",         "RemoveForceSensorLinkOffset",
     "description",       "null component",
     "version",           HRPSYS_PACKAGE_VERSION,
     "vendor",            "AIST",
@@ -33,25 +33,25 @@ static const char* absoluteforcesensor_spec[] =
   };
 // </rtc-template>
 
-AbsoluteForceSensor::AbsoluteForceSensor(RTC::Manager* manager)
+RemoveForceSensorLinkOffset::RemoveForceSensorLinkOffset(RTC::Manager* manager)
   : RTC::DataFlowComponentBase(manager),
     // <rtc-template block="initializer">
     m_qCurrentIn("qCurrent", m_qCurrent),
     m_rpyIn("rpy", m_rpy),
-    m_AbsoluteForceSensorServicePort("AbsoluteForceSensorService"),
+    m_RemoveForceSensorLinkOffsetServicePort("RemoveForceSensorLinkOffsetService"),
     // </rtc-template>
     m_debugLevel(0)
 {
-  m_service0.absfsensor(this);
+  m_service0.rmfsoff(this);
 }
 
-AbsoluteForceSensor::~AbsoluteForceSensor()
+RemoveForceSensorLinkOffset::~RemoveForceSensorLinkOffset()
 {
 }
 
 
 
-RTC::ReturnCode_t AbsoluteForceSensor::onInitialize()
+RTC::ReturnCode_t RemoveForceSensorLinkOffset::onInitialize()
 {
   std::cout << m_profile.instance_name << ": onInitialize()" << std::endl;
   // <rtc-template block="bind_config">
@@ -69,12 +69,12 @@ RTC::ReturnCode_t AbsoluteForceSensor::onInitialize()
   // Set OutPort buffer
   
   // Set service provider to Ports
-  m_AbsoluteForceSensorServicePort.registerProvider("service0", "AbsoluteForceSensorService", m_service0);
+  m_RemoveForceSensorLinkOffsetServicePort.registerProvider("service0", "RemoveForceSensorLinkOffsetService", m_service0);
   
   // Set service consumers to Ports
   
   // Set CORBA Service Ports
-  addPort(m_AbsoluteForceSensorServicePort);
+  addPort(m_RemoveForceSensorLinkOffsetServicePort);
   
   // </rtc-template>
 
@@ -116,40 +116,40 @@ RTC::ReturnCode_t AbsoluteForceSensor::onInitialize()
 }
 
 /*
-RTC::ReturnCode_t AbsoluteForceSensor::onFinalize()
+RTC::ReturnCode_t RemoveForceSensorLinkOffset::onFinalize()
 {
   return RTC::RTC_OK;
 }
 */
 
 /*
-RTC::ReturnCode_t AbsoluteForceSensor::onStartup(RTC::UniqueId ec_id)
+RTC::ReturnCode_t RemoveForceSensorLinkOffset::onStartup(RTC::UniqueId ec_id)
 {
   return RTC::RTC_OK;
 }
 */
 
 /*
-RTC::ReturnCode_t AbsoluteForceSensor::onShutdown(RTC::UniqueId ec_id)
+RTC::ReturnCode_t RemoveForceSensorLinkOffset::onShutdown(RTC::UniqueId ec_id)
 {
   return RTC::RTC_OK;
 }
 */
 
-RTC::ReturnCode_t AbsoluteForceSensor::onActivated(RTC::UniqueId ec_id)
+RTC::ReturnCode_t RemoveForceSensorLinkOffset::onActivated(RTC::UniqueId ec_id)
 {
   std::cout << m_profile.instance_name<< ": onActivated(" << ec_id << ")" << std::endl;
   return RTC::RTC_OK;
 }
 
-RTC::ReturnCode_t AbsoluteForceSensor::onDeactivated(RTC::UniqueId ec_id)
+RTC::ReturnCode_t RemoveForceSensorLinkOffset::onDeactivated(RTC::UniqueId ec_id)
 {
   std::cout << m_profile.instance_name<< ": onDeactivated(" << ec_id << ")" << std::endl;
   return RTC::RTC_OK;
 }
 
 #define DEBUGP ((m_debugLevel==1 && loop%200==0) || m_debugLevel > 1 )
-RTC::ReturnCode_t AbsoluteForceSensor::onExecute(RTC::UniqueId ec_id)
+RTC::ReturnCode_t RemoveForceSensorLinkOffset::onExecute(RTC::UniqueId ec_id)
 {
   //std::cout << m_profile.instance_name<< ": onExecute(" << ec_id << ")" << std::endl;
   static int loop = 0;
@@ -215,7 +215,7 @@ RTC::ReturnCode_t AbsoluteForceSensor::onExecute(RTC::UniqueId ec_id)
   return RTC::RTC_OK;
 }
 
-void AbsoluteForceSensor::updateRootLinkPosRot (const hrp::Vector3& rpy)
+void RemoveForceSensorLinkOffset::updateRootLinkPosRot (const hrp::Vector3& rpy)
 {
   if ( m_robot->numSensors(hrp::Sensor::ACCELERATION) > 0) {
     hrp::Sensor *sensor = m_robot->sensor(hrp::Sensor::ACCELERATION, 0);
@@ -225,7 +225,7 @@ void AbsoluteForceSensor::updateRootLinkPosRot (const hrp::Vector3& rpy)
   }
 }
 
-bool AbsoluteForceSensor::setForceMomentOffsetParam(const std::string& i_name_, const AbsoluteForceSensorService::forcemomentOffsetParam& i_param_)
+bool RemoveForceSensorLinkOffset::setForceMomentOffsetParam(const std::string& i_name_, const RemoveForceSensorLinkOffsetService::forcemomentOffsetParam& i_param_)
 {
   if (m_forcemoment_offset_param.find(i_name_) != m_forcemoment_offset_param.end()) {
     // std::cerr << "OK " << i_name_ << " in setForceMomentOffsetParam" << std::endl;
@@ -239,7 +239,7 @@ bool AbsoluteForceSensor::setForceMomentOffsetParam(const std::string& i_name_, 
   return true;
 }
 
-bool AbsoluteForceSensor::getForceMomentOffsetParam(const std::string& i_name_, AbsoluteForceSensorService::forcemomentOffsetParam& i_param_)
+bool RemoveForceSensorLinkOffset::getForceMomentOffsetParam(const std::string& i_name_, RemoveForceSensorLinkOffsetService::forcemomentOffsetParam& i_param_)
 {
   if (m_forcemoment_offset_param.find(i_name_) != m_forcemoment_offset_param.end()) {
     // std::cerr << "OK " << i_name_ << " in getForceMomentOffsetParam" << std::endl;
@@ -254,35 +254,35 @@ bool AbsoluteForceSensor::getForceMomentOffsetParam(const std::string& i_name_, 
 }
 
 /*
-RTC::ReturnCode_t AbsoluteForceSensor::onAborting(RTC::UniqueId ec_id)
+RTC::ReturnCode_t RemoveForceSensorLinkOffset::onAborting(RTC::UniqueId ec_id)
 {
   return RTC::RTC_OK;
 }
 */
 
 /*
-RTC::ReturnCode_t AbsoluteForceSensor::onError(RTC::UniqueId ec_id)
+RTC::ReturnCode_t RemoveForceSensorLinkOffset::onError(RTC::UniqueId ec_id)
 {
   return RTC::RTC_OK;
 }
 */
 
 /*
-RTC::ReturnCode_t AbsoluteForceSensor::onReset(RTC::UniqueId ec_id)
+RTC::ReturnCode_t RemoveForceSensorLinkOffset::onReset(RTC::UniqueId ec_id)
 {
   return RTC::RTC_OK;
 }
 */
 
 /*
-RTC::ReturnCode_t AbsoluteForceSensor::onStateUpdate(RTC::UniqueId ec_id)
+RTC::ReturnCode_t RemoveForceSensorLinkOffset::onStateUpdate(RTC::UniqueId ec_id)
 {
   return RTC::RTC_OK;
 }
 */
 
 /*
-RTC::ReturnCode_t AbsoluteForceSensor::onRateChanged(RTC::UniqueId ec_id)
+RTC::ReturnCode_t RemoveForceSensorLinkOffset::onRateChanged(RTC::UniqueId ec_id)
 {
   return RTC::RTC_OK;
 }
@@ -291,12 +291,12 @@ RTC::ReturnCode_t AbsoluteForceSensor::onRateChanged(RTC::UniqueId ec_id)
 extern "C"
 {
 
-  void AbsoluteForceSensorInit(RTC::Manager* manager)
+  void RemoveForceSensorLinkOffsetInit(RTC::Manager* manager)
   {
-    RTC::Properties profile(absoluteforcesensor_spec);
+    RTC::Properties profile(removeforcesensorlinkoffset_spec);
     manager->registerFactory(profile,
-                             RTC::Create<AbsoluteForceSensor>,
-                             RTC::Delete<AbsoluteForceSensor>);
+                             RTC::Create<RemoveForceSensorLinkOffset>,
+                             RTC::Delete<RemoveForceSensorLinkOffset>);
   }
 
 };

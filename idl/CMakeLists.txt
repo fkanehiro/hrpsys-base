@@ -21,7 +21,7 @@ set(idl_files
   VirtualForceSensorService.idl
   StabilizerService.idl
   AutoBalancerService.idl
-  AbsoluteForceSensorService.idl
+  RemoveForceSensorLinkOffsetService.idl
   ServoControllerService.idl
   TorqueControllerService.idl
   )

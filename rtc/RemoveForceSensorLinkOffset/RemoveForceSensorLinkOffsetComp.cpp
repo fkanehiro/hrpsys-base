@@ -1,6 +1,6 @@
 // -*- C++ -*-
 /*!
- * @file AbsoluteForceSensorComp.cpp
+ * @file RemoveForceSensorLinkOffsetComp.cpp
  * @brief Standalone component
  * @date $Date$
  *
@@ -10,16 +10,16 @@
 #include <rtm/Manager.h>
 #include <iostream>
 #include <string>
-#include "AbsoluteForceSensor.h"
+#include "RemoveForceSensorLinkOffset.h"
 
 
 void MyModuleInit(RTC::Manager* manager)
 {
-  AbsoluteForceSensorInit(manager);
+  RemoveForceSensorLinkOffsetInit(manager);
   RTC::RtcBase* comp;
 
   // Create a component
-  comp = manager->createComponent("AbsoluteForceSensor");
+  comp = manager->createComponent("RemoveForceSensorLinkOffset");
 
 
   // Example

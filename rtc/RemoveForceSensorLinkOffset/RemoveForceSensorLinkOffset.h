@@ -1,14 +1,14 @@
 // -*- C++ -*-
 /*!
- * @file  AbsoluteForceSensor.h
+ * @file  RemoveForceSensorLinkOffset.h
  * @brief null component
  * @date  $Date$
  *
  * $Id$
  */
 
-#ifndef ABSOLUTEFORCESENSOR_H
-#define ABSOLUTEFORCESENSOR_H
+#ifndef REMOVEFORCESENSORLINKOFFSET_H
+#define REMOVEFORCESENSORLINKOFFSET_H
 
 #include <rtm/Manager.h>
 #include <rtm/DataFlowComponentBase.h>
@@ -22,7 +22,7 @@
 #include <hrpModel/JointPath.h>
 #include <hrpUtil/EigenTypes.h>
 
-#include "AbsoluteForceSensorService_impl.h"
+#include "RemoveForceSensorLinkOffsetService_impl.h"
 #include "../ImpedanceController/RatsMatrix.h"
 
 // Service implementation headers
@@ -40,7 +40,7 @@ using namespace RTC;
 /**
    \brief sample RT component which has one data input port and one data output port
  */
-class AbsoluteForceSensor
+class RemoveForceSensorLinkOffset
   : public RTC::DataFlowComponentBase
 {
  public:
@@ -48,11 +48,11 @@ class AbsoluteForceSensor
      \brief Constructor
      \param manager pointer to the Manager
   */
-  AbsoluteForceSensor(RTC::Manager* manager);
+  RemoveForceSensorLinkOffset(RTC::Manager* manager);
   /**
      \brief Destructor
   */
-  virtual ~AbsoluteForceSensor();
+  virtual ~RemoveForceSensorLinkOffset();
 
   // The initialize action (on CREATED->ALIVE transition)
   // formaer rtc_init_entry()
@@ -101,8 +101,8 @@ class AbsoluteForceSensor
   // The action that is invoked when execution context's rate is changed
   // no corresponding operation exists in OpenRTm-aist-0.2.0
   // virtual RTC::ReturnCode_t onRateChanged(RTC::UniqueId ec_id);
-  bool setForceMomentOffsetParam(const std::string& i_name_, const OpenHRP::AbsoluteForceSensorService::forcemomentOffsetParam &i_param_);
-  bool getForceMomentOffsetParam(const std::string& i_name_, OpenHRP::AbsoluteForceSensorService::forcemomentOffsetParam& i_param_);
+  bool setForceMomentOffsetParam(const std::string& i_name_, const OpenHRP::RemoveForceSensorLinkOffsetService::forcemomentOffsetParam &i_param_);
+  bool getForceMomentOffsetParam(const std::string& i_name_, OpenHRP::RemoveForceSensorLinkOffsetService::forcemomentOffsetParam& i_param_);
 
  protected:
   // Configuration variable declaration
@@ -141,13 +141,13 @@ class AbsoluteForceSensor
 
   // Service declaration
   // <rtc-template block="service_declare">
-  RTC::CorbaPort m_AbsoluteForceSensorServicePort;
+  RTC::CorbaPort m_RemoveForceSensorLinkOffsetServicePort;
   
   // </rtc-template>
 
   // Consumer declaration
   // <rtc-template block="consumer_declare">
-  AbsoluteForceSensorService_impl m_service0;
+  RemoveForceSensorLinkOffsetService_impl m_service0;
   
   // </rtc-template>
 
@@ -172,7 +172,7 @@ class AbsoluteForceSensor
 
 extern "C"
 {
-  void AbsoluteForceSensorInit(RTC::Manager* manager);
+  void RemoveForceSensorLinkOffsetInit(RTC::Manager* manager);
 };
 
-#endif // ABSOLUTEFORCESENSOR_H
+#endif // REMOVEFORCESENSORLINKOFFSET_H

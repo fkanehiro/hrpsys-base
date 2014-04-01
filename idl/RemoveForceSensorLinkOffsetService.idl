@@ -1,10 +1,10 @@
 /**
- * @file AbsoluteForceSensorService.idl
- * @brief Services for the absolute force sensor interface
+ * @file RemoveForceSensorLinkOffsetService.idl
+ * @brief Services for removing link offset of force sensors
  */
 module OpenHRP
 {
-  interface AbsoluteForceSensorService
+  interface RemoveForceSensorLinkOffsetService
   {
     typedef sequence<double, 3> DblSequence3;
     struct forcemomentOffsetParam {

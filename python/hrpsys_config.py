@@ -173,7 +173,7 @@ class HrpsysConfigurator:
     tf = None # TorqueFilter
     kf = None # KalmanFilter
     vs = None # VirtualForceSensor
-    afs = None # AbsoluteForceSensor
+    rmfo = None # RemoveForceSensorLinkOffset
     ic = None # ImpedanceController
     abc = None # AutoBalancer
     st = None # Stabilizer
@@ -293,14 +293,14 @@ class HrpsysConfigurator:
                 connectPorts(self.ic.port("ref_"+sen.name), self.abc.port("ref_"+sen.name))
 
         #  actual force sensors
-        if self.afs and self.kf:
+        if self.rmfo and self.kf:
             #connectPorts(self.kf.port("rpy"), self.ic.port("rpy"))
-            connectPorts(self.kf.port("rpy"), self.afs.port("rpy"))
-            connectPorts(self.rh.port("q"), self.afs.port("qCurrent"))
+            connectPorts(self.kf.port("rpy"), self.rmfo.port("rpy"))
+            connectPorts(self.rh.port("q"), self.rmfo.port("qCurrent"))
             for sen in filter(lambda x : x.type == "Force", self.sensors):
-                connectPorts(self.rh.port(sen.name), self.afs.port(sen.name))
+                connectPorts(self.rh.port(sen.name), self.rmfo.port(sen.name))
                 if self.ic:
-                    connectPorts(self.afs.port("off_"+sen.name), self.ic.port(sen.name))
+                    connectPorts(self.rmfo.port("off_"+sen.name), self.ic.port(sen.name))
         # connection for ic
         if self.ic:
             connectPorts(self.rh.port("q"), self.ic.port("qCurrent"))
@@ -438,7 +438,7 @@ class HrpsysConfigurator:
             ['tf', "TorqueFilter"],
             ['kf', "KalmanFilter"],
             ['vs', "VirtualForceSensor"],
-            ['afs', "AbsoluteForceSensor"],
+            ['rmfo', "RemoveForceSensorLinkOffset"],
             ['ic', "ImpedanceController"],
             ['abc', "AutoBalancer"],
             ['st', "Stabilizer"],
