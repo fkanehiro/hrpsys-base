@@ -650,8 +650,11 @@ bool AutoBalancer::goStop ()
 
 bool AutoBalancer::setFootSteps(const OpenHRP::AutoBalancerService::FootstepSequence& fs)
 {
-  coordinates tmpfs;
   std::cerr << "set_foot_steps" << std::endl;
+  coordinates tmpfs, initial_support_coords, initial_input_coords, fstrans;
+  ikp[std::string(fs[0].leg)].getCurrentEndCoords(initial_support_coords);
+  memcpy(initial_input_coords.pos.data(), fs[0].pos, sizeof(double)*3);
+  initial_input_coords.rot = (Eigen::Quaternion<double>(fs[0].rot[0], fs[0].rot[1], fs[0].rot[2], fs[0].rot[3])).normalized().toRotationMatrix(); // rtc: (x, y, z, w) but eigen: (w, x, y, z)
 
   gg->clear_footstep_node_list();
   for (size_t i = 0; i < fs.length(); i++) {
@@ -659,6 +662,9 @@ bool AutoBalancer::setFootSteps(const OpenHRP::AutoBalancerService::FootstepSequ
     if (leg == ":rleg" || leg == ":lleg") {
       memcpy(tmpfs.pos.data(), fs[i].pos, sizeof(double)*3);
       tmpfs.rot = (Eigen::Quaternion<double>(fs[i].rot[0], fs[i].rot[1], fs[i].rot[2], fs[i].rot[3])).normalized().toRotationMatrix(); // rtc: (x, y, z, w) but eigen: (w, x, y, z)
+      initial_input_coords.transformation(fstrans, tmpfs);
+      tmpfs = initial_support_coords;
+      tmpfs.transform(fstrans);
       gg->append_footstep_node(leg, tmpfs);
     } else {
       std::cerr << "no such target : " << leg << std::endl;
