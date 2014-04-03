@@ -82,31 +82,6 @@ RTC::ReturnCode_t VideoCapture::onInitialize()
   
   // </rtc-template>
 
-  if (m_devIds.size() == 1){
-    std::cout << "** devId:" << m_devIds[0] << std::endl;
-    v4l_capture *cam = new v4l_capture ();
-    cam->init(m_devIds[0], false);
-    m_cameras.push_back (cam);
-    m_CameraImage.data.image.format = Img::CF_RGB;
-    m_CameraImage.data.image.width = cam->getWidth ();
-    m_CameraImage.data.image.height = cam->getHeight ();
-    m_CameraImage.data.image.raw_data.length (cam->getWidth () * cam->getHeight () * 3);
-  }else{
-    m_MultiCameraImages.data.image_seq.length (m_devIds.size ());
-    m_MultiCameraImages.data.camera_set_id = 0;
-    for (unsigned int i = 0; i < m_devIds.size (); i++)
-      {
-	std::cout << "** devId:" << m_devIds[i] << std::endl;
-	v4l_capture *cam = new v4l_capture ();
-	cam->init(m_devIds[i], false);
-	m_cameras.push_back (cam);
-	m_MultiCameraImages.data.image_seq[i].image.format = Img::CF_RGB;
-	m_MultiCameraImages.data.image_seq[i].image.width = cam->getWidth ();
-	m_MultiCameraImages.data.image_seq[i].image.height = cam->getHeight ();
-	m_MultiCameraImages.data.image_seq[i].image.raw_data.length (cam->getWidth () * cam->getHeight () * 3);
-      }
-  }
-
   return RTC::RTC_OK;
 }
 
@@ -138,6 +113,31 @@ RTC::ReturnCode_t VideoCapture::onActivated(RTC::UniqueId ec_id)
     m_mode = CONTINUOUS;
   }else{
     m_mode = SLEEP;
+  }
+
+  if (m_devIds.size() == 1){
+    std::cout << "** devId:" << m_devIds[0] << std::endl;
+    v4l_capture *cam = new v4l_capture ();
+    cam->init(m_devIds[0], false);
+    m_cameras.push_back (cam);
+    m_CameraImage.data.image.format = Img::CF_RGB;
+    m_CameraImage.data.image.width = cam->getWidth ();
+    m_CameraImage.data.image.height = cam->getHeight ();
+    m_CameraImage.data.image.raw_data.length (cam->getWidth () * cam->getHeight () * 3);
+  }else{
+    m_MultiCameraImages.data.image_seq.length (m_devIds.size ());
+    m_MultiCameraImages.data.camera_set_id = 0;
+    for (unsigned int i = 0; i < m_devIds.size (); i++)
+      {
+	std::cout << "** devId:" << m_devIds[i] << std::endl;
+	v4l_capture *cam = new v4l_capture ();
+	cam->init(m_devIds[i], false);
+	m_cameras.push_back (cam);
+	m_MultiCameraImages.data.image_seq[i].image.format = Img::CF_RGB;
+	m_MultiCameraImages.data.image_seq[i].image.width = cam->getWidth ();
+	m_MultiCameraImages.data.image_seq[i].image.height = cam->getHeight ();
+	m_MultiCameraImages.data.image_seq[i].image.raw_data.length (cam->getWidth () * cam->getHeight () * 3);
+      }
   }
 
   return RTC::RTC_OK;
