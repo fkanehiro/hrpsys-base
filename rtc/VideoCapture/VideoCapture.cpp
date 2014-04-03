@@ -7,6 +7,7 @@
  * $Id$
  */
 
+#include "util/VectorConvert.h"
 #include "VideoCapture.h"
 
 // Module specification
@@ -25,6 +26,7 @@ static const char* videocapture_spec[] =
     "lang_type",         "compile",
     // Configuration variables
     "conf.default.initialMode", "continuous",
+    "conf.default.devIds", "0",
 
     ""
   };
@@ -52,13 +54,10 @@ RTC::ReturnCode_t VideoCapture::onInitialize()
 {
   std::cout << m_profile.instance_name << ": onInitialize()" << std::endl;
 
-  std::vector<int> devIds;
-  //coil::stringTo (devIds, prop["camera_dev_id"].c_str ());
-  devIds.push_back(0); // tempolary device number -> 0
-
   // <rtc-template block="bind_config">
   // Bind variables and configuration variable
   bindParameter("initialMode", m_initialMode, "continuous");
+  bindParameter("devIds", m_devIds, "0");
   
   // </rtc-template>
 
@@ -67,7 +66,7 @@ RTC::ReturnCode_t VideoCapture::onInitialize()
   // Set InPort buffers
 
   // Set OutPort buffer
-  if (devIds.size() == 1){
+  if (m_devIds.size() == 1){
     addOutPort ("CameraImage", m_CameraImageOut);
   }else{
     addOutPort ("MultiCameraImages", m_MultiCameraImagesOut);
@@ -83,23 +82,23 @@ RTC::ReturnCode_t VideoCapture::onInitialize()
   
   // </rtc-template>
 
-  if (devIds.size() == 1){
-    std::cout << "** devId:" << devIds[0] << std::endl;
+  if (m_devIds.size() == 1){
+    std::cout << "** devId:" << m_devIds[0] << std::endl;
     v4l_capture *cam = new v4l_capture ();
-    cam->init(devIds[0], false);
+    cam->init(m_devIds[0], false);
     m_cameras.push_back (cam);
     m_CameraImage.data.image.format = Img::CF_RGB;
     m_CameraImage.data.image.width = cam->getWidth ();
     m_CameraImage.data.image.height = cam->getHeight ();
     m_CameraImage.data.image.raw_data.length (cam->getWidth () * cam->getHeight () * 3);
   }else{
-    m_MultiCameraImages.data.image_seq.length (devIds.size ());
+    m_MultiCameraImages.data.image_seq.length (m_devIds.size ());
     m_MultiCameraImages.data.camera_set_id = 0;
-    for (unsigned int i = 0; i < devIds.size (); i++)
+    for (unsigned int i = 0; i < m_devIds.size (); i++)
       {
-	std::cout << "** devId:" << devIds[i] << std::endl;
+	std::cout << "** devId:" << m_devIds[i] << std::endl;
 	v4l_capture *cam = new v4l_capture ();
-	cam->init(devIds[i], false);
+	cam->init(m_devIds[i], false);
 	m_cameras.push_back (cam);
 	m_MultiCameraImages.data.image_seq[i].image.format = Img::CF_RGB;
 	m_MultiCameraImages.data.image_seq[i].image.width = cam->getWidth ();

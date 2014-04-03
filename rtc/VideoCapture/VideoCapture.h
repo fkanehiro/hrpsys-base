@@ -143,6 +143,7 @@ class VideoCapture
   typedef enum {SLEEP, ONESHOT, CONTINUOUS} mode;
   mode m_mode;
   std::string m_initialMode;
+  std::vector<int> m_devIds;
   std::vector < v4l_capture * > m_cameras;
 };
 
