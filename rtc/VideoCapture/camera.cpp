@@ -22,7 +22,7 @@ v4l_capture::~v4l_capture()
 int
 v4l_capture::init(unsigned int devId, bool _fileout)
 {
-  init_all(width, height, devId);
+  if (!init_all(width, height, devId)) return -1;
   frame = cv::Mat(height, width, CV_8UC3);
   return 0;
 }
@@ -45,19 +45,20 @@ int v4l_capture::getHeight ()
     return height;
 }
 
-void v4l_capture::init_all(size_t _width, size_t _height, unsigned int _devId)
+bool v4l_capture::init_all(size_t _width, size_t _height, unsigned int _devId)
 {
   width = _width;
   height = _height;
   std::ostringstream oss("");
   oss << "/dev/video" << _devId;
   dev_name = oss.str();
-  open_device();
+  if (!open_device()) return false;
   init_device();
   start_capturing();
+  return true;
 }
 
-void v4l_capture::open_device(void)
+bool v4l_capture::open_device(void)
 {
   fprintf(stderr, "Opening device '%s'\n", dev_name.c_str());
   fd = open(dev_name.c_str(), O_RDWR, 0);
@@ -65,8 +66,9 @@ void v4l_capture::open_device(void)
   if (fd == -1) {
     fprintf(stderr, "Cannot open '%s': %d, %s\n",
             dev_name.c_str(), errno, strerror(errno));
-    exit(EXIT_FAILURE);
+    return false;
   }
+  return true;
 }
 
 void v4l_capture::close_device(void)

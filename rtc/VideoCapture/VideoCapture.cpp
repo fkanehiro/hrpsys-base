@@ -118,7 +118,7 @@ RTC::ReturnCode_t VideoCapture::onActivated(RTC::UniqueId ec_id)
   if (m_devIds.size() == 1){
     std::cout << "** devId:" << m_devIds[0] << std::endl;
     v4l_capture *cam = new v4l_capture ();
-    cam->init(m_devIds[0], false);
+    if (cam->init(m_devIds[0], false) != 0) return RTC::RTC_ERROR;
     m_cameras.push_back (cam);
     m_CameraImage.data.image.format = Img::CF_RGB;
     m_CameraImage.data.image.width = cam->getWidth ();

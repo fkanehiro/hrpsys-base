@@ -19,7 +19,7 @@ class v4l_capture
   int fd, width, height;
   buffer *buffers;
   unsigned int n_buffers;
-  void open_device();
+  bool open_device();
   void init_device();
   void init_mmap();
   void start_capturing();
@@ -29,7 +29,7 @@ class v4l_capture
   void close_device();
   void read_frame(void);
   void write_img(uchar * ret);
-  void init_all(size_t _width, size_t _height, unsigned int _devId);
+  bool init_all(size_t _width, size_t _height, unsigned int _devId);
  public:
   v4l_capture();
   ~v4l_capture();
