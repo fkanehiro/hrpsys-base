@@ -50,6 +50,7 @@ AutoBalancer::AutoBalancer(RTC::Manager* manager)
       m_zmpRefOut("zmpRef", m_zmpRef),
       m_basePosOut("basePos", m_basePos),
       m_baseRpyOut("baseRpy", m_baseRpy),
+      m_baseTformOut("baseTformOut", m_baseTform),
       m_AutoBalancerServicePort("AutoBalancerService"),
       // </rtc-template>
       move_base_gain(0.1),
@@ -81,6 +82,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     addOutPort("zmpRef", m_zmpRefOut);
     addOutPort("basePos", m_basePosOut);
     addOutPort("baseRpy", m_baseRpyOut);
+    addOutPort("baseTformOut", m_baseTformOut);
   
     // Set service provider to Ports
     m_AutoBalancerServicePort.registerProvider("service0", "AutoBalancerService", m_service0);
@@ -122,6 +124,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     m_q.data.length(m_robot->numJoints());
     qorg.resize(m_robot->numJoints());
     qrefv.resize(m_robot->numJoints());
+    m_baseTform.data.length(12);
 
     transition_count = 0;
     control_mode = MODE_IDLE;
@@ -300,6 +303,16 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
     m_basePos.data.y = m_robot->rootLink()->p(1);
     m_basePos.data.z = m_robot->rootLink()->p(2);
     m_basePosOut.write();
+    double *tform_arr = m_baseTform.data.get_buffer();
+    tform_arr[0] = m_basePos.data.x;
+    tform_arr[1] = m_basePos.data.y;
+    tform_arr[2] = m_basePos.data.z;
+    hrp::Matrix33 Rot = hrp::rotFromRpy(m_baseRpy.data.r, 
+                                        m_baseRpy.data.p, 
+                                        m_baseRpy.data.y); 
+    hrp::setMatrix33ToRowMajorArray(Rot, tform_arr, 3);
+    m_baseTformOut.write();
+
     m_zmpRef.data.x = refzmp(0);
     m_zmpRef.data.y = refzmp(1);
     m_zmpRef.data.z = refzmp(2);
