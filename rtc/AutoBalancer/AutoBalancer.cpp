@@ -292,16 +292,19 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
       for ( int i = 0; i < m_robot->numJoints(); i++ ){
         m_q.data[i] = m_robot->joint(i)->q;
       }
+      m_q.tm = m_qRef.tm;
       m_qOut.write();
     }
     hrp::Vector3 baseRpy = hrp::rpyFromRot(m_robot->rootLink()->R);
     m_baseRpy.data.r = baseRpy(0);
     m_baseRpy.data.p = baseRpy(1);
     m_baseRpy.data.y = baseRpy(2);
+    m_baseRpy.tm = m_qRef.tm;
     m_baseRpyOut.write();
     m_basePos.data.x = m_robot->rootLink()->p(0);
     m_basePos.data.y = m_robot->rootLink()->p(1);
     m_basePos.data.z = m_robot->rootLink()->p(2);
+    m_basePos.tm = m_qRef.tm;
     m_basePosOut.write();
     double *tform_arr = m_baseTform.data.get_buffer();
     tform_arr[0] = m_basePos.data.x;
@@ -311,11 +314,13 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
                                         m_baseRpy.data.p, 
                                         m_baseRpy.data.y); 
     hrp::setMatrix33ToRowMajorArray(Rot, tform_arr, 3);
+    m_baseTform.tm = m_qRef.tm;
     m_baseTformOut.write();
 
     m_zmpRef.data.x = refzmp(0);
     m_zmpRef.data.y = refzmp(1);
     m_zmpRef.data.z = refzmp(2);
+    m_zmpRef.tm = m_qRef.tm;
     m_zmpRefOut.write();
     return RTC::RTC_OK;
 }
