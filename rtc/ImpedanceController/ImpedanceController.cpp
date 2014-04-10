@@ -271,6 +271,7 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
     }
     if (m_qRefIn.isNew()) {
         m_qRefIn.read();
+        m_q.tm = m_qRef.tm;
     }
     if ( m_qRef.data.length() ==  m_robot->numJoints() &&
          m_qCurrent.data.length() ==  m_robot->numJoints() ) {
