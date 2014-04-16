@@ -1,0 +1,26 @@
+language:
+  - cpp
+  - python
+python:
+  - "2.7"
+compiler:
+  - gcc
+before_install: # Use this to prepare the system to install prerequisites or dependencies
+  # Define some config vars
+  - export CI_SOURCE_PATH=$(pwd)
+  - export REPOSITORY_NAME=${PWD##*/}
+  - echo "Testing branch $TRAVIS_BRANCH of $REPOSITORY_NAME"
+  - sudo sh -c 'echo "deb http://packages.ros.org/ros-shadow-fixed/ubuntu precise main" > /etc/apt/sources.list.d/ros-latest.list'
+  - wget http://packages.ros.org/ros.key -O - | sudo apt-key add -
+  - sudo apt-get update -qq
+install: # Use this to install any prerequisites or dependencies necessary to run your build
+  - sudo apt-get install -qq -y freeglut3-dev python-tk jython doxygen libboost-all-dev libsdl1.2-dev libglew1.6-dev libqhull-dev libirrlicht-dev libxmu-dev libcv-dev libhighgui-dev libopencv-contrib-dev
+  - sudo apt-get install -qq -y ros-hydro-openhrp3
+  - cd $CI_SOURCE_PATH
+before_script: # Use this to prepare your build for testing e.g. copy database configurations, environment variables, etc.
+  - source /opt/ros/hydro/setup.bash
+script: # All commands must exit with code 0 on success. Anything else is considered failure.
+  - mkdir -p ~/build
+  - cd ~/build && cmake ${CI_SOURCE_PATH} -DOPENRTM_DIR=`pkg-config openrtm-aist --variable=libdir`/openrtm_aist -DCOMPILE_JAVA_STUFF=OFF && make
+after_failure:
+
