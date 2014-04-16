@@ -40,7 +40,7 @@ if (NOT APPLE)
      )
 else()
    target_link_libraries(hrpsysext 
-     boost_python-mt
+     boost_python
      hrpsysUtil
      ${PYTHON_LIBRARIES}
      )
