@@ -1,5 +1,5 @@
 1. Requirements
-   *Ubuntu 10.04LTS
+   *Ubuntu 12.04LTS(Recommended)
    *OpenHRP 3.1.5 or later
    *OpenRTM-aist-python
    *Jython(apt-get install jython)
@@ -10,6 +10,7 @@
    *GLEW(apt-get install libglew-dev)
    *(Optional)Octomap(http://octomap.sourceforge.net/)
    *(Optional)Irrlicht(apt-get install libirrlicht-dev)
+   *(Optional)Point Cloud Library(http://pointcloud.org)
 
 2. Install
 
@@ -25,8 +26,8 @@
 
 2.1.2 Install required packages using apt-get
    Please install required packages shown above. The following is an example
-   for ubuntu10.04LTS
-   %sudo apt-get install jython libxml2-dev libsdl-dev libcv-dev libcvaux-dev libhighgui-dev libqhull-dev libglew-dev
+   for ubuntu12.04LTS
+   %sudo apt-get install jython libxml2-dev libsdl-dev libcv-dev libcvaux-dev libhighgui-dev libqhull-dev libglew-dev freeglut3-dev libxmu-dev python-dev libboost-python-dev ipython
 
 2.2 RT components and utilities
    % mkdir build
@@ -61,7 +62,7 @@
    d. terminal3: % hrpsysjy PA10.py
       PA10 will change its joint angles.
 
-3.1.2 (Optional, Section 2.3 and 2.4 are required) with Eclipse
+3.1.2 (Optional, Sections 2.3 and 2.4 are required) with Eclipse
    a. Launch Eclipse
    b. Open "GrxUI" perspective
    c. From "GrxUI" menu of Eclipse, load a project file "PA10monitor.xml" placed under
