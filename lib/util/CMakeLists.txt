@@ -53,8 +53,8 @@ target_link_libraries(hrpsysUtil
   ${GLUT_LIBRARIES} 
   ${QHULL_LIBRARIES}
   GLEW
-  boost_thread-mt
-  boost_system-mt
+  boost_thread
+  boost_system
   )
 
 set(target hrpsysUtil)
