@@ -234,8 +234,7 @@ RTC::ReturnCode_t KalmanFilter::onExecute(RTC::UniqueId ec_id)
       z/g^2 = (1 - x/g^2) cosa^2
 #endif
       b = atan2( - sx / g, sqrt( sy/g * sy/g + sz/g * sz/g ) );
-      a = atan2( ( sy/g ) / sqrt( 1 - sx/g * sx/g),
-                 ( sz/g ) / sqrt( 1 - sx/g * sx/g) );
+      a = atan2( sy/g, sz/g );
       //std::cerr << "a(roll) = " << a*180/M_PI << ", b(pitch) = " << b*180/M_PI << ",  sx = " << sx << ", sy = " << sy << ", sz = " << sz << std::endl;
       m_rpyRaw.data.r = a;
       m_rpyRaw.data.p = b;
