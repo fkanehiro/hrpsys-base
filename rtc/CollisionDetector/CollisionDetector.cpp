@@ -785,20 +785,96 @@ bool CollisionDetector::disable(void)
 	return true;
 }
 
-void CollisionDetector::setupVClipModel(hrp::Link *i_link)
+void CollisionDetector::setupFCLModel(hrp::Link *i_link)
 {
-	Vclip::Polyhedron* i_vclip_model = new Vclip::Polyhedron();
-	int n = i_link->coldetModel->getNumVertices();
-	float v[3];
-	Vclip::VertFaceName vertName;
-	for (int i = 0; i < n; i ++ ) {
-		i_link->coldetModel->getVertex(i, v[0], v[1], v[2]);
-		sprintf(vertName, "v%d", i);
-		i_vclip_model->addVertex(vertName, Vclip::Vect3(v[0], v[1], v[2]));
+	std::vector<fcl::Vec3f> fcl_vertices;
+	std::vector<fcl::Triangle> fcl_triangles;
+
+#define USE_QHULL 1
+#if USE_QHULL
+	std::vector<coordT> points;
+	for (int i = 0; i < i_link->coldetModel->getNumVertices(); i++ ) {
+		float v1, v2, v3;
+		i_link->coldetModel->getVertex(i, v1, v2, v3);
+		points.push_back(v1);
+		points.push_back(v2);
+		points.push_back(v3);
 	}
-	i_vclip_model->buildHull();
-	i_vclip_model->check();
-	m_VclipLinks[i_link->index] = i_vclip_model;
+
+	char qhull_attr[] = "qhull Qt Tc C-0.001";
+	//char qhull_attr[] = "qhull Qt Tc";
+	int ret = qh_new_qhull (3, points.size()/3, &points[0], 0, qhull_attr, NULL, stderr);
+	if (ret == 0) {
+		qh_triangulate();
+		//qh_vertexneighbors();
+		//fprintf(stderr, "[FCL] face %d -> %d / vert %d -> %d\n",
+		//points.size()/9, qh num_facets,
+		//points.size()/3, qh num_vertices);
+
+		int vertexIndex = 0;
+		int numVertices = qh num_vertices;
+		int numTriangles = qh num_facets;
+		int index[points.size()/3];
+		{
+			vertexT *vertex, **vertexp;
+			FORALLvertices {
+				int p = qh_pointid(vertex->point);
+				index[p] = vertexIndex;
+				vertexIndex++;
+				fcl::Vec3f v(points[p*3+0], points[p*3+1], points[p*3+2]);
+				fcl_vertices.push_back(v);
+			}
+		}
+		{
+			facetT *facet;
+			vertexT *vertex, **vertexp;
+			FORALLfacets {
+				int j = 0, p[3];
+				setT *vertices = qh_facet3vertex (facet);
+				FOREACHvertex_(vertices) {
+					if(j < 3) {
+						p[j] = index[qh_pointid(vertex->point)];
+					} else {
+						fprintf(stderr, "extra vertex %d\n",j);
+					}
+					j++;
+				}
+				qh_settempfree(&vertices);
+				fcl::Triangle tri(p[0], p[1], p[2]);
+				fcl_triangles.push_back(tri);
+			}
+		}
+		qh_freeqhull(!qh_ALL);
+		int curlong, totlong;    // memory remaining after qh_memfreeshort
+		qh_memfreeshort (&curlong, &totlong);    // free short memory and memory allocator
+		fprintf(stderr, "[FCL] build finished, qhull mesh of %s, %d -> %d (%d)\n",
+			i_link->name.c_str(), points.size()/3, fcl_triangles.size(), numTriangles);
+	} else {
+		fprintf(stderr, "[FCL] can not build qhull mesh of %s\n", i_link->name.c_str());
+	}
+#else
+	for (int i = 0; i < i_link->coldetModel->getNumVertices(); i ++ ) {
+		float v1, v2, v3;
+		i_link->coldetModel->getVertex(i, v1, v2, v3);
+		fcl::Vec3f p(v1, v2, v3);
+		fcl_vertices.push_back(p);
+	}
+	for (int i = 0; i < i_link->coldetModel->getNumTriangles(); i ++ ) {
+		int i1, i2, i3;
+		i_link->coldetModel->getTriangle(i, i1, i2, i3);
+		fcl::Triangle tri(i1, i2, i3);
+		fcl_triangles.push_back(tri);
+	}
+#endif
+
+	FCLModel *fcl_model = new FCLModel();
+	fcl_model->bv_splitter.reset(new fcl::BVSplitter<FCLCollisionModel>(fcl::SPLIT_METHOD_BV_CENTER));
+
+	fcl_model->beginModel();
+	fcl_model->addSubModel(fcl_vertices, fcl_triangles);
+	fcl_model->endModel();
+
+	m_FCLModels[i_link->index] = fcl_model;
 }
 
 #ifndef USE_HRPSYSUTIL
