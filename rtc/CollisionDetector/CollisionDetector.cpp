@@ -794,7 +794,7 @@ void CollisionDetector::setupFCLModel(hrp::Link *i_link)
         points.push_back(v3);
     }
 
-    char qhull_attr[] = "qhull Qt Tc C-0.003 A-0.97";
+    char qhull_attr[] = "qhull Qt Tc C-0.002 A-0.9995";
     int ret = qh_new_qhull (3, points.size()/3, &points[0], 0, qhull_attr, NULL, stderr);
     if (ret == 0) {
       qh_triangulate();
