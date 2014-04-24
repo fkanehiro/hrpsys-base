@@ -794,15 +794,11 @@ void CollisionDetector::setupFCLModel(hrp::Link *i_link)
         points.push_back(v3);
     }
 
-    char qhull_attr[] = "qhull Qt Tc C-0.001";
-    //char qhull_attr[] = "qhull Qt Tc";
+    char qhull_attr[] = "qhull Qt Tc C-0.003 A-0.97";
     int ret = qh_new_qhull (3, points.size()/3, &points[0], 0, qhull_attr, NULL, stderr);
     if (ret == 0) {
       qh_triangulate();
-      //qh_vertexneighbors();
-      //fprintf(stderr, "[FCL] face %d -> %d / vert %d -> %d\n",
-      //points.size()/9, qh num_facets,
-      //points.size()/3, qh num_vertices);
+      qh_vertexneighbors();
 
       int vertexIndex = 0;
       int numVertices = qh num_vertices;
@@ -840,8 +836,8 @@ void CollisionDetector::setupFCLModel(hrp::Link *i_link)
       qh_freeqhull(!qh_ALL);
       int curlong, totlong;    // memory remaining after qh_memfreeshort
       qh_memfreeshort (&curlong, &totlong);    // free short memory and memory allocator
-      fprintf(stderr, "[FCL] build finished, qhull mesh of %s, %d -> %d (%d)\n",
-              i_link->name.c_str(), points.size()/3, fcl_triangles.size(), numTriangles);
+      fprintf(stderr, "[FCL] qhull build finished for %s, %d -> %d\n",
+              i_link->name.c_str(), i_link->coldetModel->getNumTriangles(), fcl_triangles.size());
     } else {
       fprintf(stderr, "[FCL] can not build qhull mesh of %s\n", i_link->name.c_str());
     }
@@ -861,7 +857,9 @@ void CollisionDetector::setupFCLModel(hrp::Link *i_link)
 #endif
 
     FCLModel *fcl_model = new FCLModel();
-    fcl_model->bv_splitter.reset(new fcl::BVSplitter<FCLCollisionModel>(fcl::SPLIT_METHOD_BV_CENTER));
+    fcl_model->bv_splitter.reset(new fcl::BVSplitter<FCLCollisionModel>(fcl::SPLIT_METHOD_BV_CENTER)); // fast
+    //fcl_model->bv_splitter.reset(new fcl::BVSplitter<FCLCollisionModel>(fcl::SPLIT_METHOD_MEDIAN));
+    //fcl_model->bv_splitter.reset(new fcl::BVSplitter<FCLCollisionModel>(fcl::SPLIT_METHOD_MEAN));
 
     fcl_model->beginModel();
     fcl_model->addSubModel(fcl_vertices, fcl_triangles);

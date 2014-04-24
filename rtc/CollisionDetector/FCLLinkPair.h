@@ -3,7 +3,10 @@
 #include <fcl/distance.h>
 #include <fcl/shape/geometric_shape_to_BVH_model.h>
 
-typedef fcl::OBBRSS FCLCollisionModel;
+//typedef fcl::OBBRSS FCLCollisionModel; // moderate
+//typedef fcl::RSS FCLCollisionModel; // moderate
+typedef fcl::AABB FCLCollisionModel; // fast
+//typedef fcl::kIOS FCLCollisionModel; // slow
 typedef fcl::BVHModel<FCLCollisionModel> FCLModel;
 
 class FCLLinkPair  : public hrp::Referenced {
