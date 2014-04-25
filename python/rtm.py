@@ -265,7 +265,7 @@ def initCORBA():
                 if not nsport : nsport = 15005
 
         print "configuration ORB with ", nshost, ":", nsport
-        os.environ['ORBInitRef'] = 'NameService=corbaloc:iiop:{0}:{1}/NameService'.format(nshost,nsport)
+        os.environ['ORBInitRef'] = 'NameService=corbaloc:iiop:%s:%s/NameService'%(nshost,nsport)
 
         try:
                 orb = CORBA.ORB_init(sys.argv, CORBA.ORB_ID)
