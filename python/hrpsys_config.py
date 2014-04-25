@@ -513,6 +513,7 @@ class HrpsysConfigurator:
             self.connectLoggerPort(self.rh, 'emergencySignal', 'emergencySignal')
         for sen in filter(lambda x : x.type == "Force", self.sensors):
             self.connectLoggerPort(self.seq, sen.name+"Ref")
+        self.log_svc.clear()
 
     def waitForRTCManager(self, managerhost=nshost):
         self.ms = None
