@@ -90,6 +90,7 @@ case $TEST_PACKAGE in
             sed -i "s@install(@dummy_install(@g" src/hrpsys/catkin.cmake
             catkin_make -j8 -l8 --only-pkg-with-deps `echo $pkg | sed s/-/_/g`
             catkin_make install -j8 -l8
+            rm -fr install/share/hrpsys ./install/lib/pkgconfig/hrpsys.pc
             source install/setup.bash
 
             # checkokut old hrpsys
