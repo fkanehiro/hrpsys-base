@@ -80,14 +80,6 @@ module OpenHRP
     boolean setZmp(in dSequence zmp, in double tm);
 
     /**
-     * @brief Interpolate Wrenches. Function returns without waiting for interpolation to finish
-     * @param wrenches Wrenches
-     * @param tm duration
-     * @return true if set successfully, false otherwise
-     */
-    boolean setWrenches(in dSequence wrenches, in double tm);
-    
-    /**
      * @brief Interpolate X, Y, Z and Roll Pitch Yaw of the target joint/link group, wrt world coords Function returns without waiting for interpolation to finish
      * @param gname name of the joint group
      * @param xyz : X,Y,Z position of the target link
@@ -198,5 +190,13 @@ module OpenHRP
      * @param max_iteration max iteration
      */
     void setMaxIKIteration(in short max_iteration);
+
+    /**
+     * @brief Interpolate Wrenches. Function returns without waiting for interpolation to finish
+     * @param wrenches Wrenches
+     * @param tm duration
+     * @return true if set successfully, false otherwise
+     */
+    boolean setWrenches(in dSequence wrenches, in double tm);
   };
 };
