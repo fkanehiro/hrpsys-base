@@ -85,8 +85,8 @@ case $TEST_PACKAGE in
             cd ..
             # do not copile hrpsys because we wan to use them
             sed -i "1imacro(dummy_install)\nmessage(\"install(\${ARGN})\")\nendmacro()" src/hrpsys/CMakeLists.txt
-            sed -i "s@install\(@dummy_install\(@f" src/hrpsys/CMakeLists.txt
-            sed -i "s@install\(@dummy_install\(@f" src/hrpsys/catkin.cmake
+            sed -i "s@install(@dummy_install(@g" src/hrpsys/CMakeLists.txt
+            sed -i "s@install(@dummy_install(@g" src/hrpsys/catkin.cmake
             catkin_make -j8 -l8 --only-pkg-with-deps `echo $pkg | sed s/-/_/g`
             catkin_make install -j8 -l8
 
