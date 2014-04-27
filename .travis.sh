@@ -70,6 +70,7 @@ case $TEST_PACKAGE in
             sudo dpkg -r --force-depends ros-hydro-hrpsys
             catkin_make -j8 -l8
             catkin_make install -j8 -l8
+            source install/setup.bash
         else
             echo "
             #
@@ -89,6 +90,7 @@ case $TEST_PACKAGE in
             sed -i "s@install(@dummy_install(@g" src/hrpsys/catkin.cmake
             catkin_make -j8 -l8 --only-pkg-with-deps `echo $pkg | sed s/-/_/g`
             catkin_make install -j8 -l8
+            source install/setup.bash
 
             # checkokut old hrpsys
             mkdir -p ~/hrpsys_ws/src
@@ -101,11 +103,11 @@ case $TEST_PACKAGE in
             catkin_make -j8 -l8
             catkin_make install -j8 -l8
             source install/setup.bash
+
             cd ~/catkin_ws
         fi
 
         rospack profile
-        source install/setup.bash
 
         export EXIT_STATUS=0;
         pkg_path=`rospack find \`echo $pkg | sed s/-/_/g\``
