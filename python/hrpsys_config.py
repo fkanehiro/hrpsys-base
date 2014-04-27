@@ -491,6 +491,10 @@ class HrpsysConfigurator:
         if self.log == None:
             print self.configurator_name, "\e[1;31m  setupLogger : self.log is not defined, please check rtcd.conf or rtcd arguments\e[0m"
             return
+        # check whether setupLogger is executed or not
+        if self.log.port("sh_qOut") != None:
+            print self.configurator_name, "setupLogger is arleady executed."
+            return
         #
         for pn in ['q', 'tau']:
             self.connectLoggerPort(self.rh, pn)
