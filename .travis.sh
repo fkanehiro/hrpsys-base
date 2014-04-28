@@ -43,7 +43,7 @@ case $TEST_PACKAGE in
         # this is hotfix
         sudo wget https://raw.githubusercontent.com/start-jsk/rtmros_common/master/hrpsys_tools/test/test-pa10.test -O /opt/ros/hydro/share/hrpsys_tools/test/test-pa10.test
 
-        sudo touch /opt/ros/$ROS_DISTRO/lib/python2.7/dist-packages/hrpsys_ros_bridge/__init__.py;
+        sudo touch /opt/ros/hydro/lib/python2.7/dist-packages/hrpsys_ros_bridge/__init__.py;
 
         #
         sed -i s@imu_floor@odom@g /opt/ros/hydro/share/hrpsys_ros_bridge/test/test-samplerobot.py
