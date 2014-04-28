@@ -16,14 +16,6 @@ env:
   - TEST_TYPE=work_with_315_1_10    TEST_PACKAGE=hrpsys-ros-bridge
   - TEST_TYPE=work_with_downstream  TEST_PACKAGE=hironx-ros-bridge
   - TEST_TYPE=work_with_315_1_10    TEST_PACKAGE=hironx-ros-bridge
-matrix:
-  allow_failures:
-    - env: TEST_TYPE=work_with_downstream  TEST_PACKAGE=hrpsys-tools
-    - env: TEST_TYPE=work_with_315_1_10    TEST_PACKAGE=hrpsys-tools
-    - env: TEST_TYPE=work_with_downstream  TEST_PACKAGE=hrpsys-ros-bridge
-    - env: TEST_TYPE=work_with_315_1_10    TEST_PACKAGE=hrpsys-ros-bridge
-    - env: TEST_TYPE=work_with_downstream  TEST_PACKAGE=hironx-ros-bridge
-    - env: TEST_TYPE=work_with_315_1_10    TEST_PACKAGE=hironx-ros-bridge
 script: source .travis.sh
 
 
