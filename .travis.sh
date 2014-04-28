@@ -125,6 +125,10 @@ EOF
             wstool set rtmros_hironx http://github.com/start-jsk/rtmros_hironx --git -y
             wstool set rtmros_nextage http://github.com/tork-a/rtmros_nextage --git -y
             wstool update
+
+            ## https://github.com/start-jsk/rtmros_common/pull/447
+            wget https://github.com/start-jsk/rtmros_common/pull/447.diff
+            (cd rtmros_common; patch -p1 < ../447.diff)
             cd ..
             # do not copile hrpsys because we wan to use them
             sed -i "1imacro(dummy_install)\nmessage(\"install(\${ARGN})\")\nendmacro()" src/hrpsys/CMakeLists.txt
@@ -145,6 +149,12 @@ EOF
 
             catkin_make -j8 -l8
             catkin_make install -j8 -l8
+            # https://github.com/k-okada/hrpsys-base/commit/9ce00db.diff
+            sed -i "s@\['vs@#\['vs@g" install/lib/python2.7/dist-packages/hrpsys/hrpsys_config.py
+            sed -i "s@\['afs@#\['afs@g" install/lib/python2.7/dist-packages/hrpsys/hrpsys_config.py
+            sed -i "s@\['abc@#\['abc@g" install/lib/python2.7/dist-packages/hrpsys/hrpsys_config.py
+            sed -i "s@\['st@#\['st@g" install/lib/python2.7/dist-packages/hrpsys/hrpsys_config.py
+
             source install/setup.bash
 
             cd ~/catkin_ws
