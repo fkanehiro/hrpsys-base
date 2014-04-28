@@ -49,10 +49,10 @@ case $TEST_PACKAGE in
             sudo touch /opt/ros/hydro/lib/python2.7/dist-packages/hrpsys_ros_bridge/__init__.py;
 
             #
-            sed -i s@imu_floor@odom@g /opt/ros/hydro/share/hrpsys_ros_bridge/test/test-samplerobot.py
+            sudo sed -i s@imu_floor@odom@g /opt/ros/hydro/share/hrpsys_ros_bridge/test/test-samplerobot.py
 
             #
-            patch -p0 /opt/ros/hydro/share/hrpsys_ros_bridge/scripts/sensor_ros_bridge_connect.py <<EOF
+            sudo patch -p0 /opt/ros/hydro/share/hrpsys_ros_bridge/scripts/sensor_ros_bridge_connect.py <<EOF
 --- /opt/ros/hydro/share/hrpsys_ros_bridge/scripts/sensor_ros_bridge_connect.py 2014-04-17 17:28:42.000000000 +0900
 +++ /opt/ros/hydro/share/hrpsys_ros_bridge/scripts/sensor_ros_bridge_connect.py 2014-04-28 00:30:27.250839313 +0900
 @@ -21,7 +21,7 @@
@@ -67,7 +67,7 @@ case $TEST_PACKAGE in
 
 EOF
 
-            patch -p0 /opt/ros/hydro/share/hrpsys_ros_bridge/launch/hrpsys_ros_bridge.launch <<EOF
+            sudo patch -p0 /opt/ros/hydro/share/hrpsys_ros_bridge/launch/hrpsys_ros_bridge.launch <<EOF
 --- /opt/ros/hydro/share/hrpsys_ros_bridge/launch/hrpsys_ros_bridge.launch 2014-04-17 17:28:42.000000000 +0900
 +++ /opt/ros/hydro/share/hrpsys_ros_bridge/launch/hrpsys_ros_bridge.launch 2014-04-28 00:30:27.250839313 +0900
 @@ -10,9 +10,9 @@
