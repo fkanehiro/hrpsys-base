@@ -40,6 +40,8 @@ case $TEST_PACKAGE in
 
         sudo apt-get install -qq -y ros-hydro-$pkg
 
+        sudo apt-get install -qq -y ros-hydro-rqt-robot-dashboard
+
         # this is hotfix
         if [ -e /opt/ros/hydro/share/hrpsys_tools ] ; then
             sudo wget https://raw.githubusercontent.com/start-jsk/rtmros_common/master/hrpsys_tools/test/test-pa10.test -O /opt/ros/hydro/share/hrpsys_tools/test/test-pa10.test
@@ -126,7 +128,7 @@ EOF
             wstool set rtmros_nextage http://github.com/tork-a/rtmros_nextage --git -y
             wstool update
 
-            ## https://github.com/start-jsk/rtmros_common/pull/447
+            ## HOTFIX: https://github.com/start-jsk/rtmros_common/pull/447
             wget https://github.com/start-jsk/rtmros_common/pull/447.diff
             (cd rtmros_common; patch -p1 < ../447.diff)
             cd ..
@@ -149,7 +151,7 @@ EOF
 
             catkin_make -j8 -l8
             catkin_make install -j8 -l8
-            # https://github.com/k-okada/hrpsys-base/commit/9ce00db.diff
+            # HOTFIX: https://github.com/k-okada/hrpsys-base/commit/9ce00db.diff
             sed -i "s@\['vs@#\['vs@g" install/lib/python2.7/dist-packages/hrpsys/hrpsys_config.py
             sed -i "s@\['afs@#\['afs@g" install/lib/python2.7/dist-packages/hrpsys/hrpsys_config.py
             sed -i "s@\['abc@#\['abc@g" install/lib/python2.7/dist-packages/hrpsys/hrpsys_config.py
