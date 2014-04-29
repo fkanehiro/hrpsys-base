@@ -10,6 +10,8 @@ compiler:
   #        2 : Check if this PR works with 315.1.10
 env:
   - TEST_PACKAGE=hrpsys
+  - TEST_TYPE=iob         TEST_PACKAGE=hrpsys
+  - TEST_TYPE=stable_rtc  TEST_PACKAGE=hrpsys
   - TEST_TYPE=work_with_downstream  TEST_PACKAGE=hrpsys-tools
   - TEST_TYPE=work_with_315_1_10    TEST_PACKAGE=hrpsys-tools
   - TEST_TYPE=work_with_downstream  TEST_PACKAGE=hrpsys-ros-bridge

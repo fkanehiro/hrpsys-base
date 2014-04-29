@@ -19,21 +19,50 @@ sudo sh -c 'echo "deb http://packages.ros.org/ros-shadow-fixed/ubuntu precise ma
 wget http://packages.ros.org/ros.key -O - | sudo apt-key add -
 sudo apt-get update -qq
 
-sudo apt-get install -qq -y freeglut3-dev python-tk jython doxygen libboost-all-dev libsdl1.2-dev libglew1.6-dev libqhull-dev libirrlicht-dev libxmu-dev libcv-dev libhighgui-dev libopencv-contrib-dev
-
 # disable ssl
 git config --global http.sslVerify false
 
 case $TEST_PACKAGE in
     hrpsys)
-        # COMPILE_ONLY
-        sudo apt-get install -qq -y ros-hydro-openhrp3
-        source /opt/ros/hydro/setup.bash
-        mkdir -p ~/build
-        cd ~/build && cmake ${CI_SOURCE_PATH} -DOPENRTM_DIR=`pkg-config openrtm-aist --variable=libdir`/openrtm_aist -DCOMPILE_JAVA_STUFF=OFF && make
-        ;;
+        case $TEST_TYPE in
+            iob)
+                sudo apt-get install -qq -y cproto wget
+                wget https://github.com/fkanehiro/hrpsys-base/raw/315.1.9/lib/io/iob.h -O iob.h.315.1.9
+                echo -e "#define pid_t int\n#define size_t int\n#include \"lib/io/iob.h\""  | cproto -x - | sort > iob.h.current
+                echo -e "#define pid_t int\n#define size_t int\n#include \"iob.h.315.1.9\"" | cproto -x - | sort > iob.h.stable
+                cat iob.h.current
+                cat iob.h.stable
+                diff iob.h.current iob.h.stable || exit 1
+                ;;
+            stable_rtc)
+                sudo apt-get install -qq -y omniidl diffstat wget ros-hydro-openrtm-aist
+                mkdir stable_idl
+                for idl_file in SequencePlayerService.idl StateHolderService.idl ForwardKinematicsService.idl CollisionDetectorService.idl SoftErrorLimiterService.idl DataLoggerService.idl   ExecutionProfileService.idl HRPDataTypes.idl RobotHardwareService.idl ; do
+                    wget https://github.com/fkanehiro/hrpsys-base/raw/315.1.9/idl/${idl_file} -O stable_idl/${idl_file}
+                    omniidl -bcxx -I/opt/ros/hydro/include/openrtm-1.1/rtm/idl/                      idl/${idl_file}
+                    omniidl -bcxx -I/opt/ros/hydro/include/openrtm-1.1/rtm/idl/ -C stable_idl stable_idl/${idl_file}
+                    sk_file=$(basename ${idl_file} .idl)SK.cc
+                    cat ${sk_file}
+                    cat stable_idl/${sk_file}
 
+                    diff stable_idl/${sk_file} ${sk_file} | tee >(cat - 1>&2)  | diffstat | grep -c deletion && exit 1
+                done
+                echo "ok"
+                ;;
+            *)
+                # COMPILE_ONLY
+                sudo apt-get install -qq -y freeglut3-dev python-tk jython doxygen libboost-all-dev libsdl1.2-dev libglew1.6-dev libqhull-dev libirrlicht-dev libxmu-dev libcv-dev libhighgui-dev libopencv-contrib-dev
+
+                sudo apt-get install -qq -y ros-hydro-openhrp3
+                source /opt/ros/hydro/setup.bash
+                mkdir -p ~/build
+                cd ~/build && cmake ${CI_SOURCE_PATH} -DOPENRTM_DIR=`pkg-config openrtm-aist --variable=libdir`/openrtm_aist -DCOMPILE_JAVA_STUFF=OFF && make
+                ;;
+        esac
+        ;;
     *)
+        # COMPILE
+        sudo apt-get install -qq -y freeglut3-dev python-tk jython doxygen libboost-all-dev libsdl1.2-dev libglew1.6-dev libqhull-dev libirrlicht-dev libxmu-dev libcv-dev libhighgui-dev libopencv-contrib-dev
         # check rtmros_common
         pkg=$TEST_PACKAGE
         sudo apt-get install -qq -y python-wstool ros-hydro-catkin ros-hydro-mk ros-hydro-rostest ros-hydro-rtmbuild
