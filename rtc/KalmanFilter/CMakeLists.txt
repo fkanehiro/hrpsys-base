@@ -1,3 +1,9 @@
+option(BUILD_KALMAN_FILTER "Build KalmanFilter RTC" ON)
+
+if(NOT BUILD_KALMAN_FILTER)
+  return()
+endif()
+
 set(comp_sources KalmanFilter.cpp KalmanFilterService_impl.cpp)
 set(libs hrpModel-3.1 hrpsysBaseStub)
 
