@@ -36,6 +36,18 @@ case $TEST_PACKAGE in
                 ;;
             stable_rtc)
                 sudo apt-get install -qq -y omniidl diffstat wget ros-hydro-openrtm-aist
+                source /opt/ros/hydro/setup.bash
+                ## check stableRTCList
+                sed -i 's@^from@#from@g' python/hrpsys_config.py
+                sed -i 's@^import@#import@' python/hrpsys_config.py
+                sed -i 's@^_EPS@#_EPS@' python/hrpsys_config.py
+                sed -i 's@=nshost@=None@' python/hrpsys_config.py
+                sed -i 's@initCORBA@#initCORBA@' python/hrpsys_config.py
+                if [ "`python -c "import python.hrpsys_config; hcf=python.hrpsys_config.HrpsysConfigurator(); print [ x[1] for x in hcf.getRTCList()]" | tail -1`" != "['SequencePlayer', 'StateHolder', 'ForwardKinematics', 'CollisionDetector', 'SoftErrorLimiter', 'DataLogger']" ]; then
+                    exit 1
+                fi
+
+                ## check idl
                 mkdir stable_idl
                 for idl_file in SequencePlayerService.idl StateHolderService.idl ForwardKinematicsService.idl CollisionDetectorService.idl SoftErrorLimiterService.idl DataLoggerService.idl   ExecutionProfileService.idl HRPDataTypes.idl RobotHardwareService.idl ; do
                     wget https://github.com/fkanehiro/hrpsys-base/raw/315.1.9/idl/${idl_file} -O stable_idl/${idl_file}
