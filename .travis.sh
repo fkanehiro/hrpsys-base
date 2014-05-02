@@ -19,29 +19,114 @@ sudo sh -c 'echo "deb http://packages.ros.org/ros-shadow-fixed/ubuntu precise ma
 wget http://packages.ros.org/ros.key -O - | sudo apt-key add -
 sudo apt-get update -qq
 
-sudo apt-get install -qq -y freeglut3-dev python-tk jython doxygen libboost-all-dev libsdl1.2-dev libglew1.6-dev libqhull-dev libirrlicht-dev libxmu-dev libcv-dev libhighgui-dev libopencv-contrib-dev
-
 # disable ssl
 git config --global http.sslVerify false
 
 case $TEST_PACKAGE in
     hrpsys)
-        # COMPILE_ONLY
-        sudo apt-get install -qq -y ros-hydro-openhrp3
-        source /opt/ros/hydro/setup.bash
-        mkdir -p ~/build
-        cd ~/build && cmake ${CI_SOURCE_PATH} -DOPENRTM_DIR=`pkg-config openrtm-aist --variable=libdir`/openrtm_aist -DCOMPILE_JAVA_STUFF=OFF && make
-        ;;
+        case $TEST_TYPE in
+            iob)
+                sudo apt-get install -qq -y cproto wget
+                wget https://github.com/fkanehiro/hrpsys-base/raw/315.1.9/lib/io/iob.h -O iob.h.315.1.9
+                echo -e "#define pid_t int\n#define size_t int\n#include \"lib/io/iob.h\""  | cproto -x - | sort > iob.h.current
+                echo -e "#define pid_t int\n#define size_t int\n#include \"iob.h.315.1.9\"" | cproto -x - | sort > iob.h.stable
+                cat iob.h.current
+                cat iob.h.stable
+                diff iob.h.current iob.h.stable || exit 1
+                ;;
+            stable_rtc)
+                sudo apt-get install -qq -y omniidl diffstat wget ros-hydro-openrtm-aist
+                source /opt/ros/hydro/setup.bash
+                ## check stableRTCList
+                sed -i 's@^from@#from@g' python/hrpsys_config.py
+                sed -i 's@^import@#import@' python/hrpsys_config.py
+                sed -i 's@^_EPS@#_EPS@' python/hrpsys_config.py
+                sed -i 's@=nshost@=None@' python/hrpsys_config.py
+                sed -i 's@initCORBA@#initCORBA@' python/hrpsys_config.py
+                if [ "`python -c "import python.hrpsys_config; hcf=python.hrpsys_config.HrpsysConfigurator(); print [ x[1] for x in hcf.getRTCList()]" | tail -1`" != "['SequencePlayer', 'StateHolder', 'ForwardKinematics', 'CollisionDetector', 'SoftErrorLimiter', 'DataLogger']" ]; then
+                    exit 1
+                fi
 
+                ## check idl
+                mkdir stable_idl
+                for idl_file in SequencePlayerService.idl StateHolderService.idl ForwardKinematicsService.idl CollisionDetectorService.idl SoftErrorLimiterService.idl DataLoggerService.idl   ExecutionProfileService.idl HRPDataTypes.idl RobotHardwareService.idl ; do
+                    wget https://github.com/fkanehiro/hrpsys-base/raw/315.1.9/idl/${idl_file} -O stable_idl/${idl_file}
+                    omniidl -bcxx -I/opt/ros/hydro/include/openrtm-1.1/rtm/idl/                      idl/${idl_file}
+                    omniidl -bcxx -I/opt/ros/hydro/include/openrtm-1.1/rtm/idl/ -C stable_idl stable_idl/${idl_file}
+                    sk_file=$(basename ${idl_file} .idl)SK.cc
+                    cat ${sk_file}
+                    cat stable_idl/${sk_file}
+
+                    diff stable_idl/${sk_file} ${sk_file} | tee >(cat - 1>&2)  | diffstat | grep -c deletion && exit 1
+                done
+                echo "ok"
+                ;;
+            *)
+                # COMPILE_ONLY
+                sudo apt-get install -qq -y freeglut3-dev python-tk jython doxygen libboost-all-dev libsdl1.2-dev libglew1.6-dev libqhull-dev libirrlicht-dev libxmu-dev libcv-dev libhighgui-dev libopencv-contrib-dev
+
+                sudo apt-get install -qq -y ros-hydro-openhrp3
+                source /opt/ros/hydro/setup.bash
+                mkdir -p ~/build
+                cd ~/build && cmake ${CI_SOURCE_PATH} -DOPENRTM_DIR=`pkg-config openrtm-aist --variable=libdir`/openrtm_aist -DCOMPILE_JAVA_STUFF=OFF && make
+                ;;
+        esac
+        ;;
     *)
+        # COMPILE
+        sudo apt-get install -qq -y freeglut3-dev python-tk jython doxygen libboost-all-dev libsdl1.2-dev libglew1.6-dev libqhull-dev libirrlicht-dev libxmu-dev libcv-dev libhighgui-dev libopencv-contrib-dev
         # check rtmros_common
         pkg=$TEST_PACKAGE
         sudo apt-get install -qq -y python-wstool ros-hydro-catkin ros-hydro-mk ros-hydro-rostest ros-hydro-rtmbuild
 
         sudo apt-get install -qq -y ros-hydro-$pkg
 
+        sudo apt-get install -qq -y ros-hydro-rqt-robot-dashboard
+
         # this is hotfix
-        sudo wget https://raw.githubusercontent.com/start-jsk/rtmros_common/master/hrpsys_tools/test/test-pa10.test -O /opt/ros/hydro/share/hrpsys_tools/test/test-pa10.test
+        if [ -e /opt/ros/hydro/share/hrpsys_tools ] ; then
+            sudo wget https://raw.githubusercontent.com/start-jsk/rtmros_common/master/hrpsys_tools/test/test-pa10.test -O /opt/ros/hydro/share/hrpsys_tools/test/test-pa10.test
+        fi
+
+        if [ -e /opt/ros/hydro/lib/python2.7/dist-packages/hrpsys_ros_bridge/ ] ; then
+            sudo touch /opt/ros/hydro/lib/python2.7/dist-packages/hrpsys_ros_bridge/__init__.py;
+
+            #
+            sudo sed -i s@imu_floor@odom@g /opt/ros/hydro/share/hrpsys_ros_bridge/test/test-samplerobot.py
+
+            #
+            sudo patch -p0 /opt/ros/hydro/share/hrpsys_ros_bridge/scripts/sensor_ros_bridge_connect.py <<EOF
+--- /opt/ros/hydro/share/hrpsys_ros_bridge/scripts/sensor_ros_bridge_connect.py 2014-04-17 17:28:42.000000000 +0900
++++ /opt/ros/hydro/share/hrpsys_ros_bridge/scripts/sensor_ros_bridge_connect.py 2014-04-28 00:30:27.250839313 +0900
+@@ -21,7 +21,7 @@
+             if rh.port(sen.name) != None: # check existence of sensor ;; currently original HRP4C.xml has different naming rule of gsensor and gyrometer
+                 print program_name, "connect ", sen.name, rh.port(sen.name).get_port_profile().name, bridge.port(sen.name).get_port_profile().name
+                 connectPorts(rh.port(sen.name), bridge.port(sen.name), "new")
+-                if sen.type == 'Force':
++                if sen.type == 'Force' and afs != None:
+                     print program_name, "connect ", sen.name, afs.port("off_" + sen.name).get_port_profile().name, bridge.port("off_" + sen.name).get_port_profile().name
+                     connectPorts(afs.port("off_" + sen.name), bridge.port("off_" + sen.name), "new") # for abs forces
+         else:
+
+EOF
+
+            sudo patch -p0 /opt/ros/hydro/share/hrpsys_ros_bridge/launch/hrpsys_ros_bridge.launch <<EOF
+--- /opt/ros/hydro/share/hrpsys_ros_bridge/launch/hrpsys_ros_bridge.launch 2014-04-17 17:28:42.000000000 +0900
++++ /opt/ros/hydro/share/hrpsys_ros_bridge/launch/hrpsys_ros_bridge.launch 2014-04-28 00:30:27.250839313 +0900
+@@ -10,9 +10,9 @@
+   <!-- Set these values false when using HIRO -->
+   <arg name="USE_COMMON" default="true" />
+   <arg name="USE_ROBOTHARDWARE" default="false" />
+-  <arg name="USE_WALKING" default="true" />
++  <arg name="USE_WALKING" default="false" />
+   <arg name="USE_COLLISIONCHECK" default="true" />
+-  <arg name="USE_IMPEDANCECONTROLLER" default="true" />
++  <arg name="USE_IMPEDANCECONTROLLER" default="false" />
+   <arg name="USE_GRASPCONTROLLER" default="false" />
+   <arg name="USE_TORQUECONTROLLER" default="false" />
+   <arg name="USE_SOFTERRORLIMIT" default="true" />
+EOF
+        fi
         #
         source /opt/ros/hydro/setup.bash
 
@@ -70,6 +155,7 @@ case $TEST_PACKAGE in
             sudo dpkg -r --force-depends ros-hydro-hrpsys
             catkin_make -j8 -l8
             catkin_make install -j8 -l8
+            source install/setup.bash
         else
             echo "
             #
@@ -82,13 +168,19 @@ case $TEST_PACKAGE in
             wstool set rtmros_hironx http://github.com/start-jsk/rtmros_hironx --git -y
             wstool set rtmros_nextage http://github.com/tork-a/rtmros_nextage --git -y
             wstool update
+
+            ## HOTFIX: https://github.com/start-jsk/rtmros_common/pull/447
+            wget https://github.com/start-jsk/rtmros_common/pull/447.diff
+            (cd rtmros_common; patch -p1 < ../447.diff)
             cd ..
             # do not copile hrpsys because we wan to use them
             sed -i "1imacro(dummy_install)\nmessage(\"install(\${ARGN})\")\nendmacro()" src/hrpsys/CMakeLists.txt
-            sed -i "s@install\(@dummy_install\(@f" src/hrpsys/CMakeLists.txt
-            sed -i "s@install\(@dummy_install\(@f" src/hrpsys/catkin.cmake
+            sed -i "s@install(@dummy_install(@g" src/hrpsys/CMakeLists.txt
+            sed -i "s@install(@dummy_install(@g" src/hrpsys/catkin.cmake
             catkin_make -j8 -l8 --only-pkg-with-deps `echo $pkg | sed s/-/_/g`
             catkin_make install -j8 -l8
+            rm -fr install/share/hrpsys ./install/lib/pkgconfig/hrpsys.pc
+            source install/setup.bash
 
             # checkokut old hrpsys
             mkdir -p ~/hrpsys_ws/src
@@ -100,12 +192,18 @@ case $TEST_PACKAGE in
 
             catkin_make -j8 -l8
             catkin_make install -j8 -l8
+            # HOTFIX: https://github.com/k-okada/hrpsys-base/commit/9ce00db.diff
+            sed -i "s@\['vs@#\['vs@g" install/lib/python2.7/dist-packages/hrpsys/hrpsys_config.py
+            sed -i "s@\['afs@#\['afs@g" install/lib/python2.7/dist-packages/hrpsys/hrpsys_config.py
+            sed -i "s@\['abc@#\['abc@g" install/lib/python2.7/dist-packages/hrpsys/hrpsys_config.py
+            sed -i "s@\['st@#\['st@g" install/lib/python2.7/dist-packages/hrpsys/hrpsys_config.py
+
             source install/setup.bash
+
             cd ~/catkin_ws
         fi
 
         rospack profile
-        source install/setup.bash
 
         export EXIT_STATUS=0;
         pkg_path=`rospack find \`echo $pkg | sed s/-/_/g\``
