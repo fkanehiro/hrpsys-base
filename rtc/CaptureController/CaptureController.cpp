@@ -75,7 +75,6 @@ RTC::ReturnCode_t CaptureController::onInitialize()
   // </rtc-template>
 
   RTC::Properties& prop = getProperties();
-  std::cout << "prop[\"testconf\"] = " << prop["testconf"] << std::endl;
 
   return RTC::RTC_OK;
 }
