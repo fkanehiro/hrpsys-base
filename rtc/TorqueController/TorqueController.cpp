@@ -20,7 +20,7 @@ static const char* torquecontroller_spec[] =
 {
   "implementation_id", "TorqueController",
   "type_name",         "TorqueController",
-  "description",       "null component",
+  "description",       "Component for joint torque control",
   "version",           HRPSYS_PACKAGE_VERSION,
   "vendor",            "AIST",
   "category",          "example",
@@ -29,10 +29,7 @@ static const char* torquecontroller_spec[] =
   "language",          "C++",
   "lang_type",         "compile",
   // Configuration variables
-  "conf.default.string", "test",
-  "conf.default.intvec", "1,2,3",
-  "conf.default.double", "1.234",
-
+  "conf.default.debugLevel", "0",
   ""
 };
 // </rtc-template>
@@ -225,10 +222,8 @@ RTC::ReturnCode_t TorqueController::onExecute(RTC::UniqueId ec_id)
     for (int i = 0; i < m_robot->numJoints(); i++) {
       m_qRefOut.data[i] = std::min(std::max(m_qRefIn.data[i] - dq[i], m_robot->joint(i)->llimit), m_robot->joint(i)->ulimit);      
     }
-    m_qRefOut.tm = tm;
-    m_qRefOutOut.write();
   } else {
-    if ( loop % 100 == 1) {
+    if (DEBUGP) {
       std::cerr << "TorqueController input is not correct" << std::endl;
       std::cerr << " numJoints: " << m_robot->numJoints() << std::endl;
       std::cerr << "  qCurrent: " << m_qCurrentIn.data.length() << std::endl;
@@ -236,7 +231,15 @@ RTC::ReturnCode_t TorqueController::onExecute(RTC::UniqueId ec_id)
       std::cerr << "tauCurrent: " << m_tauCurrentIn.data.length() << std::endl;
       std::cerr << std::endl;
     }
+    // pass qRefIn to qRefOut
+    for (int i = 0; i < m_robot->numJoints(); i++) {
+      m_qRefOut.data[i] = m_qRefIn.data[i];
+    }
   }
+
+  m_qRefOut.tm = tm;
+  m_qRefOutOut.write();
+
   return RTC::RTC_OK;
 }
 
@@ -288,7 +291,7 @@ void TorqueController::executeTorqueControl(hrp::dvector &dq)
   }
   
   // determine tauMax
-  for(int i = 0; i < numJoints; i++){
+  for(int i = 0; i < numJoints; i++) {
     if ( m_tauMaxIn.data.length() ==  m_robot->numJoints() ) {
       tauMax[i] = std::min(m_robot->joint(i)->climit, m_tauMaxIn.data[i]);
     } else {
@@ -297,41 +300,35 @@ void TorqueController::executeTorqueControl(hrp::dvector &dq)
   }
 
   // execute torque control
-  if ( m_tauCurrentIn.data.length() ==  m_robot->numJoints() ) {
-    if (DEBUGP) {
-      std::cerr << "tauCurrentIn: ";
-      for (int i = 0; i < numJoints; i++) {
-        std::cerr << " " << m_tauCurrentIn.data[i];
-      }
-      std::cerr << std::endl;
-      std::cerr << "tauMax: ";
-      for (int i = 0; i < numJoints; i++) {
-        std::cerr << " " << tauMax[i];
-      }
-      std::cerr << std::endl;
-    }
-
-    Guard guard(m_mutex);
+  // tauCurrent.length is assumed to be equal to numJoints (check in onExecute)
+  if (DEBUGP) {
+    std::cerr << "tauCurrentIn: ";
     for (int i = 0; i < numJoints; i++) {
-      dq[i] = m_motorTorqueControllers[i].execute(m_tauCurrentIn.data[i], tauMax[i]); // twoDofController: tau = -K(q - qRef)
-      // output debug message
-      if (DEBUGP && m_motorTorqueControllers[i].getMotorControllerState() != MotorTorqueController::INACTIVE) {
-        m_motorTorqueControllers[i].printMotorControllerVariables();
-      }
+      std::cerr << " " << m_tauCurrentIn.data[i];
+    }
+    std::cerr << std::endl;
+    std::cerr << "tauMax: ";
+    for (int i = 0; i < numJoints; i++) {
+      std::cerr << " " << tauMax[i];
+    }
+    std::cerr << std::endl;
+  }
 
+  Guard guard(m_mutex);
+  for (int i = 0; i < numJoints; i++) {
+    dq[i] = m_motorTorqueControllers[i].execute(m_tauCurrentIn.data[i], tauMax[i]); // twoDofController: tau = -K(q - qRef)
+    // output debug message
+    if (DEBUGP && m_motorTorqueControllers[i].getMotorControllerState() != MotorTorqueController::INACTIVE) {
+      m_motorTorqueControllers[i].printMotorControllerVariables();
     }
+
+  }
     
-    if (DEBUGP) {
-      std::cerr << "dq: ";
-      for (int i = 0; i < dq.size(); i++) {
-        std::cerr << dq[i] << " ";
-      }
-      std::cerr << std::endl;
+  if (DEBUGP) {
+    std::cerr << "dq: ";
+    for (int i = 0; i < dq.size(); i++) {
+      std::cerr << dq[i] << " ";
     }
-  } else {
-    std::cerr << "TorqueController input is not correct" << std::endl;
-    std::cerr << "numJoints: " << m_robot->numJoints() << std::endl;
-    std::cerr << "tauCurrent: " << m_tauCurrentIn.data.length() << std::endl;
     std::cerr << std::endl;
   }
 
@@ -343,7 +340,9 @@ bool TorqueController::startTorqueControl(std::string jname)
   bool succeed = false;
   for (std::vector<MotorTorqueController>::iterator it = m_motorTorqueControllers.begin(); it != m_motorTorqueControllers.end(); ++it) {
     if ((*it).getJointName() == jname){
-      std::cerr << "Start torque control in " << jname << std::endl;
+      if (m_debugLevel > 0) {
+        std::cerr << "Start torque control in " << jname << std::endl;
+      }
       succeed = (*it).activate();
     }
   }
@@ -367,7 +366,9 @@ bool TorqueController::stopTorqueControl(std::string jname)
   bool succeed = false;
   for (std::vector<MotorTorqueController>::iterator it = m_motorTorqueControllers.begin(); it != m_motorTorqueControllers.end(); ++it) {
     if ((*it).getJointName() == jname){
-      std::cerr << "Stop torque control in " << jname << std::endl;
+      if (m_debugLevel > 0) {
+        std::cerr << "Stop torque control in " << jname << std::endl;
+      }
       succeed = (*it).deactivate();
     }
   }
@@ -395,8 +396,10 @@ bool TorqueController::setReferenceTorque(std::string jname, double tauRef)
 
   // Search target joint
   for (std::vector<MotorTorqueController>::iterator it = m_motorTorqueControllers.begin(); it != m_motorTorqueControllers.end(); ++it) {
-    if ((*it).getJointName() == jname){
-      std::cerr << "Set " << jname << " reference torque to " << tauRef << std::endl;
+    if ((*it).getJointName() == jname) {
+      if (m_debugLevel > 0) {
+        std::cerr << "Set " << jname << " reference torque to " << tauRef << std::endl;
+      }
       succeed = (*it).setReferenceTorque(tauRef);
     }
   }
