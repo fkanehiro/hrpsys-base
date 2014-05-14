@@ -184,15 +184,19 @@ RTC::ReturnCode_t TorqueFilter::onInitialize()
   } else {
     fb_coeffs.resize(filter_dim + 1);
     ff_coeffs.resize(filter_dim + 1);
-    for(int i = 0; i < filter_dim + 1; i++) {
+    for (int i = 0; i < filter_dim + 1; i++) {
       coil::stringTo(fb_coeffs[i], torque_filter_params[i + 1].c_str());
       coil::stringTo(ff_coeffs[i], torque_filter_params[i + (filter_dim + 2)].c_str());
-      if (m_debugLevel > 0) {
-        std::cerr << "fb[" << i << "]: " << fb_coeffs[i] << std::endl;
-        std::cerr << "ff[" << i << "]: " << ff_coeffs[i] << std::endl;
-      }
     }
   }
+
+  if (m_debugLevel > 0) {
+    for (int i = 0; i < filter_dim + 1; i++) {
+        std::cerr << "fb[" << i << "]: " << fb_coeffs[i] << std::endl;
+        std::cerr << "ff[" << i << "]: " << ff_coeffs[i] << std::endl;
+    }
+  }
+  
   // make filter instance
   for(int i = 0; i < m_robot->numJoints(); i++){
     m_filters.push_back(IIRFilter(filter_dim, fb_coeffs, ff_coeffs));
