@@ -254,27 +254,39 @@ RTC::ReturnCode_t TorqueFilter::onExecute(RTC::UniqueId ec_id)
     m_tauInIn.read();
   }
 
-  if ( m_qCurrent.data.length() ==  m_robot->numJoints() &&
-       m_tauIn.data.length() ==  m_robot->numJoints() ) {
-    // reference robot model
-    for ( int i = 0; i < m_robot->numJoints(); i++ ){
-      m_robot->joint(i)->q = m_qCurrent.data[i];
-    }
-    m_robot->calcForwardKinematics();
-    m_robot->calcCM();
-    m_robot->rootLink()->calcSubMassCM();
+  if (m_tauIn.data.length() ==  m_robot->numJoints()) {
     int num_joints = m_robot->numJoints();
-    hrp::dvector torque(num_joints);
-     
-    // calc gravity compensation of each joints
-    hrp::Vector3 g(0, 0, 9.8);
     hrp::dvector g_joint_torque(num_joints);
-    for (int i = 0; i < num_joints; i++) {
-      // subm*g x (submwc/subm - p) . R*a
-      g_joint_torque[i] = (m_robot->joint(i)->subm*g).cross(m_robot->joint(i)->submwc / m_robot->joint(i)->subm - m_robot->joint(i)->p).dot(m_robot->joint(i)->R * m_robot->joint(i)->a);
+    hrp::dvector torque(num_joints);
+
+    if (m_qCurrent.data.length() ==  m_robot->numJoints()) {
+      // reference robot model
+      for ( int i = 0; i < m_robot->numJoints(); i++ ){
+        m_robot->joint(i)->q = m_qCurrent.data[i];
+      }
+      m_robot->calcForwardKinematics();
+      m_robot->calcCM();
+      m_robot->rootLink()->calcSubMassCM();
+     
+      // calc gravity compensation of each joints
+      hrp::Vector3 g(0, 0, 9.8);
+      for (int i = 0; i < num_joints; i++) {
+        // subm*g x (submwc/subm - p) . R*a
+        g_joint_torque[i] = (m_robot->joint(i)->subm*g).cross(m_robot->joint(i)->submwc / m_robot->joint(i)->subm - m_robot->joint(i)->p).dot(m_robot->joint(i)->R * m_robot->joint(i)->a);
+      }
+    } else {
+      if (DEBUGP) {
+        std::cerr << "TorqueFilter input is not correct" << std::endl;
+        std::cerr << " numJoints: " << m_robot->numJoints() << std::endl;
+        std::cerr << " qCurrent: " << m_qCurrent.data.length() << std::endl;
+        std::cerr << std::endl;
+      }
+      for (int i = 0; i < num_joints; i++) {
+        g_joint_torque[i] = 0.0;
+      }
     }
-      
-    if ( DEBUGP ) {
+
+    if (DEBUGP) {
       std::cerr << "raw torque: ";
       for (int i = 0; i < num_joints; i++) {
         std::cerr << " " << m_tauIn.data[i] ;
@@ -309,16 +321,24 @@ RTC::ReturnCode_t TorqueFilter::onExecute(RTC::UniqueId ec_id)
         m_tauOut.data[i] = torque[i];
       }
     }
-      
-    if ( DEBUGP ) {
+    if (DEBUGP) {
       std::cerr << "filtered torque: ";
       for (int i = 0; i < num_joints; i++) {
         std::cerr << " " << torque[i];
       }
       std::cerr << std::endl;
     }
+    m_tauOut.tm = tm;
     m_tauOutOut.write();
+  } else {
+    if (DEBUGP) {
+      std::cerr << "TorqueFilter input is not correct" << std::endl;
+      std::cerr << " numJoints: " << m_robot->numJoints() << std::endl;
+      std::cerr << " tauIn: " << m_tauIn.data.length() << std::endl;
+      std::cerr << std::endl;
+    }
   }
+  
   return RTC::RTC_OK;
 }
 
