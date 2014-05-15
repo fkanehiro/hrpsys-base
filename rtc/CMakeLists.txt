@@ -63,6 +63,7 @@ find_package(PCL)
 if (PCL_FOUND)
   add_subdirectory(SORFilter)
   add_subdirectory(PCDLoader)
+  add_subdirectory(PlaneRemover)
 endif()
 
 set(EXTRA_RTC_DIRS "" CACHE PATH "directories of extra RTCs")
