@@ -1,14 +1,14 @@
 // -*- C++ -*-
 /*!
  * @file  SORFilter.h
- * @brief Statiscal Outlier Removal Filter
+ * @brief Statistical Outlier Removal Filter
  * @date  $Date$
  *
  * $Id$
  */
 
-#ifndef STATISCAL_OUTLIER_REMOVAL_FILTER_H
-#define STATISCAL_OUTLIER_REMOVAL_FILTER_H
+#ifndef STATITISCAL_OUTLIER_REMOVAL_FILTER_H
+#define STATITISCAL_OUTLIER_REMOVAL_FILTER_H
 
 #include <rtm/Manager.h>
 #include <rtm/DataFlowComponentBase.h>

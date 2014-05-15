@@ -1,7 +1,7 @@
 // -*- C++ -*-
 /*!
  * @file  SORFilter.cpp
- * @brief Statiscal Outlier Removal Filter
+ * @brief Statistical Outlier Removal Filter
  * $Date$
  *
  * $Id$
@@ -19,7 +19,7 @@ static const char* spec[] =
   {
     "implementation_id", "SORFilter",
     "type_name",         "SORFilter",
-    "description",       "Statiscal Outlier Removal Filter",
+    "description",       "Statistical Outlier Removal Filter",
     "version",           HRPSYS_PACKAGE_VERSION,
     "vendor",            "AIST",
     "category",          "example",
