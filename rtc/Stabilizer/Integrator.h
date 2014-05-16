@@ -16,7 +16,8 @@
 
 class Integrator {
 public:
-  Integrator(double _dt = 0.005, unsigned int _range = 1000);
+  // if range = 0, integrate from 0 to t. Otherwise, integrate from t - (range - 1) * dt to t.
+  Integrator(double _dt = 0.005, unsigned int _range = 0);
   ~Integrator(void);
   void reset(void);
   void setup(double _dt, unsigned int _range);
@@ -24,6 +25,8 @@ public:
   double calculate(void);
 private:
   double dt; // control cycle
+  double first, sum, last; // for trapezoidal rule calculation
+  bool init_integration_flag; // integration inited flag (true when first value is updated)
   unsigned int range; // integration range (from t_now - range * dt to t_now [sec])
   std::deque<double> buffer; // integration data buffer
 };

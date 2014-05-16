@@ -15,7 +15,6 @@
 
 Integrator::Integrator(double _dt, unsigned int _range) {
   setup(_dt, _range);
-  reset();
 }
 
 Integrator::~Integrator(void) {
@@ -23,32 +22,48 @@ Integrator::~Integrator(void) {
 
 void Integrator::reset(void) {
   buffer.clear();
+  first = 0;
+  sum = 0;
+  last = 0;
+  init_integration_flag = false;
   return;
 }
 
 void Integrator::setup(double _dt, unsigned int _range) {
   dt = _dt;
   range = _range;
+  reset();
   return;
 }
 
 void Integrator::update (double _x) {
-  // update buffer
-  buffer.push_back(_x);
-  if (buffer.size() > range) {
-    buffer.pop_front(); // remove oldest data
+
+  // integration by trapezoidal rule:
+  // (1/2 * first + sum(f(x_i), 1, N-1) + 1/2 * last) * dt
+  if (!init_integration_flag) {
+    first = _x; // update first value
+    init_integration_flag = true;
+    // first value does not be counted to sum
+  } else {
+    sum += last; // sum is last is assumed to be 0 at first
+    last = _x;
   }
+
+  // if integration range is defined, use buffer
+  if (range > 0) {
+    buffer.push_back(_x); // save values (include first)
+    if (buffer.size() > range) {
+      buffer.pop_front(); // remove oldest data
+      first = buffer.front(); // update first value
+      sum -= first;
+    }
+  }
+  
   return;
 }
 
 double Integrator::calculate(void) {
-  // std::next/prev only use C++11 later
-  std::deque<double>::iterator itr_first = buffer.begin();
-  std::deque<double>::iterator itr_last = buffer.end();
-  std::advance(itr_first, 1);
-  std::advance(itr_first, -1);
   // calc integration by trapezoidal rule
   // sum(1/2 * (f(x_i) - f(x_(i+1))), 0, N) * dt = (1/2 * f(0) + sum(f(x_i), 1, N-1) + 1/2 * f(N)) * dt
-  double integrate = (0.5 * buffer.front() + std::accumulate(itr_first, itr_last, 0.0) + 0.5 * buffer.back()) * dt;
-  return integrate;
+  return (0.5 * first + sum + 0.5 * last) * dt;
 }
