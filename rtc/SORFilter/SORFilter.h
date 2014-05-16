@@ -7,8 +7,8 @@
  * $Id$
  */
 
-#ifndef STATITISCAL_OUTLIER_REMOVAL_FILTER_H
-#define STATITISCAL_OUTLIER_REMOVAL_FILTER_H
+#ifndef STATISTICAL_OUTLIER_REMOVAL_FILTER_H
+#define STATISTICAL_OUTLIER_REMOVAL_FILTER_H
 
 #include <rtm/Manager.h>
 #include <rtm/DataFlowComponentBase.h>
