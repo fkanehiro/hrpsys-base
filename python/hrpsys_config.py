@@ -450,6 +450,32 @@ class HrpsysConfigurator:
             ['log', "DataLogger"]
             ]
 
+    # public method to configure all RTCs to be activated on rtcd which includes unstable RTCs
+    def getRTCListUnstable(self):
+        '''
+        @rtype [[str]]
+        @rerutrn List of available unstable components. Each element consists of a list
+                 of abbreviated and full names of the component.
+        '''
+        return [
+            ['seq', "SequencePlayer"],
+            ['sh', "StateHolder"],
+            ['fk', "ForwardKinematics"],
+            ['tf', "TorqueFilter"],
+            ['kf', "KalmanFilter"],
+            ['vs', "VirtualForceSensor"],
+            ['rmfo', "RemoveForceSensorLinkOffset"],
+            ['ic', "ImpedanceController"],
+            ['abc', "AutoBalancer"],
+            ['st', "Stabilizer"],
+            ['co', "CollisionDetector"],
+            ['tc', "TorqueController"],
+            #['te', "ThermoEstimator"],
+            #['tl', "ThermoLimiter"],
+            ['el', "SoftErrorLimiter"],
+            ['log', "DataLogger"]
+            ]
+
     def getJointAngleControllerList(self):
         controller_list = [self.ic, self.gc, self.abc, self.st, self.co, self.tc, self.el]
         return filter(lambda c : c != None, controller_list) # only return existing controllers
