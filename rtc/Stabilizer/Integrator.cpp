@@ -43,7 +43,7 @@ void Integrator::update (double _x) {
   if (!init_integration_flag) {
     first = _x; // update first value
     init_integration_flag = true;
-    // first value does not be counted to sum
+    // first value is not counted to sum
   } else {
     sum += last; // sum is last is assumed to be 0 at first
     last = _x;
