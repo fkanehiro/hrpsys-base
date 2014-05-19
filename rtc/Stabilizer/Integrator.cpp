@@ -1,7 +1,7 @@
 // -*- C++ -*-
 
 /*!
- * @file  TwoDofController.cpp
+ * @file  Integrator.cpp
  * @brief Feedback and Feedforward Controller
  * @date  $Date$
  *
