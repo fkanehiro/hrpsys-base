@@ -66,16 +66,18 @@ class RTcomponent:
 	# \brief update default configuration set
 	# \param self this object
 	# \param nvlist list of pairs of name and value
+	# \return True if all values are set correctly, False otherwise
 	def setConfiguration(self, nvlist):
-		setConfiguration(self.ref, nvlist)
+		return setConfiguration(self.ref, nvlist)
 
         ##
 	# \brief update value of the default configuration set
 	# \param self this object	
 	# \param name name of the property
 	# \param value new value of the property
+	# \return True if all values are set correctly, False otherwise
 	def setProperty(self, name, value):
-		self.setConfiguration([[name, value]])
+		return self.setConfiguration([[name, value]])
 
         ##
 	# \brief get value of the property in the default configuration set
@@ -655,8 +657,10 @@ def findService(rtc, port_name, type_name, instance_name):
 # \brief update default configuration set
 # \param rtc IOR of RT component
 # \param nvlist list of pairs of name and value
+# \return True if all values are set correctly, False otherwise
 #
 def setConfiguration(rtc, nvlist):
+	ret = True
 	cfg = rtc.get_configuration()
 	cfgsets = cfg.get_configuration_sets()
 	if len(cfgsets) == 0:
@@ -666,12 +670,17 @@ def setConfiguration(rtc, nvlist):
 	for nv in nvlist:
 		name = nv[0]
 		value = nv[1]
+		found = False
 		for d in cfgset.configuration_data:
 			if d.name == name:
 				d.value = any.to_any(value)
 				cfg.set_configuration_set_values(cfgset)
+				found = True
 				break;
+		if not found:
+			ret = False
 	cfg.activate_configuration_set('default')
+	return ret
 
 ##
 # \brief narrow ior
