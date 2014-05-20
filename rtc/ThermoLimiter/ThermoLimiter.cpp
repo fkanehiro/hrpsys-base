@@ -48,13 +48,12 @@ ThermoLimiter::ThermoLimiter(RTC::Manager* manager)
     m_tauMaxOutOut("tauMax", m_tauMaxOut),
     m_debugLevel(0)
 {
+  init_beep();
 }
 
 ThermoLimiter::~ThermoLimiter()
 {
 }
-
-
 
 RTC::ReturnCode_t ThermoLimiter::onInitialize()
 {
