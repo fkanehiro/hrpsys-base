@@ -12,6 +12,7 @@
 #include <rtm/CorbaNaming.h>
 #include <hrpModel/ModelLoaderUtil.h>
 #include <hrpUtil/MatrixSolvers.h>
+#include <cmath>
 
 #define DEBUGP ((m_debugLevel==1 && loop%200==0) || m_debugLevel > 1 )
 #define DQ_MAX 1.0
@@ -22,7 +23,7 @@ static const char* thermolimiter_spec[] =
   {
     "implementation_id", "ThermoLimiter",
     "type_name",         "ThermoLimiter",
-    "description",       "null component",
+    "description",       "thermo limiter",
     "version",           HRPSYS_PACKAGE_VERSION,
     "vendor",            "AIST",
     "category",          "example",
@@ -114,8 +115,8 @@ RTC::ReturnCode_t ThermoLimiter::onInitialize()
   }
   if (m_debugLevel > 0) {
     std::cerr <<  "motor_temperature_limit: ";
-    for(std::vector<double>::iterator it = m_motorTemperatureLimit.begin(); it != m_motorTemperatureLimit.end(); ++it){
-      std::cerr << *it << " ";
+    for(int i = 0; i < m_motorTemperatureLimit.size(); i++) {
+      std::cerr << m_motorTemperatureLimit[i] << " ";
     }
     std::cerr << std::endl;
   }
@@ -159,8 +160,6 @@ RTC::ReturnCode_t ThermoLimiter::onInitialize()
   return RTC::RTC_OK;
 }
 
-
-
 /*
 RTC::ReturnCode_t ThermoLimiter::onFinalize()
 {
@@ -200,11 +199,14 @@ RTC::ReturnCode_t ThermoLimiter::onExecute(RTC::UniqueId ec_id)
   static long long loop = 0;
   loop ++;
 
+  if (DEBUGP) {
+    std::cerr << "[" << m_profile.instance_name << "]" << std::endl;
+  }
+  
   coil::TimeValue coiltm(coil::gettimeofday());
   RTC::Time tm;
   tm.sec = coiltm.sec();
   tm.nsec = coiltm.usec()*1000;
-  bool isTempError = false;
   hrp::dvector tauMax;
   tauMax.resize(m_robot->numJoints());
 
@@ -219,14 +221,49 @@ RTC::ReturnCode_t ThermoLimiter::onExecute(RTC::UniqueId ec_id)
     m_qCurrentInIn.read();
   }
 
-  // calculate tauMax
-  isTempError = limitTemperature(tauMax);
-  // call beep
-  if (isTempError) {
-    start_beep(3136);
-  } else {
-    stop_beep();
+  if (DEBUGP) {
+    std::cerr << "temperature: ";
+    for (int i = 0; i < m_tempIn.data.length(); i++) {
+      std::cerr << " " << m_tempIn.data[i];
+    }
+    std::cerr << std::endl;
+    std::cerr << "tauIn: ";
+    for (int i = 0; i < m_tauIn.data.length(); i++) {
+      std::cerr << " " << m_tauIn.data[i];
+    }
+    std::cerr << std::endl;
   }
+ 
+  // calculate tauMax
+  if (m_tempIn.data.length() == m_robot->numJoints()
+      && m_tauIn.data.length() == m_robot->numJoints()) {
+    calcMaxTorqueFromTemperature(tauMax);
+  } else {
+    for (int i = 0; i < m_robot->numJoints(); i++) {
+      tauMax[i] = m_robot->joint(i)->climit; // default torque limit from model
+    }
+  }
+
+  if (DEBUGP) {
+    std::cerr << std::endl;
+    std::cerr << "tauMax: ";
+    for (int i = 0; i < tauMax.size(); i++) {
+      std::cerr << tauMax[i] << " ";
+    }
+    std::cerr << std::endl;
+  }
+
+  
+  // emergency notification
+  double alarmRatio = 0.8;
+  std::string thermoLimitPrefix = "ThermoLimit";
+  std::string torqueLimitPrefix = "TorqueLimit";
+  double thermoLimitRatio = calcEmergencyRatio(m_tempIn, m_motorTemperatureLimit, alarmRatio, thermoLimitPrefix);
+  double torqueLimitRatio = calcEmergencyRatio(m_tauIn, tauMax, alarmRatio, torqueLimitPrefix);
+
+  // call beep
+  callBeep(3136, std::max(thermoLimitRatio, torqueLimitRatio), alarmRatio);
+  
   // output restricted tauMax
   for (int i = 0; i < m_robot->numJoints(); i++) {
     m_tauMaxOut.data[i] = tauMax[i];
@@ -271,33 +308,14 @@ RTC::ReturnCode_t ThermoLimiter::onRateChanged(RTC::UniqueId ec_id)
 }
 */
 
-bool ThermoLimiter::limitTemperature(hrp::dvector &tauMax)
+void ThermoLimiter::calcMaxTorqueFromTemperature(hrp::dvector &tauMax)
 {
-  static long loop = 0;
-  loop++;
-  
   int numJoints = m_robot->numJoints();
-  bool isTempError = false;
   double temp, tempLimit;
   hrp::dvector squareTauMax(numJoints);
-
-  if (DEBUGP) {
-    std::cerr << "[" << m_profile.instance_name << "]" << std::endl;
-  }
   
-  if ( m_tempIn.data.length() ==  m_robot->numJoints() ) {
-    if (DEBUGP) {
-      std::cerr << "temperature: ";
-      for (int i = 0; i < numJoints; i++) {
-        std::cerr << " " << m_tempIn.data[i];
-      }
-      std::cerr << std::endl;
-      std::cerr << "tauIn: ";
-      for (int i = 0; i < numJoints; i++) {
-        std::cerr << " " << m_tauIn.data[i];
-      }
-      std::cerr << std::endl;
-    }
+  if ( m_tempIn.data.length() ==  m_robot->numJoints()
+       && m_tauIn.data.length() == m_robot->numJoints() ) {
 
     for (int i = 0; i < numJoints; i++) {
       temp = m_tempIn.data[i];
@@ -310,25 +328,41 @@ bool ThermoLimiter::limitTemperature(hrp::dvector &tauMax)
       // determine tauMax
       if (squareTauMax[i] < 0) {
         std::cerr << "[WARN] tauMax ** 2 = " << squareTauMax[i] << " < 0 in Joint " << i << std::endl;
-        tauMax[i] = m_robot->joint(i)->climit;
+        tauMax[i] = m_robot->joint(i)->climit; // default tauMax from model file
       } else {
-        if (std::pow(m_tauIn.data[i], 2) > squareTauMax[i]) {
-          std::cerr << "[WARN] tauMax over in Joint " << i << ": " << m_tauIn.data[i] << "^2 > " << squareTauMax[i] << std::endl;
-          isTempError = true; // in thermo emergency
-        }
-        tauMax[i] = std::sqrt(squareTauMax[i]);
+        tauMax[i] = std::sqrt(squareTauMax[i]); // tauMax is absolute value
       }
-    }
-    if (DEBUGP) {
-      std::cerr << std::endl;
-      std::cerr << "tauMax: ";
-      for (int i = 0; i < tauMax.size(); i++) {
-        std::cerr << tauMax[i] << " ";
-      }
-      std::cerr << std::endl;
     }
   }
-  return isTempError;
+  return;
+}
+
+double ThermoLimiter::calcEmergencyRatio(RTC::TimedDoubleSeq &current, hrp::dvector &max, double alarmRatio, std::string &prefix)
+{
+  double maxEmergencyRatio = 0.0;
+  if (current.data.length() == max.size()) { // estimate same dimension
+    for (int i = 0; i < current.data.length(); i++) {
+      double tmpEmergencyRatio = std::abs(current.data[i] / max[i]);
+      if (tmpEmergencyRatio > alarmRatio) {
+        std::cerr << prefix << "[" << i << "]" << " is over " << alarmRatio << "of the limit." << std::endl; 
+      }
+      if (maxEmergencyRatio < tmpEmergencyRatio) {
+        maxEmergencyRatio = tmpEmergencyRatio;
+      }
+    }
+  }
+  return maxEmergencyRatio;
+}
+
+void ThermoLimiter::callBeep(int maxFreq, double ratio, double alarmRatio)
+{
+  if (ratio > alarmRatio) {
+    int freq = maxFreq * ratio;
+    start_beep(freq);
+  } else {
+    stop_beep();
+  }
+  return;
 }
 
 extern "C"

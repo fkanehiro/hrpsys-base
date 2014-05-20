@@ -146,11 +146,13 @@ class ThermoLimiter
  private:
   double m_dt;
   unsigned int m_debugLevel;
-  std::vector<double> m_motorTemperatureLimit;
+  hrp::dvector m_motorTemperatureLimit;
   hrp::BodyPtr m_robot;
   std::vector<MotorHeatParam> m_motorHeatParams;
 
-  bool limitTemperature(hrp::dvector &tauMax);
+  void calcMaxTorqueFromTemperature(hrp::dvector &tauMax);
+  double calcEmergencyRatio(RTC::TimedDoubleSeq &current, hrp::dvector &max, double alarmRatio, std::string &prefix);
+  void callBeep(int maxFreq, double ratio, double alarmRatio);
 };
 
 
