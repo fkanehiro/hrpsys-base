@@ -153,25 +153,6 @@ RTC::ReturnCode_t ThermoLimiter::onInitialize()
     }
     std::cerr << std::endl;
   }
-  
-  // make torque controller
-  // set limit of motor heat parameters
-  coil::vstring torqueControllerParamsFromConf = coil::split(prop["torque_controller_params"], ",");
-  m_motorTwoDofControllers.resize(m_robot->numJoints());
-  if (torqueControllerParamsFromConf.size() != 2 * m_robot->numJoints()) {
-    std::cerr <<  "[WARN]: size of torque_controller_params is " << torqueControllerParamsFromConf.size() << ", not equal to 2 * " << m_robot->numJoints() << std::endl;
-    for (std::vector<TwoDofController>::iterator it = m_motorTwoDofControllers.begin(); it != m_motorTwoDofControllers.end() ; ++it) {
-      (*it).setup(400.0, 0.04, m_dt); // set default params
-      // (*it).setup(400.0, 1.0, m_dt);
-    }
-  } else {
-    double tdcParamK, tdcParamT;
-    for (int i = 0; i < m_robot->numJoints(); i++) {
-      coil::stringTo(tdcParamK, torqueControllerParamsFromConf[2 * i].c_str());
-      coil::stringTo(tdcParamT, torqueControllerParamsFromConf[2 * i + 1].c_str());
-      m_motorTwoDofControllers[i].setup(tdcParamK, tdcParamT, m_dt);
-    }
-  }
 
   // allocate memory for outPorts
   m_tauMaxOut.data.length(m_robot->numJoints());

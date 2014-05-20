@@ -21,7 +21,6 @@
 #include <hrpModel/Link.h>
 #include <hrpModel/JointPath.h>
 
-#include "../Stabilizer/TwoDofController.h"
 #include "../ThermoEstimator/MotorHeatParam.h"
 
 // Service implementation headers
@@ -149,7 +148,6 @@ class ThermoLimiter
   unsigned int m_debugLevel;
   std::vector<double> m_motorTemperatureLimit;
   hrp::BodyPtr m_robot;
-  std::vector<TwoDofController> m_motorTwoDofControllers;
   std::vector<MotorHeatParam> m_motorHeatParams;
 
   bool limitTemperature(hrp::dvector &tauMax);
