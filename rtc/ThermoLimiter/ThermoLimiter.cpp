@@ -32,10 +32,7 @@ static const char* thermolimiter_spec[] =
     "language",          "C++",
     "lang_type",         "compile",
     // Configuration variables
-    "conf.default.string", "test",
-    "conf.default.intvec", "1,2,3",
-    "conf.default.double", "1.234",
-
+    "conf.default.debugLevel", "0",
     ""
   };
 // </rtc-template>
@@ -210,6 +207,12 @@ RTC::ReturnCode_t ThermoLimiter::onExecute(RTC::UniqueId ec_id)
   hrp::dvector tauMax;
   tauMax.resize(m_robot->numJoints());
 
+  double alarmRatio = 0.8;
+  double thermoLimitRatio = 0.0;
+  double torqueLimitRatio = 0.0;
+  std::string thermoLimitPrefix = "ThermoLimit";
+  std::string torqueLimitPrefix = "TorqueLimit";
+  
   // update port
   if (m_tempInIn.isNew()) {
     m_tempInIn.read();
@@ -234,7 +237,7 @@ RTC::ReturnCode_t ThermoLimiter::onExecute(RTC::UniqueId ec_id)
     std::cerr << std::endl;
   }
  
-  // calculate tauMax
+  // calculate tauMax from temperature
   if (m_tempIn.data.length() == m_robot->numJoints()
       && m_tauIn.data.length() == m_robot->numJoints()) {
     calcMaxTorqueFromTemperature(tauMax);
@@ -245,7 +248,6 @@ RTC::ReturnCode_t ThermoLimiter::onExecute(RTC::UniqueId ec_id)
   }
 
   if (DEBUGP) {
-    std::cerr << std::endl;
     std::cerr << "tauMax: ";
     for (int i = 0; i < tauMax.size(); i++) {
       std::cerr << tauMax[i] << " ";
@@ -253,13 +255,13 @@ RTC::ReturnCode_t ThermoLimiter::onExecute(RTC::UniqueId ec_id)
     std::cerr << std::endl;
   }
 
-  
   // emergency notification
-  double alarmRatio = 0.8;
-  std::string thermoLimitPrefix = "ThermoLimit";
-  std::string torqueLimitPrefix = "TorqueLimit";
-  double thermoLimitRatio = calcEmergencyRatio(m_tempIn, m_motorTemperatureLimit, alarmRatio, thermoLimitPrefix);
-  double torqueLimitRatio = calcEmergencyRatio(m_tauIn, tauMax, alarmRatio, torqueLimitPrefix);
+  if (m_tempIn.data.length() == m_robot->numJoints()) {
+    thermoLimitRatio = calcEmergencyRatio(m_tempIn, m_motorTemperatureLimit, alarmRatio, thermoLimitPrefix);
+  }
+  if (m_tauIn.data.length() == m_robot->numJoints()) {
+    torqueLimitRatio = calcEmergencyRatio(m_tauIn, tauMax, alarmRatio, torqueLimitPrefix);
+  }
 
   // call beep
   callBeep(3136, std::max(thermoLimitRatio, torqueLimitRatio), alarmRatio);
