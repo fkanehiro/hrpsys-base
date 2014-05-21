@@ -30,6 +30,7 @@ static const char* spec[] =
     "lang_type",         "compile",
     // Configuration variables
     "conf.default.distanceThd", "0.02",
+    "conf.default.pointNumThd", "500",
 
     ""
   };
@@ -57,6 +58,7 @@ RTC::ReturnCode_t PlaneRemover::onInitialize()
   // <rtc-template block="bind_config">
   // Bind variables and configuration variable
   bindParameter("distanceThd", m_distThd, "0.02");
+  bindParameter("pointNumThd", m_pointNumThd, "500");
   
   // </rtc-template>
 
@@ -171,11 +173,11 @@ RTC::ReturnCode_t PlaneRemover::onExecute(RTC::UniqueId ec_id)
   
     pcl::ExtractIndices<pcl::PointXYZ> extract;
   
-    while(cloud->points.size() > (int)(original->points.size())*0.1){
+    while(1){
       seg.setInputCloud (cloud);
       seg.segment (*inliers, *coefficients);
     
-      if (inliers->indices.size () == 0) break;
+      if (inliers->indices.size () < m_pointNumThd) break;
     
       extract.setInputCloud( cloud );
       extract.setIndices( inliers );
@@ -184,7 +186,7 @@ RTC::ReturnCode_t PlaneRemover::onExecute(RTC::UniqueId ec_id)
       cloud = cloud_f;
     }
 
-    std::cout << "PLaneRemover: original = " << original->points.size() << ", filtered = " << cloud->points.size() << ", thd=" << m_distThd << std::endl;
+    //std::cout << "PLaneRemover: original = " << original->points.size() << ", filtered = " << cloud->points.size() << ", thd=" << m_distThd << std::endl;
 
     // PCL -> CORBA
     m_filtered.width = cloud->points.size();

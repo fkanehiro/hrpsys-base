@@ -134,6 +134,7 @@ class PlaneRemover
 
  private:
   double m_distThd;
+  double m_pointNumThd;
   int dummy;
 };
 
