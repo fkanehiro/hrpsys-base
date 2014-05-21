@@ -14,7 +14,6 @@
 #include <hrpUtil/MatrixSolvers.h>
 #include <cmath>
 
-#define DEBUGP ((m_debugLevel==1 && loop%200==0) || m_debugLevel > 1 )
 #define DQ_MAX 1.0
 
 // Module specification
@@ -193,10 +192,9 @@ RTC::ReturnCode_t ThermoLimiter::onDeactivated(RTC::UniqueId ec_id)
 RTC::ReturnCode_t ThermoLimiter::onExecute(RTC::UniqueId ec_id)
 {
   // std::cout << m_profile.instance_name<< ": onExecute(" << ec_id << "), data = " << m_data.data << std::endl;
-  static long long loop = 0;
-  loop ++;
+  m_loop++;
 
-  if (DEBUGP) {
+  if (isDebug()) {
     std::cerr << "[" << m_profile.instance_name << "]" << std::endl;
   }
   
@@ -224,7 +222,7 @@ RTC::ReturnCode_t ThermoLimiter::onExecute(RTC::UniqueId ec_id)
     m_qCurrentInIn.read();
   }
 
-  if (DEBUGP) {
+  if (isDebug()) {
     std::cerr << "temperature: ";
     for (int i = 0; i < m_tempIn.data.length(); i++) {
       std::cerr << " " << m_tempIn.data[i];
@@ -247,7 +245,7 @@ RTC::ReturnCode_t ThermoLimiter::onExecute(RTC::UniqueId ec_id)
     }
   }
 
-  if (DEBUGP) {
+  if (isDebug()) {
     std::cerr << "tauMax: ";
     for (int i = 0; i < tauMax.size(); i++) {
       std::cerr << tauMax[i] << " ";
@@ -263,8 +261,8 @@ RTC::ReturnCode_t ThermoLimiter::onExecute(RTC::UniqueId ec_id)
     torqueLimitRatio = calcEmergencyRatio(m_tauIn, tauMax, alarmRatio, torqueLimitPrefix);
   }
 
-  // call beep
-  callBeep(3136, std::max(thermoLimitRatio, torqueLimitRatio), alarmRatio);
+  // call beep (3136/0.8=3920)
+  callBeep(3920, std::max(thermoLimitRatio, torqueLimitRatio), alarmRatio);
   
   // output restricted tauMax
   for (int i = 0; i < m_robot->numJoints(); i++) {
@@ -316,8 +314,8 @@ void ThermoLimiter::calcMaxTorqueFromTemperature(hrp::dvector &tauMax)
   double temp, tempLimit;
   hrp::dvector squareTauMax(numJoints);
   
-  if ( m_tempIn.data.length() ==  m_robot->numJoints()
-       && m_tauIn.data.length() == m_robot->numJoints() ) {
+  if (m_tempIn.data.length() ==  m_robot->numJoints()
+      && m_tauIn.data.length() == m_robot->numJoints()) {
 
     for (int i = 0; i < numJoints; i++) {
       temp = m_tempIn.data[i];
@@ -346,7 +344,7 @@ double ThermoLimiter::calcEmergencyRatio(RTC::TimedDoubleSeq &current, hrp::dvec
     for (int i = 0; i < current.data.length(); i++) {
       double tmpEmergencyRatio = std::abs(current.data[i] / max[i]);
       if (tmpEmergencyRatio > alarmRatio) {
-        std::cerr << prefix << "[" << i << "]" << " is over " << alarmRatio << "of the limit.";
+        std::cerr << prefix << "[" << m_robot->joint(i)->name << "]" << " is over " << alarmRatio << " of the limit.";
         if (m_debugLevel > 0) {
           std::cerr << ": " << current.data[i] << ">" << max[i];
         }
@@ -369,6 +367,11 @@ void ThermoLimiter::callBeep(int maxFreq, double ratio, double alarmRatio)
     stop_beep();
   }
   return;
+}
+
+bool ThermoLimiter::isDebug(int cycle)
+{
+  return ((m_debugLevel==1 && m_loop%cycle==0) || m_debugLevel > 1);
 }
 
 extern "C"
