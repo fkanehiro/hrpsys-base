@@ -344,7 +344,11 @@ double ThermoLimiter::calcEmergencyRatio(RTC::TimedDoubleSeq &current, hrp::dvec
     for (int i = 0; i < current.data.length(); i++) {
       double tmpEmergencyRatio = std::abs(current.data[i] / max[i]);
       if (tmpEmergencyRatio > alarmRatio) {
-        std::cerr << prefix << "[" << i << "]" << " is over " << alarmRatio << "of the limit." << std::endl; 
+        std::cerr << prefix << "[" << i << "]" << " is over " << alarmRatio << "of the limit.";
+        if (m_debugLevel > 0) {
+          std::cerr << ": " << current.data[i] << ">" << max[i];
+        }
+        std::cerr << std::endl;
       }
       if (maxEmergencyRatio < tmpEmergencyRatio) {
         maxEmergencyRatio = tmpEmergencyRatio;
