@@ -153,7 +153,7 @@ class ThermoLimiter
 
   void calcMaxTorqueFromTemperature(hrp::dvector &tauMax);
   double calcEmergencyRatio(RTC::TimedDoubleSeq &current, hrp::dvector &max, double alarmRatio, std::string &prefix);
-  void callBeep(int maxFreq, double ratio, double alarmRatio);
+  void callBeep(double ratio, double alarmRatio);
   bool isDebug(int cycle = 200);
 };
 

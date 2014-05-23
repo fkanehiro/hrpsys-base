@@ -100,11 +100,13 @@ RTC::ReturnCode_t ThermoLimiter::onInitialize()
   }
   // set limit of motor temperature
   coil::vstring motorTemperatureLimitFromConf = coil::split(prop["motor_temperature_limit"], ",");
+  m_motorTemperatureLimit.resize(m_robot->numJoints());
   if (motorTemperatureLimitFromConf.size() != m_robot->numJoints()) {
     std::cerr <<  "[WARN]: size of motor_temperature_limit is " << motorTemperatureLimitFromConf.size() << ", not equal to " << m_robot->numJoints() << std::endl;
-    m_motorTemperatureLimit.resize(m_robot->numJoints(), 100.0);
+    for (int i = 0; i < m_robot->numJoints(); i++) {
+      m_motorTemperatureLimit[i] = 80.0;
+    }
   } else {
-    m_motorTemperatureLimit.resize(m_robot->numJoints());
     for (int i = 0; i < m_robot->numJoints(); i++) {
       coil::stringTo(m_motorTemperatureLimit[i], motorTemperatureLimitFromConf[i].c_str());
     }
@@ -148,6 +150,10 @@ RTC::ReturnCode_t ThermoLimiter::onInitialize()
       std::cerr << (*it).temperature << "," << (*it).currentCoeffs << "," << (*it).thermoCoeffs << ", ";
     }
     std::cerr << std::endl;
+    std::cerr << "default climit value:" << std::endl;
+    for (int i = 0; i < m_robot->numJoints(); i++) {
+      std::cerr << m_robot->joint(i)->name << ":" << m_robot->joint(i)->climit << std::endl;
+    }
   }
 
   // allocate memory for outPorts
@@ -205,7 +211,7 @@ RTC::ReturnCode_t ThermoLimiter::onExecute(RTC::UniqueId ec_id)
   hrp::dvector tauMax;
   tauMax.resize(m_robot->numJoints());
 
-  double alarmRatio = 0.8;
+  double alarmRatio = 0.5;
   double thermoLimitRatio = 0.0;
   double torqueLimitRatio = 0.0;
   std::string thermoLimitPrefix = "ThermoLimit";
@@ -262,7 +268,7 @@ RTC::ReturnCode_t ThermoLimiter::onExecute(RTC::UniqueId ec_id)
   }
 
   // call beep (3136/0.8=3920)
-  callBeep(3920, std::max(thermoLimitRatio, torqueLimitRatio), alarmRatio);
+  callBeep(std::max(thermoLimitRatio, torqueLimitRatio), alarmRatio);
   
   // output restricted tauMax
   for (int i = 0; i < m_robot->numJoints(); i++) {
@@ -358,11 +364,13 @@ double ThermoLimiter::calcEmergencyRatio(RTC::TimedDoubleSeq &current, hrp::dvec
   return maxEmergencyRatio;
 }
 
-void ThermoLimiter::callBeep(int maxFreq, double ratio, double alarmRatio)
+void ThermoLimiter::callBeep(double ratio, double alarmRatio)
 {
   if (ratio > alarmRatio) {
-    int freq = maxFreq * ratio;
-    start_beep(freq);
+    int maxFreq = 3136; // G
+    int minFreq = 2794; // F
+    int freq = minFreq + (maxFreq - minFreq) * ((ratio - alarmRatio) / (1.0 - alarmRatio));
+    start_beep(freq, 500);
   } else {
     stop_beep();
   }
