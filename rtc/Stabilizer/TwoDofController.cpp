@@ -20,13 +20,18 @@ TwoDofController::TwoDofController(double _ke, double _tc, double _dt, unsigned 
 TwoDofController::~TwoDofController() {
 }
 
-void TwoDofController::reset() {
-  integrator.reset();
+void TwoDofController::setup() {
+  ke = 0; tc = 0; dt = 0;
+  integrator = Integrator(0, 0);
 }
 
 void TwoDofController::setup(double _ke, double _tc, double _dt, unsigned int _range) {
   ke = _ke; tc = _tc; dt = _dt;
   integrator = Integrator(_dt, _range);
+}
+
+void TwoDofController::reset() {
+  integrator.reset();
 }
 
 double TwoDofController::update (double _x, double _xd) {

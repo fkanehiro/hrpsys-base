@@ -16,12 +16,13 @@
 #include "Convolution.h"
 #include <vector>
 
-class TwoDofControllerWithDamper : public TwoDofController {
+class TwoDofControllerWithDamper : public TwoDofControllerInterface {
 public:
   TwoDofControllerWithDamper(double _ke = 0, double _kd = 0, double _tc = 0, double _dt = 0, unsigned int _range = 0);
   ~TwoDofControllerWithDamper();
-  void reset();
+  void setup();
   void setup(double _ke, double _kd, double _tc, double _dt, unsigned int _range = 0);
+  void reset();
   double update(double _x, double _xd);
 private:
   double ke, kd, tc, dt; // ke: Pgain, kd: Dgain, tc: time constant, dt: control cycle

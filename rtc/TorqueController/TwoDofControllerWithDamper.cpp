@@ -26,11 +26,9 @@ TwoDofControllerWithDamper::TwoDofControllerWithDamper(double _ke, double _kd, d
 TwoDofControllerWithDamper::~TwoDofControllerWithDamper() {
 }
 
-void TwoDofControllerWithDamper::reset() {
-  current_time = 0;
-  for (std::vector<Convolution>::iterator itr = convolutions.begin(); itr != convolutions.end(); ++itr) {
-    (*itr).reset();
-  }
+void TwoDofControllerWithDamper::setup() {
+  ke = 0; kd = 0; tc = 0; dt = 0;
+  convolutions.clear();
 }
 
 void TwoDofControllerWithDamper::setup(double _ke, double _kd, double _tc, double _dt, unsigned int _range) {
@@ -40,6 +38,13 @@ void TwoDofControllerWithDamper::setup(double _ke, double _kd, double _tc, doubl
     convolutions.push_back(Convolution(_dt, _range));
   }
   reset();
+}
+
+void TwoDofControllerWithDamper::reset() {
+  current_time = 0;
+  for (std::vector<Convolution>::iterator itr = convolutions.begin(); itr != convolutions.end(); ++itr) {
+    (*itr).reset();
+  }
 }
 
 double TwoDofControllerWithDamper::update (double _x, double _xd) {
