@@ -12,8 +12,9 @@
 #include <iostream>
 
 TwoDofController::TwoDofController(double _ke, double _tc, double _dt, unsigned int _range) {
-  setup(_ke, _tc, _dt, _range);
-  reset();
+  ke = _ke; tc = _tc; dt = _dt;
+  integrator = Integrator(_dt, _range);
+  integrator.reset();
 }
 
 TwoDofController::~TwoDofController() {

@@ -15,8 +15,12 @@
 #define NUM_CONVOLUTION_TERM 3
 
 TwoDofControllerWithDamper::TwoDofControllerWithDamper(double _ke, double _kd, double _tc, double _dt, unsigned int _range) {
-  setup(_ke, _kd, _tc, _dt, _range);
-  reset();
+  ke = _ke; kd = _kd; tc = _tc; dt = _dt;
+  current_time = 0;
+  convolutions.clear();
+  for (int i = 0; i < NUM_CONVOLUTION_TERM; i++) {
+    convolutions.push_back(Convolution(_dt, _range));
+  }
 }
 
 TwoDofControllerWithDamper::~TwoDofControllerWithDamper() {
