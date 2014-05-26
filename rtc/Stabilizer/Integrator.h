@@ -1,7 +1,7 @@
 // -*- C++ -*-
 /*!
  * @file  Integrator.h
- * @brief Feedback and Feedforward Controller
+ * @brief Calcurate Integration
  * @date  $Date$
  *
  * $Id$

@@ -2,7 +2,7 @@
 
 /*!
  * @file  Integrator.cpp
- * @brief Feedback and Feedforward Controller
+ * @brief Calcurate Integration
  * @date  $Date$
  *
  * $Id$
