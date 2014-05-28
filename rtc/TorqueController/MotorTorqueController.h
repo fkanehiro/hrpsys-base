@@ -12,6 +12,7 @@
 
 #include <string>
 #include "../Stabilizer/TwoDofController.h"
+#include "TwoDofControllerWithDamper.h"
 
 // </rtc-template>
 
@@ -22,11 +23,14 @@ public:
     INACTIVE, // dq = 0
     STOP, // resume
     ACTIVE // execute torque control
-  }; 
-  MotorTorqueController(std::string _jname = "", double ke = 0, double tc = 0, double dt = 0);
+  };
+  MotorTorqueController();
+  MotorTorqueController(std::string _jname, double ke, double tc, double dt);
+  MotorTorqueController(std::string _jname, double ke, double kd, double tc, double dt);
   ~MotorTorqueController(void);
 
   void setupController(double _ke, double _tc, double _dt);
+  void setupController(double _ke, double _kd, double _tc, double _dt);
   bool activate(void); // set state of torque controller to ACTIVE
   bool deactivate(void); // set state of torque controller to STOP -> INACTIVE
   bool setReferenceTorque(double _tauRef); // set reference torque (does not activate controller)
@@ -43,16 +47,21 @@ private:
 
   class MotorController {
   public:
-    TwoDofController controller;
+    MotorController();
+    ~MotorController();
+    TwoDofControllerInterface *controller;
     controller_state_t state;
     double transition_count;
     double dq; //difference of joint angle from base(qRef) from tdc. it is calcurated by dq = integrate(qd * dt), dq*dt is output of tdc 
     double transition_dq; // for transition
     double recovery_dq; // last difference of joint angle from qRef (dq + transition_dq) when state was changed to STOP
+    void setupTwoDofController(double _ke, double _tc, double _dt);
+    void setupTwoDofControllerWithDamper(double _ke, double _kd, double _tc, double _dt);
     double getMotorControllerDq(void); // get according dq according to state
   };
   
   // internal functions
+  void setupControllerCommon(std::string _jname, double _dt);
   void resetMotorControllerVariables(MotorController& _mc); // reset internal torque control parameter  
   void prepareStop(MotorController &_mc);
   void updateController(double _tau, double _tauRef, MotorController& _mc); // execute control and update controller member valiables 
