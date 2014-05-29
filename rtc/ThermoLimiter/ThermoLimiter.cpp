@@ -152,6 +152,15 @@ RTC::ReturnCode_t ThermoLimiter::onInitialize()
     }
   }
 
+  // set alarm ratio threshold
+  m_alarmRatio = 0.5;
+  if (prop["alarm_ratio"] != "") {
+    coil::stringTo(m_alarmRatio, prop["alarm_ratio"].c_str());
+  }
+  if (m_debugLevel > 0) {
+    std::cerr << "alarmRatio: " << m_alarmRatio << std::endl;
+  }
+
   // allocate memory for outPorts
   m_tauMaxOut.data.length(m_robot->numJoints());
   
@@ -207,9 +216,7 @@ RTC::ReturnCode_t ThermoLimiter::onExecute(RTC::UniqueId ec_id)
   hrp::dvector tauMax;
   tauMax.resize(m_robot->numJoints());
 
-  double alarmRatio = 0.5;
   double thermoLimitRatio = 0.0;
-  double torqueLimitRatio = 0.0;
   std::string thermoLimitPrefix = "ThermoLimit";
   
   // update port
@@ -244,11 +251,11 @@ RTC::ReturnCode_t ThermoLimiter::onExecute(RTC::UniqueId ec_id)
 
   // emergency notification
   if (m_tempIn.data.length() == m_robot->numJoints()) {
-    thermoLimitRatio = calcEmergencyRatio(m_tempIn, m_motorTemperatureLimit, alarmRatio, thermoLimitPrefix);
+    thermoLimitRatio = calcEmergencyRatio(m_tempIn, m_motorTemperatureLimit, m_alarmRatio, thermoLimitPrefix);
   }
 
   // call beep (3136/0.8=3920)
-  callBeep(thermoLimitRatio, alarmRatio);
+  callBeep(thermoLimitRatio, m_alarmRatio);
   
   // output restricted tauMax
   for (int i = 0; i < m_robot->numJoints(); i++) {

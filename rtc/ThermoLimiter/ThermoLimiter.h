@@ -143,6 +143,7 @@ class ThermoLimiter
   double m_dt;
   long long m_loop;
   unsigned int m_debugLevel;
+  double m_alarmRatio;
   hrp::dvector m_motorTemperatureLimit;
   hrp::BodyPtr m_robot;
   std::vector<MotorHeatParam> m_motorHeatParams;
