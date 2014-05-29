@@ -108,15 +108,11 @@ class ThermoLimiter
   
   // </rtc-template>
   TimedDoubleSeq m_tempIn;
-  TimedDoubleSeq m_tauIn;
-  TimedDoubleSeq m_qCurrentIn;
   TimedDoubleSeq m_tauMaxOut;
   
   // DataInPort declaration
   // <rtc-template block="inport_declare">
   InPort<TimedDoubleSeq> m_tempInIn;
-  InPort<TimedDoubleSeq> m_tauInIn;
-  InPort<TimedDoubleSeq> m_qCurrentInIn;
   
   // </rtc-template>
 

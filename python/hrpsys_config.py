@@ -342,14 +342,8 @@ class HrpsysConfigurator:
             
         # connection for tl
         if self.tl:
-            if self.tf:
-                connectPorts(self.tf.port("tauOut"), self.tl.port("tauIn"))
-            else:
-                connectPorts(self.rh.port("tau"), self.tl.port("tauIn"))
             if self.te:
                 connectPorts(self.te.port("tempOut"), self.tl.port("tempIn"))
-            connectPorts(self.rh.port("q"), self.tl.port("qCurrentIn"))
-            # qRef is connected as joint angle controller
 
         # connection for tc
         if self.tc:
