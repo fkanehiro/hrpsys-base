@@ -18,8 +18,6 @@
 #include <hrpModel/ModelLoaderUtil.h>
 #include <hrpUtil/MatrixSolvers.h>
 
-#define DEBUGP ((m_debugLevel==1 && loop%200==0) || m_debugLevel > 1 )
-
 // Module specification
 // <rtc-template block="module_spec">
 static const char* thermoestimator_spec[] =
@@ -174,8 +172,7 @@ RTC::ReturnCode_t ThermoEstimator::onDeactivated(RTC::UniqueId ec_id)
 RTC::ReturnCode_t ThermoEstimator::onExecute(RTC::UniqueId ec_id)
 {
   // std::cout << m_profile.instance_name<< ": onExecute(" << ec_id << ")" << std::endl;
-  static long long loop = 0;
-  loop ++;
+  m_loop++;
 
   coil::TimeValue coiltm(coil::gettimeofday());
   RTC::Time tm;
@@ -188,14 +185,14 @@ RTC::ReturnCode_t ThermoEstimator::onExecute(RTC::UniqueId ec_id)
   
   if ( m_tauIn.data.length() ==  m_robot->numJoints() ) {
     int numJoints = m_robot->numJoints();
-    if ( DEBUGP ) {
+    if ( isDebug() ) {
       std::cerr << "raw torque: ";
       for (int i = 0; i < numJoints; i++) {
         std::cerr << " " << m_tauIn.data[i] ;
       }
       std::cerr << std::endl;
     }
-    if ( DEBUGP ) {
+    if ( isDebug() ) {
       std::cerr << "estimation values: " << std::endl;
     }
     for (int i = 0; i < numJoints; i++) {
@@ -208,13 +205,13 @@ RTC::ReturnCode_t ThermoEstimator::onExecute(RTC::UniqueId ec_id)
       currentHeat = param.currentCoeffs * std::pow(tau, 2);
       radiation = -param.thermoCoeffs * (param.temperature - m_ambientTemp);
       m_motorHeatParams[i].temperature = param.temperature + (currentHeat + radiation) * m_dt;
-      if ( DEBUGP ) {
+      if ( isDebug() ) {
         std::cerr << currentHeat << " "  << radiation << ", ";
       }
       // output
       m_tempOut.data[i] = m_motorHeatParams[i].temperature;
     }
-    if ( DEBUGP ) {
+    if ( isDebug() ) {
       std::cerr << std::endl << "temperature  : ";
       for (int i = 0; i < numJoints; i++) {
         std::cerr << " " << m_motorHeatParams[i].temperature;
@@ -277,7 +274,10 @@ RTC::ReturnCode_t ThermoEstimator::onExecute(RTC::UniqueId ec_id)
   }
 */
 
-
+bool ThermoEstimator::isDebug(int cycle)
+{
+  return ((m_debugLevel==1 && m_loop%cycle==0) || m_debugLevel > 1);
+}
 
 extern "C"
 {

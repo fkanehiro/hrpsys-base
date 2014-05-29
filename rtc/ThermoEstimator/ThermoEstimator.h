@@ -147,11 +147,12 @@ class ThermoEstimator
  private:
  
   double m_dt;
+  long long m_loop;
   unsigned int m_debugLevel;
   hrp::BodyPtr m_robot; // for numJoints
   double m_ambientTemp; // Ta
   std::vector<MotorHeatParam> m_motorHeatParams;
-  
+  bool isDebug(int cycle = 200);
 };
 
 
