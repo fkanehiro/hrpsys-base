@@ -152,6 +152,7 @@ class ThermoEstimator
   hrp::BodyPtr m_robot; // for numJoints
   double m_ambientTemp; // Ta
   std::vector<MotorHeatParam> m_motorHeatParams;
+  void estimateJointTemperature(double tau, MotorHeatParam& param);
   bool isDebug(int cycle = 200);
 };
 

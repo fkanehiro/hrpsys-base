@@ -183,49 +183,38 @@ RTC::ReturnCode_t ThermoEstimator::onExecute(RTC::UniqueId ec_id)
     m_tauInIn.read();
   }
   
-  if ( m_tauIn.data.length() ==  m_robot->numJoints() ) {
+  if (m_tauIn.data.length() ==  m_robot->numJoints()) {
     int numJoints = m_robot->numJoints();
-    if ( isDebug() ) {
+    if (isDebug()) {
       std::cerr << "raw torque: ";
       for (int i = 0; i < numJoints; i++) {
         std::cerr << " " << m_tauIn.data[i] ;
       }
       std::cerr << std::endl;
     }
-    if ( isDebug() ) {
-      std::cerr << "estimation values: " << std::endl;
-    }
     for (int i = 0; i < numJoints; i++) {
-      MotorHeatParam param = m_motorHeatParams[i];
-      double tau, currentHeat, radiation;
       // Thermo estimation
-      // from Design of High Torque and High Speed Leg Module for High Power Humanoid (Junichi Urata et al.)
-      // Tnew = T + (((Re*K^2/C) * tau^2) - ((1/RC) * (T - Ta))) * dt
-      tau = m_tauIn.data[i];
-      currentHeat = param.currentCoeffs * std::pow(tau, 2);
-      radiation = -param.thermoCoeffs * (param.temperature - m_ambientTemp);
-      m_motorHeatParams[i].temperature = param.temperature + (currentHeat + radiation) * m_dt;
-      if ( isDebug() ) {
-        std::cerr << currentHeat << " "  << radiation << ", ";
-      }
+      double tau = m_tauIn.data[i];
+      estimateJointTemperature(tau, m_motorHeatParams[i]);
       // output
       m_tempOut.data[i] = m_motorHeatParams[i].temperature;
     }
-    if ( isDebug() ) {
+    if (isDebug()) {
       std::cerr << std::endl << "temperature  : ";
       for (int i = 0; i < numJoints; i++) {
         std::cerr << " " << m_motorHeatParams[i].temperature;
       }
       std::cerr << std::endl;
     }
+    m_tempOutOut.write();
 
     // overwrite temperature in servoState
-    if ( m_servoStateInIn.isNew() && (m_servoStateIn.data.length() ==  m_robot->numJoints()) ) {
+    if (m_servoStateInIn.isNew() && (m_servoStateIn.data.length() ==  m_robot->numJoints())) {
       m_servoStateInIn.read();
-      for (unsigned int i = 0; i < m_servoStateIn.data.length(); i++){
+      for (unsigned int i = 0; i < m_servoStateIn.data.length(); i++) {
         size_t len = m_servoStateIn.data[i].length();
         m_servoStateOut.data[i].length(len + 1); // expand extra_data for temperature
-        for (unsigned int j = 0; j < len; j++){
+        for (unsigned int j = 0; j < len; j++) {
           m_servoStateOut.data[i][j] = m_servoStateIn.data[i][j];
         }
         // servoStateOut is int, but extra data will be casted to float in HrpsysSeqStateROSBridge
@@ -234,7 +223,6 @@ RTC::ReturnCode_t ThermoEstimator::onExecute(RTC::UniqueId ec_id)
       }
       m_servoStateOutOut.write();
     }
-    m_tempOutOut.write();
   }
   return RTC::RTC_OK;
 }
@@ -273,6 +261,18 @@ RTC::ReturnCode_t ThermoEstimator::onExecute(RTC::UniqueId ec_id)
   return RTC::RTC_OK;
   }
 */
+
+void ThermoEstimator::estimateJointTemperature(double tau, MotorHeatParam& param)
+{
+  // from Design of High Torque and High Speed Leg Module for High Power Humanoid (Junichi Urata et al.)
+  // Tnew = T + (((Re*K^2/C) * tau^2) - ((1/RC) * (T - Ta))) * dt
+  double currentHeat, radiation;
+  currentHeat = param.currentCoeffs * std::pow(tau, 2);
+  radiation = -param.thermoCoeffs * (param.temperature - m_ambientTemp);
+  param.temperature = param.temperature + (currentHeat + radiation) * m_dt;
+  return;
+}
+
 
 bool ThermoEstimator::isDebug(int cycle)
 {
