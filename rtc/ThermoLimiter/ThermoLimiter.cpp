@@ -345,9 +345,18 @@ double ThermoLimiter::calcEmergencyRatio(RTC::TimedDoubleSeq &current, hrp::dvec
 
 void ThermoLimiter::callBeep(double ratio, double alarmRatio)
 {
-  if (ratio > alarmRatio) {
-    int maxFreq = 3136; // G
-    int minFreq = 2794; // F
+  const int maxFreq = 3136; // G
+  const int minFreq = 2794; // F
+
+  if (ratio > 1.0) { // emergency (current load is over max load)
+    const int emergency_beep_cycle = 200;
+    int current_emergency_beep_cycle = m_loop % emergency_beep_cycle;
+    if (current_emergency_beep_cycle <= (emergency_beep_cycle / 2)) {
+      start_beep(4000, 60);
+    } else {
+      start_beep(2000, 60);
+    }
+  } else if (ratio > alarmRatio) { // normal warning
     int freq = minFreq + (maxFreq - minFreq) * ((ratio - alarmRatio) / (1.0 - alarmRatio));
     start_beep(freq, 500);
   } else {
