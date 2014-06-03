@@ -55,6 +55,6 @@ double TwoDofController::update (double _x, double _xd) {
   // 2 dof controller
   velocity = (-_x + (_xd - _x) + (integrator.calculate() / tc)) / (-ke * tc);
 
-  return velocity * dt;
+  return -velocity * dt;
   
 }

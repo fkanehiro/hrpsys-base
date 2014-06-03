@@ -239,7 +239,7 @@ RTC::ReturnCode_t TorqueController::onExecute(RTC::UniqueId ec_id)
 
     // output restricted qRef
     for (int i = 0; i < m_robot->numJoints(); i++) {
-      m_qRefOut.data[i] = std::min(std::max(m_qRefIn.data[i] - dq[i], m_robot->joint(i)->llimit), m_robot->joint(i)->ulimit);      
+      m_qRefOut.data[i] = std::min(std::max(m_qRefIn.data[i] + dq[i], m_robot->joint(i)->llimit), m_robot->joint(i)->ulimit);
     }
   } else {
     if (DEBUGP) {
