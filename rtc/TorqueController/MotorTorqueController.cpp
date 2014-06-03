@@ -211,36 +211,27 @@ void MotorTorqueController::updateController(double _tau, double _tauRef, MotorT
 // for MotorController
 MotorTorqueController::MotorController::MotorController()
 {
-  controller = NULL;
   state = INACTIVE;
   transition_count = 0;
   dq = 0;
   transition_dq = 0;
   recovery_dq = 0;
+  setupTwoDofController(0.0, 0.0, 0.0);
 }
 
 MotorTorqueController::MotorController::~MotorController()
 {
-  if (controller != NULL) {
-    delete controller;
-  }
 }
 
 void MotorTorqueController::MotorController::setupTwoDofController(double _ke, double _tc, double _dt)
 {
-  if (controller != NULL) {
-    delete controller;
-  }
-  controller = new TwoDofController(_ke, _tc, _dt);
+  controller.reset(new TwoDofController(_ke, _tc, _dt));
   controller->reset();
 }
 
 void MotorTorqueController::MotorController::setupTwoDofControllerWithDamper(double _ke, double _kd, double _tc, double _dt)
 {
-  if (controller != NULL) {
-    delete controller;
-  }
-  controller = new TwoDofControllerWithDamper(_ke, _kd, _tc, _dt);
+  controller.reset(new TwoDofControllerWithDamper(_ke, _kd, _tc, _dt));
   controller->reset();
 }
 

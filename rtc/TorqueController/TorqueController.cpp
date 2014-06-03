@@ -118,6 +118,7 @@ RTC::ReturnCode_t TorqueController::onInitialize()
  
   hrp::dvector tdcParamKe(m_robot->numJoints()), tdcParamKd(m_robot->numJoints()), tdcParamT(m_robot->numJoints());
   if (motorTorqueControllerParamsFromConf.size() == 2 * m_robot->numJoints()) {
+    std::cerr << "use TwoDofController" << std::endl;
     for (int i = 0; i < m_robot->numJoints(); i++) { // use TwoDofController
       coil::stringTo(tdcParamKe[i], motorTorqueControllerParamsFromConf[2 * i].c_str());
       coil::stringTo(tdcParamT[i], motorTorqueControllerParamsFromConf[2 * i + 1].c_str());
@@ -130,7 +131,8 @@ RTC::ReturnCode_t TorqueController::onInitialize()
       }
     }
   } else if (motorTorqueControllerParamsFromConf.size() == 3 * m_robot->numJoints()) { // use TwoDofControllerWithDamper
-    for (int i = 0; i < m_robot->numJoints(); i++) { // use TwoDofController
+    std::cerr << "use TwoDofControllerWithDamper" << std::endl;
+    for (int i = 0; i < m_robot->numJoints(); i++) { // use TwoDofControllerWithDamper
       coil::stringTo(tdcParamKe[i], motorTorqueControllerParamsFromConf[2 * i].c_str());
       coil::stringTo(tdcParamKd[i], motorTorqueControllerParamsFromConf[2 * i + 1].c_str());
       coil::stringTo(tdcParamT[i], motorTorqueControllerParamsFromConf[2 * i + 2].c_str());
@@ -143,7 +145,7 @@ RTC::ReturnCode_t TorqueController::onInitialize()
       }
     }
   }else { // default
-    std::cerr << "[WARNING] torque_controller_params is not correct number, " << motorTorqueControllerParamsFromConf.size() << std::endl;
+    std::cerr << "[WARNING] torque_controller_params is not correct number, " << motorTorqueControllerParamsFromConf.size() << ". Use default controller." << std::endl;
     for (int i = 0; i < m_robot->numJoints(); i++) {
       tdcParamKe[i] = 400.0;
       tdcParamT[i] = 0.04;
@@ -408,10 +410,10 @@ bool TorqueController::setReferenceTorque(std::string jname, double tauRef)
 {
   bool succeed = false;
   
-  // Lock Mutex
+  // lock mutex
   Guard guard(m_mutex);
 
-  // Search target joint
+  // search target joint
   for (std::vector<MotorTorqueController>::iterator it = m_motorTorqueControllers.begin(); it != m_motorTorqueControllers.end(); ++it) {
     if ((*it).getJointName() == jname) {
       if (m_debugLevel > 0) {

@@ -6,7 +6,7 @@
 #define ABS(x) (((x) < 0) ? (-(x)) : (x))
 
 int main (int argc, char* argv[]) {
-  double ke = 400.0, kd = -4.0, tc = 0.01, dt = 0.001;
+  double ke = 0.35, kd = 20.0, tc = 0.05, dt = 0.005;
   const int test_num = 2;
   MotorTorqueController *controller[test_num];
   controller[0] = new MotorTorqueController("hoge", ke, tc, dt);
@@ -49,9 +49,6 @@ int main (int argc, char* argv[]) {
         }
       }
       if (time > 30) {
-        for (int i = 0; i < test_num; i++) {
-          delete controller[i];
-        }
         return 0;
       }
     }

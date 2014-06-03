@@ -11,6 +11,7 @@
 #define MOTOR_TORQUE_CONTROLLER_H
 
 #include <string>
+#include <boost/shared_ptr.hpp>
 #include "../Stabilizer/TwoDofController.h"
 #include "TwoDofControllerWithDamper.h"
 
@@ -49,7 +50,7 @@ private:
   public:
     MotorController();
     ~MotorController();
-    TwoDofControllerInterface *controller;
+    boost::shared_ptr<TwoDofControllerInterface> controller;
     controller_state_t state;
     double transition_count;
     double dq; //difference of joint angle from base(qRef) from tdc. it is calcurated by dq = integrate(qd * dt), dq*dt is output of tdc 
