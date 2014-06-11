@@ -28,6 +28,7 @@ set(headers
   GLlink.h
   GLbody.h
   GLsceneBase.h
+  Hrpsys.h
   LogManagerBase.h
   LogManager.h
   SDLUtil.h
