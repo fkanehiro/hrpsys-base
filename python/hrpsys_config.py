@@ -816,7 +816,13 @@ class HrpsysConfigurator:
         print gname, frame_name, pos, rpy, tm
         if frame_name :
             gname = gname + ':' + frame_name
-        return self.seq_svc.setTargetPose(gname, pos, rpy, tm)
+        result = self.seq_svc.setTargetPose(gname, pos, rpy, tm)
+        if not result:
+            print("setTargetPose failed. Maybe SequencePlayer failed to solve IK.\n"
+                   + "Currently, returning IK result error\n"
+                   + "(like the one in https://github.com/start-jsk/rtmros_hironx/issues/103)"
+                   + " is not implemented. Patch is welcomed.")
+        return result 
 
     def setTargetPoseRelative(self, gname, eename, dx=0, dy=0, dz=0,
 dr=0, dp=0, dw=0, tm=10, wait=True):
