@@ -157,7 +157,7 @@ private:
 
   double m_dt;
   unsigned int m_debugLevel;
-  int m_loop;
+  long long m_loop;
   hrp::BodyPtr m_robot;
   std::vector<MotorTorqueController> m_motorTorqueControllers;
   coil::Mutex m_mutex;
