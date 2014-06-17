@@ -1,5 +1,4 @@
-# set(comp_sources TorqueControllerService_impl.cpp TorqueController.cpp ../Stabilizer/TwoDofController.cpp)
-set(comp_sources TorqueController.cpp ../Stabilizer/TwoDofController.cpp ../Stabilizer/Integrator.cpp MotorTorqueController.cpp TorqueControllerService_impl.cpp TwoDofControllerWithDamper.cpp Convolution.cpp)
+set(comp_sources TorqueController.cpp ../Stabilizer/TwoDofController.cpp ../Stabilizer/Integrator.cpp MotorTorqueController.cpp TorqueControllerService_impl.cpp TwoDofControllerPDModel.cpp Convolution.cpp)
 set(libs hrpModel-3.1 hrpUtil-3.1 hrpsysBaseStub)
 add_library(TorqueController SHARED ${comp_sources})
 target_link_libraries(TorqueController ${libs})

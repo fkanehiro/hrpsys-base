@@ -13,7 +13,7 @@
 #include <string>
 #include <boost/shared_ptr.hpp>
 #include "../Stabilizer/TwoDofController.h"
-#include "TwoDofControllerWithDamper.h"
+#include "TwoDofControllerPDModel.h"
 
 // </rtc-template>
 
@@ -57,7 +57,7 @@ private:
     double transition_dq; // for transition
     double recovery_dq; // last difference of joint angle from qRef (dq + transition_dq) when state was changed to STOP
     void setupTwoDofController(double _ke, double _tc, double _dt);
-    void setupTwoDofControllerWithDamper(double _ke, double _kd, double _tc, double _dt);
+    void setupTwoDofControllerPDModel(double _ke, double _kd, double _tc, double _dt);
     double getMotorControllerDq(void); // get according dq according to state
   };
   

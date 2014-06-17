@@ -127,9 +127,9 @@ RTC::ReturnCode_t TorqueController::onInitialize()
         std::cerr << m_robot->joint(i)->name << ":" << tdcParamKe[i] << " " << tdcParamT[i] << " " << m_dt << std::endl;
       }
     }
-  } else if (motorTorqueControllerParamsFromConf.size() == 3 * m_robot->numJoints()) { // use TwoDofControllerWithDamper
-    std::cerr << "use TwoDofControllerWithDamper" << std::endl;
-    for (int i = 0; i < m_robot->numJoints(); i++) { // use TwoDofControllerWithDamper
+  } else if (motorTorqueControllerParamsFromConf.size() == 3 * m_robot->numJoints()) { // use TwoDofControllerPDModel
+    std::cerr << "use TwoDofControllerPDModel" << std::endl;
+    for (int i = 0; i < m_robot->numJoints(); i++) { // use TwoDofControllerPDModel
       coil::stringTo(tdcParamKe[i], motorTorqueControllerParamsFromConf[3 * i].c_str());
       coil::stringTo(tdcParamKd[i], motorTorqueControllerParamsFromConf[3 * i + 1].c_str());
       coil::stringTo(tdcParamT[i], motorTorqueControllerParamsFromConf[3 * i + 2].c_str());

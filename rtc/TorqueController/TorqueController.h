@@ -162,7 +162,7 @@ private:
   std::vector<MotorTorqueController> m_motorTorqueControllers;
   coil::Mutex m_mutex;
   void executeTorqueControl(hrp::dvector &dq);
-  bool isDebug(int cycle = 200);
+  bool isDebug(int cycle = 20);
 };
 
 

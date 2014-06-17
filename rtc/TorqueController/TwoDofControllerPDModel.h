@@ -1,6 +1,6 @@
 // -*- C++ -*-
 /*!
- * @file  TwoDofControllerWithDamper.h
+ * @file  TwoDofControllerPDModel.h
  * @brief Feedback and Feedforward Controller which use PDModel as motor model
  * @date  $Date$
  *
@@ -16,10 +16,10 @@
 #include "Convolution.h"
 #include <vector>
 
-class TwoDofControllerWithDamper : public TwoDofControllerInterface {
+class TwoDofControllerPDModel : public TwoDofControllerInterface {
 public:
-  TwoDofControllerWithDamper(double _ke = 0, double _kd = 0, double _tc = 0, double _dt = 0, unsigned int _range = 0);
-  ~TwoDofControllerWithDamper();
+  TwoDofControllerPDModel(double _ke = 0, double _kd = 0, double _tc = 0, double _dt = 0, unsigned int _range = 0);
+  ~TwoDofControllerPDModel();
   void setup();
   void setup(double _ke, double _kd, double _tc, double _dt, unsigned int _range = 0);
   void reset();

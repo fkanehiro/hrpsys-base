@@ -48,8 +48,8 @@ void MotorTorqueController::setupController(double _ke, double _tc, double _dt)
 
 void MotorTorqueController::setupController(double _ke, double _kd, double _tc, double _dt)
 {
-  m_normalController.setupTwoDofControllerWithDamper(_ke, _kd, _tc, _dt);
-  m_emergencyController.setupTwoDofControllerWithDamper(_ke, _kd, _tc, _dt);
+  m_normalController.setupTwoDofControllerPDModel(_ke, _kd, _tc, _dt);
+  m_emergencyController.setupTwoDofControllerPDModel(_ke, _kd, _tc, _dt);
 }
 
 bool MotorTorqueController::activate(void)
@@ -229,9 +229,9 @@ void MotorTorqueController::MotorController::setupTwoDofController(double _ke, d
   controller->reset();
 }
 
-void MotorTorqueController::MotorController::setupTwoDofControllerWithDamper(double _ke, double _kd, double _tc, double _dt)
+void MotorTorqueController::MotorController::setupTwoDofControllerPDModel(double _ke, double _kd, double _tc, double _dt)
 {
-  controller.reset(new TwoDofControllerWithDamper(_ke, _kd, _tc, _dt));
+  controller.reset(new TwoDofControllerPDModel(_ke, _kd, _tc, _dt));
   controller->reset();
 }
 
