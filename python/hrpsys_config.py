@@ -224,6 +224,10 @@ class HrpsysConfigurator:
     # for setSelfGroups
     Groups = []  # [['torso', ['CHEST_JOINT0']], ['head', ['HEAD_JOINT0', 'HEAD_JOINT1']], ....]
 
+    # List of string names of EEF. This needs updated in the subclasses by
+    # set_eefs method. 
+    _EEF_JOINT_NAMES = []
+
     # public method
     def connectComps(self):
         if self.rh == None or self.seq == None or self.sh == None or self.fk == None:
@@ -743,17 +747,52 @@ class HrpsysConfigurator:
             raise RuntimeError("Could not find reference : " + lname)
         return pose[1].data
 
-    def getCurrentPosition(self, lname):
+
+    def _iterate_get_list(self, method_to_getpose, eef_names):
         '''
+        Access the given pose getter method per given EEFs.
+
+        @type method_to_getpose: str
+        @param method_to_getpose: Name of method iteratively called to obtain pose; that said, 
+                                  the method has to be one that returns pose ([int]).
+        @type lname: str
+        @rtype: [[int]]
+        @return: Poses
+        @since 315.2.3
+        '''
+        poses = []
+        if not eef_names:
+            raise RuntimeError("In {}: Link name isn't specified nor EEF names.".format(
+                               method_to_getpose))
+        else:
+            for eef_name in eef_names:
+                poses.append(self.getCurrentPose(eef_name))
+            return poses
+
+    def getCurrentPosition(self, lname=None):
+        '''
+        If no joint name is given (accompanied with appropriate eef_names, however),
+        this method returns position of all joints specified by eef_names.       
+
         @type jointname: str
         @rtype: List of float
         @return: List of x, y, z positions about the specified joint.
         '''
+        if not lname:
+            poses = self._iterate_get_list(self.getCurrentPose,
+                                           self._EEF_JOINT_NAMES)
+            for pose, eef_name in zip(poses, self._EEF_JOINT_NAMES):
+                print("{}: {}".format(eef_name, [pose[3], pose[7], pose[11]]))
+            return
+                
         pose = self.getCurrentPose(lname)
         return [pose[3], pose[7], pose[11]]
 
-    def getCurrentRotation(self, lname):
+    def getCurrentRotation(self, lname=None):
         '''
+        If no joint name is given (accompanied with appropriate eef_names, however),
+        this method returns rotation of all joints specified by eef_names.       
+
         @type jointname: str
         @rtype: List of float
         @return: Rotational matrix of the given joint in 2-dimensional list,
@@ -762,18 +801,31 @@ class HrpsysConfigurator:
                   [a21, a22, a23],
                   [a31, a32, a33]]
         '''
+        if not lname:
+            poses = self._iterate_get_list(self.getCurrentPose, self._EEF_JOINT_NAMES)
+            for pose, eef_name in zip(poses, self._EEF_JOINT_NAMES):
+                print("{}: {}".format(eef_name, [pose[0:3], pose[4:7], pose[8:11]]))
+            return
+
         pose = self.getCurrentPose(lname)
         return [pose[0:3], pose[4:7], pose[8:11]]
 
-    def getCurrentRPY(self, lname):
+    def getCurrentRPY(self, lname=None):
         '''
         @type jointname: str
         @rtype: List of float
         @return: List of orientation in rpy form about the specified joint.
         '''
-        return euler_from_matrix(self.getCurrentRotation(lname), 'sxyz')
+        if not lname:
+            poses = self._iterate_get_list(self.getCurrentPose, self._EEF_JOINT_NAMES)
+            for pose, eef_name in zip(poses, self._EEF_JOINT_NAMES):
+                rot = [pose[0:3], pose[4:7], pose[8:11]]
+                print("{}: {}".format(eef_name, euler_from_matrix(rot, 'sxyz')))
+            return
 
-    def getReferencePose(self, lname):
+        return euler_from_matrix(self.getCurrentRotation(lname),'sxyz')
+
+    def getReferencePose(self, lname=None):
         '''
         This returns reference(commanded) value,
         and getCurrentPose returns current(actual) value
@@ -792,16 +844,22 @@ class HrpsysConfigurator:
             raise RuntimeError("Could not find reference : " + lname)
         return pose[1].data
 
-    def getReferencePosition(self, lname):
+    def getReferencePosition(self, lname=None):
         '''
         @rtype: List of float
         @return: List of angles (degree) of all joints, in the order defined
                  in the member variable 'Groups' (eg. chest, head1, head2, ..).
         '''
+        if not lname:
+            poses = self._iterate_get_list(self.getReferencePose, self._EEF_JOINT_NAMES)
+            for pose, eef_name in zip(poses, self._EEF_JOINT_NAMES):
+                print("{}: {}".format(eef_name, [pose[3], pose[7], pose[11]]))
+            return
+
         pose = self.getReferencePose(lname)
         return [pose[3], pose[7], pose[11]]
 
-    def getReferenceRotation(self, lname):
+    def getReferenceRotation(self, lname=None):
         '''
         This seturns reference(commanded) value,
         and getCurrentRotation returns current(actual) value
@@ -814,10 +872,19 @@ class HrpsysConfigurator:
                   [a21, a22, a23],
                   [a31, a32, a33]]
         '''
+        if not lname:
+            poses = self._iterate_get_list(self.fk_svc.getReferencePose, self._EEF_JOINT_NAMES)
+            for pose, eef_name in zip(poses, self._EEF_JOINT_NAMES):
+                if not pose[0] :
+                    print("{}: Could not find reference".format(eef_name))
+                rot_in_list = [pose[0:3], pose[4:7], pose[8:11]]
+                print("{}: {}".format(eef_name, rot_in_list))
+            return
+
         pose = self.getReferencePose(lname)
         return [pose[0:3], pose[4:7], pose[8:11]]
 
-    def getReferenceRPY(self, lname):
+    def getReferenceRPY(self, lname=None):
         '''
         This seturns reference(commanded) value,
         and getCurrentRPY returns current(actual) value
@@ -826,7 +893,16 @@ class HrpsysConfigurator:
         @rtype: List of float
         @return: List of orientation in rpy form about the specified joint.
         '''
-        return euler_from_matrix(self.getReferenceRotation(lname), 'sxyz')
+        if not lname:
+            poses = self._iterate_get_list(self.fk_svc.getReferencePose, self._EEF_JOINT_NAMES)
+            for pose, eef_name in zip(poses, self._EEF_JOINT_NAMES):
+                if not pose[0] :
+                    print("{}: Could not find reference".format(eef_name))
+                rot = [pose[0:3], pose[4:7], pose[8:11]]
+                print("{}: {}".format(eef_name, euler_from_matrix(rot, 'sxyz')))
+            return
+
+        return euler_from_matrix(self.getReferenceRotation(lname),'sxyz')
 
     def setTargetPose(self, gname, pos, rpy, tm, frame_name=None):
         '''
@@ -1200,6 +1276,17 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
         print 'Turn on Hand Servo'
         if self.sc_svc:
             self.sc_svc.servoOn()
+            
+    def set_eefs(self, eef_names):
+        '''
+        This setter method must be called during init sequence of the derived
+        class.
+        
+        @type eef_names: [str]
+        @param eef_names: Length can be 1 to as many as equipped end effectors.
+        
+        '''
+        self._EEF_JOINT_NAMES = eef_names
 
     # ##
     # ## initialize
