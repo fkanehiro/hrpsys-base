@@ -36,6 +36,12 @@ MotorTorqueController::MotorTorqueController(std::string _jname, double _ke, dou
   setupControllerCommon(_jname, _dt);
 }
 
+MotorTorqueController::MotorTorqueController(std::string _jname, double _alpha, double _beta, double _ki, double _tc, double _dt)
+{
+  setupController(_alpha, _beta, _ki, _dt);
+  setupControllerCommon(_jname, _dt);
+}
+
 MotorTorqueController::~MotorTorqueController(void)
 {
 }
@@ -50,6 +56,12 @@ void MotorTorqueController::setupController(double _ke, double _kd, double _tc, 
 {
   m_normalController.setupTwoDofControllerPDModel(_ke, _kd, _tc, _dt);
   m_emergencyController.setupTwoDofControllerPDModel(_ke, _kd, _tc, _dt);
+}
+
+void MotorTorqueController::setupController(double _alpha, double _beta, double _ki, double _tc, double _dt)
+{
+  m_normalController.setupTwoDofControllerDynamicsModel(_alpha, _beta, _ki, _tc, _dt);
+  m_emergencyController.setupTwoDofControllerDynamicsModel(_alpha, _beta, _ki, _tc, _dt);
 }
 
 bool MotorTorqueController::activate(void)
@@ -232,6 +244,12 @@ void MotorTorqueController::MotorController::setupTwoDofController(double _ke, d
 void MotorTorqueController::MotorController::setupTwoDofControllerPDModel(double _ke, double _kd, double _tc, double _dt)
 {
   controller.reset(new TwoDofControllerPDModel(_ke, _kd, _tc, _dt));
+  controller->reset();
+}
+
+void MotorTorqueController::MotorController::setupTwoDofControllerDynamicsModel(double _alpha, double _beta, double _ki, double _tc, double _dt)
+{
+  controller.reset(new TwoDofControllerDynamicsModel(_alpha, _beta, _ki, _tc, _dt));
   controller->reset();
 }
 
