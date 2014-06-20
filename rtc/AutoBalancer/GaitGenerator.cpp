@@ -73,7 +73,7 @@ namespace rats
   /* member function implementation for leg_coords_generator */
   void gait_generator::leg_coords_generator::calc_current_swing_leg_coords (coordinates& ret,
                                                                             const double ratio, const double step_height,
-                                                                            const orbit_type type) const
+                                                                            const orbit_type type)
   {
     switch (type) {
     case SHUFFLING:
@@ -81,6 +81,9 @@ namespace rats
       break;
     case CYCLOID:
       cycloid_midcoords(ret, ratio, swing_leg_src_coords, swing_leg_dst_coords, step_height);
+      break;
+    case RECTANGLE:
+      rectangle_midcoords(ret, ratio, swing_leg_src_coords, swing_leg_dst_coords, step_height);
       break;
     default: break;
     }
@@ -126,6 +129,14 @@ namespace rats
   {
     mid_coords(ret, ratio, start, goal);
     cycloid_midpoint (ret.pos, ratio, start.pos, goal.pos, height);
+  };
+
+  void gait_generator::leg_coords_generator::rectangle_midcoords (coordinates& ret,
+                                                                  const double ratio, const coordinates& start,
+                                                                  const coordinates& goal, const double height)
+  {
+    mid_coords(ret, ratio, start, goal);
+    rdtg.get_trajectory_point(ret.pos, hrp::Vector3(start.pos), hrp::Vector3(goal.pos), height);
   };
 
   void gait_generator::leg_coords_generator::update_leg_coords (const std::vector<step_node>& fnl, const double default_double_support_ratio, const size_t one_step_len, const orbit_type type, const bool force_height_zero)
