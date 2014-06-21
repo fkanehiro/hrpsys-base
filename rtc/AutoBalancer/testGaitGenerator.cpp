@@ -57,14 +57,14 @@ void test0 ()
   //   gg.append_footstep_node(":rleg", coordinates(hrp::Vector3(250, -105, 0)));
   //   gg.append_footstep_node(":lleg", coordinates(hrp::Vector3(250, 105, 0)));
   //   gg.initialize_gait_parameter(cog, initial_support_leg_coords, initial_swing_leg_dst_coords);
-  //   while ( !gg.proc_one_tick(gait_generator::CYCLOID) );
+  //   while ( !gg.proc_one_tick() );
   //   gg.print_footstep_list();
 
   //   /* make step and dump */
   //   size_t i = 0;
   //   std::string fname("/tmp/plot.dat");
   //   FILE* fp = fopen(fname.c_str(), "w");
-  //   while ( gg.proc_one_tick(gait_generator::CYCLOID) ) {
+  //   while ( gg.proc_one_tick() ) {
   //     fprintf(fp, "%f ", i * dt);
   //     for (size_t ii = 0; ii < 3; ii++) {
   //       fprintf(fp, "%f %f %f %f ",
@@ -123,14 +123,14 @@ void test0 ()
     gg.append_footstep_node(":rleg", coordinates(hrp::Vector3(250*1e-3, -105*1e-3, 0)));
     gg.append_footstep_node(":lleg", coordinates(hrp::Vector3(250*1e-3, 105*1e-3, 0)));
     gg.initialize_gait_parameter(cog, initial_support_leg_coords, initial_swing_leg_dst_coords);
-    while ( !gg.proc_one_tick(gait_generator::CYCLOID) );
+    while ( !gg.proc_one_tick() );
     gg.print_footstep_list();
 
     /* make step and dump */
     size_t i = 0;
     std::string fname("/tmp/plot.dat");
     FILE* fp = fopen(fname.c_str(), "w");
-    while ( gg.proc_one_tick(gait_generator::CYCLOID) ) {
+    while ( gg.proc_one_tick() ) {
       //std::cerr << gg.lcg.gp_count << std::endl;
       // if ( gg.lcg.gp_index == 4 && gg.lcg.gp_count == 100) {
       //   //std::cerr << gg.lcg.gp_index << std::endl;
@@ -211,8 +211,8 @@ void test0 ()
 //   gg.set_default_zmp_offsets(default_zmp_offsets);
 //   gg.initialize_gait_parameter(rb->calc_com(), swc, spc);
 //   std::vector<hrp::Vector3> cog_v, spc_v, swc_v;
-//   while ( !gg.proc_one_tick(gait_generator::CYCLOID) );
-//   while ( gg.proc_one_tick(gait_generator::CYCLOID) ) {
+//   while ( !gg.proc_one_tick() );
+//   while ( gg.proc_one_tick() ) {
 //     std::cerr << "(list :cog ";
 //     print_vector(std::cerr, gg.get_cog(), false);
 //     std::cerr << " " << gg.get_support_leg() << " ";

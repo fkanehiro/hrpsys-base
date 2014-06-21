@@ -188,10 +188,10 @@ namespace rats
       double default_step_height, default_top_ratio, current_step_height, swing_ratio, rot_ratio;
       size_t gp_index, gp_count;
       leg_type support_leg;
+      orbit_type default_orbit_type;
       rectangle_delay_hoffarbib_trajectory_generator rdtg;
       void calc_current_swing_leg_coords (coordinates& ret,
-                                          const double ratio, const double step_height,
-                                          const orbit_type type);
+                                          const double ratio, const double step_height);
       void cycloid_midcoords (coordinates& ret,
                               const double ratio, const coordinates& start,
                               const coordinates& goal, const double height) const;
@@ -207,13 +207,14 @@ namespace rats
 #endif
       leg_coords_generator(const double _dt)
         : swing_leg_dst_coords(), support_leg_coords(), swing_leg_coords(), swing_leg_src_coords(),
-          default_step_height(0.05), default_top_ratio(0.5), current_step_height(0.0), swing_ratio(0), rot_ratio(0), gp_index(0), gp_count(0), support_leg(WC_RLEG)
+          default_step_height(0.05), default_top_ratio(0.5), current_step_height(0.0), swing_ratio(0), rot_ratio(0), gp_index(0), gp_count(0), support_leg(WC_RLEG), default_orbit_type(CYCLOID)
       {
         rdtg.set_dt(_dt);
       };
       ~leg_coords_generator() {};
       void set_default_step_height (const double _tmp) { default_step_height = _tmp; };
       void set_default_top_ratio (const double _tmp) { default_top_ratio = _tmp; };
+      void set_default_orbit_type (const orbit_type _tmp) { default_orbit_type = _tmp; };
       void reset(const size_t one_step_len,
                  const coordinates& _swing_leg_dst_coords,
                  const coordinates& _swing_leg_src_coords,
@@ -227,7 +228,7 @@ namespace rats
         current_step_height = 0.0;
         rdtg.set_total_time_from_count(one_step_len);
       };
-      void update_leg_coords (const std::vector<step_node>& fnl, const double default_double_support_ratio, const size_t one_step_len, const orbit_type type, const bool force_height_zero);
+      void update_leg_coords (const std::vector<step_node>& fnl, const double default_double_support_ratio, const size_t one_step_len, const bool force_height_zero);
       size_t get_gp_index() const { return gp_index; };
       size_t get_gp_count() const { return gp_count; };
       const coordinates& get_swing_leg_coords() const { return swing_leg_coords; };
@@ -255,7 +256,7 @@ namespace rats
 	  return 0;
 	}
       };
-
+      orbit_type get_default_orbit_type () const { return default_orbit_type; };
     };
 
     enum velocity_mode_flag { VEL_IDLING, VEL_DOING, VEL_ENDING };
@@ -322,7 +323,7 @@ namespace rats
                                     const coordinates& initial_support_leg_coords,
                                     const coordinates& initial_swing_leg_dst_coords,
                                     const double delay = 1.6);
-    bool proc_one_tick (const orbit_type type);
+    bool proc_one_tick ();
     void append_footstep_node (const std::string& _leg, const coordinates& _fs)
     {
       footstep_node_list.push_back(step_node((_leg == ":rleg") ? WC_RLEG : WC_LLEG, _fs));
@@ -373,6 +374,7 @@ namespace rats
       footstep_param.stride_theta = _stride_theta;
     };
     void set_use_inside_step_limitation(const bool uu) { use_inside_step_limitation = uu; };
+    void set_default_orbit_type (const orbit_type type) { lcg.set_default_orbit_type(type); };
     void print_footstep_list () const
     {
       for (size_t i = 0; i < footstep_node_list.size(); i++)
@@ -420,6 +422,7 @@ namespace rats
 	return true;
       else return false;
     };
+    orbit_type get_default_orbit_type () const { return lcg.get_default_orbit_type(); };
   };
 }
 #endif /* GAITGENERATOR_H */
