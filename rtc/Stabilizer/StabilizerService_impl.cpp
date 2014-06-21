@@ -21,6 +21,12 @@ void StabilizerService_impl::stopStabilizer(void)
 	m_stabilizer->stopStabilizer();
 }
 
+void StabilizerService_impl::getParameter(OpenHRP::StabilizerService::stParam& i_param)
+{
+  i_param = OpenHRP::StabilizerService::stParam();
+  return m_stabilizer->getParameter(i_param);
+};
+
 void StabilizerService_impl::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
 {
 	m_stabilizer->setParameter(i_stp);
