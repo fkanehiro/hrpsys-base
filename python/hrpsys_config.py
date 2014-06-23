@@ -5,7 +5,7 @@ import rtm
 
 from rtm import *
 from OpenHRP import *
-from hrpsys import * # load ModelLoader
+from hrpsys import *  # load ModelLoader
 
 import socket
 import time
@@ -29,6 +29,7 @@ _NEXT_AXIS = [1, 2, 0, 1]
 
 # epsilon for testing whether a number is close to zero
 _EPS = numpy.finfo(float).eps * 4.0
+
 
 def euler_matrix(ai, aj, ak, axes='sxyz'):
     """Return homogeneous rotation matrix from Euler angles and axis sequence.
@@ -56,8 +57,8 @@ def euler_matrix(ai, aj, ak, axes='sxyz'):
         firstaxis, parity, repetition, frame = axes
 
     i = firstaxis
-    j = _NEXT_AXIS[i+parity]
-    k = _NEXT_AXIS[i-parity+1]
+    j = _NEXT_AXIS[i + parity]
+    k = _NEXT_AXIS[i - parity + 1]
 
     if frame:
         ai, ak = ak, ai
@@ -66,31 +67,32 @@ def euler_matrix(ai, aj, ak, axes='sxyz'):
 
     si, sj, sk = math.sin(ai), math.sin(aj), math.sin(ak)
     ci, cj, ck = math.cos(ai), math.cos(aj), math.cos(ak)
-    cc, cs = ci*ck, ci*sk
-    sc, ss = si*ck, si*sk
+    cc, cs = ci * ck, ci * sk
+    sc, ss = si * ck, si * sk
 
     M = numpy.identity(4)
     if repetition:
         M[i, i] = cj
-        M[i, j] = sj*si
-        M[i, k] = sj*ci
-        M[j, i] = sj*sk
-        M[j, j] = -cj*ss+cc
-        M[j, k] = -cj*cs-sc
-        M[k, i] = -sj*ck
-        M[k, j] = cj*sc+cs
-        M[k, k] = cj*cc-ss
+        M[i, j] = sj * si
+        M[i, k] = sj * ci
+        M[j, i] = sj * sk
+        M[j, j] = -cj * ss + cc
+        M[j, k] = -cj * cs - sc
+        M[k, i] = -sj * ck
+        M[k, j] = cj * sc + cs
+        M[k, k] = cj * cc - ss
     else:
-        M[i, i] = cj*ck
-        M[i, j] = sj*sc-cs
-        M[i, k] = sj*cc+ss
-        M[j, i] = cj*sk
-        M[j, j] = sj*ss+cc
-        M[j, k] = sj*cs-sc
+        M[i, i] = cj * ck
+        M[i, j] = sj * sc - cs
+        M[i, k] = sj * cc + ss
+        M[j, i] = cj * sk
+        M[j, j] = sj * ss + cc
+        M[j, k] = sj * cs - sc
         M[k, i] = -sj
-        M[k, j] = cj*si
-        M[k, k] = cj*ci
+        M[k, j] = cj * si
+        M[k, k] = cj * ci
     return M
+
 
 def euler_from_matrix(matrix, axes='sxyz'):
     """Return Euler angles from rotation matrix for specified axis sequence.
@@ -118,29 +120,29 @@ def euler_from_matrix(matrix, axes='sxyz'):
         firstaxis, parity, repetition, frame = axes
 
     i = firstaxis
-    j = _NEXT_AXIS[i+parity]
-    k = _NEXT_AXIS[i-parity+1]
+    j = _NEXT_AXIS[i + parity]
+    k = _NEXT_AXIS[i - parity + 1]
 
     M = numpy.array(matrix, dtype=numpy.float64, copy=False)[:3, :3]
     if repetition:
-        sy = math.sqrt(M[i, j]*M[i, j] + M[i, k]*M[i, k])
+        sy = math.sqrt(M[i, j] * M[i, j] + M[i, k] * M[i, k])
         if sy > _EPS:
-            ax = math.atan2( M[i, j],  M[i, k])
-            ay = math.atan2( sy,       M[i, i])
-            az = math.atan2( M[j, i], -M[k, i])
+            ax = math.atan2(M[i, j], M[i, k])
+            ay = math.atan2(sy, M[i, i])
+            az = math.atan2(M[j, i], -M[k, i])
         else:
-            ax = math.atan2(-M[j, k],  M[j, j])
-            ay = math.atan2( sy,       M[i, i])
+            ax = math.atan2(-M[j, k], M[j, j])
+            ay = math.atan2(sy, M[i, i])
             az = 0.0
     else:
-        cy = math.sqrt(M[i, i]*M[i, i] + M[j, i]*M[j, i])
+        cy = math.sqrt(M[i, i] * M[i, i] + M[j, i] * M[j, i])
         if cy > _EPS:
-            ax = math.atan2( M[k, j],  M[k, k])
-            ay = math.atan2(-M[k, i],  cy)
-            az = math.atan2( M[j, i],  M[i, i])
+            ax = math.atan2(M[k, j], M[k, k])
+            ay = math.atan2(-M[k, i], cy)
+            az = math.atan2(M[j, i], M[i, i])
         else:
-            ax = math.atan2(-M[j, k],  M[j, j])
-            ay = math.atan2(-M[k, i],  cy)
+            ax = math.atan2(-M[j, k], M[j, j])
+            ay = math.atan2(-M[k, i], cy)
             az = 0.0
 
     if parity:
@@ -148,6 +150,7 @@ def euler_from_matrix(matrix, axes='sxyz'):
     if frame:
         ax, az = az, ax
     return ax, ay, az
+
 
 # class for configure hrpsys RTCs and ports
 #   In order to specify robot-dependent code, please inherit this HrpsysConfigurator
@@ -170,13 +173,13 @@ class HrpsysConfigurator:
     fk = None
     fk_svc = None
 
-    tf = None # TorqueFilter
-    kf = None # KalmanFilter
-    vs = None # VirtualForceSensor
-    rmfo = None # RemoveForceSensorLinkOffset
-    ic = None # ImpedanceController
-    abc = None # AutoBalancer
-    st = None # Stabilizer
+    tf = None  # TorqueFilter
+    kf = None  # KalmanFilter
+    vs = None  # VirtualForceSensor
+    rmfo = None  # RemoveForceSensorLinkOffset
+    ic = None  # ImpedanceController
+    abc = None  # AutoBalancer
+    st = None  # Stabilizer
 
     # CollisionDetector
     co = None
@@ -219,7 +222,7 @@ class HrpsysConfigurator:
     sensors = None
 
     # for setSelfGroups
-    Groups = [] # [['torso', ['CHEST_JOINT0']], ['head', ['HEAD_JOINT0', 'HEAD_JOINT1']], ....]
+    Groups = []  # [['torso', ['CHEST_JOINT0']], ['head', ['HEAD_JOINT0', 'HEAD_JOINT1']], ....]
 
     # public method
     def connectComps(self):
@@ -229,59 +232,69 @@ class HrpsysConfigurator:
         # connection for reference joint angles
         tmp_contollers = self.getJointAngleControllerList()
         if len(tmp_contollers) > 0:
-            connectPorts(self.sh.port("qOut"),  tmp_contollers[0].port("qRef"))
-            for i in range(len(tmp_contollers)-1):
-                connectPorts(tmp_contollers[i].port("q"), tmp_contollers[i+1].port("qRef"))
+            connectPorts(self.sh.port("qOut"), tmp_contollers[0].port("qRef"))
+            for i in range(len(tmp_contollers) - 1):
+                connectPorts(tmp_contollers[i].port("q"),
+                             tmp_contollers[i + 1].port("qRef"))
             if self.simulation_mode:
-                connectPorts(tmp_contollers[-1].port("q"),  self.hgc.port("qIn"))
-                connectPorts(self.hgc.port("qOut"), self.rh.port("qRef"))
-            else :
-                connectPorts(tmp_contollers[-1].port("q"),  self.rh.port("qRef"))
-        else:
-            if self.simulation_mode :
-                connectPorts(self.sh.port("qOut"),  self.hgc.port("qIn"))
+                connectPorts(tmp_contollers[-1].port("q"), self.hgc.port("qIn"))
                 connectPorts(self.hgc.port("qOut"), self.rh.port("qRef"))
             else:
-                connectPorts(self.sh.port("qOut"),  self.rh.port("qRef"))
+                connectPorts(tmp_contollers[-1].port("q"), self.rh.port("qRef"))
+        else:
+            if self.simulation_mode:
+                connectPorts(self.sh.port("qOut"), self.hgc.port("qIn"))
+                connectPorts(self.hgc.port("qOut"), self.rh.port("qRef"))
+            else:
+                connectPorts(self.sh.port("qOut"), self.rh.port("qRef"))
 
         # connection for kf
         if self.kf:
             #   currently use first acc and rate sensors for kf
-            s_acc=filter(lambda s : s.type == 'Acceleration', self.sensors)
-            if (len(s_acc)>0) and self.rh.port(s_acc[0].name) != None: # check existence of sensor ;; currently original HRP4C.xml has different naming rule of gsensor and gyrometer
+            s_acc = filter(lambda s: s.type == 'Acceleration', self.sensors)
+            if (len(s_acc) > 0) and self.rh.port(s_acc[0].name) != None:  # check existence of sensor ;; currently original HRP4C.xml has different naming rule of gsensor and gyrometer
                 connectPorts(self.rh.port(s_acc[0].name), self.kf.port('acc'))
-            s_rate=filter(lambda s : s.type == 'RateGyro', self.sensors)
-            if (len(s_rate)>0) and self.rh.port(s_rate[0].name) != None: # check existence of sensor ;; currently original HRP4C.xml has different naming rule of gsensor and gyrometer
+            s_rate = filter(lambda s: s.type == 'RateGyro', self.sensors)
+            if (len(s_rate) > 0) and self.rh.port(s_rate[0].name) != None:  # check existence of sensor ;; currently original HRP4C.xml has different naming rule of gsensor and gyrometer
                 connectPorts(self.rh.port(s_rate[0].name), self.kf.port("rate"))
             connectPorts(self.seq.port("accRef"), self.kf.port("accRef"))
 
         # connection for rh
         if self.rh.port("servoState") != None:
             if self.te and self.el:
-                connectPorts(self.rh.port("servoState"), self.te.port("servoStateIn"))
-                connectPorts(self.te.port("servoStateOut"), self.el.port("servoStateIn"))
+                connectPorts(self.rh.port("servoState"),
+                             self.te.port("servoStateIn"))
+                connectPorts(self.te.port("servoStateOut"),
+                             self.el.port("servoStateIn"))
             elif self.el:
-                connectPorts(self.rh.port("servoState"), self.el.port("servoStateIn"))
+                connectPorts(self.rh.port("servoState"),
+                             self.el.port("servoStateIn"))
             elif self.te:
-                connectPorts(self.rh.port("servoState"), self.te.port("servoStateIn"))
+                connectPorts(self.rh.port("servoState"),
+                             self.te.port("servoStateIn"))
 
         # connection for sh, seq, fk
-        connectPorts(self.rh.port("q"), [self.sh.port("currentQIn"), self.fk.port("q")]) # connection for actual joint angles
-        connectPorts(self.sh.port("qOut"),  self.fk.port("qRef"))
+        connectPorts(self.rh.port("q"), [self.sh.port("currentQIn"),
+                                         self.fk.port("q")])  # connection for actual joint angles
+        connectPorts(self.sh.port("qOut"), self.fk.port("qRef"))
         connectPorts(self.seq.port("qRef"), self.sh.port("qIn"))
         connectPorts(self.seq.port("tqRef"), self.sh.port("tqIn"))
         connectPorts(self.seq.port("basePos"), self.sh.port("basePosIn"))
         connectPorts(self.seq.port("baseRpy"), self.sh.port("baseRpyIn"))
-        connectPorts(self.seq.port("zmpRef"),  self.sh.port("zmpIn"))
-        connectPorts(self.sh.port("basePosOut"), [self.seq.port("basePosInit"), self.fk.port("basePosRef")])
-        connectPorts(self.sh.port("baseRpyOut"), [self.seq.port("baseRpyInit"), self.fk.port("baseRpyRef")])
+        connectPorts(self.seq.port("zmpRef"), self.sh.port("zmpIn"))
+        connectPorts(self.sh.port("basePosOut"), [self.seq.port("basePosInit"),
+                                                  self.fk.port("basePosRef")])
+        connectPorts(self.sh.port("baseRpyOut"), [self.seq.port("baseRpyInit"),
+                                                  self.fk.port("baseRpyRef")])
         connectPorts(self.sh.port("qOut"), self.seq.port("qInit"))
         connectPorts(self.sh.port("zmpOut"), self.seq.port("zmpRefInit"))
-        for sen in filter(lambda x : x.type == "Force", self.sensors):
-            connectPorts(self.seq.port(sen.name+"Ref"), self.sh.port(sen.name+"In"))
+        for sen in filter(lambda x: x.type == "Force", self.sensors):
+            connectPorts(self.seq.port(sen.name + "Ref"),
+                         self.sh.port(sen.name + "In"))
 
         # connection for st
-        if rtm.findPort(self.rh.ref, "lfsensor") and rtm.findPort(self.rh.ref, "rfsensor") and self.st:
+        if rtm.findPort(self.rh.ref, "lfsensor") and rtm.findPort(
+                                     self.rh.ref, "rfsensor") and self.st:
             connectPorts(self.rh.port("lfsensor"), self.st.port("forceL"))
             connectPorts(self.rh.port("rfsensor"), self.st.port("forceR"))
             connectPorts(self.kf.port("rpy"), self.st.port("rpy"))
@@ -289,18 +302,20 @@ class HrpsysConfigurator:
             connectPorts(self.abc.port("baseRpy"), self.st.port("baseRpyIn"))
             connectPorts(self.abc.port("basePos"), self.st.port("basePosIn"))
         if self.ic and self.abc:
-            for sen in filter(lambda x : x.type == "Force", self.sensors):
-                connectPorts(self.ic.port("ref_"+sen.name), self.abc.port("ref_"+sen.name))
+            for sen in filter(lambda x: x.type == "Force", self.sensors):
+                connectPorts(self.ic.port("ref_" + sen.name),
+                             self.abc.port("ref_" + sen.name))
 
         #  actual force sensors
         if self.rmfo and self.kf:
-            #connectPorts(self.kf.port("rpy"), self.ic.port("rpy"))
+            # connectPorts(self.kf.port("rpy"), self.ic.port("rpy"))
             connectPorts(self.kf.port("rpy"), self.rmfo.port("rpy"))
             connectPorts(self.rh.port("q"), self.rmfo.port("qCurrent"))
-            for sen in filter(lambda x : x.type == "Force", self.sensors):
+            for sen in filter(lambda x: x.type == "Force", self.sensors):
                 connectPorts(self.rh.port(sen.name), self.rmfo.port(sen.name))
                 if self.ic:
-                    connectPorts(self.rmfo.port("off_"+sen.name), self.ic.port(sen.name))
+                    connectPorts(self.rmfo.port("off_" + sen.name),
+                                 self.ic.port(sen.name))
         # connection for ic
         if self.ic:
             connectPorts(self.rh.port("q"), self.ic.port("qCurrent"))
@@ -316,7 +331,8 @@ class HrpsysConfigurator:
             connectPorts(self.tf.port("tauOut"), self.vs.port("tauIn"))
             #  virtual force sensors
             if self.ic:
-                for vfp in filter(lambda x : str.find(x, 'v') >= 0 and str.find(x, 'sensor') >= 0, self.vs.ports.keys()):
+                for vfp in filter(lambda x: str.find(x, 'v') >= 0 and
+                                  str.find(x, 'sensor') >= 0, self.vs.ports.keys()):
                     connectPorts(self.vs.port(vfp), self.ic.port(vfp))
         # connection for co
         if self.co:
@@ -324,13 +340,14 @@ class HrpsysConfigurator:
 
         # connection for gc
         if self.gc:
-            connectPorts(self.rh.port("q"), self.gc.port("qCurrent")) # other connections
+            connectPorts(self.rh.port("q"), self.gc.port("qCurrent"))  # other connections
             tmp_controller = self.getJointAngleControllerList()
             index = tmp_controller.index(self.gc)
             if index == 0:
                 connectPorts(self.sh.port("qOut"), self.gc.port("qIn"))
             else:
-                connectPorts(tmp_controller[index - 1].port("q"), self.gc.port("qIn"))
+                connectPorts(tmp_controller[index - 1].port("q"),
+                             self.gc.port("qIn"))
 
         # connection for te
         if self.te:
@@ -339,7 +356,7 @@ class HrpsysConfigurator:
             else:
                 connectPorts(self.rh.port("tau"), self.te.port("tauIn"))
             # sevoStateIn is connected above
-            
+
         # connection for tl
         if self.tl:
             if self.tf:
@@ -355,7 +372,8 @@ class HrpsysConfigurator:
         if self.tc:
             connectPorts(self.rh.port("q"), self.tc.port("qCurrent"))
             if self.tf:
-                connectPorts(self.tf.port("tauOut"), self.tc.port("tauCurrent"))
+                connectPorts(self.tf.port("tauOut"),
+                             self.tc.port("tauCurrent"))
             else:
                 connectPorts(self.rh.port("tau"), self.tc.port("tauCurrent"))
             if self.tl:
@@ -378,7 +396,7 @@ class HrpsysConfigurator:
         if comp == None:
             raise RuntimeError("Cannot create component: " + compName)
         if comp.service("service0"):
-            comp_svc = narrow(comp.service("service0"), compName+"Service")
+            comp_svc = narrow(comp.service("service0"), compName + "Service")
             print self.configurator_name, "create CompSvc -> ", compName, "Service : ", comp_svc
             return [comp, comp_svc]
         else:
@@ -386,14 +404,14 @@ class HrpsysConfigurator:
 
     def createComps(self):
         for rn in self.getRTCList():
-            rn2='self.'+rn[0]
+            rn2 = 'self.' + rn[0]
             if eval(rn2) == None:
-                create_str="[self."+rn[0]+", self."+rn[0]+"_svc] = self.createComp(\""+rn[1]+"\",\""+rn[0]+"\")"
+                create_str = "[self." + rn[0] + ", self." + rn[0] + "_svc] = self.createComp(\"" + rn[1] + "\",\"" + rn[0] + "\")"
                 print self.configurator_name, "  eval : ", create_str
                 exec(create_str)
 
-    def findComp(self, compName, instanceName, max_timeout_count = 10):
-        timeout_count = 0;
+    def findComp(self, compName, instanceName, max_timeout_count=10):
+        timeout_count = 0
         comp = rtm.findRTC(instanceName)
         while comp == None and timeout_count < max_timeout_count:
             comp = rtm.findRTC(instanceName)
@@ -404,10 +422,10 @@ class HrpsysConfigurator:
             timeout_count += 1
         print self.configurator_name, " find Comp    : ", instanceName, " = ", comp
         if comp == None:
-            print self.configurator_name, " Cannot find component: " + instanceName + " (" + compName +")"
+            print self.configurator_name, " Cannot find component: " + instanceName + " (" + compName + ")"
             return [None, None]
         if comp.service("service0"):
-            comp_svc = narrow(comp.service("service0"), compName+"Service")
+            comp_svc = narrow(comp.service("service0"), compName + "Service")
             print self.configurator_name, " find CompSvc : ", instanceName + "_svc = ", comp_svc
             return [comp, comp_svc]
         else:
@@ -416,9 +434,9 @@ class HrpsysConfigurator:
     def findComps(self):
         max_timeout_count = 10
         for rn in self.getRTCList():
-            rn2='self.'+rn[0]
+            rn2 = 'self.' + rn[0]
             if eval(rn2) == None:
-                create_str="[self."+rn[0]+", self."+rn[0]+"_svc] = self.findComp(\""+rn[1]+"\",\""+rn[0]+"\","+str(max_timeout_count)+")"
+                create_str = "[self." + rn[0] + ", self." + rn[0] + "_svc] = self.findComp(\"" + rn[1] + "\",\"" + rn[0] + "\"," + str(max_timeout_count) + ")"
                 print self.configurator_name, create_str
                 exec(create_str)
                 if eval(rn2) == None:
@@ -435,17 +453,17 @@ class HrpsysConfigurator:
             ['seq', "SequencePlayer"],
             ['sh', "StateHolder"],
             ['fk', "ForwardKinematics"],
-            #['tf', "TorqueFilter"],
-            #['kf', "KalmanFilter"],
-            #['vs', "VirtualForceSensor"],
-            #['rmfo', "RemoveForceSensorLinkOffset"],
-            #['ic', "ImpedanceController"],
-            #['abc', "AutoBalancer"],
-            #['st', "Stabilizer"],
+            # ['tf', "TorqueFilter"],
+            # ['kf', "KalmanFilter"],
+            # ['vs', "VirtualForceSensor"],
+            # ['rmfo', "RemoveForceSensorLinkOffset"],
+            # ['ic', "ImpedanceController"],
+            # ['abc', "AutoBalancer"],
+            # ['st', "Stabilizer"],
             ['co', "CollisionDetector"],
-            #['tc', "TorqueController"],
-            #['te', "ThermoEstimator"],
-            #['tl', "ThermoLimiter"],
+            # ['tc', "TorqueController"],
+            # ['te', "ThermoEstimator"],
+            # ['tl', "ThermoLimiter"],
             ['el', "SoftErrorLimiter"],
             ['log', "DataLogger"]
             ]
@@ -454,8 +472,8 @@ class HrpsysConfigurator:
     def getRTCListUnstable(self):
         '''
         @rtype [[str]]
-        @rerutrn List of available unstable components. Each element consists of a list
-                 of abbreviated and full names of the component.
+        @rerutrn List of available unstable components. Each element consists
+                 of a list of abbreviated and full names of the component.
         '''
         return [
             ['seq', "SequencePlayer"],
@@ -470,19 +488,20 @@ class HrpsysConfigurator:
             ['st', "Stabilizer"],
             ['co', "CollisionDetector"],
             ['tc', "TorqueController"],
-            #['te', "ThermoEstimator"],
-            #['tl', "ThermoLimiter"],
+            # ['te', "ThermoEstimator"],
+            # ['tl', "ThermoLimiter"],
             ['el', "SoftErrorLimiter"],
             ['log', "DataLogger"]
             ]
 
     def getJointAngleControllerList(self):
-        controller_list = [self.ic, self.gc, self.abc, self.st, self.co, self.tc, self.el]
-        return filter(lambda c : c != None, controller_list) # only return existing controllers
+        controller_list = [self.ic, self.gc, self.abc, self.st, self.co,
+                           self.tc, self.el]
+        return filter(lambda c: c != None, controller_list)  # only return existing controllers
 
     def getRTCInstanceList(self):
         ret = [self.rh]
-        for r in map(lambda x : 'self.'+x[0], self.getRTCList()):
+        for r in map(lambda x: 'self.' + x[0], self.getRTCList()):
             ret.append(eval(r))
         return ret
 
@@ -491,15 +510,17 @@ class HrpsysConfigurator:
         import CosNaming
         obj = rtm.rootnc.resolve([CosNaming.NameComponent('ModelLoader', '')])
         mdlldr = obj._narrow(ModelLoader_idl._0_OpenHRP__POA.ModelLoader)
-        print self.configurator_name, "  bodyinfo URL = file://"+url
-        return mdlldr.getBodyInfo("file://"+url)
+        print self.configurator_name, "  bodyinfo URL = file://" + url
+        return mdlldr.getBodyInfo("file://" + url)
 
     # public method to get sensors list
     def getSensors(self, url):
-        if url=='':
+        if url == '':
             return []
         else:
-            return sum(map(lambda x : x.sensors, filter(lambda x : len(x.sensors) > 0, self.getBodyInfo(url)._get_links())), [])  # sum is for list flatten
+            return sum(map(lambda x: x.sensors,
+                           filter(lambda x: len(x.sensors) > 0,
+                                  self.getBodyInfo(url)._get_links())), [])  # sum is for list flatten
 
     def connectLoggerPort(self, artc, sen_name, log_name=None):
         log_name = log_name if log_name else artc.name() + "_" + sen_name
@@ -536,15 +557,16 @@ class HrpsysConfigurator:
             self.connectLoggerPort(self.sh, 'baseRpyOut')
             self.connectLoggerPort(self.sh, 'zmpOut')
         if self.rh != None:
-            self.connectLoggerPort(self.rh, 'emergencySignal', 'emergencySignal')
-        for sen in filter(lambda x : x.type == "Force", self.sensors):
-            self.connectLoggerPort(self.seq, sen.name+"Ref")
+            self.connectLoggerPort(self.rh, 'emergencySignal',
+                                   'emergencySignal')
+        for sen in filter(lambda x: x.type == "Force", self.sensors):
+            self.connectLoggerPort(self.seq, sen.name + "Ref")
         self.log_svc.clear()
 
     def waitForRTCManager(self, managerhost=nshost):
         self.ms = None
-        while self.ms == None :
-            time.sleep(1);
+        while self.ms == None:
+            time.sleep(1)
             if managerhost == "localhost":
                 managerhost = socket.gethostname()
             self.ms = rtm.findRTCmanager(managerhost)
@@ -552,15 +574,15 @@ class HrpsysConfigurator:
 
     def waitForRobotHardware(self, robotname="Robot"):
         self.rh = None
-        timeout_count = 0;
+        timeout_count = 0
         # wait for simulator or RobotHardware setup which sometime takes a long time
-        while self.rh == None and timeout_count < 10: # <- time out limit
+        while self.rh == None and timeout_count < 10:  # <- time out limit
             time.sleep(1);
             self.rh = rtm.findRTC("RobotHardware0")
             if not self.rh:
                 self.rh = rtm.findRTC(robotname)
-            print self.configurator_name, "wait for", robotname, " : ",self.rh, "(timeout ", timeout_count, " < 10)"
-            if self.rh and self.rh.isActive() == None: # just in case rh is not ready...
+            print self.configurator_name, "wait for", robotname, " : ", self.rh, "(timeout ", timeout_count, " < 10)"
+            if self.rh and self.rh.isActive() == None:  # just in case rh is not ready...
                 self.rh = None
             timeout_count += 1
 
@@ -571,7 +593,7 @@ class HrpsysConfigurator:
             print self.configurator_name, "Exitting.... ", robotname
             exit(1)
 
-        print self.configurator_name, "findComps -> RobotHardware : ",self.rh, "isActive? = ", self.rh.isActive()
+        print self.configurator_name, "findComps -> RobotHardware : ", self.rh, "isActive? = ", self.rh.isActive()
 
     def checkSimulationMode(self):
         # distinguish real robot from simulation by using "servoState" port
@@ -597,9 +619,9 @@ class HrpsysConfigurator:
             return None
 
     def waitForModelLoader(self):
-        while self.findModelLoader() == None: # seq uses modelloader
+        while self.findModelLoader() == None:  # seq uses modelloader
             print self.configurator_name, "wait for ModelLoader"
-            time.sleep(3);
+            time.sleep(3)
 
     def setSelfGroups(self):
         '''
@@ -609,9 +631,9 @@ class HrpsysConfigurator:
         for item in self.Groups:
             self.seq_svc.addJointGroup(item[0], item[1])
 
-    ##
-    ## service interface for RTC component
-    ##
+    # #
+    # # service interface for RTC component
+    # #
     def goActual(self):
         '''
         Reset reference joint agnles with actual joint angle values
@@ -638,7 +660,7 @@ class HrpsysConfigurator:
         @type tm: float
         @param tm: Time to complete.
         '''
-        radangle = angle/180.0*math.pi
+        radangle = angle / 180.0 * math.pi
         return self.seq_svc.setJointAngle(jname, radangle, tm)
 
     def setJointAngles(self, angles, tm):
@@ -656,7 +678,7 @@ class HrpsysConfigurator:
         '''
         ret = []
         for angle in angles:
-            ret.append(angle/180.0*math.pi)
+            ret.append(angle / 180.0 * math.pi)
         return self.seq_svc.setJointAngles(ret, tm)
 
     def setJointAnglesOfGroup(self, gname, pose, tm, wait=True):
@@ -678,7 +700,7 @@ class HrpsysConfigurator:
                   (TODO: Elaborate what this means...Even after having taken
                   a look at its source code I can't tell exactly what it means)
         '''
-        angles = [x/180.0*math.pi for x in pose]
+        angles = [x / 180.0 * math.pi for x in pose]
         ret = self.seq_svc.setJointAnglesOfGroup(gname, angles, tm)
         if wait:
             self.waitInterpolationOfGroup(gname)
@@ -702,9 +724,9 @@ class HrpsysConfigurator:
         self.seq_svc.waitInterpolationOfGroup(gname)
 
     def getJointAngles(self):
-        return [x*180.0/math.pi for x in self.sh_svc.getCommand().jointRefs]
+        return [x * 180.0 / math.pi for x in self.sh_svc.getCommand().jointRefs]
 
-    def getCurrentPose(self,lname):
+    def getCurrentPose(self, lname):
         '''
         @type jointname: str
         @rtype: List of float
@@ -717,20 +739,20 @@ class HrpsysConfigurator:
                    0,   0,   0,  1]
         '''
         pose = self.fk_svc.getCurrentPose(lname)
-        if not pose[0] :
+        if not pose[0]:
             raise RuntimeError("Could not find reference : " + lname)
         return pose[1].data
 
-    def getCurrentPosition(self,lname):
+    def getCurrentPosition(self, lname):
         '''
         @type jointname: str
         @rtype: List of float
         @return: List of x, y, z positions about the specified joint.
         '''
         pose = self.getCurrentPose(lname)
-        return [pose[3],pose[7],pose[11]]
+        return [pose[3], pose[7], pose[11]]
 
-    def getCurrentRotation(self,lname):
+    def getCurrentRotation(self, lname):
         '''
         @type jointname: str
         @rtype: List of float
@@ -741,19 +763,20 @@ class HrpsysConfigurator:
                   [a31, a32, a33]]
         '''
         pose = self.getCurrentPose(lname)
-        return [pose[0:3],pose[4:7],pose[8:11]]
+        return [pose[0:3], pose[4:7], pose[8:11]]
 
-    def getCurrentRPY(self,lname):
+    def getCurrentRPY(self, lname):
         '''
         @type jointname: str
         @rtype: List of float
         @return: List of orientation in rpy form about the specified joint.
         '''
-        return euler_from_matrix(self.getCurrentRotation(lname),'sxyz')
+        return euler_from_matrix(self.getCurrentRotation(lname), 'sxyz')
 
-    def getReferencePose(self,lname):
+    def getReferencePose(self, lname):
         '''
-        This returns reference(commanded) value, and getCurrentPose returns current(actual) value
+        This returns reference(commanded) value,
+        and getCurrentPose returns current(actual) value
 
         @rtype: List of float
         @return: Rotational matrix and the position of the given joint in
@@ -765,22 +788,23 @@ class HrpsysConfigurator:
                    0,   0,   0,  1]
         '''
         pose = self.fk_svc.getReferencePose(lname)
-        if not pose[0] :
+        if not pose[0]:
             raise RuntimeError("Could not find reference : " + lname)
         return pose[1].data
 
-    def getReferencePosition(self,lname):
+    def getReferencePosition(self, lname):
         '''
         @rtype: List of float
         @return: List of angles (degree) of all joints, in the order defined
                  in the member variable 'Groups' (eg. chest, head1, head2, ..).
         '''
         pose = self.getReferencePose(lname)
-        return [pose[3],pose[7],pose[11]]
+        return [pose[3], pose[7], pose[11]]
 
-    def getReferenceRotation(self,lname):
+    def getReferenceRotation(self, lname):
         '''
-        This seturns reference(commanded) value, and getCurrentRotation returns current(actual) value
+        This seturns reference(commanded) value,
+        and getCurrentRotation returns current(actual) value
 
         @type jointname: str
         @rtype: List of float
@@ -791,19 +815,20 @@ class HrpsysConfigurator:
                   [a31, a32, a33]]
         '''
         pose = self.getReferencePose(lname)
-        return [pose[0:3],pose[4:7],pose[8:11]]
+        return [pose[0:3], pose[4:7], pose[8:11]]
 
-    def getReferenceRPY(self,lname):
+    def getReferenceRPY(self, lname):
         '''
-        This seturns reference(commanded) value, and getCurrentRPY returns current(actual) value
+        This seturns reference(commanded) value,
+        and getCurrentRPY returns current(actual) value
 
         @type jointname: str
         @rtype: List of float
         @return: List of orientation in rpy form about the specified joint.
         '''
-        return euler_from_matrix(self.getReferenceRotation(lname),'sxyz')
+        return euler_from_matrix(self.getReferenceRotation(lname), 'sxyz')
 
-    def setTargetPose(self, gname, pos, rpy, tm, frame_name=None) :
+    def setTargetPose(self, gname, pos, rpy, tm, frame_name=None):
         '''
         Set absolute pose to a joint.
         All d* arguments are in meter.
@@ -814,7 +839,7 @@ class HrpsysConfigurator:
         @rtype: bool
         '''
         print gname, frame_name, pos, rpy, tm
-        if frame_name :
+        if frame_name:
             gname = gname + ':' + frame_name
         result = self.seq_svc.setTargetPose(gname, pos, rpy, tm)
         if not result:
@@ -822,7 +847,7 @@ class HrpsysConfigurator:
                    + "Currently, returning IK result error\n"
                    + "(like the one in https://github.com/start-jsk/rtmros_hironx/issues/103)"
                    + " is not implemented. Patch is welcomed.")
-        return result 
+        return result
 
     def setTargetPoseRelative(self, gname, eename, dx=0, dy=0, dz=0,
 dr=0, dp=0, dw=0, tm=10, wait=True):
@@ -835,7 +860,7 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
         @rtype: bool
         '''
         self.waitInterpolationOfGroup(gname)
-        #curPose = self.getCurrentPose(eename)
+        # curPose = self.getCurrentPose(eename)
         posRef = None
         rpyRef = None
         ret, tds = self.fk_svc.getCurrentPose(eename)
@@ -860,7 +885,7 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
 
     def saveLog(self, fname='sample'):
         self.log_svc.save(fname)
-        print self.configurator_name, "saved data to ",fname
+        print self.configurator_name, "saved data to ", fname
 
     def clearLog(self):
         self.log_svc.clear()
@@ -878,16 +903,16 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
                      robot's implementation.
         @return: What RobotHardware.writeDigitalOutput returns (TODO: document)
         '''
-        doutBitLength = self.lengthDigitalOutput()*8
+        doutBitLength = self.lengthDigitalOutput() * 8
         if len(dout) < doutBitLength:
-            for i in range(doutBitLength-len(dout)):
+            for i in range(doutBitLength - len(dout)):
                 dout.append(0)
         outStr = ''
         for i in range(0, len(dout), 8):
             oneChar = 0
             for j in range(8):
-                if dout[i+j]:
-                    oneChar += 1<<j
+                if dout[i + j]:
+                    oneChar += 1 << j
             outStr = outStr + chr(oneChar)
 
         # octet sequences are mapped to strings in omniorbpy
@@ -902,11 +927,11 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
         @param mask: List of masking bits. Length depends on that of dout.
         @return: What RobotHardware.writeDigitalOutput returns (TODO: document)
         '''
-        doutBitLength = self.lengthDigitalOutput()*8
+        doutBitLength = self.lengthDigitalOutput() * 8
         if len(dout) < doutBitLength and \
                len(mask) < doutBitLength and \
                len(dout) == len(mask):
-            for i in range(doutBitLength-len(dout)):
+            for i in range(doutBitLength - len(dout)):
                 dout.append(0)
                 mask.append(0)
         outStr = ''
@@ -915,16 +940,15 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
             oneChar = 0
             oneMask = 0
             for j in range(8):
-                if dout[i+j]:
-                    oneChar += 1<<j
-                if mask[i+j]:
-                    oneMask += 1<<j
+                if dout[i + j]:
+                    oneChar += 1 << j
+                if mask[i + j]:
+                    oneMask += 1 << j
             outStr = outStr + chr(oneChar)
             outMsk = outMsk + chr(oneMask)
 
         # octet sequences are mapped to strings in omniorbpy
         return self.rh_svc.writeDigitalOutputWithMask(outStr, outMsk)
-
 
     def readDigitalInput(self):
         '''
@@ -934,7 +958,7 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
         retList = []
         for item in din:
             for i in range(8):
-                if (ord(item)>>i)&1:
+                if (ord(item) >> i) & 1:
                     retList.append(1)
                 else:
                     retList.append(0)
@@ -942,7 +966,8 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
 
     def getActualState(self):
         '''
-        @return: This returns actual states of ther robot, which is defined in RobotHardware.idl
+        @return: This returns actual states of ther robot, which is defined in
+        RobotHardware.idl
         (https://hrpsys-base.googlecode.com/svn/trunk/idl/RobotHardwareService.idl)
             /**
              * @brief status of the robot
@@ -1072,7 +1097,6 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
         except:
             print self.configurator_name, 'exception occured'
 
-
         return 1
 
     def servoOff(self, jname='all', wait=True):
@@ -1177,9 +1201,9 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
         if self.sc_svc:
             self.sc_svc.servoOn()
 
-    ###
-    ### initialize
-    ###
+    # ##
+    # ## initialize
+    # ##
 
     def init(self, robotname="Robot", url=""):
         '''
@@ -1223,12 +1247,9 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
 
 if __name__ == '__main__':
     hcf = HrpsysConfigurator()
-    if len(sys.argv) > 2 :
+    if len(sys.argv) > 2:
         hcf.init(sys.argv[1], sys.argv[2])
-    elif len(sys.argv) > 1 :
+    elif len(sys.argv) > 1:
         hcf.init(sys.argv[1])
-    else :
+    else:
         hcf.init()
-
-
-
