@@ -1034,7 +1034,7 @@ class HrpsysConfigurator(object):
         '''
         self.sh_svc.goActual()
 
-    def setJointAngle(self, jname, angle, tm):
+    def setJointAngle(self, jname, angle, tm, wait=True):
         '''!@brief
         Set angle to the given joint.
         \verbatim
@@ -1053,6 +1053,8 @@ class HrpsysConfigurator(object):
         @rtype bool
         @return False upon any problem during execution.
         '''
+        if wait:
+            self.waitInterpolation()
         radangle = angle / 180.0 * math.pi
         return self.seq_svc.setJointAngle(jname, radangle, tm)
 
@@ -1422,7 +1424,7 @@ class HrpsysConfigurator(object):
             raise RuntimeError("need to specify joint name")
         return euler_from_matrix(self.getReferenceRotation(lname, frame_name), 'sxyz')
 
-    def setTargetPose(self, gname, pos, rpy, tm, frame_name=None):
+    def setTargetPose(self, gname, pos, rpy, tm, frame_name=None, wait=True):
         '''!@brief
         Move the end-effector to the given absolute pose.
         All d* arguments are in meter.
@@ -1447,7 +1449,7 @@ class HrpsysConfigurator(object):
         return result
 
     def setTargetPoseRelative(self, gname, eename, dx=0, dy=0, dz=0,
-dr=0, dp=0, dw=0, tm=10, wait=True):
+                              dr=0, dp=0, dw=0, tm=10, wait=True):
         '''!@brief
         Move the end-effector's location relative to its current pose.
 
