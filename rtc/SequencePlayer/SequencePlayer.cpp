@@ -438,6 +438,13 @@ bool SequencePlayer::setTargetPose(const char* gname, const double *xyz, const d
     rot(1, 0) = rpy[3];    rot(1, 1) = rpy[4];    rot(1, 2) = rpy[5];
     rot(2, 0) = rpy[6];    rot(2, 1) = rpy[7];    rot(2, 2) = rpy[8];
 
+    std::vector<int> indices;
+    if(!m_seq->getJointGroup(gname, indices)) {
+        std::cerr << "[setTargetPose] Could not find joint group " << gname << std::endl;
+        return false;
+    }
+    start_av.resize(indices.size());
+    end_av.resize(indices.size());
     string target_name = m_robot->joint(indices[indices.size() - 1])->name;
     hrp::Matrix33 end_R = m_robot->link(target_name)->calcRfromAttitude(rot);
 
@@ -451,6 +458,13 @@ bool SequencePlayer::setTargetPoseMatrix(const char* gname, const double *xyz, c
     }
     // ik params
     hrp::Vector3 end_p(xyz[0], xyz[1], xyz[2]);
+    std::vector<int> indices;
+    if(!m_seq->getJointGroup(gname, indices)) {
+        std::cerr << "[setTargetPose] Could not find joint group " << gname << std::endl;
+        return false;
+    }
+    start_av.resize(indices.size());
+    end_av.resize(indices.size());
     string target_name = m_robot->joint(indices[indices.size() - 1])->name;
     hrp::Matrix33 end_R = m_robot->link(target_name)->calcRfromAttitude(hrp::rotFromRpy(rpy[0], rpy[1], rpy[2]));
 
