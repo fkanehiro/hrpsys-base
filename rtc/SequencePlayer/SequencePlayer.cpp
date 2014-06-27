@@ -467,7 +467,7 @@ bool SequencePlayer::setTargetPose(const char* gname, const double *xyz, const d
     return setTargetPoseWorker(gname, end_p, end_R, tm, frame_name);
 }
 
-bool SequencePlayer::setTargetPoseWorker(const char* gname, const hrp::Vector3 end_p, const hrp::Matrix33 end_R, double tm, const char* frame_name)
+bool SequencePlayer::setTargetPoseWorker(const char* gname, hrp::Vector3 end_p, hrp::Matrix33 end_R, double tm, const char* frame_name)
 {
     if(m_debugLevel > 0) {
         std::cerr << __PRETTY_FUNCTION__ << std::endl;
