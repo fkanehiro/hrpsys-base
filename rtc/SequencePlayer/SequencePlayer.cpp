@@ -426,17 +426,17 @@ bool SequencePlayer::setWrenches(const double *wrenches, double tm)
     return true;
 }
 
-bool SequencePlayer::setTargetPose(const char* gname, const double *xyz, const double *rpy, double tm, const char* frame_name)
+bool SequencePlayer::setTargetPoseMatrix(const char* gname, const double *xyz, const double *rot, double tm, const char* frame_name)
 {
     if(m_debugLevel > 0) {
         std::cerr << __PRETTY_FUNCTION__ << std::endl;
     }
     // ik params
     hrp::Vector3 end_p(xyz[0], xyz[1], xyz[2]);
-    hrp::Matrix33 rot;
-    rot(0, 0) = rpy[0];    rot(0, 1) = rpy[1];    rot(0, 2) = rpy[2];
-    rot(1, 0) = rpy[3];    rot(1, 1) = rpy[4];    rot(1, 2) = rpy[5];
-    rot(2, 0) = rpy[6];    rot(2, 1) = rpy[7];    rot(2, 2) = rpy[8];
+    hrp::Matrix33 rot33;
+    rot33(0, 0) = rot[0];    rot33(0, 1) = rot[1];    rot33(0, 2) = rot[2];
+    rot33(1, 0) = rot[3];    rot33(1, 1) = rot[4];    rot33(1, 2) = rot[5];
+    rot33(2, 0) = rot[6];    rot33(2, 1) = rot[7];    rot33(2, 2) = rot[8];
 
     std::vector<int> indices;
     if(!m_seq->getJointGroup(gname, indices)) {
@@ -444,12 +444,12 @@ bool SequencePlayer::setTargetPose(const char* gname, const double *xyz, const d
         return false;
     }
     string target_name = m_robot->joint(indices[indices.size() - 1])->name;
-    hrp::Matrix33 end_R = m_robot->link(target_name)->calcRfromAttitude(rot);
+    hrp::Matrix33 end_R = m_robot->link(target_name)->calcRfromAttitude(rot33);
 
     return setTargetPoseWorker(gname, end_p, end_R, tm, frame_name);
 }
 
-bool SequencePlayer::setTargetPoseMatrix(const char* gname, const double *xyz, const double *rot, double tm, const char* frame_name)
+bool SequencePlayer::setTargetPose(const char* gname, const double *xyz, const double *rpy, double tm, const char* frame_name)
 {
     if(m_debugLevel > 0) {
         std::cerr << __PRETTY_FUNCTION__ << std::endl;
