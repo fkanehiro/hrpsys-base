@@ -108,7 +108,7 @@ public:
     bool setZmp(const double *zmp, double tm);
     bool setTargetPose(const char* gname, const double *xyz, const double *rpy, double tm, const char* frame_name);
     bool setTargetPoseMatrix(const char* gname, const double *xyz, const double *rot, double tm, const char* frame_name);
-    bool setTargetPoseWorker(const char* gname, const hrp::Vector3 end_p, const hrp::Matrix33 end_R, double tm, const char* frame_name);
+    bool setTargetPoseWorker(const char* gname, hrp::Vector3 end_p, hrp::Matrix33 end_R, double tm, const char* frame_name);
     bool setWrenches(const double *wrenches, double tm);
     void loadPattern(const char *basename, double time);
     void playPattern(const OpenHRP::dSequenceSequence& pos, const OpenHRP::dSequenceSequence& rpy, const OpenHRP::dSequenceSequence& zmp, const OpenHRP::dSequence& tm);

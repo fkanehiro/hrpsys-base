@@ -1,3 +1,5 @@
+#include <iostream>
+
 #include "SequencePlayerService_impl.h"
 #include "SequencePlayer.h"
 #include <hrpModel/Body.h>
@@ -96,7 +98,7 @@ CORBA::Boolean SequencePlayerService_impl::setTargetPoseMatrix(const char* gname
         ((char *)gname)[frame_name - gname] = '\0'; // cut frame_name, gname[strpos(':')] = 0x00
         frame_name++; // skip ":"
     }
-    return m_player->setTargetPose(gname, xyz.get_buffer(), rot.get_buffer(), tm, frame_name);
+    return m_player->setTargetPoseMatrix(gname, xyz.get_buffer(), rot.get_buffer(), tm, frame_name);
 }
 
 CORBA::Boolean SequencePlayerService_impl::isEmpty()

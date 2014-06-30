@@ -431,9 +431,11 @@ bool SequencePlayer::setTargetPoseMatrix(const char* gname, const double *xyz, c
     if(m_debugLevel > 0) {
         std::cerr << __PRETTY_FUNCTION__ << std::endl;
     }
+
     // ik params
     hrp::Vector3 end_p(xyz[0], xyz[1], xyz[2]);
     hrp::Matrix33 rot33;
+
     rot33(0, 0) = rot[0];    rot33(0, 1) = rot[1];    rot33(0, 2) = rot[2];
     rot33(1, 0) = rot[3];    rot33(1, 1) = rot[4];    rot33(1, 2) = rot[5];
     rot33(2, 0) = rot[6];    rot33(2, 1) = rot[7];    rot33(2, 2) = rot[8];
@@ -478,7 +480,7 @@ bool SequencePlayer::setTargetPoseWorker(const char* gname, hrp::Vector3 end_p, 
     hrp::dvector start_av, end_av;
     std::vector<hrp::dvector> avs;
     if(!m_seq->getJointGroup(gname, indices)) {
-        std::cerr << "[setTargetPose] Could not find joint group " << gname << std::endl;
+        std::cerr << "[setTargetPoseWorker] Could not find joint group " << gname << std::endl;
         return false;
     }
     start_av.resize(indices.size());
@@ -486,7 +488,7 @@ bool SequencePlayer::setTargetPoseWorker(const char* gname, hrp::Vector3 end_p, 
 
     //std::cerr << std::endl;
     if(!m_robot->joint(indices[0])->parent) {
-        std::cerr << "[setTargetPose] " << m_robot->joint(indices[0])->name << " does not have parent" << std::endl;
+        std::cerr << "[setTargetPoseWorker] " << m_robot->joint(indices[0])->name << " does not have parent " << std::endl;
         return false;
     }
     string base_parent_name = m_robot->joint(indices[0])->parent->name;
@@ -514,7 +516,7 @@ bool SequencePlayer::setTargetPoseWorker(const char* gname, hrp::Vector3 end_p, 
 
     // change start and end must be relative to the frame_name
     if((frame_name != NULL) && (!m_robot->link(frame_name))) {
-        std::cerr << "[setTargetPose] Could not find frame_name " << frame_name << std::endl;
+        std::cerr << "[setTargetPoseWorker] Could not find frame_name " << frame_name << std::endl;
         return false;
     } else if(frame_name != NULL) {
         hrp::Vector3 frame_p(m_robot->link(frame_name)->p);
@@ -546,12 +548,12 @@ bool SequencePlayer::setTargetPoseWorker(const char* gname, hrp::Vector3 end_p, 
 
         if(m_debugLevel > 0) {
             // for debug
-            std::cerr << "target pos/rot : " << i << "/" << a << " : "
-                      << p[0] << " " << p[1] << " " << p[2] << ","
+            std::cerr << "target pos / rot : " << i << " / " << a << " : "
+                      << p[0] << " " << p[1] << " " << p[2] << ", "
                       << omega[0] << " " << omega[1] << " " << omega[2] << std::endl;
         }
         if(!ret) {
-            std::cerr << "[setTargetPose] IK failed" << std::endl;
+            std::cerr << "[setTargetPoseWorker] IK failed " << std::endl;
             return false;
         }
         v_pos[i] = (const double *)malloc(sizeof(double) * manip->numJoints());
@@ -564,7 +566,7 @@ bool SequencePlayer::setTargetPoseWorker(const char* gname, hrp::Vector3 end_p, 
     if(m_debugLevel > 0) {
         // for debug
         for(int i = 0; i < len; i++) {
-            std::cerr << v_tm[i] << ":";
+            std::cerr << v_tm[i] << " : ";
             for(int j = 0; j < start_av.size(); j++) {
                 std::cerr << v_pos[i][j] << " ";
             }
@@ -596,12 +598,12 @@ void SequencePlayer::loadPattern(const char *basename, double tm)
 bool SequencePlayer::setInitialState(double tm)
 {
     if(m_debugLevel > 0) {
-        std::cerr << __PRETTY_FUNCTION__ << "m_seq-isEmpty() " << m_seq->isEmpty() << ", m_Init.data.length() " << m_qInit.data.length() << std::endl;
+        std::cerr << __PRETTY_FUNCTION__ << "m_seq - isEmpty() " << m_seq->isEmpty() << ", m_Init.data.length() " << m_qInit.data.length() << std::endl;
     }
     if(!m_seq->isEmpty()) return true;
 
     if(m_qInit.data.length() == 0) {
-        std::cerr << "can't determine initial posture" << std::endl;
+        std::cerr << "can 't determine initial posture" << std::endl;
         return false;
     }else{
         m_seq->setJointAngles(m_qInit.data.get_buffer(), tm);
