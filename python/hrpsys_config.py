@@ -877,6 +877,42 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
             return ret
         return False
 
+
+    def setTargetPoseMatrix(self, gname, pos, rot, tm, frame_name=None):
+        '''
+        Move angles of a joint group to a fixed absolute posture
+        Units for pos are in meters
+
+        @param gname: Name of joint group
+        @type pos: float
+        @type rot: list of float or numpy.matrix
+        '''
+        if type(rot) == numpy.matrixlib.defmatrix.matrix:
+            rot = list(rot.flat)
+
+        return self.seq_svc.setTargetPoseMatrix(gname, pos, rot, tm, frame_name)
+
+
+    def setTargetPoseMatrixRelative(self, gname, dx=0.0, dy=0.0, dz=0.0,
+                                    drot=numpy.matrix([[1., .0, .0],
+                                                       [.0, 1., .0],
+                                                       [.0, .0, 1.]])
+                                    tm, frame_name):
+        self.waitInterpolationOfGroup(gname)
+        ret, tds = self.fk_svc.getCurrentPose(eename)
+        if ret:
+            posRef = numpy.array([tds.data[3], tds.data[7], tds.data[11]])
+            rotRef = numpy.matrix([tds.data[0:3], tds.data[4:7], tds.data[8:11]])
+            posRef += [dx, dy, dz]
+            rotRef = rotRef * drot
+            # print posRef, rotRef
+            ret = self.setTargetPoseMatrix(gname, list(posRef), rotRef, tm)
+            if ret and wait:
+                self.waitInterpolationOfGroup(gname)
+            return ret
+        return False
+
+
     def clear(self):
         self.seq_svc.clear()
 
