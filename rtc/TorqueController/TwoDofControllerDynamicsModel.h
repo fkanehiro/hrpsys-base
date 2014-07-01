@@ -27,8 +27,8 @@ public:
 private:
   double alpha, beta, ki, tc, dt; // alpha, beta: completing square, ki: Inertia, tc: time constant, dt: control cycle
   double current_time;
-  Integrator integrate_exp_sin_current;
-  std::vector<double> exp_sin;
+  Integrator integrate_exp_sinh_current;
+  std::vector<double> exp_sinh;
   std::vector<Convolution> convolutions;
 };
 
