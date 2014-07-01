@@ -340,7 +340,7 @@ void AutoBalancer::robotstateOrg2qRef()
     coordinates tmp_fix_coords;
     if ( gg_is_walking ) {
       gg->set_default_zmp_offsets(default_zmp_offsets);
-      gg_solved = gg->proc_one_tick(rats::gait_generator::CYCLOID);
+      gg_solved = gg->proc_one_tick();
       coordinates sp_coords(gg->get_support_leg_coords().pos, gg->get_support_leg_coords().rot);
       coordinates sw_coords(gg->get_swing_leg_coords().pos, gg->get_swing_leg_coords().rot);
       coordinates tmpc;
@@ -578,7 +578,7 @@ void AutoBalancer::startWalking ()
   ikp[init_support_leg].getTargetEndCoords(spc);
   ikp[init_swing_leg].getTargetEndCoords(swc);
   gg->initialize_gait_parameter(cog, spc, swc);
-  while ( !gg->proc_one_tick(rats::gait_generator::CYCLOID) );
+  while ( !gg->proc_one_tick() );
   gg_is_walking = gg_solved = true;
   gg_ending = false;
 }
@@ -711,6 +711,13 @@ bool AutoBalancer::setGaitGeneratorParam(const OpenHRP::AutoBalancerService::Gai
   gg->set_default_step_time(i_param.default_step_time);
   gg->set_default_step_height(i_param.default_step_height);
   gg->set_default_double_support_ratio(i_param.default_double_support_ratio);
+  if (i_param.default_orbit_type == OpenHRP::AutoBalancerService::SHUFFLING) {
+    gg->set_default_orbit_type(gait_generator::SHUFFLING);
+  } else if (i_param.default_orbit_type == OpenHRP::AutoBalancerService::CYCLOID) {
+    gg->set_default_orbit_type(gait_generator::CYCLOID);
+  } else if (i_param.default_orbit_type == OpenHRP::AutoBalancerService::RECTANGLE) {
+    gg->set_default_orbit_type(gait_generator::RECTANGLE);
+  }
   return true;
 };
 
@@ -720,6 +727,13 @@ bool AutoBalancer::getGaitGeneratorParam(OpenHRP::AutoBalancerService::GaitGener
   i_param.default_step_time = gg->get_default_step_time();
   i_param.default_step_height = gg->get_default_step_height();
   i_param.default_double_support_ratio = gg->get_default_double_support_ratio();
+  if (gg->get_default_orbit_type() == gait_generator::SHUFFLING) {
+    i_param.default_orbit_type = OpenHRP::AutoBalancerService::SHUFFLING;
+  } else if (gg->get_default_orbit_type() == gait_generator::CYCLOID) {
+    i_param.default_orbit_type = OpenHRP::AutoBalancerService::CYCLOID;
+  } else if (gg->get_default_orbit_type() == gait_generator::RECTANGLE) {
+    i_param.default_orbit_type = OpenHRP::AutoBalancerService::RECTANGLE;
+  }
   return true;
 };
 
