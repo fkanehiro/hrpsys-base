@@ -9,7 +9,7 @@
  */
 
 #include "MotorTorqueController.h"
-#include "util/Hrpsys.h"
+// #include "util/Hrpsys.h"
 #include <iostream>
 #include <cmath>
 
@@ -17,17 +17,23 @@
 #define MAX_TRANSITION_COUNT (TRANSITION_TIME/m_dt)
 #define TORQUE_MARGIN 10.0 // [Nm]
 
+MotorTorqueController::MotorTorqueController()
+{
+  // default constructor: _jname = "", _ke = _tc = _dt = 0.0
+  setupController(0.0, 0.0, 0.0);
+  setupControllerCommon("", 0.0);
+}
+
 MotorTorqueController::MotorTorqueController(std::string _jname, double _ke, double _tc, double _dt)
 {
-  m_joint_name = _jname;
-  m_dt = _dt;
-  m_command_tauRef = 0.0;
-  m_actual_tauRef = 0.0;
   setupController(_ke, _tc, _dt);
-  m_normalController.state = INACTIVE;
-  resetMotorControllerVariables(m_normalController);
-  m_emergencyController.state = INACTIVE;
-  resetMotorControllerVariables(m_emergencyController);
+  setupControllerCommon(_jname, _dt);
+}
+
+MotorTorqueController::MotorTorqueController(std::string _jname, double _ke, double _kd, double _tc, double _dt)
+{
+  setupController(_ke, _kd, _tc, _dt);
+  setupControllerCommon(_jname, _dt);
 }
 
 MotorTorqueController::~MotorTorqueController(void)
@@ -36,11 +42,14 @@ MotorTorqueController::~MotorTorqueController(void)
 
 void MotorTorqueController::setupController(double _ke, double _tc, double _dt)
 {
-  m_normalController.controller.setup(_ke, _tc, _dt);
-  m_normalController.controller.reset();
+  m_normalController.setupTwoDofController(_ke, _tc, _dt);
+  m_emergencyController.setupTwoDofController(_ke, _tc, _dt);
+}
 
-  m_emergencyController.controller.setup(_ke, _tc, _dt);
-  m_emergencyController.controller.reset();  
+void MotorTorqueController::setupController(double _ke, double _kd, double _tc, double _dt)
+{
+  m_normalController.setupTwoDofControllerPDModel(_ke, _kd, _tc, _dt);
+  m_emergencyController.setupTwoDofControllerPDModel(_ke, _kd, _tc, _dt);
 }
 
 bool MotorTorqueController::activate(void)
@@ -48,7 +57,7 @@ bool MotorTorqueController::activate(void)
   bool retval = false;
   if (m_normalController.state == INACTIVE) {
     resetMotorControllerVariables(m_normalController);
-    m_normalController.controller.reset();
+    m_normalController.controller->reset();
     m_normalController.state = ACTIVE;
     retval = true;
   } else {
@@ -85,7 +94,7 @@ double MotorTorqueController::execute (double _tau, double _tauMax)
         m_emergencyController.transition_dq = m_normalController.getMotorControllerDq();
       }
       m_emergencyController.dq = 0;
-      m_emergencyController.controller.reset();
+      m_emergencyController.controller->reset();
       m_emergencyController.state = ACTIVE;
     }
   } else {
@@ -146,6 +155,18 @@ void MotorTorqueController::printMotorControllerVariables(void)
 }
 
 // internal functions
+void MotorTorqueController::setupControllerCommon(std::string _jname, double _dt)
+{
+  m_joint_name = _jname;
+  m_dt = _dt;
+  m_command_tauRef = 0.0;
+  m_actual_tauRef = 0.0;
+  m_normalController.state = INACTIVE;
+  resetMotorControllerVariables(m_normalController);
+  m_emergencyController.state = INACTIVE;
+  resetMotorControllerVariables(m_emergencyController);
+}
+
 void MotorTorqueController::resetMotorControllerVariables(MotorTorqueController::MotorController& _mc)
 {
   _mc.transition_count = 0;
@@ -158,7 +179,7 @@ void MotorTorqueController::prepareStop(MotorTorqueController::MotorController &
 {
   _mc.recovery_dq = _mc.getMotorControllerDq(); 
   _mc.transition_count = MAX_TRANSITION_COUNT;
-  _mc.dq = 0; // dq must be reseted after recovery_dq setting(used in getMootroControllerDq)
+  _mc.dq = 0; // dq must be reseted after recovery_dq setting(used in getMotoroControllerDq)
   _mc.state = STOP;
   return;
 }
@@ -167,7 +188,7 @@ void MotorTorqueController::updateController(double _tau, double _tauRef, MotorT
 {
   switch (_mc.state) {
   case ACTIVE:
-    _mc.dq += _mc.controller.update(_tau, _tauRef);
+    _mc.dq += _mc.controller->update(_tau, _tauRef);
     break;
   case STOP:
     if (_mc.transition_count < 0){
@@ -180,7 +201,7 @@ void MotorTorqueController::updateController(double _tau, double _tauRef, MotorT
     _mc.transition_count--;
     break;
   default:
-    _mc.controller.reset();
+    _mc.controller->reset();
     resetMotorControllerVariables(_mc);
     break;
   }
@@ -188,6 +209,32 @@ void MotorTorqueController::updateController(double _tau, double _tauRef, MotorT
 }
 
 // for MotorController
+MotorTorqueController::MotorController::MotorController()
+{
+  state = INACTIVE;
+  transition_count = 0;
+  dq = 0;
+  transition_dq = 0;
+  recovery_dq = 0;
+  setupTwoDofController(0.0, 0.0, 0.0);
+}
+
+MotorTorqueController::MotorController::~MotorController()
+{
+}
+
+void MotorTorqueController::MotorController::setupTwoDofController(double _ke, double _tc, double _dt)
+{
+  controller.reset(new TwoDofController(_ke, _tc, _dt));
+  controller->reset();
+}
+
+void MotorTorqueController::MotorController::setupTwoDofControllerPDModel(double _ke, double _kd, double _tc, double _dt)
+{
+  controller.reset(new TwoDofControllerPDModel(_ke, _kd, _tc, _dt));
+  controller->reset();
+}
+
 double MotorTorqueController::MotorController::getMotorControllerDq(void)
 {
   double ret_dq;
