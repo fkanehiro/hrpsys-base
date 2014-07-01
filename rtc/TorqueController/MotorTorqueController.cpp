@@ -12,6 +12,7 @@
 // #include "util/Hrpsys.h"
 #include <iostream>
 #include <cmath>
+#include <boost/math/special_functions/sign.hpp>
 
 #define TRANSITION_TIME 2.0 // [sec]
 #define MAX_TRANSITION_COUNT (TRANSITION_TIME/m_dt)
@@ -114,7 +115,7 @@ double MotorTorqueController::execute (double _tau, double _tauMax)
   updateController(_tau, limitedTauRef, m_normalController);
   dq = m_normalController.getMotorControllerDq();
   if (m_emergencyController.state != INACTIVE) { // overwrite by tauMax control when emergency mode
-    limitedTauRef = copysign(_tauMax, _tau);
+    limitedTauRef = boost::math::copysign(_tauMax, _tau);
     updateController(_tau, limitedTauRef, m_emergencyController);
     dq = m_emergencyController.getMotorControllerDq();
   }
