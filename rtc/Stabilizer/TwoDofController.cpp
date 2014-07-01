@@ -11,20 +11,27 @@
 #include "TwoDofController.h"
 #include <iostream>
 
-TwoDofController::TwoDofController(double _ke, double _tc, double _dt) {
-  setup(_ke, _tc, _dt);
-  reset();
+TwoDofController::TwoDofController(double _ke, double _tc, double _dt, unsigned int _range) {
+  ke = _ke; tc = _tc; dt = _dt;
+  integrator = Integrator(_dt, _range);
+  integrator.reset();
 }
 
 TwoDofController::~TwoDofController() {
 }
 
-void TwoDofController::reset() {
-  integrated_diff = 0;
+void TwoDofController::setup() {
+  ke = 0; tc = 0; dt = 0;
+  integrator = Integrator(0, 0);
 }
 
-void TwoDofController::setup(double _ke, double _tc, double _dt) {
+void TwoDofController::setup(double _ke, double _tc, double _dt, unsigned int _range) {
   ke = _ke; tc = _tc; dt = _dt;
+  integrator = Integrator(_dt, _range);
+}
+
+void TwoDofController::reset() {
+  integrator.reset();
 }
 
 double TwoDofController::update (double _x, double _xd) {
@@ -42,11 +49,12 @@ double TwoDofController::update (double _x, double _xd) {
   }
   
   // integrate (xd - x)
-  integrated_diff += (_xd - _x) * dt;
+  // integrated_diff += (_xd - _x) * dt;
+  integrator.update(_xd - _x);
 
   // 2 dof controller
-  velocity = (-_x + (_xd - _x) + (integrated_diff / tc)) / (-ke * tc);
+  velocity = (-_x + (_xd - _x) + (integrator.calculate() / tc)) / (-ke * tc);
 
-  return velocity * dt;
+  return -velocity * dt;
   
 }
