@@ -38,7 +38,7 @@ MotorTorqueController::MotorTorqueController(std::string _jname, double _ke, dou
 
 MotorTorqueController::MotorTorqueController(std::string _jname, double _alpha, double _beta, double _ki, double _tc, double _dt)
 {
-  setupController(_alpha, _beta, _ki, _dt);
+  setupController(_alpha, _beta, _ki, _tc, _dt);
   setupControllerCommon(_jname, _dt);
 }
 
