@@ -26,6 +26,12 @@ module OpenHRP
       BOTH
     };
 
+    enum OrbitType {
+      SHUFFLING,
+      CYCLOID,
+      RECTANGLE
+    };
+
     struct FootstepParam
     {
       Footstep rleg_coords;
@@ -47,6 +53,7 @@ module OpenHRP
       double default_step_height; // step height [m]
       double default_double_support_ratio; // ratio of double support period. ratio is included in (0, 1)
       sequence<double, 3> stride_parameter; // stride limitation of x[m], y[m], and theta[deg]
+      OrbitType default_orbit_type;
     };
 
     struct AutoBalancerParam // parameters for AutoBalancer

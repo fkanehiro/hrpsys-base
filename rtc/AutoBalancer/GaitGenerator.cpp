@@ -72,10 +72,9 @@ namespace rats
 
   /* member function implementation for leg_coords_generator */
   void gait_generator::leg_coords_generator::calc_current_swing_leg_coords (coordinates& ret,
-                                                                            const double ratio, const double step_height,
-                                                                            const orbit_type type)
+                                                                            const double ratio, const double step_height)
   {
-    switch (type) {
+    switch (default_orbit_type) {
     case SHUFFLING:
       mid_coords(ret, ratio, swing_leg_src_coords, swing_leg_dst_coords);
       break;
@@ -139,7 +138,7 @@ namespace rats
     rdtg.get_trajectory_point(ret.pos, hrp::Vector3(start.pos), hrp::Vector3(goal.pos), height);
   };
 
-  void gait_generator::leg_coords_generator::update_leg_coords (const std::vector<step_node>& fnl, const double default_double_support_ratio, const size_t one_step_len, const orbit_type type, const bool force_height_zero)
+  void gait_generator::leg_coords_generator::update_leg_coords (const std::vector<step_node>& fnl, const double default_double_support_ratio, const size_t one_step_len, const bool force_height_zero)
   {
     swing_ratio = calc_ratio_from_double_support_ratio(default_double_support_ratio, one_step_len);
     rot_ratio = 1.0 - (double)gp_count / one_step_len;
@@ -155,7 +154,7 @@ namespace rats
       support_leg_coords = fnl[fnl.size()-2].worldcoords;
       support_leg = fnl[fnl.size()-2].l_r;
     }
-    calc_current_swing_leg_coords(swing_leg_coords, swing_ratio, current_step_height, type);
+    calc_current_swing_leg_coords(swing_leg_coords, swing_ratio, current_step_height);
     if ( 1 <= gp_count ) {
       gp_count--;
     } else {
@@ -197,7 +196,7 @@ namespace rats
     emergency_flg = IDLING;
   };
 
-  bool gait_generator::proc_one_tick (const orbit_type type)
+  bool gait_generator::proc_one_tick ()
   {
     hrp::Vector3 rzmp;
     bool refzmp_exist_p = rg.get_current_refzmp(rzmp, default_double_support_ratio, one_step_len);
@@ -231,7 +230,7 @@ namespace rats
 
     /* update swing_leg_coords, support_leg_coords */
     if ( solved ) {
-      lcg.update_leg_coords(footstep_node_list, default_double_support_ratio, one_step_len, type, (emergency_flg == STOPPING));
+      lcg.update_leg_coords(footstep_node_list, default_double_support_ratio, one_step_len, (emergency_flg == STOPPING));
     }
     return solved;
   };

@@ -110,6 +110,7 @@ class Stabilizer
   bool calcZMP(hrp::Vector3& ret_zmp);
   void calcRUNST();
   void calcTPCC();
+  void getParameter(OpenHRP::StabilizerService::stParam& i_stp);
   void setParameter(const OpenHRP::StabilizerService::stParam& i_stp);
   void waitSTTransition();
   // funcitons for calc final torque output

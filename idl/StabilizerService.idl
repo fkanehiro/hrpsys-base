@@ -8,6 +8,7 @@ module OpenHRP
   {
     typedef double DblArray2[2];
 
+    // Stabilizer Parameters
     struct stParam {
       // for TPCC
       DblArray2 k_tpcc_p;
@@ -25,8 +26,32 @@ module OpenHRP
       double d_run_y;
     };
 
+    /**
+     * @brief Get Stabilizer parameters.
+     * @param i_param is output parameters
+     * @return true if set successfully, false otherwise
+     */
+    void getParameter(out stParam i_param);
+
+    /**
+     * @brief Set Stabilizer parameters.
+     * @param i_param is input parameters
+     * @return true if set successfully, false otherwise
+     */
     void setParameter(in stParam i_param);
+
+    /**
+     * @brief Start Stabilizer mode.
+     * @param
+     * @return
+     */
     void startStabilizer();
+
+    /**
+     * @brief Sop Stabilizer mode.
+     * @param
+     * @return
+     */
     void stopStabilizer();
     boolean dummy();
   };
