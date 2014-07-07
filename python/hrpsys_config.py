@@ -556,6 +556,12 @@ class HrpsysConfigurator:
             self.connectLoggerPort(self.sh, 'basePosOut')
             self.connectLoggerPort(self.sh, 'baseRpyOut')
             self.connectLoggerPort(self.sh, 'zmpOut')
+        if self.abc != None:
+            self.connectLoggerPort(self.abc, 'zmpRef')
+            self.connectLoggerPort(self.abc, 'baseTformOut')
+            self.connectLoggerPort(self.abc, 'q')
+        if self.st != None:
+            self.connectLoggerPort(self.st, 'zmp')
         if self.rh != None:
             self.connectLoggerPort(self.rh, 'emergencySignal',
                                    'emergencySignal')
