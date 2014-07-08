@@ -14,6 +14,7 @@
 #include <boost/shared_ptr.hpp>
 #include "../Stabilizer/TwoDofController.h"
 #include "TwoDofControllerPDModel.h"
+#include "TwoDofControllerDynamicsModel.h"
 
 // </rtc-template>
 
@@ -28,10 +29,12 @@ public:
   MotorTorqueController();
   MotorTorqueController(std::string _jname, double ke, double tc, double dt);
   MotorTorqueController(std::string _jname, double ke, double kd, double tc, double dt);
+  MotorTorqueController(std::string _jname, double _alpha, double _beta, double _ki, double _tc, double _dt);
   ~MotorTorqueController(void);
 
   void setupController(double _ke, double _tc, double _dt);
   void setupController(double _ke, double _kd, double _tc, double _dt);
+  void setupController(double _alpha, double _beta, double _ki, double _tc, double _dt);
   bool activate(void); // set state of torque controller to ACTIVE
   bool deactivate(void); // set state of torque controller to STOP -> INACTIVE
   bool setReferenceTorque(double _tauRef); // set reference torque (does not activate controller)
@@ -58,6 +61,7 @@ private:
     double recovery_dq; // last difference of joint angle from qRef (dq + transition_dq) when state was changed to STOP
     void setupTwoDofController(double _ke, double _tc, double _dt);
     void setupTwoDofControllerPDModel(double _ke, double _kd, double _tc, double _dt);
+    void setupTwoDofControllerDynamicsModel(double _alpha, double _beta, double _ki, double _tc, double _dt);
     double getMotorControllerDq(void); // get according dq according to state
   };
   
