@@ -45,8 +45,8 @@ Stabilizer::Stabilizer(RTC::Manager* manager)
     m_qCurrentIn("qCurrent", m_qCurrent),
     m_qRefIn("qRef", m_qRef),
     m_rpyIn("rpy", m_rpy),
-    m_forceLIn("forceL", m_force[ST_LEFT]),
-    m_forceRIn("forceR", m_force[ST_RIGHT]),
+    m_forceLIn("forceL", m_force[1]),
+    m_forceRIn("forceR", m_force[0]),
     m_zmpRefIn("zmpRef", m_zmpRef),
     m_StabilizerServicePort("StabilizerService"),
     m_basePosIn("basePosIn", m_basePos),
@@ -170,8 +170,8 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   rdx = rdy = rx = ry = 0;
   pdr = hrp::Vector3::Zero();
 
-  sensor_names.push_back("lfsensor");
   sensor_names.push_back("rfsensor");
+  sensor_names.push_back("lfsensor");
 
   is_legged_robot = false;
   for (size_t i = 0; i < 2; i++) {
@@ -229,14 +229,13 @@ RTC::ReturnCode_t Stabilizer::onDeactivated(RTC::UniqueId ec_id)
 
 bool Stabilizer::calcZMP(hrp::Vector3& ret_zmp)
 {
-  double zmp_z = 1e10;
+  double zmp_z[2];
   for (size_t i = 0; i < 2; i++) {
     hrp::ForceSensor* sensor = m_robot->sensor<hrp::ForceSensor>(sensor_names[i]);
     if (sensor != NULL) {
       ee_trans& eet = ee_map[std::string(sensor->link->name)];
-      hrp::Vector3 zp = sensor->link->R * eet.localR * eet.localp + sensor->link->p;
-      if (zmp_z > zp(2))
-        zmp_z = zp(2);
+      hrp::Vector3 zp = sensor->link->R * eet.localp + sensor->link->p;
+      zmp_z[i] = zp(2);
     }
   }
   double tmpzmpx = 0;
@@ -249,15 +248,15 @@ bool Stabilizer::calcZMP(hrp::Vector3& ret_zmp)
     rats::rotm3times(tmpR, sensor->link->R, sensor->localR);
     hrp::Vector3 nf = tmpR * hrp::Vector3(m_force[i].data[0], m_force[i].data[1], m_force[i].data[2]);
     hrp::Vector3 nm = tmpR * hrp::Vector3(m_force[i].data[3], m_force[i].data[4], m_force[i].data[5]);
-    tmpzmpx += nf(2) * fsp(0) - (fsp(2) - zmp_z) * nf(0) - nm(1);
-    tmpzmpy += nf(2) * fsp(1) - (fsp(2) - zmp_z) * nf(1) + nm(0);
+    tmpzmpx += nf(2) * fsp(0) - (fsp(2) - zmp_z[i]) * nf(0) - nm(1);
+    tmpzmpy += nf(2) * fsp(1) - (fsp(2) - zmp_z[i]) * nf(1) + nm(0);
     tmpfz += nf(2);
   }
   if (tmpfz < 50) {
     ret_zmp = act_zmp;
     return false; // in the air
   } else {
-    ret_zmp = hrp::Vector3(tmpzmpx / tmpfz, tmpzmpy / tmpfz, zmp_z);
+    ret_zmp = hrp::Vector3(tmpzmpx / tmpfz, tmpzmpy / tmpfz, (zmp_z[0]+zmp_z[1])/2.0);
     return true; // on ground
   }
 };
@@ -299,7 +298,7 @@ RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
 
   getCurrentParameters();
   bool on_ground = false;
-  if (is_legged_robot && ( m_force[ST_LEFT].data.length() > 0 && m_force[ST_RIGHT].data.length() > 0 ))
+  if (is_legged_robot && ( m_force[0].data.length() > 0 && m_force[1].data.length() > 0 ))
     on_ground = calcZMP(act_zmp);
   // convert absolute (in st) -> root-link relative
   rel_act_zmp = m_robot->rootLink()->R.transpose() * (act_zmp - m_robot->rootLink()->p);
@@ -318,7 +317,7 @@ RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
       // if (DEBUGP2) std::cerr << "ST"<< std::endl;
       //calcRUNST();
       calcTPCC();
-      //if ( transition_count == 0 && !on_ground ) control_mode = MODE_SYNC_TO_AIR;
+      if ( transition_count == 0 && !on_ground ) control_mode = MODE_SYNC_TO_AIR;
       break;
     case MODE_SYNC_TO_IDLE:
       // std::cerr << "SYNCIDLE"<< std::endl;
@@ -484,8 +483,8 @@ void Stabilizer::getTargetParameters ()
   for (size_t i = 0; i < 2; i++) {
     hrp::Sensor* sen = m_robot->sensor<hrp::ForceSensor>(sensor_names[i]);
     if ( sen != NULL) {
-      target_foot_p[i] = sen->link->p;
-      target_foot_R[i] = sen->link->R;
+      target_foot_p[i] = sen->link->p + sen->link->R * ee_map[sen->link->name].localp;
+      target_foot_R[i] = sen->link->R * ee_map[sen->link->name].localR;
     }
   }
 
@@ -548,8 +547,17 @@ void Stabilizer::calcTPCC() {
         m_robot->rootLink()->R = current_root_R;
       }
 
+      // ee target => link-origin target
+      for (size_t i = 0; i < 2; i++) {
+        hrp::Link* target = m_robot->sensor<hrp::ForceSensor>(sensor_names[i])->link;
+        hrp::Matrix33 tmpR;
+        rats::rotm3times(tmpR, target_foot_R[i], ee_map[target->name].localR.transpose());
+        target_foot_R[i] = tmpR;
+        target_foot_p[i] -=  target_foot_R[i] * ee_map[target->name].localp;
+      }
       // solveIK
-      for (size_t jj = 0; jj < 5; jj++) {
+      //for (size_t jj = 0; jj < 5; jj++) {
+      for (size_t jj = 0; jj < 3; jj++) {
         hrp::Vector3 tmpcm = m_robot->calcCM();
         for (size_t i = 0; i < 2; i++) {
           m_robot->rootLink()->p(i) = m_robot->rootLink()->p(i) + 0.9 * (newcog(i) - tmpcm(i));
