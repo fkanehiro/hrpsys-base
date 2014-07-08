@@ -146,9 +146,9 @@ RTC::ReturnCode_t ThermoLimiter::onInitialize()
       std::cerr << (*it).temperature << "," << (*it).currentCoeffs << "," << (*it).thermoCoeffs << ", ";
     }
     std::cerr << std::endl;
-    std::cerr << "default climit value:" << std::endl;
+    std::cerr << "default torque limit from model:" << std::endl;
     for (int i = 0; i < m_robot->numJoints(); i++) {
-      std::cerr << m_robot->joint(i)->name << ":" << m_robot->joint(i)->climit << std::endl;
+      std::cerr << m_robot->joint(i)->name << ":" << m_robot->joint(i)->climit * m_robot->joint(i)->gearRatio * m_robot->joint(i)->torqueConst << std::endl;
     }
   }
 
@@ -237,7 +237,7 @@ RTC::ReturnCode_t ThermoLimiter::onExecute(RTC::UniqueId ec_id)
     calcMaxTorqueFromTemperature(tauMax);
   } else {
     for (int i = 0; i < m_robot->numJoints(); i++) {
-      tauMax[i] = m_robot->joint(i)->climit; // default torque limit from model
+      tauMax[i] = m_robot->joint(i)->climit * m_robot->joint(i)->gearRatio * m_robot->joint(i)->torqueConst; // default torque limit from model
     }
   }
 
@@ -320,7 +320,7 @@ void ThermoLimiter::calcMaxTorqueFromTemperature(hrp::dvector &tauMax)
       // determine tauMax
       if (squareTauMax[i] < 0) {
         std::cerr << "[WARN] tauMax ** 2 = " << squareTauMax[i] << " < 0 in Joint " << i << std::endl;
-        tauMax[i] = m_robot->joint(i)->climit; // default tauMax from model file
+        tauMax[i] = m_robot->joint(i)->climit * m_robot->joint(i)->gearRatio * m_robot->joint(i)->torqueConst; // default tauMax from model file
       } else {
         tauMax[i] = std::sqrt(squareTauMax[i]); // tauMax is absolute value
       }
