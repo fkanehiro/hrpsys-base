@@ -1,7 +1,7 @@
 // -*- C++ -*-
 
 /*!
- * @file  TwoDofControllerPDModel.cpp
+ * @file  TwoDofControllerDynamicsModel.cpp
  * @brief Feedback and Feedforward Controller which use PDModel as motor model
  * @date  $Date$
  *

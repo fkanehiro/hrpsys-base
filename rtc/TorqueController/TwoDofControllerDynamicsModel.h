@@ -1,6 +1,6 @@
 // -*- C++ -*-
 /*!
- * @file  TwoDofControllerPDModel.h
+ * @file  TwoDofControllerDynamicsModel.h
  * @brief Feedback and Feedforward Controller which use PDModel as motor model
  * @date  $Date$
  *
@@ -32,4 +32,4 @@ private:
   std::vector<Convolution> convolutions;
 };
 
-#endif // TWO_DOF_CONTROLLER_WITH_DAMPER_H
+#endif // TWO_DOF_CONTROLLER_DYNAMICS_MODEL_H
