@@ -320,10 +320,11 @@ void TorqueController::executeTorqueControl(hrp::dvector &dq)
   
   // determine tauMax
   for(int i = 0; i < numJoints; i++) {
+    double tauMaxFromModel = m_robot->joint(i)->climit * m_robot->joint(i)->gearRatio * m_robot->joint(i)->torqueConst;
     if ( m_tauMaxIn.data.length() ==  m_robot->numJoints() ) {
-      tauMax[i] = std::min(m_robot->joint(i)->climit, m_tauMaxIn.data[i]);
+      tauMax[i] = std::min(tauMaxFromModel, m_tauMaxIn.data[i]);
     } else {
-      tauMax[i] = m_robot->joint(i)->climit;
+      tauMax[i] = tauMaxFromModel;
     }
   }
 
