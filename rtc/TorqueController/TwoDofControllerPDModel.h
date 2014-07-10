@@ -7,8 +7,8 @@
  * $Id$
  */
 
-#ifndef TWO_DOF_CONTROLLER_WITH_DAMPER_H
-#define TWO_DOF_CONTROLLER_WITH_DAMPER_H
+#ifndef TWO_DOF_CONTROLLER_PDMODEL_H
+#define TWO_DOF_CONTROLLER_PDMODEL_H
 
 // </rtc-template>
 
@@ -30,4 +30,4 @@ private:
   std::vector<Convolution> convolutions;
 };
 
-#endif // TWO_DOF_CONTROLLER_WITH_DAMPER_H
+#endif // TWO_DOF_CONTROLLER_PDMODEL_H

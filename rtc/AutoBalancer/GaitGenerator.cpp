@@ -170,6 +170,7 @@ namespace rats
         current_step_height = 0.0;
       }
       gp_count = one_step_len;
+      rdtg.reset(one_step_len);
     }
   };
 

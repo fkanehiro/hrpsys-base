@@ -133,21 +133,23 @@ namespace rats
       ~delay_hoffarbib_trajectory_generator() { };
       void set_dt (const double __dt) { _dt = __dt; };
       void set_time_offset (const double _time_offset) { time_offset = _time_offset; };
-      void set_total_time_from_count (const size_t _one_step_len) { total_time = _one_step_len * _dt; };
+      void reset (const size_t _one_step_len)
+      {
+        remain_time = total_time = _one_step_len * _dt;
+      };
       void get_trajectory_point (hrp::Vector3& ret, const hrp::Vector3& start, const hrp::Vector3& goal, const double height)
       {
-        if ( std::fabs(remain_time - total_time) < 1e-5 || remain_time < -1e-5) {
-          remain_time = total_time;
+        if (std::fabs(remain_time - total_time) < 1e-5) {
           pos = start;
           vel = hrp::Vector3::Zero();
           acc = hrp::Vector3::Zero();
         }
         if ( remain_time > time_offset) {
           hoffarbib_interpolation (time_offset, interpolate_antecedent_path(start, goal, height));
-        } else if (remain_time > 0.0) {
+        } else if (remain_time > 1e-5) {
           hoffarbib_interpolation (remain_time, goal);
         } else {
-          pos = start;
+          pos = goal;
         }
         ret = pos;
         remain_time -= _dt;
@@ -226,7 +228,7 @@ namespace rats
         gp_count = one_step_len;
         gp_index = 0;
         current_step_height = 0.0;
-        rdtg.set_total_time_from_count(one_step_len);
+        rdtg.reset(one_step_len);
       };
       void update_leg_coords (const std::vector<step_node>& fnl, const double default_double_support_ratio, const size_t one_step_len, const bool force_height_zero);
       size_t get_gp_index() const { return gp_index; };
