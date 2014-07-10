@@ -110,12 +110,17 @@ class Stabilizer
   bool calcZMP(hrp::Vector3& ret_zmp);
   void calcRUNST();
   void calcTPCC();
+  void calcEEForceMomentControl();
   void getParameter(OpenHRP::StabilizerService::stParam& i_stp);
   void setParameter(const OpenHRP::StabilizerService::stParam& i_stp);
   void waitSTTransition();
   // funcitons for calc final torque output
   void calcContactMatrix (hrp::dmatrix& tm, const std::vector<hrp::Vector3>& contact_p);
   void calcTorque ();
+  void fixLegToCoords (const std::string& leg, const rats::coordinates& coords);
+  void getFootmidCoords (rats::coordinates& ret);
+  double calcDampingControl (const double tau_d, const double tau, const double prev_d,
+                             const double DD, const double TT);
 
  protected:
   // Configuration variable declaration
@@ -201,10 +206,13 @@ class Stabilizer
   hrp::Matrix33 target_root_R;
   hrp::Vector3 target_foot_p[2];
   hrp::Matrix33 target_foot_R[2];
+  hrp::Vector3 d_foot_rpy[2];
+  rats::coordinates target_foot_midcoords;
+  double zctrl;
   hrp::Vector3 refzmp, refcog, refcog_vel;
   // TPCC
   double k_tpcc_p[2], k_tpcc_x[2], d_rpy[2], k_brot_p[2], k_brot_tc[2];
-  hrp::Vector3 act_zmp, rel_act_zmp, prefcog;
+  hrp::Vector3 act_zmp, rel_act_zmp, prefcog, prev_act_cog, prev_act_cog_vel;
   // RUN ST
   TwoDofController m_tau_x[ST_NUM_LEGS], m_tau_y[ST_NUM_LEGS], m_f_z;
   hrp::Vector3 pdr;
