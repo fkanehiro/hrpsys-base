@@ -726,7 +726,7 @@ class HrpsysConfigurator:
     def getJointAngles(self):
         return [x * 180.0 / math.pi for x in self.sh_svc.getCommand().jointRefs]
 
-    def getCurrentPose(self, lname):
+    def getCurrentPose(self, lname=None):
         '''
         @type jointname: str
         @rtype: List of float
@@ -738,17 +738,27 @@ class HrpsysConfigurator:
                   a31, a32, a33, z,
                    0,   0,   0,  1]
         '''
+        if not lname:
+            for item in self.Groups:
+                eef_name = item[1][-1]
+                print("{}: {}".format(eef_name, self.getCurrentPose(eef_name)))
+            raise RuntimeError("need to specify joint name")
         pose = self.fk_svc.getCurrentPose(lname)
         if not pose[0]:
             raise RuntimeError("Could not find reference : " + lname)
         return pose[1].data
 
-    def getCurrentPosition(self, lname):
+    def getCurrentPosition(self, lname=None):
         '''
         @type jointname: str
         @rtype: List of float
         @return: List of x, y, z positions about the specified joint.
         '''
+        if not lname:
+            for item in self.Groups:
+                eef_name = item[1][-1]
+                print("{}: {}".format(eef_name, self.getCurrentPosition(eef_name)))
+            raise RuntimeError("need to specify joint name")
         pose = self.getCurrentPose(lname)
         return [pose[3], pose[7], pose[11]]
 
@@ -762,6 +772,11 @@ class HrpsysConfigurator:
                   [a21, a22, a23],
                   [a31, a32, a33]]
         '''
+        if not lname:
+            for item in self.Groups:
+                eef_name = item[1][-1]
+                print("{}: {}".format(eef_name, self.getCurrentRotation(eef_name)))
+            raise RuntimeError("need to specify joint name")
         pose = self.getCurrentPose(lname)
         return [pose[0:3], pose[4:7], pose[8:11]]
 
@@ -771,6 +786,11 @@ class HrpsysConfigurator:
         @rtype: List of float
         @return: List of orientation in rpy form about the specified joint.
         '''
+        if not lname:
+            for item in self.Groups:
+                eef_name = item[1][-1]
+                print("{}: {}".format(eef_name, self.getCurrentRPY(eef_name)))
+            raise RuntimeError("need to specify joint name")
         return euler_from_matrix(self.getCurrentRotation(lname), 'sxyz')
 
     def getReferencePose(self, lname):
@@ -787,6 +807,11 @@ class HrpsysConfigurator:
                   a31, a32, a33, z,
                    0,   0,   0,  1]
         '''
+        if not lname:
+            for item in self.Groups:
+                eef_name = item[1][-1]
+                print("{}: {}".format(eef_name, self.getReferencePose(eef_name)))
+            raise RuntimeError("need to specify joint name")
         pose = self.fk_svc.getReferencePose(lname)
         if not pose[0]:
             raise RuntimeError("Could not find reference : " + lname)
@@ -798,6 +823,11 @@ class HrpsysConfigurator:
         @return: List of angles (degree) of all joints, in the order defined
                  in the member variable 'Groups' (eg. chest, head1, head2, ..).
         '''
+        if not lname:
+            for item in self.Groups:
+                eef_name = item[1][-1]
+                print("{}: {}".format(eef_name, self.getReferencePosition(eef_name)))
+            raise RuntimeError("need to specify joint name")
         pose = self.getReferencePose(lname)
         return [pose[3], pose[7], pose[11]]
 
@@ -814,6 +844,11 @@ class HrpsysConfigurator:
                   [a21, a22, a23],
                   [a31, a32, a33]]
         '''
+        if not lname:
+            for item in self.Groups:
+                eef_name = item[1][-1]
+                print("{}: {}".format(eef_name, self.getReferencePotation(eef_name)))
+            raise RuntimeError("need to specify joint name")
         pose = self.getReferencePose(lname)
         return [pose[0:3], pose[4:7], pose[8:11]]
 
@@ -826,6 +861,11 @@ class HrpsysConfigurator:
         @rtype: List of float
         @return: List of orientation in rpy form about the specified joint.
         '''
+        if not lname:
+            for item in self.Groups:
+                eef_name = item[1][-1]
+                print("{}: {}".format(eef_name, self.getReferenceRPY(eef_name)))
+            raise RuntimeError("need to specify joint name")
         return euler_from_matrix(self.getReferenceRotation(lname), 'sxyz')
 
     def setTargetPose(self, gname, pos, rpy, tm, frame_name=None):
