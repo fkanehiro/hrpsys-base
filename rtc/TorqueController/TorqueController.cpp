@@ -119,7 +119,6 @@ RTC::ReturnCode_t TorqueController::onInitialize()
       coil::stringTo(tdcParamKe[i], motorTorqueControllerParamsFromConf[2 * i].c_str());
       coil::stringTo(tdcParamT[i], motorTorqueControllerParamsFromConf[2 * i + 1].c_str());
       m_motorTorqueControllers.push_back(MotorTorqueController(m_robot->joint(i)->name, tdcParamKe[i], tdcParamT[i], m_dt));
-      m_motorTorqueControllers[i].setupMotorControllerMinMaxDq(m_robot->joint(i)->lvlimit * m_dt, m_robot->joint(i)->uvlimit * m_dt);
     }
     if (m_debugLevel > 0) {
       std::cerr << "torque controller parames:" << std::endl;
@@ -169,6 +168,11 @@ RTC::ReturnCode_t TorqueController::onInitialize()
         std::cerr << m_robot->joint(i)->name << ":" << tdcParamKe[i] << " " << tdcParamT[i] << " " << m_dt << std::endl;
       }
     }
+  }
+
+  // parameter setttings for torque controller
+  for (int i = 0; i < m_robot->numJoints(); i++) {
+    m_motorTorqueControllers[i].setupMotorControllerMinMaxDq(m_robot->joint(i)->lvlimit * m_dt, m_robot->joint(i)->uvlimit * m_dt);
   }
 
   // allocate memory for outPorts
