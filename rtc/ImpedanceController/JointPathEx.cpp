@@ -381,14 +381,6 @@ void JointPathEx::solveLimbIK (const hrp::Vector3& _vel_p,
                                bool DEBUGP)
 {
             const int n = numJoints();
-            double transition_smooth_gain = 1.0;
-            if ( transition_count < 0 ) {
-                // (/ (log (/ (- 1 0.99) 0.99)) 0.5)
-                transition_smooth_gain = 1/(1+exp(-9.19*(((MAX_TRANSITION_COUNT + transition_count) / MAX_TRANSITION_COUNT) - 0.5)));
-                // vel_p = vel_p * transition_smooth_gain;
-                // vel_r = vel_r * transition_smooth_gain;
-            }
-
 #if 0
             setBestEffortIKMode(true);
             setMaxIKError(0.001);
@@ -402,7 +394,8 @@ void JointPathEx::solveLimbIK (const hrp::Vector3& _vel_p,
 	    //calcInverseKinematics2Loop(vel_p, vel_r, dq);
 
 	    hrp::dvector v(6);
-	    v << hrp::Vector3(transition_smooth_gain *_vel_p), hrp::Vector3(transition_smooth_gain *_vel_r);
+	    //v << hrp::Vector3(transition_smooth_gain *_vel_p), hrp::Vector3(transition_smooth_gain *_vel_r);
+            v << _vel_p, _vel_r;
 	    hrp::dvector dq(n);
 	    dq = Jinv * v; // dq = pseudoInverse(J) * v
 
@@ -411,33 +404,24 @@ void JointPathEx::solveLimbIK (const hrp::Vector3& _vel_p,
 	    //
 	    // dH/dq = (((t_max + t_min)/2 - t) / ((t_max - t_min)/2)) ^2
 	    hrp::dvector u(n);
-	    for(int j=0; j < n; ++j) { u[j] = 0; }
 	    for ( int j = 0; j < n ; j++ ) {
 	      double jang = joint(j)->q;
 	      double jmax = joint(j)->ulimit;
 	      double jmin = joint(j)->llimit;
 	      double r = ((( (jmax + jmin) / 2.0) - jang) / ((jmax - jmin) / 2.0));
 	      if ( r > 0 ) { r = r*r; } else { r = - r*r; }
-	      u[j] += r;
+	      u[j] = avoid_gain * r;
 	    }
 	    if ( DEBUGP ) {
 	      std::cerr << "    u : " << u;
 	      std::cerr << "  dqb : " << Jnull * u;
 	    }
-            if ( transition_count < 0 ) {
-              u = u * transition_smooth_gain;
-            }
-	    dq = dq + Jnull * ( avoid_gain *  u );
 	    //
 	    // qref - qcurr
-	    for(int j=0; j < n; ++j) { u[j] = 0; }
 	    for ( int j = 0; j < numJoints(); j++ ) {
-              u[j] = ( qrefv[joint(j)->jointId] - joint(j)->q );
+              u[j] += reference_gain * ( qrefv[joint(j)->jointId] - joint(j)->q );
 	    }
-            if ( transition_count < 0 ) {
-              u = u * transition_smooth_gain;
-            }
-	    dq = dq + Jnull * ( reference_gain *  u );
+	    dq = dq + Jnull * u;
 
             // break if dq(j) is nan/nil
             bool dq_check = true;
