@@ -16,7 +16,11 @@
 namespace RTC
 {
   class hrpExecutionContext
+#ifdef OPENRTM_VERSION110
       : public virtual PeriodicExecutionContext,
+#else
+      : public virtual RTC_exp::PeriodicExecutionContext,
+#endif
         public virtual POA_OpenHRP::ExecutionProfileService,
         public virtual PortableServer::RefCountServantBase
   {
@@ -24,6 +28,9 @@ namespace RTC
     hrpExecutionContext();
     virtual ~hrpExecutionContext();
     virtual int svc(void);
+#ifndef OPENRTM_VERSION110
+    virtual void tick(){}
+#endif
 
     OpenHRP::ExecutionProfileService::Profile *getProfile();
     OpenHRP::ExecutionProfileService::ComponentProfile getComponentProfile(RTC::LightweightRTObject_ptr obj);

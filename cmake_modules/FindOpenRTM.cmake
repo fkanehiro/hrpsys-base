@@ -38,7 +38,7 @@ if(UNIX)
 
     if(RESULT EQUAL 0)
       if(OPENRTM_DIR)
-	if(OPENRTM_VERSION STREQUAL "1.1.0")
+	if(OPENRTM_VERSION STREQUAL "1.1.0" OR OPENRTM_VERSION STREQUAL "1.1.1")
 	  set(OPENRTM_IDL_DIR ${OPENRTM_DIR}/include/openrtm-1.1/rtm/idl)
 	  list(APPEND OPENRTM_INCLUDE_DIRS "${OPENRTM_DIR}/include/openrtm-1.1")
 	  list(APPEND OPENRTM_INCLUDE_DIRS "${OPENRTM_DIR}/include/openrtm-1.1/rtm/idl")

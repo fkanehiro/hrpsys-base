@@ -33,6 +33,9 @@ endif()
 
 # OpenRTM-aist(>= 1.0.0)    
 find_package(OpenRTM REQUIRED)
+if(NOT OPENRTM_VERSION STREQUAL "1.1.1")
+add_definitions(-DOPENRTM_VERSION110)
+endif()
 
 # OpenHRP
 find_package(OpenHRP REQUIRED)

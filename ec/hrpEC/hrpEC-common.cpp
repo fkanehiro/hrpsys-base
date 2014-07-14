@@ -1,5 +1,8 @@
 #include "hrpEC.h"
 #include "io/iob.h"
+#ifndef OPENRTM_VERSION110
+#include <rtm/RTObjectStateMachine.h>
+#endif
 
 #ifdef __QNX__
 using std::fprintf;
@@ -21,9 +24,15 @@ namespace RTC
             close_iob();
             return 0;
         }
+#ifdef OPENRTM_VERSION110
         long period_nsec = (m_period.sec()*1e9+m_period.usec()*1e3);
         double period_sec = period_nsec/1e9;
-	int nsubstep = number_of_substeps();
+#else
+        coil::TimeValue period(getPeriod());
+        double period_sec = (double)period;
+        long period_nsec = period_sec*1e9;
+#endif
+	    int nsubstep = number_of_substeps();
         set_signal_period(period_nsec/nsubstep);
         std::cout << "period = " << get_signal_period()*nsubstep/1e6
                   << "[ms], priority = " << m_priority << std::endl;
@@ -51,9 +60,10 @@ namespace RTC
             m_profile.count++;
             m_tv = tv;
 
+#ifdef OPENRTM_VERSION110
             invoke_worker iw;
             struct timeval tbegin, tend;
-	    std::vector<double> processes(m_comps.size());
+	        std::vector<double> processes(m_comps.size());
             gettimeofday(&tbegin, NULL);
             for (unsigned int i=0; i< m_comps.size(); i++){
                 iw(m_comps[i]);
@@ -62,6 +72,20 @@ namespace RTC
                 processes[i] = dt;
                 tbegin = tend;
             }
+#else
+            struct timeval tbegin, tend;
+            const RTCList& list = getComponentList();
+            std::vector<double> processes(list.length());
+            gettimeofday(&tbegin, NULL);
+            for (unsigned int i=0; i< list.length(); i++){
+                RTC_impl::RTObjectStateMachine* rtobj = m_worker.findComponent(list[i]);
+                rtobj->workerDo(); 
+                gettimeofday(&tend, NULL);
+                double dt = DELTA_SEC(tbegin, tend);
+                processes[i] = dt;
+                tbegin = tend;
+            }
+#endif
 
             gettimeofday(&tv, NULL);
             double dt = DELTA_SEC(m_tv, tv);
@@ -75,7 +99,12 @@ namespace RTC
 		}
 	    }
 	    for (unsigned int i=0; i<m_profile.profiles.length(); i++){
+#ifdef OPENRTM_VERSION110
                 LifeCycleState lcs = get_component_state(m_comps[i]._ref);
+#else
+                RTC_impl::RTObjectStateMachine* rtobj = m_worker.findComponent(list[i]);
+                LifeCycleState lcs = rtobj->getState();
+#endif
                 OpenHRP::ExecutionProfileService::ComponentProfile &prof 
                     = m_profile.profiles[i];
                 double dt = processes[i];
@@ -95,7 +124,11 @@ namespace RTC
 #endif
             }
 
+#ifdef OPENRTM_VERSION110
         } while (m_running);
+#else
+        } while (isRunning());
+#endif
         exitRT();
         unlock_iob();
         close_iob();
@@ -113,8 +146,15 @@ namespace RTC
 
     OpenHRP::ExecutionProfileService::ComponentProfile hrpExecutionContext::getComponentProfile(RTC::LightweightRTObject_ptr obj)
     {
+#ifdef OPENRTM_VERSION110
         for (size_t i=0; i<m_comps.size(); i++){
             if (m_comps[i]._ref->_is_equivalent(obj)){
+#else
+        const RTCList& list = getComponentList();
+        for(size_t i=0; i<list.length(); i++){
+            RTC_impl::RTObjectStateMachine* rtobj = m_worker.findComponent(list[i]);
+            if(rtobj->isEquivalent(obj)){
+#endif
                 return m_profile.profiles[i];
             }
         }
