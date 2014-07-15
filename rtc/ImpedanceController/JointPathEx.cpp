@@ -180,7 +180,8 @@ bool JointPathEx::calcJacobianInverseNullspace(dmatrix &J, dmatrix &Jinv, dmatri
     return true;
 }
 
-bool JointPathEx::calcInverseKinematics2Loop(const Vector3& dp, const Vector3& omega, dvector &dq) {
+bool JointPathEx::calcInverseKinematics2Loop(const Vector3& dp, const Vector3& omega, dvector &dq,
+                                             const double avoid_gain, const double reference_gain, const hrp::dvector* reference_q) {
     const int n = numJoints();
 
     if ( DEBUG ) {
@@ -209,11 +210,66 @@ bool JointPathEx::calcInverseKinematics2Loop(const Vector3& dp, const Vector3& o
         std::cerr << std::endl;
         std::cerr << "    J :" << std::endl << J;
         std::cerr << " Jinv :" << std::endl << Jinv;
-        std::cerr << "   dq :";
+    }
+    // If avoid_gain is set, add joint limit avoidance by null space vector
+    if ( avoid_gain > 0.0 ) {
+      // dq = J#t a dx + ( I - J# J ) Jt b dx
+      // avoid-nspace-joint-limit: avoiding joint angle limit
+      //
+      // dH/dq = (((t_max + t_min)/2 - t) / ((t_max - t_min)/2)) ^2
+      hrp::dvector u(n);
+      for ( int j = 0; j < n ; j++ ) {
+        double jang = joint(j)->q;
+        double jmax = joint(j)->ulimit;
+        double jmin = joint(j)->llimit;
+        double r = ((( (jmax + jmin) / 2.0) - jang) / ((jmax - jmin) / 2.0));
+        if ( r > 0 ) { r = r*r; } else { r = - r*r; }
+        u[j] = avoid_gain * r;
+      }
+      if ( DEBUG ) {
+        std::cerr << " u(jl):";
         for(int j=0; j < n; ++j){
-            std::cerr << std::setw(8) << std::setiosflags(std::ios::fixed) << std::setprecision(4) << rad2deg(dq(j));
+          std::cerr << std::setw(8) << std::setiosflags(std::ios::fixed) << std::setprecision(4) << rad2deg(u(j));
         }
         std::cerr << std::endl;
+        std::cerr << " JN*u :";
+        hrp::dvector Jnullu = Jnull * u;
+        for(int j=0; j < n; ++j){
+          std::cerr << std::setw(8) << std::setiosflags(std::ios::fixed) << std::setprecision(4) << rad2deg(Jnullu(j));
+        }
+        std::cerr << std::endl;
+      }
+      dq = dq + Jnull * u;
+    }
+    // If reference_gain and reference_q are set, add following to reference_q by null space vector
+    if ( reference_gain > 0.0 && reference_q != NULL ) {
+      //
+      // qref - qcurr
+      hrp::dvector u(n);
+      for ( int j = 0; j < numJoints(); j++ ) {
+        u[j] = reference_gain * ( (*reference_q)[joint(j)->jointId] - joint(j)->q );
+      }
+      if ( DEBUG ) {
+        std::cerr << "u(ref):";
+        for(int j=0; j < n; ++j){
+          std::cerr << std::setw(8) << std::setiosflags(std::ios::fixed) << std::setprecision(4) << rad2deg(u(j));
+        }
+        std::cerr << std::endl;
+        std::cerr << "  JN*u:";
+        hrp::dvector nullu = Jnull * u;
+        for(int j=0; j < n; ++j){
+          std::cerr << std::setw(8) << std::setiosflags(std::ios::fixed) << std::setprecision(4) << rad2deg(nullu(j));
+        }
+        std::cerr << std::endl;
+      }
+      dq = dq + Jnull * u;
+    }
+    if ( DEBUG ) {
+      std::cerr << "   dq :";
+      for(int j=0; j < n; ++j){
+        std::cerr << std::setw(8) << std::setiosflags(std::ios::fixed) << std::setprecision(4) << rad2deg(dq(j));
+      }
+      std::cerr << std::endl;
     }
 
     // default servoErrorLimit in RobotHardware(DEFAULT_ANGLE_ERROR_LIMIT) = 0.2[rad]
@@ -239,7 +295,8 @@ bool JointPathEx::calcInverseKinematics2Loop(const Vector3& dp, const Vector3& o
 }
 
 
-bool JointPathEx::calcInverseKinematics2(const Vector3& end_p, const Matrix33& end_R)
+bool JointPathEx::calcInverseKinematics2(const Vector3& end_p, const Matrix33& end_R,
+                                         const double avoid_gain, const double reference_gain, const hrp::dvector* reference_q)
 {
     static const int MAX_IK_ITERATION = maxIKIteration;
     static const double LAMBDA = 0.9;
@@ -313,7 +370,7 @@ bool JointPathEx::calcInverseKinematics2(const Vector3& end_p, const Matrix33& e
         }
       }
 
-      calcInverseKinematics2Loop(dp, omega, dq);
+      calcInverseKinematics2Loop(dp, omega, dq, avoid_gain, reference_gain, reference_q);
 
       // check nan / inf
       bool solve_linear_equation = true;
@@ -377,51 +434,16 @@ void JointPathEx::solveLimbIK (const hrp::Vector3& _vel_p,
                                const double avoid_gain,
                                const double reference_gain,
                                const double MAX_TRANSITION_COUNT,
-                               const hrp::dvector& qrefv,
+                               const hrp::dvector& reference_q,
                                bool DEBUGP)
 {
             const int n = numJoints();
-#if 0
-            setBestEffortIKMode(true);
-            setMaxIKError(0.001);
-            calcInverseKinematics2(current_p0 + vel_p, target->R);
-#else
 	    hrp::dmatrix J(6, n);
 	    hrp::dmatrix Jinv(n, 6);
 	    hrp::dmatrix Jnull(n, n);
 	    
-	    calcJacobianInverseNullspace(J, Jinv, Jnull);
-	    //calcInverseKinematics2Loop(vel_p, vel_r, dq);
-
-	    hrp::dvector v(6);
-	    //v << hrp::Vector3(transition_smooth_gain *_vel_p), hrp::Vector3(transition_smooth_gain *_vel_r);
-            v << _vel_p, _vel_r;
-	    hrp::dvector dq(n);
-	    dq = Jinv * v; // dq = pseudoInverse(J) * v
-
-	    // dq = J#t a dx + ( I - J# J ) Jt b dx
-	    // avoid-nspace-joint-limit: avoiding joint angle limit
-	    //
-	    // dH/dq = (((t_max + t_min)/2 - t) / ((t_max - t_min)/2)) ^2
-	    hrp::dvector u(n);
-	    for ( int j = 0; j < n ; j++ ) {
-	      double jang = joint(j)->q;
-	      double jmax = joint(j)->ulimit;
-	      double jmin = joint(j)->llimit;
-	      double r = ((( (jmax + jmin) / 2.0) - jang) / ((jmax - jmin) / 2.0));
-	      if ( r > 0 ) { r = r*r; } else { r = - r*r; }
-	      u[j] = avoid_gain * r;
-	    }
-	    if ( DEBUGP ) {
-	      std::cerr << "    u : " << u;
-	      std::cerr << "  dqb : " << Jnull * u;
-	    }
-	    //
-	    // qref - qcurr
-	    for ( int j = 0; j < numJoints(); j++ ) {
-              u[j] += reference_gain * ( qrefv[joint(j)->jointId] - joint(j)->q );
-	    }
-	    dq = dq + Jnull * u;
+            hrp::dvector dq(n);
+            calcInverseKinematics2Loop(_vel_p, _vel_r, dq, avoid_gain, reference_gain, &reference_q);
 
             // break if dq(j) is nan/nil
             bool dq_check = true;
@@ -432,25 +454,6 @@ void JointPathEx::solveLimbIK (const hrp::Vector3& _vel_p,
                 }
             }
             if ( ! dq_check ) return;
-
-            // check max speed
-            double max_speed = 0;
-            for(int j=0; j < n; ++j){
-                max_speed = std::max(max_speed, fabs(dq(j)));
-            }
-	    if ( max_speed > 0.2*0.5 ) { // 0.5 safety margin
-                if ( DEBUGP ) {
-                    std::cerr << "spdlmt: ";
-                    for(int j=0; j < n; ++j) { std::cerr << dq(j) << " "; } std::cerr << std::endl;
-                }
-                for(int j=0; j < n; ++j) {
-                    dq(j) = dq(j) * 0.2*0.5 / max_speed;
-                }
-                if ( DEBUGP ) {
-                    std::cerr << "spdlmt: ";
-                    for(int j=0; j < n; ++j) { std::cerr << dq(j) << " "; } std::cerr << std::endl;
-                }
-            }
 
             // update robot model
             for(int j=0; j < n; ++j){
@@ -470,8 +473,6 @@ void JointPathEx::solveLimbIK (const hrp::Vector3& _vel_p,
                 }
                 joint(j)->q = std::max(joint(j)->q, joint(j)->llimit);
             }
-#endif
-
             calcForwardKinematics();
 }
 

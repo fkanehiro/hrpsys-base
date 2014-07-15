@@ -15,8 +15,8 @@ namespace hrp {
   public:
     JointPathEx(BodyPtr& robot, Link* base, Link* end);
     bool calcJacobianInverseNullspace(dmatrix &J, dmatrix &Jinv, dmatrix &Jnull);
-    bool calcInverseKinematics2Loop(const Vector3& dp, const Vector3& omega, dvector &dq);
-    bool calcInverseKinematics2(const Vector3& end_p, const Matrix33& end_R);
+    bool calcInverseKinematics2Loop(const Vector3& dp, const Vector3& omega, dvector &dq, const double avoid_gain = 0.0, const double reference_gain = 0.0, const dvector* reference_q = NULL);
+    bool calcInverseKinematics2(const Vector3& end_p, const Matrix33& end_R, const double avoid_gain = 0.0, const double reference_gain = 0.0, const dvector* reference_q = NULL);
     double getSRGain() { return sr_gain; }
     bool setSRGain(double g) { sr_gain = g; }
     double getManipulabilityLimit() { return manipulability_limit; }
