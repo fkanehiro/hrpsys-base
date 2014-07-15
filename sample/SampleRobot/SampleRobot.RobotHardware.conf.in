@@ -1,0 +1,5 @@
+model: file://@OPENHRP_DIR@/share/OpenHRP-3.1/sample/model/sample1.wrl
+exec_cxt.periodic.type: hrpExecutionContext
+exec_cxt.periodic.rate: @CONTROLLER_PERIOD@
+
+
