@@ -366,8 +366,8 @@ void AutoBalancer::robotstateOrg2qRef()
 
     target_base_pos = m_robot->rootLink()->p;
     target_base_rot = m_robot->rootLink()->R;
-    if (!gg_is_walking) {
-      for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
+    for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
+      if ( control_mode != MODE_ABC || it->first.find("leg") == std::string::npos ) {
         it->second.target_p0 = m_robot->link(it->second.target_name)->p;
         it->second.target_r0 = m_robot->link(it->second.target_name)->R;
       }

@@ -78,21 +78,31 @@ def demo():
     hcf.abc_svc.setFootSteps([OpenHRP.AutoBalancerService.Footstep([0,-0.09,0], [1,0,0,0], ":rleg"), OpenHRP.AutoBalancerService.Footstep([0.15,0.09,0], [1,0,0,0], ":lleg"), OpenHRP.AutoBalancerService.Footstep([0.3,-0.09,0], [1,0,0,0], ":rleg"), OpenHRP.AutoBalancerService.Footstep([0.3,0.09,0], [1,0,0,0], ":lleg")])
     hcf.abc_svc.waitFootSteps()
     #   4. getGaitGeneratorParam
-    ret = hcf.abc_svc.getGaitGeneratorParam()
-    if ret[0]:
+    ret1 = hcf.abc_svc.getGaitGeneratorParam()
+    if ret1[0]:
         print "getGaitGeneratorParam() => OK"
     #   5. setGaitGeneratorParam
-    ret[1].default_step_time = 0.7
-    ret[1].default_step_height = 0.15
-    ret[1].default_double_support_ratio = 0.4
-    hcf.abc_svc.setGaitGeneratorParam(ret[1])
-    ret = hcf.abc_svc.getGaitGeneratorParam()
-    if ret[0] and ret[1].default_step_time == 0.7 and ret[1].default_step_height == 0.15 and ret[1].default_double_support_ratio == 0.4:
+    newparam = hcf.abc_svc.getGaitGeneratorParam()
+    newparam[1].default_step_time = 0.7
+    newparam[1].default_step_height = 0.15
+    newparam[1].default_double_support_ratio = 0.4
+    newparam[1].default_orbit_type = OpenHRP.AutoBalancerService.RECTANGLE;
+    hcf.abc_svc.setGaitGeneratorParam(newparam[1])
+    ret2 = hcf.abc_svc.getGaitGeneratorParam()
+    if ret2[0] and ret2[1].default_step_time == newparam[1].default_step_time and ret2[1].default_step_height == newparam[1].default_step_height and ret2[1].default_double_support_ratio == newparam[1].default_double_support_ratio and ret2[1].default_orbit_type == newparam[1].default_orbit_type:
         print "setGaitGeneratorParam() => OK"
-    hcf.abc_svc.goVelocity(0,0,0)
+    hcf.abc_svc.goVelocity(0.1,0,0)
     time.sleep(1)
     hcf.abc_svc.goStop()
-    #   6. walking by fixing 
+    hcf.abc_svc.setGaitGeneratorParam(ret1[1]) # revert parameter
+    #  6. non-default stride
+    hcf.abc_svc.startAutoBalancer([":rleg", ":lleg"]);
+    hcf.abc_svc.setFootSteps([OpenHRP.AutoBalancerService.Footstep([0,-0.09,0], [1,0,0,0], ":rleg"), OpenHRP.AutoBalancerService.Footstep([0.15,0.09,0], [1,0,0,0], ":lleg")])
+    hcf.abc_svc.waitFootSteps()
+    hcf.abc_svc.setFootSteps([OpenHRP.AutoBalancerService.Footstep([0,-0.09,0], [1,0,0,0], ":rleg"), OpenHRP.AutoBalancerService.Footstep([0,0.09,0], [1,0,0,0], ":lleg")])
+    hcf.abc_svc.waitFootSteps()
+    hcf.abc_svc.stopAutoBalancer();
+    #  7. walking by fixing 
     # abc_svc.startAutoBalancer([AutoBalancerService.AutoBalancerLimbParam(":rleg", [0,0,0], [0,0,0,0]),
     #                   AutoBalancerService.AutoBalancerLimbParam(":lleg", [0,0,0], [0,0,0,0]),
     #                   AutoBalancerService.AutoBalancerLimbParam(":rarm", [0,0,0], [0,0,0,0]),
