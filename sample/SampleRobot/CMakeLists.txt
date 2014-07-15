@@ -18,6 +18,7 @@ install(PROGRAMS
   samplerobot_auto_balancer.py
   samplerobot_stabilizer.py
   samplerobot_remove_force_offset.py
+  samplerobot_impedance_controller.py
   ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_walk.py
   DESTINATION share/hrpsys/samples/SampleRobot)
 
