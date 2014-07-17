@@ -158,6 +158,17 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
     k_brot_p[i] = 0.1;
     k_brot_tc[i] = 1.5;
   }
+  // parameters for EEFM
+  double k_ratio = 0.9;
+  for (int i = 0; i < 2; i++) {
+    eefm_k1[i] = -1.41429*k_ratio;
+    eefm_k2[i] = -0.404082*k_ratio;
+    eefm_k3[i] = -0.18*k_ratio;
+  }
+  eefm_rot_damping_gain = 20*5;
+  eefm_rot_time_const = 1;
+  eefm_pos_damping_gain = 3500;
+  eefm_pos_time_const = 1;
 
   // parameters for RUNST
   double ke = 0, tc = 0;
@@ -656,10 +667,10 @@ void Stabilizer::calcEEForceMomentControl() {
         act_cog_vel = 0.5 * prev_act_cog_vel + 0.5 * act_cog_vel; // ok
         // Kajita's feedback low
         //double k1 = -1.41429, k2 = -0.404082, k3 = -0.18;
-        double k_ratio = 0.9;
-        double k1 = -1.41429*k_ratio, k2 = -0.404082*k_ratio, k3 = -0.18*k_ratio;
+        //double k_ratio = 0.9;
+        //double k1 = -1.41429*k_ratio, k2 = -0.404082*k_ratio, k3 = -0.18*k_ratio;
         for (size_t i = 0; i < 2; i++) {
-          new_refzmp(i) += k1 * transition_smooth_gain * (refcog(i) - act_cog(i)) + k2 * transition_smooth_gain * (refcog_vel(i) - act_cog_vel(i)) + k3 * transition_smooth_gain * (refzmp(i) - act_zmp(i));
+          new_refzmp(i) += eefm_k1[i] * transition_smooth_gain * (refcog(i) - act_cog(i)) + eefm_k2[i] * transition_smooth_gain * (refcog_vel(i) - act_cog_vel(i)) + eefm_k3[i] * transition_smooth_gain * (refzmp(i) - act_zmp(i));
         }
         if (DEBUGP) {
           std::cerr << "COG [" << refcog(0)*1e3 << " " << refcog(1)*1e3 << " " << refcog(2)*1e3 << "] [" << act_cog(0)*1e3 << " " << act_cog(1)*1e3 << " " << act_cog(2)*1e3 << "]" << std::endl;
@@ -719,15 +730,15 @@ void Stabilizer::calcEEForceMomentControl() {
           hrp::Vector3 ee_moment = (sensor->link->R * (sensor->localPos - ee_map[sensor->link->name].localp)).cross(sensor_force) + sensor_moment;
           fz_diff += (i==0? -sensor_force(2) : sensor_force(2));
           // calcDampingControl
-          d_foot_rpy[i](0) = calcDampingControl(ref_foot_moment[i](0), ee_moment(0), d_foot_rpy[i](0), 20*5, 1);
-          d_foot_rpy[i](1) = calcDampingControl(ref_foot_moment[i](1), ee_moment(1), d_foot_rpy[i](1), 20*5, 1);
+          d_foot_rpy[i](0) = calcDampingControl(ref_foot_moment[i](0), ee_moment(0), d_foot_rpy[i](0), eefm_rot_damping_gain, eefm_rot_time_const);
+          d_foot_rpy[i](1) = calcDampingControl(ref_foot_moment[i](1), ee_moment(1), d_foot_rpy[i](1), eefm_rot_damping_gain, eefm_rot_time_const);
           d_foot_rpy[i](0) = vlimit(d_foot_rpy[i](0), deg2rad(-10.0), deg2rad(10.0));
           d_foot_rpy[i](1) = vlimit(d_foot_rpy[i](1), deg2rad(-10.0), deg2rad(10.0));
           rats::rotm3times(total_target_foot_R[i], target_foot_R[i], hrp::rotFromRpy(-d_foot_rpy[i](0), -d_foot_rpy[i](1), 0));
         }
         // fz control
         zctrl = calcDampingControl (ref_foot_force[1][2]-ref_foot_force[0][2],
-                                    fz_diff, zctrl, 3500, 1);
+                                    fz_diff, zctrl, eefm_pos_damping_gain, eefm_pos_time_const);
         // zctrl = vlimit(zctrl, -0.02, 0.02);
         zctrl = vlimit(zctrl, -0.05, 0.05);
         for (size_t i = 0; i < 2; i++) {
@@ -1054,6 +1065,15 @@ void Stabilizer::getParameter(OpenHRP::StabilizerService::stParam& i_stp)
   i_stp.k_run_y = m_torque_k[1];
   i_stp.d_run_x = m_torque_d[0];
   i_stp.d_run_y = m_torque_d[1];
+  for (size_t i = 0; i < 2; i++) {
+    i_stp.eefm_k1[i] = eefm_k1[i];
+    i_stp.eefm_k2[i] = eefm_k2[i];
+    i_stp.eefm_k3[i] = eefm_k3[i];
+  }
+  i_stp.eefm_rot_damping_gain = eefm_rot_damping_gain;
+  i_stp.eefm_pos_damping_gain = eefm_pos_damping_gain;
+  i_stp.eefm_rot_time_const = eefm_rot_time_const;
+  i_stp.eefm_pos_time_const = eefm_pos_time_const;
 };
 
 void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
@@ -1079,6 +1099,18 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
   m_torque_d[1] = i_stp.d_run_y;
   std::cerr << " m_torque_k " << m_torque_k[0] << " m_torque_k " <<  m_torque_k[1] << std::endl;
   std::cerr << " m_torque_d " << m_torque_d[0] << " m_torque_d " <<  m_torque_d[1] << std::endl;
+  for (size_t i = 0; i < 2; i++) {
+    eefm_k1[i] = i_stp.eefm_k1[i];
+    eefm_k2[i] = i_stp.eefm_k2[i];
+    eefm_k3[i] = i_stp.eefm_k3[i];
+    std::cerr << i << " eefm_k1 " << eefm_k1[i] << " eefm_k2 " <<  eefm_k2[i] << " eefm_k3 " << eefm_k3[i] << std::endl;
+  }
+  eefm_rot_damping_gain = i_stp.eefm_rot_damping_gain;
+  eefm_pos_damping_gain = i_stp.eefm_pos_damping_gain;
+  eefm_rot_time_const = i_stp.eefm_rot_time_const;
+  eefm_pos_time_const = i_stp.eefm_pos_time_const;
+  std::cerr << " eefm_rot_damping_gain " << eefm_rot_damping_gain << " eefm_rot_time_const " <<  eefm_rot_time_const << std::endl;
+  std::cerr << " eefm_pos_damping_gain " << eefm_pos_damping_gain << " eefm_pos_time_const " <<  eefm_pos_time_const << std::endl;
 }
 
 void Stabilizer::waitSTTransition()
