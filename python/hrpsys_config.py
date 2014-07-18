@@ -999,7 +999,8 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
 
     def readDigitalInput(self):
         '''
-        @return: TODO: elaborate
+        @rtype: [int]
+        @return: List of the values in digital input register. Range: 0 or 1.
         '''
         ret, din = self.rh_svc.readDigitalInput()
         retList = []
