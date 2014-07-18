@@ -997,11 +997,15 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
         # octet sequences are mapped to strings in omniorbpy
         return self.rh_svc.writeDigitalOutputWithMask(outStr, outMsk)
 
-    def readDigitalInput(self):
+    def readDigitalInput(self, retRaw=False):
         '''
-        @return: TODO: elaborate
+        @param retRaw: If true, return unicode object.
+        @rtype: [int] or tuple (bool, unicode).
+        @return: TODO: elaborate        
         '''
         ret, din = self.rh_svc.readDigitalInput()
+        if retRaw:
+            return (ret, din)
         retList = []
         for item in din:
             for i in range(8):
