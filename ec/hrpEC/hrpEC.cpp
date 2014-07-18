@@ -28,7 +28,11 @@ void stack_prefault(void) {
 namespace RTC
 {
     hrpExecutionContext::hrpExecutionContext()
-        : PeriodicExecutionContext(), 
+#ifdef OPENRTM_VERSION110 
+        : PeriodicExecutionContext(),
+#else
+        : RTC_exp::PeriodicExecutionContext(),
+#endif 
           m_priority(49)
     {
         resetProfile();
@@ -87,9 +91,18 @@ extern "C"
 {
     void hrpECInit(RTC::Manager* manager)
     {
+#ifdef OPENRTM_VERSION110 
         manager->registerECFactory("hrpExecutionContext",
                                    RTC::ECCreate<RTC::hrpExecutionContext>,
                                    RTC::ECDelete<RTC::hrpExecutionContext>);
+#else
+        RTC::ExecutionContextFactory::
+            instance().addFactory("hrpExecutionContext",
+                            ::coil::Creator< ::RTC::ExecutionContextBase,
+                            RTC::hrpExecutionContext>,
+                            ::coil::Destructor< ::RTC::ExecutionContextBase,
+                            RTC::hrpExecutionContext>);
+#endif
         std::cerr << "hrpExecutionContext is registered" << std::endl;
     }
 };

@@ -1,5 +1,5 @@
 include_directories(${OCTOMAP_INCLUDE_DIRS})
-link_directories(${OCTOMAP_DIR}/lib)
+link_directories(${OCTOMAP_LIBRARY_DIRS})
 set(comp_sources OccupancyGridMap3D.cpp OGMap3DService_impl.cpp)
 set(libs ${OPENHRP_LIBRARIES} ${OCTOMAP_LIBRARIES} hrpsysBaseStub)
 add_library(OccupancyGridMap3D SHARED ${comp_sources})
