@@ -593,7 +593,7 @@ void Stabilizer::calcTPCC() {
           hrp::Vector3 vel_p, vel_r;
           vel_p = target_foot_p[i] - target->p;
           rats::difference_rotation(vel_r, target->R, target_foot_R[i]);
-          manip2[i]->solveLimbIK(vel_p, vel_r, transition_count, 0.001, 0.01, MAX_TRANSITION_COUNT, qrefv, false);
+          manip2[i]->calcInverseKinematics2Loop(vel_p, vel_r, 1.0, 0.001, 0.01, &qrefv);
         }
       }
     }
@@ -754,7 +754,7 @@ void Stabilizer::calcEEForceMomentControl() {
           hrp::Vector3 vel_p, vel_r;
           vel_p = total_target_foot_p[i] - target->p;
           rats::difference_rotation(vel_r, target->R, total_target_foot_R[i]);
-          manip2[i]->solveLimbIK(vel_p, vel_r, transition_count, 0.001, 0.01, MAX_TRANSITION_COUNT, qrefv, false);
+          manip2[i]->calcInverseKinematics2Loop(vel_p, vel_r, 1.0, 0.001, 0.01, &qrefv);
         }
       }
     }

@@ -446,7 +446,7 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
                 std::cerr << "vel_p : " << vel_p[0] << " " << vel_p[1] << " " << vel_p[2] << std::endl;
                 std::cerr << "vel_r : " << vel_r[0] << " " << vel_r[1] << " " << vel_r[2] << std::endl;
             }
-            manip->solveLimbIK(vel_p, vel_r, param.transition_count, param.avoid_gain, param.reference_gain, MAX_TRANSITION_COUNT, qrefv, DEBUGP);
+            manip->calcInverseKinematics2Loop(vel_p, vel_r, 1.0, param.avoid_gain, param.reference_gain, &qrefv);
 
 	    param.current_p2 = param.current_p1;
 	    param.current_p1 = param.current_p0 + vel_p;

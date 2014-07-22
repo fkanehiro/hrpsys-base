@@ -15,21 +15,13 @@ namespace hrp {
   public:
     JointPathEx(BodyPtr& robot, Link* base, Link* end);
     bool calcJacobianInverseNullspace(dmatrix &J, dmatrix &Jinv, dmatrix &Jnull);
-    bool calcInverseKinematics2Loop(const Vector3& dp, const Vector3& omega, dvector &dq, const double avoid_gain = 0.0, const double reference_gain = 0.0, const dvector* reference_q = NULL);
+    bool calcInverseKinematics2Loop(const Vector3& dp, const Vector3& omega, const double LAMBDA, const double avoid_gain = 0.0, const double reference_gain = 0.0, const dvector* reference_q = NULL);
     bool calcInverseKinematics2(const Vector3& end_p, const Matrix33& end_R, const double avoid_gain = 0.0, const double reference_gain = 0.0, const dvector* reference_q = NULL);
     double getSRGain() { return sr_gain; }
     bool setSRGain(double g) { sr_gain = g; }
     double getManipulabilityLimit() { return manipulability_limit; }
     bool setManipulabilityLimit(double l) { manipulability_limit = l; }
     bool setManipulabilityGain(double l) { manipulability_gain = l; }
-    void solveLimbIK (const hrp::Vector3& _vel_p,
-                      const hrp::Vector3& _vel_r,
-                      const int transition_count,
-                      const double avoid_gain,
-                      const double reference_gain,
-                      const double MAX_TRANSITION_COUNT,
-                      const hrp::dvector& qrefv,
-                      bool DEBUGP = false);
     void setMaxIKError(double epos, double erot);
     void setMaxIKError(double e);
     void setMaxIKIteration(int iter);

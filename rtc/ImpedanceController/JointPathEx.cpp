@@ -180,8 +180,8 @@ bool JointPathEx::calcJacobianInverseNullspace(dmatrix &J, dmatrix &Jinv, dmatri
     return true;
 }
 
-bool JointPathEx::calcInverseKinematics2Loop(const Vector3& dp, const Vector3& omega, dvector &dq,
-                                             const double avoid_gain, const double reference_gain, const hrp::dvector* reference_q) {
+bool JointPathEx::calcInverseKinematics2Loop(const Vector3& dp, const Vector3& omega,
+                                             const double LAMBDA, const double avoid_gain, const double reference_gain, const hrp::dvector* reference_q) {
     const int n = numJoints();
 
     if ( DEBUG ) {
@@ -200,6 +200,7 @@ bool JointPathEx::calcInverseKinematics2Loop(const Vector3& dp, const Vector3& o
 
     calcJacobianInverseNullspace(J, Jinv, Jnull);
 
+    hrp::dvector dq(n);
     dq = Jinv * v; // dq = pseudoInverse(J) * v
 
     if ( DEBUG ) {
@@ -291,6 +292,39 @@ bool JointPathEx::calcInverseKinematics2Loop(const Vector3& dp, const Vector3& o
       }
     }
 
+    // check nan / inf
+    bool solve_linear_equation = true;
+    for(int j=0; j < n; ++j){
+      if ( isnan(dq(j)) || isinf(dq(j)) ) {
+        solve_linear_equation = false;
+        break;
+      }
+    }
+    if ( ! solve_linear_equation ) {
+      std::cerr << "ERROR nan/inf is found" << std::endl;
+      return false;
+    }
+
+    // joint angles update
+    for(int j=0; j < n; ++j){
+      joints[j]->q += LAMBDA * dq(j);
+    }
+
+    // upper/lower limit check
+    for(int j=0; j < n; ++j){
+      if ( joints[j]->q > joints[j]->ulimit) {
+        std::cerr << "Upper joint limit error " << joints[j]->name << std::endl;
+        joints[j]->q = joints[j]->ulimit;
+      }
+      if ( joints[j]->q < joints[j]->llimit) {
+        std::cerr << "Lower joint limit error " << joints[j]->name << std::endl;
+        joints[j]->q = joints[j]->llimit;
+      }
+      joints[j]->q = std::max(joints[j]->q, joints[j]->llimit);
+    }
+
+    calcForwardKinematics();
+
     return true;
 }
 
@@ -318,7 +352,6 @@ bool JointPathEx::calcInverseKinematics2(const Vector3& end_p, const Matrix33& e
     }
     
     const int n = numJoints();
-    dvector dq(n);
     dvector qorg(n);
 
     Link* target = linkPath.endLink();
@@ -370,41 +403,8 @@ bool JointPathEx::calcInverseKinematics2(const Vector3& end_p, const Matrix33& e
         }
       }
 
-      calcInverseKinematics2Loop(dp, omega, dq, avoid_gain, reference_gain, reference_q);
-
-      // check nan / inf
-      bool solve_linear_equation = true;
-      for(int j=0; j < n; ++j){
-          if ( isnan(dq(j)) || isinf(dq(j)) ) {
-              solve_linear_equation = false;
-              break;
-          }
-      }
-      if ( ! solve_linear_equation ) {
-          std::cerr << "ERROR nan/inf is found" << std::endl;
-          return false;
-      }
-                
-      for(int j=0; j < n; ++j){
-          joints[j]->q += LAMBDA * dq(j);
-      }
-
-      calcForwardKinematics();
-
-    }
- 
-    if ( converged ) {
-      for(int j=0; j < n; ++j){
-        if ( joints[j]->q > joints[j]->ulimit) {
-          std::cerr << "Upper joint limit error " << joints[j]->name << std::endl;
-          joints[j]->q = joints[j]->ulimit;
-        }
-        if ( joints[j]->q < joints[j]->llimit) {
-          std::cerr << "Lower joint limit error " << joints[j]->name << std::endl;
-          joints[j]->q = joints[j]->llimit;
-        }
-        joints[j]->q = std::max(joints[j]->q, joints[j]->llimit);
-      }
+      if ( !calcInverseKinematics2Loop(dp, omega, LAMBDA, avoid_gain, reference_gain, reference_q) )
+        return false;
     }
 
     if(!converged){
@@ -426,53 +426,3 @@ bool JointPathEx::calcInverseKinematics2(const Vector3& end_p, const Matrix33& e
     
     return converged;
 }
-
-// This should be merged with calcInverseKinematics2 and calcInverseKinematics2Loop
-void JointPathEx::solveLimbIK (const hrp::Vector3& _vel_p,
-                               const hrp::Vector3& _vel_r,
-                               const int transition_count,
-                               const double avoid_gain,
-                               const double reference_gain,
-                               const double MAX_TRANSITION_COUNT,
-                               const hrp::dvector& reference_q,
-                               bool DEBUGP)
-{
-            const int n = numJoints();
-	    hrp::dmatrix J(6, n);
-	    hrp::dmatrix Jinv(n, 6);
-	    hrp::dmatrix Jnull(n, n);
-	    
-            hrp::dvector dq(n);
-            calcInverseKinematics2Loop(_vel_p, _vel_r, dq, avoid_gain, reference_gain, &reference_q);
-
-            // break if dq(j) is nan/nil
-            bool dq_check = true;
-            for(int j=0; j < n; ++j){
-                if ( isnan(dq(j)) || isinf(dq(j)) ) {
-                    dq_check = false;
-                    break;
-                }
-            }
-            if ( ! dq_check ) return;
-
-            // update robot model
-            for(int j=0; j < n; ++j){
-                joint(j)->q += dq(j);
-            }
-
-
-            // check limit
-            for(int j=0; j < n; ++j){
-                if ( joint(j)->q > joint(j)->ulimit) {
-                    std::cerr << "Upper joint limit error " << joint(j)->name << std::endl;
-                    joint(j)->q = joint(j)->ulimit;
-                }
-                if ( joint(j)->q < joint(j)->llimit) {
-                    std::cerr << "Lower joint limit error " << joint(j)->name << std::endl;
-                    joint(j)->q = joint(j)->llimit;
-                }
-                joint(j)->q = std::max(joint(j)->q, joint(j)->llimit);
-            }
-            calcForwardKinematics();
-}
-
