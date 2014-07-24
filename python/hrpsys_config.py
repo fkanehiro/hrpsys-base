@@ -950,6 +950,8 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
                      robot's implementation.
         @return: What RobotHardware.writeDigitalOutput returns (TODO: document)
         '''
+        if self.simulation_mode:
+            return True
         doutBitLength = self.lengthDigitalOutput() * 8
         if len(dout) < doutBitLength:
             for i in range(doutBitLength - len(dout)):
@@ -974,6 +976,8 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
         @param mask: List of masking bits. Length depends on that of dout.
         @return: What RobotHardware.writeDigitalOutput returns (TODO: document)
         '''
+        if self.simulation_mode:
+            return True
         doutBitLength = self.lengthDigitalOutput() * 8
         if len(dout) < doutBitLength and \
                len(mask) < doutBitLength and \
@@ -1001,6 +1005,8 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
         '''
         @return: TODO: elaborate
         '''
+        if self.simulation_mode:
+            return []
         ret, din = self.rh_svc.readDigitalInput()
         retList = []
         for item in din:
