@@ -25,6 +25,7 @@
 // Service implementation headers
 // <rtc-template block="service_impl_h">
 #include "AutoBalancerService_impl.h"
+#include "interpolator.h"
 
 // </rtc-template>
 
@@ -203,6 +204,9 @@ class AutoBalancer
   double m_dt, move_base_gain;
   hrp::BodyPtr m_robot;
   coil::Mutex m_mutex;
+
+  double zmp_interpolate_time;
+  interpolator *zmp_interpolator;
 
   // static balance point offsetting
   hrp::Vector3 sbp_offset, sbp_cog_offset;
