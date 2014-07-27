@@ -100,8 +100,6 @@ public:
     void log(coil::TimeValue &i_tv){
         if (m_port.isNew()){
             m_port.read();
-            m_data.tm.sec = i_tv.sec();
-            m_data.tm.nsec = i_tv.usec() * 1000; 
             m_log.push_back(m_data);
             while (m_log.size() > m_maxLength){
                 m_log.pop_front();
