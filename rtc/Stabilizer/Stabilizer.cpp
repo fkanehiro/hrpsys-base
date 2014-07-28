@@ -558,18 +558,20 @@ void Stabilizer::calcTPCC() {
 
       //rpy control
       {
-        hrp::Matrix33 act_Rs(hrp::rotFromRpy(m_rpy.data.r, m_rpy.data.p, m_rpy.data.y));
-        hrp::Matrix33 tmpm, act_Rb;
         hrp::Sensor* sen = m_robot->sensor<hrp::RateGyroSensor>("gyrometer");
-        rats::rotm3times(tmpm, hrp::Matrix33(sen->link->R * sen->localR).transpose(), m_robot->rootLink()->R);
-        rats::rotm3times(act_Rb, act_Rs, tmpm);
-        hrp::Vector3 act_rpy = hrp::rpyFromRot(act_Rb);
-        hrp::Vector3 ref_rpy = hrp::rpyFromRot(target_root_R);
-        for (size_t i = 0; i < 2; i++) {
-          d_rpy[i] = transition_smooth_gain * (k_brot_p[i] * (ref_rpy(i) - act_rpy(i)) - 1/k_brot_tc[i] * d_rpy[i]) * dt + d_rpy[i];
+        if (sen != NULL) {
+          hrp::Matrix33 act_Rs(hrp::rotFromRpy(m_rpy.data.r, m_rpy.data.p, m_rpy.data.y));
+          hrp::Matrix33 tmpm, act_Rb;
+          rats::rotm3times(tmpm, hrp::Matrix33(sen->link->R * sen->localR).transpose(), m_robot->rootLink()->R);
+          rats::rotm3times(act_Rb, act_Rs, tmpm);
+          hrp::Vector3 act_rpy = hrp::rpyFromRot(act_Rb);
+          hrp::Vector3 ref_rpy = hrp::rpyFromRot(target_root_R);
+          for (size_t i = 0; i < 2; i++) {
+            d_rpy[i] = transition_smooth_gain * (k_brot_p[i] * (ref_rpy(i) - act_rpy(i)) - 1/k_brot_tc[i] * d_rpy[i]) * dt + d_rpy[i];
+          }
+          rats::rotm3times(current_root_R, target_root_R, hrp::rotFromRpy(d_rpy[0], d_rpy[1], 0));
+          m_robot->rootLink()->R = current_root_R;
         }
-        rats::rotm3times(current_root_R, target_root_R, hrp::rotFromRpy(d_rpy[0], d_rpy[1], 0));
-        m_robot->rootLink()->R = current_root_R;
       }
 
       // ee target => link-origin target
@@ -616,18 +618,20 @@ void Stabilizer::calcEEForceMomentControl() {
 
       //rpy control
       {
-        hrp::Matrix33 act_Rs(hrp::rotFromRpy(m_rpy.data.r, m_rpy.data.p, m_rpy.data.y));
-        hrp::Matrix33 tmpm, act_Rb;
         hrp::Sensor* sen = m_robot->sensor<hrp::RateGyroSensor>("gyrometer");
-        rats::rotm3times(tmpm, hrp::Matrix33(sen->link->R * sen->localR).transpose(), m_robot->rootLink()->R);
-        rats::rotm3times(act_Rb, act_Rs, tmpm);
-        hrp::Vector3 act_rpy = hrp::rpyFromRot(act_Rb);
-        hrp::Vector3 ref_rpy = hrp::rpyFromRot(target_root_R);
-        for (size_t i = 0; i < 2; i++) {
-          d_rpy[i] = transition_smooth_gain * (k_brot_p[i] * (ref_rpy(i) - act_rpy(i)) - 1/k_brot_tc[i] * d_rpy[i]) * dt + d_rpy[i];
+        if (sen != NULL) {
+          hrp::Matrix33 act_Rs(hrp::rotFromRpy(m_rpy.data.r, m_rpy.data.p, m_rpy.data.y));
+          hrp::Matrix33 tmpm, act_Rb;
+          rats::rotm3times(tmpm, hrp::Matrix33(sen->link->R * sen->localR).transpose(), m_robot->rootLink()->R);
+          rats::rotm3times(act_Rb, act_Rs, tmpm);
+          hrp::Vector3 act_rpy = hrp::rpyFromRot(act_Rb);
+          hrp::Vector3 ref_rpy = hrp::rpyFromRot(target_root_R);
+          for (size_t i = 0; i < 2; i++) {
+            d_rpy[i] = transition_smooth_gain * (k_brot_p[i] * (ref_rpy(i) - act_rpy(i)) - 1/k_brot_tc[i] * d_rpy[i]) * dt + d_rpy[i];
+          }
+          rats::rotm3times(current_root_R, target_root_R, hrp::rotFromRpy(d_rpy[0], d_rpy[1], 0));
+          m_robot->rootLink()->R = current_root_R;
         }
-        rats::rotm3times(current_root_R, target_root_R, hrp::rotFromRpy(d_rpy[0], d_rpy[1], 0));
-        m_robot->rootLink()->R = current_root_R;
       }
 
       // new ZMP calculation
