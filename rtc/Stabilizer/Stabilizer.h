@@ -220,6 +220,9 @@ class Stabilizer
   double pangx_ref, pangy_ref, pangx, pangy;
   double k_run_b[2], d_run_b[2];
   double rdx, rdy, rx, ry;
+  // EEFM ST
+  double eefm_k1[2], eefm_k2[2], eefm_k3[2];
+  double eefm_rot_damping_gain, eefm_rot_time_const, eefm_pos_damping_gain, eefm_pos_time_const;
 };
 
 
