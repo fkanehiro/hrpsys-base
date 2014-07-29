@@ -104,10 +104,11 @@ class Stabilizer
   void startStabilizer(void);
   void stopStabilizer(void);
   void getCurrentParameters ();
+  void getActualParameters ();
   void getTargetParameters ();
   void sync_2_st ();
   void sync_2_idle();
-  bool calcZMP(hrp::Vector3& ret_zmp);
+  bool calcZMP(hrp::Vector3& ret_zmp, const double zmp_z);
   void calcRUNST();
   void calcTPCC();
   void calcEEForceMomentControl();
@@ -200,7 +201,7 @@ class Stabilizer
   std::map<std::string, ee_trans> ee_map;
   double dt;
   int transition_count, loop;
-  bool is_legged_robot;
+  bool is_legged_robot, on_ground;
   hrp::Vector3 current_root_p;
   hrp::Matrix33 current_root_R;
   hrp::Matrix33 target_root_R;
@@ -208,7 +209,7 @@ class Stabilizer
   hrp::Matrix33 target_foot_R[2];
   rats::coordinates target_foot_midcoords;
   hrp::Vector3 ref_zmp, ref_cog, ref_cogvel, prev_ref_cog;
-  hrp::Vector3 act_zmp, rel_act_zmp, prev_act_cog, prev_act_cogvel;
+  hrp::Vector3 act_zmp, act_cog, act_cogvel, rel_act_zmp, prev_act_cog, prev_act_cogvel;
   // TPCC
   double k_tpcc_p[2], k_tpcc_x[2], d_rpy[2], k_brot_p[2], k_brot_tc[2];
   // RUN ST
