@@ -13,19 +13,10 @@ except:
     import socket
     import time
 
-def getRTCList ():
-    return [
-            ['seq', "SequencePlayer"],
-            ['sh', "StateHolder"],
-            ['fk', "ForwardKinematics"],
-            ['kf', "KalmanFilter"],
-            ['rmfo', "RemoveForceSensorLinkOffset"],
-            ]
-
 def init ():
     global hcf
     hcf = HrpsysConfigurator()
-    hcf.getRTCList = getRTCList
+    hcf.getRTCList = hcf.getRTCListUnstable
     hcf.init ("SampleRobot(Robot)0")
 
 def demo():
@@ -44,10 +35,10 @@ def demo():
     hcf.rmfo_svc.setForceMomentOffsetParam("lhsensor", OpenHRP.RemoveForceSensorLinkOffsetService.forcemomentOffsetParam(force_offset=[0,0,0], moment_offset=[0,0,0], link_offset_centroid=[0,-0.0368,-0.076271], link_offset_mass=0.800011))
     ret = hcf.rmfo_svc.getForceMomentOffsetParam("rhsensor")
     if ret[0] and ret[1].link_offset_mass == 0.800011:
-        print "getGaitGeneratorParam() => OK"
+        print "getForceMomentOffsetParam(\"rhsensor\") => OK"
     ret = hcf.rmfo_svc.getForceMomentOffsetParam("lhsensor")
     if ret[0] and ret[1].link_offset_mass == 0.800011:
-        print "getGaitGeneratorParam() => OK"
+        print "getForceMomentOffsetParam(\"lhsensor\") => OK"
     # 3. force and moment are reduced
     print numpy.linalg.norm(rtm.readDataPort(hcf.rmfo.port("off_lhsensor")).data) < 1e-2
     print numpy.linalg.norm(rtm.readDataPort(hcf.rmfo.port("off_lhsensor")).data) < 1e-2

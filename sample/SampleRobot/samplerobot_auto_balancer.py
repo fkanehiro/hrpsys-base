@@ -13,18 +13,10 @@ except:
     import socket
     import time
 
-def getRTCList ():
-    return [
-            ['seq', "SequencePlayer"],
-            ['sh', "StateHolder"],
-            ['fk', "ForwardKinematics"],
-            ['abc', "AutoBalancer"],
-            ]
-
 def init ():
     global hcf
     hcf = HrpsysConfigurator()
-    hcf.getRTCList = getRTCList
+    hcf.getRTCList = hcf.getRTCListUnstable
     hcf.init ("SampleRobot(Robot)0")
 
 def demo():
@@ -43,6 +35,7 @@ def demo():
     hcf.seq_svc.setJointAngles(initial_pose, 1.0)
     hcf.seq_svc.waitInterpolation()
     hcf.abc_svc.stopAutoBalancer();
+    print "Start and Stop AutoBalancer by fixing feet=>OK"
     #   2. AutoBalancer mode by fixing hands and feet
     hcf.abc_svc.startAutoBalancer([":rleg", ":lleg", ":rarm", ":larm"])
     hcf.seq_svc.setJointAngles(arm_front_pose, 1.0)
@@ -50,6 +43,7 @@ def demo():
     hcf.seq_svc.setJointAngles(initial_pose, 1.0)
     hcf.seq_svc.waitInterpolation()
     hcf.abc_svc.stopAutoBalancer();
+    print "Start and Stop AutoBalancer by fixing hands and feet=>OK"
     #   3. getAutoBalancerParam
     ret = hcf.abc_svc.getAutoBalancerParam()
     if ret[0]:
@@ -68,15 +62,18 @@ def demo():
     #   1. goPos
     hcf.abc_svc.goPos(0.1, 0.05, 20)
     hcf.abc_svc.waitFootSteps()
+    print "goPos()=>OK"
     #   2. goVelocity and goStop
     hcf.abc_svc.goVelocity(-0.1, -0.05, -20)
     time.sleep(1)
     hcf.abc_svc.goStop()
+    print "goVelocity()=>OK"
     #   3. setFootSteps
     hcf.abc_svc.setFootSteps([OpenHRP.AutoBalancerService.Footstep([0,-0.09,0], [1,0,0,0], ":rleg"), OpenHRP.AutoBalancerService.Footstep([0,0.09,0], [1,0,0,0], ":lleg")])
     hcf.abc_svc.waitFootSteps()
     hcf.abc_svc.setFootSteps([OpenHRP.AutoBalancerService.Footstep([0,-0.09,0], [1,0,0,0], ":rleg"), OpenHRP.AutoBalancerService.Footstep([0.15,0.09,0], [1,0,0,0], ":lleg"), OpenHRP.AutoBalancerService.Footstep([0.3,-0.09,0], [1,0,0,0], ":rleg"), OpenHRP.AutoBalancerService.Footstep([0.3,0.09,0], [1,0,0,0], ":lleg")])
     hcf.abc_svc.waitFootSteps()
+    print "setFootSteps()=>OK"
     #   4. getGaitGeneratorParam
     ret1 = hcf.abc_svc.getGaitGeneratorParam()
     if ret1[0]:
@@ -102,6 +99,7 @@ def demo():
     hcf.abc_svc.setFootSteps([OpenHRP.AutoBalancerService.Footstep([0,-0.09,0], [1,0,0,0], ":rleg"), OpenHRP.AutoBalancerService.Footstep([0,0.09,0], [1,0,0,0], ":lleg")])
     hcf.abc_svc.waitFootSteps()
     hcf.abc_svc.stopAutoBalancer();
+    print "Non default Stride()=>OK"
     #  7. walking by fixing 
     # abc_svc.startAutoBalancer([AutoBalancerService.AutoBalancerLimbParam(":rleg", [0,0,0], [0,0,0,0]),
     #                   AutoBalancerService.AutoBalancerLimbParam(":lleg", [0,0,0], [0,0,0,0]),

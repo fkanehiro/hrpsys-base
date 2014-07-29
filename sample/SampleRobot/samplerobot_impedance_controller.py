@@ -13,20 +13,10 @@ except:
     import socket
     import time
 
-def getRTCList ():
-    return [
-            ['seq', "SequencePlayer"],
-            ['sh', "StateHolder"],
-            ['fk', "ForwardKinematics"],
-            ['kf', "KalmanFilter"],
-            ['rmfo', "RemoveForceSensorLinkOffset"],
-            ['ic', "ImpedanceController"],
-            ]
-
 def init ():
     global hcf
     hcf = HrpsysConfigurator()
-    hcf.getRTCList = getRTCList
+    hcf.getRTCList = hcf.getRTCListUnstable
     hcf.init ("SampleRobot(Robot)0")
 
 def demo():
