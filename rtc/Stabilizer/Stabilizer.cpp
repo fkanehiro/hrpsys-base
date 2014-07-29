@@ -284,9 +284,6 @@ RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
   }
   if (m_qCurrentIn.isNew()) {
     m_qCurrentIn.read();
-    is_qCurrent = true;
-  } else {
-    is_qCurrent = false;
   }
   if (m_rpyIn.isNew()) {
     m_rpyIn.read();
@@ -486,10 +483,10 @@ void Stabilizer::getTargetParameters ()
   target_root_R = hrp::rotFromRpy(m_baseRpy.data.r, m_baseRpy.data.p, m_baseRpy.data.y);
   m_robot->rootLink()->R = target_root_R;
   m_robot->calcForwardKinematics();
-  refzmp = hrp::Vector3(m_zmpRef.data.x, m_zmpRef.data.y, m_zmpRef.data.z);
-  refcog = m_robot->calcCM();
-  refcog_vel = (refcog - prefcog)/dt;
-  prefcog = refcog;
+  ref_zmp = hrp::Vector3(m_zmpRef.data.x, m_zmpRef.data.y, m_zmpRef.data.z);
+  ref_cog = m_robot->calcCM();
+  ref_cogvel = (ref_cog - prev_ref_cog)/dt;
+  prev_ref_cog = ref_cog;
   getFootmidCoords(target_foot_midcoords);
 
   for (size_t i = 0; i < 2; i++) {
@@ -562,8 +559,8 @@ void Stabilizer::calcTPCC() {
       hrp::Vector3 cog = m_robot->calcCM();
       hrp::Vector3 newcog = hrp::Vector3::Zero();
       for (size_t i = 0; i < 2; i++) {
-        uu(i) = refcog_vel(i) - k_tpcc_p[i] * transition_smooth_gain * (refzmp(i) - act_zmp(i))
-                              + k_tpcc_x[i] * transition_smooth_gain * (refcog(i) - cog(i));
+        uu(i) = ref_cogvel(i) - k_tpcc_p[i] * transition_smooth_gain * (ref_zmp(i) - act_zmp(i))
+                              + k_tpcc_x[i] * transition_smooth_gain * (ref_cog(i) - cog(i));
         newcog(i) = uu(i) * dt + cog(i);
       }
 
@@ -646,7 +643,7 @@ void Stabilizer::calcEEForceMomentControl() {
       }
 
       // new ZMP calculation
-      hrp::Vector3 new_refzmp = refzmp;
+      hrp::Vector3 new_refzmp = ref_zmp;
       {
         // store current configuration (previous st result)
         hrp::Vector3 org_root_pos = m_robot->rootLink()->p;
@@ -663,26 +660,26 @@ void Stabilizer::calcEEForceMomentControl() {
         fixLegToCoords(":both", target_foot_midcoords); // tempolary
         // calc COG informatoin
         hrp::Vector3 act_cog = m_robot->calcCM();
-        hrp::Vector3 act_cog_vel = (act_cog - prev_act_cog)/dt;
+        hrp::Vector3 act_cogvel = (act_cog - prev_act_cog)/dt;
         //  cog vel filtering
         //cog_vel = 0.05 * nf_cog_vel + 0.95 * cog_vel; // ng
         //cog_vel = 0.1 * nf_cog_vel + 0.9 * cog_vel; // ng
         //cog_vel = 0.2 * nf_cog_vel + 0.8 * cog_vel;
-        act_cog_vel = 0.5 * prev_act_cog_vel + 0.5 * act_cog_vel; // ok
+        act_cogvel = 0.5 * prev_act_cogvel + 0.5 * act_cogvel; // ok
         // Kajita's feedback low
         //double k1 = -1.41429, k2 = -0.404082, k3 = -0.18;
         //double k_ratio = 0.9;
         //double k1 = -1.41429*k_ratio, k2 = -0.404082*k_ratio, k3 = -0.18*k_ratio;
         for (size_t i = 0; i < 2; i++) {
-          new_refzmp(i) += eefm_k1[i] * transition_smooth_gain * (refcog(i) - act_cog(i)) + eefm_k2[i] * transition_smooth_gain * (refcog_vel(i) - act_cog_vel(i)) + eefm_k3[i] * transition_smooth_gain * (refzmp(i) - act_zmp(i));
+          new_refzmp(i) += eefm_k1[i] * transition_smooth_gain * (ref_cog(i) - act_cog(i)) + eefm_k2[i] * transition_smooth_gain * (ref_cogvel(i) - act_cogvel(i)) + eefm_k3[i] * transition_smooth_gain * (ref_zmp(i) - act_zmp(i));
         }
         if (DEBUGP) {
-          std::cerr << "COG [" << refcog(0)*1e3 << " " << refcog(1)*1e3 << " " << refcog(2)*1e3 << "] [" << act_cog(0)*1e3 << " " << act_cog(1)*1e3 << " " << act_cog(2)*1e3 << "]" << std::endl;
-          std::cerr << "vel [" << refcog_vel(0) << " " << refcog_vel(1) << " " << refcog_vel(2) << "] [" << act_cog_vel(0) << " " << act_cog_vel(1) << " " << act_cog_vel(2) << "]" << std::endl;
-          std::cerr << "ZMP [" << refzmp(0)*1e3 << " " << refzmp(1)*1e3 << " " << refzmp(2)*1e3 << "] [" << act_zmp(0)*1e3 << " " << act_zmp(1)*1e3 << " " << act_zmp(2)*1e3 << "]" << std::endl;
-          std::cerr << "dZMP [" << (new_refzmp(0)-refzmp(0)) *1e3 << " " << (new_refzmp(1)-refzmp(1))*1e3 << " " << (new_refzmp(2)-refzmp(2))*1e3 << "]" << std::endl;
+          std::cerr << "COG [" << ref_cog(0)*1e3 << " " << ref_cog(1)*1e3 << " " << ref_cog(2)*1e3 << "] [" << act_cog(0)*1e3 << " " << act_cog(1)*1e3 << " " << act_cog(2)*1e3 << "]" << std::endl;
+          std::cerr << "vel [" << ref_cogvel(0) << " " << ref_cogvel(1) << " " << ref_cogvel(2) << "] [" << act_cogvel(0) << " " << act_cogvel(1) << " " << act_cogvel(2) << "]" << std::endl;
+          std::cerr << "ZMP [" << ref_zmp(0)*1e3 << " " << ref_zmp(1)*1e3 << " " << ref_zmp(2)*1e3 << "] [" << act_zmp(0)*1e3 << " " << act_zmp(1)*1e3 << " " << act_zmp(2)*1e3 << "]" << std::endl;
+          std::cerr << "dZMP [" << (new_refzmp(0)-ref_zmp(0)) *1e3 << " " << (new_refzmp(1)-ref_zmp(1))*1e3 << " " << (new_refzmp(2)-ref_zmp(2))*1e3 << "]" << std::endl;
         }
-        prev_act_cog_vel = act_cog_vel;
+        prev_act_cogvel = act_cogvel;
         prev_act_cog = act_cog;
         // return to original current configuration
         m_robot->rootLink()->p = org_root_pos;
@@ -1016,7 +1013,7 @@ void Stabilizer::sync_2_st ()
   d_rpy[0] = d_rpy[1] = 0;
   transition_count = -MAX_TRANSITION_COUNT;
   pdr = hrp::Vector3::Zero();
-  prefcog = m_robot->calcCM();
+  prev_ref_cog = m_robot->calcCM();
   control_mode = MODE_ST;
 }
 
@@ -1033,8 +1030,8 @@ void Stabilizer::startStabilizer(void)
   if ( transition_count == 0 && control_mode == MODE_IDLE ) {
     std::cerr << "START ST"  << std::endl;
     d_foot_rpy[0](0) = d_foot_rpy[0](1) = d_foot_rpy[1](0) = d_foot_rpy[1](1) = 0.0;
-    prev_act_cog = refcog;
-    prev_act_cog_vel = hrp::Vector3::Zero();
+    prev_act_cog = ref_cog;
+    prev_act_cogvel = hrp::Vector3::Zero();
     zctrl = 0.0;
     sync_2_st();
     waitSTTransition();
