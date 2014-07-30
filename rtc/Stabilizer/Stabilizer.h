@@ -104,10 +104,11 @@ class Stabilizer
   void startStabilizer(void);
   void stopStabilizer(void);
   void getCurrentParameters ();
+  void getActualParameters ();
   void getTargetParameters ();
   void sync_2_st ();
   void sync_2_idle();
-  bool calcZMP(hrp::Vector3& ret_zmp);
+  bool calcZMP(hrp::Vector3& ret_zmp, const double zmp_z);
   void calcRUNST();
   void calcTPCC();
   void calcEEForceMomentControl();
@@ -200,19 +201,17 @@ class Stabilizer
   std::map<std::string, ee_trans> ee_map;
   double dt;
   int transition_count, loop;
-  bool is_legged_robot, is_qCurrent;
+  bool is_legged_robot, on_ground;
   hrp::Vector3 current_root_p;
   hrp::Matrix33 current_root_R;
   hrp::Matrix33 target_root_R;
   hrp::Vector3 target_foot_p[2];
   hrp::Matrix33 target_foot_R[2];
-  hrp::Vector3 d_foot_rpy[2];
   rats::coordinates target_foot_midcoords;
-  double zctrl;
-  hrp::Vector3 refzmp, refcog, refcog_vel;
+  hrp::Vector3 ref_zmp, ref_cog, ref_cogvel, prev_ref_cog;
+  hrp::Vector3 act_zmp, act_cog, act_cogvel, rel_act_zmp, prev_act_cog, prev_act_cogvel;
   // TPCC
   double k_tpcc_p[2], k_tpcc_x[2], d_rpy[2], k_brot_p[2], k_brot_tc[2];
-  hrp::Vector3 act_zmp, rel_act_zmp, prefcog, prev_act_cog, prev_act_cog_vel;
   // RUN ST
   TwoDofController m_tau_x[ST_NUM_LEGS], m_tau_y[ST_NUM_LEGS], m_f_z;
   hrp::Vector3 pdr;
@@ -220,6 +219,11 @@ class Stabilizer
   double pangx_ref, pangy_ref, pangx, pangy;
   double k_run_b[2], d_run_b[2];
   double rdx, rdy, rx, ry;
+  // EEFM ST
+  double eefm_k1[2], eefm_k2[2], eefm_k3[2];
+  double eefm_rot_damping_gain, eefm_rot_time_const, eefm_pos_damping_gain, eefm_pos_time_const;
+  hrp::Vector3 d_foot_rpy[2];
+  double zctrl;
 };
 
 

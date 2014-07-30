@@ -24,6 +24,14 @@ module OpenHRP
       double k_run_y;
       double d_run_x;
       double d_run_y;
+      // for EEFM ST
+      DblArray2 eefm_k1;
+      DblArray2 eefm_k2;
+      DblArray2 eefm_k3;
+      double eefm_rot_damping_gain;
+      double eefm_rot_time_const;
+      double eefm_pos_damping_gain;
+      double eefm_pos_time_const;
     };
 
     /**

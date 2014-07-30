@@ -130,6 +130,9 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     control_mode = MODE_IDLE;
     loop = 0;
 
+    zmp_interpolate_time = 1.0;
+    zmp_interpolator = new interpolator(6, m_dt);
+
     // setting from conf file
     // GaitGenerator requires abc_leg_offset and abc_stride_parameter in robot conf file
     // setting leg_pos from conf file
@@ -224,6 +227,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
 
 RTC::ReturnCode_t AutoBalancer::onFinalize()
 {
+  delete zmp_interpolator;
   return RTC::RTC_OK;
 }
 
@@ -322,6 +326,7 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
     m_zmpRef.data.z = refzmp(2);
     m_zmpRef.tm = m_qRef.tm;
     m_zmpRefOut.write();
+
     return RTC::RTC_OK;
 }
 
@@ -338,6 +343,18 @@ void AutoBalancer::robotstateOrg2qRef()
   coordinates rc, lc;
   if ( ikp.find(":rleg") != ikp.end() && ikp.find(":lleg") != ikp.end() ) {
     coordinates tmp_fix_coords;
+    if (!zmp_interpolator->isEmpty()) {
+      double default_zmp_offsets_output[6];
+      zmp_interpolator->get(default_zmp_offsets_output, true);
+      for (size_t i = 0; i < 2; i++)
+        for (size_t j = 0; j < 3; j++)
+          default_zmp_offsets[i](j) = default_zmp_offsets_output[i*3+j];
+      if (DEBUGP) {
+        std::cerr << "default_zmp_offsets (interpolate): "
+                  << default_zmp_offsets[0](0) << " " << default_zmp_offsets[0](1) << " " << default_zmp_offsets[0](2) << " "
+                  << default_zmp_offsets[1](0) << " " << default_zmp_offsets[1](1) << " " << default_zmp_offsets[1](2) << std::endl;
+      }
+    }
     if ( gg_is_walking ) {
       gg->set_default_zmp_offsets(default_zmp_offsets);
       gg_solved = gg->proc_one_tick();
@@ -739,14 +756,16 @@ bool AutoBalancer::getGaitGeneratorParam(OpenHRP::AutoBalancerService::GaitGener
 
 bool AutoBalancer::setAutoBalancerParam(const OpenHRP::AutoBalancerService::AutoBalancerParam& i_param)
 {
+  double default_zmp_offsets_array[6];
   move_base_gain = i_param.move_base_gain;
   for (size_t i = 0; i < 2; i++)
     for (size_t j = 0; j < 3; j++)
-      default_zmp_offsets[i](j) = i_param.default_zmp_offsets[i][j];
+      default_zmp_offsets_array[i*3+j] = i_param.default_zmp_offsets[i][j];
+  zmp_interpolator->go(default_zmp_offsets_array, zmp_interpolate_time, true);
   std::cerr << "move_base_gain: " << move_base_gain << std::endl;
   std::cerr << "default_zmp_offsets: "
-            << default_zmp_offsets[0](0) << " " << default_zmp_offsets[0](1) << " " << default_zmp_offsets[0](2) << " "
-            << default_zmp_offsets[1](0) << " " << default_zmp_offsets[1](1) << " " << default_zmp_offsets[1](2) << std::endl;
+            << default_zmp_offsets_array[0] << " " << default_zmp_offsets_array[1] << " " << default_zmp_offsets_array[2] << " "
+            << default_zmp_offsets_array[3] << " " << default_zmp_offsets_array[4] << " " << default_zmp_offsets_array[5] << std::endl;
   return true;
 };
 

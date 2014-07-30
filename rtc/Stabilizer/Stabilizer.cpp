@@ -158,6 +158,17 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
     k_brot_p[i] = 0.1;
     k_brot_tc[i] = 1.5;
   }
+  // parameters for EEFM
+  double k_ratio = 0.9;
+  for (int i = 0; i < 2; i++) {
+    eefm_k1[i] = -1.41429*k_ratio;
+    eefm_k2[i] = -0.404082*k_ratio;
+    eefm_k3[i] = -0.18*k_ratio;
+  }
+  eefm_rot_damping_gain = 20*5;
+  eefm_rot_time_const = 1;
+  eefm_pos_damping_gain = 3500;
+  eefm_pos_time_const = 1;
 
   // parameters for RUNST
   double ke = 0, tc = 0;
@@ -227,17 +238,8 @@ RTC::ReturnCode_t Stabilizer::onDeactivated(RTC::UniqueId ec_id)
   return RTC::RTC_OK;
 }
 
-bool Stabilizer::calcZMP(hrp::Vector3& ret_zmp)
+bool Stabilizer::calcZMP(hrp::Vector3& ret_zmp, const double zmp_z)
 {
-  double zmp_z[2];
-  for (size_t i = 0; i < 2; i++) {
-    hrp::ForceSensor* sensor = m_robot->sensor<hrp::ForceSensor>(sensor_names[i]);
-    if (sensor != NULL) {
-      ee_trans& eet = ee_map[std::string(sensor->link->name)];
-      hrp::Vector3 zp = sensor->link->R * eet.localp + sensor->link->p;
-      zmp_z[i] = zp(2);
-    }
-  }
   double tmpzmpx = 0;
   double tmpzmpy = 0;
   double tmpfz = 0;
@@ -248,15 +250,15 @@ bool Stabilizer::calcZMP(hrp::Vector3& ret_zmp)
     rats::rotm3times(tmpR, sensor->link->R, sensor->localR);
     hrp::Vector3 nf = tmpR * hrp::Vector3(m_force[i].data[0], m_force[i].data[1], m_force[i].data[2]);
     hrp::Vector3 nm = tmpR * hrp::Vector3(m_force[i].data[3], m_force[i].data[4], m_force[i].data[5]);
-    tmpzmpx += nf(2) * fsp(0) - (fsp(2) - zmp_z[i]) * nf(0) - nm(1);
-    tmpzmpy += nf(2) * fsp(1) - (fsp(2) - zmp_z[i]) * nf(1) + nm(0);
+    tmpzmpx += nf(2) * fsp(0) - (fsp(2) - zmp_z) * nf(0) - nm(1);
+    tmpzmpy += nf(2) * fsp(1) - (fsp(2) - zmp_z) * nf(1) + nm(0);
     tmpfz += nf(2);
   }
   if (tmpfz < 50) {
     ret_zmp = act_zmp;
     return false; // in the air
   } else {
-    ret_zmp = hrp::Vector3(tmpzmpx / tmpfz, tmpzmpy / tmpfz, (zmp_z[0]+zmp_z[1])/2.0);
+    ret_zmp = hrp::Vector3(tmpzmpx / tmpfz, tmpzmpy / tmpfz, zmp_z);
     return true; // on ground
   }
 };
@@ -273,9 +275,6 @@ RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
   }
   if (m_qCurrentIn.isNew()) {
     m_qCurrentIn.read();
-    is_qCurrent = true;
-  } else {
-    is_qCurrent = false;
   }
   if (m_rpyIn.isNew()) {
     m_rpyIn.read();
@@ -297,11 +296,7 @@ RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
   }
 
   getCurrentParameters();
-  bool on_ground = false;
-  if (is_legged_robot && ( m_force[0].data.length() > 0 && m_force[1].data.length() > 0 ))
-    on_ground = calcZMP(act_zmp);
-  // convert absolute (in st) -> root-link relative
-  rel_act_zmp = m_robot->rootLink()->R.transpose() * (act_zmp - m_robot->rootLink()->p);
+  getActualParameters();
   getTargetParameters();
 
   if (is_legged_robot) {
@@ -454,6 +449,65 @@ void Stabilizer::getCurrentParameters ()
   }
 }
 
+void Stabilizer::getActualParameters ()
+{
+#if 0
+  // update by current joint angles
+  for ( int i = 0; i < m_robot->numJoints(); i++ ){
+    m_robot->joint(i)->q = m_qCurrent.data[i];
+  }
+  // tempolary
+  m_robot->rootLink()->p = hrp::Vector3(0,0,0);
+  hrp::Sensor* sen = m_robot->sensor<hrp::RateGyroSensor>("gyrometer");
+  hrp::Matrix33 senR = sen->link->R * sen->localR;
+  //hrp::Matrix33 act_Rs(hrp::rotFromRpy(m_rpy.data.r, m_rpy.data.p, m_rpy.data.y));
+  hrp::Matrix33 act_Rs(hrp::rotFromRpy(m_rpy.data.r*0.5, m_rpy.data.p*0.5, m_rpy.data.y*0.5));
+  m_robot->rootLink()->R = act_Rs * (senR.transpose() * m_robot->rootLink()->R);
+  m_robot->calcForwardKinematics();
+  //fixLegToCoords(":both", target_foot_midcoords);
+  hrp::Vector3 foot_origin_pos;
+  hrp::Matrix33 foot_origin_rot;
+  rats::coordinates leg_c[2], tmpc;
+  hrp::Vector3 ez = hrp::Vector3(0,0,1);
+  for (size_t i = 0; i < 2; i++) {
+    hrp::Link* target = m_robot->sensor<hrp::ForceSensor>(sensor_names[i])->link;
+    leg_c[i].pos = target->p;
+    hrp::Vector3 vv = (target->R * ez).cross(ez);
+    if (fabs(vv.norm()-0.0) < 1e-5) {
+      leg_c[i].rot = target->R;
+    } else {
+      hrp::Matrix33 tmpr;
+      rats::rotation_matrix(tmpr, std::asin(vv.norm()), vv.normalized());
+      leg_c[i].rot = (tmpr * target->R);
+    }
+  }
+  rats::mid_coords(tmpc, 0.5, leg_c[0], leg_c[1]);
+  foot_origin_pos = tmpc.pos;
+  foot_origin_rot = tmpc.rot;
+#endif
+  // cog
+  act_cog = m_robot->calcCM();
+  act_cogvel = (act_cog - prev_act_cog)/dt;
+  act_cogvel = 0.8 * prev_act_cogvel + 0.2 * act_cogvel;
+  prev_act_cog = act_cog;
+  prev_act_cogvel = act_cogvel;
+  // zmp
+  //bool on_ground = false;
+  on_ground = false;
+  if (is_legged_robot && ( m_force[0].data.length() > 0 && m_force[1].data.length() > 0 ))
+    //on_ground = calcZMP(act_zmp, zmp_origin_off+foot_origin_pos(2));
+    on_ground = calcZMP(act_zmp, ref_zmp(2));
+  // convert absolute (in st) -> root-link relative
+  rel_act_zmp = m_robot->rootLink()->R.transpose() * (act_zmp - m_robot->rootLink()->p);
+#if 0
+  // world (current-tmp) => local (foot_origin)
+  act_zmp = foot_origin_rot.transpose() * (act_zmp - foot_origin_pos);
+  act_cog = foot_origin_rot.transpose() * (act_cog - foot_origin_pos);
+  act_cog_vel = foot_origin_rot.transpose() * act_cog_vel;
+  act_root_rot = m_robot->rootLink()->R;
+#endif
+}
+
 void Stabilizer::getTargetParameters ()
 {
   // update internal robot model
@@ -475,10 +529,10 @@ void Stabilizer::getTargetParameters ()
   target_root_R = hrp::rotFromRpy(m_baseRpy.data.r, m_baseRpy.data.p, m_baseRpy.data.y);
   m_robot->rootLink()->R = target_root_R;
   m_robot->calcForwardKinematics();
-  refzmp = hrp::Vector3(m_zmpRef.data.x, m_zmpRef.data.y, m_zmpRef.data.z);
-  refcog = m_robot->calcCM();
-  refcog_vel = (refcog - prefcog)/dt;
-  prefcog = refcog;
+  ref_zmp = hrp::Vector3(m_zmpRef.data.x, m_zmpRef.data.y, m_zmpRef.data.z);
+  ref_cog = m_robot->calcCM();
+  ref_cogvel = (ref_cog - prev_ref_cog)/dt;
+  prev_ref_cog = ref_cog;
   getFootmidCoords(target_foot_midcoords);
 
   for (size_t i = 0; i < 2; i++) {
@@ -488,6 +542,27 @@ void Stabilizer::getTargetParameters ()
       target_foot_R[i] = sen->link->R * ee_map[sen->link->name].localR;
     }
   }
+#if 0
+  //
+  hrp::Vector3 foot_origin_pos;
+  hrp::Matrix33 foot_origin_rot;
+  rats::coordinates leg_c[2], tmpc;
+  for (size_t i = 0; i < 2; i++) {
+    hrp::Link* target = m_robot->sensor<hrp::ForceSensor>(sensor_names[i])->link;
+    leg_c[i].pos = target->p;
+    leg_c[i].rot = target->R;
+  }
+  rats::mid_coords(tmpc, 0.5, leg_c[0], leg_c[1]);
+  foot_origin_pos = tmpc.pos;
+  foot_origin_rot = tmpc.rot;
+  // initialize for new_refzmp
+  new_refzmp = refzmp;
+  // world (current-tmp) => local (foot_origin)
+  zmp_origin_off = refzmp(2) - foot_origin_pos(2);
+  refzmp = foot_origin_rot.transpose() * (refzmp - foot_origin_pos);
+  refcog = foot_origin_rot.transpose() * (refcog - foot_origin_pos);
+  //refcog_vel = foot_origin_rot.transpose() * refcog_vel;
+#endif
 
   /* return to the original state */
   if ( !(control_mode == MODE_IDLE || control_mode == MODE_AIR) ) {
@@ -551,25 +626,27 @@ void Stabilizer::calcTPCC() {
       hrp::Vector3 cog = m_robot->calcCM();
       hrp::Vector3 newcog = hrp::Vector3::Zero();
       for (size_t i = 0; i < 2; i++) {
-        uu(i) = refcog_vel(i) - k_tpcc_p[i] * transition_smooth_gain * (refzmp(i) - act_zmp(i))
-                              + k_tpcc_x[i] * transition_smooth_gain * (refcog(i) - cog(i));
+        uu(i) = ref_cogvel(i) - k_tpcc_p[i] * transition_smooth_gain * (ref_zmp(i) - act_zmp(i))
+                              + k_tpcc_x[i] * transition_smooth_gain * (ref_cog(i) - act_cog(i));
         newcog(i) = uu(i) * dt + cog(i);
       }
 
       //rpy control
       {
-        hrp::Matrix33 act_Rs(hrp::rotFromRpy(m_rpy.data.r, m_rpy.data.p, m_rpy.data.y));
-        hrp::Matrix33 tmpm, act_Rb;
         hrp::Sensor* sen = m_robot->sensor<hrp::RateGyroSensor>("gyrometer");
-        rats::rotm3times(tmpm, hrp::Matrix33(sen->link->R * sen->localR).transpose(), m_robot->rootLink()->R);
-        rats::rotm3times(act_Rb, act_Rs, tmpm);
-        hrp::Vector3 act_rpy = hrp::rpyFromRot(act_Rb);
-        hrp::Vector3 ref_rpy = hrp::rpyFromRot(target_root_R);
-        for (size_t i = 0; i < 2; i++) {
-          d_rpy[i] = transition_smooth_gain * (k_brot_p[i] * (ref_rpy(i) - act_rpy(i)) - 1/k_brot_tc[i] * d_rpy[i]) * dt + d_rpy[i];
+        if (sen != NULL) {
+          hrp::Matrix33 act_Rs(hrp::rotFromRpy(m_rpy.data.r, m_rpy.data.p, m_rpy.data.y));
+          hrp::Matrix33 tmpm, act_Rb;
+          rats::rotm3times(tmpm, hrp::Matrix33(sen->link->R * sen->localR).transpose(), m_robot->rootLink()->R);
+          rats::rotm3times(act_Rb, act_Rs, tmpm);
+          hrp::Vector3 act_rpy = hrp::rpyFromRot(act_Rb);
+          hrp::Vector3 ref_rpy = hrp::rpyFromRot(target_root_R);
+          for (size_t i = 0; i < 2; i++) {
+            d_rpy[i] = transition_smooth_gain * (k_brot_p[i] * (ref_rpy(i) - act_rpy(i)) - 1/k_brot_tc[i] * d_rpy[i]) * dt + d_rpy[i];
+          }
+          rats::rotm3times(current_root_R, target_root_R, hrp::rotFromRpy(d_rpy[0], d_rpy[1], 0));
+          m_robot->rootLink()->R = current_root_R;
         }
-        rats::rotm3times(current_root_R, target_root_R, hrp::rotFromRpy(d_rpy[0], d_rpy[1], 0));
-        m_robot->rootLink()->R = current_root_R;
       }
 
       // ee target => link-origin target
@@ -616,22 +693,24 @@ void Stabilizer::calcEEForceMomentControl() {
 
       //rpy control
       {
-        hrp::Matrix33 act_Rs(hrp::rotFromRpy(m_rpy.data.r, m_rpy.data.p, m_rpy.data.y));
-        hrp::Matrix33 tmpm, act_Rb;
         hrp::Sensor* sen = m_robot->sensor<hrp::RateGyroSensor>("gyrometer");
-        rats::rotm3times(tmpm, hrp::Matrix33(sen->link->R * sen->localR).transpose(), m_robot->rootLink()->R);
-        rats::rotm3times(act_Rb, act_Rs, tmpm);
-        hrp::Vector3 act_rpy = hrp::rpyFromRot(act_Rb);
-        hrp::Vector3 ref_rpy = hrp::rpyFromRot(target_root_R);
-        for (size_t i = 0; i < 2; i++) {
-          d_rpy[i] = transition_smooth_gain * (k_brot_p[i] * (ref_rpy(i) - act_rpy(i)) - 1/k_brot_tc[i] * d_rpy[i]) * dt + d_rpy[i];
+        if (sen != NULL) {
+          hrp::Matrix33 act_Rs(hrp::rotFromRpy(m_rpy.data.r, m_rpy.data.p, m_rpy.data.y));
+          hrp::Matrix33 tmpm, act_Rb;
+          rats::rotm3times(tmpm, hrp::Matrix33(sen->link->R * sen->localR).transpose(), m_robot->rootLink()->R);
+          rats::rotm3times(act_Rb, act_Rs, tmpm);
+          hrp::Vector3 act_rpy = hrp::rpyFromRot(act_Rb);
+          hrp::Vector3 ref_rpy = hrp::rpyFromRot(target_root_R);
+          for (size_t i = 0; i < 2; i++) {
+            d_rpy[i] = transition_smooth_gain * (k_brot_p[i] * (ref_rpy(i) - act_rpy(i)) - 1/k_brot_tc[i] * d_rpy[i]) * dt + d_rpy[i];
+          }
+          rats::rotm3times(current_root_R, target_root_R, hrp::rotFromRpy(d_rpy[0], d_rpy[1], 0));
+          m_robot->rootLink()->R = current_root_R;
         }
-        rats::rotm3times(current_root_R, target_root_R, hrp::rotFromRpy(d_rpy[0], d_rpy[1], 0));
-        m_robot->rootLink()->R = current_root_R;
       }
 
       // new ZMP calculation
-      hrp::Vector3 new_refzmp = refzmp;
+      hrp::Vector3 new_refzmp = ref_zmp;
       {
         // store current configuration (previous st result)
         hrp::Vector3 org_root_pos = m_robot->rootLink()->p;
@@ -648,26 +727,26 @@ void Stabilizer::calcEEForceMomentControl() {
         fixLegToCoords(":both", target_foot_midcoords); // tempolary
         // calc COG informatoin
         hrp::Vector3 act_cog = m_robot->calcCM();
-        hrp::Vector3 act_cog_vel = (act_cog - prev_act_cog)/dt;
+        hrp::Vector3 act_cogvel = (act_cog - prev_act_cog)/dt;
         //  cog vel filtering
         //cog_vel = 0.05 * nf_cog_vel + 0.95 * cog_vel; // ng
         //cog_vel = 0.1 * nf_cog_vel + 0.9 * cog_vel; // ng
         //cog_vel = 0.2 * nf_cog_vel + 0.8 * cog_vel;
-        act_cog_vel = 0.5 * prev_act_cog_vel + 0.5 * act_cog_vel; // ok
+        act_cogvel = 0.5 * prev_act_cogvel + 0.5 * act_cogvel; // ok
         // Kajita's feedback low
         //double k1 = -1.41429, k2 = -0.404082, k3 = -0.18;
-        double k_ratio = 0.9;
-        double k1 = -1.41429*k_ratio, k2 = -0.404082*k_ratio, k3 = -0.18*k_ratio;
+        //double k_ratio = 0.9;
+        //double k1 = -1.41429*k_ratio, k2 = -0.404082*k_ratio, k3 = -0.18*k_ratio;
         for (size_t i = 0; i < 2; i++) {
-          new_refzmp(i) += k1 * transition_smooth_gain * (refcog(i) - act_cog(i)) + k2 * transition_smooth_gain * (refcog_vel(i) - act_cog_vel(i)) + k3 * transition_smooth_gain * (refzmp(i) - act_zmp(i));
+          new_refzmp(i) += eefm_k1[i] * transition_smooth_gain * (ref_cog(i) - act_cog(i)) + eefm_k2[i] * transition_smooth_gain * (ref_cogvel(i) - act_cogvel(i)) + eefm_k3[i] * transition_smooth_gain * (ref_zmp(i) - act_zmp(i));
         }
         if (DEBUGP) {
-          std::cerr << "COG [" << refcog(0)*1e3 << " " << refcog(1)*1e3 << " " << refcog(2)*1e3 << "] [" << act_cog(0)*1e3 << " " << act_cog(1)*1e3 << " " << act_cog(2)*1e3 << "]" << std::endl;
-          std::cerr << "vel [" << refcog_vel(0) << " " << refcog_vel(1) << " " << refcog_vel(2) << "] [" << act_cog_vel(0) << " " << act_cog_vel(1) << " " << act_cog_vel(2) << "]" << std::endl;
-          std::cerr << "ZMP [" << refzmp(0)*1e3 << " " << refzmp(1)*1e3 << " " << refzmp(2)*1e3 << "] [" << act_zmp(0)*1e3 << " " << act_zmp(1)*1e3 << " " << act_zmp(2)*1e3 << "]" << std::endl;
-          std::cerr << "dZMP [" << (new_refzmp(0)-refzmp(0)) *1e3 << " " << (new_refzmp(1)-refzmp(1))*1e3 << " " << (new_refzmp(2)-refzmp(2))*1e3 << "]" << std::endl;
+          std::cerr << "COG [" << ref_cog(0)*1e3 << " " << ref_cog(1)*1e3 << " " << ref_cog(2)*1e3 << "] [" << act_cog(0)*1e3 << " " << act_cog(1)*1e3 << " " << act_cog(2)*1e3 << "]" << std::endl;
+          std::cerr << "vel [" << ref_cogvel(0) << " " << ref_cogvel(1) << " " << ref_cogvel(2) << "] [" << act_cogvel(0) << " " << act_cogvel(1) << " " << act_cogvel(2) << "]" << std::endl;
+          std::cerr << "ZMP [" << ref_zmp(0)*1e3 << " " << ref_zmp(1)*1e3 << " " << ref_zmp(2)*1e3 << "] [" << act_zmp(0)*1e3 << " " << act_zmp(1)*1e3 << " " << act_zmp(2)*1e3 << "]" << std::endl;
+          std::cerr << "dZMP [" << (new_refzmp(0)-ref_zmp(0)) *1e3 << " " << (new_refzmp(1)-ref_zmp(1))*1e3 << " " << (new_refzmp(2)-ref_zmp(2))*1e3 << "]" << std::endl;
         }
-        prev_act_cog_vel = act_cog_vel;
+        prev_act_cogvel = act_cogvel;
         prev_act_cog = act_cog;
         // return to original current configuration
         m_robot->rootLink()->p = org_root_pos;
@@ -719,15 +798,15 @@ void Stabilizer::calcEEForceMomentControl() {
           hrp::Vector3 ee_moment = (sensor->link->R * (sensor->localPos - ee_map[sensor->link->name].localp)).cross(sensor_force) + sensor_moment;
           fz_diff += (i==0? -sensor_force(2) : sensor_force(2));
           // calcDampingControl
-          d_foot_rpy[i](0) = calcDampingControl(ref_foot_moment[i](0), ee_moment(0), d_foot_rpy[i](0), 20*5, 1);
-          d_foot_rpy[i](1) = calcDampingControl(ref_foot_moment[i](1), ee_moment(1), d_foot_rpy[i](1), 20*5, 1);
+          d_foot_rpy[i](0) = calcDampingControl(ref_foot_moment[i](0), ee_moment(0), d_foot_rpy[i](0), eefm_rot_damping_gain, eefm_rot_time_const);
+          d_foot_rpy[i](1) = calcDampingControl(ref_foot_moment[i](1), ee_moment(1), d_foot_rpy[i](1), eefm_rot_damping_gain, eefm_rot_time_const);
           d_foot_rpy[i](0) = vlimit(d_foot_rpy[i](0), deg2rad(-10.0), deg2rad(10.0));
           d_foot_rpy[i](1) = vlimit(d_foot_rpy[i](1), deg2rad(-10.0), deg2rad(10.0));
           rats::rotm3times(total_target_foot_R[i], target_foot_R[i], hrp::rotFromRpy(-d_foot_rpy[i](0), -d_foot_rpy[i](1), 0));
         }
         // fz control
-        zctrl = calcDampingControl (ref_foot_force[1][2]-ref_foot_force[0][2],
-                                    fz_diff, zctrl, 3500, 1);
+        zctrl = calcDampingControl (ref_foot_force[1](2)-ref_foot_force[0](2),
+                                    fz_diff, zctrl, eefm_pos_damping_gain, eefm_pos_time_const);
         // zctrl = vlimit(zctrl, -0.02, 0.02);
         zctrl = vlimit(zctrl, -0.05, 0.05);
         for (size_t i = 0; i < 2; i++) {
@@ -1001,7 +1080,7 @@ void Stabilizer::sync_2_st ()
   d_rpy[0] = d_rpy[1] = 0;
   transition_count = -MAX_TRANSITION_COUNT;
   pdr = hrp::Vector3::Zero();
-  prefcog = m_robot->calcCM();
+  prev_ref_cog = m_robot->calcCM();
   control_mode = MODE_ST;
 }
 
@@ -1018,8 +1097,8 @@ void Stabilizer::startStabilizer(void)
   if ( transition_count == 0 && control_mode == MODE_IDLE ) {
     std::cerr << "START ST"  << std::endl;
     d_foot_rpy[0](0) = d_foot_rpy[0](1) = d_foot_rpy[1](0) = d_foot_rpy[1](1) = 0.0;
-    prev_act_cog = refcog;
-    prev_act_cog_vel = hrp::Vector3::Zero();
+    prev_act_cog = ref_cog;
+    prev_act_cogvel = hrp::Vector3::Zero();
     zctrl = 0.0;
     sync_2_st();
     waitSTTransition();
@@ -1054,6 +1133,15 @@ void Stabilizer::getParameter(OpenHRP::StabilizerService::stParam& i_stp)
   i_stp.k_run_y = m_torque_k[1];
   i_stp.d_run_x = m_torque_d[0];
   i_stp.d_run_y = m_torque_d[1];
+  for (size_t i = 0; i < 2; i++) {
+    i_stp.eefm_k1[i] = eefm_k1[i];
+    i_stp.eefm_k2[i] = eefm_k2[i];
+    i_stp.eefm_k3[i] = eefm_k3[i];
+  }
+  i_stp.eefm_rot_damping_gain = eefm_rot_damping_gain;
+  i_stp.eefm_pos_damping_gain = eefm_pos_damping_gain;
+  i_stp.eefm_rot_time_const = eefm_rot_time_const;
+  i_stp.eefm_pos_time_const = eefm_pos_time_const;
 };
 
 void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
@@ -1079,6 +1167,18 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
   m_torque_d[1] = i_stp.d_run_y;
   std::cerr << " m_torque_k " << m_torque_k[0] << " m_torque_k " <<  m_torque_k[1] << std::endl;
   std::cerr << " m_torque_d " << m_torque_d[0] << " m_torque_d " <<  m_torque_d[1] << std::endl;
+  for (size_t i = 0; i < 2; i++) {
+    eefm_k1[i] = i_stp.eefm_k1[i];
+    eefm_k2[i] = i_stp.eefm_k2[i];
+    eefm_k3[i] = i_stp.eefm_k3[i];
+    std::cerr << i << " eefm_k1 " << eefm_k1[i] << " eefm_k2 " <<  eefm_k2[i] << " eefm_k3 " << eefm_k3[i] << std::endl;
+  }
+  eefm_rot_damping_gain = i_stp.eefm_rot_damping_gain;
+  eefm_pos_damping_gain = i_stp.eefm_pos_damping_gain;
+  eefm_rot_time_const = i_stp.eefm_rot_time_const;
+  eefm_pos_time_const = i_stp.eefm_pos_time_const;
+  std::cerr << " eefm_rot_damping_gain " << eefm_rot_damping_gain << " eefm_rot_time_const " <<  eefm_rot_time_const << std::endl;
+  std::cerr << " eefm_pos_damping_gain " << eefm_pos_damping_gain << " eefm_pos_time_const " <<  eefm_pos_time_const << std::endl;
 }
 
 void Stabilizer::waitSTTransition()
