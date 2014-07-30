@@ -295,11 +295,10 @@ RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
     m_baseRpyIn.read();
   }
 
-  getCurrentParameters();
-  getActualParameters();
-  getTargetParameters();
-
   if (is_legged_robot) {
+    getCurrentParameters();
+    getActualParameters();
+    getTargetParameters();
     switch (control_mode) {
     case MODE_IDLE:
       // if (DEBUGP2) std::cerr << "IDLE"<< std::endl;
@@ -328,16 +327,18 @@ RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
   }
   //calcTorque ();
   if ( m_robot->numJoints() == m_qRef.data.length() ) {
-    for ( int i = 0; i < m_robot->numJoints(); i++ ){
-      m_qRef.data[i] = m_robot->joint(i)->q;
-      //m_tau.data[i] = m_robot->joint(i)->u;
+    if (is_legged_robot) {
+      for ( int i = 0; i < m_robot->numJoints(); i++ ){
+        m_qRef.data[i] = m_robot->joint(i)->q;
+        //m_tau.data[i] = m_robot->joint(i)->u;
+      }
+      m_zmp.data.x = rel_act_zmp(0);
+      m_zmp.data.y = rel_act_zmp(1);
+      m_zmp.data.z = rel_act_zmp(2);
+      m_zmpOut.write();
+      //m_tauOut.write();
     }
     m_qRefOut.write();
-    m_zmp.data.x = rel_act_zmp(0);
-    m_zmp.data.y = rel_act_zmp(1);
-    m_zmp.data.z = rel_act_zmp(2);
-    m_zmpOut.write();
-    //m_tauOut.write();
   }
 
   return RTC::RTC_OK;
