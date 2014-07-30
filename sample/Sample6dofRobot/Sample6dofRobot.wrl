@@ -1,0 +1,1514 @@
+#VRML V2.0 utf8
+
+# Produced by EusLisp 9.00(e6031bb 8939ea3 63139) for Linux64 created on W540-nozawa(Sat Jul 19 16:26:23 JST 2014)
+# Date: Wed Jul 30 13:40:36 2014
+
+
+PROTO Joint [
+ exposedField     SFVec3f      center              0 0 0
+ exposedField     MFNode       children            []
+ exposedField     MFFloat      llimit              []
+ exposedField     SFRotation   limitOrientation    0 0 1 0
+ exposedField     SFString     name                ""
+ exposedField     SFRotation   rotation            0 0 1 0
+ exposedField     SFVec3f      scale               1 1 1
+ exposedField     SFRotation   scaleOrientation    0 0 1 0
+ exposedField     MFFloat      stiffness           [ 0 0 0 ]
+ exposedField     SFVec3f      translation         0 0 0
+ exposedField     MFFloat      ulimit              []
+ exposedField     MFFloat      dh                  [0 0 0 0]
+ exposedField     SFString     jointType           ""
+ exposedField     SFInt32      jointId             -1
+ exposedField     SFVec3f     jointAxis           0 0 1
+]
+{
+   Transform {
+      center           IS center
+      children         IS children
+      rotation         IS rotation
+      scale            IS scale
+      scaleOrientation IS scaleOrientation
+      translation      IS translation
+   }
+}
+
+PROTO Segment [
+ field           SFVec3f     bboxCenter        0 0 0
+ field           SFVec3f     bboxSize          -1 -1 -1
+ exposedField    SFVec3f     centerOfMass      0 0 0
+ exposedField    MFNode      children          [ ]
+ exposedField    SFNode      coord             NULL
+ exposedField    MFNode      displacers        [ ]
+ exposedField    SFFloat     mass              0
+ exposedField    MFFloat     momentsOfInertia  [ 0 0 0 0 0 0 0 0 0 ]
+ exposedField    SFString    name              ""
+ eventIn         MFNode      addChildren
+ eventIn         MFNode      removeChildren
+]
+{
+   Group {
+      addChildren    IS addChildren
+      bboxCenter     IS bboxCenter
+      bboxSize       IS bboxSize
+      children       IS children
+      removeChildren IS removeChildren
+   }
+}
+
+
+PROTO Humanoid [
+ field           SFVec3f    bboxCenter            0 0 0
+ field           SFVec3f    bboxSize              -1 -1 -1
+ exposedField    SFVec3f    center                0 0 0
+ exposedField    MFNode     humanoidBody          [ ]
+ exposedField    MFString   info                  [ ]
+ exposedField    MFNode     joints                [ ]
+ exposedField    SFString   name                  ""
+ exposedField    SFRotation rotation              0 0 1 0
+ exposedField    SFVec3f    scale                 1 1 1
+ exposedField    SFRotation scaleOrientation      0 0 1 0
+ exposedField    MFNode     segments              [ ]
+ exposedField    MFNode     sites                 [ ]
+ exposedField    SFVec3f    translation           0 0 0
+ exposedField    SFString   version               "1.1"
+ exposedField    MFNode     viewpoints            [ ]
+]
+{
+   Transform {
+      bboxCenter       IS bboxCenter
+      bboxSize         IS bboxSize
+      center           IS center
+      rotation         IS rotation
+      scale            IS scale
+      scaleOrientation IS scaleOrientation
+      translation      IS translation
+      children [
+         Group {
+            children IS viewpoints
+         }
+         Group {
+            children IS humanoidBody
+         }
+      ]
+   }
+}
+
+
+PROTO VisionSensor [
+  exposedField SFVec3f    translation       0 0 0
+  exposedField SFRotation rotation              0 0 1 0
+  #exposedField SFRotation orientation       0 0 1 0
+  exposedField SFFloat    fieldOfView       0.785398
+  exposedField SFString   name              ""
+  exposedField SFFloat    frontClipDistance 0.01
+  exposedField SFFloat    backClipDistance  10.0
+  exposedField SFString   type              "NONE"
+  exposedField SFInt32    sensorId          -1
+  exposedField SFInt32    width             320  # 
+  exposedField SFInt32    height            240  # 
+  #exposedField MFNode       children            [] # for me
+]
+{
+  Transform {
+    rotation         IS rotation
+    translation      IS translation
+    #children IS children # for me
+  }
+}
+
+
+PROTO ForceSensor [
+  exposedField SFVec3f maxForce -1 -1 -1
+  exposedField SFVec3f maxTorque -1 -1 -1
+  exposedField SFVec3f translation 0 0 0
+  exposedField SFRotation rotation 0 0 1 0
+  exposedField SFInt32 sensorId -1
+]
+{
+  Transform {
+translation IS translation
+    rotation IS rotation
+  }
+}
+
+PROTO Gyro [
+  exposedField SFVec3f maxAngularVelocity -1 -1 -1
+  exposedField SFVec3f translation 0 0 0
+  exposedField SFRotation rotation 0 0 1 0
+  exposedField SFInt32 sensorId -1
+]
+{
+  Transform {
+    translation IS translation
+    rotation IS rotation
+  }
+}
+
+PROTO AccelerationSensor [
+  exposedField SFVec3f maxAcceleration -1 -1 -1
+  exposedField SFVec3f translation 0 0 0
+  exposedField SFRotation rotation 0 0 1 0
+  exposedField SFInt32 sensorId -1
+]
+{
+  Transform {
+    translation IS translation
+    rotation IS rotation
+  }
+}
+
+PROTO PressureSensor [
+  exposedField SFFloat maxPressure -1
+  exposedField SFVec3f translation 0 0 0
+  exposedField SFRotation rotation 0 0 1 0
+  exposedField SFInt32 sensorId -1
+]
+{
+  Transform {
+    translation IS translation
+    rotation IS rotation
+  }
+}
+
+
+NavigationInfo {
+   avatarSize    0.5
+   headlight     TRUE
+   type  ["EXAMINE", "ANY"]
+}
+Viewpoint {
+   position    3 0 0.835
+   orientation 0.5770 0.5775 0.5775 2.0935
+}
+DEF Sample6dofRobot Humanoid {
+   humanoidBody [
+    DEF WAIST Joint {
+       jointType "fixed"
+       dh [0 0 0 0]
+       translation 0.000000 0.000000 0.250000
+       rotation 0.0 0.0 1.0 0
+       children [
+          DEF link0_S Segment {
+             centerOfMass 0.0 0.0 0.0
+             mass 1.0
+             momentsOfInertia [ 1.000000e-06 0.0 0.0 0.0 1.000000e-06 0.0 0.0 0.0 1.000000e-06 ]
+             children [
+                Shape {
+                   appearance Appearance {
+                      material Material {
+                      }
+                   }
+                   geometry DEF link0-FACES IndexedFaceSet {
+                      creaseAngle 0.8
+                      ccw TRUE
+                      solid TRUE
+                      colorPerVertex FALSE
+                      color Color {
+                         color [
+                          0.996094 0.414062 0.414062,
+                         ]
+                      }
+                      coord DEF link0-COORD Coordinate {
+                         point[
+                          0.250000 0.005000 -0.005000,
+                          0.250000 0.005000 0.005000,
+                          0.250000 -0.005000 -0.005000,
+                          0.250000 -0.005000 0.005000,
+                          -0.250000 0.005000 -0.005000,
+                          -0.250000 -0.005000 -0.005000,
+                          -0.250000 -0.005000 0.005000,
+                          -0.250000 0.005000 0.005000,
+                         ]
+                      }
+                      coordIndex [
+                       3, 1, 7, -1,
+                       7, 6, 3, -1,
+                       5, 4, 0, -1,
+                       0, 2, 5, -1,
+                       7, 1, 0, -1,
+                       0, 4, 7, -1,
+                       1, 3, 2, -1,
+                       2, 0, 1, -1,
+                       3, 6, 5, -1,
+                       5, 2, 3, -1,
+                       6, 7, 4, -1,
+                       4, 5, 6, -1,
+                      ]
+                      colorIndex [
+                       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+                      ]
+                   }
+                }
+             ]
+          } #Segment
+          DEF link1 Joint {
+             jointType "slide"
+             dh [0 0 0 0]
+             jointId 0
+             jointAxis 1.0 0.0 0.0
+             ulimit [0.25]
+             llimit [-0.25]
+             translation 0.000000 0.000000 0.000000
+             rotation 0.0 0.0 1.0 0
+             children [
+                DEF link1_S Segment {
+                   centerOfMass 0.0 0.0 0.0
+                   mass 1.0
+                   momentsOfInertia [ 1.000000e-06 0.0 0.0 0.0 1.000000e-06 0.0 0.0 0.0 1.000000e-06 ]
+                   children [
+                      Shape {
+                         appearance Appearance {
+                            material Material {
+                            }
+                         }
+                         geometry DEF link1-FACES IndexedFaceSet {
+                            creaseAngle 0.8
+                            ccw TRUE
+                            solid TRUE
+                            colorPerVertex FALSE
+                            color Color {
+                               color [
+                                0.304688 0.929688 0.578125,
+                               ]
+                            }
+                            coord DEF link1-COORD Coordinate {
+                               point[
+                                0.005000 0.250000 -0.005000,
+                                0.005000 0.250000 0.005000,
+                                0.005000 -0.250000 -0.005000,
+                                0.005000 -0.250000 0.005000,
+                                -0.005000 0.250000 -0.005000,
+                                -0.005000 -0.250000 -0.005000,
+                                -0.005000 -0.250000 0.005000,
+                                -0.005000 0.250000 0.005000,
+                               ]
+                            }
+                            coordIndex [
+                             3, 1, 7, -1,
+                             7, 6, 3, -1,
+                             5, 4, 0, -1,
+                             0, 2, 5, -1,
+                             7, 1, 0, -1,
+                             0, 4, 7, -1,
+                             1, 3, 2, -1,
+                             2, 0, 1, -1,
+                             3, 6, 5, -1,
+                             5, 2, 3, -1,
+                             6, 7, 4, -1,
+                             4, 5, 6, -1,
+                            ]
+                            colorIndex [
+                             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+                            ]
+                         }
+                      }
+                   ]
+                } #Segment
+                DEF link2 Joint {
+                   jointType "slide"
+                   dh [0 0 0 0]
+                   jointId 1
+                   jointAxis 0.0 1.0 0.0
+                   ulimit [0.25]
+                   llimit [-0.25]
+                   translation 0.000000 0.000000 0.000000
+                   rotation 0.0 0.0 1.0 0
+                   children [
+                      DEF link2_S Segment {
+                         centerOfMass 0.0 0.0 0.0
+                         mass 1.0
+                         momentsOfInertia [ 1.000000e-06 0.0 0.0 0.0 1.000000e-06 0.0 0.0 0.0 1.000000e-06 ]
+                         children [
+                            Shape {
+                               appearance Appearance {
+                                  material Material {
+                                  }
+                               }
+                               geometry DEF link2-FACES IndexedFaceSet {
+                                  creaseAngle 0.8
+                                  ccw TRUE
+                                  solid TRUE
+                                  colorPerVertex FALSE
+                                  color Color {
+                                     color [
+                                      0.476562 0.402344 0.929688,
+                                     ]
+                                  }
+                                  coord DEF link2-COORD Coordinate {
+                                     point[
+                                      0.005000 0.005000 -0.250000,
+                                      0.005000 0.005000 0.250000,
+                                      0.005000 -0.005000 -0.250000,
+                                      0.005000 -0.005000 0.250000,
+                                      -0.005000 0.005000 -0.250000,
+                                      -0.005000 -0.005000 -0.250000,
+                                      -0.005000 -0.005000 0.250000,
+                                      -0.005000 0.005000 0.250000,
+                                     ]
+                                  }
+                                  coordIndex [
+                                   3, 1, 7, -1,
+                                   7, 6, 3, -1,
+                                   5, 4, 0, -1,
+                                   0, 2, 5, -1,
+                                   7, 1, 0, -1,
+                                   0, 4, 7, -1,
+                                   1, 3, 2, -1,
+                                   2, 0, 1, -1,
+                                   3, 6, 5, -1,
+                                   5, 2, 3, -1,
+                                   6, 7, 4, -1,
+                                   4, 5, 6, -1,
+                                  ]
+                                  colorIndex [
+                                   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+                                  ]
+                               }
+                            }
+                         ]
+                      } #Segment
+                      DEF link3 Joint {
+                         jointType "slide"
+                         dh [0 0 0 0]
+                         jointId 2
+                         jointAxis 0.0 0.0 1.0
+                         ulimit [0.25]
+                         llimit [-0.25]
+                         translation 0.000000 0.000000 0.000000
+                         rotation 0.0 0.0 1.0 0
+                         children [
+                            DEF link3_S Segment {
+                               centerOfMass 0.0 0.0 0.0
+                               mass 1.0
+                               momentsOfInertia [ 1.000000e-06 0.0 0.0 0.0 1.000000e-06 0.0 0.0 0.0 1.000000e-06 ]
+                               children [
+                                  Shape {
+                                     appearance Appearance {
+                                        material Material {
+                                        }
+                                     }
+                                     geometry DEF link3-FACES IndexedFaceSet {
+                                        creaseAngle 0.8
+                                        ccw TRUE
+                                        solid TRUE
+                                        colorPerVertex FALSE
+                                        color Color {
+                                           color [
+                                            0.0 0.0 0.0,
+                                           ]
+                                        }
+                                        coord DEF link3-COORD Coordinate {
+                                           point[
+                                            0.000500 0.000500 -0.000500,
+                                            0.000500 0.000500 0.000500,
+                                            0.000500 -0.000500 -0.000500,
+                                            0.000500 -0.000500 0.000500,
+                                            -0.000500 0.000500 -0.000500,
+                                            -0.000500 -0.000500 -0.000500,
+                                            -0.000500 -0.000500 0.000500,
+                                            -0.000500 0.000500 0.000500,
+                                           ]
+                                        }
+                                        coordIndex [
+                                         3, 1, 7, -1,
+                                         7, 6, 3, -1,
+                                         5, 4, 0, -1,
+                                         0, 2, 5, -1,
+                                         7, 1, 0, -1,
+                                         0, 4, 7, -1,
+                                         1, 3, 2, -1,
+                                         2, 0, 1, -1,
+                                         3, 6, 5, -1,
+                                         5, 2, 3, -1,
+                                         6, 7, 4, -1,
+                                         4, 5, 6, -1,
+                                        ]
+                                        colorIndex [
+                                         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+                                        ]
+                                     }
+                                  }
+                               ]
+                            } #Segment
+                            DEF link4 Joint {
+                               jointType "rotate"
+                               dh [0 0 0 0]
+                               jointId 3
+                               jointAxis 1.0 0.0 0.0
+                               ulimit [6.28319]
+                               llimit [-6.28319]
+                               translation 0.000000 0.000000 0.000000
+                               rotation 0.0 0.0 1.0 0
+                               children [
+                                  DEF link4_S Segment {
+                                     centerOfMass 0.0 0.0 0.0
+                                     mass 1.0
+                                     momentsOfInertia [ 1.000000e-06 0.0 0.0 0.0 1.000000e-06 0.0 0.0 0.0 1.000000e-06 ]
+                                     children [
+                                        Shape {
+                                           appearance Appearance {
+                                              material Material {
+                                              }
+                                           }
+                                           geometry DEF link4-FACES IndexedFaceSet {
+                                              creaseAngle 0.8
+                                              ccw TRUE
+                                              solid TRUE
+                                              colorPerVertex FALSE
+                                              color Color {
+                                                 color [
+                                                  0.0 0.0 0.0,
+                                                 ]
+                                              }
+                                              coord DEF link4-COORD Coordinate {
+                                                 point[
+                                                  0.000500 0.000500 -0.000500,
+                                                  0.000500 0.000500 0.000500,
+                                                  0.000500 -0.000500 -0.000500,
+                                                  0.000500 -0.000500 0.000500,
+                                                  -0.000500 0.000500 -0.000500,
+                                                  -0.000500 -0.000500 -0.000500,
+                                                  -0.000500 -0.000500 0.000500,
+                                                  -0.000500 0.000500 0.000500,
+                                                 ]
+                                              }
+                                              coordIndex [
+                                               3, 1, 7, -1,
+                                               7, 6, 3, -1,
+                                               5, 4, 0, -1,
+                                               0, 2, 5, -1,
+                                               7, 1, 0, -1,
+                                               0, 4, 7, -1,
+                                               1, 3, 2, -1,
+                                               2, 0, 1, -1,
+                                               3, 6, 5, -1,
+                                               5, 2, 3, -1,
+                                               6, 7, 4, -1,
+                                               4, 5, 6, -1,
+                                              ]
+                                              colorIndex [
+                                               0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+                                              ]
+                                           }
+                                        }
+                                     ]
+                                  } #Segment
+                                  DEF link5 Joint {
+                                     jointType "rotate"
+                                     dh [0 0 0 0]
+                                     jointId 4
+                                     jointAxis 0.0 1.0 0.0
+                                     ulimit [6.28319]
+                                     llimit [-6.28319]
+                                     translation 0.000000 0.000000 0.000000
+                                     rotation 0.0 0.0 1.0 0
+                                     children [
+                                        DEF link5_S Segment {
+                                           centerOfMass 0.0 0.0 0.0
+                                           mass 1.0
+                                           momentsOfInertia [ 1.000000e-06 0.0 0.0 0.0 1.000000e-06 0.0 0.0 0.0 1.000000e-06 ]
+                                           children [
+                                              Shape {
+                                                 appearance Appearance {
+                                                    material Material {
+                                                    }
+                                                 }
+                                                 geometry DEF link5-FACES IndexedFaceSet {
+                                                    creaseAngle 0.8
+                                                    ccw TRUE
+                                                    solid TRUE
+                                                    colorPerVertex FALSE
+                                                    color Color {
+                                                       color [
+                                                        0.0 0.0 0.0,
+                                                       ]
+                                                    }
+                                                    coord DEF link5-COORD Coordinate {
+                                                       point[
+                                                        0.000500 0.000500 -0.000500,
+                                                        0.000500 0.000500 0.000500,
+                                                        0.000500 -0.000500 -0.000500,
+                                                        0.000500 -0.000500 0.000500,
+                                                        -0.000500 0.000500 -0.000500,
+                                                        -0.000500 -0.000500 -0.000500,
+                                                        -0.000500 -0.000500 0.000500,
+                                                        -0.000500 0.000500 0.000500,
+                                                       ]
+                                                    }
+                                                    coordIndex [
+                                                     3, 1, 7, -1,
+                                                     7, 6, 3, -1,
+                                                     5, 4, 0, -1,
+                                                     0, 2, 5, -1,
+                                                     7, 1, 0, -1,
+                                                     0, 4, 7, -1,
+                                                     1, 3, 2, -1,
+                                                     2, 0, 1, -1,
+                                                     3, 6, 5, -1,
+                                                     5, 2, 3, -1,
+                                                     6, 7, 4, -1,
+                                                     4, 5, 6, -1,
+                                                    ]
+                                                    colorIndex [
+                                                     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+                                                    ]
+                                                 }
+                                              }
+                                           ]
+                                        } #Segment
+                                        DEF link6 Joint {
+                                           jointType "rotate"
+                                           dh [0 0 0 0]
+                                           jointId 5
+                                           jointAxis 0.0 0.0 1.0
+                                           ulimit [6.28319]
+                                           llimit [-6.28319]
+                                           translation 0.000000 0.000000 0.000000
+                                           rotation 0.0 0.0 1.0 0
+                                           children [
+                                              DEF link6_S Segment {
+                                                 centerOfMass 0.0 0.0 0.0
+                                                 mass 1.0
+                                                 momentsOfInertia [ 1.000000e-06 0.0 0.0 0.0 1.000000e-06 0.0 0.0 0.0 1.000000e-06 ]
+                                                 children [
+                                                    DEF gsensor AccelerationSensor { sensorId 0 }
+                                                    DEF gyrometer Gyro { sensorId 0 }
+                                                    Shape {
+                                                       appearance Appearance {
+                                                          material Material {
+                                                          }
+                                                       }
+                                                       geometry DEF link6-FACES IndexedFaceSet {
+                                                          creaseAngle 0.8
+                                                          ccw TRUE
+                                                          solid TRUE
+                                                          colorPerVertex FALSE
+                                                          color Color {
+                                                             color [
+                                                              0.0 0.0 0.0,
+                                                             ]
+                                                          }
+                                                          coord DEF link6-COORD Coordinate {
+                                                             point[
+                                                              0.000500 0.000500 -0.000500,
+                                                              0.000500 0.000500 0.000500,
+                                                              0.000500 -0.000500 -0.000500,
+                                                              0.000500 -0.000500 0.000500,
+                                                              -0.000500 0.000500 -0.000500,
+                                                              -0.000500 -0.000500 -0.000500,
+                                                              -0.000500 -0.000500 0.000500,
+                                                              -0.000500 0.000500 0.000500,
+                                                             ]
+                                                          }
+                                                          coordIndex [
+                                                           3, 1, 7, -1,
+                                                           7, 6, 3, -1,
+                                                           5, 4, 0, -1,
+                                                           0, 2, 5, -1,
+                                                           7, 1, 0, -1,
+                                                           0, 4, 7, -1,
+                                                           1, 3, 2, -1,
+                                                           2, 0, 1, -1,
+                                                           3, 6, 5, -1,
+                                                           5, 2, 3, -1,
+                                                           6, 7, 4, -1,
+                                                           4, 5, 6, -1,
+                                                          ]
+                                                          colorIndex [
+                                                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+                                                          ]
+                                                       }
+                                                    }
+                                                    Shape {
+                                                       appearance Appearance {
+                                                          material Material {
+                                                          }
+                                                       }
+                                                       geometry DEF link6-FACES IndexedFaceSet {
+                                                          creaseAngle 0.8
+                                                          ccw TRUE
+                                                          solid TRUE
+                                                          colorPerVertex FALSE
+                                                          color Color {
+                                                             color [
+                                                              0.501961 0.501961 0.501961,
+                                                             ]
+                                                          }
+                                                          coord DEF link6-COORD Coordinate {
+                                                             point[
+                                                              0.000500 0.000500 0.000500,
+                                                              -0.000500 0.000500 0.000500,
+                                                              -0.000500 -0.000500 0.000500,
+                                                              0.000500 -0.000500 0.000500,
+                                                              -0.000500 0.000500 -0.000500,
+                                                              0.000500 0.000500 -0.000500,
+                                                              0.000500 -0.000500 -0.000500,
+                                                              -0.000500 -0.000500 -0.000500,
+                                                              0.000500 0.000500 0.000500,
+                                                              0.000500 0.000500 -0.000500,
+                                                              -0.000500 0.000500 -0.000500,
+                                                              -0.000500 0.000500 0.000500,
+                                                              0.000500 -0.000500 0.000500,
+                                                              0.000500 -0.000500 -0.000500,
+                                                              0.000500 0.000500 -0.000500,
+                                                              0.000500 0.000500 0.000500,
+                                                              -0.000500 -0.000500 0.000500,
+                                                              -0.000500 -0.000500 -0.000500,
+                                                              0.000500 -0.000500 -0.000500,
+                                                              0.000500 -0.000500 0.000500,
+                                                              -0.000500 0.000500 0.000500,
+                                                              -0.000500 0.000500 -0.000500,
+                                                              -0.000500 -0.000500 -0.000500,
+                                                              -0.000500 -0.000500 0.000500,
+                                                             ]
+                                                          }
+                                                          coordIndex [
+                                                           2, 3, 0, -1,
+                                                           0, 1, 2, -1,
+                                                           6, 7, 4, -1,
+                                                           4, 5, 6, -1,
+                                                           10, 11, 8, -1,
+                                                           8, 9, 10, -1,
+                                                           14, 15, 12, -1,
+                                                           12, 13, 14, -1,
+                                                           18, 19, 16, -1,
+                                                           16, 17, 18, -1,
+                                                           22, 23, 20, -1,
+                                                           20, 21, 22, -1,
+                                                          ]
+                                                          colorIndex [
+                                                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+                                                          ]
+                                                       }
+                                                    }
+                                                    Shape {
+                                                       appearance Appearance {
+                                                          material Material {
+                                                          }
+                                                       }
+                                                       geometry DEF link6-FACES IndexedFaceSet {
+                                                          creaseAngle 0.8
+                                                          ccw TRUE
+                                                          solid TRUE
+                                                          colorPerVertex FALSE
+                                                          color Color {
+                                                             color [
+                                                              0.996094 0.0 0.0,
+                                                             ]
+                                                          }
+                                                          coord DEF link6-COORD Coordinate {
+                                                             point[
+                                                              0.140000 0.000000 -0.033333,
+                                                              0.140000 -0.012756 -0.030796,
+                                                              0.140000 -0.023570 -0.023570,
+                                                              0.140000 -0.030796 -0.012756,
+                                                              0.140000 -0.033333 0.000000,
+                                                              0.140000 -0.030796 0.012756,
+                                                              0.140000 -0.023570 0.023570,
+                                                              0.140000 -0.012756 0.030796,
+                                                              0.140000 0.000000 0.033333,
+                                                              0.140000 0.012756 0.030796,
+                                                              0.140000 0.023570 0.023570,
+                                                              0.140000 0.030796 0.012756,
+                                                              0.140000 0.033333 -0.000000,
+                                                              0.140000 0.030796 -0.012756,
+                                                              0.140000 0.023570 -0.023570,
+                                                              0.140000 0.012756 -0.030796,
+                                                              0.140000 -0.012756 -0.030796,
+                                                              0.140000 0.000000 -0.033333,
+                                                              0.200000 0.000000 0.000000,
+                                                              0.140000 0.000000 -0.033333,
+                                                              0.140000 0.012756 -0.030796,
+                                                              0.200000 0.000000 0.000000,
+                                                              0.140000 0.012756 -0.030796,
+                                                              0.140000 0.023570 -0.023570,
+                                                              0.200000 0.000000 0.000000,
+                                                              0.140000 0.023570 -0.023570,
+                                                              0.140000 0.030796 -0.012756,
+                                                              0.200000 0.000000 0.000000,
+                                                              0.140000 0.030796 -0.012756,
+                                                              0.140000 0.033333 -0.000000,
+                                                              0.200000 0.000000 0.000000,
+                                                              0.140000 0.033333 -0.000000,
+                                                              0.140000 0.030796 0.012756,
+                                                              0.200000 0.000000 0.000000,
+                                                              0.140000 0.030796 0.012756,
+                                                              0.140000 0.023570 0.023570,
+                                                              0.200000 0.000000 0.000000,
+                                                              0.140000 0.023570 0.023570,
+                                                              0.140000 0.012756 0.030796,
+                                                              0.200000 0.000000 0.000000,
+                                                              0.140000 0.012756 0.030796,
+                                                              0.140000 0.000000 0.033333,
+                                                              0.200000 0.000000 0.000000,
+                                                              0.140000 0.000000 0.033333,
+                                                              0.140000 -0.012756 0.030796,
+                                                              0.200000 0.000000 0.000000,
+                                                              0.140000 -0.012756 0.030796,
+                                                              0.140000 -0.023570 0.023570,
+                                                              0.200000 0.000000 0.000000,
+                                                              0.140000 -0.023570 0.023570,
+                                                              0.140000 -0.030796 0.012756,
+                                                              0.200000 0.000000 0.000000,
+                                                              0.140000 -0.030796 0.012756,
+                                                              0.140000 -0.033333 0.000000,
+                                                              0.200000 0.000000 0.000000,
+                                                              0.140000 -0.033333 0.000000,
+                                                              0.140000 -0.030796 -0.012756,
+                                                              0.200000 0.000000 0.000000,
+                                                              0.140000 -0.030796 -0.012756,
+                                                              0.140000 -0.023570 -0.023570,
+                                                              0.200000 0.000000 0.000000,
+                                                              0.140000 -0.023570 -0.023570,
+                                                              0.140000 -0.012756 -0.030796,
+                                                              0.200000 0.000000 0.000000,
+                                                             ]
+                                                          }
+                                                          coordIndex [
+                                                           14, 15, 0, -1,
+                                                           13, 14, 0, -1,
+                                                           12, 13, 0, -1,
+                                                           11, 12, 0, -1,
+                                                           10, 11, 0, -1,
+                                                           9, 10, 0, -1,
+                                                           8, 9, 0, -1,
+                                                           7, 8, 0, -1,
+                                                           6, 7, 0, -1,
+                                                           5, 6, 0, -1,
+                                                           4, 5, 0, -1,
+                                                           3, 4, 0, -1,
+                                                           2, 3, 0, -1,
+                                                           0, 1, 2, -1,
+                                                           16, 17, 18, -1,
+                                                           19, 20, 21, -1,
+                                                           22, 23, 24, -1,
+                                                           25, 26, 27, -1,
+                                                           28, 29, 30, -1,
+                                                           31, 32, 33, -1,
+                                                           34, 35, 36, -1,
+                                                           37, 38, 39, -1,
+                                                           40, 41, 42, -1,
+                                                           43, 44, 45, -1,
+                                                           46, 47, 48, -1,
+                                                           49, 50, 51, -1,
+                                                           52, 53, 54, -1,
+                                                           55, 56, 57, -1,
+                                                           58, 59, 60, -1,
+                                                           61, 62, 63, -1,
+                                                          ]
+                                                          colorIndex [
+                                                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+                                                          ]
+                                                       }
+                                                    }
+                                                    Shape {
+                                                       appearance Appearance {
+                                                          material Material {
+                                                          }
+                                                       }
+                                                       geometry DEF link6-FACES IndexedFaceSet {
+                                                          creaseAngle 0.8
+                                                          ccw TRUE
+                                                          solid TRUE
+                                                          colorPerVertex FALSE
+                                                          color Color {
+                                                             color [
+                                                              0.996094 0.0 0.0,
+                                                             ]
+                                                          }
+                                                          coord DEF link6-COORD Coordinate {
+                                                             point[
+                                                              0.140000 -0.008333 -0.014434,
+                                                              0.140000 0.000000 -0.016667,
+                                                              0.140000 0.008333 -0.014434,
+                                                              0.140000 0.014434 -0.008333,
+                                                              0.140000 0.016667 0.000000,
+                                                              0.140000 0.014434 0.008333,
+                                                              0.140000 0.008333 0.014434,
+                                                              0.140000 0.000000 0.016667,
+                                                              0.140000 -0.008333 0.014434,
+                                                              0.140000 -0.014434 0.008333,
+                                                              0.140000 -0.016667 0.000000,
+                                                              0.140000 -0.014434 -0.008333,
+                                                              0.000000 0.000000 -0.016667,
+                                                              0.000000 -0.008333 -0.014434,
+                                                              0.000000 -0.014434 -0.008333,
+                                                              -0.000000 -0.016667 0.000000,
+                                                              -0.000000 -0.014434 0.008333,
+                                                              -0.000000 -0.008333 0.014434,
+                                                              -0.000000 0.000000 0.016667,
+                                                              -0.000000 0.008333 0.014434,
+                                                              -0.000000 0.014434 0.008333,
+                                                              0.000000 0.016667 -0.000000,
+                                                              0.000000 0.014434 -0.008333,
+                                                              0.000000 0.008333 -0.014434,
+                                                              0.140000 -0.008333 -0.014434,
+                                                              0.000000 -0.008333 -0.014434,
+                                                              0.000000 0.000000 -0.016667,
+                                                              0.140000 0.000000 -0.016667,
+                                                              0.140000 -0.014434 -0.008333,
+                                                              0.000000 -0.014434 -0.008333,
+                                                              0.000000 -0.008333 -0.014434,
+                                                              0.140000 -0.008333 -0.014434,
+                                                              0.140000 -0.016667 0.000000,
+                                                              -0.000000 -0.016667 0.000000,
+                                                              0.000000 -0.014434 -0.008333,
+                                                              0.140000 -0.014434 -0.008333,
+                                                              0.140000 -0.014434 0.008333,
+                                                              -0.000000 -0.014434 0.008333,
+                                                              -0.000000 -0.016667 0.000000,
+                                                              0.140000 -0.016667 0.000000,
+                                                              0.140000 -0.008333 0.014434,
+                                                              -0.000000 -0.008333 0.014434,
+                                                              -0.000000 -0.014434 0.008333,
+                                                              0.140000 -0.014434 0.008333,
+                                                              0.140000 0.000000 0.016667,
+                                                              -0.000000 0.000000 0.016667,
+                                                              -0.000000 -0.008333 0.014434,
+                                                              0.140000 -0.008333 0.014434,
+                                                              0.140000 0.008333 0.014434,
+                                                              -0.000000 0.008333 0.014434,
+                                                              -0.000000 0.000000 0.016667,
+                                                              0.140000 0.000000 0.016667,
+                                                              0.140000 0.014434 0.008333,
+                                                              -0.000000 0.014434 0.008333,
+                                                              -0.000000 0.008333 0.014434,
+                                                              0.140000 0.008333 0.014434,
+                                                              0.140000 0.016667 0.000000,
+                                                              0.000000 0.016667 -0.000000,
+                                                              -0.000000 0.014434 0.008333,
+                                                              0.140000 0.014434 0.008333,
+                                                              0.140000 0.014434 -0.008333,
+                                                              0.000000 0.014434 -0.008333,
+                                                              0.000000 0.016667 -0.000000,
+                                                              0.140000 0.016667 0.000000,
+                                                              0.140000 0.008333 -0.014434,
+                                                              0.000000 0.008333 -0.014434,
+                                                              0.000000 0.014434 -0.008333,
+                                                              0.140000 0.014434 -0.008333,
+                                                              0.140000 0.000000 -0.016667,
+                                                              0.000000 0.000000 -0.016667,
+                                                              0.000000 0.008333 -0.014434,
+                                                              0.140000 0.008333 -0.014434,
+                                                             ]
+                                                          }
+                                                          coordIndex [
+                                                           10, 11, 0, -1,
+                                                           9, 10, 0, -1,
+                                                           8, 9, 0, -1,
+                                                           7, 8, 0, -1,
+                                                           6, 7, 0, -1,
+                                                           5, 6, 0, -1,
+                                                           4, 5, 0, -1,
+                                                           3, 4, 0, -1,
+                                                           2, 3, 0, -1,
+                                                           0, 1, 2, -1,
+                                                           22, 23, 12, -1,
+                                                           21, 22, 12, -1,
+                                                           20, 21, 12, -1,
+                                                           19, 20, 12, -1,
+                                                           18, 19, 12, -1,
+                                                           17, 18, 12, -1,
+                                                           16, 17, 12, -1,
+                                                           15, 16, 12, -1,
+                                                           14, 15, 12, -1,
+                                                           12, 13, 14, -1,
+                                                           26, 27, 24, -1,
+                                                           24, 25, 26, -1,
+                                                           30, 31, 28, -1,
+                                                           28, 29, 30, -1,
+                                                           34, 35, 32, -1,
+                                                           32, 33, 34, -1,
+                                                           38, 39, 36, -1,
+                                                           36, 37, 38, -1,
+                                                           42, 43, 40, -1,
+                                                           40, 41, 42, -1,
+                                                           46, 47, 44, -1,
+                                                           44, 45, 46, -1,
+                                                           50, 51, 48, -1,
+                                                           48, 49, 50, -1,
+                                                           54, 55, 52, -1,
+                                                           52, 53, 54, -1,
+                                                           58, 59, 56, -1,
+                                                           56, 57, 58, -1,
+                                                           62, 63, 60, -1,
+                                                           60, 61, 62, -1,
+                                                           66, 67, 64, -1,
+                                                           64, 65, 66, -1,
+                                                           70, 71, 68, -1,
+                                                           68, 69, 70, -1,
+                                                          ]
+                                                          colorIndex [
+                                                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+                                                          ]
+                                                       }
+                                                    }
+                                                    Shape {
+                                                       appearance Appearance {
+                                                          material Material {
+                                                          }
+                                                       }
+                                                       geometry DEF link6-FACES IndexedFaceSet {
+                                                          creaseAngle 0.8
+                                                          ccw TRUE
+                                                          solid TRUE
+                                                          colorPerVertex FALSE
+                                                          color Color {
+                                                             color [
+                                                              0.0 0.996094 0.0,
+                                                             ]
+                                                          }
+                                                          coord DEF link6-COORD Coordinate {
+                                                             point[
+                                                              0.033333 0.140000 0.000000,
+                                                              0.030796 0.140000 0.012756,
+                                                              0.023570 0.140000 0.023570,
+                                                              0.012756 0.140000 0.030796,
+                                                              -0.000000 0.140000 0.033333,
+                                                              -0.012756 0.140000 0.030796,
+                                                              -0.023570 0.140000 0.023570,
+                                                              -0.030796 0.140000 0.012756,
+                                                              -0.033333 0.140000 -0.000000,
+                                                              -0.030796 0.140000 -0.012756,
+                                                              -0.023570 0.140000 -0.023570,
+                                                              -0.012756 0.140000 -0.030796,
+                                                              0.000000 0.140000 -0.033333,
+                                                              0.012756 0.140000 -0.030796,
+                                                              0.023570 0.140000 -0.023570,
+                                                              0.030796 0.140000 -0.012756,
+                                                              0.030796 0.140000 0.012756,
+                                                              0.033333 0.140000 0.000000,
+                                                              0.000000 0.200000 0.000000,
+                                                              0.033333 0.140000 0.000000,
+                                                              0.030796 0.140000 -0.012756,
+                                                              0.000000 0.200000 0.000000,
+                                                              0.030796 0.140000 -0.012756,
+                                                              0.023570 0.140000 -0.023570,
+                                                              0.000000 0.200000 0.000000,
+                                                              0.023570 0.140000 -0.023570,
+                                                              0.012756 0.140000 -0.030796,
+                                                              0.000000 0.200000 0.000000,
+                                                              0.012756 0.140000 -0.030796,
+                                                              0.000000 0.140000 -0.033333,
+                                                              0.000000 0.200000 0.000000,
+                                                              0.000000 0.140000 -0.033333,
+                                                              -0.012756 0.140000 -0.030796,
+                                                              0.000000 0.200000 0.000000,
+                                                              -0.012756 0.140000 -0.030796,
+                                                              -0.023570 0.140000 -0.023570,
+                                                              0.000000 0.200000 0.000000,
+                                                              -0.023570 0.140000 -0.023570,
+                                                              -0.030796 0.140000 -0.012756,
+                                                              0.000000 0.200000 0.000000,
+                                                              -0.030796 0.140000 -0.012756,
+                                                              -0.033333 0.140000 -0.000000,
+                                                              0.000000 0.200000 0.000000,
+                                                              -0.033333 0.140000 -0.000000,
+                                                              -0.030796 0.140000 0.012756,
+                                                              0.000000 0.200000 0.000000,
+                                                              -0.030796 0.140000 0.012756,
+                                                              -0.023570 0.140000 0.023570,
+                                                              0.000000 0.200000 0.000000,
+                                                              -0.023570 0.140000 0.023570,
+                                                              -0.012756 0.140000 0.030796,
+                                                              0.000000 0.200000 0.000000,
+                                                              -0.012756 0.140000 0.030796,
+                                                              -0.000000 0.140000 0.033333,
+                                                              0.000000 0.200000 0.000000,
+                                                              -0.000000 0.140000 0.033333,
+                                                              0.012756 0.140000 0.030796,
+                                                              0.000000 0.200000 0.000000,
+                                                              0.012756 0.140000 0.030796,
+                                                              0.023570 0.140000 0.023570,
+                                                              0.000000 0.200000 0.000000,
+                                                              0.023570 0.140000 0.023570,
+                                                              0.030796 0.140000 0.012756,
+                                                              0.000000 0.200000 0.000000,
+                                                             ]
+                                                          }
+                                                          coordIndex [
+                                                           14, 15, 0, -1,
+                                                           13, 14, 0, -1,
+                                                           12, 13, 0, -1,
+                                                           11, 12, 0, -1,
+                                                           10, 11, 0, -1,
+                                                           9, 10, 0, -1,
+                                                           8, 9, 0, -1,
+                                                           7, 8, 0, -1,
+                                                           6, 7, 0, -1,
+                                                           5, 6, 0, -1,
+                                                           4, 5, 0, -1,
+                                                           3, 4, 0, -1,
+                                                           2, 3, 0, -1,
+                                                           0, 1, 2, -1,
+                                                           16, 17, 18, -1,
+                                                           19, 20, 21, -1,
+                                                           22, 23, 24, -1,
+                                                           25, 26, 27, -1,
+                                                           28, 29, 30, -1,
+                                                           31, 32, 33, -1,
+                                                           34, 35, 36, -1,
+                                                           37, 38, 39, -1,
+                                                           40, 41, 42, -1,
+                                                           43, 44, 45, -1,
+                                                           46, 47, 48, -1,
+                                                           49, 50, 51, -1,
+                                                           52, 53, 54, -1,
+                                                           55, 56, 57, -1,
+                                                           58, 59, 60, -1,
+                                                           61, 62, 63, -1,
+                                                          ]
+                                                          colorIndex [
+                                                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+                                                          ]
+                                                       }
+                                                    }
+                                                    Shape {
+                                                       appearance Appearance {
+                                                          material Material {
+                                                          }
+                                                       }
+                                                       geometry DEF link6-FACES IndexedFaceSet {
+                                                          creaseAngle 0.8
+                                                          ccw TRUE
+                                                          solid TRUE
+                                                          colorPerVertex FALSE
+                                                          color Color {
+                                                             color [
+                                                              0.0 0.996094 0.0,
+                                                             ]
+                                                          }
+                                                          coord DEF link6-COORD Coordinate {
+                                                             point[
+                                                              0.014434 0.140000 0.008333,
+                                                              0.016667 0.140000 0.000000,
+                                                              0.014434 0.140000 -0.008333,
+                                                              0.008333 0.140000 -0.014434,
+                                                              0.000000 0.140000 -0.016667,
+                                                              -0.008333 0.140000 -0.014434,
+                                                              -0.014434 0.140000 -0.008333,
+                                                              -0.016667 0.140000 0.000000,
+                                                              -0.014434 0.140000 0.008333,
+                                                              -0.008333 0.140000 0.014434,
+                                                              -0.000000 0.140000 0.016667,
+                                                              0.008333 0.140000 0.014434,
+                                                              0.016667 0.000000 -0.000000,
+                                                              0.014434 -0.000000 0.008333,
+                                                              0.008333 -0.000000 0.014434,
+                                                              -0.000000 -0.000000 0.016667,
+                                                              -0.008333 -0.000000 0.014434,
+                                                              -0.014434 -0.000000 0.008333,
+                                                              -0.016667 0.000000 -0.000000,
+                                                              -0.014434 0.000000 -0.008333,
+                                                              -0.008333 0.000000 -0.014434,
+                                                              0.000000 0.000000 -0.016667,
+                                                              0.008333 0.000000 -0.014434,
+                                                              0.014434 0.000000 -0.008333,
+                                                              0.014434 0.140000 0.008333,
+                                                              0.014434 -0.000000 0.008333,
+                                                              0.016667 0.000000 -0.000000,
+                                                              0.016667 0.140000 0.000000,
+                                                              0.008333 0.140000 0.014434,
+                                                              0.008333 -0.000000 0.014434,
+                                                              0.014434 -0.000000 0.008333,
+                                                              0.014434 0.140000 0.008333,
+                                                              -0.000000 0.140000 0.016667,
+                                                              -0.000000 -0.000000 0.016667,
+                                                              0.008333 -0.000000 0.014434,
+                                                              0.008333 0.140000 0.014434,
+                                                              -0.008333 0.140000 0.014434,
+                                                              -0.008333 -0.000000 0.014434,
+                                                              -0.000000 -0.000000 0.016667,
+                                                              -0.000000 0.140000 0.016667,
+                                                              -0.014434 0.140000 0.008333,
+                                                              -0.014434 -0.000000 0.008333,
+                                                              -0.008333 -0.000000 0.014434,
+                                                              -0.008333 0.140000 0.014434,
+                                                              -0.016667 0.140000 0.000000,
+                                                              -0.016667 0.000000 -0.000000,
+                                                              -0.014434 -0.000000 0.008333,
+                                                              -0.014434 0.140000 0.008333,
+                                                              -0.014434 0.140000 -0.008333,
+                                                              -0.014434 0.000000 -0.008333,
+                                                              -0.016667 0.000000 -0.000000,
+                                                              -0.016667 0.140000 0.000000,
+                                                              -0.008333 0.140000 -0.014434,
+                                                              -0.008333 0.000000 -0.014434,
+                                                              -0.014434 0.000000 -0.008333,
+                                                              -0.014434 0.140000 -0.008333,
+                                                              0.000000 0.140000 -0.016667,
+                                                              0.000000 0.000000 -0.016667,
+                                                              -0.008333 0.000000 -0.014434,
+                                                              -0.008333 0.140000 -0.014434,
+                                                              0.008333 0.140000 -0.014434,
+                                                              0.008333 0.000000 -0.014434,
+                                                              0.000000 0.000000 -0.016667,
+                                                              0.000000 0.140000 -0.016667,
+                                                              0.014434 0.140000 -0.008333,
+                                                              0.014434 0.000000 -0.008333,
+                                                              0.008333 0.000000 -0.014434,
+                                                              0.008333 0.140000 -0.014434,
+                                                              0.016667 0.140000 0.000000,
+                                                              0.016667 0.000000 -0.000000,
+                                                              0.014434 0.000000 -0.008333,
+                                                              0.014434 0.140000 -0.008333,
+                                                             ]
+                                                          }
+                                                          coordIndex [
+                                                           10, 11, 0, -1,
+                                                           9, 10, 0, -1,
+                                                           8, 9, 0, -1,
+                                                           7, 8, 0, -1,
+                                                           6, 7, 0, -1,
+                                                           5, 6, 0, -1,
+                                                           4, 5, 0, -1,
+                                                           3, 4, 0, -1,
+                                                           2, 3, 0, -1,
+                                                           0, 1, 2, -1,
+                                                           22, 23, 12, -1,
+                                                           21, 22, 12, -1,
+                                                           20, 21, 12, -1,
+                                                           19, 20, 12, -1,
+                                                           18, 19, 12, -1,
+                                                           17, 18, 12, -1,
+                                                           16, 17, 12, -1,
+                                                           15, 16, 12, -1,
+                                                           14, 15, 12, -1,
+                                                           12, 13, 14, -1,
+                                                           26, 27, 24, -1,
+                                                           24, 25, 26, -1,
+                                                           30, 31, 28, -1,
+                                                           28, 29, 30, -1,
+                                                           34, 35, 32, -1,
+                                                           32, 33, 34, -1,
+                                                           38, 39, 36, -1,
+                                                           36, 37, 38, -1,
+                                                           42, 43, 40, -1,
+                                                           40, 41, 42, -1,
+                                                           46, 47, 44, -1,
+                                                           44, 45, 46, -1,
+                                                           50, 51, 48, -1,
+                                                           48, 49, 50, -1,
+                                                           54, 55, 52, -1,
+                                                           52, 53, 54, -1,
+                                                           58, 59, 56, -1,
+                                                           56, 57, 58, -1,
+                                                           62, 63, 60, -1,
+                                                           60, 61, 62, -1,
+                                                           66, 67, 64, -1,
+                                                           64, 65, 66, -1,
+                                                           70, 71, 68, -1,
+                                                           68, 69, 70, -1,
+                                                          ]
+                                                          colorIndex [
+                                                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+                                                          ]
+                                                       }
+                                                    }
+                                                    Shape {
+                                                       appearance Appearance {
+                                                          material Material {
+                                                          }
+                                                       }
+                                                       geometry DEF link6-FACES IndexedFaceSet {
+                                                          creaseAngle 0.8
+                                                          ccw TRUE
+                                                          solid TRUE
+                                                          colorPerVertex FALSE
+                                                          color Color {
+                                                             color [
+                                                              0.0 0.0 0.996094,
+                                                             ]
+                                                          }
+                                                          coord DEF link6-COORD Coordinate {
+                                                             point[
+                                                              0.033333 0.000000 0.140000,
+                                                              0.030796 -0.012756 0.140000,
+                                                              0.023570 -0.023570 0.140000,
+                                                              0.012756 -0.030796 0.140000,
+                                                              -0.000000 -0.033333 0.140000,
+                                                              -0.012756 -0.030796 0.140000,
+                                                              -0.023570 -0.023570 0.140000,
+                                                              -0.030796 -0.012756 0.140000,
+                                                              -0.033333 0.000000 0.140000,
+                                                              -0.030796 0.012756 0.140000,
+                                                              -0.023570 0.023570 0.140000,
+                                                              -0.012756 0.030796 0.140000,
+                                                              0.000000 0.033333 0.140000,
+                                                              0.012756 0.030796 0.140000,
+                                                              0.023570 0.023570 0.140000,
+                                                              0.030796 0.012756 0.140000,
+                                                              0.030796 -0.012756 0.140000,
+                                                              0.033333 0.000000 0.140000,
+                                                              0.000000 0.000000 0.200000,
+                                                              0.033333 0.000000 0.140000,
+                                                              0.030796 0.012756 0.140000,
+                                                              0.000000 0.000000 0.200000,
+                                                              0.030796 0.012756 0.140000,
+                                                              0.023570 0.023570 0.140000,
+                                                              0.000000 0.000000 0.200000,
+                                                              0.023570 0.023570 0.140000,
+                                                              0.012756 0.030796 0.140000,
+                                                              0.000000 0.000000 0.200000,
+                                                              0.012756 0.030796 0.140000,
+                                                              0.000000 0.033333 0.140000,
+                                                              0.000000 0.000000 0.200000,
+                                                              0.000000 0.033333 0.140000,
+                                                              -0.012756 0.030796 0.140000,
+                                                              0.000000 0.000000 0.200000,
+                                                              -0.012756 0.030796 0.140000,
+                                                              -0.023570 0.023570 0.140000,
+                                                              0.000000 0.000000 0.200000,
+                                                              -0.023570 0.023570 0.140000,
+                                                              -0.030796 0.012756 0.140000,
+                                                              0.000000 0.000000 0.200000,
+                                                              -0.030796 0.012756 0.140000,
+                                                              -0.033333 0.000000 0.140000,
+                                                              0.000000 0.000000 0.200000,
+                                                              -0.033333 0.000000 0.140000,
+                                                              -0.030796 -0.012756 0.140000,
+                                                              0.000000 0.000000 0.200000,
+                                                              -0.030796 -0.012756 0.140000,
+                                                              -0.023570 -0.023570 0.140000,
+                                                              0.000000 0.000000 0.200000,
+                                                              -0.023570 -0.023570 0.140000,
+                                                              -0.012756 -0.030796 0.140000,
+                                                              0.000000 0.000000 0.200000,
+                                                              -0.012756 -0.030796 0.140000,
+                                                              -0.000000 -0.033333 0.140000,
+                                                              0.000000 0.000000 0.200000,
+                                                              -0.000000 -0.033333 0.140000,
+                                                              0.012756 -0.030796 0.140000,
+                                                              0.000000 0.000000 0.200000,
+                                                              0.012756 -0.030796 0.140000,
+                                                              0.023570 -0.023570 0.140000,
+                                                              0.000000 0.000000 0.200000,
+                                                              0.023570 -0.023570 0.140000,
+                                                              0.030796 -0.012756 0.140000,
+                                                              0.000000 0.000000 0.200000,
+                                                             ]
+                                                          }
+                                                          coordIndex [
+                                                           14, 15, 0, -1,
+                                                           13, 14, 0, -1,
+                                                           12, 13, 0, -1,
+                                                           11, 12, 0, -1,
+                                                           10, 11, 0, -1,
+                                                           9, 10, 0, -1,
+                                                           8, 9, 0, -1,
+                                                           7, 8, 0, -1,
+                                                           6, 7, 0, -1,
+                                                           5, 6, 0, -1,
+                                                           4, 5, 0, -1,
+                                                           3, 4, 0, -1,
+                                                           2, 3, 0, -1,
+                                                           0, 1, 2, -1,
+                                                           16, 17, 18, -1,
+                                                           19, 20, 21, -1,
+                                                           22, 23, 24, -1,
+                                                           25, 26, 27, -1,
+                                                           28, 29, 30, -1,
+                                                           31, 32, 33, -1,
+                                                           34, 35, 36, -1,
+                                                           37, 38, 39, -1,
+                                                           40, 41, 42, -1,
+                                                           43, 44, 45, -1,
+                                                           46, 47, 48, -1,
+                                                           49, 50, 51, -1,
+                                                           52, 53, 54, -1,
+                                                           55, 56, 57, -1,
+                                                           58, 59, 60, -1,
+                                                           61, 62, 63, -1,
+                                                          ]
+                                                          colorIndex [
+                                                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+                                                          ]
+                                                       }
+                                                    }
+                                                    Shape {
+                                                       appearance Appearance {
+                                                          material Material {
+                                                          }
+                                                       }
+                                                       geometry DEF link6-FACES IndexedFaceSet {
+                                                          creaseAngle 0.8
+                                                          ccw TRUE
+                                                          solid TRUE
+                                                          colorPerVertex FALSE
+                                                          color Color {
+                                                             color [
+                                                              0.0 0.0 0.996094,
+                                                             ]
+                                                          }
+                                                          coord DEF link6-COORD Coordinate {
+                                                             point[
+                                                              0.014434 -0.008333 0.140000,
+                                                              0.016667 0.000000 0.140000,
+                                                              0.014434 0.008333 0.140000,
+                                                              0.008333 0.014434 0.140000,
+                                                              0.000000 0.016667 0.140000,
+                                                              -0.008333 0.014434 0.140000,
+                                                              -0.014434 0.008333 0.140000,
+                                                              -0.016667 0.000000 0.140000,
+                                                              -0.014434 -0.008333 0.140000,
+                                                              -0.008333 -0.014434 0.140000,
+                                                              -0.000000 -0.016667 0.140000,
+                                                              0.008333 -0.014434 0.140000,
+                                                              0.016667 0.000000 0.000000,
+                                                              0.014434 -0.008333 0.000000,
+                                                              0.008333 -0.014434 0.000000,
+                                                              -0.000000 -0.016667 0.000000,
+                                                              -0.008333 -0.014434 0.000000,
+                                                              -0.014434 -0.008333 0.000000,
+                                                              -0.016667 0.000000 0.000000,
+                                                              -0.014434 0.008333 0.000000,
+                                                              -0.008333 0.014434 0.000000,
+                                                              0.000000 0.016667 0.000000,
+                                                              0.008333 0.014434 0.000000,
+                                                              0.014434 0.008333 0.000000,
+                                                              0.014434 -0.008333 0.140000,
+                                                              0.014434 -0.008333 0.000000,
+                                                              0.016667 0.000000 0.000000,
+                                                              0.016667 0.000000 0.140000,
+                                                              0.008333 -0.014434 0.140000,
+                                                              0.008333 -0.014434 0.000000,
+                                                              0.014434 -0.008333 0.000000,
+                                                              0.014434 -0.008333 0.140000,
+                                                              -0.000000 -0.016667 0.140000,
+                                                              -0.000000 -0.016667 0.000000,
+                                                              0.008333 -0.014434 0.000000,
+                                                              0.008333 -0.014434 0.140000,
+                                                              -0.008333 -0.014434 0.140000,
+                                                              -0.008333 -0.014434 0.000000,
+                                                              -0.000000 -0.016667 0.000000,
+                                                              -0.000000 -0.016667 0.140000,
+                                                              -0.014434 -0.008333 0.140000,
+                                                              -0.014434 -0.008333 0.000000,
+                                                              -0.008333 -0.014434 0.000000,
+                                                              -0.008333 -0.014434 0.140000,
+                                                              -0.016667 0.000000 0.140000,
+                                                              -0.016667 0.000000 0.000000,
+                                                              -0.014434 -0.008333 0.000000,
+                                                              -0.014434 -0.008333 0.140000,
+                                                              -0.014434 0.008333 0.140000,
+                                                              -0.014434 0.008333 0.000000,
+                                                              -0.016667 0.000000 0.000000,
+                                                              -0.016667 0.000000 0.140000,
+                                                              -0.008333 0.014434 0.140000,
+                                                              -0.008333 0.014434 0.000000,
+                                                              -0.014434 0.008333 0.000000,
+                                                              -0.014434 0.008333 0.140000,
+                                                              0.000000 0.016667 0.140000,
+                                                              0.000000 0.016667 0.000000,
+                                                              -0.008333 0.014434 0.000000,
+                                                              -0.008333 0.014434 0.140000,
+                                                              0.008333 0.014434 0.140000,
+                                                              0.008333 0.014434 0.000000,
+                                                              0.000000 0.016667 0.000000,
+                                                              0.000000 0.016667 0.140000,
+                                                              0.014434 0.008333 0.140000,
+                                                              0.014434 0.008333 0.000000,
+                                                              0.008333 0.014434 0.000000,
+                                                              0.008333 0.014434 0.140000,
+                                                              0.016667 0.000000 0.140000,
+                                                              0.016667 0.000000 0.000000,
+                                                              0.014434 0.008333 0.000000,
+                                                              0.014434 0.008333 0.140000,
+                                                             ]
+                                                          }
+                                                          coordIndex [
+                                                           10, 11, 0, -1,
+                                                           9, 10, 0, -1,
+                                                           8, 9, 0, -1,
+                                                           7, 8, 0, -1,
+                                                           6, 7, 0, -1,
+                                                           5, 6, 0, -1,
+                                                           4, 5, 0, -1,
+                                                           3, 4, 0, -1,
+                                                           2, 3, 0, -1,
+                                                           0, 1, 2, -1,
+                                                           22, 23, 12, -1,
+                                                           21, 22, 12, -1,
+                                                           20, 21, 12, -1,
+                                                           19, 20, 12, -1,
+                                                           18, 19, 12, -1,
+                                                           17, 18, 12, -1,
+                                                           16, 17, 12, -1,
+                                                           15, 16, 12, -1,
+                                                           14, 15, 12, -1,
+                                                           12, 13, 14, -1,
+                                                           26, 27, 24, -1,
+                                                           24, 25, 26, -1,
+                                                           30, 31, 28, -1,
+                                                           28, 29, 30, -1,
+                                                           34, 35, 32, -1,
+                                                           32, 33, 34, -1,
+                                                           38, 39, 36, -1,
+                                                           36, 37, 38, -1,
+                                                           42, 43, 40, -1,
+                                                           40, 41, 42, -1,
+                                                           46, 47, 44, -1,
+                                                           44, 45, 46, -1,
+                                                           50, 51, 48, -1,
+                                                           48, 49, 50, -1,
+                                                           54, 55, 52, -1,
+                                                           52, 53, 54, -1,
+                                                           58, 59, 56, -1,
+                                                           56, 57, 58, -1,
+                                                           62, 63, 60, -1,
+                                                           60, 61, 62, -1,
+                                                           66, 67, 64, -1,
+                                                           64, 65, 66, -1,
+                                                           70, 71, 68, -1,
+                                                           68, 69, 70, -1,
+                                                          ]
+                                                          colorIndex [
+                                                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+                                                          ]
+                                                       }
+                                                    }
+                                                 ]
+                                              } #Segment
+                                           ]
+                                        } #link6
+                                        ,
+                                     ]
+                                  } #link5
+                                  ,
+                               ]
+                            } #link4
+                            ,
+                         ]
+                      } #link3
+                      ,
+                   ]
+                } #link2
+                ,
+             ]
+          } #link1
+          ,
+       ]
+    } #WAIST
+   ] # END of HumanoidBody
+
+   joints [
+    USE WAIST,
+    USE link1,
+    USE link2,
+    USE link3,
+    USE link4,
+    USE link5,
+    USE link6
+   ]
+
+   segments [
+    USE link0_S,
+    USE link1_S,
+    USE link2_S,
+    USE link3_S,
+    USE link4_S,
+    USE link5_S,
+    USE link6_S
+   ]
+
+}
