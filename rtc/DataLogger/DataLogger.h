@@ -40,7 +40,7 @@ public:
     virtual const char *name() = 0;
     virtual void clear() = 0;
     virtual void dumpLog(std::ostream& os) = 0;
-    virtual void log(coil::TimeValue &i_tv) = 0;
+    virtual void log() = 0;
     static unsigned int m_maxLength;
 };
 

@@ -97,7 +97,7 @@ public:
     InPort<T>& port(){
             return m_port;
     }
-    void log(coil::TimeValue &i_tv){
+    void log(){
         if (m_port.isNew()){
             m_port.read();
             m_log.push_back(m_data);
@@ -218,9 +218,8 @@ RTC::ReturnCode_t DataLogger::onExecute(RTC::UniqueId ec_id)
     
     if (m_suspendFlag) return RTC::RTC_OK;
     
-    coil::TimeValue tm(coil::gettimeofday());
     for (unsigned int i=0; i<m_ports.size(); i++){
-      m_ports[i]->log(tm);
+      m_ports[i]->log();
     }
   }
   return RTC::RTC_OK;
