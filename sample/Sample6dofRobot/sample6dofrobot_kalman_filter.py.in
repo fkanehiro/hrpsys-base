@@ -1,0 +1,65 @@
+#!/usr/bin/env python
+
+try:
+    from hrpsys.hrpsys_config import *
+    import OpenHRP
+except:
+    print "import without hrpsys"
+    import rtm
+    from rtm import *
+    from OpenHRP import *
+    import waitInput
+    from waitInput import *
+    import socket
+    import time
+
+import math
+import matplotlib.pyplot as plt
+
+def init ():
+    global hcf
+    hcf = HrpsysConfigurator()
+    hcf.getRTCList = hcf.getRTCListUnstable
+    hcf.init ("Sample6dofRobot(Robot)0", "@CMAKE_INSTALL_PREFIX@/share/hrpsys/samples/Sample6dofRobot/Sample6dofRobot.wrl")
+
+def test_kf_plot (time): # time [s]
+    hcf.log_svc.clear()
+    hcf.seq_svc.setJointAngles([0,0,0,0,1,0], time*0.5)
+    hcf.seq_svc.waitInterpolation()
+    hcf.seq_svc.setJointAngles([0,0,0,0,0,0], time*0.5)
+    hcf.seq_svc.waitInterpolation()
+    hcf.log_svc.save("/tmp/test-kf-sample6dofrobot-{0}".format(time))
+    kf_ret=[]
+    for line in open("/tmp/test-kf-sample6dofrobot-{0}.kf_rpy".format(time), "r"):
+        kf_ret.append(line.split(" ")[0:-1])
+    seq_ret=[]
+    for line in open("/tmp/test-kf-sample6dofrobot-{0}.sh_qOut".format(time), "r"):
+        seq_ret.append(line.split(" ")[0:-1])
+    initial_sec=int(seq_ret[0][0].split(".")[0])
+    tm_list=map (lambda x : int(x[0].split(".")[0])-initial_sec + float(x[0].split(".")[1]) * 1e-6, seq_ret)
+    plt.plot(tm_list, map(lambda x : 180.0 * float(x[5]) / math.pi, seq_ret))
+    plt.plot(tm_list, map(lambda x : 180.0 * float(x[2]) / math.pi, kf_ret))
+
+def demo():
+    init()
+    hcf.seq_svc.setJointAngles([0,0,0,0,0,0], 2.5)
+    hcf.seq_svc.waitInterpolation()
+
+    # 1. setParameter
+    ret=hcf.kf_svc.SetKalmanFilterParam(0.001, 0.003, 0.03)
+    if ret:
+        print "SetKalmanFilterParam() => OK"
+    ret=hcf.kf_svc.SetKalmanFilterParam(0.001, 0.003, 10)
+    if ret:
+        print "SetKalmanFilterParam() => OK"
+
+    # 2. check log and plot
+    test_kf_plot(2)
+    test_kf_plot(1)
+    test_kf_plot(0.5)
+    plt.xlabel("Time [s]")
+    plt.ylabel("Angle [deg]")
+    plt.legend(("Actual angle (2)", "Estimated angle (2)",
+                "Actual angle (1)", "Estimated angle (1)",
+                "Actual angle (0.5)", "Estimated angle (0.5)"))
+    plt.savefig("/tmp/test-kf-sample6dofrobot-data.eps")
