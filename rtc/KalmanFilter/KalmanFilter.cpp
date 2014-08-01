@@ -198,8 +198,10 @@ RTC::ReturnCode_t KalmanFilter::onExecute(RTC::UniqueId ec_id)
   if (m_rateIn.isNew()){
     m_rateIn.read();
   }
+  double sx_ref = 0.0, sy_ref = 0.0, sz_ref = 0.0;
   if (m_accRefIn.isNew()){
       m_accRefIn.read();
+      sx_ref = m_accRef.data.ax, sy_ref = m_accRef.data.ay, sz_ref = m_accRef.data.az;
   }
   if (m_accIn.isNew()){
       m_accIn.read();
@@ -213,7 +215,7 @@ RTC::ReturnCode_t KalmanFilter::onExecute(RTC::UniqueId ec_id)
       // s = [sx, sy, sz]t ( accelerometer )
       // g = [ 0 0 -g]t
       // s = G g = [g sinb, -g cosb sina, -g cosb cosa]t
-      double sx = m_acc.data.ax, sy = m_acc.data.ay, sz = m_acc.data.az;
+      double sx = m_acc.data.ax - sx_ref, sy = m_acc.data.ay - sy_ref, sz = m_acc.data.az - sz_ref;
 
       // hrp::RateGyroSensor* sensor = m_robot->sensor<hrp::RateGyroSensor>("gyrometer");
       hrp::Vector3 s = m_sensorR * hrp::Vector3(sx, sy, sz);
