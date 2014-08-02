@@ -594,11 +594,6 @@ void Stabilizer::getActualParameters ()
   prev_act_cogvel = act_cogvel;
   //act_root_rot = m_robot->rootLink()->R;
 
-  double transition_smooth_gain = 1.0;
-  if ( transition_count < 0 ) {
-    // (/ (log (/ (- 1 0.99) 0.99)) 0.5)
-    transition_smooth_gain = 1/(1+exp(-9.19*(((MAX_TRANSITION_COUNT + transition_count) / MAX_TRANSITION_COUNT) - 0.5)));
-  }
   // new ZMP calculation
   // Kajita's feedback low
   hrp::Vector3 dcog=foot_origin_rot * (ref_cog - act_cog);
@@ -742,16 +737,24 @@ void Stabilizer::getActualParameters ()
 void Stabilizer::getTargetParameters ()
 {
   // update internal robot model
+  if ( transition_count == 0 ) {
+    transition_smooth_gain = 1.0;
+  } else {
+    transition_smooth_gain = 1/(1+exp(-9.19*(((MAX_TRANSITION_COUNT - std::fabs(transition_count)) / MAX_TRANSITION_COUNT) - 0.5)));
+  }
   if (transition_count > 0) {
-    double transition_smooth_gain = 1/(1+exp(-9.19*(((MAX_TRANSITION_COUNT - transition_count) / MAX_TRANSITION_COUNT) - 0.5)));
     for ( int i = 0; i < m_robot->numJoints(); i++ ){
       m_robot->joint(i)->q = ( m_qRef.data[i] - transition_joint_q[i] ) * transition_smooth_gain + transition_joint_q[i];
     }
-    transition_count--;
   } else {
     for ( int i = 0; i < m_robot->numJoints(); i++ ){
       m_robot->joint(i)->q = m_qRef.data[i];
     }
+  }
+  if ( transition_count < 0 ) {
+    transition_count++;
+  } else if ( transition_count > 0 ) {
+    transition_count--;
   }
   for ( int i = 0; i < m_robot->numJoints(); i++ ){
     qrefv[i] = m_robot->joint(i)->q;
@@ -794,15 +797,6 @@ void Stabilizer::calcTPCC() {
 
     // stabilizer loop
     if ( ( m_force[ST_LEFT].data.length() > 0 && m_force[ST_RIGHT].data.length() > 0 ) ) {
-      double transition_smooth_gain = 1.0;
-      if ( transition_count < 0 ) {
-        // (/ (log (/ (- 1 0.99) 0.99)) 0.5)
-        transition_smooth_gain = 1/(1+exp(-9.19*(((MAX_TRANSITION_COUNT + transition_count) / MAX_TRANSITION_COUNT) - 0.5)));
-      }
-      if ( transition_count < 0 ) {
-        transition_count++;
-      }
-
       // Choi's feedback low
       hrp::Vector3 cog = m_robot->calcCM();
       hrp::Vector3 newcog = hrp::Vector3::Zero();
@@ -873,15 +867,6 @@ void Stabilizer::calcEEForceMomentControl() {
 
     // stabilizer loop
     if ( ( m_force[0].data.length() > 0 && m_force[1].data.length() > 0 ) ) {
-      double transition_smooth_gain = 1.0;
-      if ( transition_count < 0 ) {
-        // (/ (log (/ (- 1 0.99) 0.99)) 0.5)
-        transition_smooth_gain = 1/(1+exp(-9.19*(((MAX_TRANSITION_COUNT + transition_count) / MAX_TRANSITION_COUNT) - 0.5)));
-      }
-      if ( transition_count < 0 ) {
-        transition_count++;
-      }
-
       // return to referencea
       m_robot->rootLink()->R = target_root_R;
       m_robot->rootLink()->p = target_root_p;
@@ -1114,17 +1099,10 @@ void Stabilizer::calcRUNST() {
         //manip2[i]->solveLimbIK(vel_p, vel_r, transition_count, 0.001, 0.01, MAX_TRANSITION_COUNT, qrefv, false);
         //m_robot->joint(m_robot->link(target_name[i])->jointId)->q = dleg_y[i] + orgjq;
       }
-      double transition_smooth_gain = 1;
-      if ( transition_count < 0) {
-        transition_smooth_gain = 1/(1+exp(-9.19*(((MAX_TRANSITION_COUNT - transition_count) / MAX_TRANSITION_COUNT) - 0.5)));
-      }
       // m_robot->joint(m_robot->link("L_ANKLE_P")->jointId)->q = transition_smooth_gain * dleg_y[0] + orgjq + m_rpy.data.p;
       // m_robot->joint(m_robot->link("R_ANKLE_P")->jointId)->q = transition_smooth_gain * dleg_y[1] + orgjq + m_rpy.data.p;
       m_robot->joint(m_robot->link("L_ANKLE_P")->jointId)->q = transition_smooth_gain * dleg_y[0] + orgjq;
       m_robot->joint(m_robot->link("R_ANKLE_P")->jointId)->q = transition_smooth_gain * dleg_y[1] + orgjq;
-      if ( transition_count < 0 ) {
-        transition_count++;
-      }
     } else {
       // reinitialize
       for (int i = 0; i < ST_NUM_LEGS; i++) {

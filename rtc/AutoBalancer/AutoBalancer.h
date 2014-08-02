@@ -173,7 +173,7 @@ class AutoBalancer
     void getCurrentEndCoords(rats::coordinates& retc) { getEndCoords(retc, current_p0, current_r0); };
   };
   void robotstateOrg2qRef();
-  bool solveLimbIKforLimb (ABCIKparam& param, const double transition_smooth_gain);
+  bool solveLimbIKforLimb (ABCIKparam& param);
   void solveLimbIK();
   void startABCparam(const ::OpenHRP::AutoBalancerService::StrSequence& limbs);
   void stopABCparam();
@@ -201,7 +201,7 @@ class AutoBalancer
   hrp::Matrix33 base_rot_org, target_base_rot;
   rats::coordinates fix_leg_coords;
   std::vector<hrp::Vector3> default_zmp_offsets;
-  double m_dt, move_base_gain;
+  double m_dt, move_base_gain, transition_smooth_gain;
   hrp::BodyPtr m_robot;
   coil::Mutex m_mutex;
 

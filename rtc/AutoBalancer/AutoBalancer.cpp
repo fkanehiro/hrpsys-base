@@ -336,8 +336,32 @@ void AutoBalancer::robotstateOrg2qRef()
   base_rot_org = m_robot->rootLink()->R;
   for ( int i = 0; i < m_robot->numJoints(); i++ ){
     qorg[i] = m_robot->joint(i)->q;
-    m_robot->joint(i)->q = m_qRef.data[i];
-    qrefv[i] = m_qRef.data[i];
+  }
+  if ( transition_count == 0 ) {
+    transition_smooth_gain = 1.0;
+  } else {
+    transition_smooth_gain = 1/(1+exp(-9.19*(((MAX_TRANSITION_COUNT - std::fabs(transition_count)) / MAX_TRANSITION_COUNT) - 0.5)));
+  }
+  if ( transition_count > 0 ) {
+    for ( int i = 0; i < m_robot->numJoints(); i++ ){
+      m_robot->joint(i)->q = ( m_qRef.data[i] - transition_joint_q[i] ) * transition_smooth_gain + transition_joint_q[i];
+    }
+  } else {
+    for ( int i = 0; i < m_robot->numJoints(); i++ ){
+      m_robot->joint(i)->q = m_qRef.data[i];
+    }
+  }
+  for ( int i = 0; i < m_robot->numJoints(); i++ ){
+    qrefv[i] = m_robot->joint(i)->q;
+  }
+  if ( transition_count < 0 ) {
+    transition_count++;
+  } else if ( transition_count > 0 ) {
+    transition_count--;
+    if(transition_count <= 0){ // erase impedance param
+      std::cerr << "Finished cleanup" << std::endl;
+      control_mode = MODE_IDLE;
+    }
   }
   m_robot->calcForwardKinematics();
   coordinates rc, lc;
@@ -415,25 +439,6 @@ void AutoBalancer::robotstateOrg2qRef()
     } else refzmp = hrp::Vector3(0,0,0);
   }
   if ( transition_count > 0 ) {
-    double transition_smooth_gain = 1/(1+exp(-9.19*(((MAX_TRANSITION_COUNT - transition_count) / MAX_TRANSITION_COUNT) - 0.5)));
-    for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
-      hrp::JointPathExPtr manip = it->second.manip;
-      for ( int j = 0; j < manip->numJoints(); j++ ) {
-        int i = manip->joint(j)->jointId; // index in robot model
-        hrp::Link* joint =  m_robot->joint(i);
-        // transition_smooth_gain moves from 0 to 1
-        // (/ (log (/ (- 1 0.99) 0.99)) 0.5)
-        joint->q = ( m_qRef.data[i] - transition_joint_q[i] ) * transition_smooth_gain + transition_joint_q[i];
-      }
-    }
-    transition_count--;
-    if(transition_count <= 0){ // erase impedance param
-      std::cerr << "Finished cleanup" << std::endl;
-      control_mode = MODE_IDLE;
-    }
-  }
-  if ( transition_count > 0 ) {
-    double transition_smooth_gain = 1/(1+exp(-9.19*(((MAX_TRANSITION_COUNT - abs(transition_count)) / MAX_TRANSITION_COUNT) - 0.5)));
     refzmp = transition_smooth_gain * ( refzmp - prefzmp ) + prefzmp;
   }
 }
@@ -454,7 +459,7 @@ void AutoBalancer::fixLegToCoords (const std::string& leg, const coordinates& co
   m_robot->calcForwardKinematics();
 }
 
-bool AutoBalancer::solveLimbIKforLimb (ABCIKparam& param, const double transition_smooth_gain)
+bool AutoBalancer::solveLimbIKforLimb (ABCIKparam& param)
 {
   param.current_p0 = m_robot->link(param.target_name)->p;
   param.current_r0 = m_robot->link(param.target_name)->R;
@@ -468,12 +473,6 @@ bool AutoBalancer::solveLimbIKforLimb (ABCIKparam& param, const double transitio
 
 void AutoBalancer::solveLimbIK ()
 {
-  double transition_smooth_gain = 1.0;
-  if ( transition_count < 0 ) {
-    // (/ (log (/ (- 1 0.99) 0.99)) 0.5)
-    transition_smooth_gain = 1/(1+exp(-9.19*(((MAX_TRANSITION_COUNT + transition_count) / MAX_TRANSITION_COUNT) - 0.5)));
-  }
-
   for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
     if (it->second.is_active) {
       for ( int j = 0; j < it->second.manip->numJoints(); j++ ){
@@ -494,10 +493,7 @@ void AutoBalancer::solveLimbIK ()
   m_robot->calcForwardKinematics();
 
   for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
-    if (it->second.is_active) solveLimbIKforLimb(it->second, transition_smooth_gain);
-  }
-  if ( transition_count < 0 ) {
-    transition_count++;
+    if (it->second.is_active) solveLimbIKforLimb(it->second);
   }
   if (gg_is_walking && !gg_solved) stopWalking ();
 }
