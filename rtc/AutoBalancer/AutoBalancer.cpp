@@ -55,8 +55,7 @@ AutoBalancer::AutoBalancer(RTC::Manager* manager)
       // </rtc-template>
       move_base_gain(0.1),
       m_robot(hrp::BodyPtr()),
-      m_debugLevel(0),
-      dummy(0)
+      m_debugLevel(0)
 {
     m_service0.autobalancer(this);
 }
@@ -220,6 +219,12 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     //use_force = MODE_NO_FORCE;
     use_force = MODE_REF_FORCE;
 
+    if (ikp.find(":rleg") != ikp.end() && ikp.find(":lleg") != ikp.end()) {
+      is_legged_robot = true;
+    } else {
+      is_legged_robot = false;
+    }
+
     return RTC::RTC_OK;
 }
 
@@ -271,9 +276,6 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
     }
     if (m_qCurrentIn.isNew()) {
         m_qCurrentIn.read();
-        is_qCurrent = true;
-    } else {
-      is_qCurrent = false;
     }
     for (unsigned int i=0; i<m_ref_forceIn.size(); i++){
         if ( m_ref_forceIn[i]->isNew() ) {
@@ -365,7 +367,7 @@ void AutoBalancer::robotstateOrg2qRef()
   }
   m_robot->calcForwardKinematics();
   coordinates rc, lc;
-  if ( ikp.find(":rleg") != ikp.end() && ikp.find(":lleg") != ikp.end() ) {
+  if ( is_legged_robot ) {
     coordinates tmp_fix_coords;
     if (!zmp_interpolator->isEmpty()) {
       double default_zmp_offsets_output[6];
@@ -424,7 +426,7 @@ void AutoBalancer::robotstateOrg2qRef()
     }
   }
   if (control_mode == MODE_IDLE) {
-    if ( ikp.find(":rleg") != ikp.end() && ikp.find(":lleg") != ikp.end() ) {
+    if ( is_legged_robot ) {
       refzmp(0) = target_com(0);
       refzmp(1) = target_com(1);
       refzmp(2) = (rc.pos(2) + lc.pos(2)) / 2.0;
@@ -432,7 +434,7 @@ void AutoBalancer::robotstateOrg2qRef()
   } else if (gg_is_walking) {
     refzmp = gg->get_refzmp();
   } else {
-    if ( ikp.find(":rleg") != ikp.end() && ikp.find(":lleg") != ikp.end() ) {
+    if ( is_legged_robot ) {
       refzmp(0) = target_com(0);
       refzmp(1) = target_com(1);
       refzmp(2) = (rc.pos(2) + lc.pos(2)) / 2.0;

@@ -10,7 +10,6 @@
 #ifndef AUTOBALANCER_H
 #define AUTOBALANCER_H
 
-#include <boost/interprocess/sync/interprocess_semaphore.hpp>
 #include <rtm/Manager.h>
 #include <rtm/DataFlowComponentBase.h>
 #include <rtm/CorbaPort.h>
@@ -214,8 +213,7 @@ class AutoBalancer
   std::vector<hrp::Vector3> ref_forces;
 
   unsigned int m_debugLevel;
-  bool is_legged_robot, is_qCurrent;
-  int dummy;
+  bool is_legged_robot;
   int loop;
 };
 
