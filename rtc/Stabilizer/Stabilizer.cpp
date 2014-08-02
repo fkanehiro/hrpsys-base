@@ -55,6 +55,16 @@ Stabilizer::Stabilizer(RTC::Manager* manager)
     m_qRefOut("q", m_qRef),
     m_tauOut("tau", m_tau),
     m_zmpOut("zmp", m_zmp),
+    // for debug output
+    m_originRefZmpOut("originRefZmp", m_originRefZmp),
+    m_originRefCogOut("originRefCog", m_originRefCog),
+    m_originRefCogVelOut("originRefCogVel", m_originRefCogVel),
+    m_originNewZmpOut("originNewZmp", m_originNewZmp),
+    m_originActZmpOut("originActZmp", m_originActZmp),
+    m_originActCogOut("originActCog", m_originActCog),
+    m_originActCogVelOut("originActCogVel", m_originActCogVel),
+    m_refWrenchROut("refWrenchR", m_refWrenchR),
+    m_refWrenchLOut("refWrenchL", m_refWrenchL),
     control_mode(MODE_IDLE),
     // </rtc-template>
     m_debugLevel(0)
@@ -91,6 +101,16 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   addOutPort("q", m_qRefOut);
   addOutPort("tau", m_tauOut);
   addOutPort("zmp", m_zmpOut);
+  // for debug output
+  addOutPort("originRefZmp", m_originRefZmpOut);
+  addOutPort("originRefCog", m_originRefCogOut);
+  addOutPort("originRefCogVel", m_originRefCogVelOut);
+  addOutPort("originNewZmp", m_originNewZmpOut);
+  addOutPort("originActZmp", m_originActZmpOut);
+  addOutPort("originActCog", m_originActCogOut);
+  addOutPort("originActCogVel", m_originActCogVelOut);
+  addOutPort("refWrenchR", m_refWrenchROut);
+  addOutPort("refWrenchL", m_refWrenchLOut);
   
   // Set service provider to Ports
   m_StabilizerServicePort.registerProvider("service0", "StabilizerService", m_service0);
@@ -205,6 +225,18 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
     zmp_origin_off = ee_map[m_robot->sensor<hrp::ForceSensor>(sensor_names[0])->link->name].localp(2);
   }
   total_mass = m_robot->totalMass();
+
+  // for debug output
+  m_originRefZmp.data.x = m_originRefZmp.data.y = m_originRefZmp.data.z = 0.0;
+  m_originRefCog.data.x = m_originRefCog.data.y = m_originRefCog.data.z = 0.0;
+  m_originRefCogVel.data.x = m_originRefCogVel.data.y = m_originRefCogVel.data.z = 0.0;
+  m_originNewZmp.data.x = m_originNewZmp.data.y = m_originNewZmp.data.z = 0.0;
+  m_originActZmp.data.x = m_originActZmp.data.y = m_originActZmp.data.z = 0.0;
+  m_originActCog.data.x = m_originActCog.data.y = m_originActCog.data.z = 0.0;
+  m_originActCogVel.data.x = m_originActCogVel.data.y = m_originActCogVel.data.z = 0.0;
+  m_refWrenchR.data.length(6); m_refWrenchL.data.length(6);
+  m_refWrenchR.data[0] = m_refWrenchR.data[1] = m_refWrenchR.data[2] = m_refWrenchR.data[3] = m_refWrenchR.data[4] = m_refWrenchR.data[5] = 0.0;
+  m_refWrenchL.data[0] = m_refWrenchL.data[1] = m_refWrenchL.data[2] = m_refWrenchL.data[3] = m_refWrenchL.data[4] = m_refWrenchL.data[5] = 0.0;
 
   return RTC::RTC_OK;
 }
@@ -343,6 +375,26 @@ RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
       m_zmp.data.z = rel_act_zmp(2);
       m_zmpOut.write();
       //m_tauOut.write();
+      // for debug output
+      m_originRefZmp.data.x = ref_zmp(0); m_originRefZmp.data.y = ref_zmp(1); m_originRefZmp.data.z = ref_zmp(2);
+      m_originRefCog.data.x = ref_cog(0); m_originRefCog.data.y = ref_cog(1); m_originRefCog.data.z = ref_cog(2);
+      m_originRefCogVel.data.x = ref_cogvel(0); m_originRefCogVel.data.y = ref_cogvel(1); m_originRefCogVel.data.z = ref_cogvel(2);
+      m_originNewZmp.data.x = new_refzmp(0); m_originNewZmp.data.y = new_refzmp(1); m_originNewZmp.data.z = new_refzmp(2);
+      m_originActZmp.data.x = act_zmp(0); m_originActZmp.data.y = act_zmp(1); m_originActZmp.data.z = act_zmp(2);
+      m_originActCog.data.x = act_cog(0); m_originActCog.data.y = act_cog(1); m_originActCog.data.z = act_cog(2);
+      m_originActCogVel.data.x = act_cogvel(0); m_originActCogVel.data.y = act_cogvel(1); m_originActCogVel.data.z = act_cogvel(2);
+      m_refWrenchR.data[0] = ref_foot_force[0](0); m_refWrenchR.data[1] = ref_foot_force[0](1); m_refWrenchR.data[2] = ref_foot_force[0](2);
+      m_refWrenchR.data[3] = ref_foot_moment[0](0); m_refWrenchR.data[4] = ref_foot_moment[0](1); m_refWrenchR.data[5] = ref_foot_moment[0](2);
+      m_refWrenchL.data[0] = ref_foot_force[1](0); m_refWrenchL.data[1] = ref_foot_force[1](1); m_refWrenchL.data[2] = ref_foot_force[1](2);
+      m_refWrenchL.data[3] = ref_foot_moment[1](0); m_refWrenchL.data[4] = ref_foot_moment[1](1); m_refWrenchL.data[5] = ref_foot_moment[1](2);
+      m_originRefZmpOut.write();
+      m_originRefCogOut.write();
+      m_originRefCogVelOut.write();
+      m_originNewZmpOut.write();
+      m_originActZmpOut.write();
+      m_originActCogOut.write();
+      m_originActCogVelOut.write();
+      m_refWrenchROut.write(); m_refWrenchLOut.write();
     }
     m_qRefOut.write();
   }
@@ -617,6 +669,8 @@ void Stabilizer::getActualParameters ()
       std::cerr << "tR [" << ref_foot_moment[0](0) << " " << ref_foot_moment[0](1) << " " << ref_foot_moment[0](2) << "]" << std::endl;
       std::cerr << "tL [" << ref_foot_moment[1](0) << " " << ref_foot_moment[1](1) << " " << ref_foot_moment[1](2) << "]" << std::endl;
     }
+    // for debug output
+    new_refzmp = foot_origin_rot.transpose() * (new_refzmp - foot_origin_pos);
   }
   //rpy control
   {
