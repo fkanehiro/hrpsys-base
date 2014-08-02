@@ -106,6 +106,8 @@ class Stabilizer
   void getCurrentParameters ();
   void getActualParameters ();
   void getTargetParameters ();
+  hrp::Matrix33 OrientRotationMatrix (const hrp::Matrix33& rot, const hrp::Vector3& axis1, const hrp::Vector3& axis2);
+  void calcFootOriginCoords (hrp::Vector3& foot_origin_pos, hrp::Matrix33& foot_origin_rot);
   void sync_2_st ();
   void sync_2_idle();
   bool calcZMP(hrp::Vector3& ret_zmp, const double zmp_z);
@@ -202,14 +204,12 @@ class Stabilizer
   double dt;
   int transition_count, loop;
   bool is_legged_robot, on_ground;
-  hrp::Vector3 current_root_p;
-  hrp::Matrix33 current_root_R;
-  hrp::Matrix33 target_root_R;
-  hrp::Vector3 target_foot_p[2];
-  hrp::Matrix33 target_foot_R[2];
+  hrp::Vector3 current_root_p, target_foot_p[2], target_root_p;
+  hrp::Matrix33 current_root_R, target_root_R, target_foot_R[2];
   rats::coordinates target_foot_midcoords;
   hrp::Vector3 ref_zmp, ref_cog, ref_cogvel, prev_ref_cog;
   hrp::Vector3 act_zmp, act_cog, act_cogvel, rel_act_zmp, prev_act_cog, prev_act_cogvel;
+  double zmp_origin_off;
   // TPCC
   double k_tpcc_p[2], k_tpcc_x[2], d_rpy[2], k_brot_p[2], k_brot_tc[2];
   // RUN ST
@@ -222,8 +222,10 @@ class Stabilizer
   // EEFM ST
   double eefm_k1[2], eefm_k2[2], eefm_k3[2];
   double eefm_rot_damping_gain, eefm_rot_time_const, eefm_pos_damping_gain, eefm_pos_time_const;
-  hrp::Vector3 d_foot_rpy[2];
-  double zctrl;
+  hrp::Vector3 d_foot_rpy[2], new_refzmp, rel_cog;
+  hrp::Vector3 ref_foot_force[2];
+  hrp::Vector3 ref_foot_moment[2];
+  double zctrl, total_mass, f_zctrl[2];
 };
 
 
