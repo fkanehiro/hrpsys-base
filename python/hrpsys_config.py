@@ -563,6 +563,15 @@ class HrpsysConfigurator:
             self.connectLoggerPort(self.abc, 'q')
         if self.st != None:
             self.connectLoggerPort(self.st, 'zmp')
+            self.connectLoggerPort(self.st, 'originRefZmp')
+            self.connectLoggerPort(self.st, 'originRefCog')
+            self.connectLoggerPort(self.st, 'originRefCogVel')
+            self.connectLoggerPort(self.st, 'originNewZmp')
+            self.connectLoggerPort(self.st, 'originActZmp')
+            self.connectLoggerPort(self.st, 'originActCog')
+            self.connectLoggerPort(self.st, 'originActCogVel')
+            self.connectLoggerPort(self.st, 'refWrenchR')
+            self.connectLoggerPort(self.st, 'refWrenchL')
         if self.rh != None:
             self.connectLoggerPort(self.rh, 'emergencySignal',
                                    'emergencySignal')
