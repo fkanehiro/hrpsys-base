@@ -35,11 +35,12 @@ public:
   void setupController(double _ke, double _tc, double _dt);
   void setupController(double _ke, double _kd, double _tc, double _dt);
   void setupController(double _alpha, double _beta, double _ki, double _tc, double _dt);
+  void setupMotorControllerMinMaxDq(double _min_dq, double _max_dq); // set min/max dq for transition
   bool activate(void); // set state of torque controller to ACTIVE
   bool deactivate(void); // set state of torque controller to STOP -> INACTIVE
   bool setReferenceTorque(double _tauRef); // set reference torque (does not activate controller)
   double execute(double _tau, double _tauMax); // determine final state and tauRef, then throw tau, tauRef and state to executeControl
-  
+
   // accessor
   std::string getJointName(void);
   controller_state_t getMotorControllerState(void);
@@ -55,10 +56,11 @@ private:
     ~MotorController();
     boost::shared_ptr<TwoDofControllerInterface> controller;
     controller_state_t state;
-    double transition_count;
     double dq; //difference of joint angle from base(qRef) from tdc. it is calcurated by dq = integrate(qd * dt), dq*dt is output of tdc 
-    double transition_dq; // for transition
-    double recovery_dq; // last difference of joint angle from qRef (dq + transition_dq) when state was changed to STOP
+    double transition_dq; // for transition. first value is last difference of joint angle from qRef (dq + transition_dq) when state was changed to STOP
+    double recovery_dq; // difference of joint angle in 1 cycle to be recoverd
+    double min_dq; // min dq when transition
+    double max_dq; // max dq when transition
     void setupTwoDofController(double _ke, double _tc, double _dt);
     void setupTwoDofControllerPDModel(double _ke, double _kd, double _tc, double _dt);
     void setupTwoDofControllerDynamicsModel(double _alpha, double _beta, double _ki, double _tc, double _dt);

@@ -17,30 +17,35 @@
 #define TRANSITION_TIME 2.0 // [sec]
 #define MAX_TRANSITION_COUNT (TRANSITION_TIME/m_dt)
 #define TORQUE_MARGIN 10.0 // [Nm]
+#define DEFAULT_MIN_MAX_DQ (0.17 * m_dt) // default min/max is 10[deg/sec] = 0.17[rad/sec]
 
 MotorTorqueController::MotorTorqueController()
 {
   // default constructor: _jname = "", _ke = _tc = _dt = 0.0
   setupController(0.0, 0.0, 0.0);
   setupControllerCommon("", 0.0);
+  setupMotorControllerMinMaxDq(0.0, 0.0);
 }
 
 MotorTorqueController::MotorTorqueController(std::string _jname, double _ke, double _tc, double _dt)
 {
   setupController(_ke, _tc, _dt);
   setupControllerCommon(_jname, _dt);
+  setupMotorControllerMinMaxDq(-DEFAULT_MIN_MAX_DQ, DEFAULT_MIN_MAX_DQ); 
 }
 
 MotorTorqueController::MotorTorqueController(std::string _jname, double _ke, double _kd, double _tc, double _dt)
 {
   setupController(_ke, _kd, _tc, _dt);
   setupControllerCommon(_jname, _dt);
+  setupMotorControllerMinMaxDq(-DEFAULT_MIN_MAX_DQ, DEFAULT_MIN_MAX_DQ);
 }
 
 MotorTorqueController::MotorTorqueController(std::string _jname, double _alpha, double _beta, double _ki, double _tc, double _dt)
 {
   setupController(_alpha, _beta, _ki, _tc, _dt);
   setupControllerCommon(_jname, _dt);
+  setupMotorControllerMinMaxDq(-DEFAULT_MIN_MAX_DQ, DEFAULT_MIN_MAX_DQ);
 }
 
 MotorTorqueController::~MotorTorqueController(void)
@@ -63,6 +68,15 @@ void MotorTorqueController::setupController(double _alpha, double _beta, double 
 {
   m_normalController.setupTwoDofControllerDynamicsModel(_alpha, _beta, _ki, _tc, _dt);
   m_emergencyController.setupTwoDofControllerDynamicsModel(_alpha, _beta, _ki, _tc, _dt);
+}
+
+void MotorTorqueController::setupMotorControllerMinMaxDq(double _min_dq, double _max_dq)
+{
+  m_normalController.min_dq = _min_dq;
+  m_emergencyController.min_dq = _min_dq;
+  m_normalController.max_dq = _max_dq;
+  m_emergencyController.max_dq = _max_dq;
+  return;
 }
 
 bool MotorTorqueController::activate(void)
@@ -182,7 +196,6 @@ void MotorTorqueController::setupControllerCommon(std::string _jname, double _dt
 
 void MotorTorqueController::resetMotorControllerVariables(MotorTorqueController::MotorController& _mc)
 {
-  _mc.transition_count = 0;
   _mc.dq = 0;
   _mc.transition_dq = 0;
   _mc.recovery_dq = 0;
@@ -190,8 +203,13 @@ void MotorTorqueController::resetMotorControllerVariables(MotorTorqueController:
 
 void MotorTorqueController::prepareStop(MotorTorqueController::MotorController &_mc)
 {
-  _mc.recovery_dq = _mc.getMotorControllerDq(); 
-  _mc.transition_count = MAX_TRANSITION_COUNT;
+  // angle difference to be recoverd
+  _mc.transition_dq = _mc.getMotorControllerDq();
+
+  // determine transition in 1 cycle
+  _mc.recovery_dq = std::min(std::max(_mc.transition_dq / MAX_TRANSITION_COUNT, _mc.min_dq), _mc.max_dq); // transition in 1 cycle
+  std::cerr << _mc.recovery_dq << std::endl;
+  
   _mc.dq = 0; // dq must be reseted after recovery_dq setting(used in getMotoroControllerDq)
   _mc.state = STOP;
   return;
@@ -204,14 +222,13 @@ void MotorTorqueController::updateController(double _tau, double _tauRef, MotorT
     _mc.dq += _mc.controller->update(_tau, _tauRef);
     break;
   case STOP:
-    if (_mc.transition_count < 0){
+    if (std::abs(_mc.recovery_dq) > std::abs(_mc.transition_dq)){
         _mc.dq = 0;
         _mc.transition_dq = 0;
         _mc.state = INACTIVE;
         break;
       }
-    _mc.transition_dq = (_mc.recovery_dq / MAX_TRANSITION_COUNT) * _mc.transition_count;
-    _mc.transition_count--;
+    _mc.transition_dq -= _mc.recovery_dq;
     break;
   default:
     _mc.controller->reset();
@@ -225,7 +242,6 @@ void MotorTorqueController::updateController(double _tau, double _tauRef, MotorT
 MotorTorqueController::MotorController::MotorController()
 {
   state = INACTIVE;
-  transition_count = 0;
   dq = 0;
   transition_dq = 0;
   recovery_dq = 0;
