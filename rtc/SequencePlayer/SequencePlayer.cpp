@@ -114,7 +114,7 @@ RTC::ReturnCode_t SequencePlayer::onInitialize()
     RTC::Manager& rtcManager = RTC::Manager::instance();
     std::string nameServer = rtcManager.getConfig()["corba.nameservers"];
     int comPos = nameServer.find(",");
-    if(comPos < 0) {
+    if (comPos < 0){
         comPos = nameServer.length();
     }
     nameServer = nameServer.substr(0, comPos);
@@ -131,18 +131,18 @@ RTC::ReturnCode_t SequencePlayer::onInitialize()
     int npforce = m_robot->numSensors(hrp::Sensor::FORCE);
     m_wrenches.resize(npforce);
     m_wrenchesOut.resize(npforce);
-    for(unsigned int i = 0; i < npforce; i++) {
-        hrp::Sensor *s = m_robot->sensor(hrp::Sensor::FORCE, i);
-        m_wrenchesOut[i] = new OutPort<TimedDoubleSeq>(std::string(s->name + "Ref").c_str(), m_wrenches[i]);
-        m_wrenches[i].data.length(6);
-        registerOutPort(std::string(s->name + "Ref").c_str(), *m_wrenchesOut[i]);
-        std::cerr << s->name << std::endl;
+    for (unsigned int i = 0; i < npforce; i++){
+      hrp::Sensor *s = m_robot->sensor(hrp::Sensor::FORCE, i);
+      m_wrenchesOut[i] = new OutPort<TimedDoubleSeq>(std::string(s->name + "Ref").c_str(), m_wrenches[i]);
+      m_wrenches[i].data.length(6);
+      registerOutPort(std::string(s->name + "Ref").c_str(), *m_wrenchesOut[i]);
+      std::cerr << s->name << std::endl;
     }
 
     m_seq = new seqplay(dof, dt, npforce);
 
     m_qInit.data.length(dof);
-    for(unsigned int i = 0; i < dof; i++) m_qInit.data[i] = 0.0;
+    for (unsigned int i=0; i<dof; i++) m_qInit.data[i] = 0.0;
     Link *root = m_robot->rootLink();
     m_basePosInit.data.x = root->p[0]; m_basePosInit.data.y = root->p[1]; m_basePosInit.data.z = root->p[2];
     hrp::Vector3 rpy = hrp::rpyFromRot(root->R);
@@ -160,25 +160,25 @@ RTC::ReturnCode_t SequencePlayer::onInitialize()
 
 RTC::ReturnCode_t SequencePlayer::onFinalize()
 {
-    if(m_debugLevel > 0) {
+    if (m_debugLevel > 0){
         std::cerr << __PRETTY_FUNCTION__ << std::endl;
     }
     return RTC::RTC_OK;
 }
 
 /*
-   RTC::ReturnCode_t SequencePlayer::onStartup(RTC::UniqueId ec_id)
-   {
-   return RTC::RTC_OK;
-   }
- */
+  RTC::ReturnCode_t SequencePlayer::onStartup(RTC::UniqueId ec_id)
+  {
+  return RTC::RTC_OK;
+  }
+*/
 
 /*
-   RTC::ReturnCode_t SequencePlayer::onShutdown(RTC::UniqueId ec_id)
-   {
-   return RTC::RTC_OK;
-   }
- */
+  RTC::ReturnCode_t SequencePlayer::onShutdown(RTC::UniqueId ec_id)
+  {
+  return RTC::RTC_OK;
+  }
+*/
 
 RTC::ReturnCode_t SequencePlayer::onActivated(RTC::UniqueId ec_id)
 {
@@ -188,41 +188,41 @@ RTC::ReturnCode_t SequencePlayer::onActivated(RTC::UniqueId ec_id)
 }
 
 /*
-   RTC::ReturnCode_t SequencePlayer::onDeactivated(RTC::UniqueId ec_id)
-   {
-   return RTC::RTC_OK;
-   }
- */
+  RTC::ReturnCode_t SequencePlayer::onDeactivated(RTC::UniqueId ec_id)
+  {
+  return RTC::RTC_OK;
+  }
+*/
 
 RTC::ReturnCode_t SequencePlayer::onExecute(RTC::UniqueId ec_id)
 {
     static int loop = 0;
     loop++;
-    if(m_debugLevel > 0 && loop % 1000 == 0) {
+    if (m_debugLevel > 0 && loop % 1000 == 0){
         std::cerr << __PRETTY_FUNCTION__ << "(" << ec_id << ")" << std::endl;
     }
-    if(m_qInitIn.isNew()) m_qInitIn.read();
-    if(m_basePosInitIn.isNew()) m_basePosInitIn.read();
-    if(m_baseRpyInitIn.isNew()) m_baseRpyInitIn.read();
-    if(m_zmpRefInitIn.isNew()) m_zmpRefInitIn.read();
+    if (m_qInitIn.isNew()) m_qInitIn.read();
+    if (m_basePosInitIn.isNew()) m_basePosInitIn.read();
+    if (m_baseRpyInitIn.isNew()) m_baseRpyInitIn.read();
+    if (m_zmpRefInitIn.isNew()) m_zmpRefInitIn.read();
 
-    if(m_gname != "" && m_seq->isEmpty(m_gname.c_str())) {
-        if(m_waitFlag) {
+    if (m_gname != "" && m_seq->isEmpty(m_gname.c_str())){
+        if (m_waitFlag){
             m_gname = "";
             m_waitFlag = false;
             m_waitSem.post();
         }
     }
-    if(m_seq->isEmpty()) {
+    if (m_seq->isEmpty()){
         m_clearFlag = false;
-        if(m_waitFlag) {
+        if (m_waitFlag){
             m_waitFlag = false;
             m_waitSem.post();
         }
     }else{
-        Guard guard(m_mutex);
+       Guard guard(m_mutex);
 
-        double zmp[3], acc[3], pos[3], rpy[3], wrenches[6 * m_wrenches.size()];
+        double zmp[3], acc[3], pos[3], rpy[3], wrenches[6*m_wrenches.size()];
         m_seq->get(m_qRef.data.get_buffer(), zmp, acc, pos, rpy, m_tqRef.data.get_buffer(), wrenches);
         m_zmpRef.data.x = zmp[0];
         m_zmpRef.data.y = zmp[1];
@@ -237,13 +237,13 @@ RTC::ReturnCode_t SequencePlayer::onExecute(RTC::UniqueId ec_id)
         m_baseRpy.data.p = rpy[1];
         m_baseRpy.data.y = rpy[2];
         size_t force_i = 0;
-        for(size_t i = 0; i < m_wrenches.size(); i++) {
-            m_wrenches[i].data[0] = wrenches[force_i++];
-            m_wrenches[i].data[1] = wrenches[force_i++];
-            m_wrenches[i].data[2] = wrenches[force_i++];
-            m_wrenches[i].data[3] = wrenches[force_i++];
-            m_wrenches[i].data[4] = wrenches[force_i++];
-            m_wrenches[i].data[5] = wrenches[force_i++];
+        for (size_t i = 0; i < m_wrenches.size(); i++) {
+          m_wrenches[i].data[0] = wrenches[force_i++];
+          m_wrenches[i].data[1] = wrenches[force_i++];
+          m_wrenches[i].data[2] = wrenches[force_i++];
+          m_wrenches[i].data[3] = wrenches[force_i++];
+          m_wrenches[i].data[4] = wrenches[force_i++];
+          m_wrenches[i].data[5] = wrenches[force_i++];
         }
         m_qRefOut.write();
         m_tqRefOut.write();
@@ -251,11 +251,11 @@ RTC::ReturnCode_t SequencePlayer::onExecute(RTC::UniqueId ec_id)
         m_accRefOut.write();
         m_basePosOut.write();
         m_baseRpyOut.write();
-        for(size_t i = 0; i < m_wrenchesOut.size(); i++) {
-            m_wrenchesOut[i]->write();
+        for (size_t i = 0; i < m_wrenchesOut.size(); i++) {
+          m_wrenchesOut[i]->write();
         }
 
-        if(m_clearFlag) {
+        if (m_clearFlag){
             m_seq->clear(0.001);
         }
     }
@@ -263,43 +263,43 @@ RTC::ReturnCode_t SequencePlayer::onExecute(RTC::UniqueId ec_id)
 }
 
 /*
-   RTC::ReturnCode_t SequencePlayer::onAborting(RTC::UniqueId ec_id)
-   {
-   return RTC::RTC_OK;
-   }
- */
+  RTC::ReturnCode_t SequencePlayer::onAborting(RTC::UniqueId ec_id)
+  {
+  return RTC::RTC_OK;
+  }
+*/
 
 /*
-   RTC::ReturnCode_t SequencePlayer::onError(RTC::UniqueId ec_id)
-   {
-   return RTC::RTC_OK;
-   }
- */
+  RTC::ReturnCode_t SequencePlayer::onError(RTC::UniqueId ec_id)
+  {
+  return RTC::RTC_OK;
+  }
+*/
 
 /*
-   RTC::ReturnCode_t SequencePlayer::onReset(RTC::UniqueId ec_id)
-   {
-   return RTC::RTC_OK;
-   }
- */
+  RTC::ReturnCode_t SequencePlayer::onReset(RTC::UniqueId ec_id)
+  {
+  return RTC::RTC_OK;
+  }
+*/
 
 /*
-   RTC::ReturnCode_t SequencePlayer::onStateUpdate(RTC::UniqueId ec_id)
-   {
-   return RTC::RTC_OK;
-   }
- */
+  RTC::ReturnCode_t SequencePlayer::onStateUpdate(RTC::UniqueId ec_id)
+  {
+  return RTC::RTC_OK;
+  }
+*/
 
 /*
-   RTC::ReturnCode_t SequencePlayer::onRateChanged(RTC::UniqueId ec_id)
-   {
-   return RTC::RTC_OK;
-   }
- */
+  RTC::ReturnCode_t SequencePlayer::onRateChanged(RTC::UniqueId ec_id)
+  {
+  return RTC::RTC_OK;
+  }
+*/
 
 void SequencePlayer::setClearFlag()
 {
-    if(m_debugLevel > 0) {
+    if (m_debugLevel > 0) {
         std::cerr << __PRETTY_FUNCTION__ << std::endl;
     }
     m_clearFlag = true;
@@ -307,7 +307,7 @@ void SequencePlayer::setClearFlag()
 
 void SequencePlayer::waitInterpolation()
 {
-    if(m_debugLevel > 0) {
+    if (m_debugLevel > 0) {
         std::cerr << __PRETTY_FUNCTION__ << std::endl;
     }
     m_waitFlag = true;
@@ -316,7 +316,7 @@ void SequencePlayer::waitInterpolation()
 
 bool SequencePlayer::waitInterpolationOfGroup(const char *gname)
 {
-    if(m_debugLevel > 0) {
+    if (m_debugLevel > 0) {
         std::cerr << __PRETTY_FUNCTION__ << std::endl;
     }
     m_gname = gname;
@@ -328,23 +328,23 @@ bool SequencePlayer::waitInterpolationOfGroup(const char *gname)
 
 bool SequencePlayer::setJointAngle(short id, double angle, double tm)
 {
-    if(m_debugLevel > 0) {
+    if (m_debugLevel > 0) {
         std::cerr << __PRETTY_FUNCTION__ << std::endl;
     }
     Guard guard(m_mutex);
-    if(!setInitialState()) return false;
+    if (!setInitialState()) return false;
     dvector q(m_robot->numJoints());
     m_seq->getJointAngles(q.data());
     q[id] = angle;
-    for(int i = 0; i < m_robot->numJoints(); i++) {
+    for (int i=0; i<m_robot->numJoints(); i++){
         hrp::Link *j = m_robot->joint(i);
-        if(j) j->q = q[i];
+        if (j) j->q = q[i];
     }
     m_robot->calcForwardKinematics();
     hrp::Vector3 absZmp = m_robot->calcCM();
     absZmp[2] = 0;
     hrp::Link *root = m_robot->rootLink();
-    hrp::Vector3 relZmp = root->R.transpose() * (absZmp - root->p);
+    hrp::Vector3 relZmp = root->R.transpose()*(absZmp - root->p);
     m_seq->setJointAngles(q.data(), tm);
     m_seq->setZmp(relZmp.data(), tm);
     return true;
@@ -352,20 +352,20 @@ bool SequencePlayer::setJointAngle(short id, double angle, double tm)
 
 bool SequencePlayer::setJointAngles(const double *angles, double tm)
 {
-    if(m_debugLevel > 0) {
+    if (m_debugLevel > 0) {
         std::cerr << __PRETTY_FUNCTION__ << std::endl;
     }
     Guard guard(m_mutex);
-    if(!setInitialState()) return false;
-    for(int i = 0; i < m_robot->numJoints(); i++) {
+    if (!setInitialState()) return false;
+    for (int i=0; i<m_robot->numJoints(); i++) {
         hrp::Link *j = m_robot->joint(i);
-        if(j) j->q = angles[i];
+        if (j) j->q = angles[i];
     }
     m_robot->calcForwardKinematics();
     hrp::Vector3 absZmp = m_robot->calcCM();
     absZmp[2] = 0;
     hrp::Link *root = m_robot->rootLink();
-    hrp::Vector3 relZmp = root->R.transpose() * (absZmp - root->p);
+    hrp::Vector3 relZmp = root->R.transpose()*(absZmp - root->p);
     m_seq->setJointAngles(angles, tm);
     m_seq->setZmp(relZmp.data(), tm);
     return true;
@@ -374,15 +374,15 @@ bool SequencePlayer::setJointAngles(const double *angles, double tm)
 bool SequencePlayer::setJointAngles(const double *angles, const bool *mask,
                                     double tm)
 {
-    if(m_debugLevel > 0) {
+    if (m_debugLevel > 0) {
         std::cerr << __PRETTY_FUNCTION__ << std::endl;
     }
     Guard guard(m_mutex);
 
-    if(!setInitialState()) return false;
+    if (!setInitialState()) return false;
 
     double pose[m_robot->numJoints()];
-    for(int i = 0; i < m_robot->numJoints(); i++) {
+    for (int i=0; i<m_robot->numJoints(); i++) {
         pose[i] = mask[i] ? angles[i] : m_qInit.data[i];
     }
     m_seq->setJointAngles(pose, tm);
@@ -391,7 +391,7 @@ bool SequencePlayer::setJointAngles(const double *angles, const bool *mask,
 
 bool SequencePlayer::setBasePos(const double *pos, double tm)
 {
-    if(m_debugLevel > 0) {
+    if (m_debugLevel > 0) {
         std::cerr << __PRETTY_FUNCTION__ << std::endl;
     }
     Guard guard(m_mutex);
@@ -401,7 +401,7 @@ bool SequencePlayer::setBasePos(const double *pos, double tm)
 
 bool SequencePlayer::setBaseRpy(const double *rpy, double tm)
 {
-    if(m_debugLevel > 0) {
+    if (m_debugLevel > 0) {
         std::cerr << __PRETTY_FUNCTION__ << std::endl;
     }
     Guard guard(m_mutex);
@@ -411,7 +411,7 @@ bool SequencePlayer::setBaseRpy(const double *rpy, double tm)
 
 bool SequencePlayer::setZmp(const double *zmp, double tm)
 {
-    if(m_debugLevel > 0) {
+    if (m_debugLevel > 0) {
         std::cerr << __PRETTY_FUNCTION__ << std::endl;
     }
     Guard guard(m_mutex);
@@ -428,7 +428,7 @@ bool SequencePlayer::setWrenches(const double *wrenches, double tm)
 
 bool SequencePlayer::setTargetPoseMatrix(const char* gname, const double *xyz, const double *rot, double tm, const char* frame_name)
 {
-    if(m_debugLevel > 0) {
+    if (m_debugLevel > 0) {
         std::cerr << __PRETTY_FUNCTION__ << std::endl;
     }
 
@@ -441,8 +441,8 @@ bool SequencePlayer::setTargetPoseMatrix(const char* gname, const double *xyz, c
     rot33(2, 0) = rot[6];    rot33(2, 1) = rot[7];    rot33(2, 2) = rot[8];
 
     std::vector<int> indices;
-    if(!m_seq->getJointGroup(gname, indices)) {
-        std::cerr << "[setTargetPose] Could not find joint group " << gname << std::endl;
+    if (! m_seq->getJointGroup(gname, indices)) {
+        std::cerr << "[setTargetPoseMatrix] Could not find joint group " << gname << std::endl;
         return false;
     }
     string target_name = m_robot->joint(indices[indices.size() - 1])->name;
@@ -453,7 +453,7 @@ bool SequencePlayer::setTargetPoseMatrix(const char* gname, const double *xyz, c
 
 bool SequencePlayer::setTargetPose(const char* gname, const double *xyz, const double *rpy, double tm, const char* frame_name)
 {
-    if(m_debugLevel > 0) {
+    if (m_debugLevel > 0) {
         std::cerr << __PRETTY_FUNCTION__ << std::endl;
     }
     // ik params
