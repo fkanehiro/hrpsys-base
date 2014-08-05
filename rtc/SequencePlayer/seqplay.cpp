@@ -93,9 +93,9 @@ bool seqplay::isEmpty() const
                if (!interpolators[i]->isEmpty()) return false;
        }
        std::map<std::string, groupInterpolator *>::const_iterator it;
-       for (it = groupInterpolators.begin(); it != groupInterpolators.end(); it++) {
-                 groupInterpolator *gi = it->second;
-                 if (gi && !gi->isEmpty()) return false;
+       for (it=groupInterpolators.begin(); it!=groupInterpolators.end(); it++){
+               groupInterpolator *gi = it->second;
+               if (gi && !gi->isEmpty()) return false;
       }
 
        return true;
