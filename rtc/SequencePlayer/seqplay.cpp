@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include "seqplay.h"
 
-#define deg2rad(x)     ((x)*M_PI / 180)
+#define deg2rad(x)     ((x)*M_PI/180)
 
 seqplay::seqplay(unsigned int i_dof, double i_dt, unsigned int i_fnum) : m_dof(i_dof)
 {
@@ -34,15 +34,15 @@ seqplay::seqplay(unsigned int i_dof, double i_dt, unsigned int i_fnum) : m_dof(i
 
 seqplay::~seqplay()
 {
-      for(unsigned int i = 0; i < NINTERPOLATOR; i++){
-          delete interpolators[i];
-      }
+       for(unsigned int i=0; i<NINTERPOLATOR; i++){
+               delete interpolators[i];
+	   }
 }
 
 #if 0 // TODO
 void seqplay::goHalfSitting(double tm)
 {
-    if ( tm == 0) {
+    if (tm == 0) {
         tm = (double)angle_interpolator->calc_interpolation_time(get_half_sitting_posture());
     }
     angle_interpolator->setGoal(get_half_sitting_posture(), tm);
@@ -68,7 +68,7 @@ void seqplay::goHalfSitting(double tm)
 
 void seqplay::goInitial(double tm)
 {
-    if ( tm == 0) {
+    if (tm == 0) {
         tm = (double)angle_interpolator->calc_interpolation_time(get_initial_posture());
     }
     angle_interpolator->setGoal(get_initial_posture(), tm);
@@ -79,7 +79,7 @@ void seqplay::goInitial(double tm)
                     WAIST_HEIGHT};
     waist_pos_interpolator->setGoal(pos, tm);
 #elif defined(INITIAL_ZMP_REF_Z)
-    double zmp[] = {0,0,INITIAL_ZMP_REF_Z};
+    double zmp[] = {0,0, INITIAL_ZMP_REF_Z};
 #else
     double zmp[] = {0,0,0};
 #endif
@@ -89,7 +89,7 @@ void seqplay::goInitial(double tm)
 
 bool seqplay::isEmpty() const
 {
-       for(unsigned int i = 0; i < NINTERPOLATOR; i++) {
+       for(unsigned int i=0; i<NINTERPOLATOR; i++) {
               if(!interpolators[i]->isEmpty()) return false;
        }
        std::map<std::string, groupInterpolator *>::const_iterator it;
@@ -98,7 +98,7 @@ bool seqplay::isEmpty() const
               if (gi && !gi->isEmpty()) return false;
       }
 
-      return true;
+       return true;
 }
 
 bool seqplay::isEmpty(const char *gname)
