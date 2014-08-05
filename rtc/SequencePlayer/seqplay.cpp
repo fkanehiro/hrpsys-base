@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include "seqplay.h"
 
-#define deg2rad(x)     ((x)*M_PI/180)
+#define deg2rad(x)	((x)*M_PI/180)
 
 seqplay::seqplay(unsigned int i_dof, double i_dt, unsigned int i_fnum) : m_dof(i_dof)
 {
