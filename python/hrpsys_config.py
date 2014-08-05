@@ -952,7 +952,7 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
     def setTargetPoseMatrixRelative(self, gname, dx=0.0, dy=0.0, dz=0.0,
                                     drot=numpy.matrix([[1., .0, .0],
                                                        [.0, 1., .0],
-                                                       [.0, .0, 1.]])
+                                                       [.0, .0, 1.]]),
                                     tm, frame_name):
         self.waitInterpolationOfGroup(gname)
         ret, tds = self.fk_svc.getCurrentPose(eename)
