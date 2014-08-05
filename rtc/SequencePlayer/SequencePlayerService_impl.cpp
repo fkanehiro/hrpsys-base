@@ -25,7 +25,7 @@ CORBA::Boolean SequencePlayerService_impl::waitInterpolationOfGroup(const char *
 
 CORBA::Boolean SequencePlayerService_impl::setJointAngles(const dSequence& jvs, CORBA::Double tm)
 {
-  if(jvs.length() != (unsigned int)(m_player->robot()->numJoints())) {
+  if (jvs.length() != (unsigned int)(m_player->robot()->numJoints())) {
       std::cerr << __PRETTY_FUNCTION__ << " num of joint is differ, input:" << jvs.length() << ", robot:" << (unsigned int)(m_player->robot()->numJoints()) << std::endl;
       return false;
   }
@@ -45,33 +45,33 @@ CORBA::Boolean SequencePlayerService_impl::setJointAnglesWithMask(const dSequenc
 
 CORBA::Boolean SequencePlayerService_impl::setJointAngle(const char *jname, CORBA::Double jv, CORBA::Double tm)
 {
-  BodyPtr r = m_player->robot();
-  Link *l = r->link(jname);
-  if ( !l){
-    std::cerr << "can't find(" << jname << ")" << std::endl;
-    return false;
-  }
-  int id = l->jointId;
-  return m_player->setJointAngle(id, jv, tm);
+    BodyPtr r = m_player->robot();
+    Link *l = r->link(jname);
+    if ( !l){
+        std::cerr << "can't find(" << jname << ")" << std::endl;
+        return false;
+    }
+    int id = l->jointId;
+    return m_player->setJointAngle(id, jv, tm);
 }
 
 CORBA::Boolean SequencePlayerService_impl::setBasePos(const dSequence& pos, CORBA::Double tm)
 {
-    if ( pos.length() != 3) return false;
+    if (pos.length() != 3) return false;
 
     return m_player->setBasePos(pos.get_buffer(), tm);
 }
 
 CORBA::Boolean SequencePlayerService_impl::setBaseRpy(const dSequence& rpy, CORBA::Double tm)
 {
-    if ( rpy.length() != 3) return false;
+    if (rpy.length() != 3) return false;
 
     return m_player->setBaseRpy(rpy.get_buffer(), tm);
 }
 
 CORBA::Boolean SequencePlayerService_impl::setZmp(const dSequence& zmp, CORBA::Double tm)
 {
-    if ( zmp.length() != 3) return false;
+    if (zmp.length() != 3) return false;
 
     return m_player->setZmp(zmp.get_buffer(), tm);
 }
@@ -80,12 +80,12 @@ CORBA::Boolean SequencePlayerService_impl::setWrenches(const dSequence& wrenches
 {
   //if (wrenches.length() != ) return false;
 
-  return m_player->setWrenches(wrenches.get_buffer(), tm);
+    return m_player->setWrenches(wrenches.get_buffer(), tm);
 }
 
 CORBA::Boolean SequencePlayerService_impl::setTargetPose(const char* gname, const dSequence& xyz, const dSequence& rpy, CORBA::Double tm){
     char* frame_name = (char *)strrchr(gname, ':');
-    if( frame_name) {
+    if ( frame_name ) {
         ((char *)gname)[frame_name - gname] = '\0'; // cut frame_name, gname[strpos(':')] = 0x00
         frame_name++; // skip ":"
     }
@@ -108,9 +108,9 @@ CORBA::Boolean SequencePlayerService_impl::isEmpty()
 
 void SequencePlayerService_impl::loadPattern(const char* basename, CORBA::Double tm)
 {
-  if(!m_player->player()) {
-      std::cerr << "player is not set" << std::endl;
-      return;
+  if (!m_player->player()) {
+    std::cerr << "player is not set" << std::endl;
+    return;
   }
   m_player->loadPattern(basename, tm);
 }
@@ -137,8 +137,8 @@ CORBA::Boolean SequencePlayerService_impl::setInterpolationMode(OpenHRP::Sequenc
 
 CORBA::Boolean SequencePlayerService_impl::setInitialState()
 {
-    m_player->setInitialState();
-    return m_player->setInitialState(m_player->dt);
+  m_player->setInitialState();
+  return m_player->setInitialState(m_player->dt);
 }
 
 void SequencePlayerService_impl::player(SequencePlayer *i_player)
