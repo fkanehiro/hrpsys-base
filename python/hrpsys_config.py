@@ -13,6 +13,7 @@ import time
 # copy from transformations.py, Christoph Gohlke, The Regents of the University of California
 
 import numpy
+
 # map axes strings to/from tuples of inner axis, parity, repetition, frame
 _AXES2TUPLE = {
     'sxyz': (0, 0, 0, 0), 'sxyx': (0, 0, 1, 0), 'sxzy': (0, 1, 0, 0),
@@ -30,6 +31,7 @@ _NEXT_AXIS = [1, 2, 0, 1]
 # epsilon for testing whether a number is close to zero
 _EPS = numpy.finfo(float).eps * 4.0
 
+IDT3 = numpy.identity(3, float)
 
 def euler_matrix(ai, aj, ak, axes='sxyz'):
     """Return homogeneous rotation matrix from Euler angles and axis sequence.
@@ -950,10 +952,7 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
 
 
     def setTargetPoseMatrixRelative(self, gname, dx=0.0, dy=0.0, dz=0.0,
-                                    drot=numpy.matrix([[1., .0, .0],
-                                                       [.0, 1., .0],
-                                                       [.0, .0, 1.]]),
-                                    tm=10, frame_name=None):
+                                    drot=IDT3, tm=10, frame_name=None):
         self.waitInterpolationOfGroup(gname)
         ret, tds = self.fk_svc.getCurrentPose(eename)
         if ret:
