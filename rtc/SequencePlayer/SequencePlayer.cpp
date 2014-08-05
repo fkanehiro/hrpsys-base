@@ -676,9 +676,9 @@ bool SequencePlayer::addJointGroup(const char *gname, const OpenHRP::SequencePla
 
     Guard guard(m_mutex);
     std::vector<int> indices;
-    for ( size_t i=0; i < jnames.length(); i++) {
+    for ( size_t i=0; i<jnames.length(); i++) {
         hrp::Link *l = m_robot->link(std::string(jnames[i]));
-        if (l) {
+        if (l){
             indices.push_back(l->jointId);
         }else{
             std::cerr << "[addJointGroup] link name " << jnames[i] << "is not found" << std::endl;
@@ -711,7 +711,7 @@ bool SequencePlayer::setJointAnglesOfGroup(const char *gname, const double *angl
     return m_seq->setJointAnglesOfGroup(gname, angles, tm);
 }
 
-bool SequencePlayer::playPatternOfGroup(const char *gname, const dSequenceSequence &pos, const dSequence &tm)
+bool SequencePlayer::playPatternOfGroup(const char *gname, const dSequenceSequence& pos, const dSequence& tm)
 {
     if ( m_debugLevel > 0 ) {
         std::cerr << __PRETTY_FUNCTION__ << std::endl;
@@ -721,9 +721,9 @@ bool SequencePlayer::playPatternOfGroup(const char *gname, const dSequenceSequen
 
     std::vector<const double *> v_pos;
     std::vector<double> v_tm;
-    for(int i = 0; i < pos.length(); i++) v_pos.push_back(pos[i].get_buffer());
-    for(int i = 0; i < tm.length(); i++) v_tm.push_back(tm[i]);
-    return m_seq->playPatternOfGroup(gname, v_pos, v_tm, m_qInit.data.get_buffer(), pos.length() > 0 ? pos[0].length() : 0);
+    for ( int i = 0; i < pos.length(); i++ ) v_pos.push_back(pos[i].get_buffer());
+    for ( int i = 0; i < tm.length() ; i++ ) v_tm.push_back(tm[i]);
+    return m_seq->playPatternOfGroup(gname, v_pos, v_tm, m_qInit.data.get_buffer(), pos.length()>0?pos[0].length():0);
 }
 
 void SequencePlayer::setMaxIKError(double pos, double rot){
@@ -731,7 +731,7 @@ void SequencePlayer::setMaxIKError(double pos, double rot){
     m_error_rot = rot;
 }
 
-void SequencePlayer::setMaxIKIteration(short iter) {
+void SequencePlayer::setMaxIKIteration(short iter){
     m_iteration = iter;
 }
 
@@ -739,12 +739,12 @@ void SequencePlayer::setMaxIKIteration(short iter) {
 extern "C"
 {
 
-void SequencePlayerInit(RTC::Manager * manager)
-{
-    RTC::Properties profile(sequenceplayer_spec);
-    manager->registerFactory(profile,
-                             RTC::Create<SequencePlayer>,
-                             RTC::Delete<SequencePlayer>);
-}
+    void SequencePlayerInit(RTC::Manager * manager)
+    {
+        RTC::Properties profile(sequenceplayer_spec);
+        manager->registerFactory(profile,
+                                 RTC::Create<SequencePlayer>,
+                                 RTC::Delete<SequencePlayer>);
+    }
 
 };
