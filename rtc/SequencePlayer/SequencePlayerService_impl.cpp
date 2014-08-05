@@ -34,12 +34,12 @@ CORBA::Boolean SequencePlayerService_impl::setJointAngles(const dSequence& jvs, 
 
 CORBA::Boolean SequencePlayerService_impl::setJointAnglesWithMask(const dSequence& jvs, const bSequence& mask, CORBA::Double tm)
 {
-  if(jvs.length() != (unsigned int)(m_player->robot()->numJoints())
-     || mask.length() != (unsigned int)(m_player->robot()->numJoints())) {
-      std::cerr << __PRETTY_FUNCTION__ << " num of joint is differ, input:" << jvs.length() << ", mask:" << mask.length() << ", robot" << (unsigned int)(m_player->robot()->numJoints()) << std::endl;
-      return false;
-  }
-  return m_player->setJointAngles(jvs.get_buffer(), mask.get_buffer(), tm);
+    if(jvs.length() != (unsigned int)(m_player->robot()->numJoints())
+       || mask.length() != (unsigned int)(m_player->robot()->numJoints())) {
+        std::cerr << __PRETTY_FUNCTION__ << " num of joint is differ, input:" << jvs.length() << ", mask:" << mask.length() << ", robot" << (unsigned int)(m_player->robot()->numJoints()) << std::endl;
+        return false;
+    }
+    return m_player->setJointAngles(jvs.get_buffer(), mask.get_buffer(), tm);
 }
 
 
