@@ -240,8 +240,8 @@ void seqplay::playPattern(std::vector<const double*> pos, std::vector<const doub
          if (i < rpy.size()) e = rpy[i];
          if (i < tm.size()) t = tm[i];
         go(q, z, a, p, e, tq, wr,
-				  v, NULL, NULL, NULL, NULL, NULL, NULL,
-           		 t, false);
+			  v, NULL, NULL, NULL, NULL, NULL, NULL,
+			  t, false);
     }
     sync();
     delete [] v;
