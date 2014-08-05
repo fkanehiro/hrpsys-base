@@ -676,7 +676,7 @@ bool SequencePlayer::addJointGroup(const char *gname, const OpenHRP::SequencePla
 
     Guard guard(m_mutex);
     std::vector<int> indices;
-    for ( size_t i=0; i<jnames.length(); i++) {
+    for (size_t i=0; i<jnames.length(); i++){
         hrp::Link *l = m_robot->link(std::string(jnames[i]));
         if (l){
             indices.push_back(l->jointId);
