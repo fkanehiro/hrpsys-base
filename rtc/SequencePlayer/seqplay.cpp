@@ -250,8 +250,8 @@ void seqplay::playPattern(std::vector<const double*> pos, std::vector<const doub
 void seqplay::clear(double i_timeLimit)
 {
 	tick_t t1 = get_tick();
-	while(!isEmpty()) {
-		if (i_timeLimit > 0
+	while (!isEmpty()){
+		if (i_timeLimit > 0 
 			&& tick2sec(get_tick()-t1)>=i_timeLimit) break;
 		pop_back();
 	}
@@ -442,129 +442,129 @@ bool seqplay::removeJointGroup(const char *gname, double time)
 
 bool seqplay::resetJointGroup(const char *gname, const double *full)
 {
-    char *s = (char *)gname; while(*s) {*s = toupper(*s); s++; }
-    groupInterpolator *i = groupInterpolators[gname];
-    if(i) {
-        i->set(full);
-        std::map<std::string, groupInterpolator *>::iterator it;
-        for(it = groupInterpolators.begin(); it != groupInterpolators.end(); it++) {
-            if(it->first != std::string(gname)) { // other
-                groupInterpolator *gi = it->second;
-                if(gi && (gi->state == groupInterpolator::created || gi->state == groupInterpolator::working) && gi->inter->isEmpty()) {
-                    gi->set(full);
-                }
-            }
-        }
+	char *s = (char *)gname; while(*s) {*s=toupper(*s);s++;}
+	groupInterpolator *i = groupInterpolators[gname];
+	if (i){
+		i->set(full);
+		std::map<std::string, groupInterpolator *>::iterator it;
+        for (it=groupInterpolators.begin(); it!=groupInterpolators.end(); it++){
+			if ( it->first != std::string(gname) ) { // other 
+				groupInterpolator *gi = it->second;
+				if (gi && (gi->state == groupInterpolator::created || gi->state == groupInterpolator::working) && gi->inter->isEmpty()) {
+					gi->set(full);
+				}
+			}
+		}
         // update for non working interpolators
-
-        return true;
-    }else{
-        std::cerr << "[resetJointGroup] group name " << gname << " is not installed" << std::endl;
-        return false;
-    }
+		
+		return true;
+	}else{
+		std::cerr << "[resetJointGroup] group name " << gname << " is not installed" << std::endl;
+		return false;
+	}
 }
 
 bool seqplay::setJointAnglesOfGroup(const char *gname, const double *i_qRef, double i_tm)
 {
-    char *s = (char *)gname; while(*s) {*s = toupper(*s); s++; }
-    groupInterpolator *i = groupInterpolators[gname];
-    if(i) {
-        if(i->state == groupInterpolator::created) {
-            double q[m_dof], dq[m_dof];
-            interpolators[Q]->get(q, dq, false);
-            std::map<std::string, groupInterpolator *>::iterator it;
-            for(it = groupInterpolators.begin(); it != groupInterpolators.end(); it++) {
-                groupInterpolator *gi = it->second;
-                if(gi) gi->get(q, dq, false);
-            }
-            double x[i->indices.size()], v[i->indices.size()];
-            i->extract(x, q);
-            i->extract(v, dq);
-            i->inter->go(x, v, interpolators[Q]->deltaT());
-        }
-        double x[i->indices.size()], v[i->indices.size()];
-        i->inter->get(x, v, false);
-        i->setGoal(i_qRef, i_tm);
-        return true;
-    }else{
-        std::cerr << "[setJointAnglesOfGroup] group name " << gname << " is not installed" << std::endl;
-        return false;
-    }
+	char *s = (char *)gname; while(*s) {*s=toupper(*s);s++;}
+	groupInterpolator *i = groupInterpolators[gname];
+	if (i){
+		if (i->state == groupInterpolator::created){
+			double q[m_dof], dq[m_dof];
+			interpolators[Q]->get(q, dq, false);
+			std::map<std::string, groupInterpolator *>::iterator it;
+			for (it=groupInterpolators.begin(); it!=groupInterpolators.end(); it++){
+				groupInterpolator *gi = it->second;
+				if (gi)	gi->get(q, dq, false);
+			}
+			double x[i->indices.size()], v[i->indices.size()];
+			i->extract(x, q);
+			i->extract(v, dq);
+			i->inter->go(x,v,interpolators[Q]->deltaT());
+		}
+		double x[i->indices.size()], v[i->indices.size()];
+		i->inter->get(x, v, false);
+		i->setGoal(i_qRef, i_tm);
+		return true;
+	}else{
+		std::cerr << "[setJointAnglesOfGroup] group name " << gname << " is not installed" << std::endl;
+		return false;
+	}
 }
 
 void seqplay::clearOfGroup(const char *gname, double i_timeLimit)
 {
-    char *s = (char *)gname; while(*s) {*s = toupper(*s); s++; }
-    groupInterpolator *i = groupInterpolators[gname];
-    if(i) {
-        i->clear(i_timeLimit);
-    }
+	char *s = (char *)gname; while(*s) {*s=toupper(*s);s++;}
+	groupInterpolator *i = groupInterpolators[gname];
+	if (i){
+		i->clear(i_timeLimit);
+	}
 }
 
 bool seqplay::playPatternOfGroup(const char *gname, std::vector<const double *> pos, std::vector<double> tm, const double *qInit, unsigned int len)
 {
-    char *s = (char *)gname; while(*s) {*s = toupper(*s); s++; }
-    groupInterpolator *i = groupInterpolators[gname];
-    if(i) {
-        if(len != i->indices.size()) {
-            std::cerr << "[playPatternOfGroup] group name " << gname << " : size of manipulater is not equal to input. " << len << " /= " << i->indices.size() << std::endl;
-            return false;
-        }
-        if(i->state == groupInterpolator::created) {
-            double q[m_dof], dq[m_dof];
-            interpolators[Q]->get(q, dq, false);
-            std::map<std::string, groupInterpolator *>::iterator it;
-            for(it = groupInterpolators.begin(); it != groupInterpolators.end(); it++) {
-                groupInterpolator *gi = it->second;
-                if(gi) gi->get(q, dq, false);
-            }
-            double x[i->indices.size()], v[i->indices.size()];
-            i->extract(x, q);
-            i->extract(v, dq);
-            i->inter->go(x, v, interpolators[Q]->deltaT());
-        }
-        const double *q = NULL; double t = 0;
-        double *v = new double[len];
-        double *qi = new double[len];
-        for(unsigned int j = 0; j < len; j++) {
-            qi[j] = qInit[i->indices[j]];
-        }
-        for(unsigned int l = 0; l < pos.size(); l++) {
-            q = pos[l];
-            if(l < pos.size() - 1) {
-                double t0, t1;
-                if(tm.size() == pos.size()) {
-                    t0 = tm[l]; t1 = tm[l + 1];
-                } else {
-                    t0 = t1 = tm[0];
-                }
-                const double *q_next = pos[l + 1];
-                const double *q_prev = l == 0 ? qi : pos[l - 1];
-                for(unsigned int j = 0; j < len; j++) {
-                    double d0, d1, v0, v1;
-                    d0 = (q[j] - q_prev[j]);
-                    d1 = (q_next[j] - q[j]);
-                    v0 = d0 / t0;
-                    v1 = d1 / t1;
-                    if(v0 * v1 >= 0) {
-                        v[j] = 0.5 * (v0 + v1);
-                    } else {
-                        v[j] = 0;
-                    }
-                }
-            } else {
-                for(unsigned int j = 0; j < len; j++) { v[j] = 0.0; }
-            }
-            if(l < tm.size()) t = tm[l];
-            i->go(q, v, t);
-        }
-        sync();
-        delete [] v;
-        delete [] qi;
+	char *s = (char *)gname; while(*s) {*s=toupper(*s);s++;}
+	groupInterpolator *i = groupInterpolators[gname];
+	if (i){
+		if (len != i->indices.size() ) {
+			std::cerr << "[playPatternOfGroup] group name " << gname << " : size of manipulater is not equal to input. " << len << " /= " << i->indices.size() << std::endl;
+			return false;
+		}
+		if (i->state == groupInterpolator::created){
+			double q[m_dof], dq[m_dof];
+			interpolators[Q]->get(q, dq, false);
+			std::map<std::string, groupInterpolator *>::iterator it;
+			for (it=groupInterpolators.begin(); it!=groupInterpolators.end(); it++){
+				groupInterpolator *gi = it->second;
+				if (gi)	gi->get(q, dq, false);
+			}
+			double x[i->indices.size()], v[i->indices.size()];
+			i->extract(x, q);
+			i->extract(v, dq);
+			i->inter->go(x,v,interpolators[Q]->deltaT());
+		}
+		const double *q=NULL; double t=0;
+		double *v = new double[len];
+		double *qi = new double[len];
+		for (unsigned int j=0; j<len; j++){
+			qi[j] = qInit[i->indices[j]];
+		}
+		for (unsigned int l=0; l<pos.size(); l++){
+			q = pos[l];
+			if (l < pos.size() - 1 ) {
+				double t0, t1;
+				if (tm.size() == pos.size()) {
+					t0 = tm[l]; t1 = tm[l+1];
+				} else {
+					t0 = t1 = tm[0];
+				}
+				const double *q_next = pos[l+1];
+				const double *q_prev = l==0 ? qi : pos[l-1];
+				for (unsigned int j = 0; j < len; j++) {
+					double d0, d1, v0, v1;
+					d0 = (q[j] - q_prev[j]);
+					d1 = (q_next[j] - q[j]);
+					v0 = d0/t0;
+					v1 = d1/t1;
+					if ( v0 * v1 >= 0 ) {
+						v[j] = 0.5 * (v0 + v1);
+					} else {
+						v[j] = 0;
+					}
+				}
+			} else {
+				for (unsigned int j = 0; j < len; j++) { v[j] = 0.0; }
+			}
+			if (l < tm.size()) t = tm[l];
+			i->go(q, v, t);
+		}
+		sync();
+		delete [] v;
+		delete [] qi;
 
-        return true;
-    }else{
-        std::cerr << "[playPatternOfGroup] group name " << gname << " is not installed" << std::endl;
-        return false;
-    }
+		return true;
+	}else{
+		std::cerr << "[playPatternOfGroup] group name " << gname << " is not installed" << std::endl;
+		return false;
+	}
 }
