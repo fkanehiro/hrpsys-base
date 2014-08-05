@@ -120,8 +120,8 @@ RTC::ReturnCode_t SequencePlayer::onInitialize()
     nameServer = nameServer.substr(0, comPos);
     RTC::CorbaNaming naming(rtcManager.getORB(), nameServer.c_str());
     if (!loadBodyFromModelLoader(m_robot, prop["model"].c_str(),
-       	                         CosNaming::NamingContext::_duplicate(naming.getRootContext())
-       	                         )) {
+                                 CosNaming::NamingContext::_duplicate(naming.getRootContext())
+                                 )) {
         std::cerr << "failed to load model[" << prop["model"] << "]"
                   << std::endl;
     }
