@@ -251,7 +251,7 @@ void seqplay::clear(double i_timeLimit)
 {
 	tick_t t1 = get_tick();
 	while(!isEmpty()) {
-		if(i_timeLimit > 0
+		if (i_timeLimit > 0
 			&& tick2sec(get_tick()-t1)>=i_timeLimit) break;
 		pop_back();
 	}
@@ -306,7 +306,7 @@ void seqplay::loadPattern(const char *basename, double tm)
     }
     if (debug_level > 0) cout << endl << "wrenches   = ";
     string wrenches = basename; wrenches.append(".wrenches");
-    if (access(wrenches.c_str(), 0)==0) {
+    if (access(wrenches.c_str(),0)==0){
         found = true;
         interpolators[WRENCHES]->load(wrenches, tm, scale, false);
         if (debug_level > 0) cout << wrenches;
@@ -401,44 +401,43 @@ bool seqplay::setInterpolationMode (interpolator::interpolation_mode i_mode_)
 
 bool seqplay::addJointGroup(const char *gname, const std::vector<int>& indices)
 {
-    std::cout << "seqplay::addJointGroup" << std::endl;
-    char *s = (char *)gname; while(*s) {*s = toupper(*s); s++; }
-    groupInterpolator *i = groupInterpolators[gname];
-    if(i) {
-        std::cerr << "[addJointGroup] group name " << gname << " is already installed" << std::endl;
-        return false;
-    }
-    i = new groupInterpolator(indices, interpolators[Q]->deltaT());
-    groupInterpolators[gname] = i;
-    return true;
+	char *s = (char *)gname; while(*s) {*s=toupper(*s);s++;}
+	groupInterpolator *i = groupInterpolators[gname];
+	if (i) {
+		std::cerr << "[addJointGroup] group name " << gname << " is already installed" << std::endl;
+		return false;
+	}
+	i = new groupInterpolator(indices, interpolators[Q]->deltaT());
+	groupInterpolators[gname] = i;
+	return true;
 }
 
 bool seqplay::getJointGroup(const char *gname, std::vector<int>& indices)
 {
-    char *s = (char *)gname; while(*s) { *s = toupper(*s); s++; }
-    groupInterpolator *i = groupInterpolators[gname];
-    if(i) {
-        for(unsigned j = 0; j < i->indices.size(); j++) {
-            indices.push_back(i->indices[j]);
-        }
-        return true;
-    } else {
-        std::cerr << "[getJointGroup] group name " << gname << " is not installed" << std::endl;
-        return false;
-    }
+	char *s = (char *)gname; while(*s) {*s=toupper(*s);s++;}
+	groupInterpolator *i = groupInterpolators[gname];
+	if (i) {
+		for(unsigned j = 0; j < i->indices.size(); j++) {
+			indices.push_back(i->indices[j]);
+		}
+		return true;
+	}else{
+		std::cerr << "[getJointGroup] group name " << gname << " is not installed" << std::endl;
+		return false;
+	}
 }
 
 bool seqplay::removeJointGroup(const char *gname, double time)
 {
-    char *s = (char *)gname; while(*s) {*s = toupper(*s); s++; }
-    groupInterpolator *i = groupInterpolators[gname];
-    if(i) {
-        i->remove(time);
-        return true;
-    }else{
-        std::cerr << "[removeJointGroup] group name " << gname << " is not installed" << std::endl;
-        return false;
-    }
+	char *s = (char *)gname; while(*s) {*s=toupper(*s);s++;}
+	groupInterpolator *i = groupInterpolators[gname];
+	if (i){
+		i->remove(time);
+		return true;
+	}else{
+		std::cerr << "[removeJointGroup] group name " << gname << " is not installed" << std::endl;
+		return false;
+	}
 }
 
 bool seqplay::resetJointGroup(const char *gname, const double *full)
