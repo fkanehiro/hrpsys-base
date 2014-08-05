@@ -34,9 +34,9 @@ seqplay::seqplay(unsigned int i_dof, double i_dt, unsigned int i_fnum) : m_dof(i
 
 seqplay::~seqplay()
 {
-       for (unsigned int i=0; i<NINTERPOLATOR; i++){
-               delete interpolators[i];
-       }
+	for (unsigned int i=0; i<NINTERPOLATOR; i++){
+		delete interpolators[i];
+	}
 }
 
 #if 0 // TODO
