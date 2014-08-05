@@ -21,46 +21,46 @@ typedef coil::Guard<coil::Mutex> Guard;
 // Module specification
 // <rtc-template block="module_spec">
 static const char* sequenceplayer_spec[] =
-{
-    "implementation_id", "SequencePlayer",
-    "type_name",         "SequencePlayer",
-    "description",       "sequence player component",
-    "version",           HRPSYS_PACKAGE_VERSION,
-    "vendor",            "AIST",
-    "category",          "example",
-    "activity_type",     "DataFlowComponent",
-    "max_instance",      "10",
-    "language",          "C++",
-    "lang_type",         "compile",
-    // Configuration variables
-    "conf.default.debugLevel", "0",
+    {
+        "implementation_id", "SequencePlayer",
+        "type_name",         "SequencePlayer",
+        "description",       "sequence player component",
+        "version",           HRPSYS_PACKAGE_VERSION,
+        "vendor",            "AIST",
+        "category",          "example",
+        "activity_type",     "DataFlowComponent",
+        "max_instance",      "10",
+        "language",          "C++",
+        "lang_type",         "compile",
+        // Configuration variables
+        "conf.default.debugLevel", "0",
 
-    ""
-};
+        ""
+    };
 // </rtc-template>
 
 SequencePlayer::SequencePlayer(RTC::Manager* manager)
     : RTC::DataFlowComponentBase(manager),
-    // <rtc-template block="initializer">
-    m_qInitIn("qInit", m_qInit),
-    m_basePosInitIn("basePosInit", m_basePosInit),
-    m_baseRpyInitIn("baseRpyInit", m_baseRpyInit),
-    m_zmpRefInitIn("zmpRefInit", m_zmpRefInit),
-    m_qRefOut("qRef", m_qRef),
-    m_tqRefOut("tqRef", m_tqRef),
-    m_zmpRefOut("zmpRef", m_zmpRef),
-    m_accRefOut("accRef", m_accRef),
-    m_basePosOut("basePos", m_basePos),
-    m_baseRpyOut("baseRpy", m_baseRpy),
-    m_SequencePlayerServicePort("SequencePlayerService"),
-    // </rtc-template>
-    m_waitSem(0),
-    m_robot(hrp::BodyPtr()),
-    m_debugLevel(0),
-    m_error_pos(0.0001),
-    m_error_rot(0.001),
-    m_iteration(50),
-    dummy(0)
+      // <rtc-template block="initializer">
+      m_qInitIn("qInit", m_qInit),
+      m_basePosInitIn("basePosInit", m_basePosInit),
+      m_baseRpyInitIn("baseRpyInit", m_baseRpyInit),
+      m_zmpRefInitIn("zmpRefInit", m_zmpRefInit),
+      m_qRefOut("qRef", m_qRef),
+      m_tqRefOut("tqRef", m_tqRef),
+      m_zmpRefOut("zmpRef", m_zmpRef),
+      m_accRefOut("accRef", m_accRef),
+      m_basePosOut("basePos", m_basePos),
+      m_baseRpyOut("baseRpy", m_baseRpy),
+      m_SequencePlayerServicePort("SequencePlayerService"),
+      // </rtc-template>
+      m_waitSem(0),
+      m_robot(hrp::BodyPtr()),
+      m_debugLevel(0),
+      m_error_pos(0.0001),
+      m_error_rot(0.001),
+      m_iteration(50),
+      dummy(0)
 {
     m_service0.player(this);
     m_clearFlag = false;
