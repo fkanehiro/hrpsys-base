@@ -211,7 +211,7 @@ void seqplay::playPattern(std::vector<const double*> pos, std::vector<const doub
     double *v = new double[len];
     for (unsigned int i=0; i<pos.size(); i++){
         q = pos[i];
-	   if (i < pos.size() - 1) {
+	if (i < pos.size() - 1) {
 		 double t0, t1;
 	     if (tm.size() == pos.size()) {
 		   t0 = tm[i]; t1 = tm[i+1];
