@@ -89,16 +89,16 @@ void seqplay::goInitial(double tm)
 
 bool seqplay::isEmpty() const
 {
-       for (unsigned int i=0; i<NINTERPOLATOR; i++){
-               if (!interpolators[i]->isEmpty()) return false;
-       }
-       std::map<std::string, groupInterpolator *>::const_iterator it;
-       for (it=groupInterpolators.begin(); it!=groupInterpolators.end(); it++){
-               groupInterpolator *gi = it->second;
-               if (gi && !gi->isEmpty()) return false;
-      }
+	for (unsigned int i=0; i<NINTERPOLATOR; i++){
+		if (!interpolators[i]->isEmpty()) return false;
+	}
+	std::map<std::string, groupInterpolator *>::const_iterator it;
+	for (it=groupInterpolators.begin(); it!=groupInterpolators.end(); it++){
+		groupInterpolator *gi = it->second;
+		if (gi && !gi->isEmpty()) return false;
+	}
 
-       return true;
+	return true;
 }
 
 bool seqplay::isEmpty(const char *gname)
