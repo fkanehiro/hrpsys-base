@@ -13,8 +13,8 @@ module OpenHRP
     typedef sequence<string> StrSequence;
 
     enum  interpolationMode {
-        LINEAR,   ///< linear interpolation
-        HOFFARBIB ///< minimum jerk interpolation by Hoff & Arbib
+      LINEAR,   ///< linear interpolation
+      HOFFARBIB ///< minimum jerk interpolation by Hoff & Arbib
     };
 
     /**

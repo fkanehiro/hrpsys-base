@@ -739,7 +739,7 @@ void SequencePlayer::setMaxIKIteration(short iter){
 extern "C"
 {
 
-    void SequencePlayerInit(RTC::Manager * manager)
+    void SequencePlayerInit(RTC::Manager* manager)
     {
         RTC::Properties profile(sequenceplayer_spec);
         manager->registerFactory(profile,
