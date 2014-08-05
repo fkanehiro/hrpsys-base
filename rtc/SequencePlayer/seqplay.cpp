@@ -263,34 +263,34 @@ void seqplay::loadPattern(const char *basename, double tm)
     bool found = false;
     if (debug_level > 0) cout << "pos   = ";
     string pos = basename; pos.append(".pos");
-    if (access(pos.c_str(), 0)==0) {
+    if (access(pos.c_str(),0)==0){
         found = true;
         interpolators[Q]->load(pos, tm, scale, false);
         if (debug_level > 0) cout << pos;
     }
     if (debug_level > 0) cout << endl << "zmp   = ";
     string zmp = basename; zmp.append(".zmp");
-    if (access(zmp.c_str(), 0)==0) {
+    if (access(zmp.c_str(),0)==0){
         found = true;
         interpolators[ZMP]->load(zmp, tm, scale, false);
         if (debug_level > 0) cout << zmp;
     }
     if (debug_level > 0) cout << endl << "gsens = ";
     string acc = basename; acc.append(".gsens");
-    if (access(acc.c_str(), 0)==0) {
+    if (access(acc.c_str(),0)==0){
         found = true;
         interpolators[ACC]->load(acc, tm, scale, false);
         if (debug_level > 0) cout << acc;
     }
     if (debug_level > 0) cout << endl << "hip   = ";
     string hip = basename; hip.append(".hip");
-    if (access(hip.c_str(), 0)==0) {
+    if (access(hip.c_str(),0)==0){
         found = true;
         interpolators[RPY]->load(hip, tm, scale, false);
         if (debug_level > 0) cout << hip;
     }else{
         hip = basename; hip.append(".waist");
-        if (access(hip.c_str(), 0)==0) {
+        if (access(hip.c_str(),0)==0){
             found = true;
             interpolators[P]->load(hip, tm, scale, false, 0, 3);
             interpolators[RPY]->load(hip, tm, scale, false, 3, 0);
@@ -299,7 +299,7 @@ void seqplay::loadPattern(const char *basename, double tm)
     }
     if (debug_level > 0) cout << endl << "torque = ";
     string torque = basename; torque.append(".torque");
-    if (access(torque.c_str(), 0)==0) {
+    if (access(torque.c_str(),0)==0){
         found = true;
         interpolators[TQ]->load(torque, tm, scale, false);
         if (debug_level > 0) cout << torque;
@@ -309,7 +309,7 @@ void seqplay::loadPattern(const char *basename, double tm)
     if (access(wrenches.c_str(), 0)==0) {
         found = true;
         interpolators[WRENCHES]->load(wrenches, tm, scale, false);
-        if(debug_level > 0) cout << wrenches;
+        if (debug_level > 0) cout << wrenches;
     }
     if (debug_level > 0) cout << endl;
     if (!found) cerr << "pattern not found(" << basename << ")" << endl;
@@ -319,29 +319,29 @@ void seqplay::loadPattern(const char *basename, double tm)
 
 void seqplay::sync()
 {
-	for(unsigned int i = 0; i < NINTERPOLATOR; i++) {
+	for (unsigned int i=0; i<NINTERPOLATOR; i++){
 		interpolators[i]->sync();
 	}
 }
 
 void seqplay::pop_back()
 {
-	for(unsigned int i = 0; i < NINTERPOLATOR; i++) {
+	for (unsigned int i=0; i<NINTERPOLATOR; i++){
 		interpolators[i]->pop_back();
 	}
 }
 
 void seqplay::get(double *o_q, double *o_zmp, double *o_accel,
-                  double *o_basePos, double *o_baseRpy, double *o_tq, double *o_wrenches)
+				  double *o_basePos, double *o_baseRpy, double *o_tq, double *o_wrenches)
 {
 	double v[m_dof];
 	interpolators[Q]->get(o_q, v);
 	std::map<std::string, groupInterpolator *>::iterator it;
-	for(it = groupInterpolators.begin(); it != groupInterpolators.end(); ) {
+	for (it=groupInterpolators.begin(); it!=groupInterpolators.end();){
 		groupInterpolator *gi = it->second;
-		if(gi) {
+		if (gi){
 			gi->get(o_q, v);
-			if(gi->state == groupInterpolator::removed) {
+			if (gi->state == groupInterpolator::removed){
 				groupInterpolators.erase(it++);
 				delete gi;
 				continue;
@@ -358,45 +358,45 @@ void seqplay::get(double *o_q, double *o_zmp, double *o_accel,
 }
 
 void seqplay::go(const double *i_q, const double *i_zmp, const double *i_acc,
-                 const double *i_p, const double *i_rpy, const double *i_tq, const double *i_wrenches, double i_time,
-                 bool immediate)
+				 const double *i_p, const double *i_rpy, const double *i_tq, const double *i_wrenches, double i_time,
+				 bool immediate)
 {
 	go(i_q, i_zmp, i_acc, i_p, i_rpy, i_tq, i_wrenches,
-		NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-		i_time, immediate);
+	   NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+	   i_time, immediate);
 }
 
 void seqplay::go(const double *i_q, const double *i_zmp, const double *i_acc,
-                 const double *i_p, const double *i_rpy, const double *i_tq, const double *i_wrenches,
-                 const double *ii_q, const double *ii_zmp, const double *ii_acc,
-                 const double *ii_p, const double *ii_rpy, const double *ii_tq, const double *ii_wrenches,
-                 double i_time,  bool immediate)
+				 const double *i_p, const double *i_rpy, const double *i_tq, const double *i_wrenches,
+				 const double *ii_q, const double *ii_zmp, const double *ii_acc,
+				 const double *ii_p, const double *ii_rpy, const double *ii_tq, const double *ii_wrenches,
+				 double i_time,	 bool immediate)
 {
-    if(i_q) interpolators[Q]->go(i_q, ii_q, i_time, false);
-    if(i_zmp) interpolators[ZMP]->go(i_zmp, ii_zmp, i_time, false);
-    if(i_acc) interpolators[ACC]->go(i_acc, ii_acc, i_time, false);
-    if(i_p) interpolators[P]->go(i_p, ii_p, i_time, false);
-    if(i_rpy) interpolators[RPY]->go(i_rpy, ii_rpy, i_time, false);
-    if(i_tq) interpolators[TQ]->go(i_tq, ii_tq, i_time, false);
-    if(i_wrenches) interpolators[WRENCHES]->go(i_wrenches, ii_wrenches, i_time, false);
-    if(immediate) sync();
+	if (i_q) interpolators[Q]->go(i_q, ii_q, i_time, false);
+	if (i_zmp) interpolators[ZMP]->go(i_zmp, ii_zmp, i_time, false);
+	if (i_acc) interpolators[ACC]->go(i_acc, ii_acc, i_time, false);
+	if (i_p) interpolators[P]->go(i_p, ii_p, i_time, false);
+	if (i_rpy) interpolators[RPY]->go(i_rpy, ii_rpy, i_time, false);
+	if (i_tq) interpolators[TQ]->go(i_tq, ii_tq, i_time, false);
+	if (i_wrenches) interpolators[WRENCHES]->go(i_wrenches, ii_wrenches, i_time, false);
+	if (immediate) sync();
 }
 
-bool seqplay::setInterpolationMode(interpolator::interpolation_mode i_mode_)
+bool seqplay::setInterpolationMode (interpolator::interpolation_mode i_mode_)
 {
-    if(i_mode_ != interpolator::LINEAR && i_mode_ != interpolator::HOFFARBIB &&
-       i_mode_ != interpolator::QUINTICSPLINE && i_mode_ != interpolator::CUBICSPLINE) return false;
+    if (i_mode_ != interpolator::LINEAR && i_mode_ != interpolator::HOFFARBIB &&
+		i_mode_ != interpolator::QUINTICSPLINE && i_mode_ != interpolator::CUBICSPLINE) return false;
 
-    bool ret = true;
-    for(unsigned int i = 0; i < NINTERPOLATOR; i++) {
-        ret &= interpolators[i]->setInterpolationMode(i_mode_);
-    }
-    std::map<std::string, groupInterpolator *>::const_iterator it;
-    for(it = groupInterpolators.begin(); it != groupInterpolators.end(); it++) {
-        groupInterpolator *gi = it->second;
-        ret &= gi->inter->setInterpolationMode(i_mode_);
-    }
-    return ret;
+	bool ret=true; 
+	for (unsigned int i=0; i<NINTERPOLATOR; i++){
+		ret &= interpolators[i]->setInterpolationMode(i_mode_);
+	}
+	std::map<std::string, groupInterpolator *>::const_iterator it;
+	for (it=groupInterpolators.begin(); it!=groupInterpolators.end(); it++){
+		groupInterpolator *gi = it->second;
+		ret &= gi->inter->setInterpolationMode(i_mode_);
+	}
+	return ret;
 }
 
 bool seqplay::addJointGroup(const char *gname, const std::vector<int>& indices)
