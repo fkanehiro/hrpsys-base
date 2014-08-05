@@ -36,7 +36,7 @@ seqplay::~seqplay()
 {
        for (unsigned int i=0; i<NINTERPOLATOR; i++){
                delete interpolators[i];
-	   }
+       }
 }
 
 #if 0 // TODO
@@ -103,7 +103,7 @@ bool seqplay::isEmpty() const
 
 bool seqplay::isEmpty(const char *gname)
 {
-       char *s = (char *)gname; while(*s) {*s=toupper(*s); s++;}
+       char *s = (char *)gname; while(*s) {*s=toupper(*s);s++;}
        groupInterpolator *i = groupInterpolators[gname];
        if (!i) return true;
        return i->isEmpty();
@@ -112,7 +112,7 @@ bool seqplay::isEmpty(const char *gname)
 #if 0
 void seqplay::setReferenceState(const ::CharacterState& ref, double tm)
 {
-    if ( tm == 0) {
+    if (tm == 0){
         tm = (double)angle_interpolator->calc_interpolation_time(ref.angle);
     }
     if (ref.angle.length()>0) angle_interpolator->setGoal(ref.angle, tm, false);
@@ -211,26 +211,26 @@ void seqplay::playPattern(std::vector<const double*> pos, std::vector<const doub
     double *v = new double[len];
     for (unsigned int i=0; i<pos.size(); i++){
         q = pos[i];
-        if (i < pos.size() - 1) {
-          double t0, t1;
-          if(tm.size() == pos.size()) {
-			t0 = tm[i]; t1 = tm[i + 1];
+       if (i < pos.size() - 1) {
+         double t0, t1;
+         if (tm.size() == pos.size()) {
+		   t0 = tm[i]; t1 = tm[i+1];
           } else {
           	t0 = t1 = tm[0];
 		  }
-		  const double *q_next = pos[i + 1];
-		  const double *q_prev
-			  = i==0 ? qInit : pos[i - 1];
+           const double *q_next = pos[i + 1];
+		   const double *q_prev
+			   = i==0 ? qInit : pos[i - 1];
 		  for (unsigned int j = 0; j < len; j++) {
             double d0, d1, v0, v1;
             d0 = (q[j] - q_prev[j]);
-             (q_next[j] - q[j]);
+            d1 = (q_next[j] - q[j]);
             v0 = d0/t0;
             v1 = d1/t1;
-            if( v0 * v1 >= 0 ) {
-                v[j] = 0.5 * (v0 + v1);
+            if ( v0 * v1 >= 0 ) {
+              v[j] = 0.5 * (v0 + v1);
             } else {
-                v[j] = 0;
+              v[j] = 0;
             }
           }
         } else {
@@ -240,8 +240,8 @@ void seqplay::playPattern(std::vector<const double*> pos, std::vector<const doub
          if (i < rpy.size()) e = rpy[i];
          if (i < tm.size()) t = tm[i];
         go(q, z, a, p, e, tq, wr,
-			v, NULL, NULL, NULL, NULL, NULL, NULL,
-           t, false);
+				  v, NULL, NULL, NULL, NULL, NULL, NULL,
+           		 t, false);
     }
     sync();
     delete [] v;
@@ -252,7 +252,7 @@ void seqplay::clear(double i_timeLimit)
 	tick_t t1 = get_tick();
 	while(!isEmpty()) {
 		if(i_timeLimit > 0
-			&& tick2sec(get_tick() - t1) >= i_timeLimit) break;
+			&& tick2sec(get_tick()-t1)>=i_timeLimit) break;
 		pop_back();
 	}
 }
