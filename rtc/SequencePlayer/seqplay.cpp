@@ -103,10 +103,10 @@ bool seqplay::isEmpty() const
 
 bool seqplay::isEmpty(const char *gname)
 {
-       char *s = (char *)gname; while(*s) {*s=toupper(*s);s++;}
-       groupInterpolator *i = groupInterpolators[gname];
-       if (!i) return true;
-       return i->isEmpty();
+	char *s = (char *)gname; while(*s) {*s=toupper(*s);s++;}
+	groupInterpolator *i = groupInterpolators[gname];
+	if (!i) return true;
+	return i->isEmpty();
 }
 
 #if 0
@@ -139,11 +139,11 @@ void seqplay::getReferenceState(::CharacterState_out ref)
 
 void seqplay::setJointAngles(const double *jvs, double tm)
 {
-       if (tm == 0){
-               interpolators[Q]->set(jvs);
-       }else{
-               interpolators[Q]->setGoal(jvs, tm);
-       }
+	if (tm == 0){
+		interpolators[Q]->set(jvs);
+	}else{
+		interpolators[Q]->setGoal(jvs, tm);
+	}
 }
 
 void seqplay::getJointAngles(double *jvs)
@@ -154,47 +154,47 @@ void seqplay::getJointAngles(double *jvs)
 
 void seqplay::setZmp(const double *i_zmp, double i_tm)
 {
-       if (i_tm == 0){
-               interpolators[ZMP]->set(i_zmp);
-       }else{
-               interpolators[ZMP]->setGoal(i_zmp, i_tm);
-       }
+	if (i_tm == 0){
+		interpolators[ZMP]->set(i_zmp);
+	}else{
+		interpolators[ZMP]->setGoal(i_zmp, i_tm);
+	}
 }
 
 void seqplay::setBasePos(const double *i_pos, double i_tm)
 {
-       if (i_tm == 0){
-               interpolators[P]->set(i_pos);
-       }else{
-               interpolators[P]->setGoal(i_pos, i_tm);
-       }
+	if (i_tm == 0){
+		interpolators[P]->set(i_pos);
+	}else{
+		interpolators[P]->setGoal(i_pos, i_tm);
+	}
 }
 
 void seqplay::setBaseRpy(const double *i_rpy, double i_tm)
 {
-       if (i_tm == 0){
-               interpolators[RPY]->set(i_rpy);
-       }else{
-               interpolators[RPY]->setGoal(i_rpy, i_tm);
-       }
+	if (i_tm == 0){
+		interpolators[RPY]->set(i_rpy);
+	}else{
+		interpolators[RPY]->setGoal(i_rpy, i_tm);
+	}
 }
 
 void seqplay::setBaseAcc(const double *i_acc, double i_tm)
 {
-       if(i_tm == 0) {
-              interpolators[ACC]->set(i_acc);
-       }else{
-              interpolators[ACC]->setGoal(i_acc, i_tm);
-       }
+	if(i_tm == 0) {
+		interpolators[ACC]->set(i_acc);
+	}else{
+		interpolators[ACC]->setGoal(i_acc, i_tm);
+	}
 }
 
 void seqplay::setWrenches(const double *i_wrenches, double i_tm)
 {
-       if(i_tm == 0) {
-              interpolators[WRENCHES]->set(i_wrenches);
-       }else{
-              interpolators[WRENCHES]->setGoal(i_wrenches, i_tm);
-       }
+	if(i_tm == 0) {
+		interpolators[WRENCHES]->set(i_wrenches);
+	}else{
+		interpolators[WRENCHES]->setGoal(i_wrenches, i_tm);
+	}
 }
 
 void seqplay::setJointAngle(unsigned int i_rank, double jv, double tm)
@@ -211,13 +211,13 @@ void seqplay::playPattern(std::vector<const double*> pos, std::vector<const doub
     double *v = new double[len];
     for (unsigned int i=0; i<pos.size(); i++){
         q = pos[i];
-       if (i < pos.size() - 1) {
-         double t0, t1;
-         if (tm.size() == pos.size()) {
+	   if (i < pos.size() - 1) {
+		 double t0, t1;
+	     if (tm.size() == pos.size()) {
 		   t0 = tm[i]; t1 = tm[i+1];
-          } else {
-          	t0 = t1 = tm[0];
-		  }
+		 } else {
+		   t0 = t1 = tm[0];
+		 }
            const double *q_next = pos[i + 1];
 		   const double *q_prev
 			   = i==0 ? qInit : pos[i - 1];
