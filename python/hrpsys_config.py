@@ -31,9 +31,6 @@ _NEXT_AXIS = [1, 2, 0, 1]
 # epsilon for testing whether a number is close to zero
 _EPS = numpy.finfo(float).eps * 4.0
 
-# 3x3 identity matrix
-_IDT3 = numpy.identity(3, float)
-
 def euler_matrix(ai, aj, ak, axes='sxyz'):
     """Return homogeneous rotation matrix from Euler angles and axis sequence.
 
@@ -909,7 +906,7 @@ class HrpsysConfigurator:
         return result
 
     def setTargetPoseRelative(self, gname, eename, dx=0, dy=0, dz=0,
-dr=0, dp=0, dw=0, tm=10, wait=True):
+                              dr=0, dp=0, dw=0, tm=10, wait=True):
         '''
         Set angles to a joint group relative to its current pose.
         All d* arguments are in meter.
@@ -926,7 +923,8 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
         if ret:
             posRef = numpy.array([tds.data[3], tds.data[7], tds.data[11]])
             rpyRef = numpy.array(euler_from_matrix([tds.data[0:3],
-tds.data[4:7], tds.data[8:11]], 'sxyz'))
+                                                    tds.data[4:7],
+                                                    tds.data[8:11]], 'sxyz'))
             posRef += [dx, dy, dz]
             rpyRef += [dr, dp, dw]
             print posRef, rpyRef
@@ -953,10 +951,12 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
 
 
     def setTargetPoseMatrixRelative(self, gname, dx=0.0, dy=0.0, dz=0.0,
-                                    drot=_IDT3, tm=10, frame_name=None):
+                                    drot=None, tm=10, frame_name=None):
         self.waitInterpolationOfGroup(gname)
         ret, tds = self.fk_svc.getCurrentPose(eename)
         if ret:
+            if not drot:
+                drot = numpy.identity(3, float)
             posRef = numpy.array([tds.data[3], tds.data[7], tds.data[11]])
             rotRef = numpy.matrix([tds.data[0:3], tds.data[4:7], tds.data[8:11]])
             posRef += [dx, dy, dz]
