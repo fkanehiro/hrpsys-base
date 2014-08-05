@@ -13,21 +13,11 @@ except:
     import socket
     import time
 
-def getRTCList ():
-    return [
-            ['seq', "SequencePlayer"],
-            ['sh', "StateHolder"],
-            ['fk', "ForwardKinematics"],
-            ['kf', "KalmanFilter"],
-            ['rmfo', "RemoveForceSensorLinkOffset"],
-            ['ic', "ImpedanceController"],
-            ]
-
 def init ():
     global hcf
     hcf = HrpsysConfigurator()
-    hcf.getRTCList = getRTCList
-    hcf.init ("SampleRobot(Robot)0")
+    hcf.getRTCList = hcf.getRTCListUnstable
+    hcf.init ("SampleRobot(Robot)0", "@OPENHRP_DIR@/share/OpenHRP-3.1/sample/model/sample1.wrl")
 
 def demo():
     init()

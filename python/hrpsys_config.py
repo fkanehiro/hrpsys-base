@@ -563,6 +563,15 @@ class HrpsysConfigurator:
             self.connectLoggerPort(self.abc, 'q')
         if self.st != None:
             self.connectLoggerPort(self.st, 'zmp')
+            self.connectLoggerPort(self.st, 'originRefZmp')
+            self.connectLoggerPort(self.st, 'originRefCog')
+            self.connectLoggerPort(self.st, 'originRefCogVel')
+            self.connectLoggerPort(self.st, 'originNewZmp')
+            self.connectLoggerPort(self.st, 'originActZmp')
+            self.connectLoggerPort(self.st, 'originActCog')
+            self.connectLoggerPort(self.st, 'originActCogVel')
+            self.connectLoggerPort(self.st, 'refWrenchR')
+            self.connectLoggerPort(self.st, 'refWrenchL')
         if self.rh != None:
             self.connectLoggerPort(self.rh, 'emergencySignal',
                                    'emergencySignal')
@@ -986,6 +995,8 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
                      robot's implementation.
         @return: What RobotHardware.writeDigitalOutput returns (TODO: document)
         '''
+        if self.simulation_mode:
+            return True
         doutBitLength = self.lengthDigitalOutput() * 8
         if len(dout) < doutBitLength:
             for i in range(doutBitLength - len(dout)):
@@ -1010,6 +1021,8 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
         @param mask: List of masking bits. Length depends on that of dout.
         @return: What RobotHardware.writeDigitalOutput returns (TODO: document)
         '''
+        if self.simulation_mode:
+            return True
         doutBitLength = self.lengthDigitalOutput() * 8
         if len(dout) < doutBitLength and \
                len(mask) < doutBitLength and \
@@ -1035,11 +1048,31 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
 
     def readDigitalInput(self):
         '''
-        @return: TODO: elaborate
+        @author Hajime Saito (@emijah)
+        @rtype: [int]
+        @return: List of the values in digital input register. Range: 0 or 1.
         '''
+        if self.simulation_mode:
+            return []
         ret, din = self.rh_svc.readDigitalInput()
         retList = []
         for item in din:
+            for i in range(8):
+                if (ord(item) >> i) & 1:
+                    retList.append(1)
+                else:
+                    retList.append(0)
+        return retList
+
+    def readDigitalOutput(self):
+        '''
+        @author Hajime Saito (@emijah)
+        @rtype: [int]
+        @return: List of the values in digital input register. Range: 0 or 1.
+        '''
+        ret, dout = self.rh_svc.readDigitalOutput()
+        retList = []
+        for item in dout:
             for i in range(8):
                 if (ord(item) >> i) & 1:
                     retList.append(1)

@@ -1,17 +1,14 @@
 // -*- C++ -*-
 /*!
- * @file  DataLogger.h
- * @brief logger component
+ * @file  RangeNoiseMixer.h
+ * @brief noise mixer for range data
  * @date  $Date$
  *
  * $Id$
  */
 
-#ifndef DATA_LOGGER_H
-#define DATA_LOGGER_H
-
-#include <deque>
-#include <iomanip>
+#ifndef RANGE_NOISE_MIXER_H
+#define RANGE_NOISE_MIXER_H
 
 #include <rtm/Manager.h>
 #include <rtm/DataFlowComponentBase.h>
@@ -19,11 +16,10 @@
 #include <rtm/DataInPort.h>
 #include <rtm/DataOutPort.h>
 #include <rtm/idl/BasicDataTypeSkel.h>
-#include <rtm/idl/ExtendedDataTypesSkel.h>
+#include <rtm/idl/InterfaceDataTypes.hh>
 
 // Service implementation headers
 // <rtc-template block="service_impl_h">
-#include "DataLoggerService_impl.h"
 
 // </rtc-template>
 
@@ -34,20 +30,10 @@
 
 using namespace RTC;
 
-class LoggerPortBase
-{
-public:
-    virtual const char *name() = 0;
-    virtual void clear() = 0;
-    virtual void dumpLog(std::ostream& os) = 0;
-    virtual void log() = 0;
-    static unsigned int m_maxLength;
-};
-
 /**
    \brief sample RT component which has one data input port and one data output port
  */
-class DataLogger
+class RangeNoiseMixer
   : public RTC::DataFlowComponentBase
 {
  public:
@@ -55,11 +41,11 @@ class DataLogger
      \brief Constructor
      \param manager pointer to the Manager
   */
-  DataLogger(RTC::Manager* manager);
+  RangeNoiseMixer(RTC::Manager* manager);
   /**
      \brief Destructor
   */
-  virtual ~DataLogger();
+  virtual ~RangeNoiseMixer();
 
   // The initialize action (on CREATED->ALIVE transition)
   // formaer rtc_init_entry()
@@ -108,13 +94,7 @@ class DataLogger
   // The action that is invoked when execution context's rate is changed
   // no corresponding operation exists in OpenRTm-aist-0.2.0
   // virtual RTC::ReturnCode_t onRateChanged(RTC::UniqueId ec_id);
-  bool add(const char *i_type, const char *i_name);
-  bool save(const char *i_basename);
-  bool clear();
-  void suspendLogging();
-  void resumeLogging();
 
-  std::vector<LoggerPortBase *> m_ports;
 
  protected:
   // Configuration variable declaration
@@ -122,28 +102,27 @@ class DataLogger
   
   // </rtc-template>
 
-  TimedLong m_emergencySignal;
+  RangeData m_range;  
 
   // DataInPort declaration
   // <rtc-template block="inport_declare">
-  InPort<TimedLong> m_emergencySignalIn;
+  InPort<RangeData> m_rangeIn;
   
   // </rtc-template>
 
   // DataOutPort declaration
   // <rtc-template block="outport_declare">
+  OutPort<RangeData> m_rangeOut;
   
   // </rtc-template>
 
   // CORBA Port declaration
   // <rtc-template block="corbaport_declare">
-  RTC::CorbaPort m_DataLoggerServicePort;
   
   // </rtc-template>
 
   // Service declaration
   // <rtc-template block="service_declare">
-  DataLoggerService_impl m_service0;
   
   // </rtc-template>
 
@@ -153,15 +132,14 @@ class DataLogger
   // </rtc-template>
 
  private:
-  bool m_suspendFlag;
-  coil::Mutex m_suspendFlagMutex;
+  double m_maxDist;
   int dummy;
 };
 
 
 extern "C"
 {
-  void DataLoggerInit(RTC::Manager* manager);
+  void RangeNoiseMixerInit(RTC::Manager* manager);
 };
 
-#endif // DATA_LOGGER_H
+#endif // RANGE_NOISE_MIXER_H

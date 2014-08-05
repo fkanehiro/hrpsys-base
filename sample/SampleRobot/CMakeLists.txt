@@ -11,14 +11,20 @@ foreach(_idx 0 1)
   configure_file(SampleRobot.conf.in ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.${_tmp_controller_period}.conf)
 endforeach()
 
+# Use configure_file to specify openhrp3 directory for sample1.wrl model
 configure_file(samplerobot_walk.py.in ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_walk.py)
+configure_file(samplerobot_auto_balancer.py.in ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_auto_balancer.py)
+configure_file(samplerobot_data_logger.py.in ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_data_logger.py)
+configure_file(samplerobot_impedance_controller.py.in ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_impedance_controller.py)
+configure_file(samplerobot_remove_force_offset.py.in ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_remove_force_offset.py)
+configure_file(samplerobot_stabilizer.py.in ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_stabilizer.py)
 
 install(PROGRAMS
-  samplerobot_data_logger.py
-  samplerobot_auto_balancer.py
-  samplerobot_stabilizer.py
-  samplerobot_remove_force_offset.py
-  samplerobot_impedance_controller.py
+  ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_data_logger.py
+  ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_auto_balancer.py
+  ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_stabilizer.py
+  ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_remove_force_offset.py
+  ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_impedance_controller.py
   ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_walk.py
   DESTINATION share/hrpsys/samples/SampleRobot)
 

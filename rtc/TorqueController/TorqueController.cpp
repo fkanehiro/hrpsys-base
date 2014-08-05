@@ -170,6 +170,11 @@ RTC::ReturnCode_t TorqueController::onInitialize()
     }
   }
 
+  // parameter setttings for torque controller
+  for (int i = 0; i < m_robot->numJoints(); i++) {
+    m_motorTorqueControllers[i].setupMotorControllerMinMaxDq(m_robot->joint(i)->lvlimit * m_dt, m_robot->joint(i)->uvlimit * m_dt);
+  }
+
   // allocate memory for outPorts
   m_qRefOut.data.length(m_robot->numJoints());
   return RTC::RTC_OK;
