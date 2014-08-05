@@ -121,7 +121,7 @@ RTC::ReturnCode_t SequencePlayer::onInitialize()
     RTC::CorbaNaming naming(rtcManager.getORB(), nameServer.c_str());
     if (!loadBodyFromModelLoader(m_robot, prop["model"].c_str(),
                                  CosNaming::NamingContext::_duplicate(naming.getRootContext())
-                                 )) {
+                                 )){
         std::cerr << "failed to load model[" << prop["model"] << "]"
                   << std::endl;
     }
@@ -160,7 +160,7 @@ RTC::ReturnCode_t SequencePlayer::onInitialize()
 
 RTC::ReturnCode_t SequencePlayer::onFinalize()
 {
-    if ( m_debugLevel > 0){
+    if ( m_debugLevel > 0 ) {
         std::cerr << __PRETTY_FUNCTION__ << std::endl;
     }
     return RTC::RTC_OK;
@@ -198,7 +198,7 @@ RTC::ReturnCode_t SequencePlayer::onExecute(RTC::UniqueId ec_id)
 {
     static int loop = 0;
     loop++;
-    if ( m_debugLevel > 0 && loop % 1000 == 0){
+    if ( m_debugLevel > 0 && loop % 1000 == 0) {
         std::cerr << __PRETTY_FUNCTION__ << "(" << ec_id << ")" << std::endl;
     }
     if (m_qInitIn.isNew()) m_qInitIn.read();
@@ -352,7 +352,7 @@ bool SequencePlayer::setJointAngle(short id, double angle, double tm)
 
 bool SequencePlayer::setJointAngles(const double *angles, double tm)
 {
-    if (m_debugLevel > 0) {
+    if ( m_debugLevel > 0) {
         std::cerr << __PRETTY_FUNCTION__ << std::endl;
     }
     Guard guard(m_mutex);
@@ -453,7 +453,7 @@ bool SequencePlayer::setTargetPoseMatrix(const char* gname, const double *xyz, c
 
 bool SequencePlayer::setTargetPose(const char* gname, const double *xyz, const double *rpy, double tm, const char* frame_name)
 {
-    if ( m_debugLevel > 0) {
+    if ( m_debugLevel > 0 ) {
         std::cerr << __PRETTY_FUNCTION__ << std::endl;
     }
     // ik params
@@ -487,7 +487,7 @@ bool SequencePlayer::setTargetPoseWorker(const char* gname, hrp::Vector3 end_p, 
     end_av.resize(indices.size());
 
     //std::cerr << std::endl;
-    if( ! m_robot->joint(indices[0])->parent) {
+    if( ! m_robot->joint(indices[0])->parent ) {
         std::cerr << "[setTargetPoseWorker] " << m_robot->joint(indices[0])->name << " does not have parent " << std::endl;
         return false;
     }
@@ -497,12 +497,12 @@ bool SequencePlayer::setTargetPoseWorker(const char* gname, hrp::Vector3 end_p, 
     hrp::JointPathExPtr manip = hrp::JointPathExPtr(new hrp::JointPathEx(m_robot, m_robot->link(base_parent_name), m_robot->link(target_name)));
 
     // calc fk
-    for (int i=0; i<m_robot->numJoints(); i++) {
+    for (int i=0; i<m_robot->numJoints(); i++){
         hrp::Link *j = m_robot->joint(i);
         if (j) j->q = m_qRef.data.get_buffer()[i];
     }
     m_robot->calcForwardKinematics();
-    for ( int i = 0; i < manip->numJoints(); i++ ) {
+    for ( int i = 0; i < manip->numJoints(); i++ ){
         start_av[i] = manip->joint(i)->q;
     }
 
@@ -539,9 +539,9 @@ bool SequencePlayer::setTargetPoseWorker(const char* gname, hrp::Vector3 end_p, 
     v_tm.resize(len);
 
     // do loop
-    for (int i = 0; i < len; i++) {
-        double a = (1+i) / (double)len;
-        hrp::Vector3 p = (1-a) * start_p + a * end_p;
+    for (int i = 0; i < len; i++ ) {
+        double a = (1+i)/(double)len;
+        hrp::Vector3 p = (1-a)*start_p + a*end_p;
         hrp::Vector3 omega = hrp::omegaFromRot(start_R.transpose() * end_R);
         hrp::Matrix33 R = start_R * rodrigues(omega.isZero()?omega:omega.normalized(), a*omega.norm());
         bool ret = manip->calcInverseKinematics2(p, R);
@@ -552,12 +552,12 @@ bool SequencePlayer::setTargetPoseWorker(const char* gname, hrp::Vector3 end_p, 
                       << p[0] << " " << p[1] << " " << p[2] << ","
                       << omega[0] << " " << omega[1] << " " << omega[2] << std::endl;
         }
-        if( ! ret ) {
+        if ( ! ret ) {
             std::cerr << "[setTargetPoseWorker] IK failed " << std::endl;
             return false;
         }
         v_pos[i] = (const double *)malloc(sizeof(double)*manip->numJoints());
-        for (int j = 0; j < manip->numJoints(); j++){
+        for ( int j = 0; j < manip->numJoints(); j++ ){
             ((double *)v_pos[i])[j] = manip->joint(j)->q;
         }
         v_tm[i] = tm/len;
@@ -565,7 +565,7 @@ bool SequencePlayer::setTargetPoseWorker(const char* gname, hrp::Vector3 end_p, 
 
     if ( m_debugLevel > 0 ) {
         // for debug
-        for(int i = 0; i < len; i++) {
+        for(int i = 0; i < len; i++ ) {
             std::cerr << v_tm[i] << ":";
             for(int j = 0; j < start_av.size(); j++ ) {
                 std::cerr << v_pos[i][j] << " ";
@@ -598,12 +598,12 @@ void SequencePlayer::loadPattern(const char *basename, double tm)
 bool SequencePlayer::setInitialState(double tm)
 {
     if ( m_debugLevel > 0 ) {
-        std::cerr << __PRETTY_FUNCTION__ << "m_seq - isEmpty() " << m_seq->isEmpty() << ", m_Init.data.length() " << m_qInit.data.length() << std::endl;
+        std::cerr << __PRETTY_FUNCTION__ << "m_seq-isEmpty() " << m_seq->isEmpty() << ", m_Init.data.length() " << m_qInit.data.length() << std::endl;
     }
     if (!m_seq->isEmpty()) return true;
 
     if (m_qInit.data.length() == 0){
-        std::cerr << "can 't determine initial posture" << std::endl;
+        std::cerr << "can't determine initial posture" << std::endl;
         return false;
     }else{
         m_seq->setJointAngles(m_qInit.data.get_buffer(), tm);
@@ -633,33 +633,33 @@ bool SequencePlayer::setInitialState(double tm)
     }
 }
 
-void SequencePlayer::playPattern(const dSequenceSequence &pos, const dSequenceSequence &rpy, const dSequenceSequence &zmp, const dSequence &tm)
+void SequencePlayer::playPattern(const dSequenceSequence& pos, const dSequenceSequence& rpy, const dSequenceSequence& zmp, const dSequence& tm)
 {
-    if(m_debugLevel > 0) {
+    if ( m_debugLevel > 0 ) {
         std::cerr << __PRETTY_FUNCTION__ << std::endl;
     }
     Guard guard(m_mutex);
-    if(!setInitialState()) return;
+    if (!setInitialState()) return;
 
     std::vector<const double *> v_pos, v_rpy, v_zmp;
     std::vector<double> v_tm;
-    for(int i = 0; i < pos.length(); i++) v_pos.push_back(pos[i].get_buffer());
-    for(int i = 0; i < rpy.length(); i++) v_rpy.push_back(rpy[i].get_buffer());
-    for(int i = 0; i < zmp.length(); i++) v_zmp.push_back(zmp[i].get_buffer());
-    for(int i = 0; i < tm.length(); i++) v_tm.push_back(tm[i]);
-    return m_seq->playPattern(v_pos, v_rpy, v_zmp, v_tm, m_qInit.data.get_buffer(), pos.length() > 0 ? pos[0].length() : 0);
+    for ( int i = 0; i < pos.length(); i++ ) v_pos.push_back(pos[i].get_buffer());
+    for ( int i = 0; i < rpy.length(); i++ ) v_rpy.push_back(rpy[i].get_buffer());
+    for ( int i = 0; i < zmp.length(); i++ ) v_zmp.push_back(zmp[i].get_buffer());
+    for ( int i = 0; i < tm.length() ; i++ ) v_tm.push_back(tm[i]);
+    return m_seq->playPattern(v_pos, v_rpy, v_zmp, v_tm, m_qInit.data.get_buffer(), pos.length()>0?pos[0].length():0);
 }
 
 bool SequencePlayer::setInterpolationMode(OpenHRP::SequencePlayerService::interpolationMode i_mode_)
 {
-    if(m_debugLevel > 0) {
+    if ( m_debugLevel > 0 ) {
         std::cerr << __PRETTY_FUNCTION__ << std::endl;
     }
     Guard guard(m_mutex);
     interpolator::interpolation_mode new_mode;
-    if(i_mode_ == OpenHRP::SequencePlayerService::LINEAR) {
+    if (i_mode_ == OpenHRP::SequencePlayerService::LINEAR){
         new_mode = interpolator::LINEAR;
-    }else if(i_mode_ == OpenHRP::SequencePlayerService::HOFFARBIB) {
+    }else if (i_mode_ == OpenHRP::SequencePlayerService::HOFFARBIB){
         new_mode = interpolator::HOFFARBIB;
     }else{
         return false;
@@ -669,16 +669,16 @@ bool SequencePlayer::setInterpolationMode(OpenHRP::SequencePlayerService::interp
 
 bool SequencePlayer::addJointGroup(const char *gname, const OpenHRP::SequencePlayerService::StrSequence & jnames)
 {
-    if(m_debugLevel > 0) {
+    if ( m_debugLevel > 0 ) {
         std::cerr << __PRETTY_FUNCTION__ << std::endl;
     }
-    if(!waitInterpolationOfGroup(gname)) return false;
+    if (!waitInterpolationOfGroup(gname)) return false;
 
     Guard guard(m_mutex);
     std::vector<int> indices;
-    for(size_t i = 0; i < jnames.length(); i++) {
+    for ( size_t i=0; i < jnames.length(); i++) {
         hrp::Link *l = m_robot->link(std::string(jnames[i]));
-        if(l) {
+        if (l) {
             indices.push_back(l->jointId);
         }else{
             std::cerr << "[addJointGroup] link name " << jnames[i] << "is not found" << std::endl;
@@ -690,7 +690,7 @@ bool SequencePlayer::addJointGroup(const char *gname, const OpenHRP::SequencePla
 
 bool SequencePlayer::removeJointGroup(const char *gname)
 {
-    if(!waitInterpolationOfGroup(gname)) return false;
+    if (!waitInterpolationOfGroup(gname)) return false;
     bool ret;
     {
         Guard guard(m_mutex);
@@ -701,23 +701,23 @@ bool SequencePlayer::removeJointGroup(const char *gname)
 
 bool SequencePlayer::setJointAnglesOfGroup(const char *gname, const double *angles, double tm)
 {
-    if(m_debugLevel > 0) {
+    if ( m_debugLevel > 0 ) {
         std::cerr << __PRETTY_FUNCTION__ << std::endl;
     }
     Guard guard(m_mutex);
-    if(!setInitialState()) return false;
+    if (!setInitialState()) return false;
 
-    if(!m_seq->resetJointGroup(gname, m_qInit.data.get_buffer())) return false;
+    if (!m_seq->resetJointGroup(gname, m_qInit.data.get_buffer())) return false;
     return m_seq->setJointAnglesOfGroup(gname, angles, tm);
 }
 
 bool SequencePlayer::playPatternOfGroup(const char *gname, const dSequenceSequence &pos, const dSequence &tm)
 {
-    if(m_debugLevel > 0) {
+    if ( m_debugLevel > 0 ) {
         std::cerr << __PRETTY_FUNCTION__ << std::endl;
     }
     Guard guard(m_mutex);
-    if(!setInitialState()) return false;
+    if (!setInitialState()) return false;
 
     std::vector<const double *> v_pos;
     std::vector<double> v_tm;
@@ -726,7 +726,7 @@ bool SequencePlayer::playPatternOfGroup(const char *gname, const dSequenceSequen
     return m_seq->playPatternOfGroup(gname, v_pos, v_tm, m_qInit.data.get_buffer(), pos.length() > 0 ? pos[0].length() : 0);
 }
 
-void SequencePlayer::setMaxIKError(double pos, double rot) {
+void SequencePlayer::setMaxIKError(double pos, double rot){
     m_error_pos = pos;
     m_error_rot = rot;
 }
