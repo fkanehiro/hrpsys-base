@@ -1,3 +1,5 @@
+#include <iostream>
+
 #include "SequencePlayerService_impl.h"
 #include "SequencePlayer.h"
 #include <hrpModel/Body.h>
@@ -90,6 +92,15 @@ CORBA::Boolean SequencePlayerService_impl::setTargetPose(const char* gname, cons
     return m_player->setTargetPose(gname, xyz.get_buffer(), rpy.get_buffer(), tm, frame_name);
 }
 
+CORBA::Boolean SequencePlayerService_impl::setTargetPoseMatrix(const char* gname, const dSequence& xyz, const dSequence& rot, CORBA::Double tm) {
+    char* frame_name = (char *)strrchr(gname, ':');
+    if ( frame_name ) {
+        ((char *)gname)[frame_name - gname] = '\0'; // cut frame_name, gname[strpos(':')] = 0x00
+        frame_name++; // skip ":"
+    }
+    return m_player->setTargetPoseMatrix(gname, xyz.get_buffer(), rot.get_buffer(), tm, frame_name);
+}
+
 CORBA::Boolean SequencePlayerService_impl::isEmpty()
 {
   return m_player->player()->isEmpty();
@@ -98,7 +109,7 @@ CORBA::Boolean SequencePlayerService_impl::isEmpty()
 void SequencePlayerService_impl::loadPattern(const char* basename, CORBA::Double tm)
 {
   if (!m_player->player()){
-    std::cerr << "player is not set"<< std::endl;
+    std::cerr << "player is not set" << std::endl;
     return;
   }
   m_player->loadPattern(basename, tm);
@@ -133,7 +144,7 @@ CORBA::Boolean SequencePlayerService_impl::setInitialState()
 void SequencePlayerService_impl::player(SequencePlayer *i_player)
 {
   m_player = i_player;
-} 
+}
 
 void SequencePlayerService_impl::playPattern(const dSequenceSequence& pos, const dSequenceSequence& rpy, const dSequenceSequence& zmp, const dSequence& tm)
 {

@@ -8,7 +8,7 @@ using namespace OpenHRP;
 
 class SequencePlayer;
 
-class SequencePlayerService_impl 
+class SequencePlayerService_impl
   : public virtual POA_OpenHRP::SequencePlayerService,
     public virtual PortableServer::RefCountServantBase
 {
@@ -26,6 +26,7 @@ public:
   CORBA::Boolean setZmp(const dSequence& zmp, CORBA::Double tm);
   CORBA::Boolean setWrenches(const dSequence& wrenches, CORBA::Double tm);
   CORBA::Boolean setTargetPose(const char* gname, const dSequence& xyz, const dSequence& rpy, CORBA::Double tm);
+  CORBA::Boolean setTargetPoseMatrix(const char* gname, const dSequence& xyz, const dSequence& rot, CORBA::Double tm);
   CORBA::Boolean isEmpty();
   void loadPattern(const char* basename, CORBA::Double tm);
   void playPattern(const dSequenceSequence& pos, const dSequenceSequence& rpy, const dSequenceSequence& zmp, const dSequence& tm);
@@ -43,6 +44,6 @@ public:
   //
   void player(SequencePlayer *i_player);
   SequencePlayer *m_player;
-};				 
+};
 
 #endif

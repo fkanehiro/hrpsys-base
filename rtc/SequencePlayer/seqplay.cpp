@@ -53,7 +53,7 @@ void seqplay::goHalfSitting(double tm)
 #endif
     zmp_interpolator->setGoal(zmp, tm);
 #ifdef INITIAL_ZMP_REF_Z
-    double waist_pos[]={ref_state.basePosAtt.px, 
+    double waist_pos[]={ref_state.basePosAtt.px,
                         ref_state.basePosAtt.py,
                         -INITIAL_ZMP_REF_Z};
 #else
@@ -358,7 +358,7 @@ void seqplay::get(double *o_q, double *o_zmp, double *o_accel,
 }
 
 void seqplay::go(const double *i_q, const double *i_zmp, const double *i_acc,
-				 const double *i_p, const double *i_rpy, const double *i_tq, const double *i_wrenches, double i_time, 
+				 const double *i_p, const double *i_rpy, const double *i_tq, const double *i_wrenches, double i_time,
 				 bool immediate)
 {
 	go(i_q, i_zmp, i_acc, i_p, i_rpy, i_tq, i_wrenches,

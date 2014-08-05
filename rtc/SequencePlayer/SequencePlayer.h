@@ -44,7 +44,7 @@ class SequencePlayer
 
   // The initialize action (on CREATED->ALIVE transition)
   // formaer rtc_init_entry()
- virtual RTC::ReturnCode_t onInitialize();
+  virtual RTC::ReturnCode_t onInitialize();
 
   // The finalize action (on ALIVE->END transition)
   // formaer rtc_exiting_entry()
@@ -92,7 +92,7 @@ class SequencePlayer
 
   double dt;
   seqplay *player() { return m_seq; }
-  hrp::BodyPtr robot() { return m_robot;}  
+  hrp::BodyPtr robot() { return m_robot; }
   void setClearFlag();
   void waitInterpolation();
   bool waitInterpolationOfGroup(const char *gname);
@@ -103,8 +103,10 @@ class SequencePlayer
   bool setBaseRpy(const double *rpy, double tm);
   bool setZmp(const double *zmp, double tm);
   bool setTargetPose(const char* gname, const double *xyz, const double *rpy, double tm, const char* frame_name);
+  bool setTargetPoseMatrix(const char* gname, const double *xyz, const double *rot, double tm, const char* frame_name);
+  bool setTargetPoseWorker(const char* gname, hrp::Vector3 end_p, hrp::Matrix33 end_R, double tm, const char* frame_name);
   bool setWrenches(const double *wrenches, double tm);
-  void loadPattern(const char *basename, double time); 
+  void loadPattern(const char *basename, double time);
   void playPattern(const OpenHRP::dSequenceSequence& pos, const OpenHRP::dSequenceSequence& rpy, const OpenHRP::dSequenceSequence& zmp, const OpenHRP::dSequence& tm);
   bool setInterpolationMode(OpenHRP::SequencePlayerService::interpolationMode i_mode_);
   bool setInitialState(double tm=0.0);
@@ -118,7 +120,7 @@ class SequencePlayer
  protected:
   // Configuration variable declaration
   // <rtc-template block="config_declare">
-  
+
   // </rtc-template>
 
   // DataInPort declaration
@@ -131,7 +133,7 @@ class SequencePlayer
   InPort<TimedOrientation3D> m_baseRpyInitIn;
   TimedPoint3D m_zmpRefInit;
   InPort<TimedPoint3D> m_zmpRefInitIn;
-  
+
   // </rtc-template>
 
   // DataOutPort declaration
@@ -151,7 +153,7 @@ class SequencePlayer
   std::vector<TimedDoubleSeq> m_wrenches;
   std::vector<OutPort<TimedDoubleSeq> *> m_wrenchesOut;
 
-  
+
   // </rtc-template>
 
   // CORBA Port declaration
@@ -168,7 +170,7 @@ class SequencePlayer
 
   // Consumer declaration
   // <rtc-template block="consumer_declare">
-  
+
   // </rtc-template>
 
  private:

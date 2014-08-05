@@ -7,27 +7,27 @@ module OpenHRP
   typedef sequence<double> dSequence;
   typedef sequence<dSequence> dSequenceSequence;
   typedef sequence<boolean> bSequence;
-  
+
   interface SequencePlayerService
   {
     typedef sequence<string> StrSequence;
 
     enum  interpolationMode {
-      LINEAR, 	///< linear interpolation
+      LINEAR,   ///< linear interpolation
       HOFFARBIB ///< minimum jerk interpolation by Hoff & Arbib
     };
-    
+
     /**
      * @brief Wait until the last goal posture is sent to the robot
      */
     void waitInterpolation();
-    
+
     /**
      * @brief Wait until the last goal posture is sent to the robot
      * @param gname name of the joint group
      */
     boolean waitInterpolationOfGroup(in string gname);
-    
+
     /**
      * @brief Interpolate all joint angles on robot using duration specified by \em tm. Returns without waiting for whole sequence to be sent to robot.
      * @param jvs sequence of joint angles
@@ -44,14 +44,14 @@ module OpenHRP
      * @return true joint angles are set successfully, false otherwise
      */
     boolean setJointAnglesWithMask(in dSequence jvs, in bSequence mask,
-				   in double tm);
-    
+                                   in double tm);
+
     /**
      * @brief Interpolate just one joint angle specified by \em jname using duration \em tm. Function returns without waiting for interpolation to finish
      * @param jname joint name
      * @param jv joint angle
      * @param tm duration
-     * @return true if set successuflly, false otherwise 
+     * @return true if set successuflly, false otherwise
      */
     boolean setJointAngle(in string jname, in double jv, in double tm);
 
@@ -62,7 +62,7 @@ module OpenHRP
      * @return true if set successfully, false otherwise
      */
     boolean setBasePos(in dSequence pos, in double tm);
-    
+
     /**
      * @brief Interpolate Roll-Pitch-Yaw angles of the base link. Function returns without waiting for interpolation to finish
      * @param rpy Roll-Pitch-Yaw angles of the base link
@@ -70,7 +70,7 @@ module OpenHRP
      * @return true if set successfully, false otherwise
      */
     boolean setBaseRpy(in dSequence rpy, in double tm);
-    
+
     /**
      * @brief Interpolate ZMP. Function returns without waiting for interpolation to finish
      * @param zmp ZMP
@@ -90,6 +90,16 @@ module OpenHRP
     boolean setTargetPose(in string name, in dSequence xyz, in dSequence rpy, in double tm);
 
     /**
+     * @brief Interpolate X, Y, Z and 3x3 rotation matrix of the target joint/link group, wrt world coords Function returns without waiting for interpolation to finish
+     * @param gname name of the joint group
+     * @param xyz : X,Y,Z position of the target link
+     * @param rot : flattened 3x3 Rotation matrix of the target link
+     * @param tm duration
+     * @return true if set successfully, false otherwise
+     */
+    boolean setTargetPoseMatrix(in string name, in dSequence xyz, in dSequence rot, in double tm);
+
+    /**
      * @brief Utility functions to check whether intepolation is going on. Functions return immediately
      * @return true if interpolation queue is empty, false otherwise
      */
@@ -97,22 +107,22 @@ module OpenHRP
 
     /**
      * @brief load pattern files and start to playback.
-     * @param basename basename of the pattern files. \<basename\>.pos, \<basename\>.zmp, \<basename\>.waist and \<basename\>.gsens are used. 
+     * @param basename basename of the pattern files. \<basename\>.pos, \<basename\>.zmp, \<basename\>.waist and \<basename\>.gsens are used.
      * @param tm Duration to the initial posture in \<basename\>.pos
      */
     void loadPattern(in string basename, in double tm);
 
     /**
-     * @brief playback a pattern 
+     * @brief playback a pattern
      * @param pos sequence of joint angles
      * @param rpy sequence of Roll-Pitch-Yaw angles of the base link
      * @param zmp sequence of ZMP
      * @param tm sequence of duration beetween postures
      */
-    void playPattern(in dSequenceSequence pos, 
-		     in dSequenceSequence rpy,
-		     in dSequenceSequence zmp, 
-		     in dSequence tm);
+    void playPattern(in dSequenceSequence pos,
+                     in dSequenceSequence rpy,
+                     in dSequenceSequence zmp,
+                     in dSequence tm);
 
     /**
      * @brief clear pattern data in playback queue. This function returns after the queue becomes empty.
@@ -140,7 +150,7 @@ module OpenHRP
     /**
      * @brief add a joint group
      * @param gname name of the joint group
-     * @param jnames list of joint name 
+     * @param jnames list of joint name
      * @return true if the group is added successfully, false otherwise
      */
     boolean addJointGroup(in string gname, in StrSequence jnames);

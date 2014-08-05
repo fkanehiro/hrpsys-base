@@ -13,6 +13,7 @@ import time
 # copy from transformations.py, Christoph Gohlke, The Regents of the University of California
 
 import numpy
+
 # map axes strings to/from tuples of inner axis, parity, repetition, frame
 _AXES2TUPLE = {
     'sxyz': (0, 0, 0, 0), 'sxyx': (0, 0, 1, 0), 'sxzy': (0, 1, 0, 0),
@@ -29,7 +30,6 @@ _NEXT_AXIS = [1, 2, 0, 1]
 
 # epsilon for testing whether a number is close to zero
 _EPS = numpy.finfo(float).eps * 4.0
-
 
 def euler_matrix(ai, aj, ak, axes='sxyz'):
     """Return homogeneous rotation matrix from Euler angles and axis sequence.
@@ -906,7 +906,7 @@ class HrpsysConfigurator:
         return result
 
     def setTargetPoseRelative(self, gname, eename, dx=0, dy=0, dz=0,
-dr=0, dp=0, dw=0, tm=10, wait=True):
+                              dr=0, dp=0, dw=0, tm=10, wait=True):
         '''
         Set angles to a joint group relative to its current pose.
         All d* arguments are in meter.
@@ -923,7 +923,8 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
         if ret:
             posRef = numpy.array([tds.data[3], tds.data[7], tds.data[11]])
             rpyRef = numpy.array(euler_from_matrix([tds.data[0:3],
-tds.data[4:7], tds.data[8:11]], 'sxyz'))
+                                                    tds.data[4:7],
+                                                    tds.data[8:11]], 'sxyz'))
             posRef += [dx, dy, dz]
             rpyRef += [dr, dp, dw]
             print posRef, rpyRef
@@ -932,6 +933,41 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
                 self.waitInterpolationOfGroup(gname)
             return ret
         return False
+
+
+    def setTargetPoseMatrix(self, gname, pos, rot, tm, frame_name=None):
+        '''
+        Move angles of a joint group to a fixed absolute posture
+        Units for pos are in meters
+
+        @param gname: Name of joint group
+        @type pos: float
+        @type rot: list of float or numpy.matrix
+        '''
+        if type(rot) == numpy.matrixlib.defmatrix.matrix:
+            rot = list(rot.flat)
+
+        return self.seq_svc.setTargetPoseMatrix(gname, pos, rot, tm, frame_name)
+
+
+    def setTargetPoseMatrixRelative(self, gname, dx=0.0, dy=0.0, dz=0.0,
+                                    drot=None, tm=10, frame_name=None):
+        self.waitInterpolationOfGroup(gname)
+        ret, tds = self.fk_svc.getCurrentPose(eename)
+        if ret:
+            if not drot:
+                drot = numpy.identity(3, float)
+            posRef = numpy.array([tds.data[3], tds.data[7], tds.data[11]])
+            rotRef = numpy.matrix([tds.data[0:3], tds.data[4:7], tds.data[8:11]])
+            posRef += [dx, dy, dz]
+            rotRef = rotRef * drot
+            # print posRef, rotRef
+            ret = self.setTargetPoseMatrix(gname, list(posRef), rotRef, tm)
+            if ret and wait:
+                self.waitInterpolationOfGroup(gname)
+            return ret
+        return False
+
 
     def clear(self):
         self.seq_svc.clear()
