@@ -4,209 +4,209 @@
  */
 module OpenHRP
 {
-    typedef sequence<double> dSequence;
-    typedef sequence<dSequence> dSequenceSequence;
-    typedef sequence<boolean> bSequence;
+  typedef sequence<double> dSequence;
+  typedef sequence<dSequence> dSequenceSequence;
+  typedef sequence<boolean> bSequence;
 
-    interface SequencePlayerService
-    {
-        typedef sequence<string> StrSequence;
+  interface SequencePlayerService
+  {
+    typedef sequence<string> StrSequence;
 
-        enum  interpolationMode {
-            LINEAR,   ///< linear interpolation
-            HOFFARBIB ///< minimum jerk interpolation by Hoff & Arbib
-        };
-
-        /**
-         * @brief Wait until the last goal posture is sent to the robot
-         */
-        void waitInterpolation();
-
-        /**
-         * @brief Wait until the last goal posture is sent to the robot
-         * @param gname name of the joint group
-         */
-        boolean waitInterpolationOfGroup(in string gname);
-
-        /**
-         * @brief Interpolate all joint angles on robot using duration specified by \em tm. Returns without waiting for whole sequence to be sent to robot.
-         * @param jvs sequence of joint angles
-         * @param tm duration
-         * @return true joint angles are set successfully, false otherwise
-         */
-        boolean setJointAngles(in dSequence jvs, in double tm);
-
-        /**
-         * @brief Interpolate joint angles on robot using duration specified by \em tm. Returns without waiting for whole sequence to be sent to robot.
-         * @param jvs sequence of joint angles
-         * @param mask binary vector which selects joints to be interpolated
-         * @param tm duration
-         * @return true joint angles are set successfully, false otherwise
-         */
-        boolean setJointAnglesWithMask(in dSequence jvs, in bSequence mask,
-                                       in double tm);
-
-        /**
-         * @brief Interpolate just one joint angle specified by \em jname using duration \em tm. Function returns without waiting for interpolation to finish
-         * @param jname joint name
-         * @param jv joint angle
-         * @param tm duration
-         * @return true if set successuflly, false otherwise
-         */
-        boolean setJointAngle(in string jname, in double jv, in double tm);
-
-        /**
-         * @brief Interpolate position of the base link. Function returns without waiting for interpolation to finish
-         * @param pos position of the base link
-         * @param tm duration
-         * @return true if set successfully, false otherwise
-         */
-        boolean setBasePos(in dSequence pos, in double tm);
-
-        /**
-         * @brief Interpolate Roll-Pitch-Yaw angles of the base link. Function returns without waiting for interpolation to finish
-         * @param rpy Roll-Pitch-Yaw angles of the base link
-         * @param tm duration
-         * @return true if set successfully, false otherwise
-         */
-        boolean setBaseRpy(in dSequence rpy, in double tm);
-
-        /**
-         * @brief Interpolate ZMP. Function returns without waiting for interpolation to finish
-         * @param zmp ZMP
-         * @param tm duration
-         * @return true if set successfully, false otherwise
-         */
-        boolean setZmp(in dSequence zmp, in double tm);
-
-        /**
-         * @brief Interpolate X, Y, Z and Roll Pitch Yaw of the target joint/link group, wrt world coords Function returns without waiting for interpolation to finish
-         * @param gname name of the joint group
-         * @param xyz : X,Y,Z position of the target link
-         * @param rpy : Roll-Pitch-Yaw angles of the target link
-         * @param tm duration
-         * @return true if set successfully, false otherwise
-         */
-        boolean setTargetPose(in string name, in dSequence xyz, in dSequence rpy, in double tm);
-
-        /**
-         * @brief Interpolate X, Y, Z and 3x3 rotation matrix of the target joint/link group, wrt world coords Function returns without waiting for interpolation to finish
-         * @param gname name of the joint group
-         * @param xyz : X,Y,Z position of the target link
-         * @param rot : flattened 3x3 Rotation matrix of the target link
-         * @param tm duration
-         * @return true if set successfully, false otherwise
-         */
-        boolean setTargetPoseMatrix(in string name, in dSequence xyz, in dSequence rot, in double tm);
-
-        /**
-         * @brief Utility functions to check whether intepolation is going on. Functions return immediately
-         * @return true if interpolation queue is empty, false otherwise
-         */
-        boolean isEmpty();
-
-        /**
-         * @brief load pattern files and start to playback.
-         * @param basename basename of the pattern files. \<basename\>.pos, \<basename\>.zmp, \<basename\>.waist and \<basename\>.gsens are used.
-         * @param tm Duration to the initial posture in \<basename\>.pos
-         */
-        void loadPattern(in string basename, in double tm);
-
-        /**
-         * @brief playback a pattern
-         * @param pos sequence of joint angles
-         * @param rpy sequence of Roll-Pitch-Yaw angles of the base link
-         * @param zmp sequence of ZMP
-         * @param tm sequence of duration beetween postures
-         */
-        void playPattern(in dSequenceSequence pos,
-                         in dSequenceSequence rpy,
-                         in dSequenceSequence zmp,
-                         in dSequence tm);
-
-        /**
-         * @brief clear pattern data in playback queue. This function returns after the queue becomes empty.
-         */
-        void clear();
-
-        /**
-         * @brief clear pattern data in playback queue. This function returns immediately
-         */
-        void clearNoWait();
-
-        /**
-         * @brief set interpolation mode.
-         * @param i_mode_ new interpolation mode
-         * @return true if set successfully, false otherwise
-         */
-        boolean setInterpolationMode(in interpolationMode i_mode_);
-
-        /**
-         * @brief set to output data port by value of input data port
-         * @return true if set successfully, false otherwise
-         */
-        boolean setInitialState();
-
-        /**
-         * @brief add a joint group
-         * @param gname name of the joint group
-         * @param jnames list of joint name
-         * @return true if the group is added successfully, false otherwise
-         */
-        boolean addJointGroup(in string gname, in StrSequence jnames);
-
-        /**
-         * @brief remove a joint group
-         * @param gname name of the joint group
-         * @return true if the group is removed successfully, false otherwise
-         */
-        boolean removeJointGroup(in string gname);
-
-        /**
-         * @brief Interpolate joint angles in a group  using duration specified by \em tm. Returns without waiting for whole sequence to be sent to robot.
-         * @param gname name of the joint group
-         * @param jvs sequence of joint angles
-         * @param tm duration
-         * @return true joint angles are set successfully, false otherwise
-         */
-        boolean setJointAnglesOfGroup(in string gname, in dSequence jvs, in double tm);
-
-        /**
-         * @brief clear pattern data with joint group
-         * @param gname name of the joint group
-         * @param tm duration toward termination
-         * @return true joint angles are set successfully, false otherwise
-         */
-        boolean clearOfGroup(in string gname, in double tm);
-
-        /**
-         * @brief play back apattern with joint group
-         * @param gname name of the joint group
-         * @param pos sequence of joint angles
-         * @param tm sequence of duration beetween postures
-         * @return true joint angles are set successfully, false otherwise
-         */
-        boolean playPatternOfGroup(in string gname, in dSequenceSequence pos, in dSequence tm);
-
-        /**
-         * @brief set parameters to solve ik, used in setTargetPose
-         * @param pos error threshold for position
-         * @param rot error threshold for rotation
-         */
-        void setMaxIKError(in double pos, in double rot);
-
-        /**
-         * @brief set parameters to solve ik, used in setTargetPose
-         * @param max_iteration max iteration
-         */
-        void setMaxIKIteration(in short max_iteration);
-
-        /**
-         * @brief Interpolate Wrenches. Function returns without waiting for interpolation to finish
-         * @param wrenches Wrenches
-         * @param tm duration
-         * @return true if set successfully, false otherwise
-         */
-        boolean setWrenches(in dSequence wrenches, in double tm);
+    enum  interpolationMode {
+        LINEAR,   ///< linear interpolation
+        HOFFARBIB ///< minimum jerk interpolation by Hoff & Arbib
     };
+
+    /**
+     * @brief Wait until the last goal posture is sent to the robot
+     */
+    void waitInterpolation();
+
+    /**
+     * @brief Wait until the last goal posture is sent to the robot
+     * @param gname name of the joint group
+     */
+    boolean waitInterpolationOfGroup(in string gname);
+
+    /**
+     * @brief Interpolate all joint angles on robot using duration specified by \em tm. Returns without waiting for whole sequence to be sent to robot.
+     * @param jvs sequence of joint angles
+     * @param tm duration
+     * @return true joint angles are set successfully, false otherwise
+     */
+    boolean setJointAngles(in dSequence jvs, in double tm);
+
+    /**
+     * @brief Interpolate joint angles on robot using duration specified by \em tm. Returns without waiting for whole sequence to be sent to robot.
+     * @param jvs sequence of joint angles
+     * @param mask binary vector which selects joints to be interpolated
+     * @param tm duration
+     * @return true joint angles are set successfully, false otherwise
+     */
+    boolean setJointAnglesWithMask(in dSequence jvs, in bSequence mask,
+                                   in double tm);
+
+    /**
+     * @brief Interpolate just one joint angle specified by \em jname using duration \em tm. Function returns without waiting for interpolation to finish
+     * @param jname joint name
+     * @param jv joint angle
+     * @param tm duration
+     * @return true if set successuflly, false otherwise
+     */
+    boolean setJointAngle(in string jname, in double jv, in double tm);
+
+    /**
+     * @brief Interpolate position of the base link. Function returns without waiting for interpolation to finish
+     * @param pos position of the base link
+     * @param tm duration
+     * @return true if set successfully, false otherwise
+     */
+    boolean setBasePos(in dSequence pos, in double tm);
+
+    /**
+     * @brief Interpolate Roll-Pitch-Yaw angles of the base link. Function returns without waiting for interpolation to finish
+     * @param rpy Roll-Pitch-Yaw angles of the base link
+     * @param tm duration
+     * @return true if set successfully, false otherwise
+     */
+    boolean setBaseRpy(in dSequence rpy, in double tm);
+
+    /**
+     * @brief Interpolate ZMP. Function returns without waiting for interpolation to finish
+     * @param zmp ZMP
+     * @param tm duration
+     * @return true if set successfully, false otherwise
+     */
+    boolean setZmp(in dSequence zmp, in double tm);
+
+    /**
+     * @brief Interpolate X, Y, Z and Roll Pitch Yaw of the target joint/link group, wrt world coords Function returns without waiting for interpolation to finish
+     * @param gname name of the joint group
+     * @param xyz : X,Y,Z position of the target link
+     * @param rpy : Roll-Pitch-Yaw angles of the target link
+     * @param tm duration
+     * @return true if set successfully, false otherwise
+     */
+    boolean setTargetPose(in string name, in dSequence xyz, in dSequence rpy, in double tm);
+
+    /**
+     * @brief Interpolate X, Y, Z and 3x3 rotation matrix of the target joint/link group, wrt world coords Function returns without waiting for interpolation to finish
+     * @param gname name of the joint group
+     * @param xyz : X,Y,Z position of the target link
+     * @param rot : flattened 3x3 Rotation matrix of the target link
+     * @param tm duration
+     * @return true if set successfully, false otherwise
+     */
+    boolean setTargetPoseMatrix(in string name, in dSequence xyz, in dSequence rot, in double tm);
+
+    /**
+     * @brief Utility functions to check whether intepolation is going on. Functions return immediately
+     * @return true if interpolation queue is empty, false otherwise
+     */
+    boolean isEmpty();
+
+    /**
+     * @brief load pattern files and start to playback.
+     * @param basename basename of the pattern files. \<basename\>.pos, \<basename\>.zmp, \<basename\>.waist and \<basename\>.gsens are used.
+     * @param tm Duration to the initial posture in \<basename\>.pos
+     */
+    void loadPattern(in string basename, in double tm);
+
+    /**
+     * @brief playback a pattern
+     * @param pos sequence of joint angles
+     * @param rpy sequence of Roll-Pitch-Yaw angles of the base link
+     * @param zmp sequence of ZMP
+     * @param tm sequence of duration beetween postures
+     */
+    void playPattern(in dSequenceSequence pos,
+                     in dSequenceSequence rpy,
+                     in dSequenceSequence zmp,
+                     in dSequence tm);
+
+    /**
+     * @brief clear pattern data in playback queue. This function returns after the queue becomes empty.
+     */
+    void clear();
+
+    /**
+     * @brief clear pattern data in playback queue. This function returns immediately
+     */
+    void clearNoWait();
+
+    /**
+     * @brief set interpolation mode.
+     * @param i_mode_ new interpolation mode
+     * @return true if set successfully, false otherwise
+     */
+    boolean setInterpolationMode(in interpolationMode i_mode_);
+
+    /**
+     * @brief set to output data port by value of input data port
+     * @return true if set successfully, false otherwise
+     */
+    boolean setInitialState();
+
+    /**
+     * @brief add a joint group
+     * @param gname name of the joint group
+     * @param jnames list of joint name
+     * @return true if the group is added successfully, false otherwise
+     */
+    boolean addJointGroup(in string gname, in StrSequence jnames);
+
+    /**
+     * @brief remove a joint group
+     * @param gname name of the joint group
+     * @return true if the group is removed successfully, false otherwise
+     */
+    boolean removeJointGroup(in string gname);
+
+    /**
+     * @brief Interpolate joint angles in a group  using duration specified by \em tm. Returns without waiting for whole sequence to be sent to robot.
+     * @param gname name of the joint group
+     * @param jvs sequence of joint angles
+     * @param tm duration
+     * @return true joint angles are set successfully, false otherwise
+     */
+    boolean setJointAnglesOfGroup(in string gname, in dSequence jvs, in double tm);
+
+    /**
+     * @brief clear pattern data with joint group
+     * @param gname name of the joint group
+     * @param tm duration toward termination
+     * @return true joint angles are set successfully, false otherwise
+     */
+    boolean clearOfGroup(in string gname, in double tm);
+
+    /**
+     * @brief play back apattern with joint group
+     * @param gname name of the joint group
+     * @param pos sequence of joint angles
+     * @param tm sequence of duration beetween postures
+     * @return true joint angles are set successfully, false otherwise
+     */
+    boolean playPatternOfGroup(in string gname, in dSequenceSequence pos, in dSequence tm);
+
+    /**
+     * @brief set parameters to solve ik, used in setTargetPose
+     * @param pos error threshold for position
+     * @param rot error threshold for rotation
+     */
+    void setMaxIKError(in double pos, in double rot);
+
+    /**
+     * @brief set parameters to solve ik, used in setTargetPose
+     * @param max_iteration max iteration
+     */
+    void setMaxIKIteration(in short max_iteration);
+
+    /**
+     * @brief Interpolate Wrenches. Function returns without waiting for interpolation to finish
+     * @param wrenches Wrenches
+     * @param tm duration
+     * @return true if set successfully, false otherwise
+     */
+    boolean setWrenches(in dSequence wrenches, in double tm);
+  };
 };
