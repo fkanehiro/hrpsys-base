@@ -177,7 +177,7 @@ otected:
 
   // </rtc-template>
 
-private:
+ private:
   seqplay *m_seq;
   bool m_clearFlag, m_waitFlag;
   boost::interprocess::interprocess_semaphore m_waitSem;
