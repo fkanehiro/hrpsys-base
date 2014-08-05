@@ -57,7 +57,7 @@ CORBA::Boolean SequencePlayerService_impl::setJointAngle(const char *jname, CORB
 
 CORBA::Boolean SequencePlayerService_impl::setBasePos(const dSequence& pos, CORBA::Double tm)
 {
-    if (pos.length() != 3) return false;
+    if ( pos.length() != 3) return false;
 
     return m_player->setBasePos(pos.get_buffer(), tm);
 }
