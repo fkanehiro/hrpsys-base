@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include "seqplay.h"
 
-#define deg2rad(x)  ((x) * M_PI / 180)
+#define deg2rad(x)     ((x)*M_PI / 180)
 
 seqplay::seqplay(unsigned int i_dof, double i_dt, unsigned int i_fnum) : m_dof(i_dof)
 {
@@ -18,70 +18,70 @@ seqplay::seqplay(unsigned int i_dof, double i_dt, unsigned int i_fnum) : m_dof(i
     //
 
 #ifdef WAIST_HEIGHT
-    double initial_zmp[3] = {0, 0, -WAIST_HEIGHT};
-    double initial_waist[3] = {0, 0, WAIST_HEIGHT};
+    double initial_zmp[3] = {0,0,-WAIST_HEIGHT};
+    double initial_waist[3] = {0,0,WAIST_HEIGHT};
     interpolators[P]->set(initial_waist);
 #elif defined(INITIAL_ZMP_REF_X)
     double initial_zmp[3] = {INITIAL_ZMP_REF_X, 0, INITIAL_ZMP_REF_Z};
 #else
-    double initial_zmp[] = {0, 0, 0};
+    double initial_zmp[] = {0,0,0};
 #endif
     interpolators[ZMP]->set(initial_zmp);
     double initial_wrenches[6 * i_fnum];
-    for(size_t i = 0; i < 6 * i_fnum; i++) initial_wrenches[i] = 0;
+    for (size_t i = 0; i < 6 * i_fnum; i++) initial_wrenches[i] = 0;
     interpolators[WRENCHES]->set(initial_wrenches);
 }
 
 seqplay::~seqplay()
 {
-    for(unsigned int i = 0; i < NINTERPOLATOR; i++) {
-        delete interpolators[i];
-    }
+      for(unsigned int i = 0; i < NINTERPOLATOR; i++){
+          delete interpolators[i];
+      }
 }
 
 #if 0 // TODO
 void seqplay::goHalfSitting(double tm)
 {
-    if(tm == 0) {
+    if ( tm == 0) {
         tm = (double)angle_interpolator->calc_interpolation_time(get_half_sitting_posture());
     }
     angle_interpolator->setGoal(get_half_sitting_posture(), tm);
 #ifdef INITIAL_ZMP_REF_X
-    double zmp[] = {INITIAL_ZMP_REF_X, 0, INITIAL_ZMP_REF_Z};
+    double zmp[]={INITIAL_ZMP_REF_X, 0, INITIAL_ZMP_REF_Z};
 #else
-    double zmp[] = {0, 0, 0};
+    double zmp[] = {0,0,0};
 #endif
     zmp_interpolator->setGoal(zmp, tm);
 #ifdef INITIAL_ZMP_REF_Z
-    double waist_pos[] = {ref_state.basePosAtt.px,
-                          ref_state.basePosAtt.py,
-                          -INITIAL_ZMP_REF_Z};
+    double waist_pos[]={ref_state.basePosAtt.px,
+                        ref_state.basePosAtt.py,
+                        -INITIAL_ZMP_REF_Z};
 #else
-    double waist_pos[] = {0, 0, 0};
+    double waist_pos[] = {0,0,0};
 #endif
     waist_pos_interpolator->setGoal(waist_pos, tm);
     double p[3], rpy[3];
     OpenHRP::convTransformToPosRpy(ref_state.basePosAtt, p, rpy);
-    double initial_rpy[3] = {0, 0, rpy[2]};
+    double initial_rpy[3] = {0,0,rpy[2]};
     waist_rpy_interpolator->setGoal(initial_rpy, tm);
 }
 
 void seqplay::goInitial(double tm)
 {
-    if(tm == 0) {
+    if ( tm == 0) {
         tm = (double)angle_interpolator->calc_interpolation_time(get_initial_posture());
     }
     angle_interpolator->setGoal(get_initial_posture(), tm);
 #ifdef WAIST_HEIGHT
-    double zmp[] = {0, 0, -WAIST_HEIGHT};
+    double zmp[] = {0,0,-WAIST_HEIGHT};
     double pos[] = {ref_state.basePosAtt.px,
                     ref_state.basePosAtt.py,
                     WAIST_HEIGHT};
     waist_pos_interpolator->setGoal(pos, tm);
 #elif defined(INITIAL_ZMP_REF_Z)
-    double zmp[] = {0, 0, INITIAL_ZMP_REF_Z};
+    double zmp[] = {0,0,INITIAL_ZMP_REF_Z};
 #else
-    double zmp[] = {0, 0, 0};
+    double zmp[] = {0,0,0};
 #endif
     zmp_interpolator->setGoal(zmp, tm);
 }
@@ -89,24 +89,24 @@ void seqplay::goInitial(double tm)
 
 bool seqplay::isEmpty() const
 {
-    for(unsigned int i = 0; i < NINTERPOLATOR; i++) {
-        if(!interpolators[i]->isEmpty()) return false;
-    }
-    std::map<std::string, groupInterpolator *>::const_iterator it;
-    for(it = groupInterpolators.begin(); it != groupInterpolators.end(); it++) {
-        groupInterpolator *gi = it->second;
-        if(gi && !gi->isEmpty()) return false;
-    }
+       for(unsigned int i = 0; i < NINTERPOLATOR; i++) {
+              if(!interpolators[i]->isEmpty()) return false;
+       }
+       std::map<std::string, groupInterpolator *>::const_iterator it;
+       for(it = groupInterpolators.begin(); it != groupInterpolators.end(); it++) {
+              groupInterpolator *gi = it->second;
+              if (gi && !gi->isEmpty()) return false;
+      }
 
-    return true;
+      return true;
 }
 
 bool seqplay::isEmpty(const char *gname)
 {
-    char *s = (char *)gname; while(*s) {*s = toupper(*s); s++; }
-    groupInterpolator *i = groupInterpolators[gname];
-    if(!i) return true;
-    return i->isEmpty();
+       char *s = (char *)gname; while(*s) {*s = toupper(*s); s++;}
+       groupInterpolator *i = groupInterpolators[gname];
+       if(!i) return true;
+       return i->isEmpty();
 }
 
 #if 0
