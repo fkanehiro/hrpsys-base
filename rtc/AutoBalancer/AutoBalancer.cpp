@@ -51,6 +51,7 @@ AutoBalancer::AutoBalancer(RTC::Manager* manager)
       m_basePosOut("basePos", m_basePos),
       m_baseRpyOut("baseRpy", m_baseRpy),
       m_baseTformOut("baseTformOut", m_baseTform),
+      m_accRefOut("accRef", m_accRef),
       m_AutoBalancerServicePort("AutoBalancerService"),
       // </rtc-template>
       move_base_gain(0.1),
@@ -82,6 +83,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     addOutPort("basePos", m_basePosOut);
     addOutPort("baseRpy", m_baseRpyOut);
     addOutPort("baseTformOut", m_baseTformOut);
+    addOutPort("accRef", m_accRefOut);
   
     // Set service provider to Ports
     m_AutoBalancerServicePort.registerProvider("service0", "AutoBalancerService", m_service0);
@@ -224,6 +226,9 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
       is_legged_robot = false;
     }
 
+    m_accRef.data.ax = m_accRef.data.ay = m_accRef.data.az = 0.0;
+    prev_imu_sensor_vel = hrp::Vector3::Zero();
+
     return RTC::RTC_OK;
 }
 
@@ -331,6 +336,18 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
     m_zmpRef.data.z = ref_zmp(2);
     m_zmpRef.tm = m_qRef.tm;
     m_zmpRefOut.write();
+
+    hrp::Sensor* sen = m_robot->sensor<hrp::RateGyroSensor>("gyrometer");
+    if (sen != NULL) {
+      hrp::Vector3 imu_sensor_pos = sen->link->p + sen->link->R * sen->localPos;
+      hrp::Vector3 imu_sensor_vel = (imu_sensor_pos - prev_imu_sensor_pos)/m_dt;
+      // convert to imu sensor local acceleration
+      hrp::Vector3 acc = (sen->link->R * sen->localR).transpose() * (imu_sensor_vel - prev_imu_sensor_vel)/m_dt;
+      m_accRef.data.ax = acc(0); m_accRef.data.ay = acc(1); m_accRef.data.az = acc(2);
+      m_accRefOut.write();
+      prev_imu_sensor_pos = imu_sensor_pos;
+      prev_imu_sensor_vel = imu_sensor_vel;
+    }
 
     return RTC::RTC_OK;
 }
