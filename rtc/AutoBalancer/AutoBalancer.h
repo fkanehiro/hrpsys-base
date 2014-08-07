@@ -10,7 +10,6 @@
 #ifndef AUTOBALANCER_H
 #define AUTOBALANCER_H
 
-#include <boost/interprocess/sync/interprocess_semaphore.hpp>
 #include <rtm/Manager.h>
 #include <rtm/DataFlowComponentBase.h>
 #include <rtm/CorbaPort.h>
@@ -122,7 +121,6 @@ class AutoBalancer
 
   // DataOutPort declaration
   // <rtc-template block="outport_declare">
-  TimedDoubleSeq m_q;
   RTC::TimedPoint3D m_zmpRef;
   TimedPoint3D m_basePos;
   TimedOrientation3D m_baseRpy;
@@ -132,6 +130,8 @@ class AutoBalancer
   OutPort<TimedOrientation3D> m_baseRpyOut;
   TimedDoubleSeq m_baseTform;
   OutPort<TimedDoubleSeq> m_baseTformOut;
+  TimedAcceleration3D m_accRef;
+  OutPort<TimedAcceleration3D> m_accRefOut;
   
   // </rtc-template>
 
@@ -172,8 +172,9 @@ class AutoBalancer
     void getTargetEndCoords(rats::coordinates& retc) { getEndCoords(retc, target_p0, target_r0); };
     void getCurrentEndCoords(rats::coordinates& retc) { getEndCoords(retc, current_p0, current_r0); };
   };
-  void robotstateOrg2qRef();
-  bool solveLimbIKforLimb (ABCIKparam& param, const double transition_smooth_gain);
+  void getCurrentParameters();
+  void getTargetParameters();
+  bool solveLimbIKforLimb (ABCIKparam& param);
   void solveLimbIK();
   void startABCparam(const ::OpenHRP::AutoBalancerService::StrSequence& limbs);
   void stopABCparam();
@@ -191,17 +192,16 @@ class AutoBalancer
   ggPtr gg;
   bool gg_is_walking, gg_ending, gg_solved;
   // for abc
-  hrp::Vector3 target_com, refzmp;
+  hrp::Vector3 ref_cog, ref_zmp, prev_ref_zmp, prev_imu_sensor_pos, prev_imu_sensor_vel;
   int transition_count; // negative value when initing and positive value when deleting
   enum {MODE_IDLE, MODE_ABC, MODE_SYNC} control_mode, return_control_mode;
   std::map<std::string, ABCIKparam> ikp;
-  hrp::dvector transition_joint_q;
-  hrp::dvector qorg, qrefv;
-  hrp::Vector3 base_pos_org, target_base_pos, prefzmp;
-  hrp::Matrix33 base_rot_org, target_base_rot;
+  hrp::dvector transition_joint_q, qorg, qrefv;
+  hrp::Vector3 current_root_p, target_root_p;
+  hrp::Matrix33 current_root_R, target_root_R;
   rats::coordinates fix_leg_coords;
   std::vector<hrp::Vector3> default_zmp_offsets;
-  double m_dt, move_base_gain;
+  double m_dt, move_base_gain, transition_smooth_gain;
   hrp::BodyPtr m_robot;
   coil::Mutex m_mutex;
 
@@ -214,8 +214,7 @@ class AutoBalancer
   std::vector<hrp::Vector3> ref_forces;
 
   unsigned int m_debugLevel;
-  bool is_legged_robot, is_qCurrent;
-  int dummy;
+  bool is_legged_robot;
   int loop;
 };
 

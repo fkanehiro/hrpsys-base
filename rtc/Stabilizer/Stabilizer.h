@@ -217,7 +217,7 @@ class Stabilizer
   rats::coordinates target_foot_midcoords;
   hrp::Vector3 ref_zmp, ref_cog, ref_cogvel, prev_ref_cog;
   hrp::Vector3 act_zmp, act_cog, act_cogvel, rel_act_zmp, prev_act_cog, prev_act_cogvel;
-  double zmp_origin_off;
+  double zmp_origin_off, transition_smooth_gain;
   // TPCC
   double k_tpcc_p[2], k_tpcc_x[2], d_rpy[2], k_brot_p[2], k_brot_tc[2];
   // RUN ST
