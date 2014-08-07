@@ -217,7 +217,7 @@ class Stabilizer
   rats::coordinates target_foot_midcoords;
   hrp::Vector3 ref_zmp, ref_cog, ref_cogvel, prev_ref_cog;
   hrp::Vector3 act_zmp, act_cog, act_cogvel, rel_act_zmp, prev_act_cog, prev_act_cogvel;
-  double zmp_origin_off, transition_smooth_gain;
+  double zmp_origin_off, transition_smooth_gain, prev_act_force_z;
   // TPCC
   double k_tpcc_p[2], k_tpcc_x[2], d_rpy[2], k_brot_p[2], k_brot_tc[2];
   // RUN ST
@@ -228,9 +228,9 @@ class Stabilizer
   double k_run_b[2], d_run_b[2];
   double rdx, rdy, rx, ry;
   // EEFM ST
-  double eefm_k1[2], eefm_k2[2], eefm_k3[2];
+  double eefm_k1[2], eefm_k2[2], eefm_k3[2], eefm_zmp_delay_time_const[2];
   double eefm_rot_damping_gain, eefm_rot_time_const, eefm_pos_damping_gain, eefm_pos_time_const;
-  hrp::Vector3 d_foot_rpy[2], new_refzmp, rel_cog;
+  hrp::Vector3 d_foot_rpy[2], new_refzmp, rel_cog, ref_zmp_aux;
   hrp::Vector3 ref_foot_force[2];
   hrp::Vector3 ref_foot_moment[2];
   double zctrl, total_mass, f_zctrl[2];
