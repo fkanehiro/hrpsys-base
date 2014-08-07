@@ -201,6 +201,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   pangx_ref = pangy_ref = pangx = pangy = 0;
   rdx = rdy = rx = ry = 0;
   pdr = hrp::Vector3::Zero();
+  prev_act_force_z = 0.0;
 
   sensor_names.push_back("rfsensor");
   sensor_names.push_back("lfsensor");
@@ -279,7 +280,7 @@ bool Stabilizer::calcZMP(hrp::Vector3& ret_zmp, const double zmp_z)
 {
   double tmpzmpx = 0;
   double tmpzmpy = 0;
-  double tmpfz = 0;
+  double tmpfz = 0, tmpfz2 = 0.0;
   for (size_t i = 0; i < 2; i++) {
     hrp::ForceSensor* sensor = m_robot->sensor<hrp::ForceSensor>(sensor_names[i]);
     hrp::Vector3 fsp = sensor->link->p + sensor->link->R * sensor->localPos;
@@ -291,7 +292,9 @@ bool Stabilizer::calcZMP(hrp::Vector3& ret_zmp, const double zmp_z)
     tmpzmpy += nf(2) * fsp(1) - (fsp(2) - zmp_z) * nf(1) + nm(0);
     tmpfz += nf(2);
   }
-  if (tmpfz < 50) {
+  tmpfz2 = 0.85 * prev_act_force_z + 0.15 * tmpfz; // filter, cut off 5[Hz]
+  prev_act_force_z = tmpfz2;
+  if (tmpfz2 < 50) {
     ret_zmp = act_zmp;
     return false; // in the air
   } else {
