@@ -190,6 +190,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   eefm_rot_time_const = 1;
   eefm_pos_damping_gain = 3500;
   eefm_pos_time_const = 1;
+  eefm_zmp_delay_time_const[0] = eefm_zmp_delay_time_const[1] = 0.04;
 
   // parameters for RUNST
   double ke = 0, tc = 0;
@@ -226,6 +227,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
     zmp_origin_off = ee_map[m_robot->sensor<hrp::ForceSensor>(sensor_names[0])->link->name].localp(2);
   }
   total_mass = m_robot->totalMass();
+  ref_zmp_aux = hrp::Vector3::Zero();
 
   // for debug output
   m_originRefZmp.data.x = m_originRefZmp.data.y = m_originRefZmp.data.z = 0.0;
@@ -604,7 +606,7 @@ void Stabilizer::getActualParameters ()
   hrp::Vector3 dzmp=foot_origin_rot * (ref_zmp - act_zmp);
   new_refzmp = foot_origin_rot * new_refzmp + foot_origin_pos;
   for (size_t i = 0; i < 2; i++) {
-    new_refzmp(i) += eefm_k1[i] * transition_smooth_gain * dcog(i) + eefm_k2[i] * transition_smooth_gain * dcogvel(i) + eefm_k3[i] * transition_smooth_gain * dzmp(i);
+    new_refzmp(i) += eefm_k1[i] * transition_smooth_gain * dcog(i) + eefm_k2[i] * transition_smooth_gain * dcogvel(i) + eefm_k3[i] * transition_smooth_gain * dzmp(i) + ref_zmp_aux(i);
   }
   if (DEBUGP) {
     std::cerr << "COG [" << ref_cog(0)*1e3 << " " << ref_cog(1)*1e3 << " " << ref_cog(2)*1e3 << "] [" << act_cog(0)*1e3 << " " << act_cog(1)*1e3 << " " << act_cog(2)*1e3 << "]" << std::endl;
@@ -790,6 +792,12 @@ void Stabilizer::getTargetParameters ()
   m_robot->rootLink()->R = target_root_R;
   m_robot->calcForwardKinematics();
   ref_zmp = hrp::Vector3(m_zmpRef.data.x, m_zmpRef.data.y, m_zmpRef.data.z);
+#ifdef USE_IMU_STATEFEEDBACK
+  // apply inverse system
+  hrp::Vector3 tmp_ref_zmp = ref_zmp + eefm_zmp_delay_time_const[0] * (ref_zmp - prev_ref_zmp) / dt;
+  prev_ref_zmp = ref_zmp;
+  ref_zmp = tmp_ref_zmp;
+#endif
   ref_cog = m_robot->calcCM();
 
   for (size_t i = 0; i < 2; i++) {
@@ -1237,6 +1245,8 @@ void Stabilizer::getParameter(OpenHRP::StabilizerService::stParam& i_stp)
     i_stp.eefm_k1[i] = eefm_k1[i];
     i_stp.eefm_k2[i] = eefm_k2[i];
     i_stp.eefm_k3[i] = eefm_k3[i];
+    i_stp.eefm_zmp_delay_time_const[i] = eefm_zmp_delay_time_const[i];
+    i_stp.eefm_ref_zmp_aux[i] = ref_zmp_aux(i);
   }
   i_stp.eefm_rot_damping_gain = eefm_rot_damping_gain;
   i_stp.eefm_pos_damping_gain = eefm_pos_damping_gain;
@@ -1271,7 +1281,9 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
     eefm_k1[i] = i_stp.eefm_k1[i];
     eefm_k2[i] = i_stp.eefm_k2[i];
     eefm_k3[i] = i_stp.eefm_k3[i];
-    std::cerr << i << " eefm_k1 " << eefm_k1[i] << " eefm_k2 " <<  eefm_k2[i] << " eefm_k3 " << eefm_k3[i] << std::endl;
+    eefm_zmp_delay_time_const[i] = i_stp.eefm_zmp_delay_time_const[i];
+    ref_zmp_aux(i) = i_stp.eefm_ref_zmp_aux[i];
+    std::cerr << i << " eefm_k1 " << eefm_k1[i] << " eefm_k2 " <<  eefm_k2[i] << " eefm_k3 " << eefm_k3[i] << " " << eefm_zmp_delay_time_const[i] << " " << ref_zmp_aux(i) << std::endl;
   }
   eefm_rot_damping_gain = i_stp.eefm_rot_damping_gain;
   eefm_pos_damping_gain = i_stp.eefm_pos_damping_gain;

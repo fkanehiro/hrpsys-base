@@ -228,9 +228,9 @@ class Stabilizer
   double k_run_b[2], d_run_b[2];
   double rdx, rdy, rx, ry;
   // EEFM ST
-  double eefm_k1[2], eefm_k2[2], eefm_k3[2];
+  double eefm_k1[2], eefm_k2[2], eefm_k3[2], eefm_zmp_delay_time_const[2];
   double eefm_rot_damping_gain, eefm_rot_time_const, eefm_pos_damping_gain, eefm_pos_time_const;
-  hrp::Vector3 d_foot_rpy[2], new_refzmp, rel_cog;
+  hrp::Vector3 d_foot_rpy[2], new_refzmp, rel_cog, ref_zmp_aux;
   hrp::Vector3 ref_foot_force[2];
   hrp::Vector3 ref_foot_moment[2];
   double zctrl, total_mass, f_zctrl[2];
