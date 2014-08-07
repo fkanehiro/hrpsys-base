@@ -877,7 +877,7 @@ void Stabilizer::calcEEForceMomentControl() {
       //rpy control
       rats::rotm3times(current_root_R, target_root_R, hrp::rotFromRpy(d_rpy[0], d_rpy[1], 0));
       m_robot->rootLink()->R = current_root_R;
-      // m_robot->rootLink()->p = target_root_p + target_root_R * rel_cog - current_root_R * rel_cog;
+      m_robot->rootLink()->p = target_root_p + target_root_R * rel_cog - current_root_R * rel_cog;
       m_robot->calcForwardKinematics();
 
       // foor modif
