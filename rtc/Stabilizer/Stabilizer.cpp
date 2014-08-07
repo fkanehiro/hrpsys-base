@@ -648,18 +648,39 @@ void Stabilizer::getActualParameters ()
       ref_foot_moment[1] = hrp::Vector3::Zero();
       ref_foot_moment[0] = -1 * (ee_pos[0] - new_refzmp).cross(ref_foot_force[0]);
     } else { // double support
+      // employ foot distribution coords
+      hrp::Vector3 foot_dist_coords_y = (ee_pos[1] - ee_pos[0]); // e_y'
+      foot_dist_coords_y(2) = 0.0;
+      foot_dist_coords_y.normalize();
+      hrp::Vector3 foot_dist_coords_x = hrp::Vector3(foot_dist_coords_y.cross(hrp::Vector3::UnitZ())); // e_x'
+      hrp::Matrix33 foot_dist_coords_rot;
+      foot_dist_coords_rot(0,0) = foot_dist_coords_x(0);
+      foot_dist_coords_rot(1,0) = foot_dist_coords_x(1);
+      foot_dist_coords_rot(2,0) = foot_dist_coords_x(2);
+      foot_dist_coords_rot(0,1) = foot_dist_coords_y(0);
+      foot_dist_coords_rot(1,1) = foot_dist_coords_y(1);
+      foot_dist_coords_rot(2,1) = foot_dist_coords_y(2);
+      foot_dist_coords_rot(0,2) = 0;
+      foot_dist_coords_rot(1,2) = 0;
+      foot_dist_coords_rot(2,2) = 1;
+      hrp::Vector3 tau_0_f = foot_dist_coords_rot.transpose() * tau_0; // tau_0'
       // x
       // right
-      if (tau_0(0) > 0) ref_foot_moment[0](0) = tau_0(0);
+      if (tau_0_f(0) > 0) ref_foot_moment[0](0) = tau_0_f(0);
       else ref_foot_moment[0](0) = 0;
       // left
-      if (tau_0(0) > 0) ref_foot_moment[1](0) = 0;
-      else ref_foot_moment[1](0) = tau_0(0);
+      if (tau_0_f(0) > 0) ref_foot_moment[1](0) = 0;
+      else ref_foot_moment[1](0) = tau_0_f(0);
       // y
-      ref_foot_moment[0](1) = tau_0(1) * alpha;
-      ref_foot_moment[1](1) = tau_0(1) * (1-alpha);
+      ref_foot_moment[0](1) = tau_0_f(1) * alpha;
+      ref_foot_moment[1](1) = tau_0_f(1) * (1-alpha);
       ref_foot_moment[0](2) = ref_foot_moment[1](2) = 0.0;
+      // foot_dist_coords local => world
+      ref_foot_moment[0] = foot_dist_coords_rot * ref_foot_moment[0];
+      ref_foot_moment[1] = foot_dist_coords_rot * ref_foot_moment[1];
     }
+    ref_foot_moment[0] = foot_origin_rot.transpose() * ref_foot_moment[0];
+    ref_foot_moment[1] = foot_origin_rot.transpose() * ref_foot_moment[1];
     if (DEBUGP) {
       std::cerr << "tau [" << tau_0(0) << " " << tau_0(1) << " " << tau_0(2) << "]" << std::endl;
       std::cerr << "fR [" << ref_foot_force[0](0) << " " << ref_foot_force[0](1) << " " << ref_foot_force[0](2) << "]" << std::endl;
@@ -690,6 +711,7 @@ void Stabilizer::getActualParameters ()
       hrp::Vector3 sensor_force = (sensor->link->R * sensor->localR) * hrp::Vector3(m_force[i].data[0], m_force[i].data[1], m_force[i].data[2]);
       hrp::Vector3 sensor_moment = (sensor->link->R * sensor->localR) * hrp::Vector3(m_force[i].data[3], m_force[i].data[4], m_force[i].data[5]);
       hrp::Vector3 ee_moment = (sensor->link->R * (sensor->localPos - ee_map[sensor->link->name].localp)).cross(sensor_force) + sensor_moment;
+      ee_moment = foot_origin_rot.transpose() * ee_moment;
       fz_diff += (i==0? -sensor_force(2) : sensor_force(2));
       fz[i] = sensor_force(2);
       // calcDampingControl
