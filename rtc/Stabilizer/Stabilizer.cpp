@@ -941,6 +941,8 @@ void Stabilizer::calcEEForceMomentControl() {
           hrp::Vector3 vel_p, vel_r;
           vel_p = total_target_foot_p[i] - target->p;
           rats::difference_rotation(vel_r, target->R, total_target_foot_R[i]);
+          vel_p *= transition_smooth_gain;
+          vel_r *= transition_smooth_gain;
           manip2[i]->calcInverseKinematics2Loop(vel_p, vel_r, 1.0, 0.001, 0.01, &qrefv);
         }
       }
@@ -1181,8 +1183,8 @@ void Stabilizer::sync_2_st ()
   d_rpy[0] = d_rpy[1] = 0;
   transition_count = -MAX_TRANSITION_COUNT;
   pdr = hrp::Vector3::Zero();
-  prev_act_cogvel = hrp::Vector3::Zero();
-  prev_ref_cog = m_robot->calcCM();
+  zctrl = f_zctrl[0] = f_zctrl[1] = 0.0;
+  d_foot_rpy[0] = d_foot_rpy[1] = hrp::Vector3::Zero();
   control_mode = MODE_ST;
 }
 
@@ -1198,9 +1200,6 @@ void Stabilizer::startStabilizer(void)
 {
   if ( transition_count == 0 && control_mode == MODE_IDLE ) {
     std::cerr << "START ST"  << std::endl;
-    d_foot_rpy[0](0) = d_foot_rpy[0](1) = d_foot_rpy[1](0) = d_foot_rpy[1](1) = 0.0;
-    prev_act_cog = ref_cog;
-    zctrl = f_zctrl[0] = f_zctrl[1] = 0.0;
     sync_2_st();
     waitSTTransition();
     std::cerr << "START ST DONE"  << std::endl;
