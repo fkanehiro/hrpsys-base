@@ -52,6 +52,7 @@ Stabilizer::Stabilizer(RTC::Manager* manager)
     m_StabilizerServicePort("StabilizerService"),
     m_basePosIn("basePosIn", m_basePos),
     m_baseRpyIn("baseRpyIn", m_baseRpy),
+    m_contactStatesIn("contactStates", m_contactStates),
     m_qRefOut("q", m_qRef),
     m_tauOut("tau", m_tau),
     m_zmpOut("zmp", m_zmp),
@@ -96,6 +97,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   addInPort("zmpRef", m_zmpRefIn);
   addInPort("basePosIn", m_basePosIn);
   addInPort("baseRpyIn", m_baseRpyIn);
+  addInPort("contactStates", m_contactStatesIn);
 
   // Set OutPort buffer
   addOutPort("q", m_qRefOut);
@@ -168,7 +170,9 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
       //                                                      m_robot->link(ee_target)));
       //ee_map.insert(std::pair<std::string, ee_trans>(ee_name , eet));
       ee_map.insert(std::pair<std::string, ee_trans>(ee_target , eet));
+      contact_states_index_map.insert(std::pair<std::string, size_t>(ee_name, i));
     }
+    m_contactStates.data.length(num);
   }
 
   // parameters for TPCC
@@ -228,6 +232,10 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   }
   total_mass = m_robot->totalMass();
   ref_zmp_aux = hrp::Vector3::Zero();
+  for (size_t i = 0; i < m_contactStates.data.length(); i++) {
+    contact_states.push_back(true);
+    prev_contact_states.push_back(true);
+  }
 
   // for debug output
   m_originRefZmp.data.x = m_originRefZmp.data.y = m_originRefZmp.data.z = 0.0;
@@ -335,6 +343,12 @@ RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
   }
   if (m_baseRpyIn.isNew()){
     m_baseRpyIn.read();
+  }
+  if (m_contactStatesIn.isNew()){
+    m_contactStatesIn.read();
+    for (size_t i = 0; i < m_contactStates.data.length(); i++) {
+      contact_states[i] = m_contactStates.data[i];
+    }
   }
 
   if (is_legged_robot) {
@@ -541,9 +555,18 @@ void Stabilizer::calcFootOriginCoords (hrp::Vector3& foot_origin_pos, hrp::Matri
     xv2.normalize();
     leg_c[i].rot = OrientRotationMatrix(leg_c[i].rot, xv1, xv2);
   }
-  rats::mid_coords(tmpc, 0.5, leg_c[0], leg_c[1]);
-  foot_origin_pos = tmpc.pos;
-  foot_origin_rot = tmpc.rot;
+  if (contact_states[contact_states_index_map[":rleg"]] &&
+      contact_states[contact_states_index_map[":lleg"]]) {
+    rats::mid_coords(tmpc, 0.5, leg_c[0], leg_c[1]);
+    foot_origin_pos = tmpc.pos;
+    foot_origin_rot = tmpc.rot;
+  } else if (contact_states[contact_states_index_map[":rleg"]]) {
+    foot_origin_pos = leg_c[0].pos;
+    foot_origin_rot = leg_c[0].rot;
+  } else {
+    foot_origin_pos = leg_c[1].pos;
+    foot_origin_rot = leg_c[1].rot;
+  }
 }
 
 void Stabilizer::getActualParameters ()
@@ -592,7 +615,12 @@ void Stabilizer::getActualParameters ()
   act_zmp = foot_origin_rot.transpose() * (act_zmp - foot_origin_pos);
   act_cog = foot_origin_rot.transpose() * (act_cog - foot_origin_pos);
   //act_cogvel = foot_origin_rot.transpose() * act_cogvel;
-  act_cogvel = (act_cog - prev_act_cog)/dt;
+  if (contact_states != prev_contact_states) {
+    act_cogvel = (foot_origin_rot.transpose() * prev_act_foot_origin_rot) * act_cogvel;
+  } else {
+    act_cogvel = (act_cog - prev_act_cog)/dt;
+  }
+  prev_act_foot_origin_rot = foot_origin_rot;
   //act_cogvel = 0.8 * prev_act_cogvel + 0.2 * act_cogvel;
   act_cogvel = 0.9 * prev_act_cogvel + 0.1 * act_cogvel;
   prev_act_cog = act_cog;
@@ -759,6 +787,7 @@ void Stabilizer::getActualParameters ()
     m_robot->rootLink()->R = current_root_R;
     m_robot->calcForwardKinematics();
   }
+  copy (contact_states.begin(), contact_states.end(), prev_contact_states.begin());
 }
 
 void Stabilizer::getTargetParameters ()
@@ -820,8 +849,15 @@ void Stabilizer::getTargetParameters ()
   ref_zmp = foot_origin_rot.transpose() * (ref_zmp - foot_origin_pos);
   ref_cog = foot_origin_rot.transpose() * (ref_cog - foot_origin_pos);
   new_refzmp = foot_origin_rot.transpose() * (new_refzmp - foot_origin_pos);
-#endif
+  if (contact_states != prev_contact_states) {
+    ref_cogvel = (foot_origin_rot.transpose() * prev_ref_foot_origin_rot) * ref_cogvel;
+  } else {
+    ref_cogvel = (ref_cog - prev_ref_cog)/dt;
+  }
+  prev_ref_foot_origin_rot = foot_origin_rot;
+#else
   ref_cogvel = (ref_cog - prev_ref_cog)/dt;
+#endif
   prev_ref_cog = ref_cog;
 }
 
