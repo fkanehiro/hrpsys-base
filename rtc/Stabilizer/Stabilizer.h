@@ -140,6 +140,7 @@ class Stabilizer
   RTC::TimedPoint3D m_zmp;
   RTC::TimedPoint3D m_basePos;
   RTC::TimedOrientation3D m_baseRpy;
+  RTC::TimedBooleanSeq m_contactStates;
   // for debug ouput
   RTC::TimedPoint3D m_originRefZmp, m_originRefCog, m_originRefCogVel, m_originNewZmp;
   RTC::TimedPoint3D m_originActZmp, m_originActCog, m_originActCogVel;
@@ -155,6 +156,7 @@ class Stabilizer
   RTC::InPort<RTC::TimedPoint3D> m_zmpRefIn;
   RTC::InPort<RTC::TimedPoint3D> m_basePosIn;
   RTC::InPort<RTC::TimedOrientation3D> m_baseRpyIn;
+  RTC::InPort<RTC::TimedBooleanSeq> m_contactStatesIn;
   
   // </rtc-template>
 
@@ -209,13 +211,15 @@ class Stabilizer
   hrp::dvector transition_joint_q, qorg, qrefv;
   std::vector<std::string> sensor_names;
   std::map<std::string, ee_trans> ee_map;
+  std::map<std::string, size_t> contact_states_index_map;
+  std::vector<bool> contact_states, prev_contact_states;
   double dt;
   int transition_count, loop;
   bool is_legged_robot, on_ground;
   hrp::Vector3 current_root_p, target_foot_p[2], target_root_p;
-  hrp::Matrix33 current_root_R, target_root_R, target_foot_R[2];
+  hrp::Matrix33 current_root_R, target_root_R, target_foot_R[2], prev_act_foot_origin_rot, prev_ref_foot_origin_rot;
   rats::coordinates target_foot_midcoords;
-  hrp::Vector3 ref_zmp, ref_cog, ref_cogvel, prev_ref_cog;
+  hrp::Vector3 ref_zmp, ref_cog, ref_cogvel, prev_ref_cog, prev_ref_zmp;
   hrp::Vector3 act_zmp, act_cog, act_cogvel, rel_act_zmp, prev_act_cog, prev_act_cogvel;
   double zmp_origin_off, transition_smooth_gain, prev_act_force_z;
   // TPCC

@@ -52,6 +52,7 @@ AutoBalancer::AutoBalancer(RTC::Manager* manager)
       m_baseRpyOut("baseRpy", m_baseRpy),
       m_baseTformOut("baseTformOut", m_baseTform),
       m_accRefOut("accRef", m_accRef),
+      m_contactStatesOut("contactStates", m_contactStates),
       m_AutoBalancerServicePort("AutoBalancerService"),
       // </rtc-template>
       move_base_gain(0.1),
@@ -84,6 +85,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     addOutPort("baseRpy", m_baseRpyOut);
     addOutPort("baseTformOut", m_baseTformOut);
     addOutPort("accRef", m_accRefOut);
+    addOutPort("contactStates", m_contactStatesOut);
   
     // Set service provider to Ports
     m_AutoBalancerServicePort.registerProvider("service0", "AutoBalancerService", m_service0);
@@ -189,7 +191,9 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
         ikp.insert(std::pair<std::string, ABCIKparam>(ee_name , tp));
         std::cerr << "abc limb[" << ee_name << "] " << ee_target << " " << ee_base << std::endl;
         std::cerr << "     offset_pos : " << tp.target2foot_offset_pos(0) << " " << tp.target2foot_offset_pos(1) << " " << tp.target2foot_offset_pos(2) << std::endl;
+        contact_states_index_map.insert(std::pair<std::string, size_t>(ee_name, i));
       }
+      m_contactStates.data.length(num);
     }
 
     // ref force port
@@ -349,6 +353,8 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
       prev_imu_sensor_vel = imu_sensor_vel;
     }
 
+    m_contactStatesOut.write();
+
     return RTC::RTC_OK;
 }
 
@@ -420,6 +426,23 @@ void AutoBalancer::getTargetParameters()
       ikp[gg->get_swing_leg()].target_p0 = sw_coords.pos;
       ikp[gg->get_swing_leg()].target_r0 = sw_coords.rot;
       gg->get_swing_support_mid_coords(tmp_fix_coords);
+      // TODO : assume biped
+      switch (gg->get_current_support_state()) {
+      case 0:
+        m_contactStates.data[contact_states_index_map[":rleg"]] = true;
+        m_contactStates.data[contact_states_index_map[":lleg"]] = true;
+        break;
+      case 1:
+        m_contactStates.data[contact_states_index_map[":rleg"]] = true;
+        m_contactStates.data[contact_states_index_map[":lleg"]] = false;
+        break;
+      case 2:
+        m_contactStates.data[contact_states_index_map[":rleg"]] = false;
+        m_contactStates.data[contact_states_index_map[":lleg"]] = true;
+        break;
+      default:
+        break;
+      }
     } else {
       tmp_fix_coords = fix_leg_coords;
     }

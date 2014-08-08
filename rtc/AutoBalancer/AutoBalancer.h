@@ -132,6 +132,8 @@ class AutoBalancer
   OutPort<TimedDoubleSeq> m_baseTformOut;
   TimedAcceleration3D m_accRef;
   OutPort<TimedAcceleration3D> m_accRefOut;
+  TimedBooleanSeq m_contactStates;
+  OutPort<TimedBooleanSeq> m_contactStatesOut;
   
   // </rtc-template>
 
@@ -196,6 +198,7 @@ class AutoBalancer
   int transition_count; // negative value when initing and positive value when deleting
   enum {MODE_IDLE, MODE_ABC, MODE_SYNC} control_mode, return_control_mode;
   std::map<std::string, ABCIKparam> ikp;
+  std::map<std::string, size_t> contact_states_index_map;
   hrp::dvector transition_joint_q, qorg, qrefv;
   hrp::Vector3 current_root_p, target_root_p;
   hrp::Matrix33 current_root_R, target_root_R;

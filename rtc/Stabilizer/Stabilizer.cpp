@@ -30,13 +30,13 @@ static const char* stabilizer_spec[] =
     "language",          "C++",
     "lang_type",         "compile",
     // Configuration variables
-    "conf.default.debugLevel", "1",
+    "conf.default.debugLevel", "0",
     ""
   };
 // </rtc-template>
 
 #define MAX_TRANSITION_COUNT (2/dt)
-//#define USE_IMU_STATEFEEDBACK
+//#define USE_EEFM_STABILIZER
 static double vlimit(double value, double llimit_value, double ulimit_value);
 static double switching_inpact_absorber(double force, double lower_th, double upper_th);
 
@@ -52,6 +52,7 @@ Stabilizer::Stabilizer(RTC::Manager* manager)
     m_StabilizerServicePort("StabilizerService"),
     m_basePosIn("basePosIn", m_basePos),
     m_baseRpyIn("baseRpyIn", m_baseRpy),
+    m_contactStatesIn("contactStates", m_contactStates),
     m_qRefOut("q", m_qRef),
     m_tauOut("tau", m_tau),
     m_zmpOut("zmp", m_zmp),
@@ -96,6 +97,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   addInPort("zmpRef", m_zmpRefIn);
   addInPort("basePosIn", m_basePosIn);
   addInPort("baseRpyIn", m_baseRpyIn);
+  addInPort("contactStates", m_contactStatesIn);
 
   // Set OutPort buffer
   addOutPort("q", m_qRefOut);
@@ -168,7 +170,9 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
       //                                                      m_robot->link(ee_target)));
       //ee_map.insert(std::pair<std::string, ee_trans>(ee_name , eet));
       ee_map.insert(std::pair<std::string, ee_trans>(ee_target , eet));
+      contact_states_index_map.insert(std::pair<std::string, size_t>(ee_name, i));
     }
+    m_contactStates.data.length(num);
   }
 
   // parameters for TPCC
@@ -228,6 +232,10 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   }
   total_mass = m_robot->totalMass();
   ref_zmp_aux = hrp::Vector3::Zero();
+  for (size_t i = 0; i < m_contactStates.data.length(); i++) {
+    contact_states.push_back(true);
+    prev_contact_states.push_back(true);
+  }
 
   // for debug output
   m_originRefZmp.data.x = m_originRefZmp.data.y = m_originRefZmp.data.z = 0.0;
@@ -336,6 +344,12 @@ RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
   if (m_baseRpyIn.isNew()){
     m_baseRpyIn.read();
   }
+  if (m_contactStatesIn.isNew()){
+    m_contactStatesIn.read();
+    for (size_t i = 0; i < m_contactStates.data.length(); i++) {
+      contact_states[i] = m_contactStates.data[i];
+    }
+  }
 
   if (is_legged_robot) {
     getCurrentParameters();
@@ -352,8 +366,11 @@ RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
     case MODE_ST:
       // if (DEBUGP2) std::cerr << "ST"<< std::endl;
       //calcRUNST();
+#ifdef USE_EEFM_STABILIZER
+      calcEEForceMomentControl();
+#else
       calcTPCC();
-      //calcEEForceMomentControl();
+#endif
       if ( transition_count == 0 && !on_ground ) control_mode = MODE_SYNC_TO_AIR;
       break;
     case MODE_SYNC_TO_IDLE:
@@ -541,14 +558,23 @@ void Stabilizer::calcFootOriginCoords (hrp::Vector3& foot_origin_pos, hrp::Matri
     xv2.normalize();
     leg_c[i].rot = OrientRotationMatrix(leg_c[i].rot, xv1, xv2);
   }
-  rats::mid_coords(tmpc, 0.5, leg_c[0], leg_c[1]);
-  foot_origin_pos = tmpc.pos;
-  foot_origin_rot = tmpc.rot;
+  if (contact_states[contact_states_index_map[":rleg"]] &&
+      contact_states[contact_states_index_map[":lleg"]]) {
+    rats::mid_coords(tmpc, 0.5, leg_c[0], leg_c[1]);
+    foot_origin_pos = tmpc.pos;
+    foot_origin_rot = tmpc.rot;
+  } else if (contact_states[contact_states_index_map[":rleg"]]) {
+    foot_origin_pos = leg_c[0].pos;
+    foot_origin_rot = leg_c[0].rot;
+  } else {
+    foot_origin_pos = leg_c[1].pos;
+    foot_origin_rot = leg_c[1].rot;
+  }
 }
 
 void Stabilizer::getActualParameters ()
 {
-#ifdef USE_IMU_STATEFEEDBACK
+#ifdef USE_EEFM_STABILIZER
   // update by current joint angles
   for ( int i = 0; i < m_robot->numJoints(); i++ ){
     m_robot->joint(i)->q = m_qCurrent.data[i];
@@ -576,10 +602,9 @@ void Stabilizer::getActualParameters ()
   // cog
   act_cog = m_robot->calcCM();
   // zmp
-  //bool on_ground = false;
   on_ground = false;
   if (is_legged_robot && ( m_force[0].data.length() > 0 && m_force[1].data.length() > 0 ))
-#ifdef USE_IMU_STATEFEEDBACK
+#ifdef USE_EEFM_STABILIZER
     on_ground = calcZMP(act_zmp, zmp_origin_off+foot_origin_pos(2));
 #else
     on_ground = calcZMP(act_zmp, ref_zmp(2));
@@ -587,12 +612,17 @@ void Stabilizer::getActualParameters ()
 
   // convert absolute (in st) -> root-link relative
   rel_act_zmp = m_robot->rootLink()->R.transpose() * (act_zmp - m_robot->rootLink()->p);
-#ifdef USE_IMU_STATEFEEDBACK
+#ifdef USE_EEFM_STABILIZER
   // world (current-tmp) => local (foot_origin)
   act_zmp = foot_origin_rot.transpose() * (act_zmp - foot_origin_pos);
   act_cog = foot_origin_rot.transpose() * (act_cog - foot_origin_pos);
   //act_cogvel = foot_origin_rot.transpose() * act_cogvel;
-  act_cogvel = (act_cog - prev_act_cog)/dt;
+  if (contact_states != prev_contact_states) {
+    act_cogvel = (foot_origin_rot.transpose() * prev_act_foot_origin_rot) * act_cogvel;
+  } else {
+    act_cogvel = (act_cog - prev_act_cog)/dt;
+  }
+  prev_act_foot_origin_rot = foot_origin_rot;
   //act_cogvel = 0.8 * prev_act_cogvel + 0.2 * act_cogvel;
   act_cogvel = 0.9 * prev_act_cogvel + 0.1 * act_cogvel;
   prev_act_cog = act_cog;
@@ -759,6 +789,7 @@ void Stabilizer::getActualParameters ()
     m_robot->rootLink()->R = current_root_R;
     m_robot->calcForwardKinematics();
   }
+  copy (contact_states.begin(), contact_states.end(), prev_contact_states.begin());
 }
 
 void Stabilizer::getTargetParameters ()
@@ -792,7 +823,7 @@ void Stabilizer::getTargetParameters ()
   m_robot->rootLink()->R = target_root_R;
   m_robot->calcForwardKinematics();
   ref_zmp = hrp::Vector3(m_zmpRef.data.x, m_zmpRef.data.y, m_zmpRef.data.z);
-#ifdef USE_IMU_STATEFEEDBACK
+#ifdef USE_EEFM_STABILIZER
   // apply inverse system
   hrp::Vector3 tmp_ref_zmp = ref_zmp + eefm_zmp_delay_time_const[0] * (ref_zmp - prev_ref_zmp) / dt;
   prev_ref_zmp = ref_zmp;
@@ -807,7 +838,7 @@ void Stabilizer::getTargetParameters ()
       target_foot_R[i] = sen->link->R * ee_map[sen->link->name].localR;
     }
   }
-#ifdef USE_IMU_STATEFEEDBACK
+#ifdef USE_EEFM_STABILIZER
   //
   hrp::Vector3 foot_origin_pos;
   hrp::Matrix33 foot_origin_rot;
@@ -820,8 +851,15 @@ void Stabilizer::getTargetParameters ()
   ref_zmp = foot_origin_rot.transpose() * (ref_zmp - foot_origin_pos);
   ref_cog = foot_origin_rot.transpose() * (ref_cog - foot_origin_pos);
   new_refzmp = foot_origin_rot.transpose() * (new_refzmp - foot_origin_pos);
-#endif
+  if (contact_states != prev_contact_states) {
+    ref_cogvel = (foot_origin_rot.transpose() * prev_ref_foot_origin_rot) * ref_cogvel;
+  } else {
+    ref_cogvel = (ref_cog - prev_ref_cog)/dt;
+  }
+  prev_ref_foot_origin_rot = foot_origin_rot;
+#else
   ref_cogvel = (ref_cog - prev_ref_cog)/dt;
+#endif
   prev_ref_cog = ref_cog;
 }
 
@@ -833,7 +871,7 @@ void Stabilizer::calcTPCC() {
       // Choi's feedback low
       hrp::Vector3 cog = m_robot->calcCM();
       hrp::Vector3 newcog = hrp::Vector3::Zero();
-#ifdef USE_IMU_STATEFEEDBACK
+#ifdef USE_EEFM_STABILIZER
       hrp::Vector3 foot_origin_pos;
       hrp::Matrix33 foot_origin_rot;
       calcFootOriginCoords(foot_origin_pos, foot_origin_rot);
@@ -1189,11 +1227,16 @@ void Stabilizer::sync_2_st ()
   pangx_ref = pangy_ref = pangx = pangy = 0;
   rdx = rdy = rx = ry = 0;
   d_rpy[0] = d_rpy[1] = 0;
-  transition_count = -MAX_TRANSITION_COUNT;
   pdr = hrp::Vector3::Zero();
   zctrl = f_zctrl[0] = f_zctrl[1] = 0.0;
   d_foot_rpy[0] = d_foot_rpy[1] = hrp::Vector3::Zero();
-  control_mode = MODE_ST;
+  if (on_ground) {
+    transition_count = -MAX_TRANSITION_COUNT;
+    control_mode = MODE_ST;
+  } else {
+    transition_count = 0;
+    control_mode = MODE_AIR;
+  }
 }
 
 void Stabilizer::sync_2_idle ()
