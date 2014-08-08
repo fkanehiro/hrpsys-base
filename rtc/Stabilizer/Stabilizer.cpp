@@ -30,13 +30,13 @@ static const char* stabilizer_spec[] =
     "language",          "C++",
     "lang_type",         "compile",
     // Configuration variables
-    "conf.default.debugLevel", "1",
+    "conf.default.debugLevel", "0",
     ""
   };
 // </rtc-template>
 
 #define MAX_TRANSITION_COUNT (2/dt)
-//#define USE_IMU_STATEFEEDBACK
+//#define USE_EEFM_STABILIZER
 static double vlimit(double value, double llimit_value, double ulimit_value);
 static double switching_inpact_absorber(double force, double lower_th, double upper_th);
 
@@ -366,8 +366,11 @@ RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
     case MODE_ST:
       // if (DEBUGP2) std::cerr << "ST"<< std::endl;
       //calcRUNST();
+#ifdef USE_EEFM_STABILIZER
+      calcEEForceMomentControl();
+#else
       calcTPCC();
-      //calcEEForceMomentControl();
+#endif
       if ( transition_count == 0 && !on_ground ) control_mode = MODE_SYNC_TO_AIR;
       break;
     case MODE_SYNC_TO_IDLE:
@@ -571,7 +574,7 @@ void Stabilizer::calcFootOriginCoords (hrp::Vector3& foot_origin_pos, hrp::Matri
 
 void Stabilizer::getActualParameters ()
 {
-#ifdef USE_IMU_STATEFEEDBACK
+#ifdef USE_EEFM_STABILIZER
   // update by current joint angles
   for ( int i = 0; i < m_robot->numJoints(); i++ ){
     m_robot->joint(i)->q = m_qCurrent.data[i];
@@ -602,7 +605,7 @@ void Stabilizer::getActualParameters ()
   //bool on_ground = false;
   on_ground = false;
   if (is_legged_robot && ( m_force[0].data.length() > 0 && m_force[1].data.length() > 0 ))
-#ifdef USE_IMU_STATEFEEDBACK
+#ifdef USE_EEFM_STABILIZER
     on_ground = calcZMP(act_zmp, zmp_origin_off+foot_origin_pos(2));
 #else
     on_ground = calcZMP(act_zmp, ref_zmp(2));
@@ -610,7 +613,7 @@ void Stabilizer::getActualParameters ()
 
   // convert absolute (in st) -> root-link relative
   rel_act_zmp = m_robot->rootLink()->R.transpose() * (act_zmp - m_robot->rootLink()->p);
-#ifdef USE_IMU_STATEFEEDBACK
+#ifdef USE_EEFM_STABILIZER
   // world (current-tmp) => local (foot_origin)
   act_zmp = foot_origin_rot.transpose() * (act_zmp - foot_origin_pos);
   act_cog = foot_origin_rot.transpose() * (act_cog - foot_origin_pos);
@@ -821,7 +824,7 @@ void Stabilizer::getTargetParameters ()
   m_robot->rootLink()->R = target_root_R;
   m_robot->calcForwardKinematics();
   ref_zmp = hrp::Vector3(m_zmpRef.data.x, m_zmpRef.data.y, m_zmpRef.data.z);
-#ifdef USE_IMU_STATEFEEDBACK
+#ifdef USE_EEFM_STABILIZER
   // apply inverse system
   hrp::Vector3 tmp_ref_zmp = ref_zmp + eefm_zmp_delay_time_const[0] * (ref_zmp - prev_ref_zmp) / dt;
   prev_ref_zmp = ref_zmp;
@@ -836,7 +839,7 @@ void Stabilizer::getTargetParameters ()
       target_foot_R[i] = sen->link->R * ee_map[sen->link->name].localR;
     }
   }
-#ifdef USE_IMU_STATEFEEDBACK
+#ifdef USE_EEFM_STABILIZER
   //
   hrp::Vector3 foot_origin_pos;
   hrp::Matrix33 foot_origin_rot;
@@ -869,7 +872,7 @@ void Stabilizer::calcTPCC() {
       // Choi's feedback low
       hrp::Vector3 cog = m_robot->calcCM();
       hrp::Vector3 newcog = hrp::Vector3::Zero();
-#ifdef USE_IMU_STATEFEEDBACK
+#ifdef USE_EEFM_STABILIZER
       hrp::Vector3 foot_origin_pos;
       hrp::Matrix33 foot_origin_rot;
       calcFootOriginCoords(foot_origin_pos, foot_origin_rot);
