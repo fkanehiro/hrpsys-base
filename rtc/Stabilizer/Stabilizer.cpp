@@ -602,7 +602,6 @@ void Stabilizer::getActualParameters ()
   // cog
   act_cog = m_robot->calcCM();
   // zmp
-  //bool on_ground = false;
   on_ground = false;
   if (is_legged_robot && ( m_force[0].data.length() > 0 && m_force[1].data.length() > 0 ))
 #ifdef USE_EEFM_STABILIZER
@@ -1228,11 +1227,16 @@ void Stabilizer::sync_2_st ()
   pangx_ref = pangy_ref = pangx = pangy = 0;
   rdx = rdy = rx = ry = 0;
   d_rpy[0] = d_rpy[1] = 0;
-  transition_count = -MAX_TRANSITION_COUNT;
   pdr = hrp::Vector3::Zero();
   zctrl = f_zctrl[0] = f_zctrl[1] = 0.0;
   d_foot_rpy[0] = d_foot_rpy[1] = hrp::Vector3::Zero();
-  control_mode = MODE_ST;
+  if (on_ground) {
+    transition_count = -MAX_TRANSITION_COUNT;
+    control_mode = MODE_ST;
+  } else {
+    transition_count = 0;
+    control_mode = MODE_AIR;
+  }
 }
 
 void Stabilizer::sync_2_idle ()
