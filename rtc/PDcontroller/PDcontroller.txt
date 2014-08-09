@@ -1,0 +1,53 @@
+/**
+
+\page PDcontroller
+
+\section introduction Overview
+
+This component computes joint velocities and accelerations from joint positions
+
+<table>
+<tr><th>implementation_id</th><td>PDcontroller</td></tr>
+<tr><th>category</th><td>example</td></tr>
+</table>
+
+\section dataports Data Ports
+
+\subsection inports Input Ports
+
+<table>
+<tr><th>port name</th><th>data type</th><th>unit</th><th>description</th></tr>
+<tr><td>qIn</td><td>RTC::TimedDoubleSeq</td><td>[rad] or [m]</td><td>joint positions</td></tr>
+</table>
+
+\subsection outports Output Ports
+
+<table>
+<tr><th>port name</th><th>data type</th><th>unit</th><th>description</th></tr>
+<tr><td>qOut</td><td>RTC::TimedDoubleSeq</td><td>[rad] or [m]</td><td>joint positions</td></tr>
+<tr><td>dqOut</td><td>RTC::TimedDoubleSeq</td><td>[rad/s] or [m/s]</td><td>joint velocities</td></tr>
+<tr><td>ddqOut</td><td>RTC::TimedDoubleSeq</td><td>[rad/s^2] or [m/s^2]</td><td>joint accelerations</td></tr>
+</table>
+
+\section serviceports Service Ports
+
+\subsection provider Service Providers
+
+N/A
+
+\subsection consumer Service Consumers
+
+N/A
+
+\section configuration Configuration Variables
+
+<table>
+<tr><th>name</th><th>type</th><th>unit</th><th>default value</th><th>description</th></tr>
+<tr><td>dt</td><td>double</td><td></td><td>0.005</td><td>sampling time</td></tr>
+</table>
+
+\section conf Configuration File
+
+N/A
+
+ */
