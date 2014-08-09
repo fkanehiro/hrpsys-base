@@ -4,3 +4,5 @@ dt: @CONTROLLER_TIME@
 abc_leg_offset: 0,0.09,0
 abc_stride_parameter: 0.15,0.05,10
 end_effectors: :rarm,RARM_WRIST_P,CHEST,0.0,-5.684342e-17,-0.12,9.813078e-18,1.0,0.0,1.5708, :larm,LARM_WRIST_P,CHEST,0.0,5.684342e-17,-0.12,-9.813078e-18,1.0,0.0,1.5708, :rleg,RLEG_ANKLE_R,WAIST,0.0,0.0,-0.07,0.0,0.0,0.0,0.0, :lleg,LLEG_ANKLE_R,WAIST,0.0,0.0,-0.07,0.0,0.0,0.0,0.0,
+
+pdgains_sim.file_name: @CMAKE_INSTALL_PREFIX@/share/hrpsys/samples/SampleRobot/SampleRobot.PDgain.dat

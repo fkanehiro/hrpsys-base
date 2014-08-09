@@ -215,6 +215,9 @@ class HrpsysConfigurator:
     # HGController(Simulation)
     hgc = None
 
+    # PDController(Simulation)
+    pdc = None
+
     # flag isSimulation?
     simulation_mode = None
 
@@ -237,14 +240,20 @@ class HrpsysConfigurator:
                 connectPorts(tmp_contollers[i].port("q"),
                              tmp_contollers[i + 1].port("qRef"))
             if self.simulation_mode:
-                connectPorts(tmp_contollers[-1].port("q"), self.hgc.port("qIn"))
-                connectPorts(self.hgc.port("qOut"), self.rh.port("qRef"))
+                if self.pdc:
+                    connectPorts(tmp_contollers[-1].port("q"), self.pdc.port("angleRef"))
+                else:
+                    connectPorts(tmp_contollers[-1].port("q"), self.hgc.port("qIn"))
+                    connectPorts(self.hgc.port("qOut"), self.rh.port("qRef"))
             else:
                 connectPorts(tmp_contollers[-1].port("q"), self.rh.port("qRef"))
         else:
             if self.simulation_mode:
-                connectPorts(self.sh.port("qOut"), self.hgc.port("qIn"))
-                connectPorts(self.hgc.port("qOut"), self.rh.port("qRef"))
+                if self.pdc:
+                    connectPorts(self.sh.port("qOut"), self.pdc.port("angleRef"))
+                else:
+                    connectPorts(self.sh.port("qOut"), self.hgc.port("qIn"))
+                    connectPorts(self.hgc.port("qOut"), self.rh.port("qRef"))
             else:
                 connectPorts(self.sh.port("qOut"), self.rh.port("qRef"))
 
@@ -616,6 +625,7 @@ class HrpsysConfigurator:
         # distinguish real robot from simulation by using "servoState" port
         if rtm.findPort(self.rh.ref, "servoState") == None:
             self.hgc = findRTC("HGcontroller0")
+            self.pdc = findRTC("PDcontroller0")
             self.simulation_mode = True
         else:
             self.simulation_mode = False
