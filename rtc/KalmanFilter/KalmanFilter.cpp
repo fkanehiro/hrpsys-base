@@ -262,16 +262,9 @@ RTC::ReturnCode_t KalmanFilter::onExecute(RTC::UniqueId ec_id)
       p_filter.update(m_rate.data.avy, m_rpyRaw.data.p);
       y_filter.update(m_rate.data.avz, m_rpyRaw.data.y);
 
-      Eigen::AngleAxis<double> aaZ(y_filter.getx()[0], Eigen::Vector3d::UnitZ());
-      Eigen::AngleAxis<double> aaY(p_filter.getx()[0], Eigen::Vector3d::UnitY());
-      Eigen::AngleAxis<double> aaX(r_filter.getx()[0], Eigen::Vector3d::UnitX());
-      Eigen::Quaternion<double> q = aaZ * aaY * aaX;
-      hrp::Matrix33 imaginaryRotationMatrix = q.toRotationMatrix();
-      hrp::Matrix33 realRotationMatrix = imaginaryRotationMatrix * m_sensorR; // inverse transform to real data
-      hrp::Vector3 euler = realRotationMatrix.eulerAngles(2,1,0);
-      m_rpy.data.y = euler(0);
-      m_rpy.data.p = euler(1);
-      m_rpy.data.r = euler(2);
+      m_rpy.data.y = y_filter.getx()[0];
+      m_rpy.data.p = p_filter.getx()[0];
+      m_rpy.data.r = r_filter.getx()[0];
 #if 0
       std::cout << m_acc.tm.sec + m_acc.tm.nsec/1000000000.0 << " "
                 << m_rpyRaw.data.r << " "
