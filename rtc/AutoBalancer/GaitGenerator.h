@@ -26,10 +26,10 @@ namespace rats
       step_node (const leg_type _l_r, const coordinates& _worldcoords)
         : l_r(_l_r), worldcoords(_worldcoords) {};
       step_node (const std::string& _l_r, const coordinates& _worldcoords)
-        : l_r((_l_r == ":rleg") ? WC_RLEG : WC_LLEG), worldcoords(_worldcoords) {};
+        : l_r((_l_r == "rleg") ? WC_RLEG : WC_LLEG), worldcoords(_worldcoords) {};
       void print_eus_footstep (std::ostream& strm, const bool use_newline = true) const
       {
-        strm << "(cons " << (l_r == WC_RLEG ? ":rleg " : ":lleg ");
+        strm << "(cons " << (l_r == WC_RLEG ? "rleg " : "lleg ");
         worldcoords.print_eus_coordinates(strm, false);
         strm << ")";
         if (use_newline) strm << std::endl;
@@ -73,7 +73,7 @@ namespace rats
     public:
 #endif
       std::vector<hrp::Vector3> refzmp_cur_list;
-      std::vector<hrp::Vector3> default_zmp_offsets; /* (list :rleg :lleg) */
+      std::vector<hrp::Vector3> default_zmp_offsets; /* (list rleg lleg) */
       size_t fs_index, refzmp_index, refzmp_count;
       void calc_current_refzmp (hrp::Vector3& ret, const double default_double_support_ratio, const size_t one_step_len) const;
 #ifndef HAVE_MAIN
@@ -328,7 +328,7 @@ namespace rats
     bool proc_one_tick ();
     void append_footstep_node (const std::string& _leg, const coordinates& _fs)
     {
-      footstep_node_list.push_back(step_node((_leg == ":rleg") ? WC_RLEG : WC_LLEG, _fs));
+      footstep_node_list.push_back(step_node((_leg == "rleg") ? WC_RLEG : WC_LLEG, _fs));
     };
     void clear_footstep_node_list () { footstep_node_list.clear(); };
     void go_pos_param_2_footstep_list (const double goal_x, const double goal_y, const double goal_theta, /* [mm] [mm] [deg] */
@@ -385,10 +385,10 @@ namespace rats
     /* parameter getting */
     const hrp::Vector3& get_cog () { return cog; };
     const hrp::Vector3& get_refzmp () { return refzmp;};
-    const std::string get_footstep_front_leg () const { return footstep_node_list[0].l_r == WC_RLEG ? ":rleg" : ":lleg"; };
-    const std::string get_footstep_back_leg () const { return footstep_node_list.back().l_r == WC_RLEG ? ":rleg" : ":lleg"; };
-    const std::string get_support_leg() const { return lcg.get_support_leg() == WC_RLEG ? ":rleg" : ":lleg";};
-    const std::string get_swing_leg() const { return lcg.get_support_leg() == WC_RLEG ? ":lleg" : ":rleg";};
+    const std::string get_footstep_front_leg () const { return footstep_node_list[0].l_r == WC_RLEG ? "rleg" : "lleg"; };
+    const std::string get_footstep_back_leg () const { return footstep_node_list.back().l_r == WC_RLEG ? "rleg" : "lleg"; };
+    const std::string get_support_leg() const { return lcg.get_support_leg() == WC_RLEG ? "rleg" : "lleg";};
+    const std::string get_swing_leg() const { return lcg.get_support_leg() == WC_RLEG ? "lleg" : "rleg";};
     const coordinates& get_swing_leg_coords() const { return lcg.get_swing_leg_coords(); };
     const coordinates& get_support_leg_coords() const { return lcg.get_support_leg_coords(); };
     const coordinates& get_swing_leg_src_coords() const { return lcg.get_swing_leg_src_coords(); };

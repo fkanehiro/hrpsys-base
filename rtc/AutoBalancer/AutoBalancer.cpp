@@ -165,7 +165,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     fix_leg_coords = coordinates();
 
     // setting from conf file
-    // :rleg,TARGET_LINK,BASE_LINK
+    // rleg,TARGET_LINK,BASE_LINK
     coil::vstring end_effectors_str = coil::split(prop["end_effectors"], ",");
     size_t prop_num = 10;
     if (end_effectors_str.size() > 0) {
@@ -224,7 +224,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     //use_force = MODE_NO_FORCE;
     use_force = MODE_REF_FORCE;
 
-    if (ikp.find(":rleg") != ikp.end() && ikp.find(":lleg") != ikp.end()) {
+    if (ikp.find("rleg") != ikp.end() && ikp.find("lleg") != ikp.end()) {
       is_legged_robot = true;
     } else {
       is_legged_robot = false;
@@ -298,7 +298,7 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
         solveLimbIK();
       } else {
         for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
-          if (it->first == ":rleg" || it->first == ":lleg") {
+          if (it->first == "rleg" || it->first == "lleg") {
             it->second.current_p0 = m_robot->link(it->second.target_name)->p;
             it->second.current_r0 = m_robot->link(it->second.target_name)->R;
           }
@@ -429,16 +429,16 @@ void AutoBalancer::getTargetParameters()
       // TODO : assume biped
       switch (gg->get_current_support_state()) {
       case 0:
-        m_contactStates.data[contact_states_index_map[":rleg"]] = true;
-        m_contactStates.data[contact_states_index_map[":lleg"]] = true;
+        m_contactStates.data[contact_states_index_map["rleg"]] = true;
+        m_contactStates.data[contact_states_index_map["lleg"]] = true;
         break;
       case 1:
-        m_contactStates.data[contact_states_index_map[":rleg"]] = true;
-        m_contactStates.data[contact_states_index_map[":lleg"]] = false;
+        m_contactStates.data[contact_states_index_map["rleg"]] = true;
+        m_contactStates.data[contact_states_index_map["lleg"]] = false;
         break;
       case 2:
-        m_contactStates.data[contact_states_index_map[":rleg"]] = false;
-        m_contactStates.data[contact_states_index_map[":lleg"]] = true;
+        m_contactStates.data[contact_states_index_map["rleg"]] = false;
+        m_contactStates.data[contact_states_index_map["lleg"]] = true;
         break;
       default:
         break;
@@ -462,10 +462,10 @@ void AutoBalancer::getTargetParameters()
         it->second.target_r0 = m_robot->link(it->second.target_name)->R;
       }
     }
-    ikp[":rleg"].getRobotEndCoords(rc, m_robot);
-    ikp[":lleg"].getRobotEndCoords(lc, m_robot);
-    rc.translate(default_zmp_offsets[0]); /* :rleg */
-    lc.translate(default_zmp_offsets[1]); /* :lleg */
+    ikp["rleg"].getRobotEndCoords(rc, m_robot);
+    ikp["lleg"].getRobotEndCoords(lc, m_robot);
+    rc.translate(default_zmp_offsets[0]); /* rleg */
+    lc.translate(default_zmp_offsets[1]); /* lleg */
     if (gg_is_walking) {
       ref_cog = gg->get_cog();
     } else {
@@ -496,8 +496,8 @@ void AutoBalancer::fixLegToCoords (const std::string& leg, const coordinates& co
 {
   coordinates tar, ref, delta, tmp;
   coordinates rleg_endcoords, lleg_endcoords;
-  ikp[":rleg"].getRobotEndCoords(rleg_endcoords, m_robot);
-  ikp[":lleg"].getRobotEndCoords(lleg_endcoords, m_robot);
+  ikp["rleg"].getRobotEndCoords(rleg_endcoords, m_robot);
+  ikp["lleg"].getRobotEndCoords(lleg_endcoords, m_robot);
   mid_coords(tar, 0.5, rleg_endcoords , lleg_endcoords);
   tmp = coords;
   ref = coordinates(m_robot->rootLink()->p, m_robot->rootLink()->R);
@@ -627,13 +627,13 @@ void AutoBalancer::startWalking ()
     return_control_mode = control_mode;
     OpenHRP::AutoBalancerService::StrSequence fix_limbs;
     fix_limbs.length(2);
-    fix_limbs[0] = ":rleg";
-    fix_limbs[1] = ":lleg";
+    fix_limbs[0] = "rleg";
+    fix_limbs[1] = "lleg";
     startABCparam(fix_limbs);
     waitABCTransition();
   }
   hrp::Vector3 cog(m_robot->calcCM());
-  std::string init_support_leg (gg->get_footstep_front_leg() == ":rleg" ? ":lleg" : ":rleg");
+  std::string init_support_leg (gg->get_footstep_front_leg() == "rleg" ? "lleg" : "rleg");
   std::string init_swing_leg (gg->get_footstep_front_leg());
   coordinates spc, swc;
   gg->set_default_zmp_offsets(default_zmp_offsets);
@@ -653,8 +653,8 @@ void AutoBalancer::stopWalking ()
   } else {
     /* overwrite sequencer's angle-vector when finishing steps */
     coordinates rleg_endcoords, lleg_endcoords;
-    ikp[":rleg"].getTargetEndCoords(rleg_endcoords);
-    ikp[":lleg"].getTargetEndCoords(lleg_endcoords);
+    ikp["rleg"].getTargetEndCoords(rleg_endcoords);
+    ikp["lleg"].getTargetEndCoords(lleg_endcoords);
     mid_coords(fix_leg_coords, 0.5, rleg_endcoords, lleg_endcoords);
     fixLegToCoords(":both", fix_leg_coords);
     gg->clear_footstep_node_list();
@@ -696,8 +696,8 @@ bool AutoBalancer::goPos(const double& x, const double& y, const double& th)
 {
   coordinates foot_midcoords;
   coordinates rleg_endcoords, lleg_endcoords;
-  ikp[":rleg"].getTargetEndCoords(rleg_endcoords);
-  ikp[":lleg"].getTargetEndCoords(lleg_endcoords);
+  ikp["rleg"].getTargetEndCoords(rleg_endcoords);
+  ikp["lleg"].getTargetEndCoords(lleg_endcoords);
   mid_coords(foot_midcoords, 0.5, rleg_endcoords, lleg_endcoords);
   gg->go_pos_param_2_footstep_list(x, y, th, foot_midcoords);
   gg->print_footstep_list();
@@ -712,8 +712,8 @@ bool AutoBalancer::goVelocity(const double& vx, const double& vy, const double& 
   } else {
     coordinates foot_midcoords;
     coordinates rleg_endcoords, lleg_endcoords;
-    ikp[":rleg"].getTargetEndCoords(rleg_endcoords);
-    ikp[":lleg"].getTargetEndCoords(lleg_endcoords);
+    ikp["rleg"].getTargetEndCoords(rleg_endcoords);
+    ikp["lleg"].getTargetEndCoords(lleg_endcoords);
     mid_coords(foot_midcoords, 0.5, rleg_endcoords, lleg_endcoords);
     gg->initialize_velocity_mode(foot_midcoords, vx, vy, vth);
     startWalking();
@@ -739,7 +739,7 @@ bool AutoBalancer::setFootSteps(const OpenHRP::AutoBalancerService::FootstepSequ
   gg->clear_footstep_node_list();
   for (size_t i = 0; i < fs.length(); i++) {
     std::string leg(fs[i].leg);
-    if (leg == ":rleg" || leg == ":lleg") {
+    if (leg == "rleg" || leg == "lleg") {
       memcpy(tmpfs.pos.data(), fs[i].pos, sizeof(double)*3);
       tmpfs.rot = (Eigen::Quaternion<double>(fs[i].rot[0], fs[i].rot[1], fs[i].rot[2], fs[i].rot[3])).normalized().toRotationMatrix(); // rtc: (x, y, z, w) but eigen: (w, x, y, z)
       initial_input_coords.transformation(fstrans, tmpfs);
@@ -836,8 +836,8 @@ void AutoBalancer::copyRatscoords2Footstep(OpenHRP::AutoBalancerService::Footste
 bool AutoBalancer::getFootstepParam(OpenHRP::AutoBalancerService::FootstepParam& i_param)
 {
   coordinates rleg_endcoords, lleg_endcoords;
-  ikp[":rleg"].getCurrentEndCoords(rleg_endcoords);
-  ikp[":lleg"].getCurrentEndCoords(lleg_endcoords);
+  ikp["rleg"].getCurrentEndCoords(rleg_endcoords);
+  ikp["lleg"].getCurrentEndCoords(lleg_endcoords);
   copyRatscoords2Footstep(i_param.rleg_coords, rleg_endcoords);
   copyRatscoords2Footstep(i_param.lleg_coords, lleg_endcoords);
   copyRatscoords2Footstep(i_param.support_leg_coords, gg->get_support_leg_coords());
@@ -845,7 +845,7 @@ bool AutoBalancer::getFootstepParam(OpenHRP::AutoBalancerService::FootstepParam&
   copyRatscoords2Footstep(i_param.swing_leg_src_coords, gg->get_swing_leg_src_coords());
   copyRatscoords2Footstep(i_param.swing_leg_dst_coords, gg->get_swing_leg_dst_coords());
   copyRatscoords2Footstep(i_param.dst_foot_midcoords, gg->get_dst_foot_midcoords());
-  if (gg->get_support_leg() == ":rleg") {
+  if (gg->get_support_leg() == "rleg") {
     i_param.support_leg = OpenHRP::AutoBalancerService::RLEG;
   } else {
     i_param.support_leg = OpenHRP::AutoBalancerService::LLEG;

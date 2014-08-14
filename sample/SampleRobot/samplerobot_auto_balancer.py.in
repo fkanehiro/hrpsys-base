@@ -29,7 +29,7 @@ def demo():
 
     # sample for AutoBalancer mode
     #   1. AutoBalancer mode by fixing feet
-    hcf.abc_svc.startAutoBalancer([":rleg", ":lleg"]);
+    hcf.abc_svc.startAutoBalancer(["rleg", "lleg"]);
     hcf.seq_svc.setJointAngles(arm_front_pose, 1.0)
     hcf.seq_svc.waitInterpolation()
     hcf.seq_svc.setJointAngles(initial_pose, 1.0)
@@ -37,7 +37,7 @@ def demo():
     hcf.abc_svc.stopAutoBalancer();
     print "Start and Stop AutoBalancer by fixing feet=>OK"
     #   2. AutoBalancer mode by fixing hands and feet
-    hcf.abc_svc.startAutoBalancer([":rleg", ":lleg", ":rarm", ":larm"])
+    hcf.abc_svc.startAutoBalancer(["rleg", "lleg", "rarm", "larm"])
     hcf.seq_svc.setJointAngles(arm_front_pose, 1.0)
     hcf.seq_svc.waitInterpolation()
     hcf.seq_svc.setJointAngles(initial_pose, 1.0)
@@ -53,7 +53,7 @@ def demo():
     hcf.abc_svc.setAutoBalancerParam(ret[1])
     if ret[0] and ret[1].default_zmp_offsets == [[0.1,0,0], [0.1,0,0]]:
         print "setAutoBalancerParam() => OK"
-    hcf.abc_svc.startAutoBalancer([":rleg", ":lleg"]);
+    hcf.abc_svc.startAutoBalancer(["rleg", "lleg"]);
     hcf.abc_svc.stopAutoBalancer();
     ret[1].default_zmp_offsets = [[0,0,0], [0,0,0]]
     hcf.abc_svc.setAutoBalancerParam(ret[1])
@@ -69,9 +69,9 @@ def demo():
     hcf.abc_svc.goStop()
     print "goVelocity()=>OK"
     #   3. setFootSteps
-    hcf.abc_svc.setFootSteps([OpenHRP.AutoBalancerService.Footstep([0,-0.09,0], [1,0,0,0], ":rleg"), OpenHRP.AutoBalancerService.Footstep([0,0.09,0], [1,0,0,0], ":lleg")])
+    hcf.abc_svc.setFootSteps([OpenHRP.AutoBalancerService.Footstep([0,-0.09,0], [1,0,0,0], "rleg"), OpenHRP.AutoBalancerService.Footstep([0,0.09,0], [1,0,0,0], "lleg")])
     hcf.abc_svc.waitFootSteps()
-    hcf.abc_svc.setFootSteps([OpenHRP.AutoBalancerService.Footstep([0,-0.09,0], [1,0,0,0], ":rleg"), OpenHRP.AutoBalancerService.Footstep([0.15,0.09,0], [1,0,0,0], ":lleg"), OpenHRP.AutoBalancerService.Footstep([0.3,-0.09,0], [1,0,0,0], ":rleg"), OpenHRP.AutoBalancerService.Footstep([0.3,0.09,0], [1,0,0,0], ":lleg")])
+    hcf.abc_svc.setFootSteps([OpenHRP.AutoBalancerService.Footstep([0,-0.09,0], [1,0,0,0], "rleg"), OpenHRP.AutoBalancerService.Footstep([0.15,0.09,0], [1,0,0,0], "lleg"), OpenHRP.AutoBalancerService.Footstep([0.3,-0.09,0], [1,0,0,0], "rleg"), OpenHRP.AutoBalancerService.Footstep([0.3,0.09,0], [1,0,0,0], "lleg")])
     hcf.abc_svc.waitFootSteps()
     print "setFootSteps()=>OK"
     #   4. getGaitGeneratorParam
@@ -93,18 +93,18 @@ def demo():
     hcf.abc_svc.goStop()
     hcf.abc_svc.setGaitGeneratorParam(ret1[1]) # revert parameter
     #  6. non-default stride
-    hcf.abc_svc.startAutoBalancer([":rleg", ":lleg"]);
-    hcf.abc_svc.setFootSteps([OpenHRP.AutoBalancerService.Footstep([0,-0.09,0], [1,0,0,0], ":rleg"), OpenHRP.AutoBalancerService.Footstep([0.15,0.09,0], [1,0,0,0], ":lleg")])
+    hcf.abc_svc.startAutoBalancer(["rleg", "lleg"]);
+    hcf.abc_svc.setFootSteps([OpenHRP.AutoBalancerService.Footstep([0,-0.09,0], [1,0,0,0], "rleg"), OpenHRP.AutoBalancerService.Footstep([0.15,0.09,0], [1,0,0,0], "lleg")])
     hcf.abc_svc.waitFootSteps()
-    hcf.abc_svc.setFootSteps([OpenHRP.AutoBalancerService.Footstep([0,-0.09,0], [1,0,0,0], ":rleg"), OpenHRP.AutoBalancerService.Footstep([0,0.09,0], [1,0,0,0], ":lleg")])
+    hcf.abc_svc.setFootSteps([OpenHRP.AutoBalancerService.Footstep([0,-0.09,0], [1,0,0,0], "rleg"), OpenHRP.AutoBalancerService.Footstep([0,0.09,0], [1,0,0,0], "lleg")])
     hcf.abc_svc.waitFootSteps()
     hcf.abc_svc.stopAutoBalancer();
     print "Non default Stride()=>OK"
     #  7. walking by fixing 
-    # abc_svc.startAutoBalancer([AutoBalancerService.AutoBalancerLimbParam(":rleg", [0,0,0], [0,0,0,0]),
-    #                   AutoBalancerService.AutoBalancerLimbParam(":lleg", [0,0,0], [0,0,0,0]),
-    #                   AutoBalancerService.AutoBalancerLimbParam(":rarm", [0,0,0], [0,0,0,0]),
-    #                   AutoBalancerService.AutoBalancerLimbParam(":larm", [0,0,0], [0,0,0,0])])
+    # abc_svc.startAutoBalancer([AutoBalancerService.AutoBalancerLimbParam("rleg", [0,0,0], [0,0,0,0]),
+    #                   AutoBalancerService.AutoBalancerLimbParam("lleg", [0,0,0], [0,0,0,0]),
+    #                   AutoBalancerService.AutoBalancerLimbParam("rarm", [0,0,0], [0,0,0,0]),
+    #                   AutoBalancerService.AutoBalancerLimbParam("larm", [0,0,0], [0,0,0,0])])
     # abc_svc.goPos(0.1, 0.05, 20)
     # abc_svc.waitFootSteps()
     # abc_svc.stopABC()
