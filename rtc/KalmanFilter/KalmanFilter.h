@@ -338,7 +338,7 @@ private:
   hrp::BodyPtr m_robot;
   hrp::Matrix33 m_sensorR;
   unsigned int m_debugLevel;
-  int dummy;
+  int dummy, loop;
 };
 
 
