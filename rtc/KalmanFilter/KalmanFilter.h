@@ -153,8 +153,8 @@ public:
     /* 
      * std::cerr << "acc_measured" << std::endl << acc_measured << std::endl;
      * std::cerr << "calc acc" << std::endl << calcAcc(q, vel_ref, acc_ref, angular_rate_ref) << std::endl;
+     * std::cerr << "diff" << std::endl << y << std::endl;
      */
-    std::cerr << "diff" << std::endl << y << std::endl;
     return y;
   }
 
