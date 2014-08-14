@@ -9,8 +9,8 @@ void test0 ()
 {
   double dt = 0.005; /* [s] */
   std::vector<hrp::Vector3> leg_pos; /* default footstep transformations are necessary */
-  leg_pos.push_back(hrp::Vector3(0,1e-3*-105,0)); /* :rleg */
-  leg_pos.push_back(hrp::Vector3(0,1e-3* 105,0)); /* :lleg */
+  leg_pos.push_back(hrp::Vector3(0,1e-3*-105,0)); /* rleg */
+  leg_pos.push_back(hrp::Vector3(0,1e-3* 105,0)); /* lleg */
   gait_generator gg(dt, leg_pos, 1e-3*150, 1e-3*50, 10);
 
   /* this is c++ version example of test3, test6, test7 and test8 in euslib/demo/nozawa/motion/test-gait-generator.l */
@@ -48,14 +48,14 @@ void test0 ()
   //   coordinates initial_support_leg_coords(hrp::Vector3(0, 105, 0)), initial_swing_leg_dst_coords(hrp::Vector3(0, -105, 0));
   //   /* initialize sample footstep_list */
   //   gg.clear_footstep_node_list();
-  //   gg.append_footstep_node(":rleg", initial_swing_leg_dst_coords);
-  //   gg.append_footstep_node(":lleg", initial_support_leg_coords);
-  //   gg.append_footstep_node(":rleg", coordinates(hrp::Vector3(50, -105, 0)));
-  //   gg.append_footstep_node(":lleg", coordinates(hrp::Vector3(100, 105, 0)));
-  //   gg.append_footstep_node(":rleg", coordinates(hrp::Vector3(150, -105, 0)));
-  //   gg.append_footstep_node(":lleg", coordinates(hrp::Vector3(200, 105, 0)));
-  //   gg.append_footstep_node(":rleg", coordinates(hrp::Vector3(250, -105, 0)));
-  //   gg.append_footstep_node(":lleg", coordinates(hrp::Vector3(250, 105, 0)));
+  //   gg.append_footstep_node("rleg", initial_swing_leg_dst_coords);
+  //   gg.append_footstep_node("lleg", initial_support_leg_coords);
+  //   gg.append_footstep_node("rleg", coordinates(hrp::Vector3(50, -105, 0)));
+  //   gg.append_footstep_node("lleg", coordinates(hrp::Vector3(100, 105, 0)));
+  //   gg.append_footstep_node("rleg", coordinates(hrp::Vector3(150, -105, 0)));
+  //   gg.append_footstep_node("lleg", coordinates(hrp::Vector3(200, 105, 0)));
+  //   gg.append_footstep_node("rleg", coordinates(hrp::Vector3(250, -105, 0)));
+  //   gg.append_footstep_node("lleg", coordinates(hrp::Vector3(250, 105, 0)));
   //   gg.initialize_gait_parameter(cog, initial_support_leg_coords, initial_swing_leg_dst_coords);
   //   while ( !gg.proc_one_tick() );
   //   gg.print_footstep_list();
@@ -114,14 +114,14 @@ void test0 ()
     coordinates initial_support_leg_coords(hrp::Vector3(0, 1e-3*105, 0)), initial_swing_leg_dst_coords(hrp::Vector3(0, 1e-3*-105, 0));
     /* initialize sample footstep_list */
     gg.clear_footstep_node_list();
-    gg.append_footstep_node(":rleg", initial_swing_leg_dst_coords);
-    gg.append_footstep_node(":lleg", initial_support_leg_coords);
-    gg.append_footstep_node(":rleg", coordinates(hrp::Vector3(50*1e-3, -105*1e-3, 0)));
-    gg.append_footstep_node(":lleg", coordinates(hrp::Vector3(100*1e-3, 105*1e-3, 0)));
-    gg.append_footstep_node(":rleg", coordinates(hrp::Vector3(150*1e-3, -105*1e-3, 0)));
-    gg.append_footstep_node(":lleg", coordinates(hrp::Vector3(200*1e-3, 105*1e-3, 0)));
-    gg.append_footstep_node(":rleg", coordinates(hrp::Vector3(250*1e-3, -105*1e-3, 0)));
-    gg.append_footstep_node(":lleg", coordinates(hrp::Vector3(250*1e-3, 105*1e-3, 0)));
+    gg.append_footstep_node("rleg", initial_swing_leg_dst_coords);
+    gg.append_footstep_node("lleg", initial_support_leg_coords);
+    gg.append_footstep_node("rleg", coordinates(hrp::Vector3(50*1e-3, -105*1e-3, 0)));
+    gg.append_footstep_node("lleg", coordinates(hrp::Vector3(100*1e-3, 105*1e-3, 0)));
+    gg.append_footstep_node("rleg", coordinates(hrp::Vector3(150*1e-3, -105*1e-3, 0)));
+    gg.append_footstep_node("lleg", coordinates(hrp::Vector3(200*1e-3, 105*1e-3, 0)));
+    gg.append_footstep_node("rleg", coordinates(hrp::Vector3(250*1e-3, -105*1e-3, 0)));
+    gg.append_footstep_node("lleg", coordinates(hrp::Vector3(250*1e-3, 105*1e-3, 0)));
     gg.initialize_gait_parameter(cog, initial_support_leg_coords, initial_swing_leg_dst_coords);
     while ( !gg.proc_one_tick() );
     gg.print_footstep_list();
@@ -176,13 +176,13 @@ void test0 ()
 //   rb->fix_leg_to_coords(":both", coordinates());
 //   double dt = 0.005; /* [s] */
 //   std::vector<hrp::Vector3> leg_pos; /* default footstep transformations are necessary */
-//   leg_pos.push_back(rb->get_end_coords(":rleg").pos); /* :rleg */
-//   leg_pos.push_back(rb->get_end_coords(":lleg").pos); /* :lleg */
+//   leg_pos.push_back(rb->get_end_coords("rleg").pos); /* rleg */
+//   leg_pos.push_back(rb->get_end_coords("lleg").pos); /* lleg */
 //   gait_generator gg(dt, leg_pos, stride_x, stride_y, stride_th); // for HRP2
 //   if ( start_leg == "" ) {
 //     gg.go_pos_param_2_footstep_list(xx, yy, th, coordinates());
 //   } else {
-//     gg.go_pos_param_2_footstep_list(xx, yy, th, coordinates(), (start_leg == ":rleg" ? gait_generator::WC_RLEG : gait_generator::WC_LLEG));
+//     gg.go_pos_param_2_footstep_list(xx, yy, th, coordinates(), (start_leg == "rleg" ? gait_generator::WC_RLEG : gait_generator::WC_LLEG));
 //   }
 //   gg.print_footstep_list();
 // }
@@ -194,14 +194,14 @@ void test0 ()
 //   rb->fix_leg_to_coords(":both", coordinates());
 //   double dt = 0.005; /* [s] */
 //   std::vector<hrp::Vector3> leg_pos; /* default footstep transformations are necessary */
-//   leg_pos.push_back(rb->get_end_coords(":rleg").pos); /* :rleg */
-//   leg_pos.push_back(rb->get_end_coords(":lleg").pos); /* :lleg */
+//   leg_pos.push_back(rb->get_end_coords("rleg").pos); /* rleg */
+//   leg_pos.push_back(rb->get_end_coords("lleg").pos); /* lleg */
 //   gait_generator gg(dt, leg_pos, 150, 50, 10); // for HRP2
 //   coordinates spc, swc;
-//   std::string leg = ":rleg";
+//   std::string leg = "rleg";
 //   double goal_x = 0.15, goal_y = 0, goal_z = 0, goal_theta = 0;
-//   rb->get_end_coords(spc, (leg == ":rleg") ? ":lleg" : ":rleg");
-//   rb->get_end_coords(swc, (leg == ":rleg") ? ":rleg" : ":lleg");
+//   rb->get_end_coords(spc, (leg == "rleg") ? "lleg" : "rleg");
+//   rb->get_end_coords(swc, (leg == "rleg") ? "rleg" : "lleg");
 //   gg.clear_footstep_node_list();
 //   gg.go_single_step_param_2_footstep_list(goal_x * 1000.0, goal_y * 1000.0, goal_z * 1000.0, goal_theta,
 //                                           leg, spc);

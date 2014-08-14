@@ -147,7 +147,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   }
 
   // setting from conf file
-  // :rleg,TARGET_LINK,BASE_LINK,x,y,z,rx,ry,rz,rth #<=pos + rot (axis+angle)
+  // rleg,TARGET_LINK,BASE_LINK,x,y,z,rx,ry,rz,rth #<=pos + rot (axis+angle)
   coil::vstring end_effectors_str = coil::split(prop["end_effectors"], ",");
   if (end_effectors_str.size() > 0) {
     size_t prop_num = 10;
@@ -558,12 +558,12 @@ void Stabilizer::calcFootOriginCoords (hrp::Vector3& foot_origin_pos, hrp::Matri
     xv2.normalize();
     leg_c[i].rot = OrientRotationMatrix(leg_c[i].rot, xv1, xv2);
   }
-  if (contact_states[contact_states_index_map[":rleg"]] &&
-      contact_states[contact_states_index_map[":lleg"]]) {
+  if (contact_states[contact_states_index_map["rleg"]] &&
+      contact_states[contact_states_index_map["lleg"]]) {
     rats::mid_coords(tmpc, 0.5, leg_c[0], leg_c[1]);
     foot_origin_pos = tmpc.pos;
     foot_origin_rot = tmpc.rot;
-  } else if (contact_states[contact_states_index_map[":rleg"]]) {
+  } else if (contact_states[contact_states_index_map["rleg"]]) {
     foot_origin_pos = leg_c[0].pos;
     foot_origin_rot = leg_c[0].rot;
   } else {

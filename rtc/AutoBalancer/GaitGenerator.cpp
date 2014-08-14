@@ -280,7 +280,7 @@ namespace rats
                                                              const std::string& tmp_swing_leg,
                                                              const coordinates& _support_leg_coords)
   {
-    leg_type _swing_leg = (tmp_swing_leg == ":rleg") ? WC_RLEG : WC_LLEG;
+    leg_type _swing_leg = (tmp_swing_leg == "rleg") ? WC_RLEG : WC_LLEG;
     step_node sn0((_swing_leg == WC_RLEG) ? WC_LLEG : WC_RLEG, _support_leg_coords);
     footstep_node_list.push_back(sn0);
     step_node sn1(_swing_leg, _support_leg_coords);
