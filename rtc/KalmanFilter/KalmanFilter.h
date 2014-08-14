@@ -153,8 +153,8 @@ public:
     /* 
      * std::cerr << "acc_measured" << std::endl << acc_measured << std::endl;
      * std::cerr << "calc acc" << std::endl << calcAcc(q, vel_ref, acc_ref, angular_rate_ref) << std::endl;
+     * std::cerr << "diff" << std::endl << y << std::endl;
      */
-    std::cerr << "diff" << std::endl << y << std::endl;
     return y;
   }
 
@@ -338,7 +338,7 @@ private:
   hrp::BodyPtr m_robot;
   hrp::Matrix33 m_sensorR;
   unsigned int m_debugLevel;
-  int dummy;
+  int dummy, loop;
 };
 
 

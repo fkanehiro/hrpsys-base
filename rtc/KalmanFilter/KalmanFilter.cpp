@@ -48,7 +48,8 @@ KalmanFilter::KalmanFilter(RTC::Manager* manager)
     // </rtc-template>
     m_robot(hrp::BodyPtr()),
     m_debugLevel(0),
-    dummy(0)
+    dummy(0),
+    loop(0)
 {
   m_service0.kalman(this);
 }
@@ -58,7 +59,7 @@ KalmanFilter::~KalmanFilter()
 }
 
 
-
+#define DEBUGP ((m_debugLevel==1 && loop%200==0) || m_debugLevel > 1 )
 RTC::ReturnCode_t KalmanFilter::onInitialize()
 {
   std::cerr << m_profile.instance_name << ": onInitialize()" << std::endl;
@@ -166,6 +167,7 @@ RTC::ReturnCode_t KalmanFilter::onDeactivated(RTC::UniqueId ec_id)
 
 RTC::ReturnCode_t KalmanFilter::onExecute(RTC::UniqueId ec_id)
 {
+  loop++;
   static int initialize = 0;
   //std::cerr << m_profile.instance_name<< ": onExecute(" << ec_id << ") " << std::endl;
   if (m_rpyIn.isNew() ) {
@@ -190,8 +192,10 @@ RTC::ReturnCode_t KalmanFilter::onExecute(RTC::UniqueId ec_id)
     Eigen::Vector3d acc = m_sensorR * hrp::Vector3(m_acc.data.ax, m_acc.data.ay, m_acc.data.az); // transform to imaginary acc data
     Eigen::Vector3d gyro = m_sensorR * hrp::Vector3(m_rate.data.avx, m_rate.data.avy, m_rate.data.avz); // transform to imaginary rate data
 
-    std::cerr << "raw data acc : " << std::endl << acc << std::endl;
-    std::cerr << "raw data gyro : " << std::endl << gyro << std::endl;
+    if (DEBUGP) {
+      std::cerr << "raw data acc : " << std::endl << acc << std::endl;
+      std::cerr << "raw data gyro : " << std::endl << gyro << std::endl;
+    }
 
     ekf_filter.prediction(gyro, m_dt);
     ekf_filter.correction(acc, Eigen::Vector3d(0, 0, 0), Eigen::Vector3d(0, 0, 0), Eigen::Vector3d(0, 0, 0));
