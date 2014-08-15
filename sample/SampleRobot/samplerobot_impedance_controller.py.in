@@ -27,19 +27,34 @@ def demo():
     hcf.seq_svc.waitInterpolation()
 
     # 1. get
-    hcf.ic_svc.getImpedanceControllerParam("rhsensor")
     ret1=hcf.ic_svc.getImpedanceControllerParam("rhsensor")
     if ret1[0]:
         print "getImpedanceControllerParam => OK"
     # 2. set and start
     ret1[1].base_name="CHEST"
     ret1[1].target_name="RARM_WRIST_R"
+    ret1[1].K_r=1.0
+    ret1[1].D_r=2.0
+    ret1[1].M_r=0.2
     hcf.ic_svc.setImpedanceControllerParam(ret1[1])
     ret2=hcf.ic_svc.setImpedanceControllerParam(ret1[1])
     ret3=hcf.ic_svc.getImpedanceControllerParam("rhsensor")
     if ret2 and ret1[1].base_name == ret3[1].base_name and ret1[1].target_name == ret3[1].target_name:
         print "setImpedanceControllerParam => OK"
-    # 3. stop
+    # 3. set ref force and moment
+    ret1[1].ref_force=[10,10,-10]
+    hcf.ic_svc.setImpedanceControllerParam(ret1[1])
+    time.sleep(2)
+    ret1[1].ref_force=[0,0,0]
+    hcf.ic_svc.setImpedanceControllerParam(ret1[1])
+    time.sleep(2)
+    ret1[1].ref_moment=[0.2,0.2,-0.5]
+    hcf.ic_svc.setImpedanceControllerParam(ret1[1])
+    time.sleep(2)
+    ret1[1].ref_moment=[0,0,0]
+    hcf.ic_svc.setImpedanceControllerParam(ret1[1])
+    time.sleep(2)
+    # 4. stop
     ret4=hcf.ic_svc.deleteImpedanceController("rhsensor")
     if ret4:
         print "deleteImpedanceController => OK"
