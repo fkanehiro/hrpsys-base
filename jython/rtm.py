@@ -98,7 +98,10 @@ class RTcomponent:
 		cfgset = cfgsets[0]
 		for d in cfgset.configuration_data:
 			if d.name == name:
-				return d.value.extract_string()
+				if p.value.type().kind().value() == TCKind._tk_string:
+					return p.value.extract_string()
+				elif p.value.type().kind().value() == TCKind._tk_wstring:
+					return p.value.extract_wstring()
 		return None		
 
 	##
@@ -112,7 +115,10 @@ class RTcomponent:
 			return
 		cfgset = cfgsets[0]
 		for d in cfgset.configuration_data:
-			print d.name,":",d.value.extract_string()
+			if d.value.type().kind().value() == TCKind._tk_string:
+				print d.name,":",d.value.extract_string()
+			elif d.value.type().kind().value() == TCKind._tk_wstring:
+				print d.name,":",d.value.extract_wstring()
 		
 
 	##
@@ -236,7 +242,11 @@ class RTCmanager:
 		for afp in fps:
 			for p in afp.properties:
 				if p.name == "implementation_id":
-					fs.append(p.value.extract_string())
+					if p.value.type().kind().value() == TCKind._tk_string:
+						fs.append(p.value.extract_string())
+					elif p.value.type().kind().value() == TCKind._tk_wstring:
+						fs.append(p.value.extract_wstring())
+
 		return fs
 
 	##
@@ -418,7 +428,11 @@ def dataTypeOfPort(port):
 	prop = prof.properties
 	for p in prop:
 		if p.name == "dataport.data_type":
-			return p.value.extract_string()
+			if p.value.type().kind().value() == TCKind._tk_string:
+				return p.value.extract_string()
+			elif p.value.type().kind().value() == TCKind._tk_wstring:
+				return p.value.extract_wstring()
+
 	return None
 
 ##
@@ -555,7 +569,10 @@ def writeDataPort(port, data, tm=1.0):
 		return None
 	for p in con_prof_holder.value.properties:
 		if p.name == 'dataport.corba_cdr.inport_ior':
-			ior = p.value.extract_string()
+			if p.value.type().kind().value() == TCKind._tk_string:
+				ior = p.value.extract_string()
+			elif p.value.type().kind().value() == TCKind._tk_wstring:
+				ior = p.value.extract_wstring()
 			obj = orb.string_to_object(ior)
 			inport = InPortCdrHelper.narrow(obj)
 			cdr = data2cdr(data)
@@ -575,7 +592,10 @@ def readDataPort(port, timeout = 1.0):
 	pprof = port.get_port_profile()
 	for prop in pprof.properties:
 		if prop.name == "dataport.data_type":
-			classname = prop.value.extract_string()
+			if prop.value.type().kind().value() == TCKind._tk_string:
+				classname = prop.value.extract_string()
+			elif prop.value.type().kind().value() == TCKind._tk_wstring:
+				classname = prop.value.extract_wstring()
 			break;
 	con_prof = ConnectorProfile()
 	con_prof.connector_id = ""
@@ -609,7 +629,10 @@ def readDataPort(port, timeout = 1.0):
 	for p in con_prof_holder.value.properties:
 		#print p.name
 		if p.name == 'dataport.corba_cdr.outport_ior':
-			ior = p.value.extract_string()
+			if p.value.type().kind().value() == TCKind._tk_string:
+				ior = p.value.extract_string()
+			elif p.value.type().kind().value() == TCKind._tk_wstring:
+				ior = p.value.extract_wstring()
 			obj = orb.string_to_object(ior)
 			outport = OutPortCdrHelper.narrow(obj)
 			cdr = CdrDataHolder()
@@ -671,7 +694,10 @@ def findService(rtc, port_name, type_name, instance_name):
 	con_prof_holder = ConnectorProfileHolder()
 	con_prof_holder.value = con_prof
 	port.connect(con_prof_holder)
-	ior = con_prof_holder.value.properties[0].value.extract_string()
+	if con_prof_holder.value.properties[0].value.type().kind().value() == TCKind._tk_string:
+		ior = con_prof_holder.value.properties[0].value.extract_string()
+	elif con_prof_holder.value.properties[0].value.type().kind().value() == TCKind._tk_wstring:
+		ior = con_prof_holder.value.properties[0].value.extract_wstring()
 	port.disconnect(con_prof_holder.value.connector_id)
 	return orb.string_to_object(ior)
 
