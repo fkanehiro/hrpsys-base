@@ -145,6 +145,7 @@ class Stabilizer
   RTC::TimedPoint3D m_originRefZmp, m_originRefCog, m_originRefCogVel, m_originNewZmp;
   RTC::TimedPoint3D m_originActZmp, m_originActCog, m_originActCogVel;
   RTC::TimedDoubleSeq m_refWrenchR, m_refWrenchL;
+  RTC::TimedDoubleSeq m_footCompR, m_footCompL;
   
   // DataInPort declaration
   // <rtc-template block="inport_declare">
@@ -169,6 +170,7 @@ class Stabilizer
   RTC::OutPort<RTC::TimedPoint3D> m_originRefZmpOut, m_originRefCogOut, m_originRefCogVelOut, m_originNewZmpOut;
   RTC::OutPort<RTC::TimedPoint3D> m_originActZmpOut, m_originActCogOut, m_originActCogVelOut;
   RTC::OutPort<RTC::TimedDoubleSeq> m_refWrenchROut, m_refWrenchLOut;
+  RTC::OutPort<RTC::TimedDoubleSeq> m_footCompROut, m_footCompLOut;
   
   // </rtc-template>
 

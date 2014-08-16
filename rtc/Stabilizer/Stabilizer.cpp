@@ -66,6 +66,8 @@ Stabilizer::Stabilizer(RTC::Manager* manager)
     m_originActCogVelOut("originActCogVel", m_originActCogVel),
     m_refWrenchROut("refWrenchR", m_refWrenchR),
     m_refWrenchLOut("refWrenchL", m_refWrenchL),
+    m_footCompROut("footCompR", m_footCompR),
+    m_footCompLOut("footCompL", m_footCompL),
     control_mode(MODE_IDLE),
     // </rtc-template>
     m_debugLevel(0)
@@ -113,6 +115,8 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   addOutPort("originActCogVel", m_originActCogVelOut);
   addOutPort("refWrenchR", m_refWrenchROut);
   addOutPort("refWrenchL", m_refWrenchLOut);
+  addOutPort("footCompR", m_footCompROut);
+  addOutPort("footCompL", m_footCompLOut);
   
   // Set service provider to Ports
   m_StabilizerServicePort.registerProvider("service0", "StabilizerService", m_service0);
@@ -248,6 +252,9 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   m_refWrenchR.data.length(6); m_refWrenchL.data.length(6);
   m_refWrenchR.data[0] = m_refWrenchR.data[1] = m_refWrenchR.data[2] = m_refWrenchR.data[3] = m_refWrenchR.data[4] = m_refWrenchR.data[5] = 0.0;
   m_refWrenchL.data[0] = m_refWrenchL.data[1] = m_refWrenchL.data[2] = m_refWrenchL.data[3] = m_refWrenchL.data[4] = m_refWrenchL.data[5] = 0.0;
+  m_footCompR.data.length(6); m_footCompL.data.length(6);
+  m_footCompR.data[0] = m_footCompR.data[1] = m_footCompR.data[2] = m_footCompR.data[3] = m_footCompR.data[4] = m_footCompR.data[5] = 0.0;
+  m_footCompL.data[0] = m_footCompL.data[1] = m_footCompL.data[2] = m_footCompL.data[3] = m_footCompL.data[4] = m_footCompL.data[5] = 0.0;
 
   return RTC::RTC_OK;
 }
@@ -409,6 +416,9 @@ RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
       m_refWrenchR.data[3] = ref_foot_moment[0](0); m_refWrenchR.data[4] = ref_foot_moment[0](1); m_refWrenchR.data[5] = ref_foot_moment[0](2);
       m_refWrenchL.data[0] = ref_foot_force[1](0); m_refWrenchL.data[1] = ref_foot_force[1](1); m_refWrenchL.data[2] = ref_foot_force[1](2);
       m_refWrenchL.data[3] = ref_foot_moment[1](0); m_refWrenchL.data[4] = ref_foot_moment[1](1); m_refWrenchL.data[5] = ref_foot_moment[1](2);
+      m_footCompR.data[2] = f_zctrl[0]; m_footCompL.data[2] = f_zctrl[1];
+      m_footCompR.data[3] = d_foot_rpy[0](0); m_footCompR.data[4] = d_foot_rpy[0](1);
+      m_footCompL.data[3] = d_foot_rpy[1](0); m_footCompL.data[4] = d_foot_rpy[1](1);
       m_originRefZmpOut.write();
       m_originRefCogOut.write();
       m_originRefCogVelOut.write();
@@ -417,6 +427,7 @@ RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
       m_originActCogOut.write();
       m_originActCogVelOut.write();
       m_refWrenchROut.write(); m_refWrenchLOut.write();
+      m_footCompROut.write(); m_footCompLOut.write();
     }
     m_qRefOut.write();
   }
@@ -762,6 +773,8 @@ void Stabilizer::getActualParameters ()
     //     }
     //     // zctrl = vlimit(zctrl, -0.02, 0.02);
     //     zctrl = vlimit(zctrl, -0.05, 0.05);
+    // f_zctrl[0] = -0.5 * zctrl;
+    // f_zctrl[1] = 0.5 * zctrl;
     // foot force independent damping control
     for (size_t i = 0; i < 2; i++) {
       f_zctrl[i] = calcDampingControl (ref_foot_force[i](2),
