@@ -210,7 +210,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   pangx_ref = pangy_ref = pangx = pangy = 0;
   rdx = rdy = rx = ry = 0;
   pdr = hrp::Vector3::Zero();
-  prev_act_force_z = 0.0;
+  prev_act_force_z[0] = prev_act_force_z[1] = 0.0;
 
   sensor_names.push_back("rfsensor");
   sensor_names.push_back("lfsensor");
@@ -308,9 +308,9 @@ bool Stabilizer::calcZMP(hrp::Vector3& ret_zmp, const double zmp_z)
     tmpzmpx += nf(2) * fsp(0) - (fsp(2) - zmp_z) * nf(0) - nm(1);
     tmpzmpy += nf(2) * fsp(1) - (fsp(2) - zmp_z) * nf(1) + nm(0);
     tmpfz += nf(2);
+    prev_act_force_z[i] = 0.85 * prev_act_force_z[i] + 0.15 * nf(2); // filter, cut off 5[Hz]
   }
-  tmpfz2 = 0.85 * prev_act_force_z + 0.15 * tmpfz; // filter, cut off 5[Hz]
-  prev_act_force_z = tmpfz2;
+  tmpfz2 = prev_act_force_z[0] + prev_act_force_z[1];
   if (tmpfz2 < 50) {
     ret_zmp = act_zmp;
     return false; // in the air
@@ -765,14 +765,16 @@ void Stabilizer::getActualParameters ()
     }
     // fz control
     // foot force difference control version
-    //     if ( alpha == 0.0 || alpha == 1.0) {
-    //       zctrl = calcDampingControl (0, 0, zctrl, eefm_pos_damping_gain, 0.02);
-    //     } else {
-    //       zctrl = calcDampingControl (ref_foot_force[1](2)-ref_foot_force[0](2),
-    //                                   fz_diff, zctrl, eefm_pos_damping_gain, eefm_pos_time_const);
-    //     }
-    //     // zctrl = vlimit(zctrl, -0.02, 0.02);
-    //     zctrl = vlimit(zctrl, -0.05, 0.05);
+    // if ( (contact_states[contact_states_index_map["rleg"]] &&
+    //       contact_states[contact_states_index_map["lleg"]]) ||
+    //      (isContact(0) && isContact(1)) ) {
+    //   zctrl = calcDampingControl (ref_foot_force[1](2)-ref_foot_force[0](2),
+    //                               fz_diff, zctrl, eefm_pos_damping_gain, eefm_pos_time_const);
+    // } else {
+    //   zctrl = calcDampingControl (0, 0, zctrl, eefm_pos_damping_gain, 0.02);
+    // }
+    // // zctrl = vlimit(zctrl, -0.02, 0.02);
+    // zctrl = vlimit(zctrl, -0.05, 0.05);
     // f_zctrl[0] = -0.5 * zctrl;
     // f_zctrl[1] = 0.5 * zctrl;
     // foot force independent damping control
