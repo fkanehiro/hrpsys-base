@@ -172,9 +172,18 @@ RTC::ReturnCode_t AverageFilter::onExecute(RTC::UniqueId ec_id)
     
     src = (float *)m_original.data.get_buffer();
     for (unsigned int i=0; i<npoint; i++){
+#if 1
+      int ix = round((src[0] - xstart)/m_resolution);
+      int iy = round((src[1] - ystart)/m_resolution);
+      cell[ix+nx*iy] = src[2];
+#else
       int ix = floor((src[0] - xstart)/m_resolution);
       int iy = floor((src[1] - ystart)/m_resolution);
-      cell[ix + nx*iy] = src[2];
+      cell[ix   + nx*iy    ] = src[2];
+      cell[ix+1 + nx*iy    ] = src[2];
+      cell[ix+1 + nx*(iy+1)] = src[2];
+      cell[ix   + nx*(iy+1)] = src[2];
+#endif
       
       src += 4;
     }
@@ -188,6 +197,7 @@ RTC::ReturnCode_t AverageFilter::onExecute(RTC::UniqueId ec_id)
       for (int y=whalf; y<ny-whalf; y++){
 	int cnt=0;
 	float zsum=0;
+	//if (isnan(cell[x + nx*y])) continue;
 	for (int dx=-whalf; dx<=whalf; dx++){
 	  for (int dy=-whalf; dy<whalf; dy++){
 	    int index = x + dx + nx*(y + dy);
