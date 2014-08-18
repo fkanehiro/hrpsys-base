@@ -456,8 +456,8 @@ class HrpsysConfigurator:
     # public method to configure all RTCs to be activated on rtcd
     def getRTCList(self):
         '''
-        @rtype [[str]]
-        @rerutrn List of available components. Each element consists of a list
+        @rtype: list of list
+        @return: List of available components. Each element consists of a list
                  of abbreviated and full names of the component.
         '''
         return [
@@ -482,8 +482,8 @@ class HrpsysConfigurator:
     # public method to configure all RTCs to be activated on rtcd which includes unstable RTCs
     def getRTCListUnstable(self):
         '''
-        @rtype [[str]]
-        @rerutrn List of available unstable components. Each element consists
+        @rtype: list of list
+        @return: List of available unstable components. Each element consists
                  of a list of abbreviated and full names of the component.
         '''
         return [
@@ -698,7 +698,7 @@ class HrpsysConfigurator:
         side. Worthwhile opening an enhancement ticket for that at
         hironx' designated issue tracker.
 
-        @type angles: float
+        @type angles: list of float
         @param angles: In degree.
         @type tm: float
         @param tm: Time to complete.
@@ -717,8 +717,8 @@ class HrpsysConfigurator:
         at hironx' designated issue tracker.
 
         @type gname: str
-        @param gname: Name of joint group.
-        @type pose: [float]
+        @param gname: Name of the joint group.
+        @type pose: list of float
         @param pose: list of positions and orientations
         @type tm: float
         @param tm: Time to complete.
@@ -746,7 +746,8 @@ class HrpsysConfigurator:
         @see: http://wiki.ros.org/joint_trajectory_action. This method
               corresponds to JointTrajectoryGoal in ROS.
 
-        @type groupname: str
+        @type gname: str
+        @param gname: Name of the joint group.
         '''
         self.seq_svc.waitInterpolationOfGroup(gname)
 
@@ -755,8 +756,9 @@ class HrpsysConfigurator:
 
     def getCurrentPose(self, lname=None):
         '''
-        @type jointname: str
-        @rtype: List of float
+        @type lname: str
+        @param lname: Name of the link.
+        @rtype: list of float
         @return: Rotational matrix and the position of the given joint in
                  1-dimensional list, that is:
 
@@ -777,8 +779,9 @@ class HrpsysConfigurator:
 
     def getCurrentPosition(self, lname=None):
         '''
-        @type jointname: str
-        @rtype: List of float
+        @type lname: str
+        @param lname: Name of the link.
+        @rtype: list of float
         @return: List of x, y, z positions about the specified joint.
         '''
         if not lname:
@@ -791,8 +794,9 @@ class HrpsysConfigurator:
 
     def getCurrentRotation(self, lname):
         '''
-        @type jointname: str
-        @rtype: List of float
+        @type lname: str
+        @param lname: Name of the link.
+        @rtype: list of float
         @return: Rotational matrix of the given joint in 2-dimensional list,
                  that is:
                  [[a11, a12, a13],
@@ -809,8 +813,9 @@ class HrpsysConfigurator:
 
     def getCurrentRPY(self, lname):
         '''
-        @type jointname: str
-        @rtype: List of float
+        @type lname: str
+        @param lname: Name of the link.
+        @rtype: list of float
         @return: List of orientation in rpy form about the specified joint.
         '''
         if not lname:
@@ -825,7 +830,9 @@ class HrpsysConfigurator:
         This returns reference(commanded) value,
         and getCurrentPose returns current(actual) value
 
-        @rtype: List of float
+        @type lname: str
+        @param lname: Name of the link.
+        @rtype: list of float
         @return: Rotational matrix and the position of the given joint in
                  1-dimensional list, that is:
 
@@ -846,7 +853,9 @@ class HrpsysConfigurator:
 
     def getReferencePosition(self, lname):
         '''
-        @rtype: List of float
+        @type lname: str
+        @param lname: Name of the link.
+        @rtype: list of float
         @return: List of angles (degree) of all joints, in the order defined
                  in the member variable 'Groups' (eg. chest, head1, head2, ..).
         '''
@@ -863,8 +872,9 @@ class HrpsysConfigurator:
         This seturns reference(commanded) value,
         and getCurrentRotation returns current(actual) value
 
-        @type jointname: str
-        @rtype: List of float
+        @type lname: str
+        @param lname: Name of the link.
+        @rtype: list of float
         @return: Rotational matrix of the given joint in 2-dimensional list,
                  that is:
                  [[a11, a12, a13],
@@ -884,8 +894,9 @@ class HrpsysConfigurator:
         This seturns reference(commanded) value,
         and getCurrentRPY returns current(actual) value
 
-        @type jointname: str
-        @rtype: List of float
+        @type lname: str
+        @param lname: Name of the link.
+        @rtype: list of float
         @return: List of orientation in rpy form about the specified joint.
         '''
         if not lname:
@@ -900,10 +911,17 @@ class HrpsysConfigurator:
         Set absolute pose to a joint.
         All d* arguments are in meter.
 
+        @type gname: str
         @param gname: Name of the joint group.
-        @type pos: float
-        @type rpy: TODO: ??
+        @type pos: list of float
+        @param pos: In meter.
+        @type rpy: list of float
+        @param rpy: In radian.
+        @type tm: float
+        @param tm: Second to complete.
+        @type frame_name: str
         @rtype: bool
+        @return: False if unreachable.
         '''
         print gname, frame_name, pos, rpy, tm
         if frame_name:
@@ -922,9 +940,28 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
         Set angles to a joint group relative to its current pose.
         All d* arguments are in meter.
 
+        @type gname: str
         @param gname: Name of the joint group.
+        @type eename: str
         @param eename: Name of the link.
+        @type dx: float
+        @param dx: In meter.
+        @type dy: float
+        @param dy: In meter.
+        @type dz: float
+        @param dz: In meter.
+        @type dr: float
+        @param dr: In radian.
+        @type dp: float
+        @param dp: In radian.
+        @type dw: float
+        @param dw: In radian.
+        @type tm: float
+        @param tm: Second to complete.
+        @type wait: bool
+        @param wait: If true, SequencePlayer.waitInterpolationOfGroup gets run.
         @rtype: bool
+        @return: False if unreachable.
         '''
         self.waitInterpolationOfGroup(gname)
         # curPose = self.getCurrentPose(eename)
@@ -965,7 +1002,7 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
 
     def writeDigitalOutput(self, dout):
         '''
-        @type dout: [int]
+        @type dout: list of int
         @param dout: List of bits. Length might defer depending on
                      robot's implementation.
         @return: What RobotHardware.writeDigitalOutput returns (TODO: document)
@@ -989,10 +1026,10 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
 
     def writeDigitalOutputWithMask(self, dout, mask):
         '''
-        @type dout: [int]
+        @type dout: list of int
         @param dout: List of bits. Length might defer depending on robot's
                      implementation.
-        @type mask: [int]
+        @type mask: list of int
         @param mask: List of masking bits. Length depends on that of dout.
         @return: What RobotHardware.writeDigitalOutput returns (TODO: document)
         '''
@@ -1024,7 +1061,7 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
     def readDigitalInput(self):
         '''
         @author Hajime Saito (@emijah)
-        @rtype: [int]
+        @rtype: list of int
         @return: List of the values in digital input register. Range: 0 or 1.
         '''
         if self.simulation_mode:
@@ -1042,7 +1079,7 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
     def readDigitalOutput(self):
         '''
         @author Hajime Saito (@emijah)
-        @rtype: [int]
+        @rtype: list of int
         @return: List of the values in digital input register. Range: 0 or 1.
         '''
         ret, dout = self.rh_svc.readDigitalOutput()
@@ -1129,9 +1166,9 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
 
     def flat2Groups(self, flatList):
         '''
-        @type flatList: []
+        @type flatList: list
         @param flatList: single dimension list with its length of 15
-        @rtype: [[]]
+        @rtype: list of list
         @return: 2-dimensional list of Groups.
         '''
         retList = []
