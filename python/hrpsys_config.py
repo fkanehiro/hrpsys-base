@@ -456,7 +456,7 @@ class HrpsysConfigurator:
     # public method to configure all RTCs to be activated on rtcd
     def getRTCList(self):
         '''
-        @rtype: [[str]]
+        @rtype: list of list of str
         @return: List of available components. Each element consists of a list
                  of abbreviated and full names of the component.
         '''
@@ -482,7 +482,7 @@ class HrpsysConfigurator:
     # public method to configure all RTCs to be activated on rtcd which includes unstable RTCs
     def getRTCListUnstable(self):
         '''
-        @rtype: [[str]]
+        @rtype: list of list of str
         @return: List of available unstable components. Each element consists
                  of a list of abbreviated and full names of the component.
         '''
@@ -698,7 +698,7 @@ class HrpsysConfigurator:
         side. Worthwhile opening an enhancement ticket for that at
         hironx' designated issue tracker.
 
-        @type angles: [float]
+        @type angles: list of float
         @param angles: In degree.
         @type tm: float
         @param tm: Time to complete.
@@ -718,7 +718,7 @@ class HrpsysConfigurator:
 
         @type gname: str
         @param gname: Name of the joint group.
-        @type pose: [float]
+        @type pose: list of float
         @param pose: list of positions and orientations
         @type tm: float
         @param tm: Time to complete.
@@ -758,7 +758,7 @@ class HrpsysConfigurator:
         '''
         @type lname: str
         @param lname: Name of the link.
-        @rtype: List of float
+        @rtype: list of float
         @return: Rotational matrix and the position of the given joint in
                  1-dimensional list, that is:
 
@@ -781,7 +781,7 @@ class HrpsysConfigurator:
         '''
         @type lname: str
         @param lname: Name of the link.
-        @rtype: List of float
+        @rtype: list of float
         @return: List of x, y, z positions about the specified joint.
         '''
         if not lname:
@@ -796,7 +796,7 @@ class HrpsysConfigurator:
         '''
         @type lname: str
         @param lname: Name of the link.
-        @rtype: List of float
+        @rtype: list of float
         @return: Rotational matrix of the given joint in 2-dimensional list,
                  that is:
                  [[a11, a12, a13],
@@ -815,7 +815,7 @@ class HrpsysConfigurator:
         '''
         @type lname: str
         @param lname: Name of the link.
-        @rtype: List of float
+        @rtype: list of float
         @return: List of orientation in rpy form about the specified joint.
         '''
         if not lname:
@@ -832,7 +832,7 @@ class HrpsysConfigurator:
 
         @type lname: str
         @param lname: Name of the link.
-        @rtype: List of float
+        @rtype: list of float
         @return: Rotational matrix and the position of the given joint in
                  1-dimensional list, that is:
 
@@ -855,7 +855,7 @@ class HrpsysConfigurator:
         '''
         @type lname: str
         @param lname: Name of the link.
-        @rtype: List of float
+        @rtype: list of float
         @return: List of angles (degree) of all joints, in the order defined
                  in the member variable 'Groups' (eg. chest, head1, head2, ..).
         '''
@@ -874,7 +874,7 @@ class HrpsysConfigurator:
 
         @type lname: str
         @param lname: Name of the link.
-        @rtype: List of float
+        @rtype: list of float
         @return: Rotational matrix of the given joint in 2-dimensional list,
                  that is:
                  [[a11, a12, a13],
@@ -896,7 +896,7 @@ class HrpsysConfigurator:
 
         @type lname: str
         @param lname: Name of the link.
-        @rtype: List of float
+        @rtype: list of float
         @return: List of orientation in rpy form about the specified joint.
         '''
         if not lname:
@@ -976,7 +976,7 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
 
     def writeDigitalOutput(self, dout):
         '''
-        @type dout: [int]
+        @type dout: list of int
         @param dout: List of bits. Length might defer depending on
                      robot's implementation.
         @return: What RobotHardware.writeDigitalOutput returns (TODO: document)
@@ -1000,10 +1000,10 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
 
     def writeDigitalOutputWithMask(self, dout, mask):
         '''
-        @type dout: [int]
+        @type dout: list of int
         @param dout: List of bits. Length might defer depending on robot's
                      implementation.
-        @type mask: [int]
+        @type mask: list of int
         @param mask: List of masking bits. Length depends on that of dout.
         @return: What RobotHardware.writeDigitalOutput returns (TODO: document)
         '''
@@ -1035,7 +1035,7 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
     def readDigitalInput(self):
         '''
         @author Hajime Saito (@emijah)
-        @rtype: [int]
+        @rtype: list of int
         @return: List of the values in digital input register. Range: 0 or 1.
         '''
         if self.simulation_mode:
@@ -1053,7 +1053,7 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
     def readDigitalOutput(self):
         '''
         @author Hajime Saito (@emijah)
-        @rtype: [int]
+        @rtype: list of int
         @return: List of the values in digital input register. Range: 0 or 1.
         '''
         ret, dout = self.rh_svc.readDigitalOutput()
@@ -1140,9 +1140,9 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
 
     def flat2Groups(self, flatList):
         '''
-        @type flatList: []
+        @type flatList: list
         @param flatList: single dimension list with its length of 15
-        @rtype: [[]]
+        @rtype: list of list
         @return: 2-dimensional list of Groups.
         '''
         retList = []
