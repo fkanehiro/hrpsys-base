@@ -698,7 +698,7 @@ class HrpsysConfigurator:
         side. Worthwhile opening an enhancement ticket for that at
         hironx' designated issue tracker.
 
-        @type angles: float
+        @type angles: [float]
         @param angles: In degree.
         @type tm: float
         @param tm: Time to complete.
@@ -717,7 +717,7 @@ class HrpsysConfigurator:
         at hironx' designated issue tracker.
 
         @type gname: str
-        @param gname: Name of joint group.
+        @param gname: Name of the joint group.
         @type pose: [float]
         @param pose: list of positions and orientations
         @type tm: float
@@ -746,7 +746,8 @@ class HrpsysConfigurator:
         @see: http://wiki.ros.org/joint_trajectory_action. This method
               corresponds to JointTrajectoryGoal in ROS.
 
-        @type groupname: str
+        @type gname: str
+        @param gname: Name of the joint group.
         '''
         self.seq_svc.waitInterpolationOfGroup(gname)
 
@@ -755,7 +756,8 @@ class HrpsysConfigurator:
 
     def getCurrentPose(self, lname=None):
         '''
-        @type jointname: str
+        @type lname: str
+        @param lname: Name of the link.
         @rtype: List of float
         @return: Rotational matrix and the position of the given joint in
                  1-dimensional list, that is:
@@ -777,7 +779,8 @@ class HrpsysConfigurator:
 
     def getCurrentPosition(self, lname=None):
         '''
-        @type jointname: str
+        @type lname: str
+        @param lname: Name of the link.
         @rtype: List of float
         @return: List of x, y, z positions about the specified joint.
         '''
@@ -791,7 +794,8 @@ class HrpsysConfigurator:
 
     def getCurrentRotation(self, lname):
         '''
-        @type jointname: str
+        @type lname: str
+        @param lname: Name of the link.
         @rtype: List of float
         @return: Rotational matrix of the given joint in 2-dimensional list,
                  that is:
@@ -809,7 +813,8 @@ class HrpsysConfigurator:
 
     def getCurrentRPY(self, lname):
         '''
-        @type jointname: str
+        @type lname: str
+        @param lname: Name of the link.
         @rtype: List of float
         @return: List of orientation in rpy form about the specified joint.
         '''
@@ -825,6 +830,8 @@ class HrpsysConfigurator:
         This returns reference(commanded) value,
         and getCurrentPose returns current(actual) value
 
+        @type lname: str
+        @param lname: Name of the link.
         @rtype: List of float
         @return: Rotational matrix and the position of the given joint in
                  1-dimensional list, that is:
@@ -846,6 +853,8 @@ class HrpsysConfigurator:
 
     def getReferencePosition(self, lname):
         '''
+        @type lname: str
+        @param lname: Name of the link.
         @rtype: List of float
         @return: List of angles (degree) of all joints, in the order defined
                  in the member variable 'Groups' (eg. chest, head1, head2, ..).
@@ -863,7 +872,8 @@ class HrpsysConfigurator:
         This seturns reference(commanded) value,
         and getCurrentRotation returns current(actual) value
 
-        @type jointname: str
+        @type lname: str
+        @param lname: Name of the link.
         @rtype: List of float
         @return: Rotational matrix of the given joint in 2-dimensional list,
                  that is:
@@ -884,7 +894,8 @@ class HrpsysConfigurator:
         This seturns reference(commanded) value,
         and getCurrentRPY returns current(actual) value
 
-        @type jointname: str
+        @type lname: str
+        @param lname: Name of the link.
         @rtype: List of float
         @return: List of orientation in rpy form about the specified joint.
         '''
