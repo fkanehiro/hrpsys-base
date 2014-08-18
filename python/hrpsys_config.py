@@ -456,8 +456,8 @@ class HrpsysConfigurator:
     # public method to configure all RTCs to be activated on rtcd
     def getRTCList(self):
         '''
-        @rtype [[str]]
-        @rerutrn List of available components. Each element consists of a list
+        @rtype: [[str]]
+        @return: List of available components. Each element consists of a list
                  of abbreviated and full names of the component.
         '''
         return [
@@ -482,8 +482,8 @@ class HrpsysConfigurator:
     # public method to configure all RTCs to be activated on rtcd which includes unstable RTCs
     def getRTCListUnstable(self):
         '''
-        @rtype [[str]]
-        @rerutrn List of available unstable components. Each element consists
+        @rtype: [[str]]
+        @return: List of available unstable components. Each element consists
                  of a list of abbreviated and full names of the component.
         '''
         return [
