@@ -911,10 +911,17 @@ class HrpsysConfigurator:
         Set absolute pose to a joint.
         All d* arguments are in meter.
 
+        @type gname: str
         @param gname: Name of the joint group.
-        @type pos: float
-        @type rpy: TODO: ??
+        @type pos: list of float
+        @param pos: In meter.
+        @type rpy: list of float
+        @param rpy: In radian.
+        @type tm: float
+        @param tm: Second to complete.
+        @type frame_name: str
         @rtype: bool
+        @return: False if unreachable.
         '''
         print gname, frame_name, pos, rpy, tm
         if frame_name:
@@ -933,9 +940,28 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
         Set angles to a joint group relative to its current pose.
         All d* arguments are in meter.
 
+        @type gname: str
         @param gname: Name of the joint group.
+        @type eename: str
         @param eename: Name of the link.
+        @type dx: float
+        @param dx: In meter.
+        @type dy: float
+        @param dy: In meter.
+        @type dz: float
+        @param dz: In meter.
+        @type dr: float
+        @param dr: In radian.
+        @type dp: float
+        @param dp: In radian.
+        @type dw: float
+        @param dw: In radian.
+        @type tm: float
+        @param tm: Second to complete.
+        @type wait: bool
+        @param wait: If true, SequencePlayer.waitInterpolationOfGroup gets run.
         @rtype: bool
+        @return: False if unreachable.
         '''
         self.waitInterpolationOfGroup(gname)
         # curPose = self.getCurrentPose(eename)
