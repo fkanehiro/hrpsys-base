@@ -318,9 +318,10 @@ class HrpsysConfigurator:
                              self.abc.port("ref_" + sen.name))
 
         #  actual force sensors
-        if self.rmfo and self.kf:
-            # connectPorts(self.kf.port("rpy"), self.ic.port("rpy"))
-            connectPorts(self.kf.port("rpy"), self.rmfo.port("rpy"))
+        if self.rmfo:
+            if self.kf: # use IMU values if exists
+                # connectPorts(self.kf.port("rpy"), self.ic.port("rpy"))
+                connectPorts(self.kf.port("rpy"), self.rmfo.port("rpy"))
             connectPorts(self.rh.port("q"), self.rmfo.port("qCurrent"))
             for sen in filter(lambda x: x.type == "Force", self.sensors):
                 connectPorts(self.rh.port(sen.name), self.rmfo.port(sen.name))
