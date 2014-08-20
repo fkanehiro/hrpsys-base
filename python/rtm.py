@@ -332,9 +332,10 @@ def findRTCmanager(hostname=None, rnc=None):
         try:
                 socket.gethostbyaddr(hostname)
         except Exception as e:
-                sys.exit('[ERROR] {0}\n'.format(str(e))+
-                         '[ERROR] Could not get hostname for {0}\n'.format(hostname)+
-                         '[ERROR] Make sure that you set hostname and address in DNS or /etc/hosts')
+                sys.exit('[ERROR] {0}\n'.format(str(e)) +
+                         '[ERROR] Could not get hostname for {0}\n'.format(hostname) +
+                         '[ERROR] Make sure that you set the target hostname and address in DNS' +
+                         ' or /etc/hosts in linux/unix.')
 
 
         def getManagerFromNS(hostname, mgr = None):
