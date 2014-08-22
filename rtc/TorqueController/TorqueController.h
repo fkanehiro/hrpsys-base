@@ -154,7 +154,8 @@ protected:
 // </rtc-template>
   
 private:
-
+  enum motor_model_t {TWO_DOF_CONTROLLER, TWO_DOF_CONTROLLER_PD_MODEL, TWO_DOF_CONTROLLER_DYNAMIC_MODEL};
+  motor_model_t m_motor_model_type;
   double m_dt;
   unsigned int m_debugLevel;
   long long m_loop;
