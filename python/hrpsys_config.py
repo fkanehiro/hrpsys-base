@@ -664,7 +664,10 @@ class HrpsysConfigurator:
     # #
     def goActual(self):
         '''
-        Reset reference joint agnles with actual joint angle values
+        Adjust commanded values to the angles in the physical state
+        by calling StateHolder::goActual.
+
+        This needs to be run BEFORE servos are turned on.
         '''
         self.sh_svc.goActual()
 
@@ -694,10 +697,10 @@ class HrpsysConfigurator:
     def setJointAngles(self, angles, tm):
         '''
         NOTE-1: that while this method does not check angle value range,
-        any joints could emit position limit over error, which has not yet
-        been thrown by hrpsys so that there's no way to catch on this client
-        side. Worthwhile opening an enhancement ticket for that at
-        hironx' designated issue tracker.
+                any joints could emit position limit over error, which has not yet
+                been thrown by hrpsys so that there's no way to catch on this client
+                side. Worthwhile opening an enhancement ticket for that at
+                hironx' designated issue tracker.
 
         @type angles: list of float
         @param angles: In degree.
@@ -711,6 +714,9 @@ class HrpsysConfigurator:
 
     def setJointAnglesOfGroup(self, gname, pose, tm, wait=True):
         '''
+        Set the joint angles to aim. By default it waits interpolation to be
+        over.
+
         Note that while this method does not check angle value range,
         any joints could emit position limit over error, which has not yet
         been handled in hrpsys so that there's no way to catch on this client
@@ -735,6 +741,27 @@ class HrpsysConfigurator:
         return ret
 
     def loadPattern(self, fname, tm):
+        '''
+        Load a pattern file that is created offline.
+
+        Format of the pattern file:
+        - example format:
+
+          t0 j0 j1 j2...jn
+          t1 j0 j1 j2...jn
+          :
+          tn j0 j1 j2...jn
+
+        - Delimmitted by space
+        - Each line consists of an action.
+        - Time between each action is defined by tn+1 - tn
+          - The time taken for the 1st line is defined by the arg tm.
+
+        @param fname: Name of the pattern file.
+        @type tm: float
+        @param tm: - The time to take for the 1st line.
+        @return: List of 2 oct(string) values.
+        '''
         return self.seq_svc.loadPattern(fname, tm)
 
     def waitInterpolation(self):
@@ -744,6 +771,8 @@ class HrpsysConfigurator:
         '''
         Lets SequencePlayer wait until the movement currently happening to
         finish.
+
+        @see: SequencePlayer.waitInterpolationOfGroup
         @see: http://wiki.ros.org/joint_trajectory_action. This method
               corresponds to JointTrajectoryGoal in ROS.
 
@@ -753,10 +782,44 @@ class HrpsysConfigurator:
         self.seq_svc.waitInterpolationOfGroup(gname)
 
     def getJointAngles(self):
+        '''
+        @see: HrpsysConfigurator.getJointAngles
+
+        Returns the commanded joint angle values.
+
+        Note that it's not the physical state of the robot's joints, which
+        can be obtained by getActualState().angle.
+
+        @rtype: List of float
+        @return: List of angles (degree) of all joints, in the order defined
+                 in the member variable 'Groups' (eg. chest, head1, head2, ..).
+        '''
         return [x * 180.0 / math.pi for x in self.sh_svc.getCommand().jointRefs]
 
     def getCurrentPose(self, lname=None):
         '''
+        Returns the current physical pose of the specified joint.
+        cf. getReferencePose that returns commanded value.
+
+        eg.
+             IN: robot.getCurrentPose('LARM_JOINT5')
+             OUT: [-0.0017702356144599085,
+              0.00019034630541264752,
+              -0.9999984150158207,
+              0.32556275164378523,
+              0.00012155879975329215,
+              0.9999999745367515,
+               0.0001901314142046251,
+               0.18236394191140365,
+               0.9999984257434246,
+               -0.00012122202968358842,
+               -0.001770258707652326,
+               0.07462472659364472,
+               0.0,
+               0.0,
+               0.0,
+               1.0]
+
         @type lname: str
         @param lname: Name of the link.
         @rtype: list of float
@@ -780,6 +843,13 @@ class HrpsysConfigurator:
 
     def getCurrentPosition(self, lname=None):
         '''
+        Returns the current physical position of the specified joint.
+        cf. getReferencePosition that returns commanded value.
+
+        eg.
+            robot.getCurrentPosition('LARM_JOINT5')
+            [0.325, 0.182, 0.074]
+
         @type lname: str
         @param lname: Name of the link.
         @rtype: list of float
@@ -795,6 +865,9 @@ class HrpsysConfigurator:
 
     def getCurrentRotation(self, lname):
         '''
+        Returns the current physical rotation of the specified joint.
+        cf. getReferenceRotation that returns commanded value.
+
         @type lname: str
         @param lname: Name of the link.
         @rtype: list of float
@@ -814,6 +887,9 @@ class HrpsysConfigurator:
 
     def getCurrentRPY(self, lname):
         '''
+        Returns the current physical rotation in RPY of the specified joint.
+        cf. getReferenceRPY that returns commanded value.
+
         @type lname: str
         @param lname: Name of the link.
         @rtype: list of float
@@ -828,8 +904,8 @@ class HrpsysConfigurator:
 
     def getReferencePose(self, lname):
         '''
-        This returns reference(commanded) value,
-        and getCurrentPose returns current(actual) value
+        Returns the current commanded pose of the specified joint.
+        cf. getCurrentPose that returns physical pose.
 
         @type lname: str
         @param lname: Name of the link.
@@ -854,6 +930,9 @@ class HrpsysConfigurator:
 
     def getReferencePosition(self, lname):
         '''
+        Returns the current commanded position of the specified joint.
+        cf. getCurrentPosition that returns physical value.
+
         @type lname: str
         @param lname: Name of the link.
         @rtype: list of float
@@ -870,8 +949,8 @@ class HrpsysConfigurator:
 
     def getReferenceRotation(self, lname):
         '''
-        This seturns reference(commanded) value,
-        and getCurrentRotation returns current(actual) value
+        Returns the current commanded rotation of the specified joint.
+        cf. getCurrentRotation that returns physical value.
 
         @type lname: str
         @param lname: Name of the link.
@@ -892,8 +971,8 @@ class HrpsysConfigurator:
 
     def getReferenceRPY(self, lname):
         '''
-        This seturns reference(commanded) value,
-        and getCurrentRPY returns current(actual) value
+        Returns the current commanded rotation in RPY of the specified joint.
+        cf. getCurrentRPY that returns physical value.
 
         @type lname: str
         @param lname: Name of the link.
@@ -921,6 +1000,8 @@ class HrpsysConfigurator:
         @type tm: float
         @param tm: Second to complete.
         @type frame_name: str
+        @param frame_name: Name of the frame that this particular command
+                           reference to.
         @rtype: bool
         @return: False if unreachable.
         '''
@@ -939,7 +1020,14 @@ class HrpsysConfigurator:
 dr=0, dp=0, dw=0, tm=10, wait=True):
         '''
         Set angles to a joint group relative to its current pose.
-        All d* arguments are in meter.
+
+        For d*, distance arguments are in meter while rotations are in degree.
+
+        Example usage: The following moves RARM_JOINT5 joint 0.1mm forward
+                       within 0.1sec.
+
+            robot.setTargetPoseRelative('rarm', 'RARM_JOINT5', dx=0.0001,
+                                        tm=0.1)
 
         @type gname: str
         @param gname: Name of the joint group.
@@ -983,6 +1071,13 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
         return False
 
     def clear(self):
+        '''
+        @see HrpsysConfigurator.clear
+        Clears the Sequencer's current operation. Works for joint groups too.
+
+        Discussed in https://github.com/fkanehiro/hrpsys-base/issues/158
+        Examples is found in a unit test: https://github.com/start-jsk/rtmros_hironx/blob/bb0672be3e03e5366e03fe50520e215302b8419f/hironx_ros_bridge/test/test_hironx.py#L293
+        '''
         self.seq_svc.clear()
 
     def clearOfGroup(self, gname, tm=0.0):
@@ -1003,10 +1098,17 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
 
     def writeDigitalOutput(self, dout):
         '''
+        Using writeDigitalOutputWithMask is recommended for the less data
+        transport.
+
         @type dout: list of int
-        @param dout: List of bits. Length might defer depending on
-                     robot's implementation.
-        @return: What RobotHardware.writeDigitalOutput returns (TODO: document)
+        @param dout: List of bits, length of 32 bits where elements are
+                     0 or 1.
+
+                     What each element stands for depends on how
+                     the robot's imlemented. Consult the hardware manual.
+        @rtype: bool
+        @return: RobotHardware.writeDigitalOutput returns True if writable. False otherwise.
         '''
         if self.simulation_mode:
             return True
@@ -1027,12 +1129,36 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
 
     def writeDigitalOutputWithMask(self, dout, mask):
         '''
+        Both dout and mask are lists with length of 32. Only the bit in dout
+        that corresponds to the bits in mask that are flagged as 1 will be
+        evaluated.
+
+        Example:
+         Case-1. Only 18th bit will be evaluated as 1.
+          dout [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+          mask [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+         Case-2. Only 18th bit will be evaluated as 0.
+          dout [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+          mask [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+         Case-3. None will be evaluated since there's no flagged bit in mask.
+          dout [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+          mask [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+
         @type dout: list of int
-        @param dout: List of bits. Length might defer depending on robot's
-                     implementation.
+        @param dout: List of bits, length of 32 bits where elements are
+                     0 or 1.
         @type mask: list of int
-        @param mask: List of masking bits. Length depends on that of dout.
-        @return: What RobotHardware.writeDigitalOutput returns (TODO: document)
+        @param mask: List of masking bits, length of 32 bits where elements are
+                     0 or 1.
+        @return: RobotHardware.writeDigitalOutput returns True if writable. False otherwise.
         '''
         if self.simulation_mode:
             return True
@@ -1061,9 +1187,17 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
 
     def readDigitalInput(self):
         '''
+        @see: HrpsysConfigurator.readDigitalInput
+
+        Digital input consits of 14 bits. The last 2 bits are lacking
+        and compensated, so that the last 4 bits are 0x4 instead of 0x1.
         @author Hajime Saito (@emijah)
         @rtype: list of int
-        @return: List of the values in digital input register. Range: 0 or 1.
+        @return: List of the values (2 octtets) in digital input register. Range: 0 or 1.
+
+        #TODO: Catch AttributeError that occurs when RobotHardware not found.
+        #      Typically with simulator, erro msg might look like this;
+        #      'NoneType' object has no attribute 'readDigitalInput'
         '''
         if self.simulation_mode:
             return []
@@ -1079,6 +1213,13 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
 
     def readDigitalOutput(self):
         '''
+        Digital input consits of 14 bits. The last 2 bits are lacking
+        and compensated, so that the last 4 bits are 0x4 instead of 0x1.
+
+        #TODO: Catch AttributeError that occurs when RobotHardware not found.
+        #      Typically with simulator, erro msg might look like this;
+        #      'NoneType' object has no attribute 'readDigitaloutput'
+
         @author Hajime Saito (@emijah)
         @rtype: list of int
         @return: List of the values in digital input register. Range: 0 or 1.
