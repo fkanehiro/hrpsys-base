@@ -124,6 +124,10 @@ class Stabilizer
   void getFootmidCoords (rats::coordinates& ret);
   double calcDampingControl (const double tau_d, const double tau, const double prev_d,
                              const double DD, const double TT);
+  inline bool isContact (const size_t idx) // 0 = right, 1 = left
+  {
+    return (prev_act_force_z[idx] > 25.0);
+  };
 
  protected:
   // Configuration variable declaration
@@ -145,6 +149,7 @@ class Stabilizer
   RTC::TimedPoint3D m_originRefZmp, m_originRefCog, m_originRefCogVel, m_originNewZmp;
   RTC::TimedPoint3D m_originActZmp, m_originActCog, m_originActCogVel;
   RTC::TimedDoubleSeq m_refWrenchR, m_refWrenchL;
+  RTC::TimedDoubleSeq m_footCompR, m_footCompL;
   
   // DataInPort declaration
   // <rtc-template block="inport_declare">
@@ -169,6 +174,7 @@ class Stabilizer
   RTC::OutPort<RTC::TimedPoint3D> m_originRefZmpOut, m_originRefCogOut, m_originRefCogVelOut, m_originNewZmpOut;
   RTC::OutPort<RTC::TimedPoint3D> m_originActZmpOut, m_originActCogOut, m_originActCogVelOut;
   RTC::OutPort<RTC::TimedDoubleSeq> m_refWrenchROut, m_refWrenchLOut;
+  RTC::OutPort<RTC::TimedDoubleSeq> m_footCompROut, m_footCompLOut;
   
   // </rtc-template>
 
@@ -221,7 +227,7 @@ class Stabilizer
   rats::coordinates target_foot_midcoords;
   hrp::Vector3 ref_zmp, ref_cog, ref_cogvel, prev_ref_cog, prev_ref_zmp;
   hrp::Vector3 act_zmp, act_cog, act_cogvel, rel_act_zmp, prev_act_cog, prev_act_cogvel;
-  double zmp_origin_off, transition_smooth_gain, prev_act_force_z;
+  double zmp_origin_off, transition_smooth_gain, prev_act_force_z[2];
   // TPCC
   double k_tpcc_p[2], k_tpcc_x[2], d_rpy[2], k_brot_p[2], k_brot_tc[2];
   // RUN ST
