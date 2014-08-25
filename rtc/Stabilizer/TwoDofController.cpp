@@ -12,7 +12,7 @@
 #include <iostream>
 
 TwoDofController::TwoDofController(double _ke, double _tc, double _dt, unsigned int _range) {
-  ke = _ke; tc = _tc; dt = _dt;
+  param.ke = _ke; param.tc = _tc; param.dt = _dt;
   integrator = Integrator(_dt, _range);
   integrator.reset();
 }
@@ -21,17 +21,30 @@ TwoDofController::~TwoDofController() {
 }
 
 void TwoDofController::setup() {
-  ke = 0; tc = 0; dt = 0;
+  param.ke = 0; param.tc = 0; param.dt = 0;
   integrator = Integrator(0, 0);
+  reset();
 }
 
 void TwoDofController::setup(double _ke, double _tc, double _dt, unsigned int _range) {
-  ke = _ke; tc = _tc; dt = _dt;
+  param.ke = _ke; param.tc = _tc; param.dt = _dt;
   integrator = Integrator(_dt, _range);
+  reset();
 }
 
 void TwoDofController::reset() {
   integrator.reset();
+}
+
+bool TwoDofController::getParameter() {
+  return false;
+}
+
+bool TwoDofController::getParameter(TwoDofController::TwoDofControllerParam &_p) {
+  _p.ke = param.ke;
+  _p.tc = param.tc;
+  _p.dt = param.dt;
+  return true;
 }
 
 double TwoDofController::update (double _x, double _xd) {
@@ -43,7 +56,7 @@ double TwoDofController::update (double _x, double _xd) {
   double velocity; // velocity calcurated by 2 dof controller
 
   // check parameters
-  if (!ke || !tc || !dt){
+  if (!param.ke || !param.tc || !param.dt){
     std::cerr << "ERROR: parameters are not set." << std::endl;
     return 0;
   }
@@ -53,8 +66,8 @@ double TwoDofController::update (double _x, double _xd) {
   integrator.update(_xd - _x);
 
   // 2 dof controller
-  velocity = (-_x + (_xd - _x) + (integrator.calculate() / tc)) / (-ke * tc);
+  velocity = (-_x + (_xd - _x) + (integrator.calculate() / param.tc)) / (-param.ke * param.tc);
 
-  return -velocity * dt;
+  return -velocity * param.dt;
   
 }

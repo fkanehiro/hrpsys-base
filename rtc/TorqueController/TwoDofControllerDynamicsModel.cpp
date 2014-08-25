@@ -15,7 +15,7 @@
 #define NUM_CONVOLUTION_TERM 3
 
 TwoDofControllerDynamicsModel::TwoDofControllerDynamicsModel(double _alpha, double _beta, double _ki, double _tc, double _dt, unsigned int _range) {
-  alpha = _alpha; beta = _beta; ki = _ki; tc = _tc; dt = _dt;
+  param.alpha = _alpha; param.beta = _beta; param.ki = _ki; param.tc = _tc; param.dt = _dt;
   current_time = 0;
   convolutions.clear();
   exp_sinh.clear();
@@ -29,14 +29,15 @@ TwoDofControllerDynamicsModel::~TwoDofControllerDynamicsModel() {
 }
 
 void TwoDofControllerDynamicsModel::setup() {
-  alpha = 0; beta = 0; ki = 0; tc = 0; dt = 0;
+  param.alpha = 0; param.beta = 0; param.ki = 0; param.tc = 0; param.dt = 0;
   convolutions.clear();
   exp_sinh.clear();
   integrate_exp_sinh_current.reset();
+  reset();
 }
 
 void TwoDofControllerDynamicsModel::setup(double _alpha, double _beta, double _ki, double _tc, double _dt, unsigned int _range) {
-  alpha = _alpha; beta = _beta; ki = _ki; tc = _tc; dt = _dt;
+  param.alpha = _alpha; param.beta = _beta; param.ki = _ki; param.tc = _tc; param.dt = _dt;
   convolutions.clear();
   for (int i = 0; i < NUM_CONVOLUTION_TERM; i++) {
     convolutions.push_back(Convolution(_dt, _range));
@@ -54,6 +55,19 @@ void TwoDofControllerDynamicsModel::reset() {
   integrate_exp_sinh_current.reset();
 }
 
+bool TwoDofControllerDynamicsModel::getParameter() {
+  return false;
+}
+  
+bool TwoDofControllerDynamicsModel::getParameter(TwoDofControllerDynamicsModelParam &_p) {
+  _p.alpha = param.alpha;
+  _p.beta = param.beta;
+  _p.ki = param.ki;
+  _p.tc = param.tc;
+  _p.dt = param.dt;
+  return true;
+}
+
 double TwoDofControllerDynamicsModel::update (double _x, double _xd) {
   // motor model: P = -ke / s + kd + ki * s
   // completing the square: s^2 + (kd/ki)*s - (ke/ki) = (s+alpha)^2-beta^2
@@ -61,14 +75,14 @@ double TwoDofControllerDynamicsModel::update (double _x, double _xd) {
   double velocity; // velocity calcurated by 2 dof controller
 
   // check parameters
-  if (!alpha || !beta || !tc || !dt) {
+  if (!param.alpha || !param.beta || !param.tc || !param.dt) {
     std::cerr << "ERROR: parameters are not set." << std::endl;
-    std::cerr << "alpha: " << alpha << ", beta: " << beta << ", tc: " << tc << ", dt: " << dt << std::endl;
+    std::cerr << "alpha: " << param.alpha << ", beta: " << param.beta << ", tc: " << param.tc << ", dt: " << param.dt << std::endl;
     return 0;
   }
   
   // update exp(-a*t)*sinh(b*t) buffer
-  double exp_sinh_current = std::exp(-alpha * current_time) * std::sinh(beta * current_time);
+  double exp_sinh_current = std::exp(-param.alpha * current_time) * std::sinh(param.beta * current_time);
   exp_sinh.push_back(exp_sinh_current);
   integrate_exp_sinh_current.update(exp_sinh_current);
 
@@ -78,11 +92,11 @@ double TwoDofControllerDynamicsModel::update (double _x, double _xd) {
   convolutions[2].update(integrate_exp_sinh_current.calculate(), _xd - _x);
 
   // 2 dof controller
-  velocity = (1 / (tc * ki * beta)) * (-convolutions[0].calculate() + convolutions[1].calculate())
-    + (1 / (tc * tc * ki * beta)) * convolutions[2].calculate();
+  velocity = (1 / (param.tc * param.ki * param.beta)) * (-convolutions[0].calculate() + convolutions[1].calculate())
+    + (1 / (param.tc * param.tc * param.ki * param.beta)) * convolutions[2].calculate();
 
-  current_time += dt;
+  current_time += param.dt;
   
-  return velocity * dt;
+  return velocity * param.dt;
   
 }
