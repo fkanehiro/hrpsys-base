@@ -18,9 +18,9 @@
 class TwoDofControllerInterface {
 public:
   virtual ~TwoDofControllerInterface() {}
-  virtual void reset() = 0;
-  virtual void setup() = 0;
-  virtual double update(double _x, double _xd) = 0;
+  virtual void reset() = 0; // initialze controller
+  virtual void setup() = 0; // setup parameters
+  virtual double update(double _x, double _xd) = 0; // calculate input from current value(_x) and target value(_xd)
 };
 
 
