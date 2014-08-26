@@ -9,6 +9,16 @@ module OpenHRP
   {
     typedef sequence<double> dSequence;    
     typedef sequence<string> StrSequence;
+
+    struct torqueControllerParam {
+      string name;
+      double tc; // time constant
+      double ke; // for TwoDofController and TwoDofControllerPDModel 
+      double kd; // for TwoDofControllerPDModel 
+      double ki; // for TwoDofControllerDynamicModel
+      double alpha; // for TwoDofControllerDynamicModel
+      double beta; // for TwoDofControllerDynamicModel
+    };
     
     /**
      * @brief start torque controller in specified joint
@@ -53,6 +63,13 @@ module OpenHRP
      * @return true if set all successfully, false otherwise
      */
     boolean setMultipleReferenceTorques(in StrSequence jnames, in dSequence tauRefs);
+
+    /**
+     * @brief set torque controller parameters
+     * @param t_param: new torque controller param (invariant parameters are expected as 0)
+     * @return true if set all successfully, false otherwise
+     */
+    boolean setTorqueControllerParam(in torqueControllerParam t_param);
     
   };
 };
