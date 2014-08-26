@@ -266,14 +266,27 @@ RTC::ReturnCode_t ForwardKinematics::onRateChanged(RTC::UniqueId ec_id)
 }
 */
 
-::CORBA::Boolean ForwardKinematics::getReferencePose(const char* linkname, RTC::TimedDoubleSeq_out pose)
+::CORBA::Boolean ForwardKinematics::getReferencePose(const char* linkname, RTC::TimedDoubleSeq_out pose,const char* frame_name)
 {
     pose = new RTC::TimedDoubleSeq();
     Guard guard(m_bodyMutex);
     hrp::Link *l = m_refBody->link(linkname);
     if (!l) return false;
-    const hrp::Vector3& p = l->p;
-    const hrp::Matrix33& R = l->attitude();
+    hrp::Link *f = NULL;
+    if (frame_name) {
+        f = m_refBody->link(frame_name);
+        if (!f) {
+            std::cerr << "[getReferencePose] ERROR Could not find frame_name = " << frame_name << std::endl;
+            return false;
+        }
+    }
+    std::cerr << "[getReferencePose] linkaname = " << linkname << ", frame_name = " << (frame_name?frame_name:"(null)") << std::endl;
+    hrp::Vector3 p = l->p;
+    hrp::Matrix33 R = l->attitude();
+    if (!!f) {
+        p = f->attitude().transpose() * ( p - f->p );
+        R = f->attitude().transpose() * R;
+    }
     pose->tm = m_tm;
     pose->data.length(16);
     pose->data[ 0]=R(0,0);pose->data[ 1]=R(0,1);pose->data[ 2]=R(0,2);pose->data[ 3]=p[0];
@@ -283,16 +296,29 @@ RTC::ReturnCode_t ForwardKinematics::onRateChanged(RTC::UniqueId ec_id)
     return true;
 }
 
-::CORBA::Boolean ForwardKinematics::getCurrentPose(const char* linkname, RTC::TimedDoubleSeq_out pose)
+::CORBA::Boolean ForwardKinematics::getCurrentPose(const char* linkname, RTC::TimedDoubleSeq_out pose, const char* frame_name)
 {
     pose = new RTC::TimedDoubleSeq();
     Guard guard(m_bodyMutex);
     hrp::Link *l = m_actBody->link(linkname);
     if (!l) return false;
+    hrp::Link *f = NULL;
+    if (frame_name) {
+        f = m_actBody->link(frame_name);
+        if (!f) {
+            std::cerr << "[getCurrentPose] ERROR Could not find frame_name = " << frame_name << std::endl;
+            return false;
+        }
+    }
+    std::cerr << "[getCurrentPose] linkaname = " << linkname << ", frame_name = " << (frame_name?frame_name:"(null)") << std::endl;
     hrp::Vector3 dp(m_refLink->p - m_actLink->p);
 
-    const hrp::Vector3 p(l->p + dp);
-    const hrp::Matrix33 &R = l->attitude();
+    hrp::Vector3 p(l->p + dp);
+    hrp::Matrix33 R = l->attitude();
+    if (!!f) {
+        p = f->attitude().transpose() * ( p - f->p);
+        R = f->attitude().transpose() * R;
+    }
     pose->tm = m_tm;
     pose->data.length(16);
     pose->data[ 0]=R(0,0);pose->data[ 1]=R(0,1);pose->data[ 2]=R(0,2);pose->data[ 3]=p[0];

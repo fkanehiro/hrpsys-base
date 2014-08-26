@@ -102,8 +102,8 @@ class ForwardKinematics
   // no corresponding operation exists in OpenRTm-aist-0.2.0
   // virtual RTC::ReturnCode_t onRateChanged(RTC::UniqueId ec_id);
 
-  ::CORBA::Boolean getReferencePose(const char* linkname, RTC::TimedDoubleSeq_out pose);
-  ::CORBA::Boolean getCurrentPose(const char* linkname, RTC::TimedDoubleSeq_out pose);
+  ::CORBA::Boolean getReferencePose(const char* linkname, RTC::TimedDoubleSeq_out pose, const char* frame_name);
+  ::CORBA::Boolean getCurrentPose(const char* linkname, RTC::TimedDoubleSeq_out pose, const char* frame_name);
   ::CORBA::Boolean getRelativeCurrentPosition(const char* linknameFrom, const char *linknameTo, const OpenHRP::ForwardKinematicsService::position target, OpenHRP::ForwardKinematicsService::position result);
   ::CORBA::Boolean selectBaseLink(const char* linkname);
   

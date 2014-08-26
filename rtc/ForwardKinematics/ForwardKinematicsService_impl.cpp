@@ -23,11 +23,21 @@ void ForwardKinematicsService_impl::setComp(ForwardKinematics *i_comp)
 
 ::CORBA::Boolean ForwardKinematicsService_impl::getReferencePose(const char* linkname, RTC::TimedDoubleSeq_out pose)
 {
-    return m_comp->getReferencePose(linkname, pose);
+    char* frame_name = (char *)strrchr(linkname, ':');
+    if ( frame_name ) {
+        ((char *)linkname)[frame_name - linkname] = '\0'; // cut frame_name, linkname[strpos(':')] = 0x00
+        frame_name++; // skip ":"
+    }
+    return m_comp->getReferencePose(linkname, pose, frame_name);
 }
 ::CORBA::Boolean ForwardKinematicsService_impl::getCurrentPose(const char* linkname, RTC::TimedDoubleSeq_out pose)
 {
-    return m_comp->getCurrentPose(linkname, pose);
+    char* frame_name = (char *)strrchr(linkname, ':');
+    if ( frame_name ) {
+        ((char *)linkname)[frame_name - linkname] = '\0'; // cut frame_name, linkname[strpos(':')] = 0x00
+        frame_name++; // skip ":"
+    }
+    return m_comp->getCurrentPose(linkname, pose, frame_name);
 }
 
 ::CORBA::Boolean ForwardKinematicsService_impl::getRelativeCurrentPosition(const char* linknameFrom, const char *linknameTo, const OpenHRP::ForwardKinematicsService::position target, OpenHRP::ForwardKinematicsService::position result)

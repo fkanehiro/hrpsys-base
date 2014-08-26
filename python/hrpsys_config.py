@@ -798,7 +798,7 @@ class HrpsysConfigurator:
         '''
         return [x * 180.0 / math.pi for x in self.sh_svc.getCommand().jointRefs]
 
-    def getCurrentPose(self, lname=None):
+    def getCurrentPose(self, lname=None, frame_name=None):
         '''
         Returns the current physical pose of the specified joint.
         cf. getReferencePose that returns commanded value.
@@ -838,12 +838,14 @@ class HrpsysConfigurator:
                 eef_name = item[1][-1]
                 print("{}: {}".format(eef_name, self.getCurrentPose(eef_name)))
             raise RuntimeError("need to specify joint name")
+        if frame_name:
+            lname = lname + ':' + frame_name
         pose = self.fk_svc.getCurrentPose(lname)
         if not pose[0]:
             raise RuntimeError("Could not find reference : " + lname)
         return pose[1].data
 
-    def getCurrentPosition(self, lname=None):
+    def getCurrentPosition(self, lname=None, frame_name=None):
         '''
         Returns the current physical position of the specified joint.
         cf. getReferencePosition that returns commanded value.
@@ -862,10 +864,10 @@ class HrpsysConfigurator:
                 eef_name = item[1][-1]
                 print("{}: {}".format(eef_name, self.getCurrentPosition(eef_name)))
             raise RuntimeError("need to specify joint name")
-        pose = self.getCurrentPose(lname)
+        pose = self.getCurrentPose(lname, frame_name)
         return [pose[3], pose[7], pose[11]]
 
-    def getCurrentRotation(self, lname):
+    def getCurrentRotation(self, lname, frame_name=None):
         '''
         Returns the current physical rotation of the specified joint.
         cf. getReferenceRotation that returns commanded value.
@@ -884,10 +886,10 @@ class HrpsysConfigurator:
                 eef_name = item[1][-1]
                 print("{}: {}".format(eef_name, self.getCurrentRotation(eef_name)))
             raise RuntimeError("need to specify joint name")
-        pose = self.getCurrentPose(lname)
+        pose = self.getCurrentPose(lname, frame_name)
         return [pose[0:3], pose[4:7], pose[8:11]]
 
-    def getCurrentRPY(self, lname):
+    def getCurrentRPY(self, lname, frame_name=None):
         '''
         Returns the current physical rotation in RPY of the specified joint.
         cf. getReferenceRPY that returns commanded value.
@@ -904,7 +906,7 @@ class HrpsysConfigurator:
             raise RuntimeError("need to specify joint name")
         return euler_from_matrix(self.getCurrentRotation(lname), 'sxyz')
 
-    def getReferencePose(self, lname):
+    def getReferencePose(self, lname, frame_name=None):
         '''
         Returns the current commanded pose of the specified joint.
         cf. getCurrentPose that returns physical pose.
@@ -925,12 +927,14 @@ class HrpsysConfigurator:
                 eef_name = item[1][-1]
                 print("{}: {}".format(eef_name, self.getReferencePose(eef_name)))
             raise RuntimeError("need to specify joint name")
+        if frame_name:
+            lname = lname + ':' + frame_name
         pose = self.fk_svc.getReferencePose(lname)
         if not pose[0]:
             raise RuntimeError("Could not find reference : " + lname)
         return pose[1].data
 
-    def getReferencePosition(self, lname):
+    def getReferencePosition(self, lname, frame_name=None):
         '''
         Returns the current commanded position of the specified joint.
         cf. getCurrentPosition that returns physical value.
@@ -946,10 +950,10 @@ class HrpsysConfigurator:
                 eef_name = item[1][-1]
                 print("{}: {}".format(eef_name, self.getReferencePosition(eef_name)))
             raise RuntimeError("need to specify joint name")
-        pose = self.getReferencePose(lname)
+        pose = self.getReferencePose(lname, frame_name)
         return [pose[3], pose[7], pose[11]]
 
-    def getReferenceRotation(self, lname):
+    def getReferenceRotation(self, lname, frame_name=None):
         '''
         Returns the current commanded rotation of the specified joint.
         cf. getCurrentRotation that returns physical value.
@@ -968,10 +972,10 @@ class HrpsysConfigurator:
                 eef_name = item[1][-1]
                 print("{}: {}".format(eef_name, self.getReferencePotation(eef_name)))
             raise RuntimeError("need to specify joint name")
-        pose = self.getReferencePose(lname)
+        pose = self.getReferencePose(lname, frame_name)
         return [pose[0:3], pose[4:7], pose[8:11]]
 
-    def getReferenceRPY(self, lname):
+    def getReferenceRPY(self, lname, frame_name=None):
         '''
         Returns the current commanded rotation in RPY of the specified joint.
         cf. getCurrentRPY that returns physical value.
@@ -986,7 +990,7 @@ class HrpsysConfigurator:
                 eef_name = item[1][-1]
                 print("{}: {}".format(eef_name, self.getReferenceRPY(eef_name)))
             raise RuntimeError("need to specify joint name")
-        return euler_from_matrix(self.getReferenceRotation(lname), 'sxyz')
+        return euler_from_matrix(self.getReferenceRotation(lname, frame_name), 'sxyz')
 
     def setTargetPose(self, gname, pos, rpy, tm, frame_name=None):
         '''
