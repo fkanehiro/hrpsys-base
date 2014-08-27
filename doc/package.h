@@ -7,15 +7,16 @@ Basic RT components and utilities to control robots using <a href=http://www.ope
 
 \section requirements System requirements
 
-<a href=http://www.ubuntu.com>ubuntu</a> 10.04LTS is supported. <br>
+<a href=http://www.ubuntu.com>ubuntu</a> 12.04LTS is supported. <br>
 <a href=http://www.openrtp.jp/openhrp3>%OpenHRP</a> version 3.1.4 or later is required.<br>
-To use jython scripts to create RT components, connect ports and get/set properties, <a href=http://www.jython.org>Jython</a> is also required.<br>
 To use python scripts to create RT components, connect ports and get/set properties, <a href=http://www.openrtm.org>OpenRTM-aist-python</a> is also required.<br>
 
 \section contents Contents of the package
 
 <ul>
-  <li>\ref rtm.py "Jython and CPython library"<br>
+  <li>\ref hrpsys_config.py "hrpsys python helper library"<br>
+  This library helps working on hrpsys manager and plugins.</li>
+  <li>\ref rtm.py "rtm python helper library"<br>
   This library helps to create/delete and activate/deactivate RT components and connect/disconnect ports.</li>
   <li>Basic RT components</li>
   <ul>
