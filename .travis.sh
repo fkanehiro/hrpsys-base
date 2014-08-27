@@ -63,7 +63,7 @@ case $TEST_PACKAGE in
                 ;;
             *)
                 # COMPILE_ONLY
-                sudo apt-get install -qq -y freeglut3-dev python-tk jython doxygen libboost-all-dev libsdl1.2-dev libglew1.6-dev libqhull-dev libirrlicht-dev libxmu-dev libcv-dev libhighgui-dev libopencv-contrib-dev
+                sudo apt-get install -qq -y freeglut3-dev python-tk jython doxygen graphviz libboost-all-dev libsdl1.2-dev libglew1.6-dev libqhull-dev libirrlicht-dev libxmu-dev libcv-dev libhighgui-dev libopencv-contrib-dev
 
                 sudo apt-get install -qq -y ros-hydro-openhrp3
                 source /opt/ros/hydro/setup.bash
