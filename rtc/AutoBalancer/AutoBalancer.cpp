@@ -53,6 +53,7 @@ AutoBalancer::AutoBalancer(RTC::Manager* manager)
       m_baseTformOut("baseTformOut", m_baseTform),
       m_accRefOut("accRef", m_accRef),
       m_contactStatesOut("contactStates", m_contactStates),
+      m_controlSwingSupportTimeOut("controlSwingSupportTime", m_controlSwingSupportTime),
       m_AutoBalancerServicePort("AutoBalancerService"),
       // </rtc-template>
       move_base_gain(0.1),
@@ -86,6 +87,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     addOutPort("baseTformOut", m_baseTformOut);
     addOutPort("accRef", m_accRefOut);
     addOutPort("contactStates", m_contactStatesOut);
+    addOutPort("controlSwingSupportTime", m_controlSwingSupportTimeOut);
   
     // Set service provider to Ports
     m_AutoBalancerServicePort.registerProvider("service0", "AutoBalancerService", m_service0);
@@ -195,6 +197,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
       }
       m_contactStates.data.length(num);
     }
+    m_controlSwingSupportTime.data = 0.0;
 
     // ref force port
     coil::vstring virtual_force_sensor = coil::split(prop["virtual_force_sensor"], ",");
@@ -354,6 +357,7 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
     }
 
     m_contactStatesOut.write();
+    m_controlSwingSupportTimeOut.write();
 
     return RTC::RTC_OK;
 }
@@ -443,6 +447,7 @@ void AutoBalancer::getTargetParameters()
       default:
         break;
       }
+      m_controlSwingSupportTime.data = gg->get_current_swing_time();
     } else {
       tmp_fix_coords = fix_leg_coords;
     }

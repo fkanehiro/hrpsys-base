@@ -187,7 +187,7 @@ namespace rats
     public:
 #endif
       coordinates swing_leg_dst_coords, support_leg_coords, swing_leg_coords, swing_leg_src_coords;
-      double default_step_height, default_top_ratio, current_step_height, swing_ratio, rot_ratio;
+      double default_step_height, default_top_ratio, current_step_height, swing_ratio, rot_ratio, _dt, current_swing_time;
       size_t gp_index, gp_count;
       leg_type support_leg;
       orbit_type default_orbit_type;
@@ -203,13 +203,13 @@ namespace rats
       void rectangle_midcoords (coordinates& ret,
                                 const double ratio, const coordinates& start,
                                 const coordinates& goal, const double height);
-      double calc_ratio_from_double_support_ratio (const double default_double_support_ratio, const size_t one_step_len) const;
+      double calc_ratio_from_double_support_ratio (const double default_double_support_ratio, const size_t one_step_len);
 #ifndef HAVE_MAIN
     public:
 #endif
-      leg_coords_generator(const double _dt)
+      leg_coords_generator(const double __dt)
         : swing_leg_dst_coords(), support_leg_coords(), swing_leg_coords(), swing_leg_src_coords(),
-          default_step_height(0.05), default_top_ratio(0.5), current_step_height(0.0), swing_ratio(0), rot_ratio(0), gp_index(0), gp_count(0), support_leg(WC_RLEG), default_orbit_type(CYCLOID)
+          default_step_height(0.05), default_top_ratio(0.5), current_step_height(0.0), swing_ratio(0), rot_ratio(0), _dt(__dt), gp_index(0), gp_count(0), support_leg(WC_RLEG), default_orbit_type(CYCLOID)
       {
         rdtg.set_dt(_dt);
       };
@@ -233,6 +233,7 @@ namespace rats
       void update_leg_coords (const std::vector<step_node>& fnl, const double default_double_support_ratio, const size_t one_step_len, const bool force_height_zero);
       size_t get_gp_index() const { return gp_index; };
       size_t get_gp_count() const { return gp_count; };
+      double get_current_swing_time() const { return current_swing_time; };
       const coordinates& get_swing_leg_coords() const { return swing_leg_coords; };
       const coordinates& get_support_leg_coords() const { return support_leg_coords; };
       const coordinates& get_swing_leg_src_coords() const { return swing_leg_src_coords; };
@@ -408,6 +409,7 @@ namespace rats
     };
     size_t get_gp_index() const { return lcg.get_gp_index(); };
     size_t get_gp_count() const { return lcg.get_gp_count(); };
+    double get_current_swing_time() const { return lcg.get_current_swing_time(); };
     size_t get_current_support_state() const { return lcg.get_current_support_state();};
     double get_default_step_time () const { return default_step_time; };
     double get_default_step_height () const { return lcg.get_default_step_height(); };
