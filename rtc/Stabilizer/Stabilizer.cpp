@@ -53,6 +53,7 @@ Stabilizer::Stabilizer(RTC::Manager* manager)
     m_basePosIn("basePosIn", m_basePos),
     m_baseRpyIn("baseRpyIn", m_baseRpy),
     m_contactStatesIn("contactStates", m_contactStates),
+    m_controlSwingSupportTimeIn("controlSwingSupportTime", m_controlSwingSupportTime),
     m_qRefOut("q", m_qRef),
     m_tauOut("tau", m_tau),
     m_zmpOut("zmp", m_zmp),
@@ -68,6 +69,9 @@ Stabilizer::Stabilizer(RTC::Manager* manager)
     m_refWrenchLOut("refWrenchL", m_refWrenchL),
     m_footCompROut("footCompR", m_footCompR),
     m_footCompLOut("footCompL", m_footCompL),
+    m_actBaseRpyOut("actBaseRpy", m_actBaseRpy),
+    m_currentBasePosOut("currentBasePos", m_currentBasePos),
+    m_currentBaseRpyOut("currentBaseRpy", m_currentBaseRpy),
     control_mode(MODE_IDLE),
     // </rtc-template>
     m_debugLevel(0)
@@ -100,6 +104,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   addInPort("basePosIn", m_basePosIn);
   addInPort("baseRpyIn", m_baseRpyIn);
   addInPort("contactStates", m_contactStatesIn);
+  addInPort("controlSwingSupportTime", m_controlSwingSupportTimeIn);
 
   // Set OutPort buffer
   addOutPort("q", m_qRefOut);
@@ -117,6 +122,9 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   addOutPort("refWrenchL", m_refWrenchLOut);
   addOutPort("footCompR", m_footCompROut);
   addOutPort("footCompL", m_footCompLOut);
+  addOutPort("actBaseRpy", m_actBaseRpyOut);
+  addOutPort("currentBasePos", m_currentBasePosOut);
+  addOutPort("currentBaseRpy", m_currentBaseRpyOut);
   
   // Set service provider to Ports
   m_StabilizerServicePort.registerProvider("service0", "StabilizerService", m_service0);
@@ -357,6 +365,9 @@ RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
       contact_states[i] = m_contactStates.data[i];
     }
   }
+  if (m_controlSwingSupportTimeIn.isNew()){
+    m_controlSwingSupportTimeIn.read();
+  }
 
   if (is_legged_robot) {
     getCurrentParameters();
@@ -428,6 +439,18 @@ RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
       m_originActCogVelOut.write();
       m_refWrenchROut.write(); m_refWrenchLOut.write();
       m_footCompROut.write(); m_footCompLOut.write();
+      m_actBaseRpy.data.r = act_base_rpy(0);
+      m_actBaseRpy.data.p = act_base_rpy(1);
+      m_actBaseRpy.data.y = act_base_rpy(2);
+      m_currentBaseRpy.data.r = current_base_rpy(0);
+      m_currentBaseRpy.data.p = current_base_rpy(1);
+      m_currentBaseRpy.data.y = current_base_rpy(2);
+      m_currentBasePos.data.x = current_base_pos(0);
+      m_currentBasePos.data.y = current_base_pos(1);
+      m_currentBasePos.data.z = current_base_pos(2);
+      m_actBaseRpyOut.write();
+      m_currentBaseRpyOut.write();
+      m_currentBasePosOut.write();
     }
     m_qRefOut.write();
   }
@@ -599,6 +622,7 @@ void Stabilizer::getActualParameters ()
   //hrp::Matrix33 act_Rs(hrp::rotFromRpy(m_rpy.data.r*0.5, m_rpy.data.p*0.5, m_rpy.data.y*0.5));
   m_robot->rootLink()->R = act_Rs * (senR.transpose() * m_robot->rootLink()->R);
   m_robot->calcForwardKinematics();
+  act_base_rpy = hrp::rpyFromRot(m_robot->rootLink()->R);
   hrp::Vector3 foot_origin_pos;
   hrp::Matrix33 foot_origin_rot;
   calcFootOriginCoords (foot_origin_pos, foot_origin_rot);
@@ -765,24 +789,25 @@ void Stabilizer::getActualParameters ()
     }
     // fz control
     // foot force difference control version
-    // if ( (contact_states[contact_states_index_map["rleg"]] &&
-    //       contact_states[contact_states_index_map["lleg"]]) ||
-    //      (isContact(0) && isContact(1)) ) {
-    //   zctrl = calcDampingControl (ref_foot_force[1](2)-ref_foot_force[0](2),
-    //                               fz_diff, zctrl, eefm_pos_damping_gain, eefm_pos_time_const);
-    // } else {
-    //   zctrl = calcDampingControl (0, 0, zctrl, eefm_pos_damping_gain, 0.02);
-    // }
-    // // zctrl = vlimit(zctrl, -0.02, 0.02);
-    // zctrl = vlimit(zctrl, -0.05, 0.05);
-    // f_zctrl[0] = -0.5 * zctrl;
-    // f_zctrl[1] = 0.5 * zctrl;
-    // foot force independent damping control
-    for (size_t i = 0; i < 2; i++) {
-      f_zctrl[i] = calcDampingControl (ref_foot_force[i](2),
-                                       fz[i], f_zctrl[i], eefm_pos_damping_gain, eefm_pos_time_const);
-      f_zctrl[i] = vlimit(f_zctrl[i], -0.05, 0.05);
+    double ref_fz_diff = (ref_foot_force[1](2)-ref_foot_force[0](2));
+    if ( (contact_states[contact_states_index_map["rleg"]] &&
+          contact_states[contact_states_index_map["lleg"]]) ||
+         (isContact(0) && isContact(1)) ) {
+      zctrl = calcDampingControl (ref_fz_diff, fz_diff, zctrl,
+                                  eefm_pos_damping_gain, eefm_pos_time_const);
+    } else {
+      zctrl = calcDampingControl (0, 0, zctrl, eefm_pos_damping_gain, 0.02);
     }
+    // zctrl = vlimit(zctrl, -0.02, 0.02);
+    zctrl = vlimit(zctrl, -0.05, 0.05);
+    f_zctrl[0] = -0.5 * zctrl;
+    f_zctrl[1] = 0.5 * zctrl;
+    // foot force independent damping control
+    // for (size_t i = 0; i < 2; i++) {
+    //   f_zctrl[i] = calcDampingControl (ref_foot_force[i](2),
+    //                                    fz[i], f_zctrl[i], eefm_pos_damping_gain, eefm_pos_time_const);
+    //   f_zctrl[i] = vlimit(f_zctrl[i], -0.05, 0.05);
+    // }
   }
 
 
@@ -965,6 +990,8 @@ void Stabilizer::calcEEForceMomentControl() {
       m_robot->rootLink()->R = current_root_R;
       m_robot->rootLink()->p = target_root_p + target_root_R * rel_cog - current_root_R * rel_cog;
       m_robot->calcForwardKinematics();
+      current_base_rpy = hrp::rpyFromRot(m_robot->rootLink()->R);
+      current_base_pos = m_robot->rootLink()->p;
 
       // foor modif
       hrp::Vector3 total_target_foot_p[2];

@@ -88,14 +88,22 @@ namespace rats
     }
   };
 
-  double gait_generator::leg_coords_generator::calc_ratio_from_double_support_ratio (const double default_double_support_ratio, const size_t one_step_len) const
+  double gait_generator::leg_coords_generator::calc_ratio_from_double_support_ratio (const double default_double_support_ratio, const size_t one_step_len)
   {
-    double narrow_one_step_len = (1.0 - default_double_support_ratio) * one_step_len;
-    double tmp_ratio = 1.0 - (gp_count - 0.5 * default_double_support_ratio * one_step_len) / narrow_one_step_len;
+    double swing_len = (1.0 - default_double_support_ratio) * one_step_len;
+    double current_swing_len = (gp_count - 0.5 * default_double_support_ratio * one_step_len);
+    double tmp_ratio = 1.0 - current_swing_len / swing_len;
     double ret;
-    if ( tmp_ratio < 0.0 ) ret = 0.0;
-    else if ( tmp_ratio > 1.0 ) ret = 1.0;
-    else ret = tmp_ratio;
+    if ( tmp_ratio < 0.0 ) {
+      ret = 0.0;
+      current_swing_time = current_swing_len * _dt - swing_len * _dt;
+    } else if ( tmp_ratio > 1.0 ) {
+      ret = 1.0;
+      current_swing_time = current_swing_len * _dt + default_double_support_ratio * one_step_len * _dt;
+    } else {
+      ret = tmp_ratio;
+      current_swing_time = current_swing_len * _dt;
+    }
     return ret;
   };
 
