@@ -151,6 +151,9 @@ class Stabilizer
   RTC::TimedPoint3D m_originActZmp, m_originActCog, m_originActCogVel;
   RTC::TimedDoubleSeq m_refWrenchR, m_refWrenchL;
   RTC::TimedDoubleSeq m_footCompR, m_footCompL;
+  RTC::TimedOrientation3D m_actBaseRpy;
+  RTC::TimedPoint3D m_currentBasePos;
+  RTC::TimedOrientation3D m_currentBaseRpy;
   
   // DataInPort declaration
   // <rtc-template block="inport_declare">
@@ -177,6 +180,9 @@ class Stabilizer
   RTC::OutPort<RTC::TimedPoint3D> m_originActZmpOut, m_originActCogOut, m_originActCogVelOut;
   RTC::OutPort<RTC::TimedDoubleSeq> m_refWrenchROut, m_refWrenchLOut;
   RTC::OutPort<RTC::TimedDoubleSeq> m_footCompROut, m_footCompLOut;
+  RTC::OutPort<RTC::TimedOrientation3D> m_actBaseRpyOut;
+  RTC::OutPort<RTC::TimedPoint3D> m_currentBasePosOut;
+  RTC::OutPort<RTC::TimedOrientation3D> m_currentBaseRpyOut;
   
   // </rtc-template>
 
@@ -228,7 +234,7 @@ class Stabilizer
   hrp::Matrix33 current_root_R, target_root_R, target_foot_R[2], prev_act_foot_origin_rot, prev_ref_foot_origin_rot;
   rats::coordinates target_foot_midcoords;
   hrp::Vector3 ref_zmp, ref_cog, ref_cogvel, prev_ref_cog, prev_ref_zmp;
-  hrp::Vector3 act_zmp, act_cog, act_cogvel, rel_act_zmp, prev_act_cog, prev_act_cogvel;
+  hrp::Vector3 act_zmp, act_cog, act_cogvel, rel_act_zmp, prev_act_cog, prev_act_cogvel, act_base_rpy, current_base_rpy, current_base_pos;
   double zmp_origin_off, transition_smooth_gain, prev_act_force_z[2];
   // TPCC
   double k_tpcc_p[2], k_tpcc_x[2], d_rpy[2], k_brot_p[2], k_brot_tc[2];

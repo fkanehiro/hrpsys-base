@@ -69,6 +69,9 @@ Stabilizer::Stabilizer(RTC::Manager* manager)
     m_refWrenchLOut("refWrenchL", m_refWrenchL),
     m_footCompROut("footCompR", m_footCompR),
     m_footCompLOut("footCompL", m_footCompL),
+    m_actBaseRpyOut("actBaseRpy", m_actBaseRpy),
+    m_currentBasePosOut("currentBasePos", m_currentBasePos),
+    m_currentBaseRpyOut("currentBaseRpy", m_currentBaseRpy),
     control_mode(MODE_IDLE),
     // </rtc-template>
     m_debugLevel(0)
@@ -119,6 +122,9 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   addOutPort("refWrenchL", m_refWrenchLOut);
   addOutPort("footCompR", m_footCompROut);
   addOutPort("footCompL", m_footCompLOut);
+  addOutPort("actBaseRpy", m_actBaseRpyOut);
+  addOutPort("currentBasePos", m_currentBasePosOut);
+  addOutPort("currentBaseRpy", m_currentBaseRpyOut);
   
   // Set service provider to Ports
   m_StabilizerServicePort.registerProvider("service0", "StabilizerService", m_service0);
@@ -433,6 +439,18 @@ RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
       m_originActCogVelOut.write();
       m_refWrenchROut.write(); m_refWrenchLOut.write();
       m_footCompROut.write(); m_footCompLOut.write();
+      m_actBaseRpy.data.r = act_base_rpy(0);
+      m_actBaseRpy.data.p = act_base_rpy(1);
+      m_actBaseRpy.data.y = act_base_rpy(2);
+      m_currentBaseRpy.data.r = current_base_rpy(0);
+      m_currentBaseRpy.data.p = current_base_rpy(1);
+      m_currentBaseRpy.data.y = current_base_rpy(2);
+      m_currentBasePos.data.x = current_base_pos(0);
+      m_currentBasePos.data.y = current_base_pos(1);
+      m_currentBasePos.data.z = current_base_pos(2);
+      m_actBaseRpyOut.write();
+      m_currentBaseRpyOut.write();
+      m_currentBasePosOut.write();
     }
     m_qRefOut.write();
   }
@@ -604,6 +622,7 @@ void Stabilizer::getActualParameters ()
   //hrp::Matrix33 act_Rs(hrp::rotFromRpy(m_rpy.data.r*0.5, m_rpy.data.p*0.5, m_rpy.data.y*0.5));
   m_robot->rootLink()->R = act_Rs * (senR.transpose() * m_robot->rootLink()->R);
   m_robot->calcForwardKinematics();
+  act_base_rpy = hrp::rpyFromRot(m_robot->rootLink()->R);
   hrp::Vector3 foot_origin_pos;
   hrp::Matrix33 foot_origin_rot;
   calcFootOriginCoords (foot_origin_pos, foot_origin_rot);
@@ -971,6 +990,8 @@ void Stabilizer::calcEEForceMomentControl() {
       m_robot->rootLink()->R = current_root_R;
       m_robot->rootLink()->p = target_root_p + target_root_R * rel_cog - current_root_R * rel_cog;
       m_robot->calcForwardKinematics();
+      current_base_rpy = hrp::rpyFromRot(m_robot->rootLink()->R);
+      current_base_pos = m_robot->rootLink()->p;
 
       // foor modif
       hrp::Vector3 total_target_foot_p[2];

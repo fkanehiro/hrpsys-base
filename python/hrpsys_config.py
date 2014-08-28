@@ -586,6 +586,10 @@ class HrpsysConfigurator:
             self.connectLoggerPort(self.st, 'refWrenchL')
             self.connectLoggerPort(self.st, 'footCompR')
             self.connectLoggerPort(self.st, 'footCompL')
+            self.connectLoggerPort(self.st, 'q')
+            self.connectLoggerPort(self.st, 'actBaseRpy')
+            self.connectLoggerPort(self.st, 'currentBasePos')
+            self.connectLoggerPort(self.st, 'currentBaseRpy')
         if self.rh != None:
             self.connectLoggerPort(self.rh, 'emergencySignal',
                                    'emergencySignal')
