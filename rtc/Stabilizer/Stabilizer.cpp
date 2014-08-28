@@ -765,24 +765,25 @@ void Stabilizer::getActualParameters ()
     }
     // fz control
     // foot force difference control version
-    // if ( (contact_states[contact_states_index_map["rleg"]] &&
-    //       contact_states[contact_states_index_map["lleg"]]) ||
-    //      (isContact(0) && isContact(1)) ) {
-    //   zctrl = calcDampingControl (ref_foot_force[1](2)-ref_foot_force[0](2),
-    //                               fz_diff, zctrl, eefm_pos_damping_gain, eefm_pos_time_const);
-    // } else {
-    //   zctrl = calcDampingControl (0, 0, zctrl, eefm_pos_damping_gain, 0.02);
-    // }
-    // // zctrl = vlimit(zctrl, -0.02, 0.02);
-    // zctrl = vlimit(zctrl, -0.05, 0.05);
-    // f_zctrl[0] = -0.5 * zctrl;
-    // f_zctrl[1] = 0.5 * zctrl;
-    // foot force independent damping control
-    for (size_t i = 0; i < 2; i++) {
-      f_zctrl[i] = calcDampingControl (ref_foot_force[i](2),
-                                       fz[i], f_zctrl[i], eefm_pos_damping_gain, eefm_pos_time_const);
-      f_zctrl[i] = vlimit(f_zctrl[i], -0.05, 0.05);
+    double ref_fz_diff = (ref_foot_force[1](2)-ref_foot_force[0](2));
+    if ( (contact_states[contact_states_index_map["rleg"]] &&
+          contact_states[contact_states_index_map["lleg"]]) ||
+         (isContact(0) && isContact(1)) ) {
+      zctrl = calcDampingControl (ref_fz_diff, fz_diff, zctrl,
+                                  eefm_pos_damping_gain, eefm_pos_time_const);
+    } else {
+      zctrl = calcDampingControl (0, 0, zctrl, eefm_pos_damping_gain, 0.02);
     }
+    // zctrl = vlimit(zctrl, -0.02, 0.02);
+    zctrl = vlimit(zctrl, -0.05, 0.05);
+    f_zctrl[0] = -0.5 * zctrl;
+    f_zctrl[1] = 0.5 * zctrl;
+    // foot force independent damping control
+    // for (size_t i = 0; i < 2; i++) {
+    //   f_zctrl[i] = calcDampingControl (ref_foot_force[i](2),
+    //                                    fz[i], f_zctrl[i], eefm_pos_damping_gain, eefm_pos_time_const);
+    //   f_zctrl[i] = vlimit(f_zctrl[i], -0.05, 0.05);
+    // }
   }
 
 
