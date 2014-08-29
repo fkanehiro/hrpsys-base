@@ -104,7 +104,7 @@ module OpenHRP
 
     /**
      * @brief playback a pattern 
-     * @param pos sequence of joint angles
+     * @param pos sequence of joint angles  (In radian)
      * @param rpy sequence of Roll-Pitch-Yaw angles of the base link
      * @param zmp sequence of ZMP
      * @param tm sequence of duration beetween postures
@@ -172,7 +172,7 @@ module OpenHRP
     /**
      * @brief play back apattern with joint group
      * @param gname name of the joint group
-     * @param pos sequence of joint angles
+     * @param pos sequence of joint angles (In radian).
      * @param tm sequence of duration beetween postures
      * @return true joint angles are set successfully, false otherwise
      */
