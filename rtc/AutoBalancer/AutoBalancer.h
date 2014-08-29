@@ -181,6 +181,7 @@ class AutoBalancer
   void startABCparam(const ::OpenHRP::AutoBalancerService::StrSequence& limbs);
   void stopABCparam();
   void waitABCTransition();
+  hrp::Matrix33 OrientRotationMatrix (const hrp::Matrix33& rot, const hrp::Vector3& axis1, const hrp::Vector3& axis2);
   void fixLegToCoords (const std::string& leg, const rats::coordinates& coords);
   void startWalking ();
   void stopWalking ();
