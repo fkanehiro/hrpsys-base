@@ -12,9 +12,19 @@ foreach(_idx 0 1)
   configure_file(SampleRobot.conf.in ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.${_tmp_controller_period}.conf)
 endforeach()
 
+set(robot_waist_translation "-0.8  0  0" "-4.15  -0.2  0" "-5.83  -0.2  -0.6096")
+set(file_suffix "SlopeUpDown" "StairUp" "StairDown")
+foreach(_idx 0 1 2)
+  list(GET robot_waist_translation ${_idx} _tmp_robot_waist_translation)
+  list(GET file_suffix ${_idx} _tmp_file_suffix)
+  set(ROBOT_WAIST_TRANSLATION ${_tmp_robot_waist_translation})
+  configure_file(SampleRobot.TerrainFloor.xml.in ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.TerrainFloor.${_tmp_file_suffix}.xml)
+endforeach()
+
 # Use configure_file to specify openhrp3 directory for sample1.wrl model
 configure_file(samplerobot_walk.py.in ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_walk.py)
 configure_file(samplerobot_auto_balancer.py.in ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_auto_balancer.py)
+configure_file(samplerobot_terrain_walk.py.in ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_terrain_walk.py)
 configure_file(samplerobot_data_logger.py.in ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_data_logger.py)
 configure_file(samplerobot_impedance_controller.py.in ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_impedance_controller.py)
 configure_file(samplerobot_remove_force_offset.py.in ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_remove_force_offset.py)
@@ -23,6 +33,7 @@ configure_file(samplerobot_stabilizer.py.in ${CMAKE_CURRENT_BINARY_DIR}/samplero
 install(PROGRAMS
   ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_data_logger.py
   ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_auto_balancer.py
+  ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_terrain_walk.py
   ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_stabilizer.py
   ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_remove_force_offset.py
   ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_impedance_controller.py
@@ -41,5 +52,9 @@ install(FILES
   ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.200.torque.xml
   ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.RobotHardware.200.conf
   SampleRobot.PDgain.dat
+  # TerrainFloor
+  ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.TerrainFloor.SlopeUpDown.xml
+  ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.TerrainFloor.StairUp.xml
+  ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.TerrainFloor.StairDown.xml
   DESTINATION share/hrpsys/samples/SampleRobot)
 
