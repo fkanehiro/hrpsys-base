@@ -33,7 +33,9 @@ module OpenHRP
       double eefm_rot_damping_gain;
       double eefm_rot_time_const;
       double eefm_pos_damping_gain;
-      double eefm_pos_time_const;
+      double eefm_pos_time_const_support;
+      double eefm_pos_time_const_swing;
+      double eefm_pos_transition_time;
     };
 
     /**
