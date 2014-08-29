@@ -451,6 +451,21 @@ void AutoBalancer::getTargetParameters()
     } else {
       tmp_fix_coords = fix_leg_coords;
     }
+    // Tempolarily modify tmp_fix_coords
+    // This will be removed after seq outputs adequate waistRPY discussed in https://github.com/fkanehiro/hrpsys-base/issues/272
+    {
+      hrp::Vector3 ex = hrp::Vector3::UnitX();
+      hrp::Vector3 ez = hrp::Vector3::UnitZ();
+      hrp::Matrix33 tmpm;
+      tmpm = OrientRotationMatrix(tmp_fix_coords.rot, (tmp_fix_coords.rot * ez), ez);
+      hrp::Vector3 xv1 = tmp_fix_coords.rot * ex;
+      xv1(2)=0.0;
+      xv1.normalize();
+      hrp::Vector3 xv2 = tmpm * ex;
+      xv2(2)=0.0;
+      xv2.normalize();
+      tmp_fix_coords.rot = OrientRotationMatrix(tmpm, xv2, xv1);
+    }
     fixLegToCoords(":both", tmp_fix_coords);
 
     /* update ref_forces ;; sp's absolute -> rmc's absolute */
@@ -494,6 +509,17 @@ void AutoBalancer::getTargetParameters()
   }
   if ( transition_count > 0 ) {
     ref_zmp = transition_smooth_gain * ( ref_zmp - prev_ref_zmp ) + prev_ref_zmp;
+  }
+}
+
+hrp::Matrix33 AutoBalancer::OrientRotationMatrix (const hrp::Matrix33& rot, const hrp::Vector3& axis1, const hrp::Vector3& axis2)
+{
+  hrp::Vector3 vv = axis1.cross(axis2);
+  if (fabs(vv.norm()-0.0) < 1e-5) {
+    return rot;
+  } else {
+    Eigen::AngleAxis<double> tmpr(std::asin(vv.norm()), vv.normalized());
+    return tmpr.toRotationMatrix() * rot;
   }
 }
 

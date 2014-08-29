@@ -19,11 +19,22 @@ def init ():
     hcf.getRTCList = hcf.getRTCListUnstable
     hcf.init ("SampleRobot(Robot)0", "@OPENHRP_DIR@/share/OpenHRP-3.1/sample/model/sample1.wrl")
 
+def testPoseList(pose_list, initial_pose):
+    for pose in pose_list:
+        hcf.seq_svc.setJointAngles(pose, 1.0)
+        hcf.seq_svc.waitInterpolation()
+        hcf.seq_svc.setJointAngles(initial_pose, 1.0)
+        hcf.seq_svc.waitInterpolation()
+
 def demo():
     init()
     # set initial pose from sample/controller/SampleController/etc/Sample.pos
     initial_pose = [-7.779e-005,  -0.378613,  -0.000209793,  0.832038,  -0.452564,  0.000244781,  0.31129,  -0.159481,  -0.115399,  -0.636277,  0,  0,  0,  -7.77902e-005,  -0.378613,  -0.000209794,  0.832038,  -0.452564,  0.000244781,  0.31129,  0.159481,  0.115399,  -0.636277,  0,  0,  0,  0,  0,  0]
     arm_front_pose = [-7.779e-005,  -0.378613,  -0.000209793,  0.832038,  -0.452564,  0.000244781, -0.8,  -0.159481,  -0.115399,  -0.636277,  0,  0,  0,  -7.77902e-005,  -0.378613,  -0.000209794,  0.832038,  -0.452564,  0.000244781,  -0.8,  0.159481,  0.115399,  -0.636277,  0,  0,  0,  0.2,  0,  0]
+    half_sitting_pose=[2.754190e-16, -0.631511, -1.160177e-16, 1.30679, -0.675275, -3.439017e-16, 0.523599, 0.0, 0.0, -1.0472, 0.15708, -0.113446, 0.637045, 2.856371e-16, -0.631511, -1.160180e-16, 1.30679, -0.675275, -3.541195e-16, 0.523599, 0.0, 0.0, -1.0472, -0.15708, -0.113446, -0.637045, 0.0, 0.0, 0.0]
+    root_rot_x_pose=[-0.244096, -0.650921, 0.01133, 1.34428, -0.695635, 0.076418, 0.523599, 0.0, 0.0, -1.0472, 0.15708, -0.113446, 0.637045, -0.235678, -0.574772, 0.010764, 1.18278, -0.610206, 0.066987, 0.523599, 0.0, 0.0, -1.0472, -0.15708, -0.113446, -0.637045, 0.0, 0.0, 0.0]
+    root_rot_y_pose=[-8.967287e-17, -1.05961, -8.912514e-17, 0.737406, -0.201393, 1.393984e-17, 0.523599, 0.0, 0.0, -1.0472, 0.15708, -0.113446, 0.637045, -3.823796e-17, -1.05961, -5.922052e-17, 0.737406, -0.201393, -1.563986e-17, 0.523599, 0.0, 0.0, -1.0472, -0.15708, -0.113446, -0.637045, 0.0, 0.0, 0.0]
+    pose_list=[half_sitting_pose, root_rot_x_pose, root_rot_y_pose, arm_front_pose]
     hcf.seq_svc.setJointAngles(initial_pose, 2.0)
     hcf.seq_svc.waitInterpolation()
 
@@ -57,6 +68,10 @@ def demo():
     hcf.abc_svc.stopAutoBalancer();
     ret[1].default_zmp_offsets = [[0,0,0], [0,0,0]]
     hcf.abc_svc.setAutoBalancerParam(ret[1])
+    #   5. change base height, base rot x, base rot y, and upper body while AutoBalancer mode
+    hcf.abc_svc.startAutoBalancer(["rleg", "lleg"]);
+    testPoseList(pose_list, initial_pose)
+    hcf.abc_svc.stopAutoBalancer();
 
     # sample for walk pattern generation by AutoBalancer RTC
     #   1. goPos
@@ -74,11 +89,18 @@ def demo():
     hcf.abc_svc.setFootSteps([OpenHRP.AutoBalancerService.Footstep([0,-0.09,0], [1,0,0,0], "rleg"), OpenHRP.AutoBalancerService.Footstep([0.15,0.09,0], [1,0,0,0], "lleg"), OpenHRP.AutoBalancerService.Footstep([0.3,-0.09,0], [1,0,0,0], "rleg"), OpenHRP.AutoBalancerService.Footstep([0.3,0.09,0], [1,0,0,0], "lleg")])
     hcf.abc_svc.waitFootSteps()
     print "setFootSteps()=>OK"
-    #   4. getGaitGeneratorParam
+    #   4. change base height, base rot x, base rot y, and upper body while walking
+    hcf.abc_svc.startAutoBalancer(["rleg", "lleg"]);
+    hcf.abc_svc.waitFootSteps()
+    hcf.abc_svc.goVelocity(0,0,0)
+    testPoseList(pose_list, initial_pose)
+    hcf.abc_svc.goStop()
+    hcf.abc_svc.stopAutoBalancer();
+    #   5. getGaitGeneratorParam
     ret1 = hcf.abc_svc.getGaitGeneratorParam()
     if ret1[0]:
         print "getGaitGeneratorParam() => OK"
-    #   5. setGaitGeneratorParam
+    #   6. setGaitGeneratorParam
     newparam = hcf.abc_svc.getGaitGeneratorParam()
     newparam[1].default_step_time = 0.7
     newparam[1].default_step_height = 0.15
@@ -92,7 +114,7 @@ def demo():
     time.sleep(1)
     hcf.abc_svc.goStop()
     hcf.abc_svc.setGaitGeneratorParam(ret1[1]) # revert parameter
-    #  6. non-default stride
+    #   7. non-default stride
     hcf.abc_svc.startAutoBalancer(["rleg", "lleg"]);
     hcf.abc_svc.setFootSteps([OpenHRP.AutoBalancerService.Footstep([0,-0.09,0], [1,0,0,0], "rleg"), OpenHRP.AutoBalancerService.Footstep([0.15,0.09,0], [1,0,0,0], "lleg")])
     hcf.abc_svc.waitFootSteps()
