@@ -23,7 +23,6 @@ env:
     - TEST_TYPE=work_with_315_1_10    TEST_PACKAGE=hironx-ros-bridge
 script: source .travis.sh
 after_success:
-  - set +x
   - export GIT_COMMITTER_NAME=$GIT_NAME
   - export GIT_COMMITTER_EMAIL=$GIT_EMAIL
   - export GIT_AUTHOR_NAME=$GIT_NAME
