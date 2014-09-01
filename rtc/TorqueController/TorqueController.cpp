@@ -465,11 +465,14 @@ bool TorqueController::setMultipleReferenceTorques(const OpenHRP::TorqueControll
   return succeed;
 }
 
-bool TorqueController::setTorqueControllerParam(OpenHRP::TorqueControllerService::torqueControllerParam& t_param)
+bool TorqueController::setTorqueControllerParam(const OpenHRP::TorqueControllerService::torqueControllerParam& t_param)
 {
   // find target motor controller
   std::string jname = std::string(t_param.name);
   MotorTorqueController *tgt_controller;
+  if (isDebug()) {
+    std::cerr << "target joint:" << t_param.name << std::endl;
+  }
   for (std::vector<MotorTorqueController>::iterator it = m_motorTorqueControllers.begin(); it != m_motorTorqueControllers.end(); ++it) {
     if ((*it).getJointName() == jname){
       tgt_controller = &(*it);
@@ -481,12 +484,21 @@ bool TorqueController::setTorqueControllerParam(OpenHRP::TorqueControllerService
   MotorTorqueController::motor_model_t model_type = tgt_controller->getMotorModelType();
   switch(model_type) { // dt is defined by controller cycle
   case MotorTorqueController::TWO_DOF_CONTROLLER:
+    if (isDebug()) {
+      std::cerr << "new param:" << t_param.ke << " " << t_param.tc << " " << std::endl;
+    }
     retval = tgt_controller->updateControllerParam(t_param.ke, t_param.tc, m_dt);
     break;
   case MotorTorqueController::TWO_DOF_CONTROLLER_PD_MODEL:
+    if (isDebug()) {
+      std::cerr << "new param:" << t_param.ke << " " << t_param.kd << " " << t_param.tc << " " << std::endl;
+    }
     retval = tgt_controller->updateControllerParam(t_param.ke, t_param.kd, t_param.tc, m_dt);
     break;
   case MotorTorqueController::TWO_DOF_CONTROLLER_DYNAMICS_MODEL:
+    if (isDebug()) {
+      std::cerr << "new param:" << t_param.alpha << " " << t_param.beta << " " << t_param.ki << " " << t_param.tc << " " << std::endl;
+    }
     retval = tgt_controller->updateControllerParam(t_param.alpha, t_param.beta, t_param.ki, t_param.tc, m_dt);
     break;
   default:
