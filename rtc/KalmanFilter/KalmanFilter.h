@@ -28,6 +28,59 @@ namespace hrp{
 class KFilter {
 public:
   KFilter() {
+      F(0,0) = 1; F(0,1) =-0.005;
+      F(1,0) = 0; F(1,1) =    1;
+
+      P(0,0) = 0; P(0,1) =    0;
+      P(1,0) = 0; P(1,1) =    0;
+
+      Q(0,0) = 0.001 * 0.005; Q(0,1) = 0.000 * 0.005;
+      Q(1,0) = 0.000 * 0.005; Q(1,1) = 0.003 * 0.005;
+
+      R = 0.03;
+
+      B(0) = 0.005; B(1) = 0;
+
+      H(0,0) = 1; H(0,1) = 0;
+
+      x(0) = 0; x(1) = 0;
+
+      I = hrp::dmatrix::Identity(2,2);
+  }
+  void setF(double _f0, double _f1, double _f2, double _f3) { F(0,0) = _f0; F(0,1) = _f1; F(1,0) = _f2; F(1,1) = _f3;}
+  void setP(double _p0, double _p1, double _p2, double _p3) { P(0,0) = _p0; P(0,1) = _p1; P(1,0) = _p2; P(1,1) = _p3;}
+  void setQ(double _q0, double _q1, double _q2, double _q3) { Q(0,0) = _q0; Q(0,1) = _q1; Q(1,0) = _q2; Q(1,1) = _q3;}
+  void setR(double _R) { R = _R; }
+  void setB(double _b0, double _b1) { B[0] = _b0; B[1] = _b1; }
+  hrp::Vector2 &getx() { return x; }
+  void update(double u, double z) {
+      // Predicted (a priori) state estimate
+      x = F * x + B * u;
+      // Predicted (a priori) estimate covariance
+      P = F * P * F.transpose() + Q;
+      //
+      // Innovation or measurement residual
+      double y = z - H * x;
+      // Innovation (or residual) covariance
+      double S = H * P * H.transpose() + R;
+      // Optimal Kalman gain
+      K = P * H.transpose() / S;
+      // Updated (a posteriori) state estimate
+      x = x + K * y;
+      // Updated (a posteriori) estimate covariance
+      P = (I - K * H) * P;
+  }
+private:
+  hrp::Matrix22 P, Q, I, F;
+  Eigen::Matrix<double, 1, 2> H;
+  hrp::Vector2 B, K;
+  hrp::Vector2 x;
+  double R;
+};
+
+class EKFilter {
+public:
+  EKFilter() {
     x << 1, 0, 0, 0, 0, 0, 0;
     P = Eigen::Matrix<double, 7, 7>::Identity() * 5;
     Q = Eigen::Matrix<double, 7, 7>::Identity();
@@ -334,7 +387,8 @@ protected:
 
 private:
   double m_dt;
-  KFilter ekf_filter;
+  KFilter r_filter, p_filter, y_filter;
+  EKFilter ekf_filter;
   hrp::BodyPtr m_robot;
   hrp::Matrix33 m_sensorR;
   unsigned int m_debugLevel;
