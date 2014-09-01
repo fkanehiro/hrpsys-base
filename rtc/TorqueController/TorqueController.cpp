@@ -465,7 +465,7 @@ bool TorqueController::setMultipleReferenceTorques(const OpenHRP::TorqueControll
   return succeed;
 }
 
-bool TorqueController::setTorqueControllerParam(OpenHRP::TorqueControllerService::torqueControllerParam t_param)
+bool TorqueController::setTorqueControllerParam(OpenHRP::TorqueControllerService::torqueControllerParam& t_param)
 {
   // find target motor controller
   std::string jname = std::string(t_param.name);
