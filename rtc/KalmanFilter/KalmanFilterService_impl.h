@@ -21,7 +21,8 @@ public:
 	*/
 	virtual ~KalmanFilterService_impl();
 
-	bool SetKalmanFilterParam(double Q_angle, double Q_rate, double R_angle);
+	bool setKalmanFilterParam(const OpenHRP::KalmanFilterService::KalmanFilterParam& i_param);
+	bool getKalmanFilterParam(OpenHRP::KalmanFilterService::KalmanFilterParam& i_param);
 
 	void kalman(KalmanFilter *i_kalman);
 

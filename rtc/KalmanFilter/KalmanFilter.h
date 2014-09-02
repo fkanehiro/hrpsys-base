@@ -336,7 +336,8 @@ public:
   // The action that is invoked when execution context's rate is changed
   // no corresponding operation exists in OpenRTm-aist-0.2.0
   // virtual RTC::ReturnCode_t onRateChanged(RTC::UniqueId ec_id);
-  bool SetKalmanFilterParam(double Q_angle, double Q_rate, double R_angle);
+  bool setKalmanFilterParam(const OpenHRP::KalmanFilterService::KalmanFilterParam& i_param);
+  bool getKalmanFilterParam(OpenHRP::KalmanFilterService::KalmanFilterParam& i_param);
 
 protected:
   // Configuration variable declaration
@@ -386,7 +387,7 @@ protected:
   // </rtc-template>
 
 private:
-  double m_dt;
+  double m_dt, Q_angle, Q_rate, R_angle;
   KFilter r_filter, p_filter, y_filter;
   EKFilter ekf_filter;
   hrp::BodyPtr m_robot;

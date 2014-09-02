@@ -118,22 +118,25 @@ RTC::ReturnCode_t KalmanFilter::onInitialize()
               << std::endl;
   }
 
+  Q_angle = 0.001;
+  Q_rate = 0.003;
+  R_angle = 0.03;
   r_filter.setF(1, -m_dt, 0, 1);
   r_filter.setP(0, 0, 0, 0);
-  r_filter.setQ(0.001*m_dt, 0, 0, 0.003*m_dt);
-  r_filter.setR(0.03);
+  r_filter.setQ(Q_angle*m_dt, 0, 0, Q_rate*m_dt);
+  r_filter.setR(R_angle);
   r_filter.setB(m_dt, 0);
 
   p_filter.setF(1, -m_dt, 0, 1);
   p_filter.setP(0, 0, 0, 0);
-  p_filter.setQ(0.001*m_dt, 0, 0, 0.003*m_dt);
-  p_filter.setR(0.03);
+  p_filter.setQ(Q_angle*m_dt, 0, 0, Q_rate*m_dt);
+  p_filter.setR(R_angle);
   p_filter.setB(m_dt, 0);
 
   y_filter.setF(1, -m_dt, 0, 1);
   y_filter.setP(0, 0, 0, 0);
-  y_filter.setQ(0.001*m_dt, 0, 0, 0.003*m_dt);
-  y_filter.setR(0.03);
+  y_filter.setQ(Q_angle*m_dt, 0, 0, Q_rate*m_dt);
+  y_filter.setR(R_angle);
   y_filter.setB(m_dt, 0);
 
   m_rpy.data.r = 0;
@@ -356,8 +359,12 @@ RTC::ReturnCode_t KalmanFilter::onExecute(RTC::UniqueId ec_id)
   }
 */
 
-bool KalmanFilter::SetKalmanFilterParam(double Q_angle, double Q_rate, double R_angle) {
+bool KalmanFilter::setKalmanFilterParam(const OpenHRP::KalmanFilterService::KalmanFilterParam& i_param)
+{
 
+    Q_angle = i_param.Q_angle;
+    Q_rate = i_param.Q_rate;
+    R_angle = i_param.R_angle;
     r_filter.setF(1, -m_dt, 0, 1);
     r_filter.setP(0, 0, 0, 0);
     r_filter.setQ(Q_angle*m_dt, 0, 0, Q_rate*m_dt);
@@ -379,6 +386,13 @@ bool KalmanFilter::SetKalmanFilterParam(double Q_angle, double Q_rate, double R_
     return true;
 }
 
+bool KalmanFilter::getKalmanFilterParam(OpenHRP::KalmanFilterService::KalmanFilterParam& i_param)
+{
+  i_param.Q_angle = Q_angle;
+  i_param.Q_rate = Q_rate;
+  i_param.R_angle = R_angle;
+  return true;
+}
 
 extern "C"
 {
