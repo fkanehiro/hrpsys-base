@@ -469,36 +469,32 @@ bool TorqueController::setTorqueControllerParam(const OpenHRP::TorqueControllerS
 {
   // find target motor controller
   std::string jname = std::string(t_param.name);
-  MotorTorqueController *tgt_controller;
-  if (isDebug()) {
-    std::cerr << "target joint:" << t_param.name << std::endl;
-  }
+  MotorTorqueController *tgt_controller = NULL;
   for (std::vector<MotorTorqueController>::iterator it = m_motorTorqueControllers.begin(); it != m_motorTorqueControllers.end(); ++it) {
     if ((*it).getJointName() == jname){
+      std::cerr << "target joint:" << t_param.name << std::endl;
       tgt_controller = &(*it);
     }
-  }  
+  }
+  if (tgt_controller == NULL) {
+    std::cerr << t_param.name << "does not found." << std::endl;
+    return false;
+  }
 
   // update torque controller param
   bool retval;
   MotorTorqueController::motor_model_t model_type = tgt_controller->getMotorModelType();
   switch(model_type) { // dt is defined by controller cycle
   case MotorTorqueController::TWO_DOF_CONTROLLER:
-    if (isDebug()) {
-      std::cerr << "new param:" << t_param.ke << " " << t_param.tc << " " << std::endl;
-    }
+    std::cerr << "new param:" << t_param.ke << " " << t_param.tc << " " << std::endl;
     retval = tgt_controller->updateControllerParam(t_param.ke, t_param.tc, m_dt);
     break;
   case MotorTorqueController::TWO_DOF_CONTROLLER_PD_MODEL:
-    if (isDebug()) {
-      std::cerr << "new param:" << t_param.ke << " " << t_param.kd << " " << t_param.tc << " " << std::endl;
-    }
+    std::cerr << "new param:" << t_param.ke << " " << t_param.kd << " " << t_param.tc << " " << std::endl;
     retval = tgt_controller->updateControllerParam(t_param.ke, t_param.kd, t_param.tc, m_dt);
     break;
   case MotorTorqueController::TWO_DOF_CONTROLLER_DYNAMICS_MODEL:
-    if (isDebug()) {
-      std::cerr << "new param:" << t_param.alpha << " " << t_param.beta << " " << t_param.ki << " " << t_param.tc << " " << std::endl;
-    }
+    std::cerr << "new param:" << t_param.alpha << " " << t_param.beta << " " << t_param.ki << " " << t_param.tc << " " << std::endl;
     retval = tgt_controller->updateControllerParam(t_param.alpha, t_param.beta, t_param.ki, t_param.tc, m_dt);
     break;
   default:

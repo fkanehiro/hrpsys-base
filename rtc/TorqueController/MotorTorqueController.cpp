@@ -54,8 +54,10 @@ bool MotorTorqueController::updateControllerParam(double _ke, double _tc, double
     retval = m_normalController.updateTwoDofControllerParam(_ke, _tc, _dt);
     retval = m_emergencyController.updateTwoDofControllerParam(_ke, _tc, _dt) && retval;
     return retval;
+  } else {
+    std::cerr << "motor model type is not TwoDofController" << std::endl;
+    return false;
   }
-  return false;
 }
 
 // for TwoDofControllerPDModel
@@ -78,8 +80,10 @@ bool MotorTorqueController::updateControllerParam(double _ke, double _kd, double
     retval = m_normalController.updateTwoDofControllerPDModelParam(_ke, _kd, _tc, _dt);
     retval = m_emergencyController.updateTwoDofControllerPDModelParam(_ke, _kd, _tc, _dt) && retval;
     return retval;
+  } else {
+    std::cerr << "motor model type is not TwoDofControllerPDModel" << std::endl;
+    return false;
   }
-  return false;
 }
 
 // for TwoDofControllerDynamicsModel
@@ -98,13 +102,15 @@ void MotorTorqueController::setupController(double _alpha, double _beta, double 
 }
 bool MotorTorqueController::updateControllerParam(double _alpha, double _beta, double _ki, double _tc, double _dt)
 {
-  if (m_motor_model_type == TWO_DOF_CONTROLLER_PD_MODEL) {
+  if (m_motor_model_type == TWO_DOF_CONTROLLER_DYNAMICS_MODEL) {
     bool retval;
     retval = m_normalController.updateTwoDofControllerDynamiccsModelParam(_alpha, _beta, _ki, _tc, _dt);
     retval = m_emergencyController.updateTwoDofControllerDynamiccsModelParam(_alpha, _beta, _ki, _tc, _dt) && retval;
-    return true;
+    return retval;
+  } else {
+    std::cerr << "motor model type is not TwoDofControllerDynamicsModel" << std::endl;
+    return false;
   }
-  return false;
 }
 
 // common public functions
@@ -304,9 +310,13 @@ void MotorTorqueController::MotorController::setupTwoDofController(double _ke, d
 bool MotorTorqueController::MotorController::updateTwoDofControllerParam(double _ke, double _tc, double _dt)
 {
   if (typeid(*controller) != typeid(TwoDofController) || boost::dynamic_pointer_cast<TwoDofController>(controller) == NULL) {
+    std::cerr << "incorrect controller type: TwoDofController" << std::endl;
     return false;
   }  
-  
+  if (state != INACTIVE) {
+    std::cerr << "controller is not inactive" << std::endl;
+    return false;
+  }
   TwoDofController::TwoDofControllerParam param;
   (boost::dynamic_pointer_cast<TwoDofController>(controller))->getParameter(param);
   updateParam(param.ke, _ke);
@@ -325,8 +335,13 @@ void MotorTorqueController::MotorController::setupTwoDofControllerPDModel(double
 bool MotorTorqueController::MotorController::updateTwoDofControllerPDModelParam(double _ke, double _kd, double _tc, double _dt)
 {
   if (typeid(*controller) != typeid(TwoDofControllerPDModel) || boost::dynamic_pointer_cast<TwoDofControllerPDModel>(controller) == NULL) {
+    std::cerr << "incorrect controller type: TwoDofControllerPDModel" << std::endl;
     return false;
   }  
+  if (state != INACTIVE) {
+    std::cerr << "controller is not inactive" << std::endl;
+    return false;
+  }
   TwoDofControllerPDModel::TwoDofControllerPDModelParam param;
   (boost::dynamic_pointer_cast<TwoDofControllerPDModel>(controller))->getParameter(param);
   updateParam(param.ke, _ke);
@@ -346,6 +361,11 @@ void MotorTorqueController::MotorController::setupTwoDofControllerDynamicsModel(
 bool MotorTorqueController::MotorController::updateTwoDofControllerDynamiccsModelParam(double _alpha, double _beta, double _ki, double _tc, double _dt)
 {
   if (typeid(*controller) != typeid(TwoDofControllerDynamicsModel) || boost::dynamic_pointer_cast<TwoDofControllerDynamicsModel>(controller) == NULL) {
+    std::cerr << "incorrect controller type: TwoDofControllerDynamicsModel" << std::endl;
+    return false;
+  }
+  if (state != INACTIVE) {
+    std::cerr << "controller is not inactive" << std::endl;
     return false;
   }
   TwoDofControllerDynamicsModel::TwoDofControllerDynamicsModelParam param;
