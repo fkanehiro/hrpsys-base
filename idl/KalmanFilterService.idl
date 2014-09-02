@@ -6,6 +6,26 @@ module OpenHRP
 {
   interface KalmanFilterService
   {
-    boolean SetKalmanFilterParam(in double Q_angle, in double Q_rate, in double R_angle);
+    struct KalmanFilterParam
+    {
+      double Q_angle;
+      double Q_rate;
+      double R_angle;
+    };
+
+    /**
+     * @brief Set KalmanFilter parameters
+     * @param i_param is input parameter
+     * @return true if set successfully, false otherwise
+     */
+    boolean setKalmanFilterParam(in KalmanFilterParam i_param);
+
+    /**
+     * @brief Get KalmanFilter parameters
+     * @param i_param is input parameter
+     * @return true if set successfully, false otherwise
+     */
+    boolean getKalmanFilterParam(out KalmanFilterParam i_param);
+
   };
 };

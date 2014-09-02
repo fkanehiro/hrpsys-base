@@ -11,10 +11,15 @@ KalmanFilterService_impl::~KalmanFilterService_impl()
 {
 }
 
-bool KalmanFilterService_impl::SetKalmanFilterParam(double Q_angle, double Q_rate, double R_angle)
+bool KalmanFilterService_impl::setKalmanFilterParam(const OpenHRP::KalmanFilterService::KalmanFilterParam& i_param)
 {
-	//std::cout << "KalmanFilterService: " << std::endl;
-	return m_kalman->SetKalmanFilterParam(Q_angle, Q_rate, R_angle);
+	return m_kalman->setKalmanFilterParam(i_param);
+}
+
+bool KalmanFilterService_impl::getKalmanFilterParam(OpenHRP::KalmanFilterService::KalmanFilterParam& i_param)
+{
+	i_param = OpenHRP::KalmanFilterService::KalmanFilterParam();
+	return m_kalman->getKalmanFilterParam(i_param);
 }
 
 void KalmanFilterService_impl::kalman(KalmanFilter *i_kalman)
