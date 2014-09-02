@@ -209,6 +209,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   eefm_pos_time_const_swing = 0.04;
   eefm_pos_transition_time = 0.02;
   eefm_zmp_delay_time_const[0] = eefm_zmp_delay_time_const[1] = 0.04;
+  eefm_leg_inside_margin = 0.065; // [m]
 
   // parameters for RUNST
   double ke = 0, tc = 0;
@@ -686,15 +687,14 @@ void Stabilizer::getActualParameters ()
   double alpha;
   hrp::Vector3 tau_0 = hrp::Vector3::Zero();
   {
-    double leg_margin = 0.065; // [m]
     hrp::Vector3 ee_pos[2];
     for (size_t i = 0; i < 2; i++) {
       hrp::Link* target = m_robot->sensor<hrp::ForceSensor>(sensor_names[i])->link;
       ee_pos[i] = target->p + target->R * ee_map[target->name].localp;
     }
     // tmp
-    double ledge=ee_pos[1](1) - leg_margin;
-    double redge=ee_pos[0](1) + leg_margin;
+    double ledge=ee_pos[1](1) - eefm_leg_inside_margin;
+    double redge=ee_pos[0](1) + eefm_leg_inside_margin;
     if (ledge < new_refzmp(1)) {
       alpha = 0.0;
     } else if (redge > new_refzmp(1)) {
@@ -1348,6 +1348,7 @@ void Stabilizer::getParameter(OpenHRP::StabilizerService::stParam& i_stp)
   i_stp.eefm_pos_time_const_support = eefm_pos_time_const_support;
   i_stp.eefm_pos_time_const_swing = eefm_pos_time_const_swing;
   i_stp.eefm_pos_transition_time = eefm_pos_transition_time;
+  i_stp.eefm_leg_inside_margin = eefm_leg_inside_margin;
 };
 
 void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
@@ -1387,8 +1388,10 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
   eefm_pos_time_const_support = i_stp.eefm_pos_time_const_support;
   eefm_pos_time_const_swing = i_stp.eefm_pos_time_const_swing;
   eefm_pos_transition_time = i_stp.eefm_pos_transition_time;
+  eefm_leg_inside_margin = i_stp.eefm_leg_inside_margin;
   std::cerr << " eefm_rot_damping_gain " << eefm_rot_damping_gain << " eefm_rot_time_const " <<  eefm_rot_time_const << std::endl;
   std::cerr << " eefm_pos_damping_gain " << eefm_pos_damping_gain << " eefm_pos_time_const_support " <<  eefm_pos_time_const_support << " eefm_pos_time_const_swing " << eefm_pos_time_const_swing << " eefm_pos_transition_time " << eefm_pos_transition_time << std::endl;
+  std::cerr << " eefm_leg_inside_margin " << eefm_leg_inside_margin << std::endl;
 }
 
 void Stabilizer::waitSTTransition()
