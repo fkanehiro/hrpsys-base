@@ -36,6 +36,7 @@ module OpenHRP
       double eefm_pos_time_const_support;
       double eefm_pos_time_const_swing;
       double eefm_pos_transition_time;
+      double eefm_leg_inside_margin;
     };
 
     /**
