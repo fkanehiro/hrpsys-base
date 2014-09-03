@@ -9,24 +9,25 @@ module OpenHRP
   {
     typedef sequence<double, 3> DblSequence3;
 
+    // Impedance Controller Parameters
     struct impedanceParam {
-      string name;
-      string base_name;
-      string target_name;
-      double M_p;
-      double D_p;
-      double K_p;
-      double M_r;
-      double D_r;
-      double K_r;
-      DblSequence3 ref_force;
-      DblSequence3 force_gain;
-      DblSequence3 ref_moment;
-      DblSequence3 moment_gain;
-      double sr_gain;
-      double avoid_gain;
-      double reference_gain;
-      double manipulability_limit;
+      string name; // Name of end effector.
+      string base_name; // Name of inverse kinematics root link.
+      string target_name; // Name of inverse kinematics end effector link.
+      double M_p; // Position mass [N/(m/s^2)]
+      double D_p; // Position damper [N/(m/s)]
+      double K_p; // Position spring [N/m]
+      double M_r; // Rotation mass [Nm/(rad/s^2)]
+      double D_r; // Rotation damper [N/(rad/s)]
+      double K_r; // Rotation spring [N/rad]
+      DblSequence3 ref_force; // Reference Force [N] (x,y,z).
+      DblSequence3 force_gain; // Force gain (x,y,z).
+      DblSequence3 ref_moment; // Reference Moment [Nm] (x,y,z).
+      DblSequence3 moment_gain; // Moment gain (x,y,z).
+      double sr_gain; // SR-inverse gain for inverse kinematics.
+      double avoid_gain; // Avoid joint limit gain for inverse kinematics.
+      double reference_gain; // Reference joint angles tracking gain for inverse kinematics.
+      double manipulability_limit; // Manipulability limit for inverse kinematics.
     };
 
     /**

@@ -12,11 +12,13 @@ module OpenHRP
     //typedef sequence<double, 4> DblSequence4;
     typedef double DblArray3[3];
     typedef double DblArray4[4];
+
+    // Foot Step
     struct Footstep
     {
-      DblArray3 pos; // foot position
-      DblArray4 rot; // foot orientation by quaternion
-      string leg; // leg name
+      DblArray3 pos; // Foot position [m]
+      DblArray4 rot; // Foot orientation by quaternion (w,x,y,z)
+      string leg; // Leg name (rleg or lleg)
     };
     typedef sequence<Footstep> FootstepSequence;
 
@@ -34,31 +36,31 @@ module OpenHRP
 
     struct FootstepParam
     {
-      Footstep rleg_coords;
-      Footstep lleg_coords;
-      Footstep support_leg_coords;
-      Footstep swing_leg_coords;
-      Footstep swing_leg_src_coords;
-      Footstep swing_leg_dst_coords;
-      Footstep dst_foot_midcoords;
-      SupportLegState support_leg;
-      SupportLegState support_leg_with_both;
+      Footstep rleg_coords; // Current right foot coords
+      Footstep lleg_coords; // Current left foot coords
+      Footstep support_leg_coords; // Support foot coords
+      Footstep swing_leg_coords; // Swing foot coords, which is interpolation betwee swing_leg_src_coords and swing_leg_dst_coords
+      Footstep swing_leg_src_coords; // Source coords for swing foot
+      Footstep swing_leg_dst_coords; // Destination coords for swing foot
+      Footstep dst_foot_midcoords; // Destination foot midcoords
+      SupportLegState support_leg; // RLEG or LLEG
+      SupportLegState support_leg_with_both; // RLEG, LLEG, or BOTH
     };
 
     typedef sequence<string> StrSequence;
 
-    struct GaitGeneratorParam // parameters for GaitGenerator
+    struct GaitGeneratorParam // Parameters for GaitGenerator
     {
-      double default_step_time; // step time [s]
-      double default_step_height; // step height [m]
-      double default_double_support_ratio; // ratio of double support period. ratio is included in (0, 1)
-      sequence<double, 3> stride_parameter; // stride limitation of x[m], y[m], and theta[deg]
-      OrbitType default_orbit_type;
+      double default_step_time; // Step time [s]
+      double default_step_height; // Step height [m]
+      double default_double_support_ratio; // Ratio of double support period. Ratio is included in (0, 1). Double support period time is default_double_support_ratio*default_step_time.
+      sequence<double, 3> stride_parameter; // Stride limitation of x[m], y[m], and theta[deg] for goPos
+      OrbitType default_orbit_type; // Default OrbitType
     };
 
-    struct AutoBalancerParam // parameters for AutoBalancer
+    struct AutoBalancerParam // Parameters for AutoBalancer
     {
-      sequence<DblSequence3, 2> default_zmp_offsets; // zmp offset vectors[m] for :rleg and :lleg (<-please set by this order)
+      sequence<DblSequence3, 2> default_zmp_offsets; // ZMP offset vectors[m] for rleg and lleg (<-please set by this order)
       double move_base_gain;
     };
 

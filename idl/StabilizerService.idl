@@ -11,10 +11,10 @@ module OpenHRP
     // Stabilizer Parameters
     struct stParam {
       // for TPCC
-      DblArray2 k_tpcc_p;
-      DblArray2 k_tpcc_x;
-      DblArray2 k_brot_p;
-      DblArray2 k_brot_tc;
+      DblArray2 k_tpcc_p; // Feedback gain for ZMP tracking error (x,y)
+      DblArray2 k_tpcc_x; // Feedback gain for COG position tracking error (x,y)
+      DblArray2 k_brot_p; // Body posture control gain [rad/s] (roll, pitch).
+      DblArray2 k_brot_tc; // Time constant for body posture control [s] (roll, pitch).
       // for RUNST
       DblArray2 k_run_b;
       DblArray2 d_run_b;
@@ -25,18 +25,18 @@ module OpenHRP
       double d_run_x;
       double d_run_y;
       // for EEFM ST
-      DblArray2 eefm_k1;
-      DblArray2 eefm_k2;
-      DblArray2 eefm_k3;
-      DblArray2 eefm_zmp_delay_time_const;
-      DblArray2 eefm_ref_zmp_aux;
-      double eefm_rot_damping_gain;
-      double eefm_rot_time_const;
-      double eefm_pos_damping_gain;
-      double eefm_pos_time_const_support;
-      double eefm_pos_time_const_swing;
-      double eefm_pos_transition_time;
-      double eefm_leg_inside_margin;
+      DblArray2 eefm_k1; // Feedback gain for COG position tracking error (x,y)
+      DblArray2 eefm_k2; // Feedback gain for COG velocity tracking error (x,y)
+      DblArray2 eefm_k3; // Feedback gain for ZMP tracking error (x,y)
+      DblArray2 eefm_zmp_delay_time_const; // Time constant for stabilizer ZMP delay [s] (x,y)
+      DblArray2 eefm_ref_zmp_aux; // Auxiliary input for ZMP position [m] (x,y). This is used for delay model identification
+      double eefm_rot_damping_gain; // Foot rotation damping gain [Nm/(rad/s)].
+      double eefm_rot_time_const; // Foot rotation damping time constant [s].
+      double eefm_pos_damping_gain; // Foot position damping gain [N/(m/s)].
+      double eefm_pos_time_const_support; // Foot position damping time constant for double support phase [s].
+      double eefm_pos_time_const_swing; // Foot position damping time constant for single support phase [s].
+      double eefm_pos_transition_time; // Transition time for single=>double support phase gain interpolation [s].
+      double eefm_leg_inside_margin; // Inside foot margine [m]. Distance between foot end effector position and foot inside edge.
     };
 
     /**
