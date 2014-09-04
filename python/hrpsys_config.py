@@ -1249,7 +1249,7 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
         '''
         @return: This returns actual states of ther robot, which is defined in
         RobotHardware.idl
-        (https://hrpsys-base.googlecode.com/svn/trunk/idl/RobotHardwareService.idl)
+        (http://fkanehiro.github.io/hrpsys-base/d2/d27/RobotHardwareService_8idl.html)
             /**
              * @brief status of the robot
              */
