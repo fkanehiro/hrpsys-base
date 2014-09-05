@@ -248,6 +248,9 @@ class HrpsysConfigurator:
 
     # public method
     def connectComps(self):
+        '''!@breif
+        Connect components(plugins)
+        '''
         if self.rh == None or self.seq == None or self.sh == None or self.fk == None:
             print self.configurator_name, "\e[1;31m connectComps : hrpsys requries rh, seq, sh and fk, please check rtcd.conf or rtcd arguments\e[0m"
             return
@@ -416,12 +419,21 @@ class HrpsysConfigurator:
             connectPorts(self.rh.port("q"), self.el.port("qCurrent"))
 
     def activateComps(self):
+        '''!@brief
+        Activate components(plugins)
+        '''
         rtcList = self.getRTCInstanceList()
         rtm.serializeComponents(rtcList)
         for r in rtcList:
             r.start()
 
     def createComp(self, compName, instanceName):
+        '''!@breif
+        Create RTC component (plugins)
+
+        @param instanceName str: name of instance, choose one of https://github.com/fkanehiro/hrpsys-base/tree/master/rtc
+        @param comName str: name of component that to be created.
+        '''
         self.ms.load(compName)
         comp = self.ms.create(compName, instanceName)
         version = comp.ref.get_component_profile().version
@@ -436,6 +448,9 @@ class HrpsysConfigurator:
             return [comp, None, version]
 
     def createComps(self):
+        '''!@brief
+        Create components(plugins) in getRTCList()
+        '''
         for rn in self.getRTCList():
             rn2 = 'self.' + rn[0]
             if eval(rn2) == None:
@@ -445,6 +460,13 @@ class HrpsysConfigurator:
 
 
     def findComp(self, compName, instanceName, max_timeout_count=10):
+        '''!@brief
+        Find component(plugin) 
+        
+        @param compName str: component name
+        @param instanceName str: instance name
+        @max_timeout_count int: max timeout in seconds
+        '''
         timeout_count = 0
         comp = rtm.findRTC(instanceName)
         while comp == None and timeout_count < max_timeout_count:
@@ -466,6 +488,9 @@ class HrpsysConfigurator:
             return [comp, None]
 
     def findComps(self):
+        '''!@brief
+        Check if all components in getRTCList() are created
+        '''
         max_timeout_count = 10
         for rn in self.getRTCList():
             rn2 = 'self.' + rn[0]
@@ -479,6 +504,7 @@ class HrpsysConfigurator:
     # public method to configure all RTCs to be activated on rtcd
     def getRTCList(self):
         '''!@brief
+        Get list of available STABLE components
         @return list of list: List of available components. Each element consists of a list
                  of abbreviated and full names of the component.
         '''
@@ -504,6 +530,8 @@ class HrpsysConfigurator:
     # public method to configure all RTCs to be activated on rtcd which includes unstable RTCs
     def getRTCListUnstable(self):
         '''!@brief
+        Get list of available components including stable and unstable.
+
         @return list of list: List of available unstable components. Each element consists
                  of a list of abbreviated and full names of the component.
         '''
@@ -527,11 +555,17 @@ class HrpsysConfigurator:
             ]
 
     def getJointAngleControllerList(self):
+        '''!@brief
+        Get list of controller list that need to control joint angles
+        '''
         controller_list = [self.ic, self.gc, self.abc, self.st, self.co,
                            self.tc, self.el]
         return filter(lambda c: c != None, controller_list)  # only return existing controllers
 
     def getRTCInstanceList(self):
+        '''!@brief
+        Get list of RTC Instance
+        '''
         ret = [self.rh]
         for r in map(lambda x: 'self.' + x[0], self.getRTCList()):
             ret.append(eval(r))
@@ -539,6 +573,9 @@ class HrpsysConfigurator:
 
     # public method to get bodyInfo
     def getBodyInfo(self, url):
+        '''!@brief
+        Get bodyInfo
+        '''
         import CosNaming
         obj = rtm.rootnc.resolve([CosNaming.NameComponent('ModelLoader', '')])
         mdlldr = obj._narrow(ModelLoader_idl._0_OpenHRP__POA.ModelLoader)
@@ -547,6 +584,11 @@ class HrpsysConfigurator:
 
     # public method to get sensors list
     def getSensors(self, url):
+        '''!@brief
+        Get list of sensors
+
+        @param url str: model file url
+        '''
         if url == '':
             return []
         else:
@@ -555,6 +597,13 @@ class HrpsysConfigurator:
                                   self.getBodyInfo(url)._get_links())), [])  # sum is for list flatten
 
     def connectLoggerPort(self, artc, sen_name, log_name=None):
+        '''!@brief
+        Connect port to logger
+
+        @param artc object: object of component that contains sen_name port
+        @param sen_name str: name of port for logging
+        @param log_name str: name of port in logger
+        '''
         log_name = log_name if log_name else artc.name() + "_" + sen_name
         if artc and rtm.findPort(artc.ref, sen_name) != None:
             sen_type = rtm.dataTypeOfPort(artc.port(sen_name)).split("/")[1].split(":")[0]
@@ -567,6 +616,9 @@ class HrpsysConfigurator:
 
     # public method to configure default logger data ports
     def setupLogger(self):
+        '''!@brief
+        Setup logging function.
+        '''
         if self.log == None:
             print self.configurator_name, "\e[1;31m  setupLogger : self.log is not defined, please check rtcd.conf or rtcd arguments\e[0m"
             return
@@ -617,6 +669,11 @@ class HrpsysConfigurator:
         self.log_svc.clear()
 
     def waitForRTCManager(self, managerhost=nshost):
+        '''!@brief
+        Wait for RTC manager.
+
+        @param managerhost str: name of host computer that manager is running
+        '''
         self.ms = None
         while self.ms == None:
             time.sleep(1)
@@ -626,6 +683,11 @@ class HrpsysConfigurator:
             print self.configurator_name, "wait for RTCmanager : ", managerhost
 
     def waitForRobotHardware(self, robotname="Robot"):
+        '''!@brief
+        Wait for RobotHardware is exists and activated.
+
+        @param robotname str: name of RobotHardware component.
+        '''
         self.rh = None
         timeout_count = 0
         # wait for simulator or RobotHardware setup which sometime takes a long time
@@ -649,6 +711,9 @@ class HrpsysConfigurator:
         print self.configurator_name, "findComps -> RobotHardware : ", self.rh, "isActive? = ", self.rh.isActive()
 
     def checkSimulationMode(self):
+        '''!@brief
+        Check if this is running as simulation
+        '''
         # distinguish real robot from simulation by using "servoState" port
         if rtm.findPort(self.rh.ref, "servoState") == None:
             self.hgc = findRTC("HGcontroller0")
@@ -662,17 +727,29 @@ class HrpsysConfigurator:
         print self.configurator_name, "simulation_mode : ", self.simulation_mode
 
     def waitForRTCManagerAndRoboHardware(self, robotname="Robot", managerhost=nshost):
+        '''!@breif
+        Wait for both RTC Manager (waitForRTCManager()) and RobotHardware (waitForRobotHardware())
+
+        @param managerhost str: name of host computer that manager is running
+        @param robotname str: name of RobotHardware component.
+        '''
         self.waitForRTCManager(managerhost)
         self.waitForRobotHardware(robotname)
         self.checkSimulationMode()
 
     def findModelLoader(self):
+        '''!@brief
+        Try to find ModelLoader
+        '''
         try:
             return rtm.findObject("ModelLoader")
         except:
             return None
 
     def waitForModelLoader(self):
+        '''!@brief
+        Wait for ModelLoader.
+        '''
         while self.findModelLoader() == None:  # seq uses modelloader
             print self.configurator_name, "wait for ModelLoader"
             time.sleep(3)
@@ -722,6 +799,7 @@ class HrpsysConfigurator:
 
     def setJointAngles(self, angles, tm):
         '''!@brief
+        Set all joint angles.
         \verbatim
         NOTE-1: that while this method does not check angle value range,
                 any joints could emit position limit over error, which has not yet
@@ -786,6 +864,10 @@ class HrpsysConfigurator:
         return self.seq_svc.loadPattern(fname, tm)
 
     def waitInterpolation(self):
+        '''!@brief
+        Lets SequencePlayer wait until the movement currently happening to
+        finish.
+        '''
         self.seq_svc.waitInterpolation()
 
     def waitInterpolationOfGroup(self, gname):
@@ -803,9 +885,9 @@ class HrpsysConfigurator:
 
     def getJointAngles(self):
         '''!@brief
-        @see: HrpsysConfigurator.getJointAngles
-
         Returns the commanded joint angle values.
+
+        @see: HrpsysConfigurator.getJointAngles
 
         Note that it's not the physical state of the robot's joints, which
         can be obtained by getActualState().angle.
@@ -1074,8 +1156,8 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
 
     def clear(self):
         '''!@brief
-        @see HrpsysConfigurator.clear
         Clears the Sequencer's current operation. Works for joint groups too.
+        @see HrpsysConfigurator.clear
 
         Discussed in https://github.com/fkanehiro/hrpsys-base/issues/158
         Examples is found in a unit test: https://github.com/start-jsk/rtmros_hironx/blob/bb0672be3e03e5366e03fe50520e215302b8419f/hironx_ros_bridge/test/test_hironx.py#L293
@@ -1083,19 +1165,36 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
         self.seq_svc.clear()
 
     def clearOfGroup(self, gname, tm=0.0):
+        '''!@brief
+        Clears the Sequencer's current operation for joint groups.
+        '''
         self.seq_svc.clearOfGroup(gname, tm)
 
     def saveLog(self, fname='sample'):
+        '''!@brief
+        Save log to the given file name
+        
+        @param fname str: name of the file
+        '''
         self.log_svc.save(fname)
         print self.configurator_name, "saved data to ", fname
 
     def clearLog(self):
+        '''!@brief
+        Clear logger's buffer
+        '''
         self.log_svc.clear()
 
     def lengthDigitalInput(self):
+        '''!@brief
+        Returns the length of digital input port
+        '''
         return self.rh_svc.lengthDigitalInput()
 
     def lengthDigitalOutput(self):
+        '''!@brief
+        Returns the length of digital output port
+        '''
         return self.rh_svc.lengthDigitalOutput()
 
     def writeDigitalOutput(self, dout):
@@ -1186,6 +1285,7 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
 
     def readDigitalInput(self):
         '''!@brief
+        Read data from Digital Input
         @see: HrpsysConfigurator.readDigitalInput
 
         Digital input consits of 14 bits. The last 2 bits are lacking
@@ -1211,6 +1311,8 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
 
     def readDigitalOutput(self):
         '''!@brief
+        Read data from Digital Output
+
         Digital input consits of 14 bits. The last 2 bits are lacking
         and compensated, so that the last 4 bits are 0x4 instead of 0x1.
 
@@ -1233,7 +1335,8 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
 
     def getActualState(self):
         '''!@brief
-        @return: This returns actual states of ther robot, which is defined in
+        Get actual states of the robot that includes current reference joint angles and joint torques.
+        @return: This returns actual states of the robot, which is defined in
         RobotHardware.idl
         (https://github.com/fkanehiro/hrpsys-base/blob/master/idl/RobotHardwareService.idl#L33)
         \verbatim
@@ -1306,6 +1409,7 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
 
     def flat2Groups(self, flatList):
         '''!@brief
+        Convert list of angles into list of joint list for each groups.
         @param flatList list: single dimension list with its length of 15
         @return list of list: 2-dimensional list of Groups.
         '''
@@ -1319,7 +1423,7 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
 
     def servoOn(self, jname='all', destroy=1, tm=3):
         '''!@brief
-        Turn on/off servos.
+        Turn on servos.
         Joints need to be calibrated (otherwise error returns).
 
         @param jname str: The value 'all' works iteratively for all servos.
@@ -1364,6 +1468,7 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
 
     def servoOff(self, jname='all', wait=True):
         '''!@brief
+        Turn off servos.
         @param jname str: The value 'all' works iteratively for all servos.
         @param wait bool: Wait for user's confirmation via GUI
         @return int: 1 = all arm servo off. 2 = all servo on arms and hands off.
