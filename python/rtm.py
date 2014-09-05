@@ -274,10 +274,10 @@ def initCORBA():
                 nameserver = orb.resolve_initial_references("NameService");
                 rootnc = nameserver._narrow(CosNaming.NamingContext)
         except omniORB.CORBA.ORB.InvalidName, e:
-                sys.exit('[ERROR] Invalide Name (hostname={0}).\n'.format(nshost) +
+                sys.exit('[ERROR] Invalide Name (hostname=%s).\n'%(nshost) +
                          'Make sure the hostname is correct.\n' + str(e))
         except omniORB.CORBA.TRANSIENT, e:
-                sys.exit('[ERROR] Connection Failed with the Nameserver (hostname={0} port={1}).\n'.format(nshost, nsport) +
+                sys.exit('[ERROR] Connection Failed with the Nameserver (hostname=%s port=%s).\n'%(nshost, nsport) +
                          'Make sure the hostname is correct and the Nameserver is running.\n' + str(e))
         except Exception as e:
                 print str(e)
@@ -332,8 +332,8 @@ def findRTCmanager(hostname=None, rnc=None):
         try:
                 socket.gethostbyaddr(hostname)
         except Exception as e:
-                sys.exit('[ERROR] {0}\n'.format(str(e)) +
-                         '[ERROR] Could not get hostname for {0}\n'.format(hostname) +
+                sys.exit('[ERROR] %s\n'%(str(e)) +
+                         '[ERROR] Could not get hostname for %s\n'%(hostname) +
                          '[ERROR] Make sure that you set the target hostname and address in DNS' +
                          ' or /etc/hosts in linux/unix.')
 
