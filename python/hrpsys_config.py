@@ -866,6 +866,8 @@ class HrpsysConfigurator:
             raise RuntimeError("need to specify joint name")
         if frame_name:
             lname = lname + ':' + frame_name
+        if self.fk_version < '315.2.5' and ':' in lname:
+            raise RuntimeError('frame_name ('+lname+') is not supported')
         pose = self.fk_svc.getCurrentPose(lname)
         if not pose[0]:
             raise RuntimeError("Could not find reference : " + lname)
@@ -955,6 +957,8 @@ class HrpsysConfigurator:
             raise RuntimeError("need to specify joint name")
         if frame_name:
             lname = lname + ':' + frame_name
+        if self.fk_version < '315.2.5' and ':' in lname:
+            raise RuntimeError('frame_name ('+lname+') is not supported')
         pose = self.fk_svc.getReferencePose(lname)
         if not pose[0]:
             raise RuntimeError("Could not find reference : " + lname)
