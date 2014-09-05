@@ -248,6 +248,9 @@ class HrpsysConfigurator:
 
     # public method
     def connectComps(self):
+        '''!@breif
+        Connect components(plugins)
+        '''
         if self.rh == None or self.seq == None or self.sh == None or self.fk == None:
             print self.configurator_name, "\e[1;31m connectComps : hrpsys requries rh, seq, sh and fk, please check rtcd.conf or rtcd arguments\e[0m"
             return
@@ -416,12 +419,21 @@ class HrpsysConfigurator:
             connectPorts(self.rh.port("q"), self.el.port("qCurrent"))
 
     def activateComps(self):
+        '''!@brief
+        Activate components(plugins)
+        '''
         rtcList = self.getRTCInstanceList()
         rtm.serializeComponents(rtcList)
         for r in rtcList:
             r.start()
 
     def createComp(self, compName, instanceName):
+        '''!@breif
+        Create RTC component (plugins)
+
+        @param instanceName str: name of instance, choose one of https://github.com/fkanehiro/hrpsys-base/tree/master/rtc
+        @param comName str: name of component that to be created.
+        '''
         self.ms.load(compName)
         comp = self.ms.create(compName, instanceName)
         version = comp.ref.get_component_profile().version
@@ -436,6 +448,9 @@ class HrpsysConfigurator:
             return [comp, None, version]
 
     def createComps(self):
+        '''!@brief
+        Create components(plugins) in getRTCList()
+        '''
         for rn in self.getRTCList():
             rn2 = 'self.' + rn[0]
             if eval(rn2) == None:
@@ -445,6 +460,13 @@ class HrpsysConfigurator:
 
 
     def findComp(self, compName, instanceName, max_timeout_count=10):
+        '''!@brief
+        Find component(plugin) 
+        
+        @param compName str: component name
+        @param instanceName str: instance name
+        @max_timeout_count int: max timeout in seconds
+        '''
         timeout_count = 0
         comp = rtm.findRTC(instanceName)
         while comp == None and timeout_count < max_timeout_count:
@@ -466,6 +488,9 @@ class HrpsysConfigurator:
             return [comp, None]
 
     def findComps(self):
+        '''!@brief
+        Check if all components in getRTCList() are created
+        '''
         max_timeout_count = 10
         for rn in self.getRTCList():
             rn2 = 'self.' + rn[0]
@@ -478,9 +503,9 @@ class HrpsysConfigurator:
 
     # public method to configure all RTCs to be activated on rtcd
     def getRTCList(self):
-        '''
-        @rtype: list of list
-        @return: List of available components. Each element consists of a list
+        '''!@brief
+        Get list of available STABLE components
+        @return list of list: List of available components. Each element consists of a list
                  of abbreviated and full names of the component.
         '''
         return [
@@ -504,9 +529,10 @@ class HrpsysConfigurator:
 
     # public method to configure all RTCs to be activated on rtcd which includes unstable RTCs
     def getRTCListUnstable(self):
-        '''
-        @rtype: list of list
-        @return: List of available unstable components. Each element consists
+        '''!@brief
+        Get list of available components including stable and unstable.
+
+        @return list of list: List of available unstable components. Each element consists
                  of a list of abbreviated and full names of the component.
         '''
         return [
@@ -529,11 +555,17 @@ class HrpsysConfigurator:
             ]
 
     def getJointAngleControllerList(self):
+        '''!@brief
+        Get list of controller list that need to control joint angles
+        '''
         controller_list = [self.ic, self.gc, self.abc, self.st, self.co,
                            self.tc, self.el]
         return filter(lambda c: c != None, controller_list)  # only return existing controllers
 
     def getRTCInstanceList(self):
+        '''!@brief
+        Get list of RTC Instance
+        '''
         ret = [self.rh]
         for r in map(lambda x: 'self.' + x[0], self.getRTCList()):
             ret.append(eval(r))
@@ -541,6 +573,9 @@ class HrpsysConfigurator:
 
     # public method to get bodyInfo
     def getBodyInfo(self, url):
+        '''!@brief
+        Get bodyInfo
+        '''
         import CosNaming
         obj = rtm.rootnc.resolve([CosNaming.NameComponent('ModelLoader', '')])
         mdlldr = obj._narrow(ModelLoader_idl._0_OpenHRP__POA.ModelLoader)
@@ -549,6 +584,11 @@ class HrpsysConfigurator:
 
     # public method to get sensors list
     def getSensors(self, url):
+        '''!@brief
+        Get list of sensors
+
+        @param url str: model file url
+        '''
         if url == '':
             return []
         else:
@@ -557,6 +597,13 @@ class HrpsysConfigurator:
                                   self.getBodyInfo(url)._get_links())), [])  # sum is for list flatten
 
     def connectLoggerPort(self, artc, sen_name, log_name=None):
+        '''!@brief
+        Connect port to logger
+
+        @param artc object: object of component that contains sen_name port
+        @param sen_name str: name of port for logging
+        @param log_name str: name of port in logger
+        '''
         log_name = log_name if log_name else artc.name() + "_" + sen_name
         if artc and rtm.findPort(artc.ref, sen_name) != None:
             sen_type = rtm.dataTypeOfPort(artc.port(sen_name)).split("/")[1].split(":")[0]
@@ -569,6 +616,9 @@ class HrpsysConfigurator:
 
     # public method to configure default logger data ports
     def setupLogger(self):
+        '''!@brief
+        Setup logging function.
+        '''
         if self.log == None:
             print self.configurator_name, "\e[1;31m  setupLogger : self.log is not defined, please check rtcd.conf or rtcd arguments\e[0m"
             return
@@ -619,6 +669,11 @@ class HrpsysConfigurator:
         self.log_svc.clear()
 
     def waitForRTCManager(self, managerhost=nshost):
+        '''!@brief
+        Wait for RTC manager.
+
+        @param managerhost str: name of host computer that manager is running
+        '''
         self.ms = None
         while self.ms == None:
             time.sleep(1)
@@ -628,6 +683,11 @@ class HrpsysConfigurator:
             print self.configurator_name, "wait for RTCmanager : ", managerhost
 
     def waitForRobotHardware(self, robotname="Robot"):
+        '''!@brief
+        Wait for RobotHardware is exists and activated.
+
+        @param robotname str: name of RobotHardware component.
+        '''
         self.rh = None
         timeout_count = 0
         # wait for simulator or RobotHardware setup which sometime takes a long time
@@ -651,6 +711,9 @@ class HrpsysConfigurator:
         print self.configurator_name, "findComps -> RobotHardware : ", self.rh, "isActive? = ", self.rh.isActive()
 
     def checkSimulationMode(self):
+        '''!@brief
+        Check if this is running as simulation
+        '''
         # distinguish real robot from simulation by using "servoState" port
         if rtm.findPort(self.rh.ref, "servoState") == None:
             self.hgc = findRTC("HGcontroller0")
@@ -664,23 +727,35 @@ class HrpsysConfigurator:
         print self.configurator_name, "simulation_mode : ", self.simulation_mode
 
     def waitForRTCManagerAndRoboHardware(self, robotname="Robot", managerhost=nshost):
+        '''!@breif
+        Wait for both RTC Manager (waitForRTCManager()) and RobotHardware (waitForRobotHardware())
+
+        @param managerhost str: name of host computer that manager is running
+        @param robotname str: name of RobotHardware component.
+        '''
         self.waitForRTCManager(managerhost)
         self.waitForRobotHardware(robotname)
         self.checkSimulationMode()
 
     def findModelLoader(self):
+        '''!@brief
+        Try to find ModelLoader
+        '''
         try:
             return rtm.findObject("ModelLoader")
         except:
             return None
 
     def waitForModelLoader(self):
+        '''!@brief
+        Wait for ModelLoader.
+        '''
         while self.findModelLoader() == None:  # seq uses modelloader
             print self.configurator_name, "wait for ModelLoader"
             time.sleep(3)
 
     def setSelfGroups(self):
-        '''
+        '''!@brief
         Set to the hrpsys.SequencePlayer the groups of links and joints that
         are statically defined as member variables (Groups) within this class.
         '''
@@ -691,7 +766,7 @@ class HrpsysConfigurator:
     # # service interface for RTC component
     # #
     def goActual(self):
-        '''
+        '''!@brief
         Adjust commanded values to the angles in the physical state
         by calling StateHolder::goActual.
 
@@ -700,40 +775,41 @@ class HrpsysConfigurator:
         self.sh_svc.goActual()
 
     def setJointAngle(self, jname, angle, tm):
-        '''
+        '''!@brief
         Set angle to the given joint.
-
+        \verbatim
         NOTE-1: It's known that this method does not do anything after
                 some group operation is done.
                 TODO: at least need elaborated to warn users.
-
+        \endverbatim
+        \verbatim
         NOTE-2: that while this method does not check angle value range,
         any joints could emit position limit over error, which has not yet
         been thrown by hrpsys so that there's no way to catch on this client
         side. Worthwhile opening an enhancement ticket for that at
         hironx' designated issue tracker.
+        \endverbatim
 
-        @type jname: str
-        @type angle: float
-        @param angle: In degree.
-        @type tm: float
-        @param tm: Time to complete.
+        @param jname str: name of joint
+        @param angle float: In degree.
+        @param tm float: Time to complete.
         '''
         radangle = angle / 180.0 * math.pi
         return self.seq_svc.setJointAngle(jname, radangle, tm)
 
     def setJointAngles(self, angles, tm):
-        '''
+        '''!@brief
+        Set all joint angles.
+        \verbatim
         NOTE-1: that while this method does not check angle value range,
                 any joints could emit position limit over error, which has not yet
                 been thrown by hrpsys so that there's no way to catch on this client
                 side. Worthwhile opening an enhancement ticket for that at
                 hironx' designated issue tracker.
 
-        @type angles: list of float
-        @param angles: In degree.
-        @type tm: float
-        @param tm: Time to complete.
+        \endverbatim
+        @param angles list of float: In degree.
+        @param tm float: Time to complete.
         '''
         ret = []
         for angle in angles:
@@ -741,7 +817,7 @@ class HrpsysConfigurator:
         return self.seq_svc.setJointAngles(ret, tm)
 
     def setJointAnglesOfGroup(self, gname, pose, tm, wait=True):
-        '''
+        '''!@breif
         Set the joint angles to aim. By default it waits interpolation to be
         over.
 
@@ -751,14 +827,10 @@ class HrpsysConfigurator:
         class level. Please consider opening an enhancement ticket for that
         at hironx' designated issue tracker.
 
-        @type gname: str
-        @param gname: Name of the joint group.
-        @type pose: list of float
-        @param pose: list of positions and orientations
-        @type tm: float
-        @param tm: Time to complete.
-        @type wait: bool
-        @param wait: If true, SequencePlayer.waitInterpolationOfGroup gets run.
+        @param gname str: Name of the joint group.
+        @param pose list of float: list of positions and orientations
+        @param tm float: Time to complete.
+        @param wait bool: If true, SequencePlayer.waitInterpolationOfGroup gets run.
                   (TODO: Elaborate what this means...Even after having taken
                   a look at its source code I can't tell exactly what it means)
         '''
@@ -769,34 +841,37 @@ class HrpsysConfigurator:
         return ret
 
     def loadPattern(self, fname, tm):
-        '''
+        '''!@brief
         Load a pattern file that is created offline.
 
         Format of the pattern file:
         - example format:
-
+        \verbatim
           t0 j0 j1 j2...jn
           t1 j0 j1 j2...jn
           :
           tn j0 j1 j2...jn
-
+        \endverbatim
         - Delimmitted by space
         - Each line consists of an action.
         - Time between each action is defined by tn+1 - tn
           - The time taken for the 1st line is defined by the arg tm.
 
-        @param fname: Name of the pattern file.
-        @type tm: float
-        @param tm: - The time to take for the 1st line.
+        @param fname str: Name of the pattern file.
+        @param tm float: - The time to take for the 1st line.
         @return: List of 2 oct(string) values.
         '''
         return self.seq_svc.loadPattern(fname, tm)
 
     def waitInterpolation(self):
+        '''!@brief
+        Lets SequencePlayer wait until the movement currently happening to
+        finish.
+        '''
         self.seq_svc.waitInterpolation()
 
     def waitInterpolationOfGroup(self, gname):
-        '''
+        '''!@brief
         Lets SequencePlayer wait until the movement currently happening to
         finish.
 
@@ -804,32 +879,31 @@ class HrpsysConfigurator:
         @see: http://wiki.ros.org/joint_trajectory_action. This method
               corresponds to JointTrajectoryGoal in ROS.
 
-        @type gname: str
-        @param gname: Name of the joint group.
+        @param gname str: Name of the joint group.
         '''
         self.seq_svc.waitInterpolationOfGroup(gname)
 
     def getJointAngles(self):
-        '''
-        @see: HrpsysConfigurator.getJointAngles
-
+        '''!@brief
         Returns the commanded joint angle values.
+
+        @see: HrpsysConfigurator.getJointAngles
 
         Note that it's not the physical state of the robot's joints, which
         can be obtained by getActualState().angle.
 
-        @rtype: List of float
-        @return: List of angles (degree) of all joints, in the order defined
+        @return List of float: List of angles (degree) of all joints, in the order defined
                  in the member variable 'Groups' (eg. chest, head1, head2, ..).
         '''
         return [x * 180.0 / math.pi for x in self.sh_svc.getCommand().jointRefs]
 
     def getCurrentPose(self, lname=None, frame_name=None):
-        '''
+        '''!@brief
         Returns the current physical pose of the specified joint.
         cf. getReferencePose that returns commanded value.
 
         eg.
+        \verbatim
              IN: robot.getCurrentPose('LARM_JOINT5')
              OUT: [-0.0017702356144599085,
               0.00019034630541264752,
@@ -847,17 +921,16 @@ class HrpsysConfigurator:
                0.0,
                0.0,
                1.0]
-
-        @type lname: str
-        @param lname: Name of the link.
-        @rtype: list of float
-        @return: Rotational matrix and the position of the given joint in
+        \endverbatim
+        @param lname str: Name of the link.
+        @return list of float: Rotational matrix and the position of the given joint in
                  1-dimensional list, that is:
-
+        \verbatim
                  [a11, a12, a13, x,
                   a21, a22, a23, y,
                   a31, a32, a33, z,
                    0,   0,   0,  1]
+        \endverbatim
         '''
         if not lname:
             for item in self.Groups:
@@ -874,18 +947,18 @@ class HrpsysConfigurator:
         return pose[1].data
 
     def getCurrentPosition(self, lname=None, frame_name=None):
-        '''
+        '''!@brief
         Returns the current physical position of the specified joint.
         cf. getReferencePosition that returns commanded value.
 
         eg.
+        \verbatim
             robot.getCurrentPosition('LARM_JOINT5')
             [0.325, 0.182, 0.074]
+        \endverbatim
 
-        @type lname: str
-        @param lname: Name of the link.
-        @rtype: list of float
-        @return: List of x, y, z positions about the specified joint.
+        @param lname str: Name of the link.
+        @return list of float: List of x, y, z positions about the specified joint.
         '''
         if not lname:
             for item in self.Groups:
@@ -896,18 +969,18 @@ class HrpsysConfigurator:
         return [pose[3], pose[7], pose[11]]
 
     def getCurrentRotation(self, lname, frame_name=None):
-        '''
+        '''!@brief
         Returns the current physical rotation of the specified joint.
         cf. getReferenceRotation that returns commanded value.
 
-        @type lname: str
-        @param lname: Name of the link.
-        @rtype: list of float
-        @return: Rotational matrix of the given joint in 2-dimensional list,
+        @param lname str: Name of the link.
+        @return list of float: Rotational matrix of the given joint in 2-dimensional list,
                  that is:
+        \verbatim
                  [[a11, a12, a13],
                   [a21, a22, a23],
                   [a31, a32, a33]]
+        \endverbatim
         '''
         if not lname:
             for item in self.Groups:
@@ -918,14 +991,12 @@ class HrpsysConfigurator:
         return [pose[0:3], pose[4:7], pose[8:11]]
 
     def getCurrentRPY(self, lname, frame_name=None):
-        '''
+        '''!@brief
         Returns the current physical rotation in RPY of the specified joint.
         cf. getReferenceRPY that returns commanded value.
 
-        @type lname: str
-        @param lname: Name of the link.
-        @rtype: list of float
-        @return: List of orientation in rpy form about the specified joint.
+        @param lname str: Name of the link.
+        @return list of float: List of orientation in rpy form about the specified joint.
         '''
         if not lname:
             for item in self.Groups:
@@ -935,20 +1006,19 @@ class HrpsysConfigurator:
         return euler_from_matrix(self.getCurrentRotation(lname), 'sxyz')
 
     def getReferencePose(self, lname, frame_name=None):
-        '''
+        '''!@breif
         Returns the current commanded pose of the specified joint.
         cf. getCurrentPose that returns physical pose.
 
-        @type lname: str
-        @param lname: Name of the link.
-        @rtype: list of float
-        @return: Rotational matrix and the position of the given joint in
+        @param lname str: Name of the link.
+        @return list of float: Rotational matrix and the position of the given joint in
                  1-dimensional list, that is:
-
+        \verbatim
                  [a11, a12, a13, x,
                   a21, a22, a23, y,
                   a31, a32, a33, z,
                    0,   0,   0,  1]
+        \endverbatim
         '''
         if not lname:
             for item in self.Groups:
@@ -965,14 +1035,12 @@ class HrpsysConfigurator:
         return pose[1].data
 
     def getReferencePosition(self, lname, frame_name=None):
-        '''
+        '''!@breif
         Returns the current commanded position of the specified joint.
         cf. getCurrentPosition that returns physical value.
 
-        @type lname: str
-        @param lname: Name of the link.
-        @rtype: list of float
-        @return: List of angles (degree) of all joints, in the order defined
+        @param lname str: Name of the link.
+        @return list of float: List of angles (degree) of all joints, in the order defined
                  in the member variable 'Groups' (eg. chest, head1, head2, ..).
         '''
         if not lname:
@@ -984,18 +1052,18 @@ class HrpsysConfigurator:
         return [pose[3], pose[7], pose[11]]
 
     def getReferenceRotation(self, lname, frame_name=None):
-        '''
+        '''!@breif
         Returns the current commanded rotation of the specified joint.
         cf. getCurrentRotation that returns physical value.
 
-        @type lname: str
-        @param lname: Name of the link.
-        @rtype: list of float
-        @return: Rotational matrix of the given joint in 2-dimensional list,
+        @param lname str: Name of the link.
+        @return list of float: Rotational matrix of the given joint in 2-dimensional list,
                  that is:
+        \verbatim
                  [[a11, a12, a13],
                   [a21, a22, a23],
                   [a31, a32, a33]]
+        \endverbatim
         '''
         if not lname:
             for item in self.Groups:
@@ -1006,14 +1074,12 @@ class HrpsysConfigurator:
         return [pose[0:3], pose[4:7], pose[8:11]]
 
     def getReferenceRPY(self, lname, frame_name=None):
-        '''
+        '''!@brief
         Returns the current commanded rotation in RPY of the specified joint.
         cf. getCurrentRPY that returns physical value.
 
-        @type lname: str
-        @param lname: Name of the link.
-        @rtype: list of float
-        @return: List of orientation in rpy form about the specified joint.
+        @param lname str: Name of the link.
+        @return list of float: List of orientation in rpy form about the specified joint.
         '''
         if not lname:
             for item in self.Groups:
@@ -1023,23 +1089,17 @@ class HrpsysConfigurator:
         return euler_from_matrix(self.getReferenceRotation(lname, frame_name), 'sxyz')
 
     def setTargetPose(self, gname, pos, rpy, tm, frame_name=None):
-        '''
+        '''!@brief
         Set absolute pose to a joint.
         All d* arguments are in meter.
 
-        @type gname: str
-        @param gname: Name of the joint group.
-        @type pos: list of float
-        @param pos: In meter.
-        @type rpy: list of float
-        @param rpy: In radian.
-        @type tm: float
-        @param tm: Second to complete.
-        @type frame_name: str
-        @param frame_name: Name of the frame that this particular command
+        @param gname str: Name of the joint group.
+        @param pos list of float: In meter.
+        @param rpy list of float: In radian.
+        @param tm float: Second to complete.
+        @param frame_name str: Name of the frame that this particular command
                            reference to.
-        @rtype: bool
-        @return: False if unreachable.
+        @return bool: False if unreachable.
         '''
         print gname, frame_name, pos, rpy, tm
         if frame_name:
@@ -1054,39 +1114,27 @@ class HrpsysConfigurator:
 
     def setTargetPoseRelative(self, gname, eename, dx=0, dy=0, dz=0,
 dr=0, dp=0, dw=0, tm=10, wait=True):
-        '''
+        '''!@brief
         Set angles to a joint group relative to its current pose.
 
         For d*, distance arguments are in meter while rotations are in degree.
 
         Example usage: The following moves RARM_JOINT5 joint 0.1mm forward
                        within 0.1sec.
-
-            robot.setTargetPoseRelative('rarm', 'RARM_JOINT5', dx=0.0001,
-                                        tm=0.1)
-
-        @type gname: str
-        @param gname: Name of the joint group.
-        @type eename: str
-        @param eename: Name of the link.
-        @type dx: float
-        @param dx: In meter.
-        @type dy: float
-        @param dy: In meter.
-        @type dz: float
-        @param dz: In meter.
-        @type dr: float
-        @param dr: In radian.
-        @type dp: float
-        @param dp: In radian.
-        @type dw: float
-        @param dw: In radian.
-        @type tm: float
-        @param tm: Second to complete.
-        @type wait: bool
-        @param wait: If true, SequencePlayer.waitInterpolationOfGroup gets run.
-        @rtype: bool
-        @return: False if unreachable.
+        \verbatim
+            robot.setTargetPoseRelative('rarm', 'RARM_JOINT5', dx=0.0001, tm=0.1)
+        \endverbatim
+        @param gname str: Name of the joint group.
+        @param eename str: Name of the link.
+        @param dx float: In meter.
+        @param dy float: In meter.
+        @param dz float: In meter.
+        @param dr float: In radian.
+        @param dp float: In radian.
+        @param dw float: In radian.
+        @param tm float: Second to complete.
+        @param wait bol: If true, SequencePlayer.waitInterpolationOfGroup gets run.
+        @return bool: False if unreachable.
         '''
         self.waitInterpolationOfGroup(gname)
         # curPose = self.getCurrentPose(eename)
@@ -1107,9 +1155,9 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
         return False
 
     def clear(self):
-        '''
-        @see HrpsysConfigurator.clear
+        '''!@brief
         Clears the Sequencer's current operation. Works for joint groups too.
+        @see HrpsysConfigurator.clear
 
         Discussed in https://github.com/fkanehiro/hrpsys-base/issues/158
         Examples is found in a unit test: https://github.com/start-jsk/rtmros_hironx/blob/bb0672be3e03e5366e03fe50520e215302b8419f/hironx_ros_bridge/test/test_hironx.py#L293
@@ -1117,34 +1165,49 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
         self.seq_svc.clear()
 
     def clearOfGroup(self, gname, tm=0.0):
+        '''!@brief
+        Clears the Sequencer's current operation for joint groups.
+        '''
         self.seq_svc.clearOfGroup(gname, tm)
 
     def saveLog(self, fname='sample'):
+        '''!@brief
+        Save log to the given file name
+        
+        @param fname str: name of the file
+        '''
         self.log_svc.save(fname)
         print self.configurator_name, "saved data to ", fname
 
     def clearLog(self):
+        '''!@brief
+        Clear logger's buffer
+        '''
         self.log_svc.clear()
 
     def lengthDigitalInput(self):
+        '''!@brief
+        Returns the length of digital input port
+        '''
         return self.rh_svc.lengthDigitalInput()
 
     def lengthDigitalOutput(self):
+        '''!@brief
+        Returns the length of digital output port
+        '''
         return self.rh_svc.lengthDigitalOutput()
 
     def writeDigitalOutput(self, dout):
-        '''
+        '''!@brief
         Using writeDigitalOutputWithMask is recommended for the less data
         transport.
 
-        @type dout: list of int
-        @param dout: List of bits, length of 32 bits where elements are
+        @param dout list of int: List of bits, length of 32 bits where elements are
                      0 or 1.
 
                      What each element stands for depends on how
                      the robot's imlemented. Consult the hardware manual.
-        @rtype: bool
-        @return: RobotHardware.writeDigitalOutput returns True if writable. False otherwise.
+        @return bool: RobotHardware.writeDigitalOutput returns True if writable. False otherwise.
         '''
         if self.simulation_mode:
             return True
@@ -1164,12 +1227,13 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
         return self.rh_svc.writeDigitalOutput(outStr)
 
     def writeDigitalOutputWithMask(self, dout, mask):
-        '''
+        '''!@brief
         Both dout and mask are lists with length of 32. Only the bit in dout
         that corresponds to the bits in mask that are flagged as 1 will be
         evaluated.
 
         Example:
+        \verbatim
          Case-1. Only 18th bit will be evaluated as 1.
           dout [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
@@ -1187,14 +1251,12 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
                 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
           mask [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-
-        @type dout: list of int
-        @param dout: List of bits, length of 32 bits where elements are
+        \endverbatim
+        @param dout list of int: List of bits, length of 32 bits where elements are
                      0 or 1.
-        @type mask: list of int
-        @param mask: List of masking bits, length of 32 bits where elements are
+        @param mask list of int: List of masking bits, length of 32 bits where elements are
                      0 or 1.
-        @return: RobotHardware.writeDigitalOutput returns True if writable. False otherwise.
+        @return bool: RobotHardware.writeDigitalOutput returns True if writable. False otherwise.
         '''
         if self.simulation_mode:
             return True
@@ -1222,14 +1284,14 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
         return self.rh_svc.writeDigitalOutputWithMask(outStr, outMsk)
 
     def readDigitalInput(self):
-        '''
+        '''!@brief
+        Read data from Digital Input
         @see: HrpsysConfigurator.readDigitalInput
 
         Digital input consits of 14 bits. The last 2 bits are lacking
         and compensated, so that the last 4 bits are 0x4 instead of 0x1.
-        @author Hajime Saito (@emijah)
-        @rtype: list of int
-        @return: List of the values (2 octtets) in digital input register. Range: 0 or 1.
+        @author Hajime Saito (\@emijah)
+        @return list of int: List of the values (2 octtets) in digital input register. Range: 0 or 1.
 
         #TODO: Catch AttributeError that occurs when RobotHardware not found.
         #      Typically with simulator, erro msg might look like this;
@@ -1248,7 +1310,9 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
         return retList
 
     def readDigitalOutput(self):
-        '''
+        '''!@brief
+        Read data from Digital Output
+
         Digital input consits of 14 bits. The last 2 bits are lacking
         and compensated, so that the last 4 bits are 0x4 instead of 0x1.
 
@@ -1256,9 +1320,8 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
         #      Typically with simulator, erro msg might look like this;
         #      'NoneType' object has no attribute 'readDigitaloutput'
 
-        @author Hajime Saito (@emijah)
-        @rtype: list of int
-        @return: List of the values in digital input register. Range: 0 or 1.
+        @author Hajime Saito (\@emijah)
+        @return list of int: List of the values in digital input register. Range: 0 or 1.
         '''
         ret, dout = self.rh_svc.readDigitalOutput()
         retList = []
@@ -1271,10 +1334,12 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
         return retList
 
     def getActualState(self):
-        '''
-        @return: This returns actual states of ther robot, which is defined in
+        '''!@brief
+        Get actual states of the robot that includes current reference joint angles and joint torques.
+        @return: This returns actual states of the robot, which is defined in
         RobotHardware.idl
-        (http://fkanehiro.github.io/hrpsys-base/d2/d27/RobotHardwareService_8idl.html)
+        (https://github.com/fkanehiro/hrpsys-base/blob/master/idl/RobotHardwareService.idl#L33)
+        \verbatim
             /**
              * @brief status of the robot
              */
@@ -1300,13 +1365,14 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
               double                    voltage;  ///< voltage of power supply[V]
               double                    current;  ///< current[A]
             };
+        \endverbatim
         '''
         return self.rh_svc.getStatus()
 
     def isCalibDone(self):
-        '''
+        '''!@brief
         Check whether joints have been calibrated.
-        @rtype bool
+        @return bool: True if all joints are calibrated
         '''
         if self.simulation_mode:
             return True
@@ -1318,12 +1384,11 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
         return True
 
     def isServoOn(self, jname='any'):
-        '''
+        '''!@brief
         Check whether servo control has been turned on.
-        @type jname: str
-        @param jname: Name of a link (that can be obtained by "hiro.Groups"
+        @param jname str: Name of a link (that can be obtained by "hiro.Groups"
                       as lists of groups).
-        @rtype bool
+        @return bool: True if servo is on
         '''
         if self.simulation_mode:
             return True
@@ -1343,11 +1408,10 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
         return False
 
     def flat2Groups(self, flatList):
-        '''
-        @type flatList: list
-        @param flatList: single dimension list with its length of 15
-        @rtype: list of list
-        @return: 2-dimensional list of Groups.
+        '''!@brief
+        Convert list of angles into list of joint list for each groups.
+        @param flatList list: single dimension list with its length of 15
+        @return list of list: 2-dimensional list of Groups.
         '''
         retList = []
         index = 0
@@ -1358,17 +1422,14 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
         return retList
 
     def servoOn(self, jname='all', destroy=1, tm=3):
-        '''
-        Turn on/off servos.
+        '''!@brief
+        Turn on servos.
         Joints need to be calibrated (otherwise error returns).
 
-        @type jname: str
-        @param jname: The value 'all' works iteratively for all servos.
-        @param destroy: Not used.
-        @type tm: float
-        @param tm: Second to complete.
-        @rtype: int
-        @return: 1 or -1 indicating success or failure, respectively.
+        @param jname str: The value 'all' works iteratively for all servos.
+        @param destroy int: Not used.
+        @param tm float: Second to complete.
+        @return int: 1 or -1 indicating success or failure, respectively.
         '''
         # check joints are calibrated
         if not self.isCalibDone():
@@ -1406,12 +1467,11 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
         return 1
 
     def servoOff(self, jname='all', wait=True):
-        '''
-        @type jname: str
-        @param jname: The value 'all' works iteratively for all servos.
-        @type wait: bool
-        @rtype: int
-        @return: 1 = all arm servo off. 2 = all servo on arms and hands off.
+        '''!@brief
+        Turn off servos.
+        @param jname str: The value 'all' works iteratively for all servos.
+        @param wait bool: Wait for user's confirmation via GUI
+        @return int: 1 = all arm servo off. 2 = all servo on arms and hands off.
                 -1 = Something wrong happened.
         '''
         # do nothing for simulation
@@ -1454,14 +1514,12 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
             return -1
 
     def checkEncoders(self, jname='all', option=''):
-        '''
+        '''!@breif
         Run the encoder checking sequence for specified joints,
         run goActual and turn on servos.
 
-        @type jname: str
-        @param jname: The value 'all' works iteratively for all servos.
-        @type option: str
-        @param option: Possible values are follows (w/o double quote):\
+        @param jname str: The value 'all' works iteratively for all servos.
+        @param option str: Possible values are follows (w/o double quote):\
                         "-overwrite": Overwrite calibration value.
         '''
         if self.isServoOn():
@@ -1512,7 +1570,7 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
     # ##
 
     def init(self, robotname="Robot", url=""):
-        '''
+        '''!@berif
         Calls init from its superclass, which tries to connect RTCManager,
         looks for ModelLoader, and starts necessary RTC components. Also runs
         config, logger.
