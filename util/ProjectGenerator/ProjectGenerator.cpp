@@ -251,7 +251,7 @@ int main (int argc, char** argv)
         if ( body->numJoints() > 0 ) std::cerr << std::endl;
 
 	//
-        // comment out self collision settings according to issues at http://code.google.com/p/hrpsys-base/issues/detail?id=122
+        // comment out self collision settings according to issues at https://github.com/fkanehiro/hrpsys-base/issues/122
 	// xmlTextWriterStartElement(writer, BAD_CAST "item");
 	// xmlTextWriterWriteAttribute(writer, BAD_CAST "class", BAD_CAST "com.generalrobotix.ui.item.GrxCollisionPairItem");
 	// xmlTextWriterWriteAttribute(writer, BAD_CAST "name", BAD_CAST std::string("CP#"+name).c_str());
