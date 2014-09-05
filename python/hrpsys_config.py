@@ -1565,6 +1565,11 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
         if self.sc_svc:
             self.sc_svc.servoOn()
 
+    def removeForceSensorOffset(self):
+        '''!@brief
+        remove force sensor offset
+        '''
+        self.rh_svc.removeForceSensorOffset()
     # ##
     # ## initialize
     # ##
