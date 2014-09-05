@@ -829,6 +829,7 @@ class HrpsysConfigurator:
 
         @type lname: str
         @param lname: Name of the link.
+        @param frame_name str: set reference frame name (from 315.2.5)
         @rtype: list of float
         @return: Rotational matrix and the position of the given joint in
                  1-dimensional list, that is:
@@ -861,6 +862,7 @@ class HrpsysConfigurator:
 
         @type lname: str
         @param lname: Name of the link.
+        @param frame_name str: set reference frame name (from 315.2.5)
         @rtype: list of float
         @return: List of x, y, z positions about the specified joint.
         '''
@@ -879,6 +881,7 @@ class HrpsysConfigurator:
 
         @type lname: str
         @param lname: Name of the link.
+        @param frame_name str: set reference frame name (from 315.2.5)
         @rtype: list of float
         @return: Rotational matrix of the given joint in 2-dimensional list,
                  that is:
@@ -901,6 +904,7 @@ class HrpsysConfigurator:
 
         @type lname: str
         @param lname: Name of the link.
+        @param frame_name str: set reference frame name (from 315.2.5)
         @rtype: list of float
         @return: List of orientation in rpy form about the specified joint.
         '''
@@ -918,6 +922,7 @@ class HrpsysConfigurator:
 
         @type lname: str
         @param lname: Name of the link.
+        @param frame_name str: set reference frame name (from 315.2.5)
         @rtype: list of float
         @return: Rotational matrix and the position of the given joint in
                  1-dimensional list, that is:
@@ -946,6 +951,7 @@ class HrpsysConfigurator:
 
         @type lname: str
         @param lname: Name of the link.
+        @param frame_name str: set reference frame name (from 315.2.5)
         @rtype: list of float
         @return: List of angles (degree) of all joints, in the order defined
                  in the member variable 'Groups' (eg. chest, head1, head2, ..).
@@ -965,6 +971,7 @@ class HrpsysConfigurator:
 
         @type lname: str
         @param lname: Name of the link.
+        @param frame_name str: set reference frame name (from 315.2.5)
         @rtype: list of float
         @return: Rotational matrix of the given joint in 2-dimensional list,
                  that is:
@@ -987,6 +994,7 @@ class HrpsysConfigurator:
 
         @type lname: str
         @param lname: Name of the link.
+        @param frame_name str: set reference frame name (from 315.2.5)
         @rtype: list of float
         @return: List of orientation in rpy form about the specified joint.
         '''
