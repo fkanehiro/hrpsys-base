@@ -160,18 +160,22 @@ class HrpsysConfigurator:
     rh = None
     rh_svc = None
     ep_svc = None
+    rh_version = None
 
     # SequencePlayer
     seq = None
     seq_svc = None
+    seq_version = None
 
     # StateHolder
     sh = None
     sh_svc = None
+    sh_version = None
 
     # ForwardKinematics
     fk = None
     fk_svc = None
+    fk_version = None
 
     tf = None  # TorqueFilter
     kf = None  # KalmanFilter
@@ -181,33 +185,48 @@ class HrpsysConfigurator:
     abc = None  # AutoBalancer
     st = None  # Stabilizer
 
+    tf_version = None
+    kf_version = None
+    vs_version = None
+    rmfo_version = None
+    ic_version = None
+    abc_version = None
+    st_version = None
+
     # CollisionDetector
     co = None
     co_svc = None
+    co_version = None
 
     # GraspController
     gc = None
     gc_svc = None
+    gc_version = None
 
     # SoftErrorLimiter
     el = None
     el_svc = None
+    el_version = None
 
     # ThermoEstimator
     te = None
     te_svc = None
+    te_version = None
 
     # ThermoLimiter
     tl = None
     tl_svc = None
+    tl_version = None
 
     # TorqueController
     tc = None
     tc_svc = None
+    tc_version = None
 
     # DataLogger
     log = None
     log_svc = None
+    log_version = None
 
     # rtm manager
     ms = None
@@ -405,23 +424,25 @@ class HrpsysConfigurator:
     def createComp(self, compName, instanceName):
         self.ms.load(compName)
         comp = self.ms.create(compName, instanceName)
-        print self.configurator_name, "create Comp -> ", compName, " : ", comp
+        version = comp.ref.get_component_profile().version
+        print self.configurator_name, "create Comp -> ", compName, " : ", comp, " (", version, ")"
         if comp == None:
             raise RuntimeError("Cannot create component: " + compName)
         if comp.service("service0"):
             comp_svc = narrow(comp.service("service0"), compName + "Service")
             print self.configurator_name, "create CompSvc -> ", compName, "Service : ", comp_svc
-            return [comp, comp_svc]
+            return [comp, comp_svc, version]
         else:
-            return [comp, None]
+            return [comp, None, version]
 
     def createComps(self):
         for rn in self.getRTCList():
             rn2 = 'self.' + rn[0]
             if eval(rn2) == None:
-                create_str = "[self." + rn[0] + ", self." + rn[0] + "_svc] = self.createComp(\"" + rn[1] + "\",\"" + rn[0] + "\")"
+                create_str = "[self." + rn[0] + ", self." + rn[0] + "_svc, self." + rn[0] + "_version] = self.createComp(\"" + rn[1] + "\",\"" + rn[0] + "\")"
                 print self.configurator_name, "  eval : ", create_str
                 exec(create_str)
+
 
     def findComp(self, compName, instanceName, max_timeout_count=10):
         timeout_count = 0
