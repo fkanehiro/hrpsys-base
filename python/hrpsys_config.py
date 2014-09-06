@@ -922,8 +922,12 @@ class HrpsysConfigurator:
                0.0,
                1.0]
         \endverbatim
-        @param lname str: Name of the link.
-        @return list of float: Rotational matrix and the position of the given joint in
+
+        @type lname: str
+        @param lname: Name of the link.
+        @param frame_name str: set reference frame name (from 315.2.5)
+        @rtype: list of float
+        @return: Rotational matrix and the position of the given joint in
                  1-dimensional list, that is:
         \verbatim
                  [a11, a12, a13, x,
@@ -957,8 +961,11 @@ class HrpsysConfigurator:
             [0.325, 0.182, 0.074]
         \endverbatim
 
-        @param lname str: Name of the link.
-        @return list of float: List of x, y, z positions about the specified joint.
+        @type lname: str
+        @param lname: Name of the link.
+        @param frame_name str: set reference frame name (from 315.2.5)
+        @rtype: list of float
+        @return: List of x, y, z positions about the specified joint.
         '''
         if not lname:
             for item in self.Groups:
@@ -973,8 +980,11 @@ class HrpsysConfigurator:
         Returns the current physical rotation of the specified joint.
         cf. getReferenceRotation that returns commanded value.
 
-        @param lname str: Name of the link.
-        @return list of float: Rotational matrix of the given joint in 2-dimensional list,
+        @type lname: str
+        @param lname: Name of the link.
+        @param frame_name str: set reference frame name (from 315.2.5)
+        @rtype: list of float
+        @return: Rotational matrix of the given joint in 2-dimensional list,
                  that is:
         \verbatim
                  [[a11, a12, a13],
@@ -995,8 +1005,11 @@ class HrpsysConfigurator:
         Returns the current physical rotation in RPY of the specified joint.
         cf. getReferenceRPY that returns commanded value.
 
-        @param lname str: Name of the link.
-        @return list of float: List of orientation in rpy form about the specified joint.
+        @type lname: str
+        @param lname: Name of the link.
+        @param frame_name str: set reference frame name (from 315.2.5)
+        @rtype: list of float
+        @return: List of orientation in rpy form about the specified joint.
         '''
         if not lname:
             for item in self.Groups:
@@ -1010,8 +1023,11 @@ class HrpsysConfigurator:
         Returns the current commanded pose of the specified joint.
         cf. getCurrentPose that returns physical pose.
 
-        @param lname str: Name of the link.
-        @return list of float: Rotational matrix and the position of the given joint in
+        @type lname: str
+        @param lname: Name of the link.
+        @param frame_name str: set reference frame name (from 315.2.5)
+        @rtype: list of float
+        @return: Rotational matrix and the position of the given joint in
                  1-dimensional list, that is:
         \verbatim
                  [a11, a12, a13, x,
@@ -1039,8 +1055,11 @@ class HrpsysConfigurator:
         Returns the current commanded position of the specified joint.
         cf. getCurrentPosition that returns physical value.
 
-        @param lname str: Name of the link.
-        @return list of float: List of angles (degree) of all joints, in the order defined
+        @type lname: str
+        @param lname: Name of the link.
+        @param frame_name str: set reference frame name (from 315.2.5)
+        @rtype: list of float
+        @return: List of angles (degree) of all joints, in the order defined
                  in the member variable 'Groups' (eg. chest, head1, head2, ..).
         '''
         if not lname:
@@ -1056,8 +1075,11 @@ class HrpsysConfigurator:
         Returns the current commanded rotation of the specified joint.
         cf. getCurrentRotation that returns physical value.
 
-        @param lname str: Name of the link.
-        @return list of float: Rotational matrix of the given joint in 2-dimensional list,
+        @type lname: str
+        @param lname: Name of the link.
+        @param frame_name str: set reference frame name (from 315.2.5)
+        @rtype: list of float
+        @return: Rotational matrix of the given joint in 2-dimensional list,
                  that is:
         \verbatim
                  [[a11, a12, a13],
@@ -1078,8 +1100,11 @@ class HrpsysConfigurator:
         Returns the current commanded rotation in RPY of the specified joint.
         cf. getCurrentRPY that returns physical value.
 
-        @param lname str: Name of the link.
-        @return list of float: List of orientation in rpy form about the specified joint.
+        @type lname: str
+        @param lname: Name of the link.
+        @param frame_name str: set reference frame name (from 315.2.5)
+        @rtype: list of float
+        @return: List of orientation in rpy form about the specified joint.
         '''
         if not lname:
             for item in self.Groups:
