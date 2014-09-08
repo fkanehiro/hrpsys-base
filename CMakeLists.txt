@@ -52,7 +52,7 @@ if(ENABLE_INSTALL_RPATH)
   set(CMAKE_INSTALL_RPATH "$ORIGIN/../lib:$ORIGIN/../../../lib:${OPENHRP_LIBRARY_DIRS}")
 endif()
 
-option(COMPILE_JAVA_STUFF "Compile java stuff" ON)
+option(COMPILE_JAVA_STUFF "Compile java stuff" OFF)
 if(COMPILE_JAVA_STUFF)
   set(JAVAC javac)
   set(JAR jar)
