@@ -1,5 +1,5 @@
 <launch>
-  <include file="$(find hrpsys)/samples/samplerobot.launch" >
+  <include file="$(find hrpsys)/launch/samplerobot.launch" >
     <arg name="GUI" value="false" />
     <arg name="corbaport" value="2809" />
   </include>

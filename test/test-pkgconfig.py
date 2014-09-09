@@ -45,10 +45,10 @@ class TestHrpsysPkgconfig(unittest.TestCase):
 
     def test_files_for_hrpsys(self):
         # https://github.com/start-jsk/hrpsys/blob/master/test/test-pa10.test#L13
-        self.check_if_file_exists_from_rospack("share/hrpsys/samples/PA10/")
-        self.check_if_file_exists_from_rospack("share/hrpsys/samples/PA10/rtc.conf")
-        self.check_if_file_exists_from_rospack("share/hrpsys/samples/PA10/RobotHardware.conf")
-        self.check_if_file_exists_from_rospack("share/hrpsys/samples/PA10/PA10.conf")
+        self.check_if_file_exists_from_rospack("samples/PA10/")
+        self.check_if_file_exists_from_rospack("samples/PA10/rtc.conf")
+        self.check_if_file_exists_from_rospack("samples/PA10/RobotHardware.conf")
+        self.check_if_file_exists_from_rospack("samples/PA10/PA10.conf")
 
     def test_files_for_hrpsys_ros_bridge(self):
         # https://github.com/start-jsk/rtmros_common/blob/master/hrpsys_ros_bridge/catkin.cmake#L50
