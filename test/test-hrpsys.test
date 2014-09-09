@@ -1,0 +1,25 @@
+<launch>
+  <!-- BEGIN:common setting -->
+  <env name="LANG" value="C" />
+  <env name="ORBgiopMaxMsgSize" value="2147483648" />
+  <!-- env name="PROJECT_DIR" value="$(find hrpsys)" / -->
+  <env name="ROS_HOME" value="$(find hrpsys)/share/hrpsys/samples/PA10/" />
+  <!-- END:common setting -->
+
+  <node name="start_omninames" pkg="hrpsys" type="start_omninames.sh" args="2809" />
+
+  <!-- node name="hrpsys" pkg="hrpsys" type="hrpsys.sh" output="screen"  cwd="node" / -->
+  <node name="modelloader" pkg="openhrp3" type="openhrp-model-loader" output="screen"/>
+  <node name="hrpsys" pkg="openrtm_aist" type="rtcd"
+        args='-o "manager.modules.preload:hrpEC.so,RobotHardware.so" -o "manager.components.precreate:RobotHardware" -f $(find hrpsys)/share/hrpsys/samples/PA10/rtc.conf -o corba.nameservers:localhost:2809' 
+        output="screen"  cwd="node" />
+
+  <!-- cd $(find hrpsys)/share/hrpsys/samples/PA10/ -->
+  <!-- node name="viewer" pkg="hrpsys" type="hrpsys-monitor"
+        args="$(find hrpsys)/share/hrpsys/samples/PA10/PA10monitor.xml" / -->
+
+
+  <test test-name="hrpsys_hostname" pkg="hrpsys" type="test-hostname.py" />
+  <test test-name="hrpsys_pkgconfig" pkg="hrpsys" type="test-pkgconfig.py" />
+  <test test-name="hrpsys_hrpsysconfig" pkg="hrpsys" type="test-hrpsysconf.py" args="--host 127.0.0.1 --port 2809"/>
+</launch>
