@@ -169,3 +169,22 @@ if (NOT QNXNTO)
 endif()
 add_subdirectory(sample)
 add_subdirectory(test)
+
+#if catkin environment
+string(REGEX MATCH "catkin" need_catkin $ENV{_})
+if(need_catkin)
+  install(FILES package.xml DESTINATION share/hrpsys/)
+  foreach(target hrpsys-simulator hrpsys-simulator-python hrpsys-monitor hrpsys-viewer hrpsyspy
+                 SequencePlayerComp StateHolderComp ForwardKinematicsComp CollisionDetectorComp SoftErrorLimiterComp DataLoggerComp)
+    install(CODE "execute_process(COMMAND cmake -E create_symlink ../../bin/${target} ${target} WORKING_DIRECTORY \${CMAKE_INSTALL_PREFIX}/share/hrpsys)")
+  endforeach()
+  install(CODE "execute_process(COMMAND cmake -E make_directory lib WORKING_DIRECTORY \${CMAKE_INSTALL_PREFIX}/share/hrpsys)")
+  foreach(target AutoBalancer.so  AverageFilter.so CameraImageViewer.so CaptureController.so CollisionDetector.so DataLogger.so ExtractCameraImage.so ForwardKinematics.so GraspController.so HGcontroller.so hrpEC.so ImageData2CameraImage.so ImpedanceController.so Joystick2PanTiltAngles.so Joystick2Velocity2D.so Joystick2Velocity3D.so Joystick.so JpegDecoder.so JpegEncoder.so KalmanFilter.so NullComponent.so OccupancyGridMap3D.so OGMap3DViewer.so PCDLoader.so PDcontroller.so PlaneRemover.so Range2PointCloud.so RangeDataViewer.so RangeNoiseMixer.so RemoveForceSensorLinkOffset.so ResizeImage.so RGB2Gray.so RobotHardware.so SequencePlayer.so ServoController.so Simulator.so SoftErrorLimiter.so SORFilter.so Stabilizer.so StateHolder.so ThermoEstimator.so ThermoLimiter.so TorqueController.so TorqueFilter.so VideoCapture.so Viewer.so VirtualCamera.so VirtualForceSensor.so WavPlayer.so libhrpIo.so libhrpsysBaseStub.so libhrpsysUtil.so)
+  install(CODE "
+if(EXISTS \${CMAKE_INSTALL_PREFIX}/lib/${target})
+  execute_process(COMMAND cmake -E create_symlink ../../../lib/${target} ${target} WORKING_DIRECTORY \${CMAKE_INSTALL_PREFIX}/share/hrpsys/lib)
+endif()")
+  endforeach()
+  install(DIRECTORY test launch DESTINATION share/hrpsys USE_SOURCE_PERMISSIONS)
+  install(DIRECTORY rtc ec DESTINATION share/hrpsys/src USE_SOURCE_PERMISSIONS)
+endif()
