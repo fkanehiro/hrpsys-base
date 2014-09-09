@@ -248,7 +248,7 @@ class HrpsysConfigurator:
 
     # public method
     def connectComps(self):
-        '''!@breif
+        '''!@brief
         Connect components(plugins)
         '''
         if self.rh == None or self.seq == None or self.sh == None or self.fk == None:
@@ -428,7 +428,7 @@ class HrpsysConfigurator:
             r.start()
 
     def createComp(self, compName, instanceName):
-        '''!@breif
+        '''!@brief
         Create RTC component (plugins)
 
         @param instanceName str: name of instance, choose one of https://github.com/fkanehiro/hrpsys-base/tree/master/rtc
@@ -727,7 +727,7 @@ class HrpsysConfigurator:
         print self.configurator_name, "simulation_mode : ", self.simulation_mode
 
     def waitForRTCManagerAndRoboHardware(self, robotname="Robot", managerhost=nshost):
-        '''!@breif
+        '''!@brief
         Wait for both RTC Manager (waitForRTCManager()) and RobotHardware (waitForRobotHardware())
 
         @param managerhost str: name of host computer that manager is running
@@ -817,7 +817,7 @@ class HrpsysConfigurator:
         return self.seq_svc.setJointAngles(ret, tm)
 
     def setJointAnglesOfGroup(self, gname, pose, tm, wait=True):
-        '''!@breif
+        '''!@brief
         Set the joint angles to aim. By default it waits interpolation to be
         over.
 
@@ -1019,7 +1019,7 @@ class HrpsysConfigurator:
         return euler_from_matrix(self.getCurrentRotation(lname), 'sxyz')
 
     def getReferencePose(self, lname, frame_name=None):
-        '''!@breif
+        '''!@brief
         Returns the current commanded pose of the specified joint.
         cf. getCurrentPose that returns physical pose.
 
@@ -1051,7 +1051,7 @@ class HrpsysConfigurator:
         return pose[1].data
 
     def getReferencePosition(self, lname, frame_name=None):
-        '''!@breif
+        '''!@brief
         Returns the current commanded position of the specified joint.
         cf. getCurrentPosition that returns physical value.
 
@@ -1071,7 +1071,7 @@ class HrpsysConfigurator:
         return [pose[3], pose[7], pose[11]]
 
     def getReferenceRotation(self, lname, frame_name=None):
-        '''!@breif
+        '''!@brief
         Returns the current commanded rotation of the specified joint.
         cf. getCurrentRotation that returns physical value.
 
@@ -1539,7 +1539,7 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
             return -1
 
     def checkEncoders(self, jname='all', option=''):
-        '''!@breif
+        '''!@brief
         Run the encoder checking sequence for specified joints,
         run goActual and turn on servos.
 
@@ -1595,12 +1595,49 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
         remove force sensor offset
         '''
         self.rh_svc.removeForceSensorOffset()
+
+    def playPattern(self, jointangles, rpy, zmp, tm):
+        '''!@brief
+        Play motion pattern using a given trajectory that is represented by 
+        a list of joint angles, rpy, zmp and time.
+
+        @param jointangles list of list of float: 
+                           The whole list represents a trajectory. Each element
+                           of the 1st degree in the list consists of the joint
+                           angles.
+        @param rpy list of float: Orientation in rpy.
+        @param zmp list of float: TODO: description
+        @param tm float: Time to complete the task.
+        @return bool:
+        '''
+        return self.seq_svc.playPattern(jointangles, rpy, zmp, tm)
+
+    def playPatternOfGroup(self, gname, jointangles, tm):
+        '''!@brief
+        Play motion pattern using a given trajectory that is represented by 
+        a list of joint angles.
+
+        @param gname str: Name of the joint group.
+        @param jointangles list of list of float: 
+                           The whole list represents a trajectory. Each element
+                           of the 1st degree in the list consists of the joint
+                           angles. To illustrate:
+
+                           [[a0-0, a0-1,...,a0-n], # a)ngle. 1st path in trajectory
+                            [a1-0, a1-1,...,a1-n], # 2nd path in the trajectory.
+                            :
+                            [am-0, am-1,...,am-n]]  # mth path in the trajectory
+        @param tm float: Time to complete the task.
+        @return bool:
+        '''
+        return self.seq_svc.playPatternOfGroup(gname, jointangles, tm)
+
     # ##
     # ## initialize
     # ##
 
     def init(self, robotname="Robot", url=""):
-        '''!@berif
+        '''!@brief
         Calls init from its superclass, which tries to connect RTCManager,
         looks for ModelLoader, and starts necessary RTC components. Also runs
         config, logger.
