@@ -20,7 +20,7 @@ except: # rosbuild installed
     sys.path.append(rp.get_path('hrpsys')+'/lib/python2.7/dist-packages/hrpsys')
     sys.path.append(rp.get_path('openrtm_aist_python')+'/lib/python2.7/dist-packages')
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__))+'/../share/hrpsys/samples/PA10/') # set path to PA10
+sys.path.append(os.path.dirname(os.path.abspath(__file__))+'/../samples/PA10/') # set path to PA10
 
 #os.environ['ORBInitRef'] = 'NameService=corbaloc:iiop:{0}:{1}/NameService'.format('localhost','2809')
 

@@ -13,13 +13,13 @@
   <arg name="corbaport" default="15005" />
   <arg name="GUI" default="true" />
   <arg name="CONTROLLER_PERIOD" default="500" />
-  <arg name="CONF_FILE" default="$(find hrpsys)/share/hrpsys/samples/SampleRobot/SampleRobot.$(arg CONTROLLER_PERIOD).conf" />
+  <arg name="CONF_FILE" default="$(find hrpsys)/samples/SampleRobot/SampleRobot.$(arg CONTROLLER_PERIOD).conf" />
   <arg name="TORQUE_CONTROL" default="false"/>
-  <arg unless="$(arg TORQUE_CONTROL)" name="PROJECT_FILE" default="$(find hrpsys)/share/hrpsys/samples/SampleRobot/SampleRobot.$(arg CONTROLLER_PERIOD).xml"/>
-  <arg     if="$(arg TORQUE_CONTROL)" name="PROJECT_FILE" default="$(find hrpsys)/share/hrpsys/samples/SampleRobot/SampleRobot.$(arg CONTROLLER_PERIOD).torque.xml"/>
+  <arg unless="$(arg TORQUE_CONTROL)" name="PROJECT_FILE" default="$(find hrpsys)/samples/SampleRobot/SampleRobot.$(arg CONTROLLER_PERIOD).xml"/>
+  <arg     if="$(arg TORQUE_CONTROL)" name="PROJECT_FILE" default="$(find hrpsys)/samples/SampleRobot/SampleRobot.$(arg CONTROLLER_PERIOD).torque.xml"/>
   <arg unless="$(arg TORQUE_CONTROL)" name="JOINT_CONTROLLER" default="HGcontroller" />
   <arg     if="$(arg TORQUE_CONTROL)" name="JOINT_CONTROLLER" default="PDcontroller" />
-  <env name="ROS_HOME" value="$(find hrpsys)/share/hrpsys/samples/SampleRobot" />
+  <env name="ROS_HOME" value="$(find hrpsys)/samples/SampleRobot" />
   <!-- END:common setting -->
 
   <arg unless="$(arg GUI)" name="hrpsys_gui_args" value="-endless -realtime -nodisplay" />
@@ -34,7 +34,7 @@
   <node name="hrpsys" pkg="hrpsys" type="hrpsys-simulator"
         args='$(arg PROJECT_FILE) -o manager.is_master:YES -o naming.formats:%n.rtc -o exec_cxt.periodic.rate:1000000 -o manager.shutdown_onrtcs:NO -o manager.modules.load_path:$(find hrpsys)/lib
               -o manager.modules.preload:$(arg JOINT_CONTROLLER).so -o manager.components.precreate:$(arg JOINT_CONTROLLER) -o exec_cxt.periodic.type:SynchExtTriggerEC -f $(arg CONF_FILE)
-              -o "example.RobotHardware.config_file:$(find hrpsys)/share/hrpsys/samples/SampleRobot/SampleRobot.RobotHardware.$(arg CONTROLLER_PERIOD)conf"
+              -o "example.RobotHardware.config_file:$(find hrpsys)/samples/SampleRobot/SampleRobot.RobotHardware.$(arg CONTROLLER_PERIOD)conf"
               -o "example.SequencePlayer.config_file:$(arg CONF_FILE)"
               -o "example.ForwardKinematics.config_file:$(arg CONF_FILE)"
               -o "example.ImpedanceController.config_file:$(arg CONF_FILE)"
