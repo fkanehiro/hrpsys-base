@@ -1595,6 +1595,43 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
         remove force sensor offset
         '''
         self.rh_svc.removeForceSensorOffset()
+
+    def playPattern(self, jointangles, rpy, zmp, tm):
+        '''!@brief
+        Play motion pattern using a given trajectory that is represented by 
+        a list of joint angles, rpy, zmp and time.
+
+        @param jointangles list of list of float: 
+                           The whole list represents a trajectory. Each element
+                           of the 1st degree in the list consists of the joint
+                           angles.
+        @param rpy list of float: Orientation in rpy.
+        @param zmp list of float: TODO: description
+        @param tm float: Time to complete the task.
+        @return bool:
+        '''
+        return self.seq_svc.playPattern(jointangles, rpy, zmp, tm)
+
+    def playPatternOfGroup(self, gname, jointangles, tm):
+        '''!@brief
+        Play motion pattern using a given trajectory that is represented by 
+        a list of joint angles.
+
+        @param gname str: Name of the joint group.
+        @param jointangles list of list of float: 
+                           The whole list represents a trajectory. Each element
+                           of the 1st degree in the list consists of the joint
+                           angles. To illustrate:
+
+                           [[a0-0, a0-1,...,a0-n], # a)ngle. 1st path in trajectory
+                            [a1-0, a1-1,...,a1-n], # 2nd path in the trajectory.
+                            :
+                            [am-0, am-1,...,am-n]]  # mth path in the trajectory
+        @param tm float: Time to complete the task.
+        @return bool:
+        '''
+        return self.seq_svc.playPatternOfGroup(gname, jointangles, tm)
+
     # ##
     # ## initialize
     # ##
