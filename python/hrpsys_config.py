@@ -248,7 +248,7 @@ class HrpsysConfigurator:
 
     # public method
     def connectComps(self):
-        '''!@breif
+        '''!@brief
         Connect components(plugins)
         '''
         if self.rh == None or self.seq == None or self.sh == None or self.fk == None:
@@ -428,7 +428,7 @@ class HrpsysConfigurator:
             r.start()
 
     def createComp(self, compName, instanceName):
-        '''!@breif
+        '''!@brief
         Create RTC component (plugins)
 
         @param instanceName str: name of instance, choose one of https://github.com/fkanehiro/hrpsys-base/tree/master/rtc
@@ -727,7 +727,7 @@ class HrpsysConfigurator:
         print self.configurator_name, "simulation_mode : ", self.simulation_mode
 
     def waitForRTCManagerAndRoboHardware(self, robotname="Robot", managerhost=nshost):
-        '''!@breif
+        '''!@brief
         Wait for both RTC Manager (waitForRTCManager()) and RobotHardware (waitForRobotHardware())
 
         @param managerhost str: name of host computer that manager is running
@@ -817,7 +817,7 @@ class HrpsysConfigurator:
         return self.seq_svc.setJointAngles(ret, tm)
 
     def setJointAnglesOfGroup(self, gname, pose, tm, wait=True):
-        '''!@breif
+        '''!@brief
         Set the joint angles to aim. By default it waits interpolation to be
         over.
 
@@ -1019,7 +1019,7 @@ class HrpsysConfigurator:
         return euler_from_matrix(self.getCurrentRotation(lname), 'sxyz')
 
     def getReferencePose(self, lname, frame_name=None):
-        '''!@breif
+        '''!@brief
         Returns the current commanded pose of the specified joint.
         cf. getCurrentPose that returns physical pose.
 
@@ -1051,7 +1051,7 @@ class HrpsysConfigurator:
         return pose[1].data
 
     def getReferencePosition(self, lname, frame_name=None):
-        '''!@breif
+        '''!@brief
         Returns the current commanded position of the specified joint.
         cf. getCurrentPosition that returns physical value.
 
@@ -1071,7 +1071,7 @@ class HrpsysConfigurator:
         return [pose[3], pose[7], pose[11]]
 
     def getReferenceRotation(self, lname, frame_name=None):
-        '''!@breif
+        '''!@brief
         Returns the current commanded rotation of the specified joint.
         cf. getCurrentRotation that returns physical value.
 
@@ -1539,7 +1539,7 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
             return -1
 
     def checkEncoders(self, jname='all', option=''):
-        '''!@breif
+        '''!@brief
         Run the encoder checking sequence for specified joints,
         run goActual and turn on servos.
 
@@ -1600,7 +1600,7 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
     # ##
 
     def init(self, robotname="Robot", url=""):
-        '''!@berif
+        '''!@brief
         Calls init from its superclass, which tries to connect RTCManager,
         looks for ModelLoader, and starts necessary RTC components. Also runs
         config, logger.
