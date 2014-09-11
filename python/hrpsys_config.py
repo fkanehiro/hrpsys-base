@@ -666,6 +666,10 @@ class HrpsysConfigurator:
                                    'emergencySignal')
         for sen in filter(lambda x: x.type == "Force", self.sensors):
             self.connectLoggerPort(self.seq, sen.name + "Ref")
+            self.connectLoggerPort(self.sh, sen.name + "Out")
+        if self.rmfo != None:
+            for sen in filter(lambda x: x.type == "Force", self.sensors):
+                self.connectLoggerPort(self.rmfo, "off_"+sen.name)
         self.log_svc.clear()
 
     def waitForRTCManager(self, managerhost=nshost):
