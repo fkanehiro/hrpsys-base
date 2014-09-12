@@ -468,29 +468,52 @@ INPUT		      =  @CMAKE_CURRENT_SOURCE_DIR@/package.h \
 		      @CMAKE_CURRENT_SOURCE_DIR@/utilities.h \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../python/hrpsys_config.py \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../python/rtm.py \
+		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/AutoBalancer \
+		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/AverageFilter \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/CameraImageViewer \
+		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/CaptureController \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/CollisionDetector \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/DataLogger \
+		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/ExtractCameraImage \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/ForwardKinematics \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/GraspController \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/HGcontroller \
+		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/ImageData2CameraImage \
+		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/ImpedanceController \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/Joystick \
+		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/Joystick2PanTiltAngles \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/Joystick2Velocity2D \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/Joystick2Velocity3D \
-		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/Joystick2PanTiltAngles \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/JpegDecoder \
+		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/JpegEncoder \
+		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/KalmanFilter \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/NullComponent \
-		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/OccupancyGridMap3D \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/OGMap3DViewer \
+		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/OccupancyGridMap3D \
+		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/PCDLoader \
+		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/PlanRemover \
+		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/RGB2Gray \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/Range2PointCloud \
+		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/RangeDataViewer \
+		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/RangeNoiseMixer \
+		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/RemoveForceSensorLinkOffset \
+		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/ResizeImage \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/RobotHardware \
+		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/SORFilter \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/SequencePlayer \
+		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/ServoController \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/Simulator \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/SoftErrorLimiter \
+		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/Stabilizer \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/StateHolder \
+		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/ThermoEstimator \
+		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/ThermoLimiter \
+		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/TorqueController \
+		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/TorqueFilter \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/VideoCapture \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/Viewer \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/VirtualCamera \
+		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/VirtualForceSensor \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/WavPlayer \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../lib/io/iob.h \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../idl \
