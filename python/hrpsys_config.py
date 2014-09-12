@@ -334,6 +334,8 @@ class HrpsysConfigurator:
 
         # connection for te
         if self.te:
+            connectPorts(self.rh.port("q"), self.te.port("qCurrentIn"))
+            connectPorts(self.sh.port("qOut"), self.te.port("qRefIn"))
             if self.tf:
                 connectPorts(self.tf.port("tauOut"), self.te.port("tauIn"))
             else:
