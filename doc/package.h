@@ -71,18 +71,27 @@ To use python scripts to create RT components, connect ports and get/set propert
   </ul>
   <li>Services provided by basic RT components</li>
   <ul>
+    <li>\ref OpenHRP::AutoBalancerService</li>
     <li>\ref OpenHRP::CollisionDetectorService</li>
     <li>\ref OpenHRP::DataLoggerService</li>
     <li>\ref OpenHRP::ExecutionProfileService</li>
     <li>\ref OpenHRP::ForwardKinematicsService</li>
     <li>\ref OpenHRP::GraspControllerService</li>
+    <li>\ref Img::CameraCaptureService</li>
     <li>\ref OpenHRP::ImpedanceControllerService</li>
+    <li>\ref OpenHRP::KalmanFilterService</li>
     <li>\ref OpenHRP::OGMap3DService</li>
+    <li>\ref OpenHRP::RemoveForceSensorLinkOffsetService</li>
     <li>\ref OpenHRP::RobotHardwareService</li>
     <li>\ref OpenHRP::SequencePlayerService</li>
-    <li>\ref OpenHRP::SeftErrorLimiterService</li>
+    <li>\ref OpenHRP::ServoControllerService</li>
+    <li>\ref OpenHRP::SoftErrorLimiterService</li>
+    <li>\ref OpenHRP::StabilizerService</li>
     <li>\ref OpenHRP::StateHolderService</li>
     <li>\ref OpenHRP::TimeKeeperService</li>
+    <li>\ref OpenHRP::TorqueControllerService</li>
+    <li>\ref OpenHRP::TorqueFilterService</li>
+    <li>\ref OpenHRP::VirtualForceSensorService</li>
     <li>\ref OpenHRP::WavPlayerService</li>
   </ul>
   <li>Utilities</li>
