@@ -4,7 +4,7 @@
 
 \section introduction Overview
 
-This component is a very simple RT component to learn how to develop.
+This component controls image flow using Img::CameraCaptureService
 
 <table>
 <tr><th>implementation_id</th><td>CaptureController</td></tr>
