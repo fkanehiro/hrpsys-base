@@ -28,14 +28,20 @@ public:
 class TwoDofController : public TwoDofControllerInterface {
 public:
   struct TwoDofControllerParam {
+    TwoDofControllerParam() {
+      ke = tc = dt = 0.0;
+    }
+    ~TwoDofControllerParam() {
+    }
     double ke; // gain
     double tc; // time constant
     double dt; // control cycle
   };
-  TwoDofController(double _ke = 0, double _tc = 0, double _dt = 0, unsigned int _range = 0);
+  TwoDofController();
+  TwoDofController(TwoDofControllerParam &_param, unsigned int _range = 0);
   ~TwoDofController();
   void setup();
-  void setup(double _ke, double _tc, double _dt, unsigned int _range = 0);
+  void setup(TwoDofControllerParam &_param, unsigned int _range = 0);
   void reset();
   double update(double _x, double _xd);
   bool getParameter();

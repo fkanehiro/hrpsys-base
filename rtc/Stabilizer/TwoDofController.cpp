@@ -11,9 +11,12 @@
 #include "TwoDofController.h"
 #include <iostream>
 
-TwoDofController::TwoDofController(double _ke, double _tc, double _dt, unsigned int _range) {
-  param.ke = _ke; param.tc = _tc; param.dt = _dt;
-  integrator = Integrator(_dt, _range);
+TwoDofController::TwoDofController() {
+}
+
+TwoDofController::TwoDofController(TwoDofController::TwoDofControllerParam &_param, unsigned int _range) {
+  param.ke = _param.ke; param.tc = _param.tc; param.dt = _param.dt;
+  integrator = Integrator(_param.dt, _range);
   integrator.reset();
 }
 
@@ -26,9 +29,9 @@ void TwoDofController::setup() {
   reset();
 }
 
-void TwoDofController::setup(double _ke, double _tc, double _dt, unsigned int _range) {
-  param.ke = _ke; param.tc = _tc; param.dt = _dt;
-  integrator = Integrator(_dt, _range);
+void TwoDofController::setup(TwoDofController::TwoDofControllerParam &_param, unsigned int _range) {
+  param.ke = _param.ke; param.tc = _param.tc; param.dt = _param.dt;
+  integrator = Integrator(_param.dt, _range);
   reset();
 }
 

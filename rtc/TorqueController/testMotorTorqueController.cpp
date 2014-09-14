@@ -9,8 +9,12 @@ int main (int argc, char* argv[]) {
   double ke = 2.0, kd = 20.0, tc = 0.05, dt = 0.005;
   const int test_num = 2;
   MotorTorqueController *controller[test_num];
-  controller[0] = new MotorTorqueController("hoge", ke, tc, dt);
-  controller[1] = new MotorTorqueController("hoge", ke, kd, tc, dt);
+  TwoDofController::TwoDofControllerParam tdc_param;
+  tdc_param.ke = ke; tdc_param.tc = tc; tdc_param.dt = dt;
+  controller[0] = new MotorTorqueController("hoge", tdc_param);
+  TwoDofControllerPDModel::TwoDofControllerPDModelParam tdc_pdmodel_param;
+  tdc_pdmodel_param.ke = ke; tdc_pdmodel_param.kd = kd; tdc_pdmodel_param.tc = tc; tdc_pdmodel_param.dt = dt;
+  controller[1] = new MotorTorqueController("hoge", tdc_pdmodel_param);
   double q[test_num], dq[test_num], q_ref[test_num], tau[test_num], dqref[test_num], ddqref[test_num];
   double tau_d = 10.0, limit = 90.0, pgain = 1.0, dgain = 0.01;
   bool activate_flag[test_num], stop_flag[test_num];

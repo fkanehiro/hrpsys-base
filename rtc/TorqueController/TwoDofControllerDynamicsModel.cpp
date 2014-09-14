@@ -14,15 +14,19 @@
 
 #define NUM_CONVOLUTION_TERM 3
 
-TwoDofControllerDynamicsModel::TwoDofControllerDynamicsModel(double _alpha, double _beta, double _ki, double _tc, double _dt, unsigned int _range) {
-  param.alpha = _alpha; param.beta = _beta; param.ki = _ki; param.tc = _tc; param.dt = _dt;
+TwoDofControllerDynamicsModel::TwoDofControllerDynamicsModel() {
+}
+
+
+TwoDofControllerDynamicsModel::TwoDofControllerDynamicsModel(TwoDofControllerDynamicsModel::TwoDofControllerDynamicsModelParam &_param, unsigned int _range) {
+  param.alpha = _param.alpha; param.beta = _param.beta; param.ki = _param.ki; param.tc = _param.tc; param.dt = _param.dt;
   current_time = 0;
   convolutions.clear();
   exp_sinh.clear();
   for (int i = 0; i < NUM_CONVOLUTION_TERM; i++) {
-    convolutions.push_back(Convolution(_dt, _range));
+    convolutions.push_back(Convolution(_param.dt, _range));
   }
-  integrate_exp_sinh_current.setup(_dt, _range);
+  integrate_exp_sinh_current.setup(_param.dt, _range);
 }
 
 TwoDofControllerDynamicsModel::~TwoDofControllerDynamicsModel() {
@@ -36,13 +40,13 @@ void TwoDofControllerDynamicsModel::setup() {
   reset();
 }
 
-void TwoDofControllerDynamicsModel::setup(double _alpha, double _beta, double _ki, double _tc, double _dt, unsigned int _range) {
-  param.alpha = _alpha; param.beta = _beta; param.ki = _ki; param.tc = _tc; param.dt = _dt;
+void TwoDofControllerDynamicsModel::setup(TwoDofControllerDynamicsModel::TwoDofControllerDynamicsModelParam &_param, unsigned int _range) {
+  param.alpha = _param.alpha; param.beta = _param.beta; param.ki = _param.ki; param.tc = _param.tc; param.dt = _param.dt;
   convolutions.clear();
   for (int i = 0; i < NUM_CONVOLUTION_TERM; i++) {
-    convolutions.push_back(Convolution(_dt, _range));
+    convolutions.push_back(Convolution(_param.dt, _range));
   }
-  integrate_exp_sinh_current.setup(_dt, _range);
+  integrate_exp_sinh_current.setup(_param.dt, _range);
   reset();
 }
 

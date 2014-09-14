@@ -19,16 +19,21 @@
 class TwoDofControllerPDModel : public TwoDofControllerInterface {
 public:
   struct TwoDofControllerPDModelParam {
+    TwoDofControllerPDModelParam() {
+      ke = kd = tc = dt = 0.0;
+    }
+    ~TwoDofControllerPDModelParam() {
+    }
     double ke; // Pgain
     double kd; // Dgain
     double tc; // time constant
     double dt; // control cycle
   };
-  
-  TwoDofControllerPDModel(double _ke = 0, double _kd = 0, double _tc = 0, double _dt = 0, unsigned int _range = 0);
+  TwoDofControllerPDModel();
+  TwoDofControllerPDModel(TwoDofControllerPDModelParam &_param, unsigned int _range = 0);
   ~TwoDofControllerPDModel();
   void setup();
-  void setup(double _ke, double _kd, double _tc, double _dt, unsigned int _range = 0);
+  void setup(TwoDofControllerPDModelParam &_param, unsigned int _range = 0);
   void reset();
   double update(double _x, double _xd);
   bool getParameter();

@@ -35,18 +35,18 @@ public:
   MotorTorqueController();
   ~MotorTorqueController(void);
 
-  // for TwoDofContorller
-  MotorTorqueController(std::string _jname, double ke, double tc, double dt);
-  void setupController(double _ke, double _tc, double _dt);
-  bool updateControllerParam(double _ke, double _tc, double _dt);
-  // for TwoDofContorllerPDModel
-  MotorTorqueController(std::string _jname, double ke, double kd, double tc, double dt);
-  void setupController(double _ke, double _kd, double _tc, double _dt);
-  bool updateControllerParam(double _ke, double _kd, double _tc, double _dt);;
-  // for TwoDofContorllerDynamicsModel
-  MotorTorqueController(std::string _jname, double _alpha, double _beta, double _ki, double _tc, double _dt);
-  void setupController(double _alpha, double _beta, double _ki, double _tc, double _dt);
-  bool updateControllerParam(double _alpha, double _beta, double _ki, double _tc, double _dt);
+  // for TwoDofController
+  MotorTorqueController(std::string _jname, TwoDofController::TwoDofControllerParam &_param);
+  void setupController(TwoDofController::TwoDofControllerParam &_param);
+  bool updateControllerParam(TwoDofController::TwoDofControllerParam &_param);
+  // for TwoDofControllerPDModel
+  MotorTorqueController(std::string _jname, TwoDofControllerPDModel::TwoDofControllerPDModelParam &_param);
+  void setupController(TwoDofControllerPDModel::TwoDofControllerPDModelParam &_param);
+  bool updateControllerParam(TwoDofControllerPDModel::TwoDofControllerPDModelParam &_param);
+  // for TwoDofControllerDynamicsModel
+  MotorTorqueController(std::string _jname, TwoDofControllerDynamicsModel::TwoDofControllerDynamicsModelParam &_param);
+  void setupController(TwoDofControllerDynamicsModel::TwoDofControllerDynamicsModelParam &_param);
+  bool updateControllerParam(TwoDofControllerDynamicsModel::TwoDofControllerDynamicsModelParam &_param);
 
   void setupMotorControllerMinMaxDq(double _min_dq, double _max_dq); // set min/max dq for transition
   bool activate(void); // set state of torque controller to ACTIVE
@@ -76,14 +76,14 @@ private:
     double min_dq; // min dq when transition
     double max_dq; // max dq when transition
     // for TwoDofController
-    void setupTwoDofController(double _ke, double _tc, double _dt);
-    bool updateTwoDofControllerParam(double _ke, double _tc, double _dt);
+    void setupTwoDofController(TwoDofController::TwoDofControllerParam &_param);
+    bool updateTwoDofControllerParam(TwoDofController::TwoDofControllerParam &_param);
     // for TwoDofControllerPDModel
-    void setupTwoDofControllerPDModel(double _ke, double _kd, double _tc, double _dt);
-    bool updateTwoDofControllerPDModelParam(double _ke, double _kd, double _tc, double _dt);
-    // for TwoDofContorllerDynamicsModel
-    void setupTwoDofControllerDynamicsModel(double _alpha, double _beta, double _ki, double _tc, double _dt);
-    bool updateTwoDofControllerDynamiccsModelParam(double _alpha, double _beta, double _ki, double _tc, double _dt);
+    void setupTwoDofControllerPDModel(TwoDofControllerPDModel::TwoDofControllerPDModelParam &_param);
+    bool updateTwoDofControllerPDModelParam(TwoDofControllerPDModel::TwoDofControllerPDModelParam &_param);
+    // for TwoDofControllerDynamicsModel
+    void setupTwoDofControllerDynamicsModel(TwoDofControllerDynamicsModel::TwoDofControllerDynamicsModelParam &_param);
+    bool updateTwoDofControllerDynamiccsModelParam(TwoDofControllerDynamicsModel::TwoDofControllerDynamicsModelParam &_param);
     double getMotorControllerDq(void); // get according dq according to state
   private:
     bool updateParam(double &_param, const double &_new_value); // update param if new_value is acceptable

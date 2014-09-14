@@ -112,8 +112,8 @@ RTC::ReturnCode_t TorqueController::onInitialize()
   }
   // make torque controller settings
   coil::vstring motorTorqueControllerParamsFromConf = coil::split(prop["torque_controller_params"], ",");
-  hrp::dvector tdcParamKe(m_robot->numJoints()), tdcParamKd(m_robot->numJoints()), tdcParamKi(m_robot->numJoints()), tdcParamT(m_robot->numJoints());
-  MotorTorqueController::motor_model_t model_type;
+  // make controlle type map
+  MotorTorqueController::motor_model_t model_type; 
   std::map<int, MotorTorqueController::motor_model_t> param_num_to_motor_model_type;
   param_num_to_motor_model_type[2 * m_robot->numJoints()] = MotorTorqueController::TWO_DOF_CONTROLLER;
   param_num_to_motor_model_type[3 * m_robot->numJoints()] = MotorTorqueController::TWO_DOF_CONTROLLER_PD_MODEL;
@@ -124,56 +124,69 @@ RTC::ReturnCode_t TorqueController::onInitialize()
   } else {
     model_type = param_num_to_motor_model_type[motorTorqueControllerParamsFromConf.size()];
   }
-  
+  // define controller paramters
   switch (model_type) {
   case MotorTorqueController::TWO_DOF_CONTROLLER_DYNAMICS_MODEL:
+  { // limit scope of tdc_dynamics_model_params
     std::cerr << "use TwoDofControllerDynamicsModel" << std::endl;
+    std::vector<TwoDofControllerDynamicsModel::TwoDofControllerDynamicsModelParam> tdc_dynamics_model_params(m_robot->numJoints());
     for (int i = 0; i < m_robot->numJoints(); i++) { // use TwoDofControllerDynamicsModel
-      coil::stringTo(tdcParamKe[i], motorTorqueControllerParamsFromConf[4 * i].c_str());
-      coil::stringTo(tdcParamKd[i], motorTorqueControllerParamsFromConf[4 * i + 1].c_str());
-      coil::stringTo(tdcParamKi[i], motorTorqueControllerParamsFromConf[4 * i + 2].c_str());
-      coil::stringTo(tdcParamT[i], motorTorqueControllerParamsFromConf[4 * i + 3].c_str());
-      m_motorTorqueControllers.push_back(MotorTorqueController(m_robot->joint(i)->name, tdcParamKe[i], tdcParamKd[i], tdcParamKi[i], tdcParamT[i], m_dt));
+      coil::stringTo(tdc_dynamics_model_params[i].alpha, motorTorqueControllerParamsFromConf[4 * i].c_str());
+      coil::stringTo(tdc_dynamics_model_params[i].beta, motorTorqueControllerParamsFromConf[4 * i + 1].c_str());
+      coil::stringTo(tdc_dynamics_model_params[i].ki, motorTorqueControllerParamsFromConf[4 * i + 2].c_str());
+      coil::stringTo(tdc_dynamics_model_params[i].tc, motorTorqueControllerParamsFromConf[4 * i + 3].c_str());
+      tdc_dynamics_model_params[i].dt = m_dt;
+      m_motorTorqueControllers.push_back(MotorTorqueController(m_robot->joint(i)->name, tdc_dynamics_model_params[i]));
     }
     if (m_debugLevel > 0) {
       std::cerr << "torque controller parames:" << std::endl;
       for (int i = 0; i < m_robot->numJoints(); i++) {
-        std::cerr << m_robot->joint(i)->name << ":" << tdcParamKe[i] << " " << tdcParamKd[i] << " " << tdcParamKi[i] << " " << tdcParamT[i] << " " << m_dt << std::endl;
+        std::cerr << m_robot->joint(i)->name << ":" <<
+          tdc_dynamics_model_params[i].alpha << " " << tdc_dynamics_model_params[i].beta << " " << tdc_dynamics_model_params[i].ki <<
+          " " << tdc_dynamics_model_params[i].tc << " " << tdc_dynamics_model_params[i].dt << std::endl;
       }
     }
     break;
-
+  }
   case MotorTorqueController::TWO_DOF_CONTROLLER_PD_MODEL:
+  { // limit scope of tdc_pdmodel_params
     std::cerr << "use TwoDofControllerPDModel" << std::endl;
+    std::vector<TwoDofControllerPDModel::TwoDofControllerPDModelParam> tdc_pdmodel_params(m_robot->numJoints());
     for (int i = 0; i < m_robot->numJoints(); i++) { // use TwoDofControllerPDModel
-      coil::stringTo(tdcParamKe[i], motorTorqueControllerParamsFromConf[3 * i].c_str());
-      coil::stringTo(tdcParamKd[i], motorTorqueControllerParamsFromConf[3 * i + 1].c_str());
-      coil::stringTo(tdcParamT[i], motorTorqueControllerParamsFromConf[3 * i + 2].c_str());
-      m_motorTorqueControllers.push_back(MotorTorqueController(m_robot->joint(i)->name, tdcParamKe[i], tdcParamKd[i], tdcParamT[i], m_dt));
+      coil::stringTo(tdc_pdmodel_params[i].ke, motorTorqueControllerParamsFromConf[3 * i].c_str());
+      coil::stringTo(tdc_pdmodel_params[i].kd, motorTorqueControllerParamsFromConf[3 * i + 1].c_str());
+      coil::stringTo(tdc_pdmodel_params[i].tc, motorTorqueControllerParamsFromConf[3 * i + 2].c_str());
+      tdc_pdmodel_params[i].dt = m_dt;
+      m_motorTorqueControllers.push_back(MotorTorqueController(m_robot->joint(i)->name, tdc_pdmodel_params[i]));
     }
     if (m_debugLevel > 0) {
       std::cerr << "torque controller parames:" << std::endl;
       for (int i = 0; i < m_robot->numJoints(); i++) {
-        std::cerr << m_robot->joint(i)->name << ":" << tdcParamKe[i] << " " << tdcParamKd[i] << " " << tdcParamT[i] << " " << m_dt << std::endl;
+        std::cerr << m_robot->joint(i)->name << ":" << tdc_pdmodel_params[i].ke << " " << tdc_pdmodel_params[i].kd <<
+          " " << tdc_pdmodel_params[i].tc << " " << tdc_pdmodel_params[i].dt << std::endl;
       }
     }
     break;
-
+  }
   case MotorTorqueController::TWO_DOF_CONTROLLER:
   default:
+  { // limit scope of tdc_params
     std::cerr << "use TwoDofController" << std::endl;
+    std::vector<TwoDofController::TwoDofControllerParam> tdc_params(m_robot->numJoints());
     for (int i = 0; i < m_robot->numJoints(); i++) { // use TwoDofController
-      coil::stringTo(tdcParamKe[i], motorTorqueControllerParamsFromConf[2 * i].c_str());
-      coil::stringTo(tdcParamT[i], motorTorqueControllerParamsFromConf[2 * i + 1].c_str());
-      m_motorTorqueControllers.push_back(MotorTorqueController(m_robot->joint(i)->name, tdcParamKe[i], tdcParamT[i], m_dt));
+      coil::stringTo(tdc_params[i].ke, motorTorqueControllerParamsFromConf[2 * i].c_str());
+      coil::stringTo(tdc_params[i].tc, motorTorqueControllerParamsFromConf[2 * i + 1].c_str());
+      tdc_params[i].dt = m_dt;
+      m_motorTorqueControllers.push_back(MotorTorqueController(m_robot->joint(i)->name, tdc_params[i]));
     }
     if (m_debugLevel > 0) {
       std::cerr << "torque controller parames:" << std::endl;
       for (int i = 0; i < m_robot->numJoints(); i++) {
-        std::cerr << m_robot->joint(i)->name << ":" << tdcParamKe[i] << " " << tdcParamT[i] << " " << m_dt << std::endl;
+        std::cerr << m_robot->joint(i)->name << ":" << tdc_params[i].ke << " " << tdc_params[i].tc << " " << tdc_params[i].dt << std::endl;
       }
     }
     break;
+  }
   }
 
   // parameter setttings for torque controller
@@ -486,17 +499,29 @@ bool TorqueController::setTorqueControllerParam(const OpenHRP::TorqueControllerS
   MotorTorqueController::motor_model_t model_type = tgt_controller->getMotorModelType();
   switch(model_type) { // dt is defined by controller cycle
   case MotorTorqueController::TWO_DOF_CONTROLLER:
+  { // limit scope for param 
     std::cerr << "new param:" << t_param.ke << " " << t_param.tc << " " << std::endl;
-    retval = tgt_controller->updateControllerParam(t_param.ke, t_param.tc, m_dt);
+    TwoDofController::TwoDofControllerParam param;
+    param.ke = t_param.ke; param.tc = t_param.tc; param.dt = m_dt;
+    retval = tgt_controller->updateControllerParam(param);
     break;
+  }
   case MotorTorqueController::TWO_DOF_CONTROLLER_PD_MODEL:
+  { // limit scope for param 
     std::cerr << "new param:" << t_param.ke << " " << t_param.kd << " " << t_param.tc << " " << std::endl;
-    retval = tgt_controller->updateControllerParam(t_param.ke, t_param.kd, t_param.tc, m_dt);
+    TwoDofControllerPDModel::TwoDofControllerPDModelParam param;
+    param.ke = t_param.ke; param.kd = t_param.kd; param.tc = t_param.tc; param.dt = m_dt;
+    retval = tgt_controller->updateControllerParam(param);
     break;
+  }
   case MotorTorqueController::TWO_DOF_CONTROLLER_DYNAMICS_MODEL:
+  { // limit scope for param 
     std::cerr << "new param:" << t_param.alpha << " " << t_param.beta << " " << t_param.ki << " " << t_param.tc << " " << std::endl;
-    retval = tgt_controller->updateControllerParam(t_param.alpha, t_param.beta, t_param.ki, t_param.tc, m_dt);
+    TwoDofControllerDynamicsModel::TwoDofControllerDynamicsModelParam param;
+    param.alpha = t_param.alpha; param.beta = t_param.beta; param.ki = t_param.ki; param.tc = t_param.tc; param.dt = m_dt;
+    retval = tgt_controller->updateControllerParam(param);
     break;
+  }
   default:
     return false;
   }

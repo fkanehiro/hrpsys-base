@@ -14,12 +14,15 @@
 
 #define NUM_CONVOLUTION_TERM 3
 
-TwoDofControllerPDModel::TwoDofControllerPDModel(double _ke, double _kd, double _tc, double _dt, unsigned int _range) {
-  param.ke = _ke; param.kd = _kd; param.tc = _tc; param.dt = _dt;
+TwoDofControllerPDModel::TwoDofControllerPDModel() {
+}
+
+TwoDofControllerPDModel::TwoDofControllerPDModel(TwoDofControllerPDModel::TwoDofControllerPDModelParam &_param, unsigned int _range) {
+  param.ke = _param.ke; param.kd = _param.kd; param.tc = _param.tc; param.dt = _param.dt;
   current_time = 0;
   convolutions.clear();
   for (int i = 0; i < NUM_CONVOLUTION_TERM; i++) {
-    convolutions.push_back(Convolution(_dt, _range));
+    convolutions.push_back(Convolution(_param.dt, _range));
   }
 }
 
@@ -32,11 +35,11 @@ void TwoDofControllerPDModel::setup() {
   reset();
 }
 
-void TwoDofControllerPDModel::setup(double _ke, double _kd, double _tc, double _dt, unsigned int _range) {
-  param.ke = _ke; param.kd = _kd; param.tc = _tc; param.dt = _dt;
+void TwoDofControllerPDModel::setup(TwoDofControllerPDModel::TwoDofControllerPDModelParam &_param, unsigned int _range) {
+  param.ke = _param.ke; param.kd = _param.kd; param.tc = _param.tc; param.dt = _param.dt;
   convolutions.clear();
   for (int i = 0; i < NUM_CONVOLUTION_TERM; i++) {
-    convolutions.push_back(Convolution(_dt, _range));
+    convolutions.push_back(Convolution(_param.dt, _range));
   }
   reset();
 }
