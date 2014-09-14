@@ -4,7 +4,7 @@
 
 \section introduction Overview
 
-This component generates a height field from an input point cloud, applies average filter and outputs a filterd point cloud.
+This component generates a height field from an input point cloud, applies average filter and outputs as a point cloud.
 
 <table>
 <tr><th>implementation_id</th><td>AverageFilter</td></tr>
@@ -17,14 +17,14 @@ This component generates a height field from an input point cloud, applies avera
 
 <table>
 <tr><th>port name</th><th>data type</th><th>unit</th><th>description</th></tr>
-<tr><td>original</td><td>PointCloudTypes::PointCloud</td><td></td><td></td></tr>
+<tr><td>original</td><td>PointCloudTypes::PointCloud</td><td>[m]</td><td>original point cloud</td></tr>
 </table>
 
 \subsection outports Output Ports
 
 <table>
 <tr><th>port name</th><th>data type</th><th>unit</th><th>description</th></tr>
-<tr><td>filtered</td><td>PointCloudTypes::PointCloud</td><td></td><td></td></tr>
+<tr><td>filtered</td><td>PointCloudTypes::PointCloud</td><td>[m]</td><td>filtered point cloud</td></tr>
 </table>
 
 \section serviceports Service Ports
@@ -42,7 +42,7 @@ N/A
 <table>
 <tr><th>name</th><th>type</th><th>unit</th><th>default value</th><th>description</th></tr>
 <tr><td>resolution</td><td>double</td><td>[m]</td><td>0.01</td><td>resolution of grids</td></tr>
-<tr><td>windowSize</td><td>int<int></td><td>[grid]</td><td>4</td><td>window size for filtering</td></tr>
+<tr><td>windowSize</td><td>std::vector<int></td><td>[grid]</td><td>4</td><td>window size for filtering</td></tr>
 </table>
 
 \section conf Configuration File
