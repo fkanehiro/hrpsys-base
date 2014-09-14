@@ -74,3 +74,16 @@ double TwoDofController::update (double _x, double _xd) {
   return -velocity * param.dt;
   
 }
+
+
+// for compatiblity of Stabilizer 
+TwoDofController::TwoDofController(double _ke, double _tc, double _dt, unsigned int _range) {
+  param.ke = _ke; param.tc = _tc; param.dt = _dt;
+  integrator = Integrator(_dt, _range);
+  integrator.reset();
+}
+
+void TwoDofController::setup(double _ke, double _tc, double _dt, unsigned int _range) {
+  param.ke = _ke; param.tc = _tc; param.dt = _dt;
+  integrator = Integrator(_dt, _range);
+}

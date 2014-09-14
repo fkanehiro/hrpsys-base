@@ -46,6 +46,11 @@ public:
   double update(double _x, double _xd);
   bool getParameter();
   bool getParameter(TwoDofControllerParam &_p);
+
+  // for compatibility of Stabilizer. TODO: replace to new parameter argument
+  TwoDofController(double _ke, double _tc, double _dt, unsigned int _range = 0);
+  void setup(double _ke, double _tc, double _dt, unsigned int _range = 0);
+  
 private:
   TwoDofControllerParam param;
   Integrator integrator; // integrated (xd - x)
