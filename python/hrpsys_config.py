@@ -664,6 +664,7 @@ class HrpsysConfigurator:
         if self.rh != None:
             self.connectLoggerPort(self.rh, 'emergencySignal',
                                    'emergencySignal')
+            self.connectLoggerPort(self.rh, 'servoState')
         for sen in filter(lambda x: x.type == "Force", self.sensors):
             self.connectLoggerPort(self.seq, sen.name + "Ref")
             self.connectLoggerPort(self.sh, sen.name + "Out")

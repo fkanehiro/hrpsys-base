@@ -68,6 +68,15 @@ void printData(std::ostream& os, const RTC::Orientation3D& data)
     os << data.r << " " << data.p << " " << data.y << " ";
 }
 
+template<class T>
+std::ostream& operator<<(std::ostream& os, const _CORBA_Unbounded_Sequence<T > & data)
+{
+  for (unsigned int j=0; j<data.length(); j++){
+    os << data[j] << " ";
+  }
+  return os;
+}
+
 template <class T>
 void printData(std::ostream& os, const T& data)
 {
@@ -282,6 +291,13 @@ bool DataLogger::add(const char *i_type, const char *i_name)
       }
   }else if (strcmp(i_type, "TimedLongSeq")==0){
       LoggerPort<TimedLongSeq> *lp = new LoggerPort<TimedLongSeq>(i_name);
+      new_port = lp;
+      if (!addInPort(i_name, lp->port())) {
+          resumeLogging();
+          return false;
+      }
+  }else if (strcmp(i_type, "TimedLongSeqSeq")==0){
+      LoggerPort<OpenHRP::TimedLongSeqSeq> *lp = new LoggerPort<OpenHRP::TimedLongSeqSeq>(i_name);
       new_port = lp;
       if (!addInPort(i_name, lp->port())) {
           resumeLogging();
