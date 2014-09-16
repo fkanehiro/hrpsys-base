@@ -15,6 +15,12 @@
 #define NUM_CONVOLUTION_TERM 3
 
 TwoDofControllerPDModel::TwoDofControllerPDModel() {
+  param = TwoDofControllerPDModel::TwoDofControllerPDModelParam(); // use default constructor
+  current_time = 0;
+  convolutions.clear();
+  for (int i = 0; i < NUM_CONVOLUTION_TERM; i++) {
+    convolutions.push_back(Convolution(0.0, 0.0));
+  }
 }
 
 TwoDofControllerPDModel::TwoDofControllerPDModel(TwoDofControllerPDModel::TwoDofControllerPDModelParam &_param, unsigned int _range) {

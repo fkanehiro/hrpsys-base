@@ -12,6 +12,9 @@
 #include <iostream>
 
 TwoDofController::TwoDofController() {
+  param = TwoDofController::TwoDofControllerParam(); // use default constructor
+  integrator = Integrator(0.0, 0.0);
+  integrator.reset();
 }
 
 TwoDofController::TwoDofController(TwoDofController::TwoDofControllerParam &_param, unsigned int _range) {

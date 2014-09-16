@@ -15,8 +15,15 @@
 #define NUM_CONVOLUTION_TERM 3
 
 TwoDofControllerDynamicsModel::TwoDofControllerDynamicsModel() {
+  param = TwoDofControllerDynamicsModel::TwoDofControllerDynamicsModelParam(); // use default constructor
+  current_time = 0;
+  convolutions.clear();
+  exp_sinh.clear();
+  for (int i = 0; i < NUM_CONVOLUTION_TERM; i++) {
+    convolutions.push_back(Convolution(0.0, 0.0));
+  }
+  integrate_exp_sinh_current.setup(0.0, 0.0);
 }
-
 
 TwoDofControllerDynamicsModel::TwoDofControllerDynamicsModel(TwoDofControllerDynamicsModel::TwoDofControllerDynamicsModelParam &_param, unsigned int _range) {
   param.alpha = _param.alpha; param.beta = _param.beta; param.ki = _param.ki; param.tc = _param.tc; param.dt = _param.dt;
