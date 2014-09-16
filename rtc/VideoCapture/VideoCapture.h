@@ -145,6 +145,7 @@ class VideoCapture
   std::string m_initialMode;
   std::vector<int> m_devIds;
   std::vector < v4l_capture * > m_cameras;
+  int m_width, m_height;
 };
 
 

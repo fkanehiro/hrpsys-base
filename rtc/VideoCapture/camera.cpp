@@ -20,8 +20,10 @@ v4l_capture::~v4l_capture()
 };
 
 int
-v4l_capture::init(unsigned int devId, bool _fileout)
+v4l_capture::init(size_t _width, size_t _height, unsigned int devId)
 {
+  width = _width;
+  height = _height;
   if (!init_all(width, height, devId)) return -1;
   frame = cv::Mat(height, width, CV_8UC3);
   return 0;

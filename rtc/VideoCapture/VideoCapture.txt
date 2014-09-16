@@ -46,6 +46,8 @@ N/A
 <tr><th>name</th><th>type</th><th>unit</th><th>default value</th><th>description</th></tr>
 <tr><td>initialMode</td><td>std::string</td><td></td><td>continuous</td><td></td></tr>
 <tr><td>devIds</td><td>std::vector<int></td><td></td><td>0</td><td>list of device IDs</td></tr>
+<tr><td>width</td><td>int</td><td></td><td>640</td><td>width of image</td></tr>
+<tr><td>height</td><td>int</td><td></td><td>480</td><td>height of image</td></tr>
 </table>
 
 \section conf Configuration File

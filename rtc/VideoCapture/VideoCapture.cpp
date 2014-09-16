@@ -27,6 +27,8 @@ static const char* videocapture_spec[] =
     // Configuration variables
     "conf.default.initialMode", "continuous",
     "conf.default.devIds", "0",
+    "conf.default.width", "640",
+    "conf.default.height", "480",
 
     ""
   };
@@ -58,6 +60,8 @@ RTC::ReturnCode_t VideoCapture::onInitialize()
   // Bind variables and configuration variable
   bindParameter("initialMode", m_initialMode, "continuous");
   bindParameter("devIds", m_devIds, "0");
+  bindParameter("width", m_width, "640");
+  bindParameter("height", m_height, "480");
   
   // </rtc-template>
 
@@ -118,7 +122,7 @@ RTC::ReturnCode_t VideoCapture::onActivated(RTC::UniqueId ec_id)
   if (m_devIds.size() == 1){
     std::cout << "** devId:" << m_devIds[0] << std::endl;
     v4l_capture *cam = new v4l_capture ();
-    if (cam->init(m_devIds[0], false) != 0) return RTC::RTC_ERROR;
+    if (cam->init(m_width, m_height, m_devIds[0]) != 0) return RTC::RTC_ERROR;
     m_cameras.push_back (cam);
     m_CameraImage.data.image.format = Img::CF_RGB;
     m_CameraImage.data.image.width = cam->getWidth ();
@@ -131,7 +135,7 @@ RTC::ReturnCode_t VideoCapture::onActivated(RTC::UniqueId ec_id)
       {
 	std::cout << "** devId:" << m_devIds[i] << std::endl;
 	v4l_capture *cam = new v4l_capture ();
-	cam->init(m_devIds[i], false);
+	cam->init(m_width, m_height, m_devIds[i]);
 	m_cameras.push_back (cam);
 	m_MultiCameraImages.data.image_seq[i].image.format = Img::CF_RGB;
 	m_MultiCameraImages.data.image_seq[i].image.width = cam->getWidth ();
