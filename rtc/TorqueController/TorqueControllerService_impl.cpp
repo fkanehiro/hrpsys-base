@@ -41,6 +41,11 @@ CORBA::Boolean TorqueControllerService_impl::setMultipleReferenceTorques(const O
     return m_torque_controller->setMultipleReferenceTorques(jnames, tauRefs);
 }
 
+CORBA::Boolean TorqueControllerService_impl::setTorqueControllerParam(const OpenHRP::TorqueControllerService::torqueControllerParam& t_param)
+{
+  return m_torque_controller->setTorqueControllerParam(t_param);
+}
+
 void TorqueControllerService_impl::torque_controller(TorqueController *i_torque_controller)
 {
 	m_torque_controller = i_torque_controller;

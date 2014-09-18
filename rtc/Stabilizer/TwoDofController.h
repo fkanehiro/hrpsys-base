@@ -18,22 +18,41 @@
 class TwoDofControllerInterface {
 public:
   virtual ~TwoDofControllerInterface() {}
-  virtual void reset() = 0;
-  virtual void setup() = 0;
-  virtual double update(double _x, double _xd) = 0;
+  virtual void reset() = 0; // initialze controller
+  virtual void setup() = 0; // setup parameters
+  virtual bool getParameter() = 0; // get prameter of controller
+  virtual double update(double _x, double _xd) = 0; // calculate input from current value(_x) and target value(_xd)
 };
 
 
 class TwoDofController : public TwoDofControllerInterface {
 public:
-  TwoDofController(double _ke = 0, double _tc = 0, double _dt = 0, unsigned int _range = 0);
+  struct TwoDofControllerParam {
+    TwoDofControllerParam() {
+      ke = tc = dt = 0.0;
+    }
+    ~TwoDofControllerParam() {
+    }
+    double ke; // gain
+    double tc; // time constant
+    double dt; // control cycle
+  };
+  TwoDofController();
+  TwoDofController(TwoDofControllerParam &_param, unsigned int _range = 0);
   ~TwoDofController();
   void setup();
-  void setup(double _ke, double _tc, double _dt, unsigned int _range = 0);
+  void setup(TwoDofControllerParam &_param, unsigned int _range = 0);
   void reset();
   double update(double _x, double _xd);
+  bool getParameter();
+  bool getParameter(TwoDofControllerParam &_p);
+
+  // for compatibility of Stabilizer. TODO: replace to new parameter argument
+  TwoDofController(double _ke, double _tc, double _dt, unsigned int _range = 0);
+  void setup(double _ke, double _tc, double _dt, unsigned int _range = 0);
+  
 private:
-  double ke, tc, dt; // ke: gain, tc: time constant, dt: control cycle
+  TwoDofControllerParam param;
   Integrator integrator; // integrated (xd - x)
 };
 
