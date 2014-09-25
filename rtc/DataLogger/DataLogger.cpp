@@ -9,6 +9,7 @@
 
 #include "DataLogger.h"
 #include "util/Hrpsys.h"
+#include "pointcloud.hh"
 
 
 typedef coil::Guard<coil::Mutex> Guard;
@@ -68,6 +69,27 @@ void printData(std::ostream& os, const RTC::Orientation3D& data)
     os << data.r << " " << data.p << " " << data.y << " ";
 }
 
+void printData(std::ostream& os, const PointCloudTypes::PointCloud& data)
+{
+  os << data.width << " " << data.height << " " << data.type;
+  uint npoint = data.data.length()/data.point_step;
+  float *ptr = (float *)data.data.get_buffer();
+  std::string type(data.type);
+  if (type != "xyz" && type != "xyzrgb"){
+    std::cerr << "point cloud type(" << type << ") is not supported" 
+	      << std::endl;
+    return;
+  } 
+  for (uint i=0; i<npoint ;i++){
+    os << " " << *ptr++ << " " << *ptr++ << " " << *ptr++;
+    if (type == "xyzrgb"){
+      unsigned char *rgb = (unsigned char *)ptr;
+      os << " " << (int)rgb[0] << " " << (int)rgb[1] << " " << (int)rgb[2];
+      ptr++;
+    }
+  }
+} 
+
 template<class T>
 std::ostream& operator<<(std::ostream& os, const _CORBA_Unbounded_Sequence<T > & data)
 {
@@ -93,7 +115,7 @@ public:
     const char *name(){
         return m_port.name();
     }
-    void dumpLog(std::ostream& os){
+    virtual void dumpLog(std::ostream& os){
         os.setf(std::ios::fixed, std::ios::floatfield);
         for (unsigned int i=0; i<m_log.size(); i++){
             // time
@@ -118,10 +140,26 @@ public:
     void clear(){
         m_log.clear();
     }
-private:
+protected:
     InPort<T> m_port;
     T m_data;
     std::deque<T> m_log;
+};
+
+class LoggerPortForPointCloud : public LoggerPort<PointCloudTypes::PointCloud>
+{
+public:
+    LoggerPortForPointCloud(const char *name) : LoggerPort<PointCloudTypes::PointCloud>(name) {}
+    void dumpLog(std::ostream& os){
+        os.setf(std::ios::fixed, std::ios::floatfield);
+        for (unsigned int i=0; i<m_log.size(); i++){
+            // time
+            os << std::setprecision(6) << (m_log[i].tm.sec + m_log[i].tm.nsec/1e9) << " ";
+            // data
+            printData(os, m_log[i]);
+            os << std::endl;
+        }
+    }
 };
 
 
@@ -340,6 +378,13 @@ bool DataLogger::add(const char *i_type, const char *i_name)
       }
   }else if (strcmp(i_type, "TimedPose3D")==0){
       LoggerPort<TimedPose3D> *lp = new LoggerPort<TimedPose3D>(i_name);
+      new_port = lp;
+      if (!addInPort(i_name, lp->port())) {
+          resumeLogging();
+          return false;
+      }
+  }else if (strcmp(i_type, "PointCloud")==0){
+    LoggerPort<PointCloudTypes::PointCloud> *lp = new LoggerPortForPointCloud(i_name);
       new_port = lp;
       if (!addInPort(i_name, lp->port())) {
           resumeLogging();
