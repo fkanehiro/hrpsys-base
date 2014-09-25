@@ -71,8 +71,8 @@ void printData(std::ostream& os, const RTC::Orientation3D& data)
 
 void printData(std::ostream& os, const PointCloudTypes::PointCloud& data)
 {
-  os << data.width << " " << data.height << " " << data.type;
   uint npoint = data.data.length()/data.point_step;
+  os << data.width << " " << data.height << " " << data.type << " " << npoint;
   float *ptr = (float *)data.data.get_buffer();
   std::string type(data.type);
   if (type != "xyz" && type != "xyzrgb"){
