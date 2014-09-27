@@ -1,11 +1,15 @@
 /**
  * @file KalmanFilterService.idl
- * @brief Services for the robot hardware interface
+ * @brief Services for the kalman filter interface
  */
 module OpenHRP
 {
   interface KalmanFilterService
   {
+    /**
+     * @struct KalmanFilterParam
+     * @brief KalmanFilter Parameters.
+     */
     struct KalmanFilterParam
     {
       double Q_angle;

@@ -13,54 +13,100 @@ module OpenHRP
     typedef double DblArray3[3];
     typedef double DblArray4[4];
 
-    // Foot Step
+    /**
+     * @struct Footstep
+     * @brief Foot step for one leg.
+     */
     struct Footstep
     {
-      DblArray3 pos; // Foot position [m]
-      DblArray4 rot; // Foot orientation by quaternion (w,x,y,z)
-      string leg; // Leg name (rleg or lleg)
+      /// Foot position [m]
+      DblArray3 pos;
+      /// Foot orientation by quaternion (w,x,y,z)
+      DblArray4 rot;
+      /// Leg name (rleg or lleg)
+      string leg;
     };
+
+    /**
+     * @struct FootstepSequence
+     * @brief Sequence of foot step.
+     */
     typedef sequence<Footstep> FootstepSequence;
 
+    /**
+     * @enum SupportLegState
+     * @brief State of support leg.
+     */
     enum SupportLegState {
       RLEG,
       LLEG,
       BOTH
     };
 
+    /**
+     * @enum OrbitType
+     * @brief Orbit type of swing foot.
+     */
     enum OrbitType {
       SHUFFLING,
       CYCLOID,
       RECTANGLE
     };
 
+    /**
+     * @struct FootstepParam
+     * @brief Foot step parameters.
+     */
     struct FootstepParam
     {
-      Footstep rleg_coords; // Current right foot coords
-      Footstep lleg_coords; // Current left foot coords
-      Footstep support_leg_coords; // Support foot coords
-      Footstep swing_leg_coords; // Swing foot coords, which is interpolation betwee swing_leg_src_coords and swing_leg_dst_coords
-      Footstep swing_leg_src_coords; // Source coords for swing foot
-      Footstep swing_leg_dst_coords; // Destination coords for swing foot
-      Footstep dst_foot_midcoords; // Destination foot midcoords
-      SupportLegState support_leg; // RLEG or LLEG
-      SupportLegState support_leg_with_both; // RLEG, LLEG, or BOTH
+      /// Current right foot coords
+      Footstep rleg_coords;
+      /// Current left foot coords
+      Footstep lleg_coords;
+      /// Support foot coords
+      Footstep support_leg_coords;
+      /// Swing foot coords, which is interpolation betwee swing_leg_src_coords and swing_leg_dst_coords
+      Footstep swing_leg_coords;
+      /// Source coords for swing foot
+      Footstep swing_leg_src_coords;
+      /// Destination coords for swing foot
+      Footstep swing_leg_dst_coords;
+      /// Destination foot midcoords
+      Footstep dst_foot_midcoords;
+      /// RLEG or LLEG
+      SupportLegState support_leg;
+      /// RLEG, LLEG, or BOTH
+      SupportLegState support_leg_with_both;
     };
 
     typedef sequence<string> StrSequence;
 
-    struct GaitGeneratorParam // Parameters for GaitGenerator
+    /**
+     * @struct GaitGeneratorParam
+     * @brief Parameters for GaitGenerator.
+     */
+    struct GaitGeneratorParam
     {
-      double default_step_time; // Step time [s]
-      double default_step_height; // Step height [m]
-      double default_double_support_ratio; // Ratio of double support period. Ratio is included in (0, 1). Double support period time is default_double_support_ratio*default_step_time.
-      sequence<double, 3> stride_parameter; // Stride limitation of x[m], y[m], and theta[deg] for goPos
-      OrbitType default_orbit_type; // Default OrbitType
+      /// Step time [s]
+      double default_step_time;
+      /// Step height [m]
+      double default_step_height;
+      /// Ratio of double support period. Ratio is included in (0, 1). Double support period time is default_double_support_ratio*default_step_time.
+      double default_double_support_ratio;
+      /// Stride limitation of x[m], y[m], and theta[deg] for goPos
+      sequence<double, 3> stride_parameter;
+      /// Default OrbitType
+      OrbitType default_orbit_type;
     };
 
-    struct AutoBalancerParam // Parameters for AutoBalancer
+    /**
+     * @struct AutoBalancerParam
+     * @brief Parameters for AutoBalancer
+     */
+    struct AutoBalancerParam
     {
-      sequence<DblSequence3, 2> default_zmp_offsets; // ZMP offset vectors[m] for rleg and lleg (<-please set by this order)
+      /// ZMP offset vectors[m] for rleg and lleg (<-please set by this order)
+      sequence<DblSequence3, 2> default_zmp_offsets;
       double move_base_gain;
     };
 

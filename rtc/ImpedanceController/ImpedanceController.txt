@@ -1,13 +1,13 @@
 /**
 
-\page RemoveForceSensorLinkOffset
+\page ImpedanceController
 
 \section introduction Overview
 
-This component is remove hands or feet from force sensor values.
+This component is  cartesian impedance control.
 
 <table>
-<tr><th>implementation_id</th><td>Stabilizer</td></tr>
+<tr><th>implementation_id</th><td>ImpedanceController</td></tr>
 <tr><th>category</th><td>example</td></tr>
 </table>
 
@@ -18,17 +18,19 @@ This component is remove hands or feet from force sensor values.
 <table>
 <tr><th>port name</th><th>data type</th><th>unit</th><th>description</th></tr>
 <tr><td>qCurrent</td><td>RTC::TimedDoubleSeq</td><td>[rad]</td><td>Actual joint angles</td></tr>
-<tr><td>rpy</td><td>RTC::TimedOrientation3D</td><td>[rad]</td><td>Actual attitude sensor's RPY angle </td></tr>
-<tr><td>(force sensor name such as "rhsensor")</td><td>RTC::TimedDoubleSeq</td><td>[N],[Nm]</td><td>6D
-wrench vector for actual force and moment for one end-effector</td></tr>
+<tr><td>qRef</td><td>RTC::TimedDoubleSeq</td><td>[rad]</td><td>Reference joint angles</td></tr>
+<tr><td>rpy</td><td>RTC::TimedOrientation3D</td><td>[rad]</td><td>
+Actual attitude sensor's RPY angle </td></tr>
+<tr><td>rpyRef</td><td>RTC::TimedOrientation3D</td><td>[rad]</td><td>
+Reference attitude sensor's RPY angle </td></tr>
 </table>
 
 \subsection outports Output Ports
 
 <table>
 <tr><th>port name</th><th>data type</th><th>unit</th><th>description</th></tr>
-<tr><td>(force sensor name such as "off_rhsensor")</td><td>RTC::TimedDoubleSeq</td><td>[N],[Nm]</td><td>6D
-wrench vector for actual force and moment for one end-effector</td></tr>
+<tr><td>q</td><td>RTC::TimedDoubleSeq</td><td>[rad]</td><td>Output
+reference joint angles</td></tr>
 </table>
 
 \section serviceports Service Ports
@@ -37,7 +39,7 @@ wrench vector for actual force and moment for one end-effector</td></tr>
 
 <table>
 <tr><th>port name</th><th>interface name</th><th>service type</th><th>IDL</th><th>description</th></tr>
-<tr><td>RemoveForceSensorLinkOffsetService</td><td>service0</td><td>RemoveForceSensorLinkOffsetService</td><td>\ref OpenHRP::RemoveForceSensorLinkOffsetService</td><td>RemoveForceSensorLinkOffsetService</td></tr>
+<tr><td>ImpedanceControllerService</td><td>service0</td><td>ImpedanceControllerService</td><td>\ref OpenHRP::ImpedanceControllerService</td><td>ImpedanceControllerService</td></tr>
 </table>
 
 \subsection consumer Service Consumers
