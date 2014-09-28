@@ -24,6 +24,11 @@ set(input_files package.h utilities.h
 		      ../rtc/VirtualCamera/VirtualCamera.txt
 		      ../rtc/VirtualForceSensor/VirtualForceSensor.txt
 		      ../rtc/WavPlayer/WavPlayer.txt
+		      ../rtc/Stabilizer/Stabilizer.txt
+		      ../rtc/AutoBalancer/AutoBalancer.txt
+		      ../rtc/KalmanFilter/KalmanFilter.txt
+		      ../rtc/ImpedanceController/ImpedanceController.txt
+		      ../rtc/RemoveForceSensorLinkOffset/RemoveForceSensorLinkOffset.txt
 		      ../lib/io/iob.h
 		      ../idl/CollisionDetectorService.idl
 		      ../idl/DataLoggerService.idl
@@ -37,6 +42,10 @@ set(input_files package.h utilities.h
 		      ../idl/StateHolderService.idl
 		      ../idl/TimeKeeperService.idl
 		      ../idl/WavPlayerService.idl
+		      ../idl/AutoBalancerService.idl
+		      ../idl/StabilizerService.idl
+		      ../idl/KalmanFilterService.idl
+		      ../idl/RemoveForceSensorLinkOffsetService.idl
 		      )
 configure_file(Doxyfile.in ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)
 set(output_dir ${CMAKE_CURRENT_BINARY_DIR}/html)

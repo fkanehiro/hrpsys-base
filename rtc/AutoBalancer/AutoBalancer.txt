@@ -1,0 +1,71 @@
+/**
+
+\page AutoBalancer
+
+\section introduction Overview
+
+This component is generate walking pattern and control Center Of Gravity for legged robots without sensor feedback.
+
+<table>
+<tr><th>implementation_id</th><td>AutoBalancer</td></tr>
+<tr><th>category</th><td>example</td></tr>
+</table>
+
+\section dataports Data Ports
+
+\subsection inports Input Ports
+
+<table>
+<tr><th>port name</th><th>data type</th><th>unit</th><th>description</th></tr>
+<tr><td>qCurrent</td><td>RTC::TimedDoubleSeq</td><td>[rad]</td><td>Actual joint angles</td></tr>
+<tr><td>qRef</td><td>RTC::TimedDoubleSeq</td><td>[rad]</td><td>Reference joint angles</td></tr>
+</table>
+
+\subsection outports Output Ports
+
+<table>
+<tr><th>port name</th><th>data type</th><th>unit</th><th>description</th></tr>
+<tr><td>q</td><td>RTC::TimedDoubleSeq</td><td>[rad]</td><td>Output
+reference joint angles</td></tr>
+<tr><td>zmpRef</td><td>RTC::TimedPoint3D</td><td>[m]</td><td>Output 
+ZMP in base frame</td></tr>
+<tr><td>basePos</td><td>RTC::TimedPoint3D</td><td>[m]</td><td>Output 
+base position</td></tr>
+<tr><td>baseRpy</td><td>RTC::TimedOrientation3D</td><td>[rad]</td><td>Output 
+base orientation (RPY)</td></tr>
+<tr><td>baseTformOut</td><td>RTC::TimedDoubleSeq</td><td>[m], [rad]</td><td>Output 
+base position and orientation (RPY)</td></tr>
+<tr><td>accRef</td><td>RTC::TimedAcceleration3D</td><td>[m/s^2]</td><td>Output 
+attitude sensor's acceleration</td></tr>
+<tr><td>contactStates</td><td>RTC::TimedBooleanSeq</td><td>NA</td><td>
+Reference end-effector contact states (True=contact, False=no-contact)</td></tr>
+<tr><td>controlSwingSupportTime</td><td>RTC::TimedDouble</td><td>[s]</td><td>
+Time of swing phase</td></tr>
+</table>
+
+\section serviceports Service Ports
+
+\subsection provider Service Providers
+
+<table>
+<tr><th>port name</th><th>interface name</th><th>service type</th><th>IDL</th><th>description</th></tr>
+<tr><td>AutoBalancerService</td><td>service0</td><td>AutoBalancerService</td><td>\ref OpenHRP::AutoBalancerService</td><td>AutoBalancerService</td></tr>
+</table>
+
+\subsection consumer Service Consumers
+
+N/A
+
+\section configuration Configuration Variables
+
+<table>
+<tr><th>name</th><th>type</th><th>unit</th><th>default
+value</th><th>description</th></tr>
+<tr><td>debugLevel</td><td>int</td><td></td><td>0</td><td>debug level</td></tr>
+</table>
+
+\section conf Configuration File
+
+N/A
+
+ */

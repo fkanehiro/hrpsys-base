@@ -1,13 +1,13 @@
 /**
 
-\page NullComponent
+\page Stabilizer
 
 \section introduction Overview
 
-This component is a very simple RT component to learn how to develop.
+This component is maintain full-body balance based on sensor feedback.
 
 <table>
-<tr><th>implementation_id</th><td>NullComponent</td></tr>
+<tr><th>implementation_id</th><td>Stabilizer</td></tr>
 <tr><th>category</th><td>example</td></tr>
 </table>
 
@@ -17,14 +17,33 @@ This component is a very simple RT component to learn how to develop.
 
 <table>
 <tr><th>port name</th><th>data type</th><th>unit</th><th>description</th></tr>
-<tr><td>dataIn</td><td>RTC::TimedDouble</td><td></td><td></td></tr>
+<tr><td>qCurrent</td><td>RTC::TimedDoubleSeq</td><td>[rad]</td><td>Actual joint angles</td></tr>
+<tr><td>qRef</td><td>RTC::TimedDoubleSeq</td><td>[rad]</td><td>Reference joint angles</td></tr>
+<tr><td>rpy</td><td>RTC::TimedOrientation3D</td><td>[rad]</td><td>Actual attitude sensor's RPY angle </td></tr>
+<tr><td>forceL</td><td>RTC::TimedDoubleSeq</td><td>[N],[Nm]</td><td>6D
+wrench vector for actual force and moment for left leg</td></tr>
+<tr><td>forceR</td><td>RTC::TimedDoubleSeq</td><td>[N],[Nm]</td><td>6D
+wrench vector for actual force and moment for right leg</td></tr>
+<tr><td>zmpRef</td><td>RTC::TimedPoint3D</td><td>[m]</td><td>Reference
+ZMP in base frame</td></tr>
+<tr><td>basePosIn</td><td>RTC::TimedPoint3D</td><td>[m]</td><td>Reference
+base position</td></tr>
+<tr><td>baseRpyIn</td><td>RTC::TimedOrientation3D</td><td>[rad]</td><td>Reference
+base orientation (RPY)</td></tr>
+<tr><td>contactStates</td><td>RTC::TimedBooleanSeq</td><td>NA</td><td>
+Reference end-effector contact states (True=contact, False=no-contact)</td></tr>
+<tr><td>controlSwingSupportTime</td><td>RTC::TimedDouble</td><td>[s]</td><td>
+Time of swing phase</td></tr>
 </table>
 
 \subsection outports Output Ports
 
 <table>
 <tr><th>port name</th><th>data type</th><th>unit</th><th>description</th></tr>
-<tr><td>dataOut</td><td>RTC::TimedDouble</td><td></td><td></td></tr>
+<tr><td>q</td><td>RTC::TimedDoubleSeq</td><td>[rad]</td><td>Output
+reference joint angles</td></tr>
+<tr><td>zmp</td><td>RTC::TimedPoint3D</td><td>[m]</td><td>Estimated
+actual ZMP in base frame</td></tr>
 </table>
 
 \section serviceports Service Ports
@@ -33,7 +52,7 @@ This component is a very simple RT component to learn how to develop.
 
 <table>
 <tr><th>port name</th><th>interface name</th><th>service type</th><th>IDL</th><th>description</th></tr>
-<tr><td>NullService</td><td>service0</td><td>NullService</td><td>\ref OpenHRP::NullService</td><td></td></tr>
+<tr><td>StabilizerService</td><td>service0</td><td>StabilizerService</td><td>\ref OpenHRP::StabilizerService</td><td>StabilizerService</td></tr>
 </table>
 
 \subsection consumer Service Consumers
@@ -43,10 +62,9 @@ N/A
 \section configuration Configuration Variables
 
 <table>
-<tr><th>name</th><th>type</th><th>unit</th><th>default value</th><th>description</th></tr>
-<tr><td>string</td><td>std::string</td><td></td><td>testtest</td><td>example of string configuration variables</td></tr>
-<tr><td>intvec</td><td>std::vector<int></td><td></td><td>4,5,6,7</td><td>example of integer array configuration variables</td></tr>
-<tr><td>double</td><td>double<int></td><td></td><td>4.567</td><td>example of double precision configuration variable</td></tr>
+<tr><th>name</th><th>type</th><th>unit</th><th>default
+value</th><th>description</th></tr>
+<tr><td>debugLevel</td><td>int</td><td></td><td>0</td><td>debug level</td></tr>
 </table>
 
 \section conf Configuration File
