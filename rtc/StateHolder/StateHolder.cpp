@@ -41,6 +41,7 @@ StateHolder::StateHolder(RTC::Manager* manager)
     m_basePosIn("basePosIn", m_basePos),
     m_baseRpyIn("baseRpyIn", m_baseRpy),
     m_zmpIn("zmpIn", m_zmp),
+    m_optionalDataIn("optionalDataIn", m_optionalData),
     m_qOut("qOut", m_q),
     m_tqOut("tqOut", m_tq),
     m_basePosOut("basePosOut", m_basePos),
@@ -48,6 +49,7 @@ StateHolder::StateHolder(RTC::Manager* manager)
     m_baseTformOut("baseTformOut", m_baseTform),
     m_basePoseOut("basePoseOut", m_basePose),
     m_zmpOut("zmpOut", m_zmp),
+    m_optionalDataOut("optionalDataOut", m_optionalData),
     m_StateHolderServicePort("StateHolderService"),
     m_TimeKeeperServicePort("TimeKeeperService"),
     // </rtc-template>
@@ -85,6 +87,7 @@ RTC::ReturnCode_t StateHolder::onInitialize()
     addInPort("basePosIn", m_basePosIn);
     addInPort("baseRpyIn", m_baseRpyIn);
     addInPort("zmpIn", m_zmpIn);
+    addInPort("optionalDataIn", m_optionalDataIn);
   
   // Set OutPort buffer
     addOutPort("qOut", m_qOut);
@@ -94,6 +97,7 @@ RTC::ReturnCode_t StateHolder::onInitialize()
     addOutPort("baseTformOut", m_baseTformOut);
     addOutPort("basePoseOut", m_basePoseOut);
     addOutPort("zmpOut", m_zmpOut);
+    addOutPort("optionalDataOut", m_optionalDataOut);
   
   // Set service provider to Ports
   m_StateHolderServicePort.registerProvider("service0", "StateHolderService", m_service0);
@@ -250,6 +254,10 @@ RTC::ReturnCode_t StateHolder::onExecute(RTC::UniqueId ec_id)
         m_zmpIn.read();
     }
 
+    if (m_optionalDataIn.isNew()){
+        m_optionalDataIn.read();
+    }
+
     for (size_t i = 0; i < m_wrenchesIn.size(); i++) {
       if ( m_wrenchesIn[i]->isNew() ) {
         m_wrenchesIn[i]->read();
@@ -292,6 +300,7 @@ RTC::ReturnCode_t StateHolder::onExecute(RTC::UniqueId ec_id)
     m_baseRpyOut.write();
     m_zmpOut.write();
     m_basePoseOut.write();
+    m_optionalDataOut.write();
     for (size_t i = 0; i < m_wrenchesOut.size(); i++) {
       m_wrenchesOut[i]->write();
     }
