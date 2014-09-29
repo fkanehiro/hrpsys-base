@@ -52,6 +52,7 @@ SequencePlayer::SequencePlayer(RTC::Manager* manager)
       m_accRefOut("accRef", m_accRef),
       m_basePosOut("basePos", m_basePos),
       m_baseRpyOut("baseRpy", m_baseRpy),
+      m_optionalDataOut("optionalData", m_optionalData),
       m_SequencePlayerServicePort("SequencePlayerService"),
       // </rtc-template>
       m_waitSem(0),
@@ -90,6 +91,7 @@ RTC::ReturnCode_t SequencePlayer::onInitialize()
     addOutPort("accRef", m_accRefOut);
     addOutPort("basePos", m_basePosOut);
     addOutPort("baseRpy", m_baseRpyOut);
+    addOutPort("optionalData", m_optionalDataOut);
   
     // Set service provider to Ports
     m_SequencePlayerServicePort.registerProvider("service0", "SequencePlayerService", m_service0);
@@ -139,7 +141,13 @@ RTC::ReturnCode_t SequencePlayer::onInitialize()
       std::cerr << s->name << std::endl;
     }
 
-    m_seq = new seqplay(dof, dt, npforce);
+    if (prop.hasKey("seq_optional_data_dim")) {
+      coil::stringTo(optional_data_dim, prop["seq_optional_data_dim"].c_str());
+    } else {
+      optional_data_dim = 1;
+    }
+
+    m_seq = new seqplay(dof, dt, npforce, optional_data_dim);
 
     m_qInit.data.length(dof);
     for (unsigned int i=0; i<dof; i++) m_qInit.data[i] = 0.0;
@@ -152,6 +160,7 @@ RTC::ReturnCode_t SequencePlayer::onInitialize()
     // allocate memory for outPorts
     m_qRef.data.length(dof);
     m_tqRef.data.length(dof);
+    m_optionalData.data.length(optional_data_dim);
 
     return RTC::RTC_OK;
 }
@@ -223,7 +232,7 @@ RTC::ReturnCode_t SequencePlayer::onExecute(RTC::UniqueId ec_id)
 	Guard guard(m_mutex);
 
         double zmp[3], acc[3], pos[3], rpy[3], wrenches[6*m_wrenches.size()];
-        m_seq->get(m_qRef.data.get_buffer(), zmp, acc, pos, rpy, m_tqRef.data.get_buffer(), wrenches);
+        m_seq->get(m_qRef.data.get_buffer(), zmp, acc, pos, rpy, m_tqRef.data.get_buffer(), wrenches, m_optionalData.data.get_buffer());
         m_zmpRef.data.x = zmp[0];
         m_zmpRef.data.y = zmp[1];
         m_zmpRef.data.z = zmp[2];
@@ -251,6 +260,7 @@ RTC::ReturnCode_t SequencePlayer::onExecute(RTC::UniqueId ec_id)
         m_accRefOut.write();
         m_basePosOut.write();
         m_baseRpyOut.write();
+        m_optionalDataOut.write();
         for (size_t i = 0; i < m_wrenchesOut.size(); i++) {
           m_wrenchesOut[i]->write();
         }
