@@ -104,12 +104,10 @@ class Range2PointCloud
   // </rtc-template>
 
   RangeData m_range;  
-  RTC::TimedPose3D m_sensorPose;
 
   // DataInPort declaration
   // <rtc-template block="inport_declare">
   InPort<RangeData> m_rangeIn;
-  InPort<RTC::TimedPose3D> m_sensorPoseIn;
   
   // </rtc-template>
   PointCloudTypes::PointCloud m_cloud;
