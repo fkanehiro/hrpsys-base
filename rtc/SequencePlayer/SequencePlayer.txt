@@ -6,6 +6,15 @@
 
 This component plays motion patterns.
 
+\subsection interpolation1 Interpolation
+This component interpolates motion patterns between key frames in hoff-arbib interpolation or linear interpolation (\ref OpenHRP::SequencePlayerService::interpolationMode). 
+
+\subsection interpolation2 Partial interpolation
+This component can interpolate motion patterns at specific joint groups. 
+
+\subsection inversekinematics Simple inverse kinematics
+Simple inverse kinematics is implemented (\ref OpenHRP::SequencePlayerService::setTargetPose). 
+
 <table>
 <tr><th>implementation_id</th><td>SequencePlayer</td></tr>
 <tr><th>category</th><td>example</td></tr>
@@ -28,11 +37,13 @@ This component plays motion patterns.
 <table>
 <tr><th>port name</th><th>data type</th><th>unit</th><th>description</th></tr>
 <tr><td>qRef</td><td>RTC::TimedDoubleSeq</td><td>[rad]</td><td>reference joint angles</td></tr>
-<tr><td>tqRef</td><td>RTC::TimedDoubleSeq</td><td></td><td></td></tr>
-<tr><td>zmpRef</td><td>RTC::TimedPoint3D</td><td>[m]</td><td>reference ZMP</td></tr>
-<tr><td>accRef</td><td>RTC::TimedAcceleration3D</td><td>[m]</td><td>reference acceleration</td></tr>
-<tr><td>basePos</td><td>RTC::TimedPoint3D</td><td>[m]</td><td>reference position of the base link</td></tr>
-<tr><td>baseRpy</td><td>RTC::TimedOrientation3D</td><td>[rad]</td><td>reference Roll-Pitch-Yaw angles of the base link</td></tr>
+<tr><td>tqRef</td><td>RTC::TimedDoubleSeq</td><td>[Nm]</td><td>reference joint torques</td></tr>
+<tr><td>zmpRef</td><td>RTC::TimedPoint3D</td><td>[m]</td><td>reference ZMP in the base link frame</td></tr>
+<tr><td>accRef</td><td>RTC::TimedAcceleration3D</td><td>[m]</td><td>reference acceleration of the sensor in the sensor frame </td></tr>
+<tr><td>basePos</td><td>RTC::TimedPoint3D</td><td>[m]</td><td>reference position of the base link in the world frame</td></tr>
+<tr><td>baseRpy</td><td>RTC::TimedOrientation3D</td><td>[rad]</td><td>reference Roll-Pitch-Yaw angles of the base link in the world frame</td></tr>
+<tr><td>name of force/torque sensor defined in a VRML model + "Ref", such as "rhsensorRef"</td><td>RTC::TimedDoubleSeq</td><td>[N],[Nm]</td><td>reference force/torque in the sensor frame</td></tr>
+<tr><td>optionalData</td><td>RTC::TimedDoubleSeq</td><td></td><td>optional data sequence</td></tr>
 </table>
 
 \section serviceports Service Ports
