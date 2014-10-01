@@ -27,15 +27,19 @@ public:
 
 class TwoDofController : public TwoDofControllerInterface {
 public:
-  struct TwoDofControllerParam {
+  class TwoDofControllerParam {
+  public:
     TwoDofControllerParam() {
-      ke = tc = dt = 0.0;
+      ke = tc = dt = 0.0; // set default param
     }
     ~TwoDofControllerParam() {
     }
+    static int getControllerParamNum() {
+      return 2;
+    }
     double ke; // gain
     double tc; // time constant
-    double dt; // control cycle
+    double dt; // control cycle (not controller but system parameter)
   };
   TwoDofController();
   TwoDofController(TwoDofControllerParam &_param, unsigned int _range = 0);

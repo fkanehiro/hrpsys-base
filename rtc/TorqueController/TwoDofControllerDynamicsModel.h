@@ -18,17 +18,21 @@
 
 class TwoDofControllerDynamicsModel : public TwoDofControllerInterface {
 public:
-  struct TwoDofControllerDynamicsModelParam {
+  class TwoDofControllerDynamicsModelParam {
+  public:
     TwoDofControllerDynamicsModelParam() {
-      alpha = beta = ki = tc = dt = 0.0;
+      alpha = beta = ki = tc = dt = 0.0; // set default param
     }
     ~TwoDofControllerDynamicsModelParam() {
+    }
+    static int getControllerParamNum() {
+      return 4;
     }
     double alpha; // completing squared param (s + alpha)^2 - beta^2
     double beta; // completing square param (s + alpha)^2 - beta^2
     double ki; // virtual inertia
     double tc; // time constant
-    double dt; // control cycle
+    double dt; // control cycle (not controller but system parameter)
   };
   TwoDofControllerDynamicsModel();
   TwoDofControllerDynamicsModel(TwoDofControllerDynamicsModelParam &_param, unsigned int _range = 0);
