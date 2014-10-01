@@ -4,7 +4,51 @@
 
 \section introduction Overview
 
-This component is generate walking pattern and control Center Of Gravity for legged robots without sensor feedback.
+This component is generate walking pattern and control Center Of
+Gravity (COG) for legged robots without sensor feedback.
+
+\subsection cog COG control
+
+This component modifies input joint angles to track reference COG position. 
+This component receives reference joint angles from "qRef" inport. 
+Then it solves Inverse Kinematics (or something) to track reference COG position, 
+obtains jonint angles, and outputs the joint angles as "q" outport.   
+
+In this calculation, this component tracks reference XY COG position, 
+reference Z base position, and reference base orientation.  
+
+\subsection mode Mode  
+
+This component has modes and behaves as Finite State Machine. 
+By default, this component is idle mode ("MODE_IDLE"), in which it do
+not modify input joint angles. 
+When OpenHRP::AutoBalancerService::startAutoBalancer() are called in IDLE mode,  it switches to 
+controlling mode ("MODE_ABC"), in which it modifies joint angles. 
+When OpenHRP::AutoBalancerService::stopAutoBalancer() are called in controlling mode, it switches to idle mode. 
+
+\subsection eef Controlled end-effectors  
+
+User can specify which end-effector is controlled 
+by the argument of OpenHRP::AutoBalancerService::startAutoBalancer(). 
+When OpenHRP::AutoBalancerService::startAutoBalancer() 
+are called with ["rleg", "lleg"], 
+it controlles reference end-effector 
+position and orientation for "rleg" and "lleg".
+When OpenHRP::AutoBalancerService::startAutoBalancer() are called with
+["rleg", "lleg", "rarm", "larm"], 
+it controlles reference end-effector for "rleg", "lleg", "rarm", "larm". 
+In this case, the robot seems to keep both feet and hands position and orientation. 
+
+\subsection wpg Walking pattern generation  
+
+This component has also the feature as walking pattern generation, named as GaitGenerator. 
+When OpenHRP::AutoBalancerService::goPos(), OpenHRP::AutoBalancerService::goVelocity(), OpenHRP::AutoBalancerService::setFootSteps() are called, 
+this component starts to use reference XY COG position from "GaitGenerator". 
+For OpenHRP::AutoBalancerService::goPos() and OpenHRP::AutoBalancerService::setFootSteps(), 
+this component stops to use it after completing walking command. 
+After OpenHRP::AutoBalancerService::goVelocity() is called, this component continuously generates walking pattern. 
+When OpenHRP::AutoBalancerService::goStop() are called in this case, 
+this completing stops to use it after completing walking command.
 
 <table>
 <tr><th>implementation_id</th><td>AutoBalancer</td></tr>
