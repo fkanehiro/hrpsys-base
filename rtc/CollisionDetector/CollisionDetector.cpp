@@ -207,6 +207,7 @@ RTC::ReturnCode_t CollisionDetector::onActivated(RTC::UniqueId ec_id)
 
     if ( prop["collision_loop"] != "" ) {
         coil::stringTo(m_collision_loop, prop["collision_loop"].c_str());
+        std::cerr << "set collision_loop: " << m_collision_loop << std::endl;
     }
     if ( m_use_viewer ) {
       m_scene.addBody(m_robot);
