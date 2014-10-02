@@ -25,6 +25,19 @@ hrpsys-simulator [project file] [options]
 
 Note:NameSever and openhrp-model-loader must be running
 
+In order to change timestep (ex 0.002), you need to change SampleRobot.conf to
+
+  dt: 0.002
+
+and SampleRobot.xml to
+
+  <property name="SampleRobot(Robot)0.period" value="0.002"/>
+  <property name="timeStep" value="0.002"/>
+
+
+dt of SampleRobot.conf and XX.period of SampleRobot.xml should be same. 
+timeStep of SampleRobot.xml is not larger than these values.
+
 \section hrpsys-simulator-jython hrpsys-simulator-jython
 
 read a project file and execute simulation and a jython script
