@@ -50,6 +50,20 @@ After OpenHRP::AutoBalancerService::goVelocity() is called, this component conti
 When OpenHRP::AutoBalancerService::goStop() are called in this case, 
 this completing stops to use it after completing walking command.
 
+\subsection limitation Limitation
+<b>!!This component solves inverse kinematics and note that user should
+avoid ill-condition for the inverse kinematics!!</b>
+
+This component takes reference joint angles from 
+formar RTCs, for example, \ref SequencePlayer, 
+and modifies them while
+control mode using inverse kinematics. 
+For \ref SequencePlayer, 
+do not set joint angles 
+in which a robot is near the joint limits, 
+robot's legs are stretched, ... and so on.
+
+
 <table>
 <tr><th>implementation_id</th><td>AutoBalancer</td></tr>
 <tr><th>category</th><td>example</td></tr>

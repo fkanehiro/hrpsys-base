@@ -25,6 +25,18 @@ the air, it switches to air mode ("MODE_AIR"), which is similar to idle mode.
 When this component was air mode and the robot is put on the ground,
 it switches to controlling mode. 
 
+\subsection limitation Limitation
+<b>!!This component solves inverse kinematics and note that user should
+avoid ill-condition for the inverse kinematics!!</b>
+
+This component takes reference joint angles from 
+formar RTCs, for example, \ref SequencePlayer and \ref AutoBalancer, 
+and modifies them while
+control mode using inverse kinematics. 
+For \ref SequencePlayer, 
+do not set joint angles 
+in which a robot is near the joint limits, 
+robot's legs are stretched, ... and so on.
 
 <table>
 <tr><th>implementation_id</th><td>Stabilizer</td></tr>
