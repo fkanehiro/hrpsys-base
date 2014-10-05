@@ -17,22 +17,9 @@ namespace rats
     return ret;
   }
 
-  void print_vector(std::ostream& strm, const hrp::Vector3& vec, const bool use_newline = true);
-  void print_vector(std::ostream& strm, const hrp::dvector& vec, const bool use_newline = true);
-  void print_matrix(std::ostream& strm, const hrp::Matrix33& mat, const bool use_newline = true);
-  void print_matrix(std::ostream& strm, const hrp::dmatrix& mat, const bool use_newline = true);
   // matrix product using quaternion normalization
   void rotm3times (hrp::Matrix33& m12, const hrp::Matrix33& m1, const hrp::Matrix33& m2);
   void difference_rotation(hrp::Vector3& ret_dif_rot, const hrp::Matrix33& self_rot, const hrp::Matrix33& target_rot);
-
-  // /* implementation of template functions */
-  // void print_vector(std::ostream& strm, const hrp::Vector3& v, const bool use_newline = true) {
-  //   print_vector(strm, v.data(), use_newline);
-  // }
-
-  // void print_matrix(std::ostream& strm, const hrp::Matrix33& m, const bool use_newline = true) {
-  //   print_matrix(strm, m.data(), 3, 3, use_newline);
-  // }
 
   struct coordinates {
     hrp::Vector3 pos;
@@ -50,13 +37,6 @@ namespace rats
         rot = c.rot;
       }
       return *this;
-    }
-    //void print_eus_coordinates(std::ostream& strm, const bool use_newline = true) const; /* for euslisp format print function */
-    void print_eus_coordinates(std::ostream& strm, const bool use_newline = true) const
-    {
-      strm << "#s(coordinates pos "; print_vector(strm, hrp::Vector3(1e3*pos), false);
-      strm << " rot "; print_matrix(strm, rot, false); strm << ")";
-      if (use_newline) strm << std::endl;
     }
     void translate(const hrp::Vector3& v, const std::string& wrt = ":local") {
       if (wrt == ":local") {
