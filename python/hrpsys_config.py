@@ -453,11 +453,14 @@ class HrpsysConfigurator:
         Create components(plugins) in getRTCList()
         '''
         for rn in self.getRTCList():
-            rn2 = 'self.' + rn[0]
-            if eval(rn2) == None:
-                create_str = "[self." + rn[0] + ", self." + rn[0] + "_svc, self." + rn[0] + "_version] = self.createComp(\"" + rn[1] + "\",\"" + rn[0] + "\")"
-                print self.configurator_name, "  eval : ", create_str
-                exec(create_str)
+            try:
+                rn2 = 'self.' + rn[0]
+                if eval(rn2) == None:
+                    create_str = "[self." + rn[0] + ", self." + rn[0] + "_svc, self." + rn[0] + "_version] = self.createComp(\"" + rn[1] + "\",\"" + rn[0] + "\")"
+                    print self.configurator_name, "  eval : ", create_str
+                    exec(create_str)
+            except Exception, e:
+                print self.configurator_name, '\033[31mFail to createComps',e,'\033[0m'
 
 
     def findComp(self, compName, instanceName, max_timeout_count=10):
@@ -569,7 +572,10 @@ class HrpsysConfigurator:
         '''
         ret = [self.rh]
         for r in map(lambda x: 'self.' + x[0], self.getRTCList()):
-            ret.append(eval(r))
+            try:
+                ret.append(eval(r))
+            except Exception, e:
+                print self.configurator_name, '\033[31mFail to getRTCInstanceList',e,'\033[0m'
         return ret
 
     # public method to get bodyInfo
