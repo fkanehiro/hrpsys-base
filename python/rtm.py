@@ -277,7 +277,7 @@ def initCORBA():
 
     try:
         orb = CORBA.ORB_init(sys.argv, CORBA.ORB_ID)
-        nameserver = orb.resolve_initial_references("NameService");
+        nameserver = orb.resolve_initial_references("NameService")
         rootnc = nameserver._narrow(CosNaming.NamingContext)
     except omniORB.CORBA.ORB.InvalidName, e:
         sys.exit('[ERROR] Invalide Name (hostname=%s).\n' % (nshost) +
@@ -301,8 +301,8 @@ def getRootNamingContext(corbaloc):
     args = ["-ORBInitRef", corbaloc]
     orb = ORB.init(args, props)
 
-    nameserver = orb.resolve_initial_references("NameService");
-    return NamingContextHelper.narrow(nameserver);
+    nameserver = orb.resolve_initial_references("NameService")
+    return NamingContextHelper.narrow(nameserver)
 
 ##
 # \brief get IOR of the object
@@ -595,7 +595,7 @@ def readDataPort(port, timeout=1.0):
     for prop in pprof.properties:
         if prop.name == "dataport.data_type":
             classname = any.from_any(prop.value)
-            break;
+            break
     nv1 = SDOPackage.NameValue("dataport.interface_type", any.to_any("corba_cdr"))
     nv2 = SDOPackage.NameValue("dataport.dataflow_type", any.to_any("Pull"))
     nv3 = SDOPackage.NameValue("dataport.subscription_type", any.to_any("flush"))
@@ -691,7 +691,7 @@ def setConfiguration(rtc, nvlist):
                 d.value = any.to_any(value)
                 cfg.set_configuration_set_values(cfgset)
                 found = True
-                break;
+                break
         if not found:
             ret = False
     cfg.activate_configuration_set('default')
