@@ -255,10 +255,16 @@ namespace rats
     coordinates goal_foot_midcoords(_foot_midcoords);
     goal_foot_midcoords.translate(hrp::Vector3(goal_x, goal_y, 0.0));
     goal_foot_midcoords.rotate(deg2rad(goal_theta), hrp::Vector3(0,0,1));
-    std::cerr << "current fp";
-    _foot_midcoords.print_eus_coordinates(std::cerr);
-    std::cerr << "goal fp";
-    goal_foot_midcoords.print_eus_coordinates(std::cerr);
+    std::cerr << "current foot midcoords" << std::endl;
+    std::cerr << "  pos =" << std::endl;
+    std::cerr << _foot_midcoords.pos.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << std::endl;
+    std::cerr << "  rot =" << std::endl;
+    std::cerr << _foot_midcoords.rot.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", "\n", "    [", "]")) << std::endl;
+    std::cerr << "goal foot midcoords" << std::endl;
+    std::cerr << "  pos =" << std::endl;
+    std::cerr << goal_foot_midcoords.pos.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << std::endl;
+    std::cerr << "  rot =" << std::endl;
+    std::cerr << goal_foot_midcoords.rot.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", "\n", "    [", "]")) << std::endl;
 
     /* initialize */
     clear_footstep_node_list();

@@ -27,13 +27,16 @@ namespace rats
         : l_r(_l_r), worldcoords(_worldcoords) {};
       step_node (const std::string& _l_r, const coordinates& _worldcoords)
         : l_r((_l_r == "rleg") ? WC_RLEG : WC_LLEG), worldcoords(_worldcoords) {};
-      void print_eus_footstep (std::ostream& strm, const bool use_newline = true) const
-      {
-        strm << "(cons " << (l_r == WC_RLEG ? "rleg " : "lleg ");
-        worldcoords.print_eus_coordinates(strm, false);
-        strm << ")";
-        if (use_newline) strm << std::endl;
-      }
+    };
+    friend std::ostream &operator<<(std::ostream &os, const step_node &sn)
+    {
+      os << "footstep" << std::endl;
+      os << "  name = [" << ((sn.l_r==WC_LLEG)?std::string("lleg"):std::string("rleg")) << "]" << std::endl;
+      os << "  pos =" << std::endl;
+      os << (sn.worldcoords.pos).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << std::endl;
+      os << "  rot =" << std::endl;
+      os << (sn.worldcoords.rot).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", "\n", "    [", "]")) << std::endl;
+      return os;
     };
 
     /* footstep parameter */
@@ -381,7 +384,7 @@ namespace rats
     void print_footstep_list () const
     {
       for (size_t i = 0; i < footstep_node_list.size(); i++)
-        footstep_node_list[i].print_eus_footstep(std::cerr);
+        std::cerr << footstep_node_list[i] << std::endl;
     };
     /* parameter getting */
     const hrp::Vector3& get_cog () { return cog; };
