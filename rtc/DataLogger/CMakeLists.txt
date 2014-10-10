@@ -8,7 +8,7 @@ add_executable(DataLoggerComp DataLoggerComp.cpp ${comp_sources})
 target_link_libraries(DataLoggerComp ${libs})
 
 find_package(PCL)
-if (PCL_FOUND AND ${PCL_VERSION_MINOR} GREATER 6)
+if (PCL_FOUND AND "${PCL_VERSION_MINOR}" GREATER 6)
   include_directories(${PCL_INCLUDE_DIRS})
   link_directories(${PCL_LIBRARY_DIRS})
   add_executable(PointCloudLogViewer PointCloudLogViewer)
