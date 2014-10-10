@@ -1,0 +1,60 @@
+<package>
+  <name>hrpsys</name>
+  <version>315.2.6</version>
+  <description>
+   <p>An <a href = "http://www.openrtm.org/pub/OpenRTM-aist/">OpenRTM-aist</a>-based robot controller. This package is the most tailored for humanoid (dual-arm and/or biped) robots for historical reason.</p>
+   <p>hrpsys package does not only wraps but build and installs the code from its mainstream repository (<a href = "https://github.com/fkanehiro/hrpsys-base/">github.com/fkanehiro/hrpsys-base</a>).</p>
+   <p>The package version number is synchronized to that of mainstream, based on <a href = "https://github.com/start-jsk/rtmros_common/issues/165#issuecomment-34536168">this decision</a>. Its semantics:<br />
+    <ul>
+     <li><b>MAJOR</b>: Synchronized with <a href = "http://wiki.ros.org/openhrp3">OpenHRP3</a></li>
+     <li><b>MINOR</b>: Indicate IDL compatibility (packages with different version numbers in this section are NOT compatible)</li>
+     <li><b>PATCH</b>: Packages with different version numbers in this section ARE compatible.</li>
+    </ul>
+   </p>
+   <p>API document is <a href = "http://fkanehiro.github.io/hrpsys-base/">auto-generated on github</a>.
+   </p>
+  </description>
+
+  <license>EPL</license>
+  <maintainer email="k-okada@jsk.t.u-tokyo.ac.jp">Kei Okada</maintainer>
+  <maintainer email="iisaito@kinugarage.com">Isaac Isao Saito</maintainer>
+  <author>AIST</author>
+  <author>Fumio Kanehiro</author>
+
+  <url type="website">http://ros.org/wiki/hrpsys</url>
+  <url type="repository">https://github.com/fkanehiro/hrpsys-base/</url>
+  <url type="bugtracker">https://github.com/fkanehiro/hrpsys-base/issues</url>
+
+  <buildtool_depend>cmake</buildtool_depend>
+  <buildtool_depend>pkg-config</buildtool_depend>
+
+  <build_depend>cv_bridge</build_depend>
+  <build_depend>doxygen</build_depend>
+  <build_depend>git</build_depend>
+  <build_depend>glut</build_depend>
+  <build_depend>libglew-dev</build_depend>
+  <build_depend>libirrlicht-dev</build_depend>
+  <build_depend>libqhull</build_depend>
+  <build_depend>libxml2</build_depend>
+  <build_depend>libxmu-dev</build_depend>
+  <build_depend>mk</build_depend>
+  <build_depend>openhrp3</build_depend>
+  <build_depend>python-tk</build_depend>
+  <build_depend>sdl</build_depend>
+
+  <run_depend>cv_bridge</run_depend>
+  <run_depend>glut</run_depend>
+  <run_depend>libirrlicht-dev</run_depend>
+  <run_depend>libqhull</run_depend>
+  <run_depend>libxml2</run_depend>
+  <run_depend>libxmu-dev</run_depend>
+  <run_depend>openhrp3</run_depend>
+  <run_depend>python-tk</run_depend>
+  <run_depend>sdl</run_depend>
+
+  <!-- <test_depend>openhrp3</test_depend> -->
+  <export>
+    <build_type>cmake</build_type>
+  </export>
+
+</package>
