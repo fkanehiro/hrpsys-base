@@ -271,6 +271,12 @@ RTC::ReturnCode_t AutoBalancer::onActivated(RTC::UniqueId ec_id)
 RTC::ReturnCode_t AutoBalancer::onDeactivated(RTC::UniqueId ec_id)
 {
   std::cout << "AutoBalancer::onDeactivated(" << ec_id << ")" << std::endl;
+  Guard guard(m_mutex);
+  if (control_mode == MODE_ABC) {
+    stopABCparam();
+    control_mode = MODE_IDLE;
+    transition_count = 1; // sync in one controller loop
+  }
   return RTC::RTC_OK;
 }
 

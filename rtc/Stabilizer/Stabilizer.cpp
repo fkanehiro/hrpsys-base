@@ -301,6 +301,11 @@ RTC::ReturnCode_t Stabilizer::onActivated(RTC::UniqueId ec_id)
 RTC::ReturnCode_t Stabilizer::onDeactivated(RTC::UniqueId ec_id)
 {
   std::cout << m_profile.instance_name<< ": onDeactivated(" << ec_id << ")" << std::endl;
+  if ( (control_mode == MODE_ST || control_mode == MODE_AIR) ) {
+    sync_2_idle ();
+    control_mode = MODE_IDLE;
+    transition_count = 1; // sync in one controller loop
+  }
   return RTC::RTC_OK;
 }
 
@@ -1275,6 +1280,7 @@ RTC::ReturnCode_t Stabilizer::onRateChanged(RTC::UniqueId ec_id)
 
 void Stabilizer::sync_2_st ()
 {
+  std::cerr << "Sync IDLE => ST"  << std::endl;
   pangx_ref = pangy_ref = pangx = pangy = 0;
   rdx = rdy = rx = ry = 0;
   d_rpy[0] = d_rpy[1] = 0;
@@ -1292,6 +1298,7 @@ void Stabilizer::sync_2_st ()
 
 void Stabilizer::sync_2_idle ()
 {
+  std::cerr << "Sync ST => IDLE"  << std::endl;
   transition_count = MAX_TRANSITION_COUNT;
   for (int i = 0; i < m_robot->numJoints(); i++ ) {
     transition_joint_q[i] = m_robot->joint(i)->q;
