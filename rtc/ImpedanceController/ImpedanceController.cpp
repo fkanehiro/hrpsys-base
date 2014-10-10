@@ -206,12 +206,11 @@ RTC::ReturnCode_t ImpedanceController::onActivated(RTC::UniqueId ec_id)
     return RTC::RTC_OK;
 }
 
-/*
-  RTC::ReturnCode_t ImpedanceController::onDeactivated(RTC::UniqueId ec_id)
-  {
+RTC::ReturnCode_t ImpedanceController::onDeactivated(RTC::UniqueId ec_id)
+{
+  std::cout << "ImpedanceController::onDeactivated(" << ec_id << ")" << std::endl;
   return RTC::RTC_OK;
-  }
-*/
+}
 
 #define DEBUGP ((m_debugLevel==1 && loop%200==0) || m_debugLevel > 1 )
 RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
