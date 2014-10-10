@@ -4,6 +4,11 @@ set(vclip_dir vclip_1.0/)
 set(vclip_sources ${vclip_dir}/src/vclip.C ${vclip_dir}/src/PolyTree.C ${vclip_dir}/src/mv.C)
 
 add_definitions(-DQHULL)
+if(NOT (${CMAKE_SYSTEM_PROCESSOR} MATCHES amd64* OR
+      ${CMAKE_SYSTEM_PROCESSOR} MATCHES x86_64*) )
+## only for 32bit system
+set_source_files_properties(${vclip_sources} PROPERTIES COMPILE_FLAGS -ffloat-store)
+endif()
 include_directories(${LIBXML2_INCLUDE_DIR} ${QHULL_INCLUDE_DIR} ${seq_dir} ${vclip_dir}/include)
 add_library(CollisionDetector SHARED ${comp_sources} ${vclip_sources})
 target_link_libraries(CollisionDetector hrpsysUtil ${QHULL_LIBRARIES})
