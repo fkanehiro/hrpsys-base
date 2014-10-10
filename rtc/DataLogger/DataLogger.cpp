@@ -334,6 +334,13 @@ bool DataLogger::add(const char *i_type, const char *i_name)
           resumeLogging();
           return false;
       }
+  }else if (strcmp(i_type, "TimedBooleanSeq")==0){
+      LoggerPort<TimedBooleanSeq> *lp = new LoggerPort<TimedBooleanSeq>(i_name);
+      new_port = lp;
+      if (!addInPort(i_name, lp->port())) {
+          resumeLogging();
+          return false;
+      }
   }else if (strcmp(i_type, "TimedLongSeqSeq")==0){
       LoggerPort<OpenHRP::TimedLongSeqSeq> *lp = new LoggerPort<OpenHRP::TimedLongSeqSeq>(i_name);
       new_port = lp;

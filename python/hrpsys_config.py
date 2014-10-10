@@ -641,6 +641,7 @@ class HrpsysConfigurator:
             self.connectLoggerPort(self.abc, 'zmpRef')
             self.connectLoggerPort(self.abc, 'baseTformOut')
             self.connectLoggerPort(self.abc, 'q')
+            self.connectLoggerPort(self.abc, 'contactStates')
         if self.st != None:
             self.connectLoggerPort(self.st, 'zmp')
             self.connectLoggerPort(self.st, 'originRefZmp')
