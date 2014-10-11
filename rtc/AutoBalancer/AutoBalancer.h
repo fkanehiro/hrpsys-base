@@ -134,8 +134,8 @@ class AutoBalancer
   OutPort<TimedAcceleration3D> m_accRefOut;
   TimedBooleanSeq m_contactStates;
   OutPort<TimedBooleanSeq> m_contactStatesOut;
-  TimedDouble m_controlSwingSupportTime;
-  OutPort<TimedDouble> m_controlSwingSupportTimeOut;
+  TimedDoubleSeq m_controlSwingSupportTime;
+  OutPort<TimedDoubleSeq> m_controlSwingSupportTimeOut;
   
   // </rtc-template>
 
