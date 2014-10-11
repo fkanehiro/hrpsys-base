@@ -10,7 +10,6 @@
 #ifndef IMPEDANCE_H
 #define IMPEDANCE_H
 
-#include <boost/interprocess/sync/interprocess_semaphore.hpp>
 #include <rtm/Manager.h>
 #include <rtm/DataFlowComponentBase.h>
 #include <rtm/CorbaPort.h>
