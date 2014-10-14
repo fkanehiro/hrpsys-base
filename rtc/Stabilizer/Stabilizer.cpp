@@ -797,17 +797,23 @@ void Stabilizer::getActualParameters ()
     // fz control
     // foot force difference control version
     double ref_fz_diff = (ref_foot_force[1](2)-ref_foot_force[0](2));
-    if ( (contact_states[contact_states_index_map["rleg"]] &&
-          contact_states[contact_states_index_map["lleg"]]) ||
-         (isContact(0) && isContact(1)) ) {
+    if ( (contact_states[contact_states_index_map["rleg"]] && contact_states[contact_states_index_map["lleg"]]) // Reference : double support phase
+         || (isContact(0) && isContact(1)) ) { // Actual : double support phase
       zctrl = calcDampingControl (ref_fz_diff, fz_diff, zctrl,
                                   eefm_pos_damping_gain, eefm_pos_time_const_support);
     } else {
-      if (eefm_pos_transition_time<m_controlSwingSupportTime.data) {
+      double remain_swing_time;
+      if ( !contact_states[contact_states_index_map["rleg"]] ) { // rleg swing
+        remain_swing_time = m_controlSwingSupportTime.data[contact_states_index_map["rleg"]];
+      } else { // lleg swing
+        remain_swing_time = m_controlSwingSupportTime.data[contact_states_index_map["lleg"]];
+      }
+      // std::cerr << "st " << remain_swing_time << " rleg " << contact_states[contact_states_index_map["rleg"]] << " lleg " << contact_states[contact_states_index_map["lleg"]] << std::endl;
+      if (eefm_pos_transition_time<remain_swing_time) {
         zctrl = calcDampingControl (0, 0, zctrl,
                                     eefm_pos_damping_gain, eefm_pos_time_const_swing);
       } else {
-        double tmp_ratio = 1.0 - m_controlSwingSupportTime.data/eefm_pos_transition_time; // 0=>1
+        double tmp_ratio = 1.0 - remain_swing_time/eefm_pos_transition_time; // 0=>1
         zctrl = calcDampingControl (tmp_ratio * ref_fz_diff, tmp_ratio * fz_diff, zctrl,
                                     eefm_pos_damping_gain, ((1-tmp_ratio)*eefm_pos_time_const_swing+tmp_ratio*eefm_pos_time_const_support));
       }

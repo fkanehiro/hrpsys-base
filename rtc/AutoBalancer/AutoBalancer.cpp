@@ -204,8 +204,9 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
         m_contactStates.data[contact_states_index_map["rarm"]] = false;
         m_contactStates.data[contact_states_index_map["larm"]] = false;
       }
+      m_controlSwingSupportTime.data.length(num);
+      for (size_t i = 0; i < num; i++) m_controlSwingSupportTime.data[i] = 0.0;
     }
-    m_controlSwingSupportTime.data = 0.0;
 
     // ref force port
     coil::vstring virtual_force_sensor = coil::split(prop["virtual_force_sensor"], ",");
@@ -462,7 +463,8 @@ void AutoBalancer::getTargetParameters()
       default:
         break;
       }
-      m_controlSwingSupportTime.data = gg->get_current_swing_time();
+      m_controlSwingSupportTime.data[contact_states_index_map["rleg"]] = gg->get_current_swing_time(0);
+      m_controlSwingSupportTime.data[contact_states_index_map["lleg"]] = gg->get_current_swing_time(1);
     } else {
       tmp_fix_coords = fix_leg_coords;
     }

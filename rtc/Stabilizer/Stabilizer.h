@@ -145,7 +145,7 @@ class Stabilizer
   RTC::TimedPoint3D m_basePos;
   RTC::TimedOrientation3D m_baseRpy;
   RTC::TimedBooleanSeq m_contactStates;
-  RTC::TimedDouble m_controlSwingSupportTime;
+  RTC::TimedDoubleSeq m_controlSwingSupportTime;
   // for debug ouput
   RTC::TimedPoint3D m_originRefZmp, m_originRefCog, m_originRefCogVel, m_originNewZmp;
   RTC::TimedPoint3D m_originActZmp, m_originActCog, m_originActCogVel;
@@ -166,7 +166,7 @@ class Stabilizer
   RTC::InPort<RTC::TimedPoint3D> m_basePosIn;
   RTC::InPort<RTC::TimedOrientation3D> m_baseRpyIn;
   RTC::InPort<RTC::TimedBooleanSeq> m_contactStatesIn;
-  RTC::InPort<RTC::TimedDouble> m_controlSwingSupportTimeIn;
+  RTC::InPort<RTC::TimedDoubleSeq> m_controlSwingSupportTimeIn;
   
   // </rtc-template>
 
