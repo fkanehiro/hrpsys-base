@@ -72,6 +72,7 @@ Stabilizer::Stabilizer(RTC::Manager* manager)
     m_actBaseRpyOut("actBaseRpy", m_actBaseRpy),
     m_currentBasePosOut("currentBasePos", m_currentBasePos),
     m_currentBaseRpyOut("currentBaseRpy", m_currentBaseRpy),
+    m_debugDataOut("debugData", m_debugData),
     control_mode(MODE_IDLE),
     // </rtc-template>
     m_debugLevel(0)
@@ -125,6 +126,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   addOutPort("actBaseRpy", m_actBaseRpyOut);
   addOutPort("currentBasePos", m_currentBasePosOut);
   addOutPort("currentBaseRpy", m_currentBaseRpyOut);
+  addOutPort("debugData", m_debugDataOut);
   
   // Set service provider to Ports
   m_StabilizerServicePort.registerProvider("service0", "StabilizerService", m_service0);
@@ -266,6 +268,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   m_footCompR.data.length(6); m_footCompL.data.length(6);
   m_footCompR.data[0] = m_footCompR.data[1] = m_footCompR.data[2] = m_footCompR.data[3] = m_footCompR.data[4] = m_footCompR.data[5] = 0.0;
   m_footCompL.data[0] = m_footCompL.data[1] = m_footCompL.data[2] = m_footCompL.data[3] = m_footCompL.data[4] = m_footCompL.data[5] = 0.0;
+  m_debugData.data.length(1); m_debugData.data[0] = 0.0;
 
   return RTC::RTC_OK;
 }
@@ -459,6 +462,7 @@ RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
       m_actBaseRpyOut.write();
       m_currentBaseRpyOut.write();
       m_currentBasePosOut.write();
+      m_debugDataOut.write();
     }
     m_qRefOut.write();
   }

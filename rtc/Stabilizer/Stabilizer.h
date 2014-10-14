@@ -154,6 +154,7 @@ class Stabilizer
   RTC::TimedOrientation3D m_actBaseRpy;
   RTC::TimedPoint3D m_currentBasePos;
   RTC::TimedOrientation3D m_currentBaseRpy;
+  RTC::TimedDoubleSeq m_debugData;
   
   // DataInPort declaration
   // <rtc-template block="inport_declare">
@@ -183,6 +184,7 @@ class Stabilizer
   RTC::OutPort<RTC::TimedOrientation3D> m_actBaseRpyOut;
   RTC::OutPort<RTC::TimedPoint3D> m_currentBasePosOut;
   RTC::OutPort<RTC::TimedOrientation3D> m_currentBaseRpyOut;
+  RTC::OutPort<RTC::TimedDoubleSeq> m_debugDataOut;
   
   // </rtc-template>
 
