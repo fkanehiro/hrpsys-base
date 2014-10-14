@@ -54,6 +54,8 @@ module OpenHRP
       double eefm_pos_time_const_swing;
       /// Transition time for single=>double support phase gain interpolation [s].
       double eefm_pos_transition_time;
+      /// Margin for transition time for single=>double support phase gain interpolation [s].
+      double eefm_pos_margin_time;
       /// Inside foot margine [m]. Distance between foot end effector position and foot inside edge.
       double eefm_leg_inside_margin;
     };
