@@ -93,17 +93,21 @@ namespace rats
     double swing_len = (1.0 - default_double_support_ratio) * one_step_len;
     double current_swing_len = (gp_count - 0.5 * default_double_support_ratio * one_step_len);
     double tmp_ratio = 1.0 - current_swing_len / swing_len;
+    double tmp_current_swing_time;
     double ret;
     if ( tmp_ratio < 0.0 ) {
       ret = 0.0;
-      current_swing_time = current_swing_len * _dt - swing_len * _dt;
+      tmp_current_swing_time = current_swing_len * _dt - swing_len * _dt;
     } else if ( tmp_ratio > 1.0 ) {
       ret = 1.0;
-      current_swing_time = current_swing_len * _dt + default_double_support_ratio * one_step_len * _dt;
+      tmp_current_swing_time = current_swing_len * _dt + (default_double_support_ratio * one_step_len + one_step_len) * _dt;
     } else {
       ret = tmp_ratio;
-      current_swing_time = current_swing_len * _dt;
+      tmp_current_swing_time = current_swing_len * _dt;
     }
+    current_swing_time[support_leg==WC_RLEG?0:1] = (gp_count + 0.5 * default_double_support_ratio * one_step_len) * _dt;
+    current_swing_time[support_leg==WC_RLEG?1:0] = tmp_current_swing_time;
+    //std::cerr << "sl " << support_leg << " " << current_swing_time[support_leg==WC_RLEG?0:1] << " " << current_swing_time[support_leg==WC_RLEG?1:0] << " " << tmp_current_swing_time << " " << gp_count << std::endl;
     return ret;
   };
 
@@ -148,7 +152,6 @@ namespace rats
 
   void gait_generator::leg_coords_generator::update_leg_coords (const std::vector<step_node>& fnl, const double default_double_support_ratio, const size_t one_step_len, const bool force_height_zero)
   {
-    swing_ratio = calc_ratio_from_double_support_ratio(default_double_support_ratio, one_step_len);
     rot_ratio = 1.0 - (double)gp_count / one_step_len;
     if ( 0 == gp_index ) {
       swing_leg_dst_coords = fnl[gp_index].worldcoords;
@@ -162,6 +165,7 @@ namespace rats
       support_leg_coords = fnl[fnl.size()-2].worldcoords;
       support_leg = fnl[fnl.size()-2].l_r;
     }
+    swing_ratio = calc_ratio_from_double_support_ratio(default_double_support_ratio, one_step_len);
     calc_current_swing_leg_coords(swing_leg_coords, swing_ratio, current_step_height);
     if ( 1 <= gp_count ) {
       gp_count--;
@@ -255,10 +259,16 @@ namespace rats
     coordinates goal_foot_midcoords(_foot_midcoords);
     goal_foot_midcoords.translate(hrp::Vector3(goal_x, goal_y, 0.0));
     goal_foot_midcoords.rotate(deg2rad(goal_theta), hrp::Vector3(0,0,1));
-    std::cerr << "current fp";
-    _foot_midcoords.print_eus_coordinates(std::cerr);
-    std::cerr << "goal fp";
-    goal_foot_midcoords.print_eus_coordinates(std::cerr);
+    std::cerr << "current foot midcoords" << std::endl;
+    std::cerr << "  pos =" << std::endl;
+    std::cerr << _foot_midcoords.pos.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << std::endl;
+    std::cerr << "  rot =" << std::endl;
+    std::cerr << _foot_midcoords.rot.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", "\n", "    [", "]")) << std::endl;
+    std::cerr << "goal foot midcoords" << std::endl;
+    std::cerr << "  pos =" << std::endl;
+    std::cerr << goal_foot_midcoords.pos.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << std::endl;
+    std::cerr << "  rot =" << std::endl;
+    std::cerr << goal_foot_midcoords.rot.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", "\n", "    [", "]")) << std::endl;
 
     /* initialize */
     clear_footstep_node_list();

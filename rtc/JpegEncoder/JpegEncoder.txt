@@ -1,13 +1,13 @@
 /**
 
-\page JpegDecoder
+\page JpegEncoder
 
 \section introduction Overview
 
-This component decodes JPEG encoded images
+This component encodes raw image into JPEG
 
 <table>
-<tr><th>implementation_id</th><td>JpegDecoder</td></tr>
+<tr><th>implementation_id</th><td>JpegEncoder</td></tr>
 <tr><th>category</th><td>example</td></tr>
 </table>
 
@@ -17,14 +17,14 @@ This component decodes JPEG encoded images
 
 <table>
 <tr><th>port name</th><th>data type</th><th>unit</th><th>description</th></tr>
-<tr><td>encoded</td><td>Img::TimedCameraImage</td><td></td><td></td></tr>
+<tr><td>decoded</td><td>Img::TimedCameraImage</td><td></td><td></td></tr>
 </table>
 
 \subsection outports Output Ports
 
 <table>
 <tr><th>port name</th><th>data type</th><th>unit</th><th>description</th></tr>
-<tr><td>decoded</td><td>Img::TimedCameraImage</td><td></td><td></td></tr>
+<tr><td>encoded</td><td>Img::TimedCameraImage</td><td></td><td></td></tr>
 </table>
 
 \section serviceports Service Ports
@@ -39,7 +39,10 @@ N/A
 
 \section configuration Configuration Variables
 
-N/A
+<table>
+<tr><th>name</th><th>type</th><th>unit</th><th>default value</th><th>description</th></tr>
+<tr><td>quality</td><td>int</td><td></td><td>95</td><td>quality of JPEG image</td></tr>
+</table>
 
 \section conf Configuration File
 

@@ -248,7 +248,7 @@ class HrpsysConfigurator:
 
     # public method
     def connectComps(self):
-        '''!@breif
+        '''!@brief
         Connect components(plugins)
         '''
         if self.rh == None or self.seq == None or self.sh == None or self.fk == None:
@@ -312,6 +312,7 @@ class HrpsysConfigurator:
         connectPorts(self.seq.port("basePos"), self.sh.port("basePosIn"))
         connectPorts(self.seq.port("baseRpy"), self.sh.port("baseRpyIn"))
         connectPorts(self.seq.port("zmpRef"), self.sh.port("zmpIn"))
+        connectPorts(self.seq.port("optionalData"), self.sh.port("optionalDataIn"))
         connectPorts(self.sh.port("basePosOut"), [self.seq.port("basePosInit"),
                                                   self.fk.port("basePosRef")])
         connectPorts(self.sh.port("baseRpyOut"), [self.seq.port("baseRpyInit"),
@@ -386,6 +387,8 @@ class HrpsysConfigurator:
 
         # connection for te
         if self.te:
+            connectPorts(self.rh.port("q"), self.te.port("qCurrentIn"))
+            connectPorts(self.sh.port("qOut"), self.te.port("qRefIn"))
             if self.tf:
                 connectPorts(self.tf.port("tauOut"), self.te.port("tauIn"))
             else:
@@ -394,14 +397,8 @@ class HrpsysConfigurator:
 
         # connection for tl
         if self.tl:
-            if self.tf:
-                connectPorts(self.tf.port("tauOut"), self.tl.port("tauIn"))
-            else:
-                connectPorts(self.rh.port("tau"), self.tl.port("tauIn"))
             if self.te:
                 connectPorts(self.te.port("tempOut"), self.tl.port("tempIn"))
-            connectPorts(self.rh.port("q"), self.tl.port("qCurrentIn"))
-            # qRef is connected as joint angle controller
 
         # connection for tc
         if self.tc:
@@ -428,7 +425,7 @@ class HrpsysConfigurator:
             r.start()
 
     def createComp(self, compName, instanceName):
-        '''!@breif
+        '''!@brief
         Create RTC component (plugins)
 
         @param instanceName str: name of instance, choose one of https://github.com/fkanehiro/hrpsys-base/tree/master/rtc
@@ -452,11 +449,14 @@ class HrpsysConfigurator:
         Create components(plugins) in getRTCList()
         '''
         for rn in self.getRTCList():
-            rn2 = 'self.' + rn[0]
-            if eval(rn2) == None:
-                create_str = "[self." + rn[0] + ", self." + rn[0] + "_svc, self." + rn[0] + "_version] = self.createComp(\"" + rn[1] + "\",\"" + rn[0] + "\")"
-                print self.configurator_name, "  eval : ", create_str
-                exec(create_str)
+            try:
+                rn2 = 'self.' + rn[0]
+                if eval(rn2) == None:
+                    create_str = "[self." + rn[0] + ", self." + rn[0] + "_svc, self." + rn[0] + "_version] = self.createComp(\"" + rn[1] + "\",\"" + rn[0] + "\")"
+                    print self.configurator_name, "  eval : ", create_str
+                    exec(create_str)
+            except Exception, e:
+                print self.configurator_name, '\033[31mFail to createComps',e,'\033[0m'
 
 
     def findComp(self, compName, instanceName, max_timeout_count=10):
@@ -568,7 +568,10 @@ class HrpsysConfigurator:
         '''
         ret = [self.rh]
         for r in map(lambda x: 'self.' + x[0], self.getRTCList()):
-            ret.append(eval(r))
+            try:
+                ret.append(eval(r))
+            except Exception, e:
+                print self.configurator_name, '\033[31mFail to getRTCInstanceList',e,'\033[0m'
         return ret
 
     # public method to get bodyInfo
@@ -644,6 +647,8 @@ class HrpsysConfigurator:
             self.connectLoggerPort(self.abc, 'zmpRef')
             self.connectLoggerPort(self.abc, 'baseTformOut')
             self.connectLoggerPort(self.abc, 'q')
+            self.connectLoggerPort(self.abc, 'contactStates')
+            self.connectLoggerPort(self.abc, 'controlSwingSupportTime')
         if self.st != None:
             self.connectLoggerPort(self.st, 'zmp')
             self.connectLoggerPort(self.st, 'originRefZmp')
@@ -661,11 +666,17 @@ class HrpsysConfigurator:
             self.connectLoggerPort(self.st, 'actBaseRpy')
             self.connectLoggerPort(self.st, 'currentBasePos')
             self.connectLoggerPort(self.st, 'currentBaseRpy')
+            self.connectLoggerPort(self.st, 'debugData')
         if self.rh != None:
             self.connectLoggerPort(self.rh, 'emergencySignal',
                                    'emergencySignal')
+            self.connectLoggerPort(self.rh, 'servoState')
         for sen in filter(lambda x: x.type == "Force", self.sensors):
             self.connectLoggerPort(self.seq, sen.name + "Ref")
+            self.connectLoggerPort(self.sh, sen.name + "Out")
+        if self.rmfo != None:
+            for sen in filter(lambda x: x.type == "Force", self.sensors):
+                self.connectLoggerPort(self.rmfo, "off_"+sen.name)
         self.log_svc.clear()
 
     def waitForRTCManager(self, managerhost=nshost):
@@ -727,7 +738,7 @@ class HrpsysConfigurator:
         print self.configurator_name, "simulation_mode : ", self.simulation_mode
 
     def waitForRTCManagerAndRoboHardware(self, robotname="Robot", managerhost=nshost):
-        '''!@breif
+        '''!@brief
         Wait for both RTC Manager (waitForRTCManager()) and RobotHardware (waitForRobotHardware())
 
         @param managerhost str: name of host computer that manager is running
@@ -817,7 +828,7 @@ class HrpsysConfigurator:
         return self.seq_svc.setJointAngles(ret, tm)
 
     def setJointAnglesOfGroup(self, gname, pose, tm, wait=True):
-        '''!@breif
+        '''!@brief
         Set the joint angles to aim. By default it waits interpolation to be
         over.
 
@@ -922,8 +933,12 @@ class HrpsysConfigurator:
                0.0,
                1.0]
         \endverbatim
-        @param lname str: Name of the link.
-        @return list of float: Rotational matrix and the position of the given joint in
+
+        @type lname: str
+        @param lname: Name of the link.
+        @param frame_name str: set reference frame name (from 315.2.5)
+        @rtype: list of float
+        @return: Rotational matrix and the position of the given joint in
                  1-dimensional list, that is:
         \verbatim
                  [a11, a12, a13, x,
@@ -957,8 +972,11 @@ class HrpsysConfigurator:
             [0.325, 0.182, 0.074]
         \endverbatim
 
-        @param lname str: Name of the link.
-        @return list of float: List of x, y, z positions about the specified joint.
+        @type lname: str
+        @param lname: Name of the link.
+        @param frame_name str: set reference frame name (from 315.2.5)
+        @rtype: list of float
+        @return: List of x, y, z positions about the specified joint.
         '''
         if not lname:
             for item in self.Groups:
@@ -973,8 +991,11 @@ class HrpsysConfigurator:
         Returns the current physical rotation of the specified joint.
         cf. getReferenceRotation that returns commanded value.
 
-        @param lname str: Name of the link.
-        @return list of float: Rotational matrix of the given joint in 2-dimensional list,
+        @type lname: str
+        @param lname: Name of the link.
+        @param frame_name str: set reference frame name (from 315.2.5)
+        @rtype: list of float
+        @return: Rotational matrix of the given joint in 2-dimensional list,
                  that is:
         \verbatim
                  [[a11, a12, a13],
@@ -995,8 +1016,11 @@ class HrpsysConfigurator:
         Returns the current physical rotation in RPY of the specified joint.
         cf. getReferenceRPY that returns commanded value.
 
-        @param lname str: Name of the link.
-        @return list of float: List of orientation in rpy form about the specified joint.
+        @type lname: str
+        @param lname: Name of the link.
+        @param frame_name str: set reference frame name (from 315.2.5)
+        @rtype: list of float
+        @return: List of orientation in rpy form about the specified joint.
         '''
         if not lname:
             for item in self.Groups:
@@ -1006,12 +1030,15 @@ class HrpsysConfigurator:
         return euler_from_matrix(self.getCurrentRotation(lname), 'sxyz')
 
     def getReferencePose(self, lname, frame_name=None):
-        '''!@breif
+        '''!@brief
         Returns the current commanded pose of the specified joint.
         cf. getCurrentPose that returns physical pose.
 
-        @param lname str: Name of the link.
-        @return list of float: Rotational matrix and the position of the given joint in
+        @type lname: str
+        @param lname: Name of the link.
+        @param frame_name str: set reference frame name (from 315.2.5)
+        @rtype: list of float
+        @return: Rotational matrix and the position of the given joint in
                  1-dimensional list, that is:
         \verbatim
                  [a11, a12, a13, x,
@@ -1035,12 +1062,15 @@ class HrpsysConfigurator:
         return pose[1].data
 
     def getReferencePosition(self, lname, frame_name=None):
-        '''!@breif
+        '''!@brief
         Returns the current commanded position of the specified joint.
         cf. getCurrentPosition that returns physical value.
 
-        @param lname str: Name of the link.
-        @return list of float: List of angles (degree) of all joints, in the order defined
+        @type lname: str
+        @param lname: Name of the link.
+        @param frame_name str: set reference frame name (from 315.2.5)
+        @rtype: list of float
+        @return: List of angles (degree) of all joints, in the order defined
                  in the member variable 'Groups' (eg. chest, head1, head2, ..).
         '''
         if not lname:
@@ -1052,12 +1082,15 @@ class HrpsysConfigurator:
         return [pose[3], pose[7], pose[11]]
 
     def getReferenceRotation(self, lname, frame_name=None):
-        '''!@breif
+        '''!@brief
         Returns the current commanded rotation of the specified joint.
         cf. getCurrentRotation that returns physical value.
 
-        @param lname str: Name of the link.
-        @return list of float: Rotational matrix of the given joint in 2-dimensional list,
+        @type lname: str
+        @param lname: Name of the link.
+        @param frame_name str: set reference frame name (from 315.2.5)
+        @rtype: list of float
+        @return: Rotational matrix of the given joint in 2-dimensional list,
                  that is:
         \verbatim
                  [[a11, a12, a13],
@@ -1078,8 +1111,11 @@ class HrpsysConfigurator:
         Returns the current commanded rotation in RPY of the specified joint.
         cf. getCurrentRPY that returns physical value.
 
-        @param lname str: Name of the link.
-        @return list of float: List of orientation in rpy form about the specified joint.
+        @type lname: str
+        @param lname: Name of the link.
+        @param frame_name str: set reference frame name (from 315.2.5)
+        @rtype: list of float
+        @return: List of orientation in rpy form about the specified joint.
         '''
         if not lname:
             for item in self.Groups:
@@ -1514,7 +1550,7 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
             return -1
 
     def checkEncoders(self, jname='all', option=''):
-        '''!@breif
+        '''!@brief
         Run the encoder checking sequence for specified joints,
         run goActual and turn on servos.
 
@@ -1570,12 +1606,49 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
         remove force sensor offset
         '''
         self.rh_svc.removeForceSensorOffset()
+
+    def playPattern(self, jointangles, rpy, zmp, tm):
+        '''!@brief
+        Play motion pattern using a given trajectory that is represented by 
+        a list of joint angles, rpy, zmp and time.
+
+        @param jointangles list of list of float: 
+                           The whole list represents a trajectory. Each element
+                           of the 1st degree in the list consists of the joint
+                           angles.
+        @param rpy list of float: Orientation in rpy.
+        @param zmp list of float: TODO: description
+        @param tm float: Time to complete the task.
+        @return bool:
+        '''
+        return self.seq_svc.playPattern(jointangles, rpy, zmp, tm)
+
+    def playPatternOfGroup(self, gname, jointangles, tm):
+        '''!@brief
+        Play motion pattern using a given trajectory that is represented by 
+        a list of joint angles.
+
+        @param gname str: Name of the joint group.
+        @param jointangles list of list of float: 
+                           The whole list represents a trajectory. Each element
+                           of the 1st degree in the list consists of the joint
+                           angles. To illustrate:
+
+                           [[a0-0, a0-1,...,a0-n], # a)ngle. 1st path in trajectory
+                            [a1-0, a1-1,...,a1-n], # 2nd path in the trajectory.
+                            :
+                            [am-0, am-1,...,am-n]]  # mth path in the trajectory
+        @param tm float: Time to complete the task.
+        @return bool:
+        '''
+        return self.seq_svc.playPatternOfGroup(gname, jointangles, tm)
+
     # ##
     # ## initialize
     # ##
 
     def init(self, robotname="Robot", url=""):
-        '''!@berif
+        '''!@brief
         Calls init from its superclass, which tries to connect RTCManager,
         looks for ModelLoader, and starts necessary RTC components. Also runs
         config, logger.

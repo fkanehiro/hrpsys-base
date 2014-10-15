@@ -108,7 +108,8 @@ public:
   bool stopMultipleTorqueControls(const OpenHRP::TorqueControllerService::StrSequence& jnames);
   bool setReferenceTorque(std::string jname, double tauRef);
   bool setMultipleReferenceTorques(const OpenHRP::TorqueControllerService::StrSequence& jnames, const OpenHRP::TorqueControllerService::dSequence& tauRefs);
-
+  bool setTorqueControllerParam(const OpenHRP::TorqueControllerService::torqueControllerParam& t_param);
+  
 protected:
 // Configuration variable declaration
 // <rtc-template block="config_declare">
@@ -154,7 +155,6 @@ protected:
 // </rtc-template>
   
 private:
-
   double m_dt;
   unsigned int m_debugLevel;
   long long m_loop;
@@ -162,6 +162,7 @@ private:
   std::vector<MotorTorqueController> m_motorTorqueControllers;
   coil::Mutex m_mutex;
   void executeTorqueControl(hrp::dvector &dq);
+  void updateParam(double &val, double &val_new);
   bool isDebug(int cycle = 20);
 };
 

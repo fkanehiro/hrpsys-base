@@ -4,7 +4,16 @@
 
 \section introduction Overview
 
-This component reads sensors and write commands to actuators.
+This component reads sensors and write commands to actuators. 
+
+\subsection hardware Hardware dependent parts and common parts
+RobotHardware includes two parts: 
+hardware dependent part as \ref iob.h and common part as RobotHardware. 
+When developper want to apply hrpsys-base to new robots or simulators, 
+write hardware dependent part as \ref iob.h and link it with common part RobotHardware. 
+
+\subsection sensor Sensor data ports
+Sensor data ports are based on VRML information and sensor values are assumed to be represented in the sensor local frames. 
 
 <table>
 <tr><th>implementation_id</th><td>RobotHardware</td></tr>
@@ -28,9 +37,9 @@ Output data ports for gyros, accelerometers and force/torque sensors are created
 <tr><td>q</td><td>RTC::TimedDoubleSeq</td><td>[rad]</td><td>measured joint angles</td></tr>
 <tr><td>servoState</td><td>RTC::TimedLongSeq</td><td>[rad]</td><td>status of joint servo</td></tr>
 <tr><td>emergencySignal</td><td>RTC::TimedLong</td><td>[rad]</td><td>Emergency signal</td></tr>
-<tr><td>name of gyro defined in a VRML model</td><td>RTC::TimedAngularVelocity3D</td><td>[rad/s]</td><td>angular velocities</td></tr>
-<tr><td>name of accelerometer defined in a VRML model</td><td>RTC::TimedAcceleration3D</td><td>[rad/(s^2)]</td><td>acceleration</td></tr>
-<tr><td>name of force/torque sensor defined in a VRML model</td><td>RTC::TimedDoubleSeq</td><td>[N],[Nm]</td><td>force/torque</td></tr>
+<tr><td>name of gyro defined in a VRML model, such as "gyrometer"</td><td>RTC::TimedAngularVelocity3D</td><td>[rad/s]</td><td>angular velocities in the sensor frame</td></tr>
+<tr><td>name of accelerometer defined in a VRML model, such as "gsensor"</td><td>RTC::TimedAcceleration3D</td><td>[rad/(s^2)]</td><td>acceleration in the sensor frame</td></tr>
+<tr><td>name of force/torque sensor defined in a VRML model, such as "rhsensor"</td><td>RTC::TimedDoubleSeq</td><td>[N],[Nm]</td><td>force/torque in the sensor frame</td></tr>
 </table>
 
 \section serviceports Service Ports

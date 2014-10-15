@@ -23,13 +23,26 @@ hrpsys-simulator [project file] [options]
 -max-log-length length[s] set length of ring buffer<br>
 -exit-on-finish exit this program when the simulation finishes
 
-Note:NameSever and openhrp-model-loader must be running
+Note:NameServer and openhrp-model-loader must be running
+
+In order to change timestep (ex 0.002), you need to change SampleRobot.conf to
+
+  dt: 0.002
+
+and SampleRobot.xml to
+
+  <property name="SampleRobot(Robot)0.period" value="0.002"/>
+  <property name="timeStep" value="0.002"/>
+
+
+dt of SampleRobot.conf and XX.period of SampleRobot.xml should be same. 
+timeStep of SampleRobot.xml is not larger than these values.
 
 \section hrpsys-simulator-jython hrpsys-simulator-jython
 
 read a project file and execute simulation and a jython script
 
-Note:NameSever and openhrp-model-loader must be running
+Note:NameServer and openhrp-model-loader must be running
 
 hrpsys-simulator-jython [project file] [jython script] [options]
 
@@ -57,7 +70,7 @@ size [size] set window size<br>
 bg [r] [g] [b] background color
 max-log-length length[s] set length of ring buffer<br>
 
-Note:NameSever and openhrp-model-loader must be running
+Note:NameServer and openhrp-model-loader must be running
 
 \section hrpsys-viewer hrpsys-viewer
 
@@ -69,7 +82,7 @@ hrpsys-viewer [model file] [-size size]
 -no-default-lights turn off default lights<br>
 -max-edge-length divide large triangles which have longer edges than this value<br>
 
-Note:NameSever and openhrp-model-loader must be running
+Note:NameServer and openhrp-model-loader must be running
 
 \section hrpsys-monitor hrpsys-monitor
 
@@ -82,7 +95,7 @@ hrpsys-monitor [project file] [-rh rtcName] [-sh rtcName] [-size size]
 -size initial window size<br>
 -bg r g b background color
 
-Note:NameSever and openhrp-model-loader must be running
+Note:NameServer and openhrp-model-loader must be running
 
 \section hrpsysjy hrpsysjy
 

@@ -145,7 +145,7 @@ class Stabilizer
   RTC::TimedPoint3D m_basePos;
   RTC::TimedOrientation3D m_baseRpy;
   RTC::TimedBooleanSeq m_contactStates;
-  RTC::TimedDouble m_controlSwingSupportTime;
+  RTC::TimedDoubleSeq m_controlSwingSupportTime;
   // for debug ouput
   RTC::TimedPoint3D m_originRefZmp, m_originRefCog, m_originRefCogVel, m_originNewZmp;
   RTC::TimedPoint3D m_originActZmp, m_originActCog, m_originActCogVel;
@@ -154,6 +154,7 @@ class Stabilizer
   RTC::TimedOrientation3D m_actBaseRpy;
   RTC::TimedPoint3D m_currentBasePos;
   RTC::TimedOrientation3D m_currentBaseRpy;
+  RTC::TimedDoubleSeq m_debugData;
   
   // DataInPort declaration
   // <rtc-template block="inport_declare">
@@ -166,7 +167,7 @@ class Stabilizer
   RTC::InPort<RTC::TimedPoint3D> m_basePosIn;
   RTC::InPort<RTC::TimedOrientation3D> m_baseRpyIn;
   RTC::InPort<RTC::TimedBooleanSeq> m_contactStatesIn;
-  RTC::InPort<RTC::TimedDouble> m_controlSwingSupportTimeIn;
+  RTC::InPort<RTC::TimedDoubleSeq> m_controlSwingSupportTimeIn;
   
   // </rtc-template>
 
@@ -183,6 +184,7 @@ class Stabilizer
   RTC::OutPort<RTC::TimedOrientation3D> m_actBaseRpyOut;
   RTC::OutPort<RTC::TimedPoint3D> m_currentBasePosOut;
   RTC::OutPort<RTC::TimedOrientation3D> m_currentBaseRpyOut;
+  RTC::OutPort<RTC::TimedDoubleSeq> m_debugDataOut;
   
   // </rtc-template>
 
@@ -247,7 +249,7 @@ class Stabilizer
   double rdx, rdy, rx, ry;
   // EEFM ST
   double eefm_k1[2], eefm_k2[2], eefm_k3[2], eefm_zmp_delay_time_const[2];
-  double eefm_rot_damping_gain, eefm_rot_time_const, eefm_pos_damping_gain, eefm_pos_time_const_support, eefm_pos_time_const_swing, eefm_pos_transition_time, eefm_leg_inside_margin;
+  double eefm_rot_damping_gain, eefm_rot_time_const, eefm_pos_damping_gain, eefm_pos_time_const_support, eefm_pos_time_const_swing, eefm_pos_transition_time, eefm_pos_margin_time, eefm_leg_inside_margin;
   hrp::Vector3 d_foot_rpy[2], new_refzmp, rel_cog, ref_zmp_aux;
   hrp::Vector3 ref_foot_force[2];
   hrp::Vector3 ref_foot_moment[2];

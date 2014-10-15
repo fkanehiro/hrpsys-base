@@ -1,13 +1,35 @@
 /**
 
-\page NullComponent
+\page RemoveForceSensorLinkOffset
 
 \section introduction Overview
 
-This component is a very simple RT component to learn how to develop.
+This component is remove link's weight from force/torque sensor values.
+
+\subsection feature Feature
+
+Original force/torque values are provided by \ref RobotHadware RTC or hrpsys-simulator's RTC. 
+Original force/torque may include by the weight force/torque of links of a
+robot, which are on the tips of force/torque sensors such as hands and feet. 
+
+This component removes the links' weight offset from force/torque. 
+Out data ports are automatically generated according to VRML sensor information. 
+For example, if a robot has "rhsensor", 
+this component removes offset from input "rhsensor" port and 
+output offset force/torque from output "off_rhsensor" port. 
+
+
+\subsection frame Frame
+
+This component requires robot's attitude sensing to know the direction
+of gravity to remove weight force/torque offset. 
+If the robot has imu sensors, this component uses estimated attitude
+value from "rpy" input data port. 
+Otherwise, this component assumes that the robot's rpy equals zero. 
+
 
 <table>
-<tr><th>implementation_id</th><td>NullComponent</td></tr>
+<tr><th>implementation_id</th><td>RemoveForceSensorLinkOffset</td></tr>
 <tr><th>category</th><td>example</td></tr>
 </table>
 
@@ -17,14 +39,16 @@ This component is a very simple RT component to learn how to develop.
 
 <table>
 <tr><th>port name</th><th>data type</th><th>unit</th><th>description</th></tr>
-<tr><td>dataIn</td><td>RTC::TimedDouble</td><td></td><td></td></tr>
+<tr><td>qCurrent</td><td>RTC::TimedDoubleSeq</td><td>[rad]</td><td>Actual joint angles</td></tr>
+<tr><td>rpy</td><td>RTC::TimedOrientation3D</td><td>[rad]</td><td>Actual attitude sensor's Roll-Pitch-Yaw angle in the world frame </td></tr>
+<tr><td>name of force/torque sensor defined in a VRML model, such as "rhsensor"</td><td>RTC::TimedDoubleSeq</td><td>[N],[Nm]</td><td>raw force/torque in the sensor frame</td></tr>
 </table>
 
 \subsection outports Output Ports
 
 <table>
 <tr><th>port name</th><th>data type</th><th>unit</th><th>description</th></tr>
-<tr><td>dataOut</td><td>RTC::TimedDouble</td><td></td><td></td></tr>
+<tr><td>"off_" + name of force/torque sensor defined in a VRML model, such as "off_rhsensor"</td><td>RTC::TimedDoubleSeq</td><td>[N],[Nm]</td><td>offset-removed force/torque in the sensor frame</td></tr>
 </table>
 
 \section serviceports Service Ports
@@ -33,7 +57,7 @@ This component is a very simple RT component to learn how to develop.
 
 <table>
 <tr><th>port name</th><th>interface name</th><th>service type</th><th>IDL</th><th>description</th></tr>
-<tr><td>NullService</td><td>service0</td><td>NullService</td><td>\ref OpenHRP::NullService</td><td></td></tr>
+<tr><td>RemoveForceSensorLinkOffsetService</td><td>service0</td><td>RemoveForceSensorLinkOffsetService</td><td>\ref OpenHRP::RemoveForceSensorLinkOffsetService</td><td>RemoveForceSensorLinkOffsetService</td></tr>
 </table>
 
 \subsection consumer Service Consumers
@@ -43,10 +67,9 @@ N/A
 \section configuration Configuration Variables
 
 <table>
-<tr><th>name</th><th>type</th><th>unit</th><th>default value</th><th>description</th></tr>
-<tr><td>string</td><td>std::string</td><td></td><td>testtest</td><td>example of string configuration variables</td></tr>
-<tr><td>intvec</td><td>std::vector<int></td><td></td><td>4,5,6,7</td><td>example of integer array configuration variables</td></tr>
-<tr><td>double</td><td>double<int></td><td></td><td>4.567</td><td>example of double precision configuration variable</td></tr>
+<tr><th>name</th><th>type</th><th>unit</th><th>default
+value</th><th>description</th></tr>
+<tr><td>debugLevel</td><td>int</td><td></td><td>0</td><td>debug level</td></tr>
 </table>
 
 \section conf Configuration File

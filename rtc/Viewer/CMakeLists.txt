@@ -5,6 +5,7 @@ add_library(Viewer SHARED ${comp_sources})
 set(libraries
   ${IRRLICHT_LIBRARIES}
   ${LIBXML2_LIBRARIES}  
+  ${QHULL_LIBRARIES}
   ${OPENHRP_LIBRARIES}
   hrpsysUtil
   hrpsysBaseStub

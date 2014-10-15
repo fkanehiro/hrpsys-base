@@ -1,6 +1,6 @@
 /**
  * @file ImpedanceControllerService.idl
- * @brief Services for the impedance interface
+ * @brief Services for the impedance controller interface
  */
 module OpenHRP
 {
@@ -9,25 +9,45 @@ module OpenHRP
   {
     typedef sequence<double, 3> DblSequence3;
 
-    // Impedance Controller Parameters
+    /**
+     * @struct impedanceParam
+     * @brief Impedance controller parameters for one end-effector.
+     */
     struct impedanceParam {
-      string name; // Name of end effector.
-      string base_name; // Name of inverse kinematics root link.
-      string target_name; // Name of inverse kinematics end effector link.
-      double M_p; // Position mass [N/(m/s^2)]
-      double D_p; // Position damper [N/(m/s)]
-      double K_p; // Position spring [N/m]
-      double M_r; // Rotation mass [Nm/(rad/s^2)]
-      double D_r; // Rotation damper [N/(rad/s)]
-      double K_r; // Rotation spring [N/rad]
-      DblSequence3 ref_force; // Reference Force [N] (x,y,z).
-      DblSequence3 force_gain; // Force gain (x,y,z).
-      DblSequence3 ref_moment; // Reference Moment [Nm] (x,y,z).
-      DblSequence3 moment_gain; // Moment gain (x,y,z).
-      double sr_gain; // SR-inverse gain for inverse kinematics.
-      double avoid_gain; // Avoid joint limit gain for inverse kinematics.
-      double reference_gain; // Reference joint angles tracking gain for inverse kinematics.
-      double manipulability_limit; // Manipulability limit for inverse kinematics.
+      /// Name of end effector.
+      string name;
+      /// Name of inverse kinematics root link.
+      string base_name;
+      /// Name of inverse kinematics end effector link.
+      string target_name;
+      /// Position mass [N/(m/s^2)]
+      double M_p;
+      /// Position damper [N/(m/s)]
+      double D_p;
+      /// Position spring [N/m]
+      double K_p;
+      /// Rotation mass [Nm/(rad/s^2)]
+      double M_r;
+      /// Rotation damper [N/(rad/s)]
+      double D_r;
+      /// Rotation spring [N/rad]
+      double K_r;
+      /// Reference Force [N] (x,y,z).
+      DblSequence3 ref_force;
+      /// Force gain (x,y,z).
+      DblSequence3 force_gain;
+      /// Reference Moment [Nm] (x,y,z).
+      DblSequence3 ref_moment;
+      /// Moment gain (x,y,z).
+      DblSequence3 moment_gain;
+      /// SR-inverse gain for inverse kinematics.
+      double sr_gain;
+      /// Avoid joint limit gain for inverse kinematics.
+      double avoid_gain;
+      /// Reference joint angles tracking gain for inverse kinematics.
+      double reference_gain;
+      /// Manipulability limit for inverse kinematics.
+      double manipulability_limit;
     };
 
     /**

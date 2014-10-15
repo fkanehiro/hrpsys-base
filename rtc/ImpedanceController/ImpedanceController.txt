@@ -1,0 +1,81 @@
+/**
+
+\page ImpedanceController
+
+\section introduction Overview
+
+This component is cartesian impedance control, in which 
+it modifies end-effector's position or orientation based on force/torque.
+
+\subsection feature Feature
+
+This component receives reference joint angles from "qRef" inport and actual force/torque values. 
+Then it calculates reference end-effector position and orientation and modifies end-effector's
+position/orientation based on force/torque. 
+It solves Inverse Kinematics based on modified end-effector position/orientation, 
+obtains jonint angles, and outputs the joint angles as "q" outport. 
+
+\subsection mode Mode
+
+This component has modes by JointGroup such as ``rarm`` and ``rleg``. 
+By default, this component is idle mode for all JointGroup, in which
+it do not modify input joint angles. 
+When OpenHRP::ImpedanceControllerService::setImpedanceControllerParam() are called in idle mode, 
+it switches to controlling mode, in which it modifies input joint angles. 
+When OpenHRP::ImpedanceControllerService::deleteImpedanceController() are called in controlling mode, 
+it switches to idle mode. 
+
+<table>
+<tr><th>implementation_id</th><td>ImpedanceController</td></tr>
+<tr><th>category</th><td>example</td></tr>
+</table>
+
+\section dataports Data Ports
+
+\subsection inports Input Ports
+
+<table>
+<tr><th>port name</th><th>data type</th><th>unit</th><th>description</th></tr>
+<tr><td>qCurrent</td><td>RTC::TimedDoubleSeq</td><td>[rad]</td><td>Actual joint angles</td></tr>
+<tr><td>qRef</td><td>RTC::TimedDoubleSeq</td><td>[rad]</td><td>Reference joint angles</td></tr>
+<tr><td>rpy</td><td>RTC::TimedOrientation3D</td><td>[rad]</td><td>
+Actual attitude sensor's Roll-Pitch-Yaw angle </td></tr>
+<tr><td>rpyRef</td><td>RTC::TimedOrientation3D</td><td>[rad]</td><td>
+Reference attitude sensor's Roll-Pitch-Yaw angle </td></tr>
+<tr><td>name of force/torque sensor defined in a VRML model, such as "rhsensor"</td><td>RTC::TimedDoubleSeq</td><td>[N],[Nm]</td><td>Actual force/torque in the sensor frame</td></tr>
+</table>
+
+\subsection outports Output Ports
+
+<table>
+<tr><th>port name</th><th>data type</th><th>unit</th><th>description</th></tr>
+<tr><td>q</td><td>RTC::TimedDoubleSeq</td><td>[rad]</td><td>Output
+reference joint angles</td></tr>
+</table>
+
+\section serviceports Service Ports
+
+\subsection provider Service Providers
+
+<table>
+<tr><th>port name</th><th>interface name</th><th>service type</th><th>IDL</th><th>description</th></tr>
+<tr><td>ImpedanceControllerService</td><td>service0</td><td>ImpedanceControllerService</td><td>\ref OpenHRP::ImpedanceControllerService</td><td>ImpedanceControllerService</td></tr>
+</table>
+
+\subsection consumer Service Consumers
+
+N/A
+
+\section configuration Configuration Variables
+
+<table>
+<tr><th>name</th><th>type</th><th>unit</th><th>default
+value</th><th>description</th></tr>
+<tr><td>debugLevel</td><td>int</td><td></td><td>0</td><td>debug level</td></tr>
+</table>
+
+\section conf Configuration File
+
+N/A
+
+ */

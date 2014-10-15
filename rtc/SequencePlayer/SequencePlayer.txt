@@ -6,6 +6,15 @@
 
 This component plays motion patterns.
 
+\subsection interpolation1 Interpolation
+This component interpolates motion patterns between key frames in hoff-arbib interpolation or linear interpolation (\ref OpenHRP::SequencePlayerService::interpolationMode). 
+
+\subsection interpolation2 Partial interpolation
+This component can interpolate motion patterns at specific joint groups. 
+
+\subsection inversekinematics Simple inverse kinematics
+Simple inverse kinematics is implemented (\ref OpenHRP::SequencePlayerService::setTargetPose). 
+
 <table>
 <tr><th>implementation_id</th><td>SequencePlayer</td></tr>
 <tr><th>category</th><td>example</td></tr>
@@ -20,6 +29,7 @@ This component plays motion patterns.
 <tr><td>qInit</td><td>RTC::TimedDoubleSeq</td><td>[rad]</td><td>initial joint angles</td></tr>
 <tr><td>basePosInit</td><td>RTC::TimedPoint3D</td><td>[m]</td><td>initial position of the base link</td></tr>
 <tr><td>baseRpyInit</td><td>RTC::TimedOrientation3D</td><td>[rad]</td><td>initial Roll-Pitch-Yaw angles of the base link</td></tr>
+<tr><td>zmpRefInit</td><td>RTC::TimedPoint3D</td><td>[m]</td><td>initial ZMP reference</td></tr>
 </table>
 
 \subsection outports Output Ports
@@ -27,10 +37,13 @@ This component plays motion patterns.
 <table>
 <tr><th>port name</th><th>data type</th><th>unit</th><th>description</th></tr>
 <tr><td>qRef</td><td>RTC::TimedDoubleSeq</td><td>[rad]</td><td>reference joint angles</td></tr>
-<tr><td>accRef</td><td>RTC::TimedAcceleration3D</td><td>[m]</td><td>reference acceleration</td></tr>
-<tr><td>zmpRef</td><td>RTC::TimedPoint3D</td><td>[m]</td><td>reference ZMP</td></tr>
-<tr><td>basePos</td><td>RTC::TimedPoint3D</td><td>[m]</td><td>reference position of the base link</td></tr>
-<tr><td>baseRpy</td><td>RTC::TimedOrientation3D</td><td>[rad]</td><td>reference Roll-Pitch-Yaw angles of the base link</td></tr>
+<tr><td>tqRef</td><td>RTC::TimedDoubleSeq</td><td>[Nm]</td><td>reference joint torques</td></tr>
+<tr><td>zmpRef</td><td>RTC::TimedPoint3D</td><td>[m]</td><td>reference ZMP in the base link frame</td></tr>
+<tr><td>accRef</td><td>RTC::TimedAcceleration3D</td><td>[m]</td><td>reference acceleration of the sensor in the sensor frame </td></tr>
+<tr><td>basePos</td><td>RTC::TimedPoint3D</td><td>[m]</td><td>reference position of the base link in the world frame</td></tr>
+<tr><td>baseRpy</td><td>RTC::TimedOrientation3D</td><td>[rad]</td><td>reference Roll-Pitch-Yaw angles of the base link in the world frame</td></tr>
+<tr><td>name of force/torque sensor defined in a VRML model + "Ref", such as "rhsensorRef"</td><td>RTC::TimedDoubleSeq</td><td>[N],[Nm]</td><td>reference force/torque in the sensor frame</td></tr>
+<tr><td>optionalData</td><td>RTC::TimedDoubleSeq</td><td></td><td>optional data sequence</td></tr>
 </table>
 
 \section serviceports Service Ports
@@ -48,7 +61,10 @@ N/A
 
 \section configuration Configuration Variables
 
-N/A
+<table>
+<tr><th>name</th><th>type</th><th>unit</th><th>default value</th><th>description</th></tr>
+<tr><td>debugLevel</td><td>int</td><td></td><td>0</td><td>debug level</td></tr>
+</table>
 
 \section conf Configuration File
 

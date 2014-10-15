@@ -58,51 +58,6 @@ namespace rats
     (rm(2, 2) = (zv + cs));
   }
 
-  void print_vector(std::ostream& strm, const hrp::Vector3& vec, const bool use_newline)
-  {
-    strm << "#f(";
-    for (size_t i = 0; i < 3; i++) strm << vec(i) << " ";
-    strm << ")";
-    if (use_newline) strm << std::endl;
-  }
-
-  void print_vector(std::ostream& strm, const hrp::dvector& vec, const bool use_newline)
-  {
-    strm << "#f(";
-    for (size_t i = 0; i < vec.size(); i++) strm << vec(i) << " ";
-    strm << ")";
-    if (use_newline) strm << std::endl;
-  }
-
-  void print_matrix(std::ostream& strm, const hrp::dmatrix& mat, const bool use_newline)
-  {
-    strm << "#2f(";
-    for (std::size_t i = 0; i < mat.rows(); ++i) {
-      strm << "(";
-      for (std::size_t j = 0; j < mat.cols(); ++j) {
-        strm << mat(i,j) << " ";
-      }
-      strm << ")";
-    }
-    strm << ")";
-
-    if (use_newline) strm << std::endl;
-  }
-
-  void print_matrix(std::ostream& strm, const hrp::Matrix33& mat, const bool use_newline)
-  {
-    strm << "#2f(";
-    for (std::size_t i = 0; i < 3; ++i) {
-      strm << "(";
-      for (std::size_t j = 0; j < 3; ++j) {
-        strm << mat(i,j) << " ";
-      }
-      strm << ")";
-    }
-    strm << ")";
-
-    if (use_newline) strm << std::endl;
-  }
   // matrix product using quaternion normalization
   void rotm3times (hrp::Matrix33& m12, const hrp::Matrix33& m1, const hrp::Matrix33& m2) {
     Eigen::Quaternion<double> eiq1(m1);
@@ -119,14 +74,6 @@ namespace rats
     ret_dif_rot = self_rot * hrp::Vector3(rats::matrix_log(hrp::Matrix33(self_rot.transpose() * target_rot)));
   }
 
-  // /* implementation of template functions */
-  // void print_vector(std::ostream& strm, const hrp::Vector3& v, const bool use_newline = true) {
-  //   print_vector(strm, v.data(), use_newline);
-  // }
-
-  // void print_matrix(std::ostream& strm, const hrp::Matrix33& m, const bool use_newline = true) {
-  //   print_matrix(strm, m.data(), 3, 3, use_newline);
-  // }
   void outer_product_matrix(hrp::Matrix33 &ret, const hrp::Vector3 &v) {
     (ret(0, 0) = 0);
     (ret(0, 1) = (-v(2)));

@@ -64,7 +64,7 @@ class AutoBalancer
 
   // The deactivated action (Active state exit action)
   // former rtc_active_exit()
-  // virtual RTC::ReturnCode_t onDeactivated(RTC::UniqueId ec_id);
+  virtual RTC::ReturnCode_t onDeactivated(RTC::UniqueId ec_id);
 
   // The execution action that is invoked periodically
   // former rtc_active_do()
@@ -134,8 +134,8 @@ class AutoBalancer
   OutPort<TimedAcceleration3D> m_accRefOut;
   TimedBooleanSeq m_contactStates;
   OutPort<TimedBooleanSeq> m_contactStatesOut;
-  TimedDouble m_controlSwingSupportTime;
-  OutPort<TimedDouble> m_controlSwingSupportTimeOut;
+  TimedDoubleSeq m_controlSwingSupportTime;
+  OutPort<TimedDoubleSeq> m_controlSwingSupportTimeOut;
   
   // </rtc-template>
 

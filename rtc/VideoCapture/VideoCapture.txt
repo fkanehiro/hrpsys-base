@@ -4,7 +4,7 @@
 
 \section introduction Overview
 
-This component capture camera data using v4l and publish it.
+This component captures camera data using v4l and publish it.
 
 <table>
 <tr><th>implementation_id</th><td>VideoCapture</td></tr>
@@ -17,21 +17,24 @@ This component capture camera data using v4l and publish it.
 
 <table>
 <tr><th>port name</th><th>data type</th><th>unit</th><th>description</th></tr>
-<tr><td>encoded</td><td>Img::TimedMultiCameraImage</td><td></td><td></td></tr>
 </table>
 
 \subsection outports Output Ports
 
 <table>
 <tr><th>port name</th><th>data type</th><th>unit</th><th>description</th></tr>
-<tr><td>decoded</td><td>Img::TimedMultiCameraImage</td><td></td><td></td></tr>
+<tr><td>MultiCameraImages</td><td>Img::TimedMultiCameraImage</td><td></td><td>exists only when multiple device IDs are given</td></tr>
+<tr><td>CameraImage</td><td>Img::TimedCameraImage</td><td></td><td>exists only when a single device ID is given</td></tr>
 </table>
 
 \section serviceports Service Ports
 
 \subsection provider Service Providers
 
-N/A
+<table>
+<tr><th>port name</th><th>interface name</th><th>service type</th><th>IDL</th><th>description</th></tr>
+<tr><td>CameraCaptureService</td><td>service0</td><td>CameraCaptureService</td><td>\ref Img::CameraCaptureService</td><td></td></tr>
+</table>
 
 \subsection consumer Service Consumers
 
@@ -39,7 +42,13 @@ N/A
 
 \section configuration Configuration Variables
 
-N/A
+<table>
+<tr><th>name</th><th>type</th><th>unit</th><th>default value</th><th>description</th></tr>
+<tr><td>initialMode</td><td>std::string</td><td></td><td>continuous</td><td></td></tr>
+<tr><td>devIds</td><td>std::vector<int></td><td></td><td>0</td><td>list of device IDs</td></tr>
+<tr><td>width</td><td>int</td><td></td><td>640</td><td>width of image</td></tr>
+<tr><td>height</td><td>int</td><td></td><td>480</td><td>height of image</td></tr>
+</table>
 
 \section conf Configuration File
 

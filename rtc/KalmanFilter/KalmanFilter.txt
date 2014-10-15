@@ -1,0 +1,64 @@
+/**
+
+\page KalmanFilter
+
+\section introduction Overview
+
+This component is attitude estimation based on gyro, acceleration, and
+so on.
+
+<table>
+<tr><th>implementation_id</th><td>KalmanFilter</td></tr>
+<tr><th>category</th><td>example</td></tr>
+</table>
+
+\section dataports Data Ports
+
+\subsection inports Input Ports
+
+<table>
+<tr><th>port name</th><th>data type</th><th>unit</th><th>description</th></tr>
+<tr><td>rate</td><td>RTC::TimedAngularVelocity3D</td><td>[rad/s]</td><td>Actual 
+angular velocity (gyro) of attitude sensor</td></tr>
+<tr><td>acc</td><td>RTC::TimedAcceleration3D</td><td>[m/s^2]</td><td>Actual 
+acceleration of attitude sensor</td></tr>
+<tr><td>accRef</td><td>RTC::TimedAcceleration3D</td><td>[m/s^2]</td><td>Reference
+acceleration of attitude sensor</td></tr>
+<tr><td>rpyIn</td><td>RTC::TimedOrientation3D</td><td>[rad]</td><td>
+Actual orientation (RPY) of attitude sensor</td></tr>
+</table>
+
+\subsection outports Output Ports
+
+<table>
+<tr><th>port name</th><th>data type</th><th>unit</th><th>description</th></tr>
+<tr><td>rpy</td><td>RTC::TimedOrientation3D</td><td>[rad]</td><td>
+Output orientation (RPY) of attitude sensor</td></tr>
+</table>
+
+\section serviceports Service Ports
+
+\subsection provider Service Providers
+
+<table>
+<tr><th>port name</th><th>interface name</th><th>service type</th><th>IDL</th><th>description</th></tr>
+<tr><td>KalmanFilterService</td><td>service0</td><td>KalmanFilterService</td><td>\ref OpenHRP::KalmanFilterService</td><td>KalmanFilterService</td></tr>
+</table>
+
+\subsection consumer Service Consumers
+
+N/A
+
+\section configuration Configuration Variables
+
+<table>
+<tr><th>name</th><th>type</th><th>unit</th><th>default
+value</th><th>description</th></tr>
+<tr><td>debugLevel</td><td>int</td><td></td><td>0</td><td>debug level</td></tr>
+</table>
+
+\section conf Configuration File
+
+N/A
+
+ */

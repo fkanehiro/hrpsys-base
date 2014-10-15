@@ -35,7 +35,6 @@ Range2PointCloud::Range2PointCloud(RTC::Manager* manager)
   : RTC::DataFlowComponentBase(manager),
     // <rtc-template block="initializer">
     m_rangeIn("range", m_range),
-    m_sensorPoseIn("sensorPose", m_sensorPose),
     m_cloudOut("cloud", m_cloud),
     // </rtc-template>
     dummy(0)
@@ -60,7 +59,6 @@ RTC::ReturnCode_t Range2PointCloud::onInitialize()
   // <rtc-template block="registration">
   // Set InPort buffers
   addInPort("range", m_rangeIn);
-  addInPort("sensorPose", m_sensorPoseIn);
 
   // Set OutPort buffer
   addOutPort("cloud", m_cloudOut);
@@ -94,13 +92,6 @@ RTC::ReturnCode_t Range2PointCloud::onInitialize()
   m_cloud.point_step = 16;
   m_cloud.is_dense = true;
 
-  m_sensorPose.data.position.x = 0;
-  m_sensorPose.data.position.y = 1;
-  m_sensorPose.data.position.z = 2;
-  m_sensorPose.data.orientation.r = 0;
-  m_sensorPose.data.orientation.p = 0;
-  m_sensorPose.data.orientation.y = 0;
-  
   return RTC::RTC_OK;
 }
 
@@ -150,18 +141,18 @@ RTC::ReturnCode_t Range2PointCloud::onExecute(RTC::UniqueId ec_id)
   while (m_rangeIn.isNew()){
     nlines++;
     m_rangeIn.read();
-    if (m_sensorPoseIn.isNew()) m_sensorPoseIn.read();
     m_cloud.width += m_range.ranges.length();
     m_cloud.row_step = m_cloud.point_step*m_cloud.width;
     m_cloud.data.length(m_cloud.row_step);// shrinked later
     // range -> point cloud
     float *ptr = (float *)m_cloud.data.get_buffer() + npoint*4;
-    hrp::Vector3 relP, absP, sensorP(m_sensorPose.data.position.x,
-				     m_sensorPose.data.position.y,
-				     m_sensorPose.data.position.z);
-    hrp::Matrix33 sensorR = hrp::rotFromRpy(m_sensorPose.data.orientation.r,
-					    m_sensorPose.data.orientation.p,
-					    m_sensorPose.data.orientation.y);
+    Pose3D &pose = m_range.geometry.geometry.pose;
+    hrp::Vector3 relP, absP, sensorP(pose.position.x,
+				     pose.position.y,
+				     pose.position.z);
+    hrp::Matrix33 sensorR = hrp::rotFromRpy(pose.orientation.r,
+					    pose.orientation.p,
+					    pose.orientation.y);
     for (unsigned int i=0; i<m_range.ranges.length(); i++){
       double th = m_range.config.minAngle + i*m_range.config.angularRes;
       double d = m_range.ranges[i];

@@ -4,7 +4,7 @@
 
 \section introduction Overview
 
-This component is a very simple RT component to learn how to develop.
+This component controls image flow using Img::CameraCaptureService
 
 <table>
 <tr><th>implementation_id</th><td>CaptureController</td></tr>
@@ -17,14 +17,14 @@ This component is a very simple RT component to learn how to develop.
 
 <table>
 <tr><th>port name</th><th>data type</th><th>unit</th><th>description</th></tr>
-<tr><td>imageIn</td><td>Img::TimedCameraImage</td><td></td><td></td></tr>
+<tr><td>imageIn</td><td>Img::TimedCameraImage</td><td></td><td>camera image</td></tr>
 </table>
 
 \subsection outports Output Ports
 
 <table>
 <tr><th>port name</th><th>data type</th><th>unit</th><th>description</th></tr>
-<tr><td>imageOut</td><td>Img::TimedCameraImage</td><td></td><td></td></tr>
+<tr><td>imageOut</td><td>Img::TimedCameraImage</td><td></td><td>camera image</td></tr>
 </table>
 
 \section serviceports Service Ports

@@ -196,8 +196,17 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
         contact_states_index_map.insert(std::pair<std::string, size_t>(ee_name, i));
       }
       m_contactStates.data.length(num);
+      if (ikp.find("rleg") != ikp.end() && ikp.find("lleg") != ikp.end()) {
+        m_contactStates.data[contact_states_index_map["rleg"]] = true;
+        m_contactStates.data[contact_states_index_map["lleg"]] = true;
+      }
+      if (ikp.find("rarm") != ikp.end() && ikp.find("larm") != ikp.end()) {
+        m_contactStates.data[contact_states_index_map["rarm"]] = false;
+        m_contactStates.data[contact_states_index_map["larm"]] = false;
+      }
+      m_controlSwingSupportTime.data.length(num);
+      for (size_t i = 0; i < num; i++) m_controlSwingSupportTime.data[i] = 0.0;
     }
-    m_controlSwingSupportTime.data = 0.0;
 
     // ref force port
     coil::vstring virtual_force_sensor = coil::split(prop["virtual_force_sensor"], ",");
@@ -268,12 +277,17 @@ RTC::ReturnCode_t AutoBalancer::onActivated(RTC::UniqueId ec_id)
     return RTC::RTC_OK;
 }
 
-/*
-  RTC::ReturnCode_t AutoBalancer::onDeactivated(RTC::UniqueId ec_id)
-  {
-  return RTC::RTC_OK;
+RTC::ReturnCode_t AutoBalancer::onDeactivated(RTC::UniqueId ec_id)
+{
+  std::cout << "AutoBalancer::onDeactivated(" << ec_id << ")" << std::endl;
+  Guard guard(m_mutex);
+  if (control_mode == MODE_ABC) {
+    stopABCparam();
+    control_mode = MODE_IDLE;
+    transition_count = 1; // sync in one controller loop
   }
-*/
+  return RTC::RTC_OK;
+}
 
 #define DEBUGP ((m_debugLevel==1 && loop%200==0) || m_debugLevel > 1 )
 //#define DEBUGP2 ((loop%200==0))
@@ -356,7 +370,9 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
       prev_imu_sensor_vel = imu_sensor_vel;
     }
 
+    m_contactStates.tm = m_qRef.tm;
     m_contactStatesOut.write();
+    m_controlSwingSupportTime.tm = m_qRef.tm;
     m_controlSwingSupportTimeOut.write();
 
     return RTC::RTC_OK;
@@ -447,7 +463,8 @@ void AutoBalancer::getTargetParameters()
       default:
         break;
       }
-      m_controlSwingSupportTime.data = gg->get_current_swing_time();
+      m_controlSwingSupportTime.data[contact_states_index_map["rleg"]] = gg->get_current_swing_time(0);
+      m_controlSwingSupportTime.data[contact_states_index_map["lleg"]] = gg->get_current_swing_time(1);
     } else {
       tmp_fix_coords = fix_leg_coords;
     }

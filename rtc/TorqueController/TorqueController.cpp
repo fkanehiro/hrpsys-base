@@ -14,6 +14,8 @@
 #include <hrpModel/ModelLoaderUtil.h>
 #include <hrpUtil/MatrixSolvers.h>
 
+#include <map>
+
 // Module specification
 // <rtc-template block="module_spec">
 static const char* torquecontroller_spec[] =
@@ -53,8 +55,6 @@ TorqueController::TorqueController(RTC::Manager* manager)
 TorqueController::~TorqueController()
 {
 }
-
-
 
 RTC::ReturnCode_t TorqueController::onInitialize()
 {
@@ -112,62 +112,90 @@ RTC::ReturnCode_t TorqueController::onInitialize()
   }
   // make torque controller settings
   coil::vstring motorTorqueControllerParamsFromConf = coil::split(prop["torque_controller_params"], ",");
-  hrp::dvector tdcParamKe(m_robot->numJoints()), tdcParamKd(m_robot->numJoints()), tdcParamKi(m_robot->numJoints()), tdcParamT(m_robot->numJoints());
-  if (motorTorqueControllerParamsFromConf.size() == 2 * m_robot->numJoints()) {
-    std::cerr << "use TwoDofController" << std::endl;
-    for (int i = 0; i < m_robot->numJoints(); i++) { // use TwoDofController
-      coil::stringTo(tdcParamKe[i], motorTorqueControllerParamsFromConf[2 * i].c_str());
-      coil::stringTo(tdcParamT[i], motorTorqueControllerParamsFromConf[2 * i + 1].c_str());
-      m_motorTorqueControllers.push_back(MotorTorqueController(m_robot->joint(i)->name, tdcParamKe[i], tdcParamT[i], m_dt));
-    }
-    if (m_debugLevel > 0) {
-      std::cerr << "torque controller parames:" << std::endl;
-      for (int i = 0; i < m_robot->numJoints(); i++) {
-        std::cerr << m_robot->joint(i)->name << ":" << tdcParamKe[i] << " " << tdcParamT[i] << " " << m_dt << std::endl;
-      }
-    }
-  } else if (motorTorqueControllerParamsFromConf.size() == 3 * m_robot->numJoints()) { // use TwoDofControllerPDModel
-    std::cerr << "use TwoDofControllerPDModel" << std::endl;
-    for (int i = 0; i < m_robot->numJoints(); i++) { // use TwoDofControllerPDModel
-      coil::stringTo(tdcParamKe[i], motorTorqueControllerParamsFromConf[3 * i].c_str());
-      coil::stringTo(tdcParamKd[i], motorTorqueControllerParamsFromConf[3 * i + 1].c_str());
-      coil::stringTo(tdcParamT[i], motorTorqueControllerParamsFromConf[3 * i + 2].c_str());
-      m_motorTorqueControllers.push_back(MotorTorqueController(m_robot->joint(i)->name, tdcParamKe[i], tdcParamKd[i], tdcParamT[i], m_dt));
-    }
-    if (m_debugLevel > 0) {
-      std::cerr << "torque controller parames:" << std::endl;
-      for (int i = 0; i < m_robot->numJoints(); i++) {
-        std::cerr << m_robot->joint(i)->name << ":" << tdcParamKe[i] << " " << tdcParamKd[i] << " " << tdcParamT[i] << " " << m_dt << std::endl;
-      }
-    }
-  } else if (motorTorqueControllerParamsFromConf.size() == 4 * m_robot->numJoints()) { // use TwoDofControllerDynamicsModel
-    std::cerr << "use TwoDofControllerDynamicsModel" << std::endl;
-    for (int i = 0; i < m_robot->numJoints(); i++) { // use TwoDofControllerDynamicsModel
-      coil::stringTo(tdcParamKe[i], motorTorqueControllerParamsFromConf[4 * i].c_str());
-      coil::stringTo(tdcParamKd[i], motorTorqueControllerParamsFromConf[4 * i + 1].c_str());
-      coil::stringTo(tdcParamKi[i], motorTorqueControllerParamsFromConf[4 * i + 2].c_str());
-      coil::stringTo(tdcParamT[i], motorTorqueControllerParamsFromConf[4 * i + 3].c_str());
-      m_motorTorqueControllers.push_back(MotorTorqueController(m_robot->joint(i)->name, tdcParamKe[i], tdcParamKd[i], tdcParamKi[i], tdcParamT[i], m_dt));
-    }
-    if (m_debugLevel > 0) {
-      std::cerr << "torque controller parames:" << std::endl;
-      for (int i = 0; i < m_robot->numJoints(); i++) {
-        std::cerr << m_robot->joint(i)->name << ":" << tdcParamKe[i] << " " << tdcParamKd[i] << " " << tdcParamKi[i] << " " << tdcParamT[i] << " " << m_dt << std::endl;
-      }
-    }
-  } else { // default
+  // make controlle type map
+  MotorTorqueController::motor_model_t model_type; 
+  std::map<int, MotorTorqueController::motor_model_t> param_num_to_motor_model_type;
+  int tdc_params_num = TwoDofController::TwoDofControllerParam::getControllerParamNum() * m_robot->numJoints();
+  int tdc_pd_model_params_num = TwoDofControllerPDModel::TwoDofControllerPDModelParam::getControllerParamNum() * m_robot->numJoints();
+  int tdc_dynamics_model_params_num = TwoDofControllerDynamicsModel::TwoDofControllerDynamicsModelParam::getControllerParamNum() * m_robot->numJoints();
+  param_num_to_motor_model_type[tdc_params_num] = MotorTorqueController::TWO_DOF_CONTROLLER;
+  param_num_to_motor_model_type[tdc_pd_model_params_num] = MotorTorqueController::TWO_DOF_CONTROLLER_PD_MODEL;
+  param_num_to_motor_model_type[tdc_dynamics_model_params_num] = MotorTorqueController::TWO_DOF_CONTROLLER_DYNAMICS_MODEL;
+  if (param_num_to_motor_model_type.find(motorTorqueControllerParamsFromConf.size()) == param_num_to_motor_model_type.end()) {
     std::cerr << "[WARNING] torque_controller_params is not correct number, " << motorTorqueControllerParamsFromConf.size() << ". Use default controller." << std::endl;
-    for (int i = 0; i < m_robot->numJoints(); i++) {
-      tdcParamKe[i] = 400.0;
-      tdcParamT[i] = 0.04;
-      m_motorTorqueControllers.push_back(MotorTorqueController(m_robot->joint(i)->name, tdcParamKe[i], tdcParamT[i], m_dt));
+    model_type = MotorTorqueController::TWO_DOF_CONTROLLER; // default
+  } else {
+    model_type = param_num_to_motor_model_type[motorTorqueControllerParamsFromConf.size()];
+  }
+  // define controller paramters
+  switch (model_type) {
+  case MotorTorqueController::TWO_DOF_CONTROLLER_DYNAMICS_MODEL: // use TwoDofControllerDynamicsModel
+  { // limit scope of tdc_dynamics_model_params
+    std::cerr << "use TwoDofControllerDynamicsModel" << std::endl;
+    std::vector<TwoDofControllerDynamicsModel::TwoDofControllerDynamicsModelParam> tdc_dynamics_model_params(m_robot->numJoints());
+    for (int i = 0; i < m_robot->numJoints(); i++) { 
+      if (motorTorqueControllerParamsFromConf.size() == tdc_dynamics_model_params_num) { // use conf params if parameter num is correct
+        coil::stringTo(tdc_dynamics_model_params[i].alpha, motorTorqueControllerParamsFromConf[4 * i].c_str());
+        coil::stringTo(tdc_dynamics_model_params[i].beta, motorTorqueControllerParamsFromConf[4 * i + 1].c_str());
+        coil::stringTo(tdc_dynamics_model_params[i].ki, motorTorqueControllerParamsFromConf[4 * i + 2].c_str());
+        coil::stringTo(tdc_dynamics_model_params[i].tc, motorTorqueControllerParamsFromConf[4 * i + 3].c_str());
+      }
+      tdc_dynamics_model_params[i].dt = m_dt;
+      m_motorTorqueControllers.push_back(MotorTorqueController(m_robot->joint(i)->name, tdc_dynamics_model_params[i]));
     }
     if (m_debugLevel > 0) {
       std::cerr << "torque controller parames:" << std::endl;
       for (int i = 0; i < m_robot->numJoints(); i++) {
-        std::cerr << m_robot->joint(i)->name << ":" << tdcParamKe[i] << " " << tdcParamT[i] << " " << m_dt << std::endl;
+        std::cerr << m_robot->joint(i)->name << ":" <<
+          tdc_dynamics_model_params[i].alpha << " " << tdc_dynamics_model_params[i].beta << " " << tdc_dynamics_model_params[i].ki <<
+          " " << tdc_dynamics_model_params[i].tc << " " << tdc_dynamics_model_params[i].dt << std::endl;
       }
     }
+    break;
+  }
+  case MotorTorqueController::TWO_DOF_CONTROLLER_PD_MODEL: // use TwoDofControllerPDModel
+  { // limit scope of tdc_pd_model_params
+    std::cerr << "use TwoDofControllerPDModel" << std::endl;
+    std::vector<TwoDofControllerPDModel::TwoDofControllerPDModelParam> tdc_pd_model_params(m_robot->numJoints());
+    for (int i = 0; i < m_robot->numJoints(); i++) {
+      if (motorTorqueControllerParamsFromConf.size() == tdc_pd_model_params_num) { // use conf params if parameter num is correct
+        coil::stringTo(tdc_pd_model_params[i].ke, motorTorqueControllerParamsFromConf[3 * i].c_str());
+        coil::stringTo(tdc_pd_model_params[i].kd, motorTorqueControllerParamsFromConf[3 * i + 1].c_str());
+        coil::stringTo(tdc_pd_model_params[i].tc, motorTorqueControllerParamsFromConf[3 * i + 2].c_str());
+      }
+      tdc_pd_model_params[i].dt = m_dt;
+      m_motorTorqueControllers.push_back(MotorTorqueController(m_robot->joint(i)->name, tdc_pd_model_params[i]));
+    }
+    if (m_debugLevel > 0) {
+      std::cerr << "torque controller parames:" << std::endl;
+      for (int i = 0; i < m_robot->numJoints(); i++) {
+        std::cerr << m_robot->joint(i)->name << ":" << tdc_pd_model_params[i].ke << " " << tdc_pd_model_params[i].kd <<
+          " " << tdc_pd_model_params[i].tc << " " << tdc_pd_model_params[i].dt << std::endl;
+      }
+    }
+    break;
+  }
+  case MotorTorqueController::TWO_DOF_CONTROLLER: // use TwoDofController
+  default:
+  { // limit scope of tdc_params
+    std::cerr << "use TwoDofController" << std::endl;
+    std::vector<TwoDofController::TwoDofControllerParam> tdc_params(m_robot->numJoints());
+    for (int i = 0; i < m_robot->numJoints(); i++) { 
+      if (motorTorqueControllerParamsFromConf.size() == tdc_params_num) { // use conf params if parameter num is correct
+        coil::stringTo(tdc_params[i].ke, motorTorqueControllerParamsFromConf[2 * i].c_str());
+        coil::stringTo(tdc_params[i].tc, motorTorqueControllerParamsFromConf[2 * i + 1].c_str());
+      }
+      tdc_params[i].dt = m_dt;
+      m_motorTorqueControllers.push_back(MotorTorqueController(m_robot->joint(i)->name, tdc_params[i]));
+    }
+    if (m_debugLevel > 0) {
+      std::cerr << "torque controller parames:" << std::endl;
+      for (int i = 0; i < m_robot->numJoints(); i++) {
+        std::cerr << m_robot->joint(i)->name << ":" << tdc_params[i].ke << " " << tdc_params[i].tc << " " << tdc_params[i].dt << std::endl;
+      }
+    }
+    break;
+  }
   }
 
   // parameter setttings for torque controller
@@ -457,6 +485,66 @@ bool TorqueController::setMultipleReferenceTorques(const OpenHRP::TorqueControll
     }
   }
   return succeed;
+}
+
+bool TorqueController::setTorqueControllerParam(const OpenHRP::TorqueControllerService::torqueControllerParam& t_param)
+{
+  // find target motor controller
+  std::string jname = std::string(t_param.name);
+  MotorTorqueController *tgt_controller = NULL;
+  for (std::vector<MotorTorqueController>::iterator it = m_motorTorqueControllers.begin(); it != m_motorTorqueControllers.end(); ++it) {
+    if ((*it).getJointName() == jname){
+      std::cerr << "target joint:" << t_param.name << std::endl;
+      tgt_controller = &(*it);
+    }
+  }
+  if (tgt_controller == NULL) {
+    std::cerr << t_param.name << "does not found." << std::endl;
+    return false;
+  }
+
+  // update torque controller param
+  bool retval;
+  MotorTorqueController::motor_model_t model_type = tgt_controller->getMotorModelType();
+  switch(model_type) { // dt is defined by controller cycle
+  case MotorTorqueController::TWO_DOF_CONTROLLER:
+  { // limit scope for param 
+    std::cerr << "new param:" << t_param.ke << " " << t_param.tc << " " << std::endl;
+    TwoDofController::TwoDofControllerParam param;
+    param.ke = t_param.ke; param.tc = t_param.tc; param.dt = m_dt;
+    retval = tgt_controller->updateControllerParam(param);
+    break;
+  }
+  case MotorTorqueController::TWO_DOF_CONTROLLER_PD_MODEL:
+  { // limit scope for param 
+    std::cerr << "new param:" << t_param.ke << " " << t_param.kd << " " << t_param.tc << " " << std::endl;
+    TwoDofControllerPDModel::TwoDofControllerPDModelParam param;
+    param.ke = t_param.ke; param.kd = t_param.kd; param.tc = t_param.tc; param.dt = m_dt;
+    retval = tgt_controller->updateControllerParam(param);
+    break;
+  }
+  case MotorTorqueController::TWO_DOF_CONTROLLER_DYNAMICS_MODEL:
+  { // limit scope for param 
+    std::cerr << "new param:" << t_param.alpha << " " << t_param.beta << " " << t_param.ki << " " << t_param.tc << " " << std::endl;
+    TwoDofControllerDynamicsModel::TwoDofControllerDynamicsModelParam param;
+    param.alpha = t_param.alpha; param.beta = t_param.beta; param.ki = t_param.ki; param.tc = t_param.tc; param.dt = m_dt;
+    retval = tgt_controller->updateControllerParam(param);
+    break;
+  }
+  default:
+    return false;
+  }
+  
+  return retval;
+}
+
+void TorqueController::updateParam(double &val, double &val_new)
+{
+  // update value unless val_new is not 0
+  if (val_new != 0) { 
+    val = val_new;
+  }
+  return;
 }
 
 bool TorqueController::isDebug(int cycle)

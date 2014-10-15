@@ -150,6 +150,8 @@ class SequencePlayer
   OutPort<TimedOrientation3D> m_baseRpyOut;
   std::vector<TimedDoubleSeq> m_wrenches;
   std::vector<OutPort<TimedDoubleSeq> *> m_wrenchesOut;
+  TimedDoubleSeq m_optionalData;
+  OutPort<TimedDoubleSeq> m_optionalDataOut;
 
   
   // </rtc-template>
@@ -179,6 +181,7 @@ class SequencePlayer
   std::string m_gname;
   unsigned int m_debugLevel;
   int dummy;
+  size_t optional_data_dim;
   coil::Mutex m_mutex;
   double m_error_pos, m_error_rot;
   short m_iteration;

@@ -36,5 +36,5 @@ class v4l_capture
   uchar *capture ();
   int getHeight ();
   int getWidth ();
-  int init (unsigned int devId, bool fileout = false);
+  int init (size_t _width, size_t _height, unsigned int devId);
 };

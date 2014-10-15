@@ -18,14 +18,34 @@
 
 class TwoDofControllerDynamicsModel : public TwoDofControllerInterface {
 public:
-  TwoDofControllerDynamicsModel(double _alpha = 0, double _beta = 0, double _ki = 0, double _tc = 0, double _dt = 0, unsigned int _range = 0);
+  class TwoDofControllerDynamicsModelParam {
+  public:
+    TwoDofControllerDynamicsModelParam() {
+      alpha = beta = ki = tc = dt = 0.0; // set default param
+    }
+    ~TwoDofControllerDynamicsModelParam() {
+    }
+    static int getControllerParamNum() {
+      return 4;
+    }
+    double alpha; // completing squared param (s + alpha)^2 - beta^2
+    double beta; // completing square param (s + alpha)^2 - beta^2
+    double ki; // virtual inertia
+    double tc; // time constant
+    double dt; // control cycle (not controller but system parameter)
+  };
+  TwoDofControllerDynamicsModel();
+  TwoDofControllerDynamicsModel(TwoDofControllerDynamicsModelParam &_param, unsigned int _range = 0);
   ~TwoDofControllerDynamicsModel();
   void setup();
-  void setup(double _alpha, double _beta, double _ki, double _tc, double _dt, unsigned int _range = 0);
+  void setup(TwoDofControllerDynamicsModelParam &_param, unsigned int _range = 0);
   void reset();
   double update(double _x, double _xd);
+  bool getParameter();
+  bool getParameter(TwoDofControllerDynamicsModelParam &_p);
+
 private:
-  double alpha, beta, ki, tc, dt; // alpha, beta: completing square, ki: Inertia, tc: time constant, dt: control cycle
+  TwoDofControllerDynamicsModelParam param;
   double current_time;
   Integrator integrate_exp_sinh_current;
   std::vector<double> exp_sinh;

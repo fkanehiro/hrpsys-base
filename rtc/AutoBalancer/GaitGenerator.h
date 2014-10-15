@@ -27,13 +27,16 @@ namespace rats
         : l_r(_l_r), worldcoords(_worldcoords) {};
       step_node (const std::string& _l_r, const coordinates& _worldcoords)
         : l_r((_l_r == "rleg") ? WC_RLEG : WC_LLEG), worldcoords(_worldcoords) {};
-      void print_eus_footstep (std::ostream& strm, const bool use_newline = true) const
-      {
-        strm << "(cons " << (l_r == WC_RLEG ? "rleg " : "lleg ");
-        worldcoords.print_eus_coordinates(strm, false);
-        strm << ")";
-        if (use_newline) strm << std::endl;
-      }
+    };
+    friend std::ostream &operator<<(std::ostream &os, const step_node &sn)
+    {
+      os << "footstep" << std::endl;
+      os << "  name = [" << ((sn.l_r==WC_LLEG)?std::string("lleg"):std::string("rleg")) << "]" << std::endl;
+      os << "  pos =" << std::endl;
+      os << (sn.worldcoords.pos).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << std::endl;
+      os << "  rot =" << std::endl;
+      os << (sn.worldcoords.rot).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", "\n", "    [", "]")) << std::endl;
+      return os;
     };
 
     /* footstep parameter */
@@ -187,7 +190,7 @@ namespace rats
     public:
 #endif
       coordinates swing_leg_dst_coords, support_leg_coords, swing_leg_coords, swing_leg_src_coords;
-      double default_step_height, default_top_ratio, current_step_height, swing_ratio, rot_ratio, _dt, current_swing_time;
+      double default_step_height, default_top_ratio, current_step_height, swing_ratio, rot_ratio, _dt, current_swing_time[2];
       size_t gp_index, gp_count;
       leg_type support_leg;
       orbit_type default_orbit_type;
@@ -233,7 +236,7 @@ namespace rats
       void update_leg_coords (const std::vector<step_node>& fnl, const double default_double_support_ratio, const size_t one_step_len, const bool force_height_zero);
       size_t get_gp_index() const { return gp_index; };
       size_t get_gp_count() const { return gp_count; };
-      double get_current_swing_time() const { return current_swing_time; };
+      double get_current_swing_time(const size_t idx) const { return current_swing_time[idx]; };
       const coordinates& get_swing_leg_coords() const { return swing_leg_coords; };
       const coordinates& get_support_leg_coords() const { return support_leg_coords; };
       const coordinates& get_swing_leg_src_coords() const { return swing_leg_src_coords; };
@@ -381,7 +384,7 @@ namespace rats
     void print_footstep_list () const
     {
       for (size_t i = 0; i < footstep_node_list.size(); i++)
-        footstep_node_list[i].print_eus_footstep(std::cerr);
+        std::cerr << footstep_node_list[i] << std::endl;
     };
     /* parameter getting */
     const hrp::Vector3& get_cog () { return cog; };
@@ -409,7 +412,7 @@ namespace rats
     };
     size_t get_gp_index() const { return lcg.get_gp_index(); };
     size_t get_gp_count() const { return lcg.get_gp_count(); };
-    double get_current_swing_time() const { return lcg.get_current_swing_time(); };
+    double get_current_swing_time(const size_t idx) const { return lcg.get_current_swing_time(idx); };
     size_t get_current_support_state() const { return lcg.get_current_support_state();};
     double get_default_step_time () const { return default_step_time; };
     double get_default_step_height () const { return lcg.get_default_step_height(); };
