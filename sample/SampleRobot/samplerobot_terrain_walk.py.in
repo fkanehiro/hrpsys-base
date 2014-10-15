@@ -31,7 +31,6 @@ def demo():
 
 def setupGaitGeneratorParam():
     ggp = hcf.abc_svc.getGaitGeneratorParam()
-    ggp[1].default_step_height = 0.20
     ggp[1].default_double_support_ratio = 0.3
     ggp[1].default_step_time = 1.2
     ggp[1].default_orbit_type = OpenHRP.AutoBalancerService.RECTANGLE;
