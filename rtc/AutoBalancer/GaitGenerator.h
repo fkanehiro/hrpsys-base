@@ -157,29 +157,64 @@ namespace rats
         ret = pos;
         remain_time -= _dt;
       };
+      // interpolate path vector
+      //   tmp_ratio : ratio value [0, 1]
+      //   org_point_vec : vector of via points
+      //   e.g., move tmp_ratio from 0 to 1 => move point from org_point_vec.front() to org_point_vec.back()
+      hrp::Vector3 interpolate_antecedent_path_base (const double tmp_ratio, const std::vector<hrp::Vector3> org_point_vec)
+      {
+        std::vector<hrp::Vector3> point_vec;
+        std::vector<double> distance_vec;
+        double total_path_length = 0;
+        point_vec.push_back(org_point_vec.front());
+        // remove distance-zero points
+        for (size_t i = 0; i < org_point_vec.size()-1; i++) {
+          double tmp_distance = (org_point_vec[i+1]-org_point_vec[i]).norm();
+          if ( tmp_distance > 1e-5 ) {
+            point_vec.push_back(org_point_vec[i+1]);
+            distance_vec.push_back(tmp_distance);
+            total_path_length += tmp_distance;
+          }
+        }
+        if ( total_path_length < 1e-5 ) { // if total path is zero, return goal point.
+          return org_point_vec.back();
+        }
+        // point_vec        : [p0, p1, ..., pN-1, pN]
+        // distance_vec     : [  d0, ...,     dN-1  ]
+        // sum_distance_vec : [l0, l1, ..., lN-1, lN] <= lj = \Sum_{i=0}^{j-1} di
+        std::vector<double> sum_distance_vec;
+        sum_distance_vec.push_back(0);
+        double tmp_dist = 0;
+        for (size_t i = 0; i < distance_vec.size(); i++) {
+          sum_distance_vec.push_back(tmp_dist + distance_vec[i]);
+          tmp_dist += distance_vec[i];
+        }
+        // select current segment in which 'tmp_ratio' is included
+        double current_length = tmp_ratio * total_path_length;
+        for (size_t i = 0; i < sum_distance_vec.size(); i++) {
+          if ( (sum_distance_vec[i] <= current_length) && (current_length <= sum_distance_vec[i+1]) ) {
+            double tmpr = ((current_length - sum_distance_vec[i]) / distance_vec[i]);
+            return ((1-tmpr) * point_vec[i] + tmpr * point_vec[1+i]);
+          }
+        }
+        // if illegal tmp-ratio
+        if (current_length < 0) return org_point_vec.front();
+        else org_point_vec.back();
+      };
     };
 
     class rectangle_delay_hoffarbib_trajectory_generator : public delay_hoffarbib_trajectory_generator
     {
       hrp::Vector3 interpolate_antecedent_path (const hrp::Vector3& start, const hrp::Vector3& goal, const double height)
       {
-        double total_path_length = (goal - start).norm() + height * 2; // [m]
-        if (std::fabs(total_path_length) < 1e-4) return goal;
-        double updown_time_ratio = (height / total_path_length);
-        double min_height = (start(2) > goal(2)) ? (goal(2) + height) : (start(2) + height);
         double tmp_ratio = (total_time - remain_time) / (total_time - time_offset);
-        hrp::Vector3 ret;
-        if ( updown_time_ratio > tmp_ratio ) { // up
-          double r = tmp_ratio / updown_time_ratio;
-          ret = (1-r) * start + r * hrp::Vector3 (start(0), start(1), min_height);
-        } else if ( (1.0 - updown_time_ratio) > tmp_ratio) { // horizontal
-          double r = (tmp_ratio - updown_time_ratio) /  (1.0 - (2*updown_time_ratio));
-          ret = (1-r) * hrp::Vector3 (start(0), start(1), min_height)+ r * hrp::Vector3 (goal(0), goal(1), min_height);
-        } else { // down
-          double r = (tmp_ratio - 1 + updown_time_ratio) / updown_time_ratio;
-          ret = (1 - r) * hrp::Vector3 (goal(0), goal(1), min_height) + r * goal;
-        }
-        return ret;
+        std::vector<hrp::Vector3> rectangle_path;
+        double max_height = std::max(start(2), goal(2))+height;
+        rectangle_path.push_back(start);
+        rectangle_path.push_back(hrp::Vector3(start(0), start(1), max_height));
+        rectangle_path.push_back(hrp::Vector3(goal(0), goal(1), max_height));
+        rectangle_path.push_back(goal);
+        return interpolate_antecedent_path_base(tmp_ratio, rectangle_path);
       };
     };
 
