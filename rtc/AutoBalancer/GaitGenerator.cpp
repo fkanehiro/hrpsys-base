@@ -84,6 +84,9 @@ namespace rats
     case RECTANGLE:
       rectangle_midcoords(ret, ratio, swing_leg_src_coords, swing_leg_dst_coords, step_height);
       break;
+    case STAIR:
+      stair_midcoords(ret, ratio, swing_leg_src_coords, swing_leg_dst_coords, step_height);
+      break;
     default: break;
     }
   };
@@ -150,6 +153,14 @@ namespace rats
     rdtg.get_trajectory_point(ret.pos, hrp::Vector3(start.pos), hrp::Vector3(goal.pos), height);
   };
 
+  void gait_generator::leg_coords_generator::stair_midcoords (coordinates& ret,
+                                                              const double ratio, const coordinates& start,
+                                                              const coordinates& goal, const double height)
+  {
+    mid_coords(ret, ratio, start, goal);
+    sdtg.get_trajectory_point(ret.pos, hrp::Vector3(start.pos), hrp::Vector3(goal.pos), height);
+  };
+
   void gait_generator::leg_coords_generator::update_leg_coords (const std::vector<step_node>& fnl, const double default_double_support_ratio, const size_t one_step_len, const bool force_height_zero)
   {
     rot_ratio = 1.0 - (double)gp_count / one_step_len;
@@ -183,6 +194,7 @@ namespace rats
       }
       gp_count = one_step_len;
       rdtg.reset(one_step_len);
+      sdtg.reset(one_step_len);
     }
   };
 

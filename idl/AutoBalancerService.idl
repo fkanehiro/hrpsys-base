@@ -50,7 +50,8 @@ module OpenHRP
     enum OrbitType {
       SHUFFLING,
       CYCLOID,
-      RECTANGLE
+      RECTANGLE,
+      STAIR
     };
 
     /**
@@ -97,6 +98,10 @@ module OpenHRP
       sequence<double, 3> stride_parameter;
       /// Default OrbitType
       OrbitType default_orbit_type;
+      /// Time offset [s] for swing trajectory by delay_hoffarbib_trajectory_generator.
+      double swing_trajectory_delay_time_offset;
+      /// Way point offset 3D vector [m] for stair_delay_hoffarbib_trajectory_generator.
+      DblArray3 stair_trajectory_way_point_offset;
     };
 
     /**

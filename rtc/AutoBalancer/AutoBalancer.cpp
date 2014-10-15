@@ -827,7 +827,11 @@ bool AutoBalancer::setGaitGeneratorParam(const OpenHRP::AutoBalancerService::Gai
     gg->set_default_orbit_type(gait_generator::CYCLOID);
   } else if (i_param.default_orbit_type == OpenHRP::AutoBalancerService::RECTANGLE) {
     gg->set_default_orbit_type(gait_generator::RECTANGLE);
+  } else if (i_param.default_orbit_type == OpenHRP::AutoBalancerService::STAIR) {
+    gg->set_default_orbit_type(gait_generator::STAIR);
   }
+  gg->set_swing_trajectory_delay_time_offset(i_param.swing_trajectory_delay_time_offset);
+  gg->set_stair_trajectory_way_point_offset(hrp::Vector3(i_param.stair_trajectory_way_point_offset[0], i_param.stair_trajectory_way_point_offset[1], i_param.stair_trajectory_way_point_offset[2]));
   return true;
 };
 
@@ -843,7 +847,12 @@ bool AutoBalancer::getGaitGeneratorParam(OpenHRP::AutoBalancerService::GaitGener
     i_param.default_orbit_type = OpenHRP::AutoBalancerService::CYCLOID;
   } else if (gg->get_default_orbit_type() == gait_generator::RECTANGLE) {
     i_param.default_orbit_type = OpenHRP::AutoBalancerService::RECTANGLE;
+  } else if (gg->get_default_orbit_type() == gait_generator::STAIR) {
+    i_param.default_orbit_type = OpenHRP::AutoBalancerService::STAIR;
   }
+  hrp::Vector3 tmpv = gg->get_stair_trajectory_way_point_offset();
+  for (size_t i = 0; i < 3; i++) i_param.stair_trajectory_way_point_offset[i] = tmpv(i);
+  i_param.swing_trajectory_delay_time_offset = gg->get_swing_trajectory_delay_time_offset();
   return true;
 };
 
