@@ -73,7 +73,7 @@ case $TEST_PACKAGE in
                 sudo apt-get install -qq -y ros-hydro-openhrp3
                 source /opt/ros/hydro/setup.bash
                 mkdir -p ~/build
-                cd ~/build && cmake ${CI_SOURCE_PATH} -DOPENRTM_DIR=`pkg-config openrtm-aist --variable=libdir`/openrtm_aist -DCOMPILE_JAVA_STUFF=OFF && make
+                cd ~/build && cmake ${CI_SOURCE_PATH} && make
                 ;;
         esac
         ;;

@@ -1,0 +1,11 @@
+<launch>
+  <include file="$(find hrpsys)/launch/pa10.launch" >
+    <arg name="GUI" value="false" />
+    <arg name="corbaport" value="2809" />
+  </include>
+
+  <test test-name="pa10_sample" pkg="hrpsys" type="pa10-jointangle.py"
+        args="-ORBInitRef NameService=corbaloc:iiop:localhost:2809/NameService" retry="2" />
+  <test test-name="pa10_jointangle" pkg="hrpsys" type="test-jointangle.py" retry="2" />
+  <test test-name="pa10_hrpsysconf" pkg="hrpsys" type="test-hrpsysconf.py" args="--host 127.0.0.1 --port 2809" retry="2" />
+</launch>

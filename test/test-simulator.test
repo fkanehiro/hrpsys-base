@@ -1,0 +1,16 @@
+<launch>
+  <!-- BEGIN:common setting -->
+  <env name="LANG" value="C" />
+  <env name="ORBgiopMaxMsgSize" value="2147483648" />
+  <!-- END:common setting -->
+
+  <node name="start_omninames" pkg="hrpsys" type="start_omninames.sh" args="2809" />
+
+  <node name="modelloader" pkg="openhrp3" type="openhrp-model-loader" output="screen"/>
+  <node name="hrpsys" pkg="hrpsys" type="hrpsys-simulator"
+        args='$(find hrpsys)/samples/PA10/PA10simulation.xml -o manager.is_master:YES -o naming.formats:%n.rtc -o exec_cxt.periodic.rate:1000000 -o manager.shutdown_onrtcs:NO -o manager.modules.load_path:$(find hrpsys)/lib -o manager.modules.preload:HGcontroller.so -o manager.components.precreate:HGcontroller -o exec_cxt.periodic.type:SynchExtTriggerEC -f $(find hrpsys)/samples/PA10/rtc.conf -o "example.RobotHardware.config_file:$(find hrpsys)/samples/PA10/RobotHardware.conf" -o "example.SequencePlayer.config_file:$(find hrpsys)/samples/PA10/PA10.conf" -o "example.StateHolder.config_file:$(find hrpsys)/samples/PA10/PA10.conf" -o "example.ForwardKinematics.config_file:$(find hrpsys)/samples/PA10/PA10.conf" -o "corba.nameservers:localhost:2809" -nodisplay -endless'
+        output="screen"  cwd="node" />
+
+  <test test-name="simulator_jointangle" pkg="hrpsys" type="test-jointangle.py" retry="2" />
+  <test test-name="simulator_hrpsysconf" pkg="hrpsys" type="test-hrpsysconf.py" args="--port 2809" retry="2" />
+</launch>
