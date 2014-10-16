@@ -487,9 +487,8 @@ void AutoBalancer::getTargetParameters()
 
     /* update ref_forces ;; sp's absolute -> rmc's absolute */
     for (size_t i = 0; i < m_ref_forceIn.size(); i++)
-      tmp_fix_coords.rotate_vector(ref_forces[i],
-                                   hrp::Vector3(m_ref_force[i].data[0], m_ref_force[i].data[1], m_ref_force[i].data[2]));
-    tmp_fix_coords.rotate_vector(sbp_offset, hrp::Vector3(sbp_offset));
+      ref_forces[i] = tmp_fix_coords.rot * hrp::Vector3(m_ref_force[i].data[0], m_ref_force[i].data[1], m_ref_force[i].data[2]);
+    sbp_offset = tmp_fix_coords.rot * hrp::Vector3(sbp_offset);
 
     target_root_p = m_robot->rootLink()->p;
     target_root_R = m_robot->rootLink()->R;
@@ -501,8 +500,8 @@ void AutoBalancer::getTargetParameters()
     }
     ikp["rleg"].getRobotEndCoords(rc, m_robot);
     ikp["lleg"].getRobotEndCoords(lc, m_robot);
-    rc.translate(default_zmp_offsets[0]); /* rleg */
-    lc.translate(default_zmp_offsets[1]); /* lleg */
+    rc.pos += rc.rot * default_zmp_offsets[0]; /* rleg */
+    lc.pos += lc.rot * default_zmp_offsets[1]; /* lleg */
     if (gg_is_walking) {
       ref_cog = gg->get_cog();
     } else {

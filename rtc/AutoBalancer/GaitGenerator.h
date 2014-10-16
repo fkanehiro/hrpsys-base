@@ -378,7 +378,7 @@ namespace rats
                                   const leg_type _l_r)
     {
       step_node sn(_l_r, _foot_midcoords);
-      sn.worldcoords.translate(footstep_param.leg_default_translate_pos[(_l_r == WC_RLEG) ? 0 : 1]);
+      sn.worldcoords.pos += sn.worldcoords.rot * footstep_param.leg_default_translate_pos[(_l_r == WC_RLEG) ? 0 : 1];
       footstep_node_list.push_back(sn);
     };
     void overwrite_refzmp_queue(const std::vector<coordinates>& cv);
@@ -487,7 +487,7 @@ namespace rats
     const coordinates get_dst_foot_midcoords() const /* get foot_midcoords calculated from swing_leg_dst_coords */
     {
       coordinates tmp(lcg.get_swing_leg_dst_coords());
-      tmp.translate(hrp::Vector3(-1*footstep_param.leg_default_translate_pos[(lcg.get_support_leg() == WC_RLEG) ? 1 : 0]));
+      tmp.pos += tmp.rot * hrp::Vector3(-1*footstep_param.leg_default_translate_pos[(lcg.get_support_leg() == WC_RLEG) ? 1 : 0]);
       return tmp;
     };
     void get_swing_support_mid_coords(coordinates& ret) const { lcg.get_swing_support_mid_coords(ret); };

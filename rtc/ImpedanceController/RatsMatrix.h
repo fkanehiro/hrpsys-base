@@ -38,18 +38,6 @@ namespace rats
       }
       return *this;
     }
-    void translate(const hrp::Vector3& v, const std::string& wrt = ":local") {
-      if (wrt == ":local") {
-        pos += rot * v;
-      } else if(wrt == ":world") {
-        pos += v;
-      } else {
-        std::cerr << "**** invalid wrt! ****" << std::endl;
-      }
-    }
-    void rotate_vector(hrp::Vector3& ret, const hrp::Vector3 &v) const {
-      ret = rot * v;
-    }
     void rotate_with_matrix (const hrp::Matrix33& mat, const std::string& wrt = ":local") {
       hrp::Matrix33 rot_org(rot);
       if (wrt == ":local") {		  
@@ -65,14 +53,11 @@ namespace rats
     void rotate (const double theta, const hrp::Vector3& axis, const std::string& wrt = ":local") {
       rotate_with_matrix(rotation_matrix(theta, axis), wrt);
     }
-    void difference_position(hrp::Vector3& dif_pos, const coordinates& c) const {
-      dif_pos =  c.pos - pos;
-    }
     /* void difference_rotation(hrp::Vector3& dif_rot, const coordinates& c) const { */
     /*   dif_rot = rot * matrix_log(rot.transpose() * c.rot); */
     /* } */
     void difference(hrp::Vector3& dif_pos, hrp::Vector3& dif_rot, const coordinates& c) const {
-      difference_position(dif_pos, c);
+      dif_pos = c.pos - pos;
       difference_rotation(dif_rot, rot, c.rot);
     }
     //abc
