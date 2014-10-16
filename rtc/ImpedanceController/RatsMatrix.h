@@ -96,8 +96,6 @@ namespace rats
     }
   };
 
-  void outer_product_matrix(hrp::Matrix33 &ret, const hrp::Vector3 &v);
-  void matrix_exponent(hrp::Matrix33& mexp, const hrp::Vector3& omega, double p);
   void mid_coords(coordinates& mid_coords, const double p, const coordinates& c1, const coordinates& c2);
 };
 #endif /* RATSMATRIX_H */
