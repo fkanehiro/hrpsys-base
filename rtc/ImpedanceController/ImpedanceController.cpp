@@ -460,7 +460,8 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
             // if ( std::fabs(vel_r.norm() - 0.0) < ::std::numeric_limits<double>::epsilon() ) {
             if ( vel_r.norm() != 0.0 ) {
               hrp::Matrix33 tmpm;
-              rats::rotm3times(tmpm, rats::rotation_matrix(vel_r.norm(), vel_r.normalized()), param.current_r0);
+              Eigen::AngleAxis<double> tmpr(vel_r.norm(), vel_r.normalized());
+              rats::rotm3times(tmpm, tmpr.toRotationMatrix(), param.current_r0);
               param.current_r1 = tmpm;
             } else {
               param.current_r1 = param.current_r0;

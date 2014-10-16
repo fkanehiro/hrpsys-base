@@ -473,15 +473,15 @@ RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
 
 void Stabilizer::calcContactMatrix (hrp::dmatrix& tm, const std::vector<hrp::Vector3>& contact_p)
 {
-  tm.resize(6,6*contact_p.size());
-  tm.setZero();
-  for (size_t c = 0; c < contact_p.size(); c++) {
-    for (size_t i = 0; i < 6; i++) tm(i,(c*6)+i) = 1.0;
-    hrp::Matrix33 cm;
-    rats::outer_product_matrix(cm, contact_p[c]);
-    for (size_t i = 0; i < 3; i++)
-      for (size_t j = 0; j < 3; j++) tm(i+3,(c*6)+j) = cm(i,j);
-  }
+  // tm.resize(6,6*contact_p.size());
+  // tm.setZero();
+  // for (size_t c = 0; c < contact_p.size(); c++) {
+  //   for (size_t i = 0; i < 6; i++) tm(i,(c*6)+i) = 1.0;
+  //   hrp::Matrix33 cm;
+  //   rats::outer_product_matrix(cm, contact_p[c]);
+  //   for (size_t i = 0; i < 3; i++)
+  //     for (size_t j = 0; j < 3; j++) tm(i+3,(c*6)+j) = cm(i,j);
+  // }
 }
 
 void Stabilizer::calcTorque ()

@@ -10,12 +10,6 @@ namespace rats
     return fabs((a)-(b)) <= eps;
   };
   hrp::Vector3 matrix_log(const hrp::Matrix33& m);
-  void rotation_matrix(hrp::Matrix33& rm, const double theta, const hrp::Vector3& axis);
-  inline hrp::Matrix33 rotation_matrix(const double theta, const hrp::Vector3& axis) {
-    hrp::Matrix33 ret;
-    rotation_matrix(ret, theta, axis);
-    return ret;
-  }
 
   // matrix product using quaternion normalization
   void rotm3times (hrp::Matrix33& m12, const hrp::Matrix33& m1, const hrp::Matrix33& m2);
@@ -38,18 +32,6 @@ namespace rats
       }
       return *this;
     }
-    void translate(const hrp::Vector3& v, const std::string& wrt = ":local") {
-      if (wrt == ":local") {
-        pos += rot * v;
-      } else if(wrt == ":world") {
-        pos += v;
-      } else {
-        std::cerr << "**** invalid wrt! ****" << std::endl;
-      }
-    }
-    void rotate_vector(hrp::Vector3& ret, const hrp::Vector3 &v) const {
-      ret = rot * v;
-    }
     void rotate_with_matrix (const hrp::Matrix33& mat, const std::string& wrt = ":local") {
       hrp::Matrix33 rot_org(rot);
       if (wrt == ":local") {		  
@@ -63,16 +45,14 @@ namespace rats
       }
     }
     void rotate (const double theta, const hrp::Vector3& axis, const std::string& wrt = ":local") {
-      rotate_with_matrix(rotation_matrix(theta, axis), wrt);
-    }
-    void difference_position(hrp::Vector3& dif_pos, const coordinates& c) const {
-      dif_pos =  c.pos - pos;
+      Eigen::AngleAxis<double> tmpr(theta, axis);
+      rotate_with_matrix(tmpr.toRotationMatrix(), wrt);
     }
     /* void difference_rotation(hrp::Vector3& dif_rot, const coordinates& c) const { */
     /*   dif_rot = rot * matrix_log(rot.transpose() * c.rot); */
     /* } */
     void difference(hrp::Vector3& dif_pos, hrp::Vector3& dif_rot, const coordinates& c) const {
-      difference_position(dif_pos, c);
+      dif_pos = c.pos - pos;
       difference_rotation(dif_rot, rot, c.rot);
     }
     //abc
@@ -111,8 +91,6 @@ namespace rats
     }
   };
 
-  void outer_product_matrix(hrp::Matrix33 &ret, const hrp::Vector3 &v);
-  void matrix_exponent(hrp::Matrix33& mexp, const hrp::Vector3& omega, double p);
   void mid_coords(coordinates& mid_coords, const double p, const coordinates& c1, const coordinates& c2);
 };
 #endif /* RATSMATRIX_H */
