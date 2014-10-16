@@ -26,37 +26,6 @@ namespace rats
     }
     return mlog;
   }
-  void rotation_matrix(hrp::Matrix33& rm, const double theta, const hrp::Vector3& axis) {
-    double cs, sn, vers, xv, yv, zv, xyv, yzv, zxv, xs, ys, zs;
-    hrp::Vector3 a;
-
-    (cs = std::cos(theta));
-    (sn = std::sin(theta));
-    (vers = (1 - cs));
-    if (axis.norm() > 0) {
-      a = axis.normalized();
-    } else {
-      a = hrp::Vector3(0,0,0);
-    }
-    (xv = ((a(0) * a(0)) * vers));
-    (yv = ((a(1) * a(1)) * vers));
-    (zv = ((a(2) * a(2)) * vers));
-    (xyv = ((a(0) * a(1)) * vers));
-    (yzv = ((a(1) * a(2)) * vers));
-    (zxv = ((a(2) * a(0)) * vers));
-    (xs = (a(0) * sn));
-    (ys = (a(1) * sn));
-    (zs = (a(2) * sn));
-    (rm(0, 0) = (xv + cs));
-    (rm(0, 1) = (xyv - zs));
-    (rm(0, 2) = (zxv + ys));
-    (rm(1, 0) = (xyv + zs));
-    (rm(1, 1) = (yv + cs));
-    (rm(1, 2) = (yzv - xs));
-    (rm(2, 0) = (zxv - ys));
-    (rm(2, 1) = (yzv + xs));
-    (rm(2, 2) = (zv + cs));
-  }
 
   // matrix product using quaternion normalization
   void rotm3times (hrp::Matrix33& m12, const hrp::Matrix33& m1, const hrp::Matrix33& m2) {
