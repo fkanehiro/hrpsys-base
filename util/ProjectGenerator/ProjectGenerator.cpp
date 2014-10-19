@@ -36,6 +36,7 @@ int main (int argc, char** argv)
   std::string output;
   std::vector<std::string> inputs, filenames; // filenames is for conf file
   std::string conf_file_option, robothardware_conf_file_option, integrate("true"), dt("0.005"), timeStep(dt), joint_properties;
+  bool use_highgain_mode(true);
 
   int rtmargc=0;
   std::vector<char *> rtmargv;
@@ -58,6 +59,8 @@ int main (int argc, char** argv)
       if (++i < argc) robothardware_conf_file_option += std::string("\n") + argv[i];
     } else if ( arg == "--joint-properties" ) {
       if (++i < argc) joint_properties = argv[i];
+    } else if ( arg == "--use-highgain-mode" ) {
+      if (++i < argc) use_highgain_mode = (std::string(argv[i])==std::string("true")?true:false);
     } else if ( arg.find("--gtest_output") == 0  ||arg.find("--text") == 0 || arg.find("__log") == 0 || arg.find("__name") == 0 ) { // skip
     } else if ( arg[0] == '-'  ) {
       rtmargv.push_back(argv[i]);
@@ -135,11 +138,18 @@ int main (int argc, char** argv)
 	xmlTextWriterWriteAttribute(writer, BAD_CAST "select", BAD_CAST "true");
 
 	xmlTextWriterWriteProperty(writer, name+"(Robot)0.period", dt);
-	xmlTextWriterWriteProperty(writer, "HGcontroller0.period", dt);
-	xmlTextWriterWriteProperty(writer, "HGcontroller0.factory", "HGcontroller");
-	xmlTextWriterWriteProperty(writer, "connection", "HGcontroller0.qOut:"+name+"(Robot)0.qRef");
-	xmlTextWriterWriteProperty(writer, "connection", "HGcontroller0.dqOut:"+name+"(Robot)0.dqRef");
-	xmlTextWriterWriteProperty(writer, "connection", "HGcontroller0.ddqOut:"+name+"(Robot)0.ddqRef");
+        if (use_highgain_mode) {
+          xmlTextWriterWriteProperty(writer, "HGcontroller0.period", dt);
+          xmlTextWriterWriteProperty(writer, "HGcontroller0.factory", "HGcontroller");
+          xmlTextWriterWriteProperty(writer, "connection", "HGcontroller0.qOut:"+name+"(Robot)0.qRef");
+          xmlTextWriterWriteProperty(writer, "connection", "HGcontroller0.dqOut:"+name+"(Robot)0.dqRef");
+          xmlTextWriterWriteProperty(writer, "connection", "HGcontroller0.ddqOut:"+name+"(Robot)0.ddqRef");
+        } else {
+          xmlTextWriterWriteProperty(writer, "PDcontroller0.period", dt);
+          xmlTextWriterWriteProperty(writer, "PDcontroller0.factory", "PDcontroller");
+          xmlTextWriterWriteProperty(writer, "connection", "PDcontroller0.torque:"+name+"(Robot)0.tauRef");
+          xmlTextWriterWriteProperty(writer, "connection", ""+name+"(Robot)0.q:PDcontroller0.angle");
+        }
 	xmlTextWriterEndElement(writer); // item
 
 
@@ -149,9 +159,13 @@ int main (int argc, char** argv)
 	xmlTextWriterWriteAttribute(writer, BAD_CAST "url", BAD_CAST filename.c_str());
 
 	xmlTextWriterWriteProperty(writer, "rtcName", name + "(Robot)0");
-	xmlTextWriterWriteProperty(writer, "inport", "qRef:JOINT_VALUE");
-	xmlTextWriterWriteProperty(writer, "inport", "dqRef:JOINT_VELOCITY");
-	xmlTextWriterWriteProperty(writer, "inport", "ddqRef:JOINT_ACCELERATION");
+        if (use_highgain_mode) {
+          xmlTextWriterWriteProperty(writer, "inport", "qRef:JOINT_VALUE");
+          xmlTextWriterWriteProperty(writer, "inport", "dqRef:JOINT_VELOCITY");
+          xmlTextWriterWriteProperty(writer, "inport", "ddqRef:JOINT_ACCELERATION");
+        } else {
+          xmlTextWriterWriteProperty(writer, "inport", "tauRef:JOINT_TORQUE");
+        }
 	xmlTextWriterWriteProperty(writer, "outport", "q:JOINT_VALUE");
     xmlTextWriterWriteProperty(writer, "outport", "tau:JOINT_TORQUE");
 
@@ -241,7 +255,7 @@ int main (int argc, char** argv)
                                        (joint_properties_map.find(j_property) != joint_properties_map.end()) ? joint_properties_map[j_property] : "0.0");
             j_property = joint_name+".mode";
 	    xmlTextWriterWriteProperty(writer, j_property,
-                                       (joint_properties_map.find(j_property) != joint_properties_map.end()) ? joint_properties_map[j_property] : "HighGain");
+                                       (joint_properties_map.find(j_property) != joint_properties_map.end()) ? joint_properties_map[j_property] : (use_highgain_mode?"HighGain":"Torque"));
             j_property = joint_name+".NumOfAABB";
 	    xmlTextWriterWriteProperty(writer, j_property,
                                        (joint_properties_map.find(j_property) != joint_properties_map.end()) ? joint_properties_map[j_property] : "1");
