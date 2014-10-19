@@ -14,11 +14,11 @@ ProjectGenerator [input files] [options]
 &nbsp;&nbsp;Specify output file path (Required)<br>
 &nbsp;&nbsp;For example, when output file is <i>test.xml</i>, ProjectGenerator generates <i>test.xml</i>, <i>test.conf</i>, and <i>test.RobotHardware.conf</i>.<br>
 --integrate [true or false]<br>
-&nbsp;&nbsp;Use forward dynamics mode or kinematics mode.<br>
+&nbsp;&nbsp;Use forward dynamics mode or kinematics mode (by default, true).<br>
 --dt [dt]<br>
-&nbsp;&nbsp;<i>dt</i> is controllers' time step[s].<br>
+&nbsp;&nbsp;<i>dt</i> is controllers' time step[s] (by default, 0.005[s]).<br>
 --timestep [timestep]<br>
-&nbsp;&nbsp;<i>timestep</i> is simulator time step[s].<br>
+&nbsp;&nbsp;<i>timestep</i> is simulator time step[s] (by default, 0.005[s]).<br>
 --conf-file-option [conf file option]<br>
 &nbsp;&nbsp;<i>conf file option</i> is added to controller's config file such as <i>test.conf</i>.<br>
 --robothardware-conf-file-option [robothardware conf file option]<br>
@@ -26,6 +26,8 @@ ProjectGenerator [input files] [options]
 --joint-properties [joint properties]<br>
 &nbsp;&nbsp;<i>joint properties</i> are properties for each joint. Specify property name and property value.<br>
 &nbsp;&nbsp;For example, <i>--joint-properties RLEG_JOINT0.angle,0,RLEG_JOINT1.mode,Torque</i><br>
+--use-highgain-mode [true or false]<br>
+&nbsp;&nbsp;Use HighGain mode for robot's joints or Torque mode (by default, use true, use HighGain mode).<br>
 
 \section hrpsys-simulator hrpsys-simulator
 
