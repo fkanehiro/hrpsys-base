@@ -678,7 +678,7 @@ void Stabilizer::getActualParameters ()
   //act_root_rot = m_robot->rootLink()->R;
 
   // new ZMP calculation
-  // Kajita's feedback low
+  // Kajita's feedback law
   hrp::Vector3 dcog=foot_origin_rot * (ref_cog - act_cog);
   hrp::Vector3 dcogvel=foot_origin_rot * (ref_cogvel - act_cogvel);
   hrp::Vector3 dzmp=foot_origin_rot * (ref_zmp - act_zmp);
@@ -933,7 +933,7 @@ void Stabilizer::calcTPCC() {
 
     // stabilizer loop
     if ( ( m_force[ST_LEFT].data.length() > 0 && m_force[ST_RIGHT].data.length() > 0 ) ) {
-      // Choi's feedback low
+      // Choi's feedback law
       hrp::Vector3 cog = m_robot->calcCM();
       hrp::Vector3 newcog = hrp::Vector3::Zero();
 #ifdef USE_EEFM_STABILIZER
