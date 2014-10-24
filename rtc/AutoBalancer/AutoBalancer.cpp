@@ -418,7 +418,7 @@ void AutoBalancer::getTargetParameters()
   }
   m_robot->calcForwardKinematics();
   coordinates rc, lc;
-  if ( is_legged_robot ) {
+  {
     coordinates tmp_fix_coords;
     if (!zmp_interpolator->isEmpty()) {
       double default_zmp_offsets_output[6];
@@ -514,19 +514,15 @@ void AutoBalancer::getTargetParameters()
     }
   }
   if (control_mode == MODE_IDLE) {
-    if ( is_legged_robot ) {
-      ref_zmp(0) = ref_cog(0);
-      ref_zmp(1) = ref_cog(1);
-      ref_zmp(2) = (rc.pos(2) + lc.pos(2)) / 2.0;
-    } else ref_zmp = hrp::Vector3(0,0,0);
+    ref_zmp(0) = ref_cog(0);
+    ref_zmp(1) = ref_cog(1);
+    ref_zmp(2) = (rc.pos(2) + lc.pos(2)) / 2.0;
   } else if (gg_is_walking) {
     ref_zmp = gg->get_refzmp();
   } else {
-    if ( is_legged_robot ) {
-      ref_zmp(0) = ref_cog(0);
-      ref_zmp(1) = ref_cog(1);
-      ref_zmp(2) = (rc.pos(2) + lc.pos(2)) / 2.0;
-    } else ref_zmp = hrp::Vector3(0,0,0);
+    ref_zmp(0) = ref_cog(0);
+    ref_zmp(1) = ref_cog(1);
+    ref_zmp(2) = (rc.pos(2) + lc.pos(2)) / 2.0;
   }
   if ( transition_count > 0 ) {
     ref_zmp = transition_smooth_gain * ( ref_zmp - prev_ref_zmp ) + prev_ref_zmp;
