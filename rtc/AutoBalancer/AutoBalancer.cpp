@@ -386,6 +386,8 @@ void AutoBalancer::getCurrentParameters()
   for ( int i = 0; i < m_robot->numJoints(); i++ ){
     qorg[i] = m_robot->joint(i)->q;
   }
+  ikp["rleg"].getCurrentEndCoords(ikp["rleg"].current_end_coords);
+  ikp["lleg"].getCurrentEndCoords(ikp["lleg"].current_end_coords);
 }
 
 void AutoBalancer::getTargetParameters()
@@ -756,7 +758,7 @@ bool AutoBalancer::setFootSteps(const OpenHRP::AutoBalancerService::FootstepSequ
 {
   std::cerr << "set_foot_steps" << std::endl;
   coordinates tmpfs, initial_support_coords, initial_input_coords, fstrans;
-  ikp[std::string(fs[0].leg)].getCurrentEndCoords(initial_support_coords);
+  initial_support_coords = ikp[std::string(fs[0].leg)].target_end_coords;
   memcpy(initial_input_coords.pos.data(), fs[0].pos, sizeof(double)*3);
   initial_input_coords.rot = (Eigen::Quaternion<double>(fs[0].rot[0], fs[0].rot[1], fs[0].rot[2], fs[0].rot[3])).normalized().toRotationMatrix(); // rtc: (x, y, z, w) but eigen: (w, x, y, z)
 
@@ -868,11 +870,8 @@ void AutoBalancer::copyRatscoords2Footstep(OpenHRP::AutoBalancerService::Footste
 
 bool AutoBalancer::getFootstepParam(OpenHRP::AutoBalancerService::FootstepParam& i_param)
 {
-  coordinates rleg_endcoords, lleg_endcoords;
-  ikp["rleg"].getCurrentEndCoords(rleg_endcoords);
-  ikp["lleg"].getCurrentEndCoords(lleg_endcoords);
-  copyRatscoords2Footstep(i_param.rleg_coords, rleg_endcoords);
-  copyRatscoords2Footstep(i_param.lleg_coords, lleg_endcoords);
+  copyRatscoords2Footstep(i_param.rleg_coords, ikp["rleg"].current_end_coords);
+  copyRatscoords2Footstep(i_param.lleg_coords, ikp["lleg"].current_end_coords);
   copyRatscoords2Footstep(i_param.support_leg_coords, gg->get_support_leg_coords());
   copyRatscoords2Footstep(i_param.swing_leg_coords, gg->get_swing_leg_coords());
   copyRatscoords2Footstep(i_param.swing_leg_src_coords, gg->get_swing_leg_src_coords());
