@@ -935,16 +935,8 @@ void Stabilizer::calcTPCC() {
       // Choi's feedback law
       hrp::Vector3 cog = m_robot->calcCM();
       hrp::Vector3 newcog = hrp::Vector3::Zero();
-      hrp::Vector3 foot_origin_pos, dcog, dzmp;
-      hrp::Matrix33 foot_origin_rot;
-      if (st_algorithm == OpenHRP::StabilizerService::EEFM) {
-        calcFootOriginCoords(foot_origin_pos, foot_origin_rot);
-        dcog = foot_origin_rot * (ref_cog - act_cog);
-        dzmp = foot_origin_rot * (ref_zmp - act_zmp);
-      } else {
-        dcog = (ref_cog - act_cog);
-        dzmp = (ref_zmp - act_zmp);
-      }
+      hrp::Vector3 dcog(ref_cog - act_cog);
+      hrp::Vector3 dzmp(ref_zmp - act_zmp);
       for (size_t i = 0; i < 2; i++) {
         double uu = ref_cogvel(i) - k_tpcc_p[i] * transition_smooth_gain * dzmp(i)
                                   + k_tpcc_x[i] * transition_smooth_gain * dcog(i);
