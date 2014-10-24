@@ -726,12 +726,17 @@ void AutoBalancer::waitABCTransition()
 }
 bool AutoBalancer::goPos(const double& x, const double& y, const double& th)
 {
-  coordinates foot_midcoords;
-  mid_coords(foot_midcoords, 0.5, ikp["rleg"].target_end_coords, ikp["lleg"].target_end_coords);
-  gg->go_pos_param_2_footstep_list(x, y, th, foot_midcoords);
-  gg->print_footstep_list();
-  startWalking();
-  return 0;
+  if ( !gg_is_walking ) {
+    coordinates foot_midcoords;
+    mid_coords(foot_midcoords, 0.5, ikp["rleg"].target_end_coords, ikp["lleg"].target_end_coords);
+    gg->go_pos_param_2_footstep_list(x, y, th, foot_midcoords);
+    gg->print_footstep_list();
+    startWalking();
+    return true;
+  } else {
+    std::cerr << "Cannot goPos while walking." << std::endl;
+    return false;
+  }
 }
 
 bool AutoBalancer::goVelocity(const double& vx, const double& vy, const double& vth)
@@ -744,7 +749,7 @@ bool AutoBalancer::goVelocity(const double& vx, const double& vy, const double& 
     gg->initialize_velocity_mode(foot_midcoords, vx, vy, vth);
     startWalking();
   }
-  return 0;
+  return true;
 }
 
 bool AutoBalancer::goStop ()
@@ -756,32 +761,37 @@ bool AutoBalancer::goStop ()
 
 bool AutoBalancer::setFootSteps(const OpenHRP::AutoBalancerService::FootstepSequence& fs)
 {
-  std::cerr << "set_foot_steps" << std::endl;
-  coordinates tmpfs, initial_support_coords, initial_input_coords, fstrans;
-  initial_support_coords = ikp[std::string(fs[0].leg)].target_end_coords;
-  memcpy(initial_input_coords.pos.data(), fs[0].pos, sizeof(double)*3);
-  initial_input_coords.rot = (Eigen::Quaternion<double>(fs[0].rot[0], fs[0].rot[1], fs[0].rot[2], fs[0].rot[3])).normalized().toRotationMatrix(); // rtc: (x, y, z, w) but eigen: (w, x, y, z)
+  if (!gg_is_walking) {
+    std::cerr << "set_foot_steps" << std::endl;
+    coordinates tmpfs, initial_support_coords, initial_input_coords, fstrans;
+    initial_support_coords = ikp[std::string(fs[0].leg)].target_end_coords;
+    memcpy(initial_input_coords.pos.data(), fs[0].pos, sizeof(double)*3);
+    initial_input_coords.rot = (Eigen::Quaternion<double>(fs[0].rot[0], fs[0].rot[1], fs[0].rot[2], fs[0].rot[3])).normalized().toRotationMatrix(); // rtc: (x, y, z, w) but eigen: (w, x, y, z)
 
-  gg->clear_footstep_node_list();
-  for (size_t i = 0; i < fs.length(); i++) {
-    std::string leg(fs[i].leg);
-    if (leg == "rleg" || leg == "lleg") {
-      memcpy(tmpfs.pos.data(), fs[i].pos, sizeof(double)*3);
-      tmpfs.rot = (Eigen::Quaternion<double>(fs[i].rot[0], fs[i].rot[1], fs[i].rot[2], fs[i].rot[3])).normalized().toRotationMatrix(); // rtc: (x, y, z, w) but eigen: (w, x, y, z)
-      initial_input_coords.transformation(fstrans, tmpfs);
-      tmpfs = initial_support_coords;
-      tmpfs.transform(fstrans);
-      gg->append_footstep_node(leg, tmpfs);
-    } else {
-      std::cerr << "no such target : " << leg << std::endl;
-      return false;
+    gg->clear_footstep_node_list();
+    for (size_t i = 0; i < fs.length(); i++) {
+      std::string leg(fs[i].leg);
+      if (leg == "rleg" || leg == "lleg") {
+        memcpy(tmpfs.pos.data(), fs[i].pos, sizeof(double)*3);
+        tmpfs.rot = (Eigen::Quaternion<double>(fs[i].rot[0], fs[i].rot[1], fs[i].rot[2], fs[i].rot[3])).normalized().toRotationMatrix(); // rtc: (x, y, z, w) but eigen: (w, x, y, z)
+        initial_input_coords.transformation(fstrans, tmpfs);
+        tmpfs = initial_support_coords;
+        tmpfs.transform(fstrans);
+        gg->append_footstep_node(leg, tmpfs);
+      } else {
+        std::cerr << "no such target : " << leg << std::endl;
+        return false;
+      }
     }
+    std::cerr << "[AutoBalancer] : print footsteps " << std::endl;
+    gg->append_finalize_footstep();
+    gg->print_footstep_list();
+    startWalking();
+    return true;
+  } else {
+    std::cerr << "Cannot setFootSteps while walking." << std::endl;
+    return false;
   }
-  std::cerr << "[AutoBalancer] : print footsteps " << std::endl;
-  gg->append_finalize_footstep();
-  gg->print_footstep_list();
-  startWalking();
-  return true;
 }
 
 void AutoBalancer::waitFootSteps()
@@ -810,6 +820,26 @@ bool AutoBalancer::setGaitGeneratorParam(const OpenHRP::AutoBalancerService::Gai
   }
   gg->set_swing_trajectory_delay_time_offset(i_param.swing_trajectory_delay_time_offset);
   gg->set_stair_trajectory_way_point_offset(hrp::Vector3(i_param.stair_trajectory_way_point_offset[0], i_param.stair_trajectory_way_point_offset[1], i_param.stair_trajectory_way_point_offset[2]));
+  // print
+  hrp::Vector3 tmpv;
+  gg->get_stride_parameters(tmpv(0), tmpv(1), tmpv(2));
+  std::cerr << "  stride_parameter = " << tmpv.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << std::endl;
+  std::cerr << "  default_step_time = " << gg->get_default_step_time() << std::endl;
+  std::cerr << "  default_step_height = " << gg->get_default_step_height() << std::endl;
+  std::cerr << "  default_double_support_ratio = " << gg->get_default_double_support_ratio() << std::endl;
+  std::cerr << "  default_orbit_type = ";
+  if (gg->get_default_orbit_type() == gait_generator::SHUFFLING) {
+    std::cerr << "SHUFFLING" << std::endl;
+  } else if (gg->get_default_orbit_type() == gait_generator::CYCLOID) {
+    std::cerr << "CYCLOID" << std::endl;
+  } else if (gg->get_default_orbit_type() == gait_generator::RECTANGLE) {
+    std::cerr << "RECTANGLE" << std::endl;
+  } else if (gg->get_default_orbit_type() == gait_generator::STAIR) {
+    std::cerr << "STAIR" << std::endl;
+  }
+  std::cerr << "  swing_trajectory_delay_time_offset = " << gg->get_swing_trajectory_delay_time_offset() << std::endl;
+  tmpv = gg->get_stair_trajectory_way_point_offset();
+  std::cerr << "  stair_trajectory_way_point_offset = " << tmpv.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << std::endl;
   return true;
 };
 
