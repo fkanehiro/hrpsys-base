@@ -658,7 +658,6 @@ void AutoBalancer::stopABCparam()
   }
   prev_ref_zmp = ref_zmp;
   control_mode = MODE_SYNC;
-  gg_solved = gg_is_walking = false;
 }
 
 void AutoBalancer::startWalking ()
@@ -720,8 +719,8 @@ bool AutoBalancer::stopAutoBalancer ()
 
 void AutoBalancer::waitABCTransition()
 {
-  while (transition_count != 0) usleep(10);
-  usleep(10);
+  while (transition_count != 0) usleep(1000);
+  usleep(1000);
 }
 bool AutoBalancer::goPos(const double& x, const double& y, const double& th)
 {
@@ -787,8 +786,8 @@ void AutoBalancer::waitFootSteps()
 {
   //while (gg_is_walking) usleep(10);
   while (gg_is_walking || transition_count != 0 )
-    usleep(10);
-  usleep(10);
+    usleep(1000);
+  usleep(1000);
   gg->set_offset_velocity_param(0,0,0);
 }
 
