@@ -637,8 +637,8 @@ void AutoBalancer::solveLimbIK ()
 void AutoBalancer::startABCparam(const OpenHRP::AutoBalancerService::StrSequence& limbs)
 {
   std::cerr << "[AutoBalancer] start auto balancer mode" << std::endl;
-  transition_count = -MAX_TRANSITION_COUNT; // when start impedance, count up to 0
   Guard guard(m_mutex);
+  transition_count = -MAX_TRANSITION_COUNT; // when start impedance, count up to 0
   for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
     it->second.is_active = false;
   }
@@ -676,12 +676,18 @@ void AutoBalancer::startWalking ()
     startABCparam(fix_limbs);
     waitABCTransition();
   }
-  std::string init_support_leg (gg->get_footstep_front_leg() == "rleg" ? "lleg" : "rleg");
-  std::string init_swing_leg (gg->get_footstep_front_leg());
-  gg->set_default_zmp_offsets(default_zmp_offsets);
-  gg->initialize_gait_parameter(ref_cog, ikp[init_support_leg].target_end_coords, ikp[init_swing_leg].target_end_coords);
+  {
+    Guard guard(m_mutex);
+    std::string init_support_leg (gg->get_footstep_front_leg() == "rleg" ? "lleg" : "rleg");
+    std::string init_swing_leg (gg->get_footstep_front_leg());
+    gg->set_default_zmp_offsets(default_zmp_offsets);
+    gg->initialize_gait_parameter(ref_cog, ikp[init_support_leg].target_end_coords, ikp[init_swing_leg].target_end_coords);
+  }
   while ( !gg->proc_one_tick() );
-  gg_is_walking = gg_solved = true;
+  {
+    Guard guard(m_mutex);
+    gg_is_walking = gg_solved = true;
+  }
 }
 
 void AutoBalancer::stopWalking ()
