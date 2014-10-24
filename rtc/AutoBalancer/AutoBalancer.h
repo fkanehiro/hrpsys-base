@@ -160,6 +160,7 @@ class AutoBalancer
   struct ABCIKparam {
     hrp::Vector3 target_p0, current_p0, target2foot_offset_pos;
     hrp::Matrix33 target_r0, current_r0, target2foot_offset_rot;
+    rats::coordinates target_end_coords;
     std::string target_name, base_name;
     hrp::JointPathExPtr manip;
     bool is_active;

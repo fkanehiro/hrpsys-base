@@ -499,6 +499,8 @@ void AutoBalancer::getTargetParameters()
         it->second.target_r0 = m_robot->link(it->second.target_name)->R;
       }
     }
+    ikp["rleg"].getTargetEndCoords(ikp["rleg"].target_end_coords);
+    ikp["lleg"].getTargetEndCoords(ikp["lleg"].target_end_coords);
     ikp["rleg"].getRobotEndCoords(rc, m_robot);
     ikp["lleg"].getRobotEndCoords(lc, m_robot);
     rc.pos += rc.rot * default_zmp_offsets[0]; /* rleg */
@@ -506,7 +508,9 @@ void AutoBalancer::getTargetParameters()
     if (gg_is_walking) {
       ref_cog = gg->get_cog();
     } else {
+      hrp::Vector3 tmp_ref_cog(m_robot->calcCM());
       ref_cog = (rc.pos+lc.pos)/2.0;
+      ref_cog(2) = tmp_ref_cog(2);
     }
   }
   if (control_mode == MODE_IDLE) {
@@ -679,24 +683,17 @@ void AutoBalancer::startWalking ()
     startABCparam(fix_limbs);
     waitABCTransition();
   }
-  hrp::Vector3 cog(m_robot->calcCM());
   std::string init_support_leg (gg->get_footstep_front_leg() == "rleg" ? "lleg" : "rleg");
   std::string init_swing_leg (gg->get_footstep_front_leg());
-  coordinates spc, swc;
   gg->set_default_zmp_offsets(default_zmp_offsets);
-  ikp[init_support_leg].getTargetEndCoords(spc);
-  ikp[init_swing_leg].getTargetEndCoords(swc);
-  gg->initialize_gait_parameter(cog, spc, swc);
+  gg->initialize_gait_parameter(ref_cog, ikp[init_support_leg].target_end_coords, ikp[init_swing_leg].target_end_coords);
   while ( !gg->proc_one_tick() );
   gg_is_walking = gg_solved = true;
 }
 
 void AutoBalancer::stopWalking ()
 {
-  coordinates rleg_endcoords, lleg_endcoords;
-  ikp["rleg"].getTargetEndCoords(rleg_endcoords);
-  ikp["lleg"].getTargetEndCoords(lleg_endcoords);
-  mid_coords(fix_leg_coords, 0.5, rleg_endcoords, lleg_endcoords);
+  mid_coords(fix_leg_coords, 0.5, ikp["rleg"].target_end_coords, ikp["lleg"].target_end_coords);
   fixLegToCoords(":both", fix_leg_coords);
   gg->clear_footstep_node_list();
   if (return_control_mode == MODE_IDLE) stopABCparam();
@@ -734,10 +731,7 @@ void AutoBalancer::waitABCTransition()
 bool AutoBalancer::goPos(const double& x, const double& y, const double& th)
 {
   coordinates foot_midcoords;
-  coordinates rleg_endcoords, lleg_endcoords;
-  ikp["rleg"].getTargetEndCoords(rleg_endcoords);
-  ikp["lleg"].getTargetEndCoords(lleg_endcoords);
-  mid_coords(foot_midcoords, 0.5, rleg_endcoords, lleg_endcoords);
+  mid_coords(foot_midcoords, 0.5, ikp["rleg"].target_end_coords, ikp["lleg"].target_end_coords);
   gg->go_pos_param_2_footstep_list(x, y, th, foot_midcoords);
   gg->print_footstep_list();
   startWalking();
@@ -750,10 +744,7 @@ bool AutoBalancer::goVelocity(const double& vx, const double& vy, const double& 
     gg->set_velocity_param(vx, vy, vth);
   } else {
     coordinates foot_midcoords;
-    coordinates rleg_endcoords, lleg_endcoords;
-    ikp["rleg"].getTargetEndCoords(rleg_endcoords);
-    ikp["lleg"].getTargetEndCoords(lleg_endcoords);
-    mid_coords(foot_midcoords, 0.5, rleg_endcoords, lleg_endcoords);
+    mid_coords(foot_midcoords, 0.5, ikp["rleg"].target_end_coords, ikp["lleg"].target_end_coords);
     gg->initialize_velocity_mode(foot_midcoords, vx, vy, vth);
     startWalking();
   }
