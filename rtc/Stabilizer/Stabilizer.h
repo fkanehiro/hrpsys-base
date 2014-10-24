@@ -238,6 +238,7 @@ class Stabilizer
   hrp::Vector3 ref_zmp, ref_cog, ref_cogvel, prev_ref_cog, prev_ref_zmp;
   hrp::Vector3 act_zmp, act_cog, act_cogvel, rel_act_zmp, prev_act_cog, prev_act_cogvel, act_base_rpy, current_base_rpy, current_base_pos;
   double zmp_origin_off, transition_smooth_gain, prev_act_force_z[2];
+  OpenHRP::StabilizerService::STAlgorithm st_algorithm;
   // TPCC
   double k_tpcc_p[2], k_tpcc_x[2], d_rpy[2], k_brot_p[2], k_brot_tc[2];
   // RUN ST

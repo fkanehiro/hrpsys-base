@@ -9,6 +9,15 @@ module OpenHRP
     typedef double DblArray2[2];
 
     /**
+     * @enum STAlgorithm
+     * @brief Algorithm of Stabilizer
+     */
+    enum STAlgorithm {
+      TPCC,
+      EEFM
+    };
+
+    /**
      * @struct stParam
      * @brief Stabilizer Parameters.
      */
@@ -58,6 +67,8 @@ module OpenHRP
       double eefm_pos_margin_time;
       /// Inside foot margine [m]. Distance between foot end effector position and foot inside edge.
       double eefm_leg_inside_margin;
+      // common
+      STAlgorithm st_algorithm;
     };
 
     /**
