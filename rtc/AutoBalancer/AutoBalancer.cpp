@@ -649,13 +649,6 @@ void AutoBalancer::startABCparam(const OpenHRP::AutoBalancerService::StrSequence
     std::cerr << "abc limb [" << std::string(limbs[i]) << "]" << std::endl;
   }
 
-  for ( int i = 0; i < m_robot->numJoints(); i++ ){
-    m_robot->joint(i)->q = m_qRef.data[i];
-  }
-  m_robot->calcForwardKinematics();
-  fixLegToCoords(":both", fix_leg_coords);
-  current_root_p = m_robot->rootLink()->p;
-  current_root_R = m_robot->rootLink()->R;
   control_mode = MODE_ABC;
 }
 
