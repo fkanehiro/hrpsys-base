@@ -155,8 +155,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   if (!loadBodyFromModelLoader(m_robot, prop["model"].c_str(), 
                                CosNaming::NamingContext::_duplicate(naming.getRootContext())
                                )){
-    std::cerr << "failed to load model[" << prop["model"] << "] in "
-              << m_profile.instance_name << std::endl;
+    std::cerr << "[" << m_profile.instance_name << "]failed to load model[" << prop["model"] << "]" << std::endl;
     return RTC::RTC_ERROR;
   }
 
@@ -690,10 +689,18 @@ void Stabilizer::getActualParameters ()
       new_refzmp(i) += eefm_k1[i] * transition_smooth_gain * dcog(i) + eefm_k2[i] * transition_smooth_gain * dcogvel(i) + eefm_k3[i] * transition_smooth_gain * dzmp(i) + ref_zmp_aux(i);
     }
     if (DEBUGP) {
-      std::cerr << "COG [" << ref_cog(0)*1e3 << " " << ref_cog(1)*1e3 << " " << ref_cog(2)*1e3 << "] [" << act_cog(0)*1e3 << " " << act_cog(1)*1e3 << " " << act_cog(2)*1e3 << "]" << std::endl;
-      std::cerr << "vel [" << ref_cogvel(0) << " " << ref_cogvel(1) << " " << ref_cogvel(2) << "] [" << act_cogvel(0) << " " << act_cogvel(1) << " " << act_cogvel(2) << "]" << std::endl;
-      std::cerr << "ZMP [" << ref_zmp(0)*1e3 << " " << ref_zmp(1)*1e3 << " " << ref_zmp(2)*1e3 << "] [" << act_zmp(0)*1e3 << " " << act_zmp(1)*1e3 << " " << act_zmp(2)*1e3 << "]" << std::endl;
-      std::cerr << "dZMP [" << (new_refzmp(0)-ref_zmp(0)) *1e3 << " " << (new_refzmp(1)-ref_zmp(1))*1e3 << " " << (new_refzmp(2)-ref_zmp(2))*1e3 << "]" << std::endl;
+      std::cerr << "[" << m_profile.instance_name << "] state values" << std::endl;
+      std::cerr << "[" << m_profile.instance_name << "]   "
+                << "ref_cog    = " << hrp::Vector3(ref_cog*1e3).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]"))
+                << ", act_cog    = " << hrp::Vector3(act_cog*1e3).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[mm]" << std::endl;
+      std::cerr << "[" << m_profile.instance_name << "]   "
+                << "ref_cogvel = " << hrp::Vector3(ref_cogvel*1e3).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]"))
+                << ", act_cogvel = " << hrp::Vector3(act_cogvel*1e3).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[mm/s]" << std::endl;
+      std::cerr << "[" << m_profile.instance_name << "]   "
+                << "ref_zmp    = " << hrp::Vector3(ref_zmp*1e3).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]"))
+                << ", act_zmp    = " << hrp::Vector3(act_zmp*1e3).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[mm]" << std::endl;
+      std::cerr << "[" << m_profile.instance_name << "]   "
+                << "ref_zmp    = " << hrp::Vector3((new_refzmp - ref_zmp)*1e3).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[mm]" << std::endl;
     }
 
     // distribute new ZMP into foot force & moment
@@ -714,9 +721,6 @@ void Stabilizer::getActualParameters ()
         alpha = 1.0;
       } else {
         alpha = fabs(new_refzmp(1) - ledge)/ fabs(ledge-redge);
-      }
-      if (DEBUGP) {
-        std::cerr << "alpha [" << alpha << "]" << std::endl;
       }
       ref_foot_force[0] = hrp::Vector3(0,0, alpha * 9.8 * total_mass);
       ref_foot_force[1] = hrp::Vector3(0,0, (1-alpha) * 9.8 * total_mass);
@@ -764,11 +768,18 @@ void Stabilizer::getActualParameters ()
       ref_foot_moment[0] = foot_origin_rot.transpose() * ref_foot_moment[0];
       ref_foot_moment[1] = foot_origin_rot.transpose() * ref_foot_moment[1];
       if (DEBUGP) {
-        std::cerr << "tau [" << tau_0(0) << " " << tau_0(1) << " " << tau_0(2) << "]" << std::endl;
-        std::cerr << "fR [" << ref_foot_force[0](0) << " " << ref_foot_force[0](1) << " " << ref_foot_force[0](2) << "]" << std::endl;
-        std::cerr << "fL [" << ref_foot_force[1](0) << " " << ref_foot_force[1](1) << " " << ref_foot_force[1](2) << "]" << std::endl;
-        std::cerr << "tR [" << ref_foot_moment[0](0) << " " << ref_foot_moment[0](1) << " " << ref_foot_moment[0](2) << "]" << std::endl;
-        std::cerr << "tL [" << ref_foot_moment[1](0) << " " << ref_foot_moment[1](1) << " " << ref_foot_moment[1](2) << "]" << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "] force moment distribution" << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "]   alpha = " << alpha << "" << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "]   "
+                  << "total_tau    = " << hrp::Vector3(tau_0).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[Nm]" << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "]   "
+                  << "ref_force_R  = " << hrp::Vector3(ref_foot_force[0]).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[N]" << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "]   "
+                  << "ref_force_L  = " << hrp::Vector3(ref_foot_force[1]).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[N]" << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "]   "
+                  << "ref_moment_R = " << hrp::Vector3(ref_foot_moment[0]).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[Nm]" << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "]   "
+                  << "ref_moment_L = " << hrp::Vector3(ref_foot_moment[1]).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[Nm]" << std::endl;
       }
       // for debug output
       new_refzmp = foot_origin_rot.transpose() * (new_refzmp - foot_origin_pos);
@@ -1284,7 +1295,7 @@ RTC::ReturnCode_t Stabilizer::onRateChanged(RTC::UniqueId ec_id)
 
 void Stabilizer::sync_2_st ()
 {
-  std::cerr << "Sync IDLE => ST"  << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "] " << "Sync IDLE => ST"  << std::endl;
   pangx_ref = pangy_ref = pangx = pangy = 0;
   rdx = rdy = rx = ry = 0;
   d_rpy[0] = d_rpy[1] = 0;
@@ -1302,7 +1313,7 @@ void Stabilizer::sync_2_st ()
 
 void Stabilizer::sync_2_idle ()
 {
-  std::cerr << "Sync ST => IDLE"  << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "] " << "Sync ST => IDLE"  << std::endl;
   transition_count = MAX_TRANSITION_COUNT;
   for (int i = 0; i < m_robot->numJoints(); i++ ) {
     transition_joint_q[i] = m_robot->joint(i)->q;
@@ -1312,20 +1323,20 @@ void Stabilizer::sync_2_idle ()
 void Stabilizer::startStabilizer(void)
 {
   if ( transition_count == 0 && control_mode == MODE_IDLE ) {
-    std::cerr << "START ST"  << std::endl;
+    std::cerr << "[" << m_profile.instance_name << "] " << "Start ST"  << std::endl;
     sync_2_st();
     waitSTTransition();
-    std::cerr << "START ST DONE"  << std::endl;
+    std::cerr << "[" << m_profile.instance_name << "] " << "Start ST DONE"  << std::endl;
   }
 }
 
 void Stabilizer::stopStabilizer(void)
 {
   if ( transition_count == 0 && (control_mode == MODE_ST || control_mode == MODE_AIR) ) {
-    std::cerr << "STOP ST" << std::endl;
+    std::cerr << "[" << m_profile.instance_name << "] " << "Stop ST"  << std::endl;
     control_mode = MODE_SYNC_TO_IDLE;
     waitSTTransition();
-    std::cerr << "STOP ST DONE"  << std::endl;
+    std::cerr << "[" << m_profile.instance_name << "] " << "Stop ST DONE"  << std::endl;
   }
 }
 
@@ -1368,27 +1379,35 @@ void Stabilizer::getParameter(OpenHRP::StabilizerService::stParam& i_stp)
 
 void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
 {
+  std::cerr << "[" << m_profile.instance_name << "] setParameter" << std::endl;
+  for (size_t i = 0; i < 2; i++) {
+    k_tpcc_p[i] = i_stp.k_tpcc_p[i];
+    k_tpcc_x[i] = i_stp.k_tpcc_x[i];
+    k_brot_p[i] = i_stp.k_brot_p[i];
+    k_brot_tc[i] = i_stp.k_brot_tc[i];
+  }
+  std::cerr << "[" << m_profile.instance_name << "]  TPCC" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   k_tpcc_p  = [" << k_tpcc_p[0] << ", " <<  k_tpcc_p[1] << "]" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   k_tpcc_x  = [" << k_tpcc_x[0] << ", " << k_tpcc_x[1] << "]" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   k_brot_p  = [" << k_brot_p[0] << ", " << k_brot_p[1] << "]" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   k_brot_tc = [" << k_brot_tc[0] << ", " << k_brot_tc[1] << "]" << std::endl;
   for (size_t i = 0; i < 2; i++) {
     k_run_b[i] = i_stp.k_run_b[i];
     d_run_b[i] = i_stp.d_run_b[i];
     m_tau_x[i].setup(i_stp.tdfke[0], i_stp.tdftc[0], dt);
     m_tau_y[i].setup(i_stp.tdfke[0], i_stp.tdftc[0], dt);
     m_f_z.setup(i_stp.tdfke[1], i_stp.tdftc[1], dt);
-    k_tpcc_p[i] = i_stp.k_tpcc_p[i];
-    k_tpcc_x[i] = i_stp.k_tpcc_x[i];
-    k_brot_p[i] = i_stp.k_brot_p[i];
-    k_brot_tc[i] = i_stp.k_brot_tc[i];
-    std::cerr << i << " k_run_b " << k_run_b[i] << " d_run_b " << d_run_b[i] << std::endl;
-    std::cerr << i << " m_tau_xy " << i_stp.tdfke[i] << " " << i_stp.tdftc[i] << std::endl;
-    std::cerr << i << " k_tpcc_p " << k_tpcc_p[i] << " k_tpcc_x " << k_tpcc_x[i] << std::endl;
-    std::cerr << i << " k_brot_p " << k_brot_p[i] << " k_brot_tc " << k_brot_tc[i] << std::endl;
   }
   m_torque_k[0] = i_stp.k_run_x;
   m_torque_k[1] = i_stp.k_run_y;
   m_torque_d[0] = i_stp.d_run_x;
   m_torque_d[1] = i_stp.d_run_y;
-  std::cerr << " m_torque_k " << m_torque_k[0] << " m_torque_k " <<  m_torque_k[1] << std::endl;
-  std::cerr << " m_torque_d " << m_torque_d[0] << " m_torque_d " <<  m_torque_d[1] << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]  RUNST" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   m_torque_k  = [" << m_torque_k[0] << ", " <<  m_torque_k[1] << "]" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   m_torque_d  = [" << m_torque_d[0] << ", " <<  m_torque_d[1] << "]" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   k_run_b  = [" << k_run_b[0] << ", " <<  k_run_b[1] << "]" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   d_run_b  = [" << d_run_b[0] << ", " <<  d_run_b[1] << "]" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]  EEFM" << std::endl;
   for (size_t i = 0; i < 2; i++) {
     eefm_k1[i] = i_stp.eefm_k1[i];
     eefm_k2[i] = i_stp.eefm_k2[i];
@@ -1397,8 +1416,6 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
     ref_zmp_aux(i) = i_stp.eefm_ref_zmp_aux[i];
     eefm_body_attitude_control_gain[i] = i_stp.eefm_body_attitude_control_gain[i];
     eefm_body_attitude_control_time_const[i] = i_stp.eefm_body_attitude_control_time_const[i];
-    std::cerr << i << " eefm_k1 " << eefm_k1[i] << " eefm_k2 " <<  eefm_k2[i] << " eefm_k3 " << eefm_k3[i] << " " << eefm_zmp_delay_time_const[i] << " " << ref_zmp_aux(i) << std::endl;
-    std::cerr << i << " eefm_body_attitude_control_gain " << eefm_body_attitude_control_gain[i] << " eefm_body_attitude_control_time_const " <<  eefm_body_attitude_control_time_const[i] << std::endl;
   }
   eefm_rot_damping_gain = i_stp.eefm_rot_damping_gain;
   eefm_pos_damping_gain = i_stp.eefm_pos_damping_gain;
@@ -1408,14 +1425,24 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
   eefm_pos_transition_time = i_stp.eefm_pos_transition_time;
   eefm_pos_margin_time = i_stp.eefm_pos_margin_time;
   eefm_leg_inside_margin = i_stp.eefm_leg_inside_margin;
-  std::cerr << " eefm_rot_damping_gain " << eefm_rot_damping_gain << " eefm_rot_time_const " <<  eefm_rot_time_const << std::endl;
-  std::cerr << " eefm_pos_damping_gain " << eefm_pos_damping_gain << " eefm_pos_time_const_support " <<  eefm_pos_time_const_support << " eefm_pos_time_const_swing " << eefm_pos_time_const_swing << " eefm_pos_transition_time " << eefm_pos_transition_time << " eefm_pos_margin_time " << eefm_pos_margin_time  << std::endl;
-  std::cerr << " eefm_leg_inside_margin " << eefm_leg_inside_margin << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   eefm_k1  = [" << eefm_k1[0] << ", " << eefm_k1[1] << "]" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   eefm_k2  = [" << eefm_k2[0] << ", " << eefm_k2[1] << "]" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   eefm_k3  = [" << eefm_k3[0] << ", " << eefm_k3[1] << "]" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   eefm_zmp_delay_time_const  = [" << eefm_zmp_delay_time_const[0] << ", " << eefm_zmp_delay_time_const[1] << "][s]" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   eefm_ref_zmp_aux  = [" << ref_zmp_aux(0) << ", " << ref_zmp_aux(1) << "][m]" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   eefm_body_attitude_control_gain  = [" << eefm_body_attitude_control_gain[0] << ", " << eefm_body_attitude_control_gain[1] << "]" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   eefm_body_attitude_control_time_const  = [" << eefm_body_attitude_control_time_const[0] << ", " << eefm_body_attitude_control_time_const[1] << "][s]" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   eefm_rot_damping_gain = " << eefm_rot_damping_gain << ", eefm_rot_time_const = " << eefm_rot_time_const << "[s]" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   eefm_pos_damping_gain = " << eefm_pos_damping_gain << ", eefm_pos_time_const_support = " << eefm_pos_time_const_support << "[s], "
+            << "eefm_pos_time_const_swing = " << eefm_pos_time_const_swing << "[s]" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   eefm_pos_transition_time = " << eefm_pos_transition_time << "[s], eefm_pos_margin_time = " << eefm_pos_margin_time << "[s]" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   eefm_leg_inside_margin = " << eefm_leg_inside_margin << "[m]" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]  COMMON" << std::endl;
   if (control_mode == MODE_IDLE) {
     st_algorithm = i_stp.st_algorithm;
-    std::cerr << " st_algorithm changed to [" << (st_algorithm == OpenHRP::StabilizerService::EEFM?"EEFM":"TPCC") << "]" << std::endl;
+    std::cerr << "[" << m_profile.instance_name << "]   st_algorithm changed to [" << (st_algorithm == OpenHRP::StabilizerService::EEFM?"EEFM":"TPCC") << "]" << std::endl;
   } else {
-    std::cerr << " st_algorithm cannot be changed to [" << (st_algorithm == OpenHRP::StabilizerService::EEFM?"EEFM":"TPCC") << "] during MODE_AIR or MODE_ST." << std::endl;
+    std::cerr << "[" << m_profile.instance_name << "]   st_algorithm cannot be changed to [" << (st_algorithm == OpenHRP::StabilizerService::EEFM?"EEFM":"TPCC") << "] during MODE_AIR or MODE_ST." << std::endl;
   }
 }
 
