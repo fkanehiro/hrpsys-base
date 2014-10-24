@@ -203,6 +203,8 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
     eefm_k1[i] = -1.41429*k_ratio;
     eefm_k2[i] = -0.404082*k_ratio;
     eefm_k3[i] = -0.18*k_ratio;
+    eefm_body_attitude_control_gain[i] = 1.0;
+    eefm_body_attitude_control_time_const[i] = 1e5;
   }
   eefm_rot_damping_gain = 20*5;
   eefm_rot_time_const = 1;
@@ -776,7 +778,7 @@ void Stabilizer::getActualParameters ()
       hrp::Vector3 act_root_rpy = hrp::rpyFromRot(m_robot->rootLink()->R);
       hrp::Vector3 ref_root_rpy = hrp::rpyFromRot(target_root_R);
       for (size_t i = 0; i < 2; i++) {
-        d_rpy[i] = transition_smooth_gain * (k_brot_p[i] * (ref_root_rpy(i) - act_root_rpy(i)) - 1/k_brot_tc[i] * d_rpy[i]) * dt + d_rpy[i];
+        d_rpy[i] = transition_smooth_gain * (eefm_body_attitude_control_gain[i] * (ref_root_rpy(i) - act_root_rpy(i)) - 1/eefm_body_attitude_control_time_const[i] * d_rpy[i]) * dt + d_rpy[i];
       }
     }
 
@@ -1350,6 +1352,8 @@ void Stabilizer::getParameter(OpenHRP::StabilizerService::stParam& i_stp)
     i_stp.eefm_k3[i] = eefm_k3[i];
     i_stp.eefm_zmp_delay_time_const[i] = eefm_zmp_delay_time_const[i];
     i_stp.eefm_ref_zmp_aux[i] = ref_zmp_aux(i);
+    i_stp.eefm_body_attitude_control_time_const[i] = eefm_body_attitude_control_time_const[i];
+    i_stp.eefm_body_attitude_control_gain[i] = eefm_body_attitude_control_gain[i];
   }
   i_stp.eefm_rot_damping_gain = eefm_rot_damping_gain;
   i_stp.eefm_pos_damping_gain = eefm_pos_damping_gain;
@@ -1391,7 +1395,10 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
     eefm_k3[i] = i_stp.eefm_k3[i];
     eefm_zmp_delay_time_const[i] = i_stp.eefm_zmp_delay_time_const[i];
     ref_zmp_aux(i) = i_stp.eefm_ref_zmp_aux[i];
+    eefm_body_attitude_control_gain[i] = i_stp.eefm_body_attitude_control_gain[i];
+    eefm_body_attitude_control_time_const[i] = i_stp.eefm_body_attitude_control_time_const[i];
     std::cerr << i << " eefm_k1 " << eefm_k1[i] << " eefm_k2 " <<  eefm_k2[i] << " eefm_k3 " << eefm_k3[i] << " " << eefm_zmp_delay_time_const[i] << " " << ref_zmp_aux(i) << std::endl;
+    std::cerr << i << " eefm_body_attitude_control_gain " << eefm_body_attitude_control_gain[i] << " eefm_body_attitude_control_time_const " <<  eefm_body_attitude_control_time_const[i] << std::endl;
   }
   eefm_rot_damping_gain = i_stp.eefm_rot_damping_gain;
   eefm_pos_damping_gain = i_stp.eefm_pos_damping_gain;

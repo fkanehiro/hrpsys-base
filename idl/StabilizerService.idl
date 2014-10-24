@@ -67,6 +67,10 @@ module OpenHRP
       double eefm_pos_margin_time;
       /// Inside foot margine [m]. Distance between foot end effector position and foot inside edge.
       double eefm_leg_inside_margin;
+      /// Body attitude control gain [rad/s] (roll, pitch) for EEFM.
+      DblArray2 eefm_body_attitude_control_gain;
+      /// Time constant for body attitude control [s] (roll, pitch) for EEFM.
+      DblArray2 eefm_body_attitude_control_time_const;
       // common
       STAlgorithm st_algorithm;
     };
