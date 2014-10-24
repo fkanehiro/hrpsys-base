@@ -128,6 +128,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     m_qCurrent.data.length(m_robot->numJoints());
     qorg.resize(m_robot->numJoints());
     qrefv.resize(m_robot->numJoints());
+    transition_joint_q.resize(m_robot->numJoints());
     m_baseTform.data.length(12);
 
     transition_count = 0;
@@ -163,7 +164,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
       gg = ggPtr(new rats::gait_generator(m_dt, leg_pos, stride_param(0)/*[m]*/, stride_param(1)/*[m]*/, stride_param(2)/*[deg]*/));
       gg->set_default_zmp_offsets(default_zmp_offsets);
     }
-    gg_is_walking = gg_ending = gg_solved = false;
+    gg_is_walking = gg_solved = false;
     fix_leg_coords = coordinates();
 
     // setting from conf file
@@ -659,13 +660,12 @@ void AutoBalancer::stopABCparam()
   std::cerr << "[AutoBalancer] stop auto balancer mode" << std::endl;
   //Guard guard(m_mutex);
   transition_count = MAX_TRANSITION_COUNT; // when start impedance, count up to 0
-  transition_joint_q.resize(m_robot->numJoints());
   for (int i = 0; i < m_robot->numJoints(); i++ ) {
     transition_joint_q[i] = m_robot->joint(i)->q;
   }
   prev_ref_zmp = ref_zmp;
   control_mode = MODE_SYNC;
-  gg_ending = gg_solved = gg_is_walking = false;
+  gg_solved = gg_is_walking = false;
 }
 
 void AutoBalancer::startWalking ()
@@ -689,26 +689,18 @@ void AutoBalancer::startWalking ()
   gg->initialize_gait_parameter(cog, spc, swc);
   while ( !gg->proc_one_tick() );
   gg_is_walking = gg_solved = true;
-  gg_ending = false;
 }
 
 void AutoBalancer::stopWalking ()
 {
-  if (!gg_ending){
-    gg_ending = true; // tmpolary
-    /* sync */
-  } else {
-    /* overwrite sequencer's angle-vector when finishing steps */
-    coordinates rleg_endcoords, lleg_endcoords;
-    ikp["rleg"].getTargetEndCoords(rleg_endcoords);
-    ikp["lleg"].getTargetEndCoords(lleg_endcoords);
-    mid_coords(fix_leg_coords, 0.5, rleg_endcoords, lleg_endcoords);
-    fixLegToCoords(":both", fix_leg_coords);
-    gg->clear_footstep_node_list();
-    if (return_control_mode == MODE_IDLE) stopABCparam();
-    gg_is_walking = false;
-    gg_ending = false;
-  }
+  coordinates rleg_endcoords, lleg_endcoords;
+  ikp["rleg"].getTargetEndCoords(rleg_endcoords);
+  ikp["lleg"].getTargetEndCoords(lleg_endcoords);
+  mid_coords(fix_leg_coords, 0.5, rleg_endcoords, lleg_endcoords);
+  fixLegToCoords(":both", fix_leg_coords);
+  gg->clear_footstep_node_list();
+  if (return_control_mode == MODE_IDLE) stopABCparam();
+  gg_is_walking = false;
 }
 
 bool AutoBalancer::startAutoBalancer (const OpenHRP::AutoBalancerService::StrSequence& limbs)

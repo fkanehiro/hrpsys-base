@@ -195,7 +195,7 @@ class AutoBalancer
   // for gg
   typedef boost::shared_ptr<rats::gait_generator> ggPtr;
   ggPtr gg;
-  bool gg_is_walking, gg_ending, gg_solved;
+  bool gg_is_walking, gg_solved;
   // for abc
   hrp::Vector3 ref_cog, ref_zmp, prev_ref_zmp, prev_imu_sensor_pos, prev_imu_sensor_vel;
   int transition_count; // negative value when initing and positive value when deleting
