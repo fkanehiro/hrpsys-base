@@ -160,6 +160,7 @@ class AutoBalancer
   struct ABCIKparam {
     hrp::Vector3 target_p0, current_p0, target2foot_offset_pos;
     hrp::Matrix33 target_r0, current_r0, target2foot_offset_rot;
+    rats::coordinates target_end_coords, current_end_coords;
     std::string target_name, base_name;
     hrp::JointPathExPtr manip;
     bool is_active;
@@ -195,7 +196,7 @@ class AutoBalancer
   // for gg
   typedef boost::shared_ptr<rats::gait_generator> ggPtr;
   ggPtr gg;
-  bool gg_is_walking, gg_ending, gg_solved;
+  bool gg_is_walking, gg_solved;
   // for abc
   hrp::Vector3 ref_cog, ref_zmp, prev_ref_zmp, prev_imu_sensor_pos, prev_imu_sensor_vel;
   int transition_count; // negative value when initing and positive value when deleting
