@@ -94,8 +94,7 @@ RTC::ReturnCode_t RemoveForceSensorLinkOffset::onInitialize()
   if (!loadBodyFromModelLoader(m_robot, prop["model"].c_str(),
 			       CosNaming::NamingContext::_duplicate(naming.getRootContext())
 	  )){
-      std::cerr << "failed to load model[" << prop["model"] << "] in "
-                << m_profile.instance_name << std::endl;
+      std::cerr << "[" << m_profile.instance_name << "] failed to load model[" << prop["model"] << "]" << std::endl;
       return RTC::RTC_ERROR;
   }
 
@@ -181,9 +180,9 @@ RTC::ReturnCode_t RemoveForceSensorLinkOffset::onExecute(RTC::UniqueId ec_id)
         hrp::Vector3 data_p(m_force[i].data[0], m_force[i].data[1], m_force[i].data[2]);
         hrp::Vector3 data_r(m_force[i].data[3], m_force[i].data[4], m_force[i].data[5]);
         if ( DEBUGP ) {
-          std::cerr << "forces[" << m_forceIn[i]->name() << "]" << std::endl;;
-          std::cerr << "raw force : " << data_p[0] << " " << data_p[1] << " " << data_p[2] << std::endl;
-          std::cerr << "raw moment : " << data_r[0] << " " << data_r[1] << " " << data_r[2] << std::endl;
+          std::cerr << "[" << m_profile.instance_name << "] wrench [" << m_forceIn[i]->name() << "]" << std::endl;;
+          std::cerr << "[" << m_profile.instance_name << "]   raw force = " << data_p.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << std::endl;
+          std::cerr << "[" << m_profile.instance_name << "]   raw moment = " << data_r.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << std::endl;
         }
         if ( sensor ) {
           // real force sensor
@@ -200,11 +199,11 @@ RTC::ReturnCode_t RemoveForceSensorLinkOffset::onExecute(RTC::UniqueId ec_id)
             m_force[i].data[3+j] = off_moment(j);
           }
           if ( DEBUGP ) {
-            std::cerr << "off force : " << off_force[0] << " " << off_force[1] << " " << off_force[2] << std::endl;
-            std::cerr << "off moment : " << off_moment[0] << " " << off_moment[1] << " " << off_moment[2] << std::endl;
+            std::cerr << "[" << m_profile.instance_name << "]   off force = " << off_force.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << std::endl;
+            std::cerr << "[" << m_profile.instance_name << "]   off moment = " << off_moment.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << std::endl;
           }
         } else {
-          std::cerr << "unknwon force param" << std::endl;
+          std::cerr << "[" << m_profile.instance_name << "] unknwon force param " << sensor_name << std::endl;
         }
       }
     }
@@ -227,14 +226,18 @@ void RemoveForceSensorLinkOffset::updateRootLinkPosRot (const hrp::Vector3& rpy)
 
 bool RemoveForceSensorLinkOffset::setForceMomentOffsetParam(const std::string& i_name_, const RemoveForceSensorLinkOffsetService::forcemomentOffsetParam& i_param_)
 {
+  std::cerr << "[" << m_profile.instance_name << "] setForceMomentOffsetParam [" << i_name_ << "]" << std::endl;
   if (m_forcemoment_offset_param.find(i_name_) != m_forcemoment_offset_param.end()) {
-    // std::cerr << "OK " << i_name_ << " in setForceMomentOffsetParam" << std::endl;
     memcpy(m_forcemoment_offset_param[i_name_].force_offset.data(), i_param_.force_offset.get_buffer(), sizeof(double) * 3);
     memcpy(m_forcemoment_offset_param[i_name_].moment_offset.data(), i_param_.moment_offset.get_buffer(), sizeof(double) * 3);
     memcpy(m_forcemoment_offset_param[i_name_].link_offset_centroid.data(), i_param_.link_offset_centroid.get_buffer(), sizeof(double) * 3);
     m_forcemoment_offset_param[i_name_].link_offset_mass = i_param_.link_offset_mass;
+    std::cerr << "[" << m_profile.instance_name << "]   force_offset = " << m_forcemoment_offset_param[i_name_].force_offset.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[N]" << std::endl;
+    std::cerr << "[" << m_profile.instance_name << "]   moment_offset = " << m_forcemoment_offset_param[i_name_].moment_offset.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[Nm]" << std::endl;
+    std::cerr << "[" << m_profile.instance_name << "]   link_offset_centroid = " << m_forcemoment_offset_param[i_name_].link_offset_centroid.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[m]" << std::endl;
+    std::cerr << "[" << m_profile.instance_name << "]   link_offset_mass = " << m_forcemoment_offset_param[i_name_].link_offset_mass << "[kg]" << std::endl;
   } else {
-    std::cerr << "No such limb " << i_name_ << " in setForceMomentOffsetParam" << std::endl;
+    std::cerr << "[" << m_profile.instance_name << "]   No such limb"<< std::endl;
   }
   return true;
 }
@@ -248,7 +251,7 @@ bool RemoveForceSensorLinkOffset::getForceMomentOffsetParam(const std::string& i
     memcpy(i_param_.link_offset_centroid.get_buffer(), m_forcemoment_offset_param[i_name_].link_offset_centroid.data(), sizeof(double) * 3);
     i_param_.link_offset_mass = m_forcemoment_offset_param[i_name_].link_offset_mass;
   } else {
-    std::cerr << "No such limb " << i_name_ << " in getForceMomentOffsetParam" << std::endl;
+    std::cerr << "[" << m_profile.instance_name << "] No such limb " << i_name_ << " in getForceMomentOffsetParam" << std::endl;
   }
   return true;
 }
