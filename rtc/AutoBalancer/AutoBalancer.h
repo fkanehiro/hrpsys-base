@@ -201,17 +201,16 @@ class AutoBalancer
   ggPtr gg;
   bool gg_is_walking, gg_solved;
   // for abc
-  hrp::Vector3 ref_cog, ref_zmp, prev_ref_zmp, prev_imu_sensor_pos, prev_imu_sensor_vel;
-  int transition_count; // negative value when initing and positive value when deleting
+  hrp::Vector3 ref_cog, ref_zmp, prev_imu_sensor_pos, prev_imu_sensor_vel;
   enum {MODE_IDLE, MODE_ABC, MODE_SYNC_TO_IDLE, MODE_SYNC_TO_ABC} control_mode, return_control_mode;
   std::map<std::string, ABCIKparam> ikp;
   std::map<std::string, size_t> contact_states_index_map;
-  hrp::dvector transition_joint_q, qorg, qrefv;
+  hrp::dvector qorg, qrefv;
   hrp::Vector3 current_root_p, target_root_p;
   hrp::Matrix33 current_root_R, target_root_R;
   rats::coordinates fix_leg_coords;
   std::vector<hrp::Vector3> default_zmp_offsets;
-  double m_dt, move_base_gain, transition_smooth_gain;
+  double m_dt, move_base_gain;
   hrp::BodyPtr m_robot;
   coil::Mutex m_mutex;
 
