@@ -332,14 +332,13 @@ class HrpsysConfigurator:
             connectPorts(self.sh.port("zmpOut"), self.abc.port("zmpIn"))
             connectPorts(self.sh.port("basePosOut"), self.abc.port("basePosIn"))
             connectPorts(self.sh.port("baseRpyOut"), self.abc.port("baseRpyIn"))
-            connectPorts(self.sh.port("optionalDataOut"), self.abc.port("optionalDataIn"))
-            connectPorts(self.abc.port("zmpRef"), self.st.port("zmpRef"))
-            connectPorts(self.abc.port("baseRpy"), self.st.port("baseRpyIn"))
-            connectPorts(self.abc.port("basePos"), self.st.port("basePosIn"))
+            connectPorts(self.sh.port("optionalDataOut"), self.abc.port("optionalData"))
+            connectPorts(self.abc.port("zmpOut"), self.st.port("zmpRef"))
+            connectPorts(self.abc.port("baseRpyOut"), self.st.port("baseRpyIn"))
+            connectPorts(self.abc.port("basePosOut"), self.st.port("basePosIn"))
             connectPorts(self.abc.port("accRef"), self.kf.port("accRef"))
             connectPorts(self.abc.port("contactStates"), self.st.port("contactStates"))
             connectPorts(self.abc.port("controlSwingSupportTime"), self.st.port("controlSwingSupportTime"))
-            connectPorts(self.rh.port("q"), self.st.port("qCurrent"))
         if self.ic and self.abc:
             for sen in filter(lambda x: x.type == "Force", self.sensors):
                 connectPorts(self.ic.port("ref_" + sen.name),
@@ -648,7 +647,7 @@ class HrpsysConfigurator:
             self.connectLoggerPort(self.sh, 'baseRpyOut')
             self.connectLoggerPort(self.sh, 'zmpOut')
         if self.abc != None:
-            self.connectLoggerPort(self.abc, 'zmpRef')
+            self.connectLoggerPort(self.abc, 'zmpOut')
             self.connectLoggerPort(self.abc, 'baseTformOut')
             self.connectLoggerPort(self.abc, 'q')
             self.connectLoggerPort(self.abc, 'contactStates')

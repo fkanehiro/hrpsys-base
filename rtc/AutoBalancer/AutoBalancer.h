@@ -112,8 +112,6 @@ class AutoBalancer
   // <rtc-template block="inport_declare">
   TimedDoubleSeq m_qRef;
   InPort<TimedDoubleSeq> m_qRefIn;
-  TimedDoubleSeq m_qCurrent;
-  InPort<TimedDoubleSeq> m_qCurrentIn;
   TimedPoint3D m_basePos;
   InPort<TimedPoint3D> m_basePosIn;
   TimedOrientation3D m_baseRpy;
@@ -130,7 +128,7 @@ class AutoBalancer
   // DataOutPort declaration
   // <rtc-template block="outport_declare">
   OutPort<TimedDoubleSeq> m_qOut;
-  RTC::OutPort<RTC::TimedPoint3D> m_zmpRefOut;
+  RTC::OutPort<RTC::TimedPoint3D> m_zmpOut;
   OutPort<TimedPoint3D> m_basePosOut;
   OutPort<TimedOrientation3D> m_baseRpyOut;
   TimedDoubleSeq m_baseTform;

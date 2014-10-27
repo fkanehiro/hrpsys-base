@@ -45,15 +45,14 @@ AutoBalancer::AutoBalancer(RTC::Manager* manager)
     : RTC::DataFlowComponentBase(manager),
       // <rtc-template block="initializer">
       m_qRefIn("qRef", m_qRef),
-      m_qCurrentIn("qCurrent", m_qCurrent),
       m_basePosIn("basePosIn", m_basePos),
       m_baseRpyIn("baseRpyIn", m_baseRpy),
       m_zmpIn("zmpIn", m_zmp),
       m_optionalDataIn("optionalData", m_optionalData),
       m_qOut("q", m_qRef),
-      m_zmpRefOut("zmpRef", m_zmp),
-      m_basePosOut("basePos", m_basePos),
-      m_baseRpyOut("baseRpy", m_baseRpy),
+      m_zmpOut("zmpOut", m_zmp),
+      m_basePosOut("basePosOut", m_basePos),
+      m_baseRpyOut("baseRpyOut", m_baseRpy),
       m_baseTformOut("baseTformOut", m_baseTform),
       m_accRefOut("accRef", m_accRef),
       m_contactStatesOut("contactStates", m_contactStates),
@@ -81,7 +80,6 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     // <rtc-template block="registration">
     // Set InPort buffers
     addInPort("qRef", m_qRefIn);
-    addInPort("qCurrent", m_qCurrentIn);
     addInPort("basePosIn", m_basePosIn);
     addInPort("baseRpyIn", m_baseRpyIn);
     addInPort("zmpIn", m_zmpIn);
@@ -89,9 +87,9 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
 
     // Set OutPort buffer
     addOutPort("q", m_qOut);
-    addOutPort("zmpRef", m_zmpRefOut);
-    addOutPort("basePos", m_basePosOut);
-    addOutPort("baseRpy", m_baseRpyOut);
+    addOutPort("zmpOut", m_zmpOut);
+    addOutPort("basePosOut", m_basePosOut);
+    addOutPort("baseRpyOut", m_baseRpyOut);
     addOutPort("baseTformOut", m_baseTformOut);
     addOutPort("accRef", m_accRefOut);
     addOutPort("contactStates", m_contactStatesOut);
@@ -133,7 +131,6 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
 
     // allocate memory for outPorts
     m_qRef.data.length(m_robot->numJoints());
-    m_qCurrent.data.length(m_robot->numJoints());
     qorg.resize(m_robot->numJoints());
     qrefv.resize(m_robot->numJoints());
     transition_joint_q.resize(m_robot->numJoints());
@@ -310,9 +307,6 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
     if (m_qRefIn.isNew()) {
         m_qRefIn.read();
     }
-    if (m_qCurrentIn.isNew()) {
-        m_qCurrentIn.read();
-    }
     if (m_basePosIn.isNew()) {
       m_basePosIn.read();
       input_basePos(0) = m_basePos.data.x;
@@ -400,7 +394,7 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
     m_basePosOut.write();
     m_baseRpyOut.write();
     m_baseTformOut.write();
-    m_zmpRefOut.write();
+    m_zmpOut.write();
 
     // reference acceleration
     hrp::Sensor* sen = m_robot->sensor<hrp::RateGyroSensor>("gyrometer");

@@ -61,8 +61,13 @@ this completing stops to use it after completing walking command.
 
 <table>
 <tr><th>port name</th><th>data type</th><th>unit</th><th>description</th></tr>
-<tr><td>qCurrent</td><td>RTC::TimedDoubleSeq</td><td>[rad]</td><td>Actual joint angles</td></tr>
 <tr><td>qRef</td><td>RTC::TimedDoubleSeq</td><td>[rad]</td><td>Reference joint angles</td></tr>
+<tr><td>zmpIn</td><td>RTC::TimedPoint3D</td><td>[m]</td><td>Input 
+ZMP in base frame</td></tr>
+<tr><td>basePosIn</td><td>RTC::TimedPoint3D</td><td>[m]</td><td>Input 
+base position</td></tr>
+<tr><td>baseRpyIn</td><td>RTC::TimedOrientation3D</td><td>[rad]</td><td>Input 
+base orientation (RPY)</td></tr>
 </table>
 
 \subsection outports Output Ports
@@ -71,11 +76,11 @@ this completing stops to use it after completing walking command.
 <tr><th>port name</th><th>data type</th><th>unit</th><th>description</th></tr>
 <tr><td>q</td><td>RTC::TimedDoubleSeq</td><td>[rad]</td><td>Output
 reference joint angles</td></tr>
-<tr><td>zmpRef</td><td>RTC::TimedPoint3D</td><td>[m]</td><td>Output 
+<tr><td>zmpOut</td><td>RTC::TimedPoint3D</td><td>[m]</td><td>Output 
 ZMP in base frame</td></tr>
-<tr><td>basePos</td><td>RTC::TimedPoint3D</td><td>[m]</td><td>Output 
+<tr><td>basePosOut</td><td>RTC::TimedPoint3D</td><td>[m]</td><td>Output 
 base position</td></tr>
-<tr><td>baseRpy</td><td>RTC::TimedOrientation3D</td><td>[rad]</td><td>Output 
+<tr><td>baseRpyOut</td><td>RTC::TimedOrientation3D</td><td>[rad]</td><td>Output 
 base orientation (RPY)</td></tr>
 <tr><td>baseTformOut</td><td>RTC::TimedDoubleSeq</td><td>[m], [rad]</td><td>Output 
 base position and orientation (RPY)</td></tr>
