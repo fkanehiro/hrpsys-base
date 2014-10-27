@@ -46,8 +46,12 @@ AutoBalancer::AutoBalancer(RTC::Manager* manager)
       // <rtc-template block="initializer">
       m_qRefIn("qRef", m_qRef),
       m_qCurrentIn("qCurrent", m_qCurrent),
+      m_basePosIn("basePosIn", m_basePos),
+      m_baseRpyIn("baseRpyIn", m_baseRpy),
+      m_zmpIn("zmpIn", m_zmp),
+      m_optionalDataIn("optionalData", m_optionalData),
       m_qOut("q", m_qRef),
-      m_zmpRefOut("zmpRef", m_zmpRef),
+      m_zmpRefOut("zmpRef", m_zmp),
       m_basePosOut("basePos", m_basePos),
       m_baseRpyOut("baseRpy", m_baseRpy),
       m_baseTformOut("baseTformOut", m_baseTform),
@@ -78,6 +82,10 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     // Set InPort buffers
     addInPort("qRef", m_qRefIn);
     addInPort("qCurrent", m_qCurrentIn);
+    addInPort("basePosIn", m_basePosIn);
+    addInPort("baseRpyIn", m_baseRpyIn);
+    addInPort("zmpIn", m_zmpIn);
+    addInPort("optionalData", m_optionalDataIn);
 
     // Set OutPort buffer
     addOutPort("q", m_qOut);
@@ -137,6 +145,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
 
     zmp_interpolate_time = 1.0;
     zmp_interpolator = new interpolator(6, m_dt);
+    transition_interpolator = new interpolator(1, m_dt);
 
     // setting from conf file
     // GaitGenerator requires abc_leg_offset and abc_stride_parameter in robot conf file
@@ -254,6 +263,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
 RTC::ReturnCode_t AutoBalancer::onFinalize()
 {
   delete zmp_interpolator;
+  delete transition_interpolator;
   return RTC::RTC_OK;
 }
 
@@ -303,12 +313,30 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
     if (m_qCurrentIn.isNew()) {
         m_qCurrentIn.read();
     }
+    if (m_basePosIn.isNew()) {
+      m_basePosIn.read();
+      input_basePos(0) = m_basePos.data.x;
+      input_basePos(1) = m_basePos.data.y;
+      input_basePos(2) = m_basePos.data.z;
+    }
+    if (m_baseRpyIn.isNew()) {
+      m_baseRpyIn.read();
+      input_baseRot = hrp::rotFromRpy(m_baseRpy.data.r, m_baseRpy.data.p, m_baseRpy.data.y);
+    }
+    if (m_zmpIn.isNew()) {
+      m_zmpIn.read();
+      input_zmp(0) = m_zmp.data.x;
+      input_zmp(1) = m_zmp.data.y;
+      input_zmp(2) = m_zmp.data.z;
+    }
     for (unsigned int i=0; i<m_ref_forceIn.size(); i++){
         if ( m_ref_forceIn[i]->isNew() ) {
             m_ref_forceIn[i]->read();
         }
     }
     Guard guard(m_mutex);
+    hrp::Vector3 ref_basePos;
+    hrp::Matrix33 ref_baseRot;
     if ( is_legged_robot ) {
       getCurrentParameters();
       getTargetParameters();
@@ -322,6 +350,19 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
           }
         }
       }
+      //
+      if (!transition_interpolator->isEmpty()) {
+        double tmp_ratio;
+        transition_interpolator->get(&tmp_ratio, true);
+        // tmp_ratio 0=>1 : IDLE => ABC
+        // tmp_ratio 1=>0 : ABC => IDLE
+        ref_basePos = (1-tmp_ratio) * input_basePos + tmp_ratio * m_robot->rootLink()->p;
+        ref_zmp = (1-tmp_ratio) * input_zmp + tmp_ratio * ref_zmp;
+        rats::mid_rot(ref_baseRot, tmp_ratio, input_baseRot, m_robot->rootLink()->R);
+      } else {
+        ref_basePos = m_robot->rootLink()->p;
+        ref_baseRot = m_robot->rootLink()->R;
+      }
     }
     if ( m_qRef.data.length() != 0 ) { // initialized
       if (is_legged_robot) {
@@ -331,34 +372,37 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
       }
       m_qOut.write();
     }
-    hrp::Vector3 baseRpy = hrp::rpyFromRot(m_robot->rootLink()->R);
-    m_baseRpy.data.r = baseRpy(0);
-    m_baseRpy.data.p = baseRpy(1);
-    m_baseRpy.data.y = baseRpy(2);
-    m_baseRpy.tm = m_qRef.tm;
-    m_baseRpyOut.write();
-    m_basePos.data.x = m_robot->rootLink()->p(0);
-    m_basePos.data.y = m_robot->rootLink()->p(1);
-    m_basePos.data.z = m_robot->rootLink()->p(2);
-    m_basePos.tm = m_qRef.tm;
+    if (is_legged_robot) {
+      // basePos
+      m_basePos.data.x = ref_basePos(0);
+      m_basePos.data.y = ref_basePos(1);
+      m_basePos.data.z = ref_basePos(2);
+      m_basePos.tm = m_qRef.tm;
+      // baseRpy
+      hrp::Vector3 baseRpy = hrp::rpyFromRot(ref_baseRot);
+      m_baseRpy.data.r = baseRpy(0);
+      m_baseRpy.data.p = baseRpy(1);
+      m_baseRpy.data.y = baseRpy(2);
+      m_baseRpy.tm = m_qRef.tm;
+      // baseTform
+      double *tform_arr = m_baseTform.data.get_buffer();
+      tform_arr[0] = m_basePos.data.x;
+      tform_arr[1] = m_basePos.data.y;
+      tform_arr[2] = m_basePos.data.z;
+      hrp::setMatrix33ToRowMajorArray(ref_baseRot, tform_arr, 3);
+      m_baseTform.tm = m_qRef.tm;
+      // zmp
+      m_zmp.data.x = ref_zmp(0);
+      m_zmp.data.y = ref_zmp(1);
+      m_zmp.data.z = ref_zmp(2);
+      m_zmp.tm = m_qRef.tm;
+    }
     m_basePosOut.write();
-    double *tform_arr = m_baseTform.data.get_buffer();
-    tform_arr[0] = m_basePos.data.x;
-    tform_arr[1] = m_basePos.data.y;
-    tform_arr[2] = m_basePos.data.z;
-    hrp::Matrix33 Rot = hrp::rotFromRpy(m_baseRpy.data.r, 
-                                        m_baseRpy.data.p, 
-                                        m_baseRpy.data.y); 
-    hrp::setMatrix33ToRowMajorArray(Rot, tform_arr, 3);
-    m_baseTform.tm = m_qRef.tm;
+    m_baseRpyOut.write();
     m_baseTformOut.write();
-
-    m_zmpRef.data.x = ref_zmp(0);
-    m_zmpRef.data.y = ref_zmp(1);
-    m_zmpRef.data.z = ref_zmp(2);
-    m_zmpRef.tm = m_qRef.tm;
     m_zmpRefOut.write();
 
+    // reference acceleration
     hrp::Sensor* sen = m_robot->sensor<hrp::RateGyroSensor>("gyrometer");
     if (sen != NULL) {
       hrp::Vector3 imu_sensor_pos = sen->link->p + sen->link->R * sen->localPos;
@@ -371,6 +415,7 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
       prev_imu_sensor_vel = imu_sensor_vel;
     }
 
+    // control parameters
     m_contactStates.tm = m_qRef.tm;
     m_contactStatesOut.write();
     m_controlSwingSupportTime.tm = m_qRef.tm;
@@ -392,6 +437,7 @@ void AutoBalancer::getCurrentParameters()
 
 void AutoBalancer::getTargetParameters()
 {
+  // joint angles
   if ( transition_count == 0 ) {
     transition_smooth_gain = 1.0;
   } else {
@@ -418,9 +464,14 @@ void AutoBalancer::getTargetParameters()
       control_mode = MODE_IDLE;
     }
   }
+  // basepos, rot, zmp
+  m_robot->rootLink()->p = input_basePos;
+  m_robot->rootLink()->R = input_baseRot;
+  ref_zmp = input_zmp;
   m_robot->calcForwardKinematics();
-  coordinates rc, lc;
+  //
   {
+    coordinates rc, lc;
     coordinates tmp_fix_coords;
     if (!zmp_interpolator->isEmpty()) {
       double default_zmp_offsets_output[6];
@@ -514,22 +565,15 @@ void AutoBalancer::getTargetParameters()
       ref_cog = (rc.pos+lc.pos)/2.0;
       ref_cog(2) = tmp_ref_cog(2);
     }
+    if (gg_is_walking) {
+      ref_zmp = gg->get_refzmp();
+    } else {
+      ref_zmp(0) = ref_cog(0);
+      ref_zmp(1) = ref_cog(1);
+      ref_zmp(2) = (rc.pos(2) + lc.pos(2)) / 2.0;
+    }
   }
-  if (control_mode == MODE_IDLE) {
-    ref_zmp(0) = ref_cog(0);
-    ref_zmp(1) = ref_cog(1);
-    ref_zmp(2) = (rc.pos(2) + lc.pos(2)) / 2.0;
-  } else if (gg_is_walking) {
-    ref_zmp = gg->get_refzmp();
-  } else {
-    ref_zmp(0) = ref_cog(0);
-    ref_zmp(1) = ref_cog(1);
-    ref_zmp(2) = (rc.pos(2) + lc.pos(2)) / 2.0;
-  }
-  if ( transition_count > 0 ) {
-    ref_zmp = transition_smooth_gain * ( ref_zmp - prev_ref_zmp ) + prev_ref_zmp;
-  }
-}
+};
 
 hrp::Matrix33 AutoBalancer::OrientRotationMatrix (const hrp::Matrix33& rot, const hrp::Vector3& axis1, const hrp::Vector3& axis2)
 {
@@ -637,6 +681,8 @@ void AutoBalancer::startABCparam(const OpenHRP::AutoBalancerService::StrSequence
   std::cerr << "[AutoBalancer] start auto balancer mode" << std::endl;
   Guard guard(m_mutex);
   transition_count = -MAX_TRANSITION_COUNT; // when start impedance, count up to 0
+  double tmp_ratio = 1.0;
+  transition_interpolator->go(&tmp_ratio, 2.0, true); // 2.0 [s] transition
   for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
     it->second.is_active = false;
   }
@@ -655,6 +701,8 @@ void AutoBalancer::stopABCparam()
   std::cerr << "[AutoBalancer] stop auto balancer mode" << std::endl;
   //Guard guard(m_mutex);
   transition_count = MAX_TRANSITION_COUNT; // when start impedance, count up to 0
+  double tmp_ratio = 0.0;
+  transition_interpolator->go(&tmp_ratio, 2.0, true); // 2.0 [s] transition
   for (int i = 0; i < m_robot->numJoints(); i++ ) {
     transition_joint_q[i] = m_robot->joint(i)->q;
   }
