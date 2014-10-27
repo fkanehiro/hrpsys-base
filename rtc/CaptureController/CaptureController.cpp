@@ -24,6 +24,8 @@ static const char* capturecontroller_spec[] =
     "language",          "C++",
     "lang_type",         "compile",
     // Configuration variables
+    "conf.default.frameRate",  "1",
+    "conf.default.initialMode", "sleep",
 
     ""
   };
@@ -37,7 +39,6 @@ CaptureController::CaptureController(RTC::Manager* manager)
     m_CameraCaptureServicePort("CameraCaptureService"),
     m_CameraCaptureService(this),
     // </rtc-template>
-    m_mode(SLEEP),
     dummy(0)
 {
 }
@@ -53,6 +54,8 @@ RTC::ReturnCode_t CaptureController::onInitialize()
   std::cout << m_profile.instance_name << ": onInitialize()" << std::endl;
   // <rtc-template block="bind_config">
   // Bind variables and configuration variable
+  bindParameter("frameRate", m_frameRate, "1");
+  bindParameter("initialMode", m_initialMode, "sleep");
   
   // </rtc-template>
 
@@ -105,6 +108,14 @@ RTC::ReturnCode_t CaptureController::onShutdown(RTC::UniqueId ec_id)
 RTC::ReturnCode_t CaptureController::onActivated(RTC::UniqueId ec_id)
 {
   std::cout << m_profile.instance_name<< ": onActivated(" << ec_id << ")" << std::endl;
+  m_tOld = (double)(coil::gettimeofday());
+  if (m_initialMode == "continuous"){
+    m_mode = CONTINUOUS;
+  }else if(m_initialMode == "oneshot"){
+    m_mode = ONESHOT;
+  }else{
+    m_mode = SLEEP;
+  }
   return RTC::RTC_OK;
 }
 
@@ -117,11 +128,13 @@ RTC::ReturnCode_t CaptureController::onDeactivated(RTC::UniqueId ec_id)
 RTC::ReturnCode_t CaptureController::onExecute(RTC::UniqueId ec_id)
 {
   //std::cout << m_profile.instance_name<< ": onExecute(" << ec_id << ")" << m_data.data << std::endl;
-
-  if (m_mode != SLEEP && m_imageIn.isNew()){
+  double tNew = (double)(coil::gettimeofday());
+  double dt = (double)(tNew - m_tOld);
+  if (m_mode != SLEEP && dt > 1.0/m_frameRate && m_imageIn.isNew()){
     m_imageIn.read();
     m_imageOut.write();
     if (m_mode == ONESHOT) m_mode = SLEEP;
+    m_tOld = tNew;
   }
   
   return RTC::RTC_OK;

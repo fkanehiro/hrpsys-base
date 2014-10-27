@@ -139,6 +139,9 @@ class CaptureController
  private:
   typedef enum {SLEEP, ONESHOT, CONTINUOUS} mode;
   mode m_mode;
+  int m_frameRate;
+  double m_tOld;
+  std::string m_initialMode;
   int dummy;
 };
 

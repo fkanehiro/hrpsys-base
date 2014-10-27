@@ -29,6 +29,7 @@ static const char* videocapture_spec[] =
     "conf.default.devIds", "0",
     "conf.default.width", "640",
     "conf.default.height", "480",
+    "conf.default.frameRate", "1",
 
     ""
   };
@@ -62,6 +63,7 @@ RTC::ReturnCode_t VideoCapture::onInitialize()
   bindParameter("devIds", m_devIds, "0");
   bindParameter("width", m_width, "640");
   bindParameter("height", m_height, "480");
+  bindParameter("frameRate", m_frameRate, "1");
   
   // </rtc-template>
 
@@ -113,6 +115,7 @@ RTC::ReturnCode_t VideoCapture::onShutdown(RTC::UniqueId ec_id)
 RTC::ReturnCode_t VideoCapture::onActivated(RTC::UniqueId ec_id)
 {
   std::cout << m_profile.instance_name<< ": onActivated(" << ec_id << ")" << std::endl;
+  m_tOld = (double)(coil::gettimeofday());
   if (m_initialMode == "continuous"){
     m_mode = CONTINUOUS;
   }else{
@@ -157,6 +160,14 @@ RTC::ReturnCode_t VideoCapture::onExecute(RTC::UniqueId ec_id)
 {
   //std::cout << m_profile.instance_name<< ": onExecute(" << ec_id << ")" << std::endl;
   capture();
+
+  double tNew = (double)(coil::gettimeofday());
+  double dt = (double)(tNew - m_tOld);
+  if (dt > 1.0/m_frameRate){
+    m_tOld = tNew;
+  }else{
+    return RTC::RTC_OK;
+  }
 
   if (m_mode == SLEEP) return RTC::RTC_OK;
 
