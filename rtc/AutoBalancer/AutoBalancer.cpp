@@ -17,7 +17,6 @@
 #include "util/Hrpsys.h"
 
 
-#define MAX_TRANSITION_COUNT (2/m_dt)
 typedef coil::Guard<coil::Mutex> Guard;
 using namespace rats;
 
@@ -331,11 +330,13 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
     Guard guard(m_mutex);
     hrp::Vector3 ref_basePos;
     hrp::Matrix33 ref_baseRot;
+    hrp::Vector3 rel_ref_zmp; // ref zmp in base frame
     if ( is_legged_robot ) {
       getCurrentParameters();
       getTargetParameters();
       if (control_mode != MODE_IDLE ) {
         solveLimbIK();
+        rel_ref_zmp = m_robot->rootLink()->R.transpose() * (ref_zmp - m_robot->rootLink()->p);
       } else {
         for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
           if (it->first == "rleg" || it->first == "lleg") {
@@ -343,15 +344,16 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
             it->second.current_r0 = m_robot->link(it->second.target_name)->R;
           }
         }
+        rel_ref_zmp = input_zmp;
       }
-      //
+      // transition
       if (!transition_interpolator->isEmpty()) {
         double tmp_ratio;
         transition_interpolator->get(&tmp_ratio, true);
         // tmp_ratio 0=>1 : IDLE => ABC
         // tmp_ratio 1=>0 : ABC => IDLE
         ref_basePos = (1-tmp_ratio) * input_basePos + tmp_ratio * m_robot->rootLink()->p;
-        ref_zmp = (1-tmp_ratio) * input_zmp + tmp_ratio * ref_zmp;
+        rel_ref_zmp = (1-tmp_ratio) * input_zmp + tmp_ratio * rel_ref_zmp;
         rats::mid_rot(ref_baseRot, tmp_ratio, input_baseRot, m_robot->rootLink()->R);
         for ( int i = 0; i < m_robot->numJoints(); i++ ) {
           m_robot->joint(i)->q = (1-tmp_ratio) * m_qRef.data[i] + tmp_ratio * m_robot->joint(i)->q;
@@ -359,6 +361,13 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
       } else {
         ref_basePos = m_robot->rootLink()->p;
         ref_baseRot = m_robot->rootLink()->R;
+      }
+      // mode change for sync
+      if (control_mode == MODE_SYNC_TO_ABC) {
+        control_mode = MODE_ABC;
+      } else if (control_mode == MODE_SYNC_TO_IDLE && transition_interpolator->isEmpty() ) {
+        std::cerr << "[" << m_profile.instance_name << "] Finished cleanup" << std::endl;
+        control_mode = MODE_IDLE;
       }
     }
     if ( m_qRef.data.length() != 0 ) { // initialized
@@ -389,9 +398,9 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
       hrp::setMatrix33ToRowMajorArray(ref_baseRot, tform_arr, 3);
       m_baseTform.tm = m_qRef.tm;
       // zmp
-      m_zmp.data.x = ref_zmp(0);
-      m_zmp.data.y = ref_zmp(1);
-      m_zmp.data.z = ref_zmp(2);
+      m_zmp.data.x = rel_ref_zmp(0);
+      m_zmp.data.y = rel_ref_zmp(1);
+      m_zmp.data.z = rel_ref_zmp(2);
       m_zmp.tm = m_qRef.tm;
     }
     m_basePosOut.write();
@@ -442,7 +451,6 @@ void AutoBalancer::getTargetParameters()
   // basepos, rot, zmp
   m_robot->rootLink()->p = input_basePos;
   m_robot->rootLink()->R = input_baseRot;
-  ref_zmp = input_zmp;
   m_robot->calcForwardKinematics();
   //
   if (control_mode != MODE_IDLE) {
@@ -548,7 +556,7 @@ void AutoBalancer::getTargetParameters()
       ref_zmp(2) = (rc.pos(2) + lc.pos(2)) / 2.0;
     }
   }
-  // mode change for sync
+  // Just for ik initial value
   if (control_mode == MODE_SYNC_TO_ABC) {
     current_root_p = target_root_p;
     current_root_R = target_root_R;
@@ -558,10 +566,6 @@ void AutoBalancer::getTargetParameters()
         it->second.target_r0 = m_robot->link(it->second.target_name)->R;
       }
     }
-    control_mode = MODE_ABC;
-  } else if(control_mode == MODE_SYNC_TO_IDLE && transition_interpolator->isEmpty() ) {
-    std::cerr << "[" << m_profile.instance_name << "] Finished cleanup" << std::endl;
-    control_mode = MODE_IDLE;
   }
 };
 
