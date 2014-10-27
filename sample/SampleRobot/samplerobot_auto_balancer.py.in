@@ -72,6 +72,21 @@ def demo():
     hcf.abc_svc.startAutoBalancer(["rleg", "lleg"]);
     testPoseList(pose_list, initial_pose)
     hcf.abc_svc.stopAutoBalancer();
+    #   6. start stop check
+    ret[1].default_zmp_offsets = [[-0.05,0.05,0], [-0.05,0.05,0]]
+    hcf.abc_svc.setAutoBalancerParam(ret[1])
+    hcf.log_svc.maxLength(1500)
+    for pose in pose_list:
+        hcf.seq_svc.setJointAngles(pose, 1.0)
+        hcf.seq_svc.waitInterpolation()
+        hcf.log_svc.clear()
+        hcf.abc_svc.startAutoBalancer(["rleg", "lleg"]);
+        hcf.abc_svc.stopAutoBalancer();
+        hcf.log_svc.save("/tmp/test-samplerobot-abc-startstop-{0}".format(pose_list.index(pose)))
+    ret[1].default_zmp_offsets = [[0,0,0], [0,0,0]]
+    hcf.abc_svc.setAutoBalancerParam(ret[1])
+    hcf.seq_svc.setJointAngles(initial_pose, 1.0)
+    hcf.seq_svc.waitInterpolation()
 
     # sample for walk pattern generation by AutoBalancer RTC
     #   1. goPos

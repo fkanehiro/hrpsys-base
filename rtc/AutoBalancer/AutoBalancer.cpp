@@ -17,7 +17,6 @@
 #include "util/Hrpsys.h"
 
 
-#define MAX_TRANSITION_COUNT (2/m_dt)
 typedef coil::Guard<coil::Mutex> Guard;
 using namespace rats;
 
@@ -132,10 +131,8 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     m_qRef.data.length(m_robot->numJoints());
     qorg.resize(m_robot->numJoints());
     qrefv.resize(m_robot->numJoints());
-    transition_joint_q.resize(m_robot->numJoints());
     m_baseTform.data.length(12);
 
-    transition_count = 0;
     control_mode = MODE_IDLE;
     loop = 0;
 
@@ -292,8 +289,9 @@ RTC::ReturnCode_t AutoBalancer::onDeactivated(RTC::UniqueId ec_id)
   Guard guard(m_mutex);
   if (control_mode == MODE_ABC) {
     stopABCparam();
-    control_mode = MODE_IDLE;
-    transition_count = 1; // sync in one controller loop
+    control_mode = MODE_SYNC_TO_IDLE;
+    double tmp_ratio = 0.0;
+    transition_interpolator->go(&tmp_ratio, m_dt, true); // sync in one controller loop
   }
   return RTC::RTC_OK;
 }
@@ -332,11 +330,13 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
     Guard guard(m_mutex);
     hrp::Vector3 ref_basePos;
     hrp::Matrix33 ref_baseRot;
+    hrp::Vector3 rel_ref_zmp; // ref zmp in base frame
     if ( is_legged_robot ) {
       getCurrentParameters();
       getTargetParameters();
-      if (control_mode == MODE_ABC ) {
+      if (control_mode != MODE_IDLE ) {
         solveLimbIK();
+        rel_ref_zmp = m_robot->rootLink()->R.transpose() * (ref_zmp - m_robot->rootLink()->p);
       } else {
         for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
           if (it->first == "rleg" || it->first == "lleg") {
@@ -344,19 +344,30 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
             it->second.current_r0 = m_robot->link(it->second.target_name)->R;
           }
         }
+        rel_ref_zmp = input_zmp;
       }
-      //
+      // transition
       if (!transition_interpolator->isEmpty()) {
         double tmp_ratio;
         transition_interpolator->get(&tmp_ratio, true);
         // tmp_ratio 0=>1 : IDLE => ABC
         // tmp_ratio 1=>0 : ABC => IDLE
         ref_basePos = (1-tmp_ratio) * input_basePos + tmp_ratio * m_robot->rootLink()->p;
-        ref_zmp = (1-tmp_ratio) * input_zmp + tmp_ratio * ref_zmp;
+        rel_ref_zmp = (1-tmp_ratio) * input_zmp + tmp_ratio * rel_ref_zmp;
         rats::mid_rot(ref_baseRot, tmp_ratio, input_baseRot, m_robot->rootLink()->R);
+        for ( int i = 0; i < m_robot->numJoints(); i++ ) {
+          m_robot->joint(i)->q = (1-tmp_ratio) * m_qRef.data[i] + tmp_ratio * m_robot->joint(i)->q;
+        }
       } else {
         ref_basePos = m_robot->rootLink()->p;
         ref_baseRot = m_robot->rootLink()->R;
+      }
+      // mode change for sync
+      if (control_mode == MODE_SYNC_TO_ABC) {
+        control_mode = MODE_ABC;
+      } else if (control_mode == MODE_SYNC_TO_IDLE && transition_interpolator->isEmpty() ) {
+        std::cerr << "[" << m_profile.instance_name << "] Finished cleanup" << std::endl;
+        control_mode = MODE_IDLE;
       }
     }
     if ( m_qRef.data.length() != 0 ) { // initialized
@@ -387,9 +398,9 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
       hrp::setMatrix33ToRowMajorArray(ref_baseRot, tform_arr, 3);
       m_baseTform.tm = m_qRef.tm;
       // zmp
-      m_zmp.data.x = ref_zmp(0);
-      m_zmp.data.y = ref_zmp(1);
-      m_zmp.data.z = ref_zmp(2);
+      m_zmp.data.x = rel_ref_zmp(0);
+      m_zmp.data.y = rel_ref_zmp(1);
+      m_zmp.data.z = rel_ref_zmp(2);
       m_zmp.tm = m_qRef.tm;
     }
     m_basePosOut.write();
@@ -433,39 +444,16 @@ void AutoBalancer::getCurrentParameters()
 void AutoBalancer::getTargetParameters()
 {
   // joint angles
-  if ( transition_count == 0 ) {
-    transition_smooth_gain = 1.0;
-  } else {
-    transition_smooth_gain = 1/(1+exp(-9.19*(((MAX_TRANSITION_COUNT - std::fabs(transition_count)) / MAX_TRANSITION_COUNT) - 0.5)));
-  }
-  if ( transition_count > 0 ) {
-    for ( int i = 0; i < m_robot->numJoints(); i++ ){
-      m_robot->joint(i)->q = ( m_qRef.data[i] - transition_joint_q[i] ) * transition_smooth_gain + transition_joint_q[i];
-    }
-  } else {
-    for ( int i = 0; i < m_robot->numJoints(); i++ ){
-      m_robot->joint(i)->q = m_qRef.data[i];
-    }
-  }
   for ( int i = 0; i < m_robot->numJoints(); i++ ){
+    m_robot->joint(i)->q = m_qRef.data[i];
     qrefv[i] = m_robot->joint(i)->q;
-  }
-  if ( transition_count < 0 ) {
-    transition_count++;
-  } else if ( transition_count > 0 ) {
-    transition_count--;
-    if(transition_count <= 0){ // erase impedance param
-      std::cerr << "[" << m_profile.instance_name << "] Finished cleanup" << std::endl;
-      control_mode = MODE_IDLE;
-    }
   }
   // basepos, rot, zmp
   m_robot->rootLink()->p = input_basePos;
   m_robot->rootLink()->R = input_baseRot;
-  ref_zmp = input_zmp;
   m_robot->calcForwardKinematics();
   //
-  {
+  if (control_mode != MODE_IDLE) {
     coordinates rc, lc;
     coordinates tmp_fix_coords;
     if (!zmp_interpolator->isEmpty()) {
@@ -568,6 +556,17 @@ void AutoBalancer::getTargetParameters()
       ref_zmp(2) = (rc.pos(2) + lc.pos(2)) / 2.0;
     }
   }
+  // Just for ik initial value
+  if (control_mode == MODE_SYNC_TO_ABC) {
+    current_root_p = target_root_p;
+    current_root_R = target_root_R;
+    for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
+      if ( it->first.find("leg") != std::string::npos ) {
+        it->second.target_p0 = m_robot->link(it->second.target_name)->p;
+        it->second.target_r0 = m_robot->link(it->second.target_name)->R;
+      }
+    }
+  }
 };
 
 hrp::Matrix33 AutoBalancer::OrientRotationMatrix (const hrp::Matrix33& rot, const hrp::Vector3& axis1, const hrp::Vector3& axis2)
@@ -626,7 +625,7 @@ void AutoBalancer::solveLimbIK ()
   static_balance_point_proc_one(tmp_input_sbp, ref_zmp(2));
   hrp::Vector3 dif_cog = tmp_input_sbp - ref_cog;
   dif_cog(2) = m_robot->rootLink()->p(2) - target_root_p(2);
-  m_robot->rootLink()->p = m_robot->rootLink()->p + -1 * move_base_gain * transition_smooth_gain * dif_cog;
+  m_robot->rootLink()->p = m_robot->rootLink()->p + -1 * move_base_gain * dif_cog;
   m_robot->rootLink()->R = target_root_R;
   m_robot->calcForwardKinematics();
 
@@ -675,7 +674,6 @@ void AutoBalancer::startABCparam(const OpenHRP::AutoBalancerService::StrSequence
 {
   std::cerr << "[" << m_profile.instance_name << "] start auto balancer mode" << std::endl;
   Guard guard(m_mutex);
-  transition_count = -MAX_TRANSITION_COUNT; // when start impedance, count up to 0
   double tmp_ratio = 1.0;
   transition_interpolator->go(&tmp_ratio, 2.0, true); // 2.0 [s] transition
   for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
@@ -688,21 +686,16 @@ void AutoBalancer::startABCparam(const OpenHRP::AutoBalancerService::StrSequence
     std::cerr << "[" << m_profile.instance_name << "]   limb [" << std::string(limbs[i]) << "]" << std::endl;
   }
 
-  control_mode = MODE_ABC;
+  control_mode = MODE_SYNC_TO_ABC;
 }
 
 void AutoBalancer::stopABCparam()
 {
   std::cerr << "[" << m_profile.instance_name << "] stop auto balancer mode" << std::endl;
   //Guard guard(m_mutex);
-  transition_count = MAX_TRANSITION_COUNT; // when start impedance, count up to 0
   double tmp_ratio = 0.0;
   transition_interpolator->go(&tmp_ratio, 2.0, true); // 2.0 [s] transition
-  for (int i = 0; i < m_robot->numJoints(); i++ ) {
-    transition_joint_q[i] = m_robot->joint(i)->q;
-  }
-  prev_ref_zmp = ref_zmp;
-  control_mode = MODE_SYNC;
+  control_mode = MODE_SYNC_TO_IDLE;
 }
 
 void AutoBalancer::startWalking ()
@@ -764,7 +757,7 @@ bool AutoBalancer::stopAutoBalancer ()
 
 void AutoBalancer::waitABCTransition()
 {
-  while (transition_count != 0) usleep(1000);
+  while (!transition_interpolator->isEmpty()) usleep(1000);
   usleep(1000);
 }
 bool AutoBalancer::goPos(const double& x, const double& y, const double& th)
@@ -840,7 +833,7 @@ bool AutoBalancer::setFootSteps(const OpenHRP::AutoBalancerService::FootstepSequ
 void AutoBalancer::waitFootSteps()
 {
   //while (gg_is_walking) usleep(10);
-  while (gg_is_walking || transition_count != 0 )
+  while (gg_is_walking || !transition_interpolator->isEmpty() )
     usleep(1000);
   usleep(1000);
   gg->set_offset_velocity_param(0,0,0);
