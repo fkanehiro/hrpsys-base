@@ -109,8 +109,7 @@ RTC::ReturnCode_t ImpedanceController::onInitialize()
     if (!loadBodyFromModelLoader(m_robot, prop["model"].c_str(), 
                                  CosNaming::NamingContext::_duplicate(naming.getRootContext())
                                  )){
-      std::cerr << "failed to load model[" << prop["model"] << "] in "
-                << m_profile.instance_name << std::endl;
+      std::cerr << "[" << m_profile.instance_name << "] failed to load model[" << prop["model"] << "]" << std::endl;
       return RTC::RTC_ERROR;
     }
 
@@ -131,7 +130,8 @@ RTC::ReturnCode_t ImpedanceController::onInitialize()
         for (unsigned int j=0; j<6; j++) m_ref_force[i].data[j] = 0.0;
         m_ref_forceOut[i] = new OutPort<TimedDoubleSeq>(std::string("ref_"+s->name).c_str(), m_ref_force[i]);
         registerOutPort(std::string("ref_"+s->name).c_str(), *m_ref_forceOut[i]);
-        std::cerr << s->name << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "] force sensor" << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "]   name = " << s->name << std::endl;
     }
     for (unsigned int i=0; i<nvforce; i++){
         std::string name = virtual_force_sensor[i*10+0];
@@ -144,9 +144,10 @@ RTC::ReturnCode_t ImpedanceController::onInitialize()
         p.R = Eigen::AngleAxis<double>(tr[6], hrp::Vector3(tr[3],tr[4],tr[5])).toRotationMatrix(); // rotation in VRML is represented by axis + angle
         p.parent_link_name = virtual_force_sensor[i*10+2];
         m_sensors[name] = p;
-        std::cerr << "virtual force sensor : " << name << std::endl;
-        std::cerr << "                T, R : " << p.p[0] << " " << p.p[1] << " " << p.p[2] << std::endl << p.R << std::endl;
-        std::cerr << "              parent : " << p.parent_link_name << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "] virtual force sensor" << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "]   name = " << name << ", parent = " << p.parent_link_name << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "]   localP = " << p.p.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[m]" << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "]   localR = " << p.R.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", "\n", "    [", "]")) << std::endl;
 
         m_forceIn[i+npforce] = new InPort<TimedDoubleSeq>(name.c_str(), m_force[i+npforce]);
         m_force[i+npforce].data.length(6);
@@ -165,7 +166,7 @@ RTC::ReturnCode_t ImpedanceController::onInitialize()
     unsigned int dof = m_robot->numJoints();
     for ( int i = 0 ; i < dof; i++ ){
       if ( i != m_robot->joint(i)->jointId ) {
-        std::cerr << "jointId is not equal to the index number" << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "] jointId is not equal to the index number" << std::endl;
         return RTC::RTC_ERROR;
       }
     }
@@ -245,8 +246,9 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
           hrp::Vector3 data_p(m_force[i].data[0], m_force[i].data[1], m_force[i].data[2]);
           hrp::Vector3 data_r(m_force[i].data[3], m_force[i].data[4], m_force[i].data[5]);
           if ( DEBUGP ) {
-            std::cerr << "raw force : " << data_p[0] << " " << data_p[1] << " " << data_p[2] << std::endl;
-            std::cerr << "raw moment : " << data_r[0] << " " << data_r[1] << " " << data_r[2] << std::endl;
+            std::cerr << "[" << m_profile.instance_name << "] force and moment [" << sensor_name << "]" << std::endl;
+            std::cerr << "[" << m_profile.instance_name << "]   sensor force  = " << data_p.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[N]" << std::endl;
+            std::cerr << "[" << m_profile.instance_name << "]   sensor moment = " << data_r.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[Nm]" << std::endl;
           }
           hrp::Matrix33 sensorR;
           if ( sensor ) {
@@ -255,20 +257,17 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
           } else if ( m_sensors.find(sensor_name) !=  m_sensors.end()) {
             // virtual force sensor
             if ( DEBUGP ) {
-              //std::cerr << " targetR: " << target->R << std::endl;
-              std::cerr << " sensorR: " << m_sensors[sensor_name].R << std::endl;
+              std::cerr << "[" << m_profile.instance_name << "]   sensorR = " << m_sensors[sensor_name].R.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", "\n", "    [", "]")) << std::endl;
             }
             sensorR = m_robot->link(m_sensors[sensor_name].parent_link_name)->R * m_sensors[sensor_name].R;
           } else {
-            std::cerr << "unknwon force param" << std::endl;
+            std::cerr << "[" << m_profile.instance_name << "]   unknown force param" << std::endl;
           }
           abs_forces[sensor_name] = sensorR * data_p;
           abs_moments[sensor_name] = sensorR * data_r;
           if ( DEBUGP ) {
-            hrp::Vector3& tmpf = abs_forces[sensor_name];
-            hrp::Vector3& tmpm = abs_moments[sensor_name];
-            std::cerr << "world force : " << tmpf[0] << " " << tmpf[1] << " " << tmpf[2] << std::endl;
-            std::cerr << "world moment : " << tmpm[0] << " " << tmpm[1] << " " << tmpm[2] << std::endl;
+            std::cerr << "[" << m_profile.instance_name << "]   abs force  = " << abs_forces[sensor_name].format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[N]" << std::endl;
+            std::cerr << "[" << m_profile.instance_name << "]   abs moment = " << abs_moments[sensor_name].format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[Nm]" << std::endl;
           }
         }
       }
@@ -281,7 +280,7 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
          m_qCurrent.data.length() ==  m_robot->numJoints() ) {
 
         if ( DEBUGP ) {
-            std::cerr << "qRef  : ";
+          std::cerr << "[" << m_profile.instance_name << "] qRef = ";
             for ( int i = 0; i <  m_qRef.data.length(); i++ ){
                 std::cerr << " " << m_qRef.data[i];
             }
@@ -350,7 +349,7 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
 	    }
         param.transition_count--;
 	    if(param.transition_count <= 0){ // erase impedance param
-          std::cerr << "Finished cleanup and erase impedance param " << sensor_name << std::endl;
+          std::cerr << "[" << m_profile.instance_name << "] Finished cleanup and erase impedance param " << sensor_name << std::endl;
           m_impedance_param.erase(it++);
         }else{
           it++;
@@ -391,19 +390,13 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
             // target_p1(target_coords1) = target_p0(target_coords0)
 
             if ( DEBUGP ) {
-                std::cerr << "cur0  : " << param.current_p0[0] << " " << param.current_p0[1] << " " << param.current_p0[2] << std::endl;
-                std::cerr << "cur1  : " << param.current_p1[0] << " " << param.current_p1[1] << " " << param.current_p1[2] << std::endl;
-                std::cerr << "cur2  : " << param.current_p2[0] << " " << param.current_p2[1] << " " << param.current_p2[2] << std::endl;
-                std::cerr << "tgt0  : " << param.target_p0[0] << " " << param.target_p0[1] << " " << param.target_p0[2] << std::endl;
-                std::cerr << "tgt1  : " << param.target_p1[0] << " " << param.target_p1[1] << " " << param.target_p1[2] << std::endl;
+              std::cerr << "[" << m_profile.instance_name << "] impedance calc [" << it->first << "]" << std::endl;
+              std::cerr << "[" << m_profile.instance_name << "]   cur0 = " << param.current_p0.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[m]" << std::endl;
+              std::cerr << "[" << m_profile.instance_name << "]   cur1 = " << param.current_p1.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[m]" << std::endl;
+              std::cerr << "[" << m_profile.instance_name << "]   cur2 = " << param.current_p2.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[m]" << std::endl;
+              std::cerr << "[" << m_profile.instance_name << "]   tgt0 = " << param.target_p0.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[m]" << std::endl;
+              std::cerr << "[" << m_profile.instance_name << "]   tgt1 = " << param.target_p1.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[m]" << std::endl;
             }
-            // if ( DEBUGP ) {
-            //     std::cerr << "cur0  : " << param.current_r0[0] << " " << param.current_r0[1] << " " << param.current_r0[2] << std::endl;
-            //     std::cerr << "cur1  : " << param.current_r1[0] << " " << param.current_r1[1] << " " << param.current_r1[2] << std::endl;
-            //     std::cerr << "cur2  : " << param.current_r2[0] << " " << param.current_r2[1] << " " << param.current_r2[2] << std::endl;
-            //     std::cerr << "tgt0  : " << param.target_r0[0] << " " << param.target_r0[1] << " " << param.target_r0[2] << std::endl;
-            //     std::cerr << "tgt1  : " << param.target_r1[0] << " " << param.target_r1[1] << " " << param.target_r1[2] << std::endl;
-            // }
 
             dif_pos  = param.target_p0 - param.current_p0;
             vel_pos0 = param.current_p0 - param.current_p1;
@@ -416,16 +409,14 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
             rats::difference_rotation(dif_target_rot, param.target_r1, param.target_r0);
 
             if ( DEBUGP ) {
-                std::cerr << "dif_p : " << dif_pos[0] << " " << dif_pos[1] << " " << dif_pos[2] << std::endl;
-                std::cerr << "vel_p0: " << vel_pos0[0] << " " << vel_pos0[1] << " " << vel_pos0[2] << std::endl;
-                std::cerr << "vel_p1: " << vel_pos1[0] << " " << vel_pos1[1] << " " << vel_pos1[2] << std::endl;
-                std::cerr << "dif_t : " << dif_target_pos[0] << " " << dif_target_pos[1] << " " << dif_target_pos[2] << std::endl;
-            }
-            if ( DEBUGP ) {
-                std::cerr << "dif_r : " << dif_rot[0] << " " << dif_rot[1] << " " << dif_rot[2] << std::endl;
-                std::cerr << "vel_r0: " << vel_rot0[0] << " " << vel_rot0[1] << " " << vel_rot0[2] << std::endl;
-                std::cerr << "vel_r1: " << vel_rot1[0] << " " << vel_rot1[1] << " " << vel_rot1[2] << std::endl;
-                std::cerr << "dif_t : " << dif_target_rot[0] << " " << dif_target_rot[1] << " " << dif_target_rot[2] << std::endl;
+                std::cerr << "[" << m_profile.instance_name << "]   dif_p  = " << dif_pos.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[m]" << std::endl;
+                std::cerr << "[" << m_profile.instance_name << "]   vel_p0 = " << vel_pos0.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[m]" << std::endl;
+                std::cerr << "[" << m_profile.instance_name << "]   vel_p1 = " << vel_pos1.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[m]" << std::endl;
+                std::cerr << "[" << m_profile.instance_name << "]   dif_t  = " << dif_target_pos.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[m]" << std::endl;
+                std::cerr << "[" << m_profile.instance_name << "]   dif_r  = " << dif_rot.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[rad]" << std::endl;
+                std::cerr << "[" << m_profile.instance_name << "]   vel_r0 = " << vel_rot0.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[rad]" << std::endl;
+                std::cerr << "[" << m_profile.instance_name << "]   vel_r1 = " << vel_rot1.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[rad]" << std::endl;
+                std::cerr << "[" << m_profile.instance_name << "]   dif_t  = " << dif_target_rot.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[rad]" << std::endl;
             }
             hrp::Vector3 vel_p, vel_r;
             //std::cerr << "MDK = " << param.M_p << " " << param.D_p << " " << param.K_p << std::endl;
@@ -447,8 +438,8 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
 
             // generate smooth motion just after impedance started
             if ( DEBUGP ) {
-                std::cerr << "vel_p : " << vel_p[0] << " " << vel_p[1] << " " << vel_p[2] << std::endl;
-                std::cerr << "vel_r : " << vel_r[0] << " " << vel_r[1] << " " << vel_r[2] << std::endl;
+                std::cerr << "[" << m_profile.instance_name << "]   vel_p  = " << vel_p.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[m]" << std::endl;
+                std::cerr << "[" << m_profile.instance_name << "]   vel_r  = " << vel_r.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[rad]" << std::endl;
             }
             manip->calcInverseKinematics2Loop(vel_p, vel_r, 1.0, param.avoid_gain, param.reference_gain, &qrefv);
 
@@ -481,7 +472,7 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
             }
             m_qOut.write();
             if ( DEBUGP ) {
-                std::cerr << "q     : ";
+                std::cerr << "[" << m_profile.instance_name << "] q = ";
                 for ( int i = 0; i < m_q.data.length(); i++ ){
                     std::cerr << " " << m_q.data[i];
                 }
@@ -547,7 +538,7 @@ bool ImpedanceController::setImpedanceControllerParam(OpenHRP::ImpedanceControll
     // wait to finish deleting if the target impedance param has been deleted
     if(m_impedance_param.find(name) != m_impedance_param.end() 
        && m_impedance_param[name].transition_count > 0){
-      std::cerr << "Wait to finish deleting old " << name << std::endl;
+      std::cerr << "[" << m_profile.instance_name << "] Wait to finish deleting old " << name << std::endl;
       waitDeletingImpedanceController(name);
     }
 
@@ -555,11 +546,11 @@ bool ImpedanceController::setImpedanceControllerParam(OpenHRP::ImpedanceControll
     Guard guard(m_mutex);
     
     if ( m_qRef.data.length() !=  m_robot->numJoints() ) {
-        std::cerr << "m_qRef has wrong size, m_robot->numJoints() = " << m_robot->numJoints() << ", m_qRef.data.length() = " << m_qRef.data.length() << std::endl;
+      std::cerr << "[" << m_profile.instance_name << "] m_qRef has wrong size, m_robot->numJoints() = " << m_robot->numJoints() << ", m_qRef.data.length() = " << m_qRef.data.length() << std::endl;
         return false;
     }
     if ( m_qCurrent.data.length() !=  m_robot->numJoints() ) {
-        std::cerr << "m_qCurrent has wrong size, m_robot->numJoints() = " << m_robot->numJoints() << ", m_qCurrent.data.length() = " << m_qCurrent.data.length() << std::endl;
+      std::cerr << "[" << m_profile.instance_name << "] m_qCurrent has wrong size, m_robot->numJoints() = " << m_robot->numJoints() << ", m_qCurrent.data.length() = " << m_qCurrent.data.length() << std::endl;
         return false;
     }
 
@@ -569,14 +560,14 @@ bool ImpedanceController::setImpedanceControllerParam(OpenHRP::ImpedanceControll
     }
 
     if ( m_impedance_param.find(name) == m_impedance_param.end() ) {
-        std::cerr << "Set new impedance parameters" << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "] Set new impedance parameters" << std::endl;
 
 	if ( ! m_robot->link(base_name) ) {
-	  std::cerr << "Could not found link " << base_name << std::endl;
+          std::cerr << "[" << m_profile.instance_name << "] Could not found link " << base_name << std::endl;
 	  return false;
 	}
 	if ( ! m_robot->link(target_name) ) {
-	  std::cerr << "Could not found link " << target_name << std::endl;
+          std::cerr << "[" << m_profile.instance_name << "] Could not found link " << target_name << std::endl;
 	  return false;
 	}
     
@@ -596,7 +587,7 @@ bool ImpedanceController::setImpedanceControllerParam(OpenHRP::ImpedanceControll
 	p.manip = hrp::JointPathExPtr(new hrp::JointPathEx(m_robot, m_robot->link(p.base_name), m_robot->link(p.target_name)));
 
         if ( ! p.manip ) {
-          std::cerr << "invalid joint path from " << p.base_name << " to " << p.target_name << std::endl;
+          std::cerr << "[" << m_profile.instance_name << "] invalid joint path from " << p.base_name << " to " << p.target_name << std::endl;
           return false;
         }
 
@@ -632,7 +623,7 @@ bool ImpedanceController::setImpedanceControllerParam(OpenHRP::ImpedanceControll
 	m_impedance_param[name] = p;
 
     } else {
-        std::cerr << "Update impedance parameters" << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "] Update impedance parameters" << std::endl;
     }
 
     m_impedance_param[name].sr_gain    = i_param_.sr_gain;
@@ -666,19 +657,20 @@ bool ImpedanceController::setImpedanceControllerParam(OpenHRP::ImpedanceControll
 
     for ( std::map<std::string, ImpedanceParam>::iterator it = m_impedance_param.begin(); it != m_impedance_param.end(); it++ ) {
       ImpedanceParam& param = it->second;
-      std::cerr << "          name : " << it->first << std::endl;
-      std::cerr << "     base_name : " << param.base_name << std::endl;
-      std::cerr << "   target_name : " << param.target_name << std::endl;
-      std::cerr << " M, D, K (pos) : " << param.M_p << " " << param.D_p << " " << param.K_p << std::endl;
-      std::cerr << " M, D, K (rot) : " << param.M_r << " " << param.D_r << " " << param.K_r << std::endl;
-      std::cerr << "     ref_force : " << param.ref_force[0] << " " << param.ref_force[1] << " " << param.ref_force[2] << std::endl;
-      std::cerr << "    ref_moment : " << param.ref_moment[0] << " " << param.ref_moment[1] << " " << param.ref_moment[2] << std::endl;
-      std::cerr << "    force_gain : " << std::endl << param.force_gain << std::endl;
-      std::cerr << "   moment_gain : " << std::endl << param.moment_gain << std::endl;
-      std::cerr << "   manip_limit : " << param.manipulability_limit << std::endl;
-      std::cerr << "       sr_gain : " << param.sr_gain << std::endl;
-      std::cerr << "    avoid_gain : " << param.avoid_gain << std::endl;
-      std::cerr << "reference_gain : " << param.reference_gain << std::endl;
+      std::cerr << "[" << m_profile.instance_name << "] set parameters" << std::endl;
+      std::cerr << "[" << m_profile.instance_name << "]             name : " << it->first << std::endl;
+      std::cerr << "[" << m_profile.instance_name << "]        base_name : " << param.base_name << std::endl;
+      std::cerr << "[" << m_profile.instance_name << "]      target_name : " << param.target_name << std::endl;
+      std::cerr << "[" << m_profile.instance_name << "]    M, D, K (pos) : " << param.M_p << " " << param.D_p << " " << param.K_p << std::endl;
+      std::cerr << "[" << m_profile.instance_name << "]    M, D, K (rot) : " << param.M_r << " " << param.D_r << " " << param.K_r << std::endl;
+      std::cerr << "[" << m_profile.instance_name << "]        ref_force : " << param.ref_force.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[N]" << std::endl;
+      std::cerr << "[" << m_profile.instance_name << "]       ref_moment : " << param.ref_moment.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[Nm]" << std::endl;
+      std::cerr << "[" << m_profile.instance_name << "]       force_gain : " << param.force_gain.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", "\n", "    [", "]")) << std::endl;
+      std::cerr << "[" << m_profile.instance_name << "]      moment_gain : " << param.moment_gain.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", "\n", "    [", "]")) << std::endl;
+      std::cerr << "[" << m_profile.instance_name << "]      manip_limit : " << param.manipulability_limit << std::endl;
+      std::cerr << "[" << m_profile.instance_name << "]          sr_gain : " << param.sr_gain << std::endl;
+      std::cerr << "[" << m_profile.instance_name << "]       avoid_gain : " << param.avoid_gain << std::endl;
+      std::cerr << "[" << m_profile.instance_name << "]   reference_gain : " << param.reference_gain << std::endl;
     }
 
     
@@ -739,7 +731,7 @@ bool ImpedanceController::checkImpedanceNameValidity (int& force_id, const std::
     }
   }
   if ( force_id < 0 ) {
-    std::cerr << "Could not found FORCE_SENSOR named " << name << std::endl;
+    std::cerr << "[" << m_profile.instance_name << "] Could not found FORCE_SENSOR named " << name << std::endl;
     return false;
   }
   return true;
@@ -748,15 +740,15 @@ bool ImpedanceController::checkImpedanceNameValidity (int& force_id, const std::
 bool ImpedanceController::deleteImpedanceController(std::string i_name_)
 {
     if ( m_impedance_param.find(i_name_) == m_impedance_param.end() ) {
-      std::cerr << "Could not found impedance controller" << i_name_ << std::endl;
+      std::cerr << "[" << m_profile.instance_name << "] Could not found impedance controller" << i_name_ << std::endl;
       return false;
     }
      
     if ( m_impedance_param[i_name_].transition_count > 0) {
-      std::cerr << i_name_ << "is already in deleting." << std::endl;
+      std::cerr << "[" << m_profile.instance_name << "] " << i_name_ << "is already in deleting." << std::endl;
       return false;
     }else{
-      std::cerr << "Delete impedance parameters " << i_name_ << std::endl;
+      std::cerr << "[" << m_profile.instance_name << "] Delete impedance parameters " << i_name_ << std::endl;
       for (int i = 0; i < m_robot->numJoints(); i++ ) {
           m_impedance_param[i_name_].transition_joint_q[i] = m_robot->joint(i)->q;
       }
