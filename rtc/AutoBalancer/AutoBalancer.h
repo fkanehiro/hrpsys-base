@@ -112,8 +112,14 @@ class AutoBalancer
   // <rtc-template block="inport_declare">
   TimedDoubleSeq m_qRef;
   InPort<TimedDoubleSeq> m_qRefIn;
-  TimedDoubleSeq m_qCurrent;
-  InPort<TimedDoubleSeq> m_qCurrentIn;
+  TimedPoint3D m_basePos;
+  InPort<TimedPoint3D> m_basePosIn;
+  TimedOrientation3D m_baseRpy;
+  InPort<TimedOrientation3D> m_baseRpyIn;
+  TimedPoint3D m_zmp;
+  InPort<TimedPoint3D> m_zmpIn;
+  TimedDoubleSeq m_optionalData;
+  InPort<TimedDoubleSeq> m_optionalDataIn;
   std::vector<TimedDoubleSeq> m_ref_force;
   std::vector<InPort<TimedDoubleSeq> *> m_ref_forceIn;
   
@@ -121,11 +127,8 @@ class AutoBalancer
 
   // DataOutPort declaration
   // <rtc-template block="outport_declare">
-  RTC::TimedPoint3D m_zmpRef;
-  TimedPoint3D m_basePos;
-  TimedOrientation3D m_baseRpy;
   OutPort<TimedDoubleSeq> m_qOut;
-  RTC::OutPort<RTC::TimedPoint3D> m_zmpRefOut;
+  RTC::OutPort<RTC::TimedPoint3D> m_zmpOut;
   OutPort<TimedPoint3D> m_basePosOut;
   OutPort<TimedOrientation3D> m_baseRpyOut;
   TimedDoubleSeq m_baseTform;
@@ -214,6 +217,9 @@ class AutoBalancer
 
   double zmp_interpolate_time;
   interpolator *zmp_interpolator;
+  interpolator *transition_interpolator;
+  hrp::Vector3 input_zmp, input_basePos;
+  hrp::Matrix33 input_baseRot;
 
   // static balance point offsetting
   hrp::Vector3 sbp_offset, sbp_cog_offset;
