@@ -124,8 +124,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     if (!loadBodyFromModelLoader(m_robot, prop["model"].c_str(), 
                                  CosNaming::NamingContext::_duplicate(naming.getRootContext())
                                  )){
-      std::cerr << "failed to load model[" << prop["model"] << "] in "
-                << m_profile.instance_name << std::endl;
+      std::cerr << m_profile.instance_name << " failed to load model[" << prop["model"] << "]" << std::endl;
       return RTC::RTC_ERROR;
     }
 
@@ -152,7 +151,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     if (leg_offset_str.size() > 0) {
       hrp::Vector3 leg_offset;
       for (size_t i = 0; i < 3; i++) coil::stringTo(leg_offset(i), leg_offset_str[i].c_str());
-      std::cerr << "[AutoBalancer] abc_leg_offset : " << leg_offset(0) << " " << leg_offset(1) << " " << leg_offset(2) << std::endl;
+      std::cerr << m_profile.instance_name << " abc_leg_offset = " << leg_offset.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[m]" << std::endl;
       leg_pos.push_back(hrp::Vector3(-1*leg_offset));
       leg_pos.push_back(hrp::Vector3(leg_offset));
     }
@@ -161,7 +160,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     hrp::Vector3 stride_param;
     if (stride_param_str.size() > 0) {
       for (size_t i = 0; i < 3; i++) coil::stringTo(stride_param(i), stride_param_str[i].c_str());
-      std::cerr << "[AutoBalancer] abc_stride_parameter : " << stride_param(0) << " " << stride_param(1) << " " << stride_param(2) << std::endl;
+      std::cerr << m_profile.instance_name << " abc_stride_parameter : " << stride_param(0) << "[m], " << stride_param(1) << "[m], " << stride_param(2) << "[deg]" << std::endl;
     }
     if (default_zmp_offsets.size() == 0) {
       for (size_t i = 0; i < 2; i++) default_zmp_offsets.push_back(hrp::Vector3::Zero());
@@ -198,8 +197,9 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
         tp.manip = hrp::JointPathExPtr(new hrp::JointPathEx(m_robot, m_robot->link(tp.base_name),
                                                             m_robot->link(tp.target_name)));
         ikp.insert(std::pair<std::string, ABCIKparam>(ee_name , tp));
-        std::cerr << "abc limb[" << ee_name << "] " << ee_target << " " << ee_base << std::endl;
-        std::cerr << "     offset_pos : " << tp.target2foot_offset_pos(0) << " " << tp.target2foot_offset_pos(1) << " " << tp.target2foot_offset_pos(2) << std::endl;
+        std::cerr << m_profile.instance_name << " End Effector [" << ee_name << "]" << ee_target << " " << ee_base << std::endl;
+        std::cerr << m_profile.instance_name << "   target = " << ee_target << ", base = " << ee_base << std::endl;
+        std::cerr << m_profile.instance_name << "   offset_pos = " << tp.target2foot_offset_pos.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[m]" << std::endl;
         contact_states_index_map.insert(std::pair<std::string, size_t>(ee_name, i));
       }
       m_contactStates.data.length(num);
@@ -227,7 +227,8 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
         m_ref_forceIn[i] = new InPort<TimedDoubleSeq>(std::string("ref_"+s->name).c_str(), m_ref_force[i]);
         m_ref_force[i].data.length(6);
         registerInPort(std::string("ref_"+s->name).c_str(), *m_ref_forceIn[i]);
-        std::cerr << s->name << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "] force sensor" << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "] name = " << s->name << std::endl;
     }
     for (unsigned int i=0; i<nvforce; i++){
         std::string name = virtual_force_sensor[i*10+0];
@@ -454,7 +455,7 @@ void AutoBalancer::getTargetParameters()
   } else if ( transition_count > 0 ) {
     transition_count--;
     if(transition_count <= 0){ // erase impedance param
-      std::cerr << "Finished cleanup" << std::endl;
+      std::cerr << "[" << m_profile.instance_name << "] Finished cleanup" << std::endl;
       control_mode = MODE_IDLE;
     }
   }
@@ -474,9 +475,9 @@ void AutoBalancer::getTargetParameters()
         for (size_t j = 0; j < 3; j++)
           default_zmp_offsets[i](j) = default_zmp_offsets_output[i*3+j];
       if (DEBUGP) {
-        std::cerr << "default_zmp_offsets (interpolate): "
-                  << default_zmp_offsets[0](0) << " " << default_zmp_offsets[0](1) << " " << default_zmp_offsets[0](2) << " "
-                  << default_zmp_offsets[1](0) << " " << default_zmp_offsets[1](1) << " " << default_zmp_offsets[1](2) << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "] default_zmp_offsets (interpolated)" << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "]   rleg = " << default_zmp_offsets[0].format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[m]" << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "]   lleg = " << default_zmp_offsets[1].format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[m]" << std::endl;
       }
     }
     if ( gg_is_walking ) {
@@ -672,7 +673,7 @@ void AutoBalancer::solveLimbIK ()
 
 void AutoBalancer::startABCparam(const OpenHRP::AutoBalancerService::StrSequence& limbs)
 {
-  std::cerr << "[AutoBalancer] start auto balancer mode" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "] start auto balancer mode" << std::endl;
   Guard guard(m_mutex);
   transition_count = -MAX_TRANSITION_COUNT; // when start impedance, count up to 0
   double tmp_ratio = 1.0;
@@ -684,7 +685,7 @@ void AutoBalancer::startABCparam(const OpenHRP::AutoBalancerService::StrSequence
   for (size_t i = 0; i < limbs.length(); i++) {
     ABCIKparam& tmp = ikp[std::string(limbs[i])];
     tmp.is_active = true;
-    std::cerr << "abc limb [" << std::string(limbs[i]) << "]" << std::endl;
+    std::cerr << "[" << m_profile.instance_name << "]   limb [" << std::string(limbs[i]) << "]" << std::endl;
   }
 
   control_mode = MODE_ABC;
@@ -692,7 +693,7 @@ void AutoBalancer::startABCparam(const OpenHRP::AutoBalancerService::StrSequence
 
 void AutoBalancer::stopABCparam()
 {
-  std::cerr << "[AutoBalancer] stop auto balancer mode" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "] stop auto balancer mode" << std::endl;
   //Guard guard(m_mutex);
   transition_count = MAX_TRANSITION_COUNT; // when start impedance, count up to 0
   double tmp_ratio = 0.0;
@@ -776,7 +777,7 @@ bool AutoBalancer::goPos(const double& x, const double& y, const double& th)
     startWalking();
     return true;
   } else {
-    std::cerr << "Cannot goPos while walking." << std::endl;
+    std::cerr << "[" << m_profile.instance_name << "] Cannot goPos while walking." << std::endl;
     return false;
   }
 }
@@ -804,7 +805,7 @@ bool AutoBalancer::goStop ()
 bool AutoBalancer::setFootSteps(const OpenHRP::AutoBalancerService::FootstepSequence& fs)
 {
   if (!gg_is_walking) {
-    std::cerr << "set_foot_steps" << std::endl;
+    std::cerr << "[" << m_profile.instance_name << "] setFootSteps" << std::endl;
     coordinates tmpfs, initial_support_coords, initial_input_coords, fstrans;
     initial_support_coords = ikp[std::string(fs[0].leg)].target_end_coords;
     memcpy(initial_input_coords.pos.data(), fs[0].pos, sizeof(double)*3);
@@ -821,17 +822,17 @@ bool AutoBalancer::setFootSteps(const OpenHRP::AutoBalancerService::FootstepSequ
         tmpfs.transform(fstrans);
         gg->append_footstep_node(leg, tmpfs);
       } else {
-        std::cerr << "no such target : " << leg << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "]   No such target : " << leg << std::endl;
         return false;
       }
     }
-    std::cerr << "[AutoBalancer] : print footsteps " << std::endl;
+    std::cerr << "[" << m_profile.instance_name << "] print footsteps " << std::endl;
     gg->append_finalize_footstep();
     gg->print_footstep_list();
     startWalking();
     return true;
   } else {
-    std::cerr << "Cannot setFootSteps while walking." << std::endl;
+    std::cerr << "[" << m_profile.instance_name << "] Cannot setFootSteps while walking." << std::endl;
     return false;
   }
 }
@@ -865,11 +866,12 @@ bool AutoBalancer::setGaitGeneratorParam(const OpenHRP::AutoBalancerService::Gai
   // print
   hrp::Vector3 tmpv;
   gg->get_stride_parameters(tmpv(0), tmpv(1), tmpv(2));
-  std::cerr << "  stride_parameter = " << tmpv.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << std::endl;
-  std::cerr << "  default_step_time = " << gg->get_default_step_time() << std::endl;
-  std::cerr << "  default_step_height = " << gg->get_default_step_height() << std::endl;
-  std::cerr << "  default_double_support_ratio = " << gg->get_default_double_support_ratio() << std::endl;
-  std::cerr << "  default_orbit_type = ";
+  std::cerr << "[" << m_profile.instance_name << "] setGaitGeneratorParam" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   stride_parameter = " << tmpv.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   default_step_time = " << gg->get_default_step_time() << "[s]" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   default_step_height = " << gg->get_default_step_height() << "[m]" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   default_double_support_ratio = " << gg->get_default_double_support_ratio() << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   default_orbit_type = ";
   if (gg->get_default_orbit_type() == gait_generator::SHUFFLING) {
     std::cerr << "SHUFFLING" << std::endl;
   } else if (gg->get_default_orbit_type() == gait_generator::CYCLOID) {
@@ -879,9 +881,9 @@ bool AutoBalancer::setGaitGeneratorParam(const OpenHRP::AutoBalancerService::Gai
   } else if (gg->get_default_orbit_type() == gait_generator::STAIR) {
     std::cerr << "STAIR" << std::endl;
   }
-  std::cerr << "  swing_trajectory_delay_time_offset = " << gg->get_swing_trajectory_delay_time_offset() << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   swing_trajectory_delay_time_offset = " << gg->get_swing_trajectory_delay_time_offset() << "[s]" << std::endl;
   tmpv = gg->get_stair_trajectory_way_point_offset();
-  std::cerr << "  stair_trajectory_way_point_offset = " << tmpv.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   stair_trajectory_way_point_offset = " << tmpv.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[m]" << std::endl;
   return true;
 };
 
@@ -914,8 +916,9 @@ bool AutoBalancer::setAutoBalancerParam(const OpenHRP::AutoBalancerService::Auto
     for (size_t j = 0; j < 3; j++)
       default_zmp_offsets_array[i*3+j] = i_param.default_zmp_offsets[i][j];
   zmp_interpolator->go(default_zmp_offsets_array, zmp_interpolate_time, true);
-  std::cerr << "move_base_gain: " << move_base_gain << std::endl;
-  std::cerr << "default_zmp_offsets: "
+  std::cerr << "[" << m_profile.instance_name << "] setAutoBalancerParam" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   move_base_gain = " << move_base_gain << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   default_zmp_offsets = "
             << default_zmp_offsets_array[0] << " " << default_zmp_offsets_array[1] << " " << default_zmp_offsets_array[2] << " "
             << default_zmp_offsets_array[3] << " " << default_zmp_offsets_array[4] << " " << default_zmp_offsets_array[5] << std::endl;
   return true;
