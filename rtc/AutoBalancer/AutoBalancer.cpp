@@ -465,7 +465,7 @@ void AutoBalancer::getTargetParameters()
   ref_zmp = input_zmp;
   m_robot->calcForwardKinematics();
   //
-  {
+  if (control_mode != MODE_IDLE) {
     coordinates rc, lc;
     coordinates tmp_fix_coords;
     if (!zmp_interpolator->isEmpty()) {
@@ -567,6 +567,17 @@ void AutoBalancer::getTargetParameters()
       ref_zmp(1) = ref_cog(1);
       ref_zmp(2) = (rc.pos(2) + lc.pos(2)) / 2.0;
     }
+  }
+  if (control_mode == MODE_SYNC_TO_ABC) {
+    current_root_p = target_root_p;
+    current_root_R = target_root_R;
+    for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
+      if ( it->first.find("leg") != std::string::npos ) {
+        it->second.target_p0 = m_robot->link(it->second.target_name)->p;
+        it->second.target_r0 = m_robot->link(it->second.target_name)->R;
+      }
+    }
+    control_mode = MODE_ABC;
   }
 };
 
@@ -688,7 +699,7 @@ void AutoBalancer::startABCparam(const OpenHRP::AutoBalancerService::StrSequence
     std::cerr << "[" << m_profile.instance_name << "]   limb [" << std::string(limbs[i]) << "]" << std::endl;
   }
 
-  control_mode = MODE_ABC;
+  control_mode = MODE_SYNC_TO_ABC;
 }
 
 void AutoBalancer::stopABCparam()
@@ -702,7 +713,7 @@ void AutoBalancer::stopABCparam()
     transition_joint_q[i] = m_robot->joint(i)->q;
   }
   prev_ref_zmp = ref_zmp;
-  control_mode = MODE_SYNC;
+  control_mode = MODE_SYNC_TO_IDLE;
 }
 
 void AutoBalancer::startWalking ()
