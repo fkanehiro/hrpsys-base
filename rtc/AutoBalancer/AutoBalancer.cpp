@@ -290,7 +290,7 @@ RTC::ReturnCode_t AutoBalancer::onDeactivated(RTC::UniqueId ec_id)
   Guard guard(m_mutex);
   if (control_mode == MODE_ABC) {
     stopABCparam();
-    control_mode = MODE_IDLE;
+    control_mode = MODE_SYNC_TO_IDLE;
     double tmp_ratio = 0.0;
     transition_interpolator->go(&tmp_ratio, m_dt, true); // sync in one controller loop
   }
