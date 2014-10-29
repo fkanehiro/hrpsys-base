@@ -327,6 +327,23 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
             m_ref_forceIn[i]->read();
         }
     }
+    if (m_optionalDataIn.isNew()) {
+        m_optionalDataIn.read();
+        if (is_legged_robot) {
+          if (m_optionalData.data.length() >= contact_states_index_map.size()*2) {
+            // current optionalData is contactstates x limb and controlSwingSupportTime x limb
+            //   If contactStates in optionalData is 1.0, m_contactStates is true. Otherwise, false.
+            m_contactStates.data[contact_states_index_map["rleg"]] = (std::fabs(m_optionalData.data[contact_states_index_map["rleg"]]-1.0)<0.1)?true:false;
+            m_contactStates.data[contact_states_index_map["lleg"]] = (std::fabs(m_optionalData.data[contact_states_index_map["lleg"]]-1.0)<0.1)?true:false;
+            m_controlSwingSupportTime.data[contact_states_index_map["rleg"]] = m_optionalData.data[contact_states_index_map["rleg"]+contact_states_index_map.size()];
+            m_controlSwingSupportTime.data[contact_states_index_map["lleg"]] = m_optionalData.data[contact_states_index_map["lleg"]+contact_states_index_map.size()];
+            if ( !m_contactStates.data[contact_states_index_map["rleg"]] && !m_contactStates.data[contact_states_index_map["lleg"]] ) { // If two feet have no contact, force set double support contact
+              m_contactStates.data[contact_states_index_map["rleg"]] = true;
+              m_contactStates.data[contact_states_index_map["lleg"]] = true;
+            }
+          }
+        }
+    }
     Guard guard(m_mutex);
     hrp::Vector3 ref_basePos;
     hrp::Matrix33 ref_baseRot;
@@ -504,6 +521,12 @@ void AutoBalancer::getTargetParameters()
       m_controlSwingSupportTime.data[contact_states_index_map["lleg"]] = gg->get_current_swing_time(1);
     } else {
       tmp_fix_coords = fix_leg_coords;
+      // double support by default
+      m_contactStates.data[contact_states_index_map["rleg"]] = true;
+      m_contactStates.data[contact_states_index_map["lleg"]] = true;
+      // controlSwingSupportTime is not used while double support period, 1.0 is neglected
+      m_controlSwingSupportTime.data[contact_states_index_map["rleg"]] = 1.0;
+      m_controlSwingSupportTime.data[contact_states_index_map["lleg"]] = 1.0;
     }
     // Tempolarily modify tmp_fix_coords
     // This will be removed after seq outputs adequate waistRPY discussed in https://github.com/fkanehiro/hrpsys-base/issues/272
