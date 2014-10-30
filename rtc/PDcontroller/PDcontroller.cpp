@@ -113,8 +113,9 @@ RTC::ReturnCode_t PDcontroller::onActivated(RTC::UniqueId ec_id)
         gain >> Dgain[i];
       }
       gain.close();
+      std::cerr << "[" << m_profile.instance_name << "] " << gain_fname << " opened" << std::endl;
     }else{
-      std::cerr << gain_fname << " not opened" << std::endl;
+      std::cerr << "[" << m_profile.instance_name << "] " << gain_fname << " not opened" << std::endl;
     }
     for(int i=0; i < dof; ++i){
       m_angleRef.data[i]=0.0;
