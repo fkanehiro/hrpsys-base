@@ -18,6 +18,18 @@ module OpenHRP
     };
 
     /**
+     * @enum ControllerMode
+     * @brief Mode of controller
+     */
+    enum ControllerMode {
+      MODE_IDLE,
+      MODE_AIR,
+      MODE_ST,
+      MODE_SYNC_TO_IDLE,
+      MODE_SYNC_TO_AIR
+    };
+
+    /**
      * @struct stParam
      * @brief Stabilizer Parameters.
      */
@@ -73,6 +85,7 @@ module OpenHRP
       DblArray2 eefm_body_attitude_control_time_const;
       // common
       STAlgorithm st_algorithm;
+      ControllerMode controller_mode;
     };
 
     /**
