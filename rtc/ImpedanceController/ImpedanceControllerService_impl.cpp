@@ -11,9 +11,9 @@ ImpedanceControllerService_impl::~ImpedanceControllerService_impl()
 {
 }
 
-CORBA::Boolean ImpedanceControllerService_impl::setImpedanceControllerParam(const OpenHRP::ImpedanceControllerService::impedanceParam &i_param_)
+CORBA::Boolean ImpedanceControllerService_impl::setImpedanceControllerParam(const char *i_name_, const OpenHRP::ImpedanceControllerService::impedanceParam &i_param_)
 {
-  return m_impedance->setImpedanceControllerParam(i_param_);
+  return m_impedance->setImpedanceControllerParam(std::string(i_name_), i_param_);
 }
 
 CORBA::Boolean ImpedanceControllerService_impl::getImpedanceControllerParam(const char *i_name_, OpenHRP::ImpedanceControllerService::impedanceParam_out i_param_)

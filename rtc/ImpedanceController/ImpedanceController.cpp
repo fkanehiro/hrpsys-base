@@ -528,9 +528,9 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
 */
 
 //
-bool ImpedanceController::setImpedanceControllerParam(OpenHRP::ImpedanceControllerService::impedanceParam i_param_)
+bool ImpedanceController::setImpedanceControllerParam(const std::string& i_name_, OpenHRP::ImpedanceControllerService::impedanceParam i_param_)
 {
-    std::string name = std::string(i_param_.name);
+    std::string name = std::string(i_name_);
     std::string base_name = std::string(i_param_.base_name);
     std::string target_name = std::string(i_param_.target_name);
     if (base_name == "") base_name = m_robot->rootLink()->name;
@@ -711,7 +711,6 @@ bool ImpedanceController::getImpedanceControllerParam(const std::string& i_name_
   if ( !checkImpedanceNameValidity (force_id, i_name_) ) {
     return false;
   }
-  i_param_.name = i_name_.c_str();
   if ( m_impedance_param.find(i_name_) == m_impedance_param.end() ) { // if impedance param of i_name_ is not found, return default impedance parameter ;; default parameter is specified ImpedanceParam struct's default constructer
     copyImpedanceParam(i_param_, ImpedanceParam());
   } else {
