@@ -214,6 +214,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   eefm_pos_margin_time = 0.02;
   eefm_zmp_delay_time_const[0] = eefm_zmp_delay_time_const[1] = 0.04;
   eefm_leg_inside_margin = 0.065; // [m]
+  eefm_cogvel_cutoff_freq = 35.3678; //[Hz]
 
   // parameters for RUNST
   double ke = 0, tc = 0;
@@ -673,8 +674,8 @@ void Stabilizer::getActualParameters ()
       act_cogvel = (act_cog - prev_act_cog)/dt;
     }
     prev_act_foot_origin_rot = foot_origin_rot;
-    //act_cogvel = 0.8 * prev_act_cogvel + 0.2 * act_cogvel;
-    act_cogvel = 0.9 * prev_act_cogvel + 0.1 * act_cogvel;
+    double const_param = 2 * M_PI * eefm_cogvel_cutoff_freq * dt;
+    act_cogvel = 1.0/(1+const_param) * prev_act_cogvel + const_param/(1+const_param) * act_cogvel;
     prev_act_cog = act_cog;
     prev_act_cogvel = act_cogvel;
     //act_root_rot = m_robot->rootLink()->R;
@@ -1374,6 +1375,7 @@ void Stabilizer::getParameter(OpenHRP::StabilizerService::stParam& i_stp)
   i_stp.eefm_pos_transition_time = eefm_pos_transition_time;
   i_stp.eefm_pos_margin_time = eefm_pos_margin_time;
   i_stp.eefm_leg_inside_margin = eefm_leg_inside_margin;
+  i_stp.eefm_cogvel_cutoff_freq = eefm_cogvel_cutoff_freq;
   i_stp.st_algorithm = st_algorithm;
   switch(control_mode) {
   case MODE_IDLE: i_stp.controller_mode = OpenHRP::StabilizerService::MODE_IDLE; break;
@@ -1433,6 +1435,7 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
   eefm_pos_transition_time = i_stp.eefm_pos_transition_time;
   eefm_pos_margin_time = i_stp.eefm_pos_margin_time;
   eefm_leg_inside_margin = i_stp.eefm_leg_inside_margin;
+  eefm_cogvel_cutoff_freq = i_stp.eefm_cogvel_cutoff_freq;
   std::cerr << "[" << m_profile.instance_name << "]   eefm_k1  = [" << eefm_k1[0] << ", " << eefm_k1[1] << "]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   eefm_k2  = [" << eefm_k2[0] << ", " << eefm_k2[1] << "]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   eefm_k3  = [" << eefm_k3[0] << ", " << eefm_k3[1] << "]" << std::endl;
@@ -1445,6 +1448,7 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
             << "eefm_pos_time_const_swing = " << eefm_pos_time_const_swing << "[s]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   eefm_pos_transition_time = " << eefm_pos_transition_time << "[s], eefm_pos_margin_time = " << eefm_pos_margin_time << "[s]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   eefm_leg_inside_margin = " << eefm_leg_inside_margin << "[m]" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   eefm_cogvel_cutoff_freq = " << eefm_cogvel_cutoff_freq << "[Hz]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]  COMMON" << std::endl;
   if (control_mode == MODE_IDLE) {
     st_algorithm = i_stp.st_algorithm;
