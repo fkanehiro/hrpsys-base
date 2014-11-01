@@ -88,7 +88,7 @@ class ImpedanceController
   // no corresponding operation exists in OpenRTm-aist-0.2.0
   // virtual RTC::ReturnCode_t onRateChanged(RTC::UniqueId ec_id);
 
-  bool setImpedanceControllerParam(OpenHRP::ImpedanceControllerService::impedanceParam i_param_);
+  bool setImpedanceControllerParam(const std::string& i_name_, OpenHRP::ImpedanceControllerService::impedanceParam i_param_);
   bool getImpedanceControllerParam(const std::string& i_name_, OpenHRP::ImpedanceControllerService::impedanceParam& i_param_);
   bool deleteImpedanceController(std::string i_name_);
   void waitDeletingImpedanceController(std::string i_name_);
