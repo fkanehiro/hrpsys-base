@@ -55,6 +55,17 @@ module OpenHRP
     };
 
     /**
+     * @enum ControllerMode
+     * @brief Mode of controller
+     */
+    enum ControllerMode {
+      MODE_IDLE,
+      MODE_ABC,
+      MODE_SYNC_TO_IDLE,
+      MODE_SYNC_TO_ABC
+    };
+
+    /**
      * @struct FootstepParam
      * @brief Foot step parameters.
      */
@@ -113,6 +124,7 @@ module OpenHRP
       /// ZMP offset vectors[m] for rleg and lleg (<-please set by this order)
       sequence<DblSequence3, 2> default_zmp_offsets;
       double move_base_gain;
+      ControllerMode controller_mode;
     };
 
     /**
