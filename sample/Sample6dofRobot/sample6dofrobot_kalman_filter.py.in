@@ -45,15 +45,21 @@ def demo():
     hcf.seq_svc.setJointAngles([0,0,0,0,0,0], 2.5)
     hcf.seq_svc.waitInterpolation()
 
-    # 1. setParameter
-    ret=hcf.kf_svc.SetKalmanFilterParam(0.001, 0.003, 0.03)
-    if ret:
-        print "SetKalmanFilterParam() => OK"
-    ret=hcf.kf_svc.SetKalmanFilterParam(0.001, 0.003, 10)
-    if ret:
-        print "SetKalmanFilterParam() => OK"
+    # 1. getParameter
+    ret=hcf.kf_svc.getKalmanFilterParam()
+    if ret[0]:
+        print "getKalmanFilterParam() => OK"
+    # 2. setParameter
+    kfp=hcf.kf_svc.getKalmanFilterParam()[1]
+    kfp.Q_angle = 0.001;
+    kfp.Q_rate = 0.003;
+    kfp.R_angle = 10.0;
+    ret=hcf.kf_svc.setKalmanFilterParam(kfp)
+    kfp2=hcf.kf_svc.getKalmanFilterParam()[1]
+    if ret and kfp.Q_angle == kfp2.Q_angle and kfp.Q_rate == kfp2.Q_rate and kfp.R_angle == kfp2.R_angle:
+        print "setKalmanFilterParam() => OK"
 
-    # 2. check log and plot
+    # 3. check log and plot
     test_kf_plot(2)
     test_kf_plot(1)
     test_kf_plot(0.5)
