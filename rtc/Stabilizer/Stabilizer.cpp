@@ -580,19 +580,25 @@ void Stabilizer::getActualParameters ()
       double alpha;
       hrp::Vector3 tau_0 = hrp::Vector3::Zero();
       hrp::Vector3 ee_pos[2];
+      hrp::Matrix33 ee_rot[2];
       for (size_t i = 0; i < 2; i++) {
         hrp::Link* target = m_robot->sensor<hrp::ForceSensor>(sensor_names[i])->link;
         ee_pos[i] = target->p + target->R * ee_map[target->name].localp;
+        ee_rot[i] = target->R * ee_map[target->name].localR;
       }
-      // tmp
-      double ledge=ee_pos[1](1) - eefm_leg_inside_margin;
-      double redge=ee_pos[0](1) + eefm_leg_inside_margin;
-      if (ledge < new_refzmp(1)) {
-        alpha = 0.0;
-      } else if (redge > new_refzmp(1)) {
-        alpha = 1.0;
-      } else {
-        alpha = fabs(new_refzmp(1) - ledge)/ fabs(ledge-redge);
+      { // calc alpha
+        hrp::Vector3 l_local_zmp = ee_rot[1].transpose() * (new_refzmp-ee_pos[1]);
+        hrp::Vector3 r_local_zmp = ee_rot[0].transpose() * (new_refzmp-ee_pos[0]);
+        if (-1 * eefm_leg_inside_margin <= l_local_zmp(1)) { // new_refzmp is inside lfoot
+          alpha = 0.0;
+        } else if (eefm_leg_inside_margin >= r_local_zmp(1)) { // new_refzmp is inside rfoot
+          alpha = 1.0;
+        } else {
+          hrp::Vector3 ledge_foot = ee_rot[1] * hrp::Vector3(l_local_zmp(0), -1 * eefm_leg_inside_margin, 0.0) + ee_pos[1];
+          hrp::Vector3 redge_foot = ee_rot[0] * hrp::Vector3(r_local_zmp(0), eefm_leg_inside_margin, 0.0) + ee_pos[0];
+          hrp::Vector3 difp = redge_foot - ledge_foot;
+          alpha = difp.dot(new_refzmp-ledge_foot)/difp.squaredNorm();
+        }
       }
       ref_foot_force[0] = hrp::Vector3(0,0, alpha * 9.8 * total_mass);
       ref_foot_force[1] = hrp::Vector3(0,0, (1-alpha) * 9.8 * total_mass);
