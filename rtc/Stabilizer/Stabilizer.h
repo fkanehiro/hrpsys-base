@@ -37,7 +37,6 @@
    \brief sample RT component which has one data input port and one data output port
  */
 #define ST_NUM_LEGS 2
-#define ST_MAX_DQ (10 * M_PI / 180)
 
 class Stabilizer
   : public RTC::DataFlowComponentBase
@@ -210,10 +209,6 @@ class Stabilizer
   enum {
     ST_LEFT = 0,
     ST_RIGHT = 1
-  };
-  enum {
-    ST_X = 0,
-    ST_Y = 1
   };
   struct ee_trans {
     hrp::Vector3 localp;

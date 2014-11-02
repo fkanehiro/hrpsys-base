@@ -315,33 +315,6 @@ RTC::ReturnCode_t Stabilizer::onDeactivated(RTC::UniqueId ec_id)
   return RTC::RTC_OK;
 }
 
-bool Stabilizer::calcZMP(hrp::Vector3& ret_zmp, const double zmp_z)
-{
-  double tmpzmpx = 0;
-  double tmpzmpy = 0;
-  double tmpfz = 0, tmpfz2 = 0.0;
-  for (size_t i = 0; i < 2; i++) {
-    hrp::ForceSensor* sensor = m_robot->sensor<hrp::ForceSensor>(sensor_names[i]);
-    hrp::Vector3 fsp = sensor->link->p + sensor->link->R * sensor->localPos;
-    hrp::Matrix33 tmpR;
-    rats::rotm3times(tmpR, sensor->link->R, sensor->localR);
-    hrp::Vector3 nf = tmpR * hrp::Vector3(m_force[i].data[0], m_force[i].data[1], m_force[i].data[2]);
-    hrp::Vector3 nm = tmpR * hrp::Vector3(m_force[i].data[3], m_force[i].data[4], m_force[i].data[5]);
-    tmpzmpx += nf(2) * fsp(0) - (fsp(2) - zmp_z) * nf(0) - nm(1);
-    tmpzmpy += nf(2) * fsp(1) - (fsp(2) - zmp_z) * nf(1) + nm(0);
-    tmpfz += nf(2);
-    prev_act_force_z[i] = 0.85 * prev_act_force_z[i] + 0.15 * nf(2); // filter, cut off 5[Hz]
-  }
-  tmpfz2 = prev_act_force_z[0] + prev_act_force_z[1];
-  if (tmpfz2 < 50) {
-    ret_zmp = act_zmp;
-    return false; // in the air
-  } else {
-    ret_zmp = hrp::Vector3(tmpzmpx / tmpfz, tmpzmpy / tmpfz, zmp_z);
-    return true; // on ground
-  }
-};
-
 #define DEBUGP ((m_debugLevel==1 && loop%200==0) || m_debugLevel > 1 )
 #define DEBUGP2 (loop%10==0)
 RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
@@ -389,36 +362,28 @@ RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
     getActualParameters();
     switch (control_mode) {
     case MODE_IDLE:
-      // if (DEBUGP2) std::cerr << "IDLE"<< std::endl;
       break;
     case MODE_AIR:
-      // if (DEBUGP2) std::cerr << "AIR"<< std::endl;
       if ( transition_count == 0 && on_ground ) sync_2_st();
       break;
     case MODE_ST:
-      // if (DEBUGP2) std::cerr << "ST"<< std::endl;
-      //calcRUNST();
       if (st_algorithm == OpenHRP::StabilizerService::EEFM) {
         calcEEForceMomentControl();
       } else {
         calcTPCC();
       }
-
       if ( transition_count == 0 && !on_ground ) control_mode = MODE_SYNC_TO_AIR;
       break;
     case MODE_SYNC_TO_IDLE:
-      // std::cerr << "SYNCIDLE"<< std::endl;
       sync_2_idle();
       control_mode = MODE_IDLE;
       break;
     case MODE_SYNC_TO_AIR:
-      // std::cerr << "SYNCAIR"<< std::endl;
       sync_2_idle();
       control_mode = MODE_AIR;
       break;
     }
   }
-  //calcTorque ();
   if ( m_robot->numJoints() == m_qRef.data.length() ) {
     if (is_legged_robot) {
       for ( int i = 0; i < m_robot->numJoints(); i++ ){
@@ -473,103 +438,6 @@ RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
 
   return RTC::RTC_OK;
 }
-
-void Stabilizer::calcContactMatrix (hrp::dmatrix& tm, const std::vector<hrp::Vector3>& contact_p)
-{
-  // tm.resize(6,6*contact_p.size());
-  // tm.setZero();
-  // for (size_t c = 0; c < contact_p.size(); c++) {
-  //   for (size_t i = 0; i < 6; i++) tm(i,(c*6)+i) = 1.0;
-  //   hrp::Matrix33 cm;
-  //   rats::outer_product_matrix(cm, contact_p[c]);
-  //   for (size_t i = 0; i < 3; i++)
-  //     for (size_t j = 0; j < 3; j++) tm(i+3,(c*6)+j) = cm(i,j);
-  // }
-}
-
-void Stabilizer::calcTorque ()
-{
-  m_robot->calcForwardKinematics();
-  // buffers for the unit vector method
-  hrp::Vector3 root_w_x_v;
-  hrp::Vector3 g(0, 0, 9.80665);
-  root_w_x_v = m_robot->rootLink()->w.cross(m_robot->rootLink()->vo + m_robot->rootLink()->w.cross(m_robot->rootLink()->p));
-  m_robot->rootLink()->dvo = g - root_w_x_v;   // dv = g, dw = 0
-  m_robot->rootLink()->dw.setZero();
-
-  hrp::Vector3 root_f;
-  hrp::Vector3 root_t;
-  m_robot->calcInverseDynamics(m_robot->rootLink(), root_f, root_t);
-  // if (loop % 200 == 0) {
-  //   std::cerr << ":mass " << m_robot->totalMass() << std::endl;
-  //   std::cerr << ":cog "; rats::print_vector(std::cerr, m_robot->calcCM());
-  //   for(int i = 0; i < m_robot->numJoints(); ++i){
-  //     std::cerr << "(list :" << m_robot->link(i)->name << " "
-  //               << m_robot->joint(i)->jointId << " "
-  //               << m_robot->link(i)->m << " ";
-  //     hrp::Vector3 tmpc = m_robot->link(i)->p + m_robot->link(i)->R * m_robot->link(i)->c;
-  //     rats::print_vector(std::cerr, tmpc, false);
-  //     std::cerr << " ";
-  //     rats::print_vector(std::cerr, m_robot->link(i)->c, false);
-  //     std::cerr << ")" << std::endl;
-  //   }
-  // }
-  // if (loop % 200 == 0) {
-  //   std::cerr << ":IV1 (list ";
-  //   for(int i = 0; i < m_robot->numJoints(); ++i){
-  //     std::cerr << "(list :" << m_robot->joint(i)->name << " " <<  m_robot->joint(i)->u << ")";
-  //   }
-  //   std::cerr << ")" << std::endl;
-  // }
-  hrp::dmatrix contact_mat, contact_mat_inv;
-  std::vector<hrp::Vector3> contact_p;
-  for (size_t j = 0; j < 2; j++) contact_p.push_back(m_robot->sensor<hrp::ForceSensor>(sensor_names[j])->link->p);
-  calcContactMatrix(contact_mat, contact_p);
-  hrp::calcSRInverse(contact_mat, contact_mat_inv, 0.0);
-  hrp::dvector root_ft(6);
-  for (size_t j = 0; j < 3; j++) root_ft(j) = root_f(j);
-  for (size_t j = 0; j < 3; j++) root_ft(j+3) = root_t(j);
-  hrp::dvector contact_ft(2*6);
-  contact_ft = contact_mat_inv * root_ft;
-  // if (loop%200==0) {
-  //   std::cerr << ":mass " << m_robot->totalMass() << std::endl;
-  //   // std::cerr << ":ftv "; rats::print_vector(std::cerr, ftv);
-  //   // std::cerr << ":aa "; rats::print_matrix(std::cerr, aa);
-  //   // std::cerr << ":dv "; rats::print_vector(std::cerr, dv);
-  // }
-  for (size_t j = 0; j < 2; j++) {
-    hrp::JointPathEx jm = hrp::JointPathEx(m_robot, m_robot->rootLink(), m_robot->sensor<hrp::ForceSensor>(sensor_names[j])->link);
-    hrp::dmatrix JJ;
-    jm.calcJacobian(JJ);
-    hrp::dvector ft(6);
-    for (size_t i = 0; i < 6; i++) ft(i) = contact_ft(i+j*6);
-    hrp::dvector tq_from_extft(jm.numJoints());
-    tq_from_extft = JJ.transpose() * ft;
-    // if (loop%200==0) {
-    //   std::cerr << ":ft "; rats::print_vector(std::cerr, ft);
-    //   std::cerr << ":JJ "; rats::print_matrix(std::cerr, JJ);
-    //   std::cerr << ":tq_from_extft "; rats::print_vector(std::cerr, tq_from_extft);
-    // }
-    for (size_t i = 0; i < jm.numJoints(); i++) jm.joint(i)->u -= tq_from_extft(i);
-  }
-  //hrp::dmatrix MM(6,m_robot->numJoints());
-  //m_robot->calcMassMatrix(MM);
-  // if (loop % 200 == 0) {
-  //   std::cerr << ":INVDYN2 (list "; rats::print_vector(std::cerr, root_f, false);
-  //   std::cerr << " "; rats::print_vector(std::cerr, root_t, false);
-  //   std::cerr << ")" << std::endl;
-  //   // hrp::dvector tqv(m_robot->numJoints());
-  //   // for(int i = 0; i < m_robot->numJoints(); ++i){p
-  //   //   tqv[m_robot->joint(i)->jointId] = m_robot->joint(i)->u;
-  //   // }
-  //   // std::cerr << ":IV2 "; rats::print_vector(std::cerr, tqv);
-  //   std::cerr << ":IV2 (list ";
-  //   for(int i = 0; i < m_robot->numJoints(); ++i){
-  //     std::cerr << "(list :" << m_robot->joint(i)->name << " " <<  m_robot->joint(i)->u << ")";
-  //   }
-  //   std::cerr << ")" << std::endl;
-  // }
-};
 
 void Stabilizer::getCurrentParameters ()
 {
@@ -654,7 +522,6 @@ void Stabilizer::getActualParameters ()
   act_cog = m_robot->calcCM();
   // zmp
   on_ground = false;
-  if (is_legged_robot && ( m_force[0].data.length() > 0 && m_force[1].data.length() > 0 ))
   if (st_algorithm == OpenHRP::StabilizerService::EEFM) {
     on_ground = calcZMP(act_zmp, zmp_origin_off+foot_origin_pos(2));
   } else {
@@ -941,6 +808,33 @@ void Stabilizer::getTargetParameters ()
   prev_ref_cog = ref_cog;
 }
 
+bool Stabilizer::calcZMP(hrp::Vector3& ret_zmp, const double zmp_z)
+{
+  double tmpzmpx = 0;
+  double tmpzmpy = 0;
+  double tmpfz = 0, tmpfz2 = 0.0;
+  for (size_t i = 0; i < 2; i++) {
+    hrp::ForceSensor* sensor = m_robot->sensor<hrp::ForceSensor>(sensor_names[i]);
+    hrp::Vector3 fsp = sensor->link->p + sensor->link->R * sensor->localPos;
+    hrp::Matrix33 tmpR;
+    rats::rotm3times(tmpR, sensor->link->R, sensor->localR);
+    hrp::Vector3 nf = tmpR * hrp::Vector3(m_force[i].data[0], m_force[i].data[1], m_force[i].data[2]);
+    hrp::Vector3 nm = tmpR * hrp::Vector3(m_force[i].data[3], m_force[i].data[4], m_force[i].data[5]);
+    tmpzmpx += nf(2) * fsp(0) - (fsp(2) - zmp_z) * nf(0) - nm(1);
+    tmpzmpy += nf(2) * fsp(1) - (fsp(2) - zmp_z) * nf(1) + nm(0);
+    tmpfz += nf(2);
+    prev_act_force_z[i] = 0.85 * prev_act_force_z[i] + 0.15 * nf(2); // filter, cut off 5[Hz]
+  }
+  tmpfz2 = prev_act_force_z[0] + prev_act_force_z[1];
+  if (tmpfz2 < 50) {
+    ret_zmp = act_zmp;
+    return false; // in the air
+  } else {
+    ret_zmp = hrp::Vector3(tmpzmpx / tmpfz, tmpzmpy / tmpfz, zmp_z);
+    return true; // on ground
+  }
+};
+
 void Stabilizer::calcTPCC() {
   if ( m_robot->numJoints() == m_qRef.data.length() ) {
 
@@ -1073,191 +967,6 @@ double Stabilizer::calcDampingControl (const double tau_d, const double tau, con
 {
   return (1/DD * (tau_d - tau) - 1/TT * prev_d) * dt + prev_d;
 };
-
-void Stabilizer::calcRUNST() {
-  if ( m_robot->numJoints() == m_qRef.data.length() ) {
-    std::vector<std::string> target_name;
-    target_name.push_back("L_ANKLE_R");
-    target_name.push_back("R_ANKLE_R");
-
-    double angvelx_ref;// = (m_rpyRef.data.r - pangx_ref)/dt;
-    double angvely_ref;// = (m_rpyRef.data.p - pangy_ref)/dt;
-    //pangx_ref = m_rpyRef.data.r;
-    //pangy_ref = m_rpyRef.data.p;
-    double angvelx = (m_rpy.data.r - pangx)/dt;
-    double angvely = (m_rpy.data.r - pangy)/dt;
-    pangx = m_rpy.data.r;
-    pangy = m_rpy.data.p;
-
-    // update internal robot model
-    for ( int i = 0; i < m_robot->numJoints(); i++ ){
-      qorg[i] = m_robot->joint(i)->q;
-      m_robot->joint(i)->q = m_qRef.data[i];
-      qrefv[i] = m_qRef.data[i];
-    }
-    //double orgjq = m_robot->link("L_FOOT")->joint->q;
-    double orgjq = m_robot->joint(m_robot->link("L_ANKLE_P")->jointId)->q;
-    //set root
-    m_robot->rootLink()->p = hrp::Vector3(0,0,0);
-    //m_robot->rootLink()->R = hrp::rotFromRpy(m_rpyRef.data.r,m_rpyRef.data.p,m_rpyRef.data.y);
-    m_robot->calcForwardKinematics();
-    hrp::Vector3 target_root_p = m_robot->rootLink()->p;
-    hrp::Matrix33 target_root_R = m_robot->rootLink()->R;
-    hrp::Vector3 target_foot_p[2];
-    hrp::Matrix33 target_foot_R[2];
-    for (size_t i = 0; i < 2; i++) {
-      target_foot_p[i] = m_robot->link(target_name[i])->p;
-      target_foot_R[i] = m_robot->link(target_name[i])->R;
-    }
-    hrp::Vector3 target_fm = (m_robot->link(target_name[0])->p + m_robot->link(target_name[1])->p)/2;
-    //hrp::Vector3 org_cm = m_robot->rootLink()->R.transpose() * (m_robot->calcCM() - m_robot->rootLink()->p);
-    hrp::Vector3 org_cm = m_robot->rootLink()->R.transpose() * (target_fm - m_robot->rootLink()->p);
-
-    // stabilizer loop
-    if ( ( m_force[ST_LEFT].data.length() > 0 && m_force[ST_RIGHT].data.length() > 0 )
-         //( m_force[ST_LEFT].data[2] > m_robot->totalMass()/4 || m_force[ST_RIGHT].data[2] > m_robot->totalMass()/4 )
-         ) {
-
-      for ( int i = 0; i < m_robot->numJoints(); i++ ) {
-        m_robot->joint(i)->q = qorg[i];
-      }
-      // set root
-      double rddx;// = k_run_b[0] * (m_rpyRef.data.r - m_rpy.data.r) + d_run_b[0] * (angvelx_ref - angvelx);
-      double rddy;// = k_run_b[1] * (m_rpyRef.data.p - m_rpy.data.p) + d_run_b[1] * (angvely_ref - angvely);
-      rdx += rddx * dt;
-      rx += rdx * dt;
-      rdy += rddy * dt;
-      ry += rdy * dt;
-      //rx += rddx * dt;
-      //ry += rddy * dt;
-      // if (DEBUGP2) {
-      //   std::cerr << "REFRPY " <<  m_rpyRef.data.r << " " << m_rpyRef.data.p << std::endl;
-      // }
-      // if (DEBUGP2) {
-      //   std::cerr << "RPY " <<  m_rpy.data.r << " " << m_rpy.data.p << std::endl;
-      //   std::cerr << " rx " << rx << " " << rdx << " " << rddx << std::endl;
-      //   std::cerr << " ry " << ry << " " << rdy << " " << rddy << std::endl;
-      // }
-      hrp::Vector3 root_p_s;
-      hrp::Matrix33 root_R_s;
-      rats::rotm3times(root_R_s, hrp::rotFromRpy(rx, ry, 0), target_root_R);
-      if (DEBUGP2) {
-        hrp::Vector3 tmp = hrp::rpyFromRot(root_R_s);
-        std::cerr << "RPY2 " <<  tmp(0) << " " << tmp(1) << std::endl;
-      }
-      root_p_s = target_root_p + target_root_R * org_cm - root_R_s * org_cm;
-      //m_robot->calcForwardKinematics();
-      // FK
-      m_robot->rootLink()->R = root_R_s;
-      m_robot->rootLink()->p = root_p_s;
-      if (DEBUGP2) {
-        std::cerr << " rp " << root_p_s[0] << " " << root_p_s[1] << " " << root_p_s[2] << std::endl;
-      }
-      m_robot->calcForwardKinematics();
-      //
-      hrp::Vector3 current_fm = (m_robot->link(target_name[0])->p + m_robot->link(target_name[1])->p)/2;
-
-      // 3D-LIP model contorller
-      hrp::Vector3 dr = target_fm - current_fm;
-      //hrp::Vector3 dr = current_fm - target_fm ;
-      hrp::Vector3 dr_vel = (dr - pdr)/dt;
-      pdr = dr;
-      double tau_y = - m_torque_k[0] * dr(0) - m_torque_d[0] * dr_vel(0);
-      double tau_x = m_torque_k[1] * dr(1) + m_torque_d[1] * dr_vel(1);
-      if (DEBUGP2) {
-        dr*=1e3;
-        dr_vel*=1e3;
-        std::cerr << "dr " << dr(0) << " " << dr(1) << " " << dr_vel(0) << " " << dr_vel(1) << std::endl;
-        std::cerr << "tau_x " << tau_x << std::endl;
-        std::cerr << "tau_y " << tau_y << std::endl;
-      }
-
-      double gamma = 0.5; // temp
-      double tau_xl[2];
-      double tau_yl[2];
-      double xfront = 0.125;
-      double xrear = 0.1;
-      double yin = 0.02;
-      double yout = 0.15;
-      double mg = m_robot->totalMass() * 9.8 * 0.9;// margin
-      double tq_y_ulimit = mg * xrear;
-      double tq_y_llimit = -1 * mg * xfront;
-      double tq_x_ulimit = mg * yout;
-      double tq_x_llimit = mg * yin;
-      // left
-      tau_xl[0] = gamma * tau_x;
-      tau_yl[0] = gamma * tau_y;
-      tau_xl[0] = vlimit(tau_xl[0], tq_x_llimit, tq_x_ulimit);
-      tau_yl[0] = vlimit(tau_yl[0], tq_y_llimit, tq_y_ulimit);
-      // right
-      tau_xl[1]= (1- gamma) * tau_x;
-      tau_yl[1]= (1- gamma) * tau_y;
-      tau_xl[1] = vlimit(tau_xl[1], -1*tq_x_ulimit, -1*tq_x_llimit);
-      tau_yl[1] = vlimit(tau_yl[1], tq_y_llimit, tq_y_ulimit);
-
-      double dleg_x[2];
-      double dleg_y[2];
-      double tau_y_total = (m_force[1].data[4] + m_force[0].data[4]) / 2;
-      double dpz;
-      if (DEBUGP2) {
-        std::cerr << "tq limit " << tq_x_ulimit << " " << tq_x_llimit << " " << tq_y_ulimit << " " << tq_y_llimit << std::endl;
-      }
-      for (size_t i = 0; i < 2; i++) {
-        // dleg_x[i] = m_tau_x[i].update(m_force[i].data[3], tau_xl[i]);
-        // dleg_y[i] = m_tau_y[i].update(m_force[i].data[4], tau_yl[i]);
-        //dleg_x[i] = m_tau_x[i].update(m_force[i].data[3], tau_xl[i]);
-        dleg_x[i] = m_tau_x[i].update(0,0);
-        dleg_y[i] = m_tau_y[i].update(tau_y_total, tau_yl[i]);
-        if (DEBUGP2) {
-          std::cerr << i << " dleg_x " << dleg_x[i] << std::endl;
-          std::cerr << i << " dleg_y " << dleg_y[i] << std::endl;
-          std::cerr << i << " t_x " << m_force[i].data[3] << " "<< tau_xl[i] << std::endl;
-          std::cerr << i << " t_y " << m_force[i].data[4] << " "<< tau_yl[i] << std::endl;
-        }
-      }
-
-      // calc leg rot
-      hrp::Matrix33 target_R[2];
-      hrp::Vector3 target_p[2];
-      for (size_t i = 0; i < 2; i++) {
-        //rats::rotm3times(target_R[i], hrp::rotFromRpy(dleg_x[i], dleg_y[i], 0), target_foot_R[i]);
-        rats::rotm3times(target_R[i], hrp::rotFromRpy(0, dleg_y[i], 0), target_foot_R[i]);
-        //target_p[i] = target_foot_p[i] + target_foot_R[i] * org_cm - target_R[i] * org_cm;
-        //target_p[i] = target_foot_p[i] + target_foot_R[i] * org_cm - target_R[i] * org_cm;
-        target_p[i] = target_foot_p[i];
-      }
-      // 1=>left, 2=>right
-      double refdfz = 0;
-      dpz = m_f_z.update((m_force[0].data[2] - m_force[1].data[2]), refdfz);
-      //target_p[0](2) = target_foot_p[0](2) + dpz/2;
-      //target_p[1](2) = target_foot_p[1](2) - dpz/2;
-      target_p[0](2) = target_foot_p[0](2);
-      target_p[1](2) = target_foot_p[1](2);
-
-      // IK
-      for (size_t i = 0; i < 2; i++) {
-        hrp::Link* target = m_robot->link(target_name[i]);
-        hrp::Vector3 vel_p, vel_r;
-        vel_p = target_p[i] - target->p;
-        rats::difference_rotation(vel_r, target->R, target_R[i]);
-        //manip2[i]->solveLimbIK(vel_p, vel_r, transition_count, 0.001, 0.01, MAX_TRANSITION_COUNT, qrefv, DEBUGP);
-        //manip2[i]->solveLimbIK(vel_p, vel_r, transition_count, 0.001, 0.01, MAX_TRANSITION_COUNT, qrefv, false);
-        //m_robot->joint(m_robot->link(target_name[i])->jointId)->q = dleg_y[i] + orgjq;
-      }
-      // m_robot->joint(m_robot->link("L_ANKLE_P")->jointId)->q = transition_smooth_gain * dleg_y[0] + orgjq + m_rpy.data.p;
-      // m_robot->joint(m_robot->link("R_ANKLE_P")->jointId)->q = transition_smooth_gain * dleg_y[1] + orgjq + m_rpy.data.p;
-      m_robot->joint(m_robot->link("L_ANKLE_P")->jointId)->q = transition_smooth_gain * dleg_y[0] + orgjq;
-      m_robot->joint(m_robot->link("R_ANKLE_P")->jointId)->q = transition_smooth_gain * dleg_y[1] + orgjq;
-    } else {
-      // reinitialize
-      for (int i = 0; i < ST_NUM_LEGS; i++) {
-        m_tau_x[i].reset();
-        m_tau_y[i].reset();
-        m_f_z.reset();
-      }
-    }
-  }
-}
 
 /*
 RTC::ReturnCode_t Stabilizer::onAborting(RTC::UniqueId ec_id)
@@ -1487,6 +1196,288 @@ static double switching_inpact_absorber(double force, double lower_th, double up
     return gradient * force + intercept;
   }
 }
+
+void Stabilizer::calcRUNST() {
+  if ( m_robot->numJoints() == m_qRef.data.length() ) {
+    std::vector<std::string> target_name;
+    target_name.push_back("L_ANKLE_R");
+    target_name.push_back("R_ANKLE_R");
+
+    double angvelx_ref;// = (m_rpyRef.data.r - pangx_ref)/dt;
+    double angvely_ref;// = (m_rpyRef.data.p - pangy_ref)/dt;
+    //pangx_ref = m_rpyRef.data.r;
+    //pangy_ref = m_rpyRef.data.p;
+    double angvelx = (m_rpy.data.r - pangx)/dt;
+    double angvely = (m_rpy.data.r - pangy)/dt;
+    pangx = m_rpy.data.r;
+    pangy = m_rpy.data.p;
+
+    // update internal robot model
+    for ( int i = 0; i < m_robot->numJoints(); i++ ){
+      qorg[i] = m_robot->joint(i)->q;
+      m_robot->joint(i)->q = m_qRef.data[i];
+      qrefv[i] = m_qRef.data[i];
+    }
+    //double orgjq = m_robot->link("L_FOOT")->joint->q;
+    double orgjq = m_robot->joint(m_robot->link("L_ANKLE_P")->jointId)->q;
+    //set root
+    m_robot->rootLink()->p = hrp::Vector3(0,0,0);
+    //m_robot->rootLink()->R = hrp::rotFromRpy(m_rpyRef.data.r,m_rpyRef.data.p,m_rpyRef.data.y);
+    m_robot->calcForwardKinematics();
+    hrp::Vector3 target_root_p = m_robot->rootLink()->p;
+    hrp::Matrix33 target_root_R = m_robot->rootLink()->R;
+    hrp::Vector3 target_foot_p[2];
+    hrp::Matrix33 target_foot_R[2];
+    for (size_t i = 0; i < 2; i++) {
+      target_foot_p[i] = m_robot->link(target_name[i])->p;
+      target_foot_R[i] = m_robot->link(target_name[i])->R;
+    }
+    hrp::Vector3 target_fm = (m_robot->link(target_name[0])->p + m_robot->link(target_name[1])->p)/2;
+    //hrp::Vector3 org_cm = m_robot->rootLink()->R.transpose() * (m_robot->calcCM() - m_robot->rootLink()->p);
+    hrp::Vector3 org_cm = m_robot->rootLink()->R.transpose() * (target_fm - m_robot->rootLink()->p);
+
+    // stabilizer loop
+    if ( ( m_force[ST_LEFT].data.length() > 0 && m_force[ST_RIGHT].data.length() > 0 )
+         //( m_force[ST_LEFT].data[2] > m_robot->totalMass()/4 || m_force[ST_RIGHT].data[2] > m_robot->totalMass()/4 )
+         ) {
+
+      for ( int i = 0; i < m_robot->numJoints(); i++ ) {
+        m_robot->joint(i)->q = qorg[i];
+      }
+      // set root
+      double rddx;// = k_run_b[0] * (m_rpyRef.data.r - m_rpy.data.r) + d_run_b[0] * (angvelx_ref - angvelx);
+      double rddy;// = k_run_b[1] * (m_rpyRef.data.p - m_rpy.data.p) + d_run_b[1] * (angvely_ref - angvely);
+      rdx += rddx * dt;
+      rx += rdx * dt;
+      rdy += rddy * dt;
+      ry += rdy * dt;
+      //rx += rddx * dt;
+      //ry += rddy * dt;
+      // if (DEBUGP2) {
+      //   std::cerr << "REFRPY " <<  m_rpyRef.data.r << " " << m_rpyRef.data.p << std::endl;
+      // }
+      // if (DEBUGP2) {
+      //   std::cerr << "RPY " <<  m_rpy.data.r << " " << m_rpy.data.p << std::endl;
+      //   std::cerr << " rx " << rx << " " << rdx << " " << rddx << std::endl;
+      //   std::cerr << " ry " << ry << " " << rdy << " " << rddy << std::endl;
+      // }
+      hrp::Vector3 root_p_s;
+      hrp::Matrix33 root_R_s;
+      rats::rotm3times(root_R_s, hrp::rotFromRpy(rx, ry, 0), target_root_R);
+      if (DEBUGP2) {
+        hrp::Vector3 tmp = hrp::rpyFromRot(root_R_s);
+        std::cerr << "RPY2 " <<  tmp(0) << " " << tmp(1) << std::endl;
+      }
+      root_p_s = target_root_p + target_root_R * org_cm - root_R_s * org_cm;
+      //m_robot->calcForwardKinematics();
+      // FK
+      m_robot->rootLink()->R = root_R_s;
+      m_robot->rootLink()->p = root_p_s;
+      if (DEBUGP2) {
+        std::cerr << " rp " << root_p_s[0] << " " << root_p_s[1] << " " << root_p_s[2] << std::endl;
+      }
+      m_robot->calcForwardKinematics();
+      //
+      hrp::Vector3 current_fm = (m_robot->link(target_name[0])->p + m_robot->link(target_name[1])->p)/2;
+
+      // 3D-LIP model contorller
+      hrp::Vector3 dr = target_fm - current_fm;
+      //hrp::Vector3 dr = current_fm - target_fm ;
+      hrp::Vector3 dr_vel = (dr - pdr)/dt;
+      pdr = dr;
+      double tau_y = - m_torque_k[0] * dr(0) - m_torque_d[0] * dr_vel(0);
+      double tau_x = m_torque_k[1] * dr(1) + m_torque_d[1] * dr_vel(1);
+      if (DEBUGP2) {
+        dr*=1e3;
+        dr_vel*=1e3;
+        std::cerr << "dr " << dr(0) << " " << dr(1) << " " << dr_vel(0) << " " << dr_vel(1) << std::endl;
+        std::cerr << "tau_x " << tau_x << std::endl;
+        std::cerr << "tau_y " << tau_y << std::endl;
+      }
+
+      double gamma = 0.5; // temp
+      double tau_xl[2];
+      double tau_yl[2];
+      double xfront = 0.125;
+      double xrear = 0.1;
+      double yin = 0.02;
+      double yout = 0.15;
+      double mg = m_robot->totalMass() * 9.8 * 0.9;// margin
+      double tq_y_ulimit = mg * xrear;
+      double tq_y_llimit = -1 * mg * xfront;
+      double tq_x_ulimit = mg * yout;
+      double tq_x_llimit = mg * yin;
+      // left
+      tau_xl[0] = gamma * tau_x;
+      tau_yl[0] = gamma * tau_y;
+      tau_xl[0] = vlimit(tau_xl[0], tq_x_llimit, tq_x_ulimit);
+      tau_yl[0] = vlimit(tau_yl[0], tq_y_llimit, tq_y_ulimit);
+      // right
+      tau_xl[1]= (1- gamma) * tau_x;
+      tau_yl[1]= (1- gamma) * tau_y;
+      tau_xl[1] = vlimit(tau_xl[1], -1*tq_x_ulimit, -1*tq_x_llimit);
+      tau_yl[1] = vlimit(tau_yl[1], tq_y_llimit, tq_y_ulimit);
+
+      double dleg_x[2];
+      double dleg_y[2];
+      double tau_y_total = (m_force[1].data[4] + m_force[0].data[4]) / 2;
+      double dpz;
+      if (DEBUGP2) {
+        std::cerr << "tq limit " << tq_x_ulimit << " " << tq_x_llimit << " " << tq_y_ulimit << " " << tq_y_llimit << std::endl;
+      }
+      for (size_t i = 0; i < 2; i++) {
+        // dleg_x[i] = m_tau_x[i].update(m_force[i].data[3], tau_xl[i]);
+        // dleg_y[i] = m_tau_y[i].update(m_force[i].data[4], tau_yl[i]);
+        //dleg_x[i] = m_tau_x[i].update(m_force[i].data[3], tau_xl[i]);
+        dleg_x[i] = m_tau_x[i].update(0,0);
+        dleg_y[i] = m_tau_y[i].update(tau_y_total, tau_yl[i]);
+        if (DEBUGP2) {
+          std::cerr << i << " dleg_x " << dleg_x[i] << std::endl;
+          std::cerr << i << " dleg_y " << dleg_y[i] << std::endl;
+          std::cerr << i << " t_x " << m_force[i].data[3] << " "<< tau_xl[i] << std::endl;
+          std::cerr << i << " t_y " << m_force[i].data[4] << " "<< tau_yl[i] << std::endl;
+        }
+      }
+
+      // calc leg rot
+      hrp::Matrix33 target_R[2];
+      hrp::Vector3 target_p[2];
+      for (size_t i = 0; i < 2; i++) {
+        //rats::rotm3times(target_R[i], hrp::rotFromRpy(dleg_x[i], dleg_y[i], 0), target_foot_R[i]);
+        rats::rotm3times(target_R[i], hrp::rotFromRpy(0, dleg_y[i], 0), target_foot_R[i]);
+        //target_p[i] = target_foot_p[i] + target_foot_R[i] * org_cm - target_R[i] * org_cm;
+        //target_p[i] = target_foot_p[i] + target_foot_R[i] * org_cm - target_R[i] * org_cm;
+        target_p[i] = target_foot_p[i];
+      }
+      // 1=>left, 2=>right
+      double refdfz = 0;
+      dpz = m_f_z.update((m_force[0].data[2] - m_force[1].data[2]), refdfz);
+      //target_p[0](2) = target_foot_p[0](2) + dpz/2;
+      //target_p[1](2) = target_foot_p[1](2) - dpz/2;
+      target_p[0](2) = target_foot_p[0](2);
+      target_p[1](2) = target_foot_p[1](2);
+
+      // IK
+      for (size_t i = 0; i < 2; i++) {
+        hrp::Link* target = m_robot->link(target_name[i]);
+        hrp::Vector3 vel_p, vel_r;
+        vel_p = target_p[i] - target->p;
+        rats::difference_rotation(vel_r, target->R, target_R[i]);
+        //manip2[i]->solveLimbIK(vel_p, vel_r, transition_count, 0.001, 0.01, MAX_TRANSITION_COUNT, qrefv, DEBUGP);
+        //manip2[i]->solveLimbIK(vel_p, vel_r, transition_count, 0.001, 0.01, MAX_TRANSITION_COUNT, qrefv, false);
+        //m_robot->joint(m_robot->link(target_name[i])->jointId)->q = dleg_y[i] + orgjq;
+      }
+      // m_robot->joint(m_robot->link("L_ANKLE_P")->jointId)->q = transition_smooth_gain * dleg_y[0] + orgjq + m_rpy.data.p;
+      // m_robot->joint(m_robot->link("R_ANKLE_P")->jointId)->q = transition_smooth_gain * dleg_y[1] + orgjq + m_rpy.data.p;
+      m_robot->joint(m_robot->link("L_ANKLE_P")->jointId)->q = transition_smooth_gain * dleg_y[0] + orgjq;
+      m_robot->joint(m_robot->link("R_ANKLE_P")->jointId)->q = transition_smooth_gain * dleg_y[1] + orgjq;
+    } else {
+      // reinitialize
+      for (int i = 0; i < ST_NUM_LEGS; i++) {
+        m_tau_x[i].reset();
+        m_tau_y[i].reset();
+        m_f_z.reset();
+      }
+    }
+  }
+}
+
+void Stabilizer::calcContactMatrix (hrp::dmatrix& tm, const std::vector<hrp::Vector3>& contact_p)
+{
+  // tm.resize(6,6*contact_p.size());
+  // tm.setZero();
+  // for (size_t c = 0; c < contact_p.size(); c++) {
+  //   for (size_t i = 0; i < 6; i++) tm(i,(c*6)+i) = 1.0;
+  //   hrp::Matrix33 cm;
+  //   rats::outer_product_matrix(cm, contact_p[c]);
+  //   for (size_t i = 0; i < 3; i++)
+  //     for (size_t j = 0; j < 3; j++) tm(i+3,(c*6)+j) = cm(i,j);
+  // }
+}
+
+void Stabilizer::calcTorque ()
+{
+  m_robot->calcForwardKinematics();
+  // buffers for the unit vector method
+  hrp::Vector3 root_w_x_v;
+  hrp::Vector3 g(0, 0, 9.80665);
+  root_w_x_v = m_robot->rootLink()->w.cross(m_robot->rootLink()->vo + m_robot->rootLink()->w.cross(m_robot->rootLink()->p));
+  m_robot->rootLink()->dvo = g - root_w_x_v;   // dv = g, dw = 0
+  m_robot->rootLink()->dw.setZero();
+
+  hrp::Vector3 root_f;
+  hrp::Vector3 root_t;
+  m_robot->calcInverseDynamics(m_robot->rootLink(), root_f, root_t);
+  // if (loop % 200 == 0) {
+  //   std::cerr << ":mass " << m_robot->totalMass() << std::endl;
+  //   std::cerr << ":cog "; rats::print_vector(std::cerr, m_robot->calcCM());
+  //   for(int i = 0; i < m_robot->numJoints(); ++i){
+  //     std::cerr << "(list :" << m_robot->link(i)->name << " "
+  //               << m_robot->joint(i)->jointId << " "
+  //               << m_robot->link(i)->m << " ";
+  //     hrp::Vector3 tmpc = m_robot->link(i)->p + m_robot->link(i)->R * m_robot->link(i)->c;
+  //     rats::print_vector(std::cerr, tmpc, false);
+  //     std::cerr << " ";
+  //     rats::print_vector(std::cerr, m_robot->link(i)->c, false);
+  //     std::cerr << ")" << std::endl;
+  //   }
+  // }
+  // if (loop % 200 == 0) {
+  //   std::cerr << ":IV1 (list ";
+  //   for(int i = 0; i < m_robot->numJoints(); ++i){
+  //     std::cerr << "(list :" << m_robot->joint(i)->name << " " <<  m_robot->joint(i)->u << ")";
+  //   }
+  //   std::cerr << ")" << std::endl;
+  // }
+  hrp::dmatrix contact_mat, contact_mat_inv;
+  std::vector<hrp::Vector3> contact_p;
+  for (size_t j = 0; j < 2; j++) contact_p.push_back(m_robot->sensor<hrp::ForceSensor>(sensor_names[j])->link->p);
+  calcContactMatrix(contact_mat, contact_p);
+  hrp::calcSRInverse(contact_mat, contact_mat_inv, 0.0);
+  hrp::dvector root_ft(6);
+  for (size_t j = 0; j < 3; j++) root_ft(j) = root_f(j);
+  for (size_t j = 0; j < 3; j++) root_ft(j+3) = root_t(j);
+  hrp::dvector contact_ft(2*6);
+  contact_ft = contact_mat_inv * root_ft;
+  // if (loop%200==0) {
+  //   std::cerr << ":mass " << m_robot->totalMass() << std::endl;
+  //   // std::cerr << ":ftv "; rats::print_vector(std::cerr, ftv);
+  //   // std::cerr << ":aa "; rats::print_matrix(std::cerr, aa);
+  //   // std::cerr << ":dv "; rats::print_vector(std::cerr, dv);
+  // }
+  for (size_t j = 0; j < 2; j++) {
+    hrp::JointPathEx jm = hrp::JointPathEx(m_robot, m_robot->rootLink(), m_robot->sensor<hrp::ForceSensor>(sensor_names[j])->link);
+    hrp::dmatrix JJ;
+    jm.calcJacobian(JJ);
+    hrp::dvector ft(6);
+    for (size_t i = 0; i < 6; i++) ft(i) = contact_ft(i+j*6);
+    hrp::dvector tq_from_extft(jm.numJoints());
+    tq_from_extft = JJ.transpose() * ft;
+    // if (loop%200==0) {
+    //   std::cerr << ":ft "; rats::print_vector(std::cerr, ft);
+    //   std::cerr << ":JJ "; rats::print_matrix(std::cerr, JJ);
+    //   std::cerr << ":tq_from_extft "; rats::print_vector(std::cerr, tq_from_extft);
+    // }
+    for (size_t i = 0; i < jm.numJoints(); i++) jm.joint(i)->u -= tq_from_extft(i);
+  }
+  //hrp::dmatrix MM(6,m_robot->numJoints());
+  //m_robot->calcMassMatrix(MM);
+  // if (loop % 200 == 0) {
+  //   std::cerr << ":INVDYN2 (list "; rats::print_vector(std::cerr, root_f, false);
+  //   std::cerr << " "; rats::print_vector(std::cerr, root_t, false);
+  //   std::cerr << ")" << std::endl;
+  //   // hrp::dvector tqv(m_robot->numJoints());
+  //   // for(int i = 0; i < m_robot->numJoints(); ++i){p
+  //   //   tqv[m_robot->joint(i)->jointId] = m_robot->joint(i)->u;
+  //   // }
+  //   // std::cerr << ":IV2 "; rats::print_vector(std::cerr, tqv);
+  //   std::cerr << ":IV2 (list ";
+  //   for(int i = 0; i < m_robot->numJoints(); ++i){
+  //     std::cerr << "(list :" << m_robot->joint(i)->name << " " <<  m_robot->joint(i)->u << ")";
+  //   }
+  //   std::cerr << ")" << std::endl;
+  // }
+};
 
 extern "C"
 {
