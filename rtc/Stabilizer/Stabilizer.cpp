@@ -448,17 +448,6 @@ void Stabilizer::getCurrentParameters ()
   }
 }
 
-hrp::Matrix33 Stabilizer::OrientRotationMatrix (const hrp::Matrix33& rot, const hrp::Vector3& axis1, const hrp::Vector3& axis2)
-{
-  hrp::Vector3 vv = axis1.cross(axis2);
-  if (fabs(vv.norm()-0.0) < 1e-5) {
-    return rot;
-  } else {
-    Eigen::AngleAxis<double> tmpr(std::asin(vv.norm()), vv.normalized());
-    return tmpr.toRotationMatrix() * rot;
-  }
-}
-
 void Stabilizer::calcFootOriginCoords (hrp::Vector3& foot_origin_pos, hrp::Matrix33& foot_origin_rot)
 {
   rats::coordinates leg_c[2], tmpc;
@@ -467,14 +456,13 @@ void Stabilizer::calcFootOriginCoords (hrp::Vector3& foot_origin_pos, hrp::Matri
   for (size_t i = 0; i < 2; i++) {
     hrp::Link* target = m_robot->sensor<hrp::ForceSensor>(sensor_names[i])->link;
     leg_c[i].pos = target->p;
-    leg_c[i].rot = OrientRotationMatrix(target->R, (target->R * ez), ez);
-    hrp::Vector3 xv1 = target->R * ex;
+    hrp::Vector3 xv1(target->R * ex);
     xv1(2)=0.0;
     xv1.normalize();
-    hrp::Vector3 xv2 = leg_c[i].rot * ex;
-    xv2(2)=0.0;
-    xv2.normalize();
-    leg_c[i].rot = OrientRotationMatrix(leg_c[i].rot, xv1, xv2);
+    hrp::Vector3 yv1(ez.cross(xv1));
+    leg_c[i].rot(0,0) = xv1(0); leg_c[i].rot(1,0) = xv1(1); leg_c[i].rot(2,0) = xv1(2);
+    leg_c[i].rot(0,1) = yv1(0); leg_c[i].rot(1,1) = yv1(1); leg_c[i].rot(2,1) = yv1(2);
+    leg_c[i].rot(0,2) = ez(0); leg_c[i].rot(1,2) = ez(1); leg_c[i].rot(2,2) = ez(2);
   }
   if (contact_states[contact_states_index_map["rleg"]] &&
       contact_states[contact_states_index_map["lleg"]]) {
@@ -492,6 +480,7 @@ void Stabilizer::calcFootOriginCoords (hrp::Vector3& foot_origin_pos, hrp::Matri
 
 void Stabilizer::getActualParameters ()
 {
+  // Actual world frame =>
   hrp::Vector3 foot_origin_pos;
   hrp::Matrix33 foot_origin_rot;
   if (st_algorithm == OpenHRP::StabilizerService::EEFM) {
@@ -527,11 +516,12 @@ void Stabilizer::getActualParameters ()
   } else {
     on_ground = calcZMP(act_zmp, ref_zmp(2));
   }
+  // <= Actual world frame
 
   // convert absolute (in st) -> root-link relative
   rel_act_zmp = m_robot->rootLink()->R.transpose() * (act_zmp - m_robot->rootLink()->p);
   if (st_algorithm == OpenHRP::StabilizerService::EEFM) {
-    // world (current-tmp) => local (foot_origin)
+    // Actual foot_origin frame =>
     act_zmp = foot_origin_rot.transpose() * (act_zmp - foot_origin_pos);
     act_cog = foot_origin_rot.transpose() * (act_cog - foot_origin_pos);
     //act_cogvel = foot_origin_rot.transpose() * act_cogvel;
@@ -546,7 +536,9 @@ void Stabilizer::getActualParameters ()
     prev_act_cog = act_cog;
     prev_act_cogvel = act_cogvel;
     //act_root_rot = m_robot->rootLink()->R;
+    // <= Actual foot_origin frame
 
+    // Actual world frame =>
     // new ZMP calculation
     // Kajita's feedback law
     hrp::Vector3 dcog=foot_origin_rot * (ref_cog - act_cog);
@@ -576,33 +568,39 @@ void Stabilizer::getActualParameters ()
       double alpha;
       hrp::Vector3 tau_0 = hrp::Vector3::Zero();
       hrp::Vector3 ee_pos[2];
+      hrp::Matrix33 ee_rot[2];
       for (size_t i = 0; i < 2; i++) {
         hrp::Link* target = m_robot->sensor<hrp::ForceSensor>(sensor_names[i])->link;
         ee_pos[i] = target->p + target->R * ee_map[target->name].localp;
+        ee_rot[i] = target->R * ee_map[target->name].localR;
       }
-      // tmp
-      double ledge=ee_pos[1](1) - eefm_leg_inside_margin;
-      double redge=ee_pos[0](1) + eefm_leg_inside_margin;
-      if (ledge < new_refzmp(1)) {
-        alpha = 0.0;
-      } else if (redge > new_refzmp(1)) {
-        alpha = 1.0;
-      } else {
-        alpha = fabs(new_refzmp(1) - ledge)/ fabs(ledge-redge);
+      { // calc alpha
+        hrp::Vector3 l_local_zmp = ee_rot[1].transpose() * (new_refzmp-ee_pos[1]);
+        hrp::Vector3 r_local_zmp = ee_rot[0].transpose() * (new_refzmp-ee_pos[0]);
+        if (-1 * eefm_leg_inside_margin <= l_local_zmp(1)) { // new_refzmp is inside lfoot
+          alpha = 0.0;
+        } else if (eefm_leg_inside_margin >= r_local_zmp(1)) { // new_refzmp is inside rfoot
+          alpha = 1.0;
+        } else {
+          hrp::Vector3 ledge_foot = ee_rot[1] * hrp::Vector3(l_local_zmp(0), -1 * eefm_leg_inside_margin, 0.0) + ee_pos[1];
+          hrp::Vector3 redge_foot = ee_rot[0] * hrp::Vector3(r_local_zmp(0), eefm_leg_inside_margin, 0.0) + ee_pos[0];
+          hrp::Vector3 difp = redge_foot - ledge_foot;
+          alpha = difp.dot(new_refzmp-ledge_foot)/difp.squaredNorm();
+        }
       }
       ref_foot_force[0] = hrp::Vector3(0,0, alpha * 9.8 * total_mass);
       ref_foot_force[1] = hrp::Vector3(0,0, (1-alpha) * 9.8 * total_mass);
       for (size_t i = 0; i < 2; i++) {
         tau_0 -= (ee_pos[i] - new_refzmp).cross(ref_foot_force[i]);
       }
-      if ( alpha == 0.0 ) {
+      if ( alpha == 0.0 ) { // lleg support
         ref_foot_moment[0] = hrp::Vector3::Zero();
         ref_foot_moment[1] = -1 * (ee_pos[1] - new_refzmp).cross(ref_foot_force[1]);
-      } else if ( alpha == 1.0 ) {
+      } else if ( alpha == 1.0 ) { // rleg support
         ref_foot_moment[1] = hrp::Vector3::Zero();
         ref_foot_moment[0] = -1 * (ee_pos[0] - new_refzmp).cross(ref_foot_force[0]);
       } else { // double support
-        // employ foot distribution coords
+        // Foot-distribution-coords frame =>
         hrp::Vector3 foot_dist_coords_y = (ee_pos[1] - ee_pos[0]); // e_y'
         foot_dist_coords_y(2) = 0.0;
         foot_dist_coords_y.normalize();
@@ -629,10 +627,12 @@ void Stabilizer::getActualParameters ()
         ref_foot_moment[0](1) = tau_0_f(1) * alpha;
         ref_foot_moment[1](1) = tau_0_f(1) * (1-alpha);
         ref_foot_moment[0](2) = ref_foot_moment[1](2) = 0.0;
-        // foot_dist_coords local => world
+        // <= Foot-distribution-coords frame
+        // Convert foot-distribution-coords frame => world frame
         ref_foot_moment[0] = foot_dist_coords_rot * ref_foot_moment[0];
         ref_foot_moment[1] = foot_dist_coords_rot * ref_foot_moment[1];
       }
+      // Convert actual world frame => actual foot_origin frame
       ref_foot_moment[0] = foot_origin_rot.transpose() * ref_foot_moment[0];
       ref_foot_moment[1] = foot_origin_rot.transpose() * ref_foot_moment[1];
       if (DEBUGP) {
@@ -669,15 +669,23 @@ void Stabilizer::getActualParameters ()
 #define deg2rad(x) ((x) * M_PI / 180.0)
       for (size_t i = 0; i < 2; i++) {
         hrp::Sensor* sensor = m_robot->sensor<hrp::ForceSensor>(sensor_names[i]);
+        // Actual world frame =>
         hrp::Vector3 sensor_force = (sensor->link->R * sensor->localR) * hrp::Vector3(m_force[i].data[0], m_force[i].data[1], m_force[i].data[2]);
         hrp::Vector3 sensor_moment = (sensor->link->R * sensor->localR) * hrp::Vector3(m_force[i].data[3], m_force[i].data[4], m_force[i].data[5]);
         hrp::Vector3 ee_moment = (sensor->link->R * (sensor->localPos - ee_map[sensor->link->name].localp)).cross(sensor_force) + sensor_moment;
-        ee_moment = foot_origin_rot.transpose() * ee_moment;
+        // <= Actual world frame
+        // Actual foot_origin frame =>
+        //ee_moment = foot_origin_rot.transpose() * ee_moment;
+        hrp::Matrix33 tmpeR = sensor->link->R * ee_map[sensor->link->name].localR;
+        hrp::Vector3 ee_ref_foot_moment = tmpeR.transpose() * (foot_origin_rot * ref_foot_moment[i]);
+        hrp::Vector3 ee_act_foot_moment = tmpeR.transpose() * ee_moment;
         fz_diff += (i==0? -sensor_force(2) : sensor_force(2));
         fz[i] = sensor_force(2);
         // calcDampingControl
-        d_foot_rpy[i](0) = calcDampingControl(ref_foot_moment[i](0), ee_moment(0), d_foot_rpy[i](0), eefm_rot_damping_gain, eefm_rot_time_const);
-        d_foot_rpy[i](1) = calcDampingControl(ref_foot_moment[i](1), ee_moment(1), d_foot_rpy[i](1), eefm_rot_damping_gain, eefm_rot_time_const);
+        //d_foot_rpy[i](0) = calcDampingControl(ref_foot_moment[i](0), ee_moment(0), d_foot_rpy[i](0), eefm_rot_damping_gain, eefm_rot_time_const);
+        //d_foot_rpy[i](1) = calcDampingControl(ref_foot_moment[i](1), ee_moment(1), d_foot_rpy[i](1), eefm_rot_damping_gain, eefm_rot_time_const);
+        d_foot_rpy[i](0) = calcDampingControl(ee_ref_foot_moment(0), ee_act_foot_moment(0), d_foot_rpy[i](0), eefm_rot_damping_gain, eefm_rot_time_const);
+        d_foot_rpy[i](1) = calcDampingControl(ee_ref_foot_moment(1), ee_act_foot_moment(1), d_foot_rpy[i](1), eefm_rot_damping_gain, eefm_rot_time_const);
         d_foot_rpy[i](0) = vlimit(d_foot_rpy[i](0), deg2rad(-10.0), deg2rad(10.0));
         d_foot_rpy[i](1) = vlimit(d_foot_rpy[i](1), deg2rad(-10.0), deg2rad(10.0));
       }
@@ -739,6 +747,7 @@ void Stabilizer::getActualParameters ()
 
 void Stabilizer::getTargetParameters ()
 {
+  // Reference world frame =>
   // update internal robot model
   if ( transition_count == 0 ) {
     transition_smooth_gain = 1.0;
@@ -775,7 +784,6 @@ void Stabilizer::getTargetParameters ()
     ref_zmp = tmp_ref_zmp;
   }
   ref_cog = m_robot->calcCM();
-
   for (size_t i = 0; i < 2; i++) {
     hrp::Sensor* sen = m_robot->sensor<hrp::ForceSensor>(sensor_names[i]);
     if ( sen != NULL) {
@@ -783,15 +791,17 @@ void Stabilizer::getTargetParameters ()
       target_foot_R[i] = sen->link->R * ee_map[sen->link->name].localR;
     }
   }
+  // <= Reference world frame
+
   if (st_algorithm == OpenHRP::StabilizerService::EEFM) {
-    //
+    // Reference foot_origin frame =>
     hrp::Vector3 foot_origin_pos;
     hrp::Matrix33 foot_origin_rot;
     calcFootOriginCoords (foot_origin_pos, foot_origin_rot);
     // initialize for new_refzmp
     new_refzmp = ref_zmp;
     rel_cog = m_robot->rootLink()->R.transpose() * (ref_cog-m_robot->rootLink()->p);
-    // world (current-tmp) => local (foot_origin)
+    // convert world (current-tmp) => local (foot_origin)
     zmp_origin_off = ref_zmp(2) - foot_origin_pos(2);
     ref_zmp = foot_origin_rot.transpose() * (ref_zmp - foot_origin_pos);
     ref_cog = foot_origin_rot.transpose() * (ref_cog - foot_origin_pos);
@@ -802,6 +812,7 @@ void Stabilizer::getTargetParameters ()
       ref_cogvel = (ref_cog - prev_ref_cog)/dt;
     }
     prev_ref_foot_origin_rot = foot_origin_rot;
+    // <= Reference foot_origin frame
   } else {
     ref_cogvel = (ref_cog - prev_ref_cog)/dt;
   } // st_algorithm == OpenHRP::StabilizerService::EEFM
