@@ -448,17 +448,6 @@ void Stabilizer::getCurrentParameters ()
   }
 }
 
-hrp::Matrix33 Stabilizer::OrientRotationMatrix (const hrp::Matrix33& rot, const hrp::Vector3& axis1, const hrp::Vector3& axis2)
-{
-  hrp::Vector3 vv = axis1.cross(axis2);
-  if (fabs(vv.norm()-0.0) < 1e-5) {
-    return rot;
-  } else {
-    Eigen::AngleAxis<double> tmpr(std::asin(vv.norm()), vv.normalized());
-    return tmpr.toRotationMatrix() * rot;
-  }
-}
-
 void Stabilizer::calcFootOriginCoords (hrp::Vector3& foot_origin_pos, hrp::Matrix33& foot_origin_rot)
 {
   rats::coordinates leg_c[2], tmpc;
@@ -467,14 +456,13 @@ void Stabilizer::calcFootOriginCoords (hrp::Vector3& foot_origin_pos, hrp::Matri
   for (size_t i = 0; i < 2; i++) {
     hrp::Link* target = m_robot->sensor<hrp::ForceSensor>(sensor_names[i])->link;
     leg_c[i].pos = target->p;
-    leg_c[i].rot = OrientRotationMatrix(target->R, (target->R * ez), ez);
-    hrp::Vector3 xv1 = target->R * ex;
+    hrp::Vector3 xv1(target->R * ex);
     xv1(2)=0.0;
     xv1.normalize();
-    hrp::Vector3 xv2 = leg_c[i].rot * ex;
-    xv2(2)=0.0;
-    xv2.normalize();
-    leg_c[i].rot = OrientRotationMatrix(leg_c[i].rot, xv1, xv2);
+    hrp::Vector3 yv1(ez.cross(xv1));
+    leg_c[i].rot(0,0) = xv1(0); leg_c[i].rot(1,0) = xv1(1); leg_c[i].rot(2,0) = xv1(2);
+    leg_c[i].rot(0,1) = yv1(0); leg_c[i].rot(1,1) = yv1(1); leg_c[i].rot(2,1) = yv1(2);
+    leg_c[i].rot(0,2) = ez(0); leg_c[i].rot(1,2) = ez(1); leg_c[i].rot(2,2) = ez(2);
   }
   if (contact_states[contact_states_index_map["rleg"]] &&
       contact_states[contact_states_index_map["lleg"]]) {
@@ -687,12 +675,17 @@ void Stabilizer::getActualParameters ()
         hrp::Vector3 ee_moment = (sensor->link->R * (sensor->localPos - ee_map[sensor->link->name].localp)).cross(sensor_force) + sensor_moment;
         // <= Actual world frame
         // Actual foot_origin frame =>
-        ee_moment = foot_origin_rot.transpose() * ee_moment;
+        //ee_moment = foot_origin_rot.transpose() * ee_moment;
+        hrp::Matrix33 tmpeR = sensor->link->R * ee_map[sensor->link->name].localR;
+        hrp::Vector3 ee_ref_foot_moment = tmpeR.transpose() * (foot_origin_rot * ref_foot_moment[i]);
+        hrp::Vector3 ee_act_foot_moment = tmpeR.transpose() * ee_moment;
         fz_diff += (i==0? -sensor_force(2) : sensor_force(2));
         fz[i] = sensor_force(2);
         // calcDampingControl
-        d_foot_rpy[i](0) = calcDampingControl(ref_foot_moment[i](0), ee_moment(0), d_foot_rpy[i](0), eefm_rot_damping_gain, eefm_rot_time_const);
-        d_foot_rpy[i](1) = calcDampingControl(ref_foot_moment[i](1), ee_moment(1), d_foot_rpy[i](1), eefm_rot_damping_gain, eefm_rot_time_const);
+        //d_foot_rpy[i](0) = calcDampingControl(ref_foot_moment[i](0), ee_moment(0), d_foot_rpy[i](0), eefm_rot_damping_gain, eefm_rot_time_const);
+        //d_foot_rpy[i](1) = calcDampingControl(ref_foot_moment[i](1), ee_moment(1), d_foot_rpy[i](1), eefm_rot_damping_gain, eefm_rot_time_const);
+        d_foot_rpy[i](0) = calcDampingControl(ee_ref_foot_moment(0), ee_act_foot_moment(0), d_foot_rpy[i](0), eefm_rot_damping_gain, eefm_rot_time_const);
+        d_foot_rpy[i](1) = calcDampingControl(ee_ref_foot_moment(1), ee_act_foot_moment(1), d_foot_rpy[i](1), eefm_rot_damping_gain, eefm_rot_time_const);
         d_foot_rpy[i](0) = vlimit(d_foot_rpy[i](0), deg2rad(-10.0), deg2rad(10.0));
         d_foot_rpy[i](1) = vlimit(d_foot_rpy[i](1), deg2rad(-10.0), deg2rad(10.0));
       }
