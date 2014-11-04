@@ -41,16 +41,32 @@ def demo():
     if ret2 and ret1[1].base_name == ret3[1].base_name and ret1[1].target_name == ret3[1].target_name:
         print "setImpedanceControllerParam => OK"
     # 3. set ref force and moment
-    ret1[1].ref_force=[10,10,-10]
+    hcf.seq_svc.setWrenches([0,0,0,0,0,0,
+                             0,0,0,0,0,0,
+                             0,0,0,0,0,0,
+                             10,10,-10,0,0,0,], 2.0);
+    hcf.seq_svc.waitInterpolation();
     hcf.ic_svc.setImpedanceControllerParam("rhsensor", ret1[1])
     time.sleep(2)
-    ret1[1].ref_force=[0,0,0]
+    hcf.seq_svc.setWrenches([0,0,0,0,0,0,
+                             0,0,0,0,0,0,
+                             0,0,0,0,0,0,
+                             0,0,0,0,0,0,], 2.0);
+    hcf.seq_svc.waitInterpolation();
     hcf.ic_svc.setImpedanceControllerParam("rhsensor", ret1[1])
     time.sleep(2)
-    ret1[1].ref_moment=[0.2,0.2,-0.5]
+    hcf.seq_svc.setWrenches([0,0,0,0,0,0,
+                             0,0,0,0,0,0,
+                             0,0,0,0,0,0,
+                             0,0,0,0.2,0.2,-0.5], 2.0);
+    hcf.seq_svc.waitInterpolation();
     hcf.ic_svc.setImpedanceControllerParam("rhsensor", ret1[1])
     time.sleep(2)
-    ret1[1].ref_moment=[0,0,0]
+    hcf.seq_svc.setWrenches([0,0,0,0,0,0,
+                             0,0,0,0,0,0,
+                             0,0,0,0,0,0,
+                             0,0,0,0,0,0], 2.0);
+    hcf.seq_svc.waitInterpolation();
     hcf.ic_svc.setImpedanceControllerParam("rhsensor", ret1[1])
     time.sleep(2)
     # 4. stop
