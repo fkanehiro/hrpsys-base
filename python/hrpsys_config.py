@@ -363,6 +363,8 @@ class HrpsysConfigurator:
         # connection for ic
         if self.ic:
             connectPorts(self.rh.port("q"), self.ic.port("qCurrent"))
+            connectPorts(self.sh.port("basePosOut"), self.ic.port("basePosIn"))
+            connectPorts(self.sh.port("baseRpyOut"), self.ic.port("baseRpyIn"))
         # connection for tf
         if self.tf:
             # connection for actual torques

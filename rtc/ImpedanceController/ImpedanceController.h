@@ -106,14 +106,16 @@ class ImpedanceController
   InPort<TimedDoubleSeq> m_qCurrentIn;
   TimedDoubleSeq m_qRef;
   InPort<TimedDoubleSeq> m_qRefIn;
+  TimedPoint3D m_basePos;
+  InPort<TimedPoint3D> m_basePosIn;
+  TimedOrientation3D m_baseRpy;
+  InPort<TimedOrientation3D> m_baseRpyIn;
   std::vector<TimedDoubleSeq> m_force;
   std::vector<InPort<TimedDoubleSeq> *> m_forceIn;
   std::vector<TimedDoubleSeq> m_ref_force;
   std::vector<InPort<TimedDoubleSeq> *> m_ref_forceIn;
   TimedOrientation3D m_rpy;
-  TimedOrientation3D m_rpyRef;
   InPort<TimedOrientation3D> m_rpyIn;
-  InPort<TimedOrientation3D> m_rpyRefIn;
   
   // </rtc-template>
 
