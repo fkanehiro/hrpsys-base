@@ -340,9 +340,13 @@ class HrpsysConfigurator:
             connectPorts(self.abc.port("contactStates"), self.st.port("contactStates"))
             connectPorts(self.abc.port("controlSwingSupportTime"), self.st.port("controlSwingSupportTime"))
             connectPorts(self.rh.port("q"), self.st.port("qCurrent"))
-        if self.ic and self.abc:
+        if self.ic:
             for sen in filter(lambda x: x.type == "Force", self.sensors):
-                connectPorts(self.ic.port("ref_" + sen.name),
+                connectPorts(self.sh.port(sen.name+"Out"),
+                             self.ic.port("ref_" + sen.name+"In"))
+        if self.abc:
+            for sen in filter(lambda x: x.type == "Force", self.sensors):
+                connectPorts(self.sh.port(sen.name+"Out"),
                              self.abc.port("ref_" + sen.name))
 
         #  actual force sensors

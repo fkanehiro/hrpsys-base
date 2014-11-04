@@ -120,16 +120,17 @@ RTC::ReturnCode_t ImpedanceController::onInitialize()
     m_force.resize(nforce);
     m_forceIn.resize(nforce);
     m_ref_force.resize(nforce);
-    m_ref_forceOut.resize(nforce);
+    m_ref_forceIn.resize(nforce);
     for (unsigned int i=0; i<npforce; i++){
         hrp::Sensor *s = m_robot->sensor(hrp::Sensor::FORCE, i);
+        // actual inport
         m_forceIn[i] = new InPort<TimedDoubleSeq>(s->name.c_str(), m_force[i]);
         m_force[i].data.length(6);
         registerInPort(s->name.c_str(), *m_forceIn[i]);
+        // ref inport
         m_ref_force[i].data.length(6);
-        for (unsigned int j=0; j<6; j++) m_ref_force[i].data[j] = 0.0;
-        m_ref_forceOut[i] = new OutPort<TimedDoubleSeq>(std::string("ref_"+s->name).c_str(), m_ref_force[i]);
-        registerOutPort(std::string("ref_"+s->name).c_str(), *m_ref_forceOut[i]);
+        m_ref_forceIn[i] = new InPort<TimedDoubleSeq>(std::string("ref_"+s->name+"In").c_str(), m_ref_force[i]);
+        registerInPort(std::string("ref_"+s->name+"In").c_str(), *m_ref_forceIn[i]);
         std::cerr << "[" << m_profile.instance_name << "] force sensor" << std::endl;
         std::cerr << "[" << m_profile.instance_name << "]   name = " << s->name << std::endl;
     }
@@ -154,8 +155,6 @@ RTC::ReturnCode_t ImpedanceController::onInitialize()
         registerInPort(name.c_str(), *m_forceIn[i+npforce]);
         m_ref_force[i+npforce].data.length(6);
         for (unsigned int j=0; j<6; j++) m_ref_force[i].data[j] = 0.0;
-        m_ref_forceOut[i+npforce] = new OutPort<TimedDoubleSeq>(std::string("ref_"+name).c_str(), m_ref_force[i+npforce]);
-        registerOutPort(std::string("ref_"+name).c_str(), *m_ref_forceOut[i+npforce]);
         std::cerr << name << std::endl;
     }
     for (unsigned int i=0; i<m_forceIn.size(); i++){
@@ -230,6 +229,9 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
         if ( m_forceIn[i]->isNew() ) {
             m_forceIn[i]->read();
         }
+        if ( m_ref_forceIn[i]->isNew() ) {
+            m_ref_forceIn[i]->read();
+        }
     }
     if (m_rpyIn.isNew()) {
       m_rpyIn.read();
@@ -245,10 +247,14 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
           hrp::ForceSensor* sensor = m_robot->sensor<hrp::ForceSensor>(sensor_name);
           hrp::Vector3 data_p(m_force[i].data[0], m_force[i].data[1], m_force[i].data[2]);
           hrp::Vector3 data_r(m_force[i].data[3], m_force[i].data[4], m_force[i].data[5]);
+          hrp::Vector3 ref_data_p(m_ref_force[i].data[0], m_ref_force[i].data[1], m_ref_force[i].data[2]);
+          hrp::Vector3 ref_data_r(m_ref_force[i].data[3], m_ref_force[i].data[4], m_ref_force[i].data[5]);
           if ( DEBUGP ) {
             std::cerr << "[" << m_profile.instance_name << "] force and moment [" << sensor_name << "]" << std::endl;
             std::cerr << "[" << m_profile.instance_name << "]   sensor force  = " << data_p.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[N]" << std::endl;
             std::cerr << "[" << m_profile.instance_name << "]   sensor moment = " << data_r.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[Nm]" << std::endl;
+            std::cerr << "[" << m_profile.instance_name << "]   reference force  = " << ref_data_p.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[N]" << std::endl;
+            std::cerr << "[" << m_profile.instance_name << "]   reference moment = " << ref_data_r.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[Nm]" << std::endl;
           }
           hrp::Matrix33 sensorR;
           if ( sensor ) {
@@ -265,9 +271,13 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
           }
           abs_forces[sensor_name] = sensorR * data_p;
           abs_moments[sensor_name] = sensorR * data_r;
+          abs_ref_forces[sensor_name] = sensorR * ref_data_p;
+          abs_ref_moments[sensor_name] = sensorR * ref_data_r;
           if ( DEBUGP ) {
             std::cerr << "[" << m_profile.instance_name << "]   abs force  = " << abs_forces[sensor_name].format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[N]" << std::endl;
             std::cerr << "[" << m_profile.instance_name << "]   abs moment = " << abs_moments[sensor_name].format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[Nm]" << std::endl;
+            std::cerr << "[" << m_profile.instance_name << "]   abs ref force  = " << abs_ref_forces[sensor_name].format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[N]" << std::endl;
+            std::cerr << "[" << m_profile.instance_name << "]   abs ref moment = " << abs_ref_moments[sensor_name].format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[Nm]" << std::endl;
           }
         }
       }
@@ -425,12 +435,12 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
             // std::cerr << "ref_moment = " << param.ref_moment[0] << " " << param.ref_moment[1] << " " << param.ref_moment[2] << std::endl;
 
             // ref_force/ref_moment and force_gain/moment_gain are expressed in global coordinates. 
-            vel_p =  ( param.force_gain * (abs_forces[it->first] - param.ref_force) * m_dt * m_dt
+            vel_p =  ( param.force_gain * (abs_forces[it->first] - abs_ref_forces[it->first]) * m_dt * m_dt
                        + param.M_p * ( vel_pos1 - vel_pos0 )
                        + param.D_p * ( dif_target_pos - vel_pos0 ) * m_dt
                        + param.K_p * ( dif_pos * m_dt * m_dt ) ) /
                      (param.M_p + (param.D_p * m_dt) + (param.K_p * m_dt * m_dt));
-            vel_r =  ( param.moment_gain * (abs_moments[it->first] - param.ref_moment) * m_dt * m_dt
+            vel_r =  ( param.moment_gain * (abs_moments[it->first] - abs_ref_moments[it->first]) * m_dt * m_dt
                        + param.M_r * ( vel_rot1 - vel_rot0 )
                        + param.D_r * ( dif_target_rot - vel_rot0 ) * m_dt
                        + param.K_r * ( dif_rot * m_dt * m_dt  ) ) /
@@ -478,9 +488,6 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
                 }
                 std::cerr << std::endl;
             }
-        }
-        for (size_t i = 0; i < m_ref_forceOut.size(); i++) {
-          m_ref_forceOut[i]->write();
         }
     } else {
         if ( DEBUGP || loop % 100 == 0 ) {
@@ -640,18 +647,6 @@ bool ImpedanceController::setImpedanceControllerParam(const std::string& i_name_
     m_impedance_param[name].D_r = i_param_.D_r;
     m_impedance_param[name].K_r = i_param_.K_r;
 
-    m_impedance_param[name].ref_force = hrp::Vector3(i_param_.ref_force[0], i_param_.ref_force[1], i_param_.ref_force[2]);
-    m_impedance_param[name].ref_moment = hrp::Vector3(i_param_.ref_moment[0], i_param_.ref_moment[1], i_param_.ref_moment[2]);
-    for (size_t ii = 0; ii < m_ref_forceOut.size(); ii++) {
-      std::string sensor_name = m_forceIn[ii]->name();
-      hrp::ForceSensor* sensor = m_robot->sensor<hrp::ForceSensor>(sensor_name);
-      if (std::string(sensor->name) == name) {
-        for (size_t j = 0; j < 3; j++) {
-          m_ref_force[ii].data[j] = m_impedance_param[name].ref_force[j];
-          m_ref_force[ii].data[j+3] = m_impedance_param[name].ref_moment[j];
-        }
-      }
-    }
     m_impedance_param[name].force_gain = hrp::Vector3(i_param_.force_gain[0], i_param_.force_gain[1], i_param_.force_gain[2]).asDiagonal();
     m_impedance_param[name].moment_gain = hrp::Vector3(i_param_.moment_gain[0], i_param_.moment_gain[1], i_param_.moment_gain[2]).asDiagonal();
 
@@ -663,8 +658,6 @@ bool ImpedanceController::setImpedanceControllerParam(const std::string& i_name_
       std::cerr << "[" << m_profile.instance_name << "]      target_name : " << param.target_name << std::endl;
       std::cerr << "[" << m_profile.instance_name << "]    M, D, K (pos) : " << param.M_p << " " << param.D_p << " " << param.K_p << std::endl;
       std::cerr << "[" << m_profile.instance_name << "]    M, D, K (rot) : " << param.M_r << " " << param.D_r << " " << param.K_r << std::endl;
-      std::cerr << "[" << m_profile.instance_name << "]        ref_force : " << param.ref_force.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[N]" << std::endl;
-      std::cerr << "[" << m_profile.instance_name << "]       ref_moment : " << param.ref_moment.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[Nm]" << std::endl;
       std::cerr << "[" << m_profile.instance_name << "]       force_gain : " << param.force_gain.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", "\n", "    [", "]")) << std::endl;
       std::cerr << "[" << m_profile.instance_name << "]      moment_gain : " << param.moment_gain.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", "\n", "    [", "]")) << std::endl;
       std::cerr << "[" << m_profile.instance_name << "]      manip_limit : " << param.manipulability_limit << std::endl;
@@ -687,9 +680,7 @@ void ImpedanceController::copyImpedanceParam (ImpedanceControllerService::impeda
   i_param_.M_r = param.M_r;
   i_param_.D_r = param.D_r;
   i_param_.K_r = param.K_r;
-  memcpy(i_param_.ref_force.get_buffer(), param.ref_force.data(), sizeof(double) * 3);
   for (size_t i = 0; i < 3; i++) i_param_.force_gain[i] = param.force_gain(i,i);
-  memcpy(i_param_.ref_moment.get_buffer(), param.ref_moment.data(), sizeof(double) * 3);
   for (size_t i = 0; i < 3; i++) i_param_.moment_gain[i] = param.moment_gain(i,i);
   i_param_.sr_gain = param.sr_gain;
   i_param_.avoid_gain = param.avoid_gain;
