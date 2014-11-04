@@ -81,6 +81,13 @@ CORBA::Boolean SequencePlayerService_impl::setWrenches(const dSequence& wrenches
     return m_player->setWrenches(wrenches.get_buffer(), tm);
 }
 
+CORBA::Boolean SequencePlayerService_impl::setWrench(const char* name, const dSequence& wrench, CORBA::Double tm)
+{
+  //if (wrenches.length() != ) return false;
+
+    return m_player->setWrench(name, wrench.get_buffer(), tm);
+}
+
 CORBA::Boolean SequencePlayerService_impl::setTargetPose(const char* gname, const dSequence& xyz, const dSequence& rpy, CORBA::Double tm){
     char* frame_name = (char *)strrchr(gname, ':');
     if ( frame_name ) {
