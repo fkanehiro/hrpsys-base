@@ -214,6 +214,8 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   eefm_pos_margin_time = 0.02;
   eefm_zmp_delay_time_const[0] = eefm_zmp_delay_time_const[1] = 0.04;
   eefm_leg_inside_margin = 0.065; // [m]
+  eefm_leg_front_margin = 0.05;
+  eefm_leg_rear_margin = 0.05;
   eefm_cogvel_cutoff_freq = 35.3678; //[Hz]
 
   // parameters for RUNST
@@ -577,13 +579,42 @@ void Stabilizer::getActualParameters ()
       { // calc alpha
         hrp::Vector3 l_local_zmp = ee_rot[1].transpose() * (new_refzmp-ee_pos[1]);
         hrp::Vector3 r_local_zmp = ee_rot[0].transpose() * (new_refzmp-ee_pos[0]);
-        if (-1 * eefm_leg_inside_margin <= l_local_zmp(1)) { // new_refzmp is inside lfoot
+        if ( is_inside_foot(l_local_zmp, true) && !is_front_of_foot(l_local_zmp) && !is_rear_of_foot(l_local_zmp)) { // new_refzmp is inside lfoot
           alpha = 0.0;
-        } else if (eefm_leg_inside_margin >= r_local_zmp(1)) { // new_refzmp is inside rfoot
+        } else if ( is_inside_foot(r_local_zmp, false) && !is_front_of_foot(r_local_zmp) && !is_rear_of_foot(r_local_zmp)) { // new_refzmp is inside rfoot
           alpha = 1.0;
         } else {
-          hrp::Vector3 ledge_foot = ee_rot[1] * hrp::Vector3(l_local_zmp(0), -1 * eefm_leg_inside_margin, 0.0) + ee_pos[1];
-          hrp::Vector3 redge_foot = ee_rot[0] * hrp::Vector3(r_local_zmp(0), eefm_leg_inside_margin, 0.0) + ee_pos[0];
+          hrp::Vector3 ledge_foot;
+          hrp::Vector3 redge_foot;
+          // hrp::Vector3 ledge_foot = ee_rot[1] * hrp::Vector3(l_local_zmp(0), -1 * eefm_leg_inside_margin, 0.0) + ee_pos[1];
+          // hrp::Vector3 redge_foot = ee_rot[0] * hrp::Vector3(r_local_zmp(0), eefm_leg_inside_margin, 0.0) + ee_pos[0];
+          // lleg
+          if (is_inside_foot(l_local_zmp, true) && is_front_of_foot(l_local_zmp)) {
+            ledge_foot = hrp::Vector3(eefm_leg_front_margin, l_local_zmp(1), 0.0);
+          } else if (!is_inside_foot(l_local_zmp, true) && is_front_of_foot(l_local_zmp)) {
+            ledge_foot = hrp::Vector3(eefm_leg_front_margin, -1 * eefm_leg_inside_margin, 0.0);
+          } else if (!is_inside_foot(l_local_zmp, true) && !is_front_of_foot(l_local_zmp) && !is_rear_of_foot(l_local_zmp)) {
+            ledge_foot = hrp::Vector3(l_local_zmp(0), -1 * eefm_leg_inside_margin, 0.0);
+          } else if (!is_inside_foot(l_local_zmp, true) && is_rear_of_foot(l_local_zmp)) {
+            ledge_foot = hrp::Vector3(-1 * eefm_leg_rear_margin, -1 * eefm_leg_inside_margin, 0.0);
+          } else {
+            ledge_foot = hrp::Vector3(-1 * eefm_leg_rear_margin, l_local_zmp(1), 0.0);
+          }
+          ledge_foot = ee_rot[1] * ledge_foot + ee_pos[1];
+          // rleg
+          if (is_inside_foot(r_local_zmp, false) && is_front_of_foot(r_local_zmp)) {
+            redge_foot = hrp::Vector3(eefm_leg_front_margin, r_local_zmp(1), 0.0);
+          } else if (!is_inside_foot(r_local_zmp, false) && is_front_of_foot(r_local_zmp)) {
+            redge_foot = hrp::Vector3(eefm_leg_front_margin, eefm_leg_inside_margin, 0.0);
+          } else if (!is_inside_foot(r_local_zmp, false) && !is_front_of_foot(r_local_zmp) && !is_rear_of_foot(r_local_zmp)) {
+            redge_foot = hrp::Vector3(r_local_zmp(0), eefm_leg_inside_margin, 0.0);
+          } else if (!is_inside_foot(r_local_zmp, false) && is_rear_of_foot(r_local_zmp)) {
+            redge_foot = hrp::Vector3(-1 * eefm_leg_rear_margin, eefm_leg_inside_margin, 0.0);
+          } else {
+            redge_foot = hrp::Vector3(-1 * eefm_leg_rear_margin, r_local_zmp(1), 0.0);
+          }
+          redge_foot = ee_rot[0] * redge_foot + ee_pos[0];
+          // calc alpha
           hrp::Vector3 difp = redge_foot - ledge_foot;
           alpha = difp.dot(new_refzmp-ledge_foot)/difp.squaredNorm();
         }
@@ -1095,6 +1126,8 @@ void Stabilizer::getParameter(OpenHRP::StabilizerService::stParam& i_stp)
   i_stp.eefm_pos_transition_time = eefm_pos_transition_time;
   i_stp.eefm_pos_margin_time = eefm_pos_margin_time;
   i_stp.eefm_leg_inside_margin = eefm_leg_inside_margin;
+  i_stp.eefm_leg_front_margin = eefm_leg_front_margin;
+  i_stp.eefm_leg_rear_margin = eefm_leg_rear_margin;
   i_stp.eefm_cogvel_cutoff_freq = eefm_cogvel_cutoff_freq;
   i_stp.st_algorithm = st_algorithm;
   switch(control_mode) {
@@ -1155,6 +1188,8 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
   eefm_pos_transition_time = i_stp.eefm_pos_transition_time;
   eefm_pos_margin_time = i_stp.eefm_pos_margin_time;
   eefm_leg_inside_margin = i_stp.eefm_leg_inside_margin;
+  eefm_leg_front_margin = i_stp.eefm_leg_front_margin;
+  eefm_leg_rear_margin = i_stp.eefm_leg_rear_margin;
   eefm_cogvel_cutoff_freq = i_stp.eefm_cogvel_cutoff_freq;
   std::cerr << "[" << m_profile.instance_name << "]   eefm_k1  = [" << eefm_k1[0] << ", " << eefm_k1[1] << "]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   eefm_k2  = [" << eefm_k2[0] << ", " << eefm_k2[1] << "]" << std::endl;
@@ -1167,7 +1202,7 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
   std::cerr << "[" << m_profile.instance_name << "]   eefm_pos_damping_gain = " << eefm_pos_damping_gain << ", eefm_pos_time_const_support = " << eefm_pos_time_const_support << "[s], "
             << "eefm_pos_time_const_swing = " << eefm_pos_time_const_swing << "[s]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   eefm_pos_transition_time = " << eefm_pos_transition_time << "[s], eefm_pos_margin_time = " << eefm_pos_margin_time << "[s]" << std::endl;
-  std::cerr << "[" << m_profile.instance_name << "]   eefm_leg_inside_margin = " << eefm_leg_inside_margin << "[m]" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   eefm_leg_inside_margin = " << eefm_leg_inside_margin << "[m], eefm_leg_front_margin = " << eefm_leg_front_margin << "[m], eefm_leg_rear_margin = " << eefm_leg_rear_margin << "[m]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   eefm_cogvel_cutoff_freq = " << eefm_cogvel_cutoff_freq << "[Hz]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]  COMMON" << std::endl;
   if (control_mode == MODE_IDLE) {
