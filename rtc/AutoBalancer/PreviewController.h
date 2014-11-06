@@ -234,6 +234,7 @@ namespace rats
 
     void get_cart_zmp (double* ret) { preview_controller.get_cart_zmp(ret);}
     void get_current_refzmp (double* ret) { preview_controller.get_current_refzmp(ret);}
+    size_t get_delay () { return preview_controller.get_delay(); };
   };
 }
 #endif /*PREVIEW_H_*/

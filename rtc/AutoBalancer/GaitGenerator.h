@@ -359,11 +359,11 @@ namespace rats
     leg_coords_generator lcg;
     footstep_parameter footstep_param;
     velocity_mode_parameter vel_param, offset_vel_param;
-    hrp::Vector3 cog, refzmp; /* cog by calculating proc_one_tick */
+    hrp::Vector3 cog, refzmp, prev_que_rzmp; /* cog by calculating proc_one_tick */
     double dt; /* control loop [s] */
     double default_step_time;
     double default_double_support_ratio;
-    size_t one_step_len;
+    size_t one_step_len, finalize_count;
     velocity_mode_flag velocity_mode_flg;
     emergency_flag emergency_flg;
     bool use_inside_step_limitation;
@@ -398,9 +398,9 @@ namespace rats
                     const double _stride_x, const double _stride_y, const double _stride_theta)
       : footstep_node_list(), rg(), lcg(_dt),
         footstep_param(_leg_pos, _stride_x, _stride_y, _stride_theta),
-        vel_param(), offset_vel_param(), cog(hrp::Vector3::Zero()), refzmp(hrp::Vector3::Zero()),
+        vel_param(), offset_vel_param(), cog(hrp::Vector3::Zero()), refzmp(hrp::Vector3::Zero()), prev_que_rzmp(hrp::Vector3::Zero()),
         dt(_dt), default_step_time(1.0), default_double_support_ratio(0.2),
-        one_step_len(default_step_time / dt),
+        one_step_len(default_step_time / dt), finalize_count(0),
         velocity_mode_flg(VEL_IDLING), emergency_flg(IDLING),
         use_inside_step_limitation(true),
         preview_controller_ptr(NULL) {};
