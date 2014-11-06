@@ -140,7 +140,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
 
     zmp_interpolate_time = 1.0;
     zmp_interpolator = new interpolator(6, m_dt);
-    transition_interpolator = new interpolator(1, m_dt);
+    transition_interpolator = new interpolator(1, m_dt, interpolator::HOFFARBIB, 1);
 
     // setting from conf file
     // GaitGenerator requires abc_leg_offset and abc_stride_parameter in robot conf file
@@ -290,7 +290,6 @@ RTC::ReturnCode_t AutoBalancer::onDeactivated(RTC::UniqueId ec_id)
   std::cout << "AutoBalancer::onDeactivated(" << ec_id << ")" << std::endl;
   Guard guard(m_mutex);
   if (control_mode == MODE_ABC) {
-    stopABCparam();
     control_mode = MODE_SYNC_TO_IDLE;
     double tmp_ratio = 0.0;
     transition_interpolator->go(&tmp_ratio, m_dt, true); // sync in one controller loop
