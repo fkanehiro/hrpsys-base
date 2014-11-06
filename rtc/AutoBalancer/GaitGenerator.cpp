@@ -202,6 +202,7 @@ namespace rats
   {
     /* clear all gait_parameter */
     one_step_len = default_step_time / dt;
+    finalize_count = 0;
     footstep_node_list[0].worldcoords = initial_swing_leg_dst_coords;
     rg.reset(one_step_len);
     rg.push_refzmp_from_footstep_list_for_dual(footstep_node_list, initial_support_leg_coords, initial_swing_leg_dst_coords);
@@ -221,7 +222,13 @@ namespace rats
   {
     hrp::Vector3 rzmp;
     bool refzmp_exist_p = rg.get_current_refzmp(rzmp, default_double_support_ratio, one_step_len);
-    bool solved = preview_controller_ptr->update(refzmp, cog, rzmp, refzmp_exist_p);
+    if (!refzmp_exist_p) {
+      finalize_count++;
+      rzmp = prev_que_rzmp;
+    } else {
+      prev_que_rzmp = rzmp;
+    }
+    bool solved = preview_controller_ptr->update(refzmp, cog, rzmp, (refzmp_exist_p || finalize_count < preview_controller_ptr->get_delay()-default_step_time/dt));
     /* update refzmp */
     if ( lcg.get_gp_index() > 0 && lcg.get_gp_count() == static_cast<size_t>(one_step_len / 2) - 1 ) {
       if (velocity_mode_flg != VEL_IDLING) {

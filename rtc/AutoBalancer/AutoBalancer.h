@@ -122,6 +122,8 @@ class AutoBalancer
   InPort<TimedDoubleSeq> m_optionalDataIn;
   std::vector<TimedDoubleSeq> m_ref_force;
   std::vector<InPort<TimedDoubleSeq> *> m_ref_forceIn;
+  // for debug
+  TimedPoint3D m_cog;
   
   // </rtc-template>
 
@@ -139,6 +141,8 @@ class AutoBalancer
   OutPort<TimedBooleanSeq> m_contactStatesOut;
   TimedDoubleSeq m_controlSwingSupportTime;
   OutPort<TimedDoubleSeq> m_controlSwingSupportTimeOut;
+  // for debug
+  OutPort<TimedPoint3D> m_cogOut;
   
   // </rtc-template>
 
