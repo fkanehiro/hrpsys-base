@@ -129,33 +129,42 @@ namespace rats
         pos = pos + _dt * vel;
       };
     protected:
-      double total_time, time_offset, remain_time; // [s]
-      virtual hrp::Vector3 interpolate_antecedent_path (const hrp::Vector3& start, const hrp::Vector3& goal, const double height) = 0;
+      double total_time, time_offset, current_time, double_support_time_half; // [s]
+      virtual hrp::Vector3 interpolate_antecedent_path (const hrp::Vector3& start, const hrp::Vector3& goal, const double height, const double tmp_ratio) = 0;
     public:
-      delay_hoffarbib_trajectory_generator () : total_time(0), time_offset(0.35), remain_time(0) {};
+      delay_hoffarbib_trajectory_generator () : total_time(0), time_offset(0.2), current_time(0) {};
       ~delay_hoffarbib_trajectory_generator() { };
       void set_dt (const double __dt) { _dt = __dt; };
       void set_swing_trajectory_delay_time_offset (const double _time_offset) { time_offset = _time_offset; };
-      void reset (const size_t _one_step_len)
+      void reset (const size_t _one_step_len, const double default_double_support_ratio)
       {
-        remain_time = total_time = _one_step_len * _dt;
+        total_time = _one_step_len * _dt;
+        current_time = 0;
+        double_support_time_half = default_double_support_ratio*total_time/2.0;
       };
       void get_trajectory_point (hrp::Vector3& ret, const hrp::Vector3& start, const hrp::Vector3& goal, const double height)
       {
-        if (std::fabs(remain_time - total_time) < 1e-5) {
+        if ( double_support_time_half <= current_time && current_time <= total_time - double_support_time_half ) { // swing phase
+          double swing_remain_time = total_time - current_time - double_support_time_half;
+          double swing_total_time = total_time - double_support_time_half*2;
+          if (swing_remain_time > time_offset) { // antecedent path is still interpolating
+            hoffarbib_interpolation (time_offset, interpolate_antecedent_path(start, goal, height, ((swing_total_time - swing_remain_time) / (swing_total_time - time_offset))));
+          } else if (swing_remain_time > 1e-5) { // antecedent path already reached to goal
+            hoffarbib_interpolation (swing_remain_time, goal);
+          } else {
+            pos = goal;
+          }
+        } else if ( current_time < double_support_time_half ) { // first double support phase
           pos = start;
           vel = hrp::Vector3::Zero();
           acc = hrp::Vector3::Zero();
-        }
-        if ( remain_time > time_offset) {
-          hoffarbib_interpolation (time_offset, interpolate_antecedent_path(start, goal, height));
-        } else if (remain_time > 1e-5) {
-          hoffarbib_interpolation (remain_time, goal);
-        } else {
+        } else { // last double support phase
           pos = goal;
+          vel = hrp::Vector3::Zero();
+          acc = hrp::Vector3::Zero();
         }
         ret = pos;
-        remain_time -= _dt;
+        current_time += _dt;
       };
       double get_swing_trajectory_delay_time_offset () { return time_offset; };
       // interpolate path vector
@@ -206,9 +215,8 @@ namespace rats
 
     class rectangle_delay_hoffarbib_trajectory_generator : public delay_hoffarbib_trajectory_generator
     {
-      hrp::Vector3 interpolate_antecedent_path (const hrp::Vector3& start, const hrp::Vector3& goal, const double height)
+      hrp::Vector3 interpolate_antecedent_path (const hrp::Vector3& start, const hrp::Vector3& goal, const double height, const double tmp_ratio)
       {
-        double tmp_ratio = (total_time - remain_time) / (total_time - time_offset);
         std::vector<hrp::Vector3> rectangle_path;
         double max_height = std::max(start(2), goal(2))+height;
         rectangle_path.push_back(start);
@@ -222,9 +230,8 @@ namespace rats
     class stair_delay_hoffarbib_trajectory_generator : public delay_hoffarbib_trajectory_generator
     {
       hrp::Vector3 way_point_offset;
-      hrp::Vector3 interpolate_antecedent_path (const hrp::Vector3& start, const hrp::Vector3& goal, const double height)
+      hrp::Vector3 interpolate_antecedent_path (const hrp::Vector3& start, const hrp::Vector3& goal, const double height, const double tmp_ratio)
       {
-        double tmp_ratio = (total_time - remain_time) / (total_time - time_offset);
         std::vector<hrp::Vector3> path;
         double max_height = std::max(start(2), goal(2))+height;
         hrp::Vector3 diff_vec = goal - start;
@@ -305,7 +312,8 @@ namespace rats
       void reset(const size_t one_step_len,
                  const coordinates& _swing_leg_dst_coords,
                  const coordinates& _swing_leg_src_coords,
-                 const coordinates& _support_leg_coords)
+                 const coordinates& _support_leg_coords,
+                 const double default_double_support_ratio)
       {
         swing_leg_dst_coords = _swing_leg_dst_coords;
         swing_leg_src_coords = _swing_leg_src_coords;
@@ -313,8 +321,8 @@ namespace rats
         gp_count = one_step_len;
         gp_index = 0;
         current_step_height = 0.0;
-        rdtg.reset(one_step_len);
-        sdtg.reset(one_step_len);
+        rdtg.reset(one_step_len, default_double_support_ratio);
+        sdtg.reset(one_step_len, default_double_support_ratio);
       };
       void update_leg_coords (const std::vector<step_node>& fnl, const double default_double_support_ratio, const size_t one_step_len, const bool force_height_zero);
       size_t get_gp_index() const { return gp_index; };

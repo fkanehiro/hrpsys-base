@@ -189,8 +189,8 @@ namespace rats
         current_step_height = 0.0;
       }
       gp_count = one_step_len;
-      rdtg.reset(one_step_len);
-      sdtg.reset(one_step_len);
+      rdtg.reset(one_step_len, default_double_support_ratio);
+      sdtg.reset(one_step_len, default_double_support_ratio);
     }
   };
 
@@ -212,7 +212,7 @@ namespace rats
     }
     //preview_controller_ptr = new preview_dynamics_filter<preview_control>(dt, cog(2) - refzmp_cur_list[0](2), refzmp_cur_list[0]);
     preview_controller_ptr = new preview_dynamics_filter<extended_preview_control>(dt, cog(2) - rg.get_refzmp_cur()(2), rg.get_refzmp_cur());
-    lcg.reset(one_step_len, initial_swing_leg_dst_coords, initial_swing_leg_dst_coords, initial_support_leg_coords);
+    lcg.reset(one_step_len, initial_swing_leg_dst_coords, initial_swing_leg_dst_coords, initial_support_leg_coords, default_double_support_ratio);
     /* make another */
     rg.push_refzmp_from_footstep_list_for_single(footstep_node_list);
     emergency_flg = IDLING;
