@@ -59,7 +59,7 @@ AutoBalancer::AutoBalancer(RTC::Manager* manager)
       m_cogOut("cogOut", m_cog),
       m_AutoBalancerServicePort("AutoBalancerService"),
       // </rtc-template>
-      move_base_gain(0.1),
+      move_base_gain(0.8),
       m_robot(hrp::BodyPtr()),
       m_debugLevel(0)
 {
@@ -571,13 +571,13 @@ void AutoBalancer::getTargetParameters()
     ikp["lleg"].getRobotEndCoords(lc, m_robot);
     rc.pos += rc.rot * default_zmp_offsets[0]; /* rleg */
     lc.pos += lc.rot * default_zmp_offsets[1]; /* lleg */
+    hrp::Vector3 tmp_ref_cog(m_robot->calcCM());
     if (gg_is_walking) {
       ref_cog = gg->get_cog();
     } else {
-      hrp::Vector3 tmp_ref_cog(m_robot->calcCM());
       ref_cog = (rc.pos+lc.pos)/2.0;
-      ref_cog(2) = tmp_ref_cog(2);
     }
+    ref_cog(2) = tmp_ref_cog(2);
     if (gg_is_walking) {
       ref_zmp = gg->get_refzmp();
     } else {
