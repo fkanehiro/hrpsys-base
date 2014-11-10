@@ -155,17 +155,16 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
       leg_pos.push_back(hrp::Vector3(leg_offset));
     }
     // setting stride limitations from conf file
-    coil::vstring stride_param_str = coil::split(prop["abc_stride_parameter"], ",");
-    hrp::Vector3 stride_param;
-    if (stride_param_str.size() > 0) {
-      for (size_t i = 0; i < 3; i++) coil::stringTo(stride_param(i), stride_param_str[i].c_str());
-      std::cerr << m_profile.instance_name << " abc_stride_parameter : " << stride_param(0) << "[m], " << stride_param(1) << "[m], " << stride_param(2) << "[deg]" << std::endl;
-    }
+    double stride_fwd_x_limit = 0.15;
+    double stride_y_limit = 0.05;
+    double stride_th_limit = 10;
+    double stride_bwd_x_limit = 0.05;
+    std::cerr << "[" << m_profile.instance_name << "] abc_stride_parameter : " << stride_fwd_x_limit << "[m], " << stride_y_limit << "[m], " << stride_th_limit << "[deg], " << stride_bwd_x_limit << "[m]" << std::endl;
     if (default_zmp_offsets.size() == 0) {
       for (size_t i = 0; i < 2; i++) default_zmp_offsets.push_back(hrp::Vector3::Zero());
     }
-    if (leg_offset_str.size() > 0 && stride_param_str.size() > 0) {
-      gg = ggPtr(new rats::gait_generator(m_dt, leg_pos, stride_param(0)/*[m]*/, stride_param(1)/*[m]*/, stride_param(2)/*[deg]*/));
+    if (leg_offset_str.size() > 0) {
+      gg = ggPtr(new rats::gait_generator(m_dt, leg_pos, stride_fwd_x_limit/*[m]*/, stride_y_limit/*[m]*/, stride_th_limit/*[deg]*/, stride_bwd_x_limit/*[m]*/));
       gg->set_default_zmp_offsets(default_zmp_offsets);
     }
     gg_is_walking = gg_solved = false;
@@ -871,7 +870,7 @@ void AutoBalancer::waitFootSteps()
 
 bool AutoBalancer::setGaitGeneratorParam(const OpenHRP::AutoBalancerService::GaitGeneratorParam& i_param)
 {
-  gg->set_stride_parameters(i_param.stride_parameter[0], i_param.stride_parameter[1], i_param.stride_parameter[2]);
+  gg->set_stride_parameters(i_param.stride_parameter[0], i_param.stride_parameter[1], i_param.stride_parameter[2], i_param.stride_parameter[3]);
   gg->set_default_step_time(i_param.default_step_time);
   gg->set_default_step_height(i_param.default_step_height);
   gg->set_default_double_support_ratio(i_param.default_double_support_ratio);
@@ -887,10 +886,10 @@ bool AutoBalancer::setGaitGeneratorParam(const OpenHRP::AutoBalancerService::Gai
   gg->set_swing_trajectory_delay_time_offset(i_param.swing_trajectory_delay_time_offset);
   gg->set_stair_trajectory_way_point_offset(hrp::Vector3(i_param.stair_trajectory_way_point_offset[0], i_param.stair_trajectory_way_point_offset[1], i_param.stair_trajectory_way_point_offset[2]));
   // print
-  hrp::Vector3 tmpv;
-  gg->get_stride_parameters(tmpv(0), tmpv(1), tmpv(2));
+  double stride_fwd_x, stride_y, stride_th, stride_bwd_x;
+  gg->get_stride_parameters(stride_fwd_x, stride_y, stride_th, stride_bwd_x);
   std::cerr << "[" << m_profile.instance_name << "] setGaitGeneratorParam" << std::endl;
-  std::cerr << "[" << m_profile.instance_name << "]   stride_parameter = " << tmpv.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   stride_parameter = " << stride_fwd_x << "[m], " << stride_y << "[m], " << stride_th << "[deg], " << stride_bwd_x << "[m]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   default_step_time = " << gg->get_default_step_time() << "[s]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   default_step_height = " << gg->get_default_step_height() << "[m]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   default_double_support_ratio = " << gg->get_default_double_support_ratio() << std::endl;
@@ -905,6 +904,7 @@ bool AutoBalancer::setGaitGeneratorParam(const OpenHRP::AutoBalancerService::Gai
     std::cerr << "STAIR" << std::endl;
   }
   std::cerr << "[" << m_profile.instance_name << "]   swing_trajectory_delay_time_offset = " << gg->get_swing_trajectory_delay_time_offset() << "[s]" << std::endl;
+  hrp::Vector3 tmpv;
   tmpv = gg->get_stair_trajectory_way_point_offset();
   std::cerr << "[" << m_profile.instance_name << "]   stair_trajectory_way_point_offset = " << tmpv.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[m]" << std::endl;
   return true;
@@ -912,7 +912,7 @@ bool AutoBalancer::setGaitGeneratorParam(const OpenHRP::AutoBalancerService::Gai
 
 bool AutoBalancer::getGaitGeneratorParam(OpenHRP::AutoBalancerService::GaitGeneratorParam& i_param)
 {
-  gg->get_stride_parameters(i_param.stride_parameter[0], i_param.stride_parameter[1], i_param.stride_parameter[2]);
+  gg->get_stride_parameters(i_param.stride_parameter[0], i_param.stride_parameter[1], i_param.stride_parameter[2], i_param.stride_parameter[3]);
   i_param.default_step_time = gg->get_default_step_time();
   i_param.default_step_height = gg->get_default_step_height();
   i_param.default_double_support_ratio = gg->get_default_double_support_ratio();
