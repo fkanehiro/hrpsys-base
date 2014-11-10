@@ -58,6 +58,7 @@ namespace rats
     Eigen::Matrix<double, 1, 2> u_k;
     hrp::dvector f;
     std::deque<Eigen::Matrix<double, 2, 1> > p;
+    std::deque<double> pz;
     double zmp_z, cog_z;
     size_t delay, ending_count;
     virtual void calc_f() = 0;
@@ -79,7 +80,7 @@ namespace rats
     /* dt = [s], zc = [mm], d = [s] */
     preview_control_base(const double dt, const double zc,
                          const hrp::Vector3& init_xk, const double d = 1.6)
-      : riccati(), x_k(Eigen::Matrix<double, 3, 2>::Zero()), u_k(Eigen::Matrix<double, 1, 2>::Zero()), p(),
+      : riccati(), x_k(Eigen::Matrix<double, 3, 2>::Zero()), u_k(Eigen::Matrix<double, 1, 2>::Zero()), p(), pz(),
         zmp_z(0), cog_z(zc), delay(static_cast<size_t>(round(d / dt))), ending_count(1+delay)
     {
       tcA << 1, dt, 0.5 * dt * dt,
@@ -95,6 +96,7 @@ namespace rats
     virtual ~preview_control_base()
     {
       p.clear();
+      pz.clear();
     };
     virtual void update_x_k(const hrp::Vector3& pr);
     virtual void update_x_k()
@@ -102,7 +104,7 @@ namespace rats
       hrp::Vector3 pr;
       pr(0) = p.back()(0);
       pr(1) = p.back()(1);
-      pr(2) = zmp_z;
+      pr(2) = pz.back();
       update_x_k(pr);
       ending_count--;
     };
@@ -119,20 +121,23 @@ namespace rats
       Eigen::Matrix<double, 1, 2> _p(tcc * x_k);
       ret[0] = _p(0, 0);
       ret[1] = _p(0, 1);
-      ret[2] = zmp_z;
+      ret[2] = pz.front();
     };
     void get_current_refzmp (double* ret)
     {
       ret[0] = p.front()(0);
       ret[1] = p.front()(1);
-      ret[2] = zmp_z;
+      ret[2] = pz.front();
     };
     bool is_doing () { return p.size() >= 1 + delay; };
     bool is_end () { return ending_count <= 0 ; };
     void remove_preview_queue(const size_t remain_length)
     {
       size_t num = p.size() - remain_length;
-      for (size_t i = 0; i < num; i++) p.pop_back();
+      for (size_t i = 0; i < num; i++) {
+        p.pop_back();
+        pz.pop_back();
+      }
     };
     void print_all_queue ()
     {

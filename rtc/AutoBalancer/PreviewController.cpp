@@ -12,7 +12,11 @@ void preview_control_base<dim>::update_x_k(const hrp::Vector3& pr)
   tmpv(0,0) = pr(0);
   tmpv(1,0) = pr(1);
   p.push_back(tmpv);
-  if ( p.size() > 1 + delay ) p.pop_front();
+  pz.push_back(pr(2));
+  if ( p.size() > 1 + delay ) {
+    p.pop_front();
+    pz.pop_front();
+  }
   if ( is_doing() ) calc_x_k();
 }
 
