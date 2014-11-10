@@ -47,11 +47,11 @@ namespace rats
        */
       std::vector<hrp::Vector3> leg_default_translate_pos;
       /* stride params indicate max stride ( [mm], [mm], [deg] ) */
-      double stride_x, stride_y, stride_theta;
+      double stride_fwd_x, stride_y, stride_theta, stride_bwd_x;
       footstep_parameter (const std::vector<hrp::Vector3>& _leg_pos,
-                          const double _stride_x, const double _stride_y, const double _stride_theta)
+                          const double _stride_fwd_x, const double _stride_y, const double _stride_theta, const double _stride_bwd_x)
         : leg_default_translate_pos(_leg_pos),
-          stride_x(_stride_x), stride_y(_stride_y), stride_theta(_stride_theta)  {};
+          stride_fwd_x(_stride_fwd_x), stride_y(_stride_y), stride_theta(_stride_theta), stride_bwd_x(_stride_bwd_x)  {};
     };
 
     /* velocity parameter for velocity mode */
@@ -403,9 +403,9 @@ namespace rats
     gait_generator (double _dt,
                     /* arguments for footstep_parameter */
                     const std::vector<hrp::Vector3>& _leg_pos,
-                    const double _stride_x, const double _stride_y, const double _stride_theta)
+                    const double _stride_fwd_x, const double _stride_y, const double _stride_theta, const double _stride_bwd_x)
       : footstep_node_list(), rg(), lcg(_dt),
-        footstep_param(_leg_pos, _stride_x, _stride_y, _stride_theta),
+        footstep_param(_leg_pos, _stride_fwd_x, _stride_y, _stride_theta, _stride_bwd_x),
         vel_param(), offset_vel_param(), cog(hrp::Vector3::Zero()), refzmp(hrp::Vector3::Zero()), prev_que_rzmp(hrp::Vector3::Zero()),
         dt(_dt), default_step_time(1.0), default_double_support_ratio(0.2),
         one_step_len(default_step_time / dt), finalize_count(0),
@@ -466,11 +466,12 @@ namespace rats
     {
       offset_vel_param.set(vel_x, vel_y, vel_theta);
     };
-    void set_stride_parameters (const double _stride_x, const double _stride_y, const double _stride_theta)
+    void set_stride_parameters (const double _stride_fwd_x, const double _stride_y, const double _stride_theta, const double _stride_bwd_x)
     {
-      footstep_param.stride_x = _stride_x;
+      footstep_param.stride_fwd_x = _stride_fwd_x;
       footstep_param.stride_y = _stride_y;
       footstep_param.stride_theta = _stride_theta;
+      footstep_param.stride_bwd_x = _stride_bwd_x;
     };
     void set_use_inside_step_limitation(const bool uu) { use_inside_step_limitation = uu; };
     void set_default_orbit_type (const orbit_type type) { lcg.set_default_orbit_type(type); };
@@ -499,11 +500,12 @@ namespace rats
       return tmp;
     };
     void get_swing_support_mid_coords(coordinates& ret) const { lcg.get_swing_support_mid_coords(ret); };
-    void get_stride_parameters (double& _stride_x, double& _stride_y, double& _stride_theta)
+    void get_stride_parameters (double& _stride_fwd_x, double& _stride_y, double& _stride_theta, double& _stride_bwd_x)
     {
-      _stride_x = footstep_param.stride_x;
+      _stride_fwd_x = footstep_param.stride_fwd_x;
       _stride_y = footstep_param.stride_y;
       _stride_theta = footstep_param.stride_theta;
+      _stride_bwd_x = footstep_param.stride_bwd_x;
     };
     size_t get_gp_index() const { return lcg.get_gp_index(); };
     size_t get_gp_count() const { return lcg.get_gp_count(); };

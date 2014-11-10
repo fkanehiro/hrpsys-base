@@ -11,7 +11,7 @@ void test0 ()
   std::vector<hrp::Vector3> leg_pos; /* default footstep transformations are necessary */
   leg_pos.push_back(hrp::Vector3(0,1e-3*-105,0)); /* rleg */
   leg_pos.push_back(hrp::Vector3(0,1e-3* 105,0)); /* lleg */
-  gait_generator gg(dt, leg_pos, 1e-3*150, 1e-3*50, 10);
+  gait_generator gg(dt, leg_pos, 1e-3*150, 1e-3*50, 10, 1e-3*50);
 
   /* this is c++ version example of test3, test6, test7 and test8 in euslib/demo/nozawa/motion/test-gait-generator.l */
 

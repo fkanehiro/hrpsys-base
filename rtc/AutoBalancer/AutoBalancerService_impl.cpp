@@ -52,7 +52,7 @@ CORBA::Boolean AutoBalancerService_impl::setGaitGeneratorParam(const OpenHRP::Au
 CORBA::Boolean AutoBalancerService_impl::getGaitGeneratorParam(OpenHRP::AutoBalancerService::GaitGeneratorParam_out i_param)
 {
   i_param = new OpenHRP::AutoBalancerService::GaitGeneratorParam();
-  i_param->stride_parameter.length(3);
+  i_param->stride_parameter.length(4);
   return m_autobalancer->getGaitGeneratorParam(*i_param);
 };
 

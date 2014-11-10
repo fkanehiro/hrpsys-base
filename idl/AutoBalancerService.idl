@@ -105,8 +105,8 @@ module OpenHRP
       double default_step_height;
       /// Ratio of double support period. Ratio is included in (0, 1). Double support period time is default_double_support_ratio*default_step_time.
       double default_double_support_ratio;
-      /// Stride limitation of x[m], y[m], and theta[deg] for goPos
-      sequence<double, 3> stride_parameter;
+      /// Stride limitation of forward x[m], y[m], theta[deg], and backward x[m] for goPos
+      sequence<double, 4> stride_parameter;
       /// Default OrbitType
       OrbitType default_orbit_type;
       /// Time offset [s] for swing trajectory by delay_hoffarbib_trajectory_generator.
