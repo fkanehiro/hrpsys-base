@@ -141,14 +141,18 @@ int main (int argc, char** argv)
         if (use_highgain_mode) {
           xmlTextWriterWriteProperty(writer, "HGcontroller0.period", dt);
           xmlTextWriterWriteProperty(writer, "HGcontroller0.factory", "HGcontroller");
-          xmlTextWriterWriteProperty(writer, "connection", "HGcontroller0.qOut:"+name+"(Robot)0.qRef");
-          xmlTextWriterWriteProperty(writer, "connection", "HGcontroller0.dqOut:"+name+"(Robot)0.dqRef");
-          xmlTextWriterWriteProperty(writer, "connection", "HGcontroller0.ddqOut:"+name+"(Robot)0.ddqRef");
+          if (it==inputs.begin()) {
+            xmlTextWriterWriteProperty(writer, "connection", "HGcontroller0.qOut:"+name+"(Robot)0.qRef");
+            xmlTextWriterWriteProperty(writer, "connection", "HGcontroller0.dqOut:"+name+"(Robot)0.dqRef");
+            xmlTextWriterWriteProperty(writer, "connection", "HGcontroller0.ddqOut:"+name+"(Robot)0.ddqRef");
+          }
         } else {
           xmlTextWriterWriteProperty(writer, "PDcontroller0.period", dt);
           xmlTextWriterWriteProperty(writer, "PDcontroller0.factory", "PDcontroller");
-          xmlTextWriterWriteProperty(writer, "connection", "PDcontroller0.torque:"+name+"(Robot)0.tauRef");
-          xmlTextWriterWriteProperty(writer, "connection", ""+name+"(Robot)0.q:PDcontroller0.angle");
+          if (it==inputs.begin()) {
+            xmlTextWriterWriteProperty(writer, "connection", "PDcontroller0.torque:"+name+"(Robot)0.tauRef");
+            xmlTextWriterWriteProperty(writer, "connection", ""+name+"(Robot)0.q:PDcontroller0.angle");
+          }
         }
 	xmlTextWriterEndElement(writer); // item
 
