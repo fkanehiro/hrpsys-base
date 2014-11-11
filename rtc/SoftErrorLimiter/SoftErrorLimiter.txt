@@ -1,10 +1,35 @@
 /**
 
-\page NullComponent
+\page SoftErrorLimiter
 
 \section introduction Overview
 
-This component is a very simple RT component to learn how to develop.
+This component limits joint-level error and alerts by beep sound. 
+This component checks two types of errors:
+<table>
+  <tr><th>Type of error</th><th>Description</th><th>Beep sound</th><th>Limitation</th></tr>
+  <tr><td>Soft error</td><td>Joint angle error between ref and act
+  becomes large. </td><td>4 times / 1[s]</td><td>Limit joint error within some threshould</td></tr>
+  <tr><td>Position error</td><td>Reference joint position violates the
+  joint range.</td><td>2 times / 1[s]</td><td>Limit joint
+  angle within upper limit and lower limit</td></tr>
+</table>
+
+For soft error, this component observes the error between 
+reference joint angle and actual joint angle. 
+If the error exceeds a threshould, this component 
+overwrite output reference joint angles 
+to limit error within the threshould. 
+At the same time, this component makes beep sound 4 times per 1[s].
+
+For position error, this component checks 
+whether input reference joint angle is within the joint range.
+If input reference joint angle exceeds the joint range, 
+this component overwrite output reference joint angles 
+to keep output reference joint angle within the range. 
+At the same time, this component makes beep sound 2 times per 1[s].
+
+If the cause of errors are removed, error flags and beep sound are removed.
 
 <table>
 <tr><th>implementation_id</th><td>NullComponent</td></tr>
@@ -17,14 +42,18 @@ This component is a very simple RT component to learn how to develop.
 
 <table>
 <tr><th>port name</th><th>data type</th><th>unit</th><th>description</th></tr>
-<tr><td>dataIn</td><td>RTC::TimedDouble</td><td></td><td></td></tr>
+<tr><td>qRef</td><td>RTC::TimedDouble</td><td>[deg]</td><td>Input reference
+joint angles</td></tr>
+<tr><td>qCurrent</td><td>RTC::TimedDouble</td><td>[deg]</td><td>Actual
+joint angles</td></tr>
 </table>
 
 \subsection outports Output Ports
 
 <table>
 <tr><th>port name</th><th>data type</th><th>unit</th><th>description</th></tr>
-<tr><td>dataOut</td><td>RTC::TimedDouble</td><td></td><td></td></tr>
+<tr><td>q</td><td>RTC::TimedDouble</td><td>[deg]</td><td>Output
+reference joint angles</td></tr>
 </table>
 
 \section serviceports Service Ports
@@ -33,7 +62,7 @@ This component is a very simple RT component to learn how to develop.
 
 <table>
 <tr><th>port name</th><th>interface name</th><th>service type</th><th>IDL</th><th>description</th></tr>
-<tr><td>NullService</td><td>service0</td><td>NullService</td><td>\ref OpenHRP::NullService</td><td></td></tr>
+<tr><td>SoftErrorLimiterService</td><td>service0</td><td>SoftErrorLimiterService</td><td>\ref OpenHRP::SoftErrorLimiterService</td><td></td></tr>
 </table>
 
 \subsection consumer Service Consumers
@@ -44,13 +73,15 @@ N/A
 
 <table>
 <tr><th>name</th><th>type</th><th>unit</th><th>default value</th><th>description</th></tr>
-<tr><td>string</td><td>std::string</td><td></td><td>testtest</td><td>example of string configuration variables</td></tr>
-<tr><td>intvec</td><td>std::vector<int></td><td></td><td>4,5,6,7</td><td>example of integer array configuration variables</td></tr>
-<tr><td>double</td><td>double<int></td><td></td><td>4.567</td><td>example of double precision configuration variable</td></tr>
+<tr><td>debugLevel</td><td>int</td><td></td><td>0</td><td>debug level</td></tr>
 </table>
 
 \section conf Configuration File
 
-N/A
+<table>
+<tr><th>key</th><th>type</th><th>unit</th><th>description</th></tr>
+<tr><td>dt</td><td>double</td><td>[s]</td><td>sampling time</td></tr>
+<tr><td>model</td><td>std::string</td><td></td><td>URL of a VRML model</td></tr>
+</table>
 
  */
