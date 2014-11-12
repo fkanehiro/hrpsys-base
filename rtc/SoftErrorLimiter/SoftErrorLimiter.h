@@ -142,7 +142,7 @@ class SoftErrorLimiter
  private:
   boost::shared_ptr<robot> m_robot;
   unsigned int m_debugLevel;
-  int dummy;
+  int dummy, position_limit_error_beep_freq, soft_limit_error_beep_freq;
 };
 
 

@@ -127,6 +127,12 @@ RTC::ReturnCode_t SoftErrorLimiter::onInitialize()
     m_servoState.data[i][0] = status;
   }
 
+  /* Calculate count for beep sound frequency */
+  double dt;
+  coil::stringTo(dt, prop["dt"].c_str());
+  soft_limit_error_beep_freq = static_cast<int>(1.0/(4.0*dt)); // soft limit error => 4 times / 1[s]
+  position_limit_error_beep_freq = static_cast<int>(1.0/(2.0*dt)); // position limit error => 2 times / 1[s]
+
   return RTC::RTC_OK;
 }
 
@@ -258,9 +264,9 @@ RTC::ReturnCode_t SoftErrorLimiter::onExecute(RTC::UniqueId ec_id)
       prev_angle[i] = m_qRef.data[i];
     }
     if ( soft_limit_error ) { // play beep
-      start_beep(3136);
+      if ( loop % soft_limit_error_beep_freq == 0 ) start_beep(3136, soft_limit_error_beep_freq*0.8);
     }else if ( position_limit_error ) { // play beep
-      start_beep(3520);
+      if ( loop % position_limit_error_beep_freq == 0 ) start_beep(3520, position_limit_error_beep_freq*0.8);
     } else {
       stop_beep();
     }
