@@ -483,7 +483,7 @@ def dataTypeOfPort(port):
 # \param bufferlength length of data buffer
 # \param rate communication rate for periodic mode[Hz]
 #
-def connectPorts(outP, inPs, subscription="flush", dataflow="Push", bufferlength=1, rate=1000):
+def connectPorts(outP, inPs, subscription="flush", dataflow="Push", bufferlength=1, rate=1000, pushpolicy="new"):
     if not isinstance(inPs, list):
         inPs = [inPs]
     if not outP:
@@ -508,9 +508,10 @@ def connectPorts(outP, inPs, subscription="flush", dataflow="Push", bufferlength
         nv3 = SDOPackage.NameValue("dataport.subscription_type", any.to_any(subscription))
         nv4 = SDOPackage.NameValue("dataport.buffer.length", any.to_any(str(bufferlength)))
         nv5 = SDOPackage.NameValue("dataport.publisher.push_rate", any.to_any(str(rate)))
-        nv6 = SDOPackage.NameValue("dataport.data_type", any.to_any(dataTypeOfPort(outP)))
+        nv6 = SDOPackage.NameValue("dataport.publisher.push_policy", any.to_any(pushpolicy))
+        nv7 = SDOPackage.NameValue("dataport.data_type", any.to_any(dataTypeOfPort(outP)))
         con_prof = RTC.ConnectorProfile("connector0", "", [outP, inP],
-                                        [nv1, nv2, nv3, nv4, nv5, nv6])
+                                        [nv1, nv2, nv3, nv4, nv5, nv6, nv7])
         print '[rtm.py]    Connect ' + outP.get_port_profile().name + ' - ' + \
               inP.get_port_profile().name
         ret, prof = inP.connect(con_prof)
