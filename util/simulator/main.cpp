@@ -79,6 +79,25 @@ hrp::BodyPtr createBody(const std::string& name, const ModelItem& mitem,
     }
 }
 
+void print_usage(char* progname)
+{
+    std::cerr << "Usage:" << progname << " [project file] [options]" << std::endl;
+    std::cerr << "Options:" << std::endl;
+    std::cerr << " -nodisplay         : headless mode" << std::endl;
+    std::cerr << " -realtime          : syncronize to real world time" << std::endl;
+    std::cerr << " -usebbox           : use bounding box for collision detection" << std::endl;
+    std::cerr << " -endless           : endless mode" << std::endl;
+    std::cerr << " -showsensors       : visualize sensors" << std::endl;
+    std::cerr << " -size [pixels]     : specify window size in pixels" << std::endl;
+    std::cerr << " -no-default-lights : disable embient light (simulation environment will be dark)" << std::endl;
+    std::cerr << " -max-edge-length [value] : specify maximum size of the world" << std::endl;
+    std::cerr << " -max-log-length [value] : specify maximum size of the log" << std::endl;
+    std::cerr << " -exit-on-finish    : exit the program when the simulation finish" << std::endl;
+    std::cerr << " -record            : record the simulation as movie" << std::endl;
+    std::cerr << " -bg [r] [g] [b]    : specify background color" << std::endl;
+    std::cerr << " -h --help          : show this help message" << std::endl;
+}
+
 int main(int argc, char* argv[]) 
 {
     bool display = true, usebbox=false;
@@ -89,29 +108,24 @@ int main(int argc, char* argv[])
     bool exitOnFinish = false;
     bool record = false;
     double maxLogLen = 60;
+    bool realtime = false;
+    bool endless = false;
 
-    if (argc < 0){
-        std::cerr << "Usage:" << argv[0] << " [project file] [options]"
-                  << std::endl;
-        return 1;
-    }
-
-    Project prj;
-    if (!prj.parse(argv[1])){
-        std::cerr << "failed to parse " << argv[1] << std::endl;
+    if (argc <= 1){
+        print_usage(argv[0]);
         return 1;
     }
 
     float bgColor[]={0,0,0};
-    for (int i=2; i<argc; i++){
+    for (int i=1; i<argc; i++){
         if (strcmp("-nodisplay",argv[i])==0){
             display = false;
         }else if(strcmp("-realtime", argv[i])==0){
-            prj.realTime(true);
+            realtime = true;
         }else if(strcmp("-usebbox", argv[i])==0){
             usebbox = true;
         }else if(strcmp("-endless", argv[i])==0){
-            prj.totalTime(0);
+            endless = true;
         }else if(strcmp("-showsensors", argv[i])==0){
             showsensors = true;
         }else if(strcmp("-size", argv[i])==0){
@@ -131,7 +145,22 @@ int main(int argc, char* argv[])
             bgColor[0] = atof(argv[++i]);
             bgColor[1] = atof(argv[++i]);
             bgColor[2] = atof(argv[++i]);
+        }else if(strcmp("-h", argv[i])==0 || strcmp("--help", argv[i])==0){
+            print_usage(argv[0]);
+            return 1;
         }
+    }
+
+    Project prj;
+    if (!prj.parse(argv[1])){
+        std::cerr << "failed to parse " << argv[1] << std::endl;
+        return 1;
+    }
+    if (realtime){
+        prj.realTime(true);
+    }
+    if (endless){
+        prj.totalTime(0);
     }
 
     //================= OpenRTM =========================
