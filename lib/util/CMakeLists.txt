@@ -23,11 +23,13 @@ set(headers
   OpenRTMUtil.h
   ThreadedObject.h
   GLutil.h
+  GLcoordinates.h
   GLcamera.h
   GLshape.h
   GLlink.h
   GLbody.h
   GLsceneBase.h
+  GLbodyRTC.h
   Hrpsys.h
   LogManagerBase.h
   LogManager.h
