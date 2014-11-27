@@ -26,50 +26,50 @@ int main(int argc, char *argv[])
             bgColor[2] = atof(argv[++i]);
         }
     }
-
+    
     CORBA::ORB_var orb = CORBA::ORB::_nil();
-  
+    
     try {
-
-	orb = CORBA::ORB_init(argc, argv);
-	
-	CORBA::Object_var obj;
-	
-	obj = orb->resolve_initial_references("RootPOA");
-	PortableServer::POA_var poa = PortableServer::POA::_narrow(obj);
-	if(CORBA::is_nil(poa)){
-	    throw std::string("error: failed to narrow root POA.");
-	}
-	
-	PortableServer::POAManager_var poaManager = poa->the_POAManager();
-	if(CORBA::is_nil(poaManager)){
-	    throw std::string("error: failed to narrow root POA manager.");
-	}
-	
+        
+        orb = CORBA::ORB_init(argc, argv);
+        
+        CORBA::Object_var obj;
+        
+        obj = orb->resolve_initial_references("RootPOA");
+        PortableServer::POA_var poa = PortableServer::POA::_narrow(obj);
+        if(CORBA::is_nil(poa)){
+            throw std::string("error: failed to narrow root POA.");
+        }
+        
+        PortableServer::POAManager_var poaManager = poa->the_POAManager();
+        if(CORBA::is_nil(poaManager)){
+            throw std::string("error: failed to narrow root POA manager.");
+        }
+        
         LogManager<OpenHRP::WorldState> log;
         GLscene scene(&log);
         scene.setBackGroundColor(bgColor);
-
-	OnlineViewer_impl* OnlineViewerImpl 
+        
+        OnlineViewer_impl* OnlineViewerImpl 
             = new OnlineViewer_impl(orb, poa, &scene, &log);
-	poa->activate_object(OnlineViewerImpl);
-	OnlineViewer_var OnlineViewer = OnlineViewerImpl->_this();
-	OnlineViewerImpl->_remove_ref();
+        poa->activate_object(OnlineViewerImpl);
+        OnlineViewer_var OnlineViewer = OnlineViewerImpl->_this();
+        OnlineViewerImpl->_remove_ref();
+        
+        obj = orb->resolve_initial_references("NameService");
+        CosNaming::NamingContext_var namingContext = CosNaming::NamingContext::_narrow(obj);
+        if(CORBA::is_nil(namingContext)){
+            throw std::string("error: failed to narrow naming context.");
+        }
+        
+        CosNaming::Name name;
+        name.length(1);
+        name[0].id = CORBA::string_dup("OnlineViewer");
+        name[0].kind = CORBA::string_dup("");
+        namingContext->rebind(name, OnlineViewer);
 
-	obj = orb->resolve_initial_references("NameService");
-	CosNaming::NamingContext_var namingContext = CosNaming::NamingContext::_narrow(obj);
-	if(CORBA::is_nil(namingContext)){
-	    throw std::string("error: failed to narrow naming context.");
-	}
-	
-	CosNaming::Name name;
-	name.length(1);
-	name[0].id = CORBA::string_dup("OnlineViewer");
-	name[0].kind = CORBA::string_dup("");
-	namingContext->rebind(name, OnlineViewer);
-
-	poaManager->activate();
-
+        poaManager->activate();
+        
         int wsize=0;
         bool useDefaultLights=true;
         for (int i=1; i<argc; i++){
@@ -94,7 +94,7 @@ int main(int argc, char *argv[])
             GLbody *glbody = new GLbody();
             std::string url = argv[1];
             if (argv[1][0] != '/'){
-	        char buf[MAXPATHLEN];
+                char buf[MAXPATHLEN];
                 std::string cwd = getcwd(buf, MAXPATHLEN);
                 url = cwd + '/' + url;
             }
@@ -105,16 +105,16 @@ int main(int argc, char *argv[])
             loadShapeFromBodyInfo(glbody, binfo);
             scene.addBody(body);
         }
-
+        
         GLlink::useAbsTransformToDraw();
         GLbody::useAbsTransformToDraw();
 
         SDLwindow window(&scene, &log);
         window.init(wsize, wsize);
         if (!useDefaultLights) scene.defaultLights(false);
-
+        
         while(window.oneStep());
-
+        
     }
     catch(OpenHRP::ModelLoader::ModelLoaderException ex){
         std::cerr << ex.description << std::endl;
@@ -125,12 +125,12 @@ int main(int argc, char *argv[])
     catch (const std::string& error){
         std::cerr << error << std::endl;
     }
-
+    
     try {
-	orb->destroy();
+        orb->destroy();
     }
     catch(...){
-
+        
     }
     
     return 0;

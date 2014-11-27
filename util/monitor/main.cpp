@@ -74,29 +74,29 @@ int main(int argc, char* argv[])
     //================= CORBA =========================
     CORBA::ORB_var orb;
     CosNaming::NamingContext_var namingContext;
- 
+    
     try {
-	orb = CORBA::ORB_init(argc, argv);
-
-	CORBA::Object_var obj;
-	obj = orb->resolve_initial_references("RootPOA");
-	PortableServer::POA_var poa = PortableServer::POA::_narrow(obj);
-	if(CORBA::is_nil(poa)){
-	    throw std::string("error: failed to narrow root POA.");
-	}
-	
-	PortableServer::POAManager_var poaManager = poa->the_POAManager();
-	if(CORBA::is_nil(poaManager)){
-	    throw std::string("error: failed to narrow root POA manager.");
-	}
-	
-	obj = orb->resolve_initial_references("NameService");
-	namingContext = CosNaming::NamingContext::_narrow(obj);
-	if(CORBA::is_nil(namingContext)){
-	    throw std::string("error: failed to narrow naming context.");
-	}
-	
-	poaManager->activate();
+        orb = CORBA::ORB_init(argc, argv);
+        
+        CORBA::Object_var obj;
+        obj = orb->resolve_initial_references("RootPOA");
+        PortableServer::POA_var poa = PortableServer::POA::_narrow(obj);
+        if(CORBA::is_nil(poa)){
+            throw std::string("error: failed to narrow root POA.");
+        }
+        
+        PortableServer::POAManager_var poaManager = poa->the_POAManager();
+        if(CORBA::is_nil(poaManager)){
+            throw std::string("error: failed to narrow root POA manager.");
+        }
+        
+        obj = orb->resolve_initial_references("NameService");
+        namingContext = CosNaming::NamingContext::_narrow(obj);
+        if(CORBA::is_nil(namingContext)){
+            throw std::string("error: failed to narrow naming context.");
+        }
+        
+        poaManager->activate();
     }catch (CORBA::SystemException& ex) {
         std::cerr << ex._rep_id() << std::endl;
     }catch (const std::string& error){
@@ -106,7 +106,7 @@ int main(int argc, char* argv[])
     //================= logger ======================
     LogManager<TimedRobotState> log; 
     log.enableRingBuffer(5000);
-
+    
     //================= monitor ======================
     RobotHardwareClientView rhview = prj.RobotHardwareClient();
     Monitor monitor(orb, 
@@ -126,10 +126,10 @@ int main(int argc, char* argv[])
     GLscene scene(&log);
     scene.setBackGroundColor(bgColor);
     scene.showCoMonFloor(prj.view().showCoMonFloor);
-
+    
     SDLwindow window(&scene, &log, &monitor);
     window.init(wsize, wsize);
-
+    
     std::vector<hrp::ColdetLinkPairPtr> pairs;
     ModelLoader_var modelloader = getModelLoader(namingContext);
     if (CORBA::is_nil(modelloader)){
@@ -139,18 +139,18 @@ int main(int argc, char* argv[])
     BodyFactory factory = boost::bind(createBody, _1, _2, modelloader);
     initWorld(prj, factory, scene, pairs);
     scene.setCollisionCheckPairs(pairs);
-
+    
     monitor.start();
     int cnt=0;
     while(window.oneStep());
     monitor.stop();
-
+    
     try {
-	orb->destroy();
+        orb->destroy();
     }
     catch(...){
-
+        
     }
-
+    
     return 0;
 }
