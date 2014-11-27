@@ -21,8 +21,8 @@ void print_usage(char* progname)
     std::cerr << "Usage:" << progname << " [model file] [options]" << std::endl;
     std::cerr << "Options:" << std::endl;
     std::cerr << " -size [pixels]     : specify window size in pixels" << std::endl;
-    std::cerr << " -no-default-lights : disable embient light (simulation environment will be dark)" << std::endl;
-    std::cerr << " -max-edge-length [value] : specify maximum size of the world" << std::endl;
+    std::cerr << " -no-default-lights : disable ambient light (simulation environment will be dark)" << std::endl;
+    std::cerr << " -max-edge-length [value] : specify maximum length of polygon edge (if exceed, polygon will be divided to improve rendering quality)" << std::endl;
     std::cerr << " -bg [r] [g] [b]    : specify background color" << std::endl;
     std::cerr << " -h --help          : show this help message" << std::endl;
     std::cerr << "Example:" << std::endl;

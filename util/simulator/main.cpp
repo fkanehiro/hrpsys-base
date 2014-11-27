@@ -89,8 +89,8 @@ void print_usage(char* progname)
     std::cerr << " -endless           : endless mode" << std::endl;
     std::cerr << " -showsensors       : visualize sensors" << std::endl;
     std::cerr << " -size [pixels]     : specify window size in pixels" << std::endl;
-    std::cerr << " -no-default-lights : disable embient light (simulation environment will be dark)" << std::endl;
-    std::cerr << " -max-edge-length [value] : specify maximum size of the world" << std::endl;
+    std::cerr << " -no-default-lights : disable ambient light (simulation environment will be dark)" << std::endl;
+    std::cerr << " -max-edge-length [value] : specify maximum length of polygon edge (if exceed, polygon will be divided to improve rendering quality)" << std::endl;
     std::cerr << " -max-log-length [value] : specify maximum size of the log" << std::endl;
     std::cerr << " -exit-on-finish    : exit the program when the simulation finish" << std::endl;
     std::cerr << " -record            : record the simulation as movie" << std::endl;
