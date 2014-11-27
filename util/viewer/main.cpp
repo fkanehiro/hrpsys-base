@@ -16,14 +16,43 @@
 
 using namespace OpenHRP;
 
+void print_usage(char* progname)
+{
+    std::cerr << "Usage:" << progname << " [model file] [options]" << std::endl;
+    std::cerr << "Options:" << std::endl;
+    std::cerr << " -size [pixels]     : specify window size in pixels" << std::endl;
+    std::cerr << " -no-default-lights : disable embient light (simulation environment will be dark)" << std::endl;
+    std::cerr << " -max-edge-length [value] : specify maximum size of the world" << std::endl;
+    std::cerr << " -bg [r] [g] [b]    : specify background color" << std::endl;
+    std::cerr << " -h --help          : show this help message" << std::endl;
+    std::cerr << "Example:" << std::endl;
+    std::cerr << " run the view server and wait for the client to connect"<< std::endl;
+    std::cerr << "  $ " << progname << std::endl;
+    std::cerr << " run the view server, load the pa10 robot model, set the background to green and wait for the client to connect"<< std::endl;
+    std::cerr << "  $ " << progname << " /usr/share/OpenHRP-3.1/sample/model/PA10/pa10.main.wrl -bg 0 0.3 0"<< std::endl;
+}
+
 int main(int argc, char *argv[])
 {
+    int wsize=0;
+    double maxEdgeLen=0.0;
+    bool useDefaultLights=true;
     float bgColor[3];
+    
     for (int i=1; i<argc; i++){
-        if (strcmp(argv[i], "-bg")==0){
+        if (strcmp(argv[i], "-size")==0){
+            wsize = atoi(argv[++i]);
+        }else if(strcmp(argv[i], "-max-edge-length")==0){
+            maxEdgeLen = atof(argv[++i]);
+        }else if(strcmp(argv[i], "-no-default-lights")==0){
+            useDefaultLights=false;
+        }else if(strcmp(argv[i], "-bg")==0){
             bgColor[0] = atof(argv[++i]);
             bgColor[1] = atof(argv[++i]);
             bgColor[2] = atof(argv[++i]);
+        }else if(strcmp(argv[i], "-h")==0 || strcmp(argv[i], "--help")==0){
+            print_usage(argv[0]);
+            return 1;
         }
     }
     
@@ -49,6 +78,7 @@ int main(int argc, char *argv[])
         LogManager<OpenHRP::WorldState> log;
         GLscene scene(&log);
         scene.setBackGroundColor(bgColor);
+        scene.maxEdgeLen(maxEdgeLen);
         
         OnlineViewer_impl* OnlineViewerImpl 
             = new OnlineViewer_impl(orb, poa, &scene, &log);
@@ -70,17 +100,6 @@ int main(int argc, char *argv[])
 
         poaManager->activate();
         
-        int wsize=0;
-        bool useDefaultLights=true;
-        for (int i=1; i<argc; i++){
-            if (strcmp(argv[i], "-size")==0){
-                wsize = atoi(argv[++i]);
-            }else if(strcmp(argv[i], "-max-edge-length")==0){
-                scene.maxEdgeLen(atof(argv[++i]));
-            }else if(strcmp(argv[i], "-no-default-lights")==0){
-                useDefaultLights=false;
-            }
-        }
         if (argc >= 2 && argv[1][0] != '-'){
             OpenHRP::ModelLoader_var ml = hrp::getModelLoader(namingContext);
             if (CORBA::is_nil(ml)){
