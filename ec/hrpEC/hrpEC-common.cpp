@@ -116,9 +116,10 @@ namespace RTC
             if (dt > period_sec*nsubstep){
   	        m_profile.timeover++; 
 #ifdef NDEBUG
-                fprintf(stderr, "Timeover: processing time = %4.1f[ms]\n", dt*1e3);
+                fprintf(stderr, "[%d.%6.6d] Timeover: processing time = %4.2f[ms]\n",
+                        tv.tv_sec, tv.tv_usec, dt*1e3);
                 for (unsigned int i=0; i< processes.size(); i++){
-                    fprintf(stderr, "%4.1f, ", processes[i]*1e3);
+                    fprintf(stderr, "%4.2f, ", processes[i]*1e3);
                 }
                 fprintf(stderr, "\n");
 #endif
