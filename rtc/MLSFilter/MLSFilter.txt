@@ -43,8 +43,7 @@ N/A
 
 <table>
 <tr><th>name</th><th>type</th><th>unit</th><th>default value</th><th>description</th></tr>
-<tr><td>meanK</td><td>int</td><td></td><td>50</td><td></td></tr>
-<tr><td>stddevMulThresh</td><td>double<int></td><td></td><td>1.0</td><td></td></tr>
+<tr><td>radius</td><td>double</td><td>[m]</td><td>0.03</td><td>the sphere radius that is to be used for determining the k-nearest neighbors used for fitting</td></tr>
 </table>
 
 \section conf Configuration File
