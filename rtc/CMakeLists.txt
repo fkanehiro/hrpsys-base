@@ -1,3 +1,4 @@
+add_subdirectory(AccelerationChecker)
 add_subdirectory(NullComponent)
 add_subdirectory(RobotHardware)
 add_subdirectory(StateHolder)
