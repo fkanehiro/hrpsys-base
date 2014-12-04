@@ -567,58 +567,16 @@ void Stabilizer::getActualParameters ()
 
     // distribute new ZMP into foot force & moment
     {
-      double alpha;
       hrp::Vector3 tau_0 = hrp::Vector3::Zero();
-      hrp::Vector3 ee_pos[2];
-      hrp::Matrix33 ee_rot[2];
+      std::vector<hrp::Vector3> ee_pos;
+      std::vector<hrp::Matrix33> ee_rot;
       for (size_t i = 0; i < 2; i++) {
         hrp::Link* target = m_robot->sensor<hrp::ForceSensor>(sensor_names[i])->link;
-        ee_pos[i] = target->p + target->R * ee_map[target->name].localp;
-        ee_rot[i] = target->R * ee_map[target->name].localR;
+        ee_pos.push_back(target->p + target->R * ee_map[target->name].localp);
+        ee_rot.push_back(target->R * ee_map[target->name].localR);
       }
-      { // calc alpha
-        hrp::Vector3 l_local_zmp = ee_rot[1].transpose() * (new_refzmp-ee_pos[1]);
-        hrp::Vector3 r_local_zmp = ee_rot[0].transpose() * (new_refzmp-ee_pos[0]);
-        if ( is_inside_foot(l_local_zmp, true) && !is_front_of_foot(l_local_zmp) && !is_rear_of_foot(l_local_zmp)) { // new_refzmp is inside lfoot
-          alpha = 0.0;
-        } else if ( is_inside_foot(r_local_zmp, false) && !is_front_of_foot(r_local_zmp) && !is_rear_of_foot(r_local_zmp)) { // new_refzmp is inside rfoot
-          alpha = 1.0;
-        } else {
-          hrp::Vector3 ledge_foot;
-          hrp::Vector3 redge_foot;
-          // hrp::Vector3 ledge_foot = ee_rot[1] * hrp::Vector3(l_local_zmp(0), -1 * eefm_leg_inside_margin, 0.0) + ee_pos[1];
-          // hrp::Vector3 redge_foot = ee_rot[0] * hrp::Vector3(r_local_zmp(0), eefm_leg_inside_margin, 0.0) + ee_pos[0];
-          // lleg
-          if (is_inside_foot(l_local_zmp, true) && is_front_of_foot(l_local_zmp)) {
-            ledge_foot = hrp::Vector3(eefm_leg_front_margin, l_local_zmp(1), 0.0);
-          } else if (!is_inside_foot(l_local_zmp, true) && is_front_of_foot(l_local_zmp)) {
-            ledge_foot = hrp::Vector3(eefm_leg_front_margin, -1 * eefm_leg_inside_margin, 0.0);
-          } else if (!is_inside_foot(l_local_zmp, true) && !is_front_of_foot(l_local_zmp) && !is_rear_of_foot(l_local_zmp)) {
-            ledge_foot = hrp::Vector3(l_local_zmp(0), -1 * eefm_leg_inside_margin, 0.0);
-          } else if (!is_inside_foot(l_local_zmp, true) && is_rear_of_foot(l_local_zmp)) {
-            ledge_foot = hrp::Vector3(-1 * eefm_leg_rear_margin, -1 * eefm_leg_inside_margin, 0.0);
-          } else {
-            ledge_foot = hrp::Vector3(-1 * eefm_leg_rear_margin, l_local_zmp(1), 0.0);
-          }
-          ledge_foot = ee_rot[1] * ledge_foot + ee_pos[1];
-          // rleg
-          if (is_inside_foot(r_local_zmp, false) && is_front_of_foot(r_local_zmp)) {
-            redge_foot = hrp::Vector3(eefm_leg_front_margin, r_local_zmp(1), 0.0);
-          } else if (!is_inside_foot(r_local_zmp, false) && is_front_of_foot(r_local_zmp)) {
-            redge_foot = hrp::Vector3(eefm_leg_front_margin, eefm_leg_inside_margin, 0.0);
-          } else if (!is_inside_foot(r_local_zmp, false) && !is_front_of_foot(r_local_zmp) && !is_rear_of_foot(r_local_zmp)) {
-            redge_foot = hrp::Vector3(r_local_zmp(0), eefm_leg_inside_margin, 0.0);
-          } else if (!is_inside_foot(r_local_zmp, false) && is_rear_of_foot(r_local_zmp)) {
-            redge_foot = hrp::Vector3(-1 * eefm_leg_rear_margin, eefm_leg_inside_margin, 0.0);
-          } else {
-            redge_foot = hrp::Vector3(-1 * eefm_leg_rear_margin, r_local_zmp(1), 0.0);
-          }
-          redge_foot = ee_rot[0] * redge_foot + ee_pos[0];
-          // calc alpha
-          hrp::Vector3 difp = redge_foot - ledge_foot;
-          alpha = difp.dot(new_refzmp-ledge_foot)/difp.squaredNorm();
-        }
-      }
+      //double fz_alpha =  calcAlpha(hrp::Vector3(foot_origin_rot * ref_zmp + foot_origin_pos), ee_pos, ee_rot);
+      double alpha = calcAlpha(new_refzmp, ee_pos, ee_rot);
       ref_foot_force[0] = hrp::Vector3(0,0, alpha * 9.8 * total_mass);
       ref_foot_force[1] = hrp::Vector3(0,0, (1-alpha) * 9.8 * total_mass);
       for (size_t i = 0; i < 2; i++) {
@@ -654,6 +612,8 @@ void Stabilizer::getActualParameters ()
         // left
         if (tau_0_f(0) > 0) ref_foot_moment[1](0) = 0;
         else ref_foot_moment[1](0) = tau_0_f(0);
+        // ref_foot_moment[0](0) = tau_0_f(0) * alpha;
+        // ref_foot_moment[1](0) = tau_0_f(0) * (1-alpha);
         // y
         ref_foot_moment[0](1) = tau_0_f(1) * alpha;
         ref_foot_moment[1](1) = tau_0_f(1) * (1-alpha);
@@ -775,6 +735,53 @@ void Stabilizer::getActualParameters ()
   }
   copy (contact_states.begin(), contact_states.end(), prev_contact_states.begin());
 }
+
+double Stabilizer::calcAlpha (const hrp::Vector3& tmprefzmp,
+                              const std::vector<hrp::Vector3>& ee_pos,
+                              const std::vector<hrp::Matrix33>& ee_rot)
+{
+  double alpha;
+  hrp::Vector3 l_local_zmp = ee_rot[1].transpose() * (tmprefzmp-ee_pos[1]);
+  hrp::Vector3 r_local_zmp = ee_rot[0].transpose() * (tmprefzmp-ee_pos[0]);
+  if ( is_inside_foot(l_local_zmp, true) && !is_front_of_foot(l_local_zmp) && !is_rear_of_foot(l_local_zmp)) { // new_refzmp is inside lfoot
+    alpha = 0.0;
+  } else if ( is_inside_foot(r_local_zmp, false) && !is_front_of_foot(r_local_zmp) && !is_rear_of_foot(r_local_zmp)) { // new_refzmp is inside rfoot
+    alpha = 1.0;
+  } else {
+    hrp::Vector3 ledge_foot;
+    hrp::Vector3 redge_foot;
+    // lleg
+    if (is_inside_foot(l_local_zmp, true) && is_front_of_foot(l_local_zmp)) {
+      ledge_foot = hrp::Vector3(eefm_leg_front_margin, l_local_zmp(1), 0.0);
+    } else if (!is_inside_foot(l_local_zmp, true) && is_front_of_foot(l_local_zmp)) {
+      ledge_foot = hrp::Vector3(eefm_leg_front_margin, -1 * eefm_leg_inside_margin, 0.0);
+    } else if (!is_inside_foot(l_local_zmp, true) && !is_front_of_foot(l_local_zmp) && !is_rear_of_foot(l_local_zmp)) {
+      ledge_foot = hrp::Vector3(l_local_zmp(0), -1 * eefm_leg_inside_margin, 0.0);
+    } else if (!is_inside_foot(l_local_zmp, true) && is_rear_of_foot(l_local_zmp)) {
+      ledge_foot = hrp::Vector3(-1 * eefm_leg_rear_margin, -1 * eefm_leg_inside_margin, 0.0);
+    } else {
+      ledge_foot = hrp::Vector3(-1 * eefm_leg_rear_margin, l_local_zmp(1), 0.0);
+    }
+    ledge_foot = ee_rot[1] * ledge_foot + ee_pos[1];
+    // rleg
+    if (is_inside_foot(r_local_zmp, false) && is_front_of_foot(r_local_zmp)) {
+      redge_foot = hrp::Vector3(eefm_leg_front_margin, r_local_zmp(1), 0.0);
+    } else if (!is_inside_foot(r_local_zmp, false) && is_front_of_foot(r_local_zmp)) {
+      redge_foot = hrp::Vector3(eefm_leg_front_margin, eefm_leg_inside_margin, 0.0);
+    } else if (!is_inside_foot(r_local_zmp, false) && !is_front_of_foot(r_local_zmp) && !is_rear_of_foot(r_local_zmp)) {
+      redge_foot = hrp::Vector3(r_local_zmp(0), eefm_leg_inside_margin, 0.0);
+    } else if (!is_inside_foot(r_local_zmp, false) && is_rear_of_foot(r_local_zmp)) {
+      redge_foot = hrp::Vector3(-1 * eefm_leg_rear_margin, eefm_leg_inside_margin, 0.0);
+    } else {
+      redge_foot = hrp::Vector3(-1 * eefm_leg_rear_margin, r_local_zmp(1), 0.0);
+    }
+    redge_foot = ee_rot[0] * redge_foot + ee_pos[0];
+    // calc alpha
+    hrp::Vector3 difp = redge_foot - ledge_foot;
+    alpha = difp.dot(tmprefzmp-ledge_foot)/difp.squaredNorm();
+  }
+  return alpha;
+};
 
 void Stabilizer::getTargetParameters ()
 {

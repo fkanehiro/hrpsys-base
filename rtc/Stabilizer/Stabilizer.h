@@ -105,6 +105,9 @@ class Stabilizer
   void getCurrentParameters ();
   void getActualParameters ();
   void getTargetParameters ();
+  double calcAlpha (const hrp::Vector3& tmprefzmp,
+                    const std::vector<hrp::Vector3>& ee_pos,
+                    const std::vector<hrp::Matrix33>& ee_rot);
   void calcFootOriginCoords (hrp::Vector3& foot_origin_pos, hrp::Matrix33& foot_origin_rot);
   void sync_2_st ();
   void sync_2_idle();
