@@ -619,13 +619,10 @@ void Stabilizer::getActualParameters ()
         ref_foot_moment[1](1) = tau_0_f(1) * (1-alpha);
         ref_foot_moment[0](2) = ref_foot_moment[1](2) = 0.0;
         // <= Foot-distribution-coords frame
-        // Convert foot-distribution-coords frame => world frame
+        // Convert foot-distribution-coords frame => actual world frame
         ref_foot_moment[0] = foot_dist_coords_rot * ref_foot_moment[0];
         ref_foot_moment[1] = foot_dist_coords_rot * ref_foot_moment[1];
       }
-      // Convert actual world frame => actual foot_origin frame
-      ref_foot_moment[0] = foot_origin_rot.transpose() * ref_foot_moment[0];
-      ref_foot_moment[1] = foot_origin_rot.transpose() * ref_foot_moment[1];
       if (DEBUGP) {
         std::cerr << "[" << m_profile.instance_name << "] force moment distribution" << std::endl;
         std::cerr << "[" << m_profile.instance_name << "]   alpha = " << alpha << "" << std::endl;
@@ -665,21 +662,20 @@ void Stabilizer::getActualParameters ()
         hrp::Vector3 sensor_moment = (sensor->link->R * sensor->localR) * hrp::Vector3(m_force[i].data[3], m_force[i].data[4], m_force[i].data[5]);
         hrp::Vector3 ee_moment = (sensor->link->R * (sensor->localPos - ee_map[sensor->link->name].localp)).cross(sensor_force) + sensor_moment;
         // <= Actual world frame
-        // Actual foot_origin frame =>
-        //ee_moment = foot_origin_rot.transpose() * ee_moment;
-        hrp::Matrix33 tmpeR = sensor->link->R * ee_map[sensor->link->name].localR;
-        hrp::Vector3 ee_ref_foot_moment = tmpeR.transpose() * (foot_origin_rot * ref_foot_moment[i]);
-        hrp::Vector3 ee_act_foot_moment = tmpeR.transpose() * ee_moment;
         fz_diff += (i==0? -sensor_force(2) : sensor_force(2));
         fz[i] = sensor_force(2);
         // calcDampingControl
-        //d_foot_rpy[i](0) = calcDampingControl(ref_foot_moment[i](0), ee_moment(0), d_foot_rpy[i](0), eefm_rot_damping_gain, eefm_rot_time_const);
-        //d_foot_rpy[i](1) = calcDampingControl(ref_foot_moment[i](1), ee_moment(1), d_foot_rpy[i](1), eefm_rot_damping_gain, eefm_rot_time_const);
-        d_foot_rpy[i](0) = calcDampingControl(ee_ref_foot_moment(0), ee_act_foot_moment(0), d_foot_rpy[i](0), eefm_rot_damping_gain, eefm_rot_time_const);
-        d_foot_rpy[i](1) = calcDampingControl(ee_ref_foot_moment(1), ee_act_foot_moment(1), d_foot_rpy[i](1), eefm_rot_damping_gain, eefm_rot_time_const);
+        d_foot_rpy[i](0) = calcDampingControl(ref_foot_moment[i](0), ee_moment(0), d_foot_rpy[i](0), eefm_rot_damping_gain, eefm_rot_time_const);
+        d_foot_rpy[i](1) = calcDampingControl(ref_foot_moment[i](1), ee_moment(1), d_foot_rpy[i](1), eefm_rot_damping_gain, eefm_rot_time_const);
         d_foot_rpy[i](0) = vlimit(d_foot_rpy[i](0), deg2rad(-10.0), deg2rad(10.0));
         d_foot_rpy[i](1) = vlimit(d_foot_rpy[i](1), deg2rad(-10.0), deg2rad(10.0));
+        // Actual ee frame =>
+        ee_d_foot_rpy[i] = (sensor->link->R * ee_map[sensor->link->name].localR).transpose() * d_foot_rpy[i];
       }
+      // Convert actual world frame => actual foot_origin frame for debug data port
+      ref_foot_moment[0] = foot_origin_rot.transpose() * ref_foot_moment[0];
+      ref_foot_moment[1] = foot_origin_rot.transpose() * ref_foot_moment[1];
+
       // fz control
       // foot force difference control version
       double ref_fz_diff = (ref_foot_force[1](2)-ref_foot_force[0](2));
@@ -973,7 +969,7 @@ void Stabilizer::calcEEForceMomentControl() {
         // moment control
 #define deg2rad(x) ((x) * M_PI / 180.0)
         for (size_t i = 0; i < 2; i++) {
-          rats::rotm3times(total_target_foot_R[i], target_foot_R[i], hrp::rotFromRpy(-d_foot_rpy[i](0), -d_foot_rpy[i](1), 0));
+            rats::rotm3times(total_target_foot_R[i], target_foot_R[i], hrp::rotFromRpy(-ee_d_foot_rpy[i](0), -ee_d_foot_rpy[i](1), 0));
         }
         for (size_t i = 0; i < 2; i++) {
           hrp::Link* target = m_robot->sensor<hrp::ForceSensor>(sensor_names[i])->link;
@@ -1061,6 +1057,7 @@ void Stabilizer::sync_2_st ()
   pdr = hrp::Vector3::Zero();
   zctrl = f_zctrl[0] = f_zctrl[1] = 0.0;
   d_foot_rpy[0] = d_foot_rpy[1] = hrp::Vector3::Zero();
+  ee_d_foot_rpy[0] = ee_d_foot_rpy[1] = hrp::Vector3::Zero();
   if (on_ground) {
     transition_count = -MAX_TRANSITION_COUNT;
     control_mode = MODE_ST;
