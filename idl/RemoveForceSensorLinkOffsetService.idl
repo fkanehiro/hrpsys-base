@@ -35,5 +35,19 @@ module OpenHRP
      * @return true if set successfully, false otherwise
      */
     boolean getForceMomentOffsetParam(in string name, out forcemomentOffsetParam i_param);
+
+    /**
+     * @brief loadForceMomentOffsetParams from file
+     * @param filename is full-path input file name.
+     * @return true if load successfully, false otherwise
+     */
+    boolean loadForceMomentOffsetParams(in string filename);
+
+    /**
+     * @brief dumpForceMomentOffsetParams from file
+     * @param filename is full-path output file name.
+     * @return true if dump successfully, false otherwise
+     */
+    boolean dumpForceMomentOffsetParams(in string filename);
   };
 };

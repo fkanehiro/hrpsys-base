@@ -25,6 +25,16 @@ CORBA::Boolean RemoveForceSensorLinkOffsetService_impl::getForceMomentOffsetPara
   return m_rmfsoff->getForceMomentOffsetParam(std::string(i_name_), *i_param_);
 }
 
+CORBA::Boolean RemoveForceSensorLinkOffsetService_impl::loadForceMomentOffsetParams(const char *filename)
+{
+	return m_rmfsoff->loadForceMomentOffsetParams(std::string(filename));
+};
+
+CORBA::Boolean RemoveForceSensorLinkOffsetService_impl::dumpForceMomentOffsetParams(const char *filename)
+{
+	return m_rmfsoff->dumpForceMomentOffsetParams(std::string(filename));
+};
+
 void RemoveForceSensorLinkOffsetService_impl::rmfsoff(RemoveForceSensorLinkOffset *i_rmfsoff)
 {
 	m_rmfsoff = i_rmfsoff;
