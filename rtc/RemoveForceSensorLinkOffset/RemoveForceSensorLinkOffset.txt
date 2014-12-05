@@ -27,6 +27,12 @@ If the robot has imu sensors, this component uses estimated attitude
 value from "rpy" input data port. 
 Otherwise, this component assumes that the robot's rpy equals zero. 
 
+\subsection parameterfile Parameter File
+
+This component can load parameters from a file through OpenHRP::RemoveForceSensorLinkOffsetService::loadForceMomentOffsetParams().
+This component can also dump parameter through OpenHRP::RemoveForceSensorLinkOffsetService::dumpForceMomentOffsetParams(). 
+
+Each line of file should be 11 components, "sensorname force_offset_x force_offset_y force_offset_z moment_offset_x moment_offset_y moment_offset_z link_offset_centroid_x link_offset_centroid_y link_offset_centroid_z link_offset_mass".
 
 <table>
 <tr><th>implementation_id</th><td>RemoveForceSensorLinkOffset</td></tr>

@@ -103,6 +103,8 @@ class RemoveForceSensorLinkOffset
   // virtual RTC::ReturnCode_t onRateChanged(RTC::UniqueId ec_id);
   bool setForceMomentOffsetParam(const std::string& i_name_, const OpenHRP::RemoveForceSensorLinkOffsetService::forcemomentOffsetParam &i_param_);
   bool getForceMomentOffsetParam(const std::string& i_name_, OpenHRP::RemoveForceSensorLinkOffsetService::forcemomentOffsetParam& i_param_);
+  bool loadForceMomentOffsetParams(const std::string& filename);
+  bool dumpForceMomentOffsetParams(const std::string& filename);
 
  protected:
   // Configuration variable declaration
@@ -152,7 +154,6 @@ class RemoveForceSensorLinkOffset
   // </rtc-template>
 
  private:
-  void updateRootLinkPosRot (const hrp::Vector3& rpy);
   struct ForceMomentOffsetParam {
     hrp::Vector3 force_offset, moment_offset, link_offset_centroid;
     double link_offset_mass;
@@ -162,6 +163,9 @@ class RemoveForceSensorLinkOffset
         link_offset_centroid(hrp::Vector3::Zero()), link_offset_mass(0)
     {};
   };
+  void updateRootLinkPosRot (const hrp::Vector3& rpy);
+  void printForceMomentOffsetParam(const std::string& i_name_);
+
   std::map<std::string, ForceMomentOffsetParam> m_forcemoment_offset_param;
   static const double grav = 9.80665; /* [m/s^2] */
   double m_dt;

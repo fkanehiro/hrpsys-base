@@ -224,6 +224,14 @@ void RemoveForceSensorLinkOffset::updateRootLinkPosRot (const hrp::Vector3& rpy)
   }
 }
 
+void RemoveForceSensorLinkOffset::printForceMomentOffsetParam(const std::string& i_name_)
+{
+  std::cerr << "[" << m_profile.instance_name << "]   force_offset = " << m_forcemoment_offset_param[i_name_].force_offset.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[N]" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   moment_offset = " << m_forcemoment_offset_param[i_name_].moment_offset.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[Nm]" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   link_offset_centroid = " << m_forcemoment_offset_param[i_name_].link_offset_centroid.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[m]" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   link_offset_mass = " << m_forcemoment_offset_param[i_name_].link_offset_mass << "[kg]" << std::endl;
+};
+
 bool RemoveForceSensorLinkOffset::setForceMomentOffsetParam(const std::string& i_name_, const RemoveForceSensorLinkOffsetService::forcemomentOffsetParam& i_param_)
 {
   std::cerr << "[" << m_profile.instance_name << "] setForceMomentOffsetParam [" << i_name_ << "]" << std::endl;
@@ -232,10 +240,7 @@ bool RemoveForceSensorLinkOffset::setForceMomentOffsetParam(const std::string& i
     memcpy(m_forcemoment_offset_param[i_name_].moment_offset.data(), i_param_.moment_offset.get_buffer(), sizeof(double) * 3);
     memcpy(m_forcemoment_offset_param[i_name_].link_offset_centroid.data(), i_param_.link_offset_centroid.get_buffer(), sizeof(double) * 3);
     m_forcemoment_offset_param[i_name_].link_offset_mass = i_param_.link_offset_mass;
-    std::cerr << "[" << m_profile.instance_name << "]   force_offset = " << m_forcemoment_offset_param[i_name_].force_offset.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[N]" << std::endl;
-    std::cerr << "[" << m_profile.instance_name << "]   moment_offset = " << m_forcemoment_offset_param[i_name_].moment_offset.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[Nm]" << std::endl;
-    std::cerr << "[" << m_profile.instance_name << "]   link_offset_centroid = " << m_forcemoment_offset_param[i_name_].link_offset_centroid.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[m]" << std::endl;
-    std::cerr << "[" << m_profile.instance_name << "]   link_offset_mass = " << m_forcemoment_offset_param[i_name_].link_offset_mass << "[kg]" << std::endl;
+    printForceMomentOffsetParam(i_name_);
   } else {
     std::cerr << "[" << m_profile.instance_name << "]   No such limb"<< std::endl;
   }
@@ -255,6 +260,55 @@ bool RemoveForceSensorLinkOffset::getForceMomentOffsetParam(const std::string& i
   }
   return true;
 }
+
+bool RemoveForceSensorLinkOffset::loadForceMomentOffsetParams(const std::string& filename)
+{
+  std::cerr << "[" << m_profile.instance_name << "] loadForceMomentOffsetParams" << std::endl;
+  std::ifstream ifs(filename.c_str());
+  if (ifs.is_open()){
+    while(ifs.eof()==0){
+      std::string tmps;
+      ForceMomentOffsetParam tmpp;
+      if ( ifs >> tmps ) {
+          if ( m_forcemoment_offset_param.find(tmps) != m_forcemoment_offset_param.end()) {
+              for (size_t i = 0; i < 3; i++) ifs >> tmpp.force_offset(i);
+              for (size_t i = 0; i < 3; i++) ifs >> tmpp.moment_offset(i);
+              for (size_t i = 0; i < 3; i++) ifs >> tmpp.link_offset_centroid(i);
+              ifs >> tmpp.link_offset_mass;
+              m_forcemoment_offset_param[tmps] = tmpp;
+              std::cerr << "[" << m_profile.instance_name << "]   " << tmps << "" << std::endl;
+              printForceMomentOffsetParam(tmps);
+          } else {
+              std::cerr << "[" << m_profile.instance_name << "] no such (" << tmps << ")" << std::endl;
+              return false;
+          }
+      }
+    }
+  } else {
+    std::cerr << "[" << m_profile.instance_name << "] failed to open(" << filename << ")" << std::endl;
+    return false;
+  }
+  return true;
+};
+
+bool RemoveForceSensorLinkOffset::dumpForceMomentOffsetParams(const std::string& filename)
+{
+  std::cerr << "[" << m_profile.instance_name << "] dumpForceMomentOffsetParams" << std::endl;
+  std::ofstream ofs(filename.c_str());
+  if (ofs.is_open()){
+    for ( std::map<std::string, ForceMomentOffsetParam>::iterator it = m_forcemoment_offset_param.begin(); it != m_forcemoment_offset_param.end(); it++ ) {
+      ofs << it->first << " ";
+      ofs << it->second.force_offset[0] << " " << it->second.force_offset[1] << " " << it->second.force_offset[2] << " ";
+      ofs << it->second.moment_offset[0] << " " << it->second.moment_offset[1] << " " << it->second.moment_offset[2] << " ";
+      ofs << it->second.link_offset_centroid[0] << " " << it->second.link_offset_centroid[1] << " " << it->second.link_offset_centroid[2] << " ";
+      ofs << it->second.link_offset_mass << std::endl;
+    }
+  } else {
+    std::cerr << "[" << m_profile.instance_name << "] failed to open(" << filename << ")" << std::endl;
+    return false;
+  }
+  return true;
+};
 
 /*
 RTC::ReturnCode_t RemoveForceSensorLinkOffset::onAborting(RTC::UniqueId ec_id)
