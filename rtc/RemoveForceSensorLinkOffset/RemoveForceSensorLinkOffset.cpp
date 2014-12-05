@@ -269,18 +269,19 @@ bool RemoveForceSensorLinkOffset::loadForceMomentOffsetParams(const std::string&
     while(ifs.eof()==0){
       std::string tmps;
       ForceMomentOffsetParam tmpp;
-      ifs >> tmps;
-      if (m_forcemoment_offset_param.find(tmps) != m_forcemoment_offset_param.end()) {
-        for (size_t i = 0; i < 3; i++) ifs >> tmpp.force_offset(i);
-        for (size_t i = 0; i < 3; i++) ifs >> tmpp.moment_offset(i);
-        for (size_t i = 0; i < 3; i++) ifs >> tmpp.link_offset_centroid(i);
-        ifs >> tmpp.link_offset_mass;
-        m_forcemoment_offset_param[tmps] = tmpp;
-        std::cerr << "[" << m_profile.instance_name << "]   " << tmps << "" << std::endl;
-        printForceMomentOffsetParam(tmps);
-      } else {
-        std::cerr << "[" << m_profile.instance_name << "] no such (" << tmps << ")" << std::endl;
-        return false;
+      if ( ifs >> tmps ) {
+          if ( m_forcemoment_offset_param.find(tmps) != m_forcemoment_offset_param.end()) {
+              for (size_t i = 0; i < 3; i++) ifs >> tmpp.force_offset(i);
+              for (size_t i = 0; i < 3; i++) ifs >> tmpp.moment_offset(i);
+              for (size_t i = 0; i < 3; i++) ifs >> tmpp.link_offset_centroid(i);
+              ifs >> tmpp.link_offset_mass;
+              m_forcemoment_offset_param[tmps] = tmpp;
+              std::cerr << "[" << m_profile.instance_name << "]   " << tmps << "" << std::endl;
+              printForceMomentOffsetParam(tmps);
+          } else {
+              std::cerr << "[" << m_profile.instance_name << "] no such (" << tmps << ")" << std::endl;
+              return false;
+          }
       }
     }
   } else {
