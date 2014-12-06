@@ -217,6 +217,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   eefm_leg_front_margin = 0.05;
   eefm_leg_rear_margin = 0.05;
   eefm_cogvel_cutoff_freq = 35.3678; //[Hz]
+  eefm_wrench_alpha_blending = 1.0; // fz_alpha
 
   // parameters for RUNST
   double ke = 0, tc = 0;
@@ -575,20 +576,15 @@ void Stabilizer::getActualParameters ()
         ee_pos.push_back(target->p + target->R * ee_map[target->name].localp);
         ee_rot.push_back(target->R * ee_map[target->name].localR);
       }
-      //double fz_alpha =  calcAlpha(hrp::Vector3(foot_origin_rot * ref_zmp + foot_origin_pos), ee_pos, ee_rot);
+      double fz_alpha =  calcAlpha(hrp::Vector3(foot_origin_rot * ref_zmp + foot_origin_pos), ee_pos, ee_rot);
       double alpha = calcAlpha(new_refzmp, ee_pos, ee_rot);
-      ref_foot_force[0] = hrp::Vector3(0,0, alpha * 9.8 * total_mass);
-      ref_foot_force[1] = hrp::Vector3(0,0, (1-alpha) * 9.8 * total_mass);
+      fz_alpha = eefm_wrench_alpha_blending * fz_alpha + (1-eefm_wrench_alpha_blending) * alpha;
+      ref_foot_force[0] = hrp::Vector3(0,0, fz_alpha * 9.8 * total_mass);
+      ref_foot_force[1] = hrp::Vector3(0,0, (1-fz_alpha) * 9.8 * total_mass);
       for (size_t i = 0; i < 2; i++) {
         tau_0 -= (ee_pos[i] - new_refzmp).cross(ref_foot_force[i]);
       }
-      if ( alpha == 0.0 ) { // lleg support
-        ref_foot_moment[0] = hrp::Vector3::Zero();
-        ref_foot_moment[1] = -1 * (ee_pos[1] - new_refzmp).cross(ref_foot_force[1]);
-      } else if ( alpha == 1.0 ) { // rleg support
-        ref_foot_moment[1] = hrp::Vector3::Zero();
-        ref_foot_moment[0] = -1 * (ee_pos[0] - new_refzmp).cross(ref_foot_force[0]);
-      } else { // double support
+      {
         // Foot-distribution-coords frame =>
         hrp::Vector3 foot_dist_coords_y = (ee_pos[1] - ee_pos[0]); // e_y'
         foot_dist_coords_y(2) = 0.0;
@@ -606,14 +602,14 @@ void Stabilizer::getActualParameters ()
         foot_dist_coords_rot(2,2) = 1;
         hrp::Vector3 tau_0_f = foot_dist_coords_rot.transpose() * tau_0; // tau_0'
         // x
-        // right
-        if (tau_0_f(0) > 0) ref_foot_moment[0](0) = tau_0_f(0);
-        else ref_foot_moment[0](0) = 0;
-        // left
-        if (tau_0_f(0) > 0) ref_foot_moment[1](0) = 0;
-        else ref_foot_moment[1](0) = tau_0_f(0);
-        // ref_foot_moment[0](0) = tau_0_f(0) * alpha;
-        // ref_foot_moment[1](0) = tau_0_f(0) * (1-alpha);
+//         // right
+//         if (tau_0_f(0) > 0) ref_foot_moment[0](0) = tau_0_f(0);
+//         else ref_foot_moment[0](0) = 0;
+//         // left
+//         if (tau_0_f(0) > 0) ref_foot_moment[1](0) = 0;
+//         else ref_foot_moment[1](0) = tau_0_f(0);
+        ref_foot_moment[0](0) = tau_0_f(0) * alpha;
+        ref_foot_moment[1](0) = tau_0_f(0) * (1-alpha);
         // y
         ref_foot_moment[0](1) = tau_0_f(1) * alpha;
         ref_foot_moment[1](1) = tau_0_f(1) * (1-alpha);
@@ -625,7 +621,7 @@ void Stabilizer::getActualParameters ()
       }
       if (DEBUGP) {
         std::cerr << "[" << m_profile.instance_name << "] force moment distribution" << std::endl;
-        std::cerr << "[" << m_profile.instance_name << "]   alpha = " << alpha << "" << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "]   alpha = " << alpha << ", fz_alpha = " << fz_alpha << std::endl;
         std::cerr << "[" << m_profile.instance_name << "]   "
                   << "total_tau    = " << hrp::Vector3(tau_0).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[Nm]" << std::endl;
         std::cerr << "[" << m_profile.instance_name << "]   "
@@ -1133,6 +1129,7 @@ void Stabilizer::getParameter(OpenHRP::StabilizerService::stParam& i_stp)
   i_stp.eefm_leg_front_margin = eefm_leg_front_margin;
   i_stp.eefm_leg_rear_margin = eefm_leg_rear_margin;
   i_stp.eefm_cogvel_cutoff_freq = eefm_cogvel_cutoff_freq;
+  i_stp.eefm_wrench_alpha_blending = eefm_wrench_alpha_blending;
   i_stp.st_algorithm = st_algorithm;
   switch(control_mode) {
   case MODE_IDLE: i_stp.controller_mode = OpenHRP::StabilizerService::MODE_IDLE; break;
@@ -1195,6 +1192,7 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
   eefm_leg_front_margin = i_stp.eefm_leg_front_margin;
   eefm_leg_rear_margin = i_stp.eefm_leg_rear_margin;
   eefm_cogvel_cutoff_freq = i_stp.eefm_cogvel_cutoff_freq;
+  eefm_wrench_alpha_blending = i_stp.eefm_wrench_alpha_blending;
   std::cerr << "[" << m_profile.instance_name << "]   eefm_k1  = [" << eefm_k1[0] << ", " << eefm_k1[1] << "]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   eefm_k2  = [" << eefm_k2[0] << ", " << eefm_k2[1] << "]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   eefm_k3  = [" << eefm_k3[0] << ", " << eefm_k3[1] << "]" << std::endl;
@@ -1208,6 +1206,7 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
   std::cerr << "[" << m_profile.instance_name << "]   eefm_pos_transition_time = " << eefm_pos_transition_time << "[s], eefm_pos_margin_time = " << eefm_pos_margin_time << "[s]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   eefm_leg_inside_margin = " << eefm_leg_inside_margin << "[m], eefm_leg_front_margin = " << eefm_leg_front_margin << "[m], eefm_leg_rear_margin = " << eefm_leg_rear_margin << "[m]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   eefm_cogvel_cutoff_freq = " << eefm_cogvel_cutoff_freq << "[Hz]" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   eefm_wrench_alpha_blending = " << eefm_wrench_alpha_blending << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]  COMMON" << std::endl;
   if (control_mode == MODE_IDLE) {
     st_algorithm = i_stp.st_algorithm;
