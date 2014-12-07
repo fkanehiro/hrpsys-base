@@ -410,9 +410,9 @@ RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
       m_refWrenchR.data[3] = ref_foot_moment[0](0); m_refWrenchR.data[4] = ref_foot_moment[0](1); m_refWrenchR.data[5] = ref_foot_moment[0](2);
       m_refWrenchL.data[0] = ref_foot_force[1](0); m_refWrenchL.data[1] = ref_foot_force[1](1); m_refWrenchL.data[2] = ref_foot_force[1](2);
       m_refWrenchL.data[3] = ref_foot_moment[1](0); m_refWrenchL.data[4] = ref_foot_moment[1](1); m_refWrenchL.data[5] = ref_foot_moment[1](2);
-      m_footCompR.data[0] = f_ctrl[0](0); m_footCompL.data[0] = f_ctrl[1](0);
-      m_footCompR.data[1] = f_ctrl[0](1); m_footCompL.data[1] = f_ctrl[1](1);
-      m_footCompR.data[2] = f_ctrl[0](2); m_footCompL.data[2] = f_ctrl[1](2);
+      m_footCompR.data[0] = d_foot_pos[0](0); m_footCompL.data[0] = d_foot_pos[1](0);
+      m_footCompR.data[1] = d_foot_pos[0](1); m_footCompL.data[1] = d_foot_pos[1](1);
+      m_footCompR.data[2] = d_foot_pos[0](2); m_footCompL.data[2] = d_foot_pos[1](2);
       m_footCompR.data[3] = d_foot_rpy[0](0); m_footCompR.data[4] = d_foot_rpy[0](1);
       m_footCompL.data[3] = d_foot_rpy[1](0); m_footCompL.data[4] = d_foot_rpy[1](1);
       m_originRefZmpOut.write();
@@ -681,8 +681,8 @@ void Stabilizer::getActualParameters ()
       if ( (contact_states[contact_states_index_map["rleg"]] && contact_states[contact_states_index_map["lleg"]]) // Reference : double support phase
            || (isContact(0) && isContact(1)) ) { // Actual : double support phase
         for (size_t i = 0; i < 3; i++) {
-            pctrl(i) = calcDampingControl (ref_f_diff(i), f_diff(i), pctrl(i),
-                                           eefm_pos_damping_gain(i), eefm_pos_time_const_support);
+            pos_ctrl(i) = calcDampingControl (ref_f_diff(i), f_diff(i), pos_ctrl(i),
+                                              eefm_pos_damping_gain(i), eefm_pos_time_const_support);
         }
       } else {
         double remain_swing_time;
@@ -694,23 +694,23 @@ void Stabilizer::getActualParameters ()
         // std::cerr << "st " << remain_swing_time << " rleg " << contact_states[contact_states_index_map["rleg"]] << " lleg " << contact_states[contact_states_index_map["lleg"]] << std::endl;
         if (eefm_pos_transition_time+eefm_pos_margin_time<remain_swing_time) {
           for (size_t i = 0; i < 3; i++) {
-              pctrl(i) = calcDampingControl (0, 0, pctrl(i),
-                                             eefm_pos_damping_gain(i), eefm_pos_time_const_swing);
+              pos_ctrl(i) = calcDampingControl (0, 0, pos_ctrl(i),
+                                                eefm_pos_damping_gain(i), eefm_pos_time_const_swing);
           }
         } else {
           double tmp_ratio = std::min(1.0, 1.0 - (remain_swing_time-eefm_pos_margin_time)/eefm_pos_transition_time); // 0=>1
           for (size_t i = 0; i < 3; i++) {
-              pctrl(i) = calcDampingControl (tmp_ratio * ref_f_diff(i), tmp_ratio * f_diff(i), pctrl(i),
-                                             eefm_pos_damping_gain(i), ((1-tmp_ratio)*eefm_pos_time_const_swing+tmp_ratio*eefm_pos_time_const_support));
+              pos_ctrl(i) = calcDampingControl (tmp_ratio * ref_f_diff(i), tmp_ratio * f_diff(i), pos_ctrl(i),
+                                                eefm_pos_damping_gain(i), ((1-tmp_ratio)*eefm_pos_time_const_swing+tmp_ratio*eefm_pos_time_const_support));
           }
         }
       }
       // zctrl = vlimit(zctrl, -0.02, 0.02);
       for (size_t i = 0; i < 3; i++) {
-          pctrl(i) = vlimit(pctrl(i), -0.05, 0.05);
+          pos_ctrl(i) = vlimit(pos_ctrl(i), -0.05, 0.05);
       }
-      f_ctrl[0] = -0.5 * pctrl;
-      f_ctrl[1] = 0.5 * pctrl;
+      d_foot_pos[0] = -0.5 * pos_ctrl;
+      d_foot_pos[1] = 0.5 * pos_ctrl;
       // foot force independent damping control
       // for (size_t i = 0; i < 2; i++) {
       //   f_zctrl[i] = calcDampingControl (ref_foot_force[i](2),
@@ -985,7 +985,7 @@ void Stabilizer::calcEEForceMomentControl() {
           // foot force difference control version
           // total_target_foot_p[i](2) = target_foot_p[i](2) + (i==0?0.5:-0.5)*zctrl;
           // foot force independent damping control
-          total_target_foot_p[i] = target_foot_p[i] - f_ctrl[i];
+          total_target_foot_p[i] = target_foot_p[i] - d_foot_pos[i];
         }
       }
 
@@ -1062,7 +1062,7 @@ void Stabilizer::sync_2_st ()
   rdx = rdy = rx = ry = 0;
   d_rpy[0] = d_rpy[1] = 0;
   pdr = hrp::Vector3::Zero();
-  pctrl = f_ctrl[0] = f_ctrl[1] = hrp::Vector3::Zero();
+  pos_ctrl = d_foot_pos[0] = d_foot_pos[1] = hrp::Vector3::Zero();
   d_foot_rpy[0] = d_foot_rpy[1] = hrp::Vector3::Zero();
   ee_d_foot_rpy[0] = ee_d_foot_rpy[1] = hrp::Vector3::Zero();
   if (on_ground) {

@@ -267,7 +267,7 @@ class Stabilizer
   hrp::Vector3 d_foot_rpy[2], new_refzmp, rel_cog, ref_zmp_aux, ee_d_foot_rpy[2], eefm_pos_damping_gain;
   hrp::Vector3 ref_foot_force[2];
   hrp::Vector3 ref_foot_moment[2];
-  hrp::Vector3 f_ctrl[2], pctrl;
+  hrp::Vector3 d_foot_pos[2], pos_ctrl;
   double total_mass;
 };
 
