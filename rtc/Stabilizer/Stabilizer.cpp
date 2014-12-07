@@ -207,7 +207,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   }
   eefm_rot_damping_gain = 20*5;
   eefm_rot_time_const = 1;
-  eefm_pos_damping_gain = 3500;
+  eefm_pos_damping_gain = hrp::Vector3(3500*10, 3500*10, 3500);
   eefm_pos_time_const_support = 1;
   eefm_pos_time_const_swing = 0.04;
   eefm_pos_transition_time = 0.02;
@@ -410,7 +410,9 @@ RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
       m_refWrenchR.data[3] = ref_foot_moment[0](0); m_refWrenchR.data[4] = ref_foot_moment[0](1); m_refWrenchR.data[5] = ref_foot_moment[0](2);
       m_refWrenchL.data[0] = ref_foot_force[1](0); m_refWrenchL.data[1] = ref_foot_force[1](1); m_refWrenchL.data[2] = ref_foot_force[1](2);
       m_refWrenchL.data[3] = ref_foot_moment[1](0); m_refWrenchL.data[4] = ref_foot_moment[1](1); m_refWrenchL.data[5] = ref_foot_moment[1](2);
-      m_footCompR.data[2] = f_zctrl[0]; m_footCompL.data[2] = f_zctrl[1];
+      m_footCompR.data[0] = f_ctrl[0](0); m_footCompL.data[0] = f_ctrl[1](0);
+      m_footCompR.data[1] = f_ctrl[0](1); m_footCompL.data[1] = f_ctrl[1](1);
+      m_footCompR.data[2] = f_ctrl[0](2); m_footCompL.data[2] = f_ctrl[1](2);
       m_footCompR.data[3] = d_foot_rpy[0](0); m_footCompR.data[4] = d_foot_rpy[0](1);
       m_footCompL.data[3] = d_foot_rpy[1](0); m_footCompL.data[4] = d_foot_rpy[1](1);
       m_originRefZmpOut.write();
@@ -647,7 +649,7 @@ void Stabilizer::getActualParameters ()
 
     // foor modif
     {
-      double fz_diff = 0;
+      hrp::Vector3 f_diff(hrp::Vector3::Zero());
       double fz[2];
       // moment control
 #define deg2rad(x) ((x) * M_PI / 180.0)
@@ -658,7 +660,8 @@ void Stabilizer::getActualParameters ()
         hrp::Vector3 sensor_moment = (sensor->link->R * sensor->localR) * hrp::Vector3(m_force[i].data[3], m_force[i].data[4], m_force[i].data[5]);
         hrp::Vector3 ee_moment = (sensor->link->R * (sensor->localPos - ee_map[sensor->link->name].localp)).cross(sensor_force) + sensor_moment;
         // <= Actual world frame
-        fz_diff += (i==0? -sensor_force(2) : sensor_force(2));
+        if ( i == 0 ) f_diff += -1*sensor_force;
+        else f_diff += sensor_force;
         fz[i] = sensor_force(2);
         // calcDampingControl
         d_foot_rpy[i](0) = calcDampingControl(ref_foot_moment[i](0), ee_moment(0), d_foot_rpy[i](0), eefm_rot_damping_gain, eefm_rot_time_const);
@@ -672,13 +675,15 @@ void Stabilizer::getActualParameters ()
       ref_foot_moment[0] = foot_origin_rot.transpose() * ref_foot_moment[0];
       ref_foot_moment[1] = foot_origin_rot.transpose() * ref_foot_moment[1];
 
-      // fz control
+      // fxyz control
       // foot force difference control version
-      double ref_fz_diff = (ref_foot_force[1](2)-ref_foot_force[0](2));
+      hrp::Vector3 ref_f_diff = (ref_foot_force[1]-ref_foot_force[0]);
       if ( (contact_states[contact_states_index_map["rleg"]] && contact_states[contact_states_index_map["lleg"]]) // Reference : double support phase
            || (isContact(0) && isContact(1)) ) { // Actual : double support phase
-        zctrl = calcDampingControl (ref_fz_diff, fz_diff, zctrl,
-                                    eefm_pos_damping_gain, eefm_pos_time_const_support);
+        for (size_t i = 0; i < 3; i++) {
+            pctrl(i) = calcDampingControl (ref_f_diff(i), f_diff(i), pctrl(i),
+                                           eefm_pos_damping_gain(i), eefm_pos_time_const_support);
+        }
       } else {
         double remain_swing_time;
         if ( !contact_states[contact_states_index_map["rleg"]] ) { // rleg swing
@@ -688,18 +693,24 @@ void Stabilizer::getActualParameters ()
         }
         // std::cerr << "st " << remain_swing_time << " rleg " << contact_states[contact_states_index_map["rleg"]] << " lleg " << contact_states[contact_states_index_map["lleg"]] << std::endl;
         if (eefm_pos_transition_time+eefm_pos_margin_time<remain_swing_time) {
-          zctrl = calcDampingControl (0, 0, zctrl,
-                                      eefm_pos_damping_gain, eefm_pos_time_const_swing);
+          for (size_t i = 0; i < 3; i++) {
+              pctrl(i) = calcDampingControl (0, 0, pctrl(i),
+                                             eefm_pos_damping_gain(i), eefm_pos_time_const_swing);
+          }
         } else {
           double tmp_ratio = std::min(1.0, 1.0 - (remain_swing_time-eefm_pos_margin_time)/eefm_pos_transition_time); // 0=>1
-          zctrl = calcDampingControl (tmp_ratio * ref_fz_diff, tmp_ratio * fz_diff, zctrl,
-                                      eefm_pos_damping_gain, ((1-tmp_ratio)*eefm_pos_time_const_swing+tmp_ratio*eefm_pos_time_const_support));
+          for (size_t i = 0; i < 3; i++) {
+              pctrl(i) = calcDampingControl (tmp_ratio * ref_f_diff(i), tmp_ratio * f_diff(i), pctrl(i),
+                                             eefm_pos_damping_gain(i), ((1-tmp_ratio)*eefm_pos_time_const_swing+tmp_ratio*eefm_pos_time_const_support));
+          }
         }
       }
       // zctrl = vlimit(zctrl, -0.02, 0.02);
-      zctrl = vlimit(zctrl, -0.05, 0.05);
-      f_zctrl[0] = -0.5 * zctrl;
-      f_zctrl[1] = 0.5 * zctrl;
+      for (size_t i = 0; i < 3; i++) {
+          pctrl(i) = vlimit(pctrl(i), -0.05, 0.05);
+      }
+      f_ctrl[0] = -0.5 * pctrl;
+      f_ctrl[1] = 0.5 * pctrl;
       // foot force independent damping control
       // for (size_t i = 0; i < 2; i++) {
       //   f_zctrl[i] = calcDampingControl (ref_foot_force[i](2),
@@ -974,7 +985,7 @@ void Stabilizer::calcEEForceMomentControl() {
           // foot force difference control version
           // total_target_foot_p[i](2) = target_foot_p[i](2) + (i==0?0.5:-0.5)*zctrl;
           // foot force independent damping control
-          total_target_foot_p[i](2) = target_foot_p[i](2) - f_zctrl[i];
+          total_target_foot_p[i] = target_foot_p[i] - f_ctrl[i];
         }
       }
 
@@ -1051,7 +1062,7 @@ void Stabilizer::sync_2_st ()
   rdx = rdy = rx = ry = 0;
   d_rpy[0] = d_rpy[1] = 0;
   pdr = hrp::Vector3::Zero();
-  zctrl = f_zctrl[0] = f_zctrl[1] = 0.0;
+  pctrl = f_ctrl[0] = f_ctrl[1] = hrp::Vector3::Zero();
   d_foot_rpy[0] = d_foot_rpy[1] = hrp::Vector3::Zero();
   ee_d_foot_rpy[0] = ee_d_foot_rpy[1] = hrp::Vector3::Zero();
   if (on_ground) {
@@ -1119,7 +1130,9 @@ void Stabilizer::getParameter(OpenHRP::StabilizerService::stParam& i_stp)
     i_stp.eefm_body_attitude_control_gain[i] = eefm_body_attitude_control_gain[i];
   }
   i_stp.eefm_rot_damping_gain = eefm_rot_damping_gain;
-  i_stp.eefm_pos_damping_gain = eefm_pos_damping_gain;
+  for (size_t i = 0; i < 3; i++) {
+      i_stp.eefm_pos_damping_gain[i] = eefm_pos_damping_gain(i);
+  }
   i_stp.eefm_rot_time_const = eefm_rot_time_const;
   i_stp.eefm_pos_time_const_support = eefm_pos_time_const_support;
   i_stp.eefm_pos_time_const_swing = eefm_pos_time_const_swing;
@@ -1182,7 +1195,9 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
     eefm_body_attitude_control_time_const[i] = i_stp.eefm_body_attitude_control_time_const[i];
   }
   eefm_rot_damping_gain = i_stp.eefm_rot_damping_gain;
-  eefm_pos_damping_gain = i_stp.eefm_pos_damping_gain;
+  for (size_t i = 0; i < 3; i++) {
+      eefm_pos_damping_gain(i) = i_stp.eefm_pos_damping_gain[i];
+  }
   eefm_rot_time_const = i_stp.eefm_rot_time_const;
   eefm_pos_time_const_support = i_stp.eefm_pos_time_const_support;
   eefm_pos_time_const_swing = i_stp.eefm_pos_time_const_swing;
@@ -1201,7 +1216,7 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
   std::cerr << "[" << m_profile.instance_name << "]   eefm_body_attitude_control_gain  = [" << eefm_body_attitude_control_gain[0] << ", " << eefm_body_attitude_control_gain[1] << "]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   eefm_body_attitude_control_time_const  = [" << eefm_body_attitude_control_time_const[0] << ", " << eefm_body_attitude_control_time_const[1] << "][s]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   eefm_rot_damping_gain = " << eefm_rot_damping_gain << ", eefm_rot_time_const = " << eefm_rot_time_const << "[s]" << std::endl;
-  std::cerr << "[" << m_profile.instance_name << "]   eefm_pos_damping_gain = " << eefm_pos_damping_gain << ", eefm_pos_time_const_support = " << eefm_pos_time_const_support << "[s], "
+  std::cerr << "[" << m_profile.instance_name << "]   eefm_pos_damping_gain = " << eefm_pos_damping_gain(0) << ", " << eefm_pos_damping_gain(1) << ", " << eefm_pos_damping_gain(2) << ", eefm_pos_time_const_support = " << eefm_pos_time_const_support << "[s], "
             << "eefm_pos_time_const_swing = " << eefm_pos_time_const_swing << "[s]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   eefm_pos_transition_time = " << eefm_pos_transition_time << "[s], eefm_pos_margin_time = " << eefm_pos_margin_time << "[s]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   eefm_leg_inside_margin = " << eefm_leg_inside_margin << "[m], eefm_leg_front_margin = " << eefm_leg_front_margin << "[m], eefm_leg_rear_margin = " << eefm_leg_rear_margin << "[m]" << std::endl;

@@ -7,6 +7,7 @@ module OpenHRP
   interface StabilizerService
   {
     typedef double DblArray2[2];
+    typedef double DblArray3[3];
 
     /**
      * @enum STAlgorithm
@@ -68,7 +69,7 @@ module OpenHRP
       /// Foot rotation damping time constant [s].
       double eefm_rot_time_const;
       /// Foot position damping gain [N/(m/s)].
-      double eefm_pos_damping_gain;
+      DblArray3 eefm_pos_damping_gain;
       /// Foot position damping time constant for double support phase [s].
       double eefm_pos_time_const_support;
       /// Foot position damping time constant for single support phase [s].
