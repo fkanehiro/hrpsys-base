@@ -20,30 +20,30 @@ def init ():
     hcf.init ("SampleRobot(Robot)0", "@OPENHRP_DIR@/share/OpenHRP-3.1/sample/model/sample1.wrl")
 
 def initPose():
-    initial_pose=[1.336179e-17, -0.631511, -6.328912e-18, 1.30679, -0.675275, -1.709808e-17, 0.523599, 0.0, 0.0, -1.0472, 0.15708, -0.113446, 0.637045, -1.132555e-17, -0.631511, -6.328860e-18, 1.30679, -0.675275, 7.588845e-18, 0.523599, 0.0, 0.0, -1.0472, -0.15708, -0.113446, -0.637045, 0.0, 0.0, 0.0]
+    initial_pose=[0.0,-0.582916,0.0,1.35776,-0.774841,0.0,0.523599,0.0,0.0,-1.0472,0.15708,-0.113446,0.637045,0.0,-0.582916,0.0,1.35776,-0.774841,0.0,0.523599,0.0,0.0,-1.0472,-0.15708,-0.113446,-0.637045,0.0,0.0,0.0]
     hcf.seq_svc.setJointAngles(initial_pose, 1.0)
     hcf.seq_svc.waitInterpolation()
 
 def demo():
     init()
     initPose()
-    print "Please execute 'demoStairUp()', 'demoStairDown()', and 'demoSlopeUpDown()'"
+    print "Please execute 'demoStairUp()', 'demoStairDown()', 'demoStairUpDown()', and 'demoSlopeUpDown()'"
 
 def setupGaitGeneratorParam(use_rectangle=True):
     ggp = hcf.abc_svc.getGaitGeneratorParam()
     ggp[1].default_double_support_ratio = 0.3
     ggp[1].default_step_time = 1.2
-    ggp[1].swing_trajectory_delay_time_offset = 0.2;
+    #ggp[1].swing_trajectory_delay_time_offset = 0.2;
     if use_rectangle:
         ggp[1].default_orbit_type = OpenHRP.AutoBalancerService.RECTANGLE;
     else:
         ggp[1].default_orbit_type = OpenHRP.AutoBalancerService.STAIR;
-        ggp[1].stair_trajectory_way_point_offset = [0.04,0,0];
+        #ggp[1].stair_trajectory_way_point_offset = [0.04,0,0];
     hcf.abc_svc.setGaitGeneratorParam(ggp[1])
 
 def stairWalk(stair_height = 0.1524):
     stair_stride_x = 0.25
-    floor_stride_x = 0.157
+    floor_stride_x = 0.16
     init_step_x = 0
     init_step_z = 0
     for step_idx in [1,2,3,4]:
@@ -93,3 +93,12 @@ def demoStairDown():
     stairWalk(-0.1524)
     hcf.abc_svc.stopAutoBalancer();
 
+def demoStairUpDown():
+    print "Start stair up"
+    hcf.abc_svc.startAutoBalancer(["rleg", "lleg"]);
+    stairWalk()
+    hcf.abc_svc.goPos(0.05, 0.0, 0.0)
+    hcf.abc_svc.waitFootSteps()
+    print "Start stair down"
+    stairWalk(-0.1524)
+    hcf.abc_svc.stopAutoBalancer();

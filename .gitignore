@@ -1,1 +1,10 @@
 plugin/hrpsysBaseStub.jar
+idl/*.hh
+idl/*.cpp
+lib/*.so
+CMakeCache.txt
+CMakeFiles
+Makefile
+cmake_install.cmake
+install_manifest.txt
+*~

@@ -153,7 +153,7 @@ extern "C"{
      * @param offset	offset value[rad]
      * @retval		TRUE offset value is read successfully
      * @retval		E_ID invalid id is specified
-     * @retval		this function is not supported
+     * @retval		FALSE this function is not supported
      */
     int read_angle_offset(int id, double *offset);
 
@@ -163,7 +163,7 @@ extern "C"{
      * @param offset	offset value[rad]
      * @retval		TRUE offset values are written successfully
      * @retval		E_ID invalid id is specified
-     * @retval		this function is not supported
+     * @retval		FALSE this function is not supported
      */
     int write_angle_offset(int id, double offset);
 
@@ -459,17 +459,17 @@ extern "C"{
      * @param offsets	offset values[N][Nm], length of array must be 6.
      * @retval		TRUE offset values are read successfully
      * @retval		E_ID invalid id is specified
-     * @retval		this function is not supported
+     * @retval		FALSE this function is not supported
      */
     int read_force_offset(int id, double *offsets);
 
     /**
-     * @brief write offset values for forcesensor output
-     * @param id	accelerometer id
+     * @brief write offset values for force sensor output
+     * @param id	force/torque id
      * @param offsets	offset values[N][Nm], length of array must be 6.
      * @retval		TRUE offset values are written successfully
      * @retval		E_ID invalid id is specified
-     * @retval		this function is not supported
+     * @retval		FALSE this function is not supported
      */
     int write_force_offset(int id, double *offsets);
     //@}
@@ -492,7 +492,7 @@ extern "C"{
      * @param offset	offset values[rad/s], length of array must be 3.
      * @retval		TRUE offset values are read successfully
      * @retval		E_ID invalid id is specified
-     * @retval		this function is not supported
+     * @retval		FALSE this function is not supported
      */
     int read_gyro_sensor_offset(int id, double *offset);
 
@@ -502,7 +502,7 @@ extern "C"{
      * @param offset	offset values[rad/s], length of array must be 3.
      * @retval		TRUE offset values are written successfully
      * @retval		E_ID invalid id is specified
-     * @retval		this function is not supported
+     * @retval		FALSE this function is not supported
      */
     int write_gyro_sensor_offset(int id, double *offset);
 
@@ -526,7 +526,7 @@ extern "C"{
      * @param offset	offset values[rad/s^2], length of array must be 3.
      * @retval		TRUE offset values are read successfully
      * @retval		E_ID invalid id is specified
-     * @retval		this function is not supported
+     * @retval		FALSE this function is not supported
      */
     int read_accelerometer_offset(int id, double *offset);
 
@@ -536,7 +536,7 @@ extern "C"{
      * @param offset	offset values[rad/s^2], length of array must be 3.
      * @retval		TRUE offset values are written successfully
      * @retval		E_ID invalid id is specified
-     * @retval		this function is not supported
+     * @retval		FALSE this function is not supported
      */
     int write_accelerometer_offset(int id, double *offset);
 
@@ -552,7 +552,7 @@ extern "C"{
      * @param att	roll-pitch-yaw angle[rad], length of array must be 3
      * @retval		TRUE sensor values are read successfully
      * @retval		E_ID invalid id is specified
-     * @retval		this function is not supported
+     * @retval		FALSE this function is not supported
      */
     int read_attitude_sensor(int id, double *att);
 
@@ -582,7 +582,7 @@ extern "C"{
      * @param v		temperature[Celsius]
      * @retval		TRUE temperature is read successfully
      * @retval		E_ID invalid thermometer id is specified
-     * @retval		this function is not supported
+     * @retval		FALSE this function is not supported
      */
     int read_temperature(int id, double *v);
     //@}

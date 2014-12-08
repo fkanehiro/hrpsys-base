@@ -468,6 +468,7 @@ INPUT		      =  @CMAKE_CURRENT_SOURCE_DIR@/package.h \
 		      @CMAKE_CURRENT_SOURCE_DIR@/utilities.h \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../python/hrpsys_config.py \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../python/rtm.py \
+		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/AccelerationChecker \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/AutoBalancer \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/AverageFilter \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/CameraImageViewer \
@@ -487,6 +488,7 @@ INPUT		      =  @CMAKE_CURRENT_SOURCE_DIR@/package.h \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/JpegDecoder \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/JpegEncoder \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/KalmanFilter \
+		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/MLSFilter \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/NullComponent \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/OGMap3DViewer \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/OccupancyGridMap3D \

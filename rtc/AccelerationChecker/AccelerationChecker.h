@@ -1,14 +1,14 @@
 // -*- C++ -*-
 /*!
- * @file  SoftErrorLimiter.h
- * @brief null component
+ * @file  AccelerationChecker.h
+ * @brief joint acceleration checker
  * @date  $Date$
  *
  * $Id$
  */
 
-#ifndef SOFT_ERROR_LIMITER_H
-#define SOFT_ERROR_LIMITER_H
+#ifndef ACCELERATION_CHECKER_H
+#define ACCELERATION_CHECKER_H
 
 #include <rtm/Manager.h>
 #include <rtm/DataFlowComponentBase.h>
@@ -16,11 +16,9 @@
 #include <rtm/DataInPort.h>
 #include <rtm/DataOutPort.h>
 #include <rtm/idl/BasicDataTypeSkel.h>
-#include "HRPDataTypes.hh"
 
 // Service implementation headers
 // <rtc-template block="service_impl_h">
-#include "SoftErrorLimiterService_impl.h"
 
 // </rtc-template>
 
@@ -34,7 +32,7 @@ using namespace RTC;
 /**
    \brief sample RT component which has one data input port and one data output port
  */
-class SoftErrorLimiter
+class AccelerationChecker
   : public RTC::DataFlowComponentBase
 {
  public:
@@ -42,11 +40,11 @@ class SoftErrorLimiter
      \brief Constructor
      \param manager pointer to the Manager
   */
-  SoftErrorLimiter(RTC::Manager* manager);
+  AccelerationChecker(RTC::Manager* manager);
   /**
      \brief Destructor
   */
-  virtual ~SoftErrorLimiter();
+  virtual ~AccelerationChecker();
 
   // The initialize action (on CREATED->ALIVE transition)
   // formaer rtc_init_entry()
@@ -54,7 +52,7 @@ class SoftErrorLimiter
 
   // The finalize action (on ALIVE->END transition)
   // formaer rtc_exiting_entry()
-  //virtual RTC::ReturnCode_t onFinalize();
+  // virtual RTC::ReturnCode_t onFinalize();
 
   // The startup action when ExecutionContext startup
   // former rtc_starting_entry()
@@ -103,34 +101,27 @@ class SoftErrorLimiter
   
   // </rtc-template>
 
-  TimedDoubleSeq m_qRef;
-  TimedDoubleSeq m_qCurrent;
-  OpenHRP::TimedLongSeqSeq m_servoState;
+  TimedDoubleSeq m_q;
 
   // DataInPort declaration
   // <rtc-template block="inport_declare">
-  InPort<TimedDoubleSeq> m_qRefIn;
-  InPort<TimedDoubleSeq> m_qCurrentIn;
-  InPort<OpenHRP::TimedLongSeqSeq> m_servoStateIn;
+  InPort<TimedDoubleSeq> m_qIn;
   
   // </rtc-template>
 
   // DataOutPort declaration
   // <rtc-template block="outport_declare">
   OutPort<TimedDoubleSeq> m_qOut;
-  OutPort<OpenHRP::TimedLongSeqSeq> m_servoStateOut;
   
   // </rtc-template>
 
   // CORBA Port declaration
   // <rtc-template block="corbaport_declare">
-  RTC::CorbaPort m_SoftErrorLimiterServicePort;
   
   // </rtc-template>
 
   // Service declaration
   // <rtc-template block="service_declare">
-  SoftErrorLimiterService_impl m_service0;
   
   // </rtc-template>
 
@@ -140,15 +131,16 @@ class SoftErrorLimiter
   // </rtc-template>
 
  private:
-  boost::shared_ptr<robot> m_robot;
-  unsigned int m_debugLevel;
-  int dummy, position_limit_error_beep_freq, soft_limit_error_beep_freq;
+  TimedDoubleSeq m_dq, m_qOld, m_dqOld;
+  double m_thd;
+  double m_dt;
+  int dummy;
 };
 
 
 extern "C"
 {
-  void SoftErrorLimiterInit(RTC::Manager* manager);
+  void AccelerationCheckerInit(RTC::Manager* manager);
 };
 
-#endif // SOFT_ERROR_LIMITER_H
+#endif // ACCELERATION_CHECKER_H

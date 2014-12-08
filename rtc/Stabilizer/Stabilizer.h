@@ -105,6 +105,9 @@ class Stabilizer
   void getCurrentParameters ();
   void getActualParameters ();
   void getTargetParameters ();
+  double calcAlpha (const hrp::Vector3& tmprefzmp,
+                    const std::vector<hrp::Vector3>& ee_pos,
+                    const std::vector<hrp::Matrix33>& ee_rot);
   void calcFootOriginCoords (hrp::Vector3& foot_origin_pos, hrp::Matrix33& foot_origin_rot);
   void sync_2_st ();
   void sync_2_idle();
@@ -260,11 +263,12 @@ class Stabilizer
   double rdx, rdy, rx, ry;
   // EEFM ST
   double eefm_k1[2], eefm_k2[2], eefm_k3[2], eefm_zmp_delay_time_const[2], eefm_body_attitude_control_gain[2], eefm_body_attitude_control_time_const[2];
-  double eefm_rot_damping_gain, eefm_rot_time_const, eefm_pos_damping_gain, eefm_pos_time_const_support, eefm_pos_time_const_swing, eefm_pos_transition_time, eefm_pos_margin_time, eefm_leg_inside_margin, eefm_leg_front_margin, eefm_leg_rear_margin, eefm_cogvel_cutoff_freq;
-  hrp::Vector3 d_foot_rpy[2], new_refzmp, rel_cog, ref_zmp_aux;
+  double eefm_rot_damping_gain, eefm_rot_time_const, eefm_pos_time_const_support, eefm_pos_time_const_swing, eefm_pos_transition_time, eefm_pos_margin_time, eefm_leg_inside_margin, eefm_leg_front_margin, eefm_leg_rear_margin, eefm_cogvel_cutoff_freq, eefm_wrench_alpha_blending;
+  hrp::Vector3 d_foot_rpy[2], new_refzmp, rel_cog, ref_zmp_aux, ee_d_foot_rpy[2], eefm_pos_damping_gain;
   hrp::Vector3 ref_foot_force[2];
   hrp::Vector3 ref_foot_moment[2];
-  double zctrl, total_mass, f_zctrl[2];
+  hrp::Vector3 d_foot_pos[2], pos_ctrl;
+  double total_mass;
 };
 
 

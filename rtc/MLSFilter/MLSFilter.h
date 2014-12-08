@@ -1,14 +1,14 @@
 // -*- C++ -*-
 /*!
- * @file  SoftErrorLimiter.h
- * @brief null component
+ * @file  MLSFilter.h
+ * @brief Moving Least Squares Filter
  * @date  $Date$
  *
  * $Id$
  */
 
-#ifndef SOFT_ERROR_LIMITER_H
-#define SOFT_ERROR_LIMITER_H
+#ifndef MOVING_LEAST_SQUARES_FILTER_H
+#define MOVING_LEAST_SQUARES_FILTER_H
 
 #include <rtm/Manager.h>
 #include <rtm/DataFlowComponentBase.h>
@@ -16,11 +16,10 @@
 #include <rtm/DataInPort.h>
 #include <rtm/DataOutPort.h>
 #include <rtm/idl/BasicDataTypeSkel.h>
-#include "HRPDataTypes.hh"
+#include "pointcloud.hh"
 
 // Service implementation headers
 // <rtc-template block="service_impl_h">
-#include "SoftErrorLimiterService_impl.h"
 
 // </rtc-template>
 
@@ -34,7 +33,7 @@ using namespace RTC;
 /**
    \brief sample RT component which has one data input port and one data output port
  */
-class SoftErrorLimiter
+class MLSFilter
   : public RTC::DataFlowComponentBase
 {
  public:
@@ -42,11 +41,11 @@ class SoftErrorLimiter
      \brief Constructor
      \param manager pointer to the Manager
   */
-  SoftErrorLimiter(RTC::Manager* manager);
+  MLSFilter(RTC::Manager* manager);
   /**
      \brief Destructor
   */
-  virtual ~SoftErrorLimiter();
+  virtual ~MLSFilter();
 
   // The initialize action (on CREATED->ALIVE transition)
   // formaer rtc_init_entry()
@@ -54,7 +53,7 @@ class SoftErrorLimiter
 
   // The finalize action (on ALIVE->END transition)
   // formaer rtc_exiting_entry()
-  //virtual RTC::ReturnCode_t onFinalize();
+  // virtual RTC::ReturnCode_t onFinalize();
 
   // The startup action when ExecutionContext startup
   // former rtc_starting_entry()
@@ -103,34 +102,28 @@ class SoftErrorLimiter
   
   // </rtc-template>
 
-  TimedDoubleSeq m_qRef;
-  TimedDoubleSeq m_qCurrent;
-  OpenHRP::TimedLongSeqSeq m_servoState;
+  PointCloudTypes::PointCloud m_original;
+  PointCloudTypes::PointCloud m_filtered;
 
   // DataInPort declaration
   // <rtc-template block="inport_declare">
-  InPort<TimedDoubleSeq> m_qRefIn;
-  InPort<TimedDoubleSeq> m_qCurrentIn;
-  InPort<OpenHRP::TimedLongSeqSeq> m_servoStateIn;
+  InPort<PointCloudTypes::PointCloud> m_originalIn;
   
   // </rtc-template>
 
   // DataOutPort declaration
   // <rtc-template block="outport_declare">
-  OutPort<TimedDoubleSeq> m_qOut;
-  OutPort<OpenHRP::TimedLongSeqSeq> m_servoStateOut;
+  OutPort<PointCloudTypes::PointCloud> m_filteredOut;
   
   // </rtc-template>
 
   // CORBA Port declaration
   // <rtc-template block="corbaport_declare">
-  RTC::CorbaPort m_SoftErrorLimiterServicePort;
   
   // </rtc-template>
 
   // Service declaration
   // <rtc-template block="service_declare">
-  SoftErrorLimiterService_impl m_service0;
   
   // </rtc-template>
 
@@ -140,15 +133,14 @@ class SoftErrorLimiter
   // </rtc-template>
 
  private:
-  boost::shared_ptr<robot> m_robot;
-  unsigned int m_debugLevel;
-  int dummy, position_limit_error_beep_freq, soft_limit_error_beep_freq;
+  int dummy;
+  double m_radius;
 };
 
 
 extern "C"
 {
-  void SoftErrorLimiterInit(RTC::Manager* manager);
+  void MLSFilterInit(RTC::Manager* manager);
 };
 
-#endif // SOFT_ERROR_LIMITER_H
+#endif // MOVING_LEAST_SQUARES_FILTER_H

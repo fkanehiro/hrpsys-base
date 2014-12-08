@@ -47,11 +47,11 @@ namespace rats
        */
       std::vector<hrp::Vector3> leg_default_translate_pos;
       /* stride params indicate max stride ( [mm], [mm], [deg] ) */
-      double stride_x, stride_y, stride_theta;
+      double stride_fwd_x, stride_y, stride_theta, stride_bwd_x;
       footstep_parameter (const std::vector<hrp::Vector3>& _leg_pos,
-                          const double _stride_x, const double _stride_y, const double _stride_theta)
+                          const double _stride_fwd_x, const double _stride_y, const double _stride_theta, const double _stride_bwd_x)
         : leg_default_translate_pos(_leg_pos),
-          stride_x(_stride_x), stride_y(_stride_y), stride_theta(_stride_theta)  {};
+          stride_fwd_x(_stride_fwd_x), stride_y(_stride_y), stride_theta(_stride_theta), stride_bwd_x(_stride_bwd_x)  {};
     };
 
     /* velocity parameter for velocity mode */
@@ -129,33 +129,42 @@ namespace rats
         pos = pos + _dt * vel;
       };
     protected:
-      double total_time, time_offset, remain_time; // [s]
-      virtual hrp::Vector3 interpolate_antecedent_path (const hrp::Vector3& start, const hrp::Vector3& goal, const double height) = 0;
+      double total_time, time_offset, current_time, double_support_time_half; // [s]
+      virtual hrp::Vector3 interpolate_antecedent_path (const hrp::Vector3& start, const hrp::Vector3& goal, const double height, const double tmp_ratio) = 0;
     public:
-      delay_hoffarbib_trajectory_generator () : total_time(0), time_offset(0.1), remain_time(0) {};
+      delay_hoffarbib_trajectory_generator () : total_time(0), time_offset(0.2), current_time(0) {};
       ~delay_hoffarbib_trajectory_generator() { };
       void set_dt (const double __dt) { _dt = __dt; };
       void set_swing_trajectory_delay_time_offset (const double _time_offset) { time_offset = _time_offset; };
-      void reset (const size_t _one_step_len)
+      void reset (const size_t _one_step_len, const double default_double_support_ratio)
       {
-        remain_time = total_time = _one_step_len * _dt;
+        total_time = _one_step_len * _dt;
+        current_time = 0;
+        double_support_time_half = default_double_support_ratio*total_time/2.0;
       };
       void get_trajectory_point (hrp::Vector3& ret, const hrp::Vector3& start, const hrp::Vector3& goal, const double height)
       {
-        if (std::fabs(remain_time - total_time) < 1e-5) {
+        if ( double_support_time_half <= current_time && current_time <= total_time - double_support_time_half ) { // swing phase
+          double swing_remain_time = total_time - current_time - double_support_time_half;
+          double swing_total_time = total_time - double_support_time_half*2;
+          if (swing_remain_time > time_offset) { // antecedent path is still interpolating
+            hoffarbib_interpolation (time_offset, interpolate_antecedent_path(start, goal, height, ((swing_total_time - swing_remain_time) / (swing_total_time - time_offset))));
+          } else if (swing_remain_time > 1e-5) { // antecedent path already reached to goal
+            hoffarbib_interpolation (swing_remain_time, goal);
+          } else {
+            pos = goal;
+          }
+        } else if ( current_time < double_support_time_half ) { // first double support phase
           pos = start;
           vel = hrp::Vector3::Zero();
           acc = hrp::Vector3::Zero();
-        }
-        if ( remain_time > time_offset) {
-          hoffarbib_interpolation (time_offset, interpolate_antecedent_path(start, goal, height));
-        } else if (remain_time > 1e-5) {
-          hoffarbib_interpolation (remain_time, goal);
-        } else {
+        } else { // last double support phase
           pos = goal;
+          vel = hrp::Vector3::Zero();
+          acc = hrp::Vector3::Zero();
         }
         ret = pos;
-        remain_time -= _dt;
+        current_time += _dt;
       };
       double get_swing_trajectory_delay_time_offset () { return time_offset; };
       // interpolate path vector
@@ -206,9 +215,8 @@ namespace rats
 
     class rectangle_delay_hoffarbib_trajectory_generator : public delay_hoffarbib_trajectory_generator
     {
-      hrp::Vector3 interpolate_antecedent_path (const hrp::Vector3& start, const hrp::Vector3& goal, const double height)
+      hrp::Vector3 interpolate_antecedent_path (const hrp::Vector3& start, const hrp::Vector3& goal, const double height, const double tmp_ratio)
       {
-        double tmp_ratio = (total_time - remain_time) / (total_time - time_offset);
         std::vector<hrp::Vector3> rectangle_path;
         double max_height = std::max(start(2), goal(2))+height;
         rectangle_path.push_back(start);
@@ -222,9 +230,8 @@ namespace rats
     class stair_delay_hoffarbib_trajectory_generator : public delay_hoffarbib_trajectory_generator
     {
       hrp::Vector3 way_point_offset;
-      hrp::Vector3 interpolate_antecedent_path (const hrp::Vector3& start, const hrp::Vector3& goal, const double height)
+      hrp::Vector3 interpolate_antecedent_path (const hrp::Vector3& start, const hrp::Vector3& goal, const double height, const double tmp_ratio)
       {
-        double tmp_ratio = (total_time - remain_time) / (total_time - time_offset);
         std::vector<hrp::Vector3> path;
         double max_height = std::max(start(2), goal(2))+height;
         hrp::Vector3 diff_vec = goal - start;
@@ -248,7 +255,7 @@ namespace rats
         return interpolate_antecedent_path_base(tmp_ratio, path);
       };
     public:
-      stair_delay_hoffarbib_trajectory_generator () : delay_hoffarbib_trajectory_generator(), way_point_offset(hrp::Vector3::Zero()) {};
+      stair_delay_hoffarbib_trajectory_generator () : delay_hoffarbib_trajectory_generator(), way_point_offset(hrp::Vector3(0.03, 0.0, 0.0)) {};
       ~stair_delay_hoffarbib_trajectory_generator () {};
       void set_stair_trajectory_way_point_offset (const hrp::Vector3 _offset) { way_point_offset = _offset; };
       hrp::Vector3 get_stair_trajectory_way_point_offset() { return way_point_offset; };
@@ -305,7 +312,8 @@ namespace rats
       void reset(const size_t one_step_len,
                  const coordinates& _swing_leg_dst_coords,
                  const coordinates& _swing_leg_src_coords,
-                 const coordinates& _support_leg_coords)
+                 const coordinates& _support_leg_coords,
+                 const double default_double_support_ratio)
       {
         swing_leg_dst_coords = _swing_leg_dst_coords;
         swing_leg_src_coords = _swing_leg_src_coords;
@@ -313,8 +321,8 @@ namespace rats
         gp_count = one_step_len;
         gp_index = 0;
         current_step_height = 0.0;
-        rdtg.reset(one_step_len);
-        sdtg.reset(one_step_len);
+        rdtg.reset(one_step_len, default_double_support_ratio);
+        sdtg.reset(one_step_len, default_double_support_ratio);
       };
       void update_leg_coords (const std::vector<step_node>& fnl, const double default_double_support_ratio, const size_t one_step_len, const bool force_height_zero);
       size_t get_gp_index() const { return gp_index; };
@@ -359,11 +367,11 @@ namespace rats
     leg_coords_generator lcg;
     footstep_parameter footstep_param;
     velocity_mode_parameter vel_param, offset_vel_param;
-    hrp::Vector3 cog, refzmp; /* cog by calculating proc_one_tick */
+    hrp::Vector3 cog, refzmp, prev_que_rzmp; /* cog by calculating proc_one_tick */
     double dt; /* control loop [s] */
     double default_step_time;
     double default_double_support_ratio;
-    size_t one_step_len;
+    size_t one_step_len, finalize_count;
     velocity_mode_flag velocity_mode_flg;
     emergency_flag emergency_flg;
     bool use_inside_step_limitation;
@@ -395,12 +403,12 @@ namespace rats
     gait_generator (double _dt,
                     /* arguments for footstep_parameter */
                     const std::vector<hrp::Vector3>& _leg_pos,
-                    const double _stride_x, const double _stride_y, const double _stride_theta)
+                    const double _stride_fwd_x, const double _stride_y, const double _stride_theta, const double _stride_bwd_x)
       : footstep_node_list(), rg(), lcg(_dt),
-        footstep_param(_leg_pos, _stride_x, _stride_y, _stride_theta),
-        vel_param(), offset_vel_param(), cog(hrp::Vector3::Zero()), refzmp(hrp::Vector3::Zero()),
+        footstep_param(_leg_pos, _stride_fwd_x, _stride_y, _stride_theta, _stride_bwd_x),
+        vel_param(), offset_vel_param(), cog(hrp::Vector3::Zero()), refzmp(hrp::Vector3::Zero()), prev_que_rzmp(hrp::Vector3::Zero()),
         dt(_dt), default_step_time(1.0), default_double_support_ratio(0.2),
-        one_step_len(default_step_time / dt),
+        one_step_len(default_step_time / dt), finalize_count(0),
         velocity_mode_flg(VEL_IDLING), emergency_flg(IDLING),
         use_inside_step_limitation(true),
         preview_controller_ptr(NULL) {};
@@ -458,11 +466,12 @@ namespace rats
     {
       offset_vel_param.set(vel_x, vel_y, vel_theta);
     };
-    void set_stride_parameters (const double _stride_x, const double _stride_y, const double _stride_theta)
+    void set_stride_parameters (const double _stride_fwd_x, const double _stride_y, const double _stride_theta, const double _stride_bwd_x)
     {
-      footstep_param.stride_x = _stride_x;
+      footstep_param.stride_fwd_x = _stride_fwd_x;
       footstep_param.stride_y = _stride_y;
       footstep_param.stride_theta = _stride_theta;
+      footstep_param.stride_bwd_x = _stride_bwd_x;
     };
     void set_use_inside_step_limitation(const bool uu) { use_inside_step_limitation = uu; };
     void set_default_orbit_type (const orbit_type type) { lcg.set_default_orbit_type(type); };
@@ -491,11 +500,12 @@ namespace rats
       return tmp;
     };
     void get_swing_support_mid_coords(coordinates& ret) const { lcg.get_swing_support_mid_coords(ret); };
-    void get_stride_parameters (double& _stride_x, double& _stride_y, double& _stride_theta)
+    void get_stride_parameters (double& _stride_fwd_x, double& _stride_y, double& _stride_theta, double& _stride_bwd_x)
     {
-      _stride_x = footstep_param.stride_x;
+      _stride_fwd_x = footstep_param.stride_fwd_x;
       _stride_y = footstep_param.stride_y;
       _stride_theta = footstep_param.stride_theta;
+      _stride_bwd_x = footstep_param.stride_bwd_x;
     };
     size_t get_gp_index() const { return lcg.get_gp_index(); };
     size_t get_gp_count() const { return lcg.get_gp_count(); };

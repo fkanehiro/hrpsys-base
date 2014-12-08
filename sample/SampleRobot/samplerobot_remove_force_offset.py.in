@@ -46,3 +46,11 @@ def demo():
     print "no-offset-removed force moment (rhsensor) ", fm, "=> ", fm < 1e-2
     fm=numpy.linalg.norm(rtm.readDataPort(hcf.rmfo.port("off_lhsensor")).data)
     print "no-offset-removed force moment (lhsensor) ", fm, "=> ", fm < 1e-2
+
+    # 4. dump and load parameter file
+    ret=hcf.rmfo_svc.dumpForceMomentOffsetParams("/tmp/test-rmfo-offsets.dat")
+    if ret:
+        print "dumpForceMomentOffsetParams => OK"
+    ret=hcf.rmfo_svc.loadForceMomentOffsetParams("/tmp/test-rmfo-offsets.dat")
+    if ret:
+        print "loadForceMomentOffsetParams => OK"
