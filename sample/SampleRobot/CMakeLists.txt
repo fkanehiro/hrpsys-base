@@ -29,6 +29,7 @@ configure_file(samplerobot_data_logger.py.in ${CMAKE_CURRENT_BINARY_DIR}/sampler
 configure_file(samplerobot_impedance_controller.py.in ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_impedance_controller.py)
 configure_file(samplerobot_remove_force_offset.py.in ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_remove_force_offset.py)
 configure_file(samplerobot_stabilizer.py.in ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_stabilizer.py)
+configure_file(samplerobot_sequence_player.py.in ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_sequence_player.py)
 
 install(PROGRAMS
   ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_data_logger.py
@@ -38,6 +39,7 @@ install(PROGRAMS
   ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_remove_force_offset.py
   ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_impedance_controller.py
   ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_walk.py
+  ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_sequence_player.py
   DESTINATION share/hrpsys/samples/SampleRobot)
 
 install(FILES 
