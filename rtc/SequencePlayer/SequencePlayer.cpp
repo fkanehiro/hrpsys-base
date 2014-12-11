@@ -436,6 +436,24 @@ bool SequencePlayer::setWrenches(const double *wrenches, double tm)
     return true;
 }
 
+bool SequencePlayer::setWrench(const char* name, const double *wrench, double tm)
+{
+    Guard guard(m_mutex);
+    int idx = -1;
+    for (int i = 0; i < m_wrenches.size(); i++) {
+      hrp::Sensor *s = m_robot->sensor(hrp::Sensor::FORCE, i);
+      if (std::string(s->name) == std::string(name)) {
+        idx = i;
+      }
+    }
+    if (idx == -1) {
+      std::cerr << "[setWrench] " << name << " does not exist" << std::endl;
+      return false;
+    }
+    m_seq->setWrench(idx, wrench, tm);
+    return true;
+}
+
 bool SequencePlayer::setTargetPose(const char* gname, const double *xyz, const double *rpy, double tm, const char* frame_name)
 {
     if ( m_debugLevel > 0 ) {

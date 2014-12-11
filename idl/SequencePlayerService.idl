@@ -198,5 +198,14 @@ module OpenHRP
      * @return true if set successfully, false otherwise
      */
     boolean setWrenches(in dSequence wrenches, in double tm);
+
+    /**
+     * @brief Interpolate a Wrench. Function returns without waiting for interpolation to finish
+     * @param name Name of interpolated wrench
+     * @param wrench Wrench
+     * @param tm duration
+     * @return true if set successfully, false otherwise
+     */
+    boolean setWrench(in string name, in dSequence wrench, in double tm);
   };
 };

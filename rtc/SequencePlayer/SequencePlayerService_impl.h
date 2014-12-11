@@ -25,6 +25,7 @@ public:
   CORBA::Boolean setBaseRpy(const dSequence& rpy, CORBA::Double tm);
   CORBA::Boolean setZmp(const dSequence& zmp, CORBA::Double tm);
   CORBA::Boolean setWrenches(const dSequence& wrenches, CORBA::Double tm);
+  CORBA::Boolean setWrench(const char* name, const dSequence& wrench, CORBA::Double tm);
   CORBA::Boolean setTargetPose(const char* gname, const dSequence& xyz, const dSequence& rpy, CORBA::Double tm);
   CORBA::Boolean isEmpty();
   void loadPattern(const char* basename, CORBA::Double tm);
