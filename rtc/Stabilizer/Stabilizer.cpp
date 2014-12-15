@@ -159,6 +159,18 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
     return RTC::RTC_ERROR;
   }
 
+  int npforce = m_robot->numSensors(hrp::Sensor::FORCE);
+  m_wrenches.resize(npforce);
+  m_wrenchesIn.resize(npforce);
+  for (unsigned int i=0; i<npforce; ++i){
+    hrp::Sensor *s = m_robot->sensor(hrp::Sensor::FORCE, i);
+    m_wrenchesIn[i] = new RTC::InPort<RTC::TimedDoubleSeq>(std::string(s->name+"Ref").c_str(), m_wrenches[i]);
+    m_wrenches[i].data.length(6);
+    registerInPort(std::string(s->name+"Ref").c_str(), *m_wrenchesIn[i]);
+    std::cerr << "[" << m_profile.instance_name << "] force sensor" << std::endl;
+    std::cerr << "[" << m_profile.instance_name << "]   name = " << s->name << std::endl;
+  }
+
   // setting from conf file
   // rleg,TARGET_LINK,BASE_LINK,x,y,z,rx,ry,rz,rth #<=pos + rot (axis+angle)
   coil::vstring end_effectors_str = coil::split(prop["end_effectors"], ",");
@@ -357,6 +369,11 @@ RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
   }
   if (m_controlSwingSupportTimeIn.isNew()){
     m_controlSwingSupportTimeIn.read();
+  }
+  for (size_t i = 0; i < m_wrenchesIn.size(); ++i) {
+    if ( m_wrenchesIn[i]->isNew() ) {
+      m_wrenchesIn[i]->read();
+    }
   }
 
   if (is_legged_robot) {
@@ -583,6 +600,24 @@ void Stabilizer::getActualParameters ()
       fz_alpha = eefm_wrench_alpha_blending * fz_alpha + (1-eefm_wrench_alpha_blending) * alpha;
       ref_foot_force[0] = hrp::Vector3(0,0, fz_alpha * 9.8 * total_mass);
       ref_foot_force[1] = hrp::Vector3(0,0, (1-fz_alpha) * 9.8 * total_mass);
+
+#if 0
+      double gamma = fz_alpha;
+      double beta = m_wrenches[1].data[2] / ( m_wrenches[0].data[2] + m_wrenches[1].data[2] );
+      beta = isnan(beta) ? 0 : beta;
+      double steepness = 8; // change ration from alpha to beta (steepness >= 4)
+      double r = - 1/(1+exp(-6*steepness*(gamma-1+1/steepness))) + 1/(1+exp(-6*steepness*(gamma-1/steepness)));
+      fz_alpha = r * beta + ( 1 - r ) * gamma;
+//       alpha = fz_alpha;
+
+      ref_foot_force[0] = hrp::Vector3(0,0, fz_alpha * 9.8 * total_mass);
+      ref_foot_force[1] = hrp::Vector3(0,0, (1-fz_alpha) * 9.8 * total_mass);
+      if (DEBUGP) {
+        std::cerr << "[" << m_profile.instance_name << "] slip st parameters" << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "]   " << ref_foot_force[1](2) << " " << ref_foot_force[0](2) << "   a:"<< steepness << " beta:" << beta << " gamma:" << gamma << " r:" << r << " fz_alpha:" << fz_alpha <<  " alpha:" << alpha << std::endl;
+      }
+#endif
+
       for (size_t i = 0; i < 2; i++) {
         tau_0 -= (ee_pos[i] - new_refzmp).cross(ref_foot_force[i]);
       }
