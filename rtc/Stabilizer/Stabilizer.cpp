@@ -159,6 +159,18 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
     return RTC::RTC_ERROR;
   }
 
+  int npforce = m_robot->numSensors(hrp::Sensor::FORCE);
+  m_wrenches.resize(npforce);
+  m_wrenchesIn.resize(npforce);
+  for (unsigned int i=0; i<npforce; ++i){
+    hrp::Sensor *s = m_robot->sensor(hrp::Sensor::FORCE, i);
+    m_wrenchesIn[i] = new RTC::InPort<RTC::TimedDoubleSeq>(std::string(s->name+"Ref").c_str(), m_wrenches[i]);
+    m_wrenches[i].data.length(6);
+    registerInPort(std::string(s->name+"Ref").c_str(), *m_wrenchesIn[i]);
+    std::cerr << "[" << m_profile.instance_name << "] force sensor" << std::endl;
+    std::cerr << "[" << m_profile.instance_name << "]   name = " << s->name << std::endl;
+  }
+
   // setting from conf file
   // rleg,TARGET_LINK,BASE_LINK,x,y,z,rx,ry,rz,rth #<=pos + rot (axis+angle)
   coil::vstring end_effectors_str = coil::split(prop["end_effectors"], ",");
@@ -357,6 +369,11 @@ RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
   }
   if (m_controlSwingSupportTimeIn.isNew()){
     m_controlSwingSupportTimeIn.read();
+  }
+  for (size_t i = 0; i < m_wrenchesIn.size(); ++i) {
+    if ( m_wrenchesIn[i]->isNew() ) {
+      m_wrenchesIn[i]->read();
+    }
   }
 
   if (is_legged_robot) {
