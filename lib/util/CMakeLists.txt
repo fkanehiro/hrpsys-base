@@ -37,6 +37,7 @@ set(headers
   VectorConvert.h
   BodyRTC.h
   BVutil.h
+  PortHandler.h
   )
 
 include_directories(${LIBXML2_INCLUDE_DIR})
