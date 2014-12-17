@@ -488,8 +488,9 @@ class HrpsysConfigurator:
         if comp == None:
             print self.configurator_name, " Cannot find component: " + instanceName + " (" + compName + ")"
             return [None, None]
-        if comp.service("service0"):
-            comp_svc = narrow(comp.service("service0"), compName + "Service")
+        comp_svc_port = comp.service("service0")
+        if comp_svc_port:
+            comp_svc = narrow(comp_svc_port, compName + "Service")
             print self.configurator_name, " find CompSvc : ", instanceName + "_svc = ", comp_svc
             return [comp, comp_svc]
         else:
@@ -712,7 +713,8 @@ class HrpsysConfigurator:
         timeout_count = 0
         # wait for simulator or RobotHardware setup which sometime takes a long time
         while self.rh == None and timeout_count < 10:  # <- time out limit
-            time.sleep(1);
+            if timeout_count > 0: # do not sleep initial loop
+                time.sleep(1);
             self.rh = rtm.findRTC("RobotHardware0")
             if not self.rh:
                 self.rh = rtm.findRTC(robotname)
