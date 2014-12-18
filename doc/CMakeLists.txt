@@ -29,6 +29,7 @@ set(input_files package.h utilities.h
 		      ../rtc/KalmanFilter/KalmanFilter.txt
 		      ../rtc/ImpedanceController/ImpedanceController.txt
 		      ../rtc/RemoveForceSensorLinkOffset/RemoveForceSensorLinkOffset.txt
+		      ../rtc/CollisionDetector/CollisionDetector.txt
 		      ../lib/io/iob.h
 		      ../idl/CollisionDetectorService.idl
 		      ../idl/DataLoggerService.idl
