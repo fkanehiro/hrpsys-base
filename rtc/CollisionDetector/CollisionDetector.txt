@@ -1,0 +1,77 @@
+/**
+
+\page CollisionDetector
+
+\section introduction Overview
+
+This component checks self collision and stops robot motion.
+
+<table>
+<tr><th>implementation_id</th><td>CollisionDetector</td></tr>
+<tr><th>category</th><td>example</td></tr>
+</table>
+
+\subsection collision_pair Collision Pair
+This component checks self collision between link pairs. 
+One link pair is like "RARM_JOINT6:WAIST".
+
+\subsection failsafe Fail Safe
+When collision, this component stops robot motion by
+overwriting reference joint angles, 
+e.g., by modifying qRef and outputting to q. <br>
+When collision in qRef is resolved, this component sifts to non-overwrite mode.<br>
+Transition from overwrite mode to non-overwrite mode 
+is implemented as min-jerk interplation by default. 
+Transition time is 1.0[s] by default.
+
+\section dataports Data Ports
+
+\subsection inports Input Ports
+
+<table>
+<tr><th>port name</th><th>data type</th><th>unit</th><th>description</th></tr>
+<tr><td>qRef</td><td>RTC::TimedDoubleSeq</td><td>[rad]</td><td>Input reference joint angles</td></tr>
+<tr><td>qCurrent</td><td>RTC::TimedDoubleSeq</td><td>[rad]</td><td>Actual joint angles</td></tr>
+</table>
+
+\subsection outports Output Ports
+<table>
+<tr><th>port name</th><th>data type</th><th>unit</th><th>description</th></tr>
+<tr><td>q</td><td>RTC::TimedDoubleSeq</td><td>[rad]</td><td>Output reference joint angles</td></tr>
+</table>
+
+
+N/A
+
+\section serviceports Service Ports
+
+\subsection provider Service Providers
+
+<table>
+<tr><th>port name</th><th>interface name</th><th>service type</th><th>IDL</th><th>description</th></tr>
+<tr><td>CollisionDetectorService</td><td>service0</td><td>CollisionDetectorService</td><td>\ref OpenHRP::CollisionDetectorService</td><td></td></tr>
+</table>
+
+\subsection consumer Service Consumers
+
+N/A
+
+\section configuration Configuration Variables
+
+N/A
+
+\section conf Configuration File
+
+<table>
+<tr><th>key</th><th>type</th><th>unit</th><th>description</th></tr>
+<tr><td>dt</td><td>double</td><td>[s]</td><td>sampling time</td></tr>
+<tr><td>model</td><td>std::string</td><td></td><td>URL of a VRML model</td></tr>
+<tr><td>collision_viewer</td><td>bool</td><td></td><td>Use viewer or not</td></tr>
+<tr><td>collision_model</td><td>std::string</td><td></td><td>Collision model ("AABB" or "convex hull"). If not
+specified, use "convex hull" by default.</td></tr>
+<tr><td>collision_pair</td><td>list of string</td><td></td><td>List of collision link pair. For example
+"RARM_JOINT6:WAIST RARM_JOINT6:LARM_JOINT6"</td></tr>
+<tr><td>collision_loop</td><td>int</td><td></td><td>Collision loop</td></tr>
+</table>
+
+ */
