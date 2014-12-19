@@ -371,6 +371,7 @@ namespace rats
     double dt; /* control loop [s] */
     double default_step_time;
     double default_double_support_ratio;
+    double gravitational_acceleration;
     size_t one_step_len, finalize_count;
     velocity_mode_flag velocity_mode_flg;
     emergency_flag emergency_flg;
@@ -407,7 +408,7 @@ namespace rats
       : footstep_node_list(), rg(), lcg(_dt),
         footstep_param(_leg_pos, _stride_fwd_x, _stride_y, _stride_theta, _stride_bwd_x),
         vel_param(), offset_vel_param(), cog(hrp::Vector3::Zero()), refzmp(hrp::Vector3::Zero()), prev_que_rzmp(hrp::Vector3::Zero()),
-        dt(_dt), default_step_time(1.0), default_double_support_ratio(0.2),
+        dt(_dt), default_step_time(1.0), default_double_support_ratio(0.2), gravitational_acceleration(DEFAULT_GRAVITATIONAL_ACCELERATION),
         one_step_len(default_step_time / dt), finalize_count(0),
         velocity_mode_flg(VEL_IDLING), emergency_flg(IDLING),
         use_inside_step_limitation(true),
@@ -477,6 +478,7 @@ namespace rats
     void set_default_orbit_type (const orbit_type type) { lcg.set_default_orbit_type(type); };
     void set_swing_trajectory_delay_time_offset (const double _time_offset) { lcg.set_swing_trajectory_delay_time_offset(_time_offset); };
     void set_stair_trajectory_way_point_offset (const hrp::Vector3 _offset) { lcg.set_stair_trajectory_way_point_offset(_offset); };
+    void set_gravitational_acceleration (const double ga) { gravitational_acceleration = ga; };
     void print_footstep_list () const
     {
       for (size_t i = 0; i < footstep_node_list.size(); i++)
@@ -529,6 +531,7 @@ namespace rats
     orbit_type get_default_orbit_type () const { return lcg.get_default_orbit_type(); };
     double get_swing_trajectory_delay_time_offset () { return lcg.get_swing_trajectory_delay_time_offset(); };
     hrp::Vector3 get_stair_trajectory_way_point_offset () { return lcg.get_stair_trajectory_way_point_offset(); };
+    double get_gravitational_acceleration () { return gravitational_acceleration; } ;
   };
 }
 #endif /* GAITGENERATOR_H */

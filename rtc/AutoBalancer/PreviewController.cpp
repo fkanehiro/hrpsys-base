@@ -20,12 +20,12 @@ void preview_control_base<dim>::update_x_k(const hrp::Vector3& pr)
   if ( is_doing() ) calc_x_k();
 }
 
-template <std::size_t dim>
-void preview_control_base<dim>::update_zc(double zc)
-{
-  riccati.c(0, 2) = - zc / g; 
-  riccati.solve();
-}
+// template <std::size_t dim>
+// void preview_control_base<dim>::update_zc(double zc)
+// {
+//   riccati.c(0, 2) = - zc / gravitational_acceleration; 
+//   riccati.solve();
+// }
 
 void preview_control::calc_f()
 {
