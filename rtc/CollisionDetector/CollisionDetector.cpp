@@ -14,8 +14,10 @@
 #include <hrpUtil/Eigen3d.h>
 #include <hrpUtil/Eigen4d.h>
 #include <hrpCollision/ColdetModel.h>
+#ifdef USE_HRPSYSUTIL
 #include "util/GLbody.h"
 #include "util/GLutil.h"
+#endif // USE_HRPSYSUTIL
 #include "util/BVutil.h"
 
 #include "CollisionDetector.h"
@@ -53,17 +55,23 @@ CollisionDetector::CollisionDetector(RTC::Manager* manager)
       // </rtc-template>
       m_loop_for_check(0),
       m_collision_loop(1),
+#ifdef USE_HRPSYSUTIL
       m_glbody(NULL),
+#endif // USE_HRPSYSUTIL
       m_use_viewer(false),
       m_robot(hrp::BodyPtr()),
+#ifdef USE_HRPSYSUTIL
       m_scene(&m_log),
       m_window(&m_scene, &m_log),
+#endif // USE_HRPSYSUTIL
       m_debugLevel(0),
       m_enable(true),
       dummy(0)
 {
     m_service0.collision(this);
+#ifdef USE_HRPSYSUTIL
     m_log.enableRingBuffer(1);
+#endif // USE_HRPSYSUTIL
 }
 
 CollisionDetector::~CollisionDetector()
@@ -148,9 +156,12 @@ RTC::ReturnCode_t CollisionDetector::onActivated(RTC::UniqueId ec_id)
     if ( prop["collision_viewer"] == "true" ) {
 	m_use_viewer = true;
     }
-
+#ifdef USE_HRPSYSUTIL
     m_glbody = new GLbody();
     m_robot = hrp::BodyPtr(m_glbody);
+#else
+    m_robot = hrp::BodyPtr(new hrp::Body());
+#endif // USE_HRPSYSUTIL
     //
     OpenHRP::BodyInfo_var binfo;
     binfo = hrp::loadBodyInfo(prop["model"].c_str(),
@@ -160,12 +171,18 @@ RTC::ReturnCode_t CollisionDetector::onActivated(RTC::UniqueId ec_id)
 		  << std::endl;
 	return RTC::RTC_ERROR;
     }
+#ifdef USE_HRPSYSUTIL
     if (!loadBodyFromBodyInfo(m_robot, binfo, true, GLlinkFactory)) {
+#else
+    if (!loadBodyFromBodyInfo(m_robot, binfo, true, hrplinkFactory)) {
+#endif // USE_HRPSYSUTIL
       std::cerr << "failed to load model[" << prop["model"] << "] in "
                 << m_profile.instance_name << std::endl;
       return RTC::RTC_ERROR;
     }
+#ifdef USE_HRPSYSUTIL
     loadShapeFromBodyInfo(m_glbody, binfo);
+#endif // USE_HRPSYSUTIL
     if ( prop["collision_model"] == "AABB" ) {
         convertToAABB(m_robot);
     } else if ( prop["collision_model"] == "convex hull" ||
@@ -209,10 +226,12 @@ RTC::ReturnCode_t CollisionDetector::onActivated(RTC::UniqueId ec_id)
         coil::stringTo(m_collision_loop, prop["collision_loop"].c_str());
         std::cerr << "set collision_loop: " << m_collision_loop << std::endl;
     }
+#ifdef USE_HRPSYSUTIL
     if ( m_use_viewer ) {
       m_scene.addBody(m_robot);
       GLlink::drawMode(GLlink::DM_COLLISION);
     }
+#endif // USE_HRPSYSUTIL
 
     // setup collision state
     m_state.angle.length(m_robot->numJoints());
@@ -268,6 +287,7 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
         TimedPosture tp;
 
 	assert(m_qRef.data.length() == m_robot->numJoints());
+#ifdef USE_HRPSYSUTIL
         if ( m_use_viewer ) {
           for (int i=0; i<m_glbody->numLinks(); i++){
             ((GLlink *)m_glbody->link(i))->highlight(false);
@@ -276,6 +296,11 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
         for (int i=0; i<m_glbody->numLinks(); i++){
             m_link_collision[m_glbody->link(i)->index] = false;
         }
+#else
+        for (int i=0; i<m_robot->numLinks(); i++){
+            m_link_collision[m_robot->link(i)->index] = false;
+        }
+#endif // USE_HRPSYSUTIL
 
         //set robot model's angle for collision check(two types)
         //  1. current safe angle .. check based on qRef
@@ -324,10 +349,12 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
                     }
                     m_link_collision[p->link(0)->index] = true;
                     m_link_collision[p->link(1)->index] = true;
+#ifdef USE_HRPSYSUTIL
                     if ( m_use_viewer ) {
                         ((GLlink *)p->link(0))->highlight(true);
                         ((GLlink *)p->link(1))->highlight(true);
                     }
+#endif // USE_HRPSYSUTIL
                 }
             }
             if ( m_safe_posture ) {
@@ -387,7 +414,9 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
         if ( ++m_loop_for_check >= m_collision_loop ) m_loop_for_check = 0;
         tp.posture.resize(m_qRef.data.length());
         for (size_t i=0; i<tp.posture.size(); i++) tp.posture[i] = m_q.data[i];
+#ifdef USE_HRPSYSUTIL
         m_log.add(tp);
+#endif // USE_HRPSYSUTIL
 
         // set collisoin state
         m_state.time = tm2;
@@ -422,7 +451,9 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
         m_state.recover_time = m_recover_time;
         m_state.loop_for_check = m_loop_for_check;
     }
+#ifdef USE_HRPSYSUTIL
     if ( m_use_viewer ) m_window.oneStep();
+#endif // USE_HRPSYSUTIL
     return RTC::RTC_OK;
 }
 
@@ -559,6 +590,13 @@ void CollisionDetector::setupVClipModel(hrp::Link *i_link)
     i_vclip_model->check();
     m_VclipLinks[i_link->index] = i_vclip_model;
 }
+
+#ifndef USE_HRPSYSUTIL
+hrp::Link *hrplinkFactory()
+{
+  return new hrp::Link();
+}
+#endif // USE_HRPSYSUTIL
 
 extern "C"
 {

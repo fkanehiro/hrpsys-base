@@ -19,9 +19,11 @@
 #include <hrpModel/Body.h>
 #include <hrpModel/ColdetLinkPair.h>
 #include <hrpModel/ModelLoaderUtil.h>
+#ifdef USE_HRPSYSUTIL
 #include "GLscene.h"
 #include "util/SDLUtil.h"
 #include "util/LogManager.h"
+#endif // USE_HRPSYSUTIL
 #include "TimedPosture.h"
 #include "interpolator.h"
 
@@ -164,10 +166,12 @@ class CollisionDetector
       hrp::Vector3 point0, point1;
       double distance;
   };
+#ifdef USE_HRPSYSUTIL
   CollisionDetectorComponent::GLscene m_scene;
   LogManager<TimedPosture> m_log; 
   SDLwindow m_window;
   GLbody *m_glbody;
+#endif // USE_HRPSYSUTIL
   std::vector<Vclip::Polyhedron *> m_VclipLinks;
   bool m_use_viewer;
   hrp::BodyPtr m_robot;
@@ -188,6 +192,9 @@ class CollisionDetector
   OpenHRP::CollisionDetectorService::CollisionState m_state;
 };
 
+#ifndef USE_HRPSYSUTIL
+hrp::Link *hrplinkFactory();
+#endif // USE_HRPSYSUTIL
 
 extern "C"
 {
