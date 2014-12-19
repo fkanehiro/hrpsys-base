@@ -259,7 +259,7 @@ RTC::ReturnCode_t CollisionDetector::onDeactivated(RTC::UniqueId ec_id)
     std::cout << m_profile.instance_name<< ": onDeactivated(" << ec_id << ")" << std::endl;
     delete[] m_recover_jointdata;
     delete[] m_lastsafe_jointdata;
-    delete[] m_interpolator;
+    delete m_interpolator;
     delete[] m_link_collision;
     return RTC::RTC_OK;
 }
