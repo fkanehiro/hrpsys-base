@@ -9,6 +9,8 @@
 
 namespace rats
 {
+  static const double DEFAULT_GRAVITATIONAL_ACCELERATION = 9.80665; // [m/s^2]
+
   template <std::size_t dim>
   struct riccati_equation
   {
@@ -49,7 +51,6 @@ namespace rats
   class preview_control_base
   {
   protected:
-    static const double g = 9.80665; /* [m/s^2] */
     riccati_equation<dim> riccati;
     Eigen::Matrix<double, 3, 3> tcA;
     Eigen::Matrix<double, 3, 1> tcb;
@@ -79,7 +80,7 @@ namespace rats
   public:
     /* dt = [s], zc = [mm], d = [s] */
     preview_control_base(const double dt, const double zc,
-                         const hrp::Vector3& init_xk, const double d = 1.6)
+                         const hrp::Vector3& init_xk, const double _gravitational_acceleration, const double d = 1.6)
       : riccati(), x_k(Eigen::Matrix<double, 3, 2>::Zero()), u_k(Eigen::Matrix<double, 1, 2>::Zero()), p(), pz(),
         zmp_z(0), cog_z(zc), delay(static_cast<size_t>(round(d / dt))), ending_count(1+delay)
     {
@@ -89,7 +90,7 @@ namespace rats
       tcb << 1 / 6.0 * dt * dt * dt,
         0.5 * dt * dt,
         dt;
-      tcc << 1.0, 0.0, -zc / g;
+      tcc << 1.0, 0.0, -zc / _gravitational_acceleration;
       x_k(0,0) = init_xk(0);
       x_k(0,1) = init_xk(1);
     };
@@ -108,7 +109,7 @@ namespace rats
       update_x_k(pr);
       ending_count--;
     };
-    void update_zc(double zc);
+    // void update_zc(double zc);
     size_t get_delay () { return delay; };
     void get_refcog (double* ret)
     {
@@ -157,9 +158,9 @@ namespace rats
     void calc_x_k();
   public:
     preview_control(const double dt, const double zc,
-                    const hrp::Vector3& init_xk, const double q = 1.0,
+                    const hrp::Vector3& init_xk, const double _gravitational_acceleration = DEFAULT_GRAVITATIONAL_ACCELERATION, const double q = 1.0,
                     const double r = 1.0e-6, const double d = 1.6)
-      : preview_control_base<3>(dt, zc, init_xk, d)
+        : preview_control_base<3>(dt, zc, init_xk, _gravitational_acceleration, d)
     {
       init_riccati(tcA, tcb, tcc, q, r);
     };
@@ -175,9 +176,9 @@ namespace rats
     void calc_x_k();
   public:
     extended_preview_control(const double dt, const double zc,
-                             const hrp::Vector3& init_xk, const double q = 1.0,
+                             const hrp::Vector3& init_xk, const double _gravitational_acceleration = DEFAULT_GRAVITATIONAL_ACCELERATION, const double q = 1.0,
                              const double r = 1.0e-6, const double d = 1.6)
-      : preview_control_base<4>(dt, zc, init_xk, d), x_k_e(Eigen::Matrix<double, 4, 2>::Zero())
+      : preview_control_base<4>(dt, zc, init_xk, _gravitational_acceleration, d), x_k_e(Eigen::Matrix<double, 4, 2>::Zero())
     {
       Eigen::Matrix<double, 4, 4> A;
       Eigen::Matrix<double, 4, 1> b;
@@ -207,8 +208,8 @@ namespace rats
     bool finishedp;
   public:
     preview_dynamics_filter() {};
-    preview_dynamics_filter(const double dt, const double zc, const hrp::Vector3& init_xk, const double q = 1.0, const double r = 1.0e-6, const double d = 1.6)
-      : preview_controller(dt, zc, init_xk, q, r, d), finishedp(false) {};
+    preview_dynamics_filter(const double dt, const double zc, const hrp::Vector3& init_xk, const double _gravitational_acceleration = DEFAULT_GRAVITATIONAL_ACCELERATION, const double q = 1.0, const double r = 1.0e-6, const double d = 1.6)
+        : preview_controller(dt, zc, init_xk, _gravitational_acceleration, q, r, d), finishedp(false) {};
     ~preview_dynamics_filter() {};  
     bool update(hrp::Vector3& p_ret, hrp::Vector3& x_ret, const hrp::Vector3& pr, const bool updatep)
     {

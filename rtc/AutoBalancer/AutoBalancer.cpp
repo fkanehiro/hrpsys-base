@@ -885,6 +885,7 @@ bool AutoBalancer::setGaitGeneratorParam(const OpenHRP::AutoBalancerService::Gai
   }
   gg->set_swing_trajectory_delay_time_offset(i_param.swing_trajectory_delay_time_offset);
   gg->set_stair_trajectory_way_point_offset(hrp::Vector3(i_param.stair_trajectory_way_point_offset[0], i_param.stair_trajectory_way_point_offset[1], i_param.stair_trajectory_way_point_offset[2]));
+  gg->set_gravitational_acceleration(i_param.gravitational_acceleration);
   // print
   double stride_fwd_x, stride_y, stride_th, stride_bwd_x;
   gg->get_stride_parameters(stride_fwd_x, stride_y, stride_th, stride_bwd_x);
@@ -907,6 +908,7 @@ bool AutoBalancer::setGaitGeneratorParam(const OpenHRP::AutoBalancerService::Gai
   hrp::Vector3 tmpv;
   tmpv = gg->get_stair_trajectory_way_point_offset();
   std::cerr << "[" << m_profile.instance_name << "]   stair_trajectory_way_point_offset = " << tmpv.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[m]" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   gravitational_acceleration = " << gg->get_gravitational_acceleration() << "[m/s^2]" << std::endl;
   return true;
 };
 
@@ -928,6 +930,7 @@ bool AutoBalancer::getGaitGeneratorParam(OpenHRP::AutoBalancerService::GaitGener
   hrp::Vector3 tmpv = gg->get_stair_trajectory_way_point_offset();
   for (size_t i = 0; i < 3; i++) i_param.stair_trajectory_way_point_offset[i] = tmpv(i);
   i_param.swing_trajectory_delay_time_offset = gg->get_swing_trajectory_delay_time_offset();
+  i_param.gravitational_acceleration = gg->get_gravitational_acceleration();
   return true;
 };
 
@@ -1015,13 +1018,12 @@ void AutoBalancer::static_balance_point_proc_one(hrp::Vector3& tmp_input_sbp, co
 
 void AutoBalancer::calc_static_balance_point_from_forces(hrp::Vector3& sb_point, const hrp::Vector3& tmpcog, const double ref_com_height, std::vector<hrp::Vector3>& tmp_forces)
 {
-  double gravity = 9.8; // [m/s^2]
   hrp::Vector3 denom, nume;
   /* sb_point[m] = nume[kg * m/s^2 * m] / denom[kg * m/s^2] */
   double mass = m_robot->totalMass();
   for (size_t j = 0; j < 2; j++) {
-    nume(j) = mass * gravity * tmpcog(j);
-    denom(j) = mass * gravity;
+    nume(j) = mass * gg->get_gravitational_acceleration() * tmpcog(j);
+    denom(j) = mass * gg->get_gravitational_acceleration();
     for (size_t i = 0; i < m_ref_forceIn.size(); i++) {
       std::string sensor_name = m_ref_forceIn[i]->name();
       if ( sensor_name.find("hsensor") != std::string::npos ) { // tempolary to get arm force coords
