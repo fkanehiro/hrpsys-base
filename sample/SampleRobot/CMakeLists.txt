@@ -6,11 +6,18 @@ foreach(_idx 0 1)
   list(GET controller_period_list ${_idx} _tmp_controller_period)
   set(CONTROLLER_TIME ${_tmp_controller_time})
   set(CONTROLLER_PERIOD ${_tmp_controller_period})
+  set(VirtualForceSensorSetting "#virtual_force_sensor") # comment out by default
   configure_file(SampleRobot.RobotHardware.conf.in ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.RobotHardware.${_tmp_controller_period}.conf)
   configure_file(SampleRobot.xml.in ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.${_tmp_controller_period}.xml)
   configure_file(SampleRobot.torque.xml.in ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.${_tmp_controller_period}.torque.xml)
   configure_file(SampleRobot.conf.in ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.${_tmp_controller_period}.conf)
 endforeach()
+
+# for virtual force sensor testing
+set(CONTROLLER_TIME 0.002)
+set(CONTROLLER_PERIOD 500)
+set(VirtualForceSensorSetting "virtual_force_sensor")
+configure_file(SampleRobot.conf.in ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.500.vfs.conf)
 
 set(robot_waist_translation "-0.8  0  0" "-4.15  -0.2  0" "-5.83  -0.2  -0.6096")
 set(file_suffix "SlopeUpDown" "StairUp" "StairDown")
@@ -31,6 +38,7 @@ configure_file(samplerobot_remove_force_offset.py.in ${CMAKE_CURRENT_BINARY_DIR}
 configure_file(samplerobot_stabilizer.py.in ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_stabilizer.py)
 configure_file(samplerobot_sequence_player.py.in ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_sequence_player.py)
 configure_file(samplerobot_collision_detector.py.in ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_collision_detector.py)
+configure_file(samplerobot_virtual_force_sensor.py.in ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_virtual_force_sensor.py)
 
 install(PROGRAMS
   ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_data_logger.py
@@ -42,6 +50,7 @@ install(PROGRAMS
   ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_walk.py
   ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_sequence_player.py
   ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_collision_detector.py
+  ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_virtual_force_sensor.py
   DESTINATION share/hrpsys/samples/SampleRobot)
 
 install(FILES 
@@ -55,6 +64,8 @@ install(FILES
   ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.200.xml
   ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.200.torque.xml
   ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.RobotHardware.200.conf
+  # for virtual force sensor
+  ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.500.vfs.conf
   SampleRobot.PDgain.dat
   # TerrainFloor
   ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.TerrainFloor.SlopeUpDown.xml
