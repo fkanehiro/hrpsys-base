@@ -1,4 +1,4 @@
-set(comp_sources SoftErrorLimiter.cpp SoftErrorLimiterService_impl.cpp robot.cpp beep.cpp)
+set(comp_sources SoftErrorLimiter.cpp SoftErrorLimiterService_impl.cpp robot.cpp beep.cpp ../ImpedanceController/JointPathEx.cpp)
 set(libs hrpModel-3.1 hrpUtil-3.1 hrpsysBaseStub)
 add_library(SoftErrorLimiter SHARED ${comp_sources})
 target_link_libraries(SoftErrorLimiter ${libs})
