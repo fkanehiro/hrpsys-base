@@ -115,26 +115,38 @@ RTC::ReturnCode_t ImpedanceController::onInitialize()
       return RTC::RTC_ERROR;
     }
 
-    coil::vstring virtual_force_sensor = coil::split(prop["virtual_force_sensor"], ",");
+
+    // Setting for wrench data ports (real + virtual)
+    std::vector<std::string> fsensor_names;
+    //   find names for real force sensors
     int npforce = m_robot->numSensors(hrp::Sensor::FORCE);
+    for (unsigned int i=0; i<npforce; i++){
+        fsensor_names.push_back(m_robot->sensor(hrp::Sensor::FORCE, i)->name);
+    }
+    //   find names for virtual force sensors
+    coil::vstring virtual_force_sensor = coil::split(prop["virtual_force_sensor"], ",");
     int nvforce = virtual_force_sensor.size()/10;
+    for (unsigned int i=0; i<nvforce; i++){
+        fsensor_names.push_back(virtual_force_sensor[i*10+0]);
+    }
+    //   add ports for all force sensors
     int nforce  = npforce + nvforce;
     m_force.resize(nforce);
     m_forceIn.resize(nforce);
     m_ref_force.resize(nforce);
     m_ref_forceIn.resize(nforce);
-    for (unsigned int i=0; i<npforce; i++){
-        hrp::Sensor *s = m_robot->sensor(hrp::Sensor::FORCE, i);
+    for (unsigned int i=0; i<nforce; i++){
         // actual inport
-        m_forceIn[i] = new InPort<TimedDoubleSeq>(s->name.c_str(), m_force[i]);
+        m_forceIn[i] = new InPort<TimedDoubleSeq>(fsensor_names[i].c_str(), m_force[i]);
         m_force[i].data.length(6);
-        registerInPort(s->name.c_str(), *m_forceIn[i]);
+        registerInPort(fsensor_names[i].c_str(), *m_forceIn[i]);
         // ref inport
         m_ref_force[i].data.length(6);
-        m_ref_forceIn[i] = new InPort<TimedDoubleSeq>(std::string("ref_"+s->name+"In").c_str(), m_ref_force[i]);
-        registerInPort(std::string("ref_"+s->name+"In").c_str(), *m_ref_forceIn[i]);
+        for (unsigned int j=0; j<6; j++) m_ref_force[i].data[j] = 0.0;
+        m_ref_forceIn[i] = new InPort<TimedDoubleSeq>(std::string("ref_"+fsensor_names[i]+"In").c_str(), m_ref_force[i]);
+        registerInPort(std::string("ref_"+fsensor_names[i]+"In").c_str(), *m_ref_forceIn[i]);
         std::cerr << "[" << m_profile.instance_name << "] force sensor" << std::endl;
-        std::cerr << "[" << m_profile.instance_name << "]   name = " << s->name << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "]   name = " << fsensor_names[i] << std::endl;
     }
     for (unsigned int i=0; i<nvforce; i++){
         std::string name = virtual_force_sensor[i*10+0];
@@ -151,13 +163,6 @@ RTC::ReturnCode_t ImpedanceController::onInitialize()
         std::cerr << "[" << m_profile.instance_name << "]   name = " << name << ", parent = " << p.parent_link_name << std::endl;
         std::cerr << "[" << m_profile.instance_name << "]   localP = " << p.p.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[m]" << std::endl;
         std::cerr << "[" << m_profile.instance_name << "]   localR = " << p.R.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", "\n", "    [", "]")) << std::endl;
-
-        m_forceIn[i+npforce] = new InPort<TimedDoubleSeq>(name.c_str(), m_force[i+npforce]);
-        m_force[i+npforce].data.length(6);
-        registerInPort(name.c_str(), *m_forceIn[i+npforce]);
-        m_ref_force[i+npforce].data.length(6);
-        for (unsigned int j=0; j<6; j++) m_ref_force[i].data[j] = 0.0;
-        std::cerr << name << std::endl;
     }
     for (unsigned int i=0; i<m_forceIn.size(); i++){
       abs_forces.insert(std::pair<std::string, hrp::Vector3>(m_forceIn[i]->name(), hrp::Vector3::Zero()));
