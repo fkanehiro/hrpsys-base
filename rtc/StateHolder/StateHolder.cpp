@@ -146,8 +146,9 @@ RTC::ReturnCode_t StateHolder::onInitialize()
   m_baseRpy.data.y = m_basePose.data.orientation.y = rpy[2];
   m_zmp.data.x = m_zmp.data.y = m_zmp.data.z = 0.0;
 
-  // wrench data ports
+  // Setting for wrench data ports (real + virtual)
   std::vector<std::string> fsensor_names;
+  //   find names for real force sensors
   for ( int k = 0; k < lis->length(); k++ ) {
     OpenHRP::SensorInfoSequence& sensors = lis[k].sensors;
     for ( int l = 0; l < sensors.length(); l++ ) {
@@ -156,12 +157,19 @@ RTC::ReturnCode_t StateHolder::onInitialize()
       }
     }
   }
-
   int npforce = fsensor_names.size();
-  m_wrenches.resize(npforce);
-  m_wrenchesIn.resize(npforce);
-  m_wrenchesOut.resize(npforce);
-  for (unsigned int i=0; i<npforce; i++){
+  //   find names for virtual force sensors
+  coil::vstring virtual_force_sensor = coil::split(prop["virtual_force_sensor"], ",");
+  int nvforce = virtual_force_sensor.size()/10;
+  for (unsigned int i=0; i<nvforce; i++){
+    fsensor_names.push_back(virtual_force_sensor[i*10+0]);
+  }
+  //   add ports for all force sensors
+  int nforce  = npforce + nvforce;
+  m_wrenches.resize(nforce);
+  m_wrenchesIn.resize(nforce);
+  m_wrenchesOut.resize(nforce);
+  for (unsigned int i=0; i<nforce; i++){
     m_wrenchesIn[i] = new InPort<TimedDoubleSeq>(std::string(fsensor_names[i]+"In").c_str(), m_wrenches[i]);
     m_wrenchesOut[i] = new OutPort<TimedDoubleSeq>(std::string(fsensor_names[i]+"Out").c_str(), m_wrenches[i]);
     m_wrenches[i].data.length(6);

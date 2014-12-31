@@ -30,12 +30,8 @@ module OpenHRP
       double D_r;
       /// Rotation spring [N/rad]
       double K_r;
-      /// Reference Force [N] (x,y,z).
-      DblSequence3 ref_force;
       /// Force gain (x,y,z).
       DblSequence3 force_gain;
-      /// Reference Moment [Nm] (x,y,z).
-      DblSequence3 ref_moment;
       /// Moment gain (x,y,z).
       DblSequence3 moment_gain;
       /// SR-inverse gain for inverse kinematics.
