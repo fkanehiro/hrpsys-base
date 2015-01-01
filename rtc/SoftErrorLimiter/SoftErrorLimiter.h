@@ -17,6 +17,7 @@
 #include <rtm/DataOutPort.h>
 #include <rtm/idl/BasicDataTypeSkel.h>
 #include "HRPDataTypes.hh"
+#include "../ImpedanceController/JointPathEx.h"
 
 // Service implementation headers
 // <rtc-template block="service_impl_h">
@@ -141,6 +142,7 @@ class SoftErrorLimiter
 
  private:
   boost::shared_ptr<robot> m_robot;
+  std::map<std::string, hrp::JointLimitTable> joint_limit_tables;
   unsigned int m_debugLevel;
   int dummy, position_limit_error_beep_freq, soft_limit_error_beep_freq;
 };

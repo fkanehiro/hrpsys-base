@@ -133,6 +133,9 @@ RTC::ReturnCode_t SoftErrorLimiter::onInitialize()
   soft_limit_error_beep_freq = static_cast<int>(1.0/(4.0*dt)); // soft limit error => 4 times / 1[s]
   position_limit_error_beep_freq = static_cast<int>(1.0/(2.0*dt)); // position limit error => 2 times / 1[s]
 
+  // load joint limit table
+  hrp::readJointLimitTableFromProperties (joint_limit_tables, m_robot, prop["joint_limit_table"], std::string(m_profile.instance_name));
+
   return RTC::RTC_OK;
 }
 
@@ -244,19 +247,24 @@ RTC::ReturnCode_t SoftErrorLimiter::onExecute(RTC::UniqueId ec_id)
 
          So use m_robot->joint(i) for llimit/ulimit
        */
-      bool servo_limit_state =
-          ((m_robot->joint(i)->llimit > m_qRef.data[i]) ||
-           (m_robot->joint(i)->ulimit < m_qRef.data[i]));
+      double llimit = m_robot->joint(i)->llimit;
+      double ulimit = m_robot->joint(i)->ulimit;
+      if (joint_limit_tables.find(m_robot->joint(i)->name) != joint_limit_tables.end()) {
+          std::map<std::string, hrp::JointLimitTable>::iterator it = joint_limit_tables.find(m_robot->joint(i)->name);
+          llimit = it->second.getLlimit(m_qRef.data[it->second.getTargetJointId()]);
+          ulimit = it->second.getUlimit(m_qRef.data[it->second.getTargetJointId()]);
+      }
+      bool servo_limit_state = ((llimit > m_qRef.data[i]) || (ulimit < m_qRef.data[i]));
       if ( servo_state == 1 && servo_limit_state ) {
         std::cerr << "position limit over " << m_robot->joint(i)->name << "(" << i << "), qRef=" << m_qRef.data[i]
-                  << ", llimit =" << m_robot->joint(i)->llimit
-                  << ", ulimit =" << m_robot->joint(i)->ulimit
+                  << ", llimit =" << llimit
+                  << ", ulimit =" << ulimit
                   << ", servo_state = " <<  ( servo_state ? "ON" : "OFF")
                   << ", prev_angle = " << prev_angle[i] << std::endl;
         // fix joint angle
-        if ( m_robot->joint(i)->llimit > m_qRef.data[i] && prev_angle[i] > m_qRef.data[i] ) // ref < llimit and prev < ref -> OK
+        if ( llimit > m_qRef.data[i] && prev_angle[i] > m_qRef.data[i] ) // ref < llimit and prev < ref -> OK
           m_qRef.data[i] = prev_angle[i];
-        if ( m_robot->joint(i)->ulimit < m_qRef.data[i] && prev_angle[i] < m_qRef.data[i] ) // ulimit < ref and ref < prev -> OK
+        if ( ulimit < m_qRef.data[i] && prev_angle[i] < m_qRef.data[i] ) // ulimit < ref and ref < prev -> OK
           m_qRef.data[i] = prev_angle[i];
         m_servoState.data[i][0] |= (0x200 << OpenHRP::RobotHardwareService::SERVO_ALARM_SHIFT);
         position_limit_error = true;
