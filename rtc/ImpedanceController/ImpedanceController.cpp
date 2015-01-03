@@ -336,21 +336,27 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
             std::cerr << "[" << m_profile.instance_name << "]   reference moment = " << ref_data_r.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[Nm]" << std::endl;
           }
           hrp::Matrix33 sensorR;
+          hrp::Vector3 sensorlocalPos;
+          std::string parent_link_name;
           if ( sensor ) {
             // real force sensore
             sensorR = sensor->link->R * sensor->localR;
+            sensorlocalPos = sensor->localPos;
+            parent_link_name = sensor->link->name;
           } else if ( m_sensors.find(sensor_name) !=  m_sensors.end()) {
             // virtual force sensor
             if ( DEBUGP ) {
               std::cerr << "[" << m_profile.instance_name << "]   sensorR = " << m_sensors[sensor_name].R.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", "\n", "    [", "]")) << std::endl;
             }
             sensorR = m_robot->link(m_sensors[sensor_name].parent_link_name)->R * m_sensors[sensor_name].R;
+            sensorlocalPos = m_sensors[sensor_name].p;
+            parent_link_name = m_sensors[sensor_name].parent_link_name;
           } else {
             std::cerr << "[" << m_profile.instance_name << "]   unknown force param" << std::endl;
           }
           abs_forces[sensor_name] = sensorR * data_p;
-          abs_moments[sensor_name] = sensorR * data_r + sensor->link->R * (sensor->localPos - ee_map[sensor->link->name].localPos).cross(abs_forces[sensor_name]);
-          hrp::Matrix33 eeR (sensor->link->R * ee_map[sensor->link->name].localR);
+          abs_moments[sensor_name] = sensorR * data_r + m_robot->link(parent_link_name)->R * (sensorlocalPos - ee_map[parent_link_name].localPos).cross(abs_forces[sensor_name]);
+          hrp::Matrix33 eeR (m_robot->link(parent_link_name)->R * ee_map[parent_link_name].localR);
           abs_ref_forces[sensor_name] = eeR * ref_data_p;
           abs_ref_moments[sensor_name] = eeR * ref_data_r;
           if ( DEBUGP ) {
