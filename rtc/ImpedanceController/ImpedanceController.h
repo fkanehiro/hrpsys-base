@@ -175,7 +175,7 @@ class ImpedanceController
 
   std::map<std::string, ImpedanceParam> m_impedance_param;
   std::map<std::string, ee_trans> ee_map;
-  std::map<std::string, hrp::VirtualForceSensorParam> m_sensors;
+  std::map<std::string, hrp::VirtualForceSensorParam> m_vfs;
   std::map<std::string, hrp::Vector3> abs_forces, abs_moments, abs_ref_forces, abs_ref_moments;
   double m_dt;
   hrp::BodyPtr m_robot;

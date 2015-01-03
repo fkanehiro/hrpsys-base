@@ -124,10 +124,10 @@ RTC::ReturnCode_t ImpedanceController::onInitialize()
         fsensor_names.push_back(m_robot->sensor(hrp::Sensor::FORCE, i)->name);
     }
     // load virtual force sensors
-    readVirtualForceSensorParamFromProperties(m_sensors, m_robot, prop["virtual_force_sensor"], std::string(m_profile.instance_name));
-    int nvforce = m_sensors.size();
+    readVirtualForceSensorParamFromProperties(m_vfs, m_robot, prop["virtual_force_sensor"], std::string(m_profile.instance_name));
+    int nvforce = m_vfs.size();
     for (unsigned int i=0; i<nvforce; i++){
-        for ( std::map<std::string, hrp::VirtualForceSensorParam>::iterator it = m_sensors.begin(); it != m_sensors.end(); it++ ) {
+        for ( std::map<std::string, hrp::VirtualForceSensorParam>::iterator it = m_vfs.begin(); it != m_vfs.end(); it++ ) {
             if (it->second.id == i) fsensor_names.push_back(it->first);
         }
     }
@@ -330,14 +330,14 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
             sensorR = sensor->link->R * sensor->localR;
             sensorlocalPos = sensor->localPos;
             parentlink = sensor->link;
-          } else if ( m_sensors.find(sensor_name) !=  m_sensors.end()) {
+          } else if ( m_vfs.find(sensor_name) !=  m_vfs.end()) {
             // virtual force sensor
             if ( DEBUGP ) {
-              std::cerr << "[" << m_profile.instance_name << "]   sensorR = " << m_sensors[sensor_name].localR.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", "\n", "    [", "]")) << std::endl;
+              std::cerr << "[" << m_profile.instance_name << "]   sensorR = " << m_vfs[sensor_name].localR.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", "\n", "    [", "]")) << std::endl;
             }
-            sensorR = m_sensors[sensor_name].link->R * m_sensors[sensor_name].localR;
-            sensorlocalPos = m_sensors[sensor_name].localPos;
-            parentlink = m_sensors[sensor_name].link;
+            sensorR = m_vfs[sensor_name].link->R * m_vfs[sensor_name].localR;
+            sensorlocalPos = m_vfs[sensor_name].localPos;
+            parentlink = m_vfs[sensor_name].link;
           } else {
             std::cerr << "[" << m_profile.instance_name << "]   unknown force param" << std::endl;
           }
