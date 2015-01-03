@@ -67,6 +67,18 @@ namespace hrp {
                                             hrp::BodyPtr m_robot,
                                             const std::string& prop_string,
                                             const std::string& instance_name);
+
+    struct VirtualForceSensorParam {
+        int id;
+        hrp::Link* link;
+        hrp::Vector3 localPos;
+        hrp::Matrix33 localR;
+    };
+
+    void readVirtualForceSensorParamFromProperties (std::map<std::string, hrp::VirtualForceSensorParam>& vfs,
+                                                    hrp::BodyPtr m_robot,
+                                                    const std::string& prop_string,
+                                                    const std::string& instance_name);
 };
 
 #include <iomanip>

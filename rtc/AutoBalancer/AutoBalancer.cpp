@@ -213,32 +213,30 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
       for (size_t i = 0; i < num; i++) m_controlSwingSupportTime.data[i] = 0.0;
     }
 
+    // load virtual force sensors
+    readVirtualForceSensorParamFromProperties(m_vfs, m_robot, prop["virtual_force_sensor"], std::string(m_profile.instance_name));
     // ref force port
-    coil::vstring virtual_force_sensor = coil::split(prop["virtual_force_sensor"], ",");
     int npforce = m_robot->numSensors(hrp::Sensor::FORCE);
-    int nvforce = virtual_force_sensor.size()/10;
+    int nvforce = m_vfs.size();
     int nforce  = npforce + nvforce;
     m_ref_force.resize(nforce);
     m_ref_forceIn.resize(nforce);
     for (unsigned int i=0; i<npforce; i++){
-        hrp::Sensor *s = m_robot->sensor(hrp::Sensor::FORCE, i);
-        m_ref_forceIn[i] = new InPort<TimedDoubleSeq>(std::string("ref_"+s->name).c_str(), m_ref_force[i]);
-        m_ref_force[i].data.length(6);
-        registerInPort(std::string("ref_"+s->name).c_str(), *m_ref_forceIn[i]);
-        std::cerr << "[" << m_profile.instance_name << "] force sensor" << std::endl;
-        std::cerr << "[" << m_profile.instance_name << "] name = " << s->name << std::endl;
+        sensor_names.push_back(m_robot->sensor(hrp::Sensor::FORCE, i)->name);
     }
     for (unsigned int i=0; i<nvforce; i++){
-        std::string name = virtual_force_sensor[i*10+0];
-        m_ref_forceIn[i+npforce] = new InPort<TimedDoubleSeq>(std::string("ref_"+name).c_str(), m_ref_force[i+npforce]);
-        m_ref_force[i+npforce].data.length(6);
-        registerInPort(std::string("ref_"+name).c_str(), *m_ref_forceIn[i+npforce]);
+        for ( std::map<std::string, hrp::VirtualForceSensorParam>::iterator it = m_vfs.begin(); it != m_vfs.end(); it++ ) {
+            if (it->second.id == i) sensor_names.push_back(it->first);
+        }
     }
-    for (unsigned int i=0; i<m_ref_forceIn.size(); i++){
-      ref_forces.push_back(hrp::Vector3(0,0,0));
-      std::string str(std::string(m_ref_forceIn[i]->name()));
-      coil::replaceString(str, "ref_", "");
-      sensor_names.push_back(str);
+    // set ref force port
+    std::cerr << "[" << m_profile.instance_name << "] force sensor ports (" << nforce << ")" << std::endl;
+    for (unsigned int i=0; i<nforce; i++){
+        m_ref_forceIn[i] = new InPort<TimedDoubleSeq>(std::string("ref_"+sensor_names[i]).c_str(), m_ref_force[i]);
+        m_ref_force[i].data.length(6);
+        registerInPort(std::string("ref_"+sensor_names[i]).c_str(), *m_ref_forceIn[i]);
+        std::cerr << "[" << m_profile.instance_name << "]   name = " << std::string("ref_"+sensor_names[i]) << std::endl;
+        ref_forces.push_back(hrp::Vector3(0,0,0));
     }
     sbp_offset = hrp::Vector3(0,0,0);
     sbp_cog_offset = hrp::Vector3(0,0,0);

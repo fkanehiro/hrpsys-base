@@ -482,3 +482,29 @@ void hrp::readJointLimitTableFromProperties (std::map<std::string, hrp::JointLim
         std::cerr << "[" << instance_name << "] Do not load joint limit table" << std::endl;
     }
 };
+
+void hrp::readVirtualForceSensorParamFromProperties (std::map<std::string, hrp::VirtualForceSensorParam>& vfs,
+                                                     hrp::BodyPtr m_robot,
+                                                     const std::string& prop_string,
+                                                     const std::string& instance_name)
+{
+    coil::vstring virtual_force_sensor = coil::split(prop_string, ",");
+    int nvforce = virtual_force_sensor.size()/10;
+    for (unsigned int i=0; i<nvforce; i++){
+        std::string name = virtual_force_sensor[i*10+0];
+        hrp::dvector tr(7);
+        for (int j = 0; j < 7; j++ ) {
+          coil::stringTo(tr[j], virtual_force_sensor[i*10+3+j].c_str());
+        }
+        vfs.insert(std::pair<std::string, VirtualForceSensorParam>(name, VirtualForceSensorParam()));
+        VirtualForceSensorParam& p = vfs[name];
+        p.localPos = hrp::Vector3(tr[0], tr[1], tr[2]);
+        p.localR = Eigen::AngleAxis<double>(tr[6], hrp::Vector3(tr[3],tr[4],tr[5])).toRotationMatrix(); // rotation in VRML is represented by axis + angle
+        p.link = m_robot->link(virtual_force_sensor[i*10+2]);
+        p.id = i;
+        std::cerr << "[" << instance_name << "] virtual force sensor" << std::endl;
+        std::cerr << "[" << instance_name << "]   name = " << name << ", parent = " << p.link->name << ", id = " << p.id << std::endl;
+        std::cerr << "[" << instance_name << "]   localP = " << p.localPos.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[m]" << std::endl;
+        std::cerr << "[" << instance_name << "]   localR = " << p.localR.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", "\n", "    [", "]")) << std::endl;
+    }
+};
