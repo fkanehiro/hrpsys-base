@@ -319,9 +319,9 @@ class HrpsysConfigurator:
                                                   self.fk.port("baseRpyRef")])
         connectPorts(self.sh.port("qOut"), self.seq.port("qInit"))
         connectPorts(self.sh.port("zmpOut"), self.seq.port("zmpRefInit"))
-        for sen in filter(lambda x: x.type == "Force", self.sensors):
-            connectPorts(self.seq.port(sen.name + "Ref"),
-                         self.sh.port(sen.name + "In"))
+        for sen in self.getForceSensorNames():
+            connectPorts(self.seq.port(sen + "Ref"),
+                         self.sh.port(sen + "In"))
 
         # connection for st
         if rtm.findPort(self.rh.ref, "lfsensor") and rtm.findPort(
@@ -340,14 +340,18 @@ class HrpsysConfigurator:
             connectPorts(self.abc.port("contactStates"), self.st.port("contactStates"))
             connectPorts(self.abc.port("controlSwingSupportTime"), self.st.port("controlSwingSupportTime"))
             connectPorts(self.rh.port("q"), self.st.port("qCurrent"))
-            for sen in filter(lambda x: x.type == "Force", self.sensors):
-                connectPorts(self.sh.port(sen.name + "Out"),
-                             self.st.port(sen.name + "Ref"))
 
-        if self.ic and self.abc:
-            for sen in filter(lambda x: x.type == "Force", self.sensors):
-                connectPorts(self.ic.port("ref_" + sen.name),
-                             self.abc.port("ref_" + sen.name))
+        # ref force moment connection
+        for sen in self.getForceSensorNames():
+            if self.st:
+                connectPorts(self.sh.port(sen + "Out"),
+                             self.st.port(sen + "Ref"))
+            if self.ic:
+                connectPorts(self.sh.port(sen+"Out"),
+                             self.ic.port("ref_" + sen+"In"))
+            if self.abc:
+                connectPorts(self.sh.port(sen+"Out"),
+                             self.abc.port("ref_" + sen))
 
         #  actual force sensors
         if self.rmfo:
@@ -363,6 +367,8 @@ class HrpsysConfigurator:
         # connection for ic
         if self.ic:
             connectPorts(self.rh.port("q"), self.ic.port("qCurrent"))
+            connectPorts(self.sh.port("basePosOut"), self.ic.port("basePosIn"))
+            connectPorts(self.sh.port("baseRpyOut"), self.ic.port("baseRpyIn"))
         # connection for tf
         if self.tf:
             # connection for actual torques
@@ -607,6 +613,16 @@ class HrpsysConfigurator:
             return sum(map(lambda x: x.sensors,
                            filter(lambda x: len(x.sensors) > 0,
                                   self.getBodyInfo(url)._get_links())), [])  # sum is for list flatten
+
+    # public method to get sensors list
+    def getForceSensorNames(self):
+        '''!@brief
+        Get list of force sensor names. Returns existence force sensors and virtual force sensors. self.sensors and virtual force sensors are assumed.
+        '''
+        ret = map (lambda x : x.name, filter(lambda x: x.type == "Force", self.sensors))
+        if self.vs != None:
+            ret += filter(lambda x: str.find(x, 'v') >= 0 and str.find(x, 'sensor') >= 0, self.vs.ports.keys())
+        return ret
 
     def connectLoggerPort(self, artc, sen_name, log_name=None):
         '''!@brief

@@ -106,12 +106,16 @@ class ImpedanceController
   InPort<TimedDoubleSeq> m_qCurrentIn;
   TimedDoubleSeq m_qRef;
   InPort<TimedDoubleSeq> m_qRefIn;
+  TimedPoint3D m_basePos;
+  InPort<TimedPoint3D> m_basePosIn;
+  TimedOrientation3D m_baseRpy;
+  InPort<TimedOrientation3D> m_baseRpyIn;
   std::vector<TimedDoubleSeq> m_force;
   std::vector<InPort<TimedDoubleSeq> *> m_forceIn;
+  std::vector<TimedDoubleSeq> m_ref_force;
+  std::vector<InPort<TimedDoubleSeq> *> m_ref_forceIn;
   TimedOrientation3D m_rpy;
-  TimedOrientation3D m_rpyRef;
   InPort<TimedOrientation3D> m_rpyIn;
-  InPort<TimedOrientation3D> m_rpyRefIn;
   
   // </rtc-template>
 
@@ -119,8 +123,6 @@ class ImpedanceController
   // <rtc-template block="outport_declare">
   TimedDoubleSeq m_q;
   OutPort<TimedDoubleSeq> m_qOut;
-  std::vector<TimedDoubleSeq> m_ref_force;
-  std::vector<OutPort<TimedDoubleSeq> *> m_ref_forceOut;
   
   // </rtc-template>
 
@@ -162,6 +164,11 @@ class ImpedanceController
         sr_gain(1.0), avoid_gain(0.001), reference_gain(0.01), manipulability_limit(0.1)
     {};
   };
+  struct ee_trans {
+    hrp::Vector3 localPos;
+    hrp::Matrix33 localR;
+  };
+
   struct VirtualForceSensorParam {
     hrp::Vector3 p;
     hrp::Matrix33 R;
@@ -172,8 +179,9 @@ class ImpedanceController
   void updateRootLinkPosRot (TimedOrientation3D tmprpy);
 
   std::map<std::string, ImpedanceParam> m_impedance_param;
+  std::map<std::string, ee_trans> ee_map;
   std::map<std::string, VirtualForceSensorParam> m_sensors;
-  std::map<std::string, hrp::Vector3> abs_forces, abs_moments;
+  std::map<std::string, hrp::Vector3> abs_forces, abs_moments, abs_ref_forces, abs_ref_moments;
   double m_dt;
   hrp::BodyPtr m_robot;
   coil::Mutex m_mutex;

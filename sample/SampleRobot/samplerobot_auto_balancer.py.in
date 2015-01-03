@@ -87,6 +87,19 @@ def demo():
     hcf.abc_svc.setAutoBalancerParam(ret[1])
     hcf.seq_svc.setJointAngles(initial_pose, 1.0)
     hcf.seq_svc.waitInterpolation()
+    #   7. balance against hand force
+    hcf.abc_svc.startAutoBalancer(["rleg", "lleg"]);
+    hcf.seq_svc.setWrenches([0,0,0,0,0,0,
+                             0,0,0,0,0,0,
+                             0,0,0,0,0,0,
+                             0,0,-50,0,0,0,], 1.0); # rhsensor
+    hcf.seq_svc.waitInterpolation();
+    hcf.seq_svc.setWrenches([0,0,0,0,0,0,
+                             0,0,0,0,0,0,
+                             0,0,0,0,0,0,
+                             0,0,0,0,0,0,], 1.0);
+    hcf.seq_svc.waitInterpolation();
+    hcf.abc_svc.stopAutoBalancer();
 
     # sample for walk pattern generation by AutoBalancer RTC
     #   1. goPos
