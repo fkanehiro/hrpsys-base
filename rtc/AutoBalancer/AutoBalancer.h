@@ -165,8 +165,8 @@ class AutoBalancer
 
  private:
   struct ABCIKparam {
-    hrp::Vector3 target_p0, current_p0, target2foot_offset_pos;
-    hrp::Matrix33 target_r0, current_r0, target2foot_offset_rot;
+    hrp::Vector3 target_p0, current_p0, localPos;
+    hrp::Matrix33 target_r0, current_r0, localR;
     rats::coordinates target_end_coords, current_end_coords;
     std::string target_name, base_name;
     hrp::JointPathExPtr manip;
@@ -175,7 +175,7 @@ class AutoBalancer
     {
       retc.pos = _pos;
       retc.rot = _rot;
-      retc.transform(rats::coordinates(target2foot_offset_pos, target2foot_offset_rot));
+      retc.transform(rats::coordinates(localPos, localR));
     };
     void getRobotEndCoords(rats::coordinates& retc, hrp::BodyPtr& _robot)
     {
@@ -209,6 +209,7 @@ class AutoBalancer
   enum {MODE_IDLE, MODE_ABC, MODE_SYNC_TO_IDLE, MODE_SYNC_TO_ABC} control_mode, return_control_mode;
   std::map<std::string, ABCIKparam> ikp;
   std::map<std::string, size_t> contact_states_index_map;
+  std::map<std::string, hrp::VirtualForceSensorParam> m_vfs;
   std::vector<std::string> sensor_names;
   hrp::dvector qorg, qrefv;
   hrp::Vector3 current_root_p, target_root_p;

@@ -183,13 +183,13 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
         coil::stringTo(ee_base, end_effectors_str[i*prop_num+2].c_str());
         ABCIKparam tp;
         for (size_t j = 0; j < 3; j++) {
-          coil::stringTo(tp.target2foot_offset_pos(j), end_effectors_str[i*prop_num+3+j].c_str());
+          coil::stringTo(tp.localPos(j), end_effectors_str[i*prop_num+3+j].c_str());
         }
         double tmpv[4];
         for (int j = 0; j < 4; j++ ) {
           coil::stringTo(tmpv[j], end_effectors_str[i*prop_num+6+j].c_str());
         }
-        tp.target2foot_offset_rot = Eigen::AngleAxis<double>(tmpv[3], hrp::Vector3(tmpv[0], tmpv[1], tmpv[2])).toRotationMatrix(); // rotation in VRML is represented by axis + angle
+        tp.localR = Eigen::AngleAxis<double>(tmpv[3], hrp::Vector3(tmpv[0], tmpv[1], tmpv[2])).toRotationMatrix(); // rotation in VRML is represented by axis + angle
         tp.base_name = ee_base;
         tp.target_name = ee_target;
         tp.manip = hrp::JointPathExPtr(new hrp::JointPathEx(m_robot, m_robot->link(tp.base_name),
@@ -197,7 +197,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
         ikp.insert(std::pair<std::string, ABCIKparam>(ee_name , tp));
         std::cerr << m_profile.instance_name << " End Effector [" << ee_name << "]" << ee_target << " " << ee_base << std::endl;
         std::cerr << m_profile.instance_name << "   target = " << ee_target << ", base = " << ee_base << std::endl;
-        std::cerr << m_profile.instance_name << "   offset_pos = " << tp.target2foot_offset_pos.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[m]" << std::endl;
+        std::cerr << m_profile.instance_name << "   offset_pos = " << tp.localPos.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[m]" << std::endl;
         contact_states_index_map.insert(std::pair<std::string, size_t>(ee_name, i));
       }
       m_contactStates.data.length(num);
@@ -213,32 +213,30 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
       for (size_t i = 0; i < num; i++) m_controlSwingSupportTime.data[i] = 0.0;
     }
 
+    // load virtual force sensors
+    readVirtualForceSensorParamFromProperties(m_vfs, m_robot, prop["virtual_force_sensor"], std::string(m_profile.instance_name));
     // ref force port
-    coil::vstring virtual_force_sensor = coil::split(prop["virtual_force_sensor"], ",");
     int npforce = m_robot->numSensors(hrp::Sensor::FORCE);
-    int nvforce = virtual_force_sensor.size()/10;
+    int nvforce = m_vfs.size();
     int nforce  = npforce + nvforce;
     m_ref_force.resize(nforce);
     m_ref_forceIn.resize(nforce);
     for (unsigned int i=0; i<npforce; i++){
-        hrp::Sensor *s = m_robot->sensor(hrp::Sensor::FORCE, i);
-        m_ref_forceIn[i] = new InPort<TimedDoubleSeq>(std::string("ref_"+s->name).c_str(), m_ref_force[i]);
-        m_ref_force[i].data.length(6);
-        registerInPort(std::string("ref_"+s->name).c_str(), *m_ref_forceIn[i]);
-        std::cerr << "[" << m_profile.instance_name << "] force sensor" << std::endl;
-        std::cerr << "[" << m_profile.instance_name << "] name = " << s->name << std::endl;
+        sensor_names.push_back(m_robot->sensor(hrp::Sensor::FORCE, i)->name);
     }
     for (unsigned int i=0; i<nvforce; i++){
-        std::string name = virtual_force_sensor[i*10+0];
-        m_ref_forceIn[i+npforce] = new InPort<TimedDoubleSeq>(std::string("ref_"+name).c_str(), m_ref_force[i+npforce]);
-        m_ref_force[i+npforce].data.length(6);
-        registerInPort(std::string("ref_"+name).c_str(), *m_ref_forceIn[i+npforce]);
+        for ( std::map<std::string, hrp::VirtualForceSensorParam>::iterator it = m_vfs.begin(); it != m_vfs.end(); it++ ) {
+            if (it->second.id == i) sensor_names.push_back(it->first);
+        }
     }
-    for (unsigned int i=0; i<m_ref_forceIn.size(); i++){
-      ref_forces.push_back(hrp::Vector3(0,0,0));
-      std::string str(std::string(m_ref_forceIn[i]->name()));
-      coil::replaceString(str, "ref_", "");
-      sensor_names.push_back(str);
+    // set ref force port
+    std::cerr << "[" << m_profile.instance_name << "] force sensor ports (" << nforce << ")" << std::endl;
+    for (unsigned int i=0; i<nforce; i++){
+        m_ref_forceIn[i] = new InPort<TimedDoubleSeq>(std::string("ref_"+sensor_names[i]).c_str(), m_ref_force[i]);
+        m_ref_force[i].data.length(6);
+        registerInPort(std::string("ref_"+sensor_names[i]).c_str(), *m_ref_forceIn[i]);
+        std::cerr << "[" << m_profile.instance_name << "]   name = " << std::string("ref_"+sensor_names[i]) << std::endl;
+        ref_forces.push_back(hrp::Vector3(0,0,0));
     }
     sbp_offset = hrp::Vector3(0,0,0);
     sbp_cog_offset = hrp::Vector3(0,0,0);
@@ -500,11 +498,11 @@ void AutoBalancer::getTargetParameters()
       coordinates sp_coords(gg->get_support_leg_coords().pos, gg->get_support_leg_coords().rot);
       coordinates sw_coords(gg->get_swing_leg_coords().pos, gg->get_swing_leg_coords().rot);
       coordinates tmpc;
-      coordinates(ikp[gg->get_support_leg()].target2foot_offset_pos, ikp[gg->get_support_leg()].target2foot_offset_rot).inverse_transformation(tmpc);
+      coordinates(ikp[gg->get_support_leg()].localPos, ikp[gg->get_support_leg()].localR).inverse_transformation(tmpc);
       sp_coords.transform(tmpc);
       ikp[gg->get_support_leg()].target_p0 = sp_coords.pos;
       ikp[gg->get_support_leg()].target_r0 = sp_coords.rot;
-      coordinates(ikp[gg->get_swing_leg()].target2foot_offset_pos, ikp[gg->get_swing_leg()].target2foot_offset_rot).inverse_transformation(tmpc);
+      coordinates(ikp[gg->get_swing_leg()].localPos, ikp[gg->get_swing_leg()].localR).inverse_transformation(tmpc);
       sw_coords.transform(tmpc);
       ikp[gg->get_swing_leg()].target_p0 = sw_coords.pos;
       ikp[gg->get_swing_leg()].target_r0 = sw_coords.rot;
@@ -556,16 +554,13 @@ void AutoBalancer::getTargetParameters()
 
     /* update ref_forces ;; sp's absolute -> rmc's absolute */
     for (size_t i = 0; i < m_ref_forceIn.size(); i++) {
-      hrp::ForceSensor* sensor = m_robot->sensor<hrp::ForceSensor>(sensor_names[i]);
       hrp::Matrix33 eeR;
+      hrp::Link* parentlink;
+      hrp::ForceSensor* sensor = m_robot->sensor<hrp::ForceSensor>(sensor_names[i]);
+      if (sensor) parentlink = sensor->link;
+      else parentlink = m_vfs[sensor_names[i]].link;
       for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
-          if (it->second.target_name == std::string(sensor->link->name)) {
-              if (sensor) {
-                  eeR = sensor->link->R * it->second.target2foot_offset_rot;
-              } else {
-                  // TODO
-              }
-          }
+          if (it->second.target_name == parentlink->name) eeR = parentlink->R * it->second.localR;
       }
       ref_forces[i] = eeR * hrp::Vector3(m_ref_force[i].data[0], m_ref_force[i].data[1], m_ref_force[i].data[2]);
     }
@@ -1041,16 +1036,17 @@ void AutoBalancer::calc_static_balance_point_from_forces(hrp::Vector3& sb_point,
     denom(j) = mass * gg->get_gravitational_acceleration();
     for (size_t i = 0; i < sensor_names.size(); i++) {
       if ( sensor_names[i].find("hsensor") != std::string::npos || sensor_names[i].find("asensor") != std::string::npos ) { // tempolary to get arm force coords
-        hrp::ForceSensor* sensor = m_robot->sensor<hrp::ForceSensor>(sensor_names[i]);
-        for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
-            if (it->second.target_name == std::string(sensor->link->name)) {
-                if (sensor) {
-                    hrp::Vector3 fpos = sensor->link->p + sensor->link->R * it->second.target2foot_offset_pos;
-                    nume(j) += ( (fpos(2) - ref_com_height) * tmp_forces[i](j) - fpos(j) * tmp_forces[i](2) );
-                    denom(j) -= tmp_forces[i](2);
-                }
-            }
-        }
+          hrp::Link* parentlink;
+          hrp::ForceSensor* sensor = m_robot->sensor<hrp::ForceSensor>(sensor_names[i]);
+          if (sensor) parentlink = sensor->link;
+          else parentlink = m_vfs[sensor_names[i]].link;
+          for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
+              if (it->second.target_name == parentlink->name) {
+                  hrp::Vector3 fpos = parentlink->p + parentlink->R * it->second.localPos;
+                  nume(j) += ( (fpos(2) - ref_com_height) * tmp_forces[i](j) - fpos(j) * tmp_forces[i](2) );
+                  denom(j) -= tmp_forces[i](2);
+              }
+          }
       }
     }
     sb_point(j) = nume(j) / denom(j);

@@ -123,11 +123,13 @@ RTC::ReturnCode_t ImpedanceController::onInitialize()
     for (unsigned int i=0; i<npforce; i++){
         fsensor_names.push_back(m_robot->sensor(hrp::Sensor::FORCE, i)->name);
     }
-    //   find names for virtual force sensors
-    coil::vstring virtual_force_sensor = coil::split(prop["virtual_force_sensor"], ",");
-    int nvforce = virtual_force_sensor.size()/10;
+    // load virtual force sensors
+    readVirtualForceSensorParamFromProperties(m_vfs, m_robot, prop["virtual_force_sensor"], std::string(m_profile.instance_name));
+    int nvforce = m_vfs.size();
     for (unsigned int i=0; i<nvforce; i++){
-        fsensor_names.push_back(virtual_force_sensor[i*10+0]);
+        for ( std::map<std::string, hrp::VirtualForceSensorParam>::iterator it = m_vfs.begin(); it != m_vfs.end(); it++ ) {
+            if (it->second.id == i) fsensor_names.push_back(it->first);
+        }
     }
     //   add ports for all force sensors
     int nforce  = npforce + nvforce;
@@ -135,6 +137,7 @@ RTC::ReturnCode_t ImpedanceController::onInitialize()
     m_forceIn.resize(nforce);
     m_ref_force.resize(nforce);
     m_ref_forceIn.resize(nforce);
+    std::cerr << "[" << m_profile.instance_name << "] force sensor ports" << std::endl;
     for (unsigned int i=0; i<nforce; i++){
         // actual inport
         m_forceIn[i] = new InPort<TimedDoubleSeq>(fsensor_names[i].c_str(), m_force[i]);
@@ -145,25 +148,9 @@ RTC::ReturnCode_t ImpedanceController::onInitialize()
         for (unsigned int j=0; j<6; j++) m_ref_force[i].data[j] = 0.0;
         m_ref_forceIn[i] = new InPort<TimedDoubleSeq>(std::string("ref_"+fsensor_names[i]+"In").c_str(), m_ref_force[i]);
         registerInPort(std::string("ref_"+fsensor_names[i]+"In").c_str(), *m_ref_forceIn[i]);
-        std::cerr << "[" << m_profile.instance_name << "] force sensor" << std::endl;
         std::cerr << "[" << m_profile.instance_name << "]   name = " << fsensor_names[i] << std::endl;
     }
-    for (unsigned int i=0; i<nvforce; i++){
-        std::string name = virtual_force_sensor[i*10+0];
-        VirtualForceSensorParam p;
-        hrp::dvector tr(7);
-        for (int j = 0; j < 7; j++ ) {
-          coil::stringTo(tr[j], virtual_force_sensor[i*10+3+j].c_str());
-        }
-        p.p = hrp::Vector3(tr[0], tr[1], tr[2]);
-        p.R = Eigen::AngleAxis<double>(tr[6], hrp::Vector3(tr[3],tr[4],tr[5])).toRotationMatrix(); // rotation in VRML is represented by axis + angle
-        p.parent_link_name = virtual_force_sensor[i*10+2];
-        m_sensors[name] = p;
-        std::cerr << "[" << m_profile.instance_name << "] virtual force sensor" << std::endl;
-        std::cerr << "[" << m_profile.instance_name << "]   name = " << name << ", parent = " << p.parent_link_name << std::endl;
-        std::cerr << "[" << m_profile.instance_name << "]   localP = " << p.p.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[m]" << std::endl;
-        std::cerr << "[" << m_profile.instance_name << "]   localR = " << p.R.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", "\n", "    [", "]")) << std::endl;
-    }
+
     for (unsigned int i=0; i<m_forceIn.size(); i++){
       abs_forces.insert(std::pair<std::string, hrp::Vector3>(m_forceIn[i]->name(), hrp::Vector3::Zero()));
       abs_moments.insert(std::pair<std::string, hrp::Vector3>(m_forceIn[i]->name(), hrp::Vector3::Zero()));
@@ -337,26 +324,26 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
           }
           hrp::Matrix33 sensorR;
           hrp::Vector3 sensorlocalPos;
-          std::string parent_link_name;
+          hrp::Link* parentlink;
           if ( sensor ) {
             // real force sensore
             sensorR = sensor->link->R * sensor->localR;
             sensorlocalPos = sensor->localPos;
-            parent_link_name = sensor->link->name;
-          } else if ( m_sensors.find(sensor_name) !=  m_sensors.end()) {
+            parentlink = sensor->link;
+          } else if ( m_vfs.find(sensor_name) !=  m_vfs.end()) {
             // virtual force sensor
             if ( DEBUGP ) {
-              std::cerr << "[" << m_profile.instance_name << "]   sensorR = " << m_sensors[sensor_name].R.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", "\n", "    [", "]")) << std::endl;
+              std::cerr << "[" << m_profile.instance_name << "]   sensorR = " << m_vfs[sensor_name].localR.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", "\n", "    [", "]")) << std::endl;
             }
-            sensorR = m_robot->link(m_sensors[sensor_name].parent_link_name)->R * m_sensors[sensor_name].R;
-            sensorlocalPos = m_sensors[sensor_name].p;
-            parent_link_name = m_sensors[sensor_name].parent_link_name;
+            sensorR = m_vfs[sensor_name].link->R * m_vfs[sensor_name].localR;
+            sensorlocalPos = m_vfs[sensor_name].localPos;
+            parentlink = m_vfs[sensor_name].link;
           } else {
             std::cerr << "[" << m_profile.instance_name << "]   unknown force param" << std::endl;
           }
           abs_forces[sensor_name] = sensorR * data_p;
-          abs_moments[sensor_name] = sensorR * data_r + m_robot->link(parent_link_name)->R * (sensorlocalPos - ee_map[parent_link_name].localPos).cross(abs_forces[sensor_name]);
-          hrp::Matrix33 eeR (m_robot->link(parent_link_name)->R * ee_map[parent_link_name].localR);
+          abs_moments[sensor_name] = sensorR * data_r + parentlink->R * (sensorlocalPos - ee_map[parentlink->name].localPos).cross(abs_forces[sensor_name]);
+          hrp::Matrix33 eeR (parentlink->R * ee_map[parentlink->name].localR);
           abs_ref_forces[sensor_name] = eeR * ref_data_p;
           abs_ref_moments[sensor_name] = eeR * ref_data_r;
           if ( DEBUGP ) {
