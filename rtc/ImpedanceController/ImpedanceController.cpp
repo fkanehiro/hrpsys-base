@@ -177,6 +177,34 @@ RTC::ReturnCode_t ImpedanceController::onInitialize()
       }
     }
 
+    // setting from conf file
+    // rleg,TARGET_LINK,BASE_LINK,x,y,z,rx,ry,rz,rth #<=pos + rot (axis+angle)
+    coil::vstring end_effectors_str = coil::split(prop["end_effectors"], ",");
+    if (end_effectors_str.size() > 0) {
+        size_t prop_num = 10;
+        size_t num = end_effectors_str.size()/prop_num;
+        for (size_t i = 0; i < num; i++) {
+            std::string ee_name, ee_target, ee_base;
+            coil::stringTo(ee_name, end_effectors_str[i*prop_num].c_str());
+            coil::stringTo(ee_target, end_effectors_str[i*prop_num+1].c_str());
+            coil::stringTo(ee_base, end_effectors_str[i*prop_num+2].c_str());
+            ee_trans eet;
+            for (size_t j = 0; j < 3; j++) {
+                coil::stringTo(eet.localPos(j), end_effectors_str[i*prop_num+3+j].c_str());
+            }
+            double tmpv[4];
+            for (int j = 0; j < 4; j++ ) {
+                coil::stringTo(tmpv[j], end_effectors_str[i*prop_num+6+j].c_str());
+            }
+            eet.localR = Eigen::AngleAxis<double>(tmpv[3], hrp::Vector3(tmpv[0], tmpv[1], tmpv[2])).toRotationMatrix(); // rotation in VRML is represented by axis + angle
+            ee_map.insert(std::pair<std::string, ee_trans>(ee_target , eet));
+            std::cerr << "[" << m_profile.instance_name << "] End Effector [" << ee_name << "]" << ee_target << " " << ee_base << std::endl;
+            std::cerr << "[" << m_profile.instance_name << "]   target = " << ee_target << ", base = " << ee_base << std::endl;
+            std::cerr << "[" << m_profile.instance_name << "]   localPos = " << eet.localPos.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[m]" << std::endl;
+            std::cerr << "[" << m_profile.instance_name << "]   localR = " << eet.localR.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", "\n", "    [", "]")) << std::endl;
+        }
+    }
+
     // allocate memory for outPorts
     m_q.data.length(dof);
     qrefv.resize(dof);
@@ -321,9 +349,10 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
             std::cerr << "[" << m_profile.instance_name << "]   unknown force param" << std::endl;
           }
           abs_forces[sensor_name] = sensorR * data_p;
-          abs_moments[sensor_name] = sensorR * data_r;
-          abs_ref_forces[sensor_name] = sensorR * ref_data_p;
-          abs_ref_moments[sensor_name] = sensorR * ref_data_r;
+          abs_moments[sensor_name] = sensorR * data_r + sensor->link->R * (sensor->localPos - ee_map[sensor->link->name].localPos).cross(abs_forces[sensor_name]);
+          hrp::Matrix33 eeR (sensor->link->R * ee_map[sensor->link->name].localR);
+          abs_ref_forces[sensor_name] = eeR * ref_data_p;
+          abs_ref_moments[sensor_name] = eeR * ref_data_r;
           if ( DEBUGP ) {
             std::cerr << "[" << m_profile.instance_name << "]   abs force  = " << abs_forces[sensor_name].format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[N]" << std::endl;
             std::cerr << "[" << m_profile.instance_name << "]   abs moment = " << abs_moments[sensor_name].format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[Nm]" << std::endl;
@@ -336,8 +365,8 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
 	  // set sequencer position to target_p0
 	  for ( std::map<std::string, ImpedanceParam>::iterator it = m_impedance_param.begin(); it != m_impedance_param.end(); it++ ) {
             ImpedanceParam& param = it->second;
-            param.target_p0 = m_robot->link(param.target_name)->p;
-            param.target_r0 = m_robot->link(param.target_name)->R;
+            param.target_p0 = m_robot->link(param.target_name)->p + m_robot->link(param.target_name)->R * ee_map[param.target_name].localPos;
+            param.target_r0 = m_robot->link(param.target_name)->R * ee_map[param.target_name].localR;
           }
           // back to impedance robot model (only for controlled joint)
 	  for ( std::map<std::string, ImpedanceParam>::iterator it = m_impedance_param.begin(); it != m_impedance_param.end(); it++ ) {
@@ -383,8 +412,9 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
             assert(target);
             assert(base);
 
-            param.current_p0 = target->p;
-            param.current_r0 = target->R;
+            param.current_p0 = target->p + target->R * ee_map[target->name].localPos;
+            param.current_r0 = target->R * ee_map[target->name].localR;
+
 
             hrp::JointPathExPtr manip = param.manip;
             assert(manip);
@@ -625,17 +655,17 @@ bool ImpedanceController::setImpedanceControllerParam(const std::string& i_name_
 
         p.transition_joint_q.resize(m_robot->numJoints());
 
-	p.target_p0 = m_robot->link(p.target_name)->p;
-	p.target_p1 = m_robot->link(p.target_name)->p;
-        p.target_r0 = m_robot->link(p.target_name)->R;
-        p.target_r1 = m_robot->link(p.target_name)->R;
+	p.target_p0 = m_robot->link(p.target_name)->p + m_robot->link(p.target_name)->R * ee_map[p.target_name].localPos;
+	p.target_p1 = p.target_p0;
+        p.target_r0 = m_robot->link(p.target_name)->R * ee_map[p.target_name].localR;
+        p.target_r1 = p.target_r0;
 
-	p.current_p0 = m_robot->link(p.target_name)->p;
-	p.current_p1 = m_robot->link(p.target_name)->p;
-	p.current_p2 = m_robot->link(p.target_name)->p;
-	p.current_r0 = m_robot->link(p.target_name)->R;
-        p.current_r1 = m_robot->link(p.target_name)->R;
-        p.current_r2 = m_robot->link(p.target_name)->R;
+	p.current_p0 = p.target_p0;
+	p.current_p1 = p.target_p0;
+	p.current_p2 = p.target_p0;
+	p.current_r0 = p.target_r0;
+        p.current_r1 = p.target_r0;
+        p.current_r2 = p.target_r0;
         p.transition_count = -MAX_TRANSITION_COUNT; // when start impedance, count up to 0
 
 	m_impedance_param[name] = p;

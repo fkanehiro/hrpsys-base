@@ -164,6 +164,11 @@ class ImpedanceController
         sr_gain(1.0), avoid_gain(0.001), reference_gain(0.01), manipulability_limit(0.1)
     {};
   };
+  struct ee_trans {
+    hrp::Vector3 localPos;
+    hrp::Matrix33 localR;
+  };
+
   struct VirtualForceSensorParam {
     hrp::Vector3 p;
     hrp::Matrix33 R;
@@ -174,6 +179,7 @@ class ImpedanceController
   void updateRootLinkPosRot (TimedOrientation3D tmprpy);
 
   std::map<std::string, ImpedanceParam> m_impedance_param;
+  std::map<std::string, ee_trans> ee_map;
   std::map<std::string, VirtualForceSensorParam> m_sensors;
   std::map<std::string, hrp::Vector3> abs_forces, abs_moments, abs_ref_forces, abs_ref_moments;
   double m_dt;
