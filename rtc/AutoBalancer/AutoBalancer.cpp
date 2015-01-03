@@ -236,6 +236,9 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     }
     for (unsigned int i=0; i<m_ref_forceIn.size(); i++){
       ref_forces.push_back(hrp::Vector3(0,0,0));
+      std::string str(std::string(m_ref_forceIn[i]->name()));
+      coil::replaceString(str, "ref_", "");
+      sensor_names.push_back(str);
     }
     sbp_offset = hrp::Vector3(0,0,0);
     sbp_cog_offset = hrp::Vector3(0,0,0);
@@ -552,8 +555,20 @@ void AutoBalancer::getTargetParameters()
     fixLegToCoords(":both", tmp_fix_coords);
 
     /* update ref_forces ;; sp's absolute -> rmc's absolute */
-    for (size_t i = 0; i < m_ref_forceIn.size(); i++)
-      ref_forces[i] = tmp_fix_coords.rot * hrp::Vector3(m_ref_force[i].data[0], m_ref_force[i].data[1], m_ref_force[i].data[2]);
+    for (size_t i = 0; i < m_ref_forceIn.size(); i++) {
+      hrp::ForceSensor* sensor = m_robot->sensor<hrp::ForceSensor>(sensor_names[i]);
+      hrp::Matrix33 eeR;
+      for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
+          if (it->second.target_name == std::string(sensor->link->name)) {
+              if (sensor) {
+                  eeR = sensor->link->R * it->second.target2foot_offset_rot;
+              } else {
+                  // TODO
+              }
+          }
+      }
+      ref_forces[i] = eeR * hrp::Vector3(m_ref_force[i].data[0], m_ref_force[i].data[1], m_ref_force[i].data[2]);
+    }
     sbp_offset = tmp_fix_coords.rot * hrp::Vector3(sbp_offset);
 
     target_root_p = m_robot->rootLink()->p;
@@ -1024,13 +1039,18 @@ void AutoBalancer::calc_static_balance_point_from_forces(hrp::Vector3& sb_point,
   for (size_t j = 0; j < 2; j++) {
     nume(j) = mass * gg->get_gravitational_acceleration() * tmpcog(j);
     denom(j) = mass * gg->get_gravitational_acceleration();
-    for (size_t i = 0; i < m_ref_forceIn.size(); i++) {
-      std::string sensor_name = m_ref_forceIn[i]->name();
-      if ( sensor_name.find("hsensor") != std::string::npos ) { // tempolary to get arm force coords
-        hrp::Sensor *sensor = m_robot->sensor(hrp::Sensor::FORCE, i);
-        hrp::Vector3 fpos = sensor->link->p + (sensor->link->R) * sensor->localPos;
-        nume(j) += ( (fpos(2) - ref_com_height) * tmp_forces[i](j) - fpos(j) * tmp_forces[i](2) );
-        denom(j) -= tmp_forces[i](2);
+    for (size_t i = 0; i < sensor_names.size(); i++) {
+      if ( sensor_names[i].find("hsensor") != std::string::npos || sensor_names[i].find("asensor") != std::string::npos ) { // tempolary to get arm force coords
+        hrp::ForceSensor* sensor = m_robot->sensor<hrp::ForceSensor>(sensor_names[i]);
+        for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
+            if (it->second.target_name == std::string(sensor->link->name)) {
+                if (sensor) {
+                    hrp::Vector3 fpos = sensor->link->p + sensor->link->R * it->second.target2foot_offset_pos;
+                    nume(j) += ( (fpos(2) - ref_com_height) * tmp_forces[i](j) - fpos(j) * tmp_forces[i](2) );
+                    denom(j) -= tmp_forces[i](2);
+                }
+            }
+        }
       }
     }
     sb_point(j) = nume(j) / denom(j);
