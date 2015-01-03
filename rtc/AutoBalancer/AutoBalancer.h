@@ -209,6 +209,7 @@ class AutoBalancer
   enum {MODE_IDLE, MODE_ABC, MODE_SYNC_TO_IDLE, MODE_SYNC_TO_ABC} control_mode, return_control_mode;
   std::map<std::string, ABCIKparam> ikp;
   std::map<std::string, size_t> contact_states_index_map;
+  std::vector<std::string> sensor_names;
   hrp::dvector qorg, qrefv;
   hrp::Vector3 current_root_p, target_root_p;
   hrp::Matrix33 current_root_R, target_root_R;
