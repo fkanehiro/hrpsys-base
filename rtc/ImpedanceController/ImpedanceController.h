@@ -170,9 +170,9 @@ class ImpedanceController
   };
 
   struct VirtualForceSensorParam {
-    hrp::Vector3 p;
-    hrp::Matrix33 R;
-    std::string parent_link_name;
+    hrp::Link* link;
+    hrp::Vector3 localPos;
+    hrp::Matrix33 localR;
   };
   bool checkImpedanceNameValidity (int& force_id, const std::string& name);
   void copyImpedanceParam (OpenHRP::ImpedanceControllerService::impedanceParam& i_param_, const ImpedanceParam& param);
