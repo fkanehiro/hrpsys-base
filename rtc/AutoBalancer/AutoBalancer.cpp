@@ -183,13 +183,13 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
         coil::stringTo(ee_base, end_effectors_str[i*prop_num+2].c_str());
         ABCIKparam tp;
         for (size_t j = 0; j < 3; j++) {
-          coil::stringTo(tp.target2foot_offset_pos(j), end_effectors_str[i*prop_num+3+j].c_str());
+          coil::stringTo(tp.localPos(j), end_effectors_str[i*prop_num+3+j].c_str());
         }
         double tmpv[4];
         for (int j = 0; j < 4; j++ ) {
           coil::stringTo(tmpv[j], end_effectors_str[i*prop_num+6+j].c_str());
         }
-        tp.target2foot_offset_rot = Eigen::AngleAxis<double>(tmpv[3], hrp::Vector3(tmpv[0], tmpv[1], tmpv[2])).toRotationMatrix(); // rotation in VRML is represented by axis + angle
+        tp.localR = Eigen::AngleAxis<double>(tmpv[3], hrp::Vector3(tmpv[0], tmpv[1], tmpv[2])).toRotationMatrix(); // rotation in VRML is represented by axis + angle
         tp.base_name = ee_base;
         tp.target_name = ee_target;
         tp.manip = hrp::JointPathExPtr(new hrp::JointPathEx(m_robot, m_robot->link(tp.base_name),
@@ -197,7 +197,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
         ikp.insert(std::pair<std::string, ABCIKparam>(ee_name , tp));
         std::cerr << m_profile.instance_name << " End Effector [" << ee_name << "]" << ee_target << " " << ee_base << std::endl;
         std::cerr << m_profile.instance_name << "   target = " << ee_target << ", base = " << ee_base << std::endl;
-        std::cerr << m_profile.instance_name << "   offset_pos = " << tp.target2foot_offset_pos.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[m]" << std::endl;
+        std::cerr << m_profile.instance_name << "   offset_pos = " << tp.localPos.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[m]" << std::endl;
         contact_states_index_map.insert(std::pair<std::string, size_t>(ee_name, i));
       }
       m_contactStates.data.length(num);
@@ -500,11 +500,11 @@ void AutoBalancer::getTargetParameters()
       coordinates sp_coords(gg->get_support_leg_coords().pos, gg->get_support_leg_coords().rot);
       coordinates sw_coords(gg->get_swing_leg_coords().pos, gg->get_swing_leg_coords().rot);
       coordinates tmpc;
-      coordinates(ikp[gg->get_support_leg()].target2foot_offset_pos, ikp[gg->get_support_leg()].target2foot_offset_rot).inverse_transformation(tmpc);
+      coordinates(ikp[gg->get_support_leg()].localPos, ikp[gg->get_support_leg()].localR).inverse_transformation(tmpc);
       sp_coords.transform(tmpc);
       ikp[gg->get_support_leg()].target_p0 = sp_coords.pos;
       ikp[gg->get_support_leg()].target_r0 = sp_coords.rot;
-      coordinates(ikp[gg->get_swing_leg()].target2foot_offset_pos, ikp[gg->get_swing_leg()].target2foot_offset_rot).inverse_transformation(tmpc);
+      coordinates(ikp[gg->get_swing_leg()].localPos, ikp[gg->get_swing_leg()].localR).inverse_transformation(tmpc);
       sw_coords.transform(tmpc);
       ikp[gg->get_swing_leg()].target_p0 = sw_coords.pos;
       ikp[gg->get_swing_leg()].target_r0 = sw_coords.rot;
@@ -561,7 +561,7 @@ void AutoBalancer::getTargetParameters()
       for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
           if (it->second.target_name == std::string(sensor->link->name)) {
               if (sensor) {
-                  eeR = sensor->link->R * it->second.target2foot_offset_rot;
+                  eeR = sensor->link->R * it->second.localR;
               } else {
                   // TODO
               }
@@ -1045,7 +1045,7 @@ void AutoBalancer::calc_static_balance_point_from_forces(hrp::Vector3& sb_point,
         for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
             if (it->second.target_name == std::string(sensor->link->name)) {
                 if (sensor) {
-                    hrp::Vector3 fpos = sensor->link->p + sensor->link->R * it->second.target2foot_offset_pos;
+                    hrp::Vector3 fpos = sensor->link->p + sensor->link->R * it->second.localPos;
                     nume(j) += ( (fpos(2) - ref_com_height) * tmp_forces[i](j) - fpos(j) * tmp_forces[i](2) );
                     denom(j) -= tmp_forces[i](2);
                 }
