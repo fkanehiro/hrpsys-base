@@ -175,7 +175,11 @@ RTC::ReturnCode_t AverageFilter::onExecute(RTC::UniqueId ec_id)
 #if 1
       int ix = round((src[0] - xstart)/m_resolution);
       int iy = round((src[1] - ystart)/m_resolution);
-      cell[ix+nx*iy] = src[2];
+      int rank = ix+nx*iy;
+      double z = cell[rank], z_new = src[2];
+      if (isnan(z) || !isnan(z) && z_new > z){
+          cell[rank] = z_new;
+      }
 #else
       int ix = floor((src[0] - xstart)/m_resolution);
       int iy = floor((src[1] - ystart)/m_resolution);
