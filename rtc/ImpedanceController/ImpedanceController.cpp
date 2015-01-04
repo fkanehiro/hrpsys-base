@@ -307,53 +307,7 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
           m_robot->rootLink()->p = hrp::Vector3(m_basePos.data.x, m_basePos.data.y, m_basePos.data.z);
           m_robot->rootLink()->R = hrp::rotFromRpy(m_baseRpy.data.r, m_baseRpy.data.p, m_baseRpy.data.y);
 	  m_robot->calcForwardKinematics();
-      for (unsigned int i=0; i<m_forceIn.size(); i++){
-        if ( m_force[i].data.length()==6 ) {
-          std::string sensor_name = m_forceIn[i]->name();
-          hrp::ForceSensor* sensor = m_robot->sensor<hrp::ForceSensor>(sensor_name);
-          hrp::Vector3 data_p(m_force[i].data[0], m_force[i].data[1], m_force[i].data[2]);
-          hrp::Vector3 data_r(m_force[i].data[3], m_force[i].data[4], m_force[i].data[5]);
-          hrp::Vector3 ref_data_p(m_ref_force[i].data[0], m_ref_force[i].data[1], m_ref_force[i].data[2]);
-          hrp::Vector3 ref_data_r(m_ref_force[i].data[3], m_ref_force[i].data[4], m_ref_force[i].data[5]);
-          if ( DEBUGP ) {
-            std::cerr << "[" << m_profile.instance_name << "] force and moment [" << sensor_name << "]" << std::endl;
-            std::cerr << "[" << m_profile.instance_name << "]   sensor force  = " << data_p.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[N]" << std::endl;
-            std::cerr << "[" << m_profile.instance_name << "]   sensor moment = " << data_r.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[Nm]" << std::endl;
-            std::cerr << "[" << m_profile.instance_name << "]   reference force  = " << ref_data_p.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[N]" << std::endl;
-            std::cerr << "[" << m_profile.instance_name << "]   reference moment = " << ref_data_r.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[Nm]" << std::endl;
-          }
-          hrp::Matrix33 sensorR;
-          hrp::Vector3 sensorlocalPos;
-          hrp::Link* parentlink;
-          if ( sensor ) {
-            // real force sensore
-            sensorR = sensor->link->R * sensor->localR;
-            sensorlocalPos = sensor->localPos;
-            parentlink = sensor->link;
-          } else if ( m_vfs.find(sensor_name) !=  m_vfs.end()) {
-            // virtual force sensor
-            if ( DEBUGP ) {
-              std::cerr << "[" << m_profile.instance_name << "]   sensorR = " << m_vfs[sensor_name].localR.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", "\n", "    [", "]")) << std::endl;
-            }
-            sensorR = m_vfs[sensor_name].link->R * m_vfs[sensor_name].localR;
-            sensorlocalPos = m_vfs[sensor_name].localPos;
-            parentlink = m_vfs[sensor_name].link;
-          } else {
-            std::cerr << "[" << m_profile.instance_name << "]   unknown force param" << std::endl;
-          }
-          abs_forces[sensor_name] = sensorR * data_p;
-          abs_moments[sensor_name] = sensorR * data_r + parentlink->R * (sensorlocalPos - ee_map[parentlink->name].localPos).cross(abs_forces[sensor_name]);
-          hrp::Matrix33 eeR (parentlink->R * ee_map[parentlink->name].localR);
-          abs_ref_forces[sensor_name] = eeR * ref_data_p;
-          abs_ref_moments[sensor_name] = eeR * ref_data_r;
-          if ( DEBUGP ) {
-            std::cerr << "[" << m_profile.instance_name << "]   abs force  = " << abs_forces[sensor_name].format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[N]" << std::endl;
-            std::cerr << "[" << m_profile.instance_name << "]   abs moment = " << abs_moments[sensor_name].format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[Nm]" << std::endl;
-            std::cerr << "[" << m_profile.instance_name << "]   abs ref force  = " << abs_ref_forces[sensor_name].format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[N]" << std::endl;
-            std::cerr << "[" << m_profile.instance_name << "]   abs ref moment = " << abs_ref_moments[sensor_name].format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[Nm]" << std::endl;
-          }
-        }
-      }
+          calcForceMoment();
 
 	  // set sequencer position to target_p0
 	  for ( std::map<std::string, ImpedanceParam>::iterator it = m_impedance_param.begin(); it != m_impedance_param.end(); it++ ) {
@@ -567,6 +521,57 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
   return RTC::RTC_OK;
   }
 */
+
+void ImpedanceController::calcForceMoment ()
+{
+      for (unsigned int i=0; i<m_forceIn.size(); i++){
+        if ( m_force[i].data.length()==6 ) {
+          std::string sensor_name = m_forceIn[i]->name();
+          hrp::ForceSensor* sensor = m_robot->sensor<hrp::ForceSensor>(sensor_name);
+          hrp::Vector3 data_p(m_force[i].data[0], m_force[i].data[1], m_force[i].data[2]);
+          hrp::Vector3 data_r(m_force[i].data[3], m_force[i].data[4], m_force[i].data[5]);
+          hrp::Vector3 ref_data_p(m_ref_force[i].data[0], m_ref_force[i].data[1], m_ref_force[i].data[2]);
+          hrp::Vector3 ref_data_r(m_ref_force[i].data[3], m_ref_force[i].data[4], m_ref_force[i].data[5]);
+          if ( DEBUGP ) {
+            std::cerr << "[" << m_profile.instance_name << "] force and moment [" << sensor_name << "]" << std::endl;
+            std::cerr << "[" << m_profile.instance_name << "]   sensor force  = " << data_p.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[N]" << std::endl;
+            std::cerr << "[" << m_profile.instance_name << "]   sensor moment = " << data_r.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[Nm]" << std::endl;
+            std::cerr << "[" << m_profile.instance_name << "]   reference force  = " << ref_data_p.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[N]" << std::endl;
+            std::cerr << "[" << m_profile.instance_name << "]   reference moment = " << ref_data_r.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[Nm]" << std::endl;
+          }
+          hrp::Matrix33 sensorR;
+          hrp::Vector3 sensorlocalPos;
+          hrp::Link* parentlink;
+          if ( sensor ) {
+            // real force sensore
+            sensorR = sensor->link->R * sensor->localR;
+            sensorlocalPos = sensor->localPos;
+            parentlink = sensor->link;
+          } else if ( m_vfs.find(sensor_name) !=  m_vfs.end()) {
+            // virtual force sensor
+            if ( DEBUGP ) {
+              std::cerr << "[" << m_profile.instance_name << "]   sensorR = " << m_vfs[sensor_name].localR.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", "\n", "    [", "]")) << std::endl;
+            }
+            sensorR = m_vfs[sensor_name].link->R * m_vfs[sensor_name].localR;
+            sensorlocalPos = m_vfs[sensor_name].localPos;
+            parentlink = m_vfs[sensor_name].link;
+          } else {
+            std::cerr << "[" << m_profile.instance_name << "]   unknown force param" << std::endl;
+          }
+          abs_forces[sensor_name] = sensorR * data_p;
+          abs_moments[sensor_name] = sensorR * data_r + parentlink->R * (sensorlocalPos - ee_map[parentlink->name].localPos).cross(abs_forces[sensor_name]);
+          hrp::Matrix33 eeR (parentlink->R * ee_map[parentlink->name].localR);
+          abs_ref_forces[sensor_name] = eeR * ref_data_p;
+          abs_ref_moments[sensor_name] = eeR * ref_data_r;
+          if ( DEBUGP ) {
+            std::cerr << "[" << m_profile.instance_name << "]   abs force  = " << abs_forces[sensor_name].format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[N]" << std::endl;
+            std::cerr << "[" << m_profile.instance_name << "]   abs moment = " << abs_moments[sensor_name].format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[Nm]" << std::endl;
+            std::cerr << "[" << m_profile.instance_name << "]   abs ref force  = " << abs_ref_forces[sensor_name].format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[N]" << std::endl;
+            std::cerr << "[" << m_profile.instance_name << "]   abs ref moment = " << abs_ref_moments[sensor_name].format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[Nm]" << std::endl;
+          }
+        }
+      }
+};
 
 //
 bool ImpedanceController::setImpedanceControllerParam(const std::string& i_name_, OpenHRP::ImpedanceControllerService::impedanceParam i_param_)
