@@ -288,6 +288,7 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
         if ( m_impedance_param.size() == 0 ) {
           for ( int i = 0; i < m_qRef.data.length(); i++ ){
             m_q.data[i] = m_qRef.data[i];
+            m_robot->joint(i)->q = m_qRef.data[i];
           }
           m_qOut.write();
           return RTC_OK;
@@ -646,24 +647,8 @@ bool ImpedanceController::setImpedanceControllerParam(const std::string& i_name_
           return false;
         }
 
-	// update reference model
-        for (int i = 0; i < m_robot->numJoints(); i++ ) {
-          // if other controller is already taken the joint, do not update the reference model
-          bool update = true;
-          for ( std::map<std::string, ImpedanceParam>::iterator it = m_impedance_param.begin(); it != m_impedance_param.end(); it++ ) {
-            ImpedanceParam& param = it->second;
-            for ( int j = 0; j < param.manip->numJoints(); j++ ){
-              if ( i == param.manip->joint(j)->jointId ) update = false;
-            }
-          }
-          if ( update ) m_robot->joint(i)->q = m_qRef.data[i];
-        }
-	m_robot->calcForwardKinematics();
-
         p.transition_joint_q.resize(m_robot->numJoints());
-
         p.transition_count = -MAX_TRANSITION_COUNT; // when start impedance, count up to 0
-
 	m_impedance_param[name] = p;
 
     } else {
