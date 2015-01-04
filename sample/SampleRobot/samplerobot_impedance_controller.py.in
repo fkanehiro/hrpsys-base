@@ -32,7 +32,7 @@ def demo():
         print "getImpedanceControllerParam => OK"
     # 2. set and start
     ret1[1].base_name="CHEST"
-    ret1[1].target_name="RARM_WRIST_R"
+    ret1[1].target_name="RARM_WRIST_P"
     ret1[1].K_r=1.0
     ret1[1].D_r=2.0
     ret1[1].M_r=0.2
@@ -44,7 +44,7 @@ def demo():
     hcf.seq_svc.setWrenches([0,0,0,0,0,0,
                              0,0,0,0,0,0,
                              0,0,0,0,0,0,
-                             10,10,-10,0,0,0,], 2.0);
+                             20,10,-10,0,0,0,], 2.0);
     hcf.seq_svc.waitInterpolation();
     hcf.ic_svc.setImpedanceControllerParam("rhsensor", ret1[1])
     time.sleep(2)
@@ -58,7 +58,7 @@ def demo():
     hcf.seq_svc.setWrenches([0,0,0,0,0,0,
                              0,0,0,0,0,0,
                              0,0,0,0,0,0,
-                             0,0,0,0.2,0.2,-0.5], 2.0);
+                             0,0,0,0.1,-0.1,0.1], 2.0);
     hcf.seq_svc.waitInterpolation();
     hcf.ic_svc.setImpedanceControllerParam("rhsensor", ret1[1])
     time.sleep(2)

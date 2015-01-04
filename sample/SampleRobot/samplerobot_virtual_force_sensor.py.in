@@ -55,7 +55,7 @@ def demo ():
     # 2. Test impedance controller
     ret1=hcf.ic_svc.getImpedanceControllerParam("vrhsensor")
     ret1[1].base_name="CHEST"
-    ret1[1].target_name="RARM_WRIST_R"
+    ret1[1].target_name="RARM_WRIST_P"
     ret1[1].K_r=1.0
     ret1[1].D_r=2.0
     ret1[1].M_r=0.2
