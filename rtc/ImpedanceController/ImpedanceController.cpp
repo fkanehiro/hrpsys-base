@@ -314,6 +314,10 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
             ImpedanceParam& param = it->second;
             param.target_p0 = m_robot->link(param.target_name)->p + m_robot->link(param.target_name)->R * ee_map[param.target_name].localPos;
             param.target_r0 = m_robot->link(param.target_name)->R * ee_map[param.target_name].localR;
+            if (param.transition_count == -MAX_TRANSITION_COUNT) {
+                param.target_p1 = param.target_p0;
+                param.target_r1 = param.target_r0;
+            }
           }
           // back to impedance robot model (only for controlled joint)
 	  for ( std::map<std::string, ImpedanceParam>::iterator it = m_impedance_param.begin(); it != m_impedance_param.end(); it++ ) {
@@ -361,7 +365,12 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
 
             param.current_p0 = target->p + target->R * ee_map[target->name].localPos;
             param.current_r0 = target->R * ee_map[target->name].localR;
-
+            if (param.transition_count == -MAX_TRANSITION_COUNT) {
+                param.current_p1 = param.current_p0;
+                param.current_p2 = param.current_p1;
+                param.current_r1 = param.current_r0;
+                param.current_r2 = param.current_r1;
+            }
 
             hrp::JointPathExPtr manip = param.manip;
             assert(manip);
@@ -647,23 +656,12 @@ bool ImpedanceController::setImpedanceControllerParam(const std::string& i_name_
               if ( i == param.manip->joint(j)->jointId ) update = false;
             }
           }
-          if ( update ) m_robot->joint(i)->q = m_qCurrent.data[i];
+          if ( update ) m_robot->joint(i)->q = m_qRef.data[i];
         }
 	m_robot->calcForwardKinematics();
 
         p.transition_joint_q.resize(m_robot->numJoints());
 
-	p.target_p0 = m_robot->link(p.target_name)->p + m_robot->link(p.target_name)->R * ee_map[p.target_name].localPos;
-	p.target_p1 = p.target_p0;
-        p.target_r0 = m_robot->link(p.target_name)->R * ee_map[p.target_name].localR;
-        p.target_r1 = p.target_r0;
-
-	p.current_p0 = p.target_p0;
-	p.current_p1 = p.target_p0;
-	p.current_p2 = p.target_p0;
-	p.current_r0 = p.target_r0;
-        p.current_r1 = p.target_r0;
-        p.current_r2 = p.target_r0;
         p.transition_count = -MAX_TRANSITION_COUNT; // when start impedance, count up to 0
 
 	m_impedance_param[name] = p;
