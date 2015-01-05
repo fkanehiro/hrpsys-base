@@ -18,7 +18,7 @@
 #include "util/Hrpsys.h"
 
 
-#define MAX_TRANSITION_COUNT (2/m_dt)
+#define MAX_TRANSITION_COUNT (static_cast<int>(2/m_dt))
 typedef coil::Guard<coil::Mutex> Guard;
 
 // Module specification
@@ -285,6 +285,8 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
             std::cerr << std::endl;
         }
 
+        Guard guard(m_mutex);
+
         if ( m_impedance_param.size() == 0 ) {
           for ( int i = 0; i < m_qRef.data.length(); i++ ){
             m_q.data[i] = m_qRef.data[i];
@@ -293,8 +295,6 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
           m_qOut.write();
           return RTC_OK;
         }
-
-        Guard guard(m_mutex);
 
 	{
 	  hrp::dvector qorg(m_robot->numJoints());
@@ -346,7 +346,7 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
 	      hrp::Link* joint =  m_robot->joint(i);
               // transition_smooth_gain moves from 0 to 1
               // (/ (log (/ (- 1 0.99) 0.99)) 0.5)
-              double transition_smooth_gain = 1/(1+exp(-9.19*(((MAX_TRANSITION_COUNT - param.transition_count) / MAX_TRANSITION_COUNT) - 0.5)));
+              double transition_smooth_gain = 1/(1+exp(-9.19*((static_cast<double>(MAX_TRANSITION_COUNT - param.transition_count) / MAX_TRANSITION_COUNT) - 0.5)));
               joint->q = ( m_qRef.data[i] - param.transition_joint_q[i] ) * transition_smooth_gain + param.transition_joint_q[i];
 	    }
         param.transition_count--;
@@ -452,10 +452,9 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
             manip->calcInverseKinematics2Loop(vel_p, vel_r, 1.0, param.avoid_gain, param.reference_gain, &qrefv);
 
 	    param.current_p2 = param.current_p1;
-	    param.current_p1 = param.current_p0 + vel_p;
-	    param.target_p1 = param.target_p0;
-
 	    param.current_r2 = param.current_r1;
+
+	    param.current_p1 = param.current_p0 + vel_p;
             // if ( std::fabs(vel_r.norm() - 0.0) < ::std::numeric_limits<double>::epsilon() ) {
             if ( vel_r.norm() != 0.0 ) {
               hrp::Matrix33 tmpm;
@@ -465,6 +464,8 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
             } else {
               param.current_r1 = param.current_r0;
             }
+
+	    param.target_p1 = param.target_p0;
             param.target_r1 = param.target_r0;
 
             if ( param.transition_count < 0 ) {
@@ -631,13 +632,6 @@ bool ImpedanceController::setImpedanceControllerParam(const std::string& i_name_
 	ImpedanceParam p;
 	p.base_name = base_name;
 	p.target_name = target_name;
-	p.M_p = i_param_.M_p;
-	p.D_p = i_param_.D_p;
-	p.K_p = i_param_.K_p;
-	p.M_r = i_param_.M_r;
-	p.D_r = i_param_.D_r;
-	p.K_r = i_param_.K_r;
-
     
 	// joint path
 	p.manip = hrp::JointPathExPtr(new hrp::JointPathEx(m_robot, m_robot->link(p.base_name), m_robot->link(p.target_name)));
