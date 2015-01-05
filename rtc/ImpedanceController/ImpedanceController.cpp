@@ -433,12 +433,13 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
             // std::cerr << "ref_moment = " << param.ref_moment[0] << " " << param.ref_moment[1] << " " << param.ref_moment[2] << std::endl;
 
             // ref_force/ref_moment and force_gain/moment_gain are expressed in global coordinates. 
-            vel_p =  ( param.force_gain * (abs_forces[it->first] - abs_ref_forces[it->first]) * m_dt * m_dt
+            hrp::Matrix33 eeR = target->R * ee_map[target->name].localR;
+            vel_p =  ( eeR * (param.force_gain * (eeR.transpose() * (abs_forces[it->first] - abs_ref_forces[it->first]))) * m_dt * m_dt
                        + param.M_p * ( vel_pos1 - vel_pos0 )
                        + param.D_p * ( dif_target_pos - vel_pos0 ) * m_dt
                        + param.K_p * ( dif_pos * m_dt * m_dt ) ) /
                      (param.M_p + (param.D_p * m_dt) + (param.K_p * m_dt * m_dt));
-            vel_r =  ( param.moment_gain * (abs_moments[it->first] - abs_ref_moments[it->first]) * m_dt * m_dt
+            vel_r =  ( eeR * (param.moment_gain * (eeR.transpose() * (abs_moments[it->first] - abs_ref_moments[it->first]))) * m_dt * m_dt
                        + param.M_r * ( vel_rot1 - vel_rot0 )
                        + param.D_r * ( dif_target_rot - vel_rot0 ) * m_dt
                        + param.K_r * ( dif_rot * m_dt * m_dt  ) ) /
