@@ -449,7 +449,6 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
                 std::cerr << "[" << m_profile.instance_name << "]   vel_p  = " << vel_p.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[m]" << std::endl;
                 std::cerr << "[" << m_profile.instance_name << "]   vel_r  = " << vel_r.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[rad]" << std::endl;
             }
-            manip->calcInverseKinematics2Loop(vel_p, vel_r, 1.0, param.avoid_gain, param.reference_gain, &qrefv);
 
 	    param.current_p2 = param.current_p1;
 	    param.current_r2 = param.current_r1;
@@ -467,6 +466,16 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
 
 	    param.target_p1 = param.target_p0;
             param.target_r1 = param.target_r0;
+
+            // Solve ik
+            //   Fix ee frame objective vel => link frame objective vel
+            hrp::Vector3 link_frame_pos;
+            hrp::Matrix33 link_frame_rot;
+            link_frame_rot = param.current_r1 * ee_map[target->name].localR.transpose();
+            link_frame_pos = param.current_p1 - link_frame_rot * ee_map[target->name].localPos;
+            vel_p = link_frame_pos - target->p;
+            rats::difference_rotation(vel_r, target->R, link_frame_rot);
+            manip->calcInverseKinematics2Loop(vel_p, vel_r, 1.0, param.avoid_gain, param.reference_gain, &qrefv);
 
             if ( param.transition_count < 0 ) {
               param.transition_count++;
