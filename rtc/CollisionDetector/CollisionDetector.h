@@ -26,6 +26,7 @@
 #endif // USE_HRPSYSUTIL
 #include "TimedPosture.h"
 #include "interpolator.h"
+#include "HRPDataTypes.hh"
 
 #include "VclipLinkPair.h"
 #include "CollisionDetectorService_impl.h"
@@ -126,6 +127,8 @@ class CollisionDetector
   InPort<TimedDoubleSeq> m_qRefIn;
   TimedDoubleSeq m_qCurrent;
   InPort<TimedDoubleSeq> m_qCurrentIn;
+  OpenHRP::TimedLongSeqSeq m_servoState;
+  InPort<OpenHRP::TimedLongSeqSeq> m_servoStateIn;
   
   // </rtc-template>
 
