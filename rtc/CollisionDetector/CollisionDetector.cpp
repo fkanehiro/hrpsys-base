@@ -113,36 +113,6 @@ RTC::ReturnCode_t CollisionDetector::onInitialize()
 
     //RTC::Properties& prop = getProperties();
 
-    return RTC::RTC_OK;
-}
-
-
-
-/*
-  RTC::ReturnCode_t CollisionDetector::onFinalize()
-  {
-  return RTC::RTC_OK;
-  }
-*/
-
-/*
-  RTC::ReturnCode_t CollisionDetector::onStartup(RTC::UniqueId ec_id)
-  {
-  return RTC::RTC_OK;
-  }
-*/
-
-/*
-  RTC::ReturnCode_t CollisionDetector::onShutdown(RTC::UniqueId ec_id)
-  {
-  return RTC::RTC_OK;
-  }
-*/
-
-RTC::ReturnCode_t CollisionDetector::onActivated(RTC::UniqueId ec_id)
-{
-    std::cout << m_profile.instance_name<< ": onActivated(" << ec_id << ")" << std::endl;
-
     RTC::Manager& rtcManager = RTC::Manager::instance();
     std::string nameServer = rtcManager.getConfig()["corba.nameservers"];
     int comPos = nameServer.find(",");
@@ -269,13 +239,40 @@ RTC::ReturnCode_t CollisionDetector::onActivated(RTC::UniqueId ec_id)
     return RTC::RTC_OK;
 }
 
-RTC::ReturnCode_t CollisionDetector::onDeactivated(RTC::UniqueId ec_id)
+
+
+RTC::ReturnCode_t CollisionDetector::onFinalize()
 {
-    std::cout << m_profile.instance_name<< ": onDeactivated(" << ec_id << ")" << std::endl;
     delete[] m_recover_jointdata;
     delete[] m_lastsafe_jointdata;
     delete m_interpolator;
     delete[] m_link_collision;
+    return RTC::RTC_OK;
+}
+
+/*
+  RTC::ReturnCode_t CollisionDetector::onStartup(RTC::UniqueId ec_id)
+  {
+  return RTC::RTC_OK;
+  }
+*/
+
+/*
+  RTC::ReturnCode_t CollisionDetector::onShutdown(RTC::UniqueId ec_id)
+  {
+  return RTC::RTC_OK;
+  }
+*/
+
+RTC::ReturnCode_t CollisionDetector::onActivated(RTC::UniqueId ec_id)
+{
+    std::cout << m_profile.instance_name<< ": onActivated(" << ec_id << ")" << std::endl;
+    return RTC::RTC_OK;
+}
+
+RTC::ReturnCode_t CollisionDetector::onDeactivated(RTC::UniqueId ec_id)
+{
+    std::cout << m_profile.instance_name<< ": onDeactivated(" << ec_id << ")" << std::endl;
     return RTC::RTC_OK;
 }
 
