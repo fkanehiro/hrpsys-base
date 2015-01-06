@@ -77,3 +77,4 @@ def demo():
     demoCollisionCheckSafe()
     demoCollisionCheckFail()
     demoCollisionCheckFailWithSetTolerance()
+    demoCollisionDisableEnable()
