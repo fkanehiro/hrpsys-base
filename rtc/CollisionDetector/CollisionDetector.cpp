@@ -551,6 +551,7 @@ bool CollisionDetector::checkIsSafeTransition(void)
 bool CollisionDetector::enable(void)
 {
     if (m_enable){
+        std::cerr << "CollisionDetector is already enabled." << std::endl;
         return true;
     }
 
@@ -576,6 +577,7 @@ bool CollisionDetector::enable(void)
             return false;
         }
     }
+    std::cerr << "CollisionDetector is successfully enabled." << std::endl;
 
     m_safe_posture = true;
     m_recover_time = 0;
@@ -590,6 +592,7 @@ bool CollisionDetector::disable(void)
         std::cerr << "CollisionDetector cannot be disabled because of different reference joint angle" << std::endl;
         return false;
     }
+    std::cerr << "CollisionDetector is successfully disabled." << std::endl;
     m_enable = false;
     return true;
 }
