@@ -26,6 +26,7 @@
 #endif // USE_HRPSYSUTIL
 #include "TimedPosture.h"
 #include "interpolator.h"
+#include "HRPDataTypes.hh"
 
 #include "VclipLinkPair.h"
 #include "CollisionDetectorService_impl.h"
@@ -65,7 +66,7 @@ class CollisionDetector
 
   // The finalize action (on ALIVE->END transition)
   // formaer rtc_exiting_entry()
-  // virtual RTC::ReturnCode_t onFinalize();
+  virtual RTC::ReturnCode_t onFinalize();
 
   // The startup action when ExecutionContext startup
   // former rtc_starting_entry()
@@ -126,6 +127,8 @@ class CollisionDetector
   InPort<TimedDoubleSeq> m_qRefIn;
   TimedDoubleSeq m_qCurrent;
   InPort<TimedDoubleSeq> m_qCurrentIn;
+  OpenHRP::TimedLongSeqSeq m_servoState;
+  InPort<OpenHRP::TimedLongSeqSeq> m_servoStateIn;
   
   // </rtc-template>
 

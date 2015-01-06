@@ -387,6 +387,8 @@ class HrpsysConfigurator:
         # connection for co
         if self.co:
             connectPorts(self.rh.port("q"), self.co.port("qCurrent"))
+            connectPorts(self.rh.port("servoState"), self.co.port("servoStateIn"))
+
 
         # connection for gc
         if self.gc:

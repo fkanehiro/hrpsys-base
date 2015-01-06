@@ -19,6 +19,7 @@
 #include "util/GLutil.h"
 #endif // USE_HRPSYSUTIL
 #include "util/BVutil.h"
+#include "RobotHardwareService.hh"
 
 #include "CollisionDetector.h"
 
@@ -50,6 +51,7 @@ CollisionDetector::CollisionDetector(RTC::Manager* manager)
       // <rtc-template block="initializer">
       m_qRefIn("qRef", m_qRef),
       m_qCurrentIn("qCurrent", m_qCurrent),
+      m_servoStateIn("servoStateIn", m_servoState),
       m_qOut("q", m_q),
       m_CollisionDetectorServicePort("CollisionDetectorService"),
       // </rtc-template>
@@ -94,6 +96,7 @@ RTC::ReturnCode_t CollisionDetector::onInitialize()
     // Set InPort buffers
     addInPort("qRef", m_qRefIn);
     addInPort("qCurrent", m_qCurrentIn);
+    addInPort("servoStateIn", m_servoStateIn);
 
     // Set OutPort buffer
     addOutPort("q", m_qOut);
@@ -109,36 +112,6 @@ RTC::ReturnCode_t CollisionDetector::onInitialize()
     // </rtc-template>
 
     //RTC::Properties& prop = getProperties();
-
-    return RTC::RTC_OK;
-}
-
-
-
-/*
-  RTC::ReturnCode_t CollisionDetector::onFinalize()
-  {
-  return RTC::RTC_OK;
-  }
-*/
-
-/*
-  RTC::ReturnCode_t CollisionDetector::onStartup(RTC::UniqueId ec_id)
-  {
-  return RTC::RTC_OK;
-  }
-*/
-
-/*
-  RTC::ReturnCode_t CollisionDetector::onShutdown(RTC::UniqueId ec_id)
-  {
-  return RTC::RTC_OK;
-  }
-*/
-
-RTC::ReturnCode_t CollisionDetector::onActivated(RTC::UniqueId ec_id)
-{
-    std::cout << m_profile.instance_name<< ": onActivated(" << ec_id << ")" << std::endl;
 
     RTC::Manager& rtcManager = RTC::Manager::instance();
     std::string nameServer = rtcManager.getConfig()["corba.nameservers"];
@@ -251,16 +224,55 @@ RTC::ReturnCode_t CollisionDetector::onActivated(RTC::UniqueId ec_id)
     for(int i=0; i<m_robot->numJoints(); i++){
       m_q.data[i] = 0;
     }
+
+    m_servoState.data.length(m_robot->numJoints());
+    for(int i = 0; i < m_robot->numJoints(); i++) {
+        m_servoState.data[i].length(1);
+        int status = 0;
+        status |= 1<< OpenHRP::RobotHardwareService::CALIB_STATE_SHIFT;
+        status |= 1<< OpenHRP::RobotHardwareService::POWER_STATE_SHIFT;
+        status |= 1<< OpenHRP::RobotHardwareService::SERVO_STATE_SHIFT;
+        status |= 0<< OpenHRP::RobotHardwareService::SERVO_ALARM_SHIFT;
+        status |= 0<< OpenHRP::RobotHardwareService::DRIVER_TEMP_SHIFT;
+        m_servoState.data[i][0] = status;
+    }
+    return RTC::RTC_OK;
+}
+
+
+
+RTC::ReturnCode_t CollisionDetector::onFinalize()
+{
+    delete[] m_recover_jointdata;
+    delete[] m_lastsafe_jointdata;
+    delete m_interpolator;
+    delete[] m_link_collision;
+    return RTC::RTC_OK;
+}
+
+/*
+  RTC::ReturnCode_t CollisionDetector::onStartup(RTC::UniqueId ec_id)
+  {
+  return RTC::RTC_OK;
+  }
+*/
+
+/*
+  RTC::ReturnCode_t CollisionDetector::onShutdown(RTC::UniqueId ec_id)
+  {
+  return RTC::RTC_OK;
+  }
+*/
+
+RTC::ReturnCode_t CollisionDetector::onActivated(RTC::UniqueId ec_id)
+{
+    std::cout << m_profile.instance_name<< ": onActivated(" << ec_id << ")" << std::endl;
     return RTC::RTC_OK;
 }
 
 RTC::ReturnCode_t CollisionDetector::onDeactivated(RTC::UniqueId ec_id)
 {
     std::cout << m_profile.instance_name<< ": onDeactivated(" << ec_id << ")" << std::endl;
-    delete[] m_recover_jointdata;
-    delete[] m_lastsafe_jointdata;
-    delete m_interpolator;
-    delete[] m_link_collision;
     return RTC::RTC_OK;
 }
 
@@ -269,6 +281,9 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
 {
     static int loop = 0;
     loop++;
+    if (m_servoStateIn.isNew()) {
+        m_servoStateIn.read();
+    }
     if ( ! m_enable ) {
         if ( DEBUGP || loop % 100 == 1) {
             std::cerr << "CAUTION!! The robot is moving without checking self collision detection!!! please send enableCollisionDetection to CollisoinDetection RTC" << std::endl;
@@ -523,7 +538,9 @@ void CollisionDetector::setupVClipModel(hrp::BodyPtr i_body)
 bool CollisionDetector::checkIsSafeTransition(void)
 {
     for ( int i = 0; i < m_q.data.length(); i++ ) {
-        if (abs(m_q.data[i] - m_qRef.data[i]) > 0.017) return false;
+        // If servoOn, check too large joint angle gap. Otherwise (servoOff), neglect too large joint angle gap.
+        int servo_state = (m_servoState.data[i][0] & OpenHRP::RobotHardwareService::SERVO_STATE_MASK) >> OpenHRP::RobotHardwareService::SERVO_STATE_SHIFT; // enum SwitchStatus {SWITCH_ON, SWITCH_OFF};
+        if (servo_state == 1 && abs(m_q.data[i] - m_qRef.data[i]) > 0.017) return false;
     }
     return true;
 }
@@ -531,6 +548,7 @@ bool CollisionDetector::checkIsSafeTransition(void)
 bool CollisionDetector::enable(void)
 {
     if (m_enable){
+        std::cerr << "CollisionDetector is already enabled." << std::endl;
         return true;
     }
 
@@ -556,6 +574,7 @@ bool CollisionDetector::enable(void)
             return false;
         }
     }
+    std::cerr << "CollisionDetector is successfully enabled." << std::endl;
 
     m_safe_posture = true;
     m_recover_time = 0;
@@ -570,6 +589,7 @@ bool CollisionDetector::disable(void)
         std::cerr << "CollisionDetector cannot be disabled because of different reference joint angle" << std::endl;
         return false;
     }
+    std::cerr << "CollisionDetector is successfully disabled." << std::endl;
     m_enable = false;
     return true;
 }

@@ -57,8 +57,24 @@ def demoCollisionCheckFailWithSetTolerance ():
     if cs.safe_posture:
         print "=> Successfully return to safe pose"
 
+def demoCollisionDisableEnable ():
+    print "4. CollisionDetection enable and disable"
+    hcf.seq_svc.setJointAngles(col_safe_pose, 1.0);
+    hcf.seq_svc.waitInterpolation();
+    if hcf.co_svc.disableCollisionDetection():
+        print "=> Successfully disabled when no collision"
+    if hcf.co_svc.enableCollisionDetection():
+        print "=> Successfully enabled when no collision"
+    hcf.seq_svc.setJointAngles(col_fail_pose, 1.0);
+    hcf.seq_svc.waitInterpolation();
+    if not hcf.co_svc.disableCollisionDetection():
+        print "=> Successfully inhibit disabling when collision"
+    hcf.seq_svc.setJointAngles(col_safe_pose, 1.0);
+    hcf.seq_svc.waitInterpolation();
+
 def demo():
     init()
     demoCollisionCheckSafe()
     demoCollisionCheckFail()
     demoCollisionCheckFailWithSetTolerance()
+    demoCollisionDisableEnable()
