@@ -67,7 +67,7 @@ CollisionDetector::CollisionDetector(RTC::Manager* manager)
       m_window(&m_scene, &m_log),
 #endif // USE_HRPSYSUTIL
       m_debugLevel(0),
-      m_enable(true),
+      m_enable(false),
       dummy(0)
 {
     m_service0.collision(this);
