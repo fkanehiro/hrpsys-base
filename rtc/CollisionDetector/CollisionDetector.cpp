@@ -236,6 +236,15 @@ RTC::ReturnCode_t CollisionDetector::onInitialize()
         status |= 0<< OpenHRP::RobotHardwareService::DRIVER_TEMP_SHIFT;
         m_servoState.data[i][0] = status;
     }
+
+    //
+    if ( prop["exec_cxt.periodic.type"] == "hrpExecutionContext" ) {
+      m_is_overwrite_jointangles = true;
+    } else {
+      m_is_overwrite_jointangles = false;
+    }
+    std::cerr << "CollisionDetector is activated on " << prop["exec_cxt.periodic.type"] << std::endl;
+    std::cerr << "  Overwrite Joint Angles : " << (m_is_overwrite_jointangles?"true":"false") << std::endl;
     return RTC::RTC_OK;
 }
 
@@ -284,7 +293,7 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
     if (m_servoStateIn.isNew()) {
         m_servoStateIn.read();
     }
-    if ( ! m_enable ) {
+    if ( m_is_overwrite_jointangles && ! m_enable ) {
         if ( DEBUGP || loop % 100 == 1) {
             std::cerr << "CAUTION!! The robot is moving without checking self collision detection!!! please send enableCollisionDetection to CollisoinDetection RTC" << std::endl;
         }
@@ -296,7 +305,7 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
             m_qOut.write();
         }
     }
-    if (m_enable && m_qRefIn.isNew()) {
+    if ( ((m_enable && m_is_overwrite_jointangles) || !m_is_overwrite_jointangles) && m_qRefIn.isNew() ) {
 	m_qRefIn.read();
 
         TimedPosture tp;
@@ -320,7 +329,7 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
         //set robot model's angle for collision check(two types)
         //  1. current safe angle .. check based on qRef
         //  2. recovery or collision angle .. check based on q'(m_recover_jointdata)
-        if (m_safe_posture && m_recover_time == 0) {           // 1. current safe angle
+        if ((m_safe_posture && m_recover_time == 0) || !m_is_overwrite_jointangles) { // 1. current safe angle
             if ( m_loop_for_check == 0 ) { // update robot posutre for each m_loop_for_check timing
                 for ( int i = 0; i < m_robot->numJoints(); i++ ){
                     m_robot->joint(i)->q = m_qRef.data[i];
