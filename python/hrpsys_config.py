@@ -870,9 +870,8 @@ class HrpsysConfigurator:
         @param gname str: Name of the joint group.
         @param pose list of float: list of positions and orientations
         @param tm float: Time to complete.
-        @param wait bool: If true, SequencePlayer.waitInterpolationOfGroup gets run.
-                  (TODO: Elaborate what this means...Even after having taken
-                  a look at its source code I can't tell exactly what it means)
+        @param wait bool: If true, all other subsequent commands wait until
+                          the movement commanded by this method call finishes.
         '''
         angles = [x / 180.0 * math.pi for x in pose]
         ret = self.seq_svc.setJointAnglesOfGroup(gname, angles, tm)
@@ -1198,7 +1197,8 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
         @param dp float: In radian.
         @param dw float: In radian.
         @param tm float: Second to complete.
-        @param wait bol: If true, SequencePlayer.waitInterpolationOfGroup gets run.
+        @param wait bool: If true, all other subsequent commands wait until
+                          the movement commanded by this method call finishes.
         @return bool: False if unreachable.
         '''
         self.waitInterpolationOfGroup(gname)
