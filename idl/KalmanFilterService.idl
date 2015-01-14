@@ -31,5 +31,10 @@ module OpenHRP
      */
     boolean getKalmanFilterParam(out KalmanFilterParam i_param);
 
+    /**
+     * @brief Reset KalmanFilter state
+     * @return true if set successfully, false otherwise
+     */
+    boolean resetKalmanFilterState();
   };
 };

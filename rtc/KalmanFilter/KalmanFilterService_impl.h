@@ -23,6 +23,7 @@ public:
 
 	bool setKalmanFilterParam(const OpenHRP::KalmanFilterService::KalmanFilterParam& i_param);
 	bool getKalmanFilterParam(OpenHRP::KalmanFilterService::KalmanFilterParam& i_param);
+	bool resetKalmanFilterState();
 
 	void kalman(KalmanFilter *i_kalman);
 
