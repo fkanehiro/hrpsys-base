@@ -22,6 +22,11 @@ bool KalmanFilterService_impl::getKalmanFilterParam(OpenHRP::KalmanFilterService
 	return m_kalman->getKalmanFilterParam(i_param);
 }
 
+bool KalmanFilterService_impl::resetKalmanFilterState()
+{
+	return m_kalman->resetKalmanFilterState();
+}
+
 void KalmanFilterService_impl::kalman(KalmanFilter *i_kalman)
 {
 	m_kalman = i_kalman;

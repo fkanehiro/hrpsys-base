@@ -386,6 +386,13 @@ bool KalmanFilter::setKalmanFilterParam(const OpenHRP::KalmanFilterService::Kalm
     return true;
 }
 
+bool KalmanFilter::resetKalmanFilterState()
+{
+    r_filter.resetStateByObservation();
+    p_filter.resetStateByObservation();
+    y_filter.resetStateByObservation();
+};
+
 bool KalmanFilter::getKalmanFilterParam(OpenHRP::KalmanFilterService::KalmanFilterParam& i_param)
 {
   i_param.Q_angle = Q_angle;
