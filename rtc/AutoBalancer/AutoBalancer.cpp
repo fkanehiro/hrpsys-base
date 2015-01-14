@@ -251,6 +251,9 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     m_accRef.data.ax = m_accRef.data.ay = m_accRef.data.az = 0.0;
     prev_imu_sensor_vel = hrp::Vector3::Zero();
 
+    leg_names.push_back("rleg");
+    leg_names.push_back("lleg");
+
     return RTC::RTC_OK;
 }
 
@@ -460,8 +463,6 @@ void AutoBalancer::getCurrentParameters()
   for ( int i = 0; i < m_robot->numJoints(); i++ ){
     qorg[i] = m_robot->joint(i)->q;
   }
-  ikp["rleg"].getCurrentEndCoords(ikp["rleg"].current_end_coords);
-  ikp["lleg"].getCurrentEndCoords(ikp["lleg"].current_end_coords);
 }
 
 void AutoBalancer::getTargetParameters()
@@ -477,7 +478,6 @@ void AutoBalancer::getTargetParameters()
   m_robot->calcForwardKinematics();
   //
   if (control_mode != MODE_IDLE) {
-    coordinates rc, lc;
     coordinates tmp_fix_coords;
     if (!zmp_interpolator->isEmpty()) {
       double default_zmp_offsets_output[6];
@@ -571,17 +571,23 @@ void AutoBalancer::getTargetParameters()
         it->second.target_r0 = it->second.target_link->R;
       }
     }
-    ikp["rleg"].getTargetEndCoords(ikp["rleg"].target_end_coords);
-    ikp["lleg"].getTargetEndCoords(ikp["lleg"].target_end_coords);
-    ikp["rleg"].getRobotEndCoords(rc);
-    ikp["lleg"].getRobotEndCoords(lc);
-    rc.pos += rc.rot * default_zmp_offsets[0]; /* rleg */
-    lc.pos += lc.rot * default_zmp_offsets[1]; /* lleg */
+
+    hrp::Vector3 tmp_foot_mid_pos(hrp::Vector3::Zero());
+    for (size_t i = 0; i < leg_names.size(); i++) {
+        ABCIKparam& tmpikp = ikp[leg_names[i]];
+        // get target_end_coords
+        tmpikp.target_end_coords.pos = tmpikp.target_p0 + tmpikp.target_r0 * tmpikp.localPos;
+        tmpikp.target_end_coords.rot = tmpikp.target_r0 * tmpikp.localR;
+        // for foot_mid_pos
+        tmp_foot_mid_pos += tmpikp.target_link->p + tmpikp.target_link->R * tmpikp.localPos + tmpikp.target_link->R * tmpikp.localR * default_zmp_offsets[i];
+    }
+    tmp_foot_mid_pos *= 0.5;
+
     hrp::Vector3 tmp_ref_cog(m_robot->calcCM());
     if (gg_is_walking) {
       ref_cog = gg->get_cog();
     } else {
-      ref_cog = (rc.pos+lc.pos)/2.0;
+      ref_cog = tmp_foot_mid_pos;
     }
     ref_cog(2) = tmp_ref_cog(2);
     if (gg_is_walking) {
@@ -589,7 +595,7 @@ void AutoBalancer::getTargetParameters()
     } else {
       ref_zmp(0) = ref_cog(0);
       ref_zmp(1) = ref_cog(1);
-      ref_zmp(2) = (rc.pos(2) + lc.pos(2)) / 2.0;
+      ref_zmp(2) = tmp_foot_mid_pos(2);
     }
   }
   // Just for ik initial value
@@ -618,17 +624,21 @@ hrp::Matrix33 AutoBalancer::OrientRotationMatrix (const hrp::Matrix33& rot, cons
 
 void AutoBalancer::fixLegToCoords (const std::string& leg, const coordinates& coords)
 {
-  coordinates tar, ref, delta, tmp;
-  coordinates rleg_endcoords, lleg_endcoords;
-  ikp["rleg"].getRobotEndCoords(rleg_endcoords);
-  ikp["lleg"].getRobotEndCoords(lleg_endcoords);
-  mid_coords(tar, 0.5, rleg_endcoords , lleg_endcoords);
-  tmp = coords;
-  ref = coordinates(m_robot->rootLink()->p, m_robot->rootLink()->R);
-  tar.transformation(delta, ref, ":local");
-  tmp.transform(delta, ":local");
-  m_robot->rootLink()->p = tmp.pos;
-  m_robot->rootLink()->R = tmp.rot;
+  // get current foot mid pos + rot
+  std::vector<hrp::Vector3> foot_pos;
+  std::vector<hrp::Matrix33> foot_rot;
+  for (size_t i = 0; i < leg_names.size(); i++) {
+      ABCIKparam& tmpikp = ikp[leg_names[i]];
+      foot_pos.push_back(tmpikp.target_link->p + tmpikp.target_link->R * tmpikp.localPos);
+      foot_rot.push_back(tmpikp.target_link->R * tmpikp.localR);
+  }
+  hrp::Vector3 current_foot_mid_pos ((foot_pos[0]+foot_pos[1])/2.0);
+  hrp::Matrix33 current_foot_mid_rot;
+  mid_rot(current_foot_mid_rot, 0.5, foot_rot[0], foot_rot[1]);
+  // fix root pos + rot to fix "coords" = "current_foot_mid_xx"
+  hrp::Matrix33 tmpR (coords.rot * current_foot_mid_rot.transpose());
+  m_robot->rootLink()->p = coords.pos + tmpR * (m_robot->rootLink()->p - current_foot_mid_pos);
+  rats::rotm3times(m_robot->rootLink()->R, tmpR, m_robot->rootLink()->R);
   m_robot->calcForwardKinematics();
 }
 
@@ -985,8 +995,14 @@ void AutoBalancer::copyRatscoords2Footstep(OpenHRP::AutoBalancerService::Footste
 
 bool AutoBalancer::getFootstepParam(OpenHRP::AutoBalancerService::FootstepParam& i_param)
 {
-  copyRatscoords2Footstep(i_param.rleg_coords, ikp["rleg"].current_end_coords);
-  copyRatscoords2Footstep(i_param.lleg_coords, ikp["lleg"].current_end_coords);
+  std::vector<rats::coordinates> leg_coords;
+  for (size_t i = 0; i < leg_names.size(); i++) {
+      ABCIKparam& tmpikp = ikp[leg_names[i]];
+      leg_coords.push_back(coordinates(tmpikp.current_p0 + tmpikp.current_r0 * tmpikp.localPos,
+                                       tmpikp.current_r0 * tmpikp.localR));
+  }
+  copyRatscoords2Footstep(i_param.rleg_coords, leg_coords[0]);
+  copyRatscoords2Footstep(i_param.lleg_coords, leg_coords[1]);
   copyRatscoords2Footstep(i_param.support_leg_coords, gg->get_support_leg_coords());
   copyRatscoords2Footstep(i_param.swing_leg_coords, gg->get_swing_leg_coords());
   copyRatscoords2Footstep(i_param.swing_leg_src_coords, gg->get_swing_leg_src_coords());
