@@ -26,7 +26,7 @@ CORBA::Boolean DataLoggerService_impl::clear()
 
 void DataLoggerService_impl::maxLength(CORBA::ULong len)
 {
-  LoggerPortBase::m_maxLength = len;
+  m_logger->maxLength(len);
 }
 
 

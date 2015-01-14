@@ -35,14 +35,19 @@
 
 using namespace RTC;
 
+#define DEFAULT_MAX_LOG_LENGTH (200*20)
+
 class LoggerPortBase
 {
 public:
+    LoggerPortBase() : m_maxLength(DEFAULT_MAX_LOG_LENGTH) {}
     virtual const char *name() = 0;
     virtual void clear() = 0;
     virtual void dumpLog(std::ostream& os) = 0;
     virtual void log() = 0;
-    static unsigned int m_maxLength;
+    void maxLength(unsigned int len) { m_maxLength = len; }
+protected:
+    unsigned int m_maxLength;
 };
 
 /**
@@ -114,6 +119,7 @@ class DataLogger
   bool clear();
   void suspendLogging();
   void resumeLogging();
+  void maxLength(unsigned int len);
 
   std::vector<LoggerPortBase *> m_ports;
 
