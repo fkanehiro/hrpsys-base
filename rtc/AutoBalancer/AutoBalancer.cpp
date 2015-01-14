@@ -194,9 +194,9 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
                                                             m_robot->link(ee_target)));
         ikp.insert(std::pair<std::string, ABCIKparam>(ee_name , tp));
         ikp[ee_name].target_link = m_robot->link(ee_target);
-        std::cerr << m_profile.instance_name << " End Effector [" << ee_name << "]" << ikp[ee_name].target_link->name << " " << ee_base << std::endl;
-        std::cerr << m_profile.instance_name << "   target = " << ee_target << ", base = " << ee_base << std::endl;
-        std::cerr << m_profile.instance_name << "   offset_pos = " << tp.localPos.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[m]" << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "] End Effector [" << ee_name << "]" << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "]   target = " << ikp[ee_name].target_link->name << ", base = " << ee_base << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "]   offset_pos = " << tp.localPos.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[m]" << std::endl;
         contact_states_index_map.insert(std::pair<std::string, size_t>(ee_name, i));
       }
       m_contactStates.data.length(num);
