@@ -168,7 +168,7 @@ class AutoBalancer
     hrp::Vector3 target_p0, current_p0, localPos;
     hrp::Matrix33 target_r0, current_r0, localR;
     rats::coordinates target_end_coords, current_end_coords;
-    std::string target_name, base_name;
+    hrp::Link* target_link;
     hrp::JointPathExPtr manip;
     bool is_active;
     void getEndCoords(rats::coordinates& retc, const hrp::Vector3& _pos, const hrp::Matrix33& _rot)
@@ -177,9 +177,9 @@ class AutoBalancer
       retc.rot = _rot;
       retc.transform(rats::coordinates(localPos, localR));
     };
-    void getRobotEndCoords(rats::coordinates& retc, hrp::BodyPtr& _robot)
+    void getRobotEndCoords(rats::coordinates& retc)
     {
-      getEndCoords(retc, _robot->link(target_name)->p, _robot->link(target_name)->R);
+        getEndCoords(retc, target_link->p, target_link->R);
     };
     void getTargetEndCoords(rats::coordinates& retc) { getEndCoords(retc, target_p0, target_r0); };
     void getCurrentEndCoords(rats::coordinates& retc) { getEndCoords(retc, current_p0, current_r0); };
