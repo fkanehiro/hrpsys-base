@@ -185,6 +185,7 @@ RTC::ReturnCode_t ImpedanceController::onInitialize()
             }
             eet.localR = Eigen::AngleAxis<double>(tmpv[3], hrp::Vector3(tmpv[0], tmpv[1], tmpv[2])).toRotationMatrix(); // rotation in VRML is represented by axis + angle
             ee_map.insert(std::pair<std::string, ee_trans>(ee_target , eet));
+            ee_name_map.insert(std::pair<std::string, std::string>(ee_name, ee_target));;
             std::cerr << "[" << m_profile.instance_name << "] End Effector [" << ee_name << "]" << ee_target << " " << ee_base << std::endl;
             std::cerr << "[" << m_profile.instance_name << "]   target = " << ee_target << ", base = " << ee_base << std::endl;
             std::cerr << "[" << m_profile.instance_name << "]   localPos = " << eet.localPos.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[m]" << std::endl;
@@ -307,7 +308,46 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
 	  }
           m_robot->rootLink()->p = hrp::Vector3(m_basePos.data.x, m_basePos.data.y, m_basePos.data.z);
           m_robot->rootLink()->R = hrp::rotFromRpy(m_baseRpy.data.r, m_baseRpy.data.p, m_baseRpy.data.y);
-	  m_robot->calcForwardKinematics();
+          m_robot->calcForwardKinematics();
+          if (ee_name_map.find("rleg") != ee_name_map.end() && ee_name_map.find("lleg") != ee_name_map.end()) { // if legged robot
+              // TODO
+              //  Tempolarily modify root coords to fix foot pos rot
+              //  This will be removed after seq outputs adequate waistRPY discussed in https://github.com/fkanehiro/hrpsys-base/issues/272
+
+              // get current foot mid pos + rot
+              std::vector<hrp::Vector3> foot_pos;
+              std::vector<hrp::Matrix33> foot_rot;
+              std::vector<std::string> leg_names;
+              leg_names.push_back("rleg");
+              leg_names.push_back("lleg");
+              for (size_t i = 0; i < leg_names.size(); i++) {
+                  hrp::Link* target_link = m_robot->link(ee_name_map[leg_names[i]]);
+                  foot_pos.push_back(target_link->p + target_link->R * ee_map[target_link->name].localPos);
+                  foot_rot.push_back(target_link->R * ee_map[target_link->name].localR);
+              }
+              hrp::Vector3 current_foot_mid_pos ((foot_pos[0]+foot_pos[1])/2.0);
+              hrp::Matrix33 current_foot_mid_rot;
+              rats::mid_rot(current_foot_mid_rot, 0.5, foot_rot[0], foot_rot[1]);
+              // calculate fix pos + rot
+              hrp::Vector3 new_foot_mid_pos(current_foot_mid_pos);
+              hrp::Matrix33 new_foot_mid_rot;
+              {
+                  hrp::Vector3 ex = hrp::Vector3::UnitX();
+                  hrp::Vector3 ez = hrp::Vector3::UnitZ();
+                  hrp::Vector3 xv1 (current_foot_mid_rot * ex);
+                  xv1(2) = 0.0;
+                  xv1.normalize();
+                  hrp::Vector3 yv1(ez.cross(xv1));
+                  new_foot_mid_rot(0,0) = xv1(0); new_foot_mid_rot(1,0) = xv1(1); new_foot_mid_rot(2,0) = xv1(2);
+                  new_foot_mid_rot(0,1) = yv1(0); new_foot_mid_rot(1,1) = yv1(1); new_foot_mid_rot(2,1) = yv1(2);
+                  new_foot_mid_rot(0,2) = ez(0); new_foot_mid_rot(1,2) = ez(1); new_foot_mid_rot(2,2) = ez(2);
+              }
+              // fix root pos + rot to fix "coords" = "current_foot_mid_xx"
+              hrp::Matrix33 tmpR (new_foot_mid_rot * current_foot_mid_rot.transpose());
+              m_robot->rootLink()->p = new_foot_mid_pos + tmpR * (m_robot->rootLink()->p - current_foot_mid_pos);
+              rats::rotm3times(m_robot->rootLink()->R, tmpR, m_robot->rootLink()->R);
+              m_robot->calcForwardKinematics();
+          }
           calcForceMoment();
 
 	  // set sequencer position to target_p0
@@ -581,9 +621,13 @@ void ImpedanceController::calcForceMoment ()
           }
           abs_forces[sensor_name] = sensorR * data_p;
           abs_moments[sensor_name] = sensorR * data_r + parentlink->R * (sensorlocalPos - ee_map[parentlink->name].localPos).cross(abs_forces[sensor_name]);
-          hrp::Matrix33 eeR (parentlink->R * ee_map[parentlink->name].localR);
-          abs_ref_forces[sensor_name] = eeR * ref_data_p;
-          abs_ref_moments[sensor_name] = eeR * ref_data_r;
+          // End effector local frame
+          // hrp::Matrix33 eeR (parentlink->R * ee_map[parentlink->name].localR);
+          // abs_ref_forces[sensor_name] = eeR * ref_data_p;
+          // abs_ref_moments[sensor_name] = eeR * ref_data_r;
+          // World frame
+          abs_ref_forces[sensor_name] = ref_data_p;
+          abs_ref_moments[sensor_name] = ref_data_r;
           if ( DEBUGP ) {
             std::cerr << "[" << m_profile.instance_name << "]   abs force  = " << abs_forces[sensor_name].format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[N]" << std::endl;
             std::cerr << "[" << m_profile.instance_name << "]   abs moment = " << abs_moments[sensor_name].format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[Nm]" << std::endl;

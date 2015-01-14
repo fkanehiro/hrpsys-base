@@ -167,22 +167,10 @@ class AutoBalancer
   struct ABCIKparam {
     hrp::Vector3 target_p0, current_p0, localPos;
     hrp::Matrix33 target_r0, current_r0, localR;
-    rats::coordinates target_end_coords, current_end_coords;
-    std::string target_name, base_name;
+    rats::coordinates target_end_coords;
+    hrp::Link* target_link;
     hrp::JointPathExPtr manip;
     bool is_active;
-    void getEndCoords(rats::coordinates& retc, const hrp::Vector3& _pos, const hrp::Matrix33& _rot)
-    {
-      retc.pos = _pos;
-      retc.rot = _rot;
-      retc.transform(rats::coordinates(localPos, localR));
-    };
-    void getRobotEndCoords(rats::coordinates& retc, hrp::BodyPtr& _robot)
-    {
-      getEndCoords(retc, _robot->link(target_name)->p, _robot->link(target_name)->R);
-    };
-    void getTargetEndCoords(rats::coordinates& retc) { getEndCoords(retc, target_p0, target_r0); };
-    void getCurrentEndCoords(rats::coordinates& retc) { getEndCoords(retc, current_p0, current_r0); };
   };
   void getCurrentParameters();
   void getTargetParameters();
@@ -192,7 +180,7 @@ class AutoBalancer
   void stopABCparam();
   void waitABCTransition();
   hrp::Matrix33 OrientRotationMatrix (const hrp::Matrix33& rot, const hrp::Vector3& axis1, const hrp::Vector3& axis2);
-  void fixLegToCoords (const std::string& leg, const rats::coordinates& coords);
+  void fixLegToCoords (const hrp::Vector3& fix_pos, const hrp::Matrix33& fix_rot);
   void startWalking ();
   void stopWalking ();
   void copyRatscoords2Footstep(OpenHRP::AutoBalancerService::Footstep& out_fs, const rats::coordinates& in_fs);
@@ -210,7 +198,7 @@ class AutoBalancer
   std::map<std::string, ABCIKparam> ikp;
   std::map<std::string, size_t> contact_states_index_map;
   std::map<std::string, hrp::VirtualForceSensorParam> m_vfs;
-  std::vector<std::string> sensor_names;
+  std::vector<std::string> sensor_names, leg_names;
   hrp::dvector qorg, qrefv;
   hrp::Vector3 current_root_p, target_root_p;
   hrp::Matrix33 current_root_R, target_root_R;
