@@ -540,15 +540,13 @@ void AutoBalancer::getTargetParameters()
     {
       hrp::Vector3 ex = hrp::Vector3::UnitX();
       hrp::Vector3 ez = hrp::Vector3::UnitZ();
-      hrp::Matrix33 tmpm;
-      tmpm = OrientRotationMatrix(tmp_fix_coords.rot, (tmp_fix_coords.rot * ez), ez);
-      hrp::Vector3 xv1 = tmp_fix_coords.rot * ex;
-      xv1(2)=0.0;
+      hrp::Vector3 xv1 (tmp_fix_coords.rot * ex);
+      xv1(2) = 0.0;
       xv1.normalize();
-      hrp::Vector3 xv2 = tmpm * ex;
-      xv2(2)=0.0;
-      xv2.normalize();
-      tmp_fix_coords.rot = OrientRotationMatrix(tmpm, xv2, xv1);
+      hrp::Vector3 yv1(ez.cross(xv1));
+      tmp_fix_coords.rot(0,0) = xv1(0); tmp_fix_coords.rot(1,0) = xv1(1); tmp_fix_coords.rot(2,0) = xv1(2);
+      tmp_fix_coords.rot(0,1) = yv1(0); tmp_fix_coords.rot(1,1) = yv1(1); tmp_fix_coords.rot(2,1) = yv1(2);
+      tmp_fix_coords.rot(0,2) = ez(0); tmp_fix_coords.rot(1,2) = ez(1); tmp_fix_coords.rot(2,2) = ez(2);
     }
     fixLegToCoords(":both", tmp_fix_coords);
 
