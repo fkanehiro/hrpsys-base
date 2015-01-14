@@ -180,7 +180,7 @@ class AutoBalancer
   void stopABCparam();
   void waitABCTransition();
   hrp::Matrix33 OrientRotationMatrix (const hrp::Matrix33& rot, const hrp::Vector3& axis1, const hrp::Vector3& axis2);
-  void fixLegToCoords (const std::string& leg, const rats::coordinates& coords);
+  void fixLegToCoords (const hrp::Vector3& fix_pos, const hrp::Matrix33& fix_rot);
   void startWalking ();
   void stopWalking ();
   void copyRatscoords2Footstep(OpenHRP::AutoBalancerService::Footstep& out_fs, const rats::coordinates& in_fs);

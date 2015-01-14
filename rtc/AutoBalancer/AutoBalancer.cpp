@@ -547,7 +547,7 @@ void AutoBalancer::getTargetParameters()
       tmp_fix_coords.rot(0,1) = yv1(0); tmp_fix_coords.rot(1,1) = yv1(1); tmp_fix_coords.rot(2,1) = yv1(2);
       tmp_fix_coords.rot(0,2) = ez(0); tmp_fix_coords.rot(1,2) = ez(1); tmp_fix_coords.rot(2,2) = ez(2);
     }
-    fixLegToCoords(":both", tmp_fix_coords);
+    fixLegToCoords(tmp_fix_coords.pos, tmp_fix_coords.rot);
 
     /* update ref_forces ;; sp's absolute -> rmc's absolute */
     for (size_t i = 0; i < m_ref_forceIn.size(); i++) {
@@ -622,7 +622,7 @@ hrp::Matrix33 AutoBalancer::OrientRotationMatrix (const hrp::Matrix33& rot, cons
   }
 }
 
-void AutoBalancer::fixLegToCoords (const std::string& leg, const coordinates& coords)
+void AutoBalancer::fixLegToCoords (const hrp::Vector3& fix_pos, const hrp::Matrix33& fix_rot)
 {
   // get current foot mid pos + rot
   std::vector<hrp::Vector3> foot_pos;
@@ -636,8 +636,8 @@ void AutoBalancer::fixLegToCoords (const std::string& leg, const coordinates& co
   hrp::Matrix33 current_foot_mid_rot;
   mid_rot(current_foot_mid_rot, 0.5, foot_rot[0], foot_rot[1]);
   // fix root pos + rot to fix "coords" = "current_foot_mid_xx"
-  hrp::Matrix33 tmpR (coords.rot * current_foot_mid_rot.transpose());
-  m_robot->rootLink()->p = coords.pos + tmpR * (m_robot->rootLink()->p - current_foot_mid_pos);
+  hrp::Matrix33 tmpR (fix_rot * current_foot_mid_rot.transpose());
+  m_robot->rootLink()->p = fix_pos + tmpR * (m_robot->rootLink()->p - current_foot_mid_pos);
   rats::rotm3times(m_robot->rootLink()->R, tmpR, m_robot->rootLink()->R);
   m_robot->calcForwardKinematics();
 }
@@ -772,7 +772,7 @@ void AutoBalancer::startWalking ()
 void AutoBalancer::stopWalking ()
 {
   mid_coords(fix_leg_coords, 0.5, ikp["rleg"].target_end_coords, ikp["lleg"].target_end_coords);
-  fixLegToCoords(":both", fix_leg_coords);
+  fixLegToCoords(fix_leg_coords.pos, fix_leg_coords.rot);
   gg->clear_footstep_node_list();
   if (return_control_mode == MODE_IDLE) stopABCparam();
   gg_is_walking = false;
