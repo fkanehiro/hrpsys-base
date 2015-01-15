@@ -434,7 +434,7 @@ DEF Sample6dofRobot Humanoid {
                                jointType "rotate"
                                dh [0 0 0 0]
                                jointId 3
-                               jointAxis 1.0 0.0 0.0
+                               jointAxis 0.0 0.0 1.0
                                ulimit [6.28319]
                                llimit [-6.28319]
                                translation 0.000000 0.000000 0.000000
@@ -560,7 +560,7 @@ DEF Sample6dofRobot Humanoid {
                                            jointType "rotate"
                                            dh [0 0 0 0]
                                            jointId 5
-                                           jointAxis 0.0 0.0 1.0
+                                           jointAxis 1.0 0.0 0.0
                                            ulimit [6.28319]
                                            llimit [-6.28319]
                                            translation 0.000000 0.000000 0.000000

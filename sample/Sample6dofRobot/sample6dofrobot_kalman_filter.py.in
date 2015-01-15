@@ -44,7 +44,7 @@ def test_kf_plot (time, av1, av2, av3, optional_out_file_name): # time [s]
     tm_list=map (lambda x : int(x[0].split(".")[0])-initial_sec + float(x[0].split(".")[1]) * 1e-6, seq_ret)
     plt.clf()
     for idx in range(3):
-        plt.plot(tm_list, map(lambda x : 180.0 * float(x[4+idx]) / math.pi, seq_ret))
+        plt.plot(tm_list, map(lambda x : 180.0 * float(x[4+(2-idx)]) / math.pi, seq_ret))
         plt.plot(tm_list, map(lambda x : 180.0 * float(x[1+idx]) / math.pi, kf_ret), ":")
     plt.xlabel("Time [s]")
     plt.ylabel("Angle [deg]")
@@ -76,7 +76,7 @@ def demo():
     # 3. check log and plot
     for tm in [4, 1]:
         test_kf_plot(tm, [0,0,0,0,1,0],   [0,0,0,0,-1,0],    [0,0,0,0,0,0],   "r0-ptest")
-        test_kf_plot(tm, [0,0,0,0.8,0,0], [0,0,0,-0.8,0,0],  [0,0,0,0,0,0],   "p0-rtest")
-        test_kf_plot(tm, [0,0,0,0.8,1,0], [0,0,0,-0.8,1,0],  [0,0,0,0.0,1,0], "p1-rtest")
-        test_kf_plot(tm, [0,0,0,0.8,1,0], [0,0,0,0.8,-1,0],  [0,0,0,0.8,0,0], "r1-ptest")
-        test_kf_plot(tm, [0,0,0,0.8,1,0], [0,0,0,-0.8,-1,0], [0,0,0,0,0,0],   "rptest")
+        test_kf_plot(tm, [0,0,0,0,1,0.8], [0,0,0,0,-1,0.8],  [0,0,0,0,0,0.8], "r1-ptest")
+        test_kf_plot(tm, [0,0,0,0,0,0.8], [0,0,0,0,0,-0.8],  [0,0,0,0,0,0],   "p0-rtest")
+        test_kf_plot(tm, [0,0,0,0,1,0.8], [0,0,0,0,1,-0.8],  [0,0,0,0.0,1,0], "p1-rtest")
+        test_kf_plot(tm, [0,0,0,0,1,0.8], [0,0,0,0,-1,-0.8], [0,0,0,0,0,0],   "rptest")
