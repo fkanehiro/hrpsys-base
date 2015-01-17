@@ -16,7 +16,7 @@
 namespace RTC
 {
   class hrpExecutionContext
-#ifdef OPENRTM_VERSION110
+#ifndef OPENRTM_VERSION_TRUNK
       : public virtual PeriodicExecutionContext,
 #else
       : public virtual RTC_exp::PeriodicExecutionContext,
@@ -28,7 +28,7 @@ namespace RTC
     hrpExecutionContext();
     virtual ~hrpExecutionContext();
     virtual int svc(void);
-#ifndef OPENRTM_VERSION110
+#ifdef OPENRTM_VERSION_TRUNK
     virtual void tick(){}
 #endif
 

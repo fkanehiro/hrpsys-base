@@ -28,7 +28,7 @@ void stack_prefault(void) {
 namespace RTC
 {
     hrpExecutionContext::hrpExecutionContext()
-#ifdef OPENRTM_VERSION110 
+#ifndef OPENRTM_VERSION_TRUNK
         : PeriodicExecutionContext(),
 #else
         : RTC_exp::PeriodicExecutionContext(),
@@ -91,7 +91,7 @@ extern "C"
 {
     void hrpECInit(RTC::Manager* manager)
     {
-#ifdef OPENRTM_VERSION110 
+#ifndef OPENRTM_VERSION_TRUNK
         manager->registerECFactory("hrpExecutionContext",
                                    RTC::ECCreate<RTC::hrpExecutionContext>,
                                    RTC::ECDelete<RTC::hrpExecutionContext>);

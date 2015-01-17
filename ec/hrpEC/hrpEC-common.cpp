@@ -1,6 +1,6 @@
 #include "hrpEC.h"
 #include "io/iob.h"
-#ifndef OPENRTM_VERSION110
+#ifdef OPENRTM_VERSION_TRUNK
 #include <rtm/RTObjectStateMachine.h>
 #endif
 
@@ -24,7 +24,7 @@ namespace RTC
             close_iob();
             return 0;
         }
-#ifdef OPENRTM_VERSION110
+#ifndef OPENRTM_VERSION_TRUNK
         long period_nsec = (m_period.sec()*1e9+m_period.usec()*1e3);
         double period_sec = period_nsec/1e9;
 #else
@@ -60,7 +60,7 @@ namespace RTC
             m_profile.count++;
             m_tv = tv;
 
-#ifdef OPENRTM_VERSION110
+#ifndef OPENRTM_VERSION_TRUNK
             invoke_worker iw;
             struct timeval tbegin, tend;
 	        std::vector<double> processes(m_comps.size());
@@ -99,7 +99,7 @@ namespace RTC
 		}
 	    }
 	    for (unsigned int i=0; i<m_profile.profiles.length(); i++){
-#ifdef OPENRTM_VERSION110
+#ifndef OPENRTM_VERSION_TRUNK
                 LifeCycleState lcs = get_component_state(m_comps[i]._ref);
 #else
                 RTC_impl::RTObjectStateMachine* rtobj = m_worker.findComponent(list[i]);
@@ -125,7 +125,7 @@ namespace RTC
 #endif
             }
 
-#ifdef OPENRTM_VERSION110
+#ifndef OPENRTM_VERSION_TRUNK
         } while (m_running);
 #else
         } while (isRunning());
@@ -147,7 +147,7 @@ namespace RTC
 
     OpenHRP::ExecutionProfileService::ComponentProfile hrpExecutionContext::getComponentProfile(RTC::LightweightRTObject_ptr obj)
     {
-#ifdef OPENRTM_VERSION110
+#ifndef OPENRTM_VERSION_TRUNK
         for (size_t i=0; i<m_comps.size(); i++){
             if (m_comps[i]._ref->_is_equivalent(obj)){
 #else
