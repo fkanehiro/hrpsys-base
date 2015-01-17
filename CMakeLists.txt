@@ -32,10 +32,10 @@ elseif(WIN32)
   set(SH_SFX "bat")
 endif()
 
-# OpenRTM-aist(>= 1.0.0)    
+# OpenRTM-aist(>= 1.0.0)
 find_package(OpenRTM REQUIRED)
-if(NOT OPENRTM_VERSION STREQUAL "1.1.1")
-add_definitions(-DOPENRTM_VERSION110)
+if(EXISTS "${OPENRTM_DIR}/include/openrtm-1.1/rtm/RTObjectStateMachine.h")
+add_definitions(-DOPENRTM_VERSION_TRUNK)
 endif()
 
 # OpenHRP
