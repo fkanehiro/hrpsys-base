@@ -351,7 +351,7 @@ void BodyRTC::createOutPort(const std::string &config)
     }else if(type == "CONSTRAINT_FORCE"){
         std::cout << "CONSTRAINT_FORCE is not implemented yet" << std::endl;
     }else{
-        std::cerr << "unknown InPort data type(" << type << ")" << std::endl;
+        std::cerr << "unknown OutPort data type(" << type << ")" << std::endl;
     }
 
     m_outports.push_back(new EmergencySignalPortHandler(this, "emergencySignal"));
