@@ -44,6 +44,7 @@ public:
       H(0,0) = 1; H(0,1) = 0;
 
       x(0) = 0; x(1) = 0;
+      z = 0;
 
       I = hrp::dmatrix::Identity(2,2);
   }
@@ -53,13 +54,14 @@ public:
   void setR(double _R) { R = _R; }
   void setB(double _b0, double _b1) { B[0] = _b0; B[1] = _b1; }
   hrp::Vector2 &getx() { return x; }
-  void update(double u, double z) {
+  void update(double u, double _z) {
       // Predicted (a priori) state estimate
       x = F * x + B * u;
       // Predicted (a priori) estimate covariance
       P = F * P * F.transpose() + Q;
       //
       // Innovation or measurement residual
+      z = _z;
       double y = z - H * x;
       // Innovation (or residual) covariance
       double S = H * P * H.transpose() + R;
@@ -70,12 +72,16 @@ public:
       // Updated (a posteriori) estimate covariance
       P = (I - K * H) * P;
   }
+  void resetStateByObservation() {
+      x(0) = z;
+      x(1) = 0;
+  };
 private:
   hrp::Matrix22 P, Q, I, F;
   Eigen::Matrix<double, 1, 2> H;
   hrp::Vector2 B, K;
   hrp::Vector2 x;
-  double R;
+  double R, z;
 };
 
 class EKFilter {
@@ -338,6 +344,7 @@ public:
   // virtual RTC::ReturnCode_t onRateChanged(RTC::UniqueId ec_id);
   bool setKalmanFilterParam(const OpenHRP::KalmanFilterService::KalmanFilterParam& i_param);
   bool getKalmanFilterParam(OpenHRP::KalmanFilterService::KalmanFilterParam& i_param);
+  bool resetKalmanFilterState();
 
 protected:
   // Configuration variable declaration

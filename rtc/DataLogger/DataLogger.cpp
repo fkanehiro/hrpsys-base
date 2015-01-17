@@ -33,9 +33,6 @@ static const char* nullcomponent_spec[] =
   };
 // </rtc-template>
 
-#define DEFAULT_MAX_LOG_LENGTH (200*20)
-
-unsigned int LoggerPortBase::m_maxLength = DEFAULT_MAX_LOG_LENGTH;
 
 void printData(std::ostream& os, const RTC::Acceleration3D& data)
 {
@@ -448,6 +445,15 @@ void DataLogger::resumeLogging()
 {
   Guard guard(m_suspendFlagMutex);
   m_suspendFlag = false;
+}
+
+void DataLogger::maxLength(unsigned int len)
+{
+  suspendLogging();
+  for (unsigned int i=0; i<m_ports.size(); i++){
+    m_ports[i]->maxLength(len);
+  }
+  resumeLogging();
 }
 
 extern "C"

@@ -56,20 +56,8 @@ namespace rats
   };
 
   void mid_coords(coordinates& mid_coords, const double p, const coordinates& c1, const coordinates& c2) {
-    hrp::Vector3 mid_point, omega;
-    hrp::Matrix33 mid_rot, r;
-  
-    mid_point = (1 - p) * c1.pos + p * c2.pos;
-    r = c1.rot.transpose() * c2.rot;
-    omega = matrix_log(r);
-    if (eps_eq(omega.norm(),0.0)) { // c1.rot and c2.rot are same
-      mid_rot = c1.rot;
-    } else {
-      hrp::calcRodrigues(r, omega.normalized(), omega.norm()*p);
-      //mid_rot = c1.rot * r;
-      rotm3times(mid_rot, c1.rot, r);
-    }
-    mid_coords = coordinates(mid_point, mid_rot);
+    mid_coords.pos = (1 - p) * c1.pos + p * c2.pos;
+    mid_rot(mid_coords.rot, p, c1.rot, c2.rot);
   };
 
 }

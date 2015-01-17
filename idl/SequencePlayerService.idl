@@ -31,7 +31,7 @@ module OpenHRP
     /**
      * @brief Interpolate all joint angles on robot using duration specified by \em tm. Returns without waiting for whole sequence to be sent to robot.
      * @param jvs sequence of joint angles
-     * @param tm duration
+     * @param tm duration [s]
      * @return true joint angles are set successfully, false otherwise
      */
     boolean setJointAngles(in dSequence jvs, in double tm);
@@ -50,31 +50,31 @@ module OpenHRP
      * @brief Interpolate just one joint angle specified by \em jname using duration \em tm. Function returns without waiting for interpolation to finish
      * @param jname joint name
      * @param jv joint angle
-     * @param tm duration
+     * @param tm duration [s]
      * @return true if set successuflly, false otherwise 
      */
     boolean setJointAngle(in string jname, in double jv, in double tm);
 
     /**
      * @brief Interpolate position of the base link. Function returns without waiting for interpolation to finish
-     * @param pos position of the base link
-     * @param tm duration
+     * @param pos position of the base link [m]
+     * @param tm duration [s]
      * @return true if set successfully, false otherwise
      */
     boolean setBasePos(in dSequence pos, in double tm);
     
     /**
      * @brief Interpolate Roll-Pitch-Yaw angles of the base link. Function returns without waiting for interpolation to finish
-     * @param rpy Roll-Pitch-Yaw angles of the base link
-     * @param tm duration
+     * @param rpy Roll-Pitch-Yaw angles of the base link [rad]
+     * @param tm duration [s]
      * @return true if set successfully, false otherwise
      */
     boolean setBaseRpy(in dSequence rpy, in double tm);
     
     /**
      * @brief Interpolate ZMP. Function returns without waiting for interpolation to finish
-     * @param zmp ZMP
-     * @param tm duration
+     * @param zmp ZMP in the base link frame [m]
+     * @param tm duration [s]
      * @return true if set successfully, false otherwise
      */
     boolean setZmp(in dSequence zmp, in double tm);
@@ -82,9 +82,9 @@ module OpenHRP
     /**
      * @brief Interpolate X, Y, Z and Roll Pitch Yaw of the target joint/link group, wrt world coords Function returns without waiting for interpolation to finish
      * @param gname name of the joint group
-     * @param xyz : X,Y,Z position of the target link
-     * @param rpy : Roll-Pitch-Yaw angles of the target link
-     * @param tm duration
+     * @param xyz : X,Y,Z position of the target link [m]
+     * @param rpy : Roll-Pitch-Yaw angles of the target link [rad]
+     * @param tm duration [s]
      * @return true if set successfully, false otherwise
      */
     boolean setTargetPose(in string name, in dSequence xyz, in dSequence rpy, in double tm);
@@ -98,16 +98,16 @@ module OpenHRP
     /**
      * @brief load pattern files and start to playback.
      * @param basename basename of the pattern files. \<basename\>.pos, \<basename\>.zmp, \<basename\>.waist and \<basename\>.gsens are used. 
-     * @param tm Duration to the initial posture in \<basename\>.pos
+     * @param tm Duration to the initial posture in \<basename\>.pos [s]
      */
     void loadPattern(in string basename, in double tm);
 
     /**
      * @brief playback a pattern 
      * @param pos sequence of joint angles
-     * @param rpy sequence of Roll-Pitch-Yaw angles of the base link
-     * @param zmp sequence of ZMP
-     * @param tm sequence of duration beetween postures
+     * @param rpy sequence of Roll-Pitch-Yaw angles of the base link [rad]
+     * @param zmp sequence of ZMP [m]
+     * @param tm sequence of duration beetween postures [s]
      */
     void playPattern(in dSequenceSequence pos, 
 		     in dSequenceSequence rpy,
@@ -156,7 +156,7 @@ module OpenHRP
      * @brief Interpolate joint angles in a group  using duration specified by \em tm. Returns without waiting for whole sequence to be sent to robot.
      * @param gname name of the joint group
      * @param jvs sequence of joint angles
-     * @param tm duration
+     * @param tm duration [s]
      * @return true joint angles are set successfully, false otherwise
      */
     boolean setJointAnglesOfGroup(in string gname, in dSequence jvs, in double tm);
@@ -164,7 +164,7 @@ module OpenHRP
     /**
      * @brief clear pattern data with joint group
      * @param gname name of the joint group
-     * @param tm duration toward termination
+     * @param tm duration toward termination [s]
      * @return true joint angles are set successfully, false otherwise
      */
     boolean clearOfGroup(in string gname, in double tm);
@@ -173,7 +173,7 @@ module OpenHRP
      * @brief play back apattern with joint group
      * @param gname name of the joint group
      * @param pos sequence of joint angles
-     * @param tm sequence of duration beetween postures
+     * @param tm sequence of duration beetween postures [s]
      * @return true joint angles are set successfully, false otherwise
      */
     boolean playPatternOfGroup(in string gname, in dSequenceSequence pos, in dSequence tm);
@@ -193,8 +193,8 @@ module OpenHRP
 
     /**
      * @brief Interpolate Wrenches. Function returns without waiting for interpolation to finish
-     * @param wrenches Wrenches
-     * @param tm duration
+     * @param wrenches Wrenches [N], [Nm]
+     * @param tm duration [s]
      * @return true if set successfully, false otherwise
      */
     boolean setWrenches(in dSequence wrenches, in double tm);
