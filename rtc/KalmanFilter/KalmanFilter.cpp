@@ -96,8 +96,7 @@ RTC::ReturnCode_t KalmanFilter::onInitialize()
   // Setup robot model
   RTC::Properties& prop = getProperties();
   if ( ! coil::stringTo(m_dt, prop["dt"].c_str()) ) {
-    std::cerr << "KalmanFilter failed to prop[dt] " << prop["dt"] << "" 
-              << std::endl;
+    std::cerr << "[" << m_profile.instance_name << "]failed to get dt" << std::endl;
     return RTC::RTC_ERROR;
   }
 
@@ -114,8 +113,7 @@ RTC::ReturnCode_t KalmanFilter::onInitialize()
   if (!loadBodyFromModelLoader(m_robot, prop["model"].c_str(), 
                                CosNaming::NamingContext::_duplicate(naming.getRootContext())
                                )){
-    std::cerr << "failed to load model[" << prop["model"] << "]" 
-              << std::endl;
+    std::cerr << "[" << m_profile.instance_name << "]failed to load model[" << prop["model"] << "]" << std::endl;
   }
 
   Q_angle = 0.001;
@@ -216,8 +214,8 @@ RTC::ReturnCode_t KalmanFilter::onExecute(RTC::UniqueId ec_id)
     Eigen::Vector3d acc = m_sensorR * hrp::Vector3(m_acc.data.ax-sx_ref, m_acc.data.ay-sy_ref, m_acc.data.az-sz_ref); // transform to imaginary acc data
     Eigen::Vector3d gyro = m_sensorR * hrp::Vector3(m_rate.data.avx, m_rate.data.avy, m_rate.data.avz); // transform to imaginary rate data
     if (DEBUGP) {
-        std::cerr << "raw data acc : " << std::endl << acc << std::endl;
-        std::cerr << "raw data gyro : " << std::endl << gyro << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "] raw data acc : " << std::endl << acc << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "] raw data gyro : " << std::endl << gyro << std::endl;
     }
     if (kf_algorithm == OpenHRP::KalmanFilterService::QuaternionExtendedKalmanFilter) {
         ekf_filter.prediction(gyro, m_dt);
@@ -316,7 +314,7 @@ RTC::ReturnCode_t KalmanFilter::onExecute(RTC::UniqueId ec_id)
 
 bool KalmanFilter::setKalmanFilterParam(const OpenHRP::KalmanFilterService::KalmanFilterParam& i_param)
 {
-
+    std::cerr << "[" << m_profile.instance_name << "] setKalmanFilterParam" << std::endl;
     Q_angle = i_param.Q_angle;
     Q_rate = i_param.Q_rate;
     R_angle = i_param.R_angle;
@@ -339,7 +337,8 @@ bool KalmanFilter::setKalmanFilterParam(const OpenHRP::KalmanFilterService::Kalm
     y_filter.setB(m_dt, 0);
 
     kf_algorithm = i_param.kf_algorithm;
-
+    std::cerr << "[" << m_profile.instance_name << "]   Q_angle=" << Q_angle << ", Q_rate=" << Q_rate << ", R_angle=" << R_angle << std::endl;
+    std::cerr << "[" << m_profile.instance_name << "]   kf_algorithm=" << (kf_algorithm==OpenHRP::KalmanFilterService::RPYKalmanFilter?"RPYKalmanFilter":"QuaternionExtendedKalmanFilter") << std::endl;
     return true;
 }
 
