@@ -354,6 +354,7 @@ bool KalmanFilter::getKalmanFilterParam(OpenHRP::KalmanFilterService::KalmanFilt
   i_param.Q_angle = Q_angle;
   i_param.Q_rate = Q_rate;
   i_param.R_angle = R_angle;
+  i_param.kf_algorithm = kf_algorithm;
   return true;
 }
 
