@@ -214,74 +214,74 @@ RTC::ReturnCode_t KalmanFilter::onExecute(RTC::UniqueId ec_id)
     m_accIn.read();
 
     if (OpenHRP::KalmanFilterService::QuaternionExtendedKalmanFilter) {
-    Eigen::Vector3d acc = m_sensorR * hrp::Vector3(m_acc.data.ax, m_acc.data.ay, m_acc.data.az); // transform to imaginary acc data
-    Eigen::Vector3d gyro = m_sensorR * hrp::Vector3(m_rate.data.avx, m_rate.data.avy, m_rate.data.avz); // transform to imaginary rate data
+        Eigen::Vector3d acc = m_sensorR * hrp::Vector3(m_acc.data.ax, m_acc.data.ay, m_acc.data.az); // transform to imaginary acc data
+        Eigen::Vector3d gyro = m_sensorR * hrp::Vector3(m_rate.data.avx, m_rate.data.avy, m_rate.data.avz); // transform to imaginary rate data
 
-    if (DEBUGP) {
-      std::cerr << "raw data acc : " << std::endl << acc << std::endl;
-      std::cerr << "raw data gyro : " << std::endl << gyro << std::endl;
-    }
+        if (DEBUGP) {
+            std::cerr << "raw data acc : " << std::endl << acc << std::endl;
+            std::cerr << "raw data gyro : " << std::endl << gyro << std::endl;
+        }
 
-    ekf_filter.prediction(gyro, m_dt);
-    ekf_filter.correction(acc, Eigen::Vector3d(0, 0, 0), Eigen::Vector3d(0, 0, 0), Eigen::Vector3d(0, 0, 0));
-    /* ekf_filter.printAll(); */
+        ekf_filter.prediction(gyro, m_dt);
+        ekf_filter.correction(acc, Eigen::Vector3d(0, 0, 0), Eigen::Vector3d(0, 0, 0), Eigen::Vector3d(0, 0, 0));
+        /* ekf_filter.printAll(); */
 
-    Eigen::Matrix<double, 7, 1> x = ekf_filter.getx();
-    Eigen::Quaternion<double> q = Eigen::Quaternion<double>(x[0], x[1], x[2], x[3]);
-    Eigen::Vector3d eulerZYX = q.toRotationMatrix().eulerAngles(2,1,0);
-    m_rpy.data.y = eulerZYX(0);
-    m_rpy.data.p = eulerZYX(1);
-    m_rpy.data.r = eulerZYX(2);
+        Eigen::Matrix<double, 7, 1> x = ekf_filter.getx();
+        Eigen::Quaternion<double> q = Eigen::Quaternion<double>(x[0], x[1], x[2], x[3]);
+        Eigen::Vector3d eulerZYX = q.toRotationMatrix().eulerAngles(2,1,0);
+        m_rpy.data.y = eulerZYX(0);
+        m_rpy.data.p = eulerZYX(1);
+        m_rpy.data.r = eulerZYX(2);
     } else if (OpenHRP::KalmanFilterService::RPYKalmanFilter) {
-      //std::cerr << "rate : " << m_rate.data.avx <<  " " << m_rate.data.avy <<  " " << m_rate.data.avz << std::endl; // rad/sec (AngularVelocity3D) / gyro / stable, drift
-      //std::cerr << "acc  : " << m_acc.data.ax   <<  " " << m_acc.data.ay   <<  " " << m_acc.data.az   << std::endl; //   m/sec (Acceleration3D) / accelerometer / unstable , no drift
-      //
-      // G = [ cosb, sinb sina, sinb cosa,
-      //          0,      cosa,     -sina,
-      //      -sinb, cosb sina, cosb cosa]
-      // s = [sx, sy, sz]t ( accelerometer )
-      // g = [ 0 0 -g]t
-      // s = G g = [g sinb, -g cosb sina, -g cosb cosa]t
-      double sx = m_acc.data.ax - sx_ref, sy = m_acc.data.ay - sy_ref, sz = m_acc.data.az - sz_ref;
+        //std::cerr << "rate : " << m_rate.data.avx <<  " " << m_rate.data.avy <<  " " << m_rate.data.avz << std::endl; // rad/sec (AngularVelocity3D) / gyro / stable, drift
+        //std::cerr << "acc  : " << m_acc.data.ax   <<  " " << m_acc.data.ay   <<  " " << m_acc.data.az   << std::endl; //   m/sec (Acceleration3D) / accelerometer / unstable , no drift
+        //
+        // G = [ cosb, sinb sina, sinb cosa,
+        //          0,      cosa,     -sina,
+        //      -sinb, cosb sina, cosb cosa]
+        // s = [sx, sy, sz]t ( accelerometer )
+        // g = [ 0 0 -g]t
+        // s = G g = [g sinb, -g cosb sina, -g cosb cosa]t
+        double sx = m_acc.data.ax - sx_ref, sy = m_acc.data.ay - sy_ref, sz = m_acc.data.az - sz_ref;
 
-      // hrp::RateGyroSensor* sensor = m_robot->sensor<hrp::RateGyroSensor>("gyrometer");
-      hrp::Vector3 s = m_sensorR * hrp::Vector3(sx, sy, sz);
-      sx = s(0); sy = s(1); sz = s(2); // transform to imaginary acc data
-      double g = sqrt(sx * sx + sy * sy + sz * sz);
-      // atan2(y, x) = atan(y/x)
-      double a, b;
-      b = atan2( - sx / g, sqrt( sy/g * sy/g + sz/g * sz/g ) );
-      a = atan2( ( sy/g ), ( sz/g ) );
-      //std::cerr << "a(roll) = " << a*180/M_PI << ", b(pitch) = " << b*180/M_PI << ",  sx = " << sx << ", sy = " << sy << ", sz = " << sz << std::endl;
-      m_rpyRaw.data.r = a;
-      m_rpyRaw.data.p = b;
-      m_rpyRaw.data.y = 0;
-// #if 0
-//       // complementary filter
-//       m_rpy.data.r = 0.98 *(m_rpy.data.r+m_rate.data.avx*m_dt) + 0.02*m_rpyRaw.data.r;
-//       m_rpy.data.p = 0.98 *(m_rpy.data.p+m_rate.data.avy*m_dt) + 0.02*m_rpyRaw.data.p;
-//       m_rpy.data.y = 0.98 *(m_rpy.data.y+m_rate.data.avz*m_dt) + 0.02*m_rpyRaw.data.y;
-// #endif
-      // kalman filter
-      // x[0] = m_rpyRaw.data.r; // angle (from m/sec Acceleration3D, unstable, no drift )
-      // x[1] = m_rate.data.avx; // rate ( rad/sec, AngularVelocity, gyro, stable/drift )
-      hrp::Vector3 av = m_sensorR * hrp::Vector3(m_rate.data.avx, m_rate.data.avy, m_rate.data.avz);
-      m_rate.data.avx = av(0); m_rate.data.avy = av(1); m_rate.data.avz = av(2); // transform to imaginary rate data
-      // use kalman filter with imaginary data
-      r_filter.update(m_rate.data.avx, m_rpyRaw.data.r);
-      p_filter.update(m_rate.data.avy, m_rpyRaw.data.p);
-      y_filter.update(m_rate.data.avz, m_rpyRaw.data.y);
+        // hrp::RateGyroSensor* sensor = m_robot->sensor<hrp::RateGyroSensor>("gyrometer");
+        hrp::Vector3 s = m_sensorR * hrp::Vector3(sx, sy, sz);
+        sx = s(0); sy = s(1); sz = s(2); // transform to imaginary acc data
+        double g = sqrt(sx * sx + sy * sy + sz * sz);
+        // atan2(y, x) = atan(y/x)
+        double a, b;
+        b = atan2( - sx / g, sqrt( sy/g * sy/g + sz/g * sz/g ) );
+        a = atan2( ( sy/g ), ( sz/g ) );
+        //std::cerr << "a(roll) = " << a*180/M_PI << ", b(pitch) = " << b*180/M_PI << ",  sx = " << sx << ", sy = " << sy << ", sz = " << sz << std::endl;
+        m_rpyRaw.data.r = a;
+        m_rpyRaw.data.p = b;
+        m_rpyRaw.data.y = 0;
+        // #if 0
+        //       // complementary filter
+        //       m_rpy.data.r = 0.98 *(m_rpy.data.r+m_rate.data.avx*m_dt) + 0.02*m_rpyRaw.data.r;
+        //       m_rpy.data.p = 0.98 *(m_rpy.data.p+m_rate.data.avy*m_dt) + 0.02*m_rpyRaw.data.p;
+        //       m_rpy.data.y = 0.98 *(m_rpy.data.y+m_rate.data.avz*m_dt) + 0.02*m_rpyRaw.data.y;
+        // #endif
+        // kalman filter
+        // x[0] = m_rpyRaw.data.r; // angle (from m/sec Acceleration3D, unstable, no drift )
+        // x[1] = m_rate.data.avx; // rate ( rad/sec, AngularVelocity, gyro, stable/drift )
+        hrp::Vector3 av = m_sensorR * hrp::Vector3(m_rate.data.avx, m_rate.data.avy, m_rate.data.avz);
+        m_rate.data.avx = av(0); m_rate.data.avy = av(1); m_rate.data.avz = av(2); // transform to imaginary rate data
+        // use kalman filter with imaginary data
+        r_filter.update(m_rate.data.avx, m_rpyRaw.data.r);
+        p_filter.update(m_rate.data.avy, m_rpyRaw.data.p);
+        y_filter.update(m_rate.data.avz, m_rpyRaw.data.y);
 
-      Eigen::AngleAxis<double> aaZ(y_filter.getx()[0], Eigen::Vector3d::UnitZ());
-      Eigen::AngleAxis<double> aaY(p_filter.getx()[0], Eigen::Vector3d::UnitY());
-      Eigen::AngleAxis<double> aaX(r_filter.getx()[0], Eigen::Vector3d::UnitX());
-      Eigen::Quaternion<double> q = aaZ * aaY * aaX;
-      hrp::Matrix33 imaginaryRotationMatrix = q.toRotationMatrix();
-      hrp::Matrix33 realRotationMatrix = imaginaryRotationMatrix * m_sensorR; // inverse transform to real data
-      hrp::Vector3 euler = realRotationMatrix.eulerAngles(2,1,0);
-      m_rpy.data.y = euler(0);
-      m_rpy.data.p = euler(1);
-      m_rpy.data.r = euler(2);
+        Eigen::AngleAxis<double> aaZ(y_filter.getx()[0], Eigen::Vector3d::UnitZ());
+        Eigen::AngleAxis<double> aaY(p_filter.getx()[0], Eigen::Vector3d::UnitY());
+        Eigen::AngleAxis<double> aaX(r_filter.getx()[0], Eigen::Vector3d::UnitX());
+        Eigen::Quaternion<double> q = aaZ * aaY * aaX;
+        hrp::Matrix33 imaginaryRotationMatrix = q.toRotationMatrix();
+        hrp::Matrix33 realRotationMatrix = imaginaryRotationMatrix * m_sensorR; // inverse transform to real data
+        hrp::Vector3 euler = realRotationMatrix.eulerAngles(2,1,0);
+        m_rpy.data.y = euler(0);
+        m_rpy.data.p = euler(1);
+        m_rpy.data.r = euler(2);
     }
 
     m_rpyOut.write();
