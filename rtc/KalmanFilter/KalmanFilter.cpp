@@ -338,6 +338,8 @@ bool KalmanFilter::setKalmanFilterParam(const OpenHRP::KalmanFilterService::Kalm
     y_filter.setR(R_angle);
     y_filter.setB(m_dt, 0);
 
+    kf_algorithm = i_param.kf_algorithm;
+
     return true;
 }
 
