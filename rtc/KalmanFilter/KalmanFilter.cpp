@@ -250,35 +250,18 @@ RTC::ReturnCode_t KalmanFilter::onExecute(RTC::UniqueId ec_id)
       double g = sqrt(sx * sx + sy * sy + sz * sz);
       // atan2(y, x) = atan(y/x)
       double a, b;
-#if 0
-      x/g = sinb
-     -y/g = cosb sina
-     -z/g = cosb cosa
-      y/g^2 = cosb^2 sina^2
-      z/g^2 = cosb^2 cosa^2
-      y/g^2 + z/g^2 = cosb^2
-      y/g^2 = (1 - sinb^2) sina^2
-      z/g^2 = (1 - sinb^2) cosa^2
-      y/g^2 = (1 - x/g^2) sina^2
-      z/g^2 = (1 - x/g^2) cosa^2
-#endif
       b = atan2( - sx / g, sqrt( sy/g * sy/g + sz/g * sz/g ) );
       a = atan2( ( sy/g ), ( sz/g ) );
       //std::cerr << "a(roll) = " << a*180/M_PI << ", b(pitch) = " << b*180/M_PI << ",  sx = " << sx << ", sy = " << sy << ", sz = " << sz << std::endl;
       m_rpyRaw.data.r = a;
       m_rpyRaw.data.p = b;
       m_rpyRaw.data.y = 0;
-#if 0
-      m_rpy.data.r = m_rpyRaw.data.r;
-      m_rpy.data.p = m_rpyRaw.data.p;
-      m_rpy.data.y = m_rpyRaw.data.y;
-#endif
-#if 0
-      // complementary filter
-      m_rpy.data.r = 0.98 *(m_rpy.data.r+m_rate.data.avx*m_dt) + 0.02*m_rpyRaw.data.r;
-      m_rpy.data.p = 0.98 *(m_rpy.data.p+m_rate.data.avy*m_dt) + 0.02*m_rpyRaw.data.p;
-      m_rpy.data.y = 0.98 *(m_rpy.data.y+m_rate.data.avz*m_dt) + 0.02*m_rpyRaw.data.y;
-#endif
+// #if 0
+//       // complementary filter
+//       m_rpy.data.r = 0.98 *(m_rpy.data.r+m_rate.data.avx*m_dt) + 0.02*m_rpyRaw.data.r;
+//       m_rpy.data.p = 0.98 *(m_rpy.data.p+m_rate.data.avy*m_dt) + 0.02*m_rpyRaw.data.p;
+//       m_rpy.data.y = 0.98 *(m_rpy.data.y+m_rate.data.avz*m_dt) + 0.02*m_rpyRaw.data.y;
+// #endif
       // kalman filter
       // x[0] = m_rpyRaw.data.r; // angle (from m/sec Acceleration3D, unstable, no drift )
       // x[1] = m_rate.data.avx; // rate ( rad/sec, AngularVelocity, gyro, stable/drift )
@@ -299,24 +282,6 @@ RTC::ReturnCode_t KalmanFilter::onExecute(RTC::UniqueId ec_id)
       m_rpy.data.y = euler(0);
       m_rpy.data.p = euler(1);
       m_rpy.data.r = euler(2);
-#if 0
-      std::cout << m_acc.tm.sec + m_acc.tm.nsec/1000000000.0 << " "
-                << m_rpyRaw.data.r << " "
-                << m_rpyRaw.data.p << " "
-                << m_rpyRaw.data.y << " "
-                << m_rpy.data.r << " "
-                << m_rpy.data.p << " "
-                << m_rpy.data.y << " "
-                << (m_rpyRaw.data.r - m_rpyRaw_prev.data.r) << " "
-                << (m_rpyRaw.data.p - m_rpyRaw_prev.data.p) << " "
-                << (m_rpyRaw.data.y - m_rpyRaw_prev.data.y) << " "
-                << (m_rpy.data.r - m_rpy_prev.data.r) << " "
-                << (m_rpy.data.p - m_rpy_prev.data.p) << " "
-                << (m_rpy.data.y - m_rpy_prev.data.y)
-                << std::endl;
-      m_rpy_prev = m_rpy;
-      m_rpyRaw_prev = m_rpyRaw;
-#endif
     }
 
     m_rpyOut.write();
