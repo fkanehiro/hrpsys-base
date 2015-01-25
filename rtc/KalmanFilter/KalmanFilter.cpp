@@ -149,6 +149,7 @@ RTC::ReturnCode_t KalmanFilter::onInitialize()
   } else {
     m_sensorR = hrp::Matrix33::Identity();
   }
+  kfalgorithm = OpenHRP::KalmanFilterService::RPYKalmanFilter;
 
   return RTC::RTC_OK;
 }
@@ -212,7 +213,7 @@ RTC::ReturnCode_t KalmanFilter::onExecute(RTC::UniqueId ec_id)
   if (m_accIn.isNew()){
     m_accIn.read();
 
-#ifdef USE_EKF
+    if (OpenHRP::KalmanFilterService::QuaternionExtendedKalmanFilter) {
     Eigen::Vector3d acc = m_sensorR * hrp::Vector3(m_acc.data.ax, m_acc.data.ay, m_acc.data.az); // transform to imaginary acc data
     Eigen::Vector3d gyro = m_sensorR * hrp::Vector3(m_rate.data.avx, m_rate.data.avy, m_rate.data.avz); // transform to imaginary rate data
 
@@ -231,7 +232,7 @@ RTC::ReturnCode_t KalmanFilter::onExecute(RTC::UniqueId ec_id)
     m_rpy.data.y = eulerZYX(0);
     m_rpy.data.p = eulerZYX(1);
     m_rpy.data.r = eulerZYX(2);
-#else // USE_EKF
+    } else if (OpenHRP::KalmanFilterService::RPYKalmanFilter) {
       //std::cerr << "rate : " << m_rate.data.avx <<  " " << m_rate.data.avy <<  " " << m_rate.data.avz << std::endl; // rad/sec (AngularVelocity3D) / gyro / stable, drift
       //std::cerr << "acc  : " << m_acc.data.ax   <<  " " << m_acc.data.ay   <<  " " << m_acc.data.az   << std::endl; //   m/sec (Acceleration3D) / accelerometer / unstable , no drift
       //
@@ -316,7 +317,7 @@ RTC::ReturnCode_t KalmanFilter::onExecute(RTC::UniqueId ec_id)
       m_rpy_prev = m_rpy;
       m_rpyRaw_prev = m_rpyRaw;
 #endif
-#endif
+    }
 
     m_rpyOut.write();
     m_rpyRawOut.write();
