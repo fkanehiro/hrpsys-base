@@ -149,7 +149,7 @@ RTC::ReturnCode_t KalmanFilter::onInitialize()
   } else {
     m_sensorR = hrp::Matrix33::Identity();
   }
-  kfalgorithm = OpenHRP::KalmanFilterService::RPYKalmanFilter;
+  kf_algorithm = OpenHRP::KalmanFilterService::RPYKalmanFilter;
 
   return RTC::RTC_OK;
 }
@@ -213,15 +213,13 @@ RTC::ReturnCode_t KalmanFilter::onExecute(RTC::UniqueId ec_id)
   if (m_accIn.isNew()){
     m_accIn.read();
 
-    if (OpenHRP::KalmanFilterService::QuaternionExtendedKalmanFilter) {
-        Eigen::Vector3d acc = m_sensorR * hrp::Vector3(m_acc.data.ax, m_acc.data.ay, m_acc.data.az); // transform to imaginary acc data
-        Eigen::Vector3d gyro = m_sensorR * hrp::Vector3(m_rate.data.avx, m_rate.data.avy, m_rate.data.avz); // transform to imaginary rate data
-
-        if (DEBUGP) {
-            std::cerr << "raw data acc : " << std::endl << acc << std::endl;
-            std::cerr << "raw data gyro : " << std::endl << gyro << std::endl;
-        }
-
+    Eigen::Vector3d acc = m_sensorR * hrp::Vector3(m_acc.data.ax-sx_ref, m_acc.data.ay-sy_ref, m_acc.data.az-sz_ref); // transform to imaginary acc data
+    Eigen::Vector3d gyro = m_sensorR * hrp::Vector3(m_rate.data.avx, m_rate.data.avy, m_rate.data.avz); // transform to imaginary rate data
+    if (DEBUGP) {
+        std::cerr << "raw data acc : " << std::endl << acc << std::endl;
+        std::cerr << "raw data gyro : " << std::endl << gyro << std::endl;
+    }
+    if (kf_algorithm == OpenHRP::KalmanFilterService::QuaternionExtendedKalmanFilter) {
         ekf_filter.prediction(gyro, m_dt);
         ekf_filter.correction(acc, Eigen::Vector3d(0, 0, 0), Eigen::Vector3d(0, 0, 0), Eigen::Vector3d(0, 0, 0));
         /* ekf_filter.printAll(); */
@@ -232,9 +230,7 @@ RTC::ReturnCode_t KalmanFilter::onExecute(RTC::UniqueId ec_id)
         m_rpy.data.y = eulerZYX(0);
         m_rpy.data.p = eulerZYX(1);
         m_rpy.data.r = eulerZYX(2);
-    } else if (OpenHRP::KalmanFilterService::RPYKalmanFilter) {
-        //std::cerr << "rate : " << m_rate.data.avx <<  " " << m_rate.data.avy <<  " " << m_rate.data.avz << std::endl; // rad/sec (AngularVelocity3D) / gyro / stable, drift
-        //std::cerr << "acc  : " << m_acc.data.ax   <<  " " << m_acc.data.ay   <<  " " << m_acc.data.az   << std::endl; //   m/sec (Acceleration3D) / accelerometer / unstable , no drift
+    } else if (kf_algorithm == OpenHRP::KalmanFilterService::RPYKalmanFilter) {
         //
         // G = [ cosb, sinb sina, sinb cosa,
         //          0,      cosa,     -sina,
@@ -242,17 +238,12 @@ RTC::ReturnCode_t KalmanFilter::onExecute(RTC::UniqueId ec_id)
         // s = [sx, sy, sz]t ( accelerometer )
         // g = [ 0 0 -g]t
         // s = G g = [g sinb, -g cosb sina, -g cosb cosa]t
-        double sx = m_acc.data.ax - sx_ref, sy = m_acc.data.ay - sy_ref, sz = m_acc.data.az - sz_ref;
-
         // hrp::RateGyroSensor* sensor = m_robot->sensor<hrp::RateGyroSensor>("gyrometer");
-        hrp::Vector3 s = m_sensorR * hrp::Vector3(sx, sy, sz);
-        sx = s(0); sy = s(1); sz = s(2); // transform to imaginary acc data
-        double g = sqrt(sx * sx + sy * sy + sz * sz);
+        double g = sqrt(acc(0) * acc(0) + acc(1) * acc(1) + acc(2) * acc(2));
         // atan2(y, x) = atan(y/x)
         double a, b;
-        b = atan2( - sx / g, sqrt( sy/g * sy/g + sz/g * sz/g ) );
-        a = atan2( ( sy/g ), ( sz/g ) );
-        //std::cerr << "a(roll) = " << a*180/M_PI << ", b(pitch) = " << b*180/M_PI << ",  sx = " << sx << ", sy = " << sy << ", sz = " << sz << std::endl;
+        b = atan2( - acc(0) / g, sqrt( acc(1)/g * acc(1)/g + acc(2)/g * acc(2)/g ) );
+        a = atan2( ( acc(1)/g ), ( acc(2)/g ) );
         m_rpyRaw.data.r = a;
         m_rpyRaw.data.p = b;
         m_rpyRaw.data.y = 0;
@@ -265,12 +256,10 @@ RTC::ReturnCode_t KalmanFilter::onExecute(RTC::UniqueId ec_id)
         // kalman filter
         // x[0] = m_rpyRaw.data.r; // angle (from m/sec Acceleration3D, unstable, no drift )
         // x[1] = m_rate.data.avx; // rate ( rad/sec, AngularVelocity, gyro, stable/drift )
-        hrp::Vector3 av = m_sensorR * hrp::Vector3(m_rate.data.avx, m_rate.data.avy, m_rate.data.avz);
-        m_rate.data.avx = av(0); m_rate.data.avy = av(1); m_rate.data.avz = av(2); // transform to imaginary rate data
         // use kalman filter with imaginary data
-        r_filter.update(m_rate.data.avx, m_rpyRaw.data.r);
-        p_filter.update(m_rate.data.avy, m_rpyRaw.data.p);
-        y_filter.update(m_rate.data.avz, m_rpyRaw.data.y);
+        r_filter.update(gyro(0), m_rpyRaw.data.r);
+        p_filter.update(gyro(1), m_rpyRaw.data.p);
+        y_filter.update(gyro(2), m_rpyRaw.data.y);
 
         Eigen::AngleAxis<double> aaZ(y_filter.getx()[0], Eigen::Vector3d::UnitZ());
         Eigen::AngleAxis<double> aaY(p_filter.getx()[0], Eigen::Vector3d::UnitY());

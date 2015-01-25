@@ -12,7 +12,7 @@ module OpenHRP
      */
     enum KFAlgorithm {
         RPYKalmanFilter,
-        QuaternionExtendedKalmanFilter,
+        QuaternionExtendedKalmanFilter
     };
 
     /**
@@ -26,7 +26,7 @@ module OpenHRP
       double Q_rate;
       double R_angle;
       // KFAlgorithm
-      KFAlgorithm kfalgorithm;
+      KFAlgorithm kf_algorithm;
     };
 
     /**
