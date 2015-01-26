@@ -401,6 +401,7 @@ private:
   hrp::Matrix33 m_sensorR;
   unsigned int m_debugLevel;
   int dummy, loop;
+  OpenHRP::KalmanFilterService::KFAlgorithm kf_algorithm;
 };
 
 

@@ -7,14 +7,26 @@ module OpenHRP
   interface KalmanFilterService
   {
     /**
+     * @enum KFAlgorithm
+     * @brief Algorithm for KalmanFilter
+     */
+    enum KFAlgorithm {
+        RPYKalmanFilter,
+        QuaternionExtendedKalmanFilter
+    };
+
+    /**
      * @struct KalmanFilterParam
      * @brief KalmanFilter Parameters.
      */
     struct KalmanFilterParam
     {
+      // RPYKalmanFilter
       double Q_angle;
       double Q_rate;
       double R_angle;
+      // KFAlgorithm
+      KFAlgorithm kf_algorithm;
     };
 
     /**
