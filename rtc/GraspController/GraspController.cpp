@@ -230,7 +230,7 @@ RTC::ReturnCode_t GraspController::onExecute(RTC::UniqueId ec_id)
           int i = grasp_param.joints[j].id;
           if ( 0 <= i && i < m_qRef.data.length() ) {
             double error = (m_qCurrent.data[i] - m_qRef.data[i]) + grasp_param.target_error * grasp_param.joints[j].dir;
-            double diff  = min(fabs(error/2.0), 0.5); // limit speed
+            double diff  = fabs(error);
             if ( error > 0 ) m_q.data[i] = m_qRef.data[i] + diff;
             if ( error < 0 ) m_q.data[i] = m_qRef.data[i] - diff;
             //std::cerr << "id = " << i << ", ref = " << m_qRef.data[i] << ", cur =" << m_qCurrent.data[i] << " error = " << error << ", diff = " << diff << ", q = " << m_q.data[i] << " (target = " << grasp_param.target_error << ", dir=" << grasp_param.joints[j].dir << ")" << std::endl;
