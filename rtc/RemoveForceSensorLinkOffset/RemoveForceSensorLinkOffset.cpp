@@ -252,7 +252,7 @@ bool RemoveForceSensorLinkOffset::getForceMomentOffsetParam(const std::string& i
   if (m_forcemoment_offset_param.find(i_name_) != m_forcemoment_offset_param.end()) {
     // std::cerr << "OK " << i_name_ << " in getForceMomentOffsetParam" << std::endl;
     memcpy(i_param_.force_offset.get_buffer(), m_forcemoment_offset_param[i_name_].force_offset.data(), sizeof(double) * 3);
-    memcpy(i_param_.moment_offset.get_buffer(), m_forcemoment_offset_param[i_name_].force_offset.data(), sizeof(double) * 3);
+    memcpy(i_param_.moment_offset.get_buffer(), m_forcemoment_offset_param[i_name_].moment_offset.data(), sizeof(double) * 3);
     memcpy(i_param_.link_offset_centroid.get_buffer(), m_forcemoment_offset_param[i_name_].link_offset_centroid.data(), sizeof(double) * 3);
     i_param_.link_offset_mass = m_forcemoment_offset_param[i_name_].link_offset_mass;
   } else {
