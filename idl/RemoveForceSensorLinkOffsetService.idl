@@ -12,10 +12,6 @@ module OpenHRP
      */
     typedef sequence<double, 3> DblSequence3;
     struct forcemomentOffsetParam {
-      /// Force offset [N].
-      DblSequence3 force_offset;
-      /// Moment offset [Nm].
-      DblSequence3 moment_offset;
       /// Link center of mass in sensor frame [m].
       DblSequence3 link_offset_centroid;
       /// Link msas [kg].
