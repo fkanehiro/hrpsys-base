@@ -128,7 +128,6 @@ RTC::ReturnCode_t SoftErrorLimiter::onInitialize()
   }
 
   /* Calculate count for beep sound frequency */
-  double dt;
   coil::stringTo(dt, prop["dt"].c_str());
   soft_limit_error_beep_freq = static_cast<int>(1.0/(4.0*dt)); // soft limit error => 4 times / 1[s]
   position_limit_error_beep_freq = static_cast<int>(1.0/(2.0*dt)); // position limit error => 2 times / 1[s]
@@ -203,6 +202,7 @@ RTC::ReturnCode_t SoftErrorLimiter::onExecute(RTC::UniqueId ec_id)
     0x800 : 'SS_OTHER'
   */
   bool soft_limit_error = false;
+  bool velocity_limit_error = false;
   bool position_limit_error = false;
   if ( m_qRef.data.length() == m_qCurrent.data.length() &&
        m_qRef.data.length() == m_servoState.data.length() ) {
@@ -213,6 +213,24 @@ RTC::ReturnCode_t SoftErrorLimiter::onExecute(RTC::UniqueId ec_id)
         prev_angle[i] = m_qCurrent.data[i];
       }
     }
+
+    for ( int i = 0; i < m_qRef.data.length(); i++ ){
+      int servo_state = (m_servoState.data[i][0] & OpenHRP::RobotHardwareService::SERVO_STATE_MASK) >> OpenHRP::RobotHardwareService::SERVO_STATE_SHIFT; // enum SwitchStatus {SWITCH_ON, SWITCH_OFF};
+      double qvel = (m_qRef.data[i] - prev_angle[i]) / dt;
+      double lvlimit = m_robot->joint(i)->lvlimit;
+      double uvlimit = m_robot->joint(i)->uvlimit;
+      if ( servo_state == 1 && ((lvlimit > qvel) || (uvlimit < qvel)) ) {
+        std::cerr << "velocity limit over " << m_robot->joint(i)->name << "(" << i << "), qvel=" << qvel
+                  << ", lvlimit =" << lvlimit
+                  << ", uvlimit =" << uvlimit
+                  << ", servo_state = " <<  ( servo_state ? "ON" : "OFF") << std::endl;
+        // fix joint angle
+        if ( lvlimit > qvel ) m_qRef.data[i] = prev_angle[i] + lvlimit * dt;
+        if ( uvlimit < qvel ) m_qRef.data[i] = prev_angle[i] + uvlimit * dt;
+        velocity_limit_error = true;
+      }
+    }
+
     for ( int i = 0; i < m_qRef.data.length(); i++ ){
       int servo_state = (m_servoState.data[i][0] & OpenHRP::RobotHardwareService::SERVO_STATE_MASK) >> OpenHRP::RobotHardwareService::SERVO_STATE_SHIFT; // enum SwitchStatus {SWITCH_ON, SWITCH_OFF};
       double error = m_qRef.data[i] - m_qCurrent.data[i];
@@ -274,7 +292,7 @@ RTC::ReturnCode_t SoftErrorLimiter::onExecute(RTC::UniqueId ec_id)
 
     if ( soft_limit_error ) { // play beep
       if ( loop % soft_limit_error_beep_freq == 0 ) start_beep(3136, soft_limit_error_beep_freq*0.8);
-    }else if ( position_limit_error ) { // play beep
+    }else if ( position_limit_error || velocity_limit_error ) { // play beep
       if ( loop % position_limit_error_beep_freq == 0 ) start_beep(3520, position_limit_error_beep_freq*0.8);
     } else {
       stop_beep();
