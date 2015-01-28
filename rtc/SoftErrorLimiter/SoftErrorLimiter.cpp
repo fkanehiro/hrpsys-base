@@ -214,6 +214,7 @@ RTC::ReturnCode_t SoftErrorLimiter::onExecute(RTC::UniqueId ec_id)
       }
     }
 
+    // Velocity limitation for reference joint angles
     for ( int i = 0; i < m_qRef.data.length(); i++ ){
       int servo_state = (m_servoState.data[i][0] & OpenHRP::RobotHardwareService::SERVO_STATE_MASK) >> OpenHRP::RobotHardwareService::SERVO_STATE_SHIFT; // enum SwitchStatus {SWITCH_ON, SWITCH_OFF};
       double qvel = (m_qRef.data[i] - prev_angle[i]) / dt;
@@ -231,6 +232,7 @@ RTC::ReturnCode_t SoftErrorLimiter::onExecute(RTC::UniqueId ec_id)
       }
     }
 
+    // Position limitation for reference joint angles
     for ( int i = 0; i < m_qRef.data.length(); i++ ){
       int servo_state = (m_servoState.data[i][0] & OpenHRP::RobotHardwareService::SERVO_STATE_MASK) >> OpenHRP::RobotHardwareService::SERVO_STATE_SHIFT; // enum SwitchStatus {SWITCH_ON, SWITCH_OFF};
       double error = m_qRef.data[i] - m_qCurrent.data[i];
@@ -274,6 +276,7 @@ RTC::ReturnCode_t SoftErrorLimiter::onExecute(RTC::UniqueId ec_id)
       prev_angle[i] = m_qRef.data[i];
     }
 
+    // Servo error limitation between reference joint angles and actual joint angles
     for ( int i = 0; i < m_qRef.data.length(); i++ ){
       double limit = m_robot->m_servoErrorLimit[i];
       double error = m_qRef.data[i] - m_qCurrent.data[i];
@@ -290,6 +293,7 @@ RTC::ReturnCode_t SoftErrorLimiter::onExecute(RTC::UniqueId ec_id)
       }
     }
 
+    // Beep sound
     if ( soft_limit_error ) { // play beep
       if ( loop % soft_limit_error_beep_freq == 0 ) start_beep(3136, soft_limit_error_beep_freq*0.8);
     }else if ( position_limit_error || velocity_limit_error ) { // play beep
