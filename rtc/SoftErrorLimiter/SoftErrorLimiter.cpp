@@ -213,18 +213,22 @@ RTC::ReturnCode_t SoftErrorLimiter::onExecute(RTC::UniqueId ec_id)
         prev_angle[i] = m_qCurrent.data[i];
       }
     }
+    std::vector<int> servo_state;
+    servo_state.resize(m_qRef.data.length(), 0);
+    for ( int i = 0; i < m_qRef.data.length(); i++ ){
+        servo_state[i] = (m_servoState.data[i][0] & OpenHRP::RobotHardwareService::SERVO_STATE_MASK) >> OpenHRP::RobotHardwareService::SERVO_STATE_SHIFT; // enum SwitchStatus {SWITCH_ON, SWITCH_OFF};
+    }
 
     // Velocity limitation for reference joint angles
     for ( int i = 0; i < m_qRef.data.length(); i++ ){
-      int servo_state = (m_servoState.data[i][0] & OpenHRP::RobotHardwareService::SERVO_STATE_MASK) >> OpenHRP::RobotHardwareService::SERVO_STATE_SHIFT; // enum SwitchStatus {SWITCH_ON, SWITCH_OFF};
       double qvel = (m_qRef.data[i] - prev_angle[i]) / dt;
       double lvlimit = m_robot->joint(i)->lvlimit;
       double uvlimit = m_robot->joint(i)->uvlimit;
-      if ( servo_state == 1 && ((lvlimit > qvel) || (uvlimit < qvel)) ) {
+      if ( servo_state[i] == 1 && ((lvlimit > qvel) || (uvlimit < qvel)) ) {
         std::cerr << "velocity limit over " << m_robot->joint(i)->name << "(" << i << "), qvel=" << qvel
                   << ", lvlimit =" << lvlimit
                   << ", uvlimit =" << uvlimit
-                  << ", servo_state = " <<  ( servo_state ? "ON" : "OFF") << std::endl;
+                  << ", servo_state = " <<  ( servo_state[i] ? "ON" : "OFF") << std::endl;
         // fix joint angle
         if ( lvlimit > qvel ) m_qRef.data[i] = prev_angle[i] + lvlimit * dt;
         if ( uvlimit < qvel ) m_qRef.data[i] = prev_angle[i] + uvlimit * dt;
@@ -234,7 +238,6 @@ RTC::ReturnCode_t SoftErrorLimiter::onExecute(RTC::UniqueId ec_id)
 
     // Position limitation for reference joint angles
     for ( int i = 0; i < m_qRef.data.length(); i++ ){
-      int servo_state = (m_servoState.data[i][0] & OpenHRP::RobotHardwareService::SERVO_STATE_MASK) >> OpenHRP::RobotHardwareService::SERVO_STATE_SHIFT; // enum SwitchStatus {SWITCH_ON, SWITCH_OFF};
       double error = m_qRef.data[i] - m_qCurrent.data[i];
       /*
         From hrpModel/Body.h
@@ -259,11 +262,11 @@ RTC::ReturnCode_t SoftErrorLimiter::onExecute(RTC::UniqueId ec_id)
           ulimit = it->second.getUlimit(m_qRef.data[it->second.getTargetJointId()]);
       }
       bool servo_limit_state = ((llimit > m_qRef.data[i]) || (ulimit < m_qRef.data[i]));
-      if ( servo_state == 1 && servo_limit_state ) {
+      if ( servo_state[i] == 1 && servo_limit_state ) {
         std::cerr << "position limit over " << m_robot->joint(i)->name << "(" << i << "), qRef=" << m_qRef.data[i]
                   << ", llimit =" << llimit
                   << ", ulimit =" << ulimit
-                  << ", servo_state = " <<  ( servo_state ? "ON" : "OFF")
+                  << ", servo_state = " <<  ( servo_state[i] ? "ON" : "OFF")
                   << ", prev_angle = " << prev_angle[i] << std::endl;
         // fix joint angle
         if ( llimit > m_qRef.data[i] && prev_angle[i] > m_qRef.data[i] ) // ref < llimit and prev < ref -> OK
@@ -280,8 +283,7 @@ RTC::ReturnCode_t SoftErrorLimiter::onExecute(RTC::UniqueId ec_id)
     for ( int i = 0; i < m_qRef.data.length(); i++ ){
       double limit = m_robot->m_servoErrorLimit[i];
       double error = m_qRef.data[i] - m_qCurrent.data[i];
-      int servo_state = (m_servoState.data[i][0] & OpenHRP::RobotHardwareService::SERVO_STATE_MASK) >> OpenHRP::RobotHardwareService::SERVO_STATE_SHIFT; // enum SwitchStatus {SWITCH_ON, SWITCH_OFF};
-      if ( servo_state == 1 && fabs(error) > limit ) {
+      if ( servo_state[i] == 1 && fabs(error) > limit ) {
         std::cerr << "error limit over " << m_robot->joint(i)->name << "(" << i << "), qRef=" << m_qRef.data[i]
                   << ", qCurrent=" << m_qCurrent.data[i] << " "
                   << ", Error=" << error << " > " << limit << " (limit)"
