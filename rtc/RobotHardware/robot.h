@@ -72,6 +72,11 @@ public:
     void startInertiaSensorCalibration();
 
     /**
+       \brief start force sensor calibration and wait until finish
+    */
+    void startForceSensorCalibration();
+
+    /**
        \brief initialize joint angle
        \param name joint name, part name or all
        \param option options for initialization
@@ -252,6 +257,11 @@ private:
     void calibrateInertiaSensorOneStep();
 
     /**
+       \brief calibrate force sensor for one sampling period
+     */
+    void calibrateForceSensorOneStep();
+
+    /**
        \brief check if a calibration process is running or not
        \true if one of calibration processes is running, false otherwise
      */
@@ -263,12 +273,13 @@ private:
     void gain_control();
     void gain_control(int id);
 
-    int calib_counter;
+    int inertia_calib_counter, force_calib_counter;
     std::vector<double> gain_counter;
 
     std::vector< boost::array<double,3> > gyro_sum;
     std::vector< boost::array<double,3> > accel_sum;
     std::vector< boost::array<double,3> > att_sum;
+    std::vector< boost::array<double,6> > force_sum;
 
     std::vector<double> pgain, old_pgain, default_pgain;
     std::vector<double> dgain, old_dgain, default_dgain;
