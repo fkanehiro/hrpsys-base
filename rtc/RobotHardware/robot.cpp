@@ -37,7 +37,7 @@ bool robot::init()
 	gain_counter[i] = GAIN_COUNT;
     }
 
-    calib_counter = -1;
+    inertia_calib_counter = force_calib_counter = -1;
 
     pgain.resize(numJoints());
     dgain.resize(numJoints());
@@ -70,6 +70,7 @@ bool robot::init()
 
     gyro_sum.resize(numSensors(Sensor::RATE_GYRO));
     accel_sum.resize(numSensors(Sensor::ACCELERATION));
+    force_sum.resize(numSensors(Sensor::FORCE));
 
     if ((number_of_joints() != numJoints())
 	|| (number_of_force_sensors() != numSensors(Sensor::FORCE))
@@ -90,13 +91,7 @@ bool robot::init()
 
 void robot::removeForceSensorOffset()
 {
-    double force[6], offsets[6];
-    
-    for (int i=0; i<numSensors(Sensor::FORCE); i++) {
-        read_force_sensor(i, force);
-        for (int j=0; j<6; j++) offsets[j] = -force[j];
-        write_force_offset(i, offsets);
-    }
+    startForceSensorCalibration();
 }
 
 bool robot::loadGain()
@@ -147,7 +142,24 @@ void robot::startInertiaSensorCalibration()
     }
 #endif
 
-    calib_counter=CALIB_COUNT;
+    inertia_calib_counter=CALIB_COUNT;
+
+    wait_sem.wait();
+}
+
+void robot::startForceSensorCalibration()
+{
+    if (numSensors(Sensor::FORCE)==0)  return;
+
+    if (isBusy()) return;
+
+    for (int j=0; j<numSensors(Sensor::FORCE); j++) {
+        for (int i=0; i<6; i++) {
+            force_sum[j][i] = 0;
+        }
+    }
+
+    force_calib_counter=CALIB_COUNT;
 
     wait_sem.wait();
 }
@@ -162,7 +174,7 @@ void robot::initializeJointAngle(const char *name, const char *option)
 
 void robot::calibrateInertiaSensorOneStep()
 {
-    if (calib_counter>0) {
+    if (inertia_calib_counter>0) {
         for (int j=0; j<numSensors(Sensor::RATE_GYRO); j++){
             double rate[3];
             read_gyro_sensor(j, rate);
@@ -186,8 +198,8 @@ void robot::calibrateInertiaSensorOneStep()
         }
 #endif
 
-        calib_counter--;
-        if (calib_counter==0) {
+        inertia_calib_counter--;
+        if (inertia_calib_counter==0) {
 
             for (int j=0; j<numSensors(Sensor::RATE_GYRO); j++) {
                 for (int i=0; i<3; i++) {
@@ -219,6 +231,30 @@ void robot::calibrateInertiaSensorOneStep()
     }
 }
 
+void robot::calibrateForceSensorOneStep()
+{
+    if (force_calib_counter>0) {
+        for (int j=0; j<numSensors(Sensor::FORCE); j++){
+            double force[6];
+            read_force_sensor(j, force);
+            for (int i=0; i<6; i++)
+                force_sum[j][i] += force[i];
+        }
+        force_calib_counter--;
+        if (force_calib_counter==0) {
+
+            for (int j=0; j<numSensors(Sensor::FORCE); j++) {
+                for (int i=0; i<6; i++) {
+                    force_sum[j][i] = -force_sum[j][i]/CALIB_COUNT;
+                }
+                write_force_offset(j,  force_sum[j].data());
+            }
+
+            wait_sem.post();
+        }
+    }
+}
+
 void robot::gain_control(int i)
 {
     double new_pgain=0,new_dgain=0;
@@ -240,6 +276,7 @@ void robot::gain_control()
 void robot::oneStep()
 {
     calibrateInertiaSensorOneStep();
+    calibrateForceSensorOneStep();
     gain_control();
     if (m_calibRequested){
         ::initializeJointAngle(m_calibJointName.c_str(), 
@@ -359,7 +396,7 @@ bool robot::power(int jid, bool turnon)
 
 bool robot::isBusy() const
 {
-    if (calib_counter > 0)
+    if (inertia_calib_counter > 0 || force_calib_counter > 0)
         return true;
 
     for (int i=0; i<numJoints(); i++) {
