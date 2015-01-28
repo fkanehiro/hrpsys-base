@@ -1,6 +1,7 @@
 #include "RobotHardwareService_impl.h"
 #include "robot.h"
 #include <hrpModel/Sensor.h>
+#include <boost/array.hpp>
 
 using namespace OpenHRP;
 using namespace hrp;
@@ -148,4 +149,16 @@ CORBA::Boolean RobotHardwareService_impl::readDigitalOutput(::OpenHRP::RobotHard
     dout = new ::OpenHRP::RobotHardwareService::OctSequence();
     dout->length(lengthDigitalOutput());
     return m_robot->readDigitalOutput((char *)(dout->get_buffer()));
+}
+
+void RobotHardwareService_impl::removeForceSensorOffsetWithMassOffset(const ::OpenHRP::RobotHardwareService::DblSequence6Sequence& mass_offset)
+{
+    std::vector< boost::array<double,6> > _mass_offset;
+    _mass_offset.resize(mass_offset.length());
+    for (int j = 0; j < mass_offset.length(); j++) {
+        for (int i = 0; i < 6; i++) {
+            _mass_offset[j][i] = mass_offset[j][i];
+        }
+    }
+    m_robot->removeForceSensorOffsetWithMassOffset(_mass_offset);
 }

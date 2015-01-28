@@ -71,6 +71,7 @@ bool robot::init()
     gyro_sum.resize(numSensors(Sensor::RATE_GYRO));
     accel_sum.resize(numSensors(Sensor::ACCELERATION));
     force_sum.resize(numSensors(Sensor::FORCE));
+    force_mass_offset.resize(numSensors(Sensor::FORCE));
 
     if ((number_of_joints() != numJoints())
 	|| (number_of_force_sensors() != numSensors(Sensor::FORCE))
@@ -91,6 +92,22 @@ bool robot::init()
 
 void robot::removeForceSensorOffset()
 {
+    // Do not use force_mass_offset
+    for (int j=0; j<numSensors(Sensor::FORCE); j++) {
+        for (int i=0; i<6; i++) {
+            force_mass_offset[j][i] = 0;
+        }
+    }
+    startForceSensorCalibration();
+}
+
+void robot::removeForceSensorOffsetWithMassOffset(const std::vector< boost::array<double,6> >& mass_offset)
+{
+    for (int j=0; j<numSensors(Sensor::FORCE); j++) {
+        for (int i=0; i<6; i++) {
+            force_mass_offset[j][i] = mass_offset[j][i];
+        }
+    }
     startForceSensorCalibration();
 }
 
@@ -245,7 +262,7 @@ void robot::calibrateForceSensorOneStep()
 
             for (int j=0; j<numSensors(Sensor::FORCE); j++) {
                 for (int i=0; i<6; i++) {
-                    force_sum[j][i] = -force_sum[j][i]/CALIB_COUNT;
+                    force_sum[j][i] = -force_sum[j][i]/CALIB_COUNT + force_mass_offset[j][i];
                 }
                 write_force_offset(j,  force_sum[j].data());
             }

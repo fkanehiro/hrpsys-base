@@ -28,6 +28,7 @@ module OpenHRP
 
     typedef sequence<double, 3> DblSequence3;
     typedef sequence<double, 6> DblSequence6;
+    typedef sequence<DblSequence6> DblSequence6Sequence;
 
     /**
      * @brief status of the robot
@@ -162,5 +163,11 @@ module OpenHRP
      * @return true if applicable, false otherwise
      */
     boolean readDigitalOutput(out OctSequence dOut);
+
+    /**
+     * @brief remove offsets on sensor outputs form force/torque sensors with offsets from mass properties
+     * @param mass_offsets is sequence of force/torque offsets from mass properties. If all values are set to zero, this function becomes same as removeForceSensorOffset().
+     */
+    void removeForceSensorOffsetWithMassOffset(in DblSequence6Sequence mass_offsets);
   };
 };

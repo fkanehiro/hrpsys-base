@@ -60,6 +60,11 @@ public:
     void removeForceSensorOffset();
 
     /**
+       \brief remove offsets on force sensor outputs with offsets from mass properties
+     */
+    void removeForceSensorOffsetWithMassOffset(const std::vector< boost::array<double,6> >& mass_offset);
+
+    /**
        \brief load PD gains 
        \param fname name of the file where gains are stored
        \return true if gains are loaded successufully, false otherwise
@@ -279,7 +284,7 @@ private:
     std::vector< boost::array<double,3> > gyro_sum;
     std::vector< boost::array<double,3> > accel_sum;
     std::vector< boost::array<double,3> > att_sum;
-    std::vector< boost::array<double,6> > force_sum;
+    std::vector< boost::array<double,6> > force_sum, force_mass_offset;
 
     std::vector<double> pgain, old_pgain, default_pgain;
     std::vector<double> dgain, old_dgain, default_dgain;
