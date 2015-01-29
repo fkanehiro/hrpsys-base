@@ -688,7 +688,7 @@ bool ImpedanceController::setImpedanceControllerParam(const std::string& i_name_
 	p.target_name = target_name;
     
 	// joint path
-	p.manip = hrp::JointPathExPtr(new hrp::JointPathEx(m_robot, m_robot->link(p.base_name), m_robot->link(p.target_name)));
+	p.manip = hrp::JointPathExPtr(new hrp::JointPathEx(m_robot, m_robot->link(p.base_name), m_robot->link(p.target_name), m_dt));
 
         if ( ! p.manip ) {
           std::cerr << "[" << m_profile.instance_name << "] invalid joint path from " << p.base_name << " to " << p.target_name << std::endl;

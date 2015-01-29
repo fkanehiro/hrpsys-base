@@ -249,7 +249,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   is_legged_robot = false;
   for (size_t i = 0; i < 2; i++) {
     if ( m_robot->sensor<hrp::ForceSensor>(sensor_names[i]) != NULL) {
-      manip2[i] = hrp::JointPathExPtr(new hrp::JointPathEx(m_robot, m_robot->rootLink(), m_robot->sensor<hrp::ForceSensor>(sensor_names[i])->link));
+      manip2[i] = hrp::JointPathExPtr(new hrp::JointPathEx(m_robot, m_robot->rootLink(), m_robot->sensor<hrp::ForceSensor>(sensor_names[i])->link, dt));
       is_legged_robot = true;
     }
   }
@@ -1545,7 +1545,7 @@ void Stabilizer::calcTorque ()
   //   // std::cerr << ":dv "; rats::print_vector(std::cerr, dv);
   // }
   for (size_t j = 0; j < 2; j++) {
-    hrp::JointPathEx jm = hrp::JointPathEx(m_robot, m_robot->rootLink(), m_robot->sensor<hrp::ForceSensor>(sensor_names[j])->link);
+    hrp::JointPathEx jm = hrp::JointPathEx(m_robot, m_robot->rootLink(), m_robot->sensor<hrp::ForceSensor>(sensor_names[j])->link, dt);
     hrp::dmatrix JJ;
     jm.calcJacobian(JJ);
     hrp::dvector ft(6);
