@@ -15,7 +15,7 @@ namespace hrp {
 namespace hrp {
     class JointPathEx : public JointPath {
   public:
-    JointPathEx(BodyPtr& robot, Link* base, Link* end);
+    JointPathEx(BodyPtr& robot, Link* base, Link* end, double control_cycle);
     bool calcJacobianInverseNullspace(dmatrix &J, dmatrix &Jinv, dmatrix &Jnull);
     bool calcInverseKinematics2Loop(const Vector3& dp, const Vector3& omega, const double LAMBDA, const double avoid_gain = 0.0, const double reference_gain = 0.0, const dvector* reference_q = NULL);
     bool calcInverseKinematics2(const Vector3& end_p, const Matrix33& end_R, const double avoid_gain = 0.0, const double reference_gain = 0.0, const dvector* reference_q = NULL);
@@ -32,7 +32,7 @@ namespace hrp {
         int maxIKIteration;
         std::vector<Link*> joints;
         std::vector<double> avoid_weight_gain;
-	double sr_gain, manipulability_limit, manipulability_gain;
+        double sr_gain, manipulability_limit, manipulability_gain, dt;
     };
 
     typedef boost::shared_ptr<JointPathEx> JointPathExPtr;

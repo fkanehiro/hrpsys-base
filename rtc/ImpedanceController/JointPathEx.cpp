@@ -86,13 +86,13 @@ Vector3 omegaFromRotEx(const Matrix33& r)
     }
 }
 
-JointPathEx::JointPathEx(BodyPtr& robot, Link* base, Link* end)
+JointPathEx::JointPathEx(BodyPtr& robot, Link* base, Link* end, double control_cycle)
     : JointPath(base, end), sr_gain(1.0), manipulability_limit(0.1), manipulability_gain(0.001), maxIKPosErrorSqr(1.0e-8), maxIKRotErrorSqr(1.0e-6), maxIKIteration(50) {
   for (int i = 0 ; i < numJoints(); i++ ) {
     joints.push_back(joint(i));
   }
-
   avoid_weight_gain.resize(numJoints());
+  dt = control_cycle;
 }
 
 void JointPathEx::setMaxIKError(double epos, double erot) {
@@ -273,18 +273,24 @@ bool JointPathEx::calcInverseKinematics2Loop(const Vector3& dp, const Vector3& o
       std::cerr << std::endl;
     }
 
-    // default servoErrorLimit in RobotHardware(DEFAULT_ANGLE_ERROR_LIMIT) = 0.2[rad]
-    double max_speed = 0;
+    // dq limitation using lvlimit/uvlimit
+    double min_speed_ratio = 1.0;
     for(int j=0; j < n; ++j){
-      max_speed = std::max(max_speed, fabs(dq(j)));
+        double speed_ratio = 1.0;
+        if (dq(j) < joints[j]->lvlimit * dt) {
+            speed_ratio = fabs(joints[j]->lvlimit * dt / dq(j));
+        } else if (dq(j) > joints[j]->uvlimit * dt) {
+            speed_ratio = fabs(joints[j]->uvlimit * dt / dq(j));
+        }
+        min_speed_ratio = std::max(std::min(min_speed_ratio, speed_ratio), 0.0);
     }
-    if ( max_speed > 0.2*0.5 ) { // 0.5 safety margin
+    if ( min_speed_ratio < 1.0 ) { 
       if ( DEBUG ) {
         std::cerr << "spdlmt: ";
         for(int j=0; j < n; ++j) { std::cerr << dq(j) << " "; } std::cerr << std::endl;
       }
       for(int j=0; j < n; ++j) {
-        dq(j) = dq(j) * 0.2*0.5 / max_speed;
+        dq(j) = dq(j) * min_speed_ratio; // make
       }
       if ( DEBUG ) {
         std::cerr << "spdlmt: ";
