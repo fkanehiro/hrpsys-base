@@ -31,45 +31,43 @@ def demo():
     if ret1[0]:
         print "getImpedanceControllerParam => OK"
     # 2. set and start
-    ret1[1].base_name="CHEST"
-    ret1[1].target_name="RARM_WRIST_P"
     ret1[1].K_r=1.0
     ret1[1].D_r=2.0
     ret1[1].M_r=0.2
     ret2=hcf.ic_svc.setImpedanceControllerParam("rhsensor", ret1[1])
     ret3=hcf.ic_svc.getImpedanceControllerParam("rhsensor")
-    if ret2 and ret1[1].base_name == ret3[1].base_name and ret1[1].target_name == ret3[1].target_name:
+    if ret2:
         print "setImpedanceControllerParam => OK"
-    # 3. set ref force and moment
+    # 3. start impedance
+    ret4=hcf.ic_svc.startImpedanceController("rhsensor")
+    if ret4:
+        print "startImpedanceController => OK"
+    # 4. set ref force and moment
     hcf.seq_svc.setWrenches([0,0,0,0,0,0,
                              0,0,0,0,0,0,
                              0,0,0,0,0,0,
                              20,10,-10,0,0,0,], 2.0);
     hcf.seq_svc.waitInterpolation();
-    hcf.ic_svc.setImpedanceControllerParam("rhsensor", ret1[1])
     time.sleep(2)
     hcf.seq_svc.setWrenches([0,0,0,0,0,0,
                              0,0,0,0,0,0,
                              0,0,0,0,0,0,
                              0,0,0,0,0,0,], 2.0);
     hcf.seq_svc.waitInterpolation();
-    hcf.ic_svc.setImpedanceControllerParam("rhsensor", ret1[1])
     time.sleep(2)
     hcf.seq_svc.setWrenches([0,0,0,0,0,0,
                              0,0,0,0,0,0,
                              0,0,0,0,0,0,
                              0,0,0,0.1,-0.1,0.1], 2.0);
     hcf.seq_svc.waitInterpolation();
-    hcf.ic_svc.setImpedanceControllerParam("rhsensor", ret1[1])
     time.sleep(2)
     hcf.seq_svc.setWrenches([0,0,0,0,0,0,
                              0,0,0,0,0,0,
                              0,0,0,0,0,0,
                              0,0,0,0,0,0], 2.0);
     hcf.seq_svc.waitInterpolation();
-    hcf.ic_svc.setImpedanceControllerParam("rhsensor", ret1[1])
     time.sleep(2)
-    # 4. stop
-    ret4=hcf.ic_svc.deleteImpedanceController("rhsensor")
-    if ret4:
-        print "deleteImpedanceController => OK"
+    # 5. stop impedance
+    ret5=hcf.ic_svc.stopImpedanceController("rhsensor")
+    if ret5:
+        print "stopImpedanceController => OK"
