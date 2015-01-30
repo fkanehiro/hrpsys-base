@@ -251,9 +251,8 @@ RTC::ReturnCode_t ImpedanceController::onActivated(RTC::UniqueId ec_id)
 RTC::ReturnCode_t ImpedanceController::onDeactivated(RTC::UniqueId ec_id)
 {
   std::cout << "ImpedanceController::onDeactivated(" << ec_id << ")" << std::endl;
-  Guard guard(m_mutex);
   for ( std::map<std::string, ImpedanceParam>::iterator it = m_impedance_param.begin(); it != m_impedance_param.end(); it++ ) {
-      stopImpedanceController(it->first);
+      stopImpedanceControllerNoWait(it->first);
     m_impedance_param[it->first].transition_count = 1;
   }
   return RTC::RTC_OK;
@@ -661,11 +660,11 @@ void ImpedanceController::calcForceMoment ()
 };
 
 //
-bool ImpedanceController::startImpedanceController(const std::string& i_name_)
+bool ImpedanceController::startImpedanceControllerNoWait(const std::string& i_name_)
 {
     // Lock Mutex
-    Guard guard(m_mutex);
     {
+        Guard guard(m_mutex);
         if ( m_impedance_param.find(i_name_) == m_impedance_param.end() ) {
             std::cerr << "[" << m_profile.instance_name << "] Could not found impedance controller param [" << i_name_ << "]" << std::endl;
             return false;
@@ -678,15 +677,20 @@ bool ImpedanceController::startImpedanceController(const std::string& i_name_)
         m_impedance_param[i_name_].is_active = true;
         m_impedance_param[i_name_].transition_count = -MAX_TRANSITION_COUNT; // when start impedance, count up to 0
     }
-    waitImpedanceControllerTransition(i_name_);
     return true;
 }
 
-bool ImpedanceController::stopImpedanceController(const std::string& i_name_)
+ bool ImpedanceController::startImpedanceController(const std::string& i_name_)
+ {
+     startImpedanceControllerNoWait(i_name_);
+     waitImpedanceControllerTransition(i_name_);
+ }
+
+bool ImpedanceController::stopImpedanceControllerNoWait(const std::string& i_name_)
 {
     // Lock Mutex
-    Guard guard(m_mutex);
     {
+        Guard guard(m_mutex);
         if ( m_impedance_param.find(i_name_) == m_impedance_param.end() ) {
             std::cerr << "[" << m_profile.instance_name << "] Could not found impedance controller param [" << i_name_ << "]" << std::endl;
             return false;
@@ -701,6 +705,12 @@ bool ImpedanceController::stopImpedanceController(const std::string& i_name_)
         }
         m_impedance_param[i_name_].transition_count = MAX_TRANSITION_COUNT; // when stop impedance, count down to 0
     }
+    return true;
+}
+
+bool ImpedanceController::stopImpedanceController(const std::string& i_name_)
+{
+    stopImpedanceControllerNoWait(i_name_);
     waitImpedanceControllerTransition(i_name_);
     return true;
 }
@@ -708,8 +718,8 @@ bool ImpedanceController::stopImpedanceController(const std::string& i_name_)
 bool ImpedanceController::setImpedanceControllerParam(const std::string& i_name_, OpenHRP::ImpedanceControllerService::impedanceParam i_param_)
 {
     // Lock Mutex
-    Guard guard(m_mutex);
     {
+        Guard guard(m_mutex);
         std::string name = std::string(i_name_);
         if ( m_impedance_param.find(name) == m_impedance_param.end() ) {
             std::cerr << "[" << m_profile.instance_name << "] Could not found impedance controller param [" << name << "]" << std::endl;

@@ -170,6 +170,8 @@ class ImpedanceController
     hrp::Matrix33 localR;
   };
 
+  bool startImpedanceControllerNoWait(const std::string& i_name_);
+  bool stopImpedanceControllerNoWait(const std::string& i_name_);
   void copyImpedanceParam (OpenHRP::ImpedanceControllerService::impedanceParam& i_param_, const ImpedanceParam& param);
   void updateRootLinkPosRot (TimedOrientation3D tmprpy);
   void calcForceMoment();
