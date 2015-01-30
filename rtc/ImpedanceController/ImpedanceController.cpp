@@ -663,43 +663,20 @@ void ImpedanceController::calcForceMoment ()
 //
 bool ImpedanceController::startImpedanceController(const std::string& i_name_)
 {
-    std::string name = std::string(i_name_);
-    if ( m_impedance_param.find(name) == m_impedance_param.end() ) {
-      std::cerr << "[" << m_profile.instance_name << "] Could not found impedance controller" << name << std::endl;
-      return false;
-    }
-
-    // wait to finish deleting if the target impedance param has been deleted
-    if(m_impedance_param[name].transition_count != 0){
-      std::cerr << "[" << m_profile.instance_name << "] Wait for transition " << name << std::endl;
-      waitImpedanceControllerTransition(name);
-    }
-
     // Lock Mutex
     Guard guard(m_mutex);
-    
-    if ( m_qRef.data.length() !=  m_robot->numJoints() ) {
-      std::cerr << "[" << m_profile.instance_name << "] m_qRef has wrong size, m_robot->numJoints() = " << m_robot->numJoints() << ", m_qRef.data.length() = " << m_qRef.data.length() << std::endl;
-        return false;
-    }
-    if ( m_qCurrent.data.length() !=  m_robot->numJoints() ) {
-      std::cerr << "[" << m_profile.instance_name << "] m_qCurrent has wrong size, m_robot->numJoints() = " << m_robot->numJoints() << ", m_qCurrent.data.length() = " << m_qCurrent.data.length() << std::endl;
-        return false;
-    }
-
-    int force_id = -1;
-    if ( !checkImpedanceNameValidity (force_id, name) ) {
-      return false;
-    }
-
-    if ( m_impedance_param.find(name) == m_impedance_param.end() ) {
-        std::cerr << "[" << m_profile.instance_name << "] No such impedance controller param [" << name << "]" << std::endl;
-        return false;
-    }
-    if ( !m_impedance_param[name].is_active ) {
-        std::cerr << "[" << m_profile.instance_name << "] Set new impedance parameters" << std::endl;
-        m_impedance_param[name].is_active = true;
-        m_impedance_param[name].transition_count = -MAX_TRANSITION_COUNT; // when start impedance, count up to 0
+    {
+        if ( m_impedance_param.find(i_name_) == m_impedance_param.end() ) {
+            std::cerr << "[" << m_profile.instance_name << "] Could not found impedance controller param [" << i_name_ << "]" << std::endl;
+            return false;
+        }
+        if ( m_impedance_param[i_name_].is_active ) {
+            std::cerr << "[" << m_profile.instance_name << "] Impedance control [" << i_name_ << "] is already started" << std::endl;
+            return false;
+        }
+        std::cerr << "[" << m_profile.instance_name << "] Start impedance control [" << i_name_ << "]" << std::endl;
+        m_impedance_param[i_name_].is_active = true;
+        m_impedance_param[i_name_].transition_count = -MAX_TRANSITION_COUNT; // when start impedance, count up to 0
     }
     waitImpedanceControllerTransition(i_name_);
     return true;
@@ -707,23 +684,22 @@ bool ImpedanceController::startImpedanceController(const std::string& i_name_)
 
 bool ImpedanceController::stopImpedanceController(const std::string& i_name_)
 {
-    if ( m_impedance_param.find(i_name_) == m_impedance_param.end() ) {
-      std::cerr << "[" << m_profile.instance_name << "] Could not found impedance controller" << i_name_ << std::endl;
-      return false;
-    }
-    if ( !m_impedance_param[i_name_].is_active ) {
-      std::cerr << "[" << m_profile.instance_name << "] " << i_name_ << "is already in deactivated" << std::endl;
-      return false;
-    }
-    if ( m_impedance_param[i_name_].transition_count > 0) {
-      std::cerr << "[" << m_profile.instance_name << "] " << i_name_ << "is already in deleting." << std::endl;
-      return false;
-    }else{
-      std::cerr << "[" << m_profile.instance_name << "] Delete impedance parameters " << i_name_ << std::endl;
-      for (int i = 0; i < m_robot->numJoints(); i++ ) {
-          m_impedance_param[i_name_].transition_joint_q[i] = m_robot->joint(i)->q;
-      }
-      m_impedance_param[i_name_].transition_count = MAX_TRANSITION_COUNT; // when stop impedance, count down to 0
+    // Lock Mutex
+    Guard guard(m_mutex);
+    {
+        if ( m_impedance_param.find(i_name_) == m_impedance_param.end() ) {
+            std::cerr << "[" << m_profile.instance_name << "] Could not found impedance controller param [" << i_name_ << "]" << std::endl;
+            return false;
+        }
+        if ( !m_impedance_param[i_name_].is_active ) {
+            std::cerr << "[" << m_profile.instance_name << "] Impedance control [" << i_name_ << "] is already stopped" << std::endl;
+            return false;
+        }
+        std::cerr << "[" << m_profile.instance_name << "] Stop impedance control [" << i_name_ << "]" << std::endl;
+        for (int i = 0; i < m_robot->numJoints(); i++ ) {
+            m_impedance_param[i_name_].transition_joint_q[i] = m_robot->joint(i)->q;
+        }
+        m_impedance_param[i_name_].transition_count = MAX_TRANSITION_COUNT; // when stop impedance, count down to 0
     }
     waitImpedanceControllerTransition(i_name_);
     return true;
@@ -731,73 +707,48 @@ bool ImpedanceController::stopImpedanceController(const std::string& i_name_)
 
 bool ImpedanceController::setImpedanceControllerParam(const std::string& i_name_, OpenHRP::ImpedanceControllerService::impedanceParam i_param_)
 {
-    std::string name = std::string(i_name_);
-    if ( m_impedance_param.find(name) == m_impedance_param.end() ) {
-      std::cerr << "[" << m_profile.instance_name << "] Could not found impedance controller" << name << std::endl;
-      return false;
-    }
-
-    // wait to finish deleting if the target impedance param has been deleted
-    if(m_impedance_param[name].transition_count != 0){
-      std::cerr << "[" << m_profile.instance_name << "] Wait for transition " << name << std::endl;
-      waitImpedanceControllerTransition(name);
-    }
-
     // Lock Mutex
     Guard guard(m_mutex);
-    
-    if ( m_qRef.data.length() !=  m_robot->numJoints() ) {
-      std::cerr << "[" << m_profile.instance_name << "] m_qRef has wrong size, m_robot->numJoints() = " << m_robot->numJoints() << ", m_qRef.data.length() = " << m_qRef.data.length() << std::endl;
-        return false;
+    {
+        std::string name = std::string(i_name_);
+        if ( m_impedance_param.find(name) == m_impedance_param.end() ) {
+            std::cerr << "[" << m_profile.instance_name << "] Could not found impedance controller param [" << name << "]" << std::endl;
+            return false;
+        }
+
+        std::cerr << "[" << m_profile.instance_name << "] Update impedance parameters" << std::endl;
+
+        m_impedance_param[name].sr_gain    = i_param_.sr_gain;
+        m_impedance_param[name].avoid_gain = i_param_.avoid_gain;
+        m_impedance_param[name].reference_gain = i_param_.reference_gain;
+        m_impedance_param[name].manipulability_limit = i_param_.manipulability_limit;
+        m_impedance_param[name].manip->setSRGain(m_impedance_param[name].sr_gain);
+        m_impedance_param[name].manip->setManipulabilityLimit(m_impedance_param[name].manipulability_limit);
+
+        m_impedance_param[name].M_p = i_param_.M_p;
+        m_impedance_param[name].D_p = i_param_.D_p;
+        m_impedance_param[name].K_p = i_param_.K_p;
+        m_impedance_param[name].M_r = i_param_.M_r;
+        m_impedance_param[name].D_r = i_param_.D_r;
+        m_impedance_param[name].K_r = i_param_.K_r;
+
+        m_impedance_param[name].force_gain = hrp::Vector3(i_param_.force_gain[0], i_param_.force_gain[1], i_param_.force_gain[2]).asDiagonal();
+        m_impedance_param[name].moment_gain = hrp::Vector3(i_param_.moment_gain[0], i_param_.moment_gain[1], i_param_.moment_gain[2]).asDiagonal();
+
+        for ( std::map<std::string, ImpedanceParam>::iterator it = m_impedance_param.begin(); it != m_impedance_param.end(); it++ ) {
+            ImpedanceParam& param = it->second;
+            std::cerr << "[" << m_profile.instance_name << "] set parameters" << std::endl;
+            std::cerr << "[" << m_profile.instance_name << "]             name : " << it->first << std::endl;
+            std::cerr << "[" << m_profile.instance_name << "]    M, D, K (pos) : " << param.M_p << " " << param.D_p << " " << param.K_p << std::endl;
+            std::cerr << "[" << m_profile.instance_name << "]    M, D, K (rot) : " << param.M_r << " " << param.D_r << " " << param.K_r << std::endl;
+            std::cerr << "[" << m_profile.instance_name << "]       force_gain : " << param.force_gain.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", "\n", "    [", "]")) << std::endl;
+            std::cerr << "[" << m_profile.instance_name << "]      moment_gain : " << param.moment_gain.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", "\n", "    [", "]")) << std::endl;
+            std::cerr << "[" << m_profile.instance_name << "]      manip_limit : " << param.manipulability_limit << std::endl;
+            std::cerr << "[" << m_profile.instance_name << "]          sr_gain : " << param.sr_gain << std::endl;
+            std::cerr << "[" << m_profile.instance_name << "]       avoid_gain : " << param.avoid_gain << std::endl;
+            std::cerr << "[" << m_profile.instance_name << "]   reference_gain : " << param.reference_gain << std::endl;
+        }
     }
-    if ( m_qCurrent.data.length() !=  m_robot->numJoints() ) {
-      std::cerr << "[" << m_profile.instance_name << "] m_qCurrent has wrong size, m_robot->numJoints() = " << m_robot->numJoints() << ", m_qCurrent.data.length() = " << m_qCurrent.data.length() << std::endl;
-        return false;
-    }
-
-    int force_id = -1;
-    if ( !checkImpedanceNameValidity (force_id, name) ) {
-      return false;
-    }
-
-    if ( m_impedance_param.find(name) == m_impedance_param.end() ) {
-        std::cerr << "[" << m_profile.instance_name << "] No such impedance controller param [" << name << "]" << std::endl;
-        return false;
-    }
-    std::cerr << "[" << m_profile.instance_name << "] Update impedance parameters" << std::endl;
-
-    m_impedance_param[name].sr_gain    = i_param_.sr_gain;
-    m_impedance_param[name].avoid_gain = i_param_.avoid_gain;
-    m_impedance_param[name].reference_gain = i_param_.reference_gain;
-    m_impedance_param[name].manipulability_limit = i_param_.manipulability_limit;
-    m_impedance_param[name].manip->setSRGain(m_impedance_param[name].sr_gain);
-    m_impedance_param[name].manip->setManipulabilityLimit(m_impedance_param[name].manipulability_limit);
-
-    m_impedance_param[name].M_p = i_param_.M_p;
-    m_impedance_param[name].D_p = i_param_.D_p;
-    m_impedance_param[name].K_p = i_param_.K_p;
-    m_impedance_param[name].M_r = i_param_.M_r;
-    m_impedance_param[name].D_r = i_param_.D_r;
-    m_impedance_param[name].K_r = i_param_.K_r;
-
-    m_impedance_param[name].force_gain = hrp::Vector3(i_param_.force_gain[0], i_param_.force_gain[1], i_param_.force_gain[2]).asDiagonal();
-    m_impedance_param[name].moment_gain = hrp::Vector3(i_param_.moment_gain[0], i_param_.moment_gain[1], i_param_.moment_gain[2]).asDiagonal();
-
-    for ( std::map<std::string, ImpedanceParam>::iterator it = m_impedance_param.begin(); it != m_impedance_param.end(); it++ ) {
-      ImpedanceParam& param = it->second;
-      std::cerr << "[" << m_profile.instance_name << "] set parameters" << std::endl;
-      std::cerr << "[" << m_profile.instance_name << "]             name : " << it->first << std::endl;
-      std::cerr << "[" << m_profile.instance_name << "]    M, D, K (pos) : " << param.M_p << " " << param.D_p << " " << param.K_p << std::endl;
-      std::cerr << "[" << m_profile.instance_name << "]    M, D, K (rot) : " << param.M_r << " " << param.D_r << " " << param.K_r << std::endl;
-      std::cerr << "[" << m_profile.instance_name << "]       force_gain : " << param.force_gain.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", "\n", "    [", "]")) << std::endl;
-      std::cerr << "[" << m_profile.instance_name << "]      moment_gain : " << param.moment_gain.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", "\n", "    [", "]")) << std::endl;
-      std::cerr << "[" << m_profile.instance_name << "]      manip_limit : " << param.manipulability_limit << std::endl;
-      std::cerr << "[" << m_profile.instance_name << "]          sr_gain : " << param.sr_gain << std::endl;
-      std::cerr << "[" << m_profile.instance_name << "]       avoid_gain : " << param.avoid_gain << std::endl;
-      std::cerr << "[" << m_profile.instance_name << "]   reference_gain : " << param.reference_gain << std::endl;
-    }
-
-    
     return true;
 }
 
@@ -827,33 +778,14 @@ void ImpedanceController::updateRootLinkPosRot (TimedOrientation3D tmprpy)
 
 bool ImpedanceController::getImpedanceControllerParam(const std::string& i_name_, ImpedanceControllerService::impedanceParam& i_param_)
 {
-  int force_id = -1;
-  if ( !checkImpedanceNameValidity (force_id, i_name_) ) {
-    return false;
-  }
-  if ( m_impedance_param.find(i_name_) == m_impedance_param.end() ) { // if impedance param of i_name_ is not found, return default impedance parameter ;; default parameter is specified ImpedanceParam struct's default constructer
-    copyImpedanceParam(i_param_, ImpedanceParam());
-  } else {
-    copyImpedanceParam(i_param_, m_impedance_param[i_name_]);
-  }
-  return true;
-}
-
-bool ImpedanceController::checkImpedanceNameValidity (int& force_id, const std::string& name)
-{
-  // error check
-  force_id = -1;
-  for (unsigned int i=0; i<m_forceIn.size(); i++){
-    if ( std::string(m_forceIn[i]->name()) == name ) {
-      force_id = i;
-      break;
+    if ( m_impedance_param.find(i_name_) == m_impedance_param.end() ) {
+        std::cerr << "[" << m_profile.instance_name << "] Could not found impedance controller param [" << i_name_ << "]" << std::endl;
+        // if impedance param of i_name_ is not found, return default impedance parameter ;; default parameter is specified ImpedanceParam struct's default constructer
+        copyImpedanceParam(i_param_, ImpedanceParam());
+        return false;
     }
-  }
-  if ( force_id < 0 ) {
-    std::cerr << "[" << m_profile.instance_name << "] Could not found FORCE_SENSOR named " << name << std::endl;
-    return false;
-  }
-  return true;
+    copyImpedanceParam(i_param_, m_impedance_param[i_name_]);
+    return true;
 }
 
 void ImpedanceController::waitImpedanceControllerTransition(std::string i_name_)

@@ -170,7 +170,6 @@ class ImpedanceController
     hrp::Matrix33 localR;
   };
 
-  bool checkImpedanceNameValidity (int& force_id, const std::string& name);
   void copyImpedanceParam (OpenHRP::ImpedanceControllerService::impedanceParam& i_param_, const ImpedanceParam& param);
   void updateRootLinkPosRot (TimedOrientation3D tmprpy);
   void calcForceMoment();
