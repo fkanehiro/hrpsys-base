@@ -167,6 +167,7 @@ RTC::ReturnCode_t ImpedanceController::onInitialize()
     // setting from conf file
     // rleg,TARGET_LINK,BASE_LINK,x,y,z,rx,ry,rz,rth #<=pos + rot (axis+angle)
     coil::vstring end_effectors_str = coil::split(prop["end_effectors"], ",");
+    std::vector<std::string> base_name_vec;
     if (end_effectors_str.size() > 0) {
         size_t prop_num = 10;
         size_t num = end_effectors_str.size()/prop_num;
@@ -186,10 +187,29 @@ RTC::ReturnCode_t ImpedanceController::onInitialize()
             eet.localR = Eigen::AngleAxis<double>(tmpv[3], hrp::Vector3(tmpv[0], tmpv[1], tmpv[2])).toRotationMatrix(); // rotation in VRML is represented by axis + angle
             ee_map.insert(std::pair<std::string, ee_trans>(ee_target , eet));
             ee_name_map.insert(std::pair<std::string, std::string>(ee_name, ee_target));;
+            base_name_vec.push_back(ee_base);
             std::cerr << "[" << m_profile.instance_name << "] End Effector [" << ee_name << "]" << ee_target << " " << ee_base << std::endl;
             std::cerr << "[" << m_profile.instance_name << "]   target = " << ee_target << ", base = " << ee_base << std::endl;
             std::cerr << "[" << m_profile.instance_name << "]   localPos = " << eet.localPos.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[m]" << std::endl;
             std::cerr << "[" << m_profile.instance_name << "]   localR = " << eet.localR.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", "\n", "    [", "]")) << std::endl;
+        }
+    }
+
+    // initialize impedance params
+    for (unsigned int i=0; i<m_forceIn.size(); i++){
+        std::string sensor_name = m_forceIn[i]->name();
+        hrp::ForceSensor* sensor = m_robot->sensor<hrp::ForceSensor>(sensor_name);
+        // set param
+        ImpedanceParam p;
+        p.target_name = sensor->link->name;
+        p.base_name = base_name_vec[i];
+        // joint path
+        p.manip = hrp::JointPathExPtr(new hrp::JointPathEx(m_robot, m_robot->link(p.base_name), m_robot->link(p.target_name), m_dt));
+        if ( ! p.manip ) {
+            std::cerr << "[" << m_profile.instance_name << "] invalid joint path from " << p.base_name << " to " << p.target_name << std::endl;
+        } else {
+            p.transition_joint_q.resize(m_robot->numJoints());
+            m_impedance_param[sensor_name] = p;
         }
     }
 
@@ -288,7 +308,11 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
 
         Guard guard(m_mutex);
 
-        if ( m_impedance_param.size() == 0 ) {
+        bool is_active = false;
+        for ( std::map<std::string, ImpedanceParam>::iterator it = m_impedance_param.begin(); it != m_impedance_param.end(); it++ ) {
+            is_active = is_active || it->second.is_active;
+        }
+        if ( !is_active ) {
           for ( int i = 0; i < m_qRef.data.length(); i++ ){
             m_q.data[i] = m_qRef.data[i];
             m_robot->joint(i)->q = m_qRef.data[i];
@@ -363,9 +387,11 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
           // back to impedance robot model (only for controlled joint)
 	  for ( std::map<std::string, ImpedanceParam>::iterator it = m_impedance_param.begin(); it != m_impedance_param.end(); it++ ) {
             ImpedanceParam& param = it->second;
-            for ( int j = 0; j < param.manip->numJoints(); j++ ){
-              int i = param.manip->joint(j)->jointId;
-              m_robot->joint(i)->q = qorg[i];
+            if (param.is_active) {
+                for ( int j = 0; j < param.manip->numJoints(); j++ ){
+                    int i = param.manip->joint(j)->jointId;
+                    m_robot->joint(i)->q = qorg[i];
+                }
             }
 	  }
           if (update_rpy) updateRootLinkPosRot(m_rpy);
@@ -378,6 +404,7 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
 	while(it != m_impedance_param.end()){
 	  std::string sensor_name = it->first;
 	  ImpedanceParam& param = it->second;
+          if (param.is_active) {
 
 	  if ( param.transition_count > 0 ) {
 	    hrp::JointPathExPtr manip = param.manip;
@@ -392,9 +419,7 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
         param.transition_count--;
 	    if(param.transition_count <= 0){ // erase impedance param
           std::cerr << "[" << m_profile.instance_name << "] Finished cleanup and erase impedance param " << sensor_name << std::endl;
-          m_impedance_param.erase(it++);
-        }else{
-          it++;
+          param.is_active = false;
         }
 	  } else {
 	    // use impedance model
@@ -521,8 +546,9 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
             if ( param.transition_count < 0 ) {
               param.transition_count++;
             }
-        it++;
 	  } // else
+          }
+        it++;
     } // while
 
         if ( m_q.data.length() != 0 ) { // initialized
@@ -642,14 +668,14 @@ void ImpedanceController::calcForceMoment ()
 bool ImpedanceController::setImpedanceControllerParam(const std::string& i_name_, OpenHRP::ImpedanceControllerService::impedanceParam i_param_)
 {
     std::string name = std::string(i_name_);
-    std::string base_name = std::string(i_param_.base_name);
-    std::string target_name = std::string(i_param_.target_name);
-    if (base_name == "") base_name = m_robot->rootLink()->name;
+    if ( m_impedance_param.find(name) == m_impedance_param.end() ) {
+      std::cerr << "[" << m_profile.instance_name << "] Could not found impedance controller" << name << std::endl;
+      return false;
+    }
 
     // wait to finish deleting if the target impedance param has been deleted
-    if(m_impedance_param.find(name) != m_impedance_param.end() 
-       && m_impedance_param[name].transition_count > 0){
-      std::cerr << "[" << m_profile.instance_name << "] Wait to finish deleting old " << name << std::endl;
+    if(m_impedance_param[name].transition_count != 0){
+      std::cerr << "[" << m_profile.instance_name << "] Wait for transition " << name << std::endl;
       waitDeletingImpedanceController(name);
     }
 
@@ -671,34 +697,13 @@ bool ImpedanceController::setImpedanceControllerParam(const std::string& i_name_
     }
 
     if ( m_impedance_param.find(name) == m_impedance_param.end() ) {
+        std::cerr << "[" << m_profile.instance_name << "] No such impedance controller param [" << name << "]" << std::endl;
+        return false;
+    }
+    if ( !m_impedance_param[name].is_active ) {
         std::cerr << "[" << m_profile.instance_name << "] Set new impedance parameters" << std::endl;
-
-	if ( ! m_robot->link(base_name) ) {
-          std::cerr << "[" << m_profile.instance_name << "] Could not found link " << base_name << std::endl;
-	  return false;
-	}
-	if ( ! m_robot->link(target_name) ) {
-          std::cerr << "[" << m_profile.instance_name << "] Could not found link " << target_name << std::endl;
-	  return false;
-	}
-    
-	// set param
-	ImpedanceParam p;
-	p.base_name = base_name;
-	p.target_name = target_name;
-    
-	// joint path
-	p.manip = hrp::JointPathExPtr(new hrp::JointPathEx(m_robot, m_robot->link(p.base_name), m_robot->link(p.target_name), m_dt));
-
-        if ( ! p.manip ) {
-          std::cerr << "[" << m_profile.instance_name << "] invalid joint path from " << p.base_name << " to " << p.target_name << std::endl;
-          return false;
-        }
-
-        p.transition_joint_q.resize(m_robot->numJoints());
-        p.transition_count = -MAX_TRANSITION_COUNT; // when start impedance, count up to 0
-	m_impedance_param[name] = p;
-
+        m_impedance_param[name].is_active = true;
+        m_impedance_param[name].transition_count = -MAX_TRANSITION_COUNT; // when start impedance, count up to 0
     } else {
         std::cerr << "[" << m_profile.instance_name << "] Update impedance parameters" << std::endl;
     }
@@ -724,8 +729,6 @@ bool ImpedanceController::setImpedanceControllerParam(const std::string& i_name_
       ImpedanceParam& param = it->second;
       std::cerr << "[" << m_profile.instance_name << "] set parameters" << std::endl;
       std::cerr << "[" << m_profile.instance_name << "]             name : " << it->first << std::endl;
-      std::cerr << "[" << m_profile.instance_name << "]        base_name : " << param.base_name << std::endl;
-      std::cerr << "[" << m_profile.instance_name << "]      target_name : " << param.target_name << std::endl;
       std::cerr << "[" << m_profile.instance_name << "]    M, D, K (pos) : " << param.M_p << " " << param.D_p << " " << param.K_p << std::endl;
       std::cerr << "[" << m_profile.instance_name << "]    M, D, K (rot) : " << param.M_r << " " << param.D_r << " " << param.K_r << std::endl;
       std::cerr << "[" << m_profile.instance_name << "]       force_gain : " << param.force_gain.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", "\n", "    [", "]")) << std::endl;
@@ -803,7 +806,10 @@ bool ImpedanceController::deleteImpedanceController(std::string i_name_)
       std::cerr << "[" << m_profile.instance_name << "] Could not found impedance controller" << i_name_ << std::endl;
       return false;
     }
-     
+    if ( !m_impedance_param[i_name_].is_active ) {
+      std::cerr << "[" << m_profile.instance_name << "] " << i_name_ << "is already in deactivated" << std::endl;
+      return false;
+    }
     if ( m_impedance_param[i_name_].transition_count > 0) {
       std::cerr << "[" << m_profile.instance_name << "] " << i_name_ << "is already in deleting." << std::endl;
       return false;
