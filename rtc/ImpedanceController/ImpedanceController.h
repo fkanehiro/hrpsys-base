@@ -145,7 +145,7 @@ class ImpedanceController
 
  private:
   struct ImpedanceParam{
-    std::string base_name, target_name;
+    std::string target_name;
     hrp::Vector3 target_p0, target_p1, current_p0, current_p1, current_p2;
     hrp::Matrix33 target_r0, target_r1, current_r0, current_r1, current_r2;
     double M_p, D_p, K_p;

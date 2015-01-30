@@ -14,10 +14,6 @@ module OpenHRP
      * @brief Impedance controller parameters for one end-effector.
      */
     struct impedanceParam {
-      /// Name of inverse kinematics root link.
-      string base_name;
-      /// Name of inverse kinematics end effector link.
-      string target_name;
       /// Position mass [N/(m/s^2)]
       double M_p;
       /// Position damper [N/(m/s)]

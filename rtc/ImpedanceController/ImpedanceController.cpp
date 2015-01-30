@@ -202,11 +202,10 @@ RTC::ReturnCode_t ImpedanceController::onInitialize()
         // set param
         ImpedanceParam p;
         p.target_name = sensor->link->name;
-        p.base_name = base_name_vec[i];
         // joint path
-        p.manip = hrp::JointPathExPtr(new hrp::JointPathEx(m_robot, m_robot->link(p.base_name), m_robot->link(p.target_name), m_dt));
+        p.manip = hrp::JointPathExPtr(new hrp::JointPathEx(m_robot, m_robot->link(base_name_vec[i]), m_robot->link(p.target_name), m_dt));
         if ( ! p.manip ) {
-            std::cerr << "[" << m_profile.instance_name << "] invalid joint path from " << p.base_name << " to " << p.target_name << std::endl;
+            std::cerr << "[" << m_profile.instance_name << "] invalid joint path from " << base_name_vec[i] << " to " << p.target_name << std::endl;
         } else {
             p.transition_joint_q.resize(m_robot->numJoints());
             m_impedance_param[sensor_name] = p;
@@ -423,10 +422,8 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
                 } else {
                     // use impedance model
 
-                    hrp::Link* base = m_robot->link(param.base_name);
                     hrp::Link* target = m_robot->link(param.target_name);
                     assert(target);
-                    assert(base);
 
                     param.current_p0 = target->p + target->R * ee_map[target->name].localPos;
                     param.current_r0 = target->R * ee_map[target->name].localR;
@@ -744,8 +741,6 @@ bool ImpedanceController::setImpedanceControllerParam(const std::string& i_name_
 
 void ImpedanceController::copyImpedanceParam (ImpedanceControllerService::impedanceParam& i_param_, const ImpedanceParam& param)
 {
-  i_param_.base_name = param.base_name.c_str();
-  i_param_.target_name = param.target_name.c_str();
   i_param_.M_p = param.M_p;
   i_param_.D_p = param.D_p;
   i_param_.K_p = param.K_p;
