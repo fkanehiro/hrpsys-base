@@ -253,7 +253,7 @@ RTC::ReturnCode_t ImpedanceController::onDeactivated(RTC::UniqueId ec_id)
   std::cout << "ImpedanceController::onDeactivated(" << ec_id << ")" << std::endl;
   Guard guard(m_mutex);
   for ( std::map<std::string, ImpedanceParam>::iterator it = m_impedance_param.begin(); it != m_impedance_param.end(); it++ ) {
-    deleteImpedanceController(it->first);
+      stopImpedanceController(it->first);
     m_impedance_param[it->first].transition_count = 1;
   }
   return RTC::RTC_OK;
@@ -661,7 +661,7 @@ void ImpedanceController::calcForceMoment ()
 };
 
 //
-bool ImpedanceController::setImpedanceControllerParam(const std::string& i_name_, OpenHRP::ImpedanceControllerService::impedanceParam i_param_)
+bool ImpedanceController::startImpedanceController(const std::string& i_name_)
 {
     std::string name = std::string(i_name_);
     if ( m_impedance_param.find(name) == m_impedance_param.end() ) {
@@ -672,7 +672,7 @@ bool ImpedanceController::setImpedanceControllerParam(const std::string& i_name_
     // wait to finish deleting if the target impedance param has been deleted
     if(m_impedance_param[name].transition_count != 0){
       std::cerr << "[" << m_profile.instance_name << "] Wait for transition " << name << std::endl;
-      waitDeletingImpedanceController(name);
+      waitImpedanceControllerTransition(name);
     }
 
     // Lock Mutex
@@ -700,9 +700,71 @@ bool ImpedanceController::setImpedanceControllerParam(const std::string& i_name_
         std::cerr << "[" << m_profile.instance_name << "] Set new impedance parameters" << std::endl;
         m_impedance_param[name].is_active = true;
         m_impedance_param[name].transition_count = -MAX_TRANSITION_COUNT; // when start impedance, count up to 0
-    } else {
-        std::cerr << "[" << m_profile.instance_name << "] Update impedance parameters" << std::endl;
     }
+    waitImpedanceControllerTransition(i_name_);
+    return true;
+}
+
+bool ImpedanceController::stopImpedanceController(const std::string& i_name_)
+{
+    if ( m_impedance_param.find(i_name_) == m_impedance_param.end() ) {
+      std::cerr << "[" << m_profile.instance_name << "] Could not found impedance controller" << i_name_ << std::endl;
+      return false;
+    }
+    if ( !m_impedance_param[i_name_].is_active ) {
+      std::cerr << "[" << m_profile.instance_name << "] " << i_name_ << "is already in deactivated" << std::endl;
+      return false;
+    }
+    if ( m_impedance_param[i_name_].transition_count > 0) {
+      std::cerr << "[" << m_profile.instance_name << "] " << i_name_ << "is already in deleting." << std::endl;
+      return false;
+    }else{
+      std::cerr << "[" << m_profile.instance_name << "] Delete impedance parameters " << i_name_ << std::endl;
+      for (int i = 0; i < m_robot->numJoints(); i++ ) {
+          m_impedance_param[i_name_].transition_joint_q[i] = m_robot->joint(i)->q;
+      }
+      m_impedance_param[i_name_].transition_count = MAX_TRANSITION_COUNT; // when stop impedance, count down to 0
+    }
+    waitImpedanceControllerTransition(i_name_);
+    return true;
+}
+
+bool ImpedanceController::setImpedanceControllerParam(const std::string& i_name_, OpenHRP::ImpedanceControllerService::impedanceParam i_param_)
+{
+    std::string name = std::string(i_name_);
+    if ( m_impedance_param.find(name) == m_impedance_param.end() ) {
+      std::cerr << "[" << m_profile.instance_name << "] Could not found impedance controller" << name << std::endl;
+      return false;
+    }
+
+    // wait to finish deleting if the target impedance param has been deleted
+    if(m_impedance_param[name].transition_count != 0){
+      std::cerr << "[" << m_profile.instance_name << "] Wait for transition " << name << std::endl;
+      waitImpedanceControllerTransition(name);
+    }
+
+    // Lock Mutex
+    Guard guard(m_mutex);
+    
+    if ( m_qRef.data.length() !=  m_robot->numJoints() ) {
+      std::cerr << "[" << m_profile.instance_name << "] m_qRef has wrong size, m_robot->numJoints() = " << m_robot->numJoints() << ", m_qRef.data.length() = " << m_qRef.data.length() << std::endl;
+        return false;
+    }
+    if ( m_qCurrent.data.length() !=  m_robot->numJoints() ) {
+      std::cerr << "[" << m_profile.instance_name << "] m_qCurrent has wrong size, m_robot->numJoints() = " << m_robot->numJoints() << ", m_qCurrent.data.length() = " << m_qCurrent.data.length() << std::endl;
+        return false;
+    }
+
+    int force_id = -1;
+    if ( !checkImpedanceNameValidity (force_id, name) ) {
+      return false;
+    }
+
+    if ( m_impedance_param.find(name) == m_impedance_param.end() ) {
+        std::cerr << "[" << m_profile.instance_name << "] No such impedance controller param [" << name << "]" << std::endl;
+        return false;
+    }
+    std::cerr << "[" << m_profile.instance_name << "] Update impedance parameters" << std::endl;
 
     m_impedance_param[name].sr_gain    = i_param_.sr_gain;
     m_impedance_param[name].avoid_gain = i_param_.avoid_gain;
@@ -794,49 +856,13 @@ bool ImpedanceController::checkImpedanceNameValidity (int& force_id, const std::
   return true;
 }
 
-bool ImpedanceController::deleteImpedanceController(std::string i_name_)
-{
-    if ( m_impedance_param.find(i_name_) == m_impedance_param.end() ) {
-      std::cerr << "[" << m_profile.instance_name << "] Could not found impedance controller" << i_name_ << std::endl;
-      return false;
-    }
-    if ( !m_impedance_param[i_name_].is_active ) {
-      std::cerr << "[" << m_profile.instance_name << "] " << i_name_ << "is already in deactivated" << std::endl;
-      return false;
-    }
-    if ( m_impedance_param[i_name_].transition_count > 0) {
-      std::cerr << "[" << m_profile.instance_name << "] " << i_name_ << "is already in deleting." << std::endl;
-      return false;
-    }else{
-      std::cerr << "[" << m_profile.instance_name << "] Delete impedance parameters " << i_name_ << std::endl;
-      for (int i = 0; i < m_robot->numJoints(); i++ ) {
-          m_impedance_param[i_name_].transition_joint_q[i] = m_robot->joint(i)->q;
-      }
-      m_impedance_param[i_name_].transition_count = MAX_TRANSITION_COUNT; // when stop impedance, count down to 0
-    }
-
-    return true;
-}
-
-void ImpedanceController::waitDeletingImpedanceController(std::string i_name_)
+void ImpedanceController::waitImpedanceControllerTransition(std::string i_name_)
 {
     while (m_impedance_param.find(i_name_) != m_impedance_param.end() &&
-           m_impedance_param[i_name_].transition_count > 0) {
+           m_impedance_param[i_name_].transition_count != 0) {
       usleep(10);
     }
     return;
-}
-
-bool ImpedanceController::deleteImpedanceControllerAndWait(std::string i_name_)
-{
-    if(!deleteImpedanceController(i_name_)){
-      return false;
-    }
-
-    // wait for transition count
-    waitDeletingImpedanceController(i_name_);
-
-    return true;
 }
 
 extern "C"
