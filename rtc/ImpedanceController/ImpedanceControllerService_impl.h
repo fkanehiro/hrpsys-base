@@ -16,11 +16,11 @@ public:
   ImpedanceControllerService_impl();
   virtual ~ImpedanceControllerService_impl();
   //
+  CORBA::Boolean startImpedanceController(const char *i_name_);
+  CORBA::Boolean stopImpedanceController(const char *i_name_);
   CORBA::Boolean setImpedanceControllerParam(const char *i_name_, const OpenHRP::ImpedanceControllerService::impedanceParam &i_param_);
   CORBA::Boolean getImpedanceControllerParam(const char *i_name_, OpenHRP::ImpedanceControllerService::impedanceParam_out i_param_);
-  CORBA::Boolean deleteImpedanceController(const char *i_name_);
-  void waitDeletingImpedanceController(const char *i_name_);
-  CORBA::Boolean deleteImpedanceControllerAndWait(const char *i_name_);
+  void waitImpedanceControllerTransition(const char *i_name_);
   //
   void impedance(ImpedanceController *i_impedance);
 private:

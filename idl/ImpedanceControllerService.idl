@@ -14,10 +14,6 @@ module OpenHRP
      * @brief Impedance controller parameters for one end-effector.
      */
     struct impedanceParam {
-      /// Name of inverse kinematics root link.
-      string base_name;
-      /// Name of inverse kinematics end effector link.
-      string target_name;
       /// Position mass [N/(m/s^2)]
       double M_p;
       /// Position damper [N/(m/s)]
@@ -45,37 +41,39 @@ module OpenHRP
     };
 
     /**
+     * @brief start impedance controller.
+     * @param name impedance controller param's name, which basically corresponds to force sensor name
+     * @return true if set successfully, false otherwise
+     */
+    boolean startImpedanceController(in string name);
+
+    /**
+     * @brief stop impedance controller.
+     * @param name impedance controller param's name, which basically corresponds to force sensor name
+     * @return true if set successfully, false otherwise
+     */
+    boolean stopImpedanceController(in string name);
+
+    /**
      * @brief set impedance parameters.
-     * @param i_param new impedance parameters
+     * @param i_param input new impedance parameters
+     * @param name impedance controller param's name, which basically corresponds to force sensor name
      * @return true if set successfully, false otherwise
      */
     boolean setImpedanceControllerParam(in string name, in impedanceParam i_param);
 
     /**
      * @brief get impedance parameters.
-     * @param name is name of the impedance parameter set and i_param output impedance parameters
+     * @param i_param ouput impedance parameters
+     * @param name impedance controller param's name, which basically corresponds to force sensor name
      * @return true if set successfully, false otherwise
      */
     boolean getImpedanceControllerParam(in string name, out impedanceParam i_param);
 
     /**
-     * @brief remove impedance parameters.
-     * @param name name of the impedance parameter set
-     * @return true if set successfully, false otherwise
+     * @brief wait for impedance controller mode transition.
+     * @param name impedance controller param's name, which basically corresponds to force sensor name
      */
-    boolean deleteImpedanceController(in string name);
-
-    /**
-     * @brief wait to finish deleting the impedance param object.
-     * @param name name of the impedance parameter set
-     */
-    void waitDeletingImpedanceController(in string name);
-
-    /**
-     * @brief remove impedance parameters and wait to finish deleting the impedance param object.
-     * @param name name of the impedance parameter set
-     * @return true if set successfully, false otherwise
-     */
-    boolean deleteImpedanceControllerAndWait(in string name);
+    void waitImpedanceControllerTransition(in string name);
   };
 };
