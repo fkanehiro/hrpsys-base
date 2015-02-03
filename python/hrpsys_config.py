@@ -364,6 +364,11 @@ class HrpsysConfigurator:
                 if self.ic:
                     connectPorts(self.rmfo.port("off_" + sen.name),
                                  self.ic.port(sen.name))
+        elif self.ic: # if the robot does not have rmfo and kf, but have ic
+            for sen in filter(lambda x: x.type == "Force", self.sensors):
+                connectPorts(self.rh.port(sen.name),
+                             self.ic.port(sen.name))
+
         # connection for ic
         if self.ic:
             connectPorts(self.rh.port("q"), self.ic.port("qCurrent"))
