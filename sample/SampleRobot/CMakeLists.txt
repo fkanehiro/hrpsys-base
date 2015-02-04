@@ -43,6 +43,7 @@ configure_file(samplerobot_sequence_player.py.in ${CMAKE_CURRENT_BINARY_DIR}/sam
 configure_file(samplerobot_collision_detector.py.in ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_collision_detector.py)
 configure_file(samplerobot_virtual_force_sensor.py.in ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_virtual_force_sensor.py)
 configure_file(samplerobot_soft_error_limiter.py.in ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_soft_error_limiter.py)
+configure_file(samplerobot_kalman_filter.py.in ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_kalman_filter.py)
 
 install(PROGRAMS
   ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_data_logger.py
@@ -56,6 +57,7 @@ install(PROGRAMS
   ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_collision_detector.py
   ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_virtual_force_sensor.py
   ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_soft_error_limiter.py
+  ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_kalman_filter.py
   DESTINATION share/hrpsys/samples/SampleRobot)
 
 install(FILES 
