@@ -167,7 +167,7 @@ RTC::ReturnCode_t ImpedanceController::onInitialize()
     // setting from conf file
     // rleg,TARGET_LINK,BASE_LINK,x,y,z,rx,ry,rz,rth #<=pos + rot (axis+angle)
     coil::vstring end_effectors_str = coil::split(prop["end_effectors"], ",");
-    std::vector<std::string> base_name_vec;
+    std::map<std::string, std::string> base_name_map;
     if (end_effectors_str.size() > 0) {
         size_t prop_num = 10;
         size_t num = end_effectors_str.size()/prop_num;
@@ -187,7 +187,7 @@ RTC::ReturnCode_t ImpedanceController::onInitialize()
             eet.localR = Eigen::AngleAxis<double>(tmpv[3], hrp::Vector3(tmpv[0], tmpv[1], tmpv[2])).toRotationMatrix(); // rotation in VRML is represented by axis + angle
             eet.target_name = ee_target;
             ee_map.insert(std::pair<std::string, ee_trans>(ee_name , eet));
-            base_name_vec.push_back(ee_base);
+            base_name_map.insert(std::pair<std::string, std::string>(ee_name, ee_base));
             std::cerr << "[" << m_profile.instance_name << "] End Effector [" << ee_name << "]" << ee_target << " " << ee_base << std::endl;
             std::cerr << "[" << m_profile.instance_name << "]   target = " << ee_target << ", base = " << ee_base << std::endl;
             std::cerr << "[" << m_profile.instance_name << "]   localPos = " << eet.localPos.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[m]" << std::endl;
@@ -196,24 +196,39 @@ RTC::ReturnCode_t ImpedanceController::onInitialize()
     }
 
     // initialize impedance params
+    std::cerr << "[" << m_profile.instance_name << "] Add impedance params" << std::endl;
     for (unsigned int i=0; i<m_forceIn.size(); i++){
         std::string sensor_name = m_forceIn[i]->name();
         hrp::ForceSensor* sensor = m_robot->sensor<hrp::ForceSensor>(sensor_name);
+        // 1. Check whether adequate ee_map exists for the sensor.
+        std::string ee_name;
+        bool is_ee_exists = false;
         for ( std::map<std::string, ee_trans>::iterator it = ee_map.begin(); it != ee_map.end(); it++ ) {
             if ( it->second.target_name == sensor->link->name ) {
-                // set param
-                ImpedanceParam p;
-                // joint path
-                p.manip = hrp::JointPathExPtr(new hrp::JointPathEx(m_robot, m_robot->link(base_name_vec[i]), m_robot->link(sensor->link->name), m_dt));
-                if ( ! p.manip ) {
-                    std::cerr << "[" << m_profile.instance_name << "] invalid joint path from " << base_name_vec[i] << " to " << sensor->link->name << std::endl;
-                } else {
-                    p.transition_joint_q.resize(m_robot->numJoints());
-                    p.sensor_name = sensor_name;
-                    m_impedance_param[it->first] = p;
-                }
+                is_ee_exists = true;
+                ee_name = it->first;
             }
         }
+        if (!is_ee_exists) {
+            std::cerr << "[" << m_profile.instance_name << "]   No such ee setting for " << sensor_name << " and " << sensor->link->name << "!!. Impedance param for " << sensor_name << " cannot be added!!" << std::endl;
+            continue;
+        }
+        // 2. Check whether already impedance param exists, which has the same target link as the sensor.
+        if (m_impedance_param.find(ee_name) != m_impedance_param.end()) {
+            std::cerr << "[" << m_profile.instance_name << "]   Already impedance param (target_name=" << sensor->link->name << ", ee_name=" << ee_name << ") exists!!. Impedance param for " << sensor_name << " cannot be added!!" << std::endl;
+            continue;
+        }
+        // 3. Check whether joint path is adequate.
+        ImpedanceParam p;
+        p.manip = hrp::JointPathExPtr(new hrp::JointPathEx(m_robot, m_robot->link(base_name_map[ee_name]), m_robot->link(sensor->link->name), m_dt));
+        if ( ! p.manip ) {
+            std::cerr << "[" << m_profile.instance_name << "]   Invalid joint path from " << base_name_map[ee_name] << " to " << sensor->link->name << "!! Impedance param for " << sensor_name << " cannot be added!!" << std::endl;
+            continue;
+        }
+        // 4. Set impedance param
+        p.transition_joint_q.resize(m_robot->numJoints());
+        p.sensor_name = sensor_name;
+        m_impedance_param[ee_name] = p;
     }
 
     // allocate memory for outPorts
