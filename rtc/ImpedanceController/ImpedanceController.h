@@ -145,7 +145,7 @@ class ImpedanceController
 
  private:
   struct ImpedanceParam{
-    std::string target_name;
+    std::string sensor_name;
     hrp::Vector3 target_p0, target_p1, current_p0, current_p1, current_p2;
     hrp::Matrix33 target_r0, target_r1, current_r0, current_r1, current_r2;
     double M_p, D_p, K_p;
@@ -166,6 +166,7 @@ class ImpedanceController
     {};
   };
   struct ee_trans {
+    std::string target_name;
     hrp::Vector3 localPos;
     hrp::Matrix33 localR;
   };
@@ -178,7 +179,6 @@ class ImpedanceController
 
   std::map<std::string, ImpedanceParam> m_impedance_param;
   std::map<std::string, ee_trans> ee_map;
-  std::map<std::string, std::string> ee_name_map;
   std::map<std::string, hrp::VirtualForceSensorParam> m_vfs;
   std::map<std::string, hrp::Vector3> abs_forces, abs_moments, abs_ref_forces, abs_ref_moments;
   double m_dt;
