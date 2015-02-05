@@ -995,6 +995,12 @@ void Stabilizer::calcEEForceMomentControl() {
       for ( int i = 0; i < m_robot->numJoints(); i++ ) {
         m_robot->joint(i)->q = qrefv[i];
       }
+      for (size_t i = 0; i < 2; i++) {
+        for ( int j = 0; j < manip2[i]->numJoints(); j++ ){
+          int idx = manip2[i]->joint(j)->jointId;
+          m_robot->joint(idx)->q = qorg[idx];
+        }
+      }
 
       //rpy control
       rats::rotm3times(current_root_R, target_root_R, hrp::rotFromRpy(d_rpy[0], d_rpy[1], 0));
@@ -1012,9 +1018,6 @@ void Stabilizer::calcEEForceMomentControl() {
 #define deg2rad(x) ((x) * M_PI / 180.0)
         for (size_t i = 0; i < 2; i++) {
             rats::rotm3times(total_target_foot_R[i], target_foot_R[i], hrp::rotFromRpy(-ee_d_foot_rpy[i](0), -ee_d_foot_rpy[i](1), 0));
-        }
-        for (size_t i = 0; i < 2; i++) {
-          hrp::Link* target = m_robot->sensor<hrp::ForceSensor>(sensor_names[i])->link;
           total_target_foot_p[i](0) = target_foot_p[i](0);
           total_target_foot_p[i](1) = target_foot_p[i](1);
           // foot force difference control version
@@ -1034,7 +1037,6 @@ void Stabilizer::calcEEForceMomentControl() {
       }
       // solveIK
       for (size_t jj = 0; jj < 3; jj++) {
-        m_robot->calcForwardKinematics();
         for (size_t i = 0; i < 2; i++) {
           hrp::Link* target = m_robot->sensor<hrp::ForceSensor>(sensor_names[i])->link;
           hrp::Vector3 vel_p, vel_r;
