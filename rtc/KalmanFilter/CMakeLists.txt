@@ -15,6 +15,8 @@ set_target_properties(KalmanFilter PROPERTIES PREFIX "")
 
 add_executable(KalmanFilterComp KalmanFilterComp.cpp ${comp_sources})
 target_link_libraries(KalmanFilterComp ${libs})
+add_executable(testKalmanFilterEstimation testKalmanFilterEstimation.cpp)
+target_link_libraries(testKalmanFilterEstimation ${libs})
 
 set(target KalmanFilter KalmanFilterComp)
 
