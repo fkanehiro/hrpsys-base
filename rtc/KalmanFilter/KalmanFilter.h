@@ -84,6 +84,90 @@ private:
   double R, z;
 };
 
+class RPYKalmanFilter {
+public:
+    RPYKalmanFilter() {};
+    void main_one (hrp::Vector3& rpy, hrp::Vector3& rpyRaw, const hrp::Vector3& acc, const hrp::Vector3& gyro)
+    {
+      //
+      // G = [ cosb, sinb sina, sinb cosa,
+      //          0,      cosa,     -sina,
+      //      -sinb, cosb sina, cosb cosa]
+      // s = [sx, sy, sz]t ( accelerometer )
+      // g = [ 0 0 -g]t
+      // s = G g = [g sinb, -g cosb sina, -g cosb cosa]t
+      // hrp::RateGyroSensor* sensor = m_robot->sensor<hrp::RateGyroSensor>("gyrometer");
+      double g = sqrt(acc(0) * acc(0) + acc(1) * acc(1) + acc(2) * acc(2));
+      // atan2(y, x) = atan(y/x)
+      double a, b;
+      b = atan2( - acc(0) / g, sqrt( acc(1)/g * acc(1)/g + acc(2)/g * acc(2)/g ) );
+      a = atan2( ( acc(1)/g ), ( acc(2)/g ) );
+      rpyRaw = hrp::Vector3(a,b,0);
+      // #if 0
+      //       // complementary filter
+      //       m_rpy.data.r = 0.98 *(m_rpy.data.r+m_rate.data.avx*m_dt) + 0.02*m_rpyRaw.data.r;
+      //       m_rpy.data.p = 0.98 *(m_rpy.data.p+m_rate.data.avy*m_dt) + 0.02*m_rpyRaw.data.p;
+      //       m_rpy.data.y = 0.98 *(m_rpy.data.y+m_rate.data.avz*m_dt) + 0.02*m_rpyRaw.data.y;
+      // #endif
+      // kalman filter
+      // x[0] = m_rpyRaw.data.r; // angle (from m/sec Acceleration3D, unstable, no drift )
+      // x[1] = m_rate.data.avx; // rate ( rad/sec, AngularVelocity, gyro, stable/drift )
+      // use kalman filter with imaginary data
+      r_filter.update(gyro(0), rpyRaw(0));
+      p_filter.update(gyro(1), rpyRaw(1));
+      y_filter.update(gyro(2), rpyRaw(2));
+
+      Eigen::AngleAxis<double> aaZ(y_filter.getx()[0], Eigen::Vector3d::UnitZ());
+      Eigen::AngleAxis<double> aaY(p_filter.getx()[0], Eigen::Vector3d::UnitY());
+      Eigen::AngleAxis<double> aaX(r_filter.getx()[0], Eigen::Vector3d::UnitX());
+      Eigen::Quaternion<double> q = aaZ * aaY * aaX;
+      hrp::Matrix33 imaginaryRotationMatrix = q.toRotationMatrix();
+      hrp::Matrix33 realRotationMatrix = imaginaryRotationMatrix * m_sensorR; // inverse transform to real data
+      hrp::Vector3 euler = realRotationMatrix.eulerAngles(2,1,0);
+      rpy(0) = euler(2);
+      rpy(1) = euler(1);
+      rpy(2) = euler(0);
+    };
+    void setParam (const double _dt, const double _Q_angle, const double _Q_rate, const double _R_angle, const std::string print_str = "")
+    {
+        Q_angle = _Q_angle;
+        Q_rate = _Q_rate;
+        R_angle = _R_angle;
+        r_filter.setF(1, -_dt, 0, 1);
+        r_filter.setP(0, 0, 0, 0);
+        r_filter.setQ(Q_angle*_dt, 0, 0, Q_rate*_dt);
+        r_filter.setR(R_angle);
+        r_filter.setB(_dt, 0);
+
+        p_filter.setF(1, -_dt, 0, 1);
+        p_filter.setP(0, 0, 0, 0);
+        p_filter.setQ(Q_angle*_dt, 0, 0, Q_rate*_dt);
+        p_filter.setR(R_angle);
+        p_filter.setB(_dt, 0);
+
+        y_filter.setF(1, -_dt, 0, 1);
+        y_filter.setP(0, 0, 0, 0);
+        y_filter.setQ(Q_angle*_dt, 0, 0, Q_rate*_dt);
+        y_filter.setR(R_angle);
+        y_filter.setB(_dt, 0);
+        std::cerr << "[" << print_str << "]   Q_angle=" << Q_angle << ", Q_rate=" << Q_rate << ", R_angle=" << R_angle << std::endl;
+    };
+    void resetKalmanFilterState()
+    {
+        r_filter.resetStateByObservation();
+        p_filter.resetStateByObservation();
+        y_filter.resetStateByObservation();
+    };
+    void setSensorR (const hrp::Matrix33& sr) { m_sensorR = sr;};
+    double getQangle () const { return Q_angle;};
+    double getQrate () const { return Q_rate;};
+    double getRangle () const { return R_angle;};
+private:
+    KFilter r_filter, p_filter, y_filter;
+    double Q_angle, Q_rate, R_angle;
+    hrp::Matrix33 m_sensorR;
+};
+
 class EKFilter {
 public:
   EKFilter() {
@@ -218,7 +302,7 @@ public:
   }
 
 
-  void prediction(const Eigen::Vector3d& u, const double& dt) {
+  void prediction(const Eigen::Vector3d& u) {
     Eigen::Matrix<double, 4, 1> q = x.block<4, 1>(0, 0);
     Eigen::Vector3d drift = x.block<3, 1>(4, 0);
     Eigen::Matrix<double, 7, 7> F = calcF(q, u, drift, dt);
@@ -256,6 +340,20 @@ public:
      */
   }
 
+  void main_one (hrp::Vector3& rpy, hrp::Vector3& rpyRaw, const hrp::Vector3& acc, const hrp::Vector3& gyro)
+  {
+      prediction(gyro);
+      correction(acc, Eigen::Vector3d(0, 0, 0), Eigen::Vector3d(0, 0, 0), Eigen::Vector3d(0, 0, 0));
+      /* ekf_filter.printAll(); */
+      Eigen::Matrix<double, 7, 1> x = getx();
+      Eigen::Quaternion<double> q = Eigen::Quaternion<double>(x[0], x[1], x[2], x[3]);
+      hrp::Vector3 eulerZYX = q.toRotationMatrix().eulerAngles(2,1,0);
+      rpy(2) = eulerZYX(0);
+      rpy(1) = eulerZYX(1);
+      rpy(0) = eulerZYX(2);
+  };
+
+  void setdt (const double _dt) { dt = _dt;};
 private:
   Eigen::Matrix<double, 7, 1> x, x_a_priori;
   Eigen::Matrix<double, 7, 7> P, P_a_priori;
@@ -263,6 +361,7 @@ private:
   Eigen::Matrix<double, 3, 3> R;
   /* static const Eigen::Vector3d g_vec = Eigen::Vector3d(0.0, 0.0, 9.80665); */
   Eigen::Vector3d g_vec;
+  double dt;
 };
 
 // Service implementation headers
@@ -394,8 +493,8 @@ protected:
   // </rtc-template>
 
 private:
-  double m_dt, Q_angle, Q_rate, R_angle;
-  KFilter r_filter, p_filter, y_filter;
+  double m_dt;
+  RPYKalmanFilter rpy_kf;
   EKFilter ekf_filter;
   hrp::BodyPtr m_robot;
   hrp::Matrix33 m_sensorR;

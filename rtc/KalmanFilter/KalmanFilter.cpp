@@ -116,27 +116,6 @@ RTC::ReturnCode_t KalmanFilter::onInitialize()
     std::cerr << "[" << m_profile.instance_name << "]failed to load model[" << prop["model"] << "]" << std::endl;
   }
 
-  Q_angle = 0.001;
-  Q_rate = 0.003;
-  R_angle = 0.03;
-  r_filter.setF(1, -m_dt, 0, 1);
-  r_filter.setP(0, 0, 0, 0);
-  r_filter.setQ(Q_angle*m_dt, 0, 0, Q_rate*m_dt);
-  r_filter.setR(R_angle);
-  r_filter.setB(m_dt, 0);
-
-  p_filter.setF(1, -m_dt, 0, 1);
-  p_filter.setP(0, 0, 0, 0);
-  p_filter.setQ(Q_angle*m_dt, 0, 0, Q_rate*m_dt);
-  p_filter.setR(R_angle);
-  p_filter.setB(m_dt, 0);
-
-  y_filter.setF(1, -m_dt, 0, 1);
-  y_filter.setP(0, 0, 0, 0);
-  y_filter.setQ(Q_angle*m_dt, 0, 0, Q_rate*m_dt);
-  y_filter.setR(R_angle);
-  y_filter.setB(m_dt, 0);
-
   m_rpy.data.r = 0;
   m_rpy.data.p = 0;
   m_rpy.data.y = 0;
@@ -147,6 +126,9 @@ RTC::ReturnCode_t KalmanFilter::onInitialize()
   } else {
     m_sensorR = hrp::Matrix33::Identity();
   }
+  rpy_kf.setParam(m_dt, 0.001, 0.003, 0.03);
+  rpy_kf.setSensorR(m_sensorR);
+  ekf_filter.setdt(m_dt);
   kf_algorithm = OpenHRP::KalmanFilterService::RPYKalmanFilter;
 
   return RTC::RTC_OK;
@@ -217,59 +199,19 @@ RTC::ReturnCode_t KalmanFilter::onExecute(RTC::UniqueId ec_id)
         std::cerr << "[" << m_profile.instance_name << "] raw data acc : " << std::endl << acc << std::endl;
         std::cerr << "[" << m_profile.instance_name << "] raw data gyro : " << std::endl << gyro << std::endl;
     }
+    hrp::Vector3 rpy, rpyRaw;
     if (kf_algorithm == OpenHRP::KalmanFilterService::QuaternionExtendedKalmanFilter) {
-        ekf_filter.prediction(gyro, m_dt);
-        ekf_filter.correction(acc, Eigen::Vector3d(0, 0, 0), Eigen::Vector3d(0, 0, 0), Eigen::Vector3d(0, 0, 0));
-        /* ekf_filter.printAll(); */
-
-        Eigen::Matrix<double, 7, 1> x = ekf_filter.getx();
-        Eigen::Quaternion<double> q = Eigen::Quaternion<double>(x[0], x[1], x[2], x[3]);
-        Eigen::Vector3d eulerZYX = q.toRotationMatrix().eulerAngles(2,1,0);
-        m_rpy.data.y = eulerZYX(0);
-        m_rpy.data.p = eulerZYX(1);
-        m_rpy.data.r = eulerZYX(2);
+        ekf_filter.main_one(rpy, rpyRaw, acc, gyro);
     } else if (kf_algorithm == OpenHRP::KalmanFilterService::RPYKalmanFilter) {
-        //
-        // G = [ cosb, sinb sina, sinb cosa,
-        //          0,      cosa,     -sina,
-        //      -sinb, cosb sina, cosb cosa]
-        // s = [sx, sy, sz]t ( accelerometer )
-        // g = [ 0 0 -g]t
-        // s = G g = [g sinb, -g cosb sina, -g cosb cosa]t
-        // hrp::RateGyroSensor* sensor = m_robot->sensor<hrp::RateGyroSensor>("gyrometer");
-        double g = sqrt(acc(0) * acc(0) + acc(1) * acc(1) + acc(2) * acc(2));
-        // atan2(y, x) = atan(y/x)
-        double a, b;
-        b = atan2( - acc(0) / g, sqrt( acc(1)/g * acc(1)/g + acc(2)/g * acc(2)/g ) );
-        a = atan2( ( acc(1)/g ), ( acc(2)/g ) );
-        m_rpyRaw.data.r = a;
-        m_rpyRaw.data.p = b;
-        m_rpyRaw.data.y = 0;
-        // #if 0
-        //       // complementary filter
-        //       m_rpy.data.r = 0.98 *(m_rpy.data.r+m_rate.data.avx*m_dt) + 0.02*m_rpyRaw.data.r;
-        //       m_rpy.data.p = 0.98 *(m_rpy.data.p+m_rate.data.avy*m_dt) + 0.02*m_rpyRaw.data.p;
-        //       m_rpy.data.y = 0.98 *(m_rpy.data.y+m_rate.data.avz*m_dt) + 0.02*m_rpyRaw.data.y;
-        // #endif
-        // kalman filter
-        // x[0] = m_rpyRaw.data.r; // angle (from m/sec Acceleration3D, unstable, no drift )
-        // x[1] = m_rate.data.avx; // rate ( rad/sec, AngularVelocity, gyro, stable/drift )
-        // use kalman filter with imaginary data
-        r_filter.update(gyro(0), m_rpyRaw.data.r);
-        p_filter.update(gyro(1), m_rpyRaw.data.p);
-        y_filter.update(gyro(2), m_rpyRaw.data.y);
-
-        Eigen::AngleAxis<double> aaZ(y_filter.getx()[0], Eigen::Vector3d::UnitZ());
-        Eigen::AngleAxis<double> aaY(p_filter.getx()[0], Eigen::Vector3d::UnitY());
-        Eigen::AngleAxis<double> aaX(r_filter.getx()[0], Eigen::Vector3d::UnitX());
-        Eigen::Quaternion<double> q = aaZ * aaY * aaX;
-        hrp::Matrix33 imaginaryRotationMatrix = q.toRotationMatrix();
-        hrp::Matrix33 realRotationMatrix = imaginaryRotationMatrix * m_sensorR; // inverse transform to real data
-        hrp::Vector3 euler = realRotationMatrix.eulerAngles(2,1,0);
-        m_rpy.data.y = euler(0);
-        m_rpy.data.p = euler(1);
-        m_rpy.data.r = euler(2);
+        rpy_kf.main_one(rpy, rpyRaw, acc, gyro);
     }
+    m_rpyRaw.data.r = rpyRaw(0);
+    m_rpyRaw.data.p = rpyRaw(1);
+    m_rpyRaw.data.y = rpyRaw(2);
+    m_rpy.data.r = rpy(0);
+    m_rpy.data.p = rpy(1);
+    m_rpy.data.y = rpy(2);
+
 
     m_rpyOut.write();
     m_rpyRawOut.write();
@@ -315,45 +257,22 @@ RTC::ReturnCode_t KalmanFilter::onExecute(RTC::UniqueId ec_id)
 bool KalmanFilter::setKalmanFilterParam(const OpenHRP::KalmanFilterService::KalmanFilterParam& i_param)
 {
     std::cerr << "[" << m_profile.instance_name << "] setKalmanFilterParam" << std::endl;
-    Q_angle = i_param.Q_angle;
-    Q_rate = i_param.Q_rate;
-    R_angle = i_param.R_angle;
-    r_filter.setF(1, -m_dt, 0, 1);
-    r_filter.setP(0, 0, 0, 0);
-    r_filter.setQ(Q_angle*m_dt, 0, 0, Q_rate*m_dt);
-    r_filter.setR(R_angle);
-    r_filter.setB(m_dt, 0);
-
-    p_filter.setF(1, -m_dt, 0, 1);
-    p_filter.setP(0, 0, 0, 0);
-    p_filter.setQ(Q_angle*m_dt, 0, 0, Q_rate*m_dt);
-    p_filter.setR(R_angle);
-    p_filter.setB(m_dt, 0);
-
-    y_filter.setF(1, -m_dt, 0, 1);
-    y_filter.setP(0, 0, 0, 0);
-    y_filter.setQ(Q_angle*m_dt, 0, 0, Q_rate*m_dt);
-    y_filter.setR(R_angle);
-    y_filter.setB(m_dt, 0);
-
+    rpy_kf.setParam(m_dt, i_param.Q_angle, i_param.Q_rate, i_param.R_angle, std::string(m_profile.instance_name));
     kf_algorithm = i_param.kf_algorithm;
-    std::cerr << "[" << m_profile.instance_name << "]   Q_angle=" << Q_angle << ", Q_rate=" << Q_rate << ", R_angle=" << R_angle << std::endl;
     std::cerr << "[" << m_profile.instance_name << "]   kf_algorithm=" << (kf_algorithm==OpenHRP::KalmanFilterService::RPYKalmanFilter?"RPYKalmanFilter":"QuaternionExtendedKalmanFilter") << std::endl;
     return true;
 }
 
 bool KalmanFilter::resetKalmanFilterState()
 {
-    r_filter.resetStateByObservation();
-    p_filter.resetStateByObservation();
-    y_filter.resetStateByObservation();
+    rpy_kf.resetKalmanFilterState();
 };
 
 bool KalmanFilter::getKalmanFilterParam(OpenHRP::KalmanFilterService::KalmanFilterParam& i_param)
 {
-  i_param.Q_angle = Q_angle;
-  i_param.Q_rate = Q_rate;
-  i_param.R_angle = R_angle;
+  i_param.Q_angle = rpy_kf.getQangle();
+  i_param.Q_rate = rpy_kf.getQrate();
+  i_param.R_angle = rpy_kf.getRangle();
   i_param.kf_algorithm = kf_algorithm;
   return true;
 }
