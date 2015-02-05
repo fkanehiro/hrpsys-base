@@ -1013,18 +1013,16 @@ void Stabilizer::calcEEForceMomentControl() {
       // foor modif
       hrp::Vector3 total_target_foot_p[2];
       hrp::Matrix33 total_target_foot_R[2];
-      {
-        // moment control
 #define deg2rad(x) ((x) * M_PI / 180.0)
-        for (size_t i = 0; i < 2; i++) {
-            rats::rotm3times(total_target_foot_R[i], target_foot_R[i], hrp::rotFromRpy(-ee_d_foot_rpy[i](0), -ee_d_foot_rpy[i](1), 0));
+      for (size_t i = 0; i < 2; i++) {
+          // moment control
+          rats::rotm3times(total_target_foot_R[i], target_foot_R[i], hrp::rotFromRpy(-ee_d_foot_rpy[i](0), -ee_d_foot_rpy[i](1), 0));
           total_target_foot_p[i](0) = target_foot_p[i](0);
           total_target_foot_p[i](1) = target_foot_p[i](1);
           // foot force difference control version
           // total_target_foot_p[i](2) = target_foot_p[i](2) + (i==0?0.5:-0.5)*zctrl;
           // foot force independent damping control
           total_target_foot_p[i] = target_foot_p[i] - d_foot_pos[i];
-        }
       }
 
       // ee=>link-origin
