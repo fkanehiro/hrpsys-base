@@ -374,14 +374,13 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
       }
       // transition
       if (!is_transition_interpolator_empty) {
-        double tmp_ratio = transition_interpolator_ratio;
-        // tmp_ratio 0=>1 : IDLE => ABC
-        // tmp_ratio 1=>0 : ABC => IDLE
-        ref_basePos = (1-tmp_ratio) * input_basePos + tmp_ratio * m_robot->rootLink()->p;
-        rel_ref_zmp = (1-tmp_ratio) * input_zmp + tmp_ratio * rel_ref_zmp;
-        rats::mid_rot(ref_baseRot, tmp_ratio, input_baseRot, m_robot->rootLink()->R);
+        // transition_interpolator_ratio 0=>1 : IDLE => ABC
+        // transition_interpolator_ratio 1=>0 : ABC => IDLE
+        ref_basePos = (1-transition_interpolator_ratio) * input_basePos + transition_interpolator_ratio * m_robot->rootLink()->p;
+        rel_ref_zmp = (1-transition_interpolator_ratio) * input_zmp + transition_interpolator_ratio * rel_ref_zmp;
+        rats::mid_rot(ref_baseRot, transition_interpolator_ratio, input_baseRot, m_robot->rootLink()->R);
         for ( int i = 0; i < m_robot->numJoints(); i++ ) {
-          m_robot->joint(i)->q = (1-tmp_ratio) * m_qRef.data[i] + tmp_ratio * m_robot->joint(i)->q;
+          m_robot->joint(i)->q = (1-transition_interpolator_ratio) * m_qRef.data[i] + transition_interpolator_ratio * m_robot->joint(i)->q;
         }
       } else {
         ref_basePos = m_robot->rootLink()->p;
