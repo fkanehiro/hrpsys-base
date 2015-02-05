@@ -767,19 +767,16 @@ bool ImpedanceController::setImpedanceControllerParam(const std::string& i_name_
         m_impedance_param[name].force_gain = hrp::Vector3(i_param_.force_gain[0], i_param_.force_gain[1], i_param_.force_gain[2]).asDiagonal();
         m_impedance_param[name].moment_gain = hrp::Vector3(i_param_.moment_gain[0], i_param_.moment_gain[1], i_param_.moment_gain[2]).asDiagonal();
 
-        for ( std::map<std::string, ImpedanceParam>::iterator it = m_impedance_param.begin(); it != m_impedance_param.end(); it++ ) {
-            ImpedanceParam& param = it->second;
-            std::cerr << "[" << m_profile.instance_name << "] set parameters" << std::endl;
-            std::cerr << "[" << m_profile.instance_name << "]             name : " << it->first << std::endl;
-            std::cerr << "[" << m_profile.instance_name << "]    M, D, K (pos) : " << param.M_p << " " << param.D_p << " " << param.K_p << std::endl;
-            std::cerr << "[" << m_profile.instance_name << "]    M, D, K (rot) : " << param.M_r << " " << param.D_r << " " << param.K_r << std::endl;
-            std::cerr << "[" << m_profile.instance_name << "]       force_gain : " << param.force_gain.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", "\n", "    [", "]")) << std::endl;
-            std::cerr << "[" << m_profile.instance_name << "]      moment_gain : " << param.moment_gain.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", "\n", "    [", "]")) << std::endl;
-            std::cerr << "[" << m_profile.instance_name << "]      manip_limit : " << param.manipulability_limit << std::endl;
-            std::cerr << "[" << m_profile.instance_name << "]          sr_gain : " << param.sr_gain << std::endl;
-            std::cerr << "[" << m_profile.instance_name << "]       avoid_gain : " << param.avoid_gain << std::endl;
-            std::cerr << "[" << m_profile.instance_name << "]   reference_gain : " << param.reference_gain << std::endl;
-        }
+        std::cerr << "[" << m_profile.instance_name << "] set parameters" << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "]             name : " << name << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "]    M, D, K (pos) : " << m_impedance_param[name].M_p << " " << m_impedance_param[name].D_p << " " << m_impedance_param[name].K_p << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "]    M, D, K (rot) : " << m_impedance_param[name].M_r << " " << m_impedance_param[name].D_r << " " << m_impedance_param[name].K_r << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "]       force_gain : " << m_impedance_param[name].force_gain.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", "\n", "    [", "]")) << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "]      moment_gain : " << m_impedance_param[name].moment_gain.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", "\n", "    [", "]")) << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "]      manip_limit : " << m_impedance_param[name].manipulability_limit << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "]          sr_gain : " << m_impedance_param[name].sr_gain << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "]       avoid_gain : " << m_impedance_param[name].avoid_gain << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "]   reference_gain : " << m_impedance_param[name].reference_gain << std::endl;
     }
     return true;
 }
