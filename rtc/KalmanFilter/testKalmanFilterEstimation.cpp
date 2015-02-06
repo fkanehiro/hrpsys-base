@@ -4,10 +4,37 @@
 
 int main(int argc, char *argv[])
 {
-  std::ifstream ratef("test.rate"), accf("test.acc"), posef("test.pose");
+  double Q_angle = 0.001;
+  double Q_rate = 0.003;
+  double R_angle = 10;
+  double dt = 0.002;
+  std::string pose_file("test.pose"), acc_file("test.acc"), rate_file("test.rate");
+  for (int i = 0; i < argc; ++ i) {
+      std::string arg(argv[i]);
+      if ( arg == "--Q-angle" ) {
+          if (++i < argc) Q_angle = atof(argv[i]);
+      } else if ( arg == "--Q-rate" ) {
+          if (++i < argc) Q_rate = atof(argv[i]);
+      } else if ( arg == "--R-angle" ) {
+          if (++i < argc) R_angle = atof(argv[i]);
+      } else if ( arg == "--dt" ) {
+          if (++i < argc) dt = atof(argv[i]);
+      } else if ( arg == "--rate-file" ) {
+          if (++i < argc) rate_file = argv[i];
+      } else if ( arg == "--acc-file" ) {
+          if (++i < argc) acc_file = argv[i];
+      } else if ( arg == "--pose-file" ) {
+          if (++i < argc) pose_file = argv[i];
+      }
+  }
+  std::ifstream ratef(rate_file.c_str()), accf(acc_file.c_str()), posef(pose_file.c_str());
+  std::cerr << "File : " << rate_file << " " << acc_file << " " << pose_file << std::endl;
+  if (!ratef.is_open() || !accf.is_open() || !posef.is_open()) {
+      std::cerr << "No such " << rate_file << " " << acc_file << " " << pose_file << std::endl;
+      return -1;
+  }
   RPYKalmanFilter rpy_kf;
-  //rpy_kf.setParam(0.002, 0.001, 0.003, 1000);
-  rpy_kf.setParam(0.002, 0.01, 0.003, 0.01);
+  rpy_kf.setParam(dt, Q_angle, Q_rate, R_angle);
 
   hrp::Vector3 rate, acc, rpy, rpyRaw, rpyAct;
   double time;
