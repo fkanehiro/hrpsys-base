@@ -167,7 +167,7 @@ RTC::ReturnCode_t ImpedanceController::onInitialize()
     // setting from conf file
     // rleg,TARGET_LINK,BASE_LINK,x,y,z,rx,ry,rz,rth #<=pos + rot (axis+angle)
     coil::vstring end_effectors_str = coil::split(prop["end_effectors"], ",");
-    std::vector<std::string> base_name_vec;
+    std::map<std::string, std::string> base_name_map;
     if (end_effectors_str.size() > 0) {
         size_t prop_num = 10;
         size_t num = end_effectors_str.size()/prop_num;
@@ -185,9 +185,9 @@ RTC::ReturnCode_t ImpedanceController::onInitialize()
                 coil::stringTo(tmpv[j], end_effectors_str[i*prop_num+6+j].c_str());
             }
             eet.localR = Eigen::AngleAxis<double>(tmpv[3], hrp::Vector3(tmpv[0], tmpv[1], tmpv[2])).toRotationMatrix(); // rotation in VRML is represented by axis + angle
-            ee_map.insert(std::pair<std::string, ee_trans>(ee_target , eet));
-            ee_name_map.insert(std::pair<std::string, std::string>(ee_name, ee_target));;
-            base_name_vec.push_back(ee_base);
+            eet.target_name = ee_target;
+            ee_map.insert(std::pair<std::string, ee_trans>(ee_name , eet));
+            base_name_map.insert(std::pair<std::string, std::string>(ee_name, ee_base));
             std::cerr << "[" << m_profile.instance_name << "] End Effector [" << ee_name << "]" << ee_target << " " << ee_base << std::endl;
             std::cerr << "[" << m_profile.instance_name << "]   target = " << ee_target << ", base = " << ee_base << std::endl;
             std::cerr << "[" << m_profile.instance_name << "]   localPos = " << eet.localPos.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[m]" << std::endl;
@@ -196,20 +196,39 @@ RTC::ReturnCode_t ImpedanceController::onInitialize()
     }
 
     // initialize impedance params
+    std::cerr << "[" << m_profile.instance_name << "] Add impedance params" << std::endl;
     for (unsigned int i=0; i<m_forceIn.size(); i++){
         std::string sensor_name = m_forceIn[i]->name();
         hrp::ForceSensor* sensor = m_robot->sensor<hrp::ForceSensor>(sensor_name);
-        // set param
-        ImpedanceParam p;
-        p.target_name = sensor->link->name;
-        // joint path
-        p.manip = hrp::JointPathExPtr(new hrp::JointPathEx(m_robot, m_robot->link(base_name_vec[i]), m_robot->link(p.target_name), m_dt));
-        if ( ! p.manip ) {
-            std::cerr << "[" << m_profile.instance_name << "] invalid joint path from " << base_name_vec[i] << " to " << p.target_name << std::endl;
-        } else {
-            p.transition_joint_q.resize(m_robot->numJoints());
-            m_impedance_param[sensor_name] = p;
+        // 1. Check whether adequate ee_map exists for the sensor.
+        std::string ee_name;
+        bool is_ee_exists = false;
+        for ( std::map<std::string, ee_trans>::iterator it = ee_map.begin(); it != ee_map.end(); it++ ) {
+            if ( it->second.target_name == sensor->link->name ) {
+                is_ee_exists = true;
+                ee_name = it->first;
+            }
         }
+        if (!is_ee_exists) {
+            std::cerr << "[" << m_profile.instance_name << "]   No such ee setting for " << sensor_name << " and " << sensor->link->name << "!!. Impedance param for " << sensor_name << " cannot be added!!" << std::endl;
+            continue;
+        }
+        // 2. Check whether already impedance param exists, which has the same target link as the sensor.
+        if (m_impedance_param.find(ee_name) != m_impedance_param.end()) {
+            std::cerr << "[" << m_profile.instance_name << "]   Already impedance param (target_name=" << sensor->link->name << ", ee_name=" << ee_name << ") exists!!. Impedance param for " << sensor_name << " cannot be added!!" << std::endl;
+            continue;
+        }
+        // 3. Check whether joint path is adequate.
+        ImpedanceParam p;
+        p.manip = hrp::JointPathExPtr(new hrp::JointPathEx(m_robot, m_robot->link(base_name_map[ee_name]), m_robot->link(sensor->link->name), m_dt));
+        if ( ! p.manip ) {
+            std::cerr << "[" << m_profile.instance_name << "]   Invalid joint path from " << base_name_map[ee_name] << " to " << sensor->link->name << "!! Impedance param for " << sensor_name << " cannot be added!!" << std::endl;
+            continue;
+        }
+        // 4. Set impedance param
+        p.transition_joint_q.resize(m_robot->numJoints());
+        p.sensor_name = sensor_name;
+        m_impedance_param[ee_name] = p;
     }
 
     // allocate memory for outPorts
@@ -253,7 +272,7 @@ RTC::ReturnCode_t ImpedanceController::onDeactivated(RTC::UniqueId ec_id)
   std::cout << "ImpedanceController::onDeactivated(" << ec_id << ")" << std::endl;
   for ( std::map<std::string, ImpedanceParam>::iterator it = m_impedance_param.begin(); it != m_impedance_param.end(); it++ ) {
       stopImpedanceControllerNoWait(it->first);
-    m_impedance_param[it->first].transition_count = 1;
+      it->second.transition_count = 1;
   }
   return RTC::RTC_OK;
 }
@@ -331,7 +350,7 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
           m_robot->rootLink()->p = hrp::Vector3(m_basePos.data.x, m_basePos.data.y, m_basePos.data.z);
           m_robot->rootLink()->R = hrp::rotFromRpy(m_baseRpy.data.r, m_baseRpy.data.p, m_baseRpy.data.y);
           m_robot->calcForwardKinematics();
-          if (ee_name_map.find("rleg") != ee_name_map.end() && ee_name_map.find("lleg") != ee_name_map.end()) { // if legged robot
+          if (ee_map.find("rleg") != ee_map.end() && ee_map.find("lleg") != ee_map.end()) { // if legged robot
               // TODO
               //  Tempolarily modify root coords to fix foot pos rot
               //  This will be removed after seq outputs adequate waistRPY discussed in https://github.com/fkanehiro/hrpsys-base/issues/272
@@ -343,9 +362,9 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
               leg_names.push_back("rleg");
               leg_names.push_back("lleg");
               for (size_t i = 0; i < leg_names.size(); i++) {
-                  hrp::Link* target_link = m_robot->link(ee_name_map[leg_names[i]]);
-                  foot_pos.push_back(target_link->p + target_link->R * ee_map[target_link->name].localPos);
-                  foot_rot.push_back(target_link->R * ee_map[target_link->name].localR);
+                  hrp::Link* target_link = m_robot->link(ee_map[leg_names[i]].target_name);
+                  foot_pos.push_back(target_link->p + target_link->R * ee_map[leg_names[i]].localPos);
+                  foot_rot.push_back(target_link->R * ee_map[leg_names[i]].localR);
               }
               hrp::Vector3 current_foot_mid_pos ((foot_pos[0]+foot_pos[1])/2.0);
               hrp::Matrix33 current_foot_mid_rot;
@@ -375,8 +394,9 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
 	  // set sequencer position to target_p0
 	  for ( std::map<std::string, ImpedanceParam>::iterator it = m_impedance_param.begin(); it != m_impedance_param.end(); it++ ) {
             ImpedanceParam& param = it->second;
-            param.target_p0 = m_robot->link(param.target_name)->p + m_robot->link(param.target_name)->R * ee_map[param.target_name].localPos;
-            param.target_r0 = m_robot->link(param.target_name)->R * ee_map[param.target_name].localR;
+            std::string target_name = ee_map[it->first].target_name;
+            param.target_p0 = m_robot->link(target_name)->p + m_robot->link(target_name)->R * ee_map[it->first].localPos;
+            param.target_r0 = m_robot->link(target_name)->R * ee_map[it->first].localR;
             if (param.transition_count == -MAX_TRANSITION_COUNT) {
                 param.target_p1 = param.target_p0;
                 param.target_r1 = param.target_r0;
@@ -400,7 +420,6 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
 	// set m_robot to qRef when deleting status
         std::map<std::string, ImpedanceParam>::iterator it = m_impedance_param.begin();
 	while(it != m_impedance_param.end()){
-            std::string sensor_name = it->first;
             ImpedanceParam& param = it->second;
             if (param.is_active) {
                 if ( param.transition_count > 0 ) {
@@ -415,17 +434,17 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
                     }
                     param.transition_count--;
                     if(param.transition_count <= 0){ // erase impedance param
-                        std::cerr << "[" << m_profile.instance_name << "] Finished cleanup and erase impedance param " << sensor_name << std::endl;
+                        std::cerr << "[" << m_profile.instance_name << "] Finished cleanup and erase impedance param " << it->first << std::endl;
                         param.is_active = false;
                     }
                 } else {
                     // use impedance model
 
-                    hrp::Link* target = m_robot->link(param.target_name);
+                    hrp::Link* target = m_robot->link(ee_map[it->first].target_name);
                     assert(target);
 
-                    param.current_p0 = target->p + target->R * ee_map[target->name].localPos;
-                    param.current_r0 = target->R * ee_map[target->name].localR;
+                    param.current_p0 = target->p + target->R * ee_map[it->first].localPos;
+                    param.current_r0 = target->R * ee_map[it->first].localR;
                     if (param.transition_count == -MAX_TRANSITION_COUNT) {
                         param.current_p1 = param.current_p0;
                         param.current_p2 = param.current_p1;
@@ -493,13 +512,13 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
                     // std::cerr << "ref_moment = " << param.ref_moment[0] << " " << param.ref_moment[1] << " " << param.ref_moment[2] << std::endl;
 
                     // ref_force/ref_moment and force_gain/moment_gain are expressed in global coordinates. 
-                    hrp::Matrix33 eeR = target->R * ee_map[target->name].localR;
-                    vel_p =  ( eeR * (param.force_gain * (eeR.transpose() * (abs_forces[it->first] - abs_ref_forces[it->first]))) * m_dt * m_dt
+                    hrp::Matrix33 eeR = target->R * ee_map[it->first].localR;
+                    vel_p =  ( eeR * (param.force_gain * (eeR.transpose() * (abs_forces[it->second.sensor_name] - abs_ref_forces[it->second.sensor_name]))) * m_dt * m_dt
                                + param.M_p * ( vel_pos1 - vel_pos0 )
                                + param.D_p * ( dif_target_pos - vel_pos0 ) * m_dt
                                + param.K_p * ( dif_pos * m_dt * m_dt ) ) /
                         (param.M_p + (param.D_p * m_dt) + (param.K_p * m_dt * m_dt));
-                    vel_r =  ( eeR * (param.moment_gain * (eeR.transpose() * (abs_moments[it->first] - abs_ref_moments[it->first]))) * m_dt * m_dt
+                    vel_r =  ( eeR * (param.moment_gain * (eeR.transpose() * (abs_moments[it->second.sensor_name] - abs_ref_moments[it->second.sensor_name]))) * m_dt * m_dt
                                + param.M_r * ( vel_rot1 - vel_rot0 )
                                + param.D_r * ( dif_target_rot - vel_rot0 ) * m_dt
                                + param.K_r * ( dif_rot * m_dt * m_dt  ) ) /
@@ -532,8 +551,8 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
                     //   Fix ee frame objective vel => link frame objective vel
                     hrp::Vector3 link_frame_pos;
                     hrp::Matrix33 link_frame_rot;
-                    link_frame_rot = param.current_r1 * ee_map[target->name].localR.transpose();
-                    link_frame_pos = param.current_p1 - link_frame_rot * ee_map[target->name].localPos;
+                    link_frame_rot = param.current_r1 * ee_map[it->first].localR.transpose();
+                    link_frame_pos = param.current_p1 - link_frame_rot * ee_map[it->first].localPos;
                     vel_p = link_frame_pos - target->p;
                     rats::difference_rotation(vel_r, target->R, link_frame_rot);
                     manip->calcInverseKinematics2Loop(vel_p, vel_r, 1.0, param.avoid_gain, param.reference_gain, &qrefv);
@@ -622,7 +641,7 @@ void ImpedanceController::calcForceMoment ()
             std::cerr << "[" << m_profile.instance_name << "]   reference moment = " << ref_data_r.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[Nm]" << std::endl;
           }
           hrp::Matrix33 sensorR;
-          hrp::Vector3 sensorlocalPos;
+          hrp::Vector3 sensorlocalPos, eelocalPos;
           hrp::Link* parentlink;
           if ( sensor ) {
             // real force sensore
@@ -641,7 +660,10 @@ void ImpedanceController::calcForceMoment ()
             std::cerr << "[" << m_profile.instance_name << "]   unknown force param" << std::endl;
           }
           abs_forces[sensor_name] = sensorR * data_p;
-          abs_moments[sensor_name] = sensorR * data_r + parentlink->R * (sensorlocalPos - ee_map[parentlink->name].localPos).cross(abs_forces[sensor_name]);
+          for ( std::map<std::string, ee_trans>::iterator it = ee_map.begin(); it != ee_map.end(); it++ ) {
+              if ( it->second.target_name == parentlink->name ) eelocalPos = it->second.localPos;
+          }
+          abs_moments[sensor_name] = sensorR * data_r + parentlink->R * (sensorlocalPos - eelocalPos).cross(abs_forces[sensor_name]);
           // End effector local frame
           // hrp::Matrix33 eeR (parentlink->R * ee_map[parentlink->name].localR);
           // abs_ref_forces[sensor_name] = eeR * ref_data_p;
@@ -745,19 +767,16 @@ bool ImpedanceController::setImpedanceControllerParam(const std::string& i_name_
         m_impedance_param[name].force_gain = hrp::Vector3(i_param_.force_gain[0], i_param_.force_gain[1], i_param_.force_gain[2]).asDiagonal();
         m_impedance_param[name].moment_gain = hrp::Vector3(i_param_.moment_gain[0], i_param_.moment_gain[1], i_param_.moment_gain[2]).asDiagonal();
 
-        for ( std::map<std::string, ImpedanceParam>::iterator it = m_impedance_param.begin(); it != m_impedance_param.end(); it++ ) {
-            ImpedanceParam& param = it->second;
-            std::cerr << "[" << m_profile.instance_name << "] set parameters" << std::endl;
-            std::cerr << "[" << m_profile.instance_name << "]             name : " << it->first << std::endl;
-            std::cerr << "[" << m_profile.instance_name << "]    M, D, K (pos) : " << param.M_p << " " << param.D_p << " " << param.K_p << std::endl;
-            std::cerr << "[" << m_profile.instance_name << "]    M, D, K (rot) : " << param.M_r << " " << param.D_r << " " << param.K_r << std::endl;
-            std::cerr << "[" << m_profile.instance_name << "]       force_gain : " << param.force_gain.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", "\n", "    [", "]")) << std::endl;
-            std::cerr << "[" << m_profile.instance_name << "]      moment_gain : " << param.moment_gain.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", "\n", "    [", "]")) << std::endl;
-            std::cerr << "[" << m_profile.instance_name << "]      manip_limit : " << param.manipulability_limit << std::endl;
-            std::cerr << "[" << m_profile.instance_name << "]          sr_gain : " << param.sr_gain << std::endl;
-            std::cerr << "[" << m_profile.instance_name << "]       avoid_gain : " << param.avoid_gain << std::endl;
-            std::cerr << "[" << m_profile.instance_name << "]   reference_gain : " << param.reference_gain << std::endl;
-        }
+        std::cerr << "[" << m_profile.instance_name << "] set parameters" << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "]             name : " << name << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "]    M, D, K (pos) : " << m_impedance_param[name].M_p << " " << m_impedance_param[name].D_p << " " << m_impedance_param[name].K_p << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "]    M, D, K (rot) : " << m_impedance_param[name].M_r << " " << m_impedance_param[name].D_r << " " << m_impedance_param[name].K_r << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "]       force_gain : " << m_impedance_param[name].force_gain.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", "\n", "    [", "]")) << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "]      moment_gain : " << m_impedance_param[name].moment_gain.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", "\n", "    [", "]")) << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "]      manip_limit : " << m_impedance_param[name].manipulability_limit << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "]          sr_gain : " << m_impedance_param[name].sr_gain << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "]       avoid_gain : " << m_impedance_param[name].avoid_gain << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "]   reference_gain : " << m_impedance_param[name].reference_gain << std::endl;
     }
     return true;
 }
