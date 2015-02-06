@@ -61,7 +61,7 @@ add_custom_command(
 )
 
 add_custom_target(doc ALL DEPENDS ${output_dir}/index.html)
-add_custom_target(doc ALL DEPENDS ${output_dir}/index.xml)
+add_custom_target(doc ALL DEPENDS ${output_dir_xml}/index.xml)
 
 install(DIRECTORY ${output_dir} DESTINATION share/doc/hrpsys/base)
 install(DIRECTORY ${output_dir_xml} DESTINATION share/doc/hrpsys/base)
