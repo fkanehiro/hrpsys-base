@@ -50,15 +50,19 @@ set(input_files package.h utilities.h
 		      )
 configure_file(Doxyfile.in ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)
 set(output_dir ${CMAKE_CURRENT_BINARY_DIR}/html)
+set(output_dir_xml ${CMAKE_CURRENT_BINARY_DIR}/xml)
 file(MAKE_DIRECTORY ${output_dir})
+file(MAKE_DIRECTORY ${output_dir_xml})
 
 add_custom_command(
-  OUTPUT ${output_dir}/index.html
+  OUTPUT ${output_dir}/index.html ${output_dir_xml}/index.xml
   COMMAND doxygen
   DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile ${input_files}
 )
 
 add_custom_target(doc ALL DEPENDS ${output_dir}/index.html)
+add_custom_target(doc ALL DEPENDS ${output_dir_xml}/index.xml)
 
 install(DIRECTORY ${output_dir} DESTINATION share/doc/hrpsys/base)
+install(DIRECTORY ${output_dir_xml} DESTINATION share/doc/hrpsys/base)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/hrpsys_base.doxytag DESTINATION share/doc/hrpsys/base)
