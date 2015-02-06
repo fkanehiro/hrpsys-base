@@ -141,6 +141,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     zmp_interpolate_time = 1.0;
     zmp_interpolator = new interpolator(6, m_dt);
     transition_interpolator = new interpolator(1, m_dt, interpolator::HOFFARBIB, 1);
+    transition_interpolator_ratio = 1.0;
 
     // setting from conf file
     // GaitGenerator requires abc_leg_offset and abc_stride_parameter in robot conf file
@@ -353,6 +354,12 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
     if ( is_legged_robot ) {
       getCurrentParameters();
       getTargetParameters();
+      bool is_transition_interpolator_empty = transition_interpolator->isEmpty();
+      if (!is_transition_interpolator_empty) {
+        transition_interpolator->get(&transition_interpolator_ratio, true);
+      } else {
+        transition_interpolator_ratio = 1.0;
+      }
       if (control_mode != MODE_IDLE ) {
         solveLimbIK();
         rel_ref_zmp = m_robot->rootLink()->R.transpose() * (ref_zmp - m_robot->rootLink()->p);
@@ -366,16 +373,14 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
         rel_ref_zmp = input_zmp;
       }
       // transition
-      if (!transition_interpolator->isEmpty()) {
-        double tmp_ratio;
-        transition_interpolator->get(&tmp_ratio, true);
-        // tmp_ratio 0=>1 : IDLE => ABC
-        // tmp_ratio 1=>0 : ABC => IDLE
-        ref_basePos = (1-tmp_ratio) * input_basePos + tmp_ratio * m_robot->rootLink()->p;
-        rel_ref_zmp = (1-tmp_ratio) * input_zmp + tmp_ratio * rel_ref_zmp;
-        rats::mid_rot(ref_baseRot, tmp_ratio, input_baseRot, m_robot->rootLink()->R);
+      if (!is_transition_interpolator_empty) {
+        // transition_interpolator_ratio 0=>1 : IDLE => ABC
+        // transition_interpolator_ratio 1=>0 : ABC => IDLE
+        ref_basePos = (1-transition_interpolator_ratio) * input_basePos + transition_interpolator_ratio * m_robot->rootLink()->p;
+        rel_ref_zmp = (1-transition_interpolator_ratio) * input_zmp + transition_interpolator_ratio * rel_ref_zmp;
+        rats::mid_rot(ref_baseRot, transition_interpolator_ratio, input_baseRot, m_robot->rootLink()->R);
         for ( int i = 0; i < m_robot->numJoints(); i++ ) {
-          m_robot->joint(i)->q = (1-tmp_ratio) * m_qRef.data[i] + tmp_ratio * m_robot->joint(i)->q;
+          m_robot->joint(i)->q = (1-transition_interpolator_ratio) * m_qRef.data[i] + transition_interpolator_ratio * m_robot->joint(i)->q;
         }
       } else {
         ref_basePos = m_robot->rootLink()->p;
@@ -652,6 +657,8 @@ bool AutoBalancer::solveLimbIKforLimb (ABCIKparam& param)
   hrp::Vector3 vel_p, vel_r;
   vel_p = param.target_p0 - param.current_p0;
   rats::difference_rotation(vel_r, param.current_r0, param.target_r0);
+  vel_p *= transition_interpolator_ratio;
+  vel_r *= transition_interpolator_ratio;
   param.manip->calcInverseKinematics2Loop(vel_p, vel_r, 1.0, 0.001, 0.01, &qrefv);
   return true;
 }
