@@ -195,4 +195,8 @@ foreach(target \${targets})
 endforeach()")
   install(DIRECTORY test launch DESTINATION share/hrpsys USE_SOURCE_PERMISSIONS)
   install(DIRECTORY rtc ec DESTINATION share/hrpsys/src USE_SOURCE_PERMISSIONS)
+  install(CODE "
+execute_process(COMMAND cmake -E make_directory share WORKING_DIRECTORY \$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/share/hrpsys)
+execute_process(COMMAND cmake -E create_symlink ../../hrpsys share/hrpsys WORKING_DIRECTORY \$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/share/hrpsys)
+")
 endif()
