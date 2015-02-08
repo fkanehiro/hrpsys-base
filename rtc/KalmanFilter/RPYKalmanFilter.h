@@ -95,9 +95,20 @@ public:
       // x[0] = m_rpyRaw.data.r; // angle (from m/sec Acceleration3D, unstable, no drift )
       // x[1] = m_rate.data.avx; // rate ( rad/sec, AngularVelocity, gyro, stable/drift )
       // use kalman filter with imaginary data
-      r_filter.update(gyro(0), rpyRaw(0));
-      p_filter.update(gyro(1), rpyRaw(1));
-      y_filter.update(gyro(2), rpyRaw(2));
+      hrp::Vector3 gyro2 = gyro;
+#if 0
+      double roll = r_filter.getx()[0];
+      double pitch = p_filter.getx()[0];
+      double yaw = y_filter.getx()[0];
+      hrp::Matrix33 tmpMat;
+      tmpMat << 1.0, sin(roll)*sin(pitch)/cos(pitch), cos(roll)*sin(pitch)/cos(pitch),
+                0,   cos(roll),                       -sin(roll),
+                0,   sin(roll)/cos(pitch),            cos(roll)/cos(pitch);
+      gyro2 = tmpMat * gyro;
+#endif
+      r_filter.update(gyro2(0), rpyRaw(0));
+      p_filter.update(gyro2(1), rpyRaw(1));
+      y_filter.update(gyro2(2), rpyRaw(2));
 
       Eigen::AngleAxis<double> aaZ(y_filter.getx()[0], Eigen::Vector3d::UnitZ());
       Eigen::AngleAxis<double> aaY(p_filter.getx()[0], Eigen::Vector3d::UnitY());
