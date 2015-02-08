@@ -111,8 +111,8 @@ case $TEST_PACKAGE in
             # [hrpsys:new] <-> [rtmros_common:old] + [hrpsys:old]
             "
             sudo dpkg -r --force-depends ros-hydro-hrpsys
-            catkin_make -j8 -l8
-            catkin_make install -j8 -l8
+            catkin_make -j1 -l1
+            catkin_make install -j1 -l1
             source install/setup.bash
         else
             echo "
