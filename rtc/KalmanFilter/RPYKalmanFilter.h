@@ -31,13 +31,13 @@ public:
 
       I = hrp::dmatrix::Identity(2,2);
   }
-  void setF(double _f0, double _f1, double _f2, double _f3) { F(0,0) = _f0; F(0,1) = _f1; F(1,0) = _f2; F(1,1) = _f3;}
-  void setP(double _p0, double _p1, double _p2, double _p3) { P(0,0) = _p0; P(0,1) = _p1; P(1,0) = _p2; P(1,1) = _p3;}
-  void setQ(double _q0, double _q1, double _q2, double _q3) { Q(0,0) = _q0; Q(0,1) = _q1; Q(1,0) = _q2; Q(1,1) = _q3;}
-  void setR(double _R) { R = _R; }
-  void setB(double _b0, double _b1) { B[0] = _b0; B[1] = _b1; }
-  hrp::Vector2 &getx() { return x; }
-  void update(double u, double _z) {
+  void setF(const double _f0, const double _f1, const double _f2, const double _f3) { F << _f0, _f1, _f2, _f3; };
+  void setP(const double _p0, const double _p1, const double _p2, const double _p3) { P << _p0, _p1, _p2, _p3; };
+  void setQ(const double _q0, const double _q1, const double _q2, const double _q3) { Q << _q0, _q1, _q2, _q3; };
+  void setR(const double _R) { R = _R; }
+  void setB(const double _b0, const double _b1) { B << _b0, _b1; };
+  const hrp::Vector2 &getx() { return x; }
+  void update(const double u, const double _z) {
       // Predicted (a priori) state estimate
       x = F * x + B * u;
       // Predicted (a priori) estimate covariance
@@ -56,8 +56,7 @@ public:
       P = (I - K * H) * P;
   }
   void resetStateByObservation() {
-      x(0) = z;
-      x(1) = 0;
+      x << z ,0;
   };
 private:
   hrp::Matrix22 P, Q, I, F;
@@ -96,9 +95,20 @@ public:
       // x[0] = m_rpyRaw.data.r; // angle (from m/sec Acceleration3D, unstable, no drift )
       // x[1] = m_rate.data.avx; // rate ( rad/sec, AngularVelocity, gyro, stable/drift )
       // use kalman filter with imaginary data
-      r_filter.update(gyro(0), rpyRaw(0));
-      p_filter.update(gyro(1), rpyRaw(1));
-      y_filter.update(gyro(2), rpyRaw(2));
+      hrp::Vector3 gyro2 = gyro;
+#if 0
+      double roll = r_filter.getx()[0];
+      double pitch = p_filter.getx()[0];
+      double yaw = y_filter.getx()[0];
+      hrp::Matrix33 tmpMat;
+      tmpMat << 1.0, sin(roll)*sin(pitch)/cos(pitch), cos(roll)*sin(pitch)/cos(pitch),
+                0,   cos(roll),                       -sin(roll),
+                0,   sin(roll)/cos(pitch),            cos(roll)/cos(pitch);
+      gyro2 = tmpMat * gyro;
+#endif
+      r_filter.update(gyro2(0), rpyRaw(0));
+      p_filter.update(gyro2(1), rpyRaw(1));
+      y_filter.update(gyro2(2), rpyRaw(2));
 
       Eigen::AngleAxis<double> aaZ(y_filter.getx()[0], Eigen::Vector3d::UnitZ());
       Eigen::AngleAxis<double> aaY(p_filter.getx()[0], Eigen::Vector3d::UnitY());

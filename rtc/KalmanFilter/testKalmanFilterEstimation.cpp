@@ -61,17 +61,21 @@ int main(int argc, char *argv[])
   RPYKalmanFilter rpy_kf;
   rpy_kf.setParam(dt, Q_angle, Q_rate, R_angle);
   hrp::Vector3 rate, acc, rpy, rpyRaw, rpyAct;
-  double time;
+  double time, time2=0.0;
   while(!ratef.eof()){
     posef >> time >> time >> time >> time >> rpyAct[0] >> rpyAct[1] >> rpyAct[2]; // Neglect translation in .pose file
     ratef >> time >> rate[0] >> rate[1] >> rate[2];
     accf >> time >> acc[0] >> acc[1] >> acc[2];
     rpy_kf.main_one(rpy, rpyRaw, acc, rate);
+    // rad->deg
+    rpy*=180/3.14159;
+    rpyAct*=180/3.14159;
     if (use_gnuplot) {
-        ofs << time << " " << rpy[0] << " " << rpy[1] << " " << rpy[2] << " " << rpyAct[0] << " " << rpyAct[1] << " " << rpyAct[2] << std::endl;
+        ofs << time2 << " " << rpy[0] << " " << rpy[1] << " " << rpy[2] << " " << rpyAct[0] << " " << rpyAct[1] << " " << rpyAct[2] << std::endl;
     } else {
         std::cout << rpy[0] << " " << rpy[1] << " " << rpy[2] << " " << rpyAct[0] << " " << rpyAct[1] << " " << rpyAct[2] << std::endl;
     }
+    time2+=dt;
   }
   // gnuplot
   if (use_gnuplot) {
