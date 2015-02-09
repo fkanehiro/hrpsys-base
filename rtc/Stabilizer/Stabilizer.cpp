@@ -56,6 +56,7 @@ Stabilizer::Stabilizer(RTC::Manager* manager)
     m_qRefOut("q", m_qRef),
     m_tauOut("tau", m_tau),
     m_zmpOut("zmp", m_zmp),
+    m_actContactStatesOut("actContactStates", m_actContactStates),
     // for debug output
     m_originRefZmpOut("originRefZmp", m_originRefZmp),
     m_originRefCogOut("originRefCog", m_originRefCog),
@@ -111,6 +112,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   addOutPort("q", m_qRefOut);
   addOutPort("tau", m_tauOut);
   addOutPort("zmp", m_zmpOut);
+  addOutPort("actContactStates", m_actContactStatesOut);
   // for debug output
   addOutPort("originRefZmp", m_originRefZmpOut);
   addOutPort("originRefCog", m_originRefCogOut);
@@ -267,9 +269,11 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   }
   total_mass = m_robot->totalMass();
   ref_zmp_aux = hrp::Vector3::Zero();
+  m_actContactStates.data.length(m_contactStates.data.length());
   for (size_t i = 0; i < m_contactStates.data.length(); i++) {
     contact_states.push_back(true);
     prev_contact_states.push_back(true);
+    m_actContactStates.data[i] = false;
   }
 
   // for debug output
@@ -414,6 +418,8 @@ RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
       m_zmp.data.y = rel_act_zmp(1);
       m_zmp.data.z = rel_act_zmp(2);
       m_zmpOut.write();
+      m_actContactStates.tm = m_qRef.tm;
+      m_actContactStatesOut.write();
       //m_tauOut.write();
       // for debug output
       m_originRefZmp.data.x = ref_zmp(0); m_originRefZmp.data.y = ref_zmp(1); m_originRefZmp.data.z = ref_zmp(2);
@@ -538,6 +544,9 @@ void Stabilizer::getActualParameters ()
   } else {
     on_ground = calcZMP(act_zmp, ref_zmp(2));
   }
+  // set actual contact states
+  m_actContactStates.data[contact_states_index_map["rleg"]] = isContact(0);
+  m_actContactStates.data[contact_states_index_map["lleg"]] = isContact(1);
   // <= Actual world frame
 
   // convert absolute (in st) -> root-link relative
