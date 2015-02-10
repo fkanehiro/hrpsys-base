@@ -192,6 +192,7 @@ class CollisionDetector
   int default_recover_time;
   unsigned int m_debugLevel;
   bool m_enable;
+  int collision_beep_freq, collision_beep_count;
   OpenHRP::CollisionDetectorService::CollisionState m_state;
 };
 

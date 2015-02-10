@@ -22,6 +22,7 @@
 #include "RobotHardwareService.hh"
 
 #include "CollisionDetector.h"
+#include "../SoftErrorLimiter/beep.h"
 
 #define deg2rad(x)	((x)*M_PI/180)
 #define rad2deg(x)      ((x)*180/M_PI)
@@ -68,16 +69,20 @@ CollisionDetector::CollisionDetector(RTC::Manager* manager)
 #endif // USE_HRPSYSUTIL
       m_debugLevel(0),
       m_enable(true),
+      collision_beep_count(0),
       dummy(0)
 {
     m_service0.collision(this);
 #ifdef USE_HRPSYSUTIL
     m_log.enableRingBuffer(1);
 #endif // USE_HRPSYSUTIL
+    init_beep();
+    start_beep(3136);
 }
 
 CollisionDetector::~CollisionDetector()
 {
+  quit_beep();
 }
 
 
@@ -236,6 +241,8 @@ RTC::ReturnCode_t CollisionDetector::onInitialize()
         status |= 0<< OpenHRP::RobotHardwareService::DRIVER_TEMP_SHIFT;
         m_servoState.data[i][0] = status;
     }
+
+    collision_beep_freq = static_cast<int>(1.0/(3.0*m_dt)); // 3 times / 1[s]
     return RTC::RTC_OK;
 }
 
@@ -424,6 +431,22 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
         }
         //
         m_qOut.write();
+
+        // beep sound for collision alert
+        //  check servo for collision beep sound
+        bool has_servoOn = false;
+        for (int i = 0; i < m_robot->numJoints(); i++ ){
+          int servo_state = (m_servoState.data[i][0] & OpenHRP::RobotHardwareService::SERVO_STATE_MASK) >> OpenHRP::RobotHardwareService::SERVO_STATE_SHIFT;
+          has_servoOn = has_servoOn || (servo_state == 1);
+        }
+        //  beep
+        if ( !m_safe_posture && has_servoOn ) { // If collided and some joint is servoOn
+          if ( collision_beep_count % collision_beep_freq == 0 && collision_beep_count % (collision_beep_freq * 3) != 0 ) start_beep(2352, collision_beep_freq*0.7);
+          else stop_beep();
+          collision_beep_count++;
+        } else {
+          collision_beep_count = 0;
+        }
 
         if ( ++m_loop_for_check >= m_collision_loop ) m_loop_for_check = 0;
         tp.posture.resize(m_qRef.data.length());
