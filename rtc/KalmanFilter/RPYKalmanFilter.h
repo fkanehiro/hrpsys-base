@@ -2,6 +2,7 @@
 #define RPYKALMANFILTER_H
 
 #include <hrpUtil/EigenTypes.h>
+#include "util/Hrpsys.h"
 namespace hrp{
   typedef Eigen::Vector2d Vector2;
   typedef Eigen::Matrix2d Matrix22;
