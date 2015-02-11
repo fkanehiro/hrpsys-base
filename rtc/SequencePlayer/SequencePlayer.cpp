@@ -649,6 +649,7 @@ bool SequencePlayer::setInterpolationMode(OpenHRP::SequencePlayerService::interp
 
 bool SequencePlayer::addJointGroup(const char *gname, const OpenHRP::SequencePlayerService::StrSequence& jnames)
 {
+    std::cerr << "[addJointGroup] group name = " << gname << std::endl;
     if ( m_debugLevel > 0 ) {
         std::cerr << __PRETTY_FUNCTION__ << std::endl;
     }
@@ -670,6 +671,7 @@ bool SequencePlayer::addJointGroup(const char *gname, const OpenHRP::SequencePla
 
 bool SequencePlayer::removeJointGroup(const char *gname)
 {
+    std::cerr << "[removeJointGroup] group name = " << gname << std::endl;
     if (!waitInterpolationOfGroup(gname)) return false;
     bool ret;
     {
