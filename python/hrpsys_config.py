@@ -1679,6 +1679,34 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
         '''
         return self.seq_svc.playPatternOfGroup(gname, jointangles, tm)
 
+    # #
+    # # service interface for Unstable RTC component
+    # #
+    def startAutoBalancer(self, limbs=["rleg", "lleg"]):
+        '''!@brief
+        Start AutoBalancer mode
+        @param limbs list of end-effector name to control. rleg and lleg by default.
+        '''
+        self.abc_svc.startAutoBalancer(limbs)
+
+    def stopAutoBalancer(self):
+        '''!@brief
+        Stop AutoBalancer mode
+        '''
+        self.abc_svc.stopAutoBalancer()
+
+    def startStabilizer(self):
+        '''!@brief
+        Start Stabilzier mode
+        '''
+        self.st_svc.startStabilizer()
+
+    def stopStabilizer(self):
+        '''!@brief
+        Stop Stabilzier mode
+        '''
+        self.st_svc.stopStabilizer()
+
     # ##
     # ## initialize
     # ##
