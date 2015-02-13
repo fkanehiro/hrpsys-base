@@ -115,8 +115,8 @@ RTC::ReturnCode_t OccupancyGridMap3D::onInitialize()
 
   m_pose.data.position.x = 0; 
   m_pose.data.position.y = 0; 
-  m_pose.data.position.z = 1.5; 
-  m_pose.data.orientation.r = -M_PI/2;
+  m_pose.data.position.z = 0; 
+  m_pose.data.orientation.r = 0;
   m_pose.data.orientation.p = 0;
   m_pose.data.orientation.y = 0;
 
@@ -228,7 +228,7 @@ RTC::ReturnCode_t OccupancyGridMap3D::onExecute(RTC::UniqueId ec_id)
                          m_pose.data.orientation.r,
                          m_pose.data.orientation.p,
                          m_pose.data.orientation.y);
-            m_map->insertScan(cloud, sensor, frame);
+            m_map->insertPointCloud(cloud, sensor, frame);
         }else if (strcmp(m_cloud.type, "xyzv")==0){
             hrp::Matrix33 R;
             hrp::Vector3 p;
