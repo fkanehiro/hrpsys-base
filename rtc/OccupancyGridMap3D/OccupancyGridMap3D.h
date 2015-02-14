@@ -115,9 +115,11 @@ class OccupancyGridMap3D
   PointCloudTypes::PointCloud m_cloud;
   TimedPose3D m_pose;  
   TimedLong m_update;
+  RangeData m_range;  
 
   // DataInPort declaration
   // <rtc-template block="inport_declare">
+  InPort<RangeData> m_rangeIn;
   InPort<PointCloudTypes::PointCloud> m_cloudIn;
   InPort<TimedPose3D> m_poseIn;
   InPort<TimedLong> m_updateIn;
