@@ -254,6 +254,10 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     leg_names.push_back("rleg");
     leg_names.push_back("lleg");
 
+    graspless_manip_mode = false;
+    graspless_manip_arm = "arms";
+    graspless_manip_p_gain = hrp::Vector3::Zero();
+
     return RTC::RTC_OK;
 }
 
@@ -589,6 +593,20 @@ void AutoBalancer::getTargetParameters()
         tmp_foot_mid_pos += tmpikp.target_link->p + tmpikp.target_link->R * tmpikp.localPos + tmpikp.target_link->R * tmpikp.localR * default_zmp_offsets[i];
     }
     tmp_foot_mid_pos *= 0.5;
+
+    //
+    {
+        if ( gg_is_walking && gg->get_gp_count() == static_cast<size_t>(gg->get_default_step_time()/(2*m_dt))-1) {
+            hrp::Vector3 vel_htc(calc_vel_from_hand_error(tmp_fix_coords));
+            gg->set_offset_velocity_param(vel_htc(0), vel_htc(1) ,vel_htc(2));
+        }//  else {
+        //     if ( gg_is_walking && gg->get_gp_count() == static_cast<size_t>(gg->get_default_step_time()/(2*m_dt))-1) {
+        //         gg->set_offset_velocity_param(0,0,0);
+        //     }
+        // }
+    }
+
+    //
 
     hrp::Vector3 tmp_ref_cog(m_robot->calcCM());
     if (gg_is_walking) {
@@ -968,11 +986,26 @@ bool AutoBalancer::setAutoBalancerParam(const OpenHRP::AutoBalancerService::Auto
     for (size_t j = 0; j < 3; j++)
       default_zmp_offsets_array[i*3+j] = i_param.default_zmp_offsets[i][j];
   zmp_interpolator->go(default_zmp_offsets_array, zmp_interpolate_time, true);
+  graspless_manip_mode = i_param.graspless_manip_mode;
+  graspless_manip_arm = std::string(i_param.graspless_manip_arm);
+  for (size_t j = 0; j < 3; j++)
+      graspless_manip_p_gain[j] = i_param.graspless_manip_p_gain[j];
+  for (size_t j = 0; j < 3; j++)
+      graspless_manip_reference_trans_coords.pos[j] = i_param.graspless_manip_reference_trans_pos[j];
+  graspless_manip_reference_trans_coords.rot = (Eigen::Quaternion<double>(i_param.graspless_manip_reference_trans_rot[0],
+                                                                          i_param.graspless_manip_reference_trans_rot[1],
+                                                                          i_param.graspless_manip_reference_trans_rot[2],
+                                                                          i_param.graspless_manip_reference_trans_rot[3]).normalized().toRotationMatrix()); // rtc: (x, y, z, w) but eigen: (w, x, y, z)
   std::cerr << "[" << m_profile.instance_name << "] setAutoBalancerParam" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   move_base_gain = " << move_base_gain << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   default_zmp_offsets = "
             << default_zmp_offsets_array[0] << " " << default_zmp_offsets_array[1] << " " << default_zmp_offsets_array[2] << " "
             << default_zmp_offsets_array[3] << " " << default_zmp_offsets_array[4] << " " << default_zmp_offsets_array[5] << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   graspless_manip_mode = " << graspless_manip_mode << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   graspless_manip_arm = " << graspless_manip_arm << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   graspless_manip_p_gain = " << graspless_manip_p_gain.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   graspless_manip_reference_trans_pos = " << graspless_manip_reference_trans_coords.pos.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   graspless_manip_reference_trans_rot = " << graspless_manip_reference_trans_coords.rot.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", "\n", "    [", "]")) << std::endl;
   return true;
 };
 
@@ -989,6 +1022,17 @@ bool AutoBalancer::getAutoBalancerParam(OpenHRP::AutoBalancerService::AutoBalanc
   case MODE_SYNC_TO_ABC: i_param.controller_mode = OpenHRP::AutoBalancerService::MODE_SYNC_TO_ABC; break;
   default: break;
   }
+  i_param.graspless_manip_mode = graspless_manip_mode;
+  i_param.graspless_manip_arm = graspless_manip_arm.c_str();
+  for (size_t j = 0; j < 3; j++)
+      i_param.graspless_manip_p_gain[j] = graspless_manip_p_gain[j];
+  for (size_t j = 0; j < 3; j++)
+      i_param.graspless_manip_reference_trans_pos[j] = graspless_manip_reference_trans_coords.pos[j];
+  Eigen::Quaternion<double> qt(graspless_manip_reference_trans_coords.rot);
+  i_param.graspless_manip_reference_trans_rot[0] = qt.w();
+  i_param.graspless_manip_reference_trans_rot[1] = qt.x();
+  i_param.graspless_manip_reference_trans_rot[2] = qt.y();
+  i_param.graspless_manip_reference_trans_rot[3] = qt.z();
   return true;
 };
 
@@ -1074,6 +1118,51 @@ void AutoBalancer::calc_static_balance_point_from_forces(hrp::Vector3& sb_point,
     sb_point(j) = nume(j) / denom(j);
   }
   sb_point(2) = ref_com_height;
+};
+
+#ifndef rad2deg
+#define rad2deg(rad) (rad * 180 / M_PI)
+#endif
+#ifndef deg2rad
+#define deg2rad(deg) (deg * M_PI / 180)
+#endif
+
+hrp::Vector3 AutoBalancer::calc_vel_from_hand_error (const coordinates& tmp_fix_coords)
+{
+  if (graspless_manip_mode) {
+    hrp::Vector3 dp,dr;
+    coordinates ref_hand_coords(gg->get_dst_foot_midcoords()), act_hand_coords;
+    ref_hand_coords.transform(graspless_manip_reference_trans_coords); // desired arm coords
+    hrp::Vector3 foot_pos(gg->get_dst_foot_midcoords().pos);
+    if ( graspless_manip_arm == "arms" ) {
+      // act_hand_coords.pos = (target_coords["rarm"].pos + target_coords["larm"].pos) / 2.0;
+      // vector3 cur_y(target_coords["larm"].pos - target_coords["rarm"].pos);
+      // cur_y(2) = 0;
+      // alias(cur_y) = normalize(cur_y);
+      // vector3 ref_y(ref_hand_coords.axis(AXIS_Y));
+      // ref_y(2) = 0;
+      // alias(ref_y) = normalize(ref_y);
+      // dr = 0,0,((vector3(cross(ref_y, cur_y))(2) > 0 ? 1.0 : -1.0) * std::acos(dot(ref_y, cur_y))); // fix for rotation
+    } else {
+      ABCIKparam& tmpikp = ikp[graspless_manip_arm];
+      act_hand_coords = rats::coordinates(tmpikp.target_p0 + tmpikp.target_r0 * tmpikp.localPos,
+                                          tmpikp.target_r0 * tmpikp.localR);
+      rats::difference_rotation(dr, ref_hand_coords.rot, act_hand_coords.rot);
+      dr(0) = 0; dr(1) = 0;
+    }
+    dp = act_hand_coords.pos - ref_hand_coords.pos
+        + dr.cross(hrp::Vector3(foot_pos - act_hand_coords.pos));
+    dp(2) = 0;
+    hrp::Matrix33 foot_mt(gg->get_dst_foot_midcoords().rot.transpose());
+    //alias(dp) = foot_mt * dp;
+    hrp::Vector3 dp2 = foot_mt * dp;
+    //alias(dr) = foot_mt * dr;
+    return hrp::Vector3(graspless_manip_p_gain[0] * dp2(0)/gg->get_default_step_time(),
+                        graspless_manip_p_gain[1] * dp2(1)/gg->get_default_step_time(),
+                        graspless_manip_p_gain[2] * rad2deg(dr(2))/gg->get_default_step_time());
+  } else {
+    return hrp::Vector3::Zero();
+  }
 };
 
 //
