@@ -4,8 +4,16 @@ import os
 import rtm
 
 from rtm import *
+import OpenRTM_aist.RTM_IDL # to avoid https://github.com/fkanehiro/openhrp3/issues/42 issue
+try:
+    import imp
+    fp, pathname, description = imp.find_module('OpenHRP') # I'm not sure but this read OpenHRP, not hrpsys.OpenHRP
+    OpenHRP3 = imp.load_module('OpenHRP3', fp, pathname, description)
+    ModelLoader_idl = OpenHRP3.ModelLoader_idl
+except:
+    from OpenHRP3 import * # import ModelLoader_idl for old OpenHRP3 (3.1.7)
+
 from OpenHRP import *
-from hrpsys import *  # load ModelLoader
 
 import socket
 import time
