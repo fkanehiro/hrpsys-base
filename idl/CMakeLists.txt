@@ -121,9 +121,31 @@ foreach(_idl_file ${openhrp_idl_files})
   endif()
 endforeach()
 
-install(CODE "execute_process(COMMAND omniidl -bpython -C${python_dist_pkg_dir}/hrpsys -I${OPENRTM_IDL_DIR} ${idl_files} WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})")
-install(CODE "execute_process(COMMAND omniidl -bpython -C${python_dist_pkg_dir}/hrpsys -I${OPENRTM_IDL_DIR} ${openhrp_idl_files} WORKING_DIRECTORY ${OPENHRP_IDL_DIR}/OpenHRP)")
-install(CODE "execute_process(COMMAND python -m compileall . WORKING_DIRECTORY ${python_dist_pkg_dir}/hrpsys)")
+add_custom_command(
+  OUTPUT python_idl_dir
+  COMMAND cmake -E make_directory ${python_dist_pkg_dir}/hrpsys
+  WORKING_DIRECTORY $ENV{DESTDIR}${CMAKE_INSTALL_PREFIX})
+foreach(_idl_file ${idl_files})
+  get_filename_component(idl_basename ${_idl_file} NAME_WE)
+  add_custom_command(
+    OUTPUT ${idl_basename}_idl.py
+    COMMAND omniidl -bpython -C${python_dist_pkg_dir}/hrpsys -I${OPENRTM_IDL_DIR} ${_idl_file}
+    DEPENDS ${_idl_file} python_idl_dir
+    WORKING_DIRECTORY $ENV{DESTDIR}${CMAKE_INSTALL_PREFIX})
+  list(APPEND python_compiled_files ${idl_basename}_idl.py)
+endforeach()
+foreach(_idl_file ${openhrp_idl_files})
+  get_filename_component(idl_basename ${_idl_file} NAME_WE)
+  add_custom_command(
+    OUTPUT ${idl_basename}_idl.py
+    COMMAND omniidl -bpython -C${python_dist_pkg_dir}/hrpsys -I${OPENRTM_IDL_DIR} ${OPENHRP_IDL_DIR}/OpenHRP/${_idl_file}
+    DEPENDS ${OPENHRP_IDL_DIR}/OpenHRP/${_idl_file} python_idl_dir
+    WORKING_DIRECTORY $ENV{DESTDIR}${CMAKE_INSTALL_PREFIX})
+  list(APPEND python_compiled_files ${idl_basename}_idl.py)
+endforeach()
+add_custom_target(compile_python_idl_files DEPENDS ${python_compiled_files})
+install(CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" --build \"${CMAKE_BINARY_DIR}\" --target compile_python_idl_files)")
+
 install(FILES ${headers} DESTINATION include/hrpsys/idl)
 install(FILES ${idl_files} DESTINATION share/hrpsys/idl)
 
