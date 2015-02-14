@@ -1460,6 +1460,8 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
         Check whether servo control has been turned on.
         @param jname str: Name of a link (that can be obtained by "hiro.Groups"
                       as lists of groups).
+                      When jname = 'all' or 'any' => If all joints are servoOn, return True, otherwise, return False.
+                      When jname = 'some' => If some joint is servoOn, return True, otherwise return False.
         @return bool: True if servo is on
         '''
         if self.simulation_mode:
@@ -1471,13 +1473,20 @@ tds.data[4:7], tds.data[8:11]], 'sxyz'))
                     # print self.configurator_name, 's = ', s
                     if (s[0] & 2) == 0:
                         return False
+                return True
+            elif jname.lower() == 'some':
+                for s in s_s:
+                    # print self.configurator_name, 's = ', s
+                    if (s[0] & 2) != 0:
+                        return True
+                return False
             else:
                 jid = eval('self.' + jname)
                 print self.configurator_name, s_s[jid]
                 if s_s[jid][0] & 1 == 0:
                     return False
-            return True
-        return False
+                else:
+                    return True
 
     def flat2Groups(self, flatList):
         '''!@brief
