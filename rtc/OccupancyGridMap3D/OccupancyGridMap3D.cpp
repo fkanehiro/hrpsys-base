@@ -55,6 +55,7 @@ OccupancyGridMap3D::OccupancyGridMap3D(RTC::Manager* manager)
     m_rangeIn("range", m_range),
     m_cloudIn("cloud", m_cloud),
     m_poseIn("pose", m_pose),
+    m_sensorPosIn("sensorPos", m_sensorPos),
     m_updateIn("update", m_update),
     m_updateOut("updateSignal", m_updateSignal),
     m_OGMap3DServicePort("OGMap3DService"),
@@ -91,6 +92,7 @@ RTC::ReturnCode_t OccupancyGridMap3D::onInitialize()
   addInPort("range", m_rangeIn);
   addInPort("cloud", m_cloudIn);
   addInPort("pose", m_poseIn);
+  addInPort("sensorPos", m_sensorPosIn);
   addInPort("update", m_updateIn);
 
   // Set OutPort buffer
@@ -121,6 +123,10 @@ RTC::ReturnCode_t OccupancyGridMap3D::onInitialize()
   m_pose.data.orientation.r = 0;
   m_pose.data.orientation.p = 0;
   m_pose.data.orientation.y = 0;
+
+  m_sensorPos.data.x = 0;
+  m_sensorPos.data.y = 0;
+  m_sensorPos.data.z = 0;
 
   m_updateSignal.data = 0;
  
@@ -235,6 +241,7 @@ RTC::ReturnCode_t OccupancyGridMap3D::onExecute(RTC::UniqueId ec_id)
     if (m_cloudIn.isNew()){
         while (m_cloudIn.isNew()) m_cloudIn.read();
         while (m_poseIn.isNew())  m_poseIn.read();
+        while (m_sensorPosIn.isNew())  m_sensorPosIn.read();
         Guard guard(m_mutex);
         float *ptr = (float *)m_cloud.data.get_buffer();
         if (strcmp(m_cloud.type, "xyz")==0 
@@ -244,7 +251,9 @@ RTC::ReturnCode_t OccupancyGridMap3D::onExecute(RTC::UniqueId ec_id)
                 if (isnan(ptr[0])) continue;
                 cloud.push_back(point3d(ptr[0],ptr[1],ptr[2]));
             }
-            point3d sensor(0,0,0);
+            point3d sensor(m_sensorPos.data.x,
+                           m_sensorPos.data.y,
+                           m_sensorPos.data.z);
             pose6d frame(m_pose.data.position.x,
                          m_pose.data.position.y,
                          m_pose.data.position.z, 
