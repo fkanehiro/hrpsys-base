@@ -187,6 +187,7 @@ class AutoBalancer
   // static balance point offsetting
   void static_balance_point_proc_one(hrp::Vector3& tmp_input_sbp, const double ref_com_height);
   void calc_static_balance_point_from_forces(hrp::Vector3& sb_point, const hrp::Vector3& tmpcog, const double ref_com_height, std::vector<hrp::Vector3>& tmp_forces);
+  hrp::Vector3 calc_vel_from_hand_error (const rats::coordinates& tmp_fix_coords);
 
   // for gg
   typedef boost::shared_ptr<rats::gait_generator> ggPtr;
@@ -222,6 +223,10 @@ class AutoBalancer
   unsigned int m_debugLevel;
   bool is_legged_robot;
   int loop;
+  bool graspless_manip_mode;
+  std::string graspless_manip_arm;
+  hrp::Vector3 graspless_manip_p_gain;
+  rats::coordinates graspless_manip_reference_trans_coords;
 };
 
 
