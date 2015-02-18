@@ -269,11 +269,10 @@ void v4l_capture::init_device(void)
     fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;
     fmt.fmt.pix.field = V4L2_FIELD_INTERLACED;
 
-    /* tempolarily disable set format */
-    // if (ioctl(fd, VIDIOC_S_FMT, &fmt) == -1) {
-    //     perror("VIDIOC_S_FMT");
-    //     exit(EXIT_FAILURE);
-    // }
+    if (ioctl(fd, VIDIOC_S_FMT, &fmt) == -1) {
+        perror("VIDIOC_S_FMT");
+        exit(EXIT_FAILURE);
+    }
 
     init_mmap();
 }
