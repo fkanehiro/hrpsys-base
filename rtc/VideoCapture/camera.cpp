@@ -56,7 +56,7 @@ bool v4l_capture::init_all(size_t _width, size_t _height, unsigned int _devId)
   dev_name = oss.str();
   if (!open_device()) return false;
   init_device();
-  start_capturing();
+  if (!start_capturing()) return false;
   return true;
 }
 
@@ -284,7 +284,7 @@ void v4l_capture::uninit_device(void)
     free(buffers);
 }
 
-void v4l_capture::start_capturing(void)
+bool v4l_capture::start_capturing(void)
 {
     unsigned int i;
     enum v4l2_buf_type type;
@@ -300,7 +300,7 @@ void v4l_capture::start_capturing(void)
 
 	if (ioctl(fd, VIDIOC_QBUF, &buf) == -1) {
 	    perror("VIDIOC_QBUF");
-	    exit(EXIT_FAILURE);
+            return false;
 	}
     }
 
@@ -308,8 +308,9 @@ void v4l_capture::start_capturing(void)
 
     if (ioctl(fd, VIDIOC_STREAMON, &type) == -1) {
 	perror("VIDIOC_STREAMON");
-	exit(EXIT_FAILURE);
+        return false;
     }
+    return true;
 }
 
 void v4l_capture::stop_capturing(void)
