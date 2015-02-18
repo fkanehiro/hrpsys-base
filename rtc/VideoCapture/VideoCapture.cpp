@@ -153,6 +153,10 @@ RTC::ReturnCode_t VideoCapture::onActivated(RTC::UniqueId ec_id)
 RTC::ReturnCode_t VideoCapture::onDeactivated(RTC::UniqueId ec_id)
 {
   std::cout << m_profile.instance_name<< ": onDeactivated(" << ec_id << ")" << std::endl;
+  for (unsigned int i=0; i< m_cameras.size(); i++){
+      delete m_cameras[i];
+  } 
+  m_cameras.clear();
   return RTC::RTC_OK;
 }
 
