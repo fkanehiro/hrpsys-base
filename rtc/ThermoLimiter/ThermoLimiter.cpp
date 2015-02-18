@@ -163,6 +163,7 @@ RTC::ReturnCode_t ThermoLimiter::onInitialize()
 
   // allocate memory for outPorts
   m_tauMaxOut.data.length(m_robot->numJoints());
+  m_debug_print_freq = static_cast<int>(0.1/m_dt); // once per 0.1 [s]
   
   return RTC::RTC_OK;
 }
@@ -335,7 +336,7 @@ double ThermoLimiter::calcEmergencyRatio(RTC::TimedDoubleSeq &current, hrp::dvec
   if (current.data.length() == max.size()) { // estimate same dimension
     for (int i = 0; i < current.data.length(); i++) {
       double tmpEmergencyRatio = std::abs(current.data[i] / max[i]);
-      if (tmpEmergencyRatio > alarmRatio) {
+      if (tmpEmergencyRatio > alarmRatio && m_loop % m_debug_print_freq == 0) {
           std::cerr << prefix << "[" << m_robot->joint(i)->name << "]" << " is over " << alarmRatio << " of the limit (" << current.data[i] << "/" << max[i] << ")" << std::endl;
       }
       if (maxEmergencyRatio < tmpEmergencyRatio) {

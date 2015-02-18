@@ -142,7 +142,7 @@ class ThermoLimiter
  private:
   double m_dt;
   long long m_loop;
-  unsigned int m_debugLevel;
+  unsigned int m_debugLevel, m_debug_print_freq;
   double m_alarmRatio;
   hrp::dvector m_motorTemperatureLimit;
   hrp::BodyPtr m_robot;
