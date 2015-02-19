@@ -8,6 +8,7 @@
  */
 
 
+#include <stdio.h>
 #include <fstream>
 #include "RPYKalmanFilter.h"
 #include "EKFilter.h"
