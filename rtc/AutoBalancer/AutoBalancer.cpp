@@ -877,7 +877,9 @@ bool AutoBalancer::setFootSteps(const OpenHRP::AutoBalancerService::FootstepSequ
     memcpy(initial_input_coords.pos.data(), fs[0].pos, sizeof(double)*3);
     initial_input_coords.rot = (Eigen::Quaternion<double>(fs[0].rot[0], fs[0].rot[1], fs[0].rot[2], fs[0].rot[3])).normalized().toRotationMatrix(); // rtc: (x, y, z, w) but eigen: (w, x, y, z)
 
-    gg->clear_footstep_node_list();
+    std::vector<coordinates> fs_vec;
+    std::vector<std::string> leg_name_vec;
+    std::string prev_leg(std::string(fs[0].leg) == "rleg"?"lleg":"rleg");
     for (size_t i = 0; i < fs.length(); i++) {
       std::string leg(fs[i].leg);
       if (leg == "rleg" || leg == "lleg") {
@@ -886,13 +888,24 @@ bool AutoBalancer::setFootSteps(const OpenHRP::AutoBalancerService::FootstepSequ
         initial_input_coords.transformation(fstrans, tmpfs);
         tmpfs = initial_support_coords;
         tmpfs.transform(fstrans);
-        gg->append_footstep_node(leg, tmpfs);
+        if ( prev_leg != leg ) {
+            leg_name_vec.push_back(leg);
+            fs_vec.push_back(tmpfs);
+        } else {
+            std::cerr << "[" << m_profile.instance_name << "]   Invalid footstep (" << leg << "), footsteps should alternate in rleg and lleg." << std::endl;
+            return false;
+        }
+        prev_leg = leg;
       } else {
-        std::cerr << "[" << m_profile.instance_name << "]   No such target : " << leg << std::endl;
+          std::cerr << "[" << m_profile.instance_name << "]   No such target : " << leg << std::endl;
         return false;
       }
     }
     std::cerr << "[" << m_profile.instance_name << "] print footsteps " << std::endl;
+    gg->clear_footstep_node_list();
+    for (size_t i = 0; i < fs_vec.size(); i++) {
+        gg->append_footstep_node(leg_name_vec[i], fs_vec[i]);
+    }
     gg->append_finalize_footstep();
     gg->print_footstep_list();
     startWalking();
