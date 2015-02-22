@@ -22,7 +22,7 @@ class v4l_capture
   bool open_device();
   void init_device();
   void init_mmap();
-  void start_capturing();
+  bool start_capturing();
   void stop_capturing();
   void uninit_device();
   void uninit_mmap();
