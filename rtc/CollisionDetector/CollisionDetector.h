@@ -191,7 +191,7 @@ class CollisionDetector
   double i_dt;
   int default_recover_time;
   unsigned int m_debugLevel;
-  bool m_enable;
+  bool m_enable, m_is_overwrite_jointangles;
   OpenHRP::CollisionDetectorService::CollisionState m_state;
 };
 
