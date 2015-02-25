@@ -127,6 +127,11 @@ module OpenHRP
       sequence<DblSequence3, 2> default_zmp_offsets;
       double move_base_gain;
       ControllerMode controller_mode;
+      boolean graspless_manip_mode;
+      string graspless_manip_arm;
+      DblArray3 graspless_manip_p_gain;
+      DblArray3 graspless_manip_reference_trans_pos;
+      DblArray4 graspless_manip_reference_trans_rot;
     };
 
     /**

@@ -1,10 +1,10 @@
 set(seq_dir ${PROJECT_SOURCE_DIR}/rtc/SequencePlayer)
 if (USE_HRPSYSUTIL)
-  set(comp_sources ${seq_dir}/interpolator.cpp CollisionDetector.cpp CollisionDetectorService_impl.cpp GLscene.cpp VclipLinkPair.cpp)
+  set(comp_sources ${seq_dir}/interpolator.cpp CollisionDetector.cpp CollisionDetectorService_impl.cpp GLscene.cpp VclipLinkPair.cpp ../SoftErrorLimiter/beep.cpp)
   add_definitions(-DUSE_HRPSYSUTIL)
 else()
   # BVutil.cpp can be used without hrpsysUtil dependencies
-  set(comp_sources ${seq_dir}/interpolator.cpp CollisionDetector.cpp CollisionDetectorService_impl.cpp VclipLinkPair.cpp ../../lib/util/BVutil.cpp)
+  set(comp_sources ${seq_dir}/interpolator.cpp CollisionDetector.cpp CollisionDetectorService_impl.cpp VclipLinkPair.cpp ../../lib/util/BVutil.cpp ../SoftErrorLimiter/beep.cpp)
   set(libs hrpModel-3.1 hrpCollision-3.1 hrpsysBaseStub)
 endif()
 set(vclip_dir vclip_1.0/)

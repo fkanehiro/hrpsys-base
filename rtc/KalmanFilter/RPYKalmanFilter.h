@@ -97,7 +97,7 @@ public:
       // x[1] = m_rate.data.avx; // rate ( rad/sec, AngularVelocity, gyro, stable/drift )
       // use kalman filter with imaginary data
       hrp::Vector3 gyro2 = gyro;
-#if 0
+#if 1
       double roll = r_filter.getx()[0];
       double pitch = p_filter.getx()[0];
       double yaw = y_filter.getx()[0];
