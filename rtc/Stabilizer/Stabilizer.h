@@ -240,7 +240,7 @@ class Stabilizer
   };
   enum cmode {MODE_IDLE, MODE_AIR, MODE_ST, MODE_SYNC_TO_IDLE, MODE_SYNC_TO_AIR} control_mode;
   // members
-  std::vector<hrp::JointPathExPtr> manip2;
+  std::vector<hrp::JointPathExPtr> jpe_v;
   hrp::BodyPtr m_robot;
   unsigned int m_debugLevel;
   hrp::dvector transition_joint_q, qorg, qrefv;
