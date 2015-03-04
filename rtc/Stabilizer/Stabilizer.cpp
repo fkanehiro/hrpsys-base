@@ -200,6 +200,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
       target_ee_diff_p.push_back(hrp::Vector3::Zero());
       target_ee_R.push_back(hrp::Matrix33::Identity());
       contact_states_index_map.insert(std::pair<std::string, size_t>(ee_name, i));
+      is_ik_enable.push_back( (ee_name.find("leg") != std::string::npos ? true : false) ); // Hands ik => disabled, feet ik => enabled, by default
     }
     m_contactStates.data.length(num);
   }
@@ -996,11 +997,13 @@ void Stabilizer::calcTPCC() {
         }
         m_robot->calcForwardKinematics();
         for (size_t i = 0; i < ee_vec.size(); i++) {
-          hrp::Link* target = m_robot->link(ee_vec[i].target_name);
-          hrp::Vector3 vel_p, vel_r;
-          vel_p = target_link_p[i] - target->p;
-          rats::difference_rotation(vel_r, target->R, target_link_R[i]);
-          jpe_v[i]->calcInverseKinematics2Loop(vel_p, vel_r, 1.0, 0.001, 0.01, &qrefv);
+          if (is_ik_enable[i]) {
+              hrp::Link* target = m_robot->link(ee_vec[i].target_name);
+              hrp::Vector3 vel_p, vel_r;
+              vel_p = target_link_p[i] - target->p;
+              rats::difference_rotation(vel_r, target->R, target_link_R[i]);
+              jpe_v[i]->calcInverseKinematics2Loop(vel_p, vel_r, 1.0, 0.001, 0.01, &qrefv);
+          }
         }
       }
     }
@@ -1068,13 +1071,15 @@ void Stabilizer::calcEEForceMomentControl() {
       //   IK target is link origin pos and rot, not ee pos and rot.
       for (size_t jj = 0; jj < 3; jj++) {
         for (size_t i = 0; i < ee_vec.size(); i++) {
-          hrp::Link* target = m_robot->link(ee_vec[i].target_name);
-          hrp::Vector3 vel_p, vel_r;
-          vel_p = target_link_p[i] - target->p;
-          rats::difference_rotation(vel_r, target->R, target_link_R[i]);
-          vel_p *= transition_smooth_gain;
-          vel_r *= transition_smooth_gain;
-          jpe_v[i]->calcInverseKinematics2Loop(vel_p, vel_r, 1.0, 0.001, 0.01, &qrefv);
+          if (is_ik_enable[i]) {
+              hrp::Link* target = m_robot->link(ee_vec[i].target_name);
+              hrp::Vector3 vel_p, vel_r;
+              vel_p = target_link_p[i] - target->p;
+              rats::difference_rotation(vel_r, target->R, target_link_R[i]);
+              vel_p *= transition_smooth_gain;
+              vel_r *= transition_smooth_gain;
+              jpe_v[i]->calcInverseKinematics2Loop(vel_p, vel_r, 1.0, 0.001, 0.01, &qrefv);
+          }
         }
       }
     }

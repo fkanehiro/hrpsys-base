@@ -247,7 +247,7 @@ class Stabilizer
   std::vector<std::string> sensor_names;
   std::vector<ee_trans> ee_vec;
   std::map<std::string, size_t> contact_states_index_map;
-  std::vector<bool> contact_states, prev_contact_states;
+  std::vector<bool> contact_states, prev_contact_states, is_ik_enable;
   double dt;
   int transition_count, loop;
   bool is_legged_robot, on_ground;
