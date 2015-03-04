@@ -1038,8 +1038,8 @@ void Stabilizer::calcEEForceMomentControl() {
 #define deg2rad(x) ((x) * M_PI / 180.0)
       for (size_t i = 0; i < ee_vec.size(); i++) {
           bool is_foot = false;
-          for (size_t ss = 0; ss < sensor_names.size(); ss++) {
-              if ( m_robot->sensor<hrp::ForceSensor>(sensor_names[ss])->link->name == ee_vec[i].target_name ) is_foot = true;
+          for ( std::vector<std::string>::const_iterator it = sensor_names.begin(); it != sensor_names.end(); it++ ) {
+              if ( m_robot->sensor<hrp::ForceSensor>(*it)->link->name == ee_vec[i].target_name ) is_foot = true;
           }
           if ( is_foot ) {
               // moment control
@@ -1057,14 +1057,11 @@ void Stabilizer::calcEEForceMomentControl() {
             total_target_ee_p[i] = target_ee_p[i] + 0.0 * target_foot_origin_rot * target_ee_diff_p[i]; // tempolarily disabled
             total_target_ee_R[i] = target_ee_R[i];
           }
-      }
-
-      // ee=>link-origin
-      for (size_t i = 0; i < ee_vec.size(); i++) {
-        hrp::Matrix33 tmpR;
-        rats::rotm3times(tmpR, total_target_ee_R[i], ee_vec[i].localR.transpose());
-        total_target_ee_R[i] = tmpR;
-        total_target_ee_p[i] -= total_target_ee_R[i] * ee_vec[i].localp;
+          // ee=>link-origin
+          hrp::Matrix33 tmpR;
+          rats::rotm3times(tmpR, total_target_ee_R[i], ee_vec[i].localR.transpose());
+          total_target_ee_R[i] = tmpR;
+          total_target_ee_p[i] -= total_target_ee_R[i] * ee_vec[i].localp;
       }
       // solveIK
       for (size_t jj = 0; jj < 3; jj++) {
