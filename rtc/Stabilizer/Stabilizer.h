@@ -234,24 +234,27 @@ class Stabilizer
     ST_RIGHT = 1
   };
   struct ee_trans {
+    std::string target_name;
     hrp::Vector3 localp;
     hrp::Matrix33 localR;
   };
   enum cmode {MODE_IDLE, MODE_AIR, MODE_ST, MODE_SYNC_TO_IDLE, MODE_SYNC_TO_AIR} control_mode;
   // members
-  hrp::JointPathExPtr manip2[2];
+  std::vector<hrp::JointPathExPtr> jpe_v;
   hrp::BodyPtr m_robot;
   unsigned int m_debugLevel;
   hrp::dvector transition_joint_q, qorg, qrefv;
   std::vector<std::string> sensor_names;
-  std::map<std::string, ee_trans> ee_map;
+  std::vector<ee_trans> ee_vec;
   std::map<std::string, size_t> contact_states_index_map;
-  std::vector<bool> contact_states, prev_contact_states;
+  std::vector<bool> contact_states, prev_contact_states, is_ik_enable;
   double dt;
   int transition_count, loop;
   bool is_legged_robot, on_ground;
-  hrp::Vector3 current_root_p, target_foot_p[2], target_root_p;
-  hrp::Matrix33 current_root_R, target_root_R, target_foot_R[2], prev_act_foot_origin_rot, prev_ref_foot_origin_rot;
+  hrp::Vector3 current_root_p, target_root_p;
+  hrp::Matrix33 current_root_R, target_root_R, prev_act_foot_origin_rot, prev_ref_foot_origin_rot, target_foot_origin_rot;
+  std::vector <hrp::Vector3> target_ee_p, target_ee_diff_p;
+  std::vector <hrp::Matrix33> target_ee_R;
   rats::coordinates target_foot_midcoords;
   hrp::Vector3 ref_zmp, ref_cog, ref_cogvel, prev_ref_cog, prev_ref_zmp;
   hrp::Vector3 act_zmp, act_cog, act_cogvel, rel_act_zmp, prev_act_cog, prev_act_cogvel, act_base_rpy, current_base_rpy, current_base_pos;
