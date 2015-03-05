@@ -103,7 +103,7 @@ case $TEST_PACKAGE in
             # [hrpsys:new] <-> [rtmros_common:old] + [hrpsys:old]
             "
             sudo dpkg -r --force-depends ros-hydro-hrpsys
-            catkin_make_isolated -j2 -l2
+            catkin_make_isolated -j1 -l1
             catkin_make_isolated --install -j2 -l2
             # you need to pretend this is catkin package since you only have hrpsys in catkin_ws
             export ROS_PACKAGE_PATH=`pwd`/install_isolated/share:`pwd`/install_isolated/stacks:$ROS_PACKAGE_PATH
@@ -149,7 +149,7 @@ case $TEST_PACKAGE in
             cd ~/hrpsys_ws
             ls -al src
             ls -al src/hrpsys
-            catkin_make_isolated -j2 -l2 --merge
+            catkin_make_isolated -j1 -l1 --merge
             catkin_make_isolated -j2 -l2 --install
             # HOTFIX: https://github.com/k-okada/hrpsys-base/commit/9ce00db.diff
             sed -i "s@\['vs@#\['vs@g" install_isolated/lib/python2.7/dist-packages/hrpsys/hrpsys_config.py
