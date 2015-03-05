@@ -783,9 +783,11 @@ void Stabilizer::getActualParameters ()
   m_robot->rootLink()->R = target_root_R;
   if ( !(control_mode == MODE_IDLE || control_mode == MODE_AIR) ) {
     for (size_t i = 0; i < jpe_v.size(); i++) {
-      for ( int j = 0; j < jpe_v[i]->numJoints(); j++ ){
-        int idx = jpe_v[i]->joint(j)->jointId;
-        m_robot->joint(idx)->q = qorg[idx];
+      if (is_ik_enable[i]) {
+        for ( int j = 0; j < jpe_v[i]->numJoints(); j++ ){
+          int idx = jpe_v[i]->joint(j)->jointId;
+          m_robot->joint(idx)->q = qorg[idx];
+        }
       }
     }
     m_robot->rootLink()->p(0) = current_root_p(0);
@@ -1022,9 +1024,11 @@ void Stabilizer::calcEEForceMomentControl() {
         m_robot->joint(i)->q = qrefv[i];
       }
       for (size_t i = 0; i < jpe_v.size(); i++) {
-        for ( int j = 0; j < jpe_v[i]->numJoints(); j++ ){
-          int idx = jpe_v[i]->joint(j)->jointId;
-          m_robot->joint(idx)->q = qorg[idx];
+        if (is_ik_enable[i]) {
+          for ( int j = 0; j < jpe_v[i]->numJoints(); j++ ){
+            int idx = jpe_v[i]->joint(j)->jointId;
+            m_robot->joint(idx)->q = qorg[idx];
+          }
         }
       }
 
