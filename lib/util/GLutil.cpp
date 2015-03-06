@@ -71,7 +71,7 @@ void mulTrans(const double i_m1[16], const double i_m2[16], double o_m[16])
 bool loadTextureFromTextureInfo(GLtexture *texture, TextureInfo &ti)
 {
     if (ti.image.length() == 0){
-        std::cerr << "texture image is not loaded(" << ti.url << std::endl;
+        std::cerr << "texture image is not loaded(" << ti.url << ")" << std::endl;
         return false;
     }else if (ti.numComponents != 3 && ti.numComponents != 4){
         std::cerr << "texture image which has "
