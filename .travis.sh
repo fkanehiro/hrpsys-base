@@ -83,6 +83,9 @@ case $TEST_PACKAGE in
         # check rtmros_common
         pkg=$TEST_PACKAGE
         sudo apt-get install -qq -y python-wstool ros-hydro-catkin ros-hydro-mk ros-hydro-rostest ros-hydro-rtmbuild ros-hydro-roslint
+        # force overwrite catkin to display times
+        git clone -b display_time_0_5_90 http://github.com/k-okada/catkin
+        (cd catkin; python setup.py build; sudo python setup.py install  --prefix=/opt/ros/hydro --install-layout=deb)
 
         sudo apt-get install -qq -y ros-hydro-$pkg
 
@@ -103,7 +106,7 @@ case $TEST_PACKAGE in
             # [hrpsys:new] <-> [rtmros_common:old] + [hrpsys:old]
             "
             sudo dpkg -r --force-depends ros-hydro-hrpsys
-            catkin_make_isolated -j2 -l2
+            catkin_make_isolated -j1 -l1
             catkin_make_isolated --install -j2 -l2
             # you need to pretend this is catkin package since you only have hrpsys in catkin_ws
             export ROS_PACKAGE_PATH=`pwd`/install_isolated/share:`pwd`/install_isolated/stacks:$ROS_PACKAGE_PATH
@@ -143,13 +146,15 @@ case $TEST_PACKAGE in
             wstool update
             sed -i "s@find_package(catkin REQUIRED COMPONENTS rostest mk openrtm_aist openhrp3)@find_package(catkin REQUIRED COMPONENTS rostest mk)\nset(openrtm_aist_PREFIX /opt/ros/hydro/)\nset(openhrp3_PREFIX /opt/ros/hydro/)@"  hrpsys/catkin.cmake
             sed -i "s@NUM_OF_CPUS = \$(shell grep -c '^processor' /proc/cpuinfo)@NUM_OF_CPUS = 2@" hrpsys/Makefile.hrpsys-base
+            sed -i 's@-cd $(SVN_DIR) && $(SVN_CMDLINE) up $(SVN_REVISION)@-cd $(SVN_DIR) \&\& $(SVN_CMDLINE) up $(SVN_REVISION); sed -i -e s/\(add_subdirectory(\(RobotHardware\|SequencePlayer\|StateHolder\|ForwardKinematics\|CollisionDetector\|SoftErrorLimiter\|DataLogger\))\)/#\\1/ -e s/add_subdirectory/#add_subdirectory/ -e s/##add/add/ rtc/CMakeLists.txt@' hrpsys/Makefile.hrpsys-base
+
             #git clone -b 315.1.9 http://github.com/fkanehiro/hrpsys-base hrpsys
             #cp ~/catkin_ws/src/hrpsys/CMakeLists.txt hrpsys/
             #cp ~/catkin_ws/src/hrpsys/package.xml hrpsys/
             cd ~/hrpsys_ws
             ls -al src
             ls -al src/hrpsys
-            catkin_make_isolated -j2 -l2 --merge
+            catkin_make_isolated -j1 -l1 --merge
             catkin_make_isolated -j2 -l2 --install
             # HOTFIX: https://github.com/k-okada/hrpsys-base/commit/9ce00db.diff
             sed -i "s@\['vs@#\['vs@g" install_isolated/lib/python2.7/dist-packages/hrpsys/hrpsys_config.py
