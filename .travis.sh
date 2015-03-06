@@ -127,6 +127,9 @@ case $TEST_PACKAGE in
             sudo apt-get install -qq -y ros-hydro-urdf
 
             cd ..
+            # do not compile unstable rtc
+            sed -i -e 's/\(add_subdirectory(\(RobotHardware\|SequencePlayer\|StateHolder\|ForwardKinematics\|CollisionDetector\|SoftErrorLimiter\|DataLogger\))\)/#\1/' -e 's/add_subdirectory/#add_subdirectory/' -e 's/##add/add/' src/hrpsys/rtc/CMakeLists.txt
+            cat  src/hrpsys/rtc/CMakeLists.txt
             # do not copile hrpsys because we wan to use them
             sed -i "1imacro(dummy_install)\nmessage(\"install(\${ARGN})\")\nendmacro()" src/hrpsys/CMakeLists.txt
             sed -i "s@install(@dummy_install(@g" src/hrpsys/CMakeLists.txt
@@ -143,6 +146,10 @@ case $TEST_PACKAGE in
             wstool update
             sed -i "s@find_package(catkin REQUIRED COMPONENTS rostest mk openrtm_aist openhrp3)@find_package(catkin REQUIRED COMPONENTS rostest mk)\nset(openrtm_aist_PREFIX /opt/ros/hydro/)\nset(openhrp3_PREFIX /opt/ros/hydro/)@"  hrpsys/catkin.cmake
             sed -i "s@NUM_OF_CPUS = \$(shell grep -c '^processor' /proc/cpuinfo)@NUM_OF_CPUS = 2@" hrpsys/Makefile.hrpsys-base
+            # do not compile unstable rtc
+            sed -i 's@-cd $(SVN_DIR) && $(SVN_CMDLINE) up $(SVN_REVISION)@-cd $(SVN_DIR) \&\& $(SVN_CMDLINE) up $(SVN_REVISION); sed -i -e s/\(add_subdirectory(\(RobotHardware\|SequencePlayer\|StateHolder\|ForwardKinematics\|CollisionDetector\|SoftErrorLimiter\|DataLogger\))\)/#\\1/ -e s/add_subdirectory/#add_subdirectory/ -e s/##add/add/ rtc/CMakeLists.txt@' hrpsys/Makefile.hrpsys-base
+            cat hrpsys/Makefile.hrpsys-base
+
             #git clone -b 315.1.9 http://github.com/fkanehiro/hrpsys-base hrpsys
             #cp ~/catkin_ws/src/hrpsys/CMakeLists.txt hrpsys/
             #cp ~/catkin_ws/src/hrpsys/package.xml hrpsys/
