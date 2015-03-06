@@ -83,6 +83,9 @@ case $TEST_PACKAGE in
         # check rtmros_common
         pkg=$TEST_PACKAGE
         sudo apt-get install -qq -y python-wstool ros-hydro-catkin ros-hydro-mk ros-hydro-rostest ros-hydro-rtmbuild ros-hydro-roslint
+        # force overwrite catkin to display times
+        git clone -b display_time_0_5_90 http://github.com/k-okada/catkin
+        (cd catkin; python setup.py build; sudo python setup.py install  --prefix=/opt/ros/hydro --install-layout=deb)
 
         sudo apt-get install -qq -y ros-hydro-$pkg
 
