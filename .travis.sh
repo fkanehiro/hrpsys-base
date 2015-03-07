@@ -171,17 +171,11 @@ case $TEST_PACKAGE in
             # [hrpsys:new] <-> [rtmros_common:old] + [hrpsys:old]
             "
 
-            travis_time_start  compile_downstream
+            travis_time_start  compile_and_install_downstream
 
             sudo dpkg -r --force-depends ros-hydro-hrpsys
 
-            catkin_make_isolated -j2 -l2
-
-            travis_time_end
-            travis_time_start  install_downstream
-
-            catkin_make_isolated --install -j2 -l2
-
+            catkin_make_isolated --install -j1 -l1
             # you need to pretend this is catkin package since you only have hrpsys in catkin_ws
             export ROS_PACKAGE_PATH=`pwd`/install_isolated/share:`pwd`/install_isolated/stacks:$ROS_PACKAGE_PATH
             source install_isolated/setup.bash
@@ -219,12 +213,7 @@ case $TEST_PACKAGE in
             travis_time_end
             travis_time_start  compile_new_version
 
-            catkin_make_isolated -j2 -l2 --merge   --only-pkg-with-deps `echo $pkg | sed s/-/_/g`
-
-            travis_time_end
-            travis_time_start  install_new_version
-
-            catkin_make_isolated -j2 -l2 --install --only-pkg-with-deps `echo $pkg | sed s/-/_/g`
+            catkin_make_isolated -j1 -l1 --install --only-pkg-with-deps `echo $pkg | sed s/-/_/g`
             rm -fr ./install_isolated/hrpsys/share/hrpsys ./install_isolated/hrpsys/lib/pkgconfig/hrpsys.pc
             source install_isolated/setup.bash
 
@@ -238,7 +227,7 @@ case $TEST_PACKAGE in
             wstool set hrpsys http://github.com/start-jsk/hrpsys -v 315.1.9 --git -y
             wstool update
             sed -i "s@find_package(catkin REQUIRED COMPONENTS rostest mk openrtm_aist openhrp3)@find_package(catkin REQUIRED COMPONENTS rostest mk)\nset(openrtm_aist_PREFIX /opt/ros/hydro/)\nset(openhrp3_PREFIX /opt/ros/hydro/)@"  hrpsys/catkin.cmake
-            sed -i "s@NUM_OF_CPUS = \$(shell grep -c '^processor' /proc/cpuinfo)@NUM_OF_CPUS = 2@" hrpsys/Makefile.hrpsys-base
+            sed -i "s@NUM_OF_CPUS = \$(shell grep -c '^processor' /proc/cpuinfo)@NUM_OF_CPUS = 1@" hrpsys/Makefile.hrpsys-base
             # do not compile unstable rtc
             sed -i 's@-cd $(SVN_DIR) && $(SVN_CMDLINE) up $(SVN_REVISION)@-cd $(SVN_DIR) \&\& $(SVN_CMDLINE) up $(SVN_REVISION); sed -i -e s/\(add_subdirectory(\(RobotHardware\|SequencePlayer\|StateHolder\|ForwardKinematics\|CollisionDetector\|SoftErrorLimiter\|DataLogger\))\)/#\\1/ -e s/add_subdirectory/#add_subdirectory/ -e s/##add/add/ rtc/CMakeLists.txt@' hrpsys/Makefile.hrpsys-base
             cat hrpsys/Makefile.hrpsys-base
@@ -253,12 +242,12 @@ case $TEST_PACKAGE in
             travis_time_end
             travis_time_start  compile_old_hrpsys
 
-            catkin_make_isolated -j2 -l2 --merge
+            catkin_make_isolated -j1 -l1 --merge
 
             travis_time_end
             travis_time_start  install_old_hrpsys
 
-            catkin_make_isolated -j2 -l2 --install
+            catkin_make_isolated -j1 -l1 --install
 
             # HOTFIX: https://github.com/k-okada/hrpsys-base/commit/9ce00db.diff
             sed -i "s@\['vs@#\['vs@g" install_isolated/lib/python2.7/dist-packages/hrpsys/hrpsys_config.py
