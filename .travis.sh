@@ -3,6 +3,7 @@
 set -x
 
 function error {
+    travis_time_end 31
     find ${HOME}/.ros/test_results -type f -exec echo "=== {} ===" \; -exec\
  cat {} \;
     for file in ${HOME}/.ros/log/rostest-*; do echo "=== $file ==="; cat \$\
@@ -12,10 +13,35 @@ file; done
 
 trap error ERR
 
+function travis_time_start {
+    set +x
+    TRAVIS_START_TIME=$(date +%s%N)
+    TRAVIS_TIME_ID=$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 8 | head -n 1)
+    TRAVIS_FOLD_NAME=$1
+    echo -e "\e[0Ktraivs_fold:start:$TRAVIS_FOLD_NAME"
+    echo -e "\e[0Ktraivs_time:start:$TRAVIS_TIME_ID"
+    set -x
+}
+function travis_time_end {
+    set +x
+    _COLOR=${1:-32}
+    TRAVIS_END_TIME=$(date +%s%N)
+    TIME_ELAPSED_SECONDS=$(( ($TRAVIS_END_TIME - $TRAVIS_START_TIME)/1000000000 ))
+    echo -e "traivs_time:end:$TRAVIS_TIME_ID:start=$TRAVIS_START_TIME,finish=$TRAVIS_END_TIME,duration=$(($TRAVIS_END_TIME - $TRAVIS_START_TIME))\n\e[0K"
+    echo -e "traivs_fold:end:$TRAVIS_FOLD_NAME"
+    echo -e "\e[0K\e[${_COLOR}mFunction $TRAVIS_FOLD_NAME takes $(( $TIME_ELAPSED_SECONDS / 60 )) min $(( $TIME_ELAPSED_SECONDS % 60 )) sec\e[0m"
+    set -x
+}
+
+travis_time_start mongo_hack
+
 # MongoDB hack
 dpkg -s mongodb || echo "ok"; export HAVE_MONGO_DB=$?
 if [ $HAVE_MONGO_DB == 0 ]; then sudo apt-get remove -qq -y mongodb mongodb-10gen || echo "ok"; fi
 if [ $HAVE_MONGO_DB == 0 ]; then sudo apt-get install -qq -y mongodb-clients mongodb-server -o Dpkg::Options::="--force-confdef" || echo "ok"; fi # default actions
+
+travis_time_end
+travis_time_start setup_ros
 
 export CI_SOURCE_PATH=$(pwd)
 export REPOSITORY_NAME=${PWD##*/}
@@ -24,22 +50,37 @@ sudo sh -c 'echo "deb http://packages.ros.org/ros-shadow-fixed/ubuntu precise ma
 wget http://packages.ros.org/ros.key -O - | sudo apt-key add -
 sudo apt-get update -qq
 
+travis_time_end
+travis_time_start disable_ssl
+
 # disable ssl
 git config --global http.sslVerify false
+
+travis_time_end
 
 case $TEST_PACKAGE in
     hrpsys)
         case $TEST_TYPE in
             iob)
+                travis_time_start  install_wget
+
                 sudo apt-get install -qq -y cproto wget
+
+                travis_time_end
+                travis_time_start  iob_test
+
                 wget https://github.com/fkanehiro/hrpsys-base/raw/315.1.9/lib/io/iob.h -O iob.h.315.1.9
                 echo -e "#define pid_t int\n#define size_t int\n#include \"lib/io/iob.h\""  | cproto -x - | sort > iob.h.current
                 echo -e "#define pid_t int\n#define size_t int\n#include \"iob.h.315.1.9\"" | cproto -x - | sort > iob.h.stable
                 cat iob.h.current
                 cat iob.h.stable
                 diff iob.h.current iob.h.stable || exit 1
+
+                travis_time_end
                 ;;
             stable_rtc)
+                travis_time_start  install_openrtm
+
                 sudo apt-get install -qq -y omniidl diffstat wget ros-hydro-openrtm-aist
                 source /opt/ros/hydro/setup.bash
                 ## check stableRTCList
@@ -51,6 +92,9 @@ case $TEST_PACKAGE in
                 if [ "`python -c "import python.hrpsys_config; hcf=python.hrpsys_config.HrpsysConfigurator(); print [ x[1] for x in hcf.getRTCList()]" | tail -1`" != "['SequencePlayer', 'StateHolder', 'ForwardKinematics', 'CollisionDetector', 'SoftErrorLimiter', 'DataLogger']" ]; then
                     exit 1
                 fi
+
+                travis_time_end
+                travis_time_start  check_idl
 
                 ## check idl
                 mkdir stable_idl
@@ -65,28 +109,50 @@ case $TEST_PACKAGE in
                     diff stable_idl/${sk_file} ${sk_file} | tee >(cat - 1>&2)  | diffstat | grep -c deletion && exit 1
                 done
                 echo "ok"
+
+                travis_time_end
                 ;;
             *)
+                travis_time_start  install_libs
+
                 # COMPILE_ONLY
                 sudo apt-get install -qq -y freeglut3-dev python-tk jython doxygen graphviz libboost-all-dev libsdl1.2-dev libglew1.6-dev libqhull-dev libirrlicht-dev libxmu-dev libcv-dev libhighgui-dev libopencv-contrib-dev
+
+                travis_time_end
+                travis_time_start  install_openhrp3
 
                 sudo apt-get install -qq -y ros-hydro-openhrp3
                 source /opt/ros/hydro/setup.bash
                 mkdir -p ~/build
+
+                travis_time_end
+                travis_time_start  compile_hrpsys
+
                 cd ~/build && cmake ${CI_SOURCE_PATH} && make
+
+                travis_time_end
                 ;;
         esac
         ;;
     *)
+        travis_time_start  install_libs
+
         # COMPILE
         sudo apt-get install -qq -y freeglut3-dev python-tk jython doxygen libboost-all-dev libsdl1.2-dev libglew1.6-dev libqhull-dev libirrlicht-dev libxmu-dev libcv-dev libhighgui-dev libopencv-contrib-dev
         # check rtmros_common
+
+        travis_time_end
+        travis_time_start  install_$TEST_PACKAGE
+
         pkg=$TEST_PACKAGE
         sudo apt-get install -qq -y python-wstool ros-hydro-catkin ros-hydro-mk ros-hydro-rostest ros-hydro-rtmbuild ros-hydro-roslint
 
         sudo apt-get install -qq -y ros-hydro-$pkg
 
         source /opt/ros/hydro/setup.bash
+
+        travis_time_end
+        travis_time_start  setup_catkin_ws
 
         # set hrpsys in catkin workspace
         mkdir -p ~/catkin_ws/src
@@ -96,24 +162,40 @@ case $TEST_PACKAGE in
         sed -i "s@if(ENABLE_DOXYGEN)@if(0)@" hrpsys/CMakeLists.txt         # disable doc generation
         cd ~/catkin_ws
 
+        travis_time_end
+
         if [ "$TEST_TYPE" == "work_with_downstream" ]; then
             echo "
             #
             # check newer version of hrpsys works on current rtmros_common deb package
             # [hrpsys:new] <-> [rtmros_common:old] + [hrpsys:old]
             "
+
+            travis_time_start  compile_downstream
+
             sudo dpkg -r --force-depends ros-hydro-hrpsys
+
             catkin_make_isolated -j2 -l2
+
+            travis_time_end
+            travis_time_start  install_downstream
+
             catkin_make_isolated --install -j2 -l2
+
             # you need to pretend this is catkin package since you only have hrpsys in catkin_ws
             export ROS_PACKAGE_PATH=`pwd`/install_isolated/share:`pwd`/install_isolated/stacks:$ROS_PACKAGE_PATH
             source install_isolated/setup.bash
+
+            travis_time_end
         else
             echo "
             #
             # check rtmros_common compiled on newer version of hrpsys works with deb version of hrpsys
             # [hrpsys:old] <-> [rtmros_common:new] + [hrpsys:new]
             "
+
+            travis_time_start  setup_wstool_rtmros
+
             #
             find /opt/ros/hydro/share/hrpsys
             sudo cp /opt/ros/hydro/bin/hrpsys-simulator /opt/ros/hydro/share/hrpsys/
@@ -133,10 +215,21 @@ case $TEST_PACKAGE in
             # do not copile hrpsys because we wan to use them
             sed -i "1imacro(dummy_install)\nmessage(\"install(\${ARGN})\")\nendmacro()" src/hrpsys/CMakeLists.txt
             sed -i "s@install(@dummy_install(@g" src/hrpsys/CMakeLists.txt
+
+            travis_time_end
+            travis_time_start  compile_new_version
+
             catkin_make_isolated -j2 -l2 --merge   --only-pkg-with-deps `echo $pkg | sed s/-/_/g`
+
+            travis_time_end
+            travis_time_start  install_new_version
+
             catkin_make_isolated -j2 -l2 --install --only-pkg-with-deps `echo $pkg | sed s/-/_/g`
             rm -fr ./install_isolated/hrpsys/share/hrpsys ./install_isolated/hrpsys/lib/pkgconfig/hrpsys.pc
             source install_isolated/setup.bash
+
+            travis_time_end
+            travis_time_start  setup_old_hrpsys
 
             # checkokut old hrpsys
             mkdir -p ~/hrpsys_ws/src
@@ -156,8 +249,17 @@ case $TEST_PACKAGE in
             cd ~/hrpsys_ws
             ls -al src
             ls -al src/hrpsys
+
+            travis_time_end
+            travis_time_start  compile_old_hrpsys
+
             catkin_make_isolated -j2 -l2 --merge
+
+            travis_time_end
+            travis_time_start  install_old_hrpsys
+
             catkin_make_isolated -j2 -l2 --install
+
             # HOTFIX: https://github.com/k-okada/hrpsys-base/commit/9ce00db.diff
             sed -i "s@\['vs@#\['vs@g" install_isolated/lib/python2.7/dist-packages/hrpsys/hrpsys_config.py
             sed -i "s@\['afs@#\['afs@g" install_isolated/lib/python2.7/dist-packages/hrpsys/hrpsys_config.py
@@ -174,7 +276,11 @@ case $TEST_PACKAGE in
             rospack find hrpsys
 
             cd ~/catkin_ws
+
+            travis_time_end
         fi
+
+        travis_time_start  hot_fixes
 
         rospack profile
 
@@ -189,6 +295,9 @@ case $TEST_PACKAGE in
             sudo sed -i "s@test_tf_and_controller@_test_tf_and_controller@" /opt/ros/hydro/share/hironx_ros_bridge/test/test_hironx_ros_bridge.py
         fi
 
+        travis_time_end
+        travis_time_start  run_tests
+
         sudo /etc/init.d/omniorb4-nameserver stop || echo "stop omniserver just in case..."
         export EXIT_STATUS=0;
         pkg_path=`rospack find \`echo $pkg | sed s/-/_/g\``
@@ -201,5 +310,7 @@ case $TEST_PACKAGE in
         # for debugging
         [ $TEST_PACKAGE == "hrpsys-ros-bridge" ] && rostest -t hrpsys_ros_bridge test-samplerobot.test
         [ $EXIT_STATUS == 0 ] || exit 1
+
+        travis_time_end
         ;;
 esac
