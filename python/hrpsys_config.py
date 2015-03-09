@@ -1161,15 +1161,15 @@ class HrpsysConfigurator:
 
     def setTargetPose(self, gname, pos, rpy, tm, frame_name=None):
         '''!@brief
-        Set absolute pose to a joint.
+        Move the end-effector to the given absolute pose.
         All d* arguments are in meter.
 
         @param gname str: Name of the joint group.
         @param pos list of float: In meter.
         @param rpy list of float: In radian.
-        @param tm float: Second to complete.
+        @param tm float: Second to complete the command.
         @param frame_name str: Name of the frame that this particular command
-                           reference to.
+                           references to.
         @return bool: False if unreachable.
         '''
         print gname, frame_name, pos, rpy, tm
@@ -1186,7 +1186,7 @@ class HrpsysConfigurator:
     def setTargetPoseRelative(self, gname, eename, dx=0, dy=0, dz=0,
 dr=0, dp=0, dw=0, tm=10, wait=True):
         '''!@brief
-        Set angles to a joint group relative to its current pose.
+        Move the end-effector's location relative to its current pose.
 
         For d*, distance arguments are in meter while rotations are in degree.
 
@@ -1203,7 +1203,7 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
         @param dr float: In radian.
         @param dp float: In radian.
         @param dw float: In radian.
-        @param tm float: Second to complete.
+        @param tm float: Second to complete the command.
         @param wait bool: If true, all other subsequent commands wait until
                           the movement commanded by this method call finishes.
         @return bool: False if unreachable.
