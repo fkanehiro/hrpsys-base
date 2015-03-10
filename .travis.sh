@@ -316,5 +316,20 @@ case $TEST_PACKAGE in
         [ $EXIT_STATUS == 0 ] || exit 1
 
         travis_time_end
+        travis_time_start  run_tests_installed
+
+        sudo mv install_isolated/lib/python2.7/dist-packages/hrpsys /opt/ros/hydro/lib/python2.7/dist-packages/
+
+        if [ "`find $pkg_path/test -iname '*.test'`" == "" ]; then
+            echo "[$pkg] No tests ware found!!!"
+        else
+            find $pkg_path/test -iname "*.test" -print0 | xargs -0 -n1 rostest || export EXIT_STATUS=$?;
+        fi
+
+        # for debugging
+        [ $TEST_PACKAGE == "hrpsys-ros-bridge" ] && rostest -t hrpsys_ros_bridge test-samplerobot.test
+        [ $EXIT_STATUS == 0 ] || exit 1
+
+        travis_time_end
         ;;
 esac
