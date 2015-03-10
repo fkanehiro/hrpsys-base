@@ -131,6 +131,21 @@ case $TEST_PACKAGE in
                 cd ~/build && cmake ${CI_SOURCE_PATH} && make
 
                 travis_time_end
+
+                travis_time_start  run_tests
+
+                sudo /etc/init.d/omniorb4-nameserver stop || echo "stop omniserver just in case..."
+                export EXIT_STATUS=0;
+                pkg_path=`rospack find \`echo $pkg | sed s/-/_/g\``
+                if [ "`find $pkg_path/test -iname '*.test'`" == "" ]; then
+                    echo "[$pkg] No tests ware found!!!"
+                else
+                    find $pkg_path/test -iname "*.test" -print0 | xargs -0 -n1 rostest || export EXIT_STATUS=$?;
+                fi
+
+                [ $EXIT_STATUS == 0 ] || exit 1
+
+                travis_time_end
                 ;;
         esac
         ;;
