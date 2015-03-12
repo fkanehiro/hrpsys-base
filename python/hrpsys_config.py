@@ -445,6 +445,14 @@ class HrpsysConfigurator:
         for r in rtcList:
             r.start()
 
+    def deactivateComps(self):
+        '''!@brief
+        Deactivate components(plugins)
+        '''
+        rtcList = self.getRTCInstanceList()
+        for r in reversed(rtcList):
+            r.stop()
+
     def createComp(self, compName, instanceName):
         '''!@brief
         Create RTC component (plugins)
@@ -479,6 +487,33 @@ class HrpsysConfigurator:
             except Exception, e:
                 print self.configurator_name, '\033[31mFail to createComps',e,'\033[0m'
 
+
+    def deleteComp(self, compName):
+        '''!@brief
+        Delete RTC component (plugins)
+
+        @param compName str: name of component that to be deleted
+        '''
+        # component must be stoppped before delete
+        comp = rtm.findRTC(compName)
+        comp.stop()
+        return self.ms.delete(compName)
+
+    def deleteComps(self):
+        '''!@brief
+        Delete components(plugins) in getRTCInstanceList()
+        '''
+        self.deactivateComps()
+        rtcList = self.getRTCInstanceList()
+        if rtcList:
+            try:
+                rtcList.remove(self.rh)
+                for r in reversed(rtcList):
+                    if r.isActive():
+                        print self.configurator_name, '\033[31m ' + r.name() + ' is staill active\033[0m'
+                    self.deleteComp(r.name())
+            except Exception, e:
+                print self.configurator_name, '\033[31mFail to deleteComps',e,'\033[0m'
 
     def findComp(self, compName, instanceName, max_timeout_count=10):
         '''!@brief
