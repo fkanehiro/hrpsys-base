@@ -209,6 +209,17 @@ class RTCmanager:
             return RTcomponent(ref)
 
     ##
+    # \brief create an instance of RT component
+    # \param self this object
+    # \param name name of RT component instance
+    def delete(self, name):
+        ref = self.ref.delete_component(name)
+        if ref == RTC_OK:
+            return True
+        else:
+            return False
+
+    ##
     # \brief get list of factory names
     # \return list of factory names
     def get_factory_names(self):
