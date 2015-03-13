@@ -79,9 +79,9 @@ case $TEST_PACKAGE in
                 travis_time_end
                 ;;
             stable_rtc)
-                travis_time_start  install_openhrp3
+                travis_time_start  install_openrtm
 
-                sudo apt-get install -qq -y omniidl diffstat wget ros-hydro-openhrp3 ros-hydro-openrtm-aist-python
+                sudo apt-get install -qq -y omniidl diffstat wget ros-hydro-openrtm-aist
                 source /opt/ros/hydro/setup.bash
                 ## check stableRTCList
                 sed -i 's@^from@#from@g' python/hrpsys_config.py
