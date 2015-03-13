@@ -704,8 +704,9 @@ bool ImpedanceController::startImpedanceControllerNoWait(const std::string& i_na
 
  bool ImpedanceController::startImpedanceController(const std::string& i_name_)
  {
-     startImpedanceControllerNoWait(i_name_);
+     bool ret = startImpedanceControllerNoWait(i_name_);
      waitImpedanceControllerTransition(i_name_);
+     return ret;
  }
 
 bool ImpedanceController::stopImpedanceControllerNoWait(const std::string& i_name_)
@@ -732,9 +733,9 @@ bool ImpedanceController::stopImpedanceControllerNoWait(const std::string& i_nam
 
 bool ImpedanceController::stopImpedanceController(const std::string& i_name_)
 {
-    stopImpedanceControllerNoWait(i_name_);
+    bool ret = stopImpedanceControllerNoWait(i_name_);
     waitImpedanceControllerTransition(i_name_);
-    return true;
+    return ret;
 }
 
 bool ImpedanceController::setImpedanceControllerParam(const std::string& i_name_, OpenHRP::ImpedanceControllerService::impedanceParam i_param_)
