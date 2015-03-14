@@ -42,11 +42,13 @@ NullComponent::NullComponent(RTC::Manager* manager)
     // </rtc-template>
 	dummy(0)
 {
+  std::cout << "NullComponent::NullComponent()" << std::endl;
   m_data.data = 0;
 }
 
 NullComponent::~NullComponent()
 {
+  std::cout << "NullComponent::~NullComponent()" << std::endl;
 }
 
 
