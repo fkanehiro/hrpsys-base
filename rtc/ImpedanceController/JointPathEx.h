@@ -27,11 +27,17 @@ namespace hrp {
     void setMaxIKError(double epos, double erot);
     void setMaxIKError(double e);
     void setMaxIKIteration(int iter);
+    void setOptionalWeightVector(const std::vector<double>& _opt_w)
+    {
+        for (int i = 0 ; i < numJoints(); i++ ) {
+            optional_weight_vector[i] = _opt_w[i];
+        }
+    };
   protected:
         double maxIKPosErrorSqr, maxIKRotErrorSqr;
         int maxIKIteration;
         std::vector<Link*> joints;
-        std::vector<double> avoid_weight_gain;
+        std::vector<double> avoid_weight_gain, optional_weight_vector;
         double sr_gain, manipulability_limit, manipulability_gain, dt;
     };
 

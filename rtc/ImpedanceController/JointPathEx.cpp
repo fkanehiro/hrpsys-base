@@ -92,6 +92,10 @@ JointPathEx::JointPathEx(BodyPtr& robot, Link* base, Link* end, double control_c
     joints.push_back(joint(i));
   }
   avoid_weight_gain.resize(numJoints());
+  optional_weight_vector.resize(numJoints());
+  for (int i = 0 ; i < numJoints(); i++ ) {
+      optional_weight_vector[i] = 1.0;
+  }
   dt = control_cycle;
 }
 
@@ -147,15 +151,18 @@ bool JointPathEx::calcJacobianInverseNullspace(dmatrix &J, dmatrix &Jinv, dmatri
         }
 
         if (( r - avoid_weight_gain[j] ) >= 0 ) {
-	  w(j, j) = ( 1.0 / ( 1.0 + r) );
+	  w(j, j) = optional_weight_vector[j] * ( 1.0 / ( 1.0 + r) );
 	} else {
-	  w(j, j) = 1.0;
+	  w(j, j) = optional_weight_vector[j] * 1.0;
 	}
         avoid_weight_gain[j] = r;
     }
     if ( DEBUG ) {
         std::cerr << " cost :";
         for(int j = 0; j < n; j++ ) { std::cerr << std::setw(8) << std::setiosflags(std::ios::fixed) << std::setprecision(4) << avoid_weight_gain[j]; }
+        std::cerr << std::endl;
+        std::cerr << " optw :";
+        for(int j = 0; j < n; j++ ) { std::cerr << std::setw(8) << std::setiosflags(std::ios::fixed) << std::setprecision(4) << optional_weight_vector[j]; }
         std::cerr << std::endl;
         std::cerr << "    w :";
         for(int j = 0; j < n; j++ ) { std::cerr << std::setw(8) << std::setiosflags(std::ios::fixed) << std::setprecision(4) << w(j, j); }
@@ -225,7 +232,7 @@ bool JointPathEx::calcInverseKinematics2Loop(const Vector3& dp, const Vector3& o
         double jmin = joint(j)->llimit;
         double r = ((( (jmax + jmin) / 2.0) - jang) / ((jmax - jmin) / 2.0));
         if ( r > 0 ) { r = r*r; } else { r = - r*r; }
-        u[j] = avoid_gain * r;
+        u[j] = optional_weight_vector[j] * avoid_gain * r;
       }
       if ( DEBUG ) {
         std::cerr << " u(jl):";
@@ -248,7 +255,7 @@ bool JointPathEx::calcInverseKinematics2Loop(const Vector3& dp, const Vector3& o
       // qref - qcurr
       hrp::dvector u(n);
       for ( int j = 0; j < numJoints(); j++ ) {
-        u[j] = reference_gain * ( (*reference_q)[joint(j)->jointId] - joint(j)->q );
+        u[j] = optional_weight_vector[j] * reference_gain * ( (*reference_q)[joint(j)->jointId] - joint(j)->q );
       }
       if ( DEBUG ) {
         std::cerr << "u(ref):";
