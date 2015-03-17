@@ -455,6 +455,7 @@ bool SequencePlayer::setTargetPose(const char* gname, const double *xyz, const d
         std::cerr << __PRETTY_FUNCTION__ << std::endl;
     }
     Guard guard(m_mutex);
+    if (!setInitialState()) return false;
     // setup
     std::vector<int> indices;
     hrp::dvector start_av, end_av;
@@ -593,6 +594,7 @@ bool SequencePlayer::setInitialState(double tm)
         for (int i=0; i<m_robot->numJoints(); i++){
             Link *l = m_robot->joint(i);
             l->q = m_qInit.data[i];
+            m_qRef.data[i] = m_qInit.data[i]; // update m_qRef for setTargetPose()
         }
 
         Link *root = m_robot->rootLink();
