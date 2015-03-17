@@ -196,6 +196,15 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
       eet.target_name = ee_target;
       ee_vec.push_back(eet);
       jpe_v.push_back(hrp::JointPathExPtr(new hrp::JointPathEx(m_robot, m_robot->link(ee_base), m_robot->link(ee_target), dt)));
+      // Fix for toe joint
+      if (ee_name.find("leg") != std::string::npos && jpe_v.back()->numJoints() == 7) { // leg and has 7dof joint (6dof leg +1dof toe)
+          std::vector<double> optw;
+          for (int j = 0; j < jpe_v.back()->numJoints(); j++ ) {
+              if ( j == jpe_v.back()->numJoints()-1 ) optw.push_back(0.0);
+              else optw.push_back(1.0);
+          }
+          jpe_v.back()->setOptionalWeightVector(optw);
+      }
       target_ee_p.push_back(hrp::Vector3::Zero());
       target_ee_diff_p.push_back(hrp::Vector3::Zero());
       target_ee_R.push_back(hrp::Matrix33::Identity());

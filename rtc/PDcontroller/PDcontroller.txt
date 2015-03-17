@@ -4,7 +4,15 @@
 
 \section introduction Overview
 
-This component computes joint velocities and accelerations from joint positions
+This component computes joint torques from joint angles.
+
+\subsection pdgain PD gains
+PD gains should be specified by pdgain file.
+PD file should include <br>
+[Pgain_1] [Dgain_1]<br>
+...<br>
+[Pgain_N] [Dgain_N]<br>
+Here, N is the number of joints.
 
 <table>
 <tr><th>implementation_id</th><td>PDcontroller</td></tr>
@@ -17,16 +25,15 @@ This component computes joint velocities and accelerations from joint positions
 
 <table>
 <tr><th>port name</th><th>data type</th><th>unit</th><th>description</th></tr>
-<tr><td>qIn</td><td>RTC::TimedDoubleSeq</td><td>[rad] or [m]</td><td>joint positions</td></tr>
+<tr><td>angle</td><td>RTC::TimedDoubleSeq</td><td>[rad] or [m]</td><td>Actual joint angles</td></tr>
+<tr><td>angleRef</td><td>RTC::TimedDoubleSeq</td><td>[rad] or [m]</td><td>Reference joint angles</td></tr>
 </table>
 
 \subsection outports Output Ports
 
 <table>
 <tr><th>port name</th><th>data type</th><th>unit</th><th>description</th></tr>
-<tr><td>qOut</td><td>RTC::TimedDoubleSeq</td><td>[rad] or [m]</td><td>joint positions</td></tr>
-<tr><td>dqOut</td><td>RTC::TimedDoubleSeq</td><td>[rad/s] or [m/s]</td><td>joint velocities</td></tr>
-<tr><td>ddqOut</td><td>RTC::TimedDoubleSeq</td><td>[rad/s^2] or [m/s^2]</td><td>joint accelerations</td></tr>
+<tr><td>torque</td><td>RTC::TimedDoubleSeq</td><td>[rad] or [m]</td><td>Reference joint torques</td></tr>
 </table>
 
 \section serviceports Service Ports
@@ -44,6 +51,7 @@ N/A
 <table>
 <tr><th>name</th><th>type</th><th>unit</th><th>default value</th><th>description</th></tr>
 <tr><td>dt</td><td>double</td><td></td><td>0.005</td><td>sampling time</td></tr>
+<tr><td>pdgains_sim.file_name</td><td>string</td><td></td><td></td><td>File path for PD gain file.</td></tr>
 </table>
 
 \section conf Configuration File

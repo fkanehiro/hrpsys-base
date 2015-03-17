@@ -78,6 +78,8 @@ void GLscene::drawAdditionalLines()
 
 void GLscene::showStatus()
 {
+    if (m_log->index()<0) return;
+
     LogManager<SceneState> *lm 
         = (LogManager<SceneState> *)m_log;
     SceneState &state = lm->state();

@@ -30,6 +30,7 @@ set(input_files package.h utilities.h
 		      ../rtc/ImpedanceController/ImpedanceController.txt
 		      ../rtc/RemoveForceSensorLinkOffset/RemoveForceSensorLinkOffset.txt
 		      ../rtc/CollisionDetector/CollisionDetector.txt
+		      ../rtc/PDcontroller/PDcontroller.txt
 		      ../lib/io/iob.h
 		      ../idl/CollisionDetectorService.idl
 		      ../idl/DataLoggerService.idl
