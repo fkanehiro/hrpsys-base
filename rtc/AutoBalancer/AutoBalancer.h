@@ -135,6 +135,8 @@ class AutoBalancer
   OutPort<TimedOrientation3D> m_baseRpyOut;
   TimedDoubleSeq m_baseTform;
   OutPort<TimedDoubleSeq> m_baseTformOut;
+  TimedPose3D m_basePose;
+  OutPort<TimedPose3D> m_basePoseOut;
   TimedAcceleration3D m_accRef;
   OutPort<TimedAcceleration3D> m_accRefOut;
   TimedBooleanSeq m_contactStates;
