@@ -150,6 +150,15 @@ void BodyRTC::createInPort(const std::string &config)
         if (getJointList(this, elements, joints) && joints.size() == 1){
             m_inports.push_back(
                 new AbsTransformInPortHandler(this, name.c_str(), joints[0]));
+        } else if (elements.size() == 1) {
+            hrp::Link *l=this->link(elements[0]);
+            if (l){
+                m_inports.push_back(
+                                     new AbsTransformInPortHandler(this, name.c_str(), l));
+                return;
+            }
+            std::cerr << "can't find a link(or a sensor)(" << elements[0] << ")" 
+                      << std::endl;
         }
     }else if(type == "ABS_VELOCITY"){
         std::vector<hrp::Link *> joints;
