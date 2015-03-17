@@ -267,6 +267,11 @@ class HrpsysConfigurator:
                 else:
                     connectPorts(tmp_contollers[-1].port("q"), self.hgc.port("qIn"))
                     connectPorts(self.hgc.port("qOut"), self.rh.port("qRef"))
+                    if rtm.findPort(self.rh.ref, "basePoseRef"):
+                        if self.abc:
+                            connectPorts(self.abc.port("basePoseOut"), self.rh.port("basePoseRef"))
+                        else:
+                            connectPorts(self.sh.port("basePoseOut"), self.rh.port("basePoseRef"))
             else:
                 connectPorts(tmp_contollers[-1].port("q"), self.rh.port("qRef"))
         else:
@@ -276,6 +281,11 @@ class HrpsysConfigurator:
                 else:
                     connectPorts(self.sh.port("qOut"), self.hgc.port("qIn"))
                     connectPorts(self.hgc.port("qOut"), self.rh.port("qRef"))
+                    if rtm.findPort(self.rh.ref, "basePoseRef"):
+                        if self.abc:
+                            connectPorts(self.abc.port("basePoseOut"), self.rh.port("basePoseRef"))
+                        else:
+                            connectPorts(self.sh.port("basePoseOut"), self.rh.port("basePoseRef"))
             else:
                 connectPorts(self.sh.port("qOut"), self.rh.port("qRef"))
 
