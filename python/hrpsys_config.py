@@ -1219,7 +1219,7 @@ class HrpsysConfigurator:
         return result
 
     def setTargetPoseRelative(self, gname, eename, dx=0, dy=0, dz=0,
-dr=0, dp=0, dw=0, tm=10, wait=True):
+                              dr=0, dp=0, dw=0, tm=10, wait=True, frame_name=None):
         '''!@brief
         Move the end-effector's location relative to its current pose.
 
@@ -1241,6 +1241,8 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
         @param tm float: Second to complete the command.
         @param wait bool: If true, all other subsequent commands wait until
                           the movement commanded by this method call finishes.
+        @param frame_name str: Name of the frame that this particular command
+                               references to.
         @return bool: False if unreachable.
         '''
         self.waitInterpolationOfGroup(gname)
@@ -1251,11 +1253,11 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
         if ret:
             posRef = numpy.array([tds.data[3], tds.data[7], tds.data[11]])
             rpyRef = numpy.array(euler_from_matrix([tds.data[0:3],
-tds.data[4:7], tds.data[8:11]], 'sxyz'))
+                                 tds.data[4:7], tds.data[8:11]], 'sxyz'))
             posRef += [dx, dy, dz]
             rpyRef += [dr, dp, dw]
             print posRef, rpyRef
-            ret = self.setTargetPose(gname, list(posRef), list(rpyRef), tm)
+            ret = self.setTargetPose(gname, list(posRef), list(rpyRef), tm, frame_name=frame_name)
             if ret and wait:
                 self.waitInterpolationOfGroup(gname)
             return ret
