@@ -219,6 +219,7 @@ RTC::ReturnCode_t CollisionDetector::onInitialize()
     m_q.data.length(m_robot->numJoints());
     m_recover_time = 0;
     m_safe_posture = true;
+    m_have_safe_posture = false;
     i_dt = 1.0;
     default_recover_time = 2.5/m_dt;
     m_recover_jointdata = new double[m_robot->numJoints()];
@@ -274,6 +275,7 @@ RTC::ReturnCode_t CollisionDetector::onFinalize()
 RTC::ReturnCode_t CollisionDetector::onActivated(RTC::UniqueId ec_id)
 {
     std::cout << m_profile.instance_name<< ": onActivated(" << ec_id << ")" << std::endl;
+    m_have_safe_posture = false;
     return RTC::RTC_OK;
 }
 
@@ -380,6 +382,7 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
                 }
             }
             if ( m_safe_posture ) {
+                m_have_safe_posture = true;
                 for ( int i = 0; i < m_q.data.length(); i++ ) {
                     m_lastsafe_jointdata[i] = m_robot->joint(i)->q;
                 }
@@ -429,6 +432,14 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
         if ( m_pair.size() == 0 && ( DEBUGP || (loop % ((int)(5/m_dt))) == 1) ) {
             std::cerr << "CAUTION!! The robot is moving without checking self collision detection!!! please define collision_pair in configuration file" << std::endl;
         }
+        if ( ! m_have_safe_posture && ! m_safe_posture ) {
+            if ( DEBUGP || (loop % ((int)(5/m_dt))) == 1) {
+                std::cerr << "CAUTION!! The robot is moving while collision detection!!!, since we do not get safe_posture yet";
+            }
+            for ( int i = 0; i < m_q.data.length(); i++ ) {
+                m_lastsafe_jointdata[i] = m_recover_jointdata[i] = m_q.data[i] = m_qRef.data[i];
+            }
+        }
         //
         m_qOut.write();
 
@@ -438,6 +449,10 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
         for (int i = 0; i < m_robot->numJoints(); i++ ){
           int servo_state = (m_servoState.data[i][0] & OpenHRP::RobotHardwareService::SERVO_STATE_MASK) >> OpenHRP::RobotHardwareService::SERVO_STATE_SHIFT;
           has_servoOn = has_servoOn || (servo_state == 1);
+        }
+        // if servo off, we do not know last safe posture
+        if (! has_servoOn ) {
+            m_have_safe_posture = false;
         }
         //  beep
         if ( !m_safe_posture && has_servoOn ) { // If collided and some joint is servoOn

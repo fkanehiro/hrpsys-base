@@ -193,6 +193,7 @@ class CollisionDetector
   unsigned int m_debugLevel;
   bool m_enable;
   int collision_beep_freq, collision_beep_count;
+  bool m_have_safe_posture;
   OpenHRP::CollisionDetectorService::CollisionState m_state;
 };
 
