@@ -162,6 +162,9 @@ case $TEST_PACKAGE in
         wstool init
         ln -sf ${CI_SOURCE_PATH} hrpsys
         sed -i "s@if(ENABLE_DOXYGEN)@if(0)@" hrpsys/CMakeLists.txt         # disable doc generation
+        find hrpsys -name CMakeLists.txt -exec sed -i "s@PCL_FOUND@0@" {} \; # disable PCL
+        find hrpsys -name CMakeLists.txt -exec sed -i "s@OCTMAP_FOUND@0@" {} \; # disable OCTMAP
+        find hrpsys -name CMakeLists.txt -exec sed -i "s@IRRLIGHT_FOUND@0@" {} \; # disable IRRLIGHT
         cd ~/catkin_ws
 
         travis_time_end
