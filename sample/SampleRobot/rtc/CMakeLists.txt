@@ -1,3 +1,22 @@
+#for solo compile
+set(libs hrpsysBaseStub)
+if(NOT OPENRTM_IDL_DIR)
+  execute_process(
+    COMMAND rtm-config --rtm-idldir
+    OUTPUT_VARIABLE OPENRTM_IDL_DIR
+    OUTPUT_STRIP_TRAILING_WHITESPACE)
+  find_package(PkgConfig)
+  pkg_check_modules(hrpsys hrpsys-base)
+  include_directories(${OPENRTM_IDL_DIR};${hrpsys_INCLUDE_DIRS})
+  link_directories(${hrpsys_LIBRARY_DIRS})
+  add_definitions(-DHRPSYS_PACKAGE_VERSION=\"\\"${hrpsys_VERSION}\\"\")
+  set(libs ${libs} ${hrpsys_LIBRARIES})
+  execute_process(
+    COMMAND python -c "from distutils import sysconfig; print sysconfig.get_config_var(\"VERSION\")"
+    OUTPUT_VARIABLE PYTHON_VERSION
+    OUTPUT_STRIP_TRAILING_WHITESPACE)
+  set(python_dist_pkg_dir lib/python${PYTHON_VERSION}/dist-packages)
+endif()
 # idl
 set(idl_flags -bcxx -Wbuse_quotes -Wbh=.hh -Wbs=Sk.cpp -Wba -Wbd=DynSk.cpp -I${OPENRTM_IDL_DIR})
 add_custom_command(
@@ -9,7 +28,6 @@ add_custom_target(SampleComponentService.idl.compiled ALL DEPENDS SampleComponen
 
 # plugins comps
 set(comp_sources SampleComponent.cpp SampleComponent_impl.cpp SampleComponentServiceSk.cpp SampleComponentServiceDynSk.cpp)
-set(libs hrpsysBaseStub)
 
 add_library(SampleComponent SHARED ${comp_sources})
 target_link_libraries(SampleComponent ${libs})

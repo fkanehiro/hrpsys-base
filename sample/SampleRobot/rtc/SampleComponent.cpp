@@ -8,7 +8,6 @@
  */
 
 #include "SampleComponent.h"
-#include "util/VectorConvert.h"
 
 // Module specification
 // <rtc-template block="module_spec">
