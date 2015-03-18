@@ -167,6 +167,9 @@ int main (int argc, char** argv)
           xmlTextWriterWriteProperty(writer, "inport", "qRef:JOINT_VALUE");
           xmlTextWriterWriteProperty(writer, "inport", "dqRef:JOINT_VELOCITY");
           xmlTextWriterWriteProperty(writer, "inport", "ddqRef:JOINT_ACCELERATION");
+          if (integrate == "false") { // For kinematics only simultion
+              xmlTextWriterWriteProperty(writer, "inport", "basePoseRef:"+body->rootLink()->name+":ABS_TRANSFORM");
+          }
         } else {
           xmlTextWriterWriteProperty(writer, "inport", "tauRef:JOINT_TORQUE");
         }

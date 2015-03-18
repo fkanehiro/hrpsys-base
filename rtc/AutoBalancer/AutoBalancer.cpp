@@ -53,6 +53,7 @@ AutoBalancer::AutoBalancer(RTC::Manager* manager)
       m_basePosOut("basePosOut", m_basePos),
       m_baseRpyOut("baseRpyOut", m_baseRpy),
       m_baseTformOut("baseTformOut", m_baseTform),
+      m_basePoseOut("basePoseOut", m_basePose),
       m_accRefOut("accRef", m_accRef),
       m_contactStatesOut("contactStates", m_contactStates),
       m_controlSwingSupportTimeOut("controlSwingSupportTime", m_controlSwingSupportTime),
@@ -91,6 +92,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     addOutPort("basePosOut", m_basePosOut);
     addOutPort("baseRpyOut", m_baseRpyOut);
     addOutPort("baseTformOut", m_baseTformOut);
+    addOutPort("basePoseOut", m_basePoseOut);
     addOutPort("accRef", m_accRefOut);
     addOutPort("contactStates", m_contactStatesOut);
     addOutPort("controlSwingSupportTime", m_controlSwingSupportTimeOut);
@@ -434,6 +436,14 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
       tform_arr[2] = m_basePos.data.z;
       hrp::setMatrix33ToRowMajorArray(ref_baseRot, tform_arr, 3);
       m_baseTform.tm = m_qRef.tm;
+      // basePose
+      m_basePose.data.position.x = m_basePos.data.x;
+      m_basePose.data.position.y = m_basePos.data.y;
+      m_basePose.data.position.z = m_basePos.data.z;
+      m_basePose.data.orientation.r = m_baseRpy.data.r;
+      m_basePose.data.orientation.p = m_baseRpy.data.p;
+      m_basePose.data.orientation.y = m_baseRpy.data.y;
+      m_basePose.tm = m_qRef.tm;
       // zmp
       m_zmp.data.x = rel_ref_zmp(0);
       m_zmp.data.y = rel_ref_zmp(1);
@@ -448,6 +458,7 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
     m_basePosOut.write();
     m_baseRpyOut.write();
     m_baseTformOut.write();
+    m_basePoseOut.write();
     m_zmpOut.write();
     m_cogOut.write();
 
