@@ -46,7 +46,9 @@ SDLwindow::SDLwindow(GLsceneBase* i_scene, LogManagerBase *i_log,
 
 SDLwindow::~SDLwindow()
 {
-    SDL_Quit();
+    if ( initialized ) {
+        SDL_Quit();
+    }
 }
 
 bool SDLwindow::init(int w, int h, bool resizable)
