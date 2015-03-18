@@ -231,15 +231,14 @@ case $TEST_PACKAGE in
             wstool init .
             wstool set hrpsys http://github.com/start-jsk/hrpsys -v 315.1.9 --git -y
             wstool update
+            #
             sed -i "s@find_package(catkin REQUIRED COMPONENTS rostest mk openrtm_aist openhrp3)@find_package(catkin REQUIRED COMPONENTS rostest mk)\nset(openrtm_aist_PREFIX /opt/ros/hydro/)\nset(openhrp3_PREFIX /opt/ros/hydro/)@"  hrpsys/catkin.cmake
             sed -i "s@NUM_OF_CPUS = \$(shell grep -c '^processor' /proc/cpuinfo)@NUM_OF_CPUS = 1@" hrpsys/Makefile.hrpsys-base
-            # do not compile unstable rtc
-            sed -i 's@-cd $(SVN_DIR) && $(SVN_CMDLINE) up $(SVN_REVISION)@-cd $(SVN_DIR) \&\& $(SVN_CMDLINE) up $(SVN_REVISION); sed -i -e s/\(add_subdirectory(\(RobotHardware\|SequencePlayer\|StateHolder\|ForwardKinematics\|CollisionDetector\|SoftErrorLimiter\|DataLogger\))\)/#\\1/ -e s/add_subdirectory/#add_subdirectory/ -e s/##add/add/ rtc/CMakeLists.txt@' hrpsys/Makefile.hrpsys-base
             cat hrpsys/Makefile.hrpsys-base
+            # use git repository, instead of svn due to googlecode shoutdown
+            git clone http://github.com/fkanehiro/hrpsys-base --depth 1 -b 315.1.9 ../build_isolated/hrpsys/build/hrpsys-base-source
+            cat ../build_isolated/hrpsys/build/hrpsys-base-source/rtc/CMakeLists.txt
 
-            #git clone -b 315.1.9 http://github.com/fkanehiro/hrpsys-base hrpsys
-            #cp ~/catkin_ws/src/hrpsys/CMakeLists.txt hrpsys/
-            #cp ~/catkin_ws/src/hrpsys/package.xml hrpsys/
             cd ~/hrpsys_ws
             ls -al src
             ls -al src/hrpsys
