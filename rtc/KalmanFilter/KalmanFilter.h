@@ -131,6 +131,10 @@ protected:
   OutPort<TimedOrientation3D> m_rpyOut;
   OutPort<TimedOrientation3D> m_rpyRawOut;
   
+  RTC::TimedDoubleSeq m_qCurrent;
+  RTC::InPort<RTC::TimedDoubleSeq> m_qCurrentIn;
+  RTC::TimedOrientation3D m_baseRpy;
+  RTC::OutPort<RTC::TimedOrientation3D> m_baseRpyOut;
   // </rtc-template>
 
   // CORBA Port declaration

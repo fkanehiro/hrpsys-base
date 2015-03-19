@@ -8,6 +8,10 @@ namespace hrp{
   typedef Eigen::Matrix2d Matrix22;
 }
 #include <iostream>
+#include <hrpModel/ModelLoaderUtil.h>
+#include <hrpModel/Link.h>
+#include <hrpModel/Sensor.h>
+#include <hrpModel/Body.h>
 
 class KFilter {
 public:
@@ -70,7 +74,7 @@ private:
 class RPYKalmanFilter {
 public:
     RPYKalmanFilter() : m_sensorR(hrp::Matrix33::Identity()) {};
-    void main_one (hrp::Vector3& rpy, hrp::Vector3& rpyRaw, const hrp::Vector3& acc, const hrp::Vector3& gyro)
+    void main_one (hrp::Vector3& rpy, hrp::Vector3& rpyRaw, hrp::Vector3& baseRpy, const hrp::Vector3& acc, const hrp::Vector3& gyro, const hrp::Matrix33& sensorLinkR)
     {
       //
       // G = [ cosb, sinb sina, sinb cosa,
@@ -116,11 +120,16 @@ public:
       Eigen::AngleAxis<double> aaX(r_filter.getx()[0], Eigen::Vector3d::UnitX());
       Eigen::Quaternion<double> q = aaZ * aaY * aaX;
       hrp::Matrix33 imaginaryRotationMatrix = q.toRotationMatrix();
-      hrp::Matrix33 realRotationMatrix = imaginaryRotationMatrix * m_sensorR; // inverse transform to real data
+      hrp::Matrix33 realRotationMatrix = imaginaryRotationMatrix * m_sensorR;
       hrp::Vector3 euler = realRotationMatrix.eulerAngles(2,1,0);
       rpy(0) = euler(2);
       rpy(1) = euler(1);
       rpy(2) = euler(0);
+      hrp::Matrix33 realRotationMatrix2 = sensorLinkR.transpose() * imaginaryRotationMatrix;
+      hrp::Vector3 euler2 = realRotationMatrix2.eulerAngles(2,1,0);
+      baseRpy(0) = euler2(2);
+      baseRpy(1) = euler2(1);
+      baseRpy(2) = euler2(0);
     };
     void setParam (const double _dt, const double _Q_angle, const double _Q_rate, const double _R_angle, const std::string print_str = "")
     {
@@ -153,6 +162,7 @@ public:
         y_filter.resetStateByObservation();
     };
     void setSensorR (const hrp::Matrix33& sr) { m_sensorR = sr;};
+    void setRobot (const hrp::BodyPtr& r) { m_robot = r;};
     double getQangle () const { return Q_angle;};
     double getQrate () const { return Q_rate;};
     double getRangle () const { return R_angle;};
@@ -160,6 +170,7 @@ private:
     KFilter r_filter, p_filter, y_filter;
     double Q_angle, Q_rate, R_angle;
     hrp::Matrix33 m_sensorR;
+    hrp::BodyPtr m_robot;
 };
 
 #endif /* RPYKALMANFILTER_H */
