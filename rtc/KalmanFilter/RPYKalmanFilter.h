@@ -2,6 +2,7 @@
 #define RPYKALMANFILTER_H
 
 #include <hrpUtil/EigenTypes.h>
+#include <hrpUtil/Eigen3d.h>
 #include "util/Hrpsys.h"
 namespace hrp{
   typedef Eigen::Vector2d Vector2;
@@ -115,11 +116,7 @@ public:
       p_filter.update(gyro2(1), rpyRaw(1));
       y_filter.update(gyro2(2), rpyRaw(2));
 
-      Eigen::AngleAxis<double> aaZ(y_filter.getx()[0], Eigen::Vector3d::UnitZ());
-      Eigen::AngleAxis<double> aaY(p_filter.getx()[0], Eigen::Vector3d::UnitY());
-      Eigen::AngleAxis<double> aaX(r_filter.getx()[0], Eigen::Vector3d::UnitX());
-      Eigen::Quaternion<double> q = aaZ * aaY * aaX;
-      hrp::Matrix33 imaginaryRotationMatrix = q.toRotationMatrix();
+      hrp::Matrix33 imaginaryRotationMatrix = hrp::rotFromRpy(r_filter.getx()[0], p_filter.getx()[0], y_filter.getx()[0]);
       hrp::Matrix33 realRotationMatrix = imaginaryRotationMatrix * m_sensorR;
       hrp::Vector3 euler = realRotationMatrix.eulerAngles(2,1,0);
       rpy(0) = euler(2);
