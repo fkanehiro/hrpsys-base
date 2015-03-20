@@ -237,6 +237,9 @@ case $TEST_PACKAGE in
             cat hrpsys/Makefile.hrpsys-base
             # use git repository, instead of svn due to googlecode shoutdown
             git clone http://github.com/fkanehiro/hrpsys-base --depth 1 -b 315.1.9 ../build_isolated/hrpsys/build/hrpsys-base-source
+            # we use latest hrpsys_ocnfig.py for this case, so do not install them
+            sed -i -e 's/\(add_subdirectory(python)\)/#\1/' ../build_isolated/hrpsys/build/hrpsys-base-source/CMakeLists.txt
+            cat ../build_isolated/hrpsys/build/hrpsys-base-source/CMakeLists.txt
             cat ../build_isolated/hrpsys/build/hrpsys-base-source/rtc/CMakeLists.txt
 
             cd ~/hrpsys_ws
@@ -252,12 +255,6 @@ case $TEST_PACKAGE in
             travis_time_start  install_old_hrpsys
 
             catkin_make_isolated -j1 -l1 --install
-
-            # HOTFIX: https://github.com/k-okada/hrpsys-base/commit/9ce00db.diff
-            sed -i "s@\['vs@#\['vs@g" install_isolated/lib/python2.7/dist-packages/hrpsys/hrpsys_config.py
-            sed -i "s@\['afs@#\['afs@g" install_isolated/lib/python2.7/dist-packages/hrpsys/hrpsys_config.py
-            sed -i "s@\['abc@#\['abc@g" install_isolated/lib/python2.7/dist-packages/hrpsys/hrpsys_config.py
-            sed -i "s@\['st@#\['st@g" install_isolated/lib/python2.7/dist-packages/hrpsys/hrpsys_config.py
 
             #cp ~/catkin_ws/src/hrpsys/package.xml install_isolated/share/hrpsys/ # old hrpsys did not do this
             source install_isolated/setup.bash
