@@ -8,7 +8,7 @@ endif()
 
 set(target hrpIo)
 
-option(INSTALL_HRPIO "Install dummy implimentation of hrpIo" ON)
+option(INSTALL_HRPIO "Install dummy implementation of hrpIo" ON)
 
 if(INSTALL_HRPIO)
   install(TARGETS ${target}
