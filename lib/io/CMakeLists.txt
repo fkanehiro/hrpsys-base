@@ -8,10 +8,14 @@ endif()
 
 set(target hrpIo)
 
-install(TARGETS ${target}
-  RUNTIME DESTINATION bin CONFIGURATIONS Release Debug
-  LIBRARY DESTINATION lib CONFIGURATIONS Release Debug
-)
+option(INSTALL_HRPIO "Install dummy implimentation of hrpIo" ON)
+
+if(INSTALL_HRPIO)
+  install(TARGETS ${target}
+    RUNTIME DESTINATION bin CONFIGURATIONS Release Debug
+    LIBRARY DESTINATION lib CONFIGURATIONS Release Debug
+    )
+endif()
 
 install(FILES ${headers} DESTINATION include/hrpsys/io)
 
