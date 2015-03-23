@@ -434,7 +434,7 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
         }
         if ( ! m_have_safe_posture && ! m_safe_posture ) {
             if ( DEBUGP || (loop % ((int)(5/m_dt))) == 1) {
-                std::cerr << "CAUTION!! The robot is moving while collision detection!!!, since we do not get safe_posture yet";
+                std::cerr << "CAUTION!! The robot is moving while collision detection!!!, since we do not get safe_posture yet" << std::endl;
             }
             for ( int i = 0; i < m_q.data.length(); i++ ) {
                 m_lastsafe_jointdata[i] = m_recover_jointdata[i] = m_q.data[i] = m_qRef.data[i];
