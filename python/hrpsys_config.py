@@ -367,6 +367,9 @@ class HrpsysConfigurator:
             if self.abc:
                 connectPorts(self.sh.port(sen+"Out"),
                              self.abc.port("ref_" + sen))
+            if self.abc and self.st:
+                connectPorts(self.abc.port("limbCOPOffset_"+sen),
+                             self.st.port("limbCOPOffset_"+sen))
 
         #  actual force sensors
         if self.rmfo:
