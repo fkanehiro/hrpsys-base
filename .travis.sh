@@ -244,6 +244,10 @@ case $TEST_PACKAGE in
             find ../build_isolated/hrpsys/build/hrpsys-base-source -name CMakeLists.txt -exec sed -i "s@OCTOMAP_FOUND@0@" {} \; # disable OCTOMAP
             find ../build_isolated/hrpsys/build/hrpsys-base-source -name CMakeLists.txt -exec sed -i "s@IRRLIGHT_FOUND@0@" {} \; # disable IRRLIGHT
 
+            sed -i "1imacro(dummy_macro)\nmessage(\"dummy(\${ARGN})\")\nendmacro()" ../build_isolated/hrpsys/build/hrpsys-base-source/util/simulator/CMakeLists.txt
+            sed -i "s@\(.*\)(hrpsysext@dummy_macro(hrpsysext@g" ../build_isolated/hrpsys/build/hrpsys-base-source/util/simulator/CMakeLists.txt
+            sed -i "s@install(TARGETS hrpsysext@dummy_macro(TARGETS hrpsysext@g" ../build_isolated/hrpsys/build/hrpsys-base-source/util/simulator/CMakeLists.txt
+
             cat ../build_isolated/hrpsys/build/hrpsys-base-source/CMakeLists.txt
             cat ../build_isolated/hrpsys/build/hrpsys-base-source/rtc/CMakeLists.txt
 
