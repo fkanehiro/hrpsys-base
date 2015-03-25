@@ -206,6 +206,7 @@ case $TEST_PACKAGE in
             wstool set rtmros_nextage http://github.com/tork-a/rtmros_nextage --git -y
             wstool update
             sudo apt-get install -qq -y ros-hydro-urdf
+            export ROS_LANG_DISABLE=genlisp
 
             cd ..
             # do not compile unstable rtc
