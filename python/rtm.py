@@ -421,15 +421,19 @@ def serializeComponents(rtcs, stopEC=True):
         return
     ec = rtcs[0].ec
     for rtc in rtcs[1:]:
-        if not ec._is_equivalent(rtc.ec):
-            if stopEC:
-                rtc.ec.stop()
-            if ec.add_component(rtc.ref) == RTC.RTC_OK:
-                rtc.ec = ec
+        try:
+            if not ec._is_equivalent(rtc.ec):
+                if stopEC:
+                    rtc.ec.stop()
+                if ec.add_component(rtc.ref) == RTC.RTC_OK:
+                    rtc.ec = ec
+                else:
+                    print 'error in add_component()'
             else:
-                print 'error in add_component()'
-        else:
-            print 'already serialized'
+                print rtc.name(), 'is already serialized'
+        except Exception, e:
+            print "error in serialize", rtc, "of", rtcs, e
+            raise e
 
 ##
 # \brief check two ports are connected or not
