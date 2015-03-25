@@ -239,6 +239,10 @@ case $TEST_PACKAGE in
             git clone http://github.com/fkanehiro/hrpsys-base --depth 1 -b 315.1.9 ../build_isolated/hrpsys/build/hrpsys-base-source
             # we use latest hrpsys_ocnfig.py for this case, so do not install them
             sed -i -e 's/\(add_subdirectory(python)\)/#\1/' ../build_isolated/hrpsys/build/hrpsys-base-source/CMakeLists.txt
+            find ../build_isolated/hrpsys/build/hrpsys-base-source -name CMakeLists.txt -exec sed -i "s@PCL_FOUND@0@" {} \; # disable PCL
+            find ../build_isolated/hrpsys/build/hrpsys-base-source -name CMakeLists.txt -exec sed -i "s@OCTOMAP_FOUND@0@" {} \; # disable OCTOMAP
+            find ../build_isolated/hrpsys/build/hrpsys-base-source -name CMakeLists.txt -exec sed -i "s@IRRLIGHT_FOUND@0@" {} \; # disable IRRLIGHT
+
             cat ../build_isolated/hrpsys/build/hrpsys-base-source/CMakeLists.txt
             cat ../build_isolated/hrpsys/build/hrpsys-base-source/rtc/CMakeLists.txt
 
