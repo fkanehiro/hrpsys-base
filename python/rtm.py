@@ -213,7 +213,8 @@ class RTCmanager:
     # \param self this object
     # \param name name of RT component instance
     def delete(self, name):
-        ref = self.ref.delete_component(name)
+        # ref = self.ref.delete_component(name)
+        ref = findRTC(name).ref.exit() # delte_component did not actually kill component, so use rtc.exit https://github.com/fkanehiro/hrpsys-base/pull/512#issuecomment-80430387
         if ref == RTC_OK:
             return True
         else:
