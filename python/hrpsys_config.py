@@ -589,9 +589,13 @@ class HrpsysConfigurator:
         Get list of RTC Instance
         '''
         ret = [self.rh]
-        for r in map(lambda x: 'self.' + x[0], self.getRTCList()):
+        for rtc in self.getRTCList():
+            r = 'self.'+rtc[0]
             try:
-                ret.append(eval(r))
+                if eval(r): 
+                    ret.append(eval(r))
+                else:
+                    print self.configurator_name, '\033[31mFail to find instance ('+str(rtc)+') for getRTCInstanceList\033[0m'
             except Exception, e:
                 print self.configurator_name, '\033[31mFail to getRTCInstanceList',e,'\033[0m'
         return ret
