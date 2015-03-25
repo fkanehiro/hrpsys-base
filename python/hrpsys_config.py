@@ -172,6 +172,11 @@ class HrpsysConfigurator:
     sh_svc = None
     sh_version = None
 
+    # ServoController
+    sc= None
+    sc_svc = None
+    sc_version = None
+
     # ForwardKinematics
     fk = None
     fk_svc = None
