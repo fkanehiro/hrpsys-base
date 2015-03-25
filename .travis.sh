@@ -219,7 +219,7 @@ case $TEST_PACKAGE in
             travis_time_end
             travis_time_start  compile_new_version
 
-            catkin_make_isolated -j1 -l1 --install --only-pkg-with-deps `echo $pkg | sed s/-/_/g`
+            catkin_make_isolated -j1 -l1 --install --only-pkg-with-deps `echo $pkg | sed s/-/_/g` | grep -v '^-- \(Up-to-date\|Installing\):' | grep -v 'Generating \(Python\|C++\) code from' | grep -v '^Compiling .*.py ...$' | uniq
             rm -fr ./install_isolated/hrpsys/share/hrpsys ./install_isolated/hrpsys/lib/pkgconfig/hrpsys.pc
             source install_isolated/setup.bash
 
@@ -259,7 +259,7 @@ case $TEST_PACKAGE in
             travis_time_end
             travis_time_start  install_old_hrpsys
 
-            catkin_make_isolated -j1 -l1 --install
+            catkin_make_isolated -j1 -l1 --install | grep -v '^-- \(Up-to-date\|Installing\):'
 
             #cp ~/catkin_ws/src/hrpsys/package.xml install_isolated/share/hrpsys/ # old hrpsys did not do this
             source install_isolated/setup.bash
