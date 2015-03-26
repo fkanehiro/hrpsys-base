@@ -327,13 +327,15 @@ class HrpsysConfigurator:
         connectPorts(self.seq.port("basePos"), self.sh.port("basePosIn"))
         connectPorts(self.seq.port("baseRpy"), self.sh.port("baseRpyIn"))
         connectPorts(self.seq.port("zmpRef"), self.sh.port("zmpIn"))
-        connectPorts(self.seq.port("optionalData"), self.sh.port("optionalDataIn"))
+        if self.seq_version >= '315.2.6':
+            connectPorts(self.seq.port("optionalData"), self.sh.port("optionalDataIn"))
         connectPorts(self.sh.port("basePosOut"), [self.seq.port("basePosInit"),
                                                   self.fk.port("basePosRef")])
         connectPorts(self.sh.port("baseRpyOut"), [self.seq.port("baseRpyInit"),
                                                   self.fk.port("baseRpyRef")])
         connectPorts(self.sh.port("qOut"), self.seq.port("qInit"))
-        connectPorts(self.sh.port("zmpOut"), self.seq.port("zmpRefInit"))
+        if self.seq_version >= '315.2.0':
+            connectPorts(self.sh.port("zmpOut"), self.seq.port("zmpRefInit"))
         for sen in self.getForceSensorNames():
             connectPorts(self.seq.port(sen + "Ref"),
                          self.sh.port(sen + "In"))
@@ -387,8 +389,9 @@ class HrpsysConfigurator:
         # connection for ic
         if self.ic:
             connectPorts(self.rh.port("q"), self.ic.port("qCurrent"))
-            connectPorts(self.sh.port("basePosOut"), self.ic.port("basePosIn"))
-            connectPorts(self.sh.port("baseRpyOut"), self.ic.port("baseRpyIn"))
+            if self.seq_version >= '315.3.0':
+                connectPorts(self.sh.port("basePosOut"), self.ic.port("basePosIn"))
+                connectPorts(self.sh.port("baseRpyOut"), self.ic.port("baseRpyIn"))
         # connection for tf
         if self.tf:
             # connection for actual torques
