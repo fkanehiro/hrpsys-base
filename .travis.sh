@@ -302,7 +302,6 @@ case $TEST_PACKAGE in
         fi
 
         travis_time_end
-        travis_time_start  run_tests
 
         sudo /etc/init.d/omniorb4-nameserver stop || echo "stop omniserver just in case..."
         export EXIT_STATUS=0;
@@ -310,8 +309,13 @@ case $TEST_PACKAGE in
         if [ "`find $pkg_path/test -iname '*.test'`" == "" ]; then
             echo "[$pkg] No tests ware found!!!"
         else
-            find $pkg_path/test -iname "*.test" -print0 | xargs -0 -n1 rostest || export EXIT_STATUS=$?;
+            for test_file in `find $pkg_path/test -iname "*.test" -print`; do
+                travis_time_start $(echo $test_file | sed 's@.*/\([a-zA-Z0-9-]*\).test$@\1@' | sed 's@-@_@g')
+                rostest $test_file && travis_time_end || (travis_time_end 31; export EXIT_STATUS=$?)
+            done
         fi
+
+        travis_time_start  end_tests
 
         # for debugging
         [ $TEST_PACKAGE == "hrpsys-ros-bridge" ] && rostest -t hrpsys_ros_bridge test-samplerobot.test
