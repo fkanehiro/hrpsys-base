@@ -499,13 +499,13 @@ def connectPorts(outP, inPs, subscription="flush", dataflow="Push", bufferlength
     if not isinstance(inPs, list):
         inPs = [inPs]
     if not outP:
-        print '[rtm.py] \033[31m   Failed to connect %s to %s\033[0m' % \
-              (outP, [inP.get_port_profile().name if inP else inP for inP in inPs])
+        print '[rtm.py] \033[31m   Failed to connect %s to %s(%s)\033[0m' % \
+              (outP, [inP.get_port_profile().name if inP else inP for inP in inPs], inPs)
         return
     for inP in inPs:
         if not inP:
-            print '[rtm.py] \033[31m   Failed to connect %s to %s\033[0m' % \
-                  (outP.get_port_profile().name, inP)
+            print '[rtm.py] \033[31m   Failed to connect %s to %s(%s)\033[0m' % \
+                  (outP.get_port_profile().name, inP, inPs)
             continue
         if isConnected(outP, inP) == True:
             print outP.get_port_profile().name, 'and', inP.get_port_profile().name, \
