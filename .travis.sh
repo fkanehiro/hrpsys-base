@@ -234,7 +234,7 @@ case $TEST_PACKAGE in
             wstool update
             #
             sed -i "s@find_package(catkin REQUIRED COMPONENTS rostest mk openrtm_aist openhrp3)@find_package(catkin REQUIRED COMPONENTS rostest mk)\nset(openrtm_aist_PREFIX /opt/ros/hydro/)\nset(openhrp3_PREFIX /opt/ros/hydro/)@"  hrpsys/catkin.cmake
-            sed -i "s@NUM_OF_CPUS = \$(shell grep -c '^processor' /proc/cpuinfo)@NUM_OF_CPUS = 1@" hrpsys/Makefile.hrpsys-base
+            sed -i "s@NUM_OF_CPUS = \$(shell grep -c '^processor' /proc/cpuinfo)@NUM_OF_CPUS = 2@" hrpsys/Makefile.hrpsys-base
             cat hrpsys/Makefile.hrpsys-base
             # use git repository, instead of svn due to googlecode shoutdown
             git clone http://github.com/fkanehiro/hrpsys-base --depth 1 -b 315.1.9 ../build_isolated/hrpsys/build/hrpsys-base-source
@@ -243,6 +243,7 @@ case $TEST_PACKAGE in
             find ../build_isolated/hrpsys/build/hrpsys-base-source -name CMakeLists.txt -exec sed -i "s@PCL_FOUND@0@" {} \; # disable PCL
             find ../build_isolated/hrpsys/build/hrpsys-base-source -name CMakeLists.txt -exec sed -i "s@OCTOMAP_FOUND@0@" {} \; # disable OCTOMAP
             find ../build_isolated/hrpsys/build/hrpsys-base-source -name CMakeLists.txt -exec sed -i "s@IRRLIGHT_FOUND@0@" {} \; # disable IRRLIGHT
+            find ../build_isolated/hrpsys/build/hrpsys-base-source -name CMakeLists.txt -exec sed -i "s@SDL_FOUND@0@" {} \; # disable SDL
 
             sed -i "1imacro(dummy_macro)\nmessage(\"dummy(\${ARGN})\")\nendmacro()" ../build_isolated/hrpsys/build/hrpsys-base-source/util/simulator/CMakeLists.txt
             sed -i "s@\(.*\)(hrpsysext@dummy_macro(hrpsysext@g" ../build_isolated/hrpsys/build/hrpsys-base-source/util/simulator/CMakeLists.txt
