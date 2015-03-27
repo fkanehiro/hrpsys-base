@@ -243,7 +243,9 @@ case $TEST_PACKAGE in
             find ../build_isolated/hrpsys/build/hrpsys-base-source -name CMakeLists.txt -exec sed -i "s@PCL_FOUND@0@" {} \; # disable PCL
             find ../build_isolated/hrpsys/build/hrpsys-base-source -name CMakeLists.txt -exec sed -i "s@OCTOMAP_FOUND@0@" {} \; # disable OCTOMAP
             find ../build_isolated/hrpsys/build/hrpsys-base-source -name CMakeLists.txt -exec sed -i "s@IRRLIGHT_FOUND@0@" {} \; # disable IRRLIGHT
-            sed -i "s@USE_HRPSYSUTIL@0@" ../build_isolated/hrpsys/build/hrpsys-base-source/rtc/CMakeLists.txt # disable HRPSYSUTIL APPs
+            sed -i "s@USE_HRPSYSUTIL@0@" ../build_isolated/hrpsys/build/hrpsys-base-source/rtc/CMakeLists.txt # disable HRPSYSUTIL APPs # this disables CollisionDetector
+            sed -i "\$aadd_subdirectory(CollisionDetector)" ../build_isolated/hrpsys/build/hrpsys-base-source/rtc/CMakeLists.txt
+
             sed -i "s@NOT QNXNTO@1@" ../build_isolated/hrpsys/build/hrpsys-base-source/rtc/CMakeLists.txt # disable Joystick
 
             sed -i "1imacro(dummy_macro)\nmessage(\"dummy(\${ARGN})\")\nendmacro()" ../build_isolated/hrpsys/build/hrpsys-base-source/util/simulator/CMakeLists.txt
