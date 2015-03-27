@@ -135,12 +135,16 @@ class AutoBalancer
   OutPort<TimedOrientation3D> m_baseRpyOut;
   TimedDoubleSeq m_baseTform;
   OutPort<TimedDoubleSeq> m_baseTformOut;
+  TimedPose3D m_basePose;
+  OutPort<TimedPose3D> m_basePoseOut;
   TimedAcceleration3D m_accRef;
   OutPort<TimedAcceleration3D> m_accRefOut;
   TimedBooleanSeq m_contactStates;
   OutPort<TimedBooleanSeq> m_contactStatesOut;
   TimedDoubleSeq m_controlSwingSupportTime;
   OutPort<TimedDoubleSeq> m_controlSwingSupportTimeOut;
+  std::vector<TimedPoint3D> m_limbCOPOffset;
+  std::vector<OutPort<TimedPoint3D> *> m_limbCOPOffsetOut;
   // for debug
   OutPort<TimedPoint3D> m_cogOut;
   

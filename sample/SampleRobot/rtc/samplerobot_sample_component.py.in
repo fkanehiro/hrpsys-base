@@ -1,0 +1,47 @@
+#!/usr/bin/env python
+
+try:
+    from hrpsys.hrpsys_config import *
+    import OpenHRP
+except:
+    print "import without hrpsys"
+    import rtm
+    from rtm import *
+    from OpenHRP import *
+    import waitInput
+    from waitInput import *
+    import socket
+    import time
+
+class SampleConfigurator(HrpsysConfigurator):
+    ss = None
+    ss_svc = None
+
+    def getRTCList(self):
+        return [
+            ['seq', "SequencePlayer"],
+            ['sh', "StateHolder"],
+            ['fk', "ForwardKinematics"],
+            ['ss', "SampleComponent"],
+            ['co', "CollisionDetector"],
+            ['el', "SoftErrorLimiter"],
+            ['log', "DataLogger"]
+        ]
+
+def init ():
+    global hcf
+    hcf = SampleConfigurator()
+    hcf.init ("SampleRobot(Robot)0", "@OPENHRP_DIR@/share/OpenHRP-3.1/sample/model/sample1.wrl")
+    disconnectPorts(hcf.sh.port("qOut"), hcf.co.port("qRef"))
+    connectPorts(hcf.sh.port("qOut"), hcf.ss.port("qCurrent"))
+    connectPorts(hcf.ss.port("q"), hcf.co.port("qRef"))
+
+def demo ():
+    init()
+    # set initial pose from sample/controller/SampleController/etc/Sample.pos
+    initial_pose = [-7.779e-005,  -0.378613,  -0.000209793,  0.832038,  -0.452564,  0.000244781,  0.31129,  -0.159481,  -0.115399,  -0.636277,  0,  0,  0,  -7.77902e-005,  -0.378613,  -0.000209794,  0.832038,  -0.452564,  0.000244781,  0.31129,  0.159481,  0.115399,  -0.636277,  0,  0,  0,  0,  0,  0]
+
+    hcf.ss_svc.echo("up")
+    time.sleep(3)
+    hcf.ss_svc.echo("down")
+    time.sleep(3)

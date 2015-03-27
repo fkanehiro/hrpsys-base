@@ -82,3 +82,5 @@ install(FILES
   ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.TerrainFloor.StairDown.xml
   DESTINATION share/hrpsys/samples/SampleRobot)
 
+add_subdirectory(rtc)
+
