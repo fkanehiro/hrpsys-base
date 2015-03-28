@@ -236,7 +236,7 @@ class Stabilizer
     ST_RIGHT = 1
   };
   struct ee_trans {
-    std::string target_name;
+    std::string target_name, ee_name, sensor_name;
     hrp::Vector3 localp;
     hrp::Matrix33 localR;
   };
@@ -246,7 +246,6 @@ class Stabilizer
   hrp::BodyPtr m_robot;
   unsigned int m_debugLevel;
   hrp::dvector transition_joint_q, qorg, qrefv;
-  std::vector<std::string> sensor_names;
   std::vector<ee_trans> ee_vec;
   std::map<std::string, size_t> contact_states_index_map;
   std::vector<bool> contact_states, prev_contact_states, is_ik_enable;
