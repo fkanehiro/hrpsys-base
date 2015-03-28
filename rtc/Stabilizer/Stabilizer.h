@@ -237,7 +237,7 @@ class Stabilizer
   };
   struct ee_trans {
     std::string target_name, ee_name, sensor_name;
-    hrp::Vector3 localp;
+    hrp::Vector3 localp, localCOPPos;
     hrp::Matrix33 localR;
   };
   enum cmode {MODE_IDLE, MODE_AIR, MODE_ST, MODE_SYNC_TO_IDLE, MODE_SYNC_TO_AIR} control_mode;
