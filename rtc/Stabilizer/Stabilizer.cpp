@@ -1056,6 +1056,15 @@ void Stabilizer::calcEEForceMomentControl() {
           }
         }
       }
+      // Fix for toe joint
+      for (size_t i = 0; i < jpe_v.size(); i++) {
+          if (is_ik_enable[i]) {
+              if (jpe_v[i]->numJoints() == 7) {
+                  int idx = jpe_v[i]->joint(jpe_v[i]->numJoints() -1)->jointId;
+                  m_robot->joint(idx)->q = qrefv[idx];
+              }
+          }
+      }
 
       //rpy control
       rats::rotm3times(current_root_R, target_root_R, hrp::rotFromRpy(d_rpy[0], d_rpy[1], 0));
