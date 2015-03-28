@@ -194,21 +194,21 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
       coil::stringTo(ee_name, end_effectors_str[i*prop_num].c_str());
       coil::stringTo(ee_target, end_effectors_str[i*prop_num+1].c_str());
       coil::stringTo(ee_base, end_effectors_str[i*prop_num+2].c_str());
-      ee_trans eet;
+      STIKParam ikp;
       for (size_t j = 0; j < 3; j++) {
-        coil::stringTo(eet.localp(j), end_effectors_str[i*prop_num+3+j].c_str());
+        coil::stringTo(ikp.localp(j), end_effectors_str[i*prop_num+3+j].c_str());
       }
       double tmpv[4];
       for (int j = 0; j < 4; j++ ) {
         coil::stringTo(tmpv[j], end_effectors_str[i*prop_num+6+j].c_str());
       }
-      eet.localR = Eigen::AngleAxis<double>(tmpv[3], hrp::Vector3(tmpv[0], tmpv[1], tmpv[2])).toRotationMatrix(); // rotation in VRML is represented by axis + angle
-      eet.target_name = ee_target;
-      eet.ee_name = ee_name;
-      if (ee_name == "rleg") eet.sensor_name = "rfsensor";
-      else if (ee_name == "lleg") eet.sensor_name = "lfsensor";
-      else eet.sensor_name = "";
-      ee_vec.push_back(eet);
+      ikp.localR = Eigen::AngleAxis<double>(tmpv[3], hrp::Vector3(tmpv[0], tmpv[1], tmpv[2])).toRotationMatrix(); // rotation in VRML is represented by axis + angle
+      ikp.target_name = ee_target;
+      ikp.ee_name = ee_name;
+      if (ee_name == "rleg") ikp.sensor_name = "rfsensor";
+      else if (ee_name == "lleg") ikp.sensor_name = "lfsensor";
+      else ikp.sensor_name = "";
+      stikp.push_back(ikp);
       jpe_v.push_back(hrp::JointPathExPtr(new hrp::JointPathEx(m_robot, m_robot->link(ee_base), m_robot->link(ee_target), dt)));
       // Fix for toe joint
       if (ee_name.find("leg") != std::string::npos && jpe_v.back()->numJoints() == 7) { // leg and has 7dof joint (6dof leg +1dof toe)
@@ -273,9 +273,9 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
 
   // Check is legged robot or not
   is_legged_robot = false;
-  for (size_t i = 0; i < ee_vec.size(); i++) {
-      if (ee_vec[i].ee_name.find("leg") == std::string::npos) continue;
-      hrp::Sensor* sen= m_robot->sensor<hrp::ForceSensor>(ee_vec[i].sensor_name);
+  for (size_t i = 0; i < stikp.size(); i++) {
+      if (stikp[i].ee_name.find("leg") == std::string::npos) continue;
+      hrp::Sensor* sen= m_robot->sensor<hrp::ForceSensor>(stikp[i].sensor_name);
       if ( sen != NULL ) is_legged_robot = true;
   }
 
@@ -402,7 +402,7 @@ RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
   for (size_t i = 0; i < m_limbCOPOffsetIn.size(); ++i) {
     if ( m_limbCOPOffsetIn[i]->isNew() ) {
       m_limbCOPOffsetIn[i]->read();
-      ee_vec[i].localCOPPos = ee_vec[i].localp + hrp::Vector3(m_limbCOPOffset[i].data.x, m_limbCOPOffset[i].data.y, m_limbCOPOffset[i].data.z);
+      stikp[i].localCOPPos = stikp[i].localp + hrp::Vector3(m_limbCOPOffset[i].data.x, m_limbCOPOffset[i].data.y, m_limbCOPOffset[i].data.z);
     }
   }
 
@@ -507,9 +507,9 @@ void Stabilizer::calcFootOriginCoords (hrp::Vector3& foot_origin_pos, hrp::Matri
   rats::coordinates leg_c[2], tmpc;
   hrp::Vector3 ez = hrp::Vector3::UnitZ();
   hrp::Vector3 ex = hrp::Vector3::UnitX();
-  for (size_t i = 0; i < ee_vec.size(); i++) {
-    if (ee_vec[i].ee_name.find("leg") == std::string::npos) continue;
-    hrp::Link* target = m_robot->sensor<hrp::ForceSensor>(ee_vec[i].sensor_name)->link;
+  for (size_t i = 0; i < stikp.size(); i++) {
+    if (stikp[i].ee_name.find("leg") == std::string::npos) continue;
+    hrp::Link* target = m_robot->sensor<hrp::ForceSensor>(stikp[i].sensor_name)->link;
     leg_c[i].pos = target->p;
     hrp::Vector3 xv1(target->R * ex);
     xv1(2)=0.0;
@@ -594,10 +594,10 @@ void Stabilizer::getActualParameters ()
     prev_act_cog = act_cog;
     prev_act_cogvel = act_cogvel;
     //act_root_rot = m_robot->rootLink()->R;
-    for (size_t i = 0; i < ee_vec.size(); i++) {
-      hrp::Link* target = m_robot->link(ee_vec[i].target_name);
-      hrp::Vector3 act_ee_p = target->p + target->R * ee_vec[i].localCOPPos;
-      //target_ee_R[i] = target->R * ee_vec[i].localR;
+    for (size_t i = 0; i < stikp.size(); i++) {
+      hrp::Link* target = m_robot->link(stikp[i].target_name);
+      hrp::Vector3 act_ee_p = target->p + target->R * stikp[i].localCOPPos;
+      //target_ee_R[i] = target->R * stikp[i].localR;
       target_ee_diff_p[i] -= foot_origin_rot.transpose() * (act_ee_p - foot_origin_pos);
     }
     // <= Actual foot_origin frame
@@ -632,12 +632,12 @@ void Stabilizer::getActualParameters ()
       hrp::Vector3 tau_0 = hrp::Vector3::Zero();
       std::vector<hrp::Vector3> ee_pos;
       std::vector<hrp::Matrix33> ee_rot;
-      for (size_t i = 0; i < ee_vec.size(); i++) {
-          ee_trans& eet = ee_vec[i];
-          if (eet.ee_name.find("leg") == std::string::npos) continue;
-          hrp::Link* target = m_robot->link(eet.target_name);
-          ee_pos.push_back(target->p + target->R * eet.localCOPPos);
-          ee_rot.push_back(target->R * eet.localR);
+      for (size_t i = 0; i < stikp.size(); i++) {
+          STIKParam& ikp = stikp[i];
+          if (ikp.ee_name.find("leg") == std::string::npos) continue;
+          hrp::Link* target = m_robot->link(ikp.target_name);
+          ee_pos.push_back(target->p + target->R * ikp.localCOPPos);
+          ee_rot.push_back(target->R * ikp.localR);
       }
       double fz_alpha =  calcAlpha(hrp::Vector3(foot_origin_rot * ref_zmp + foot_origin_pos), ee_pos, ee_rot);
       double alpha = calcAlpha(new_refzmp, ee_pos, ee_rot);
@@ -732,15 +732,15 @@ void Stabilizer::getActualParameters ()
       double fz[2];
       // moment control
 #define deg2rad(x) ((x) * M_PI / 180.0)
-      for (size_t i = 0; i < ee_vec.size(); i++) {
-        ee_trans& eet = ee_vec[i];
-        if (eet.ee_name.find("leg") == std::string::npos) continue;
-        hrp::Sensor* sensor = m_robot->sensor<hrp::ForceSensor>(eet.sensor_name);
-        hrp::Link* target = m_robot->link(eet.target_name);
+      for (size_t i = 0; i < stikp.size(); i++) {
+        STIKParam& ikp = stikp[i];
+        if (ikp.ee_name.find("leg") == std::string::npos) continue;
+        hrp::Sensor* sensor = m_robot->sensor<hrp::ForceSensor>(ikp.sensor_name);
+        hrp::Link* target = m_robot->link(ikp.target_name);
         // Actual world frame =>
         hrp::Vector3 sensor_force = (sensor->link->R * sensor->localR) * hrp::Vector3(m_force[i].data[0], m_force[i].data[1], m_force[i].data[2]);
         hrp::Vector3 sensor_moment = (sensor->link->R * sensor->localR) * hrp::Vector3(m_force[i].data[3], m_force[i].data[4], m_force[i].data[5]);
-        hrp::Vector3 ee_moment = ((sensor->link->R * sensor->localPos + sensor->link->p) - (target->R * eet.localCOPPos + target->p)).cross(sensor_force) + sensor_moment;
+        hrp::Vector3 ee_moment = ((sensor->link->R * sensor->localPos + sensor->link->p) - (target->R * ikp.localCOPPos + target->p)).cross(sensor_force) + sensor_moment;
         // <= Actual world frame
         if ( i == 0 ) f_diff += -1*sensor_force;
         else f_diff += sensor_force;
@@ -751,7 +751,7 @@ void Stabilizer::getActualParameters ()
         d_foot_rpy[i](0) = vlimit(d_foot_rpy[i](0), deg2rad(-10.0), deg2rad(10.0));
         d_foot_rpy[i](1) = vlimit(d_foot_rpy[i](1), deg2rad(-10.0), deg2rad(10.0));
         // Actual ee frame =>
-        ee_d_foot_rpy[i] = (target->R * eet.localR).transpose() * d_foot_rpy[i];
+        ee_d_foot_rpy[i] = (target->R * ikp.localR).transpose() * d_foot_rpy[i];
       }
       // Convert actual world frame => actual foot_origin frame for debug data port
       ref_foot_moment[0] = foot_origin_rot.transpose() * ref_foot_moment[0];
@@ -909,10 +909,10 @@ void Stabilizer::getTargetParameters ()
     ref_zmp = tmp_ref_zmp;
   }
   ref_cog = m_robot->calcCM();
-  for (size_t i = 0; i < ee_vec.size(); i++) {
-    hrp::Link* target = m_robot->link(ee_vec[i].target_name);
-    target_ee_p[i] = target->p + target->R * ee_vec[i].localCOPPos;
-    target_ee_R[i] = target->R * ee_vec[i].localR;
+  for (size_t i = 0; i < stikp.size(); i++) {
+    hrp::Link* target = m_robot->link(stikp[i].target_name);
+    target_ee_p[i] = target->p + target->R * stikp[i].localCOPPos;
+    target_ee_R[i] = target->R * stikp[i].localR;
   }
   // <= Reference world frame
 
@@ -935,7 +935,7 @@ void Stabilizer::getTargetParameters ()
       ref_cogvel = (ref_cog - prev_ref_cog)/dt;
     }
     prev_ref_foot_origin_rot = foot_origin_rot;
-    for (size_t i = 0; i < ee_vec.size(); i++) {
+    for (size_t i = 0; i < stikp.size(); i++) {
       target_ee_diff_p[i] += foot_origin_rot.transpose() * (target_ee_p[i] - foot_origin_pos);
     }
     target_foot_origin_rot = foot_origin_rot;
@@ -951,9 +951,9 @@ bool Stabilizer::calcZMP(hrp::Vector3& ret_zmp, const double zmp_z)
   double tmpzmpx = 0;
   double tmpzmpy = 0;
   double tmpfz = 0, tmpfz2 = 0.0;
-  for (size_t i = 0; i < ee_vec.size(); i++) {
-    if (ee_vec[i].ee_name.find("leg") == std::string::npos) continue;
-    hrp::ForceSensor* sensor = m_robot->sensor<hrp::ForceSensor>(ee_vec[i].sensor_name);
+  for (size_t i = 0; i < stikp.size(); i++) {
+    if (stikp[i].ee_name.find("leg") == std::string::npos) continue;
+    hrp::ForceSensor* sensor = m_robot->sensor<hrp::ForceSensor>(stikp[i].sensor_name);
     hrp::Vector3 fsp = sensor->link->p + sensor->link->R * sensor->localPos;
     hrp::Matrix33 tmpR;
     rats::rotm3times(tmpR, sensor->link->R, sensor->localR);
@@ -1009,11 +1009,11 @@ void Stabilizer::calcTPCC() {
       }
 
       // target at ee => target at link-origin
-      hrp::Vector3 target_link_p[ee_vec.size()];
-      hrp::Matrix33 target_link_R[ee_vec.size()];
-      for (size_t i = 0; i < ee_vec.size(); i++) {
-        rats::rotm3times(target_link_R[i], target_ee_R[i], ee_vec[i].localR.transpose());
-        target_link_p[i] = target_ee_p[i] - target_ee_R[i] * ee_vec[i].localCOPPos;
+      hrp::Vector3 target_link_p[stikp.size()];
+      hrp::Matrix33 target_link_R[stikp.size()];
+      for (size_t i = 0; i < stikp.size(); i++) {
+        rats::rotm3times(target_link_R[i], target_ee_R[i], stikp[i].localR.transpose());
+        target_link_p[i] = target_ee_p[i] - target_ee_R[i] * stikp[i].localCOPPos;
       }
       // solveIK
       //   IK target is link origin pos and rot, not ee pos and rot.
@@ -1024,9 +1024,9 @@ void Stabilizer::calcTPCC() {
           m_robot->rootLink()->p(i) = m_robot->rootLink()->p(i) + 0.9 * (newcog(i) - tmpcm(i));
         }
         m_robot->calcForwardKinematics();
-        for (size_t i = 0; i < ee_vec.size(); i++) {
+        for (size_t i = 0; i < stikp.size(); i++) {
           if (is_ik_enable[i]) {
-              hrp::Link* target = m_robot->link(ee_vec[i].target_name);
+              hrp::Link* target = m_robot->link(stikp[i].target_name);
               hrp::Vector3 vel_p, vel_r;
               vel_p = target_link_p[i] - target->p;
               rats::difference_rotation(vel_r, target->R, target_link_R[i]);
@@ -1076,13 +1076,13 @@ void Stabilizer::calcEEForceMomentControl() {
       current_base_pos = m_robot->rootLink()->p;
 
       // Feet and hands modification
-      hrp::Vector3 target_link_p[ee_vec.size()];
-      hrp::Matrix33 target_link_R[ee_vec.size()];
+      hrp::Vector3 target_link_p[stikp.size()];
+      hrp::Matrix33 target_link_R[stikp.size()];
 #define deg2rad(x) ((x) * M_PI / 180.0)
-      for (size_t i = 0; i < ee_vec.size(); i++) {
+      for (size_t i = 0; i < stikp.size(); i++) {
           hrp::Vector3 tmpp; // modified ee Pos
           hrp::Matrix33 tmpR; // modified ee Rot
-          if ( ee_vec[i].ee_name.find("leg") != std::string::npos ) {
+          if ( stikp[i].ee_name.find("leg") != std::string::npos ) {
               // moment control
               rats::rotm3times(tmpR, target_ee_R[i], hrp::rotFromRpy(-ee_d_foot_rpy[i](0), -ee_d_foot_rpy[i](1), 0));
               // total_target_foot_p[i](0) = target_foot_p[i](0);
@@ -1099,15 +1099,15 @@ void Stabilizer::calcEEForceMomentControl() {
             tmpR = target_ee_R[i];
           }
           // target at ee => target at link-origin
-          rats::rotm3times(target_link_R[i], tmpR, ee_vec[i].localR.transpose());
-          target_link_p[i] = tmpp - target_link_R[i] * ee_vec[i].localCOPPos;
+          rats::rotm3times(target_link_R[i], tmpR, stikp[i].localR.transpose());
+          target_link_p[i] = tmpp - target_link_R[i] * stikp[i].localCOPPos;
       }
       // solveIK
       //   IK target is link origin pos and rot, not ee pos and rot.
       for (size_t jj = 0; jj < 3; jj++) {
-        for (size_t i = 0; i < ee_vec.size(); i++) {
+        for (size_t i = 0; i < stikp.size(); i++) {
           if (is_ik_enable[i]) {
-              hrp::Link* target = m_robot->link(ee_vec[i].target_name);
+              hrp::Link* target = m_robot->link(stikp[i].target_name);
               hrp::Vector3 vel_p, vel_r;
               vel_p = target_link_p[i] - target->p;
               rats::difference_rotation(vel_r, target->R, target_link_R[i]);
@@ -1172,7 +1172,7 @@ void Stabilizer::sync_2_st ()
   pos_ctrl = d_foot_pos[0] = d_foot_pos[1] = hrp::Vector3::Zero();
   d_foot_rpy[0] = d_foot_rpy[1] = hrp::Vector3::Zero();
   ee_d_foot_rpy[0] = ee_d_foot_rpy[1] = hrp::Vector3::Zero();
-  for (size_t i = 0; i < ee_vec.size(); i++) {
+  for (size_t i = 0; i < stikp.size(); i++) {
     target_ee_diff_p[i] = hrp::Vector3::Zero();
   }
   if (on_ground) {
@@ -1605,7 +1605,7 @@ void Stabilizer::calcTorque ()
   // }
   hrp::dmatrix contact_mat, contact_mat_inv;
   std::vector<hrp::Vector3> contact_p;
-  for (size_t j = 0; j < 2; j++) contact_p.push_back(m_robot->sensor<hrp::ForceSensor>(ee_vec[j].sensor_name)->link->p);
+  for (size_t j = 0; j < 2; j++) contact_p.push_back(m_robot->sensor<hrp::ForceSensor>(stikp[j].sensor_name)->link->p);
   calcContactMatrix(contact_mat, contact_p);
   hrp::calcSRInverse(contact_mat, contact_mat_inv, 0.0);
   hrp::dvector root_ft(6);
@@ -1620,7 +1620,7 @@ void Stabilizer::calcTorque ()
   //   // std::cerr << ":dv "; rats::print_vector(std::cerr, dv);
   // }
   for (size_t j = 0; j < 2; j++) {
-    hrp::JointPathEx jm = hrp::JointPathEx(m_robot, m_robot->rootLink(), m_robot->sensor<hrp::ForceSensor>(ee_vec[j].sensor_name)->link, dt);
+    hrp::JointPathEx jm = hrp::JointPathEx(m_robot, m_robot->rootLink(), m_robot->sensor<hrp::ForceSensor>(stikp[j].sensor_name)->link, dt);
     hrp::dmatrix JJ;
     jm.calcJacobian(JJ);
     hrp::dvector ft(6);

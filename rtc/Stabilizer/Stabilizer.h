@@ -235,10 +235,14 @@ class Stabilizer
     ST_LEFT = 0,
     ST_RIGHT = 1
   };
-  struct ee_trans {
-    std::string target_name, ee_name, sensor_name;
-    hrp::Vector3 localp, localCOPPos;
-    hrp::Matrix33 localR;
+  // Stabilizer Parameters
+  struct STIKParam {
+    std::string target_name; // Name of end link
+    std::string ee_name; // Name of ee (e.g., rleg, lleg, ...)
+    std::string sensor_name; // Name of force sensor in the limb
+    hrp::Vector3 localp; // Position of ee in end link frame (^{l}p_e = R_l^T (p_e - p_l))
+    hrp::Vector3 localCOPPos; // Position offset of reference COP in end link frame (^{l}p_{cop} = R_l^T (p_{cop} - p_l) - ^{l}p_e)
+    hrp::Matrix33 localR; // Rotation of ee in end link frame (^{l}R_e = R_l^T R_e)
   };
   enum cmode {MODE_IDLE, MODE_AIR, MODE_ST, MODE_SYNC_TO_IDLE, MODE_SYNC_TO_AIR} control_mode;
   // members
@@ -246,7 +250,7 @@ class Stabilizer
   hrp::BodyPtr m_robot;
   unsigned int m_debugLevel;
   hrp::dvector transition_joint_q, qorg, qrefv;
-  std::vector<ee_trans> ee_vec;
+  std::vector<STIKParam> stikp;
   std::map<std::string, size_t> contact_states_index_map;
   std::vector<bool> contact_states, prev_contact_states, is_ik_enable;
   double dt;
