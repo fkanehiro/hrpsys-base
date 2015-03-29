@@ -1,13 +1,12 @@
 #!/usr/bin/env python
 
 """
- this is example file for Sample6dofRobot robot
+ this is example file for SampleRobot robot
 
- $ roslaunch hrpsys sample6dofrobot.launch
- $ rosrun    hrpsys sample6dofrobot-kalman-filter.py
+ $ roslaunch hrpsys samplerobot.launch
+ $ rosrun    hrpsys samplerobot-kalman-filter.py
 
 """
-
 import imp, sys, os
 
 # set path to hrpsys to use HrpsysConfigurator
@@ -18,14 +17,20 @@ except: # rosbuild installed
     import roslib
     roslib.load_manifest('hrpsys')
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__))+'/../samples/Sample6dofRobot/') # set path to SampleRobot
+sys.path.append(os.path.dirname(os.path.abspath(__file__))+'/../samples/SampleRobot/') # set path to SampleRobot
 
-import sample6dofrobot_kalman_filter
+import samplerobot_kalman_filter
 
 if __name__ == '__main__':
-    sample6dofrobot_kalman_filter.demo()
+    samplerobot_kalman_filter.demo()
 
 ## IGNORE ME: this code used for rostest
 if [s for s in sys.argv if "--gtest_output=xml:" in s] :
     import unittest, rostest
-    rostest.run('hrpsys', 'sample6dofrobot_kalman_filter', unittest.TestCase, sys.argv)
+    rostest.run('hrpsys', 'samplerobot_kalman_filter', unittest.TestCase, sys.argv)
+
+
+
+
+
+

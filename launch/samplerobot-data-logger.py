@@ -17,7 +17,7 @@ except: # rosbuild installed
     import roslib
     roslib.load_manifest('hrpsys')
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__))+'/../share/hrpsys/samples/SampleRobot/') # set path to SampleRobot
+sys.path.append(os.path.dirname(os.path.abspath(__file__))+'/../samples/SampleRobot/') # set path to SampleRobot
 
 import samplerobot_data_logger
 
