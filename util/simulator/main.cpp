@@ -65,6 +65,7 @@ hrp::BodyPtr createBody(const std::string& name, const ModelItem& mitem,
                           << it2->second.collisionShape << std::endl;
             }
         }
+        glbodyrtc->setup();
         if (usebbox) convertToAABB(body);
         for (size_t i=0; i<mitem.inports.size(); i++){
             glbodyrtc->createInPort(mitem.inports[i]);
