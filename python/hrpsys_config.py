@@ -1278,10 +1278,10 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
         ret, tds = self.fk_svc.getCurrentPose(eename)
         if ret:
             posRef = numpy.array([tds.data[3], tds.data[7], tds.data[11]])
-            rpyRef = numpy.array(euler_from_matrix([tds.data[0:3],
-tds.data[4:7], tds.data[8:11]], 'sxyz'))
+            matRef = numpy.array([tds.data[0:3], tds.data[4:7], tds.data[8:11]])
             posRef += [dx, dy, dz]
-            rpyRef += [dr, dp, dw]
+            matRef = matRef.dot(numpy.array(euler_matrix(dr, dp, dw)[:3, :3])) 
+            rpyRef = euler_from_matrix(matRef)
             print posRef, rpyRef
             ret = self.setTargetPose(gname, list(posRef), list(rpyRef), tm)
             if ret and wait:
