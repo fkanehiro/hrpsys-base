@@ -402,7 +402,7 @@ RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
   for (size_t i = 0; i < m_limbCOPOffsetIn.size(); ++i) {
     if ( m_limbCOPOffsetIn[i]->isNew() ) {
       m_limbCOPOffsetIn[i]->read();
-      stikp[i].localCOPPos = stikp[i].localp + hrp::Vector3(m_limbCOPOffset[i].data.x, m_limbCOPOffset[i].data.y, m_limbCOPOffset[i].data.z);
+      stikp[i].localCOPPos = stikp[i].localp + stikp[i].localR * hrp::Vector3(m_limbCOPOffset[i].data.x, m_limbCOPOffset[i].data.y, m_limbCOPOffset[i].data.z);
     }
   }
 
@@ -630,13 +630,14 @@ void Stabilizer::getActualParameters ()
     // distribute new ZMP into foot force & moment
     {
       hrp::Vector3 tau_0 = hrp::Vector3::Zero();
-      std::vector<hrp::Vector3> ee_pos;
+      std::vector<hrp::Vector3> ee_pos, cop_pos;
       std::vector<hrp::Matrix33> ee_rot;
       for (size_t i = 0; i < stikp.size(); i++) {
           STIKParam& ikp = stikp[i];
           if (ikp.ee_name.find("leg") == std::string::npos) continue;
           hrp::Link* target = m_robot->link(ikp.target_name);
-          ee_pos.push_back(target->p + target->R * ikp.localCOPPos);
+          ee_pos.push_back(target->p + target->R * ikp.localp);
+          cop_pos.push_back(target->p + target->R * ikp.localCOPPos);
           ee_rot.push_back(target->R * ikp.localR);
       }
       double fz_alpha =  calcAlpha(hrp::Vector3(foot_origin_rot * ref_zmp + foot_origin_pos), ee_pos, ee_rot);
@@ -663,11 +664,11 @@ void Stabilizer::getActualParameters ()
 #endif
 
       for (size_t i = 0; i < 2; i++) {
-        tau_0 -= (ee_pos[i] - new_refzmp).cross(ref_foot_force[i]);
+        tau_0 -= (cop_pos[i] - new_refzmp).cross(ref_foot_force[i]);
       }
       {
         // Foot-distribution-coords frame =>
-        hrp::Vector3 foot_dist_coords_y = (ee_pos[1] - ee_pos[0]); // e_y'
+        hrp::Vector3 foot_dist_coords_y = (cop_pos[1] - cop_pos[0]); // e_y'
         foot_dist_coords_y(2) = 0.0;
         foot_dist_coords_y.normalize();
         hrp::Vector3 foot_dist_coords_x = hrp::Vector3(foot_dist_coords_y.cross(hrp::Vector3::UnitZ())); // e_x'
