@@ -172,6 +172,11 @@ class HrpsysConfigurator:
     sh_svc = None
     sh_version = None
 
+    # ServoController
+    sc= None
+    sc_svc = None
+    sc_version = None
+
     # ForwardKinematics
     fk = None
     fk_svc = None
@@ -322,13 +327,15 @@ class HrpsysConfigurator:
         connectPorts(self.seq.port("basePos"), self.sh.port("basePosIn"))
         connectPorts(self.seq.port("baseRpy"), self.sh.port("baseRpyIn"))
         connectPorts(self.seq.port("zmpRef"), self.sh.port("zmpIn"))
-        connectPorts(self.seq.port("optionalData"), self.sh.port("optionalDataIn"))
+        if self.seq_version >= '315.2.6':
+            connectPorts(self.seq.port("optionalData"), self.sh.port("optionalDataIn"))
         connectPorts(self.sh.port("basePosOut"), [self.seq.port("basePosInit"),
                                                   self.fk.port("basePosRef")])
         connectPorts(self.sh.port("baseRpyOut"), [self.seq.port("baseRpyInit"),
                                                   self.fk.port("baseRpyRef")])
         connectPorts(self.sh.port("qOut"), self.seq.port("qInit"))
-        connectPorts(self.sh.port("zmpOut"), self.seq.port("zmpRefInit"))
+        if self.seq_version >= '315.2.0':
+            connectPorts(self.sh.port("zmpOut"), self.seq.port("zmpRefInit"))
         for sen in self.getForceSensorNames():
             connectPorts(self.seq.port(sen + "Ref"),
                          self.sh.port(sen + "In"))
@@ -362,6 +369,9 @@ class HrpsysConfigurator:
             if self.abc:
                 connectPorts(self.sh.port(sen+"Out"),
                              self.abc.port("ref_" + sen))
+            if self.abc and self.st:
+                connectPorts(self.abc.port("limbCOPOffset_"+sen),
+                             self.st.port("limbCOPOffset_"+sen))
 
         #  actual force sensors
         if self.rmfo:
@@ -382,8 +392,9 @@ class HrpsysConfigurator:
         # connection for ic
         if self.ic:
             connectPorts(self.rh.port("q"), self.ic.port("qCurrent"))
-            connectPorts(self.sh.port("basePosOut"), self.ic.port("basePosIn"))
-            connectPorts(self.sh.port("baseRpyOut"), self.ic.port("baseRpyIn"))
+            if self.seq_version >= '315.3.0':
+                connectPorts(self.sh.port("basePosOut"), self.ic.port("basePosIn"))
+                connectPorts(self.sh.port("baseRpyOut"), self.ic.port("baseRpyIn"))
         # connection for tf
         if self.tf:
             # connection for actual torques
@@ -634,9 +645,13 @@ class HrpsysConfigurator:
         Get list of RTC Instance
         '''
         ret = [self.rh]
-        for r in map(lambda x: 'self.' + x[0], self.getRTCList()):
+        for rtc in self.getRTCList():
+            r = 'self.'+rtc[0]
             try:
-                ret.append(eval(r))
+                if eval(r): 
+                    ret.append(eval(r))
+                else:
+                    print self.configurator_name, '\033[31mFail to find instance ('+str(rtc)+') for getRTCInstanceList\033[0m'
             except Exception, e:
                 print self.configurator_name, '\033[31mFail to getRTCInstanceList',e,'\033[0m'
         return ret
