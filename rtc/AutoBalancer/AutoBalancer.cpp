@@ -53,6 +53,7 @@ AutoBalancer::AutoBalancer(RTC::Manager* manager)
       m_basePosOut("basePosOut", m_basePos),
       m_baseRpyOut("baseRpyOut", m_baseRpy),
       m_baseTformOut("baseTformOut", m_baseTform),
+      m_basePoseOut("basePoseOut", m_basePose),
       m_accRefOut("accRef", m_accRef),
       m_contactStatesOut("contactStates", m_contactStates),
       m_controlSwingSupportTimeOut("controlSwingSupportTime", m_controlSwingSupportTime),
@@ -91,6 +92,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     addOutPort("basePosOut", m_basePosOut);
     addOutPort("baseRpyOut", m_baseRpyOut);
     addOutPort("baseTformOut", m_baseTformOut);
+    addOutPort("basePoseOut", m_basePoseOut);
     addOutPort("accRef", m_accRefOut);
     addOutPort("contactStates", m_contactStatesOut);
     addOutPort("controlSwingSupportTime", m_controlSwingSupportTimeOut);
@@ -229,6 +231,8 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     int nforce  = npforce + nvforce;
     m_ref_force.resize(nforce);
     m_ref_forceIn.resize(nforce);
+    m_limbCOPOffset.resize(nforce);
+    m_limbCOPOffsetOut.resize(nforce);
     for (unsigned int i=0; i<npforce; i++){
         sensor_names.push_back(m_robot->sensor(hrp::Sensor::FORCE, i)->name);
     }
@@ -245,6 +249,15 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
         registerInPort(std::string("ref_"+sensor_names[i]).c_str(), *m_ref_forceIn[i]);
         std::cerr << "[" << m_profile.instance_name << "]   name = " << std::string("ref_"+sensor_names[i]) << std::endl;
         ref_forces.push_back(hrp::Vector3(0,0,0));
+    }
+    // set limb cop offset port
+    std::cerr << "[" << m_profile.instance_name << "] limbCOPOffset ports (" << nforce << ")" << std::endl;
+    for (unsigned int i=0; i<nforce; i++){
+        std::string nm("limbCOPOffset_"+sensor_names[i]);
+        m_limbCOPOffsetOut[i] = new OutPort<TimedPoint3D>(nm.c_str(), m_limbCOPOffset[i]);
+        registerOutPort(nm.c_str(), *m_limbCOPOffsetOut[i]);
+        m_limbCOPOffset[i].data.x = m_limbCOPOffset[i].data.y = m_limbCOPOffset[i].data.z = 0.0;
+        std::cerr << "[" << m_profile.instance_name << "]   name = " << nm << std::endl;
     }
     sbp_offset = hrp::Vector3(0,0,0);
     sbp_cog_offset = hrp::Vector3(0,0,0);
@@ -434,6 +447,14 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
       tform_arr[2] = m_basePos.data.z;
       hrp::setMatrix33ToRowMajorArray(ref_baseRot, tform_arr, 3);
       m_baseTform.tm = m_qRef.tm;
+      // basePose
+      m_basePose.data.position.x = m_basePos.data.x;
+      m_basePose.data.position.y = m_basePos.data.y;
+      m_basePose.data.position.z = m_basePos.data.z;
+      m_basePose.data.orientation.r = m_baseRpy.data.r;
+      m_basePose.data.orientation.p = m_baseRpy.data.p;
+      m_basePose.data.orientation.y = m_baseRpy.data.y;
+      m_basePose.tm = m_qRef.tm;
       // zmp
       m_zmp.data.x = rel_ref_zmp(0);
       m_zmp.data.y = rel_ref_zmp(1);
@@ -448,6 +469,7 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
     m_basePosOut.write();
     m_baseRpyOut.write();
     m_baseTformOut.write();
+    m_basePoseOut.write();
     m_zmpOut.write();
     m_cogOut.write();
 
@@ -469,6 +491,11 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
     m_contactStatesOut.write();
     m_controlSwingSupportTime.tm = m_qRef.tm;
     m_controlSwingSupportTimeOut.write();
+
+    for (unsigned int i=0; i<m_limbCOPOffsetOut.size(); i++){
+        m_limbCOPOffset[i].tm = m_qRef.tm;
+        m_limbCOPOffsetOut[i]->write();
+    }
 
     return RTC::RTC_OK;
 }
@@ -502,6 +529,12 @@ void AutoBalancer::getTargetParameters()
       for (size_t i = 0; i < 2; i++)
         for (size_t j = 0; j < 3; j++)
           default_zmp_offsets[i](j) = default_zmp_offsets_output[i*3+j];
+      m_limbCOPOffset[contact_states_index_map["rleg"]].data.x = default_zmp_offsets[0](0);
+      m_limbCOPOffset[contact_states_index_map["rleg"]].data.y = default_zmp_offsets[0](1);
+      m_limbCOPOffset[contact_states_index_map["rleg"]].data.z = default_zmp_offsets[0](2);
+      m_limbCOPOffset[contact_states_index_map["lleg"]].data.x = default_zmp_offsets[1](0);
+      m_limbCOPOffset[contact_states_index_map["lleg"]].data.y = default_zmp_offsets[1](1);
+      m_limbCOPOffset[contact_states_index_map["lleg"]].data.z = default_zmp_offsets[1](2);
       if (DEBUGP) {
         std::cerr << "[" << m_profile.instance_name << "] default_zmp_offsets (interpolated)" << std::endl;
         std::cerr << "[" << m_profile.instance_name << "]   rleg = " << default_zmp_offsets[0].format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[m]" << std::endl;
