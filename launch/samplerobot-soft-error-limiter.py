@@ -3,11 +3,10 @@
 """
  this is example file for SampleRobot robot
 
- $ roslaunch hrpsys samplerobot.launch CONTROLLER_PERIOD:=200
- $ rosrun    hrpsys samplerobot-stabilizer.py
+ $ roslaunch hrpsys samplerobot.launch CONF_FILE:=`rospack find hrpsys`/samples/SampleRobot/SampleRobot.500.el.conf
+ $ rosrun    hrpsys samplerobot-soft-error-limiter.py
 
 """
-
 import imp, sys, os
 
 # set path to hrpsys to use HrpsysConfigurator
@@ -20,18 +19,12 @@ except: # rosbuild installed
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__))+'/../samples/SampleRobot/') # set path to SampleRobot
 
-import samplerobot_stabilizer
+import samplerobot_soft_error_limiter
 
 if __name__ == '__main__':
-    samplerobot_stabilizer.demo()
+    samplerobot_soft_error_limiter.demo()
 
 ## IGNORE ME: this code used for rostest
 if [s for s in sys.argv if "--gtest_output=xml:" in s] :
     import unittest, rostest
-    rostest.run('hrpsys', 'samplerobot_stabilizer', unittest.TestCase, sys.argv)
-
-
-
-
-
-
+    rostest.run('hrpsys', 'samplerobot_soft_error_limiter', unittest.TestCase, sys.argv)

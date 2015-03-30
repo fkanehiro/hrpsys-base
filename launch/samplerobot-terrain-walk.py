@@ -4,15 +4,15 @@
  this is example file for SampleRobot robot terrain walking
 
  for SlopeUpDown
- $ roslaunch hrpsys samplerobot.launch CONTROLLER_PERIOD:=200 PROJECT_FILE:=`rospack find hrpsys`/share/hrpsys/samples/SampleRobot/SampleRobot.TerrainFloor.SlopeUpDown.xml
+ $ roslaunch hrpsys samplerobot.launch CONTROLLER_PERIOD:=200 PROJECT_FILE:=`rospack find hrpsys`/samples/SampleRobot/SampleRobot.TerrainFloor.SlopeUpDown.xml
  $ rosrun hrpsys samplerobot-terrain-walk.py --SlopeUpDown
 
  for StairUp
- $ roslaunch hrpsys samplerobot.launch CONTROLLER_PERIOD:=200 PROJECT_FILE:=`rospack find hrpsys`/share/hrpsys/samples/SampleRobot/SampleRobot.TerrainFloor.StairUp.xml
+ $ roslaunch hrpsys samplerobot.launch CONTROLLER_PERIOD:=200 PROJECT_FILE:=`rospack find hrpsys`/samples/SampleRobot/SampleRobot.TerrainFloor.StairUp.xml
  $ rosrun hrpsys samplerobot-terrain-walk.py --StairUp
 
  for StairDown
- $ roslaunch hrpsys samplerobot.launch CONTROLLER_PERIOD:=200 PROJECT_FILE:=`rospack find hrpsys`/share/hrpsys/samples/SampleRobot/SampleRobot.TerrainFloor.StairDown.xml
+ $ roslaunch hrpsys samplerobot.launch CONTROLLER_PERIOD:=200 PROJECT_FILE:=`rospack find hrpsys`/samples/SampleRobot/SampleRobot.TerrainFloor.StairDown.xml
  $ rosrun hrpsys samplerobot-terrain-walk.py --StairDown
 
 """
@@ -27,7 +27,7 @@ except: # rosbuild installed
     import roslib
     roslib.load_manifest('hrpsys')
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__))+'/../share/hrpsys/samples/SampleRobot/') # set path to SampleRobot
+sys.path.append(os.path.dirname(os.path.abspath(__file__))+'/../samples/SampleRobot/') # set path to SampleRobot
 
 import samplerobot_terrain_walk
 
