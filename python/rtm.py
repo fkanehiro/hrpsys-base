@@ -213,7 +213,8 @@ class RTCmanager:
     # \param self this object
     # \param name name of RT component instance
     def delete(self, name):
-        ref = self.ref.delete_component(name)
+        # ref = self.ref.delete_component(name)
+        ref = findRTC(name).ref.exit() # delte_component did not actually kill component, so use rtc.exit https://github.com/fkanehiro/hrpsys-base/pull/512#issuecomment-80430387
         if ref == RTC_OK:
             return True
         else:
@@ -432,15 +433,19 @@ def serializeComponents(rtcs, stopEC=True):
         return
     ec = rtcs[0].ec
     for rtc in rtcs[1:]:
-        if not ec._is_equivalent(rtc.ec):
-            if stopEC:
-                rtc.ec.stop()
-            if ec.add_component(rtc.ref) == RTC.RTC_OK:
-                rtc.ec = ec
+        try:
+            if not ec._is_equivalent(rtc.ec):
+                if stopEC:
+                    rtc.ec.stop()
+                if ec.add_component(rtc.ref) == RTC.RTC_OK:
+                    rtc.ec = ec
+                else:
+                    print 'error in add_component()'
             else:
-                print 'error in add_component()'
-        else:
-            print 'already serialized'
+                print rtc.name(), 'is already serialized'
+        except Exception, e:
+            print "error in serialize", rtc, "of", rtcs, e
+            raise e
 
 ##
 # \brief check two ports are connected or not
@@ -498,13 +503,13 @@ def connectPorts(outP, inPs, subscription="flush", dataflow="Push", bufferlength
     if not isinstance(inPs, list):
         inPs = [inPs]
     if not outP:
-        print '[rtm.py] \033[31m   Failed to connect %s to %s\033[0m' % \
-              (outP, [inP.get_port_profile().name if inP else inP for inP in inPs])
+        print '[rtm.py] \033[31m   Failed to connect %s to %s(%s)\033[0m' % \
+              (outP, [inP.get_port_profile().name if inP else inP for inP in inPs], inPs)
         return
     for inP in inPs:
         if not inP:
-            print '[rtm.py] \033[31m   Failed to connect %s to %s\033[0m' % \
-                  (outP.get_port_profile().name, inP)
+            print '[rtm.py] \033[31m   Failed to connect %s to %s(%s)\033[0m' % \
+                  (outP.get_port_profile().name, inP, inPs)
             continue
         if isConnected(outP, inP) == True:
             print outP.get_port_profile().name, 'and', inP.get_port_profile().name, \
