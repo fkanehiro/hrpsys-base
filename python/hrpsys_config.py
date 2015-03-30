@@ -773,6 +773,9 @@ class HrpsysConfigurator:
             for sen in filter(lambda x: x.type == "Force", self.sensors):
                 self.connectLoggerPort(self.rmfo, "off_"+sen.name)
         self.log_svc.clear()
+        ## parallel running log process (outside from rtcd) for saving logs by emergency signal
+        self.log.owned_ecs[0].start()
+        self.log.start(self.log.owned_ecs[0])
 
     def waitForRTCManager(self, managerhost=nshost):
         '''!@brief
