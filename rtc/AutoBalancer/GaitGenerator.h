@@ -132,7 +132,7 @@ namespace rats
       double total_time, time_offset, current_time, double_support_time_half; // [s]
       virtual hrp::Vector3 interpolate_antecedent_path (const hrp::Vector3& start, const hrp::Vector3& goal, const double height, const double tmp_ratio) = 0;
     public:
-      delay_hoffarbib_trajectory_generator () : total_time(0), time_offset(0.2), current_time(0) {};
+      delay_hoffarbib_trajectory_generator () : total_time(0), time_offset(0.35), current_time(0) {};
       ~delay_hoffarbib_trajectory_generator() { };
       void set_dt (const double __dt) { _dt = __dt; };
       void set_swing_trajectory_delay_time_offset (const double _time_offset) { time_offset = _time_offset; };

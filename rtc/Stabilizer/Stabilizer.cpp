@@ -87,7 +87,7 @@ Stabilizer::~Stabilizer()
 
 RTC::ReturnCode_t Stabilizer::onInitialize()
 {
-  std::cerr << m_profile.instance_name << ": onInitialize()" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "] onInitialize()" << std::endl;
   // <rtc-template block="bind_config">
   // Bind variables and configuration variable
   bindParameter("debugLevel", m_debugLevel, "0");
@@ -166,12 +166,12 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   m_wrenchesIn.resize(npforce);
   m_limbCOPOffset.resize(npforce);
   m_limbCOPOffsetIn.resize(npforce);
+  std::cerr << "[" << m_profile.instance_name << "] force sensor ports (" << npforce << ")" << std::endl;
   for (unsigned int i=0; i<npforce; ++i){
     hrp::Sensor *s = m_robot->sensor(hrp::Sensor::FORCE, i);
     m_wrenchesIn[i] = new RTC::InPort<RTC::TimedDoubleSeq>(std::string(s->name+"Ref").c_str(), m_wrenches[i]);
     m_wrenches[i].data.length(6);
     registerInPort(std::string(s->name+"Ref").c_str(), *m_wrenchesIn[i]);
-    std::cerr << "[" << m_profile.instance_name << "] force sensor" << std::endl;
     std::cerr << "[" << m_profile.instance_name << "]   name = " << s->name << std::endl;
   }
   std::cerr << "[" << m_profile.instance_name << "] limbCOPOffset ports (" << npforce << ")" << std::endl;
@@ -224,6 +224,9 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
       target_ee_R.push_back(hrp::Matrix33::Identity());
       contact_states_index_map.insert(std::pair<std::string, size_t>(ee_name, i));
       is_ik_enable.push_back( (ee_name.find("leg") != std::string::npos ? true : false) ); // Hands ik => disabled, feet ik => enabled, by default
+      std::cerr << "[" << m_profile.instance_name << "] End Effector [" << ee_name << "]" << std::endl;
+      std::cerr << "[" << m_profile.instance_name << "]   target = " << m_robot->link(ikp.target_name)->name << ", base = " << ee_base << std::endl;
+      std::cerr << "[" << m_profile.instance_name << "]   offset_pos = " << ikp.localp.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[m]" << std::endl;
     }
     m_contactStates.data.length(num);
   }
@@ -242,21 +245,21 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
     eefm_k1[i] = -1.41429*k_ratio;
     eefm_k2[i] = -0.404082*k_ratio;
     eefm_k3[i] = -0.18*k_ratio;
-    eefm_body_attitude_control_gain[i] = 1.0;
+    eefm_body_attitude_control_gain[i] = 0.5;
     eefm_body_attitude_control_time_const[i] = 1e5;
   }
   eefm_rot_damping_gain = 20*5;
-  eefm_rot_time_const = 1;
+  eefm_rot_time_const = 1.5;
   eefm_pos_damping_gain = hrp::Vector3(3500*10, 3500*10, 3500);
-  eefm_pos_time_const_support = 1;
-  eefm_pos_time_const_swing = 0.04;
-  eefm_pos_transition_time = 0.02;
+  eefm_pos_time_const_support = 1.5;
+  eefm_pos_time_const_swing = 0.08;
+  eefm_pos_transition_time = 0.01;
   eefm_pos_margin_time = 0.02;
-  eefm_zmp_delay_time_const[0] = eefm_zmp_delay_time_const[1] = 0.04;
+  eefm_zmp_delay_time_const[0] = eefm_zmp_delay_time_const[1] = 0.055;
   eefm_leg_inside_margin = 0.065; // [m]
   eefm_leg_front_margin = 0.05;
   eefm_leg_rear_margin = 0.05;
-  eefm_cogvel_cutoff_freq = 35.3678; //[Hz]
+  eefm_cogvel_cutoff_freq = 4.0; //[Hz]
   eefm_wrench_alpha_blending = 1.0; // fz_alpha
 
   // parameters for RUNST
@@ -339,13 +342,13 @@ RTC::ReturnCode_t Stabilizer::onShutdown(RTC::UniqueId ec_id)
 
 RTC::ReturnCode_t Stabilizer::onActivated(RTC::UniqueId ec_id)
 {
-  std::cout << m_profile.instance_name<< ": onActivated(" << ec_id << ")" << std::endl;
+  std::cerr << "[" << m_profile.instance_name<< "] onActivated(" << ec_id << ")" << std::endl;
   return RTC::RTC_OK;
 }
 
 RTC::ReturnCode_t Stabilizer::onDeactivated(RTC::UniqueId ec_id)
 {
-  std::cout << m_profile.instance_name<< ": onDeactivated(" << ec_id << ")" << std::endl;
+  std::cerr << "[" << m_profile.instance_name<< "] onDeactivated(" << ec_id << ")" << std::endl;
   if ( (control_mode == MODE_ST || control_mode == MODE_AIR) ) {
     sync_2_idle ();
     control_mode = MODE_IDLE;
