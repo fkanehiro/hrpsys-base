@@ -75,7 +75,7 @@ private:
 class RPYKalmanFilter {
 public:
     RPYKalmanFilter() : m_sensorR(hrp::Matrix33::Identity()) {};
-    void main_one (hrp::Vector3& rpy, hrp::Vector3& rpyRaw, hrp::Vector3& baseRpy, const hrp::Vector3& acc, const hrp::Vector3& gyro, const hrp::Matrix33& sensorLinkR)
+    void main_one (hrp::Vector3& rpy, hrp::Vector3& rpyRaw, hrp::Vector3& baseRpy, const hrp::Vector3& acc, const hrp::Vector3& gyro, const hrp::Matrix33& BtoS, const hrp::Matrix33& slR)
     {
       //
       // G = [ cosb, sinb sina, sinb cosa,
@@ -90,7 +90,7 @@ public:
       double a, b;
       b = atan2( - acc(0) / g, sqrt( acc(1)/g * acc(1)/g + acc(2)/g * acc(2)/g ) );
       a = atan2( ( acc(1)/g ), ( acc(2)/g ) );
-      rpyRaw = hrp::Vector3(a,b,0);
+      rpyRaw = hrp::Vector3(a,b,hrp::rpyFromRot(slR)[2]);
       // #if 0
       //       // complementary filter
       //       m_rpy.data.r = 0.98 *(m_rpy.data.r+m_rate.data.avx*m_dt) + 0.02*m_rpyRaw.data.r;
@@ -122,7 +122,7 @@ public:
       rpy(0) = euler(2);
       rpy(1) = euler(1);
       rpy(2) = euler(0);
-      hrp::Matrix33 realRotationMatrix2 = sensorLinkR.transpose() * imaginaryRotationMatrix;
+      hrp::Matrix33 realRotationMatrix2 = realRotationMatrix * BtoS.transpose();
       hrp::Vector3 euler2 = realRotationMatrix2.eulerAngles(2,1,0);
       baseRpy(0) = euler2(2);
       baseRpy(1) = euler2(1);

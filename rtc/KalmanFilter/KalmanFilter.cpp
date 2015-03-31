@@ -216,8 +216,24 @@ RTC::ReturnCode_t KalmanFilter::onExecute(RTC::UniqueId ec_id)
         ekf_filter.main_one(rpy, rpyRaw, acc, gyro);
     } else if (kf_algorithm == OpenHRP::KalmanFilterService::RPYKalmanFilter) {
         m_robot->calcForwardKinematics();
-        hrp::Matrix33 sensorLinkR = m_robot->sensor(hrp::Sensor::ACCELERATION, 0)->link->R;
-        rpy_kf.main_one(rpy, rpyRaw, baseRpy, acc, gyro, sensorLinkR);
+        hrp::Matrix33 BtoS, slR;
+        if (m_robot->numSensors(hrp::Sensor::ACCELERATION) > 0) {
+            hrp::Sensor* sensor = m_robot->sensor(hrp::Sensor::ACCELERATION, 0);
+            slR = sensor->link->R;
+            BtoS = (m_robot->rootLink()->R).transpose() * (slR * sensor->localR);
+            if (DEBUGP) {
+                std::cerr << "[sendor->link->R] : " << std::endl << sensor->link->R << std::endl;
+                std::cerr << "[sensor->localR] : " << std::endl << sensor->localR << std::endl;
+            }
+        } else {
+            BtoS = (m_robot->rootLink()->R).transpose();
+            slR = hrp::Matrix33::Identity();
+        }
+        if (DEBUGP) {
+            std::cerr << "[BtoS in rot] : " << std::endl << BtoS << std::endl;
+            std::cerr << "[BtoS in rpy] : " << std::endl << hrp::rpyFromRot(BtoS) << std::endl;
+        }
+        rpy_kf.main_one(rpy, rpyRaw, baseRpy, acc, gyro, BtoS, slR);
     }
     m_rpyRaw.data.r = rpyRaw(0);
     m_rpyRaw.data.p = rpyRaw(1);
