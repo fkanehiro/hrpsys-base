@@ -126,7 +126,7 @@ RTC::ReturnCode_t KalmanFilter::onInitialize()
   } else {
     m_sensorR = hrp::Matrix33::Identity();
   }
-  rpy_kf.setParam(m_dt, 0.001, 0.003, 0.03);
+  rpy_kf.setParam(m_dt, 0.001, 0.003, 1000);
   rpy_kf.setSensorR(m_sensorR);
   ekf_filter.setdt(m_dt);
   kf_algorithm = OpenHRP::KalmanFilterService::RPYKalmanFilter;

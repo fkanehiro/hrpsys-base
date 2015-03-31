@@ -242,21 +242,21 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
     eefm_k1[i] = -1.41429*k_ratio;
     eefm_k2[i] = -0.404082*k_ratio;
     eefm_k3[i] = -0.18*k_ratio;
-    eefm_body_attitude_control_gain[i] = 1.0;
+    eefm_body_attitude_control_gain[i] = 0.5;
     eefm_body_attitude_control_time_const[i] = 1e5;
   }
   eefm_rot_damping_gain = 20*5;
-  eefm_rot_time_const = 1;
+  eefm_rot_time_const = 1.5;
   eefm_pos_damping_gain = hrp::Vector3(3500*10, 3500*10, 3500);
-  eefm_pos_time_const_support = 1;
-  eefm_pos_time_const_swing = 0.04;
-  eefm_pos_transition_time = 0.02;
+  eefm_pos_time_const_support = 1.5;
+  eefm_pos_time_const_swing = 0.08;
+  eefm_pos_transition_time = 0.01;
   eefm_pos_margin_time = 0.02;
-  eefm_zmp_delay_time_const[0] = eefm_zmp_delay_time_const[1] = 0.04;
+  eefm_zmp_delay_time_const[0] = eefm_zmp_delay_time_const[1] = 0.055;
   eefm_leg_inside_margin = 0.065; // [m]
   eefm_leg_front_margin = 0.05;
   eefm_leg_rear_margin = 0.05;
-  eefm_cogvel_cutoff_freq = 35.3678; //[Hz]
+  eefm_cogvel_cutoff_freq = 4.0; //[Hz]
   eefm_wrench_alpha_blending = 1.0; // fz_alpha
 
   // parameters for RUNST
