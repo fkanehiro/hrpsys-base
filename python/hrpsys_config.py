@@ -546,6 +546,7 @@ class HrpsysConfigurator:
         '''
         timeout_count = 0
         comp = rtm.findRTC(instanceName)
+        version = None
         while comp == None and timeout_count < max_timeout_count:
             comp = rtm.findRTC(instanceName)
             if comp != None:
@@ -553,17 +554,19 @@ class HrpsysConfigurator:
             print self.configurator_name, " find Comp wait for", instanceName
             time.sleep(1)
             timeout_count += 1
-        print self.configurator_name, " find Comp    : ", instanceName, " = ", comp
+        if comp and comp.ref:
+            version = comp.ref.get_component_profile().version
+        print self.configurator_name, " find Comp    : ", instanceName, " = ", comp, " (", version, ")"
         if comp == None:
             print self.configurator_name, " Cannot find component: " + instanceName + " (" + compName + ")"
-            return [None, None]
+            return [None, None, None]
         comp_svc_port = comp.service("service0")
         if comp_svc_port:
             comp_svc = narrow(comp_svc_port, compName + "Service")
             print self.configurator_name, " find CompSvc : ", instanceName + "_svc = ", comp_svc
-            return [comp, comp_svc]
+            return [comp, comp_svc, version]
         else:
-            return [comp, None]
+            return [comp, None, version]
 
     def findComps(self):
         '''!@brief
@@ -573,7 +576,7 @@ class HrpsysConfigurator:
         for rn in self.getRTCList():
             rn2 = 'self.' + rn[0]
             if eval(rn2) == None:
-                create_str = "[self." + rn[0] + ", self." + rn[0] + "_svc] = self.findComp(\"" + rn[1] + "\",\"" + rn[0] + "\"," + str(max_timeout_count) + ")"
+                create_str = "[self." + rn[0] + ", self." + rn[0] + "_svc, self." + rn[0] + "_version] = self.findComp(\"" + rn[1] + "\",\"" + rn[0] + "\"," + str(max_timeout_count) + ")"
                 print self.configurator_name, create_str
                 exec(create_str)
                 if eval(rn2) == None:
