@@ -407,8 +407,7 @@ bool BodyRTC::names2ids(const std::vector<std::string> &i_names,
     return ret;
 }
 
-void BodyRTC::getStatus(OpenHRP::RobotHardwareService::RobotState_out rs) {
-    rs = new OpenHRP::RobotHardwareService::RobotState();
+void BodyRTC::getStatus(OpenHRP::RobotHardwareService::RobotState* rs) {
 
     rs->angle.length(numJoints());
     rs->command.length(numJoints());
@@ -594,6 +593,7 @@ RobotHardwareServicePort::~RobotHardwareServicePort() {
 }
 
 void RobotHardwareServicePort::getStatus(OpenHRP::RobotHardwareService::RobotState_out rs) {
+    rs = new OpenHRP::RobotHardwareService::RobotState();
     m_robot->getStatus(rs);
 }
 

@@ -603,11 +603,11 @@ ServoStatePortHandler::ServoStatePortHandler(
     OutPortHandler<OpenHRP::TimedLongSeqSeq>(i_rtc, i_portName),
     m_body(i_body)
 {
+    rs = new OpenHRP::RobotHardwareService::RobotState();
 }
 
 void ServoStatePortHandler::update(double time)
 {
-    OpenHRP::RobotHardwareService::RobotState* rs;
     m_body->getStatus(rs);
     m_data.data.length(rs->servoState.length());
     for (size_t i=0; i < rs->servoState.length(); i++) {

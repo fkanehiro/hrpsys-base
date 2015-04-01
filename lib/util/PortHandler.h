@@ -350,6 +350,7 @@ public:
     void update(double time);
 protected:
     BodyRTC *m_body;
+    OpenHRP::RobotHardwareService::RobotState* rs;
 };
 
 #endif

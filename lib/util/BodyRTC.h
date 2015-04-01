@@ -70,7 +70,7 @@ public:
     void readDataPorts();
     static void moduleInit(RTC::Manager*);
 
-    void getStatus(OpenHRP::RobotHardwareService::RobotState_out rs);
+    void getStatus(OpenHRP::RobotHardwareService::RobotState* rs);
 
 
     bool preOneStep();
