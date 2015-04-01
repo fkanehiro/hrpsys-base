@@ -1275,13 +1275,13 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
         # curPose = self.getCurrentPose(eename)
         posRef = None
         rpyRef = None
-        ret, tds = self.fk_svc.getCurrentPose(eename)
-        if ret:
-            posRef = numpy.array([tds.data[3], tds.data[7], tds.data[11]])
-            rpyRef = numpy.array(euler_from_matrix([tds.data[0:3],
-tds.data[4:7], tds.data[8:11]], 'sxyz'))
+        tds = self.getCurrentPose(eename)
+        if tds:
+            posRef = numpy.array([tds[3], tds[7], tds[11]])
+            matRef = numpy.array([tds[0:3], tds[4:7], tds[8:11]])
             posRef += [dx, dy, dz]
-            rpyRef += [dr, dp, dw]
+            matRef = matRef.dot(numpy.array(euler_matrix(dr, dp, dw)[:3, :3])) 
+            rpyRef = euler_from_matrix(matRef)
             print posRef, rpyRef
             ret = self.setTargetPose(gname, list(posRef), list(rpyRef), tm)
             if ret and wait:
