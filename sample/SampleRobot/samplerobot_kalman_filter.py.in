@@ -17,7 +17,7 @@ import math
 import matplotlib.pyplot as plt
 
 def init ():
-    global hcf, pitch_poses, roll_poses, roll_pitch_poses, initial_pose
+    global hcf, pitch_poses, roll_poses, yaw_poses, roll_pitch_poses, initial_pose
     hcf = HrpsysConfigurator()
     hcf.getRTCList = hcf.getRTCListUnstable
     hcf.init ("SampleRobot(Robot)0", "@OPENHRP_DIR@/share/OpenHRP-3.1/sample/model/sample1.wrl")
@@ -46,6 +46,11 @@ def init ():
     roll_pose2=[-0.475317,-0.568231,0.022036,1.1549,-0.595553,0.138268,0.31129,-0.159481,-0.115399,-0.636277,0.0,0.0,0.0,-0.447984,-0.378428,0.020283,0.753855,-0.383755,0.106576,0.31129,0.159481,0.115399,-0.636277,0.0,0.0,0.0,0.0,0.0,0.0]
     roll_pose3=[0.44835,-0.377793,-0.020814,0.752451,-0.38309,-0.106633,0.31129,-0.159481,-0.115399,-0.636277,0.0,0.0,0.0,0.475616,-0.567819,-0.022616,1.15389,-0.595074,-0.138377,0.31129,0.159481,0.115399,-0.636277,0.0,0.0,0.0,0.0,0.0,0.0]
     roll_poses = [roll_pose1, roll_pose2, roll_pose3]
+    # yaw
+    yaw_pose1=[-0.000113, -0.523213, -0.000225, 1.15585, -0.631772, 0.000245, 0.31129, -0.159481, -0.115399, -0.636277, 0.0, 0.0, 0.0, -0.000113, -0.523213, -0.000225, 1.15585, -0.631772, 0.000245, 0.31129, 0.159481, 0.115399, -0.636277, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    yaw_pose2=[-0.000113, -0.523213, -0.000225, 1.15585, -0.631772, 0.000245, 0.31129, -0.159481, -0.115399, -0.636277, 0.0, 0.0, 0.0, -0.000113, -0.523213, -0.000225, 1.15585, -0.631772, 0.000245, 0.31129, 0.159481, 0.115399, -0.636277, 0.0, 0.0, 0.0, 0.0, 0.0, 0.785398]
+    yaw_pose3=[-0.000113, -0.523213, -0.000225, 1.15585, -0.631772, 0.000245, 0.31129, -0.159481, -0.115399, -0.636277, 0.0, 0.0, 0.0, -0.000113, -0.523213, -0.000225, 1.15585, -0.631772, 0.000245, 0.31129, 0.159481, 0.115399, -0.636277, 0.0, 0.0, 0.0, 0.0, 0.0, 1.5708]
+    yaw_poses = [yaw_pose1, yaw_pose2, yaw_pose3]
     # roll + pitch
     roll_pitch_pose1=[0.000111,-0.681981,-0.000333,1.41142,-0.728577,-7.604916e-05,0.31129,-0.159481,-0.115399,-0.636277,0.0,0.0,0.0,0.000111,-0.682003,-0.000333,1.41142,-0.728553,-7.605437e-05,0.31129,0.159481,0.115399,-0.636277,0.0,0.0,0.0,0.0,0.0,0.0]
     roll_pitch_pose2=[-0.486326,-1.18821,-0.026531,0.908889,-0.267927,0.130916,0.31129,-0.159481,-0.115399,-0.636277,0.0,0.0,0.0,-0.430362,-0.964194,0.009303,0.590166,-0.173131,0.103544,0.31129,0.159481,0.115399,-0.636277,0.0,0.0,0.0,0.0,0.0,0.0]
@@ -102,6 +107,12 @@ def test_roll_bending_4s ():
 def test_roll_bending_2s ():
     test_bending_common(2.0, roll_poses)
 
+def test_yaw_bending_4s ():
+    test_bending_common(4.0, yaw_poses)
+
+def test_yaw_bending_2s ():
+    test_bending_common(2.0, yaw_poses)
+
 def test_roll_pitch_bending_4s ():
     test_bending_common(4.0, roll_pitch_poses)
 
@@ -140,6 +151,11 @@ def demo():
     hcf.seq_svc.setJointAngles(roll_poses[0], 1.0)
     hcf.seq_svc.waitInterpolation()
     test_kf_plot(test_roll_bending_2s, "roll-bending-2s")
+
+    #hcf.kf_svc.resetKalmanFilterState()
+    hcf.seq_svc.setJointAngles(yaw_poses[0], 1.0)
+    hcf.seq_svc.waitInterpolation()
+    test_kf_plot(test_yaw_bending_2s, "yaw-bending-4s")
 
     #hcf.kf_svc.resetKalmanFilterState()
     hcf.seq_svc.setJointAngles(roll_pitch_poses[0], 1.0)
