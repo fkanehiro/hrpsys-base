@@ -64,7 +64,7 @@ KalmanFilter::~KalmanFilter()
 #define DEBUGP ((m_debugLevel==1 && loop%200==0) || m_debugLevel > 1 )
 RTC::ReturnCode_t KalmanFilter::onInitialize()
 {
-  std::cerr << m_profile.instance_name << ": onInitialize()" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "] onInitialize()" << std::endl;
   // <rtc-template block="bind_config">
   // Bind variables and configuration variable
   bindParameter("debugLevel", m_debugLevel, "0");
@@ -126,7 +126,7 @@ RTC::ReturnCode_t KalmanFilter::onInitialize()
   } else {
     m_sensorR = hrp::Matrix33::Identity();
   }
-  rpy_kf.setParam(m_dt, 0.001, 0.003, 0.03);
+  rpy_kf.setParam(m_dt, 0.001, 0.003, 1000, std::string(m_profile.instance_name));
   rpy_kf.setSensorR(m_sensorR);
   ekf_filter.setdt(m_dt);
   kf_algorithm = OpenHRP::KalmanFilterService::RPYKalmanFilter;
@@ -159,13 +159,13 @@ RTC::ReturnCode_t KalmanFilter::onInitialize()
 
 RTC::ReturnCode_t KalmanFilter::onActivated(RTC::UniqueId ec_id)
 {
-  std::cerr << m_profile.instance_name<< ": onActivated(" << ec_id << ")" << std::endl;
+  std::cerr << "[" << m_profile.instance_name<< "] onActivated(" << ec_id << ")" << std::endl;
   return RTC::RTC_OK;
 }
 
 RTC::ReturnCode_t KalmanFilter::onDeactivated(RTC::UniqueId ec_id)
 {
-  std::cerr << m_profile.instance_name<< ": onDeactivated(" << ec_id << ")" << std::endl;
+  std::cerr << "[" << m_profile.instance_name<< "] onDeactivated(" << ec_id << ")" << std::endl;
   return RTC::RTC_OK;
 }
 

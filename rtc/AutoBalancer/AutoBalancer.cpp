@@ -74,7 +74,7 @@ AutoBalancer::~AutoBalancer()
 
 RTC::ReturnCode_t AutoBalancer::onInitialize()
 {
-    std::cout << "AutoBalancer::onInitialize()" << std::endl;
+    std::cerr << "[" << m_profile.instance_name << "] onInitialize()" << std::endl;
     bindParameter("debugLevel", m_debugLevel, "0");
 
     // Registration: InPort/OutPort/Service
@@ -153,7 +153,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     if (leg_offset_str.size() > 0) {
       hrp::Vector3 leg_offset;
       for (size_t i = 0; i < 3; i++) coil::stringTo(leg_offset(i), leg_offset_str[i].c_str());
-      std::cerr << m_profile.instance_name << " abc_leg_offset = " << leg_offset.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[m]" << std::endl;
+      std::cerr << "[" << m_profile.instance_name << "] abc_leg_offset = " << leg_offset.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[m]" << std::endl;
       leg_pos.push_back(hrp::Vector3(-1*leg_offset));
       leg_pos.push_back(hrp::Vector3(leg_offset));
     }
@@ -308,14 +308,14 @@ RTC::ReturnCode_t AutoBalancer::onFinalize()
 
 RTC::ReturnCode_t AutoBalancer::onActivated(RTC::UniqueId ec_id)
 {
-    std::cout << "AutoBalancer::onActivated(" << ec_id << ")" << std::endl;
+    std::cerr << "[" << m_profile.instance_name<< "] onActivated(" << ec_id << ")" << std::endl;
     
     return RTC::RTC_OK;
 }
 
 RTC::ReturnCode_t AutoBalancer::onDeactivated(RTC::UniqueId ec_id)
 {
-  std::cout << "AutoBalancer::onDeactivated(" << ec_id << ")" << std::endl;
+  std::cerr << "[" << m_profile.instance_name<< "] onDeactivated(" << ec_id << ")" << std::endl;
   Guard guard(m_mutex);
   if (control_mode == MODE_ABC) {
     control_mode = MODE_SYNC_TO_IDLE;
@@ -742,6 +742,13 @@ void AutoBalancer::solveLimbIK ()
   dif_cog(2) = m_robot->rootLink()->p(2) - target_root_p(2);
   m_robot->rootLink()->p = m_robot->rootLink()->p + -1 * move_base_gain * dif_cog;
   m_robot->rootLink()->R = target_root_R;
+  // Fix for toe joint
+  for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
+      if (it->second.is_active && (it->first.find("leg") != std::string::npos) && it->second.manip->numJoints() == 7) {
+          int i = it->second.target_link->jointId;
+          m_robot->joint(i)->q = qrefv[i];
+      }
+  }
   m_robot->calcForwardKinematics();
 
   for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
