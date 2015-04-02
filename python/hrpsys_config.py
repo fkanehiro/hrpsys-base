@@ -543,6 +543,7 @@ class HrpsysConfigurator:
         '''
         timeout_count = 0
         comp = rtm.findRTC(instanceName)
+        version = None
         while comp == None and timeout_count < max_timeout_count:
             comp = rtm.findRTC(instanceName)
             if comp != None:
@@ -550,17 +551,19 @@ class HrpsysConfigurator:
             print self.configurator_name, " find Comp wait for", instanceName
             time.sleep(1)
             timeout_count += 1
-        print self.configurator_name, " find Comp    : ", instanceName, " = ", comp
+        if comp and comp.ref:
+            version = comp.ref.get_component_profile().version
+        print self.configurator_name, " find Comp    : ", instanceName, " = ", comp, " (", version, ")"
         if comp == None:
             print self.configurator_name, " Cannot find component: " + instanceName + " (" + compName + ")"
-            return [None, None]
+            return [None, None, None]
         comp_svc_port = comp.service("service0")
         if comp_svc_port:
             comp_svc = narrow(comp_svc_port, compName + "Service")
             print self.configurator_name, " find CompSvc : ", instanceName + "_svc = ", comp_svc
-            return [comp, comp_svc]
+            return [comp, comp_svc, version]
         else:
-            return [comp, None]
+            return [comp, None, version]
 
     def findComps(self):
         '''!@brief
@@ -570,7 +573,7 @@ class HrpsysConfigurator:
         for rn in self.getRTCList():
             rn2 = 'self.' + rn[0]
             if eval(rn2) == None:
-                create_str = "[self." + rn[0] + ", self." + rn[0] + "_svc] = self.findComp(\"" + rn[1] + "\",\"" + rn[0] + "\"," + str(max_timeout_count) + ")"
+                create_str = "[self." + rn[0] + ", self." + rn[0] + "_svc, self." + rn[0] + "_version] = self.findComp(\"" + rn[1] + "\",\"" + rn[0] + "\"," + str(max_timeout_count) + ")"
                 print self.configurator_name, create_str
                 exec(create_str)
                 if eval(rn2) == None:
@@ -1269,13 +1272,13 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
         # curPose = self.getCurrentPose(eename)
         posRef = None
         rpyRef = None
-        ret, tds = self.fk_svc.getCurrentPose(eename)
-        if ret:
-            posRef = numpy.array([tds.data[3], tds.data[7], tds.data[11]])
-            rpyRef = numpy.array(euler_from_matrix([tds.data[0:3],
-tds.data[4:7], tds.data[8:11]], 'sxyz'))
+        tds = self.getCurrentPose(eename)
+        if tds:
+            posRef = numpy.array([tds[3], tds[7], tds[11]])
+            matRef = numpy.array([tds[0:3], tds[4:7], tds[8:11]])
             posRef += [dx, dy, dz]
-            rpyRef += [dr, dp, dw]
+            matRef = matRef.dot(numpy.array(euler_matrix(dr, dp, dw)[:3, :3])) 
+            rpyRef = euler_from_matrix(matRef)
             print posRef, rpyRef
             ret = self.setTargetPose(gname, list(posRef), list(rpyRef), tm)
             if ret and wait:

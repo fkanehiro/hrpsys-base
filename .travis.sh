@@ -206,6 +206,7 @@ case $TEST_PACKAGE in
             wstool set rtmros_nextage http://github.com/tork-a/rtmros_nextage --git -y
             wstool update
             sudo apt-get install -qq -y ros-hydro-urdf
+            export ROS_LANG_DISABLE=genlisp
 
             cd ..
             # do not compile unstable rtc
@@ -218,7 +219,7 @@ case $TEST_PACKAGE in
             travis_time_end
             travis_time_start  compile_new_version
 
-            catkin_make_isolated -j1 -l1 --install --only-pkg-with-deps `echo $pkg | sed s/-/_/g`
+            catkin_make_isolated -j1 -l1 --install --only-pkg-with-deps `echo $pkg | sed s/-/_/g` | grep -v '^-- \(Up-to-date\|Installing\):' | grep -v 'Generating \(Python\|C++\) code from' | grep -v '^Compiling .*.py ...$' | uniq
             rm -fr ./install_isolated/hrpsys/share/hrpsys ./install_isolated/hrpsys/lib/pkgconfig/hrpsys.pc
             source install_isolated/setup.bash
 
@@ -234,11 +235,24 @@ case $TEST_PACKAGE in
             #
             sed -i "s@find_package(catkin REQUIRED COMPONENTS rostest mk openrtm_aist openhrp3)@find_package(catkin REQUIRED COMPONENTS rostest mk)\nset(openrtm_aist_PREFIX /opt/ros/hydro/)\nset(openhrp3_PREFIX /opt/ros/hydro/)@"  hrpsys/catkin.cmake
             sed -i "s@NUM_OF_CPUS = \$(shell grep -c '^processor' /proc/cpuinfo)@NUM_OF_CPUS = 2@" hrpsys/Makefile.hrpsys-base
+            sed -i "s@touch installed@@" hrpsys/Makefile.hrpsys-base
             cat hrpsys/Makefile.hrpsys-base
             # use git repository, instead of svn due to googlecode shoutdown
             git clone http://github.com/fkanehiro/hrpsys-base --depth 1 -b 315.1.9 ../build_isolated/hrpsys/build/hrpsys-base-source
             # we use latest hrpsys_ocnfig.py for this case, so do not install them
             sed -i -e 's/\(add_subdirectory(python)\)/#\1/' ../build_isolated/hrpsys/build/hrpsys-base-source/CMakeLists.txt
+            find ../build_isolated/hrpsys/build/hrpsys-base-source -name CMakeLists.txt -exec sed -i "s@PCL_FOUND@0@" {} \; # disable PCL
+            find ../build_isolated/hrpsys/build/hrpsys-base-source -name CMakeLists.txt -exec sed -i "s@OCTOMAP_FOUND@0@" {} \; # disable OCTOMAP
+            find ../build_isolated/hrpsys/build/hrpsys-base-source -name CMakeLists.txt -exec sed -i "s@IRRLIGHT_FOUND@0@" {} \; # disable IRRLIGHT
+            sed -i "s@USE_HRPSYSUTIL@0@" ../build_isolated/hrpsys/build/hrpsys-base-source/rtc/CMakeLists.txt # disable HRPSYSUTIL APPs # this disables CollisionDetector
+            sed -i "\$aadd_subdirectory(CollisionDetector)" ../build_isolated/hrpsys/build/hrpsys-base-source/rtc/CMakeLists.txt
+
+            sed -i "s@NOT QNXNTO@1@" ../build_isolated/hrpsys/build/hrpsys-base-source/rtc/CMakeLists.txt # disable Joystick
+
+            sed -i "1imacro(dummy_macro)\nmessage(\"dummy(\${ARGN})\")\nendmacro()" ../build_isolated/hrpsys/build/hrpsys-base-source/util/simulator/CMakeLists.txt
+            sed -i "s@\(.*\)(hrpsysext@dummy_macro(hrpsysext@g" ../build_isolated/hrpsys/build/hrpsys-base-source/util/simulator/CMakeLists.txt
+            sed -i "s@install(TARGETS hrpsysext@dummy_macro(TARGETS hrpsysext@g" ../build_isolated/hrpsys/build/hrpsys-base-source/util/simulator/CMakeLists.txt
+
             cat ../build_isolated/hrpsys/build/hrpsys-base-source/CMakeLists.txt
             cat ../build_isolated/hrpsys/build/hrpsys-base-source/rtc/CMakeLists.txt
 
@@ -249,12 +263,24 @@ case $TEST_PACKAGE in
             travis_time_end
             travis_time_start  compile_old_hrpsys
 
-            catkin_make_isolated -j1 -l1 --merge
+            trap 0 ERR
+            need_compile=1
+            while [ $need_compile != 0 ]; do
+                catkin_make_isolated -j1 -l1 --merge
+                need_compile=$?
+            done
+            trap error ERR
 
             travis_time_end
             travis_time_start  install_old_hrpsys
 
-            catkin_make_isolated -j1 -l1 --install
+            trap 0 ERR
+            need_compile=1
+            while [ $need_compile != 0 ]; do
+                catkin_make_isolated -j1 -l1 --install | grep -v '^-- \(Up-to-date\|Installing\):'
+                need_compile=${PIPESTATUS[0]}
+            done
+            trap error ERR
 
             #cp ~/catkin_ws/src/hrpsys/package.xml install_isolated/share/hrpsys/ # old hrpsys did not do this
             source install_isolated/setup.bash
@@ -292,7 +318,6 @@ case $TEST_PACKAGE in
         fi
 
         travis_time_end
-        travis_time_start  run_tests
 
         sudo /etc/init.d/omniorb4-nameserver stop || echo "stop omniserver just in case..."
         export EXIT_STATUS=0;
@@ -300,8 +325,13 @@ case $TEST_PACKAGE in
         if [ "`find $pkg_path/test -iname '*.test'`" == "" ]; then
             echo "[$pkg] No tests ware found!!!"
         else
-            find $pkg_path/test -iname "*.test" -print0 | xargs -0 -n1 rostest || export EXIT_STATUS=$?;
+            for test_file in `find $pkg_path/test -iname "*.test" -print`; do
+                travis_time_start $(echo $test_file | sed 's@.*/\([a-zA-Z0-9-]*\).test$@\1@' | sed 's@-@_@g')
+                rostest $test_file && travis_time_end || (travis_time_end 31; export EXIT_STATUS=$?)
+            done
         fi
+
+        travis_time_start  end_tests
 
         # for debugging
         [ $TEST_PACKAGE == "hrpsys-ros-bridge" ] && rostest -t hrpsys_ros_bridge test-samplerobot.test
