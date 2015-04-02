@@ -263,12 +263,24 @@ case $TEST_PACKAGE in
             travis_time_end
             travis_time_start  compile_old_hrpsys
 
-            (catkin_make_isolated -j1 -l1 --merge || catkin_make_isolated -j1 -l1 --merge)
+            trap 0 ERR
+            need_compile=1
+            while [ $need_compile != 0 ]; do
+                catkin_make_isolated -j1 -l1 --merge
+                need_compile=$?
+            done
+            trap error ERR
 
             travis_time_end
             travis_time_start  install_old_hrpsys
 
-            (catkin_make_isolated -j1 -l1 --install || catkin_make_isolated -j1 -l1 --install ) | grep -v '^-- \(Up-to-date\|Installing\):'
+            trap 0 ERR
+            need_compile=1
+            while [ $need_compile != 0 ]; do
+                catkin_make_isolated -j1 -l1 --install | grep -v '^-- \(Up-to-date\|Installing\):'
+                need_compile=${PIPESTATUS[0]}
+            done
+            trap error ERR
 
             #cp ~/catkin_ws/src/hrpsys/package.xml install_isolated/share/hrpsys/ # old hrpsys did not do this
             source install_isolated/setup.bash
