@@ -283,7 +283,7 @@ namespace rats
       double toe_pos_offset_x, heel_pos_offset_x, toe_angle, heel_angle;
       void calc_current_swing_leg_coords (coordinates& ret,
                                           const double ratio, const double step_height);
-      double calc_current_toe_heel_ratio (const toe_heel_phase phase);
+      double calc_interpolated_toe_heel_angle (const toe_heel_phase start_phase, const toe_heel_phase goal_phase, const double start, const double goal);
       void modif_foot_coords_for_toe_heel_phase (coordinates& org_coords);
       void cycloid_midcoords (coordinates& ret,
                               const double ratio, const coordinates& start,
