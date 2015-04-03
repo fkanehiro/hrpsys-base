@@ -123,6 +123,8 @@ module OpenHRP
       double toe_angle;
       /// Maximum heel angle [deg] for heel-contact motion
       double heel_angle;
+      /// Sequence of phase ratio of toe-off and heel-contact. Sum of toe_heel_phase_ratio should be 1.0.
+      sequence<double> toe_heel_phase_ratio;
     };
 
     /**
