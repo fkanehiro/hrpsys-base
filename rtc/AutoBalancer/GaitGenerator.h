@@ -268,16 +268,23 @@ namespace rats
 #ifdef HAVE_MAIN
     public:
 #endif
+      enum toe_heel_phase {SOLE0, SOLE2TOE, TOE2SOLE, SOLE1, SOLE2HEEL, HEEL2SOLE, SOLE2, NUM_TH_PHASES};
       coordinates swing_leg_dst_coords, support_leg_coords, swing_leg_coords, swing_leg_src_coords;
       double default_step_height, default_top_ratio, current_step_height, swing_ratio, rot_ratio, _dt, current_swing_time[2];
-      size_t gp_index, gp_count;
+      size_t gp_index, gp_count, total_count;
+      size_t toe_heel_phase_count[NUM_TH_PHASES];
       leg_type support_leg;
       orbit_type default_orbit_type;
       rectangle_delay_hoffarbib_trajectory_generator rdtg;
       stair_delay_hoffarbib_trajectory_generator sdtg;
-      interpolator *foot_ratio_interpolator;
+      interpolator* foot_ratio_interpolator;
+      // Parameters for toe-heel contact
+      interpolator* toe_heel_interpolator;
+      double toe_pos_offset_x, heel_pos_offset_x, toe_angle, heel_angle;
       void calc_current_swing_leg_coords (coordinates& ret,
                                           const double ratio, const double step_height);
+      double calc_current_toe_heel_ratio (const toe_heel_phase phase);
+      void modif_foot_coords_for_toe_heel_phase (coordinates& org_coords);
       void cycloid_midcoords (coordinates& ret,
                               const double ratio, const coordinates& start,
                               const coordinates& goal, const double height) const;
@@ -297,15 +304,25 @@ namespace rats
       leg_coords_generator(const double __dt)
         : swing_leg_dst_coords(), support_leg_coords(), swing_leg_coords(), swing_leg_src_coords(),
           default_step_height(0.05), default_top_ratio(0.5), current_step_height(0.0), swing_ratio(0), rot_ratio(0), _dt(__dt), gp_index(0), gp_count(0), support_leg(WC_RLEG), default_orbit_type(CYCLOID),
-          //foot_ratio_interpolator(new interpolator(1, __dt, interpolator::LINEAR))
-          foot_ratio_interpolator(new interpolator(1, __dt))
+          foot_ratio_interpolator(NULL), toe_heel_interpolator(NULL),
+          toe_pos_offset_x(0.0), heel_pos_offset_x(0.0), toe_angle(0.0), heel_angle(0.0)
       {
         rdtg.set_dt(_dt);
         sdtg.set_dt(_dt);
+        if (foot_ratio_interpolator == NULL) foot_ratio_interpolator = new interpolator(1, __dt);
+        //if (foot_ratio_interpolator == NULL) foot_ratio_interpolator = new interpolator(1, __dt, interpolator::LINEAR);
+        if (toe_heel_interpolator == NULL) toe_heel_interpolator = new interpolator(1, __dt);
       };
       ~leg_coords_generator()
       {
-        delete foot_ratio_interpolator;
+        if (foot_ratio_interpolator != NULL) {
+            delete foot_ratio_interpolator;
+            foot_ratio_interpolator = NULL;
+        }
+        if (toe_heel_interpolator != NULL) {
+            delete toe_heel_interpolator;
+            toe_heel_interpolator = NULL;
+        }
       };
       void set_default_step_height (const double _tmp) { default_step_height = _tmp; };
       void set_default_top_ratio (const double _tmp) { default_top_ratio = _tmp; };
@@ -316,6 +333,10 @@ namespace rats
         sdtg.set_swing_trajectory_delay_time_offset(_time_offset);
       };
       void set_stair_trajectory_way_point_offset (const hrp::Vector3 _offset) { sdtg.set_stair_trajectory_way_point_offset(_offset); };
+      void set_toe_pos_offset_x (const double _offx) { toe_pos_offset_x = _offx; };
+      void set_heel_pos_offset_x (const double _offx) { heel_pos_offset_x = _offx; };
+      void set_toe_angle (const double _angle) { toe_angle = _angle; };
+      void set_heel_angle (const double _angle) { heel_angle = _angle; };
       void reset(const size_t one_step_len,
                  const coordinates& _swing_leg_dst_coords,
                  const coordinates& _swing_leg_src_coords,
@@ -325,11 +346,16 @@ namespace rats
         swing_leg_dst_coords = _swing_leg_dst_coords;
         swing_leg_src_coords = _swing_leg_src_coords;
         support_leg_coords = _support_leg_coords;
-        gp_count = one_step_len;
+        total_count = gp_count = one_step_len;
         gp_index = 0;
         current_step_height = 0.0;
         rdtg.reset(one_step_len, default_double_support_ratio);
         sdtg.reset(one_step_len, default_double_support_ratio);
+        double ratio[NUM_TH_PHASES] = {0.05,0.25,0.2,0.0,0.2,0.25,0.05}, ratio_sum = 0.0;
+        for (size_t i = 0; i < NUM_TH_PHASES; i++) {
+            ratio_sum += ratio[i];
+            toe_heel_phase_count[i] = static_cast<size_t>(one_step_len * ratio_sum);
+        }
       };
       void update_leg_coords (const std::vector<step_node>& fnl, const double default_double_support_ratio, const size_t one_step_len, const bool force_height_zero);
       size_t get_gp_index() const { return gp_index; };
@@ -363,6 +389,10 @@ namespace rats
       orbit_type get_default_orbit_type () const { return default_orbit_type; };
       double get_swing_trajectory_delay_time_offset () { return rdtg.get_swing_trajectory_delay_time_offset(); };
       hrp::Vector3 get_stair_trajectory_way_point_offset () { return sdtg.get_stair_trajectory_way_point_offset(); };
+      double get_toe_pos_offset_x () { return toe_pos_offset_x; };
+      double get_heel_pos_offset_x () { return heel_pos_offset_x; };
+      double get_toe_angle () { return toe_angle; };
+      double get_heel_angle () { return heel_angle; };
     };
 
     enum velocity_mode_flag { VEL_IDLING, VEL_DOING, VEL_ENDING };
@@ -486,6 +516,10 @@ namespace rats
     void set_swing_trajectory_delay_time_offset (const double _time_offset) { lcg.set_swing_trajectory_delay_time_offset(_time_offset); };
     void set_stair_trajectory_way_point_offset (const hrp::Vector3 _offset) { lcg.set_stair_trajectory_way_point_offset(_offset); };
     void set_gravitational_acceleration (const double ga) { gravitational_acceleration = ga; };
+    void set_toe_pos_offset_x (const double _offx) { lcg.set_toe_pos_offset_x(_offx); };
+    void set_heel_pos_offset_x (const double _offx) { lcg.set_heel_pos_offset_x(_offx); };
+    void set_toe_angle (const double _angle) { lcg.set_toe_angle(_angle); };
+    void set_heel_angle (const double _angle) { lcg.set_heel_angle(_angle); };
     void print_footstep_list () const
     {
       for (size_t i = 0; i < footstep_node_list.size(); i++)
@@ -539,6 +573,10 @@ namespace rats
     double get_swing_trajectory_delay_time_offset () { return lcg.get_swing_trajectory_delay_time_offset(); };
     hrp::Vector3 get_stair_trajectory_way_point_offset () { return lcg.get_stair_trajectory_way_point_offset(); };
     double get_gravitational_acceleration () { return gravitational_acceleration; } ;
+    double get_toe_pos_offset_x () { return lcg.get_toe_pos_offset_x(); };
+    double get_heel_pos_offset_x () { return lcg.get_heel_pos_offset_x(); };
+    double get_toe_angle () { return lcg.get_toe_angle(); };
+    double get_heel_angle () { return lcg.get_heel_angle(); };
   };
 }
 #endif /* GAITGENERATOR_H */

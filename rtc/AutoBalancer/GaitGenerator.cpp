@@ -85,6 +85,9 @@ namespace rats
       break;
     default: break;
     }
+    if (std::fabs(step_height) > 1e-3*10) {
+        modif_foot_coords_for_toe_heel_phase(ret);
+    }
   };
 
   double gait_generator::leg_coords_generator::calc_ratio_from_double_support_ratio (const double default_double_support_ratio, const size_t one_step_len)
@@ -131,6 +134,48 @@ namespace rats
       u(1), v(1), 0,
       u(2), v(2), 1;
     ret = dvm * cycloid_point + start + uz;
+  };
+
+  double gait_generator::leg_coords_generator::calc_current_toe_heel_ratio (const toe_heel_phase phase)
+  {
+      double tmp_ip_ratio;
+      size_t current_count = total_count - gp_count;
+      if (current_count == toe_heel_phase_count[phase-1]) {
+          tmp_ip_ratio = 0.0;
+          toe_heel_interpolator->set(&tmp_ip_ratio);
+          tmp_ip_ratio = 1.0;
+          toe_heel_interpolator->go(&tmp_ip_ratio, _dt * (toe_heel_phase_count[phase]-toe_heel_phase_count[phase-1]));
+      }
+      toe_heel_interpolator->get(&tmp_ip_ratio, true);
+      return tmp_ip_ratio;
+  };
+
+  void gait_generator::leg_coords_generator::modif_foot_coords_for_toe_heel_phase (coordinates& org_coords)
+  {
+      double dif_angle = 0.0;
+      coordinates new_coords;
+      size_t current_count = total_count - gp_count;
+      hrp::Vector3 ee_local_pivot_pos(hrp::Vector3(0,0,0));
+      if (current_count < toe_heel_phase_count[SOLE0]) {
+      } else if (current_count < toe_heel_phase_count[SOLE2TOE]) {
+          dif_angle = toe_angle * calc_current_toe_heel_ratio(SOLE2TOE);
+          ee_local_pivot_pos(0) = toe_pos_offset_x;
+      } else if (current_count < toe_heel_phase_count[TOE2SOLE]) {
+          dif_angle = toe_angle * (1-calc_current_toe_heel_ratio(TOE2SOLE));
+          ee_local_pivot_pos(0) = toe_pos_offset_x;
+      } else if (current_count < toe_heel_phase_count[SOLE1]) {
+      } else if (current_count < toe_heel_phase_count[SOLE2HEEL]) {
+          dif_angle = heel_angle * calc_current_toe_heel_ratio(SOLE2HEEL);
+          ee_local_pivot_pos(0) = heel_pos_offset_x;
+      } else if (current_count < toe_heel_phase_count[HEEL2SOLE]) {
+          dif_angle = heel_angle * (1-calc_current_toe_heel_ratio(HEEL2SOLE));
+          ee_local_pivot_pos(0) = heel_pos_offset_x;
+      } else { //  if (current_count < toe_heel_phase_count[SOLE2])
+      }
+      Eigen::AngleAxis<double> tmpr(deg2rad(dif_angle), hrp::Vector3::UnitY());
+      rotm3times(new_coords.rot, org_coords.rot, tmpr.toRotationMatrix());
+      new_coords.pos = org_coords.pos + org_coords.rot * ee_local_pivot_pos - new_coords.rot * ee_local_pivot_pos;
+      org_coords = new_coords;
   };
 
   void gait_generator::leg_coords_generator::cycloid_midcoords (coordinates& ret,

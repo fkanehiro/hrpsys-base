@@ -992,6 +992,11 @@ bool AutoBalancer::setGaitGeneratorParam(const OpenHRP::AutoBalancerService::Gai
   gg->set_swing_trajectory_delay_time_offset(i_param.swing_trajectory_delay_time_offset);
   gg->set_stair_trajectory_way_point_offset(hrp::Vector3(i_param.stair_trajectory_way_point_offset[0], i_param.stair_trajectory_way_point_offset[1], i_param.stair_trajectory_way_point_offset[2]));
   gg->set_gravitational_acceleration(i_param.gravitational_acceleration);
+  gg->set_toe_angle(i_param.toe_angle);
+  gg->set_heel_angle(i_param.heel_angle);
+  gg->set_toe_pos_offset_x(i_param.toe_pos_offset_x);
+  gg->set_heel_pos_offset_x(i_param.heel_pos_offset_x);
+
   // print
   double stride_fwd_x, stride_y, stride_th, stride_bwd_x;
   gg->get_stride_parameters(stride_fwd_x, stride_y, stride_th, stride_bwd_x);
@@ -1015,6 +1020,10 @@ bool AutoBalancer::setGaitGeneratorParam(const OpenHRP::AutoBalancerService::Gai
   tmpv = gg->get_stair_trajectory_way_point_offset();
   std::cerr << "[" << m_profile.instance_name << "]   stair_trajectory_way_point_offset = " << tmpv.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[m]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   gravitational_acceleration = " << gg->get_gravitational_acceleration() << "[m/s^2]" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   toe_pos_offset_x = " << gg->get_toe_pos_offset_x() << "[mm]" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   heel_pos_offset_x = " << gg->get_heel_pos_offset_x() << "[mm]" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   toe_angle = " << gg->get_toe_angle() << "[deg]" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   heel_angle = " << gg->get_heel_angle() << "[deg]" << std::endl;
   return true;
 };
 
@@ -1037,6 +1046,10 @@ bool AutoBalancer::getGaitGeneratorParam(OpenHRP::AutoBalancerService::GaitGener
   for (size_t i = 0; i < 3; i++) i_param.stair_trajectory_way_point_offset[i] = tmpv(i);
   i_param.swing_trajectory_delay_time_offset = gg->get_swing_trajectory_delay_time_offset();
   i_param.gravitational_acceleration = gg->get_gravitational_acceleration();
+  i_param.toe_angle = gg->get_toe_angle();
+  i_param.heel_angle = gg->get_heel_angle();
+  i_param.toe_pos_offset_x = gg->get_toe_pos_offset_x();
+  i_param.heel_pos_offset_x = gg->get_heel_pos_offset_x();
   return true;
 };
 
