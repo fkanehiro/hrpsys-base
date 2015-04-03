@@ -3,6 +3,7 @@
 #define GAITGENERATOR_H
 #include "PreviewController.h"
 #include "../ImpedanceController/RatsMatrix.h"
+#include "interpolator.h"
 #include <vector>
 #include <queue>
 
@@ -274,6 +275,7 @@ namespace rats
       orbit_type default_orbit_type;
       rectangle_delay_hoffarbib_trajectory_generator rdtg;
       stair_delay_hoffarbib_trajectory_generator sdtg;
+      interpolator *foot_ratio_interpolator;
       void calc_current_swing_leg_coords (coordinates& ret,
                                           const double ratio, const double step_height);
       void cycloid_midcoords (coordinates& ret,
@@ -294,12 +296,17 @@ namespace rats
 #endif
       leg_coords_generator(const double __dt)
         : swing_leg_dst_coords(), support_leg_coords(), swing_leg_coords(), swing_leg_src_coords(),
-          default_step_height(0.05), default_top_ratio(0.5), current_step_height(0.0), swing_ratio(0), rot_ratio(0), _dt(__dt), gp_index(0), gp_count(0), support_leg(WC_RLEG), default_orbit_type(CYCLOID)
+          default_step_height(0.05), default_top_ratio(0.5), current_step_height(0.0), swing_ratio(0), rot_ratio(0), _dt(__dt), gp_index(0), gp_count(0), support_leg(WC_RLEG), default_orbit_type(CYCLOID),
+          //foot_ratio_interpolator(new interpolator(1, __dt, interpolator::LINEAR))
+          foot_ratio_interpolator(new interpolator(1, __dt))
       {
         rdtg.set_dt(_dt);
         sdtg.set_dt(_dt);
       };
-      ~leg_coords_generator() {};
+      ~leg_coords_generator()
+      {
+        delete foot_ratio_interpolator;
+      };
       void set_default_step_height (const double _tmp) { default_step_height = _tmp; };
       void set_default_top_ratio (const double _tmp) { default_top_ratio = _tmp; };
       void set_default_orbit_type (const orbit_type _tmp) { default_orbit_type = _tmp; };

@@ -7,7 +7,7 @@ set_target_properties(AutoBalancer PROPERTIES PREFIX "")
 add_executable(testPreviewController testPreviewController.cpp ../ImpedanceController/RatsMatrix.cpp PreviewController.cpp)
 target_link_libraries(testPreviewController ${libs})
 
-add_executable(testGaitGenerator testGaitGenerator.cpp ../ImpedanceController/RatsMatrix.cpp PreviewController.cpp GaitGenerator.cpp)
+add_executable(testGaitGenerator testGaitGenerator.cpp ../ImpedanceController/RatsMatrix.cpp PreviewController.cpp GaitGenerator.cpp ../SequencePlayer/interpolator.cpp)
 target_link_libraries(testGaitGenerator ${libs})
 
 add_executable(AutoBalancerComp AutoBalancerComp.cpp ${comp_sources})

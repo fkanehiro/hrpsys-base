@@ -159,7 +159,7 @@ namespace rats
 
   void gait_generator::leg_coords_generator::update_leg_coords (const std::vector<step_node>& fnl, const double default_double_support_ratio, const size_t one_step_len, const bool force_height_zero)
   {
-    rot_ratio = 1.0 - (double)gp_count / one_step_len;
+    foot_ratio_interpolator->get(&rot_ratio, true);
     if ( 0 == gp_index ) {
       swing_leg_dst_coords = fnl[gp_index].worldcoords;
       support_leg = fnl[gp_index+1].l_r;
@@ -191,6 +191,10 @@ namespace rats
       gp_count = one_step_len;
       rdtg.reset(one_step_len, default_double_support_ratio);
       sdtg.reset(one_step_len, default_double_support_ratio);
+      double tmp_ratio = 0.0;
+      foot_ratio_interpolator->set(&tmp_ratio);
+      tmp_ratio = 1.0;
+      foot_ratio_interpolator->go(&tmp_ratio, _dt*one_step_len, true);
     }
   };
 
