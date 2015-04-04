@@ -53,6 +53,7 @@ CORBA::Boolean AutoBalancerService_impl::getGaitGeneratorParam(OpenHRP::AutoBala
 {
   i_param = new OpenHRP::AutoBalancerService::GaitGeneratorParam();
   i_param->stride_parameter.length(4);
+  i_param->toe_heel_phase_ratio.length(7);
   return m_autobalancer->getGaitGeneratorParam(*i_param);
 };
 
