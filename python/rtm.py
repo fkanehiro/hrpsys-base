@@ -465,17 +465,20 @@ def isConnected(outP, inP):
 # \brief disconnect ports
 # \param outP IOR of outPort
 # \param inP IOR of inPort
+# \return True disconnected successfully, False otherwise
 #
 def disconnectPorts(outP, inP):
     op = outP.get_port_profile()
     iname = inP.get_port_profile().name
     for con_prof in op.connector_profiles:
         ports = con_prof.ports
-        pname = ports[1].get_port_profile().name
-        if len(ports) == 2 and pname == iname:
-            print '[rtm.py]    Disconnect ' + iname + ' - ' + pname
-            outP.disconnect(con_prof.connector_id)
-    return
+        if len(ports) == 2:
+            pname = ports[1].get_port_profile().name
+            if pname == iname:
+                print '[rtm.py]    Disconnect ' + iname + ' - ' + pname
+                outP.disconnect(con_prof.connector_id)
+                return True
+    return False
 
 ##
 # \brief get data type of a port
