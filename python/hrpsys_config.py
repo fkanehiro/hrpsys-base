@@ -821,15 +821,18 @@ class HrpsysConfigurator:
         '''!@brief
         Check if this is running as simulation
         '''
-        # distinguish real robot from simulation by check "HG/PD controller"
+        # distinguish real robot from simulation by check "HG/PD controller" ( > 315.3.0)
+        # distinguish real robot from simulation by using "servoState" port  (<= 315.3.0)
         self.hgc = findRTC("HGcontroller0")
         self.pdc = findRTC("PDcontroller0")
         if self.hgc or self.pdc:
             self.simulation_mode = True
         else:
             self.simulation_mode = False
-        self.rh_svc = narrow(self.rh.service("service0"), "RobotHardwareService")
-        self.ep_svc = narrow(self.rh.ec, "ExecutionProfileService")
+
+        if rtm.findPort(self.rh.ref, "servoState"): # for RobotHadware <= 315.3.0, which does not have service port
+            self.rh_svc = narrow(self.rh.service("service0"), "RobotHardwareService")
+            self.ep_svc = narrow(self.rh.ec, "ExecutionProfileService")
 
         print self.configurator_name, "simulation_mode : ", self.simulation_mode
 
