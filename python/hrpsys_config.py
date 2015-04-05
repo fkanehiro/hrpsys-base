@@ -232,6 +232,7 @@ class HrpsysConfigurator:
     log = None
     log_svc = None
     log_version = None
+    log_use_owned_ec = False
 
     # rtm manager
     ms = None
@@ -777,8 +778,10 @@ class HrpsysConfigurator:
                 self.connectLoggerPort(self.rmfo, "off_"+sen.name)
         self.log_svc.clear()
         ## parallel running log process (outside from rtcd) for saving logs by emergency signal
-        self.log.owned_ecs[0].start()
-        self.log.start(self.log.owned_ecs[0])
+        if self.log and (self.log_use_owned_ec or not isinstance(self.log.owned_ecs[0], OpenRTM._objref_ExtTrigExecutionContextService)):
+            print self.configurator_name, "\033[32mruning DataLogger with own Execution Context\033[0m"
+            self.log.owned_ecs[0].start()
+            self.log.start(self.log.owned_ecs[0])
 
     def waitForRTCManager(self, managerhost=nshost):
         '''!@brief

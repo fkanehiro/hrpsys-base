@@ -12,6 +12,9 @@ foreach(_idx 0 1)
   configure_file(SampleRobot.xml.in ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.${_tmp_controller_period}.xml)
   configure_file(SampleRobot.torque.xml.in ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.${_tmp_controller_period}.torque.xml)
   configure_file(SampleRobot.conf.in ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.${_tmp_controller_period}.conf)
+  configure_file(SampleRobot.conf.in ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.${_tmp_controller_period}.log.conf)
+  file(APPEND ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.${_tmp_controller_period}.log.conf "exec_cxt.periodic.type: PeriodicExecutionContext\n")
+  file(APPEND ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.${_tmp_controller_period}.log.conf "exec_cxt.periodic.rate: ${_tmp_controller_period}\n")
 endforeach()
 
 # for virtual force sensor testing
@@ -64,11 +67,13 @@ install(PROGRAMS
 install(FILES 
   # files for 500[Hz] = 0.002[s]
   ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.500.conf
+  ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.500.log.conf
   ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.500.xml
   ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.500.torque.xml
   ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.RobotHardware.500.conf
   # files for 200[Hz]  = 0.005[s]
   ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.200.conf
+  ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.200.log.conf
   ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.200.xml
   ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.200.torque.xml
   ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.RobotHardware.200.conf
