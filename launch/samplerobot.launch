@@ -14,6 +14,7 @@
   <arg name="GUI" default="true" />
   <arg name="CONTROLLER_PERIOD" default="500" />
   <arg name="CONF_FILE" default="$(find hrpsys)/samples/SampleRobot/SampleRobot.$(arg CONTROLLER_PERIOD).conf" />
+  <arg name="LOG_CONF_FILE" default="$(find hrpsys)/samples/SampleRobot/SampleRobot.$(arg CONTROLLER_PERIOD).log.conf" />
   <arg name="TORQUE_CONTROL" default="false"/>
   <arg unless="$(arg TORQUE_CONTROL)" name="PROJECT_FILE" default="$(find hrpsys)/samples/SampleRobot/SampleRobot.$(arg CONTROLLER_PERIOD).xml"/>
   <arg     if="$(arg TORQUE_CONTROL)" name="PROJECT_FILE" default="$(find hrpsys)/samples/SampleRobot/SampleRobot.$(arg CONTROLLER_PERIOD).torque.xml"/>
@@ -40,6 +41,7 @@
               -o "example.ImpedanceController.config_file:$(arg CONF_FILE)"
               -o "example.AutoBalancer.config_file:$(arg CONF_FILE)"
               -o "example.StateHolder.config_file:$(arg CONF_FILE)"
+              -o "example.DataLogger.config_file:$(arg LOG_CONF_FILE)"
               -o "example.TorqueFilter.config_file:$(arg CONF_FILE)"
               -o "example.TorqueController.config_file:$(arg CONF_FILE)"
               -o "example.ThermoEstimator.config_file:$(arg CONF_FILE)"
