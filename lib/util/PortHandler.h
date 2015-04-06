@@ -2,6 +2,7 @@
 #define __PORT_HANDLER_H__
 
 #include <rtm/idl/InterfaceDataTypes.hh>
+#include "HRPDataTypes.hh"
 #include "BodyRTC.h"
 #include "pointcloud.hh"
 
@@ -60,11 +61,13 @@ protected:
 class JointInPortHandler : public InPortHandler<RTC::TimedDoubleSeq>
 {
 public:
-    JointInPortHandler(RTC::DataFlowComponentBase *i_rtc, 
+    JointInPortHandler(RTC::DataFlowComponentBase *i_rtc,
                        const char *i_portName,
-                       const std::vector<hrp::Link *> &i_joints);
+                       const std::vector<hrp::Link *> &i_joints,
+                       std::vector<OpenHRP::RobotHardwareService::SwitchStatus> *i_servo);
 protected:
     std::vector<hrp::Link *> m_joints;
+    std::vector<OpenHRP::RobotHardwareService::SwitchStatus> &m_servo;
 };
 
 class JointOutPortHandler : public OutPortHandler<RTC::TimedDoubleSeq>
@@ -82,7 +85,8 @@ class JointValueInPortHandler : public JointInPortHandler
 public:
     JointValueInPortHandler(RTC::DataFlowComponentBase *i_rtc, 
                             const char *i_portName,
-                            const std::vector<hrp::Link *> &i_joints);
+                            const std::vector<hrp::Link *> &i_joints,
+                            std::vector<OpenHRP::RobotHardwareService::SwitchStatus> *i_servo);
     void update();
 };
 
@@ -100,7 +104,8 @@ class JointVelocityInPortHandler : public JointInPortHandler
 public:
     JointVelocityInPortHandler(RTC::DataFlowComponentBase *i_rtc, 
                                const char *i_portName,
-                               const std::vector<hrp::Link *> &i_joints);
+                               const std::vector<hrp::Link *> &i_joints,
+                               std::vector<OpenHRP::RobotHardwareService::SwitchStatus> *i_servo);
     void update();
 };
 
@@ -118,7 +123,8 @@ class JointAccelerationInPortHandler : public JointInPortHandler
 public:
     JointAccelerationInPortHandler(RTC::DataFlowComponentBase *i_rtc, 
                                    const char *i_portName,
-                                   const std::vector<hrp::Link *> &i_joints);
+                                   const std::vector<hrp::Link *> &i_joints,
+                                   std::vector<OpenHRP::RobotHardwareService::SwitchStatus> *i_servo);
     void update();
 };
 
@@ -136,7 +142,8 @@ class JointTorqueInPortHandler : public JointInPortHandler
 public:
     JointTorqueInPortHandler(RTC::DataFlowComponentBase *i_rtc, 
                              const char *i_portName,
-                             const std::vector<hrp::Link *> &i_joints);
+                             const std::vector<hrp::Link *> &i_joints,
+                             std::vector<OpenHRP::RobotHardwareService::SwitchStatus> *i_servo);
     void update();
 };
 
@@ -327,8 +334,23 @@ class EmergencySignalPortHandler : public OutPortHandler<RTC::TimedLong>
 {
 public:
     EmergencySignalPortHandler(RTC::DataFlowComponentBase *i_rtc, 
-                               const char *i_portName);
+                               const char *i_portName,
+                               BodyRTC *i_body);
     void update(double time);
+protected:
+    BodyRTC *m_body;
+};
+
+class ServoStatePortHandler : public OutPortHandler<OpenHRP::TimedLongSeqSeq>
+{
+public:
+    ServoStatePortHandler(RTC::DataFlowComponentBase *i_rtc,
+                          const char *i_portName,
+                          BodyRTC *i_body);
+    void update(double time);
+protected:
+    BodyRTC *m_body;
+    OpenHRP::RobotHardwareService::RobotState* rs;
 };
 
 #endif

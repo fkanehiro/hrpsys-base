@@ -272,11 +272,6 @@ class HrpsysConfigurator:
                 else:
                     connectPorts(tmp_contollers[-1].port("q"), self.hgc.port("qIn"))
                     connectPorts(self.hgc.port("qOut"), self.rh.port("qRef"))
-                    if rtm.findPort(self.rh.ref, "basePoseRef"):
-                        if self.abc:
-                            connectPorts(self.abc.port("basePoseOut"), self.rh.port("basePoseRef"))
-                        else:
-                            connectPorts(self.sh.port("basePoseOut"), self.rh.port("basePoseRef"))
             else:
                 connectPorts(tmp_contollers[-1].port("q"), self.rh.port("qRef"))
         else:
@@ -286,13 +281,15 @@ class HrpsysConfigurator:
                 else:
                     connectPorts(self.sh.port("qOut"), self.hgc.port("qIn"))
                     connectPorts(self.hgc.port("qOut"), self.rh.port("qRef"))
-                    if rtm.findPort(self.rh.ref, "basePoseRef"):
-                        if self.abc:
-                            connectPorts(self.abc.port("basePoseOut"), self.rh.port("basePoseRef"))
-                        else:
-                            connectPorts(self.sh.port("basePoseOut"), self.rh.port("basePoseRef"))
             else:
                 connectPorts(self.sh.port("qOut"), self.rh.port("qRef"))
+
+        # only for kinematics simulator
+        if rtm.findPort(self.rh.ref, "basePoseRef"):
+            if self.abc:
+                connectPorts(self.abc.port("basePoseOut"), self.rh.port("basePoseRef"))
+            else:
+                connectPorts(self.sh.port("basePoseOut"), self.rh.port("basePoseRef"))
 
         # connection for kf
         if self.kf:
@@ -824,13 +821,16 @@ class HrpsysConfigurator:
         '''!@brief
         Check if this is running as simulation
         '''
-        # distinguish real robot from simulation by using "servoState" port
-        if rtm.findPort(self.rh.ref, "servoState") == None:
-            self.hgc = findRTC("HGcontroller0")
-            self.pdc = findRTC("PDcontroller0")
+        # distinguish real robot from simulation by check "HG/PD controller" ( > 315.3.0)
+        # distinguish real robot from simulation by using "servoState" port  (<= 315.3.0)
+        self.hgc = findRTC("HGcontroller0")
+        self.pdc = findRTC("PDcontroller0")
+        if self.hgc or self.pdc:
             self.simulation_mode = True
         else:
             self.simulation_mode = False
+
+        if rtm.findPort(self.rh.ref, "servoState"): # for RobotHadware <= 315.3.0, which does not have service port
             self.rh_svc = narrow(self.rh.service("service0"), "RobotHardwareService")
             self.ep_svc = narrow(self.rh.ec, "ExecutionProfileService")
 

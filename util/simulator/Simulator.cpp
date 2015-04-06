@@ -121,7 +121,10 @@ bool Simulator::oneStep(){
         BodyRTC *bodyrtc = dynamic_cast<BodyRTC *>(body(i).get());
         bodyrtc->readDataPorts();
     }
-    
+    for (unsigned int i=0; i<numBodies(); i++){
+        BodyRTC *bodyrtc = dynamic_cast<BodyRTC *>(body(i).get());
+        bodyrtc->preOneStep();
+    }
     for (unsigned int i=0; i<receivers.size(); i++){
         receivers[i].tick(timeStep());
     }
@@ -144,6 +147,10 @@ bool Simulator::oneStep(){
         calcNextState(collisions);
     }
     
+    for (unsigned int i=0; i<numBodies(); i++){
+        BodyRTC *bodyrtc = dynamic_cast<BodyRTC *>(body(i).get());
+        bodyrtc->postOneStep();
+    }
     appendLog();
     tm_dynamics.end();
     

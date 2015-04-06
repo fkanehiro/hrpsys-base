@@ -8,9 +8,11 @@ using namespace hrp;
 JointInPortHandler::JointInPortHandler(
     RTC::DataFlowComponentBase *i_rtc, 
     const char *i_portName,
-    const std::vector<Link *> &i_joints) : 
+    const std::vector<Link *> &i_joints,
+    std::vector<OpenHRP::RobotHardwareService::SwitchStatus> *i_servo) :
     InPortHandler<RTC::TimedDoubleSeq>(i_rtc, i_portName),
-    m_joints(i_joints)
+    m_joints(i_joints),
+    m_servo(*i_servo)
 {
     m_data.data.length(m_joints.size());
 }
@@ -28,8 +30,9 @@ JointOutPortHandler::JointOutPortHandler(
 JointValueInPortHandler::JointValueInPortHandler(
     RTC::DataFlowComponentBase *i_rtc, 
     const char *i_portName,
-    const std::vector<Link *> &i_joints) : 
-    JointInPortHandler(i_rtc, i_portName, i_joints)
+    const std::vector<Link *> &i_joints,
+    std::vector<OpenHRP::RobotHardwareService::SwitchStatus> *i_servo) :
+    JointInPortHandler(i_rtc, i_portName, i_joints, i_servo)
 {
 }
 
@@ -40,7 +43,7 @@ void JointValueInPortHandler::update()
             m_port.read();
         }while(m_port.isNew());
         for (size_t i=0; i<m_joints.size(); i++){
-            if (m_joints[i]) m_joints[i]->q = m_data.data[i];
+            if (m_joints[i] && m_servo[i] == OpenHRP::RobotHardwareService::SWITCH_ON) m_joints[i]->q = m_data.data[i];
         }
     }
 }
@@ -64,8 +67,9 @@ void JointValueOutPortHandler::update(double time)
 JointVelocityInPortHandler::JointVelocityInPortHandler(
     RTC::DataFlowComponentBase *i_rtc, 
     const char *i_portName,
-    const std::vector<Link *> &i_joints) : 
-    JointInPortHandler(i_rtc, i_portName, i_joints)
+    const std::vector<Link *> &i_joints,
+    std::vector<OpenHRP::RobotHardwareService::SwitchStatus> *i_servo) :
+    JointInPortHandler(i_rtc, i_portName, i_joints, i_servo)
 {
 }
 
@@ -76,7 +80,7 @@ void JointVelocityInPortHandler::update()
             m_port.read();
         }while(m_port.isNew());
         for (size_t i=0; i<m_joints.size(); i++){
-            if (m_joints[i]) m_joints[i]->dq = m_data.data[i];
+            if (m_joints[i] && m_servo[i] == OpenHRP::RobotHardwareService::SWITCH_ON) m_joints[i]->dq = m_data.data[i];
         }
     }
 }
@@ -100,8 +104,9 @@ void JointVelocityOutPortHandler::update(double time)
 JointAccelerationInPortHandler::JointAccelerationInPortHandler(
     RTC::DataFlowComponentBase *i_rtc, 
     const char *i_portName,
-    const std::vector<Link *> &i_joints) : 
-    JointInPortHandler(i_rtc, i_portName, i_joints)
+    const std::vector<Link *> &i_joints,
+    std::vector<OpenHRP::RobotHardwareService::SwitchStatus> *i_servo) :
+    JointInPortHandler(i_rtc, i_portName, i_joints, i_servo)
 {
 }
 
@@ -112,7 +117,7 @@ void JointAccelerationInPortHandler::update()
             m_port.read();
         }while(m_port.isNew());
         for (size_t i=0; i<m_joints.size(); i++){
-            if (m_joints[i]) m_joints[i]->ddq = m_data.data[i];
+            if (m_joints[i] && m_servo[i] == OpenHRP::RobotHardwareService::SWITCH_ON) m_joints[i]->ddq = m_data.data[i];
         }
     }
 }
@@ -136,8 +141,9 @@ void JointAccelerationOutPortHandler::update(double time)
 JointTorqueInPortHandler::JointTorqueInPortHandler(
     RTC::DataFlowComponentBase *i_rtc, 
     const char *i_portName,
-    const std::vector<Link *> &i_joints) : 
-    JointInPortHandler(i_rtc, i_portName, i_joints)
+    const std::vector<Link *> &i_joints,
+    std::vector<OpenHRP::RobotHardwareService::SwitchStatus> *i_servo) :
+    JointInPortHandler(i_rtc, i_portName, i_joints, i_servo)
 {
 }
 
@@ -153,7 +159,7 @@ void JointTorqueInPortHandler::update()
                       << ")" << std::endl;
         } 
         for (size_t i=0; i<m_joints.size(); i++){
-            if (m_joints[i]) m_joints[i]->u = m_data.data[i];
+            if (m_joints[i] && m_servo[i] == OpenHRP::RobotHardwareService::SWITCH_ON) m_joints[i]->u = m_data.data[i];
         }
     }
 }
@@ -575,13 +581,40 @@ void AbsAccelerationOutPortHandler::update(double time)
 
 EmergencySignalPortHandler::EmergencySignalPortHandler(
     RTC::DataFlowComponentBase *i_rtc,
-    const char *i_portName) :
-    OutPortHandler<RTC::TimedLong>(i_rtc, i_portName)
+    const char *i_portName,
+    BodyRTC *i_body) :
+    OutPortHandler<RTC::TimedLong>(i_rtc, i_portName),
+    m_body(i_body)
 {
 }
 
 void EmergencySignalPortHandler::update(double time)
 {
-    //m_data.data = EMG_SERVO_ERROR;
+    if (m_body->m_emergencyReason != BodyRTC::EMG_NONE){
+        m_data.data = m_body->m_emergencyReason;
+        write(time);
+    }
 }
 
+ServoStatePortHandler::ServoStatePortHandler(
+    RTC::DataFlowComponentBase *i_rtc,
+    const char *i_portName,
+    BodyRTC *i_body) :
+    OutPortHandler<OpenHRP::TimedLongSeqSeq>(i_rtc, i_portName),
+    m_body(i_body)
+{
+    rs = new OpenHRP::RobotHardwareService::RobotState();
+}
+
+void ServoStatePortHandler::update(double time)
+{
+    m_body->getStatus(rs);
+    m_data.data.length(rs->servoState.length());
+    for (size_t i=0; i < rs->servoState.length(); i++) {
+        m_data.data[i].length(rs->servoState[i].length());
+        for (size_t j=0; j < rs->servoState[i].length(); j++) {
+            m_data.data[i][j] = rs->servoState[i][j];
+        }
+    }
+    write(time);
+}
