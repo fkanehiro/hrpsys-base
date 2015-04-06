@@ -2,6 +2,157 @@
 Changelog for package hrpsys
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
+Stable RTCs
+===========
+
+* python/hrpsys_config.py
+
+  * [hrpsy_config.py] paralell running of log is not available if ExtTrigExecutationContet In simulator, log is not using own ecs so it does not write log on emergency signal, if you wan to activate this se hcf.log_use_own_ec as samplerobot_data_logger, see https://github.com/fkanehiro/hrpsys-base/issues/490 for discussion
+  * fixes a bug in disconnectPorts() and it returns True/False
+  * (hrpsys python) Correct relative rotation. (https://github.com/fkanehiro/hrpsys-base/pull/543 )
+  * (hrpsys_config.py) Better referencing to local getCurrentPose method.  (https://github.com/fkanehiro/hrpsys-base/pull/543 )
+  * [hrpsys_conifg.py] set version for findComp()
+  * [hrpsys_config.py] remove None from getRTCInstanceList() (https://github.com/fkanehiro/hrpsys-base/pull/534)
+  * [hrpsys_config.py] add version check for some plugins when connectPorts() (https://github.com/fkanehiro/hrpsys-base/pull/533)
+  * [hrpsys_config.py] add variables for servo controller instances (fixes https://github.com/fkanehiro/hrpsys-base/pull/529)
+  * [hrpsys_config.py] add delteComps(), deleteComp(), deactiveComps() (https://github.com/fkanehiro/hrpsys-base/pull/512)
+  * [hrpsys_conig.py] try to import OpenHRP3 for old version https://github.com/start-jsk/rtmros_hironx/issues/331
+  * (Doc) minor clarification in hrpsys_config.py (https://github.com/fkanehiro/hrpsys-base/pull/505)
+
+* python/rtm.py
+
+  * [rtm.py] add more debug message when serializeComponents failed (https://github.com/fkanehiro/hrpsys-base/pull/536)
+  * [rtm.py] add more debug message when failed connect port  (https://github.com/fkanehiro/hrpsys-base/pull/535)
+  * [rtm.py] use rtc.ref.exit after delete_components https://github.com/fkanehiro/hrpsys-base/pull/512#issuecomment-80430387
+  * [rtm.py] add delete() (https://github.com/fkanehiro/hrpsys-base/pull/512)
+
+* hrpsys_simulator
+
+  * [lib/util] enable robot simulation on RobotHardwareService (#187)
+  * [hrpsys_config.py] fix for connecting to old RobotHardware which does not have service ports
+  * [BodyRTC,PortHander] fix memory leak
+  * Use basePose in kinemtics only simulation ( https://github.com/fkanehiro/hrpsys-base/pull/521 )
+
+    * Connect RTCs' basePose outports to simulator basePose inport
+    * Add basePose port to AutoBalancer like StateHolder
+    * Add basePose inport for kinematics simultion (integrate == false)
+    * Enable to parse ABS_TRANSFORM inport from link name according to outport ABS_TRANSFORM setting
+
+  * fixes an invalid access to log
+
+* SequencePlayer
+
+  * (fix problem when calling setTargetPose in first time) https://github.com/fkanehiro/hrpsys-base/pull/519
+
+    * [SequencePlayer.cpp] forget to call setInitialState in setTargetPose , update m_Ref.data using m_qInit.data
+    * [SequencePlayer.cpp] Print info in setTargetPose
+
+* CollisionDetector
+
+  * add lin breank in debug message (https://github.com/fkanehiro/hrpsys-base/pull/528)
+  * [CollisionDetector] set m_have_safe_posture to false in initial time, so that we can check if the system did not
+    know any safe posture (https://github.com/fkanehiro/hrpsys-base/pull/525)
+
+* DataLogger
+
+  * [hrpsys_config.py] running log process for receiving emergency signal (https://github.com/fkanehiro/hrpsys-base/pull/544)
+* lib/io
+
+  * adds an option not to install libhrpIo.so
+
+* lib/util
+
+  * [SDLUtil.cpp] SDLwindow::~SDLwindow, call SDL_Quit only when this object is initialized (https://github.com/fkanehiro/hrpsys-base/pull/524)
+
+
+Unstable RTCs
+=============
+
+
+* AutoBalancer
+
+  * Add toe-off and heelo-contact (https://github.com/fkanehiro/hrpsys-base/pull/553 )
+
+    * Use interpolator for rot_ratio
+    * Add toe-off and heel-contact parameters.
+    * Enable to set phase time ratio
+    * Enable to interpolate smoothly if SOLE1 phase does not exist
+
+  * Update st abc kf param (https://github.com/fkanehiro/hrpsys-base/pull/549)
+
+    * Update print message for parameters
+    * Update default parameters for ST, KF, ABC
+
+  * Fix for limbcop and toe joint usage in ST (https://github.com/fkanehiro/hrpsys-base/pull/539)
+
+    * Use ee_pos for foot edge points and alpha calculation
+    * Fix variable name ee_trans => STIKParam and add comment
+    * Calculate params and IK using reference COP instead of ee
+    * Overwrite toe joints' joint angles based on StateHolder output
+    * Fix getting ee name and sensor name in ST
+
+  * Add ports for offsets of limbCOP (https://github.com/fkanehiro/hrpsys-base/pull/538)
+
+  * Add user-defined weight for IK and use it for toe joint (https://github.com/fkanehiro/hrpsys-base/pull/515)
+
+    * Set toe joint weight 0 by default
+    * Enable to set user-defined weight vector for Inverse Kinematics
+
+* TorqueController
+
+  * Check boost version in TorqueController. sign.hpp is added at 1.35 (https://github.com/fkanehiro/hrpsys-base/pull/541)
+
+* NullComponent
+
+  * adds debug messages in constructor/destructor
+
+* ImpedanceController
+
+  * [rtc/ImpedanceController] return true/false for {start,stop}ImpedanceController https://github.com/fkanehiro/hrpsys-base/pull/513
+
+* sample/SampleRobot
+
+  * add yaw test code (samplerobot_kalman_filter.py : https://github.com/fkanehiro/hrpsys-base/pull/550)
+  * Reset virtual force sensor conf setting (https://github.com/fkanehiro/hrpsys-base/pull/545)
+  * [sample/SampleRobot/rtc/CMakeLists.txt] set OPENHRP_DIR (https://github.com/fkanehiro/hrpsys-base/pull/520)
+  * [sample/SampleRobot/rtc] update for solo compilation (https://github.com/fkanehiro/hrpsys-base/pull/520)
+  * [sample/SampleRbot/rtc] add sample rtc program for samplerobot(https://github.com/fkanehiro/hrpsys-base/pull/520)
+
+* sample/environments/
+  
+  * Add Stair model and update Terrain model with ground https://github.com/fkanehiro/hrpsys-base/pull/540
+  * Fix indent of vrml models
+  * Add DRC testbed terrain VRMLs (JP block version and US block version) https://github.com/fkanehiro/hrpsys-base/pull/523
+
+* doc
+
+  * Add PD controller doc (https://github.com/fkanehiro/hrpsys-base/pull/517)
+* travis.sh
+
+  * [.travis.sh] use infinite loop to compile old hrpsys
+  * [.travis.sh] do not touch installed, to rerun catkin_make twice
+  * [.travis.sh] add CollisionDetector, which is disabled by USE_HRPSYSUTIL=0
+  * [.travis.sh] run catkin_make_isolated twice for old hrpsys compile due to g++ memory error
+  * [.travis.sh] disabling all SDL does not work
+  * [.travis.sh] display time for each tests
+  * [.travis.sh] use -j2 and disable SDL
+  * [.travis.sh] do not compile hrpsysext (python binding)
+  * [.travis.sh] less verbose when install code
+  * [.travis.sh] disable roslisp generation for speedup
+  * [.travis.sh] disable PCL/OCTMAP/IRRLIGHT for test
+  * [.travis.sh] use -j2 for old hrpsys compile
+  * [.travis.sh] 'check rtmros_common compiled on newer version of hrpsys works with deb version of hrpsys' means hrpsys running in OLD machine and roslaunch from NEW machine so we assume latest python codes using for this setup
+  * [.travis.sh] use git repository, instead of svn due to googlecode shoutdown
+  * [.travis.sh] apply https://github.com/start-jsk/rtmros_hironx/pull/318.diff
+  * [.travis.sh] disable pcl/octmap/irrlight
+  * [.travis.sh] do not show status for basic packages of  apt-get install
+  * [.travis.sh] hrpsys_config requires openhrp3
+
+* Contributors: Eisoku Kuroiwa, Fumio KANEHIRO, Isaac IY Saito, Kei Okada, Shunichi Nozawa, YoheiKakiuchi, eisoku9618
+
 315.3.0 (2015-03-07)
 --------------------
 
