@@ -796,6 +796,8 @@ void ImpedanceController::copyImpedanceParam (ImpedanceControllerService::impeda
   i_param_.avoid_gain = param.avoid_gain;
   i_param_.reference_gain = param.reference_gain;
   i_param_.manipulability_limit = param.manipulability_limit;
+  if (param.is_active) i_param_.controller_mode = OpenHRP::ImpedanceControllerService::MODE_IMP;
+  else i_param_.controller_mode = OpenHRP::ImpedanceControllerService::MODE_IDLE;
 }
 
 void ImpedanceController::updateRootLinkPosRot (TimedOrientation3D tmprpy)
