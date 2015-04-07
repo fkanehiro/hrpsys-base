@@ -44,6 +44,11 @@
 #define SS_POSITION_ERROR	0x200
 #define SS_ENCODER_ERROR	0x400
 #define SS_OTHER		0x800
+
+#define SS_RESERVED1		0x1000
+#define SS_RESERVED2		0x2000
+#define SS_RESERVED3		0x4000
+#define SS_EMERGENCY		0x8000
 //@}
 
 #define JID_ALL -1

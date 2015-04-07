@@ -211,7 +211,7 @@ public:
     /**
        \brief reasons of emergency
      */
-    typedef enum {EMG_SERVO_ERROR, EMG_FZ} emg_reason;
+    typedef enum {EMG_SERVO_ERROR, EMG_FZ, EMG_SERVO_ALARM} emg_reason;
 
     /**
        \brief check occurrence of emergency state
@@ -289,7 +289,7 @@ private:
     bool m_calibRequested;
     std::string m_calibJointName, m_calibOptions;
     std::string m_pdgainsFilename;
-
+    bool m_reportedEmergency;
     boost::interprocess::interprocess_semaphore wait_sem;
 };
 
