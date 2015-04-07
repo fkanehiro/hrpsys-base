@@ -718,7 +718,7 @@ class HrpsysConfigurator:
             print self.configurator_name, "\e[1;31m  setupLogger : self.log is not defined, please check rtcd.conf or rtcd arguments\e[0m"
             return
         #
-        for pn in ['q', 'tau']:
+        for pn in ['q', 'dq', 'tau']:
             self.connectLoggerPort(self.rh, pn)
         # sensor logger ports
         print self.configurator_name, "sensor names for DataLogger"
