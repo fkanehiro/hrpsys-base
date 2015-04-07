@@ -719,7 +719,7 @@ class HrpsysConfigurator:
             print self.configurator_name, "\e[1;31m  setupLogger : self.log is not defined, please check rtcd.conf or rtcd arguments\e[0m"
             return
         #
-        for pn in ['q', 'tau']:
+        for pn in ['q', 'dq', 'tau']:
             self.connectLoggerPort(self.rh, pn)
         # sensor logger ports
         print self.configurator_name, "sensor names for DataLogger"
@@ -1325,6 +1325,13 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
         Clear logger's buffer
         '''
         self.log_svc.clear()
+
+    def setMaxLogLength(self, length):
+        '''!@brief
+        Set logger's buffer
+        @param length int: length of log, if the system runs at 500hz and you want to store 2min, set 2*60*500.
+        '''
+        self.log_svc.maxLength(length)
 
     def lengthDigitalInput(self):
         '''!@brief
