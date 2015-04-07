@@ -503,7 +503,8 @@ class HrpsysConfigurator:
                     create_str = "[self." + rn[0] + ", self." + rn[0] + "_svc, self." + rn[0] + "_version] = self.createComp(\"" + rn[1] + "\",\"" + rn[0] + "\")"
                     print(self.configurator_name, "  eval : ", create_str)
                     exec(create_str)
-            except Exception, e:
+            except Exception:
+                _, e, _ = sys.exc_info()
                 print(self.configurator_name, '\033[31mFail to createComps',e,'\033[0m')
 
 
@@ -531,7 +532,8 @@ class HrpsysConfigurator:
                     if r.isActive():
                         print(self.configurator_name, '\033[31m ' + r.name() + ' is staill active\033[0m')
                     self.deleteComp(r.name())
-            except Exception, e:
+            except Exception:
+                _, e, _ = sys.exc_info()
                 print(self.configurator_name, '\033[31mFail to deleteComps',e,'\033[0m')
 
     def findComp(self, compName, instanceName, max_timeout_count=10):
@@ -653,7 +655,8 @@ class HrpsysConfigurator:
                     ret.append(eval(r))
                 else:
                     print(self.configurator_name, '\033[31mFail to find instance ('+str(rtc)+') for getRTCInstanceList\033[0m')
-            except Exception, e:
+            except Exception:
+                _, e, _ = sys.exc_info()
                 print(self.configurator_name, '\033[31mFail to getRTCInstanceList',e,'\033[0m')
         return ret
 

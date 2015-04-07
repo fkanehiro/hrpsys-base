@@ -291,13 +291,16 @@ def initCORBA():
         orb = CORBA.ORB_init(sys.argv, CORBA.ORB_ID)
         nameserver = orb.resolve_initial_references("NameService")
         rootnc = nameserver._narrow(CosNaming.NamingContext)
-    except omniORB.CORBA.ORB.InvalidName, e:
+    except omniORB.CORBA.ORB.InvalidName:
+        _, e, _ = sys.exc_info()
         sys.exit('[ERROR] Invalide Name (hostname=%s).\n' % (nshost) +
                  'Make sure the hostname is correct.\n' + str(e))
-    except omniORB.CORBA.TRANSIENT, e:
+    except omniORB.CORBA.TRANSIENT:
+        _, e, _ = sys.exc_info()
         sys.exit('[ERROR] Connection Failed with the Nameserver (hostname=%s port=%s).\n' % (nshost, nsport) +
                  'Make sure the hostname is correct and the Nameserver is running.\n' + str(e))
-    except Exception as e:
+    except Exception:
+        _, e, _ = sys.exc_info()
         print(str(e))
 
     return None
@@ -351,7 +354,8 @@ def findRTCmanager(hostname=None, rnc=None):
         hostname = socket.gethostname()
     try:
         socket.gethostbyaddr(hostname)
-    except Exception as e:
+    except Exception:
+        _, e, _ = sys.exc_info()
         sys.exit('[ERROR] %s\n' % (str(e)) + '[ERROR] Could not get hostname for %s\n' % (hostname) +
                  '[ERROR] Make sure that you set the target hostname and address in DNS or /etc/hosts in linux/unix.')
 
@@ -443,7 +447,8 @@ def serializeComponents(rtcs, stopEC=True):
                     print('error in add_component()')
             else:
                 print(rtc.name(), 'is already serialized')
-        except Exception, e:
+        except Exception:
+            _, e, _ = sys.exc_info()
             print("error in serialize", rtc, "of", rtcs, e)
             raise e
 

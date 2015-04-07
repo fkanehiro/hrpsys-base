@@ -9,7 +9,7 @@ def waitInputConfirm(msg):
     root.withdraw()
     ret = askokcancel("waitInputConfirm", msg)
     if ret == False:
-        raise StandardError, "script is canceled"
+        raise StandardError("script is canceled")
     root.destroy()
     return True
 
