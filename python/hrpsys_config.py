@@ -1320,6 +1320,13 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
         '''
         self.log_svc.clear()
 
+    def setMaxLogLength(self, length):
+        '''!@brief
+        Set logger's buffer
+        @param length int: length of log, if the system runs at 500hz and you want to store 2min, set 2*60*500.
+        '''
+        self.log_svc.maxLength(length)
+
     def lengthDigitalInput(self):
         '''!@brief
         Returns the length of digital input port
