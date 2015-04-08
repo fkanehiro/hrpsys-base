@@ -61,6 +61,26 @@ travis_time_end
 case $TEST_PACKAGE in
     hrpsys)
         case $TEST_TYPE in
+            python)
+                travis_time_start  install_python
+
+                #http://askubuntu.com/questions/204510/how-to-install-python-2-5-4
+                sudo apt-add-repository -y ppa:fkrull/deadsnakes
+                sudo apt-get update -qq
+                sudo apt-get install -qq -y python2.5 python3.4
+
+                travis_time_end
+                travis_time_start  check_python
+
+                for code in python/*.py; do
+                    python2.5 -m py_compile $code
+                    python2.7 -m py_compile $code
+                    python3.4 -m py_compile $code
+                done
+
+
+                travis_time_end
+                ;;
             iob)
                 travis_time_start  install_wget
 
