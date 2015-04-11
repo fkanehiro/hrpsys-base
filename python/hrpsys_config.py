@@ -1767,6 +1767,48 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
         '''
         return self.seq_svc.playPatternOfGroup(gname, jointangles, tm)
 
+    def waitInputConfirmWithDisplayCheck(self, print_str):
+        import waitInput
+        xp=os.popen("xset q 2>&1 | grep unable");
+        display_available = (xp.read()=='')
+        xp.close()
+        if display_available:
+            waitInputConfirm(print_str)
+        else:
+            c = False
+            while (c != 'Y' and c != 'y'):
+                c = raw_input(print_str.replace('[OK]','[Y]'))
+
+    def setSensorCalibrationJointAngles(self):
+        '''!@brief
+        Set joint angles for sensor calibration.
+        Please override joint angles to avoid self collision.
+        '''
+        self.setJointAngles([0]*len(self.rh_svc.getStatus().servoState), 4.0)
+        self.waitInterpolation()
+
+    def calibrateInertiaSensor(self):
+        '''!@brief
+        Calibrate inertia sensor
+        '''
+        self.rh_svc.calibrateInertiaSensor()
+
+    def calibrateInertiaSensorWithDialog(self):
+        '''!@brief
+        Calibrate inertia sensor with dialog and setting calibration pose
+        '''
+        self.waitInputConfirmWithDisplayCheck (
+                        '!! Robot Motion Warning (Move to Sensor Calibration Pose)!!\n\n'
+                        'Push [OK] to move to sensor calibration pose.')
+        self.setSensorCalibrationJointAngles()
+        self.waitInputConfirmWithDisplayCheck (
+                        '!! Put the robot down!!\n\n'
+                        'Push [OK] to the next step.')
+        self.calibrateInertiaSensor()
+        self.waitInputConfirmWithDisplayCheck (
+                        '!! Put the robot up!!\n\n'
+                        'Push [OK] to the next step.')
+
     # #
     # # service interface for Unstable RTC component
     # #
