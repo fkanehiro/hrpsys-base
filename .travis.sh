@@ -330,12 +330,6 @@ case $TEST_PACKAGE in
         if [ -e /opt/ros/hydro/share/hironx_ros_bridge/test/test_hironx_ros_bridge.py ]; then
             sudo sed -i "s@test_tf_and_controller@_test_tf_and_controller@" /opt/ros/hydro/share/hironx_ros_bridge/test/test_hironx_ros_bridge.py
         fi
-        # https://github.com/start-jsk/rtmros_hironx/pull/318.diff
-        if [ -e /opt/ros/hydro/share/hironx_ros_bridge/launch/hironx_ros_bridge.launch ]; then
-            wget --no-check-certificate https://github.com/start-jsk/rtmros_hironx/pull/318.diff -O /tmp/318.diff
-            (cd /opt/ros/hydro/share/hironx_ros_bridge/; sudo patch -f -N -p2 < /tmp/318.diff)
-            cat /opt/ros/hydro/share/hironx_ros_bridge/launch/hironx_ros_bridge.launch
-        fi
 
         travis_time_end
 
