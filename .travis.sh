@@ -215,10 +215,6 @@ case $TEST_PACKAGE in
 
             travis_time_start  setup_wstool_rtmros
 
-            #
-            find /opt/ros/hydro/share/hrpsys
-            sudo cp /opt/ros/hydro/bin/hrpsys-simulator /opt/ros/hydro/share/hrpsys/
-            sudo cp /opt/ros/hydro/bin/ProjectGenerator /opt/ros/hydro/share/hrpsys/
             # set up sorce code of downstream package
             cd src
             wstool set rtmros_common http://github.com/start-jsk/rtmros_common --git -y
@@ -226,6 +222,7 @@ case $TEST_PACKAGE in
             wstool set rtmros_nextage http://github.com/tork-a/rtmros_nextage --git -y
             wstool update
             sudo apt-get install -qq -y ros-hydro-urdf
+            sudo dpkg -r --force-depends ros-hydro-hrpsys
             export ROS_LANG_DISABLE=genlisp
 
             cd ..
