@@ -126,6 +126,7 @@ public:
     int lengthDigitalOutput();
     bool readDigitalOutput(char *o_dout);
 
+    bool resetPosition() { m_resetPosition = true; }
     //
     BodyRTC::emg_reason m_emergencyReason;
     int m_emergencyId;
@@ -151,6 +152,7 @@ private:
     std::map<std::string, std::vector<int> > m_jointGroups;
 
     // pinned position for servo off
+    bool m_resetPosition;
     hrp::Vector3  m_lastServoOn_p;
     hrp::Matrix33 m_lastServoOn_R;
 
