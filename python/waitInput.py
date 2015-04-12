@@ -5,12 +5,21 @@ import __builtin__
 import threading
 
 def waitInputConfirm(msg):
-    root = Tk()
-    root.withdraw()
-    ret = askokcancel("waitInputConfirm", msg)
-    if ret == False:
-        raise StandardError("script is canceled")
-    root.destroy()
+    root = None
+    try:
+        root = Tk()
+        root.withdraw()
+        ret = askokcancel("waitInputConfirm", msg)
+        return ret == True
+    except Exception:
+        _, e, _ = sys.exc_info()
+        if "couldn't connect to display" in str(e):
+            c = raw_input(msg+' (Enter [Y/y] to proceed) ').lower()
+            return c == 'y' or c == ''
+        raise
+    finally:
+        if root:
+            root.destroy()
     return True
 
 def waitInputSelect(msg):
