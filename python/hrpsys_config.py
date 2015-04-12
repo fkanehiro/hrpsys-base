@@ -1605,10 +1605,13 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
             jname = 'all'
 
         try:
-            waitInputConfirm(\
+            r = waitInputConfirm(\
                 '!! Robot Motion Warning (SERVO_ON) !!\n\n'
                 'Confirm RELAY switched ON\n'
                 'Push [OK] to switch servo ON(%s).' % (jname))
+            if not r:
+                print(self.configurator_name, 'servo on: canceled')
+                return 0
         except:  # ths needs to change
             self.rh_svc.power('all', SWITCH_OFF)
             raise
@@ -1653,10 +1656,12 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
             jname = 'all'
 
         if wait:
-            waitInputConfirm(
+            r = waitInputConfirm(
                 '!! Robot Motion Warning (Servo OFF)!!\n\n'
                 'Push [OK] to servo OFF (%s).' % (jname))  # :
-
+            if not r:
+                print(self.configurator_name, 'servo off: canceled')
+                return 2
         try:
             self.rh_svc.servo('all', SWITCH_OFF)
             time.sleep(0.2)
