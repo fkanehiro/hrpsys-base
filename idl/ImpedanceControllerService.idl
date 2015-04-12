@@ -10,6 +10,15 @@ module OpenHRP
     typedef sequence<double, 3> DblSequence3;
 
     /**
+     * @enum ControllerMode
+     * @brief Mode of controller
+     */
+    enum ControllerMode {
+      MODE_IDLE,
+      MODE_IMP
+    };
+
+    /**
      * @struct impedanceParam
      * @brief Impedance controller parameters for one end-effector.
      */
@@ -38,6 +47,8 @@ module OpenHRP
       double reference_gain;
       /// Manipulability limit for inverse kinematics.
       double manipulability_limit;
+      /// Controller mode.
+      ControllerMode controller_mode;
     };
 
     /**

@@ -61,6 +61,26 @@ travis_time_end
 case $TEST_PACKAGE in
     hrpsys)
         case $TEST_TYPE in
+            python)
+                travis_time_start  install_python
+
+                #http://askubuntu.com/questions/204510/how-to-install-python-2-5-4
+                sudo apt-add-repository -y ppa:fkrull/deadsnakes
+                sudo apt-get update -qq
+                sudo apt-get install -qq -y python2.5 python3.4
+
+                travis_time_end
+                travis_time_start  check_python
+
+                for code in python/*.py; do
+                    python2.5 -m py_compile $code
+                    python2.7 -m py_compile $code
+                    python3.4 -m py_compile $code
+                done
+
+
+                travis_time_end
+                ;;
             iob)
                 travis_time_start  install_wget
 
@@ -195,10 +215,6 @@ case $TEST_PACKAGE in
 
             travis_time_start  setup_wstool_rtmros
 
-            #
-            find /opt/ros/hydro/share/hrpsys
-            sudo cp /opt/ros/hydro/bin/hrpsys-simulator /opt/ros/hydro/share/hrpsys/
-            sudo cp /opt/ros/hydro/bin/ProjectGenerator /opt/ros/hydro/share/hrpsys/
             # set up sorce code of downstream package
             cd src
             wstool set rtmros_common http://github.com/start-jsk/rtmros_common --git -y
@@ -206,6 +222,7 @@ case $TEST_PACKAGE in
             wstool set rtmros_nextage http://github.com/tork-a/rtmros_nextage --git -y
             wstool update
             sudo apt-get install -qq -y ros-hydro-urdf
+            sudo dpkg -r --force-depends ros-hydro-hrpsys
             export ROS_LANG_DISABLE=genlisp
 
             cd ..
@@ -309,12 +326,6 @@ case $TEST_PACKAGE in
         # https://github.com/start-jsk/rtmros_hironx/issues/287
         if [ -e /opt/ros/hydro/share/hironx_ros_bridge/test/test_hironx_ros_bridge.py ]; then
             sudo sed -i "s@test_tf_and_controller@_test_tf_and_controller@" /opt/ros/hydro/share/hironx_ros_bridge/test/test_hironx_ros_bridge.py
-        fi
-        # https://github.com/start-jsk/rtmros_hironx/pull/318.diff
-        if [ -e /opt/ros/hydro/share/hironx_ros_bridge/launch/hironx_ros_bridge.launch ]; then
-            wget --no-check-certificate https://github.com/start-jsk/rtmros_hironx/pull/318.diff -O /tmp/318.diff
-            (cd /opt/ros/hydro/share/hironx_ros_bridge/; sudo patch -f -N -p2 < /tmp/318.diff)
-            cat /opt/ros/hydro/share/hironx_ros_bridge/launch/hironx_ros_bridge.launch
         fi
 
         travis_time_end
