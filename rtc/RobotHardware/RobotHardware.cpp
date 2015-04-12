@@ -222,6 +222,9 @@ RTC::ReturnCode_t RobotHardware::onExecute(RTC::UniqueId ec_id)
               m_robot->servo("all", false);
               m_emergencySignal.data = reason;
               m_emergencySignalOut.write();
+          } else if (reason == robot::EMG_SERVO_ALARM) {
+              m_emergencySignal.data = reason;
+              m_emergencySignalOut.write();
           }
       }
   }    
