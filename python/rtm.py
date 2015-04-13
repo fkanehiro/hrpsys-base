@@ -197,7 +197,7 @@ class RTCmanager:
         if name != None:
             rtc = findRTC(name)
             if rtc != None:
-                print('RTC named "', name, '" already exists.')
+                print('RTC named "' + name + '" already exists.')
                 return rtc
         args = module
         if name != None:
@@ -283,7 +283,7 @@ def initCORBA():
         if not nsport:
             nsport = 15005
 
-    print("configuration ORB with ", nshost, ":", nsport)
+    print("configuration ORB with %s:%s"%(nshost, nsport))
     os.environ['ORBInitRef'] = 'NameService=corbaloc:iiop:%s:%s/NameService' % \
                                (nshost, nsport)
 
@@ -446,10 +446,10 @@ def serializeComponents(rtcs, stopEC=True):
                 else:
                     print('error in add_component()')
             else:
-                print(rtc.name(), 'is already serialized')
+                print(rtc.name() + 'is already serialized')
         except Exception:
             _, e, _ = sys.exc_info()
-            print("error in serialize", rtc, "of", rtcs, e)
+            print("error in serialize %s of %s %s" % (rtc,  rtcs, str(e)))
             raise e
 
 ##
@@ -480,7 +480,7 @@ def disconnectPorts(outP, inP):
         if len(ports) == 2:
             pname = ports[1].get_port_profile().name
             if pname == iname:
-                print('[rtm.py]    Disconnect ' + iname + ' - ' + pname)
+                print('[rtm.py]    Disconnect %s - %s' %(iname, pname))
                 outP.disconnect(con_prof.connector_id)
                 return True
     return False
@@ -520,11 +520,11 @@ def connectPorts(outP, inPs, subscription="flush", dataflow="Push", bufferlength
                   (outP.get_port_profile().name, inP, inPs))
             continue
         if isConnected(outP, inP) == True:
-            print(outP.get_port_profile().name, 'and', inP.get_port_profile().name, \
+            print(outP.get_port_profile().name + 'and' + inP.get_port_profile().name, \
                   'are already connected')
             continue
         if dataTypeOfPort(outP) != dataTypeOfPort(inP):
-            print(outP.get_port_profile().name, 'and', inP.get_port_profile().name, \
+            print(outP.get_port_profile().name + 'and' + inP.get_port_profile().name, \
                   'have different data types')
             continue
         nv1 = SDOPackage.NameValue("dataport.interface_type", any.to_any("corba_cdr"))
@@ -670,7 +670,7 @@ def findService(rtc, port_name, type_name, instance_name):
     else:
         p = rtc.port(port_name)
         if p == None:
-            print("can't find a port named", port_name)
+            print("can't find a port named" + port_name)
             return None
         else:
             port_prof = [p.get_port_profile()]

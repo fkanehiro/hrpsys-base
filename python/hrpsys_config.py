@@ -258,7 +258,7 @@ class HrpsysConfigurator:
         Connect components(plugins)
         '''
         if self.rh == None or self.seq == None or self.sh == None or self.fk == None:
-            print(self.configurator_name, "\e[1;31m connectComps : hrpsys requries rh, seq, sh and fk, please check rtcd.conf or rtcd arguments\e[0m")
+            print(self.configurator_name + "\033[31m connectComps : hrpsys requries rh, seq, sh and fk, please check rtcd.conf or rtcd arguments\033[0m")
             return
         # connection for reference joint angles
         tmp_contollers = self.getJointAngleControllerList()
@@ -482,12 +482,12 @@ class HrpsysConfigurator:
         self.ms.load(compName)
         comp = self.ms.create(compName, instanceName)
         version = comp.ref.get_component_profile().version
-        print(self.configurator_name, "create Comp -> ", compName, " : ", comp, " (", version, ")")
+        print(self.configurator_name + "create Comp -> %s : %s (%s)" % (compName, comp, version))
         if comp == None:
             raise RuntimeError("Cannot create component: " + compName)
         if comp.service("service0"):
             comp_svc = narrow(comp.service("service0"), compName + "Service")
-            print(self.configurator_name, "create CompSvc -> ", compName, "Service : ", comp_svc)
+            print(self.configurator_name + "create CompSvc -> %s Service : %s" % (compName, comp_svc))
             return [comp, comp_svc, version]
         else:
             return [comp, None, version]
@@ -501,11 +501,11 @@ class HrpsysConfigurator:
                 rn2 = 'self.' + rn[0]
                 if eval(rn2) == None:
                     create_str = "[self." + rn[0] + ", self." + rn[0] + "_svc, self." + rn[0] + "_version] = self.createComp(\"" + rn[1] + "\",\"" + rn[0] + "\")"
-                    print(self.configurator_name, "  eval : ", create_str)
+                    print(self.configurator_name + "  eval : " + create_str)
                     exec(create_str)
             except Exception:
                 _, e, _ = sys.exc_info()
-                print(self.configurator_name, '\033[31mFail to createComps',e,'\033[0m')
+                print(self.configurator_name + '\033[31mFail to createComps ' + str(e) + '\033[0m')
 
 
     def deleteComp(self, compName):
@@ -534,7 +534,7 @@ class HrpsysConfigurator:
                     self.deleteComp(r.name())
             except Exception:
                 _, e, _ = sys.exc_info()
-                print(self.configurator_name, '\033[31mFail to deleteComps',e,'\033[0m')
+                print(self.configurator_name + '\033[31mFail to deleteComps' + str(e) + '\033[0m')
 
     def findComp(self, compName, instanceName, max_timeout_count=10):
         '''!@brief
@@ -551,19 +551,19 @@ class HrpsysConfigurator:
             comp = rtm.findRTC(instanceName)
             if comp != None:
                 break
-            print(self.configurator_name, " find Comp wait for", instanceName)
+            print(self.configurator_name + " find Comp wait for" + instanceName)
             time.sleep(1)
             timeout_count += 1
         if comp and comp.ref:
             version = comp.ref.get_component_profile().version
-        print(self.configurator_name, " find Comp    : ", instanceName, " = ", comp, " (", version, ")")
+        print(self.configurator_name + " find Comp    : %s = %s (%s)" % (instanceName, comp, version))
         if comp == None:
-            print(self.configurator_name, " Cannot find component: " + instanceName + " (" + compName + ")")
+            print(self.configurator_name + " Cannot find component: %s (%s)" % (instanceName, compName))
             return [None, None, None]
         comp_svc_port = comp.service("service0")
         if comp_svc_port:
             comp_svc = narrow(comp_svc_port, compName + "Service")
-            print(self.configurator_name, " find CompSvc : ", instanceName + "_svc = ", comp_svc)
+            print(self.configurator_name + " find CompSvc : %s_svc = %s"%(instanceName, comp_svc))
             return [comp, comp_svc, version]
         else:
             return [comp, None, version]
@@ -577,7 +577,7 @@ class HrpsysConfigurator:
             rn2 = 'self.' + rn[0]
             if eval(rn2) == None:
                 create_str = "[self." + rn[0] + ", self." + rn[0] + "_svc, self." + rn[0] + "_version] = self.findComp(\"" + rn[1] + "\",\"" + rn[0] + "\"," + str(max_timeout_count) + ")"
-                print(self.configurator_name, create_str)
+                print(self.configurator_name + create_str)
                 exec(create_str)
                 if eval(rn2) == None:
                     max_timeout_count = 0
@@ -654,10 +654,10 @@ class HrpsysConfigurator:
                 if eval(r): 
                     ret.append(eval(r))
                 else:
-                    print(self.configurator_name, '\033[31mFail to find instance ('+str(rtc)+') for getRTCInstanceList\033[0m')
+                    print(self.configurator_name + '\033[31mFail to find instance ('+str(rtc)+') for getRTCInstanceList\033[0m')
             except Exception:
                 _, e, _ = sys.exc_info()
-                print(self.configurator_name, '\033[31mFail to getRTCInstanceList',e,'\033[0m')
+                print(self.configurator_name + '\033[31mFail to getRTCInstanceList'+str(e)+'\033[0m')
         return ret
 
     # public method to get bodyInfo
@@ -668,7 +668,7 @@ class HrpsysConfigurator:
         import CosNaming
         obj = rtm.rootnc.resolve([CosNaming.NameComponent('ModelLoader', '')])
         mdlldr = obj._narrow(ModelLoader_idl._0_OpenHRP__POA.ModelLoader)
-        print(self.configurator_name, "  bodyinfo URL = file://" + url)
+        print(self.configurator_name + "  bodyinfo URL = file://" + url)
         return mdlldr.getBodyInfo("file://" + url)
 
     # public method to get sensors list
@@ -707,10 +707,10 @@ class HrpsysConfigurator:
         if artc and rtm.findPort(artc.ref, sen_name) != None:
             sen_type = rtm.dataTypeOfPort(artc.port(sen_name)).split("/")[1].split(":")[0]
             if rtm.findPort(self.log.ref, log_name) == None:
-                print(self.configurator_name, "  setupLogger : record type =", sen_type, ", name = ", sen_name, " to ", log_name)
+                print(self.configurator_name + "  setupLogger : record type = %s, name = %s to %s" % ( sen_type, sen_name, log_name))
                 self.log_svc.add(sen_type, log_name)
             else:
-                print(self.configurator_name, "  setupLogger : ", sen_name, " arleady exists in DataLogger")
+                print(self.configurator_name + "  setupLogger : %s arleady exists in DataLogger"% sen_name)
             connectPorts(artc.port(sen_name), self.log.port(log_name))
 
     # public method to configure default logger data ports
@@ -719,13 +719,13 @@ class HrpsysConfigurator:
         Setup logging function.
         '''
         if self.log == None:
-            print(self.configurator_name, "\e[1;31m  setupLogger : self.log is not defined, please check rtcd.conf or rtcd arguments\e[0m")
+            print(self.configurator_name + "\033[31m  setupLogger : self.log is not defined, please check rtcd.conf or rtcd arguments\033[0m")
             return
         #
         for pn in ['q', 'dq', 'tau']:
             self.connectLoggerPort(self.rh, pn)
         # sensor logger ports
-        print(self.configurator_name, "sensor names for DataLogger")
+        print(self.configurator_name + "sensor names for DataLogger")
         for sen in self.sensors:
             self.connectLoggerPort(self.rh, sen.name)
         #
@@ -779,7 +779,7 @@ class HrpsysConfigurator:
         self.log_svc.clear()
         ## parallel running log process (outside from rtcd) for saving logs by emergency signal
         if self.log and (self.log_use_owned_ec or not isinstance(self.log.owned_ecs[0], OpenRTM._objref_ExtTrigExecutionContextService)):
-            print(self.configurator_name, "\033[32mruning DataLogger with own Execution Context\033[0m")
+            print(self.configurator_name + "\033[32mruning DataLogger with own Execution Context\033[0m")
             self.log.owned_ecs[0].start()
             self.log.start(self.log.owned_ecs[0])
 
@@ -795,7 +795,7 @@ class HrpsysConfigurator:
             if managerhost == "localhost":
                 managerhost = socket.gethostname()
             self.ms = rtm.findRTCmanager(managerhost)
-            print(self.configurator_name, "wait for RTCmanager : ", managerhost)
+            print(self.configurator_name + "wait for RTCmanager : " + str(managerhost))
 
     def waitForRobotHardware(self, robotname="Robot"):
         '''!@brief
@@ -812,19 +812,18 @@ class HrpsysConfigurator:
             self.rh = rtm.findRTC("RobotHardware0")
             if not self.rh:
                 self.rh = rtm.findRTC(robotname)
-            print(self.configurator_name, "wait for", robotname, " : ", self.rh, "(timeout ", timeout_count, " < 10)")
+            print(self.configurator_name + "wait for %s : %s ( timeout %d < 10)" % ( robotname, self.rh, timeout_count))
             if self.rh and self.rh.isActive() == None:  # just in case rh is not ready...
                 self.rh = None
             timeout_count += 1
-
         if not self.rh:
-            print(self.configurator_name, "Could not find ", robotname)
+            print(self.configurator_name + "Could not find " + robotname)
             if self.ms:
-                print(self.configurator_name, "Candidates are .... ", [x.name()  for x in self.ms.get_components()])
-            print(self.configurator_name, "Exitting.... ", robotname)
+                print(self.configurator_name + "Candidates are .... " + str([x.name()  for x in self.ms.get_components()]))
+            print(self.configurator_name + "Exitting.... " + robotname)
             exit(1)
 
-        print(self.configurator_name, "findComps -> RobotHardware : ", self.rh, "isActive? = ", self.rh.isActive())
+        print(self.configurator_name + "findComps -> RobotHardware : %s isActive? = %s " % (self.rh,  self.rh.isActive()))
 
     def checkSimulationMode(self):
         '''!@brief
@@ -843,7 +842,7 @@ class HrpsysConfigurator:
             self.rh_svc = narrow(self.rh.service("service0"), "RobotHardwareService")
             self.ep_svc = narrow(self.rh.ec, "ExecutionProfileService")
 
-        print(self.configurator_name, "simulation_mode : ", self.simulation_mode)
+        print(self.configurator_name + "simulation_mode : %s" % self.simulation_mode)
 
     def waitForRTCManagerAndRoboHardware(self, robotname="Robot", managerhost=nshost):
         '''!@brief
@@ -870,7 +869,7 @@ class HrpsysConfigurator:
         Wait for ModelLoader.
         '''
         while self.findModelLoader() == None:  # seq uses modelloader
-            print(self.configurator_name, "wait for ModelLoader")
+            print(self.configurator_name + "wait for ModelLoader")
             time.sleep(3)
 
     def setSelfGroups(self):
@@ -1321,7 +1320,7 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
         @param fname str: name of the file
         '''
         self.log_svc.save(fname)
-        print(self.configurator_name, "saved data to ", fname)
+        print(self.configurator_name + "saved data to " + fname)
 
     def clearLog(self):
         '''!@brief
@@ -1561,7 +1560,7 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
                 return False
             else:
                 jid = eval('self.' + jname)
-                print(self.configurator_name, s_s[jid])
+                print(self.configurator_name + s_s[jid])
                 if s_s[jid][0] & 1 == 0:
                     return False
                 else:
@@ -1619,10 +1618,10 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
             self.rh_svc.servo(jname, SWITCH_ON)
             time.sleep(2)
             if not self.isServoOn(jname):
-                print(self.configurator_name, 'servo on failed.')
+                print(self.configurator_name + 'servo on failed.')
                 raise
         except:
-            print(self.configurator_name, 'exception occured')
+            print(self.configurator_name + 'exception occured')
 
         return 1
 
@@ -1636,7 +1635,7 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
         '''
         # do nothing for simulation
         if self.simulation_mode:
-            print(self.configurator_name, 'omit servo off')
+            print(self.configurator_name + 'omit servo off')
             return 0
 
         print('Turn off Hand Servo')
@@ -1670,7 +1669,7 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
 
             return 2
         except:
-            print(self.configurator_name, 'servo off: communication error')
+            print(self.configurator_name + 'servo off: communication error')
             return -1
 
     def checkEncoders(self, jname='all', option=''):
@@ -1712,9 +1711,9 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
             self.rh_svc.power('all', SWITCH_OFF)
             return 0
 
-        print(self.configurator_name, 'calib-joint ' + jname + ' ' + option)
+        print(self.configurator_name + 'calib-joint ' + jname + ' ' + option)
         self.rh_svc.initializeJointAngle(jname, option)
-        print(self.configurator_name, 'done')
+        print(self.configurator_name + 'done')
         self.rh_svc.power('all', SWITCH_OFF)
         self.goActual()
         time.sleep(0.1)
@@ -1809,30 +1808,30 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
         @type robotname: str
         @type url: str
         '''
-        print(self.configurator_name, "waiting ModelLoader")
+        print(self.configurator_name + "waiting ModelLoader")
         self.waitForModelLoader()
-        print(self.configurator_name, "start hrpsys")
+        print(self.configurator_name + "start hrpsys")
 
-        print(self.configurator_name, "finding RTCManager and RobotHardware")
+        print(self.configurator_name + "finding RTCManager and RobotHardware")
         self.waitForRTCManagerAndRoboHardware(robotname)
         self.sensors = self.getSensors(url)
 
-        print(self.configurator_name, "creating components")
+        print(self.configurator_name + "creating components")
         self.createComps()
 
-        print(self.configurator_name, "connecting components")
+        print(self.configurator_name + "connecting components")
         self.connectComps()
 
-        print(self.configurator_name, "activating components")
+        print(self.configurator_name + "activating components")
         self.activateComps()
 
-        print(self.configurator_name, "setup logger")
+        print(self.configurator_name + "setup logger")
         self.setupLogger()
 
-        print(self.configurator_name, "setup joint groups")
+        print(self.configurator_name + "setup joint groups")
         self.setSelfGroups()
 
-        print(self.configurator_name, '\033[32minitialized successfully\033[0m')
+        print(self.configurator_name + '\033[32minitialized successfully\033[0m')
 
     def __init__(self, cname="[hrpsys.py] "):
         initCORBA()
