@@ -2,8 +2,8 @@
 Changelog for package hrpsys
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+315.3.2 (2015-04-13)
+--------------------
 * hrpsys_config.py
 
   * python 2.5 - 3.0 supports
