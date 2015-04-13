@@ -176,6 +176,7 @@ void initWorld(Project& prj, BodyFactory &factory,
             }
         }
         body->calcForwardKinematics();
+        body->setDefaultRootPosition(body->rootLink()->p, body->rootLink()->attitude());
     }
     world.initialize();
 #if 0
