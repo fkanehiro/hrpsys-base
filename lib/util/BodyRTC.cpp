@@ -525,6 +525,7 @@ bool BodyRTC::preOneStep() {
                           << j->jointType << std::endl;
         }
     }
+    if (numJoints() == 0) { all_servo_off = false; }
     if ( all_servo_off ) { // when all servo is off, do not move root joint
         rootLink()->p = m_lastServoOn_p;
         rootLink()->setAttitude(m_lastServoOn_R);
