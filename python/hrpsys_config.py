@@ -1604,10 +1604,13 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
             jname = 'all'
 
         try:
-            waitInputConfirm(\
+            r = waitInputConfirm(\
                 '!! Robot Motion Warning (SERVO_ON) !!\n\n'
                 'Confirm RELAY switched ON\n'
                 'Push [OK] to switch servo ON(%s).' % (jname))
+            if not r:
+                print(self.configurator_name, 'servo on: canceled')
+                return 0
         except:  # ths needs to change
             self.rh_svc.power('all', SWITCH_OFF)
             raise
@@ -1652,10 +1655,12 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
             jname = 'all'
 
         if wait:
-            waitInputConfirm(
+            r = waitInputConfirm(
                 '!! Robot Motion Warning (Servo OFF)!!\n\n'
                 'Push [OK] to servo OFF (%s).' % (jname))  # :
-
+            if not r:
+                print(self.configurator_name, 'servo off: canceled')
+                return 2
         try:
             self.rh_svc.servo('all', SWITCH_OFF)
             time.sleep(0.2)
@@ -1765,6 +1770,40 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
         @return bool:
         '''
         return self.seq_svc.playPatternOfGroup(gname, jointangles, tm)
+
+    def setSensorCalibrationJointAngles(self):
+        '''!@brief
+        Set joint angles for sensor calibration.
+        Please override joint angles to avoid self collision.
+        '''
+        self.setJointAngles([0]*len(self.rh_svc.getStatus().servoState), 4.0)
+        self.waitInterpolation()
+
+    def calibrateInertiaSensor(self):
+        '''!@brief
+        Calibrate inertia sensor
+        '''
+        self.rh_svc.calibrateInertiaSensor()
+
+    def calibrateInertiaSensorWithDialog(self):
+        '''!@brief
+        Calibrate inertia sensor with dialog and setting calibration pose
+        '''
+        r = waitInputConfirm (
+                        '!! Robot Motion Warning (Move to Sensor Calibration Pose)!!\n\n'
+                        'Push [OK] to move to sensor calibration pose.')
+        if not r: return False
+        self.setSensorCalibrationJointAngles()
+        r = waitInputConfirm (
+                        '!! Put the robot down!!\n\n'
+                        'Push [OK] to the next step.')
+        if not r: return False
+        self.calibrateInertiaSensor()
+        r = waitInputConfirm (
+                        '!! Put the robot up!!\n\n'
+                        'Push [OK] to the next step.')
+        if not r: return False
+        return True
 
     # #
     # # service interface for Unstable RTC component
