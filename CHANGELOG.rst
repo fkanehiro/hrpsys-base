@@ -2,6 +2,58 @@
 Changelog for package hrpsys
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+315.3.2 (2015-04-13)
+--------------------
+* hrpsys_config.py
+
+  * python 2.5 - 3.0 supports
+
+    * [hrpsys_config.py,rtm.py] #559 is not what expected, we do not want to change output string style
+    * [rtm.py, hrpsys_config.py] fix exception to work on all python version. see http://stackoverflow.com/questions/11285313/try-except-as-error-in-python-2-5-python-3-x
+    * [rtm.py, hrpsys_config.py] use print() for support python2.5-python3.4
+
+  * Behavior change on waitInputConfrim() https://github.com/fkanehiro/hrpsys-base/issues/480, https://github.com/fkanehiro/hrpsys-base/pull/565#issuecomment-92078185
+
+    * [hrpsys_config.py] remove waitInputConfirmWithDisplayCheck(), since waitInputConfirm() in waitInput.py now support non-X environment
+    * [hrpsys_config.py] previous commit changes waitInputConfirm() behavior, it returns True/False for Ok/Cance, not raise error
+    * [waitInput.py] if window is not available, ask via screen, this changes behavior of waitInputConfirm() which previously raise error on cancel input, but not it returns False
+
+  * [hrpsys_config.py] support $(OPENHRP_DIR) and $(PROJECT_DIR) in getBodyInfo and loadPattern
+  * Add calibrateInertiaSensor function and add calibration function with dialog
+  * [hrpsys_config.py] add setMaxLogLength()
+  * [hrpsys_config.py] add dq to setupLogger()
+  * Enable to get impedance controller mode
+
+* lib/util/BodyRTC
+
+  * [lib/util/BodyRTC.{cpp,h}] Set all servo off if robot has no joints, which means single rigid body
+  * fixes a bug in checkEmergency()
+
+* rtc/RobotHardware
+
+  * send emergency signal by hardware servo alarm https://github.com/fkanehiro/hrpsys-base/pull/556
+
+* sample/SampleRobot
+
+  * [sample/SampleRobot] add README.md
+  * [launch/samplerobot-drc-testbed.launch, sample/SampleRobot/SampleRobot.DRCTestbed.xml, sample/SampleRobot/environments/DRCTestbed*.wrl] add DRC Testbed models
+  * [DRCTestbedTerrainUSBlock.wrl] fix floor color
+  * [launch/samplerobot-terrain-walk.{launch,py} add sample program for terrain walk
+  * [launch/samplerobot-walk.py] use check_output, instead of abspath(__file__) ../sample...
+  * [launch/samplerobot*.py] remove python files just to run from ROS environment, now you can call everything by rosrun hrpsys samplerobot_auto_balacner.py
+  * [sample/SampleRobot] use ''  to specify model location
+
+* .travis.sh
+
+  * [.travis.sh] remove hrpsys deb file for both downstream and 315.1.9 test
+  * [.travis.sh] https://github.com/start-jsk/rtmros_hironx/pull/318.diff has been merged
+  * [.travis.sh] remove hrpsys deb file for both downstream and 315.1.9 test
+  * [.travis.h] https://github.com/start-jsk/rtmros_hironx/pull/318.diff has been merged
+  * [.travis.yml] check python code work on python2.5 to python3.4
+  * [.travis.sh] add --no-check-certificate
+
+* Contributors: Fumio KANEHIRO, Kei Okada, Shunichi Nozawa, Yohei Kakiuchi
+
 315.3.1 (2015-04-07)
 --------------------
 
