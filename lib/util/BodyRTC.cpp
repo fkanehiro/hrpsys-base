@@ -30,6 +30,7 @@ BodyRTC::BodyRTC(RTC::Manager* manager)
     : Body(),
       DataFlowComponentBase(manager),
       m_RobotHardwareServicePort("RobotHardwareService"),
+      m_resetPosition(true),
       dummy(0)
 {
     //std::cout << "constructor of BodyRTC"  << std::endl;
@@ -65,7 +66,6 @@ RTC::ReturnCode_t BodyRTC::setup(){
     std::cout << "BodyRTC::setup(), numJoints = " << numJoints() << std::endl;
     angles.resize(numJoints());
     commands.resize(numJoints());
-    getDefaultRootPosition(m_lastServoOn_p, m_lastServoOn_R);
     calib_status.resize(numJoints());
     servo_status.resize(numJoints());
     power_status.resize(numJoints());
@@ -524,6 +524,12 @@ bool BodyRTC::preOneStep() {
                 std::cerr << "calcCMJacobian() : unsupported jointType("
                           << j->jointType << std::endl;
         }
+    }
+    if ( m_resetPosition ) {
+        getDefaultRootPosition(m_lastServoOn_p, m_lastServoOn_R);
+        rootLink()->p = m_lastServoOn_p;
+        rootLink()->setAttitude(m_lastServoOn_R);
+        m_resetPosition = false;
     }
     if ( all_servo_off ) { // when all servo is off, do not move root joint
         rootLink()->p = m_lastServoOn_p;
