@@ -553,7 +553,7 @@ bool robot::checkEmergency(emg_reason &o_reason, int &o_id)
     } 
     int alarm;
     for (int i=0; i<numJoints(); i++){
-        read_servo_alarm(i, &alarm);
+        if (!read_servo_alarm(i, &alarm)) continue;
         if (alarm & SS_EMERGENCY) {
             if (!m_reportedEmergency) {
                 m_reportedEmergency = true;
