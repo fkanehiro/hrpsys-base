@@ -17,7 +17,7 @@ def init ():
     global hcf
     hcf = HrpsysConfigurator()
     hcf.getRTCList = hcf.getRTCListUnstable
-    hcf.init ("SampleRobot(Robot)0", "@OPENHRP_DIR@/share/OpenHRP-3.1/sample/model/sample1.wrl")
+    hcf.init ("SampleRobot(Robot)0", "$(OPENHRP_DIR)/share/OpenHRP-3.1/sample/model/sample1.wrl")
 
 def demo():
     init()
@@ -71,3 +71,6 @@ def demo():
     ret5=hcf.ic_svc.stopImpedanceController("rarm")
     if ret5:
         print "stopImpedanceController => OK"
+
+if __name__ == '__main__':
+    demo()

@@ -17,7 +17,7 @@ def init ():
     global hcf
     hcf = HrpsysConfigurator()
     hcf.getRTCList = hcf.getRTCListUnstable
-    hcf.init ("SampleRobot(Robot)0", "@OPENHRP_DIR@/share/OpenHRP-3.1/sample/model/sample1.wrl")
+    hcf.init ("SampleRobot(Robot)0", "$(OPENHRP_DIR)/share/OpenHRP-3.1/sample/model/sample1.wrl")
 
 def initPose():
     # set initial pose from base 90mm down pose of sample/controller/SampleController/etc/Sample.pos
@@ -103,3 +103,6 @@ def demoStairUpDown():
     print "Start stair down"
     stairWalk(-0.1524)
     hcf.abc_svc.stopAutoBalancer();
+
+if __name__ == '__main__':
+    demo()

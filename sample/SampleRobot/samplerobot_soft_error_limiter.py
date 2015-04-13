@@ -13,19 +13,22 @@ except:
     import socket
     import time
 
+from subprocess import check_output
+
 def init ():
     global hcf, initial_pose, limit_table_list, bodyinfo
     hcf = HrpsysConfigurator()
     hcf.getRTCList = hcf.getRTCListUnstable
-    hcf.init ("SampleRobot(Robot)0", "@OPENHRP_DIR@/share/OpenHRP-3.1/sample/model/sample1.wrl")
+    hcf.init ("SampleRobot(Robot)0", "$(OPENHRP_DIR)/share/OpenHRP-3.1/sample/model/sample1.wrl")
     initial_pose = [-7.779e-005,  -0.378613,  -0.000209793,  0.832038,  -0.452564,  0.000244781,  0.31129,  -0.159481,  -0.115399,  -0.636277,  0,  0,  0,  -7.77902e-005,  -0.378613,  -0.000209794,  0.832038,  -0.452564,  0.000244781,  0.31129,  0.159481,  0.115399,  -0.636277,  0,  0,  0,  0,  0,  0]
     # load joint limit table from conf file
-    f=open("@DESTDIR@@CMAKE_INSTALL_PREFIX@/share/hrpsys/samples/SampleRobot/SampleRobot.500.el.conf")
+    PROJECT_DIR=check_output(['pkg-config', 'hrpsys-base', '--variable=prefix']).rstrip()
+    f=open("{}/share/hrpsys/samples/SampleRobot/SampleRobot.500.el.conf".format(PROJECT_DIR))
     limit_table_str=filter(lambda x : x.find("joint_limit_table") > -1 , f.readlines())[0]
     limit_table_list=limit_table_str.split(":")[1:]
     f.close()
     # set bodyinfo
-    bodyinfo=hcf.getBodyInfo("@OPENHRP_DIR@/share/OpenHRP-3.1/sample/model/sample1.wrl")
+    bodyinfo=hcf.getBodyInfo("$(OPENHRP_DIR)/share/OpenHRP-3.1/sample/model/sample1.wrl")
 
 def demo ():
     init()
@@ -107,3 +110,5 @@ def testOneLimitTable (self_jointId, target_jointId, limit_table, target_llimit,
     hcf.seq_svc.waitInterpolation()
     return all(ret)
 
+if __name__ == '__main__':
+    demo()

@@ -20,7 +20,7 @@ def init ():
     global hcf, pitch_poses, roll_poses, yaw_poses, roll_pitch_poses, initial_pose
     hcf = HrpsysConfigurator()
     hcf.getRTCList = hcf.getRTCListUnstable
-    hcf.init ("SampleRobot(Robot)0", "@OPENHRP_DIR@/share/OpenHRP-3.1/sample/model/sample1.wrl")
+    hcf.init ("SampleRobot(Robot)0", "$(OPENHRP_DIR)/share/OpenHRP-3.1/sample/model/sample1.wrl")
     # initialize poses
     # pose1 = [0]*29
     # pose2 = [0]*29
@@ -169,3 +169,6 @@ def demo():
     hcf.abc_svc.startAutoBalancer(["rleg", "lleg"])
     hcf.seq_svc.waitInterpolation()
     test_kf_plot(test_walk, "test_walk")
+
+if __name__ == '__main__':
+    demo()

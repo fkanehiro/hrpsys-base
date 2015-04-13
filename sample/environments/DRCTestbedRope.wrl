@@ -1,0 +1,348 @@
+#VRML V2.0 utf8
+
+# Produced by EusLisp 9.10(0f0f62e 1.0.2 66314) for Linux64 created on kokada-t440s(Thu Feb 12 22:47:25 JST 2015)
+# Date: Mon Apr 13 19:46:48 2015
+
+
+PROTO Joint [
+ exposedField     SFVec3f      center              0 0 0
+ exposedField     MFNode       children            []
+ exposedField     MFFloat      llimit              []
+ exposedField     SFRotation   limitOrientation    0 0 1 0
+ exposedField     SFString     name                ""
+ exposedField     SFRotation   rotation            0 0 1 0
+ exposedField     SFVec3f      scale               1 1 1
+ exposedField     SFRotation   scaleOrientation    0 0 1 0
+ exposedField     MFFloat      stiffness           [ 0 0 0 ]
+ exposedField     SFVec3f      translation         0 0 0
+ exposedField     MFFloat      ulimit              []
+ exposedField     MFFloat      dh                  [0 0 0 0]
+ exposedField     SFString     jointType           ""
+ exposedField     SFInt32      jointId             -1
+ exposedField     SFVec3f     jointAxis           0 0 1
+]
+{
+   Transform {
+      center           IS center
+      children         IS children
+      rotation         IS rotation
+      scale            IS scale
+      scaleOrientation IS scaleOrientation
+      translation      IS translation
+   }
+}
+
+PROTO Segment [
+ field           SFVec3f     bboxCenter        0 0 0
+ field           SFVec3f     bboxSize          -1 -1 -1
+ exposedField    SFVec3f     centerOfMass      0 0 0
+ exposedField    MFNode      children          [ ]
+ exposedField    SFNode      coord             NULL
+ exposedField    MFNode      displacers        [ ]
+ exposedField    SFFloat     mass              0
+ exposedField    MFFloat     momentsOfInertia  [ 0 0 0 0 0 0 0 0 0 ]
+ exposedField    SFString    name              ""
+ eventIn         MFNode      addChildren
+ eventIn         MFNode      removeChildren
+]
+{
+   Group {
+      addChildren    IS addChildren
+      bboxCenter     IS bboxCenter
+      bboxSize       IS bboxSize
+      children       IS children
+      removeChildren IS removeChildren
+   }
+}
+
+
+PROTO Humanoid [
+ field           SFVec3f    bboxCenter            0 0 0
+ field           SFVec3f    bboxSize              -1 -1 -1
+ exposedField    SFVec3f    center                0 0 0
+ exposedField    MFNode     humanoidBody          [ ]
+ exposedField    MFString   info                  [ ]
+ exposedField    MFNode     joints                [ ]
+ exposedField    SFString   name                  ""
+ exposedField    SFRotation rotation              0 0 1 0
+ exposedField    SFVec3f    scale                 1 1 1
+ exposedField    SFRotation scaleOrientation      0 0 1 0
+ exposedField    MFNode     segments              [ ]
+ exposedField    MFNode     sites                 [ ]
+ exposedField    SFVec3f    translation           0 0 0
+ exposedField    SFString   version               "1.1"
+ exposedField    MFNode     viewpoints            [ ]
+]
+{
+   Transform {
+      bboxCenter       IS bboxCenter
+      bboxSize         IS bboxSize
+      center           IS center
+      rotation         IS rotation
+      scale            IS scale
+      scaleOrientation IS scaleOrientation
+      translation      IS translation
+      children [
+         Group {
+            children IS viewpoints
+         }
+         Group {
+            children IS humanoidBody
+         }
+      ]
+   }
+}
+
+
+PROTO VisionSensor [
+  exposedField SFVec3f    translation       0 0 0
+  exposedField SFRotation rotation              0 0 1 0
+  #exposedField SFRotation orientation       0 0 1 0
+  exposedField SFFloat    fieldOfView       0.785398
+  exposedField SFString   name              ""
+  exposedField SFFloat    frontClipDistance 0.01
+  exposedField SFFloat    backClipDistance  10.0
+  exposedField SFString   type              "NONE"
+  exposedField SFInt32    sensorId          -1
+  exposedField SFInt32    width             320  # 
+  exposedField SFInt32    height            240  # 
+  #exposedField MFNode       children            [] # for me
+]
+{
+  Transform {
+    rotation         IS rotation
+    translation      IS translation
+    #children IS children # for me
+  }
+}
+
+
+PROTO ForceSensor [
+  exposedField SFVec3f maxForce -1 -1 -1
+  exposedField SFVec3f maxTorque -1 -1 -1
+  exposedField SFVec3f translation 0 0 0
+  exposedField SFRotation rotation 0 0 1 0
+  exposedField SFInt32 sensorId -1
+]
+{
+  Transform {
+translation IS translation
+    rotation IS rotation
+  }
+}
+
+PROTO Gyro [
+  exposedField SFVec3f maxAngularVelocity -1 -1 -1
+  exposedField SFVec3f translation 0 0 0
+  exposedField SFRotation rotation 0 0 1 0
+  exposedField SFInt32 sensorId -1
+]
+{
+  Transform {
+    translation IS translation
+    rotation IS rotation
+  }
+}
+
+PROTO AccelerationSensor [
+  exposedField SFVec3f maxAcceleration -1 -1 -1
+  exposedField SFVec3f translation 0 0 0
+  exposedField SFRotation rotation 0 0 1 0
+  exposedField SFInt32 sensorId -1
+]
+{
+  Transform {
+    translation IS translation
+    rotation IS rotation
+  }
+}
+
+PROTO PressureSensor [
+  exposedField SFFloat maxPressure -1
+  exposedField SFVec3f translation 0 0 0
+  exposedField SFRotation rotation 0 0 1 0
+  exposedField SFInt32 sensorId -1
+]
+{
+  Transform {
+    translation IS translation
+    rotation IS rotation
+  }
+}
+
+
+NavigationInfo {
+avatarSize    0.5
+headlight     TRUE
+type  ["EXAMINE", "ANY"]
+}
+Viewpoint {
+position    3 0 0.835
+orientation 0.5770 0.5775 0.5775 2.0935
+}
+DEF DRCTestbedRope Humanoid {
+humanoidBody [
+DEF WAIST Joint {
+  jointType "fixed"
+  dh [0 0 0 0]
+  translation 0.000000 0.665000 0.000000
+  rotation 0.0 0.0 1.0 0
+  children [
+DEF ROOT-LINK_S Segment {
+  centerOfMass 0.0 0.0 0.0
+  mass 0.001
+  momentsOfInertia [ 1.000000e-09 0.0 0.0 0.0 1.000000e-09 0.0 0.0 0.0 1.000000e-09 ]
+  children [
+    Shape {
+      appearance Appearance {
+        material Material {
+        }
+      }
+      geometry DEF ROOT-LINK-FACES IndexedFaceSet {
+        creaseAngle 0.8
+        ccw TRUE
+        solid TRUE
+        colorPerVertex FALSE
+        color Color {
+           color [
+             0.800781 0.519531 0.0,
+           ]
+        }
+        coord DEF ROOT-LINK-COORD Coordinate {
+          point[
+            0.010000 0.665000 0.105000,
+            0.010000 0.665000 1.695000,
+            0.010000 -0.665000 0.105000,
+            0.010000 -0.665000 1.695000,
+            0.000000 0.665000 0.105000,
+            0.000000 -0.665000 0.105000,
+            0.000000 -0.665000 1.695000,
+            0.000000 0.665000 1.695000,
+          ]
+        }
+        coordIndex [
+          3, 1, 7, -1,
+          7, 6, 3, -1,
+          5, 4, 0, -1,
+          0, 2, 5, -1,
+          7, 1, 0, -1,
+          0, 4, 7, -1,
+          1, 3, 2, -1,
+          2, 0, 1, -1,
+          3, 6, 5, -1,
+          5, 2, 3, -1,
+          6, 7, 4, -1,
+          4, 5, 6, -1,
+        ]
+        colorIndex [
+          0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+        ]
+      }
+    }
+    Shape {
+      appearance Appearance {
+        material Material {
+        }
+      }
+      geometry DEF ROOT-LINK-FACES IndexedFaceSet {
+        creaseAngle 0.8
+        ccw TRUE
+        solid TRUE
+        colorPerVertex FALSE
+        color Color {
+           color [
+             0.0 0.0 0.996094,
+           ]
+        }
+        coord DEF ROOT-LINK-COORD Coordinate {
+          point[
+            0.000000 -0.430000 1.410000,
+            0.000000 -0.430000 1.460000,
+            0.000000 -0.530000 1.410000,
+            0.000000 -0.530000 1.460000,
+            -0.050000 -0.430000 1.410000,
+            -0.050000 -0.530000 1.410000,
+            -0.050000 -0.530000 1.460000,
+            -0.050000 -0.430000 1.460000,
+          ]
+        }
+        coordIndex [
+          3, 1, 7, -1,
+          7, 6, 3, -1,
+          5, 4, 0, -1,
+          0, 2, 5, -1,
+          7, 1, 0, -1,
+          0, 4, 7, -1,
+          1, 3, 2, -1,
+          2, 0, 1, -1,
+          3, 6, 5, -1,
+          5, 2, 3, -1,
+          6, 7, 4, -1,
+          4, 5, 6, -1,
+        ]
+        colorIndex [
+          0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+        ]
+      }
+    }
+    Shape {
+      appearance Appearance {
+        material Material {
+        }
+      }
+      geometry DEF ROOT-LINK-FACES IndexedFaceSet {
+        creaseAngle 0.8
+        ccw TRUE
+        solid TRUE
+        colorPerVertex FALSE
+        color Color {
+           color [
+             0.996094 0.0 0.0,
+           ]
+        }
+        coord DEF ROOT-LINK-COORD Coordinate {
+          point[
+            0.000000 0.600000 1.430000,
+            0.000000 0.600000 1.440000,
+            0.000000 -0.440000 1.430000,
+            0.000000 -0.440000 1.440000,
+            -0.010000 0.600000 1.430000,
+            -0.010000 -0.440000 1.430000,
+            -0.010000 -0.440000 1.440000,
+            -0.010000 0.600000 1.440000,
+          ]
+        }
+        coordIndex [
+          3, 1, 7, -1,
+          7, 6, 3, -1,
+          5, 4, 0, -1,
+          0, 2, 5, -1,
+          7, 1, 0, -1,
+          0, 4, 7, -1,
+          1, 3, 2, -1,
+          2, 0, 1, -1,
+          3, 6, 5, -1,
+          5, 2, 3, -1,
+          6, 7, 4, -1,
+          4, 5, 6, -1,
+        ]
+        colorIndex [
+          0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+        ]
+      }
+    }
+  ]
+} #Segment
+]
+} #WAIST
+] # END of HumanoidBody
+
+joints [
+  USE WAIST
+]
+
+segments [
+  USE ROOT-LINK_S
+]
+
+}

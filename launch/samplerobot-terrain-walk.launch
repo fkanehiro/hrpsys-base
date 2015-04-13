@@ -1,0 +1,16 @@
+<launch>
+  <!--
+
+HOW TO RUN TEST CODE:
+
+$ ipython -i `rospack find hrpsys`/samples/SampleRobot/samplerobot_terrain_walk.py 
+>>> demoSlopeUpDown()
+
+   -->
+  <arg name="MODEL" default="SlopeUpDown" />
+  <include file="$(find hrpsys)/launch/samplerobot.launch" >
+    <arg name="CONTROLLER_PERIOD" value="200" />
+    <arg name="PROJECT_FILE"      value="$(find hrpsys)/samples/SampleRobot/SampleRobot.TerrainFloor.$(arg MODEL).xml" />
+  </include>
+</launch>
+

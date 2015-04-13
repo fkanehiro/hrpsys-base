@@ -18,7 +18,8 @@ except: # rosbuild installed
     import roslib
     roslib.load_manifest('hrpsys')
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__))+'/../samples/SampleRobot/') # set path to SampleRobot
+from subprocess import check_output
+sys.path.append(os.path.join(check_output(['pkg-config', 'hrpsys-base', '--variable=prefix']).rstrip(),'share/hrpsys/samples/SampleRobot/')) # set path to SampleRobot
 
 import samplerobot_walk
 

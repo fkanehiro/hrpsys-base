@@ -10,6 +10,8 @@ from hrpsys import *  # load ModelLoader
 import socket
 import time
 
+from subprocess import check_output
+
 # copy from transformations.py, Christoph Gohlke, The Regents of the University of California
 
 import numpy
@@ -660,6 +662,14 @@ class HrpsysConfigurator:
                 print(self.configurator_name + '\033[31mFail to getRTCInstanceList'+str(e)+'\033[0m')
         return ret
 
+    # private method to replace $(OPENHRP_DIR) or $(PROJECT_DIR)
+    def parseUrl(self, url):
+        if '$(OPENHRP_DIR)' in url:
+            url = url.replace('$(OPENHRP_DIR)', check_output(['pkg-config', 'openhrp3.1', '--variable=prefix']).rstrip())
+        if '$(PROJECT_DIR)' in url:
+            url = url.replace('$(PROJECT_DIR)', check_output(['pkg-config', 'hrpsys-base', '--variable=prefix']).rstrip())
+        return url
+
     # public method to get bodyInfo
     def getBodyInfo(self, url):
         '''!@brief
@@ -668,6 +678,7 @@ class HrpsysConfigurator:
         import CosNaming
         obj = rtm.rootnc.resolve([CosNaming.NameComponent('ModelLoader', '')])
         mdlldr = obj._narrow(ModelLoader_idl._0_OpenHRP__POA.ModelLoader)
+        url = self.parseUrl(url)
         print(self.configurator_name + "  bodyinfo URL = file://" + url)
         return mdlldr.getBodyInfo("file://" + url)
 
@@ -978,6 +989,7 @@ class HrpsysConfigurator:
         @param tm float: - The time to take for the 1st line.
         @return: List of 2 oct(string) values.
         '''
+        fname = self.parseUrl(fname)
         return self.seq_svc.loadPattern(fname, tm)
 
     def waitInterpolation(self):

@@ -16,7 +16,7 @@ except:
 def init ():
     global hcf
     hcf = HrpsysConfigurator()
-    hcf.init ("SampleRobot(Robot)0", "@OPENHRP_DIR@/share/OpenHRP-3.1/sample/model/sample1.wrl")
+    hcf.init ("SampleRobot(Robot)0", "$(OPENHRP_DIR)/share/OpenHRP-3.1/sample/model/sample1.wrl")
     global reset_pose_doc, move_base_pose_doc, doc
     # doc for patterns.
     #  torque and wrenches are non-realistic values, just for testing.
@@ -138,4 +138,7 @@ def demo():
     demoSetZmp()
     demoSetBasePosRpy()
     demoSetWrenches()
+
+if __name__ == '__main__':
+    demo()
 

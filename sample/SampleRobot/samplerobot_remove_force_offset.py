@@ -17,7 +17,7 @@ def init ():
     global hcf
     hcf = HrpsysConfigurator()
     hcf.getRTCList = hcf.getRTCListUnstable
-    hcf.init ("SampleRobot(Robot)0", "@OPENHRP_DIR@/share/OpenHRP-3.1/sample/model/sample1.wrl")
+    hcf.init ("SampleRobot(Robot)0", "$(OPENHRP_DIR)/share/OpenHRP-3.1/sample/model/sample1.wrl")
 
 def demo():
     import numpy
@@ -54,3 +54,6 @@ def demo():
     ret=hcf.rmfo_svc.loadForceMomentOffsetParams("/tmp/test-rmfo-offsets.dat")
     if ret:
         print "loadForceMomentOffsetParams => OK"
+
+if __name__ == '__main__':
+    demo()
