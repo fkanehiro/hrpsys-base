@@ -17,7 +17,7 @@ def init ():
     global hcf
     hcf = HrpsysConfigurator()
     hcf.getRTCList = hcf.getRTCListUnstable
-    hcf.init ("SampleRobot(Robot)0", "@OPENHRP_DIR@/share/OpenHRP-3.1/sample/model/sample1.wrl")
+    hcf.init ("SampleRobot(Robot)0", "$(OPENHRP_DIR)/share/OpenHRP-3.1/sample/model/sample1.wrl")
 
 def demo ():
     init()
@@ -76,3 +76,6 @@ def demo ():
     hcf.seq_svc.waitInterpolation();
     hcf.ic_svc.deleteImpedanceController("vrhsensor")
     print "test ImpedanceController for virtual force sensor => OK"
+
+if __name__ == '__main__':
+    demo()

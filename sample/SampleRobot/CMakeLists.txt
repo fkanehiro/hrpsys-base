@@ -35,35 +35,6 @@ foreach(_idx 0 1 2)
   configure_file(SampleRobot.TerrainFloor.xml.in ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.TerrainFloor.${_tmp_file_suffix}.xml)
 endforeach()
 
-# Use configure_file to specify openhrp3 directory for sample1.wrl model
-configure_file(samplerobot_walk.py.in ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_walk.py)
-configure_file(samplerobot_auto_balancer.py.in ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_auto_balancer.py)
-configure_file(samplerobot_terrain_walk.py.in ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_terrain_walk.py)
-configure_file(samplerobot_data_logger.py.in ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_data_logger.py)
-configure_file(samplerobot_impedance_controller.py.in ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_impedance_controller.py)
-configure_file(samplerobot_remove_force_offset.py.in ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_remove_force_offset.py)
-configure_file(samplerobot_stabilizer.py.in ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_stabilizer.py)
-configure_file(samplerobot_sequence_player.py.in ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_sequence_player.py)
-configure_file(samplerobot_collision_detector.py.in ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_collision_detector.py)
-configure_file(samplerobot_virtual_force_sensor.py.in ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_virtual_force_sensor.py)
-configure_file(samplerobot_soft_error_limiter.py.in ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_soft_error_limiter.py)
-configure_file(samplerobot_kalman_filter.py.in ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_kalman_filter.py)
-
-install(PROGRAMS
-  ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_data_logger.py
-  ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_auto_balancer.py
-  ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_terrain_walk.py
-  ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_stabilizer.py
-  ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_remove_force_offset.py
-  ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_impedance_controller.py
-  ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_walk.py
-  ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_sequence_player.py
-  ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_collision_detector.py
-  ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_virtual_force_sensor.py
-  ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_soft_error_limiter.py
-  ${CMAKE_CURRENT_BINARY_DIR}/samplerobot_kalman_filter.py
-  DESTINATION share/hrpsys/samples/SampleRobot)
-
 install(FILES 
   # files for 500[Hz] = 0.002[s]
   ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.500.conf

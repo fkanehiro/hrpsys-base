@@ -27,9 +27,12 @@ def init ():
     hcf.init ("SampleRobot(Robot)0")
 
 def loadPattern(basename, tm=1.0):
-    hcf.seq_svc.loadPattern(basename, tm)
-    hcf.seq_svc.waitInterpolation()
+    hcf.loadPattern(basename, tm)
+    hcf.waitInterpolation()
 
 def demo():
     init()
-    loadPattern("@OPENHRP_DIR@/share/OpenHRP-3.1/sample/controller/SampleController/etc/Sample")
+    loadPattern("$(OPENHRP_DIR)/share/OpenHRP-3.1/sample/controller/SampleController/etc/Sample")
+
+if __name__ == '__main__':
+    demo()

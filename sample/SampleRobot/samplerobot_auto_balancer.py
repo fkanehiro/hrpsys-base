@@ -17,7 +17,7 @@ def init ():
     global hcf
     hcf = HrpsysConfigurator()
     hcf.getRTCList = hcf.getRTCListUnstable
-    hcf.init ("SampleRobot(Robot)0", "@OPENHRP_DIR@/share/OpenHRP-3.1/sample/model/sample1.wrl")
+    hcf.init ("SampleRobot(Robot)0", "$(OPENHRP_DIR)/share/OpenHRP-3.1/sample/model/sample1.wrl")
 
 def testPoseList(pose_list, initial_pose):
     for pose in pose_list:
@@ -158,3 +158,7 @@ def demo():
     # abc_svc.goPos(0.1, 0.05, 20)
     # abc_svc.waitFootSteps()
     # abc_svc.stopABC()
+
+if __name__ == '__main__':
+    demo()
+

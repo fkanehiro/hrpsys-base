@@ -16,7 +16,7 @@ except:
 def init ():
     global hcf, init_pose, col_safe_pose, col_fail_pose
     hcf = HrpsysConfigurator()
-    hcf.init ("SampleRobot(Robot)0", "@OPENHRP_DIR@/share/OpenHRP-3.1/sample/model/sample1.wrl")
+    hcf.init ("SampleRobot(Robot)0", "$(OPENHRP_DIR)/share/OpenHRP-3.1/sample/model/sample1.wrl")
     init_pose = [0]*29
     col_safe_pose = [0.0,-0.349066,0.0,0.820305,-0.471239,0.0,0.523599,0.0,0.0,-1.74533,0.15708,-0.113446,0.0,0.0,-0.349066,0.0,0.820305,-0.471239,0.0,0.523599,0.0,0.0,-1.74533,-0.15708,-0.113446,0.0,0.0,0.0,0.0]
     col_fail_pose = [0.0,-0.349066,0.0,0.820305,-0.471239,0.0,0.845363,0.03992,0.250074,-1.32816,0.167513,0.016204,0.0,0.0,-0.349066,0.0,0.820305,-0.471239,0.0,0.523599,0.0,0.0,-1.74533,-0.15708,-0.113446,0.0,0.0,0.0,0.0]
@@ -78,3 +78,6 @@ def demo():
     demoCollisionCheckFail()
     demoCollisionCheckFailWithSetTolerance()
     demoCollisionDisableEnable()
+
+if __name__ == '__main__':
+    demo()
