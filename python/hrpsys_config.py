@@ -645,7 +645,7 @@ class HrpsysConfigurator:
                            self.tc, self.el]
         return filter(lambda c: c != None, controller_list)  # only return existing controllers
 
-    def getRTCInstanceList(self):
+    def getRTCInstanceList(self, verbose=True):
         '''!@brief
         Get list of RTC Instance
         '''
@@ -656,7 +656,8 @@ class HrpsysConfigurator:
                 if eval(r): 
                     ret.append(eval(r))
                 else:
-                    print(self.configurator_name + '\033[31mFail to find instance ('+str(rtc)+') for getRTCInstanceList\033[0m')
+                    if verbose:
+                        print(self.configurator_name + '\033[31mFail to find instance ('+str(rtc)+') for getRTCInstanceList\033[0m')
             except Exception:
                 _, e, _ = sys.exc_info()
                 print(self.configurator_name + '\033[31mFail to getRTCInstanceList'+str(e)+'\033[0m')
