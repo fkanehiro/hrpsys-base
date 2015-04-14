@@ -553,7 +553,7 @@ class HrpsysConfigurator:
             comp = rtm.findRTC(instanceName)
             if comp != None:
                 break
-            print(self.configurator_name + " find Comp wait for" + instanceName)
+            print(self.configurator_name + " find Comp wait for " + instanceName)
             time.sleep(1)
             timeout_count += 1
         if comp and comp.ref:
