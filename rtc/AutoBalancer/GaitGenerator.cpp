@@ -154,6 +154,8 @@ namespace rats
       size_t current_count = total_count - gp_count;
       double dif_angle = 0.0;
       hrp::Vector3 ee_local_pivot_pos(hrp::Vector3(0,0,0));
+      //bool use_toe_joint = true;
+      bool use_toe_joint = false;
       if ( (toe_heel_phase_count[SOLE0] <= current_count) && (current_count < toe_heel_phase_count[SOLE2TOE]) ) {
           dif_angle = calc_interpolated_toe_heel_angle(SOLE0, SOLE2TOE, 0.0, toe_angle);
           ee_local_pivot_pos(0) = toe_pos_offset_x;
@@ -178,6 +180,8 @@ namespace rats
               }
           }
       }
+      foot_dif_rot_angle = (dif_angle > 0.0 ? deg2rad(dif_angle) : 0.0);
+      if (use_toe_joint && dif_angle > 0.0) dif_angle = 0.0;
       Eigen::AngleAxis<double> tmpr(deg2rad(dif_angle), hrp::Vector3::UnitY());
       rotm3times(new_coords.rot, org_coords.rot, tmpr.toRotationMatrix());
       new_coords.pos = org_coords.pos + org_coords.rot * ee_local_pivot_pos - new_coords.rot * ee_local_pivot_pos;

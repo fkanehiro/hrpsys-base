@@ -746,7 +746,11 @@ void AutoBalancer::solveLimbIK ()
   for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
       if (it->second.is_active && (it->first.find("leg") != std::string::npos) && it->second.manip->numJoints() == 7) {
           int i = it->second.target_link->jointId;
-          m_robot->joint(i)->q = qrefv[i];
+          if (gg->get_swing_leg() == it->first) {
+              m_robot->joint(i)->q = qrefv[i] + -1 * gg->get_foot_dif_rot_angle();
+          } else {
+              m_robot->joint(i)->q = qrefv[i];
+          }
       }
   }
   m_robot->calcForwardKinematics();
