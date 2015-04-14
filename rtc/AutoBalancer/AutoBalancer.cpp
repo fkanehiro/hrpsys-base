@@ -746,7 +746,11 @@ void AutoBalancer::solveLimbIK ()
   for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
       if (it->second.is_active && (it->first.find("leg") != std::string::npos) && it->second.manip->numJoints() == 7) {
           int i = it->second.target_link->jointId;
-          m_robot->joint(i)->q = qrefv[i];
+          if (gg->get_swing_leg() == it->first) {
+              m_robot->joint(i)->q = qrefv[i] + -1 * gg->get_foot_dif_rot_angle();
+          } else {
+              m_robot->joint(i)->q = qrefv[i];
+          }
       }
   }
   m_robot->calcForwardKinematics();
@@ -1001,6 +1005,7 @@ bool AutoBalancer::setGaitGeneratorParam(const OpenHRP::AutoBalancerService::Gai
       for (int i = 0; i < gg->get_NUM_TH_PHASES(); i++) ratio[i] = i_param.toe_heel_phase_ratio[i];
       gg->set_toe_heel_phase_ratio(ratio);
   }
+  gg->set_use_toe_joint(i_param.use_toe_joint);
 
   // print
   double stride_fwd_x, stride_y, stride_th, stride_bwd_x;
@@ -1038,6 +1043,7 @@ bool AutoBalancer::setGaitGeneratorParam(const OpenHRP::AutoBalancerService::Gai
   } else {
       std::cerr << "[" << m_profile.instance_name << "]   toe_heel_phase_ratio is not set. Required length = " << gg->get_NUM_TH_PHASES() << " != input length " << i_param.toe_heel_phase_ratio.length() << std::endl;
   }
+  std::cerr << "[" << m_profile.instance_name << "]   use_toe_joint = " << (gg->get_use_toe_joint()?"true":"false") << std::endl;
   return true;
 };
 
@@ -1067,6 +1073,7 @@ bool AutoBalancer::getGaitGeneratorParam(OpenHRP::AutoBalancerService::GaitGener
   double ratio[gg->get_NUM_TH_PHASES()];
   gg->get_toe_heel_phase_ratio(ratio);
   for (int i = 0; i < gg->get_NUM_TH_PHASES(); i++) i_param.toe_heel_phase_ratio[i] = ratio[i];
+  i_param.use_toe_joint = gg->get_use_toe_joint();
   return true;
 };
 
