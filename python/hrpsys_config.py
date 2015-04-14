@@ -570,11 +570,10 @@ class HrpsysConfigurator:
         else:
             return [comp, None, version]
 
-    def findComps(self):
+    def findComps(self, max_timeout_count = 10):
         '''!@brief
         Check if all components in getRTCList() are created
         '''
-        max_timeout_count = 10
         for rn in self.getRTCList():
             rn2 = 'self.' + rn[0]
             if eval(rn2) == None:
