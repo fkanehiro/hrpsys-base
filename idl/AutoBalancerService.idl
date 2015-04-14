@@ -119,6 +119,10 @@ module OpenHRP
       double toe_pos_offset_x;
       /// Heel position offset [mm] in end-effector frame x axis
       double heel_pos_offset_x;
+      /// Toe ZMP offset [mm] in end-effector frame x axis
+      double toe_zmp_offset_x;
+      /// Heel ZMP offset [mm] in end-effector frame x axis
+      double heel_zmp_offset_x;
       /// Maximum toe angle [deg] for toe-off motion
       double toe_angle;
       /// Maximum heel angle [deg] for heel-contact motion
