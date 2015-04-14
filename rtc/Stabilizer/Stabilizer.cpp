@@ -261,6 +261,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   eefm_leg_rear_margin = 0.05;
   eefm_cogvel_cutoff_freq = 4.0; //[Hz]
   eefm_wrench_alpha_blending = 1.0; // fz_alpha
+  eefm_gravitational_acceleration = 9.80665; // [m/s^2]
 
   // parameters for RUNST
   double ke = 0, tc = 0;
@@ -646,8 +647,8 @@ void Stabilizer::getActualParameters ()
       double fz_alpha =  calcAlpha(hrp::Vector3(foot_origin_rot * ref_zmp + foot_origin_pos), ee_pos, ee_rot);
       double alpha = calcAlpha(new_refzmp, ee_pos, ee_rot);
       fz_alpha = eefm_wrench_alpha_blending * fz_alpha + (1-eefm_wrench_alpha_blending) * alpha;
-      ref_foot_force[0] = hrp::Vector3(0,0, fz_alpha * 9.8 * total_mass);
-      ref_foot_force[1] = hrp::Vector3(0,0, (1-fz_alpha) * 9.8 * total_mass);
+      ref_foot_force[0] = hrp::Vector3(0,0, fz_alpha * eefm_gravitational_acceleration * total_mass);
+      ref_foot_force[1] = hrp::Vector3(0,0, (1-fz_alpha) * eefm_gravitational_acceleration * total_mass);
 
 #if 0
       double gamma = fz_alpha;
@@ -658,8 +659,8 @@ void Stabilizer::getActualParameters ()
       fz_alpha = r * beta + ( 1 - r ) * gamma;
 //       alpha = fz_alpha;
 
-      ref_foot_force[0] = hrp::Vector3(0,0, fz_alpha * 9.8 * total_mass);
-      ref_foot_force[1] = hrp::Vector3(0,0, (1-fz_alpha) * 9.8 * total_mass);
+      ref_foot_force[0] = hrp::Vector3(0,0, fz_alpha * eefm_gravitational_acceleration * total_mass);
+      ref_foot_force[1] = hrp::Vector3(0,0, (1-fz_alpha) * eefm_gravitational_acceleration * total_mass);
       if (DEBUGP) {
         std::cerr << "[" << m_profile.instance_name << "] slip st parameters" << std::endl;
         std::cerr << "[" << m_profile.instance_name << "]   " << ref_foot_force[1](2) << " " << ref_foot_force[0](2) << "   a:"<< steepness << " beta:" << beta << " gamma:" << gamma << " r:" << r << " fz_alpha:" << fz_alpha <<  " alpha:" << alpha << std::endl;
@@ -1257,6 +1258,7 @@ void Stabilizer::getParameter(OpenHRP::StabilizerService::stParam& i_stp)
   i_stp.eefm_leg_rear_margin = eefm_leg_rear_margin;
   i_stp.eefm_cogvel_cutoff_freq = eefm_cogvel_cutoff_freq;
   i_stp.eefm_wrench_alpha_blending = eefm_wrench_alpha_blending;
+  i_stp.eefm_gravitational_acceleration = eefm_gravitational_acceleration;
   i_stp.st_algorithm = st_algorithm;
   switch(control_mode) {
   case MODE_IDLE: i_stp.controller_mode = OpenHRP::StabilizerService::MODE_IDLE; break;
@@ -1322,6 +1324,7 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
   eefm_leg_rear_margin = i_stp.eefm_leg_rear_margin;
   eefm_cogvel_cutoff_freq = i_stp.eefm_cogvel_cutoff_freq;
   eefm_wrench_alpha_blending = i_stp.eefm_wrench_alpha_blending;
+  eefm_gravitational_acceleration = i_stp.eefm_gravitational_acceleration;
   std::cerr << "[" << m_profile.instance_name << "]   eefm_k1  = [" << eefm_k1[0] << ", " << eefm_k1[1] << "]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   eefm_k2  = [" << eefm_k2[0] << ", " << eefm_k2[1] << "]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   eefm_k3  = [" << eefm_k3[0] << ", " << eefm_k3[1] << "]" << std::endl;
@@ -1336,6 +1339,7 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
   std::cerr << "[" << m_profile.instance_name << "]   eefm_leg_inside_margin = " << eefm_leg_inside_margin << "[m], eefm_leg_front_margin = " << eefm_leg_front_margin << "[m], eefm_leg_rear_margin = " << eefm_leg_rear_margin << "[m]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   eefm_cogvel_cutoff_freq = " << eefm_cogvel_cutoff_freq << "[Hz]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   eefm_wrench_alpha_blending = " << eefm_wrench_alpha_blending << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   eefm_gravitational_acceleration = " << eefm_gravitational_acceleration << "[m/s^2]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]  COMMON" << std::endl;
   if (control_mode == MODE_IDLE) {
     st_algorithm = i_stp.st_algorithm;
