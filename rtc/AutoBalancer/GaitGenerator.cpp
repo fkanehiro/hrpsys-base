@@ -164,8 +164,10 @@ namespace rats
           // If SOLE1 phase does not exist, interpolate toe => heel smoothly, without 0 velocity phase.
           if ( toe_heel_phase_count[TOE2SOLE] == toe_heel_phase_count[SOLE1] ) {
               dif_angle = calc_interpolated_toe_heel_angle(SOLE2TOE, SOLE2HEEL, toe_angle, -1 * heel_angle);
-              if ( dif_angle > 0) ee_local_pivot_pos(0) = toe_pos_offset_x;
-              else ee_local_pivot_pos(0) = -1 * heel_pos_offset_x;
+              double tmpd = (-1*heel_angle-toe_angle);
+              if (std::fabs(tmpd) > 1e-5) {
+                  ee_local_pivot_pos(0) = (-1 * heel_pos_offset_x - toe_pos_offset_x) * (dif_angle - toe_angle) / tmpd + toe_pos_offset_x;
+              }
           } else {
               if ( (toe_heel_phase_count[SOLE2TOE] <= current_count) && (current_count < toe_heel_phase_count[TOE2SOLE]) ) {
                   dif_angle = calc_interpolated_toe_heel_angle(SOLE2TOE, TOE2SOLE, toe_angle, 0.0);
