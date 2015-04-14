@@ -125,6 +125,8 @@ module OpenHRP
       double heel_angle;
       /// Sequence of phase ratio of toe-off and heel-contact. Sum of toe_heel_phase_ratio should be 1.0.
       sequence<double> toe_heel_phase_ratio;
+      /// Use toe joint or not in toe-off heel-contact motion.
+      boolean use_toe_joint;
     };
 
     /**

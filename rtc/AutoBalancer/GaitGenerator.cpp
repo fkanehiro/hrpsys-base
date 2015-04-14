@@ -154,8 +154,6 @@ namespace rats
       size_t current_count = total_count - gp_count;
       double dif_angle = 0.0;
       hrp::Vector3 ee_local_pivot_pos(hrp::Vector3(0,0,0));
-      //bool use_toe_joint = true;
-      bool use_toe_joint = false;
       if ( (toe_heel_phase_count[SOLE0] <= current_count) && (current_count < toe_heel_phase_count[SOLE2TOE]) ) {
           dif_angle = calc_interpolated_toe_heel_angle(SOLE0, SOLE2TOE, 0.0, toe_angle);
           ee_local_pivot_pos(0) = toe_pos_offset_x;
