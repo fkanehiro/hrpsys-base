@@ -538,7 +538,7 @@ class HrpsysConfigurator:
                 _, e, _ = sys.exc_info()
                 print(self.configurator_name + '\033[31mFail to deleteComps' + str(e) + '\033[0m')
 
-    def findComp(self, compName, instanceName, max_timeout_count=10):
+    def findComp(self, compName, instanceName, max_timeout_count=10, verbose=True):
         '''!@brief
         Find component(plugin) 
         
@@ -553,32 +553,37 @@ class HrpsysConfigurator:
             comp = rtm.findRTC(instanceName)
             if comp != None:
                 break
-            print(self.configurator_name + " find Comp wait for " + instanceName)
+            if verbose:
+                print(self.configurator_name + " find Comp wait for " + instanceName)
             time.sleep(1)
             timeout_count += 1
         if comp and comp.ref:
             version = comp.ref.get_component_profile().version
-        print(self.configurator_name + " find Comp    : %s = %s (%s)" % (instanceName, comp, version))
+        if verbose:
+            print(self.configurator_name + " find Comp    : %s = %s (%s)" % (instanceName, comp, version))
         if comp == None:
-            print(self.configurator_name + " Cannot find component: %s (%s)" % (instanceName, compName))
+            if verbose:
+                print(self.configurator_name + " Cannot find component: %s (%s)" % (instanceName, compName))
             return [None, None, None]
         comp_svc_port = comp.service("service0")
         if comp_svc_port:
             comp_svc = narrow(comp_svc_port, compName + "Service")
-            print(self.configurator_name + " find CompSvc : %s_svc = %s"%(instanceName, comp_svc))
+            if verbose:
+                print(self.configurator_name + " find CompSvc : %s_svc = %s"%(instanceName, comp_svc))
             return [comp, comp_svc, version]
         else:
             return [comp, None, version]
 
-    def findComps(self, max_timeout_count = 10):
+    def findComps(self, max_timeout_count = 10, verbose=True):
         '''!@brief
         Check if all components in getRTCList() are created
         '''
         for rn in self.getRTCList():
             rn2 = 'self.' + rn[0]
             if eval(rn2) == None:
-                create_str = "[self." + rn[0] + ", self." + rn[0] + "_svc, self." + rn[0] + "_version] = self.findComp(\"" + rn[1] + "\",\"" + rn[0] + "\"," + str(max_timeout_count) + ")"
-                print(self.configurator_name + create_str)
+                create_str = "[self." + rn[0] + ", self." + rn[0] + "_svc, self." + rn[0] + "_version] = self.findComp(\"" + rn[1] + "\",\"" + rn[0] + "\"," + str(max_timeout_count) + "," + str(verbose) + ")"
+                if verbose:
+                    print(self.configurator_name + create_str)
                 exec(create_str)
                 if eval(rn2) == None:
                     max_timeout_count = 0
