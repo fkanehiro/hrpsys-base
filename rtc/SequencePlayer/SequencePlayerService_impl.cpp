@@ -40,6 +40,35 @@ CORBA::Boolean SequencePlayerService_impl::setJointAnglesWithMask(const dSequenc
     return m_player->setJointAngles(jvs.get_buffer(), mask.get_buffer(), tm);
 }
 
+CORBA::Boolean SequencePlayerService_impl::setJointAnglesSequence(const dSequenceSequence& jvss, const dSequence& tms)
+{
+  const OpenHRP::bSequence mask;
+  return setJointAnglesSequenceWithMask(jvss, mask, tms);
+}
+
+CORBA::Boolean SequencePlayerService_impl::setJointAnglesSequenceWithMask(const dSequenceSequence& jvss, const bSequence& mask, const dSequence& tms)
+{
+  if (jvss.length() <= 0) {
+      std::cerr << __PRETTY_FUNCTION__ << " num of joint angles sequence is invalid:" << jvss.length() << " > 0" << std::endl;
+      return false;
+  }
+  if (jvss.length() != tms.length()) {
+      std::cerr << __PRETTY_FUNCTION__ << " length of joint angles sequence and time sequence differ, joint angle:" << jvss.length() << ", time:" << tms.length() << std::endl;
+      return false;
+  }
+  const dSequence& jvs = jvss[0];
+  if (jvs.length() != (unsigned int)(m_player->robot()->numJoints())) {
+      std::cerr << __PRETTY_FUNCTION__ << " num of joint is differ, input:" << jvs.length() << ", robot:" << (unsigned int)(m_player->robot()->numJoints()) << std::endl;
+      return false;
+  }
+
+  if (mask.length() > 0 && mask.length() != (unsigned int)(m_player->robot()->numJoints())) {
+      std::cerr << __PRETTY_FUNCTION__ << " num of joint is differ, input:" << jvs.length() << ", mask:" << mask.length() << ", robot" << (unsigned int)(m_player->robot()->numJoints()) << std::endl;
+      return false;
+  }
+  
+  return m_player->setJointAnglesSequence(jvss, mask, tms);
+}
 
 CORBA::Boolean SequencePlayerService_impl::setJointAngle(const char *jname, CORBA::Double jv, CORBA::Double tm)
 {
@@ -153,6 +182,11 @@ CORBA::Boolean SequencePlayerService_impl::removeJointGroup(const char* gname)
 CORBA::Boolean SequencePlayerService_impl::setJointAnglesOfGroup(const char *gname, const dSequence& jvs, CORBA::Double tm)
 {
     return m_player->setJointAnglesOfGroup(gname, jvs.get_buffer(), tm);
+}
+
+CORBA::Boolean SequencePlayerService_impl::setJointAnglesSequenceOfGroup(const char *gname, const dSequenceSequence& jvss, const dSequence& tms)
+{
+    return false;
 }
 
 CORBA::Boolean SequencePlayerService_impl::playPatternOfGroup(const char *gname, const dSequenceSequence& pos, const dSequence& tm)

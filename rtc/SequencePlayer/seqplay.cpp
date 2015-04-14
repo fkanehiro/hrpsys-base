@@ -581,3 +581,48 @@ bool seqplay::playPatternOfGroup(const char *gname, std::vector<const double *> 
 		return false;
 	}
 }
+
+bool seqplay::setJointAnglesSequence(std::vector<const double*> pos, std::vector<double> tm)
+{
+	// setJointAngles to override curren tgoal
+	double x[m_dof], v[m_dof];
+	interpolators[Q]->get(x, v, false);
+	interpolators[Q]->set(x, v);
+	interpolators[Q]->clear();
+
+    const double *q=NULL;
+    for (unsigned int i=0; i<pos.size(); i++){
+        q = pos[i];
+		if (i < pos.size() - 1 ) {
+			double t0, t1;
+			if (tm.size() == pos.size()) {
+				t0 = tm[i]; t1 = tm[i+1];
+			} else {
+				t0 = t1 = tm[0];
+			}
+			const double *q_next = pos[i+1];
+			const double *q_prev = i==0?x:pos[i-1];
+			for (unsigned int j = 0; j < m_dof; j++) {
+				double d0, d1, v0, v1;
+				d0 = (q[j] - q_prev[j]);
+				d1 = (q_next[j] - q[j]);
+				v0 = d0/t0;
+				v1 = d1/t1;
+				if ( v0 * v1 >= 0 ) {
+					v[j] = 0.5 * (v0 + v1);
+				} else {
+					v[j] = 0;
+				}
+			}
+		} else {
+			for (unsigned int j = 0; j < m_dof; j++) { v[j] = 0.0; }
+		}
+
+		interpolators[Q]->setGoal(pos[i], v, tm[i], false);
+		do{
+			interpolators[Q]->interpolate(tm[i]);
+		}while(tm[i]>0);
+		sync();
+	}
+	return true;
+}

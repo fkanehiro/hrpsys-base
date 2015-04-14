@@ -412,6 +412,29 @@ bool SequencePlayer::setJointAngles(const double *angles, const bool *mask,
     return true;
 }
 
+bool SequencePlayer::setJointAnglesSequence(const OpenHRP::dSequenceSequence angless, const OpenHRP::bSequence& mask, const OpenHRP::dSequence& times)
+{
+    if ( m_debugLevel > 0 ) {
+        std::cerr << __PRETTY_FUNCTION__ << std::endl;
+    }
+    Guard guard(m_mutex);
+
+    if (!setInitialState()) return false;
+
+    bool tmp_mask[robot()->numJoints()];
+    if (mask.length() != robot()->numJoints()) {
+        for (int i=0; i < robot()->numJoints(); i++) tmp_mask[i] = true;
+    }else{
+        for (int i=0; i < robot()->numJoints(); i++) tmp_mask[i] = mask.get_buffer()[i];
+    }
+    int len = angless.length();
+    std::vector<const double*> v_poss;
+    std::vector<double> v_tms;
+    for ( int i = 0; i < angless.length(); i++ ) v_poss.push_back(angless[i].get_buffer());
+    for ( int i = 0; i <  times.length();  i++ )  v_tms.push_back(times[i]);
+    return m_seq->setJointAnglesSequence(v_poss, v_tms);
+}
+
 bool SequencePlayer::setBasePos(const double *pos, double tm)
 {
     if ( m_debugLevel > 0 ) {

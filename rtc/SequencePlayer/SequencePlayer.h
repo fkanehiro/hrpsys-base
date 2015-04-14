@@ -99,6 +99,7 @@ class SequencePlayer
   bool setJointAngle(short id, double angle, double tm);
   bool setJointAngles(const double *angles, double tm);
   bool setJointAngles(const double *angles, const bool *mask, double tm);
+  bool setJointAnglesSequence(const OpenHRP::dSequenceSequence angless, const OpenHRP::bSequence& mask, const OpenHRP::dSequence& times);
   bool setBasePos(const double *pos, double tm);
   bool setBaseRpy(const double *rpy, double tm);
   bool setZmp(const double *zmp, double tm);
