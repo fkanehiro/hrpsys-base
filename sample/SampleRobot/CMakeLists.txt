@@ -34,6 +34,8 @@ foreach(_idx 0 1 2)
   set(ROBOT_WAIST_TRANSLATION ${_tmp_robot_waist_translation})
   configure_file(SampleRobot.TerrainFloor.xml.in ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.TerrainFloor.${_tmp_file_suffix}.xml)
 endforeach()
+configure_file(SampleRobot.DRCTestbed.xml ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.DRCTestbed.xml)
+
 
 install(FILES 
   # files for 500[Hz] = 0.002[s]
@@ -57,6 +59,8 @@ install(FILES
   ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.TerrainFloor.SlopeUpDown.xml
   ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.TerrainFloor.StairUp.xml
   ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.TerrainFloor.StairDown.xml
+  # DRCTestbed
+  ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.DRCTestbed.xml
   DESTINATION share/hrpsys/samples/SampleRobot)
 
 add_subdirectory(rtc)
