@@ -71,7 +71,7 @@ private:
 class RPYKalmanFilter {
 public:
     RPYKalmanFilter() : m_sensorR(hrp::Matrix33::Identity()) {};
-    void main_one (hrp::Vector3& rpy, hrp::Vector3& rpyRaw, const hrp::Vector3& acc, const hrp::Vector3& gyro)
+    void main_one (hrp::Vector3& rpy, hrp::Vector3& rpyRaw, const hrp::Vector3& acc, const hrp::Vector3& gyro, const double& sl_y)
     {
       //
       // G = [ cosb, sinb sina, sinb cosa,
@@ -86,7 +86,7 @@ public:
       double a, b;
       b = atan2( - acc(0) / g, sqrt( acc(1)/g * acc(1)/g + acc(2)/g * acc(2)/g ) );
       a = atan2( ( acc(1)/g ), ( acc(2)/g ) );
-      rpyRaw = hrp::Vector3(a,b,0);
+      rpyRaw = hrp::Vector3(a,b,sl_y);
       // #if 0
       //       // complementary filter
       //       m_rpy.data.r = 0.98 *(m_rpy.data.r+m_rate.data.avx*m_dt) + 0.02*m_rpyRaw.data.r;
