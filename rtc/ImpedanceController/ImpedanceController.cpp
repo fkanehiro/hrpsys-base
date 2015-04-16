@@ -776,6 +776,13 @@ bool ImpedanceController::setImpedanceControllerParam(const std::string& i_name_
         m_impedance_param[name].force_gain = hrp::Vector3(i_param_.force_gain[0], i_param_.force_gain[1], i_param_.force_gain[2]).asDiagonal();
         m_impedance_param[name].moment_gain = hrp::Vector3(i_param_.moment_gain[0], i_param_.moment_gain[1], i_param_.moment_gain[2]).asDiagonal();
 
+        std::vector<double> ov;
+        ov.resize(m_impedance_param[name].manip->numJoints());
+        for (size_t i = 0; i < m_impedance_param[name].manip->numJoints(); i++) {
+            ov[i] = i_param_.ik_optional_weight_vector[i];
+        }
+        m_impedance_param[name].manip->setOptionalWeightVector(ov);
+
         std::cerr << "[" << m_profile.instance_name << "] set parameters" << std::endl;
         std::cerr << "[" << m_profile.instance_name << "]             name : " << name << std::endl;
         std::cerr << "[" << m_profile.instance_name << "]    M, D, K (pos) : " << m_impedance_param[name].M_p << " " << m_impedance_param[name].D_p << " " << m_impedance_param[name].K_p << std::endl;
@@ -806,6 +813,16 @@ void ImpedanceController::copyImpedanceParam (ImpedanceControllerService::impeda
   i_param_.manipulability_limit = param.manipulability_limit;
   if (param.is_active) i_param_.controller_mode = OpenHRP::ImpedanceControllerService::MODE_IMP;
   else i_param_.controller_mode = OpenHRP::ImpedanceControllerService::MODE_IDLE;
+  if (param.manip == NULL) i_param_.ik_optional_weight_vector.length(0);
+  else {
+      i_param_.ik_optional_weight_vector.length(param.manip->numJoints());
+      std::vector<double> ov;
+      ov.resize(param.manip->numJoints());
+      param.manip->getOptionalWeightVector(ov);
+      for (size_t i = 0; i < param.manip->numJoints(); i++) {
+          i_param_.ik_optional_weight_vector[i] = ov[i];
+      }
+  }
 }
 
 void ImpedanceController::updateRootLinkPosRot (TimedOrientation3D tmprpy)
