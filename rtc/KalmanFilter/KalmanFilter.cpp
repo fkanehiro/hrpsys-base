@@ -44,8 +44,10 @@ KalmanFilter::KalmanFilter(RTC::Manager* manager)
     m_accIn("acc", m_acc),
     m_accRefIn("accRef", m_accRef),
     m_rpyIn("rpyIn", m_rate),
+    m_qCurrentIn("qCurrent", m_qCurrent),
     m_rpyOut("rpy", m_rpy),
     m_rpyRawOut("rpy_raw", m_rpyRaw),
+    m_baseRpyOut("base_rpy", m_baseRpy),
     m_KalmanFilterServicePort("KalmanFilterService"),
     // </rtc-template>
     m_robot(hrp::BodyPtr()),
@@ -78,10 +80,12 @@ RTC::ReturnCode_t KalmanFilter::onInitialize()
   addInPort("acc", m_accIn);
   addInPort("accRef", m_accRefIn);
   addInPort("rpyIn", m_rpyIn);
+  addInPort("qCurrent", m_qCurrentIn);
 
   // Set OutPort buffer
   addOutPort("rpy", m_rpyOut);
   addOutPort("rpy_raw", m_rpyRawOut);
+  addOutPort("base_rpy", m_baseRpyOut);
 
   // Set service provider to Ports
   m_KalmanFilterServicePort.registerProvider("service0", "KalmanFilterService", m_service0);
@@ -128,8 +132,10 @@ RTC::ReturnCode_t KalmanFilter::onInitialize()
   }
   rpy_kf.setParam(m_dt, 0.001, 0.003, 1000, std::string(m_profile.instance_name));
   rpy_kf.setSensorR(m_sensorR);
+  rpy_kf.setRobot(m_robot);
   ekf_filter.setdt(m_dt);
   kf_algorithm = OpenHRP::KalmanFilterService::RPYKalmanFilter;
+  m_qCurrent.data.length(m_robot->numJoints());
 
   return RTC::RTC_OK;
 }
@@ -185,6 +191,12 @@ RTC::ReturnCode_t KalmanFilter::onExecute(RTC::UniqueId ec_id)
   if (m_rateIn.isNew()){
     m_rateIn.read();
   }
+  if (m_qCurrentIn.isNew()) {
+    m_qCurrentIn.read();
+    for ( int i = 0; i < m_robot->numJoints(); i++ ){
+      m_robot->joint(i)->q = m_qCurrent.data[i];
+    }
+  }
   double sx_ref = 0.0, sy_ref = 0.0, sz_ref = 0.0;
   if (m_accRefIn.isNew()){
     m_accRefIn.read();
@@ -199,11 +211,29 @@ RTC::ReturnCode_t KalmanFilter::onExecute(RTC::UniqueId ec_id)
         std::cerr << "[" << m_profile.instance_name << "] raw data acc : " << std::endl << acc << std::endl;
         std::cerr << "[" << m_profile.instance_name << "] raw data gyro : " << std::endl << gyro << std::endl;
     }
-    hrp::Vector3 rpy, rpyRaw;
+    hrp::Vector3 rpy, rpyRaw, baseRpy;
     if (kf_algorithm == OpenHRP::KalmanFilterService::QuaternionExtendedKalmanFilter) {
         ekf_filter.main_one(rpy, rpyRaw, acc, gyro);
     } else if (kf_algorithm == OpenHRP::KalmanFilterService::RPYKalmanFilter) {
-        rpy_kf.main_one(rpy, rpyRaw, acc, gyro);
+        m_robot->calcForwardKinematics();
+        hrp::Matrix33 BtoS, slR;
+        if (m_robot->numSensors(hrp::Sensor::ACCELERATION) > 0) {
+            hrp::Sensor* sensor = m_robot->sensor(hrp::Sensor::ACCELERATION, 0);
+            slR = sensor->link->R;
+            BtoS = (m_robot->rootLink()->R).transpose() * (slR * sensor->localR);
+            if (DEBUGP) {
+                std::cerr << "[sendor->link->R] : " << std::endl << sensor->link->R << std::endl;
+                std::cerr << "[sensor->localR] : " << std::endl << sensor->localR << std::endl;
+            }
+        } else {
+            BtoS = (m_robot->rootLink()->R).transpose();
+            slR = hrp::Matrix33::Identity();
+        }
+        if (DEBUGP) {
+            std::cerr << "[BtoS in rot] : " << std::endl << BtoS << std::endl;
+            std::cerr << "[BtoS in rpy] : " << std::endl << hrp::rpyFromRot(BtoS) << std::endl;
+        }
+        rpy_kf.main_one(rpy, rpyRaw, baseRpy, acc, gyro, BtoS, slR);
     }
     m_rpyRaw.data.r = rpyRaw(0);
     m_rpyRaw.data.p = rpyRaw(1);
@@ -211,10 +241,14 @@ RTC::ReturnCode_t KalmanFilter::onExecute(RTC::UniqueId ec_id)
     m_rpy.data.r = rpy(0);
     m_rpy.data.p = rpy(1);
     m_rpy.data.y = rpy(2);
+    m_baseRpy.data.r = baseRpy(0);
+    m_baseRpy.data.p = baseRpy(1);
+    m_baseRpy.data.y = baseRpy(2);
 
 
     m_rpyOut.write();
     m_rpyRawOut.write();
+    m_baseRpyOut.write();
   }
   return RTC::RTC_OK;
 }

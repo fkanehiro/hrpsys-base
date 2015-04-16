@@ -209,7 +209,8 @@ class Stabilizer
   RTC::OutPort<RTC::TimedPoint3D> m_currentBasePosOut;
   RTC::OutPort<RTC::TimedOrientation3D> m_currentBaseRpyOut;
   RTC::OutPort<RTC::TimedDoubleSeq> m_debugDataOut;
-  
+  RTC::TimedOrientation3D m_baseRpy_kf;
+  RTC::InPort<RTC::TimedOrientation3D> m_baseRpyIn_kf;
   // </rtc-template>
 
   // CORBA Port declaration

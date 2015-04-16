@@ -72,6 +72,7 @@ Stabilizer::Stabilizer(RTC::Manager* manager)
     m_actBaseRpyOut("actBaseRpy", m_actBaseRpy),
     m_currentBasePosOut("currentBasePos", m_currentBasePos),
     m_currentBaseRpyOut("currentBaseRpy", m_currentBaseRpy),
+    m_baseRpyIn_kf("base_rpy", m_baseRpy_kf),
     m_debugDataOut("debugData", m_debugData),
     control_mode(MODE_IDLE),
     st_algorithm(OpenHRP::StabilizerService::TPCC),
@@ -107,6 +108,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   addInPort("baseRpyIn", m_baseRpyIn);
   addInPort("contactStates", m_contactStatesIn);
   addInPort("controlSwingSupportTime", m_controlSwingSupportTimeIn);
+  addInPort("base_rpy", m_baseRpyIn_kf);
 
   // Set OutPort buffer
   addOutPort("q", m_qRefOut);
@@ -389,6 +391,9 @@ RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
   if (m_baseRpyIn.isNew()){
     m_baseRpyIn.read();
   }
+  if (m_baseRpyIn_kf.isNew()){
+    m_baseRpyIn_kf.read();
+  }
   if (m_contactStatesIn.isNew()){
     m_contactStatesIn.read();
     for (size_t i = 0; i < m_contactStates.data.length(); i++) {
@@ -554,7 +559,8 @@ void Stabilizer::getActualParameters ()
     hrp::Matrix33 senR = sen->link->R * sen->localR;
     hrp::Matrix33 act_Rs(hrp::rotFromRpy(m_rpy.data.r, m_rpy.data.p, m_rpy.data.y));
     //hrp::Matrix33 act_Rs(hrp::rotFromRpy(m_rpy.data.r*0.5, m_rpy.data.p*0.5, m_rpy.data.y*0.5));
-    m_robot->rootLink()->R = act_Rs * (senR.transpose() * m_robot->rootLink()->R);
+    m_robot->rootLink()->R = hrp::rotFromRpy(m_baseRpy_kf.data.r, m_baseRpy_kf.data.p, m_baseRpy_kf.data.y) * m_robot->rootLink()->R;
+    /* m_robot->rootLink()->R = act_Rs * (senR.transpose() * m_robot->rootLink()->R); */
     m_robot->calcForwardKinematics();
     act_base_rpy = hrp::rpyFromRot(m_robot->rootLink()->R);
     calcFootOriginCoords (foot_origin_pos, foot_origin_rot);
