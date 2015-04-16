@@ -10,8 +10,6 @@ from hrpsys import *  # load ModelLoader
 import socket
 import time
 
-from subprocess import check_output
-
 # copy from transformations.py, Christoph Gohlke, The Regents of the University of California
 
 import numpy
@@ -670,8 +668,10 @@ class HrpsysConfigurator:
     # private method to replace $(OPENHRP_DIR) or $(PROJECT_DIR)
     def parseUrl(self, url):
         if '$(OPENHRP_DIR)' in url:
+            from subprocess import check_output
             url = url.replace('$(OPENHRP_DIR)', check_output(['pkg-config', 'openhrp3.1', '--variable=prefix']).rstrip())
         if '$(PROJECT_DIR)' in url:
+            from subprocess import check_output
             url = url.replace('$(PROJECT_DIR)', check_output(['pkg-config', 'hrpsys-base', '--variable=prefix']).rstrip())
         return url
 
