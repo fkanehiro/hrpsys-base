@@ -33,6 +33,12 @@ namespace hrp {
             optional_weight_vector[i] = _opt_w[i];
         }
     };
+    void getOptionalWeightVector(std::vector<double>& _opt_w)
+    {
+        for (int i = 0 ; i < numJoints(); i++ ) {
+            _opt_w[i] = optional_weight_vector[i];
+        }
+    };
   protected:
         double maxIKPosErrorSqr, maxIKRotErrorSqr;
         int maxIKIteration;
