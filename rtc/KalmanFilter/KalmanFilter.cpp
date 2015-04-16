@@ -44,8 +44,10 @@ KalmanFilter::KalmanFilter(RTC::Manager* manager)
     m_accIn("acc", m_acc),
     m_accRefIn("accRef", m_accRef),
     m_rpyIn("rpyIn", m_rate),
+    m_qCurrentIn("qCurrent", m_qCurrent),
     m_rpyOut("rpy", m_rpy),
     m_rpyRawOut("rpy_raw", m_rpyRaw),
+    m_baseRpyCurrentOut("baseRpyCurrent", m_baseRpyCurrent),
     m_KalmanFilterServicePort("KalmanFilterService"),
     // </rtc-template>
     m_robot(hrp::BodyPtr()),
@@ -78,10 +80,12 @@ RTC::ReturnCode_t KalmanFilter::onInitialize()
   addInPort("acc", m_accIn);
   addInPort("accRef", m_accRefIn);
   addInPort("rpyIn", m_rpyIn);
+  addInPort("qCurrent", m_qCurrentIn);
 
   // Set OutPort buffer
   addOutPort("rpy", m_rpyOut);
   addOutPort("rpy_raw", m_rpyRawOut);
+  addOutPort("baseRpyCurrent", m_baseRpyCurrentOut);
 
   // Set service provider to Ports
   m_KalmanFilterServicePort.registerProvider("service0", "KalmanFilterService", m_service0);
@@ -130,6 +134,7 @@ RTC::ReturnCode_t KalmanFilter::onInitialize()
   rpy_kf.setSensorR(m_sensorR);
   ekf_filter.setdt(m_dt);
   kf_algorithm = OpenHRP::KalmanFilterService::RPYKalmanFilter;
+  m_qCurrent.data.length(m_robot->numJoints());
 
   return RTC::RTC_OK;
 }
