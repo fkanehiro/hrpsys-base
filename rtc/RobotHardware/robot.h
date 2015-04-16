@@ -221,6 +221,13 @@ public:
      */
     bool checkEmergency(emg_reason &o_reason, int &o_id);
 
+
+    /**
+       \brief check joint commands are valid or not
+       \return true if the joint command is invalid, false otherwise
+     */
+    bool checkJointCommands(const double *i_commands);
+
     /**
        \brief set the parcentage to the default servo gain
        \param name joint name, part name or "all"
