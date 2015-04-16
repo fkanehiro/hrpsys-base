@@ -204,9 +204,14 @@ RTC::ReturnCode_t ImpedanceController::onInitialize()
         std::string ee_name;
         bool is_ee_exists = false;
         for ( std::map<std::string, ee_trans>::iterator it = ee_map.begin(); it != ee_map.end(); it++ ) {
-            if ( it->second.target_name == sensor->link->name ) {
-                is_ee_exists = true;
-                ee_name = it->first;
+            hrp::Link* alink = m_robot->link(it->second.target_name);
+            std::string tmp_base_name = base_name_map[it->first];
+            while (alink != NULL && alink->name != tmp_base_name && !is_ee_exists) {
+                if ( alink->name == sensor->link->name ) {
+                    is_ee_exists = true;
+                    ee_name = it->first;
+                }
+                alink = alink->parent;
             }
         }
         if (!is_ee_exists) {
@@ -219,16 +224,18 @@ RTC::ReturnCode_t ImpedanceController::onInitialize()
             continue;
         }
         // 3. Check whether joint path is adequate.
+        hrp::Link* target_link = m_robot->link(ee_map[ee_name].target_name);
         ImpedanceParam p;
-        p.manip = hrp::JointPathExPtr(new hrp::JointPathEx(m_robot, m_robot->link(base_name_map[ee_name]), m_robot->link(sensor->link->name), m_dt));
+        p.manip = hrp::JointPathExPtr(new hrp::JointPathEx(m_robot, m_robot->link(base_name_map[ee_name]), target_link, m_dt));
         if ( ! p.manip ) {
-            std::cerr << "[" << m_profile.instance_name << "]   Invalid joint path from " << base_name_map[ee_name] << " to " << sensor->link->name << "!! Impedance param for " << sensor_name << " cannot be added!!" << std::endl;
+            std::cerr << "[" << m_profile.instance_name << "]   Invalid joint path from " << base_name_map[ee_name] << " to " << target_link->name << "!! Impedance param for " << sensor_name << " cannot be added!!" << std::endl;
             continue;
         }
         // 4. Set impedance param
         p.transition_joint_q.resize(m_robot->numJoints());
         p.sensor_name = sensor_name;
         m_impedance_param[ee_name] = p;
+        std::cerr << "[" << m_profile.instance_name << "]   sensor = " << sensor_name << ", sensor-link = " << sensor->link->name << ", ee_name = " << ee_name << ", ee-link = " << target_link->name << std::endl;
     }
 
     // allocate memory for outPorts
@@ -641,29 +648,30 @@ void ImpedanceController::calcForceMoment ()
             std::cerr << "[" << m_profile.instance_name << "]   reference moment = " << ref_data_r.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[Nm]" << std::endl;
           }
           hrp::Matrix33 sensorR;
-          hrp::Vector3 sensorlocalPos, eelocalPos;
-          hrp::Link* parentlink;
+          hrp::Vector3 sensorPos, eePos;
           if ( sensor ) {
             // real force sensore
             sensorR = sensor->link->R * sensor->localR;
-            sensorlocalPos = sensor->localPos;
-            parentlink = sensor->link;
+            sensorPos = sensor->link->p + sensorR * sensor->localPos;
           } else if ( m_vfs.find(sensor_name) !=  m_vfs.end()) {
             // virtual force sensor
             if ( DEBUGP ) {
               std::cerr << "[" << m_profile.instance_name << "]   sensorR = " << m_vfs[sensor_name].localR.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", "\n", "    [", "]")) << std::endl;
             }
             sensorR = m_vfs[sensor_name].link->R * m_vfs[sensor_name].localR;
-            sensorlocalPos = m_vfs[sensor_name].localPos;
-            parentlink = m_vfs[sensor_name].link;
+            sensorPos = m_vfs[sensor_name].link->p + m_vfs[sensor_name].link->R * m_vfs[sensor_name].localPos;
           } else {
             std::cerr << "[" << m_profile.instance_name << "]   unknown force param" << std::endl;
           }
           abs_forces[sensor_name] = sensorR * data_p;
-          for ( std::map<std::string, ee_trans>::iterator it = ee_map.begin(); it != ee_map.end(); it++ ) {
-              if ( it->second.target_name == parentlink->name ) eelocalPos = it->second.localPos;
+          for ( std::map<std::string, ImpedanceParam>::iterator it = m_impedance_param.begin(); it != m_impedance_param.end(); it++ ) {
+              if ( it->second.sensor_name == sensor_name ) {
+                  std::string ee_name = it->first;
+                  hrp::Link* target_link = m_robot->link(ee_map[ee_name].target_name);
+                  eePos = target_link->p + target_link->R * ee_map[ee_name].localPos;
+              }
           }
-          abs_moments[sensor_name] = sensorR * data_r + parentlink->R * (sensorlocalPos - eelocalPos).cross(abs_forces[sensor_name]);
+          abs_moments[sensor_name] = sensorR * data_r + (sensorPos - eePos).cross(abs_forces[sensor_name]);
           // End effector local frame
           // hrp::Matrix33 eeR (parentlink->R * ee_map[parentlink->name].localR);
           // abs_ref_forces[sensor_name] = eeR * ref_data_p;
