@@ -130,6 +130,10 @@ protected:
   // <rtc-template block="outport_declare">
   OutPort<TimedOrientation3D> m_rpyOut;
   OutPort<TimedOrientation3D> m_rpyRawOut;
+  RTC::TimedDoubleSeq m_qCurrent;
+  RTC::InPort<RTC::TimedDoubleSeq> m_qCurrentIn;
+  RTC::TimedOrientation3D m_baseRpyCurrent;
+  RTC::OutPort<RTC::TimedOrientation3D> m_baseRpyCurrentOut;
   
   // </rtc-template>
 
