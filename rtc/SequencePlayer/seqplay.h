@@ -38,6 +38,7 @@ public:
     bool resetJointGroup(const char *gname, const double *full);
     //
     bool setJointAnglesSequence(std::vector<const double*> pos, std::vector<double> tm);
+    bool setJointAnglesSequenceOfGroup(const char *gname, std::vector<const double*> pos, std::vector<double> tm);
     //
     void setJointAngle(unsigned int i_rank, double jv, double tm);
     void loadPattern(const char *i_basename, double i_tm);

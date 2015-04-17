@@ -626,3 +626,68 @@ bool seqplay::setJointAnglesSequence(std::vector<const double*> pos, std::vector
 	}
 	return true;
 }
+
+bool seqplay::setJointAnglesSequenceOfGroup(const char *gname, std::vector<const double*> pos, std::vector<double> tm)
+{
+	char *s = (char *)gname; while(*s) {*s=toupper(*s);s++;}
+	groupInterpolator *i = groupInterpolators[gname];
+
+	if (! i){
+		std::cerr << "[setJointAnglesOfGroup] group name " << gname << " is not installed" << std::endl;
+		return false;
+	}
+	int len = i->indices.size();
+	double x[len], v[len];
+	double q[m_dof], dq[m_dof];
+	i->inter->get(q, dq, false);
+	i->inter->set(q, dq);
+	i->extract(x, q);
+	i->extract(v, dq);
+	i->inter->clear();
+    const double *q_curr=NULL;
+    for (unsigned int j=0; j<pos.size(); j++){
+        q_curr = pos[j];
+		if ( j < pos.size() - 1 ) {
+			double t0, t1;
+			if (tm.size() == pos.size()) {
+				t0 = tm[j]; t1 = tm[j+1];
+			} else {
+				t0 = t1 = tm[0];
+			}
+			const double *q_next = pos[j+1];
+			const double *q_prev = j==0?x:pos[j-1];
+			for (unsigned int k = 0; k < len; k++) {
+				double d0, d1, v0, v1;
+				d0 = (q_curr[k] - q_prev[k]);
+				d1 = (q_next[k] - q_curr[k]);
+				v0 = d0/t0;
+				v1 = d1/t1;
+				if ( v0 * v1 >= 0 ) {
+					v[k] = 0.5 * (v0 + v1);
+				} else {
+					v[k] = 0;
+				}
+			}
+		} else {
+			for (unsigned int k = 0; k < len; k++) { v[k] = 0.0; }
+		}
+		if (i->state == groupInterpolator::created){
+			interpolators[Q]->get(q, dq, false);
+			std::map<std::string, groupInterpolator *>::iterator it;
+			for (it=groupInterpolators.begin(); it!=groupInterpolators.end(); it++){
+				groupInterpolator *gi = it->second;
+				if (gi)	gi->get(q, dq, false);
+			}
+			i->extract(x, q);
+			i->extract(v, dq);
+			i->inter->go(x,v,interpolators[Q]->deltaT());
+		}
+		i->inter->setGoal(pos[j], v, tm[j], false);
+		do{
+			i->inter->interpolate(tm[j]);
+		}while(tm[j]>0);
+		i->inter->sync();
+		i->state = groupInterpolator::working;
+	}
+	return true;
+}

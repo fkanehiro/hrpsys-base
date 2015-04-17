@@ -439,6 +439,23 @@ bool SequencePlayer::setJointAnglesSequence(const OpenHRP::dSequenceSequence ang
     return m_seq->setJointAnglesSequence(v_poss, v_tms);
 }
 
+bool SequencePlayer::setJointAnglesSequenceOfGroup(const char *gname, const OpenHRP::dSequenceSequence angless, const OpenHRP::dSequence& times)
+{
+    if ( m_debugLevel > 0 ) {
+        std::cerr << __PRETTY_FUNCTION__ << std::endl;
+    }
+    Guard guard(m_mutex);
+    if (!setInitialState()) return false;
+
+    if (!m_seq->resetJointGroup(gname, m_qInit.data.get_buffer())) return false;
+
+    std::vector<const double*> v_poss;
+    std::vector<double> v_tms;
+    for ( int i = 0; i < angless.length(); i++ ) v_poss.push_back(angless[i].get_buffer());
+    for ( int i = 0; i <  times.length();  i++ )  v_tms.push_back(times[i]);
+    return m_seq->setJointAnglesSequenceOfGroup(gname, v_poss, v_tms);
+}
+
 bool SequencePlayer::setBasePos(const double *pos, double tm)
 {
     if ( m_debugLevel > 0 ) {

@@ -987,6 +987,26 @@ class HrpsysConfigurator:
                 angles[i] = angles[i] / 180.0 * math.pi
         return self.seq_svc.setJointAnglesSequence(angless, tms)
 
+    def setJointAnglesSequenceOfGroup(self, gname, angless, tms):
+        '''!@brief
+        Set all joint angles.
+        \verbatim
+        NOTE-1: that while this method does not check angle value range,
+                any joints could emit position limit over error, which has not yet
+                been thrown by hrpsys so that there's no way to catch on this client
+                side. Worthwhile opening an enhancement ticket for that at
+                hironx' designated issue tracker.
+
+        \endverbatim
+        @param gname str: Name of the joint group.
+        @param sequence angles list of float: In degree.
+        @param tm sequence of float: Time to complete, In Second
+        '''
+        for angles in angless:
+            for i in range(len(angles)):
+                angles[i] = angles[i] / 180.0 * math.pi
+        return self.seq_svc.setJointAnglesSequenceOfGroup(gname, angless, tms)
+
     def loadPattern(self, fname, tm):
         '''!@brief
         Load a pattern file that is created offline.

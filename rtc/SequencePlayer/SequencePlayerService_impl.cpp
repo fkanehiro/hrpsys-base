@@ -186,7 +186,11 @@ CORBA::Boolean SequencePlayerService_impl::setJointAnglesOfGroup(const char *gna
 
 CORBA::Boolean SequencePlayerService_impl::setJointAnglesSequenceOfGroup(const char *gname, const dSequenceSequence& jvss, const dSequence& tms)
 {
-    return false;
+    if (jvss.length() != tms.length()) {
+        std::cerr << __PRETTY_FUNCTION__ << " length of joint angles sequence and time sequence differ, joint angle:" << jvss.length() << ", time:" << tms.length() << std::endl;
+        return false;
+    }
+    return m_player->setJointAnglesSequenceOfGroup(gname, jvss, tms);
 }
 
 CORBA::Boolean SequencePlayerService_impl::playPatternOfGroup(const char *gname, const dSequenceSequence& pos, const dSequence& tm)
