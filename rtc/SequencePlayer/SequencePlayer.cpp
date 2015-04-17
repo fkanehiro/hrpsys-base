@@ -389,7 +389,11 @@ bool SequencePlayer::setJointAngles(const double *angles, double tm)
     absZmp[2] = 0;
     hrp::Link *root = m_robot->rootLink();
     hrp::Vector3 relZmp = root->R.transpose()*(absZmp - root->p);
-    m_seq->setJointAngles(angles, tm);
+    std::vector<const double*> v_poss;
+    std::vector<double> v_tms;
+    v_poss.push_back(angles);
+    v_tms.push_back(tm);
+    m_seq->setJointAnglesSequence(v_poss, v_tms);
     m_seq->setZmp(relZmp.data(), tm);
     return true;
 }
