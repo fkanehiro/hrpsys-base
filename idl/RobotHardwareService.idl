@@ -54,6 +54,7 @@ module OpenHRP
       sequence<DblSequence3>	accel;    ///< accelerations[m/(s^2)]
       double			voltage;  ///< voltage of power supply[V]
       double			current;  ///< current[A] 
+      double			battery;  ///< remingin battery level[%]
     };
 
     /**
