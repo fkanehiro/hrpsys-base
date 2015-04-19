@@ -459,9 +459,9 @@ void robot::writeVelocityCommands(const double *i_commands)
     write_command_velocities(i_commands);
 }
 
-void robot::readPowerStatus(double &o_voltage, double &o_current)
+void robot::readPowerStatus(double &o_voltage, double &o_current, double &o_battery)
 {
-    read_power(&o_voltage, &o_current);
+    read_power(&o_voltage, &o_current, &o_battery);
 }
 
 int robot::readCalibState(int i)

@@ -8,6 +8,7 @@ module OpenHRP
   interface ImpedanceControllerService
   {
     typedef sequence<double, 3> DblSequence3;
+    typedef sequence<double> DblSequence;
 
     /**
      * @enum ControllerMode
@@ -49,6 +50,8 @@ module OpenHRP
       double manipulability_limit;
       /// Controller mode.
       ControllerMode controller_mode;
+      /// Joint weight for Inverse Kinematics calculation
+      DblSequence ik_optional_weight_vector;
     };
 
     /**

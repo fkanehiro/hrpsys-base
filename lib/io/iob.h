@@ -572,9 +572,10 @@ extern "C"{
      * @brief		read status of power source
      * @param v		voltage[V]
      * @param a		current[A]
+     * @param b		remaining battery level[%]
      * @return		TRUE or FALSE
      */
-    int read_power(double *v, double *a);
+    int read_power(double *v, double *a, double *b);
     //@}
 
     /**

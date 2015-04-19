@@ -44,8 +44,10 @@ KalmanFilter::KalmanFilter(RTC::Manager* manager)
     m_accIn("acc", m_acc),
     m_accRefIn("accRef", m_accRef),
     m_rpyIn("rpyIn", m_rate),
+    m_qCurrentIn("qCurrent", m_qCurrent),
     m_rpyOut("rpy", m_rpy),
     m_rpyRawOut("rpy_raw", m_rpyRaw),
+    m_baseRpyCurrentOut("baseRpyCurrent", m_baseRpyCurrent),
     m_KalmanFilterServicePort("KalmanFilterService"),
     // </rtc-template>
     m_robot(hrp::BodyPtr()),
@@ -78,10 +80,12 @@ RTC::ReturnCode_t KalmanFilter::onInitialize()
   addInPort("acc", m_accIn);
   addInPort("accRef", m_accRefIn);
   addInPort("rpyIn", m_rpyIn);
+  addInPort("qCurrent", m_qCurrentIn);
 
   // Set OutPort buffer
   addOutPort("rpy", m_rpyOut);
   addOutPort("rpy_raw", m_rpyRawOut);
+  addOutPort("baseRpyCurrent", m_baseRpyCurrentOut);
 
   // Set service provider to Ports
   m_KalmanFilterServicePort.registerProvider("service0", "KalmanFilterService", m_service0);
@@ -130,6 +134,7 @@ RTC::ReturnCode_t KalmanFilter::onInitialize()
   rpy_kf.setSensorR(m_sensorR);
   ekf_filter.setdt(m_dt);
   kf_algorithm = OpenHRP::KalmanFilterService::RPYKalmanFilter;
+  m_qCurrent.data.length(m_robot->numJoints());
 
   return RTC::RTC_OK;
 }
@@ -185,6 +190,12 @@ RTC::ReturnCode_t KalmanFilter::onExecute(RTC::UniqueId ec_id)
   if (m_rateIn.isNew()){
     m_rateIn.read();
   }
+  if (m_qCurrentIn.isNew()) {
+      m_qCurrentIn.read();
+      for ( int i = 0; i < m_robot->numJoints(); i++ ){
+          m_robot->joint(i)->q = m_qCurrent.data[i];
+      }
+  }
   double sx_ref = 0.0, sy_ref = 0.0, sz_ref = 0.0;
   if (m_accRefIn.isNew()){
     m_accRefIn.read();
@@ -203,7 +214,15 @@ RTC::ReturnCode_t KalmanFilter::onExecute(RTC::UniqueId ec_id)
     if (kf_algorithm == OpenHRP::KalmanFilterService::QuaternionExtendedKalmanFilter) {
         ekf_filter.main_one(rpy, rpyRaw, acc, gyro);
     } else if (kf_algorithm == OpenHRP::KalmanFilterService::RPYKalmanFilter) {
-        rpy_kf.main_one(rpy, rpyRaw, acc, gyro);
+        double sl_y;
+        m_robot->calcForwardKinematics();
+        if (m_robot->numSensors(hrp::Sensor::ACCELERATION) > 0) {
+            hrp::Sensor* sensor = m_robot->sensor(hrp::Sensor::ACCELERATION, 0);
+            sl_y = hrp::rpyFromRot(sensor->link->R)[2];
+        } else {
+            sl_y = 0.0;
+        }
+        rpy_kf.main_one(rpy, rpyRaw, acc, gyro, sl_y);
     }
     m_rpyRaw.data.r = rpyRaw(0);
     m_rpyRaw.data.p = rpyRaw(1);
