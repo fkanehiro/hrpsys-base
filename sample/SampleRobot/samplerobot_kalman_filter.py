@@ -72,7 +72,7 @@ def test_kf_plot (test_motion_func, optional_out_file_name): # time [s]
     estimated_base_rpy_ret=[]
     for line in open("/tmp/test-kf-samplerobot-{0}.kf_baseRpyCurrent".format(optional_out_file_name), "r"):
         estimated_base_rpy_ret.append(line.split(" ")[0:-1])
-    #  Actual rpy from simualtro : time, posx, posy, posz, roll, pitch, yaw
+    #  Actual rpy from simualtor : time, posx, posy, posz, roll, pitch, yaw
     act_rpy_ret=[]
     for line in open("/tmp/test-kf-samplerobot-{0}.SampleRobot(Robot)0_WAIST".format(optional_out_file_name), "r"):
         act_rpy_ret.append(line.split(" ")[0:-1])
