@@ -35,6 +35,8 @@ foreach(_idx 0 1 2)
   configure_file(SampleRobot.TerrainFloor.xml.in ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.TerrainFloor.${_tmp_file_suffix}.xml)
 endforeach()
 
+file(GLOB python_scripts RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.py)
+
 install(FILES 
   # files for 500[Hz] = 0.002[s]
   ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.500.conf
@@ -60,5 +62,8 @@ install(FILES
   SampleRobot.DRCTestbed.xml
   DESTINATION share/hrpsys/samples/SampleRobot)
 
+install(PROGRAMS
+    ${python_scripts}
+  DESTINATION share/hrpsys/samples/SampleRobot)
 add_subdirectory(rtc)
 
