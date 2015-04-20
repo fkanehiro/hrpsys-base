@@ -438,6 +438,9 @@ void BodyRTC::getStatus(OpenHRP::RobotHardwareService::RobotState* rs) {
     //readPowerStatus(rs->voltage, rs->current);
 }
 
+void BodyRTC::getStatus2(OpenHRP::RobotHardwareService::RobotState2* rs) {
+}
+
 bool BodyRTC::setServoErrorLimit(const char *i_jname, double i_limit)
 {
     Link *l = NULL;
@@ -603,6 +606,10 @@ void RobotHardwareServicePort::getStatus(OpenHRP::RobotHardwareService::RobotSta
     m_robot->getStatus(rs);
 }
 
+void RobotHardwareServicePort::getStatus2(OpenHRP::RobotHardwareService::RobotState2_out rs) {
+    rs = new OpenHRP::RobotHardwareService::RobotState2();
+    m_robot->getStatus2(rs);
+}
 
 CORBA::Boolean RobotHardwareServicePort::power(const char* jname, OpenHRP::RobotHardwareService::SwitchStatus turnon) {
     m_robot->power(jname, turnon == OpenHRP::RobotHardwareService::SWITCH_ON);
