@@ -8,7 +8,11 @@
 
   <node name="start_omninames" pkg="hrpsys" type="start_omninames.sh" args="2809" />
 
-  <node name="colcheck" pkg="hrpsys" type="CollisionDetectorComp" output="screen"  cwd="node" />
+  <node name="modelloader" pkg="openhrp3" type="openhrp-model-loader" output="screen"/>
+
+  <node name="colcheck" pkg="hrpsys" type="CollisionDetectorComp"
+	args='-o "example.CollisionDetector.config_file:$(find hrpsys)/share/hrpsys/samples/PA10/PA10.conf"'
+	output="screen"  cwd="node" />
 
   <test test-name="colcheck" pkg="hrpsys" type="test-colcheck.py" />
 </launch>
