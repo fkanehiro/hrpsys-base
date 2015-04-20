@@ -11,6 +11,8 @@ import socket
 import time
 import subprocess
 
+import threading
+
 # copy from transformations.py, Christoph Gohlke, The Regents of the University of California
 
 import numpy
@@ -31,6 +33,7 @@ _NEXT_AXIS = [1, 2, 0, 1]
 # epsilon for testing whether a number is close to zero
 _EPS = numpy.finfo(float).eps * 4.0
 
+_LOCK = threading.Lock()
 
 def euler_matrix(ai, aj, ak, axes='sxyz'):
     """Return homogeneous rotation matrix from Euler angles and axis sequence.
@@ -1017,7 +1020,9 @@ class HrpsysConfigurator:
 
         @param gname str: Name of the joint group.
         '''
+        _LOCK.acquire(True) # blocking wait
         self.seq_svc.waitInterpolationOfGroup(gname)
+        _LOCK.release()
 
     def getJointAngles(self):
         '''!@brief
