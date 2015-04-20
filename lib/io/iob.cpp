@@ -562,10 +562,15 @@ int number_of_substeps()
     return 5;
 }
 
-int read_power(double *voltage, double *current, double *battery)
+int read_power(double *voltage, double *current)
 {
     *voltage = ((double)random()-RAND_MAX/2)/(RAND_MAX/2)*1+48;
     *current = ((double)random()-RAND_MAX/2)/(RAND_MAX/2)*0.5+1;
+    return TRUE;
+}
+
+int read_battery(double *battery)
+{
     *battery = ((double)random()-RAND_MAX/2)/(RAND_MAX/2)*0.5+50;
     return TRUE;
 }
