@@ -9,8 +9,7 @@ from hrpsys import *  # load ModelLoader
 
 import socket
 import time
-
-from subprocess import check_output
+import subprocess
 
 # copy from transformations.py, Christoph Gohlke, The Regents of the University of California
 
@@ -303,6 +302,7 @@ class HrpsysConfigurator:
             s_rate = filter(lambda s: s.type == 'RateGyro', self.sensors)
             if (len(s_rate) > 0) and self.rh.port(s_rate[0].name) != None:  # check existence of sensor ;; currently original HRP4C.xml has different naming rule of gsensor and gyrometer
                 connectPorts(self.rh.port(s_rate[0].name), self.kf.port("rate"))
+            connectPorts(self.rh.port("q"), self.kf.port("qCurrent"))
 
         # connection for rh
         if self.rh.port("servoState") != None:
@@ -670,9 +670,11 @@ class HrpsysConfigurator:
     # private method to replace $(OPENHRP_DIR) or $(PROJECT_DIR)
     def parseUrl(self, url):
         if '$(OPENHRP_DIR)' in url:
-            url = url.replace('$(OPENHRP_DIR)', check_output(['pkg-config', 'openhrp3.1', '--variable=prefix']).rstrip())
+            path = subprocess.Popen(['pkg-config', 'openhrp3.1', '--variable=prefix'], stdout=subprocess.PIPE).communicate()[0].rstrip().decode('utf-8')
+            url = url.replace('$(OPENHRP_DIR)', path)
         if '$(PROJECT_DIR)' in url:
-            url = url.replace('$(PROJECT_DIR)', check_output(['pkg-config', 'hrpsys-base', '--variable=prefix']).rstrip())
+            path = subprocess.Popen(['pkg-config', 'hrpsys-base', '--variable=prefix'], stdout=subprocess.PIPE).communicate()[0].rstrip().decode('utf-8')
+            url = url.replace('$(PROJECT_DIR)', path)
         return url
 
     # public method to get bodyInfo

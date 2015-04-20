@@ -459,9 +459,9 @@ void robot::writeVelocityCommands(const double *i_commands)
     write_command_velocities(i_commands);
 }
 
-void robot::readPowerStatus(double &o_voltage, double &o_current)
+void robot::readPowerStatus(double &o_voltage, double &o_current, double &o_battery)
 {
-    read_power(&o_voltage, &o_current);
+    read_power(&o_voltage, &o_current, &o_battery);
 }
 
 int robot::readCalibState(int i)
@@ -507,6 +507,27 @@ char *time_string()
     static char time[20];
     sprintf(time, "%02d:%02d:%02d.%06d", tm_->tm_hour, tm_->tm_min, tm_->tm_sec, (int)tv.tv_usec);
     return time;
+}
+
+bool robot::checkJointCommands(const double *i_commands)
+{
+    int state;
+    for (int i=0; i<numJoints(); i++){
+        read_servo_state(i, &state);
+        if (state == ON && m_servoErrorLimit[i] != 0){
+            double angle, command=i_commands[i];
+            read_actual_angle(i, &angle);
+            if (fabs(angle-command) > m_servoErrorLimit[i]){
+                std::cerr << time_string()
+                          << ": servo error limit over: joint = " 
+		          << joint(i)->name
+		          << ", qRef = " << command/M_PI*180 << "[deg], q = " 
+		          << angle/M_PI*180 << "[deg]" << std::endl;
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 bool robot::checkEmergency(emg_reason &o_reason, int &o_id)

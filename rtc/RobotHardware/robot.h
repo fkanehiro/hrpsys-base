@@ -127,8 +127,9 @@ public:
        \brief read voltage and current of the robot power source
        \param o_voltage voltage
        \param o_current current
+       \param o_battery remaining battery level
      */
-    void readPowerStatus(double &o_voltage, double &o_current);
+    void readPowerStatus(double &o_voltage, double &o_current, double &o_battery);
 
     /**
        \brief read array of all joint angles[rad]
@@ -220,6 +221,13 @@ public:
        \return true if the robot is in emergency state, false otherwise
      */
     bool checkEmergency(emg_reason &o_reason, int &o_id);
+
+
+    /**
+       \brief check joint commands are valid or not
+       \return true if the joint command is invalid, false otherwise
+     */
+    bool checkJointCommands(const double *i_commands);
 
     /**
        \brief set the parcentage to the default servo gain

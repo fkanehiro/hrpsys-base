@@ -67,7 +67,7 @@ int main(int argc, char *argv[])
     posef >> time >> time >> time >> time >> rpyAct[0] >> rpyAct[1] >> rpyAct[2]; // Neglect translation in .pose file
     ratef >> time >> rate[0] >> rate[1] >> rate[2];
     accf >> time >> acc[0] >> acc[1] >> acc[2];
-    rpy_kf.main_one(rpy, rpyRaw, acc, rate);
+    rpy_kf.main_one(rpy, rpyRaw, acc, rate, 0.0);
     // rad->deg
     rpy*=180/3.14159;
     rpyAct*=180/3.14159;

@@ -68,7 +68,7 @@ void RobotHardwareService_impl::getStatus(OpenHRP::RobotHardwareService::RobotSt
         m_robot->readForceSensor(i, rs->force[i].get_buffer());
     }
 
-    m_robot->readPowerStatus(rs->voltage, rs->current);
+    m_robot->readPowerStatus(rs->voltage, rs->current, rs->battery);
 }
 
 CORBA::Boolean RobotHardwareService_impl::power(const char* jname, OpenHRP::RobotHardwareService::SwitchStatus ss)
