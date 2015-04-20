@@ -161,6 +161,9 @@ case $TEST_PACKAGE in
         sudo apt-get install -qq -y freeglut3-dev python-tk jython doxygen libboost-all-dev libsdl1.2-dev libglew1.6-dev libqhull-dev libirrlicht-dev libxmu-dev libcv-dev libhighgui-dev libopencv-contrib-dev
         # check rtmros_common
 
+        if [ "$TEST_PACKAGE" == "hrpsys-base" ]; then
+            TEST_PACKAGE="hrpsys"
+        fi
         travis_time_end
         travis_time_start  install_$TEST_PACKAGE
 
@@ -338,7 +341,11 @@ case $TEST_PACKAGE in
         else
             for test_file in `find $pkg_path/test -iname "*.test" -print`; do
                 travis_time_start $(echo $test_file | sed 's@.*/\([a-zA-Z0-9-]*\).test$@\1@' | sed 's@-@_@g')
-                rostest $test_file && travis_time_end || (travis_time_end 31; export EXIT_STATUS=$?)
+                rostest $test_file && travis_time_end || export TMP_EXIT_STATUS=$?
+                if [ $TMP_EXIT_STATUS != 0 ]; then
+                    export EXIT_STATUS=$TMP_EXIT_STATUS
+                    travis_time_end 31
+                fi
             done
         fi
 
