@@ -17,8 +17,8 @@ env:
     - TEST_TYPE=python      TEST_PACKAGE=hrpsys
     - TEST_TYPE=iob         TEST_PACKAGE=hrpsys
     - TEST_TYPE=stable_rtc  TEST_PACKAGE=hrpsys
-    - TEST_TYPE=work_with_downstream  TEST_PACKAGE=hrpsys
-    - TEST_TYPE=work_with_315_1_10    TEST_PACKAGE=hrpsys
+    - TEST_TYPE=work_with_downstream  TEST_PACKAGE=hrpsys-base
+    - TEST_TYPE=work_with_315_1_10    TEST_PACKAGE=hrpsys-base
     - TEST_TYPE=work_with_downstream  TEST_PACKAGE=hrpsys-tools
     - TEST_TYPE=work_with_315_1_10    TEST_PACKAGE=hrpsys-tools
     - TEST_TYPE=work_with_downstream  TEST_PACKAGE=hrpsys-ros-bridge
