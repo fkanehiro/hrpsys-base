@@ -17,6 +17,7 @@ public:
     virtual ~RobotHardwareService_impl();
 
     void getStatus(OpenHRP::RobotHardwareService::RobotState_out rs);
+    void getStatus2(OpenHRP::RobotHardwareService::RobotState2_out rs);
 
     CORBA::Boolean power(const char* jname, OpenHRP::RobotHardwareService::SwitchStatus ss);
     CORBA::Boolean servo(const char* jname, OpenHRP::RobotHardwareService::SwitchStatus ss);

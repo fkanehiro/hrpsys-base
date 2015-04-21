@@ -161,6 +161,9 @@ case $TEST_PACKAGE in
         sudo apt-get install -qq -y freeglut3-dev python-tk jython doxygen libboost-all-dev libsdl1.2-dev libglew1.6-dev libqhull-dev libirrlicht-dev libxmu-dev libcv-dev libhighgui-dev libopencv-contrib-dev
         # check rtmros_common
 
+        if [ "$TEST_PACKAGE" == "hrpsys-base" ]; then
+            TEST_PACKAGE="hrpsys"
+        fi
         travis_time_end
         travis_time_start  install_$TEST_PACKAGE
 
@@ -169,7 +172,9 @@ case $TEST_PACKAGE in
 
         sudo apt-get install -qq -y ros-hydro-pcl-ros ros-hydro-moveit-commander ros-hydro-rqt-robot-dashboard > /dev/null
 
-        sudo apt-get install -qq -y ros-hydro-$pkg
+        if [ "$TEST_PACKAGE" != "hrpsys-base" ]; then
+            sudo apt-get install -qq -y ros-hydro-$pkg
+        fi
 
         source /opt/ros/hydro/setup.bash
 
