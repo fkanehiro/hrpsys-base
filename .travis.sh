@@ -84,7 +84,7 @@ case $TEST_PACKAGE in
             iob)
                 travis_time_start  install_wget
 
-                sudo apt-get install -qq -y cproto wget
+                sudo apt-get install -qq -y cproto wget diffstat
 
                 travis_time_end
                 travis_time_start  iob_test
@@ -94,7 +94,7 @@ case $TEST_PACKAGE in
                 echo -e "#define pid_t int\n#define size_t int\n#include \"iob.h.315.1.9\"" | cproto -x - | sort > iob.h.stable
                 cat iob.h.current
                 cat iob.h.stable
-                diff iob.h.current iob.h.stable || exit 1
+                diff iob.h.stable iob.h.current | tee >(cat - 1>&2)  | diffstat | grep -c deletion && exit 1
 
                 travis_time_end
                 ;;
@@ -161,6 +161,9 @@ case $TEST_PACKAGE in
         sudo apt-get install -qq -y freeglut3-dev python-tk jython doxygen libboost-all-dev libsdl1.2-dev libglew1.6-dev libqhull-dev libirrlicht-dev libxmu-dev libcv-dev libhighgui-dev libopencv-contrib-dev
         # check rtmros_common
 
+        if [ "$TEST_PACKAGE" == "hrpsys-base" ]; then
+            TEST_PACKAGE="hrpsys"
+        fi
         travis_time_end
         travis_time_start  install_$TEST_PACKAGE
 
@@ -169,7 +172,9 @@ case $TEST_PACKAGE in
 
         sudo apt-get install -qq -y ros-hydro-pcl-ros ros-hydro-moveit-commander ros-hydro-rqt-robot-dashboard > /dev/null
 
-        sudo apt-get install -qq -y ros-hydro-$pkg
+        if [ "$TEST_PACKAGE" != "hrpsys-base" ]; then
+            sudo apt-get install -qq -y ros-hydro-$pkg
+        fi
 
         source /opt/ros/hydro/setup.bash
 
@@ -232,11 +237,14 @@ case $TEST_PACKAGE in
             # do not copile hrpsys because we wan to use them
             sed -i "1imacro(dummy_install)\nmessage(\"install(\${ARGN})\")\nendmacro()" src/hrpsys/CMakeLists.txt
             sed -i "s@install(@dummy_install(@g" src/hrpsys/CMakeLists.txt
+            sed -i "\$iinstall(DIRECTORY test launch sample DESTINATION share/hrpsys USE_SOURCE_PERMISSIONS)" src/hrpsys/CMakeLists.txt
+            sed -i "\$iinstall(FILES package.xml DESTINATION share/hrpsys/)" src/hrpsys/CMakeLists.txt
+            cat src/hrpsys/CMakeLists.txt
 
             travis_time_end
             travis_time_start  compile_new_version
 
-            catkin_make_isolated -j1 -l1 --install --only-pkg-with-deps `echo $pkg | sed s/-/_/g` | grep -v '^-- \(Up-to-date\|Installing\):' | grep -v 'Generating \(Python\|C++\) code from' | grep -v '^Compiling .*.py ...$' | uniq
+            catkin_make_isolated -j1 -l1 --install --only-pkg-with-deps `echo $pkg | sed s/-/_/g` | grep -v 'Generating \(Python\|C++\) code from' | grep -v '^Compiling .*.py ...$' | uniq #| grep -v '^-- \(Up-to-date\|Installing\):' | grep -v 'Generating \(Python\|C++\) code from' | grep -v '^Compiling .*.py ...$' | uniq
             rm -fr ./install_isolated/hrpsys/share/hrpsys ./install_isolated/hrpsys/lib/pkgconfig/hrpsys.pc
             source install_isolated/setup.bash
 
@@ -250,7 +258,10 @@ case $TEST_PACKAGE in
             wstool set hrpsys http://github.com/start-jsk/hrpsys -v 315.1.9 --git -y
             wstool update
             #
+            sed -i "1imacro(dummy_macro)\nmessage(\"dummy(\${ARGN})\")\nendmacro()" hrpsys/catkin.cmake
+            sed -i "s@install(DIRECTORY test share@dummy_macro(DIRECTORY test share@" hrpsys/catkin.cmake
             sed -i "s@find_package(catkin REQUIRED COMPONENTS rostest mk openrtm_aist openhrp3)@find_package(catkin REQUIRED COMPONENTS rostest mk)\nset(openrtm_aist_PREFIX /opt/ros/hydro/)\nset(openhrp3_PREFIX /opt/ros/hydro/)@"  hrpsys/catkin.cmake
+            cat hrpsys/catkin.cmake
             sed -i "s@NUM_OF_CPUS = \$(shell grep -c '^processor' /proc/cpuinfo)@NUM_OF_CPUS = 2@" hrpsys/Makefile.hrpsys-base
             sed -i "s@touch installed@@" hrpsys/Makefile.hrpsys-base
             cat hrpsys/Makefile.hrpsys-base
@@ -258,6 +269,7 @@ case $TEST_PACKAGE in
             git clone http://github.com/fkanehiro/hrpsys-base --depth 1 -b 315.1.9 ../build_isolated/hrpsys/build/hrpsys-base-source
             # we use latest hrpsys_ocnfig.py for this case, so do not install them
             sed -i -e 's/\(add_subdirectory(python)\)/#\1/' ../build_isolated/hrpsys/build/hrpsys-base-source/CMakeLists.txt
+            sed -i -e 's/\(add_subdirectory(test)\)/#\1/' ../build_isolated/hrpsys/build/hrpsys-base-source/CMakeLists.txt
             find ../build_isolated/hrpsys/build/hrpsys-base-source -name CMakeLists.txt -exec sed -i "s@PCL_FOUND@0@" {} \; # disable PCL
             find ../build_isolated/hrpsys/build/hrpsys-base-source -name CMakeLists.txt -exec sed -i "s@OCTOMAP_FOUND@0@" {} \; # disable OCTOMAP
             find ../build_isolated/hrpsys/build/hrpsys-base-source -name CMakeLists.txt -exec sed -i "s@IRRLIGHT_FOUND@0@" {} \; # disable IRRLIGHT
@@ -294,7 +306,7 @@ case $TEST_PACKAGE in
             trap 0 ERR
             need_compile=1
             while [ $need_compile != 0 ]; do
-                catkin_make_isolated -j1 -l1 --install | grep -v '^-- \(Up-to-date\|Installing\):'
+                catkin_make_isolated -j1 -l1 --install #| grep -v '^-- \(Up-to-date\|Installing\):'
                 need_compile=${PIPESTATUS[0]}
             done
             trap error ERR
@@ -338,7 +350,12 @@ case $TEST_PACKAGE in
         else
             for test_file in `find $pkg_path/test -iname "*.test" -print`; do
                 travis_time_start $(echo $test_file | sed 's@.*/\([a-zA-Z0-9-]*\).test$@\1@' | sed 's@-@_@g')
-                rostest $test_file && travis_time_end || (travis_time_end 31; export EXIT_STATUS=$?)
+                export TMP_EXIT_STATUS=0
+                rostest $test_file && travis_time_end || export TMP_EXIT_STATUS=$?
+                if [ "$TMP_EXIT_STATUS" != 0 ]; then
+                    export EXIT_STATUS=$TMP_EXIT_STATUS
+                    travis_time_end 31
+                fi
             done
         fi
 
