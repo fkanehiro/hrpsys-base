@@ -172,7 +172,9 @@ case $TEST_PACKAGE in
 
         sudo apt-get install -qq -y ros-hydro-pcl-ros ros-hydro-moveit-commander ros-hydro-rqt-robot-dashboard > /dev/null
 
-        sudo apt-get install -qq -y ros-hydro-$pkg
+        if [ "$TEST_PACKAGE" != "hrpsys-base" ]; then
+            sudo apt-get install -qq -y ros-hydro-$pkg
+        fi
 
         source /opt/ros/hydro/setup.bash
 
