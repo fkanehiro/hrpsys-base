@@ -32,7 +32,7 @@ def loadPattern(basename, tm=1.0):
 
 def demo():
     init()
-    loadPattern("$(OPENHRP_DIR)/share/OpenHRP-3.1/sample/controller/SampleController/etc/Sample")
+    loadPattern("$(PROJECT_DIR)/../controller/SampleController/etc/Sample")
 
 if __name__ == '__main__':
     demo()
