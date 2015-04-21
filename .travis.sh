@@ -84,7 +84,7 @@ case $TEST_PACKAGE in
             iob)
                 travis_time_start  install_wget
 
-                sudo apt-get install -qq -y cproto wget
+                sudo apt-get install -qq -y cproto wget diffstat
 
                 travis_time_end
                 travis_time_start  iob_test
@@ -94,7 +94,7 @@ case $TEST_PACKAGE in
                 echo -e "#define pid_t int\n#define size_t int\n#include \"iob.h.315.1.9\"" | cproto -x - | sort > iob.h.stable
                 cat iob.h.current
                 cat iob.h.stable
-                diff iob.h.current iob.h.stable || exit 1
+                diff iob.h.stable iob.h.current | tee >(cat - 1>&2)  | diffstat | grep -c deletion && exit 1
 
                 travis_time_end
                 ;;
