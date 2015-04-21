@@ -235,6 +235,12 @@ case $TEST_PACKAGE in
             # do not copile hrpsys because we wan to use them
             sed -i "1imacro(dummy_install)\nmessage(\"install(\${ARGN})\")\nendmacro()" src/hrpsys/CMakeLists.txt
             sed -i "s@install(@dummy_install(@g" src/hrpsys/CMakeLists.txt
+            sed -i "\$iinstall(DIRECTORY test launch sample DESTINATION share/hrpsys USE_SOURCE_PERMISSIONS)" src/hrpsys/CMakeLists.txt
+            sed -i "\$iinstall(FILES package.xml DESTINATION share/hrpsys/)" src/hrpsys/CMakeLists.txt
+            sed -i "\$iinstall(CODE \"execute_process(COMMAND cmake -E make_directory share/hrpsys WORKING_DIRECTORY \$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/share/hrpsys)\")" src/hrpsys/CMakeLists.txt
+            sed -i "\$iinstall(CODE \"execute_process(COMMAND cmake -E create_symlink ../../../hrpsys/idl     share/hrpsys/idl WORKING_DIRECTORY \$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/share/hrpsys)\")" src/hrpsys/CMakeLists.txt
+            sed -i "\$iinstall(CODE \"execute_process(COMMAND cmake -E create_symlink ../../../hrpsys/samples share/hrpsys/samples WORKING_DIRECTORY \$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/share/hrpsys)\")" src/hrpsys/CMakeLists.txt
+            cat src/hrpsys/CMakeLists.txt
 
             travis_time_end
             travis_time_start  compile_new_version
@@ -253,7 +259,10 @@ case $TEST_PACKAGE in
             wstool set hrpsys http://github.com/start-jsk/hrpsys -v 315.1.9 --git -y
             wstool update
             #
+            sed -i "1imacro(dummy_macro)\nmessage(\"dummy(\${ARGN})\")\nendmacro()" hrpsys/catkin.cmake
+            sed -i "s@install(DIRECTORY test share@dummy_macro(DIRECTORY test share@" hrpsys/catkin.cmake
             sed -i "s@find_package(catkin REQUIRED COMPONENTS rostest mk openrtm_aist openhrp3)@find_package(catkin REQUIRED COMPONENTS rostest mk)\nset(openrtm_aist_PREFIX /opt/ros/hydro/)\nset(openhrp3_PREFIX /opt/ros/hydro/)@"  hrpsys/catkin.cmake
+            cat hrpsys/catkin.cmake
             sed -i "s@NUM_OF_CPUS = \$(shell grep -c '^processor' /proc/cpuinfo)@NUM_OF_CPUS = 2@" hrpsys/Makefile.hrpsys-base
             sed -i "s@touch installed@@" hrpsys/Makefile.hrpsys-base
             cat hrpsys/Makefile.hrpsys-base
@@ -342,8 +351,9 @@ case $TEST_PACKAGE in
         else
             for test_file in `find $pkg_path/test -iname "*.test" -print`; do
                 travis_time_start $(echo $test_file | sed 's@.*/\([a-zA-Z0-9-]*\).test$@\1@' | sed 's@-@_@g')
+                export TMP_EXIT_STATUS=0
                 rostest $test_file && travis_time_end || export TMP_EXIT_STATUS=$?
-                if [ $TMP_EXIT_STATUS != 0 ]; then
+                if [ "$TMP_EXIT_STATUS" != 0 ]; then
                     export EXIT_STATUS=$TMP_EXIT_STATUS
                     travis_time_end 31
                 fi
