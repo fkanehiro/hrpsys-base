@@ -359,6 +359,7 @@ case $TEST_PACKAGE in
                 rostest $test_file && travis_time_end || export TMP_EXIT_STATUS=$?
                 if [ "$TMP_EXIT_STATUS" != 0 ]; then
                     export EXIT_STATUS=$TMP_EXIT_STATUS
+                    find ~/.ros/test_results -type f -iname "*`basename $test_file .test`.xml" -print -exec echo "=== {} ===" \; -exec cat {} \;
                     travis_time_end 31
                 fi
             done
