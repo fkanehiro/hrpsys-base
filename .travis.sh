@@ -344,7 +344,10 @@ case $TEST_PACKAGE in
         if [ -e /opt/ros/hydro/share/hironx_ros_bridge/test/test_hironx_ros_bridge.py ]; then
             sudo sed -i "s@test_tf_and_controller@_test_tf_and_controller@" /opt/ros/hydro/share/hironx_ros_bridge/test/test_hironx_ros_bridge.py
         fi
-
+        #https://github.com/start-jsk/rtmros_hironx/pull/358
+        if [ -e /opt/ros/hydro/lib/python2.7/dist-packages/hironx_ros_bridge/hironx_client.py ]; then
+            sudo wget https://raw.githubusercontent.com/k-okada/rtmros_hironx/stop_unfinished_battle/hironx_ros_bridge/src/hironx_ros_bridge/hironx_client.py -O /opt/ros/hydro/lib/python2.7/dist-packages/hironx_ros_bridge/hironx_client.py
+        fi
         travis_time_end
 
         sudo /etc/init.d/omniorb4-nameserver stop || echo "stop omniserver just in case..."
