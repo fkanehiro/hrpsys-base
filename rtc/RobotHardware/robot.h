@@ -127,8 +127,9 @@ public:
        \brief read voltage and current of the robot power source
        \param o_voltage voltage
        \param o_current current
-       \param o_battery remaining battery level
+       \param o_battery remaining battery level ( new feature on 315.4.0)
      */
+    void readPowerStatus(double &o_voltage, double &o_current);
     void readPowerStatus(double &o_voltage, double &o_current, double &o_battery);
 
     /**
