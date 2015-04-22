@@ -667,13 +667,13 @@ class HrpsysConfigurator:
                 print(self.configurator_name + '\033[31mFail to getRTCInstanceList'+str(e)+'\033[0m')
         return ret
 
-    # private method to replace $(OPENHRP_DIR) or $(PROJECT_DIR)
+    # private method to replace $(PROJECT_DIR)
+    # PROJECT_DIR=(OpenHRP3  installed directory)/share/OpenHRP-3.1/sample/project
+    # see http://www.openrtp.jp/openhrp3/3.1.0.beta/jp/install_ubuntu.html
     def parseUrl(self, url):
-        if '$(OPENHRP_DIR)' in url:
-            path = subprocess.Popen(['pkg-config', 'openhrp3.1', '--variable=prefix'], stdout=subprocess.PIPE).communicate()[0].rstrip()
-            url = url.replace('$(OPENHRP_DIR)', path)
         if '$(PROJECT_DIR)' in url:
-            path = subprocess.Popen(['pkg-config', 'hrpsys-base', '--variable=prefix'], stdout=subprocess.PIPE).communicate()[0].rstrip()
+            path = subprocess.Popen(['pkg-config', 'openhrp3.1', '--variable=prefix'], stdout=subprocess.PIPE).communicate()[0].rstrip()
+            path = os.path.join(path, 'share/OpenHRP-3.1/sample/project')
             url = url.replace('$(PROJECT_DIR)', path)
         return url
 
