@@ -572,10 +572,18 @@ extern "C"{
      * @brief		read status of power source
      * @param v		voltage[V]
      * @param a		current[A]
+     * @return		TRUE or FALSE
+     */
+    int read_power(double *v, double *a);
+    //@}
+
+    //@{
+    /**
+     * @brief		read status of battery source this is new API since 315.4.0
      * @param b		remaining battery level[%]
      * @return		TRUE or FALSE
      */
-    int read_power(double *v, double *a, double *b);
+    int read_battery(double *b) /* {} */; // if you are compiling against old libiob.so, please uncomment to dummy define this function.
     //@}
 
     /**

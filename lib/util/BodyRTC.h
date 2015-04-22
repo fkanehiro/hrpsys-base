@@ -26,6 +26,7 @@ public:
     RobotHardwareServicePort();
     ~RobotHardwareServicePort();
     void getStatus(OpenHRP::RobotHardwareService::RobotState_out rs);
+    void getStatus2(OpenHRP::RobotHardwareService::RobotState2_out rs);
     CORBA::Boolean power(const char* jname, OpenHRP::RobotHardwareService::SwitchStatus ss);
     CORBA::Boolean servo(const char* jname, OpenHRP::RobotHardwareService::SwitchStatus ss);
     void setServoGainPercentage(const char *jname, double limit);
@@ -71,7 +72,7 @@ public:
     static void moduleInit(RTC::Manager*);
 
     void getStatus(OpenHRP::RobotHardwareService::RobotState* rs);
-
+    void getStatus2(OpenHRP::RobotHardwareService::RobotState2* rs);
 
     bool preOneStep();
     bool postOneStep();
