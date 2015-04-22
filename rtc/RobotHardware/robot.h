@@ -130,7 +130,9 @@ public:
        \param o_battery remaining battery level ( new feature on 315.4.0)
      */
     void readPowerStatus(double &o_voltage, double &o_current);
+#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 2
     void readPowerStatus(double &o_voltage, double &o_current, double &o_battery);
+#endif
 
     /**
        \brief read array of all joint angles[rad]
