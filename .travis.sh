@@ -313,6 +313,10 @@ case $TEST_PACKAGE in
             trap error ERR
 
             #cp ~/catkin_ws/src/hrpsys/package.xml install_isolated/share/hrpsys/ # old hrpsys did not do this
+            mkdir -p install_isolated/share/hrpsys/share/
+            cp -r ~/catkin_ws/install_isolated/share/hrpsys/idl install_isolated/share/hrpsys/share
+            cp -r ~/catkin_ws/install_isolated/share/hrpsys/{test,launch,samples} install_isolated/share/hrpsys/ # cp latest script
+
             source install_isolated/setup.bash
 
             #echo $ROS_PACKAGE_PATH
