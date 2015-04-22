@@ -81,7 +81,11 @@ void RobotHardwareService_impl::getStatus2(OpenHRP::RobotHardwareService::RobotS
 
     GetStatus
 
+#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 2
     m_robot->readPowerStatus(rs->voltage, rs->current, rs->battery);
+#else
+    m_robot->readPowerStatus(rs->voltage, rs->current);
+#endif
 }
 
 CORBA::Boolean RobotHardwareService_impl::power(const char* jname, OpenHRP::RobotHardwareService::SwitchStatus ss)

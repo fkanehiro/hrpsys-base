@@ -577,6 +577,7 @@ extern "C"{
     int read_power(double *v, double *a);
     //@}
 
+#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 2
     //@{
     /**
      * @brief		read status of battery source this is new API since 315.4.0
@@ -585,6 +586,7 @@ extern "C"{
      */
     int read_battery(double *b) /* {} */; // if you are compiling against old libiob.so, please uncomment to dummy define this function.
     //@}
+#endif
 
     /**
      * @name thermometer
