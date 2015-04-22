@@ -570,9 +570,16 @@ int read_power(double *voltage, double *current)
 }
 
 #if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 2
-int read_battery(double *battery)
+int number_of_batteries()
 {
-    *battery = ((double)random()-RAND_MAX/2)/(RAND_MAX/2)*0.5+50;
+    return 1;
+}
+
+int read_battery(int id, double *voltage, double *current, double *soc)
+{
+    *voltage = ((double)random()-RAND_MAX/2)/(RAND_MAX/2)*1+48;
+    *current = ((double)random()-RAND_MAX/2)/(RAND_MAX/2)*0.5+1;
+    *soc = ((double)random()-RAND_MAX/2)/(RAND_MAX/2)*0.5+50;
     return TRUE;
 }
 #endif

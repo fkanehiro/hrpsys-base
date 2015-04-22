@@ -64,27 +64,31 @@ RobotHardwareService_impl::~RobotHardwareService_impl()
     for (unsigned int i=0; i<rs->force.length(); i++){                  \
         rs->force[i].length(6);                                         \
         m_robot->readForceSensor(i, rs->force[i].get_buffer());         \
-    }
+    }									\
+									\
+    m_robot->readPowerStatus(rs->voltage, rs->current);
 
 void RobotHardwareService_impl::getStatus(OpenHRP::RobotHardwareService::RobotState_out rs)
 {
     rs = new OpenHRP::RobotHardwareService::RobotState();
 
-    GetStatus
-
-    m_robot->readPowerStatus(rs->voltage, rs->current);
+    GetStatus;
 }
 
 void RobotHardwareService_impl::getStatus2(OpenHRP::RobotHardwareService::RobotState2_out rs)
 {
     rs = new OpenHRP::RobotHardwareService::RobotState2();
 
-    GetStatus
+    GetStatus;
 
 #if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 2
-    m_robot->readPowerStatus(rs->voltage, rs->current, rs->battery);
-#else
-    m_robot->readPowerStatus(rs->voltage, rs->current);
+    rs->batteries.length(m_robot->numBatteries());
+    for(unsigned int i=0; i<rs->batteries.length(); i++){
+        m_robot->readBatteryState(i, 
+                                  rs->batteries[i].voltage,
+                                  rs->batteries[i].current,
+                                  rs->batteries[i].soc);
+    }
 #endif
 }
 
