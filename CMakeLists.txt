@@ -152,6 +152,7 @@ install(FILES
   DESTINATION lib/pkgconfig)
 
 add_definitions(-DHRPSYS_PACKAGE_VERSION=\"\\"${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}\\"\")
+add_definitions(-DROBOT_IOB_VERSION=2)
 
 if(COMPILE_JAVA_STUFF)
   add_subdirectory(jython)

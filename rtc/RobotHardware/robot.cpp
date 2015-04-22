@@ -464,11 +464,13 @@ void robot::readPowerStatus(double &o_voltage, double &o_current)
     read_power(&o_voltage, &o_current);
 }
 
+#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 2
 void robot::readPowerStatus(double &o_voltage, double &o_current, double &o_battery)
 {
     read_power(&o_voltage, &o_current);
     read_battery(&o_battery);
 }
+#endif
 
 int robot::readCalibState(int i)
 {
