@@ -464,14 +464,6 @@ void robot::readPowerStatus(double &o_voltage, double &o_current)
     read_power(&o_voltage, &o_current);
 }
 
-#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 2
-void robot::readPowerStatus(double &o_voltage, double &o_current, double &o_battery)
-{
-    read_power(&o_voltage, &o_current);
-    read_battery(&o_battery);
-}
-#endif
-
 int robot::readCalibState(int i)
 {
     int v=0;
@@ -734,3 +726,13 @@ bool robot::readDigitalOutput(char *o_dout)
     return read_digital_output(o_dout);
 }
 
+void robot::readBatteryState(unsigned int i_rank, double &voltage, 
+                             double &current, double &soc)
+{
+    read_battery(i_rank, &voltage, &current, &soc);
+}
+
+int robot::numBatteries()
+{
+    return number_of_batteries();
+}

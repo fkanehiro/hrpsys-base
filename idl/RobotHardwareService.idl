@@ -164,6 +164,12 @@ module OpenHRP
     boolean readDigitalOutput(out OctSequence dOut);
 
     /* robot status version 2.0 */
+    struct BatteryState
+    {
+      double			voltage;  ///< voltage of power supply[V]
+      double			current;  ///< current[A] 
+      double                    soc;  	  ///< state of charge[%]
+    };
     /**
      * @brief status of the robot
      */
@@ -187,9 +193,9 @@ module OpenHRP
       sequence<DblSequence6>	force;    ///< forces[N] and torques[Nm]
       sequence<DblSequence3>	rateGyro; ///< angular velocities[rad/s]
       sequence<DblSequence3>	accel;    ///< accelerations[m/(s^2)]
+      sequence<BatteryState>    batteries;///< battery states
       double			voltage;  ///< voltage of power supply[V]
       double			current;  ///< current[A] 
-      double                    battery;  ///< remingin battery level[%]
     };
 
     /**
