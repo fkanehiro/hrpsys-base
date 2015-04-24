@@ -85,7 +85,11 @@ namespace rats
 #endif
       refzmp_generator()
         : refzmp_cur_list(), default_zmp_offsets(),
-          fs_index(0), refzmp_index(0), refzmp_count(0) {};
+          fs_index(0), refzmp_index(0), refzmp_count(0)
+      {
+          default_zmp_offsets.push_back(hrp::Vector3::Zero());
+          default_zmp_offsets.push_back(hrp::Vector3::Zero());
+      };
       ~refzmp_generator() {};
       /*  */
       void remove_refzmp_cur_list_over_length (const size_t len)
