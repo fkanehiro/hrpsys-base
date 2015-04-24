@@ -159,6 +159,7 @@ RTC::ReturnCode_t OccupancyGridMap3D::onActivated(RTC::UniqueId ec_id)
 {
   std::cout << m_profile.instance_name<< ": onActivated(" << ec_id << ")" << std::endl;
 
+  Guard guard(m_mutex);
   if (m_knownMapPath != ""){
       m_knownMap = new OcTree(m_cwd+m_knownMapPath);
       m_updateOut.write();
@@ -198,6 +199,7 @@ RTC::ReturnCode_t OccupancyGridMap3D::onActivated(RTC::UniqueId ec_id)
 RTC::ReturnCode_t OccupancyGridMap3D::onDeactivated(RTC::UniqueId ec_id)
 {
   std::cout << m_profile.instance_name<< ": onDeactivated(" << ec_id << ")" << std::endl;
+  Guard guard(m_mutex);
   delete m_map;
   if (m_knownMap) delete m_knownMap;
   return RTC::RTC_OK;
