@@ -28,10 +28,21 @@ module OpenHRP
     };
 
     /**
+     * @struct StepParam
+     * @brief Step parameter for one step
+     */
+    struct StepParam
+    {
+      /// Step height [m]
+      double step_height;
+    };
+
+    /**
      * @struct FootstepSequence
      * @brief Sequence of foot step.
      */
     typedef sequence<Footstep> FootstepSequence;
+    typedef sequence<StepParam> StepParamSequence;
 
     /**
      * @enum SupportLegState
@@ -177,6 +188,13 @@ module OpenHRP
      * @return true if set successfully, false otherwise
      */
     boolean setFootSteps(in FootstepSequence fs);
+
+    /**
+     * @brief Set footsteps. Returns without waiting for whole steps to be executed.
+     * @param fs is sequence of FootStepWithParam structure.
+     * @return true if set successfully, false otherwise
+     */
+    boolean setFootStepsWithParam(in FootstepSequence fs, in StepParamSequence sps);
 
     /**
      * @brief Wait for whole footsteps are executed.
