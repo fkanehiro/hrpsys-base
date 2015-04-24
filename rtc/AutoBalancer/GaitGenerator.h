@@ -24,10 +24,11 @@ namespace rats
     {
       leg_type l_r;
       coordinates worldcoords;
-      step_node (const leg_type _l_r, const coordinates& _worldcoords)
-        : l_r(_l_r), worldcoords(_worldcoords) {};
-      step_node (const std::string& _l_r, const coordinates& _worldcoords)
-        : l_r((_l_r == "rleg") ? WC_RLEG : WC_LLEG), worldcoords(_worldcoords) {};
+      double step_height;
+      step_node (const leg_type _l_r, const coordinates& _worldcoords, const double _step_height)
+        : l_r(_l_r), worldcoords(_worldcoords), step_height(_step_height) {};
+      step_node (const std::string& _l_r, const coordinates& _worldcoords, const double _step_height)
+        : l_r((_l_r == "rleg") ? WC_RLEG : WC_LLEG), worldcoords(_worldcoords), step_height(_step_height) {};
     };
     friend std::ostream &operator<<(std::ostream &os, const step_node &sn)
     {
@@ -37,6 +38,7 @@ namespace rats
       os << (sn.worldcoords.pos).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << std::endl;
       os << "  rot =" << std::endl;
       os << (sn.worldcoords.rot).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", "\n", "    [", "]")) << std::endl;
+      os << "  step_height = " << sn.step_height << "[m]" << std::endl;
       return os;
     };
 
@@ -447,7 +449,7 @@ namespace rats
     void append_go_pos_step_node (const coordinates& _foot_midcoords,
                                   const leg_type _l_r)
     {
-      step_node sn(_l_r, _foot_midcoords);
+      step_node sn(_l_r, _foot_midcoords, lcg.get_default_step_height());
       sn.worldcoords.pos += sn.worldcoords.rot * footstep_param.leg_default_translate_pos[(_l_r == WC_RLEG) ? 0 : 1];
       footstep_node_list.push_back(sn);
     };
@@ -487,7 +489,11 @@ namespace rats
     bool proc_one_tick ();
     void append_footstep_node (const std::string& _leg, const coordinates& _fs)
     {
-      footstep_node_list.push_back(step_node((_leg == "rleg") ? WC_RLEG : WC_LLEG, _fs));
+        footstep_node_list.push_back(step_node((_leg == "rleg") ? WC_RLEG : WC_LLEG, _fs, lcg.get_default_step_height()));
+    };
+    void append_footstep_node (const std::string& _leg, const coordinates& _fs, const double _step_height)
+    {
+        footstep_node_list.push_back(step_node((_leg == "rleg") ? WC_RLEG : WC_LLEG, _fs, _step_height));
     };
     void clear_footstep_node_list () { footstep_node_list.clear(); };
     void go_pos_param_2_footstep_list (const double goal_x, const double goal_y, const double goal_theta, /* [mm] [mm] [deg] */
