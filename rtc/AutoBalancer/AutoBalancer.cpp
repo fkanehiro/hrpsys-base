@@ -558,15 +558,15 @@ void AutoBalancer::getTargetParameters()
       gg->get_swing_support_mid_coords(tmp_fix_coords);
       // TODO : assume biped
       switch (gg->get_current_support_state()) {
-      case 0:
+      case gait_generator::BOTH:
         m_contactStates.data[contact_states_index_map["rleg"]] = true;
         m_contactStates.data[contact_states_index_map["lleg"]] = true;
         break;
-      case 1:
+      case gait_generator::RLEG:
         m_contactStates.data[contact_states_index_map["rleg"]] = true;
         m_contactStates.data[contact_states_index_map["lleg"]] = false;
         break;
-      case 2:
+      case gait_generator::LLEG:
         m_contactStates.data[contact_states_index_map["rleg"]] = false;
         m_contactStates.data[contact_states_index_map["lleg"]] = true;
         break;
@@ -1174,9 +1174,9 @@ bool AutoBalancer::getFootstepParam(OpenHRP::AutoBalancerService::FootstepParam&
     i_param.support_leg = OpenHRP::AutoBalancerService::LLEG;
   }
   switch ( gg->get_current_support_state() ) {
-  case 0: i_param.support_leg_with_both = OpenHRP::AutoBalancerService::BOTH; break;
-  case 1: i_param.support_leg_with_both = OpenHRP::AutoBalancerService::RLEG; break;
-  case 2: i_param.support_leg_with_both = OpenHRP::AutoBalancerService::LLEG; break;
+  case gait_generator::BOTH: i_param.support_leg_with_both = OpenHRP::AutoBalancerService::BOTH; break;
+  case gait_generator::RLEG: i_param.support_leg_with_both = OpenHRP::AutoBalancerService::RLEG; break;
+  case gait_generator::LLEG: i_param.support_leg_with_both = OpenHRP::AutoBalancerService::LLEG; break;
   default: break;
   }
   return true;

@@ -14,11 +14,11 @@ namespace rats
 
   public:
     enum orbit_type {SHUFFLING, CYCLOID, RECTANGLE, STAIR};
+    enum leg_type {RLEG, LLEG, BOTH};
 
 #ifndef HAVE_MAIN
   private:
 #endif
-    enum leg_type {LLEG, RLEG};
 
     struct step_node
     {
@@ -392,17 +392,17 @@ namespace rats
 	mid_coords(tmp, rot_ratio, swing_leg_src_coords, swing_leg_dst_coords);
         mid_coords(ret, 0.5, tmp, support_leg_coords);
       };
-      size_t get_current_support_state () const
+      leg_type get_current_support_state () const
       {
 	if ( current_step_height > 0.0 ) {
 	  if ( 0.0 < swing_ratio && swing_ratio < 1.0 ) {
-	    if ( get_support_leg() == RLEG ) return 1; // rleg
-	    else return 2;
+	    if ( get_support_leg() == RLEG ) return RLEG;
+	    else return LLEG;
 	  } else {
-	    return 0;
+	    return BOTH;
 	  }
 	} else {
-	  return 0;
+	  return BOTH;
 	}
       };
       orbit_type get_default_orbit_type () const { return default_orbit_type; };
