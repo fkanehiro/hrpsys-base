@@ -385,6 +385,7 @@ namespace rats
       const coordinates& get_swing_leg_src_coords() const { return swing_leg_src_coords; };
       const coordinates& get_swing_leg_dst_coords() const { return swing_leg_dst_coords; };
       leg_type get_support_leg() const { return support_leg;};
+      leg_type get_swing_leg() const { return support_leg == RLEG ? LLEG : RLEG;};
       double get_default_step_height () const { return default_step_height;};
       void get_swing_support_mid_coords(coordinates& ret) const
       {
@@ -450,7 +451,7 @@ namespace rats
                                   const leg_type _l_r)
     {
       step_node sn(_l_r, _foot_midcoords, lcg.get_default_step_height());
-      sn.worldcoords.pos += sn.worldcoords.rot * footstep_param.leg_default_translate_pos[(_l_r == RLEG) ? 0 : 1];
+      sn.worldcoords.pos += sn.worldcoords.rot * footstep_param.leg_default_translate_pos[_l_r];
       footstep_node_list.push_back(sn);
     };
     void overwrite_refzmp_queue(const std::vector<coordinates>& cv);
@@ -489,11 +490,11 @@ namespace rats
     bool proc_one_tick ();
     void append_footstep_node (const std::string& _leg, const coordinates& _fs)
     {
-        footstep_node_list.push_back(step_node((_leg == "rleg") ? RLEG : LLEG, _fs, lcg.get_default_step_height()));
+        footstep_node_list.push_back(step_node(_leg, _fs, lcg.get_default_step_height()));
     };
     void append_footstep_node (const std::string& _leg, const coordinates& _fs, const double _step_height)
     {
-        footstep_node_list.push_back(step_node((_leg == "rleg") ? RLEG : LLEG, _fs, _step_height));
+        footstep_node_list.push_back(step_node(_leg, _fs, _step_height));
     };
     void clear_footstep_node_list () { footstep_node_list.clear(); };
     void go_pos_param_2_footstep_list (const double goal_x, const double goal_y, const double goal_theta, /* [mm] [mm] [deg] */
@@ -563,7 +564,7 @@ namespace rats
     const std::string get_footstep_front_leg () const { return footstep_node_list[0].l_r == RLEG ? "rleg" : "lleg"; };
     const std::string get_footstep_back_leg () const { return footstep_node_list.back().l_r == RLEG ? "rleg" : "lleg"; };
     const std::string get_support_leg() const { return lcg.get_support_leg() == RLEG ? "rleg" : "lleg";};
-    const std::string get_swing_leg() const { return lcg.get_support_leg() == RLEG ? "lleg" : "rleg";};
+    const std::string get_swing_leg() const { return lcg.get_swing_leg() == RLEG ? "rleg" : "lleg";};
     const coordinates& get_swing_leg_coords() const { return lcg.get_swing_leg_coords(); };
     const coordinates& get_support_leg_coords() const { return lcg.get_support_leg_coords(); };
     const coordinates& get_swing_leg_src_coords() const { return lcg.get_swing_leg_src_coords(); };
@@ -571,7 +572,7 @@ namespace rats
     const coordinates get_dst_foot_midcoords() const /* get foot_midcoords calculated from swing_leg_dst_coords */
     {
       coordinates tmp(lcg.get_swing_leg_dst_coords());
-      tmp.pos += tmp.rot * hrp::Vector3(-1*footstep_param.leg_default_translate_pos[(lcg.get_support_leg() == RLEG) ? 1 : 0]);
+      tmp.pos += tmp.rot * hrp::Vector3(-1*footstep_param.leg_default_translate_pos[lcg.get_swing_leg()]);
       return tmp;
     };
     void get_swing_support_mid_coords(coordinates& ret) const { lcg.get_swing_support_mid_coords(ret); };

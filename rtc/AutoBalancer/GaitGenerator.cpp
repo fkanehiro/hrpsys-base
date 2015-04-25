@@ -17,8 +17,8 @@ namespace rats
     hrp::Vector3 rzmp;
     hrp::Vector3 dz0, dz1, ret_zmp;
     leg_type spl = (fnl[fs_index].l_r == RLEG) ? LLEG :RLEG;
-    dz0 = _support_leg_coords.rot * ((spl == RLEG)? default_zmp_offsets[0] : default_zmp_offsets[1]);
-    dz1 = _swing_leg_coords.rot * ((spl == RLEG)? default_zmp_offsets[1] : default_zmp_offsets[0]);
+    dz0 = _support_leg_coords.rot * default_zmp_offsets[spl];
+    dz1 = _swing_leg_coords.rot * default_zmp_offsets[spl == RLEG ? LLEG : RLEG];
     dz0 += _support_leg_coords.pos;
     dz1 += _swing_leg_coords.pos;
     rzmp = (dz0 + dz1) / 2.0;
@@ -30,7 +30,7 @@ namespace rats
   {
     hrp::Vector3 rzmp;
     coordinates tmp(fnl[fs_index-1].worldcoords);
-    rzmp = tmp.rot * ((fnl[fs_index-1].l_r == RLEG)? default_zmp_offsets[0] : default_zmp_offsets[1]) + tmp.pos;
+    rzmp = tmp.rot * default_zmp_offsets[fnl[fs_index-1].l_r] + tmp.pos;
     refzmp_cur_list.push_back( rzmp );
     if (fs_index < fnl.size()) fs_index++;
   };
@@ -107,8 +107,8 @@ namespace rats
       ret = tmp_ratio;
       tmp_current_swing_time = current_swing_len * _dt;
     }
-    current_swing_time[support_leg==RLEG?0:1] = (gp_count + 0.5 * default_double_support_ratio * one_step_len) * _dt;
-    current_swing_time[support_leg==RLEG?1:0] = tmp_current_swing_time;
+    current_swing_time[support_leg] = (gp_count + 0.5 * default_double_support_ratio * one_step_len) * _dt;
+    current_swing_time[support_leg==RLEG ? LLEG : RLEG] = tmp_current_swing_time;
     //std::cerr << "sl " << support_leg << " " << current_swing_time[support_leg==RLEG?0:1] << " " << current_swing_time[support_leg==RLEG?1:0] << " " << tmp_current_swing_time << " " << gp_count << std::endl;
     return ret;
   };
@@ -355,7 +355,7 @@ namespace rats
       set_velocity_param(dp(0)/default_step_time, dp(1)/default_step_time, rad2deg(dr(2))/default_step_time);
       append_footstep_list_velocity_mode();
       foot_midcoords = footstep_node_list.back().worldcoords;
-      foot_midcoords.pos += foot_midcoords.rot * hrp::Vector3(footstep_param.leg_default_translate_pos[(footstep_node_list.back().l_r == RLEG) ? 0 : 1] * -1.0);
+      foot_midcoords.pos += foot_midcoords.rot * hrp::Vector3(footstep_param.leg_default_translate_pos[footstep_node_list.back().l_r] * -1.0);
       foot_midcoords.difference(dp, dr, goal_foot_midcoords);
       dp = foot_midcoords.rot.transpose() * dp;
       dr = foot_midcoords.rot.transpose() * dr;
@@ -374,7 +374,7 @@ namespace rats
     step_node sn0((_swing_leg == RLEG) ? LLEG : RLEG, _support_leg_coords, lcg.get_default_step_height());
     footstep_node_list.push_back(sn0);
     step_node sn1(_swing_leg, _support_leg_coords, lcg.get_default_step_height());
-    hrp::Vector3 trs(2.0 * footstep_param.leg_default_translate_pos[(_swing_leg == RLEG) ? 0 : 1] + hrp::Vector3(goal_x, goal_y, goal_z));
+    hrp::Vector3 trs(2.0 * footstep_param.leg_default_translate_pos[_swing_leg] + hrp::Vector3(goal_x, goal_y, goal_z));
     sn1.worldcoords.pos += sn1.worldcoords.rot * trs;
     sn1.worldcoords.rotate(deg2rad(goal_theta), hrp::Vector3(0,0,1));
     footstep_node_list.push_back(sn1);
@@ -403,7 +403,7 @@ namespace rats
   void gait_generator::calc_foot_midcoords_trans_vector_velocity_mode (coordinates& foot_midcoords, hrp::Vector3& trans, double& dth, const step_node& sn)
   {
     foot_midcoords = sn.worldcoords;
-    hrp::Vector3 tmpv(footstep_param.leg_default_translate_pos[(sn.l_r == RLEG) ? 0 : 1] * -1.0);
+    hrp::Vector3 tmpv(footstep_param.leg_default_translate_pos[sn.l_r] * -1.0);
     foot_midcoords.pos += foot_midcoords.rot * tmpv;
     double dx = vel_param.velocity_x + offset_vel_param.velocity_x, dy = vel_param.velocity_y + offset_vel_param.velocity_y;
     dth = vel_param.velocity_theta + offset_vel_param.velocity_theta;
