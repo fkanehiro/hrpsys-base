@@ -1,4 +1,5 @@
 import rtm
+from hrpsys import OpenHRP
 
 from rtm import *
 from OpenHRP import *

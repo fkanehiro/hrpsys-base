@@ -237,7 +237,7 @@ namespace rats
       }
       if (gp_index < fnl.size() - 1) {
         if (force_height_zero) current_step_height = 0.0;
-        else current_step_height = default_step_height;
+        else current_step_height = fnl[gp_index].step_height;
       } else {
         current_step_height = 0.0;
       }
@@ -371,9 +371,9 @@ namespace rats
                                                              const coordinates& _support_leg_coords)
   {
     leg_type _swing_leg = (tmp_swing_leg == "rleg") ? WC_RLEG : WC_LLEG;
-    step_node sn0((_swing_leg == WC_RLEG) ? WC_LLEG : WC_RLEG, _support_leg_coords);
+    step_node sn0((_swing_leg == WC_RLEG) ? WC_LLEG : WC_RLEG, _support_leg_coords, lcg.get_default_step_height());
     footstep_node_list.push_back(sn0);
-    step_node sn1(_swing_leg, _support_leg_coords);
+    step_node sn1(_swing_leg, _support_leg_coords, lcg.get_default_step_height());
     hrp::Vector3 trs(2.0 * footstep_param.leg_default_translate_pos[(_swing_leg == WC_RLEG) ? 0 : 1] + hrp::Vector3(goal_x, goal_y, goal_z));
     sn1.worldcoords.pos += sn1.worldcoords.rot * trs;
     sn1.worldcoords.rotate(deg2rad(goal_theta), hrp::Vector3(0,0,1));
@@ -475,7 +475,7 @@ namespace rats
       if ( footstep_node_list.size() - 1 >= idx + i) /* if footstep_node_list[idx] and footstep_node_list[idx+1]  exists */
         footstep_node_list[idx + i].worldcoords = cv[i];
       else
-        footstep_node_list.push_back(step_node(footstep_node_list[lcg.get_gp_index()-1 + i].l_r, cv[i]));
+        footstep_node_list.push_back(step_node(footstep_node_list[lcg.get_gp_index()-1 + i].l_r, cv[i], lcg.get_default_step_height()));
     }
 
     /* remove steps after newly added steps */
