@@ -71,7 +71,7 @@ private:
 class RPYKalmanFilter {
 public:
     RPYKalmanFilter() : m_sensorR(hrp::Matrix33::Identity()) {};
-    void main_one (hrp::Vector3& rpy, hrp::Vector3& rpyRaw, const hrp::Vector3& acc, const hrp::Vector3& gyro, const double& sl_y)
+    void main_one (hrp::Vector3& rpy, hrp::Vector3& rpyRaw, hrp::Vector3& baseRpyCurrent, const hrp::Vector3& acc, const hrp::Vector3& gyro, const double& sl_y, const hrp::Matrix33& BtoS)
     {
       //
       // G = [ cosb, sinb sina, sinb cosa,
@@ -112,12 +112,17 @@ public:
       p_filter.update(gyro2(1), rpyRaw(1));
       y_filter.update(gyro2(2), rpyRaw(2));
 
-      hrp::Matrix33 imaginaryRotationMatrix = hrp::rotFromRpy(r_filter.getx()[0], p_filter.getx()[0], y_filter.getx()[0]);
-      hrp::Matrix33 realRotationMatrix = imaginaryRotationMatrix * m_sensorR; // inverse transform to real data
+      hrp::Matrix33 imaginaryRotationMatrix = hrp::rotFromRpy(r_filter.getx()[0], p_filter.getx()[0], y_filter.getx()[0]); // the imaginary frame relative to a world reference frame
+      hrp::Matrix33 realRotationMatrix = imaginaryRotationMatrix * m_sensorR; // the imu frame relative to a world reference frame
       hrp::Vector3 euler = hrp::rpyFromRot(realRotationMatrix);
       rpy(0) = euler(0);
       rpy(1) = euler(1);
       rpy(2) = euler(2);
+      hrp::Matrix33 WtoB = realRotationMatrix * BtoS.transpose(); // the body frame relative to a world reference frame
+      hrp::Vector3 euler2 = hrp::rpyFromRot(WtoB);
+      baseRpyCurrent(0) = euler2(0);
+      baseRpyCurrent(1) = euler2(1);
+      baseRpyCurrent(2) = euler2(2);
     };
     void setParam (const double _dt, const double _Q_angle, const double _Q_rate, const double _R_angle, const std::string print_str = "")
     {
