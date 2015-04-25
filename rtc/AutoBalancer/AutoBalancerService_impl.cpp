@@ -29,6 +29,11 @@ CORBA::Boolean AutoBalancerService_impl::setFootSteps(const OpenHRP::AutoBalance
   return m_autobalancer->setFootSteps(fs);
 }
 
+CORBA::Boolean AutoBalancerService_impl::setFootStepsWithParam(const OpenHRP::AutoBalancerService::FootstepSequence& fs, const OpenHRP::AutoBalancerService::StepParamSequence& sps)
+{
+  return m_autobalancer->setFootStepsWithParam(fs, sps);
+}
+
 void AutoBalancerService_impl::waitFootSteps()
 {
   return m_autobalancer->waitFootSteps();
