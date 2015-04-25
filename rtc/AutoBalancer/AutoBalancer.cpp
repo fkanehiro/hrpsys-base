@@ -1008,10 +1008,20 @@ bool AutoBalancer::setGaitGeneratorParam(const OpenHRP::AutoBalancerService::Gai
   gg->set_heel_angle(i_param.heel_angle);
   gg->set_toe_pos_offset_x(i_param.toe_pos_offset_x);
   gg->set_heel_pos_offset_x(i_param.heel_pos_offset_x);
+  bool set_toe_heel_phase_ratio = true;
+  double sum_ratio = 0.0;
   if (i_param.toe_heel_phase_ratio.length() == gg->get_NUM_TH_PHASES()) {
       double ratio[gg->get_NUM_TH_PHASES()];
-      for (int i = 0; i < gg->get_NUM_TH_PHASES(); i++) ratio[i] = i_param.toe_heel_phase_ratio[i];
-      gg->set_toe_heel_phase_ratio(ratio);
+      for (int i = 0; i < gg->get_NUM_TH_PHASES(); i++) {
+          ratio[i] = i_param.toe_heel_phase_ratio[i];
+          sum_ratio += ratio[i];
+      }
+      if (std::fabs(sum_ratio-1.0) < 1e-3) {
+          gg->set_toe_heel_phase_ratio(ratio);
+          set_toe_heel_phase_ratio = true;
+      } else {
+          set_toe_heel_phase_ratio = false;
+      }
   }
   gg->set_use_toe_joint(i_param.use_toe_joint);
 
@@ -1042,14 +1052,16 @@ bool AutoBalancer::setGaitGeneratorParam(const OpenHRP::AutoBalancerService::Gai
   std::cerr << "[" << m_profile.instance_name << "]   heel_pos_offset_x = " << gg->get_heel_pos_offset_x() << "[mm]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   toe_angle = " << gg->get_toe_angle() << "[deg]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   heel_angle = " << gg->get_heel_angle() << "[deg]" << std::endl;
-  if (i_param.toe_heel_phase_ratio.length() == gg->get_NUM_TH_PHASES()) {
+  if (i_param.toe_heel_phase_ratio.length() == gg->get_NUM_TH_PHASES() && set_toe_heel_phase_ratio) {
       double ratio[gg->get_NUM_TH_PHASES()];
       gg->get_toe_heel_phase_ratio(ratio);
       std::cerr << "[" << m_profile.instance_name << "]   toe_heel_phase_ratio = [";
       for (int i = 0; i < gg->get_NUM_TH_PHASES(); i++) std::cerr << ratio[i] << " ";
       std::cerr << "]" << std::endl;
   } else {
-      std::cerr << "[" << m_profile.instance_name << "]   toe_heel_phase_ratio is not set. Required length = " << gg->get_NUM_TH_PHASES() << " != input length " << i_param.toe_heel_phase_ratio.length() << std::endl;
+      std::cerr << "[" << m_profile.instance_name << "]   toe_heel_phase_ratio is not set. "
+                << "Required length = " << gg->get_NUM_TH_PHASES() << " != input length " << i_param.toe_heel_phase_ratio.length()
+                << ", or sum_ratio = " << sum_ratio << " is not 1.0." << std::endl;
   }
   std::cerr << "[" << m_profile.instance_name << "]   use_toe_joint = " << (gg->get_use_toe_joint()?"true":"false") << std::endl;
   return true;
