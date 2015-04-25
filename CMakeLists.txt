@@ -152,6 +152,7 @@ install(FILES
   DESTINATION lib/pkgconfig)
 
 add_definitions(-DHRPSYS_PACKAGE_VERSION=\"\\"${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}\\"\")
+add_definitions(-DROBOT_IOB_VERSION=2)
 
 if(COMPILE_JAVA_STUFF)
   add_subdirectory(jython)
@@ -174,6 +175,7 @@ add_subdirectory(test)
 #if catkin environment
 string(REGEX MATCH "catkin" need_catkin "$ENV{_}")
 if(need_catkin OR "${CATKIN_BUILD_BINARY_PACKAGE}")
+  install(CODE "file(WRITE \$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/share/doc/hrpsys/rospack_nosubdirs)")
   install(FILES package.xml DESTINATION share/hrpsys/)
   install(CODE "
 execute_process(COMMAND cmake -E make_directory lib WORKING_DIRECTORY \$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/share/hrpsys)

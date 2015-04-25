@@ -13,62 +13,83 @@ RobotHardwareService_impl::~RobotHardwareService_impl()
 {
 }
 
+#define GetStatus                                                       \
+                                                                        \
+    rs->angle.length(m_robot->numJoints());                             \
+    m_robot->readJointAngles(rs->angle.get_buffer());                   \
+                                                                        \
+    rs->command.length(m_robot->numJoints());                           \
+    m_robot->readJointCommands(rs->command.get_buffer());               \
+                                                                        \
+    rs->torque.length(m_robot->numJoints());                            \
+    if (!m_robot->readJointTorques(rs->torque.get_buffer())){           \
+        for (unsigned int i=0; i<rs->torque.length(); i++){             \
+            rs->torque[i] = 0.0;                                        \
+        }                                                               \
+    }                                                                   \
+                                                                        \
+    rs->servoState.length(m_robot->numJoints());                        \
+    int v, status;                                                      \
+    for(unsigned int i=0; i < rs->servoState.length(); ++i){            \
+        size_t len = m_robot->lengthOfExtraServoState(i)+1;             \
+        rs->servoState[i].length(len);                                  \
+	status = 0;                                                     \
+        v = m_robot->readCalibState(i);                                 \
+        status |= v<< OpenHRP::RobotHardwareService::CALIB_STATE_SHIFT; \
+        v = m_robot->readPowerState(i);                                 \
+        status |= v<< OpenHRP::RobotHardwareService::POWER_STATE_SHIFT; \
+        v = m_robot->readServoState(i);                                 \
+        status |= v<< OpenHRP::RobotHardwareService::SERVO_STATE_SHIFT; \
+        v = m_robot->readServoAlarm(i);                                 \
+        status |= v<< OpenHRP::RobotHardwareService::SERVO_ALARM_SHIFT; \
+        v = m_robot->readDriverTemperature(i);                          \
+        status |= v<< OpenHRP::RobotHardwareService::DRIVER_TEMP_SHIFT; \
+        rs->servoState[i][0] = status;                                  \
+        m_robot->readExtraServoState(i, (int *)(rs->servoState[i].get_buffer()+1)); \
+    }                                                                   \
+                                                                        \
+    rs->rateGyro.length(m_robot->numSensors(Sensor::RATE_GYRO));        \
+    for (unsigned int i=0; i<rs->rateGyro.length(); i++){               \
+        rs->rateGyro[i].length(3);                                      \
+        m_robot->readGyroSensor(i, rs->rateGyro[i].get_buffer());       \
+    }                                                                   \
+                                                                        \
+    rs->accel.length(m_robot->numSensors(Sensor::ACCELERATION));        \
+    for (unsigned int i=0; i<rs->accel.length(); i++){                  \
+        rs->accel[i].length(3);                                         \
+        m_robot->readAccelerometer(i, rs->accel[i].get_buffer());       \
+    }                                                                   \
+                                                                        \
+    rs->force.length(m_robot->numSensors(Sensor::FORCE));               \
+    for (unsigned int i=0; i<rs->force.length(); i++){                  \
+        rs->force[i].length(6);                                         \
+        m_robot->readForceSensor(i, rs->force[i].get_buffer());         \
+    }									\
+									\
+    m_robot->readPowerStatus(rs->voltage, rs->current);
+
 void RobotHardwareService_impl::getStatus(OpenHRP::RobotHardwareService::RobotState_out rs)
 {
     rs = new OpenHRP::RobotHardwareService::RobotState();
 
-    rs->angle.length(m_robot->numJoints());
-    m_robot->readJointAngles(rs->angle.get_buffer());
+    GetStatus;
+}
 
-    rs->command.length(m_robot->numJoints());
-    m_robot->readJointCommands(rs->command.get_buffer());
+void RobotHardwareService_impl::getStatus2(OpenHRP::RobotHardwareService::RobotState2_out rs)
+{
+    rs = new OpenHRP::RobotHardwareService::RobotState2();
 
-    rs->torque.length(m_robot->numJoints());
-    if (!m_robot->readJointTorques(rs->torque.get_buffer())){
-        for (unsigned int i=0; i<rs->torque.length(); i++){
-            rs->torque[i] = 0.0;
-        }
+    GetStatus;
+
+#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 2
+    rs->batteries.length(m_robot->numBatteries());
+    for(unsigned int i=0; i<rs->batteries.length(); i++){
+        m_robot->readBatteryState(i, 
+                                  rs->batteries[i].voltage,
+                                  rs->batteries[i].current,
+                                  rs->batteries[i].soc);
     }
-
-    rs->servoState.length(m_robot->numJoints());
-    int v, status;
-    for(unsigned int i=0; i < rs->servoState.length(); ++i){
-        size_t len = m_robot->lengthOfExtraServoState(i)+1;
-        rs->servoState[i].length(len);
-	status = 0;
-        v = m_robot->readCalibState(i);
-        status |= v<< OpenHRP::RobotHardwareService::CALIB_STATE_SHIFT;
-        v = m_robot->readPowerState(i);
-        status |= v<< OpenHRP::RobotHardwareService::POWER_STATE_SHIFT;
-        v = m_robot->readServoState(i);
-        status |= v<< OpenHRP::RobotHardwareService::SERVO_STATE_SHIFT;
-        v = m_robot->readServoAlarm(i);
-        status |= v<< OpenHRP::RobotHardwareService::SERVO_ALARM_SHIFT;
-        v = m_robot->readDriverTemperature(i);
-        status |= v<< OpenHRP::RobotHardwareService::DRIVER_TEMP_SHIFT;
-        rs->servoState[i][0] = status;
-        m_robot->readExtraServoState(i, (int *)(rs->servoState[i].get_buffer()+1));
-    }
-
-    rs->rateGyro.length(m_robot->numSensors(Sensor::RATE_GYRO));
-    for (unsigned int i=0; i<rs->rateGyro.length(); i++){
-        rs->rateGyro[i].length(3);
-        m_robot->readGyroSensor(i, rs->rateGyro[i].get_buffer());
-    }
-
-    rs->accel.length(m_robot->numSensors(Sensor::ACCELERATION));
-    for (unsigned int i=0; i<rs->accel.length(); i++){
-        rs->accel[i].length(3);
-        m_robot->readAccelerometer(i, rs->accel[i].get_buffer());
-    }
-
-    rs->force.length(m_robot->numSensors(Sensor::FORCE));
-    for (unsigned int i=0; i<rs->force.length(); i++){
-        rs->force[i].length(6);
-        m_robot->readForceSensor(i, rs->force[i].get_buffer());
-    }
-
-    m_robot->readPowerStatus(rs->voltage, rs->current);
+#endif
 }
 
 CORBA::Boolean RobotHardwareService_impl::power(const char* jname, OpenHRP::RobotHardwareService::SwitchStatus ss)

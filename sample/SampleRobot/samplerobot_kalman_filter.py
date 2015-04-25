@@ -20,7 +20,7 @@ def init ():
     global hcf, pitch_poses, roll_poses, yaw_poses, roll_pitch_poses, initial_pose
     hcf = HrpsysConfigurator()
     hcf.getRTCList = hcf.getRTCListUnstable
-    hcf.init ("SampleRobot(Robot)0", "$(OPENHRP_DIR)/share/OpenHRP-3.1/sample/model/sample1.wrl")
+    hcf.init ("SampleRobot(Robot)0", "$(PROJECT_DIR)/../model/sample1.wrl")
     hcf.connectLoggerPort(hcf.kf, 'baseRpyCurrent')
     # initialize poses
     # pose1 = [0]*29

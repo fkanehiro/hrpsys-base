@@ -569,6 +569,21 @@ int read_power(double *voltage, double *current)
     return TRUE;
 }
 
+#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 2
+int number_of_batteries()
+{
+    return 1;
+}
+
+int read_battery(int id, double *voltage, double *current, double *soc)
+{
+    *voltage = ((double)random()-RAND_MAX/2)/(RAND_MAX/2)*1+48;
+    *current = ((double)random()-RAND_MAX/2)/(RAND_MAX/2)*0.5+1;
+    *soc = ((double)random()-RAND_MAX/2)/(RAND_MAX/2)*0.5+50;
+    return TRUE;
+}
+#endif
+
 int read_driver_temperature(int id, unsigned char *v)
 {
     *v = id * 2;

@@ -9,10 +9,8 @@
   <node name="start_omninames" pkg="hrpsys" type="start_omninames.sh" args="2809" />
 
   <node name="modelloader" pkg="openhrp3" type="openhrp-model-loader" output="screen"/>
-
-  <node name="colcheck" pkg="hrpsys" type="CollisionDetectorComp"
-	args='-o "example.CollisionDetector.config_file:$(find hrpsys)/share/hrpsys/samples/PA10/PA10.conf"'
+  <node name="robot_hardware" pkg="hrpsys" type="RobotHardwareComp"
+	args='-o "example.RobotHardware.config_file:$(find hrpsys)/share/hrpsys/samples/PA10/PA10.conf" -o "naming.formats:%n.rtc"'
 	output="screen"  cwd="node" />
-
-  <test test-name="colcheck" pkg="hrpsys" type="test-colcheck.py" />
+  <test test-name="robot_hardware_py" pkg="hrpsys" type="test-robot-hardware.py" />
 </launch>

@@ -726,3 +726,13 @@ bool robot::readDigitalOutput(char *o_dout)
     return read_digital_output(o_dout);
 }
 
+void robot::readBatteryState(unsigned int i_rank, double &voltage, 
+                             double &current, double &soc)
+{
+    read_battery(i_rank, &voltage, &current, &soc);
+}
+
+int robot::numBatteries()
+{
+    return number_of_batteries();
+}

@@ -127,8 +127,19 @@ public:
        \brief read voltage and current of the robot power source
        \param o_voltage voltage
        \param o_current current
+       \param o_battery remaining battery level ( new feature on 315.4.0)
      */
     void readPowerStatus(double &o_voltage, double &o_current);
+
+    /**
+       \brief read battery state
+       \param i_rank rank of battery
+       \param o_voltage voltage
+       \param o_current current
+       \param o_soc state of charge
+     */
+    void readBatteryState(unsigned int i_rank, double &o_voltage,
+                          double &o_current, double &o_soc);
 
     /**
        \brief read array of all joint angles[rad]
@@ -257,6 +268,7 @@ public:
     int lengthDigitalOutput();
     bool readDigitalOutput(char *o_dout);
 
+    int numBatteries();
 private:
     /**
        \brief calibrate inertia sensor for one sampling period
