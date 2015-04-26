@@ -434,7 +434,7 @@ namespace rats
     leg_coords_generator lcg;
     footstep_parameter footstep_param;
     velocity_mode_parameter vel_param, offset_vel_param;
-    hrp::Vector3 cog, refzmp, prev_que_rzmp; /* cog by calculating proc_one_tick */
+    hrp::Vector3 cog, refzmp, prev_que_rzmp, swing_foot_zmp_offset, prev_que_sfzo; /* cog by calculating proc_one_tick */
     double dt; /* control loop [s] */
     double default_step_time;
     double default_double_support_ratio;
@@ -475,6 +475,7 @@ namespace rats
       : footstep_node_list(), rg(), lcg(_dt),
         footstep_param(_leg_pos, _stride_fwd_x, _stride_y, _stride_theta, _stride_bwd_x),
         vel_param(), offset_vel_param(), cog(hrp::Vector3::Zero()), refzmp(hrp::Vector3::Zero()), prev_que_rzmp(hrp::Vector3::Zero()),
+        swing_foot_zmp_offset(hrp::Vector3::Zero()), prev_que_sfzo(hrp::Vector3::Zero()),
         dt(_dt), default_step_time(1.0), default_double_support_ratio(0.2), gravitational_acceleration(DEFAULT_GRAVITATIONAL_ACCELERATION),
         one_step_len(default_step_time / dt), finalize_count(0),
         velocity_mode_flg(VEL_IDLING), emergency_flg(IDLING),
@@ -564,6 +565,7 @@ namespace rats
     /* parameter getting */
     const hrp::Vector3& get_cog () { return cog; };
     const hrp::Vector3& get_refzmp () { return refzmp;};
+    const hrp::Vector3& get_swing_foot_zmp_offset () { return swing_foot_zmp_offset;};
     const std::string get_footstep_front_leg () const { return footstep_node_list[0].l_r == RLEG ? "rleg" : "lleg"; };
     const std::string get_footstep_back_leg () const { return footstep_node_list.back().l_r == RLEG ? "rleg" : "lleg"; };
     const std::string get_support_leg() const { return lcg.get_support_leg() == RLEG ? "rleg" : "lleg";};

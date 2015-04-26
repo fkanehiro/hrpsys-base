@@ -294,7 +294,7 @@ namespace rats
       prev_que_rzmp = rzmp;
       prev_que_sfzo = sfzo;
     }
-    bool solved = preview_controller_ptr->update(refzmp, cog, rzmp, (refzmp_exist_p || finalize_count < preview_controller_ptr->get_delay()-default_step_time/dt));
+    bool solved = preview_controller_ptr->update(refzmp, cog, swing_foot_zmp_offset, rzmp, sfzo, (refzmp_exist_p || finalize_count < preview_controller_ptr->get_delay()-default_step_time/dt));
     /* update refzmp */
     if ( lcg.get_gp_index() > 0 && lcg.get_gp_count() == static_cast<size_t>(one_step_len / 2) - 1 ) {
       if (velocity_mode_flg != VEL_IDLING) {
@@ -509,7 +509,7 @@ namespace rats
     bool not_solved = true;
     while (not_solved) {
       bool refzmp_exist_p = rg.get_current_refzmp(rzmp, sfzo, default_double_support_ratio, one_step_len);
-      not_solved = !preview_controller_ptr->update(refzmp, cog, rzmp, refzmp_exist_p);
+      not_solved = !preview_controller_ptr->update(refzmp, cog, swing_foot_zmp_offset, rzmp, sfzo, refzmp_exist_p);
       rg.update_refzmp(footstep_node_list, one_step_len);
     }
   };
