@@ -121,6 +121,7 @@ namespace rats
         return refzmp_cur_list.size() > refzmp_index;
       };
       const hrp::Vector3& get_refzmp_cur () { return refzmp_cur_list.front(); };
+      const hrp::Vector3& get_default_zmp_offset (const leg_type lt) { return default_zmp_offsets[lt]; };
     };
 
     class delay_hoffarbib_trajectory_generator
@@ -566,6 +567,7 @@ namespace rats
     const hrp::Vector3& get_cog () { return cog; };
     const hrp::Vector3& get_refzmp () { return refzmp;};
     const hrp::Vector3& get_swing_foot_zmp_offset () { return swing_foot_zmp_offset;};
+    const hrp::Vector3& get_support_foot_zmp_offset () { return rg.get_default_zmp_offset(lcg.get_support_leg());};
     const std::string get_footstep_front_leg () const { return footstep_node_list[0].l_r == RLEG ? "rleg" : "lleg"; };
     const std::string get_footstep_back_leg () const { return footstep_node_list.back().l_r == RLEG ? "rleg" : "lleg"; };
     const std::string get_support_leg() const { return lcg.get_support_leg() == RLEG ? "rleg" : "lleg";};
