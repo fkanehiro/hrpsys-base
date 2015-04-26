@@ -34,11 +34,12 @@ private:
                 } else {
                     cogpos = gg.get_cog()(ii);
                 }
-                fprintf(fp, "%f %f %f %f ",
+                fprintf(fp, "%f %f %f %f %f ",
                         gg.get_refzmp()(ii),
                         cogpos,
                         gg.get_support_leg_coords().pos(ii),
-                        gg.get_swing_leg_coords().pos(ii));
+                        gg.get_swing_leg_coords().pos(ii),
+                        gg.get_swing_foot_zmp_offset()(ii));
             }
             fprintf(fp, "\n");
             i++;
@@ -49,15 +50,17 @@ private:
         FILE* gp = popen("gnuplot", "w");
         fprintf(gp, "set multiplot layout 3, 1\n");
         std::string titles[3] = {"X", "Y", "Z"};
-        int data_size = 4;
+        int data_size = 5;
         for (size_t ii = 0; ii < 3; ii++) {
             fprintf(gp, "set title \"%s\"\n", titles[ii].c_str());
             fprintf(gp, "set xlabel \"Time [s]\"\n");
             fprintf(gp, "set ylabel \"[m]\"\n");
             fprintf(gp, "plot \"%s\" using 1:%d with lines title \"refzmp\", \"%s\" using 1:%d with lines title \"cog\"",
                     fname.c_str(), ( ii * data_size + 2), fname.c_str(), ( ii * data_size + 3));
-            // fprintf(gp, ",\"%s\" using 1:%d with lines title \"support\", \"%s\" using 1:%d with lines title \"swing\"\n",
+            // fprintf(gp, ",\"%s\" using 1:%d with lines title \"support\", \"%s\" using 1:%d with lines title \"swing\"",
             //         fname.c_str(), ( ii * data_size + 4), fname.c_str(), ( ii * data_size + 5));
+            fprintf(gp, ",\"%s\" using 1:%d with lines title \"swing zmpoff\"",
+                    fname.c_str(), ( ii * data_size + 6));
             fprintf(gp, "\n");
         }
         fflush(gp);
@@ -142,6 +145,19 @@ public:
         gg.append_footstep_node("lleg", coordinates(hrp::Vector3(hrp::Vector3(300*1e-3, 0, 300*1e-3)+leg_pos[1])));
         gen_and_plot_walk_pattern(gg);
     };
+
+    void test6 ()
+    {
+        gait_generator gg(dt, leg_pos, 1e-3*150, 1e-3*50, 10, 1e-3*50);
+        /* initialize sample footstep_list */
+        std::vector<hrp::Vector3> dzo;
+        dzo.push_back(hrp::Vector3(20*1e-3,30*1e-3,0));
+        dzo.push_back(hrp::Vector3(20*1e-3,-30*1e-3,0));
+        gg.set_default_zmp_offsets(dzo);
+        gg.clear_footstep_node_list();
+        gg.go_pos_param_2_footstep_list(100*1e-3, 0, 0, coordinates());
+        gen_and_plot_walk_pattern(gg);
+    };
 };
 
 class testGaitGeneratorHRP2JSK : public testGaitGenerator
@@ -171,6 +187,8 @@ int main(int argc, char* argv[])
           testGaitGeneratorHRP2JSK().test4();
       } else if (std::string(argv[1]) == "--test5") {
           testGaitGeneratorHRP2JSK().test5();
+      } else if (std::string(argv[1]) == "--test6") {
+          testGaitGeneratorHRP2JSK().test6();
       }
   }
   return 0;
