@@ -50,7 +50,7 @@ namespace rats
     //if (cnt==0) std::cerr << "z " << refzmp_index << " " << refzmp_cur_list.size() << " " << fs_index << " " << (refzmp_index == refzmp_cur_list.size()-2) << " " << is_final_double_support_set << std::endl;
     if (use_toe_heel_transition && !(is_start_double_support_phase() || is_end_double_support_phase())) {
         if (thp_ptr->is_between_phases(cnt, SOLE0)) {
-            double ratio = thp_ptr->get_phase_ratio(cnt, SOLE0);
+            double ratio = thp_ptr->get_phase_ratio(cnt+1, SOLE0);
             swing_foot_zmp_offset(0) = (1-ratio)*swing_foot_zmp_offset(0) + ratio*toe_zmp_offset_x;
         } else if (thp_ptr->is_between_phases(cnt, HEEL2SOLE, SOLE2)) {
             double ratio = thp_ptr->get_phase_ratio(cnt, HEEL2SOLE, SOLE2);
@@ -79,7 +79,7 @@ namespace rats
       if ( !(is_start_double_support_phase() || is_end_double_support_phase()) ) {
           current_support_zmp += (((refzmp_index == refzmp_cur_list.size()-2) && is_final_double_support_set) ? zmp_diff * 0.5 : zmp_diff) * foot_x_axis_list[refzmp_index+1];
       }
-      double ratio = (0.5 / margine_count) * (cnt - (one_step_len - margine_count));
+      double ratio = (0.5 / margine_count) * (cnt - 1 - (one_step_len - margine_count));
       ret = (1 - ratio) * prev_support_zmp + ratio * current_support_zmp;
     } else {
       ret = refzmp_cur_list[refzmp_index];
