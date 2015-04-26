@@ -1014,6 +1014,8 @@ bool AutoBalancer::setGaitGeneratorParam(const OpenHRP::AutoBalancerService::Gai
   gg->set_heel_angle(i_param.heel_angle);
   gg->set_toe_pos_offset_x(i_param.toe_pos_offset_x);
   gg->set_heel_pos_offset_x(i_param.heel_pos_offset_x);
+  gg->set_toe_zmp_offset_x(i_param.toe_zmp_offset_x);
+  gg->set_heel_zmp_offset_x(i_param.heel_zmp_offset_x);
   bool set_toe_heel_phase_ratio = true;
   double sum_ratio = 0.0;
   if (i_param.toe_heel_phase_ratio.length() == gg->get_NUM_TH_PHASES()) {
@@ -1054,8 +1056,8 @@ bool AutoBalancer::setGaitGeneratorParam(const OpenHRP::AutoBalancerService::Gai
   tmpv = gg->get_stair_trajectory_way_point_offset();
   std::cerr << "[" << m_profile.instance_name << "]   stair_trajectory_way_point_offset = " << tmpv.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[m]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   gravitational_acceleration = " << gg->get_gravitational_acceleration() << "[m/s^2]" << std::endl;
-  std::cerr << "[" << m_profile.instance_name << "]   toe_pos_offset_x = " << gg->get_toe_pos_offset_x() << "[mm]" << std::endl;
-  std::cerr << "[" << m_profile.instance_name << "]   heel_pos_offset_x = " << gg->get_heel_pos_offset_x() << "[mm]" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   toe_pos_offset_x = " << gg->get_toe_pos_offset_x() << "[mm], heel_pos_offset_x = " << gg->get_heel_pos_offset_x() << "[mm]" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   toe_zmp_offset_x = " << gg->get_toe_zmp_offset_x() << "[mm], heel_zmp_offset_x = " << gg->get_heel_zmp_offset_x() << "[mm]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   toe_angle = " << gg->get_toe_angle() << "[deg]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   heel_angle = " << gg->get_heel_angle() << "[deg]" << std::endl;
   if (i_param.toe_heel_phase_ratio.length() == gg->get_NUM_TH_PHASES() && set_toe_heel_phase_ratio) {
@@ -1096,6 +1098,8 @@ bool AutoBalancer::getGaitGeneratorParam(OpenHRP::AutoBalancerService::GaitGener
   i_param.heel_angle = gg->get_heel_angle();
   i_param.toe_pos_offset_x = gg->get_toe_pos_offset_x();
   i_param.heel_pos_offset_x = gg->get_heel_pos_offset_x();
+  i_param.toe_zmp_offset_x = gg->get_toe_zmp_offset_x();
+  i_param.heel_zmp_offset_x = gg->get_heel_zmp_offset_x();
   double ratio[gg->get_NUM_TH_PHASES()];
   gg->get_toe_heel_phase_ratio(ratio);
   for (int i = 0; i < gg->get_NUM_TH_PHASES(); i++) i_param.toe_heel_phase_ratio[i] = ratio[i];
