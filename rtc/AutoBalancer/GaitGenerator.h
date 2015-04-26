@@ -119,9 +119,21 @@ namespace rats
         {
             return (toe_heel_phase_count[phase0] <= current_count) && (current_count < toe_heel_phase_count[phase1]);
         };
+        bool is_between_phases (const size_t current_count, const toe_heel_phase phase1)
+        {
+            return (current_count < toe_heel_phase_count[phase1]);
+        };
         double get_phase_period (const toe_heel_phase start_phase, const toe_heel_phase goal_phase, const double _dt)
         {
             return _dt * (toe_heel_phase_count[goal_phase]-toe_heel_phase_count[start_phase]);
+        };
+        double get_phase_ratio (const size_t current_count, const toe_heel_phase start_phase, const toe_heel_phase goal_phase)
+        {
+            return static_cast<double>(current_count-toe_heel_phase_count[start_phase]) / (toe_heel_phase_count[goal_phase]-toe_heel_phase_count[start_phase]);
+        };
+        double get_phase_ratio (const size_t current_count, const toe_heel_phase goal_phase)
+        {
+            return static_cast<double>(current_count) / (toe_heel_phase_count[goal_phase]);
         };
         bool is_no_SOLE1_phase () { return toe_heel_phase_count[TOE2SOLE] == toe_heel_phase_count[SOLE1]; };
     };
@@ -132,39 +144,53 @@ namespace rats
 #ifdef HAVE_MAIN
     public:
 #endif
-      std::vector<hrp::Vector3> refzmp_cur_list;
+      std::vector<hrp::Vector3> refzmp_cur_list, foot_x_axis_list;
       std::vector<leg_type> swing_leg_list;
       std::vector<hrp::Vector3> default_zmp_offsets; /* (list rleg lleg) */
       size_t fs_index, refzmp_index, refzmp_count;
+      double toe_zmp_offset_x, heel_zmp_offset_x;
+      toe_heel_phase_counter* thp_ptr;
+      bool use_toe_heel_transition, is_final_double_support_set;
       void calc_current_refzmp (hrp::Vector3& ret, hrp::Vector3& swing_foot_zmp_offset, const double default_double_support_ratio, const size_t one_step_len) const;
       const bool is_start_double_support_phase () const { return refzmp_index == 0; };
       const bool is_end_double_support_phase () const { return refzmp_index == refzmp_cur_list.size() - 1; };
 #ifndef HAVE_MAIN
     public:
 #endif
-      refzmp_generator()
-        : refzmp_cur_list(), support_leg_list(), default_zmp_offsets(),
-          fs_index(0), refzmp_index(0), refzmp_count(0)
+      refzmp_generator(toe_heel_phase_counter* _thp_ptr)
+        : refzmp_cur_list(), foot_x_axis_list(), swing_leg_list(), default_zmp_offsets(),
+          fs_index(0), refzmp_index(0), refzmp_count(0),
+          toe_zmp_offset_x(0), heel_zmp_offset_x(0),
+          thp_ptr(_thp_ptr), use_toe_heel_transition(false), is_final_double_support_set(false)
       {
           default_zmp_offsets.push_back(hrp::Vector3::Zero());
           default_zmp_offsets.push_back(hrp::Vector3::Zero());
       };
-      ~refzmp_generator() {};
+      ~refzmp_generator()
+      {
+          thp_ptr = NULL;
+      };
       /*  */
       void remove_refzmp_cur_list_over_length (const size_t len)
       {
         while ( refzmp_cur_list.size() > len) refzmp_cur_list.pop_back();
+        while ( foot_x_axis_list.size() > len) foot_x_axis_list.pop_back();
         while ( swing_leg_list.size() > len) swing_leg_list.pop_back();
       };
       void set_indices (const size_t idx) { fs_index = refzmp_index = idx; };
       void set_refzmp_count(const size_t _refzmp_count) { refzmp_count = _refzmp_count; };
       void set_default_zmp_offsets(const std::vector<hrp::Vector3>& tmp) { default_zmp_offsets = tmp; };
+      void set_toe_zmp_offset_x (const double _off) { toe_zmp_offset_x = _off; };
+      void set_heel_zmp_offset_x (const double _off) { heel_zmp_offset_x = _off; };
+      void set_use_toe_heel_transition (const double _u) { use_toe_heel_transition = _u; };
       void reset (const size_t _refzmp_count)
       {
         set_indices(0);
         set_refzmp_count(_refzmp_count);
         refzmp_cur_list.clear();
+        foot_x_axis_list.clear();
         swing_leg_list.clear();
+        is_final_double_support_set = false;
       };
       void push_refzmp_from_footstep_list_for_dual (const std::vector<step_node>& fnl,
                                                     const coordinates& _support_leg_coords,
@@ -178,6 +204,9 @@ namespace rats
       };
       const hrp::Vector3& get_refzmp_cur () { return refzmp_cur_list.front(); };
       const hrp::Vector3& get_default_zmp_offset (const leg_type lt) { return default_zmp_offsets[lt]; };
+      double get_toe_zmp_offset_x () const { return toe_zmp_offset_x; };
+      double get_heel_zmp_offset_x () const { return heel_zmp_offset_x; };
+      bool get_use_toe_heel_transition () const { return use_toe_heel_transition; };
     };
 
     class delay_hoffarbib_trajectory_generator
@@ -511,7 +540,7 @@ namespace rats
                     /* arguments for footstep_parameter */
                     const std::vector<hrp::Vector3>& _leg_pos,
                     const double _stride_fwd_x, const double _stride_y, const double _stride_theta, const double _stride_bwd_x)
-      : footstep_node_list(), thp(), rg(), lcg(_dt, &thp),
+      : footstep_node_list(), thp(), rg(&thp), lcg(_dt, &thp),
         footstep_param(_leg_pos, _stride_fwd_x, _stride_y, _stride_theta, _stride_bwd_x),
         vel_param(), offset_vel_param(), cog(hrp::Vector3::Zero()), refzmp(hrp::Vector3::Zero()), prev_que_rzmp(hrp::Vector3::Zero()),
         swing_foot_zmp_offset(hrp::Vector3::Zero()), prev_que_sfzo(hrp::Vector3::Zero()),
@@ -568,6 +597,9 @@ namespace rats
     void set_default_step_time (const double _default_step_time) { default_step_time = _default_step_time; };
     void set_default_double_support_ratio (const double _default_double_support_ratio) { default_double_support_ratio = _default_double_support_ratio; };
     void set_default_zmp_offsets(const std::vector<hrp::Vector3>& tmp) { rg.set_default_zmp_offsets(tmp); };
+    void set_toe_zmp_offset_x (const double _off) { rg.set_toe_zmp_offset_x(_off); };
+    void set_heel_zmp_offset_x (const double _off) { rg.set_heel_zmp_offset_x(_off); };
+    void set_use_toe_heel_transition (const double _u) { rg.set_use_toe_heel_transition(_u); };
     void set_default_step_height(const double _tmp) { lcg.set_default_step_height(_tmp); };
     void set_default_top_ratio(const double _tmp) { lcg.set_default_top_ratio(_tmp); };
     void set_velocity_param (const double vel_x, const double vel_y, const double vel_theta) /* [mm/s] [mm/s] [deg/s] */
@@ -606,6 +638,9 @@ namespace rats
     const hrp::Vector3& get_refzmp () { return refzmp;};
     const hrp::Vector3& get_swing_foot_zmp_offset () { return swing_foot_zmp_offset;};
     const hrp::Vector3& get_support_foot_zmp_offset () { return rg.get_default_zmp_offset(lcg.get_support_leg());};
+    double get_toe_zmp_offset_x () const { return rg.get_toe_zmp_offset_x(); };
+    double get_heel_zmp_offset_x () const { return rg.get_heel_zmp_offset_x(); };
+    bool get_use_toe_heel_transition () const { return rg.get_use_toe_heel_transition(); };
     const std::string get_footstep_front_leg () const { return footstep_node_list[0].l_r == RLEG ? "rleg" : "lleg"; };
     const std::string get_footstep_back_leg () const { return footstep_node_list.back().l_r == RLEG ? "rleg" : "lleg"; };
     const std::string get_support_leg() const { return lcg.get_support_leg() == RLEG ? "rleg" : "lleg";};

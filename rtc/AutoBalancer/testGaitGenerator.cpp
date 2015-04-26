@@ -57,11 +57,14 @@ private:
             fprintf(gp, "set title \"%s\"\n", titles[ii].c_str());
             fprintf(gp, "set xlabel \"Time [s]\"\n");
             fprintf(gp, "set ylabel \"[m]\"\n");
-            fprintf(gp, "plot \"%s\" using 1:%d with lines title \"refzmp\", \"%s\" using 1:%d with lines title \"cog\"",
+            fprintf(gp, "plot ");
+            fprintf(gp, "\"%s\" using 1:%d with lines title \"refzmp\", \"%s\" using 1:%d with lines title \"cog\"",
                     fname.c_str(), ( ii * data_size + 2), fname.c_str(), ( ii * data_size + 3));
-            // fprintf(gp, ",\"%s\" using 1:%d with lines title \"support\", \"%s\" using 1:%d with lines title \"swing\"",
+            // fprintf(gp, ",");
+            // fprintf(gp, "\"%s\" using 1:%d with lines title \"support\", \"%s\" using 1:%d with lines title \"swing\"",
             //         fname.c_str(), ( ii * data_size + 4), fname.c_str(), ( ii * data_size + 5));
-            // fprintf(gp, ",\"%s\" using 1:%d with lines title \"support zmpoff\", \"%s\" using 1:%d with lines title \"swing zmpoff\" ",
+            // fprintf(gp, ",");
+            // fprintf(gp, "\"%s\" using 1:%d with lines title \"support zmpoff\", \"%s\" using 1:%d with lines title \"swing zmpoff\"",
             //         fname.c_str(), ( ii * data_size + 6), fname.c_str(), ( ii * data_size + 7));
             fprintf(gp, "\n");
         }
@@ -71,14 +74,19 @@ private:
         pclose(gp);
     };
 
+    void gen_and_plot_walk_pattern(gait_generator& gg, const coordinates& initial_support_leg_coords, const coordinates& initial_swing_leg_dst_coords)
+    {
+        gg.initialize_gait_parameter(cog, initial_support_leg_coords, initial_swing_leg_dst_coords);
+        while ( !gg.proc_one_tick() );
+        //gg.print_footstep_list();
+        plot_walk_pattern(gg, dt);
+    }
+
     void gen_and_plot_walk_pattern(gait_generator& gg)
     {
         coordinates initial_support_leg_coords(gg.get_footstep_front_leg()=="rleg"?leg_pos[1]:leg_pos[0]);
         coordinates initial_swing_leg_dst_coords(gg.get_footstep_front_leg()!="rleg"?leg_pos[1]:leg_pos[0]);
-        gg.initialize_gait_parameter(cog, initial_support_leg_coords, initial_swing_leg_dst_coords);
-        while ( !gg.proc_one_tick() );
-        gg.print_footstep_list();
-        plot_walk_pattern(gg, dt);
+        gen_and_plot_walk_pattern(gg, initial_support_leg_coords, initial_swing_leg_dst_coords);
     }
 
 public:
@@ -151,14 +159,47 @@ public:
     void test6 ()
     {
         gait_generator gg(dt, leg_pos, 1e-3*150, 1e-3*50, 10, 1e-3*50);
+        gg.clear_footstep_node_list();
+        gg.go_single_step_param_2_footstep_list(100*1e-3, 0, 0, 0, "rleg", coordinates(leg_pos[0]));
+        gen_and_plot_walk_pattern(gg);
+    };
+
+    void test7 ()
+    {
+        gait_generator gg(dt, leg_pos, 1e-3*150, 1e-3*50, 10, 1e-3*50);
         /* initialize sample footstep_list */
         std::vector<hrp::Vector3> dzo;
-        dzo.push_back(hrp::Vector3(20*1e-3,30*1e-3,0));
         dzo.push_back(hrp::Vector3(20*1e-3,-30*1e-3,0));
+        dzo.push_back(hrp::Vector3(20*1e-3,30*1e-3,0));
         gg.set_default_zmp_offsets(dzo);
+        gg.set_toe_zmp_offset_x(137*1e-3);
+        gg.set_heel_zmp_offset_x(-105*1e-3);
+        // gg.set_use_toe_heel_transition(false);
+        gg.set_use_toe_heel_transition(true);
         gg.clear_footstep_node_list();
         gg.go_pos_param_2_footstep_list(100*1e-3, 0, 0, coordinates());
         gen_and_plot_walk_pattern(gg);
+    };
+
+    void test8 ()
+    {
+        gait_generator gg(dt, leg_pos, 1e-3*150, 1e-3*50, 10, 1e-3*50);
+        /* initialize sample footstep_list */
+        std::vector<hrp::Vector3> dzo;
+        dzo.push_back(hrp::Vector3(20*1e-3,-30*1e-3,0));
+        dzo.push_back(hrp::Vector3(20*1e-3,30*1e-3,0));
+        gg.set_default_zmp_offsets(dzo);
+        gg.set_toe_zmp_offset_x(137*1e-3);
+        gg.set_heel_zmp_offset_x(-105*1e-3);
+        // gg.set_use_toe_heel_transition(false);
+        gg.set_use_toe_heel_transition(true);
+        gg.clear_footstep_node_list();
+        hrp::Matrix33 initial_foot_mid_rot = Eigen::AngleAxis<double>(M_PI/2, hrp::Vector3::UnitZ()).toRotationMatrix();
+        //hrp::Matrix33 initial_foot_mid_rot = Eigen::AngleAxis<double>(M_PI, hrp::Vector3::UnitZ()).toRotationMatrix();
+        gg.go_pos_param_2_footstep_list(100*1e-3, 0, 0, coordinates(initial_foot_mid_rot));
+        coordinates initial_support_leg_coords(hrp::Vector3(initial_foot_mid_rot * (gg.get_footstep_front_leg()=="rleg"?leg_pos[1]:leg_pos[0])), initial_foot_mid_rot);
+        coordinates initial_swing_leg_dst_coords(hrp::Vector3(initial_foot_mid_rot * (gg.get_footstep_front_leg()!="rleg"?leg_pos[1]:leg_pos[0])), initial_foot_mid_rot);
+        gen_and_plot_walk_pattern(gg, initial_support_leg_coords, initial_swing_leg_dst_coords);
     };
 };
 
@@ -191,6 +232,10 @@ int main(int argc, char* argv[])
           testGaitGeneratorHRP2JSK().test5();
       } else if (std::string(argv[1]) == "--test6") {
           testGaitGeneratorHRP2JSK().test6();
+      } else if (std::string(argv[1]) == "--test7") {
+          testGaitGeneratorHRP2JSK().test7();
+      } else if (std::string(argv[1]) == "--test8") {
+          testGaitGeneratorHRP2JSK().test8();
       }
   }
   return 0;
