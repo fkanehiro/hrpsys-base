@@ -34,12 +34,14 @@ private:
                 } else {
                     cogpos = gg.get_cog()(ii);
                 }
-                fprintf(fp, "%f %f %f %f %f ",
+                fprintf(fp, "%f %f %f %f %f %f ",
                         gg.get_refzmp()(ii),
                         cogpos,
                         gg.get_support_leg_coords().pos(ii),
                         gg.get_swing_leg_coords().pos(ii),
-                        gg.get_swing_foot_zmp_offset()(ii));
+                        gg.get_support_foot_zmp_offset()(ii),
+                        gg.get_swing_foot_zmp_offset()(ii)
+                        );
             }
             fprintf(fp, "\n");
             i++;
@@ -50,7 +52,7 @@ private:
         FILE* gp = popen("gnuplot", "w");
         fprintf(gp, "set multiplot layout 3, 1\n");
         std::string titles[3] = {"X", "Y", "Z"};
-        int data_size = 5;
+        int data_size = 6;
         for (size_t ii = 0; ii < 3; ii++) {
             fprintf(gp, "set title \"%s\"\n", titles[ii].c_str());
             fprintf(gp, "set xlabel \"Time [s]\"\n");
@@ -59,8 +61,8 @@ private:
                     fname.c_str(), ( ii * data_size + 2), fname.c_str(), ( ii * data_size + 3));
             // fprintf(gp, ",\"%s\" using 1:%d with lines title \"support\", \"%s\" using 1:%d with lines title \"swing\"",
             //         fname.c_str(), ( ii * data_size + 4), fname.c_str(), ( ii * data_size + 5));
-            fprintf(gp, ",\"%s\" using 1:%d with lines title \"swing zmpoff\"",
-                    fname.c_str(), ( ii * data_size + 6));
+            // fprintf(gp, ",\"%s\" using 1:%d with lines title \"support zmpoff\", \"%s\" using 1:%d with lines title \"swing zmpoff\" ",
+            //         fname.c_str(), ( ii * data_size + 6), fname.c_str(), ( ii * data_size + 7));
             fprintf(gp, "\n");
         }
         fflush(gp);
