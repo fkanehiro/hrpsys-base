@@ -61,13 +61,13 @@ int main(int argc, char *argv[])
   // Test kalman filter
   RPYKalmanFilter rpy_kf;
   rpy_kf.setParam(dt, Q_angle, Q_rate, R_angle);
-  hrp::Vector3 rate, acc, rpy, rpyRaw, rpyAct;
+  hrp::Vector3 rate, acc, rpy, rpyRaw, baseRpyCurrent, rpyAct;
   double time, time2=0.0;
   while(!ratef.eof()){
     posef >> time >> time >> time >> time >> rpyAct[0] >> rpyAct[1] >> rpyAct[2]; // Neglect translation in .pose file
     ratef >> time >> rate[0] >> rate[1] >> rate[2];
     accf >> time >> acc[0] >> acc[1] >> acc[2];
-    rpy_kf.main_one(rpy, rpyRaw, acc, rate, 0.0);
+    rpy_kf.main_one(rpy, rpyRaw, baseRpyCurrent, acc, rate, 0.0, hrp::Matrix33::Identity());
     // rad->deg
     rpy*=180/3.14159;
     rpyAct*=180/3.14159;
