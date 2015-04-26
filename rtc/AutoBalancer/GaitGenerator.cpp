@@ -23,6 +23,7 @@ namespace rats
     dz1 += _swing_leg_coords.pos;
     rzmp = (dz0 + dz1) / 2.0;
     refzmp_cur_list.push_back( rzmp );
+    support_leg_list.push_back( BOTH );
     fs_index++;
   };
 
@@ -32,13 +33,19 @@ namespace rats
     coordinates tmp(fnl[fs_index-1].worldcoords);
     rzmp = tmp.rot * default_zmp_offsets[fnl[fs_index-1].l_r] + tmp.pos;
     refzmp_cur_list.push_back( rzmp );
+    support_leg_list.push_back( fnl[fs_index-1].l_r );
     if (fs_index < fnl.size()) fs_index++;
   };
 
-  void gait_generator::refzmp_generator::calc_current_refzmp (hrp::Vector3& ret, const double default_double_support_ratio, const size_t one_step_len) const
+  void gait_generator::refzmp_generator::calc_current_refzmp (hrp::Vector3& ret, hrp::Vector3& swing_foot_zmp_offset, const double default_double_support_ratio, const size_t one_step_len) const
   {
     size_t cnt = one_step_len - refzmp_count;
     double margine_count = 0.5 * default_double_support_ratio * one_step_len;
+    if (support_leg_list[refzmp_index] == BOTH) {
+        swing_foot_zmp_offset = hrp::Vector3::Zero();
+    } else {
+        swing_foot_zmp_offset = default_zmp_offsets[support_leg_list[refzmp_index]];
+    }
     if ( cnt < margine_count ) {
       double ratio = (-0.5 / margine_count) * (cnt - margine_count);
       ret = (1 - ratio) * refzmp_cur_list[refzmp_index] + ratio * ((refzmp_index > 0) ? refzmp_cur_list[refzmp_index-1] : refzmp_cur_list[refzmp_index]);
@@ -277,13 +284,15 @@ namespace rats
 
   bool gait_generator::proc_one_tick ()
   {
-    hrp::Vector3 rzmp;
-    bool refzmp_exist_p = rg.get_current_refzmp(rzmp, default_double_support_ratio, one_step_len);
+    hrp::Vector3 rzmp, sfzo;
+    bool refzmp_exist_p = rg.get_current_refzmp(rzmp, sfzo, default_double_support_ratio, one_step_len);
     if (!refzmp_exist_p) {
       finalize_count++;
       rzmp = prev_que_rzmp;
+      sfzo = prev_que_sfzo;
     } else {
       prev_que_rzmp = rzmp;
+      prev_que_sfzo = sfzo;
     }
     bool solved = preview_controller_ptr->update(refzmp, cog, rzmp, (refzmp_exist_p || finalize_count < preview_controller_ptr->get_delay()-default_step_time/dt));
     /* update refzmp */
@@ -496,10 +505,10 @@ namespace rats
     if (emergency_flg == EMERGENCY_STOP)
       rg.push_refzmp_from_footstep_list_for_dual(footstep_node_list, cv[0], cv[1]);
     /* fill preview controller queue by new refzmp */
-    hrp::Vector3 rzmp;
+    hrp::Vector3 rzmp, sfzo;
     bool not_solved = true;
     while (not_solved) {
-      bool refzmp_exist_p = rg.get_current_refzmp(rzmp, default_double_support_ratio, one_step_len);
+      bool refzmp_exist_p = rg.get_current_refzmp(rzmp, sfzo, default_double_support_ratio, one_step_len);
       not_solved = !preview_controller_ptr->update(refzmp, cog, rzmp, refzmp_exist_p);
       rg.update_refzmp(footstep_node_list, one_step_len);
     }

@@ -79,14 +79,15 @@ namespace rats
     public:
 #endif
       std::vector<hrp::Vector3> refzmp_cur_list;
+      std::vector<leg_type> support_leg_list;
       std::vector<hrp::Vector3> default_zmp_offsets; /* (list rleg lleg) */
       size_t fs_index, refzmp_index, refzmp_count;
-      void calc_current_refzmp (hrp::Vector3& ret, const double default_double_support_ratio, const size_t one_step_len) const;
+      void calc_current_refzmp (hrp::Vector3& ret, hrp::Vector3& swing_foot_zmp_offset, const double default_double_support_ratio, const size_t one_step_len) const;
 #ifndef HAVE_MAIN
     public:
 #endif
       refzmp_generator()
-        : refzmp_cur_list(), default_zmp_offsets(),
+        : refzmp_cur_list(), support_leg_list(), default_zmp_offsets(),
           fs_index(0), refzmp_index(0), refzmp_count(0)
       {
           default_zmp_offsets.push_back(hrp::Vector3::Zero());
@@ -97,6 +98,7 @@ namespace rats
       void remove_refzmp_cur_list_over_length (const size_t len)
       {
         while ( refzmp_cur_list.size() > len) refzmp_cur_list.pop_back();
+        while ( support_leg_list.size() > len) support_leg_list.pop_back();
       };
       void set_indices (const size_t idx) { fs_index = refzmp_index = idx; };
       void set_refzmp_count(const size_t _refzmp_count) { refzmp_count = _refzmp_count; };
@@ -106,15 +108,16 @@ namespace rats
         set_indices(0);
         set_refzmp_count(_refzmp_count);
         refzmp_cur_list.clear();
+        support_leg_list.clear();
       };
       void push_refzmp_from_footstep_list_for_dual (const std::vector<step_node>& fnl,
                                                     const coordinates& _support_leg_coords,
                                                     const coordinates& _swing_leg_coords);
       void push_refzmp_from_footstep_list_for_single (const std::vector<step_node>& fnl);
       void update_refzmp (const std::vector<step_node>& fnl, const size_t one_step_len);
-      bool get_current_refzmp (hrp::Vector3& rzmp, const double default_double_support_ratio, const size_t one_step_len) const
+      bool get_current_refzmp (hrp::Vector3& rzmp, hrp::Vector3& swing_foot_zmp_offset, const double default_double_support_ratio, const size_t one_step_len) const
       {
-        if (refzmp_cur_list.size() > refzmp_index ) calc_current_refzmp(rzmp, default_double_support_ratio, one_step_len);
+        if (refzmp_cur_list.size() > refzmp_index ) calc_current_refzmp(rzmp, swing_foot_zmp_offset, default_double_support_ratio, one_step_len);
         return refzmp_cur_list.size() > refzmp_index;
       };
       const hrp::Vector3& get_refzmp_cur () { return refzmp_cur_list.front(); };
