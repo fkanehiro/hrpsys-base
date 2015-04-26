@@ -49,14 +49,16 @@ private:
         FILE* gp = popen("gnuplot", "w");
         fprintf(gp, "set multiplot layout 3, 1\n");
         std::string titles[3] = {"X", "Y", "Z"};
+        int data_size = 4;
         for (size_t ii = 0; ii < 3; ii++) {
             fprintf(gp, "set title \"%s\"\n", titles[ii].c_str());
             fprintf(gp, "set xlabel \"Time [s]\"\n");
             fprintf(gp, "set ylabel \"[m]\"\n");
-            //fprintf(gp, "plot \"%s\" using 1:%d with lines title \"refzmp\", \"%s\" using 1:%d with lines title \"cog\", \"%s\" using 1:%d with lines title \"support\", \"%s\" using 1:%d with lines title \"swing\"\n",
-            //        fname.c_str(), ( ii * 4 + 2), fname.c_str(), ( ii * 4 + 3), fname.c_str(), ( ii * 4 + 4), fname.c_str(), ( ii * 4 + 5));
-            fprintf(gp, "plot \"%s\" using 1:%d with lines title \"refzmp\", \"%s\" using 1:%d with lines title \"cog\"\n",
-                    fname.c_str(), ( ii * 4 + 2), fname.c_str(), ( ii * 4 + 3));
+            fprintf(gp, "plot \"%s\" using 1:%d with lines title \"refzmp\", \"%s\" using 1:%d with lines title \"cog\"",
+                    fname.c_str(), ( ii * data_size + 2), fname.c_str(), ( ii * data_size + 3));
+            // fprintf(gp, ",\"%s\" using 1:%d with lines title \"support\", \"%s\" using 1:%d with lines title \"swing\"\n",
+            //         fname.c_str(), ( ii * data_size + 4), fname.c_str(), ( ii * data_size + 5));
+            fprintf(gp, "\n");
         }
         fflush(gp);
         double tmp;
