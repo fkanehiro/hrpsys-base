@@ -19,6 +19,7 @@ public:
   CORBA::Boolean goVelocity( CORBA::Double vx,  CORBA::Double vy,  CORBA::Double vth);
   CORBA::Boolean goStop();
   CORBA::Boolean setFootSteps(const OpenHRP::AutoBalancerService::FootstepSequence& fs);
+  CORBA::Boolean setFootStepsWithParam(const OpenHRP::AutoBalancerService::FootstepSequence& fs, const OpenHRP::AutoBalancerService::StepParamSequence& sps);
   void waitFootSteps();
   CORBA::Boolean startAutoBalancer(const OpenHRP::AutoBalancerService::StrSequence& limbs);
   CORBA::Boolean stopAutoBalancer();

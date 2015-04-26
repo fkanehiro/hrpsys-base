@@ -21,6 +21,7 @@ def init ():
     hcf = HrpsysConfigurator()
     hcf.getRTCList = hcf.getRTCListUnstable
     hcf.init ("SampleRobot(Robot)0", "$(PROJECT_DIR)/../model/sample1.wrl")
+    hcf.connectLoggerPort(hcf.kf, 'baseRpyCurrent')
     # initialize poses
     # pose1 = [0]*29
     # pose2 = [0]*29
@@ -67,7 +68,11 @@ def test_kf_plot (test_motion_func, optional_out_file_name): # time [s]
     estimated_rpy_ret=[]
     for line in open("/tmp/test-kf-samplerobot-{0}.kf_rpy".format(optional_out_file_name), "r"):
         estimated_rpy_ret.append(line.split(" ")[0:-1])
-    #  Actual rpy from simualtro : time, posx, posy, posz, roll, pitch, yaw
+    #  Estimated base link rpy from KF : time, roll, pitch, yaw
+    estimated_base_rpy_ret=[]
+    for line in open("/tmp/test-kf-samplerobot-{0}.kf_baseRpyCurrent".format(optional_out_file_name), "r"):
+        estimated_base_rpy_ret.append(line.split(" ")[0:-1])
+    #  Actual rpy from simualtor : time, posx, posy, posz, roll, pitch, yaw
     act_rpy_ret=[]
     for line in open("/tmp/test-kf-samplerobot-{0}.SampleRobot(Robot)0_WAIST".format(optional_out_file_name), "r"):
         act_rpy_ret.append(line.split(" ")[0:-1])
@@ -76,15 +81,17 @@ def test_kf_plot (test_motion_func, optional_out_file_name): # time [s]
     tm_list=map (lambda x : int(x[0].split(".")[0])-initial_sec + float(x[0].split(".")[1]) * 1e-6, act_rpy_ret)
     # Plotting
     plt.clf()
+    color_list = ['r', 'g', 'b']
     for idx in range(3):
-        plt.plot(tm_list, map(lambda x : 180.0 * float(x[1+3+idx]) / math.pi, act_rpy_ret))
-        plt.plot(tm_list, map(lambda x : 180.0 * float(x[1+idx]) / math.pi, estimated_rpy_ret), ":")
+        plt.plot(tm_list, map(lambda x : 180.0 * float(x[1+3+idx]) / math.pi, act_rpy_ret), color=color_list[idx])
+        plt.plot(tm_list, map(lambda x : 180.0 * float(x[1+idx]) / math.pi, estimated_rpy_ret), ":", color=color_list[idx])
+        plt.plot(tm_list, map(lambda x : 180.0 * float(x[1+idx]) / math.pi, estimated_base_rpy_ret), "--", color=color_list[idx])
     plt.xlabel("Time [s]")
     plt.ylabel("Angle [deg]")
     plt.title("KF actual-estimated data (motion time = {0})".format(optional_out_file_name))
-    plt.legend(("Actual roll", "Estimated roll",
-                "Actual pitch", "Estimated pitch",
-                "Actual yaw", "Estimated yaw"))
+    plt.legend(("Actual roll", "Estimated roll", "Estimated base roll",
+                "Actual pitch", "Estimated pitch", "Estimated base pitch",
+                "Actual yaw", "Estimated yaw", "Estimated base yaw"))
     plt.savefig("/tmp/test-kf-samplerobot-data-{0}.eps".format(optional_out_file_name))
 
 def test_bending_common (time, poses):
