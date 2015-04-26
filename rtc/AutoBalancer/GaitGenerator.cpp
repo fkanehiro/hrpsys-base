@@ -43,40 +43,47 @@ namespace rats
 
   void gait_generator::refzmp_generator::calc_current_refzmp (hrp::Vector3& ret, hrp::Vector3& swing_foot_zmp_offset, const double default_double_support_ratio, const size_t one_step_len) const
   {
-    size_t cnt = one_step_len - refzmp_count;
-    double margine_count = 0.5 * default_double_support_ratio * one_step_len;
+    size_t cnt = one_step_len - refzmp_count; // current counter (0 -> one_step_len)
+    double margine_count = 0.5 * default_double_support_ratio * one_step_len; // margin count for double support period
     swing_foot_zmp_offset = default_zmp_offsets[swing_leg_list[refzmp_index]];
-    double zmp_diff = 0.0;
+    double zmp_diff = 0.0; // difference between total swing_foot_zmp_offset and default_zmp_offset
     //if (cnt==0) std::cerr << "z " << refzmp_index << " " << refzmp_cur_list.size() << " " << fs_index << " " << (refzmp_index == refzmp_cur_list.size()-2) << " " << is_final_double_support_set << std::endl;
-    if (use_toe_heel_transition && !(is_start_double_support_phase() || is_end_double_support_phase())) {
+
+    // Calculate swing foot zmp offset for toe heel zmp transition
+    if (use_toe_heel_transition &&
+        !(is_start_double_support_phase() || is_end_double_support_phase())) { // Do not use toe heel zmp transition during start and end double support period because there is no swing foot
         if (thp_ptr->is_between_phases(cnt, SOLE0)) {
-            double ratio = thp_ptr->get_phase_ratio(cnt+1, SOLE0);
+            double ratio = thp_ptr->calc_phase_ratio(cnt+1, SOLE0);
             swing_foot_zmp_offset(0) = (1-ratio)*swing_foot_zmp_offset(0) + ratio*toe_zmp_offset_x;
         } else if (thp_ptr->is_between_phases(cnt, HEEL2SOLE, SOLE2)) {
-            double ratio = thp_ptr->get_phase_ratio(cnt, HEEL2SOLE, SOLE2);
+            double ratio = thp_ptr->calc_phase_ratio(cnt, HEEL2SOLE, SOLE2);
             swing_foot_zmp_offset(0) = ratio*swing_foot_zmp_offset(0) + (1-ratio)*heel_zmp_offset_x;
         } else if (thp_ptr->is_between_phases(cnt, SOLE0, SOLE2TOE)) {
             swing_foot_zmp_offset(0) = toe_zmp_offset_x;
         } else if (thp_ptr->is_between_phases(cnt, SOLE2HEEL, HEEL2SOLE)) {
             swing_foot_zmp_offset(0) = heel_zmp_offset_x;
         } else if (thp_ptr->is_between_phases(cnt, SOLE2TOE, SOLE2HEEL)) {
-            double ratio = thp_ptr->get_phase_ratio(cnt, SOLE2TOE, SOLE2HEEL);
+            double ratio = thp_ptr->calc_phase_ratio(cnt, SOLE2TOE, SOLE2HEEL);
             swing_foot_zmp_offset(0) = ratio * heel_zmp_offset_x + (1-ratio) * toe_zmp_offset_x;
         }
         zmp_diff = swing_foot_zmp_offset(0)-default_zmp_offsets[swing_leg_list[refzmp_index]](0);
     }
-    if ( cnt < margine_count ) {
+
+    // Calculate total reference ZMP
+    if ( cnt < margine_count ) { // Start double support period
       hrp::Vector3 current_support_zmp = refzmp_cur_list[refzmp_index];
       hrp::Vector3 prev_support_zmp = (is_start_double_support_phase() ? refzmp_cur_list[refzmp_index] : refzmp_cur_list[refzmp_index-1]);
       if ( !(is_start_double_support_phase() || is_end_double_support_phase()) ) {
+          // "* 0.5" is for double supprot period
           prev_support_zmp +=  ((refzmp_index == 1) ? zmp_diff*0.5: zmp_diff) * foot_x_axis_list[refzmp_index-1];
       }
       double ratio = (-0.5 / margine_count) * (cnt - margine_count);
       ret = (1 - ratio) * current_support_zmp + ratio * prev_support_zmp;
-    } else if ( cnt > one_step_len - margine_count ) {
+    } else if ( cnt > one_step_len - margine_count ) { // End double support period
       hrp::Vector3 current_support_zmp = (is_end_double_support_phase() ? refzmp_cur_list[refzmp_index] : refzmp_cur_list[refzmp_index+1]);
       hrp::Vector3 prev_support_zmp = refzmp_cur_list[refzmp_index];
       if ( !(is_start_double_support_phase() || is_end_double_support_phase()) ) {
+          // "* 0.5" is for double supprot period
           current_support_zmp += (((refzmp_index == refzmp_cur_list.size()-2) && is_final_double_support_set) ? zmp_diff * 0.5 : zmp_diff) * foot_x_axis_list[refzmp_index+1];
       }
       double ratio = (0.5 / margine_count) * (cnt - 1 - (one_step_len - margine_count));
@@ -179,7 +186,7 @@ namespace rats
       size_t current_count = total_count - gp_count;
       if (thp_ptr->is_phase_starting(current_count, start_phase)) {
           toe_heel_interpolator->set(&start);
-          toe_heel_interpolator->go(&goal, thp_ptr->get_phase_period(start_phase, goal_phase, _dt));
+          toe_heel_interpolator->go(&goal, thp_ptr->calc_phase_period(start_phase, goal_phase, _dt));
       }
       toe_heel_interpolator->get(&tmp_ip_ratio, true);
       return tmp_ip_ratio;
