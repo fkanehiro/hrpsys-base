@@ -339,7 +339,7 @@ namespace rats
       orbit_type default_orbit_type;
       rectangle_delay_hoffarbib_trajectory_generator rdtg;
       stair_delay_hoffarbib_trajectory_generator sdtg;
-      toe_heel_phase_counter thp;
+      toe_heel_phase_counter* thp_ptr;
       interpolator* foot_ratio_interpolator;
       // Parameters for toe-heel contact
       interpolator* toe_heel_interpolator;
@@ -365,9 +365,10 @@ namespace rats
 #ifndef HAVE_MAIN
     public:
 #endif
-      leg_coords_generator(const double __dt)
+      leg_coords_generator(const double __dt, toe_heel_phase_counter* _thp_ptr)
         : swing_leg_dst_coords(), support_leg_coords(), swing_leg_coords(), swing_leg_src_coords(),
           default_step_height(0.05), default_top_ratio(0.5), current_step_height(0.0), swing_ratio(0), rot_ratio(0), _dt(__dt), gp_index(0), gp_count(0), support_leg(RLEG), default_orbit_type(CYCLOID),
+          thp_ptr(_thp_ptr),
           foot_ratio_interpolator(NULL), toe_heel_interpolator(NULL),
           toe_pos_offset_x(0.0), heel_pos_offset_x(0.0), toe_angle(0.0), heel_angle(0.0), foot_dif_rot_angle(0.0), use_toe_joint(false)
       {
@@ -387,6 +388,7 @@ namespace rats
             delete toe_heel_interpolator;
             toe_heel_interpolator = NULL;
         }
+        thp_ptr = NULL;
       };
       void set_default_step_height (const double _tmp) { default_step_height = _tmp; };
       void set_default_top_ratio (const double _tmp) { default_top_ratio = _tmp; };
@@ -412,7 +414,7 @@ namespace rats
         swing_leg_src_coords = _swing_leg_src_coords;
         support_leg_coords = _support_leg_coords;
         total_count = gp_count = one_step_len;
-        thp.set_total_count(total_count);
+        thp_ptr->set_total_count(total_count);
         gp_index = 0;
         current_step_height = 0.0;
         rdtg.reset(one_step_len, default_double_support_ratio);
@@ -464,9 +466,9 @@ namespace rats
 
     /* member variables for gait_generator */
     std::vector<step_node> footstep_node_list;
+    toe_heel_phase_counter thp;
     refzmp_generator rg;
     leg_coords_generator lcg;
-    toe_heel_phase_counter thp;
     footstep_parameter footstep_param;
     velocity_mode_parameter vel_param, offset_vel_param;
     hrp::Vector3 cog, refzmp, prev_que_rzmp, swing_foot_zmp_offset, prev_que_sfzo; /* cog by calculating proc_one_tick */
@@ -507,7 +509,7 @@ namespace rats
                     /* arguments for footstep_parameter */
                     const std::vector<hrp::Vector3>& _leg_pos,
                     const double _stride_fwd_x, const double _stride_y, const double _stride_theta, const double _stride_bwd_x)
-      : footstep_node_list(), rg(), lcg(_dt),
+      : footstep_node_list(), thp(), rg(), lcg(_dt, &thp),
         footstep_param(_leg_pos, _stride_fwd_x, _stride_y, _stride_theta, _stride_bwd_x),
         vel_param(), offset_vel_param(), cog(hrp::Vector3::Zero()), refzmp(hrp::Vector3::Zero()), prev_que_rzmp(hrp::Vector3::Zero()),
         swing_foot_zmp_offset(hrp::Vector3::Zero()), prev_que_sfzo(hrp::Vector3::Zero()),
