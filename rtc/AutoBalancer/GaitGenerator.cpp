@@ -143,9 +143,9 @@ namespace rats
   {
       double tmp_ip_ratio;
       size_t current_count = total_count - gp_count;
-      if (current_count == toe_heel_phase_count[start_phase]) {
+      if (thp.is_phase_starting(current_count, start_phase)) {
           toe_heel_interpolator->set(&start);
-          toe_heel_interpolator->go(&goal, _dt * (toe_heel_phase_count[goal_phase]-toe_heel_phase_count[start_phase]));
+          toe_heel_interpolator->go(&goal, thp.get_phase_period(start_phase, goal_phase, _dt));
       }
       toe_heel_interpolator->get(&tmp_ip_ratio, true);
       return tmp_ip_ratio;
@@ -157,25 +157,25 @@ namespace rats
       size_t current_count = total_count - gp_count;
       double dif_angle = 0.0;
       hrp::Vector3 ee_local_pivot_pos(hrp::Vector3(0,0,0));
-      if ( (toe_heel_phase_count[SOLE0] <= current_count) && (current_count < toe_heel_phase_count[SOLE2TOE]) ) {
+      if ( thp.is_between_phases(current_count, SOLE0, SOLE2TOE) ) {
           dif_angle = calc_interpolated_toe_heel_angle(SOLE0, SOLE2TOE, 0.0, toe_angle);
           ee_local_pivot_pos(0) = toe_pos_offset_x;
-      } else if ( (toe_heel_phase_count[SOLE2HEEL] <= current_count) && (current_count < toe_heel_phase_count[HEEL2SOLE]) ) {
+      } else if ( thp.is_between_phases(current_count, SOLE2HEEL, HEEL2SOLE) ) {
           dif_angle = calc_interpolated_toe_heel_angle(SOLE2HEEL, HEEL2SOLE, -1 * heel_angle, 0.0);
           ee_local_pivot_pos(0) = -1 * heel_pos_offset_x;
-      } else if ( (toe_heel_phase_count[SOLE2TOE] <= current_count) && (current_count < toe_heel_phase_count[SOLE2HEEL]) ) {
+      } else if ( thp.is_between_phases(current_count, SOLE2TOE, SOLE2HEEL) ) {
           // If SOLE1 phase does not exist, interpolate toe => heel smoothly, without 0 velocity phase.
-          if ( toe_heel_phase_count[TOE2SOLE] == toe_heel_phase_count[SOLE1] ) {
+          if ( thp.is_no_SOLE1_phase() ) {
               dif_angle = calc_interpolated_toe_heel_angle(SOLE2TOE, SOLE2HEEL, toe_angle, -1 * heel_angle);
               double tmpd = (-1*heel_angle-toe_angle);
               if (std::fabs(tmpd) > 1e-5) {
                   ee_local_pivot_pos(0) = (-1 * heel_pos_offset_x - toe_pos_offset_x) * (dif_angle - toe_angle) / tmpd + toe_pos_offset_x;
               }
           } else {
-              if ( (toe_heel_phase_count[SOLE2TOE] <= current_count) && (current_count < toe_heel_phase_count[TOE2SOLE]) ) {
+              if ( thp.is_between_phases(current_count, SOLE2TOE, TOE2SOLE) ) {
                   dif_angle = calc_interpolated_toe_heel_angle(SOLE2TOE, TOE2SOLE, toe_angle, 0.0);
                   ee_local_pivot_pos(0) = toe_pos_offset_x;
-              } else if ( (toe_heel_phase_count[SOLE1] <= current_count) && (current_count < toe_heel_phase_count[SOLE2HEEL]) ) {
+              } else if ( thp.is_between_phases(current_count, SOLE1, SOLE2HEEL) ) {
                   dif_angle = calc_interpolated_toe_heel_angle(SOLE1, SOLE2HEEL, 0.0, -1 * heel_angle);
                   ee_local_pivot_pos(0) = -1 * heel_pos_offset_x;
               }
