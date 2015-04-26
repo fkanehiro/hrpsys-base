@@ -5,7 +5,7 @@ using namespace hrp;
 using namespace rats;
 
 template <std::size_t dim>
-void preview_control_base<dim>::update_x_k(const hrp::Vector3& pr)
+void preview_control_base<dim>::update_x_k(const hrp::Vector3& pr, const hrp::Vector3& _qdata)
 {
   zmp_z = pr(2);
   Eigen::Matrix<double, 2, 1> tmpv;
@@ -13,9 +13,11 @@ void preview_control_base<dim>::update_x_k(const hrp::Vector3& pr)
   tmpv(1,0) = pr(1);
   p.push_back(tmpv);
   pz.push_back(pr(2));
+  qdata.push_back(_qdata);
   if ( p.size() > 1 + delay ) {
     p.pop_front();
     pz.pop_front();
+    qdata.pop_front();
   }
   if ( is_doing() ) calc_x_k();
 }
