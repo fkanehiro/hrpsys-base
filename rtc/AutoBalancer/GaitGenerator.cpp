@@ -23,7 +23,7 @@ namespace rats
     dz1 += _swing_leg_coords.pos;
     rzmp = (dz0 + dz1) / 2.0;
     refzmp_cur_list.push_back( rzmp );
-    support_leg_list.push_back( fnl[fs_index].l_r );
+    swing_leg_list.push_back( fnl[fs_index].l_r );
     fs_index++;
   };
 
@@ -33,7 +33,7 @@ namespace rats
     coordinates tmp(fnl[fs_index-1].worldcoords);
     rzmp = tmp.rot * default_zmp_offsets[fnl[fs_index-1].l_r] + tmp.pos;
     refzmp_cur_list.push_back( rzmp );
-    support_leg_list.push_back( fnl[fs_index-1].l_r == RLEG ? LLEG : RLEG);
+    swing_leg_list.push_back( fnl[fs_index-1].l_r == RLEG ? LLEG : RLEG);
     if (fs_index < fnl.size()) fs_index++;
   };
 
@@ -41,7 +41,7 @@ namespace rats
   {
     size_t cnt = one_step_len - refzmp_count;
     double margine_count = 0.5 * default_double_support_ratio * one_step_len;
-    swing_foot_zmp_offset = default_zmp_offsets[support_leg_list[refzmp_index]];
+    swing_foot_zmp_offset = default_zmp_offsets[swing_leg_list[refzmp_index]];
     if ( cnt < margine_count ) {
       hrp::Vector3 current_support_zmp = refzmp_cur_list[refzmp_index];
       hrp::Vector3 prev_support_zmp = (is_start_double_support_phase() ? refzmp_cur_list[refzmp_index] : refzmp_cur_list[refzmp_index-1]);
