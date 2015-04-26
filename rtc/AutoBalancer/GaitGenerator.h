@@ -133,7 +133,7 @@ namespace rats
     public:
 #endif
       std::vector<hrp::Vector3> refzmp_cur_list;
-      std::vector<leg_type> support_leg_list;
+      std::vector<leg_type> swing_leg_list;
       std::vector<hrp::Vector3> default_zmp_offsets; /* (list rleg lleg) */
       size_t fs_index, refzmp_index, refzmp_count;
       void calc_current_refzmp (hrp::Vector3& ret, hrp::Vector3& swing_foot_zmp_offset, const double default_double_support_ratio, const size_t one_step_len) const;
@@ -154,7 +154,7 @@ namespace rats
       void remove_refzmp_cur_list_over_length (const size_t len)
       {
         while ( refzmp_cur_list.size() > len) refzmp_cur_list.pop_back();
-        while ( support_leg_list.size() > len) support_leg_list.pop_back();
+        while ( swing_leg_list.size() > len) swing_leg_list.pop_back();
       };
       void set_indices (const size_t idx) { fs_index = refzmp_index = idx; };
       void set_refzmp_count(const size_t _refzmp_count) { refzmp_count = _refzmp_count; };
@@ -164,7 +164,7 @@ namespace rats
         set_indices(0);
         set_refzmp_count(_refzmp_count);
         refzmp_cur_list.clear();
-        support_leg_list.clear();
+        swing_leg_list.clear();
       };
       void push_refzmp_from_footstep_list_for_dual (const std::vector<step_node>& fnl,
                                                     const coordinates& _support_leg_coords,
