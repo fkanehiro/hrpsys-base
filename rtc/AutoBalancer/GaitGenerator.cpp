@@ -43,11 +43,15 @@ namespace rats
     double margine_count = 0.5 * default_double_support_ratio * one_step_len;
     swing_foot_zmp_offset = default_zmp_offsets[support_leg_list[refzmp_index]];
     if ( cnt < margine_count ) {
+      hrp::Vector3 current_support_zmp = refzmp_cur_list[refzmp_index];
+      hrp::Vector3 prev_support_zmp = (is_start_double_support_phase() ? refzmp_cur_list[refzmp_index] : refzmp_cur_list[refzmp_index-1]);
       double ratio = (-0.5 / margine_count) * (cnt - margine_count);
-      ret = (1 - ratio) * refzmp_cur_list[refzmp_index] + ratio * ((refzmp_index > 0) ? refzmp_cur_list[refzmp_index-1] : refzmp_cur_list[refzmp_index]);
+      ret = (1 - ratio) * current_support_zmp + ratio * prev_support_zmp;
     } else if ( cnt > one_step_len - margine_count ) {
+      hrp::Vector3 current_support_zmp = (is_end_double_support_phase() ? refzmp_cur_list[refzmp_index] : refzmp_cur_list[refzmp_index+1]);
+      hrp::Vector3 prev_support_zmp = refzmp_cur_list[refzmp_index];
       double ratio = (0.5 / margine_count) * (cnt - (one_step_len - margine_count));
-      ret = (1 - ratio) * refzmp_cur_list[refzmp_index] + ratio * ((refzmp_index + 1 <= refzmp_cur_list.size() - 1) ? refzmp_cur_list[refzmp_index+1] : refzmp_cur_list[refzmp_index]);
+      ret = (1 - ratio) * prev_support_zmp + ratio * current_support_zmp;
     } else {
       ret = refzmp_cur_list[refzmp_index];
     }

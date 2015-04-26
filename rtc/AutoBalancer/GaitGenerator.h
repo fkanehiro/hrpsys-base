@@ -137,6 +137,8 @@ namespace rats
       std::vector<hrp::Vector3> default_zmp_offsets; /* (list rleg lleg) */
       size_t fs_index, refzmp_index, refzmp_count;
       void calc_current_refzmp (hrp::Vector3& ret, hrp::Vector3& swing_foot_zmp_offset, const double default_double_support_ratio, const size_t one_step_len) const;
+      const bool is_start_double_support_phase () const { return refzmp_index == 0; };
+      const bool is_end_double_support_phase () const { return refzmp_index == refzmp_cur_list.size() - 1; };
 #ifndef HAVE_MAIN
     public:
 #endif
