@@ -196,14 +196,14 @@ namespace rats
           ee_local_pivot_pos(0) = toe_pos_offset_x;
       } else if ( thp_ptr->is_between_phases(current_count, SOLE2HEEL, HEEL2SOLE) ) {
           dif_angle = calc_interpolated_toe_heel_angle(SOLE2HEEL, HEEL2SOLE, -1 * heel_angle, 0.0);
-          ee_local_pivot_pos(0) = -1 * heel_pos_offset_x;
+          ee_local_pivot_pos(0) = heel_pos_offset_x;
       } else if ( thp_ptr->is_between_phases(current_count, SOLE2TOE, SOLE2HEEL) ) {
           // If SOLE1 phase does not exist, interpolate toe => heel smoothly, without 0 velocity phase.
           if ( thp_ptr->is_no_SOLE1_phase() ) {
               dif_angle = calc_interpolated_toe_heel_angle(SOLE2TOE, SOLE2HEEL, toe_angle, -1 * heel_angle);
               double tmpd = (-1*heel_angle-toe_angle);
               if (std::fabs(tmpd) > 1e-5) {
-                  ee_local_pivot_pos(0) = (-1 * heel_pos_offset_x - toe_pos_offset_x) * (dif_angle - toe_angle) / tmpd + toe_pos_offset_x;
+                  ee_local_pivot_pos(0) = (heel_pos_offset_x - toe_pos_offset_x) * (dif_angle - toe_angle) / tmpd + toe_pos_offset_x;
               }
           } else {
               if ( thp_ptr->is_between_phases(current_count, SOLE2TOE, TOE2SOLE) ) {
@@ -211,7 +211,7 @@ namespace rats
                   ee_local_pivot_pos(0) = toe_pos_offset_x;
               } else if ( thp_ptr->is_between_phases(current_count, SOLE1, SOLE2HEEL) ) {
                   dif_angle = calc_interpolated_toe_heel_angle(SOLE1, SOLE2HEEL, 0.0, -1 * heel_angle);
-                  ee_local_pivot_pos(0) = -1 * heel_pos_offset_x;
+                  ee_local_pivot_pos(0) = heel_pos_offset_x;
               }
           }
       }
