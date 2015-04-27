@@ -408,12 +408,11 @@ bool BodyRTC::names2ids(const std::vector<std::string> &i_names,
 }
 
 void BodyRTC::getStatus(OpenHRP::RobotHardwareService::RobotState* rs) {
-
     rs->angle.length(numJoints());
     rs->command.length(numJoints());
     for(size_t i = 0; i < numJoints(); i++) {
-        rs->angle = angles[i];
-        rs->command = commands[i];
+        rs->angle[i] = angles[i];
+        rs->command[i] = commands[i];
     }
 
     rs->servoState.length(numJoints());
