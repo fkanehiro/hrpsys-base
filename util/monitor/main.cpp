@@ -98,9 +98,13 @@ int main(int argc, char* argv[])
         
         poaManager->activate();
     }catch (CORBA::SystemException& ex) {
-        std::cerr << ex._rep_id() << std::endl;
+        std::cerr << "[monitor] Failed to initialize CORBA " << std::endl << ex._rep_id() << std::endl;
+        std::cerr << "[monitor] please check your command-line option -ORBInitRef NameService=corbaloc:iiop:<hotname>:<port>/NameService" << std::endl;
+        return -1;
     }catch (const std::string& error){
-        std::cerr << error << std::endl;
+        std::cerr << "[monitor] Failed to initialize CORBA " << std::endl << error << std::endl;
+        std::cerr << "[monitor] please check your command-line option -ORBInitRef NameService=corbaloc:iiop:<hotname>:<port>/NameService" << std::endl;
+        return -1;
     }
 
     //================= logger ======================

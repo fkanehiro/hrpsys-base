@@ -144,13 +144,14 @@ void GLscene::showStatus()
                 // joint name, current angle, command angle and torque
                 sprintf(buf, "%13s %8.3f %8.3f %6.1f", 
                         l->name.c_str(), 
-                        rstate.angle[i]*180/M_PI,
-                        rstate.command[i]*180/M_PI,
-                        rstate.torque[i]*180/M_PI);
+                        (i<rstate.angle.length())?(rstate.angle[i]*180/M_PI):0,
+                        (i<rstate.command.length())?(rstate.command[i]*180/M_PI):0,
+                        (i<rstate.torque.length())?(rstate.torque[i]*180/M_PI):0);
                 glRasterPos2f(x, height);
                 drawString2(buf);
                 x += 8*(14+9+9+7);
                 // servo alarms
+
                 sprintf(buf, "%03x", servoAlarm(ss));
                 glRasterPos2f(x, height);
                 drawString2(buf);

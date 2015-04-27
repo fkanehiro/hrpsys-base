@@ -12,13 +12,22 @@ Monitor::Monitor(CORBA::ORB_var orb, const std::string &i_hostname,
     m_log(i_log)
 {
     char buf[128];
-    sprintf(buf, "%s:%d", i_hostname.c_str(), i_port);
-    RTC::CorbaNaming naming(orb, buf);
-    m_naming = CosNaming::NamingContext::_duplicate(naming.getRootContext());
+    try {
+        sprintf(buf, "%s:%d", i_hostname.c_str(), i_port);
+        RTC::CorbaNaming naming(orb, buf);
+        m_naming = CosNaming::NamingContext::_duplicate(naming.getRootContext());
+    }catch (CORBA::SystemException& ex) {
+        std::cerr << "[monitor] Failed to initialize CORBA " << std::endl << ex._rep_id() << " with " << buf << std::endl;
+    }catch (const std::string& error){
+        std::cerr << "[monitor] Failed to initialize CORBA " << std::endl << error << " with " << buf << std::endl;
+    }catch (...){
+        std::cerr << "[monitor] Failed to initialize CORBA with " << buf << std::endl;
+    }
 }
 
 bool Monitor::oneStep()
 {
+    static long long loop = 0;
     ThreadedObject::oneStep();
 
     // RobotHardwareService
@@ -37,7 +46,12 @@ bool Monitor::oneStep()
             const char *ior = getServiceIOR(rtc, "RobotHardwareService");
             m_rhService = OpenHRP::RobotHardwareService::_narrow(m_orb->string_to_object(ior));
         }catch(...){
+            if ( (loop%(5*(1000/m_interval))) == 0 )
+                std::cerr << "[monitor] RobotHardwareService could not connect (" << m_rhCompName << ")" << std::endl;
         }
+    } else {
+        if ( (loop%(5*(1000/m_interval))) == 0 )
+            std::cerr << "[monitor] RobotHardwareService is not found (" << m_rhCompName << ")" << std::endl;
     }
     // StateHolderService
     if (CORBA::is_nil(m_shService)){
@@ -51,7 +65,12 @@ bool Monitor::oneStep()
             const char *ior = getServiceIOR(rtc, "StateHolderService");
             m_shService = OpenHRP::StateHolderService::_narrow(m_orb->string_to_object(ior));
         }catch(...){
+            if ( (loop%(5*(1000/m_interval))) == 0 )
+            std::cerr << "[monitor] StateHolderService could not connect (" << m_shCompName << ")" << std::endl;
         }
+    }else{
+        if ( (loop%(5*(1000/m_interval))) == 0 )
+            std::cerr << "[monitor] StateHolderService is not found (" << m_shCompName << ")" << std::endl;
     }
 
     bool stateUpdate = false;
@@ -62,7 +81,7 @@ bool Monitor::oneStep()
             m_rstate.state = rs;
             stateUpdate = true;
         }catch(...){
-            std::cout << "exception in getStatus()" << std::endl;
+            std::cerr << "[monitor] exception in getStatus()" << std::endl;
             m_rhService = NULL;
         }
     }
@@ -74,7 +93,7 @@ bool Monitor::oneStep()
             m_rstate.command = com;
             stateUpdate = true;
         }catch(...){
-            std::cout << "exception in getCommand()" << std::endl;
+            std::cerr << "[monitor] exception in getCommand()" << std::endl;
             m_shService = NULL;
         }
     }
@@ -87,6 +106,7 @@ bool Monitor::oneStep()
         m_log->add(m_rstate);
     }
     usleep(1000*m_interval);
+    loop ++;
 
     return true;
 }
