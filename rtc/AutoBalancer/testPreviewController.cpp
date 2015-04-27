@@ -45,8 +45,8 @@ int main()
   bool r = true;
   size_t index = 0;
   while (r) {
-    hrp::Vector3 p, x;
-    r = df.update(p, x, ref_zmp_list.front(), !ref_zmp_list.empty());
+    hrp::Vector3 p, x, qdata;
+    r = df.update(p, x, qdata, ref_zmp_list.front(), qdata, !ref_zmp_list.empty());
     if (r) {
       index++;
       df.get_cart_zmp(cart_zmp);

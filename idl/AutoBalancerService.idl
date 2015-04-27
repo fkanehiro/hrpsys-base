@@ -126,13 +126,13 @@ module OpenHRP
       DblArray3 stair_trajectory_way_point_offset;
       /// Gravitational acceleration [m/s^2]
       double gravitational_acceleration;
-      /// Toe position offset [mm] in end-effector frame x axis
+      /// Toe position offset [m] in end-effector frame x axis
       double toe_pos_offset_x;
-      /// Heel position offset [mm] in end-effector frame x axis
+      /// Heel position offset [m] in end-effector frame x axis
       double heel_pos_offset_x;
-      /// Toe ZMP offset [mm] in end-effector frame x axis
+      /// Toe ZMP offset [m] in end-effector frame x axis
       double toe_zmp_offset_x;
-      /// Heel ZMP offset [mm] in end-effector frame x axis
+      /// Heel ZMP offset [m] in end-effector frame x axis
       double heel_zmp_offset_x;
       /// Maximum toe angle [deg] for toe-off motion
       double toe_angle;
