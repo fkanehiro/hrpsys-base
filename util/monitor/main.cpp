@@ -44,7 +44,7 @@ hrp::BodyPtr createBody(const std::string& name, const ModelItem& mitem,
 int main(int argc, char* argv[]) 
 {
     if (argc < 2){
-        std::cerr << "Usage:" << argv[0] << " project.xml [-rh RobotHardwareComponent] [-sh StateHolder component] [-size size] [-bg r g b]" << std::endl;
+        std::cerr << "Usage:" << argv[0] << " project.xml [-rh RobotHardwareComponent] [-sh StateHolder component] [-size size] [-bg r g b] [-host localhost] [-port 2809] [-interval 100]" << std::endl;
         return 1;
     }
 
@@ -54,9 +54,10 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    char *rhname = NULL, *shname = NULL;
-    int wsize = 0;
+    char *rhname = NULL, *shname = NULL, *hostname = NULL;
+    int wsize = 0, port=0, interval=0;
     float bgColor[] = {0,0,0};
+    bool orbinitref = false;
     for (int i = 2; i<argc; i++){
         if (strcmp(argv[i], "-rh")==0){
             rhname = argv[++i];
@@ -68,15 +69,39 @@ int main(int argc, char* argv[])
             bgColor[0] = atof(argv[++i]);
             bgColor[1] = atof(argv[++i]);
             bgColor[2] = atof(argv[++i]);
+        }else if(strcmp(argv[i], "-host")==0){
+            hostname = argv[++i];
+        }else if(strcmp(argv[i], "-port")==0){
+            port = atoi(argv[++i]);
+        }else if(strcmp(argv[i], "-interval")==0){
+            interval = atoi(argv[++i]);
+        }else if(strcmp(argv[i], "-ORBInitRef")==0){
+            orbinitref = true;
         }
+    }
+    char **nargv = argv;
+    int nargc = argc;
+    if(orbinitref == false){
+        nargv = (char **)malloc((argc+2)*sizeof(char *));
+        for(int i = 0; i < nargc; i++) nargv[i] = argv[i];
+        char buf1[] = "-ORBInitRef";
+        char buf2[256];
+        sprintf(buf2, "NameService=corbaloc:iiop:%s:%d/NameService", hostname==NULL?"localhost":hostname, port==0?2809:port);
+        nargv[nargc++] = buf1;
+        nargv[nargc++] = buf2;
     }
 
     //================= CORBA =========================
+    for(int i = 0; i < nargc-1; i++) {
+        if(strcmp(nargv[i], "-ORBInitRef")==0) {
+            std::cerr << "[monitor] Starting CORBA Client with " << nargv[i+1] << std::endl;
+        }
+    }
     CORBA::ORB_var orb;
     CosNaming::NamingContext_var namingContext;
     
     try {
-        orb = CORBA::ORB_init(argc, argv);
+        orb = CORBA::ORB_init(nargc, nargv);
         
         CORBA::Object_var obj;
         obj = orb->resolve_initial_references("RootPOA");
@@ -99,11 +124,9 @@ int main(int argc, char* argv[])
         poaManager->activate();
     }catch (CORBA::SystemException& ex) {
         std::cerr << "[monitor] Failed to initialize CORBA " << std::endl << ex._rep_id() << std::endl;
-        std::cerr << "[monitor] please check your command-line option -ORBInitRef NameService=corbaloc:iiop:<hotname>:<port>/NameService" << std::endl;
         return -1;
     }catch (const std::string& error){
         std::cerr << "[monitor] Failed to initialize CORBA " << std::endl << error << std::endl;
-        std::cerr << "[monitor] please check your command-line option -ORBInitRef NameService=corbaloc:iiop:<hotname>:<port>/NameService" << std::endl;
         return -1;
     }
 
@@ -113,6 +136,10 @@ int main(int argc, char* argv[])
     
     //================= monitor ======================
     RobotHardwareClientView rhview = prj.RobotHardwareClient();
+    if ( hostname != NULL ) rhview.hostname = hostname;
+    if ( port != 0 ) rhview.port = port;
+    if ( interval != 0 ) rhview.interval = interval;
+    std::cerr << "[monitor] Monitor service with " << rhview.hostname << "@" << rhview.port << ", " << 1000/rhview.interval << "Hz" << std::endl;
     Monitor monitor(orb, 
                     rhview.hostname, rhview.port, rhview.interval,
                     &log);
