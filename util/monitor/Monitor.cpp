@@ -130,11 +130,32 @@ void Monitor::showStatus(hrp::BodyPtr &body)
         = (LogManager<TimedRobotState> *)m_log;
     OpenHRP::RobotHardwareService::RobotState &rstate = lm->state().state;
 
-    //fprintf(stdout, "\e[2J\e[1;1H"); // clear + home
     fprintf(stdout, "\e[1;1H"); // home
     fprintf(stdout, "\x1b[42m"); // greep backgroupd
-    //fprintf(stdout, "\e[2K"); // clear 1 line
-    fprintf(stdout, "\e[2KID PW                 NAME    ANGLE  COMMAND TORQUE SERVO TEMP\n"); // greep backgroupd
+
+    fprintf(stdout, "\e[2KTimestamp %16.4f, elapsed time %8.4f\n", lm->state().time, lm->currentTime());
+    double curr_time, prev_time;
+    std::vector<double> curr_angle, prev_angle, velocity, curr_vel, prev_vel, curr_acc, acceleration;
+    int n = body->numJoints();
+    curr_angle.resize(n); prev_angle.resize(n); curr_vel.resize(n); prev_vel.resize(n); curr_acc.resize(n);
+    velocity.resize(n); acceleration.resize(n);
+    for(int i = 0; i < n; i++) { prev_angle[i] = lm->state().state.angle[i]; velocity[i] = acceleration[i] = curr_vel[i] = 0; }
+    prev_time = lm->state().time - 10; // dummy data
+    while(m_log->index()>0) {
+        curr_time = lm->state().time;
+        for(int i = 0; i < n; i++) {
+            curr_angle[i] = lm->state().state.angle[i];
+            curr_vel[i] = (curr_angle[i] - prev_angle[i])/(curr_time-prev_time);
+            curr_acc[i] = (curr_vel[i] - prev_vel[i])/(curr_time-prev_time);
+            if (fabs(velocity[i]) < fabs(curr_vel[i])) velocity[i] = curr_vel[i];
+            if (fabs(acceleration[i]) < fabs(curr_acc[i])) acceleration[i] = curr_acc[i];
+        }
+        m_log->prev(1);
+        for(int i = 0; i < n; i++) { prev_angle[i] = curr_angle[i]; prev_vel[i] = curr_vel[i];}
+        prev_time = curr_time;
+    }
+    m_log->tail();
+    fprintf(stdout, "\e[2KID PW                 NAME    ANGLE  COMMAND    ERROR VELOCITY   ACCEL. TORQUE SERVO TEMP\n"); // greep backgroupd
     char buf[256];
     for (int i=0; i<body->numJoints(); i++){
         hrp::Link *l = body->joint(i);
@@ -154,11 +175,57 @@ void Monitor::showStatus(hrp::BodyPtr &body)
             fprintf(stdout, " o ");
             if (isPowerOn(ss)) black();
             // joint name, current angle, command angle and torque
-            fprintf(stdout, "%20s %8.3f %8.3f %6.1f   ",
-                    l->name.c_str(),
-                    (i<rstate.angle.length())?(rstate.angle[i]*180/M_PI):0,
-                    (i<rstate.command.length())?(rstate.command[i]*180/M_PI):0,
-                    (i<rstate.torque.length())?(rstate.torque[i]*180/M_PI):0);
+            fprintf(stdout, "%20s ", l->name.c_str());
+            // angle
+            if( i<rstate.angle.length() )
+                fprintf(stdout, "%8.3f ", rstate.angle[i]*180/M_PI);
+            else
+                fprintf(stdout, "-------- ");
+            // command
+            if( i<rstate.command.length() )
+                fprintf(stdout, "%8.3f ", rstate.command[i]*180/M_PI);
+            else
+                fprintf(stdout, "-------- ");
+
+            // error
+            if( i<rstate.angle.length() && i<rstate.command.length() ){
+                double e = (rstate.angle[i]-rstate.command[i])*180/M_PI;
+                if ( abs(e) > 1 ) yellow();
+                if ( abs(e) > 2 ) magenta();
+                if ( abs(e) > 4 ) red();
+                fprintf(stdout, "%8.3f ", e);
+                black();
+            }else{
+                fprintf(stdout, "-------- ");
+            }
+            // velocity
+            if( i<velocity.size() ) {
+                double e = velocity[i]; //*180/M_PI;
+                if ( abs(e) >  2 ) yellow();
+                if ( abs(e) > 10 ) magenta();
+                if ( abs(e) > 20 ) red();
+                fprintf(stdout, "%8.2f ", e);
+                black();
+            }else{
+                fprintf(stdout, "-------- ");
+            }
+            // accleration
+            if( i<acceleration.size() ) {
+                double e = acceleration[i]; //*180/M_PI;
+                if ( abs(e) >  50 ) yellow();
+                if ( abs(e) > 100 ) magenta();
+                if ( abs(e) > 200 ) red();
+                fprintf(stdout, "%8.1f ", e);
+                black();
+            }else{
+                fprintf(stdout, "-------- ");
+            }
+
+            // torque
+            if( i<rstate.torque.length() )
+                fprintf(stdout, "%6.1f ", rstate.torque[i]*180/M_PI);
+            else
+                fprintf(stdout, "------   ");
             // servo alarms
             fprintf(stdout, "%03x   ", servoAlarm(ss));
             // driver temperature
