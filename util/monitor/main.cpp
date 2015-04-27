@@ -44,7 +44,7 @@ hrp::BodyPtr createBody(const std::string& name, const ModelItem& mitem,
 int main(int argc, char* argv[]) 
 {
     if (argc < 2){
-        std::cerr << "Usage:" << argv[0] << " project.xml [-rh RobotHardwareComponent] [-sh StateHolder component] [-size size] [-bg r g b] [-host localhost] [-port 2809] [-interval 100]" << std::endl;
+        std::cerr << "Usage:" << argv[0] << " project.xml [-rh RobotHardwareComponent] [-sh StateHolder component] [-size size] [-bg r g b] [-host localhost] [-port 2809] [-interval 100] [-nogui]" << std::endl;
         return 1;
     }
 
@@ -57,7 +57,7 @@ int main(int argc, char* argv[])
     char *rhname = NULL, *shname = NULL, *hostname = NULL;
     int wsize = 0, port=0, interval=0;
     float bgColor[] = {0,0,0};
-    bool orbinitref = false;
+    bool orbinitref = false, gui = true;
     for (int i = 2; i<argc; i++){
         if (strcmp(argv[i], "-rh")==0){
             rhname = argv[++i];
@@ -75,6 +75,8 @@ int main(int argc, char* argv[])
             port = atoi(argv[++i]);
         }else if(strcmp(argv[i], "-interval")==0){
             interval = atoi(argv[++i]);
+        }else if(strcmp(argv[i], "-nogui")==0){
+            gui = false;
         }else if(strcmp(argv[i], "-ORBInitRef")==0){
             orbinitref = true;
         }
@@ -154,28 +156,66 @@ int main(int argc, char* argv[])
         monitor.setStateHolderName(rhview.StateHolderName.c_str());
     }
     //==================== viewer ===============
-    GLscene scene(&log);
-    scene.setBackGroundColor(bgColor);
-    scene.showCoMonFloor(prj.view().showCoMonFloor);
+    if ( gui ) {
+        GLscene scene(&log);
+        scene.setBackGroundColor(bgColor);
+        scene.showCoMonFloor(prj.view().showCoMonFloor);
     
-    SDLwindow window(&scene, &log, &monitor);
-    window.init(wsize, wsize);
+        SDLwindow window(&scene, &log, &monitor);
+        window.init(wsize, wsize);
+
+        std::vector<hrp::ColdetLinkPairPtr> pairs;
+        ModelLoader_var modelloader = getModelLoader(namingContext);
+        if (CORBA::is_nil(modelloader)){
+            std::cerr << "openhrp-model-loader is not running" << std::endl;
+            return 1;
+        }
+        BodyFactory factory = boost::bind(createBody, _1, _2, modelloader);
+
+        initWorld(prj, factory, scene, pairs);
+        scene.setCollisionCheckPairs(pairs);
     
-    std::vector<hrp::ColdetLinkPairPtr> pairs;
-    ModelLoader_var modelloader = getModelLoader(namingContext);
-    if (CORBA::is_nil(modelloader)){
-        std::cerr << "openhrp-model-loader is not running" << std::endl;
-        return 1;
+        monitor.start();
+        int cnt=0;
+        while(window.oneStep());
+        monitor.stop();
     }
-    BodyFactory factory = boost::bind(createBody, _1, _2, modelloader);
-    initWorld(prj, factory, scene, pairs);
-    scene.setCollisionCheckPairs(pairs);
-    
-    monitor.start();
-    int cnt=0;
-    while(window.oneStep());
-    monitor.stop();
-    
+    else
+    {
+        std::vector<hrp::ColdetLinkPairPtr> pairs;
+        ModelLoader_var modelloader = getModelLoader(namingContext);
+        if (CORBA::is_nil(modelloader)){
+            std::cerr << "openhrp-model-loader is not running" << std::endl;
+            return 1;
+        }
+        BodyFactory factory = boost::bind(createBody, _1, _2, modelloader);
+
+        // add bodies
+        hrp::BodyPtr body;
+        for (std::map<std::string, ModelItem>::iterator it=prj.models().begin();
+             it != prj.models().end(); it++){
+            const std::string name
+                = it->second.rtcName == "" ? it->first : it->second.rtcName;
+            hrp::BodyPtr tmp_body = factory(name, it->second);
+            if (tmp_body){
+                tmp_body->setName(name);
+                if(tmp_body->numJoints() > 0)
+                    body = tmp_body;
+                else
+                    std::cerr << "[monitor] Skipping non-robot model (" << name << ")" << std::endl;
+            }
+        }
+        if (!body) {
+            std::cerr << "[monitor]  Monitoring " << body->name() << std::endl;
+            return -1;
+        }
+        monitor.start();
+        while(monitor.oneStep()){
+            log.updateIndex();
+            monitor.showStatus(body);
+        }
+        monitor.stop();
+    }
     try {
         orb->destroy();
     }

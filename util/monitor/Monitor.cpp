@@ -116,6 +116,98 @@ bool Monitor::isConnected()
     return !CORBA::is_nil(m_rhService);
 }
 
+extern bool isCalibrated(int s);
+extern bool isPowerOn(int s);
+extern bool isServoOn(int s);
+extern int servoAlarm(int s);
+extern int temperature(int s);
+
+void Monitor::showStatus(hrp::BodyPtr &body)
+{
+    if (m_log->index()<0) return;
+
+    LogManager<TimedRobotState> *lm
+        = (LogManager<TimedRobotState> *)m_log;
+    OpenHRP::RobotHardwareService::RobotState &rstate = lm->state().state;
+
+    //fprintf(stdout, "\e[2J\e[1;1H"); // clear + home
+    fprintf(stdout, "\e[1;1H"); // home
+    fprintf(stdout, "\x1b[42m"); // greep backgroupd
+    //fprintf(stdout, "\e[2K"); // clear 1 line
+    fprintf(stdout, "\e[2KID PW                 NAME    ANGLE  COMMAND TORQUE SERVO TEMP\n"); // greep backgroupd
+    char buf[256];
+    for (int i=0; i<body->numJoints(); i++){
+        hrp::Link *l = body->joint(i);
+        if (l){
+            fprintf(stdout,"\e[2K");
+            int ss = rstate.servoState[i][0];
+            // joint ID
+            if (!isCalibrated(ss)){
+                yellow();
+            }else if(isServoOn(ss)){
+                red();
+            }
+            fprintf(stdout, "%2d ",i);
+            black();
+            // power status
+            if (isPowerOn(ss)) blue();
+            fprintf(stdout, " o ");
+            if (isPowerOn(ss)) black();
+            // joint name, current angle, command angle and torque
+            fprintf(stdout, "%20s %8.3f %8.3f %6.1f   ",
+                    l->name.c_str(),
+                    (i<rstate.angle.length())?(rstate.angle[i]*180/M_PI):0,
+                    (i<rstate.command.length())?(rstate.command[i]*180/M_PI):0,
+                    (i<rstate.torque.length())?(rstate.torque[i]*180/M_PI):0);
+            // servo alarms
+            fprintf(stdout, "%03x   ", servoAlarm(ss));
+            // driver temperature
+            int temp = temperature(ss);
+            if (!temp){
+                fprintf(stdout, "-- ", temp);
+            }else{
+                if (temp >= 60) red();
+                fprintf(stdout, "%2d ", temp);
+                if (temp >= 60) black();
+            }
+            fprintf(stdout, "\n");
+        }
+    }
+    fprintf(stdout, "\e[2K---\n");
+
+    if (rstate.accel.length()){
+        fprintf(stdout, "\e[2K         acc:");
+        for (unsigned int i=0; i<rstate.accel.length(); i++){
+            if(i>0)fprintf(stdout, "\e[2K             ");
+            fprintf(stdout, " %8.4f %8.4f %8.4f\n",
+                    rstate.accel[i][0], rstate.accel[i][1], rstate.accel[i][2]);
+        }
+    }
+    if (rstate.rateGyro.length()){
+        fprintf(stdout, "\e[2K        rate:");
+        for (unsigned int i=0; i<rstate.rateGyro.length(); i++){
+            if(i>0)fprintf(stdout, "\e[2K             ");
+            fprintf(stdout, " %8.4f %8.4f %8.4f\n",
+                    rstate.rateGyro[i][0], rstate.rateGyro[i][1], rstate.rateGyro[i][2]);
+        }
+    }
+    if (rstate.force.length()){
+        fprintf(stdout, "\e[2Kforce/torque:");
+        for (unsigned int i=0; i<rstate.force.length(); i++){
+            if(i>0)fprintf(stdout, "\e[2K             ");
+            fprintf(stdout, " %6.1f %6.1f %6.1f %6.2f %6.2f %6.2f\n",
+                    rstate.force[i][0],
+                    rstate.force[i][1],
+                    rstate.force[i][2],
+                    rstate.force[i][3],
+                    rstate.force[i][4],
+                    rstate.force[i][5]);
+            }
+    }
+    fprintf(stdout, "\e[2K\n");
+}
+
+
 void Monitor::setRobotHardwareName(const char *i_name)
 {
     m_rhCompName = i_name;
