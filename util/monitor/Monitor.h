@@ -30,6 +30,7 @@ private:
     void yellow() { fprintf(stdout, "\x1b[33m");}
     void green()  { fprintf(stdout, "\x1b[32m");}
     void blue()   { fprintf(stdout, "\x1b[34m");}
+    void magenta(){ fprintf(stdout, "\x1b[35m");}
     void black()  { fprintf(stdout, "\x1b[30m");}
 
 };
