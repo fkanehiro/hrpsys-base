@@ -3,6 +3,7 @@
 #include "util/LogManager.h"
 #include "StateHolderService.hh"
 #include "TimedRobotState.h"
+#include "hrpModel/Body.h"
 
 class Monitor : public ThreadedObject
 {
@@ -10,6 +11,7 @@ public:
     Monitor(CORBA::ORB_var orb, const std::string &i_hostname,
             int i_port, int i_interval, LogManager<TimedRobotState> *i_log);
     bool oneStep();
+    void showStatus(hrp::BodyPtr &body);
     bool isConnected();
     void setRobotHardwareName(const char *i_name);
     void setStateHolderName(const char *i_name);
@@ -22,4 +24,12 @@ private:
     TimedRobotState m_rstate;
     LogManager<TimedRobotState> *m_log;
     int m_interval;
+
+    void white()  { fprintf(stdout, "\x1b[37m");}
+    void red()    { fprintf(stdout, "\x1b[31m");}
+    void yellow() { fprintf(stdout, "\x1b[33m");}
+    void green()  { fprintf(stdout, "\x1b[32m");}
+    void blue()   { fprintf(stdout, "\x1b[34m");}
+    void black()  { fprintf(stdout, "\x1b[30m");}
+
 };

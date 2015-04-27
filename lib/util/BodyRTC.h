@@ -147,6 +147,9 @@ private:
     // robot status
     std::vector<double> angles;
     std::vector<double> commands;
+    std::vector<hrp::Vector3> accels;
+    std::vector<hrp::Vector3> gyros;
+    std::vector<hrp::dvector6> forces;
     std::vector<OpenHRP::RobotHardwareService::SwitchStatus> calib_status;
     std::vector<OpenHRP::RobotHardwareService::SwitchStatus> servo_status;
     std::vector<OpenHRP::RobotHardwareService::SwitchStatus> power_status;

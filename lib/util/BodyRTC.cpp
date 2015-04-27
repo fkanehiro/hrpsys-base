@@ -66,6 +66,9 @@ RTC::ReturnCode_t BodyRTC::setup(){
     std::cout << "BodyRTC::setup(), numJoints = " << numJoints() << std::endl;
     angles.resize(numJoints());
     commands.resize(numJoints());
+    accels.resize(numSensors(hrp::Sensor::ACCELERATION));
+    gyros.resize(numSensors(hrp::Sensor::RATE_GYRO));
+    forces.resize(numSensors(hrp::Sensor::FORCE));
     calib_status.resize(numJoints());
     servo_status.resize(numJoints());
     power_status.resize(numJoints());
@@ -408,12 +411,26 @@ bool BodyRTC::names2ids(const std::vector<std::string> &i_names,
 }
 
 void BodyRTC::getStatus(OpenHRP::RobotHardwareService::RobotState* rs) {
-
     rs->angle.length(numJoints());
     rs->command.length(numJoints());
     for(size_t i = 0; i < numJoints(); i++) {
-        rs->angle = angles[i];
-        rs->command = commands[i];
+        rs->angle[i] = angles[i];
+        rs->command[i] = commands[i];
+    }
+    rs->force.length(forces.size());
+    for(size_t j = 0; j < forces.size(); j++) {
+        rs->force[j].length(6);
+        for(size_t i = 0; i < 6; i++ ) rs->force[j][i] = forces[j][i];
+    }
+    rs->rateGyro.length(gyros.size());
+    for(size_t j = 0; j < gyros.size() ; j++) {
+        rs->rateGyro[j].length(3);
+        for(size_t i = 0; i < 3; i++ ) rs->rateGyro[j][i] = gyros[j][i];
+    }
+    rs->accel.length(accels.size());
+    for(size_t j = 0; j < accels.size(); j++) {
+        rs->accel[j].length(3);
+        for(size_t i = 0; i < 3; i++ ) rs->accel[j][i] = accels[j][i];
     }
 
     rs->servoState.length(numJoints());
@@ -547,6 +564,27 @@ bool BodyRTC::postOneStep() {
 
     for(int i = 0; i < numJoints(); ++i){
         angles[i] = joint(i)->q;
+    }
+    for(int i = 0; i < numSensors(hrp::Sensor::ACCELERATION); i++ ){
+        hrp::AccelSensor *s = sensor<AccelSensor>(i);
+        accels[i][0] =  s->dv[0];
+        accels[i][1] =  s->dv[1];
+        accels[i][2] =  s->dv[2];
+    }
+    for(int i = 0; i < numSensors(hrp::Sensor::RATE_GYRO); i++ ){
+        hrp::RateGyroSensor *s = sensor<RateGyroSensor>(i);
+        gyros[i][0] =  s->w[0];
+        gyros[i][1] =  s->w[1];
+        gyros[i][2] =  s->w[2];
+    }
+    for(int i = 0; i < numSensors(hrp::Sensor::FORCE); i++ ){
+        hrp::ForceSensor *s = sensor<ForceSensor>(i);
+        forces[i][0] =  s->f[0];
+        forces[i][1] =  s->f[1];
+        forces[i][2] =  s->f[2];
+        forces[i][3] =  s->tau[0];
+        forces[i][4] =  s->tau[1];
+        forces[i][5] =  s->tau[2];
     }
     if ( checkEmergency(m_emergencyReason, m_emergencyId) ) {
         servo("all", false);
