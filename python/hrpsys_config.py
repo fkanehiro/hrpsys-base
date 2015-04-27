@@ -732,13 +732,16 @@ class HrpsysConfigurator:
             connectPorts(artc.port(sen_name), self.log.port(log_name))
 
     # public method to configure default logger data ports
-    def setupLogger(self):
+    def setupLogger(self, maxLength=4000):
         '''!@brief
         Setup logging function.
+        @param maxLength : max length of data from DataLogger.h #define DEFAULT_MAX_LOG_LENGTH (200*20)
+                           if the robot running at 200hz (5msec) 4000 means 20 secs
         '''
         if self.log == None:
             print(self.configurator_name + "\033[31m  setupLogger : self.log is not defined, please check rtcd.conf or rtcd arguments\033[0m")
             return
+        self.log_svc.maxLength(maxLength);
         #
         for pn in ['q', 'dq', 'tau']:
             self.connectLoggerPort(self.rh, pn)
