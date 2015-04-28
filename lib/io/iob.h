@@ -593,7 +593,14 @@ extern "C"{
      * @param b		remaining battery level[%]
      * @return		TRUE or FALSE
      */
-    int read_battery(int id, double *v, double *a, double *b) /* {} */; // if you are compiling against old libiob.so, please uncomment to dummy define this function.
+    int read_battery(int id, double *v, double *a, double *b);
+
+    /**
+     * @brief get the number of thermometers
+     * @return the number of thermometers
+     */
+    int number_of_thermometers();
+
     //@}
 #endif
 

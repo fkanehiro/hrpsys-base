@@ -736,3 +736,14 @@ int robot::numBatteries()
 {
     return number_of_batteries();
 }
+
+void robot::readThermometer(unsigned int i_rank, double &o_temp)
+{
+    read_temperature(i_rank, &o_temp);
+}
+
+int robot::numThermometers()
+{
+    return number_of_thermometers();
+}
+

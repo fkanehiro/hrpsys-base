@@ -142,6 +142,13 @@ public:
                           double &o_current, double &o_soc);
 
     /**
+       \brief read thermometer
+       \param i_rank rank of thermometer
+       \param o_temp temperature
+     */
+    void readThermometer(unsigned int i_rank, double &o_temp);
+
+    /**
        \brief read array of all joint angles[rad]
        \param o_angles array of all joint angles
      */
@@ -268,7 +275,17 @@ public:
     int lengthDigitalOutput();
     bool readDigitalOutput(char *o_dout);
 
+    /**
+       \brief get the number of batteries
+       \return the number of batteries
+    */
     int numBatteries();
+
+    /**
+       \brief get the number of thermometers
+       \return the number of thermometers
+    */
+    int numThermometers();
 private:
     /**
        \brief calibrate inertia sensor for one sampling period

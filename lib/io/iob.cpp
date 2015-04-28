@@ -582,6 +582,12 @@ int read_battery(int id, double *voltage, double *current, double *soc)
     *soc = ((double)random()-RAND_MAX/2)/(RAND_MAX/2)*0.5+50;
     return TRUE;
 }
+
+int number_of_thermometers()
+{
+    return 0;
+}
+
 #endif
 
 int read_driver_temperature(int id, unsigned char *v)
