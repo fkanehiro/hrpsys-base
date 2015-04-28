@@ -196,6 +196,7 @@ module OpenHRP
       sequence<BatteryState>    batteries;///< battery states
       double			voltage;  ///< voltage of power supply[V]
       double			current;  ///< current[A] 
+      sequence<double>	        temperature; ///< temperatures
     };
 
     /**

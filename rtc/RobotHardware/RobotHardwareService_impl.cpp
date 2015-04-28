@@ -89,6 +89,10 @@ void RobotHardwareService_impl::getStatus2(OpenHRP::RobotHardwareService::RobotS
                                   rs->batteries[i].current,
                                   rs->batteries[i].soc);
     }
+    rs->temperature.length(m_robot->numThermometers());
+    for (unsigned int i=0; i<rs->temperature.length(); i++){
+        m_robot->readThermometer(i, rs->temperature[i]);
+    }
 #endif
 }
 
