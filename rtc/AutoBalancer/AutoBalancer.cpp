@@ -1032,6 +1032,7 @@ bool AutoBalancer::setGaitGeneratorParam(const OpenHRP::AutoBalancerService::Gai
       }
   }
   gg->set_use_toe_joint(i_param.use_toe_joint);
+  gg->set_use_toe_heel_transition(i_param.use_toe_heel_transition);
 
   // print
   double stride_fwd_x, stride_y, stride_th, stride_bwd_x;
@@ -1071,7 +1072,7 @@ bool AutoBalancer::setGaitGeneratorParam(const OpenHRP::AutoBalancerService::Gai
                 << "Required length = " << gg->get_NUM_TH_PHASES() << " != input length " << i_param.toe_heel_phase_ratio.length()
                 << ", or sum_ratio = " << sum_ratio << " is not 1.0." << std::endl;
   }
-  std::cerr << "[" << m_profile.instance_name << "]   use_toe_joint = " << (gg->get_use_toe_joint()?"true":"false") << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   use_toe_joint = " << (gg->get_use_toe_joint()?"true":"false") << ", use_toe_heel_transition = " << (gg->get_use_toe_heel_transition()?"true":"false") << std::endl;
   return true;
 };
 
@@ -1104,6 +1105,7 @@ bool AutoBalancer::getGaitGeneratorParam(OpenHRP::AutoBalancerService::GaitGener
   gg->get_toe_heel_phase_ratio(ratio);
   for (int i = 0; i < gg->get_NUM_TH_PHASES(); i++) i_param.toe_heel_phase_ratio[i] = ratio[i];
   i_param.use_toe_joint = gg->get_use_toe_joint();
+  i_param.use_toe_heel_transition = gg->get_use_toe_heel_transition();
   return true;
 };
 

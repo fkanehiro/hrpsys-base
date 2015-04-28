@@ -142,6 +142,8 @@ module OpenHRP
       sequence<double> toe_heel_phase_ratio;
       /// Use toe joint or not in toe-off heel-contact motion.
       boolean use_toe_joint;
+      /// Use toe heel zmp transition. If true, zmp moves among default position, toe position (described by toe_zmp_offset_x), and heel position (described by heel_zmp_offset_x).
+      boolean use_toe_heel_transition;
     };
 
     /**
