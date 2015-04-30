@@ -7,6 +7,8 @@
 
 int main(int argc, char* argv[])
 {
+    SimpleZMPDistributor szd;
+    //
     std::vector<std::vector<Eigen::Vector2d> > fs;
     std::vector<Eigen::Vector2d> tmpfs;
     tmpfs.push_back(Eigen::Vector2d(0.137525, 0.070104));
@@ -15,8 +17,12 @@ int main(int argc, char* argv[])
     tmpfs.push_back(Eigen::Vector2d(-0.106925, 0.070104));
     fs.push_back(tmpfs);
     fs.push_back(tmpfs);
-    SimpleZMPDistributor szd(fs);
-    //
+    // szd.set_vertices(fs);
+    szd.set_leg_inside_margin(0.070104);
+    szd.set_leg_front_margin(0.137525);
+    szd.set_leg_rear_margin(0.106925);
+    szd.set_vertices_from_margin_params();
+    szd.print_vertices("");
     std::vector<hrp::Vector3> ee_pos;
     std::vector<hrp::Vector3> cop_pos;
     std::vector<hrp::Matrix33> ee_rot;

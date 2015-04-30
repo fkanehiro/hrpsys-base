@@ -18,9 +18,7 @@ class FootSupportPolygon
 {
     std::vector<std::vector<Eigen::Vector2d> > foot_vertices; // RLEG, LLEG
 public:
-    FootSupportPolygon (const std::vector<std::vector<Eigen::Vector2d> >& fvs) : foot_vertices(fvs)
-    {
-    };
+    FootSupportPolygon () {};
     bool inside_foot (size_t idx)
     {
         return true;
@@ -29,6 +27,18 @@ public:
     {
         return foot_vertices[foot_idx][vtx_idx];
     };
+    void set_vertices (const std::vector<std::vector<Eigen::Vector2d> >& vs) { foot_vertices = vs; };
+    void get_vertices (std::vector<std::vector<Eigen::Vector2d> >& vs) { vs = foot_vertices; };
+    void print_vertices (const std::string& str)
+    {
+        for (size_t i = 0; i < foot_vertices.size(); i++) {
+            std::cerr << "[" << str << "]   vs = ";
+            for (size_t j = 0; j < foot_vertices[i].size(); j++) {
+                std::cerr << "[" << foot_vertices[i][j](0) << " " << foot_vertices[i][j](1) << "] ";
+            }
+            std::cerr << "[m]" << std::endl;;
+        }
+    }
 };
 
 //
@@ -38,12 +48,8 @@ class SimpleZMPDistributor
     FootSupportPolygon fs;
     double leg_inside_margin, leg_front_margin, leg_rear_margin, wrench_alpha_blending;
 public:
-    SimpleZMPDistributor (const std::vector<std::vector<Eigen::Vector2d> >& fvs) : fs(fvs)
+    SimpleZMPDistributor () : wrench_alpha_blending (0.5)
     {
-        leg_inside_margin = fs.get_foot_vertex(0, 0)(1);
-        leg_front_margin = fs.get_foot_vertex(0, 0)(0);
-        leg_rear_margin = std::fabs(fs.get_foot_vertex(0, 3)(0));
-        wrench_alpha_blending = 0.5;
     };
 
     inline bool is_inside_foot (const hrp::Vector3& leg_pos, const bool is_lleg)
@@ -64,16 +70,40 @@ public:
         std::cerr << "[" << str << "]   leg_inside_margin = " << leg_inside_margin << "[m], leg_front_margin = " << leg_front_margin << "[m], leg_rear_margin = " << leg_rear_margin << "[m]" << std::endl;
         std::cerr << "[" << str << "]   wrench_alpha_blending = " << wrench_alpha_blending << std::endl;
     }
+    void print_vertices (const std::string& str)
+    {
+        fs.print_vertices(str);
+    };
     // setter
     void set_wrench_alpha_blending (const double a) { wrench_alpha_blending = a; };
     void set_leg_front_margin (const double a) { leg_front_margin = a; };
     void set_leg_rear_margin (const double a) { leg_rear_margin = a; };
     void set_leg_inside_margin (const double a) { leg_inside_margin = a; };
+    void set_vertices (const std::vector<std::vector<Eigen::Vector2d> >& vs)
+    {
+        fs.set_vertices(vs);
+        // leg_inside_margin = fs.get_foot_vertex(0, 0)(1);
+        // leg_front_margin = fs.get_foot_vertex(0, 0)(0);
+        // leg_rear_margin = std::fabs(fs.get_foot_vertex(0, 3)(0));
+    };
+    void set_vertices_from_margin_params ()
+    {
+        std::vector<std::vector<Eigen::Vector2d> > vec;
+        std::vector<Eigen::Vector2d> tvec;
+        tvec.push_back(Eigen::Vector2d(leg_front_margin, leg_inside_margin));
+        tvec.push_back(Eigen::Vector2d(leg_front_margin, -1*leg_inside_margin));
+        tvec.push_back(Eigen::Vector2d(leg_rear_margin, -1*leg_inside_margin));
+        tvec.push_back(Eigen::Vector2d(leg_rear_margin, leg_inside_margin));
+        vec.push_back(tvec);
+        vec.push_back(tvec);
+        set_vertices(vec);
+    };
     // getter
     double get_wrench_alpha_blending () { return wrench_alpha_blending; };
     double get_leg_front_margin () { return leg_front_margin; };
     double get_leg_rear_margin () { return leg_rear_margin; };
     double get_leg_inside_margin () { return leg_inside_margin; };
+    void get_vertices (std::vector<std::vector<Eigen::Vector2d> >& vs) { fs.get_vertices(vs); };
     //
     double calcAlpha (const hrp::Vector3& tmprefzmp,
                       const std::vector<hrp::Vector3>& ee_pos,

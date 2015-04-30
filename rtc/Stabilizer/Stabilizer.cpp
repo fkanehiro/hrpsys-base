@@ -318,8 +318,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   m_debugData.data.length(1); m_debugData.data[0] = 0.0;
 
   //
-  std::vector<std::vector<Eigen::Vector2d> > tmp_fs;
-  szd = new SimpleZMPDistributor(tmp_fs);
+  szd = new SimpleZMPDistributor();
 
   return RTC::RTC_OK;
 }
@@ -1225,6 +1224,7 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
   szd->set_leg_inside_margin(i_stp.eefm_leg_inside_margin);
   szd->set_leg_front_margin(i_stp.eefm_leg_front_margin);
   szd->set_leg_rear_margin(i_stp.eefm_leg_rear_margin);
+  szd->set_vertices_from_margin_params();
   eefm_cogvel_cutoff_freq = i_stp.eefm_cogvel_cutoff_freq;
   szd->set_wrench_alpha_blending(i_stp.eefm_wrench_alpha_blending);
   eefm_gravitational_acceleration = i_stp.eefm_gravitational_acceleration;
@@ -1241,6 +1241,7 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
   std::cerr << "[" << m_profile.instance_name << "]   eefm_pos_transition_time = " << eefm_pos_transition_time << "[s], eefm_pos_margin_time = " << eefm_pos_margin_time << "[s]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   eefm_cogvel_cutoff_freq = " << eefm_cogvel_cutoff_freq << "[Hz]" << std::endl;
   szd->print_params(std::string(m_profile.instance_name));
+  szd->print_vertices(std::string(m_profile.instance_name));
   std::cerr << "[" << m_profile.instance_name << "]   eefm_gravitational_acceleration = " << eefm_gravitational_acceleration << "[m/s^2]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]  COMMON" << std::endl;
   if (control_mode == MODE_IDLE) {
