@@ -86,8 +86,8 @@ Vector3 omegaFromRotEx(const Matrix33& r)
     }
 }
 
-JointPathEx::JointPathEx(BodyPtr& robot, Link* base, Link* end, double control_cycle)
-    : JointPath(base, end), sr_gain(1.0), manipulability_limit(0.1), manipulability_gain(0.001), maxIKPosErrorSqr(1.0e-8), maxIKRotErrorSqr(1.0e-6), maxIKIteration(50) {
+JointPathEx::JointPathEx(BodyPtr& robot, Link* base, Link* end, double control_cycle, bool _use_inside_joint_weight_retrieval)
+    : JointPath(base, end), sr_gain(1.0), manipulability_limit(0.1), manipulability_gain(0.001), maxIKPosErrorSqr(1.0e-8), maxIKRotErrorSqr(1.0e-6), maxIKIteration(50), use_inside_joint_weight_retrieval(_use_inside_joint_weight_retrieval) {
   for (int i = 0 ; i < numJoints(); i++ ) {
     joints.push_back(joint(i));
   }
@@ -150,10 +150,15 @@ bool JointPathEx::calcJacobianInverseNullspace(dmatrix &J, dmatrix &Jinv, dmatri
             if (isnan(r)) r = 0;
         }
 
+        // If use_inside_joint_weight_retrieval = true (true by default), use T. F. Chang and R.-V. Dubeby weight retrieval inward.
+        // Otherwise, joint weight is always calculated from limit value to resolve https://github.com/fkanehiro/hrpsys-base/issues/516.
         if (( r - avoid_weight_gain[j] ) >= 0 ) {
 	  w(j, j) = optional_weight_vector[j] * ( 1.0 / ( 1.0 + r) );
 	} else {
-	  w(j, j) = optional_weight_vector[j] * 1.0;
+            if (use_inside_joint_weight_retrieval)
+                w(j, j) = optional_weight_vector[j] * 1.0;
+            else
+                w(j, j) = optional_weight_vector[j] * ( 1.0 / ( 1.0 + r) );
 	}
         avoid_weight_gain[j] = r;
     }

@@ -209,7 +209,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
       else if (ee_name == "lleg") ikp.sensor_name = "lfsensor";
       else ikp.sensor_name = "";
       stikp.push_back(ikp);
-      jpe_v.push_back(hrp::JointPathExPtr(new hrp::JointPathEx(m_robot, m_robot->link(ee_base), m_robot->link(ee_target), dt)));
+      jpe_v.push_back(hrp::JointPathExPtr(new hrp::JointPathEx(m_robot, m_robot->link(ee_base), m_robot->link(ee_target), dt, false)));
       // Fix for toe joint
       if (ee_name.find("leg") != std::string::npos && jpe_v.back()->numJoints() == 7) { // leg and has 7dof joint (6dof leg +1dof toe)
           std::vector<double> optw;
