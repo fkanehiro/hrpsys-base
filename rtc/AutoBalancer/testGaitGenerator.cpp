@@ -26,6 +26,9 @@ private:
             // }
             fprintf(fp, "%f ", i * dt);
             for (size_t ii = 0; ii < 3; ii++) {
+                fprintf(fp, "%f ", gg.get_refzmp()(ii));
+            }
+            for (size_t ii = 0; ii < 3; ii++) {
                 double cogpos;
                 if (ii==2) {
                     coordinates tmpc;
@@ -34,44 +37,133 @@ private:
                 } else {
                     cogpos = gg.get_cog()(ii);
                 }
-                fprintf(fp, "%f %f %f %f %f %f ",
-                        gg.get_refzmp()(ii),
-                        cogpos,
-                        gg.get_support_leg_coords().pos(ii),
-                        gg.get_swing_leg_coords().pos(ii),
-                        gg.get_support_foot_zmp_offset()(ii),
-                        gg.get_swing_foot_zmp_offset()(ii)
-                        );
+                fprintf(fp, "%f ", cogpos);
             }
+            for (size_t ii = 0; ii < 3; ii++) {
+                fprintf(fp, "%f ", (gg.get_support_leg() == "rleg") ? gg.get_support_leg_coords().pos(ii) : gg.get_swing_leg_coords().pos(ii));
+            }
+            for (size_t ii = 0; ii < 3; ii++) {
+                fprintf(fp, "%f ", (gg.get_support_leg() == "lleg") ? gg.get_support_leg_coords().pos(ii) : gg.get_swing_leg_coords().pos(ii));
+            }
+            hrp::Vector3 rpy;
+            rpy = hrp::rpyFromRot((gg.get_support_leg() == "rleg") ? gg.get_support_leg_coords().rot : gg.get_swing_leg_coords().rot);
+            for (size_t ii = 0; ii < 3; ii++) {
+                fprintf(fp, "%f ", 180.0*rpy(ii)/M_PI);
+            }
+            rpy = hrp::rpyFromRot((gg.get_support_leg() == "lleg") ? gg.get_support_leg_coords().rot : gg.get_swing_leg_coords().rot);
+            for (size_t ii = 0; ii < 3; ii++) {
+                fprintf(fp, "%f ", 180.0*rpy(ii)/M_PI);
+            }
+            for (size_t ii = 0; ii < 3; ii++) {
+                fprintf(fp, "%f ", (gg.get_support_leg() == "rleg") ? gg.get_support_foot_zmp_offset()(ii) : gg.get_swing_foot_zmp_offset()(ii));
+            }
+            for (size_t ii = 0; ii < 3; ii++) {
+                fprintf(fp, "%f ", (gg.get_support_leg() == "lleg") ? gg.get_support_foot_zmp_offset()(ii) : gg.get_swing_foot_zmp_offset()(ii));
+            }
+            fprintf(fp, "%f %f ",
+                    gg.get_current_swing_time(gait_generator::RLEG),
+                    gg.get_current_swing_time(gait_generator::LLEG));
             fprintf(fp, "\n");
             i++;
         }
         fclose(fp);
 
         /* plot */
-        FILE* gp = popen("gnuplot", "w");
-        fprintf(gp, "set multiplot layout 3, 1\n");
-        std::string titles[3] = {"X", "Y", "Z"};
-        int data_size = 6;
-        for (size_t ii = 0; ii < 3; ii++) {
-            fprintf(gp, "set title \"%s\"\n", titles[ii].c_str());
-            fprintf(gp, "set xlabel \"Time [s]\"\n");
-            fprintf(gp, "set ylabel \"[m]\"\n");
-            fprintf(gp, "plot ");
-            fprintf(gp, "\"%s\" using 1:%d with lines title \"refzmp\", \"%s\" using 1:%d with lines title \"cog\"",
-                    fname.c_str(), ( ii * data_size + 2), fname.c_str(), ( ii * data_size + 3));
-            // fprintf(gp, ",");
-            // fprintf(gp, "\"%s\" using 1:%d with lines title \"support\", \"%s\" using 1:%d with lines title \"swing\"",
-            //         fname.c_str(), ( ii * data_size + 4), fname.c_str(), ( ii * data_size + 5));
-            // fprintf(gp, ",");
-            // fprintf(gp, "\"%s\" using 1:%d with lines title \"support zmpoff\", \"%s\" using 1:%d with lines title \"swing zmpoff\"",
-            //         fname.c_str(), ( ii * data_size + 6), fname.c_str(), ( ii * data_size + 7));
-            fprintf(gp, "\n");
+        size_t gpsize = 6;
+        size_t tmp_start = 2;
+        FILE* gps[gpsize];
+        {
+            FILE* gp = gps[0];
+            gp = popen("gnuplot", "w");
+            fprintf(gp, "set multiplot layout 3, 1 title 'COG and ZMP'\n");
+            std::string titles[3] = {"X", "Y", "Z"};
+            for (size_t ii = 0; ii < 3; ii++) {
+                fprintf(gp, "set title '%s'\n", titles[ii].c_str());
+                fprintf(gp, "set xlabel 'Time [s]'\n");
+                fprintf(gp, "set ylabel '[m]'\n");
+                fprintf(gp, "plot '%s' using 1:%d with lines title 'refzmp', '%s' using 1:%d with lines title 'cog'\n",
+                        fname.c_str(), (tmp_start+ii), fname.c_str(), (tmp_start+3+ii));
+            }
+            fflush(gp);
+            tmp_start += 6;
         }
-        fflush(gp);
+        {
+            FILE* gp = gps[1];
+            gp = popen("gnuplot", "w");
+            fprintf(gp, "set multiplot layout 3, 1 title 'Swing support pos'\n");
+            std::string titles[3] = {"X", "Y", "Z"};
+            for (size_t ii = 0; ii < 3; ii++) {
+                fprintf(gp, "set title '%s'\n", titles[ii].c_str());
+                fprintf(gp, "set xlabel 'Time [s]'\n");
+                fprintf(gp, "set ylabel '[m]'\n");
+                fprintf(gp, "plot '%s' using 1:%d with lines title 'rleg', '%s' using 1:%d with lines title 'lleg'\n",
+                        fname.c_str(), (tmp_start+ii), fname.c_str(), (tmp_start+3+ii));
+            }
+            fflush(gp);
+            tmp_start += 6;
+        }
+        {
+            FILE* gp = gps[2];
+            gp = popen("gnuplot", "w");
+            fprintf(gp, "set multiplot layout 3, 1 title 'Swing support rot'\n");
+            std::string titles[3] = {"Roll", "Pitch", "Yaw"};
+            for (size_t ii = 0; ii < 3; ii++) {
+                fprintf(gp, "set title '%s'\n", titles[ii].c_str());
+                fprintf(gp, "set xlabel 'Time [s]'\n");
+                fprintf(gp, "set ylabel '[deg]'\n");
+                fprintf(gp, "plot '%s' using 1:%d with lines title 'rleg', '%s' using 1:%d with lines title 'lleg'\n",
+                        fname.c_str(), (tmp_start+ii), fname.c_str(), (tmp_start+3+ii));
+            }
+            fflush(gp);
+            tmp_start += 6;
+        }
+        {
+            FILE* gp = gps[3];
+            gp = popen("gnuplot", "w");
+            fprintf(gp, "set multiplot layout 3, 1 title 'Swing support zmp offset'\n");
+            std::string titles[3] = {"X", "Y", "Z"};
+            for (size_t ii = 0; ii < 3; ii++) {
+                fprintf(gp, "set title '%s'\n", titles[ii].c_str());
+                fprintf(gp, "set xlabel 'Time [s]'\n");
+                fprintf(gp, "set ylabel '[m]'\n");
+                fprintf(gp, "plot '%s' using 1:%d with lines title 'rleg zmpoff', '%s' using 1:%d with lines title 'lleg zmpoff'\n",
+                        fname.c_str(), (tmp_start+ii), fname.c_str(), (tmp_start+3+ii));
+            }
+            fflush(gp);
+            tmp_start += 6;
+        }
+        {
+            FILE* gp = gps[4];
+            gp = popen("gnuplot", "w");
+            fprintf(gp, "set multiplot layout 1,1 title 'Swing support remain time'\n");
+            fprintf(gp, "set title 'Remain Time'\n");
+            fprintf(gp, "set xlabel 'Time [s]'\n");
+            fprintf(gp, "set ylabel 'Tims [s]'\n");
+            fprintf(gp, "plot '%s' using 1:%d with lines title 'rleg', '%s' using 1:%d with lines title 'lleg'\n",
+                    fname.c_str(), (tmp_start+0), fname.c_str(), (tmp_start+1));
+            fflush(gp);
+        }
+        {
+            FILE* gp = gps[5];
+            gp = popen("gnuplot", "w");
+            fprintf(gp, "set multiplot layout 2,1 title 'Swing support pos trajectory'\n");
+            fprintf(gp, "set title 'X-Z'\n");
+            fprintf(gp, "set xlabel 'X [m]'\n");
+            fprintf(gp, "set ylabel 'Z [m]'\n");
+            fprintf(gp, "plot '%s' using %d:%d with lines title 'rleg', '%s' using %d:%d with lines title 'lleg'\n",
+                    fname.c_str(), (2+3+3+0), (2+3+3+2), fname.c_str(), (2+3+3+3+0), (2+3+3+3+2));
+            fprintf(gp, "set title 'Y-Z'\n");
+            fprintf(gp, "set xlabel 'Y [m]'\n");
+            fprintf(gp, "set ylabel 'Z [m]'\n");
+            fprintf(gp, "plot '%s' using %d:%d with lines title 'rleg', '%s' using %d:%d with lines title 'lleg'\n",
+                    fname.c_str(), (2+3+3+1), (2+3+3+2), fname.c_str(), (2+3+3+3+1), (2+3+3+3+2));
+            fflush(gp);
+        }
         double tmp;
         std::cin >> tmp;
-        pclose(gp);
+        for (size_t ii = 0; ii < gpsize; ii++) {
+            pclose(gps[ii]);
+        }
     };
 
     void gen_and_plot_walk_pattern(gait_generator& gg, const coordinates& initial_support_leg_coords, const coordinates& initial_swing_leg_dst_coords)
@@ -174,6 +266,10 @@ public:
         gg.set_default_zmp_offsets(dzo);
         gg.set_toe_zmp_offset_x(137*1e-3);
         gg.set_heel_zmp_offset_x(-105*1e-3);
+        gg.set_toe_pos_offset_x(137*1e-3);
+        gg.set_heel_pos_offset_x(-105*1e-3);
+        gg.set_toe_angle(30);
+        gg.set_heel_angle(10);
         // gg.set_use_toe_heel_transition(false);
         gg.set_use_toe_heel_transition(true);
         gg.clear_footstep_node_list();
@@ -191,6 +287,10 @@ public:
         gg.set_default_zmp_offsets(dzo);
         gg.set_toe_zmp_offset_x(137*1e-3);
         gg.set_heel_zmp_offset_x(-105*1e-3);
+        gg.set_toe_pos_offset_x(137*1e-3);
+        gg.set_heel_pos_offset_x(-105*1e-3);
+        gg.set_toe_angle(30);
+        gg.set_heel_angle(10);
         // gg.set_use_toe_heel_transition(false);
         gg.set_use_toe_heel_transition(true);
         gg.clear_footstep_node_list();
@@ -200,6 +300,23 @@ public:
         coordinates initial_support_leg_coords(hrp::Vector3(initial_foot_mid_rot * (gg.get_footstep_front_leg()=="rleg"?leg_pos[1]:leg_pos[0])), initial_foot_mid_rot);
         coordinates initial_swing_leg_dst_coords(hrp::Vector3(initial_foot_mid_rot * (gg.get_footstep_front_leg()!="rleg"?leg_pos[1]:leg_pos[0])), initial_foot_mid_rot);
         gen_and_plot_walk_pattern(gg, initial_support_leg_coords, initial_swing_leg_dst_coords);
+
+    };
+
+    void test9 ()
+    {
+        gait_generator gg(dt, leg_pos, 1e-3*150, 1e-3*50, 10, 1e-3*50);
+        /* initialize sample footstep_list */
+        gg.clear_footstep_node_list();
+        gg.set_default_orbit_type(gait_generator::STAIR);
+        gg.set_swing_trajectory_delay_time_offset (0.15);
+        gg.append_footstep_node("rleg", coordinates(hrp::Vector3(hrp::Vector3(0, 0, 0)+leg_pos[0])));
+        gg.append_footstep_node("lleg", coordinates(hrp::Vector3(hrp::Vector3(0, 0, 0)+leg_pos[1])));
+        gg.append_footstep_node("rleg", coordinates(hrp::Vector3(hrp::Vector3(100*1e-3, 0, 100*1e-3)+leg_pos[0])));
+        gg.append_footstep_node("lleg", coordinates(hrp::Vector3(hrp::Vector3(200*1e-3, 0, 200*1e-3)+leg_pos[1])));
+        gg.append_footstep_node("rleg", coordinates(hrp::Vector3(hrp::Vector3(300*1e-3, 0, 100*1e-3)+leg_pos[0])));
+        gg.append_footstep_node("lleg", coordinates(hrp::Vector3(hrp::Vector3(300*1e-3, 0, 100*1e-3)+leg_pos[1])));
+        gen_and_plot_walk_pattern(gg);
     };
 };
 
@@ -236,6 +353,8 @@ int main(int argc, char* argv[])
           testGaitGeneratorHRP2JSK().test7();
       } else if (std::string(argv[1]) == "--test8") {
           testGaitGeneratorHRP2JSK().test8();
+      } else if (std::string(argv[1]) == "--test9") {
+          testGaitGeneratorHRP2JSK().test9();
       }
   }
   return 0;

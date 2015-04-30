@@ -150,6 +150,20 @@ def demo():
     hcf.abc_svc.waitFootSteps()
     hcf.abc_svc.stopAutoBalancer();
     print "Non default Stride()=>OK"
+    #   8. Use toe heel contact
+    hcf.abc_svc.startAutoBalancer(["rleg", "lleg"]);
+    ggp=hcf.abc_svc.getGaitGeneratorParam()[1];
+    ggp.toe_pos_offset_x = 1e-3*182.0;
+    ggp.heel_pos_offset_x = 1e-3*-72.0;
+    ggp.toe_zmp_offset_x = 1e-3*182.0;
+    ggp.heel_zmp_offset_x = 1e-3*-72.0;
+    ggp.toe_angle = 20;
+    ggp.heel_angle = 10;
+    hcf.abc_svc.setGaitGeneratorParam(ggp);
+    hcf.abc_svc.goPos(0.3, 0, 0);
+    hcf.abc_svc.waitFootSteps()
+    hcf.abc_svc.stopAutoBalancer();
+    print "Toe heel contact=>OK"
     #  7. walking by fixing 
     # abc_svc.startAutoBalancer([AutoBalancerService.AutoBalancerLimbParam("rleg", [0,0,0], [0,0,0,0]),
     #                   AutoBalancerService.AutoBalancerLimbParam("lleg", [0,0,0], [0,0,0,0]),
