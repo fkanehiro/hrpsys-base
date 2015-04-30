@@ -16,7 +16,11 @@ set(target Stabilizer StabilizerComp)
 
 add_executable(testTwoDofController testTwoDofController.cpp ${comp_sources})
 target_link_libraries(testTwoDofController ${libs})
-set(target Stabilizer StabilizerComp testTwoDofController)
+add_executable(testZMPDistributor testZMPDistributor.cpp ZMPDistributor.h)
+target_link_libraries(testZMPDistributor ${libs})
+set(target Stabilizer StabilizerComp testTwoDofController testZMPDistributor)
+
+
 
 install(TARGETS ${target}
   RUNTIME DESTINATION bin CONFIGURATIONS Release Debug
