@@ -12,7 +12,7 @@
 
 #include <hrpModel/Body.h>
 #include <iostream>
-//typedef Eigen::Vector2d Vector2;
+#include "../ImpedanceController/JointPathEx.h"
 
 class FootSupportPolygon
 {
@@ -194,6 +194,80 @@ public:
             ref_foot_moment[0] = foot_dist_coords_rot * ref_foot_moment[0];
             ref_foot_moment[1] = foot_dist_coords_rot * ref_foot_moment[1];
         }
+#if 0
+        {
+            // Foot-distribution-coords frame =>
+            hrp::Vector3 foot_dist_coords_y = (cop_pos[1] - cop_pos[0]); // e_y'
+            foot_dist_coords_y(2) = 0.0;
+            foot_dist_coords_y.normalize();
+            hrp::Vector3 foot_dist_coords_x = hrp::Vector3(foot_dist_coords_y.cross(hrp::Vector3::UnitZ())); // e_x'
+            hrp::Matrix33 foot_dist_coords_rot;
+            foot_dist_coords_rot(0,0) = foot_dist_coords_x(0);
+            foot_dist_coords_rot(1,0) = foot_dist_coords_x(1);
+            foot_dist_coords_rot(2,0) = foot_dist_coords_x(2);
+            foot_dist_coords_rot(0,1) = foot_dist_coords_y(0);
+            foot_dist_coords_rot(1,1) = foot_dist_coords_y(1);
+            foot_dist_coords_rot(2,1) = foot_dist_coords_y(2);
+            foot_dist_coords_rot(0,2) = 0;
+            foot_dist_coords_rot(1,2) = 0;
+            foot_dist_coords_rot(2,2) = 1;
+            tau_0 = hrp::Vector3::Zero();
+            //
+            hrp::dvector fvec(3);
+            fvec(0) = total_fz;
+            fvec(1) = tau_0(0);
+            fvec(2) = tau_0(1);
+            hrp::dmatrix Gmat(3,6);
+            Gmat(0,0) = 1.0; Gmat(0,1) = 0.0; Gmat(0,2) = 0.0;
+            Gmat(0,3) = 1.0; Gmat(0,4) = 0.0; Gmat(0,5) = 0.0;
+            Gmat(1,0) = (cop_pos[0](1)-new_refzmp(1));
+            Gmat(1,1) = 1.0;
+            Gmat(1,2) = 0.0;
+            Gmat(1,3) = (cop_pos[1](1)-new_refzmp(1));
+            Gmat(1,4) = 1.0;
+            Gmat(1,5) = 0.0;
+            Gmat(2,0) = -(cop_pos[0](0)-new_refzmp(0));
+            Gmat(2,1) = 0.0;
+            Gmat(2,2) = 1.0;
+            Gmat(2,3) = -(cop_pos[1](0)-new_refzmp(0));
+            Gmat(2,4) = 0.0;
+            Gmat(2,5) = 1.0;
+            hrp::dmatrix Wmat(6,6);
+            for (size_t i = 0; i < 6; i++) {
+                for (size_t j = 0; j < 6; j++) {
+                    Wmat(i,j) = 0.0;
+                }
+            }
+            double beta_r =0 , beta_l =0;
+            double kk = 16.0;
+            if (alpha > 0.5) beta_r = std::pow((2*alpha-1.0), kk);
+            else beta_r = 0;
+            if (alpha < 0.5) beta_l = std::pow((2*alpha-1.0), kk);
+            else beta_l = 0;
+            Wmat(0,0) = alpha;
+            Wmat(1,1) = beta_r;
+            Wmat(2,2) = alpha;
+            Wmat(3,3) = (1-alpha);
+            Wmat(5,5) = (1-alpha);
+            Wmat(4,4) = beta_l;
+            // if (printp) {
+            //     std::cerr << Wmat << std::endl;
+            // }
+            hrp::dmatrix Gmat_ret(6,3);
+            hrp::calcSRInverse(Gmat, Gmat_ret, 0.0, Wmat);
+            hrp::dvector fmvec(6);
+            fmvec = Gmat_ret* fvec;
+            ref_foot_force[0] = hrp::Vector3(0,0,fmvec(0));
+            ref_foot_force[1] = hrp::Vector3(0,0,fmvec(3));
+            ref_foot_moment[0] = hrp::Vector3(fmvec(1),fmvec(2),0);
+            ref_foot_moment[1] = hrp::Vector3(fmvec(4),fmvec(5),0);
+            // <= Foot-distribution-coords frame
+            // Convert foot-distribution-coords frame => actual world frame
+            ref_foot_moment[0] = foot_dist_coords_rot * ref_foot_moment[0];
+            ref_foot_moment[1] = foot_dist_coords_rot * ref_foot_moment[1];
+        }
+#endif
+
         if (printp) {
             std::cerr << "[" << print_str << "]   alpha = " << alpha << ", fz_alpha = " << fz_alpha << std::endl;
             std::cerr << "[" << print_str << "]   "

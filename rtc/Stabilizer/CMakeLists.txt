@@ -16,7 +16,7 @@ set(target Stabilizer StabilizerComp)
 
 add_executable(testTwoDofController testTwoDofController.cpp ${comp_sources})
 target_link_libraries(testTwoDofController ${libs})
-add_executable(testZMPDistributor testZMPDistributor.cpp ZMPDistributor.h)
+add_executable(testZMPDistributor testZMPDistributor.cpp ZMPDistributor.h ../ImpedanceController/JointPathEx.cpp)
 target_link_libraries(testZMPDistributor ${libs})
 set(target Stabilizer StabilizerComp testTwoDofController testZMPDistributor)
 
