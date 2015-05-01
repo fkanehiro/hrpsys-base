@@ -235,32 +235,33 @@ namespace rats
         pos = pos + _dt * vel;
       };
     protected:
-      double total_time, time_offset, current_time, double_support_time_half; // [s]
+      double time_offset; // [s]
+      size_t total_count, current_count, double_support_count_half; // time/dt
       virtual hrp::Vector3 interpolate_antecedent_path (const hrp::Vector3& start, const hrp::Vector3& goal, const double height, const double tmp_ratio) = 0;
     public:
-      delay_hoffarbib_trajectory_generator () : total_time(0), time_offset(0.35), current_time(0) {};
+      delay_hoffarbib_trajectory_generator () : time_offset(0.35), total_count(0), current_count(0), double_support_count_half(0) {};
       ~delay_hoffarbib_trajectory_generator() { };
       void set_dt (const double __dt) { _dt = __dt; };
       void set_swing_trajectory_delay_time_offset (const double _time_offset) { time_offset = _time_offset; };
       void reset (const size_t _one_step_len, const double default_double_support_ratio)
       {
-        total_time = _one_step_len * _dt;
-        current_time = 0;
-        double_support_time_half = default_double_support_ratio*total_time/2.0;
+        total_count = _one_step_len;
+        current_count = 0;
+        double_support_count_half = (default_double_support_ratio*total_count/2.0);
       };
       void get_trajectory_point (hrp::Vector3& ret, const hrp::Vector3& start, const hrp::Vector3& goal, const double height)
       {
-        if ( double_support_time_half <= current_time && current_time <= total_time - double_support_time_half ) { // swing phase
-          double swing_remain_time = total_time - current_time - double_support_time_half;
-          double swing_total_time = total_time - double_support_time_half*2;
-          if (swing_remain_time > time_offset) { // antecedent path is still interpolating
-            hoffarbib_interpolation (time_offset, interpolate_antecedent_path(start, goal, height, ((swing_total_time - swing_remain_time) / (swing_total_time - time_offset))));
-          } else if (swing_remain_time > 1e-5) { // antecedent path already reached to goal
-            hoffarbib_interpolation (swing_remain_time, goal);
+        if ( double_support_count_half <= current_count && current_count < total_count - double_support_count_half ) { // swing phase
+          size_t swing_remain_count = total_count - current_count - double_support_count_half;
+          size_t swing_total_count = total_count - double_support_count_half*2;
+          if (swing_remain_count*_dt > time_offset) { // antecedent path is still interpolating
+            hoffarbib_interpolation (time_offset, interpolate_antecedent_path(start, goal, height, ((swing_total_count - swing_remain_count) / (swing_total_count - time_offset/_dt))));
+          } else if (swing_remain_count > 0) { // antecedent path already reached to goal
+            hoffarbib_interpolation (swing_remain_count*_dt, goal);
           } else {
             pos = goal;
           }
-        } else if ( current_time < double_support_time_half ) { // first double support phase
+        } else if ( current_count < double_support_count_half ) { // first double support phase
           pos = start;
           vel = hrp::Vector3::Zero();
           acc = hrp::Vector3::Zero();
@@ -270,7 +271,7 @@ namespace rats
           acc = hrp::Vector3::Zero();
         }
         ret = pos;
-        current_time += _dt;
+        current_count++;
       };
       double get_swing_trajectory_delay_time_offset () { return time_offset; };
       // interpolate path vector
