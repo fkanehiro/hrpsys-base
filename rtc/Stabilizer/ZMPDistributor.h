@@ -274,10 +274,12 @@ public:
                 }
             }
             double beta_r =0 , beta_l =0;
-            double kk = 16.0;
-            if (alpha > 0.5) beta_r = std::pow((2*alpha-1.0), kk);
+            double kk = 8.0;
+            double alpha_r = 0.9;
+            double alpha_l = 0.1;
+            if (alpha > alpha_r) beta_r = std::pow((alpha/alpha_r-1.0), kk)/std::pow((1.0/alpha_r-1.0), kk);
             else beta_r = 0;
-            if (alpha < 0.5) beta_l = std::pow((2*alpha-1.0), kk);
+            if (alpha < alpha_l) beta_l = std::pow((alpha/alpha_l-1.0), kk);
             else beta_l = 0;
             Wmat(0,0) = alpha;
             Wmat(1,1) = beta_r;
@@ -417,6 +419,7 @@ public:
         ref_foot_force[1] = hrp::Vector3(0,0,tmpv(0));
         ref_foot_moment[1] = hrp::Vector3(tmpv(1),tmpv(2),0);
         if (printp) {
+            std::cerr << "[" << print_str << "] force moment distribution" << std::endl;
             //std::cerr << "[" << print_str << "]   alpha = " << alpha << ", fz_alpha = " << fz_alpha << std::endl;
             // std::cerr << "[" << print_str << "]   "
             //           << "total_tau    = " << hrp::Vector3(tau_0).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[Nm]" << std::endl;
