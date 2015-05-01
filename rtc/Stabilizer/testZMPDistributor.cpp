@@ -2,6 +2,7 @@
 
 #include "ZMPDistributor.h"
 /* samples */
+#include <stdio.h>
 #include <cstdio>
 #include <iostream>
 
