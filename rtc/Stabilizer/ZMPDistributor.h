@@ -14,6 +14,11 @@
 #include <iostream>
 #include "../ImpedanceController/JointPathEx.h"
 
+#ifdef USE_QPOASES
+#include <qpOASES.hpp>
+using namespace qpOASES;
+#endif
+
 class FootSupportPolygon
 {
     std::vector<std::vector<Eigen::Vector2d> > foot_vertices; // RLEG, LLEG
@@ -312,6 +317,120 @@ public:
                       << "ref_moment_L = " << hrp::Vector3(ref_foot_moment[1]).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[Nm]" << std::endl;
         }
     };
+
+#ifdef USE_QPOASES
+    void distributeZMPToForceMomentsQP (hrp::Vector3* ref_foot_force, hrp::Vector3* ref_foot_moment,
+                                        const std::vector<hrp::Vector3>& ee_pos,
+                                        const std::vector<hrp::Vector3>& cop_pos,
+                                        const std::vector<hrp::Matrix33>& ee_rot,
+                                        const hrp::Vector3& new_refzmp, const hrp::Vector3& ref_zmp,
+                                        const double total_fz, const bool printp = true, const std::string& print_str = "")
+    {
+        double alpha = calcAlpha(new_refzmp, ee_pos, ee_rot);
+        hrp::dvector total_fm(3);
+        total_fm(0) = total_fz;
+        total_fm(1) = 0;
+        total_fm(2) = 0;
+        size_t state_dim = 8;
+        //
+        std::vector<hrp::dvector> ff;
+        ff.push_back(hrp::dvector(state_dim/2));
+        ff.push_back(hrp::dvector(state_dim/2));
+        std::vector<hrp::dmatrix> mm;
+        mm.push_back(hrp::dmatrix(3,state_dim/2));
+        mm.push_back(hrp::dmatrix(3,state_dim/2));
+        //
+        hrp::dmatrix Gmat(3,state_dim);
+        for (size_t i = 0; i < state_dim; i++) {
+            Gmat(0,i) = 1.0;
+        }
+        for (size_t i = 0; i < state_dim/2; i++) {
+            hrp::Vector3 fpos[2];
+            fpos[0] = ee_rot[0]*hrp::Vector3(fs.get_foot_vertex(0,i)(0), fs.get_foot_vertex(0,i)(1), 0) + ee_pos[0];
+            fpos[1] = ee_rot[1]*hrp::Vector3(fs.get_foot_vertex(1,i)(0), fs.get_foot_vertex(1,i)(1), 0) + ee_pos[1];
+            mm[0](0,i) = 1.0;
+            mm[1](0,i) = 1.0;
+            mm[0](1,i) = (fpos[0](1)-cop_pos[0](1));
+            mm[1](1,i) = (fpos[1](1)-cop_pos[1](1));
+            mm[0](2,i) = -(fpos[0](0)-cop_pos[0](0));
+            mm[1](2,i) = -(fpos[1](0)-cop_pos[1](0));
+            Gmat(1,i) = (fpos[0](1)-new_refzmp(1));
+            Gmat(1,i+state_dim/2) = (fpos[1](1)-new_refzmp(1));
+            Gmat(2,i) = -(fpos[0](0)-new_refzmp(0));
+            Gmat(2,i+state_dim/2) = -(fpos[1](0)-new_refzmp(0));
+        }
+        // std::cerr << "Gmat " << std::endl;
+        // std::cerr << Gmat << std::endl;
+        // std::cerr << "total_fm " << std::endl;
+        // std::cerr << total_fm << std::endl;
+        hrp::dmatrix Hmat(state_dim,state_dim);
+        for (size_t i = 0; i < state_dim; i++) {
+            for (size_t j = 0; j < state_dim; j++) {
+                if (i == j) Hmat(i,j) = 1e-5;
+                else Hmat(i,j) = 0.0;
+            }
+        }
+        Hmat += Gmat.transpose() * Gmat;
+        hrp::dvector gvec(state_dim);
+        gvec = -1 * Gmat.transpose() * total_fm;
+        {
+            real_t* H = new real_t[state_dim*state_dim];
+            real_t* g = new real_t[state_dim];
+            real_t* lb = new real_t[state_dim];
+            real_t* ub = new real_t[state_dim];
+            for (size_t i = 0; i < state_dim; i++) {
+                for (size_t j = 0; j < state_dim; j++) {
+                    H[i*state_dim+j] = Hmat(i,j);
+                }
+                g[i] = gvec(i);
+                lb[i] = 0.0;
+                ub[i] = 1e10;
+            }
+            QProblemB example( state_dim );
+            Options options;
+            //options.enableFlippingBounds = BT_FALSE;
+            options.initialStatusBounds = ST_INACTIVE;
+            options.numRefinementSteps = 1;
+            options.enableCholeskyRefactorisation = 1;
+            options.printLevel = PL_NONE;
+            example.setOptions( options );
+            /* Solve first QP. */
+            int nWSR = 10;
+            example.init( H,g,lb,ub, nWSR,0 );
+            real_t* xOpt = new real_t[state_dim];
+            example.getPrimalSolution( xOpt );
+            for (size_t i = 0; i < state_dim/2; i++) {
+                ff[0][i] = xOpt[i];
+                ff[1][i] = xOpt[i+state_dim/2];
+            }
+            delete[] H;
+            delete[] g;
+            delete[] lb;
+            delete[] ub;
+            delete[] xOpt;
+        }
+        hrp::dvector tmpv(3);
+        tmpv = mm[0] * ff[0];
+        ref_foot_force[0] = hrp::Vector3(0,0,tmpv(0));
+        ref_foot_moment[0] = hrp::Vector3(tmpv(1),tmpv(2),0);
+        tmpv = mm[1] * ff[1];
+        ref_foot_force[1] = hrp::Vector3(0,0,tmpv(0));
+        ref_foot_moment[1] = hrp::Vector3(tmpv(1),tmpv(2),0);
+        if (printp) {
+            //std::cerr << "[" << print_str << "]   alpha = " << alpha << ", fz_alpha = " << fz_alpha << std::endl;
+            // std::cerr << "[" << print_str << "]   "
+            //           << "total_tau    = " << hrp::Vector3(tau_0).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[Nm]" << std::endl;
+            std::cerr << "[" << print_str << "]   "
+                      << "ref_force_R  = " << hrp::Vector3(ref_foot_force[0]).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[N]" << std::endl;
+            std::cerr << "[" << print_str << "]   "
+                      << "ref_force_L  = " << hrp::Vector3(ref_foot_force[1]).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[N]" << std::endl;
+            std::cerr << "[" << print_str << "]   "
+                      << "ref_moment_R = " << hrp::Vector3(ref_foot_moment[0]).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[Nm]" << std::endl;
+            std::cerr << "[" << print_str << "]   "
+                      << "ref_moment_L = " << hrp::Vector3(ref_foot_moment[1]).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[Nm]" << std::endl;
+        }
+    };
+#endif // USE_QPOASES
 };
 
 #endif // ZMP_DISTRIBUTOR_H

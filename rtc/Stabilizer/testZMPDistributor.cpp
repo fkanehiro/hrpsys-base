@@ -66,6 +66,7 @@ int main(int argc, char* argv[])
     hrp::Vector3 ref_foot_force[2], ref_foot_moment[2];
     for (size_t i = 0; i < refzmp_vec.size(); i++) {
         szd.distributeZMPToForceMoments(ref_foot_force, ref_foot_moment,
+        //szd.distributeZMPToForceMomentsQP(ref_foot_force, ref_foot_moment,
                                         ee_pos, cop_pos, ee_rot,
                                         refzmp_vec[i], refzmp_vec[i],
                                         total_fz);
