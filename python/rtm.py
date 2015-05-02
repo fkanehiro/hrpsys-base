@@ -130,7 +130,7 @@ class RTcomponent:
                 if self.isInactive(ec):
                     return True
                 time.sleep(0.01)
-                time += 0.01
+                tm += 0.01
         return False
 
     ##
