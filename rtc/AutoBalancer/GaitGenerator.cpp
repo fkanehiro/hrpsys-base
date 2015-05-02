@@ -44,7 +44,7 @@ namespace rats
   void gait_generator::refzmp_generator::calc_current_refzmp (hrp::Vector3& ret, hrp::Vector3& swing_foot_zmp_offset, const double default_double_support_ratio, const size_t one_step_len) const
   {
     size_t cnt = one_step_len - refzmp_count; // current counter (0 -> one_step_len)
-    double margine_count = 0.5 * default_double_support_ratio * one_step_len; // margin count for double support period
+    size_t margine_count = (0.5 * default_double_support_ratio) * one_step_len;
     swing_foot_zmp_offset = default_zmp_offsets[swing_leg_list[refzmp_index]];
     double zmp_diff = 0.0; // difference between total swing_foot_zmp_offset and default_zmp_offset
     //if (cnt==0) std::cerr << "z " << refzmp_index << " " << refzmp_cur_list.size() << " " << fs_index << " " << (refzmp_index == refzmp_cur_list.size()-2) << " " << is_final_double_support_set << std::endl;
@@ -77,7 +77,7 @@ namespace rats
           // "* 0.5" is for double supprot period
           prev_support_zmp +=  ((refzmp_index == 1) ? zmp_diff*0.5: zmp_diff) * foot_x_axis_list[refzmp_index-1];
       }
-      double ratio = (-0.5 / margine_count) * (cnt - margine_count);
+      double ratio = (0.5 / margine_count) * (margine_count-cnt);
       ret = (1 - ratio) * current_support_zmp + ratio * prev_support_zmp;
     } else if ( cnt > one_step_len - margine_count ) { // End double support period
       hrp::Vector3 current_support_zmp = (is_end_double_support_phase() ? refzmp_cur_list[refzmp_index] : refzmp_cur_list[refzmp_index+1]);
@@ -185,10 +185,15 @@ namespace rats
       double tmp_ip_ratio;
       size_t current_count = total_count - gp_count;
       if (thp_ptr->is_phase_starting(current_count, start_phase)) {
+          toe_heel_interpolator->clear();
           toe_heel_interpolator->set(&start);
           toe_heel_interpolator->go(&goal, thp_ptr->calc_phase_period(start_phase, goal_phase, _dt));
       }
-      toe_heel_interpolator->get(&tmp_ip_ratio, true);
+      if (!toe_heel_interpolator->isEmpty()) {
+          toe_heel_interpolator->get(&tmp_ip_ratio, true);
+      } else {
+          toe_heel_interpolator->get(&tmp_ip_ratio, false);
+      }
       return tmp_ip_ratio;
   };
 
@@ -256,7 +261,9 @@ namespace rats
 
   void gait_generator::leg_coords_generator::update_leg_coords (const std::vector<step_node>& fnl, const double default_double_support_ratio, const size_t one_step_len, const bool force_height_zero)
   {
-    foot_ratio_interpolator->get(&rot_ratio, true);
+    if (!foot_ratio_interpolator->isEmpty()) {
+        foot_ratio_interpolator->get(&rot_ratio, true);
+    }
     if ( 0 == gp_index ) {
       swing_leg_dst_coords = fnl[gp_index].worldcoords;
       support_leg = fnl[gp_index+1].l_r;
@@ -288,10 +295,7 @@ namespace rats
       gp_count = one_step_len;
       rdtg.reset(one_step_len, default_double_support_ratio);
       sdtg.reset(one_step_len, default_double_support_ratio);
-      double tmp_ratio = 0.0;
-      foot_ratio_interpolator->set(&tmp_ratio);
-      tmp_ratio = 1.0;
-      foot_ratio_interpolator->go(&tmp_ratio, _dt*one_step_len, true);
+      reset_foot_ratio_interpolator(one_step_len);
     }
   };
 
