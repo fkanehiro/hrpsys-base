@@ -729,21 +729,37 @@ bool robot::readDigitalOutput(char *o_dout)
 void robot::readBatteryState(unsigned int i_rank, double &voltage, 
                              double &current, double &soc)
 {
+#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 2
     read_battery(i_rank, &voltage, &current, &soc);
+#else
+    voltage=0; current=0; soc=0;
+#endif
 }
 
 int robot::numBatteries()
 {
+#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 2
     return number_of_batteries();
+#else
+    return 0;
+#endif
 }
 
 void robot::readThermometer(unsigned int i_rank, double &o_temp)
 {
+#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 2
     read_temperature(i_rank, &o_temp);
+#else
+    o_temp=0;
+#endif
 }
 
 int robot::numThermometers()
 {
+#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 2
     return number_of_thermometers();
+#else
+    return 0;
+#endif
 }
 
