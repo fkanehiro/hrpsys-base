@@ -148,7 +148,7 @@ case $TEST_PACKAGE in
                 travis_time_end
                 travis_time_start  compile_hrpsys
 
-                cd ~/build && cmake ${CI_SOURCE_PATH} && make
+                cd ~/build && cmake ${CI_SOURCE_PATH} ${COMPILE_OPTION} && make
 
                 travis_time_end
                 ;;

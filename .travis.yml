@@ -14,6 +14,7 @@ env:
     - secure: "ESSo9YL0lUB0nnlFIL1vV7zpOyZjgTign4IZR735laiylPjOLKW4BkP9JxT5alA9ip72qbpDKI192Ed3sSkWjjQxhM+/HIjtyOy5/F6U5wfvxWudorJeF4zCy4OBD7Bp9JWqucAkRmd5Qe3Djaih69rAK31IFeNhQ2Ebz6RWVGk="
   matrix:
     - TEST_PACKAGE=hrpsys
+    - TEST_PACKAGE=hrpsys   COMPILE_OPTION='-DROBOT_IOB_VERSION=0'
     - TEST_TYPE=python      TEST_PACKAGE=hrpsys
     - TEST_TYPE=iob         TEST_PACKAGE=hrpsys
     - TEST_TYPE=stable_rtc  TEST_PACKAGE=hrpsys
