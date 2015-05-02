@@ -461,6 +461,15 @@ namespace rats
         current_step_height = 0.0;
         rdtg.reset(one_step_len, default_double_support_ratio);
         sdtg.reset(one_step_len, default_double_support_ratio);
+        reset_foot_ratio_interpolator(one_step_len);
+      };
+      void reset_foot_ratio_interpolator (const size_t one_step_len)
+      {
+        double tmp_ratio = 0.0;
+        foot_ratio_interpolator->clear();
+        foot_ratio_interpolator->set(&tmp_ratio);
+        tmp_ratio = 1.0;
+        foot_ratio_interpolator->go(&tmp_ratio, _dt*one_step_len, true);
       };
       void update_leg_coords (const std::vector<step_node>& fnl, const double default_double_support_ratio, const size_t one_step_len, const bool force_height_zero);
       size_t get_gp_index() const { return gp_index; };
