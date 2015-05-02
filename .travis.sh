@@ -94,7 +94,7 @@ case $TEST_PACKAGE in
                 echo -e "#define pid_t int\n#define size_t int\n#include \"iob.h.315.1.9\"" | cproto -x - | sort > iob.h.stable
                 cat iob.h.current
                 cat iob.h.stable
-                diff iob.h.stable iob.h.current | tee >(cat - 1>&2)  | diffstat | grep -c deletion && exit 1
+                diff iob.h.stable iob.h.current || exit 1
 
                 travis_time_end
                 ;;
@@ -148,7 +148,7 @@ case $TEST_PACKAGE in
                 travis_time_end
                 travis_time_start  compile_hrpsys
 
-                cd ~/build && cmake ${CI_SOURCE_PATH} && make
+                cd ~/build && cmake ${CI_SOURCE_PATH} ${COMPILE_OPTION} && make
 
                 travis_time_end
                 ;;

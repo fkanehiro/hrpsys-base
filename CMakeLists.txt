@@ -152,7 +152,13 @@ install(FILES
   DESTINATION lib/pkgconfig)
 
 add_definitions(-DHRPSYS_PACKAGE_VERSION=\"\\"${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}\\"\")
-add_definitions(-DROBOT_IOB_VERSION=2)
+
+option(ROBOT_IOB_VERSION "Supported robot IOB version (lib/io/iob.h)")
+if("${ROBOT_IOB_VERSION}" STREQUAL "OFF")
+  set(ROBOT_IOB_VERSION 2)
+endif()
+add_definitions(-DROBOT_IOB_VERSION=${ROBOT_IOB_VERSION})
+message(STATUS "compile iob with -DROBOT_IOB_VERSION=${ROBOT_IOB_VERSION}")
 
 if(COMPILE_JAVA_STUFF)
   add_subdirectory(jython)
