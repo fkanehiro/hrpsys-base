@@ -7,4 +7,6 @@
   <test test-name="samplerobot_test" pkg="hrpsys" type="test-samplerobot.py" args="--host 127.0.0.1 --port 2809" retry="2" />
   <test test-name="samplerobot_walk" pkg="hrpsys" type="samplerobot-walk.py"
         args="-ORBInitRef NameService=corbaloc:iiop:localhost:2809/NameService" retry="2" />
+  <test test-name="samplerobot_impedance" pkg="hrpsys" type="test-samplerobot-impedance.py"
+        args="-ORBInitRef NameService=corbaloc:iiop:localhost:2809/NameService" retry="2" />
 </launch>
