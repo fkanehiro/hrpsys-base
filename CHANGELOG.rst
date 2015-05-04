@@ -2,6 +2,155 @@
 Changelog for package hrpsys
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
+Stable RTCs
+===========
+
+* RobotHardware (lib/io/iob.cpp) API Updated
+
+  * [rtm/RobotHardware/robot.cpp] fix for source program with ROBOT_IOB_VERSION < 2
+  * [RobotHardwareService.idl, lib/io/iob.cpp] adds a field, temperature to RobotState2
+  * [RobotHardwareService.idl] changes interface to get battery status
+  * [lib/io/iob{cpp,h},rtc/RobotHardware/{robot.cpp,robot.h,RobotHardwareService_impl.cpp,CMakeList.txt] add ROBOT_IOB_VERSION for backword compatibility
+  * [RobotHardware, iob, BodyRTC] fix to compatible with old API
+  * [lib/io/iob.cpp] adds the third argument to read_power of iob.h
+  * [idl/RobotHardwareService.idl] adds a field, battery to RobotState
+  * [RobotHrdware.cpp, robot.cpp] adds checkJointCommands() to check joint commands before setting
+
+* KalmanFilter
+
+  * [KalmanFilter.cpp] output the body frame relative to a world reference frame as baseRpyCurrent
+  * [KalmanFilter.cpp] use yaw of sensor->link->R for update of yaw instead of 0.0
+  * [python/hrpsys_config.py, KalmanFilter.cpp] connect port from rh.q to kf.qCurrent
+  * [KalmanFilter.h] use openhrp3/hrplib/hrpUtil for rotation conversion
+
+* hrpsys_config.py
+
+  * [hrpsys_config.py] add startImpedance and stopImpedance
+  * [hrpsys_config.py] add MaxLength option for setupLogger
+  * [hrpsys_config.py] `#567 <https://github.com/fkanehiro/hrpsys-base/issues/567>`_ is not correct PROJECT_DIR is
+  (OpenHRP3  installed directory)/share/OpenHRP-3.1/sample/project
+  * [hrpsys_config.py] `#567 <https://github.com/fkanehiro/hrpsys-base/issues/567>`_ is wrong, do not need to decode
+  * [hrpsys_config.py] fix code to work on python2.5
+  * [hrpsys_config.py] Import check_output near the line which check_output is used
+  * [hrpsys_config.py] add verbose option to findCOmps()
+ * [hrpsys_config.py] add max_timeout_count to findComps()
+  * [hrpsys_config.py] fix print message
+  * [hrpsys_config.py] add verbose option to getRTCInstanceList()
+
+* rtm.py
+
+  * fix typo time->tm in stop()
+  * adds timeout to start() and stop()
+
+* test
+
+  * [test-samplerobot-impedance] add test code for impedance controller API
+  * [test-drc-testbet.test] add test code for drc samplerobot
+  * [test-robot-hardware.test] add test to check robot-hardware service call
+  * [test-colcheck.test] load modelfiles
+
+* sample
+
+  * [SampleRobot/samplerobot_auto_balancer.py] Update auto balancer python sample. Add toe heel samples.
+  * [PA10/PA10.py] add from hrpsys import OpenHRP, something has changed during openhrp3 3.1.7 and 3.1.8, https://github.com/fkanehiro/openhrp3/commits/master
+  * [sample/SampleRobot] fix for new PROJECT_DIR location
+  * [sample/RampleRobot,sample/environment] install pyhton scripts under deval
+  * [samplerobot_kalman_filter.py] fix typo
+  * [samplerobot_kalman_filter.py] update kf test program for baseRpyCurrent
+  * install SampleRobot.DRCTestbed.xml under devel
+  * remove ROS examples, but enable to call Hrpsys examples directly
+
+* .travis
+
+  * [.travis.sh, .travis.yml] compile with -DROBOT_IOB_VERSION=0
+  * [.travis.sh] any diff between 315.1.9 and current is not permitted, since we use cproto without any -DROBOT_IOB_VERSION, so this should output header file compatible with stable version
+  * [.travis.sh] hot fix for https://github.com/start-jsk/rtmros_hironx/pull/358
+  * [.travis.yml, .travis.sh] enable hrpsys with 315.1.10
+  * [.travis.sh] RULE CHANGED adding new function to iob.h is ok
+  * [.travis.sh] do not install test/share/samples/src of old hrpsys, use sample/test/launch of latest hrpsys
+  * [.travis.sh] display test results when failure
+
+* [util/monitor]
+
+  * [Monitor.cpp] show velocity and acceleration (hold maxmum value for 5 sec)
+  * [Monitor.cpp] add -nogui mode
+  * [main.cpp] add --host, --port, --interval option
+  * [GLscene.cpp, Monitor.cpp, main.cpp] add many error check codes
+
+* [lib/util]
+
+  * [bodyRTC.cpp] get sensor data through getStatus
+  * [BodyRTC.cpp] fix bugs in `#200 <https://github.com/fkanehiro/hrpsys-base/issues/200>`_
+
+* [CMakeLists.txt] touch rospack_nosubdirs for not search by roslaunch, onlyfor ROS users
+* [python/hrpsyspy] rewrite hrpsyspy, now you can just call hrpsyspy to create hcf instance
+
+Unstable RTCs
+=============
+
+* OccupancyGridMap3D
+
+  * [OccupancyGridMap3D.cpp] outputs an update signal when onActivate() is called
+  * [OccupancyGridMap3D.cpp] uses mutex lock to prevent crash
+
+* ImpedanceController (API updated)
+
+  * [JointPathEx.cpp] Enable to change weight caluclation. If use_inside_joint_weight_retrieval=true (true by default),
+    inward joint weight retrievs to 1.0 (original). Otherwise, always weight is calculated from joint limit to solve
+    https://github.com/fkanehiro/hrpsys-base/issues/516
+  * Disable use_inside_joint_weight_retrieval by default in ImpedanceController, AutoBalancer, Stabilizer to reduce oscillation (https://github.com/fkanehiro/hrpsys-base/issues/516)
+  * [idl/ImpedanceControllerService.idl] Add optional weight vector for impedance control IK. Currently, this is used for toe joint supression.
+  * [ImpedanceController.cpp] Fix target_link calculation for IC. Support sensor->link is not same as ee target link (such as toe joint).
+
+* AutoBalancer (API updated)
+
+  * [GaitGenerator.cpp] Fix discontinuous autobalancer parameter using interpolator
+  * [GaitGenerator.h] Fix foot trajectory discontinuous
+  * [testGaitGenerator.cpp] Add plotting for several properties of GaitGenerator
+  * [AutoBalancer.cpp] Enable to configure toe heel zmp transition
+
+* Stabilizer (API updated)
+
+  * [ZMPDistributor.h] Fix foot vertices and update evaluation codes
+  * [Stabilizer.cpp] Update Stabilizer debug messages and calculation
+  * [rtc/Stabilizer/testZMPDistributor.cpp] add stdio for qnx
+  * [CMakeLists.txt] Add qpoases code. Disabled by default
+  * [Stabilizer.cpp] Update for sole vertices
+  * [ZMPDistributor.h] Add testing code for force distribution to use fz diff control ()
+  * [ZMPDistributor.h] Add plotting of force moment
+  * [Stabilizer.cpp] Separate ZMP distribution codes
+  * [Stabilizer.cpp, idl/Stabilizer.idl] Enable to set Stabilizer gravitational acceleration (9.8 by default)
+  * [GaitGenerator.cpp] Add comments and some functions are renamed
+  * [GaitGenerator.cpp] Use negative value for heel_pos_offset_x
+  * [idl/AutoBalancerService.idl] Fix unit system in documenatation
+  * [AutoBalancer.cpp] Enable to set toe heel zmp
+  * [GaitGenerator.cpp] Remove refzmp vel junping
+  * [GaitGenerator.cpp] Add transition ZMP among toe, heel, and ee pos. Update tests.
+  * [GaitGenerator.cpp] Rename supprot_leg_list -> swing_leg_list
+  * [GaitGenerator.cpp] Update refzmp interpolation codes
+  * [GaitGenerator.cpp] Use toe_heel_phase_counter pointer in lcg
+  * [GaitGenerator.cpp] Add toe_heel_phase_counter. This should be change behaviour.
+  * [AutoBalancer.cpp] Get default zmp offset and use ZMP offset in abc
+  * [GaitGenerator.cpp] Push swing_foot_zmp_offset to PreviewControl qdata and update sample
+  * [PreviewController.cpp] Add qdata for preview control
+  * [GaitGenerator.cpp] Enable to get swing foot zmp offset
+  * [testGaitGenerator.cpp] Update testGaitGenerator plotting
+  * [AutoBalancer.cpp] Add check for toe heel ratio summation
+  * [GaitGenerator.cpp] Use leg_type for array index
+  * [AutoBalancer.cpp] Update leg_type. RLEG = 0, LLEG = 1. Add both and use it in Abc.
+  * [/GaitGenerator.cpp] Rename WC_RLEG => RLEG, WC_LLEG => LLEG
+  * [idl/AutoBalancerService.idl] Add StepParam and enable to set step height
+  * [GaitGenerator.h, testGaitGenerator.cpp] Update testGaitGenerator sample
+  * [idl/AutoBalancerService.idl] Add argument for toe and heel zmp
+  * [idl/AutoBalancerService.idl, AutoBalancer.cpp, GaitGenerator.cpp, GaitGenerator.h] Add parameter for use toe joint or not
+  * [AutoBalancer.cpp, GaitGenerator.cpp, GaitGenerator.h] Use toe joint in heel toe contact. (Disabled by default)
+  * [GaintGenerator.cpp] Update interpolation from toe to heel
+
+* Contributors: Eisoku Kuroiwa, Fumio KANEHIRO, Kei Okada, Shunichi Nozawa, YoheiKakiuchi, Chi Wun Au, Eisoku Kuroiwa, Masaki Mmurooka
+
 315.3.2 (2015-04-13)
 --------------------
 * hrpsys_config.py
