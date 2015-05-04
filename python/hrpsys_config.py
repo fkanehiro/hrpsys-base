@@ -6,6 +6,7 @@ import rtm
 from rtm import *
 from OpenHRP import *
 from hrpsys import *  # load ModelLoader
+from hrpsys import ImpedanceControllerService_idl
 
 import socket
 import time
@@ -252,6 +253,8 @@ class HrpsysConfigurator:
 
     # for setSelfGroups
     Groups = []  # [['torso', ['CHEST_JOINT0']], ['head', ['HEAD_JOINT0', 'HEAD_JOINT1']], ....]
+
+    hrpsys_version = None
 
     # public method
     def connectComps(self):
@@ -1855,6 +1858,65 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
         '''
         self.st_svc.stopStabilizer()
 
+    def startImpedance_315_4(self, arm,
+                       M_p = 100.0,
+                       D_p = 100.0,
+                       K_p = 100.0,
+                       M_r = 100.0,
+                       D_r = 2000.0,
+                       K_r = 2000.0,
+                       force_gain = [1, 1, 1],
+                       moment_gain = [0, 0, 0],
+                       sr_gain = 1.0,
+                       avoid_gain = 0.0,
+                       reference_gain = 0.0,
+                       manipulability_limit = 0.1,
+                       controller_mode = None,
+                       ik_optional_weight_vector = None):
+        '''!@brief
+        start impedance mode
+
+        @type arm: str name of artm to be controlled, this must be initialized using setSelfGroups()
+        '''
+        r, p = self.ic_svc.getImpedanceControllerParam(arm)
+        if not r:
+            print('{}, Failt to getImpedanceControllerParam({})'.format(self.configurator_name, arm))
+            return False
+        if M_p != None: p.M_p = M_p
+        if D_p != None: p.M_p = D_p
+        if K_p != None: p.M_p = K_p
+        if M_r != None: p.M_r = M_r
+        if D_r != None: p.M_r = D_r
+        if K_r != None: p.M_r = K_r
+        if force_gain != None: p.force_gain = force_gain
+        if moment_gain != None: p.moment_gain = moment_gain
+        if sr_gain != None: p.sr_gain = sr_gain
+        if avoid_gain != None: p.avoid_gain = avoid_gain
+        if reference_gain != None: p.reference_gain = reference_gain
+        if manipulability_limit != None: p.manipulability_limit = manipulability_limit
+        if controller_mode != None: p.controller_mode = controller_mode
+        if ik_optional_weight_vector != None: p.ik_optional_weight_vector = ik_optional_weight_vector
+        self.ic_svc.setImpedanceControllerParam(arm, p)
+        return self.ic_svc.startImpedanceController(arm)
+
+    def stopImpedance_315_4(self, arm):
+        '''!@brief
+        stop impedance mode
+        '''
+        return self.ic_svc.stopImpedanceController(arm)
+
+    def startImpedance(self, arm, **kwargs):
+        if self.hrpsys_version and self.hrpsys_version < '315.2.0':
+            print(self.configurator_name + '\033[31mstartImpedance: Try to connect unsupported RTC' + str(self.hrpsys_version) + '\033[0m')
+        else:
+            self.startImpedance_315_4(arm, **kwargs)
+
+    def stopImpedance(self, arm):
+        if self.hrpsys_version and self.hrpsys_version < '315.2.0':
+            print(self.configurator_name + '\033[31mstopImpedance: Try to connect unsupported RTC' + str(self.hrpsys_version) + '\033[0m')
+        else:
+            self.stopImpedance_315_4(arm)
+
     # ##
     # ## initialize
     # ##
@@ -1893,6 +1955,14 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
         self.setSelfGroups()
 
         print(self.configurator_name + '\033[32minitialized successfully\033[0m')
+
+        # set hrpsys_version
+        try:
+            self.hrpsys_version = self.fk.ref.get_component_profile().version
+        except:
+            print(self.configurator_name + '\033[34mCould not get hrpsys_version\033[0m')
+
+            pass
 
     def __init__(self, cname="[hrpsys.py] "):
         initCORBA()
