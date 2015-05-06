@@ -39,6 +39,7 @@ public:
     //
     bool setJointAnglesSequence(std::vector<const double*> pos, std::vector<double> tm);
     bool setJointAnglesSequenceOfGroup(const char *gname, std::vector<const double*> pos, std::vector<double> tm);
+    bool setJointAnglesSequenceFull(std::vector<const double*> pos, std::vector<const double*> vel, std::vector<const double*> torques, std::vector<const double*> bpos, std::vector<const double*> brpy, std::vector<const double*> bacc, std::vector<const double*> zmps, std::vector<const double*> wrenches, std::vector<const double*> optionals, std::vector<double> tm);
     //
     void setJointAngle(unsigned int i_rank, double jv, double tm);
     void loadPattern(const char *i_basename, double i_tm);

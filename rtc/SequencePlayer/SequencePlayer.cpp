@@ -456,6 +456,31 @@ bool SequencePlayer::setJointAnglesSequenceOfGroup(const char *gname, const Open
     return m_seq->setJointAnglesSequenceOfGroup(gname, v_poss, v_tms);
 }
 
+bool SequencePlayer::setJointAnglesSequenceFull(const OpenHRP::dSequenceSequence i_jvss, const OpenHRP::dSequenceSequence i_vels, const OpenHRP::dSequenceSequence i_torques, const OpenHRP::dSequenceSequence i_poss, const OpenHRP::dSequenceSequence i_rpys, const OpenHRP::dSequenceSequence i_accs, const OpenHRP::dSequenceSequence i_zmps, const OpenHRP::dSequenceSequence i_wrenches, const OpenHRP::dSequenceSequence i_optionals, const dSequence i_tms)
+{
+    if ( m_debugLevel > 0 ) {
+        std::cerr << __PRETTY_FUNCTION__ << std::endl;
+    }
+    Guard guard(m_mutex);
+
+    if (!setInitialState()) return false;
+
+    int len = i_jvss.length();
+    std::vector<const double*> v_jvss, v_vels, v_torques, v_poss, v_rpys, v_accs, v_zmps, v_wrenches, v_optionals;
+    std::vector<double> v_tms;
+    for ( int i = 0; i < i_jvss.length(); i++ ) v_poss.push_back(i_jvss[i].get_buffer());
+    for ( int i = 0; i < i_vels.length(); i++ ) v_poss.push_back(i_vels[i].get_buffer());
+    for ( int i = 0; i < i_torques.length(); i++ ) v_poss.push_back(i_torques[i].get_buffer());
+    for ( int i = 0; i < i_poss.length(); i++ ) v_poss.push_back(i_poss[i].get_buffer());
+    for ( int i = 0; i < i_rpys.length(); i++ ) v_poss.push_back(i_rpys[i].get_buffer());
+    for ( int i = 0; i < i_accs.length(); i++ ) v_poss.push_back(i_accs[i].get_buffer());
+    for ( int i = 0; i < i_zmps.length(); i++ ) v_poss.push_back(i_zmps[i].get_buffer());
+    for ( int i = 0; i < i_wrenches.length(); i++ ) v_poss.push_back(i_wrenches[i].get_buffer());
+    for ( int i = 0; i < i_optionals.length(); i++ ) v_poss.push_back(i_optionals[i].get_buffer());
+    for ( int i = 0; i < i_tms.length();  i++ )  v_tms.push_back(i_tms[i]);
+    return m_seq->setJointAnglesSequenceFull(v_jvss, v_vels, v_torques, v_poss, v_rpys, v_accs, v_zmps, v_wrenches, v_optionals, v_tms);
+}
+
 bool SequencePlayer::setBasePos(const double *pos, double tm)
 {
     if ( m_debugLevel > 0 ) {
