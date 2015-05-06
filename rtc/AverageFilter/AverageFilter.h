@@ -136,6 +136,7 @@ class AverageFilter
   int dummy;
   double m_resolution;
   int m_windowSize;
+  bool m_dilation;
 };
 
 

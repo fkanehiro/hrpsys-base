@@ -29,6 +29,7 @@ static const char* spec[] =
     // Configuration variables
     "conf.default.resolution", "0.01",
     "conf.default.windowSize", "4",
+    "conf.default.dilation", "0",
 
     ""
   };
@@ -57,6 +58,7 @@ RTC::ReturnCode_t AverageFilter::onInitialize()
   // Bind variables and configuration variable
   bindParameter("resolution", m_resolution, "0.01");
   bindParameter("windowSize", m_windowSize, "4");
+  bindParameter("dilation", m_dilation, "0");
   
   // </rtc-template>
 
@@ -171,25 +173,32 @@ RTC::ReturnCode_t AverageFilter::onExecute(RTC::UniqueId ec_id)
     //std::cout << "nx=" << nx << ", ny=" << ny << std::endl;
     
     src = (float *)m_original.data.get_buffer();
-    for (unsigned int i=0; i<npoint; i++){
-#if 1
-      int ix = round((src[0] - xstart)/m_resolution);
-      int iy = round((src[1] - ystart)/m_resolution);
-      int rank = ix+nx*iy;
-      double z = cell[rank], z_new = src[2];
-      if (isnan(z) || !isnan(z) && z_new > z){
-          cell[rank] = z_new;
-      }
-#else
-      int ix = floor((src[0] - xstart)/m_resolution);
-      int iy = floor((src[1] - ystart)/m_resolution);
-      cell[ix   + nx*iy    ] = src[2];
-      cell[ix+1 + nx*iy    ] = src[2];
-      cell[ix+1 + nx*(iy+1)] = src[2];
-      cell[ix   + nx*(iy+1)] = src[2];
-#endif
-      
-      src += 4;
+    if (!m_dilation){
+        for (unsigned int i=0; i<npoint; i++){
+            int ix = round((src[0] - xstart)/m_resolution);
+            int iy = round((src[1] - ystart)/m_resolution);
+            int rank = ix+nx*iy;
+            double z = cell[rank], z_new = src[2];
+            if (isnan(z) || !isnan(z) && z_new > z){
+                cell[rank] = z_new;
+            }
+            src += 4;
+        }
+    }else{
+        for (unsigned int i=0; i<npoint; i++){
+            int ix = floor((src[0] - xstart)/m_resolution);
+            int iy = floor((src[1] - ystart)/m_resolution);
+            for (int j=0; j<2; j++){
+                for (int k=0; k<2; k++){
+                    int rank = ix+j + nx*(iy+k);
+                    double z = cell[rank], z_new = src[2];
+                    if (isnan(z) || !isnan(z) && z_new > z){
+                        cell[rank] = z_new;
+                    }
+                }
+            }
+            src += 4;
+        }
     }
 
     
