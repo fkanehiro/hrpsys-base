@@ -34,7 +34,7 @@ public:
   bool setInterpolationMode (interpolation_mode i_mode_);
   void setGoal(const double *gx, const double *gv, double time,
                bool online=true);
-  void setGoal(const double *gx, double time);
+  void setGoal(const double *gx, double time, bool online=true);
   void interpolate(double& remain_t);
   double deltaT() const { return dt; }
 private:
