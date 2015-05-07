@@ -331,6 +331,9 @@ public:
         double norm_weight = 1e-7;
         double cop_weight = 1e-3;
         double alpha = calcAlpha(new_refzmp, ee_pos, ee_rot);
+        double fz_alpha = calcAlpha(ref_zmp, ee_pos, ee_rot);
+        if (fz_alpha>1.0) fz_alpha = 1.0;
+        if (fz_alpha<0.0) fz_alpha = 0.0;
         hrp::dvector total_fm(3);
         total_fm(0) = total_fz;
         total_fm(1) = 0;
@@ -349,8 +352,16 @@ public:
         for (size_t i = 0; i < state_dim; i++) {
             gvec(i) = 0.0;
             for (size_t j = 0; j < state_dim; j++) {
-                if (i == j) Hmat(i,j) = norm_weight;
-                else Hmat(i,j) = 0.0;
+                if (i == j) {
+                    if (i < state_dim_half) {
+                        Hmat(i,j) = norm_weight*(1/fz_alpha);
+                    } else {
+                        Hmat(i,j) = norm_weight*(1/(1-fz_alpha));
+                    }
+                    //Hmat(i,j) = norm_weight;
+                } else {
+                    Hmat(i,j) = 0.0;
+                }
             }
         }
         //
@@ -365,8 +376,8 @@ public:
                 mm[fidx](0,i) = 1.0;
                 mm[fidx](1,i) = -(fpos[fidx](1)-cop_pos[fidx](1));
                 mm[fidx](2,i) = (fpos[fidx](0)-cop_pos[fidx](0));
-                Gmat(1,i+state_dim_half*fidx) = (fpos[fidx](1)-new_refzmp(1));
-                Gmat(2,i+state_dim_half*fidx) = -(fpos[fidx](0)-new_refzmp(0));
+                Gmat(1,i+state_dim_half*fidx) = -(fpos[fidx](1)-new_refzmp(1));
+                Gmat(2,i+state_dim_half*fidx) = (fpos[fidx](0)-new_refzmp(0));
             }
             //std::cerr << "fpos " << fpos[0] << " " << fpos[1] << std::endl;
         }
@@ -474,8 +485,8 @@ public:
             ref_foot_moment[fidx] = hrp::Vector3(tmpv(1),tmpv(2),0);
         }
         if (printp) {
-            std::cerr << "[" << print_str << "] force moment distribution" << std::endl;
-            //std::cerr << "[" << print_str << "]   alpha = " << alpha << ", fz_alpha = " << fz_alpha << std::endl;
+            std::cerr << "[" << print_str << "] force moment distribution (QP)" << std::endl;
+            std::cerr << "[" << print_str << "]   alpha = " << alpha << ", fz_alpha = " << fz_alpha << std::endl;
             // std::cerr << "[" << print_str << "]   "
             //           << "total_tau    = " << hrp::Vector3(tau_0).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[Nm]" << std::endl;
             std::cerr << "[" << print_str << "]   "
