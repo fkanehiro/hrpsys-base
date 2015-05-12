@@ -93,6 +93,8 @@ module OpenHRP
       double eefm_cogvel_cutoff_freq;
       /// Blending parameter [0, 1] for wrench distribution
       double eefm_wrench_alpha_blending;
+      /// Cutoff frequency of LPF in calculation of force moment distribution alpha ratio parameter [Hz]
+      double eefm_alpha_cutoff_freq;
       /// Gravitational acceleration [m/s^2] used in ST calculation
       double eefm_gravitational_acceleration;
       // common
