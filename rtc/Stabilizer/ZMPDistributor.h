@@ -349,14 +349,17 @@ public:
         //
         hrp::dmatrix Hmat(state_dim,state_dim);
         hrp::dvector gvec(state_dim);
+        double alpha_thre = 1e-20;
         for (size_t i = 0; i < state_dim; i++) {
             gvec(i) = 0.0;
             for (size_t j = 0; j < state_dim; j++) {
                 if (i == j) {
                     if (i < state_dim_half) {
-                        Hmat(i,j) = norm_weight*(1/fz_alpha);
+                        double tmpa = (fz_alpha < alpha_thre) ? 1/alpha_thre : 1/fz_alpha;
+                        Hmat(i,j) = norm_weight*tmpa;
                     } else {
-                        Hmat(i,j) = norm_weight*(1/(1-fz_alpha));
+                        double tmpa = (1-fz_alpha < alpha_thre) ? 1/alpha_thre : 1/(1-fz_alpha);
+                        Hmat(i,j) = norm_weight*tmpa;
                     }
                     //Hmat(i,j) = norm_weight;
                 } else {
@@ -484,6 +487,8 @@ public:
             ref_foot_force[fidx] = hrp::Vector3(0,0,tmpv(0));
             ref_foot_moment[fidx] = hrp::Vector3(tmpv(1),tmpv(2),0);
         }
+        ref_foot_moment[0] = -1 * ref_foot_moment[0];
+        ref_foot_moment[1] = -1 * ref_foot_moment[1];
         if (printp) {
             std::cerr << "[" << print_str << "] force moment distribution (QP)" << std::endl;
             std::cerr << "[" << print_str << "]   alpha = " << alpha << ", fz_alpha = " << fz_alpha << std::endl;
@@ -498,6 +503,19 @@ public:
             std::cerr << "[" << print_str << "]   "
                       << "ref_moment_L = " << hrp::Vector3(ref_foot_moment[1]).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[Nm]" << std::endl;
         }
+    };
+#else
+    void distributeZMPToForceMomentsQP (hrp::Vector3* ref_foot_force, hrp::Vector3* ref_foot_moment,
+                                        const std::vector<hrp::Vector3>& ee_pos,
+                                        const std::vector<hrp::Vector3>& cop_pos,
+                                        const std::vector<hrp::Matrix33>& ee_rot,
+                                        const hrp::Vector3& new_refzmp, const hrp::Vector3& ref_zmp,
+                                        const double total_fz, const bool printp = true, const std::string& print_str = "")
+    {
+        distributeZMPToForceMoments(ref_foot_force, ref_foot_moment,
+                                    ee_pos, cop_pos, ee_rot,
+                                    new_refzmp, ref_zmp,
+                                    total_fz, printp, print_str);
     };
 #endif // USE_QPOASES
 };
