@@ -673,13 +673,13 @@ void Stabilizer::getActualParameters ()
           szd->distributeZMPToForceMoments(ref_foot_force, ref_foot_moment,
                                            ee_pos, cop_pos, ee_rot,
                                            new_refzmp, hrp::Vector3(foot_origin_rot * ref_zmp + foot_origin_pos),
-                                           eefm_gravitational_acceleration * total_mass,
+                                           eefm_gravitational_acceleration * total_mass, dt,
                                            DEBUGP, std::string(m_profile.instance_name));
       } else if (st_algorithm == OpenHRP::StabilizerService::EEFMQP) {
           szd->distributeZMPToForceMomentsQP(ref_foot_force, ref_foot_moment,
                                              ee_pos, cop_pos, ee_rot,
                                              new_refzmp, hrp::Vector3(foot_origin_rot * ref_zmp + foot_origin_pos),
-                                             eefm_gravitational_acceleration * total_mass,
+                                             eefm_gravitational_acceleration * total_mass, dt,
                                              DEBUGP, std::string(m_profile.instance_name));
       }
       // for debug output
@@ -1183,6 +1183,7 @@ void Stabilizer::getParameter(OpenHRP::StabilizerService::stParam& i_stp)
   i_stp.eefm_leg_rear_margin = szd->get_leg_rear_margin();
   i_stp.eefm_cogvel_cutoff_freq = eefm_cogvel_cutoff_freq;
   i_stp.eefm_wrench_alpha_blending = szd->get_wrench_alpha_blending();
+  i_stp.eefm_alpha_cutoff_freq = szd->get_alpha_cutoff_freq();
   i_stp.eefm_gravitational_acceleration = eefm_gravitational_acceleration;
   i_stp.st_algorithm = st_algorithm;
   switch(control_mode) {
@@ -1250,6 +1251,7 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
   szd->set_vertices_from_margin_params();
   eefm_cogvel_cutoff_freq = i_stp.eefm_cogvel_cutoff_freq;
   szd->set_wrench_alpha_blending(i_stp.eefm_wrench_alpha_blending);
+  szd->set_alpha_cutoff_freq(i_stp.eefm_alpha_cutoff_freq);
   eefm_gravitational_acceleration = i_stp.eefm_gravitational_acceleration;
   std::cerr << "[" << m_profile.instance_name << "]   eefm_k1  = [" << eefm_k1[0] << ", " << eefm_k1[1] << "]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   eefm_k2  = [" << eefm_k2[0] << ", " << eefm_k2[1] << "]" << std::endl;

@@ -70,7 +70,7 @@ int main(int argc, char* argv[])
         //szd.distributeZMPToForceMomentsQP(ref_foot_force, ref_foot_moment,
                                         ee_pos, cop_pos, ee_rot,
                                         refzmp_vec[i], refzmp_vec[i],
-                                        total_fz);
+                                        total_fz, 0.004);
         for (size_t j = 0; j < fs.size(); j++) {
             std::string fname("/tmp/plot"+names[j]+".dat");
             FILE* fp = fopen(fname.c_str(), "w");
