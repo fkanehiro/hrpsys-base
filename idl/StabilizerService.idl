@@ -15,7 +15,8 @@ module OpenHRP
      */
     enum STAlgorithm {
       TPCC,
-      EEFM
+      EEFM,
+      EEFMQP
     };
 
     /**
