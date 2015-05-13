@@ -211,6 +211,24 @@ RTC::ReturnCode_t CollisionDetector::onInitialize()
     }
 #endif // USE_HRPSYSUTIL
 
+    // true (1) do not move when collide,
+    // false(0) move even if collide
+    m_collision_mask.resize(m_robot->numJoints());
+    std::fill(m_collision_mask.begin(), m_collision_mask.end(), 1);
+    if ( prop["collision_mask"] != "" ) {
+	std::cerr << "[co] prop[collision_mask] ->" << prop["collision_mask"] << std::endl;
+        coil::vstring mask_str = coil::split(prop["collision_mask"], ",");
+        if (mask_str.size() == m_robot->numJoints()) {
+            for (size_t i = 0; i < m_robot->numJoints(); i++) coil::stringTo(m_collision_mask[i], mask_str[i].c_str());
+            for (size_t i = 0; i < m_robot->numJoints(); i++) {
+                if ( m_collision_mask[i] == 0 ) {
+                    std::cerr << "[co] CollisionDetector will not control " << m_robot->joint(i)->name << std::endl;
+                }
+            }
+        }else{
+            std::cerr << "[co] ERROR size of collision_mask is differ from robot joint number .. " << mask_str.size()  << ", " << m_robot->numJoints() << std::endl;
+        }
+    }
     // setup collision state
     m_state.angle.length(m_robot->numJoints());
     m_state.collide.length(m_robot->numLinks());
@@ -412,6 +430,11 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
             m_recover_time = default_recover_time;      // m_recover_time should be set based on difference between qRef and q
             m_interpolator->set(m_lastsafe_jointdata); //Set last safe joint data as initial angle
             //m_interpolator->set(m_q.data.get_buffer()); //Set initial angle
+          }
+          for ( int i = 0; i < m_q.data.length(); i++ ) {
+              if (m_collision_mask[i] == 0) {
+                  m_q.data[i] = m_qRef.data[i];
+              }
           }
           //calc q'
 #if 0
