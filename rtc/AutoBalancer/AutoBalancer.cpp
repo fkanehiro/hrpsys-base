@@ -806,7 +806,10 @@ void AutoBalancer::startABCparam(const OpenHRP::AutoBalancerService::StrSequence
 {
   std::cerr << "[" << m_profile.instance_name << "] start auto balancer mode" << std::endl;
   Guard guard(m_mutex);
-  double tmp_ratio = 1.0;
+  double tmp_ratio = 0.0;
+  transition_interpolator->clear();
+  transition_interpolator->set(&tmp_ratio);
+  tmp_ratio = 1.0;
   transition_interpolator->go(&tmp_ratio, 2.0, true); // 2.0 [s] transition
   for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
     it->second.is_active = false;
@@ -825,7 +828,10 @@ void AutoBalancer::stopABCparam()
 {
   std::cerr << "[" << m_profile.instance_name << "] stop auto balancer mode" << std::endl;
   //Guard guard(m_mutex);
-  double tmp_ratio = 0.0;
+  double tmp_ratio = 1.0;
+  transition_interpolator->clear();
+  transition_interpolator->set(&tmp_ratio);
+  tmp_ratio = 0.0;
   transition_interpolator->go(&tmp_ratio, 2.0, true); // 2.0 [s] transition
   control_mode = MODE_SYNC_TO_IDLE;
 }
