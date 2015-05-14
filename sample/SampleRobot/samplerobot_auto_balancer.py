@@ -163,7 +163,32 @@ def demo():
     hcf.abc_svc.goPos(0.3, 0, 0);
     hcf.abc_svc.waitFootSteps()
     hcf.abc_svc.stopAutoBalancer();
+    ggp.toe_angle = 0;
+    ggp.heel_angle = 0;
+    hcf.abc_svc.setGaitGeneratorParam(ggp);
     print "Toe heel contact=>OK"
+    #  9. Stop and start auto balancer sync check
+    #   Check 9-1 Sync after setFootSteps
+    hcf.startAutoBalancer();
+    hcf.abc_svc.setFootSteps([OpenHRP.AutoBalancerService.Footstep([0,-0.09,0], [1,0,0,0], "rleg"), OpenHRP.AutoBalancerService.Footstep([0.1,0.09,0], [1,0,0,0], "lleg")]);
+    hcf.abc_svc.waitFootSteps();
+    hcf.stopAutoBalancer();
+    print "Sync after setFootSteps => OK"
+    #   Check 9-2 Sync from setJointAngles at the beginning
+    open_stride_pose = [0.00026722677758058496, -0.3170503560247552, -0.0002054613599000865, 0.8240549352035262, -0.5061434785447525, -8.67443660992421e-05, 0.3112899999999996, -0.15948099999999998, -0.11539900000000003, -0.6362769999999993, 0.0, 0.0, 0.0, 0.00023087433689200683, -0.4751295978345554, -0.00021953834197007937, 0.8048588066686679, -0.3288687069275527, -8.676469399681631e-05, 0.3112899999999996, 0.15948099999999998, 0.11539900000000003, -0.6362769999999993, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    hcf.seq_svc.setJointAngles(open_stride_pose, 2.0);
+    hcf.seq_svc.waitInterpolation();
+    hcf.startAutoBalancer();
+    hcf.abc_svc.setFootSteps([OpenHRP.AutoBalancerService.Footstep([0,-0.09,0], [1,0,0,0], "rleg"), OpenHRP.AutoBalancerService.Footstep([0.1,0.09,0], [1,0,0,0], "lleg")]);
+    hcf.abc_svc.waitFootSteps();
+    hcf.stopAutoBalancer();
+    print "Sync from setJointAngle at the beginning => OK"
+    #   Check 9-3 Sync from setJointAngles
+    hcf.startAutoBalancer();
+    hcf.seq_svc.setJointAngles(initial_pose, 2.0);
+    hcf.seq_svc.waitInterpolation();
+    hcf.stopAutoBalancer();
+    print "Sync from setJointAngle => OK"
     #  7. walking by fixing 
     # abc_svc.startAutoBalancer([AutoBalancerService.AutoBalancerLimbParam("rleg", [0,0,0], [0,0,0,0]),
     #                   AutoBalancerService.AutoBalancerLimbParam("lleg", [0,0,0], [0,0,0,0]),
