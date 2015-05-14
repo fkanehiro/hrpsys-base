@@ -625,7 +625,7 @@ void AutoBalancer::getTargetParameters()
     target_root_p = m_robot->rootLink()->p;
     target_root_R = m_robot->rootLink()->R;
     for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
-      if ( control_mode != MODE_ABC || it->first.find("leg") == std::string::npos ) {
+      if ( control_mode == MODE_IDLE || it->first.find("leg") == std::string::npos ) {
         it->second.target_p0 = it->second.target_link->p;
         it->second.target_r0 = it->second.target_link->R;
       }
