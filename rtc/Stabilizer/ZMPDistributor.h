@@ -160,6 +160,9 @@ public:
             hrp::Vector3 difp = redge_foot - ledge_foot;
             alpha = difp.dot(tmprefzmp-ledge_foot)/difp.squaredNorm();
         }
+        // limit
+        if (alpha>1.0) alpha = 1.0;
+        if (alpha<0.0) alpha = 0.0;
         return alpha;
     };
 
@@ -205,38 +208,44 @@ public:
         }
         {
             // Foot-distribution-coords frame =>
-            hrp::Vector3 foot_dist_coords_y = (cop_pos[1] - cop_pos[0]); // e_y'
-            foot_dist_coords_y(2) = 0.0;
-            foot_dist_coords_y.normalize();
-            hrp::Vector3 foot_dist_coords_x = hrp::Vector3(foot_dist_coords_y.cross(hrp::Vector3::UnitZ())); // e_x'
-            hrp::Matrix33 foot_dist_coords_rot;
-            foot_dist_coords_rot(0,0) = foot_dist_coords_x(0);
-            foot_dist_coords_rot(1,0) = foot_dist_coords_x(1);
-            foot_dist_coords_rot(2,0) = foot_dist_coords_x(2);
-            foot_dist_coords_rot(0,1) = foot_dist_coords_y(0);
-            foot_dist_coords_rot(1,1) = foot_dist_coords_y(1);
-            foot_dist_coords_rot(2,1) = foot_dist_coords_y(2);
-            foot_dist_coords_rot(0,2) = 0;
-            foot_dist_coords_rot(1,2) = 0;
-            foot_dist_coords_rot(2,2) = 1;
-            hrp::Vector3 tau_0_f = foot_dist_coords_rot.transpose() * tau_0; // tau_0'
-            // x
-            //         // right
-            //         if (tau_0_f(0) > 0) ref_foot_moment[0](0) = tau_0_f(0);
-            //         else ref_foot_moment[0](0) = 0;
-            //         // left
-            //         if (tau_0_f(0) > 0) ref_foot_moment[1](0) = 0;
-            //         else ref_foot_moment[1](0) = tau_0_f(0);
-            ref_foot_moment[0](0) = tau_0_f(0) * alpha;
-            ref_foot_moment[1](0) = tau_0_f(0) * (1-alpha);
-            // y
-            ref_foot_moment[0](1) = tau_0_f(1) * alpha;
-            ref_foot_moment[1](1) = tau_0_f(1) * (1-alpha);
-            ref_foot_moment[0](2) = ref_foot_moment[1](2) = 0.0;
-            // <= Foot-distribution-coords frame
-            // Convert foot-distribution-coords frame => actual world frame
-            ref_foot_moment[0] = foot_dist_coords_rot * ref_foot_moment[0];
-            ref_foot_moment[1] = foot_dist_coords_rot * ref_foot_moment[1];
+//             hrp::Vector3 foot_dist_coords_y = (cop_pos[1] - cop_pos[0]); // e_y'
+//             foot_dist_coords_y(2) = 0.0;
+//             foot_dist_coords_y.normalize();
+//             hrp::Vector3 foot_dist_coords_x = hrp::Vector3(foot_dist_coords_y.cross(hrp::Vector3::UnitZ())); // e_x'
+//             hrp::Matrix33 foot_dist_coords_rot;
+//             foot_dist_coords_rot(0,0) = foot_dist_coords_x(0);
+//             foot_dist_coords_rot(1,0) = foot_dist_coords_x(1);
+//             foot_dist_coords_rot(2,0) = foot_dist_coords_x(2);
+//             foot_dist_coords_rot(0,1) = foot_dist_coords_y(0);
+//             foot_dist_coords_rot(1,1) = foot_dist_coords_y(1);
+//             foot_dist_coords_rot(2,1) = foot_dist_coords_y(2);
+//             foot_dist_coords_rot(0,2) = 0;
+//             foot_dist_coords_rot(1,2) = 0;
+//             foot_dist_coords_rot(2,2) = 1;
+//             hrp::Vector3 tau_0_f = foot_dist_coords_rot.transpose() * tau_0; // tau_0'
+//             // x
+//             //         // right
+//             //         if (tau_0_f(0) > 0) ref_foot_moment[0](0) = tau_0_f(0);
+//             //         else ref_foot_moment[0](0) = 0;
+//             //         // left
+//             //         if (tau_0_f(0) > 0) ref_foot_moment[1](0) = 0;
+//             //         else ref_foot_moment[1](0) = tau_0_f(0);
+//             ref_foot_moment[0](0) = tau_0_f(0) * alpha;
+//             ref_foot_moment[1](0) = tau_0_f(0) * (1-alpha);
+//             // y
+//             ref_foot_moment[0](1) = tau_0_f(1) * alpha;
+//             ref_foot_moment[1](1) = tau_0_f(1) * (1-alpha);
+//             ref_foot_moment[0](2) = ref_foot_moment[1](2) = 0.0;
+//             // <= Foot-distribution-coords frame
+//             // Convert foot-distribution-coords frame => actual world frame
+//             ref_foot_moment[0] = foot_dist_coords_rot * ref_foot_moment[0];
+//             ref_foot_moment[1] = foot_dist_coords_rot * ref_foot_moment[1];
+            //
+          ref_foot_moment[0](0) = tau_0(0) * alpha;
+          ref_foot_moment[1](0) = tau_0(0) * (1-alpha);
+          ref_foot_moment[0](1) = tau_0(1) * alpha;
+          ref_foot_moment[1](1) = tau_0(1) * (1-alpha);
+          ref_foot_moment[0](2) = ref_foot_moment[1](2)= 0.0;
         }
 #if 0
         {
@@ -345,9 +354,6 @@ public:
         double const_param = 2 * M_PI * alpha_cutoff_freq * dt;
         alpha = 1.0/(1+const_param) * prev_alpha + const_param/(1+const_param) * tmpalpha;
         prev_alpha = tmpalpha;
-        // limit
-        if (fz_alpha>1.0) fz_alpha = 1.0;
-        if (fz_alpha<0.0) fz_alpha = 0.0;
         hrp::dvector total_fm(3);
         total_fm(0) = total_fz;
         total_fm(1) = 0;
