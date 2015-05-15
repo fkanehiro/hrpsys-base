@@ -16,6 +16,7 @@ except:
 def init ():
     global hcf, init_pose, col_safe_pose, col_fail_pose
     hcf = HrpsysConfigurator()
+    hcf.getRTCList = hcf.getRTCListUnstable
     hcf.init ("SampleRobot(Robot)0", "$(PROJECT_DIR)/../model/sample1.wrl")
     init_pose = [0]*29
     col_safe_pose = [0.0,-0.349066,0.0,0.820305,-0.471239,0.0,0.523599,0.0,0.0,-1.74533,0.15708,-0.113446,0.0,0.0,-0.349066,0.0,0.820305,-0.471239,0.0,0.523599,0.0,0.0,-1.74533,-0.15708,-0.113446,0.0,0.0,0.0,0.0]
@@ -72,12 +73,28 @@ def demoCollisionDisableEnable ():
     hcf.seq_svc.setJointAngles(col_safe_pose, 1.0);
     hcf.seq_svc.waitInterpolation();
 
+def demoCollisionMask ():
+    if hcf.abc_svc != None:
+        print "5. Collision mask test"
+        hcf.seq_svc.setJointAngles(col_safe_pose, 1.0);
+        hcf.seq_svc.waitInterpolation();
+        hcf.startAutoBalancer()
+        hcf.abc_svc.goVelocity(0,0,0);
+        hcf.seq_svc.setJointAngles(col_fail_pose, 1.0);
+        hcf.seq_svc.waitInterpolation();
+        hcf.seq_svc.setJointAngles(col_safe_pose, 3.0);
+        hcf.seq_svc.waitInterpolation();
+        hcf.abc_svc.goStop();
+        hcf.stopAutoBalancer()
+        print "=> Successfully mask works"
+
 def demo():
     init()
     demoCollisionCheckSafe()
     demoCollisionCheckFail()
     demoCollisionCheckFailWithSetTolerance()
     demoCollisionDisableEnable()
+    demoCollisionMask()
 
 if __name__ == '__main__':
     demo()

@@ -9,6 +9,8 @@ pdgains_sim.file_name: @CMAKE_INSTALL_PREFIX@/share/hrpsys/samples/SampleRobot/S
 
 # CollisionDetector Setting
 collision_pair: RARM_WRIST_P:WAIST LARM_WRIST_P:WAIST RARM_WRIST_P:RLEG_HIP_R LARM_WRIST_P:LLEG_HIP_R RARM_WRIST_R:RLEG_HIP_R LARM_WRIST_R:LLEG_HIP_R
+#   Collision mask not to control legs joints
+collision_mask: 0,0,0,0,0,0,1,1,1,1,1,1,1,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1
 
 # virtual force sensor
 @VirtualForceSensorSetting@: vlhsensor, CHEST, LARM_WRIST_P, 0,0,0, 0,0,1,0, vrhsensor, CHEST, RARM_WRIST_P, 0,0,0, 0,0,1,0,
