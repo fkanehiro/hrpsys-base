@@ -462,7 +462,7 @@ def serializeComponents(rtcs, stopEC=True):
                 print(rtc.name() + 'is already serialized')
         except Exception:
             _, e, _ = sys.exc_info()
-            print("error in serialize %s of %s %s" % (rtc,  rtcs, str(e)))
+            print("[rtm.py] \033[31m   error in serialize %s of %s %s\033[0m" % (rtc.name(),  [[r, r.name()] for r in rtcs], str(e)))
             raise e
 
 ##
@@ -532,13 +532,13 @@ def connectPorts(outP, inPs, subscription="flush", dataflow="Push", bufferlength
             print('[rtm.py] \033[31m   Failed to connect %s to %s(%s)\033[0m' % \
                   (outP.get_port_profile().name, inP, inPs))
             continue
-        if isConnected(outP, inP) == True:
-            print(outP.get_port_profile().name + 'and' + inP.get_port_profile().name, \
-                  'are already connected')
+        if isConnected(outP, inP) == True and False:
+            print('[rtm.py]      %s and %s are already connected' % \
+                  (outP.get_port_profile().name, inP.get_port_profile().name))
             continue
         if dataTypeOfPort(outP) != dataTypeOfPort(inP):
-            print(outP.get_port_profile().name + 'and' + inP.get_port_profile().name, \
-                  'have different data types')
+            print('[rtm.py] \033[31m     %s and %s have different data types\033[0m' % \
+                  (outP.get_port_profile().name, inP.get_port_profile().name))
             continue
         nv1 = SDOPackage.NameValue("dataport.interface_type", any.to_any("corba_cdr"))
         nv2 = SDOPackage.NameValue("dataport.dataflow_type", any.to_any(dataflow))
