@@ -71,6 +71,22 @@ def demo():
     ret5=hcf.ic_svc.stopImpedanceController("rarm")
     if ret5:
         print "stopImpedanceController => OK"
+    # 6. tracking check
+    hcf.ic_svc.startImpedanceController("rarm")
+    hcf.setJointAngle("RARM_ELBOW", -40.0, 0.5);
+    hcf.waitInterpolation()
+    hcf.setJointAngle("RARM_ELBOW", -70.0, 0.5);
+    hcf.waitInterpolation()
+    # 7. world frame check
+    if hcf.kinematics_only_mode:
+        hcf.seq_svc.setJointAngles(initial_pose, 2.0)
+        hcf.seq_svc.waitInterpolation()
+        hcf.setJointAngle("RLEG_ANKLE_P",40, 1);
+        hcf.waitInterpolation()
+        hcf.setJointAngle("RLEG_ANKLE_P",-40, 1);
+        hcf.waitInterpolation()
+        hcf.seq_svc.setJointAngles(initial_pose, 2.0)
+        hcf.seq_svc.waitInterpolation()
 
 if __name__ == '__main__':
     demo()
