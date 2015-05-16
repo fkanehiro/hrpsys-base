@@ -30,7 +30,12 @@ if __name__ == '__main__':
                     ifs = pp.interfaces
                     for aif in ifs:
                         if aif.instance_name == "service0" and aif.type_name == "RobotHardwareService" and aif.polarity == PROVIDED:
-                            rh_name = x.name()
+                            con_prof = RTC.ConnectorProfile("noname", "", [pp.port_ref], [])
+                            ret, con_prof = pp.port_ref.connect(con_prof)
+                            ior = any.from_any(con_prof.properties[0].value)
+                            svc = rtm.orb.string_to_object(ior)
+                            if len(svc.getStatus().angle) > 0 :
+                                rh_name = x.name()
             except:
                 pass
     hcf.waitForRobotHardware(rh_name)
