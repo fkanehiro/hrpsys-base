@@ -140,8 +140,8 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     control_mode = MODE_IDLE;
     loop = 0;
 
-    zmp_interpolate_time = 1.0;
     zmp_interpolator = new interpolator(6, m_dt);
+    zmp_transition_time = 1.0;
     transition_interpolator = new interpolator(1, m_dt, interpolator::HOFFARBIB, 1);
     transition_interpolator_ratio = 1.0;
     transition_time = 2.0;
@@ -1118,12 +1118,19 @@ bool AutoBalancer::getGaitGeneratorParam(OpenHRP::AutoBalancerService::GaitGener
 
 bool AutoBalancer::setAutoBalancerParam(const OpenHRP::AutoBalancerService::AutoBalancerParam& i_param)
 {
+  std::cerr << "[" << m_profile.instance_name << "] setAutoBalancerParam" << std::endl;
   double default_zmp_offsets_array[6];
   move_base_gain = i_param.move_base_gain;
   for (size_t i = 0; i < 2; i++)
     for (size_t j = 0; j < 3; j++)
       default_zmp_offsets_array[i*3+j] = i_param.default_zmp_offsets[i][j];
-  zmp_interpolator->go(default_zmp_offsets_array, zmp_interpolate_time, true);
+  zmp_transition_time = i_param.zmp_transition_time;
+  if (zmp_interpolator->isEmpty()) {
+      zmp_interpolator->clear();
+      zmp_interpolator->go(default_zmp_offsets_array, zmp_transition_time, true);
+  } else {
+      std::cerr << "[" << m_profile.instance_name << "]   default_zmp_offsets cannot be set because interpolating." << std::endl;
+  }
   graspless_manip_mode = i_param.graspless_manip_mode;
   graspless_manip_arm = std::string(i_param.graspless_manip_arm);
   for (size_t j = 0; j < 3; j++)
@@ -1135,7 +1142,6 @@ bool AutoBalancer::setAutoBalancerParam(const OpenHRP::AutoBalancerService::Auto
                                                                           i_param.graspless_manip_reference_trans_rot[2],
                                                                           i_param.graspless_manip_reference_trans_rot[3]).normalized().toRotationMatrix()); // rtc: (x, y, z, w) but eigen: (w, x, y, z)
   transition_time = i_param.transition_time;
-  std::cerr << "[" << m_profile.instance_name << "] setAutoBalancerParam" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   move_base_gain = " << move_base_gain << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   default_zmp_offsets = "
             << default_zmp_offsets_array[0] << " " << default_zmp_offsets_array[1] << " " << default_zmp_offsets_array[2] << " "
@@ -1145,7 +1151,7 @@ bool AutoBalancer::setAutoBalancerParam(const OpenHRP::AutoBalancerService::Auto
   std::cerr << "[" << m_profile.instance_name << "]   graspless_manip_p_gain = " << graspless_manip_p_gain.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   graspless_manip_reference_trans_pos = " << graspless_manip_reference_trans_coords.pos.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   graspless_manip_reference_trans_rot = " << graspless_manip_reference_trans_coords.rot.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", "\n", "    [", "]")) << std::endl;
-  std::cerr << "[" << m_profile.instance_name << "]   transition_time = " << transition_time << "[s]" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   transition_time = " << transition_time << "[s], zmp_transition_time = " << zmp_transition_time << "[s]" << std::endl;
   return true;
 };
 
@@ -1174,6 +1180,7 @@ bool AutoBalancer::getAutoBalancerParam(OpenHRP::AutoBalancerService::AutoBalanc
   i_param.graspless_manip_reference_trans_rot[2] = qt.y();
   i_param.graspless_manip_reference_trans_rot[3] = qt.z();
   i_param.transition_time = transition_time;
+  i_param.zmp_transition_time = zmp_transition_time;
   return true;
 };
 
