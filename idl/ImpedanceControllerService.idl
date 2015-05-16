@@ -52,6 +52,8 @@ module OpenHRP
       ControllerMode controller_mode;
       /// Joint weight for Inverse Kinematics calculation
       DblSequence ik_optional_weight_vector;
+      /// Use StateHolder basePos and baseRpy?
+      boolean use_sh_base_pos_rpy;
     };
 
     /**

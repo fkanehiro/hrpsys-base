@@ -86,6 +86,11 @@ def demo():
     # 7. World frame check
     if hcf.kinematics_only_mode:
         print "7. World frame check"
+        # tempolarily set use_sh_base_pos_rpy
+        icp=hcf.ic_svc.getImpedanceControllerParam("rarm")[1]
+        icp.use_sh_base_pos_rpy = True
+        hcf.ic_svc.setImpedanceControllerParam("rarm", icp)
+        # test
         hcf.seq_svc.setJointAngles(initial_pose, 2.0)
         hcf.seq_svc.waitInterpolation()
         hcf.setJointAngle("RLEG_ANKLE_P",40, 1);
@@ -96,6 +101,42 @@ def demo():
         hcf.seq_svc.waitInterpolation()
     else:
         print "7. World frame check is not executed in non-kinematics-only-mode"
+    # 8. World frame ref-force check
+    if hcf.kinematics_only_mode:
+        print "8. World frame ref-force check"
+        # tempolarily set use_sh_base_pos_rpy
+        icp=hcf.ic_svc.getImpedanceControllerParam("rarm")[1]
+        icp.use_sh_base_pos_rpy = True
+        hcf.ic_svc.setImpedanceControllerParam("rarm", icp)
+        # test
+        hcf.seq_svc.setBaseRpy([0,0,0], 1.0);
+        hcf.seq_svc.waitInterpolation();
+        hcf.seq_svc.setWrenches([0,0,0,0,0,0,
+                                 0,0,0,0,0,0,
+                                 0,0,0,0,0,0,
+                                 -40,0,0,0,0,0], 2.0);
+        hcf.seq_svc.waitInterpolation();
+        hcf.seq_svc.setWrenches([0,0,0,0,0,0,
+                                 0,0,0,0,0,0,
+                                 0,0,0,0,0,0,
+                                 0,0,0,0,0,0], 1.0);
+        hcf.seq_svc.waitInterpolation();
+        hcf.seq_svc.setBaseRpy([0,45*3.14159/180,0], 1.0);
+        hcf.seq_svc.waitInterpolation();
+        hcf.seq_svc.setWrenches([0,0,0,0,0,0,
+                                 0,0,0,0,0,0,
+                                 0,0,0,0,0,0,
+                                 -40,0,0,0,0,0], 2.0);
+        hcf.seq_svc.waitInterpolation();
+        hcf.seq_svc.setWrenches([0,0,0,0,0,0,
+                                 0,0,0,0,0,0,
+                                 0,0,0,0,0,0,
+                                 0,0,0,0,0,0], 1.0);
+        hcf.seq_svc.waitInterpolation();
+        hcf.seq_svc.setBaseRpy([0,0,0], 1.0);
+        hcf.seq_svc.waitInterpolation();
+    else:
+        print "8. World frame ref-force check is not executed in non-kinematics-only-mode"
 
 if __name__ == '__main__':
     demo()

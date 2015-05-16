@@ -188,6 +188,7 @@ class ImpedanceController
   unsigned int m_debugLevel;
   int dummy;
   int loop;
+  bool use_sh_base_pos_rpy;
 };
 
 
