@@ -215,12 +215,14 @@ RTC::ReturnCode_t CollisionDetector::onInitialize()
     // true (1) do not move when collide,
     // false(0) move even if collide
     m_collision_mask.resize(m_robot->numJoints());
+    m_init_collision_mask.resize(m_robot->numJoints());
     std::fill(m_collision_mask.begin(), m_collision_mask.end(), 1);
+    std::fill(m_init_collision_mask.begin(), m_init_collision_mask.end(), 1);
     if ( prop["collision_mask"] != "" ) {
 	std::cerr << "[co] prop[collision_mask] ->" << prop["collision_mask"] << std::endl;
         coil::vstring mask_str = coil::split(prop["collision_mask"], ",");
         if (mask_str.size() == m_robot->numJoints()) {
-            for (size_t i = 0; i < m_robot->numJoints(); i++) coil::stringTo(m_collision_mask[i], mask_str[i].c_str());
+            for (size_t i = 0; i < m_robot->numJoints(); i++) {coil::stringTo(m_collision_mask[i], mask_str[i].c_str()); m_init_collision_mask[i] = m_collision_mask[i]; }
             for (size_t i = 0; i < m_robot->numJoints(); i++) {
                 if ( m_collision_mask[i] == 0 ) {
                     std::cerr << "[co] CollisionDetector will not control " << m_robot->joint(i)->name << std::endl;
@@ -232,15 +234,11 @@ RTC::ReturnCode_t CollisionDetector::onInitialize()
     }
 
     if ( prop["use_limb_collision"] != "" ) {
-        if ( prop["collision_mask"] != "" ) {
-            std::cerr << "[co] Could not enable use_limb_collision along with collision_mask" << std::endl;
-        }else{
-            std::cerr << "[co] prop[use_limb_collision] -> " << prop["use_limb_collision"] << std::endl;
-            if ( prop["use_limb_collision"] == "true" ) {
-                std::fill(m_collision_mask.begin(), m_collision_mask.end(), 0);
-                m_use_limb_collision = true;
-                std::cerr << "[co] Enable use_limb_collision" << std::endl;
-            }
+        std::cerr << "[co] prop[use_limb_collision] -> " << prop["use_limb_collision"] << std::endl;
+        if ( prop["use_limb_collision"] == "true" ) {
+            std::fill(m_collision_mask.begin(), m_collision_mask.end(), 0);
+            m_use_limb_collision = true;
+            std::cerr << "[co] Enable use_limb_collision" << std::endl;
         }
     }
 
@@ -412,9 +410,22 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
                     m_link_collision[p->link(1)->index] = true;
                     if ( m_use_limb_collision ) {
                         hrp::JointPathPtr jointPath = m_robot->getJointPath(p->link(0),p->link(1));
+                        bool stop_all = true;
+                        // if all joint is within false(0:move even if collide) in initial mask ( for example leg to leg ) we stop them
+                        // if some joint is not within true(1:do not move within collide) on initial mask, stop only true joint (for exmple leg to arm)
+                        //for ( int i = 0; i < jointPath->numJoints(); i++ ){ std::cerr << jointPath->joint(i)->name << " " << jointPath->joint(i)->jointId << " " << m_init_collision_mask[jointPath->joint(i)->jointId] << std::endl; }
+                        for ( int i = 0; i < jointPath->numJoints(); i++ ){ if ( m_init_collision_mask[jointPath->joint(i)->jointId] == 1) stop_all = false; }
+                        //std::cerr << "stop_all " << stop_all << std::endl;
                         for ( int i = 0; i < jointPath->numJoints(); i++ ){
-                            m_collision_mask[jointPath->joint(i)->jointId] = 1; // true (1) do not move when collide,
+                            int id = jointPath->joint(i)->jointId;
+                            if ( stop_all ) {
+                                m_collision_mask[id] = 1; // true (1) do not move when collide,
+                            } else if (m_init_collision_mask[id] == 1) {  // skip false (0: move even if collide)
+                                m_collision_mask[id] = 1;
+                            }
+                            //std::cerr << m_init_collision_mask[id] << ":" << m_collision_mask[id] <<" ";
                         }
+                        //std::cerr << std::endl;
                     }
 #ifdef USE_HRPSYSUTIL
                     if ( m_use_viewer ) {
