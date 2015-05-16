@@ -58,6 +58,7 @@ CollisionDetector::CollisionDetector(RTC::Manager* manager)
       // </rtc-template>
       m_loop_for_check(0),
       m_collision_loop(1),
+      m_use_limb_collision(false),
 #ifdef USE_HRPSYSUTIL
       m_glbody(NULL),
 #endif // USE_HRPSYSUTIL
@@ -229,6 +230,20 @@ RTC::ReturnCode_t CollisionDetector::onInitialize()
             std::cerr << "[co] ERROR size of collision_mask is differ from robot joint number .. " << mask_str.size()  << ", " << m_robot->numJoints() << std::endl;
         }
     }
+
+    if ( prop["use_limb_collision"] != "" ) {
+        if ( prop["collision_mask"] != "" ) {
+            std::cerr << "[co] Could not enable use_limb_collision along with collision_mask" << std::endl;
+        }else{
+            std::cerr << "[co] prop[use_limb_collision] -> " << prop["use_limb_collision"] << std::endl;
+            if ( prop["use_limb_collision"] == "true" ) {
+                std::fill(m_collision_mask.begin(), m_collision_mask.end(), 0);
+                m_use_limb_collision = true;
+                std::cerr << "[co] Enable use_limb_collision" << std::endl;
+            }
+        }
+    }
+
     // setup collision state
     m_state.angle.length(m_robot->numJoints());
     m_state.collide.length(m_robot->numLinks());
@@ -355,7 +370,11 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
             }
         }else{   // recovery or collision angle
           for ( int i = 0; i < m_robot->numJoints(); i++ ){
-              m_robot->joint(i)->q = m_recover_jointdata[i];
+              if ( m_collision_mask[i] == 1) {// joint with 1 (do not move when collide :default), need to be updated using recover data
+                  m_robot->joint(i)->q = m_recover_jointdata[i];
+              }else{                          // joint with 0 (move even if collide), need to be updated using current data
+                  m_robot->joint(i)->q = m_qRef.data[i];
+              }
           }
         }
         //        }
@@ -391,6 +410,12 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
                     }
                     m_link_collision[p->link(0)->index] = true;
                     m_link_collision[p->link(1)->index] = true;
+                    if ( m_use_limb_collision ) {
+                        hrp::JointPathPtr jointPath = m_robot->getJointPath(p->link(0),p->link(1));
+                        for ( int i = 0; i < jointPath->numJoints(); i++ ){
+                            m_collision_mask[jointPath->joint(i)->jointId] = 1; // true (1) do not move when collide,
+                        }
+                    }
 #ifdef USE_HRPSYSUTIL
                     if ( m_use_viewer ) {
                         ((GLlink *)p->link(0))->highlight(true);
@@ -403,6 +428,24 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
                 m_have_safe_posture = true;
                 for ( int i = 0; i < m_q.data.length(); i++ ) {
                     m_lastsafe_jointdata[i] = m_robot->joint(i)->q;
+                }
+            }else{
+                for ( int i = 0; i < m_q.data.length(); i++ ) {
+                    if ( m_collision_mask[i] == 0 ) { // if collisoin_mask is 0 (move even if collide), we update lastsafe_joint_data from input data
+                        m_lastsafe_jointdata[i] = m_robot->joint(i)->q;
+                    }
+                }
+            }
+            if ( m_use_limb_collision ) {
+               if (m_safe_posture && m_recover_time == 0){ // safe mode
+                    std::fill(m_collision_mask.begin(), m_collision_mask.end(), 0); // false(0) move even if collide
+               }
+               if ( loop%200==0 and ! m_safe_posture ) {
+                   std::cerr << "collision_mask : ";
+                    for (size_t i = 0; i < m_robot->numJoints(); i++) {
+                        std::cerr << m_robot->joint(i)->name << ":"  << m_collision_mask[i] << " ";
+                    }
+                    std::cerr << std::endl;
                 }
             }
         }
@@ -432,7 +475,7 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
             //m_interpolator->set(m_q.data.get_buffer()); //Set initial angle
           }
           for ( int i = 0; i < m_q.data.length(); i++ ) {
-              if (m_collision_mask[i] == 0) {
+              if (m_collision_mask[i] == 0) { // joint with 0(move even if collide), need to be updated
                   m_q.data[i] = m_qRef.data[i];
               }
           }
