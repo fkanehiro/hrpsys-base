@@ -144,6 +144,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     zmp_interpolator = new interpolator(6, m_dt);
     transition_interpolator = new interpolator(1, m_dt, interpolator::HOFFARBIB, 1);
     transition_interpolator_ratio = 1.0;
+    transition_time = 2.0;
 
     // setting from conf file
     // GaitGenerator requires abc_leg_offset and abc_stride_parameter in robot conf file
@@ -810,7 +811,7 @@ void AutoBalancer::startABCparam(const OpenHRP::AutoBalancerService::StrSequence
   transition_interpolator->clear();
   transition_interpolator->set(&tmp_ratio);
   tmp_ratio = 1.0;
-  transition_interpolator->go(&tmp_ratio, 2.0, true); // 2.0 [s] transition
+  transition_interpolator->go(&tmp_ratio, transition_time, true);
   for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
     it->second.is_active = false;
   }
@@ -832,7 +833,7 @@ void AutoBalancer::stopABCparam()
   transition_interpolator->clear();
   transition_interpolator->set(&tmp_ratio);
   tmp_ratio = 0.0;
-  transition_interpolator->go(&tmp_ratio, 2.0, true); // 2.0 [s] transition
+  transition_interpolator->go(&tmp_ratio, transition_time, true);
   control_mode = MODE_SYNC_TO_IDLE;
 }
 
@@ -1133,6 +1134,7 @@ bool AutoBalancer::setAutoBalancerParam(const OpenHRP::AutoBalancerService::Auto
                                                                           i_param.graspless_manip_reference_trans_rot[1],
                                                                           i_param.graspless_manip_reference_trans_rot[2],
                                                                           i_param.graspless_manip_reference_trans_rot[3]).normalized().toRotationMatrix()); // rtc: (x, y, z, w) but eigen: (w, x, y, z)
+  transition_time = i_param.transition_time;
   std::cerr << "[" << m_profile.instance_name << "] setAutoBalancerParam" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   move_base_gain = " << move_base_gain << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   default_zmp_offsets = "
@@ -1143,6 +1145,7 @@ bool AutoBalancer::setAutoBalancerParam(const OpenHRP::AutoBalancerService::Auto
   std::cerr << "[" << m_profile.instance_name << "]   graspless_manip_p_gain = " << graspless_manip_p_gain.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   graspless_manip_reference_trans_pos = " << graspless_manip_reference_trans_coords.pos.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   graspless_manip_reference_trans_rot = " << graspless_manip_reference_trans_coords.rot.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", "\n", "    [", "]")) << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   transition_time = " << transition_time << "[s]" << std::endl;
   return true;
 };
 
@@ -1170,6 +1173,7 @@ bool AutoBalancer::getAutoBalancerParam(OpenHRP::AutoBalancerService::AutoBalanc
   i_param.graspless_manip_reference_trans_rot[1] = qt.x();
   i_param.graspless_manip_reference_trans_rot[2] = qt.y();
   i_param.graspless_manip_reference_trans_rot[3] = qt.z();
+  i_param.transition_time = transition_time;
   return true;
 };
 

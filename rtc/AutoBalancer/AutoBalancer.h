@@ -214,7 +214,7 @@ class AutoBalancer
   hrp::BodyPtr m_robot;
   coil::Mutex m_mutex;
 
-  double zmp_interpolate_time, transition_interpolator_ratio;
+  double zmp_interpolate_time, transition_interpolator_ratio, transition_time;
   interpolator *zmp_interpolator;
   interpolator *transition_interpolator;
   hrp::Vector3 input_zmp, input_basePos;
