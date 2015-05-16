@@ -681,6 +681,14 @@ class HrpsysConfigurator:
             url = url.replace('$(PROJECT_DIR)', path)
         return url
 
+    # public method to get sensors list
+    def getModelFileURL(self):
+        '''!@brief
+        Get Model File URL for ModelLoader
+        This function should be overridden in sub class
+        '''
+        return None
+
     # public method to get bodyInfo
     def getBodyInfo(self, url):
         '''!@brief
@@ -700,12 +708,23 @@ class HrpsysConfigurator:
 
         @param url str: model file url
         '''
+        if self.getModelFileURL() != None:
+            url = self.getModelFileURL()
         if url == '':
             return []
         else:
             return sum(map(lambda x: x.sensors,
                            filter(lambda x: len(x.sensors) > 0,
                                   self.getBodyInfo(url)._get_links())), [])  # sum is for list flatten
+
+    # public method to get sensors list
+    def setSensors(self, url):
+        '''!@brief
+        Set list of sensors
+
+        @param url str: model file url
+        '''
+        self.sensors = self.getSensors(url)
 
     # public method to get sensors list
     def getForceSensorNames(self):
@@ -1938,7 +1957,7 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
 
         print(self.configurator_name + "finding RTCManager and RobotHardware")
         self.waitForRTCManagerAndRoboHardware(robotname)
-        self.sensors = self.getSensors(url)
+        self.setSensors(url)
 
         print(self.configurator_name + "creating components")
         self.createComps()
