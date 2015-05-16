@@ -264,7 +264,7 @@ class Stabilizer
   hrp::Vector3 ref_foot_force[2];
   hrp::Vector3 ref_foot_moment[2];
   hrp::Vector3 d_foot_pos[2], pos_ctrl;
-  double total_mass;
+  double total_mass, transition_time;
 };
 
 

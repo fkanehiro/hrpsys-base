@@ -100,6 +100,8 @@ module OpenHRP
       // common
       STAlgorithm st_algorithm;
       ControllerMode controller_mode;
+      /// Transition time [s] for start and stop Stabilizer
+      double transition_time;
     };
 
     /**

@@ -35,7 +35,6 @@ static const char* stabilizer_spec[] =
   };
 // </rtc-template>
 
-#define MAX_TRANSITION_COUNT (2/dt)
 static double vlimit(double value, double llimit_value, double ulimit_value);
 static double switching_inpact_absorber(double force, double lower_th, double upper_th);
 
@@ -300,6 +299,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
     prev_contact_states.push_back(true);
     m_actContactStates.data[i] = false;
   }
+  transition_time = 2.0;
 
   // for debug output
   m_originRefZmp.data.x = m_originRefZmp.data.y = m_originRefZmp.data.z = 0.0;
@@ -807,7 +807,8 @@ void Stabilizer::getTargetParameters ()
   if ( transition_count == 0 ) {
     transition_smooth_gain = 1.0;
   } else {
-    transition_smooth_gain = 1/(1+exp(-9.19*(((MAX_TRANSITION_COUNT - std::fabs(transition_count)) / MAX_TRANSITION_COUNT) - 0.5)));
+    double max_transition_count = transition_time / dt;
+    transition_smooth_gain = 1/(1+exp(-9.19*(((max_transition_count - std::fabs(transition_count)) / max_transition_count) - 0.5)));
   }
   if (transition_count > 0) {
     for ( int i = 0; i < m_robot->numJoints(); i++ ){
@@ -1106,7 +1107,7 @@ void Stabilizer::sync_2_st ()
     target_ee_diff_p[i] = hrp::Vector3::Zero();
   }
   if (on_ground) {
-    transition_count = -MAX_TRANSITION_COUNT;
+    transition_count = -1 * transition_time / dt;
     control_mode = MODE_ST;
   } else {
     transition_count = 0;
@@ -1117,7 +1118,7 @@ void Stabilizer::sync_2_st ()
 void Stabilizer::sync_2_idle ()
 {
   std::cerr << "[" << m_profile.instance_name << "] " << "Sync ST => IDLE"  << std::endl;
-  transition_count = MAX_TRANSITION_COUNT;
+  transition_count = transition_time / dt;
   for (int i = 0; i < m_robot->numJoints(); i++ ) {
     transition_joint_q[i] = m_robot->joint(i)->q;
   }
@@ -1186,6 +1187,7 @@ void Stabilizer::getParameter(OpenHRP::StabilizerService::stParam& i_stp)
   i_stp.eefm_alpha_cutoff_freq = szd->get_alpha_cutoff_freq();
   i_stp.eefm_gravitational_acceleration = eefm_gravitational_acceleration;
   i_stp.st_algorithm = st_algorithm;
+  i_stp.transition_time = transition_time;
   switch(control_mode) {
   case MODE_IDLE: i_stp.controller_mode = OpenHRP::StabilizerService::MODE_IDLE; break;
   case MODE_AIR: i_stp.controller_mode = OpenHRP::StabilizerService::MODE_AIR; break;
@@ -1253,6 +1255,7 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
   szd->set_wrench_alpha_blending(i_stp.eefm_wrench_alpha_blending);
   szd->set_alpha_cutoff_freq(i_stp.eefm_alpha_cutoff_freq);
   eefm_gravitational_acceleration = i_stp.eefm_gravitational_acceleration;
+  transition_time = i_stp.transition_time;
   std::cerr << "[" << m_profile.instance_name << "]   eefm_k1  = [" << eefm_k1[0] << ", " << eefm_k1[1] << "]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   eefm_k2  = [" << eefm_k2[0] << ", " << eefm_k2[1] << "]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   eefm_k3  = [" << eefm_k3[0] << ", " << eefm_k3[1] << "]" << std::endl;
@@ -1275,6 +1278,7 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
   } else {
     std::cerr << "[" << m_profile.instance_name << "]   st_algorithm cannot be changed to [" << (st_algorithm == OpenHRP::StabilizerService::EEFM?"EEFM":(st_algorithm == OpenHRP::StabilizerService::EEFMQP?"EEFMQP":"TPCC")) << "] during MODE_AIR or MODE_ST." << std::endl;
   }
+  std::cerr << "[" << m_profile.instance_name << "]  transition_time = " << transition_time << "[s]" << std::endl;
 }
 
 void Stabilizer::waitSTTransition()
