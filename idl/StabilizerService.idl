@@ -98,8 +98,12 @@ module OpenHRP
       /// Gravitational acceleration [m/s^2] used in ST calculation
       double eefm_gravitational_acceleration;
       // common
+      /// Current Stabilizer algorithm
       STAlgorithm st_algorithm;
+      /// Current ControllerMode
       ControllerMode controller_mode;
+      /// Transition time [s] for start and stop Stabilizer
+      double transition_time;
     };
 
     /**
