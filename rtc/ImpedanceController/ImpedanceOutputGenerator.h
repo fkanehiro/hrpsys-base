@@ -144,7 +144,7 @@ struct ImpedanceOutputGenerator
         dif_pos1 = current_p2 - target_p2;
         rats::difference_rotation(dif_rot1, target_r2, current_r2);
         err_p = target_p0 - current_p0;
-        rats::difference_rotation(err_r, target_r0, current_r0);
+        rats::difference_rotation(err_r, current_r0, target_r0);
         vel_p =  ( eeR * (force_gain * (eeR.transpose() * force_diff)) * _dt * _dt
                    + (2 * M_p + D_p * _dt) * dif_pos0
                    - M_p * dif_pos1) /
