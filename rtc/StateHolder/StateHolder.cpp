@@ -243,6 +243,11 @@ RTC::ReturnCode_t StateHolder::onExecute(RTC::UniqueId ec_id)
     if (m_requestGoActual || (m_q.data.length() == 0 && m_currentQ.data.length() > 0)){
         m_q = m_currentQ;
         if (m_q.data.length() != m_tq.data.length()) m_tq.data.length(m_q.data.length());
+        // Reset reference wrenches to zero
+        for (unsigned int i=0; i<m_wrenchesIn.size(); i++){
+            m_wrenches[i].data[0] = m_wrenches[i].data[1] = m_wrenches[i].data[2] = 0.0;
+            m_wrenches[i].data[3] = m_wrenches[i].data[4] = m_wrenches[i].data[5] = 0.0;
+        }
     }
 
     if (m_requestGoActual){
