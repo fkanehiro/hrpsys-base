@@ -54,7 +54,8 @@ ImpedanceController::ImpedanceController(RTC::Manager* manager)
       // </rtc-template>
       m_robot(hrp::BodyPtr()),
       m_debugLevel(0),
-      dummy(0)
+      dummy(0),
+      use_sh_base_pos_rpy(false)
 {
     m_service0.impedance(this);
 }
@@ -357,7 +358,8 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
           m_robot->rootLink()->p = hrp::Vector3(m_basePos.data.x, m_basePos.data.y, m_basePos.data.z);
           m_robot->rootLink()->R = hrp::rotFromRpy(m_baseRpy.data.r, m_baseRpy.data.p, m_baseRpy.data.y);
           m_robot->calcForwardKinematics();
-          if (ee_map.find("rleg") != ee_map.end() && ee_map.find("lleg") != ee_map.end()) { // if legged robot
+          if ( (ee_map.find("rleg") != ee_map.end() && ee_map.find("lleg") != ee_map.end()) // if legged robot
+               && !use_sh_base_pos_rpy ) {
               // TODO
               //  Tempolarily modify root coords to fix foot pos rot
               //  This will be removed after seq outputs adequate waistRPY discussed in https://github.com/fkanehiro/hrpsys-base/issues/272
@@ -782,6 +784,7 @@ bool ImpedanceController::setImpedanceControllerParam(const std::string& i_name_
             ov[i] = i_param_.ik_optional_weight_vector[i];
         }
         m_impedance_param[name].manip->setOptionalWeightVector(ov);
+        use_sh_base_pos_rpy = i_param_.use_sh_base_pos_rpy;
 
         std::cerr << "[" << m_profile.instance_name << "] set parameters" << std::endl;
         std::cerr << "[" << m_profile.instance_name << "]             name : " << name << std::endl;
@@ -793,6 +796,7 @@ bool ImpedanceController::setImpedanceControllerParam(const std::string& i_name_
         std::cerr << "[" << m_profile.instance_name << "]          sr_gain : " << m_impedance_param[name].sr_gain << std::endl;
         std::cerr << "[" << m_profile.instance_name << "]       avoid_gain : " << m_impedance_param[name].avoid_gain << std::endl;
         std::cerr << "[" << m_profile.instance_name << "]   reference_gain : " << m_impedance_param[name].reference_gain << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "]   use_sh_base_pos_rpy : " << (use_sh_base_pos_rpy?"true":"false") << std::endl;
     }
     return true;
 }
@@ -839,9 +843,11 @@ bool ImpedanceController::getImpedanceControllerParam(const std::string& i_name_
         std::cerr << "[" << m_profile.instance_name << "] Could not found impedance controller param [" << i_name_ << "]" << std::endl;
         // if impedance param of i_name_ is not found, return default impedance parameter ;; default parameter is specified ImpedanceParam struct's default constructer
         copyImpedanceParam(i_param_, ImpedanceParam());
+        i_param_.use_sh_base_pos_rpy = use_sh_base_pos_rpy;
         return false;
     }
     copyImpedanceParam(i_param_, m_impedance_param[i_name_]);
+    i_param_.use_sh_base_pos_rpy = use_sh_base_pos_rpy;
     return true;
 }
 
