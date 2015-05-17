@@ -214,17 +214,17 @@ RTC::ReturnCode_t CollisionDetector::onInitialize()
 
     // true (1) do not move when collide,
     // false(0) move even if collide
-    m_collision_mask.resize(m_robot->numJoints());
-    m_init_collision_mask.resize(m_robot->numJoints());
-    std::fill(m_collision_mask.begin(), m_collision_mask.end(), 1);
+    m_curr_collision_mask.resize(m_robot->numJoints()); // collision_mask used to select output                0: passthough reference data, 1 output safe data
+    std::fill(m_curr_collision_mask.begin(), m_curr_collision_mask.end(), 0);
+    m_init_collision_mask.resize(m_robot->numJoints()); // collision_mask defined in .conf as [collisoin_mask] 0: move even if collide, 1: do not move when collide
     std::fill(m_init_collision_mask.begin(), m_init_collision_mask.end(), 1);
     if ( prop["collision_mask"] != "" ) {
 	std::cerr << "[co] prop[collision_mask] ->" << prop["collision_mask"] << std::endl;
         coil::vstring mask_str = coil::split(prop["collision_mask"], ",");
         if (mask_str.size() == m_robot->numJoints()) {
-            for (size_t i = 0; i < m_robot->numJoints(); i++) {coil::stringTo(m_collision_mask[i], mask_str[i].c_str()); m_init_collision_mask[i] = m_collision_mask[i]; }
+            for (size_t i = 0; i < m_robot->numJoints(); i++) {coil::stringTo(m_init_collision_mask[i], mask_str[i].c_str()); }
             for (size_t i = 0; i < m_robot->numJoints(); i++) {
-                if ( m_collision_mask[i] == 0 ) {
+                if ( m_init_collision_mask[i] == 0 ) {
                     std::cerr << "[co] CollisionDetector will not control " << m_robot->joint(i)->name << std::endl;
                 }
             }
@@ -236,7 +236,6 @@ RTC::ReturnCode_t CollisionDetector::onInitialize()
     if ( prop["use_limb_collision"] != "" ) {
         std::cerr << "[co] prop[use_limb_collision] -> " << prop["use_limb_collision"] << std::endl;
         if ( prop["use_limb_collision"] == "true" ) {
-            std::fill(m_collision_mask.begin(), m_collision_mask.end(), 0);
             m_use_limb_collision = true;
             std::cerr << "[co] Enable use_limb_collision" << std::endl;
         }
@@ -368,9 +367,9 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
             }
         }else{   // recovery or collision angle
           for ( int i = 0; i < m_robot->numJoints(); i++ ){
-              if ( m_collision_mask[i] == 1) {// joint with 1 (do not move when collide :default), need to be updated using recover data
+              if ( m_curr_collision_mask[i] == 1) {// joint with 1 (do not move when collide :default), need to be updated using recover(safe) data
                   m_robot->joint(i)->q = m_recover_jointdata[i];
-              }else{                          // joint with 0 (move even if collide), need to be updated using current data
+              }else{                               // joint with 0 (move even if collide), need to be updated using reference(dangerous) data
                   m_robot->joint(i)->q = m_qRef.data[i];
               }
           }
@@ -413,19 +412,18 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
                         bool stop_all = true;
                         // if all joint is within false(0:move even if collide) in initial mask ( for example leg to leg ) we stop them
                         // if some joint is not within true(1:do not move within collide) on initial mask, stop only true joint (for exmple leg to arm)
-                        //for ( int i = 0; i < jointPath->numJoints(); i++ ){ std::cerr << jointPath->joint(i)->name << " " << jointPath->joint(i)->jointId << " " << m_init_collision_mask[jointPath->joint(i)->jointId] << std::endl; }
                         for ( int i = 0; i < jointPath->numJoints(); i++ ){ if ( m_init_collision_mask[jointPath->joint(i)->jointId] == 1) stop_all = false; }
-                        //std::cerr << "stop_all " << stop_all << std::endl;
                         for ( int i = 0; i < jointPath->numJoints(); i++ ){
                             int id = jointPath->joint(i)->jointId;
+                            // collision_mask used to select output                0: passthough reference data, 1 output safe data
                             if ( stop_all ) {
-                                m_collision_mask[id] = 1; // true (1) do not move when collide,
+                                m_curr_collision_mask[id] = 1;            // true (1: output safe data) do not move when collide,
                             } else if (m_init_collision_mask[id] == 1) {  // skip false (0: move even if collide)
-                                m_collision_mask[id] = 1;
+                                m_curr_collision_mask[id] = 1;
                             }
-                            //std::cerr << m_init_collision_mask[id] << ":" << m_collision_mask[id] <<" ";
                         }
-                        //std::cerr << std::endl;
+                    } else {
+                        std::copy(m_init_collision_mask.begin(), m_init_collision_mask.end(), m_curr_collision_mask.begin()); // copy init_collision_mask to curr_collision_mask
                     }
 #ifdef USE_HRPSYSUTIL
                     if ( m_use_viewer ) {
@@ -442,19 +440,16 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
                 }
             }else{
                 for ( int i = 0; i < m_q.data.length(); i++ ) {
-                    if ( m_collision_mask[i] == 0 ) { // if collisoin_mask is 0 (move even if collide), we update lastsafe_joint_data from input data
+                    if ( m_curr_collision_mask[i] == 0 ) { // if collisoin_mask is 0 (move even if collide), we update lastsafe_joint_data from input data
                         m_lastsafe_jointdata[i] = m_robot->joint(i)->q;
                     }
                 }
             }
             if ( m_use_limb_collision ) {
-               if (m_safe_posture && m_recover_time == 0){ // safe mode
-                    std::fill(m_collision_mask.begin(), m_collision_mask.end(), 0); // false(0) move even if collide
-               }
                if ( loop%200==0 and ! m_safe_posture ) {
                    std::cerr << "collision_mask : ";
                     for (size_t i = 0; i < m_robot->numJoints(); i++) {
-                        std::cerr << m_robot->joint(i)->name << ":"  << m_collision_mask[i] << " ";
+                        std::cerr << m_robot->joint(i)->name << ":"  << m_curr_collision_mask[i] << " ";
                     }
                     std::cerr << std::endl;
                 }
@@ -471,6 +466,8 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
           for ( int i = 0; i < m_q.data.length(); i++ ) {
             m_q.data[i] = m_qRef.data[i];
           }
+          // collision_mask used to select output                0: passthough reference data, 1 output safe data
+          std::fill(m_curr_collision_mask.begin(), m_curr_collision_mask.end(), 0); // false(0) clear output data
         } else {
           if(m_safe_posture){  //recover
             //std::cerr << "recover-------------- " << std::endl;
@@ -486,7 +483,7 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
             //m_interpolator->set(m_q.data.get_buffer()); //Set initial angle
           }
           for ( int i = 0; i < m_q.data.length(); i++ ) {
-              if (m_collision_mask[i] == 0) { // joint with 0(move even if collide), need to be updated
+              if (m_curr_collision_mask[i] == 0) { // 0: passthough reference data, 1 output safe data, stop joints only joint with 1
                   m_q.data[i] = m_qRef.data[i];
               }
           }
