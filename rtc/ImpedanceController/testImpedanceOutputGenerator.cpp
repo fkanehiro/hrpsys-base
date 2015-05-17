@@ -1,0 +1,103 @@
+/* -*- coding:utf-8-unix; mode:c++; -*- */
+
+#include "ImpedanceOutputGenerator.h"
+/* samples */
+#include <stdio.h>
+#include <cstdio>
+#include <iostream>
+#include <vector>
+
+class testImpedanceOutputGenerator
+{
+protected:
+    double dt; /* [s] */
+    ImpedanceOutputGenerator imp;
+    void gen_pattern_and_plot (const std::vector<hrp::Vector3>& force_diff_vec,
+                               const std::vector<hrp::Vector3>& moment_diff_vec,
+                               const std::vector<hrp::Vector3>& target_p0_vec,
+                               const std::vector<hrp::Matrix33>& target_r0_vec,
+                               const std::vector<double>& time_vec)
+    {
+        std::string fname("/tmp/plot-imp.dat");
+        FILE* fp = fopen(fname.c_str(), "w");
+        for (size_t i = 0; i < time_vec.size();i++) {
+            imp.target_p0 = target_p0_vec[i];
+            imp.target_r0 = target_r0_vec[i];
+            imp.current_p0 = imp.current_p1;
+            imp.current_r0 = imp.current_r1;
+            hrp::Vector3 vel_p, vel_r;
+            hrp::Matrix33 eeR = hrp::Matrix33::Identity();
+            imp.calcTargetVelocity(vel_p, vel_r,
+                                   eeR, force_diff_vec[i], moment_diff_vec[i], dt);
+            fprintf(fp, "%f %f %f %f %f %f %f %f %f %f\n",
+                    time_vec[i], imp.current_p1(0), imp.current_p1(1), imp.current_p1(2),
+                    imp.target_p1(0), imp.target_p1(1), imp.target_p1(2),
+                    force_diff_vec[i](0)/imp.K_p, force_diff_vec[i](1)/imp.K_p, force_diff_vec[i](2)/imp.K_p);
+        }
+        fclose(fp);
+        // plot
+        FILE* gp = popen("gnuplot", "w");
+        fprintf(gp, "set multiplot layout 3, 1 title 'Pos results'\n");
+        std::string titles[3] = {"X", "Y", "Z"};
+        for (size_t ii = 0; ii < 3; ii++) {
+            fprintf(gp, "set title '%s'\n", titles[ii].c_str());
+            fprintf(gp, "set xlabel 'Time [s]'\n");
+            fprintf(gp, "set ylabel 'pos [m]'\n");
+            fprintf(gp, "plot '/tmp/plot-imp.dat' using 1:%d with lines title 'cur pos(%s)', '/tmp/plot-imp.dat' using 1:%d with lines title 'tgt pos(%s)', '/tmp/plot-imp.dat' using 1:%d with lines title 'force_diff/K(%s)'\n",
+                    ii+2, titles[ii].c_str(), ii+2+3, titles[ii].c_str(), ii+2+3*2, titles[ii].c_str());
+        }
+        fflush(gp);
+        double tmp;
+        std::cin >> tmp;
+        pclose(gp);
+    };
+public:
+    testImpedanceOutputGenerator (const double _dt = 0.004) : dt(_dt), imp() {};
+    void test0 ()
+    {
+        double tm = 0.0, total_tm = 4.0;
+        std::vector<double> time_vec;
+        std::vector<hrp::Vector3> force_diff_vec, moment_diff_vec, target_p0_vec;
+        std::vector<hrp::Matrix33> target_r0_vec;
+        for (size_t i = 0; i < static_cast<size_t>(total_tm/dt);i++) {
+            time_vec.push_back(tm);
+            force_diff_vec.push_back((i*dt < total_tm * 0.2 ? hrp::Vector3::Zero() : hrp::Vector3(10,-20,30)));
+            moment_diff_vec.push_back((i*dt < total_tm * 0.3 ? hrp::Vector3::Zero() : hrp::Vector3(5,-10,15)));
+            target_p0_vec.push_back(hrp::Vector3::Zero());
+            target_r0_vec.push_back(hrp::Matrix33::Identity());
+            tm += dt;
+        }
+        gen_pattern_and_plot (force_diff_vec, moment_diff_vec, target_p0_vec, target_r0_vec, time_vec);
+    };
+    void test1 ()
+    {
+        double tm = 0.0, total_tm = 1.0;
+        std::vector<double> time_vec;
+        std::vector<hrp::Vector3> force_diff_vec, moment_diff_vec, target_p0_vec;
+        std::vector<hrp::Matrix33> target_r0_vec;
+        //imp.M_p = 0.0; imp.M_r = 0.0;
+        for (size_t i = 0; i < static_cast<size_t>(total_tm/dt);i++) {
+            time_vec.push_back(tm);
+            force_diff_vec.push_back(hrp::Vector3::Zero());
+            moment_diff_vec.push_back(hrp::Vector3::Zero());
+            double ratio = (i*dt < total_tm * 0.3 ? i*dt/(total_tm * 0.3) : 1.0);
+            target_p0_vec.push_back(hrp::Vector3((1-ratio)*hrp::Vector3(0,0,0)+ratio*hrp::Vector3(0.01,-0.02,0.03)));
+            target_r0_vec.push_back(hrp::Matrix33::Identity());
+            tm += dt;
+        }
+        gen_pattern_and_plot (force_diff_vec, moment_diff_vec, target_p0_vec, target_r0_vec, time_vec);
+    };
+};
+
+int main(int argc, char* argv[])
+{
+    if (argc == 2) {
+        if (std::string(argv[1]) == "--test0") {
+            testImpedanceOutputGenerator().test0();
+        } else if (std::string(argv[1]) == "--test1") {
+            testImpedanceOutputGenerator().test1();
+        }
+    }
+    return 0;
+}
+
