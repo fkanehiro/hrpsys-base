@@ -89,9 +89,11 @@ RTC::ReturnCode_t RobotHardware::onInitialize()
   
   // </rtc-template>
 
-  m_robot = boost::shared_ptr<robot>(new robot());
-
   RTC::Properties& prop = getProperties();
+  double dt;
+  coil::stringTo(dt, prop["dt"].c_str());
+
+  m_robot = boost::shared_ptr<robot>(new robot(dt));
 
   RTC::Manager& rtcManager = RTC::Manager::instance();
   std::string nameServer = rtcManager.getConfig()["corba.nameservers"];
@@ -235,7 +237,7 @@ RTC::ReturnCode_t RobotHardware::onExecute(RTC::UniqueId ec_id)
       if (!m_isDemoMode 
           && m_robot->checkJointCommands(m_qRef.data.get_buffer())){
           m_robot->servo("all", false);
-          m_emergencySignal.data = robot::EMG_SERVO_ERROR;
+          m_emergencySignal.data = robot::EMG_CMD_VELOCITY;
           m_emergencySignalOut.write();
       }else{
           // output to iob
