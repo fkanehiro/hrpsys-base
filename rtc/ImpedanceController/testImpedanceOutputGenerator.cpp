@@ -7,6 +7,13 @@
 #include <iostream>
 #include <vector>
 
+#ifndef rad2deg
+#define rad2deg(rad) (rad * 180 / M_PI)
+#endif
+#ifndef deg2rad
+#define deg2rad(deg) (deg * M_PI / 180)
+#endif
+
 class testImpedanceOutputGenerator
 {
 protected:
@@ -29,27 +36,46 @@ protected:
             hrp::Matrix33 eeR = hrp::Matrix33::Identity();
             imp.calcTargetVelocity(vel_p, vel_r,
                                    eeR, force_diff_vec[i], moment_diff_vec[i], dt);
-            fprintf(fp, "%f %f %f %f %f %f %f %f %f %f\n",
-                    time_vec[i], imp.current_p1(0), imp.current_p1(1), imp.current_p1(2),
+            hrp::Vector3 current_rot, target_rot;
+            rats::difference_rotation(current_rot, hrp::Matrix33::Identity(), imp.current_r1);
+            rats::difference_rotation(target_rot, hrp::Matrix33::Identity(), imp.target_r1);
+            fprintf(fp, "%f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n",
+                    time_vec[i],
+                    imp.current_p1(0), imp.current_p1(1), imp.current_p1(2),
                     imp.target_p1(0), imp.target_p1(1), imp.target_p1(2),
-                    force_diff_vec[i](0)/imp.K_p, force_diff_vec[i](1)/imp.K_p, force_diff_vec[i](2)/imp.K_p);
+                    force_diff_vec[i](0)/imp.K_p, force_diff_vec[i](1)/imp.K_p, force_diff_vec[i](2)/imp.K_p,
+                    rad2deg(current_rot(0)), rad2deg(current_rot(1)), rad2deg(current_rot(2)),
+                    rad2deg(target_rot(0)), rad2deg(target_rot(1)), rad2deg(target_rot(2)),
+                    rad2deg(moment_diff_vec[i](0)/imp.K_r), rad2deg(moment_diff_vec[i](1)/imp.K_r), rad2deg(moment_diff_vec[i](2)/imp.K_r)
+                    );
         }
         fclose(fp);
         // plot
-        FILE* gp = popen("gnuplot", "w");
-        fprintf(gp, "set multiplot layout 3, 1 title 'Pos results'\n");
         std::string titles[3] = {"X", "Y", "Z"};
+        //   plot pos
+        FILE* gp_pos = popen("gnuplot", "w");
+        fprintf(gp_pos, "set multiplot layout 3, 1 title 'Pos results'\n");
         for (size_t ii = 0; ii < 3; ii++) {
-            fprintf(gp, "set title '%s'\n", titles[ii].c_str());
-            fprintf(gp, "set xlabel 'Time [s]'\n");
-            fprintf(gp, "set ylabel 'pos [m]'\n");
-            fprintf(gp, "plot '/tmp/plot-imp.dat' using 1:%d with lines title 'cur pos(%s)', '/tmp/plot-imp.dat' using 1:%d with lines title 'tgt pos(%s)', '/tmp/plot-imp.dat' using 1:%d with lines title 'force_diff/K(%s)'\n",
+            fprintf(gp_pos, "set xlabel 'Time [s]'\n");
+            fprintf(gp_pos, "set ylabel 'pos %s [m]'\n", titles[ii].c_str());
+            fprintf(gp_pos, "plot '/tmp/plot-imp.dat' using 1:%d with lines title 'cur pos(%s)' lw 4, '/tmp/plot-imp.dat' using 1:%d with lines title 'tgt pos(%s)' lw 3, '/tmp/plot-imp.dat' using 1:%d with lines title 'force_diff/K(%s)' lw 2\n",
                     ii+2, titles[ii].c_str(), ii+2+3, titles[ii].c_str(), ii+2+3*2, titles[ii].c_str());
         }
-        fflush(gp);
+        fflush(gp_pos);
+        //   plot rot
+        FILE* gp_rot = popen("gnuplot", "w");
+        fprintf(gp_rot, "set multiplot layout 3, 1 title 'Rot results'\n");
+        for (size_t ii = 0; ii < 3; ii++) {
+            fprintf(gp_rot, "set xlabel 'Time [s]'\n");
+            fprintf(gp_rot, "set ylabel 'rot %s [deg]'\n", titles[ii].c_str());
+            fprintf(gp_rot, "plot '/tmp/plot-imp.dat' using 1:%d with lines title 'cur rot(%s)' lw 4, '/tmp/plot-imp.dat' using 1:%d with lines title 'tgt rot(%s)' lw 3, '/tmp/plot-imp.dat' using 1:%d with lines title 'moment_diff/K(%s)' lw 2\n",
+                    ii+2+9, titles[ii].c_str(), ii+2+3+9, titles[ii].c_str(), ii+2+3*2+9, titles[ii].c_str());
+        }
+        fflush(gp_rot);
         double tmp;
         std::cin >> tmp;
-        pclose(gp);
+        pclose(gp_pos);
+        pclose(gp_rot);
     };
 public:
     testImpedanceOutputGenerator (const double _dt = 0.004) : dt(_dt), imp() {};
@@ -81,8 +107,15 @@ public:
             force_diff_vec.push_back(hrp::Vector3::Zero());
             moment_diff_vec.push_back(hrp::Vector3::Zero());
             double ratio = (i*dt < total_tm * 0.3 ? i*dt/(total_tm * 0.3) : 1.0);
-            target_p0_vec.push_back(hrp::Vector3((1-ratio)*hrp::Vector3(0,0,0)+ratio*hrp::Vector3(0.01,-0.02,0.03)));
-            target_r0_vec.push_back(hrp::Matrix33::Identity());
+            target_p0_vec.push_back(hrp::Vector3((1-ratio)*hrp::Vector3::Zero()+ratio*hrp::Vector3(0.01,-0.02,0.03)));
+            hrp::Vector3 tmpv(hrp::Vector3((1-ratio)*hrp::Vector3::Zero() + ratio*hrp::Vector3(0.1,-0.2,0.3)));
+            Eigen::AngleAxis<double> tmpr;
+            if (tmpv.norm() != 0.0) {
+                tmpr = Eigen::AngleAxis<double>(tmpv.norm(), tmpv.normalized());
+            } else {
+                tmpr = hrp::Matrix33::Identity();
+            }
+            target_r0_vec.push_back(tmpr.toRotationMatrix());
             tm += dt;
         }
         gen_pattern_and_plot (force_diff_vec, moment_diff_vec, target_p0_vec, target_r0_vec, time_vec);
