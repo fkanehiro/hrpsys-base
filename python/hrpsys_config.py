@@ -257,6 +257,9 @@ class HrpsysConfigurator:
 
     hrpsys_version = None
 
+    # flag isKinamticsOnlyMode?
+    kinematics_only_mode = False
+
     # public method
     def connectComps(self):
         '''!@brief
@@ -292,6 +295,7 @@ class HrpsysConfigurator:
 
         # only for kinematics simulator
         if rtm.findPort(self.rh.ref, "basePoseRef"):
+            self.kinematics_only_mode = True
             if self.abc:
                 connectPorts(self.abc.port("basePoseOut"), self.rh.port("basePoseRef"))
             else:
