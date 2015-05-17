@@ -21,3 +21,8 @@ void OGMap3DService_impl::save(const char *filename)
 {
     m_comp->save(filename);
 }
+
+void OGMap3DService_impl::clear()
+{
+    m_comp->clear();
+}

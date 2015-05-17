@@ -105,6 +105,7 @@ class OccupancyGridMap3D
 
   OpenHRP::OGMap3D* getOGMap3D(const OpenHRP::AABB& region);
   void save(const char *filename);
+  void clear();
 
  protected:
   // Configuration variable declaration

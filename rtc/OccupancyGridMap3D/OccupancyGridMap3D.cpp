@@ -620,6 +620,12 @@ void OccupancyGridMap3D::save(const char *filename)
     m_map->writeBinary(filename);
 }
 
+void OccupancyGridMap3D::clear()
+{
+    Guard guard(m_mutex);
+    m_map->clear();
+}
+
 extern "C"
 {
 
