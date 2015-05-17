@@ -14,7 +14,7 @@ public:
     /**
        \brief constructor
      */
-    robot();
+    robot(double dt);
 
     /**
        \brief destructor
@@ -229,7 +229,11 @@ public:
     /**
        \brief reasons of emergency
      */
-    typedef enum {EMG_SERVO_ERROR, EMG_FZ, EMG_SERVO_ALARM} emg_reason;
+    typedef enum {EMG_SERVO_ERROR, ///< servo error is bigger than threshold 
+                  EMG_FZ, 	   ///< Fz is bigger than threshold
+                  EMG_SERVO_ALARM, ///< servo alarm is detected
+                  EMG_CMD_VELOCITY ///< command joint velocity is too fast
+    } emg_reason;
 
     /**
        \brief check occurrence of emergency state
@@ -327,6 +331,7 @@ private:
     std::string m_pdgainsFilename;
     bool m_reportedEmergency;
     boost::interprocess::interprocess_semaphore wait_sem;
+    double m_dt;
 };
 
 #endif
