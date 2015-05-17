@@ -624,6 +624,7 @@ void OccupancyGridMap3D::clear()
 {
     Guard guard(m_mutex);
     m_map->clear();
+    m_updateOut.write();
 }
 
 extern "C"
