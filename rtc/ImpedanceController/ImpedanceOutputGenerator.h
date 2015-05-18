@@ -5,6 +5,12 @@
 
 struct ImpedanceOutputGenerator
 {
+    // target  : Target pos and rot from SequencePlayer and StateHolder
+    // current : Current ee pos and rot (IK result)
+    // output  : Output from ImpedanceOutput which response is characterized by MDK
+    // index 0 : t+dt. Values in current onExecute.
+    // index 1 : t. Values in previous onExecute.
+    // index 2 : t-dt. Values in previous previous onExecute.
     hrp::Vector3 target_p0, target_p1, target_p2, current_p1, output_p1, output_p2;
     hrp::Matrix33 target_r0, target_r1, target_r2, current_r1, output_r1, output_r2;
     double M_p, D_p, K_p;
