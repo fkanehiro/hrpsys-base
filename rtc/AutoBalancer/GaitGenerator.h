@@ -160,7 +160,7 @@ namespace rats
       double toe_zmp_offset_x, heel_zmp_offset_x; // [m]
       toe_heel_phase_counter* thp_ptr;
       bool use_toe_heel_transition, is_final_double_support_set;
-      void calc_current_refzmp (hrp::Vector3& ret, hrp::Vector3& swing_foot_zmp_offset, const double default_double_support_ratio, const size_t one_step_len) const;
+      void calc_current_refzmp (hrp::Vector3& ret, hrp::Vector3& swing_foot_zmp_offset, const double default_double_support_ratio, const double default_double_support_static_ratio, const size_t one_step_len) const;
       const bool is_start_double_support_phase () const { return refzmp_index == 0; };
       const bool is_end_double_support_phase () const { return refzmp_index == refzmp_cur_list.size() - 1; };
 #ifndef HAVE_MAIN
@@ -207,9 +207,9 @@ namespace rats
       void set_heel_zmp_offset_x (const double _off) { heel_zmp_offset_x = _off; };
       void set_use_toe_heel_transition (const double _u) { use_toe_heel_transition = _u; };
       // getter
-      bool get_current_refzmp (hrp::Vector3& rzmp, hrp::Vector3& swing_foot_zmp_offset, const double default_double_support_ratio, const size_t one_step_len) const
+      bool get_current_refzmp (hrp::Vector3& rzmp, hrp::Vector3& swing_foot_zmp_offset, const double default_double_support_ratio, const double default_double_support_static_ratio, const size_t one_step_len) const
       {
-        if (refzmp_cur_list.size() > refzmp_index ) calc_current_refzmp(rzmp, swing_foot_zmp_offset, default_double_support_ratio, one_step_len);
+        if (refzmp_cur_list.size() > refzmp_index ) calc_current_refzmp(rzmp, swing_foot_zmp_offset, default_double_support_ratio, default_double_support_static_ratio, one_step_len);
         return refzmp_cur_list.size() > refzmp_index;
       };
       const hrp::Vector3& get_refzmp_cur () { return refzmp_cur_list.front(); };

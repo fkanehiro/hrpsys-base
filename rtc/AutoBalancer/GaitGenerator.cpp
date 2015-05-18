@@ -41,10 +41,11 @@ namespace rats
     if (fs_index < fnl.size()) fs_index++;
   };
 
-  void gait_generator::refzmp_generator::calc_current_refzmp (hrp::Vector3& ret, hrp::Vector3& swing_foot_zmp_offset, const double default_double_support_ratio, const size_t one_step_len) const
+  void gait_generator::refzmp_generator::calc_current_refzmp (hrp::Vector3& ret, hrp::Vector3& swing_foot_zmp_offset, const double default_double_support_ratio, const double default_double_support_static_ratio, const size_t one_step_len) const
   {
     size_t cnt = one_step_len - refzmp_count; // current counter (0 -> one_step_len)
-    size_t margine_count = (0.5 * default_double_support_ratio) * one_step_len;
+    size_t double_support_count_half = (0.5 * default_double_support_ratio) * one_step_len;
+    size_t double_support_static_count_half = (0.5 * default_double_support_static_ratio) * one_step_len;
     swing_foot_zmp_offset = default_zmp_offsets[swing_leg_list[refzmp_index]];
     double zmp_diff = 0.0; // difference between total swing_foot_zmp_offset and default_zmp_offset
     //if (cnt==0) std::cerr << "z " << refzmp_index << " " << refzmp_cur_list.size() << " " << fs_index << " " << (refzmp_index == refzmp_cur_list.size()-2) << " " << is_final_double_support_set << std::endl;
@@ -70,23 +71,41 @@ namespace rats
     }
 
     // Calculate total reference ZMP
-    if ( cnt < margine_count ) { // Start double support period
+    if ( cnt < double_support_static_count_half ) { // Start double support static period
       hrp::Vector3 current_support_zmp = refzmp_cur_list[refzmp_index];
       hrp::Vector3 prev_support_zmp = (is_start_double_support_phase() ? refzmp_cur_list[refzmp_index] : refzmp_cur_list[refzmp_index-1]);
       if ( !(is_start_double_support_phase() || is_end_double_support_phase()) ) {
           // "* 0.5" is for double supprot period
           prev_support_zmp +=  ((refzmp_index == 1) ? zmp_diff*0.5: zmp_diff) * foot_x_axis_list[refzmp_index-1];
       }
-      double ratio = (0.5 / margine_count) * (margine_count-cnt);
+      double ratio = 0.5; 
       ret = (1 - ratio) * current_support_zmp + ratio * prev_support_zmp;
-    } else if ( cnt > one_step_len - margine_count ) { // End double support period
+    } else if ( cnt > one_step_len - double_support_static_count_half ) { // End double support static period
       hrp::Vector3 current_support_zmp = (is_end_double_support_phase() ? refzmp_cur_list[refzmp_index] : refzmp_cur_list[refzmp_index+1]);
       hrp::Vector3 prev_support_zmp = refzmp_cur_list[refzmp_index];
       if ( !(is_start_double_support_phase() || is_end_double_support_phase()) ) {
           // "* 0.5" is for double supprot period
           current_support_zmp += (((refzmp_index == refzmp_cur_list.size()-2) && is_final_double_support_set) ? zmp_diff * 0.5 : zmp_diff) * foot_x_axis_list[refzmp_index+1];
       }
-      double ratio = (0.5 / margine_count) * (cnt - 1 - (one_step_len - margine_count));
+      double ratio = 0.5;
+      ret = (1 - ratio) * prev_support_zmp + ratio * current_support_zmp;
+    } else if ( cnt < double_support_count_half ) { // Start double support period
+      hrp::Vector3 current_support_zmp = refzmp_cur_list[refzmp_index];
+      hrp::Vector3 prev_support_zmp = (is_start_double_support_phase() ? refzmp_cur_list[refzmp_index] : refzmp_cur_list[refzmp_index-1]);
+      if ( !(is_start_double_support_phase() || is_end_double_support_phase()) ) {
+          // "* 0.5" is for double supprot period
+          prev_support_zmp +=  ((refzmp_index == 1) ? zmp_diff*0.5: zmp_diff) * foot_x_axis_list[refzmp_index-1];
+      }
+      double ratio = (0.5 / (double_support_count_half-double_support_static_count_half)) * (double_support_count_half-cnt);
+      ret = (1 - ratio) * current_support_zmp + ratio * prev_support_zmp;
+    } else if ( cnt > one_step_len - double_support_count_half ) { // End double support period
+      hrp::Vector3 current_support_zmp = (is_end_double_support_phase() ? refzmp_cur_list[refzmp_index] : refzmp_cur_list[refzmp_index+1]);
+      hrp::Vector3 prev_support_zmp = refzmp_cur_list[refzmp_index];
+      if ( !(is_start_double_support_phase() || is_end_double_support_phase()) ) {
+          // "* 0.5" is for double supprot period
+          current_support_zmp += (((refzmp_index == refzmp_cur_list.size()-2) && is_final_double_support_set) ? zmp_diff * 0.5 : zmp_diff) * foot_x_axis_list[refzmp_index+1];
+      }
+      double ratio = (0.5 / (double_support_count_half-double_support_static_count_half)) * (cnt - 1 - (one_step_len - double_support_count_half));
       ret = (1 - ratio) * prev_support_zmp + ratio * current_support_zmp;
     } else {
       ret = refzmp_cur_list[refzmp_index];
@@ -326,7 +345,7 @@ namespace rats
   bool gait_generator::proc_one_tick ()
   {
     hrp::Vector3 rzmp, sfzo;
-    bool refzmp_exist_p = rg.get_current_refzmp(rzmp, sfzo, default_double_support_ratio, one_step_len);
+    bool refzmp_exist_p = rg.get_current_refzmp(rzmp, sfzo, default_double_support_ratio, default_double_support_static_ratio, one_step_len);
     if (!refzmp_exist_p) {
       finalize_count++;
       rzmp = prev_que_rzmp;
@@ -549,7 +568,7 @@ namespace rats
     hrp::Vector3 rzmp, sfzo;
     bool not_solved = true;
     while (not_solved) {
-      bool refzmp_exist_p = rg.get_current_refzmp(rzmp, sfzo, default_double_support_ratio, one_step_len);
+      bool refzmp_exist_p = rg.get_current_refzmp(rzmp, sfzo, default_double_support_ratio, default_double_support_static_ratio, one_step_len);
       not_solved = !preview_controller_ptr->update(refzmp, cog, swing_foot_zmp_offset, rzmp, sfzo, refzmp_exist_p);
       rg.update_refzmp(footstep_node_list, one_step_len);
     }
