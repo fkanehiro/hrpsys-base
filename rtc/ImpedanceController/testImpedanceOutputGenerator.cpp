@@ -30,21 +30,21 @@ protected:
         for (size_t i = 0; i < time_vec.size();i++) {
             imp.target_p0 = target_p0_vec[i];
             imp.target_r0 = target_r0_vec[i];
-            imp.current_p0 = imp.current_p1;
-            imp.current_r0 = imp.current_r1;
+            imp.current_p1 = imp.output_p1;
+            imp.current_r1 = imp.output_r1;
             hrp::Vector3 vel_p, vel_r;
             hrp::Matrix33 eeR = hrp::Matrix33::Identity();
             imp.calcTargetVelocity(vel_p, vel_r,
                                    eeR, force_diff_vec[i], moment_diff_vec[i], dt);
-            hrp::Vector3 current_rot, target_rot;
-            rats::difference_rotation(current_rot, hrp::Matrix33::Identity(), imp.current_r1);
+            hrp::Vector3 output_rot, target_rot;
+            rats::difference_rotation(output_rot, hrp::Matrix33::Identity(), imp.output_r1);
             rats::difference_rotation(target_rot, hrp::Matrix33::Identity(), imp.target_r1);
             fprintf(fp, "%f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n",
                     time_vec[i],
-                    imp.current_p1(0), imp.current_p1(1), imp.current_p1(2),
+                    imp.output_p1(0), imp.output_p1(1), imp.output_p1(2),
                     imp.target_p1(0), imp.target_p1(1), imp.target_p1(2),
                     force_diff_vec[i](0)/imp.K_p, force_diff_vec[i](1)/imp.K_p, force_diff_vec[i](2)/imp.K_p,
-                    rad2deg(current_rot(0)), rad2deg(current_rot(1)), rad2deg(current_rot(2)),
+                    rad2deg(output_rot(0)), rad2deg(output_rot(1)), rad2deg(output_rot(2)),
                     rad2deg(target_rot(0)), rad2deg(target_rot(1)), rad2deg(target_rot(2)),
                     rad2deg(moment_diff_vec[i](0)/imp.K_r), rad2deg(moment_diff_vec[i](1)/imp.K_r), rad2deg(moment_diff_vec[i](2)/imp.K_r)
                     );

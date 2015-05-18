@@ -448,8 +448,8 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
 
                     hrp::Link* target = m_robot->link(ee_map[it->first].target_name);
                     assert(target);
-                    param.current_p0 = target->p + target->R * ee_map[it->first].localPos;
-                    param.current_r0 = target->R * ee_map[it->first].localR;
+                    param.current_p1 = target->p + target->R * ee_map[it->first].localPos;
+                    param.current_r1 = target->R * ee_map[it->first].localR;
                     if (param.transition_count == -MAX_TRANSITION_COUNT) param.resetPreviousCurrentParam();
 
                     hrp::Vector3 vel_p, vel_r;
