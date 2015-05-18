@@ -78,9 +78,8 @@ private:
             fprintf(gp, "set multiplot layout 3, 1 title 'COG and ZMP'\n");
             std::string titles[3] = {"X", "Y", "Z"};
             for (size_t ii = 0; ii < 3; ii++) {
-                fprintf(gp, "set title '%s'\n", titles[ii].c_str());
                 fprintf(gp, "set xlabel 'Time [s]'\n");
-                fprintf(gp, "set ylabel '[m]'\n");
+                fprintf(gp, "set ylabel '%s [m]'\n", titles[ii].c_str());
                 fprintf(gp, "plot '%s' using 1:%d with lines title 'refzmp', '%s' using 1:%d with lines title 'cog'\n",
                         fname.c_str(), (tmp_start+ii), fname.c_str(), (tmp_start+3+ii));
             }
@@ -93,9 +92,8 @@ private:
             fprintf(gp, "set multiplot layout 3, 1 title 'Swing support pos'\n");
             std::string titles[3] = {"X", "Y", "Z"};
             for (size_t ii = 0; ii < 3; ii++) {
-                fprintf(gp, "set title '%s'\n", titles[ii].c_str());
                 fprintf(gp, "set xlabel 'Time [s]'\n");
-                fprintf(gp, "set ylabel '[m]'\n");
+                fprintf(gp, "set ylabel '%s [m]'\n", titles[ii].c_str());
                 fprintf(gp, "plot '%s' using 1:%d with lines title 'rleg', '%s' using 1:%d with lines title 'lleg'\n",
                         fname.c_str(), (tmp_start+ii), fname.c_str(), (tmp_start+3+ii));
             }
@@ -108,9 +106,8 @@ private:
             fprintf(gp, "set multiplot layout 3, 1 title 'Swing support rot'\n");
             std::string titles[3] = {"Roll", "Pitch", "Yaw"};
             for (size_t ii = 0; ii < 3; ii++) {
-                fprintf(gp, "set title '%s'\n", titles[ii].c_str());
                 fprintf(gp, "set xlabel 'Time [s]'\n");
-                fprintf(gp, "set ylabel '[deg]'\n");
+                fprintf(gp, "set ylabel '%s [deg]'\n", titles[ii].c_str());
                 fprintf(gp, "plot '%s' using 1:%d with lines title 'rleg', '%s' using 1:%d with lines title 'lleg'\n",
                         fname.c_str(), (tmp_start+ii), fname.c_str(), (tmp_start+3+ii));
             }
@@ -123,9 +120,8 @@ private:
             fprintf(gp, "set multiplot layout 3, 1 title 'Swing support zmp offset'\n");
             std::string titles[3] = {"X", "Y", "Z"};
             for (size_t ii = 0; ii < 3; ii++) {
-                fprintf(gp, "set title '%s'\n", titles[ii].c_str());
                 fprintf(gp, "set xlabel 'Time [s]'\n");
-                fprintf(gp, "set ylabel '[m]'\n");
+                fprintf(gp, "set ylabel '%s [m]'\n", titles[ii].c_str());
                 fprintf(gp, "plot '%s' using 1:%d with lines title 'rleg zmpoff', '%s' using 1:%d with lines title 'lleg zmpoff'\n",
                         fname.c_str(), (tmp_start+ii), fname.c_str(), (tmp_start+3+ii));
             }
@@ -187,6 +183,7 @@ public:
 
     void test0 ()
     {
+        std::cerr << "test0 : Set foot steps" << std::endl;
         gait_generator gg(dt, leg_pos, 1e-3*150, 1e-3*50, 10, 1e-3*50);
         /* initialize sample footstep_list */
         gg.clear_footstep_node_list();
@@ -200,6 +197,7 @@ public:
 
     void test1 ()
     {
+        std::cerr << "test1 : Go pos x,y,th combination" << std::endl;
         gait_generator gg(dt, leg_pos, 1e-3*150, 1e-3*50, 10, 1e-3*50);
         /* initialize sample footstep_list */
         gg.clear_footstep_node_list();
@@ -209,6 +207,7 @@ public:
 
     void test2 ()
     {
+        std::cerr << "test2 : Go pos x" << std::endl;
         gait_generator gg(dt, leg_pos, 1e-3*150, 1e-3*50, 10, 1e-3*50);
         /* initialize sample footstep_list */
         gg.clear_footstep_node_list();
@@ -218,6 +217,7 @@ public:
 
     void test3 ()
     {
+        std::cerr << "test3 : Go pos y" << std::endl;
         gait_generator gg(dt, leg_pos, 1e-3*150, 1e-3*50, 10, 1e-3*50);
         /* initialize sample footstep_list */
         gg.clear_footstep_node_list();
@@ -227,6 +227,7 @@ public:
 
     void test4 ()
     {
+        std::cerr << "test4 : Go pos th" << std::endl;
         gait_generator gg(dt, leg_pos, 1e-3*150, 1e-3*50, 10, 1e-3*50);
         /* initialize sample footstep_list */
         gg.clear_footstep_node_list();
@@ -236,6 +237,7 @@ public:
 
     void test5 ()
     {
+        std::cerr << "test5 : Set foot steps with Z change" << std::endl;
         gait_generator gg(dt, leg_pos, 1e-3*150, 1e-3*50, 10, 1e-3*50);
         /* initialize sample footstep_list */
         gg.clear_footstep_node_list();
@@ -250,6 +252,7 @@ public:
 
     void test6 ()
     {
+        std::cerr << "test6 : Go single step" << std::endl;
         gait_generator gg(dt, leg_pos, 1e-3*150, 1e-3*50, 10, 1e-3*50);
         gg.clear_footstep_node_list();
         gg.go_single_step_param_2_footstep_list(100*1e-3, 0, 0, 0, "rleg", coordinates(leg_pos[0]));
@@ -258,6 +261,7 @@ public:
 
     void test7 ()
     {
+        std::cerr << "test7 : Toe heel walk" << std::endl;
         gait_generator gg(dt, leg_pos, 1e-3*150, 1e-3*50, 10, 1e-3*50);
         /* initialize sample footstep_list */
         std::vector<hrp::Vector3> dzo;
@@ -279,6 +283,7 @@ public:
 
     void test8 ()
     {
+        std::cerr << "test8 : Toe heel walk on slope" << std::endl;
         gait_generator gg(dt, leg_pos, 1e-3*150, 1e-3*50, 10, 1e-3*50);
         /* initialize sample footstep_list */
         std::vector<hrp::Vector3> dzo;
@@ -305,6 +310,7 @@ public:
 
     void test9 ()
     {
+        std::cerr << "test9 : Stair walk" << std::endl;
         gait_generator gg(dt, leg_pos, 1e-3*150, 1e-3*50, 10, 1e-3*50);
         /* initialize sample footstep_list */
         gg.clear_footstep_node_list();
@@ -332,6 +338,22 @@ class testGaitGeneratorHRP2JSK : public testGaitGenerator
         };
 };
 
+void print_usage ()
+{
+    std::cerr << "Usage : testGaitGenerator [option]" << std::endl;
+    std::cerr << " [option] should be:" << std::endl;
+    std::cerr << "  --test0 : Set foot steps" << std::endl;
+    std::cerr << "  --test1 : Go pos x,y,th combination" << std::endl;
+    std::cerr << "  --test2 : Go pos x" << std::endl;
+    std::cerr << "  --test3 : Go pos y" << std::endl;
+    std::cerr << "  --test4 : Go pos th" << std::endl;
+    std::cerr << "  --test5 : Set foot steps with Z change" << std::endl;
+    std::cerr << "  --test6 : Go single step" << std::endl;
+    std::cerr << "  --test7 : Toe heel walk" << std::endl;
+    std::cerr << "  --test8 : Toe heel walk on slope" << std::endl;
+    std::cerr << "  --test9 : Stair walk" << std::endl;
+};
+
 int main(int argc, char* argv[])
 {
   if (argc == 2) {
@@ -355,7 +377,11 @@ int main(int argc, char* argv[])
           testGaitGeneratorHRP2JSK().test8();
       } else if (std::string(argv[1]) == "--test9") {
           testGaitGeneratorHRP2JSK().test9();
+      } else {
+          print_usage();
       }
+  } else {
+      print_usage();
   }
   return 0;
 }
