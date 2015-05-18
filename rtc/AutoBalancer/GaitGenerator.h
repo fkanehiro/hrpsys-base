@@ -525,7 +525,7 @@ namespace rats
     hrp::Vector3 cog, refzmp, prev_que_rzmp, swing_foot_zmp_offset, prev_que_sfzo; /* cog by calculating proc_one_tick */
     double dt; /* control loop [s] */
     double default_step_time;
-    double default_double_support_ratio;
+    double default_double_support_ratio, default_double_support_static_ratio;
     double gravitational_acceleration;
     size_t one_step_len, finalize_count;
     velocity_mode_flag velocity_mode_flg;
@@ -564,7 +564,7 @@ namespace rats
         footstep_param(_leg_pos, _stride_fwd_x, _stride_y, _stride_theta, _stride_bwd_x),
         vel_param(), offset_vel_param(), cog(hrp::Vector3::Zero()), refzmp(hrp::Vector3::Zero()), prev_que_rzmp(hrp::Vector3::Zero()),
         swing_foot_zmp_offset(hrp::Vector3::Zero()), prev_que_sfzo(hrp::Vector3::Zero()),
-        dt(_dt), default_step_time(1.0), default_double_support_ratio(0.2), gravitational_acceleration(DEFAULT_GRAVITATIONAL_ACCELERATION),
+        dt(_dt), default_step_time(1.0), default_double_support_ratio(0.2), default_double_support_static_ratio(0.0), gravitational_acceleration(DEFAULT_GRAVITATIONAL_ACCELERATION),
         one_step_len(default_step_time / dt), finalize_count(0),
         velocity_mode_flg(VEL_IDLING), emergency_flg(IDLING),
         use_inside_step_limitation(true),
@@ -616,6 +616,7 @@ namespace rats
     /* parameter setting */
     void set_default_step_time (const double _default_step_time) { default_step_time = _default_step_time; };
     void set_default_double_support_ratio (const double _default_double_support_ratio) { default_double_support_ratio = _default_double_support_ratio; };
+    void set_default_double_support_static_ratio (const double _default_double_support_static_ratio) { default_double_support_static_ratio = _default_double_support_static_ratio; };
     void set_default_zmp_offsets(const std::vector<hrp::Vector3>& tmp) { rg.set_default_zmp_offsets(tmp); };
     void set_toe_zmp_offset_x (const double _off) { rg.set_toe_zmp_offset_x(_off); };
     void set_heel_zmp_offset_x (const double _off) { rg.set_heel_zmp_offset_x(_off); };
@@ -690,6 +691,7 @@ namespace rats
     double get_default_step_time () const { return default_step_time; };
     double get_default_step_height () const { return lcg.get_default_step_height(); };
     double get_default_double_support_ratio () const { return default_double_support_ratio; };
+    double get_default_double_support_static_ratio () const { return default_double_support_static_ratio; };
     /* return whether _leg is swinging leg or not
      * swinging leg -> swing_leg and not double support phase
      *                 landing_offset_ratio is mergin from double support period

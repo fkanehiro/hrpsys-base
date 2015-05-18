@@ -1005,6 +1005,7 @@ bool AutoBalancer::setGaitGeneratorParam(const OpenHRP::AutoBalancerService::Gai
   gg->set_default_step_time(i_param.default_step_time);
   gg->set_default_step_height(i_param.default_step_height);
   gg->set_default_double_support_ratio(i_param.default_double_support_ratio);
+  gg->set_default_double_support_static_ratio(i_param.default_double_support_static_ratio);
   if (i_param.default_orbit_type == OpenHRP::AutoBalancerService::SHUFFLING) {
     gg->set_default_orbit_type(gait_generator::SHUFFLING);
   } else if (i_param.default_orbit_type == OpenHRP::AutoBalancerService::CYCLOID) {
@@ -1048,7 +1049,7 @@ bool AutoBalancer::setGaitGeneratorParam(const OpenHRP::AutoBalancerService::Gai
   std::cerr << "[" << m_profile.instance_name << "]   stride_parameter = " << stride_fwd_x << "[m], " << stride_y << "[m], " << stride_th << "[deg], " << stride_bwd_x << "[m]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   default_step_time = " << gg->get_default_step_time() << "[s]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   default_step_height = " << gg->get_default_step_height() << "[m]" << std::endl;
-  std::cerr << "[" << m_profile.instance_name << "]   default_double_support_ratio = " << gg->get_default_double_support_ratio() << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   default_double_support_ratio = " << gg->get_default_double_support_ratio() << ", default_double_support_static_ratio = " << gg->get_default_double_support_static_ratio() << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   default_orbit_type = ";
   if (gg->get_default_orbit_type() == gait_generator::SHUFFLING) {
     std::cerr << "SHUFFLING" << std::endl;
@@ -1089,6 +1090,7 @@ bool AutoBalancer::getGaitGeneratorParam(OpenHRP::AutoBalancerService::GaitGener
   i_param.default_step_time = gg->get_default_step_time();
   i_param.default_step_height = gg->get_default_step_height();
   i_param.default_double_support_ratio = gg->get_default_double_support_ratio();
+  i_param.default_double_support_static_ratio = gg->get_default_double_support_static_ratio();
   if (gg->get_default_orbit_type() == gait_generator::SHUFFLING) {
     i_param.default_orbit_type = OpenHRP::AutoBalancerService::SHUFFLING;
   } else if (gg->get_default_orbit_type() == gait_generator::CYCLOID) {
