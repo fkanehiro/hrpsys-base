@@ -41,7 +41,7 @@ struct ImpedanceOutputGenerator
         output_r1 = current_r1;
         output_r2 = output_r1;
     };
-    void calcTargetVelocity (hrp::Vector3& vel_p, hrp::Vector3& vel_r,
+    void calcTargetVelocityOrg (hrp::Vector3& vel_p, hrp::Vector3& vel_r,
                              const hrp::Matrix33& eeR,
                              const hrp::Vector3& force_diff, const hrp::Vector3& moment_diff,
                              const double _dt, const bool printp = false, const std::string& print_str = "", const std::string& ee_name = "")
@@ -112,7 +112,7 @@ struct ImpedanceOutputGenerator
         target_p1 = target_p0;
         target_r1 = target_r0;
     };
-    void calcTargetVelocityNew (hrp::Vector3& vel_p, hrp::Vector3& vel_r,
+    void calcTargetVelocity (hrp::Vector3& vel_p, hrp::Vector3& vel_r,
                                 const hrp::Matrix33& eeR,
                                 const hrp::Vector3& force_diff, const hrp::Vector3& moment_diff,
                                 const double _dt, const bool printp = false, const std::string& print_str = "", const std::string& ee_name = "")
