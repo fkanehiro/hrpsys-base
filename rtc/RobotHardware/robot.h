@@ -13,8 +13,9 @@ class robot : public hrp::Body
 public:
     /**
        \brief constructor
+       \param dt sampling time
      */
-    robot();
+    robot(double dt);
 
     /**
        \brief destructor
@@ -327,6 +328,7 @@ private:
     std::string m_pdgainsFilename;
     bool m_reportedEmergency;
     boost::interprocess::interprocess_semaphore wait_sem;
+    double m_dt;
 };
 
 #endif
