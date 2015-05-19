@@ -173,7 +173,6 @@ public:
                                       const hrp::Vector3& new_refzmp, const hrp::Vector3& ref_zmp,
                                       const double total_fz, const double dt, const bool printp = true, const std::string& print_str = "")
     {
-        //double fz_alpha =  calcAlpha(hrp::Vector3(foot_origin_rot * ref_zmp + foot_origin_pos), ee_pos, ee_rot);
         double fz_alpha =  calcAlpha(ref_zmp, ee_pos, ee_rot);
         double tmpalpha = calcAlpha(new_refzmp, ee_pos, ee_rot), alpha;
         // LPF
@@ -346,14 +345,18 @@ public:
                                         const hrp::Vector3& new_refzmp, const hrp::Vector3& ref_zmp,
                                         const double total_fz, const double dt, const bool printp = true, const std::string& print_str = "")
     {
-        double norm_weight = 1e-7;
-        double cop_weight = 1e-3;
-        double fz_alpha = calcAlpha(ref_zmp, ee_pos, ee_rot);
+        double fz_alpha =  calcAlpha(ref_zmp, ee_pos, ee_rot);
         double tmpalpha = calcAlpha(new_refzmp, ee_pos, ee_rot), alpha;
         // LPF
         double const_param = 2 * M_PI * alpha_cutoff_freq * dt;
         alpha = 1.0/(1+const_param) * prev_alpha + const_param/(1+const_param) * tmpalpha;
         prev_alpha = tmpalpha;
+        // Blending
+        fz_alpha = wrench_alpha_blending * fz_alpha + (1-wrench_alpha_blending) * alpha;
+
+        // QP
+        double norm_weight = 1e-7;
+        double cop_weight = 1e-3;
         hrp::dvector total_fm(3);
         total_fm(0) = total_fz;
         total_fm(1) = 0;
