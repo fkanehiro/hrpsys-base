@@ -14,6 +14,7 @@ protected:
 private:
     void plot_walk_pattern (gait_generator& gg, const double dt)
     {
+        gg.print_param();
         /* make step and dump */
         size_t i = 0;
         std::string fname("/tmp/plot.dat");

@@ -716,6 +716,35 @@ namespace rats
     void get_toe_heel_phase_ratio (double* ratio) { thp.get_toe_heel_phase_ratio(ratio); };
     int get_NUM_TH_PHASES () { return thp.get_NUM_TH_PHASES(); };
     bool get_use_toe_joint () { return lcg.get_use_toe_joint(); };
+    void print_param (const std::string& print_str = "")
+    {
+        double stride_fwd_x, stride_y, stride_th, stride_bwd_x;
+        get_stride_parameters(stride_fwd_x, stride_y, stride_th, stride_bwd_x);
+        std::cerr << "[" << print_str << "]   stride_parameter = " << stride_fwd_x << "[m], " << stride_y << "[m], " << stride_th << "[deg], " << stride_bwd_x << "[m]" << std::endl;
+        std::cerr << "[" << print_str << "]   default_step_time = " << get_default_step_time() << "[s]" << std::endl;
+        std::cerr << "[" << print_str << "]   default_step_height = " << get_default_step_height() << "[m]" << std::endl;
+        std::cerr << "[" << print_str << "]   default_double_support_ratio = " << get_default_double_support_ratio() << ", default_double_support_static_ratio = " << get_default_double_support_static_ratio() << std::endl;
+        std::cerr << "[" << print_str << "]   default_orbit_type = ";
+        if (get_default_orbit_type() == gait_generator::SHUFFLING) {
+            std::cerr << "SHUFFLING" << std::endl;
+        } else if (get_default_orbit_type() == gait_generator::CYCLOID) {
+            std::cerr << "CYCLOID" << std::endl;
+        } else if (get_default_orbit_type() == gait_generator::RECTANGLE) {
+            std::cerr << "RECTANGLE" << std::endl;
+        } else if (get_default_orbit_type() == gait_generator::STAIR) {
+            std::cerr << "STAIR" << std::endl;
+        }
+        std::cerr << "[" << print_str << "]   swing_trajectory_delay_time_offset = " << get_swing_trajectory_delay_time_offset() << "[s]" << std::endl;
+        hrp::Vector3 tmpv;
+        tmpv = get_stair_trajectory_way_point_offset();
+        std::cerr << "[" << print_str << "]   stair_trajectory_way_point_offset = " << tmpv.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[m]" << std::endl;
+        std::cerr << "[" << print_str << "]   gravitational_acceleration = " << get_gravitational_acceleration() << "[m/s^2]" << std::endl;
+        std::cerr << "[" << print_str << "]   toe_pos_offset_x = " << get_toe_pos_offset_x() << "[mm], heel_pos_offset_x = " << get_heel_pos_offset_x() << "[mm]" << std::endl;
+        std::cerr << "[" << print_str << "]   toe_zmp_offset_x = " << get_toe_zmp_offset_x() << "[mm], heel_zmp_offset_x = " << get_heel_zmp_offset_x() << "[mm]" << std::endl;
+        std::cerr << "[" << print_str << "]   toe_angle = " << get_toe_angle() << "[deg]" << std::endl;
+        std::cerr << "[" << print_str << "]   heel_angle = " << get_heel_angle() << "[deg]" << std::endl;
+        std::cerr << "[" << print_str << "]   use_toe_joint = " << (get_use_toe_joint()?"true":"false") << ", use_toe_heel_transition = " << (get_use_toe_heel_transition()?"true":"false") << std::endl;
+    };
   };
 }
 #endif /* GAITGENERATOR_H */
