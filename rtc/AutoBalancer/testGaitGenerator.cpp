@@ -4,6 +4,7 @@
 /* samples */
 using namespace rats;
 #include <cstdio>
+#include <coil/stringutil.h>
 
 class testGaitGenerator
 {
@@ -11,66 +12,67 @@ protected:
     double dt; /* [s] */
     std::vector<hrp::Vector3> leg_pos; /* default footstep transformations are necessary */
     hrp::Vector3 cog;
+    gait_generator* gg;
 private:
-    void plot_walk_pattern (gait_generator& gg, const double dt)
+    void plot_walk_pattern ()
     {
-        gg.print_param();
+        gg->print_param();
         /* make step and dump */
         size_t i = 0;
         std::string fname("/tmp/plot.dat");
         FILE* fp = fopen(fname.c_str(), "w");
         hrp::Vector3 prev_rfoot_pos, prev_lfoot_pos;
-        while ( gg.proc_one_tick() ) {
-            //std::cerr << gg.lcg.gp_count << std::endl;
-            // if ( gg.lcg.gp_index == 4 && gg.lcg.gp_count == 100) {
-            //   //std::cerr << gg.lcg.gp_index << std::endl;
-            //   gg.update_refzmp_queue(coordinates(hrp::Vector3(150, 105, 0)), coordinates(hrp::Vector3(150, -105, 0)));
+        while ( gg->proc_one_tick() ) {
+            //std::cerr << gg->lcg.gp_count << std::endl;
+            // if ( gg->lcg.gp_index == 4 && gg->lcg.gp_count == 100) {
+            //   //std::cerr << gg->lcg.gp_index << std::endl;
+            //   gg->update_refzmp_queue(coordinates(hrp::Vector3(150, 105, 0)), coordinates(hrp::Vector3(150, -105, 0)));
             // }
             fprintf(fp, "%f ", i * dt);
             for (size_t ii = 0; ii < 3; ii++) {
-                fprintf(fp, "%f ", gg.get_refzmp()(ii));
+                fprintf(fp, "%f ", gg->get_refzmp()(ii));
             }
             for (size_t ii = 0; ii < 3; ii++) {
                 double cogpos;
                 if (ii==2) {
                     coordinates tmpc;
-                    gg.get_swing_support_mid_coords(tmpc);
-                    cogpos = tmpc.pos(2)+gg.get_cog()(2);
+                    gg->get_swing_support_mid_coords(tmpc);
+                    cogpos = tmpc.pos(2)+gg->get_cog()(2);
                 } else {
-                    cogpos = gg.get_cog()(ii);
+                    cogpos = gg->get_cog()(ii);
                 }
                 fprintf(fp, "%f ", cogpos);
             }
             // Foot pos
-            hrp::Vector3 rfoot_pos = (gg.get_support_leg() == "rleg") ? gg.get_support_leg_coords().pos : gg.get_swing_leg_coords().pos;
+            hrp::Vector3 rfoot_pos = (gg->get_support_leg() == "rleg") ? gg->get_support_leg_coords().pos : gg->get_swing_leg_coords().pos;
             for (size_t ii = 0; ii < 3; ii++) {
                 fprintf(fp, "%f ", rfoot_pos(ii));
             }
-            hrp::Vector3 lfoot_pos = (gg.get_support_leg() == "lleg") ? gg.get_support_leg_coords().pos : gg.get_swing_leg_coords().pos;
+            hrp::Vector3 lfoot_pos = (gg->get_support_leg() == "lleg") ? gg->get_support_leg_coords().pos : gg->get_swing_leg_coords().pos;
             for (size_t ii = 0; ii < 3; ii++) {
                 fprintf(fp, "%f ", lfoot_pos(ii));
             }
             // Foot rot
             hrp::Vector3 rpy;
-            rpy = hrp::rpyFromRot((gg.get_support_leg() == "rleg") ? gg.get_support_leg_coords().rot : gg.get_swing_leg_coords().rot);
+            rpy = hrp::rpyFromRot((gg->get_support_leg() == "rleg") ? gg->get_support_leg_coords().rot : gg->get_swing_leg_coords().rot);
             for (size_t ii = 0; ii < 3; ii++) {
                 fprintf(fp, "%f ", 180.0*rpy(ii)/M_PI);
             }
-            rpy = hrp::rpyFromRot((gg.get_support_leg() == "lleg") ? gg.get_support_leg_coords().rot : gg.get_swing_leg_coords().rot);
+            rpy = hrp::rpyFromRot((gg->get_support_leg() == "lleg") ? gg->get_support_leg_coords().rot : gg->get_swing_leg_coords().rot);
             for (size_t ii = 0; ii < 3; ii++) {
                 fprintf(fp, "%f ", 180.0*rpy(ii)/M_PI);
             }
             // ZMP offsets
             for (size_t ii = 0; ii < 3; ii++) {
-                fprintf(fp, "%f ", (gg.get_support_leg() == "rleg") ? gg.get_support_foot_zmp_offset()(ii) : gg.get_swing_foot_zmp_offset()(ii));
+                fprintf(fp, "%f ", (gg->get_support_leg() == "rleg") ? gg->get_support_foot_zmp_offset()(ii) : gg->get_swing_foot_zmp_offset()(ii));
             }
             for (size_t ii = 0; ii < 3; ii++) {
-                fprintf(fp, "%f ", (gg.get_support_leg() == "lleg") ? gg.get_support_foot_zmp_offset()(ii) : gg.get_swing_foot_zmp_offset()(ii));
+                fprintf(fp, "%f ", (gg->get_support_leg() == "lleg") ? gg->get_support_foot_zmp_offset()(ii) : gg->get_swing_foot_zmp_offset()(ii));
             }
             // Swing time
             fprintf(fp, "%f %f ",
-                    gg.get_current_swing_time(gait_generator::RLEG),
-                    gg.get_current_swing_time(gait_generator::LLEG));
+                    gg->get_current_swing_time(gait_generator::RLEG),
+                    gg->get_current_swing_time(gait_generator::LLEG));
             // Foot vel
             hrp::Vector3 tmpv;
             if ( i == 0 ) prev_rfoot_pos = rfoot_pos;
@@ -198,170 +200,189 @@ private:
         }
     };
 
-    void gen_and_plot_walk_pattern(gait_generator& gg, const coordinates& initial_support_leg_coords, const coordinates& initial_swing_leg_dst_coords)
+    void gen_and_plot_walk_pattern(const coordinates& initial_support_leg_coords, const coordinates& initial_swing_leg_dst_coords)
     {
-        gg.initialize_gait_parameter(cog, initial_support_leg_coords, initial_swing_leg_dst_coords);
-        while ( !gg.proc_one_tick() );
-        //gg.print_footstep_list();
-        plot_walk_pattern(gg, dt);
+        gg->initialize_gait_parameter(cog, initial_support_leg_coords, initial_swing_leg_dst_coords);
+        while ( !gg->proc_one_tick() );
+        //gg->print_footstep_list();
+        plot_walk_pattern();
     }
 
-    void gen_and_plot_walk_pattern(gait_generator& gg)
+    void gen_and_plot_walk_pattern()
     {
-        coordinates initial_support_leg_coords(gg.get_footstep_front_leg()=="rleg"?leg_pos[1]:leg_pos[0]);
-        coordinates initial_swing_leg_dst_coords(gg.get_footstep_front_leg()!="rleg"?leg_pos[1]:leg_pos[0]);
-        gen_and_plot_walk_pattern(gg, initial_support_leg_coords, initial_swing_leg_dst_coords);
+        coordinates initial_support_leg_coords(gg->get_footstep_front_leg()=="rleg"?leg_pos[1]:leg_pos[0]);
+        coordinates initial_swing_leg_dst_coords(gg->get_footstep_front_leg()!="rleg"?leg_pos[1]:leg_pos[0]);
+        gen_and_plot_walk_pattern(initial_support_leg_coords, initial_swing_leg_dst_coords);
     }
 
 public:
     testGaitGenerator() {};
-    virtual ~testGaitGenerator() {};
+    virtual ~testGaitGenerator()
+    {
+        if (gg != NULL) {
+            delete gg;
+            gg = NULL;
+        }
+    };
 
     void test0 ()
     {
         std::cerr << "test0 : Set foot steps" << std::endl;
-        gait_generator gg(dt, leg_pos, 1e-3*150, 1e-3*50, 10, 1e-3*50);
         /* initialize sample footstep_list */
-        gg.clear_footstep_node_list();
-        gg.append_footstep_node("rleg", coordinates(hrp::Vector3(hrp::Vector3(0, 0, 0)+leg_pos[0])));
-        gg.append_footstep_node("lleg", coordinates(hrp::Vector3(hrp::Vector3(0, 0, 0)+leg_pos[1])));
-        gg.append_footstep_node("rleg", coordinates(hrp::Vector3(hrp::Vector3(100*1e-3, 0, 0)+leg_pos[0])));
-        gg.append_footstep_node("lleg", coordinates(hrp::Vector3(hrp::Vector3(200*1e-3, 0, 0)+leg_pos[1])));
-        gg.append_footstep_node("rleg", coordinates(hrp::Vector3(hrp::Vector3(200*1e-3, 0, 0)+leg_pos[0])));
-        gg.append_finalize_footstep();
-        gen_and_plot_walk_pattern(gg);
+        gg->clear_footstep_node_list();
+        gg->append_footstep_node("rleg", coordinates(hrp::Vector3(hrp::Vector3(0, 0, 0)+leg_pos[0])));
+        gg->append_footstep_node("lleg", coordinates(hrp::Vector3(hrp::Vector3(0, 0, 0)+leg_pos[1])));
+        gg->append_footstep_node("rleg", coordinates(hrp::Vector3(hrp::Vector3(100*1e-3, 0, 0)+leg_pos[0])));
+        gg->append_footstep_node("lleg", coordinates(hrp::Vector3(hrp::Vector3(200*1e-3, 0, 0)+leg_pos[1])));
+        gg->append_footstep_node("rleg", coordinates(hrp::Vector3(hrp::Vector3(200*1e-3, 0, 0)+leg_pos[0])));
+        gg->append_finalize_footstep();
+        gen_and_plot_walk_pattern();
     };
 
     void test1 ()
     {
         std::cerr << "test1 : Go pos x,y,th combination" << std::endl;
-        gait_generator gg(dt, leg_pos, 1e-3*150, 1e-3*50, 10, 1e-3*50);
         /* initialize sample footstep_list */
-        gg.clear_footstep_node_list();
-        gg.go_pos_param_2_footstep_list(200*1e-3, 100*1e-3, 20, coordinates());
-        gen_and_plot_walk_pattern(gg);
+        gg->clear_footstep_node_list();
+        gg->go_pos_param_2_footstep_list(200*1e-3, 100*1e-3, 20, coordinates());
+        gen_and_plot_walk_pattern();
     };
 
     void test2 ()
     {
         std::cerr << "test2 : Go pos x" << std::endl;
-        gait_generator gg(dt, leg_pos, 1e-3*150, 1e-3*50, 10, 1e-3*50);
         /* initialize sample footstep_list */
-        gg.clear_footstep_node_list();
-        gg.go_pos_param_2_footstep_list(300*1e-3, 0, 0, coordinates());
-        gen_and_plot_walk_pattern(gg);
+        gg->clear_footstep_node_list();
+        gg->go_pos_param_2_footstep_list(300*1e-3, 0, 0, coordinates());
+        gen_and_plot_walk_pattern();
     };
 
     void test3 ()
     {
         std::cerr << "test3 : Go pos y" << std::endl;
-        gait_generator gg(dt, leg_pos, 1e-3*150, 1e-3*50, 10, 1e-3*50);
         /* initialize sample footstep_list */
-        gg.clear_footstep_node_list();
-        gg.go_pos_param_2_footstep_list(0, 150*1e-3, 0, coordinates());
-        gen_and_plot_walk_pattern(gg);
+        gg->clear_footstep_node_list();
+        gg->go_pos_param_2_footstep_list(0, 150*1e-3, 0, coordinates());
+        gen_and_plot_walk_pattern();
     };
 
     void test4 ()
     {
         std::cerr << "test4 : Go pos th" << std::endl;
-        gait_generator gg(dt, leg_pos, 1e-3*150, 1e-3*50, 10, 1e-3*50);
         /* initialize sample footstep_list */
-        gg.clear_footstep_node_list();
-        gg.go_pos_param_2_footstep_list(0, 0, 30, coordinates());
-        gen_and_plot_walk_pattern(gg);
+        gg->clear_footstep_node_list();
+        gg->go_pos_param_2_footstep_list(0, 0, 30, coordinates());
+        gen_and_plot_walk_pattern();
     };
 
     void test5 ()
     {
         std::cerr << "test5 : Set foot steps with Z change" << std::endl;
-        gait_generator gg(dt, leg_pos, 1e-3*150, 1e-3*50, 10, 1e-3*50);
         /* initialize sample footstep_list */
-        gg.clear_footstep_node_list();
-        gg.append_footstep_node("rleg", coordinates(hrp::Vector3(hrp::Vector3(0, 0, 0)+leg_pos[0])));
-        gg.append_footstep_node("lleg", coordinates(hrp::Vector3(hrp::Vector3(0, 0, 0)+leg_pos[1])));
-        gg.append_footstep_node("rleg", coordinates(hrp::Vector3(hrp::Vector3(100*1e-3, 0, 100*1e-3)+leg_pos[0])));
-        gg.append_footstep_node("lleg", coordinates(hrp::Vector3(hrp::Vector3(200*1e-3, 0, 200*1e-3)+leg_pos[1])));
-        gg.append_footstep_node("rleg", coordinates(hrp::Vector3(hrp::Vector3(300*1e-3, 0, 300*1e-3)+leg_pos[0])));
-        gg.append_footstep_node("lleg", coordinates(hrp::Vector3(hrp::Vector3(300*1e-3, 0, 300*1e-3)+leg_pos[1])));
-        gg.append_finalize_footstep();
-        gen_and_plot_walk_pattern(gg);
+        gg->clear_footstep_node_list();
+        gg->append_footstep_node("rleg", coordinates(hrp::Vector3(hrp::Vector3(0, 0, 0)+leg_pos[0])));
+        gg->append_footstep_node("lleg", coordinates(hrp::Vector3(hrp::Vector3(0, 0, 0)+leg_pos[1])));
+        gg->append_footstep_node("rleg", coordinates(hrp::Vector3(hrp::Vector3(100*1e-3, 0, 100*1e-3)+leg_pos[0])));
+        gg->append_footstep_node("lleg", coordinates(hrp::Vector3(hrp::Vector3(200*1e-3, 0, 200*1e-3)+leg_pos[1])));
+        gg->append_footstep_node("rleg", coordinates(hrp::Vector3(hrp::Vector3(300*1e-3, 0, 300*1e-3)+leg_pos[0])));
+        gg->append_footstep_node("lleg", coordinates(hrp::Vector3(hrp::Vector3(300*1e-3, 0, 300*1e-3)+leg_pos[1])));
+        gg->append_finalize_footstep();
+        gen_and_plot_walk_pattern();
     };
 
     void test6 ()
     {
         std::cerr << "test6 : Go single step" << std::endl;
-        gait_generator gg(dt, leg_pos, 1e-3*150, 1e-3*50, 10, 1e-3*50);
-        gg.clear_footstep_node_list();
-        gg.go_single_step_param_2_footstep_list(100*1e-3, 0, 0, 0, "rleg", coordinates(leg_pos[0]));
-        gen_and_plot_walk_pattern(gg);
+        gg->clear_footstep_node_list();
+        gg->go_single_step_param_2_footstep_list(100*1e-3, 0, 0, 0, "rleg", coordinates(leg_pos[0]));
+        gen_and_plot_walk_pattern();
     };
 
     void test7 ()
     {
         std::cerr << "test7 : Toe heel walk" << std::endl;
-        gait_generator gg(dt, leg_pos, 1e-3*150, 1e-3*50, 10, 1e-3*50);
         /* initialize sample footstep_list */
         std::vector<hrp::Vector3> dzo;
         dzo.push_back(hrp::Vector3(20*1e-3,-30*1e-3,0));
         dzo.push_back(hrp::Vector3(20*1e-3,30*1e-3,0));
-        gg.set_default_zmp_offsets(dzo);
-        gg.set_toe_zmp_offset_x(137*1e-3);
-        gg.set_heel_zmp_offset_x(-105*1e-3);
-        gg.set_toe_pos_offset_x(137*1e-3);
-        gg.set_heel_pos_offset_x(-105*1e-3);
-        gg.set_toe_angle(30);
-        gg.set_heel_angle(10);
-        // gg.set_use_toe_heel_transition(false);
-        gg.set_use_toe_heel_transition(true);
-        gg.clear_footstep_node_list();
-        gg.go_pos_param_2_footstep_list(100*1e-3, 0, 0, coordinates());
-        gen_and_plot_walk_pattern(gg);
+        gg->set_default_zmp_offsets(dzo);
+        gg->set_toe_zmp_offset_x(137*1e-3);
+        gg->set_heel_zmp_offset_x(-105*1e-3);
+        gg->set_toe_pos_offset_x(137*1e-3);
+        gg->set_heel_pos_offset_x(-105*1e-3);
+        gg->set_toe_angle(30);
+        gg->set_heel_angle(10);
+        // gg->set_use_toe_heel_transition(false);
+        gg->set_use_toe_heel_transition(true);
+        gg->clear_footstep_node_list();
+        gg->go_pos_param_2_footstep_list(100*1e-3, 0, 0, coordinates());
+        gen_and_plot_walk_pattern();
     };
 
     void test8 ()
     {
         std::cerr << "test8 : Toe heel walk on slope" << std::endl;
-        gait_generator gg(dt, leg_pos, 1e-3*150, 1e-3*50, 10, 1e-3*50);
         /* initialize sample footstep_list */
         std::vector<hrp::Vector3> dzo;
         dzo.push_back(hrp::Vector3(20*1e-3,-30*1e-3,0));
         dzo.push_back(hrp::Vector3(20*1e-3,30*1e-3,0));
-        gg.set_default_zmp_offsets(dzo);
-        gg.set_toe_zmp_offset_x(137*1e-3);
-        gg.set_heel_zmp_offset_x(-105*1e-3);
-        gg.set_toe_pos_offset_x(137*1e-3);
-        gg.set_heel_pos_offset_x(-105*1e-3);
-        gg.set_toe_angle(30);
-        gg.set_heel_angle(10);
-        // gg.set_use_toe_heel_transition(false);
-        gg.set_use_toe_heel_transition(true);
-        gg.clear_footstep_node_list();
+        gg->set_default_zmp_offsets(dzo);
+        gg->set_toe_zmp_offset_x(137*1e-3);
+        gg->set_heel_zmp_offset_x(-105*1e-3);
+        gg->set_toe_pos_offset_x(137*1e-3);
+        gg->set_heel_pos_offset_x(-105*1e-3);
+        gg->set_toe_angle(30);
+        gg->set_heel_angle(10);
+        // gg->set_use_toe_heel_transition(false);
+        gg->set_use_toe_heel_transition(true);
+        gg->clear_footstep_node_list();
         hrp::Matrix33 initial_foot_mid_rot = Eigen::AngleAxis<double>(M_PI/2, hrp::Vector3::UnitZ()).toRotationMatrix();
         //hrp::Matrix33 initial_foot_mid_rot = Eigen::AngleAxis<double>(M_PI, hrp::Vector3::UnitZ()).toRotationMatrix();
-        gg.go_pos_param_2_footstep_list(100*1e-3, 0, 0, coordinates(initial_foot_mid_rot));
-        coordinates initial_support_leg_coords(hrp::Vector3(initial_foot_mid_rot * (gg.get_footstep_front_leg()=="rleg"?leg_pos[1]:leg_pos[0])), initial_foot_mid_rot);
-        coordinates initial_swing_leg_dst_coords(hrp::Vector3(initial_foot_mid_rot * (gg.get_footstep_front_leg()!="rleg"?leg_pos[1]:leg_pos[0])), initial_foot_mid_rot);
-        gen_and_plot_walk_pattern(gg, initial_support_leg_coords, initial_swing_leg_dst_coords);
+        gg->go_pos_param_2_footstep_list(100*1e-3, 0, 0, coordinates(initial_foot_mid_rot));
+        coordinates initial_support_leg_coords(hrp::Vector3(initial_foot_mid_rot * (gg->get_footstep_front_leg()=="rleg"?leg_pos[1]:leg_pos[0])), initial_foot_mid_rot);
+        coordinates initial_swing_leg_dst_coords(hrp::Vector3(initial_foot_mid_rot * (gg->get_footstep_front_leg()!="rleg"?leg_pos[1]:leg_pos[0])), initial_foot_mid_rot);
+        gen_and_plot_walk_pattern(initial_support_leg_coords, initial_swing_leg_dst_coords);
 
     };
 
     void test9 ()
     {
         std::cerr << "test9 : Stair walk" << std::endl;
-        gait_generator gg(dt, leg_pos, 1e-3*150, 1e-3*50, 10, 1e-3*50);
         /* initialize sample footstep_list */
-        gg.clear_footstep_node_list();
-        gg.set_default_orbit_type(gait_generator::STAIR);
-        gg.set_swing_trajectory_delay_time_offset (0.15);
-        gg.append_footstep_node("rleg", coordinates(hrp::Vector3(hrp::Vector3(0, 0, 0)+leg_pos[0])));
-        gg.append_footstep_node("lleg", coordinates(hrp::Vector3(hrp::Vector3(0, 0, 0)+leg_pos[1])));
-        gg.append_footstep_node("rleg", coordinates(hrp::Vector3(hrp::Vector3(100*1e-3, 0, 100*1e-3)+leg_pos[0])));
-        gg.append_footstep_node("lleg", coordinates(hrp::Vector3(hrp::Vector3(200*1e-3, 0, 200*1e-3)+leg_pos[1])));
-        gg.append_footstep_node("rleg", coordinates(hrp::Vector3(hrp::Vector3(300*1e-3, 0, 100*1e-3)+leg_pos[0])));
-        gg.append_footstep_node("lleg", coordinates(hrp::Vector3(hrp::Vector3(300*1e-3, 0, 100*1e-3)+leg_pos[1])));
-        gg.append_finalize_footstep();
-        gen_and_plot_walk_pattern(gg);
+        gg->clear_footstep_node_list();
+        gg->set_default_orbit_type(gait_generator::STAIR);
+        gg->set_swing_trajectory_delay_time_offset (0.15);
+        gg->append_footstep_node("rleg", coordinates(hrp::Vector3(hrp::Vector3(0, 0, 0)+leg_pos[0])));
+        gg->append_footstep_node("lleg", coordinates(hrp::Vector3(hrp::Vector3(0, 0, 0)+leg_pos[1])));
+        gg->append_footstep_node("rleg", coordinates(hrp::Vector3(hrp::Vector3(100*1e-3, 0, 100*1e-3)+leg_pos[0])));
+        gg->append_footstep_node("lleg", coordinates(hrp::Vector3(hrp::Vector3(200*1e-3, 0, 200*1e-3)+leg_pos[1])));
+        gg->append_footstep_node("rleg", coordinates(hrp::Vector3(hrp::Vector3(300*1e-3, 0, 100*1e-3)+leg_pos[0])));
+        gg->append_footstep_node("lleg", coordinates(hrp::Vector3(hrp::Vector3(300*1e-3, 0, 100*1e-3)+leg_pos[1])));
+        gg->append_finalize_footstep();
+        gen_and_plot_walk_pattern();
+    };
+
+    void parse_params (int argc, char* argv[])
+    {
+      for (int i = 1; i < argc; ++ i) {
+          std::string arg(argv[i]);
+          if ( arg == "--default-step-time" ) {
+              if (++i < argc) gg->set_default_step_time(atof(argv[i]));
+          } else if ( arg == "--default-step-height" ) {
+              if (++i < argc) gg->set_default_step_height(atof(argv[i]));
+          } else if ( arg == "--default-double-support-ratio" ) {
+              if (++i < argc) gg->set_default_double_support_ratio(atof(argv[i]));
+          } else if ( arg == "--default-double-support-static-ratio" ) {
+              if (++i < argc) gg->set_default_double_support_static_ratio(atof(argv[i]));
+          } else if ( arg == "--swing-trajectory-delay-time-offset" ) {
+              if (++i < argc) gg->set_swing_trajectory_delay_time_offset(atof(argv[i]));
+          } else if ( arg == "--stair-trajectory-way-point-offset" ) {
+              if (++i < argc) {
+                  coil::vstring strs = coil::split(std::string(argv[i]), ",");
+                  gg->set_stair_trajectory_way_point_offset(hrp::Vector3(atof(strs[0].c_str()), atof(strs[1].c_str()), atof(strs[2].c_str())));
+              }
+          }
+      }   
     };
 };
 
@@ -374,6 +395,7 @@ class testGaitGeneratorHRP2JSK : public testGaitGenerator
             cog = 1e-3*hrp::Vector3(6.785, 1.54359, 806.831);
             leg_pos.push_back(hrp::Vector3(0,1e-3*-105,0)); /* rleg */
             leg_pos.push_back(hrp::Vector3(0,1e-3* 105,0)); /* lleg */
+            gg = new gait_generator(dt, leg_pos, 1e-3*150, 1e-3*50, 10, 1e-3*50);
         };
 };
 
@@ -395,27 +417,29 @@ void print_usage ()
 
 int main(int argc, char* argv[])
 {
-  if (argc == 2) {
+  if (argc >= 2) {
+      testGaitGeneratorHRP2JSK tgg;
+      tgg.parse_params(argc, argv);
       if (std::string(argv[1]) == "--test0") {
-          testGaitGeneratorHRP2JSK().test0();
+          tgg.test0();
       } else if (std::string(argv[1]) == "--test1") {
-          testGaitGeneratorHRP2JSK().test1();
+          tgg.test1();
       } else if (std::string(argv[1]) == "--test2") {
-          testGaitGeneratorHRP2JSK().test2();
+          tgg.test2();
       } else if (std::string(argv[1]) == "--test3") {
-          testGaitGeneratorHRP2JSK().test3();
+          tgg.test3();
       } else if (std::string(argv[1]) == "--test4") {
-          testGaitGeneratorHRP2JSK().test4();
+          tgg.test4();
       } else if (std::string(argv[1]) == "--test5") {
-          testGaitGeneratorHRP2JSK().test5();
+          tgg.test5();
       } else if (std::string(argv[1]) == "--test6") {
-          testGaitGeneratorHRP2JSK().test6();
+          tgg.test6();
       } else if (std::string(argv[1]) == "--test7") {
-          testGaitGeneratorHRP2JSK().test7();
+          tgg.test7();
       } else if (std::string(argv[1]) == "--test8") {
-          testGaitGeneratorHRP2JSK().test8();
+          tgg.test8();
       } else if (std::string(argv[1]) == "--test9") {
-          testGaitGeneratorHRP2JSK().test9();
+          tgg.test9();
       } else {
           print_usage();
       }
