@@ -441,6 +441,10 @@ void robot::readForceSensor(unsigned int i_rank, double *o_forces)
 
 void robot::writeJointCommands(const double *i_commands)
 {
+    if (!m_commandOld.size()) m_commandOld.resize(numJoints());
+    for (int i=0; i<numJoints(); i++){
+        m_commandOld[i] = i_commands[i];
+    }
     write_command_angles(i_commands);
 }
 
@@ -512,13 +516,13 @@ char *time_string()
 bool robot::checkJointCommands(const double *i_commands)
 {
     if (!m_dt) return false;
+    if (!m_commandOld.size()) return false;
 
     int state;
     for (int i=0; i<numJoints(); i++){
         read_servo_state(i, &state);
         if (state == ON){
-            double command_old, command=i_commands[i];
-            read_command_angle(i, &command_old);
+            double command_old=m_commandOld[i], command=i_commands[i];
             double v = fabs(command - command_old)/m_dt;
             if (v > joint(i)->uvlimit){
                 std::cerr << time_string()
