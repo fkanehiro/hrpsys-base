@@ -37,6 +37,8 @@ UndistortImage::UndistortImage(RTC::Manager* manager)
       m_imageOut("imageOut", m_image),
       // </rtc-template>
       m_cvImage(NULL),
+      m_intrinsic(NULL),
+      m_distortion(NULL),
       dummy(0)
 {
 }
@@ -106,6 +108,11 @@ RTC::ReturnCode_t UndistortImage::onActivated(RTC::UniqueId ec_id)
 
     CvFileStorage *fs 
         = cvOpenFileStorage (m_calibFile.c_str(), 0, CV_STORAGE_READ);
+    if (!fs){
+        std::cerr << m_profile.instance_name << ": can't open "
+                  << m_calibFile << std::endl;
+        return RTC::RTC_ERROR;
+    }
     CvFileNode *param = cvGetFileNodeByName (fs, NULL, "intrinsic");
     m_intrinsic = (CvMat *) cvRead (fs, param);
     param = cvGetFileNodeByName (fs, NULL, "distortion");
@@ -122,8 +129,8 @@ RTC::ReturnCode_t UndistortImage::onDeactivated(RTC::UniqueId ec_id)
         cvReleaseImage(&m_cvImage);
         m_cvImage = NULL;
     }
-    cvReleaseMat (&m_intrinsic);
-    cvReleaseMat (&m_distortion);
+    if (m_intrinsic) cvReleaseMat (&m_intrinsic);
+    if (m_distortion) cvReleaseMat (&m_distortion);
     
     return RTC::RTC_OK;
 }
