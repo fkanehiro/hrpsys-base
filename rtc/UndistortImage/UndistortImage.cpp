@@ -196,7 +196,7 @@ RTC::ReturnCode_t UndistortImage::onExecute(RTC::UniqueId ec_id)
     case Img::CF_RGB:
         {
             // BGR -> RGB
-            char *src = m_cvImage->imageData;
+            char *src = dst_img->imageData;
             for (int i=0; i<m_image.data.image.raw_data.length(); i+=3){
                 m_image.data.image.raw_data[i+2] = src[i  ]; 
                 m_image.data.image.raw_data[i+1] = src[i+1]; 
