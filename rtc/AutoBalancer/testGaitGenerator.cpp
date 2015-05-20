@@ -14,8 +14,17 @@ protected:
     hrp::Vector3 cog;
     gait_generator* gg;
 private:
+    void plot_and_save (FILE* gp, const std::string graph_fname, const std::string plot_str)
+    {
+        gp = popen("gnuplot", "w");
+        fprintf(gp, "%s\n unset multiplot\n", plot_str.c_str());
+        fprintf(gp, "set terminal postscript eps color\nset output '/tmp/%s.eps'\n", graph_fname.c_str());
+        fprintf(gp, "%s\n unset multiplot\n", plot_str.c_str());
+        fflush(gp);
+    };
     void plot_walk_pattern ()
     {
+        parse_params();
         gg->print_param();
         /* make step and dump */
         size_t i = 0;
@@ -97,101 +106,117 @@ private:
         size_t tmp_start = 2;
         FILE* gps[gpsize];
         {
-            FILE* gp = gps[0];
-            gp = popen("gnuplot", "w");
-            fprintf(gp, "set multiplot layout 3, 1 title 'COG and ZMP'\n");
+            std::ostringstream oss("");
+            std::string gtitle("COG_and_ZMP");
+            oss << "set multiplot layout 3, 1 title '" << gtitle << "'" << std::endl;
             std::string titles[3] = {"X", "Y", "Z"};
             for (size_t ii = 0; ii < 3; ii++) {
-                fprintf(gp, "set xlabel 'Time [s]'\n");
-                fprintf(gp, "set ylabel '%s [m]'\n", titles[ii].c_str());
-                fprintf(gp, "plot '%s' using 1:%d with lines title 'refzmp', '%s' using 1:%d with lines title 'cog'\n",
-                        fname.c_str(), (tmp_start+ii), fname.c_str(), (tmp_start+3+ii));
+                oss << "set xlabel 'Time [s]'" << std::endl;
+                oss << "set ylabel '" << titles[ii] << "[m]'" << std::endl;
+                oss << "plot "
+                    << "'" << fname << "' using 1:" << (tmp_start+ii) << " with lines title 'rleg',"
+                    << "'" << fname << "' using 1:" << (tmp_start+3+ii) << " with lines title 'lleg'"
+                    << std::endl;
             }
-            fflush(gp);
+            plot_and_save(gps[0], gtitle, oss.str());
             tmp_start += 6;
         }
         {
-            FILE* gp = gps[1];
-            gp = popen("gnuplot", "w");
-            fprintf(gp, "set multiplot layout 3, 1 title 'Swing support pos'\n");
+            std::ostringstream oss("");
+            std::string gtitle("Swing_support_pos");
+            oss << "set multiplot layout 3, 1 title '" << gtitle << "'" << std::endl;
             std::string titles[3] = {"X", "Y", "Z"};
             for (size_t ii = 0; ii < 3; ii++) {
-                fprintf(gp, "set xlabel 'Time [s]'\n");
-                fprintf(gp, "set ylabel '%s [m]'\n", titles[ii].c_str());
-                fprintf(gp, "plot '%s' using 1:%d with lines title 'rleg', '%s' using 1:%d with lines title 'lleg'\n",
-                        fname.c_str(), (tmp_start+ii), fname.c_str(), (tmp_start+3+ii));
+                oss << "set xlabel 'Time [s]'" << std::endl;
+                oss << "set ylabel '" << titles[ii] << "[m]'" << std::endl;
+                oss << "plot "
+                    << "'" << fname << "' using 1:" << (tmp_start+ii) << " with lines title 'rleg',"
+                    << "'" << fname << "' using 1:" << (tmp_start+3+ii) << " with lines title 'lleg'"
+                    << std::endl;
             }
-            fflush(gp);
+            plot_and_save(gps[1], gtitle, oss.str());
             tmp_start += 6;
         }
         {
-            FILE* gp = gps[2];
-            gp = popen("gnuplot", "w");
-            fprintf(gp, "set multiplot layout 3, 1 title 'Swing support rot'\n");
+            std::ostringstream oss("");
+            std::string gtitle("Swing_support_rot");
+            oss << "set multiplot layout 3, 1 title '" << gtitle << "'" << std::endl;
             std::string titles[3] = {"Roll", "Pitch", "Yaw"};
             for (size_t ii = 0; ii < 3; ii++) {
-                fprintf(gp, "set xlabel 'Time [s]'\n");
-                fprintf(gp, "set ylabel '%s [deg]'\n", titles[ii].c_str());
-                fprintf(gp, "plot '%s' using 1:%d with lines title 'rleg', '%s' using 1:%d with lines title 'lleg'\n",
-                        fname.c_str(), (tmp_start+ii), fname.c_str(), (tmp_start+3+ii));
+                oss << "set xlabel 'Time [s]'" << std::endl;
+                oss << "set ylabel '" << titles[ii] << "[deg]'" << std::endl;
+                oss << "plot "
+                    << "'" << fname << "' using 1:" << (tmp_start+ii) << " with lines title 'rleg',"
+                    << "'" << fname << "' using 1:" << (tmp_start+3+ii) << " with lines title 'lleg'"
+                    << std::endl;
             }
-            fflush(gp);
+            plot_and_save(gps[2], gtitle, oss.str());
             tmp_start += 6;
         }
         {
-            FILE* gp = gps[3];
-            gp = popen("gnuplot", "w");
-            fprintf(gp, "set multiplot layout 3, 1 title 'Swing support zmp offset'\n");
+            std::ostringstream oss("");
+            std::string gtitle("Swing_support_zmp_offset");
+            oss << "set multiplot layout 3, 1 title '" << gtitle << "'" << std::endl;
             std::string titles[3] = {"X", "Y", "Z"};
             for (size_t ii = 0; ii < 3; ii++) {
-                fprintf(gp, "set xlabel 'Time [s]'\n");
-                fprintf(gp, "set ylabel '%s [m]'\n", titles[ii].c_str());
-                fprintf(gp, "plot '%s' using 1:%d with lines title 'rleg zmpoff', '%s' using 1:%d with lines title 'lleg zmpoff'\n",
-                        fname.c_str(), (tmp_start+ii), fname.c_str(), (tmp_start+3+ii));
+                oss << "set xlabel 'Time [s]'" << std::endl;
+                oss << "set ylabel '" << titles[ii] << "[m]'" << std::endl;
+                oss << "plot "
+                    << "'" << fname << "' using 1:" << (tmp_start+ii) << " with lines title 'rleg',"
+                    << "'" << fname << "' using 1:" << (tmp_start+3+ii) << " with lines title 'lleg'"
+                    << std::endl;
             }
-            fflush(gp);
+            plot_and_save(gps[3], gtitle, oss.str());
             tmp_start += 6;
         }
         {
-            FILE* gp = gps[4];
-            gp = popen("gnuplot", "w");
-            fprintf(gp, "set multiplot layout 1,1 title 'Swing support remain time'\n");
-            fprintf(gp, "set title 'Remain Time'\n");
-            fprintf(gp, "set xlabel 'Time [s]'\n");
-            fprintf(gp, "set ylabel 'Tims [s]'\n");
-            fprintf(gp, "plot '%s' using 1:%d with lines title 'rleg', '%s' using 1:%d with lines title 'lleg'\n",
-                    fname.c_str(), (tmp_start+0), fname.c_str(), (tmp_start+1));
-            fflush(gp);
+            std::ostringstream oss("");
+            std::string gtitle("Swing_support_remain_time");
+            oss << "set multiplot layout 1, 1 title '" << gtitle << "'" << std::endl;
+            oss << "set title 'Remain Time'" << std::endl;
+            oss << "set xlabel 'Time [s]'" << std::endl;
+            oss << "set ylabel 'Time [s]'" << std::endl;
+            oss << "plot "
+                << "'" << fname << "' using 1:" << (tmp_start+0) << " with lines title 'rleg',"
+                << "'" << fname << "' using 1:" << (tmp_start+1) << " with lines title 'lleg'"
+                << std::endl;
+            plot_and_save(gps[4], gtitle, oss.str());
             tmp_start += 2;
         }
         {
-            FILE* gp = gps[5];
-            gp = popen("gnuplot", "w");
-            fprintf(gp, "set multiplot layout 3, 1 title 'Swing support vel'\n");
+            std::ostringstream oss("");
+            std::string gtitle("Swing_support_vel");
+            oss << "set multiplot layout 3, 1 title '" << gtitle << "'" << std::endl;
             std::string titles[3] = {"X", "Y", "Z"};
             for (size_t ii = 0; ii < 3; ii++) {
-                fprintf(gp, "set xlabel 'Time [s]'\n");
-                fprintf(gp, "set ylabel '%s [m]'\n", titles[ii].c_str());
-                fprintf(gp, "plot '%s' using 1:%d with lines title 'rleg', '%s' using 1:%d with lines title 'lleg'\n",
-                        fname.c_str(), (tmp_start+ii), fname.c_str(), (tmp_start+3+ii));
+                oss << "set xlabel 'Time [s]'" << std::endl;
+                oss << "set ylabel '" << titles[ii] << "[m]'" << std::endl;
+                oss << "plot "
+                    << "'" << fname << "' using 1:" << (tmp_start+ii) << " with lines title 'rleg',"
+                    << "'" << fname << "' using 1:" << (tmp_start+3+ii) << " with lines title 'lleg'"
+                    << std::endl;
             }
-            fflush(gp);
+            plot_and_save(gps[5], gtitle, oss.str());
         }
         {
-            FILE* gp = gps[6];
-            gp = popen("gnuplot", "w");
-            fprintf(gp, "set multiplot layout 2,1 title 'Swing support pos trajectory'\n");
-            fprintf(gp, "set title 'X-Z'\n");
-            fprintf(gp, "set xlabel 'X [m]'\n");
-            fprintf(gp, "set ylabel 'Z [m]'\n");
-            fprintf(gp, "plot '%s' using %d:%d with lines title 'rleg', '%s' using %d:%d with lines title 'lleg'\n",
-                    fname.c_str(), (2+3+3+0), (2+3+3+2), fname.c_str(), (2+3+3+3+0), (2+3+3+3+2));
-            fprintf(gp, "set title 'Y-Z'\n");
-            fprintf(gp, "set xlabel 'Y [m]'\n");
-            fprintf(gp, "set ylabel 'Z [m]'\n");
-            fprintf(gp, "plot '%s' using %d:%d with lines title 'rleg', '%s' using %d:%d with lines title 'lleg'\n",
-                    fname.c_str(), (2+3+3+1), (2+3+3+2), fname.c_str(), (2+3+3+3+1), (2+3+3+3+2));
-            fflush(gp);
+            std::ostringstream oss("");
+            std::string gtitle("Swing_support_pos_trajectory");
+            oss << "set multiplot layout 2, 1 title '" << gtitle << "'" << std::endl;
+            oss << "set title 'X-Z'" << std::endl;
+            oss << "set xlabel 'X [m]'" << std::endl;            
+            oss << "set ylabel 'Z [m]'" << std::endl;            
+            oss << "plot "
+                << "'" << fname << "' using " << (2+3+3+0) << ":" << (2+3+3+2)  << " with lines title 'rleg',"
+                << "'" << fname << "' using " << (2+3+3+3+0) << ":" << (2+3+3+3+2) << " with lines title 'lleg'"
+                << std::endl;
+            oss << "set title 'Y-Z'" << std::endl;
+            oss << "set xlabel 'Y [m]'" << std::endl;            
+            oss << "set ylabel 'Z [m]'" << std::endl;            
+            oss << "plot "
+                << "'" << fname << "' using " << (2+3+3+1) << ":" << (2+3+3+2)  << " with lines title 'rleg',"
+                << "'" << fname << "' using " << (2+3+3+3+1) << ":" << (2+3+3+3+2) << " with lines title 'lleg'"
+                << std::endl;
+            plot_and_save(gps[6], gtitle, oss.str());
         }
         double tmp;
         std::cin >> tmp;
@@ -216,6 +241,7 @@ private:
     }
 
 public:
+    std::vector<std::string> arg_strs;
     testGaitGenerator() {};
     virtual ~testGaitGenerator()
     {
@@ -354,31 +380,32 @@ public:
         gg->set_swing_trajectory_delay_time_offset (0.15);
         gg->append_footstep_node("rleg", coordinates(hrp::Vector3(hrp::Vector3(0, 0, 0)+leg_pos[0])));
         gg->append_footstep_node("lleg", coordinates(hrp::Vector3(hrp::Vector3(0, 0, 0)+leg_pos[1])));
-        gg->append_footstep_node("rleg", coordinates(hrp::Vector3(hrp::Vector3(100*1e-3, 0, 100*1e-3)+leg_pos[0])));
-        gg->append_footstep_node("lleg", coordinates(hrp::Vector3(hrp::Vector3(200*1e-3, 0, 200*1e-3)+leg_pos[1])));
-        gg->append_footstep_node("rleg", coordinates(hrp::Vector3(hrp::Vector3(300*1e-3, 0, 100*1e-3)+leg_pos[0])));
-        gg->append_footstep_node("lleg", coordinates(hrp::Vector3(hrp::Vector3(300*1e-3, 0, 100*1e-3)+leg_pos[1])));
+        gg->append_footstep_node("rleg", coordinates(hrp::Vector3(hrp::Vector3(250*1e-3, 0, 200*1e-3)+leg_pos[0])));
+        gg->append_footstep_node("lleg", coordinates(hrp::Vector3(hrp::Vector3(250*1e-3, 0, 200*1e-3)+leg_pos[1])));
+        gg->append_footstep_node("rleg", coordinates(hrp::Vector3(hrp::Vector3(500*1e-3, 0, 400*1e-3)+leg_pos[0])));
+        gg->append_footstep_node("lleg", coordinates(hrp::Vector3(hrp::Vector3(500*1e-3, 0, 400*1e-3)+leg_pos[1])));
+        gg->append_footstep_node("rleg", coordinates(hrp::Vector3(hrp::Vector3(750*1e-3, 0, 600*1e-3)+leg_pos[0])));
+        gg->append_footstep_node("lleg", coordinates(hrp::Vector3(hrp::Vector3(750*1e-3, 0, 600*1e-3)+leg_pos[1])));
         gg->append_finalize_footstep();
         gen_and_plot_walk_pattern();
     };
 
-    void parse_params (int argc, char* argv[])
+    void parse_params ()
     {
-      for (int i = 1; i < argc; ++ i) {
-          std::string arg(argv[i]);
-          if ( arg == "--default-step-time" ) {
-              if (++i < argc) gg->set_default_step_time(atof(argv[i]));
-          } else if ( arg == "--default-step-height" ) {
-              if (++i < argc) gg->set_default_step_height(atof(argv[i]));
-          } else if ( arg == "--default-double-support-ratio" ) {
-              if (++i < argc) gg->set_default_double_support_ratio(atof(argv[i]));
-          } else if ( arg == "--default-double-support-static-ratio" ) {
-              if (++i < argc) gg->set_default_double_support_static_ratio(atof(argv[i]));
-          } else if ( arg == "--swing-trajectory-delay-time-offset" ) {
-              if (++i < argc) gg->set_swing_trajectory_delay_time_offset(atof(argv[i]));
-          } else if ( arg == "--stair-trajectory-way-point-offset" ) {
-              if (++i < argc) {
-                  coil::vstring strs = coil::split(std::string(argv[i]), ",");
+      for (int i = 0; i < arg_strs.size(); ++ i) {
+          if ( arg_strs[i]== "--default-step-time" ) {
+              if (++i < arg_strs.size()) gg->set_default_step_time(atof(arg_strs[i].c_str()));
+          } else if ( arg_strs[i]== "--default-step-height" ) {
+              if (++i < arg_strs.size()) gg->set_default_step_height(atof(arg_strs[i].c_str()));
+          } else if ( arg_strs[i]== "--default-double-support-ratio" ) {
+              if (++i < arg_strs.size()) gg->set_default_double_support_ratio(atof(arg_strs[i].c_str()));
+          } else if ( arg_strs[i]== "--default-double-support-static-ratio" ) {
+              if (++i < arg_strs.size()) gg->set_default_double_support_static_ratio(atof(arg_strs[i].c_str()));
+          } else if ( arg_strs[i]== "--swing-trajectory-delay-time-offset" ) {
+              if (++i < arg_strs.size()) gg->set_swing_trajectory_delay_time_offset(atof(arg_strs[i].c_str()));
+          } else if ( arg_strs[i]== "--stair-trajectory-way-point-offset" ) {
+              if (++i < arg_strs.size()) {
+                  coil::vstring strs = coil::split(std::string(arg_strs[i].c_str()), ",");
                   gg->set_stair_trajectory_way_point_offset(hrp::Vector3(atof(strs[0].c_str()), atof(strs[1].c_str()), atof(strs[2].c_str())));
               }
           }
@@ -419,7 +446,9 @@ int main(int argc, char* argv[])
 {
   if (argc >= 2) {
       testGaitGeneratorHRP2JSK tgg;
-      tgg.parse_params(argc, argv);
+      for (int i = 1; i < argc; ++ i) {
+          tgg.arg_strs.push_back(std::string(argv[i]));
+      }
       if (std::string(argv[1]) == "--test0") {
           tgg.test0();
       } else if (std::string(argv[1]) == "--test1") {
