@@ -1001,6 +1001,7 @@ void AutoBalancer::waitFootSteps()
 
 bool AutoBalancer::setGaitGeneratorParam(const OpenHRP::AutoBalancerService::GaitGeneratorParam& i_param)
 {
+  std::cerr << "[" << m_profile.instance_name << "] setGaitGeneratorParam" << std::endl;
   gg->set_stride_parameters(i_param.stride_parameter[0], i_param.stride_parameter[1], i_param.stride_parameter[2], i_param.stride_parameter[3]);
   gg->set_default_step_time(i_param.default_step_time);
   gg->set_default_step_height(i_param.default_step_height);
@@ -1043,32 +1044,7 @@ bool AutoBalancer::setGaitGeneratorParam(const OpenHRP::AutoBalancerService::Gai
   gg->set_use_toe_heel_transition(i_param.use_toe_heel_transition);
 
   // print
-  double stride_fwd_x, stride_y, stride_th, stride_bwd_x;
-  gg->get_stride_parameters(stride_fwd_x, stride_y, stride_th, stride_bwd_x);
-  std::cerr << "[" << m_profile.instance_name << "] setGaitGeneratorParam" << std::endl;
-  std::cerr << "[" << m_profile.instance_name << "]   stride_parameter = " << stride_fwd_x << "[m], " << stride_y << "[m], " << stride_th << "[deg], " << stride_bwd_x << "[m]" << std::endl;
-  std::cerr << "[" << m_profile.instance_name << "]   default_step_time = " << gg->get_default_step_time() << "[s]" << std::endl;
-  std::cerr << "[" << m_profile.instance_name << "]   default_step_height = " << gg->get_default_step_height() << "[m]" << std::endl;
-  std::cerr << "[" << m_profile.instance_name << "]   default_double_support_ratio = " << gg->get_default_double_support_ratio() << ", default_double_support_static_ratio = " << gg->get_default_double_support_static_ratio() << std::endl;
-  std::cerr << "[" << m_profile.instance_name << "]   default_orbit_type = ";
-  if (gg->get_default_orbit_type() == gait_generator::SHUFFLING) {
-    std::cerr << "SHUFFLING" << std::endl;
-  } else if (gg->get_default_orbit_type() == gait_generator::CYCLOID) {
-    std::cerr << "CYCLOID" << std::endl;
-  } else if (gg->get_default_orbit_type() == gait_generator::RECTANGLE) {
-    std::cerr << "RECTANGLE" << std::endl;
-  } else if (gg->get_default_orbit_type() == gait_generator::STAIR) {
-    std::cerr << "STAIR" << std::endl;
-  }
-  std::cerr << "[" << m_profile.instance_name << "]   swing_trajectory_delay_time_offset = " << gg->get_swing_trajectory_delay_time_offset() << "[s]" << std::endl;
-  hrp::Vector3 tmpv;
-  tmpv = gg->get_stair_trajectory_way_point_offset();
-  std::cerr << "[" << m_profile.instance_name << "]   stair_trajectory_way_point_offset = " << tmpv.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[m]" << std::endl;
-  std::cerr << "[" << m_profile.instance_name << "]   gravitational_acceleration = " << gg->get_gravitational_acceleration() << "[m/s^2]" << std::endl;
-  std::cerr << "[" << m_profile.instance_name << "]   toe_pos_offset_x = " << gg->get_toe_pos_offset_x() << "[mm], heel_pos_offset_x = " << gg->get_heel_pos_offset_x() << "[mm]" << std::endl;
-  std::cerr << "[" << m_profile.instance_name << "]   toe_zmp_offset_x = " << gg->get_toe_zmp_offset_x() << "[mm], heel_zmp_offset_x = " << gg->get_heel_zmp_offset_x() << "[mm]" << std::endl;
-  std::cerr << "[" << m_profile.instance_name << "]   toe_angle = " << gg->get_toe_angle() << "[deg]" << std::endl;
-  std::cerr << "[" << m_profile.instance_name << "]   heel_angle = " << gg->get_heel_angle() << "[deg]" << std::endl;
+  gg->print_param(std::string(m_profile.instance_name));
   if (i_param.toe_heel_phase_ratio.length() == gg->get_NUM_TH_PHASES() && set_toe_heel_phase_ratio) {
       double ratio[gg->get_NUM_TH_PHASES()];
       gg->get_toe_heel_phase_ratio(ratio);
@@ -1080,7 +1056,6 @@ bool AutoBalancer::setGaitGeneratorParam(const OpenHRP::AutoBalancerService::Gai
                 << "Required length = " << gg->get_NUM_TH_PHASES() << " != input length " << i_param.toe_heel_phase_ratio.length()
                 << ", or sum_ratio = " << sum_ratio << " is not 1.0." << std::endl;
   }
-  std::cerr << "[" << m_profile.instance_name << "]   use_toe_joint = " << (gg->get_use_toe_joint()?"true":"false") << ", use_toe_heel_transition = " << (gg->get_use_toe_heel_transition()?"true":"false") << std::endl;
   return true;
 };
 
