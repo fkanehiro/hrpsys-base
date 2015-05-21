@@ -62,7 +62,8 @@ module OpenHRP
       SHUFFLING,
       CYCLOID,
       RECTANGLE,
-      STAIR
+      STAIR,
+      CYCLOIDDELAY
     };
 
     /**

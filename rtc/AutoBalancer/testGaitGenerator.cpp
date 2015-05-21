@@ -29,6 +29,7 @@ private:
         std::string fname("/tmp/plot.dat");
         FILE* fp = fopen(fname.c_str(), "w");
         hrp::Vector3 prev_rfoot_pos, prev_lfoot_pos;
+        hrp::Vector3 min_rfoot_pos(1e10,1e10,1e10), min_lfoot_pos(1e10,1e10,1e10), max_rfoot_pos(-1e10,-1e10,-1e10), max_lfoot_pos(-1e10,-1e10,-1e10);
         while ( gg->proc_one_tick() ) {
             //std::cerr << gg->lcg.gp_count << std::endl;
             // if ( gg->lcg.gp_index == 4 && gg->lcg.gp_count == 100) {
@@ -58,10 +59,14 @@ private:
             hrp::Vector3 rfoot_pos = (gg->get_support_leg() == "rleg") ? gg->get_support_leg_coords().pos : gg->get_swing_leg_coords().pos;
             for (size_t ii = 0; ii < 3; ii++) {
                 fprintf(fp, "%f ", rfoot_pos(ii));
+                min_rfoot_pos(ii) = std::min(min_rfoot_pos(ii), rfoot_pos(ii));
+                max_rfoot_pos(ii) = std::max(max_rfoot_pos(ii), rfoot_pos(ii));
             }
             hrp::Vector3 lfoot_pos = (gg->get_support_leg() == "lleg") ? gg->get_support_leg_coords().pos : gg->get_swing_leg_coords().pos;
             for (size_t ii = 0; ii < 3; ii++) {
                 fprintf(fp, "%f ", lfoot_pos(ii));
+                min_lfoot_pos(ii) = std::min(min_lfoot_pos(ii), lfoot_pos(ii));
+                max_lfoot_pos(ii) = std::max(max_lfoot_pos(ii), lfoot_pos(ii));
             }
             // Foot rot
             hrp::Vector3 rpy;
@@ -204,20 +209,35 @@ private:
         {
             std::ostringstream oss("");
             std::string gtitle("Swing_support_pos_trajectory");
+            double min_v[3], max_v[3], range[3];
+            for (size_t ii = 0; ii < 3; ii++) {
+                min_v[ii] = std::min(min_rfoot_pos(ii), min_lfoot_pos(ii));
+                max_v[ii] = std::max(max_rfoot_pos(ii), max_lfoot_pos(ii));
+                range[ii] = max_v[ii] - min_v[ii];
+                double mid = (max_v[ii]+min_v[ii])/2.0;
+                min_v[ii] = mid + range[ii] * 1.05 * -0.5;
+                max_v[ii] = mid + range[ii] * 1.05 * 0.5;
+            }
             oss << "set multiplot layout 2, 1 title '" << gtitle << "'" << std::endl;
-            oss << "set title 'X-Z'" << std::endl;
+            //oss << "set title 'X-Z'" << std::endl;
+            oss << "set size ratio " << range[2]/range[0] << std::endl;
             oss << "set xlabel 'X [m]'" << std::endl;            
             oss << "set ylabel 'Z [m]'" << std::endl;            
             oss << "plot "
-                << "'" << fname << "' using " << (2+3+3+0) << ":" << (2+3+3+2)  << " with lines title 'rleg',"
-                << "'" << fname << "' using " << (2+3+3+3+0) << ":" << (2+3+3+3+2) << " with lines title 'lleg'"
+                << "[" << min_v[0]<< ":" << max_v[0] << "]"
+                << "[" << min_v[2] << ":" << max_v[2] << "]"
+                << "'" << fname << "' using " << (2+3+3+3+0) << ":" << (2+3+3+3+2)  << " with lines title 'rleg',"
+                << "'" << fname << "' using " << (2+3+3+3+3+0) << ":" << (2+3+3+3+3+2) << " with lines title 'lleg'"
                 << std::endl;
-            oss << "set title 'Y-Z'" << std::endl;
+            //oss << "set title 'Y-Z'" << std::endl;
+            oss << "set size ratio " << range[2]/range[1] << std::endl;
             oss << "set xlabel 'Y [m]'" << std::endl;            
             oss << "set ylabel 'Z [m]'" << std::endl;            
             oss << "plot "
-                << "'" << fname << "' using " << (2+3+3+1) << ":" << (2+3+3+2)  << " with lines title 'rleg',"
-                << "'" << fname << "' using " << (2+3+3+3+1) << ":" << (2+3+3+3+2) << " with lines title 'lleg'"
+                << "[" << min_v[1]<< ":" << max_v[1] << "]"
+                << "[" << min_v[2] << ":" << max_v[2] << "]"
+                << "'" << fname << "' using " << (2+3+3+3+1) << ":" << (2+3+3+3+2)  << " with lines title 'rleg',"
+                << "'" << fname << "' using " << (2+3+3+3+3+1) << ":" << (2+3+3+3+3+2) << " with lines title 'lleg'"
                 << std::endl;
             plot_and_save(gps[6], gtitle, oss.str());
         }
@@ -404,6 +424,22 @@ public:
               if (++i < arg_strs.size()) gg->set_default_step_height(atof(arg_strs[i].c_str()));
           } else if ( arg_strs[i]== "--default-double-support-ratio" ) {
               if (++i < arg_strs.size()) gg->set_default_double_support_ratio(atof(arg_strs[i].c_str()));
+          } else if ( arg_strs[i]== "--default-orbit-type" ) {
+              if (++i < arg_strs.size()) {
+                  if (arg_strs[i] == "SHUFFLING") {
+                      gg->set_default_orbit_type(gait_generator::SHUFFLING);
+                  } else if (arg_strs[i] == "CYCLOID") {
+                      gg->set_default_orbit_type(gait_generator::CYCLOID);
+                  } else if (arg_strs[i] == "RECTANGLE") {
+                      gg->set_default_orbit_type(gait_generator::RECTANGLE);
+                  } else if (arg_strs[i] == "STAIR") {
+                      gg->set_default_orbit_type(gait_generator::STAIR);
+                  } else if (arg_strs[i] == "CYCLOIDDELAY") {
+                      gg->set_default_orbit_type(gait_generator::CYCLOIDDELAY);
+                  } else {
+                      std::cerr << "No such default-orbit-type " << arg_strs[i] << std::endl;
+                  }
+              }
           } else if ( arg_strs[i]== "--default-double-support-static-ratio" ) {
               if (++i < arg_strs.size()) gg->set_default_double_support_static_ratio(atof(arg_strs[i].c_str()));
           } else if ( arg_strs[i]== "--swing-trajectory-delay-time-offset" ) {
