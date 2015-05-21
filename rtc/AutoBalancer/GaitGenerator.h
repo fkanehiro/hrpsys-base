@@ -657,6 +657,12 @@ namespace rats
     /* parameter getting */
     const hrp::Vector3& get_cog () { return cog; };
     const hrp::Vector3& get_refzmp () { return refzmp;};
+    hrp::Vector3 get_cart_zmp ()
+    {
+        double czmp[3];
+        preview_controller_ptr->get_cart_zmp(czmp);
+        return hrp::Vector3(czmp[0], czmp[1], czmp[2]);
+    };
     const hrp::Vector3& get_swing_foot_zmp_offset () { return swing_foot_zmp_offset;};
     const hrp::Vector3& get_support_foot_zmp_offset () { return rg.get_default_zmp_offset(lcg.get_support_leg());};
     double get_toe_zmp_offset_x () const { return rg.get_toe_zmp_offset_x(); };
