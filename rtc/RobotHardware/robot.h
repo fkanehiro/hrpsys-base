@@ -330,6 +330,7 @@ private:
     boost::interprocess::interprocess_semaphore wait_sem;
     double m_dt;
     std::vector<double> m_commandOld;
+    hrp::Vector3 G;
 };
 
 #endif
