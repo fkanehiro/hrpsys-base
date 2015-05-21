@@ -424,6 +424,22 @@ public:
               if (++i < arg_strs.size()) gg->set_default_step_height(atof(arg_strs[i].c_str()));
           } else if ( arg_strs[i]== "--default-double-support-ratio" ) {
               if (++i < arg_strs.size()) gg->set_default_double_support_ratio(atof(arg_strs[i].c_str()));
+          } else if ( arg_strs[i]== "--default-orbit-type" ) {
+              if (++i < arg_strs.size()) {
+                  if (arg_strs[i] == "SHUFFLING") {
+                      gg->set_default_orbit_type(gait_generator::SHUFFLING);
+                  } else if (arg_strs[i] == "CYCLOID") {
+                      gg->set_default_orbit_type(gait_generator::CYCLOID);
+                  } else if (arg_strs[i] == "RECTANGLE") {
+                      gg->set_default_orbit_type(gait_generator::RECTANGLE);
+                  } else if (arg_strs[i] == "STAIR") {
+                      gg->set_default_orbit_type(gait_generator::STAIR);
+                  } else if (arg_strs[i] == "CYCLOIDDELAY") {
+                      gg->set_default_orbit_type(gait_generator::CYCLOIDDELAY);
+                  } else {
+                      std::cerr << "No such default-orbit-type " << arg_strs[i] << std::endl;
+                  }
+              }
           } else if ( arg_strs[i]== "--default-double-support-static-ratio" ) {
               if (++i < arg_strs.size()) gg->set_default_double_support_static_ratio(atof(arg_strs[i].c_str()));
           } else if ( arg_strs[i]== "--swing-trajectory-delay-time-offset" ) {

@@ -9,6 +9,30 @@ namespace rats
 #ifndef deg2rad
 #define deg2rad(deg) (deg * M_PI / 180)
 #endif
+  void cycloid_midpoint (hrp::Vector3& ret,
+                         const double ratio, const hrp::Vector3& start,
+                         const hrp::Vector3& goal, const double height,
+                         const double default_top_ratio)
+  {
+    hrp::Vector3 u ( goal - start );
+    hrp::Vector3 uz (0,0, ratio * u(2));
+    u(2) = 0.0;
+    double pth = 2 * M_PI * ratio, norm_u = u.norm();
+    if ( !eps_eq(norm_u, 0.0,1e-3*0.01) )
+      u =  u.normalized();
+    /* check ratio vs 0.5 for default_top_ratio blending */
+    hrp::Vector3 cycloid_point( ((0.5 > ratio) ? ( 2 * default_top_ratio * norm_u ) : ( 2 * (1 - default_top_ratio) * norm_u )) * ( pth - sin(pth) ) / (2 * M_PI) -
+			   ((0.5 > ratio) ? 0.0 : (norm_u * (1 - 2 * default_top_ratio)) ), // local x
+			   0, // local y
+			   ( 0.5 * height * ( 1 - cos(pth) )) ); // local z
+    hrp::Vector3 v(hrp::Vector3(0,0,1).cross(u));
+    hrp::Matrix33 dvm;
+    dvm << u(0), v(0), 0,
+      u(1), v(1), 0,
+      u(2), v(2), 1;
+    ret = dvm * cycloid_point + start + uz;
+  };
+
   /* member function implementation for refzmp_generator */
   void gait_generator::refzmp_generator::push_refzmp_from_footstep_list_for_dual (const std::vector<step_node>& fnl,
                                                                                   const coordinates& _support_leg_coords,
@@ -137,6 +161,9 @@ namespace rats
     case STAIR:
       stair_midcoords(ret, ratio, swing_leg_src_coords, swing_leg_dst_coords, step_height);
       break;
+    case CYCLOIDDELAY:
+      cycloid_delay_midcoords(ret, ratio, swing_leg_src_coords, swing_leg_dst_coords, step_height);
+      break;
     default: break;
     }
     if (std::fabs(step_height) > 1e-3*10) {
@@ -165,29 +192,6 @@ namespace rats
     current_swing_time[support_leg==RLEG ? LLEG : RLEG] = tmp_current_swing_time;
     //std::cerr << "sl " << support_leg << " " << current_swing_time[support_leg==RLEG?0:1] << " " << current_swing_time[support_leg==RLEG?1:0] << " " << tmp_current_swing_time << " " << gp_count << std::endl;
     return ret;
-  };
-
-  void gait_generator::leg_coords_generator::cycloid_midpoint (hrp::Vector3& ret,
-                                                               const double ratio, const hrp::Vector3& start,
-                                                               const hrp::Vector3& goal, const double height) const
-  {
-    hrp::Vector3 u ( goal - start );
-    hrp::Vector3 uz (0,0, ratio * u(2));
-    u(2) = 0.0;
-    double pth = 2 * M_PI * ratio, norm_u = u.norm();
-    if ( !eps_eq(norm_u, 0.0,1e-3*0.01) )
-      u =  u.normalized();
-    /* check ratio vs 0.5 for default_top_ratio blending */
-    hrp::Vector3 cycloid_point( ((0.5 > ratio) ? ( 2 * default_top_ratio * norm_u ) : ( 2 * (1 - default_top_ratio) * norm_u )) * ( pth - sin(pth) ) / (2 * M_PI) -
-			   ((0.5 > ratio) ? 0.0 : (norm_u * (1 - 2 * default_top_ratio)) ), // local x
-			   0, // local y
-			   ( 0.5 * height * ( 1 - cos(pth) )) ); // local z
-    hrp::Vector3 v(hrp::Vector3(0,0,1).cross(u));
-    hrp::Matrix33 dvm;
-    dvm << u(0), v(0), 0,
-      u(1), v(1), 0,
-      u(2), v(2), 1;
-    ret = dvm * cycloid_point + start + uz;
   };
 
   double gait_generator::leg_coords_generator::calc_interpolated_toe_heel_angle (const toe_heel_phase start_phase, const toe_heel_phase goal_phase, const double start, const double goal)
@@ -250,7 +254,7 @@ namespace rats
                                                                 const coordinates& goal, const double height) const
   {
     mid_coords(ret, ratio, start, goal);
-    cycloid_midpoint (ret.pos, ratio, start.pos, goal.pos, height);
+    cycloid_midpoint (ret.pos, ratio, start.pos, goal.pos, height, default_top_ratio);
   };
 
   void gait_generator::leg_coords_generator::rectangle_midcoords (coordinates& ret,
@@ -267,6 +271,14 @@ namespace rats
   {
     mid_coords(ret, ratio, start, goal);
     sdtg.get_trajectory_point(ret.pos, hrp::Vector3(start.pos), hrp::Vector3(goal.pos), height);
+  };
+
+  void gait_generator::leg_coords_generator::cycloid_delay_midcoords (coordinates& ret,
+                                                                      const double ratio, const coordinates& start,
+                                                                      const coordinates& goal, const double height)
+  {
+    mid_coords(ret, ratio, start, goal);
+    cdtg.get_trajectory_point(ret.pos, hrp::Vector3(start.pos), hrp::Vector3(goal.pos), height);
   };
 
   void gait_generator::leg_coords_generator::update_leg_coords (const std::vector<step_node>& fnl, const double default_double_support_ratio, const size_t one_step_len, const bool force_height_zero)
@@ -305,6 +317,7 @@ namespace rats
       gp_count = one_step_len;
       rdtg.reset(one_step_len, default_double_support_ratio);
       sdtg.reset(one_step_len, default_double_support_ratio);
+      cdtg.reset(one_step_len, default_double_support_ratio);
       reset_foot_ratio_interpolator(one_step_len);
     }
   };
