@@ -162,6 +162,8 @@ namespace rats
       bool use_toe_heel_transition, is_final_double_support_set;
       void calc_current_refzmp (hrp::Vector3& ret, hrp::Vector3& swing_foot_zmp_offset, const double default_double_support_ratio, const double default_double_support_static_ratio, const size_t one_step_len) const;
       const bool is_start_double_support_phase () const { return refzmp_index == 0; };
+      const bool is_second_phase () const { return refzmp_index == 1; };
+      const bool is_second_last_phase () const { return ((refzmp_index == refzmp_cur_list.size()-2) && is_final_double_support_set); };
       const bool is_end_double_support_phase () const { return refzmp_index == refzmp_cur_list.size() - 1; };
 #ifndef HAVE_MAIN
     public:
