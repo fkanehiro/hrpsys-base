@@ -83,6 +83,7 @@ bool robot::init()
       std::cerr << "  accelerometer:" << numSensors(Sensor::ACCELERATION) << "(VRML), " << number_of_accelerometers() << "(IOB)"  << std::endl;
       return false;
     }
+    G << 0, 0, 9.8;
 
     if (open_iob() == FALSE) return false;
 
@@ -209,10 +210,11 @@ void robot::calibrateInertiaSensorOneStep()
             }
 
             for (int j=0; j<numSensors(Sensor::ACCELERATION); j++) {
+                hrp::Sensor* m_sensor = sensor(hrp::Sensor::ACCELERATION, j);
+                hrp::Matrix33 m_sensorR = m_sensor->link->R * m_sensor->localR;
+                hrp::Vector3 G_rotated = m_sensorR.transpose() * G;
                 for (int i=0; i<3; i++) {
-                    accel_sum[j][i] = -accel_sum[j][i]/CALIB_COUNT;
-#define	G	(9.8) // [m/s^2]
-                    if (i==2) accel_sum[j][i] += G;
+                    accel_sum[j][i] = -accel_sum[j][i]/CALIB_COUNT + G_rotated(i);
                 }
                 write_accelerometer_offset(j, accel_sum[j].data());
             }
@@ -563,7 +565,7 @@ bool robot::checkEmergency(emg_reason &o_reason, int &o_id)
     if (m_rLegForceSensorId >= 0){
         double force[6];
         read_force_sensor(m_rLegForceSensorId, force);
-        if (force[FZ] > totalMass()*G*m_fzLimitRatio){
+        if (force[FZ] > totalMass()*G(2)*m_fzLimitRatio){
 	    std::cerr << time_string() << ": right Fz limit over: Fz = " << force[FZ] << std::endl;
             o_reason = EMG_FZ;
             o_id = m_rLegForceSensorId;
@@ -573,7 +575,7 @@ bool robot::checkEmergency(emg_reason &o_reason, int &o_id)
     if (m_lLegForceSensorId >= 0){
         double force[6];
         read_force_sensor(m_lLegForceSensorId, force);
-        if (force[FZ] > totalMass()*G*m_fzLimitRatio){
+        if (force[FZ] > totalMass()*G(2)*m_fzLimitRatio){
 	    std::cerr << time_string() << ": left Fz limit over: Fz = " << force[FZ] << std::endl;
             o_reason = EMG_FZ;
             o_id = m_lLegForceSensorId;
