@@ -68,44 +68,35 @@ namespace rats
             swing_foot_zmp_offset(0) = ratio * heel_zmp_offset_x + (1-ratio) * toe_zmp_offset_x;
         }
         zmp_diff = swing_foot_zmp_offset(0)-default_zmp_offsets[swing_leg_list[refzmp_index]](0);
+        if ((is_second_phase() && ( cnt < double_support_count_half )) ||
+            (is_second_last_phase() && ( cnt > one_step_len - double_support_count_half ))) {
+            // "* 0.5" is for double supprot period
+            zmp_diff *= 0.5;
+        }
     }
 
     // Calculate total reference ZMP
-    if ( cnt < double_support_static_count_half ) { // Start double support static period
+    if (is_start_double_support_phase() || is_end_double_support_phase()) {
+      ret = refzmp_cur_list[refzmp_index];
+    } else if ( cnt < double_support_static_count_half ) { // Start double support static period
       hrp::Vector3 current_support_zmp = refzmp_cur_list[refzmp_index];
-      hrp::Vector3 prev_support_zmp = (is_start_double_support_phase() ? refzmp_cur_list[refzmp_index] : refzmp_cur_list[refzmp_index-1]);
-      if ( !(is_start_double_support_phase() || is_end_double_support_phase()) ) {
-          // "* 0.5" is for double supprot period
-          prev_support_zmp +=  ((refzmp_index == 1) ? zmp_diff*0.5: zmp_diff) * foot_x_axis_list[refzmp_index-1];
-      }
-      double ratio = 0.5; 
+      hrp::Vector3 prev_support_zmp = refzmp_cur_list[refzmp_index-1] + zmp_diff * foot_x_axis_list[refzmp_index-1];
+      double ratio = (is_second_phase()?1.0:0.5); 
       ret = (1 - ratio) * current_support_zmp + ratio * prev_support_zmp;
     } else if ( cnt > one_step_len - double_support_static_count_half ) { // End double support static period
-      hrp::Vector3 current_support_zmp = (is_end_double_support_phase() ? refzmp_cur_list[refzmp_index] : refzmp_cur_list[refzmp_index+1]);
+      hrp::Vector3 current_support_zmp = refzmp_cur_list[refzmp_index+1] + zmp_diff * foot_x_axis_list[refzmp_index+1];
       hrp::Vector3 prev_support_zmp = refzmp_cur_list[refzmp_index];
-      if ( !(is_start_double_support_phase() || is_end_double_support_phase()) ) {
-          // "* 0.5" is for double supprot period
-          current_support_zmp += (((refzmp_index == refzmp_cur_list.size()-2) && is_final_double_support_set) ? zmp_diff * 0.5 : zmp_diff) * foot_x_axis_list[refzmp_index+1];
-      }
-      double ratio = 0.5;
+      double ratio = (is_second_last_phase()?1.0:0.5);
       ret = (1 - ratio) * prev_support_zmp + ratio * current_support_zmp;
     } else if ( cnt < double_support_count_half ) { // Start double support period
       hrp::Vector3 current_support_zmp = refzmp_cur_list[refzmp_index];
-      hrp::Vector3 prev_support_zmp = (is_start_double_support_phase() ? refzmp_cur_list[refzmp_index] : refzmp_cur_list[refzmp_index-1]);
-      if ( !(is_start_double_support_phase() || is_end_double_support_phase()) ) {
-          // "* 0.5" is for double supprot period
-          prev_support_zmp +=  ((refzmp_index == 1) ? zmp_diff*0.5: zmp_diff) * foot_x_axis_list[refzmp_index-1];
-      }
-      double ratio = (0.5 / (double_support_count_half-double_support_static_count_half)) * (double_support_count_half-cnt);
+      hrp::Vector3 prev_support_zmp = refzmp_cur_list[refzmp_index-1] + zmp_diff * foot_x_axis_list[refzmp_index-1];
+      double ratio = ((is_second_phase()?1.0:0.5) / (double_support_count_half-double_support_static_count_half)) * (double_support_count_half-cnt);
       ret = (1 - ratio) * current_support_zmp + ratio * prev_support_zmp;
     } else if ( cnt > one_step_len - double_support_count_half ) { // End double support period
-      hrp::Vector3 current_support_zmp = (is_end_double_support_phase() ? refzmp_cur_list[refzmp_index] : refzmp_cur_list[refzmp_index+1]);
+      hrp::Vector3 current_support_zmp = refzmp_cur_list[refzmp_index+1] + zmp_diff * foot_x_axis_list[refzmp_index+1];
       hrp::Vector3 prev_support_zmp = refzmp_cur_list[refzmp_index];
-      if ( !(is_start_double_support_phase() || is_end_double_support_phase()) ) {
-          // "* 0.5" is for double supprot period
-          current_support_zmp += (((refzmp_index == refzmp_cur_list.size()-2) && is_final_double_support_set) ? zmp_diff * 0.5 : zmp_diff) * foot_x_axis_list[refzmp_index+1];
-      }
-      double ratio = (0.5 / (double_support_count_half-double_support_static_count_half)) * (cnt - 1 - (one_step_len - double_support_count_half));
+      double ratio = ((is_second_last_phase()?1.0:0.5) / (double_support_count_half-double_support_static_count_half)) * (cnt - 1 - (one_step_len - double_support_count_half));
       ret = (1 - ratio) * prev_support_zmp + ratio * current_support_zmp;
     } else {
       ret = refzmp_cur_list[refzmp_index];

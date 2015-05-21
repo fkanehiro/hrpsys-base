@@ -24,8 +24,6 @@ private:
     };
     void plot_walk_pattern ()
     {
-        parse_params();
-        gg->print_param();
         /* make step and dump */
         size_t i = 0;
         std::string fname("/tmp/plot.dat");
@@ -40,6 +38,10 @@ private:
             fprintf(fp, "%f ", i * dt);
             for (size_t ii = 0; ii < 3; ii++) {
                 fprintf(fp, "%f ", gg->get_refzmp()(ii));
+            }
+            hrp::Vector3 czmp = gg->get_cart_zmp();
+            for (size_t ii = 0; ii < 3; ii++) {
+                fprintf(fp, "%f ", czmp(ii));
             }
             for (size_t ii = 0; ii < 3; ii++) {
                 double cogpos;
@@ -114,12 +116,13 @@ private:
                 oss << "set xlabel 'Time [s]'" << std::endl;
                 oss << "set ylabel '" << titles[ii] << "[m]'" << std::endl;
                 oss << "plot "
-                    << "'" << fname << "' using 1:" << (tmp_start+ii) << " with lines title 'rleg',"
-                    << "'" << fname << "' using 1:" << (tmp_start+3+ii) << " with lines title 'lleg'"
+                    << "'" << fname << "' using 1:" << (tmp_start+ii) << " with lines title 'REFZMP',"
+                    << "'" << fname << "' using 1:" << (tmp_start+3+ii) << " with lines title 'CARTZMP',"
+                    << "'" << fname << "' using 1:" << (tmp_start+6+ii) << " with lines title 'COG'"
                     << std::endl;
             }
             plot_and_save(gps[0], gtitle, oss.str());
-            tmp_start += 6;
+            tmp_start += 9;
         }
         {
             std::ostringstream oss("");
@@ -227,6 +230,8 @@ private:
 
     void gen_and_plot_walk_pattern(const coordinates& initial_support_leg_coords, const coordinates& initial_swing_leg_dst_coords)
     {
+        parse_params();
+        gg->print_param();
         gg->initialize_gait_parameter(cog, initial_support_leg_coords, initial_swing_leg_dst_coords);
         while ( !gg->proc_one_tick() );
         //gg->print_footstep_list();
@@ -403,6 +408,8 @@ public:
               if (++i < arg_strs.size()) gg->set_default_double_support_static_ratio(atof(arg_strs[i].c_str()));
           } else if ( arg_strs[i]== "--swing-trajectory-delay-time-offset" ) {
               if (++i < arg_strs.size()) gg->set_swing_trajectory_delay_time_offset(atof(arg_strs[i].c_str()));
+          } else if ( arg_strs[i]== "--swing-trajectory-final-distance-weight" ) {
+              if (++i < arg_strs.size()) gg->set_swing_trajectory_final_distance_weight(atof(arg_strs[i].c_str()));
           } else if ( arg_strs[i]== "--stair-trajectory-way-point-offset" ) {
               if (++i < arg_strs.size()) {
                   coil::vstring strs = coil::split(std::string(arg_strs[i].c_str()), ",");
