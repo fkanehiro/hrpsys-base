@@ -198,5 +198,47 @@ module OpenHRP
      * @return true if set successfully, false otherwise
      */
     boolean setWrenches(in dSequence wrenches, in double tm);
+
+    /**
+     * @brief Interpolate all joint angles on robot using duration specified by \em tm. Returns without waiting for whole sequence to be sent to robot. If this function called during the robot moves, it overwrite current goal.
+     * @param jvs sequence of sequence of joint angles [rad]
+     * @param tm sequence of duration [s]
+     * @return true joint angles are set successfully, false otherwise
+     */
+    boolean setJointAnglesSequence(in dSequenceSequence jvss, in dSequence tms);
+
+    /**
+     * @brief Interpolate all joint angles on robot using duration specified by \em tm. Returns without waiting for whole sequence to be sent to robot. If this function called during the robot moves, it overwrite current goal.
+     * @param jvs sequence of sequence of joint angles  [rad]
+     * @param mask binary vector which selects joints to be interpolated
+     * @param tm sequence of duration [s]
+     * @return true joint angles are set successfully, false otherwise
+     */
+    boolean setJointAnglesSequenceWithMask(in dSequenceSequence jvss, in bSequence mask, in dSequence tms);
+
+    /**
+     * @brief Interpolate all joint angles in groups, using duration specified by \em tm. Returns without waiting for whole sequence to be sent to robot. If this function called during the robot moves, it overwrite current goal.
+     * @param gname name of the joint group
+     * @param jvs sequence of sequence of joint angles [rad]
+     * @param tm sequence of duration [s]
+     * @return true joint angles are set successfully, false otherwise
+     */
+    boolean setJointAnglesSequenceOfGroup(in string gname, in dSequenceSequence jvss, in dSequence tms);
+
+    /**
+     * @brief Interpolate all joint angles, using duration specified by \em tm. Returns without waiting for whole sequence to be sent to robot. If this function called during the robot moves, it overwrite current goal.
+     * @param jvss sequence of sequence of joint angles [rad]
+     * @param vels sequence of sequence of velocities [rad/s]
+     * @param accs sequence of sequence of torques [N]
+     * @param poss sequence of weist pos [mm]
+     * @param rpys sequence of weist rpy [rad]
+     * @param accs sequence of weist acc [m/ss]
+     * @param zmps sequence of weist zmp [mm]
+     * @param wrenches sequence of wrenches [N, Nm]
+     * @param optionss sequence of options []
+     * @param tms sequence of duration [s]
+     * @return true joint angles are set successfully, false otherwise
+     */
+    boolean setJointAnglesSequenceFull(in dSequenceSequence jvss, in dSequenceSequence vels,  in dSequenceSequence torques, in dSequenceSequence poss, in dSequenceSequence rpys, in dSequenceSequence accs, in dSequenceSequence zmps, in dSequenceSequence wrenchs, in dSequenceSequence optionals, in dSequence tms);
   };
 };

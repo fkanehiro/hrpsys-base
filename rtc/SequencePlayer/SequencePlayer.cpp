@@ -389,7 +389,11 @@ bool SequencePlayer::setJointAngles(const double *angles, double tm)
     absZmp[2] = 0;
     hrp::Link *root = m_robot->rootLink();
     hrp::Vector3 relZmp = root->R.transpose()*(absZmp - root->p);
-    m_seq->setJointAngles(angles, tm);
+    std::vector<const double*> v_poss;
+    std::vector<double> v_tms;
+    v_poss.push_back(angles);
+    v_tms.push_back(tm);
+    m_seq->setJointAnglesSequence(v_poss, v_tms);
     m_seq->setZmp(relZmp.data(), tm);
     return true;
 }
@@ -410,6 +414,71 @@ bool SequencePlayer::setJointAngles(const double *angles, const bool *mask,
     }
     m_seq->setJointAngles(pose, tm);
     return true;
+}
+
+bool SequencePlayer::setJointAnglesSequence(const OpenHRP::dSequenceSequence angless, const OpenHRP::bSequence& mask, const OpenHRP::dSequence& times)
+{
+    if ( m_debugLevel > 0 ) {
+        std::cerr << __PRETTY_FUNCTION__ << std::endl;
+    }
+    Guard guard(m_mutex);
+
+    if (!setInitialState()) return false;
+
+    bool tmp_mask[robot()->numJoints()];
+    if (mask.length() != robot()->numJoints()) {
+        for (int i=0; i < robot()->numJoints(); i++) tmp_mask[i] = true;
+    }else{
+        for (int i=0; i < robot()->numJoints(); i++) tmp_mask[i] = mask.get_buffer()[i];
+    }
+    int len = angless.length();
+    std::vector<const double*> v_poss;
+    std::vector<double> v_tms;
+    for ( int i = 0; i < angless.length(); i++ ) v_poss.push_back(angless[i].get_buffer());
+    for ( int i = 0; i <  times.length();  i++ )  v_tms.push_back(times[i]);
+    return m_seq->setJointAnglesSequence(v_poss, v_tms);
+}
+
+bool SequencePlayer::setJointAnglesSequenceOfGroup(const char *gname, const OpenHRP::dSequenceSequence angless, const OpenHRP::dSequence& times)
+{
+    if ( m_debugLevel > 0 ) {
+        std::cerr << __PRETTY_FUNCTION__ << std::endl;
+    }
+    Guard guard(m_mutex);
+    if (!setInitialState()) return false;
+
+    if (!m_seq->resetJointGroup(gname, m_qInit.data.get_buffer())) return false;
+
+    std::vector<const double*> v_poss;
+    std::vector<double> v_tms;
+    for ( int i = 0; i < angless.length(); i++ ) v_poss.push_back(angless[i].get_buffer());
+    for ( int i = 0; i <  times.length();  i++ )  v_tms.push_back(times[i]);
+    return m_seq->setJointAnglesSequenceOfGroup(gname, v_poss, v_tms);
+}
+
+bool SequencePlayer::setJointAnglesSequenceFull(const OpenHRP::dSequenceSequence i_jvss, const OpenHRP::dSequenceSequence i_vels, const OpenHRP::dSequenceSequence i_torques, const OpenHRP::dSequenceSequence i_poss, const OpenHRP::dSequenceSequence i_rpys, const OpenHRP::dSequenceSequence i_accs, const OpenHRP::dSequenceSequence i_zmps, const OpenHRP::dSequenceSequence i_wrenches, const OpenHRP::dSequenceSequence i_optionals, const dSequence i_tms)
+{
+    if ( m_debugLevel > 0 ) {
+        std::cerr << __PRETTY_FUNCTION__ << std::endl;
+    }
+    Guard guard(m_mutex);
+
+    if (!setInitialState()) return false;
+
+    int len = i_jvss.length();
+    std::vector<const double*> v_jvss, v_vels, v_torques, v_poss, v_rpys, v_accs, v_zmps, v_wrenches, v_optionals;
+    std::vector<double> v_tms;
+    for ( int i = 0; i < i_jvss.length(); i++ ) v_poss.push_back(i_jvss[i].get_buffer());
+    for ( int i = 0; i < i_vels.length(); i++ ) v_poss.push_back(i_vels[i].get_buffer());
+    for ( int i = 0; i < i_torques.length(); i++ ) v_poss.push_back(i_torques[i].get_buffer());
+    for ( int i = 0; i < i_poss.length(); i++ ) v_poss.push_back(i_poss[i].get_buffer());
+    for ( int i = 0; i < i_rpys.length(); i++ ) v_poss.push_back(i_rpys[i].get_buffer());
+    for ( int i = 0; i < i_accs.length(); i++ ) v_poss.push_back(i_accs[i].get_buffer());
+    for ( int i = 0; i < i_zmps.length(); i++ ) v_poss.push_back(i_zmps[i].get_buffer());
+    for ( int i = 0; i < i_wrenches.length(); i++ ) v_poss.push_back(i_wrenches[i].get_buffer());
+    for ( int i = 0; i < i_optionals.length(); i++ ) v_poss.push_back(i_optionals[i].get_buffer());
+    for ( int i = 0; i < i_tms.length();  i++ )  v_tms.push_back(i_tms[i]);
+    return m_seq->setJointAnglesSequenceFull(v_jvss, v_vels, v_torques, v_poss, v_rpys, v_accs, v_zmps, v_wrenches, v_optionals, v_tms);
 }
 
 bool SequencePlayer::setBasePos(const double *pos, double tm)

@@ -117,9 +117,10 @@ bool interpolator::setInterpolationMode (interpolation_mode i_mode_)
     return true;
 };
 
-void interpolator::setGoal(const double *newg, double time)
+void interpolator::setGoal(const double *newg, double time,
+                           bool online)
 {
-    setGoal(newg, NULL, time);
+    setGoal(newg, NULL, time, online);
 }
 
 void interpolator::setGoal(const double *newg, const double *newv, double time,
