@@ -585,10 +585,11 @@ bool seqplay::playPatternOfGroup(const char *gname, std::vector<const double *> 
 bool seqplay::setJointAnglesSequence(std::vector<const double*> pos, std::vector<double> tm)
 {
 	// setJointAngles to override curren tgoal
-	double x[m_dof], v[m_dof];
-	interpolators[Q]->get(x, v, false);
+	double x[m_dof], v[m_dof], a[m_dof];
+	interpolators[Q]->get(x, v, a, false);
 	interpolators[Q]->set(x, v);
 	interpolators[Q]->clear();
+	interpolators[Q]->push(x, v, a, true);
 
     const double *q=NULL;
     for (unsigned int i=0; i<pos.size(); i++){
@@ -630,35 +631,46 @@ bool seqplay::setJointAnglesSequence(std::vector<const double*> pos, std::vector
 bool seqplay::setJointAnglesSequenceFull(std::vector<const double*> i_pos, std::vector<const double*> i_vel, std::vector<const double*> i_torques, std::vector<const double*> i_bpos, std::vector<const double*> i_brpy, std::vector<const double*> i_bacc,  std::vector<const double*> i_zmps, std::vector<const double*> i_wrenches, std::vector<const double*> i_optionals, std::vector<double> i_tm)
 {
 	// setJointAngles to override curren tgoal
-	double x[m_dof], v[m_dof];
-	interpolators[Q]->get(x, v, false);
+	double x[m_dof], v[m_dof], a[m_dof];
+	interpolators[Q]->get(x, v, a, false);
 	interpolators[Q]->set(x, v);
 	interpolators[Q]->clear();
-	double torque[m_dof];
+	interpolators[Q]->push(x, v, a, true);
+	double torque[m_dof], dummy_dof[m_dof];
+	for (unsigned int j = 0; j < m_dof; j++) { dummy_dof[j] = 0.0; }
 	interpolators[TQ]->get(torque, false);
 	interpolators[TQ]->set(torque);
 	interpolators[TQ]->clear();
-	double bpos[3], brpy[3], bacc[3];
+	interpolators[TQ]->push(torque, dummy_dof, dummy_dof, true);
+	double bpos[3], brpy[3], bacc[3], dummy_3[3]={0,0,0};
 	interpolators[P]->get(bpos, false);
 	interpolators[P]->set(bpos);
 	interpolators[P]->clear();
+	interpolators[P]->push(bpos, dummy_3, dummy_3, true);
 	interpolators[RPY]->get(brpy, false);
 	interpolators[RPY]->set(brpy);
 	interpolators[RPY]->clear();
+	interpolators[RPY]->push(brpy, dummy_3, dummy_3, true);
 	interpolators[ACC]->get(bacc, false);
 	interpolators[ACC]->set(bacc);
 	interpolators[ACC]->clear();
+	interpolators[RPY]->push(bacc, dummy_3, dummy_3, true);
 	int fnum = interpolators[WRENCHES]->dimension()/6, optional_data_dim = interpolators[OPTIONAL_DATA]->dimension();
-	double zmp[3], wrench[6*fnum], optional[optional_data_dim];
+	double zmp[3], wrench[6*fnum], dummy_fnum[6*fnum], optional[optional_data_dim], dummy_optional[optional_data_dim];
+	for (unsigned int j = 0; j < 6*fnum; j++) { dummy_dof[j] = 0.0; }
+	for (unsigned int j = 0; j < optional_data_dim; j++) { dummy_optional[j] = 0.0; }
 	interpolators[ZMP]->get(zmp, false);
 	interpolators[ZMP]->set(zmp);
 	interpolators[ZMP]->clear();
+	interpolators[ZMP]->push(zmp, dummy_3, dummy_3, true);
 	interpolators[WRENCHES]->get(wrench, false);
 	interpolators[WRENCHES]->set(wrench);
 	interpolators[WRENCHES]->clear();
+	interpolators[WRENCHES]->push(wrench, dummy_fnum, dummy_fnum, true);
 	interpolators[OPTIONAL_DATA]->get(optional, false);
 	interpolators[OPTIONAL_DATA]->set(optional);
 	interpolators[OPTIONAL_DATA]->clear();
+	interpolators[OPTIONAL_DATA]->push(optional, dummy_optional, dummy_optional, true);
 
     const double *q=NULL;
     for (unsigned int i=0; i<i_pos.size(); i++){
