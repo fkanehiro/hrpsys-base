@@ -57,18 +57,32 @@ module OpenHRP
     };
 
     /**
-     * @brief start impedance controller.
+     * @brief start impedance controller with waiting for transition.
      * @param name impedance controller param's name, which basically corresponds to force sensor name
      * @return true if set successfully, false otherwise
      */
     boolean startImpedanceController(in string name);
 
     /**
-     * @brief stop impedance controller.
+     * @brief start impedance controller without waiting for transition.
+     * @param name impedance controller param's name, which basically corresponds to force sensor name
+     * @return true if set successfully, false otherwise
+     */
+    boolean startImpedanceControllerNoWait(in string name);
+
+    /**
+     * @brief stop impedance controller with waiting for transition.
      * @param name impedance controller param's name, which basically corresponds to force sensor name
      * @return true if set successfully, false otherwise
      */
     boolean stopImpedanceController(in string name);
+
+    /**
+     * @brief stop impedance controller without waiting for transition.
+     * @param name impedance controller param's name, which basically corresponds to force sensor name
+     * @return true if set successfully, false otherwise
+     */
+    boolean stopImpedanceControllerNoWait(in string name);
 
     /**
      * @brief set impedance parameters.
