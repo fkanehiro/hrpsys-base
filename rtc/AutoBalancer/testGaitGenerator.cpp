@@ -408,6 +408,8 @@ public:
               if (++i < arg_strs.size()) gg->set_default_double_support_static_ratio(atof(arg_strs[i].c_str()));
           } else if ( arg_strs[i]== "--swing-trajectory-delay-time-offset" ) {
               if (++i < arg_strs.size()) gg->set_swing_trajectory_delay_time_offset(atof(arg_strs[i].c_str()));
+          } else if ( arg_strs[i]== "--swing-trajectory-final-distance-weight" ) {
+              if (++i < arg_strs.size()) gg->set_swing_trajectory_final_distance_weight(atof(arg_strs[i].c_str()));
           } else if ( arg_strs[i]== "--stair-trajectory-way-point-offset" ) {
               if (++i < arg_strs.size()) {
                   coil::vstring strs = coil::split(std::string(arg_strs[i].c_str()), ",");

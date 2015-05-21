@@ -238,13 +238,15 @@ namespace rats
       };
     protected:
       double time_offset; // [s]
+      double final_distance_weight;
       size_t total_count, current_count, double_support_count_half; // time/dt
       virtual hrp::Vector3 interpolate_antecedent_path (const hrp::Vector3& start, const hrp::Vector3& goal, const double height, const double tmp_ratio) = 0;
     public:
-      delay_hoffarbib_trajectory_generator () : time_offset(0.35), total_count(0), current_count(0), double_support_count_half(0) {};
+      delay_hoffarbib_trajectory_generator () : time_offset(0.35), final_distance_weight(1.0), total_count(0), current_count(0), double_support_count_half(0) {};
       ~delay_hoffarbib_trajectory_generator() { };
       void set_dt (const double __dt) { _dt = __dt; };
       void set_swing_trajectory_delay_time_offset (const double _time_offset) { time_offset = _time_offset; };
+      void set_swing_trajectory_final_distance_weight (const double _final_distance_weight) { final_distance_weight = _final_distance_weight; };
       void reset (const size_t _one_step_len, const double default_double_support_ratio)
       {
         total_count = _one_step_len;
@@ -276,6 +278,7 @@ namespace rats
         current_count++;
       };
       double get_swing_trajectory_delay_time_offset () { return time_offset; };
+      double get_swing_trajectory_final_distance_weight () { return final_distance_weight; };
       // interpolate path vector
       //   tmp_ratio : ratio value [0, 1]
       //   org_point_vec : vector of via points
@@ -289,6 +292,7 @@ namespace rats
         // remove distance-zero points
         for (size_t i = 0; i < org_point_vec.size()-1; i++) {
           double tmp_distance = (org_point_vec[i+1]-org_point_vec[i]).norm();
+          if (i==org_point_vec.size()-2) tmp_distance*=final_distance_weight;
           if ( tmp_distance > 1e-5 ) {
             point_vec.push_back(org_point_vec[i+1]);
             distance_vec.push_back(tmp_distance);
@@ -357,9 +361,9 @@ namespace rats
         if ( diff_vec.norm() > 1e-4 && (start(2) - goal(2)) > 0.02) {
           path.push_back(hrp::Vector3(goal+way_point_offset(0)*diff_vec.normalized()+hrp::Vector3(0,0,way_point_offset(2)+max_height-goal(2))));
         }
-        if (height > 20 * 1e-3) {
-          path.push_back(hrp::Vector3(goal(0), goal(1), 20*1e-3+goal(2)));
-        }
+        // if (height > 20 * 1e-3) {
+        //   path.push_back(hrp::Vector3(goal(0), goal(1), 20*1e-3+goal(2)));
+        // }
         path.push_back(goal);
         return interpolate_antecedent_path_base(tmp_ratio, path);
       };
@@ -442,6 +446,11 @@ namespace rats
         rdtg.set_swing_trajectory_delay_time_offset(_time_offset);
         sdtg.set_swing_trajectory_delay_time_offset(_time_offset);
       };
+      void set_swing_trajectory_final_distance_weight (const double _final_distance_weight)
+      {
+        rdtg.set_swing_trajectory_final_distance_weight(_final_distance_weight);
+        sdtg.set_swing_trajectory_final_distance_weight(_final_distance_weight);
+      };
       void set_stair_trajectory_way_point_offset (const hrp::Vector3 _offset) { sdtg.set_stair_trajectory_way_point_offset(_offset); };
       void set_toe_pos_offset_x (const double _offx) { toe_pos_offset_x = _offx; };
       void set_heel_pos_offset_x (const double _offx) { heel_pos_offset_x = _offx; };
@@ -505,6 +514,7 @@ namespace rats
       };
       orbit_type get_default_orbit_type () const { return default_orbit_type; };
       double get_swing_trajectory_delay_time_offset () { return rdtg.get_swing_trajectory_delay_time_offset(); };
+      double get_swing_trajectory_final_distance_weight () { return rdtg.get_swing_trajectory_final_distance_weight(); };
       hrp::Vector3 get_stair_trajectory_way_point_offset () { return sdtg.get_stair_trajectory_way_point_offset(); };
       double get_toe_pos_offset_x () { return toe_pos_offset_x; };
       double get_heel_pos_offset_x () { return heel_pos_offset_x; };
@@ -643,6 +653,7 @@ namespace rats
     void set_use_inside_step_limitation(const bool uu) { use_inside_step_limitation = uu; };
     void set_default_orbit_type (const orbit_type type) { lcg.set_default_orbit_type(type); };
     void set_swing_trajectory_delay_time_offset (const double _time_offset) { lcg.set_swing_trajectory_delay_time_offset(_time_offset); };
+    void set_swing_trajectory_final_distance_weight (const double _final_distance_weight) { lcg.set_swing_trajectory_final_distance_weight(_final_distance_weight); };
     void set_stair_trajectory_way_point_offset (const hrp::Vector3 _offset) { lcg.set_stair_trajectory_way_point_offset(_offset); };
     void set_gravitational_acceleration (const double ga) { gravitational_acceleration = ga; };
     void set_toe_pos_offset_x (const double _offx) { lcg.set_toe_pos_offset_x(_offx); };
@@ -714,6 +725,7 @@ namespace rats
     };
     orbit_type get_default_orbit_type () const { return lcg.get_default_orbit_type(); };
     double get_swing_trajectory_delay_time_offset () { return lcg.get_swing_trajectory_delay_time_offset(); };
+    double get_swing_trajectory_final_distance_weight () { return lcg.get_swing_trajectory_final_distance_weight(); };
     hrp::Vector3 get_stair_trajectory_way_point_offset () { return lcg.get_stair_trajectory_way_point_offset(); };
     double get_gravitational_acceleration () { return gravitational_acceleration; } ;
     double get_toe_pos_offset_x () { return lcg.get_toe_pos_offset_x(); };
@@ -742,7 +754,7 @@ namespace rats
         } else if (get_default_orbit_type() == gait_generator::STAIR) {
             std::cerr << "STAIR" << std::endl;
         }
-        std::cerr << "[" << print_str << "]   swing_trajectory_delay_time_offset = " << get_swing_trajectory_delay_time_offset() << "[s]" << std::endl;
+        std::cerr << "[" << print_str << "]   swing_trajectory_delay_time_offset = " << get_swing_trajectory_delay_time_offset() << "[s], swing_trajectory_final_distance_weight = " << get_swing_trajectory_final_distance_weight() << std::endl;
         hrp::Vector3 tmpv;
         tmpv = get_stair_trajectory_way_point_offset();
         std::cerr << "[" << print_str << "]   stair_trajectory_way_point_offset = " << tmpv.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[m]" << std::endl;
