@@ -90,7 +90,9 @@ class ImpedanceController
   // virtual RTC::ReturnCode_t onRateChanged(RTC::UniqueId ec_id);
 
   bool startImpedanceController(const std::string& i_name_);
+  bool startImpedanceControllerNoWait(const std::string& i_name_);
   bool stopImpedanceController(const std::string& i_name_);
+  bool stopImpedanceControllerNoWait(const std::string& i_name_);
   bool setImpedanceControllerParam(const std::string& i_name_, OpenHRP::ImpedanceControllerService::impedanceParam i_param_);
   bool getImpedanceControllerParam(const std::string& i_name_, OpenHRP::ImpedanceControllerService::impedanceParam& i_param_);
   void waitImpedanceControllerTransition(std::string i_name_);
@@ -167,8 +169,6 @@ class ImpedanceController
     hrp::Matrix33 localR;
   };
 
-  bool startImpedanceControllerNoWait(const std::string& i_name_);
-  bool stopImpedanceControllerNoWait(const std::string& i_name_);
   void copyImpedanceParam (OpenHRP::ImpedanceControllerService::impedanceParam& i_param_, const ImpedanceParam& param);
   void updateRootLinkPosRot (TimedOrientation3D tmprpy);
   void calcForceMoment();

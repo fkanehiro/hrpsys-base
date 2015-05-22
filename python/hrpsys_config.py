@@ -1961,6 +1961,30 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
         else:
             self.stopImpedance_315_4(arm)
 
+    def startDefaultUnstableControllers (self, ic_limbs=["rarm", "larm"], abc_limbs=["rleg", "lleg"]):
+        '''!@brief
+        Start default unstable RTCs controller mode.
+        Currently Stabilzier, AutoBalancer, and ImpedanceController are started.
+        '''
+        self.startStabilizer()
+        for limb in ic_limbs:
+            self.ic_svc.startImpedanceControllerNoWait(limb)
+        self.startAutoBalancer(abc_limbs)
+        for limb in ic_limbs:
+            self.ic_svc.waitImpedanceControllerTransition(limb)
+
+    def stopDefaultUnstableControllers (self, ic_limbs=["rarm", "larm"]):
+        '''!@brief
+        Stop default unstable RTCs controller mode.
+        Currently Stabilzier, AutoBalancer, and ImpedanceController are stopped.
+        '''
+        self.stopStabilizer()
+        for limb in ic_limbs:
+            self.ic_svc.stopImpedanceControllerNoWait(limb)
+        self.stopAutoBalancer()
+        for limb in ic_limbs:
+            self.ic_svc.waitImpedanceControllerTransition(limb)
+
     # ##
     # ## initialize
     # ##

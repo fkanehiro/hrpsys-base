@@ -16,9 +16,19 @@ CORBA::Boolean ImpedanceControllerService_impl::startImpedanceController(const c
   return m_impedance->startImpedanceController(std::string(i_name_));
 }
 
+CORBA::Boolean ImpedanceControllerService_impl::startImpedanceControllerNoWait(const char *i_name_)
+{
+  return m_impedance->startImpedanceControllerNoWait(std::string(i_name_));
+}
+
 CORBA::Boolean ImpedanceControllerService_impl::stopImpedanceController(const char *i_name_)
 {
   return m_impedance->stopImpedanceController(std::string(i_name_));
+}
+
+CORBA::Boolean ImpedanceControllerService_impl::stopImpedanceControllerNoWait(const char *i_name_)
+{
+  return m_impedance->stopImpedanceControllerNoWait(std::string(i_name_));
 }
 
 CORBA::Boolean ImpedanceControllerService_impl::setImpedanceControllerParam(const char *i_name_, const OpenHRP::ImpedanceControllerService::impedanceParam &i_param_)

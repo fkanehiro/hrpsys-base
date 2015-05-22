@@ -279,8 +279,10 @@ RTC::ReturnCode_t ImpedanceController::onDeactivated(RTC::UniqueId ec_id)
 {
   std::cout << "ImpedanceController::onDeactivated(" << ec_id << ")" << std::endl;
   for ( std::map<std::string, ImpedanceParam>::iterator it = m_impedance_param.begin(); it != m_impedance_param.end(); it++ ) {
-      stopImpedanceControllerNoWait(it->first);
-      it->second.transition_count = 1;
+      if (it->second.is_active) {
+          stopImpedanceControllerNoWait(it->first);
+          it->second.transition_count = 1;
+      }
   }
   return RTC::RTC_OK;
 }
