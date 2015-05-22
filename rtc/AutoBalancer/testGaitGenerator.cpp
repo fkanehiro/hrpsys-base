@@ -70,11 +70,13 @@ private:
             }
             // Foot rot
             hrp::Vector3 rpy;
-            rpy = hrp::rpyFromRot((gg->get_support_leg() == "rleg") ? gg->get_support_leg_coords().rot : gg->get_swing_leg_coords().rot);
+            hrp::Matrix33 rfoot_rot = (gg->get_support_leg() == "rleg") ? gg->get_support_leg_coords().rot : gg->get_swing_leg_coords().rot;
+            rpy = hrp::rpyFromRot(rfoot_rot);
             for (size_t ii = 0; ii < 3; ii++) {
                 fprintf(fp, "%f ", 180.0*rpy(ii)/M_PI);
             }
-            rpy = hrp::rpyFromRot((gg->get_support_leg() == "lleg") ? gg->get_support_leg_coords().rot : gg->get_swing_leg_coords().rot);
+            hrp::Matrix33 lfoot_rot = (gg->get_support_leg() == "lleg") ? gg->get_support_leg_coords().rot : gg->get_swing_leg_coords().rot;
+            rpy = hrp::rpyFromRot(lfoot_rot);
             for (size_t ii = 0; ii < 3; ii++) {
                 fprintf(fp, "%f ", 180.0*rpy(ii)/M_PI);
             }
@@ -103,6 +105,32 @@ private:
                 fprintf(fp, "%f ", tmpv(ii));
             }
             prev_lfoot_pos = lfoot_pos;
+            // Toe heel pos
+            hrp::Vector3 tmppos;
+            tmppos = rfoot_pos+rfoot_rot*hrp::Vector3(gg->get_toe_pos_offset_x(), 0, 0);
+            for (size_t ii = 0; ii < 3; ii++) {
+                fprintf(fp, "%f ", tmppos(ii));
+                min_rfoot_pos(ii) = std::min(min_rfoot_pos(ii), tmppos(ii));
+                max_rfoot_pos(ii) = std::max(max_rfoot_pos(ii), tmppos(ii));
+            }
+            tmppos = lfoot_pos+lfoot_rot*hrp::Vector3(gg->get_toe_pos_offset_x(), 0, 0);
+            for (size_t ii = 0; ii < 3; ii++) {
+                fprintf(fp, "%f ", tmppos(ii));
+                min_lfoot_pos(ii) = std::min(min_lfoot_pos(ii), tmppos(ii));
+                max_lfoot_pos(ii) = std::max(max_lfoot_pos(ii), tmppos(ii));
+            }
+            tmppos = rfoot_pos+rfoot_rot*hrp::Vector3(gg->get_heel_pos_offset_x(), 0, 0);
+            for (size_t ii = 0; ii < 3; ii++) {
+                fprintf(fp, "%f ", tmppos(ii));
+                min_rfoot_pos(ii) = std::min(min_rfoot_pos(ii), tmppos(ii));
+                max_rfoot_pos(ii) = std::max(max_rfoot_pos(ii), tmppos(ii));
+            }
+            tmppos = lfoot_pos+lfoot_rot*hrp::Vector3(gg->get_heel_pos_offset_x(), 0, 0);
+            for (size_t ii = 0; ii < 3; ii++) {
+                fprintf(fp, "%f ", tmppos(ii));
+                min_lfoot_pos(ii) = std::min(min_lfoot_pos(ii), tmppos(ii));
+                max_lfoot_pos(ii) = std::max(max_lfoot_pos(ii), tmppos(ii));
+            }
             fprintf(fp, "\n");
             i++;
         }
@@ -205,6 +233,7 @@ private:
                     << std::endl;
             }
             plot_and_save(gps[5], gtitle, oss.str());
+            tmp_start += 6;
         }
         {
             std::ostringstream oss("");
@@ -226,8 +255,12 @@ private:
             oss << "plot "
                 << "[" << min_v[0]<< ":" << max_v[0] << "]"
                 << "[" << min_v[2] << ":" << max_v[2] << "]"
-                << "'" << fname << "' using " << (2+3+3+3+0) << ":" << (2+3+3+3+2)  << " with lines title 'rleg',"
-                << "'" << fname << "' using " << (2+3+3+3+3+0) << ":" << (2+3+3+3+3+2) << " with lines title 'lleg'"
+                << "'" << fname << "' using " << (2+3+3+3+0) << ":" << (2+3+3+3+2)  << " with lines title 'rleg ee',"
+                << "'" << fname << "' using " << (2+3+3+3+3+0) << ":" << (2+3+3+3+3+2) << " with lines title 'lleg ee',"
+                << "'" << fname << "' using " << (tmp_start) << ":" << (tmp_start+2)  << " with lines title 'rleg toe',"
+                << "'" << fname << "' using " << (tmp_start+3) << ":" << (tmp_start+3+2)  << " with lines title 'lleg toe',"
+                << "'" << fname << "' using " << (tmp_start+3+3) << ":" << (tmp_start+3+3+2)  << " with lines title 'rleg heel',"
+                << "'" << fname << "' using " << (tmp_start+3+3+3) << ":" << (tmp_start+3+3+3+2)  << " with lines title 'lleg heel'"
                 << std::endl;
             //oss << "set title 'Y-Z'" << std::endl;
             oss << "set size ratio " << range[2]/range[1] << std::endl;
@@ -236,8 +269,12 @@ private:
             oss << "plot "
                 << "[" << min_v[1]<< ":" << max_v[1] << "]"
                 << "[" << min_v[2] << ":" << max_v[2] << "]"
-                << "'" << fname << "' using " << (2+3+3+3+1) << ":" << (2+3+3+3+2)  << " with lines title 'rleg',"
-                << "'" << fname << "' using " << (2+3+3+3+3+1) << ":" << (2+3+3+3+3+2) << " with lines title 'lleg'"
+                << "'" << fname << "' using " << (2+3+3+3+1) << ":" << (2+3+3+3+2)  << " with lines title 'rleg ee',"
+                << "'" << fname << "' using " << (2+3+3+3+3+1) << ":" << (2+3+3+3+3+2) << " with lines title 'lleg ee',"
+                << "'" << fname << "' using " << (tmp_start+1) << ":" << (tmp_start+2)  << " with lines title 'rleg toe',"
+                << "'" << fname << "' using " << (tmp_start+3+1) << ":" << (tmp_start+3+2)  << " with lines title 'lleg toe',"
+                << "'" << fname << "' using " << (tmp_start+3+3+1) << ":" << (tmp_start+3+3+2)  << " with lines title 'rleg heel',"
+                << "'" << fname << "' using " << (tmp_start+3+3+3+1) << ":" << (tmp_start+3+3+3+2)  << " with lines title 'lleg heel'"
                 << std::endl;
             plot_and_save(gps[6], gtitle, oss.str());
         }
@@ -402,7 +439,37 @@ public:
         /* initialize sample footstep_list */
         gg->clear_footstep_node_list();
         gg->set_default_orbit_type(gait_generator::STAIR);
-        gg->set_swing_trajectory_delay_time_offset (0.15);
+        gg->set_swing_trajectory_delay_time_offset (0.2);
+        gg->append_footstep_node("rleg", coordinates(hrp::Vector3(hrp::Vector3(0, 0, 0)+leg_pos[0])));
+        gg->append_footstep_node("lleg", coordinates(hrp::Vector3(hrp::Vector3(0, 0, 0)+leg_pos[1])));
+        gg->append_footstep_node("rleg", coordinates(hrp::Vector3(hrp::Vector3(250*1e-3, 0, 200*1e-3)+leg_pos[0])));
+        gg->append_footstep_node("lleg", coordinates(hrp::Vector3(hrp::Vector3(250*1e-3, 0, 200*1e-3)+leg_pos[1])));
+        gg->append_footstep_node("rleg", coordinates(hrp::Vector3(hrp::Vector3(500*1e-3, 0, 400*1e-3)+leg_pos[0])));
+        gg->append_footstep_node("lleg", coordinates(hrp::Vector3(hrp::Vector3(500*1e-3, 0, 400*1e-3)+leg_pos[1])));
+        gg->append_footstep_node("rleg", coordinates(hrp::Vector3(hrp::Vector3(750*1e-3, 0, 600*1e-3)+leg_pos[0])));
+        gg->append_footstep_node("lleg", coordinates(hrp::Vector3(hrp::Vector3(750*1e-3, 0, 600*1e-3)+leg_pos[1])));
+        gg->append_finalize_footstep();
+        gen_and_plot_walk_pattern();
+    };
+
+    void test10 ()
+    {
+        std::cerr << "test9 : Stair walk + toe heel contact" << std::endl;
+        /* initialize sample footstep_list */
+        gg->clear_footstep_node_list();
+        gg->set_default_orbit_type(gait_generator::STAIR);
+        gg->set_swing_trajectory_delay_time_offset (0.2);
+        gg->set_toe_zmp_offset_x(137*1e-3);
+        gg->set_heel_zmp_offset_x(-105*1e-3);
+        gg->set_toe_pos_offset_x(137*1e-3);
+        gg->set_heel_pos_offset_x(-105*1e-3);
+        gg->set_toe_angle(20);
+        gg->set_heel_angle(5);
+        gg->set_default_step_time(1.5);
+        gg->set_default_double_support_ratio(0.2);
+        double ratio[7] = {0.02, 0.28, 0.2, 0.0, 0.2, 0.25, 0.05};
+        std::vector<double> ratio2(ratio, ratio+gg->get_NUM_TH_PHASES());
+        gg->set_toe_heel_phase_ratio(ratio2);
         gg->append_footstep_node("rleg", coordinates(hrp::Vector3(hrp::Vector3(0, 0, 0)+leg_pos[0])));
         gg->append_footstep_node("lleg", coordinates(hrp::Vector3(hrp::Vector3(0, 0, 0)+leg_pos[1])));
         gg->append_footstep_node("rleg", coordinates(hrp::Vector3(hrp::Vector3(250*1e-3, 0, 200*1e-3)+leg_pos[0])));
@@ -451,6 +518,20 @@ public:
                   coil::vstring strs = coil::split(std::string(arg_strs[i].c_str()), ",");
                   gg->set_stair_trajectory_way_point_offset(hrp::Vector3(atof(strs[0].c_str()), atof(strs[1].c_str()), atof(strs[2].c_str())));
               }
+          } else if ( arg_strs[i]== "--toe-angle" ) {
+              if (++i < arg_strs.size()) gg->set_toe_angle(atof(arg_strs[i].c_str()));
+          } else if ( arg_strs[i]== "--heel-angle" ) {
+              if (++i < arg_strs.size()) gg->set_heel_angle(atof(arg_strs[i].c_str()));
+          } else if ( arg_strs[i]== "--toe-heel-phase-ratio" ) {
+              if (++i < arg_strs.size()) {
+                  coil::vstring strs = coil::split(std::string(arg_strs[i].c_str()), ",");
+                  std::vector<double> ratio;
+                  for (size_t i_th = 0; i_th < strs.size(); i_th++) {
+                      ratio.push_back(atof(strs[i_th].c_str()));
+                  }
+                  std::cerr << "[]   "; // for set_toe_heel_phase_ratio
+                  gg->set_toe_heel_phase_ratio(ratio);
+              }
           }
       }   
     };
@@ -483,6 +564,7 @@ void print_usage ()
     std::cerr << "  --test7 : Toe heel walk" << std::endl;
     std::cerr << "  --test8 : Toe heel walk on slope" << std::endl;
     std::cerr << "  --test9 : Stair walk" << std::endl;
+    std::cerr << "  --test10 : Stair walk + toe heel contact" << std::endl;
 };
 
 int main(int argc, char* argv[])
@@ -512,6 +594,8 @@ int main(int argc, char* argv[])
           tgg.test8();
       } else if (std::string(argv[1]) == "--test9") {
           tgg.test9();
+      } else if (std::string(argv[1]) == "--test10") {
+          tgg.test10();
       } else {
           print_usage();
       }

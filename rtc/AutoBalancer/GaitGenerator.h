@@ -104,8 +104,36 @@ namespace rats
     public:
         toe_heel_phase_counter () : total_count(0)
         {
-            double ratio[NUM_TH_PHASES] = {0.05,0.25,0.2,0.0,0.2,0.25,0.05};
-            set_toe_heel_phase_ratio(ratio);
+            toe_heel_phase_ratio[SOLE0] = 0.05;
+            toe_heel_phase_ratio[SOLE2TOE] = 0.25;
+            toe_heel_phase_ratio[TOE2SOLE] = 0.2;
+            toe_heel_phase_ratio[SOLE1] = 0.0;
+            toe_heel_phase_ratio[SOLE2HEEL] = 0.2;
+            toe_heel_phase_ratio[HEEL2SOLE] = 0.25;
+            toe_heel_phase_ratio[SOLE2] = 0.05;
+        };
+        bool check_toe_heel_phase_ratio_validity (const std::vector<double>& ratio)
+        {
+            bool ret = true;
+            // Check size
+            if (ratio.size() != NUM_TH_PHASES) {
+                ret = false;
+            }
+            // Check sum == 1.0
+            double sum_ratio = 0.0;
+            for (int i = 0; i < NUM_TH_PHASES; i++) sum_ratio += ratio[i];
+            if (std::fabs(sum_ratio-1.0) > 1e-3) {
+                ret = false;
+            }
+            if (!ret) {
+                std::cerr << "toe_heel_phase_ratio is not set, "
+                          << ", required length = " << NUM_TH_PHASES << " != input length " << ratio.size()
+                          << ", sum_ratio = " << sum_ratio << " is not 1.0."
+                          << std::endl;
+            } else {
+                std::cerr << "toe_heel_phase_ratio is successfully set." << std::endl;
+            }
+            return ret;
         };
         // setter
         void set_total_count (const size_t _count)
@@ -113,12 +141,17 @@ namespace rats
             total_count = _count;
             calc_toe_heel_phase_count_from_raio();
         };
-        bool set_toe_heel_phase_ratio (const double* ratio)
+        bool set_toe_heel_phase_ratio (const std::vector<double>& ratio)
         {
-            for (size_t i = 0; i < NUM_TH_PHASES; i++) toe_heel_phase_ratio[i] = ratio[i];
+            if (check_toe_heel_phase_ratio_validity(ratio)) {
+                for (size_t i = 0; i < NUM_TH_PHASES; i++) toe_heel_phase_ratio[i] = ratio[i];
+                return true;
+            } else {
+                return false;
+            }
         };
         // getter
-        void get_toe_heel_phase_ratio (double* ratio)
+        void get_toe_heel_phase_ratio (std::vector<double>& ratio)
         {
             for (size_t i = 0; i < NUM_TH_PHASES; i++) ratio[i] = toe_heel_phase_ratio[i];
         };
@@ -694,7 +727,7 @@ namespace rats
     void set_heel_pos_offset_x (const double _offx) { lcg.set_heel_pos_offset_x(_offx); };
     void set_toe_angle (const double _angle) { lcg.set_toe_angle(_angle); };
     void set_heel_angle (const double _angle) { lcg.set_heel_angle(_angle); };
-    void set_toe_heel_phase_ratio (const double* ratio) { thp.set_toe_heel_phase_ratio(ratio); };
+    bool set_toe_heel_phase_ratio (const std::vector<double>& ratio) { return thp.set_toe_heel_phase_ratio(ratio); };
     void set_use_toe_joint (const bool ut) { lcg.set_use_toe_joint(ut); };
     void print_footstep_list () const
     {
@@ -767,7 +800,7 @@ namespace rats
     double get_toe_angle () { return lcg.get_toe_angle(); };
     double get_heel_angle () { return lcg.get_heel_angle(); };
     double get_foot_dif_rot_angle () { return lcg.get_foot_dif_rot_angle(); };
-    void get_toe_heel_phase_ratio (double* ratio) { thp.get_toe_heel_phase_ratio(ratio); };
+    void get_toe_heel_phase_ratio (std::vector<double>& ratio) { thp.get_toe_heel_phase_ratio(ratio); };
     int get_NUM_TH_PHASES () { return thp.get_NUM_TH_PHASES(); };
     bool get_use_toe_joint () { return lcg.get_use_toe_joint(); };
     void print_param (const std::string& print_str = "")
@@ -800,6 +833,11 @@ namespace rats
         std::cerr << "[" << print_str << "]   toe_angle = " << get_toe_angle() << "[deg]" << std::endl;
         std::cerr << "[" << print_str << "]   heel_angle = " << get_heel_angle() << "[deg]" << std::endl;
         std::cerr << "[" << print_str << "]   use_toe_joint = " << (get_use_toe_joint()?"true":"false") << ", use_toe_heel_transition = " << (get_use_toe_heel_transition()?"true":"false") << std::endl;
+        std::vector<double> tmp_ratio(get_NUM_TH_PHASES(), 0.0);
+        get_toe_heel_phase_ratio(tmp_ratio);
+        std::cerr << "[" << print_str << "]   toe_heel_phase_ratio = [";
+        for (int i = 0; i < get_NUM_TH_PHASES(); i++) std::cerr << tmp_ratio[i] << " ";
+        std::cerr << "]" << std::endl;
     };
   };
 }
