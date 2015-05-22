@@ -468,7 +468,8 @@ public:
         gg->set_default_step_time(1.5);
         gg->set_default_double_support_ratio(0.2);
         double ratio[7] = {0.02, 0.28, 0.2, 0.0, 0.2, 0.25, 0.05};
-        gg->set_toe_heel_phase_ratio(ratio);
+        std::vector<double> ratio2(ratio, ratio+gg->get_NUM_TH_PHASES());
+        gg->set_toe_heel_phase_ratio(ratio2);
         gg->append_footstep_node("rleg", coordinates(hrp::Vector3(hrp::Vector3(0, 0, 0)+leg_pos[0])));
         gg->append_footstep_node("lleg", coordinates(hrp::Vector3(hrp::Vector3(0, 0, 0)+leg_pos[1])));
         gg->append_footstep_node("rleg", coordinates(hrp::Vector3(hrp::Vector3(250*1e-3, 0, 200*1e-3)+leg_pos[0])));
@@ -516,6 +517,20 @@ public:
               if (++i < arg_strs.size()) {
                   coil::vstring strs = coil::split(std::string(arg_strs[i].c_str()), ",");
                   gg->set_stair_trajectory_way_point_offset(hrp::Vector3(atof(strs[0].c_str()), atof(strs[1].c_str()), atof(strs[2].c_str())));
+              }
+          } else if ( arg_strs[i]== "--toe-angle" ) {
+              if (++i < arg_strs.size()) gg->set_toe_angle(atof(arg_strs[i].c_str()));
+          } else if ( arg_strs[i]== "--heel-angle" ) {
+              if (++i < arg_strs.size()) gg->set_heel_angle(atof(arg_strs[i].c_str()));
+          } else if ( arg_strs[i]== "--toe-heel-phase-ratio" ) {
+              if (++i < arg_strs.size()) {
+                  coil::vstring strs = coil::split(std::string(arg_strs[i].c_str()), ",");
+                  std::vector<double> ratio;
+                  for (size_t i_th = 0; i_th < strs.size(); i_th++) {
+                      ratio.push_back(atof(strs[i_th].c_str()));
+                  }
+                  std::cerr << "[]   "; // for set_toe_heel_phase_ratio
+                  gg->set_toe_heel_phase_ratio(ratio);
               }
           }
       }   
