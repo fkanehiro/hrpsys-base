@@ -1003,6 +1003,11 @@ bool AutoBalancer::setGaitGeneratorParam(const OpenHRP::AutoBalancerService::Gai
 {
   std::cerr << "[" << m_profile.instance_name << "] setGaitGeneratorParam" << std::endl;
   gg->set_stride_parameters(i_param.stride_parameter[0], i_param.stride_parameter[1], i_param.stride_parameter[2], i_param.stride_parameter[3]);
+  std::vector<hrp::Vector3> off;
+  for (size_t i = 0; i < i_param.leg_default_translate_pos.length(); i++) {
+      off.push_back(hrp::Vector3(i_param.leg_default_translate_pos[i][0], i_param.leg_default_translate_pos[i][1], i_param.leg_default_translate_pos[i][2]));
+  }
+  gg->set_leg_default_translate_pos(off);
   gg->set_default_step_time(i_param.default_step_time);
   gg->set_default_step_height(i_param.default_step_height);
   gg->set_default_double_support_ratio(i_param.default_double_support_ratio);
@@ -1042,6 +1047,15 @@ bool AutoBalancer::setGaitGeneratorParam(const OpenHRP::AutoBalancerService::Gai
 bool AutoBalancer::getGaitGeneratorParam(OpenHRP::AutoBalancerService::GaitGeneratorParam& i_param)
 {
   gg->get_stride_parameters(i_param.stride_parameter[0], i_param.stride_parameter[1], i_param.stride_parameter[2], i_param.stride_parameter[3]);
+  std::vector<hrp::Vector3> off;
+  gg->get_leg_default_translate_pos(off);
+  i_param.leg_default_translate_pos.length(off.size());
+  for (size_t i = 0; i < i_param.leg_default_translate_pos.length(); i++) {
+      i_param.leg_default_translate_pos[i].length(3);
+      i_param.leg_default_translate_pos[i][0] = off[i](0);
+      i_param.leg_default_translate_pos[i][1] = off[i](1);
+      i_param.leg_default_translate_pos[i][2] = off[i](2);
+  }
   i_param.default_step_time = gg->get_default_step_time();
   i_param.default_step_height = gg->get_default_step_height();
   i_param.default_double_support_ratio = gg->get_default_double_support_ratio();
