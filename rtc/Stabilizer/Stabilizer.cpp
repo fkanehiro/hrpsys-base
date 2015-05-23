@@ -412,7 +412,8 @@ RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
   for (size_t i = 0; i < m_limbCOPOffsetIn.size(); ++i) {
     if ( m_limbCOPOffsetIn[i]->isNew() ) {
       m_limbCOPOffsetIn[i]->read();
-      stikp[i].localCOPPos = stikp[i].localp + stikp[i].localR * hrp::Vector3(m_limbCOPOffset[i].data.x, m_limbCOPOffset[i].data.y, m_limbCOPOffset[i].data.z);
+      //stikp[i].localCOPPos = stikp[i].localp + stikp[i].localR * hrp::Vector3(m_limbCOPOffset[i].data.x, m_limbCOPOffset[i].data.y, m_limbCOPOffset[i].data.z);
+      stikp[i].localCOPPos = stikp[i].localp + stikp[i].localR * hrp::Vector3(m_limbCOPOffset[i].data.x, 0, m_limbCOPOffset[i].data.z);
     }
   }
 
@@ -669,6 +670,7 @@ void Stabilizer::getActualParameters ()
           std::cerr << ", cop_pos_L    = " << hrp::Vector3(tmpp*1e3).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[mm]" << std::endl;
       }
 
+      // Ref force and moment at COP
       if (st_algorithm == OpenHRP::StabilizerService::EEFM) {
           szd->distributeZMPToForceMoments(ref_foot_force, ref_foot_moment,
                                            ee_pos, cop_pos, ee_rot,
@@ -705,10 +707,17 @@ void Stabilizer::getActualParameters ()
         if (ikp.ee_name.find("leg") == std::string::npos) continue;
         hrp::Sensor* sensor = m_robot->sensor<hrp::ForceSensor>(ikp.sensor_name);
         hrp::Link* target = m_robot->link(ikp.target_name);
+        // Convert moment at COP => moment at ee
+        if (ikp.ee_name=="rleg") {
+          ref_foot_moment[0] = ref_foot_moment[0] + ((target->R * ikp.localCOPPos + target->p) - (target->R * ikp.localp + target->p)).cross(ref_foot_force[0]);
+        } else if (ikp.ee_name=="lleg") {
+          ref_foot_moment[1] = ref_foot_moment[1] + ((target->R * ikp.localCOPPos + target->p) - (target->R * ikp.localp + target->p)).cross(ref_foot_force[1]);
+        }
         // Actual world frame =>
         hrp::Vector3 sensor_force = (sensor->link->R * sensor->localR) * hrp::Vector3(m_force[i].data[0], m_force[i].data[1], m_force[i].data[2]);
         hrp::Vector3 sensor_moment = (sensor->link->R * sensor->localR) * hrp::Vector3(m_force[i].data[3], m_force[i].data[4], m_force[i].data[5]);
-        hrp::Vector3 ee_moment = ((sensor->link->R * sensor->localPos + sensor->link->p) - (target->R * ikp.localCOPPos + target->p)).cross(sensor_force) + sensor_moment;
+        //hrp::Vector3 ee_moment = ((sensor->link->R * sensor->localPos + sensor->link->p) - (target->R * ikp.localCOPPos + target->p)).cross(sensor_force) + sensor_moment;
+        hrp::Vector3 ee_moment = ((sensor->link->R * sensor->localPos + sensor->link->p) - (target->R * ikp.localp + target->p)).cross(sensor_force) + sensor_moment;
         // <= Actual world frame
         if ( i == 0 ) f_diff += -1*sensor_force;
         else f_diff += sensor_force;
@@ -842,7 +851,8 @@ void Stabilizer::getTargetParameters ()
   ref_cog = m_robot->calcCM();
   for (size_t i = 0; i < stikp.size(); i++) {
     hrp::Link* target = m_robot->link(stikp[i].target_name);
-    target_ee_p[i] = target->p + target->R * stikp[i].localCOPPos;
+    //target_ee_p[i] = target->p + target->R * stikp[i].localCOPPos;
+    target_ee_p[i] = target->p + target->R * stikp[i].localp;
     target_ee_R[i] = target->R * stikp[i].localR;
   }
   // <= Reference world frame
@@ -1031,7 +1041,8 @@ void Stabilizer::calcEEForceMomentControl() {
           }
           // target at ee => target at link-origin
           rats::rotm3times(target_link_R[i], tmpR, stikp[i].localR.transpose());
-          target_link_p[i] = tmpp - target_link_R[i] * stikp[i].localCOPPos;
+          //target_link_p[i] = tmpp - target_link_R[i] * stikp[i].localCOPPos;
+          target_link_p[i] = tmpp - target_link_R[i] * stikp[i].localp;
       }
       // solveIK
       //   IK target is link origin pos and rot, not ee pos and rot.

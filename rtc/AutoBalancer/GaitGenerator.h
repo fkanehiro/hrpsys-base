@@ -452,6 +452,7 @@ namespace rats
       cycloid_delay_hoffarbib_trajectory_generator cdtg;
       toe_heel_phase_counter* thp_ptr;
       interpolator* foot_ratio_interpolator;
+      interpolator* swing_foot_rot_ratio_interpolator;
       // Parameters for toe-heel contact
       interpolator* toe_heel_interpolator;
       double toe_pos_offset_x, heel_pos_offset_x, toe_angle, heel_angle, foot_dif_rot_angle;
@@ -480,13 +481,14 @@ namespace rats
         : swing_leg_dst_coords(), support_leg_coords(), swing_leg_coords(), swing_leg_src_coords(),
           default_step_height(0.05), default_top_ratio(0.5), current_step_height(0.0), swing_ratio(0), rot_ratio(0), _dt(__dt), gp_index(0), gp_count(0), support_leg(RLEG), default_orbit_type(CYCLOID),
           thp_ptr(_thp_ptr),
-          foot_ratio_interpolator(NULL), toe_heel_interpolator(NULL),
+          foot_ratio_interpolator(NULL), swing_foot_rot_ratio_interpolator(NULL), toe_heel_interpolator(NULL),
           toe_pos_offset_x(0.0), heel_pos_offset_x(0.0), toe_angle(0.0), heel_angle(0.0), foot_dif_rot_angle(0.0), use_toe_joint(false)
       {
         rdtg.set_dt(_dt);
         sdtg.set_dt(_dt);
         cdtg.set_dt(_dt);
         if (foot_ratio_interpolator == NULL) foot_ratio_interpolator = new interpolator(1, __dt);
+        if (swing_foot_rot_ratio_interpolator == NULL) swing_foot_rot_ratio_interpolator = new interpolator(1, __dt);
         //if (foot_ratio_interpolator == NULL) foot_ratio_interpolator = new interpolator(1, __dt, interpolator::LINEAR);
         if (toe_heel_interpolator == NULL) toe_heel_interpolator = new interpolator(1, __dt);
       };
@@ -495,6 +497,10 @@ namespace rats
         if (foot_ratio_interpolator != NULL) {
             delete foot_ratio_interpolator;
             foot_ratio_interpolator = NULL;
+        }
+        if (swing_foot_rot_ratio_interpolator != NULL) {
+            delete swing_foot_rot_ratio_interpolator;
+            swing_foot_rot_ratio_interpolator = NULL;
         }
         if (toe_heel_interpolator != NULL) {
             delete toe_heel_interpolator;

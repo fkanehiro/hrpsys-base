@@ -454,7 +454,7 @@ public:
 
     void test10 ()
     {
-        std::cerr << "test9 : Stair walk + toe heel contact" << std::endl;
+        std::cerr << "test10 : Stair walk + toe heel contact" << std::endl;
         /* initialize sample footstep_list */
         gg->clear_footstep_node_list();
         gg->set_default_orbit_type(gait_generator::STAIR);
@@ -478,6 +478,21 @@ public:
         gg->append_footstep_node("lleg", coordinates(hrp::Vector3(hrp::Vector3(500*1e-3, 0, 400*1e-3)+leg_pos[1])));
         gg->append_footstep_node("rleg", coordinates(hrp::Vector3(hrp::Vector3(750*1e-3, 0, 600*1e-3)+leg_pos[0])));
         gg->append_footstep_node("lleg", coordinates(hrp::Vector3(hrp::Vector3(750*1e-3, 0, 600*1e-3)+leg_pos[1])));
+        gg->append_finalize_footstep();
+        gen_and_plot_walk_pattern();
+    };
+
+    void test11 ()
+    {
+        std::cerr << "test11 : Foot rot change" << std::endl;
+        /* initialize sample footstep_list */
+        hrp::Matrix33 tmpr;
+        gg->clear_footstep_node_list();
+        gg->append_footstep_node("lleg", coordinates(hrp::Vector3(hrp::Vector3(0, 0, 0)+leg_pos[1])));
+        tmpr = hrp::rotFromRpy(5*M_PI/180.0, 15*M_PI/180.0, 0);
+        gg->append_footstep_node("rleg", coordinates(hrp::Vector3(hrp::Vector3(250*1e-3, 0, 0*1e-3)+leg_pos[0]), tmpr));
+        tmpr = hrp::rotFromRpy(-5*M_PI/180.0, -15*M_PI/180.0, 0);
+        gg->append_footstep_node("lleg", coordinates(hrp::Vector3(hrp::Vector3(250*1e-3, 0, 0*1e-3)+leg_pos[1]), tmpr));
         gg->append_finalize_footstep();
         gen_and_plot_walk_pattern();
     };
@@ -565,6 +580,8 @@ void print_usage ()
     std::cerr << "  --test8 : Toe heel walk on slope" << std::endl;
     std::cerr << "  --test9 : Stair walk" << std::endl;
     std::cerr << "  --test10 : Stair walk + toe heel contact" << std::endl;
+    std::cerr << "  --test10 : Stair walk + toe heel contact" << std::endl;
+    std::cerr << "  --test11 : Foot rot change" << std::endl;
 };
 
 int main(int argc, char* argv[])
@@ -596,6 +613,8 @@ int main(int argc, char* argv[])
           tgg.test9();
       } else if (std::string(argv[1]) == "--test10") {
           tgg.test10();
+      } else if (std::string(argv[1]) == "--test11") {
+          tgg.test11();
       } else {
           print_usage();
       }
