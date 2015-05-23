@@ -27,6 +27,7 @@ static const char* spec[] =
     "lang_type",         "compile",
     // Configuration variables
     "conf.default.thd", "1000",
+    "conf.default.print", "0",
 
     ""
   };
@@ -54,6 +55,7 @@ RTC::ReturnCode_t AccelerationChecker::onInitialize()
   // <rtc-template block="bind_config">
   // Bind variables and configuration variable
   bindParameter("thd", m_thd, "1000");
+  bindParameter("print", m_print, "0");
   
   // </rtc-template>
 
@@ -74,7 +76,13 @@ RTC::ReturnCode_t AccelerationChecker::onInitialize()
   // </rtc-template>
 
   RTC::Properties& prop = getProperties();
+  m_dt = 0;
   coil::stringTo(m_dt, prop["dt"].c_str());
+  if (m_dt == 0){
+      std::cerr << m_profile.instance_name << ": dt is not defined in the conf"
+                << std::endl;
+      return RTC::RTC_ERROR;
+  }
 
   return RTC::RTC_OK;
 }
@@ -124,14 +132,17 @@ RTC::ReturnCode_t AccelerationChecker::onExecute(RTC::UniqueId ec_id)
         m_qOld.data.length(m_q.data.length());
         m_qOld = m_q;
         m_dqOld.data.length(m_q.data.length());
+        m_ddqMax.data.length(m_q.data.length());
         for (unsigned int i=0; i<m_dqOld.data.length(); i++){
             m_dqOld.data[i] = 0.0;
+            m_ddqMax.data[i] = 0.0;
         }
         m_dq.data.length(m_q.data.length());
     }
     for (unsigned int i=0; i<m_q.data.length(); i++){
         m_dq.data[i] = (m_q.data[i] - m_qOld.data[i])/m_dt;
         double ddq = (m_dq.data[i] - m_dqOld.data[i])/m_dt;
+        if (fabs(ddq) > m_ddqMax.data[i]) m_ddqMax.data[i] = fabs(ddq);
         if (fabs(ddq) > m_thd){
             std::cout << std::fixed << std::setprecision(3) << "[" 
                       << (double)coil::gettimeofday() 
@@ -141,6 +152,14 @@ RTC::ReturnCode_t AccelerationChecker::onExecute(RTC::UniqueId ec_id)
     }
     m_qOld = m_q;
     m_dqOld = m_dq;
+
+    if (m_print){
+        printf("jid: max acc[rad/m^2]\n");
+        for (unsigned int i=0; i<m_ddqMax.data.length(); i++){
+            printf("%2d: %8f\n", i, m_ddqMax.data[i]);
+        }
+        m_print = false;
+    }
 
     m_qOut.write();
   }

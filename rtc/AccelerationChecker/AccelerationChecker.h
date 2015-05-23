@@ -131,9 +131,10 @@ class AccelerationChecker
   // </rtc-template>
 
  private:
-  TimedDoubleSeq m_dq, m_qOld, m_dqOld;
+  TimedDoubleSeq m_dq, m_qOld, m_dqOld, m_ddqMax;
   double m_thd;
   double m_dt;
+  bool m_print;
   int dummy;
 };
 
