@@ -723,8 +723,9 @@ void Stabilizer::getActualParameters ()
         else f_diff += sensor_force;
         fz[i] = sensor_force(2);
         // calcDampingControl
-        d_foot_rpy[i](0) = calcDampingControl(ref_foot_moment[i](0), ee_moment(0), d_foot_rpy[i](0), eefm_rot_damping_gain, eefm_rot_time_const);
-        d_foot_rpy[i](1) = calcDampingControl(ref_foot_moment[i](1), ee_moment(1), d_foot_rpy[i](1), eefm_rot_damping_gain, eefm_rot_time_const);
+        double tmp_damping_gain = (1-transition_smooth_gain) * eefm_rot_damping_gain * 10 + transition_smooth_gain * eefm_rot_damping_gain;
+        d_foot_rpy[i](0) = calcDampingControl(ref_foot_moment[i](0), ee_moment(0), d_foot_rpy[i](0), tmp_damping_gain, eefm_rot_time_const);
+        d_foot_rpy[i](1) = calcDampingControl(ref_foot_moment[i](1), ee_moment(1), d_foot_rpy[i](1), tmp_damping_gain, eefm_rot_time_const);
         d_foot_rpy[i](0) = vlimit(d_foot_rpy[i](0), deg2rad(-10.0), deg2rad(10.0));
         d_foot_rpy[i](1) = vlimit(d_foot_rpy[i](1), deg2rad(-10.0), deg2rad(10.0));
         // Actual ee frame =>
@@ -740,8 +741,9 @@ void Stabilizer::getActualParameters ()
       if ( (contact_states[contact_states_index_map["rleg"]] && contact_states[contact_states_index_map["lleg"]]) // Reference : double support phase
            || (isContact(0) && isContact(1)) ) { // Actual : double support phase
         for (size_t i = 0; i < 3; i++) {
+            double tmp_damping_gain = (1-transition_smooth_gain) * eefm_pos_damping_gain(i) * 10 + transition_smooth_gain * eefm_pos_damping_gain(i);
             pos_ctrl(i) = calcDampingControl (ref_f_diff(i), f_diff(i), pos_ctrl(i),
-                                              eefm_pos_damping_gain(i), eefm_pos_time_const_support);
+                                              tmp_damping_gain, eefm_pos_time_const_support);
         }
       } else {
         double remain_swing_time;
@@ -753,14 +755,16 @@ void Stabilizer::getActualParameters ()
         // std::cerr << "st " << remain_swing_time << " rleg " << contact_states[contact_states_index_map["rleg"]] << " lleg " << contact_states[contact_states_index_map["lleg"]] << std::endl;
         if (eefm_pos_transition_time+eefm_pos_margin_time<remain_swing_time) {
           for (size_t i = 0; i < 3; i++) {
+              double tmp_damping_gain = (1-transition_smooth_gain) * eefm_pos_damping_gain(i) * 10 + transition_smooth_gain * eefm_pos_damping_gain(i);
               pos_ctrl(i) = calcDampingControl (0, 0, pos_ctrl(i),
-                                                eefm_pos_damping_gain(i), eefm_pos_time_const_swing);
+                                                tmp_damping_gain, eefm_pos_time_const_swing);
           }
         } else {
           double tmp_ratio = std::min(1.0, 1.0 - (remain_swing_time-eefm_pos_margin_time)/eefm_pos_transition_time); // 0=>1
           for (size_t i = 0; i < 3; i++) {
+              double tmp_damping_gain = (1-transition_smooth_gain) * eefm_pos_damping_gain(i) * 10 + transition_smooth_gain * eefm_pos_damping_gain(i);
               pos_ctrl(i) = calcDampingControl (tmp_ratio * ref_f_diff(i), tmp_ratio * f_diff(i), pos_ctrl(i),
-                                                eefm_pos_damping_gain(i), ((1-tmp_ratio)*eefm_pos_time_const_swing+tmp_ratio*eefm_pos_time_const_support));
+                                                tmp_damping_gain, ((1-tmp_ratio)*eefm_pos_time_const_swing+tmp_ratio*eefm_pos_time_const_support));
           }
         }
       }
