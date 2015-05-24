@@ -306,6 +306,8 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
     m_actContactStates.data[i] = false;
   }
   transition_time = 2.0;
+  foot_origin_offset[0] = hrp::Vector3::Zero();
+  foot_origin_offset[1] = hrp::Vector3::Zero();
 
   // for debug output
   m_originRefZmp.data.x = m_originRefZmp.data.y = m_originRefZmp.data.z = 0.0;
@@ -527,7 +529,7 @@ void Stabilizer::calcFootOriginCoords (hrp::Vector3& foot_origin_pos, hrp::Matri
   for (size_t i = 0; i < stikp.size(); i++) {
     if (stikp[i].ee_name.find("leg") == std::string::npos) continue;
     hrp::Link* target = m_robot->sensor<hrp::ForceSensor>(stikp[i].sensor_name)->link;
-    leg_c[i].pos = target->p;
+    leg_c[i].pos = target->p + target->R * foot_origin_offset[i];
     hrp::Vector3 xv1(target->R * ex);
     xv1(2)=0.0;
     xv1.normalize();
@@ -1222,6 +1224,12 @@ void Stabilizer::getParameter(OpenHRP::StabilizerService::stParam& i_stp)
   for (size_t i = 0; i < is_ik_enable.size(); i++) {
       i_stp.is_ik_enable[i] = is_ik_enable[i];
   }
+  i_stp.foot_origin_offset.length(2);
+  for (size_t i = 0; i < i_stp.foot_origin_offset.length(); i++) {
+      i_stp.foot_origin_offset[i][0] = foot_origin_offset[i](0);
+      i_stp.foot_origin_offset[i][1] = foot_origin_offset[i](1);
+      i_stp.foot_origin_offset[i][2] = foot_origin_offset[i](2);
+  }
   i_stp.st_algorithm = st_algorithm;
   i_stp.transition_time = transition_time;
   switch(control_mode) {
@@ -1304,11 +1312,27 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
       }
   }
   transition_time = i_stp.transition_time;
+  if (i_stp.foot_origin_offset.length () != 2) {
+      std::cerr << "[" << m_profile.instance_name << "]   foot_origin_offset cannot be set. Length " << i_stp.foot_origin_offset.length() << " != " << 2 << std::endl;
+  } else if (control_mode != MODE_IDLE) {
+      std::cerr << "[" << m_profile.instance_name << "]   foot_origin_offset cannot be set. Current control_mode is " << control_mode << std::endl;
+  } else {
+      for (size_t i = 0; i < i_stp.foot_origin_offset.length(); i++) {
+          foot_origin_offset[i](0) = i_stp.foot_origin_offset[i][0];
+          foot_origin_offset[i](1) = i_stp.foot_origin_offset[i][1];
+          foot_origin_offset[i](2) = i_stp.foot_origin_offset[i][2];
+      }
+  }
   std::cerr << "[" << m_profile.instance_name << "]   is_ik_enable is ";
   for (size_t i = 0; i < is_ik_enable.size(); i++) {
       std::cerr <<"[" << is_ik_enable[i] << "]";
   }
   std::cerr << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   foot_origin_offset is ";
+  for (size_t i = 0; i < 2; i++) {
+      std::cerr << foot_origin_offset[i].format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << std::endl;
+  }
+  std::cerr << "[m]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   eefm_k1  = [" << eefm_k1[0] << ", " << eefm_k1[1] << "]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   eefm_k2  = [" << eefm_k2[0] << ", " << eefm_k2[1] << "]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   eefm_k3  = [" << eefm_k3[0] << ", " << eefm_k3[1] << "]" << std::endl;

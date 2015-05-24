@@ -113,6 +113,8 @@ module OpenHRP
       ControllerMode controller_mode;
       /// Transition time [s] for start and stop Stabilizer
       double transition_time;
+      /// Foot origin position offset
+      sequence<DblArray3> foot_origin_offset;
     };
 
     /**
