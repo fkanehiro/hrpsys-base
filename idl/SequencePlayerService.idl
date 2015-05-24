@@ -240,5 +240,17 @@ module OpenHRP
      * @return true joint angles are set successfully, false otherwise
      */
     boolean setJointAnglesSequenceFull(in dSequenceSequence jvss, in dSequenceSequence vels,  in dSequenceSequence torques, in dSequenceSequence poss, in dSequenceSequence rpys, in dSequenceSequence accs, in dSequenceSequence zmps, in dSequenceSequence wrenchs, in dSequenceSequence optionals, in dSequence tms);
+
+    /**
+     * @brief clear current JointAngles
+     * @return true joint angles are set successfully, false otherwise
+     */
+    boolean clearJointAngles();
+    /**
+     * @brief clear current JointAnglesOfGroup
+     * @param gname name of the joint group
+     * @return true joint angles are set successfully, false otherwise
+     */
+    boolean clearJointAnglesOfGroup(in string gname);
   };
 };

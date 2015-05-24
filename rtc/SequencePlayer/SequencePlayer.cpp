@@ -439,6 +439,18 @@ bool SequencePlayer::setJointAnglesSequence(const OpenHRP::dSequenceSequence ang
     return m_seq->setJointAnglesSequence(v_poss, v_tms);
 }
 
+bool SequencePlayer::clearJointAngles()
+{
+    if ( m_debugLevel > 0 ) {
+        std::cerr << __PRETTY_FUNCTION__ << std::endl;
+    }
+    Guard guard(m_mutex);
+
+    if (!setInitialState()) return false;
+
+    return m_seq->clearJointAngles();
+}
+
 bool SequencePlayer::setJointAnglesSequenceOfGroup(const char *gname, const OpenHRP::dSequenceSequence angless, const OpenHRP::dSequence& times)
 {
     if ( m_debugLevel > 0 ) {
@@ -454,6 +466,19 @@ bool SequencePlayer::setJointAnglesSequenceOfGroup(const char *gname, const Open
     for ( int i = 0; i < angless.length(); i++ ) v_poss.push_back(angless[i].get_buffer());
     for ( int i = 0; i <  times.length();  i++ )  v_tms.push_back(times[i]);
     return m_seq->setJointAnglesSequenceOfGroup(gname, v_poss, v_tms);
+}
+
+bool SequencePlayer::clearJointAnglesOfGroup(const char *gname)
+{
+    if ( m_debugLevel > 0 ) {
+        std::cerr << __PRETTY_FUNCTION__ << std::endl;
+    }
+    Guard guard(m_mutex);
+    if (!setInitialState()) return false;
+
+    if (!m_seq->resetJointGroup(gname, m_qInit.data.get_buffer())) return false;
+
+    return m_seq->clearJointAnglesOfGroup(gname);
 }
 
 bool SequencePlayer::setJointAnglesSequenceFull(const OpenHRP::dSequenceSequence i_jvss, const OpenHRP::dSequenceSequence i_vels, const OpenHRP::dSequenceSequence i_torques, const OpenHRP::dSequenceSequence i_poss, const OpenHRP::dSequenceSequence i_rpys, const OpenHRP::dSequenceSequence i_accs, const OpenHRP::dSequenceSequence i_zmps, const OpenHRP::dSequenceSequence i_wrenches, const OpenHRP::dSequenceSequence i_optionals, const dSequence i_tms)
