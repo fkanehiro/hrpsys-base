@@ -8,6 +8,7 @@ module OpenHRP
   {
     typedef double DblArray2[2];
     typedef double DblArray3[3];
+    typedef sequence<boolean> BoolSequence;
 
     /**
      * @enum STAlgorithm
@@ -97,6 +98,14 @@ module OpenHRP
       double eefm_alpha_cutoff_freq;
       /// Gravitational acceleration [m/s^2] used in ST calculation
       double eefm_gravitational_acceleration;
+      /// Pos error gain
+      double eefm_ee_pos_error_p_gain;
+      /// Rot error gain
+      double eefm_ee_rot_error_p_gain;
+      /// Pos rot error cutoff freq [Hz]
+      double eefm_ee_error_cutoff_freq;
+      /// Is ik enable
+      BoolSequence is_ik_enable;
       // common
       /// Current Stabilizer algorithm
       STAlgorithm st_algorithm;
