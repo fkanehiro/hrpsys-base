@@ -553,7 +553,21 @@ namespace rats
         foot_ratio_interpolator->clear();
         foot_ratio_interpolator->set(&tmp_ratio);
         tmp_ratio = 1.0;
-        foot_ratio_interpolator->go(&tmp_ratio, _dt*one_step_len, true);
+        //foot_ratio_interpolator->go(&tmp_ratio, _dt*one_step_len, true);
+        foot_ratio_interpolator->setGoal(&tmp_ratio, _dt*one_step_len, true);
+        foot_ratio_interpolator->sync();
+      };
+      void clear_interpolators ( ) {
+        double tmp;
+        while (!swing_foot_rot_ratio_interpolator->isEmpty()) {
+            swing_foot_rot_ratio_interpolator->get(&tmp, true);
+        }
+        while (!foot_ratio_interpolator->isEmpty()) {
+            foot_ratio_interpolator->get(&tmp, true);
+        }
+        while (!toe_heel_interpolator->isEmpty()) {
+            toe_heel_interpolator->get(&tmp, true);
+        }
       };
       void update_leg_coords (const std::vector<step_node>& fnl, const double default_double_support_ratio, const size_t one_step_len, const bool force_height_zero);
       size_t get_gp_index() const { return gp_index; };
@@ -811,6 +825,7 @@ namespace rats
     int get_NUM_TH_PHASES () { return thp.get_NUM_TH_PHASES(); };
     bool get_use_toe_joint () { return lcg.get_use_toe_joint(); };
     void get_leg_default_translate_pos (std::vector<hrp::Vector3>& off) { off = footstep_param.leg_default_translate_pos; };
+    bool is_finalizing (const double tm) const { return ((preview_controller_ptr->get_delay()*2 - default_step_time/dt)-finalize_count) <= (tm/dt)-1; };
     void print_param (const std::string& print_str = "")
     {
         double stride_fwd_x, stride_y, stride_th, stride_bwd_x;

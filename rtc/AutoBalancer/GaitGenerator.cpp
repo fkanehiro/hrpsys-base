@@ -193,7 +193,9 @@ namespace rats
           tmp = 1.0;
           // int reduced_swing_len = 0.95*swing_len; // For margin from early landing
           // swing_foot_rot_ratio_interpolator->go(&tmp, _dt * reduced_swing_len);
-          swing_foot_rot_ratio_interpolator->go(&tmp, _dt * swing_len);
+          //swing_foot_rot_ratio_interpolator->go(&tmp, _dt * swing_len);
+          swing_foot_rot_ratio_interpolator->setGoal(&tmp, _dt * swing_len);
+          swing_foot_rot_ratio_interpolator->sync();
       }
       if (!swing_foot_rot_ratio_interpolator->isEmpty()) {
           swing_foot_rot_ratio_interpolator->get(&ret, true);
@@ -215,7 +217,9 @@ namespace rats
       if (thp_ptr->is_phase_starting(current_count, start_phase)) {
           toe_heel_interpolator->clear();
           toe_heel_interpolator->set(&start);
-          toe_heel_interpolator->go(&goal, thp_ptr->calc_phase_period(start_phase, goal_phase, _dt));
+          //toe_heel_interpolator->go(&goal, thp_ptr->calc_phase_period(start_phase, goal_phase, _dt));
+          toe_heel_interpolator->setGoal(&goal, thp_ptr->calc_phase_period(start_phase, goal_phase, _dt));
+          toe_heel_interpolator->sync();
       }
       if (!toe_heel_interpolator->isEmpty()) {
           toe_heel_interpolator->get(&tmp_ip_ratio, true);
@@ -403,6 +407,8 @@ namespace rats
     /* update swing_leg_coords, support_leg_coords */
     if ( solved ) {
       lcg.update_leg_coords(footstep_node_list, default_double_support_ratio, one_step_len, (emergency_flg == STOPPING));
+    } else if (finalize_count>0) {
+      lcg.clear_interpolators();
     }
     return solved;
   };

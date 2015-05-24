@@ -999,6 +999,15 @@ void AutoBalancer::waitFootSteps()
   gg->set_offset_velocity_param(0,0,0);
 }
 
+void AutoBalancer::waitFootStepsEarly(const double tm)
+{
+  if (!gg_is_walking) { return;}
+  while ( !gg->is_finalizing(tm)|| !transition_interpolator->isEmpty() )
+    usleep(1000);
+  usleep(1000);
+  gg->set_offset_velocity_param(0,0,0);
+}
+
 bool AutoBalancer::setGaitGeneratorParam(const OpenHRP::AutoBalancerService::GaitGeneratorParam& i_param)
 {
   std::cerr << "[" << m_profile.instance_name << "] setGaitGeneratorParam" << std::endl;
