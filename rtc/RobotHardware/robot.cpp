@@ -19,7 +19,7 @@
 using namespace hrp;
 
 
-robot::robot(double dt) : m_fzLimitRatio(0), m_maxZmpError(DEFAULT_MAX_ZMP_ERROR), m_calibRequested(false), m_pdgainsFilename("PDgains.sav"), wait_sem(0), m_reportedEmergency(true), m_dt(dt)
+robot::robot(double dt) : m_fzLimitRatio(0), m_maxZmpError(DEFAULT_MAX_ZMP_ERROR), m_calibRequested(false), m_pdgainsFilename("PDgains.sav"), wait_sem(0), m_reportedEmergency(true), m_dt(dt), m_accLimit(0)
 {
     m_rLegForceSensorId = m_lLegForceSensorId = -1;
 }
@@ -443,8 +443,12 @@ void robot::readForceSensor(unsigned int i_rank, double *o_forces)
 
 void robot::writeJointCommands(const double *i_commands)
 {
-    if (!m_commandOld.size()) m_commandOld.resize(numJoints());
+    if (!m_commandOld.size()) {
+        m_commandOld.resize(numJoints());
+        m_velocityOld.resize(numJoints());
+    }
     for (int i=0; i<numJoints(); i++){
+        m_velocityOld[i] = (i_commands[i] - m_commandOld[i])/m_dt;
         m_commandOld[i] = i_commands[i];
     }
     write_command_angles(i_commands);
@@ -525,14 +529,24 @@ bool robot::checkJointCommands(const double *i_commands)
         read_servo_state(i, &state);
         if (state == ON){
             double command_old=m_commandOld[i], command=i_commands[i];
-            double v = fabs(command - command_old)/m_dt;
-            if (v > joint(i)->uvlimit){
+            double v = (command - command_old)/m_dt;
+            if (fabs(v) > joint(i)->uvlimit){
                 std::cerr << time_string()
                           << ": joint command velocity limit over: joint = " 
 		          << joint(i)->name
 		          << ", vlimit = " << joint(i)->uvlimit/M_PI*180 
                           << "[deg/s], v = " 
 		          << v/M_PI*180 << "[deg/s]" << std::endl;
+                return true;
+            }
+            double a = (v - m_velocityOld[i])/m_dt;
+            if (m_accLimit && fabs(a) > m_accLimit){
+                std::cerr << time_string()
+                          << ": joint command acceleration limit over: joint = " 
+		          << joint(i)->name
+		          << ", alimit = " << m_accLimit/M_PI*180 
+                          << "[deg/s^2], v = " 
+		          << a/M_PI*180 << "[deg/s^2]" << std::endl;
                 return true;
             }
         }
@@ -772,4 +786,3 @@ int robot::numThermometers()
     return 0;
 #endif
 }
-

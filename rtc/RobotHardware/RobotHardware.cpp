@@ -36,6 +36,7 @@ static const char* robothardware_spec[] =
     "conf.default.isDemoMode", "0",
     "conf.default.fzLimitRatio", "2.0",
     "conf.default.servoErrorLimit", ",",
+    "conf.default.jointAccelerationLimit", "0",
 
     ""
   };
@@ -169,6 +170,7 @@ RTC::ReturnCode_t RobotHardware::onInitialize()
   bindParameter("isDemoMode", m_isDemoMode, "0");  
   bindParameter("servoErrorLimit", m_robot->m_servoErrorLimit, ",");
   bindParameter("fzLimitRatio", m_robot->m_fzLimitRatio, "2");
+  bindParameter("jointAccelerationLimit", m_robot->m_accLimit, "0");
 
   // </rtc-template>
 

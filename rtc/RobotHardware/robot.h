@@ -268,6 +268,7 @@ public:
     std::vector<double> m_servoErrorLimit;  
     double m_fzLimitRatio;
     double m_maxZmpError;
+    double m_accLimit;
 
     bool readDigitalInput(char *o_din);
     int lengthDigitalInput();
@@ -329,7 +330,7 @@ private:
     bool m_reportedEmergency;
     boost::interprocess::interprocess_semaphore wait_sem;
     double m_dt;
-    std::vector<double> m_commandOld;
+    std::vector<double> m_commandOld, m_velocityOld;
     hrp::Vector3 G;
 };
 
