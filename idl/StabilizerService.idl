@@ -114,7 +114,7 @@ module OpenHRP
       /// Transition time [s] for start and stop Stabilizer
       double transition_time;
       /// Foot origin position offset
-      sequence<DblArray3> foot_origin_offset;
+      sequence< sequence<double, 3> > foot_origin_offset;
     };
 
     /**
