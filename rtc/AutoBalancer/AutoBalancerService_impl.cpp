@@ -39,6 +39,11 @@ void AutoBalancerService_impl::waitFootSteps()
   return m_autobalancer->waitFootSteps();
 };
 
+void AutoBalancerService_impl::waitFootStepsEarly(CORBA::Double tm)
+{
+  return m_autobalancer->waitFootStepsEarly(tm);
+};
+
 CORBA::Boolean AutoBalancerService_impl::startAutoBalancer(const OpenHRP::AutoBalancerService::StrSequence& limbs)
 {
   return m_autobalancer->startAutoBalancer(limbs);

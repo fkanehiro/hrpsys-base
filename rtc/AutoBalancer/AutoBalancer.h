@@ -95,6 +95,7 @@ class AutoBalancer
   bool setFootSteps(const OpenHRP::AutoBalancerService::FootstepSequence& fs);
   bool setFootStepsWithParam(const OpenHRP::AutoBalancerService::FootstepSequence& fs, const OpenHRP::AutoBalancerService::StepParamSequence& sps);
   void waitFootSteps();
+  void waitFootStepsEarly(const double tm);
   bool startAutoBalancer(const ::OpenHRP::AutoBalancerService::StrSequence& limbs);
   bool stopAutoBalancer();
   bool setGaitGeneratorParam(const OpenHRP::AutoBalancerService::GaitGeneratorParam& i_param);

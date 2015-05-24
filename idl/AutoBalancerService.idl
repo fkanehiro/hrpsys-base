@@ -217,6 +217,13 @@ module OpenHRP
     void waitFootSteps();
 
     /**
+     * @brief Wait for whole footsteps are executed.
+     * @param tm is early time from stepping finish
+     * @return true if set successfully, false otherwise
+     */
+    void waitFootStepsEarly(in double tm);
+
+    /**
      * @brief Start AutoBalancer mode in which the robot controls the COM.
      * @param limbs is sequence of limbs to fix. limbs are :rleg, :lleg, :rarm, and :larm
      * @return true if set successfully, false otherwise
