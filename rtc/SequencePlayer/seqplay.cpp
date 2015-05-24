@@ -628,6 +628,22 @@ bool seqplay::setJointAnglesSequence(std::vector<const double*> pos, std::vector
 	return true;
 }
 
+bool seqplay::clearJointAngles()
+{
+	// setJointAngles to override curren tgoal
+	double x[m_dof], v[m_dof], a[m_dof];
+	interpolators[Q]->get(x, v, a, false);
+	interpolators[Q]->set(x, v);
+	interpolators[Q]->clear();
+	double tm = interpolators[Q]->deltaT();
+	interpolators[Q]->setGoal(x, v, tm, false);
+	do{
+		interpolators[Q]->interpolate(tm);
+	}while(tm>0);
+	sync();
+	return true;
+}
+
 bool seqplay::setJointAnglesSequenceFull(std::vector<const double*> i_pos, std::vector<const double*> i_vel, std::vector<const double*> i_torques, std::vector<const double*> i_bpos, std::vector<const double*> i_brpy, std::vector<const double*> i_bacc,  std::vector<const double*> i_zmps, std::vector<const double*> i_wrenches, std::vector<const double*> i_optionals, std::vector<double> i_tm)
 {
 	// setJointAngles to override curren tgoal
@@ -792,5 +808,47 @@ bool seqplay::setJointAnglesSequenceOfGroup(const char *gname, std::vector<const
 		i->inter->sync();
 		i->state = groupInterpolator::working;
 	}
+	return true;
+}
+
+bool seqplay::clearJointAnglesOfGroup(const char *gname)
+{
+	char *s = (char *)gname; while(*s) {*s=toupper(*s);s++;}
+	groupInterpolator *i = groupInterpolators[gname];
+
+	if (! i){
+		std::cerr << "[clearJointAnglesOfGroup] group name " << gname << " is not installed" << std::endl;
+		return false;
+	}
+
+	if (i->state == groupInterpolator::created){
+		std::cerr << "[clearJointAnglesOfGroup] group name " << gname << " is not created" << std::endl;
+		return false;
+	}
+
+	if (i->state == groupInterpolator::removing || i->state == groupInterpolator::removed){
+		std::cerr << "[clearJointAnglesOfGroup] group name " << gname << " is removing" << std::endl;
+		return false;
+	}
+
+	int len = i->indices.size();
+	double x[len], v[len], a[len];
+	i->inter->get(x, v, a, false);
+	i->inter->set(x, v);
+	//i->inter->clear(); // somehow isEmpty did not true if length is 0, remain_t has soeme value
+	while(i->inter->remain_time() > 0){
+		i->inter->pop();
+	}
+	std::cerr << __PRETTY_FUNCTION__  << " isEmpty() " << i->inter->isEmpty() << std::endl;
+	for(int i = 0; i < len; i++ ){
+		std::cerr << x[i]*180/M_PI << " ";
+	}
+	double tm = interpolators[Q]->deltaT();
+	i->inter->setGoal(x, v, tm, false);
+	do{
+		i->inter->interpolate(tm);
+	}while(tm>0);
+	i->inter->sync();
+
 	return true;
 }

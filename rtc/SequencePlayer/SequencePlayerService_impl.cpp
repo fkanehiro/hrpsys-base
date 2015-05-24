@@ -46,6 +46,11 @@ CORBA::Boolean SequencePlayerService_impl::setJointAnglesSequence(const dSequenc
   return setJointAnglesSequenceWithMask(jvss, mask, tms);
 }
 
+CORBA::Boolean SequencePlayerService_impl::clearJointAngles()
+{
+  return m_player->clearJointAngles();
+}
+
 CORBA::Boolean SequencePlayerService_impl::setJointAnglesSequenceWithMask(const dSequenceSequence& jvss, const bSequence& mask, const dSequence& tms)
 {
   if (jvss.length() <= 0) {
@@ -298,6 +303,11 @@ CORBA::Boolean SequencePlayerService_impl::setJointAnglesSequenceOfGroup(const c
         return false;
     }
     return m_player->setJointAnglesSequenceOfGroup(gname, jvss, tms);
+}
+
+CORBA::Boolean SequencePlayerService_impl::clearJointAnglesOfGroup(const char *gname)
+{
+    return m_player->clearJointAnglesOfGroup(gname);
 }
 
 CORBA::Boolean SequencePlayerService_impl::playPatternOfGroup(const char *gname, const dSequenceSequence& pos, const dSequence& tm)
