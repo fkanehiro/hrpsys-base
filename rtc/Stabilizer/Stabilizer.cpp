@@ -1226,6 +1226,7 @@ void Stabilizer::getParameter(OpenHRP::StabilizerService::stParam& i_stp)
   }
   i_stp.foot_origin_offset.length(2);
   for (size_t i = 0; i < i_stp.foot_origin_offset.length(); i++) {
+      i_stp.foot_origin_offset[i].length(3);
       i_stp.foot_origin_offset[i][0] = foot_origin_offset[i](0);
       i_stp.foot_origin_offset[i][1] = foot_origin_offset[i](1);
       i_stp.foot_origin_offset[i][2] = foot_origin_offset[i](2);
@@ -1330,7 +1331,7 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
   std::cerr << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   foot_origin_offset is ";
   for (size_t i = 0; i < 2; i++) {
-      std::cerr << foot_origin_offset[i].format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << std::endl;
+      std::cerr << foot_origin_offset[i].format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]"));
   }
   std::cerr << "[m]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   eefm_k1  = [" << eefm_k1[0] << ", " << eefm_k1[1] << "]" << std::endl;
