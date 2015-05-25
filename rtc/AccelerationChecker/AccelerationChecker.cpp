@@ -9,6 +9,7 @@
 
 #include <math.h>
 #include <iomanip>
+#include <stdio.h>
 #include "AccelerationChecker.h"
 
 // Module specification
