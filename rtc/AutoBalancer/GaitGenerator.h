@@ -443,7 +443,7 @@ namespace rats
     public:
 #endif
       coordinates swing_leg_dst_coords, support_leg_coords, swing_leg_coords, swing_leg_src_coords;
-      double default_step_height, default_top_ratio, current_step_height, swing_ratio, foot_midcoords_ratio, _dt, current_swing_time[2];
+      double default_step_height, default_top_ratio, current_step_height, swing_ratio, swing_rot_ratio, foot_midcoords_ratio, _dt, current_swing_time[2];
       size_t gp_index, gp_count, total_count;
       leg_type support_leg;
       orbit_type default_orbit_type;
@@ -468,13 +468,13 @@ namespace rats
                             const coordinates& goal, const double height);
       void cycloid_delay_midcoords (coordinates& ret, const coordinates& start,
                                     const coordinates& goal, const double height);
-      double calc_ratio_from_double_support_ratio (const double default_double_support_ratio, const size_t one_step_len);
+      void calc_ratio_from_double_support_ratio (const double default_double_support_ratio, const size_t one_step_len);
 #ifndef HAVE_MAIN
     public:
 #endif
       leg_coords_generator(const double __dt, toe_heel_phase_counter* _thp_ptr)
         : swing_leg_dst_coords(), support_leg_coords(), swing_leg_coords(), swing_leg_src_coords(),
-          default_step_height(0.05), default_top_ratio(0.5), current_step_height(0.0), swing_ratio(0), foot_midcoords_ratio(0), _dt(__dt), gp_index(0), gp_count(0), support_leg(RLEG), default_orbit_type(CYCLOID),
+          default_step_height(0.05), default_top_ratio(0.5), current_step_height(0.0), swing_ratio(0), swing_rot_ratio(0), foot_midcoords_ratio(0), _dt(__dt), gp_index(0), gp_count(0), support_leg(RLEG), default_orbit_type(CYCLOID),
           thp_ptr(_thp_ptr),
           foot_ratio_interpolator(NULL), swing_foot_rot_ratio_interpolator(NULL), toe_heel_interpolator(NULL),
           toe_pos_offset_x(0.0), heel_pos_offset_x(0.0), toe_angle(0.0), heel_angle(0.0), foot_dif_rot_angle(0.0), use_toe_joint(false)
