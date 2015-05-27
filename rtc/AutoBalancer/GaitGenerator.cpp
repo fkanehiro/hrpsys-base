@@ -202,7 +202,7 @@ namespace rats
       }
       tmp_current_swing_time = current_swing_len * _dt;
       swing_ratio = static_cast<double>(current_swing_count-support_len/2)/swing_len;
-      std::cerr << "gp " << swing_ratio << " " << swing_rot_ratio << std::endl;
+      //std::cerr << "gp " << swing_ratio << " " << swing_rot_ratio << std::endl;
     }
     current_swing_time[support_leg] = (gp_count + 0.5 * default_double_support_ratio * one_step_len) * _dt;
     current_swing_time[support_leg==RLEG ? LLEG : RLEG] = tmp_current_swing_time;
