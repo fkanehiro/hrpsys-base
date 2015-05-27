@@ -457,21 +457,16 @@ namespace rats
       interpolator* toe_heel_interpolator;
       double toe_pos_offset_x, heel_pos_offset_x, toe_angle, heel_angle, foot_dif_rot_angle;
       bool use_toe_joint;
-      void calc_current_swing_leg_coords (coordinates& ret,
-                                          const double ratio, const double step_height);
+      void calc_current_swing_leg_coords (coordinates& ret, const double step_height);
       double calc_interpolated_toe_heel_angle (const toe_heel_phase start_phase, const toe_heel_phase goal_phase, const double start, const double goal);
       void modif_foot_coords_for_toe_heel_phase (coordinates& org_coords);
-      void cycloid_midcoords (coordinates& ret,
-                              const double ratio, const coordinates& start,
+      void cycloid_midcoords (coordinates& ret, const coordinates& start,
                               const coordinates& goal, const double height) const;
-      void rectangle_midcoords (coordinates& ret,
-                                const double ratio, const coordinates& start,
+      void rectangle_midcoords (coordinates& ret, const coordinates& start,
                                 const coordinates& goal, const double height);
-      void stair_midcoords (coordinates& ret,
-                            const double ratio, const coordinates& start,
+      void stair_midcoords (coordinates& ret, const coordinates& start,
                             const coordinates& goal, const double height);
-      void cycloid_delay_midcoords (coordinates& ret,
-                                    const double ratio, const coordinates& start,
+      void cycloid_delay_midcoords (coordinates& ret, const coordinates& start,
                                     const coordinates& goal, const double height);
       double calc_ratio_from_double_support_ratio (const double default_double_support_ratio, const size_t one_step_len);
 #ifndef HAVE_MAIN
