@@ -302,7 +302,7 @@ namespace rats
   void gait_generator::leg_coords_generator::update_leg_coords (const std::vector<step_node>& fnl, const double default_double_support_ratio, const size_t one_step_len, const bool force_height_zero)
   {
     if (!foot_ratio_interpolator->isEmpty()) {
-        foot_ratio_interpolator->get(&rot_ratio, true);
+        foot_ratio_interpolator->get(&foot_midcoords_ratio, true);
     }
     if ( 0 == gp_index ) {
       swing_leg_dst_coords = fnl[gp_index].worldcoords;
