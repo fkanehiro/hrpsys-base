@@ -452,6 +452,9 @@ namespace rats
     /* finalize */
     append_go_pos_step_node(foot_midcoords, (footstep_node_list.back().l_r == RLEG ? LLEG : RLEG));
     append_go_pos_step_node(foot_midcoords, (footstep_node_list.back().l_r == RLEG ? LLEG : RLEG));
+    for (size_t i = 0; i < optional_go_pos_finalize_footstep_num; i++) {
+        append_go_pos_step_node(foot_midcoords, (footstep_node_list.back().l_r == RLEG ? LLEG : RLEG));
+    }
   };
 
   void gait_generator::go_single_step_param_2_footstep_list (const double goal_x, const double goal_y, const double goal_z, const double goal_theta,

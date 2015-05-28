@@ -317,6 +317,7 @@ public:
     {
         std::cerr << "test0 : Set foot steps" << std::endl;
         /* initialize sample footstep_list */
+        parse_params();
         gg->clear_footstep_node_list();
         gg->append_footstep_node("rleg", coordinates(hrp::Vector3(hrp::Vector3(0, 0, 0)+leg_pos[0])));
         gg->append_footstep_node("lleg", coordinates(hrp::Vector3(hrp::Vector3(0, 0, 0)+leg_pos[1])));
@@ -331,6 +332,7 @@ public:
     {
         std::cerr << "test1 : Go pos x,y,th combination" << std::endl;
         /* initialize sample footstep_list */
+        parse_params();
         gg->clear_footstep_node_list();
         gg->go_pos_param_2_footstep_list(200*1e-3, 100*1e-3, 20, coordinates());
         gen_and_plot_walk_pattern();
@@ -340,6 +342,7 @@ public:
     {
         std::cerr << "test2 : Go pos x" << std::endl;
         /* initialize sample footstep_list */
+        parse_params();
         gg->clear_footstep_node_list();
         gg->go_pos_param_2_footstep_list(300*1e-3, 0, 0, coordinates());
         gen_and_plot_walk_pattern();
@@ -349,6 +352,7 @@ public:
     {
         std::cerr << "test3 : Go pos y" << std::endl;
         /* initialize sample footstep_list */
+        parse_params();
         gg->clear_footstep_node_list();
         gg->go_pos_param_2_footstep_list(0, 150*1e-3, 0, coordinates());
         gen_and_plot_walk_pattern();
@@ -358,6 +362,7 @@ public:
     {
         std::cerr << "test4 : Go pos th" << std::endl;
         /* initialize sample footstep_list */
+        parse_params();
         gg->clear_footstep_node_list();
         gg->go_pos_param_2_footstep_list(0, 0, 30, coordinates());
         gen_and_plot_walk_pattern();
@@ -367,6 +372,7 @@ public:
     {
         std::cerr << "test5 : Set foot steps with Z change" << std::endl;
         /* initialize sample footstep_list */
+        parse_params();
         gg->clear_footstep_node_list();
         gg->append_footstep_node("rleg", coordinates(hrp::Vector3(hrp::Vector3(0, 0, 0)+leg_pos[0])));
         gg->append_footstep_node("lleg", coordinates(hrp::Vector3(hrp::Vector3(0, 0, 0)+leg_pos[1])));
@@ -381,6 +387,7 @@ public:
     void test6 ()
     {
         std::cerr << "test6 : Go single step" << std::endl;
+        parse_params();
         gg->clear_footstep_node_list();
         gg->go_single_step_param_2_footstep_list(100*1e-3, 0, 0, 0, "rleg", coordinates(leg_pos[0]));
         gen_and_plot_walk_pattern();
@@ -390,6 +397,7 @@ public:
     {
         std::cerr << "test7 : Toe heel walk" << std::endl;
         /* initialize sample footstep_list */
+        parse_params();
         std::vector<hrp::Vector3> dzo;
         dzo.push_back(hrp::Vector3(20*1e-3,-30*1e-3,0));
         dzo.push_back(hrp::Vector3(20*1e-3,30*1e-3,0));
@@ -411,6 +419,7 @@ public:
     {
         std::cerr << "test8 : Toe heel walk on slope" << std::endl;
         /* initialize sample footstep_list */
+        parse_params();
         std::vector<hrp::Vector3> dzo;
         dzo.push_back(hrp::Vector3(20*1e-3,-30*1e-3,0));
         dzo.push_back(hrp::Vector3(20*1e-3,30*1e-3,0));
@@ -437,6 +446,7 @@ public:
     {
         std::cerr << "test9 : Stair walk" << std::endl;
         /* initialize sample footstep_list */
+        parse_params();
         gg->clear_footstep_node_list();
         gg->set_default_orbit_type(gait_generator::STAIR);
         gg->set_swing_trajectory_delay_time_offset (0.2);
@@ -456,6 +466,7 @@ public:
     {
         std::cerr << "test10 : Stair walk + toe heel contact" << std::endl;
         /* initialize sample footstep_list */
+        parse_params();
         gg->clear_footstep_node_list();
         gg->set_default_orbit_type(gait_generator::STAIR);
         gg->set_swing_trajectory_delay_time_offset (0.2);
@@ -486,6 +497,7 @@ public:
     {
         std::cerr << "test11 : Foot rot change" << std::endl;
         /* initialize sample footstep_list */
+        parse_params();
         hrp::Matrix33 tmpr;
         gg->clear_footstep_node_list();
         gg->append_footstep_node("lleg", coordinates(hrp::Vector3(hrp::Vector3(0, 0, 0)+leg_pos[1])));
@@ -547,6 +559,8 @@ public:
                   std::cerr << "[]   "; // for set_toe_heel_phase_ratio
                   gg->set_toe_heel_phase_ratio(ratio);
               }
+          } else if ( arg_strs[i]== "--optional-go-pos-finalize-footstep-num" ) {
+              if (++i < arg_strs.size()) gg->set_optional_go_pos_finalize_footstep_num(atoi(arg_strs[i].c_str()));
           }
       }   
     };

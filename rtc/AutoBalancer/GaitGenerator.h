@@ -621,7 +621,7 @@ namespace rats
     double default_step_time;
     double default_double_support_ratio, default_double_support_static_ratio;
     double gravitational_acceleration;
-    size_t one_step_len, finalize_count;
+    size_t one_step_len, finalize_count, optional_go_pos_finalize_footstep_num;
     velocity_mode_flag velocity_mode_flg;
     emergency_flag emergency_flg;
     bool use_inside_step_limitation;
@@ -659,7 +659,7 @@ namespace rats
         vel_param(), offset_vel_param(), cog(hrp::Vector3::Zero()), refzmp(hrp::Vector3::Zero()), prev_que_rzmp(hrp::Vector3::Zero()),
         swing_foot_zmp_offset(hrp::Vector3::Zero()), prev_que_sfzo(hrp::Vector3::Zero()),
         dt(_dt), default_step_time(1.0), default_double_support_ratio(0.2), default_double_support_static_ratio(0.0), gravitational_acceleration(DEFAULT_GRAVITATIONAL_ACCELERATION),
-        one_step_len(default_step_time / dt), finalize_count(0),
+        one_step_len(default_step_time / dt), finalize_count(0), optional_go_pos_finalize_footstep_num(0),
         velocity_mode_flg(VEL_IDLING), emergency_flg(IDLING),
         use_inside_step_limitation(true),
         preview_controller_ptr(NULL) {};
@@ -745,6 +745,7 @@ namespace rats
     bool set_toe_heel_phase_ratio (const std::vector<double>& ratio) { return thp.set_toe_heel_phase_ratio(ratio); };
     void set_use_toe_joint (const bool ut) { lcg.set_use_toe_joint(ut); };
     void set_leg_default_translate_pos (const std::vector<hrp::Vector3>& off) { footstep_param.leg_default_translate_pos = off;};
+    void set_optional_go_pos_finalize_footstep_num (const size_t num) { optional_go_pos_finalize_footstep_num = num; };
     void print_footstep_list () const
     {
       for (size_t i = 0; i < footstep_node_list.size(); i++)
@@ -820,6 +821,7 @@ namespace rats
     int get_NUM_TH_PHASES () { return thp.get_NUM_TH_PHASES(); };
     bool get_use_toe_joint () { return lcg.get_use_toe_joint(); };
     void get_leg_default_translate_pos (std::vector<hrp::Vector3>& off) { off = footstep_param.leg_default_translate_pos; };
+    size_t get_optional_go_pos_finalize_footstep_num () const { return optional_go_pos_finalize_footstep_num; };
     bool is_finalizing (const double tm) const { return ((preview_controller_ptr->get_delay()*2 - default_step_time/dt)-finalize_count) <= (tm/dt)-1; };
     void print_param (const std::string& print_str = "")
     {
@@ -861,6 +863,7 @@ namespace rats
         std::cerr << "[" << print_str << "]   toe_heel_phase_ratio = [";
         for (int i = 0; i < get_NUM_TH_PHASES(); i++) std::cerr << tmp_ratio[i] << " ";
         std::cerr << "]" << std::endl;
+        std::cerr << "[" << print_str << "]   optional_go_pos_finalize_footstep_num = " << optional_go_pos_finalize_footstep_num << std::endl;
     };
   };
 }
