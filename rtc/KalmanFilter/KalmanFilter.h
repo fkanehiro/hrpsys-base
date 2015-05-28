@@ -159,7 +159,8 @@ private:
   RPYKalmanFilter rpy_kf;
   EKFilter ekf_filter;
   hrp::BodyPtr m_robot;
-  hrp::Matrix33 m_sensorR;
+  hrp::Matrix33 m_sensorR, sensorR_offset;
+  hrp::Vector3 acc_offset;
   unsigned int m_debugLevel;
   int dummy, loop;
   OpenHRP::KalmanFilterService::KFAlgorithm kf_algorithm;
