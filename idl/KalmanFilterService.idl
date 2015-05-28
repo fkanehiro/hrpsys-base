@@ -15,6 +15,8 @@ module OpenHRP
         QuaternionExtendedKalmanFilter
     };
 
+    typedef double DblArray3[3];
+
     /**
      * @struct KalmanFilterParam
      * @brief KalmanFilter Parameters.
@@ -25,8 +27,10 @@ module OpenHRP
       double Q_angle;
       double Q_rate;
       double R_angle;
-      // KFAlgorithm
+      // Common
       KFAlgorithm kf_algorithm;
+      DblArray3 acc_offset;
+      DblArray3 sensorRPY_offset;
     };
 
     /**
