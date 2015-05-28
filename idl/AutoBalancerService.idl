@@ -151,6 +151,8 @@ module OpenHRP
       boolean use_toe_heel_transition;
       /// Foot position offset[m] (rleg and lleg)
       sequence<DblSequence3> leg_default_translate_pos;
+      /// Number of optional finalize footsteps in goPos
+      long optional_go_pos_finalize_footstep_num;
     };
 
     /**
