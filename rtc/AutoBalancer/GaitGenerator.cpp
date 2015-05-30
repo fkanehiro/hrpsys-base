@@ -145,7 +145,7 @@ namespace rats
   };
 
   /* member function implementation for leg_coords_generator */
-  void gait_generator::leg_coords_generator::calc_current_swing_leg_coords (coordinates& ret, const double step_height)
+  void gait_generator::leg_coords_generator::calc_current_swing_leg_coords (coordinates& ret, const double step_height, const double _current_toe_angle, const double _current_heel_angle)
   {
     switch (default_orbit_type) {
     case SHUFFLING:
@@ -166,7 +166,7 @@ namespace rats
     default: break;
     }
     if (std::fabs(step_height) > 1e-3*10) {
-        modif_foot_coords_for_toe_heel_phase(ret);
+        modif_foot_coords_for_toe_heel_phase(ret, _current_toe_angle, _current_heel_angle);
     }
   };
 
@@ -228,32 +228,32 @@ namespace rats
       return tmp_ip_ratio;
   };
 
-  void gait_generator::leg_coords_generator::modif_foot_coords_for_toe_heel_phase (coordinates& org_coords)
+  void gait_generator::leg_coords_generator::modif_foot_coords_for_toe_heel_phase (coordinates& org_coords, const double _current_toe_angle, const double _current_heel_angle)
   {
       coordinates new_coords;
       size_t current_count = total_count - gp_count;
       double dif_angle = 0.0;
       hrp::Vector3 ee_local_pivot_pos(hrp::Vector3(0,0,0));
       if ( thp_ptr->is_between_phases(current_count, SOLE0, SOLE2TOE) ) {
-          dif_angle = calc_interpolated_toe_heel_angle(SOLE0, SOLE2TOE, 0.0, toe_angle);
+          dif_angle = calc_interpolated_toe_heel_angle(SOLE0, SOLE2TOE, 0.0, _current_toe_angle);
           ee_local_pivot_pos(0) = toe_pos_offset_x;
       } else if ( thp_ptr->is_between_phases(current_count, SOLE2HEEL, HEEL2SOLE) ) {
-          dif_angle = calc_interpolated_toe_heel_angle(SOLE2HEEL, HEEL2SOLE, -1 * heel_angle, 0.0);
+          dif_angle = calc_interpolated_toe_heel_angle(SOLE2HEEL, HEEL2SOLE, -1 * _current_heel_angle, 0.0);
           ee_local_pivot_pos(0) = heel_pos_offset_x;
       } else if ( thp_ptr->is_between_phases(current_count, SOLE2TOE, SOLE2HEEL) ) {
           // If SOLE1 phase does not exist, interpolate toe => heel smoothly, without 0 velocity phase.
           if ( thp_ptr->is_no_SOLE1_phase() ) {
-              dif_angle = calc_interpolated_toe_heel_angle(SOLE2TOE, SOLE2HEEL, toe_angle, -1 * heel_angle);
-              double tmpd = (-1*heel_angle-toe_angle);
+              dif_angle = calc_interpolated_toe_heel_angle(SOLE2TOE, SOLE2HEEL, _current_toe_angle, -1 * _current_heel_angle);
+              double tmpd = (-1*_current_heel_angle-_current_toe_angle);
               if (std::fabs(tmpd) > 1e-5) {
-                  ee_local_pivot_pos(0) = (heel_pos_offset_x - toe_pos_offset_x) * (dif_angle - toe_angle) / tmpd + toe_pos_offset_x;
+                  ee_local_pivot_pos(0) = (heel_pos_offset_x - toe_pos_offset_x) * (dif_angle - _current_toe_angle) / tmpd + toe_pos_offset_x;
               }
           } else {
               if ( thp_ptr->is_between_phases(current_count, SOLE2TOE, TOE2SOLE) ) {
-                  dif_angle = calc_interpolated_toe_heel_angle(SOLE2TOE, TOE2SOLE, toe_angle, 0.0);
+                  dif_angle = calc_interpolated_toe_heel_angle(SOLE2TOE, TOE2SOLE, _current_toe_angle, 0.0);
                   ee_local_pivot_pos(0) = toe_pos_offset_x;
               } else if ( thp_ptr->is_between_phases(current_count, SOLE1, SOLE2HEEL) ) {
-                  dif_angle = calc_interpolated_toe_heel_angle(SOLE1, SOLE2HEEL, 0.0, -1 * heel_angle);
+                  dif_angle = calc_interpolated_toe_heel_angle(SOLE1, SOLE2HEEL, 0.0, -1 * _current_heel_angle);
                   ee_local_pivot_pos(0) = heel_pos_offset_x;
               }
           }
@@ -312,7 +312,7 @@ namespace rats
       support_leg = fnl[fnl.size()-2].l_r;
     }
     calc_ratio_from_double_support_ratio(default_double_support_ratio, one_step_len);
-    calc_current_swing_leg_coords(swing_leg_coords, current_step_height);
+    calc_current_swing_leg_coords(swing_leg_coords, current_step_height, current_toe_angle, current_heel_angle);
     if ( 1 <= gp_count ) {
       gp_count--;
     } else {
@@ -324,8 +324,11 @@ namespace rats
       if (gp_index < fnl.size() - 1) {
         if (force_height_zero) current_step_height = 0.0;
         else current_step_height = fnl[gp_index].step_height;
+        current_toe_angle = fnl[gp_index].toe_angle;
+        current_heel_angle = fnl[gp_index].heel_angle;
       } else {
         current_step_height = 0.0;
+        current_toe_angle = current_heel_angle = 0.0;
       }
       gp_count = one_step_len;
       rdtg.reset(one_step_len, default_double_support_ratio);
@@ -462,9 +465,9 @@ namespace rats
                                                              const coordinates& _support_leg_coords)
   {
     leg_type _swing_leg = (tmp_swing_leg == "rleg") ? RLEG : LLEG;
-    step_node sn0((_swing_leg == RLEG) ? LLEG : RLEG, _support_leg_coords, lcg.get_default_step_height());
+    step_node sn0((_swing_leg == RLEG) ? LLEG : RLEG, _support_leg_coords, lcg.get_default_step_height(), lcg.get_toe_angle(), lcg.get_heel_angle());
     footstep_node_list.push_back(sn0);
-    step_node sn1(_swing_leg, _support_leg_coords, lcg.get_default_step_height());
+    step_node sn1(_swing_leg, _support_leg_coords, lcg.get_default_step_height(), lcg.get_toe_angle(), lcg.get_heel_angle());
     hrp::Vector3 trs(2.0 * footstep_param.leg_default_translate_pos[_swing_leg] + hrp::Vector3(goal_x, goal_y, goal_z));
     sn1.worldcoords.pos += sn1.worldcoords.rot * trs;
     sn1.worldcoords.rotate(deg2rad(goal_theta), hrp::Vector3(0,0,1));
@@ -566,7 +569,7 @@ namespace rats
       if ( footstep_node_list.size() - 1 >= idx + i) /* if footstep_node_list[idx] and footstep_node_list[idx+1]  exists */
         footstep_node_list[idx + i].worldcoords = cv[i];
       else
-        footstep_node_list.push_back(step_node(footstep_node_list[lcg.get_gp_index()-1 + i].l_r, cv[i], lcg.get_default_step_height()));
+        footstep_node_list.push_back(step_node(footstep_node_list[lcg.get_gp_index()-1 + i].l_r, cv[i], lcg.get_default_step_height(), lcg.get_toe_angle(), lcg.get_heel_angle()));
     }
 
     /* remove steps after newly added steps */

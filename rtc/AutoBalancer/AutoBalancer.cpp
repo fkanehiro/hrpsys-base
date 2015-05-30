@@ -958,6 +958,8 @@ bool AutoBalancer::setFootSteps(const OpenHRP::AutoBalancerService::FootstepSequ
   OpenHRP::AutoBalancerService::StepParamSequence sps;
   sps.length(fs.length());
   for (size_t i = 0; i < sps.length(); i++) sps[i].step_height = gg->get_default_step_height();
+  for (size_t i = 0; i < sps.length(); i++) sps[i].toe_angle = gg->get_toe_angle();
+  for (size_t i = 0; i < sps.length(); i++) sps[i].heel_angle = gg->get_heel_angle();
   setFootStepsWithParam(fs, sps);
 }
 
@@ -997,7 +999,7 @@ bool AutoBalancer::setFootStepsWithParam(const OpenHRP::AutoBalancerService::Foo
     std::cerr << "[" << m_profile.instance_name << "] print footsteps " << std::endl;
     gg->clear_footstep_node_list();
     for (size_t i = 0; i < fs_vec.size(); i++) {
-        gg->append_footstep_node(leg_name_vec[i], fs_vec[i], sps[i].step_height);
+        gg->append_footstep_node(leg_name_vec[i], fs_vec[i], sps[i].step_height, sps[i].toe_angle, sps[i].heel_angle);
     }
     gg->append_finalize_footstep();
     gg->print_footstep_list();
@@ -1235,14 +1237,21 @@ bool AutoBalancer::adjustFootSteps(const OpenHRP::AutoBalancerService::Footstep&
   if (control_mode == MODE_ABC && !gg_is_walking && adjust_footstep_interpolator->isEmpty()) {
       Guard guard(m_mutex);
       //
-      hrp::Vector3 org_mid_pos, target_mid_pos, eepos;
-      hrp::Matrix33 eerot;
+      hrp::Vector3 eepos, org_mid_rpy, target_mid_rpy;
+      hrp::Matrix33 eerot, tmprot;
+      coordinates org_mid_coords, target_mid_coords;
+      // Get org coords
       ikp["rleg"].adjust_interpolation_org_p0 = ikp["rleg"].target_p0;
       ikp["lleg"].adjust_interpolation_org_p0 = ikp["lleg"].target_p0;
       ikp["rleg"].adjust_interpolation_org_r0 = ikp["rleg"].target_r0;
       ikp["lleg"].adjust_interpolation_org_r0 = ikp["lleg"].target_r0;
-      org_mid_pos = 0.5*ikp["rleg"].adjust_interpolation_org_p0 + 0.5*ikp["lleg"].adjust_interpolation_org_p0;
-      //
+      mid_coords(org_mid_coords, 0.5,
+                 coordinates(ikp["rleg"].adjust_interpolation_org_p0, ikp["rleg"].adjust_interpolation_org_r0),
+                 coordinates(ikp["lleg"].adjust_interpolation_org_p0, ikp["lleg"].adjust_interpolation_org_r0));
+      org_mid_rpy = hrp::rpyFromRot(org_mid_coords.rot);
+      // Get target coords
+      //   Input : ee coords
+      //   Output : link coords
       memcpy(eepos.data(), rfootstep.pos, sizeof(double)*3);
       eerot = (Eigen::Quaternion<double>(rfootstep.rot[0], rfootstep.rot[1], rfootstep.rot[2], rfootstep.rot[3])).normalized().toRotationMatrix(); // rtc: 
       ikp["rleg"].adjust_interpolation_target_r0 = eerot * ikp["rleg"].localR.transpose();
@@ -1251,10 +1260,28 @@ bool AutoBalancer::adjustFootSteps(const OpenHRP::AutoBalancerService::Footstep&
       eerot = (Eigen::Quaternion<double>(lfootstep.rot[0], lfootstep.rot[1], lfootstep.rot[2], lfootstep.rot[3])).normalized().toRotationMatrix(); // rtc: 
       ikp["lleg"].adjust_interpolation_target_r0 = eerot * ikp["lleg"].localR.transpose();
       ikp["lleg"].adjust_interpolation_target_p0 = eepos - ikp["lleg"].adjust_interpolation_target_r0 * ikp["lleg"].localPos;
-      //
-      target_mid_pos = 0.5*ikp["rleg"].adjust_interpolation_target_p0+0.5*ikp["lleg"].adjust_interpolation_target_p0;
-      ikp["rleg"].adjust_interpolation_target_p0 += (org_mid_pos - target_mid_pos);
-      ikp["lleg"].adjust_interpolation_target_p0 += (org_mid_pos - target_mid_pos);
+      mid_coords(target_mid_coords, 0.5,
+                 coordinates(ikp["rleg"].adjust_interpolation_target_p0, ikp["rleg"].adjust_interpolation_target_r0),
+                 coordinates(ikp["lleg"].adjust_interpolation_target_p0, ikp["lleg"].adjust_interpolation_target_r0));
+      coordinates rtrans, ltrans;
+      target_mid_coords.transformation(rtrans, coordinates(ikp["rleg"].adjust_interpolation_target_p0, ikp["rleg"].adjust_interpolation_target_r0));
+      target_mid_coords.transformation(ltrans, coordinates(ikp["lleg"].adjust_interpolation_target_p0, ikp["lleg"].adjust_interpolation_target_r0));
+      target_mid_rpy = hrp::rpyFromRot(target_mid_coords.rot);
+      // Fix target pos => org pos, target yaw => org yaw
+      target_mid_rpy(2) = org_mid_rpy(2);
+      target_mid_coords.rot = hrp::rotFromRpy(target_mid_rpy);
+      target_mid_coords.pos = org_mid_coords.pos;
+      // Calculate rleg and lleg coords
+      coordinates tmpc;
+      tmpc = target_mid_coords;
+      tmpc.transform(rtrans);
+      ikp["rleg"].adjust_interpolation_target_p0 = tmpc.pos;
+      ikp["rleg"].adjust_interpolation_target_r0 = tmpc.rot;
+      tmpc = target_mid_coords;
+      tmpc.transform(ltrans);
+      ikp["lleg"].adjust_interpolation_target_p0 = tmpc.pos;
+      ikp["lleg"].adjust_interpolation_target_r0 = tmpc.rot;
+      // Set interpolator
       adjust_footstep_interpolator->clear();
       double tmp = 0.0;
       adjust_footstep_interpolator->set(&tmp);
