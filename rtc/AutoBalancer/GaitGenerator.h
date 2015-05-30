@@ -29,11 +29,11 @@ namespace rats
     {
       leg_type l_r;
       coordinates worldcoords;
-      double step_height;
-      step_node (const leg_type _l_r, const coordinates& _worldcoords, const double _step_height)
-        : l_r(_l_r), worldcoords(_worldcoords), step_height(_step_height) {};
-      step_node (const std::string& _l_r, const coordinates& _worldcoords, const double _step_height)
-        : l_r((_l_r == "rleg") ? RLEG : LLEG), worldcoords(_worldcoords), step_height(_step_height) {};
+      double step_height, toe_angle, heel_angle;
+      step_node (const leg_type _l_r, const coordinates& _worldcoords, const double _step_height, const double _toe_angle, const double _heel_angle)
+        : l_r(_l_r), worldcoords(_worldcoords), step_height(_step_height), toe_angle(_toe_angle), heel_angle(_heel_angle) {};
+      step_node (const std::string& _l_r, const coordinates& _worldcoords, const double _step_height, const double _toe_angle, const double _heel_angle)
+        : l_r((_l_r == "rleg") ? RLEG : LLEG), worldcoords(_worldcoords), step_height(_step_height), toe_angle(_toe_angle), heel_angle(_heel_angle) {};
     };
     friend std::ostream &operator<<(std::ostream &os, const step_node &sn)
     {
@@ -44,6 +44,7 @@ namespace rats
       os << "  rot =" << std::endl;
       os << (sn.worldcoords.rot).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", "\n", "    [", "]")) << std::endl;
       os << "  step_height = " << sn.step_height << "[m]" << std::endl;
+      os << "  toe_angle = " << sn.toe_angle << "[deg], heel_angle = " << sn.heel_angle << "[deg]" << std::endl;
       return os;
     };
 
@@ -443,7 +444,7 @@ namespace rats
     public:
 #endif
       coordinates swing_leg_dst_coords, support_leg_coords, swing_leg_coords, swing_leg_src_coords;
-      double default_step_height, default_top_ratio, current_step_height, swing_ratio, swing_rot_ratio, foot_midcoords_ratio, _dt, current_swing_time[2];
+      double default_step_height, default_top_ratio, current_step_height, swing_ratio, swing_rot_ratio, foot_midcoords_ratio, _dt, current_swing_time[2], current_toe_angle, current_heel_angle;
       size_t gp_index, gp_count, total_count;
       leg_type support_leg;
       orbit_type default_orbit_type;
@@ -457,9 +458,9 @@ namespace rats
       interpolator* toe_heel_interpolator;
       double toe_pos_offset_x, heel_pos_offset_x, toe_angle, heel_angle, foot_dif_rot_angle;
       bool use_toe_joint;
-      void calc_current_swing_leg_coords (coordinates& ret, const double step_height);
+      void calc_current_swing_leg_coords (coordinates& ret, const double step_height, const double _current_toe_angle, const double _current_heel_angle);
       double calc_interpolated_toe_heel_angle (const toe_heel_phase start_phase, const toe_heel_phase goal_phase, const double start, const double goal);
-      void modif_foot_coords_for_toe_heel_phase (coordinates& org_coords);
+      void modif_foot_coords_for_toe_heel_phase (coordinates& org_coords, const double _current_toe_angle, const double _current_heel_angle);
       void cycloid_midcoords (coordinates& ret, const coordinates& start,
                               const coordinates& goal, const double height) const;
       void rectangle_midcoords (coordinates& ret, const coordinates& start,
@@ -474,7 +475,9 @@ namespace rats
 #endif
       leg_coords_generator(const double __dt, toe_heel_phase_counter* _thp_ptr)
         : swing_leg_dst_coords(), support_leg_coords(), swing_leg_coords(), swing_leg_src_coords(),
-          default_step_height(0.05), default_top_ratio(0.5), current_step_height(0.0), swing_ratio(0), swing_rot_ratio(0), foot_midcoords_ratio(0), _dt(__dt), gp_index(0), gp_count(0), support_leg(RLEG), default_orbit_type(CYCLOID),
+          default_step_height(0.05), default_top_ratio(0.5), current_step_height(0.0), swing_ratio(0), swing_rot_ratio(0), foot_midcoords_ratio(0), _dt(__dt),
+          current_toe_angle(0), current_heel_angle(0),
+          gp_index(0), gp_count(0), support_leg(RLEG), default_orbit_type(CYCLOID),
           thp_ptr(_thp_ptr),
           foot_ratio_interpolator(NULL), swing_foot_rot_ratio_interpolator(NULL), toe_heel_interpolator(NULL),
           toe_pos_offset_x(0.0), heel_pos_offset_x(0.0), toe_angle(0.0), heel_angle(0.0), foot_dif_rot_angle(0.0), use_toe_joint(false)
@@ -635,7 +638,7 @@ namespace rats
     void append_go_pos_step_node (const coordinates& _foot_midcoords,
                                   const leg_type _l_r)
     {
-      step_node sn(_l_r, _foot_midcoords, lcg.get_default_step_height());
+      step_node sn(_l_r, _foot_midcoords, lcg.get_default_step_height(), lcg.get_toe_angle(), lcg.get_heel_angle());
       sn.worldcoords.pos += sn.worldcoords.rot * footstep_param.leg_default_translate_pos[_l_r];
       footstep_node_list.push_back(sn);
     };
@@ -676,11 +679,11 @@ namespace rats
     bool proc_one_tick ();
     void append_footstep_node (const std::string& _leg, const coordinates& _fs)
     {
-        footstep_node_list.push_back(step_node(_leg, _fs, lcg.get_default_step_height()));
+        footstep_node_list.push_back(step_node(_leg, _fs, lcg.get_default_step_height(), lcg.get_toe_angle(), lcg.get_heel_angle()));
     };
-    void append_footstep_node (const std::string& _leg, const coordinates& _fs, const double _step_height)
+    void append_footstep_node (const std::string& _leg, const coordinates& _fs, const double _step_height, const double _toe_angle, const double _heel_angle)
     {
-        footstep_node_list.push_back(step_node(_leg, _fs, _step_height));
+        footstep_node_list.push_back(step_node(_leg, _fs, _step_height, _toe_angle, _heel_angle));
     };
     void clear_footstep_node_list () { footstep_node_list.clear(); };
     void go_pos_param_2_footstep_list (const double goal_x, const double goal_y, const double goal_theta, /* [mm] [mm] [deg] */

@@ -958,6 +958,8 @@ bool AutoBalancer::setFootSteps(const OpenHRP::AutoBalancerService::FootstepSequ
   OpenHRP::AutoBalancerService::StepParamSequence sps;
   sps.length(fs.length());
   for (size_t i = 0; i < sps.length(); i++) sps[i].step_height = gg->get_default_step_height();
+  for (size_t i = 0; i < sps.length(); i++) sps[i].toe_angle = gg->get_toe_angle();
+  for (size_t i = 0; i < sps.length(); i++) sps[i].heel_angle = gg->get_heel_angle();
   setFootStepsWithParam(fs, sps);
 }
 
@@ -997,7 +999,7 @@ bool AutoBalancer::setFootStepsWithParam(const OpenHRP::AutoBalancerService::Foo
     std::cerr << "[" << m_profile.instance_name << "] print footsteps " << std::endl;
     gg->clear_footstep_node_list();
     for (size_t i = 0; i < fs_vec.size(); i++) {
-        gg->append_footstep_node(leg_name_vec[i], fs_vec[i], sps[i].step_height);
+        gg->append_footstep_node(leg_name_vec[i], fs_vec[i], sps[i].step_height, sps[i].toe_angle, sps[i].heel_angle);
     }
     gg->append_finalize_footstep();
     gg->print_footstep_list();
