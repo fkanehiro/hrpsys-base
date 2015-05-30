@@ -144,7 +144,9 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     zmp_transition_time = 1.0;
     transition_interpolator = new interpolator(1, m_dt, interpolator::HOFFARBIB, 1);
     transition_interpolator_ratio = 1.0;
+    adjust_footstep_interpolator = new interpolator(1, m_dt, interpolator::HOFFARBIB, 1);
     transition_time = 2.0;
+    adjust_footstep_transition_time = 2.0;
 
     // setting from conf file
     // GaitGenerator requires abc_leg_offset and abc_stride_parameter in robot conf file
@@ -290,6 +292,7 @@ RTC::ReturnCode_t AutoBalancer::onFinalize()
 {
   delete zmp_interpolator;
   delete transition_interpolator;
+  delete adjust_footstep_interpolator;
   return RTC::RTC_OK;
 }
 
@@ -590,6 +593,22 @@ void AutoBalancer::getTargetParameters()
       m_limbCOPOffset[contact_states_index_map["lleg"]].data.x = default_zmp_offsets[1](0);
       m_limbCOPOffset[contact_states_index_map["lleg"]].data.y = default_zmp_offsets[1](1);
       m_limbCOPOffset[contact_states_index_map["lleg"]].data.z = default_zmp_offsets[1](2);
+    }
+    if (!adjust_footstep_interpolator->isEmpty()) {
+        double tmp = 0.0;
+        adjust_footstep_interpolator->get(&tmp, true);
+        //std::cerr << "[" << m_profile.instance_name << "] adjust ratio " << tmp << std::endl;
+        ikp["rleg"].target_p0 = (1-tmp) * ikp["rleg"].adjust_interpolation_org_p0 + tmp*ikp["rleg"].adjust_interpolation_target_p0;
+        ikp["lleg"].target_p0 = (1-tmp) * ikp["lleg"].adjust_interpolation_org_p0 + tmp*ikp["lleg"].adjust_interpolation_target_p0;
+        rats::mid_rot(ikp["rleg"].target_r0, tmp, ikp["rleg"].adjust_interpolation_org_r0, ikp["rleg"].adjust_interpolation_target_r0);
+        rats::mid_rot(ikp["lleg"].target_r0, tmp, ikp["lleg"].adjust_interpolation_org_r0, ikp["lleg"].adjust_interpolation_target_r0);
+        coordinates tmprc, tmplc;
+        tmprc.pos = ikp["rleg"].target_p0 + ikp["rleg"].target_r0 * ikp["rleg"].localPos;
+        tmprc.rot = ikp["rleg"].target_r0 * ikp["rleg"].localR;
+        tmplc.pos = ikp["lleg"].target_p0 + ikp["lleg"].target_r0 * ikp["lleg"].localPos;
+        tmplc.rot = ikp["lleg"].target_r0 * ikp["lleg"].localR;
+        rats::mid_coords(fix_leg_coords, 0.5, tmprc, tmplc);
+        tmp_fix_coords = fix_leg_coords;
     }
     // Tempolarily modify tmp_fix_coords
     // This will be removed after seq outputs adequate waistRPY discussed in https://github.com/fkanehiro/hrpsys-base/issues/272
@@ -1110,6 +1129,7 @@ bool AutoBalancer::setAutoBalancerParam(const OpenHRP::AutoBalancerService::Auto
     for (size_t j = 0; j < 3; j++)
       default_zmp_offsets_array[i*3+j] = i_param.default_zmp_offsets[i][j];
   zmp_transition_time = i_param.zmp_transition_time;
+  adjust_footstep_transition_time = i_param.adjust_footstep_transition_time;
   if (zmp_interpolator->isEmpty()) {
       zmp_interpolator->clear();
       zmp_interpolator->go(default_zmp_offsets_array, zmp_transition_time, true);
@@ -1136,7 +1156,7 @@ bool AutoBalancer::setAutoBalancerParam(const OpenHRP::AutoBalancerService::Auto
   std::cerr << "[" << m_profile.instance_name << "]   graspless_manip_p_gain = " << graspless_manip_p_gain.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   graspless_manip_reference_trans_pos = " << graspless_manip_reference_trans_coords.pos.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   graspless_manip_reference_trans_rot = " << graspless_manip_reference_trans_coords.rot.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", "\n", "    [", "]")) << std::endl;
-  std::cerr << "[" << m_profile.instance_name << "]   transition_time = " << transition_time << "[s], zmp_transition_time = " << zmp_transition_time << "[s]" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   transition_time = " << transition_time << "[s], zmp_transition_time = " << zmp_transition_time << "[s], adjust_footstep_transition_time = " << adjust_footstep_transition_time << "[s]" << std::endl;
   return true;
 };
 
@@ -1166,6 +1186,7 @@ bool AutoBalancer::getAutoBalancerParam(OpenHRP::AutoBalancerService::AutoBalanc
   i_param.graspless_manip_reference_trans_rot[3] = qt.z();
   i_param.transition_time = transition_time;
   i_param.zmp_transition_time = zmp_transition_time;
+  i_param.adjust_footstep_transition_time = adjust_footstep_transition_time;
   return true;
 };
 
@@ -1205,6 +1226,44 @@ bool AutoBalancer::getFootstepParam(OpenHRP::AutoBalancerService::FootstepParam&
   case gait_generator::LLEG: i_param.support_leg_with_both = OpenHRP::AutoBalancerService::LLEG; break;
   default: break;
   }
+  return true;
+};
+
+bool AutoBalancer::adjustFootSteps(const OpenHRP::AutoBalancerService::Footstep& rfootstep, const OpenHRP::AutoBalancerService::Footstep& lfootstep)
+{
+  std::cerr << "[" << m_profile.instance_name << "] adjustFootSteps" << std::endl;
+  if (control_mode == MODE_ABC && !gg_is_walking && adjust_footstep_interpolator->isEmpty()) {
+      Guard guard(m_mutex);
+      //
+      hrp::Vector3 org_mid_pos, target_mid_pos, eepos;
+      hrp::Matrix33 eerot;
+      ikp["rleg"].adjust_interpolation_org_p0 = ikp["rleg"].target_p0;
+      ikp["lleg"].adjust_interpolation_org_p0 = ikp["lleg"].target_p0;
+      ikp["rleg"].adjust_interpolation_org_r0 = ikp["rleg"].target_r0;
+      ikp["lleg"].adjust_interpolation_org_r0 = ikp["lleg"].target_r0;
+      org_mid_pos = 0.5*ikp["rleg"].adjust_interpolation_org_p0 + 0.5*ikp["lleg"].adjust_interpolation_org_p0;
+      //
+      memcpy(eepos.data(), rfootstep.pos, sizeof(double)*3);
+      eerot = (Eigen::Quaternion<double>(rfootstep.rot[0], rfootstep.rot[1], rfootstep.rot[2], rfootstep.rot[3])).normalized().toRotationMatrix(); // rtc: 
+      ikp["rleg"].adjust_interpolation_target_r0 = eerot * ikp["rleg"].localR.transpose();
+      ikp["rleg"].adjust_interpolation_target_p0 = eepos - ikp["rleg"].adjust_interpolation_target_r0 * ikp["rleg"].localPos;
+      memcpy(eepos.data(), lfootstep.pos, sizeof(double)*3);
+      eerot = (Eigen::Quaternion<double>(lfootstep.rot[0], lfootstep.rot[1], lfootstep.rot[2], lfootstep.rot[3])).normalized().toRotationMatrix(); // rtc: 
+      ikp["lleg"].adjust_interpolation_target_r0 = eerot * ikp["lleg"].localR.transpose();
+      ikp["lleg"].adjust_interpolation_target_p0 = eepos - ikp["lleg"].adjust_interpolation_target_r0 * ikp["lleg"].localPos;
+      //
+      target_mid_pos = 0.5*ikp["rleg"].adjust_interpolation_target_p0+0.5*ikp["lleg"].adjust_interpolation_target_p0;
+      ikp["rleg"].adjust_interpolation_target_p0 += (org_mid_pos - target_mid_pos);
+      ikp["lleg"].adjust_interpolation_target_p0 += (org_mid_pos - target_mid_pos);
+      adjust_footstep_interpolator->clear();
+      double tmp = 0.0;
+      adjust_footstep_interpolator->set(&tmp);
+      tmp = 1.0;
+      adjust_footstep_interpolator->go(&tmp, adjust_footstep_transition_time, true);
+  }
+  while (!adjust_footstep_interpolator->isEmpty() )
+    usleep(1000);
+  usleep(1000);
   return true;
 };
 

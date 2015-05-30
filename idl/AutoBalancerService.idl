@@ -174,6 +174,8 @@ module OpenHRP
       double transition_time;
       /// Transition time [s] for default_zmp_offsets
       double zmp_transition_time;
+      /// Transition time [s] for adjust foot step
+      double adjust_footstep_transition_time;
     };
 
     /**
@@ -273,5 +275,12 @@ module OpenHRP
      * @return true if set successfully, false otherwise
      */
     boolean getFootstepParam(out FootstepParam i_param);
+
+    /**
+     * @brief Adjust Footsteps.
+     * @param 
+     * @return true if set successfully, false otherwise
+     */
+    boolean adjustFootSteps(in Footstep rfootstep, in Footstep lfootstep);
   };
 };
