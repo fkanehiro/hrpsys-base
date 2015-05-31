@@ -781,6 +781,9 @@ void Stabilizer::getActualParameters ()
       for (size_t i = 0; i < 3; i++) {
           pos_ctrl(i) = vlimit(pos_ctrl(i), -0.05, 0.05);
       }
+      // Convert pos_ctrl actual frame => foot origin frame
+      pos_ctrl = foot_origin_rot.transpose() * pos_ctrl;
+      // Divide pos_ctrl into rfoot and lfoot
       d_foot_pos[0] = -0.5 * pos_ctrl;
       d_foot_pos[1] = 0.5 * pos_ctrl;
       if (DEBUGP) {
@@ -1029,6 +1032,13 @@ void Stabilizer::calcEEForceMomentControl() {
       m_robot->calcForwardKinematics();
       current_base_rpy = hrp::rpyFromRot(m_robot->rootLink()->R);
       current_base_pos = m_robot->rootLink()->p;
+
+      // Convert d_foot_pos in foot origin frame => "current" world frame
+      hrp::Vector3 foot_origin_pos;
+      hrp::Matrix33 foot_origin_rot;
+      calcFootOriginCoords (foot_origin_pos, foot_origin_rot);
+      for (size_t i = 0; i < stikp.size(); i++)
+          d_foot_pos[i] = foot_origin_rot * d_foot_pos[i];
 
       // Feet and hands modification
       hrp::Vector3 target_link_p[stikp.size()];
