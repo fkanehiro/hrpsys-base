@@ -1037,7 +1037,7 @@ void Stabilizer::calcEEForceMomentControl() {
       hrp::Vector3 foot_origin_pos;
       hrp::Matrix33 foot_origin_rot;
       calcFootOriginCoords (foot_origin_pos, foot_origin_rot);
-      for (size_t i = 0; i < stikp.size(); i++)
+      for (size_t i = 0; i < 2; i++)
           d_foot_pos[i] = foot_origin_rot * d_foot_pos[i];
 
       // Feet and hands modification
