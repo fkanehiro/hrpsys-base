@@ -228,8 +228,8 @@ RTC::ReturnCode_t SoftErrorLimiter::onExecute(RTC::UniqueId ec_id)
     // Velocity limitation for reference joint angles
     for ( int i = 0; i < m_qRef.data.length(); i++ ){
       double qvel = (m_qRef.data[i] - prev_angle[i]) / dt;
-      double lvlimit = m_robot->joint(i)->lvlimit;
-      double uvlimit = m_robot->joint(i)->uvlimit;
+      double lvlimit = m_robot->joint(i)->lvlimit + 0.000175; // 0.01 deg / sec
+      double uvlimit = m_robot->joint(i)->uvlimit - 0.000175;
       if ( servo_state[i] == 1 && ((lvlimit > qvel) || (uvlimit < qvel)) ) {
         if (loop % debug_print_freq == 0 || debug_print_velocity_first ) {
           std::cerr << "velocity limit over " << m_robot->joint(i)->name << "(" << i << "), qvel=" << qvel
