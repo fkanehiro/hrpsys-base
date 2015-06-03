@@ -131,7 +131,7 @@ RTC::ReturnCode_t SoftErrorLimiter::onInitialize()
   coil::stringTo(dt, prop["dt"].c_str());
   soft_limit_error_beep_freq = static_cast<int>(1.0/(4.0*dt)); // soft limit error => 4 times / 1[s]
   position_limit_error_beep_freq = static_cast<int>(1.0/(2.0*dt)); // position limit error => 2 times / 1[s]
-  debug_print_freq = static_cast<int>(0.02/dt); // once per 0.02 [s]
+  debug_print_freq = static_cast<int>(0.2/dt); // once per 0.2 [s]
   /* If you print debug message for all controller loop, please comment in here */
   // debug_print_freq = 1;
 
