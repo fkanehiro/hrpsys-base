@@ -430,6 +430,13 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
 	while(it != m_impedance_param.end()){
             ImpedanceParam& param = it->second;
             if (param.is_active) {
+                if ( loop % 200 == 0 ) {
+                  std::cerr << "[" << m_profile.instance_name << "] impedance mode " << it->first << " transition count = " << param.transition_count << ", ";
+                  std::cerr << "MDK = " << param.M_p << " " << param.D_p << " " << param.K_p << ", ";
+                  std::cerr << "MDK = " << param.M_r << " " << param.D_r << " " << param.K_r << ", ";
+                  std::cerr << "ref_force = " << param.ref_force[0] << " " << param.ref_force[1] << " " << param.ref_force[2] << ", ";
+                  std::cerr << "ref_moment = " << param.ref_moment[0] << " " << param.ref_moment[1] << " " << param.ref_moment[2] << std::endl;
+                }
                 if ( param.transition_count > 0 ) {
                     hrp::JointPathExPtr manip = param.manip;
                     for ( int j = 0; j < manip->numJoints(); j++ ) {
