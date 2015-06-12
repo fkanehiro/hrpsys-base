@@ -2,6 +2,173 @@
 Changelog for package hrpsys
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+315.5.0 (2015-06-10)
+--------------------
+
+Stable RTCs
+===========
+
+* rtc/SequencePlayer
+
+  * [idl/SequencePlayerService.idl, SequencePlayer.{h,cpp}, SequencePlayerService_impl.{h,cpp}, seqplay.{h,cpp}] add clearJointAngles and clearJointAnglesOfGroup()
+  * [seqplay.cpp] push current data to the queue
+  * [idl/SequencePlayerService.idl, SequencePlayer.{h,cpp}, SequencePlayerService_impl{h,cpp}, seqplay.{h,cpp}] add setJointAnglesSequenceFull()
+  * [interpolator.h] add dimension() returns dim
+  * [interpolator.{cpp,h}] add setGoal(double *, double, bool = true)
+  * [python/hrpsys_config.py, SequencePlayer.{h,cpp}, SequencePlayerService_impl.cpp, seqplay.{h,cpp}] add setJointAnglesSequenceOfGroup
+  * [SequencePlayer.cpp] use setJointAnglesSequence for setJointAngles
+  * [idl/SequencePlayerService.idl, python/hrpsys_config.py, SequencePlayer.{h,cpp}, SequencePlayerService_impl.{h,cpp}, seqplay.{h,cpp}] add setJointAnglesSequence wcich takes Sequence of JointAngles and overwrite current motion
+
+* rtc/StateHolder
+
+  * [StateHolder.cpp] Reset StateHolder wrench in goActual. Currently zero is assumed.
+
+* rtc/RobotHardware
+
+  * [RobotHardware.cpp,robot.{h,cpp}] adds check of joint command acceleration
+  * [robot.{h,cpp}] use imu coordinate for reference gravity
+  * [robot.{h,cpp}] memorize the previous joint commands
+  * [RobotHardware.cpp,robot.{h,cpp}] modifies checkJointCommands() to check joint command velocities
+  * [RobotHardware.cpp,robot.{h,cpp}] Revert "changes checkJointCommands() to check joint command velocities"
+  * [RobotHardware.cpp,robot.{h,cpp}]changes checkJointCommands() to check joint command velocities
+
+* python
+
+  * [rtm.py] fixes a mistake in a debug message
+  * [hrpsys_config.py] add more features to logger
+  * [hrpsys_config.py] Add function to start and stop default unstable controllers (st, abc, ic)
+  * [hrpsys_config.py] Add kinematics_only_mode flag to hcf
+  * [rtm.py] add more error messages on activate and connnect components
+  * [rpsyspy] chekc if RobotHadwareService has joint angle (to avoid confusion such as longfloor)
+  * [hrpsys_config.py] import waitInputConfirm from waitInput.py in hrpsys_config.py to resolve function name
+
+* [package.xml] add deped to graphviz for dot program fix #629
+
+Unstable RTCs
+=============
+
+* sample
+
+  * [environments/DRCFinalStair.wrl] Add DRC final stair with sloped ground
+  * [environments/DRCTestfieldStair.wrl] Add drc testfield stair
+  * [environments/DRCTestbedTerrainJPBlock.wrl,environments/DRCTestbedTerrainUSBlock.wrl] Update location of each block of terrain models
+  * [environments/DRCTestfieldTerrain.wrl] Add testfield drc terrain vrml file
+  * [SampleRobot/samplerobot_impedance_controller.py] Add print message for impedance controller sample
+  * [SampleRobot/samplerobot_impedance_controller.py] Add tracking check sample to impedance controller sample
+  * [SampleRobot/CMakeLists.txt, ampleRobot/SampleRobot.kinematicsonly.xml.in] Add kinematics only mode Project file for sample robot
+
+* rtc/AverageFilter
+
+  * [AverageFilter.{h,cpp}] adds a configuration parameter, dilation
+
+* rtc/CameraImageLoader
+
+  * adds a new component, CameraImageLoader
+
+* rtc/UndistortImage
+
+  * [UndistortImage.cpp] fixes a bug in onExecute()
+  * [UndistortImage.cpp] checks if the calibration file exists
+  * adds a new component UndistortImage
+
+* rtc/SoftErrorLimiter
+
+  * [SoftErrorLimit.cpp] display limit violation message for 0.2  period
+  * [SoftErrorLimit.cpp] check velocity limit using limit - 0.01 deg, if we use limit = limit, then it will fail at RobotHardware
+  * [SoftErrorLimit.cpp] display error message in the first time, see #498
+
+* rtc/ImpedanceController
+
+  * [ImpedanceController.cpp] write debug message
+  * [ImpedanceController.cpp] Stop impedance controller which is active in onDeactivated
+  * [idl/ImpedanceControllerService.idl, ImpedanceControllerService_impl.{cpp,h}, ImpedanceController.h] Add start and stop impedance without waiting
+  * [ImpedanceOutputGenerator.h] Use new version impedance output generation by default which considerstarget acceleration
+  * [ImpedanceOutputGenerator.h] Add comment for ImpedanceOutputGenerator
+  * [ImpedanceOutputGenerator.h] Fix subtraction of current and target rotation
+  * [ImpedanceController/testImpedanceOutputGenerator.cpp] Add plotting of rotation
+  * [ImpedanceOutputGenerator.h] Add calcTargetVelocityNew.
+  * Separate calculation of impedance control output. This commit will not change ImpedanceController behavior
+  * [ImpedanceController.cpp,ImpedanceOutputGenerator.h] Update variables in ImpedanceOutputGenerator. Use output, target, and current
+  * [idl/ImpedanceControllerService.idl,ImpedanceController.{h,cpp},sample/SampleRobot/samplerobot_impedance_controller.py] Enable to fix ref force frame (experimental codes)
+
+* rtc/CollisionDetector
+
+  * (Code Refactoring) [rtc/CollisionDetector] enable to work both collision_mask and use_collision_limb
+  * [CollisionDetector.{h,cpp}] enable to work both collision_mask and use_collision_limb
+  * [sample/SampleRobot/samplerobot_collision_detector.py] Add example for desired collision behavior
+  * [CollisionDetector.{h,cpp}] add use_limb_collision mode (VERY EXPERIMENTAL)
+  * [sample/SampleRobot/samplerobot_collision_detector.py]Add collision mask test added in  https://github.com/fkanehiro/hrpsys-base/pull/627
+  * [CollisoinDetector.{h,cpp}] add m_collision_mask property
+
+* rtc/OccupancyGridMap3D
+
+  * [OccupancyGridMap3D.cpp] emits update signal at the end of clear()
+  * [idl/OGMap3DService.idl,OccupancyGridMap3D.{h,cpp},OGMap3DService_impl.{h,cpp}] adds clear() to OGMap3DService
+
+* rtc/KalmanFilter
+
+  * [idl/KalmanFilterService.idl, KalmanFilter.{h,cpp}] Add kalman filter offset parameters
+
+* rtc/Stabilizer
+
+  * [Stabilizer.cpp] Fix invalid st index
+  * [Stabilizer.cpp] Fix pos_ctrl frame in stabilzier
+  * [environments/DRCTestfieldStair.wrl, Stabilizer.cpp] Use sequence for foot_origin_offset and fix printing
+  * [idl/StabilizerService.idl, Stabilizer.cpp] Enable to set foot origin offset in ST
+  * [idl/StabilizerService.idl, Stabilizer.cpp] Add ee error pos and rot compensation and enable to set is_ik_enable
+  * [Stabilizer.cpp] Make slow stabilizer sync
+  * [Stabilizer.cpp] Use moment at EE instead of COP
+  * [Stabilizer.cpp] Do not use local y COP offset
+  * [ZMPDistributor.h] Update Stabilizer QP foot moment force distribution to use alpha parameter
+  * [idl/StabilizerService.idl] Add documentation for st param
+  * [idl/StabilizerService.idl, Stabilizer.{h,cpp}] Enable to change transition time of ST
+  * [ZMPDistributor.h] Do not use foot distribution coords in force moment distribution and limit alpha
+  * [idl/StabilizerService.idl, Stabilizer.{h,cpp}, ZMPDistributor.h, testZMPDistributor.cpp] Add alpha force moment distribution lpf
+  * [idl/StabilizerService.idl, Stabilizer.cpp, ZMPDistributor.h] Enable to change force moment distribution
+  * [ZMPDistributor.h] Update force moment distribution based on reference zmp alpha parameter.
+
+* rtc/AccelerationChecker
+
+  * [AccelerationChecker.cpp] add stdio.h, hope this works on qnx
+  * [AccelerationChecker.cpp] adds a configuration variable, print
+
+* rtc/AutoBalancer
+
+  * [idl/AutoBalancerService.idl, AutoBalancer.cpp, GaitGenerator.{h,cpp}] Enable to set toe heel angle during setFootSteps
+  * [AutoBalancer.cpp] Fix org origin and target origin in adjust function
+  * [idl/AutoBalancerService.idl, AutoBalancer.cpp] Add adjust footstep for walking
+  * [idl/AutoBalancerService.idl, AutoBalancer.cpp, GaitGenerator.{h,cpp}] Enable to set go pos finalize footsteps num
+  * [GaitGenerator.cpp] Remove unused debug message
+  * [GaitGenerator.{h,cpp}] Use swing_rot_ratio for swing rot calculation and swing_ratio to get swing phase
+  * [GaitGenerator.{h,cpp}] directly use swing_ratio
+  * [GaitGenerator.{h,cpp}] Rename rot_ratio -> foot_midcoords_ratio
+  * [idl/AutoBalancerService.idl, AutoBalancer.cpp, AutoBalancerService_impl.{h,cpp}, GaitGenerator.h] Add waitFootStepsEarly
+  * [GaitGenerator.{h,cpp}] Use setGoal instead of go in gait generator interpolators
+  * [idl/AutoBalancerService.idl, AutoBalancer.{h,cpp}] Enable to set leg default offset position
+  * [testGaitGenerator.cpp] Add foot rotation testing
+  * [GaitGenerator.{h,cpp}] Use interpolator for foot rotation calculation
+  * [AutoBalancer.cpp, GaitGenerator.h, testGaitGenerator.cpp] Update toe_heel_phase_ratio enable to be set
+  * [testGaitGenerator.cpp] Update for toe heel trajectory. Display toe heel trajectory and add test for it
+  * [idl/AutoBalancerService.idl, AutoBalancer.cpp, GaitGenerator.{cpp,h}, testGaitGenerator.cpp] Add swing foot trajectry by combining cycloid and delay hoff arbib
+  * [testGaitGenerator.cpp] Fix plot size of foot trajectory
+  * [idl/AutoBalancerService.idl, AutoBalancer.cpp, GaitGenerator.h, testGaitGenerator.cpp] Add weighting parameter for final path of delay_hoffarbib_trajectory_generator
+  * [GaitGenerator.{h,cpp}] Fix zmp transition in second and second_last phase
+  * [GaitGenerator.h, testGaitGenerator.cpp] Fix gg param setting and plot cart zmp
+  * [testGaitGenerator.cpp] Generate graph eps file, fix test9 foot steps, and arg setting
+  * [testGaitGenerator.cpp] Add parsing of GaitGenerator params
+  * [AutoBalancer.cpp, GaitGenerator.{h,cpp}] Add print_param for GaitGenerator
+  * [testGaitGenerator.cpp] Add foot velocity trajectories in GaitGenerator test
+  * [GaitGenerator.{h,cpp}] Use calculation of default_double_support_static_ratio
+  * [testGaitGenerator.cpp] Update graph printing and add print messages
+  * [idl/AutoBalancerService.idl, AutoBalancer.cpp, GaitGenerator.h] Add default_double_support_static_ratio to keep reference zmp static
+  * [idl/AutoBalancerService.idl, AutoBalancer.{h,cpp}] Enable to set zmp transition time for abc
+  * [idl/AutoBalancerService.idl, AutoBalancer.{h,cpp}] Enable to set transition time for abc
+  * [sample/SampleRObot/samplerobot_auto_balancer.py] Add test for discontinuous sync
+  * [AutoBalancer.cpp] clear interpolator before setting
+  * [AutoBalancer.cpp] Fix discontinuous when stopping auto balancer after walking
+
+* Contributors: Eisoku Kuroiwa, Fumio KANEHIRO, Kei Okada, Ryohei Ueda, Shunichi Nozawa
+
 315.4.0 (2015-05-04)
 --------------------
 
