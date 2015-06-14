@@ -760,8 +760,6 @@ class HrpsysConfigurator:
         #
         if self.kf != None:
             self.connectLoggerPort(self.kf, 'rpy')
-        if self.seq != None:
-            self.connectLoggerPort(self.seq, 'qRef')
         if self.sh != None:
             self.connectLoggerPort(self.sh, 'qOut')
             self.connectLoggerPort(self.sh, 'tqOut')
@@ -802,7 +800,6 @@ class HrpsysConfigurator:
             if self.simulation_mode:
                 self.connectLoggerPort(self.rh, 'WAIST')
         for sen in filter(lambda x: x.type == "Force", self.sensors):
-            self.connectLoggerPort(self.seq, sen.name + "Ref")
             self.connectLoggerPort(self.sh, sen.name + "Out")
         if self.rmfo != None:
             for sen in filter(lambda x: x.type == "Force", self.sensors):
