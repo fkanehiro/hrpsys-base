@@ -147,6 +147,7 @@ class Stabilizer
   RTC::TimedDoubleSeq m_controlSwingSupportTime;
   std::vector<RTC::TimedPoint3D> m_limbCOPOffset;
   RTC::TimedBooleanSeq m_actContactStates;
+  RTC::TimedDoubleSeq m_COPInfo;
   // for debug ouput
   RTC::TimedPoint3D m_originRefZmp, m_originRefCog, m_originRefCogVel, m_originNewZmp;
   RTC::TimedPoint3D m_originActZmp, m_originActCog, m_originActCogVel;
@@ -182,6 +183,7 @@ class Stabilizer
   RTC::OutPort<RTC::TimedDoubleSeq> m_tauOut;
   RTC::OutPort<RTC::TimedPoint3D> m_zmpOut;
   RTC::OutPort<RTC::TimedBooleanSeq> m_actContactStatesOut;
+  RTC::OutPort<RTC::TimedDoubleSeq> m_COPInfoOut;
   // for debug output
   RTC::OutPort<RTC::TimedPoint3D> m_originRefZmpOut, m_originRefCogOut, m_originRefCogVelOut, m_originNewZmpOut;
   RTC::OutPort<RTC::TimedPoint3D> m_originActZmpOut, m_originActCogOut, m_originActCogVelOut;
