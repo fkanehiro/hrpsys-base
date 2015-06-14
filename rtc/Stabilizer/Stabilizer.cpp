@@ -56,6 +56,7 @@ Stabilizer::Stabilizer(RTC::Manager* manager)
     m_tauOut("tau", m_tau),
     m_zmpOut("zmp", m_zmp),
     m_actContactStatesOut("actContactStates", m_actContactStates),
+    m_COPInfoOut("COPInfo", m_COPInfo),
     // for debug output
     m_originRefZmpOut("originRefZmp", m_originRefZmp),
     m_originRefCogOut("originRefCog", m_originRefCog),
@@ -113,6 +114,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   addOutPort("tau", m_tauOut);
   addOutPort("zmp", m_zmpOut);
   addOutPort("actContactStates", m_actContactStatesOut);
+  addOutPort("COPInfo", m_COPInfoOut);
   // for debug output
   addOutPort("originRefZmp", m_originRefZmpOut);
   addOutPort("originRefCog", m_originRefCogOut);
@@ -305,6 +307,10 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
     prev_contact_states.push_back(true);
     m_actContactStates.data[i] = false;
   }
+  m_COPInfo.data.length(m_contactStates.data.length()*3); // nx, ny, fz for each end-effectors
+  for (size_t i = 0; i < m_COPInfo.data.length(); i++) {
+      m_COPInfo.data[i] = 0.0;
+  }
   transition_time = 2.0;
   foot_origin_offset[0] = hrp::Vector3::Zero();
   foot_origin_offset[1] = hrp::Vector3::Zero();
@@ -465,6 +471,8 @@ RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
       m_zmpOut.write();
       m_actContactStates.tm = m_qRef.tm;
       m_actContactStatesOut.write();
+      m_COPInfo.tm = m_qRef.tm;
+      m_COPInfoOut.write();
       //m_tauOut.write();
       // for debug output
       m_originRefZmp.data.x = ref_zmp(0); m_originRefZmp.data.y = ref_zmp(1); m_originRefZmp.data.z = ref_zmp(2);
@@ -920,6 +928,19 @@ bool Stabilizer::calcZMP(hrp::Vector3& ret_zmp, const double zmp_z)
     tmpzmpx += nf(2) * fsp(0) - (fsp(2) - zmp_z) * nf(0) - nm(1);
     tmpzmpy += nf(2) * fsp(1) - (fsp(2) - zmp_z) * nf(1) + nm(0);
     tmpfz += nf(2);
+    // calc ee-local COP
+    hrp::Link* target = m_robot->link(stikp[i].target_name);
+    hrp::Matrix33 eeR = target->R * stikp[i].localR;
+    hrp::Vector3 ee_fsp = eeR.transpose() * (fsp - (target->p + target->R * stikp[i].localp)); // ee-local force sensor pos
+    nf = eeR.transpose() * nf;
+    nm = eeR.transpose() * nm;
+    // ee-local total moment and total force at ee position
+    double tmpcopmy = nf(2) * ee_fsp(0) - nf(0) * ee_fsp(2) - nm(1);
+    double tmpcopmx = nf(2) * ee_fsp(1) - nf(1) * ee_fsp(2) + nm(0);
+    double tmpcopfz = nf(2);
+    m_COPInfo.data[i*3] = tmpcopmx;
+    m_COPInfo.data[i*3+1] = tmpcopmy;
+    m_COPInfo.data[i*3+2] = tmpcopfz;
     prev_act_force_z[i] = 0.85 * prev_act_force_z[i] + 0.15 * nf(2); // filter, cut off 5[Hz]
   }
   tmpfz2 = prev_act_force_z[0] + prev_act_force_z[1];
