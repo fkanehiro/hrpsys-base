@@ -204,6 +204,13 @@ module OpenHRP
     boolean goStop();
 
     /**
+     * @brief Stop stepping immediately.
+     * @param
+     * @return true if set successfully, false otherwise
+     */
+    boolean emergencyStop();
+
+    /**
      * @brief Set footsteps. Returns without waiting for whole steps to be executed.
      * @param fs is sequence of FootStep structure.
      * @return true if set successfully, false otherwise
