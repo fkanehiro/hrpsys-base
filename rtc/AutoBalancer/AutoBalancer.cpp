@@ -953,6 +953,13 @@ bool AutoBalancer::goStop ()
   return true;
 }
 
+bool AutoBalancer::emergencyStop ()
+{
+  gg->emergency_stop();
+  waitFootSteps();
+  return true;
+}
+
 bool AutoBalancer::setFootSteps(const OpenHRP::AutoBalancerService::FootstepSequence& fs)
 {
   OpenHRP::AutoBalancerService::StepParamSequence sps;

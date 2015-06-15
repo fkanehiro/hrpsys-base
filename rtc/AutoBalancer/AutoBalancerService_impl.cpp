@@ -24,6 +24,11 @@ CORBA::Boolean AutoBalancerService_impl::goStop()
   return m_autobalancer->goStop();
 };
 
+CORBA::Boolean AutoBalancerService_impl::emergencyStop()
+{
+  return m_autobalancer->emergencyStop();
+};
+
 CORBA::Boolean AutoBalancerService_impl::setFootSteps(const OpenHRP::AutoBalancerService::FootstepSequence& fs)
 {
   return m_autobalancer->setFootSteps(fs);
