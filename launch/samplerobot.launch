@@ -51,6 +51,7 @@
               -o "example.RemoveForceSensorLinkOffset.config_file:$(arg CONF_FILE)"
               -o "example.KalmanFilter.config_file:$(arg CONF_FILE)"
               -o "example.Stabilizer.config_file:$(arg CONF_FILE)"
+              -o "example.EmergencyStopper.config_file:$(arg CONF_FILE)"
               -o "example.CollisionDetector.config_file:$(arg CONF_FILE)"
               -o "example.SoftErrorLimiter.config_file:$(arg CONF_FILE)"
               -o "example.$(arg JOINT_CONTROLLER).config_file:$(arg CONF_FILE)"

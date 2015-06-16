@@ -202,6 +202,11 @@ class HrpsysConfigurator:
     st_version = None
 
     # CollisionDetector
+    es = None
+    es_svc = None
+    es_version = None
+
+    # CollisionDetector
     co = None
     co_svc = None
     co_version = None
@@ -641,6 +646,7 @@ class HrpsysConfigurator:
             ['ic', "ImpedanceController"],
             ['abc', "AutoBalancer"],
             ['st', "Stabilizer"],
+            ['es', "EmergencyStopper"],
             ['co', "CollisionDetector"],
             ['tc', "TorqueController"],
             # ['te', "ThermoEstimator"],

@@ -1,0 +1,12 @@
+#ifndef __EMERGENCYSTOPPER_SERVICE_IDL__
+#define __EMERGENCYSTOPPER_SERVICE_IDL__
+
+module OpenHRP
+{
+  interface EmergencyStopperService
+  {
+    void echo(in string msg);
+  };
+};
+
+#endif
