@@ -105,6 +105,7 @@ class AutoBalancer
   bool getAutoBalancerParam(OpenHRP::AutoBalancerService::AutoBalancerParam& i_param);
   bool getFootstepParam(OpenHRP::AutoBalancerService::FootstepParam& i_param);
   bool adjustFootSteps(const OpenHRP::AutoBalancerService::Footstep& rfootstep, const OpenHRP::AutoBalancerService::Footstep& lfootstep);
+  bool getRemainingFootstepSequence(OpenHRP::AutoBalancerService::FootstepSequence_out o_footstep);
 
  protected:
   // Configuration variable declaration

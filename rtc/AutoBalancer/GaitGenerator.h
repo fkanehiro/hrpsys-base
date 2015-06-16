@@ -21,10 +21,6 @@ namespace rats
     enum orbit_type {SHUFFLING, CYCLOID, RECTANGLE, STAIR, CYCLOIDDELAY};
     enum leg_type {RLEG, LLEG, BOTH};
 
-#ifndef HAVE_MAIN
-  private:
-#endif
-
     struct step_node
     {
       leg_type l_r;
@@ -47,6 +43,10 @@ namespace rats
       os << "  toe_angle = " << sn.toe_angle << "[deg], heel_angle = " << sn.heel_angle << "[deg]" << std::endl;
       return os;
     };
+
+#ifndef HAVE_MAIN
+  private:
+#endif
 
     /* footstep parameter */
     struct footstep_parameter
@@ -798,6 +798,18 @@ namespace rats
     double get_default_step_height () const { return lcg.get_default_step_height(); };
     double get_default_double_support_ratio () const { return default_double_support_ratio; };
     double get_default_double_support_static_ratio () const { return default_double_support_static_ratio; };
+    std::vector<step_node> get_remaining_footstep_list ()
+    {
+        std::vector<step_node> fsl;
+        // fsl[0] is current support leg coords
+        fsl.push_back(step_node(lcg.get_support_leg(), lcg.get_support_leg_coords(), 0, 0, 0)); // step_height and toe_heel_angle are dummy
+        size_t fsl_size = (footstep_node_list.size()>lcg.get_gp_index() ? footstep_node_list.size()-lcg.get_gp_index() : 0);
+        // The rest of fsl are swing dst coords from now.
+        for (size_t i = 0; i < fsl_size; i++) {
+            fsl.push_back(footstep_node_list[i+lcg.get_gp_index()]);
+        }
+        return fsl;
+    };
     /* return whether _leg is swinging leg or not
      * swinging leg -> swing_leg and not double support phase
      *                 landing_offset_ratio is mergin from double support period

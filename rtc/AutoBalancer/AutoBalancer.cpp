@@ -1301,6 +1301,20 @@ bool AutoBalancer::adjustFootSteps(const OpenHRP::AutoBalancerService::Footstep&
   return true;
 };
 
+bool AutoBalancer::getRemainingFootstepSequence(OpenHRP::AutoBalancerService::FootstepSequence_out o_footstep)
+{
+    std::cerr << "[" << m_profile.instance_name << "] getRemainingFootstepSequence" << std::endl;
+    o_footstep = new OpenHRP::AutoBalancerService::FootstepSequence;
+    if (gg_is_walking) {
+        std::vector<gait_generator::step_node> fsl = gg->get_remaining_footstep_list();
+        o_footstep->length(fsl.size());
+        for (size_t i = 0; i < fsl.size(); i++) {
+            o_footstep[i].leg = (fsl[i].l_r==gait_generator::RLEG?"rleg":"lleg");
+            copyRatscoords2Footstep(o_footstep[i], fsl[i].worldcoords);
+        }
+    }
+};
+
 void AutoBalancer::static_balance_point_proc_one(hrp::Vector3& tmp_input_sbp, const double ref_com_height)
 {
   hrp::Vector3 target_sbp = hrp::Vector3(0, 0, 0);
