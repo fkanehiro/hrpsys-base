@@ -643,10 +643,10 @@ class HrpsysConfigurator:
             ['kf', "KalmanFilter"],
             ['vs', "VirtualForceSensor"],
             ['rmfo', "RemoveForceSensorLinkOffset"],
+            ['es', "EmergencyStopper"],
             ['ic', "ImpedanceController"],
             ['abc', "AutoBalancer"],
             ['st', "Stabilizer"],
-            ['es', "EmergencyStopper"],
             ['co', "CollisionDetector"],
             ['tc', "TorqueController"],
             # ['te', "ThermoEstimator"],
@@ -659,7 +659,7 @@ class HrpsysConfigurator:
         '''!@brief
         Get list of controller list that need to control joint angles
         '''
-        controller_list = [self.ic, self.gc, self.abc, self.st, self.co,
+        controller_list = [self.es, self.ic, self.gc, self.abc, self.st, self.co,
                            self.tc, self.el]
         return filter(lambda c: c != None, controller_list)  # only return existing controllers
 
