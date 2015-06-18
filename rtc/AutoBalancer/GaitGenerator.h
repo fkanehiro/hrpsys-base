@@ -9,73 +9,65 @@
 
 namespace rats
 {
-  void cycloid_midpoint (hrp::Vector3& ret,
-                         const double ratio, const hrp::Vector3& start,
-                         const hrp::Vector3& goal, const double height,
-                         const double default_top_ratio = 0.5);
+    void cycloid_midpoint (hrp::Vector3& ret,
+                           const double ratio, const hrp::Vector3& start,
+                           const hrp::Vector3& goal, const double height,
+                           const double default_top_ratio = 0.5);
 
-  class gait_generator
-  {
-
-  public:
     enum orbit_type {SHUFFLING, CYCLOID, RECTANGLE, STAIR, CYCLOIDDELAY};
     enum leg_type {RLEG, LLEG, BOTH};
 
     struct step_node
     {
-      leg_type l_r;
-      coordinates worldcoords;
-      double step_height, toe_angle, heel_angle;
-      step_node (const leg_type _l_r, const coordinates& _worldcoords, const double _step_height, const double _toe_angle, const double _heel_angle)
-        : l_r(_l_r), worldcoords(_worldcoords), step_height(_step_height), toe_angle(_toe_angle), heel_angle(_heel_angle) {};
-      step_node (const std::string& _l_r, const coordinates& _worldcoords, const double _step_height, const double _toe_angle, const double _heel_angle)
-        : l_r((_l_r == "rleg") ? RLEG : LLEG), worldcoords(_worldcoords), step_height(_step_height), toe_angle(_toe_angle), heel_angle(_heel_angle) {};
+        leg_type l_r;
+        coordinates worldcoords;
+        double step_height, toe_angle, heel_angle;
+        step_node (const leg_type _l_r, const coordinates& _worldcoords, const double _step_height, const double _toe_angle, const double _heel_angle)
+            : l_r(_l_r), worldcoords(_worldcoords), step_height(_step_height), toe_angle(_toe_angle), heel_angle(_heel_angle) {};
+        step_node (const std::string& _l_r, const coordinates& _worldcoords, const double _step_height, const double _toe_angle, const double _heel_angle)
+            : l_r((_l_r == "rleg") ? RLEG : LLEG), worldcoords(_worldcoords), step_height(_step_height), toe_angle(_toe_angle), heel_angle(_heel_angle) {};
+        friend std::ostream &operator<<(std::ostream &os, const step_node &sn)
+        {
+            os << "footstep" << std::endl;
+            os << "  name = [" << ((sn.l_r==LLEG)?std::string("lleg"):std::string("rleg")) << "]" << std::endl;
+            os << "  pos =" << std::endl;
+            os << (sn.worldcoords.pos).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << std::endl;
+            os << "  rot =" << std::endl;
+            os << (sn.worldcoords.rot).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", "\n", "    [", "]")) << std::endl;
+            os << "  step_height = " << sn.step_height << "[m]" << std::endl;
+            os << "  toe_angle = " << sn.toe_angle << "[deg], heel_angle = " << sn.heel_angle << "[deg]" << std::endl;
+            return os;
+        };
     };
-    friend std::ostream &operator<<(std::ostream &os, const step_node &sn)
-    {
-      os << "footstep" << std::endl;
-      os << "  name = [" << ((sn.l_r==LLEG)?std::string("lleg"):std::string("rleg")) << "]" << std::endl;
-      os << "  pos =" << std::endl;
-      os << (sn.worldcoords.pos).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << std::endl;
-      os << "  rot =" << std::endl;
-      os << (sn.worldcoords.rot).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", "\n", "    [", "]")) << std::endl;
-      os << "  step_height = " << sn.step_height << "[m]" << std::endl;
-      os << "  toe_angle = " << sn.toe_angle << "[deg], heel_angle = " << sn.heel_angle << "[deg]" << std::endl;
-      return os;
-    };
-
-#ifndef HAVE_MAIN
-  private:
-#endif
 
     /* footstep parameter */
     struct footstep_parameter
     {
-      /* translate pos is translate position of a leg from default foot_midcoords
-       *   vector -> (list rleg-pos[mm] lleg-pos[mm] )
-       */
-      std::vector<hrp::Vector3> leg_default_translate_pos;
-      /* stride params indicate max stride ( [mm], [mm], [deg] ) */
-      double stride_fwd_x, stride_y, stride_theta, stride_bwd_x;
-      footstep_parameter (const std::vector<hrp::Vector3>& _leg_pos,
-                          const double _stride_fwd_x, const double _stride_y, const double _stride_theta, const double _stride_bwd_x)
-        : leg_default_translate_pos(_leg_pos),
-          stride_fwd_x(_stride_fwd_x), stride_y(_stride_y), stride_theta(_stride_theta), stride_bwd_x(_stride_bwd_x)  {};
+        /* translate pos is translate position of a leg from default foot_midcoords
+         *   vector -> (list rleg-pos[mm] lleg-pos[mm] )
+         */
+        std::vector<hrp::Vector3> leg_default_translate_pos;
+        /* stride params indicate max stride ( [mm], [mm], [deg] ) */
+        double stride_fwd_x, stride_y, stride_theta, stride_bwd_x;
+        footstep_parameter (const std::vector<hrp::Vector3>& _leg_pos,
+                            const double _stride_fwd_x, const double _stride_y, const double _stride_theta, const double _stride_bwd_x)
+            : leg_default_translate_pos(_leg_pos),
+              stride_fwd_x(_stride_fwd_x), stride_y(_stride_y), stride_theta(_stride_theta), stride_bwd_x(_stride_bwd_x)  {};
     };
 
     /* velocity parameter for velocity mode */
     struct velocity_mode_parameter
     {
-      /* velocity is [mm/s], [mm/s], [deg/s] */
-      double velocity_x, velocity_y, velocity_theta;
-      void set (const double _vx, const double _vy, const double _vth)
-      {
-        velocity_x = _vx;
-        velocity_y = _vy;
-        velocity_theta = _vth;
-      };
-      velocity_mode_parameter ()
-	:velocity_x(0), velocity_y(0), velocity_theta(0) {};
+        /* velocity is [mm/s], [mm/s], [deg/s] */
+        double velocity_x, velocity_y, velocity_theta;
+        void set (const double _vx, const double _vy, const double _vth)
+        {
+            velocity_x = _vx;
+            velocity_y = _vy;
+            velocity_theta = _vth;
+        };
+        velocity_mode_parameter ()
+            :velocity_x(0), velocity_y(0), velocity_theta(0) {};
     };
 
     /* Phase name of toe heel contact.
@@ -609,6 +601,14 @@ namespace rats
       bool get_use_toe_joint () { return use_toe_joint; };
     };
 
+  class gait_generator
+  {
+
+  public:
+#ifndef HAVE_MAIN
+  private:
+#endif
+
     enum velocity_mode_flag { VEL_IDLING, VEL_DOING, VEL_ENDING };
     enum emergency_flag { IDLING, EMERGENCY_STOP, STOPPING };
 
@@ -852,15 +852,15 @@ namespace rats
         std::cerr << "[" << print_str << "]   default_step_height = " << get_default_step_height() << "[m]" << std::endl;
         std::cerr << "[" << print_str << "]   default_double_support_ratio = " << get_default_double_support_ratio() << ", default_double_support_static_ratio = " << get_default_double_support_static_ratio() << std::endl;
         std::cerr << "[" << print_str << "]   default_orbit_type = ";
-        if (get_default_orbit_type() == gait_generator::SHUFFLING) {
+        if (get_default_orbit_type() == SHUFFLING) {
             std::cerr << "SHUFFLING" << std::endl;
-        } else if (get_default_orbit_type() == gait_generator::CYCLOID) {
+        } else if (get_default_orbit_type() == CYCLOID) {
             std::cerr << "CYCLOID" << std::endl;
-        } else if (get_default_orbit_type() == gait_generator::RECTANGLE) {
+        } else if (get_default_orbit_type() == RECTANGLE) {
             std::cerr << "RECTANGLE" << std::endl;
-        } else if (get_default_orbit_type() == gait_generator::STAIR) {
+        } else if (get_default_orbit_type() == STAIR) {
             std::cerr << "STAIR" << std::endl;
-        } else if (get_default_orbit_type() == gait_generator::CYCLOIDDELAY) {
+        } else if (get_default_orbit_type() == CYCLOIDDELAY) {
             std::cerr << "CYCLOIDDELAY" << std::endl;
         }
         std::cerr << "[" << print_str << "]   swing_trajectory_delay_time_offset = " << get_swing_trajectory_delay_time_offset() << "[s], swing_trajectory_final_distance_weight = " << get_swing_trajectory_final_distance_weight() << std::endl;

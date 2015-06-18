@@ -34,7 +34,7 @@ namespace rats
   };
 
   /* member function implementation for refzmp_generator */
-  void gait_generator::refzmp_generator::push_refzmp_from_footstep_list_for_dual (const std::vector<step_node>& fnl,
+  void refzmp_generator::push_refzmp_from_footstep_list_for_dual (const std::vector<step_node>& fnl,
                                                                                   const coordinates& _support_leg_coords,
                                                                                   const coordinates& _swing_leg_coords)
   {
@@ -53,7 +53,7 @@ namespace rats
     fs_index++;
   };
 
-  void gait_generator::refzmp_generator::push_refzmp_from_footstep_list_for_single (const std::vector<step_node>& fnl)
+  void refzmp_generator::push_refzmp_from_footstep_list_for_single (const std::vector<step_node>& fnl)
   {
     hrp::Vector3 rzmp;
     coordinates tmp(fnl[fs_index-1].worldcoords);
@@ -65,7 +65,7 @@ namespace rats
     if (fs_index < fnl.size()) fs_index++;
   };
 
-  void gait_generator::refzmp_generator::calc_current_refzmp (hrp::Vector3& ret, hrp::Vector3& swing_foot_zmp_offset, const double default_double_support_ratio, const double default_double_support_static_ratio, const size_t one_step_len) const
+  void refzmp_generator::calc_current_refzmp (hrp::Vector3& ret, hrp::Vector3& swing_foot_zmp_offset, const double default_double_support_ratio, const double default_double_support_static_ratio, const size_t one_step_len) const
   {
     size_t cnt = one_step_len - refzmp_count; // current counter (0 -> one_step_len)
     size_t double_support_count_half = (0.5 * default_double_support_ratio) * one_step_len;
@@ -127,7 +127,7 @@ namespace rats
     }
   };
 
-  void gait_generator::refzmp_generator::update_refzmp (const std::vector<step_node>& fnl, const size_t one_step_len)
+  void refzmp_generator::update_refzmp (const std::vector<step_node>& fnl, const size_t one_step_len)
   {
     if ( 1 <= refzmp_count ) {
       refzmp_count--;
@@ -145,7 +145,7 @@ namespace rats
   };
 
   /* member function implementation for leg_coords_generator */
-  void gait_generator::leg_coords_generator::calc_current_swing_leg_coords (coordinates& ret, const double step_height, const double _current_toe_angle, const double _current_heel_angle)
+  void leg_coords_generator::calc_current_swing_leg_coords (coordinates& ret, const double step_height, const double _current_toe_angle, const double _current_heel_angle)
   {
     switch (default_orbit_type) {
     case SHUFFLING:
@@ -170,7 +170,7 @@ namespace rats
     }
   };
 
-  void gait_generator::leg_coords_generator::calc_ratio_from_double_support_ratio (const double default_double_support_ratio, const size_t one_step_len)
+  void leg_coords_generator::calc_ratio_from_double_support_ratio (const double default_double_support_ratio, const size_t one_step_len)
   {
     int swing_len = (1.0 - default_double_support_ratio) * one_step_len;
     int support_len = one_step_len - swing_len;
@@ -209,7 +209,7 @@ namespace rats
     //std::cerr << "sl " << support_leg << " " << current_swing_time[support_leg==RLEG?0:1] << " " << current_swing_time[support_leg==RLEG?1:0] << " " << tmp_current_swing_time << " " << gp_count << std::endl;
   };
 
-  double gait_generator::leg_coords_generator::calc_interpolated_toe_heel_angle (const toe_heel_phase start_phase, const toe_heel_phase goal_phase, const double start, const double goal)
+  double leg_coords_generator::calc_interpolated_toe_heel_angle (const toe_heel_phase start_phase, const toe_heel_phase goal_phase, const double start, const double goal)
   {
       double tmp_ip_ratio;
       size_t current_count = total_count - gp_count;
@@ -228,7 +228,7 @@ namespace rats
       return tmp_ip_ratio;
   };
 
-  void gait_generator::leg_coords_generator::modif_foot_coords_for_toe_heel_phase (coordinates& org_coords, const double _current_toe_angle, const double _current_heel_angle)
+  void leg_coords_generator::modif_foot_coords_for_toe_heel_phase (coordinates& org_coords, const double _current_toe_angle, const double _current_heel_angle)
   {
       coordinates new_coords;
       size_t current_count = total_count - gp_count;
@@ -266,35 +266,35 @@ namespace rats
       org_coords = new_coords;
   };
 
-  void gait_generator::leg_coords_generator::cycloid_midcoords (coordinates& ret, const coordinates& start,
+  void leg_coords_generator::cycloid_midcoords (coordinates& ret, const coordinates& start,
                                                                 const coordinates& goal, const double height) const
   {
     mid_coords(ret, swing_rot_ratio, start, goal);
     cycloid_midpoint (ret.pos, swing_ratio, start.pos, goal.pos, height, default_top_ratio);
   };
 
-  void gait_generator::leg_coords_generator::rectangle_midcoords (coordinates& ret, const coordinates& start,
+  void leg_coords_generator::rectangle_midcoords (coordinates& ret, const coordinates& start,
                                                                   const coordinates& goal, const double height)
   {
     mid_coords(ret, swing_rot_ratio, start, goal);
     rdtg.get_trajectory_point(ret.pos, hrp::Vector3(start.pos), hrp::Vector3(goal.pos), height);
   };
 
-  void gait_generator::leg_coords_generator::stair_midcoords (coordinates& ret, const coordinates& start,
+  void leg_coords_generator::stair_midcoords (coordinates& ret, const coordinates& start,
                                                               const coordinates& goal, const double height)
   {
     mid_coords(ret, swing_rot_ratio, start, goal);
     sdtg.get_trajectory_point(ret.pos, hrp::Vector3(start.pos), hrp::Vector3(goal.pos), height);
   };
 
-  void gait_generator::leg_coords_generator::cycloid_delay_midcoords (coordinates& ret, const coordinates& start,
+  void leg_coords_generator::cycloid_delay_midcoords (coordinates& ret, const coordinates& start,
                                                                       const coordinates& goal, const double height)
   {
     mid_coords(ret, swing_rot_ratio, start, goal);
     cdtg.get_trajectory_point(ret.pos, hrp::Vector3(start.pos), hrp::Vector3(goal.pos), height);
   };
 
-  void gait_generator::leg_coords_generator::update_leg_coords (const std::vector<step_node>& fnl, const double default_double_support_ratio, const size_t one_step_len, const bool force_height_zero)
+  void leg_coords_generator::update_leg_coords (const std::vector<step_node>& fnl, const double default_double_support_ratio, const size_t one_step_len, const bool force_height_zero)
   {
     if (!foot_ratio_interpolator->isEmpty()) {
         foot_ratio_interpolator->get(&foot_midcoords_ratio, true);
