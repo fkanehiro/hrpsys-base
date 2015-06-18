@@ -664,11 +664,11 @@ void AutoBalancer::getTargetParameters()
 
     //
     {
-        if ( gg_is_walking && gg->get_gp_count() == static_cast<size_t>(gg->get_default_step_time()/(2*m_dt))-1) {
+        if ( gg_is_walking && gg->get_lcg_count() == static_cast<size_t>(gg->get_default_step_time()/(2*m_dt))-1) {
             hrp::Vector3 vel_htc(calc_vel_from_hand_error(tmp_fix_coords));
             gg->set_offset_velocity_param(vel_htc(0), vel_htc(1) ,vel_htc(2));
         }//  else {
-        //     if ( gg_is_walking && gg->get_gp_count() == static_cast<size_t>(gg->get_default_step_time()/(2*m_dt))-1) {
+        //     if ( gg_is_walking && gg->get_lcg_count() == static_cast<size_t>(gg->get_default_step_time()/(2*m_dt))-1) {
         //         gg->set_offset_velocity_param(0,0,0);
         //     }
         // }
