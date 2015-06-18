@@ -189,6 +189,28 @@ def demo():
     hcf.seq_svc.waitInterpolation();
     hcf.stopAutoBalancer();
     print "Sync from setJointAngle => OK"
+    #  10. Emergency stop
+    hcf.startAutoBalancer()
+    hcf.abc_svc.goPos(0,0,90);
+    print "Start goPos and wait for 4 steps"
+    for idx in range(4): # Wait for 4 steps including initial double support phase
+        # Wait for 1 steps
+        hcf.seq_svc.setJointAngles(initial_pose, hcf.abc_svc.getGaitGeneratorParam()[1].default_step_time);
+        hcf.seq_svc.waitInterpolation();
+    print "Emergency stoping"
+    hcf.abc_svc.emergencyStop();
+    print "Align foot steps"
+    hcf.abc_svc.goPos(0,0,0);
+    hcf.abc_svc.waitFootSteps()
+    #  11. Get remaining foot steps
+    hcf.abc_svc.goPos(0.3,0.1,15);
+    fslist=hcf.abc_svc.getRemainingFootstepSequence()[1]
+    while fslist != []:
+        fslist=hcf.abc_svc.getRemainingFootstepSequence()[1]
+        print "Remaining footstep ", len(fslist)
+        # Wait for 1 step
+        hcf.seq_svc.setJointAngles(initial_pose, hcf.abc_svc.getGaitGeneratorParam()[1].default_step_time);
+        hcf.seq_svc.waitInterpolation();
     #  7. walking by fixing 
     # abc_svc.startAutoBalancer([AutoBalancerService.AutoBalancerLimbParam("rleg", [0,0,0], [0,0,0,0]),
     #                   AutoBalancerService.AutoBalancerLimbParam("lleg", [0,0,0], [0,0,0,0]),
