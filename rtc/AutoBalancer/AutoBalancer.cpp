@@ -556,15 +556,15 @@ void AutoBalancer::getTargetParameters()
       gg->get_swing_support_mid_coords(tmp_fix_coords);
       // TODO : assume biped
       switch (gg->get_current_support_state()) {
-      case gait_generator::BOTH:
+      case BOTH:
         m_contactStates.data[contact_states_index_map["rleg"]] = true;
         m_contactStates.data[contact_states_index_map["lleg"]] = true;
         break;
-      case gait_generator::RLEG:
+      case RLEG:
         m_contactStates.data[contact_states_index_map["rleg"]] = true;
         m_contactStates.data[contact_states_index_map["lleg"]] = false;
         break;
-      case gait_generator::LLEG:
+      case LLEG:
         m_contactStates.data[contact_states_index_map["rleg"]] = false;
         m_contactStates.data[contact_states_index_map["lleg"]] = true;
         break;
@@ -664,11 +664,11 @@ void AutoBalancer::getTargetParameters()
 
     //
     {
-        if ( gg_is_walking && gg->get_gp_count() == static_cast<size_t>(gg->get_default_step_time()/(2*m_dt))-1) {
+        if ( gg_is_walking && gg->get_lcg_count() == static_cast<size_t>(gg->get_default_step_time()/(2*m_dt))-1) {
             hrp::Vector3 vel_htc(calc_vel_from_hand_error(tmp_fix_coords));
             gg->set_offset_velocity_param(vel_htc(0), vel_htc(1) ,vel_htc(2));
         }//  else {
-        //     if ( gg_is_walking && gg->get_gp_count() == static_cast<size_t>(gg->get_default_step_time()/(2*m_dt))-1) {
+        //     if ( gg_is_walking && gg->get_lcg_count() == static_cast<size_t>(gg->get_default_step_time()/(2*m_dt))-1) {
         //         gg->set_offset_velocity_param(0,0,0);
         //     }
         // }
@@ -1050,15 +1050,15 @@ bool AutoBalancer::setGaitGeneratorParam(const OpenHRP::AutoBalancerService::Gai
   gg->set_default_double_support_ratio(i_param.default_double_support_ratio);
   gg->set_default_double_support_static_ratio(i_param.default_double_support_static_ratio);
   if (i_param.default_orbit_type == OpenHRP::AutoBalancerService::SHUFFLING) {
-    gg->set_default_orbit_type(gait_generator::SHUFFLING);
+    gg->set_default_orbit_type(SHUFFLING);
   } else if (i_param.default_orbit_type == OpenHRP::AutoBalancerService::CYCLOID) {
-    gg->set_default_orbit_type(gait_generator::CYCLOID);
+    gg->set_default_orbit_type(CYCLOID);
   } else if (i_param.default_orbit_type == OpenHRP::AutoBalancerService::RECTANGLE) {
-    gg->set_default_orbit_type(gait_generator::RECTANGLE);
+    gg->set_default_orbit_type(RECTANGLE);
   } else if (i_param.default_orbit_type == OpenHRP::AutoBalancerService::STAIR) {
-    gg->set_default_orbit_type(gait_generator::STAIR);
+    gg->set_default_orbit_type(STAIR);
   } else if (i_param.default_orbit_type == OpenHRP::AutoBalancerService::CYCLOIDDELAY) {
-    gg->set_default_orbit_type(gait_generator::CYCLOIDDELAY);
+    gg->set_default_orbit_type(CYCLOIDDELAY);
   }
   gg->set_swing_trajectory_delay_time_offset(i_param.swing_trajectory_delay_time_offset);
   gg->set_swing_trajectory_final_distance_weight(i_param.swing_trajectory_final_distance_weight);
@@ -1098,15 +1098,15 @@ bool AutoBalancer::getGaitGeneratorParam(OpenHRP::AutoBalancerService::GaitGener
   i_param.default_step_height = gg->get_default_step_height();
   i_param.default_double_support_ratio = gg->get_default_double_support_ratio();
   i_param.default_double_support_static_ratio = gg->get_default_double_support_static_ratio();
-  if (gg->get_default_orbit_type() == gait_generator::SHUFFLING) {
+  if (gg->get_default_orbit_type() == SHUFFLING) {
     i_param.default_orbit_type = OpenHRP::AutoBalancerService::SHUFFLING;
-  } else if (gg->get_default_orbit_type() == gait_generator::CYCLOID) {
+  } else if (gg->get_default_orbit_type() == CYCLOID) {
     i_param.default_orbit_type = OpenHRP::AutoBalancerService::CYCLOID;
-  } else if (gg->get_default_orbit_type() == gait_generator::RECTANGLE) {
+  } else if (gg->get_default_orbit_type() == RECTANGLE) {
     i_param.default_orbit_type = OpenHRP::AutoBalancerService::RECTANGLE;
-  } else if (gg->get_default_orbit_type() == gait_generator::STAIR) {
+  } else if (gg->get_default_orbit_type() == STAIR) {
     i_param.default_orbit_type = OpenHRP::AutoBalancerService::STAIR;
-  } else if (gg->get_default_orbit_type() == gait_generator::CYCLOIDDELAY) {
+  } else if (gg->get_default_orbit_type() == CYCLOIDDELAY) {
     i_param.default_orbit_type = OpenHRP::AutoBalancerService::CYCLOIDDELAY;
   }
   hrp::Vector3 tmpv = gg->get_stair_trajectory_way_point_offset();
@@ -1230,9 +1230,9 @@ bool AutoBalancer::getFootstepParam(OpenHRP::AutoBalancerService::FootstepParam&
     i_param.support_leg = OpenHRP::AutoBalancerService::LLEG;
   }
   switch ( gg->get_current_support_state() ) {
-  case gait_generator::BOTH: i_param.support_leg_with_both = OpenHRP::AutoBalancerService::BOTH; break;
-  case gait_generator::RLEG: i_param.support_leg_with_both = OpenHRP::AutoBalancerService::RLEG; break;
-  case gait_generator::LLEG: i_param.support_leg_with_both = OpenHRP::AutoBalancerService::LLEG; break;
+  case BOTH: i_param.support_leg_with_both = OpenHRP::AutoBalancerService::BOTH; break;
+  case RLEG: i_param.support_leg_with_both = OpenHRP::AutoBalancerService::RLEG; break;
+  case LLEG: i_param.support_leg_with_both = OpenHRP::AutoBalancerService::LLEG; break;
   default: break;
   }
   return true;
@@ -1306,10 +1306,10 @@ bool AutoBalancer::getRemainingFootstepSequence(OpenHRP::AutoBalancerService::Fo
     std::cerr << "[" << m_profile.instance_name << "] getRemainingFootstepSequence" << std::endl;
     o_footstep = new OpenHRP::AutoBalancerService::FootstepSequence;
     if (gg_is_walking) {
-        std::vector<gait_generator::step_node> fsl = gg->get_remaining_footstep_list();
+        std::vector<step_node> fsl = gg->get_remaining_footstep_list();
         o_footstep->length(fsl.size());
         for (size_t i = 0; i < fsl.size(); i++) {
-            o_footstep[i].leg = (fsl[i].l_r==gait_generator::RLEG?"rleg":"lleg");
+            o_footstep[i].leg = (fsl[i].l_r==RLEG?"rleg":"lleg");
             copyRatscoords2Footstep(o_footstep[i], fsl[i].worldcoords);
         }
     }

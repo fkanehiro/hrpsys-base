@@ -89,8 +89,8 @@ private:
             }
             // Swing time
             fprintf(fp, "%f %f ",
-                    gg->get_current_swing_time(gait_generator::RLEG),
-                    gg->get_current_swing_time(gait_generator::LLEG));
+                    gg->get_current_swing_time(RLEG),
+                    gg->get_current_swing_time(LLEG));
             // Foot vel
             hrp::Vector3 tmpv;
             if ( i == 0 ) prev_rfoot_pos = rfoot_pos;
@@ -448,7 +448,7 @@ public:
         /* initialize sample footstep_list */
         parse_params();
         gg->clear_footstep_node_list();
-        gg->set_default_orbit_type(gait_generator::STAIR);
+        gg->set_default_orbit_type(STAIR);
         gg->set_swing_trajectory_delay_time_offset (0.2);
         gg->append_footstep_node("rleg", coordinates(hrp::Vector3(hrp::Vector3(0, 0, 0)+leg_pos[0])));
         gg->append_footstep_node("lleg", coordinates(hrp::Vector3(hrp::Vector3(0, 0, 0)+leg_pos[1])));
@@ -468,7 +468,7 @@ public:
         /* initialize sample footstep_list */
         parse_params();
         gg->clear_footstep_node_list();
-        gg->set_default_orbit_type(gait_generator::STAIR);
+        gg->set_default_orbit_type(STAIR);
         gg->set_swing_trajectory_delay_time_offset (0.2);
         gg->set_toe_zmp_offset_x(137*1e-3);
         gg->set_heel_zmp_offset_x(-105*1e-3);
@@ -521,15 +521,15 @@ public:
           } else if ( arg_strs[i]== "--default-orbit-type" ) {
               if (++i < arg_strs.size()) {
                   if (arg_strs[i] == "SHUFFLING") {
-                      gg->set_default_orbit_type(gait_generator::SHUFFLING);
+                      gg->set_default_orbit_type(SHUFFLING);
                   } else if (arg_strs[i] == "CYCLOID") {
-                      gg->set_default_orbit_type(gait_generator::CYCLOID);
+                      gg->set_default_orbit_type(CYCLOID);
                   } else if (arg_strs[i] == "RECTANGLE") {
-                      gg->set_default_orbit_type(gait_generator::RECTANGLE);
+                      gg->set_default_orbit_type(RECTANGLE);
                   } else if (arg_strs[i] == "STAIR") {
-                      gg->set_default_orbit_type(gait_generator::STAIR);
+                      gg->set_default_orbit_type(STAIR);
                   } else if (arg_strs[i] == "CYCLOIDDELAY") {
-                      gg->set_default_orbit_type(gait_generator::CYCLOIDDELAY);
+                      gg->set_default_orbit_type(CYCLOIDDELAY);
                   } else {
                       std::cerr << "No such default-orbit-type " << arg_strs[i] << std::endl;
                   }
