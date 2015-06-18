@@ -11,6 +11,7 @@ set(input_files package.h utilities.h
 		      ../rtc/Joystick2PanTiltAngles/Joystick2PanTiltAngles.txt
 		      ../rtc/JpegDecoder/JpegDecoder.txt
 		      ../rtc/NullComponent/NullComponent.txt
+		      ../rtc/EmergencyStopper/EmergencyStopper.txt
 		      ../rtc/OccupancyGridMap3D/OccupancyGridMap3D.txt
 		      ../rtc/OGMap3DViewer/OGMap3DViewer.txt
 		      ../rtc/Range2PointCloud/Range2PointCloud.txt
