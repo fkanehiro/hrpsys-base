@@ -299,18 +299,15 @@ namespace rats
     if (!foot_ratio_interpolator->isEmpty()) {
         foot_ratio_interpolator->get(&foot_midcoords_ratio, true);
     }
-    if ( 0 == footstep_index ) {
-      swing_leg_dst_coords = fnl[footstep_index].worldcoords;
-      support_leg = fnl[footstep_index+1].l_r;
-    } else if (footstep_index < fnl.size() - 1) {
-      swing_leg_dst_coords = fnl[footstep_index].worldcoords;
-      support_leg_coords = fnl[footstep_index-1].worldcoords;
-      support_leg = fnl[footstep_index-1].l_r;
-    } else {
-      swing_leg_dst_coords = fnl[fnl.size()-1].worldcoords;
-      support_leg_coords = fnl[fnl.size()-2].worldcoords;
-      support_leg = fnl[fnl.size()-2].l_r;
+
+    // Get current swing coords, support coords, and support leg parameters
+    size_t current_footstep_index = (footstep_index < fnl.size() - 1 ? footstep_index : fnl.size()-1);
+    swing_leg_dst_coords = fnl[current_footstep_index].worldcoords;
+    support_leg = (fnl[current_footstep_index].l_r==RLEG ? LLEG : RLEG);
+    if (footstep_index != 0) { // If not initial step, support_leg_coords is previous swing_leg_dst_coords
+        support_leg_coords = fnl[current_footstep_index-1].worldcoords;
     }
+
     calc_ratio_from_double_support_ratio(default_double_support_ratio, one_step_len);
     calc_current_swing_leg_coords(swing_leg_coords, current_step_height, current_toe_angle, current_heel_angle);
     if ( 1 <= lcg_count ) {
@@ -560,26 +557,21 @@ namespace rats
   {
     /* clear footstep and refzmp after footstep_index + 1, it means we do not modify current step */
     size_t idx = lcg.get_footstep_index() + 1;
-    /* reset index and counter */
-    rg.set_indices(idx);
-    rg.set_refzmp_count(one_step_len);
+    footstep_node_list.erase(footstep_node_list.begin()+idx, footstep_node_list.end());
 
     /* add new next steps ;; the number of next steps is cv.size() */
     for (size_t i = 0; i < cv.size(); i++ ) {
-      if ( footstep_node_list.size() - 1 >= idx + i) /* if footstep_node_list[idx] and footstep_node_list[idx+1]  exists */
-        footstep_node_list[idx + i].worldcoords = cv[i];
-      else
         footstep_node_list.push_back(step_node(footstep_node_list[lcg.get_footstep_index()-1 + i].l_r, cv[i], lcg.get_default_step_height(), lcg.get_toe_angle(), lcg.get_heel_angle()));
     }
 
-    /* remove steps after newly added steps */
-    while ( footstep_node_list.size() > idx + cv.size())//
-      footstep_node_list.pop_back();
     /* remove refzmp after idx for allocation of new refzmp by push_refzmp_from_footstep_list */
     rg.remove_refzmp_cur_list_over_length(idx);
     /* remove refzmp in preview contoroller queue */
     preview_controller_ptr->remove_preview_queue(lcg.get_lcg_count());
 
+    /* reset index and counter */
+    rg.set_indices(idx);
+    rg.set_refzmp_count(one_step_len);
     /* reset refzmp */
     for (size_t i = 0; i < cv.size()-1; i++) {
       if (emergency_flg == EMERGENCY_STOP)
