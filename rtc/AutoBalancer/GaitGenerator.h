@@ -818,18 +818,6 @@ namespace rats
         }
         return fsl;
     };
-    /* return whether _leg is swinging leg or not
-     * swinging leg -> swing_leg and not double support phase
-     *                 landing_offset_ratio is mergin from double support period
-     */
-    bool is_swinging_leg (const std::string& _leg, const double landing_offset_ratio = 0.08) const
-    {
-      if ( _leg == get_swing_leg() &&
-	   lcg.get_lcg_count() <= static_cast<size_t>( ( 1.0 - default_double_support_ratio - landing_offset_ratio) * one_step_len) &&
-	   lcg.get_lcg_count() >= static_cast<size_t>( (default_double_support_ratio + landing_offset_ratio) * one_step_len) )
-	return true;
-      else return false;
-    };
     orbit_type get_default_orbit_type () const { return lcg.get_default_orbit_type(); };
     double get_swing_trajectory_delay_time_offset () { return lcg.get_swing_trajectory_delay_time_offset(); };
     double get_swing_trajectory_final_distance_weight () { return lcg.get_swing_trajectory_final_distance_weight(); };
