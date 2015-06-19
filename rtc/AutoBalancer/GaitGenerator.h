@@ -456,7 +456,7 @@ namespace rats
       // Index for current footstep. footstep_index should be [0,footstep_node_list.size()]. Current footstep is footstep_node_list[footstep_index].
       size_t footstep_index;
       // one_step_count is total counter num of current steps (= step_time/dt). lcg_count is counter for lcg. During one step, lcg_count decreases from one_step_count to 0.
-      size_t lcg_count, one_step_count;
+      size_t lcg_count, one_step_count, next_one_step_count;
       // Current support leg
       leg_type support_leg;
       orbit_type default_orbit_type;
@@ -540,7 +540,7 @@ namespace rats
       void set_toe_angle (const double _angle) { toe_angle = _angle; };
       void set_heel_angle (const double _angle) { heel_angle = _angle; };
       void set_use_toe_joint (const bool ut) { use_toe_joint = ut; };
-      void reset(const size_t one_step_len,
+      void reset(const size_t _one_step_count, const size_t _next_one_step_count,
                  const coordinates& _swing_leg_dst_coords,
                  const coordinates& _swing_leg_src_coords,
                  const coordinates& _support_leg_coords,
@@ -549,13 +549,14 @@ namespace rats
         swing_leg_dst_coords = _swing_leg_dst_coords;
         swing_leg_src_coords = _swing_leg_src_coords;
         support_leg_coords = _support_leg_coords;
-        one_step_count = lcg_count = one_step_len;
+        one_step_count = lcg_count = _one_step_count;
+        next_one_step_count = _next_one_step_count;
         thp_ptr->set_one_step_count(one_step_count);
         footstep_index = 0;
         current_step_height = 0.0;
-        rdtg.reset(one_step_len, default_double_support_ratio);
-        sdtg.reset(one_step_len, default_double_support_ratio);
-        cdtg.reset(one_step_len, default_double_support_ratio);
+        rdtg.reset(one_step_count, default_double_support_ratio);
+        sdtg.reset(one_step_count, default_double_support_ratio);
+        cdtg.reset(one_step_count, default_double_support_ratio);
         reset_foot_ratio_interpolator();
       };
       void reset_foot_ratio_interpolator ()

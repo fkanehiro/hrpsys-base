@@ -520,8 +520,8 @@ public:
         gg->set_default_step_time(4.0); // dummy
         fnl.push_back(step_node("rleg", coordinates(hrp::Vector3(hrp::Vector3(0, 0, 0)+leg_pos[0])), gg->get_default_step_height(), 1.0, 0, 0));
         fnl.push_back(step_node("lleg", coordinates(hrp::Vector3(hrp::Vector3(0, 0, 0)+leg_pos[1])), gg->get_default_step_height(), 2.0, 0, 0));
-        fnl.push_back(step_node("rleg", coordinates(hrp::Vector3(hrp::Vector3(100*1e-3, 0, 0)+leg_pos[0])), gg->get_default_step_height()*2, 1.0, 0, 0));
-        fnl.push_back(step_node("lleg", coordinates(hrp::Vector3(hrp::Vector3(200*1e-3, 0, 0)+leg_pos[1])), gg->get_default_step_height(), 2.0, 0, 0));
+        fnl.push_back(step_node("rleg", coordinates(hrp::Vector3(hrp::Vector3(100*1e-3, 0, 0)+leg_pos[0])), gg->get_default_step_height()*2, 1.5, 0, 0));
+        fnl.push_back(step_node("lleg", coordinates(hrp::Vector3(hrp::Vector3(200*1e-3, 0, 0)+leg_pos[1])), gg->get_default_step_height(), 2.5, 0, 0));
         fnl.push_back(step_node("rleg", coordinates(hrp::Vector3(hrp::Vector3(300*1e-3, 0, 0)+leg_pos[0])), gg->get_default_step_height(), 1.0, 20, 5));
         fnl.push_back(step_node("lleg", coordinates(hrp::Vector3(hrp::Vector3(300*1e-3, 0, 0)+leg_pos[1])), gg->get_default_step_height(), 2.0, 0, 0));
         gg->set_foot_steps(fnl);

@@ -178,13 +178,13 @@ namespace rats
     int support_len = one_step_count - swing_len;
     int current_swing_len = lcg_count - support_len/2;
     double tmp_current_swing_time;
-    int current_swing_count = (one_step_count - lcg_count);
-    if ( current_swing_count < support_len/2 ) {
+    int current_swing_count = (one_step_count - lcg_count); // 0->one_step_count
+    if ( current_swing_count < support_len/2 ) { // First double support period
       swing_ratio = swing_rot_ratio = 0.0;
       tmp_current_swing_time = current_swing_len * dt - swing_len * dt;
-    } else if ( current_swing_count >= support_len/2+swing_len ) {
+    } else if ( current_swing_count >= support_len/2+swing_len ) { // Last double support period
       swing_ratio = swing_rot_ratio = 1.0;
-      tmp_current_swing_time = current_swing_len * dt + (default_double_support_ratio * one_step_count + one_step_count) * dt;
+      tmp_current_swing_time = current_swing_len * dt + (default_double_support_ratio * one_step_count + next_one_step_count) * dt;
     } else {
       if (current_swing_count == support_len/2) {
           double tmp = 0.0;
@@ -206,7 +206,7 @@ namespace rats
       swing_ratio = static_cast<double>(current_swing_count-support_len/2)/swing_len;
       //std::cerr << "gp " << swing_ratio << " " << swing_rot_ratio << std::endl;
     }
-    current_swing_time[support_leg] = (lcg_count + 0.5 * default_double_support_ratio * one_step_count) * dt;
+    current_swing_time[support_leg] = (lcg_count + 0.5 * default_double_support_ratio * next_one_step_count) * dt;
     current_swing_time[support_leg==RLEG ? LLEG : RLEG] = tmp_current_swing_time;
     //std::cerr << "sl " << support_leg << " " << current_swing_time[support_leg==RLEG?0:1] << " " << current_swing_time[support_leg==RLEG?1:0] << " " << tmp_current_swing_time << " " << lcg_count << std::endl;
   };
@@ -330,6 +330,9 @@ namespace rats
       if (footstep_index < fnl.size()) {
         one_step_count = static_cast<size_t>(fnl[footstep_index].step_time/dt);
       }
+      if (footstep_index + 1 < fnl.size()) {
+        next_one_step_count = static_cast<size_t>(fnl[footstep_index+1].step_time/dt);
+      }
       lcg_count = one_step_count;
       rdtg.reset(one_step_count, default_double_support_ratio);
       sdtg.reset(one_step_count, default_double_support_ratio);
@@ -356,7 +359,7 @@ namespace rats
     }
     //preview_controller_ptr = new preview_dynamics_filter<preview_control>(dt, cog(2) - refzmp_cur_list[0](2), refzmp_cur_list[0]);
     preview_controller_ptr = new preview_dynamics_filter<extended_preview_control>(dt, cog(2) - rg.get_refzmp_cur()(2), rg.get_refzmp_cur(), gravitational_acceleration);
-    lcg.reset(one_step_len, initial_swing_leg_dst_coords, initial_swing_leg_dst_coords, initial_support_leg_coords, default_double_support_ratio);
+    lcg.reset(one_step_len, footstep_node_list[1].step_time/dt, initial_swing_leg_dst_coords, initial_swing_leg_dst_coords, initial_support_leg_coords, default_double_support_ratio);
     /* make another */
     rg.push_refzmp_from_footstep_list_for_single(footstep_node_list);
     emergency_flg = IDLING;
