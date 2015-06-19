@@ -479,7 +479,7 @@ namespace rats
                             const coordinates& goal, const double height);
       void cycloid_delay_midcoords (coordinates& ret, const coordinates& start,
                                     const coordinates& goal, const double height);
-      void calc_ratio_from_double_support_ratio (const double default_double_support_ratio, const size_t one_step_len);
+      void calc_ratio_from_double_support_ratio (const double default_double_support_ratio);
 #ifndef HAVE_MAIN
     public:
 #endif
@@ -553,16 +553,16 @@ namespace rats
         rdtg.reset(one_step_len, default_double_support_ratio);
         sdtg.reset(one_step_len, default_double_support_ratio);
         cdtg.reset(one_step_len, default_double_support_ratio);
-        reset_foot_ratio_interpolator(one_step_len);
+        reset_foot_ratio_interpolator();
       };
-      void reset_foot_ratio_interpolator (const size_t one_step_len)
+      void reset_foot_ratio_interpolator ()
       {
         double tmp_ratio = 0.0;
         foot_ratio_interpolator->clear();
         foot_ratio_interpolator->set(&tmp_ratio);
         tmp_ratio = 1.0;
-        //foot_ratio_interpolator->go(&tmp_ratio, _dt*one_step_len, true);
-        foot_ratio_interpolator->setGoal(&tmp_ratio, _dt*one_step_len, true);
+        //foot_ratio_interpolator->go(&tmp_ratio, _dt*one_step_count, true);
+        foot_ratio_interpolator->setGoal(&tmp_ratio, _dt*one_step_count, true);
         foot_ratio_interpolator->sync();
       };
       void clear_interpolators ( ) {
@@ -577,7 +577,7 @@ namespace rats
             toe_heel_interpolator->get(&tmp, true);
         }
       };
-      void update_leg_coords (const std::vector<step_node>& fnl, const double default_double_support_ratio, const size_t one_step_len);
+      void update_leg_coords (const std::vector<step_node>& fnl, const double default_double_support_ratio);
       size_t get_footstep_index() const { return footstep_index; };
       size_t get_lcg_count() const { return lcg_count; };
       double get_current_swing_time(const size_t idx) const { return current_swing_time[idx]; };

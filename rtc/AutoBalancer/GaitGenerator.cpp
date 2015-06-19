@@ -173,19 +173,19 @@ namespace rats
     }
   };
 
-  void leg_coords_generator::calc_ratio_from_double_support_ratio (const double default_double_support_ratio, const size_t one_step_len)
+  void leg_coords_generator::calc_ratio_from_double_support_ratio (const double default_double_support_ratio)
   {
-    int swing_len = (1.0 - default_double_support_ratio) * one_step_len;
-    int support_len = one_step_len - swing_len;
+    int swing_len = (1.0 - default_double_support_ratio) * one_step_count;
+    int support_len = one_step_count - swing_len;
     int current_swing_len = lcg_count - support_len/2;
     double tmp_current_swing_time;
-    int current_swing_count = (one_step_len - lcg_count);
+    int current_swing_count = (one_step_count - lcg_count);
     if ( current_swing_count < support_len/2 ) {
       swing_ratio = swing_rot_ratio = 0.0;
       tmp_current_swing_time = current_swing_len * _dt - swing_len * _dt;
     } else if ( current_swing_count >= support_len/2+swing_len ) {
       swing_ratio = swing_rot_ratio = 1.0;
-      tmp_current_swing_time = current_swing_len * _dt + (default_double_support_ratio * one_step_len + one_step_len) * _dt;
+      tmp_current_swing_time = current_swing_len * _dt + (default_double_support_ratio * one_step_count + one_step_count) * _dt;
     } else {
       if (current_swing_count == support_len/2) {
           double tmp = 0.0;
@@ -207,7 +207,7 @@ namespace rats
       swing_ratio = static_cast<double>(current_swing_count-support_len/2)/swing_len;
       //std::cerr << "gp " << swing_ratio << " " << swing_rot_ratio << std::endl;
     }
-    current_swing_time[support_leg] = (lcg_count + 0.5 * default_double_support_ratio * one_step_len) * _dt;
+    current_swing_time[support_leg] = (lcg_count + 0.5 * default_double_support_ratio * one_step_count) * _dt;
     current_swing_time[support_leg==RLEG ? LLEG : RLEG] = tmp_current_swing_time;
     //std::cerr << "sl " << support_leg << " " << current_swing_time[support_leg==RLEG?0:1] << " " << current_swing_time[support_leg==RLEG?1:0] << " " << tmp_current_swing_time << " " << lcg_count << std::endl;
   };
@@ -297,7 +297,7 @@ namespace rats
     cdtg.get_trajectory_point(ret.pos, hrp::Vector3(start.pos), hrp::Vector3(goal.pos), height);
   };
 
-  void leg_coords_generator::update_leg_coords (const std::vector<step_node>& fnl, const double default_double_support_ratio, const size_t one_step_len)
+  void leg_coords_generator::update_leg_coords (const std::vector<step_node>& fnl, const double default_double_support_ratio)
   {
     if (!foot_ratio_interpolator->isEmpty()) {
         foot_ratio_interpolator->get(&foot_midcoords_ratio, true);
@@ -311,7 +311,7 @@ namespace rats
         support_leg_coords = fnl[current_footstep_index-1].worldcoords;
     }
 
-    calc_ratio_from_double_support_ratio(default_double_support_ratio, one_step_len);
+    calc_ratio_from_double_support_ratio(default_double_support_ratio);
     calc_current_swing_leg_coords(swing_leg_coords, current_step_height, current_toe_angle, current_heel_angle);
     if ( 1 <= lcg_count ) {
       lcg_count--;
@@ -328,11 +328,14 @@ namespace rats
       } else {
         current_step_height = current_toe_angle = current_heel_angle = 0.0;
       }
-      lcg_count = one_step_len;
-      rdtg.reset(one_step_len, default_double_support_ratio);
-      sdtg.reset(one_step_len, default_double_support_ratio);
-      cdtg.reset(one_step_len, default_double_support_ratio);
-      reset_foot_ratio_interpolator(one_step_len);
+      if (footstep_index < fnl.size()) {
+        one_step_count = static_cast<size_t>(fnl[footstep_index].step_time/_dt);
+      }
+      lcg_count = one_step_count;
+      rdtg.reset(one_step_count, default_double_support_ratio);
+      sdtg.reset(one_step_count, default_double_support_ratio);
+      cdtg.reset(one_step_count, default_double_support_ratio);
+      reset_foot_ratio_interpolator();
     }
   };
 
@@ -343,7 +346,7 @@ namespace rats
                                                   const double delay)
   {
     /* clear all gait_parameter */
-    one_step_len = default_step_time / dt;
+    one_step_len = footstep_node_list[0].step_time / dt;
     finalize_count = 0;
     footstep_node_list[0].worldcoords = initial_swing_leg_dst_coords;
     rg.reset(one_step_len);
@@ -408,7 +411,7 @@ namespace rats
 
     /* update swing_leg_coords, support_leg_coords */
     if ( solved ) {
-      lcg.update_leg_coords(footstep_node_list, default_double_support_ratio, one_step_len);
+      lcg.update_leg_coords(footstep_node_list, default_double_support_ratio);
     } else if (finalize_count>0) {
       lcg.clear_interpolators();
     }
