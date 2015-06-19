@@ -334,7 +334,7 @@ public:
         /* initialize sample footstep_list */
         parse_params();
         gg->clear_footstep_node_list();
-        gg->go_pos_param_2_footstep_list(200*1e-3, 100*1e-3, 20, coordinates());
+        gg->go_pos_param_2_footstep_list(200*1e-3, 100*1e-3, 20, coordinates(leg_pos[0]), coordinates(leg_pos[1]), RLEG);
         gen_and_plot_walk_pattern();
     };
 
@@ -344,7 +344,7 @@ public:
         /* initialize sample footstep_list */
         parse_params();
         gg->clear_footstep_node_list();
-        gg->go_pos_param_2_footstep_list(300*1e-3, 0, 0, coordinates());
+        gg->go_pos_param_2_footstep_list(300*1e-3, 0, 0, coordinates(leg_pos[1]), coordinates(leg_pos[0]), LLEG);
         gen_and_plot_walk_pattern();
     };
 
@@ -354,7 +354,7 @@ public:
         /* initialize sample footstep_list */
         parse_params();
         gg->clear_footstep_node_list();
-        gg->go_pos_param_2_footstep_list(0, 150*1e-3, 0, coordinates());
+        gg->go_pos_param_2_footstep_list(0, 150*1e-3, 0, coordinates(leg_pos[0]), coordinates(leg_pos[1]), RLEG);
         gen_and_plot_walk_pattern();
     };
 
@@ -364,7 +364,7 @@ public:
         /* initialize sample footstep_list */
         parse_params();
         gg->clear_footstep_node_list();
-        gg->go_pos_param_2_footstep_list(0, 0, 30, coordinates());
+        gg->go_pos_param_2_footstep_list(0, 0, 30, coordinates(leg_pos[1]), coordinates(leg_pos[0]), LLEG);
         gen_and_plot_walk_pattern();
     };
 
@@ -411,7 +411,7 @@ public:
         // gg->set_use_toe_heel_transition(false);
         gg->set_use_toe_heel_transition(true);
         gg->clear_footstep_node_list();
-        gg->go_pos_param_2_footstep_list(100*1e-3, 0, 0, coordinates());
+        gg->go_pos_param_2_footstep_list(100*1e-3, 0, 0, coordinates(leg_pos[1]), coordinates(leg_pos[0]), LLEG);
         gen_and_plot_walk_pattern();
     };
 
@@ -435,7 +435,7 @@ public:
         gg->clear_footstep_node_list();
         hrp::Matrix33 initial_foot_mid_rot = Eigen::AngleAxis<double>(M_PI/2, hrp::Vector3::UnitZ()).toRotationMatrix();
         //hrp::Matrix33 initial_foot_mid_rot = Eigen::AngleAxis<double>(M_PI, hrp::Vector3::UnitZ()).toRotationMatrix();
-        gg->go_pos_param_2_footstep_list(100*1e-3, 0, 0, coordinates(initial_foot_mid_rot));
+        gg->go_pos_param_2_footstep_list(100*1e-3, 0, 0, coordinates(leg_pos[1], initial_foot_mid_rot), coordinates(leg_pos[0], initial_foot_mid_rot), LLEG);
         coordinates initial_support_leg_coords(hrp::Vector3(initial_foot_mid_rot * (gg->get_footstep_front_leg()=="rleg"?leg_pos[1]:leg_pos[0])), initial_foot_mid_rot);
         coordinates initial_swing_leg_dst_coords(hrp::Vector3(initial_foot_mid_rot * (gg->get_footstep_front_leg()!="rleg"?leg_pos[1]:leg_pos[0])), initial_foot_mid_rot);
         gen_and_plot_walk_pattern(initial_support_leg_coords, initial_swing_leg_dst_coords);

@@ -413,17 +413,19 @@ namespace rats
    *  unit system -> x [mm], y [mm], theta [deg]
    */
   void gait_generator::go_pos_param_2_footstep_list (const double goal_x, const double goal_y, const double goal_theta,
-                                                     const coordinates& _foot_midcoords, const leg_type start_leg)
+                                                     const coordinates& initial_support_coords, const coordinates& initial_swing_src_coords,
+                                                     const leg_type initial_support_leg)
   {
-    coordinates foot_midcoords(_foot_midcoords); /* foot_midcoords is modified during loop */
-    coordinates goal_foot_midcoords(_foot_midcoords);
+    coordinates foot_midcoords; /* foot_midcoords is modified during loop */
+    mid_coords(foot_midcoords, 0.5, initial_support_coords, initial_swing_src_coords);
+    coordinates goal_foot_midcoords(foot_midcoords);
     goal_foot_midcoords.pos += goal_foot_midcoords.rot * hrp::Vector3(goal_x, goal_y, 0.0);
     goal_foot_midcoords.rotate(deg2rad(goal_theta), hrp::Vector3(0,0,1));
     std::cerr << "current foot midcoords" << std::endl;
     std::cerr << "  pos =" << std::endl;
-    std::cerr << _foot_midcoords.pos.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << std::endl;
+    std::cerr << foot_midcoords.pos.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << std::endl;
     std::cerr << "  rot =" << std::endl;
-    std::cerr << _foot_midcoords.rot.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", "\n", "    [", "]")) << std::endl;
+    std::cerr << foot_midcoords.rot.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", "\n", "    [", "]")) << std::endl;
     std::cerr << "goal foot midcoords" << std::endl;
     std::cerr << "  pos =" << std::endl;
     std::cerr << goal_foot_midcoords.pos.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << std::endl;
@@ -432,7 +434,8 @@ namespace rats
 
     /* initialize */
     clear_footstep_node_list();
-    append_go_pos_step_node(foot_midcoords, start_leg);
+    // For initial double support period
+    footstep_node_list.push_back(step_node(initial_support_leg, initial_support_coords, lcg.get_default_step_height(), lcg.get_toe_angle(), lcg.get_heel_angle()));
 
     /* footstep generation loop */
     hrp::Vector3 dp, dr;
@@ -448,13 +451,23 @@ namespace rats
       dp = foot_midcoords.rot.transpose() * dp;
       dr = foot_midcoords.rot.transpose() * dr;
     }
-
-    /* finalize */
-    append_go_pos_step_node(foot_midcoords, (footstep_node_list.back().l_r == RLEG ? LLEG : RLEG));
-    append_go_pos_step_node(foot_midcoords, (footstep_node_list.back().l_r == RLEG ? LLEG : RLEG));
     for (size_t i = 0; i < optional_go_pos_finalize_footstep_num; i++) {
         append_go_pos_step_node(foot_midcoords, (footstep_node_list.back().l_r == RLEG ? LLEG : RLEG));
     }
+
+    /* finalize */
+    //   Align last foot
+    append_go_pos_step_node(foot_midcoords, (footstep_node_list.back().l_r == RLEG ? LLEG : RLEG));
+    //   Check align
+    coordinates final_step_coords1 = footstep_node_list[footstep_node_list.size()-2].worldcoords; // Final coords in footstep_node_list
+    coordinates final_step_coords2 = foot_midcoords; // Final coords calculated from foot_midcoords + translate pos
+    final_step_coords2.pos += final_step_coords2.rot * hrp::Vector3(footstep_param.leg_default_translate_pos[footstep_node_list[footstep_node_list.size()-2].l_r]);
+    final_step_coords1.difference(dp, dr, final_step_coords2);
+    if ( !(eps_eq(dp.norm(), 0.0, 1e-3*0.1) && eps_eq(dr.norm(), 0.0, deg2rad(0.5))) ) { // If final_step_coords1 != final_step_coords2, add steps to match final_step_coords1 and final_step_coords2
+        append_go_pos_step_node(foot_midcoords, (footstep_node_list.back().l_r == RLEG ? LLEG : RLEG));
+    }
+    //   For Last double support period
+    append_finalize_footstep();
   };
 
   void gait_generator::go_single_step_param_2_footstep_list (const double goal_x, const double goal_y, const double goal_z, const double goal_theta,

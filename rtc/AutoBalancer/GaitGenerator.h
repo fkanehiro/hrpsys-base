@@ -695,12 +695,8 @@ namespace rats
     };
     void clear_footstep_node_list () { footstep_node_list.clear(); };
     void go_pos_param_2_footstep_list (const double goal_x, const double goal_y, const double goal_theta, /* [mm] [mm] [deg] */
-                                       const coordinates& _foot_midcoords) {
-      go_pos_param_2_footstep_list(goal_x, goal_y, goal_theta,
-                                   _foot_midcoords, (goal_y > 0.0 ? RLEG : LLEG));
-    }
-    void go_pos_param_2_footstep_list (const double goal_x, const double goal_y, const double goal_theta, /* [mm] [mm] [deg] */
-                                       const coordinates& _foot_midcoords, const leg_type start_leg);
+                                       const coordinates& initial_support_coords, const coordinates& initial_swing_src_coords,
+                                       const leg_type initial_support_leg);
     void go_single_step_param_2_footstep_list (const double goal_x, const double goal_y, const double goal_z, const double goal_theta, /* [mm] [mm] [mm] [deg] */
                                                const std::string& tmp_swing_leg,
                                                const coordinates& _support_leg_coords);
