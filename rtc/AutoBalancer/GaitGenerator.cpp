@@ -324,8 +324,7 @@ namespace rats
         current_toe_angle = fnl[footstep_index].toe_angle;
         current_heel_angle = fnl[footstep_index].heel_angle;
       } else {
-        current_step_height = 0.0;
-        current_toe_angle = current_heel_angle = 0.0;
+        current_step_height = current_toe_angle = current_heel_angle = 0.0;
       }
       lcg_count = one_step_len;
       rdtg.reset(one_step_len, default_double_support_ratio);
@@ -435,7 +434,7 @@ namespace rats
     /* initialize */
     clear_footstep_node_list();
     // For initial double support period
-    footstep_node_list.push_back(step_node(initial_support_leg, initial_support_coords, lcg.get_default_step_height(), default_step_time, lcg.get_toe_angle(), lcg.get_heel_angle()));
+    footstep_node_list.push_back(step_node(initial_support_leg, initial_support_coords, 0, default_step_time, 0, 0));
 
     /* footstep generation loop */
     hrp::Vector3 dp, dr;

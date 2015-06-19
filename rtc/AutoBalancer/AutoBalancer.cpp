@@ -964,10 +964,10 @@ bool AutoBalancer::setFootSteps(const OpenHRP::AutoBalancerService::FootstepSequ
 {
   OpenHRP::AutoBalancerService::StepParamSequence sps;
   sps.length(fs.length());
-  for (size_t i = 0; i < sps.length(); i++) sps[i].step_height = gg->get_default_step_height();
+  for (size_t i = 0; i < sps.length(); i++) sps[i].step_height = (i==0 ? 0.0 : gg->get_default_step_height());
   for (size_t i = 0; i < sps.length(); i++) sps[i].step_time = gg->get_default_step_time();
-  for (size_t i = 0; i < sps.length(); i++) sps[i].toe_angle = gg->get_toe_angle();
-  for (size_t i = 0; i < sps.length(); i++) sps[i].heel_angle = gg->get_heel_angle();
+  for (size_t i = 0; i < sps.length(); i++) sps[i].toe_angle = (i==0 ? 0.0 : gg->get_toe_angle());
+  for (size_t i = 0; i < sps.length(); i++) sps[i].heel_angle = (i==0 ? 0.0 : gg->get_heel_angle());
   setFootStepsWithParam(fs, sps);
 }
 

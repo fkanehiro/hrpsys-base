@@ -715,7 +715,9 @@ namespace rats
     void finalize_velocity_mode ();
     void append_finalize_footstep ()
     {
-      footstep_node_list.push_back(footstep_node_list[footstep_node_list.size()-2]);
+      step_node sn = footstep_node_list[footstep_node_list.size()-2];
+      sn.step_height = sn.toe_angle = sn.heel_angle = 0.0;
+      footstep_node_list.push_back(sn);
     };
     void emergency_stop ()
     {
