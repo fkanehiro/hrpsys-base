@@ -194,6 +194,7 @@ namespace rats
       std::vector<hrp::Vector3> refzmp_cur_list;
       std::vector<hrp::Vector3> foot_x_axis_list; // Swing foot x axis list according to refzmp_cur_list
       std::vector<leg_type> swing_leg_list; // Swing leg list according to refzmp_cur_list
+      std::vector<size_t> step_count_list; // Swing leg list according to refzmp_cur_list
       std::vector<hrp::Vector3> default_zmp_offsets; /* list of RLEG and LLEG */
       size_t fs_index, refzmp_index, refzmp_count, one_step_count;
       double toe_zmp_offset_x, heel_zmp_offset_x; // [m]
@@ -209,7 +210,7 @@ namespace rats
     public:
 #endif
       refzmp_generator(toe_heel_phase_counter* _thp_ptr, const double _dt)
-        : refzmp_cur_list(), foot_x_axis_list(), swing_leg_list(), default_zmp_offsets(),
+        : refzmp_cur_list(), foot_x_axis_list(), swing_leg_list(), step_count_list(), default_zmp_offsets(),
           fs_index(0), refzmp_index(0), refzmp_count(0), one_step_count(0),
           toe_zmp_offset_x(0), heel_zmp_offset_x(0), dt(_dt),
           thp_ptr(_thp_ptr), use_toe_heel_transition(false), is_final_double_support_set(false)
@@ -226,6 +227,7 @@ namespace rats
         while ( refzmp_cur_list.size() > len) refzmp_cur_list.pop_back();
         while ( foot_x_axis_list.size() > len) foot_x_axis_list.pop_back();
         while ( swing_leg_list.size() > len) swing_leg_list.pop_back();
+        while ( step_count_list.size() > len) step_count_list.pop_back();
       };
       void reset (const size_t _refzmp_count)
       {
@@ -235,6 +237,7 @@ namespace rats
         refzmp_cur_list.clear();
         foot_x_axis_list.clear();
         swing_leg_list.clear();
+        step_count_list.clear();
         is_final_double_support_set = false;
       };
       void push_refzmp_from_footstep_list_for_dual (const std::vector<step_node>& fnl,

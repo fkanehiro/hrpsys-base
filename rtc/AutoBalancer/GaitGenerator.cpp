@@ -49,6 +49,7 @@ namespace rats
     refzmp_cur_list.push_back( rzmp );
     foot_x_axis_list.push_back( hrp::Vector3(_swing_leg_coords.rot * hrp::Vector3::UnitX()) );
     swing_leg_list.push_back( fnl[fs_index].l_r );
+    step_count_list.push_back(static_cast<size_t>(fnl[fs_index].step_time/dt));
     //std::cerr << "double " << (fnl[fs_index].l_r==RLEG?LLEG:RLEG) << " [" << refzmp_cur_list.back()(0) << " " << refzmp_cur_list.back()(1) << " " << refzmp_cur_list.back()(2) << "]" << std::endl;
     fs_index++;
   };
@@ -61,6 +62,7 @@ namespace rats
     refzmp_cur_list.push_back( rzmp );
     foot_x_axis_list.push_back( hrp::Vector3(tmp.rot * hrp::Vector3::UnitX()) );
     swing_leg_list.push_back( fnl[fs_index-1].l_r == RLEG ? LLEG : RLEG);
+    step_count_list.push_back(static_cast<size_t>(fnl[fs_index].step_time/dt));
     //std::cerr << "single " << fnl[fs_index-1].l_r << " [" << refzmp_cur_list.back()(0) << " " << refzmp_cur_list.back()(1) << " " << refzmp_cur_list.back()(2) << "]" << std::endl;
     if (fs_index < fnl.size()) fs_index++;
   };
@@ -133,10 +135,6 @@ namespace rats
       refzmp_count--;
     } else {
       //std::cerr << "fs " << fs_index << "/" << fnl.size() << " rf " << refzmp_index << "/" << refzmp_cur_list.size() << " flg " << std::endl;
-      if (fnl.size () > fs_index) {
-          one_step_count = static_cast<size_t>(fnl[fs_index].step_time/dt);
-      }
-      refzmp_count = one_step_count;
       if ( fnl.size() - 1 == fs_index ) {
         push_refzmp_from_footstep_list_for_dual(fnl, fnl[fs_index-1].worldcoords, fnl[fs_index-2].worldcoords);
         is_final_double_support_set = true;
@@ -144,6 +142,7 @@ namespace rats
         push_refzmp_from_footstep_list_for_single(fnl);
       }
       refzmp_index++;
+      refzmp_count = one_step_count = step_count_list[refzmp_index];
     }
   };
 
