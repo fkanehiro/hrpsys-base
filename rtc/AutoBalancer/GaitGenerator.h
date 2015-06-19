@@ -575,7 +575,7 @@ namespace rats
             toe_heel_interpolator->get(&tmp, true);
         }
       };
-      void update_leg_coords (const std::vector<step_node>& fnl, const double default_double_support_ratio, const size_t one_step_len, const bool force_height_zero);
+      void update_leg_coords (const std::vector<step_node>& fnl, const double default_double_support_ratio, const size_t one_step_len);
       size_t get_footstep_index() const { return footstep_index; };
       size_t get_lcg_count() const { return lcg_count; };
       double get_current_swing_time(const size_t idx) const { return current_swing_time[idx]; };
@@ -660,7 +660,7 @@ namespace rats
       sn.worldcoords.pos += sn.worldcoords.rot * footstep_param.leg_default_translate_pos[_l_r];
       footstep_node_list.push_back(sn);
     };
-    void overwrite_refzmp_queue(const std::vector<coordinates>& cv);
+    void overwrite_refzmp_queue(const std::vector<step_node>& fnl);
     void calc_foot_midcoords_trans_vector_velocity_mode (coordinates& foot_midcoords, hrp::Vector3& trans, double& dth, const step_node& sn);
     void calc_next_coords_velocity_mode (std::vector<coordinates>& ret, const size_t idx);
     void append_footstep_list_velocity_mode ();
