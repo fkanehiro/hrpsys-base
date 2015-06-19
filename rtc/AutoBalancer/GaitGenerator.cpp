@@ -346,7 +346,7 @@ namespace rats
                                                   const double delay)
   {
     /* clear all gait_parameter */
-    one_step_len = footstep_node_list[0].step_time / dt;
+    size_t one_step_len = footstep_node_list[0].step_time / dt;
     finalize_count = 0;
     footstep_node_list[0].worldcoords = initial_swing_leg_dst_coords;
     rg.reset(one_step_len);
@@ -377,7 +377,7 @@ namespace rats
     }
     bool solved = preview_controller_ptr->update(refzmp, cog, swing_foot_zmp_offset, rzmp, sfzo, (refzmp_exist_p || finalize_count < preview_controller_ptr->get_delay()-default_step_time/dt));
     /* update refzmp */
-    if ( lcg.get_footstep_index() > 0 && lcg.get_lcg_count() == static_cast<size_t>(one_step_len / 2) - 1 ) {
+    if ( lcg.get_footstep_index() > 0 && lcg.get_lcg_count() == static_cast<size_t>(footstep_node_list[lcg.get_footstep_index()].step_time/dt * 0.5) - 1 ) {
       if (velocity_mode_flg != VEL_IDLING) {
         std::vector<coordinates> cv;
         calc_next_coords_velocity_mode(cv, lcg.get_footstep_index() + 1);
@@ -595,7 +595,7 @@ namespace rats
 
     /* reset index and counter */
     rg.set_indices(idx);
-    rg.set_refzmp_count(one_step_len);
+    rg.set_refzmp_count(static_cast<size_t>(fnl[0].step_time/dt));
     /* reset refzmp */
     for (size_t i = 0; i < fnl.size()-1; i++) {
       if (emergency_flg == EMERGENCY_STOP)
