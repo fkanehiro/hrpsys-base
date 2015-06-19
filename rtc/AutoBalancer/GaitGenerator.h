@@ -195,11 +195,12 @@ namespace rats
       std::vector<hrp::Vector3> foot_x_axis_list; // Swing foot x axis list according to refzmp_cur_list
       std::vector<leg_type> swing_leg_list; // Swing leg list according to refzmp_cur_list
       std::vector<hrp::Vector3> default_zmp_offsets; /* list of RLEG and LLEG */
-      size_t fs_index, refzmp_index, refzmp_count;
+      size_t fs_index, refzmp_index, refzmp_count, one_step_count;
       double toe_zmp_offset_x, heel_zmp_offset_x; // [m]
+      double dt;
       toe_heel_phase_counter* thp_ptr;
       bool use_toe_heel_transition, is_final_double_support_set;
-      void calc_current_refzmp (hrp::Vector3& ret, hrp::Vector3& swing_foot_zmp_offset, const double default_double_support_ratio, const double default_double_support_static_ratio, const size_t one_step_len) const;
+      void calc_current_refzmp (hrp::Vector3& ret, hrp::Vector3& swing_foot_zmp_offset, const double default_double_support_ratio, const double default_double_support_static_ratio) const;
       const bool is_start_double_support_phase () const { return refzmp_index == 0; };
       const bool is_second_phase () const { return refzmp_index == 1; };
       const bool is_second_last_phase () const { return ((refzmp_index == refzmp_cur_list.size()-2) && is_final_double_support_set); };
@@ -207,10 +208,10 @@ namespace rats
 #ifndef HAVE_MAIN
     public:
 #endif
-      refzmp_generator(toe_heel_phase_counter* _thp_ptr)
+      refzmp_generator(toe_heel_phase_counter* _thp_ptr, const double _dt)
         : refzmp_cur_list(), foot_x_axis_list(), swing_leg_list(), default_zmp_offsets(),
-          fs_index(0), refzmp_index(0), refzmp_count(0),
-          toe_zmp_offset_x(0), heel_zmp_offset_x(0),
+          fs_index(0), refzmp_index(0), refzmp_count(0), one_step_count(0),
+          toe_zmp_offset_x(0), heel_zmp_offset_x(0), dt(_dt),
           thp_ptr(_thp_ptr), use_toe_heel_transition(false), is_final_double_support_set(false)
       {
           default_zmp_offsets.push_back(hrp::Vector3::Zero());
@@ -229,6 +230,7 @@ namespace rats
       void reset (const size_t _refzmp_count)
       {
         set_indices(0);
+        one_step_count = _refzmp_count;
         set_refzmp_count(_refzmp_count);
         refzmp_cur_list.clear();
         foot_x_axis_list.clear();
@@ -239,7 +241,7 @@ namespace rats
                                                     const coordinates& _support_leg_coords,
                                                     const coordinates& _swing_leg_coords);
       void push_refzmp_from_footstep_list_for_single (const std::vector<step_node>& fnl);
-      void update_refzmp (const std::vector<step_node>& fnl, const size_t one_step_len);
+      void update_refzmp (const std::vector<step_node>& fnl);
       // setter
       void set_indices (const size_t idx) { fs_index = refzmp_index = idx; };
       void set_refzmp_count(const size_t _refzmp_count) { refzmp_count = _refzmp_count; };
@@ -248,9 +250,9 @@ namespace rats
       void set_heel_zmp_offset_x (const double _off) { heel_zmp_offset_x = _off; };
       void set_use_toe_heel_transition (const double _u) { use_toe_heel_transition = _u; };
       // getter
-      bool get_current_refzmp (hrp::Vector3& rzmp, hrp::Vector3& swing_foot_zmp_offset, const double default_double_support_ratio, const double default_double_support_static_ratio, const size_t one_step_len) const
+      bool get_current_refzmp (hrp::Vector3& rzmp, hrp::Vector3& swing_foot_zmp_offset, const double default_double_support_ratio, const double default_double_support_static_ratio) const
       {
-        if (refzmp_cur_list.size() > refzmp_index ) calc_current_refzmp(rzmp, swing_foot_zmp_offset, default_double_support_ratio, default_double_support_static_ratio, one_step_len);
+        if (refzmp_cur_list.size() > refzmp_index ) calc_current_refzmp(rzmp, swing_foot_zmp_offset, default_double_support_ratio, default_double_support_static_ratio);
         return refzmp_cur_list.size() > refzmp_index;
       };
       const hrp::Vector3& get_refzmp_cur () { return refzmp_cur_list.front(); };
@@ -675,7 +677,7 @@ namespace rats
                     /* arguments for footstep_parameter */
                     const std::vector<hrp::Vector3>& _leg_pos,
                     const double _stride_fwd_x, const double _stride_y, const double _stride_theta, const double _stride_bwd_x)
-      : footstep_node_list(), thp(), rg(&thp), lcg(_dt, &thp),
+      : footstep_node_list(), thp(), rg(&thp, _dt), lcg(_dt, &thp),
         footstep_param(_leg_pos, _stride_fwd_x, _stride_y, _stride_theta, _stride_bwd_x),
         vel_param(), offset_vel_param(), cog(hrp::Vector3::Zero()), refzmp(hrp::Vector3::Zero()), prev_que_rzmp(hrp::Vector3::Zero()),
         swing_foot_zmp_offset(hrp::Vector3::Zero()), prev_que_sfzo(hrp::Vector3::Zero()),
