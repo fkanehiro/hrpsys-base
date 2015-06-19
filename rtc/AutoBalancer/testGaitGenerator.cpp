@@ -511,6 +511,22 @@ public:
         gen_and_plot_walk_pattern();
     };
 
+    void test12 ()
+    {
+        std::cerr << "  --test12 : Change step param in set foot steps" << std::endl;
+        /* initialize sample footstep_list */
+        parse_params();
+        std::vector<step_node> fnl;
+        fnl.push_back(step_node("rleg", coordinates(hrp::Vector3(hrp::Vector3(0, 0, 0)+leg_pos[0])), gg->get_default_step_height(), gg->get_default_step_time(), 0, 0));
+        fnl.push_back(step_node("lleg", coordinates(hrp::Vector3(hrp::Vector3(0, 0, 0)+leg_pos[1])), gg->get_default_step_height(), gg->get_default_step_time(), 0, 0));
+        fnl.push_back(step_node("rleg", coordinates(hrp::Vector3(hrp::Vector3(100*1e-3, 0, 0)+leg_pos[0])), gg->get_default_step_height()*2, gg->get_default_step_time(), 0, 0));
+        fnl.push_back(step_node("lleg", coordinates(hrp::Vector3(hrp::Vector3(200*1e-3, 0, 0)+leg_pos[1])), gg->get_default_step_height(), gg->get_default_step_time()*2, 0, 0));
+        fnl.push_back(step_node("rleg", coordinates(hrp::Vector3(hrp::Vector3(300*1e-3, 0, 0)+leg_pos[0])), gg->get_default_step_height(), gg->get_default_step_time(), 20, 5));
+        fnl.push_back(step_node("lleg", coordinates(hrp::Vector3(hrp::Vector3(300*1e-3, 0, 0)+leg_pos[1])), gg->get_default_step_height(), gg->get_default_step_time(), 0, 0));
+        gg->set_foot_steps(fnl);
+        gen_and_plot_walk_pattern();
+    };
+
     void parse_params ()
     {
       for (int i = 0; i < arg_strs.size(); ++ i) {
@@ -598,6 +614,7 @@ void print_usage ()
     std::cerr << "  --test10 : Stair walk + toe heel contact" << std::endl;
     std::cerr << "  --test10 : Stair walk + toe heel contact" << std::endl;
     std::cerr << "  --test11 : Foot rot change" << std::endl;
+    std::cerr << "  --test12 : Change step param in set foot steps" << std::endl;
 };
 
 int main(int argc, char* argv[])
@@ -631,6 +648,8 @@ int main(int argc, char* argv[])
           tgg.test10();
       } else if (std::string(argv[1]) == "--test11") {
           tgg.test11();
+      } else if (std::string(argv[1]) == "--test12") {
+          tgg.test12();
       } else {
           print_usage();
       }
