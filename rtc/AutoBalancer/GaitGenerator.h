@@ -763,6 +763,13 @@ namespace rats
     void set_use_toe_joint (const bool ut) { lcg.set_use_toe_joint(ut); };
     void set_leg_default_translate_pos (const std::vector<hrp::Vector3>& off) { footstep_param.leg_default_translate_pos = off;};
     void set_optional_go_pos_finalize_footstep_num (const size_t num) { optional_go_pos_finalize_footstep_num = num; };
+    void set_foot_steps (const std::vector<step_node>& fnl)
+    {
+        clear_footstep_node_list();
+        footstep_node_list = fnl;
+        append_finalize_footstep();
+        print_footstep_list();
+    };
     void print_footstep_list () const
     {
       for (size_t i = 0; i < footstep_node_list.size(); i++)

@@ -468,6 +468,7 @@ namespace rats
     }
     //   For Last double support period
     append_finalize_footstep();
+    print_footstep_list();
   };
 
   void gait_generator::go_single_step_param_2_footstep_list (const double goal_x, const double goal_y, const double goal_z, const double goal_theta,
