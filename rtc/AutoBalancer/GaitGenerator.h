@@ -21,11 +21,19 @@ namespace rats
     {
         leg_type l_r;
         coordinates worldcoords;
-        double step_height, toe_angle, heel_angle;
-        step_node (const leg_type _l_r, const coordinates& _worldcoords, const double _step_height, const double _toe_angle, const double _heel_angle)
-            : l_r(_l_r), worldcoords(_worldcoords), step_height(_step_height), toe_angle(_toe_angle), heel_angle(_heel_angle) {};
-        step_node (const std::string& _l_r, const coordinates& _worldcoords, const double _step_height, const double _toe_angle, const double _heel_angle)
-            : l_r((_l_r == "rleg") ? RLEG : LLEG), worldcoords(_worldcoords), step_height(_step_height), toe_angle(_toe_angle), heel_angle(_heel_angle) {};
+        double step_height, step_time, toe_angle, heel_angle;
+        step_node (const leg_type _l_r, const coordinates& _worldcoords,
+                   const double _step_height, const double _step_time,
+                   const double _toe_angle, const double _heel_angle)
+            : l_r(_l_r), worldcoords(_worldcoords),
+              step_height(_step_height), step_time(_step_time),
+              toe_angle(_toe_angle), heel_angle(_heel_angle) {};
+        step_node (const std::string& _l_r, const coordinates& _worldcoords,
+                   const double _step_height, const double _step_time,
+                   const double _toe_angle, const double _heel_angle)
+            : l_r((_l_r == "rleg") ? RLEG : LLEG), worldcoords(_worldcoords),
+              step_height(_step_height), step_time(_step_time),
+              toe_angle(_toe_angle), heel_angle(_heel_angle) {};
         friend std::ostream &operator<<(std::ostream &os, const step_node &sn)
         {
             os << "footstep" << std::endl;
@@ -34,7 +42,7 @@ namespace rats
             os << (sn.worldcoords.pos).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << std::endl;
             os << "  rot =" << std::endl;
             os << (sn.worldcoords.rot).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", "\n", "    [", "]")) << std::endl;
-            os << "  step_height = " << sn.step_height << "[m]" << std::endl;
+            os << "  step_height = " << sn.step_height << "[m], step_time = " << sn.step_time << "[s]" << std::endl;
             os << "  toe_angle = " << sn.toe_angle << "[deg], heel_angle = " << sn.heel_angle << "[deg]" << std::endl;
             return os;
         };
@@ -646,7 +654,9 @@ namespace rats
     void append_go_pos_step_node (const coordinates& _foot_midcoords,
                                   const leg_type _l_r)
     {
-      step_node sn(_l_r, _foot_midcoords, lcg.get_default_step_height(), lcg.get_toe_angle(), lcg.get_heel_angle());
+      step_node sn(_l_r, _foot_midcoords,
+                   lcg.get_default_step_height(), default_step_time,
+                   lcg.get_toe_angle(), lcg.get_heel_angle());
       sn.worldcoords.pos += sn.worldcoords.rot * footstep_param.leg_default_translate_pos[_l_r];
       footstep_node_list.push_back(sn);
     };
@@ -687,11 +697,11 @@ namespace rats
     bool proc_one_tick ();
     void append_footstep_node (const std::string& _leg, const coordinates& _fs)
     {
-        footstep_node_list.push_back(step_node(_leg, _fs, lcg.get_default_step_height(), lcg.get_toe_angle(), lcg.get_heel_angle()));
+        footstep_node_list.push_back(step_node(_leg, _fs, lcg.get_default_step_height(), default_step_time, lcg.get_toe_angle(), lcg.get_heel_angle()));
     };
-    void append_footstep_node (const std::string& _leg, const coordinates& _fs, const double _step_height, const double _toe_angle, const double _heel_angle)
+    void append_footstep_node (const std::string& _leg, const coordinates& _fs, const double _step_height, const double _step_time, const double _toe_angle, const double _heel_angle)
     {
-        footstep_node_list.push_back(step_node(_leg, _fs, _step_height, _toe_angle, _heel_angle));
+        footstep_node_list.push_back(step_node(_leg, _fs, _step_height, _step_time, _toe_angle, _heel_angle));
     };
     void clear_footstep_node_list () { footstep_node_list.clear(); };
     void go_pos_param_2_footstep_list (const double goal_x, const double goal_y, const double goal_theta, /* [mm] [mm] [deg] */
@@ -806,7 +816,7 @@ namespace rats
     {
         std::vector<step_node> fsl;
         // fsl[0] is current support leg coords
-        fsl.push_back(step_node(lcg.get_support_leg(), lcg.get_support_leg_coords(), 0, 0, 0)); // step_height and toe_heel_angle are dummy
+        fsl.push_back(step_node(lcg.get_support_leg(), lcg.get_support_leg_coords(), 0, 0, 0, 0)); // step_height, step_time and toe_heel_angle are dummy
         size_t fsl_size = (footstep_node_list.size()>lcg.get_footstep_index() ? footstep_node_list.size()-lcg.get_footstep_index() : 0);
         // The rest of fsl are swing dst coords from now.
         for (size_t i = 0; i < fsl_size; i++) {

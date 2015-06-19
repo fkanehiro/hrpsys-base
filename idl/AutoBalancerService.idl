@@ -35,6 +35,8 @@ module OpenHRP
     {
       /// Step height [m]
       double step_height;
+      /// Step time [s]
+      double step_time;
       /// Maximum toe angle [deg] for toe-off motion
       double toe_angle;
       /// Maximum heel angle [deg] for heel-contact motion

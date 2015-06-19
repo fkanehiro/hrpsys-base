@@ -435,7 +435,7 @@ namespace rats
     /* initialize */
     clear_footstep_node_list();
     // For initial double support period
-    footstep_node_list.push_back(step_node(initial_support_leg, initial_support_coords, lcg.get_default_step_height(), lcg.get_toe_angle(), lcg.get_heel_angle()));
+    footstep_node_list.push_back(step_node(initial_support_leg, initial_support_coords, lcg.get_default_step_height(), default_step_time, lcg.get_toe_angle(), lcg.get_heel_angle()));
 
     /* footstep generation loop */
     hrp::Vector3 dp, dr;
@@ -475,9 +475,9 @@ namespace rats
                                                              const coordinates& _support_leg_coords)
   {
     leg_type _swing_leg = (tmp_swing_leg == "rleg") ? RLEG : LLEG;
-    step_node sn0((_swing_leg == RLEG) ? LLEG : RLEG, _support_leg_coords, lcg.get_default_step_height(), lcg.get_toe_angle(), lcg.get_heel_angle());
+    step_node sn0((_swing_leg == RLEG) ? LLEG : RLEG, _support_leg_coords, lcg.get_default_step_height(), default_step_time, lcg.get_toe_angle(), lcg.get_heel_angle());
     footstep_node_list.push_back(sn0);
-    step_node sn1(_swing_leg, _support_leg_coords, lcg.get_default_step_height(), lcg.get_toe_angle(), lcg.get_heel_angle());
+    step_node sn1(_swing_leg, _support_leg_coords, lcg.get_default_step_height(), default_step_time, lcg.get_toe_angle(), lcg.get_heel_angle());
     hrp::Vector3 trs(2.0 * footstep_param.leg_default_translate_pos[_swing_leg] + hrp::Vector3(goal_x, goal_y, goal_z));
     sn1.worldcoords.pos += sn1.worldcoords.rot * trs;
     sn1.worldcoords.rotate(deg2rad(goal_theta), hrp::Vector3(0,0,1));
@@ -574,7 +574,7 @@ namespace rats
 
     /* add new next steps ;; the number of next steps is cv.size() */
     for (size_t i = 0; i < cv.size(); i++ ) {
-        footstep_node_list.push_back(step_node(footstep_node_list[lcg.get_footstep_index()-1 + i].l_r, cv[i], lcg.get_default_step_height(), lcg.get_toe_angle(), lcg.get_heel_angle()));
+        footstep_node_list.push_back(step_node(footstep_node_list[lcg.get_footstep_index()-1 + i].l_r, cv[i], lcg.get_default_step_height(), default_step_time, lcg.get_toe_angle(), lcg.get_heel_angle()));
     }
 
     /* remove refzmp after idx for allocation of new refzmp by push_refzmp_from_footstep_list */
