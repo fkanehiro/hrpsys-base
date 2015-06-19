@@ -182,10 +182,10 @@ namespace rats
     int current_swing_count = (one_step_count - lcg_count);
     if ( current_swing_count < support_len/2 ) {
       swing_ratio = swing_rot_ratio = 0.0;
-      tmp_current_swing_time = current_swing_len * _dt - swing_len * _dt;
+      tmp_current_swing_time = current_swing_len * dt - swing_len * dt;
     } else if ( current_swing_count >= support_len/2+swing_len ) {
       swing_ratio = swing_rot_ratio = 1.0;
-      tmp_current_swing_time = current_swing_len * _dt + (default_double_support_ratio * one_step_count + one_step_count) * _dt;
+      tmp_current_swing_time = current_swing_len * dt + (default_double_support_ratio * one_step_count + one_step_count) * dt;
     } else {
       if (current_swing_count == support_len/2) {
           double tmp = 0.0;
@@ -193,9 +193,9 @@ namespace rats
           swing_foot_rot_ratio_interpolator->set(&tmp);
           tmp = 1.0;
           // int reduced_swing_len = 0.95*swing_len; // For margin from early landing
-          // swing_foot_rot_ratio_interpolator->go(&tmp, _dt * reduced_swing_len);
-          //swing_foot_rot_ratio_interpolator->go(&tmp, _dt * swing_len);
-          swing_foot_rot_ratio_interpolator->setGoal(&tmp, _dt * swing_len);
+          // swing_foot_rot_ratio_interpolator->go(&tmp, dt * reduced_swing_len);
+          //swing_foot_rot_ratio_interpolator->go(&tmp, dt * swing_len);
+          swing_foot_rot_ratio_interpolator->setGoal(&tmp, dt * swing_len);
           swing_foot_rot_ratio_interpolator->sync();
       }
       if (!swing_foot_rot_ratio_interpolator->isEmpty()) {
@@ -203,11 +203,11 @@ namespace rats
       } else {
           swing_foot_rot_ratio_interpolator->get(&swing_rot_ratio, false);
       }
-      tmp_current_swing_time = current_swing_len * _dt;
+      tmp_current_swing_time = current_swing_len * dt;
       swing_ratio = static_cast<double>(current_swing_count-support_len/2)/swing_len;
       //std::cerr << "gp " << swing_ratio << " " << swing_rot_ratio << std::endl;
     }
-    current_swing_time[support_leg] = (lcg_count + 0.5 * default_double_support_ratio * one_step_count) * _dt;
+    current_swing_time[support_leg] = (lcg_count + 0.5 * default_double_support_ratio * one_step_count) * dt;
     current_swing_time[support_leg==RLEG ? LLEG : RLEG] = tmp_current_swing_time;
     //std::cerr << "sl " << support_leg << " " << current_swing_time[support_leg==RLEG?0:1] << " " << current_swing_time[support_leg==RLEG?1:0] << " " << tmp_current_swing_time << " " << lcg_count << std::endl;
   };
@@ -219,8 +219,8 @@ namespace rats
       if (thp_ptr->is_phase_starting(current_count, start_phase)) {
           toe_heel_interpolator->clear();
           toe_heel_interpolator->set(&start);
-          //toe_heel_interpolator->go(&goal, thp_ptr->calc_phase_period(start_phase, goal_phase, _dt));
-          toe_heel_interpolator->setGoal(&goal, thp_ptr->calc_phase_period(start_phase, goal_phase, _dt));
+          //toe_heel_interpolator->go(&goal, thp_ptr->calc_phase_period(start_phase, goal_phase, dt));
+          toe_heel_interpolator->setGoal(&goal, thp_ptr->calc_phase_period(start_phase, goal_phase, dt));
           toe_heel_interpolator->sync();
       }
       if (!toe_heel_interpolator->isEmpty()) {
@@ -329,7 +329,7 @@ namespace rats
         current_step_height = current_toe_angle = current_heel_angle = 0.0;
       }
       if (footstep_index < fnl.size()) {
-        one_step_count = static_cast<size_t>(fnl[footstep_index].step_time/_dt);
+        one_step_count = static_cast<size_t>(fnl[footstep_index].step_time/dt);
       }
       lcg_count = one_step_count;
       rdtg.reset(one_step_count, default_double_support_ratio);

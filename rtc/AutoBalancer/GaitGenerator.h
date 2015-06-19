@@ -266,16 +266,16 @@ namespace rats
     {
     private:
       hrp::Vector3 pos, vel, acc; // [m], [m/s], [m/s^2]
-      double _dt; // [s]
+      double dt; // [s]
       // Implement hoffarbib to configure remain_time;
       void hoffarbib_interpolation (const double tmp_remain_time, const hrp::Vector3& tmp_goal)
       {
         hrp::Vector3 jerk = (-9.0/ tmp_remain_time) * acc +
           (-36.0 / (tmp_remain_time * tmp_remain_time)) * vel +
           (60.0 / (tmp_remain_time * tmp_remain_time * tmp_remain_time)) * (tmp_goal - pos);
-        acc = acc + _dt * jerk;
-        vel = vel + _dt * acc;
-        pos = pos + _dt * vel;
+        acc = acc + dt * jerk;
+        vel = vel + dt * acc;
+        pos = pos + dt * vel;
       };
     protected:
       double time_offset; // [s]
@@ -285,7 +285,7 @@ namespace rats
     public:
       delay_hoffarbib_trajectory_generator () : time_offset(0.35), final_distance_weight(1.0), one_step_count(0), current_count(0), double_support_count_half(0) {};
       ~delay_hoffarbib_trajectory_generator() { };
-      void set_dt (const double __dt) { _dt = __dt; };
+      void set_dt (const double _dt) { dt = _dt; };
       void set_swing_trajectory_delay_time_offset (const double _time_offset) { time_offset = _time_offset; };
       void set_swing_trajectory_final_distance_weight (const double _final_distance_weight) { final_distance_weight = _final_distance_weight; };
       void reset (const size_t _one_step_len, const double default_double_support_ratio)
@@ -299,10 +299,10 @@ namespace rats
         if ( double_support_count_half <= current_count && current_count < one_step_count - double_support_count_half ) { // swing phase
           size_t swing_remain_count = one_step_count - current_count - double_support_count_half;
           size_t swing_one_step_count = one_step_count - double_support_count_half*2;
-          if (swing_remain_count*_dt > time_offset) { // antecedent path is still interpolating
-            hoffarbib_interpolation (time_offset, interpolate_antecedent_path(start, goal, height, ((swing_one_step_count - swing_remain_count) / (swing_one_step_count - time_offset/_dt))));
+          if (swing_remain_count*dt > time_offset) { // antecedent path is still interpolating
+            hoffarbib_interpolation (time_offset, interpolate_antecedent_path(start, goal, height, ((swing_one_step_count - swing_remain_count) / (swing_one_step_count - time_offset/dt))));
           } else if (swing_remain_count > 0) { // antecedent path already reached to goal
-            hoffarbib_interpolation (swing_remain_count*_dt, goal);
+            hoffarbib_interpolation (swing_remain_count*dt, goal);
           } else {
             pos = goal;
           }
@@ -449,7 +449,7 @@ namespace rats
       coordinates support_leg_coords;
       // Swing leg coordinates is interpolated from swing_leg_src_coords to swing_leg_dst_coords during swing phase.
       coordinates swing_leg_coords, swing_leg_src_coords, swing_leg_dst_coords;
-      double default_step_height, default_top_ratio, current_step_height, swing_ratio, swing_rot_ratio, foot_midcoords_ratio, _dt, current_swing_time[2], current_toe_angle, current_heel_angle;
+      double default_step_height, default_top_ratio, current_step_height, swing_ratio, swing_rot_ratio, foot_midcoords_ratio, dt, current_swing_time[2], current_toe_angle, current_heel_angle;
       // Index for current footstep. footstep_index should be [0,footstep_node_list.size()]. Current footstep is footstep_node_list[footstep_index].
       size_t footstep_index;
       // one_step_count is total counter num of current steps (= step_time/dt). lcg_count is counter for lcg. During one step, lcg_count decreases from one_step_count to 0.
@@ -483,22 +483,22 @@ namespace rats
 #ifndef HAVE_MAIN
     public:
 #endif
-      leg_coords_generator(const double __dt, toe_heel_phase_counter* _thp_ptr)
+      leg_coords_generator(const double _dt, toe_heel_phase_counter* _thp_ptr)
         : support_leg_coords(), swing_leg_coords(), swing_leg_src_coords(), swing_leg_dst_coords(),
-          default_step_height(0.05), default_top_ratio(0.5), current_step_height(0.0), swing_ratio(0), swing_rot_ratio(0), foot_midcoords_ratio(0), _dt(__dt),
+          default_step_height(0.05), default_top_ratio(0.5), current_step_height(0.0), swing_ratio(0), swing_rot_ratio(0), foot_midcoords_ratio(0), dt(_dt),
           current_toe_angle(0), current_heel_angle(0),
           footstep_index(0), lcg_count(0), support_leg(RLEG), default_orbit_type(CYCLOID),
           thp_ptr(_thp_ptr),
           foot_ratio_interpolator(NULL), swing_foot_rot_ratio_interpolator(NULL), toe_heel_interpolator(NULL),
           toe_pos_offset_x(0.0), heel_pos_offset_x(0.0), toe_angle(0.0), heel_angle(0.0), foot_dif_rot_angle(0.0), use_toe_joint(false)
       {
-        rdtg.set_dt(_dt);
-        sdtg.set_dt(_dt);
-        cdtg.set_dt(_dt);
-        if (foot_ratio_interpolator == NULL) foot_ratio_interpolator = new interpolator(1, __dt);
-        if (swing_foot_rot_ratio_interpolator == NULL) swing_foot_rot_ratio_interpolator = new interpolator(1, __dt);
-        //if (foot_ratio_interpolator == NULL) foot_ratio_interpolator = new interpolator(1, __dt, interpolator::LINEAR);
-        if (toe_heel_interpolator == NULL) toe_heel_interpolator = new interpolator(1, __dt);
+        rdtg.set_dt(dt);
+        sdtg.set_dt(dt);
+        cdtg.set_dt(dt);
+        if (foot_ratio_interpolator == NULL) foot_ratio_interpolator = new interpolator(1, dt);
+        if (swing_foot_rot_ratio_interpolator == NULL) swing_foot_rot_ratio_interpolator = new interpolator(1, dt);
+        //if (foot_ratio_interpolator == NULL) foot_ratio_interpolator = new interpolator(1, dt, interpolator::LINEAR);
+        if (toe_heel_interpolator == NULL) toe_heel_interpolator = new interpolator(1, dt);
       };
       ~leg_coords_generator()
       {
@@ -561,8 +561,8 @@ namespace rats
         foot_ratio_interpolator->clear();
         foot_ratio_interpolator->set(&tmp_ratio);
         tmp_ratio = 1.0;
-        //foot_ratio_interpolator->go(&tmp_ratio, _dt*one_step_count, true);
-        foot_ratio_interpolator->setGoal(&tmp_ratio, _dt*one_step_count, true);
+        //foot_ratio_interpolator->go(&tmp_ratio, dt*one_step_count, true);
+        foot_ratio_interpolator->setGoal(&tmp_ratio, dt*one_step_count, true);
         foot_ratio_interpolator->sync();
       };
       void clear_interpolators ( ) {
