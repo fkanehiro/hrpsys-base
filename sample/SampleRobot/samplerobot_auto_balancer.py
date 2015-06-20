@@ -116,6 +116,7 @@ def demoAutoBalancerBalanceAgainstHandForce():
 
 def demoGaitGeneratorGoPos():
     print "1. goPos"
+    hcf.startAutoBalancer();
     hcf.abc_svc.goPos(0.1, 0.05, 20)
     hcf.abc_svc.waitFootSteps()
     print "  goPos()=>OK"
@@ -141,12 +142,10 @@ def demoGaitGeneratorSetFootSteps():
 
 def demoGaitGeneratorChangePoseWhileWalking():
     print "4. Change base height, base rot x, base rot y, and upper body while walking"
-    hcf.startAutoBalancer();
     hcf.abc_svc.waitFootSteps()
     hcf.abc_svc.goVelocity(0,0,0)
     testPoseList(pose_list, initial_pose)
     hcf.abc_svc.goStop()
-    hcf.stopAutoBalancer();
 
 def demoGaitGeneratorGetParam():
     print "5. getGaitGeneratorParam"
@@ -158,32 +157,31 @@ def demoGaitGeneratorSetParam():
     print "6. setGaitGeneratorParam"
     ggp_org = hcf.abc_svc.getGaitGeneratorParam()[1]
     ggp = hcf.abc_svc.getGaitGeneratorParam()[1]
-    ggp.default_step_time = 0.7
+    ggp.default_step_time = 0.9
     ggp.default_step_height = 0.15
     ggp.default_double_support_ratio = 0.4
+    ggp.swing_trajectory_delay_time_offset = 0.20
     ggp.default_orbit_type = OpenHRP.AutoBalancerService.RECTANGLE;
     hcf.abc_svc.setGaitGeneratorParam(ggp)
     ret = hcf.abc_svc.getGaitGeneratorParam()
     if ret[0] and ret[1].default_step_time == ggp.default_step_time and ret[1].default_step_height == ggp.default_step_height and ret[1].default_double_support_ratio == ggp.default_double_support_ratio and ret[1].default_orbit_type == ggp.default_orbit_type:
         print "  setGaitGeneratorParam() => OK"
     hcf.abc_svc.goPos(0.2,0,0)
+    hcf.abc_svc.waitFootSteps()
     hcf.abc_svc.setGaitGeneratorParam(ggp_org) # revert parameter
 
 def demoGaitGeneratorNonDefaultStrideStop():
     print "7. non-default stride"
-    hcf.startAutoBalancer();
     hcf.abc_svc.setFootSteps([OpenHRP.AutoBalancerService.Footstep([0,-0.09,0], [1,0,0,0], "rleg"),
                               OpenHRP.AutoBalancerService.Footstep([0.15,0.09,0], [1,0,0,0], "lleg")])
     hcf.abc_svc.waitFootSteps()
     hcf.abc_svc.setFootSteps([OpenHRP.AutoBalancerService.Footstep([0,-0.09,0], [1,0,0,0], "rleg"),
                               OpenHRP.AutoBalancerService.Footstep([0,0.09,0], [1,0,0,0], "lleg")])
     hcf.abc_svc.waitFootSteps()
-    hcf.stopAutoBalancer();
     print "  Non default Stride()=>OK"
 
 def demoGaitGeneratorToeHeelContact():
     print "8. Use toe heel contact"
-    hcf.startAutoBalancer();
     ggp=hcf.abc_svc.getGaitGeneratorParam()[1];
     ggp.toe_pos_offset_x = 1e-3*182.0;
     ggp.heel_pos_offset_x = 1e-3*-72.0;
@@ -194,7 +192,6 @@ def demoGaitGeneratorToeHeelContact():
     hcf.abc_svc.setGaitGeneratorParam(ggp);
     hcf.abc_svc.goPos(0.3, 0, 0);
     hcf.abc_svc.waitFootSteps()
-    hcf.stopAutoBalancer();
     ggp.toe_angle = 0;
     ggp.heel_angle = 0;
     hcf.abc_svc.setGaitGeneratorParam(ggp);
@@ -226,7 +223,7 @@ def demoGaitGeneratorStopStartSyncCheck():
 
 def demoGaitGeneratorEmergencyStop():
     print "10. Emergency stop"
-    hcf.startAutoBalancer()
+    hcf.startAutoBalancer();
     hcf.abc_svc.goPos(0,0,90);
     print "  Start goPos and wait for 4 steps"
     for idx in range(4): # Wait for 4 steps including initial double support phase
@@ -237,7 +234,6 @@ def demoGaitGeneratorEmergencyStop():
     hcf.abc_svc.emergencyStop();
     print "  Align foot steps"
     hcf.abc_svc.goPos(0,0,0);
-    hcf.abc_svc.waitFootSteps()
 
 def demoGaitGeneratorGetRemainingSteps():
     print "11. Get remaining foot steps"
@@ -250,8 +246,45 @@ def demoGaitGeneratorGetRemainingSteps():
         hcf.seq_svc.setJointAngles(initial_pose, hcf.abc_svc.getGaitGeneratorParam()[1].default_step_time);
         hcf.waitInterpolation();
 
+def demoGaitGeneratorChangeStepParam():
+    print "12. Change step param with setFootSteps"
+    ggp_org=hcf.abc_svc.getGaitGeneratorParam()[1];
+    # dummy setting
+    ggp=hcf.abc_svc.getGaitGeneratorParam()[1];
+    ggp.toe_angle = 50;
+    ggp.heel_angle = 50;
+    hcf.abc_svc.setGaitGeneratorParam(ggp);
+    hcf.abc_svc.setFootStepsWithParam([OpenHRP.AutoBalancerService.Footstep([0,-0.09,0], [1,0,0,0], "rleg"),
+                                       OpenHRP.AutoBalancerService.Footstep([0.1,0.09,0], [1,0,0,0], "lleg"),
+                                       OpenHRP.AutoBalancerService.Footstep([0.2,-0.09,0], [1,0,0,0], "rleg"),
+                                       OpenHRP.AutoBalancerService.Footstep([0.2,0.09,0], [1,0,0,0], "lleg")],
+                                      [OpenHRP.AutoBalancerService.StepParam(step_height=0.0, step_time=1.0, toe_angle=0.0, heel_angle=0.0),
+                                       OpenHRP.AutoBalancerService.StepParam(step_height=0.05, step_time=2.0, toe_angle=0.0, heel_angle=0.0),
+                                       OpenHRP.AutoBalancerService.StepParam(step_height=0.05, step_time=1.0, toe_angle=0.0, heel_angle=0.0),
+                                       OpenHRP.AutoBalancerService.StepParam(step_height=0.05, step_time=2.0, toe_angle=0.0, heel_angle=0.0)])
+    hcf.abc_svc.waitFootSteps()
+    hcf.abc_svc.setFootStepsWithParam([OpenHRP.AutoBalancerService.Footstep([0,-0.09,0], [1,0,0,0], "rleg"),
+                                       OpenHRP.AutoBalancerService.Footstep([0.1,0.09,0], [1,0,0,0], "lleg"),
+                                       OpenHRP.AutoBalancerService.Footstep([0.2,-0.09,0], [1,0,0,0], "rleg"),
+                                       OpenHRP.AutoBalancerService.Footstep([0.2,0.09,0], [1,0,0,0], "lleg")],
+                                      [OpenHRP.AutoBalancerService.StepParam(step_height=0.0, step_time=1.0, toe_angle=0.0, heel_angle=0.0),
+                                       OpenHRP.AutoBalancerService.StepParam(step_height=0.1, step_time=1.0, toe_angle=0.0, heel_angle=0.0),
+                                       OpenHRP.AutoBalancerService.StepParam(step_height=0.05, step_time=1.0, toe_angle=0.0, heel_angle=0.0),
+                                       OpenHRP.AutoBalancerService.StepParam(step_height=0.1, step_time=1.0, toe_angle=0.0, heel_angle=0.0)])
+    hcf.abc_svc.waitFootSteps()
+    hcf.abc_svc.setFootStepsWithParam([OpenHRP.AutoBalancerService.Footstep([0,-0.09,0], [1,0,0,0], "rleg"),
+                                       OpenHRP.AutoBalancerService.Footstep([0.1,0.09,0], [1,0,0,0], "lleg"),
+                                       OpenHRP.AutoBalancerService.Footstep([0.2,-0.09,0], [1,0,0,0], "rleg"),
+                                       OpenHRP.AutoBalancerService.Footstep([0.2,0.09,0], [1,0,0,0], "lleg")],
+                                      [OpenHRP.AutoBalancerService.StepParam(step_height=0.0, step_time=1.0, toe_angle=0.0, heel_angle=0.0),
+                                       OpenHRP.AutoBalancerService.StepParam(step_height=0.05, step_time=1.0, toe_angle=0.0, heel_angle=0.0),
+                                       OpenHRP.AutoBalancerService.StepParam(step_height=0.05, step_time=1.0, toe_angle=20.0, heel_angle=5.0),
+                                       OpenHRP.AutoBalancerService.StepParam(step_height=0.05, step_time=1.0, toe_angle=10.0, heel_angle=10.0)])
+    hcf.abc_svc.waitFootSteps()
+    hcf.abc_svc.setGaitGeneratorParam(ggp_org);
+
 def demoGaitGeneratorHandFixWalking():
-    print "12. walking by fixing"
+    print "13. walking by fixing"
     # abc_svc.startAutoBalancer([AutoBalancerService.AutoBalancerLimbParam("rleg", [0,0,0], [0,0,0,0]),
     #                            AutoBalancerService.AutoBalancerLimbParam("lleg", [0,0,0], [0,0,0,0]),
     #                            AutoBalancerService.AutoBalancerLimbParam("rarm", [0,0,0], [0,0,0,0]),
@@ -284,6 +317,7 @@ def demo():
     demoGaitGeneratorStopStartSyncCheck()
     demoGaitGeneratorEmergencyStop()
     demoGaitGeneratorGetRemainingSteps()
+    demoGaitGeneratorChangeStepParam()
     # demoGaitGeneratorHandFixWalking()
 
 if __name__ == '__main__':

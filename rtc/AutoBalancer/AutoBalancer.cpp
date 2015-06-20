@@ -925,7 +925,6 @@ bool AutoBalancer::goPos(const double& x, const double& y, const double& th)
                                      (y > 0 ? ikp["rleg"].target_end_coords : ikp["lleg"].target_end_coords),
                                      (y > 0 ? ikp["lleg"].target_end_coords : ikp["rleg"].target_end_coords),
                                      (y > 0 ? RLEG : LLEG));
-    gg->print_footstep_list();
     startWalking();
     return true;
   } else {
@@ -965,9 +964,10 @@ bool AutoBalancer::setFootSteps(const OpenHRP::AutoBalancerService::FootstepSequ
 {
   OpenHRP::AutoBalancerService::StepParamSequence sps;
   sps.length(fs.length());
-  for (size_t i = 0; i < sps.length(); i++) sps[i].step_height = gg->get_default_step_height();
-  for (size_t i = 0; i < sps.length(); i++) sps[i].toe_angle = gg->get_toe_angle();
-  for (size_t i = 0; i < sps.length(); i++) sps[i].heel_angle = gg->get_heel_angle();
+  for (size_t i = 0; i < sps.length(); i++) sps[i].step_height = (i==0 ? 0.0 : gg->get_default_step_height());
+  for (size_t i = 0; i < sps.length(); i++) sps[i].step_time = gg->get_default_step_time();
+  for (size_t i = 0; i < sps.length(); i++) sps[i].toe_angle = (i==0 ? 0.0 : gg->get_toe_angle());
+  for (size_t i = 0; i < sps.length(); i++) sps[i].heel_angle = (i==0 ? 0.0 : gg->get_heel_angle());
   setFootStepsWithParam(fs, sps);
 }
 
@@ -1004,13 +1004,16 @@ bool AutoBalancer::setFootStepsWithParam(const OpenHRP::AutoBalancerService::Foo
         return false;
       }
     }
-    std::cerr << "[" << m_profile.instance_name << "] print footsteps " << std::endl;
-    gg->clear_footstep_node_list();
-    for (size_t i = 0; i < fs_vec.size(); i++) {
-        gg->append_footstep_node(leg_name_vec[i], fs_vec[i], sps[i].step_height, sps[i].toe_angle, sps[i].heel_angle);
+    if (sps.length() != fs_vec.size()) {
+        std::cerr << "[" << m_profile.instance_name << "]   StepParam length " << sps.length () << " != Footstep length " << fs_vec.size() << std::endl;
+        return false;
     }
-    gg->append_finalize_footstep();
-    gg->print_footstep_list();
+    std::cerr << "[" << m_profile.instance_name << "] print footsteps " << std::endl;
+    std::vector<step_node> fnl;
+    for (size_t i = 0; i < fs_vec.size(); i++) {
+        fnl.push_back(step_node(leg_name_vec[i], fs_vec[i], sps[i].step_height, sps[i].step_time, sps[i].toe_angle, sps[i].heel_angle));
+    }
+    gg->set_foot_steps(fnl);
     startWalking();
     return true;
   } else {
