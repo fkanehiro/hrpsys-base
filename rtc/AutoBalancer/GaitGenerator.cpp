@@ -392,7 +392,7 @@ namespace rats
         leg_type cur_leg = footstep_node_list[lcg.get_footstep_index()].l_r;
         fnl.push_back(step_node(cur_leg==RLEG?LLEG:RLEG, footstep_node_list[lcg.get_footstep_index()-1].worldcoords, 0, default_step_time, 0, 0));
         fnl.push_back(step_node(cur_leg, footstep_node_list[lcg.get_footstep_index()].worldcoords, 0, default_step_time, 0, 0));
-        // fnl.push_back(step_node(cur_leg==RLEG?LLEG:RLEG, footstep_node_list[lcg.get_footstep_index()-1].worldcoords, 0, default_step_time, 0, 0));
+        fnl.push_back(step_node(cur_leg==RLEG?LLEG:RLEG, footstep_node_list[lcg.get_footstep_index()-1].worldcoords, 0, default_step_time, 0, 0));
         overwrite_refzmp_queue(fnl);
         emergency_flg = STOPPING;
       }
