@@ -392,7 +392,7 @@ namespace rats
         leg_type cur_leg = footstep_node_list[lcg.get_footstep_index()].l_r;
         fnl.push_back(step_node(cur_leg==RLEG?LLEG:RLEG, footstep_node_list[lcg.get_footstep_index()-1].worldcoords, 0, default_step_time, 0, 0));
         fnl.push_back(step_node(cur_leg, footstep_node_list[lcg.get_footstep_index()].worldcoords, 0, default_step_time, 0, 0));
-        fnl.push_back(step_node(cur_leg==RLEG?LLEG:RLEG, footstep_node_list[lcg.get_footstep_index()-1].worldcoords, 0, default_step_time, 0, 0));
+        // fnl.push_back(step_node(cur_leg==RLEG?LLEG:RLEG, footstep_node_list[lcg.get_footstep_index()-1].worldcoords, 0, default_step_time, 0, 0));
         overwrite_refzmp_queue(fnl);
         emergency_flg = STOPPING;
       }
@@ -597,14 +597,15 @@ namespace rats
     rg.set_refzmp_count(static_cast<size_t>(fnl[0].step_time/dt));
     /* reset refzmp */
     for (size_t i = 0; i < fnl.size(); i++) {
-      if (emergency_flg == EMERGENCY_STOP)
-        rg.push_refzmp_from_footstep_list_for_dual(footstep_node_list[idx+i], fnl[i%2].worldcoords, fnl[(i+1)%2].worldcoords);
-      else
-          if (i==fnl.size()-1) {
-              rg.push_refzmp_from_footstep_list_for_dual(footstep_node_list[fnl.size()-1], fnl[fnl.size()-1].worldcoords, fnl[fnl.size()-2].worldcoords);
-          } else {
-              rg.push_refzmp_from_footstep_list_for_single(footstep_node_list[idx+i], footstep_node_list[idx+i-1].worldcoords);
-          }
+        if (emergency_flg == EMERGENCY_STOP)
+            rg.push_refzmp_from_footstep_list_for_dual(footstep_node_list[idx+i], fnl[i%2].worldcoords, fnl[(i+1)%2].worldcoords);
+        else {
+            if (i==fnl.size()-1) {
+                rg.push_refzmp_from_footstep_list_for_dual(footstep_node_list[fnl.size()-1], fnl[fnl.size()-1].worldcoords, fnl[fnl.size()-2].worldcoords);
+            } else {
+                rg.push_refzmp_from_footstep_list_for_single(footstep_node_list[idx+i], footstep_node_list[idx+i-1].worldcoords);
+            }
+        }
     }
     /* fill preview controller queue by new refzmp */
     hrp::Vector3 rzmp, sfzo;
