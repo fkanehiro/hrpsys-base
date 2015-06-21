@@ -34,13 +34,13 @@ namespace rats
   };
 
   /* member function implementation for refzmp_generator */
-  void refzmp_generator::push_refzmp_from_footstep_list_for_dual (const std::vector<step_node>& fnl,
+  void refzmp_generator::push_refzmp_from_footstep_list_for_dual (const step_node& fn,
                                                                                   const coordinates& _support_leg_coords,
                                                                                   const coordinates& _swing_leg_coords)
   {
     hrp::Vector3 rzmp;
     hrp::Vector3 dz0, dz1, ret_zmp;
-    leg_type spl = (fnl[fs_index].l_r == RLEG) ? LLEG :RLEG;
+    leg_type spl = (fn.l_r == RLEG) ? LLEG :RLEG;
     dz0 = _support_leg_coords.rot * default_zmp_offsets[spl];
     dz1 = _swing_leg_coords.rot * default_zmp_offsets[spl == RLEG ? LLEG : RLEG];
     dz0 += _support_leg_coords.pos;
@@ -48,23 +48,23 @@ namespace rats
     rzmp = (dz0 + dz1) / 2.0;
     refzmp_cur_list.push_back( rzmp );
     foot_x_axis_list.push_back( hrp::Vector3(_swing_leg_coords.rot * hrp::Vector3::UnitX()) );
-    swing_leg_list.push_back( fnl[fs_index].l_r );
-    step_count_list.push_back(static_cast<size_t>(fnl[fs_index].step_time/dt));
+    swing_leg_list.push_back( fn.l_r );
+    step_count_list.push_back(static_cast<size_t>(fn.step_time/dt));
     //std::cerr << "double " << (fnl[fs_index].l_r==RLEG?LLEG:RLEG) << " [" << refzmp_cur_list.back()(0) << " " << refzmp_cur_list.back()(1) << " " << refzmp_cur_list.back()(2) << "]" << std::endl;
-    fs_index++;
   };
 
-  void refzmp_generator::push_refzmp_from_footstep_list_for_single (const std::vector<step_node>& fnl)
+  void refzmp_generator::push_refzmp_from_footstep_list_for_single (const step_node& fn, const coordinates& _support_leg_coords)
   {
+    // support leg = prev fnl l_r
+    // swing leg = fnl l_r
     hrp::Vector3 rzmp;
-    coordinates tmp(fnl[fs_index-1].worldcoords);
-    rzmp = tmp.rot * default_zmp_offsets[fnl[fs_index-1].l_r] + tmp.pos;
+    coordinates tmp(_support_leg_coords);
+    rzmp = tmp.rot * default_zmp_offsets[fn.l_r==RLEG?LLEG:RLEG] + tmp.pos;
     refzmp_cur_list.push_back( rzmp );
     foot_x_axis_list.push_back( hrp::Vector3(tmp.rot * hrp::Vector3::UnitX()) );
-    swing_leg_list.push_back( fnl[fs_index-1].l_r == RLEG ? LLEG : RLEG);
-    step_count_list.push_back(static_cast<size_t>(fnl[fs_index].step_time/dt));
+    swing_leg_list.push_back(fn.l_r);
+    step_count_list.push_back(static_cast<size_t>(fn.step_time/dt));
     //std::cerr << "single " << fnl[fs_index-1].l_r << " [" << refzmp_cur_list.back()(0) << " " << refzmp_cur_list.back()(1) << " " << refzmp_cur_list.back()(2) << "]" << std::endl;
-    if (fs_index < fnl.size()) fs_index++;
   };
 
   void refzmp_generator::calc_current_refzmp (hrp::Vector3& ret, hrp::Vector3& swing_foot_zmp_offset, const double default_double_support_ratio, const double default_double_support_static_ratio) const
@@ -134,15 +134,9 @@ namespace rats
     if ( 1 <= refzmp_count ) {
       refzmp_count--;
     } else {
-      //std::cerr << "fs " << fs_index << "/" << fnl.size() << " rf " << refzmp_index << "/" << refzmp_cur_list.size() << " flg " << std::endl;
-      if ( fnl.size() - 1 == fs_index ) {
-        push_refzmp_from_footstep_list_for_dual(fnl, fnl[fs_index-1].worldcoords, fnl[fs_index-2].worldcoords);
-        is_final_double_support_set = true;
-      } else if ( fnl.size () - 1 > fs_index ) {
-        push_refzmp_from_footstep_list_for_single(fnl);
-      }
       refzmp_index++;
       refzmp_count = one_step_count = step_count_list[refzmp_index];
+      //std::cerr << "fs " << fs_index << "/" << fnl.size() << " rf " << refzmp_index << "/" << refzmp_cur_list.size() << " flg " << std::endl;
     }
   };
 
@@ -352,7 +346,7 @@ namespace rats
     finalize_count = 0;
     footstep_node_list[0].worldcoords = initial_swing_leg_dst_coords;
     rg.reset(one_step_len);
-    rg.push_refzmp_from_footstep_list_for_dual(footstep_node_list, initial_support_leg_coords, initial_swing_leg_dst_coords);
+    rg.push_refzmp_from_footstep_list_for_dual(footstep_node_list.front(), initial_support_leg_coords, initial_swing_leg_dst_coords);
     if ( preview_controller_ptr != NULL ) {
       delete preview_controller_ptr;
       preview_controller_ptr = NULL;
@@ -361,7 +355,10 @@ namespace rats
     preview_controller_ptr = new preview_dynamics_filter<extended_preview_control>(dt, cog(2) - rg.get_refzmp_cur()(2), rg.get_refzmp_cur(), gravitational_acceleration);
     lcg.reset(one_step_len, footstep_node_list[1].step_time/dt, initial_swing_leg_dst_coords, initial_swing_leg_dst_coords, initial_support_leg_coords, default_double_support_ratio);
     /* make another */
-    rg.push_refzmp_from_footstep_list_for_single(footstep_node_list);
+    for (size_t i = 1; i < footstep_node_list.size()-1; i++) {
+        rg.push_refzmp_from_footstep_list_for_single(footstep_node_list[i], footstep_node_list[i-1].worldcoords);
+    }
+    rg.push_refzmp_from_footstep_list_for_dual(footstep_node_list[footstep_node_list.size()-1], footstep_node_list[footstep_node_list.size()-1].worldcoords, footstep_node_list[footstep_node_list.size()-2].worldcoords);
     emergency_flg = IDLING;
   };
 
@@ -599,14 +596,16 @@ namespace rats
     rg.set_indices(idx);
     rg.set_refzmp_count(static_cast<size_t>(fnl[0].step_time/dt));
     /* reset refzmp */
-    for (size_t i = 0; i < fnl.size()-1; i++) {
+    for (size_t i = 0; i < fnl.size(); i++) {
       if (emergency_flg == EMERGENCY_STOP)
-        rg.push_refzmp_from_footstep_list_for_dual(footstep_node_list, fnl[i%2].worldcoords, fnl[(i+1)%2].worldcoords);
+        rg.push_refzmp_from_footstep_list_for_dual(footstep_node_list[idx+i], fnl[i%2].worldcoords, fnl[(i+1)%2].worldcoords);
       else
-        rg.push_refzmp_from_footstep_list_for_single(footstep_node_list);
+          if (i==fnl.size()-1) {
+              rg.push_refzmp_from_footstep_list_for_dual(footstep_node_list[fnl.size()-1], fnl[fnl.size()-1].worldcoords, fnl[fnl.size()-2].worldcoords);
+          } else {
+              rg.push_refzmp_from_footstep_list_for_single(footstep_node_list[idx+i], footstep_node_list[idx+i-1].worldcoords);
+          }
     }
-    if (emergency_flg == EMERGENCY_STOP)
-      rg.push_refzmp_from_footstep_list_for_dual(footstep_node_list, fnl[0].worldcoords, fnl[1].worldcoords);
     /* fill preview controller queue by new refzmp */
     hrp::Vector3 rzmp, sfzo;
     bool not_solved = true;
