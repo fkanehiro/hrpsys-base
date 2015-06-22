@@ -196,24 +196,24 @@ namespace rats
       std::vector<leg_type> swing_leg_list; // Swing leg list according to refzmp_cur_list
       std::vector<size_t> step_count_list; // Swing leg list according to refzmp_cur_list
       std::vector<hrp::Vector3> default_zmp_offsets; /* list of RLEG and LLEG */
-      size_t fs_index, refzmp_index, refzmp_count, one_step_count;
+      size_t refzmp_index, refzmp_count, one_step_count;
       double toe_zmp_offset_x, heel_zmp_offset_x; // [m]
       double dt;
       toe_heel_phase_counter* thp_ptr;
-      bool use_toe_heel_transition, is_final_double_support_set;
+      bool use_toe_heel_transition;
       void calc_current_refzmp (hrp::Vector3& ret, hrp::Vector3& swing_foot_zmp_offset, const double default_double_support_ratio, const double default_double_support_static_ratio) const;
       const bool is_start_double_support_phase () const { return refzmp_index == 0; };
       const bool is_second_phase () const { return refzmp_index == 1; };
-      const bool is_second_last_phase () const { return ((refzmp_index == refzmp_cur_list.size()-2) && is_final_double_support_set); };
+      const bool is_second_last_phase () const { return refzmp_index == refzmp_cur_list.size()-2; };
       const bool is_end_double_support_phase () const { return refzmp_index == refzmp_cur_list.size() - 1; };
 #ifndef HAVE_MAIN
     public:
 #endif
       refzmp_generator(toe_heel_phase_counter* _thp_ptr, const double _dt)
         : refzmp_cur_list(), foot_x_axis_list(), swing_leg_list(), step_count_list(), default_zmp_offsets(),
-          fs_index(0), refzmp_index(0), refzmp_count(0), one_step_count(0),
+          refzmp_index(0), refzmp_count(0), one_step_count(0),
           toe_zmp_offset_x(0), heel_zmp_offset_x(0), dt(_dt),
-          thp_ptr(_thp_ptr), use_toe_heel_transition(false), is_final_double_support_set(false)
+          thp_ptr(_thp_ptr), use_toe_heel_transition(false)
       {
           default_zmp_offsets.push_back(hrp::Vector3::Zero());
           default_zmp_offsets.push_back(hrp::Vector3::Zero());
@@ -238,15 +238,14 @@ namespace rats
         foot_x_axis_list.clear();
         swing_leg_list.clear();
         step_count_list.clear();
-        is_final_double_support_set = false;
       };
-      void push_refzmp_from_footstep_list_for_dual (const std::vector<step_node>& fnl,
+      void push_refzmp_from_footstep_list_for_dual (const step_node& fn,
                                                     const coordinates& _support_leg_coords,
                                                     const coordinates& _swing_leg_coords);
-      void push_refzmp_from_footstep_list_for_single (const std::vector<step_node>& fnl);
+      void push_refzmp_from_footstep_list_for_single (const step_node& fn, const coordinates& _support_leg_coords);
       void update_refzmp (const std::vector<step_node>& fnl);
       // setter
-      void set_indices (const size_t idx) { fs_index = refzmp_index = idx; };
+      void set_indices (const size_t idx) { refzmp_index = idx; };
       void set_refzmp_count(const size_t _refzmp_count) { refzmp_count = _refzmp_count; };
       void set_default_zmp_offsets(const std::vector<hrp::Vector3>& tmp) { default_zmp_offsets = tmp; };
       void set_toe_zmp_offset_x (const double _off) { toe_zmp_offset_x = _off; };
@@ -448,6 +447,7 @@ namespace rats
 #ifdef HAVE_MAIN
     public:
 #endif
+      std::vector<coordinates> swing_leg_dst_coords_list, support_leg_coords_list;
       // Support leg coordinates.
       coordinates support_leg_coords;
       // Swing leg coordinates is interpolated from swing_leg_src_coords to swing_leg_dst_coords during swing phase.
@@ -540,15 +540,35 @@ namespace rats
       void set_toe_angle (const double _angle) { toe_angle = _angle; };
       void set_heel_angle (const double _angle) { heel_angle = _angle; };
       void set_use_toe_joint (const bool ut) { use_toe_joint = ut; };
+      void set_swing_support_list (const std::vector<step_node>& fnl)
+      {
+          coordinates prev_support_leg_coords = support_leg_coords_list.front();
+          support_leg_coords_list.clear();
+          swing_leg_dst_coords_list.clear();
+          support_leg_coords_list.push_back(prev_support_leg_coords);
+          for (size_t i = 0; i<fnl.size(); i++) {
+              swing_leg_dst_coords_list.push_back(fnl[i].worldcoords);
+              if (i>0) {
+                  if (fnl[i].l_r == fnl[i-1].l_r) {
+                      support_leg_coords_list.push_back(support_leg_coords_list.back());
+                  } else {
+                      support_leg_coords_list.push_back(swing_leg_dst_coords_list[i-1]);
+                  }
+              }
+          }
+      };
       void reset(const size_t _one_step_count, const size_t _next_one_step_count,
                  const coordinates& _swing_leg_dst_coords,
                  const coordinates& _swing_leg_src_coords,
                  const coordinates& _support_leg_coords,
                  const double default_double_support_ratio)
       {
+        support_leg_coords_list.clear();
+        swing_leg_dst_coords_list.clear();
         swing_leg_dst_coords = _swing_leg_dst_coords;
         swing_leg_src_coords = _swing_leg_src_coords;
         support_leg_coords = _support_leg_coords;
+        support_leg_coords_list.push_back(support_leg_coords);
         one_step_count = lcg_count = _one_step_count;
         next_one_step_count = _next_one_step_count;
         thp_ptr->set_one_step_count(one_step_count);
@@ -589,6 +609,8 @@ namespace rats
       const coordinates& get_support_leg_coords() const { return support_leg_coords; };
       const coordinates& get_swing_leg_src_coords() const { return swing_leg_src_coords; };
       const coordinates& get_swing_leg_dst_coords() const { return swing_leg_dst_coords; };
+      const coordinates& get_swing_leg_dst_coords_idx(const size_t idx) const { return swing_leg_dst_coords_list[idx]; };
+      const coordinates& get_support_leg_coords_idx(const size_t idx) const { return support_leg_coords_list[idx]; };
       leg_type get_support_leg() const { return support_leg;};
       leg_type get_swing_leg() const { return support_leg == RLEG ? LLEG : RLEG;};
       double get_default_step_height () const { return default_step_height;};
