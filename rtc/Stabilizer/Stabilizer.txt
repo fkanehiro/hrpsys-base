@@ -25,6 +25,14 @@ the air, it switches to air mode ("MODE_AIR"), which is similar to idle mode.
 When this component was air mode and the robot is put on the ground,
 it switches to controlling mode. 
 
+\subsection zdexample ZMPDistributor Example
+ZMPDistributor example, in which distributed force and moment are displayed on graphs 
+(COP, Ref-force, Ref-moment, ... etc).
+
+@code
+testZMPDistributor # Non ROS environment
+rosrun hrpsys testZMPDistributor # ROS environment
+@endcode
 
 <table>
 <tr><th>implementation_id</th><td>Stabilizer</td></tr>

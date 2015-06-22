@@ -50,6 +50,30 @@ After OpenHRP::AutoBalancerService::goVelocity() is called, this component conti
 When OpenHRP::AutoBalancerService::goStop() are called in this case, 
 this completing stops to use it after completing walking command.
 
+\subsection pcexample Preview Controller Example
+Preview controller example, in which trajectories are displayed on graphs
+(COG, ZMP, ... etc). 
+
+@code
+testPreviewController # Non-ROS environemnt
+rosrun hrpsys testPreviewController # ROS environemnt
+@endcode
+
+\subsection ggexample GaitGenerator Example
+GaitGenerator example, in which trajectories are displayed on graphs 
+(COG, ZMP, foot trajectories ... etc).
+
+Users can change test type (fwd-walking example, rotation-walking example, stair-walking, toe-heel example, ... etc).
+
+Users can also change GaitGenerator parameters (step time, step height, orbit type, ... etc).
+
+@code
+testGaitGenerator [test-type-option] [gg-parameters-options] # Non ROS environment
+rosrun hrpsys testGaitGenerator [test-type-option] [gg-parameters-options] # ROS environment
+@endcode
+[test-type-option] is test type and [gg-parameters-options] are GaitGeneratorParameters.
+To learn test type, please execute testGaitGenerator without arguments.
+
 <table>
 <tr><th>implementation_id</th><td>AutoBalancer</td></tr>
 <tr><th>category</th><td>example</td></tr>
