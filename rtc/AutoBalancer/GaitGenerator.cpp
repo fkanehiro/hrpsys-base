@@ -301,7 +301,14 @@ namespace rats
     swing_leg_dst_coords = fnl[current_footstep_index].worldcoords;
     support_leg = (fnl[current_footstep_index].l_r==RLEG ? LLEG : RLEG);
     if (footstep_index != 0) { // If not initial step, support_leg_coords is previous swing_leg_dst_coords
-        support_leg_coords = fnl[current_footstep_index-1].worldcoords;
+        support_leg_coords = support_leg_coords_list[current_footstep_index];
+    }
+    if (current_footstep_index > 0) {
+        if (fnl[current_footstep_index].l_r == fnl[current_footstep_index-1].l_r) {
+            swing_leg_src_coords = swing_leg_dst_coords_list[current_footstep_index-1];
+        } else {
+            swing_leg_src_coords = support_leg_coords_list[current_footstep_index-1];
+        }
     }
 
     calc_ratio_from_double_support_ratio(default_double_support_ratio);
@@ -311,7 +318,6 @@ namespace rats
     } else {
       //std::cerr << "gp " << footstep_index << std::endl;
       if (footstep_index < fnl.size() - 1) {
-        swing_leg_src_coords = support_leg_coords;
         footstep_index++;
       }
       if (footstep_index < fnl.size() - 1) {
@@ -355,10 +361,13 @@ namespace rats
     preview_controller_ptr = new preview_dynamics_filter<extended_preview_control>(dt, cog(2) - rg.get_refzmp_cur()(2), rg.get_refzmp_cur(), gravitational_acceleration);
     lcg.reset(one_step_len, footstep_node_list[1].step_time/dt, initial_swing_leg_dst_coords, initial_swing_leg_dst_coords, initial_support_leg_coords, default_double_support_ratio);
     /* make another */
+    lcg.set_swing_support_list(footstep_node_list);
     for (size_t i = 1; i < footstep_node_list.size()-1; i++) {
         rg.push_refzmp_from_footstep_list_for_single(footstep_node_list[i], footstep_node_list[i-1].worldcoords);
     }
-    rg.push_refzmp_from_footstep_list_for_dual(footstep_node_list[footstep_node_list.size()-1], footstep_node_list[footstep_node_list.size()-1].worldcoords, footstep_node_list[footstep_node_list.size()-2].worldcoords);
+    rg.push_refzmp_from_footstep_list_for_dual(footstep_node_list[footstep_node_list.size()-1],
+                                               lcg.get_swing_leg_dst_coords_idx(footstep_node_list.size()-1),
+                                               lcg.get_support_leg_coords_idx(footstep_node_list.size()-1));
     emergency_flg = IDLING;
   };
 
@@ -595,15 +604,20 @@ namespace rats
     /* reset index and counter */
     rg.set_indices(idx);
     rg.set_refzmp_count(static_cast<size_t>(fnl[0].step_time/dt));
+    lcg.set_swing_support_list(footstep_node_list);
     /* reset refzmp */
     for (size_t i = 0; i < fnl.size(); i++) {
         if (emergency_flg == EMERGENCY_STOP)
-            rg.push_refzmp_from_footstep_list_for_dual(footstep_node_list[idx+i], fnl[i%2].worldcoords, fnl[(i+1)%2].worldcoords);
+            rg.push_refzmp_from_footstep_list_for_dual(footstep_node_list[idx+i],
+                                                       lcg.get_swing_leg_dst_coords_idx(footstep_node_list.size()-1),
+                                                       lcg.get_support_leg_coords_idx(footstep_node_list.size()-1));
         else {
             if (i==fnl.size()-1) {
-                rg.push_refzmp_from_footstep_list_for_dual(footstep_node_list[fnl.size()-1], fnl[fnl.size()-1].worldcoords, fnl[fnl.size()-2].worldcoords);
+                rg.push_refzmp_from_footstep_list_for_dual(footstep_node_list[fnl.size()-1],
+                                                           lcg.get_swing_leg_dst_coords_idx(footstep_node_list.size()-1),
+                                                           lcg.get_support_leg_coords_idx(footstep_node_list.size()-1));
             } else {
-                rg.push_refzmp_from_footstep_list_for_single(footstep_node_list[idx+i], footstep_node_list[idx+i-1].worldcoords);
+                rg.push_refzmp_from_footstep_list_for_single(footstep_node_list[idx+i], lcg.get_support_leg_coords_idx(idx+i));
             }
         }
     }

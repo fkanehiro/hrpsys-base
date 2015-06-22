@@ -447,6 +447,7 @@ namespace rats
 #ifdef HAVE_MAIN
     public:
 #endif
+      std::vector<coordinates> swing_leg_dst_coords_list, support_leg_coords_list;
       // Support leg coordinates.
       coordinates support_leg_coords;
       // Swing leg coordinates is interpolated from swing_leg_src_coords to swing_leg_dst_coords during swing phase.
@@ -539,15 +540,35 @@ namespace rats
       void set_toe_angle (const double _angle) { toe_angle = _angle; };
       void set_heel_angle (const double _angle) { heel_angle = _angle; };
       void set_use_toe_joint (const bool ut) { use_toe_joint = ut; };
+      void set_swing_support_list (const std::vector<step_node>& fnl)
+      {
+          coordinates prev_support_leg_coords = support_leg_coords_list.front();
+          support_leg_coords_list.clear();
+          swing_leg_dst_coords_list.clear();
+          support_leg_coords_list.push_back(prev_support_leg_coords);
+          for (size_t i = 0; i<fnl.size(); i++) {
+              swing_leg_dst_coords_list.push_back(fnl[i].worldcoords);
+              if (i>0) {
+                  if (fnl[i].l_r == fnl[i-1].l_r) {
+                      support_leg_coords_list.push_back(support_leg_coords_list.back());
+                  } else {
+                      support_leg_coords_list.push_back(swing_leg_dst_coords_list[i-1]);
+                  }
+              }
+          }
+      };
       void reset(const size_t _one_step_count, const size_t _next_one_step_count,
                  const coordinates& _swing_leg_dst_coords,
                  const coordinates& _swing_leg_src_coords,
                  const coordinates& _support_leg_coords,
                  const double default_double_support_ratio)
       {
+        support_leg_coords_list.clear();
+        swing_leg_dst_coords_list.clear();
         swing_leg_dst_coords = _swing_leg_dst_coords;
         swing_leg_src_coords = _swing_leg_src_coords;
         support_leg_coords = _support_leg_coords;
+        support_leg_coords_list.push_back(support_leg_coords);
         one_step_count = lcg_count = _one_step_count;
         next_one_step_count = _next_one_step_count;
         thp_ptr->set_one_step_count(one_step_count);
@@ -588,6 +609,8 @@ namespace rats
       const coordinates& get_support_leg_coords() const { return support_leg_coords; };
       const coordinates& get_swing_leg_src_coords() const { return swing_leg_src_coords; };
       const coordinates& get_swing_leg_dst_coords() const { return swing_leg_dst_coords; };
+      const coordinates& get_swing_leg_dst_coords_idx(const size_t idx) const { return swing_leg_dst_coords_list[idx]; };
+      const coordinates& get_support_leg_coords_idx(const size_t idx) const { return support_leg_coords_list[idx]; };
       leg_type get_support_leg() const { return support_leg;};
       leg_type get_swing_leg() const { return support_leg == RLEG ? LLEG : RLEG;};
       double get_default_step_height () const { return default_step_height;};
