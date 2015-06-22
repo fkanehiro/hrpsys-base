@@ -25,6 +25,20 @@ it switches to controlling mode, in which it modifies input joint angles.
 When OpenHRP::ImpedanceControllerService::deleteImpedanceController() are called in controlling mode, 
 it switches to idle mode. 
 
+\subsection impexample ImpedanceOutputGenerator Example
+ImpedanceOutputGenerator example to learn ImpedanceController response.
+
+Users can change test type (step responce for reference force, ramp response for reference position, ... etc).
+
+@code
+testImpedanceOutputGenerator [test-type-option] # Non ROS environment
+rosrun hrpsys testImpedanceOutputGenerator [test-type-option] # ROS environment
+@endcode
+
+[test-type-option] is test type.
+
+To learn test type, please execute testImpedanceOutputGenerator without arguments.
+
 <table>
 <tr><th>implementation_id</th><td>ImpedanceController</td></tr>
 <tr><th>category</th><td>example</td></tr>

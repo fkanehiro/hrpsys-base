@@ -7,6 +7,15 @@
 This component is attitude estimation based on gyro, acceleration, and
 so on.
 
+\subsection kfexample KalmanFilterEstimation Example
+KalmanFilter example, in which estimated orientation are displayed on graphs.
+
+@code
+testKalmanFilterEstimation [pose-file] [parameters] # Non ROS environment
+rosrun hrpsys testKalmanFilterEstimation [pose-file] [parameters] # Non ROS environment
+@endcode
+
+
 <table>
 <tr><th>implementation_id</th><td>KalmanFilter</td></tr>
 <tr><th>category</th><td>example</td></tr>
