@@ -668,6 +668,8 @@ int main(int argc, char* argv[])
           tgg.test11();
       } else if (std::string(argv[1]) == "--test12") {
           tgg.test12();
+      } else if (std::string(argv[1]) == "--test13") {
+          tgg.test13();
       } else {
           print_usage();
       }
