@@ -363,7 +363,7 @@ namespace rats
     /* make another */
     lcg.set_swing_support_list(footstep_node_list);
     for (size_t i = 1; i < footstep_node_list.size()-1; i++) {
-        rg.push_refzmp_from_footstep_list_for_single(footstep_node_list[i], footstep_node_list[i-1].worldcoords);
+        rg.push_refzmp_from_footstep_list_for_single(footstep_node_list[i], lcg.get_support_leg_coords_idx(i));
     }
     rg.push_refzmp_from_footstep_list_for_dual(footstep_node_list[footstep_node_list.size()-1],
                                                lcg.get_swing_leg_dst_coords_idx(footstep_node_list.size()-1),
