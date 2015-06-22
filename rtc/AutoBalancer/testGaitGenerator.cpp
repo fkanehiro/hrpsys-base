@@ -513,7 +513,7 @@ public:
 
     void test12 ()
     {
-        std::cerr << "  --test12 : Change step param in set foot steps" << std::endl;
+        std::cerr << "test12 : Change step param in set foot steps" << std::endl;
         /* initialize sample footstep_list */
         parse_params();
         std::vector<step_node> fnl;
@@ -524,6 +524,22 @@ public:
         fnl.push_back(step_node("lleg", coordinates(hrp::Vector3(hrp::Vector3(200*1e-3, 0, 0)+leg_pos[1])), gg->get_default_step_height(), 2.5, 0, 0));
         fnl.push_back(step_node("rleg", coordinates(hrp::Vector3(hrp::Vector3(300*1e-3, 0, 0)+leg_pos[0])), gg->get_default_step_height(), 1.0, 20, 5));
         fnl.push_back(step_node("lleg", coordinates(hrp::Vector3(hrp::Vector3(300*1e-3, 0, 0)+leg_pos[1])), gg->get_default_step_height(), 2.0, 0, 0));
+        gg->set_foot_steps(fnl);
+        gen_and_plot_walk_pattern();
+    };
+
+    void test13 ()
+    {
+        std::cerr << "test13 : Arbitrary leg switching" << std::endl;
+        /* initialize sample footstep_list */
+        parse_params();
+        std::vector<step_node> fnl;
+        fnl.push_back(step_node("rleg", coordinates(hrp::Vector3(hrp::Vector3(0, 0, 0)+leg_pos[0])), gg->get_default_step_height(), gg->get_default_step_time(), 0, 0));
+        fnl.push_back(step_node("lleg", coordinates(hrp::Vector3(hrp::Vector3(0, 0, 0)+leg_pos[1])), gg->get_default_step_height(), gg->get_default_step_time(), 0, 0));
+        fnl.push_back(step_node("lleg", coordinates(hrp::Vector3(hrp::Vector3(100*1e-3, 0, 0)+leg_pos[1])), gg->get_default_step_height(), gg->get_default_step_time(), 0, 0));
+        fnl.push_back(step_node("rleg", coordinates(hrp::Vector3(hrp::Vector3(100*1e-3, 0, 0)+leg_pos[0])), gg->get_default_step_height(), gg->get_default_step_time(), 0, 0));
+        fnl.push_back(step_node("rleg", coordinates(hrp::Vector3(hrp::Vector3(200*1e-3, 0, 0)+leg_pos[0])), gg->get_default_step_height(), gg->get_default_step_time(), 0, 0));
+        fnl.push_back(step_node("lleg", coordinates(hrp::Vector3(hrp::Vector3(200*1e-3, 0, 0)+leg_pos[1])), gg->get_default_step_height(), gg->get_default_step_time(), 0, 0));
         gg->set_foot_steps(fnl);
         gen_and_plot_walk_pattern();
     };
@@ -616,6 +632,7 @@ void print_usage ()
     std::cerr << "  --test10 : Stair walk + toe heel contact" << std::endl;
     std::cerr << "  --test11 : Foot rot change" << std::endl;
     std::cerr << "  --test12 : Change step param in set foot steps" << std::endl;
+    std::cerr << "  --test13 : Arbitrary leg switching" << std::endl;
 };
 
 int main(int argc, char* argv[])
