@@ -108,10 +108,12 @@ protected:
 
     TimedDoubleSeq m_qRef;
     TimedDoubleSeq m_q;
+    TimedLong m_emergencySignal;
 
     // DataInPort declaration
     // <rtc-template block="inport_declare">
     InPort<TimedDoubleSeq> m_qRefIn;
+    InPort<TimedLong> m_emergencySignalIn;
   
     // </rtc-template>
 

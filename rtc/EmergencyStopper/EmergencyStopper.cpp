@@ -39,6 +39,7 @@ EmergencyStopper::EmergencyStopper(RTC::Manager* manager)
     : RTC::DataFlowComponentBase(manager),
       // <rtc-template block="initializer">
       m_qRefIn("qRef", m_qRef),
+      m_emergencySignalIn("emergencySignal", m_emergencySignal),
       m_qOut("q", m_q),
       m_EmergencyStopperServicePort("EmergencyStopperService"),
       // </rtc-template>
@@ -67,6 +68,7 @@ RTC::ReturnCode_t EmergencyStopper::onInitialize()
     // <rtc-template block="registration">
     // Set InPort buffers
     addInPort("qRef", m_qRefIn);
+    addInPort("emergencySignal", m_emergencySignalIn);
 
     // Set OutPort buffer
     addOutPort("q", m_qOut);
@@ -169,6 +171,11 @@ RTC::ReturnCode_t EmergencyStopper::onExecute(RTC::UniqueId ec_id)
     if (m_qRefIn.isNew()) {
         m_qRefIn.read();
         assert(m_qRef.data.length() == numJoints);
+    }
+
+    if (m_emergencySignalIn.isNew()){
+        m_emergencySignalIn.read();
+        is_stop_mode = true;
     }
 
     if (DEBUGP) {
