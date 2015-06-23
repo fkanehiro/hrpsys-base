@@ -356,8 +356,8 @@ class HrpsysConfigurator:
         # connection for st
         if rtm.findPort(self.rh.ref, "lfsensor") and rtm.findPort(
                                      self.rh.ref, "rfsensor") and self.st:
-            connectPorts(self.rh.port("lfsensor"), self.st.port("forceL"))
-            connectPorts(self.rh.port("rfsensor"), self.st.port("forceR"))
+            connectPorts(self.rmfo.port("off_lfsensor"), self.st.port("forceL"))
+            connectPorts(self.rmfo.port("off_rfsensor"), self.st.port("forceR"))
             connectPorts(self.kf.port("rpy"), self.st.port("rpy"))
             connectPorts(self.sh.port("zmpOut"), self.abc.port("zmpIn"))
             connectPorts(self.sh.port("basePosOut"), self.abc.port("basePosIn"))
