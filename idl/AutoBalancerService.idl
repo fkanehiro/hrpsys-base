@@ -69,7 +69,8 @@ module OpenHRP
       CYCLOID,
       RECTANGLE,
       STAIR,
-      CYCLOIDDELAY
+      CYCLOIDDELAY,
+      CYCLOIDDELAYKICK
     };
 
     /**

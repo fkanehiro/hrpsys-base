@@ -14,7 +14,7 @@ namespace rats
                            const hrp::Vector3& goal, const double height,
                            const double default_top_ratio = 0.5);
 
-    enum orbit_type {SHUFFLING, CYCLOID, RECTANGLE, STAIR, CYCLOIDDELAY};
+    enum orbit_type {SHUFFLING, CYCLOID, RECTANGLE, STAIR, CYCLOIDDELAY,CYCLOIDDELAYKICK};
     enum leg_type {RLEG, LLEG, BOTH};
 
     struct step_node
@@ -441,6 +441,32 @@ namespace rats
       };
     };
 
+    class cycloid_delay_kick_hoffarbib_trajectory_generator : public delay_hoffarbib_trajectory_generator
+    {
+      hrp::Vector3 interpolate_antecedent_path (const hrp::Vector3& start, const hrp::Vector3& goal, const double height, const double tmp_ratio)
+      {
+        std::vector<hrp::Vector3> cycloid_path;
+        hrp::Vector3 tmpv, via_goal(goal);
+        double ratio = 0.4;
+        via_goal(2) += ratio*height;
+        double tmpheight = ((start(2)+goal(2))/2.0+height-(start(2)+via_goal(2))/2.0);
+        double kick_ratio = 1.0;
+        cycloid_path.push_back(start);
+        cycloid_path.push_back(start * (1.0 + kick_ratio) - goal * (kick_ratio));
+        cycloid_midpoint(tmpv, 0.2, start, via_goal, tmpheight);
+        cycloid_path.push_back(tmpv);
+        cycloid_midpoint(tmpv, 0.4, start, via_goal, tmpheight);
+        cycloid_path.push_back(tmpv);
+        cycloid_midpoint(tmpv, 0.6, start, via_goal, tmpheight);
+        cycloid_path.push_back(tmpv);
+        cycloid_midpoint(tmpv, 0.8, start, via_goal, tmpheight);
+        cycloid_path.push_back(tmpv);
+        cycloid_path.push_back(via_goal);
+        cycloid_path.push_back(goal);
+        return interpolate_antecedent_path_base(tmp_ratio, cycloid_path);
+      };
+    };
+    
     /* leg_coords_generator to generate current swing_leg_coords and support_leg_coords from footstep_node_list */
     class leg_coords_generator
     {
@@ -464,6 +490,7 @@ namespace rats
       rectangle_delay_hoffarbib_trajectory_generator rdtg;
       stair_delay_hoffarbib_trajectory_generator sdtg;
       cycloid_delay_hoffarbib_trajectory_generator cdtg;
+      cycloid_delay_kick_hoffarbib_trajectory_generator cdktg;
       toe_heel_phase_counter* thp_ptr;
       interpolator* foot_ratio_interpolator;
       interpolator* swing_foot_rot_ratio_interpolator;
@@ -482,6 +509,8 @@ namespace rats
                             const coordinates& goal, const double height);
       void cycloid_delay_midcoords (coordinates& ret, const coordinates& start,
                                     const coordinates& goal, const double height);
+      void cycloid_delay_kick_midcoords (coordinates& ret, const coordinates& start,
+                                    const coordinates& goal, const double height);        
       void calc_ratio_from_double_support_ratio (const double default_double_support_ratio);
 #ifndef HAVE_MAIN
     public:
@@ -498,6 +527,7 @@ namespace rats
         rdtg.set_dt(dt);
         sdtg.set_dt(dt);
         cdtg.set_dt(dt);
+        cdktg.set_dt(dt);
         if (foot_ratio_interpolator == NULL) foot_ratio_interpolator = new interpolator(1, dt);
         if (swing_foot_rot_ratio_interpolator == NULL) swing_foot_rot_ratio_interpolator = new interpolator(1, dt);
         //if (foot_ratio_interpolator == NULL) foot_ratio_interpolator = new interpolator(1, dt, interpolator::LINEAR);
@@ -527,12 +557,14 @@ namespace rats
         rdtg.set_swing_trajectory_delay_time_offset(_time_offset);
         sdtg.set_swing_trajectory_delay_time_offset(_time_offset);
         cdtg.set_swing_trajectory_delay_time_offset(_time_offset);
+        cdktg.set_swing_trajectory_delay_time_offset(_time_offset);        
       };
       void set_swing_trajectory_final_distance_weight (const double _final_distance_weight)
       {
         rdtg.set_swing_trajectory_final_distance_weight(_final_distance_weight);
         sdtg.set_swing_trajectory_final_distance_weight(_final_distance_weight);
         cdtg.set_swing_trajectory_final_distance_weight(_final_distance_weight);
+        cdktg.set_swing_trajectory_final_distance_weight(_final_distance_weight);        
       };
       void set_stair_trajectory_way_point_offset (const hrp::Vector3 _offset) { sdtg.set_stair_trajectory_way_point_offset(_offset); };
       void set_toe_pos_offset_x (const double _offx) { toe_pos_offset_x = _offx; };
@@ -577,6 +609,7 @@ namespace rats
         rdtg.reset(one_step_count, default_double_support_ratio);
         sdtg.reset(one_step_count, default_double_support_ratio);
         cdtg.reset(one_step_count, default_double_support_ratio);
+        cdktg.reset(one_step_count, default_double_support_ratio);
         reset_foot_ratio_interpolator();
       };
       void reset_foot_ratio_interpolator ()
@@ -901,6 +934,8 @@ namespace rats
             std::cerr << "STAIR" << std::endl;
         } else if (get_default_orbit_type() == CYCLOIDDELAY) {
             std::cerr << "CYCLOIDDELAY" << std::endl;
+        } else if (get_default_orbit_type() == CYCLOIDDELAYKICK) {
+            std::cerr << "CYCLOIDDELAYKICK" << std::endl;
         }
         std::cerr << "[" << print_str << "]   swing_trajectory_delay_time_offset = " << get_swing_trajectory_delay_time_offset() << "[s], swing_trajectory_final_distance_weight = " << get_swing_trajectory_final_distance_weight() << std::endl;
         hrp::Vector3 tmpv;

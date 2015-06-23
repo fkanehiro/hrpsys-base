@@ -565,6 +565,8 @@ public:
                       gg->set_default_orbit_type(STAIR);
                   } else if (arg_strs[i] == "CYCLOIDDELAY") {
                       gg->set_default_orbit_type(CYCLOIDDELAY);
+                  } else if (arg_strs[i] == "CYCLOIDDELAYKICK") {
+                      gg->set_default_orbit_type(CYCLOIDDELAYKICK);
                   } else {
                       std::cerr << "No such default-orbit-type " << arg_strs[i] << std::endl;
                   }
