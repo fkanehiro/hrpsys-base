@@ -57,6 +57,7 @@ Stabilizer::Stabilizer(RTC::Manager* manager)
     m_zmpOut("zmp", m_zmp),
     m_actContactStatesOut("actContactStates", m_actContactStates),
     m_COPInfoOut("COPInfo", m_COPInfo),
+    m_emergencySignalOut("emergencySignal", m_emergencySignal),
     // for debug output
     m_originRefZmpOut("originRefZmp", m_originRefZmp),
     m_originRefCogOut("originRefCog", m_originRefCog),
@@ -115,6 +116,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   addOutPort("zmp", m_zmpOut);
   addOutPort("actContactStates", m_actContactStatesOut);
   addOutPort("COPInfo", m_COPInfoOut);
+  addOutPort("emergencySignal", m_emergencySignalOut);
   // for debug output
   addOutPort("originRefZmp", m_originRefZmpOut);
   addOutPort("originRefCog", m_originRefCogOut);
@@ -515,6 +517,8 @@ RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
       m_debugDataOut.write();
     }
     m_qRefOut.write();
+    // emergencySignal
+    // m_emergencySignalOut.write();
   }
 
   return RTC::RTC_OK;
