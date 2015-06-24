@@ -148,6 +148,7 @@ class Stabilizer
   std::vector<RTC::TimedPoint3D> m_limbCOPOffset;
   RTC::TimedBooleanSeq m_actContactStates;
   RTC::TimedDoubleSeq m_COPInfo;
+  RTC::TimedLong m_emergencySignal;
   // for debug ouput
   RTC::TimedPoint3D m_originRefZmp, m_originRefCog, m_originRefCogVel, m_originNewZmp;
   RTC::TimedPoint3D m_originActZmp, m_originActCog, m_originActCogVel;
@@ -184,6 +185,7 @@ class Stabilizer
   RTC::OutPort<RTC::TimedPoint3D> m_zmpOut;
   RTC::OutPort<RTC::TimedBooleanSeq> m_actContactStatesOut;
   RTC::OutPort<RTC::TimedDoubleSeq> m_COPInfoOut;
+  RTC::OutPort<RTC::TimedLong> m_emergencySignalOut;
   // for debug output
   RTC::OutPort<RTC::TimedPoint3D> m_originRefZmpOut, m_originRefCogOut, m_originRefCogVelOut, m_originNewZmpOut;
   RTC::OutPort<RTC::TimedPoint3D> m_originActZmpOut, m_originActCogOut, m_originActCogVelOut;
@@ -239,7 +241,7 @@ class Stabilizer
   std::vector<bool> contact_states, prev_contact_states, is_ik_enable;
   double dt;
   int transition_count, loop;
-  bool is_legged_robot, on_ground;
+  bool is_legged_robot, on_ground, is_cop_outside;
   hrp::Vector3 current_root_p, target_root_p;
   hrp::Matrix33 current_root_R, target_root_R, prev_act_foot_origin_rot, prev_ref_foot_origin_rot, target_foot_origin_rot;
   std::vector <hrp::Vector3> target_ee_p, target_ee_diff_p, prev_target_ee_diff_p, target_ee_diff_r, prev_target_ee_diff_r;

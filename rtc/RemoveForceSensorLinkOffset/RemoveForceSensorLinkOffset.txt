@@ -18,6 +18,9 @@ For example, if a robot has "rhsensor",
 this component removes offset from input "rhsensor" port and 
 output offset force/torque from output "off_rhsensor" port. 
 
+Note that "off_xx" values from this component are same as "xx" values from RobotHardware by default.
+This means, if zero force-moment offset and zero mass offset are specified,
+"off_xx" values equal to "xx".
 
 \subsection frame Frame
 
