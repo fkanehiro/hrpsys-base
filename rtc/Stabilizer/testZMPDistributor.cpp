@@ -11,13 +11,22 @@ int main(int argc, char* argv[])
     SimpleZMPDistributor szd;
     //
     std::vector<std::vector<Eigen::Vector2d> > fs;
-    std::vector<Eigen::Vector2d> tmpfs;
-    tmpfs.push_back(Eigen::Vector2d(0.137525, 0.070104));
-    tmpfs.push_back(Eigen::Vector2d(0.137525, -0.070104));
-    tmpfs.push_back(Eigen::Vector2d(-0.106925, -0.070104));
-    tmpfs.push_back(Eigen::Vector2d(-0.106925, 0.070104));
-    fs.push_back(tmpfs);
-    fs.push_back(tmpfs);
+    { // RLEG
+        std::vector<Eigen::Vector2d> tmpfs;
+        tmpfs.push_back(Eigen::Vector2d(0.137525, 0.070104));
+        tmpfs.push_back(Eigen::Vector2d(0.137525, -0.070104));
+        tmpfs.push_back(Eigen::Vector2d(-0.106925, -0.070104));
+        tmpfs.push_back(Eigen::Vector2d(-0.106925, 0.070104));
+        fs.push_back(tmpfs);
+    }
+    { // LLEG
+        std::vector<Eigen::Vector2d> tmpfs;
+        tmpfs.push_back(Eigen::Vector2d(0.137525, 0.070104));
+        tmpfs.push_back(Eigen::Vector2d(0.137525, -0.070104));
+        tmpfs.push_back(Eigen::Vector2d(-0.106925, -0.070104));
+        tmpfs.push_back(Eigen::Vector2d(-0.106925, 0.070104));
+        fs.push_back(tmpfs);
+    }
     // szd.set_vertices(fs);
     szd.set_leg_inside_margin(0.070104);
     szd.set_leg_front_margin(0.137525);
@@ -59,6 +68,7 @@ int main(int argc, char* argv[])
     FILE* gp = popen("gnuplot", "w");
     FILE* gp_m = popen("gnuplot", "w");
     FILE* gp_f = popen("gnuplot", "w");
+    FILE* gp_a = popen("gnuplot", "w");
     std::string fname_fm("/tmp/plot-fm.dat");
     FILE* fp_fm = fopen(fname_fm.c_str(), "w");
     std::vector<std::string> names;
@@ -66,6 +76,7 @@ int main(int argc, char* argv[])
     names.push_back("lleg");
     hrp::Vector3 ref_foot_force[2], ref_foot_moment[2];
     for (size_t i = 0; i < refzmp_vec.size(); i++) {
+        double alpha = szd.calcAlpha(refzmp_vec[i], ee_pos, ee_rot);
         szd.distributeZMPToForceMoments(ref_foot_force, ref_foot_moment,
         //szd.distributeZMPToForceMomentsQP(ref_foot_force, ref_foot_moment,
                                         ee_pos, cop_pos, ee_rot,
@@ -92,11 +103,12 @@ int main(int argc, char* argv[])
             fprintf(fp, "%f %f %f\n", cop(0), cop(1), ref_foot_force[j](2));
             fclose(fp);
         }
-        fprintf(fp_fm, "%f %f %f %f %f %f %f %f \n",
+        fprintf(fp_fm, "%f %f %f %f %f %f %f %f %f\n",
                 refzmp_vec[i](0), refzmp_vec[i](1),
                 ref_foot_force[0](2), ref_foot_force[1](2),
                 ref_foot_moment[0](0), ref_foot_moment[1](0),
-                ref_foot_moment[0](1), ref_foot_moment[1](1));
+                ref_foot_moment[0](1), ref_foot_moment[1](1),
+                alpha);
         {
             std::string fname("/tmp/plotzmp.dat");
             FILE* fp = fopen(fname.c_str(), "w");
@@ -124,11 +136,16 @@ int main(int argc, char* argv[])
     fprintf(gp_f, "replot '/tmp/plot-fm.dat' using 1:2:3 with points title 'rleg fz' lw 5\n");
     fprintf(gp_f, "replot '/tmp/plot-fm.dat' using 1:2:4 with points title 'lleg fz' lw 5\n");
     fflush(gp_f);
+    fprintf(gp_a, "splot [-0.5:0.5][-0.5:0.5][-0.1:1.1] '/tmp/plotrleg.dat' using 1:2:3 with lines title 'rleg'\n");
+    fprintf(gp_a, "replot '/tmp/plotlleg.dat' using 1:2:3 with lines title 'lleg'\n");
+    fprintf(gp_a, "replot '/tmp/plot-fm.dat' using 1:2:9 with points title 'alpha' lw 5\n");
+    fflush(gp_a);
     double tmp;
     std::cin >> tmp;
     pclose(gp);
     pclose(gp_m);
     pclose(gp_f);
+    pclose(gp_a);
     return 0;
 }
 
