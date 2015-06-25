@@ -82,6 +82,8 @@ module OpenHRP
       double eefm_pos_margin_time;
       /// Inside foot margine [m]. Distance between foot end effector position and foot inside edge.
       double eefm_leg_inside_margin;
+      /// Outside foot margine [m]. Distance between foot end effector position and foot outside edge.
+      double eefm_leg_outside_margin;
       /// Front foot margine [m]. Distance between foot end effector position and foot front edge.
       double eefm_leg_front_margin;
       /// Rear foot margine [m]. Distance between foot end effector position and foot rear edge.
