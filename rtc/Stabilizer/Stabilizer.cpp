@@ -272,6 +272,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   eefm_ee_pos_error_p_gain = 0;
   eefm_ee_rot_error_p_gain = 0;
   eefm_ee_error_cutoff_freq = 50.0; // [Hz]
+  cop_check_margin = 20.0*1e-3; // [m]
 
   // parameters for RUNST
   double ke = 0, tc = 0;
@@ -963,16 +964,15 @@ bool Stabilizer::calcZMP(hrp::Vector3& ret_zmp, const double zmp_z)
       // check COP inside
       if (m_COPInfo.data[i*3+2] > 20.0 ) {
         hrp::Vector3 tmpcop(m_COPInfo.data[i*3+1]/m_COPInfo.data[i*3+2], m_COPInfo.data[i*3]/m_COPInfo.data[i*3+2], 0);
-        double margin_from_edge = 20*1e-3;
         is_cop_outside = is_cop_outside &&
-            (!szd->is_inside_foot(tmpcop, stikp[i].ee_name=="lleg", margin_from_edge) ||
-             szd->is_front_of_foot(tmpcop, margin_from_edge) ||
-             szd->is_rear_of_foot(tmpcop, margin_from_edge));
+            (!szd->is_inside_foot(tmpcop, stikp[i].ee_name=="lleg", cop_check_margin) ||
+             szd->is_front_of_foot(tmpcop, cop_check_margin) ||
+             szd->is_rear_of_foot(tmpcop, cop_check_margin));
         if (DEBUGP) {
             std::cerr << "[" << m_profile.instance_name << "]   [" << stikp[i].ee_name << "] "
-                      << "outside(" << !szd->is_inside_foot(tmpcop, stikp[i].ee_name=="lleg", margin_from_edge) << ") "
-                      << "front(" << szd->is_front_of_foot(tmpcop, margin_from_edge) << ") "
-                      << "rear(" << szd->is_rear_of_foot(tmpcop, margin_from_edge) << ")" << std::endl;
+                      << "outside(" << !szd->is_inside_foot(tmpcop, stikp[i].ee_name=="lleg", cop_check_margin) << ") "
+                      << "front(" << szd->is_front_of_foot(tmpcop, cop_check_margin) << ") "
+                      << "rear(" << szd->is_rear_of_foot(tmpcop, cop_check_margin) << ")" << std::endl;
         }
       } else {
         //is_cop_outside = true;
@@ -1301,6 +1301,7 @@ void Stabilizer::getParameter(OpenHRP::StabilizerService::stParam& i_stp)
   }
   i_stp.st_algorithm = st_algorithm;
   i_stp.transition_time = transition_time;
+  i_stp.cop_check_margin = cop_check_margin;
   switch(control_mode) {
   case MODE_IDLE: i_stp.controller_mode = OpenHRP::StabilizerService::MODE_IDLE; break;
   case MODE_AIR: i_stp.controller_mode = OpenHRP::StabilizerService::MODE_AIR; break;
@@ -1381,6 +1382,7 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
       }
   }
   transition_time = i_stp.transition_time;
+  cop_check_margin = i_stp.cop_check_margin;
   if (i_stp.foot_origin_offset.length () != 2) {
       std::cerr << "[" << m_profile.instance_name << "]   foot_origin_offset cannot be set. Length " << i_stp.foot_origin_offset.length() << " != " << 2 << std::endl;
   } else if (control_mode != MODE_IDLE) {
@@ -1426,6 +1428,7 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
     std::cerr << "[" << m_profile.instance_name << "]   st_algorithm cannot be changed to [" << (st_algorithm == OpenHRP::StabilizerService::EEFM?"EEFM":(st_algorithm == OpenHRP::StabilizerService::EEFMQP?"EEFMQP":"TPCC")) << "] during MODE_AIR or MODE_ST." << std::endl;
   }
   std::cerr << "[" << m_profile.instance_name << "]  transition_time = " << transition_time << "[s]" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]  cop_check_margin = " << cop_check_margin << "[m]" << std::endl;
 }
 
 void Stabilizer::waitSTTransition()
