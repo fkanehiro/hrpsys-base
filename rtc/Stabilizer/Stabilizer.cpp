@@ -926,7 +926,7 @@ bool Stabilizer::calcZMP(hrp::Vector3& ret_zmp, const double zmp_z)
   double tmpzmpx = 0;
   double tmpzmpy = 0;
   double tmpfz = 0, tmpfz2 = 0.0;
-  is_cop_outside = false;
+  is_cop_outside = true;
   for (size_t i = 0; i < stikp.size(); i++) {
     if (stikp[i].ee_name.find("leg") == std::string::npos) continue;
     hrp::ForceSensor* sensor = m_robot->sensor<hrp::ForceSensor>(stikp[i].sensor_name);
@@ -952,17 +952,35 @@ bool Stabilizer::calcZMP(hrp::Vector3& ret_zmp, const double zmp_z)
     m_COPInfo.data[i*3+1] = tmpcopmy;
     m_COPInfo.data[i*3+2] = tmpcopfz;
     prev_act_force_z[i] = 0.85 * prev_act_force_z[i] + 0.15 * nf(2); // filter, cut off 5[Hz]
-    // check COP inside
-    if (tmpcopfz > 20.0) {
-        hrp::Vector3 tmpcop(tmpcopmy/tmpcopfz, tmpcopmx/tmpcopfz, 0);
+  }
+  tmpfz2 = prev_act_force_z[0] + prev_act_force_z[1];
+  if (tmpfz2 > 50) {
+    if (DEBUGP) {
+        std::cerr << "[" << m_profile.instance_name << "] COP check" << std::endl;
+    }
+    for (size_t i = 0; i < stikp.size(); i++) {
+      if (stikp[i].ee_name.find("leg") == std::string::npos) continue;
+      // check COP inside
+      if (m_COPInfo.data[i*3+2] > 20.0 ) {
+        hrp::Vector3 tmpcop(m_COPInfo.data[i*3+1]/m_COPInfo.data[i*3+2], m_COPInfo.data[i*3]/m_COPInfo.data[i*3+2], 0);
         double margin_from_edge = 20*1e-3;
-        is_cop_outside = is_cop_outside ||
+        is_cop_outside = is_cop_outside &&
             (!szd->is_inside_foot(tmpcop, stikp[i].ee_name=="lleg", margin_from_edge) ||
              szd->is_front_of_foot(tmpcop, margin_from_edge) ||
              szd->is_rear_of_foot(tmpcop, margin_from_edge));
+        if (DEBUGP) {
+            std::cerr << "[" << m_profile.instance_name << "]   [" << stikp[i].ee_name << "] "
+                      << "outside(" << !szd->is_inside_foot(tmpcop, stikp[i].ee_name=="lleg", margin_from_edge) << ") "
+                      << "front(" << szd->is_front_of_foot(tmpcop, margin_from_edge) << ") "
+                      << "rear(" << szd->is_rear_of_foot(tmpcop, margin_from_edge) << ")" << std::endl;
+        }
+      } else {
+        //is_cop_outside = true;
+      }
     }
+  } else {
+    is_cop_outside = false;
   }
-  tmpfz2 = prev_act_force_z[0] + prev_act_force_z[1];
   if (tmpfz2 < 50) {
     ret_zmp = act_zmp;
     return false; // in the air
