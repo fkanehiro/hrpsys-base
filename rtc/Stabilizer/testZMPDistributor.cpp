@@ -12,12 +12,16 @@ protected:
     double dt; // [s]
     double total_fz; // [N]
     SimpleZMPDistributor* szd;
+    bool use_qp;
     std::vector<hrp::Vector3> ee_pos;
     std::vector<hrp::Vector3> cop_pos;
     std::vector<std::vector<Eigen::Vector2d> > fs;
-private:
 public:
-    testZMPDistributor() {};
+    std::vector<std::string> arg_strs;
+    testZMPDistributor() : use_qp(true)
+    {
+        szd = new SimpleZMPDistributor();
+    };
     virtual ~testZMPDistributor()
     {
         if (szd != NULL) {
@@ -26,8 +30,19 @@ public:
         }
     };
 
+    void parse_params ()
+    {
+      for (int i = 0; i < arg_strs.size(); ++ i) {
+          if ( arg_strs[i]== "--use-qp" ) {
+              if (++i < arg_strs.size()) use_qp = (arg_strs[i].c_str()=="true"?true:false);
+          }
+      }
+    };
+
     void gen_and_plot ()
     {
+        parse_params();
+        szd->print_vertices("");
         std::vector<hrp::Matrix33> ee_rot;
         hrp::Matrix33 tmpr;
         tmpr = hrp::rotFromRpy(hrp::Vector3(0,0,0*M_PI/180.0));
@@ -68,11 +83,17 @@ public:
         szd->get_vertices(fs);
         for (size_t i = 0; i < refzmp_vec.size(); i++) {
             double alpha = szd->calcAlpha(refzmp_vec[i], ee_pos, ee_rot);
-            szd->distributeZMPToForceMoments(ref_foot_force, ref_foot_moment,
-                                             //szd->distributeZMPToForceMomentsQP(ref_foot_force, ref_foot_moment,
-                                             ee_pos, cop_pos, ee_rot,
-                                             refzmp_vec[i], refzmp_vec[i],
-                                             total_fz, 0.004);
+            if (use_qp) {
+                szd->distributeZMPToForceMomentsQP(ref_foot_force, ref_foot_moment,
+                                                   ee_pos, cop_pos, ee_rot,
+                                                   refzmp_vec[i], refzmp_vec[i],
+                                                   total_fz, dt);
+            } else {
+                szd->distributeZMPToForceMoments(ref_foot_force, ref_foot_moment,
+                                                 ee_pos, cop_pos, ee_rot,
+                                                 refzmp_vec[i], refzmp_vec[i],
+                                                 total_fz, dt);
+            }
             for (size_t j = 0; j < fs.size(); j++) {
                 std::string fname("/tmp/plot"+names[j]+".dat");
                 FILE* fp = fopen(fname.c_str(), "w");
@@ -122,7 +143,7 @@ public:
         fprintf(gp_m, "replot '/tmp/plot-fm.dat' using 1:2:7 with points title 'rleg ny' lw 5\n");
         fprintf(gp_m, "replot '/tmp/plot-fm.dat' using 1:2:8 with points title 'lleg ny' lw 5\n");
         fflush(gp_m);
-        fprintf(gp_f, "splot [-0.5:0.5][-0.5:0.5][-50:800] '/tmp/plotrleg.dat' using 1:2:3 with lines title 'rleg'\n");
+        fprintf(gp_f, "splot [-0.5:0.5][-0.5:0.5][-50:%f] '/tmp/plotrleg.dat' using 1:2:3 with lines title 'rleg'\n", total_fz*1.1);
         fprintf(gp_f, "replot '/tmp/plotlleg.dat' using 1:2:3 with lines title 'lleg'\n");
         fprintf(gp_f, "replot '/tmp/plot-fm.dat' using 1:2:3 with points title 'rleg fz' lw 5\n");
         fprintf(gp_f, "replot '/tmp/plot-fm.dat' using 1:2:4 with points title 'lleg fz' lw 5\n");
@@ -147,13 +168,11 @@ class testZMPDistributorHRP2JSK : public testZMPDistributor
         {
             dt = 0.004;
             total_fz = 56*9.8066;
-            szd = new SimpleZMPDistributor();
             szd->set_leg_inside_margin(0.070104);
             szd->set_leg_outside_margin(0.070104);
             szd->set_leg_front_margin(0.137525);
             szd->set_leg_rear_margin(0.106925);
             szd->set_vertices_from_margin_params();
-            szd->print_vertices("");
             ee_pos.push_back(hrp::Vector3(0,-0.105,0));
             ee_pos.push_back(hrp::Vector3(0,0.105,0));
             cop_pos.push_back(hrp::Vector3(0,-0.105,0));
@@ -161,10 +180,52 @@ class testZMPDistributorHRP2JSK : public testZMPDistributor
         };
 };
 
+class testZMPDistributorJAXON_RED : public testZMPDistributor
+{
+ public:
+    testZMPDistributorJAXON_RED ()
+        {
+            dt = 0.002;
+            total_fz = 130.442*9.8066;
+            szd->set_leg_inside_margin(0.055992);
+            szd->set_leg_outside_margin(0.075992);
+            szd->set_leg_front_margin(0.133242);
+            szd->set_leg_rear_margin(0.100445);
+            szd->set_vertices_from_margin_params();
+            ee_pos.push_back(hrp::Vector3(0,-0.100,0));
+            ee_pos.push_back(hrp::Vector3(0,0.100,0));
+            cop_pos.push_back(hrp::Vector3(0,-0.100,0));
+            cop_pos.push_back(hrp::Vector3(0,0.100,0));
+        };
+};
+
+void print_usage ()
+{
+    std::cerr << "Usage : testZMPDistributor [robot-name] [option]" << std::endl;
+    std::cerr << " [robot-name] should be: --hrp2jsk, --jaxon_red" << std::endl;
+};
+
 int main(int argc, char* argv[])
 {
-    testZMPDistributorHRP2JSK tzd;
-    tzd.gen_and_plot();
+    if (argc >= 2) {
+        testZMPDistributor* tzd = NULL;
+        if (std::string(argv[1]) == "--hrp2jsk") {
+            tzd = new testZMPDistributorHRP2JSK();
+        } else if (std::string(argv[1]) == "--jaxon_red") {
+            tzd = new testZMPDistributorJAXON_RED();
+        } else {
+            print_usage();
+        }
+        if (tzd != NULL) {
+            for (int i = 1; i < argc; ++ i) {
+                tzd->arg_strs.push_back(std::string(argv[i]));
+            }
+            tzd->gen_and_plot();
+            delete tzd;
+        }
+    } else {
+        print_usage();
+    }
     return 0;
 }
 
