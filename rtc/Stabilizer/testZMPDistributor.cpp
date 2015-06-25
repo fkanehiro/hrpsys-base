@@ -13,50 +13,29 @@ protected:
     double total_fz; // [N]
     SimpleZMPDistributor* szd;
     bool use_qp;
+    size_t sleep_msec;
+    std::vector<hrp::Vector3> leg_pos;
     std::vector<hrp::Vector3> ee_pos;
     std::vector<hrp::Vector3> cop_pos;
+    std::vector<hrp::Matrix33> ee_rot;
     std::vector<std::vector<Eigen::Vector2d> > fs;
-public:
-    std::vector<std::string> arg_strs;
-    testZMPDistributor() : use_qp(true)
-    {
-        szd = new SimpleZMPDistributor();
-    };
-    virtual ~testZMPDistributor()
-    {
-        if (szd != NULL) {
-            delete szd;
-            szd = NULL;
-        }
-    };
-
-    void parse_params ()
-    {
-      for (int i = 0; i < arg_strs.size(); ++ i) {
-          if ( arg_strs[i]== "--use-qp" ) {
-              if (++i < arg_strs.size()) use_qp = (arg_strs[i].c_str()=="true"?true:false);
-          }
-      }
-    };
-
+private:
     void gen_and_plot ()
     {
+        std::cerr << "use_qp = " << (use_qp==true?"true":"false") << ", sleep_msec = " << sleep_msec << "[msec]" << std::endl;
         parse_params();
         szd->print_vertices("");
-        std::vector<hrp::Matrix33> ee_rot;
-        hrp::Matrix33 tmpr;
-        tmpr = hrp::rotFromRpy(hrp::Vector3(0,0,0*M_PI/180.0));
-        ee_rot.push_back(tmpr);
-        ee_rot.push_back(tmpr);
         szd->print_params(std::string(""));
         //
         std::vector<double> x_vec;
-        x_vec.push_back(0.0);
-        x_vec.push_back(0.05);
-        x_vec.push_back(0.1);
+        double txx = -0.25;
+        while (txx < 0.25) {
+            x_vec.push_back(txx);
+            txx += 0.05;
+        };
         std::vector<double> y_vec;
-        double tyy = -0.1;
-        while (tyy < 0.11) {
+        double tyy = -0.24;
+        while (tyy < 0.25) {
             y_vec.push_back(tyy);
             tyy += 0.01;
         };
@@ -133,7 +112,7 @@ public:
             fprintf(gp, "replot '/tmp/plotllegfm.dat' using 1:2:3 with lines title 'lleg fm' lw 5\n");
             fprintf(gp, "replot '/tmp/plotzmp.dat' using 1:2:3 with points title 'zmp' lw 10\n");
             fflush(gp);
-            usleep(100000);
+            usleep(1000*sleep_msec);
         }
         fclose(fp_fm);
         fprintf(gp_m, "splot [-0.5:0.5][-0.5:0.5][-50:50] '/tmp/plotrleg.dat' using 1:2:3 with lines title 'rleg'\n");
@@ -158,7 +137,68 @@ public:
         pclose(gp_m);
         pclose(gp_f);
         pclose(gp_a);
-    }
+    };
+public:
+    std::vector<std::string> arg_strs;
+    testZMPDistributor() : use_qp(true), sleep_msec(100)
+    {
+        szd = new SimpleZMPDistributor();
+    };
+    virtual ~testZMPDistributor()
+    {
+        if (szd != NULL) {
+            delete szd;
+            szd = NULL;
+        }
+    };
+
+    void parse_params ()
+    {
+      for (int i = 0; i < arg_strs.size(); ++ i) {
+          if ( arg_strs[i]== "--use-qp" ) {
+              if (++i < arg_strs.size()) use_qp = (arg_strs[i].c_str()=="true"?true:false);
+          } else if ( arg_strs[i]== "--sleep-msec" ) {
+              if (++i < arg_strs.size()) sleep_msec = atoi(arg_strs[i].c_str());
+          }
+      }
+    };
+
+    void test0 ()
+    {
+        std::cerr << "test0 : Default foot pos" << std::endl;
+        ee_pos = leg_pos;
+        cop_pos = leg_pos;
+        ee_rot.push_back(hrp::Matrix33::Identity());
+        ee_rot.push_back(hrp::Matrix33::Identity());
+        gen_and_plot();
+    };
+
+    void test1 ()
+    {
+        std::cerr << "test1 : Fwd foot pos" << std::endl;
+        ee_pos = leg_pos;
+        ee_pos[0] = ee_pos[0] + hrp::Vector3(0.05,0,0);
+        ee_pos[1] = ee_pos[1] + hrp::Vector3(-0.05,0,0);
+        cop_pos = ee_pos;
+        ee_rot.push_back(hrp::Matrix33::Identity());
+        ee_rot.push_back(hrp::Matrix33::Identity());
+        gen_and_plot();
+    };
+
+    void test2 ()
+    {
+        std::cerr << "test2 : Rot foot pos" << std::endl;
+        ee_pos = leg_pos;
+        ee_pos[0] = ee_pos[0] + hrp::Vector3(0.02,0,0);
+        ee_pos[1] = ee_pos[1] + hrp::Vector3(-0.02,0,0);
+        cop_pos = ee_pos;
+        hrp::Matrix33 tmpr;
+        tmpr = hrp::rotFromRpy(hrp::Vector3(0,0,-15*M_PI/180.0));
+        ee_rot.push_back(tmpr);
+        tmpr = hrp::rotFromRpy(hrp::Vector3(0,0,15*M_PI/180.0));
+        ee_rot.push_back(tmpr);
+        gen_and_plot();
+    };
 };
 
 class testZMPDistributorHRP2JSK : public testZMPDistributor
@@ -173,10 +213,8 @@ class testZMPDistributorHRP2JSK : public testZMPDistributor
             szd->set_leg_front_margin(0.137525);
             szd->set_leg_rear_margin(0.106925);
             szd->set_vertices_from_margin_params();
-            ee_pos.push_back(hrp::Vector3(0,-0.105,0));
-            ee_pos.push_back(hrp::Vector3(0,0.105,0));
-            cop_pos.push_back(hrp::Vector3(0,-0.105,0));
-            cop_pos.push_back(hrp::Vector3(0,0.105,0));
+            leg_pos.push_back(hrp::Vector3(0,-0.105,0));
+            leg_pos.push_back(hrp::Vector3(0,0.105,0));
         };
 };
 
@@ -192,22 +230,24 @@ class testZMPDistributorJAXON_RED : public testZMPDistributor
             szd->set_leg_front_margin(0.133242);
             szd->set_leg_rear_margin(0.100445);
             szd->set_vertices_from_margin_params();
-            ee_pos.push_back(hrp::Vector3(0,-0.100,0));
-            ee_pos.push_back(hrp::Vector3(0,0.100,0));
-            cop_pos.push_back(hrp::Vector3(0,-0.100,0));
-            cop_pos.push_back(hrp::Vector3(0,0.100,0));
+            leg_pos.push_back(hrp::Vector3(0,-0.100,0));
+            leg_pos.push_back(hrp::Vector3(0,0.100,0));
         };
 };
 
 void print_usage ()
 {
-    std::cerr << "Usage : testZMPDistributor [robot-name] [option]" << std::endl;
+    std::cerr << "Usage : testZMPDistributor [robot-name] [test-type] [option]" << std::endl;
     std::cerr << " [robot-name] should be: --hrp2jsk, --jaxon_red" << std::endl;
+    std::cerr << " [test-type] should be:" << std::endl;
+    std::cerr << "  --test0 : Default foot pos" << std::endl;
+    std::cerr << "  --test1 : Fwd foot pos" << std::endl;
+    std::cerr << "  --test2 : Rot foot pos" << std::endl;
 };
 
 int main(int argc, char* argv[])
 {
-    if (argc >= 2) {
+    if (argc >= 3) {
         testZMPDistributor* tzd = NULL;
         if (std::string(argv[1]) == "--hrp2jsk") {
             tzd = new testZMPDistributorHRP2JSK();
@@ -217,10 +257,18 @@ int main(int argc, char* argv[])
             print_usage();
         }
         if (tzd != NULL) {
-            for (int i = 1; i < argc; ++ i) {
+            for (int i = 2; i < argc; ++ i) {
                 tzd->arg_strs.push_back(std::string(argv[i]));
             }
-            tzd->gen_and_plot();
+            if (std::string(argv[2]) == "--test0") {
+                tzd->test0();
+            } else if (std::string(argv[2]) == "--test1") {
+                tzd->test1();
+            } else if (std::string(argv[2]) == "--test2") {
+                tzd->test2();
+            } else {
+                print_usage();
+            }
             delete tzd;
         }
     } else {
