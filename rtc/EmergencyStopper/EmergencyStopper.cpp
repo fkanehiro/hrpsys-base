@@ -108,7 +108,7 @@ RTC::ReturnCode_t EmergencyStopper::onInitialize()
     recover_time = retrieve_time = 0;
     recover_time_dt = 1.0;
     default_recover_time = 2.5/m_dt;
-    default_retrieve_time = 0.0/m_dt;
+    default_retrieve_time = 1;
     m_stop_posture = new double[m_robot->numJoints()];
     m_interpolator = new interpolator(m_robot->numJoints(), recover_time_dt);
 
