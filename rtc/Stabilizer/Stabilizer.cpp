@@ -57,6 +57,7 @@ Stabilizer::Stabilizer(RTC::Manager* manager)
     m_zmpOut("zmp", m_zmp),
     m_actContactStatesOut("actContactStates", m_actContactStates),
     m_COPInfoOut("COPInfo", m_COPInfo),
+    m_emergencySignalOut("emergencySignal", m_emergencySignal),
     // for debug output
     m_originRefZmpOut("originRefZmp", m_originRefZmp),
     m_originRefCogOut("originRefCog", m_originRefCog),
@@ -115,6 +116,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   addOutPort("zmp", m_zmpOut);
   addOutPort("actContactStates", m_actContactStatesOut);
   addOutPort("COPInfo", m_COPInfoOut);
+  addOutPort("emergencySignal", m_emergencySignalOut);
   // for debug output
   addOutPort("originRefZmp", m_originRefZmpOut);
   addOutPort("originRefCog", m_originRefCogOut);
@@ -290,6 +292,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
       hrp::Sensor* sen= m_robot->sensor<hrp::ForceSensor>(stikp[i].sensor_name);
       if ( sen != NULL ) is_legged_robot = true;
   }
+  is_cop_outside = false;
 
   m_qCurrent.data.length(m_robot->numJoints());
   m_qRef.data.length(m_robot->numJoints());
@@ -515,6 +518,12 @@ RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
       m_debugDataOut.write();
     }
     m_qRefOut.write();
+    // emergencySignal
+#if 0
+    if (is_cop_outside) {
+        m_emergencySignalOut.write();
+    }
+#endif
   }
 
   return RTC::RTC_OK;
@@ -917,6 +926,7 @@ bool Stabilizer::calcZMP(hrp::Vector3& ret_zmp, const double zmp_z)
   double tmpzmpx = 0;
   double tmpzmpy = 0;
   double tmpfz = 0, tmpfz2 = 0.0;
+  is_cop_outside = false;
   for (size_t i = 0; i < stikp.size(); i++) {
     if (stikp[i].ee_name.find("leg") == std::string::npos) continue;
     hrp::ForceSensor* sensor = m_robot->sensor<hrp::ForceSensor>(stikp[i].sensor_name);
@@ -942,6 +952,15 @@ bool Stabilizer::calcZMP(hrp::Vector3& ret_zmp, const double zmp_z)
     m_COPInfo.data[i*3+1] = tmpcopmy;
     m_COPInfo.data[i*3+2] = tmpcopfz;
     prev_act_force_z[i] = 0.85 * prev_act_force_z[i] + 0.15 * nf(2); // filter, cut off 5[Hz]
+    // check COP inside
+    if (tmpcopfz > 20.0) {
+        hrp::Vector3 tmpcop(tmpcopmy/tmpcopfz, tmpcopmx/tmpcopfz, 0);
+        double margin_from_edge = 20*1e-3;
+        is_cop_outside = is_cop_outside ||
+            (!szd->is_inside_foot(tmpcop, stikp[i].ee_name=="lleg", margin_from_edge) ||
+             szd->is_front_of_foot(tmpcop, margin_from_edge) ||
+             szd->is_rear_of_foot(tmpcop, margin_from_edge));
+    }
   }
   tmpfz2 = prev_act_force_z[0] + prev_act_force_z[1];
   if (tmpfz2 < 50) {

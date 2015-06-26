@@ -39,6 +39,7 @@ EmergencyStopper::EmergencyStopper(RTC::Manager* manager)
     : RTC::DataFlowComponentBase(manager),
       // <rtc-template block="initializer">
       m_qRefIn("qRef", m_qRef),
+      m_emergencySignalIn("emergencySignal", m_emergencySignal),
       m_qOut("q", m_q),
       m_EmergencyStopperServicePort("EmergencyStopperService"),
       // </rtc-template>
@@ -67,6 +68,7 @@ RTC::ReturnCode_t EmergencyStopper::onInitialize()
     // <rtc-template block="registration">
     // Set InPort buffers
     addInPort("qRef", m_qRefIn);
+    addInPort("emergencySignal", m_emergencySignalIn);
 
     // Set OutPort buffer
     addOutPort("q", m_qOut);
@@ -171,6 +173,20 @@ RTC::ReturnCode_t EmergencyStopper::onExecute(RTC::UniqueId ec_id)
         assert(m_qRef.data.length() == numJoints);
     }
 
+    if (m_emergencySignalIn.isNew()){
+        std::cerr << "[" << m_profile.instance_name << "] emergencySignal is set!" << std::endl;
+        m_emergencySignalIn.read();
+        if (!is_stop_mode) {
+            if (recover_time <= 0) { // release mode
+                m_interpolator->set(m_qRef.data.get_buffer());
+            } else { // recover mode
+                m_interpolator->get(m_recover_jointdata);
+                m_interpolator->set(m_recover_jointdata);
+            }
+            is_stop_mode = true;
+        }
+    }
+
     if (DEBUGP) {
         std::cerr << "[" << m_profile.instance_name << "] is_stop_mode : " << is_stop_mode << " recover_time: "  << recover_time << std::endl;
     }
@@ -201,7 +217,6 @@ RTC::ReturnCode_t EmergencyStopper::onExecute(RTC::UniqueId ec_id)
         }
         std::cerr << std::endl;
     }
-
     m_qOut.write();
     return RTC::RTC_OK;
 }

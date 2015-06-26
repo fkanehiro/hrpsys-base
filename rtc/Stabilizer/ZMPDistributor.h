@@ -59,18 +59,18 @@ public:
     {
     };
 
-    inline bool is_inside_foot (const hrp::Vector3& leg_pos, const bool is_lleg)
+    inline bool is_inside_foot (const hrp::Vector3& leg_pos, const bool is_lleg, const double margin = 0.0)
     {
-        if (is_lleg) return leg_pos(1) >= -1 * leg_inside_margin;
-        else return leg_pos(1) <= leg_inside_margin;
+        if (is_lleg) return leg_pos(1) >= (-1 * leg_inside_margin + margin);
+        else return leg_pos(1) <= (leg_inside_margin - margin);
     };
-    inline bool is_front_of_foot (const hrp::Vector3& leg_pos)
+    inline bool is_front_of_foot (const hrp::Vector3& leg_pos, const double margin = 0.0)
     {
-        return leg_pos(0) >= leg_front_margin;
+        return leg_pos(0) >= (leg_front_margin - margin);
     };
-    inline bool is_rear_of_foot (const hrp::Vector3& leg_pos)
+    inline bool is_rear_of_foot (const hrp::Vector3& leg_pos, const double margin = 0.0)
     {
-        return leg_pos(0) <= -1 * leg_rear_margin;
+        return leg_pos(0) <= (-1 * leg_rear_margin + margin);
     };
     void print_params (const std::string& str)
     {
