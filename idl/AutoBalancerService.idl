@@ -136,6 +136,8 @@ module OpenHRP
       double swing_trajectory_final_distance_weight;
       /// Way point offset 3D vector [m] for stair_delay_hoffarbib_trajectory_generator.
       DblArray3 stair_trajectory_way_point_offset;
+      /// Kick point offset 3D vector [m] for cycloid_delay_kick_hoffarbib_trajectory_generator.
+      DblArray3 cycloid_delay_kick_point_offset;
       /// Gravitational acceleration [m/s^2]
       double gravitational_acceleration;
       /// Toe position offset [m] in end-effector frame x axis

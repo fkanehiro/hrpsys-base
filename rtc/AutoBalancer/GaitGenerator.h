@@ -443,6 +443,14 @@ namespace rats
 
     class cycloid_delay_kick_hoffarbib_trajectory_generator : public delay_hoffarbib_trajectory_generator
     {
+    private:
+      hrp::Vector3 kick_point_offset;
+    public:
+      cycloid_delay_kick_hoffarbib_trajectory_generator() : delay_hoffarbib_trajectory_generator(){
+          kick_point_offset = hrp::Vector3::Zero();
+      }
+      void set_cycloid_delay_kick_point_offset (const hrp::Vector3 _offset) { kick_point_offset = _offset; };
+      hrp::Vector3 get_cycloid_delay_kick_point_offset () { return kick_point_offset; };
       hrp::Vector3 interpolate_antecedent_path (const hrp::Vector3& start, const hrp::Vector3& goal, const double height, const double tmp_ratio)
       {
         std::vector<hrp::Vector3> cycloid_path;
@@ -450,9 +458,8 @@ namespace rats
         double ratio = 0.4;
         via_goal(2) += ratio*height;
         double tmpheight = ((start(2)+goal(2))/2.0+height-(start(2)+via_goal(2))/2.0);
-        double kick_ratio = 1.0;
         cycloid_path.push_back(start);
-        cycloid_path.push_back(start * (1.0 + kick_ratio) - goal * (kick_ratio));
+        cycloid_path.push_back(start + kick_point_offset);
         cycloid_midpoint(tmpv, 0.2, start, via_goal, tmpheight);
         cycloid_path.push_back(tmpv);
         cycloid_midpoint(tmpv, 0.4, start, via_goal, tmpheight);
@@ -567,6 +574,7 @@ namespace rats
         cdktg.set_swing_trajectory_final_distance_weight(_final_distance_weight);        
       };
       void set_stair_trajectory_way_point_offset (const hrp::Vector3 _offset) { sdtg.set_stair_trajectory_way_point_offset(_offset); };
+      void set_cycloid_delay_kick_point_offset (const hrp::Vector3 _offset) { cdktg.set_cycloid_delay_kick_point_offset(_offset); };
       void set_toe_pos_offset_x (const double _offx) { toe_pos_offset_x = _offx; };
       void set_heel_pos_offset_x (const double _offx) { heel_pos_offset_x = _offx; };
       void set_toe_angle (const double _angle) { toe_angle = _angle; };
@@ -670,6 +678,7 @@ namespace rats
       double get_swing_trajectory_delay_time_offset () { return rdtg.get_swing_trajectory_delay_time_offset(); };
       double get_swing_trajectory_final_distance_weight () { return rdtg.get_swing_trajectory_final_distance_weight(); };
       hrp::Vector3 get_stair_trajectory_way_point_offset () { return sdtg.get_stair_trajectory_way_point_offset(); };
+      hrp::Vector3 get_cycloid_delay_kick_point_offset () { return cdktg.get_cycloid_delay_kick_point_offset() ; };
       double get_toe_pos_offset_x () { return toe_pos_offset_x; };
       double get_heel_pos_offset_x () { return heel_pos_offset_x; };
       double get_toe_angle () { return toe_angle; };
@@ -817,6 +826,7 @@ namespace rats
     void set_swing_trajectory_delay_time_offset (const double _time_offset) { lcg.set_swing_trajectory_delay_time_offset(_time_offset); };
     void set_swing_trajectory_final_distance_weight (const double _final_distance_weight) { lcg.set_swing_trajectory_final_distance_weight(_final_distance_weight); };
     void set_stair_trajectory_way_point_offset (const hrp::Vector3 _offset) { lcg.set_stair_trajectory_way_point_offset(_offset); };
+    void set_cycloid_delay_kick_point_offset (const hrp::Vector3 _offset) { lcg.set_cycloid_delay_kick_point_offset(_offset); };
     void set_gravitational_acceleration (const double ga) { gravitational_acceleration = ga; };
     void set_toe_pos_offset_x (const double _offx) { lcg.set_toe_pos_offset_x(_offx); };
     void set_heel_pos_offset_x (const double _offx) { lcg.set_heel_pos_offset_x(_offx); };
@@ -898,6 +908,7 @@ namespace rats
     double get_swing_trajectory_delay_time_offset () { return lcg.get_swing_trajectory_delay_time_offset(); };
     double get_swing_trajectory_final_distance_weight () { return lcg.get_swing_trajectory_final_distance_weight(); };
     hrp::Vector3 get_stair_trajectory_way_point_offset () { return lcg.get_stair_trajectory_way_point_offset(); };
+    hrp::Vector3 get_cycloid_delay_kick_point_offset () { return lcg.get_cycloid_delay_kick_point_offset(); };
     double get_gravitational_acceleration () { return gravitational_acceleration; } ;
     double get_toe_pos_offset_x () { return lcg.get_toe_pos_offset_x(); };
     double get_heel_pos_offset_x () { return lcg.get_heel_pos_offset_x(); };
@@ -941,6 +952,8 @@ namespace rats
         hrp::Vector3 tmpv;
         tmpv = get_stair_trajectory_way_point_offset();
         std::cerr << "[" << print_str << "]   stair_trajectory_way_point_offset = " << tmpv.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[m]" << std::endl;
+        tmpv = get_cycloid_delay_kick_point_offset();
+        std::cerr << "[" << print_str << "]   cycloid_delay_kick_point_offset = " << tmpv.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[m]" << std::endl;
         std::cerr << "[" << print_str << "]   gravitational_acceleration = " << get_gravitational_acceleration() << "[m/s^2]" << std::endl;
         std::cerr << "[" << print_str << "]   toe_pos_offset_x = " << get_toe_pos_offset_x() << "[mm], heel_pos_offset_x = " << get_heel_pos_offset_x() << "[mm]" << std::endl;
         std::cerr << "[" << print_str << "]   toe_zmp_offset_x = " << get_toe_zmp_offset_x() << "[mm], heel_zmp_offset_x = " << get_heel_zmp_offset_x() << "[mm]" << std::endl;
