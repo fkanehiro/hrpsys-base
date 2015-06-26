@@ -105,15 +105,17 @@ RTC::ReturnCode_t EmergencyStopper::onInitialize()
     is_stop_mode = false;
     is_initialized = false;
 
-    recover_time = 0;
+    recover_time = retrieve_time = 0;
     recover_time_dt = 1.0;
     default_recover_time = 2.5/m_dt;
-    m_recover_jointdata = new double[m_robot->numJoints()];
+    default_retrieve_time = 0.0/m_dt;
+    m_stop_posture = new double[m_robot->numJoints()];
     m_interpolator = new interpolator(m_robot->numJoints(), recover_time_dt);
 
     m_q.data.length(m_robot->numJoints());
     for(int i=0; i<m_robot->numJoints(); i++){
         m_q.data[i] = 0;
+        m_stop_posture[i] = 0;
     }
 
     return RTC::RTC_OK;
@@ -125,6 +127,7 @@ RTC::ReturnCode_t EmergencyStopper::onInitialize()
 RTC::ReturnCode_t EmergencyStopper::onFinalize()
 {
     delete m_interpolator;
+    delete m_stop_posture;
     return RTC::RTC_OK;
 }
 
@@ -171,43 +174,58 @@ RTC::ReturnCode_t EmergencyStopper::onExecute(RTC::UniqueId ec_id)
     if (m_qRefIn.isNew()) {
         m_qRefIn.read();
         assert(m_qRef.data.length() == numJoints);
+        if (!is_stop_mode) {
+            std::vector<double> current_posture;
+            for ( int i = 0; i < m_qRef.data.length(); i++ ) {
+                current_posture.push_back(m_qRef.data[i]);
+            }
+            m_input_posture_queue.push(current_posture);
+            if (m_input_posture_queue.size() > default_retrieve_time) {
+                m_input_posture_queue.pop();
+            }
+            for ( int i = 0; i < m_qRef.data.length(); i++ ) {
+                m_stop_posture[i] = m_input_posture_queue.front()[i];
+            }
+        } else {
+            while (!m_input_posture_queue.empty()) m_input_posture_queue.pop();
+        }
     }
 
     if (m_emergencySignalIn.isNew()){
-        std::cerr << "[" << m_profile.instance_name << "] emergencySignal is set!" << std::endl;
         m_emergencySignalIn.read();
         if (!is_stop_mode) {
-            if (recover_time <= 0) { // release mode
-                m_interpolator->set(m_qRef.data.get_buffer());
-            } else { // recover mode
-                m_interpolator->get(m_recover_jointdata);
-                m_interpolator->set(m_recover_jointdata);
-            }
+            std::cerr << "[" << m_profile.instance_name << "] emergencySignal is set!" << std::endl;
             is_stop_mode = true;
         }
     }
 
     if (DEBUGP) {
-        std::cerr << "[" << m_profile.instance_name << "] is_stop_mode : " << is_stop_mode << " recover_time: "  << recover_time << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "] is_stop_mode : " << is_stop_mode << " recover_time : "  << recover_time << "[s] retrieve_time : " << retrieve_time << "[s]" << std::endl;
     }
 
     //     mode : is_stop_mode : recover_time  : set as q
     // release  :        false :            0  : qRef
     // recover  :        false :         >  0  : q'
     // stop     :         true :  do not care  : q(do nothing)
-    if (!is_stop_mode && recover_time <= 0) { // release mode
-        for ( int i = 0; i < m_q.data.length(); i++ ) {
-            m_q.data[i] = m_qRef.data[i];
-        }
-    } else if (!is_stop_mode) { // recover mode
-        recover_time = recover_time - recover_time_dt;
-        m_interpolator->setGoal(m_qRef.data.get_buffer(), recover_time);
-        m_interpolator->get(m_recover_jointdata);
-        for ( int i = 0; i < m_q.data.length(); i++ ) {
-            m_q.data[i] = m_recover_jointdata[i];
+    if (!is_stop_mode) {
+        if (recover_time > 0) {
+            recover_time = recover_time - recover_time_dt;
+            m_interpolator->setGoal(m_qRef.data.get_buffer(), recover_time);
+            m_interpolator->get(m_q.data.get_buffer());
+        } else {
+            for ( int i = 0; i < m_q.data.length(); i++ ) {
+                m_q.data[i] = m_qRef.data[i];
+            }
         }
     } else { // stop mode
         recover_time = default_recover_time;
+        if (retrieve_time > 0 ) {
+            retrieve_time = retrieve_time - recover_time_dt;
+            m_interpolator->setGoal(m_stop_posture, retrieve_time);
+            m_interpolator->get(m_q.data.get_buffer());
+        } else {
+            // Do nothing
+        }
     }
 
     if (DEBUGP) {
@@ -259,13 +277,9 @@ RTC::ReturnCode_t EmergencyStopper::onExecute(RTC::UniqueId ec_id)
 bool EmergencyStopper::stopMotion()
 {
     if (!is_stop_mode) {
-        if (recover_time <= 0) { // release mode
-            m_interpolator->set(m_qRef.data.get_buffer());
-        } else { // recover mode
-            m_interpolator->get(m_recover_jointdata);
-            m_interpolator->set(m_recover_jointdata);
-        }
         is_stop_mode = true;
+        m_interpolator->set(m_qRef.data.get_buffer());
+        retrieve_time = default_retrieve_time;
         std::cerr << "[" << m_profile.instance_name << "] stopMotion is called" << std::endl;
     }
     return true;
