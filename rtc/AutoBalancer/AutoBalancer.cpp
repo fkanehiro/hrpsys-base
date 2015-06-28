@@ -991,7 +991,8 @@ bool AutoBalancer::setFootStepsWithParam(const OpenHRP::AutoBalancerService::Foo
         initial_input_coords.transformation(fstrans, tmpfs);
         tmpfs = initial_support_coords;
         tmpfs.transform(fstrans);
-        if ( prev_leg != leg ) {
+        // if ( prev_leg != leg ) {
+        if ( true ) {
             leg_name_vec.push_back(leg);
             fs_vec.push_back(tmpfs);
         } else {
