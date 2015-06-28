@@ -297,6 +297,23 @@ bool EmergencyStopper::releaseMotion()
     return true;
 }
 
+bool EmergencyStopper::getEmergencyStopperParam(OpenHRP::EmergencyStopperService::EmergencyStopperParam& i_param)
+{
+    std::cerr << "[" << m_profile.instance_name << "] getEmergencyStopperParam" << std::endl;
+    i_param.default_recover_time = default_recover_time*m_dt;
+    i_param.default_retrieve_time = default_retrieve_time*m_dt;
+    i_param.is_stop_mode = is_stop_mode;
+    return true;
+};
+
+bool EmergencyStopper::setEmergencyStopperParam(const OpenHRP::EmergencyStopperService::EmergencyStopperParam& i_param)
+{
+    std::cerr << "[" << m_profile.instance_name << "] setEmergencyStopperParam" << std::endl;
+    default_recover_time = i_param.default_recover_time/m_dt;
+    default_retrieve_time = i_param.default_retrieve_time/m_dt;
+    std::cerr << "[" << m_profile.instance_name << "]   default_recover_time = " << default_recover_time*m_dt << "[s], default_retrieve_time = " << default_retrieve_time*m_dt << "[s]" << std::endl;
+    return true;
+};
 
 extern "C"
 {

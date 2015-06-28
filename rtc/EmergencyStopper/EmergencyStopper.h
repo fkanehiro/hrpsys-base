@@ -100,6 +100,8 @@ public:
     // virtual RTC::ReturnCode_t onRateChanged(RTC::UniqueId ec_id);
     bool stopMotion();
     bool releaseMotion();
+    bool getEmergencyStopperParam(OpenHRP::EmergencyStopperService::EmergencyStopperParam& i_param);
+    bool setEmergencyStopperParam(const OpenHRP::EmergencyStopperService::EmergencyStopperParam& i_param);
 
 protected:
     // Configuration variable declaration
