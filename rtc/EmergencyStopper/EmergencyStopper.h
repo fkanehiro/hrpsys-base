@@ -146,7 +146,7 @@ private:
     double m_dt;
     unsigned int m_debugLevel;
     int dummy, loop;
-    bool is_stop_mode;
+    bool is_stop_mode, prev_is_stop_mode;
     bool is_initialized;
     int recover_time, retrieve_time;
     double recover_time_dt;
