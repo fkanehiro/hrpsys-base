@@ -51,7 +51,7 @@ public:
 class SimpleZMPDistributor
 {
     FootSupportPolygon fs;
-    double leg_inside_margin, leg_front_margin, leg_rear_margin, wrench_alpha_blending, alpha_cutoff_freq;
+    double leg_inside_margin, leg_outside_margin, leg_front_margin, leg_rear_margin, wrench_alpha_blending, alpha_cutoff_freq;
     double prev_alpha;
 public:
     SimpleZMPDistributor () : wrench_alpha_blending (0.5), alpha_cutoff_freq(1e7), // Almost no filter by default
@@ -61,8 +61,8 @@ public:
 
     inline bool is_inside_foot (const hrp::Vector3& leg_pos, const bool is_lleg, const double margin = 0.0)
     {
-        if (is_lleg) return leg_pos(1) >= (-1 * leg_inside_margin + margin);
-        else return leg_pos(1) <= (leg_inside_margin - margin);
+        if (is_lleg) return (leg_pos(1) >= (-1 * leg_inside_margin + margin)) && (leg_pos(1) <= (leg_outside_margin - margin));
+        else return (leg_pos(1) <= (leg_inside_margin - margin)) && (leg_pos(1) >= (-1 * leg_outside_margin + margin));
     };
     inline bool is_front_of_foot (const hrp::Vector3& leg_pos, const double margin = 0.0)
     {
@@ -74,7 +74,7 @@ public:
     };
     void print_params (const std::string& str)
     {
-        std::cerr << "[" << str << "]   leg_inside_margin = " << leg_inside_margin << "[m], leg_front_margin = " << leg_front_margin << "[m], leg_rear_margin = " << leg_rear_margin << "[m]" << std::endl;
+        std::cerr << "[" << str << "]   leg_inside_margin = " << leg_inside_margin << "[m], leg_outside_margin = " << leg_outside_margin << "[m], leg_front_margin = " << leg_front_margin << "[m], leg_rear_margin = " << leg_rear_margin << "[m]" << std::endl;
         std::cerr << "[" << str << "]   wrench_alpha_blending = " << wrench_alpha_blending << ", alpha_cutoff_freq = " << alpha_cutoff_freq << "[Hz]" << std::endl;
     }
     void print_vertices (const std::string& str)
@@ -86,6 +86,7 @@ public:
     void set_leg_front_margin (const double a) { leg_front_margin = a; };
     void set_leg_rear_margin (const double a) { leg_rear_margin = a; };
     void set_leg_inside_margin (const double a) { leg_inside_margin = a; };
+    void set_leg_outside_margin (const double a) { leg_outside_margin = a; };
     void set_alpha_cutoff_freq (const double a) { alpha_cutoff_freq = a; };
     void set_vertices (const std::vector<std::vector<Eigen::Vector2d> >& vs)
     {
@@ -97,13 +98,24 @@ public:
     void set_vertices_from_margin_params ()
     {
         std::vector<std::vector<Eigen::Vector2d> > vec;
-        std::vector<Eigen::Vector2d> tvec;
-        tvec.push_back(Eigen::Vector2d(leg_front_margin, leg_inside_margin));
-        tvec.push_back(Eigen::Vector2d(leg_front_margin, -1*leg_inside_margin));
-        tvec.push_back(Eigen::Vector2d(-1*leg_rear_margin, -1*leg_inside_margin));
-        tvec.push_back(Eigen::Vector2d(-1*leg_rear_margin, leg_inside_margin));
-        vec.push_back(tvec);
-        vec.push_back(tvec);
+        // RLEG
+        {
+            std::vector<Eigen::Vector2d> tvec;
+            tvec.push_back(Eigen::Vector2d(leg_front_margin, leg_inside_margin));
+            tvec.push_back(Eigen::Vector2d(leg_front_margin, -1*leg_outside_margin));
+            tvec.push_back(Eigen::Vector2d(-1*leg_rear_margin, -1*leg_outside_margin));
+            tvec.push_back(Eigen::Vector2d(-1*leg_rear_margin, leg_inside_margin));
+            vec.push_back(tvec);
+        }
+        // LLEG
+        {
+            std::vector<Eigen::Vector2d> tvec;
+            tvec.push_back(Eigen::Vector2d(leg_front_margin, leg_outside_margin));
+            tvec.push_back(Eigen::Vector2d(leg_front_margin, -1*leg_inside_margin));
+            tvec.push_back(Eigen::Vector2d(-1*leg_rear_margin, -1*leg_inside_margin));
+            tvec.push_back(Eigen::Vector2d(-1*leg_rear_margin, leg_outside_margin));
+            vec.push_back(tvec);
+        }
         set_vertices(vec);
     };
     // getter
@@ -111,6 +123,7 @@ public:
     double get_leg_front_margin () { return leg_front_margin; };
     double get_leg_rear_margin () { return leg_rear_margin; };
     double get_leg_inside_margin () { return leg_inside_margin; };
+    double get_leg_outside_margin () { return leg_outside_margin; };
     double get_alpha_cutoff_freq () { return alpha_cutoff_freq; };
     void get_vertices (std::vector<std::vector<Eigen::Vector2d> >& vs) { fs.get_vertices(vs); };
     //
