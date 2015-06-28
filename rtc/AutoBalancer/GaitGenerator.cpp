@@ -297,6 +297,7 @@ namespace rats
                                                                       const coordinates& goal, const double height)
   {
     mid_coords(ret, swing_rot_ratio, start, goal);
+    cdktg.set_start_rot(hrp::Matrix33(start.rot));
     cdktg.get_trajectory_point(ret.pos, hrp::Vector3(start.pos), hrp::Vector3(goal.pos), height);
   };
 

@@ -444,12 +444,14 @@ namespace rats
     class cycloid_delay_kick_hoffarbib_trajectory_generator : public delay_hoffarbib_trajectory_generator
     {
     private:
+      hrp::Matrix33 start_rot;
       hrp::Vector3 kick_point_offset;
     public:
       cycloid_delay_kick_hoffarbib_trajectory_generator() : delay_hoffarbib_trajectory_generator(){
           kick_point_offset = hrp::Vector3::Zero();
       }
       void set_cycloid_delay_kick_point_offset (const hrp::Vector3 _offset) { kick_point_offset = _offset; };
+      void set_start_rot (const hrp::Matrix33 _offset) { start_rot = _offset; };
       hrp::Vector3 get_cycloid_delay_kick_point_offset () { return kick_point_offset; };
       hrp::Vector3 interpolate_antecedent_path (const hrp::Vector3& start, const hrp::Vector3& goal, const double height, const double tmp_ratio)
       {
@@ -459,6 +461,7 @@ namespace rats
         via_goal(2) += ratio*height;
         double tmpheight = ((start(2)+goal(2))/2.0+height-(start(2)+via_goal(2))/2.0);
         cycloid_path.push_back(start);
+        kick_point_offset = start_rot * kick_point_offset;
         cycloid_path.push_back(start + kick_point_offset);
         cycloid_midpoint(tmpv, 0.2, start, via_goal, tmpheight);
         cycloid_path.push_back(tmpv);
@@ -970,4 +973,3 @@ namespace rats
   };
 }
 #endif /* GAITGENERATOR_H */
-
