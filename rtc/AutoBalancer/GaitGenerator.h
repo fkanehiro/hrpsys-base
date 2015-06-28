@@ -447,9 +447,7 @@ namespace rats
       hrp::Matrix33 start_rot;
       hrp::Vector3 kick_point_offset;
     public:
-      cycloid_delay_kick_hoffarbib_trajectory_generator() : delay_hoffarbib_trajectory_generator(){
-          kick_point_offset = hrp::Vector3::Zero();
-      }
+        cycloid_delay_kick_hoffarbib_trajectory_generator() : delay_hoffarbib_trajectory_generator(), kick_point_offset(hrp::Vector3(-0.1, 0.0, 0.0)) {};
       void set_cycloid_delay_kick_point_offset (const hrp::Vector3 _offset) { kick_point_offset = _offset; };
       void set_start_rot (const hrp::Matrix33 _offset) { start_rot = _offset; };
       hrp::Vector3 get_cycloid_delay_kick_point_offset () { return kick_point_offset; };
@@ -460,17 +458,19 @@ namespace rats
         double ratio = 0.4;
         via_goal(2) += ratio*height;
         double tmpheight = ((start(2)+goal(2))/2.0+height-(start(2)+via_goal(2))/2.0);
+        // kick_point_offset = start_rot * kick_point_offset;
         cycloid_path.push_back(start);
-        kick_point_offset = start_rot * kick_point_offset;
-        cycloid_path.push_back(start + kick_point_offset);
-        cycloid_midpoint(tmpv, 0.2, start, via_goal, tmpheight);
-        cycloid_path.push_back(tmpv);
-        cycloid_midpoint(tmpv, 0.4, start, via_goal, tmpheight);
-        cycloid_path.push_back(tmpv);
-        cycloid_midpoint(tmpv, 0.6, start, via_goal, tmpheight);
-        cycloid_path.push_back(tmpv);
-        cycloid_midpoint(tmpv, 0.8, start, via_goal, tmpheight);
-        cycloid_path.push_back(tmpv);
+        if(height > 1e-4){
+            cycloid_path.push_back(start + start_rot * kick_point_offset);
+            cycloid_midpoint(tmpv, 0.2, start + start_rot * kick_point_offset, via_goal, tmpheight);
+            cycloid_path.push_back(tmpv);
+            cycloid_midpoint(tmpv, 0.4, start + start_rot * kick_point_offset, via_goal, tmpheight);
+            cycloid_path.push_back(tmpv);
+            cycloid_midpoint(tmpv, 0.6, start + start_rot * kick_point_offset, via_goal, tmpheight);
+            cycloid_path.push_back(tmpv);
+            cycloid_midpoint(tmpv, 0.8, start + start_rot * kick_point_offset, via_goal, tmpheight);
+            cycloid_path.push_back(tmpv);
+        }
         cycloid_path.push_back(via_goal);
         cycloid_path.push_back(goal);
         return interpolate_antecedent_path_base(tmp_ratio, cycloid_path);
