@@ -180,12 +180,16 @@ RTC::ReturnCode_t EmergencyStopper::onExecute(RTC::UniqueId ec_id)
             current_posture.push_back(m_qRef.data[i]);
         }
         m_input_posture_queue.push(current_posture);
-        if (m_input_posture_queue.size() > default_retrieve_time) {
+        while (m_input_posture_queue.size() > default_retrieve_time) {
             m_input_posture_queue.pop();
         }
         if (!is_stop_mode) {
             for ( int i = 0; i < m_qRef.data.length(); i++ ) {
-                m_stop_posture[i] = m_input_posture_queue.front()[i];
+                if (recover_time > 0) { // Until releasing is finished, do not use m_stop_posture in input queue because too large error.
+                    m_stop_posture[i] = m_q.data[i];
+                } else {
+                    m_stop_posture[i] = m_input_posture_queue.front()[i];
+                }
             }
         }
     }
