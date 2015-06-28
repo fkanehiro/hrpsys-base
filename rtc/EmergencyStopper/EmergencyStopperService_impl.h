@@ -22,6 +22,8 @@ public:
 
     void stopMotion();
     void releaseMotion();
+    CORBA::Boolean getEmergencyStopperParam(OpenHRP::EmergencyStopperService::EmergencyStopperParam& i_param);
+    CORBA::Boolean setEmergencyStopperParam(const OpenHRP::EmergencyStopperService::EmergencyStopperParam& i_param);
 
     void emergencystopper(EmergencyStopper *i_emergencystopper);
 

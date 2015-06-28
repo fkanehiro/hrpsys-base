@@ -19,6 +19,7 @@
 #include <rtm/idl/ExtendedDataTypesSkel.h>
 #include <hrpModel/Body.h>
 #include "interpolator.h"
+#include <queue>
 
 // Service implementation headers
 // <rtc-template block="service_impl_h">
@@ -99,6 +100,8 @@ public:
     // virtual RTC::ReturnCode_t onRateChanged(RTC::UniqueId ec_id);
     bool stopMotion();
     bool releaseMotion();
+    bool getEmergencyStopperParam(OpenHRP::EmergencyStopperService::EmergencyStopperParam& i_param);
+    bool setEmergencyStopperParam(const OpenHRP::EmergencyStopperService::EmergencyStopperParam& i_param);
 
 protected:
     // Configuration variable declaration
@@ -145,13 +148,14 @@ private:
     double m_dt;
     unsigned int m_debugLevel;
     int dummy, loop;
-    bool is_stop_mode;
+    bool is_stop_mode, prev_is_stop_mode;
     bool is_initialized;
-    int recover_time;
+    int recover_time, retrieve_time;
     double recover_time_dt;
-    int default_recover_time;
-    double *m_recover_jointdata;
+    int default_recover_time, default_retrieve_time;
+    double *m_stop_posture;
     interpolator* m_interpolator;
+    std::queue<std::vector<double> > m_input_posture_queue;
 };
 
 

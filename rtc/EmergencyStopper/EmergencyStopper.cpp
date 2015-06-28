@@ -102,18 +102,21 @@ RTC::ReturnCode_t EmergencyStopper::onInitialize()
         std::cerr << "[" << m_profile.instance_name << "] failed to load model[" << prop["model"] << "]" << std::endl;
     }
 
-    is_stop_mode = false;
+    is_stop_mode = prev_is_stop_mode = false;
     is_initialized = false;
 
-    recover_time = 0;
+    recover_time = retrieve_time = 0;
     recover_time_dt = 1.0;
     default_recover_time = 2.5/m_dt;
-    m_recover_jointdata = new double[m_robot->numJoints()];
+    default_retrieve_time = 1;
+    //default_retrieve_time = 1.0/m_dt;
+    m_stop_posture = new double[m_robot->numJoints()];
     m_interpolator = new interpolator(m_robot->numJoints(), recover_time_dt);
 
     m_q.data.length(m_robot->numJoints());
     for(int i=0; i<m_robot->numJoints(); i++){
         m_q.data[i] = 0;
+        m_stop_posture[i] = 0;
     }
 
     return RTC::RTC_OK;
@@ -125,6 +128,7 @@ RTC::ReturnCode_t EmergencyStopper::onInitialize()
 RTC::ReturnCode_t EmergencyStopper::onFinalize()
 {
     delete m_interpolator;
+    delete m_stop_posture;
     return RTC::RTC_OK;
 }
 
@@ -171,43 +175,65 @@ RTC::ReturnCode_t EmergencyStopper::onExecute(RTC::UniqueId ec_id)
     if (m_qRefIn.isNew()) {
         m_qRefIn.read();
         assert(m_qRef.data.length() == numJoints);
-    }
-
-    if (m_emergencySignalIn.isNew()){
-        std::cerr << "[" << m_profile.instance_name << "] emergencySignal is set!" << std::endl;
-        m_emergencySignalIn.read();
+        std::vector<double> current_posture;
+        for ( int i = 0; i < m_qRef.data.length(); i++ ) {
+            current_posture.push_back(m_qRef.data[i]);
+        }
+        m_input_posture_queue.push(current_posture);
+        while (m_input_posture_queue.size() > default_retrieve_time) {
+            m_input_posture_queue.pop();
+        }
         if (!is_stop_mode) {
-            if (recover_time <= 0) { // release mode
-                m_interpolator->set(m_qRef.data.get_buffer());
-            } else { // recover mode
-                m_interpolator->get(m_recover_jointdata);
-                m_interpolator->set(m_recover_jointdata);
+            for ( int i = 0; i < m_qRef.data.length(); i++ ) {
+                if (recover_time > 0) { // Until releasing is finished, do not use m_stop_posture in input queue because too large error.
+                    m_stop_posture[i] = m_q.data[i];
+                } else {
+                    m_stop_posture[i] = m_input_posture_queue.front()[i];
+                }
             }
-            is_stop_mode = true;
         }
     }
 
+    if (m_emergencySignalIn.isNew()){
+        m_emergencySignalIn.read();
+        if (!is_stop_mode) {
+            std::cerr << "[" << m_profile.instance_name << "] emergencySignal is set!" << std::endl;
+            is_stop_mode = true;
+        }
+    }
+    if (is_stop_mode && !prev_is_stop_mode) {
+        retrieve_time = default_retrieve_time;
+        // Reflect current output joint angles to interpolator state
+        m_interpolator->set(m_q.data.get_buffer());
+    }
+
     if (DEBUGP) {
-        std::cerr << "[" << m_profile.instance_name << "] is_stop_mode : " << is_stop_mode << " recover_time: "  << recover_time << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "] is_stop_mode : " << is_stop_mode << " recover_time : "  << recover_time << "[s] retrieve_time : " << retrieve_time << "[s]" << std::endl;
     }
 
     //     mode : is_stop_mode : recover_time  : set as q
     // release  :        false :            0  : qRef
     // recover  :        false :         >  0  : q'
     // stop     :         true :  do not care  : q(do nothing)
-    if (!is_stop_mode && recover_time <= 0) { // release mode
-        for ( int i = 0; i < m_q.data.length(); i++ ) {
-            m_q.data[i] = m_qRef.data[i];
-        }
-    } else if (!is_stop_mode) { // recover mode
-        recover_time = recover_time - recover_time_dt;
-        m_interpolator->setGoal(m_qRef.data.get_buffer(), recover_time);
-        m_interpolator->get(m_recover_jointdata);
-        for ( int i = 0; i < m_q.data.length(); i++ ) {
-            m_q.data[i] = m_recover_jointdata[i];
+    if (!is_stop_mode) {
+        if (recover_time > 0) {
+            recover_time = recover_time - recover_time_dt;
+            m_interpolator->setGoal(m_qRef.data.get_buffer(), recover_time);
+            m_interpolator->get(m_q.data.get_buffer());
+        } else {
+            for ( int i = 0; i < m_q.data.length(); i++ ) {
+                m_q.data[i] = m_qRef.data[i];
+            }
         }
     } else { // stop mode
         recover_time = default_recover_time;
+        if (retrieve_time > 0 ) {
+            retrieve_time = retrieve_time - recover_time_dt;
+            m_interpolator->setGoal(m_stop_posture, retrieve_time);
+            m_interpolator->get(m_q.data.get_buffer());
+        } else {
+            // Do nothing
+        }
     }
 
     if (DEBUGP) {
@@ -218,6 +244,7 @@ RTC::ReturnCode_t EmergencyStopper::onExecute(RTC::UniqueId ec_id)
         std::cerr << std::endl;
     }
     m_qOut.write();
+    prev_is_stop_mode = is_stop_mode;
     return RTC::RTC_OK;
 }
 
@@ -259,12 +286,6 @@ RTC::ReturnCode_t EmergencyStopper::onExecute(RTC::UniqueId ec_id)
 bool EmergencyStopper::stopMotion()
 {
     if (!is_stop_mode) {
-        if (recover_time <= 0) { // release mode
-            m_interpolator->set(m_qRef.data.get_buffer());
-        } else { // recover mode
-            m_interpolator->get(m_recover_jointdata);
-            m_interpolator->set(m_recover_jointdata);
-        }
         is_stop_mode = true;
         std::cerr << "[" << m_profile.instance_name << "] stopMotion is called" << std::endl;
     }
@@ -280,6 +301,23 @@ bool EmergencyStopper::releaseMotion()
     return true;
 }
 
+bool EmergencyStopper::getEmergencyStopperParam(OpenHRP::EmergencyStopperService::EmergencyStopperParam& i_param)
+{
+    std::cerr << "[" << m_profile.instance_name << "] getEmergencyStopperParam" << std::endl;
+    i_param.default_recover_time = default_recover_time*m_dt;
+    i_param.default_retrieve_time = default_retrieve_time*m_dt;
+    i_param.is_stop_mode = is_stop_mode;
+    return true;
+};
+
+bool EmergencyStopper::setEmergencyStopperParam(const OpenHRP::EmergencyStopperService::EmergencyStopperParam& i_param)
+{
+    std::cerr << "[" << m_profile.instance_name << "] setEmergencyStopperParam" << std::endl;
+    default_recover_time = i_param.default_recover_time/m_dt;
+    default_retrieve_time = i_param.default_retrieve_time/m_dt;
+    std::cerr << "[" << m_profile.instance_name << "]   default_recover_time = " << default_recover_time*m_dt << "[s], default_retrieve_time = " << default_retrieve_time*m_dt << "[s]" << std::endl;
+    return true;
+};
 
 extern "C"
 {
