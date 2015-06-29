@@ -110,6 +110,7 @@ class Stabilizer
   void sync_2_st ();
   void sync_2_idle();
   bool calcZMP(hrp::Vector3& ret_zmp, const double zmp_z);
+  void calcStateForEmergencySignal();
   void calcRUNST();
   void calcTPCC();
   void calcEEForceMomentControl();
