@@ -201,10 +201,15 @@ class HrpsysConfigurator:
     abc_version = None
     st_version = None
 
-    # CollisionDetector
+    # EmergencyStopper
     es = None
     es_svc = None
     es_version = None
+
+    # EmergencyStopper (HardEmergencyStopper)
+    hes = None
+    hes_svc = None
+    hes_version = None
 
     # CollisionDetector
     co = None
@@ -657,6 +662,7 @@ class HrpsysConfigurator:
             ['tc', "TorqueController"],
             # ['te', "ThermoEstimator"],
             # ['tl', "ThermoLimiter"],
+            ['hes', "EmergencyStopper"],
             ['el', "SoftErrorLimiter"],
             ['log', "DataLogger"]
             ]
@@ -666,7 +672,7 @@ class HrpsysConfigurator:
         Get list of controller list that need to control joint angles
         '''
         controller_list = [self.es, self.ic, self.gc, self.abc, self.st, self.co,
-                           self.tc, self.el]
+                           self.tc, self.hes, self.el]
         return filter(lambda c: c != None, controller_list)  # only return existing controllers
 
     def getRTCInstanceList(self, verbose=True):
