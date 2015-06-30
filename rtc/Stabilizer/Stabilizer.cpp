@@ -295,7 +295,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
       hrp::Sensor* sen= m_robot->sensor<hrp::ForceSensor>(stikp[i].sensor_name);
       if ( sen != NULL ) is_legged_robot = true;
   }
-  is_cop_outside = false;
+  is_emergency = false;
 
   m_qCurrent.data.length(m_robot->numJoints());
   m_qRef.data.length(m_robot->numJoints());
@@ -530,7 +530,7 @@ RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
     m_qRefOut.write();
     // emergencySignal
 #if 0
-    if (is_cop_outside && is_seq_interpolating) {
+    if (is_emergency) {
         m_emergencySignalOut.write();
     }
 #endif
@@ -975,7 +975,7 @@ bool Stabilizer::calcZMP(hrp::Vector3& ret_zmp, const double zmp_z)
 void Stabilizer::calcStateForEmergencySignal()
 {
   // COP Check
-  is_cop_outside = true;
+  bool is_cop_outside = true;
   if (DEBUGP) {
       std::cerr << "[" << m_profile.instance_name << "] Check Emergency State (seq = " << (is_seq_interpolating?"interpolating":"empty") << ")" << std::endl;
   }
@@ -1005,6 +1005,8 @@ void Stabilizer::calcStateForEmergencySignal()
   } else {
     is_cop_outside = false;
   }
+  // Total check for emergency signal
+  is_emergency = is_cop_outside && is_seq_interpolating;
 };
 
 void Stabilizer::calcTPCC() {

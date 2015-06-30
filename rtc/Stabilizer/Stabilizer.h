@@ -244,7 +244,7 @@ class Stabilizer
   std::vector<bool> contact_states, prev_contact_states, is_ik_enable;
   double dt;
   int transition_count, loop;
-  bool is_legged_robot, on_ground, is_cop_outside, is_seq_interpolating;
+  bool is_legged_robot, on_ground, is_emergency, is_seq_interpolating;
   hrp::Vector3 current_root_p, target_root_p;
   hrp::Matrix33 current_root_R, target_root_R, prev_act_foot_origin_rot, prev_ref_foot_origin_rot, target_foot_origin_rot;
   std::vector <hrp::Vector3> target_ee_p, target_ee_diff_p, prev_target_ee_diff_p, target_ee_diff_r, prev_target_ee_diff_r;
