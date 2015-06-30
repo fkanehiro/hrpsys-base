@@ -46,36 +46,61 @@ def demoSetParameter():
     print "2. setParameter"
     stp_org = hcf.st_svc.getParameter()
     stp = hcf.st_svc.getParameter()
+    # for tpcc
     stp.k_tpcc_p=[0.2, 0.2]
     stp.k_tpcc_x=[4.0, 4.0]
     stp.k_brot_p=[0.0, 0.0]
+    # for eefm
+    stp.eefm_leg_inside_margin=71.12*1e-3
+    stp.eefm_leg_outside_margin=71.12*1e-3
+    stp.eefm_leg_front_margin=182.0*1e-3
+    stp.eefm_leg_rear_margin=72.0*1e-3
+    stp.eefm_k1=[-1.39899,-1.39899]
+    stp.eefm_k2=[-0.386111,-0.386111]
+    stp.eefm_k3=[-0.175068,-0.175068]
+    stp.eefm_rot_damping_gain=20*1.6*10 # Stiff parameter for simulation
+    stp.eefm_pos_damping_gain=[3500*50, 3500*50, 3500*1.0*5] # Stiff parameter for simulation
     hcf.st_svc.setParameter(stp)
     stp = hcf.st_svc.getParameter()
     if stp.k_tpcc_p == stp_org.k_tpcc_p and stp.k_tpcc_x == stp_org.k_tpcc_x and stp.k_brot_p == stp_org.k_brot_p:
         print "  setParameter() => OK"
 
-def demoStartStopST ():
-    print "3. start and stop st"
-    hcf.st_svc.startStabilizer ()
-    hcf.abc_svc.goPos(0.5, 0.1, 10)
-    hcf.abc_svc.waitFootSteps()
-    hcf.st_svc.stopStabilizer ()
-    print "  Start and Stop Stabilizer => OK"
+def demoStartStopTPCCST ():
+    print "3. start and stop TPCC st"
+    if hcf.pdc:
+        stp = hcf.st_svc.getParameter()
+        stp.st_algorithm=OpenHRP.StabilizerService.TPCC
+        hcf.st_svc.setParameter(stp)
+        hcf.startStabilizer ()
+        hcf.abc_svc.goPos(0.5, 0.1, 10)
+        hcf.abc_svc.waitFootSteps()
+        hcf.stopStabilizer ()
+        print "  Start and Stop Stabilizer => OK"
+    else:
+        print "  This sample is neglected in High-gain mode simulation"
 
-def demoCOPCheck():
-    stp=hcf.st_svc.getParameter()
-    stp.eefm_leg_inside_margin=71.12*1e-3
-    stp.eefm_leg_front_margin=182.0*1e-3
-    stp.eefm_leg_rear_margin=72.0*1e-3
-    hcf.st_svc.setParameter(stp)
 
+def demoStartStopEEFMQPST ():
+    print "4. start and stop EEFMQP st"
+    if hcf.pdc:
+        stp = hcf.st_svc.getParameter()
+        stp.st_algorithm=OpenHRP.StabilizerService.EEFMQP
+        hcf.st_svc.setParameter(stp)
+        hcf.startStabilizer ()
+        hcf.abc_svc.goPos(0.3, 0, 0)
+        hcf.abc_svc.waitFootSteps()
+        hcf.stopStabilizer ()
+        print "  Start and Stop Stabilizer => OK"
+    else:
+        print "  This sample is neglected in High-gain mode simulation"
 
 def demo():
     init()
 
     demoGetParameter()
     demoSetParameter()
-    #demoStartStopST()
+    demoStartStopTPCCST()
+    demoStartStopEEFMQPST()
 
 if __name__ == '__main__':
     demo()

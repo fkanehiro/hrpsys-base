@@ -439,6 +439,7 @@ RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
     getCurrentParameters();
     getTargetParameters();
     getActualParameters();
+    calcStateForEmergencySignal();
     switch (control_mode) {
     case MODE_IDLE:
       break;
@@ -927,7 +928,6 @@ bool Stabilizer::calcZMP(hrp::Vector3& ret_zmp, const double zmp_z)
   double tmpzmpx = 0;
   double tmpzmpy = 0;
   double tmpfz = 0, tmpfz2 = 0.0;
-  is_cop_outside = true;
   for (size_t i = 0; i < stikp.size(); i++) {
     if (stikp[i].ee_name.find("leg") == std::string::npos) continue;
     hrp::ForceSensor* sensor = m_robot->sensor<hrp::ForceSensor>(stikp[i].sensor_name);
@@ -955,7 +955,20 @@ bool Stabilizer::calcZMP(hrp::Vector3& ret_zmp, const double zmp_z)
     prev_act_force_z[i] = 0.85 * prev_act_force_z[i] + 0.15 * nf(2); // filter, cut off 5[Hz]
   }
   tmpfz2 = prev_act_force_z[0] + prev_act_force_z[1];
-  if (tmpfz2 > 50) {
+  if (tmpfz2 < 50) {
+    ret_zmp = act_zmp;
+    return false; // in the air
+  } else {
+    ret_zmp = hrp::Vector3(tmpzmpx / tmpfz, tmpzmpy / tmpfz, zmp_z);
+    return true; // on ground
+  }
+};
+
+void Stabilizer::calcStateForEmergencySignal()
+{
+  // COP Check
+  is_cop_outside = true;
+  if (on_ground) {
     if (DEBUGP) {
         std::cerr << "[" << m_profile.instance_name << "] COP check" << std::endl;
     }
@@ -980,13 +993,6 @@ bool Stabilizer::calcZMP(hrp::Vector3& ret_zmp, const double zmp_z)
     }
   } else {
     is_cop_outside = false;
-  }
-  if (tmpfz2 < 50) {
-    ret_zmp = act_zmp;
-    return false; // in the air
-  } else {
-    ret_zmp = hrp::Vector3(tmpzmpx / tmpfz, tmpzmpy / tmpfz, zmp_z);
-    return true; // on ground
   }
 };
 
