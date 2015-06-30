@@ -4,7 +4,7 @@
    <property name="integrate" value="true"/>
    <property name="timeStep" value="@CONTROLLER_TIME@"/>
    <property name="totalTime" value="2000000.0"/>
-   <property name="method" value="EULER"/>
+   <property name="method" value="RUNGE_KUTTA"/>
   </item>
   <item class="com.generalrobotix.ui.item.GrxRTSItem" name="SampleRobot" select="true">
    <property name="SampleRobot(Robot)0.period" value="@CONTROLLER_TIME@"/>
