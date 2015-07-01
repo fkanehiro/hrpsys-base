@@ -49,12 +49,20 @@ def dumpLoadPatternTestFile (basename, var_doc, tm):
 def checkArrayEquality (arr1, arr2, eps=1e-7):
     return all(map(lambda x,y : abs(x-y)<eps, arr1, arr2))
 
+def checkArrayBetween (arr1, arr2, arr3, eps=1e-7):
+    return all(map(lambda x,y,z : abs(x-y)<eps or (z-x)*(y-x) > 0, arr1, arr2, arr3))
+
 def checkJointAngles (var_doc):
     if isinstance(var_doc, list):
         p = var_doc
     else:
         p = var_doc['pos']
     print "  pos => ", checkArrayEquality(rtm.readDataPort(hcf.sh.port("qOut")).data, p)
+
+def checkJointAnglesBetween(from_doc, to_doc):
+    p0 =  from_doc if isinstance(from_doc, list) else from_doc['pos']
+    p1 =    to_doc if isinstance(  to_doc, list) else   to_doc['pos']
+    print "  pos => ", checkArrayBetween(p0, rtm.readDataPort(hcf.sh.port("qOut")).data, p1)
 
 def checkZmp(var_doc):
     zmp=rtm.readDataPort(hcf.sh.port("zmpOut")).data
@@ -87,6 +95,20 @@ def demoSetJointAngles():
     hcf.seq_svc.setJointAngles(reset_pose_doc['pos'], 1.0);
     hcf.seq_svc.waitInterpolation();
     checkJointAngles(reset_pose_doc)
+    # check override
+    print "   check override"
+    hcf.seq_svc.setJointAngles(move_base_pose_doc['pos'], 5.0);
+    time.sleep(2.5)
+    hcf.seq_svc.setJointAngles(reset_pose_doc['pos'], 1.0);
+    hcf.seq_svc.waitInterpolation();
+    checkJointAngles(reset_pose_doc)
+    # check clear
+    print "   check clear"
+    hcf.seq_svc.setJointAngles(move_base_pose_doc['pos'], 5.0);
+    time.sleep(2.5)
+    hcf.seq_svc.clearJointAngles()
+    checkJointAnglesBetween(reset_pose_doc,move_base_pose_doc)
+
 
 def demoSetJointAngle():
     print "2. setJointAngle"
@@ -94,14 +116,27 @@ def demoSetJointAngle():
     hcf.seq_svc.waitInterpolation();
     hcf.seq_svc.setJointAngle("WAIST_R", 10*3.14159/180.0, 1.0);
     hcf.seq_svc.waitInterpolation();
-    p = reset_pose_doc['pos']
+    p = list(reset_pose_doc['pos']) # copy object
     p[27] = 10*3.14159/180.0
     checkJointAngles(p)
     hcf.seq_svc.setJointAngle("WAIST_R", 0*3.14159/180.0, 1.0);
     hcf.seq_svc.waitInterpolation();
-    p = reset_pose_doc['pos']
-    p[27] = 0*3.14159/180.0
-    checkJointAngles(p)
+    checkJointAngles(reset_pose_doc)
+    # # check override
+    # print "   check override"
+    # hcf.seq_svc.setJointAngles(reset_pose_doc['pos'], 1.0);
+    # hcf.seq_svc.waitInterpolation();
+    # hcf.seq_svc.setJointAngle("WAIST_R", 10*3.14159/180.0, 5.0);
+    # time.sleep(2.5)
+    # hcf.seq_svc.setJointAngle("WAIST_R", 0*3.14159/180.0, 5.0);
+    # hcf.seq_svc.waitInterpolation();
+    # checkJointAngles(reset_pose_doc)
+    # # check clear
+    # print "   check clear"
+    # hcf.seq_svc.setJointAngle("WAIST_R", 10*3.14159/180.0, 5.0);
+    # time.sleep(2.5)
+    # hcf.seq_svc.clearJointAngles()
+    # checkJointAnglesBetween(reset_pose_doc,p)
 
 def demoLoadPattern():
     print "3. loadPattern"
@@ -153,16 +188,32 @@ def demoSetJointAnglesOfGroup():
     hcf.seq_svc.setJointAngles(reset_pose_doc['pos'], 1.0);
     hcf.seq_svc.setJointAnglesOfGroup('larm', larm_pos0, 1.0);
     hcf.seq_svc.waitInterpolationOfGroup('larm');
-    p = reset_pose_doc['pos']
+    p0 = list(reset_pose_doc['pos']) # copy
     for i in range(len(larm_pos0)):
-        p[i+19] = larm_pos0[i]
-    checkJointAngles(p)
+        p0[i+19] = larm_pos0[i]
+    checkJointAngles(p0)
     hcf.seq_svc.setJointAnglesOfGroup('larm', larm_pos1, 1.0);
     hcf.seq_svc.waitInterpolationOfGroup('larm');
-    p = reset_pose_doc['pos']
+    p1 = list(reset_pose_doc['pos']) # copy
     for i in range(len(larm_pos1)):
-        p[i+19] = larm_pos1[i]
-    checkJointAngles(p)
+        p1[i+19] = larm_pos1[i]
+    checkJointAngles(p1)
+    # check override
+    print "   check override"
+    hcf.seq_svc.setJointAngles(reset_pose_doc['pos'], 1.0);
+    hcf.seq_svc.setJointAnglesOfGroup('larm', larm_pos0, 5.0);
+    time.sleep(2.5)
+    hcf.seq_svc.setJointAnglesOfGroup('larm', larm_pos1, 1.0);
+    hcf.seq_svc.waitInterpolationOfGroup('larm');
+    checkJointAngles(p1)
+    # check clear
+    print "   check clear"
+    hcf.seq_svc.setJointAnglesOfGroup('larm', larm_pos0, 5.0);
+    time.sleep(2.5)
+    hcf.seq_svc.clearJointAnglesOfGroup('larm')
+    checkJointAnglesBetween(p1, p0)
+
+
 
 def demo():
     init()
