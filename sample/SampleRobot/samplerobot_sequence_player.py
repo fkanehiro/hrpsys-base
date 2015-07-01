@@ -14,7 +14,7 @@ except:
     import time
 
 def init ():
-    global hcf
+    global hcf, hrpsys_version
     hcf = HrpsysConfigurator()
     hcf.init ("SampleRobot(Robot)0", "$(PROJECT_DIR)/../model/sample1.wrl")
     global reset_pose_doc, move_base_pose_doc, doc
@@ -35,9 +35,12 @@ def init ():
                           'torque':range(dof),
                           'wrenches':[1]*6+[-2]*6+[3]*6+[-4]*6
                           }
+    hrpsys_version = hcf.seq.ref.get_component_profile().version
+    print("hrpsys_version = %s"%hrpsys_version)
     hcf.seq_svc.removeJointGroup('larm')
     hcf.seq_svc.setJointAngles(reset_pose_doc['pos'], 1.0);
     hcf.seq_svc.waitInterpolation();
+
 
 def dumpLoadPatternTestFile (basename, var_doc, tm):
     for key in var_doc.keys():
@@ -114,6 +117,8 @@ def demoSetJointAngles():
     hcf.seq_svc.waitInterpolation();
     checkJointAngles(reset_pose_doc)
     # check clear
+    if hrpsys_version < '315.5.0':
+        return
     print "   check clear"
     hcf.seq_svc.setJointAngles(move_base_pose_doc['pos'], 5.0);
     time.sleep(2.5)
@@ -239,6 +244,8 @@ def demoSetJointAnglesOfGroup():
     hcf.seq_svc.waitInterpolationOfGroup('larm');
     checkJointAngles(p1)
     # check clear
+    if hrpsys_version < '315.5.0':
+        return
     print "   check clear"
     hcf.seq_svc.setJointAnglesOfGroup('larm', larm_pos0, 5.0);
     time.sleep(2.5)
@@ -282,14 +289,16 @@ def demoSetJointAnglesSequenceOfGroup():
 def demo():
     init()
     demoSetJointAngles()
-    demoSetJointAnglesSequence()
+    if hrpsys_version >= '315.5.0':
+        demoSetJointAnglesSequence()
     demoSetJointAngle()
     demoLoadPattern()
     demoSetZmp()
     demoSetBasePosRpy()
     demoSetWrenches()
     demoSetJointAnglesOfGroup()
-    demoSetJointAnglesSequenceOfGroup()
+    if hrpsys_version >= '315.5.0':
+        demoSetJointAnglesSequenceOfGroup()
 
 if __name__ == '__main__':
     demo()
