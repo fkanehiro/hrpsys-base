@@ -9,4 +9,6 @@
         args="-ORBInitRef NameService=corbaloc:iiop:localhost:2809/NameService" retry="2" />
   <test test-name="samplerobot_impedance" pkg="hrpsys" type="test-samplerobot-impedance.py"
         args="-ORBInitRef NameService=corbaloc:iiop:localhost:2809/NameService" retry="2" />
+  <test test-name="samplerobot_sequence" pkg="hrpsys" type="test-samplerobot-sequence.py"
+        args="-ORBInitRef NameService=corbaloc:iiop:localhost:2809/NameService" retry="2" />
 </launch>

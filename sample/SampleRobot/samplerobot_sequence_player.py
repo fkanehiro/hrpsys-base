@@ -57,27 +57,38 @@ def checkJointAngles (var_doc):
         p = var_doc
     else:
         p = var_doc['pos']
-    print "  pos => ", checkArrayEquality(rtm.readDataPort(hcf.sh.port("qOut")).data, p)
+    ret = checkArrayEquality(rtm.readDataPort(hcf.sh.port("qOut")).data, p)
+    print "  pos => ", ret
 
 def checkJointAnglesBetween(from_doc, to_doc):
     p0 =  from_doc if isinstance(from_doc, list) else from_doc['pos']
     p1 =    to_doc if isinstance(  to_doc, list) else   to_doc['pos']
-    print "  pos => ", checkArrayBetween(p0, rtm.readDataPort(hcf.sh.port("qOut")).data, p1)
+    ret = checkArrayBetween(p0, rtm.readDataPort(hcf.sh.port("qOut")).data, p1)
+    print "  pos => ", ret
+    assert(ret is True)
 
 def checkZmp(var_doc):
     zmp=rtm.readDataPort(hcf.sh.port("zmpOut")).data
-    print "  zmp => ", checkArrayEquality([zmp.x, zmp.y, zmp.z], var_doc['zmp'])
+    ret = checkArrayEquality([zmp.x, zmp.y, zmp.z], var_doc['zmp'])
+    print "  zmp => ", ret
+    assert(ret is True)
 
 def checkWaist(var_doc):
     bpos=rtm.readDataPort(hcf.sh.port("basePosOut")).data
     brpy=rtm.readDataPort(hcf.sh.port("baseRpyOut")).data
-    print "  waist => ", checkArrayEquality([bpos.x, bpos.y, bpos.z, brpy.r, brpy.p, brpy.y], var_doc['waist'])
+    ret = checkArrayEquality([bpos.x, bpos.y, bpos.z, brpy.r, brpy.p, brpy.y], var_doc['waist'])
+    print "  waist => ", ret
+    assert(ret is True)
 
 def checkTorque (var_doc):
-    print "  torque => ", checkArrayEquality(rtm.readDataPort(hcf.sh.port("tqOut")).data, var_doc['torque'])
+    ret = checkArrayEquality(rtm.readDataPort(hcf.sh.port("tqOut")).data, var_doc['torque'])
+    print "  torque => ", ret
+    assert(ret is True)
 
 def checkWrenches (var_doc):
-    print "  wrenches => ", checkArrayEquality(reduce(lambda x,y:x+y, map(lambda fs : rtm.readDataPort(hcf.sh.port(fs+"Out")).data, ['lfsensor', 'rfsensor', 'lhsensor', 'rhsensor'])), var_doc['wrenches'])
+    ret = checkArrayEquality(reduce(lambda x,y:x+y, map(lambda fs : rtm.readDataPort(hcf.sh.port(fs+"Out")).data, ['lfsensor', 'rfsensor', 'lhsensor', 'rhsensor'])), var_doc['wrenches'])
+    print "  wrenches => ", ret
+    assert(ret is True)
 
 def checkRobotState (var_doc):
     checkJointAngles(var_doc)
