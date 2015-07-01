@@ -35,6 +35,9 @@ def init ():
                           'torque':range(dof),
                           'wrenches':[1]*6+[-2]*6+[3]*6+[-4]*6
                           }
+    hcf.seq_svc.removeJointGroup('larm')
+    hcf.seq_svc.setJointAngles(reset_pose_doc['pos'], 1.0);
+    hcf.seq_svc.waitInterpolation();
 
 def dumpLoadPatternTestFile (basename, var_doc, tm):
     for key in var_doc.keys():
@@ -47,7 +50,11 @@ def checkArrayEquality (arr1, arr2, eps=1e-7):
     return all(map(lambda x,y : abs(x-y)<eps, arr1, arr2))
 
 def checkJointAngles (var_doc):
-    print "  pos => ", checkArrayEquality(rtm.readDataPort(hcf.sh.port("qOut")).data, var_doc['pos'])
+    if isinstance(var_doc, list):
+        p = var_doc
+    else:
+        p = var_doc['pos']
+    print "  pos => ", checkArrayEquality(rtm.readDataPort(hcf.sh.port("qOut")).data, p)
 
 def checkZmp(var_doc):
     zmp=rtm.readDataPort(hcf.sh.port("zmpOut")).data
@@ -83,10 +90,18 @@ def demoSetJointAngles():
 
 def demoSetJointAngle():
     print "2. setJointAngle"
+    hcf.seq_svc.setJointAngles(reset_pose_doc['pos'], 1.0);
+    hcf.seq_svc.waitInterpolation();
     hcf.seq_svc.setJointAngle("WAIST_R", 10*3.14159/180.0, 1.0);
     hcf.seq_svc.waitInterpolation();
+    p = reset_pose_doc['pos']
+    p[27] = 10*3.14159/180.0
+    checkJointAngles(p)
     hcf.seq_svc.setJointAngle("WAIST_R", 0*3.14159/180.0, 1.0);
     hcf.seq_svc.waitInterpolation();
+    p = reset_pose_doc['pos']
+    p[27] = 0*3.14159/180.0
+    checkJointAngles(p)
 
 def demoLoadPattern():
     print "3. loadPattern"
@@ -130,6 +145,25 @@ def demoSetWrenches ():
     hcf.seq_svc.waitInterpolation();
     checkWrenches(reset_pose_doc)
 
+def demoSetJointAnglesOfGroup():
+    print "6. setJointAnglesOfGroup"
+    hcf.seq_svc.addJointGroup('larm', ['LARM_SHOULDER_P', 'LARM_SHOULDER_R', 'LARM_SHOULDER_Y', 'LARM_ELBOW', 'LARM_WRIST_Y', 'LARM_WRIST_P', 'LARM_WRIST_R'])
+    larm_pos0 = [-0.000111, 0.31129, -0.159481, -1.57079, -0.636277, 0.0]
+    larm_pos1 = [-0.000111, 0.31129, -0.159481, -0.115399, -0.636277, 0.0]
+    hcf.seq_svc.setJointAngles(reset_pose_doc['pos'], 1.0);
+    hcf.seq_svc.setJointAnglesOfGroup('larm', larm_pos0, 1.0);
+    hcf.seq_svc.waitInterpolationOfGroup('larm');
+    p = reset_pose_doc['pos']
+    for i in range(len(larm_pos0)):
+        p[i+19] = larm_pos0[i]
+    checkJointAngles(p)
+    hcf.seq_svc.setJointAnglesOfGroup('larm', larm_pos1, 1.0);
+    hcf.seq_svc.waitInterpolationOfGroup('larm');
+    p = reset_pose_doc['pos']
+    for i in range(len(larm_pos1)):
+        p[i+19] = larm_pos1[i]
+    checkJointAngles(p)
+
 def demo():
     init()
     demoSetJointAngles()
@@ -138,6 +172,7 @@ def demo():
     demoSetZmp()
     demoSetBasePosRpy()
     demoSetWrenches()
+    demoSetJointAnglesOfGroup()
 
 if __name__ == '__main__':
     demo()
