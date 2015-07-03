@@ -22,15 +22,15 @@ public:
   typedef enum {LINEAR, HOFFARBIB,QUINTICSPLINE,CUBICSPLINE} interpolation_mode;
   interpolator(int dim_, double dt_, interpolation_mode imode_=HOFFARBIB, double default_avg_vel_=0.5); // default_avg_vel = [rad/s]
   ~interpolator();
-  void push(const double *x, const double *v, const double *a, bool immediate=true);
+  void push(const double *x_, const double *v_, const double *a_, bool immediate=true);
   double *front();
   // Getter function.
   //   1. Interpolate value if remain_t > 0 (time to goal is remaining).
   //   2. Get value.
   //   3. Pop value queue (q, dq, ddq) if popp = true.
-  void get(double *x, bool popp=true);
-  void get(double *x, double *v, bool popp=true);
-  void get(double *x, double *v, double *a, bool popp=true);
+  void get(double *x_, bool popp=true);
+  void get(double *x_, double *v_, bool popp=true);
+  void get(double *x_, double *v_, double *a_, bool popp=true);
   // Reset current value.
   void set(const double *x, const double *v=NULL);
   // Set goal and complete all interpolation.
@@ -56,7 +56,7 @@ public:
   void setGoal(const double *gx, double time, bool online=true);
   // Interpolate value and push value to queue (q, dq, ddq).
   //   If remain_t <= 0, do nothing.
-  void interpolate(double& remain_t);
+  void interpolate(double& remain_t_);
   double deltaT() const { return dt; }
   double dimension() const { return dim; }
 private:
@@ -82,11 +82,11 @@ private:
   // Default average velocity for calc_interpolation_time
   double default_avg_vel;
 
-  void hoffarbib(double &remain_t,
+  void hoffarbib(double &remain_t_,
 		 double a0, double a1, double a2,
 		 double a3, double a4, double a5,
 		 double &xx, double &vv, double &aa);
-  void linear_interpolation(double &remain_t,
+  void linear_interpolation(double &remain_t_,
 			    double gx,
 			    double &xx, double &vv, double &aa);
 };
