@@ -41,6 +41,7 @@ EmergencyStopper::EmergencyStopper(RTC::Manager* manager)
       m_qRefIn("qRef", m_qRef),
       m_emergencySignalIn("emergencySignal", m_emergencySignal),
       m_qOut("q", m_q),
+      m_emergencyModeOut("emergencyMode", m_emergencyMode),
       m_EmergencyStopperServicePort("EmergencyStopperService"),
       // </rtc-template>
       m_robot(hrp::BodyPtr()),
@@ -72,6 +73,7 @@ RTC::ReturnCode_t EmergencyStopper::onInitialize()
 
     // Set OutPort buffer
     addOutPort("q", m_qOut);
+    addOutPort("emergencyMode", m_emergencyModeOut);
 
     // Set service provider to Ports
     m_EmergencyStopperServicePort.registerProvider("service0", "EmergencyStopperService", m_service0);
@@ -244,6 +246,11 @@ RTC::ReturnCode_t EmergencyStopper::onExecute(RTC::UniqueId ec_id)
         std::cerr << std::endl;
     }
     m_qOut.write();
+
+    m_emergencyMode.data = is_stop_mode;
+    m_emergencyMode.tm = m_qRef.tm;
+    m_emergencyModeOut.write();
+
     prev_is_stop_mode = is_stop_mode;
     return RTC::RTC_OK;
 }
