@@ -98,7 +98,8 @@ def checkRobotState (var_doc):
     checkZmp(var_doc)
     checkWaist(var_doc)
     checkTorque(var_doc)
-    checkWrenches(var_doc)
+    if hrpsys_version >= '315.2.0':
+        checkWrenches(var_doc)
 
 # demo functions
 def demoSetJointAngles():
@@ -295,7 +296,8 @@ def demo():
     demoLoadPattern()
     demoSetZmp()
     demoSetBasePosRpy()
-    demoSetWrenches()
+    if hrpsys_version >= '315.2.0':
+        demoSetWrenches()
     demoSetJointAnglesOfGroup()
     if hrpsys_version >= '315.5.0':
         demoSetJointAnglesSequenceOfGroup()
