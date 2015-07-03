@@ -835,16 +835,11 @@ bool seqplay::clearJointAnglesOfGroup(const char *gname)
 	double x[len], v[len], a[len];
 	i->inter->get(x, v, a, false);
 	i->inter->set(x, v);
-	//i->inter->clear(); // somehow isEmpty did not true if length is 0, remain_t has soeme value
 	while(i->inter->remain_time() > 0){
 		i->inter->pop();
 	}
-	std::cerr << __PRETTY_FUNCTION__  << " isEmpty() " << i->inter->isEmpty() << std::endl;
-	for(int i = 0; i < len; i++ ){
-		std::cerr << x[i]*180/M_PI << " ";
-	}
 	double tm = interpolators[Q]->deltaT();
-	i->inter->setGoal(x, v, tm, false);
+	i->inter->setGoal(x, v, tm, true);// true: update remian_t
 	do{
 		i->inter->interpolate(tm);
 	}while(tm>0);
