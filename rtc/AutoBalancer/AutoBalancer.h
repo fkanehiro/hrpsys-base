@@ -127,6 +127,8 @@ class AutoBalancer
   InPort<TimedDoubleSeq> m_optionalDataIn;
   std::vector<TimedDoubleSeq> m_ref_force;
   std::vector<InPort<TimedDoubleSeq> *> m_ref_forceIn;
+  TimedLong m_emergencySignal;
+  InPort<TimedLong> m_emergencySignalIn;
   // for debug
   TimedPoint3D m_cog;
   
