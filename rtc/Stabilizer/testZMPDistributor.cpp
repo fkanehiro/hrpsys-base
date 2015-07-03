@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <cstdio>
 #include <iostream>
+#include "util/Hrpsys.h" // added for QNX compile
 
 class testZMPDistributor
 {
