@@ -112,6 +112,7 @@ protected:
     TimedDoubleSeq m_qRef;
     TimedDoubleSeq m_q;
     TimedLong m_emergencySignal;
+    TimedLong m_emergencyMode;
 
     // DataInPort declaration
     // <rtc-template block="inport_declare">
@@ -123,6 +124,7 @@ protected:
     // DataOutPort declaration
     // <rtc-template block="outport_declare">
     OutPort<TimedDoubleSeq> m_qOut;
+    OutPort<TimedLong> m_emergencyModeOut;
   
     // </rtc-template>
 
