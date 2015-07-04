@@ -102,6 +102,11 @@ CORBA::Boolean AutoBalancerService_impl::getRemainingFootstepSequence(OpenHRP::A
     return m_autobalancer->getRemainingFootstepSequence(o_footstep);
 };
 
+CORBA::Boolean AutoBalancerService_impl::releaseEmergencyStop()
+{
+    return m_autobalancer->releaseEmergencyStop();
+};
+
 void AutoBalancerService_impl::autobalancer(AutoBalancer *i_autobalancer)
 {
   m_autobalancer = i_autobalancer;

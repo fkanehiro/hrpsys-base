@@ -77,6 +77,7 @@ Stabilizer::Stabilizer(RTC::Manager* manager)
     m_debugDataOut("debugData", m_debugData),
     control_mode(MODE_IDLE),
     st_algorithm(OpenHRP::StabilizerService::TPCC),
+    emergency_check_mode(OpenHRP::StabilizerService::NO_CHECK),
     szd(NULL),
     // </rtc-template>
     m_debugLevel(0)
@@ -529,11 +530,9 @@ RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
     }
     m_qRefOut.write();
     // emergencySignal
-#if 0
     if (is_emergency) {
         m_emergencySignalOut.write();
     }
-#endif
   }
 
   return RTC::RTC_OK;
@@ -975,11 +974,11 @@ bool Stabilizer::calcZMP(hrp::Vector3& ret_zmp, const double zmp_z)
 void Stabilizer::calcStateForEmergencySignal()
 {
   // COP Check
-  bool is_cop_outside = true;
+  bool is_cop_outside = false;
   if (DEBUGP) {
       std::cerr << "[" << m_profile.instance_name << "] Check Emergency State (seq = " << (is_seq_interpolating?"interpolating":"empty") << ")" << std::endl;
   }
-  if (on_ground) {
+  if (on_ground && transition_count == 0 && control_mode == MODE_ST) {
     if (DEBUGP) {
         std::cerr << "[" << m_profile.instance_name << "] COP check" << std::endl;
     }
@@ -988,7 +987,7 @@ void Stabilizer::calcStateForEmergencySignal()
       // check COP inside
       if (m_COPInfo.data[i*3+2] > 20.0 ) {
         hrp::Vector3 tmpcop(m_COPInfo.data[i*3+1]/m_COPInfo.data[i*3+2], m_COPInfo.data[i*3]/m_COPInfo.data[i*3+2], 0);
-        is_cop_outside = is_cop_outside &&
+        is_cop_outside = is_cop_outside ||
             (!szd->is_inside_foot(tmpcop, stikp[i].ee_name=="lleg", cop_check_margin) ||
              szd->is_front_of_foot(tmpcop, cop_check_margin) ||
              szd->is_rear_of_foot(tmpcop, cop_check_margin));
@@ -999,14 +998,24 @@ void Stabilizer::calcStateForEmergencySignal()
                       << "rear(" << szd->is_rear_of_foot(tmpcop, cop_check_margin) << ")" << std::endl;
         }
       } else {
-        //is_cop_outside = true;
+        is_cop_outside = true;
       }
     }
   } else {
     is_cop_outside = false;
   }
   // Total check for emergency signal
-  is_emergency = is_cop_outside && is_seq_interpolating;
+  if (OpenHRP::StabilizerService::NO_CHECK) {
+      is_emergency = false;
+  } else {
+      // tempolarily
+      is_emergency = is_cop_outside && is_seq_interpolating;
+  }
+  if (DEBUGP) {
+      std::cerr << "[" << m_profile.instance_name << "] EmergencyCheck ("
+                << (emergency_check_mode == OpenHRP::StabilizerService::NO_CHECK?"NO_CHECK": (emergency_check_mode == OpenHRP::StabilizerService::COP?"COP":"CP") )
+                << ") " << (is_emergency?"emergency":"non-emergency") << std::endl;
+  }
 };
 
 void Stabilizer::calcTPCC() {
@@ -1330,6 +1339,7 @@ void Stabilizer::getParameter(OpenHRP::StabilizerService::stParam& i_stp)
   case MODE_SYNC_TO_AIR: i_stp.controller_mode = OpenHRP::StabilizerService::MODE_SYNC_TO_AIR; break;
   default: break;
   }
+  i_stp.emergency_check_mode = emergency_check_mode;
 };
 
 void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
@@ -1444,9 +1454,12 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
   std::cerr << "[" << m_profile.instance_name << "]  COMMON" << std::endl;
   if (control_mode == MODE_IDLE) {
     st_algorithm = i_stp.st_algorithm;
+    emergency_check_mode = i_stp.emergency_check_mode;
     std::cerr << "[" << m_profile.instance_name << "]   st_algorithm changed to [" << (st_algorithm == OpenHRP::StabilizerService::EEFM?"EEFM":(st_algorithm == OpenHRP::StabilizerService::EEFMQP?"EEFMQP":"TPCC")) << "]" << std::endl;
+    std::cerr << "[" << m_profile.instance_name << "]   emergency_check_mode changed to [" << (emergency_check_mode == OpenHRP::StabilizerService::NO_CHECK?"NO_CHECK": (emergency_check_mode == OpenHRP::StabilizerService::COP?"COP":"CP") ) << "]" << std::endl;
   } else {
     std::cerr << "[" << m_profile.instance_name << "]   st_algorithm cannot be changed to [" << (st_algorithm == OpenHRP::StabilizerService::EEFM?"EEFM":(st_algorithm == OpenHRP::StabilizerService::EEFMQP?"EEFMQP":"TPCC")) << "] during MODE_AIR or MODE_ST." << std::endl;
+    std::cerr << "[" << m_profile.instance_name << "]   emergency_check_mode cannot be changed to [" << (emergency_check_mode == OpenHRP::StabilizerService::NO_CHECK?"NO_CHECK": (emergency_check_mode == OpenHRP::StabilizerService::COP?"COP":"CP") ) << "] during MODE_AIR or MODE_ST." << std::endl;
   }
   std::cerr << "[" << m_profile.instance_name << "]  transition_time = " << transition_time << "[s]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]  cop_check_margin = " << cop_check_margin << "[m]" << std::endl;

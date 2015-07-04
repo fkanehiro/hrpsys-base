@@ -302,5 +302,12 @@ module OpenHRP
      * @return true if set successfully, false otherwise
      */
     boolean getRemainingFootstepSequence(out FootstepSequence o_footstep);
+
+    /**
+     * @brief Release emergency stop mode.
+     * @param
+     * @return true if set successfully, false otherwise
+     */
+    boolean releaseEmergencyStop();
   };
 };

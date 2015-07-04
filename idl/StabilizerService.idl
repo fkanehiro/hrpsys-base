@@ -33,6 +33,16 @@ module OpenHRP
     };
 
     /**
+     * @enum EmergencyCheckMode
+     * @brief Mode of emergency checking
+     */
+    enum EmergencyCheckMode {
+      NO_CHECK,
+      COP,
+      CP
+    };
+
+    /**
      * @struct stParam
      * @brief Stabilizer Parameters.
      */
@@ -119,6 +129,8 @@ module OpenHRP
       double cop_check_margin;
       /// Foot origin position offset
       sequence< sequence<double, 3> > foot_origin_offset;
+      /// Emergency signal checking mode
+      EmergencyCheckMode emergency_check_mode;
     };
 
     /**

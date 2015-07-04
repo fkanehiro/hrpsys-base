@@ -48,6 +48,7 @@ AutoBalancer::AutoBalancer(RTC::Manager* manager)
       m_baseRpyIn("baseRpyIn", m_baseRpy),
       m_zmpIn("zmpIn", m_zmp),
       m_optionalDataIn("optionalData", m_optionalData),
+      m_emergencySignalIn("emergencySignal", m_emergencySignal),
       m_qOut("q", m_qRef),
       m_zmpOut("zmpOut", m_zmp),
       m_basePosOut("basePosOut", m_basePos),
@@ -85,6 +86,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     addInPort("baseRpyIn", m_baseRpyIn);
     addInPort("zmpIn", m_zmpIn);
     addInPort("optionalData", m_optionalDataIn);
+    addInPort("emergencySignal", m_emergencySignalIn);
 
     // Set OutPort buffer
     addOutPort("q", m_qOut);
@@ -283,6 +285,8 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     graspless_manip_arm = "arms";
     graspless_manip_p_gain = hrp::Vector3::Zero();
 
+    is_stop_mode = false;
+
     return RTC::RTC_OK;
 }
 
@@ -377,6 +381,14 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
           }
         }
     }
+    if (m_emergencySignalIn.isNew()){
+        m_emergencySignalIn.read();
+        // if (!is_stop_mode) {
+        //     std::cerr << "[" << m_profile.instance_name << "] emergencySignal is set!" << std::endl;
+        //     is_stop_mode = true;
+        // }
+    }
+
     Guard guard(m_mutex);
     hrp::Vector3 ref_basePos;
     hrp::Matrix33 ref_baseRot;
@@ -920,7 +932,7 @@ void AutoBalancer::waitABCTransition()
 }
 bool AutoBalancer::goPos(const double& x, const double& y, const double& th)
 {
-  if ( !gg_is_walking ) {
+  if ( !gg_is_walking && !is_stop_mode) {
     gg->go_pos_param_2_footstep_list(x, y, th,
                                      (y > 0 ? ikp["rleg"].target_end_coords : ikp["lleg"].target_end_coords),
                                      (y > 0 ? ikp["lleg"].target_end_coords : ikp["rleg"].target_end_coords),
@@ -955,8 +967,19 @@ bool AutoBalancer::goStop ()
 
 bool AutoBalancer::emergencyStop ()
 {
+  std::cerr << "[" << m_profile.instance_name << "] emergencyStop" << std::endl;
+  // is_stop_mode = true;
   gg->emergency_stop();
   waitFootSteps();
+  return true;
+}
+
+bool AutoBalancer::releaseEmergencyStop ()
+{
+  if (is_stop_mode) {
+      std::cerr << "[" << m_profile.instance_name << "] releaseEmergencyStop" << std::endl;
+      is_stop_mode = false;
+  }
   return true;
 }
 
@@ -973,7 +996,7 @@ bool AutoBalancer::setFootSteps(const OpenHRP::AutoBalancerService::FootstepSequ
 
 bool AutoBalancer::setFootStepsWithParam(const OpenHRP::AutoBalancerService::FootstepSequence& fs, const OpenHRP::AutoBalancerService::StepParamSequence& sps)
 {
-  if (!gg_is_walking) {
+  if (!gg_is_walking && !is_stop_mode) {
     std::cerr << "[" << m_profile.instance_name << "] setFootSteps" << std::endl;
     coordinates tmpfs, initial_support_coords, initial_input_coords, fstrans;
     initial_support_coords = ikp[std::string(fs[0].leg)].target_end_coords;
