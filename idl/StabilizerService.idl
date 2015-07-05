@@ -33,6 +33,16 @@ module OpenHRP
     };
 
     /**
+     * @enum EmergencyCheckMode
+     * @brief Mode of emergency checking
+     */
+    enum EmergencyCheckMode {
+      NO_CHECK,
+      COP,
+      CP
+    };
+
+    /**
      * @struct stParam
      * @brief Stabilizer Parameters.
      */
@@ -82,6 +92,8 @@ module OpenHRP
       double eefm_pos_margin_time;
       /// Inside foot margine [m]. Distance between foot end effector position and foot inside edge.
       double eefm_leg_inside_margin;
+      /// Outside foot margine [m]. Distance between foot end effector position and foot outside edge.
+      double eefm_leg_outside_margin;
       /// Front foot margine [m]. Distance between foot end effector position and foot front edge.
       double eefm_leg_front_margin;
       /// Rear foot margine [m]. Distance between foot end effector position and foot rear edge.
@@ -113,8 +125,12 @@ module OpenHRP
       ControllerMode controller_mode;
       /// Transition time [s] for start and stop Stabilizer
       double transition_time;
+      /// COP margin [m] from edges for COP checking
+      double cop_check_margin;
       /// Foot origin position offset
       sequence< sequence<double, 3> > foot_origin_offset;
+      /// Emergency signal checking mode
+      EmergencyCheckMode emergency_check_mode;
     };
 
     /**

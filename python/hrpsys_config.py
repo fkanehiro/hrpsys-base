@@ -201,10 +201,15 @@ class HrpsysConfigurator:
     abc_version = None
     st_version = None
 
-    # CollisionDetector
+    # EmergencyStopper
     es = None
     es_svc = None
     es_version = None
+
+    # EmergencyStopper (HardEmergencyStopper)
+    hes = None
+    hes_svc = None
+    hes_version = None
 
     # CollisionDetector
     co = None
@@ -356,8 +361,12 @@ class HrpsysConfigurator:
         # connection for st
         if rtm.findPort(self.rh.ref, "lfsensor") and rtm.findPort(
                                      self.rh.ref, "rfsensor") and self.st:
-            connectPorts(self.rh.port("lfsensor"), self.st.port("forceL"))
-            connectPorts(self.rh.port("rfsensor"), self.st.port("forceR"))
+            if self.rmfo:
+                connectPorts(self.rmfo.port("off_lfsensor"), self.st.port("forceL"))
+                connectPorts(self.rmfo.port("off_rfsensor"), self.st.port("forceR"))
+            else:
+                connectPorts(self.rh.port("lfsensor"), self.st.port("forceL"))
+                connectPorts(self.rh.port("rfsensor"), self.st.port("forceR"))
             connectPorts(self.kf.port("rpy"), self.st.port("rpy"))
             connectPorts(self.sh.port("zmpOut"), self.abc.port("zmpIn"))
             connectPorts(self.sh.port("basePosOut"), self.abc.port("basePosIn"))
@@ -370,8 +379,10 @@ class HrpsysConfigurator:
             connectPorts(self.abc.port("contactStates"), self.st.port("contactStates"))
             connectPorts(self.abc.port("controlSwingSupportTime"), self.st.port("controlSwingSupportTime"))
             connectPorts(self.rh.port("q"), self.st.port("qCurrent"))
+            connectPorts(self.seq.port("qRef"), self.st.port("qRefSeq"))
             if self.es:
                 connectPorts(self.st.port("emergencySignal"), self.es.port("emergencySignal"))
+            connectPorts(self.st.port("emergencySignal"), self.abc.port("emergencySignal"))
 
         # ref force moment connection
         for sen in self.getForceSensorNames():
@@ -653,6 +664,7 @@ class HrpsysConfigurator:
             ['tc', "TorqueController"],
             # ['te', "ThermoEstimator"],
             # ['tl', "ThermoLimiter"],
+            ['hes', "EmergencyStopper"],
             ['el', "SoftErrorLimiter"],
             ['log', "DataLogger"]
             ]
@@ -662,7 +674,7 @@ class HrpsysConfigurator:
         Get list of controller list that need to control joint angles
         '''
         controller_list = [self.es, self.ic, self.gc, self.abc, self.st, self.co,
-                           self.tc, self.el]
+                           self.tc, self.hes, self.el]
         return filter(lambda c: c != None, controller_list)  # only return existing controllers
 
     def getRTCInstanceList(self, verbose=True):

@@ -108,14 +108,23 @@ RTC::ReturnCode_t PDcontroller::onActivated(RTC::UniqueId ec_id)
     Dgain.resize(dof);
     gain.open(gain_fname.c_str());
     if (gain.is_open()){
+      double tmp;
       for (int i=0; i<dof; i++){
-        gain >> Pgain[i];
-        gain >> Dgain[i];
+          if (gain >> tmp) {
+              Pgain[i] = tmp;
+          } else {
+              std::cerr << "[" << m_profile.instance_name << "] Gain file [" << gain_fname << "] is too short" << std::endl;
+          }
+          if (gain >> tmp) {
+              Dgain[i] = tmp;
+          } else {
+              std::cerr << "[" << m_profile.instance_name << "] Gain file [" << gain_fname << "] is too short" << std::endl;
+          }
       }
       gain.close();
-      std::cerr << "[" << m_profile.instance_name << "] " << gain_fname << " opened" << std::endl;
+      std::cerr << "[" << m_profile.instance_name << "] Gain file [" << gain_fname << "] opened" << std::endl;
     }else{
-      std::cerr << "[" << m_profile.instance_name << "] " << gain_fname << " not opened" << std::endl;
+      std::cerr << "[" << m_profile.instance_name << "] Gain file [" << gain_fname << "] not opened" << std::endl;
     }
     for(int i=0; i < dof; ++i){
       m_angleRef.data[i]=0.0;

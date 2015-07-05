@@ -3,11 +3,35 @@
 
 \section intro_hrpsys Overview
 
-Basic RT components and utilities to control robots using <a href=http://www.openrtm.org>%OpenRTM</a>
+"hrpsys": Basic RT components and utilities to control robots using <a href=http://www.openrtm.org>%OpenRTM</a>. 
+Some notable features:
+
+<ul>
+  <li>Real-time capable utilizing OS feature</li>
+  <li>Rich interface for kinematic operation</li>
+    <li>Manipulator operation by the pose of end-effector (EEF linear interpolation)</li>
+    <li>Manipulation by passing the set of joint angles (joint angle interpolation)</li>
+    <li>2 interpolation options; linear / minimum jerk</li>
+    <li>Preemptive kinematic operation (canceleable and modifyable)</li>
+    <li>Preemption can be disabled</li>
+  <li>Plugins</li>
+    <li>EEF compliance control plugin (using on force-torque sensor)</li>
+    <li>EEF virtual force computation plugin (using joint torque values)</li>
+    <li>Joint protection plugin</li>
+    <li>Self interference detection plugin</li>
+    <li>Servo module hand plugin</li>
+  <li>Proven operational history</li>
+    <li>Development has been active over years at institutes such as the original developer <a href = "http://aist.go.jp/">AIST</a> (National Institute of Advanced Industrial Science and Technology in Japan), <a href = "http://jsk.t.u-tokyo.ac.jp/">JSK Lab at U-Tokyo</a>.</li>
+    <li>Dozens of thousands of operational time</li>
+    <li>Number of robots are running atop</li>
+      <li>Include 4 DRC contender robots</li>
+      <li>See the incomplete list of the hrpsys-based robots <a href = "http://wiki.ros.org/hrpsys">here</a></li>
+  <li>Active development status; 73 commits during month of June 2015 made by 5 authors</li>
+</ul>
 
 \section requirements System requirements
 
-<a href=http://www.ubuntu.com>ubuntu</a> 12.04LTS is supported. <br>
+<a href=http://www.ubuntu.com>ubuntu</a> 12.04LTS and 14.04LTS are supported. <br>
 <a href=http://www.openrtp.jp/openhrp3>%OpenHRP</a> version 3.1.5 or later is required.<br>
 To use python scripts to create RT components, connect ports and get/set properties, <a href=http://www.openrtm.org>OpenRTM-aist-python</a> is also required.<br>
 

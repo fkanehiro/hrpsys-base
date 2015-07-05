@@ -106,6 +106,7 @@ class AutoBalancer
   bool getFootstepParam(OpenHRP::AutoBalancerService::FootstepParam& i_param);
   bool adjustFootSteps(const OpenHRP::AutoBalancerService::Footstep& rfootstep, const OpenHRP::AutoBalancerService::Footstep& lfootstep);
   bool getRemainingFootstepSequence(OpenHRP::AutoBalancerService::FootstepSequence_out o_footstep);
+  bool releaseEmergencyStop();
 
  protected:
   // Configuration variable declaration
@@ -127,6 +128,8 @@ class AutoBalancer
   InPort<TimedDoubleSeq> m_optionalDataIn;
   std::vector<TimedDoubleSeq> m_ref_force;
   std::vector<InPort<TimedDoubleSeq> *> m_ref_forceIn;
+  TimedLong m_emergencySignal;
+  InPort<TimedLong> m_emergencySignalIn;
   // for debug
   TimedPoint3D m_cog;
   
@@ -231,7 +234,7 @@ class AutoBalancer
   std::vector<hrp::Vector3> ref_forces;
 
   unsigned int m_debugLevel;
-  bool is_legged_robot;
+  bool is_legged_robot, is_stop_mode;
   int loop;
   bool graspless_manip_mode;
   std::string graspless_manip_arm;

@@ -5,8 +5,43 @@ module OpenHRP
 {
   interface EmergencyStopperService
   {
+    /**
+     * @struct EmergencyStopperParam
+     * @brief Parameters for EmergencyStopper.
+     */
+    struct EmergencyStopperParam
+    {
+      /// Sync time for releasing [s]
+      double default_recover_time;
+      /// Sync time for retrieve motion [s]
+      double default_retrieve_time;
+      /// Stop mode or not.
+      boolean is_stop_mode;
+    };
+
+    /**
+     * @brief Stop Input Motion.
+     * @return true if set successfully, false otherwise
+     */
     void stopMotion();
+
+    /**
+     * @brief Release Motion.
+     * @return true if set successfully, false otherwise
+     */
     void releaseMotion();
+
+    /**
+     * @brief Get EmergencyStopperParam
+     * @return true if set successfully, false otherwise
+     */
+    boolean getEmergencyStopperParam(out EmergencyStopperParam i_param);
+
+    /**
+     * @brief Set EmergencyStopperParam
+     * @return true if set successfully, false otherwise
+     */
+    boolean setEmergencyStopperParam(in EmergencyStopperParam i_param);
   };
 };
 
