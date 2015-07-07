@@ -365,6 +365,6 @@ int main (int argc, char** argv)
       s << "exec_cxt.periodic.rate: " << static_cast<size_t>(1/atof(dt.c_str())+0.5) << std::endl; // rounding to specify integer rate value
       s << robothardware_conf_file_option << std::endl;
   }
-
+  std::cerr << "\033[1;31mProjectGenerator in hrpsys-base is old, so please use projectGenerator in openhrp3.\033[0m" << std::endl;
   return 0;
 }
