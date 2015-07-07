@@ -127,6 +127,8 @@ module OpenHRP
       double transition_time;
       /// COP margin [m] from edges for COP checking
       double cop_check_margin;
+      /// CP margin [m]
+      double cp_check_margin;
       /// Foot origin position offset
       sequence< sequence<double, 3> > foot_origin_offset;
       /// Emergency signal checking mode
