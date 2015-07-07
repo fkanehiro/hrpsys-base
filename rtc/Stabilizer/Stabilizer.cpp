@@ -1004,12 +1004,29 @@ void Stabilizer::calcStateForEmergencySignal()
   } else {
     is_cop_outside = false;
   }
+  // CP Check
+  bool is_cp_outside = false;
+  if (on_ground && transition_count == 0 && control_mode == MODE_ST) {
+    hrp::Vector3 ref_cp = ref_cog + ref_cogvel/std::sqrt(9.8/ ref_cog(2));
+    hrp::Vector3 act_cp = act_cog + act_cogvel/std::sqrt(9.8/ act_cog(2));
+    hrp::Vector3 diff_cp = ref_cp - act_cp;
+    diff_cp(2) = 0.0;
+    if (DEBUGP) {
+        std::cerr << "[" << m_profile.instance_name << "] CP value " << diff_cp.norm() << std::endl;
+    }
+    // check CP inside
+    if (diff_cp.norm() > 60*1e-3) {
+      is_cp_outside = true;
+      std::cerr << "[" << m_profile.instance_name << "] CP too large error " << diff_cp.norm() << std::endl;
+    }
+  }
   // Total check for emergency signal
   if (OpenHRP::StabilizerService::NO_CHECK) {
       is_emergency = false;
+  } else if (OpenHRP::StabilizerService::COP) {
+    is_emergency = is_cop_outside && is_seq_interpolating;
   } else {
-      // tempolarily
-      is_emergency = is_cop_outside && is_seq_interpolating;
+    is_emergency = is_cp_outside;
   }
   if (DEBUGP) {
       std::cerr << "[" << m_profile.instance_name << "] EmergencyCheck ("
