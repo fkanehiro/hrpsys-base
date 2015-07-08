@@ -1014,14 +1014,8 @@ bool AutoBalancer::setFootStepsWithParam(const OpenHRP::AutoBalancerService::Foo
         initial_input_coords.transformation(fstrans, tmpfs);
         tmpfs = initial_support_coords;
         tmpfs.transform(fstrans);
-        // if ( prev_leg != leg ) {
-        if ( true ) {
-            leg_name_vec.push_back(leg);
-            fs_vec.push_back(tmpfs);
-        } else {
-            std::cerr << "[" << m_profile.instance_name << "]   Invalid footstep (" << leg << "), footsteps should alternate in rleg and lleg." << std::endl;
-            return false;
-        }
+        leg_name_vec.push_back(leg);
+        fs_vec.push_back(tmpfs);
         prev_leg = leg;
       } else {
           std::cerr << "[" << m_profile.instance_name << "]   No such target : " << leg << std::endl;
