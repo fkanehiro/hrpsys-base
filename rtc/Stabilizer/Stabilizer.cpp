@@ -276,6 +276,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   eefm_ee_rot_error_p_gain = 0;
   eefm_ee_error_cutoff_freq = 50.0; // [Hz]
   cop_check_margin = 20.0*1e-3; // [m]
+  cp_check_margin = 60.0*1e-3; // [m]
 
   // parameters for RUNST
   double ke = 0, tc = 0;
@@ -1004,12 +1005,29 @@ void Stabilizer::calcStateForEmergencySignal()
   } else {
     is_cop_outside = false;
   }
+  // CP Check
+  bool is_cp_outside = false;
+  if (on_ground && transition_count == 0 && control_mode == MODE_ST) {
+    hrp::Vector3 ref_cp = ref_cog + ref_cogvel/std::sqrt(eefm_gravitational_acceleration/ ref_cog(2));
+    hrp::Vector3 act_cp = act_cog + act_cogvel/std::sqrt(eefm_gravitational_acceleration/ act_cog(2));
+    hrp::Vector3 diff_cp = ref_cp - act_cp;
+    diff_cp(2) = 0.0;
+    if (DEBUGP) {
+        std::cerr << "[" << m_profile.instance_name << "] CP value " << diff_cp.norm() << std::endl;
+    }
+    // check CP inside
+    if (diff_cp.norm() > cp_check_margin) {
+      is_cp_outside = true;
+      std::cerr << "[" << m_profile.instance_name << "] CP too large error " << diff_cp.norm() << std::endl;
+    }
+  }
   // Total check for emergency signal
   if (OpenHRP::StabilizerService::NO_CHECK) {
       is_emergency = false;
+  } else if (OpenHRP::StabilizerService::COP) {
+    is_emergency = is_cop_outside && is_seq_interpolating;
   } else {
-      // tempolarily
-      is_emergency = is_cop_outside && is_seq_interpolating;
+    is_emergency = is_cp_outside;
   }
   if (DEBUGP) {
       std::cerr << "[" << m_profile.instance_name << "] EmergencyCheck ("
@@ -1331,6 +1349,7 @@ void Stabilizer::getParameter(OpenHRP::StabilizerService::stParam& i_stp)
   i_stp.st_algorithm = st_algorithm;
   i_stp.transition_time = transition_time;
   i_stp.cop_check_margin = cop_check_margin;
+  i_stp.cp_check_margin = cp_check_margin;
   switch(control_mode) {
   case MODE_IDLE: i_stp.controller_mode = OpenHRP::StabilizerService::MODE_IDLE; break;
   case MODE_AIR: i_stp.controller_mode = OpenHRP::StabilizerService::MODE_AIR; break;
@@ -1414,6 +1433,7 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
   }
   transition_time = i_stp.transition_time;
   cop_check_margin = i_stp.cop_check_margin;
+  cp_check_margin = i_stp.cp_check_margin;
   if (i_stp.foot_origin_offset.length () != 2) {
       std::cerr << "[" << m_profile.instance_name << "]   foot_origin_offset cannot be set. Length " << i_stp.foot_origin_offset.length() << " != " << 2 << std::endl;
   } else if (control_mode != MODE_IDLE) {
@@ -1463,6 +1483,7 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
   }
   std::cerr << "[" << m_profile.instance_name << "]  transition_time = " << transition_time << "[s]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]  cop_check_margin = " << cop_check_margin << "[m]" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]  cp_check_margin = " << cp_check_margin << "[m]" << std::endl;
 }
 
 void Stabilizer::waitSTTransition()
