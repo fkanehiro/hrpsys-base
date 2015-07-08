@@ -1014,13 +1014,8 @@ bool AutoBalancer::setFootStepsWithParam(const OpenHRP::AutoBalancerService::Foo
         initial_input_coords.transformation(fstrans, tmpfs);
         tmpfs = initial_support_coords;
         tmpfs.transform(fstrans);
-        if ( prev_leg != leg ) {
-            leg_name_vec.push_back(leg);
-            fs_vec.push_back(tmpfs);
-        } else {
-            std::cerr << "[" << m_profile.instance_name << "]   Invalid footstep (" << leg << "), footsteps should alternate in rleg and lleg." << std::endl;
-            return false;
-        }
+        leg_name_vec.push_back(leg);
+        fs_vec.push_back(tmpfs);
         prev_leg = leg;
       } else {
           std::cerr << "[" << m_profile.instance_name << "]   No such target : " << leg << std::endl;
@@ -1086,10 +1081,13 @@ bool AutoBalancer::setGaitGeneratorParam(const OpenHRP::AutoBalancerService::Gai
     gg->set_default_orbit_type(STAIR);
   } else if (i_param.default_orbit_type == OpenHRP::AutoBalancerService::CYCLOIDDELAY) {
     gg->set_default_orbit_type(CYCLOIDDELAY);
+  } else if (i_param.default_orbit_type == OpenHRP::AutoBalancerService::CYCLOIDDELAYKICK) {
+    gg->set_default_orbit_type(CYCLOIDDELAYKICK);
   }
   gg->set_swing_trajectory_delay_time_offset(i_param.swing_trajectory_delay_time_offset);
   gg->set_swing_trajectory_final_distance_weight(i_param.swing_trajectory_final_distance_weight);
   gg->set_stair_trajectory_way_point_offset(hrp::Vector3(i_param.stair_trajectory_way_point_offset[0], i_param.stair_trajectory_way_point_offset[1], i_param.stair_trajectory_way_point_offset[2]));
+  gg->set_cycloid_delay_kick_point_offset(hrp::Vector3(i_param.cycloid_delay_kick_point_offset[0], i_param.cycloid_delay_kick_point_offset[1], i_param.cycloid_delay_kick_point_offset[2]));  
   gg->set_gravitational_acceleration(i_param.gravitational_acceleration);
   gg->set_toe_angle(i_param.toe_angle);
   gg->set_heel_angle(i_param.heel_angle);
@@ -1135,9 +1133,14 @@ bool AutoBalancer::getGaitGeneratorParam(OpenHRP::AutoBalancerService::GaitGener
     i_param.default_orbit_type = OpenHRP::AutoBalancerService::STAIR;
   } else if (gg->get_default_orbit_type() == CYCLOIDDELAY) {
     i_param.default_orbit_type = OpenHRP::AutoBalancerService::CYCLOIDDELAY;
+  } else if (gg->get_default_orbit_type() == CYCLOIDDELAYKICK) {
+    i_param.default_orbit_type = OpenHRP::AutoBalancerService::CYCLOIDDELAYKICK;
   }
+
   hrp::Vector3 tmpv = gg->get_stair_trajectory_way_point_offset();
   for (size_t i = 0; i < 3; i++) i_param.stair_trajectory_way_point_offset[i] = tmpv(i);
+  tmpv = gg->get_cycloid_delay_kick_point_offset();
+  for (size_t i = 0; i < 3; i++) i_param.cycloid_delay_kick_point_offset[i] = tmpv(i);
   i_param.swing_trajectory_delay_time_offset = gg->get_swing_trajectory_delay_time_offset();
   i_param.swing_trajectory_final_distance_weight = gg->get_swing_trajectory_final_distance_weight();
   i_param.gravitational_acceleration = gg->get_gravitational_acceleration();
