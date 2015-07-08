@@ -544,6 +544,18 @@ public:
         gen_and_plot_walk_pattern();
     };
 
+        void test14 ()
+    {
+        std::cerr << "test14 : kick walk" << std::endl;
+        /* initialize sample footstep_list */
+        parse_params();
+        gg->clear_footstep_node_list();
+        gg->set_default_orbit_type(CYCLOIDDELAYKICK);
+        gg->go_pos_param_2_footstep_list(300*1e-3, 0, 0, coordinates(leg_pos[1]), coordinates(leg_pos[0]), LLEG);
+        gen_and_plot_walk_pattern();
+    };
+
+
     void parse_params ()
     {
       for (int i = 0; i < arg_strs.size(); ++ i) {
@@ -581,6 +593,11 @@ public:
               if (++i < arg_strs.size()) {
                   coil::vstring strs = coil::split(std::string(arg_strs[i].c_str()), ",");
                   gg->set_stair_trajectory_way_point_offset(hrp::Vector3(atof(strs[0].c_str()), atof(strs[1].c_str()), atof(strs[2].c_str())));
+              }
+          } else if ( arg_strs[i]== "--cycloid-delay-kick-point-offset" ) {
+              if (++i < arg_strs.size()) {
+                  coil::vstring strs = coil::split(std::string(arg_strs[i].c_str()), ",");
+                  gg->set_cycloid_delay_kick_point_offset(hrp::Vector3(atof(strs[0].c_str()), atof(strs[1].c_str()), atof(strs[2].c_str())));
               }
           } else if ( arg_strs[i]== "--toe-angle" ) {
               if (++i < arg_strs.size()) gg->set_toe_angle(atof(arg_strs[i].c_str()));
@@ -635,6 +652,7 @@ void print_usage ()
     std::cerr << "  --test11 : Foot rot change" << std::endl;
     std::cerr << "  --test12 : Change step param in set foot steps" << std::endl;
     std::cerr << "  --test13 : Arbitrary leg switching" << std::endl;
+    std::cerr << "  --test14 : kick walk" << std::endl;
 };
 
 int main(int argc, char* argv[])
@@ -672,6 +690,8 @@ int main(int argc, char* argv[])
           tgg.test12();
       } else if (std::string(argv[1]) == "--test13") {
           tgg.test13();
+      } else if (std::string(argv[1]) == "--test14") {
+          tgg.test14();
       } else {
           print_usage();
       }
