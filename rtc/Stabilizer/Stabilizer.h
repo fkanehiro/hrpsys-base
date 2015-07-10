@@ -243,6 +243,7 @@ class Stabilizer
   std::map<std::string, size_t> contact_states_index_map;
   std::vector<bool> contact_states, prev_contact_states, is_ik_enable;
   double dt;
+  hrp::Vector3 m_gravity;
   int transition_count, loop;
   bool is_legged_robot, on_ground, is_emergency, is_seq_interpolating;
   hrp::Vector3 current_root_p, target_root_p;

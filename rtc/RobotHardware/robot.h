@@ -15,7 +15,7 @@ public:
        \brief constructor
        \param dt sampling time
      */
-    robot(double dt);
+    robot(double dt, const hrp::Vector3& gravity);
 
     /**
        \brief destructor
@@ -331,7 +331,7 @@ private:
     boost::interprocess::interprocess_semaphore wait_sem;
     double m_dt;
     std::vector<double> m_commandOld, m_velocityOld;
-    hrp::Vector3 G;
+    hrp::Vector3 m_gravity;
 };
 
 #endif

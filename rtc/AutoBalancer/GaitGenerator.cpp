@@ -357,6 +357,7 @@ namespace rats
   void gait_generator::initialize_gait_parameter (const hrp::Vector3& cog,
                                                   const coordinates& initial_support_leg_coords,
                                                   const coordinates& initial_swing_leg_dst_coords,
+                                                  const double gravity_norm,
                                                   const double delay)
   {
     /* clear all gait_parameter */
@@ -370,7 +371,7 @@ namespace rats
       preview_controller_ptr = NULL;
     }
     //preview_controller_ptr = new preview_dynamics_filter<preview_control>(dt, cog(2) - refzmp_cur_list[0](2), refzmp_cur_list[0]);
-    preview_controller_ptr = new preview_dynamics_filter<extended_preview_control>(dt, cog(2) - rg.get_refzmp_cur()(2), rg.get_refzmp_cur(), gravitational_acceleration);
+    preview_controller_ptr = new preview_dynamics_filter<extended_preview_control>(dt, cog(2) - rg.get_refzmp_cur()(2), rg.get_refzmp_cur(), gravity_norm);
     lcg.reset(one_step_len, footstep_node_list[1].step_time/dt, initial_swing_leg_dst_coords, initial_swing_leg_dst_coords, initial_support_leg_coords, default_double_support_ratio);
     /* make another */
     lcg.set_swing_support_list(footstep_node_list);
