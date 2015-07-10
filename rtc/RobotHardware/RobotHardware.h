@@ -191,6 +191,7 @@ class RobotHardware
  private:
   int dummy;
   boost::shared_ptr<robot> m_robot;
+  hrp::Vector3 m_gravity;
 };
 
 

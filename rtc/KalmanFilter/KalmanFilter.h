@@ -156,6 +156,7 @@ protected:
 
 private:
   double m_dt;
+  hrp::Vector3 m_gravity;
   RPYKalmanFilter rpy_kf;
   EKFilter ekf_filter;
   hrp::BodyPtr m_robot;

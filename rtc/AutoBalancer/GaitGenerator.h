@@ -766,6 +766,7 @@ namespace rats
     void initialize_gait_parameter (const hrp::Vector3& cog,
                                     const coordinates& initial_support_leg_coords,
                                     const coordinates& initial_swing_leg_dst_coords,
+                                    const double gravity_norm = DEFAULT_GRAVITATIONAL_ACCELERATION,
                                     const double delay = 1.6);
     bool proc_one_tick ();
     void append_footstep_node (const std::string& _leg, const coordinates& _fs)

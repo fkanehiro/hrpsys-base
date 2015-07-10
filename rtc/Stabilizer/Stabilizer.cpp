@@ -148,6 +148,12 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   // </rtc-template>
   RTC::Properties& prop = getProperties();
   coil::stringTo(dt, prop["dt"].c_str());
+  coil::vstring gravity_str = coil::split(prop["gravity"], ",");
+  if (gravity_str.size() > 0) {
+      for (size_t i = 0; i < 3; i++) coil::stringTo(m_gravity(i), gravity_str[i].c_str());
+  } else {
+      m_gravity << 0.0, 0.0, 9.80665;
+  }
 
   // parameters for corba
   RTC::Manager& rtcManager = RTC::Manager::instance();
@@ -271,7 +277,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   //eefm_leg_rear_margin = 0.05;
   eefm_cogvel_cutoff_freq = 4.0; //[Hz]
   //fm_wrench_alpha_blending = 1.0; // fz_alpha
-  eefm_gravitational_acceleration = 9.80665; // [m/s^2]
+  eefm_gravitational_acceleration = m_gravity.norm(); // [m/s^2]
   eefm_ee_pos_error_p_gain = 0;
   eefm_ee_rot_error_p_gain = 0;
   eefm_ee_error_cutoff_freq = 50.0; // [Hz]
@@ -1621,7 +1627,7 @@ void Stabilizer::calcRUNST() {
       double xrear = 0.1;
       double yin = 0.02;
       double yout = 0.15;
-      double mg = m_robot->totalMass() * 9.8 * 0.9;// margin
+      double mg = m_robot->totalMass() * m_gravity.norm() * 0.9;// margin
       double tq_y_ulimit = mg * xrear;
       double tq_y_llimit = -1 * mg * xfront;
       double tq_x_ulimit = mg * yout;
@@ -1719,9 +1725,8 @@ void Stabilizer::calcTorque ()
   m_robot->calcForwardKinematics();
   // buffers for the unit vector method
   hrp::Vector3 root_w_x_v;
-  hrp::Vector3 g(0, 0, 9.80665);
   root_w_x_v = m_robot->rootLink()->w.cross(m_robot->rootLink()->vo + m_robot->rootLink()->w.cross(m_robot->rootLink()->p));
-  m_robot->rootLink()->dvo = g - root_w_x_v;   // dv = g, dw = 0
+  m_robot->rootLink()->dvo = m_gravity - root_w_x_v;   // dv = g, dw = 0
   m_robot->rootLink()->dw.setZero();
 
   hrp::Vector3 root_f;

@@ -80,6 +80,12 @@ RTC::ReturnCode_t RemoveForceSensorLinkOffset::onInitialize()
 
   RTC::Properties& prop = getProperties();
   coil::stringTo(m_dt, prop["dt"].c_str());
+  coil::vstring gravity_str = coil::split(prop["gravity"], ",");
+  if (gravity_str.size() > 0) {
+      for (size_t i = 0; i < 3; i++) coil::stringTo(m_gravity(i), gravity_str[i].c_str());
+  } else {
+      m_gravity << 0.0, 0.0, 9.80665;
+  }
 
   m_robot = hrp::BodyPtr(new hrp::Body());
 
@@ -187,7 +193,7 @@ RTC::ReturnCode_t RemoveForceSensorLinkOffset::onExecute(RTC::UniqueId ec_id)
         if ( sensor ) {
           // real force sensor
           hrp::Matrix33 sensorR = sensor->link->R * sensor->localR;
-          hrp::Vector3 mg = hrp::Vector3(0,0, m_forcemoment_offset_param[sensor_name].link_offset_mass * grav * -1);
+          hrp::Vector3 mg = hrp::Vector3(0,0, m_forcemoment_offset_param[sensor_name].link_offset_mass * m_gravity.norm() * -1);
           // force and moments which do not include offsets
           hrp::Vector3 off_force = sensorR * (data_p - m_forcemoment_offset_param[sensor_name].force_offset) - mg;
           hrp::Vector3 off_moment = sensorR * (data_r - m_forcemoment_offset_param[sensor_name].moment_offset) - hrp::Vector3(sensorR * m_forcemoment_offset_param[sensor->name].link_offset_centroid).cross(mg);

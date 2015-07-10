@@ -116,6 +116,12 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
 
     RTC::Properties& prop =  getProperties();
     coil::stringTo(m_dt, prop["dt"].c_str());
+    coil::vstring gravity_str = coil::split(prop["gravity"], ",");
+    if (gravity_str.size() > 0) {
+        for (size_t i = 0; i < 3; i++) coil::stringTo(m_gravity(i), gravity_str[i].c_str());
+    } else {
+        m_gravity << 0.0, 0.0, 9.80665;
+    }
 
     m_robot = hrp::BodyPtr(new hrp::Body());
     RTC::Manager& rtcManager = RTC::Manager::instance();
@@ -884,7 +890,7 @@ void AutoBalancer::startWalking ()
     std::string init_support_leg (gg->get_footstep_front_leg() == "rleg" ? "lleg" : "rleg");
     std::string init_swing_leg (gg->get_footstep_front_leg());
     gg->set_default_zmp_offsets(default_zmp_offsets);
-    gg->initialize_gait_parameter(ref_cog, ikp[init_support_leg].target_end_coords, ikp[init_swing_leg].target_end_coords);
+    gg->initialize_gait_parameter(ref_cog, ikp[init_support_leg].target_end_coords, ikp[init_swing_leg].target_end_coords, m_gravity.norm());
   }
   while ( !gg->proc_one_tick() );
   {

@@ -218,6 +218,7 @@ class AutoBalancer
   rats::coordinates fix_leg_coords;
   std::vector<hrp::Vector3> default_zmp_offsets;
   double m_dt, move_base_gain;
+  hrp::Vector3 m_gravity;
   hrp::BodyPtr m_robot;
   coil::Mutex m_mutex;
 

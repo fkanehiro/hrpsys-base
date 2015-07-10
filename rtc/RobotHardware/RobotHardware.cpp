@@ -96,8 +96,13 @@ RTC::ReturnCode_t RobotHardware::onInitialize()
   if (!dt) {
       std::cerr << m_profile.instance_name << ": joint command velocity check is disabled" << std::endl;
   }
-  m_robot = boost::shared_ptr<robot>(new robot(dt));
-
+  coil::vstring gravity_str = coil::split(prop["gravity"], ",");
+  if (gravity_str.size() > 0) {
+      for (size_t i = 0; i < 3; i++) coil::stringTo(m_gravity(i), gravity_str[i].c_str());
+  } else {
+      m_gravity << 0.0, 0.0, 9.80665;
+  }
+  m_robot = boost::shared_ptr<robot>(new robot(dt, m_gravity));
 
   RTC::Manager& rtcManager = RTC::Manager::instance();
   std::string nameServer = rtcManager.getConfig()["corba.nameservers"];

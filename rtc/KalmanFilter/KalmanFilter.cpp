@@ -103,6 +103,12 @@ RTC::ReturnCode_t KalmanFilter::onInitialize()
     std::cerr << "[" << m_profile.instance_name << "]failed to get dt" << std::endl;
     return RTC::RTC_ERROR;
   }
+  coil::vstring gravity_str = coil::split(prop["gravity"], ",");
+  if (gravity_str.size() > 0) {
+      for (size_t i = 0; i < 3; i++) coil::stringTo(m_gravity(i), gravity_str[i].c_str());
+  } else {
+      m_gravity << 0.0, 0.0, 9.80665;
+  }
 
   m_robot = hrp::BodyPtr(new hrp::Body());
 
