@@ -2,6 +2,141 @@
 Changelog for package hrpsys
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+315.6.0 (2015-07-10)
+--------------------
+
+Stable RTCs
+===========
+
+* SequencePlayer
+
+  * Rename arguments and local variables remain_t, x, v, and a because these are same name as member variables
+  * Add comments to interpolator
+  * [SequencePlayer/seqplay.cpp] clearJointAnglesOfGroup use online = true to clear remain_t
+  * Connect seq port to monitor seq interpolation
+
+* python/hrpsys_config.py
+
+  * Add HardEmergencyStopper RTC to stop almost all rtc motion
+  * Add check for rmfo-st connection
+  * Use rmfo off sensor values in st
+  * Remove seq data logging which can replaced by StateHolder data (reported in https://github.com/fkanehiro/hrpsys-base/issues/594)
+
+* test
+
+  * [test/test-samplerobot.test b/test/test-samplerobot.test] wrenches is available from 315.2.0
+  * [test/test-samplerobot.test b/test/test-samplerobot.test] update timelimit to 120
+
+* sample
+
+  * [sample/SampleRobot/samplerobot_sequence_player.py] check  seq rtc version for executing tests
+  * [sample/SampleRobot/samplerobot_sequence_player.py, test/test-samplerobot-sequence.py, test-test-samplerobot.test] add samplerobot_sequence_player to test case
+  * [sample/SampleRobot/samplerobot_sequence_player.py] add demoSetJointAnglesSequence() demoSetJointAnglesSequenceOfGroup()
+  * [sample/SampleRobot/samplerobot_sequence_player.py] add test code for override and clear function to demoSetJointAngles() demoSetJointAnglesOfGroup(), demoSetJointAnglesOfGroup()
+  * [sample/SampleRobot/samplerobot_sequence_player.py] add setSetJointAnglesOfGroup() and check results
+  * [sample/SampleRobot/SampleRobot.torque.xml.in] Use RUNGE_KUTTA for torque simulation
+  * [sample/SampleRobot/samplerobot_stabilizer.py] Add tpcc eefm st sample
+  * [sample/SampleRobot/SampleRobot.PDgain.dat] Fix SampleRobot PD gain
+  * Fix stabilizer sample
+  * Update sample for stepparam change
+  * Use functions defined in hrpsys_config.py
+  * Divide samples into small sample functions
+  * Add emergency stop and remain fot step sample
+
+* lib/util/Hrpsys.h
+
+  * [lib/util/Hrpsys.h] add atoi
+  * [lib/util/Hrpsys.h] add header file for QNX compile
+
+* [doc] Elaborate package overview
+
+Unstable RTCs
+=============
+
+* AutoBalancer
+
+  * add kick-test to testGaitGenerator.cpp
+  * Update AutoBalancer.cpp enable to stop with one lne
+  * check capture point to detect falling down
+  * Do not set is_stop_mode for testing
+  * Add emergency stop mode and release mode for AutoBalancer
+  * Add emergency stop port for autoBalancer to stop walking
+  * enable to step with one leg
+  * add height check to cycloid_delay_kick_hoffarbib_trajectory_generator and changed initerpolation point
+  * modify cycloid_delay_kick_trajectory_generator by adding start_rot
+  * modify orbit : enabled to modify kick_offset by function
+  * 1 control loop by default for default_retrieve_time
+  * Add retrieving after emergency stop
+  * add swing leg orbit type :CYCLOIDDELAYKICK
+  * Update single footstep support coords
+  * Add support and swing leg coords to lcg
+  * Add test13 to argument
+  * Add test for arbitrary leg switching
+  * Revert previous estop commit
+  * Fix paren and indent
+  * Update rmfo documentation. off_xx equal to xx
+  * Update footstep calculation. Push refzmp list immediately.
+  * Fix calculation of current remain time and update sample
+  * Use footstep_node_list step_time in refzmp_generator
+  * Rename leg_coords_generator _dt => dt
+  * Remove one_step_len and use foot step time in footstep_node_list
+  * Use step time from footstep node list in leg_coords_generator
+  * Use total step count from footstep_node_list
+  * Set step parameters for foot step node list
+  * Set height, toe_angle, heel_angle to 0 at initial and final foot step
+  * Add test for changing step param
+  * Add set foot steps function
+  * Add step_time for each step parameter. Currently interface are provided and step_time is not used in GaitGenerator
+  * Fix go pos 000 discontinuous last foot.
+  * Update overwrite refzmp
+  * Remove unused function is_swinging_leg
+  * Rename variables for lcg and add comments
+  * Separate gait generator type, class, functions from gait_generator class
+  * Add function to get remaining foot steps
+  * Add emergency stop interface for walking. Currently, velocity mode is supported.
+
+* Stabilizer
+
+  * add cp_check_margin to avoid hard coding
+  * Add emregency check mode for st
+  * Fix st cop check to strong constraint
+  * Use is_emerency for emergency signal checking
+  * Separate state calculation function for emergency signal
+  * Add add_subdirectory for qpOASES
+  * Fix calculation of stop queue and current seq state resetting
+  * Svn co and build qpOases. Disabled by default
+  * Add foot rot test
+  * Add jaxonred zmp sample and parse args
+  * Add test class for ZMPDistributor
+  * plot alpha in ZMPdistributor check
+  * Set outside margin
+  * Add outside margin
+  * Enable to set cop check margin
+  * Add debug message and check both cop on ground
+  * Add check cop outside
+  * Add COPInfo including total moment x, y, and total force at each end effectors
+  * Add documentation for test samples
+
+* ProjectGenerator
+
+  * add a note in read to use a new program instead of this one
+
+* EmergencyStopper
+
+  * add out port for emergency_mode
+  * Fix m_stop_posture setting to be able to change retrieve time
+  * Add EmergencyStopper Param and add getter and setter
+  * Set interpolator and add message
+  * Add emergency signal port to ES and ST and connect them (currently signal writing is comment-outed).
+  * implement EmergencyStopper and add sample script
+  * add source files of EmergencyStopper rtc
+
+* PDcontroller
+
+  * Add warning for too short pdgain
+
+* Contributors: Eisoku Kuroiwa, Isaac IY Saito, Kei Okada, Masaki Murooka, Shunichi Nozawa, Takasugi Noriaki, Yuta Kojio
+
 315.5.0 (2015-06-10)
 --------------------
 
