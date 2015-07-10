@@ -1,5 +1,5 @@
 set(seq_dir ${PROJECT_SOURCE_DIR}/rtc/SequencePlayer)
-set(comp_sources ${seq_dir}/interpolator.cpp EmergencyStopper.cpp EmergencyStopperService_impl.cpp)
+set(comp_sources ${seq_dir}/interpolator.cpp EmergencyStopper.cpp EmergencyStopperService_impl.cpp ../SoftErrorLimiter/beep.cpp)
 set(libs hrpModel-3.1 hrpUtil-3.1 hrpsysBaseStub)
 include_directories(${seq_dir})
 add_library(EmergencyStopper SHARED ${comp_sources})
