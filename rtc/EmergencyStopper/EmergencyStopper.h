@@ -19,6 +19,7 @@
 #include <rtm/idl/ExtendedDataTypesSkel.h>
 #include <hrpModel/Body.h>
 #include "interpolator.h"
+#include "HRPDataTypes.hh"
 #include <queue>
 
 // Service implementation headers
@@ -113,11 +114,13 @@ protected:
     TimedDoubleSeq m_q;
     TimedLong m_emergencySignal;
     TimedLong m_emergencyMode;
+    OpenHRP::TimedLongSeqSeq m_servoState;
 
     // DataInPort declaration
     // <rtc-template block="inport_declare">
     InPort<TimedDoubleSeq> m_qRefIn;
     InPort<TimedLong> m_emergencySignalIn;
+    InPort<OpenHRP::TimedLongSeqSeq> m_servoStateIn;
   
     // </rtc-template>
 
@@ -158,6 +161,7 @@ private:
     double *m_stop_posture;
     interpolator* m_interpolator;
     std::queue<std::vector<double> > m_input_posture_queue;
+    int emergency_stopper_beep_count, emergency_stopper_beep_freq;
 };
 
 
