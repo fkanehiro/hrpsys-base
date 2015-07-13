@@ -1022,12 +1022,18 @@ void Stabilizer::calcStateForEmergencySignal()
     }
   }
   // Total check for emergency signal
-  if (OpenHRP::StabilizerService::NO_CHECK) {
+  switch (emergency_check_mode) {
+  case OpenHRP::StabilizerService::NO_CHECK:
       is_emergency = false;
-  } else if (OpenHRP::StabilizerService::COP) {
-    is_emergency = is_cop_outside && is_seq_interpolating;
-  } else {
-    is_emergency = is_cp_outside;
+      break;
+  case OpenHRP::StabilizerService::COP:
+      is_emergency = is_cop_outside && is_seq_interpolating;
+      break;
+  case OpenHRP::StabilizerService::CP:
+      is_emergency = is_cp_outside;
+      break;
+  default:
+      break;
   }
   if (DEBUGP) {
       std::cerr << "[" << m_profile.instance_name << "] EmergencyCheck ("
