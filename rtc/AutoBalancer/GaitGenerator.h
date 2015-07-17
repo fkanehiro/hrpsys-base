@@ -702,7 +702,11 @@ namespace rats
     enum emergency_flag { IDLING, EMERGENCY_STOP, STOPPING };
 
     /* member variables for gait_generator */
+    // Footstep list to be executed
+    //   First and last footstep are used for double support phase.
     std::vector<step_node> footstep_node_list;
+    // Footstep list for overwriting future footstep queue
+    std::vector<step_node> overwrite_footstep_node_list;
     toe_heel_phase_counter thp;
     refzmp_generator rg;
     leg_coords_generator lcg;
@@ -748,7 +752,7 @@ namespace rats
                     /* arguments for footstep_parameter */
                     const std::vector<hrp::Vector3>& _leg_pos,
                     const double _stride_fwd_x, const double _stride_y, const double _stride_theta, const double _stride_bwd_x)
-      : footstep_node_list(), thp(), rg(&thp, _dt), lcg(_dt, &thp),
+      : footstep_node_list(), overwrite_footstep_node_list(), thp(), rg(&thp, _dt), lcg(_dt, &thp),
         footstep_param(_leg_pos, _stride_fwd_x, _stride_y, _stride_theta, _stride_bwd_x),
         vel_param(), offset_vel_param(), cog(hrp::Vector3::Zero()), refzmp(hrp::Vector3::Zero()), prev_que_rzmp(hrp::Vector3::Zero()),
         swing_foot_zmp_offset(hrp::Vector3::Zero()), prev_que_sfzo(hrp::Vector3::Zero()),
@@ -776,7 +780,11 @@ namespace rats
     {
         footstep_node_list.push_back(step_node(_leg, _fs, _step_height, _step_time, _toe_angle, _heel_angle));
     };
-    void clear_footstep_node_list () { footstep_node_list.clear(); };
+    void clear_footstep_node_list ()
+    {
+        footstep_node_list.clear();
+        overwrite_footstep_node_list.clear();
+    };
     void go_pos_param_2_footstep_list (const double goal_x, const double goal_y, const double goal_theta, /* [mm] [mm] [deg] */
                                        const coordinates& initial_support_coords, const coordinates& initial_swing_src_coords,
                                        const leg_type initial_support_leg);
@@ -788,9 +796,13 @@ namespace rats
     void finalize_velocity_mode ();
     void append_finalize_footstep ()
     {
-      step_node sn = footstep_node_list[footstep_node_list.size()-2];
+      append_finalize_footstep(footstep_node_list);
+    };
+    void append_finalize_footstep (std::vector<step_node>& _footstep_node_list)
+    {
+      step_node sn = _footstep_node_list[_footstep_node_list.size()-2];
       sn.step_height = sn.toe_angle = sn.heel_angle = 0.0;
-      footstep_node_list.push_back(sn);
+      _footstep_node_list.push_back(sn);
     };
     void emergency_stop ()
     {
@@ -846,10 +858,21 @@ namespace rats
         append_finalize_footstep();
         print_footstep_list();
     };
+    void set_overwrite_foot_steps (const std::vector<step_node>& fnl)
+    {
+        overwrite_footstep_node_list.clear();
+        overwrite_footstep_node_list = fnl;
+        append_finalize_footstep(overwrite_footstep_node_list);
+        print_footstep_list(overwrite_footstep_node_list);
+    };
+    void print_footstep_list (const std::vector<step_node> _footstep_node_list) const
+    {
+      for (size_t i = 0; i < _footstep_node_list.size(); i++)
+        std::cerr << _footstep_node_list[i] << std::endl;
+    };
     void print_footstep_list () const
     {
-      for (size_t i = 0; i < footstep_node_list.size(); i++)
-        std::cerr << footstep_node_list[i] << std::endl;
+      print_footstep_list(footstep_node_list);
     };
     /* parameter getting */
     const hrp::Vector3& get_cog () { return cog; };
