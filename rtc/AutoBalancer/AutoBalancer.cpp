@@ -1021,7 +1021,6 @@ bool AutoBalancer::setFootStepsWithParam(const OpenHRP::AutoBalancerService::Foo
     // Get footsteps
     std::vector<coordinates> fs_vec;
     std::vector<std::string> leg_name_vec;
-    std::string prev_leg(std::string(fs[0].leg) == "rleg"?"lleg":"rleg");
     for (size_t i = 0; i < fs.length(); i++) {
       std::string leg(fs[i].leg);
       if (leg == "rleg" || leg == "lleg") {
@@ -1032,7 +1031,6 @@ bool AutoBalancer::setFootStepsWithParam(const OpenHRP::AutoBalancerService::Foo
         tmpfs.transform(fstrans);
         leg_name_vec.push_back(leg);
         fs_vec.push_back(tmpfs);
-        prev_leg = leg;
       } else {
           std::cerr << "[" << m_profile.instance_name << "]   No such target : " << leg << std::endl;
         return false;
@@ -1359,6 +1357,7 @@ bool AutoBalancer::getRemainingFootstepSequence(OpenHRP::AutoBalancerService::Fo
     o_footstep = new OpenHRP::AutoBalancerService::FootstepSequence;
     if (gg_is_walking) {
         std::vector<step_node> fsl = gg->get_remaining_footstep_list();
+        o_current_fs_idx = gg->get_footstep_index();
         o_footstep->length(fsl.size());
         for (size_t i = 0; i < fsl.size(); i++) {
             o_footstep[i].leg = (fsl[i].l_r==RLEG?"rleg":"lleg");
