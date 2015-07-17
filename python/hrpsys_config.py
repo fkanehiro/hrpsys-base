@@ -2004,6 +2004,23 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
         for limb in ic_limbs:
             self.ic_svc.waitImpedanceControllerTransition(limb)
 
+    def setFootSteps(self, footstep, overwrite_fs_idx = 0):
+        '''!@brief
+        setFootSteps
+        @param footstep : FootstepSequence.
+        @param overwrite_fs_idx : Index to be overwritten. overwrite_fs_idx is used only in walking.
+        '''
+        self.abc_svc.setFootSteps(footstep, overwrite_fs_idx)
+
+    def setFootStepsWithParam(self, footstep, stepparams, overwrite_fs_idx = 0):
+        '''!@brief
+        setFootSteps
+        @param footstep : FootstepSequence.
+        @param stepparams : StepParamSeuqnce.
+        @param overwrite_fs_idx : Index to be overwritten. overwrite_fs_idx is used only in walking.
+        '''
+        self.abc_svc.setFootStepsWithParam(footstep, stepparams, overwrite_fs_idx)
+
     # ##
     # ## initialize
     # ##
