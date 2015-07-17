@@ -283,6 +283,35 @@ def demoGaitGeneratorChangeStepParam():
     hcf.abc_svc.waitFootSteps()
     hcf.abc_svc.setGaitGeneratorParam(ggp_org);
 
+def demoGaitGeneratorOverwriteFootsteps():
+    print "13. Overwrite footsteps during walking."
+    hcf.seq_svc.setJointAngles(initial_pose, 1.0);
+    hcf.waitInterpolation();
+    hcf.abc_svc.setFootSteps([OpenHRP.AutoBalancerService.Footstep([0,-0.09,0], [1,0,0,0], "rleg"),
+                              OpenHRP.AutoBalancerService.Footstep([0.1,0.09,0], [1,0,0,0], "lleg"),
+                              OpenHRP.AutoBalancerService.Footstep([0.2,-0.09,0], [1,0,0,0], "rleg"),
+                              OpenHRP.AutoBalancerService.Footstep([0.2,0.09+0.1,0], [1,0,0,0], "lleg"),
+                              OpenHRP.AutoBalancerService.Footstep([0.2,-0.09+0.1,0], [1,0,0,0], "rleg")]);
+    # used for waiting
+    hcf.seq_svc.setJointAngles(initial_pose, 2.0);
+    hcf.waitInterpolation();
+    # overwriting
+    hcf.abc_svc.setFootSteps([OpenHRP.AutoBalancerService.Footstep([0,-0.09,0], [1,0,0,0], "rleg"),
+                              OpenHRP.AutoBalancerService.Footstep([0.1,0.09,0], [1,0,0,0], "lleg"),
+                              OpenHRP.AutoBalancerService.Footstep([0.2,-0.09,0], [1,0,0,0], "rleg"),
+                              OpenHRP.AutoBalancerService.Footstep([0.2,0.09+0.1,0], [1,0,0,0], "lleg"),
+                              OpenHRP.AutoBalancerService.Footstep([0.2,-0.09+0.1,0], [1,0,0,0], "rleg")]);
+    # used for waiting
+    hcf.seq_svc.setJointAngles(initial_pose, 2.0);
+    hcf.waitInterpolation();
+    # overwriting
+    hcf.abc_svc.setFootSteps([OpenHRP.AutoBalancerService.Footstep([0,-0.09,0], [1,0,0,0], "rleg"),
+                              OpenHRP.AutoBalancerService.Footstep([0.1,0.09,0], [1,0,0,0], "lleg"),
+                              OpenHRP.AutoBalancerService.Footstep([0.2,-0.09,0], [1,0,0,0], "rleg"),
+                              OpenHRP.AutoBalancerService.Footstep([0.2,0.09+0.1,0], [1,0,0,0], "lleg"),
+                              OpenHRP.AutoBalancerService.Footstep([0.2,-0.09+0.1,0], [1,0,0,0], "rleg")]);
+    hcf.abc_svc.waitFootSteps()
+
 def demoGaitGeneratorHandFixWalking():
     print "13. walking by fixing"
     # abc_svc.startAutoBalancer([AutoBalancerService.AutoBalancerLimbParam("rleg", [0,0,0], [0,0,0,0]),
@@ -318,6 +347,7 @@ def demo():
     demoGaitGeneratorEmergencyStop()
     demoGaitGeneratorGetRemainingSteps()
     demoGaitGeneratorChangeStepParam()
+    demoGaitGeneratorOverwriteFootsteps()
     # demoGaitGeneratorHandFixWalking()
 
 if __name__ == '__main__':

@@ -397,24 +397,28 @@ namespace rats
     }
     bool solved = preview_controller_ptr->update(refzmp, cog, swing_foot_zmp_offset, rzmp, sfzo, (refzmp_exist_p || finalize_count < preview_controller_ptr->get_delay()-default_step_time/dt));
     /* update refzmp */
-    if ( lcg.get_footstep_index() > 0 && lcg.get_lcg_count() == static_cast<size_t>(footstep_node_list[lcg.get_footstep_index()].step_time/dt * 0.5) - 1 ) {
+    if ( lcg.get_footstep_index() > 0 &&
+         lcg.get_lcg_count() == static_cast<size_t>(footstep_node_list[lcg.get_footstep_index()].step_time/dt * 0.5) - 1 ) { // Almost middle of step time
       if (velocity_mode_flg != VEL_IDLING) {
         std::vector<coordinates> cv;
         calc_next_coords_velocity_mode(cv, lcg.get_footstep_index() + 1);
         if (velocity_mode_flg == VEL_ENDING) velocity_mode_flg = VEL_IDLING;
-        std::vector<step_node> fnl;
         leg_type cur_leg = footstep_node_list[lcg.get_footstep_index()].l_r;
-        fnl.push_back(step_node(cur_leg==RLEG?LLEG:RLEG, cv[0], lcg.get_default_step_height(), default_step_time, lcg.get_toe_angle(), lcg.get_heel_angle()));
-        fnl.push_back(step_node(cur_leg, cv[1], lcg.get_default_step_height(), default_step_time, lcg.get_toe_angle(), lcg.get_heel_angle()));
-        fnl.push_back(step_node(cur_leg==RLEG?LLEG:RLEG, cv[2], lcg.get_default_step_height(), default_step_time, lcg.get_toe_angle(), lcg.get_heel_angle()));
-        overwrite_refzmp_queue(fnl);
+        overwrite_footstep_node_list.push_back(step_node(cur_leg==RLEG?LLEG:RLEG, cv[0], lcg.get_default_step_height(), default_step_time, lcg.get_toe_angle(), lcg.get_heel_angle()));
+        overwrite_footstep_node_list.push_back(step_node(cur_leg, cv[1], lcg.get_default_step_height(), default_step_time, lcg.get_toe_angle(), lcg.get_heel_angle()));
+        overwrite_footstep_node_list.push_back(step_node(cur_leg==RLEG?LLEG:RLEG, cv[2], lcg.get_default_step_height(), default_step_time, lcg.get_toe_angle(), lcg.get_heel_angle()));
+        overwrite_refzmp_queue(overwrite_footstep_node_list);
+        overwrite_footstep_node_list.clear();
+      } else if (!overwrite_footstep_node_list.empty() && (lcg.get_footstep_index() < footstep_node_list.size()-1) ) { // If overwrite_footstep_node_list is specified and current footstep is not last footstep.
+        overwrite_refzmp_queue(overwrite_footstep_node_list);
+        overwrite_footstep_node_list.clear();
       } else if (emergency_flg == EMERGENCY_STOP) {
-        std::vector<step_node> fnl;
         leg_type cur_leg = footstep_node_list[lcg.get_footstep_index()].l_r;
-        fnl.push_back(step_node(cur_leg==RLEG?LLEG:RLEG, footstep_node_list[lcg.get_footstep_index()-1].worldcoords, 0, default_step_time, 0, 0));
-        fnl.push_back(step_node(cur_leg, footstep_node_list[lcg.get_footstep_index()].worldcoords, 0, default_step_time, 0, 0));
-        fnl.push_back(step_node(cur_leg==RLEG?LLEG:RLEG, footstep_node_list[lcg.get_footstep_index()-1].worldcoords, 0, default_step_time, 0, 0));
-        overwrite_refzmp_queue(fnl);
+        overwrite_footstep_node_list.push_back(step_node(cur_leg==RLEG?LLEG:RLEG, footstep_node_list[lcg.get_footstep_index()-1].worldcoords, 0, default_step_time, 0, 0));
+        overwrite_footstep_node_list.push_back(step_node(cur_leg, footstep_node_list[lcg.get_footstep_index()].worldcoords, 0, default_step_time, 0, 0));
+        overwrite_footstep_node_list.push_back(step_node(cur_leg==RLEG?LLEG:RLEG, footstep_node_list[lcg.get_footstep_index()-1].worldcoords, 0, default_step_time, 0, 0));
+        overwrite_refzmp_queue(overwrite_footstep_node_list);
+        overwrite_footstep_node_list.clear();
         emergency_flg = STOPPING;
       }
     }
