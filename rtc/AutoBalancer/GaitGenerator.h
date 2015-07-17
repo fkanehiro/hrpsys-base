@@ -718,6 +718,9 @@ namespace rats
     double default_double_support_ratio, default_double_support_static_ratio;
     double gravitational_acceleration;
     size_t finalize_count, optional_go_pos_finalize_footstep_num;
+    // overwrite_footstep_index is used for footstep overwriting.
+    //   When overwrite_footstep_index == get_overwritable_index(), overwrite footsteps after overwrite_footstep_index.
+    size_t overwrite_footstep_index;
     velocity_mode_flag velocity_mode_flg;
     emergency_flag emergency_flg;
     bool use_inside_step_limitation;
@@ -757,7 +760,7 @@ namespace rats
         vel_param(), offset_vel_param(), cog(hrp::Vector3::Zero()), refzmp(hrp::Vector3::Zero()), prev_que_rzmp(hrp::Vector3::Zero()),
         swing_foot_zmp_offset(hrp::Vector3::Zero()), prev_que_sfzo(hrp::Vector3::Zero()),
         dt(_dt), default_step_time(1.0), default_double_support_ratio(0.2), default_double_support_static_ratio(0.0), gravitational_acceleration(DEFAULT_GRAVITATIONAL_ACCELERATION),
-        finalize_count(0), optional_go_pos_finalize_footstep_num(0),
+        finalize_count(0), optional_go_pos_finalize_footstep_num(0), overwrite_footstep_index(0),
         velocity_mode_flg(VEL_IDLING), emergency_flg(IDLING),
         use_inside_step_limitation(true),
         preview_controller_ptr(NULL) {};
@@ -784,6 +787,7 @@ namespace rats
     {
         footstep_node_list.clear();
         overwrite_footstep_node_list.clear();
+        overwrite_footstep_index = 0;
     };
     void go_pos_param_2_footstep_list (const double goal_x, const double goal_y, const double goal_theta, /* [mm] [mm] [deg] */
                                        const coordinates& initial_support_coords, const coordinates& initial_swing_src_coords,
@@ -864,6 +868,28 @@ namespace rats
         overwrite_footstep_node_list = fnl;
         append_finalize_footstep(overwrite_footstep_node_list);
         print_footstep_list(overwrite_footstep_node_list);
+    };
+    size_t get_overwritable_index ()
+    {
+        return lcg.get_footstep_index()+1;
+    };
+    bool set_overwrite_foot_step_index (const size_t idx)
+    {
+        if (idx >= get_overwritable_index()) {
+            overwrite_footstep_index = idx;
+            return true;
+        } else {
+            return false;
+        }
+    };
+    bool get_footstep_coords_by_index (coordinates& cs, const size_t idx)
+    {
+        if (footstep_node_list.size()-1 >= idx) {
+            cs = footstep_node_list[idx].worldcoords;
+            return true;
+        } else {
+            return false;
+        }
     };
     void print_footstep_list (const std::vector<step_node> _footstep_node_list) const
     {

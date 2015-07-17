@@ -1004,12 +1004,13 @@ bool AutoBalancer::setFootStepsWithParam(const OpenHRP::AutoBalancerService::Foo
     // Initial footstep Snapping
     coordinates tmpfs, initial_support_coords, initial_input_coords, fstrans;
     if (gg_is_walking) {
-        if (std::string(fs[0].leg) == gg->get_support_leg()) {
-            // Snap initial footstep to current support leg coords
-            initial_support_coords = gg->get_support_leg_coords();
-        } else {
-            // Pass current support leg coords and snap initial footstep to next support leg coords (= current swing leg dst coords)
-            initial_support_coords = gg->get_swing_leg_dst_coords();
+        if (overwrite_fs_idx <= 0) {
+            std::cerr << "[" << m_profile.instance_name << "]   Invalid overwrite index = " << overwrite_fs_idx << std::endl;
+            return false;
+        }
+        if (!gg->get_footstep_coords_by_index(initial_support_coords, overwrite_fs_idx-1)) {
+            std::cerr << "[" << m_profile.instance_name << "]   Invalid overwrite index = " << overwrite_fs_idx << std::endl;
+            return false;
         }
     } else {
         // If walking, snap initial leg to current ABC foot coords.
@@ -1043,11 +1044,13 @@ bool AutoBalancer::setFootStepsWithParam(const OpenHRP::AutoBalancerService::Foo
     std::cerr << "[" << m_profile.instance_name << "] print footsteps " << std::endl;
     std::vector<step_node> fnl;
     for (size_t i = 0; i < fs_vec.size(); i++) {
-        fnl.push_back(step_node(leg_name_vec[i], fs_vec[i], sps[i].step_height, sps[i].step_time, sps[i].toe_angle, sps[i].heel_angle));
+        if (!(gg_is_walking && i == 0)) // If initial footstep, e.g., not walking, pass user-defined footstep list. If walking, pass cdr footsteps in order to neglect initial double support leg.
+            fnl.push_back(step_node(leg_name_vec[i], fs_vec[i], sps[i].step_height, sps[i].step_time, sps[i].toe_angle, sps[i].heel_angle));
     }
     if (gg_is_walking) {
         std::cerr << "[" << m_profile.instance_name << "]  Set overwrite footsteps" << std::endl;
         gg->set_overwrite_foot_steps(fnl);
+        gg->set_overwrite_foot_step_index(overwrite_fs_idx);
     } else {
         std::cerr << "[" << m_profile.instance_name << "]  Set normal footsteps" << std::endl;
         gg->set_foot_steps(fnl);
