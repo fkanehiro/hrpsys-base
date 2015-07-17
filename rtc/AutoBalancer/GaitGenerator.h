@@ -921,8 +921,6 @@ namespace rats
     std::vector<step_node> get_remaining_footstep_list ()
     {
         std::vector<step_node> fsl;
-        // fsl[0] is current support leg coords
-        fsl.push_back(step_node(lcg.get_support_leg(), lcg.get_support_leg_coords(), 0, 0, 0, 0)); // step_height, step_time and toe_heel_angle are dummy
         size_t fsl_size = (footstep_node_list.size()>lcg.get_footstep_index() ? footstep_node_list.size()-lcg.get_footstep_index() : 0);
         // The rest of fsl are swing dst coords from now.
         for (size_t i = 0; i < fsl_size; i++) {

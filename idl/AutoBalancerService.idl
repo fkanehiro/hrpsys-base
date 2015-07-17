@@ -301,7 +301,7 @@ module OpenHRP
 
     /**
      * @brief Get remaining footstep list.
-     * @param o_footstep is remaining footstep sequence. For example, if initial footsteps are [rfoot(1), lfoot(2), ..., rfoot(N)] (rfoot(1) is initial support foot and lfoot(2) is initial swing destination foot) and current support foot is lfoot(X), o_footstep is [lfoot(X), rfoot(X+1), ..., rfootN].
+     * @param o_footstep is remaining footstep sequence. For example, if initial footsteps are [rfoot(0), lfoot(1), ..., rfoot(N-1)] (rfoot(0) is initial support foot and lfoot(1) is initial swing destination foot) and current support foot is lfoot(X), o_footstep is [rfoot(X+1), lfoot(X+2), ..., rfoot(N)].
      * @return true if set successfully, false otherwise
      */
     boolean getRemainingFootstepSequence(out FootstepSequence o_footstep);
