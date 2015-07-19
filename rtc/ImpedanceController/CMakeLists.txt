@@ -11,6 +11,9 @@ add_executable(testImpedanceOutputGenerator testImpedanceOutputGenerator.cpp Imp
 target_link_libraries(testImpedanceOutputGenerator ${libs})
 set(target ImpedanceController ImpedanceControllerComp testImpedanceOutputGenerator)
 
+add_test(testImpedanceOutputGeneratorTest0 testImpedanceOutputGenerator --test0 --use-gnuplot false)
+add_test(testImpedanceOutputGeneratorTest1 testImpedanceOutputGenerator --test1 --use-gnuplot false)
+
 install(TARGETS ${target}
   RUNTIME DESTINATION bin CONFIGURATIONS Release Debug
   LIBRARY DESTINATION lib CONFIGURATIONS Release Debug

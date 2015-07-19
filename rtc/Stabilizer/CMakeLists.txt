@@ -40,6 +40,12 @@ add_executable(testZMPDistributor testZMPDistributor.cpp ZMPDistributor.h ../Imp
 target_link_libraries(testZMPDistributor ${libs})
 set(target Stabilizer StabilizerComp testTwoDofController testZMPDistributor)
 
+add_test(testZMPDistributorHRP2JSKTest0 testZMPDistributor --hrp2jsk --test0 --use-gnuplot false)
+add_test(testZMPDistributorHRP2JSKTest1 testZMPDistributor --hrp2jsk --test1 --use-gnuplot false)
+add_test(testZMPDistributorHRP2JSKTest2 testZMPDistributor --hrp2jsk --test2 --use-gnuplot false)
+add_test(testZMPDistributorJAXONREDTest0 testZMPDistributor --jaxon_red --test0 --use-gnuplot false)
+add_test(testZMPDistributorJAXONREDTest1 testZMPDistributor --jaxon_red --test1 --use-gnuplot false)
+add_test(testZMPDistributorJAXONREDTest2 testZMPDistributor --jaxon_red --test2 --use-gnuplot false)
 
 install(TARGETS ${target}
   RUNTIME DESTINATION bin CONFIGURATIONS Release Debug

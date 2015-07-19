@@ -13,7 +13,7 @@ protected:
     double dt; // [s]
     double total_fz; // [N]
     SimpleZMPDistributor* szd;
-    bool use_qp;
+    bool use_qp, use_gnuplot;
     size_t sleep_msec;
     std::vector<hrp::Vector3> leg_pos;
     std::vector<hrp::Vector3> ee_pos;
@@ -49,10 +49,16 @@ private:
         //
 
         // plot
-        FILE* gp = popen("gnuplot", "w");
-        FILE* gp_m = popen("gnuplot", "w");
-        FILE* gp_f = popen("gnuplot", "w");
-        FILE* gp_a = popen("gnuplot", "w");
+        FILE* gp;
+        FILE* gp_m;
+        FILE* gp_f;
+        FILE* gp_a;
+        if (use_gnuplot) {
+            gp = popen("gnuplot", "w");
+            gp_m = popen("gnuplot", "w");
+            gp_f = popen("gnuplot", "w");
+            gp_a = popen("gnuplot", "w");
+        }
         std::string fname_fm("/tmp/plot-fm.dat");
         FILE* fp_fm = fopen(fname_fm.c_str(), "w");
         std::vector<std::string> names;
@@ -107,41 +113,45 @@ private:
                 fprintf(fp, "%f %f %f\n", refzmp_vec[i](0), refzmp_vec[i](1), refzmp_vec[i](2));
                 fclose(fp);
             }
-            fprintf(gp, "splot [-0.5:0.5][-0.5:0.5][-1:1000] '/tmp/plotrleg.dat' using 1:2:3 with lines title 'rleg'\n");
-            fprintf(gp, "replot '/tmp/plotlleg.dat' using 1:2:3 with lines title 'lleg'\n");
-            fprintf(gp, "replot '/tmp/plotrlegfm.dat' using 1:2:3 with lines title 'rleg fm' lw 5\n");
-            fprintf(gp, "replot '/tmp/plotllegfm.dat' using 1:2:3 with lines title 'lleg fm' lw 5\n");
-            fprintf(gp, "replot '/tmp/plotzmp.dat' using 1:2:3 with points title 'zmp' lw 10\n");
-            fflush(gp);
-            usleep(1000*sleep_msec);
+            if (use_gnuplot) {
+                fprintf(gp, "splot [-0.5:0.5][-0.5:0.5][-1:1000] '/tmp/plotrleg.dat' using 1:2:3 with lines title 'rleg'\n");
+                fprintf(gp, "replot '/tmp/plotlleg.dat' using 1:2:3 with lines title 'lleg'\n");
+                fprintf(gp, "replot '/tmp/plotrlegfm.dat' using 1:2:3 with lines title 'rleg fm' lw 5\n");
+                fprintf(gp, "replot '/tmp/plotllegfm.dat' using 1:2:3 with lines title 'lleg fm' lw 5\n");
+                fprintf(gp, "replot '/tmp/plotzmp.dat' using 1:2:3 with points title 'zmp' lw 10\n");
+                fflush(gp);
+                usleep(1000*sleep_msec);
+            }
         }
         fclose(fp_fm);
-        fprintf(gp_m, "splot [-0.5:0.5][-0.5:0.5][-50:50] '/tmp/plotrleg.dat' using 1:2:3 with lines title 'rleg'\n");
-        fprintf(gp_m, "replot '/tmp/plotlleg.dat' using 1:2:3 with lines title 'lleg'\n");
-        fprintf(gp_m, "replot '/tmp/plot-fm.dat' using 1:2:5 with points title 'rleg nx' lw 5\n");
-        fprintf(gp_m, "replot '/tmp/plot-fm.dat' using 1:2:6 with points title 'lleg nx' lw 5\n");
-        fprintf(gp_m, "replot '/tmp/plot-fm.dat' using 1:2:7 with points title 'rleg ny' lw 5\n");
-        fprintf(gp_m, "replot '/tmp/plot-fm.dat' using 1:2:8 with points title 'lleg ny' lw 5\n");
-        fflush(gp_m);
-        fprintf(gp_f, "splot [-0.5:0.5][-0.5:0.5][-50:%f] '/tmp/plotrleg.dat' using 1:2:3 with lines title 'rleg'\n", total_fz*1.1);
-        fprintf(gp_f, "replot '/tmp/plotlleg.dat' using 1:2:3 with lines title 'lleg'\n");
-        fprintf(gp_f, "replot '/tmp/plot-fm.dat' using 1:2:3 with points title 'rleg fz' lw 5\n");
-        fprintf(gp_f, "replot '/tmp/plot-fm.dat' using 1:2:4 with points title 'lleg fz' lw 5\n");
-        fflush(gp_f);
-        fprintf(gp_a, "splot [-0.5:0.5][-0.5:0.5][-0.1:1.1] '/tmp/plotrleg.dat' using 1:2:3 with lines title 'rleg'\n");
-        fprintf(gp_a, "replot '/tmp/plotlleg.dat' using 1:2:3 with lines title 'lleg'\n");
-        fprintf(gp_a, "replot '/tmp/plot-fm.dat' using 1:2:9 with points title 'alpha' lw 5\n");
-        fflush(gp_a);
-        double tmp;
-        std::cin >> tmp;
-        pclose(gp);
-        pclose(gp_m);
-        pclose(gp_f);
-        pclose(gp_a);
+        if (use_gnuplot) {
+            fprintf(gp_m, "splot [-0.5:0.5][-0.5:0.5][-50:50] '/tmp/plotrleg.dat' using 1:2:3 with lines title 'rleg'\n");
+            fprintf(gp_m, "replot '/tmp/plotlleg.dat' using 1:2:3 with lines title 'lleg'\n");
+            fprintf(gp_m, "replot '/tmp/plot-fm.dat' using 1:2:5 with points title 'rleg nx' lw 5\n");
+            fprintf(gp_m, "replot '/tmp/plot-fm.dat' using 1:2:6 with points title 'lleg nx' lw 5\n");
+            fprintf(gp_m, "replot '/tmp/plot-fm.dat' using 1:2:7 with points title 'rleg ny' lw 5\n");
+            fprintf(gp_m, "replot '/tmp/plot-fm.dat' using 1:2:8 with points title 'lleg ny' lw 5\n");
+            fflush(gp_m);
+            fprintf(gp_f, "splot [-0.5:0.5][-0.5:0.5][-50:%f] '/tmp/plotrleg.dat' using 1:2:3 with lines title 'rleg'\n", total_fz*1.1);
+            fprintf(gp_f, "replot '/tmp/plotlleg.dat' using 1:2:3 with lines title 'lleg'\n");
+            fprintf(gp_f, "replot '/tmp/plot-fm.dat' using 1:2:3 with points title 'rleg fz' lw 5\n");
+            fprintf(gp_f, "replot '/tmp/plot-fm.dat' using 1:2:4 with points title 'lleg fz' lw 5\n");
+            fflush(gp_f);
+            fprintf(gp_a, "splot [-0.5:0.5][-0.5:0.5][-0.1:1.1] '/tmp/plotrleg.dat' using 1:2:3 with lines title 'rleg'\n");
+            fprintf(gp_a, "replot '/tmp/plotlleg.dat' using 1:2:3 with lines title 'lleg'\n");
+            fprintf(gp_a, "replot '/tmp/plot-fm.dat' using 1:2:9 with points title 'alpha' lw 5\n");
+            fflush(gp_a);
+            double tmp;
+            std::cin >> tmp;
+            pclose(gp);
+            pclose(gp_m);
+            pclose(gp_f);
+            pclose(gp_a);
+        }
     };
 public:
     std::vector<std::string> arg_strs;
-    testZMPDistributor() : use_qp(true), sleep_msec(100)
+    testZMPDistributor() : use_qp(true), use_gnuplot(true), sleep_msec(100)
     {
         szd = new SimpleZMPDistributor();
     };
@@ -160,6 +170,8 @@ public:
               if (++i < arg_strs.size()) use_qp = (arg_strs[i].c_str()=="true"?true:false);
           } else if ( arg_strs[i]== "--sleep-msec" ) {
               if (++i < arg_strs.size()) sleep_msec = atoi(arg_strs[i].c_str());
+          } else if ( arg_strs[i]== "--use-gnuplot" ) {
+              if (++i < arg_strs.size()) use_gnuplot = (arg_strs[i]=="true");
           }
       }
     };
@@ -248,6 +260,7 @@ void print_usage ()
 
 int main(int argc, char* argv[])
 {
+    int ret = 0;
     if (argc >= 3) {
         testZMPDistributor* tzd = NULL;
         if (std::string(argv[1]) == "--hrp2jsk") {
@@ -256,6 +269,7 @@ int main(int argc, char* argv[])
             tzd = new testZMPDistributorJAXON_RED();
         } else {
             print_usage();
+            ret = 1;
         }
         if (tzd != NULL) {
             for (int i = 2; i < argc; ++ i) {
@@ -269,12 +283,14 @@ int main(int argc, char* argv[])
                 tzd->test2();
             } else {
                 print_usage();
+                ret = 1;
             }
             delete tzd;
         }
     } else {
         print_usage();
+        ret = 1;
     }
-    return 0;
+    return ret;
 }
 

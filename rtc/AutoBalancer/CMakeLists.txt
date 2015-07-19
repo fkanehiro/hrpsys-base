@@ -17,6 +17,21 @@ include_directories(${PROJECT_SOURCE_DIR}/rtc/SequencePlayer)
 
 set(target AutoBalancer AutoBalancerComp testPreviewController testGaitGenerator)
 
+add_test(testPreviewControllerNoGP testPreviewController --use-gnuplot false)
+add_test(testGaitGeneratorTest0 testGaitGenerator --test0 --use-gnuplot false)
+add_test(testGaitGeneratorTest1 testGaitGenerator --test1 --use-gnuplot false)
+add_test(testGaitGeneratorTest2 testGaitGenerator --test2 --use-gnuplot false)
+add_test(testGaitGeneratorTest3 testGaitGenerator --test3 --use-gnuplot false)
+add_test(testGaitGeneratorTest4 testGaitGenerator --test4 --use-gnuplot false)
+add_test(testGaitGeneratorTest5 testGaitGenerator --test5 --use-gnuplot false)
+#add_test(testGaitGeneratorTest6 testGaitGenerator --test6 --use-gnuplot false)
+add_test(testGaitGeneratorTest7 testGaitGenerator --test7 --use-gnuplot false)
+add_test(testGaitGeneratorTest8 testGaitGenerator --test8 --use-gnuplot false)
+add_test(testGaitGeneratorTest9 testGaitGenerator --test9 --use-gnuplot false)
+add_test(testGaitGeneratorTest10 testGaitGenerator --test10 --use-gnuplot false)
+add_test(testGaitGeneratorTest11 testGaitGenerator --test11 --use-gnuplot false)
+add_test(testGaitGeneratorTest12 testGaitGenerator --test12 --use-gnuplot false)
+
 install(TARGETS ${target}
   RUNTIME DESTINATION bin CONFIGURATIONS Release Debug
   LIBRARY DESTINATION lib CONFIGURATIONS Release Debug

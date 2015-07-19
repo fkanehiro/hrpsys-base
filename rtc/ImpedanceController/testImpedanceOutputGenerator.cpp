@@ -19,12 +19,14 @@ class testImpedanceOutputGenerator
 protected:
     double dt; /* [s] */
     ImpedanceOutputGenerator imp;
+    bool use_gnuplot;
     void gen_pattern_and_plot (const std::vector<hrp::Vector3>& force_diff_vec,
                                const std::vector<hrp::Vector3>& moment_diff_vec,
                                const std::vector<hrp::Vector3>& target_p0_vec,
                                const std::vector<hrp::Matrix33>& target_r0_vec,
                                const std::vector<double>& time_vec)
     {
+        parse_params();
         std::string fname("/tmp/plot-imp.dat");
         FILE* fp = fopen(fname.c_str(), "w");
         for (size_t i = 0; i < time_vec.size();i++) {
@@ -50,6 +52,7 @@ protected:
                     );
         }
         fclose(fp);
+        if (use_gnuplot) {
         // plot
         std::string titles[3] = {"X", "Y", "Z"};
         //   plot pos
@@ -76,11 +79,14 @@ protected:
         std::cin >> tmp;
         pclose(gp_pos);
         pclose(gp_rot);
+        }
     };
 public:
-    testImpedanceOutputGenerator (const double _dt = 0.004) : dt(_dt), imp() {};
+    std::vector<std::string> arg_strs;
+    testImpedanceOutputGenerator (const double _dt = 0.004) : dt(_dt), imp(), use_gnuplot(true) {};
     void test0 ()
     {
+        std::cerr << "test0 : Set ref force" << std::endl;
         double tm = 0.0, total_tm = 4.0;
         std::vector<double> time_vec;
         std::vector<hrp::Vector3> force_diff_vec, moment_diff_vec, target_p0_vec;
@@ -97,6 +103,7 @@ public:
     };
     void test1 ()
     {
+        std::cerr << "test1 : Move pos and rot" << std::endl;
         double tm = 0.0, total_tm = 1.0;
         std::vector<double> time_vec;
         std::vector<hrp::Vector3> force_diff_vec, moment_diff_vec, target_p0_vec;
@@ -120,17 +127,44 @@ public:
         }
         gen_pattern_and_plot (force_diff_vec, moment_diff_vec, target_p0_vec, target_r0_vec, time_vec);
     };
+    void parse_params ()
+    {
+      for (int i = 0; i < arg_strs.size(); ++ i) {
+          if ( arg_strs[i]== "--use-gnuplot" ) {
+              if (++i < arg_strs.size()) use_gnuplot = (arg_strs[i]=="true");
+          }
+      }
+    };
+};
+
+void print_usage ()
+{
+    std::cerr << "Usage : testImpedanceOutputGenerator [option]" << std::endl;
+    std::cerr << " [option] should be:" << std::endl;
+    std::cerr << "  --test0 : Set ref force" << std::endl;
+    std::cerr << "  --test1 : Move pos and rot" << std::endl;
 };
 
 int main(int argc, char* argv[])
 {
-    if (argc == 2) {
-        if (std::string(argv[1]) == "--test0") {
-            testImpedanceOutputGenerator().test0();
-        } else if (std::string(argv[1]) == "--test1") {
-            testImpedanceOutputGenerator().test1();
+    int ret = 0;
+    if (argc >= 2) {
+        testImpedanceOutputGenerator tiog;
+        for (int i = 1; i < argc; ++ i) {
+          tiog.arg_strs.push_back(std::string(argv[i]));
         }
+        if (std::string(argv[1]) == "--test0") {
+            tiog.test0();
+        } else if (std::string(argv[1]) == "--test1") {
+            tiog.test1();
+        } else {
+            print_usage();
+            ret = 1;
+        }
+    } else {
+        print_usage();
+        ret = 1;
     }
-    return 0;
+    return ret;
 }
 
