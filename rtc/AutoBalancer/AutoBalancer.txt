@@ -74,6 +74,9 @@ rosrun hrpsys testGaitGenerator [test-type-option] [gg-parameters-options] # ROS
 [test-type-option] is test type and [gg-parameters-options] are GaitGeneratorParameters.
 To learn test type, please execute testGaitGenerator without arguments.
 
+\subsection moreabcggdocument More Documentation, Figures, and Explanation for AutoBalancer and GaitGenerator
+<A HREF="https://github.com/fkanehiro/hrpsys-base/raw/master/rtc/AutoBalancer/hrpsys_AutoBalancer_GaitGenerator_memo.pptx">AutoBalancerGaitGeneratorDocumentationSlide</a>
+
 <table>
 <tr><th>implementation_id</th><td>AutoBalancer</td></tr>
 <tr><th>category</th><td>example</td></tr>
