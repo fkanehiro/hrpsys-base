@@ -13,11 +13,13 @@ env:
   global:
     - secure: "ESSo9YL0lUB0nnlFIL1vV7zpOyZjgTign4IZR735laiylPjOLKW4BkP9JxT5alA9ip72qbpDKI192Ed3sSkWjjQxhM+/HIjtyOy5/F6U5wfvxWudorJeF4zCy4OBD7Bp9JWqucAkRmd5Qe3Djaih69rAK31IFeNhQ2Ebz6RWVGk="
   matrix:
+    # test for normal hrpsys users, this will not depends on any ROS-related tools
     - TEST_PACKAGE=hrpsys
     - TEST_PACKAGE=hrpsys   COMPILE_OPTION='-DROBOT_IOB_VERSION=0'
     - TEST_TYPE=python      TEST_PACKAGE=hrpsys
     - TEST_TYPE=iob         TEST_PACKAGE=hrpsys
     - TEST_TYPE=stable_rtc  TEST_PACKAGE=hrpsys
+    # compile source code with ros-related tools, they are compiled with catkin and test with rostest
     - TEST_TYPE=work_with_downstream  TEST_PACKAGE=hrpsys-base
     - TEST_TYPE=work_with_315_1_10    TEST_PACKAGE=hrpsys-base
     - TEST_TYPE=work_with_downstream  TEST_PACKAGE=hrpsys-tools
