@@ -13,15 +13,24 @@ protected:
     std::vector<hrp::Vector3> leg_pos; /* default footstep transformations are necessary */
     hrp::Vector3 cog;
     gait_generator* gg;
+    bool use_gnuplot;
 private:
     void plot_and_save (FILE* gp, const std::string graph_fname, const std::string plot_str)
     {
-        gp = popen("gnuplot", "w");
         fprintf(gp, "%s\n unset multiplot\n", plot_str.c_str());
         fprintf(gp, "set terminal postscript eps color\nset output '/tmp/%s.eps'\n", graph_fname.c_str());
         fprintf(gp, "%s\n unset multiplot\n", plot_str.c_str());
         fflush(gp);
     };
+    // error check
+    bool check_zmp_error (const hrp::Vector3& czmp, const hrp::Vector3& refzmp)
+    {
+        return (czmp-refzmp).norm() < 50.0*1e-3; // [mm]
+    }
+    bool check_zmp_diff (const hrp::Vector3& prev_zmp, const hrp::Vector3& zmp)
+    {
+        return (prev_zmp - zmp).norm() < 10.0*1e-3; // [mm]
+    }
     void plot_walk_pattern ()
     {
         /* make step and dump */
@@ -30,6 +39,10 @@ private:
         FILE* fp = fopen(fname.c_str(), "w");
         hrp::Vector3 prev_rfoot_pos, prev_lfoot_pos;
         hrp::Vector3 min_rfoot_pos(1e10,1e10,1e10), min_lfoot_pos(1e10,1e10,1e10), max_rfoot_pos(-1e10,-1e10,-1e10), max_lfoot_pos(-1e10,-1e10,-1e10);
+        //
+        bool is_small_zmp_error = true;
+        bool is_small_zmp_diff = true;
+        hrp::Vector3 prev_refzmp;
         while ( gg->proc_one_tick() ) {
             //std::cerr << gg->lcg.gp_count << std::endl;
             // if ( gg->lcg.gp_index == 4 && gg->lcg.gp_count == 100) {
@@ -132,14 +145,24 @@ private:
                 max_lfoot_pos(ii) = std::max(max_lfoot_pos(ii), tmppos(ii));
             }
             fprintf(fp, "\n");
+            // Error checking
+            is_small_zmp_error = check_zmp_error(gg->get_cart_zmp(), gg->get_refzmp()) && is_small_zmp_error;
+            if (i>0) {
+                is_small_zmp_diff = check_zmp_diff(prev_refzmp, gg->get_refzmp()) && is_small_zmp_diff;
+            }
+            prev_refzmp = gg->get_refzmp();
             i++;
         }
         fclose(fp);
 
         /* plot */
+        if (use_gnuplot) {
         size_t gpsize = 7;
         size_t tmp_start = 2;
         FILE* gps[gpsize];
+        for (size_t ii = 0; ii < gpsize;ii++) {
+            gps[ii] = popen("gnuplot", "w");
+        }
         {
             std::ostringstream oss("");
             std::string gtitle("COG_and_ZMP");
@@ -281,8 +304,14 @@ private:
         double tmp;
         std::cin >> tmp;
         for (size_t ii = 0; ii < gpsize; ii++) {
+            fprintf(gps[ii], "exit\n");
+            fflush(gps[ii]);
             pclose(gps[ii]);
         }
+        }
+        std::cerr << "Checking" << std::endl;
+        std::cerr << "  ZMP error : " << is_small_zmp_error << std::endl;
+        std::cerr << "  ZMP diff : " << is_small_zmp_diff << std::endl;
     };
 
     void gen_and_plot_walk_pattern(const coordinates& initial_support_leg_coords, const coordinates& initial_swing_leg_dst_coords)
@@ -304,7 +333,7 @@ private:
 
 public:
     std::vector<std::string> arg_strs;
-    testGaitGenerator() {};
+    testGaitGenerator() : use_gnuplot(true) {};
     virtual ~testGaitGenerator()
     {
         if (gg != NULL) {
@@ -615,6 +644,8 @@ public:
               }
           } else if ( arg_strs[i]== "--optional-go-pos-finalize-footstep-num" ) {
               if (++i < arg_strs.size()) gg->set_optional_go_pos_finalize_footstep_num(atoi(arg_strs[i].c_str()));
+          } else if ( arg_strs[i]== "--use-gnuplot" ) {
+              if (++i < arg_strs.size()) use_gnuplot = (arg_strs[i]=="true");
           }
       }   
     };
