@@ -29,14 +29,14 @@ CORBA::Boolean AutoBalancerService_impl::emergencyStop()
   return m_autobalancer->emergencyStop();
 };
 
-CORBA::Boolean AutoBalancerService_impl::setFootSteps(const OpenHRP::AutoBalancerService::FootstepSequence& fs)
+CORBA::Boolean AutoBalancerService_impl::setFootSteps(const OpenHRP::AutoBalancerService::FootstepSequence& fs, CORBA::Long overwrite_fs_idx)
 {
-  return m_autobalancer->setFootSteps(fs);
+  return m_autobalancer->setFootSteps(fs, overwrite_fs_idx);
 }
 
-CORBA::Boolean AutoBalancerService_impl::setFootStepsWithParam(const OpenHRP::AutoBalancerService::FootstepSequence& fs, const OpenHRP::AutoBalancerService::StepParamSequence& sps)
+CORBA::Boolean AutoBalancerService_impl::setFootStepsWithParam(const OpenHRP::AutoBalancerService::FootstepSequence& fs, const OpenHRP::AutoBalancerService::StepParamSequence& sps, CORBA::Long overwrite_fs_idx)
 {
-  return m_autobalancer->setFootStepsWithParam(fs, sps);
+  return m_autobalancer->setFootStepsWithParam(fs, sps, overwrite_fs_idx);
 }
 
 void AutoBalancerService_impl::waitFootSteps()
@@ -97,9 +97,9 @@ CORBA::Boolean AutoBalancerService_impl::adjustFootSteps(const OpenHRP::AutoBala
     return m_autobalancer->adjustFootSteps(rfootstep, lfootstep);
 };
 
-CORBA::Boolean AutoBalancerService_impl::getRemainingFootstepSequence(OpenHRP::AutoBalancerService::FootstepSequence_out o_footstep)
+CORBA::Boolean AutoBalancerService_impl::getRemainingFootstepSequence(OpenHRP::AutoBalancerService::FootstepSequence_out o_footstep, CORBA::Long& o_current_fs_idx)
 {
-    return m_autobalancer->getRemainingFootstepSequence(o_footstep);
+    return m_autobalancer->getRemainingFootstepSequence(o_footstep, o_current_fs_idx);
 };
 
 CORBA::Boolean AutoBalancerService_impl::releaseEmergencyStop()

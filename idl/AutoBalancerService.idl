@@ -218,16 +218,18 @@ module OpenHRP
     /**
      * @brief Set footsteps. Returns without waiting for whole steps to be executed.
      * @param fs is sequence of FootStep structure.
+              overwrite_fs_idx is index to be overwritten. overwrite_fs_idx is used only in walking.
      * @return true if set successfully, false otherwise
      */
-    boolean setFootSteps(in FootstepSequence fs);
+    boolean setFootSteps(in FootstepSequence fs, in long overwrite_fs_idx);
 
     /**
      * @brief Set footsteps. Returns without waiting for whole steps to be executed.
      * @param fs is sequence of FootStepWithParam structure.
+              overwrite_fs_idx is index to be overwritten. overwrite_fs_idx is used only in walking.
      * @return true if set successfully, false otherwise
      */
-    boolean setFootStepsWithParam(in FootstepSequence fs, in StepParamSequence sps);
+    boolean setFootStepsWithParam(in FootstepSequence fs, in StepParamSequence sps, in long overwrite_fs_idx);
 
     /**
      * @brief Wait for whole footsteps are executed.
@@ -301,10 +303,11 @@ module OpenHRP
 
     /**
      * @brief Get remaining footstep list.
-     * @param o_footstep is remaining footstep sequence. For example, if initial footsteps are [rfoot(1), lfoot(2), ..., rfoot(N)] (rfoot(1) is initial support foot and lfoot(2) is initial swing destination foot) and current support foot is lfoot(X), o_footstep is [lfoot(X), rfoot(X+1), ..., rfootN].
+     * @param o_footstep is remaining footstep sequence. For example, if initial footsteps are [rfoot(0), lfoot(1), ..., rfoot(N-1)] (rfoot(0) is initial support foot and lfoot(1) is initial swing destination foot) and current support foot is lfoot(X-1), o_footstep is [rfoot(X), lfoot(X+1), ..., rfoot(N)].
+              o_current_fs_idx is current footstep index X.
      * @return true if set successfully, false otherwise
      */
-    boolean getRemainingFootstepSequence(out FootstepSequence o_footstep);
+    boolean getRemainingFootstepSequence(out FootstepSequence o_footstep, out long o_current_fs_idx);
 
     /**
      * @brief Release emergency stop mode.
