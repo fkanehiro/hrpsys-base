@@ -157,157 +157,157 @@ private:
 
         /* plot */
         if (use_gnuplot) {
-        size_t gpsize = 7;
-        size_t tmp_start = 2;
-        FILE* gps[gpsize];
-        for (size_t ii = 0; ii < gpsize;ii++) {
-            gps[ii] = popen("gnuplot", "w");
-        }
-        {
-            std::ostringstream oss("");
-            std::string gtitle("COG_and_ZMP");
-            oss << "set multiplot layout 3, 1 title '" << gtitle << "'" << std::endl;
-            std::string titles[3] = {"X", "Y", "Z"};
-            for (size_t ii = 0; ii < 3; ii++) {
+            size_t gpsize = 7;
+            size_t tmp_start = 2;
+            FILE* gps[gpsize];
+            for (size_t ii = 0; ii < gpsize;ii++) {
+                gps[ii] = popen("gnuplot", "w");
+            }
+            {
+                std::ostringstream oss("");
+                std::string gtitle("COG_and_ZMP");
+                oss << "set multiplot layout 3, 1 title '" << gtitle << "'" << std::endl;
+                std::string titles[3] = {"X", "Y", "Z"};
+                for (size_t ii = 0; ii < 3; ii++) {
+                    oss << "set xlabel 'Time [s]'" << std::endl;
+                    oss << "set ylabel '" << titles[ii] << "[m]'" << std::endl;
+                    oss << "plot "
+                        << "'" << fname << "' using 1:" << (tmp_start+ii) << " with lines title 'REFZMP',"
+                        << "'" << fname << "' using 1:" << (tmp_start+3+ii) << " with lines title 'CARTZMP',"
+                        << "'" << fname << "' using 1:" << (tmp_start+6+ii) << " with lines title 'COG'"
+                        << std::endl;
+                }
+                plot_and_save(gps[0], gtitle, oss.str());
+                tmp_start += 9;
+            }
+            {
+                std::ostringstream oss("");
+                std::string gtitle("Swing_support_pos");
+                oss << "set multiplot layout 3, 1 title '" << gtitle << "'" << std::endl;
+                std::string titles[3] = {"X", "Y", "Z"};
+                for (size_t ii = 0; ii < 3; ii++) {
+                    oss << "set xlabel 'Time [s]'" << std::endl;
+                    oss << "set ylabel '" << titles[ii] << "[m]'" << std::endl;
+                    oss << "plot "
+                        << "'" << fname << "' using 1:" << (tmp_start+ii) << " with lines title 'rleg',"
+                        << "'" << fname << "' using 1:" << (tmp_start+3+ii) << " with lines title 'lleg'"
+                        << std::endl;
+                }
+                plot_and_save(gps[1], gtitle, oss.str());
+                tmp_start += 6;
+            }
+            {
+                std::ostringstream oss("");
+                std::string gtitle("Swing_support_rot");
+                oss << "set multiplot layout 3, 1 title '" << gtitle << "'" << std::endl;
+                std::string titles[3] = {"Roll", "Pitch", "Yaw"};
+                for (size_t ii = 0; ii < 3; ii++) {
+                    oss << "set xlabel 'Time [s]'" << std::endl;
+                    oss << "set ylabel '" << titles[ii] << "[deg]'" << std::endl;
+                    oss << "plot "
+                        << "'" << fname << "' using 1:" << (tmp_start+ii) << " with lines title 'rleg',"
+                        << "'" << fname << "' using 1:" << (tmp_start+3+ii) << " with lines title 'lleg'"
+                        << std::endl;
+                }
+                plot_and_save(gps[2], gtitle, oss.str());
+                tmp_start += 6;
+            }
+            {
+                std::ostringstream oss("");
+                std::string gtitle("Swing_support_zmp_offset");
+                oss << "set multiplot layout 3, 1 title '" << gtitle << "'" << std::endl;
+                std::string titles[3] = {"X", "Y", "Z"};
+                for (size_t ii = 0; ii < 3; ii++) {
+                    oss << "set xlabel 'Time [s]'" << std::endl;
+                    oss << "set ylabel '" << titles[ii] << "[m]'" << std::endl;
+                    oss << "plot "
+                        << "'" << fname << "' using 1:" << (tmp_start+ii) << " with lines title 'rleg',"
+                        << "'" << fname << "' using 1:" << (tmp_start+3+ii) << " with lines title 'lleg'"
+                        << std::endl;
+                }
+                plot_and_save(gps[3], gtitle, oss.str());
+                tmp_start += 6;
+            }
+            {
+                std::ostringstream oss("");
+                std::string gtitle("Swing_support_remain_time");
+                oss << "set multiplot layout 1, 1 title '" << gtitle << "'" << std::endl;
+                oss << "set title 'Remain Time'" << std::endl;
                 oss << "set xlabel 'Time [s]'" << std::endl;
-                oss << "set ylabel '" << titles[ii] << "[m]'" << std::endl;
+                oss << "set ylabel 'Time [s]'" << std::endl;
                 oss << "plot "
-                    << "'" << fname << "' using 1:" << (tmp_start+ii) << " with lines title 'REFZMP',"
-                    << "'" << fname << "' using 1:" << (tmp_start+3+ii) << " with lines title 'CARTZMP',"
-                    << "'" << fname << "' using 1:" << (tmp_start+6+ii) << " with lines title 'COG'"
+                    << "'" << fname << "' using 1:" << (tmp_start+0) << " with lines title 'rleg',"
+                    << "'" << fname << "' using 1:" << (tmp_start+1) << " with lines title 'lleg'"
                     << std::endl;
+                plot_and_save(gps[4], gtitle, oss.str());
+                tmp_start += 2;
             }
-            plot_and_save(gps[0], gtitle, oss.str());
-            tmp_start += 9;
-        }
-        {
-            std::ostringstream oss("");
-            std::string gtitle("Swing_support_pos");
-            oss << "set multiplot layout 3, 1 title '" << gtitle << "'" << std::endl;
-            std::string titles[3] = {"X", "Y", "Z"};
-            for (size_t ii = 0; ii < 3; ii++) {
-                oss << "set xlabel 'Time [s]'" << std::endl;
-                oss << "set ylabel '" << titles[ii] << "[m]'" << std::endl;
+            {
+                std::ostringstream oss("");
+                std::string gtitle("Swing_support_vel");
+                oss << "set multiplot layout 3, 1 title '" << gtitle << "'" << std::endl;
+                std::string titles[3] = {"X", "Y", "Z"};
+                for (size_t ii = 0; ii < 3; ii++) {
+                    oss << "set xlabel 'Time [s]'" << std::endl;
+                    oss << "set ylabel '" << titles[ii] << "[m]'" << std::endl;
+                    oss << "plot "
+                        << "'" << fname << "' using 1:" << (tmp_start+ii) << " with lines title 'rleg',"
+                        << "'" << fname << "' using 1:" << (tmp_start+3+ii) << " with lines title 'lleg'"
+                        << std::endl;
+                }
+                plot_and_save(gps[5], gtitle, oss.str());
+                tmp_start += 6;
+            }
+            {
+                std::ostringstream oss("");
+                std::string gtitle("Swing_support_pos_trajectory");
+                double min_v[3], max_v[3], range[3];
+                for (size_t ii = 0; ii < 3; ii++) {
+                    min_v[ii] = std::min(min_rfoot_pos(ii), min_lfoot_pos(ii));
+                    max_v[ii] = std::max(max_rfoot_pos(ii), max_lfoot_pos(ii));
+                    range[ii] = max_v[ii] - min_v[ii];
+                    double mid = (max_v[ii]+min_v[ii])/2.0;
+                    min_v[ii] = mid + range[ii] * 1.05 * -0.5;
+                    max_v[ii] = mid + range[ii] * 1.05 * 0.5;
+                }
+                oss << "set multiplot layout 2, 1 title '" << gtitle << "'" << std::endl;
+                //oss << "set title 'X-Z'" << std::endl;
+                oss << "set size ratio " << range[2]/range[0] << std::endl;
+                oss << "set xlabel 'X [m]'" << std::endl;            
+                oss << "set ylabel 'Z [m]'" << std::endl;            
                 oss << "plot "
-                    << "'" << fname << "' using 1:" << (tmp_start+ii) << " with lines title 'rleg',"
-                    << "'" << fname << "' using 1:" << (tmp_start+3+ii) << " with lines title 'lleg'"
+                    << "[" << min_v[0]<< ":" << max_v[0] << "]"
+                    << "[" << min_v[2] << ":" << max_v[2] << "]"
+                    << "'" << fname << "' using " << (2+3+3+3+0) << ":" << (2+3+3+3+2)  << " with lines title 'rleg ee',"
+                    << "'" << fname << "' using " << (2+3+3+3+3+0) << ":" << (2+3+3+3+3+2) << " with lines title 'lleg ee',"
+                    << "'" << fname << "' using " << (tmp_start) << ":" << (tmp_start+2)  << " with lines title 'rleg toe',"
+                    << "'" << fname << "' using " << (tmp_start+3) << ":" << (tmp_start+3+2)  << " with lines title 'lleg toe',"
+                    << "'" << fname << "' using " << (tmp_start+3+3) << ":" << (tmp_start+3+3+2)  << " with lines title 'rleg heel',"
+                    << "'" << fname << "' using " << (tmp_start+3+3+3) << ":" << (tmp_start+3+3+3+2)  << " with lines title 'lleg heel'"
                     << std::endl;
-            }
-            plot_and_save(gps[1], gtitle, oss.str());
-            tmp_start += 6;
-        }
-        {
-            std::ostringstream oss("");
-            std::string gtitle("Swing_support_rot");
-            oss << "set multiplot layout 3, 1 title '" << gtitle << "'" << std::endl;
-            std::string titles[3] = {"Roll", "Pitch", "Yaw"};
-            for (size_t ii = 0; ii < 3; ii++) {
-                oss << "set xlabel 'Time [s]'" << std::endl;
-                oss << "set ylabel '" << titles[ii] << "[deg]'" << std::endl;
+                //oss << "set title 'Y-Z'" << std::endl;
+                oss << "set size ratio " << range[2]/range[1] << std::endl;
+                oss << "set xlabel 'Y [m]'" << std::endl;            
+                oss << "set ylabel 'Z [m]'" << std::endl;            
                 oss << "plot "
-                    << "'" << fname << "' using 1:" << (tmp_start+ii) << " with lines title 'rleg',"
-                    << "'" << fname << "' using 1:" << (tmp_start+3+ii) << " with lines title 'lleg'"
+                    << "[" << min_v[1]<< ":" << max_v[1] << "]"
+                    << "[" << min_v[2] << ":" << max_v[2] << "]"
+                    << "'" << fname << "' using " << (2+3+3+3+1) << ":" << (2+3+3+3+2)  << " with lines title 'rleg ee',"
+                    << "'" << fname << "' using " << (2+3+3+3+3+1) << ":" << (2+3+3+3+3+2) << " with lines title 'lleg ee',"
+                    << "'" << fname << "' using " << (tmp_start+1) << ":" << (tmp_start+2)  << " with lines title 'rleg toe',"
+                    << "'" << fname << "' using " << (tmp_start+3+1) << ":" << (tmp_start+3+2)  << " with lines title 'lleg toe',"
+                    << "'" << fname << "' using " << (tmp_start+3+3+1) << ":" << (tmp_start+3+3+2)  << " with lines title 'rleg heel',"
+                    << "'" << fname << "' using " << (tmp_start+3+3+3+1) << ":" << (tmp_start+3+3+3+2)  << " with lines title 'lleg heel'"
                     << std::endl;
+                plot_and_save(gps[6], gtitle, oss.str());
             }
-            plot_and_save(gps[2], gtitle, oss.str());
-            tmp_start += 6;
-        }
-        {
-            std::ostringstream oss("");
-            std::string gtitle("Swing_support_zmp_offset");
-            oss << "set multiplot layout 3, 1 title '" << gtitle << "'" << std::endl;
-            std::string titles[3] = {"X", "Y", "Z"};
-            for (size_t ii = 0; ii < 3; ii++) {
-                oss << "set xlabel 'Time [s]'" << std::endl;
-                oss << "set ylabel '" << titles[ii] << "[m]'" << std::endl;
-                oss << "plot "
-                    << "'" << fname << "' using 1:" << (tmp_start+ii) << " with lines title 'rleg',"
-                    << "'" << fname << "' using 1:" << (tmp_start+3+ii) << " with lines title 'lleg'"
-                    << std::endl;
+            double tmp;
+            std::cin >> tmp;
+            for (size_t ii = 0; ii < gpsize; ii++) {
+                fprintf(gps[ii], "exit\n");
+                fflush(gps[ii]);
+                pclose(gps[ii]);
             }
-            plot_and_save(gps[3], gtitle, oss.str());
-            tmp_start += 6;
-        }
-        {
-            std::ostringstream oss("");
-            std::string gtitle("Swing_support_remain_time");
-            oss << "set multiplot layout 1, 1 title '" << gtitle << "'" << std::endl;
-            oss << "set title 'Remain Time'" << std::endl;
-            oss << "set xlabel 'Time [s]'" << std::endl;
-            oss << "set ylabel 'Time [s]'" << std::endl;
-            oss << "plot "
-                << "'" << fname << "' using 1:" << (tmp_start+0) << " with lines title 'rleg',"
-                << "'" << fname << "' using 1:" << (tmp_start+1) << " with lines title 'lleg'"
-                << std::endl;
-            plot_and_save(gps[4], gtitle, oss.str());
-            tmp_start += 2;
-        }
-        {
-            std::ostringstream oss("");
-            std::string gtitle("Swing_support_vel");
-            oss << "set multiplot layout 3, 1 title '" << gtitle << "'" << std::endl;
-            std::string titles[3] = {"X", "Y", "Z"};
-            for (size_t ii = 0; ii < 3; ii++) {
-                oss << "set xlabel 'Time [s]'" << std::endl;
-                oss << "set ylabel '" << titles[ii] << "[m]'" << std::endl;
-                oss << "plot "
-                    << "'" << fname << "' using 1:" << (tmp_start+ii) << " with lines title 'rleg',"
-                    << "'" << fname << "' using 1:" << (tmp_start+3+ii) << " with lines title 'lleg'"
-                    << std::endl;
-            }
-            plot_and_save(gps[5], gtitle, oss.str());
-            tmp_start += 6;
-        }
-        {
-            std::ostringstream oss("");
-            std::string gtitle("Swing_support_pos_trajectory");
-            double min_v[3], max_v[3], range[3];
-            for (size_t ii = 0; ii < 3; ii++) {
-                min_v[ii] = std::min(min_rfoot_pos(ii), min_lfoot_pos(ii));
-                max_v[ii] = std::max(max_rfoot_pos(ii), max_lfoot_pos(ii));
-                range[ii] = max_v[ii] - min_v[ii];
-                double mid = (max_v[ii]+min_v[ii])/2.0;
-                min_v[ii] = mid + range[ii] * 1.05 * -0.5;
-                max_v[ii] = mid + range[ii] * 1.05 * 0.5;
-            }
-            oss << "set multiplot layout 2, 1 title '" << gtitle << "'" << std::endl;
-            //oss << "set title 'X-Z'" << std::endl;
-            oss << "set size ratio " << range[2]/range[0] << std::endl;
-            oss << "set xlabel 'X [m]'" << std::endl;            
-            oss << "set ylabel 'Z [m]'" << std::endl;            
-            oss << "plot "
-                << "[" << min_v[0]<< ":" << max_v[0] << "]"
-                << "[" << min_v[2] << ":" << max_v[2] << "]"
-                << "'" << fname << "' using " << (2+3+3+3+0) << ":" << (2+3+3+3+2)  << " with lines title 'rleg ee',"
-                << "'" << fname << "' using " << (2+3+3+3+3+0) << ":" << (2+3+3+3+3+2) << " with lines title 'lleg ee',"
-                << "'" << fname << "' using " << (tmp_start) << ":" << (tmp_start+2)  << " with lines title 'rleg toe',"
-                << "'" << fname << "' using " << (tmp_start+3) << ":" << (tmp_start+3+2)  << " with lines title 'lleg toe',"
-                << "'" << fname << "' using " << (tmp_start+3+3) << ":" << (tmp_start+3+3+2)  << " with lines title 'rleg heel',"
-                << "'" << fname << "' using " << (tmp_start+3+3+3) << ":" << (tmp_start+3+3+3+2)  << " with lines title 'lleg heel'"
-                << std::endl;
-            //oss << "set title 'Y-Z'" << std::endl;
-            oss << "set size ratio " << range[2]/range[1] << std::endl;
-            oss << "set xlabel 'Y [m]'" << std::endl;            
-            oss << "set ylabel 'Z [m]'" << std::endl;            
-            oss << "plot "
-                << "[" << min_v[1]<< ":" << max_v[1] << "]"
-                << "[" << min_v[2] << ":" << max_v[2] << "]"
-                << "'" << fname << "' using " << (2+3+3+3+1) << ":" << (2+3+3+3+2)  << " with lines title 'rleg ee',"
-                << "'" << fname << "' using " << (2+3+3+3+3+1) << ":" << (2+3+3+3+3+2) << " with lines title 'lleg ee',"
-                << "'" << fname << "' using " << (tmp_start+1) << ":" << (tmp_start+2)  << " with lines title 'rleg toe',"
-                << "'" << fname << "' using " << (tmp_start+3+1) << ":" << (tmp_start+3+2)  << " with lines title 'lleg toe',"
-                << "'" << fname << "' using " << (tmp_start+3+3+1) << ":" << (tmp_start+3+3+2)  << " with lines title 'rleg heel',"
-                << "'" << fname << "' using " << (tmp_start+3+3+3+1) << ":" << (tmp_start+3+3+3+2)  << " with lines title 'lleg heel'"
-                << std::endl;
-            plot_and_save(gps[6], gtitle, oss.str());
-        }
-        double tmp;
-        std::cin >> tmp;
-        for (size_t ii = 0; ii < gpsize; ii++) {
-            fprintf(gps[ii], "exit\n");
-            fflush(gps[ii]);
-            pclose(gps[ii]);
-        }
         }
         std::cerr << "Checking" << std::endl;
         std::cerr << "  ZMP error : " << is_small_zmp_error << std::endl;
