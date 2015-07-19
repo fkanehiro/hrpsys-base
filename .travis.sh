@@ -149,6 +149,8 @@ case $TEST_PACKAGE in
                 travis_time_start  compile_hrpsys
 
                 cd ~/build && cmake ${CI_SOURCE_PATH} ${COMPILE_OPTION} && make
+                # Check make test by passing PATH to bin directory
+                PATH=$PATH:~/build/bin make test
 
                 travis_time_end
                 ;;
@@ -350,6 +352,9 @@ case $TEST_PACKAGE in
         fi
         travis_time_end
 
+        # Check make test
+        (cd ~/catkin_ws/build_isolated/hrpsys/install && make test)
+        # Check rostest
         sudo /etc/init.d/omniorb4-nameserver stop || echo "stop omniserver just in case..."
         export EXIT_STATUS=0;
         pkg_path=`rospack find \`echo $pkg | sed s/-/_/g\``
