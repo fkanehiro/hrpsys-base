@@ -14,9 +14,15 @@ struct gait_parameter /* for test */
 
 #include<cstdio>
 
-int main()
+int main(int argc, char* argv[])
 {
   /* this is c++ version example of test-preview-filter1-modified in euslib/jsk/preview.l*/
+  bool use_gnuplot = true;
+  if (argc >= 2) {
+      if ( std::string(argv[1])== "--use-gnuplot" ) {
+          use_gnuplot = (std::string(argv[2])=="true");
+      }
+  }
 
   double dt = 0.01, max_tm = 8.0;
   std::queue<hrp::Vector3> ref_zmp_list;
@@ -64,6 +70,7 @@ int main()
     if (!ref_zmp_list.empty()) ref_zmp_list.pop();
   }
   fclose(fp);
+  if (use_gnuplot) {
   FILE* gp[3];
   std::string titles[2] = {"X", "Y"};
   for (size_t ii = 0; ii < 2; ii++) {
@@ -77,5 +84,6 @@ int main()
   double tmp;
   std::cin >> tmp;
   for (size_t j = 0; j < 2; j++) pclose(gp[j]);
+  }
   return 0;
 }
