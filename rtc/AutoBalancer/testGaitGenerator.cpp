@@ -13,15 +13,8 @@ protected:
     std::vector<hrp::Vector3> leg_pos; /* default footstep transformations are necessary */
     hrp::Vector3 cog;
     gait_generator* gg;
-    bool use_gnuplot;
+    bool use_gnuplot, is_small_zmp_error, is_small_zmp_diff;
 private:
-    void plot_and_save (FILE* gp, const std::string graph_fname, const std::string plot_str)
-    {
-        fprintf(gp, "%s\n unset multiplot\n", plot_str.c_str());
-        fprintf(gp, "set terminal postscript eps color\nset output '/tmp/%s.eps'\n", graph_fname.c_str());
-        fprintf(gp, "%s\n unset multiplot\n", plot_str.c_str());
-        fflush(gp);
-    };
     // error check
     bool check_zmp_error (const hrp::Vector3& czmp, const hrp::Vector3& refzmp)
     {
@@ -31,6 +24,14 @@ private:
     {
         return (prev_zmp - zmp).norm() < 10.0*1e-3; // [mm]
     }
+    // plot and pattern generation
+    void plot_and_save (FILE* gp, const std::string graph_fname, const std::string plot_str)
+    {
+        fprintf(gp, "%s\n unset multiplot\n", plot_str.c_str());
+        fprintf(gp, "set terminal postscript eps color\nset output '/tmp/%s.eps'\n", graph_fname.c_str());
+        fprintf(gp, "%s\n unset multiplot\n", plot_str.c_str());
+        fflush(gp);
+    };
     void plot_walk_pattern ()
     {
         /* make step and dump */
@@ -40,8 +41,6 @@ private:
         hrp::Vector3 prev_rfoot_pos, prev_lfoot_pos;
         hrp::Vector3 min_rfoot_pos(1e10,1e10,1e10), min_lfoot_pos(1e10,1e10,1e10), max_rfoot_pos(-1e10,-1e10,-1e10), max_lfoot_pos(-1e10,-1e10,-1e10);
         //
-        bool is_small_zmp_error = true;
-        bool is_small_zmp_diff = true;
         hrp::Vector3 prev_refzmp;
         while ( gg->proc_one_tick() ) {
             //std::cerr << gg->lcg.gp_count << std::endl;
@@ -333,7 +332,7 @@ private:
 
 public:
     std::vector<std::string> arg_strs;
-    testGaitGenerator() : use_gnuplot(true) {};
+    testGaitGenerator() : use_gnuplot(true), is_small_zmp_error(true), is_small_zmp_diff(true) {};
     virtual ~testGaitGenerator()
     {
         if (gg != NULL) {
@@ -649,6 +648,11 @@ public:
           }
       }   
     };
+
+    bool check_all_results ()
+    {
+        return is_small_zmp_error && is_small_zmp_diff;
+    };
 };
 
 class testGaitGeneratorHRP2JSK : public testGaitGenerator
@@ -688,6 +692,7 @@ void print_usage ()
 
 int main(int argc, char* argv[])
 {
+  int ret = 0;
   if (argc >= 2) {
       testGaitGeneratorHRP2JSK tgg;
       for (int i = 1; i < argc; ++ i) {
@@ -725,10 +730,13 @@ int main(int argc, char* argv[])
           tgg.test14();
       } else {
           print_usage();
+          ret = 1;
       }
+      ret = (tgg.check_all_results()?0:2);
   } else {
       print_usage();
+      ret = 1;
   }
-  return 0;
+  return ret;
 }
 
