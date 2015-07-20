@@ -29,17 +29,16 @@ def init ():
     f.close()
     # set bodyinfo
     bodyinfo=hcf.getBodyInfo("$(PROJECT_DIR)/../model/sample1.wrl")
-
-def demo ():
-    init()
     # set initial pose from sample/controller/SampleController/etc/Sample.pos
     hcf.seq_svc.setJointAngles(initial_pose, 2.0)
     hcf.seq_svc.waitInterpolation()
 
-    # 1. demo all jointLimitTables
+def demo ():
+    init()
     demoTestAllLimitTables()
 
 def demoTestAllLimitTables():
+    print "1. demo all jointLimitTables"
     for table_idx in range(len(limit_table_list)/6):
         testLimitTables(table_idx)
 
