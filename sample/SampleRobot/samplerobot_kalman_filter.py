@@ -130,23 +130,30 @@ def test_walk ():
     hcf.abc_svc.goPos(0.1,0,0)
     hcf.abc_svc.waitFootSteps()
 
-def demo():
-    init()
-
-    # 1. getParameter
+def demoGetKalmanFilterParameter():
+    print "1. getParameter"
     ret=hcf.kf_svc.getKalmanFilterParam()
     if ret[0]:
-        print "getKalmanFilterParam() => OK"
+        print "  getKalmanFilterParam() => OK"
+    assert(ret[0])
 
-    # 2. setParameter
+def demoSetKalmanFilterParameter():
+    print "2. setParameter"
     kfp=hcf.kf_svc.getKalmanFilterParam()[1]
     kfp.Q_angle = 0.001;
     kfp.Q_rate = 0.003;
     kfp.R_angle = 100;
     ret=hcf.kf_svc.setKalmanFilterParam(kfp)
     kfp2=hcf.kf_svc.getKalmanFilterParam()[1]
-    if ret and kfp.Q_angle == kfp2.Q_angle and kfp.Q_rate == kfp2.Q_rate and kfp.R_angle == kfp2.R_angle:
-        print "setKalmanFilterParam() => OK"
+    ret2 = ret and kfp.Q_angle == kfp2.Q_angle and kfp.Q_rate == kfp2.Q_rate and kfp.R_angle == kfp2.R_angle
+    if ret2:
+        print "  setKalmanFilterParam() => OK"
+    assert(ret2)
+
+def demo():
+    init()
+    demoGetKalmanFilterParameter()
+    demoSetKalmanFilterParameter()
 
     # 3. check log and plot
     hcf.kf_svc.resetKalmanFilterState()
