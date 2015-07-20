@@ -22,13 +22,13 @@ def init ():
     # set initial pose from sample/controller/SampleController/etc/Sample.pos
     initial_pose = [-7.779e-005,  -0.378613,  -0.000209793,  0.832038,  -0.452564,  0.000244781,  0.31129,  -0.159481,  -0.115399,  -0.636277,  0,  0,  0,  -7.77902e-005,  -0.378613,  -0.000209794,  0.832038,  -0.452564,  0.000244781,  0.31129,  0.159481,  0.115399,  -0.636277,  0,  0,  0,  0,  0,  0]
     hcf.seq_svc.setJointAngles(initial_pose, 2.0)
-    hcf.seq_svc.waitInterpolation()
+    hcf.waitInterpolation()
 
 def demoSaveLog():
     print "1. Save log"
     # Save log files for each ports as /tmp/test-samplerobot-log.*
     #   file names are /tmp/test-samplerobot-log.[RTCName]_[PortName], c.f.,  /tmp/test-samplerobot-log.sh_qOut ... etc
-    hcf.log_svc.save("/tmp/test-samplerobot-log")
+    hcf.saveLog("/tmp/test-samplerobot-log")
     ret = os.path.exists("/tmp/test-samplerobot-log.sh_qOut")
     if ret:
         print "  save() =>OK"
@@ -36,16 +36,16 @@ def demoSaveLog():
 
 def demoClearLog():
     print "2. Clear buffer"
-    hcf.log_svc.clear()
+    hcf.clearLog()
     print "  clear() =>OK"
     assert(True)
 
 def demoSetMaxLogLength():
     print "3. Set max ring-buffer length : 100 [loop] * 0.002 [s] = 0.2 [s] data"
-    hcf.log_svc.maxLength(100)
+    hcf.setMaxLogLength(100)
     hcf.seq_svc.setJointAngles(initial_pose, 0.2) # wait
-    hcf.seq_svc.waitInterpolation()
-    hcf.log_svc.save("/tmp/test-samplerobot-log")
+    hcf.waitInterpolation()
+    hcf.saveLog("/tmp/test-samplerobot-log")
     from subprocess import check_output
     ret = check_output(['wc', '-l', '/tmp/test-samplerobot-log.sh_qOut']).split(" ")[0] == '100'
     if ret:
