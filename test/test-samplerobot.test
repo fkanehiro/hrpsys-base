@@ -11,4 +11,8 @@
         args="-ORBInitRef NameService=corbaloc:iiop:localhost:2809/NameService" retry="2" />
   <test test-name="samplerobot_sequence" pkg="hrpsys" type="test-samplerobot-sequence.py"
         args="-ORBInitRef NameService=corbaloc:iiop:localhost:2809/NameService" retry="2" time-limit="120"/>
+  <test test-name="samplerobot_data_logger" pkg="hrpsys" type="test-samplerobot-datalogger.py"
+        args="-ORBInitRef NameService=corbaloc:iiop:localhost:2809/NameService" retry="2"/>
+  <test test-name="samplerobot_collision_detector" pkg="hrpsys" type="test-samplerobot-collision.py"
+        args="-ORBInitRef NameService=corbaloc:iiop:localhost:2809/NameService" retry="2"/>
 </launch>
