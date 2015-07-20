@@ -14,46 +14,104 @@ except:
     import time
 
 def init ():
-    global hcf
+    global hcf, initial_pose
     hcf = HrpsysConfigurator()
     hcf.getRTCList = hcf.getRTCListUnstable
     hcf.init ("SampleRobot(Robot)0", "$(PROJECT_DIR)/../model/sample1.wrl")
+    # set initial pose from sample/controller/SampleController/etc/Sample.pos
+    initial_pose = [-7.779e-005,  -0.378613,  -0.000209793,  0.832038,  -0.452564,  0.000244781,  0.31129,  -0.159481,  -0.115399,  -0.636277,  0,  0,  0.637045,  -7.77902e-005,  -0.378613,  -0.000209794,  0.832038,  -0.452564,  0.000244781,  0.31129,  0.159481,  0.115399,  -0.636277,  0,  0,  -0.637045,  0,  0,  0]
+    hcf.seq_svc.setJointAngles(initial_pose, 2.5)
+    hcf.waitInterpolation()
+
+def demoGetForceMomentOffsetParam ():
+    print "1. GetForceMomentOffsetParam"
+    for fs_name in ["rhsensor", "lhsensor"]:
+        ret = hcf.rmfo_svc.getForceMomentOffsetParam(fs_name)
+        if ret[0]:
+            print "    getForceMomentOffsetParam('", fs_name,"') => OK"
+        assert(ret[0] is True)
+
+def demoSetForceMomentOffsetParam ():
+    print "2. SetForceMomentOffsetParam"
+    print "  Force and moment are large because of link offsets"
+    for fs_name in ["rhsensor", "lhsensor"]:
+        fm = numpy.linalg.norm(rtm.readDataPort(hcf.rmfo.port("off_"+fs_name)).data)
+        vret = fm > 5e-2
+        print "    no-offset-removed force moment (",fs_name,") ", fm, "=> ", vret
+        assert(vret)
+    print "  Set link offsets (link_offset_centroid and link_offset_mass are identified value)."
+    # Get param
+    r_fmop = hcf.rmfo_svc.getForceMomentOffsetParam("rhsensor")[1]
+    r_fmop.link_offset_centroid = [0,0.0368,-0.076271]
+    r_fmop.link_offset_mass = 0.80011
+    l_fmop = hcf.rmfo_svc.getForceMomentOffsetParam("lhsensor")[1]
+    l_fmop.link_offset_centroid = [0,-0.0368,-0.076271]
+    l_fmop.link_offset_mass = 0.80011
+    # Set param
+    hcf.rmfo_svc.setForceMomentOffsetParam("rhsensor", r_fmop)
+    hcf.rmfo_svc.setForceMomentOffsetParam("lhsensor", l_fmop)
+    # Check values
+    ret = hcf.rmfo_svc.getForceMomentOffsetParam("rhsensor")
+    if ret[0] and ret[1].link_offset_mass == r_fmop.link_offset_mass and ret[1].link_offset_centroid == r_fmop.link_offset_centroid:
+        print "    getForceMomentOffsetParam('rhsensor') => OK"
+    assert((ret[0] and ret[1].link_offset_mass == r_fmop.link_offset_mass and ret[1].link_offset_centroid == r_fmop.link_offset_centroid))
+    ret = hcf.rmfo_svc.getForceMomentOffsetParam("lhsensor")
+    if ret[0] and ret[1].link_offset_mass == l_fmop.link_offset_mass and ret[1].link_offset_centroid == l_fmop.link_offset_centroid:
+        print "    getForceMomentOffsetParam('lhsensor') => OK"
+    assert((ret[0] and ret[1].link_offset_mass == l_fmop.link_offset_mass and ret[1].link_offset_centroid == l_fmop.link_offset_centroid))
+    print "  Force and moment are reduced"
+    for fs_name in ["rhsensor", "lhsensor"]:
+        fm = numpy.linalg.norm(rtm.readDataPort(hcf.rmfo.port("off_"+fs_name)).data)
+        vret = fm < 5e-2
+        print "    no-offset-removed force moment (",fs_name,") ", fm, "=> ", vret
+        assert(vret)
+
+def demoDumpLoadForceMomentOffsetParams():
+    print "3. Dump and load parameter file"
+    print "  Get and set param"
+    r_fmop = hcf.rmfo_svc.getForceMomentOffsetParam("rhsensor")[1]
+    r_fmop.link_offset_centroid = [0,0.0368,-0.076271]
+    r_fmop.link_offset_mass = 0.80011
+    l_fmop = hcf.rmfo_svc.getForceMomentOffsetParam("lhsensor")[1]
+    l_fmop.link_offset_centroid = [0,-0.0368,-0.076271]
+    l_fmop.link_offset_mass = 0.80011
+    hcf.rmfo_svc.setForceMomentOffsetParam("rhsensor", r_fmop)
+    hcf.rmfo_svc.setForceMomentOffsetParam("lhsensor", l_fmop)
+    print "  Dump param as file"
+    ret = hcf.rmfo_svc.dumpForceMomentOffsetParams("/tmp/test-rmfo-offsets.dat")
+    print "  Value check"
+    data_str=filter(lambda x : x.find("lhsensor") >= 0, open("/tmp/test-rmfo-offsets.dat", "r").read().split("\n"))[0]
+    vcheck = map(float, data_str.split(" ")[7:10]) == l_fmop.link_offset_centroid and float(data_str.split(" ")[10]) == l_fmop.link_offset_mass
+    data_str=filter(lambda x : x.find("rhsensor") >= 0, open("/tmp/test-rmfo-offsets.dat", "r").read().split("\n"))[0]
+    vcheck = vcheck and map(float, data_str.split(" ")[7:10]) == r_fmop.link_offset_centroid and float(data_str.split(" ")[10]) == r_fmop.link_offset_mass
+    import os
+    if ret and os.path.exists("/tmp/test-rmfo-offsets.dat") and vcheck:
+        print "    dumpForceMomentOffsetParams => OK"
+    assert((ret and os.path.exists("/tmp/test-rmfo-offsets.dat") and vcheck))
+    print "  Resetting values"
+    r_fmop2 = hcf.rmfo_svc.getForceMomentOffsetParam("rhsensor")[1]
+    r_fmop2.link_offset_centroid = [0,0,0]
+    r_fmop2.link_offset_mass = 0
+    l_fmop2 = hcf.rmfo_svc.getForceMomentOffsetParam("lhsensor")[1]
+    l_fmop2.link_offset_centroid = [0,0,0]
+    l_fmop2.link_offset_mass = 0
+    hcf.rmfo_svc.setForceMomentOffsetParam("rhsensor", r_fmop2)
+    hcf.rmfo_svc.setForceMomentOffsetParam("lhsensor", l_fmop2)
+    print "  Load from file"
+    ret = hcf.rmfo_svc.loadForceMomentOffsetParams("/tmp/test-rmfo-offsets.dat")
+    r_fmop3 = hcf.rmfo_svc.getForceMomentOffsetParam("rhsensor")[1]
+    l_fmop3 = hcf.rmfo_svc.getForceMomentOffsetParam("lhsensor")[1]
+    vcheck = r_fmop3.link_offset_mass == r_fmop.link_offset_mass and r_fmop3.link_offset_centroid == r_fmop.link_offset_centroid and l_fmop3.link_offset_mass == l_fmop.link_offset_mass and l_fmop3.link_offset_centroid == l_fmop.link_offset_centroid
+    if ret and vcheck:
+        print "    loadForceMomentOffsetParams => OK"
+    assert((ret and vcheck))
 
 def demo():
     import numpy
     init()
-    # set initial pose from sample/controller/SampleController/etc/Sample.pos
-    initial_pose = [-7.779e-005,  -0.378613,  -0.000209793,  0.832038,  -0.452564,  0.000244781,  0.31129,  -0.159481,  -0.115399,  -0.636277,  0,  0,  0.637045,  -7.77902e-005,  -0.378613,  -0.000209794,  0.832038,  -0.452564,  0.000244781,  0.31129,  0.159481,  0.115399,  -0.636277,  0,  0,  -0.637045,  0,  0,  0]
-    hcf.seq_svc.setJointAngles(initial_pose, 2.5)
-    hcf.seq_svc.waitInterpolation()
-    # 1. force and moment are large because of link offsets
-    fm=numpy.linalg.norm(rtm.readDataPort(hcf.rmfo.port("off_rhsensor")).data)
-    print "no-offset-removed force moment (rhsensor) ", fm, "=> ", fm > 1e-2
-    fm=numpy.linalg.norm(rtm.readDataPort(hcf.rmfo.port("off_lhsensor")).data)
-    print "no-offset-removed force moment (lhsensor) ", fm, "=> ", fm > 1e-2
-    # 2. Set link offsets
-    #    link_offset_centroid and link_offset_mass are identified value.
-    hcf.rmfo_svc.setForceMomentOffsetParam("rhsensor", OpenHRP.RemoveForceSensorLinkOffsetService.forcemomentOffsetParam(force_offset=[0,0,0], moment_offset=[0,0,0], link_offset_centroid=[0,0.0368,-0.076271], link_offset_mass=0.800011))
-    hcf.rmfo_svc.setForceMomentOffsetParam("lhsensor", OpenHRP.RemoveForceSensorLinkOffsetService.forcemomentOffsetParam(force_offset=[0,0,0], moment_offset=[0,0,0], link_offset_centroid=[0,-0.0368,-0.076271], link_offset_mass=0.800011))
-    ret = hcf.rmfo_svc.getForceMomentOffsetParam("rhsensor")
-    if ret[0] and ret[1].link_offset_mass == 0.800011:
-        print "getForceMomentOffsetParam(\"rhsensor\") => OK"
-    ret = hcf.rmfo_svc.getForceMomentOffsetParam("lhsensor")
-    if ret[0] and ret[1].link_offset_mass == 0.800011:
-        print "getForceMomentOffsetParam(\"lhsensor\") => OK"
-    # 3. force and moment are reduced
-    fm=numpy.linalg.norm(rtm.readDataPort(hcf.rmfo.port("off_rhsensor")).data)
-    print "no-offset-removed force moment (rhsensor) ", fm, "=> ", fm < 1e-2
-    fm=numpy.linalg.norm(rtm.readDataPort(hcf.rmfo.port("off_lhsensor")).data)
-    print "no-offset-removed force moment (lhsensor) ", fm, "=> ", fm < 1e-2
-
-    # 4. dump and load parameter file
-    ret=hcf.rmfo_svc.dumpForceMomentOffsetParams("/tmp/test-rmfo-offsets.dat")
-    if ret:
-        print "dumpForceMomentOffsetParams => OK"
-    ret=hcf.rmfo_svc.loadForceMomentOffsetParams("/tmp/test-rmfo-offsets.dat")
-    if ret:
-        print "loadForceMomentOffsetParams => OK"
+    demoGetForceMomentOffsetParam()
+    demoSetForceMomentOffsetParam()
+    demoDumpLoadForceMomentOffsetParams()
 
 if __name__ == '__main__':
     demo()
