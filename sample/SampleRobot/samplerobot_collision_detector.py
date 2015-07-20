@@ -29,7 +29,8 @@ def demoCollisionCheckSafe ():
     hcf.seq_svc.waitInterpolation();
     cs=hcf.co_svc.getCollisionStatus()[1]
     if cs.safe_posture:
-        print "=> Safe pose"
+        print "  => Safe pose"
+    assert(cs.safe_posture is True)
 
 def demoCollisionCheckFail ():
     print "2. CollisionCheck in fail pose"
@@ -37,12 +38,14 @@ def demoCollisionCheckFail ():
     hcf.seq_svc.waitInterpolation();
     cs=hcf.co_svc.getCollisionStatus()[1]
     if not cs.safe_posture:
-        print "=> Successfully stop fail pose"
+        print "  => Successfully stop fail pose"
+    assert((not cs.safe_posture) is True)
     hcf.seq_svc.setJointAngles(col_safe_pose, 3.0);
     hcf.seq_svc.waitInterpolation();
     cs=hcf.co_svc.getCollisionStatus()[1]
     if cs.safe_posture:
-        print "=> Successfully return to safe pose"
+        print "  => Successfully return to safe pose"
+    assert(cs.safe_posture is True)
 
 def demoCollisionCheckFailWithSetTolerance ():
     print "3. CollisionCheck in fail pose with 0.1[m] tolerance"
@@ -51,25 +54,31 @@ def demoCollisionCheckFailWithSetTolerance ():
     hcf.seq_svc.waitInterpolation();
     cs=hcf.co_svc.getCollisionStatus()[1]
     if not cs.safe_posture:
-        print "=> Successfully stop fail pose (0.1[m] tolerance)"
+        print "  => Successfully stop fail pose (0.1[m] tolerance)"
+    assert((not cs.safe_posture) is True)
+    hcf.co_svc.setTolerance("all", 0.0); # [m]
     hcf.seq_svc.setJointAngles(col_safe_pose, 3.0);
     hcf.seq_svc.waitInterpolation();
     cs=hcf.co_svc.getCollisionStatus()[1]
     if cs.safe_posture:
-        print "=> Successfully return to safe pose"
+        print "  => Successfully return to safe pose"
+    assert(cs.safe_posture is True)
 
 def demoCollisionDisableEnable ():
     print "4. CollisionDetection enable and disable"
     hcf.seq_svc.setJointAngles(col_safe_pose, 1.0);
     hcf.seq_svc.waitInterpolation();
     if hcf.co_svc.disableCollisionDetection():
-        print "=> Successfully disabled when no collision"
+        print "  => Successfully disabled when no collision"
+    assert(hcf.co_svc.disableCollisionDetection() is True)
     if hcf.co_svc.enableCollisionDetection():
-        print "=> Successfully enabled when no collision"
+        print "  => Successfully enabled when no collision"
+    assert(hcf.co_svc.enableCollisionDetection() is True)
     hcf.seq_svc.setJointAngles(col_fail_pose, 1.0);
     hcf.seq_svc.waitInterpolation();
     if not hcf.co_svc.disableCollisionDetection():
-        print "=> Successfully inhibit disabling when collision"
+        print "  => Successfully inhibit disabling when collision"
+    assert((not hcf.co_svc.disableCollisionDetection()) is True)
     hcf.seq_svc.setJointAngles(col_safe_pose, 1.0);
     hcf.seq_svc.waitInterpolation();
 
@@ -114,7 +123,7 @@ def demo():
     demoCollisionCheckFail()
     demoCollisionCheckFailWithSetTolerance()
     demoCollisionDisableEnable()
-    demoCollisionMask()
+    #demoCollisionMask()
 
 if __name__ == '__main__':
     demo()
