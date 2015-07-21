@@ -97,7 +97,7 @@ def test_kf_plot (test_motion_func, optional_out_file_name): # time [s]
                     "Actual yaw", "Estimated yaw", "Estimated base yaw"))
         plt.savefig("/tmp/test-kf-samplerobot-data-{0}.eps".format(optional_out_file_name))
     except:
-        print "No plot"
+        print >> sys.stderr, "No plot"
 
 def test_bending_common (time, poses):
     hcf.seq_svc.setJointAngles(poses[1], time*0.25)
@@ -136,14 +136,14 @@ def test_walk ():
     hcf.abc_svc.waitFootSteps()
 
 def demoGetKalmanFilterParameter():
-    print "1. getParameter"
+    print >> sys.stderr, "1. getParameter"
     ret=hcf.kf_svc.getKalmanFilterParam()
     if ret[0]:
-        print "  getKalmanFilterParam() => OK"
+        print >> sys.stderr, "  getKalmanFilterParam() => OK"
     assert(ret[0])
 
 def demoSetKalmanFilterParameter():
-    print "2. setParameter"
+    print >> sys.stderr, "2. setParameter"
     kfp=hcf.kf_svc.getKalmanFilterParam()[1]
     kfp.Q_angle = 0.001;
     kfp.Q_rate = 0.003;
@@ -152,7 +152,7 @@ def demoSetKalmanFilterParameter():
     kfp2=hcf.kf_svc.getKalmanFilterParam()[1]
     ret2 = ret and kfp.Q_angle == kfp2.Q_angle and kfp.Q_rate == kfp2.Q_rate and kfp.R_angle == kfp2.R_angle
     if ret2:
-        print "  setKalmanFilterParam() => OK"
+        print >> sys.stderr, "  setKalmanFilterParam() => OK"
     assert(ret2)
 
 def demo():

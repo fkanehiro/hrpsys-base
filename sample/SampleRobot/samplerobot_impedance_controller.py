@@ -27,26 +27,26 @@ def demo():
     hcf.seq_svc.waitInterpolation()
 
     # 1. Getter check
-    print "1. Getter check"
+    print >> sys.stderr, "1. Getter check"
     ret1=hcf.ic_svc.getImpedanceControllerParam("rarm")
     if ret1[0]:
-        print "  getImpedanceControllerParam => OK"
+        print >> sys.stderr, "  getImpedanceControllerParam => OK"
     # 2. Setter check
-    print "2. Setter check"
+    print >> sys.stderr, "2. Setter check"
     ret1[1].K_r=1.0
     ret1[1].D_r=2.0
     ret1[1].M_r=0.2
     ret2=hcf.ic_svc.setImpedanceControllerParam("rarm", ret1[1])
     ret3=hcf.ic_svc.getImpedanceControllerParam("rarm")
     if ret2:
-        print "  setImpedanceControllerParam => OK"
+        print >> sys.stderr, "  setImpedanceControllerParam => OK"
     # 3. Start impedance
-    print "3. Start impedance"
+    print >> sys.stderr, "3. Start impedance"
     ret4=hcf.ic_svc.startImpedanceController("rarm")
     if ret4:
-        print "  startImpedanceController => OK"
+        print >> sys.stderr, "  startImpedanceController => OK"
     # 4. Set ref force and moment
-    print "4. Set ref force and moment"
+    print >> sys.stderr, "4. Set ref force and moment"
     hcf.seq_svc.setWrenches([0,0,0,0,0,0,
                              0,0,0,0,0,0,
                              0,0,0,0,0,0,
@@ -72,12 +72,12 @@ def demo():
     hcf.seq_svc.waitInterpolation();
     time.sleep(2)
     # 5. Stop impedance
-    print "5. Stop impedance"
+    print >> sys.stderr, "5. Stop impedance"
     ret5=hcf.ic_svc.stopImpedanceController("rarm")
     if ret5:
-        print "  stopImpedanceController => OK"
+        print >> sys.stderr, "  stopImpedanceController => OK"
     # 6. Arm tracking check
-    print "6. Arm tracking check"
+    print >> sys.stderr, "6. Arm tracking check"
     hcf.ic_svc.startImpedanceController("rarm")
     hcf.setJointAngle("RARM_ELBOW", -40.0, 0.5);
     hcf.waitInterpolation()
@@ -85,7 +85,7 @@ def demo():
     hcf.waitInterpolation()
     # 7. World frame check
     if hcf.kinematics_only_mode:
-        print "7. World frame check"
+        print >> sys.stderr, "7. World frame check"
         # tempolarily set use_sh_base_pos_rpy
         icp=hcf.ic_svc.getImpedanceControllerParam("rarm")[1]
         icp.use_sh_base_pos_rpy = True
@@ -100,10 +100,10 @@ def demo():
         hcf.seq_svc.setJointAngles(initial_pose, 2.0)
         hcf.seq_svc.waitInterpolation()
     else:
-        print "7. World frame check is not executed in non-kinematics-only-mode"
+        print >> sys.stderr, "7. World frame check is not executed in non-kinematics-only-mode"
     # 8. World frame ref-force check
     if hcf.kinematics_only_mode:
-        print "8. World frame ref-force check"
+        print >> sys.stderr, "8. World frame ref-force check"
         # tempolarily set use_sh_base_pos_rpy
         icp=hcf.ic_svc.getImpedanceControllerParam("rarm")[1]
         icp.use_sh_base_pos_rpy = True
@@ -136,7 +136,7 @@ def demo():
         hcf.seq_svc.setBaseRpy([0,0,0], 1.0);
         hcf.seq_svc.waitInterpolation();
     else:
-        print "8. World frame ref-force check is not executed in non-kinematics-only-mode"
+        print >> sys.stderr, "8. World frame ref-force check is not executed in non-kinematics-only-mode"
 
 if __name__ == '__main__':
     demo()

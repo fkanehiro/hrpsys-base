@@ -477,11 +477,15 @@ bool seqplay::resetJointGroup(const char *gname, const double *full)
 	}
 }
 
-bool seqplay::setJointAnglesOfGroup(const char *gname, const double *i_qRef, double i_tm)
+bool seqplay::setJointAnglesOfGroup(const char *gname, const double* i_qRef, const size_t i_qsize, double i_tm)
 {
 	char *s = (char *)gname; while(*s) {*s=toupper(*s);s++;}
 	groupInterpolator *i = groupInterpolators[gname];
 	if (i){
+		if (i_qsize != i->indices.size() ) {
+			std::cerr << "[setJointAnglesOfGroup] group name " << gname << " : size of manipulater is not equal to input. " << i_qsize << " /= " << i->indices.size() << std::endl;
+			return false;
+		}
 		if (i->state == groupInterpolator::created){
 			double q[m_dof], dq[m_dof];
 			interpolators[Q]->get(q, dq, false);
@@ -746,13 +750,17 @@ bool seqplay::setJointAnglesSequenceFull(std::vector<const double*> i_pos, std::
 	return true;
 }
 
-bool seqplay::setJointAnglesSequenceOfGroup(const char *gname, std::vector<const double*> pos, std::vector<double> tm)
+bool seqplay::setJointAnglesSequenceOfGroup(const char *gname, std::vector<const double*> pos, std::vector<double> tm, const size_t pos_size)
 {
 	char *s = (char *)gname; while(*s) {*s=toupper(*s);s++;}
 	groupInterpolator *i = groupInterpolators[gname];
 
 	if (! i){
-		std::cerr << "[setJointAnglesOfGroup] group name " << gname << " is not installed" << std::endl;
+		std::cerr << "[setJointAnglesSequenceOfGroup] group name " << gname << " is not installed" << std::endl;
+		return false;
+	}
+	if (pos_size != i->indices.size() ) {
+		std::cerr << "[setJointAnglesSequenceOfGroup] group name " << gname << " : size of manipulater is not equal to input. " << pos_size << " /= " << i->indices.size() << std::endl;
 		return false;
 	}
 	int len = i->indices.size();

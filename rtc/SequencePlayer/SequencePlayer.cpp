@@ -465,7 +465,7 @@ bool SequencePlayer::setJointAnglesSequenceOfGroup(const char *gname, const Open
     std::vector<double> v_tms;
     for ( int i = 0; i < angless.length(); i++ ) v_poss.push_back(angless[i].get_buffer());
     for ( int i = 0; i <  times.length();  i++ )  v_tms.push_back(times[i]);
-    return m_seq->setJointAnglesSequenceOfGroup(gname, v_poss, v_tms);
+    return m_seq->setJointAnglesSequenceOfGroup(gname, v_poss, v_tms, angless.length()>0?angless[0].length():0);
 }
 
 bool SequencePlayer::clearJointAnglesOfGroup(const char *gname)
@@ -780,7 +780,7 @@ bool SequencePlayer::removeJointGroup(const char *gname)
     return ret;
 }
 
-bool SequencePlayer::setJointAnglesOfGroup(const char *gname, const double *angles, double tm)
+bool SequencePlayer::setJointAnglesOfGroup(const char *gname, const dSequence& jvs, double tm)
 {
     if ( m_debugLevel > 0 ) {
         std::cerr << __PRETTY_FUNCTION__ << std::endl;
@@ -789,7 +789,7 @@ bool SequencePlayer::setJointAnglesOfGroup(const char *gname, const double *angl
     if (!setInitialState()) return false;
 
     if (!m_seq->resetJointGroup(gname, m_qInit.data.get_buffer())) return false;
-    return m_seq->setJointAnglesOfGroup(gname, angles, tm);
+    return m_seq->setJointAnglesOfGroup(gname, jvs.get_buffer(), jvs.length(), tm);
 }
 
 bool SequencePlayer::playPatternOfGroup(const char *gname, const dSequenceSequence& pos, const dSequence& tm)
