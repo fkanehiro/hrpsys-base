@@ -25,23 +25,23 @@ def init ():
     hcf.waitInterpolation()
 
 def demoSaveLog():
-    print "1. Save log"
+    print >> sys.stderr, "1. Save log"
     # Save log files for each ports as /tmp/test-samplerobot-log.*
     #   file names are /tmp/test-samplerobot-log.[RTCName]_[PortName], c.f.,  /tmp/test-samplerobot-log.sh_qOut ... etc
     hcf.saveLog("/tmp/test-samplerobot-log")
     ret = os.path.exists("/tmp/test-samplerobot-log.sh_qOut")
     if ret:
-        print "  save() =>OK"
+        print >> sys.stderr, "  save() =>OK"
     assert(ret is True)
 
 def demoClearLog():
-    print "2. Clear buffer"
+    print >> sys.stderr, "2. Clear buffer"
     hcf.clearLog()
-    print "  clear() =>OK"
+    print >> sys.stderr, "  clear() =>OK"
     assert(True)
 
 def demoSetMaxLogLength():
-    print "3. Set max ring-buffer length : 100 [loop] * 0.002 [s] = 0.2 [s] data"
+    print >> sys.stderr, "3. Set max ring-buffer length : 100 [loop] * 0.002 [s] = 0.2 [s] data"
     hcf.setMaxLogLength(100)
     hcf.seq_svc.setJointAngles(initial_pose, 0.2) # wait
     hcf.waitInterpolation()
@@ -49,7 +49,7 @@ def demoSetMaxLogLength():
     from subprocess import check_output
     ret = check_output(['wc', '-l', '/tmp/test-samplerobot-log.sh_qOut']).split(" ")[0] == '100'
     if ret:
-        print "  maxLength() =>OK"
+        print >> sys.stderr, "  maxLength() =>OK"
     assert(ret is True)
 
 def demo ():

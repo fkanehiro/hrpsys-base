@@ -41,12 +41,12 @@ def calcCOP ():
             [(cop_info[1]+cop_info[1+3])/(cop_info[2]+cop_info[2+3]),(cop_info[0]+cop_info[0+3])/(cop_info[2]+cop_info[2+3])]] # total ZMP
 
 def demoGetParameter():
-    print "1. getParameter"
+    print >> sys.stderr, "1. getParameter"
     stp = hcf.st_svc.getParameter()
-    print "  getParameter() => OK"
+    print >> sys.stderr, "  getParameter() => OK"
 
 def demoSetParameter():
-    print "2. setParameter"
+    print >> sys.stderr, "2. setParameter"
     stp_org = hcf.st_svc.getParameter()
     # for tpcc
     stp_org.k_tpcc_p=[0.2, 0.2]
@@ -66,11 +66,11 @@ def demoSetParameter():
     stp = hcf.st_svc.getParameter()
     vcheck = stp.k_tpcc_p == stp_org.k_tpcc_p and stp.k_tpcc_x == stp_org.k_tpcc_x and stp.k_brot_p == stp_org.k_brot_p
     if vcheck:
-        print "  setParameter() => OK", vcheck
+        print >> sys.stderr, "  setParameter() => OK", vcheck
     assert(vcheck)
 
 def demoStartStopTPCCST ():
-    print "3. start and stop TPCC st"
+    print >> sys.stderr, "3. start and stop TPCC st"
     if hcf.pdc:
         stp = hcf.st_svc.getParameter()
         stp.st_algorithm=OpenHRP.StabilizerService.TPCC
@@ -79,13 +79,13 @@ def demoStartStopTPCCST ():
         hcf.abc_svc.goPos(0.5, 0.1, 10)
         hcf.abc_svc.waitFootSteps()
         hcf.stopStabilizer ()
-        print "  Start and Stop Stabilizer => OK"
+        print >> sys.stderr, "  Start and Stop Stabilizer => OK"
     else:
-        print "  This sample is neglected in High-gain mode simulation"
+        print >> sys.stderr, "  This sample is neglected in High-gain mode simulation"
 
 
 def demoStartStopEEFMQPST ():
-    print "4. start and stop EEFMQP st"
+    print >> sys.stderr, "4. start and stop EEFMQP st"
     if hcf.pdc:
         stp = hcf.st_svc.getParameter()
         stp.st_algorithm=OpenHRP.StabilizerService.EEFMQP
@@ -94,9 +94,9 @@ def demoStartStopEEFMQPST ():
         hcf.abc_svc.goPos(0.3, 0, 0)
         hcf.abc_svc.waitFootSteps()
         hcf.stopStabilizer ()
-        print "  Start and Stop Stabilizer => OK"
+        print >> sys.stderr, "  Start and Stop Stabilizer => OK"
     else:
-        print "  This sample is neglected in High-gain mode simulation"
+        print >> sys.stderr, "  This sample is neglected in High-gain mode simulation"
 
 def demo():
     init()
