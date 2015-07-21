@@ -14,7 +14,6 @@ except:
     import time
 
 import math
-import matplotlib.pyplot as plt
 
 def init ():
     global hcf, pitch_poses, roll_poses, yaw_poses, roll_pitch_poses, initial_pose
@@ -80,19 +79,23 @@ def test_kf_plot (test_motion_func, optional_out_file_name): # time [s]
     initial_sec=int(act_rpy_ret[0][0].split(".")[0])
     tm_list=map (lambda x : int(x[0].split(".")[0])-initial_sec + float(x[0].split(".")[1]) * 1e-6, act_rpy_ret)
     # Plotting
-    plt.clf()
-    color_list = ['r', 'g', 'b']
-    for idx in range(3):
-        plt.plot(tm_list, map(lambda x : 180.0 * float(x[1+3+idx]) / math.pi, act_rpy_ret), color=color_list[idx])
-        plt.plot(tm_list, map(lambda x : 180.0 * float(x[1+idx]) / math.pi, estimated_rpy_ret), ":", color=color_list[idx])
-        plt.plot(tm_list, map(lambda x : 180.0 * float(x[1+idx]) / math.pi, estimated_base_rpy_ret), "--", color=color_list[idx])
-    plt.xlabel("Time [s]")
-    plt.ylabel("Angle [deg]")
-    plt.title("KF actual-estimated data (motion time = {0})".format(optional_out_file_name))
-    plt.legend(("Actual roll", "Estimated roll", "Estimated base roll",
-                "Actual pitch", "Estimated pitch", "Estimated base pitch",
-                "Actual yaw", "Estimated yaw", "Estimated base yaw"))
-    plt.savefig("/tmp/test-kf-samplerobot-data-{0}.eps".format(optional_out_file_name))
+    try:
+        import matplotlib.pyplot as plt
+        plt.clf()
+        color_list = ['r', 'g', 'b']
+        for idx in range(3):
+            plt.plot(tm_list, map(lambda x : 180.0 * float(x[1+3+idx]) / math.pi, act_rpy_ret), color=color_list[idx])
+            plt.plot(tm_list, map(lambda x : 180.0 * float(x[1+idx]) / math.pi, estimated_rpy_ret), ":", color=color_list[idx])
+            plt.plot(tm_list, map(lambda x : 180.0 * float(x[1+idx]) / math.pi, estimated_base_rpy_ret), "--", color=color_list[idx])
+        plt.xlabel("Time [s]")
+        plt.ylabel("Angle [deg]")
+        plt.title("KF actual-estimated data (motion time = {0})".format(optional_out_file_name))
+        plt.legend(("Actual roll", "Estimated roll", "Estimated base roll",
+                    "Actual pitch", "Estimated pitch", "Estimated base pitch",
+                    "Actual yaw", "Estimated yaw", "Estimated base yaw"))
+        plt.savefig("/tmp/test-kf-samplerobot-data-{0}.eps".format(optional_out_file_name))
+    except:
+        print "No plot"
 
 def test_bending_common (time, poses):
     hcf.seq_svc.setJointAngles(poses[1], time*0.25)
