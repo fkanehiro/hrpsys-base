@@ -14,7 +14,7 @@ except:
     import time
 
 def init ():
-    global hcf, initial_pose
+    global hcf, initial_pose, hrpsys_version
     hcf = HrpsysConfigurator()
     hcf.getRTCList = hcf.getRTCListUnstable
     hcf.init ("SampleRobot(Robot)0", "$(PROJECT_DIR)/../model/sample1.wrl")
@@ -22,6 +22,8 @@ def init ():
     initial_pose = [-7.779e-005,  -0.378613,  -0.000209793,  0.832038,  -0.452564,  0.000244781,  0.31129,  -0.159481,  -0.115399,  -0.636277,  0,  0,  0.637045,  -7.77902e-005,  -0.378613,  -0.000209794,  0.832038,  -0.452564,  0.000244781,  0.31129,  0.159481,  0.115399,  -0.636277,  0,  0,  -0.637045,  0,  0,  0]
     hcf.seq_svc.setJointAngles(initial_pose, 2.5)
     hcf.waitInterpolation()
+    hrpsys_version = hcf.seq.ref.get_component_profile().version
+    print("hrpsys_version = %s"%hrpsys_version)
 
 def demoGetForceMomentOffsetParam ():
     print "1. GetForceMomentOffsetParam"
@@ -109,9 +111,10 @@ def demoDumpLoadForceMomentOffsetParams():
 def demo():
     import numpy
     init()
-    demoGetForceMomentOffsetParam()
-    demoSetForceMomentOffsetParam()
-    demoDumpLoadForceMomentOffsetParams()
+    if hrpsys_version >= '315.5.0':
+        demoGetForceMomentOffsetParam()
+        demoSetForceMomentOffsetParam()
+        demoDumpLoadForceMomentOffsetParams()
 
 if __name__ == '__main__':
     demo()

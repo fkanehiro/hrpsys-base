@@ -14,7 +14,7 @@ except:
     import time
 
 def init ():
-    global hcf, initial_pose
+    global hcf, initial_pose, hrpsys_version
     hcf = HrpsysConfigurator()
     hcf.getRTCList = hcf.getRTCListUnstable
     hcf.init ("SampleRobot(Robot)0", "$(PROJECT_DIR)/../model/sample1.wrl")
@@ -22,13 +22,16 @@ def init ():
     initial_pose = [-7.779e-005,  -0.378613,  -0.000209793,  0.832038,  -0.452564,  0.000244781,  0.31129,  -0.159481,  -0.115399,  -0.636277,  0,  0,  0,  -7.77902e-005,  -0.378613,  -0.000209794,  0.832038,  -0.452564,  0.000244781,  0.31129,  0.159481,  0.115399,  -0.636277,  0,  0,  0,  0,  0,  0]
     hcf.seq_svc.setJointAngles(initial_pose, 2.0)
     hcf.seq_svc.waitInterpolation()
-    # Start AutoBalancer
-    hcf.startAutoBalancer()
-    # Remove offset
-    for sen in ["rfsensor", "lfsensor"]:
-        ofp=hcf.rmfo_svc.getForceMomentOffsetParam(sen)[1];
-        ofp.link_offset_mass=1.9;ofp.link_offset_centroid=[0.08, 0, -0.03];
-        hcf.rmfo_svc.setForceMomentOffsetParam(sen, ofp);
+    hrpsys_version = hcf.seq.ref.get_component_profile().version
+    print("hrpsys_version = %s"%hrpsys_version)
+    if hrpsys_version >= '315.5.0':
+        # Start AutoBalancer
+        hcf.startAutoBalancer()
+        # Remove offset
+        for sen in ["rfsensor", "lfsensor"]:
+            ofp=hcf.rmfo_svc.getForceMomentOffsetParam(sen)[1];
+            ofp.link_offset_mass=1.9;ofp.link_offset_centroid=[0.08, 0, -0.03];
+            hcf.rmfo_svc.setForceMomentOffsetParam(sen, ofp);
 
 def calcCOP ():
     cop_info=rtm.readDataPort(hcf.st.port("COPInfo")).data
@@ -97,11 +100,11 @@ def demoStartStopEEFMQPST ():
 
 def demo():
     init()
-
-    demoGetParameter()
-    demoSetParameter()
-    demoStartStopTPCCST()
-    demoStartStopEEFMQPST()
+    if hrpsys_version >= '315.5.0':
+        demoGetParameter()
+        demoSetParameter()
+        demoStartStopTPCCST()
+        demoStartStopEEFMQPST()
 
 if __name__ == '__main__':
     demo()
