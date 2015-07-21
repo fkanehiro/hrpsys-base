@@ -221,8 +221,8 @@ def demoSetWrenches ():
 def demoSetJointAnglesOfGroup():
     print >> sys.stderr, "8. setJointAnglesOfGroup"
     hcf.seq_svc.addJointGroup('larm', ['LARM_SHOULDER_P', 'LARM_SHOULDER_R', 'LARM_SHOULDER_Y', 'LARM_ELBOW', 'LARM_WRIST_Y', 'LARM_WRIST_P', 'LARM_WRIST_R'])
-    larm_pos0 = [-0.000111, 0.31129, -0.159481, -1.57079, -0.636277, 0.0]
-    larm_pos1 = [-0.000111, 0.31129, -0.159481, -0.115399, -0.636277, 0.0]
+    larm_pos0 = [-0.000111, 0.31129, -0.159481, -1.57079, -0.636277, 0.0, 0.0]
+    larm_pos1 = [-0.000111, 0.31129, -0.159481, -0.115399, -0.636277, 0.0, 0.0]
     hcf.seq_svc.setJointAngles(reset_pose_doc['pos'], 1.0);
     hcf.seq_svc.setJointAnglesOfGroup('larm', larm_pos0, 1.0);
     hcf.seq_svc.waitInterpolationOfGroup('larm');
@@ -256,8 +256,8 @@ def demoSetJointAnglesOfGroup():
 def demoSetJointAnglesSequenceOfGroup():
     print >> sys.stderr, "9. setJointAnglesOfGroup"
     hcf.seq_svc.addJointGroup('larm', ['LARM_SHOULDER_P', 'LARM_SHOULDER_R', 'LARM_SHOULDER_Y', 'LARM_ELBOW', 'LARM_WRIST_Y', 'LARM_WRIST_P', 'LARM_WRIST_R'])
-    larm_pos0 = [-0.000111, 0.31129, -0.159481, -1.57079, -0.636277, 0.0]
-    larm_pos1 = [-0.000111, 0.31129, -0.159481, -0.115399, -0.636277, 0.0]
+    larm_pos0 = [-0.000111, 0.31129, -0.159481, -1.57079, -0.636277, 0.0, 0.0]
+    larm_pos1 = [-0.000111, 0.31129, -0.159481, -0.115399, -0.636277, 0.0, 0.0]
     hcf.seq_svc.setJointAngles(reset_pose_doc['pos'], 1.0);
     hcf.seq_svc.setJointAnglesSequenceOfGroup('larm', [larm_pos0, larm_pos1, larm_pos0], [1.0, 1.0, 1.0]);
     hcf.seq_svc.waitInterpolationOfGroup('larm');
