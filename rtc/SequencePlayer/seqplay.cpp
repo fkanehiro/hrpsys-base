@@ -756,7 +756,7 @@ bool seqplay::setJointAnglesSequenceOfGroup(const char *gname, std::vector<const
 	groupInterpolator *i = groupInterpolators[gname];
 
 	if (! i){
-		std::cerr << "[setJointAnglesOfGroup] group name " << gname << " is not installed" << std::endl;
+		std::cerr << "[setJointAnglesSequenceOfGroup] group name " << gname << " is not installed" << std::endl;
 		return false;
 	}
 	if (pos_size != i->indices.size() ) {
