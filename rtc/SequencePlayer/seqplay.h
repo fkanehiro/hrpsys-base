@@ -31,14 +31,14 @@ public:
     bool addJointGroup(const char *gname, const std::vector<int>& indices);
     bool getJointGroup(const char *gname, std::vector<int>& indices);
     bool removeJointGroup(const char *gname, double time=2.5);
-    bool setJointAnglesOfGroup(const char *gname, const double *i_qRef, double i_tm=0.0);
+    bool setJointAnglesOfGroup(const char *gname, const double* i_qRef, const size_t i_qsize, double i_tm=0.0);
     void clearOfGroup(const char *gname, double i_timeLimit);
     bool playPatternOfGroup(const char *gname, std::vector<const double*> pos, std::vector<double> tm, const double *qInit, unsigned int len);
 
     bool resetJointGroup(const char *gname, const double *full);
     //
     bool setJointAnglesSequence(std::vector<const double*> pos, std::vector<double> tm);
-    bool setJointAnglesSequenceOfGroup(const char *gname, std::vector<const double*> pos, std::vector<double> tm);
+    bool setJointAnglesSequenceOfGroup(const char *gname, std::vector<const double*> pos, std::vector<double> tm, const size_t pos_size);
     bool setJointAnglesSequenceFull(std::vector<const double*> pos, std::vector<const double*> vel, std::vector<const double*> torques, std::vector<const double*> bpos, std::vector<const double*> brpy, std::vector<const double*> bacc, std::vector<const double*> zmps, std::vector<const double*> wrenches, std::vector<const double*> optionals, std::vector<double> tm);
     bool clearJointAngles();
     bool clearJointAnglesOfGroup(const char *gname);

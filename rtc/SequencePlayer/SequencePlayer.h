@@ -113,7 +113,7 @@ class SequencePlayer
   bool setInitialState(double tm=0.0);
   bool addJointGroup(const char *gname, const OpenHRP::SequencePlayerService::StrSequence& jnames);
   bool removeJointGroup(const char *gname);
-  bool setJointAnglesOfGroup(const char *gname, const double *angles, double tm);
+  bool setJointAnglesOfGroup(const char *gname, const OpenHRP::dSequence& jvs, double tm);
   bool setJointAnglesSequenceOfGroup(const char *gname, const OpenHRP::dSequenceSequence angless, const OpenHRP::dSequence& times);
     bool clearJointAnglesOfGroup(const char *gname);
   bool playPatternOfGroup(const char *gname, const OpenHRP::dSequenceSequence& pos, const OpenHRP::dSequence& tm);

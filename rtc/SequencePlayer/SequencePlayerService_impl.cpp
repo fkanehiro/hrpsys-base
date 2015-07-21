@@ -293,7 +293,7 @@ CORBA::Boolean SequencePlayerService_impl::removeJointGroup(const char* gname)
 
 CORBA::Boolean SequencePlayerService_impl::setJointAnglesOfGroup(const char *gname, const dSequence& jvs, CORBA::Double tm)
 {
-    return m_player->setJointAnglesOfGroup(gname, jvs.get_buffer(), tm);
+    return m_player->setJointAnglesOfGroup(gname, jvs, tm);
 }
 
 CORBA::Boolean SequencePlayerService_impl::setJointAnglesSequenceOfGroup(const char *gname, const dSequenceSequence& jvss, const dSequence& tms)
