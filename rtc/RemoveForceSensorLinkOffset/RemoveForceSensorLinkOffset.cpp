@@ -241,10 +241,11 @@ bool RemoveForceSensorLinkOffset::setForceMomentOffsetParam(const std::string& i
     memcpy(m_forcemoment_offset_param[i_name_].link_offset_centroid.data(), i_param_.link_offset_centroid.get_buffer(), sizeof(double) * 3);
     m_forcemoment_offset_param[i_name_].link_offset_mass = i_param_.link_offset_mass;
     printForceMomentOffsetParam(i_name_);
+    return true;
   } else {
     std::cerr << "[" << m_profile.instance_name << "]   No such limb"<< std::endl;
+    return false;
   }
-  return true;
 }
 
 bool RemoveForceSensorLinkOffset::getForceMomentOffsetParam(const std::string& i_name_, RemoveForceSensorLinkOffsetService::forcemomentOffsetParam& i_param_)
@@ -255,10 +256,11 @@ bool RemoveForceSensorLinkOffset::getForceMomentOffsetParam(const std::string& i
     memcpy(i_param_.moment_offset.get_buffer(), m_forcemoment_offset_param[i_name_].moment_offset.data(), sizeof(double) * 3);
     memcpy(i_param_.link_offset_centroid.get_buffer(), m_forcemoment_offset_param[i_name_].link_offset_centroid.data(), sizeof(double) * 3);
     i_param_.link_offset_mass = m_forcemoment_offset_param[i_name_].link_offset_mass;
+    return true;
   } else {
     std::cerr << "[" << m_profile.instance_name << "] No such limb " << i_name_ << " in getForceMomentOffsetParam" << std::endl;
+    return false;
   }
-  return true;
 }
 
 bool RemoveForceSensorLinkOffset::loadForceMomentOffsetParams(const std::string& filename)

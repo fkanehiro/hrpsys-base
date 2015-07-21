@@ -14,7 +14,7 @@ except:
     import time
 
 def init ():
-    global hcf, initial_pose, arm_front_pose, half_sitting_pose, root_rot_x_pose, root_rot_y_pose, pose_list
+    global hcf, initial_pose, arm_front_pose, half_sitting_pose, root_rot_x_pose, root_rot_y_pose, pose_list, hrpsys_version
     hcf = HrpsysConfigurator()
     hcf.getRTCList = hcf.getRTCListUnstable
     hcf.init ("SampleRobot(Robot)0", "$(PROJECT_DIR)/../model/sample1.wrl")
@@ -27,6 +27,8 @@ def init ():
     pose_list=[half_sitting_pose, root_rot_x_pose, root_rot_y_pose, arm_front_pose]
     hcf.seq_svc.setJointAngles(initial_pose, 2.0)
     hcf.waitInterpolation()
+    hrpsys_version = hcf.seq.ref.get_component_profile().version
+    print("hrpsys_version = %s"%hrpsys_version)
 
 def testPoseList(pose_list, initial_pose):
     for pose in pose_list:
@@ -344,32 +346,31 @@ def demoGaitGeneratorHandFixWalking():
 
 def demo():
     init()
-
-    # sample for AutoBalancer mode
-    demoAutoBalancerFixFeet()
-    demoAutoBalancerFixFeetHands()
-    demoAutoBalancerGetParam()
-    demoAutoBalancerSetParam()
-    demoAutoBalancerTestPoses()
-    demoAutoBalancerStartStopCheck()
-    demoAutoBalancerBalanceAgainstHandForce()
-
-    # sample for walk pattern generation by AutoBalancer RTC
-    demoGaitGeneratorGoPos()
-    demoGaitGeneratorGoVelocity()
-    demoGaitGeneratorSetFootSteps()
-    demoGaitGeneratorChangePoseWhileWalking()
-    demoGaitGeneratorGetParam()
-    demoGaitGeneratorSetParam()
-    demoGaitGeneratorNonDefaultStrideStop()
-    demoGaitGeneratorToeHeelContact()
-    demoGaitGeneratorStopStartSyncCheck()
-    demoGaitGeneratorEmergencyStop()
-    demoGaitGeneratorGetRemainingSteps()
-    demoGaitGeneratorChangeStepParam()
-    demoGaitGeneratorOverwriteFootsteps()
-    demoGaitGeneratorOverwriteFootsteps(2)
-    # demoGaitGeneratorHandFixWalking()
+    if hrpsys_version >= '315.5.0':
+        # sample for AutoBalancer mode
+        demoAutoBalancerFixFeet()
+        demoAutoBalancerFixFeetHands()
+        demoAutoBalancerGetParam()
+        demoAutoBalancerSetParam()
+        demoAutoBalancerTestPoses()
+        demoAutoBalancerStartStopCheck()
+        demoAutoBalancerBalanceAgainstHandForce()
+        # sample for walk pattern generation by AutoBalancer RTC
+        demoGaitGeneratorGoPos()
+        demoGaitGeneratorGoVelocity()
+        demoGaitGeneratorSetFootSteps()
+        demoGaitGeneratorChangePoseWhileWalking()
+        demoGaitGeneratorGetParam()
+        demoGaitGeneratorSetParam()
+        demoGaitGeneratorNonDefaultStrideStop()
+        demoGaitGeneratorToeHeelContact()
+        demoGaitGeneratorStopStartSyncCheck()
+        demoGaitGeneratorEmergencyStop()
+        demoGaitGeneratorGetRemainingSteps()
+        demoGaitGeneratorChangeStepParam()
+        demoGaitGeneratorOverwriteFootsteps()
+        demoGaitGeneratorOverwriteFootsteps(2)
+        # demoGaitGeneratorHandFixWalking()
 
 if __name__ == '__main__':
     demo()

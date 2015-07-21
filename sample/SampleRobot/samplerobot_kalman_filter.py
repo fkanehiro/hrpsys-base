@@ -14,10 +14,9 @@ except:
     import time
 
 import math
-import matplotlib.pyplot as plt
 
 def init ():
-    global hcf, pitch_poses, roll_poses, yaw_poses, roll_pitch_poses, initial_pose
+    global hcf, pitch_poses, roll_poses, yaw_poses, roll_pitch_poses, initial_pose, hrpsys_version
     hcf = HrpsysConfigurator()
     hcf.getRTCList = hcf.getRTCListUnstable
     hcf.init ("SampleRobot(Robot)0", "$(PROJECT_DIR)/../model/sample1.wrl")
@@ -57,6 +56,8 @@ def init ():
     roll_pitch_pose2=[-0.486326,-1.18821,-0.026531,0.908889,-0.267927,0.130916,0.31129,-0.159481,-0.115399,-0.636277,0.0,0.0,0.0,-0.430362,-0.964194,0.009303,0.590166,-0.173131,0.103544,0.31129,0.159481,0.115399,-0.636277,0.0,0.0,0.0,0.0,0.0,0.0]
     roll_pitch_pose3=[0.463158,0.281851,-0.0701,0.747965,-0.514677,-0.108534,0.31129,-0.159481,-0.115399,-0.636277,0.0,0.0,0.0,0.486068,0.189331,-0.083976,1.08676,-0.76299,-0.139173,0.31129,0.159481,0.115399,-0.636277,0.0,0.0,0.0,0.0,0.0,0.0]
     roll_pitch_poses = [roll_pitch_pose1, roll_pitch_pose2, roll_pitch_pose3]
+    hrpsys_version = hcf.seq.ref.get_component_profile().version
+    print("hrpsys_version = %s"%hrpsys_version)
 
 def test_kf_plot (test_motion_func, optional_out_file_name): # time [s]
     # Reset KF and store data during motion
@@ -80,19 +81,23 @@ def test_kf_plot (test_motion_func, optional_out_file_name): # time [s]
     initial_sec=int(act_rpy_ret[0][0].split(".")[0])
     tm_list=map (lambda x : int(x[0].split(".")[0])-initial_sec + float(x[0].split(".")[1]) * 1e-6, act_rpy_ret)
     # Plotting
-    plt.clf()
-    color_list = ['r', 'g', 'b']
-    for idx in range(3):
-        plt.plot(tm_list, map(lambda x : 180.0 * float(x[1+3+idx]) / math.pi, act_rpy_ret), color=color_list[idx])
-        plt.plot(tm_list, map(lambda x : 180.0 * float(x[1+idx]) / math.pi, estimated_rpy_ret), ":", color=color_list[idx])
-        plt.plot(tm_list, map(lambda x : 180.0 * float(x[1+idx]) / math.pi, estimated_base_rpy_ret), "--", color=color_list[idx])
-    plt.xlabel("Time [s]")
-    plt.ylabel("Angle [deg]")
-    plt.title("KF actual-estimated data (motion time = {0})".format(optional_out_file_name))
-    plt.legend(("Actual roll", "Estimated roll", "Estimated base roll",
-                "Actual pitch", "Estimated pitch", "Estimated base pitch",
-                "Actual yaw", "Estimated yaw", "Estimated base yaw"))
-    plt.savefig("/tmp/test-kf-samplerobot-data-{0}.eps".format(optional_out_file_name))
+    try:
+        import matplotlib.pyplot as plt
+        plt.clf()
+        color_list = ['r', 'g', 'b']
+        for idx in range(3):
+            plt.plot(tm_list, map(lambda x : 180.0 * float(x[1+3+idx]) / math.pi, act_rpy_ret), color=color_list[idx])
+            plt.plot(tm_list, map(lambda x : 180.0 * float(x[1+idx]) / math.pi, estimated_rpy_ret), ":", color=color_list[idx])
+            plt.plot(tm_list, map(lambda x : 180.0 * float(x[1+idx]) / math.pi, estimated_base_rpy_ret), "--", color=color_list[idx])
+        plt.xlabel("Time [s]")
+        plt.ylabel("Angle [deg]")
+        plt.title("KF actual-estimated data (motion time = {0})".format(optional_out_file_name))
+        plt.legend(("Actual roll", "Estimated roll", "Estimated base roll",
+                    "Actual pitch", "Estimated pitch", "Estimated base pitch",
+                    "Actual yaw", "Estimated yaw", "Estimated base yaw"))
+        plt.savefig("/tmp/test-kf-samplerobot-data-{0}.eps".format(optional_out_file_name))
+    except:
+        print "No plot"
 
 def test_bending_common (time, poses):
     hcf.seq_svc.setJointAngles(poses[1], time*0.25)
@@ -130,52 +135,60 @@ def test_walk ():
     hcf.abc_svc.goPos(0.1,0,0)
     hcf.abc_svc.waitFootSteps()
 
-def demo():
-    init()
-
-    # 1. getParameter
+def demoGetKalmanFilterParameter():
+    print "1. getParameter"
     ret=hcf.kf_svc.getKalmanFilterParam()
     if ret[0]:
-        print "getKalmanFilterParam() => OK"
+        print "  getKalmanFilterParam() => OK"
+    assert(ret[0])
 
-    # 2. setParameter
+def demoSetKalmanFilterParameter():
+    print "2. setParameter"
     kfp=hcf.kf_svc.getKalmanFilterParam()[1]
     kfp.Q_angle = 0.001;
     kfp.Q_rate = 0.003;
     kfp.R_angle = 100;
     ret=hcf.kf_svc.setKalmanFilterParam(kfp)
     kfp2=hcf.kf_svc.getKalmanFilterParam()[1]
-    if ret and kfp.Q_angle == kfp2.Q_angle and kfp.Q_rate == kfp2.Q_rate and kfp.R_angle == kfp2.R_angle:
-        print "setKalmanFilterParam() => OK"
+    ret2 = ret and kfp.Q_angle == kfp2.Q_angle and kfp.Q_rate == kfp2.Q_rate and kfp.R_angle == kfp2.R_angle
+    if ret2:
+        print "  setKalmanFilterParam() => OK"
+    assert(ret2)
 
-    # 3. check log and plot
-    hcf.kf_svc.resetKalmanFilterState()
-    hcf.seq_svc.setJointAngles(pitch_poses[0], 1.0)
-    hcf.seq_svc.waitInterpolation()
-    test_kf_plot(test_pitch_bending_2s, "pitch-bending-2s")
+def demo():
+    init()
+    if hrpsys_version >= '315.5.0':
+        demoGetKalmanFilterParameter()
+        demoSetKalmanFilterParameter()
 
-    #hcf.kf_svc.resetKalmanFilterState()
-    hcf.seq_svc.setJointAngles(roll_poses[0], 1.0)
-    hcf.seq_svc.waitInterpolation()
-    test_kf_plot(test_roll_bending_2s, "roll-bending-2s")
+        # 3. check log and plot
+        hcf.kf_svc.resetKalmanFilterState()
+        hcf.seq_svc.setJointAngles(pitch_poses[0], 1.0)
+        hcf.seq_svc.waitInterpolation()
+        test_kf_plot(test_pitch_bending_2s, "pitch-bending-2s")
 
-    #hcf.kf_svc.resetKalmanFilterState()
-    hcf.seq_svc.setJointAngles(yaw_poses[0], 1.0)
-    hcf.seq_svc.waitInterpolation()
-    test_kf_plot(test_yaw_bending_2s, "yaw-bending-4s")
+        #hcf.kf_svc.resetKalmanFilterState()
+        hcf.seq_svc.setJointAngles(roll_poses[0], 1.0)
+        hcf.seq_svc.waitInterpolation()
+        test_kf_plot(test_roll_bending_2s, "roll-bending-2s")
 
-    #hcf.kf_svc.resetKalmanFilterState()
-    hcf.seq_svc.setJointAngles(roll_pitch_poses[0], 1.0)
-    hcf.seq_svc.waitInterpolation()
-    test_kf_plot(test_roll_pitch_bending_4s, "roll-pitch-bending-4s")
+        #hcf.kf_svc.resetKalmanFilterState()
+        hcf.seq_svc.setJointAngles(yaw_poses[0], 1.0)
+        hcf.seq_svc.waitInterpolation()
+        test_kf_plot(test_yaw_bending_2s, "yaw-bending-4s")
 
-    hcf.seq_svc.setJointAngles(initial_pose, 1.0)
-    #hcf.seq_svc.waitInterpolation()
-    #hcf.kf_svc.resetKalmanFilterState()
-    #hcf.seq_svc.setJointAngles(initial_pose, 1.0)
-    hcf.abc_svc.startAutoBalancer(["rleg", "lleg"])
-    hcf.seq_svc.waitInterpolation()
-    test_kf_plot(test_walk, "test_walk")
+        #hcf.kf_svc.resetKalmanFilterState()
+        hcf.seq_svc.setJointAngles(roll_pitch_poses[0], 1.0)
+        hcf.seq_svc.waitInterpolation()
+        test_kf_plot(test_roll_pitch_bending_4s, "roll-pitch-bending-4s")
+
+        hcf.seq_svc.setJointAngles(initial_pose, 1.0)
+        #hcf.seq_svc.waitInterpolation()
+        #hcf.kf_svc.resetKalmanFilterState()
+        #hcf.seq_svc.setJointAngles(initial_pose, 1.0)
+        hcf.abc_svc.startAutoBalancer(["rleg", "lleg"])
+        hcf.seq_svc.waitInterpolation()
+        test_kf_plot(test_walk, "test_walk")
 
 if __name__ == '__main__':
     demo()
