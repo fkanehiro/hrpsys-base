@@ -27,10 +27,10 @@ def demo():
     hcf.seq_svc.waitInterpolation()
 
     # 1. Getter check
-    print >> sys.stderr "1. Getter check"
+    print >> sys.stderr, "1. Getter check"
     ret1=hcf.ic_svc.getImpedanceControllerParam("rarm")
     if ret1[0]:
-        print >> sys.stderr "  getImpedanceControllerParam => OK"
+        print >> sys.stderr, "  getImpedanceControllerParam => OK"
     # 2. Setter check
     print >> sys.stderr, "2. Setter check"
     ret1[1].K_r=1.0
