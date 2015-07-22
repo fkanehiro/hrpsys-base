@@ -261,7 +261,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   eefm_rot_damping_gain = 20*5;
   eefm_rot_time_const = 1.5;
   eefm_pos_damping_gain = hrp::Vector3(3500*10, 3500*10, 3500);
-  eefm_pos_time_const_support = 1.5;
+  eefm_pos_time_const_support(0) = eefm_pos_time_const_support(1) = eefm_pos_time_const_support(2) = 1.5;
   eefm_pos_time_const_swing = 0.08;
   eefm_pos_transition_time = 0.01;
   eefm_pos_margin_time = 0.02;
@@ -780,7 +780,7 @@ void Stabilizer::getActualParameters ()
         for (size_t i = 0; i < 3; i++) {
             double tmp_damping_gain = (1-transition_smooth_gain) * eefm_pos_damping_gain(i) * 10 + transition_smooth_gain * eefm_pos_damping_gain(i);
             pos_ctrl(i) = calcDampingControl (ref_f_diff(i), f_diff(i), pos_ctrl(i),
-                                              tmp_damping_gain, eefm_pos_time_const_support);
+                                              tmp_damping_gain, eefm_pos_time_const_support(i));
         }
       } else {
         double remain_swing_time;
@@ -801,7 +801,7 @@ void Stabilizer::getActualParameters ()
           for (size_t i = 0; i < 3; i++) {
               double tmp_damping_gain = (1-transition_smooth_gain) * eefm_pos_damping_gain(i) * 10 + transition_smooth_gain * eefm_pos_damping_gain(i);
               pos_ctrl(i) = calcDampingControl (tmp_ratio * ref_f_diff(i), tmp_ratio * f_diff(i), pos_ctrl(i),
-                                                tmp_damping_gain, ((1-tmp_ratio)*eefm_pos_time_const_swing+tmp_ratio*eefm_pos_time_const_support));
+                                                tmp_damping_gain, ((1-tmp_ratio)*eefm_pos_time_const_swing+tmp_ratio*eefm_pos_time_const_support(i)));
           }
         }
       }
@@ -1325,9 +1325,9 @@ void Stabilizer::getParameter(OpenHRP::StabilizerService::stParam& i_stp)
   i_stp.eefm_rot_damping_gain = eefm_rot_damping_gain;
   for (size_t i = 0; i < 3; i++) {
       i_stp.eefm_pos_damping_gain[i] = eefm_pos_damping_gain(i);
+      i_stp.eefm_pos_time_const_support[i] = eefm_pos_time_const_support(i);
   }
   i_stp.eefm_rot_time_const = eefm_rot_time_const;
-  i_stp.eefm_pos_time_const_support = eefm_pos_time_const_support;
   i_stp.eefm_pos_time_const_swing = eefm_pos_time_const_swing;
   i_stp.eefm_pos_transition_time = eefm_pos_transition_time;
   i_stp.eefm_pos_margin_time = eefm_pos_margin_time;
@@ -1412,9 +1412,9 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
   eefm_rot_damping_gain = i_stp.eefm_rot_damping_gain;
   for (size_t i = 0; i < 3; i++) {
       eefm_pos_damping_gain(i) = i_stp.eefm_pos_damping_gain[i];
+      eefm_pos_time_const_support(i) = i_stp.eefm_pos_time_const_support[i];
   }
   eefm_rot_time_const = i_stp.eefm_rot_time_const;
-  eefm_pos_time_const_support = i_stp.eefm_pos_time_const_support;
   eefm_pos_time_const_swing = i_stp.eefm_pos_time_const_swing;
   eefm_pos_transition_time = i_stp.eefm_pos_transition_time;
   eefm_pos_margin_time = i_stp.eefm_pos_margin_time;
@@ -1472,7 +1472,8 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
   std::cerr << "[" << m_profile.instance_name << "]   eefm_body_attitude_control_gain  = [" << eefm_body_attitude_control_gain[0] << ", " << eefm_body_attitude_control_gain[1] << "]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   eefm_body_attitude_control_time_const  = [" << eefm_body_attitude_control_time_const[0] << ", " << eefm_body_attitude_control_time_const[1] << "][s]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   eefm_rot_damping_gain = " << eefm_rot_damping_gain << ", eefm_rot_time_const = " << eefm_rot_time_const << "[s]" << std::endl;
-  std::cerr << "[" << m_profile.instance_name << "]   eefm_pos_damping_gain = " << eefm_pos_damping_gain(0) << ", " << eefm_pos_damping_gain(1) << ", " << eefm_pos_damping_gain(2) << ", eefm_pos_time_const_support = " << eefm_pos_time_const_support << "[s], "
+  std::cerr << "[" << m_profile.instance_name << "]   eefm_pos_damping_gain = " << eefm_pos_damping_gain(0) << ", " << eefm_pos_damping_gain(1) << ", " << eefm_pos_damping_gain(2)
+            << ", eefm_pos_time_const_support = " << eefm_pos_time_const_support(0) << ", " << eefm_pos_time_const_support(1) << ", " << eefm_pos_time_const_support(2) << "[s], "
             << "eefm_pos_time_const_swing = " << eefm_pos_time_const_swing << "[s]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   eefm_pos_transition_time = " << eefm_pos_transition_time << "[s], eefm_pos_margin_time = " << eefm_pos_margin_time << "[s]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   eefm_cogvel_cutoff_freq = " << eefm_cogvel_cutoff_freq << "[Hz]" << std::endl;

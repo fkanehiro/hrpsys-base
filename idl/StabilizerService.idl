@@ -83,7 +83,7 @@ module OpenHRP
       /// Foot position damping gain [N/(m/s)].
       DblArray3 eefm_pos_damping_gain;
       /// Foot position damping time constant for double support phase [s].
-      double eefm_pos_time_const_support;
+      DblArray3 eefm_pos_time_const_support;
       /// Foot position damping time constant for single support phase [s].
       double eefm_pos_time_const_swing;
       /// Transition time for single=>double support phase gain interpolation [s].
