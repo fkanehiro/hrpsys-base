@@ -129,6 +129,8 @@ module OpenHRP
       double cop_check_margin;
       /// CP margin [m]
       double cp_check_margin;
+      /// contact decision threshold [N]
+      double contact_decision_threshold;
       /// Foot origin position offset
       sequence< sequence<double, 3> > foot_origin_offset;
       /// Emergency signal checking mode
