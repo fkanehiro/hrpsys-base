@@ -94,7 +94,7 @@ namespace rats
     {
         double toe_heel_phase_ratio[NUM_TH_PHASES];
         size_t toe_heel_phase_count[NUM_TH_PHASES], one_step_count;
-        bool calc_toe_heel_phase_count_from_raio ()
+        void calc_toe_heel_phase_count_from_raio ()
         {
             double ratio_sum = 0.0;
             for (size_t i = 0; i < NUM_TH_PHASES; i++) {
@@ -939,7 +939,7 @@ namespace rats
     size_t get_footstep_index() const { return lcg.get_footstep_index(); };
     size_t get_lcg_count() const { return lcg.get_lcg_count(); };
     double get_current_swing_time(const size_t idx) const { return lcg.get_current_swing_time(idx); };
-    size_t get_current_support_state() const { return lcg.get_current_support_state();};
+    leg_type get_current_support_state() const { return lcg.get_current_support_state();};
     double get_default_step_time () const { return default_step_time; };
     double get_default_step_height () const { return lcg.get_default_step_height(); };
     double get_default_double_support_ratio () const { return default_double_support_ratio; };
