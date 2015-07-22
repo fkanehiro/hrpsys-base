@@ -277,6 +277,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   eefm_ee_error_cutoff_freq = 50.0; // [Hz]
   cop_check_margin = 20.0*1e-3; // [m]
   cp_check_margin = 60.0*1e-3; // [m]
+  contact_decision_threshold = 50; // [N]
 
   // parameters for RUNST
   double ke = 0, tc = 0;
@@ -963,7 +964,7 @@ bool Stabilizer::calcZMP(hrp::Vector3& ret_zmp, const double zmp_z)
     prev_act_force_z[i] = 0.85 * prev_act_force_z[i] + 0.15 * nf(2); // filter, cut off 5[Hz]
   }
   tmpfz2 = prev_act_force_z[0] + prev_act_force_z[1];
-  if (tmpfz2 < 50) {
+  if (tmpfz2 < contact_decision_threshold) {
     ret_zmp = act_zmp;
     return false; // in the air
   } else {
@@ -1356,6 +1357,7 @@ void Stabilizer::getParameter(OpenHRP::StabilizerService::stParam& i_stp)
   i_stp.transition_time = transition_time;
   i_stp.cop_check_margin = cop_check_margin;
   i_stp.cp_check_margin = cp_check_margin;
+  i_stp.contact_decision_threshold = contact_decision_threshold;
   switch(control_mode) {
   case MODE_IDLE: i_stp.controller_mode = OpenHRP::StabilizerService::MODE_IDLE; break;
   case MODE_AIR: i_stp.controller_mode = OpenHRP::StabilizerService::MODE_AIR; break;
@@ -1440,6 +1442,7 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
   transition_time = i_stp.transition_time;
   cop_check_margin = i_stp.cop_check_margin;
   cp_check_margin = i_stp.cp_check_margin;
+  contact_decision_threshold = i_stp.contact_decision_threshold;
   if (i_stp.foot_origin_offset.length () != 2) {
       std::cerr << "[" << m_profile.instance_name << "]   foot_origin_offset cannot be set. Length " << i_stp.foot_origin_offset.length() << " != " << 2 << std::endl;
   } else if (control_mode != MODE_IDLE) {
@@ -1490,6 +1493,7 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
   std::cerr << "[" << m_profile.instance_name << "]  transition_time = " << transition_time << "[s]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]  cop_check_margin = " << cop_check_margin << "[m]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]  cp_check_margin = " << cp_check_margin << "[m]" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]  contact_decision_threshold = " << contact_decision_threshold << "[N]" << std::endl;
 }
 
 void Stabilizer::waitSTTransition()
