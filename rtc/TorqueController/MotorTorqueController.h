@@ -61,6 +61,7 @@ public:
   controller_state_t getMotorControllerState(void);
 
   // for debug
+  void setErrorPrefix(const std::string& _error_prefix);
   void printMotorControllerVariables(void); // debug print
   
 private:
@@ -85,8 +86,10 @@ private:
     void setupTwoDofControllerDynamicsModel(TwoDofControllerDynamicsModel::TwoDofControllerDynamicsModelParam &_param);
     bool updateTwoDofControllerDynamiccsModelParam(TwoDofControllerDynamicsModel::TwoDofControllerDynamicsModelParam &_param);
     double getMotorControllerDq(void); // get according dq according to state
+    void setErrorPrefix(const std::string& _error_prefix);
   private:
     bool updateParam(double &_param, const double &_new_value); // update param if new_value is acceptable
+    std::string error_prefix;
   };
   
   // internal functions
@@ -104,7 +107,7 @@ private:
   double m_actual_tauRef; // reference tau which is limited or overwritten by emergency (mainly for debug message)
   MotorController m_normalController; // substance of two dof controller
   MotorController m_emergencyController; // overwrite normal controller when emergency
-  
+  std::string m_error_prefix; // assumed to be instance name of rtc
 };
 
 

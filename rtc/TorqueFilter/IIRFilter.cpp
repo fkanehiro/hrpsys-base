@@ -1,14 +1,14 @@
 #include <iostream>
 #include "IIRFilter.h"
 
-IIRFilter::IIRFilter(int dim, std::vector<double>& fb_coeffs, std::vector<double>& ff_coeffs)  
+IIRFilter::IIRFilter(int dim, std::vector<double>& fb_coeffs, std::vector<double>& ff_coeffs, const std::string& error_prefix)
 {
   // init dimention
   m_dimention = dim;
   
   // init coefficients
   if(fb_coeffs.size() != dim + 1|| ff_coeffs.size() != dim + 1){
-    std::cout << "coefficients size error" << std::endl;
+    std::cout << "[" <<  error_prefix << "]" << "IIRFilter coefficients size error" << std::endl;
     return;
   }
   for(std::vector<double>::iterator it = fb_coeffs.begin(); it != fb_coeffs.end(); it++){

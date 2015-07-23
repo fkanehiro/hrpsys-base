@@ -283,8 +283,11 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   double ke = 0, tc = 0;
   for (int i = 0; i < ST_NUM_LEGS; i++) {
     m_tau_x[i].setup(ke, tc, dt);
+    m_tau_x[i].setErrorPrefix(std::string(m_profile.instance_name));
     m_tau_y[i].setup(ke, tc, dt);
+    m_tau_y[i].setErrorPrefix(std::string(m_profile.instance_name));
     m_f_z.setup(ke, tc, dt);
+    m_f_z.setErrorPrefix(std::string(m_profile.instance_name));
   }
   pangx_ref = pangy_ref = pangx = pangy = 0;
   rdx = rdy = rx = ry = 0;

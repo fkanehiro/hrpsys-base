@@ -122,7 +122,7 @@ RTC::ReturnCode_t TorqueController::onInitialize()
   param_num_to_motor_model_type[tdc_pd_model_params_num] = MotorTorqueController::TWO_DOF_CONTROLLER_PD_MODEL;
   param_num_to_motor_model_type[tdc_dynamics_model_params_num] = MotorTorqueController::TWO_DOF_CONTROLLER_DYNAMICS_MODEL;
   if (param_num_to_motor_model_type.find(motorTorqueControllerParamsFromConf.size()) == param_num_to_motor_model_type.end()) {
-    std::cerr << "[WARNING] torque_controller_params is not correct number, " << motorTorqueControllerParamsFromConf.size() << ". Use default controller." << std::endl;
+      std::cerr << "[" <<  m_profile.instance_name << "]" << "torque_controller_params is not correct number, " << motorTorqueControllerParamsFromConf.size() << ". Use default controller." << std::endl;
     model_type = MotorTorqueController::TWO_DOF_CONTROLLER; // default
   } else {
     model_type = param_num_to_motor_model_type[motorTorqueControllerParamsFromConf.size()];
@@ -131,7 +131,7 @@ RTC::ReturnCode_t TorqueController::onInitialize()
   switch (model_type) {
   case MotorTorqueController::TWO_DOF_CONTROLLER_DYNAMICS_MODEL: // use TwoDofControllerDynamicsModel
   { // limit scope of tdc_dynamics_model_params
-    std::cerr << "use TwoDofControllerDynamicsModel" << std::endl;
+    std::cerr << "[" <<  m_profile.instance_name << "]" << "use TwoDofControllerDynamicsModel" << std::endl;
     std::vector<TwoDofControllerDynamicsModel::TwoDofControllerDynamicsModelParam> tdc_dynamics_model_params(m_robot->numJoints());
     for (int i = 0; i < m_robot->numJoints(); i++) { 
       if (motorTorqueControllerParamsFromConf.size() == tdc_dynamics_model_params_num) { // use conf params if parameter num is correct
@@ -144,18 +144,18 @@ RTC::ReturnCode_t TorqueController::onInitialize()
       m_motorTorqueControllers.push_back(MotorTorqueController(m_robot->joint(i)->name, tdc_dynamics_model_params[i]));
     }
     if (m_debugLevel > 0) {
-      std::cerr << "torque controller parames:" << std::endl;
+      std::cerr << "[" <<  m_profile.instance_name << "]" << "torque controller parames:" << std::endl;
       for (int i = 0; i < m_robot->numJoints(); i++) {
-        std::cerr << m_robot->joint(i)->name << ":" <<
-          tdc_dynamics_model_params[i].alpha << " " << tdc_dynamics_model_params[i].beta << " " << tdc_dynamics_model_params[i].ki <<
-          " " << tdc_dynamics_model_params[i].tc << " " << tdc_dynamics_model_params[i].dt << std::endl;
+        std::cerr << "[" <<  m_profile.instance_name << "]" << m_robot->joint(i)->name << ":"
+                  << tdc_dynamics_model_params[i].alpha << " " << tdc_dynamics_model_params[i].beta << " " << tdc_dynamics_model_params[i].ki
+                  << " " << tdc_dynamics_model_params[i].tc << " " << tdc_dynamics_model_params[i].dt << std::endl;
       }
     }
     break;
   }
   case MotorTorqueController::TWO_DOF_CONTROLLER_PD_MODEL: // use TwoDofControllerPDModel
   { // limit scope of tdc_pd_model_params
-    std::cerr << "use TwoDofControllerPDModel" << std::endl;
+    std::cerr << "[" <<  m_profile.instance_name << "]" << "use TwoDofControllerPDModel" << std::endl;
     std::vector<TwoDofControllerPDModel::TwoDofControllerPDModelParam> tdc_pd_model_params(m_robot->numJoints());
     for (int i = 0; i < m_robot->numJoints(); i++) {
       if (motorTorqueControllerParamsFromConf.size() == tdc_pd_model_params_num) { // use conf params if parameter num is correct
@@ -167,10 +167,11 @@ RTC::ReturnCode_t TorqueController::onInitialize()
       m_motorTorqueControllers.push_back(MotorTorqueController(m_robot->joint(i)->name, tdc_pd_model_params[i]));
     }
     if (m_debugLevel > 0) {
-      std::cerr << "torque controller parames:" << std::endl;
+      std::cerr << "[" <<  m_profile.instance_name << "]" << "torque controller parames:" << std::endl;
       for (int i = 0; i < m_robot->numJoints(); i++) {
-        std::cerr << m_robot->joint(i)->name << ":" << tdc_pd_model_params[i].ke << " " << tdc_pd_model_params[i].kd <<
-          " " << tdc_pd_model_params[i].tc << " " << tdc_pd_model_params[i].dt << std::endl;
+        std::cerr << "[" <<  m_profile.instance_name << "]" << m_robot->joint(i)->name << ":"
+                  << tdc_pd_model_params[i].ke << " " << tdc_pd_model_params[i].kd
+                  << " " << tdc_pd_model_params[i].tc << " " << tdc_pd_model_params[i].dt << std::endl;
       }
     }
     break;
@@ -178,7 +179,7 @@ RTC::ReturnCode_t TorqueController::onInitialize()
   case MotorTorqueController::TWO_DOF_CONTROLLER: // use TwoDofController
   default:
   { // limit scope of tdc_params
-    std::cerr << "use TwoDofController" << std::endl;
+    std::cerr << "[" <<  m_profile.instance_name << "]" << "use TwoDofController" << std::endl;
     std::vector<TwoDofController::TwoDofControllerParam> tdc_params(m_robot->numJoints());
     for (int i = 0; i < m_robot->numJoints(); i++) { 
       if (motorTorqueControllerParamsFromConf.size() == tdc_params_num) { // use conf params if parameter num is correct
@@ -189,9 +190,10 @@ RTC::ReturnCode_t TorqueController::onInitialize()
       m_motorTorqueControllers.push_back(MotorTorqueController(m_robot->joint(i)->name, tdc_params[i]));
     }
     if (m_debugLevel > 0) {
-      std::cerr << "torque controller parames:" << std::endl;
+      std::cerr << "[" <<  m_profile.instance_name << "]" << "torque controller parames:" << std::endl;
       for (int i = 0; i < m_robot->numJoints(); i++) {
-        std::cerr << m_robot->joint(i)->name << ":" << tdc_params[i].ke << " " << tdc_params[i].tc << " " << tdc_params[i].dt << std::endl;
+        std::cerr << "[" <<  m_profile.instance_name << "]" << m_robot->joint(i)->name << ":"
+                  << tdc_params[i].ke << " " << tdc_params[i].tc << " " << tdc_params[i].dt << std::endl;
       }
     }
     break;
@@ -200,6 +202,7 @@ RTC::ReturnCode_t TorqueController::onInitialize()
 
   // parameter setttings for torque controller
   for (int i = 0; i < m_robot->numJoints(); i++) {
+    m_motorTorqueControllers[i].setErrorPrefix(std::string(m_profile.instance_name));
     m_motorTorqueControllers[i].setupMotorControllerMinMaxDq(m_robot->joint(i)->lvlimit * m_dt, m_robot->joint(i)->uvlimit * m_dt);
   }
 
@@ -287,11 +290,11 @@ RTC::ReturnCode_t TorqueController::onExecute(RTC::UniqueId ec_id)
     }
   } else {
     if (isDebug()) {
-      std::cerr << "TorqueController input is not correct" << std::endl;
-      std::cerr << " numJoints: " << m_robot->numJoints() << std::endl;
-      std::cerr << "  qCurrent: " << m_qCurrentIn.data.length() << std::endl;
-      std::cerr << "    qRefIn: " << m_qRefIn.data.length() << std::endl;
-      std::cerr << "tauCurrent: " << m_tauCurrentIn.data.length() << std::endl;
+      std::cerr << "[" <<  m_profile.instance_name << "]" << "TorqueController input is not correct" << std::endl;
+      std::cerr << "[" <<  m_profile.instance_name << "]" << " numJoints: " << m_robot->numJoints() << std::endl;
+      std::cerr << "[" <<  m_profile.instance_name << "]" << "  qCurrent: " << m_qCurrentIn.data.length() << std::endl;
+      std::cerr << "[" <<  m_profile.instance_name << "]" << "    qRefIn: " << m_qRefIn.data.length() << std::endl;
+      std::cerr << "[" <<  m_profile.instance_name << "]" << "tauCurrent: " << m_tauCurrentIn.data.length() << std::endl;
       std::cerr << std::endl;
     }
     // pass qRefIn to qRefOut
@@ -347,10 +350,6 @@ void TorqueController::executeTorqueControl(hrp::dvector &dq)
   hrp::dvector tauMax(numJoints);
   dq.resize(numJoints);
 
-  if (isDebug()) {
-    std::cerr << "[" << m_profile.instance_name << "]" << std::endl;
-  }
-  
   // determine tauMax
   for(int i = 0; i < numJoints; i++) {
     double tauMaxFromModel = m_robot->joint(i)->climit * m_robot->joint(i)->gearRatio * m_robot->joint(i)->torqueConst;
@@ -364,12 +363,12 @@ void TorqueController::executeTorqueControl(hrp::dvector &dq)
   // execute torque control
   // tauCurrent.length is assumed to be equal to numJoints (check in onExecute)
   if (isDebug()) {
-    std::cerr << "tauCurrentIn: ";
+    std::cerr << "[" <<  m_profile.instance_name << "]" << "tauCurrentIn: ";
     for (int i = 0; i < numJoints; i++) {
       std::cerr << " " << m_tauCurrentIn.data[i];
     }
     std::cerr << std::endl;
-    std::cerr << "tauMax: ";
+    std::cerr << "[" <<  m_profile.instance_name << "]" << "tauMax: ";
     for (int i = 0; i < numJoints; i++) {
       std::cerr << " " << tauMax[i];
     }
@@ -387,7 +386,7 @@ void TorqueController::executeTorqueControl(hrp::dvector &dq)
   }
     
   if (isDebug()) {
-    std::cerr << "dq: ";
+    std::cerr << "[" <<  m_profile.instance_name << "]" << "dq: ";
     for (int i = 0; i < dq.size(); i++) {
       std::cerr << dq[i] << " ";
     }
@@ -403,7 +402,7 @@ bool TorqueController::startTorqueControl(std::string jname)
   for (std::vector<MotorTorqueController>::iterator it = m_motorTorqueControllers.begin(); it != m_motorTorqueControllers.end(); ++it) {
     if ((*it).getJointName() == jname){
       if (m_debugLevel > 0) {
-        std::cerr << "Start torque control in " << jname << std::endl;
+        std::cerr << "[" <<  m_profile.instance_name << "]" << "Start torque control in " << jname << std::endl;
       }
       succeed = (*it).activate();
     }
@@ -429,7 +428,7 @@ bool TorqueController::stopTorqueControl(std::string jname)
   for (std::vector<MotorTorqueController>::iterator it = m_motorTorqueControllers.begin(); it != m_motorTorqueControllers.end(); ++it) {
     if ((*it).getJointName() == jname){
       if (m_debugLevel > 0) {
-        std::cerr << "Stop torque control in " << jname << std::endl;
+        std::cerr << "[" <<  m_profile.instance_name << "]" << "Stop torque control in " << jname << std::endl;
       }
       succeed = (*it).deactivate();
     }
@@ -460,7 +459,7 @@ bool TorqueController::setReferenceTorque(std::string jname, double tauRef)
   for (std::vector<MotorTorqueController>::iterator it = m_motorTorqueControllers.begin(); it != m_motorTorqueControllers.end(); ++it) {
     if ((*it).getJointName() == jname) {
       if (m_debugLevel > 0) {
-        std::cerr << "Set " << jname << " reference torque to " << tauRef << std::endl;
+        std::cerr << "[" <<  m_profile.instance_name << "]" << "Set " << jname << " reference torque to " << tauRef << std::endl;
       }
       succeed = (*it).setReferenceTorque(tauRef);
     }
@@ -474,7 +473,7 @@ bool TorqueController::setMultipleReferenceTorques(const OpenHRP::TorqueControll
   bool retval;
   // check accordance of joint name and tauRefs
   if (jnames.length() != tauRefs.length()) {
-    std::cerr << "[ERROR] Length of jnames and tauRefs are different." << std::endl;
+    std::cerr << "[" <<  m_profile.instance_name << "]" << "Length of jnames and tauRefs are different." << std::endl;
     return false;
   }
   // set reference torques
@@ -494,12 +493,12 @@ bool TorqueController::setTorqueControllerParam(const OpenHRP::TorqueControllerS
   MotorTorqueController *tgt_controller = NULL;
   for (std::vector<MotorTorqueController>::iterator it = m_motorTorqueControllers.begin(); it != m_motorTorqueControllers.end(); ++it) {
     if ((*it).getJointName() == jname){
-      std::cerr << "target joint:" << t_param.name << std::endl;
+      std::cerr << "[" <<  m_profile.instance_name << "]" << "target joint:" << t_param.name << std::endl;
       tgt_controller = &(*it);
     }
   }
   if (tgt_controller == NULL) {
-    std::cerr << t_param.name << "does not found." << std::endl;
+    std::cerr << "[" <<  m_profile.instance_name << "]" << t_param.name << "does not found." << std::endl;
     return false;
   }
 
@@ -509,7 +508,7 @@ bool TorqueController::setTorqueControllerParam(const OpenHRP::TorqueControllerS
   switch(model_type) { // dt is defined by controller cycle
   case MotorTorqueController::TWO_DOF_CONTROLLER:
   { // limit scope for param 
-    std::cerr << "new param:" << t_param.ke << " " << t_param.tc << " " << std::endl;
+    std::cerr << "[" <<  m_profile.instance_name << "]" << "new param:" << t_param.ke << " " << t_param.tc << " " << std::endl;
     TwoDofController::TwoDofControllerParam param;
     param.ke = t_param.ke; param.tc = t_param.tc; param.dt = m_dt;
     retval = tgt_controller->updateControllerParam(param);
@@ -517,7 +516,7 @@ bool TorqueController::setTorqueControllerParam(const OpenHRP::TorqueControllerS
   }
   case MotorTorqueController::TWO_DOF_CONTROLLER_PD_MODEL:
   { // limit scope for param 
-    std::cerr << "new param:" << t_param.ke << " " << t_param.kd << " " << t_param.tc << " " << std::endl;
+    std::cerr << "[" <<  m_profile.instance_name << "]" << "new param:" << t_param.ke << " " << t_param.kd << " " << t_param.tc << " " << std::endl;
     TwoDofControllerPDModel::TwoDofControllerPDModelParam param;
     param.ke = t_param.ke; param.kd = t_param.kd; param.tc = t_param.tc; param.dt = m_dt;
     retval = tgt_controller->updateControllerParam(param);
@@ -525,7 +524,7 @@ bool TorqueController::setTorqueControllerParam(const OpenHRP::TorqueControllerS
   }
   case MotorTorqueController::TWO_DOF_CONTROLLER_DYNAMICS_MODEL:
   { // limit scope for param 
-    std::cerr << "new param:" << t_param.alpha << " " << t_param.beta << " " << t_param.ki << " " << t_param.tc << " " << std::endl;
+    std::cerr << "[" <<  m_profile.instance_name << "]" << "new param:" << t_param.alpha << " " << t_param.beta << " " << t_param.ki << " " << t_param.tc << " " << std::endl;
     TwoDofControllerDynamicsModel::TwoDofControllerDynamicsModelParam param;
     param.alpha = t_param.alpha; param.beta = t_param.beta; param.ki = t_param.ki; param.tc = t_param.tc; param.dt = m_dt;
     retval = tgt_controller->updateControllerParam(param);

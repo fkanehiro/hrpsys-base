@@ -21,6 +21,7 @@ TwoDofControllerPDModel::TwoDofControllerPDModel() {
   for (int i = 0; i < NUM_CONVOLUTION_TERM; i++) {
     convolutions.push_back(Convolution(0.0, 0.0));
   }
+  error_prefix = ""; // inheritted from TwoDofControllerInterface  
 }
 
 TwoDofControllerPDModel::TwoDofControllerPDModel(TwoDofControllerPDModel::TwoDofControllerPDModelParam &_param, unsigned int _range) {
@@ -30,6 +31,7 @@ TwoDofControllerPDModel::TwoDofControllerPDModel(TwoDofControllerPDModel::TwoDof
   for (int i = 0; i < NUM_CONVOLUTION_TERM; i++) {
     convolutions.push_back(Convolution(_param.dt, _range));
   }
+  error_prefix = ""; // inheritted from TwoDofControllerInterface  
 }
 
 TwoDofControllerPDModel::~TwoDofControllerPDModel() {
@@ -76,8 +78,8 @@ double TwoDofControllerPDModel::update (double _x, double _xd) {
 
   // check parameters
   if (!param.ke || !param.kd || !param.tc || !param.dt) {
-    std::cerr << "ERROR: parameters are not set." << std::endl;
-    std::cerr << "ke: " << param.ke << ", kd: " << param.kd << ", tc: " << param.tc << ", dt: " << param.dt << std::endl;
+    std::cerr << "[" << error_prefix << "]" << "TwoDofControllerPDModel parameters are not set." << std::endl;
+    std::cerr << "[" << error_prefix << "]" << "ke: " << param.ke << ", kd: " << param.kd << ", tc: " << param.tc << ", dt: " << param.dt << std::endl;
     return 0;
   }
 

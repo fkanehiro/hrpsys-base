@@ -13,6 +13,7 @@
 // </rtc-template>
 
 #include "Integrator.h"
+#include <string>
 
 // interface class for TwoDofController
 class TwoDofControllerInterface {
@@ -22,6 +23,9 @@ public:
   virtual void setup() = 0; // setup parameters
   virtual bool getParameter() = 0; // get prameter of controller
   virtual double update(double _x, double _xd) = 0; // calculate input from current value(_x) and target value(_xd)
+  void setErrorPrefix(const std::string& _error_prefix); // set prefix string for error message
+protected:
+  std::string error_prefix;
 };
 
 
