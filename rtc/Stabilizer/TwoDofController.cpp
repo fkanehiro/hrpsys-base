@@ -11,6 +11,10 @@
 #include "TwoDofController.h"
 #include <iostream>
 
+void TwoDofControllerInterface::setErrorPrefix(const std::string& _error_prefix) {
+  error_prefix = _error_prefix;
+}
+
 TwoDofController::TwoDofController() {
   param = TwoDofController::TwoDofControllerParam(); // use default constructor
   integrator = Integrator(0.0, 0.0);
@@ -78,10 +82,6 @@ double TwoDofController::update (double _x, double _xd) {
 
   return -velocity * param.dt;
   
-}
-
-void TwoDofController::setErrorPrefix(const std::string& _error_prefix) {
-  error_prefix = _error_prefix;
 }
 
 // for compatiblity of Stabilizer 
