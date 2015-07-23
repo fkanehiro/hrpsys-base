@@ -38,9 +38,9 @@ def demo ():
     demoTestAllLimitTables()
 
 def demoTestAllLimitTables():
-    print "1. demo all jointLimitTables"
+    print >> sys.stderr, "1. demo all jointLimitTables"
     for table_idx in range(len(limit_table_list)/6):
-        testLimitTables(table_idx)
+        testLimitTables(table_idx, True, 5)
 
 def rad2deg (ang):
     return 180.0*ang/3.14159
@@ -69,8 +69,10 @@ def testLimitTables (table_idx=0, debug=True, loop_mod=1):
      self_llimits, self_ulimits] = getJointLimitTableInfo(table_idx)
     lret = testOneLimitTable(self_jointId, target_jointId, self_llimits, target_llimit, target_ulimit, -1, debug, loop_mod)
     uret = testOneLimitTable(self_jointId, target_jointId, self_ulimits, target_llimit, target_ulimit, 1, debug, loop_mod)
-    print "lower limit check(", self_joint_name, ",", target_joint_name,")=", lret
-    print "upper limit check(", self_joint_name, ",", target_joint_name,")=", uret
+    print >> sys.stderr, "lower limit check(", self_joint_name, ",", target_joint_name,")=", lret
+    print >> sys.stderr, "upper limit check(", self_joint_name, ",", target_joint_name,")=", uret
+    assert(lret)
+    assert(uret)
 
 def testOneLimitTable (self_jointId, target_jointId, limit_table, target_llimit, target_ulimit, angle_violation, debug=True, loop_mod=1):
     tmp_pose=map(lambda x : x, initial_pose)
