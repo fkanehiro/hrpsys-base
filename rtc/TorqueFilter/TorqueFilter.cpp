@@ -127,13 +127,13 @@ RTC::ReturnCode_t TorqueFilter::onInitialize()
   if ( m_torque_offset.size() == torque_offset.size() && m_debugLevel > 0) {
     for(int i = 0; i < m_robot->numJoints(); i++){
         coil::stringTo(m_torque_offset[i], torque_offset[i].c_str());
-        std::cerr << "offset[" << m_robot->joint(i)->name << "]: " << m_torque_offset[i] << std::endl;
+        std::cerr << "[" <<  m_profile.instance_name << "]" << "offset[" << m_robot->joint(i)->name << "]: " << m_torque_offset[i] << std::endl;
     }
   } else {
     if (m_debugLevel > 0) {
-      std::cerr <<  m_profile.instance_name << " : Size of torque_offset is not correct." << std::endl;
-      std::cerr <<  "joints: " << m_robot->numJoints() << std::endl;
-      std::cerr <<  "offsets: " << torque_offset.size() << std::endl;
+      std::cerr << "[" <<  m_profile.instance_name << "]" << "Size of torque_offset is not correct." << std::endl;
+      std::cerr << "[" <<  m_profile.instance_name << "]" <<  "joints: " << m_robot->numJoints() << std::endl;
+      std::cerr << "[" <<  m_profile.instance_name << "]" <<  "offsets: " << torque_offset.size() << std::endl;
     }
   }
   
@@ -147,18 +147,18 @@ RTC::ReturnCode_t TorqueFilter::onInitialize()
   if ( torque_filter_params.size() > 0 ) {
     coil::stringTo(filter_dim, torque_filter_params[0].c_str());
     if (m_debugLevel > 0) {
-      std::cerr << "filter dim: " << filter_dim << std::endl;
-      std::cerr << "torque filter param size: " << torque_filter_params.size() << std::endl;
+      std::cerr << "[" <<  m_profile.instance_name << "]" << "filter dim: " << filter_dim << std::endl;
+      std::cerr << "[" <<  m_profile.instance_name << "]" << "torque filter param size: " << torque_filter_params.size() << std::endl;
     }
   } else {
     use_default_flag = true;
     if (m_debugLevel > 0) {
-      std::cerr <<  m_profile.instance_name << " : There is no torque_filter_params. Use default values." << std::endl;
+      std::cerr<< "[" <<  m_profile.instance_name << "]" << "There is no torque_filter_params. Use default values." << std::endl;
     }
   }
   if (!use_default_flag && ((filter_dim + 1) * 2 + 1 != torque_filter_params.size()) ) {
     if (m_debugLevel > 0) {
-      std::cerr <<  m_profile.instance_name << " : Size of torque_filter_params is not correct. Use default values." << std::endl;
+      std::cerr<< "[" <<  m_profile.instance_name << "]" << "Size of torque_filter_params is not correct. Use default values." << std::endl;
     }
     use_default_flag = true;
   }
@@ -192,14 +192,14 @@ RTC::ReturnCode_t TorqueFilter::onInitialize()
 
   if (m_debugLevel > 0) {
     for (int i = 0; i < filter_dim + 1; i++) {
-        std::cerr << "fb[" << i << "]: " << fb_coeffs[i] << std::endl;
-        std::cerr << "ff[" << i << "]: " << ff_coeffs[i] << std::endl;
+        std::cerr << "[" <<  m_profile.instance_name << "]" << "fb[" << i << "]: " << fb_coeffs[i] << std::endl;
+        std::cerr << "[" <<  m_profile.instance_name << "]" << "ff[" << i << "]: " << ff_coeffs[i] << std::endl;
     }
   }
   
   // make filter instance
   for(int i = 0; i < m_robot->numJoints(); i++){
-    m_filters.push_back(IIRFilter(filter_dim, fb_coeffs, ff_coeffs));
+    m_filters.push_back(IIRFilter(filter_dim, fb_coeffs, ff_coeffs, std::string(m_profile.instance_name)));
   }
   
   return RTC::RTC_OK;
@@ -280,9 +280,9 @@ RTC::ReturnCode_t TorqueFilter::onExecute(RTC::UniqueId ec_id)
       }
     } else {
       if (DEBUGP) {
-        std::cerr << "TorqueFilter input is not correct" << std::endl;
-        std::cerr << " numJoints: " << m_robot->numJoints() << std::endl;
-        std::cerr << " qCurrent: " << m_qCurrent.data.length() << std::endl;
+        std::cerr << "[" <<  m_profile.instance_name << "]" << "input is not correct" << std::endl;
+        std::cerr << "[" <<  m_profile.instance_name << "]" << " numJoints: " << m_robot->numJoints() << std::endl;
+        std::cerr << "[" <<  m_profile.instance_name << "]" << " qCurrent: " << m_qCurrent.data.length() << std::endl;
         std::cerr << std::endl;
       }
       for (int i = 0; i < num_joints; i++) {
@@ -291,12 +291,12 @@ RTC::ReturnCode_t TorqueFilter::onExecute(RTC::UniqueId ec_id)
     }
 
     if (DEBUGP) {
-      std::cerr << "raw torque: ";
+      std::cerr << "[" <<  m_profile.instance_name << "]" << "raw torque: ";
       for (int i = 0; i < num_joints; i++) {
         std::cerr << " " << m_tauIn.data[i] ;
       }
       std::cerr << std::endl;
-      std::cerr << "gravity compensation: ";
+      std::cerr << "[" <<  m_profile.instance_name << "]" << "gravity compensation: ";
       for (int i = 0; i < num_joints; i++) {
         std::cerr << " " << g_joint_torque[i];
       }
@@ -326,7 +326,7 @@ RTC::ReturnCode_t TorqueFilter::onExecute(RTC::UniqueId ec_id)
       }
     }
     if (DEBUGP) {
-      std::cerr << "filtered torque: ";
+      std::cerr << "[" <<  m_profile.instance_name << "]" << "filtered torque: ";
       for (int i = 0; i < num_joints; i++) {
         std::cerr << " " << torque[i];
       }
@@ -336,9 +336,9 @@ RTC::ReturnCode_t TorqueFilter::onExecute(RTC::UniqueId ec_id)
     m_tauOutOut.write();
   } else {
     if (DEBUGP) {
-      std::cerr << "TorqueFilter input is not correct" << std::endl;
-      std::cerr << " numJoints: " << m_robot->numJoints() << std::endl;
-      std::cerr << " tauIn: " << m_tauIn.data.length() << std::endl;
+      std::cerr << "[" <<  m_profile.instance_name << "]" << "input is not correct" << std::endl;
+      std::cerr << "[" <<  m_profile.instance_name << "]" << " numJoints: " << m_robot->numJoints() << std::endl;
+      std::cerr << "[" <<  m_profile.instance_name << "]" << " tauIn: " << m_tauIn.data.length() << std::endl;
       std::cerr << std::endl;
     }
   }
