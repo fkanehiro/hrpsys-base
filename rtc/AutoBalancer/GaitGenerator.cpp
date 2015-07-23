@@ -35,13 +35,16 @@ namespace rats
   };
 
     std::vector<leg_type> get_support_leg_types_from_footstep_nodes(const std::vector<step_node>& fns) {
+        /* cannot use boost::remove_erase_if() */
         if (fns.size() == 1) {
             std::vector<leg_type> tmp_spls = boost::assign::list_of(RLEG)(LLEG);
-            boost::remove_erase_if(tmp_spls, (boost::lambda::_1 == fns.front().l_r));
+            std::vector<leg_type>::iterator it = std::remove_if(tmp_spls.begin(), tmp_spls.end(), (boost::lambda::_1 == fns.front().l_r));
+            tmp_spls.erase(it, tmp_spls.end());
             return tmp_spls;
         } else if (fns.size() == 2) {
             std::vector<leg_type> tmp_spls = boost::assign::list_of(RLEG)(LLEG)(RARM)(LARM);
-            boost::remove_erase_if(tmp_spls, (boost::lambda::_1 == fns.at(0).l_r || boost::lambda::_1 == fns.at(1).l_r));
+            std::vector<leg_type>::iterator it = std::remove_if(tmp_spls.begin(), tmp_spls.end(), (boost::lambda::_1 == fns.at(0).l_r || boost::lambda::_1 == fns.at(1).l_r));
+            tmp_spls.erase(it, tmp_spls.end());
             return tmp_spls;
         } else {
             std::cerr << "not implemented yet " << std::endl;

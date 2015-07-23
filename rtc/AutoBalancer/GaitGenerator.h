@@ -6,7 +6,6 @@
 #include "interpolator.h"
 #include <vector>
 #include <queue>
-#include <boost/range/algorithm_ext/erase.hpp>
 #include <boost/assign.hpp>
 #include <boost/lambda/lambda.hpp>
 
@@ -675,14 +674,17 @@ namespace rats
       const std::vector<coordinates>& get_support_legs_coords_idx(const size_t idx) const { return support_legs_coords_list[idx]; };
       std::vector<leg_type> get_support_legs() const { return support_legs;};
       std::vector<leg_type> get_swing_legs() const {
+        /* cannot use boost::remove_erase_if() */
         if (support_legs.size() == 1) {
-          std::vector<leg_type> tmp_spll = boost::assign::list_of(RLEG)(LLEG);
-          boost::remove_erase_if(tmp_spll, (boost::lambda::_1 == support_legs.front()));
-          return tmp_spll;
+          std::vector<leg_type> tmp_spls = boost::assign::list_of(RLEG)(LLEG);
+          std::vector<leg_type>::iterator it = std::remove_if(tmp_spls.begin(), tmp_spls.end(), (boost::lambda::_1 == support_legs.front()));
+          tmp_spls.erase(it, tmp_spls.end());
+          return tmp_spls;
         } else if (support_legs.size() == 2) {
-          std::vector<leg_type> tmp_spll = boost::assign::list_of(RLEG)(LLEG)(RARM)(LARM);
-          boost::remove_erase_if(tmp_spll, (boost::lambda::_1 == support_legs.at(0) || boost::lambda::_1 == support_legs.at(1)));
-          return tmp_spll;
+          std::vector<leg_type> tmp_spls = boost::assign::list_of(RLEG)(LLEG)(RARM)(LARM);
+          std::vector<leg_type>::iterator it = std::remove_if(tmp_spls.begin(), tmp_spls.end(), (boost::lambda::_1 == support_legs.at(0) || boost::lambda::_1 == support_legs.at(1)));
+          tmp_spls.erase(it, tmp_spls.end());
+          return tmp_spls;
         }
       };
       double get_default_step_height () const { return default_step_height;};
