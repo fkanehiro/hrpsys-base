@@ -23,6 +23,7 @@ TwoDofControllerDynamicsModel::TwoDofControllerDynamicsModel() {
     convolutions.push_back(Convolution(0.0, 0.0));
   }
   integrate_exp_sinh_current.setup(0.0, 0.0);
+  error_prefix = ""; // inheritted from TwoDofControllerInterface
 }
 
 TwoDofControllerDynamicsModel::TwoDofControllerDynamicsModel(TwoDofControllerDynamicsModel::TwoDofControllerDynamicsModelParam &_param, unsigned int _range) {
@@ -34,6 +35,7 @@ TwoDofControllerDynamicsModel::TwoDofControllerDynamicsModel(TwoDofControllerDyn
     convolutions.push_back(Convolution(_param.dt, _range));
   }
   integrate_exp_sinh_current.setup(_param.dt, _range);
+  error_prefix = ""; // inheritted from TwoDofControllerInterface  
 }
 
 TwoDofControllerDynamicsModel::~TwoDofControllerDynamicsModel() {
@@ -87,8 +89,8 @@ double TwoDofControllerDynamicsModel::update (double _x, double _xd) {
 
   // check parameters
   if (!param.alpha || !param.beta || !param.tc || !param.dt) {
-    std::cerr << "ERROR: parameters are not set." << std::endl;
-    std::cerr << "alpha: " << param.alpha << ", beta: " << param.beta << ", tc: " << param.tc << ", dt: " << param.dt << std::endl;
+    std::cerr << "[" << error_prefix << "]" << "TwoDofControllerDynamicsModel parameters are not set." << std::endl;
+    std::cerr << "[" << error_prefix << "]" << "alpha: " << param.alpha << ", beta: " << param.beta << ", tc: " << param.tc << ", dt: " << param.dt << std::endl;
     return 0;
   }
   
