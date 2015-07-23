@@ -13,6 +13,7 @@
 // </rtc-template>
 
 #include "Integrator.h"
+#include <string>
 
 // interface class for TwoDofController
 class TwoDofControllerInterface {
@@ -50,6 +51,7 @@ public:
   double update(double _x, double _xd);
   bool getParameter();
   bool getParameter(TwoDofControllerParam &_p);
+  void setErrorPrefix(const std::string& _error_prefix);
 
   // for compatibility of Stabilizer. TODO: replace to new parameter argument
   TwoDofController(double _ke, double _tc, double _dt, unsigned int _range = 0);
@@ -58,6 +60,7 @@ public:
 private:
   TwoDofControllerParam param;
   Integrator integrator; // integrated (xd - x)
+  std::string error_prefix;
 };
 
 #endif // TWO_DOF_CONTROLLER_H
