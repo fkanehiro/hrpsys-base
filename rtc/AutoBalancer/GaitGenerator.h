@@ -765,8 +765,6 @@ namespace rats
     //preview_dynamics_filter<preview_control>* preview_controller_ptr;
     preview_dynamics_filter<extended_preview_control>* preview_controller_ptr;
 
-    void solve_angle_vector (const leg_type support_leg, const coordinates& support_leg_coords,
-                             const coordinates& swing_leg_coords, const hrp::Vector3& cog);
     void append_go_pos_step_node (const coordinates& _foot_midcoords,
                                   const leg_type _l_r)
     {
