@@ -231,7 +231,7 @@ RTC::ReturnCode_t SoftErrorLimiter::onExecute(RTC::UniqueId ec_id)
       double lvlimit = m_robot->joint(i)->lvlimit + 0.000175; // 0.01 deg / sec
       double uvlimit = m_robot->joint(i)->uvlimit - 0.000175;
       // fixed joint has ulimit = vlimit
-      if ( servo_state[i] == 1 && (uvlimit < uvlimit) && ((lvlimit > qvel) || (uvlimit < qvel)) ) {
+      if ( servo_state[i] == 1 && (lvlimit < uvlimit) && ((lvlimit > qvel) || (uvlimit < qvel)) ) {
         if (loop % debug_print_freq == 0 || debug_print_velocity_first ) {
           std::cerr << "velocity limit over " << m_robot->joint(i)->name << "(" << i << "), qvel=" << qvel
                     << ", lvlimit =" << lvlimit
