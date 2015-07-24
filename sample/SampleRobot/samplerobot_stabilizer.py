@@ -13,6 +13,8 @@ except:
     import socket
     import time
 
+import math
+
 def init ():
     global hcf, initial_pose, hrpsys_version
     hcf = HrpsysConfigurator()
@@ -69,6 +71,12 @@ def demoSetParameter():
         print >> sys.stderr, "  setParameter() => OK", vcheck
     assert(vcheck)
 
+def checkActualBaseAttitude():
+    rpy = rtm.readDataPort(hcf.rh.port("WAIST")).data.orientation
+    ret = math.degrees(rpy.r) < 0.1 and math.degrees(rpy.p) < 0.1
+    print >> sys.stderr, "  actual base rpy = ", ret, "(", rpy, ")"
+    return ret
+
 def demoStartStopTPCCST ():
     print >> sys.stderr, "3. start and stop TPCC st"
     if hcf.pdc:
@@ -79,7 +87,10 @@ def demoStartStopTPCCST ():
         hcf.abc_svc.goPos(0.5, 0.1, 10)
         hcf.abc_svc.waitFootSteps()
         hcf.stopStabilizer ()
-        print >> sys.stderr, "  Start and Stop Stabilizer => OK"
+        ret = checkActualBaseAttitude()
+        if ret:
+            print >> sys.stderr, "  Start and Stop Stabilizer => OK"
+        assert(ret)
     else:
         print >> sys.stderr, "  This sample is neglected in High-gain mode simulation"
 
@@ -94,7 +105,10 @@ def demoStartStopEEFMQPST ():
         hcf.abc_svc.goPos(0.3, 0, 0)
         hcf.abc_svc.waitFootSteps()
         hcf.stopStabilizer ()
-        print >> sys.stderr, "  Start and Stop Stabilizer => OK"
+        ret = checkActualBaseAttitude()
+        if ret:
+            print >> sys.stderr, "  Start and Stop Stabilizer => OK"
+        assert(ret)
     else:
         print >> sys.stderr, "  This sample is neglected in High-gain mode simulation"
 
