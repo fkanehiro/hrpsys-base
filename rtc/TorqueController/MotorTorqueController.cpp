@@ -119,6 +119,28 @@ bool MotorTorqueController::updateControllerParam(TwoDofControllerDynamicsModel:
 }
 
 // common public functions
+bool MotorTorqueController::enable(void)
+{
+  m_enable_flag = true;
+  return true; // return result of changing mode 
+}
+
+bool MotorTorqueController::disable(void)
+{
+  bool retval;
+  if (m_emergencyController.state != INACTIVE) {
+    std::cerr << "[" << m_error_prefix << "]" << "Normal torque control in " << m_joint_name << " is active" << std::endl;
+    retval = false;
+  } else if (m_emergencyController.state != INACTIVE) {
+    std::cerr << "[" << m_error_prefix << "]" << "Emergency torque control in " << m_joint_name << " is active" << std::endl;
+    retval = false;
+  } else{
+    m_enable_flag = false;
+    retval = true;
+  }
+  return retval; // return result of changing mode
+}
+
 void MotorTorqueController::setupMotorControllerMinMaxDq(double _min_dq, double _max_dq)
 {
   m_normalController.min_dq = _min_dq;
@@ -157,8 +179,11 @@ bool MotorTorqueController::setReferenceTorque(double _tauRef)
 
 double MotorTorqueController::execute (double _tau, double _tauMax)
 {
-  // define controller state
   double dq, limitedTauRef;
+
+  if (!m_enable_flag) {
+    return 0.0; // dq = 0.0 when disabled
+  }
  
   // define emergency state
   if (std::abs(_tau) > std::abs(_tauMax)) {
@@ -220,6 +245,11 @@ MotorTorqueController::controller_state_t MotorTorqueController::getMotorControl
   }
 }
 
+bool MotorTorqueController::isEnabled(void)
+{
+  return m_enable_flag;
+}
+
 void MotorTorqueController::setErrorPrefix(const std::string& _error_prefix)
 {
   m_error_prefix = _error_prefix;
@@ -257,7 +287,8 @@ void MotorTorqueController::setupControllerCommon(std::string _jname, double _dt
   resetMotorControllerVariables(m_normalController);
   m_emergencyController.state = INACTIVE;
   resetMotorControllerVariables(m_emergencyController);
-  m_error_prefix = "";  
+  m_error_prefix = "";
+  m_enable_flag = false;
 }
 
 void MotorTorqueController::resetMotorControllerVariables(MotorTorqueController::MotorController& _mc)
