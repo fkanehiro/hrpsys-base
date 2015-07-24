@@ -15,10 +15,14 @@ except:
 
 from subprocess import check_output
 
+# Tempolarily remove tc which is limit position range
+def getRTCList ():
+    return filter(lambda x : x[0]!='tc', hcf.getRTCListUnstable())
+
 def init ():
-    global hcf, initial_pose, limit_table_list, bodyinfo
+    global hcf, initial_pose, limit_table_list, bodyinfo, hrpsys_version
     hcf = HrpsysConfigurator()
-    hcf.getRTCList = hcf.getRTCListUnstable
+    hcf.getRTCList = getRTCList
     hcf.init ("SampleRobot(Robot)0", "$(PROJECT_DIR)/../model/sample1.wrl")
     initial_pose = [-7.779e-005,  -0.378613,  -0.000209793,  0.832038,  -0.452564,  0.000244781,  0.31129,  -0.159481,  -0.115399,  -0.636277,  0,  0,  0,  -7.77902e-005,  -0.378613,  -0.000209794,  0.832038,  -0.452564,  0.000244781,  0.31129,  0.159481,  0.115399,  -0.636277,  0,  0,  0,  0,  0,  0]
     # load joint limit table from conf file
@@ -32,15 +36,19 @@ def init ():
     # set initial pose from sample/controller/SampleController/etc/Sample.pos
     hcf.seq_svc.setJointAngles(initial_pose, 2.0)
     hcf.seq_svc.waitInterpolation()
+    hrpsys_version = hcf.seq.ref.get_component_profile().version
+    print("hrpsys_version = %s"%hrpsys_version)
 
 def demo ():
     init()
-    demoTestAllLimitTables()
+    if hrpsys_version >= '315.5.0':
+        demoTestAllLimitTables()
+    demoPositionLimit()
 
 def demoTestAllLimitTables():
-    print "1. demo all jointLimitTables"
+    print >> sys.stderr, "1. demo all jointLimitTables"
     for table_idx in range(len(limit_table_list)/6):
-        testLimitTables(table_idx)
+        testLimitTables(table_idx, True, 5)
 
 def rad2deg (ang):
     return 180.0*ang/3.14159
@@ -69,8 +77,10 @@ def testLimitTables (table_idx=0, debug=True, loop_mod=1):
      self_llimits, self_ulimits] = getJointLimitTableInfo(table_idx)
     lret = testOneLimitTable(self_jointId, target_jointId, self_llimits, target_llimit, target_ulimit, -1, debug, loop_mod)
     uret = testOneLimitTable(self_jointId, target_jointId, self_ulimits, target_llimit, target_ulimit, 1, debug, loop_mod)
-    print "lower limit check(", self_joint_name, ",", target_joint_name,")=", lret
-    print "upper limit check(", self_joint_name, ",", target_joint_name,")=", uret
+    print >> sys.stderr, "lower limit check(", self_joint_name, ",", target_joint_name,")=", lret
+    print >> sys.stderr, "upper limit check(", self_joint_name, ",", target_joint_name,")=", uret
+    assert(lret)
+    assert(uret)
 
 def testOneLimitTable (self_jointId, target_jointId, limit_table, target_llimit, target_ulimit, angle_violation, debug=True, loop_mod=1):
     tmp_pose=map(lambda x : x, initial_pose)
@@ -108,6 +118,32 @@ def testOneLimitTable (self_jointId, target_jointId, limit_table, target_llimit,
     hcf.seq_svc.setJointAngles(initial_pose, 1);
     hcf.seq_svc.waitInterpolation()
     return all(ret)
+
+def setAndCheckJointLimit (joint_name):
+    mdlldr=hcf.getBodyInfo("$(PROJECT_DIR)/../model/sample1.wrl")
+    print >> sys.stderr, "  ", joint_name
+    # ulimit check
+    link_info=filter(lambda x : x.name==joint_name, mdlldr._get_links())[0]
+    hcf.seq_svc.setJointAngle(joint_name, math.radians(1)+link_info.ulimit[0], 1)
+    hcf.waitInterpolation()
+    ret = rtm.readDataPort(hcf.el.port("q")).data[link_info.jointId] < link_info.ulimit[0]
+    print >> sys.stderr, "    ulimit = ", ret, "(elout=", rtm.readDataPort(hcf.el.port("q")).data[link_info.jointId], ", limit=", link_info.ulimit[0], ")"
+    assert(ret)
+    # llimit check
+    hcf.seq_svc.setJointAngle(joint_name, math.radians(-1)+link_info.llimit[0], 1)
+    hcf.waitInterpolation()
+    ret = rtm.readDataPort(hcf.el.port("q")).data[link_info.jointId] > link_info.llimit[0]
+    print >> sys.stderr, "    llimit = ", ret, "(elout=", rtm.readDataPort(hcf.el.port("q")).data[link_info.jointId], ", limit=", link_info.llimit[0], ")"
+    assert(ret)
+    # go to initial
+    hcf.seq_svc.setJointAngles(initial_pose, 1.0)
+    hcf.waitInterpolation()
+
+def demoPositionLimit():
+    print >> sys.stderr, "2. Position limit"
+    setAndCheckJointLimit('LARM_WRIST_Y')
+    setAndCheckJointLimit('LARM_WRIST_P')
+    setAndCheckJointLimit('LARM_SHOULDER_P')
 
 if __name__ == '__main__':
     demo()

@@ -17,7 +17,7 @@
 #include <rtm/DataOutPort.h>
 #include <rtm/idl/BasicDataTypeSkel.h>
 #include "HRPDataTypes.hh"
-#include "../ImpedanceController/JointPathEx.h"
+#include "JointLimitTable.h"
 
 // Service implementation headers
 // <rtc-template block="service_impl_h">
