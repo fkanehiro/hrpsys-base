@@ -37,6 +37,13 @@ def testPoseList(pose_list, initial_pose):
         hcf.seq_svc.setJointAngles(initial_pose, 1.0)
         hcf.waitInterpolation()
 
+def checkActualBaseAttitude():
+    rpy = rtm.readDataPort(hcf.rh.port("WAIST")).data.orientation
+    ret = math.degrees(rpy.r) < 0.1 and math.degrees(rpy.p) < 0.1
+    print >> sys.stderr, "  actual base rpy = ", ret, "(", rpy, ")"
+    assert (ret)
+    return ret
+
 def demoAutoBalancerFixFeet ():
     print >> sys.stderr, "1. AutoBalancer mode by fixing feet"
     hcf.startAutoBalancer();
@@ -45,6 +52,7 @@ def demoAutoBalancerFixFeet ():
     hcf.seq_svc.setJointAngles(initial_pose, 1.0)
     hcf.waitInterpolation()
     hcf.stopAutoBalancer();
+    checkActualBaseAttitude()
     print >> sys.stderr, "  Start and Stop AutoBalancer by fixing feet=>OK"
 
 def demoAutoBalancerFixFeetHands ():
@@ -55,6 +63,7 @@ def demoAutoBalancerFixFeetHands ():
     hcf.seq_svc.setJointAngles(initial_pose, 1.0)
     hcf.waitInterpolation()
     hcf.stopAutoBalancer();
+    checkActualBaseAttitude()
     print >> sys.stderr, "  Start and Stop AutoBalancer by fixing hands and feet=>OK"
 
 def demoAutoBalancerGetParam():
@@ -82,6 +91,7 @@ def demoAutoBalancerTestPoses():
     hcf.startAutoBalancer();
     testPoseList(pose_list, initial_pose)
     hcf.stopAutoBalancer();
+    checkActualBaseAttitude()
 
 def demoAutoBalancerStartStopCheck():
     print >> sys.stderr, "6. start stop check"
@@ -100,6 +110,7 @@ def demoAutoBalancerStartStopCheck():
     hcf.abc_svc.setAutoBalancerParam(abcp)
     hcf.seq_svc.setJointAngles(initial_pose, 1.0)
     hcf.waitInterpolation()
+    checkActualBaseAttitude()
 
 def demoAutoBalancerBalanceAgainstHandForce():
     print >> sys.stderr, "7. balance against hand force"
@@ -115,12 +126,14 @@ def demoAutoBalancerBalanceAgainstHandForce():
                              0,0,0,0,0,0,], 1.0);
     hcf.waitInterpolation();
     hcf.stopAutoBalancer();
+    checkActualBaseAttitude()
 
 def demoGaitGeneratorGoPos():
     print >> sys.stderr, "1. goPos"
     hcf.startAutoBalancer();
     hcf.abc_svc.goPos(0.1, 0.05, 20)
     hcf.abc_svc.waitFootSteps()
+    checkActualBaseAttitude()
     print >> sys.stderr, "  goPos()=>OK"
 
 def demoGaitGeneratorGoVelocity():
@@ -128,6 +141,7 @@ def demoGaitGeneratorGoVelocity():
     hcf.abc_svc.goVelocity(-0.1, -0.05, -20)
     time.sleep(1)
     hcf.abc_svc.goStop()
+    checkActualBaseAttitude()
     print >> sys.stderr, "  goVelocity()=>OK"
 
 def demoGaitGeneratorSetFootSteps():
@@ -140,6 +154,7 @@ def demoGaitGeneratorSetFootSteps():
                       OpenHRP.AutoBalancerService.Footstep([0.3,-0.09,0], [1,0,0,0], "rleg"),
                       OpenHRP.AutoBalancerService.Footstep([0.3,0.09,0], [1,0,0,0], "lleg")])
     hcf.abc_svc.waitFootSteps()
+    checkActualBaseAttitude()
     print >> sys.stderr, "  setFootSteps()=>OK"
 
 def demoGaitGeneratorChangePoseWhileWalking():
@@ -148,6 +163,7 @@ def demoGaitGeneratorChangePoseWhileWalking():
     hcf.abc_svc.goVelocity(0,0,0)
     testPoseList(pose_list, initial_pose)
     hcf.abc_svc.goStop()
+    checkActualBaseAttitude()
 
 def demoGaitGeneratorGetParam():
     print >> sys.stderr, "5. getGaitGeneratorParam"
@@ -180,6 +196,7 @@ def demoGaitGeneratorNonDefaultStrideStop():
     hcf.setFootSteps([OpenHRP.AutoBalancerService.Footstep([0,-0.09,0], [1,0,0,0], "rleg"),
                       OpenHRP.AutoBalancerService.Footstep([0,0.09,0], [1,0,0,0], "lleg")])
     hcf.abc_svc.waitFootSteps()
+    checkActualBaseAttitude()
     print >> sys.stderr, "  Non default Stride()=>OK"
 
 def demoGaitGeneratorToeHeelContact():
@@ -197,6 +214,7 @@ def demoGaitGeneratorToeHeelContact():
     ggp.toe_angle = 0;
     ggp.heel_angle = 0;
     hcf.abc_svc.setGaitGeneratorParam(ggp);
+    checkActualBaseAttitude()
     print >> sys.stderr, "  Toe heel contact=>OK"
 
 def demoGaitGeneratorStopStartSyncCheck():
@@ -236,6 +254,7 @@ def demoGaitGeneratorEmergencyStop():
     hcf.abc_svc.emergencyStop();
     print >> sys.stderr, "  Align foot steps"
     hcf.abc_svc.goPos(0,0,0);
+    checkActualBaseAttitude()
 
 def demoGaitGeneratorGetRemainingSteps():
     print >> sys.stderr, "11. Get remaining foot steps"
@@ -247,6 +266,7 @@ def demoGaitGeneratorGetRemainingSteps():
         # Wait for 1 step
         hcf.seq_svc.setJointAngles(initial_pose, hcf.abc_svc.getGaitGeneratorParam()[1].default_step_time);
         hcf.waitInterpolation();
+    checkActualBaseAttitude()
 
 def demoGaitGeneratorChangeStepParam():
     print >> sys.stderr, "12. Change step param with setFootSteps"
@@ -284,6 +304,7 @@ def demoGaitGeneratorChangeStepParam():
                                OpenHRP.AutoBalancerService.StepParam(step_height=0.05, step_time=1.0, toe_angle=10.0, heel_angle=10.0)])
     hcf.abc_svc.waitFootSteps()
     hcf.abc_svc.setGaitGeneratorParam(ggp_org);
+    checkActualBaseAttitude()
 
 def demoGaitGeneratorOverwriteFootsteps(overwrite_offset_idx = 1):
     print >> sys.stderr, "13. Overwrite footsteps during walking."
@@ -296,6 +317,7 @@ def demoGaitGeneratorOverwriteFootsteps(overwrite_offset_idx = 1):
     hcf.seq_svc.waitInterpolation()
     demoGaitGeneratorOverwriteFootstepsBase("x", overwrite_offset_idx, True) # Overwrite by X direction foot steps
     hcf.abc_svc.waitFootSteps()
+    checkActualBaseAttitude()
 
 def demoGaitGeneratorOverwriteFootstepsBase(axis, overwrite_offset_idx = 1, init_fs = False):
     if init_fs:
