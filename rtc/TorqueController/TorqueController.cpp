@@ -396,6 +396,60 @@ void TorqueController::executeTorqueControl(hrp::dvector &dq)
   return;
 }
 
+bool TorqueController::enableTorqueController(std::string jname)
+{
+  bool succeed = false;
+  for (std::vector<MotorTorqueController>::iterator it = m_motorTorqueControllers.begin(); it != m_motorTorqueControllers.end(); ++it) {
+    if ((*it).getJointName() == jname){
+      if (m_debugLevel > 0) {
+        std::cerr << "[" <<  m_profile.instance_name << "]" << "Enable torque controller in " << jname << std::endl;
+      }
+      succeed = (*it).enable();
+    }
+  }
+  return succeed;
+}
+
+bool TorqueController::enableMultipleTorqueControllers(const OpenHRP::TorqueControllerService::StrSequence& jnames)
+{
+  bool succeed = true;
+  bool retval;
+  for (int i = 0; i < jnames.length(); i++) {
+    retval = enableTorqueController(std::string(jnames[i]));
+    if (!retval) { // return false when once failed
+      succeed = false;
+    }
+  }
+  return succeed;
+}
+
+bool TorqueController::disableTorqueController(std::string jname)
+{
+  bool succeed = false;
+  for (std::vector<MotorTorqueController>::iterator it = m_motorTorqueControllers.begin(); it != m_motorTorqueControllers.end(); ++it) {
+    if ((*it).getJointName() == jname){
+      if (m_debugLevel > 0) {
+        std::cerr << "[" <<  m_profile.instance_name << "]" << "Disable torque controller in " << jname << std::endl;
+      }
+      succeed = (*it).disable();
+    }
+  }
+  return succeed;
+}
+
+bool TorqueController::disableMultipleTorqueControllers(const OpenHRP::TorqueControllerService::StrSequence& jnames)
+{
+  bool succeed = true;
+  bool retval;
+  for (int i = 0; i < jnames.length(); i++) {
+    retval = disableTorqueController(std::string(jnames[i]));
+    if (!retval) { // return false when once failed
+      succeed = false;
+    }
+  }
+  return succeed;
+}
+
 bool TorqueController::startTorqueControl(std::string jname)
 {
   bool succeed = false;
@@ -420,6 +474,7 @@ bool TorqueController::startMultipleTorqueControls(const OpenHRP::TorqueControll
       succeed = false;
     }
   }
+  return succeed;
 }
 
 bool TorqueController::stopTorqueControl(std::string jname)
@@ -446,6 +501,7 @@ bool TorqueController::stopMultipleTorqueControls(const OpenHRP::TorqueControlle
       succeed = false;
     }
   }
+  return succeed;
 }
 
 bool TorqueController::setReferenceTorque(std::string jname, double tauRef)
