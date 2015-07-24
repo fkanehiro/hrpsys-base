@@ -20,7 +20,7 @@ def getRTCList ():
     return filter(lambda x : x[0]!='tc', hcf.getRTCListUnstable())
 
 def init ():
-    global hcf, initial_pose, limit_table_list, bodyinfo
+    global hcf, initial_pose, limit_table_list, bodyinfo, hrpsys_version
     hcf = HrpsysConfigurator()
     hcf.getRTCList = getRTCList
     hcf.init ("SampleRobot(Robot)0", "$(PROJECT_DIR)/../model/sample1.wrl")
@@ -36,10 +36,13 @@ def init ():
     # set initial pose from sample/controller/SampleController/etc/Sample.pos
     hcf.seq_svc.setJointAngles(initial_pose, 2.0)
     hcf.seq_svc.waitInterpolation()
+    hrpsys_version = hcf.seq.ref.get_component_profile().version
+    print("hrpsys_version = %s"%hrpsys_version)
 
 def demo ():
     init()
-    demoTestAllLimitTables()
+    if hrpsys_version >= '315.5.0':
+        demoTestAllLimitTables()
     demoPositionLimit()
 
 def demoTestAllLimitTables():
