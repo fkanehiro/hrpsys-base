@@ -128,7 +128,7 @@ bool MotorTorqueController::enable(void)
 bool MotorTorqueController::disable(void)
 {
   bool retval;
-  if (m_emergencyController.state != INACTIVE) {
+  if (m_normalController.state != INACTIVE) {
     std::cerr << "[" << m_error_prefix << "]" << "Normal torque control in " << m_joint_name << " is active" << std::endl;
     retval = false;
   } else if (m_emergencyController.state != INACTIVE) {
