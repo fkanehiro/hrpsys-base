@@ -105,7 +105,7 @@ RTC::ReturnCode_t GraspController::onInitialize()
   if (!loadBodyFromModelLoader(m_robot, prop["model"].c_str(), 
                                CosNaming::NamingContext::_duplicate(naming.getRootContext())
           )){
-      std::cerr << "failed to load model[" << prop["model"] << "]" 
+      std::cerr << "[" << m_profile.instance_name << "] failed to load model[" << prop["model"] << "]" 
                 << std::endl;
       return RTC::RTC_ERROR;
   }
@@ -157,7 +157,7 @@ RTC::ReturnCode_t GraspController::onInitialize()
   if ( m_debugLevel ) {
     std::map<std::string, GraspParam >::iterator it = m_grasp_param.begin();
     while ( it != m_grasp_param.end() ) {
-      std::cerr << it->first << " : ";
+      std::cerr << "[" << m_profile.instance_name << "] " << it->first << " : ";
       for ( int i = 0 ; i < it->second.joints.size(); i++ ) {
         std::cerr << "id = " << it->second.joints[i].id << ", dir = " << it->second.joints[i].dir << ", ";
       }
@@ -312,20 +312,24 @@ RTC::ReturnCode_t GraspController::onRateChanged(RTC::UniqueId ec_id)
  // < 0  : starting
 bool GraspController::startGrasp(const char *name, double target_error) {
   if ( m_grasp_param.find( name ) == m_grasp_param.end() ) {
-    std::cerr << "Could not found grasp controller" << name << std::endl;
+    std::cerr << "[" << m_profile.instance_name << "] Could not found grasp controller " << name << std::endl;
     return false;
   }
+  std::cerr << "[" << m_profile.instance_name << "] Start Grasp " << name << std::endl;
   m_grasp_param[name].time = -10; // count up to 0
   m_grasp_param[name].target_error = fabs(target_error);
+  return true;
 }
 
 bool GraspController::stopGrasp(const char *name) {
   if ( m_grasp_param.find( name ) == m_grasp_param.end() ) {
-    std::cerr << "Could not found grasp controller" << name << std::endl;
+    std::cerr << "[" << m_profile.instance_name << "] Could not found grasp controller " << name << std::endl;
     return false;
   }
+  std::cerr << "[" << m_profile.instance_name << "] Stop Grasp " << name << std::endl;
   m_grasp_param[name].time = 1000; // count down to 1
   m_grasp_param[name].target_error = 0;
+  return true;
 }
 
 
