@@ -6,5 +6,5 @@
   </include>
 
   <test test-name="samplerobot_el" pkg="hrpsys" type="test-samplerobot-el.py"
-        args="-ORBInitRef NameService=corbaloc:iiop:localhost:2809/NameService" retry="2" />
+        args="-ORBInitRef NameService=corbaloc:iiop:localhost:2809/NameService" retry="2" time-limit="300"/>
 </launch>
