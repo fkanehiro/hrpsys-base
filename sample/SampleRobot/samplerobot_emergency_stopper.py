@@ -14,12 +14,14 @@ except:
     import time
 
 def init ():
-    global hcf, init_pose, reset_pose
+    global hcf, init_pose, reset_pose, hrpsys_version
     hcf = HrpsysConfigurator()
     hcf.getRTCList = hcf.getRTCListUnstable
     hcf.init ("SampleRobot(Robot)0", "$(PROJECT_DIR)/../model/sample1.wrl")
     init_pose = [0]*29
     reset_pose = [0.0,-0.772215,0.0,1.8338,-1.06158,0.0,0.523599,0.0,0.0,-2.44346,0.15708,-0.113446,0.637045,0.0,-0.772215,0.0,1.8338,-1.06158,0.0,0.523599,0.0,0.0,-2.44346,-0.15708,-0.113446,-0.637045,0.0,0.0,0.0]
+    hrpsys_version = hcf.seq.ref.get_component_profile().version
+    print("hrpsys_version = %s"%hrpsys_version)
 
 def angleDistance (angle1, angle2):
     return sum([abs(i-j) for (i,j) in zip(angle1,angle2)])
@@ -101,11 +103,12 @@ def demoEmergencyStopReleaseWhenDeactivated():
 
 def demo(key_interaction=False):
     init()
-    if key_interaction:
-        demoEmergencyStopWithKeyInteracton()
-    else:
-        demoEmergencyStop()
-    demoEmergencyStopReleaseWhenDeactivated()
+    if hrpsys_version >= '315.6.0':
+        if key_interaction:
+            demoEmergencyStopWithKeyInteracton()
+        else:
+            demoEmergencyStop()
+        demoEmergencyStopReleaseWhenDeactivated()
 
 if __name__ == '__main__':
     demo()
