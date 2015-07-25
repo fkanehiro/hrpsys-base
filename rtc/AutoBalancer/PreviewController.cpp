@@ -5,7 +5,7 @@ using namespace hrp;
 using namespace rats;
 
 template <std::size_t dim>
-void preview_control_base<dim>::update_x_k(const hrp::Vector3& pr, const hrp::Vector3& _qdata)
+void preview_control_base<dim>::update_x_k(const hrp::Vector3& pr, const std::vector<hrp::Vector3>& _qdata)
 {
   zmp_z = pr(2);
   Eigen::Matrix<double, 2, 1> tmpv;

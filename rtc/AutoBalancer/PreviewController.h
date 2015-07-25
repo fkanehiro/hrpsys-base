@@ -60,7 +60,7 @@ namespace rats
     hrp::dvector f;
     std::deque<Eigen::Matrix<double, 2, 1> > p;
     std::deque<double> pz;
-    std::deque<hrp::Vector3> qdata;
+    std::deque< std::vector<hrp::Vector3> > qdata;
     double zmp_z, cog_z;
     size_t delay, ending_count;
     virtual void calc_f() = 0;
@@ -101,7 +101,7 @@ namespace rats
       pz.clear();
       qdata.clear();
     };
-    virtual void update_x_k(const hrp::Vector3& pr, const hrp::Vector3& qdata);
+    virtual void update_x_k(const hrp::Vector3& pr, const std::vector<hrp::Vector3>& qdata);
     virtual void update_x_k()
     {
       hrp::Vector3 pr;
@@ -132,7 +132,7 @@ namespace rats
       ret[1] = p.front()(1);
       ret[2] = pz.front();
     };
-    void get_current_qdata (hrp::Vector3& _qdata)
+    void get_current_qdata (std::vector<hrp::Vector3>& _qdata)
     {
         _qdata = qdata.front();
     };
@@ -218,7 +218,7 @@ namespace rats
     preview_dynamics_filter(const double dt, const double zc, const hrp::Vector3& init_xk, const double _gravitational_acceleration = DEFAULT_GRAVITATIONAL_ACCELERATION, const double q = 1.0, const double r = 1.0e-6, const double d = 1.6)
         : preview_controller(dt, zc, init_xk, _gravitational_acceleration, q, r, d), finishedp(false) {};
     ~preview_dynamics_filter() {};
-    bool update(hrp::Vector3& p_ret, hrp::Vector3& x_ret, hrp::Vector3& qdata_ret, const hrp::Vector3& pr, const hrp::Vector3& qdata, const bool updatep)
+    bool update(hrp::Vector3& p_ret, hrp::Vector3& x_ret, std::vector<hrp::Vector3>& qdata_ret, const hrp::Vector3& pr, const std::vector<hrp::Vector3>& qdata, const bool updatep)
     {
       bool flg;
       if (updatep) {
