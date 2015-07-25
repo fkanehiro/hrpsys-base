@@ -19,7 +19,35 @@ module OpenHRP
       double alpha; // for TwoDofControllerDynamicModel
       double beta; // for TwoDofControllerDynamicModel
     };
+
+    /**
+     * @brief enable torque controller in specified joint
+     * @param jname: target joint name
+     * @return true if set successfully, false otherwise
+     */
+    boolean enableTorqueController(in string jname);
+
+    /**
+     * @brief enable torque controller in specified joints
+     * @param jnames: target joint names
+     * @return true if set successfully, false otherwise
+     */
+    boolean enableMultipleTorqueControllers(in StrSequence jnames);
     
+    /**
+     * @brief disable torque controller in specified joint
+     * @param jname: target joint name
+     * @return true if set successfully, false otherwise
+     */
+    boolean disableTorqueController(in string jname);
+
+    /**
+     * @brief disable torque controller in specified joints
+     * @param jnames: target joint names
+     * @return true if set successfully, false otherwise
+     */
+    boolean disableMultipleTorqueControllers(in StrSequence jnames);
+      
     /**
      * @brief start torque controller in specified joint
      * @param jname: target joint name

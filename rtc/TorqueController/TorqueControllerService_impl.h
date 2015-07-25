@@ -16,6 +16,11 @@ public:
 	TorqueControllerService_impl();
 	virtual ~TorqueControllerService_impl();
 
+	CORBA::Boolean enableTorqueController(const char *jointName);
+	CORBA::Boolean enableMultipleTorqueControllers(const OpenHRP::TorqueControllerService::StrSequence& jnames);
+	CORBA::Boolean disableTorqueController(const char *jointName);
+	CORBA::Boolean disableMultipleTorqueControllers(const OpenHRP::TorqueControllerService::StrSequence& jnames);
+	
 	CORBA::Boolean startTorqueControl(const char *jointName);
 	CORBA::Boolean startMultipleTorqueControls(const OpenHRP::TorqueControllerService::StrSequence& jnames);
 	CORBA::Boolean stopTorqueControl(const char *jointName);

@@ -11,6 +11,26 @@ TorqueControllerService_impl::~TorqueControllerService_impl()
 {
 }
 
+CORBA::Boolean TorqueControllerService_impl::enableTorqueController(const char *jointName)
+{
+	return m_torque_controller->enableTorqueController(std::string(jointName));
+}
+
+CORBA::Boolean TorqueControllerService_impl::enableMultipleTorqueControllers(const OpenHRP::TorqueControllerService::StrSequence& jnames)
+{
+	return m_torque_controller->enableMultipleTorqueControllers(jnames);
+}
+
+CORBA::Boolean TorqueControllerService_impl::disableTorqueController(const char *jointName)
+{
+	return m_torque_controller->disableTorqueController(std::string(jointName));
+}
+
+CORBA::Boolean TorqueControllerService_impl::disableMultipleTorqueControllers(const OpenHRP::TorqueControllerService::StrSequence& jnames)
+{
+	return m_torque_controller->disableMultipleTorqueControllers(jnames);
+}
+
 CORBA::Boolean TorqueControllerService_impl::startTorqueControl(const char *jointName)
 {
 	return m_torque_controller->startTorqueControl(std::string(jointName));

@@ -101,7 +101,10 @@ public:
 // The action that is invoked when execution context's rate is changed
 // no corresponding operation exists in OpenRTm-aist-0.2.0
 // virtual RTC::ReturnCode_t onRateChanged(RTC::UniqueId ec_id);
-
+  bool enableTorqueController(std::string jname);
+  bool enableMultipleTorqueControllers(const OpenHRP::TorqueControllerService::StrSequence& jnames);
+  bool disableTorqueController(std::string jname);
+  bool disableMultipleTorqueControllers(const OpenHRP::TorqueControllerService::StrSequence& jnames);
   bool startTorqueControl(std::string jname);
   bool startMultipleTorqueControls(const OpenHRP::TorqueControllerService::StrSequence& jnames);
   bool stopTorqueControl(std::string jname);
