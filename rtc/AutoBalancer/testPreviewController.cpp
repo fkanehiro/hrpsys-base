@@ -51,7 +51,8 @@ int main(int argc, char* argv[])
   bool r = true;
   size_t index = 0;
   while (r) {
-    hrp::Vector3 p, x, qdata;
+    hrp::Vector3 p, x;
+    std::vector<hrp::Vector3> qdata;
     r = df.update(p, x, qdata, ref_zmp_list.front(), qdata, !ref_zmp_list.empty());
     if (r) {
       index++;
