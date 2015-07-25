@@ -77,9 +77,9 @@ int main(int argc, char* argv[])
   for (size_t ii = 0; ii < 2; ii++) {
     gp[ii] = popen("gnuplot", "w");
     fprintf(gp[ii], "set title \"%s\"\n", titles[ii].c_str());
-    fprintf(gp[ii], "plot \"%s\" using 1:%d with lines title \"cart-table zmp\"\n", fname.c_str(), ( ii * 3 + 2));
-    fprintf(gp[ii], "replot \"%s\" using 1:%d with lines title \"cog\"\n", fname.c_str(), ( ii * 3 + 3));
-    fprintf(gp[ii], "replot \"%s\" using 1:%d with lines title \"refzmp\"\n", fname.c_str(), ( ii * 3 + 4));
+    fprintf(gp[ii], "plot \"%s\" using 1:%zu with lines title \"cart-table zmp\"\n", fname.c_str(), ( ii * 3 + 2));
+    fprintf(gp[ii], "replot \"%s\" using 1:%zu with lines title \"cog\"\n", fname.c_str(), ( ii * 3 + 3));
+    fprintf(gp[ii], "replot \"%s\" using 1:%zu with lines title \"refzmp\"\n", fname.c_str(), ( ii * 3 + 4));
     fflush(gp[ii]);
   }
   double tmp;
