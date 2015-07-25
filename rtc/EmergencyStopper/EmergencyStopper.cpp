@@ -18,6 +18,8 @@
 #include "EmergencyStopper.h"
 #include "../SoftErrorLimiter/beep.h"
 
+typedef coil::Guard<coil::Mutex> Guard;
+
 // Module specification
 // <rtc-template block="module_spec">
 static const char* emergencystopper_spec[] =
@@ -179,6 +181,7 @@ RTC::ReturnCode_t EmergencyStopper::onActivated(RTC::UniqueId ec_id)
 RTC::ReturnCode_t EmergencyStopper::onDeactivated(RTC::UniqueId ec_id)
 {
     std::cout << m_profile.instance_name<< ": onDeactivated(" << ec_id << ")" << std::endl;
+    Guard guard(m_mutex);
     if (is_stop_mode) {
         is_stop_mode = false;
         recover_time = 0;
@@ -229,6 +232,7 @@ RTC::ReturnCode_t EmergencyStopper::onExecute(RTC::UniqueId ec_id)
     if (m_emergencySignalIn.isNew()){
         m_emergencySignalIn.read();
         if (!is_stop_mode) {
+            Guard guard(m_mutex);
             std::cerr << "[" << m_profile.instance_name << "] emergencySignal is set!" << std::endl;
             is_stop_mode = true;
         }
@@ -338,6 +342,7 @@ RTC::ReturnCode_t EmergencyStopper::onExecute(RTC::UniqueId ec_id)
 
 bool EmergencyStopper::stopMotion()
 {
+    Guard guard(m_mutex);
     if (!is_stop_mode) {
         is_stop_mode = true;
         std::cerr << "[" << m_profile.instance_name << "] stopMotion is called" << std::endl;
@@ -347,6 +352,7 @@ bool EmergencyStopper::stopMotion()
 
 bool EmergencyStopper::releaseMotion()
 {
+    Guard guard(m_mutex);
     if (is_stop_mode) {
         is_stop_mode = false;
         std::cerr << "[" << m_profile.instance_name << "] releaseMotion is called" << std::endl;

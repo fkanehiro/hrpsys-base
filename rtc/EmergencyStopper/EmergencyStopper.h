@@ -162,6 +162,7 @@ private:
     interpolator* m_interpolator;
     std::queue<std::vector<double> > m_input_posture_queue;
     int emergency_stopper_beep_count, emergency_stopper_beep_freq;
+    coil::Mutex m_mutex;
 };
 
 
