@@ -179,6 +179,12 @@ RTC::ReturnCode_t EmergencyStopper::onActivated(RTC::UniqueId ec_id)
 RTC::ReturnCode_t EmergencyStopper::onDeactivated(RTC::UniqueId ec_id)
 {
     std::cout << m_profile.instance_name<< ": onDeactivated(" << ec_id << ")" << std::endl;
+    if (is_stop_mode) {
+        is_stop_mode = false;
+        recover_time = 0;
+        m_interpolator->setGoal(m_qRef.data.get_buffer(), m_dt);
+        m_interpolator->get(m_q.data.get_buffer());
+    }
     return RTC::RTC_OK;
 }
 
