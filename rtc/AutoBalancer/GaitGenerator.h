@@ -770,13 +770,16 @@ namespace rats
     preview_dynamics_filter<extended_preview_control>* preview_controller_ptr;
 
     void append_go_pos_step_nodes (const coordinates& _ref_coords,
-                                  const leg_type _l_r)
+                                   const std::vector<leg_type>& lts)
     {
-      step_node sn(_l_r, _ref_coords,
-                   lcg.get_default_step_height(), default_step_time,
-                   lcg.get_toe_angle(), lcg.get_heel_angle());
-      sn.worldcoords.pos += sn.worldcoords.rot * footstep_param.leg_default_translate_pos[_l_r];
-      footstep_nodes_list.push_back(boost::assign::list_of(sn));
+      std::vector<step_node> sns;
+      for (size_t i = 0; i < lts.size(); i++) {
+          sns.push_back(step_node(lts.at(i), _ref_coords,
+                                  lcg.get_default_step_height(), default_step_time,
+                                  lcg.get_toe_angle(), lcg.get_heel_angle()));
+          sns.at(i).worldcoords.pos += sns.at(i).worldcoords.rot * footstep_param.leg_default_translate_pos[lts.at(i)];
+      }
+      footstep_nodes_list.push_back(sns);
     };
     void overwrite_refzmp_queue(const std::vector< std::vector<step_node> >& fnsl);
     void calc_ref_coords_trans_vector_velocity_mode (coordinates& ref_coords, hrp::Vector3& trans, double& dth, const std::vector<step_node>& sup_fns);

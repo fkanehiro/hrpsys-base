@@ -562,19 +562,19 @@ namespace rats
       dr = start_ref_coords.rot.transpose() * dr;
     }
     for (size_t i = 0; i < optional_go_pos_finalize_footstep_num; i++) {
-        append_go_pos_step_nodes(start_ref_coords, (footstep_nodes_list.back().front().l_r == RLEG ? LLEG : RLEG));
+        append_go_pos_step_nodes(start_ref_coords, get_support_leg_types_from_footstep_nodes(footstep_nodes_list.back(), all_limbs));
     }
 
     /* finalize */
     //   Align last foot
-    append_go_pos_step_nodes(start_ref_coords, (footstep_nodes_list.back().front().l_r == RLEG ? LLEG : RLEG));
+    append_go_pos_step_nodes(start_ref_coords, get_support_leg_types_from_footstep_nodes(footstep_nodes_list.back(), all_limbs));
     //   Check align
     coordinates final_step_coords1 = footstep_nodes_list[footstep_nodes_list.size()-2].front().worldcoords; // Final coords in footstep_node_list
     coordinates final_step_coords2 = start_ref_coords; // Final coords calculated from start_ref_coords + translate pos
     final_step_coords2.pos += final_step_coords2.rot * hrp::Vector3(footstep_param.leg_default_translate_pos[footstep_nodes_list[footstep_nodes_list.size()-2].front().l_r]);
     final_step_coords1.difference(dp, dr, final_step_coords2);
     if ( !(eps_eq(dp.norm(), 0.0, 1e-3*0.1) && eps_eq(dr.norm(), 0.0, deg2rad(0.5))) ) { // If final_step_coords1 != final_step_coords2, add steps to match final_step_coords1 and final_step_coords2
-        append_go_pos_step_nodes(start_ref_coords, (footstep_nodes_list.back().front().l_r == RLEG ? LLEG : RLEG));
+        append_go_pos_step_nodes(start_ref_coords, get_support_leg_types_from_footstep_nodes(footstep_nodes_list.back(), all_limbs));
     }
     //   For Last double support period
     append_finalize_footstep();
@@ -604,7 +604,7 @@ namespace rats
     leg_type current_leg = (vel_y > 0.0) ? RLEG : LLEG;
     clear_footstep_nodes_list();
     set_velocity_param (vel_x, vel_y, vel_theta);
-    append_go_pos_step_nodes(_ref_coords, current_leg);
+    append_go_pos_step_nodes(_ref_coords, boost::assign::list_of(current_leg));
     append_footstep_list_velocity_mode();
     append_footstep_list_velocity_mode();
     append_footstep_list_velocity_mode();
@@ -652,7 +652,7 @@ namespace rats
 
     ref_coords.pos += ref_coords.rot * trans;
     ref_coords.rotate(dth, hrp::Vector3(0,0,1));
-    append_go_pos_step_nodes(ref_coords, get_support_leg_types_from_footstep_nodes(footstep_nodes_list.back(), all_limbs).front());
+    append_go_pos_step_nodes(ref_coords, get_support_leg_types_from_footstep_nodes(footstep_nodes_list.back(), all_limbs));
   };
 
   void gait_generator::calc_next_coords_velocity_mode (std::vector< std::vector<coordinates> >& ret_list, const size_t idx)
@@ -662,14 +662,25 @@ namespace rats
     double dth;
     calc_ref_coords_trans_vector_velocity_mode(ref_coords, trans, dth, footstep_nodes_list[idx-1]);
 
+    std::vector<leg_type> cur_sup_legs, next_sup_legs;
+    for (size_t i = 0; i < footstep_nodes_list[idx-1].size(); i++) cur_sup_legs.push_back(footstep_nodes_list[idx-1].at(i).l_r);
+    next_sup_legs = get_support_leg_types_from_footstep_nodes(footstep_nodes_list[idx-1], all_limbs);
+
     for (size_t i = 0; i < 3; i++) {
       std::vector<coordinates> ret;
-      ret.push_back(ref_coords);
-      if ( velocity_mode_flg != VEL_ENDING ) {
-          ret.front().pos += ret.front().rot * trans;
-          ret.front().rotate(dth, hrp::Vector3(0,0,1));
+      std::vector<leg_type> forcused_sup_legs;
+      switch( i % 2) {
+      case 0: forcused_sup_legs = next_sup_legs; break;
+      case 1: forcused_sup_legs = cur_sup_legs; break;
       }
-      ret.front().pos += ret.front().rot * footstep_param.leg_default_translate_pos[(footstep_nodes_list[idx-1][0].l_r == RLEG) ? (1 + i)%2 : i%2];
+      for (size_t j = 0; j < forcused_sup_legs.size(); j++) {
+          ret.push_back(ref_coords);
+          if ( velocity_mode_flg != VEL_ENDING ) {
+              ret[j].pos += ret[j].rot * trans;
+              ret[j].rotate(dth, hrp::Vector3(0,0,1));
+          }
+          ret[j].pos += ret[j].rot * footstep_param.leg_default_translate_pos[forcused_sup_legs.at(j)];
+      }
       ret_list.push_back(ret);
     }
   };
