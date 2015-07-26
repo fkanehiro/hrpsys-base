@@ -11,6 +11,7 @@ class testGaitGenerator
 protected:
     double dt; /* [s] */
     std::vector<hrp::Vector3> leg_pos; /* default footstep transformations are necessary */
+    std::vector<std::string> all_limbs;
     hrp::Vector3 cog;
     gait_generator* gg;
     bool use_gnuplot, is_small_zmp_error, is_small_zmp_diff;
@@ -664,7 +665,9 @@ class testGaitGeneratorHRP2JSK : public testGaitGenerator
             cog = 1e-3*hrp::Vector3(6.785, 1.54359, 806.831);
             leg_pos.push_back(hrp::Vector3(0,1e-3*-105,0)); /* rleg */
             leg_pos.push_back(hrp::Vector3(0,1e-3* 105,0)); /* lleg */
-            gg = new gait_generator(dt, leg_pos, 1e-3*150, 1e-3*50, 10, 1e-3*50);
+            all_limbs.push_back("rleg");
+            all_limbs.push_back("lleg");
+            gg = new gait_generator(dt, leg_pos, all_limbs, 1e-3*150, 1e-3*50, 10, 1e-3*50);
         };
 };
 

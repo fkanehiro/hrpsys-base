@@ -55,7 +55,7 @@ namespace rats
             return os;
         };
     };
-    std::vector<leg_type> get_support_leg_types_from_footstep_nodes(const std::vector<step_node>& fns);
+    std::vector<leg_type> get_support_leg_types_from_footstep_nodes(const std::vector<step_node>& fns, std::vector<std::string> _all_limbs);
 
     /* footstep parameter */
     struct footstep_parameter
@@ -251,9 +251,10 @@ namespace rats
         step_count_list.clear();
       };
       void push_refzmp_from_footstep_nodes_for_dual (const std::vector<step_node>& fns,
-                                                    const std::vector<coordinates>& _support_legs_coords,
-                                                    const std::vector<coordinates>& _swing_legs_coords);
-      void push_refzmp_from_footstep_nodes_for_single (const std::vector<step_node>& fns, const std::vector<coordinates>& _support_legs_coords);
+                                                     const std::vector<coordinates>& _support_legs_coords,
+                                                     const std::vector<coordinates>& _swing_legs_coords,
+                                                     std::vector<std::string> _all_limbs);
+        void push_refzmp_from_footstep_nodes_for_single (const std::vector<step_node>& fns, const std::vector<coordinates>& _support_legs_coords, std::vector<std::string> _all_limbs);
       void update_refzmp (const std::vector< std::vector<step_node> >& fnsl);
       // setter
       void set_indices (const size_t idx) { refzmp_index = idx; };
@@ -662,7 +663,7 @@ namespace rats
             toe_heel_interpolator->get(&tmp, true);
         }
       };
-      void update_legs_coords (const std::vector< std::vector<step_node> >& fnsl, const double default_double_support_ratio);
+      void update_legs_coords (const std::vector< std::vector<step_node> >& fnsl, const double default_double_support_ratio, std::vector<std::string> _all_limbs);
       size_t get_footstep_index() const { return footstep_index; };
       size_t get_lcg_count() const { return lcg_count; };
       double get_current_swing_time(const size_t idx) const { return current_swing_time[idx]; };
@@ -752,6 +753,7 @@ namespace rats
     hrp::Vector3 cog, refzmp, prev_que_rzmp; /* cog by calculating proc_one_tick */
     std::vector<hrp::Vector3> swing_foot_zmp_offsets, prev_que_sfzos;
     double dt; /* control loop [s] */
+    std::vector<std::string> all_limbs;
     double default_step_time;
     double default_double_support_ratio, default_double_support_static_ratio;
     double gravitational_acceleration;
@@ -767,18 +769,21 @@ namespace rats
     //preview_dynamics_filter<preview_control>* preview_controller_ptr;
     preview_dynamics_filter<extended_preview_control>* preview_controller_ptr;
 
-    void append_go_pos_step_node (const coordinates& _foot_midcoords,
-                                  const leg_type _l_r)
+    void append_go_pos_step_nodes (const coordinates& _ref_coords,
+                                   const std::vector<leg_type>& lts)
     {
-      step_node sn(_l_r, _foot_midcoords,
-                   lcg.get_default_step_height(), default_step_time,
-                   lcg.get_toe_angle(), lcg.get_heel_angle());
-      sn.worldcoords.pos += sn.worldcoords.rot * footstep_param.leg_default_translate_pos[_l_r];
-      footstep_nodes_list.push_back(boost::assign::list_of(sn));
+      std::vector<step_node> sns;
+      for (size_t i = 0; i < lts.size(); i++) {
+          sns.push_back(step_node(lts.at(i), _ref_coords,
+                                  lcg.get_default_step_height(), default_step_time,
+                                  lcg.get_toe_angle(), lcg.get_heel_angle()));
+          sns.at(i).worldcoords.pos += sns.at(i).worldcoords.rot * footstep_param.leg_default_translate_pos[lts.at(i)];
+      }
+      footstep_nodes_list.push_back(sns);
     };
     void overwrite_refzmp_queue(const std::vector< std::vector<step_node> >& fnsl);
-    void calc_feet_midcoords_trans_vectors_velocity_mode (std::vector<coordinates>& feet_midcoords, std::vector<hrp::Vector3>& transes, std::vector<double>& dthes, const std::vector<step_node>& sns);
-    void calc_next_coords_velocity_mode (std::vector< std::vector<coordinates> >& rets, const size_t idx);
+    void calc_ref_coords_trans_vector_velocity_mode (coordinates& ref_coords, hrp::Vector3& trans, double& dth, const std::vector<step_node>& sup_fns);
+    void calc_next_coords_velocity_mode (std::vector< std::vector<coordinates> >& ret_list, const size_t idx);
     void append_footstep_list_velocity_mode ();
 
 #ifndef HAVE_MAIN
@@ -789,9 +794,9 @@ namespace rats
 #endif
     gait_generator (double _dt,
                     /* arguments for footstep_parameter */
-                    const std::vector<hrp::Vector3>& _leg_pos,
+                    const std::vector<hrp::Vector3>& _leg_pos, std::vector<std::string> _all_limbs,
                     const double _stride_fwd_x, const double _stride_y, const double _stride_theta, const double _stride_bwd_x)
-      : footstep_nodes_list(), overwrite_footstep_nodes_list(), thp(), rg(&thp, _dt), lcg(_dt, &thp),
+        : footstep_nodes_list(), overwrite_footstep_nodes_list(), thp(), rg(&thp, _dt), lcg(_dt, &thp), all_limbs(_all_limbs),
         footstep_param(_leg_pos, _stride_fwd_x, _stride_y, _stride_theta, _stride_bwd_x),
         vel_param(), offset_vel_param(), cog(hrp::Vector3::Zero()), refzmp(hrp::Vector3::Zero()), prev_que_rzmp(hrp::Vector3::Zero()),
         dt(_dt), default_step_time(1.0), default_double_support_ratio(0.2), default_double_support_static_ratio(0.0), gravitational_acceleration(DEFAULT_GRAVITATIONAL_ACCELERATION),
@@ -840,7 +845,7 @@ namespace rats
     void go_single_step_param_2_footstep_nodes_list (const double goal_x, const double goal_y, const double goal_z, const double goal_theta, /* [mm] [mm] [mm] [deg] */
                                                const std::string& tmp_swing_leg,
                                                const coordinates& _support_leg_coords);
-    void initialize_velocity_mode (const coordinates& _foot_midcoords,
+    void initialize_velocity_mode (const coordinates& _ref_coords,
 				   const double vel_x, const double vel_y, const double vel_theta); /* [mm/s] [mm/s] [deg/s] */
     void finalize_velocity_mode ();
     void append_finalize_footstep ()

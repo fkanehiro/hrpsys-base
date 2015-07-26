@@ -162,6 +162,8 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
       leg_pos.push_back(hrp::Vector3(-1*leg_offset));
       leg_pos.push_back(hrp::Vector3(leg_offset));
     }
+    leg_names.push_back("rleg");
+    leg_names.push_back("lleg");
     // setting stride limitations from conf file
     double stride_fwd_x_limit = 0.15;
     double stride_y_limit = 0.05;
@@ -172,7 +174,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
       for (size_t i = 0; i < leg_pos.size(); i++) default_zmp_offsets.push_back(hrp::Vector3::Zero());
     }
     if (leg_offset_str.size() > 0) {
-      gg = ggPtr(new rats::gait_generator(m_dt, leg_pos, stride_fwd_x_limit/*[m]*/, stride_y_limit/*[m]*/, stride_th_limit/*[deg]*/, stride_bwd_x_limit/*[m]*/));
+      gg = ggPtr(new rats::gait_generator(m_dt, leg_pos, leg_names, stride_fwd_x_limit/*[m]*/, stride_y_limit/*[m]*/, stride_th_limit/*[deg]*/, stride_bwd_x_limit/*[m]*/));
       gg->set_default_zmp_offsets(default_zmp_offsets);
     }
     gg_is_walking = gg_solved = false;
@@ -277,9 +279,6 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
 
     m_accRef.data.ax = m_accRef.data.ay = m_accRef.data.az = 0.0;
     prev_imu_sensor_vel = hrp::Vector3::Zero();
-
-    leg_names.push_back("rleg");
-    leg_names.push_back("lleg");
 
     graspless_manip_mode = false;
     graspless_manip_arm = "arms";
@@ -961,9 +960,9 @@ bool AutoBalancer::goVelocity(const double& vx, const double& vy, const double& 
   if (gg_is_walking && gg_solved) {
     gg->set_velocity_param(vx, vy, vth);
   } else {
-    coordinates foot_midcoords;
-    mid_coords(foot_midcoords, 0.5, ikp["rleg"].target_end_coords, ikp["lleg"].target_end_coords);
-    gg->initialize_velocity_mode(foot_midcoords, vx, vy, vth);
+    coordinates ref_coords;
+    mid_coords(ref_coords, 0.5, ikp["rleg"].target_end_coords, ikp["lleg"].target_end_coords);
+    gg->initialize_velocity_mode(ref_coords, vx, vy, vth);
     startWalking();
   }
   return true;
