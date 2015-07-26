@@ -609,14 +609,9 @@ namespace rats
     double dx = vel_param.velocity_x + offset_vel_param.velocity_x, dy = vel_param.velocity_y + offset_vel_param.velocity_y;
     dth = vel_param.velocity_theta + offset_vel_param.velocity_theta;
     /* velocity limitation by stride parameters <- this should be based on footstep candidates */
-    if (footstep_param.stride_fwd_x / default_step_time < dx)
-        dx = footstep_param.stride_fwd_x / default_step_time;
-    if (-1*footstep_param.stride_bwd_x / default_step_time > dx)
-        dx = -1*footstep_param.stride_bwd_x / default_step_time;
-    if (footstep_param.stride_y / default_step_time < fabs(dy))
-        dy = footstep_param.stride_y * ((dy > 0.0) ? 1.0 : -1.0) / default_step_time;
-    if (footstep_param.stride_theta / default_step_time < fabs(dth))
-        dth = footstep_param.stride_theta * ((dth > 0.0) ? 1.0 : -1.0) / default_step_time;
+    dx  = std::max(-1 * footstep_param.stride_bwd_x / default_step_time, std::min(footstep_param.stride_fwd_x / default_step_time, dx ));
+    dy  = std::max(-1 * footstep_param.stride_y     / default_step_time, std::min(footstep_param.stride_y     / default_step_time, dy ));
+    dth = std::max(-1 * footstep_param.stride_theta / default_step_time, std::min(footstep_param.stride_theta / default_step_time, dth));
     /* inside step limitation */
     if (use_inside_step_limitation) {
         if (vel_param.velocity_y > 0) {
