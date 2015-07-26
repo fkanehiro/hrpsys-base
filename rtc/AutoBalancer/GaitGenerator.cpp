@@ -512,21 +512,21 @@ namespace rats
                                                            const coordinates& initial_support_coords, const coordinates& initial_swing_src_coords,
                                                            const leg_type initial_support_leg)
   {
-    coordinates foot_midcoords; /* foot_midcoords is modified during loop */
-    mid_coords(foot_midcoords, 0.5, initial_support_coords, initial_swing_src_coords);
-    coordinates goal_foot_midcoords(foot_midcoords);
-    goal_foot_midcoords.pos += goal_foot_midcoords.rot * hrp::Vector3(goal_x, goal_y, 0.0);
-    goal_foot_midcoords.rotate(deg2rad(goal_theta), hrp::Vector3(0,0,1));
-    std::cerr << "current foot midcoords" << std::endl;
+    coordinates start_ref_coords; /* start_ref_coords is modified during loop */
+    mid_coords(start_ref_coords, 0.5, initial_support_coords, initial_swing_src_coords);
+    coordinates goal_ref_coords(start_ref_coords);
+    goal_ref_coords.pos += goal_ref_coords.rot * hrp::Vector3(goal_x, goal_y, 0.0);
+    goal_ref_coords.rotate(deg2rad(goal_theta), hrp::Vector3(0,0,1));
+    std::cerr << "start ref coords" << std::endl;
     std::cerr << "  pos =" << std::endl;
-    std::cerr << foot_midcoords.pos.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << std::endl;
+    std::cerr << start_ref_coords.pos.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << std::endl;
     std::cerr << "  rot =" << std::endl;
-    std::cerr << foot_midcoords.rot.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", "\n", "    [", "]")) << std::endl;
-    std::cerr << "goal foot midcoords" << std::endl;
+    std::cerr << start_ref_coords.rot.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", "\n", "    [", "]")) << std::endl;
+    std::cerr << "goal ref midcoords" << std::endl;
     std::cerr << "  pos =" << std::endl;
-    std::cerr << goal_foot_midcoords.pos.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << std::endl;
+    std::cerr << goal_ref_coords.pos.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << std::endl;
     std::cerr << "  rot =" << std::endl;
-    std::cerr << goal_foot_midcoords.rot.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", "\n", "    [", "]")) << std::endl;
+    std::cerr << goal_ref_coords.rot.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", "\n", "    [", "]")) << std::endl;
 
     /* initialize */
     clear_footstep_nodes_list();
@@ -535,32 +535,32 @@ namespace rats
 
     /* footstep generation loop */
     hrp::Vector3 dp, dr;
-    foot_midcoords.difference(dp, dr, goal_foot_midcoords);
-    dp = foot_midcoords.rot.transpose() * dp;
-    dr = foot_midcoords.rot.transpose() * dr;
+    start_ref_coords.difference(dp, dr, goal_ref_coords);
+    dp = start_ref_coords.rot.transpose() * dp;
+    dr = start_ref_coords.rot.transpose() * dr;
     while ( !(eps_eq(dp.norm(), 0.0, 1e-3*0.1) && eps_eq(dr.norm(), 0.0, deg2rad(0.5))) ) {
       set_velocity_param(dp(0)/default_step_time, dp(1)/default_step_time, rad2deg(dr(2))/default_step_time);
       append_footstep_list_velocity_mode();
-      foot_midcoords = footstep_nodes_list.back().front().worldcoords;
-      foot_midcoords.pos += foot_midcoords.rot * hrp::Vector3(footstep_param.leg_default_translate_pos[footstep_nodes_list.back().front().l_r] * -1.0);
-      foot_midcoords.difference(dp, dr, goal_foot_midcoords);
-      dp = foot_midcoords.rot.transpose() * dp;
-      dr = foot_midcoords.rot.transpose() * dr;
+      start_ref_coords = footstep_nodes_list.back().front().worldcoords;
+      start_ref_coords.pos += start_ref_coords.rot * hrp::Vector3(footstep_param.leg_default_translate_pos[footstep_nodes_list.back().front().l_r] * -1.0);
+      start_ref_coords.difference(dp, dr, goal_ref_coords);
+      dp = start_ref_coords.rot.transpose() * dp;
+      dr = start_ref_coords.rot.transpose() * dr;
     }
     for (size_t i = 0; i < optional_go_pos_finalize_footstep_num; i++) {
-        append_go_pos_step_node(foot_midcoords, (footstep_nodes_list.back().front().l_r == RLEG ? LLEG : RLEG));
+        append_go_pos_step_node(start_ref_coords, (footstep_nodes_list.back().front().l_r == RLEG ? LLEG : RLEG));
     }
 
     /* finalize */
     //   Align last foot
-    append_go_pos_step_node(foot_midcoords, (footstep_nodes_list.back().front().l_r == RLEG ? LLEG : RLEG));
+    append_go_pos_step_node(start_ref_coords, (footstep_nodes_list.back().front().l_r == RLEG ? LLEG : RLEG));
     //   Check align
     coordinates final_step_coords1 = footstep_nodes_list[footstep_nodes_list.size()-2].front().worldcoords; // Final coords in footstep_node_list
-    coordinates final_step_coords2 = foot_midcoords; // Final coords calculated from foot_midcoords + translate pos
+    coordinates final_step_coords2 = start_ref_coords; // Final coords calculated from start_ref_coords + translate pos
     final_step_coords2.pos += final_step_coords2.rot * hrp::Vector3(footstep_param.leg_default_translate_pos[footstep_nodes_list[footstep_nodes_list.size()-2].front().l_r]);
     final_step_coords1.difference(dp, dr, final_step_coords2);
     if ( !(eps_eq(dp.norm(), 0.0, 1e-3*0.1) && eps_eq(dr.norm(), 0.0, deg2rad(0.5))) ) { // If final_step_coords1 != final_step_coords2, add steps to match final_step_coords1 and final_step_coords2
-        append_go_pos_step_node(foot_midcoords, (footstep_nodes_list.back().front().l_r == RLEG ? LLEG : RLEG));
+        append_go_pos_step_node(start_ref_coords, (footstep_nodes_list.back().front().l_r == RLEG ? LLEG : RLEG));
     }
     //   For Last double support period
     append_finalize_footstep();
@@ -582,7 +582,7 @@ namespace rats
     footstep_nodes_list.push_back(boost::assign::list_of(sn0));
   };
 
-  void gait_generator::initialize_velocity_mode (const coordinates& _foot_midcoords,
+  void gait_generator::initialize_velocity_mode (const coordinates& _ref_coords,
 						 const double vel_x, const double vel_y, const double vel_theta)
   {
     velocity_mode_flg = VEL_DOING;
@@ -590,7 +590,7 @@ namespace rats
     leg_type current_leg = (vel_y > 0.0) ? RLEG : LLEG;
     clear_footstep_nodes_list();
     set_velocity_param (vel_x, vel_y, vel_theta);
-    append_go_pos_step_node(_foot_midcoords, current_leg);
+    append_go_pos_step_node(_ref_coords, current_leg);
     append_footstep_list_velocity_mode();
     append_footstep_list_velocity_mode();
     append_footstep_list_velocity_mode();
@@ -601,75 +601,67 @@ namespace rats
     if (velocity_mode_flg == VEL_DOING) velocity_mode_flg = VEL_ENDING;
   };
 
-  void gait_generator::calc_feet_midcoords_trans_vectors_velocity_mode (std::vector<coordinates>& feet_midcoords, std::vector<hrp::Vector3>& transes, std::vector<double>& dthes, const std::vector<step_node>& sns)
+  void gait_generator::calc_ref_coords_trans_vector_velocity_mode (coordinates& ref_coords, hrp::Vector3& trans, double& dth, const std::vector<step_node>& sup_fns)
   {
-    for (size_t i = 0; i < sns.size(); i++) {
-      step_node sn = sns.at(i);
-      coordinates foot_midcoords = sn.worldcoords;
-      hrp::Vector3 tmpv(footstep_param.leg_default_translate_pos[sn.l_r] * -1.0);
-      foot_midcoords.pos += foot_midcoords.rot * tmpv;
-      feet_midcoords.push_back(foot_midcoords);
-      double dx = vel_param.velocity_x + offset_vel_param.velocity_x, dy = vel_param.velocity_y + offset_vel_param.velocity_y;
-      double dth = vel_param.velocity_theta + offset_vel_param.velocity_theta;
-      /* velocity limitation by stride parameters <- this should be based on footstep candidates */
-      if (footstep_param.stride_fwd_x / default_step_time < dx)
+    ref_coords = sup_fns.front().worldcoords;
+    hrp::Vector3 tmpv(footstep_param.leg_default_translate_pos[sup_fns.front().l_r] * -1.0); /* not fair to every support legs */
+    ref_coords.pos += ref_coords.rot * tmpv;
+    double dx = vel_param.velocity_x + offset_vel_param.velocity_x, dy = vel_param.velocity_y + offset_vel_param.velocity_y;
+    dth = vel_param.velocity_theta + offset_vel_param.velocity_theta;
+    /* velocity limitation by stride parameters <- this should be based on footstep candidates */
+    if (footstep_param.stride_fwd_x / default_step_time < dx)
         dx = footstep_param.stride_fwd_x / default_step_time;
-      if (-1*footstep_param.stride_bwd_x / default_step_time > dx)
+    if (-1*footstep_param.stride_bwd_x / default_step_time > dx)
         dx = -1*footstep_param.stride_bwd_x / default_step_time;
-      if (footstep_param.stride_y / default_step_time < fabs(dy))
+    if (footstep_param.stride_y / default_step_time < fabs(dy))
         dy = footstep_param.stride_y * ((dy > 0.0) ? 1.0 : -1.0) / default_step_time;
-      if (footstep_param.stride_theta / default_step_time < fabs(dth))
+    if (footstep_param.stride_theta / default_step_time < fabs(dth))
         dth = footstep_param.stride_theta * ((dth > 0.0) ? 1.0 : -1.0) / default_step_time;
-      /* inside step limitation */
-      if (use_inside_step_limitation) {
+    /* inside step limitation */
+    if (use_inside_step_limitation) {
         if (vel_param.velocity_y > 0) {
-          if (sn.l_r == LLEG || sn.l_r == LARM) dy *= 0.5;
+            if (sup_fns.front().l_r == LLEG || sup_fns.front().l_r == LARM) dy *= 0.5;
         } else {
-          if (sn.l_r == RLEG || sn.l_r == RARM) dy *= 0.5;
+            if (sup_fns.front().l_r == RLEG || sup_fns.front().l_r == RARM) dy *= 0.5;
         }
         if (vel_param.velocity_theta > 0) {
-          if (sn.l_r == LLEG || sn.l_r == LARM) dth *= 0.5;
+            if (sup_fns.front().l_r == LLEG || sup_fns.front().l_r == LARM) dth *= 0.5;
         } else {
-          if (sn.l_r == RLEG || sn.l_r == RARM) dth *= 0.5;
+            if (sup_fns.front().l_r == RLEG || sup_fns.front().l_r == RARM) dth *= 0.5;
         }
-      }
-      transes.push_back(hrp::Vector3(dx * default_step_time, dy * default_step_time, 0));
-      dthes.push_back(deg2rad(dth * default_step_time));
     }
+    trans = hrp::Vector3(dx * default_step_time, dy * default_step_time, 0);
+    dth = deg2rad(dth * default_step_time);
   };
 
   void gait_generator::append_footstep_list_velocity_mode ()
   {
-    std::vector<coordinates> feet_midcoords;
-    std::vector<hrp::Vector3> transes;
-    std::vector<double> dthes;
-    calc_feet_midcoords_trans_vectors_velocity_mode(feet_midcoords, transes, dthes, footstep_nodes_list.back());
+    coordinates ref_coords;
+    hrp::Vector3 trans;
+    double dth;
+    calc_ref_coords_trans_vector_velocity_mode(ref_coords, trans, dth, footstep_nodes_list.back());
 
-    for (size_t i = 0; i < feet_midcoords.size(); i++) {
-      feet_midcoords[i].pos += feet_midcoords[i].rot * transes[i];
-      feet_midcoords[i].rotate(dthes[i], hrp::Vector3(0,0,1));
-    }
-    append_go_pos_step_node(feet_midcoords.front(), get_support_leg_types_from_footstep_nodes(footstep_nodes_list.back()).front());
+    ref_coords.pos += ref_coords.rot * trans;
+    ref_coords.rotate(dth, hrp::Vector3(0,0,1));
+    append_go_pos_step_node(ref_coords, get_support_leg_types_from_footstep_nodes(footstep_nodes_list.back()).front());
   };
 
-  void gait_generator::calc_next_coords_velocity_mode (std::vector< std::vector<coordinates> >& rets, const size_t idx)
+  void gait_generator::calc_next_coords_velocity_mode (std::vector< std::vector<coordinates> >& ret_list, const size_t idx)
   {
-    std::vector<coordinates> feet_midcoords;
-    std::vector<hrp::Vector3> transes;
-    std::vector<double> dthes;
-    calc_feet_midcoords_trans_vectors_velocity_mode(feet_midcoords, transes, dthes, footstep_nodes_list[idx-1]);
+    coordinates ref_coords;
+    hrp::Vector3 trans;
+    double dth;
+    calc_ref_coords_trans_vector_velocity_mode(ref_coords, trans, dth, footstep_nodes_list[idx-1]);
 
     for (size_t i = 0; i < 3; i++) {
       std::vector<coordinates> ret;
-      for (size_t j = 0; j < feet_midcoords.size(); j++) {
-        ret.push_back(feet_midcoords[j]);
-        if ( velocity_mode_flg != VEL_ENDING ) {
-          ret[j].pos += ret[j].rot * transes[j];
-          ret[j].rotate(dthes[j], hrp::Vector3(0,0,1));
-        }
-        ret[j].pos += ret[j].rot * footstep_param.leg_default_translate_pos[(footstep_nodes_list[idx-1][0].l_r == RLEG) ? (1 + i)%2 : i%2];
+      ret.push_back(ref_coords);
+      if ( velocity_mode_flg != VEL_ENDING ) {
+          ret.front().pos += ret.front().rot * trans;
+          ret.front().rotate(dth, hrp::Vector3(0,0,1));
       }
-      rets.push_back(ret);
+      ret.front().pos += ret.front().rot * footstep_param.leg_default_translate_pos[(footstep_nodes_list[idx-1][0].l_r == RLEG) ? (1 + i)%2 : i%2];
+      ret_list.push_back(ret);
     }
   };
 

@@ -767,18 +767,18 @@ namespace rats
     //preview_dynamics_filter<preview_control>* preview_controller_ptr;
     preview_dynamics_filter<extended_preview_control>* preview_controller_ptr;
 
-    void append_go_pos_step_node (const coordinates& _foot_midcoords,
+    void append_go_pos_step_node (const coordinates& _ref_coords,
                                   const leg_type _l_r)
     {
-      step_node sn(_l_r, _foot_midcoords,
+      step_node sn(_l_r, _ref_coords,
                    lcg.get_default_step_height(), default_step_time,
                    lcg.get_toe_angle(), lcg.get_heel_angle());
       sn.worldcoords.pos += sn.worldcoords.rot * footstep_param.leg_default_translate_pos[_l_r];
       footstep_nodes_list.push_back(boost::assign::list_of(sn));
     };
     void overwrite_refzmp_queue(const std::vector< std::vector<step_node> >& fnsl);
-    void calc_feet_midcoords_trans_vectors_velocity_mode (std::vector<coordinates>& feet_midcoords, std::vector<hrp::Vector3>& transes, std::vector<double>& dthes, const std::vector<step_node>& sns);
-    void calc_next_coords_velocity_mode (std::vector< std::vector<coordinates> >& rets, const size_t idx);
+    void calc_ref_coords_trans_vector_velocity_mode (coordinates& ref_coords, hrp::Vector3& trans, double& dth, const std::vector<step_node>& sup_fns);
+    void calc_next_coords_velocity_mode (std::vector< std::vector<coordinates> >& ret_list, const size_t idx);
     void append_footstep_list_velocity_mode ();
 
 #ifndef HAVE_MAIN
@@ -840,7 +840,7 @@ namespace rats
     void go_single_step_param_2_footstep_nodes_list (const double goal_x, const double goal_y, const double goal_z, const double goal_theta, /* [mm] [mm] [mm] [deg] */
                                                const std::string& tmp_swing_leg,
                                                const coordinates& _support_leg_coords);
-    void initialize_velocity_mode (const coordinates& _foot_midcoords,
+    void initialize_velocity_mode (const coordinates& _ref_coords,
 				   const double vel_x, const double vel_y, const double vel_theta); /* [mm/s] [mm/s] [deg/s] */
     void finalize_velocity_mode ();
     void append_finalize_footstep ()

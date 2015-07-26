@@ -961,9 +961,9 @@ bool AutoBalancer::goVelocity(const double& vx, const double& vy, const double& 
   if (gg_is_walking && gg_solved) {
     gg->set_velocity_param(vx, vy, vth);
   } else {
-    coordinates foot_midcoords;
-    mid_coords(foot_midcoords, 0.5, ikp["rleg"].target_end_coords, ikp["lleg"].target_end_coords);
-    gg->initialize_velocity_mode(foot_midcoords, vx, vy, vth);
+    coordinates ref_coords;
+    mid_coords(ref_coords, 0.5, ikp["rleg"].target_end_coords, ikp["lleg"].target_end_coords);
+    gg->initialize_velocity_mode(ref_coords, vx, vy, vth);
     startWalking();
   }
   return true;
