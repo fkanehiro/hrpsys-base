@@ -767,7 +767,7 @@ namespace rats
     //preview_dynamics_filter<preview_control>* preview_controller_ptr;
     preview_dynamics_filter<extended_preview_control>* preview_controller_ptr;
 
-    void append_go_pos_step_node (const coordinates& _ref_coords,
+    void append_go_pos_step_nodes (const coordinates& _ref_coords,
                                   const leg_type _l_r)
     {
       step_node sn(_l_r, _ref_coords,
