@@ -522,11 +522,9 @@ namespace rats
    *  unit system -> x [mm], y [mm], theta [deg]
    */
   void gait_generator::go_pos_param_2_footstep_nodes_list (const double goal_x, const double goal_y, const double goal_theta, /* [mm] [mm] [deg] */
-                                                           const coordinates& initial_support_coords, const coordinates& initial_swing_src_coords,
+                                                           const coordinates& initial_support_coords, const coordinates& initial_swing_src_coords, coordinates start_ref_coords,
                                                            const leg_type initial_support_leg)
   {
-    coordinates start_ref_coords; /* start_ref_coords is modified during loop */
-    mid_coords(start_ref_coords, 0.5, initial_support_coords, initial_swing_src_coords);
     coordinates goal_ref_coords(start_ref_coords);
     goal_ref_coords.pos += goal_ref_coords.rot * hrp::Vector3(goal_x, goal_y, 0.0);
     goal_ref_coords.rotate(deg2rad(goal_theta), hrp::Vector3(0,0,1));

@@ -943,9 +943,15 @@ void AutoBalancer::waitABCTransition()
 bool AutoBalancer::goPos(const double& x, const double& y, const double& th)
 {
   if ( !gg_is_walking && !is_stop_mode) {
+    coordinates start_ref_coords;
+    if ( y > 0)
+        mid_coords(start_ref_coords, 0.5, ikp["rleg"].target_end_coords, ikp["lleg"].target_end_coords);
+    else
+        mid_coords(start_ref_coords, 0.5, ikp["lleg"].target_end_coords, ikp["rleg"].target_end_coords);
     gg->go_pos_param_2_footstep_nodes_list(x, y, th,
                                      (y > 0 ? ikp["rleg"].target_end_coords : ikp["lleg"].target_end_coords),
                                      (y > 0 ? ikp["lleg"].target_end_coords : ikp["rleg"].target_end_coords),
+                                     start_ref_coords,
                                      (y > 0 ? RLEG : LLEG));
     startWalking();
     return true;
