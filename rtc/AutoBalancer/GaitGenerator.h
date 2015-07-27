@@ -8,6 +8,7 @@
 #include <queue>
 #include <boost/assign.hpp>
 #include <boost/lambda/lambda.hpp>
+#include <boost/range/algorithm/count_if.hpp>
 
 namespace rats
 {
@@ -674,19 +675,22 @@ namespace rats
       const std::vector<coordinates>& get_swing_legs_dst_coords_idx(const size_t idx) const { return swing_legs_dst_coords_list[idx]; };
       const std::vector<coordinates>& get_support_legs_coords_idx(const size_t idx) const { return support_legs_coords_list[idx]; };
       std::vector<leg_type> get_support_legs() const { return support_legs;};
-      std::vector<leg_type> get_swing_legs() const {
-        /* cannot use boost::remove_erase_if() */
-        if (support_legs.size() == 1) {
-          std::vector<leg_type> tmp_spls = boost::assign::list_of(RLEG)(LLEG);
-          std::vector<leg_type>::iterator it = std::remove_if(tmp_spls.begin(), tmp_spls.end(), (boost::lambda::_1 == support_legs.front()));
-          tmp_spls.erase(it, tmp_spls.end());
-          return tmp_spls;
-        } else if (support_legs.size() == 2) {
-          std::vector<leg_type> tmp_spls = boost::assign::list_of(RLEG)(LLEG)(RARM)(LARM);
-          std::vector<leg_type>::iterator it = std::remove_if(tmp_spls.begin(), tmp_spls.end(), (boost::lambda::_1 == support_legs.at(0) || boost::lambda::_1 == support_legs.at(1)));
-          tmp_spls.erase(it, tmp_spls.end());
-          return tmp_spls;
+      std::vector<leg_type> get_swing_legs(const std::vector<std::string>& _all_limbs) const {
+        std::vector<leg_type> tmp_support_legs, tmp_all_limbs, ret_swing_legs;
+        tmp_support_legs = support_legs;
+        for (size_t i = 0; i < _all_limbs.size(); i++) {
+            if (_all_limbs.at(i) == "rleg") tmp_all_limbs.push_back(RLEG);
+            else if (_all_limbs.at(i) == "lleg") tmp_all_limbs.push_back(LLEG);
+            else if (_all_limbs.at(i) == "rarm") tmp_all_limbs.push_back(RARM);
+            else if (_all_limbs.at(i) == "larm") tmp_all_limbs.push_back(LARM);
+            else std::cerr << "invalid input" << std::endl;
         }
+        std::sort(tmp_all_limbs.begin(), tmp_all_limbs.end());
+        std::sort(tmp_support_legs.begin(), tmp_support_legs.end());
+        std::set_difference(tmp_all_limbs.begin(), tmp_all_limbs.end(),
+                            tmp_support_legs.begin(), tmp_support_legs.end(),
+                            std::back_inserter(ret_swing_legs));
+        return ret_swing_legs;
       };
       double get_default_step_height () const { return default_step_height;};
       void get_swing_support_mid_coords(coordinates& ret) const
@@ -1003,7 +1007,7 @@ namespace rats
       return convert_leg_types_to_strings(lts);
     };
     std::vector<std::string> get_support_legs() const { return convert_leg_types_to_strings(lcg.get_support_legs());};
-    std::vector<std::string> get_swing_legs() const { return convert_leg_types_to_strings(lcg.get_swing_legs());};
+    std::vector<std::string> get_swing_legs() const { return convert_leg_types_to_strings(lcg.get_swing_legs(all_limbs));};
     const std::vector<coordinates>& get_swing_legs_coords() const { return lcg.get_swing_legs_coords(); };
     const std::vector<coordinates>& get_support_legs_coords() const { return lcg.get_support_legs_coords(); };
     const std::vector<coordinates>& get_swing_legs_src_coords() const { return lcg.get_swing_legs_src_coords(); };
@@ -1012,8 +1016,8 @@ namespace rats
     {
       std::vector<coordinates> tmps(lcg.get_swing_legs_dst_coords());
       std::vector<coordinates>::iterator it_tmp = tmps.begin();
-      std::vector<leg_type>::iterator it_l_r = lcg.get_swing_legs().begin();
-      for ( ; it_tmp != tmps.end() && it_l_r != lcg.get_swing_legs().end(); it_tmp++ , it_l_r++) {
+      std::vector<leg_type>::iterator it_l_r = lcg.get_swing_legs(all_limbs).begin();
+      for ( ; it_tmp != tmps.end() && it_l_r != lcg.get_swing_legs(all_limbs).end(); it_tmp++ , it_l_r++) {
         it_tmp->pos += it_tmp->rot * hrp::Vector3(-1*footstep_param.leg_default_translate_pos[*it_l_r]);
       }
       return tmps;
