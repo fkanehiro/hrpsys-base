@@ -522,11 +522,9 @@ namespace rats
    *  unit system -> x [mm], y [mm], theta [deg]
    */
   void gait_generator::go_pos_param_2_footstep_nodes_list (const double goal_x, const double goal_y, const double goal_theta, /* [mm] [mm] [deg] */
-                                                           const coordinates& initial_support_coords, const coordinates& initial_swing_src_coords,
-                                                           const leg_type initial_support_leg)
+                                                           const std::vector<coordinates>& initial_support_legs_coords, coordinates start_ref_coords,
+                                                           const std::vector<leg_type>& initial_support_legs)
   {
-    coordinates start_ref_coords; /* start_ref_coords is modified during loop */
-    mid_coords(start_ref_coords, 0.5, initial_support_coords, initial_swing_src_coords);
     coordinates goal_ref_coords(start_ref_coords);
     goal_ref_coords.pos += goal_ref_coords.rot * hrp::Vector3(goal_x, goal_y, 0.0);
     goal_ref_coords.rotate(deg2rad(goal_theta), hrp::Vector3(0,0,1));
@@ -544,7 +542,11 @@ namespace rats
     /* initialize */
     clear_footstep_nodes_list();
     // For initial double support period
-    footstep_nodes_list.push_back(boost::assign::list_of(step_node(initial_support_leg, initial_support_coords, 0, default_step_time, 0, 0)));
+    std::vector<step_node> initial_footstep_nodes;
+    for (size_t i = 0; i < initial_support_legs.size(); i++) {
+        initial_footstep_nodes.push_back(step_node(initial_support_legs.at(i), initial_support_legs_coords.at(i), 0, default_step_time, 0, 0));
+    }
+    footstep_nodes_list.push_back(initial_footstep_nodes);
 
     /* footstep generation loop */
     hrp::Vector3 dp, dr;
