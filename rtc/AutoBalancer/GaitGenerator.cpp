@@ -522,7 +522,7 @@ namespace rats
    *  unit system -> x [mm], y [mm], theta [deg]
    */
   void gait_generator::go_pos_param_2_footstep_nodes_list (const double goal_x, const double goal_y, const double goal_theta, /* [mm] [mm] [deg] */
-                                                           const coordinates& initial_support_coords, const coordinates& initial_swing_src_coords, coordinates start_ref_coords,
+                                                           const coordinates& initial_support_coords, coordinates start_ref_coords,
                                                            const leg_type initial_support_leg)
   {
     coordinates goal_ref_coords(start_ref_coords);
