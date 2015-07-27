@@ -365,7 +365,7 @@ public:
         gg->clear_footstep_nodes_list();
         coordinates start_ref_coords;
         mid_coords(start_ref_coords, 0.5, coordinates(leg_pos[0]), coordinates(leg_pos[1]));
-        gg->go_pos_param_2_footstep_nodes_list(200*1e-3, 100*1e-3, 20, coordinates(leg_pos[0]), start_ref_coords, RLEG);
+        gg->go_pos_param_2_footstep_nodes_list(200*1e-3, 100*1e-3, 20, boost::assign::list_of(coordinates(leg_pos[0])), start_ref_coords, boost::assign::list_of(RLEG));
         gen_and_plot_walk_pattern();
     };
 
@@ -377,7 +377,7 @@ public:
         gg->clear_footstep_nodes_list();
         coordinates start_ref_coords;
         mid_coords(start_ref_coords, 0.5, coordinates(leg_pos[1]), coordinates(leg_pos[0]));
-        gg->go_pos_param_2_footstep_nodes_list(300*1e-3, 0, 0, coordinates(leg_pos[1]), start_ref_coords, LLEG);
+        gg->go_pos_param_2_footstep_nodes_list(300*1e-3, 0, 0, boost::assign::list_of(coordinates(leg_pos[1])), start_ref_coords, boost::assign::list_of(LLEG));
         gen_and_plot_walk_pattern();
     };
 
@@ -389,7 +389,7 @@ public:
         gg->clear_footstep_nodes_list();
         coordinates start_ref_coords;
         mid_coords(start_ref_coords, 0.5, coordinates(leg_pos[0]), coordinates(leg_pos[1]));
-        gg->go_pos_param_2_footstep_nodes_list(0, 150*1e-3, 0, coordinates(leg_pos[0]), start_ref_coords, RLEG);
+        gg->go_pos_param_2_footstep_nodes_list(0, 150*1e-3, 0, boost::assign::list_of(coordinates(leg_pos[0])), start_ref_coords, boost::assign::list_of(RLEG));
         gen_and_plot_walk_pattern();
     };
 
@@ -401,7 +401,7 @@ public:
         gg->clear_footstep_nodes_list();
         coordinates start_ref_coords;
         mid_coords(start_ref_coords, 0.5, coordinates(leg_pos[1]), coordinates(leg_pos[0]));
-        gg->go_pos_param_2_footstep_nodes_list(0, 0, 30, coordinates(leg_pos[1]), start_ref_coords, LLEG);
+        gg->go_pos_param_2_footstep_nodes_list(0, 0, 30, boost::assign::list_of(coordinates(leg_pos[1])), start_ref_coords, boost::assign::list_of(LLEG));
         gen_and_plot_walk_pattern();
     };
 
@@ -450,7 +450,7 @@ public:
         gg->clear_footstep_nodes_list();
         coordinates start_ref_coords;
         mid_coords(start_ref_coords, 0.5, coordinates(leg_pos[1]), coordinates(leg_pos[0]));
-        gg->go_pos_param_2_footstep_nodes_list(100*1e-3, 0, 0, coordinates(leg_pos[1]), start_ref_coords, LLEG);
+        gg->go_pos_param_2_footstep_nodes_list(100*1e-3, 0, 0, boost::assign::list_of(coordinates(leg_pos[1])), start_ref_coords, boost::assign::list_of(LLEG));
         gen_and_plot_walk_pattern();
     };
 
@@ -476,7 +476,7 @@ public:
         //hrp::Matrix33 initial_foot_mid_rot = Eigen::AngleAxis<double>(M_PI, hrp::Vector3::UnitZ()).toRotationMatrix();
         coordinates start_ref_coords;
         mid_coords(start_ref_coords, 0.5, coordinates(initial_foot_mid_rot*leg_pos[1], initial_foot_mid_rot), coordinates(initial_foot_mid_rot*leg_pos[0], initial_foot_mid_rot));
-        gg->go_pos_param_2_footstep_nodes_list(100*1e-3, 0, 0, coordinates(initial_foot_mid_rot*leg_pos[1], initial_foot_mid_rot), start_ref_coords, LLEG);
+        gg->go_pos_param_2_footstep_nodes_list(100*1e-3, 0, 0, boost::assign::list_of(coordinates(initial_foot_mid_rot*leg_pos[1], initial_foot_mid_rot)), start_ref_coords, boost::assign::list_of(LLEG));
         coordinates initial_support_leg_coords(hrp::Vector3(initial_foot_mid_rot * (gg->get_footstep_front_legs()==boost::assign::list_of("rleg")?leg_pos[1]:leg_pos[0])), initial_foot_mid_rot);
         coordinates initial_swing_leg_dst_coords(hrp::Vector3(initial_foot_mid_rot * (gg->get_footstep_front_legs()!=boost::assign::list_of("rleg")?leg_pos[1]:leg_pos[0])), initial_foot_mid_rot);
         gen_and_plot_walk_pattern(initial_support_leg_coords, initial_swing_leg_dst_coords);
@@ -594,7 +594,7 @@ public:
         gg->set_default_orbit_type(CYCLOIDDELAYKICK);
         coordinates start_ref_coords;
         mid_coords(start_ref_coords, 0.5, coordinates(leg_pos[1]), coordinates(leg_pos[0]));
-        gg->go_pos_param_2_footstep_nodes_list(300*1e-3, 0, 0, coordinates(leg_pos[1]), start_ref_coords, LLEG);
+        gg->go_pos_param_2_footstep_nodes_list(300*1e-3, 0, 0, boost::assign::list_of(coordinates(leg_pos[1])), start_ref_coords, boost::assign::list_of(LLEG));
         gen_and_plot_walk_pattern();
     };
 
