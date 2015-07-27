@@ -2,7 +2,6 @@
 
 #include "GaitGenerator.h"
 #include <numeric>
-#include <boost/range/algorithm/count_if.hpp>
 
 namespace rats
 {
