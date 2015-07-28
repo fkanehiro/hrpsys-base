@@ -427,10 +427,10 @@ namespace rats
                                                   const double delay)
   {
     /* clear all gait_parameter */
-    size_t one_step_len = footstep_nodes_list[0][0].step_time / dt;
+    size_t one_step_len = footstep_nodes_list.front().front().step_time / dt;
     finalize_count = 0;
-    for (size_t i = 0; i < footstep_nodes_list[0].size(); i++) {
-      footstep_nodes_list[0][i].worldcoords = initial_swing_legs_dst_coords[i];
+    for (size_t i = 0; i < footstep_nodes_list.front().size(); i++) {
+        footstep_nodes_list.front().at(i).worldcoords = initial_swing_legs_dst_coords.at(i);
     }
     rg.reset(one_step_len);
     rg.push_refzmp_from_footstep_nodes_for_dual(footstep_nodes_list.front(), initial_support_legs_coords, initial_swing_legs_dst_coords, all_limbs);
@@ -440,13 +440,13 @@ namespace rats
     }
     //preview_controller_ptr = new preview_dynamics_filter<preview_control>(dt, cog(2) - refzmp_cur_list[0](2), refzmp_cur_list[0]);
     preview_controller_ptr = new preview_dynamics_filter<extended_preview_control>(dt, cog(2) - rg.get_refzmp_cur()(2), rg.get_refzmp_cur(), gravitational_acceleration);
-    lcg.reset(one_step_len, footstep_nodes_list[1].front().step_time/dt, initial_swing_legs_dst_coords, initial_swing_legs_dst_coords, initial_support_legs_coords, default_double_support_ratio);
+    lcg.reset(one_step_len, footstep_nodes_list.at(1).front().step_time/dt, initial_swing_legs_dst_coords, initial_swing_legs_dst_coords, initial_support_legs_coords, default_double_support_ratio);
     /* make another */
     lcg.set_swings_supports_list(footstep_nodes_list);
     for (size_t i = 1; i < footstep_nodes_list.size()-1; i++) {
-        rg.push_refzmp_from_footstep_nodes_for_single(footstep_nodes_list[i], lcg.get_support_legs_coords_idx(i), all_limbs);
+        rg.push_refzmp_from_footstep_nodes_for_single(footstep_nodes_list.at(i), lcg.get_support_legs_coords_idx(i), all_limbs);
     }
-    rg.push_refzmp_from_footstep_nodes_for_dual(footstep_nodes_list[footstep_nodes_list.size()-1],
+    rg.push_refzmp_from_footstep_nodes_for_dual(footstep_nodes_list.back(),
                                                 lcg.get_swing_legs_dst_coords_idx(footstep_nodes_list.size()-1),
                                                 lcg.get_support_legs_coords_idx(footstep_nodes_list.size()-1),
                                                 all_limbs);
