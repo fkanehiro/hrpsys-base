@@ -73,6 +73,7 @@ if (PCL_FOUND)
   add_subdirectory(MLSFilter)
   add_subdirectory(PCDLoader)
   add_subdirectory(PlaneRemover)
+  add_subdirectory(VoxelGridFilter)
 endif()
 
 set(EXTRA_RTC_DIRS "" CACHE PATH "directories of extra RTCs")
