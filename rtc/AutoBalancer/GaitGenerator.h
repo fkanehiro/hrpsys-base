@@ -8,7 +8,6 @@
 #include <queue>
 #include <boost/assign.hpp>
 #include <boost/lambda/lambda.hpp>
-#include <boost/range/algorithm/count_if.hpp>
 
 namespace rats
 {
