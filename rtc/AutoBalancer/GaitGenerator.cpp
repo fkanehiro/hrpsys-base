@@ -86,11 +86,11 @@ namespace rats
         foot_x_axises.push_back( hrp::Vector3(_swing_legs_coords.at(i).rot * hrp::Vector3::UnitX()) );
     }
     foot_x_axises_list.push_back(foot_x_axises);
-    std::vector<leg_type> swing_legs;
+    std::vector<leg_type> swing_leg_types;
     for (size_t i = 0; i < fns.size(); i++) {
-        swing_legs.push_back(fns.at(i).l_r);
+        swing_leg_types.push_back(fns.at(i).l_r);
     }
-    swing_legs_list.push_back( swing_legs );
+    swing_leg_types_list.push_back( swing_leg_types );
     step_count_list.push_back(static_cast<size_t>(fns.front().step_time/dt));
     //std::cerr << "double " << (fns[fs_index].l_r==RLEG?LLEG:RLEG) << " [" << refzmp_cur_list.back()(0) << " " << refzmp_cur_list.back()(1) << " " << refzmp_cur_list.back()(2) << "]" << std::endl;
   };
@@ -113,11 +113,11 @@ namespace rats
         foot_x_axises.push_back( hrp::Vector3(_support_legs_coords.at(i).rot * hrp::Vector3::UnitX()) );
     }
     foot_x_axises_list.push_back(foot_x_axises);
-    std::vector<leg_type> swing_legs;
+    std::vector<leg_type> swing_leg_types;
     for (size_t i = 0; i< fns.size(); i++) {
-        swing_legs.push_back(fns.at(i).l_r);
+        swing_leg_types.push_back(fns.at(i).l_r);
     }
-    swing_legs_list.push_back( swing_legs );
+    swing_leg_types_list.push_back( swing_leg_types );
     step_count_list.push_back(static_cast<size_t>(fns.front().step_time/dt));
     //std::cerr << "single " << fns[fs_index-1].l_r << " [" << refzmp_cur_list.back()(0) << " " << refzmp_cur_list.back()(1) << " " << refzmp_cur_list.back()(2) << "]" << std::endl;
   };
@@ -127,8 +127,8 @@ namespace rats
     size_t cnt = one_step_count - refzmp_count; // current counter (0 -> one_step_count)
     size_t double_support_count_half = (0.5 * default_double_support_ratio) * one_step_count;
     size_t double_support_static_count_half = (0.5 * default_double_support_static_ratio) * one_step_count;
-    for (size_t i = 0; i < swing_legs_list[refzmp_index].size(); i++) {
-        swing_foot_zmp_offsets.push_back(default_zmp_offsets[swing_legs_list[refzmp_index].at(i)]);
+    for (size_t i = 0; i < swing_leg_types_list[refzmp_index].size(); i++) {
+        swing_foot_zmp_offsets.push_back(default_zmp_offsets[swing_leg_types_list[refzmp_index].at(i)]);
     }
     double zmp_diff = 0.0; // difference between total swing_foot_zmp_offset and default_zmp_offset
     //if (cnt==0) std::cerr << "z " << refzmp_index << " " << refzmp_cur_list.size() << " " << fs_index << " " << (refzmp_index == refzmp_cur_list.size()-2) << " " << is_final_double_support_set << std::endl;
@@ -150,7 +150,7 @@ namespace rats
             double ratio = thp_ptr->calc_phase_ratio(cnt, SOLE2TOE, SOLE2HEEL);
             swing_foot_zmp_offsets.front()(0) = ratio * heel_zmp_offset_x + (1-ratio) * toe_zmp_offset_x;
         }
-        zmp_diff = swing_foot_zmp_offsets.front()(0)-default_zmp_offsets[swing_legs_list[refzmp_index].front()](0);
+        zmp_diff = swing_foot_zmp_offsets.front()(0)-default_zmp_offsets[swing_leg_types_list[refzmp_index].front()](0);
         if ((is_second_phase() && ( cnt < double_support_count_half )) ||
             (is_second_last_phase() && ( cnt > one_step_count - double_support_count_half ))) {
             // "* 0.5" is for double supprot period
@@ -266,8 +266,8 @@ namespace rats
       swing_ratio = static_cast<double>(current_swing_count-support_len/2)/swing_len;
       //std::cerr << "gp " << swing_ratio << " " << swing_rot_ratio << std::endl;
     }
-    current_swing_time[support_legs.front()] = (lcg_count + 0.5 * default_double_support_ratio * next_one_step_count) * dt;
-    current_swing_time[support_legs.front()==RLEG ? LLEG : RLEG] = tmp_current_swing_time;
+    current_swing_time[support_leg_types.front()] = (lcg_count + 0.5 * default_double_support_ratio * next_one_step_count) * dt;
+    current_swing_time[support_leg_types.front()==RLEG ? LLEG : RLEG] = tmp_current_swing_time;
     //std::cerr << "sl " << support_leg << " " << current_swing_time[support_leg==RLEG?0:1] << " " << current_swing_time[support_leg==RLEG?1:0] << " " << tmp_current_swing_time << " " << lcg_count << std::endl;
   };
 
@@ -376,7 +376,7 @@ namespace rats
     for (size_t i = 0; i < fnsl[current_footstep_index].size(); i++) {
         swing_legs_dst_coords.push_back(fnsl[current_footstep_index].at(i).worldcoords);
     }
-    support_legs = get_support_leg_types_from_footstep_nodes(fnsl[current_footstep_index], _all_limbs);
+    support_leg_types = get_support_leg_types_from_footstep_nodes(fnsl[current_footstep_index], _all_limbs);
     if (footstep_index != 0) { // If not initial step, support_leg_coords is previous swing_leg_dst_coords
         support_legs_coords = support_legs_coords_list[current_footstep_index];
     }
