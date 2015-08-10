@@ -558,21 +558,21 @@ void AutoBalancer::getTargetParameters()
       for (size_t i = 0; i < gg->get_support_legs_coords().size(); i++) {
         sp_coords = coordinates(gg->get_support_legs_coords()[i].pos,
                                 gg->get_support_legs_coords()[i].rot);
-        coordinates(ikp[gg->get_support_legs()[i]].localPos,
-                    ikp[gg->get_support_legs()[i]].localR).inverse_transformation(tmpc);
+        coordinates(ikp[gg->get_support_leg_names()[i]].localPos,
+                    ikp[gg->get_support_leg_names()[i]].localR).inverse_transformation(tmpc);
         sp_coords.transform(tmpc);
-        ikp[gg->get_support_legs()[i]].target_p0 = sp_coords.pos;
-        ikp[gg->get_support_legs()[i]].target_r0 = sp_coords.rot;
+        ikp[gg->get_support_leg_names()[i]].target_p0 = sp_coords.pos;
+        ikp[gg->get_support_leg_names()[i]].target_r0 = sp_coords.rot;
       }
       // for swing leg
       for (size_t i = 0; i < gg->get_swing_legs_coords().size(); i++) {
         sw_coords = coordinates(gg->get_swing_legs_coords()[i].pos,
                                 gg->get_swing_legs_coords()[i].rot);
-        coordinates(ikp[gg->get_swing_legs()[i]].localPos,
-                    ikp[gg->get_swing_legs()[i]].localR).inverse_transformation(tmpc);
+        coordinates(ikp[gg->get_swing_leg_names()[i]].localPos,
+                    ikp[gg->get_swing_leg_names()[i]].localR).inverse_transformation(tmpc);
         sw_coords.transform(tmpc);
-        ikp[gg->get_swing_legs()[i]].target_p0 = sw_coords.pos;
-        ikp[gg->get_swing_legs()[i]].target_r0 = sw_coords.rot;
+        ikp[gg->get_swing_leg_names()[i]].target_p0 = sw_coords.pos;
+        ikp[gg->get_swing_leg_names()[i]].target_r0 = sw_coords.rot;
       }
       gg->get_swing_support_mid_coords(tmp_fix_coords);
       // TODO : assume biped
@@ -595,12 +595,12 @@ void AutoBalancer::getTargetParameters()
       }
       m_controlSwingSupportTime.data[contact_states_index_map["rleg"]] = gg->get_current_swing_time(0);
       m_controlSwingSupportTime.data[contact_states_index_map["lleg"]] = gg->get_current_swing_time(1);
-      m_limbCOPOffset[contact_states_index_map[gg->get_swing_legs().front()]].data.x = gg->get_swing_foot_zmp_offsets().front()(0);
-      m_limbCOPOffset[contact_states_index_map[gg->get_swing_legs().front()]].data.y = gg->get_swing_foot_zmp_offsets().front()(1);
-      m_limbCOPOffset[contact_states_index_map[gg->get_swing_legs().front()]].data.z = gg->get_swing_foot_zmp_offsets().front()(2);
-      m_limbCOPOffset[contact_states_index_map[gg->get_support_legs().front()]].data.x = gg->get_support_foot_zmp_offsets().front()(0);
-      m_limbCOPOffset[contact_states_index_map[gg->get_support_legs().front()]].data.y = gg->get_support_foot_zmp_offsets().front()(1);
-      m_limbCOPOffset[contact_states_index_map[gg->get_support_legs().front()]].data.z = gg->get_support_foot_zmp_offsets().front()(2);
+      m_limbCOPOffset[contact_states_index_map[gg->get_swing_leg_names().front()]].data.x = gg->get_swing_foot_zmp_offsets().front()(0);
+      m_limbCOPOffset[contact_states_index_map[gg->get_swing_leg_names().front()]].data.y = gg->get_swing_foot_zmp_offsets().front()(1);
+      m_limbCOPOffset[contact_states_index_map[gg->get_swing_leg_names().front()]].data.z = gg->get_swing_foot_zmp_offsets().front()(2);
+      m_limbCOPOffset[contact_states_index_map[gg->get_support_leg_names().front()]].data.x = gg->get_support_foot_zmp_offsets().front()(0);
+      m_limbCOPOffset[contact_states_index_map[gg->get_support_leg_names().front()]].data.y = gg->get_support_foot_zmp_offsets().front()(1);
+      m_limbCOPOffset[contact_states_index_map[gg->get_support_leg_names().front()]].data.z = gg->get_support_foot_zmp_offsets().front()(2);
     } else {
       tmp_fix_coords = fix_leg_coords;
       // double support by default
@@ -794,7 +794,7 @@ void AutoBalancer::solveLimbIK ()
   for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
       if (it->second.is_active && (it->first.find("leg") != std::string::npos) && it->second.manip->numJoints() == 7) {
           int i = it->second.target_link->jointId;
-          if (gg->get_swing_legs().front() == it->first) {
+          if (gg->get_swing_leg_names().front() == it->first) {
               m_robot->joint(i)->q = qrefv[i] + -1 * gg->get_foot_dif_rot_angle();
           } else {
               m_robot->joint(i)->q = qrefv[i];
@@ -891,19 +891,19 @@ void AutoBalancer::startWalking ()
   }
   {
     Guard guard(m_mutex);
-    std::vector<std::string> init_swing_legs(gg->get_footstep_front_legs());
+    std::vector<std::string> init_swing_leg_names(gg->get_footstep_front_leg_names());
     std::vector<std::string> tmp_all_limbs(leg_names);
-    std::vector<std::string> init_support_legs;
+    std::vector<std::string> init_support_leg_names;
     std::sort(tmp_all_limbs.begin(), tmp_all_limbs.end());
-    std::sort(init_swing_legs.begin(), init_swing_legs.end());
+    std::sort(init_swing_leg_names.begin(), init_swing_leg_names.end());
     std::set_difference(tmp_all_limbs.begin(), tmp_all_limbs.end(),
-                        init_swing_legs.begin(), init_swing_legs.end(),
-                        std::back_inserter(init_support_legs));
+                        init_swing_leg_names.begin(), init_swing_leg_names.end(),
+                        std::back_inserter(init_support_leg_names));
     std::vector<coordinates> init_support_legs_coords, init_swing_legs_dst_coords;
-    for (size_t i = 0; i < init_support_legs.size(); i++)
-        init_support_legs_coords.push_back(ikp[init_support_legs.at(i)].target_end_coords);
-    for (size_t i = 0; i < init_swing_legs.size(); i++)
-        init_swing_legs_dst_coords.push_back(ikp[init_swing_legs.at(i)].target_end_coords);
+    for (size_t i = 0; i < init_support_leg_names.size(); i++)
+        init_support_legs_coords.push_back(ikp[init_support_leg_names.at(i)].target_end_coords);
+    for (size_t i = 0; i < init_swing_leg_names.size(); i++)
+        init_swing_legs_dst_coords.push_back(ikp[init_swing_leg_names.at(i)].target_end_coords);
     gg->set_default_zmp_offsets(default_zmp_offsets);
     gg->initialize_gait_parameter(ref_cog, init_support_legs_coords, init_swing_legs_dst_coords);
   }
@@ -1303,7 +1303,7 @@ bool AutoBalancer::getFootstepParam(OpenHRP::AutoBalancerService::FootstepParam&
   copyRatscoords2Footstep(i_param.swing_leg_src_coords, gg->get_swing_legs_src_coords().front());
   copyRatscoords2Footstep(i_param.swing_leg_dst_coords, gg->get_swing_legs_dst_coords().front());
   copyRatscoords2Footstep(i_param.dst_foot_midcoords, gg->get_dst_feet_midcoords().front());
-  if (gg->get_support_legs().front() == "rleg") {
+  if (gg->get_support_leg_names().front() == "rleg") {
     i_param.support_leg = OpenHRP::AutoBalancerService::RLEG;
   } else {
     i_param.support_leg = OpenHRP::AutoBalancerService::LLEG;
