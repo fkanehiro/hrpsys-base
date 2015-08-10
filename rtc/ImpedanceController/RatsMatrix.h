@@ -18,17 +18,20 @@ namespace rats
   struct coordinates {
     hrp::Vector3 pos;
     hrp::Matrix33 rot;
-    coordinates() : pos(hrp::Vector3::Zero()), rot(hrp::Matrix33::Identity()) {};
-    coordinates(const hrp::Vector3& p, const hrp::Matrix33& r) : pos(p), rot(r) {};
-    coordinates(const hrp::Vector3& p) : pos(p), rot(hrp::Matrix33::Identity()) {};
-    coordinates(const hrp::Matrix33& r) : pos(hrp::Vector3::Zero()), rot(r) {};
-    coordinates(const coordinates& c) : pos(c.pos), rot(c.rot) {};
+    std::string name;
+    coordinates() : pos(hrp::Vector3::Zero()), rot(hrp::Matrix33::Identity()), name("") {};
+    coordinates(const hrp::Vector3& p, const hrp::Matrix33& r) : pos(p), rot(r), name("") {};
+    coordinates(const hrp::Vector3& p, const hrp::Matrix33& r, const std::string& nm) : pos(p), rot(r), name(nm) {};
+    coordinates(const hrp::Vector3& p) : pos(p), rot(hrp::Matrix33::Identity()), name("") {};
+    coordinates(const hrp::Matrix33& r) : pos(hrp::Vector3::Zero()), rot(r), name("") {};
+    coordinates(const coordinates& c) : pos(c.pos), rot(c.rot), name(c.name) {};
     virtual ~coordinates() {
     }
     coordinates& operator=(const coordinates& c) {
       if (this != &c) {
         pos = c.pos;
         rot = c.rot;
+        name = c.name;
       }
       return *this;
     }
