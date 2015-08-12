@@ -40,6 +40,21 @@ namespace rats
                   LLEG), worldcoords(_worldcoords),
               step_height(_step_height), step_time(_step_time),
               toe_angle(_toe_angle), heel_angle(_heel_angle) {};
+        step_node& operator=(const step_node& sn) {
+            if (this != &sn) {
+                l_r = sn.l_r;
+                worldcoords = sn.worldcoords;
+                step_height = sn.step_height;
+                step_time = sn.step_time;
+                toe_angle = sn.toe_angle;
+                heel_angle = sn.heel_angle;
+            }
+            return *this;
+        }
+        bool operator ==(const step_node& sn) {
+            return (l_r == sn.l_r && worldcoords == sn.worldcoords &&
+                    step_height == sn.step_height && step_time == sn.step_time && toe_angle == sn.toe_angle && heel_angle == sn.heel_angle);
+        }
         friend std::ostream &operator<<(std::ostream &os, const step_node &sn)
         {
             os << "footstep" << std::endl;
