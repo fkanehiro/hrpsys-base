@@ -384,7 +384,16 @@ namespace rats
       if (fnsl[current_footstep_index].front().l_r == fnsl[current_footstep_index-1].front().l_r) {
             swing_legs_src_coords = swing_legs_dst_coords_list[current_footstep_index-1];
         } else {
-            swing_legs_src_coords = support_legs_coords_list[current_footstep_index-1];
+            /* current swing leg src coords = (previout support leg coords + previous swing leg dst coords) - current support leg coords */
+            std::vector<coordinates> tmp_swing_legs_src_coords = support_legs_coords_list[current_footstep_index-1];
+            std::copy(swing_legs_dst_coords_list[current_footstep_index-1].begin(),
+                      swing_legs_dst_coords_list[current_footstep_index-1].end(),
+                      std::back_inserter(tmp_swing_legs_src_coords));
+            for (size_t i = 0; i < support_legs_coords.size(); i++) {
+                std::vector<coordinates>::iterator it = std::remove_if(tmp_swing_legs_src_coords.begin(), tmp_swing_legs_src_coords.end(), boost::lambda::_1 == support_legs_coords.at(i));
+                tmp_swing_legs_src_coords.erase(it, tmp_swing_legs_src_coords.end());
+            }
+            swing_legs_src_coords = tmp_swing_legs_src_coords;
         }
     }
 
