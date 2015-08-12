@@ -619,17 +619,17 @@ namespace rats
           swing_legs_dst_coords_list.clear();
           support_legs_coords_list.push_back(prev_support_legs_coords);
           for (size_t j = 0; j<fnsl.size(); j++) {
-              std::vector<step_node> fns = fnsl.at(j);
-            std::vector<coordinates> swing_legs_dst_coords;
+            std::vector<step_node> fns = fnsl.at(j);
+            std::vector<coordinates> tmp_swing_legs_dst_coords;
             for (size_t i = 0; i<fns.size(); i++) {
-              swing_legs_dst_coords.push_back(fns[i].worldcoords);
+              tmp_swing_legs_dst_coords.push_back(fns.at(i).worldcoords);
             }
-            swing_legs_dst_coords_list.push_back(swing_legs_dst_coords);
+            swing_legs_dst_coords_list.push_back(tmp_swing_legs_dst_coords);
             if (j>0) {
-              if (fnsl[j].front().l_r == fnsl[j-1].front().l_r) {
+              if (fnsl.at(j).front().l_r == fnsl.at(j-1).front().l_r) {
                 support_legs_coords_list.push_back(support_legs_coords_list.back());
               } else {
-                support_legs_coords_list.push_back(swing_legs_dst_coords_list[j-1]);
+                support_legs_coords_list.push_back(swing_legs_dst_coords_list.at(j-1));
               }
             }
           }

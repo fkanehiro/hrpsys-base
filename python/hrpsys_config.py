@@ -662,8 +662,8 @@ class HrpsysConfigurator:
             ['st', "Stabilizer"],
             ['co', "CollisionDetector"],
             ['tc', "TorqueController"],
-            # ['te', "ThermoEstimator"],
-            # ['tl', "ThermoLimiter"],
+            ['te', "ThermoEstimator"],
+            ['tl', "ThermoLimiter"],
             ['hes', "EmergencyStopper"],
             ['el', "SoftErrorLimiter"],
             ['log', "DataLogger"]
