@@ -32,6 +32,9 @@ namespace rats
       }
       return *this;
     }
+    bool operator ==(const coordinates& c) {
+      return (pos == c.pos && rot == c.rot);
+    }
     void rotate_with_matrix (const hrp::Matrix33& mat, const std::string& wrt = ":local") {
       hrp::Matrix33 rot_org(rot);
       if (wrt == ":local") {		  
