@@ -1004,15 +1004,11 @@ namespace rats
     const std::vector<step_node>& get_support_leg_steps() const { return lcg.get_support_leg_steps(); };
     const std::vector<step_node>& get_swing_leg_src_steps() const { return lcg.get_swing_leg_src_steps(); };
     const std::vector<step_node>& get_swing_leg_dst_steps() const { return lcg.get_swing_leg_dst_steps(); };
-    const std::vector<coordinates> get_dst_feet_midcoords() const /* get foot_midcoords calculated from swing_leg_dst_coords */
+    const coordinates get_dst_foot_midcoords() const /* get foot_midcoords calculated from swing_leg_dst_coords */
     {
-      std::vector<coordinates> tmps;
-      for (std::vector<step_node>::const_iterator it = lcg.get_swing_leg_dst_steps().begin(); it != lcg.get_swing_leg_dst_steps().end(); it++) {
-          coordinates tmp(it->worldcoords);
-          tmp.pos += tmp.rot * hrp::Vector3(-1*footstep_param.leg_default_translate_pos[it->l_r]);
-          tmps.push_back(tmp);
-      }
-      return tmps;
+      coordinates tmp(lcg.get_swing_leg_dst_steps().front().worldcoords);
+      tmp.pos += tmp.rot * hrp::Vector3(-1*footstep_param.leg_default_translate_pos[lcg.get_swing_leg_dst_steps().front().l_r]);
+      return tmp;
     };
     void get_swing_support_mid_coords(coordinates& ret) const { lcg.get_swing_support_mid_coords(ret); };
     void get_stride_parameters (double& _stride_fwd_x, double& _stride_y, double& _stride_theta, double& _stride_bwd_x)

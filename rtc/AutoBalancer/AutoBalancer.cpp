@@ -1303,7 +1303,7 @@ bool AutoBalancer::getFootstepParam(OpenHRP::AutoBalancerService::FootstepParam&
   copyRatscoords2Footstep(i_param.swing_leg_coords, gg->get_swing_leg_steps().front().worldcoords);
   copyRatscoords2Footstep(i_param.swing_leg_src_coords, gg->get_swing_leg_src_steps().front().worldcoords);
   copyRatscoords2Footstep(i_param.swing_leg_dst_coords, gg->get_swing_leg_dst_steps().front().worldcoords);
-  copyRatscoords2Footstep(i_param.dst_foot_midcoords, gg->get_dst_feet_midcoords().front());
+  copyRatscoords2Footstep(i_param.dst_foot_midcoords, gg->get_dst_foot_midcoords());
   if (gg->get_support_legs().front() == "rleg") {
     i_param.support_leg = OpenHRP::AutoBalancerService::RLEG;
   } else {
@@ -1452,9 +1452,9 @@ hrp::Vector3 AutoBalancer::calc_vel_from_hand_error (const coordinates& tmp_fix_
 {
   if (graspless_manip_mode) {
     hrp::Vector3 dp,dr;
-    coordinates ref_hand_coords(gg->get_dst_feet_midcoords().front()), act_hand_coords;
+    coordinates ref_hand_coords(gg->get_dst_foot_midcoords()), act_hand_coords;
     ref_hand_coords.transform(graspless_manip_reference_trans_coords); // desired arm coords
-    hrp::Vector3 foot_pos(gg->get_dst_feet_midcoords().front().pos);
+    hrp::Vector3 foot_pos(gg->get_dst_foot_midcoords().pos);
     if ( graspless_manip_arm == "arms" ) {
       // act_hand_coords.pos = (target_coords["rarm"].pos + target_coords["larm"].pos) / 2.0;
       // vector3 cur_y(target_coords["larm"].pos - target_coords["rarm"].pos);
@@ -1474,7 +1474,7 @@ hrp::Vector3 AutoBalancer::calc_vel_from_hand_error (const coordinates& tmp_fix_
     dp = act_hand_coords.pos - ref_hand_coords.pos
         + dr.cross(hrp::Vector3(foot_pos - act_hand_coords.pos));
     dp(2) = 0;
-    hrp::Matrix33 foot_mt(gg->get_dst_feet_midcoords().front().rot.transpose());
+    hrp::Matrix33 foot_mt(gg->get_dst_foot_midcoords().rot.transpose());
     //alias(dp) = foot_mt * dp;
     hrp::Vector3 dp2 = foot_mt * dp;
     //alias(dr) = foot_mt * dr;
