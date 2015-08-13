@@ -553,25 +553,27 @@ void AutoBalancer::getTargetParameters()
     if ( gg_is_walking ) {
       gg->set_default_zmp_offsets(default_zmp_offsets);
       gg_solved = gg->proc_one_tick();
-      // for support leg
-      coordinates sp_coords, sw_coords, tmpc;
-      std::map<leg_type, std::string> leg_type_map = boost::assign::map_list_of(RLEG, "rleg")(LLEG, "lleg")(RARM, "rarm")(LARM, "larm");
-      for (std::vector<step_node>::const_iterator it = gg->get_support_leg_steps().begin(); it != gg->get_support_leg_steps().end(); it++) {
-        sp_coords = it->worldcoords;
-        coordinates(ikp[leg_type_map[it->l_r]].localPos,
-                    ikp[leg_type_map[it->l_r]].localR).inverse_transformation(tmpc);
-        sp_coords.transform(tmpc);
-        ikp[leg_type_map[it->l_r]].target_p0 = sp_coords.pos;
-        ikp[leg_type_map[it->l_r]].target_r0 = sp_coords.rot;
-      }
-      // for swing leg
-      for (std::vector<step_node>::const_iterator it = gg->get_swing_leg_steps().begin(); it != gg->get_swing_leg_steps().end(); it++) {
-        sw_coords = it->worldcoords;
-        coordinates(ikp[leg_type_map[it->l_r]].localPos,
-                    ikp[leg_type_map[it->l_r]].localR).inverse_transformation(tmpc);
-        sw_coords.transform(tmpc);
-        ikp[leg_type_map[it->l_r]].target_p0 = sw_coords.pos;
-        ikp[leg_type_map[it->l_r]].target_r0 = sw_coords.rot;
+      {
+          // for support leg
+          std::map<leg_type, std::string> leg_type_map = boost::assign::map_list_of(RLEG, "rleg")(LLEG, "lleg")(RARM, "rarm")(LARM, "larm");
+          coordinates tmpc;
+          for (std::vector<step_node>::const_iterator it = gg->get_support_leg_steps().begin(); it != gg->get_support_leg_steps().end(); it++) {
+              coordinates sp_coords = it->worldcoords;
+              coordinates(ikp[leg_type_map[it->l_r]].localPos,
+                          ikp[leg_type_map[it->l_r]].localR).inverse_transformation(tmpc);
+              sp_coords.transform(tmpc);
+              ikp[leg_type_map[it->l_r]].target_p0 = sp_coords.pos;
+              ikp[leg_type_map[it->l_r]].target_r0 = sp_coords.rot;
+          }
+          // for swing leg
+          for (std::vector<step_node>::const_iterator it = gg->get_swing_leg_steps().begin(); it != gg->get_swing_leg_steps().end(); it++) {
+              coordinates sw_coords = it->worldcoords;
+              coordinates(ikp[leg_type_map[it->l_r]].localPos,
+                          ikp[leg_type_map[it->l_r]].localR).inverse_transformation(tmpc);
+              sw_coords.transform(tmpc);
+              ikp[leg_type_map[it->l_r]].target_p0 = sw_coords.pos;
+              ikp[leg_type_map[it->l_r]].target_r0 = sw_coords.rot;
+          }
       }
       gg->get_swing_support_mid_coords(tmp_fix_coords);
       // TODO : assume biped
