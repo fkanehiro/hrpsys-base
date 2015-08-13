@@ -394,6 +394,10 @@ namespace rats
     for (std::vector<step_node>::iterator it = support_leg_steps.begin(); it != support_leg_steps.end(); it++) {
         support_legs.push_back(it->l_r);
     }
+    swing_legs.clear();
+    for (std::vector<step_node>::iterator it = swing_leg_dst_steps.begin(); it != swing_leg_dst_steps.end(); it++) {
+        swing_legs.push_back(it->l_r);
+    }
     if (current_footstep_index > 0) {
       if (is_same_footstep_nodes(fnsl[current_footstep_index], fnsl[current_footstep_index-1])) {
             swing_leg_src_steps = swing_leg_dst_steps_list[current_footstep_index-1];
