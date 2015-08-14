@@ -69,13 +69,13 @@ private:
                 fprintf(fp, "%f ", cogpos);
             }
             // Foot pos
-            hrp::Vector3 rfoot_pos = (gg->get_support_legs() == boost::assign::list_of("rleg")) ? gg->get_support_legs_coords().front().pos : gg->get_swing_legs_coords().front().pos;
+            hrp::Vector3 rfoot_pos = (gg->get_support_leg_names() == boost::assign::list_of("rleg")) ? gg->get_support_leg_steps().front().worldcoords.pos : gg->get_swing_leg_steps().front().worldcoords.pos;
             for (size_t ii = 0; ii < 3; ii++) {
                 fprintf(fp, "%f ", rfoot_pos(ii));
                 min_rfoot_pos(ii) = std::min(min_rfoot_pos(ii), rfoot_pos(ii));
                 max_rfoot_pos(ii) = std::max(max_rfoot_pos(ii), rfoot_pos(ii));
             }
-            hrp::Vector3 lfoot_pos = (gg->get_support_legs() == boost::assign::list_of("lleg")) ? gg->get_support_legs_coords().front().pos : gg->get_swing_legs_coords().front().pos;
+            hrp::Vector3 lfoot_pos = (gg->get_support_leg_names() == boost::assign::list_of("lleg")) ? gg->get_support_leg_steps().front().worldcoords.pos : gg->get_swing_leg_steps().front().worldcoords.pos;
             for (size_t ii = 0; ii < 3; ii++) {
                 fprintf(fp, "%f ", lfoot_pos(ii));
                 min_lfoot_pos(ii) = std::min(min_lfoot_pos(ii), lfoot_pos(ii));
@@ -83,22 +83,22 @@ private:
             }
             // Foot rot
             hrp::Vector3 rpy;
-            hrp::Matrix33 rfoot_rot = (gg->get_support_legs() == boost::assign::list_of("rleg")) ? gg->get_support_legs_coords().front().rot : gg->get_swing_legs_coords().front().rot;
+            hrp::Matrix33 rfoot_rot = (gg->get_support_leg_names() == boost::assign::list_of("rleg")) ? gg->get_support_leg_steps().front().worldcoords.rot : gg->get_swing_leg_steps().front().worldcoords.rot;
             rpy = hrp::rpyFromRot(rfoot_rot);
             for (size_t ii = 0; ii < 3; ii++) {
                 fprintf(fp, "%f ", 180.0*rpy(ii)/M_PI);
             }
-            hrp::Matrix33 lfoot_rot = (gg->get_support_legs() == boost::assign::list_of("lleg")) ? gg->get_support_legs_coords().front().rot : gg->get_swing_legs_coords().front().rot;
+            hrp::Matrix33 lfoot_rot = (gg->get_support_leg_names() == boost::assign::list_of("lleg")) ? gg->get_support_leg_steps().front().worldcoords.rot : gg->get_swing_leg_steps().front().worldcoords.rot;
             rpy = hrp::rpyFromRot(lfoot_rot);
             for (size_t ii = 0; ii < 3; ii++) {
                 fprintf(fp, "%f ", 180.0*rpy(ii)/M_PI);
             }
             // ZMP offsets
             for (size_t ii = 0; ii < 3; ii++) {
-                fprintf(fp, "%f ", (gg->get_support_legs() == boost::assign::list_of("rleg")) ? gg->get_support_foot_zmp_offsets().front()(ii) : gg->get_swing_foot_zmp_offsets().front()(ii));
+                fprintf(fp, "%f ", (gg->get_support_leg_names() == boost::assign::list_of("rleg")) ? gg->get_support_foot_zmp_offsets().front()(ii) : gg->get_swing_foot_zmp_offsets().front()(ii));
             }
             for (size_t ii = 0; ii < 3; ii++) {
-                fprintf(fp, "%f ", (gg->get_support_legs() == boost::assign::list_of("lleg")) ? gg->get_support_foot_zmp_offsets().front()(ii) : gg->get_swing_foot_zmp_offsets().front()(ii));
+                fprintf(fp, "%f ", (gg->get_support_leg_names() == boost::assign::list_of("lleg")) ? gg->get_support_foot_zmp_offsets().front()(ii) : gg->get_swing_foot_zmp_offsets().front()(ii));
             }
             // Swing time
             fprintf(fp, "%f %f ",
@@ -314,11 +314,11 @@ private:
         std::cerr << "  ZMP diff : " << is_small_zmp_diff << std::endl;
     };
 
-    void gen_and_plot_walk_pattern(const coordinates& initial_support_leg_coords, const coordinates& initial_swing_leg_dst_coords)
+    void gen_and_plot_walk_pattern(const step_node& initial_support_leg_step, const step_node& initial_swing_leg_dst_step)
     {
         parse_params();
         gg->print_param();
-        gg->initialize_gait_parameter(cog, boost::assign::list_of(initial_support_leg_coords), boost::assign::list_of(initial_swing_leg_dst_coords));
+        gg->initialize_gait_parameter(cog, boost::assign::list_of(initial_support_leg_step), boost::assign::list_of(initial_swing_leg_dst_step));
         while ( !gg->proc_one_tick() );
         //gg->print_footstep_list();
         plot_walk_pattern();
@@ -326,9 +326,15 @@ private:
 
     void gen_and_plot_walk_pattern()
     {
-        coordinates initial_support_leg_coords(gg->get_footstep_front_legs()==boost::assign::list_of("rleg")?leg_pos[1]:leg_pos[0]);
-        coordinates initial_swing_leg_dst_coords(gg->get_footstep_front_legs()!=boost::assign::list_of("rleg")?leg_pos[1]:leg_pos[0]);
-        gen_and_plot_walk_pattern(initial_support_leg_coords, initial_swing_leg_dst_coords);
+        if (gg->get_footstep_front_leg_names() == boost::assign::list_of("rleg")) {
+            step_node initial_support_leg_step = step_node(LLEG, coordinates(leg_pos[1]), 0, 0, 0, 0);
+            step_node initial_swing_leg_dst_step = step_node(RLEG, coordinates(leg_pos[0]), 0, 0, 0, 0);
+            gen_and_plot_walk_pattern(initial_support_leg_step, initial_swing_leg_dst_step);
+        } else {
+            step_node initial_support_leg_step = step_node(RLEG, coordinates(leg_pos[0]), 0, 0, 0, 0);
+            step_node initial_swing_leg_dst_step = step_node(LLEG, coordinates(leg_pos[1]), 0, 0, 0, 0);
+            gen_and_plot_walk_pattern(initial_support_leg_step, initial_swing_leg_dst_step);
+        }
     }
 
 public:
@@ -477,10 +483,16 @@ public:
         coordinates start_ref_coords;
         mid_coords(start_ref_coords, 0.5, coordinates(initial_foot_mid_rot*leg_pos[1], initial_foot_mid_rot), coordinates(initial_foot_mid_rot*leg_pos[0], initial_foot_mid_rot));
         gg->go_pos_param_2_footstep_nodes_list(100*1e-3, 0, 0, boost::assign::list_of(coordinates(initial_foot_mid_rot*leg_pos[1], initial_foot_mid_rot)), start_ref_coords, boost::assign::list_of(LLEG));
-        coordinates initial_support_leg_coords(hrp::Vector3(initial_foot_mid_rot * (gg->get_footstep_front_legs()==boost::assign::list_of("rleg")?leg_pos[1]:leg_pos[0])), initial_foot_mid_rot);
-        coordinates initial_swing_leg_dst_coords(hrp::Vector3(initial_foot_mid_rot * (gg->get_footstep_front_legs()!=boost::assign::list_of("rleg")?leg_pos[1]:leg_pos[0])), initial_foot_mid_rot);
-        gen_and_plot_walk_pattern(initial_support_leg_coords, initial_swing_leg_dst_coords);
 
+        if (gg->get_footstep_front_leg_names() == boost::assign::list_of("rleg")) {
+            step_node initial_support_leg_step = step_node(LLEG, coordinates(hrp::Vector3(initial_foot_mid_rot * leg_pos[1]), initial_foot_mid_rot), 0, 0, 0, 0);
+            step_node initial_swing_leg_dst_step = step_node(RLEG, coordinates(hrp::Vector3(initial_foot_mid_rot * leg_pos[0]), initial_foot_mid_rot), 0, 0, 0, 0);
+            gen_and_plot_walk_pattern(initial_support_leg_step, initial_swing_leg_dst_step);
+        } else {
+            step_node initial_support_leg_step = step_node(RLEG, coordinates(hrp::Vector3(initial_foot_mid_rot * leg_pos[0]), initial_foot_mid_rot), 0, 0, 0, 0);
+            step_node initial_swing_leg_dst_step = step_node(LLEG, coordinates(hrp::Vector3(initial_foot_mid_rot * leg_pos[1]), initial_foot_mid_rot), 0, 0, 0, 0);
+            gen_and_plot_walk_pattern(initial_support_leg_step, initial_swing_leg_dst_step);
+        }
     };
 
     void test9 ()
