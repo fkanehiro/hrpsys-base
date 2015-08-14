@@ -8,7 +8,6 @@
 #include <queue>
 #include <boost/assign.hpp>
 #include <boost/lambda/lambda.hpp>
-#include <boost/range/algorithm/count_if.hpp>
 
 namespace rats
 {
@@ -808,8 +807,8 @@ namespace rats
         velocity_mode_flg(VEL_IDLING), emergency_flg(IDLING),
         use_inside_step_limitation(true),
         preview_controller_ptr(NULL) {
-        swing_foot_zmp_offsets = boost::assign::list_of(hrp::Vector3::Zero());
-        prev_que_sfzos = boost::assign::list_of(hrp::Vector3::Zero());
+        swing_foot_zmp_offsets = boost::assign::list_of<hrp::Vector3>(hrp::Vector3::Zero());
+        prev_que_sfzos = boost::assign::list_of<hrp::Vector3>(hrp::Vector3::Zero());
     };
     ~gait_generator () {
       if ( preview_controller_ptr != NULL ) {
