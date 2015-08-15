@@ -962,14 +962,8 @@ namespace rats
     };
     std::vector<std::string> convert_leg_types_to_names (const std::vector<leg_type>& lts) const {
       std::vector<std::string> ret;
-      for (size_t i = 0; i < lts.size(); i++) {
-          switch(lts.at(i)) {
-          case RLEG : ret.push_back("rleg"); break;
-          case LLEG : ret.push_back("lleg"); break;
-          case RARM : ret.push_back("rarm"); break;
-          case LARM : ret.push_back("rarm"); break;
-          default   : ret.push_back("lleg"); break;
-          }
+      for (std::vector<leg_type>::const_iterator it = lts.begin(); it != lts.end(); it++) {
+          ret.push_back(leg_type_map.find(*it)->second);
       }
       return ret;
     };

@@ -733,27 +733,18 @@ namespace rats
 
   const std::vector<leg_type> gait_generator::calc_counter_leg_types_from_footstep_nodes(const std::vector<step_node>& fns, std::vector<std::string> _all_limbs) const {
     std::vector<std::string> fns_names, cntr_legs_names;
-    std::vector<leg_type> ret;
-    for (size_t i = 0; i < fns.size(); i++) {
-        switch (fns.at(i).l_r) {
-        case RLEG: fns_names.push_back("rleg"); break;
-        case LLEG: fns_names.push_back("lleg"); break;
-        case RARM: fns_names.push_back("rarm"); break;
-        case LARM: fns_names.push_back("larm"); break;
-        default: std::cerr << "invalid input" << std::endl;
-        }
+    for (std::vector<step_node>::const_iterator it = fns.begin(); it != fns.end(); it++) {
+        fns_names.push_back(leg_type_map.find(it->l_r)->second);
     }
     std::sort(_all_limbs.begin(), _all_limbs.end());
     std::sort(fns_names.begin(), fns_names.end());
     std::set_difference(_all_limbs.begin(), _all_limbs.end(), /* all candidates for legs */
                         fns_names.begin(), fns_names.end(),   /* support legs */
-                        std::back_inserter(cntr_legs_names));  /* swing   legs */
-    for (size_t i = 0; i < cntr_legs_names.size(); i++) {
-        if (cntr_legs_names.at(i) == "rleg") ret.push_back(RLEG);
-        else if (cntr_legs_names.at(i) == "lleg") ret.push_back(LLEG);
-        else if (cntr_legs_names.at(i) == "rarm") ret.push_back(RARM);
-        else if (cntr_legs_names.at(i) == "larm") ret.push_back(LARM);
-        else std::cerr << "invalid input" << std::endl;
+                        std::back_inserter(cntr_legs_names)); /* swing   legs */
+    std::vector<leg_type> ret;
+    for (std::vector<std::string>::const_iterator it = cntr_legs_names.begin(); it != cntr_legs_names.end(); it++) {
+        std::map<leg_type, std::string>::const_iterator dst = std::find_if(leg_type_map.begin(), leg_type_map.end(), (&boost::lambda::_1->* &std::map<leg_type, std::string>::value_type::second == *it));
+        ret.push_back(dst->first);
     }
     return ret;
   };
