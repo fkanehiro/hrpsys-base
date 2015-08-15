@@ -35,33 +35,6 @@ namespace rats
     ret = dvm * cycloid_point + start + uz;
   };
 
-  std::vector<leg_type> get_support_leg_types_from_footstep_nodes(const std::vector<step_node>& fns, std::vector<std::string> _all_limbs) {
-    std::vector<std::string> fns_names, cntr_legs_names;
-    std::vector<leg_type> ret;
-    for (size_t i = 0; i < fns.size(); i++) {
-        switch (fns.at(i).l_r) {
-        case RLEG: fns_names.push_back("rleg"); break;
-        case LLEG: fns_names.push_back("lleg"); break;
-        case RARM: fns_names.push_back("rarm"); break;
-        case LARM: fns_names.push_back("larm"); break;
-        default: std::cerr << "invalid input" << std::endl;
-        }
-    }
-    std::sort(_all_limbs.begin(), _all_limbs.end());
-    std::sort(fns_names.begin(), fns_names.end());
-    std::set_difference(_all_limbs.begin(), _all_limbs.end(), /* all candidates for legs */
-                        fns_names.begin(), fns_names.end(),   /* support legs */
-                        std::back_inserter(cntr_legs_names));  /* swing   legs */
-    for (size_t i = 0; i < cntr_legs_names.size(); i++) {
-        if (cntr_legs_names.at(i) == "rleg") ret.push_back(RLEG);
-        else if (cntr_legs_names.at(i) == "lleg") ret.push_back(LLEG);
-        else if (cntr_legs_names.at(i) == "rarm") ret.push_back(RARM);
-        else if (cntr_legs_names.at(i) == "larm") ret.push_back(LARM);
-        else std::cerr << "invalid input" << std::endl;
-    }
-    return ret;
-  };
-
   /* member function implementation for refzmp_generator */
   void refzmp_generator::push_refzmp_from_footstep_nodes_for_dual (const std::vector<step_node>& fns,
                                                                    const std::vector<step_node>& _support_leg_steps,
@@ -756,6 +729,33 @@ namespace rats
       not_solved = !preview_controller_ptr->update(refzmp, cog, swing_foot_zmp_offsets, rzmp, sfzos, refzmp_exist_p);
       rg.update_refzmp(footstep_nodes_list);
     }
+  };
+
+  std::vector<leg_type> gait_generator::get_support_leg_types_from_footstep_nodes(const std::vector<step_node>& fns, std::vector<std::string> _all_limbs) {
+    std::vector<std::string> fns_names, cntr_legs_names;
+    std::vector<leg_type> ret;
+    for (size_t i = 0; i < fns.size(); i++) {
+        switch (fns.at(i).l_r) {
+        case RLEG: fns_names.push_back("rleg"); break;
+        case LLEG: fns_names.push_back("lleg"); break;
+        case RARM: fns_names.push_back("rarm"); break;
+        case LARM: fns_names.push_back("larm"); break;
+        default: std::cerr << "invalid input" << std::endl;
+        }
+    }
+    std::sort(_all_limbs.begin(), _all_limbs.end());
+    std::sort(fns_names.begin(), fns_names.end());
+    std::set_difference(_all_limbs.begin(), _all_limbs.end(), /* all candidates for legs */
+                        fns_names.begin(), fns_names.end(),   /* support legs */
+                        std::back_inserter(cntr_legs_names));  /* swing   legs */
+    for (size_t i = 0; i < cntr_legs_names.size(); i++) {
+        if (cntr_legs_names.at(i) == "rleg") ret.push_back(RLEG);
+        else if (cntr_legs_names.at(i) == "lleg") ret.push_back(LLEG);
+        else if (cntr_legs_names.at(i) == "rarm") ret.push_back(RARM);
+        else if (cntr_legs_names.at(i) == "larm") ret.push_back(LARM);
+        else std::cerr << "invalid input" << std::endl;
+    }
+    return ret;
   };
 }
 
