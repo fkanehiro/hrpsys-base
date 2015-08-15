@@ -15,6 +15,7 @@ namespace rats
                            const double ratio, const hrp::Vector3& start,
                            const hrp::Vector3& goal, const double height,
                            const double default_top_ratio = 0.5);
+    void multi_mid_coords (coordinates& mid_coords, const std::vector<coordinates>& cs);
 
     enum orbit_type {SHUFFLING, CYCLOID, RECTANGLE, STAIR, CYCLOIDDELAY, CYCLOIDDELAYKICK};
     enum leg_type {RLEG, LLEG, RARM, LARM, BOTH, ALL};
@@ -55,7 +56,6 @@ namespace rats
             return os;
         };
     };
-    std::vector<leg_type> get_support_leg_types_from_footstep_nodes(const std::vector<step_node>& fns, std::vector<std::string> _all_limbs);
 
     /* footstep parameter */
     struct footstep_parameter
@@ -686,9 +686,21 @@ namespace rats
       double get_default_step_height () const { return default_step_height;};
       void get_swing_support_mid_coords(coordinates& ret) const
       {
-        coordinates tmp;
-        mid_coords(tmp, foot_midcoords_ratio, swing_leg_src_steps.front().worldcoords, swing_leg_dst_steps.front().worldcoords);
-        mid_coords(ret, 0.5, tmp, support_leg_steps.front().worldcoords);
+        std::vector<coordinates> swg_coords, sup_coords;
+        for (std::vector<step_node>::const_iterator it_src = swing_leg_src_steps.begin(), it_dst = swing_leg_dst_steps.begin();
+             it_src != swing_leg_src_steps.end() && it_dst != swing_leg_dst_steps.end();
+             it_src++, it_dst++) {
+            coordinates tmp;
+            mid_coords(tmp, foot_midcoords_ratio, it_src->worldcoords, it_dst->worldcoords);
+            swg_coords.push_back(tmp);
+        }
+        for (std::vector<step_node>::const_iterator it = support_leg_steps.begin(); it != support_leg_steps.end(); it++) {
+            sup_coords.push_back(it->worldcoords);
+        }
+        coordinates tmp_swg_mid, tmp_sup_mid;
+        multi_mid_coords(tmp_swg_mid, swg_coords);
+        multi_mid_coords(tmp_sup_mid, sup_coords);
+        mid_coords(ret, 0.5, tmp_swg_mid, tmp_sup_mid);
       };
       std::vector<leg_type> get_current_support_states () const
       {
@@ -759,6 +771,7 @@ namespace rats
     velocity_mode_flag velocity_mode_flg;
     emergency_flag emergency_flg;
     bool use_inside_step_limitation;
+    std::map<leg_type, std::string> leg_type_map;
 
     /* preview controller parameters */
     //preview_dynamics_filter<preview_control>* preview_controller_ptr;
@@ -801,6 +814,7 @@ namespace rats
         preview_controller_ptr(NULL) {
         swing_foot_zmp_offsets = boost::assign::list_of<hrp::Vector3>(hrp::Vector3::Zero());
         prev_que_sfzos = boost::assign::list_of<hrp::Vector3>(hrp::Vector3::Zero());
+        leg_type_map = boost::assign::map_list_of<leg_type, std::string>(RLEG, "rleg")(LLEG, "lleg")(RARM, "rarm")(LARM, "larm");
     };
     ~gait_generator () {
       if ( preview_controller_ptr != NULL ) {
@@ -961,14 +975,8 @@ namespace rats
     };
     std::vector<std::string> convert_leg_types_to_names (const std::vector<leg_type>& lts) const {
       std::vector<std::string> ret;
-      for (size_t i = 0; i < lts.size(); i++) {
-          switch(lts.at(i)) {
-          case RLEG : ret.push_back("rleg"); break;
-          case LLEG : ret.push_back("lleg"); break;
-          case RARM : ret.push_back("rarm"); break;
-          case LARM : ret.push_back("rarm"); break;
-          default   : ret.push_back("lleg"); break;
-          }
+      for (std::vector<leg_type>::const_iterator it = lts.begin(); it != lts.end(); it++) {
+          ret.push_back(leg_type_map.find(*it)->second);
       }
       return ret;
     };
@@ -1050,6 +1058,8 @@ namespace rats
     int get_NUM_TH_PHASES () { return thp.get_NUM_TH_PHASES(); };
     bool get_use_toe_joint () { return lcg.get_use_toe_joint(); };
     void get_leg_default_translate_pos (std::vector<hrp::Vector3>& off) { off = footstep_param.leg_default_translate_pos; };
+    const std::vector<leg_type> calc_counter_leg_types_from_footstep_nodes (const std::vector<step_node>& fns, std::vector<std::string> _all_limbs) const;
+    const std::map<leg_type, std::string> get_leg_type_map () const { return leg_type_map; };
     size_t get_optional_go_pos_finalize_footstep_num () const { return optional_go_pos_finalize_footstep_num; };
     bool is_finalizing (const double tm) const { return ((preview_controller_ptr->get_delay()*2 - default_step_time/dt)-finalize_count) <= (tm/dt)-1; };
     void print_param (const std::string& print_str = "")
