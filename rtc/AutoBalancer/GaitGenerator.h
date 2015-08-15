@@ -1049,7 +1049,7 @@ namespace rats
     int get_NUM_TH_PHASES () { return thp.get_NUM_TH_PHASES(); };
     bool get_use_toe_joint () { return lcg.get_use_toe_joint(); };
     void get_leg_default_translate_pos (std::vector<hrp::Vector3>& off) { off = footstep_param.leg_default_translate_pos; };
-    std::vector<leg_type> get_support_leg_types_from_footstep_nodes(const std::vector<step_node>& fns, std::vector<std::string> _all_limbs);
+    const std::vector<leg_type> calc_counter_leg_types_from_footstep_nodes (const std::vector<step_node>& fns, std::vector<std::string> _all_limbs) const;
     size_t get_optional_go_pos_finalize_footstep_num () const { return optional_go_pos_finalize_footstep_num; };
     bool is_finalizing (const double tm) const { return ((preview_controller_ptr->get_delay()*2 - default_step_time/dt)-finalize_count) <= (tm/dt)-1; };
     void print_param (const std::string& print_str = "")
