@@ -554,9 +554,9 @@ void AutoBalancer::getTargetParameters()
       gg->set_default_zmp_offsets(default_zmp_offsets);
       gg_solved = gg->proc_one_tick();
       {
-          // for support leg
-          std::map<leg_type, std::string> leg_type_map = boost::assign::map_list_of(RLEG, "rleg")(LLEG, "lleg")(RARM, "rarm")(LARM, "larm");
+          std::map<leg_type, std::string> leg_type_map = gg->get_leg_type_map();
           coordinates tmpc;
+          // for support leg
           for (std::vector<step_node>::const_iterator it = gg->get_support_leg_steps().begin(); it != gg->get_support_leg_steps().end(); it++) {
               coordinates sp_coords = it->worldcoords;
               coordinates(ikp[leg_type_map[it->l_r]].localPos,
