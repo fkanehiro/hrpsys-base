@@ -15,6 +15,7 @@ namespace rats
                            const double ratio, const hrp::Vector3& start,
                            const hrp::Vector3& goal, const double height,
                            const double default_top_ratio = 0.5);
+    void multi_mid_coords (coordinates& mid_coords, const std::vector<coordinates>& cs);
 
     enum orbit_type {SHUFFLING, CYCLOID, RECTANGLE, STAIR, CYCLOIDDELAY, CYCLOIDDELAYKICK};
     enum leg_type {RLEG, LLEG, RARM, LARM, BOTH, ALL};
@@ -685,9 +686,21 @@ namespace rats
       double get_default_step_height () const { return default_step_height;};
       void get_swing_support_mid_coords(coordinates& ret) const
       {
-        coordinates tmp;
-        mid_coords(tmp, foot_midcoords_ratio, swing_leg_src_steps.front().worldcoords, swing_leg_dst_steps.front().worldcoords);
-        mid_coords(ret, 0.5, tmp, support_leg_steps.front().worldcoords);
+        std::vector<coordinates> swg_coords, sup_coords;
+        for (std::vector<step_node>::const_iterator it_src = swing_leg_src_steps.begin(), it_dst = swing_leg_dst_steps.begin();
+             it_src != swing_leg_src_steps.end() && it_dst != swing_leg_dst_steps.end();
+             it_src++, it_dst++) {
+            coordinates tmp;
+            mid_coords(tmp, foot_midcoords_ratio, it_src->worldcoords, it_dst->worldcoords);
+            swg_coords.push_back(tmp);
+        }
+        for (std::vector<step_node>::const_iterator it = support_leg_steps.begin(); it != support_leg_steps.end(); it++) {
+            sup_coords.push_back(it->worldcoords);
+        }
+        coordinates tmp_swg_mid, tmp_sup_mid;
+        multi_mid_coords(tmp_swg_mid, swg_coords);
+        multi_mid_coords(tmp_sup_mid, sup_coords);
+        mid_coords(ret, 0.5, tmp_swg_mid, tmp_sup_mid);
       };
       std::vector<leg_type> get_current_support_states () const
       {

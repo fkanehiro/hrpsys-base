@@ -741,16 +741,16 @@ hrp::Matrix33 AutoBalancer::OrientRotationMatrix (const hrp::Matrix33& rot, cons
 void AutoBalancer::fixLegToCoords (const hrp::Vector3& fix_pos, const hrp::Matrix33& fix_rot)
 {
   // get current foot mid pos + rot
-  std::vector<hrp::Vector3> foot_pos;
-  std::vector<hrp::Matrix33> foot_rot;
+  std::vector<coordinates> foot_coords;
   for (size_t i = 0; i < leg_names.size(); i++) {
       ABCIKparam& tmpikp = ikp[leg_names[i]];
-      foot_pos.push_back(tmpikp.target_link->p + tmpikp.target_link->R * tmpikp.localPos);
-      foot_rot.push_back(tmpikp.target_link->R * tmpikp.localR);
+      foot_coords.push_back(coordinates((tmpikp.target_link->p + tmpikp.target_link->R * tmpikp.localPos),
+                                        (tmpikp.target_link->R * tmpikp.localR)));
   }
-  hrp::Vector3 current_foot_mid_pos ((foot_pos[0]+foot_pos[1])/2.0);
-  hrp::Matrix33 current_foot_mid_rot;
-  mid_rot(current_foot_mid_rot, 0.5, foot_rot[0], foot_rot[1]);
+  coordinates current_foot_mid_coords;
+  multi_mid_coords(current_foot_mid_coords, foot_coords);
+  hrp::Vector3 current_foot_mid_pos = current_foot_mid_coords.pos;
+  hrp::Matrix33 current_foot_mid_rot = current_foot_mid_coords.rot;
   // fix root pos + rot to fix "coords" = "current_foot_mid_xx"
   hrp::Matrix33 tmpR (fix_rot * current_foot_mid_rot.transpose());
   m_robot->rootLink()->p = fix_pos + tmpR * (m_robot->rootLink()->p - current_foot_mid_pos);
@@ -917,7 +917,11 @@ void AutoBalancer::startWalking ()
 
 void AutoBalancer::stopWalking ()
 {
-  mid_coords(fix_leg_coords, 0.5, ikp["rleg"].target_end_coords, ikp["lleg"].target_end_coords);
+  std::vector<coordinates> tmp_end_coords_list;
+  for (std::vector<string>::iterator it = leg_names.begin(); it != leg_names.end(); it++) {
+      tmp_end_coords_list.push_back(ikp[*it].target_end_coords);
+  }
+  multi_mid_coords(fix_leg_coords, tmp_end_coords_list);
   fixLegToCoords(fix_leg_coords.pos, fix_leg_coords.rot);
   gg->clear_footstep_nodes_list();
   if (return_control_mode == MODE_IDLE) stopABCparam();

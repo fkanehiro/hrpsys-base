@@ -34,6 +34,22 @@ namespace rats
       u(2), v(2), 1;
     ret = dvm * cycloid_point + start + uz;
   };
+  void multi_mid_coords (coordinates& ret, const std::vector<coordinates>& cs)
+  {
+      if (cs.size() == 1) {
+          ret = cs.front();
+      } else {
+          std::vector<coordinates> tmp_mid_coords;
+          double ratio = (1.0 - 1.0 / cs.size());
+          for (size_t i = 1; i < cs.size(); i++) {
+              coordinates tmp;
+              mid_coords(tmp, ratio, cs.front(), cs.at(i));
+              tmp_mid_coords.push_back(tmp);
+          }
+          multi_mid_coords(ret, tmp_mid_coords);
+      }
+      return;
+  };
 
   /* member function implementation for refzmp_generator */
   void refzmp_generator::push_refzmp_from_footstep_nodes_for_dual (const std::vector<step_node>& fns,
