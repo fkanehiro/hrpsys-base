@@ -445,9 +445,14 @@ namespace rats
     /* clear all gait_parameter */
     size_t one_step_len = footstep_nodes_list.front().front().step_time / dt;
     finalize_count = 0;
-    for (size_t i = 0; i < footstep_nodes_list.front().size(); i++) {
-        /* initial_swing_leg_dst_steps has dummy step_height, step_time, toe_angle and heel_angle. */
-        footstep_nodes_list.front().at(i).worldcoords = initial_swing_leg_dst_steps.at(i).worldcoords;
+    for (std::vector<step_node>::iterator it_fns = footstep_nodes_list.front().begin(); it_fns != footstep_nodes_list.front().end(); it_fns++) {
+        for (std::vector<step_node>::const_iterator it_init = initial_swing_leg_dst_steps.begin(); it_init != initial_swing_leg_dst_steps.end(); it_init++) {
+            if (it_fns->l_r == it_init->l_r) {
+                /* initial_swing_leg_dst_steps has dummy step_height, step_time, toe_angle and heel_angle. */
+                it_fns->worldcoords = it_init->worldcoords;
+                break;
+            }
+        }
     }
     rg.reset(one_step_len);
     rg.push_refzmp_from_footstep_nodes_for_dual(footstep_nodes_list.front(), initial_support_leg_steps, initial_swing_leg_dst_steps);
