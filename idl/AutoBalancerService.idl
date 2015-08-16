@@ -185,6 +185,7 @@ module OpenHRP
       double zmp_transition_time;
       /// Transition time [s] for adjust foot step
       double adjust_footstep_transition_time;
+      StrSequence leg_names;
     };
 
     /**
