@@ -2,8 +2,8 @@
 Changelog for package hrpsys
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+315.7.0 (2015-08-19)
+--------------------
 
 Stable RTCs
 ===========
