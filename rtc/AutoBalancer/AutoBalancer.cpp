@@ -959,11 +959,9 @@ void AutoBalancer::waitABCTransition()
 bool AutoBalancer::goPos(const double& x, const double& y, const double& th)
 {
   if ( !gg_is_walking && !is_stop_mode) {
+    gg->set_all_limbs(leg_names);
     coordinates start_ref_coords;
-    if ( y > 0)
-        mid_coords(start_ref_coords, 0.5, ikp["rleg"].target_end_coords, ikp["lleg"].target_end_coords);
-    else
-        mid_coords(start_ref_coords, 0.5, ikp["lleg"].target_end_coords, ikp["rleg"].target_end_coords);
+    mid_coords(start_ref_coords, 0.5, ikp["rleg"].target_end_coords, ikp["lleg"].target_end_coords);
     gg->go_pos_param_2_footstep_nodes_list(x, y, th,
                                            (y > 0 ? boost::assign::list_of(ikp["rleg"].target_end_coords) : boost::assign::list_of(ikp["lleg"].target_end_coords)),
                                            start_ref_coords,
@@ -1240,6 +1238,10 @@ bool AutoBalancer::setAutoBalancerParam(const OpenHRP::AutoBalancerService::Auto
                                                                           i_param.graspless_manip_reference_trans_rot[2],
                                                                           i_param.graspless_manip_reference_trans_rot[3]).normalized().toRotationMatrix()); // rtc: (x, y, z, w) but eigen: (w, x, y, z)
   transition_time = i_param.transition_time;
+  leg_names.clear();
+  for (size_t i = 0; i < i_param.leg_names.length(); i++) {
+      leg_names.push_back(std::string(i_param.leg_names[i]));
+  }
   std::cerr << "[" << m_profile.instance_name << "]   move_base_gain = " << move_base_gain << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   default_zmp_offsets = "
             << default_zmp_offsets_array[0] << " " << default_zmp_offsets_array[1] << " " << default_zmp_offsets_array[2] << " "
@@ -1250,6 +1252,7 @@ bool AutoBalancer::setAutoBalancerParam(const OpenHRP::AutoBalancerService::Auto
   std::cerr << "[" << m_profile.instance_name << "]   graspless_manip_reference_trans_pos = " << graspless_manip_reference_trans_coords.pos.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   graspless_manip_reference_trans_rot = " << graspless_manip_reference_trans_coords.rot.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", "\n", "    [", "]")) << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   transition_time = " << transition_time << "[s], zmp_transition_time = " << zmp_transition_time << "[s], adjust_footstep_transition_time = " << adjust_footstep_transition_time << "[s]" << std::endl;
+  for (std::vector<std::string>::iterator it = leg_names.begin(); it != leg_names.end(); it++) std::cerr << "[" << m_profile.instance_name << "]   leg_names [" << *it << "]" << std::endl;
   return true;
 };
 
@@ -1280,6 +1283,8 @@ bool AutoBalancer::getAutoBalancerParam(OpenHRP::AutoBalancerService::AutoBalanc
   i_param.transition_time = transition_time;
   i_param.zmp_transition_time = zmp_transition_time;
   i_param.adjust_footstep_transition_time = adjust_footstep_transition_time;
+  i_param.leg_names.length(leg_names.size());
+  for (size_t i = 0; i < leg_names.size(); i++) i_param.leg_names[i] = leg_names.at(i).c_str();
   return true;
 };
 
