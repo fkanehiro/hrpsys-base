@@ -285,6 +285,10 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     graspless_manip_p_gain = hrp::Vector3::Zero();
 
     is_stop_mode = false;
+    has_ik_failed = false;
+
+    pos_ik_thre = 0.1*1e-3; // [m]
+    rot_ik_thre = (1e-5)*M_PI/180.0; // [rad]
 
     return RTC::RTC_OK;
 }
@@ -769,6 +773,17 @@ bool AutoBalancer::solveLimbIKforLimb (ABCIKparam& param)
   vel_p *= transition_interpolator_ratio;
   vel_r *= transition_interpolator_ratio;
   param.manip->calcInverseKinematics2Loop(vel_p, vel_r, 1.0, 0.001, 0.01, &qrefv);
+  // IK check
+  vel_p = param.target_p0 - param.target_link->p;
+  rats::difference_rotation(vel_r, param.current_r0, param.target_link->R);
+  if (vel_p.norm() > pos_ik_thre) {
+      std::cerr << "[" << m_profile.instance_name << "] Too large IK error (vel_p) = [" << vel_p(0) << " " << vel_p(1) << " " << vel_p(2) << "][m]" << std::endl;
+      has_ik_failed = true;
+  }
+  if (vel_r.norm() > rot_ik_thre) {
+      std::cerr << "[" << m_profile.instance_name << "] Too large IK error (vel_r) = [" << vel_r(0) << " " << vel_r(1) << " " << vel_r(2) << "][rad]" << std::endl;
+      has_ik_failed = true;
+  }
   return true;
 }
 
@@ -892,6 +907,7 @@ void AutoBalancer::startWalking ()
   }
   {
     Guard guard(m_mutex);
+    has_ik_failed = false;
     std::vector<std::string> init_swing_leg_names(gg->get_footstep_front_leg_names());
     std::vector<std::string> tmp_all_limbs(leg_names);
     std::vector<std::string> init_support_leg_names;
@@ -931,6 +947,7 @@ void AutoBalancer::stopWalking ()
 bool AutoBalancer::startAutoBalancer (const OpenHRP::AutoBalancerService::StrSequence& limbs)
 {
   if (control_mode == MODE_IDLE) {
+    has_ik_failed = false;
     startABCparam(limbs);
     waitABCTransition();
     return_control_mode = MODE_ABC;
@@ -1242,6 +1259,8 @@ bool AutoBalancer::setAutoBalancerParam(const OpenHRP::AutoBalancerService::Auto
   for (size_t i = 0; i < i_param.leg_names.length(); i++) {
       leg_names.push_back(std::string(i_param.leg_names[i]));
   }
+  pos_ik_thre = i_param.pos_ik_thre;
+  rot_ik_thre = i_param.rot_ik_thre;
   std::cerr << "[" << m_profile.instance_name << "]   move_base_gain = " << move_base_gain << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   default_zmp_offsets = "
             << default_zmp_offsets_array[0] << " " << default_zmp_offsets_array[1] << " " << default_zmp_offsets_array[2] << " "
@@ -1253,6 +1272,7 @@ bool AutoBalancer::setAutoBalancerParam(const OpenHRP::AutoBalancerService::Auto
   std::cerr << "[" << m_profile.instance_name << "]   graspless_manip_reference_trans_rot = " << graspless_manip_reference_trans_coords.rot.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", "\n", "    [", "]")) << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   transition_time = " << transition_time << "[s], zmp_transition_time = " << zmp_transition_time << "[s], adjust_footstep_transition_time = " << adjust_footstep_transition_time << "[s]" << std::endl;
   for (std::vector<std::string>::iterator it = leg_names.begin(); it != leg_names.end(); it++) std::cerr << "[" << m_profile.instance_name << "]   leg_names [" << *it << "]" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   pos_ik_thre = " << pos_ik_thre << "[m], rot_ik_thre = " << rot_ik_thre << "[rad]" << std::endl;
   return true;
 };
 
@@ -1285,6 +1305,8 @@ bool AutoBalancer::getAutoBalancerParam(OpenHRP::AutoBalancerService::AutoBalanc
   i_param.adjust_footstep_transition_time = adjust_footstep_transition_time;
   i_param.leg_names.length(leg_names.size());
   for (size_t i = 0; i < leg_names.size(); i++) i_param.leg_names[i] = leg_names.at(i).c_str();
+  i_param.pos_ik_thre = pos_ik_thre;
+  i_param.rot_ik_thre = rot_ik_thre;
   return true;
 };
 
