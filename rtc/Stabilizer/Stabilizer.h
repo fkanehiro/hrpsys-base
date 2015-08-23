@@ -142,7 +142,8 @@ class Stabilizer
   RTC::TimedDoubleSeq m_force[2];
   RTC::TimedPoint3D m_zmpRef;
   RTC::TimedPoint3D m_zmp;
-  RTC::TimedPoint3D m_cp;
+  RTC::TimedPoint3D m_refCP;
+  RTC::TimedPoint3D m_actCP;
   RTC::TimedPoint3D m_basePos;
   RTC::TimedOrientation3D m_baseRpy;
   RTC::TimedBooleanSeq m_contactStates;
@@ -187,7 +188,8 @@ class Stabilizer
   RTC::OutPort<RTC::TimedDoubleSeq> m_qRefOut;
   RTC::OutPort<RTC::TimedDoubleSeq> m_tauOut;
   RTC::OutPort<RTC::TimedPoint3D> m_zmpOut;
-  RTC::OutPort<RTC::TimedPoint3D> m_cpOut;
+  RTC::OutPort<RTC::TimedPoint3D> m_refCPOut;
+  RTC::OutPort<RTC::TimedPoint3D> m_actCPOut;
   RTC::OutPort<RTC::TimedBooleanSeq> m_actContactStatesOut;
   RTC::OutPort<RTC::TimedDoubleSeq> m_COPInfoOut;
   RTC::OutPort<RTC::TimedLong> m_emergencySignalOut;
