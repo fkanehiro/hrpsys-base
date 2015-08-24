@@ -94,7 +94,7 @@ RTC::ReturnCode_t PDcontroller::onShutdown(RTC::UniqueId ec_id)
 
 RTC::ReturnCode_t PDcontroller::onActivated(RTC::UniqueId ec_id)
 {
-  std::cout << "on Activated" << std::endl;
+  std::cout << m_profile.instance_name << ": on Activated " << std::endl;
 
   if(m_angleIn.isNew()){
     m_angleIn.read();
@@ -126,8 +126,9 @@ RTC::ReturnCode_t PDcontroller::onActivated(RTC::UniqueId ec_id)
     }else{
       std::cerr << "[" << m_profile.instance_name << "] Gain file [" << gain_fname << "] not opened" << std::endl;
     }
+    // initialize angleRef, old_ref and old with angle
     for(int i=0; i < dof; ++i){
-      m_angleRef.data[i]=0.0;
+      m_angleRef.data[i] = qold_ref[i] = qold[i] = m_angle.data[i];
     }
   }
   if(m_angleRefIn.isNew()){
@@ -139,7 +140,7 @@ RTC::ReturnCode_t PDcontroller::onActivated(RTC::UniqueId ec_id)
 
 RTC::ReturnCode_t PDcontroller::onDeactivated(RTC::UniqueId ec_id)
 {
-  std::cout << "on Deactivated" << std::endl;
+  std::cout << m_profile.instance_name << ": on Deactivated " << std::endl;
   return RTC::RTC_OK;
 }
 
