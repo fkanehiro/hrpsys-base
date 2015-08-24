@@ -25,6 +25,9 @@ namespace rats
         leg_type l_r;
         coordinates worldcoords;
         double step_height, step_time, toe_angle, heel_angle;
+        step_node () : l_r(RLEG), worldcoords(coordinates()),
+                       step_height(), step_time(),
+                       toe_angle(), heel_angle(){};
         step_node (const leg_type _l_r, const coordinates& _worldcoords,
                    const double _step_height, const double _step_time,
                    const double _toe_angle, const double _heel_angle)
