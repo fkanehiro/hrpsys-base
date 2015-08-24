@@ -591,7 +591,7 @@ void AutoBalancer::getTargetParameters()
         m_contactStates.data[contact_states_index_map["lleg"]] = true;
         break;
       default:
-        std::cerr << "not implemented yet " << std::endl;
+          if (DEBUGP) std::cerr << "not implemented yet " << std::endl;
         break;
       }
       m_controlSwingSupportTime.data[contact_states_index_map["rleg"]] = gg->get_current_swing_time(0);
