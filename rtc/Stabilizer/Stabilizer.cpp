@@ -56,7 +56,8 @@ Stabilizer::Stabilizer(RTC::Manager* manager)
     m_qRefOut("q", m_qRef),
     m_tauOut("tau", m_tau),
     m_zmpOut("zmp", m_zmp),
-    m_cpOut("cp", m_cp),
+    m_refCPOut("refCapturePoint", m_refCP),
+    m_actCPOut("actCapturePoint", m_actCP),
     m_actContactStatesOut("actContactStates", m_actContactStates),
     m_COPInfoOut("COPInfo", m_COPInfo),
     m_emergencySignalOut("emergencySignal", m_emergencySignal),
@@ -118,7 +119,8 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   addOutPort("q", m_qRefOut);
   addOutPort("tau", m_tauOut);
   addOutPort("zmp", m_zmpOut);
-  addOutPort("cp", m_cpOut);
+  addOutPort("refCapturePoint", m_refCPOut);
+  addOutPort("actCapturePoint", m_actCPOut);
   addOutPort("actContactStates", m_actContactStatesOut);
   addOutPort("COPInfo", m_COPInfoOut);
   addOutPort("emergencySignal", m_emergencySignalOut);
@@ -490,10 +492,14 @@ RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
       m_zmp.data.y = rel_act_zmp(1);
       m_zmp.data.z = rel_act_zmp(2);
       m_zmpOut.write();
-      m_cp.data.x = act_cp(0);
-      m_cp.data.y = act_cp(1);
-      m_cp.data.z = act_cp(2);
-      m_cpOut.write();
+      m_refCP.data.x = ref_cp(0);
+      m_refCP.data.y = ref_cp(1);
+      m_refCP.data.z = ref_cp(2);
+      m_refCPOut.write();
+      m_actCP.data.x = act_cp(0);
+      m_actCP.data.y = act_cp(1);
+      m_actCP.data.z = act_cp(2);
+      m_actCPOut.write();
       m_actContactStates.tm = m_qRef.tm;
       m_actContactStatesOut.write();
       m_COPInfo.tm = m_qRef.tm;
@@ -1021,6 +1027,8 @@ void Stabilizer::calcStateForEmergencySignal()
     ref_cp = ref_cog + ref_cogvel/std::sqrt(eefm_gravitational_acceleration/ ref_cog(2));
     act_cp = act_cog + act_cogvel/std::sqrt(eefm_gravitational_acceleration/ act_cog(2));
     hrp::Vector3 diff_cp = ref_cp - act_cp;
+    ref_cp(2) = rel_act_zmp(2);
+    act_cp(2) = rel_act_zmp(2);
     diff_cp(2) = 0.0;
     if (DEBUGP) {
         std::cerr << "[" << m_profile.instance_name << "] CP value " << diff_cp.norm() << std::endl;
