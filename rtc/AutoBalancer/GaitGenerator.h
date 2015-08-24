@@ -959,6 +959,7 @@ namespace rats
     void print_footstep_nodes_list (const std::vector< std::vector<step_node> > _footstep_nodes_list) const
     {
         for (size_t i = 0; i < _footstep_nodes_list.size(); i++) {
+            std::cerr << "foot step index : " << i << std::endl;
             for (size_t j = 0; j < _footstep_nodes_list.at(i).size(); j++) {
                 std::cerr << _footstep_nodes_list.at(i).at(j) << std::endl;
             }
