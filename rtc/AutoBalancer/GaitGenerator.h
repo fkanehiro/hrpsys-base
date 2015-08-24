@@ -703,7 +703,7 @@ namespace rats
         coordinates tmp_swg_mid, tmp_sup_mid;
         multi_mid_coords(tmp_swg_mid, swg_coords);
         multi_mid_coords(tmp_sup_mid, sup_coords);
-        mid_coords(ret, 0.5, tmp_swg_mid, tmp_sup_mid);
+        mid_coords(ret, static_cast<double>(sup_coords.size()) / (swg_coords.size() + sup_coords.size()), tmp_swg_mid, tmp_sup_mid);
       };
       std::vector<leg_type> get_current_support_states () const
       {
