@@ -89,9 +89,11 @@ def demoCollisionMask ():
         hcf.startAutoBalancer()
         print >> sys.stderr, "  5.1 Collision mask among legs : Check RLEG_ANKLE_R - LLEG_ANKLE_R"
         print >> sys.stderr, "      Desired behavior : Robot stops when legs collision."
-        hcf.abc_svc.setFootSteps([OpenHRP.AutoBalancerService.Footstep([0,-0.09,0],[1,0,0,0],"rleg"),OpenHRP.AutoBalancerService.Footstep([0,0.0,0],[1,0,0,0],"lleg")])
+        hcf.setFootSteps([OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([0,-0.09,0],[1,0,0,0],"rleg")]),
+                          OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([0,0.0,0],[1,0,0,0],"lleg")])])
         hcf.abc_svc.waitFootSteps();
-        hcf.abc_svc.setFootSteps([OpenHRP.AutoBalancerService.Footstep([0,-0.09,0],[1,0,0,0],"rleg"),OpenHRP.AutoBalancerService.Footstep([0,0.09,0],[1,0,0,0],"lleg")])
+        hcf.setFootSteps([OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([0,-0.09,0],[1,0,0,0],"rleg")]),
+                          OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([0,0.09,0],[1,0,0,0],"lleg")])])
         hcf.abc_svc.waitFootSteps();
         print >> sys.stderr, "  => Successfully mask works. Legs joints stops when collision."
         print >> sys.stderr, "  5.2 Collision mask between leg and arm : Check RLEG_HIP_R and RARM_WRIST*"
@@ -110,9 +112,11 @@ def demoCollisionMask ():
         hcf.seq_svc.setJointAngles(col_safe_pose, 1.0);
         hcf.waitInterpolation();
         print >> sys.stderr, "      Desired behavior : Next, arm keeps stopping and legs stops."
-        hcf.abc_svc.setFootSteps([OpenHRP.AutoBalancerService.Footstep([0,-0.09,0],[1,0,0,0],"rleg"),OpenHRP.AutoBalancerService.Footstep([0,0.0,0],[1,0,0,0],"lleg")])
+        hcf.setFootSteps([OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([0,-0.09,0],[1,0,0,0],"rleg")]),
+                          OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([0,0.0,0],[1,0,0,0],"lleg")])])
         hcf.abc_svc.waitFootSteps();
-        hcf.abc_svc.setFootSteps([OpenHRP.AutoBalancerService.Footstep([0,-0.09,0],[1,0,0,0],"rleg"),OpenHRP.AutoBalancerService.Footstep([0,0.09,0],[1,0,0,0],"lleg")])
+        hcf.setFootSteps([OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([0,-0.09,0],[1,0,0,0],"rleg")]),
+                          OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([0,0.09,0],[1,0,0,0],"lleg")])])
         hcf.abc_svc.waitFootSteps();
         print >> sys.stderr, "  => Successfully mask works with combined situation."
         hcf.stopAutoBalancer()

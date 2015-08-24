@@ -947,10 +947,10 @@ namespace rats
             return false;
         }
     };
-    bool get_footstep_coords_by_index (coordinates& cs, const size_t idx)
+    bool get_footstep_nodes_by_index (std::vector<step_node>& csl, const size_t idx)
     {
         if (footstep_nodes_list.size()-1 >= idx) {
-            cs = footstep_nodes_list[idx].front().worldcoords;
+            csl = footstep_nodes_list.at(idx);
             return true;
         } else {
             return false;
