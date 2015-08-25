@@ -25,6 +25,9 @@ namespace rats
         leg_type l_r;
         coordinates worldcoords;
         double step_height, step_time, toe_angle, heel_angle;
+        step_node () : l_r(RLEG), worldcoords(coordinates()),
+                       step_height(), step_time(),
+                       toe_angle(), heel_angle(){};
         step_node (const leg_type _l_r, const coordinates& _worldcoords,
                    const double _step_height, const double _step_time,
                    const double _toe_angle, const double _heel_angle)
@@ -700,7 +703,7 @@ namespace rats
         coordinates tmp_swg_mid, tmp_sup_mid;
         multi_mid_coords(tmp_swg_mid, swg_coords);
         multi_mid_coords(tmp_sup_mid, sup_coords);
-        mid_coords(ret, 0.5, tmp_swg_mid, tmp_sup_mid);
+        mid_coords(ret, static_cast<double>(sup_coords.size()) / (swg_coords.size() + sup_coords.size()), tmp_swg_mid, tmp_sup_mid);
       };
       std::vector<leg_type> get_current_support_states () const
       {
@@ -944,10 +947,10 @@ namespace rats
             return false;
         }
     };
-    bool get_footstep_coords_by_index (coordinates& cs, const size_t idx)
+    bool get_footstep_nodes_by_index (std::vector<step_node>& csl, const size_t idx)
     {
         if (footstep_nodes_list.size()-1 >= idx) {
-            cs = footstep_nodes_list[idx].front().worldcoords;
+            csl = footstep_nodes_list.at(idx);
             return true;
         } else {
             return false;
@@ -956,6 +959,7 @@ namespace rats
     void print_footstep_nodes_list (const std::vector< std::vector<step_node> > _footstep_nodes_list) const
     {
         for (size_t i = 0; i < _footstep_nodes_list.size(); i++) {
+            std::cerr << "foot step index : " << i << std::endl;
             for (size_t j = 0; j < _footstep_nodes_list.at(i).size(); j++) {
                 std::cerr << _footstep_nodes_list.at(i).at(j) << std::endl;
             }
