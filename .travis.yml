@@ -6,6 +6,8 @@ python:
   - "2.7"
 compiler:
   - gcc
+notifications:
+  slack: jsk-robotics:Av7tc8wj3IWkLYvlTzHE7x2g
   # TEST_TYPE:
   #        1 : Check if this PR works with current downstream package
   #        2 : Check if this PR works with 315.1.10
