@@ -529,11 +529,12 @@ public:
                                         const std::vector<hrp::Vector3>& ee_pos,
                                         const std::vector<hrp::Vector3>& cop_pos,
                                         const std::vector<hrp::Matrix33>& ee_rot,
+                                        const std::vector<std::string>& ee_name,
                                         const hrp::Vector3& new_refzmp, const hrp::Vector3& ref_zmp,
                                         const double total_fz, const double dt, const bool printp = true, const std::string& print_str = "")
     {
         distributeZMPToForceMoments(ref_foot_force, ref_foot_moment,
-                                    ee_pos, cop_pos, ee_rot,
+                                    ee_pos, cop_pos, ee_rot, ee_name,
                                     new_refzmp, ref_zmp,
                                     total_fz, dt, printp, print_str);
     };
