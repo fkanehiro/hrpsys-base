@@ -250,7 +250,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
 
   // parameters for TPCC
   act_zmp = hrp::Vector3::Zero();
-  for (int i = 0; i < ST_NUM_LEGS; i++) {
+  for (int i = 0; i < 2; i++) {
     k_tpcc_p[i] = 0.2;
     k_tpcc_x[i] = 4.0;
     k_brot_p[i] = 0.1;
@@ -288,7 +288,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
 
   // parameters for RUNST
   double ke = 0, tc = 0;
-  for (int i = 0; i < ST_NUM_LEGS; i++) {
+  for (int i = 0; i < 2; i++) {
     m_tau_x[i].setup(ke, tc, dt);
     m_tau_x[i].setErrorPrefix(std::string(m_profile.instance_name));
     m_tau_y[i].setup(ke, tc, dt);
@@ -1059,10 +1059,7 @@ void Stabilizer::calcStateForEmergencySignal()
 };
 
 void Stabilizer::calcTPCC() {
-  if ( m_robot->numJoints() == m_qRef.data.length() ) {
-
     // stabilizer loop
-    if ( ( m_wrenches[ST_LEFT].data.length() > 0 && m_wrenches[ST_RIGHT].data.length() > 0 ) ) {
       // Choi's feedback law
       hrp::Vector3 cog = m_robot->calcCM();
       hrp::Vector3 newcog = hrp::Vector3::Zero();
@@ -1118,15 +1115,11 @@ void Stabilizer::calcTPCC() {
           }
         }
       }
-    }
-  }
 }
 
 void Stabilizer::calcEEForceMomentControl() {
-  if ( m_robot->numJoints() == m_qRef.data.length() ) {
 
     // stabilizer loop
-    if ( ( m_wrenches[0].data.length() > 0 && m_wrenches[1].data.length() > 0 ) ) {
       // return to referencea
       m_robot->rootLink()->R = target_root_R;
       m_robot->rootLink()->p = target_root_p;
@@ -1212,8 +1205,6 @@ void Stabilizer::calcEEForceMomentControl() {
           }
         }
       }
-    }
-  }
 }
 
 double Stabilizer::calcDampingControl (const double tau_d, const double tau, const double prev_d,
@@ -1582,7 +1573,7 @@ void Stabilizer::calcRUNST() {
     hrp::Vector3 org_cm = m_robot->rootLink()->R.transpose() * (target_fm - m_robot->rootLink()->p);
 
     // stabilizer loop
-    if ( ( m_wrenches[ST_LEFT].data.length() > 0 && m_wrenches[ST_RIGHT].data.length() > 0 )
+    if ( ( m_wrenches[1].data.length() > 0 && m_wrenches[0].data.length() > 0 )
          //( m_wrenches[ST_LEFT].data[2] > m_robot->totalMass()/4 || m_wrenches[ST_RIGHT].data[2] > m_robot->totalMass()/4 )
          ) {
 
@@ -1718,7 +1709,7 @@ void Stabilizer::calcRUNST() {
       m_robot->joint(m_robot->link("R_ANKLE_P")->jointId)->q = transition_smooth_gain * dleg_y[1] + orgjq;
     } else {
       // reinitialize
-      for (int i = 0; i < ST_NUM_LEGS; i++) {
+      for (int i = 0; i < 2; i++) {
         m_tau_x[i].reset();
         m_tau_y[i].reset();
         m_f_z.reset();

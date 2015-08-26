@@ -37,7 +37,6 @@
 /**
    \brief sample RT component which has one data input port and one data output port
  */
-#define ST_NUM_LEGS 2
 
 class Stabilizer
   : public RTC::DataFlowComponentBase
@@ -221,11 +220,6 @@ class Stabilizer
   // </rtc-template>
 
  private:
-  // constant defines
-  enum {
-    ST_LEFT = 0,
-    ST_RIGHT = 1
-  };
   // Stabilizer Parameters
   struct STIKParam {
     std::string target_name; // Name of end link
@@ -261,7 +255,7 @@ class Stabilizer
   // TPCC
   double k_tpcc_p[2], k_tpcc_x[2], d_rpy[2], k_brot_p[2], k_brot_tc[2];
   // RUN ST
-  TwoDofController m_tau_x[ST_NUM_LEGS], m_tau_y[ST_NUM_LEGS], m_f_z;
+  TwoDofController m_tau_x[2], m_tau_y[2], m_f_z;
   hrp::Vector3 pdr;
   double m_torque_k[2], m_torque_d[2]; // 3D-LIP parameters (0: x, 1: y)
   double pangx_ref, pangy_ref, pangx, pangy;
