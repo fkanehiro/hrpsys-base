@@ -675,16 +675,22 @@ void AutoBalancer::getTargetParameters()
     }
 
     hrp::Vector3 tmp_foot_mid_pos(hrp::Vector3::Zero());
-    for (size_t i = 0; i < leg_names.size(); i++) {
-        ABCIKparam& tmpikp = ikp[leg_names[i]];
-        // get target_end_coords
-        tmpikp.target_end_coords.pos = tmpikp.target_p0 + tmpikp.target_r0 * tmpikp.localPos;
-        tmpikp.target_end_coords.rot = tmpikp.target_r0 * tmpikp.localR;
-        // for foot_mid_pos
-        tmp_foot_mid_pos += tmpikp.target_link->p + tmpikp.target_link->R * tmpikp.localPos + tmpikp.target_link->R * tmpikp.localR * default_zmp_offsets[i];
+    {
+        std::map<leg_type, std::string> leg_type_map = gg->get_leg_type_map();
+        std::map<leg_type, double> zmp_weight_map = gg->get_zmp_weight_map();
+        double sum_of_weight = 0.0;
+        for (size_t i = 0; i < leg_names.size(); i++) {
+            ABCIKparam& tmpikp = ikp[leg_names[i]];
+            // get target_end_coords
+            tmpikp.target_end_coords.pos = tmpikp.target_p0 + tmpikp.target_r0 * tmpikp.localPos;
+            tmpikp.target_end_coords.rot = tmpikp.target_r0 * tmpikp.localR;
+            // for foot_mid_pos
+            std::map<leg_type, std::string>::const_iterator dst = std::find_if(leg_type_map.begin(), leg_type_map.end(), (&boost::lambda::_1->* &std::map<leg_type, std::string>::value_type::second == leg_names[i]));
+            tmp_foot_mid_pos += (tmpikp.target_link->p + tmpikp.target_link->R * tmpikp.localPos + tmpikp.target_link->R * tmpikp.localR * default_zmp_offsets[i]) * zmp_weight_map[dst->first];
+            sum_of_weight += zmp_weight_map[dst->first];
+        }
+        tmp_foot_mid_pos *= (1.0 / sum_of_weight);
     }
-    tmp_foot_mid_pos *= (1.0 / leg_names.size());
-
     //
     {
         if ( gg_is_walking && gg->get_lcg_count() == static_cast<size_t>(gg->get_default_step_time()/(2*m_dt))-1) {

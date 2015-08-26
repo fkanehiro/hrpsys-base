@@ -204,6 +204,7 @@ namespace rats
     public:
 #endif
       std::vector<hrp::Vector3> refzmp_cur_list;
+      std::map<leg_type, double> zmp_weight_map;
       std::vector< std::vector<hrp::Vector3> > foot_x_axises_list; // Swing foot x axis list according to refzmp_cur_list
       std::vector< std::vector<leg_type> > swing_leg_types_list; // Swing leg list according to refzmp_cur_list
       std::vector<size_t> step_count_list; // Swing leg list according to refzmp_cur_list
@@ -231,6 +232,7 @@ namespace rats
           default_zmp_offsets.push_back(hrp::Vector3::Zero());
           default_zmp_offsets.push_back(hrp::Vector3::Zero());
           default_zmp_offsets.push_back(hrp::Vector3::Zero());
+          zmp_weight_map = boost::assign::map_list_of<leg_type, double>(RLEG, 1.0)(LLEG, 1.0)(RARM, 0.01)(LARM, 0.01);
       };
       ~refzmp_generator()
       {
@@ -265,6 +267,7 @@ namespace rats
       void set_toe_zmp_offset_x (const double _off) { toe_zmp_offset_x = _off; };
       void set_heel_zmp_offset_x (const double _off) { heel_zmp_offset_x = _off; };
       void set_use_toe_heel_transition (const double _u) { use_toe_heel_transition = _u; };
+      void set_zmp_weight_map (const std::map<leg_type, double> _map) { zmp_weight_map = _map; };
       // getter
       bool get_current_refzmp (hrp::Vector3& rzmp, std::vector<hrp::Vector3>& swing_foot_zmp_offsets, const double default_double_support_ratio, const double default_double_support_static_ratio) const
       {
@@ -276,6 +279,7 @@ namespace rats
       double get_toe_zmp_offset_x () const { return toe_zmp_offset_x; };
       double get_heel_zmp_offset_x () const { return heel_zmp_offset_x; };
       bool get_use_toe_heel_transition () const { return use_toe_heel_transition; };
+      const std::map<leg_type, double> get_zmp_weight_map () const { return zmp_weight_map; };
     };
 
     class delay_hoffarbib_trajectory_generator
@@ -887,6 +891,7 @@ namespace rats
     void set_toe_zmp_offset_x (const double _off) { rg.set_toe_zmp_offset_x(_off); };
     void set_heel_zmp_offset_x (const double _off) { rg.set_heel_zmp_offset_x(_off); };
     void set_use_toe_heel_transition (const double _u) { rg.set_use_toe_heel_transition(_u); };
+    void set_zmp_weight_map (const std::map<leg_type, double> _map) { rg.set_zmp_weight_map(_map); };
     void set_default_step_height(const double _tmp) { lcg.set_default_step_height(_tmp); };
     void set_default_top_ratio(const double _tmp) { lcg.set_default_top_ratio(_tmp); };
     void set_velocity_param (const double vel_x, const double vel_y, const double vel_theta) /* [mm/s] [mm/s] [deg/s] */
@@ -996,6 +1001,7 @@ namespace rats
     double get_toe_zmp_offset_x () const { return rg.get_toe_zmp_offset_x(); };
     double get_heel_zmp_offset_x () const { return rg.get_heel_zmp_offset_x(); };
     bool get_use_toe_heel_transition () const { return rg.get_use_toe_heel_transition(); };
+    const std::map<leg_type, double> get_zmp_weight_map () const { return rg.get_zmp_weight_map(); };
     std::vector<std::string> get_footstep_front_leg_names () const {
       std::vector<leg_type> lts;
       for (size_t i = 0; i < footstep_nodes_list[0].size(); i++) {
