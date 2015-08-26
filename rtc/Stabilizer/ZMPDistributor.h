@@ -179,12 +179,11 @@ public:
         return alpha;
     };
 
-    void distributeZMPToForceMoments (hrp::Vector3* ref_foot_force, hrp::Vector3* ref_foot_moment,
-                                      const std::vector<hrp::Vector3>& ee_pos,
-                                      const std::vector<hrp::Vector3>& cop_pos,
-                                      const std::vector<hrp::Matrix33>& ee_rot,
-                                      const hrp::Vector3& new_refzmp, const hrp::Vector3& ref_zmp,
-                                      const double total_fz, const double dt, const bool printp = true, const std::string& print_str = "")
+    void calcAlphaVector (std::vector<double>& alpha_vector,
+                          std::vector<double>& fz_alpha_vector,
+                          const std::vector<hrp::Vector3>& ee_pos,
+                          const std::vector<hrp::Matrix33>& ee_rot,
+                          const hrp::Vector3& new_refzmp, const hrp::Vector3& ref_zmp, const double dt)
     {
         double fz_alpha =  calcAlpha(ref_zmp, ee_pos, ee_rot);
         double tmpalpha = calcAlpha(new_refzmp, ee_pos, ee_rot), alpha;
@@ -194,8 +193,23 @@ public:
         prev_alpha = tmpalpha;
         // Blending
         fz_alpha = wrench_alpha_blending * fz_alpha + (1-wrench_alpha_blending) * alpha;
-        ref_foot_force[0] = hrp::Vector3(0,0, fz_alpha * total_fz);
-        ref_foot_force[1] = hrp::Vector3(0,0, (1-fz_alpha) * total_fz);
+        alpha_vector.push_back(alpha);
+        alpha_vector.push_back(1-alpha);
+        fz_alpha_vector.push_back(fz_alpha);
+        fz_alpha_vector.push_back(1-fz_alpha);
+    };
+
+    void distributeZMPToForceMoments (hrp::Vector3* ref_foot_force, hrp::Vector3* ref_foot_moment,
+                                      const std::vector<hrp::Vector3>& ee_pos,
+                                      const std::vector<hrp::Vector3>& cop_pos,
+                                      const std::vector<hrp::Matrix33>& ee_rot,
+                                      const hrp::Vector3& new_refzmp, const hrp::Vector3& ref_zmp,
+                                      const double total_fz, const double dt, const bool printp = true, const std::string& print_str = "")
+    {
+        std::vector<double> alpha_vector, fz_alpha_vector;
+        calcAlphaVector(alpha_vector, fz_alpha_vector, ee_pos, ee_rot, new_refzmp, ref_zmp, dt);
+        ref_foot_force[0] = hrp::Vector3(0,0, fz_alpha_vector[0] * total_fz);
+        ref_foot_force[1] = hrp::Vector3(0,0, fz_alpha_vector[1] * total_fz);
 
         hrp::Vector3 tau_0 = hrp::Vector3::Zero();
 #if 0
@@ -253,10 +267,10 @@ public:
 //             ref_foot_moment[0] = foot_dist_coords_rot * ref_foot_moment[0];
 //             ref_foot_moment[1] = foot_dist_coords_rot * ref_foot_moment[1];
             //
-          ref_foot_moment[0](0) = tau_0(0) * alpha;
-          ref_foot_moment[1](0) = tau_0(0) * (1-alpha);
-          ref_foot_moment[0](1) = tau_0(1) * alpha;
-          ref_foot_moment[1](1) = tau_0(1) * (1-alpha);
+          ref_foot_moment[0](0) = tau_0(0) * alpha_vector[0];
+          ref_foot_moment[1](0) = tau_0(0) * alpha_vector[1];
+          ref_foot_moment[0](1) = tau_0(1) * alpha_vector[0];
+          ref_foot_moment[1](1) = tau_0(1) * alpha_vector[1];
           ref_foot_moment[0](2) = ref_foot_moment[1](2)= 0.0;
         }
 #if 0
@@ -336,7 +350,7 @@ public:
 #endif
 
         if (printp) {
-            std::cerr << "[" << print_str << "]   alpha = " << alpha << ", fz_alpha = " << fz_alpha << std::endl;
+            //std::cerr << "[" << print_str << "]   alpha = " << alpha << ", fz_alpha = " << fz_alpha << std::endl;
             std::cerr << "[" << print_str << "]   "
                       << "total_tau    = " << hrp::Vector3(tau_0).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[Nm]" << std::endl;
             std::cerr << "[" << print_str << "]   "
@@ -358,14 +372,8 @@ public:
                                         const hrp::Vector3& new_refzmp, const hrp::Vector3& ref_zmp,
                                         const double total_fz, const double dt, const bool printp = true, const std::string& print_str = "")
     {
-        double fz_alpha =  calcAlpha(ref_zmp, ee_pos, ee_rot);
-        double tmpalpha = calcAlpha(new_refzmp, ee_pos, ee_rot), alpha;
-        // LPF
-        double const_param = 2 * M_PI * alpha_cutoff_freq * dt;
-        alpha = 1.0/(1+const_param) * prev_alpha + const_param/(1+const_param) * tmpalpha;
-        prev_alpha = tmpalpha;
-        // Blending
-        fz_alpha = wrench_alpha_blending * fz_alpha + (1-wrench_alpha_blending) * alpha;
+        std::vector<double> alpha_vector, fz_alpha_vector;
+        calcAlphaVector(alpha_vector, fz_alpha_vector, ee_pos, ee_rot, new_refzmp, ref_zmp, dt);
 
         // QP
         double norm_weight = 1e-7;
@@ -391,10 +399,10 @@ public:
             for (size_t j = 0; j < state_dim; j++) {
                 if (i == j) {
                     if (i < state_dim_half) {
-                        double tmpa = (fz_alpha < alpha_thre) ? 1/alpha_thre : 1/fz_alpha;
+                        double tmpa = (fz_alpha_vector[0] < alpha_thre) ? 1/alpha_thre : 1/fz_alpha_vector[0];
                         Hmat(i,j) = norm_weight*tmpa;
                     } else {
-                        double tmpa = (1-fz_alpha < alpha_thre) ? 1/alpha_thre : 1/(1-fz_alpha);
+                        double tmpa = (fz_alpha_vector[1] < alpha_thre) ? 1/alpha_thre : 1/fz_alpha_vector[1];
                         Hmat(i,j) = norm_weight*tmpa;
                     }
                     //Hmat(i,j) = norm_weight;
@@ -527,7 +535,7 @@ public:
         ref_foot_moment[1] = -1 * ref_foot_moment[1];
         if (printp) {
             std::cerr << "[" << print_str << "] force moment distribution (QP)" << std::endl;
-            std::cerr << "[" << print_str << "]   alpha = " << alpha << ", fz_alpha = " << fz_alpha << std::endl;
+            //std::cerr << "[" << print_str << "]   alpha = " << alpha << ", fz_alpha = " << fz_alpha << std::endl;
             // std::cerr << "[" << print_str << "]   "
             //           << "total_tau    = " << hrp::Vector3(tau_0).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[Nm]" << std::endl;
             std::cerr << "[" << print_str << "]   "

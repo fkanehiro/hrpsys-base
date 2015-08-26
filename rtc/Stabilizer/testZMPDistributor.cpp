@@ -125,7 +125,7 @@ private:
         }
         fclose(fp_fm);
         if (use_gnuplot) {
-            fprintf(gp_m, "splot [-0.5:0.5][-0.5:0.5][-50:50] '/tmp/plotrleg.dat' using 1:2:3 with lines title 'rleg'\n");
+            fprintf(gp_m, "splot [-0.5:0.5][-0.5:0.5][-100:100] '/tmp/plotrleg.dat' using 1:2:3 with lines title 'rleg'\n");
             fprintf(gp_m, "replot '/tmp/plotlleg.dat' using 1:2:3 with lines title 'lleg'\n");
             fprintf(gp_m, "replot '/tmp/plot-fm.dat' using 1:2:5 with points title 'rleg nx' lw 5\n");
             fprintf(gp_m, "replot '/tmp/plot-fm.dat' using 1:2:6 with points title 'lleg nx' lw 5\n");
