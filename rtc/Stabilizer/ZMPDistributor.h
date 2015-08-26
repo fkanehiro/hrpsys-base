@@ -391,27 +391,18 @@ public:
         mm.push_back(hrp::dmatrix(3,state_dim_half));
         mm.push_back(hrp::dmatrix(3,state_dim_half));
         //
-        hrp::dmatrix Hmat(state_dim,state_dim);
-        hrp::dvector gvec(state_dim);
+        hrp::dmatrix Hmat = hrp::dmatrix::Zero(state_dim,state_dim);
+        hrp::dvector gvec = hrp::dvector::Zero(state_dim);
         double alpha_thre = 1e-20;
-        for (size_t i = 0; i < state_dim; i++) {
-            gvec(i) = 0.0;
-            for (size_t j = 0; j < state_dim; j++) {
-                if (i == j) {
-                    if (i < state_dim_half) {
-                        double tmpa = (fz_alpha_vector[0] < alpha_thre) ? 1/alpha_thre : 1/fz_alpha_vector[0];
-                        Hmat(i,j) = norm_weight*tmpa;
-                    } else {
-                        double tmpa = (fz_alpha_vector[1] < alpha_thre) ? 1/alpha_thre : 1/fz_alpha_vector[1];
-                        Hmat(i,j) = norm_weight*tmpa;
-                    }
-                    //Hmat(i,j) = norm_weight;
-                } else {
-                    Hmat(i,j) = 0.0;
-                }
+        // fz_alpha inversion for weighing matrix
+        for (size_t i = 0; i < fz_alpha_vector.size(); i++) {
+            fz_alpha_vector[i] = (fz_alpha_vector[i] < alpha_thre) ? 1/alpha_thre : 1/fz_alpha_vector[i];
+        }
+        for (size_t j = 0; j < fz_alpha_vector.size(); j++) {
+            for (size_t i = 0; i < state_dim_half; i++) {
+                Hmat(i+j*state_dim_half,i+j*state_dim_half) = norm_weight * fz_alpha_vector[j];
             }
         }
-        //
         hrp::dmatrix Gmat(3,state_dim);
         for (size_t i = 0; i < state_dim; i++) {
             Gmat(0,i) = 1.0;
@@ -436,54 +427,31 @@ public:
         // std::cerr << total_fm << std::endl;
         //
         {
-            hrp::dmatrix Kmat(1,state_dim);
-            hrp::dmatrix KW(1,1);
-            hrp::dvector reff(1);
-            // rleg
-            for (size_t i = 0; i < 4; i++) {
-                Kmat(0,i) = 1.0;
-                Kmat(0,i+4) = 0.0;
+            hrp::dmatrix Kmat = hrp::dmatrix::Zero(2,state_dim);
+            hrp::dmatrix KW = hrp::dmatrix::Zero(2,2);
+            hrp::dvector reff(2);
+            for (size_t j = 0; j < 2; j++) {
+                for (size_t i = 0; i < state_dim_half; i++) {
+                    Kmat(j,i+j*state_dim_half) = 1.0;
+                }
+                reff(j) = total_fz/2.0;
             }
-            KW(0,0) = 0.0; // tmp
-            reff(0) = total_fz/2.0;
-            Hmat += Kmat.transpose() * KW * Kmat;
-            gvec += -1 * Kmat.transpose() * KW * reff;
-            // lleg
-            for (size_t i = 0; i < 4; i++) {
-                Kmat(0,i) = 0.0;
-                Kmat(0,i+4) = 1.0;
-            }
-            KW(0,0) = 0.0; // tmp
-            reff(0) = total_fz/2.0;
             Hmat += Kmat.transpose() * KW * Kmat;
             gvec += -1 * Kmat.transpose() * KW * reff;
         }
         {
-            hrp::dmatrix Cmat(2,state_dim);
-            hrp::dmatrix CW(2,2);
+            hrp::dmatrix Cmat = hrp::dmatrix::Zero(4,state_dim);
+            hrp::dmatrix CW = hrp::dmatrix::Zero(4,4);
             hrp::Vector3 fpos;
-            // rleg
-            for (size_t i = 0; i < 4; i++) {
-                fpos = ee_rot[0]*hrp::Vector3(fs.get_foot_vertex(0,i)(0), fs.get_foot_vertex(0,i)(1), 0) + ee_pos[0];
-                Cmat(0,i) = fpos(0) - cop_pos[0](0);
-                Cmat(1,i) = fpos(1) - cop_pos[0](1);
-                Cmat(0,i+4) = 0;
-                Cmat(1,i+4) = 0;
+            for (size_t j = 0; j < 2; j++) {
+                for (size_t i = 0; i < state_dim_half; i++) {
+                    fpos = ee_rot[j]*hrp::Vector3(fs.get_foot_vertex(j,i)(0), fs.get_foot_vertex(j,i)(1), 0) + ee_pos[j];
+                    Cmat(j*2,  i+j*state_dim_half) = fpos(0) - cop_pos[j](0);
+                    Cmat(j*2+1,i+j*state_dim_half) = fpos(1) - cop_pos[j](1);
+                }
+                CW(j*2,j*2) = CW(j*2+1,j*2+1) = cop_weight;
+                Hmat += Cmat.transpose() * CW * Cmat;
             }
-            CW(0,0) = CW(1,1) = cop_weight;
-            CW(0,1) = CW(1,0) = 0.0;
-            Hmat += Cmat.transpose() * CW * Cmat;
-            // lleg
-            for (size_t i = 0; i < 4; i++) {
-                fpos = ee_rot[1]*hrp::Vector3(fs.get_foot_vertex(1,i)(0), fs.get_foot_vertex(1,i)(1), 0) + ee_pos[1];
-                Cmat(0,i+4) = fpos(0) - cop_pos[1](0);
-                Cmat(1,i+4) = fpos(1) - cop_pos[1](1);
-                Cmat(0,i) = 0;
-                Cmat(1,i) = 0;
-            }
-            CW(0,0) = CW(1,1) = cop_weight;
-            CW(0,1) = CW(1,0) = 0.0;
-            Hmat += Cmat.transpose() * CW * Cmat;
         }
         // std::cerr << "H " << Hmat << std::endl;
         // std::cerr << "g " << gvec << std::endl;
