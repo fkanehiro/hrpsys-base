@@ -450,8 +450,8 @@ public:
                     Cmat(j*2+1,i+j*state_dim_half) = fpos(1) - cop_pos[j](1);
                 }
                 CW(j*2,j*2) = CW(j*2+1,j*2+1) = cop_weight;
-                Hmat += Cmat.transpose() * CW * Cmat;
             }
+            Hmat += Cmat.transpose() * CW * Cmat;
         }
         // std::cerr << "H " << Hmat << std::endl;
         // std::cerr << "g " << gvec << std::endl;
