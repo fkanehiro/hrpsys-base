@@ -776,11 +776,11 @@ bool AutoBalancer::solveLimbIKforLimb (ABCIKparam& param)
   // IK check
   vel_p = param.target_p0 - param.target_link->p;
   rats::difference_rotation(vel_r, param.current_r0, param.target_link->R);
-  if (vel_p.norm() > pos_ik_thre) {
+  if (vel_p.norm() > pos_ik_thre && transition_interpolator->isEmpty()) {
       std::cerr << "[" << m_profile.instance_name << "] Too large IK error (vel_p) = [" << vel_p(0) << " " << vel_p(1) << " " << vel_p(2) << "][m]" << std::endl;
       has_ik_failed = true;
   }
-  if (vel_r.norm() > rot_ik_thre) {
+  if (vel_r.norm() > rot_ik_thre && transition_interpolator->isEmpty()) {
       std::cerr << "[" << m_profile.instance_name << "] Too large IK error (vel_r) = [" << vel_r(0) << " " << vel_r(1) << " " << vel_r(2) << "][rad]" << std::endl;
       has_ik_failed = true;
   }
