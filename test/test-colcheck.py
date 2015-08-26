@@ -3,6 +3,9 @@
 PKG = 'hrpsys'
 NAME = 'test-colcheck'
 
+import sys
+print "running test with PYTHONPATH=%s" % ";".join(sys.path)
+
 import imp  ## for rosbuild
 try:
     imp.find_module(PKG)
@@ -15,14 +18,15 @@ import socket
 import rtm
 
 import unittest
-import rostest
-import sys
 
 class TestHrpsysColcheck(unittest.TestCase):
 
     def test_dummy(self):
         pass
 
-#unittest.main()
 if __name__ == '__main__':
-    rostest.run(PKG, NAME, TestHrpsysColcheck, sys.argv)
+    try:
+        import rostest
+        rostest.run(PKG, NAME, TestHrpsysColcheck, sys.argv)
+    except ImportError:
+        unittest.main()

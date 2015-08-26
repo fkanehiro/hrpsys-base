@@ -3,6 +3,9 @@
 PKG = 'hrpsys'
 NAME = 'test-hrpsys-config'
 
+import sys
+print "running test with PYTHONPATH=%s" % ";".join(sys.path)
+
 import imp  ## for rosbuild
 try:
     imp.find_module(PKG)
@@ -13,9 +16,8 @@ from hrpsys.hrpsys_config import *
 from hrpsys import rtm
 import OpenHRP
 
-import argparse,unittest,rostest
-
-import unittest, sys
+import argparse
+import unittest
 
 class SampleHrpsysConfigurator(HrpsysConfigurator):
     def init(self, robotname="SampleRobot(Robot)0", url=""):
@@ -47,7 +49,9 @@ class TestHrpsysConfig(unittest.TestCase):
         h = SampleHrpsysConfigurator()
 
 
-#unittest.main()
 if __name__ == '__main__':
-    import rostest
-    rostest.run(PKG, NAME, TestHrpsysConfig, sys.argv)
+    try:
+        import rostest
+        rostest.run(PKG, NAME, TestHrpsysConfig, sys.argv)
+    except ImportError:
+        unittest.main()
