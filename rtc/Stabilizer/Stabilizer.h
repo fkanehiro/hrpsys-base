@@ -138,8 +138,6 @@ class Stabilizer
   RTC::TimedDoubleSeq m_qRef;
   RTC::TimedDoubleSeq m_tau;
   RTC::TimedOrientation3D m_rpy;
-  // RTC::TimedDoubleSeq m_forceR, m_forceL;
-  RTC::TimedDoubleSeq m_force[2];
   RTC::TimedPoint3D m_zmpRef;
   RTC::TimedPoint3D m_zmp;
   RTC::TimedPoint3D m_refCP;
@@ -168,8 +166,6 @@ class Stabilizer
   RTC::InPort<RTC::TimedDoubleSeq> m_qCurrentIn;
   RTC::InPort<RTC::TimedDoubleSeq> m_qRefIn;
   RTC::InPort<RTC::TimedOrientation3D> m_rpyIn;
-  RTC::InPort<RTC::TimedDoubleSeq> m_forceRIn;
-  RTC::InPort<RTC::TimedDoubleSeq> m_forceLIn;
   RTC::InPort<RTC::TimedPoint3D> m_zmpRefIn;
   RTC::InPort<RTC::TimedPoint3D> m_basePosIn;
   RTC::InPort<RTC::TimedOrientation3D> m_baseRpyIn;
@@ -180,6 +176,8 @@ class Stabilizer
 
   std::vector<RTC::TimedDoubleSeq> m_wrenches;
   std::vector<RTC::InPort<RTC::TimedDoubleSeq> *> m_wrenchesIn;
+  std::vector<RTC::TimedDoubleSeq> m_ref_wrenches;
+  std::vector<RTC::InPort<RTC::TimedDoubleSeq> *> m_ref_wrenchesIn;
   
   // </rtc-template>
 

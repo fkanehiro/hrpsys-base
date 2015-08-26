@@ -44,8 +44,6 @@ Stabilizer::Stabilizer(RTC::Manager* manager)
     m_qCurrentIn("qCurrent", m_qCurrent),
     m_qRefIn("qRef", m_qRef),
     m_rpyIn("rpy", m_rpy),
-    m_forceLIn("forceL", m_force[1]),
-    m_forceRIn("forceR", m_force[0]),
     m_zmpRefIn("zmpRef", m_zmpRef),
     m_StabilizerServicePort("StabilizerService"),
     m_basePosIn("basePosIn", m_basePos),
@@ -105,8 +103,6 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   // Set InPort buffers
   addInPort("qCurrent", m_qCurrentIn);
   addInPort("qRef", m_qRefIn);
-  addInPort("forceR", m_forceRIn);
-  addInPort("forceL", m_forceLIn);
   addInPort("rpy", m_rpyIn);
   addInPort("zmpRef", m_zmpRefIn);
   addInPort("basePosIn", m_basePosIn);
@@ -175,14 +171,21 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   int npforce = m_robot->numSensors(hrp::Sensor::FORCE);
   m_wrenches.resize(npforce);
   m_wrenchesIn.resize(npforce);
+  m_ref_wrenches.resize(npforce);
+  m_ref_wrenchesIn.resize(npforce);
   m_limbCOPOffset.resize(npforce);
   m_limbCOPOffsetIn.resize(npforce);
   std::cerr << "[" << m_profile.instance_name << "] force sensor ports (" << npforce << ")" << std::endl;
   for (unsigned int i=0; i<npforce; ++i){
     hrp::Sensor *s = m_robot->sensor(hrp::Sensor::FORCE, i);
-    m_wrenchesIn[i] = new RTC::InPort<RTC::TimedDoubleSeq>(std::string(s->name+"Ref").c_str(), m_wrenches[i]);
+    // act
+    m_wrenchesIn[i] = new RTC::InPort<RTC::TimedDoubleSeq>(s->name.c_str(), m_wrenches[i]);
     m_wrenches[i].data.length(6);
-    registerInPort(std::string(s->name+"Ref").c_str(), *m_wrenchesIn[i]);
+    registerInPort(s->name.c_str(), *m_wrenchesIn[i]);
+    // ref
+    m_ref_wrenchesIn[i] = new RTC::InPort<RTC::TimedDoubleSeq>(std::string(s->name+"Ref").c_str(), m_ref_wrenches[i]);
+    m_ref_wrenches[i].data.length(6);
+    registerInPort(std::string(s->name+"Ref").c_str(), *m_ref_wrenchesIn[i]);
     std::cerr << "[" << m_profile.instance_name << "]   name = " << s->name << std::endl;
   }
   std::cerr << "[" << m_profile.instance_name << "] limbCOPOffset ports (" << npforce << ")" << std::endl;
@@ -410,12 +413,6 @@ RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
   if (m_rpyIn.isNew()) {
     m_rpyIn.read();
   }
-  if (m_forceRIn.isNew()) {
-    m_forceRIn.read();
-  }
-  if (m_forceLIn.isNew()) {
-    m_forceLIn.read();
-  }
   if (m_zmpRefIn.isNew()) {
     m_zmpRefIn.read();
   }
@@ -437,6 +434,11 @@ RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
   for (size_t i = 0; i < m_wrenchesIn.size(); ++i) {
     if ( m_wrenchesIn[i]->isNew() ) {
       m_wrenchesIn[i]->read();
+    }
+  }
+  for (size_t i = 0; i < m_ref_wrenchesIn.size(); ++i) {
+    if ( m_ref_wrenchesIn[i]->isNew() ) {
+      m_ref_wrenchesIn[i]->read();
     }
   }
   for (size_t i = 0; i < m_limbCOPOffsetIn.size(); ++i) {
@@ -759,14 +761,11 @@ void Stabilizer::getActualParameters ()
         hrp::Sensor* sensor = m_robot->sensor<hrp::ForceSensor>(ikp.sensor_name);
         hrp::Link* target = m_robot->link(ikp.target_name);
         // Convert moment at COP => moment at ee
-        if (ikp.ee_name=="rleg") {
-          ref_foot_moment[0] = ref_foot_moment[0] + ((target->R * ikp.localCOPPos + target->p) - (target->R * ikp.localp + target->p)).cross(ref_foot_force[0]);
-        } else if (ikp.ee_name=="lleg") {
-          ref_foot_moment[1] = ref_foot_moment[1] + ((target->R * ikp.localCOPPos + target->p) - (target->R * ikp.localp + target->p)).cross(ref_foot_force[1]);
-        }
+        size_t idx = contact_states_index_map[ikp.ee_name];
+        ref_foot_moment[idx] = ref_foot_moment[idx] + ((target->R * ikp.localCOPPos + target->p) - (target->R * ikp.localp + target->p)).cross(ref_foot_force[idx]);
         // Actual world frame =>
-        hrp::Vector3 sensor_force = (sensor->link->R * sensor->localR) * hrp::Vector3(m_force[i].data[0], m_force[i].data[1], m_force[i].data[2]);
-        hrp::Vector3 sensor_moment = (sensor->link->R * sensor->localR) * hrp::Vector3(m_force[i].data[3], m_force[i].data[4], m_force[i].data[5]);
+        hrp::Vector3 sensor_force = (sensor->link->R * sensor->localR) * hrp::Vector3(m_wrenches[i].data[0], m_wrenches[i].data[1], m_wrenches[i].data[2]);
+        hrp::Vector3 sensor_moment = (sensor->link->R * sensor->localR) * hrp::Vector3(m_wrenches[i].data[3], m_wrenches[i].data[4], m_wrenches[i].data[5]);
         //hrp::Vector3 ee_moment = ((sensor->link->R * sensor->localPos + sensor->link->p) - (target->R * ikp.localCOPPos + target->p)).cross(sensor_force) + sensor_moment;
         hrp::Vector3 ee_moment = ((sensor->link->R * sensor->localPos + sensor->link->p) - (target->R * ikp.localp + target->p)).cross(sensor_force) + sensor_moment;
         // <= Actual world frame
@@ -957,8 +956,8 @@ bool Stabilizer::calcZMP(hrp::Vector3& ret_zmp, const double zmp_z)
     hrp::Vector3 fsp = sensor->link->p + sensor->link->R * sensor->localPos;
     hrp::Matrix33 tmpR;
     rats::rotm3times(tmpR, sensor->link->R, sensor->localR);
-    hrp::Vector3 nf = tmpR * hrp::Vector3(m_force[i].data[0], m_force[i].data[1], m_force[i].data[2]);
-    hrp::Vector3 nm = tmpR * hrp::Vector3(m_force[i].data[3], m_force[i].data[4], m_force[i].data[5]);
+    hrp::Vector3 nf = tmpR * hrp::Vector3(m_wrenches[i].data[0], m_wrenches[i].data[1], m_wrenches[i].data[2]);
+    hrp::Vector3 nm = tmpR * hrp::Vector3(m_wrenches[i].data[3], m_wrenches[i].data[4], m_wrenches[i].data[5]);
     tmpzmpx += nf(2) * fsp(0) - (fsp(2) - zmp_z) * nf(0) - nm(1);
     tmpzmpy += nf(2) * fsp(1) - (fsp(2) - zmp_z) * nf(1) + nm(0);
     tmpfz += nf(2);
@@ -1063,7 +1062,7 @@ void Stabilizer::calcTPCC() {
   if ( m_robot->numJoints() == m_qRef.data.length() ) {
 
     // stabilizer loop
-    if ( ( m_force[ST_LEFT].data.length() > 0 && m_force[ST_RIGHT].data.length() > 0 ) ) {
+    if ( ( m_wrenches[ST_LEFT].data.length() > 0 && m_wrenches[ST_RIGHT].data.length() > 0 ) ) {
       // Choi's feedback law
       hrp::Vector3 cog = m_robot->calcCM();
       hrp::Vector3 newcog = hrp::Vector3::Zero();
@@ -1127,7 +1126,7 @@ void Stabilizer::calcEEForceMomentControl() {
   if ( m_robot->numJoints() == m_qRef.data.length() ) {
 
     // stabilizer loop
-    if ( ( m_force[0].data.length() > 0 && m_force[1].data.length() > 0 ) ) {
+    if ( ( m_wrenches[0].data.length() > 0 && m_wrenches[1].data.length() > 0 ) ) {
       // return to referencea
       m_robot->rootLink()->R = target_root_R;
       m_robot->rootLink()->p = target_root_p;
@@ -1583,8 +1582,8 @@ void Stabilizer::calcRUNST() {
     hrp::Vector3 org_cm = m_robot->rootLink()->R.transpose() * (target_fm - m_robot->rootLink()->p);
 
     // stabilizer loop
-    if ( ( m_force[ST_LEFT].data.length() > 0 && m_force[ST_RIGHT].data.length() > 0 )
-         //( m_force[ST_LEFT].data[2] > m_robot->totalMass()/4 || m_force[ST_RIGHT].data[2] > m_robot->totalMass()/4 )
+    if ( ( m_wrenches[ST_LEFT].data.length() > 0 && m_wrenches[ST_RIGHT].data.length() > 0 )
+         //( m_wrenches[ST_LEFT].data[2] > m_robot->totalMass()/4 || m_wrenches[ST_RIGHT].data[2] > m_robot->totalMass()/4 )
          ) {
 
       for ( int i = 0; i < m_robot->numJoints(); i++ ) {
@@ -1666,22 +1665,22 @@ void Stabilizer::calcRUNST() {
 
       double dleg_x[2];
       double dleg_y[2];
-      double tau_y_total = (m_force[1].data[4] + m_force[0].data[4]) / 2;
+      double tau_y_total = (m_wrenches[1].data[4] + m_wrenches[0].data[4]) / 2;
       double dpz;
       if (DEBUGP2) {
         std::cerr << "tq limit " << tq_x_ulimit << " " << tq_x_llimit << " " << tq_y_ulimit << " " << tq_y_llimit << std::endl;
       }
       for (size_t i = 0; i < 2; i++) {
-        // dleg_x[i] = m_tau_x[i].update(m_force[i].data[3], tau_xl[i]);
-        // dleg_y[i] = m_tau_y[i].update(m_force[i].data[4], tau_yl[i]);
-        //dleg_x[i] = m_tau_x[i].update(m_force[i].data[3], tau_xl[i]);
+        // dleg_x[i] = m_tau_x[i].update(m_wrenches[i].data[3], tau_xl[i]);
+        // dleg_y[i] = m_tau_y[i].update(m_wrenches[i].data[4], tau_yl[i]);
+        //dleg_x[i] = m_tau_x[i].update(m_wrenches[i].data[3], tau_xl[i]);
         dleg_x[i] = m_tau_x[i].update(0,0);
         dleg_y[i] = m_tau_y[i].update(tau_y_total, tau_yl[i]);
         if (DEBUGP2) {
           std::cerr << i << " dleg_x " << dleg_x[i] << std::endl;
           std::cerr << i << " dleg_y " << dleg_y[i] << std::endl;
-          std::cerr << i << " t_x " << m_force[i].data[3] << " "<< tau_xl[i] << std::endl;
-          std::cerr << i << " t_y " << m_force[i].data[4] << " "<< tau_yl[i] << std::endl;
+          std::cerr << i << " t_x " << m_wrenches[i].data[3] << " "<< tau_xl[i] << std::endl;
+          std::cerr << i << " t_y " << m_wrenches[i].data[4] << " "<< tau_yl[i] << std::endl;
         }
       }
 
@@ -1697,7 +1696,7 @@ void Stabilizer::calcRUNST() {
       }
       // 1=>left, 2=>right
       double refdfz = 0;
-      dpz = m_f_z.update((m_force[0].data[2] - m_force[1].data[2]), refdfz);
+      dpz = m_f_z.update((m_wrenches[0].data[2] - m_wrenches[1].data[2]), refdfz);
       //target_p[0](2) = target_foot_p[0](2) + dpz/2;
       //target_p[1](2) = target_foot_p[1](2) - dpz/2;
       target_p[0](2) = target_foot_p[0](2);
