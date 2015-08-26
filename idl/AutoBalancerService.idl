@@ -183,6 +183,8 @@ module OpenHRP
       boolean use_toe_joint;
       /// Use toe heel zmp transition. If true, zmp moves among default position, toe position (described by toe_zmp_offset_x), and heel position (described by heel_zmp_offset_x).
       boolean use_toe_heel_transition;
+      /// ZMP weight of RLEG, LLEG, RARM and LARM
+      sequence<double, 4> zmp_weight_map;
       /// Foot position offset[m] (rleg and lleg)
       sequence<DblSequence3> leg_default_translate_pos;
       /// Number of optional finalize footsteps in goPos
