@@ -68,15 +68,15 @@ private:
         std::vector<std::vector<Eigen::Vector2d> > fs;
         szd->get_vertices(fs);
         for (size_t i = 0; i < refzmp_vec.size(); i++) {
-            double alpha = szd->calcAlpha(refzmp_vec[i], ee_pos, ee_rot);
+            double alpha = szd->calcAlpha(refzmp_vec[i], ee_pos, ee_rot, names);
             if (use_qp) {
                 szd->distributeZMPToForceMomentsQP(ref_foot_force, ref_foot_moment,
-                                                   ee_pos, cop_pos, ee_rot,
+                                                   ee_pos, cop_pos, ee_rot, names,
                                                    refzmp_vec[i], refzmp_vec[i],
                                                    total_fz, dt);
             } else {
                 szd->distributeZMPToForceMoments(ref_foot_force, ref_foot_moment,
-                                                 ee_pos, cop_pos, ee_rot,
+                                                 ee_pos, cop_pos, ee_rot, names,
                                                  refzmp_vec[i], refzmp_vec[i],
                                                  total_fz, dt);
             }

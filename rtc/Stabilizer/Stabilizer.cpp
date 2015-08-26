@@ -587,11 +587,11 @@ void Stabilizer::calcFootOriginCoords (hrp::Vector3& foot_origin_pos, hrp::Matri
     foot_origin_pos = tmpc.pos;
     foot_origin_rot = tmpc.rot;
   } else if (contact_states[contact_states_index_map["rleg"]]) {
-    foot_origin_pos = leg_c[0].pos;
-    foot_origin_rot = leg_c[0].rot;
+    foot_origin_pos = leg_c[contact_states_index_map["rleg"]].pos;
+    foot_origin_rot = leg_c[contact_states_index_map["rleg"]].rot;
   } else {
-    foot_origin_pos = leg_c[1].pos;
-    foot_origin_rot = leg_c[1].rot;
+    foot_origin_pos = leg_c[contact_states_index_map["lleg"]].pos;
+    foot_origin_rot = leg_c[contact_states_index_map["lleg"]].rot;
   }
 }
 
@@ -634,8 +634,8 @@ void Stabilizer::getActualParameters ()
     on_ground = calcZMP(act_zmp, ref_zmp(2));
   }
   // set actual contact states
-  m_actContactStates.data[contact_states_index_map["rleg"]] = isContact(0);
-  m_actContactStates.data[contact_states_index_map["lleg"]] = isContact(1);
+  m_actContactStates.data[contact_states_index_map["rleg"]] = isContact(contact_states_index_map["rleg"]);
+  m_actContactStates.data[contact_states_index_map["lleg"]] = isContact(contact_states_index_map["lleg"]);
   // <= Actual world frame
 
   // convert absolute (in st) -> root-link relative
@@ -694,6 +694,7 @@ void Stabilizer::getActualParameters ()
                 << ", dif_zmp    = " << hrp::Vector3((tmpnew_refzmp-ref_zmp)*1e3).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[mm]" << std::endl;
     }
 
+    std::vector<std::string> ee_name;
     // distribute new ZMP into foot force & moment
     {
       std::vector<hrp::Vector3> ee_pos, cop_pos;
@@ -705,33 +706,31 @@ void Stabilizer::getActualParameters ()
           ee_pos.push_back(target->p + target->R * ikp.localp);
           cop_pos.push_back(target->p + target->R * ikp.localCOPPos);
           ee_rot.push_back(target->R * ikp.localR);
+          ee_name.push_back(ikp.ee_name);
       }
       // All state variables are foot_origin coords relative
       if (DEBUGP) {
           std::cerr << "[" << m_profile.instance_name << "] ee values" << std::endl;
           hrp::Vector3 tmpp;
-          tmpp = foot_origin_rot.transpose()*(ee_pos[0]-foot_origin_pos);
-          std::cerr << "[" << m_profile.instance_name << "]   "
-                    << "ee_pos_R    = " << hrp::Vector3(tmpp*1e3).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]"));
-          tmpp = foot_origin_rot.transpose()*(cop_pos[0]-foot_origin_pos);
-          std::cerr << ", cop_pos_R    = " << hrp::Vector3(tmpp*1e3).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[mm]" << std::endl;
-          tmpp = foot_origin_rot.transpose()*(ee_pos[1]-foot_origin_pos);
-          std::cerr << "[" << m_profile.instance_name << "]   "
-                    << "ee_pos_L    = " << hrp::Vector3(tmpp*1e3).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]"));
-          tmpp = foot_origin_rot.transpose()*(cop_pos[1]-foot_origin_pos);
-          std::cerr << ", cop_pos_L    = " << hrp::Vector3(tmpp*1e3).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[mm]" << std::endl;
+          for (size_t i = 0; i < ee_name.size(); i++) {
+              tmpp = foot_origin_rot.transpose()*(ee_pos[i]-foot_origin_pos);
+              std::cerr << "[" << m_profile.instance_name << "]   "
+                        << "ee_pos (" << ee_name[i] << ")    = " << hrp::Vector3(tmpp*1e3).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]"));
+              tmpp = foot_origin_rot.transpose()*(cop_pos[i]-foot_origin_pos);
+              std::cerr << ", cop_pos (" << ee_name[i] << ")    = " << hrp::Vector3(tmpp*1e3).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[mm]" << std::endl;
+          }
       }
 
       // Ref force and moment at COP
       if (st_algorithm == OpenHRP::StabilizerService::EEFM) {
           szd->distributeZMPToForceMoments(ref_foot_force, ref_foot_moment,
-                                           ee_pos, cop_pos, ee_rot,
+                                           ee_pos, cop_pos, ee_rot, ee_name,
                                            new_refzmp, hrp::Vector3(foot_origin_rot * ref_zmp + foot_origin_pos),
                                            eefm_gravitational_acceleration * total_mass, dt,
                                            DEBUGP, std::string(m_profile.instance_name));
       } else if (st_algorithm == OpenHRP::StabilizerService::EEFMQP) {
           szd->distributeZMPToForceMomentsQP(ref_foot_force, ref_foot_moment,
-                                             ee_pos, cop_pos, ee_rot,
+                                             ee_pos, cop_pos, ee_rot, ee_name,
                                              new_refzmp, hrp::Vector3(foot_origin_rot * ref_zmp + foot_origin_pos),
                                              eefm_gravitational_acceleration * total_mass, dt,
                                              DEBUGP, std::string(m_profile.instance_name));
@@ -833,10 +832,10 @@ void Stabilizer::getActualParameters ()
         std::cerr << "[" << m_profile.instance_name << "] Control values" << std::endl;
         std::cerr << "[" << m_profile.instance_name << "]   "
                   << "pos_ctrl    = [" << pos_ctrl(0)*1e3 << " " << pos_ctrl(1)*1e3 << " "<< pos_ctrl(2)*1e3 << "] [mm]" << std::endl;
-        std::cerr << "[" << m_profile.instance_name << "]   "
-                  << "d_foot_rpy_R  = [" << d_foot_rpy[0](0)*180.0/M_PI << " " << d_foot_rpy[0](1)*180.0/M_PI << "] [deg]" << std::endl;
-        std::cerr << "[" << m_profile.instance_name << "]   "
-                  << "d_foot_rpy_L  = [" << d_foot_rpy[1](0)*180.0/M_PI << " " << d_foot_rpy[1](1)*180.0/M_PI << "] [deg]" << std::endl;
+        for (size_t i = 0; i < ee_name.size(); i++) {
+            std::cerr << "[" << m_profile.instance_name << "]   "
+                      << "d_foot_rpy (" << ee_name[i] << ")  = [" << d_foot_rpy[i](0)*180.0/M_PI << " " << d_foot_rpy[i](1)*180.0/M_PI << "] [deg]" << std::endl;
+        }
       }
       // foot force independent damping control
       // for (size_t i = 0; i < 2; i++) {
