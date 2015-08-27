@@ -1,12 +1,10 @@
 #!/usr/bin/env python
 
 import os
-import rtm
+from hrpsys import rtm
 
-from rtm import *
-from OpenHRP import *
-from hrpsys import *  # load ModelLoader
-from hrpsys import ImpedanceControllerService_idl
+from hrpsys.rtm import *
+from hrpsys.OpenHRP import *
 from waitInput import waitInputConfirm
 
 import socket
