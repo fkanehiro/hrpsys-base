@@ -12,6 +12,9 @@ target_link_libraries(testIIRFilter ${libs})
 
 set(target TorqueFilter TorqueFilterComp testIIRFilter)
 
+add_test(testIIRFilterDoubleTest0 testIIRFilter --double --test0 --use-gnuplot false)
+add_test(testIIRFilterVector3Test0 testIIRFilter --double --test0 --use-gnuplot false)
+
 install(TARGETS ${target}
   RUNTIME DESTINATION bin CONFIGURATIONS Release Debug
   LIBRARY DESTINATION lib CONFIGURATIONS Release Debug
