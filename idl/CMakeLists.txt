@@ -42,17 +42,6 @@ if(NOT QNXNTO)
   list(APPEND openhrp_idl_files  PathPlanner.idl)
 endif()
 
-set(openrtm_idl_files
-  BasicDataType.idl
-  DataPort.idl
-  ExtendedDataTypes.idl
-  InterfaceDataTypes.idl
-  Manager.idl
-  OpenRTM.idl
-  RTC.idl
-  SDOPackage.idl
-  )
-
 # add CMAKE_CURRENT_SOURCE_DIR to all files
 set(EXTRA_IDL_FILES "" CACHE PATH "directories of extra idls") # this must contain paths
 set(idl_files2 ${idl_files})
@@ -132,16 +121,9 @@ foreach(_idl_file ${openhrp_idl_files})
     message(FATAL_ERROR "ERROR: ${OPENHRP_IDL_DIR}/OpenHRP/${_idl_file} is not present")
   endif()
 endforeach()
-foreach(_idl_file ${openrtm_idl_files})
-  message("Check if ${OPENRTM_IDL_DIR}/${_idl_file} exists")
-  if(NOT EXISTS ${OPENRTM_IDL_DIR}/${_idl_file})
-    message(FATAL_ERROR "ERROR: ${OPENRTM_IDL_DIR}/${_idl_file} is not present")
-  endif()
-endforeach()
 
 install(CODE "execute_process(COMMAND omniidl -bpython -Wbpackage=hrpsys -Wbinline -C\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${python_dist_pkg_dir} -I${OPENRTM_IDL_DIR} ${idl_files} WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})")
 install(CODE "execute_process(COMMAND omniidl -bpython -Wbpackage=hrpsys -Wbinline -C\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${python_dist_pkg_dir} -I${OPENRTM_IDL_DIR} ${openhrp_idl_files} WORKING_DIRECTORY ${OPENHRP_IDL_DIR}/OpenHRP)")
-install(CODE "execute_process(COMMAND omniidl -bpython -Wbpackage=hrpsys -Wbinline -C\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${python_dist_pkg_dir} ${openrtm_idl_files} WORKING_DIRECTORY ${OPENRTM_IDL_DIR})")
 install(CODE "execute_process(COMMAND python -m compileall hrpsys WORKING_DIRECTORY ${python_dist_pkg_dir})")
 install(FILES ${headers} DESTINATION include/hrpsys/idl)
 install(FILES ${idl_files} DESTINATION share/hrpsys/idl)

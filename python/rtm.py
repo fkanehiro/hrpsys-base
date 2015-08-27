@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 from omniORB import CORBA, any, cdrUnmarshal, cdrMarshal
 import CosNaming
 
