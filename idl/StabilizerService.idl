@@ -76,15 +76,15 @@ module OpenHRP
       DblArray2 eefm_zmp_delay_time_const;
       /// Auxiliary input for ZMP position [m] (x,y). This is used for delay model identification
       DblArray2 eefm_ref_zmp_aux;
-      /// Foot rotation damping gain [Nm/(rad/s)].
+      /// Sequence of all end-effector rotation damping gain [Nm/(rad/s)] (r,p,y).
       sequence<sequence<double, 3> > eefm_rot_damping_gain;
-      /// Foot rotation damping time constant [s].
+      /// Sequence of all end-effector rotation damping time constant [s] (r,p,y).
       sequence<sequence<double, 3> > eefm_rot_time_const;
-      /// Foot position damping gain [N/(m/s)].
+      /// Sequence of all end-effector position damping gain [N/(m/s)] (x,y,z).
       sequence<sequence<double, 3> > eefm_pos_damping_gain;
-      /// Foot position damping time constant for double support phase [s].
+      /// Sequence of all end-effector position damping time constant for double support phase [s] (x,y,z).
       sequence<sequence<double, 3> > eefm_pos_time_const_support;
-      /// Foot position damping time constant for single support phase [s].
+      /// End-effector position damping time constant for single support phase [s].
       double eefm_pos_time_const_swing;
       /// Transition time for single=>double support phase gain interpolation [s].
       double eefm_pos_transition_time;
