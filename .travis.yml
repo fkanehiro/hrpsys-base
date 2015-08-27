@@ -17,6 +17,7 @@ env:
   matrix:
     # test for normal hrpsys users, this will not depends on any ROS-related tools
     - TEST_PACKAGE=hrpsys
+    - TEST_PACKAGE=hrpsys USE_SRC_OPENHRP3=true
     - TEST_PACKAGE=hrpsys   COMPILE_OPTION='-DROBOT_IOB_VERSION=0'
     - TEST_TYPE=python      TEST_PACKAGE=hrpsys
     - TEST_TYPE=iob         TEST_PACKAGE=hrpsys
@@ -30,6 +31,8 @@ env:
     - TEST_TYPE=work_with_315_1_10    TEST_PACKAGE=hrpsys-ros-bridge
     - TEST_TYPE=work_with_downstream  TEST_PACKAGE=hironx-ros-bridge
     - TEST_TYPE=work_with_315_1_10    TEST_PACKAGE=hironx-ros-bridge
+    - TEST_TYPE=work_with_downstream  TEST_PACKAGE=hironx-ros-bridge USE_SRC_OPENHRP3=true
+    - TEST_TYPE=work_with_315_1_10    TEST_PACKAGE=hironx-ros-bridge USE_SRC_OPENHRP3=true
 script: source .travis.sh
 after_success:
   - set +x
