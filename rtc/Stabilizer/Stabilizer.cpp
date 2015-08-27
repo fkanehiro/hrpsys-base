@@ -740,14 +740,6 @@ void Stabilizer::getActualParameters ()
       // for debug output
       new_refzmp = foot_origin_rot.transpose() * (new_refzmp - foot_origin_pos);
     }
-    //rpy control
-    {
-      hrp::Vector3 act_root_rpy = hrp::rpyFromRot(m_robot->rootLink()->R);
-      hrp::Vector3 ref_root_rpy = hrp::rpyFromRot(target_root_R);
-      for (size_t i = 0; i < 2; i++) {
-        d_rpy[i] = transition_smooth_gain * (eefm_body_attitude_control_gain[i] * (ref_root_rpy(i) - act_root_rpy(i)) - 1/eefm_body_attitude_control_time_const[i] * d_rpy[i]) * dt + d_rpy[i];
-      }
-    }
 
     // foor modif
     {
@@ -844,6 +836,7 @@ void Stabilizer::getActualParameters ()
       // }
     }
   } // st_algorithm == OpenHRP::StabilizerService::EEFM
+
   for ( int i = 0; i < m_robot->numJoints(); i++ ){
     m_robot->joint(i)->q = qrefv[i];
   }
@@ -1058,6 +1051,21 @@ void Stabilizer::calcStateForEmergencySignal()
   }
 };
 
+void Stabilizer::moveBasePosRotForBodyRPYControl ()
+{
+    // Body rpy control
+    hrp::Vector3 ref_root_rpy = hrp::rpyFromRot(target_root_R);
+    for (size_t i = 0; i < 2; i++) {
+        d_rpy[i] = transition_smooth_gain * (eefm_body_attitude_control_gain[i] * (ref_root_rpy(i) - act_base_rpy(i)) - 1/eefm_body_attitude_control_time_const[i] * d_rpy[i]) * dt + d_rpy[i];
+    }
+    rats::rotm3times(current_root_R, target_root_R, hrp::rotFromRpy(d_rpy[0], d_rpy[1], 0));
+    m_robot->rootLink()->R = current_root_R;
+    m_robot->rootLink()->p = target_root_p + target_root_R * rel_cog - current_root_R * rel_cog;
+    m_robot->calcForwardKinematics();
+    current_base_rpy = hrp::rpyFromRot(m_robot->rootLink()->R);
+    current_base_pos = m_robot->rootLink()->p;
+};
+
 void Stabilizer::calcTPCC() {
     // stabilizer loop
       // Choi's feedback law
@@ -1071,23 +1079,7 @@ void Stabilizer::calcTPCC() {
         newcog(i) = uu * dt + cog(i);
       }
 
-      //rpy control
-      {
-        hrp::Sensor* sen = m_robot->sensor<hrp::RateGyroSensor>("gyrometer");
-        if (sen != NULL) {
-          hrp::Matrix33 act_Rs(hrp::rotFromRpy(m_rpy.data.r, m_rpy.data.p, m_rpy.data.y));
-          hrp::Matrix33 tmpm, act_Rb;
-          rats::rotm3times(tmpm, hrp::Matrix33(sen->link->R * sen->localR).transpose(), m_robot->rootLink()->R);
-          rats::rotm3times(act_Rb, act_Rs, tmpm);
-          hrp::Vector3 act_rpy = hrp::rpyFromRot(act_Rb);
-          hrp::Vector3 ref_rpy = hrp::rpyFromRot(target_root_R);
-          for (size_t i = 0; i < 2; i++) {
-            d_rpy[i] = transition_smooth_gain * (k_brot_p[i] * (ref_rpy(i) - act_rpy(i)) - 1/k_brot_tc[i] * d_rpy[i]) * dt + d_rpy[i];
-          }
-          rats::rotm3times(current_root_R, target_root_R, hrp::rotFromRpy(d_rpy[0], d_rpy[1], 0));
-          m_robot->rootLink()->R = current_root_R;
-        }
-      }
+      moveBasePosRotForBodyRPYControl ();
 
       // target at ee => target at link-origin
       hrp::Vector3 target_link_p[stikp.size()];
@@ -1117,6 +1109,7 @@ void Stabilizer::calcTPCC() {
       }
 }
 
+
 void Stabilizer::calcEEForceMomentControl() {
 
     // stabilizer loop
@@ -1144,13 +1137,7 @@ void Stabilizer::calcEEForceMomentControl() {
           }
       }
 
-      //rpy control
-      rats::rotm3times(current_root_R, target_root_R, hrp::rotFromRpy(d_rpy[0], d_rpy[1], 0));
-      m_robot->rootLink()->R = current_root_R;
-      m_robot->rootLink()->p = target_root_p + target_root_R * rel_cog - current_root_R * rel_cog;
-      m_robot->calcForwardKinematics();
-      current_base_rpy = hrp::rpyFromRot(m_robot->rootLink()->R);
-      current_base_pos = m_robot->rootLink()->p;
+      moveBasePosRotForBodyRPYControl ();
 
       // Convert d_foot_pos in foot origin frame => "current" world frame
       hrp::Vector3 foot_origin_pos;

@@ -112,6 +112,7 @@ class Stabilizer
   bool calcZMP(hrp::Vector3& ret_zmp, const double zmp_z);
   void calcStateForEmergencySignal();
   void calcRUNST();
+  void moveBasePosRotForBodyRPYControl ();
   void calcTPCC();
   void calcEEForceMomentControl();
   void getParameter(OpenHRP::StabilizerService::stParam& i_stp);
