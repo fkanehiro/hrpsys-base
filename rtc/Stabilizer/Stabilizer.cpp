@@ -1287,6 +1287,7 @@ void Stabilizer::stopStabilizer(void)
 
 void Stabilizer::getParameter(OpenHRP::StabilizerService::stParam& i_stp)
 {
+  std::cerr << "[" << m_profile.instance_name << "] getParameter" << std::endl;
   for (size_t i = 0; i < 2; i++) {
     i_stp.k_run_b[i] = k_run_b[i];
     i_stp.d_run_b[i] = d_run_b[i];
@@ -1408,13 +1409,22 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
     eefm_body_attitude_control_gain[i] = i_stp.eefm_body_attitude_control_gain[i];
     eefm_body_attitude_control_time_const[i] = i_stp.eefm_body_attitude_control_time_const[i];
   }
-  for (size_t j = 0; j < stikp.size(); j++) {
-      for (size_t i = 0; i < 3; i++) {
-          stikp[j].eefm_pos_damping_gain(i) = i_stp.eefm_pos_damping_gain[j][i];
-          stikp[j].eefm_pos_time_const_support(i) = i_stp.eefm_pos_time_const_support[j][i];
-          stikp[j].eefm_rot_damping_gain(i) = i_stp.eefm_rot_damping_gain[j][i];
-          stikp[j].eefm_rot_time_const(i) = i_stp.eefm_rot_time_const[j][i];
+  bool is_damping_parameter_ok = true;
+  if ( i_stp.eefm_pos_damping_gain.length () == stikp.size() &&
+       i_stp.eefm_pos_time_const_support.length () == stikp.size() &&
+       i_stp.eefm_rot_damping_gain.length () == stikp.size() &&
+       i_stp.eefm_rot_time_const.length () == stikp.size() ) {
+      is_damping_parameter_ok = true;
+      for (size_t j = 0; j < stikp.size(); j++) {
+          for (size_t i = 0; i < 3; i++) {
+              stikp[j].eefm_pos_damping_gain(i) = i_stp.eefm_pos_damping_gain[j][i];
+              stikp[j].eefm_pos_time_const_support(i) = i_stp.eefm_pos_time_const_support[j][i];
+              stikp[j].eefm_rot_damping_gain(i) = i_stp.eefm_rot_damping_gain[j][i];
+              stikp[j].eefm_rot_time_const(i) = i_stp.eefm_rot_time_const[j][i];
+          }
       }
+  } else {
+      is_damping_parameter_ok = false;
   }
   eefm_pos_time_const_swing = i_stp.eefm_pos_time_const_swing;
   eefm_pos_transition_time = i_stp.eefm_pos_transition_time;
@@ -1474,11 +1484,23 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
   std::cerr << "[" << m_profile.instance_name << "]   eefm_ref_zmp_aux  = [" << ref_zmp_aux(0) << ", " << ref_zmp_aux(1) << "][m]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   eefm_body_attitude_control_gain  = [" << eefm_body_attitude_control_gain[0] << ", " << eefm_body_attitude_control_gain[1] << "]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   eefm_body_attitude_control_time_const  = [" << eefm_body_attitude_control_time_const[0] << ", " << eefm_body_attitude_control_time_const[1] << "][s]" << std::endl;
-  // std::cerr << "[" << m_profile.instance_name << "]   eefm_rot_damping_gain = " << eefm_rot_damping_gain << ", eefm_rot_time_const = " << eefm_rot_time_const << "[s]" << std::endl;
-  // std::cerr << "[" << m_profile.instance_name << "]   eefm_pos_damping_gain = " << eefm_pos_damping_gain(0) << ", " << eefm_pos_damping_gain(1) << ", " << eefm_pos_damping_gain(2)
-  //           << ", eefm_pos_time_const_support = " << eefm_pos_time_const_support(0) << ", " << eefm_pos_time_const_support(1) << ", " << eefm_pos_time_const_support(2) << "[s], "
-  //           << "eefm_pos_time_const_swing = " << eefm_pos_time_const_swing << "[s]" << std::endl;
-  std::cerr << "[" << m_profile.instance_name << "]   eefm_pos_transition_time = " << eefm_pos_transition_time << "[s], eefm_pos_margin_time = " << eefm_pos_margin_time << "[s]" << std::endl;
+  if (is_damping_parameter_ok) {
+      for (size_t j = 0; j < stikp.size(); j++) {
+          std::cerr << "[" << m_profile.instance_name << "]   [" << stikp[j].ee_name << "] eefm_rot_damping_gain = "
+                    << stikp[j].eefm_rot_damping_gain.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]"))
+                    << ", eefm_rot_time_const = "
+                    << stikp[j].eefm_rot_time_const.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]"))
+                    << "[s]" << std::endl;
+          std::cerr << "[" << m_profile.instance_name << "]   [" << stikp[j].ee_name << "] eefm_pos_damping_gain = "
+                    << stikp[j].eefm_pos_damping_gain.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]"))
+                    << ", eefm_pos_time_const_support = "
+                    << stikp[j].eefm_pos_time_const_support.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]"))
+                    << "[s]" << std::endl;
+      }
+  } else {
+      std::cerr << "[" << m_profile.instance_name << "]   eefm damping parameters cannot be set because of invalid param." << std::endl;
+  }
+  std::cerr << "[" << m_profile.instance_name << "]   eefm_pos_transition_time = " << eefm_pos_transition_time << "[s], eefm_pos_margin_time = " << eefm_pos_margin_time << "[s] eefm_pos_time_const_swing = " << eefm_pos_time_const_swing << "[s]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   cogvel_cutoff_freq = " << act_cogvel_filter->getCutOffFreq() << "[Hz]" << std::endl;
   szd->print_params(std::string(m_profile.instance_name));
   szd->print_vertices(std::string(m_profile.instance_name));
