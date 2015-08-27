@@ -13,6 +13,7 @@
 #include <hrpModel/Body.h>
 #include <iostream>
 #include "../ImpedanceController/JointPathEx.h"
+#include "../TorqueFilter/IIRFilter.h"
 
 #ifdef USE_QPOASES
 #include <qpOASES.hpp>
@@ -51,12 +52,13 @@ public:
 class SimpleZMPDistributor
 {
     FootSupportPolygon fs;
-    double leg_inside_margin, leg_outside_margin, leg_front_margin, leg_rear_margin, wrench_alpha_blending, alpha_cutoff_freq;
-    double prev_alpha;
+    double leg_inside_margin, leg_outside_margin, leg_front_margin, leg_rear_margin, wrench_alpha_blending;
+    boost::shared_ptr<FirstOrderLowPassFilter<double> > alpha_filter;
 public:
-    SimpleZMPDistributor () : wrench_alpha_blending (0.5), alpha_cutoff_freq(1e7), // Almost no filter by default
-                              prev_alpha (0.5)
+    SimpleZMPDistributor (const double _dt) : wrench_alpha_blending (0.5)
     {
+        alpha_filter = boost::shared_ptr<FirstOrderLowPassFilter<double> >(new FirstOrderLowPassFilter<double>(1e7, _dt)); // [Hz], Almost no filter by default
+        alpha_filter->reset(0.5);
     };
 
     inline bool is_inside_foot (const hrp::Vector3& leg_pos, const bool is_lleg, const double margin = 0.0)
@@ -75,7 +77,7 @@ public:
     void print_params (const std::string& str)
     {
         std::cerr << "[" << str << "]   leg_inside_margin = " << leg_inside_margin << "[m], leg_outside_margin = " << leg_outside_margin << "[m], leg_front_margin = " << leg_front_margin << "[m], leg_rear_margin = " << leg_rear_margin << "[m]" << std::endl;
-        std::cerr << "[" << str << "]   wrench_alpha_blending = " << wrench_alpha_blending << ", alpha_cutoff_freq = " << alpha_cutoff_freq << "[Hz]" << std::endl;
+        std::cerr << "[" << str << "]   wrench_alpha_blending = " << wrench_alpha_blending << ", alpha_cutoff_freq = " << alpha_filter->getCutOffFreq() << "[Hz]" << std::endl;
     }
     void print_vertices (const std::string& str)
     {
@@ -87,7 +89,7 @@ public:
     void set_leg_rear_margin (const double a) { leg_rear_margin = a; };
     void set_leg_inside_margin (const double a) { leg_inside_margin = a; };
     void set_leg_outside_margin (const double a) { leg_outside_margin = a; };
-    void set_alpha_cutoff_freq (const double a) { alpha_cutoff_freq = a; };
+    void set_alpha_cutoff_freq (const double a) { alpha_filter->setCutOffFreq(a); };
     void set_vertices (const std::vector<std::vector<Eigen::Vector2d> >& vs)
     {
         fs.set_vertices(vs);
@@ -124,7 +126,7 @@ public:
     double get_leg_rear_margin () { return leg_rear_margin; };
     double get_leg_inside_margin () { return leg_inside_margin; };
     double get_leg_outside_margin () { return leg_outside_margin; };
-    double get_alpha_cutoff_freq () { return alpha_cutoff_freq; };
+    double get_alpha_cutoff_freq () { return alpha_filter->getCutOffFreq(); };
     void get_vertices (std::vector<std::vector<Eigen::Vector2d> >& vs) { fs.get_vertices(vs); };
     //
     double calcAlpha (const hrp::Vector3& tmprefzmp,
@@ -191,14 +193,12 @@ public:
                           const std::vector<hrp::Vector3>& ee_pos,
                           const std::vector<hrp::Matrix33>& ee_rot,
                           const std::vector<std::string>& ee_name,
-                          const hrp::Vector3& new_refzmp, const hrp::Vector3& ref_zmp, const double dt)
+                          const hrp::Vector3& new_refzmp, const hrp::Vector3& ref_zmp)
     {
         double fz_alpha =  calcAlpha(ref_zmp, ee_pos, ee_rot, ee_name);
         double tmpalpha = calcAlpha(new_refzmp, ee_pos, ee_rot, ee_name), alpha;
         // LPF
-        double const_param = 2 * M_PI * alpha_cutoff_freq * dt;
-        alpha = 1.0/(1+const_param) * prev_alpha + const_param/(1+const_param) * tmpalpha;
-        prev_alpha = tmpalpha;
+        alpha = alpha_filter->passFilter(tmpalpha);
         // Blending
         fz_alpha = wrench_alpha_blending * fz_alpha + (1-wrench_alpha_blending) * alpha;
         for (size_t i = 0; i < ee_name.size(); i++) {
@@ -216,7 +216,7 @@ public:
                                       const double total_fz, const double dt, const bool printp = true, const std::string& print_str = "")
     {
         std::vector<double> alpha_vector(2), fz_alpha_vector(2);
-        calcAlphaVector(alpha_vector, fz_alpha_vector, ee_pos, ee_rot, ee_name, new_refzmp, ref_zmp, dt);
+        calcAlphaVector(alpha_vector, fz_alpha_vector, ee_pos, ee_rot, ee_name, new_refzmp, ref_zmp);
         ref_foot_force[0] = hrp::Vector3(0,0, fz_alpha_vector[0] * total_fz);
         ref_foot_force[1] = hrp::Vector3(0,0, fz_alpha_vector[1] * total_fz);
 
@@ -383,7 +383,7 @@ public:
                                         const double total_fz, const double dt, const bool printp = true, const std::string& print_str = "")
     {
         std::vector<double> alpha_vector(2), fz_alpha_vector(2);
-        calcAlphaVector(alpha_vector, fz_alpha_vector, ee_pos, ee_rot, ee_name, new_refzmp, ref_zmp, dt);
+        calcAlphaVector(alpha_vector, fz_alpha_vector, ee_pos, ee_rot, ee_name, new_refzmp, ref_zmp);
 
         // QP
         double norm_weight = 1e-7;

@@ -26,6 +26,7 @@
 #include "ZMPDistributor.h"
 #include "../ImpedanceController/JointPathEx.h"
 #include "../ImpedanceController/RatsMatrix.h"
+#include "../TorqueFilter/IIRFilter.h"
 
 // </rtc-template>
 
@@ -247,9 +248,10 @@ class Stabilizer
   std::vector <hrp::Matrix33> target_ee_R;
   rats::coordinates target_foot_midcoords;
   hrp::Vector3 ref_zmp, ref_cog, ref_cp, ref_cogvel, prev_ref_cog, prev_ref_zmp;
-  hrp::Vector3 act_zmp, act_cog, act_cogvel, act_cp, rel_act_zmp, prev_act_cog, prev_act_cogvel, act_base_rpy, current_base_rpy, current_base_pos;
+  hrp::Vector3 act_zmp, act_cog, act_cogvel, act_cp, rel_act_zmp, prev_act_cog, act_base_rpy, current_base_rpy, current_base_pos;
   hrp::Vector3 foot_origin_offset[2];
   double zmp_origin_off, transition_smooth_gain, prev_act_force_z[2];
+  boost::shared_ptr<FirstOrderLowPassFilter<hrp::Vector3> > act_cogvel_filter;
   OpenHRP::StabilizerService::STAlgorithm st_algorithm;
   SimpleZMPDistributor* szd;
   // TPCC
@@ -263,7 +265,7 @@ class Stabilizer
   double rdx, rdy, rx, ry;
   // EEFM ST
   double eefm_k1[2], eefm_k2[2], eefm_k3[2], eefm_zmp_delay_time_const[2], eefm_body_attitude_control_gain[2], eefm_body_attitude_control_time_const[2];
-  double eefm_rot_damping_gain, eefm_rot_time_const, eefm_pos_time_const_swing, eefm_pos_transition_time, eefm_pos_margin_time, eefm_cogvel_cutoff_freq, eefm_gravitational_acceleration, eefm_ee_pos_error_p_gain, eefm_ee_rot_error_p_gain, eefm_ee_error_cutoff_freq;
+  double eefm_rot_damping_gain, eefm_rot_time_const, eefm_pos_time_const_swing, eefm_pos_transition_time, eefm_pos_margin_time, eefm_gravitational_acceleration, eefm_ee_pos_error_p_gain, eefm_ee_rot_error_p_gain, eefm_ee_error_cutoff_freq;
   hrp::Vector3 d_foot_rpy[2], new_refzmp, rel_cog, ref_zmp_aux, ee_d_foot_rpy[2], eefm_pos_damping_gain, eefm_pos_time_const_support;
   hrp::Vector3 ref_foot_force[2];
   hrp::Vector3 ref_foot_moment[2];

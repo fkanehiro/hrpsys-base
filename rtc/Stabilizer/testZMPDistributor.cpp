@@ -151,9 +151,9 @@ private:
     };
 public:
     std::vector<std::string> arg_strs;
-    testZMPDistributor() : use_qp(true), use_gnuplot(true), sleep_msec(100)
+    testZMPDistributor(const double _dt) : dt(_dt), use_qp(true), use_gnuplot(true), sleep_msec(100)
     {
-        szd = new SimpleZMPDistributor();
+        szd = new SimpleZMPDistributor(_dt);
     };
     virtual ~testZMPDistributor()
     {
@@ -217,9 +217,8 @@ public:
 class testZMPDistributorHRP2JSK : public testZMPDistributor
 {
  public:
-    testZMPDistributorHRP2JSK ()
+    testZMPDistributorHRP2JSK () : testZMPDistributor(0.004)
         {
-            dt = 0.004;
             total_fz = 56*9.8066;
             szd->set_leg_inside_margin(0.070104);
             szd->set_leg_outside_margin(0.070104);
@@ -234,9 +233,8 @@ class testZMPDistributorHRP2JSK : public testZMPDistributor
 class testZMPDistributorJAXON_RED : public testZMPDistributor
 {
  public:
-    testZMPDistributorJAXON_RED ()
+    testZMPDistributorJAXON_RED () : testZMPDistributor(0.002)
         {
-            dt = 0.002;
             total_fz = 130.442*9.8066;
             szd->set_leg_inside_margin(0.055992);
             szd->set_leg_outside_margin(0.075992);

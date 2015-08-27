@@ -276,7 +276,6 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   //eefm_leg_inside_margin = 0.065; // [m]
   //eefm_leg_front_margin = 0.05;
   //eefm_leg_rear_margin = 0.05;
-  eefm_cogvel_cutoff_freq = 4.0; //[Hz]
   //fm_wrench_alpha_blending = 1.0; // fz_alpha
   eefm_gravitational_acceleration = 9.80665; // [m/s^2]
   eefm_ee_pos_error_p_gain = 0;
@@ -334,6 +333,10 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   foot_origin_offset[0] = hrp::Vector3::Zero();
   foot_origin_offset[1] = hrp::Vector3::Zero();
 
+  //
+  act_cogvel_filter = boost::shared_ptr<FirstOrderLowPassFilter<hrp::Vector3> >(new FirstOrderLowPassFilter<hrp::Vector3>(4.0, dt)); // [Hz]
+  act_cogvel_filter->reset(hrp::Vector3::Zero());
+
   // for debug output
   m_originRefZmp.data.x = m_originRefZmp.data.y = m_originRefZmp.data.z = 0.0;
   m_originRefCog.data.x = m_originRefCog.data.y = m_originRefCog.data.z = 0.0;
@@ -351,7 +354,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   m_debugData.data.length(1); m_debugData.data[0] = 0.0;
 
   //
-  szd = new SimpleZMPDistributor();
+  szd = new SimpleZMPDistributor(dt);
 
   return RTC::RTC_OK;
 }
@@ -653,10 +656,8 @@ void Stabilizer::getActualParameters ()
       act_cogvel = (act_cog - prev_act_cog)/dt;
     }
     prev_act_foot_origin_rot = foot_origin_rot;
-    double const_param = 2 * M_PI * eefm_cogvel_cutoff_freq * dt;
-    act_cogvel = 1.0/(1+const_param) * prev_act_cogvel + const_param/(1+const_param) * act_cogvel;
+    act_cogvel = act_cogvel_filter->passFilter(act_cogvel);
     prev_act_cog = act_cog;
-    prev_act_cogvel = act_cogvel;
     //act_root_rot = m_robot->rootLink()->R;
     for (size_t i = 0; i < stikp.size(); i++) {
       hrp::Link* target = m_robot->link(stikp[i].target_name);
@@ -1341,7 +1342,7 @@ void Stabilizer::getParameter(OpenHRP::StabilizerService::stParam& i_stp)
   i_stp.eefm_leg_outside_margin = szd->get_leg_outside_margin();
   i_stp.eefm_leg_front_margin = szd->get_leg_front_margin();
   i_stp.eefm_leg_rear_margin = szd->get_leg_rear_margin();
-  i_stp.eefm_cogvel_cutoff_freq = eefm_cogvel_cutoff_freq;
+  i_stp.eefm_cogvel_cutoff_freq = act_cogvel_filter->getCutOffFreq();
   i_stp.eefm_wrench_alpha_blending = szd->get_wrench_alpha_blending();
   i_stp.eefm_alpha_cutoff_freq = szd->get_alpha_cutoff_freq();
   i_stp.eefm_gravitational_acceleration = eefm_gravitational_acceleration;
@@ -1429,7 +1430,7 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
   szd->set_leg_front_margin(i_stp.eefm_leg_front_margin);
   szd->set_leg_rear_margin(i_stp.eefm_leg_rear_margin);
   szd->set_vertices_from_margin_params();
-  eefm_cogvel_cutoff_freq = i_stp.eefm_cogvel_cutoff_freq;
+  act_cogvel_filter->setCutOffFreq(i_stp.eefm_cogvel_cutoff_freq);
   szd->set_wrench_alpha_blending(i_stp.eefm_wrench_alpha_blending);
   szd->set_alpha_cutoff_freq(i_stp.eefm_alpha_cutoff_freq);
   eefm_gravitational_acceleration = i_stp.eefm_gravitational_acceleration;
@@ -1482,7 +1483,7 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
             << ", eefm_pos_time_const_support = " << eefm_pos_time_const_support(0) << ", " << eefm_pos_time_const_support(1) << ", " << eefm_pos_time_const_support(2) << "[s], "
             << "eefm_pos_time_const_swing = " << eefm_pos_time_const_swing << "[s]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   eefm_pos_transition_time = " << eefm_pos_transition_time << "[s], eefm_pos_margin_time = " << eefm_pos_margin_time << "[s]" << std::endl;
-  std::cerr << "[" << m_profile.instance_name << "]   eefm_cogvel_cutoff_freq = " << eefm_cogvel_cutoff_freq << "[Hz]" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   cogvel_cutoff_freq = " << act_cogvel_filter->getCutOffFreq() << "[Hz]" << std::endl;
   szd->print_params(std::string(m_profile.instance_name));
   szd->print_vertices(std::string(m_profile.instance_name));
   std::cerr << "[" << m_profile.instance_name << "]   eefm_gravitational_acceleration = " << eefm_gravitational_acceleration << "[m/s^2]" << std::endl;
