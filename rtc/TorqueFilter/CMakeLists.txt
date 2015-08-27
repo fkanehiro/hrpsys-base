@@ -7,7 +7,13 @@ set_target_properties(TorqueFilter PROPERTIES PREFIX "")
 add_executable(TorqueFilterComp TorqueFilterComp.cpp ${comp_sources})
 target_link_libraries(TorqueFilterComp ${libs})
 
-set(target TorqueFilter TorqueFilterComp)
+add_executable(testIIRFilter testIIRFilter.cpp IIRFilter.cpp)
+target_link_libraries(testIIRFilter ${libs})
+
+set(target TorqueFilter TorqueFilterComp testIIRFilter)
+
+add_test(testIIRFilterDoubleTest0 testIIRFilter --double --test0 --use-gnuplot false)
+add_test(testIIRFilterVector3Test0 testIIRFilter --double --test0 --use-gnuplot false)
 
 install(TARGETS ${target}
   RUNTIME DESTINATION bin CONFIGURATIONS Release Debug
