@@ -43,6 +43,7 @@ private:
         hrp::Vector3 min_rfoot_pos(1e10,1e10,1e10), min_lfoot_pos(1e10,1e10,1e10), max_rfoot_pos(-1e10,-1e10,-1e10), max_lfoot_pos(-1e10,-1e10,-1e10);
         //
         hrp::Vector3 prev_refzmp;
+        std::vector<std::string> tmp_string_vector;
         while ( gg->proc_one_tick() ) {
             //std::cerr << gg->lcg.gp_count << std::endl;
             // if ( gg->lcg.gp_index == 4 && gg->lcg.gp_count == 100) {
@@ -69,13 +70,15 @@ private:
                 fprintf(fp, "%f ", cogpos);
             }
             // Foot pos
-            hrp::Vector3 rfoot_pos = (gg->get_support_leg_names() == boost::assign::list_of("rleg")) ? gg->get_support_leg_steps().front().worldcoords.pos : gg->get_swing_leg_steps().front().worldcoords.pos;
+            tmp_string_vector = boost::assign::list_of("rleg");
+            hrp::Vector3 rfoot_pos = (gg->get_support_leg_names() == tmp_string_vector) ? gg->get_support_leg_steps().front().worldcoords.pos : gg->get_swing_leg_steps().front().worldcoords.pos;
             for (size_t ii = 0; ii < 3; ii++) {
                 fprintf(fp, "%f ", rfoot_pos(ii));
                 min_rfoot_pos(ii) = std::min(min_rfoot_pos(ii), rfoot_pos(ii));
                 max_rfoot_pos(ii) = std::max(max_rfoot_pos(ii), rfoot_pos(ii));
             }
-            hrp::Vector3 lfoot_pos = (gg->get_support_leg_names() == boost::assign::list_of("lleg")) ? gg->get_support_leg_steps().front().worldcoords.pos : gg->get_swing_leg_steps().front().worldcoords.pos;
+            tmp_string_vector = boost::assign::list_of("lleg");
+            hrp::Vector3 lfoot_pos = (gg->get_support_leg_names() == tmp_string_vector) ? gg->get_support_leg_steps().front().worldcoords.pos : gg->get_swing_leg_steps().front().worldcoords.pos;
             for (size_t ii = 0; ii < 3; ii++) {
                 fprintf(fp, "%f ", lfoot_pos(ii));
                 min_lfoot_pos(ii) = std::min(min_lfoot_pos(ii), lfoot_pos(ii));
@@ -83,22 +86,26 @@ private:
             }
             // Foot rot
             hrp::Vector3 rpy;
-            hrp::Matrix33 rfoot_rot = (gg->get_support_leg_names() == boost::assign::list_of("rleg")) ? gg->get_support_leg_steps().front().worldcoords.rot : gg->get_swing_leg_steps().front().worldcoords.rot;
+            tmp_string_vector = boost::assign::list_of("rleg");
+            hrp::Matrix33 rfoot_rot = (gg->get_support_leg_names() == tmp_string_vector) ? gg->get_support_leg_steps().front().worldcoords.rot : gg->get_swing_leg_steps().front().worldcoords.rot;
             rpy = hrp::rpyFromRot(rfoot_rot);
             for (size_t ii = 0; ii < 3; ii++) {
                 fprintf(fp, "%f ", 180.0*rpy(ii)/M_PI);
             }
-            hrp::Matrix33 lfoot_rot = (gg->get_support_leg_names() == boost::assign::list_of("lleg")) ? gg->get_support_leg_steps().front().worldcoords.rot : gg->get_swing_leg_steps().front().worldcoords.rot;
+            tmp_string_vector = boost::assign::list_of("lleg");
+            hrp::Matrix33 lfoot_rot = (gg->get_support_leg_names() == tmp_string_vector) ? gg->get_support_leg_steps().front().worldcoords.rot : gg->get_swing_leg_steps().front().worldcoords.rot;
             rpy = hrp::rpyFromRot(lfoot_rot);
             for (size_t ii = 0; ii < 3; ii++) {
                 fprintf(fp, "%f ", 180.0*rpy(ii)/M_PI);
             }
             // ZMP offsets
+            tmp_string_vector = boost::assign::list_of("rleg");
             for (size_t ii = 0; ii < 3; ii++) {
-                fprintf(fp, "%f ", (gg->get_support_leg_names() == boost::assign::list_of("rleg")) ? gg->get_support_foot_zmp_offsets().front()(ii) : gg->get_swing_foot_zmp_offsets().front()(ii));
+                fprintf(fp, "%f ", (gg->get_support_leg_names() == tmp_string_vector) ? gg->get_support_foot_zmp_offsets().front()(ii) : gg->get_swing_foot_zmp_offsets().front()(ii));
             }
+            tmp_string_vector = boost::assign::list_of("lleg");
             for (size_t ii = 0; ii < 3; ii++) {
-                fprintf(fp, "%f ", (gg->get_support_leg_names() == boost::assign::list_of("lleg")) ? gg->get_support_foot_zmp_offsets().front()(ii) : gg->get_swing_foot_zmp_offsets().front()(ii));
+                fprintf(fp, "%f ", (gg->get_support_leg_names() == tmp_string_vector) ? gg->get_support_foot_zmp_offsets().front()(ii) : gg->get_swing_foot_zmp_offsets().front()(ii));
             }
             // Swing time
             fprintf(fp, "%f %f ",
@@ -326,7 +333,8 @@ private:
 
     void gen_and_plot_walk_pattern()
     {
-        if (gg->get_footstep_front_leg_names() == boost::assign::list_of("rleg")) {
+        std::vector<std::string> tmp_string_vector = boost::assign::list_of("rleg");
+        if (gg->get_footstep_front_leg_names() == tmp_string_vector) {
             step_node initial_support_leg_step = step_node(LLEG, coordinates(leg_pos[1]), 0, 0, 0, 0);
             step_node initial_swing_leg_dst_step = step_node(RLEG, coordinates(leg_pos[0]), 0, 0, 0, 0);
             gen_and_plot_walk_pattern(initial_support_leg_step, initial_swing_leg_dst_step);
@@ -484,7 +492,8 @@ public:
         mid_coords(start_ref_coords, 0.5, coordinates(initial_foot_mid_rot*leg_pos[1], initial_foot_mid_rot), coordinates(initial_foot_mid_rot*leg_pos[0], initial_foot_mid_rot));
         gg->go_pos_param_2_footstep_nodes_list(100*1e-3, 0, 0, boost::assign::list_of(coordinates(initial_foot_mid_rot*leg_pos[1], initial_foot_mid_rot)), start_ref_coords, boost::assign::list_of(LLEG));
 
-        if (gg->get_footstep_front_leg_names() == boost::assign::list_of("rleg")) {
+        std::vector<std::string> tmp_string_vector = boost::assign::list_of("rleg");
+        if (gg->get_footstep_front_leg_names() == tmp_string_vector) {
             step_node initial_support_leg_step = step_node(LLEG, coordinates(hrp::Vector3(initial_foot_mid_rot * leg_pos[1]), initial_foot_mid_rot), 0, 0, 0, 0);
             step_node initial_swing_leg_dst_step = step_node(RLEG, coordinates(hrp::Vector3(initial_foot_mid_rot * leg_pos[0]), initial_foot_mid_rot), 0, 0, 0, 0);
             gen_and_plot_walk_pattern(initial_support_leg_step, initial_swing_leg_dst_step);
