@@ -211,6 +211,12 @@ module OpenHRP
       /// Transition time [s] for adjust foot step
       double adjust_footstep_transition_time;
       StrSequence leg_names;
+      /// Flag for inverse kinematics (IK). If true, IK has failed before.
+      boolean has_ik_failed;
+      /// IK position threshold [m]
+      double pos_ik_thre;
+      /// IK rotation threshold [rad]
+      double rot_ik_thre;
     };
 
     /**

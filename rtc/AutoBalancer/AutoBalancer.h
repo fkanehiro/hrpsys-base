@@ -236,12 +236,13 @@ class AutoBalancer
   std::vector<hrp::Vector3> ref_forces;
 
   unsigned int m_debugLevel;
-  bool is_legged_robot, is_stop_mode;
+  bool is_legged_robot, is_stop_mode, has_ik_failed;
   int loop;
   bool graspless_manip_mode;
   std::string graspless_manip_arm;
   hrp::Vector3 graspless_manip_p_gain;
   rats::coordinates graspless_manip_reference_trans_coords;
+  double pos_ik_thre, rot_ik_thre;
 };
 
 
