@@ -129,11 +129,18 @@ public:
     //
     double calcAlpha (const hrp::Vector3& tmprefzmp,
                       const std::vector<hrp::Vector3>& ee_pos,
-                      const std::vector<hrp::Matrix33>& ee_rot)
+                      const std::vector<hrp::Matrix33>& ee_rot,
+                      const std::vector<std::string>& ee_name)
     {
         double alpha;
-        hrp::Vector3 l_local_zmp = ee_rot[1].transpose() * (tmprefzmp-ee_pos[1]);
-        hrp::Vector3 r_local_zmp = ee_rot[0].transpose() * (tmprefzmp-ee_pos[0]);
+        size_t l_idx, r_idx;
+        for (size_t i = 0; i < ee_name.size(); i++) {
+            if (ee_name[i]=="rleg") r_idx = i;
+            else l_idx = i;
+        }
+        hrp::Vector3 l_local_zmp = ee_rot[l_idx].transpose() * (tmprefzmp-ee_pos[l_idx]);
+        hrp::Vector3 r_local_zmp = ee_rot[r_idx].transpose() * (tmprefzmp-ee_pos[r_idx]);
+
         // std::cerr << "a " << l_local_zmp(0) << " " << l_local_zmp(1) << std::endl;
         // std::cerr << "b " << r_local_zmp(0) << " " << r_local_zmp(1) << std::endl;
         if ( is_inside_foot(l_local_zmp, true) && !is_front_of_foot(l_local_zmp) && !is_rear_of_foot(l_local_zmp)) { // new_refzmp is inside lfoot
@@ -155,7 +162,7 @@ public:
             } else {
                 ledge_foot = hrp::Vector3(-1 * leg_rear_margin, l_local_zmp(1), 0.0);
             }
-            ledge_foot = ee_rot[1] * ledge_foot + ee_pos[1];
+            ledge_foot = ee_rot[l_idx] * ledge_foot + ee_pos[l_idx];
             // rleg
             if (is_inside_foot(r_local_zmp, false) && is_front_of_foot(r_local_zmp)) {
                 redge_foot = hrp::Vector3(leg_front_margin, r_local_zmp(1), 0.0);
@@ -168,7 +175,7 @@ public:
             } else {
                 redge_foot = hrp::Vector3(-1 * leg_rear_margin, r_local_zmp(1), 0.0);
             }
-            redge_foot = ee_rot[0] * redge_foot + ee_pos[0];
+            redge_foot = ee_rot[r_idx] * redge_foot + ee_pos[r_idx];
             // calc alpha
             hrp::Vector3 difp = redge_foot - ledge_foot;
             alpha = difp.dot(tmprefzmp-ledge_foot)/difp.squaredNorm();
@@ -179,23 +186,39 @@ public:
         return alpha;
     };
 
-    void distributeZMPToForceMoments (hrp::Vector3* ref_foot_force, hrp::Vector3* ref_foot_moment,
-                                      const std::vector<hrp::Vector3>& ee_pos,
-                                      const std::vector<hrp::Vector3>& cop_pos,
-                                      const std::vector<hrp::Matrix33>& ee_rot,
-                                      const hrp::Vector3& new_refzmp, const hrp::Vector3& ref_zmp,
-                                      const double total_fz, const double dt, const bool printp = true, const std::string& print_str = "")
+    void calcAlphaVector (std::vector<double>& alpha_vector,
+                          std::vector<double>& fz_alpha_vector,
+                          const std::vector<hrp::Vector3>& ee_pos,
+                          const std::vector<hrp::Matrix33>& ee_rot,
+                          const std::vector<std::string>& ee_name,
+                          const hrp::Vector3& new_refzmp, const hrp::Vector3& ref_zmp, const double dt)
     {
-        double fz_alpha =  calcAlpha(ref_zmp, ee_pos, ee_rot);
-        double tmpalpha = calcAlpha(new_refzmp, ee_pos, ee_rot), alpha;
+        double fz_alpha =  calcAlpha(ref_zmp, ee_pos, ee_rot, ee_name);
+        double tmpalpha = calcAlpha(new_refzmp, ee_pos, ee_rot, ee_name), alpha;
         // LPF
         double const_param = 2 * M_PI * alpha_cutoff_freq * dt;
         alpha = 1.0/(1+const_param) * prev_alpha + const_param/(1+const_param) * tmpalpha;
         prev_alpha = tmpalpha;
         // Blending
         fz_alpha = wrench_alpha_blending * fz_alpha + (1-wrench_alpha_blending) * alpha;
-        ref_foot_force[0] = hrp::Vector3(0,0, fz_alpha * total_fz);
-        ref_foot_force[1] = hrp::Vector3(0,0, (1-fz_alpha) * total_fz);
+        for (size_t i = 0; i < ee_name.size(); i++) {
+            alpha_vector[i]= (ee_name[i]=="rleg") ? alpha : 1-alpha;
+            fz_alpha_vector[i]=(ee_name[i]=="rleg") ? fz_alpha : 1-fz_alpha;
+        }
+    };
+
+    void distributeZMPToForceMoments (hrp::Vector3* ref_foot_force, hrp::Vector3* ref_foot_moment,
+                                      const std::vector<hrp::Vector3>& ee_pos,
+                                      const std::vector<hrp::Vector3>& cop_pos,
+                                      const std::vector<hrp::Matrix33>& ee_rot,
+                                      const std::vector<std::string>& ee_name,
+                                      const hrp::Vector3& new_refzmp, const hrp::Vector3& ref_zmp,
+                                      const double total_fz, const double dt, const bool printp = true, const std::string& print_str = "")
+    {
+        std::vector<double> alpha_vector(2), fz_alpha_vector(2);
+        calcAlphaVector(alpha_vector, fz_alpha_vector, ee_pos, ee_rot, ee_name, new_refzmp, ref_zmp, dt);
+        ref_foot_force[0] = hrp::Vector3(0,0, fz_alpha_vector[0] * total_fz);
+        ref_foot_force[1] = hrp::Vector3(0,0, fz_alpha_vector[1] * total_fz);
 
         hrp::Vector3 tau_0 = hrp::Vector3::Zero();
 #if 0
@@ -253,10 +276,10 @@ public:
 //             ref_foot_moment[0] = foot_dist_coords_rot * ref_foot_moment[0];
 //             ref_foot_moment[1] = foot_dist_coords_rot * ref_foot_moment[1];
             //
-          ref_foot_moment[0](0) = tau_0(0) * alpha;
-          ref_foot_moment[1](0) = tau_0(0) * (1-alpha);
-          ref_foot_moment[0](1) = tau_0(1) * alpha;
-          ref_foot_moment[1](1) = tau_0(1) * (1-alpha);
+          ref_foot_moment[0](0) = tau_0(0) * alpha_vector[0];
+          ref_foot_moment[1](0) = tau_0(0) * alpha_vector[1];
+          ref_foot_moment[0](1) = tau_0(1) * alpha_vector[0];
+          ref_foot_moment[1](1) = tau_0(1) * alpha_vector[1];
           ref_foot_moment[0](2) = ref_foot_moment[1](2)= 0.0;
         }
 #if 0
@@ -336,7 +359,7 @@ public:
 #endif
 
         if (printp) {
-            std::cerr << "[" << print_str << "]   alpha = " << alpha << ", fz_alpha = " << fz_alpha << std::endl;
+            //std::cerr << "[" << print_str << "]   alpha = " << alpha << ", fz_alpha = " << fz_alpha << std::endl;
             std::cerr << "[" << print_str << "]   "
                       << "total_tau    = " << hrp::Vector3(tau_0).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[Nm]" << std::endl;
             std::cerr << "[" << print_str << "]   "
@@ -355,17 +378,12 @@ public:
                                         const std::vector<hrp::Vector3>& ee_pos,
                                         const std::vector<hrp::Vector3>& cop_pos,
                                         const std::vector<hrp::Matrix33>& ee_rot,
+                                        const std::vector<std::string>& ee_name,
                                         const hrp::Vector3& new_refzmp, const hrp::Vector3& ref_zmp,
                                         const double total_fz, const double dt, const bool printp = true, const std::string& print_str = "")
     {
-        double fz_alpha =  calcAlpha(ref_zmp, ee_pos, ee_rot);
-        double tmpalpha = calcAlpha(new_refzmp, ee_pos, ee_rot), alpha;
-        // LPF
-        double const_param = 2 * M_PI * alpha_cutoff_freq * dt;
-        alpha = 1.0/(1+const_param) * prev_alpha + const_param/(1+const_param) * tmpalpha;
-        prev_alpha = tmpalpha;
-        // Blending
-        fz_alpha = wrench_alpha_blending * fz_alpha + (1-wrench_alpha_blending) * alpha;
+        std::vector<double> alpha_vector(2), fz_alpha_vector(2);
+        calcAlphaVector(alpha_vector, fz_alpha_vector, ee_pos, ee_rot, ee_name, new_refzmp, ref_zmp, dt);
 
         // QP
         double norm_weight = 1e-7;
@@ -383,27 +401,18 @@ public:
         mm.push_back(hrp::dmatrix(3,state_dim_half));
         mm.push_back(hrp::dmatrix(3,state_dim_half));
         //
-        hrp::dmatrix Hmat(state_dim,state_dim);
-        hrp::dvector gvec(state_dim);
+        hrp::dmatrix Hmat = hrp::dmatrix::Zero(state_dim,state_dim);
+        hrp::dvector gvec = hrp::dvector::Zero(state_dim);
         double alpha_thre = 1e-20;
-        for (size_t i = 0; i < state_dim; i++) {
-            gvec(i) = 0.0;
-            for (size_t j = 0; j < state_dim; j++) {
-                if (i == j) {
-                    if (i < state_dim_half) {
-                        double tmpa = (fz_alpha < alpha_thre) ? 1/alpha_thre : 1/fz_alpha;
-                        Hmat(i,j) = norm_weight*tmpa;
-                    } else {
-                        double tmpa = (1-fz_alpha < alpha_thre) ? 1/alpha_thre : 1/(1-fz_alpha);
-                        Hmat(i,j) = norm_weight*tmpa;
-                    }
-                    //Hmat(i,j) = norm_weight;
-                } else {
-                    Hmat(i,j) = 0.0;
-                }
+        // fz_alpha inversion for weighing matrix
+        for (size_t i = 0; i < fz_alpha_vector.size(); i++) {
+            fz_alpha_vector[i] = (fz_alpha_vector[i] < alpha_thre) ? 1/alpha_thre : 1/fz_alpha_vector[i];
+        }
+        for (size_t j = 0; j < fz_alpha_vector.size(); j++) {
+            for (size_t i = 0; i < state_dim_half; i++) {
+                Hmat(i+j*state_dim_half,i+j*state_dim_half) = norm_weight * fz_alpha_vector[j];
             }
         }
-        //
         hrp::dmatrix Gmat(3,state_dim);
         for (size_t i = 0; i < state_dim; i++) {
             Gmat(0,i) = 1.0;
@@ -428,53 +437,30 @@ public:
         // std::cerr << total_fm << std::endl;
         //
         {
-            hrp::dmatrix Kmat(1,state_dim);
-            hrp::dmatrix KW(1,1);
-            hrp::dvector reff(1);
-            // rleg
-            for (size_t i = 0; i < 4; i++) {
-                Kmat(0,i) = 1.0;
-                Kmat(0,i+4) = 0.0;
+            hrp::dmatrix Kmat = hrp::dmatrix::Zero(2,state_dim);
+            hrp::dmatrix KW = hrp::dmatrix::Zero(2,2);
+            hrp::dvector reff(2);
+            for (size_t j = 0; j < 2; j++) {
+                for (size_t i = 0; i < state_dim_half; i++) {
+                    Kmat(j,i+j*state_dim_half) = 1.0;
+                }
+                reff(j) = total_fz/2.0;
             }
-            KW(0,0) = 0.0; // tmp
-            reff(0) = total_fz/2.0;
-            Hmat += Kmat.transpose() * KW * Kmat;
-            gvec += -1 * Kmat.transpose() * KW * reff;
-            // lleg
-            for (size_t i = 0; i < 4; i++) {
-                Kmat(0,i) = 0.0;
-                Kmat(0,i+4) = 1.0;
-            }
-            KW(0,0) = 0.0; // tmp
-            reff(0) = total_fz/2.0;
             Hmat += Kmat.transpose() * KW * Kmat;
             gvec += -1 * Kmat.transpose() * KW * reff;
         }
         {
-            hrp::dmatrix Cmat(2,state_dim);
-            hrp::dmatrix CW(2,2);
+            hrp::dmatrix Cmat = hrp::dmatrix::Zero(4,state_dim);
+            hrp::dmatrix CW = hrp::dmatrix::Zero(4,4);
             hrp::Vector3 fpos;
-            // rleg
-            for (size_t i = 0; i < 4; i++) {
-                fpos = ee_rot[0]*hrp::Vector3(fs.get_foot_vertex(0,i)(0), fs.get_foot_vertex(0,i)(1), 0) + ee_pos[0];
-                Cmat(0,i) = fpos(0) - cop_pos[0](0);
-                Cmat(1,i) = fpos(1) - cop_pos[0](1);
-                Cmat(0,i+4) = 0;
-                Cmat(1,i+4) = 0;
+            for (size_t j = 0; j < 2; j++) {
+                for (size_t i = 0; i < state_dim_half; i++) {
+                    fpos = ee_rot[j]*hrp::Vector3(fs.get_foot_vertex(j,i)(0), fs.get_foot_vertex(j,i)(1), 0) + ee_pos[j];
+                    Cmat(j*2,  i+j*state_dim_half) = fpos(0) - cop_pos[j](0);
+                    Cmat(j*2+1,i+j*state_dim_half) = fpos(1) - cop_pos[j](1);
+                }
+                CW(j*2,j*2) = CW(j*2+1,j*2+1) = cop_weight;
             }
-            CW(0,0) = CW(1,1) = cop_weight;
-            CW(0,1) = CW(1,0) = 0.0;
-            Hmat += Cmat.transpose() * CW * Cmat;
-            // lleg
-            for (size_t i = 0; i < 4; i++) {
-                fpos = ee_rot[1]*hrp::Vector3(fs.get_foot_vertex(1,i)(0), fs.get_foot_vertex(1,i)(1), 0) + ee_pos[1];
-                Cmat(0,i+4) = fpos(0) - cop_pos[1](0);
-                Cmat(1,i+4) = fpos(1) - cop_pos[1](1);
-                Cmat(0,i) = 0;
-                Cmat(1,i) = 0;
-            }
-            CW(0,0) = CW(1,1) = cop_weight;
-            CW(0,1) = CW(1,0) = 0.0;
             Hmat += Cmat.transpose() * CW * Cmat;
         }
         // std::cerr << "H " << Hmat << std::endl;
@@ -521,13 +507,11 @@ public:
         for (size_t fidx = 0; fidx < 2; fidx++) {
             tmpv = mm[fidx] * ff[fidx];
             ref_foot_force[fidx] = hrp::Vector3(0,0,tmpv(0));
-            ref_foot_moment[fidx] = hrp::Vector3(tmpv(1),tmpv(2),0);
+            ref_foot_moment[fidx] = -1*hrp::Vector3(tmpv(1),tmpv(2),0);
         }
-        ref_foot_moment[0] = -1 * ref_foot_moment[0];
-        ref_foot_moment[1] = -1 * ref_foot_moment[1];
         if (printp) {
             std::cerr << "[" << print_str << "] force moment distribution (QP)" << std::endl;
-            std::cerr << "[" << print_str << "]   alpha = " << alpha << ", fz_alpha = " << fz_alpha << std::endl;
+            //std::cerr << "[" << print_str << "]   alpha = " << alpha << ", fz_alpha = " << fz_alpha << std::endl;
             // std::cerr << "[" << print_str << "]   "
             //           << "total_tau    = " << hrp::Vector3(tau_0).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[Nm]" << std::endl;
             std::cerr << "[" << print_str << "]   "
@@ -545,11 +529,12 @@ public:
                                         const std::vector<hrp::Vector3>& ee_pos,
                                         const std::vector<hrp::Vector3>& cop_pos,
                                         const std::vector<hrp::Matrix33>& ee_rot,
+                                        const std::vector<std::string>& ee_name,
                                         const hrp::Vector3& new_refzmp, const hrp::Vector3& ref_zmp,
                                         const double total_fz, const double dt, const bool printp = true, const std::string& print_str = "")
     {
         distributeZMPToForceMoments(ref_foot_force, ref_foot_moment,
-                                    ee_pos, cop_pos, ee_rot,
+                                    ee_pos, cop_pos, ee_rot, ee_name,
                                     new_refzmp, ref_zmp,
                                     total_fz, dt, printp, print_str);
     };

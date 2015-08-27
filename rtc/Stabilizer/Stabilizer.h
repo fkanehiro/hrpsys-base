@@ -37,7 +37,6 @@
 /**
    \brief sample RT component which has one data input port and one data output port
  */
-#define ST_NUM_LEGS 2
 
 class Stabilizer
   : public RTC::DataFlowComponentBase
@@ -138,8 +137,6 @@ class Stabilizer
   RTC::TimedDoubleSeq m_qRef;
   RTC::TimedDoubleSeq m_tau;
   RTC::TimedOrientation3D m_rpy;
-  // RTC::TimedDoubleSeq m_forceR, m_forceL;
-  RTC::TimedDoubleSeq m_force[2];
   RTC::TimedPoint3D m_zmpRef;
   RTC::TimedPoint3D m_zmp;
   RTC::TimedPoint3D m_refCP;
@@ -168,8 +165,6 @@ class Stabilizer
   RTC::InPort<RTC::TimedDoubleSeq> m_qCurrentIn;
   RTC::InPort<RTC::TimedDoubleSeq> m_qRefIn;
   RTC::InPort<RTC::TimedOrientation3D> m_rpyIn;
-  RTC::InPort<RTC::TimedDoubleSeq> m_forceRIn;
-  RTC::InPort<RTC::TimedDoubleSeq> m_forceLIn;
   RTC::InPort<RTC::TimedPoint3D> m_zmpRefIn;
   RTC::InPort<RTC::TimedPoint3D> m_basePosIn;
   RTC::InPort<RTC::TimedOrientation3D> m_baseRpyIn;
@@ -180,6 +175,8 @@ class Stabilizer
 
   std::vector<RTC::TimedDoubleSeq> m_wrenches;
   std::vector<RTC::InPort<RTC::TimedDoubleSeq> *> m_wrenchesIn;
+  std::vector<RTC::TimedDoubleSeq> m_ref_wrenches;
+  std::vector<RTC::InPort<RTC::TimedDoubleSeq> *> m_ref_wrenchesIn;
   
   // </rtc-template>
 
@@ -223,11 +220,6 @@ class Stabilizer
   // </rtc-template>
 
  private:
-  // constant defines
-  enum {
-    ST_LEFT = 0,
-    ST_RIGHT = 1
-  };
   // Stabilizer Parameters
   struct STIKParam {
     std::string target_name; // Name of end link
@@ -263,7 +255,7 @@ class Stabilizer
   // TPCC
   double k_tpcc_p[2], k_tpcc_x[2], d_rpy[2], k_brot_p[2], k_brot_tc[2];
   // RUN ST
-  TwoDofController m_tau_x[ST_NUM_LEGS], m_tau_y[ST_NUM_LEGS], m_f_z;
+  TwoDofController m_tau_x[2], m_tau_y[2], m_f_z;
   hrp::Vector3 pdr;
   double m_torque_k[2], m_torque_d[2]; // 3D-LIP parameters (0: x, 1: y)
   double pangx_ref, pangy_ref, pangx, pangy;

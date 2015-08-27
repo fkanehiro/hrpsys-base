@@ -68,15 +68,15 @@ private:
         std::vector<std::vector<Eigen::Vector2d> > fs;
         szd->get_vertices(fs);
         for (size_t i = 0; i < refzmp_vec.size(); i++) {
-            double alpha = szd->calcAlpha(refzmp_vec[i], ee_pos, ee_rot);
+            double alpha = szd->calcAlpha(refzmp_vec[i], ee_pos, ee_rot, names);
             if (use_qp) {
                 szd->distributeZMPToForceMomentsQP(ref_foot_force, ref_foot_moment,
-                                                   ee_pos, cop_pos, ee_rot,
+                                                   ee_pos, cop_pos, ee_rot, names,
                                                    refzmp_vec[i], refzmp_vec[i],
                                                    total_fz, dt);
             } else {
                 szd->distributeZMPToForceMoments(ref_foot_force, ref_foot_moment,
-                                                 ee_pos, cop_pos, ee_rot,
+                                                 ee_pos, cop_pos, ee_rot, names,
                                                  refzmp_vec[i], refzmp_vec[i],
                                                  total_fz, dt);
             }
@@ -125,7 +125,7 @@ private:
         }
         fclose(fp_fm);
         if (use_gnuplot) {
-            fprintf(gp_m, "splot [-0.5:0.5][-0.5:0.5][-50:50] '/tmp/plotrleg.dat' using 1:2:3 with lines title 'rleg'\n");
+            fprintf(gp_m, "splot [-0.5:0.5][-0.5:0.5][-100:100] '/tmp/plotrleg.dat' using 1:2:3 with lines title 'rleg'\n");
             fprintf(gp_m, "replot '/tmp/plotlleg.dat' using 1:2:3 with lines title 'lleg'\n");
             fprintf(gp_m, "replot '/tmp/plot-fm.dat' using 1:2:5 with points title 'rleg nx' lw 5\n");
             fprintf(gp_m, "replot '/tmp/plot-fm.dat' using 1:2:6 with points title 'lleg nx' lw 5\n");

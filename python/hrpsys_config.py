@@ -361,12 +361,6 @@ class HrpsysConfigurator:
         # connection for st
         if rtm.findPort(self.rh.ref, "lfsensor") and rtm.findPort(
                                      self.rh.ref, "rfsensor") and self.st:
-            if self.rmfo:
-                connectPorts(self.rmfo.port("off_lfsensor"), self.st.port("forceL"))
-                connectPorts(self.rmfo.port("off_rfsensor"), self.st.port("forceR"))
-            else:
-                connectPorts(self.rh.port("lfsensor"), self.st.port("forceL"))
-                connectPorts(self.rh.port("rfsensor"), self.st.port("forceR"))
             connectPorts(self.kf.port("rpy"), self.st.port("rpy"))
             connectPorts(self.sh.port("zmpOut"), self.abc.port("zmpIn"))
             connectPorts(self.sh.port("basePosOut"), self.abc.port("basePosIn"))
@@ -410,6 +404,9 @@ class HrpsysConfigurator:
                 if self.ic:
                     connectPorts(self.rmfo.port("off_" + sen.name),
                                  self.ic.port(sen.name))
+                if self.st:
+                    connectPorts(self.rmfo.port("off_" + sen.name),
+                                 self.st.port(sen.name))
         elif self.ic: # if the robot does not have rmfo and kf, but have ic
             for sen in filter(lambda x: x.type == "Force", self.sensors):
                 connectPorts(self.rh.port(sen.name),
