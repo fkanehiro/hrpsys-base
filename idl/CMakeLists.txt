@@ -142,7 +142,7 @@ endforeach()
 install(CODE "execute_process(COMMAND omniidl -bpython -Wbpackage=hrpsys -Wbinline -C\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${python_dist_pkg_dir} -I${OPENRTM_IDL_DIR} ${idl_files} WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})")
 install(CODE "execute_process(COMMAND omniidl -bpython -Wbpackage=hrpsys -Wbinline -C\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${python_dist_pkg_dir} -I${OPENRTM_IDL_DIR} ${openhrp_idl_files} WORKING_DIRECTORY ${OPENHRP_IDL_DIR}/OpenHRP)")
 install(CODE "execute_process(COMMAND omniidl -bpython -Wbpackage=hrpsys -Wbinline -C\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${python_dist_pkg_dir} ${openrtm_idl_files} WORKING_DIRECTORY ${OPENRTM_IDL_DIR})")
-install(CODE "execute_process(COMMAND python -m compileall . WORKING_DIRECTORY ${python_dist_pkg_dir}/hrpsys)")
+install(CODE "execute_process(COMMAND python -m compileall hrpsys WORKING_DIRECTORY ${python_dist_pkg_dir})")
 install(FILES ${headers} DESTINATION include/hrpsys/idl)
 install(FILES ${idl_files} DESTINATION share/hrpsys/idl)
 
