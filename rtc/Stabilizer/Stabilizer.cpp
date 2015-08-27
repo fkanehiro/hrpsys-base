@@ -236,9 +236,9 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
       target_ee_p.push_back(hrp::Vector3::Zero());
       target_ee_R.push_back(hrp::Matrix33::Identity());
       target_ee_diff_p.push_back(hrp::Vector3::Zero());
-      prev_target_ee_diff_p.push_back(hrp::Vector3::Zero());
       target_ee_diff_r.push_back(hrp::Vector3::Zero());
       prev_target_ee_diff_r.push_back(hrp::Vector3::Zero());
+      target_ee_diff_p_filter.push_back(boost::shared_ptr<FirstOrderLowPassFilter<hrp::Vector3> >(new FirstOrderLowPassFilter<hrp::Vector3>(50.0, dt, hrp::Vector3::Zero()))); // [Hz]
       contact_states_index_map.insert(std::pair<std::string, size_t>(ee_name, i));
       is_ik_enable.push_back( (ee_name.find("leg") != std::string::npos ? true : false) ); // Hands ik => disabled, feet ik => enabled, by default
       std::cerr << "[" << m_profile.instance_name << "] End Effector [" << ee_name << "]" << std::endl;
@@ -280,7 +280,6 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   eefm_gravitational_acceleration = 9.80665; // [m/s^2]
   eefm_ee_pos_error_p_gain = 0;
   eefm_ee_rot_error_p_gain = 0;
-  eefm_ee_error_cutoff_freq = 50.0; // [Hz]
   cop_check_margin = 20.0*1e-3; // [m]
   cp_check_margin = 60.0*1e-3; // [m]
   contact_decision_threshold = 50; // [N]
@@ -1166,10 +1165,7 @@ void Stabilizer::calcEEForceMomentControl() {
 //               target_link_p[i] = target_ee_p[i];
 //               target_link_R[i] = target_ee_R[i];
             target_ee_diff_p[i] *= transition_smooth_gain;
-            double const_param = 2 * M_PI * eefm_ee_error_cutoff_freq * dt;
-            target_ee_diff_p[i] = 1.0/(1+const_param) * prev_target_ee_diff_p[i] + const_param/(1+const_param) * target_ee_diff_p[i];
-            tmpp = target_ee_p[i] + eefm_ee_pos_error_p_gain * target_foot_origin_rot * target_ee_diff_p[i]; // tempolarily disabled
-            prev_target_ee_diff_p[i] = target_ee_diff_p[i];
+            tmpp = target_ee_p[i] + eefm_ee_pos_error_p_gain * target_foot_origin_rot * target_ee_diff_p_filter[i]->passFilter(target_ee_diff_p[i]);// tempolarily disabled
             tmpR = target_ee_R[i];
           }
           // target at ee => target at link-origin
@@ -1247,7 +1243,6 @@ void Stabilizer::sync_2_st ()
   ee_d_foot_rpy[0] = ee_d_foot_rpy[1] = hrp::Vector3::Zero();
   for (size_t i = 0; i < stikp.size(); i++) {
     target_ee_diff_p[i] = hrp::Vector3::Zero();
-    prev_target_ee_diff_p[i] = hrp::Vector3::Zero();
     target_ee_diff_r[i] = hrp::Vector3::Zero();
     prev_target_ee_diff_r[i] = hrp::Vector3::Zero();
   }
@@ -1334,7 +1329,7 @@ void Stabilizer::getParameter(OpenHRP::StabilizerService::stParam& i_stp)
   i_stp.eefm_gravitational_acceleration = eefm_gravitational_acceleration;
   i_stp.eefm_ee_pos_error_p_gain = eefm_ee_pos_error_p_gain;
   i_stp.eefm_ee_rot_error_p_gain = eefm_ee_rot_error_p_gain;
-  i_stp.eefm_ee_error_cutoff_freq = eefm_ee_error_cutoff_freq;
+  i_stp.eefm_ee_error_cutoff_freq = target_ee_diff_p_filter[0]->getCutOffFreq();
   i_stp.is_ik_enable.length(is_ik_enable.size());
   for (size_t i = 0; i < is_ik_enable.size(); i++) {
       i_stp.is_ik_enable[i] = is_ik_enable[i];
@@ -1422,7 +1417,9 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
   eefm_gravitational_acceleration = i_stp.eefm_gravitational_acceleration;
   eefm_ee_pos_error_p_gain = i_stp.eefm_ee_pos_error_p_gain;
   eefm_ee_rot_error_p_gain = i_stp.eefm_ee_rot_error_p_gain;
-  eefm_ee_error_cutoff_freq = i_stp.eefm_ee_error_cutoff_freq;
+  for (size_t i = 0; i < target_ee_diff_p_filter.size(); i++) {
+      target_ee_diff_p_filter[i]->setCutOffFreq(i_stp.eefm_ee_error_cutoff_freq);
+  }
   if (is_ik_enable.size() != i_stp.is_ik_enable.length()) {
       std::cerr << "[" << m_profile.instance_name << "]   is_ik_enable cannot be set. Length " << is_ik_enable.size() << " != " << i_stp.is_ik_enable.length() << std::endl;
   } else if (control_mode != MODE_IDLE) {
@@ -1473,7 +1470,7 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
   szd->print_params(std::string(m_profile.instance_name));
   szd->print_vertices(std::string(m_profile.instance_name));
   std::cerr << "[" << m_profile.instance_name << "]   eefm_gravitational_acceleration = " << eefm_gravitational_acceleration << "[m/s^2]" << std::endl;
-  std::cerr << "[" << m_profile.instance_name << "]   eefm_ee_pos_error_p_gain = " << eefm_ee_pos_error_p_gain << ", eefm_ee_rot_error_p_gain = " << eefm_ee_rot_error_p_gain << ", eefm_ee_error_cutoff_freq = " << eefm_ee_error_cutoff_freq << "[Hz]" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   eefm_ee_pos_error_p_gain = " << eefm_ee_pos_error_p_gain << ", eefm_ee_rot_error_p_gain = " << eefm_ee_rot_error_p_gain << ", eefm_ee_error_cutoff_freq = " << target_ee_diff_p_filter[0]->getCutOffFreq() << "[Hz]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]  COMMON" << std::endl;
   if (control_mode == MODE_IDLE) {
     st_algorithm = i_stp.st_algorithm;
