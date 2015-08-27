@@ -1,17 +1,9 @@
 #!/usr/bin/env python
 
-try:
-    from hrpsys.hrpsys_config import *
-    import OpenHRP
-except:
-    print "import without hrpsys"
-    import rtm
-    from rtm import *
-    from OpenHRP import *
-    import waitInput
-    from waitInput import *
-    import socket
-    import time
+from hrpsys.hrpsys_config import *
+from hrpsys import OpenHRP
+import sys
+import time
 
 def init ():
     global hcf, init_pose, reset_pose, hrpsys_version

@@ -14,7 +14,7 @@ except:
 
 from hrpsys.hrpsys_config import *
 from hrpsys import rtm
-import OpenHRP
+from hrpsys import OpenHRP
 
 import argparse
 import unittest
@@ -28,7 +28,7 @@ class TestHrpsysConfig(unittest.TestCase):
 
     def test_import_waitinput(self):
         # https://github.com/start-jsk/rtmros_hironx/blob/groovy-devel/hironx_ros_bridge/src/hironx_ros_bridge/hironx_client.py
-        from waitInput import waitInputConfirm, waitInputSelect
+        from hrpsys.waitInput import waitInputConfirm, waitInputSelect
         self.assertTrue(True)
 
     def test_findcomp(self):
