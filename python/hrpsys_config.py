@@ -710,7 +710,7 @@ class HrpsysConfigurator:
         '''
         import CosNaming
         obj = rtm.rootnc.resolve([CosNaming.NameComponent('ModelLoader', '')])
-        mdlldr = obj._narrow(ModelLoader_idl._0_OpenHRP__POA.ModelLoader)
+        mdlldr = obj._narrow(ModelLoader)
         url = self.parseUrl(url)
         print(self.configurator_name + "  bodyinfo URL = file://" + url)
         return mdlldr.getBodyInfo("file://" + url)
