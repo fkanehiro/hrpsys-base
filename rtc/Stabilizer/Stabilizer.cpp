@@ -520,11 +520,11 @@ RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
       m_refWrenchR.data[3] = ref_foot_moment[0](0); m_refWrenchR.data[4] = ref_foot_moment[0](1); m_refWrenchR.data[5] = ref_foot_moment[0](2);
       m_refWrenchL.data[0] = ref_foot_force[1](0); m_refWrenchL.data[1] = ref_foot_force[1](1); m_refWrenchL.data[2] = ref_foot_force[1](2);
       m_refWrenchL.data[3] = ref_foot_moment[1](0); m_refWrenchL.data[4] = ref_foot_moment[1](1); m_refWrenchL.data[5] = ref_foot_moment[1](2);
-      m_footCompR.data[0] = d_foot_pos[0](0); m_footCompL.data[0] = d_foot_pos[1](0);
-      m_footCompR.data[1] = d_foot_pos[0](1); m_footCompL.data[1] = d_foot_pos[1](1);
-      m_footCompR.data[2] = d_foot_pos[0](2); m_footCompL.data[2] = d_foot_pos[1](2);
-      m_footCompR.data[3] = d_foot_rpy[0](0); m_footCompR.data[4] = d_foot_rpy[0](1);
-      m_footCompL.data[3] = d_foot_rpy[1](0); m_footCompL.data[4] = d_foot_rpy[1](1);
+      m_footCompR.data[0] = stikp[0].d_foot_pos(0); m_footCompL.data[0] = stikp[1].d_foot_pos(0);
+      m_footCompR.data[1] = stikp[0].d_foot_pos(1); m_footCompL.data[1] = stikp[1].d_foot_pos(1);
+      m_footCompR.data[2] = stikp[0].d_foot_pos(2); m_footCompL.data[2] = stikp[1].d_foot_pos(2);
+      m_footCompR.data[3] = stikp[0].d_foot_rpy(0); m_footCompR.data[4] = stikp[0].d_foot_rpy(1);
+      m_footCompL.data[3] = stikp[1].d_foot_rpy(0); m_footCompL.data[4] = stikp[1].d_foot_rpy(1);
       m_originRefZmpOut.write();
       m_originRefCogOut.write();
       m_originRefCogVelOut.write();
@@ -765,12 +765,12 @@ void Stabilizer::getActualParameters ()
         fz[i] = sensor_force(2);
         // calcDampingControl
         double tmp_damping_gain = (1-transition_smooth_gain) * eefm_rot_damping_gain * 10 + transition_smooth_gain * eefm_rot_damping_gain;
-        d_foot_rpy[i](0) = calcDampingControl(ref_foot_moment[i](0), ee_moment(0), d_foot_rpy[i](0), tmp_damping_gain, eefm_rot_time_const);
-        d_foot_rpy[i](1) = calcDampingControl(ref_foot_moment[i](1), ee_moment(1), d_foot_rpy[i](1), tmp_damping_gain, eefm_rot_time_const);
-        d_foot_rpy[i](0) = vlimit(d_foot_rpy[i](0), deg2rad(-10.0), deg2rad(10.0));
-        d_foot_rpy[i](1) = vlimit(d_foot_rpy[i](1), deg2rad(-10.0), deg2rad(10.0));
+        ikp.d_foot_rpy(0) = calcDampingControl(ref_foot_moment[i](0), ee_moment(0), ikp.d_foot_rpy(0), tmp_damping_gain, eefm_rot_time_const);
+        ikp.d_foot_rpy(1) = calcDampingControl(ref_foot_moment[i](1), ee_moment(1), ikp.d_foot_rpy(1), tmp_damping_gain, eefm_rot_time_const);
+        ikp.d_foot_rpy(0) = vlimit(ikp.d_foot_rpy(0), deg2rad(-10.0), deg2rad(10.0));
+        ikp.d_foot_rpy(1) = vlimit(ikp.d_foot_rpy(1), deg2rad(-10.0), deg2rad(10.0));
         // Actual ee frame =>
-        ee_d_foot_rpy[i] = (target->R * ikp.localR).transpose() * d_foot_rpy[i];
+        ikp.ee_d_foot_rpy = (target->R * ikp.localR).transpose() * ikp.d_foot_rpy;
       }
       // Convert actual world frame => actual foot_origin frame for debug data port
       ref_foot_moment[0] = foot_origin_rot.transpose() * ref_foot_moment[0];
@@ -816,15 +816,15 @@ void Stabilizer::getActualParameters ()
       // Convert pos_ctrl actual frame => foot origin frame
       pos_ctrl = foot_origin_rot.transpose() * pos_ctrl;
       // Divide pos_ctrl into rfoot and lfoot
-      d_foot_pos[0] = -0.5 * pos_ctrl;
-      d_foot_pos[1] = 0.5 * pos_ctrl;
+      stikp[0].d_foot_pos = -0.5 * pos_ctrl;
+      stikp[1].d_foot_pos = 0.5 * pos_ctrl;
       if (DEBUGP) {
         std::cerr << "[" << m_profile.instance_name << "] Control values" << std::endl;
         std::cerr << "[" << m_profile.instance_name << "]   "
                   << "pos_ctrl    = [" << pos_ctrl(0)*1e3 << " " << pos_ctrl(1)*1e3 << " "<< pos_ctrl(2)*1e3 << "] [mm]" << std::endl;
         for (size_t i = 0; i < ee_name.size(); i++) {
             std::cerr << "[" << m_profile.instance_name << "]   "
-                      << "d_foot_rpy (" << ee_name[i] << ")  = [" << d_foot_rpy[i](0)*180.0/M_PI << " " << d_foot_rpy[i](1)*180.0/M_PI << "] [deg]" << std::endl;
+                      << "d_foot_rpy (" << ee_name[i] << ")  = [" << stikp[i].d_foot_rpy(0)*180.0/M_PI << " " << stikp[i].d_foot_rpy(1)*180.0/M_PI << "] [deg]" << std::endl;
         }
       }
       // foot force independent damping control
@@ -1143,7 +1143,7 @@ void Stabilizer::calcEEForceMomentControl() {
       hrp::Matrix33 foot_origin_rot;
       calcFootOriginCoords (foot_origin_pos, foot_origin_rot);
       for (size_t i = 0; i < 2; i++)
-          d_foot_pos[i] = foot_origin_rot * d_foot_pos[i];
+          stikp[i].d_foot_pos = foot_origin_rot * stikp[i].d_foot_pos;
 
       // Feet and hands modification
       hrp::Vector3 target_link_p[stikp.size()];
@@ -1154,13 +1154,13 @@ void Stabilizer::calcEEForceMomentControl() {
           hrp::Matrix33 tmpR; // modified ee Rot
           if ( stikp[i].ee_name.find("leg") != std::string::npos ) {
               // moment control
-              rats::rotm3times(tmpR, target_ee_R[i], hrp::rotFromRpy(-ee_d_foot_rpy[i](0), -ee_d_foot_rpy[i](1), 0));
+              rats::rotm3times(tmpR, target_ee_R[i], hrp::rotFromRpy(-stikp[i].ee_d_foot_rpy(0), -stikp[i].ee_d_foot_rpy(1), 0));
               // total_target_foot_p[i](0) = target_foot_p[i](0);
               // total_target_foot_p[i](1) = target_foot_p[i](1);
               // foot force difference control version
               // total_target_foot_p[i](2) = target_foot_p[i](2) + (i==0?0.5:-0.5)*zctrl;
               // foot force independent damping control
-              tmpp = target_ee_p[i] - d_foot_pos[i];
+              tmpp = target_ee_p[i] - stikp[i].d_foot_pos;
           } else {
 //               target_link_p[i] = target_ee_p[i];
 //               target_link_R[i] = target_ee_R[i];
@@ -1238,13 +1238,13 @@ void Stabilizer::sync_2_st ()
   rdx = rdy = rx = ry = 0;
   d_rpy[0] = d_rpy[1] = 0;
   pdr = hrp::Vector3::Zero();
-  pos_ctrl = d_foot_pos[0] = d_foot_pos[1] = hrp::Vector3::Zero();
-  d_foot_rpy[0] = d_foot_rpy[1] = hrp::Vector3::Zero();
-  ee_d_foot_rpy[0] = ee_d_foot_rpy[1] = hrp::Vector3::Zero();
+  pos_ctrl = hrp::Vector3::Zero();
   for (size_t i = 0; i < stikp.size(); i++) {
     target_ee_diff_p[i] = hrp::Vector3::Zero();
     target_ee_diff_r[i] = hrp::Vector3::Zero();
     prev_target_ee_diff_r[i] = hrp::Vector3::Zero();
+    STIKParam& ikp = stikp[i];
+    ikp.d_foot_pos = ikp.d_foot_rpy = ikp.ee_d_foot_rpy = hrp::Vector3::Zero();
   }
   if (on_ground) {
     transition_count = -1 * transition_time / dt;
