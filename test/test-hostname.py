@@ -15,7 +15,7 @@ except:
 from hrpsys import hrpsys_config
 
 import socket
-import rtm
+from hrpsys import rtm
 
 import unittest
 import time
