@@ -334,8 +334,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   foot_origin_offset[1] = hrp::Vector3::Zero();
 
   //
-  act_cogvel_filter = boost::shared_ptr<FirstOrderLowPassFilter<hrp::Vector3> >(new FirstOrderLowPassFilter<hrp::Vector3>(4.0, dt)); // [Hz]
-  act_cogvel_filter->reset(hrp::Vector3::Zero());
+  act_cogvel_filter = boost::shared_ptr<FirstOrderLowPassFilter<hrp::Vector3> >(new FirstOrderLowPassFilter<hrp::Vector3>(4.0, dt, hrp::Vector3::Zero())); // [Hz]
 
   // for debug output
   m_originRefZmp.data.x = m_originRefZmp.data.y = m_originRefZmp.data.z = 0.0;

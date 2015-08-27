@@ -51,13 +51,16 @@ class IIRFilter
 
 };
 
+/**
+   First order low pass filter
+ */
 template <class T> class FirstOrderLowPassFilter
 {
 private:
     T prev_value;
     double cutoff_freq, dt, const_param;
 public:
-    FirstOrderLowPassFilter (const double _cutoff_freq, const double _dt) : dt(_dt)
+    FirstOrderLowPassFilter (const double _cutoff_freq, const double _dt, const T init_value) : dt(_dt), prev_value(init_value)
     {
         setCutOffFreq(_cutoff_freq);
     };

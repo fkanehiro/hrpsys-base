@@ -8,13 +8,6 @@
 #include <vector>
 #include <boost/shared_ptr.hpp>
 
-#ifndef rad2deg
-#define rad2deg(rad) (rad * 180 / M_PI)
-#endif
-#ifndef deg2rad
-#define deg2rad(deg) (deg * M_PI / 180)
-#endif
-
 class testIIRFilter
 {
 protected:
@@ -44,10 +37,7 @@ protected:
     };
 public:
     std::vector<std::string> arg_strs;
-    testIIRFilter (const double _dt = 0.004) : dt(_dt), input_freq(1.0), filter(boost::shared_ptr<FirstOrderLowPassFilter<double> >(new FirstOrderLowPassFilter<double>(4.0, dt))), use_gnuplot(true)
-    {
-        filter->reset(0);
-    };
+    testIIRFilter (const double _dt = 0.004) : dt(_dt), input_freq(1.0), filter(boost::shared_ptr<FirstOrderLowPassFilter<double> >(new FirstOrderLowPassFilter<double>(4.0, dt, 0))), use_gnuplot(true) {};
     void test0 ()
     {
         std::cerr << "test0 : test" << std::endl;

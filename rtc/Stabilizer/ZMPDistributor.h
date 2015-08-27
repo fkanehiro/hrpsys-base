@@ -57,8 +57,7 @@ class SimpleZMPDistributor
 public:
     SimpleZMPDistributor (const double _dt) : wrench_alpha_blending (0.5)
     {
-        alpha_filter = boost::shared_ptr<FirstOrderLowPassFilter<double> >(new FirstOrderLowPassFilter<double>(1e7, _dt)); // [Hz], Almost no filter by default
-        alpha_filter->reset(0.5);
+        alpha_filter = boost::shared_ptr<FirstOrderLowPassFilter<double> >(new FirstOrderLowPassFilter<double>(1e7, _dt, 0.5)); // [Hz], Almost no filter by default
     };
 
     inline bool is_inside_foot (const hrp::Vector3& leg_pos, const bool is_lleg, const double margin = 0.0)
