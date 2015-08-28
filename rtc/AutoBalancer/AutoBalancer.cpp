@@ -142,14 +142,6 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     control_mode = MODE_IDLE;
     loop = 0;
 
-    zmp_interpolator = new interpolator(6, m_dt);
-    zmp_transition_time = 1.0;
-    transition_interpolator = new interpolator(1, m_dt, interpolator::HOFFARBIB, 1);
-    transition_interpolator_ratio = 1.0;
-    adjust_footstep_interpolator = new interpolator(1, m_dt, interpolator::HOFFARBIB, 1);
-    transition_time = 2.0;
-    adjust_footstep_transition_time = 2.0;
-
     // setting from conf file
     // GaitGenerator requires abc_leg_offset and abc_stride_parameter in robot conf file
     // setting leg_pos from conf file
@@ -164,21 +156,6 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     }
     leg_names.push_back("rleg");
     leg_names.push_back("lleg");
-    // setting stride limitations from conf file
-    double stride_fwd_x_limit = 0.15;
-    double stride_y_limit = 0.05;
-    double stride_th_limit = 10;
-    double stride_bwd_x_limit = 0.05;
-    std::cerr << "[" << m_profile.instance_name << "] abc_stride_parameter : " << stride_fwd_x_limit << "[m], " << stride_y_limit << "[m], " << stride_th_limit << "[deg], " << stride_bwd_x_limit << "[m]" << std::endl;
-    if (default_zmp_offsets.size() == 0) {
-      for (size_t i = 0; i < leg_pos.size(); i++) default_zmp_offsets.push_back(hrp::Vector3::Zero());
-    }
-    if (leg_offset_str.size() > 0) {
-      gg = ggPtr(new rats::gait_generator(m_dt, leg_pos, leg_names, stride_fwd_x_limit/*[m]*/, stride_y_limit/*[m]*/, stride_th_limit/*[deg]*/, stride_bwd_x_limit/*[m]*/));
-      gg->set_default_zmp_offsets(default_zmp_offsets);
-    }
-    gg_is_walking = gg_solved = false;
-    fix_leg_coords = coordinates();
 
     // setting from conf file
     // rleg,TARGET_LINK,BASE_LINK
@@ -229,6 +206,30 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
       m_controlSwingSupportTime.data.length(num);
       for (size_t i = 0; i < num; i++) m_controlSwingSupportTime.data[i] = 0.0;
     }
+
+    zmp_interpolator = new interpolator(6, m_dt);
+    zmp_transition_time = 1.0;
+    transition_interpolator = new interpolator(1, m_dt, interpolator::HOFFARBIB, 1);
+    transition_interpolator_ratio = 1.0;
+    adjust_footstep_interpolator = new interpolator(1, m_dt, interpolator::HOFFARBIB, 1);
+    transition_time = 2.0;
+    adjust_footstep_transition_time = 2.0;
+
+    // setting stride limitations from conf file
+    double stride_fwd_x_limit = 0.15;
+    double stride_y_limit = 0.05;
+    double stride_th_limit = 10;
+    double stride_bwd_x_limit = 0.05;
+    std::cerr << "[" << m_profile.instance_name << "] abc_stride_parameter : " << stride_fwd_x_limit << "[m], " << stride_y_limit << "[m], " << stride_th_limit << "[deg], " << stride_bwd_x_limit << "[m]" << std::endl;
+    if (default_zmp_offsets.size() == 0) {
+      for (size_t i = 0; i < leg_pos.size(); i++) default_zmp_offsets.push_back(hrp::Vector3::Zero());
+    }
+    if (leg_offset_str.size() > 0) {
+      gg = ggPtr(new rats::gait_generator(m_dt, leg_pos, leg_names, stride_fwd_x_limit/*[m]*/, stride_y_limit/*[m]*/, stride_th_limit/*[deg]*/, stride_bwd_x_limit/*[m]*/));
+      gg->set_default_zmp_offsets(default_zmp_offsets);
+    }
+    gg_is_walking = gg_solved = false;
+    fix_leg_coords = coordinates();
 
     // load virtual force sensors
     readVirtualForceSensorParamFromProperties(m_vfs, m_robot, prop["virtual_force_sensor"], std::string(m_profile.instance_name));
