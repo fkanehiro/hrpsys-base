@@ -475,8 +475,8 @@ namespace rats
         rg.push_refzmp_from_footstep_nodes_for_single(footstep_nodes_list.at(i), lcg.get_support_leg_steps_idx(i));
     }
     rg.push_refzmp_from_footstep_nodes_for_dual(footstep_nodes_list.back(),
-                                                lcg.get_swing_leg_dst_steps_idx(footstep_nodes_list.size()-1),
-                                                lcg.get_support_leg_steps_idx(footstep_nodes_list.size()-1));
+                                                lcg.get_support_leg_steps_idx(footstep_nodes_list.size()-1),
+                                                lcg.get_swing_leg_dst_steps_idx(footstep_nodes_list.size()-1));
     emergency_flg = IDLING;
   };
 
