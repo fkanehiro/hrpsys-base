@@ -283,9 +283,9 @@ RTC::ReturnCode_t SoftErrorLimiter::onExecute(RTC::UniqueId ec_id)
         }
         // fix joint angle
         if ( llimit > m_qRef.data[i] && prev_angle[i] > m_qRef.data[i] ) // ref < llimit and prev < ref -> OK
-          m_qRef.data[i] = prev_angle[i];
+          m_qRef.data[i] = llimit;
         if ( ulimit < m_qRef.data[i] && prev_angle[i] < m_qRef.data[i] ) // ulimit < ref and ref < prev -> OK
-          m_qRef.data[i] = prev_angle[i];
+          m_qRef.data[i] = ulimit;
         m_servoState.data[i][0] |= (0x200 << OpenHRP::RobotHardwareService::SERVO_ALARM_SHIFT);
         position_limit_error = true;
       }
