@@ -26,6 +26,7 @@
 #include "ZMPDistributor.h"
 #include "../ImpedanceController/JointPathEx.h"
 #include "../ImpedanceController/RatsMatrix.h"
+#include "../TorqueFilter/IIRFilter.h"
 
 // </rtc-template>
 
@@ -37,7 +38,6 @@
 /**
    \brief sample RT component which has one data input port and one data output port
  */
-#define ST_NUM_LEGS 2
 
 class Stabilizer
   : public RTC::DataFlowComponentBase
@@ -112,6 +112,7 @@ class Stabilizer
   bool calcZMP(hrp::Vector3& ret_zmp, const double zmp_z);
   void calcStateForEmergencySignal();
   void calcRUNST();
+  void moveBasePosRotForBodyRPYControl ();
   void calcTPCC();
   void calcEEForceMomentControl();
   void getParameter(OpenHRP::StabilizerService::stParam& i_stp);
@@ -138,8 +139,6 @@ class Stabilizer
   RTC::TimedDoubleSeq m_qRef;
   RTC::TimedDoubleSeq m_tau;
   RTC::TimedOrientation3D m_rpy;
-  // RTC::TimedDoubleSeq m_forceR, m_forceL;
-  RTC::TimedDoubleSeq m_force[2];
   RTC::TimedPoint3D m_zmpRef;
   RTC::TimedPoint3D m_zmp;
   RTC::TimedPoint3D m_refCP;
@@ -168,8 +167,6 @@ class Stabilizer
   RTC::InPort<RTC::TimedDoubleSeq> m_qCurrentIn;
   RTC::InPort<RTC::TimedDoubleSeq> m_qRefIn;
   RTC::InPort<RTC::TimedOrientation3D> m_rpyIn;
-  RTC::InPort<RTC::TimedDoubleSeq> m_forceRIn;
-  RTC::InPort<RTC::TimedDoubleSeq> m_forceLIn;
   RTC::InPort<RTC::TimedPoint3D> m_zmpRefIn;
   RTC::InPort<RTC::TimedPoint3D> m_basePosIn;
   RTC::InPort<RTC::TimedOrientation3D> m_baseRpyIn;
@@ -180,6 +177,8 @@ class Stabilizer
 
   std::vector<RTC::TimedDoubleSeq> m_wrenches;
   std::vector<RTC::InPort<RTC::TimedDoubleSeq> *> m_wrenchesIn;
+  std::vector<RTC::TimedDoubleSeq> m_ref_wrenches;
+  std::vector<RTC::InPort<RTC::TimedDoubleSeq> *> m_ref_wrenchesIn;
   
   // </rtc-template>
 
@@ -223,11 +222,6 @@ class Stabilizer
   // </rtc-template>
 
  private:
-  // constant defines
-  enum {
-    ST_LEFT = 0,
-    ST_RIGHT = 1
-  };
   // Stabilizer Parameters
   struct STIKParam {
     std::string target_name; // Name of end link
@@ -251,19 +245,21 @@ class Stabilizer
   bool is_legged_robot, on_ground, is_emergency, is_seq_interpolating;
   hrp::Vector3 current_root_p, target_root_p;
   hrp::Matrix33 current_root_R, target_root_R, prev_act_foot_origin_rot, prev_ref_foot_origin_rot, target_foot_origin_rot;
-  std::vector <hrp::Vector3> target_ee_p, target_ee_diff_p, prev_target_ee_diff_p, target_ee_diff_r, prev_target_ee_diff_r;
+  std::vector <hrp::Vector3> target_ee_p, target_ee_diff_p, target_ee_diff_r, prev_target_ee_diff_r;
   std::vector <hrp::Matrix33> target_ee_R;
   rats::coordinates target_foot_midcoords;
   hrp::Vector3 ref_zmp, ref_cog, ref_cp, ref_cogvel, prev_ref_cog, prev_ref_zmp;
-  hrp::Vector3 act_zmp, act_cog, act_cogvel, act_cp, rel_act_zmp, prev_act_cog, prev_act_cogvel, act_base_rpy, current_base_rpy, current_base_pos;
+  hrp::Vector3 act_zmp, act_cog, act_cogvel, act_cp, rel_act_zmp, prev_act_cog, act_base_rpy, current_base_rpy, current_base_pos;
   hrp::Vector3 foot_origin_offset[2];
   double zmp_origin_off, transition_smooth_gain, prev_act_force_z[2];
+  boost::shared_ptr<FirstOrderLowPassFilter<hrp::Vector3> > act_cogvel_filter;
+  std::vector<boost::shared_ptr<FirstOrderLowPassFilter<hrp::Vector3> > > target_ee_diff_p_filter;
   OpenHRP::StabilizerService::STAlgorithm st_algorithm;
   SimpleZMPDistributor* szd;
   // TPCC
   double k_tpcc_p[2], k_tpcc_x[2], d_rpy[2], k_brot_p[2], k_brot_tc[2];
   // RUN ST
-  TwoDofController m_tau_x[ST_NUM_LEGS], m_tau_y[ST_NUM_LEGS], m_f_z;
+  TwoDofController m_tau_x[2], m_tau_y[2], m_f_z;
   hrp::Vector3 pdr;
   double m_torque_k[2], m_torque_d[2]; // 3D-LIP parameters (0: x, 1: y)
   double pangx_ref, pangy_ref, pangx, pangy;
@@ -271,7 +267,7 @@ class Stabilizer
   double rdx, rdy, rx, ry;
   // EEFM ST
   double eefm_k1[2], eefm_k2[2], eefm_k3[2], eefm_zmp_delay_time_const[2], eefm_body_attitude_control_gain[2], eefm_body_attitude_control_time_const[2];
-  double eefm_rot_damping_gain, eefm_rot_time_const, eefm_pos_time_const_swing, eefm_pos_transition_time, eefm_pos_margin_time, eefm_cogvel_cutoff_freq, eefm_gravitational_acceleration, eefm_ee_pos_error_p_gain, eefm_ee_rot_error_p_gain, eefm_ee_error_cutoff_freq;
+  double eefm_rot_damping_gain, eefm_rot_time_const, eefm_pos_time_const_swing, eefm_pos_transition_time, eefm_pos_margin_time, eefm_gravitational_acceleration, eefm_ee_pos_error_p_gain, eefm_ee_rot_error_p_gain;
   hrp::Vector3 d_foot_rpy[2], new_refzmp, rel_cog, ref_zmp_aux, ee_d_foot_rpy[2], eefm_pos_damping_gain, eefm_pos_time_const_support;
   hrp::Vector3 ref_foot_force[2];
   hrp::Vector3 ref_foot_moment[2];

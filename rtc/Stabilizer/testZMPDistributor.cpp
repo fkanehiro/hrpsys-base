@@ -68,15 +68,15 @@ private:
         std::vector<std::vector<Eigen::Vector2d> > fs;
         szd->get_vertices(fs);
         for (size_t i = 0; i < refzmp_vec.size(); i++) {
-            double alpha = szd->calcAlpha(refzmp_vec[i], ee_pos, ee_rot);
+            double alpha = szd->calcAlpha(refzmp_vec[i], ee_pos, ee_rot, names);
             if (use_qp) {
                 szd->distributeZMPToForceMomentsQP(ref_foot_force, ref_foot_moment,
-                                                   ee_pos, cop_pos, ee_rot,
+                                                   ee_pos, cop_pos, ee_rot, names,
                                                    refzmp_vec[i], refzmp_vec[i],
                                                    total_fz, dt);
             } else {
                 szd->distributeZMPToForceMoments(ref_foot_force, ref_foot_moment,
-                                                 ee_pos, cop_pos, ee_rot,
+                                                 ee_pos, cop_pos, ee_rot, names,
                                                  refzmp_vec[i], refzmp_vec[i],
                                                  total_fz, dt);
             }
@@ -125,7 +125,7 @@ private:
         }
         fclose(fp_fm);
         if (use_gnuplot) {
-            fprintf(gp_m, "splot [-0.5:0.5][-0.5:0.5][-50:50] '/tmp/plotrleg.dat' using 1:2:3 with lines title 'rleg'\n");
+            fprintf(gp_m, "splot [-0.5:0.5][-0.5:0.5][-100:100] '/tmp/plotrleg.dat' using 1:2:3 with lines title 'rleg'\n");
             fprintf(gp_m, "replot '/tmp/plotlleg.dat' using 1:2:3 with lines title 'lleg'\n");
             fprintf(gp_m, "replot '/tmp/plot-fm.dat' using 1:2:5 with points title 'rleg nx' lw 5\n");
             fprintf(gp_m, "replot '/tmp/plot-fm.dat' using 1:2:6 with points title 'lleg nx' lw 5\n");
@@ -151,9 +151,9 @@ private:
     };
 public:
     std::vector<std::string> arg_strs;
-    testZMPDistributor() : use_qp(true), use_gnuplot(true), sleep_msec(100)
+    testZMPDistributor(const double _dt) : dt(_dt), use_qp(true), use_gnuplot(true), sleep_msec(100)
     {
-        szd = new SimpleZMPDistributor();
+        szd = new SimpleZMPDistributor(_dt);
     };
     virtual ~testZMPDistributor()
     {
@@ -217,9 +217,8 @@ public:
 class testZMPDistributorHRP2JSK : public testZMPDistributor
 {
  public:
-    testZMPDistributorHRP2JSK ()
+    testZMPDistributorHRP2JSK () : testZMPDistributor(0.004)
         {
-            dt = 0.004;
             total_fz = 56*9.8066;
             szd->set_leg_inside_margin(0.070104);
             szd->set_leg_outside_margin(0.070104);
@@ -234,9 +233,8 @@ class testZMPDistributorHRP2JSK : public testZMPDistributor
 class testZMPDistributorJAXON_RED : public testZMPDistributor
 {
  public:
-    testZMPDistributorJAXON_RED ()
+    testZMPDistributorJAXON_RED () : testZMPDistributor(0.002)
         {
-            dt = 0.002;
             total_fz = 130.442*9.8066;
             szd->set_leg_inside_margin(0.055992);
             szd->set_leg_outside_margin(0.075992);

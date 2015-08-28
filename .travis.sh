@@ -143,6 +143,14 @@ case $TEST_PACKAGE in
 
                 sudo apt-get install -qq -y ros-hydro-openhrp3
                 source /opt/ros/hydro/setup.bash
+                if [ "$USE_SRC_OPENHRP3" == true ] ; then
+                    sudo dpkg -r --force-depends ros-hydro-openhrp3
+                    mkdir -p ~/build_openhrp3
+                    cd ~/build_openhrp3
+                    git clone http://github.com/fkanehiro/openhrp3
+                    sed -i 's/COLLADA_DOM_FOUND/0/' openhrp3/sample/CMakeLists.txt
+                    cd openhrp3 && cmake . ${COMPILE_OPTION} && make && sudo make install
+                fi
                 mkdir -p ~/build
 
                 travis_time_end
@@ -190,6 +198,10 @@ case $TEST_PACKAGE in
         find hrpsys -name CMakeLists.txt -exec sed -i "s@PCL_FOUND@0@" {} \; # disable PCL
         find hrpsys -name CMakeLists.txt -exec sed -i "s@OCTMAP_FOUND@0@" {} \; # disable OCTMAP
         find hrpsys -name CMakeLists.txt -exec sed -i "s@IRRLIGHT_FOUND@0@" {} \; # disable IRRLIGHT
+        if [ "$USE_SRC_OPENHRP3" == true ] ; then
+            git clone http://github.com/fkanehiro/openhrp3/
+            sed -i 's/COLLADA_DOM_FOUND/0/' openhrp3/sample/CMakeLists.txt
+        fi
         cd ~/catkin_ws
 
         travis_time_end
