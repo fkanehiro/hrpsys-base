@@ -62,8 +62,10 @@ def demoSetParameter():
     stp_org.eefm_k1=[-1.39899,-1.39899]
     stp_org.eefm_k2=[-0.386111,-0.386111]
     stp_org.eefm_k3=[-0.175068,-0.175068]
-    stp_org.eefm_rot_damping_gain=20*1.6*10 # Stiff parameter for simulation
-    stp_org.eefm_pos_damping_gain=[3500*50, 3500*50, 3500*1.0*5] # Stiff parameter for simulation
+    tmp_rot_damping_gain = [20*1.6*10, 20*1.6*10, 1e5] # Stiff parameter for simulation
+    tmp_pos_damping_gain = [3500*50, 3500*50, 3500*1.0*5] # Stiff parameter for simulation
+    stp_org.eefm_rot_damping_gain=[tmp_rot_damping_gain, tmp_rot_damping_gain, tmp_rot_damping_gain, tmp_rot_damping_gain]
+    stp_org.eefm_pos_damping_gain=[tmp_pos_damping_gain, tmp_pos_damping_gain, tmp_pos_damping_gain, tmp_pos_damping_gain]
     hcf.st_svc.setParameter(stp_org)
     stp = hcf.st_svc.getParameter()
     vcheck = stp.k_tpcc_p == stp_org.k_tpcc_p and stp.k_tpcc_x == stp_org.k_tpcc_x and stp.k_brot_p == stp_org.k_brot_p
