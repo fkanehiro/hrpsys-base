@@ -692,7 +692,7 @@ void AutoBalancer::getTargetParameters()
             tmpikp.target_end_coords.rot = tmpikp.target_r0 * tmpikp.localR;
             // for foot_mid_pos
             std::map<leg_type, std::string>::const_iterator dst = std::find_if(leg_type_map.begin(), leg_type_map.end(), (&boost::lambda::_1->* &std::map<leg_type, std::string>::value_type::second == leg_names[i]));
-            tmp_foot_mid_pos += (tmpikp.target_link->p + tmpikp.target_link->R * tmpikp.localPos + tmpikp.target_link->R * tmpikp.localR * default_zmp_offsets[i]) * zmp_weight_map[dst->first];
+            tmp_foot_mid_pos += (tmpikp.target_p0 + tmpikp.target_r0 * tmpikp.localPos + tmpikp.target_r0 * tmpikp.localR * default_zmp_offsets[i]) * zmp_weight_map[dst->first];
             sum_of_weight += zmp_weight_map[dst->first];
         }
         tmp_foot_mid_pos *= (1.0 / sum_of_weight);
