@@ -224,7 +224,7 @@ class AutoBalancer
   coil::Mutex m_mutex;
 
   double transition_interpolator_ratio, transition_time, zmp_transition_time, adjust_footstep_transition_time;
-  interpolator *zmp_interpolator;
+  interpolator *zmp_offset_interpolator;
   interpolator *transition_interpolator;
   interpolator *adjust_footstep_interpolator;
   hrp::Vector3 input_zmp, input_basePos;

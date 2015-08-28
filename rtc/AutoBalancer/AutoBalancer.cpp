@@ -207,7 +207,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
       for (size_t i = 0; i < num; i++) m_controlSwingSupportTime.data[i] = 0.0;
     }
 
-    zmp_interpolator = new interpolator(ikp.size()*3, m_dt);
+    zmp_offset_interpolator = new interpolator(ikp.size()*3, m_dt);
     zmp_transition_time = 1.0;
     transition_interpolator = new interpolator(1, m_dt, interpolator::HOFFARBIB, 1);
     transition_interpolator_ratio = 1.0;
@@ -294,7 +294,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
 
 RTC::ReturnCode_t AutoBalancer::onFinalize()
 {
-  delete zmp_interpolator;
+  delete zmp_offset_interpolator;
   delete transition_interpolator;
   delete adjust_footstep_interpolator;
   return RTC::RTC_OK;
@@ -539,9 +539,9 @@ void AutoBalancer::getTargetParameters()
   //
   if (control_mode != MODE_IDLE) {
     coordinates tmp_fix_coords;
-    if (!zmp_interpolator->isEmpty()) {
+    if (!zmp_offset_interpolator->isEmpty()) {
       double *default_zmp_offsets_output = new double[ikp.size()*3];
-      zmp_interpolator->get(default_zmp_offsets_output, true);
+      zmp_offset_interpolator->get(default_zmp_offsets_output, true);
       for (size_t i = 0; i < ikp.size(); i++)
         for (size_t j = 0; j < 3; j++)
           default_zmp_offsets[i](j) = default_zmp_offsets_output[i*3+j];
@@ -1270,9 +1270,9 @@ bool AutoBalancer::setAutoBalancerParam(const OpenHRP::AutoBalancerService::Auto
       default_zmp_offsets_array[i*3+j] = i_param.default_zmp_offsets[i][j];
   zmp_transition_time = i_param.zmp_transition_time;
   adjust_footstep_transition_time = i_param.adjust_footstep_transition_time;
-  if (zmp_interpolator->isEmpty()) {
-      zmp_interpolator->clear();
-      zmp_interpolator->go(default_zmp_offsets_array, zmp_transition_time, true);
+  if (zmp_offset_interpolator->isEmpty()) {
+      zmp_offset_interpolator->clear();
+      zmp_offset_interpolator->go(default_zmp_offsets_array, zmp_transition_time, true);
   } else {
       std::cerr << "[" << m_profile.instance_name << "]   default_zmp_offsets cannot be set because interpolating." << std::endl;
   }
