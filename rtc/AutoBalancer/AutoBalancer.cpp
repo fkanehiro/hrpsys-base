@@ -394,6 +394,7 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
     hrp::Matrix33 ref_baseRot;
     hrp::Vector3 rel_ref_zmp; // ref zmp in base frame
     if ( is_legged_robot ) {
+      gg->proc_zmp_weight_map_interpolation();
       getCurrentParameters();
       getTargetParameters();
       bool is_transition_interpolator_empty = transition_interpolator->isEmpty();
