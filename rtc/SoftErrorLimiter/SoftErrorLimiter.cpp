@@ -235,6 +235,22 @@ RTC::ReturnCode_t SoftErrorLimiter::onExecute(RTC::UniqueId ec_id)
     total_upper_limit.resize(m_qRef.data.length(), std::numeric_limits<double>::max());
     total_lower_limit.resize(m_qRef.data.length(), -std::numeric_limits<double>::max());
 
+      /*
+        From hrpModel/Body.h
+        inline Link* joint(int id) const
+           This function returns a link that has a given joint ID.
+           If there is no link that has a given joint ID,
+           the function returns a dummy link object whose ID is minus one.
+           The maximum id can be obtained by numJoints().
+
+         inline Link* link(int index) const
+           This function returns the link of a given index in the whole link sequence.
+           The order of the sequence corresponds to a link-tree traverse from the root link.
+           The size of the sequence can be obtained by numLinks().
+
+         So use m_robot->joint(i) for llimit/ulimit, lvlimit/ulimit
+       */
+
     // Velocity limitation for reference joint angles
     for ( int i = 0; i < m_qRef.data.length(); i++ ){
       double qvel = (m_qRef.data[i] - prev_angle[i]) / dt;
@@ -262,21 +278,6 @@ RTC::ReturnCode_t SoftErrorLimiter::onExecute(RTC::UniqueId ec_id)
 
     // Position limitation for reference joint angles
     for ( int i = 0; i < m_qRef.data.length(); i++ ){
-      /*
-        From hrpModel/Body.h
-        inline Link* joint(int id) const
-           This function returns a link that has a given joint ID.
-           If there is no link that has a given joint ID,
-           the function returns a dummy link object whose ID is minus one.
-           The maximum id can be obtained by numJoints().
-
-         inline Link* link(int index) const
-           This function returns the link of a given index in the whole link sequence.
-           The order of the sequence corresponds to a link-tree traverse from the root link.
-           The size of the sequence can be obtained by numLinks().
-
-         So use m_robot->joint(i) for llimit/ulimit
-       */
       double llimit = m_robot->joint(i)->llimit;
       double ulimit = m_robot->joint(i)->ulimit;
       if (joint_limit_tables.find(m_robot->joint(i)->name) != joint_limit_tables.end()) {
