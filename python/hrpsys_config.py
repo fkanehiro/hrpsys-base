@@ -5,7 +5,7 @@ from hrpsys import rtm
 
 from hrpsys.rtm import *
 from hrpsys.OpenHRP import *
-from waitInput import waitInputConfirm
+from hrpsys.waitInput import waitInputConfirm
 
 import socket
 import time
