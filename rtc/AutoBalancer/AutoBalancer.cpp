@@ -288,7 +288,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     has_ik_failed = false;
 
     pos_ik_thre = 0.1*1e-3; // [m]
-    rot_ik_thre = (1e-5)*M_PI/180.0; // [rad]
+    rot_ik_thre = (1e-2)*M_PI/180.0; // [rad]
 
     return RTC::RTC_OK;
 }
@@ -775,7 +775,7 @@ bool AutoBalancer::solveLimbIKforLimb (ABCIKparam& param)
   param.manip->calcInverseKinematics2Loop(vel_p, vel_r, 1.0, 0.001, 0.01, &qrefv);
   // IK check
   vel_p = param.target_p0 - param.target_link->p;
-  rats::difference_rotation(vel_r, param.current_r0, param.target_link->R);
+  rats::difference_rotation(vel_r, param.target_link->R, param.target_r0);
   if (vel_p.norm() > pos_ik_thre && transition_interpolator->isEmpty()) {
       std::cerr << "[" << m_profile.instance_name << "] Too large IK error (vel_p) = [" << vel_p(0) << " " << vel_p(1) << " " << vel_p(2) << "][m]" << std::endl;
       has_ik_failed = true;
