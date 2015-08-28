@@ -262,7 +262,6 @@ RTC::ReturnCode_t SoftErrorLimiter::onExecute(RTC::UniqueId ec_id)
 
     // Position limitation for reference joint angles
     for ( int i = 0; i < m_qRef.data.length(); i++ ){
-      double error = m_qRef.data[i] - m_qCurrent.data[i];
       /*
         From hrpModel/Body.h
         inline Link* joint(int id) const
