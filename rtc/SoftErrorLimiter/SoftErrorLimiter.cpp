@@ -289,7 +289,6 @@ RTC::ReturnCode_t SoftErrorLimiter::onExecute(RTC::UniqueId ec_id)
         m_servoState.data[i][0] |= (0x200 << OpenHRP::RobotHardwareService::SERVO_ALARM_SHIFT);
         position_limit_error = true;
       }
-      prev_angle[i] = m_qRef.data[i];
     }
     debug_print_position_first = !position_limit_error; // display error info if no error found
 
@@ -311,6 +310,7 @@ RTC::ReturnCode_t SoftErrorLimiter::onExecute(RTC::UniqueId ec_id)
         m_servoState.data[i][0] |= (0x040 << OpenHRP::RobotHardwareService::SERVO_ALARM_SHIFT);
         soft_limit_error = true;
       }
+      prev_angle[i] = m_qRef.data[i];
     }
     debug_print_error_first = !soft_limit_error; // display error info if no error found
 
