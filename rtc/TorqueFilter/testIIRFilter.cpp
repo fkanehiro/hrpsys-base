@@ -3,7 +3,7 @@
 #include "IIRFilter.h"
 /* samples */
 #include <stdio.h>
-#include <cstdio>
+#include <stdlib.h>
 #include <iostream>
 #include <vector>
 #include <boost/shared_ptr.hpp>
