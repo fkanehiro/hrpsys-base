@@ -198,7 +198,7 @@ module OpenHRP
     struct AutoBalancerParam
     {
       /// ZMP offset vectors[m] for rleg and lleg (<-please set by this order)
-      sequence<DblSequence3, 2> default_zmp_offsets;
+      sequence<DblSequence3> default_zmp_offsets;
       double move_base_gain;
       ControllerMode controller_mode;
       boolean graspless_manip_mode;

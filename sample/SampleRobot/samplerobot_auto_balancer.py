@@ -75,7 +75,7 @@ def demoAutoBalancerGetParam():
 def demoAutoBalancerSetParam():
     print >> sys.stderr, "4. setAutoBalancerParam"
     abcp=hcf.abc_svc.getAutoBalancerParam()[1]
-    abcp.default_zmp_offsets = [[0.1,0,0], [0.1,0,0]]
+    abcp.default_zmp_offsets = [[0.1,0,0], [0.1,0,0], [0,0,0], [0,0,0]]
     hcf.abc_svc.setAutoBalancerParam(abcp)
     ret=hcf.abc_svc.getAutoBalancerParam()
     if ret[0] and ret[1].default_zmp_offsets == abcp.default_zmp_offsets:
@@ -83,7 +83,7 @@ def demoAutoBalancerSetParam():
     print >> sys.stderr, "  default_zmp_offsets setting check in start and stop"
     hcf.startAutoBalancer();
     hcf.stopAutoBalancer();
-    abcp.default_zmp_offsets = [[0,0,0], [0,0,0]]
+    abcp.default_zmp_offsets = [[0,0,0], [0,0,0], [0,0,0], [0,0,0]]
     hcf.abc_svc.setAutoBalancerParam(abcp)
 
 def demoAutoBalancerTestPoses():
@@ -96,7 +96,7 @@ def demoAutoBalancerTestPoses():
 def demoAutoBalancerStartStopCheck():
     print >> sys.stderr, "6. start stop check"
     abcp=hcf.abc_svc.getAutoBalancerParam()[1]
-    abcp.default_zmp_offsets = [[-0.05,0.05,0], [-0.05,0.05,0]]
+    abcp.default_zmp_offsets = [[-0.05,0.05,0], [-0.05,0.05,0], [0,0,0], [0,0,0]]
     hcf.abc_svc.setAutoBalancerParam(abcp)
     hcf.setMaxLogLength(1500)
     for pose in pose_list:
@@ -106,7 +106,7 @@ def demoAutoBalancerStartStopCheck():
         hcf.startAutoBalancer();
         hcf.stopAutoBalancer();
         hcf.saveLog("/tmp/test-samplerobot-abc-startstop-{0}".format(pose_list.index(pose)))
-    abcp.default_zmp_offsets = [[0,0,0], [0,0,0]]
+    abcp.default_zmp_offsets = [[0,0,0], [0,0,0], [0,0,0], [0,0,0]]
     hcf.abc_svc.setAutoBalancerParam(abcp)
     hcf.seq_svc.setJointAngles(initial_pose, 1.0)
     hcf.waitInterpolation()
