@@ -125,6 +125,11 @@ class Stabilizer
   void getFootmidCoords (rats::coordinates& ret);
   double calcDampingControl (const double tau_d, const double tau, const double prev_d,
                              const double DD, const double TT);
+  hrp::Vector3 calcDampingControl (const hrp::Vector3& tau_d, const hrp::Vector3& tau, const hrp::Vector3& prev_d,
+                                   const hrp::Vector3& DD, const hrp::Vector3& TT);
+  double vlimit(double value, double llimit_value, double ulimit_value);
+  hrp::Vector3 vlimit(const hrp::Vector3& value, double llimit_value, double ulimit_value);
+
   inline bool isContact (const size_t idx) // 0 = right, 1 = left
   {
     return (prev_act_force_z[idx] > 25.0);
@@ -230,6 +235,9 @@ class Stabilizer
     hrp::Vector3 localp; // Position of ee in end link frame (^{l}p_e = R_l^T (p_e - p_l))
     hrp::Vector3 localCOPPos; // Position offset of reference COP in end link frame (^{l}p_{cop} = R_l^T (p_{cop} - p_l) - ^{l}p_e)
     hrp::Matrix33 localR; // Rotation of ee in end link frame (^{l}R_e = R_l^T R_e)
+    // For eefm
+    hrp::Vector3 d_foot_pos, d_foot_rpy, ee_d_foot_rpy;
+    hrp::Vector3 eefm_pos_damping_gain, eefm_pos_time_const_support, eefm_rot_damping_gain, eefm_rot_time_const;
   };
   enum cmode {MODE_IDLE, MODE_AIR, MODE_ST, MODE_SYNC_TO_IDLE, MODE_SYNC_TO_AIR} control_mode;
   // members
@@ -267,11 +275,11 @@ class Stabilizer
   double rdx, rdy, rx, ry;
   // EEFM ST
   double eefm_k1[2], eefm_k2[2], eefm_k3[2], eefm_zmp_delay_time_const[2], eefm_body_attitude_control_gain[2], eefm_body_attitude_control_time_const[2];
-  double eefm_rot_damping_gain, eefm_rot_time_const, eefm_pos_time_const_swing, eefm_pos_transition_time, eefm_pos_margin_time, eefm_gravitational_acceleration, eefm_ee_pos_error_p_gain, eefm_ee_rot_error_p_gain;
-  hrp::Vector3 d_foot_rpy[2], new_refzmp, rel_cog, ref_zmp_aux, ee_d_foot_rpy[2], eefm_pos_damping_gain, eefm_pos_time_const_support;
+  double eefm_pos_time_const_swing, eefm_pos_transition_time, eefm_pos_margin_time, eefm_gravitational_acceleration, eefm_ee_pos_error_p_gain, eefm_ee_rot_error_p_gain;
+  hrp::Vector3 new_refzmp, rel_cog, ref_zmp_aux;
   hrp::Vector3 ref_foot_force[2];
   hrp::Vector3 ref_foot_moment[2];
-  hrp::Vector3 d_foot_pos[2], pos_ctrl;
+  hrp::Vector3 pos_ctrl;
   double total_mass, transition_time, cop_check_margin, cp_check_margin, contact_decision_threshold;
   OpenHRP::StabilizerService::EmergencyCheckMode emergency_check_mode;
 };
