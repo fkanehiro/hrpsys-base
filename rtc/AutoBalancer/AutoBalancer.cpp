@@ -210,6 +210,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
             }
             tp.manip->setOptionalWeightVector(optw);
         }
+        tp.pos_ik_error_count = tp.rot_ik_error_count = 0;
         ikp.insert(std::pair<std::string, ABCIKparam>(ee_name , tp));
         ikp[ee_name].target_link = m_robot->link(ee_target);
         std::cerr << "[" << m_profile.instance_name << "] End Effector [" << ee_name << "]" << std::endl;
@@ -289,6 +290,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
 
     pos_ik_thre = 0.1*1e-3; // [m]
     rot_ik_thre = (1e-2)*M_PI/180.0; // [rad]
+    ik_error_debug_print_freq = static_cast<int>(0.2/m_dt); // once per 0.2 [s]
 
     return RTC::RTC_OK;
 }
@@ -777,12 +779,22 @@ bool AutoBalancer::solveLimbIKforLimb (ABCIKparam& param)
   vel_p = param.target_p0 - param.target_link->p;
   rats::difference_rotation(vel_r, param.target_link->R, param.target_r0);
   if (vel_p.norm() > pos_ik_thre && transition_interpolator->isEmpty()) {
-      std::cerr << "[" << m_profile.instance_name << "] Too large IK error (vel_p) = [" << vel_p(0) << " " << vel_p(1) << " " << vel_p(2) << "][m]" << std::endl;
+      if (param.pos_ik_error_count % ik_error_debug_print_freq == 0) {
+          std::cerr << "[" << m_profile.instance_name << "] Too large IK error (vel_p) = [" << vel_p(0) << " " << vel_p(1) << " " << vel_p(2) << "][m], count = " << param.pos_ik_error_count << std::endl;
+      }
+      param.pos_ik_error_count++;
       has_ik_failed = true;
+  } else {
+      param.pos_ik_error_count = 0;
   }
   if (vel_r.norm() > rot_ik_thre && transition_interpolator->isEmpty()) {
-      std::cerr << "[" << m_profile.instance_name << "] Too large IK error (vel_r) = [" << vel_r(0) << " " << vel_r(1) << " " << vel_r(2) << "][rad]" << std::endl;
+      if (param.rot_ik_error_count % ik_error_debug_print_freq == 0) {
+          std::cerr << "[" << m_profile.instance_name << "] Too large IK error (vel_r) = [" << vel_r(0) << " " << vel_r(1) << " " << vel_r(2) << "][rad], count = " << param.rot_ik_error_count << std::endl;
+      }
+      param.rot_ik_error_count++;
       has_ik_failed = true;
+  } else {
+      param.rot_ik_error_count = 0;
   }
   return true;
 }
@@ -908,6 +920,9 @@ void AutoBalancer::startWalking ()
   {
     Guard guard(m_mutex);
     has_ik_failed = false;
+    for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
+        it->second.pos_ik_error_count = it->second.rot_ik_error_count = 0;
+    }
     std::vector<std::string> init_swing_leg_names(gg->get_footstep_front_leg_names());
     std::vector<std::string> tmp_all_limbs(leg_names);
     std::vector<std::string> init_support_leg_names;
@@ -948,6 +963,9 @@ bool AutoBalancer::startAutoBalancer (const OpenHRP::AutoBalancerService::StrSeq
 {
   if (control_mode == MODE_IDLE) {
     has_ik_failed = false;
+    for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
+        it->second.pos_ik_error_count = it->second.rot_ik_error_count = 0;
+    }
     startABCparam(limbs);
     waitABCTransition();
     return_control_mode = MODE_ABC;

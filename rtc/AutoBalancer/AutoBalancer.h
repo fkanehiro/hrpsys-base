@@ -184,6 +184,7 @@ class AutoBalancer
     rats::coordinates target_end_coords;
     hrp::Link* target_link;
     hrp::JointPathExPtr manip;
+    size_t pos_ik_error_count, rot_ik_error_count;
     bool is_active;
   };
   void getCurrentParameters();
@@ -237,7 +238,7 @@ class AutoBalancer
 
   unsigned int m_debugLevel;
   bool is_legged_robot, is_stop_mode, has_ik_failed;
-  int loop;
+  int loop, ik_error_debug_print_freq;
   bool graspless_manip_mode;
   std::string graspless_manip_arm;
   hrp::Vector3 graspless_manip_p_gain;
