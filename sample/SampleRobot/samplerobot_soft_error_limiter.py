@@ -44,6 +44,8 @@ def demo ():
     if hrpsys_version >= '315.5.0':
         demoTestAllLimitTables()
     demoPositionLimit()
+    demoVelocityLimit()
+    demoErrorLimit()
 
 def demoTestAllLimitTables():
     print >> sys.stderr, "1. demo all jointLimitTables"
@@ -82,7 +84,7 @@ def testLimitTables (table_idx=0, debug=True, loop_mod=1):
     assert(lret)
     assert(uret)
 
-def testOneLimitTable (self_jointId, target_jointId, limit_table, target_llimit, target_ulimit, angle_violation, debug=True, loop_mod=1):
+def testOneLimitTable (self_jointId, target_jointId, limit_table, target_llimit, target_ulimit, angle_violation, debug=True, loop_mod=1, thre=1e-2):
     tmp_pose=map(lambda x : x, initial_pose)
     ret=[]
     for idx in range(int(target_ulimit-target_llimit+1)):
@@ -100,14 +102,15 @@ def testOneLimitTable (self_jointId, target_jointId, limit_table, target_llimit,
         hcf.seq_svc.waitInterpolation()
         # A-2. check joint limit is not violated
         el_out1 = rtm.readDataPort(hcf.el.port("q")).data
-        ret1 = abs(rad2deg(el_out1[self_jointId])-limit_table[idx]) < 1e-3 and abs(rad2deg(el_out1[target_jointId])- (target_llimit + idx)) < 1e-3
+        ret1 = abs(rad2deg(el_out1[self_jointId])-limit_table[idx]) < thre and abs(rad2deg(el_out1[target_jointId])- (target_llimit + idx)) < thre
         # B-1. set violated joint
         tmp_pose[self_jointId]=deg2rad(limit_table[idx]+angle_violation);
         hcf.seq_svc.setJointAngles(tmp_pose, 0.01);
         hcf.seq_svc.waitInterpolation()
         # B-2. check joint limit is not violated
         el_out2=rtm.readDataPort(hcf.el.port("q")).data
-        ret2 = abs(rad2deg(el_out2[self_jointId])-limit_table[idx]) < 1e-3 and abs(rad2deg(el_out2[target_jointId])- (target_llimit + idx)) < 1e-3
+        ret2 = abs(rad2deg(el_out2[self_jointId]) - limit_table[int(round(rad2deg(el_out2[target_jointId])-target_llimit))]) < thre \ # Check self and target is on limit table
+            and abs(el_out2[self_jointId] - (limit_table[idx]+angle_violation)) > thre # Check result value is not violated value
         # C. results
         if debug:
             print " ret = (", ret1, ",", ret2,")"
@@ -126,13 +129,13 @@ def setAndCheckJointLimit (joint_name):
     link_info=filter(lambda x : x.name==joint_name, mdlldr._get_links())[0]
     hcf.seq_svc.setJointAngle(joint_name, math.radians(1)+link_info.ulimit[0], 1)
     hcf.waitInterpolation()
-    ret = rtm.readDataPort(hcf.el.port("q")).data[link_info.jointId] < link_info.ulimit[0]
+    ret = rtm.readDataPort(hcf.el.port("q")).data[link_info.jointId] <= link_info.ulimit[0]
     print >> sys.stderr, "    ulimit = ", ret, "(elout=", rtm.readDataPort(hcf.el.port("q")).data[link_info.jointId], ", limit=", link_info.ulimit[0], ")"
     assert(ret)
     # llimit check
     hcf.seq_svc.setJointAngle(joint_name, math.radians(-1)+link_info.llimit[0], 1)
     hcf.waitInterpolation()
-    ret = rtm.readDataPort(hcf.el.port("q")).data[link_info.jointId] > link_info.llimit[0]
+    ret = rtm.readDataPort(hcf.el.port("q")).data[link_info.jointId] >= link_info.llimit[0]
     print >> sys.stderr, "    llimit = ", ret, "(elout=", rtm.readDataPort(hcf.el.port("q")).data[link_info.jointId], ", limit=", link_info.llimit[0], ")"
     assert(ret)
     # go to initial
@@ -140,10 +143,101 @@ def setAndCheckJointLimit (joint_name):
     hcf.waitInterpolation()
 
 def demoPositionLimit():
-    print >> sys.stderr, "2. Position limit"
+    print >> sys.stderr, "2. Check Position limit"
     setAndCheckJointLimit('LARM_WRIST_Y')
     setAndCheckJointLimit('LARM_WRIST_P')
     setAndCheckJointLimit('LARM_SHOULDER_P')
+
+def setAndCheckJointVelocityLimit (joint_name, thre=1e-5, dt=0.002):
+    mdlldr=hcf.getBodyInfo("$(PROJECT_DIR)/../model/sample1.wrl")
+    link_info=filter(lambda x : x.name==joint_name, mdlldr._get_links())[0]
+    # lvlimit and uvlimit existence check
+    if not(len(link_info.lvlimit) == 1 and len(link_info.uvlimit) == 1):
+        print >> sys.stderr, "  ", joint_name, " test neglected because no lvlimit and uvlimit are found."
+        return
+    for is_upper_limit in [True, False]: # uvlimit or lvlimit
+        print >> sys.stderr, "  ", joint_name, ", uvlimit" if is_upper_limit else ", lvlimit"
+        # Disable error limit for checking vel limit
+        hcf.el_svc.setServoErrorLimit("all", 100000)
+        # Test motion and logging
+        hcf.clearLog()
+        target_angle = (math.degrees( link_info.ulimit[0] if is_upper_limit else link_info.llimit[0] )*0.99) # 0.99 is margin
+        vel_limit = link_info.uvlimit[0] if is_upper_limit else link_info.lvlimit[0]
+        wait_time = abs(target_angle/math.degrees(vel_limit) * 1.1) # 1.1 is margin
+        hcf.setJointAngle(joint_name, math.degrees(initial_pose[link_info.jointId]), 0.1)
+        hcf.waitInterpolation()
+        hcf.setJointAngle(joint_name, target_angle, 0.002)
+        hcf.waitInterpolation()
+        hcf.setJointAngle(joint_name, target_angle, wait_time) # Wait for finishing of joint motion
+        hcf.waitInterpolation()
+        hcf.saveLog("/tmp/test-samplerobot-el-vel-check")
+        # Check whether joint angle is reached
+        reach_angle = math.degrees(rtm.readDataPort(hcf.el.port("q")).data[link_info.jointId])
+        is_reached = abs(reach_angle - target_angle) < thre
+        # Check actual velocity from Datalogger log
+        poslist=[]
+        for line in open("/tmp/test-samplerobot-el-vel-check.SampleRobot(Robot)0_q", "r"):
+            poslist.append(float(line.split(" ")[link_info.jointId+1]))
+        tmp = map(lambda x,y : x-y, poslist[1:], poslist[0:-1])
+        max_ret_vel = max(tmp)/dt if is_upper_limit else min(tmp)/dt
+        is_vel_limited = abs(max_ret_vel - vel_limit) < thre
+        # Enable error limit by reverting limit value and reset joint angle
+        hcf.el_svc.setServoErrorLimit("all", (0.2-0.02))
+        hcf.setJointAngle(joint_name, math.degrees(initial_pose[link_info.jointId]), 0.5)
+        hcf.waitInterpolation()
+        # Check flags and print
+        print >> sys.stderr, "    is_reached =", is_reached, ", is_vel_limited =", is_vel_limited,
+        print >> sys.stderr, ", target_angle =", target_angle, "[deg], reach_angle =", reach_angle, "[deg], max_ret_vel =", max_ret_vel, "[rad/s], vel_limit =", vel_limit, "[rad/s]"
+        assert(is_reached and is_vel_limited)
+
+def demoVelocityLimit():
+    print >> sys.stderr, "3. Check Velocity limit"
+    setAndCheckJointVelocityLimit('LARM_WRIST_Y')
+    setAndCheckJointVelocityLimit('LARM_WRIST_P')
+
+def setAndCheckJointErrorLimit (joint_name, thre=1e-5):
+    mdlldr=hcf.getBodyInfo("$(PROJECT_DIR)/../model/sample1.wrl")
+    link_info=filter(lambda x : x.name==joint_name, mdlldr._get_links())[0]
+    for is_upper_limit in [True, False]: # uvlimit or lvlimit
+        print >> sys.stderr, "  ", joint_name, ", uvlimit" if is_upper_limit else ", lvlimit"
+        # Disable error limit for checking vel limit
+        error_limit = 1.0 if is_upper_limit else -1.0 # [deg]
+        hcf.el_svc.setServoErrorLimit("all", abs(math.radians(error_limit)))
+        # Test motion and logging
+        hcf.clearLog()
+        target_angle = 3.0 if is_upper_limit else -3.0 # [deg]
+        wait_time = abs(target_angle/error_limit * 1.1) # 1.1 is margin
+        hcf.setJointAngle(joint_name, math.degrees(initial_pose[link_info.jointId]), 0.1)
+        hcf.waitInterpolation()
+        hcf.setJointAngle(joint_name, target_angle, 0.002)
+        hcf.waitInterpolation()
+        hcf.setJointAngle(joint_name, target_angle, wait_time) # Wait for finishing of joint motion
+        hcf.waitInterpolation()
+        hcf.saveLog("/tmp/test-samplerobot-el-err-check")
+        # Check whether joint angle is reached
+        reach_angle = math.degrees(rtm.readDataPort(hcf.el.port("q")).data[link_info.jointId])
+        is_reached = abs(reach_angle - target_angle) < thre
+        # Check actual velocity from Datalogger log
+        poslist=[]
+        for line in open("/tmp/test-samplerobot-el-err-check.SampleRobot(Robot)0_q", "r"):
+            poslist.append(float(line.split(" ")[link_info.jointId+1]))
+        tmp = map(lambda x,y : x-y, poslist[1:], poslist[0:-1])
+        max_ret_err = max(tmp) if is_upper_limit else min(tmp)
+        is_err_limited = abs(max_ret_err - math.radians(error_limit)) < thre
+        # Enable error limit by reverting limit value and reset joint angle
+        hcf.el_svc.setServoErrorLimit("all", (0.2-0.02))
+        hcf.setJointAngle(joint_name, math.degrees(initial_pose[link_info.jointId]), 0.5)
+        hcf.waitInterpolation()
+        # Check flags and print
+        print >> sys.stderr, "    is_reached =", is_reached, ", is_err_limited =", is_err_limited,
+        print >> sys.stderr, ", target_angle =", target_angle, "[deg], reach_angle =", reach_angle, "[deg], max_ret_err =", max_ret_err, "[rad], err_limit =", math.radians(error_limit), "[rad]"
+        assert(is_reached and is_err_limited)
+
+def demoErrorLimit():
+    print >> sys.stderr, "4. Check Error limit"
+    setAndCheckJointErrorLimit('LARM_WRIST_Y')
+    setAndCheckJointErrorLimit('LARM_WRIST_P')
+
 
 if __name__ == '__main__':
     demo()
