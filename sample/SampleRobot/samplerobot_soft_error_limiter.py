@@ -109,8 +109,8 @@ def testOneLimitTable (self_jointId, target_jointId, limit_table, target_llimit,
         hcf.seq_svc.waitInterpolation()
         # B-2. check joint limit is not violated
         el_out2=rtm.readDataPort(hcf.el.port("q")).data
-        ret2 = abs(rad2deg(el_out2[self_jointId]) - limit_table[int(round(rad2deg(el_out2[target_jointId])-target_llimit))]) < thre \ # Check self and target is on limit table
-            and abs(el_out2[self_jointId] - (limit_table[idx]+angle_violation)) > thre # Check result value is not violated value
+        ret2 = abs(rad2deg(el_out2[self_jointId]) - limit_table[int(round(rad2deg(el_out2[target_jointId])-target_llimit))]) < thre # Check self and target is on limit table
+        ret2 = ret2 and abs(el_out2[self_jointId] - (limit_table[idx]+angle_violation)) > thre # Check result value is not violated value
         # C. results
         if debug:
             print " ret = (", ret1, ",", ret2,")"
@@ -123,10 +123,9 @@ def testOneLimitTable (self_jointId, target_jointId, limit_table, target_llimit,
     return all(ret)
 
 def setAndCheckJointLimit (joint_name):
-    mdlldr=hcf.getBodyInfo("$(PROJECT_DIR)/../model/sample1.wrl")
     print >> sys.stderr, "  ", joint_name
     # ulimit check
-    link_info=filter(lambda x : x.name==joint_name, mdlldr._get_links())[0]
+    link_info=filter(lambda x : x.name==joint_name, bodyinfo._get_links())[0]
     hcf.seq_svc.setJointAngle(joint_name, math.radians(1)+link_info.ulimit[0], 1)
     hcf.waitInterpolation()
     ret = rtm.readDataPort(hcf.el.port("q")).data[link_info.jointId] <= link_info.ulimit[0]
@@ -149,8 +148,7 @@ def demoPositionLimit():
     setAndCheckJointLimit('LARM_SHOULDER_P')
 
 def setAndCheckJointVelocityLimit (joint_name, thre=1e-5, dt=0.002):
-    mdlldr=hcf.getBodyInfo("$(PROJECT_DIR)/../model/sample1.wrl")
-    link_info=filter(lambda x : x.name==joint_name, mdlldr._get_links())[0]
+    link_info=filter(lambda x : x.name==joint_name, bodyinfo._get_links())[0]
     # lvlimit and uvlimit existence check
     if not(len(link_info.lvlimit) == 1 and len(link_info.uvlimit) == 1):
         print >> sys.stderr, "  ", joint_name, " test neglected because no lvlimit and uvlimit are found."
@@ -196,8 +194,7 @@ def demoVelocityLimit():
     setAndCheckJointVelocityLimit('LARM_WRIST_P')
 
 def setAndCheckJointErrorLimit (joint_name, thre=1e-5):
-    mdlldr=hcf.getBodyInfo("$(PROJECT_DIR)/../model/sample1.wrl")
-    link_info=filter(lambda x : x.name==joint_name, mdlldr._get_links())[0]
+    link_info=filter(lambda x : x.name==joint_name, bodyinfo._get_links())[0]
     for is_upper_limit in [True, False]: # uvlimit or lvlimit
         print >> sys.stderr, "  ", joint_name, ", uvlimit" if is_upper_limit else ", lvlimit"
         # Disable error limit for checking vel limit
