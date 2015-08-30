@@ -184,6 +184,7 @@ class AutoBalancer
     rats::coordinates target_end_coords;
     hrp::Link* target_link;
     hrp::JointPathExPtr manip;
+    size_t pos_ik_error_count, rot_ik_error_count;
     bool is_active;
   };
   void getCurrentParameters();
@@ -224,7 +225,7 @@ class AutoBalancer
   coil::Mutex m_mutex;
 
   double transition_interpolator_ratio, transition_time, zmp_transition_time, adjust_footstep_transition_time;
-  interpolator *zmp_interpolator;
+  interpolator *zmp_offset_interpolator;
   interpolator *transition_interpolator;
   interpolator *adjust_footstep_interpolator;
   hrp::Vector3 input_zmp, input_basePos;
@@ -237,7 +238,7 @@ class AutoBalancer
 
   unsigned int m_debugLevel;
   bool is_legged_robot, is_stop_mode, has_ik_failed;
-  int loop;
+  int loop, ik_error_debug_print_freq;
   bool graspless_manip_mode;
   std::string graspless_manip_arm;
   hrp::Vector3 graspless_manip_p_gain;
