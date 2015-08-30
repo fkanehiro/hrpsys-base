@@ -84,7 +84,7 @@ def demoAutoBalancerSetParam():
     flag = (ret[0] and ret[1].default_zmp_offsets == abcp.default_zmp_offsets)
     if flag:
         print >> sys.stderr, "  setAutoBalancerParam() => OK"
-    assert (flag)
+    assert (flag), (ret[0], ret[1].default_zmp_offsets, abcp.default_zmp_offsets)
     abcp.default_zmp_offsets = [[0,0,0], [0,0,0]]
     hcf.abc_svc.setAutoBalancerParam(abcp)
 
