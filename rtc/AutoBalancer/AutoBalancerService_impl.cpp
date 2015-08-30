@@ -69,6 +69,7 @@ CORBA::Boolean AutoBalancerService_impl::getGaitGeneratorParam(OpenHRP::AutoBala
   i_param = new OpenHRP::AutoBalancerService::GaitGeneratorParam();
   i_param->stride_parameter.length(4);
   i_param->toe_heel_phase_ratio.length(7);
+  i_param->zmp_weight_map.length(4);
   return m_autobalancer->getGaitGeneratorParam(*i_param);
 };
 
@@ -80,9 +81,6 @@ CORBA::Boolean AutoBalancerService_impl::setAutoBalancerParam(const OpenHRP::Aut
 CORBA::Boolean AutoBalancerService_impl::getAutoBalancerParam(OpenHRP::AutoBalancerService::AutoBalancerParam_out i_param)
 {
   i_param = new OpenHRP::AutoBalancerService::AutoBalancerParam();
-  i_param->default_zmp_offsets.length(2);
-  for (size_t i = 0; i < 2; i++)
-    i_param->default_zmp_offsets[i].length(3);
   return m_autobalancer->getAutoBalancerParam(*i_param);
 };
 

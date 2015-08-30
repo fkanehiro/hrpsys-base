@@ -61,14 +61,18 @@ namespace rats
     hrp::Vector3 ret_zmp;
     hrp::Vector3 tmp_zero = hrp::Vector3::Zero();
     std::vector<hrp::Vector3> foot_x_axises;
-    for (std::vector<step_node>::const_iterator it = _support_leg_steps.begin(); it != _support_leg_steps.end(); it++)
-        dzl.push_back(it->worldcoords.rot * default_zmp_offsets[it->l_r] + it->worldcoords.pos);
+    double sum_of_weight = 0.0;
+    for (std::vector<step_node>::const_iterator it = _support_leg_steps.begin(); it != _support_leg_steps.end(); it++) {
+        dzl.push_back((it->worldcoords.rot * default_zmp_offsets[it->l_r] + it->worldcoords.pos) * zmp_weight_map[it->l_r]);
+        sum_of_weight += zmp_weight_map[it->l_r];
+    }
     for (std::vector<step_node>::const_iterator it = _swing_leg_steps.begin(); it != _swing_leg_steps.end(); it++) {
-        dzl.push_back(it->worldcoords.rot * default_zmp_offsets[it->l_r] + it->worldcoords.pos);
+        dzl.push_back((it->worldcoords.rot * default_zmp_offsets[it->l_r] + it->worldcoords.pos) * zmp_weight_map[it->l_r]);
+        sum_of_weight += zmp_weight_map[it->l_r];
         foot_x_axises.push_back( hrp::Vector3(it->worldcoords.rot * hrp::Vector3::UnitX()) );
     }
     foot_x_axises_list.push_back(foot_x_axises);
-    rzmp = std::accumulate(dzl.begin(), dzl.end(), tmp_zero) / dzl.size();
+    rzmp = std::accumulate(dzl.begin(), dzl.end(), tmp_zero) / sum_of_weight;
     refzmp_cur_list.push_back( rzmp );
     std::vector<leg_type> swing_leg_types;
     for (size_t i = 0; i < fns.size(); i++) {
@@ -86,12 +90,14 @@ namespace rats
     hrp::Vector3 rzmp, tmp_zero=hrp::Vector3::Zero();
     std::vector<hrp::Vector3> dzl;
     std::vector<hrp::Vector3> foot_x_axises;
+    double sum_of_weight = 0.0;
 
     for (std::vector<step_node>::const_iterator it = _support_leg_steps.begin(); it != _support_leg_steps.end(); it++) {
-      dzl.push_back(it->worldcoords.rot * default_zmp_offsets[it->l_r] + it->worldcoords.pos);
-      foot_x_axises.push_back( hrp::Vector3(it->worldcoords.rot * hrp::Vector3::UnitX()) );
+        dzl.push_back((it->worldcoords.rot * default_zmp_offsets[it->l_r] + it->worldcoords.pos) * zmp_weight_map[it->l_r]);
+        sum_of_weight += zmp_weight_map[it->l_r];
+        foot_x_axises.push_back( hrp::Vector3(it->worldcoords.rot * hrp::Vector3::UnitX()) );
     }
-    rzmp = std::accumulate(dzl.begin(), dzl.end(), tmp_zero) / dzl.size();
+    rzmp = std::accumulate(dzl.begin(), dzl.end(), tmp_zero) / sum_of_weight;
     refzmp_cur_list.push_back( rzmp );
     foot_x_axises_list.push_back(foot_x_axises);
     std::vector<leg_type> swing_leg_types;
@@ -469,8 +475,8 @@ namespace rats
         rg.push_refzmp_from_footstep_nodes_for_single(footstep_nodes_list.at(i), lcg.get_support_leg_steps_idx(i));
     }
     rg.push_refzmp_from_footstep_nodes_for_dual(footstep_nodes_list.back(),
-                                                lcg.get_swing_leg_dst_steps_idx(footstep_nodes_list.size()-1),
-                                                lcg.get_support_leg_steps_idx(footstep_nodes_list.size()-1));
+                                                lcg.get_support_leg_steps_idx(footstep_nodes_list.size()-1),
+                                                lcg.get_swing_leg_dst_steps_idx(footstep_nodes_list.size()-1));
     emergency_flg = IDLING;
   };
 
