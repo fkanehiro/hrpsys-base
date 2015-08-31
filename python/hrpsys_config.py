@@ -618,7 +618,7 @@ class HrpsysConfigurator:
         @return list of list: List of available components. Each element consists of a list
                  of abbreviated and full names of the component.
         '''
-        return [
+        rtclist = [
             ['seq', "SequencePlayer"],
             ['sh', "StateHolder"],
             ['fk', "ForwardKinematics"],
@@ -634,8 +634,14 @@ class HrpsysConfigurator:
             # ['te', "ThermoEstimator"],
             # ['tl', "ThermoLimiter"],
             ['el', "SoftErrorLimiter"],
-            ['log', "DataLogger"]
-            ]
+            ['log', "DataLogger"],
+        ]
+        if self.hgc:
+            rtclist.append(["hgc", "HGcontroller"])
+        elif self.pdc:
+            rtclist.append(["pdc", "PDcontroller"])
+        return rtclist
+
 
     # public method to configure all RTCs to be activated on rtcd which includes unstable RTCs
     def getRTCListUnstable(self):
@@ -645,7 +651,7 @@ class HrpsysConfigurator:
         @return list of list: List of available unstable components. Each element consists
                  of a list of abbreviated and full names of the component.
         '''
-        return [
+        rtclist = [
             ['seq', "SequencePlayer"],
             ['sh', "StateHolder"],
             ['fk', "ForwardKinematics"],
@@ -663,8 +669,14 @@ class HrpsysConfigurator:
             ['tl', "ThermoLimiter"],
             ['hes', "EmergencyStopper"],
             ['el', "SoftErrorLimiter"],
-            ['log', "DataLogger"]
-            ]
+            ['log', "DataLogger"],
+        ]
+        if self.hgc:
+            rtclist.append(["hgc", "HGcontroller"])
+        elif self.pdc:
+            rtclist.append(["pdc", "PDcontroller"])
+        return rtclist
+
 
     def getJointAngleControllerList(self):
         '''!@brief
