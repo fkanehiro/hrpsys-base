@@ -62,10 +62,8 @@ def demoSetParameter():
     stp_org.eefm_k1=[-1.39899,-1.39899]
     stp_org.eefm_k2=[-0.386111,-0.386111]
     stp_org.eefm_k3=[-0.175068,-0.175068]
-    tmp_rot_damping_gain = [20*1.6*10, 20*1.6*10, 1e5] # Stiff parameter for simulation
-    tmp_pos_damping_gain = [3500*50, 3500*50, 3500*1.0*5] # Stiff parameter for simulation
-    stp_org.eefm_rot_damping_gain=[tmp_rot_damping_gain, tmp_rot_damping_gain, tmp_rot_damping_gain, tmp_rot_damping_gain]
-    stp_org.eefm_pos_damping_gain=[tmp_pos_damping_gain, tmp_pos_damping_gain, tmp_pos_damping_gain, tmp_pos_damping_gain]
+    stp_org.eefm_rot_damping_gain = [[20*1.6*1.5, 20*1.6*1.5, 1e5]]*4
+    stp_org.eefm_pos_damping_gain = [[3500*50, 3500*50, 3500*1.0*1.5]]*4
     hcf.st_svc.setParameter(stp_org)
     stp = hcf.st_svc.getParameter()
     vcheck = stp.k_tpcc_p == stp_org.k_tpcc_p and stp.k_tpcc_x == stp_org.k_tpcc_x and stp.k_brot_p == stp_org.k_brot_p
@@ -73,9 +71,9 @@ def demoSetParameter():
         print >> sys.stderr, "  setParameter() => OK", vcheck
     assert(vcheck)
 
-def checkActualBaseAttitude():
+def checkActualBaseAttitude(thre=5.0):
     rpy = rtm.readDataPort(hcf.rh.port("WAIST")).data.orientation
-    ret = math.degrees(rpy.r) < 0.1 and math.degrees(rpy.p) < 0.1
+    ret = abs(math.degrees(rpy.r)) < thre and abs(math.degrees(rpy.p)) < thre
     print >> sys.stderr, "  actual base rpy = ", ret, "(", rpy, ")"
     return ret
 
@@ -86,9 +84,12 @@ def demoStartStopTPCCST ():
         stp.st_algorithm=OpenHRP.StabilizerService.TPCC
         hcf.st_svc.setParameter(stp)
         hcf.startStabilizer ()
-        hcf.abc_svc.goPos(0.5, 0.1, 10)
-        hcf.abc_svc.waitFootSteps()
+        #hcf.abc_svc.goPos(0.5, 0.1, 10)
+        #hcf.abc_svc.waitFootSteps()
         hcf.stopStabilizer ()
+        # Wait for non-st osscilation being samall
+        hcf.seq_svc.setJointAngles(initial_pose, 2.0)
+        hcf.waitInterpolation()
         ret = checkActualBaseAttitude()
         if ret:
             print >> sys.stderr, "  Start and Stop Stabilizer => OK"
@@ -107,6 +108,9 @@ def demoStartStopEEFMQPST ():
         hcf.abc_svc.goPos(0.3, 0, 0)
         hcf.abc_svc.waitFootSteps()
         hcf.stopStabilizer ()
+        # Wait for non-st osscilation being samall
+        hcf.seq_svc.setJointAngles(initial_pose, 2.0)
+        hcf.waitInterpolation()
         ret = checkActualBaseAttitude()
         if ret:
             print >> sys.stderr, "  Start and Stop Stabilizer => OK"
