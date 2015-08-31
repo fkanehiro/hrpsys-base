@@ -87,7 +87,7 @@ Vector3 omegaFromRotEx(const Matrix33& r)
 }
 
 JointPathEx::JointPathEx(BodyPtr& robot, Link* base, Link* end, double control_cycle, bool _use_inside_joint_weight_retrieval)
-    : JointPath(base, end), sr_gain(1.0), manipulability_limit(0.1), manipulability_gain(0.001), maxIKPosErrorSqr(1.0e-8), maxIKRotErrorSqr(1.0e-6), maxIKIteration(50), use_inside_joint_weight_retrieval(_use_inside_joint_weight_retrieval) {
+    : JointPath(base, end), sr_gain(1.0), manipulability_limit(0.1), manipulability_gain(0.001), maxIKPosErrorSqr(1.0e-8), maxIKRotErrorSqr(1.0e-6), maxIKIteration(50), interlocking_joint_pair_indices(), use_inside_joint_weight_retrieval(_use_inside_joint_weight_retrieval) {
   for (int i = 0 ; i < numJoints(); i++ ) {
     joints.push_back(joint(i));
   }
@@ -112,6 +112,45 @@ void JointPathEx::setMaxIKError(double e)
 void JointPathEx::setMaxIKIteration(int iter) {
     maxIKIteration = iter;
 }
+
+bool JointPathEx::setInterlockingJointPairIndices (const std::vector<std::pair<Link*, Link*> >& pairs, const std::string& print_str) {
+    // Convert pair<Link*, Link*> => pair<size_t, size_t>
+    std::vector< std::pair<size_t, size_t> > tmp_vec;
+    for (size_t i = 0; i < pairs.size(); i++) {
+        std::pair<size_t, size_t> tmp_pair;
+        bool is_first_ok = false, is_second_ok = false;
+        for (size_t j = 0; j < joints.size(); j++) {
+            if (joints[j]->name == pairs[i].first->name) {
+                tmp_pair.first = j;
+                is_first_ok = true;
+            } else if (joints[j]->name == pairs[i].second->name) {
+                tmp_pair.second = j;
+                is_second_ok = true;
+            }
+        }
+        if (is_first_ok && is_second_ok) tmp_vec.push_back(tmp_pair);
+    }
+    if (tmp_vec.size() > 0) {
+        std::cerr << "[" << print_str << "]   Interlocking_joint_pair_indices is set => ";
+        for (size_t j = 0; j < tmp_vec.size(); j++) {
+            std::cerr << "[" << joints[tmp_vec[j].first]->name << ", " << joints[tmp_vec[j].second]->name << "] ";
+        }
+        std::cerr << std::endl;
+        return setInterlockingJointPairIndices(tmp_vec);
+    } else {
+        std::cerr << "[" << print_str << "]   No interlocking_joint_pair_indices set." << std::endl;
+        return false;
+    }
+};
+
+bool JointPathEx::setInterlockingJointPairIndices (const std::vector<std::pair<size_t, size_t> >& pairs) {
+    interlocking_joint_pair_indices = pairs;
+    return true;
+};
+
+void JointPathEx::getInterlockingJointPairIndices (std::vector<std::pair<size_t, size_t> >& pairs) {
+    pairs = interlocking_joint_pair_indices;
+};
 
 bool JointPathEx::calcJacobianInverseNullspace(dmatrix &J, dmatrix &Jinv, dmatrix &Jnull) {
     const int n = numJoints();
@@ -174,8 +213,6 @@ bool JointPathEx::calcJacobianInverseNullspace(dmatrix &J, dmatrix &Jinv, dmatri
         std::cerr << std::endl;
     }
 
-    calcJacobian(J);
-
     double manipulability = sqrt((J*J.transpose()).determinant());
     double k = 0;
     if ( manipulability < manipulability_limit ) {
@@ -203,21 +240,39 @@ bool JointPathEx::calcInverseKinematics2Loop(const Vector3& dp, const Vector3& o
         }
         std::cerr << endl;
     }
-    dvector v(6);
-    v << dp, omega;
 
-    hrp::dmatrix J(6, n);
-    hrp::dmatrix Jinv(n, 6);
+    size_t ee_workspace_dim = 6; // End-effector workspace dimensions including pos(3) and rot(3)
+    size_t ij_workspace_dim = interlocking_joint_pair_indices.size(); // Dimensions for interlocking joints constraint. 0 by default.
+    size_t workspace_dim = ee_workspace_dim + ij_workspace_dim;
+
+    // Total jacobian, workspace velocty, and so on
+    hrp::dmatrix J(workspace_dim, n);
+    dvector v(workspace_dim);
+    hrp::dmatrix Jinv(n, workspace_dim);
     hrp::dmatrix Jnull(n, n);
-
-    calcJacobianInverseNullspace(J, Jinv, Jnull);
-
     hrp::dvector dq(n);
+
+    if (ij_workspace_dim > 0) {
+        v << dp, omega, dvector::Zero(ij_workspace_dim);
+        hrp::dmatrix ee_J = dmatrix::Zero(ee_workspace_dim, n);
+        calcJacobian(ee_J);
+        hrp::dmatrix ij_J(ij_workspace_dim, n);
+        for (size_t i = 0; i < ij_workspace_dim; i++) {
+            std::pair<size_t, size_t>& pair = interlocking_joint_pair_indices[i];
+            ij_J(i, pair.first) = 1;
+            ij_J(i, pair.second) = -1;
+        }
+        J << ee_J, ij_J;
+    } else {
+        v << dp, omega;
+        calcJacobian(J);
+    }
+    calcJacobianInverseNullspace(J, Jinv, Jnull);
     dq = Jinv * v; // dq = pseudoInverse(J) * v
 
     if ( DEBUG ) {
         std::cerr << "    v :";
-        for(int j=0; j < 6; ++j){
+        for(int j=0; j < v.size(); ++j){
             std::cerr << " " << v(j);
         }
         std::cerr << std::endl;
@@ -326,6 +381,14 @@ bool JointPathEx::calcInverseKinematics2Loop(const Vector3& dp, const Vector3& o
     // joint angles update
     for(int j=0; j < n; ++j){
       joints[j]->q += LAMBDA * dq(j);
+    }
+
+    // If interlocking joints are defined, set interlocking joints by mid point
+    for (size_t i = 0; i < interlocking_joint_pair_indices.size(); i++) {
+        std::pair<size_t, size_t>& pair = interlocking_joint_pair_indices[i];
+        double midp = (joints[pair.first]->q + joints[pair.second]->q)/2.0;
+        joints[pair.first]->q = midp;
+        joints[pair.second]->q = midp;
     }
 
     // upper/lower limit check
@@ -468,5 +531,28 @@ void hrp::readVirtualForceSensorParamFromProperties (std::map<std::string, hrp::
         std::cerr << "[" << instance_name << "]   name = " << name << ", parent = " << p.link->name << ", id = " << p.id << std::endl;
         std::cerr << "[" << instance_name << "]   localP = " << p.localPos.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[m]" << std::endl;
         std::cerr << "[" << instance_name << "]   localR = " << p.localR.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", "\n", "    [", "]")) << std::endl;
+    }
+};
+
+void hrp::readInterlockingJointsParamFromProperties (std::vector<std::pair<Link*, Link*> >& pairs,
+                                                     hrp::BodyPtr m_robot,
+                                                     const std::string& prop_string,
+                                                     const std::string& instance_name)
+{
+    coil::vstring interlocking_joints_str = coil::split(prop_string, ",");
+    size_t ij_prop_num = 2;
+    if (interlocking_joints_str.size() > 0) {
+        size_t num = interlocking_joints_str.size()/ij_prop_num;
+        for (size_t i = 0; i < num; i++) {
+            //std::cerr << "[" << instance_name << "] Interlocking Joints [" << interlocking_joints_str[i*ij_prop_num] << "], [" << interlocking_joints_str[i*ij_prop_num+1] << "]" << std::endl;
+            hrp::Link* link1 = m_robot->link(interlocking_joints_str[i*ij_prop_num]);
+            hrp::Link* link2 = m_robot->link(interlocking_joints_str[i*ij_prop_num+1]);
+            if (link1 == NULL || link2 == NULL) {
+                std::cerr << "[" << instance_name << "] No such interlocking joints [" << interlocking_joints_str[i*ij_prop_num] << "], [" << interlocking_joints_str[i*ij_prop_num+1] << "]" << std::endl;
+                continue;
+            }
+            std::pair<hrp::Link*, hrp::Link*> pair(link1, link2);
+            pairs.push_back(pair);
+        };
     }
 };

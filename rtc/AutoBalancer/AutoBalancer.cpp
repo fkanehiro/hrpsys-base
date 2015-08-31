@@ -208,6 +208,15 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
       for (size_t i = 0; i < num; i++) m_controlSwingSupportTime.data[i] = 0.0;
     }
 
+    std::vector<std::pair<hrp::Link*, hrp::Link*> > interlocking_joints;
+    readInterlockingJointsParamFromProperties(interlocking_joints, m_robot, prop["interlocking_joints"], std::string(m_profile.instance_name));
+    if (interlocking_joints.size() > 0) {
+        for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
+            std::cerr << "[" << m_profile.instance_name << "] Interlocking Joints for [" << it->first << "]" << std::endl;
+            it->second.manip->setInterlockingJointPairIndices(interlocking_joints, std::string(m_profile.instance_name));
+        }
+    }
+
     zmp_offset_interpolator = new interpolator(ikp.size()*3, m_dt);
     zmp_transition_time = 1.0;
     transition_interpolator = new interpolator(1, m_dt, interpolator::HOFFARBIB, 1);

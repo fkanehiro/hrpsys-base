@@ -33,6 +33,9 @@ namespace hrp {
             optional_weight_vector[i] = _opt_w[i];
         }
     };
+    bool setInterlockingJointPairIndices (const std::vector<std::pair<Link*, Link*> >& pairs, const std::string& print_str = "");
+    bool setInterlockingJointPairIndices (const std::vector<std::pair<size_t, size_t> >& pairs);
+    void getInterlockingJointPairIndices (std::vector<std::pair<size_t, size_t> >& pairs);
     void getOptionalWeightVector(std::vector<double>& _opt_w)
     {
         for (int i = 0 ; i < numJoints(); i++ ) {
@@ -44,6 +47,11 @@ namespace hrp {
         int maxIKIteration;
         std::vector<Link*> joints;
         std::vector<double> avoid_weight_gain, optional_weight_vector;
+        // Interlocking joint pairs
+        //  pair = [index of joint1, index of joint2], index is considered as index for "joints[index]"
+        //  Joint angles of joint1 and joint2 has relathionships.
+        //  Currently joint1 = joint2 is assumed.
+        std::vector<std::pair<size_t, size_t> > interlocking_joint_pair_indices;
         double sr_gain, manipulability_limit, manipulability_gain, dt;
         bool use_inside_joint_weight_retrieval;
     };
@@ -58,6 +66,11 @@ namespace hrp {
     };
 
     void readVirtualForceSensorParamFromProperties (std::map<std::string, hrp::VirtualForceSensorParam>& vfs,
+                                                    hrp::BodyPtr m_robot,
+                                                    const std::string& prop_string,
+                                                    const std::string& instance_name);
+
+    void readInterlockingJointsParamFromProperties (std::vector<std::pair<Link*, Link*> >& pairs,
                                                     hrp::BodyPtr m_robot,
                                                     const std::string& prop_string,
                                                     const std::string& instance_name);
