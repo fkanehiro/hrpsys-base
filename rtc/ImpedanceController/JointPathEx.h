@@ -70,7 +70,7 @@ namespace hrp {
                                                     const std::string& prop_string,
                                                     const std::string& instance_name);
 
-    void readInterlockingJointsParamFromProperties (std::vector<std::pair<Link*, Link*> > pairs,
+    void readInterlockingJointsParamFromProperties (std::vector<std::pair<Link*, Link*> >& pairs,
                                                     hrp::BodyPtr m_robot,
                                                     const std::string& prop_string,
                                                     const std::string& instance_name);

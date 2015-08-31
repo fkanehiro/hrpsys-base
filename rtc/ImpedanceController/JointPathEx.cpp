@@ -534,7 +534,7 @@ void hrp::readVirtualForceSensorParamFromProperties (std::map<std::string, hrp::
     }
 };
 
-void hrp::readInterlockingJointsParamFromProperties (std::vector<std::pair<Link*, Link*> > pairs,
+void hrp::readInterlockingJointsParamFromProperties (std::vector<std::pair<Link*, Link*> >& pairs,
                                                      hrp::BodyPtr m_robot,
                                                      const std::string& prop_string,
                                                      const std::string& instance_name)
@@ -544,11 +544,11 @@ void hrp::readInterlockingJointsParamFromProperties (std::vector<std::pair<Link*
     if (interlocking_joints_str.size() > 0) {
         size_t num = interlocking_joints_str.size()/ij_prop_num;
         for (size_t i = 0; i < num; i++) {
-            std::cerr << "[" << instance_name << "] Interlocking Joints [" << interlocking_joints_str[i*ij_prop_num] << "], [" << interlocking_joints_str[i*ij_prop_num+1] << "]" << std::endl;
+            //std::cerr << "[" << instance_name << "] Interlocking Joints [" << interlocking_joints_str[i*ij_prop_num] << "], [" << interlocking_joints_str[i*ij_prop_num+1] << "]" << std::endl;
             hrp::Link* link1 = m_robot->link(interlocking_joints_str[i*ij_prop_num]);
             hrp::Link* link2 = m_robot->link(interlocking_joints_str[i*ij_prop_num+1]);
             if (link1 == NULL || link2 == NULL) {
-                std::cerr << "[" << instance_name << "]   No such interlocking joints [" << interlocking_joints_str[i*ij_prop_num] << "], [" << interlocking_joints_str[i*ij_prop_num+1] << "]" << std::endl;
+                std::cerr << "[" << instance_name << "] No such interlocking joints [" << interlocking_joints_str[i*ij_prop_num] << "], [" << interlocking_joints_str[i*ij_prop_num+1] << "]" << std::endl;
                 continue;
             }
             std::pair<hrp::Link*, hrp::Link*> pair(link1, link2);

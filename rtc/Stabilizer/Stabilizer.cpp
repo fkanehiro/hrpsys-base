@@ -247,6 +247,16 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
     m_contactStates.data.length(num);
   }
 
+  std::vector<std::pair<hrp::Link*, hrp::Link*> > interlocking_joints;
+  readInterlockingJointsParamFromProperties(interlocking_joints, m_robot, prop["interlocking_joints"], std::string(m_profile.instance_name));
+  if (interlocking_joints.size() > 0) {
+      for (size_t i = 0; i < jpe_v.size(); i++) {
+          std::cerr << "[" << m_profile.instance_name << "] Interlocking Joints for [" << stikp[i].ee_name << "]" << std::endl;
+          jpe_v[i]->setInterlockingJointPairIndices(interlocking_joints, std::string(m_profile.instance_name));
+      }
+  }
+
+
   // parameters for TPCC
   act_zmp = hrp::Vector3::Zero();
   for (int i = 0; i < 2; i++) {

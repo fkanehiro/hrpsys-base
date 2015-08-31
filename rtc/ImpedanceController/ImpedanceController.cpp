@@ -239,6 +239,16 @@ RTC::ReturnCode_t ImpedanceController::onInitialize()
         std::cerr << "[" << m_profile.instance_name << "]   sensor = " << sensor_name << ", sensor-link = " << sensor->link->name << ", ee_name = " << ee_name << ", ee-link = " << target_link->name << std::endl;
     }
 
+    std::vector<std::pair<hrp::Link*, hrp::Link*> > interlocking_joints;
+    readInterlockingJointsParamFromProperties(interlocking_joints, m_robot, prop["interlocking_joints"], std::string(m_profile.instance_name));
+    if (interlocking_joints.size() > 0) {
+        for ( std::map<std::string, ImpedanceParam>::iterator it = m_impedance_param.begin(); it != m_impedance_param.end(); it++ ) {
+            std::cerr << "[" << m_profile.instance_name << "] Interlocking Joints for [" << it->first << "]" << std::endl;
+            it->second.manip->setInterlockingJointPairIndices(interlocking_joints, std::string(m_profile.instance_name));
+        }
+    }
+
+
     // allocate memory for outPorts
     m_q.data.length(dof);
     qrefv.resize(dof);
