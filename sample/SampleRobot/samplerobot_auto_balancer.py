@@ -81,7 +81,7 @@ def demoAutoBalancerSetParam():
     hcf.startAutoBalancer();
     hcf.stopAutoBalancer();
     ret=hcf.abc_svc.getAutoBalancerParam()
-    flag = (ret[0] and all([numpy.allclose(act, ref, 1e-6) for act, ref in zip(ret[1].default_zmp_offsets, abcp.default_zmp_offsets)]))
+    flag = (ret[0] and numpy.allclose(ret[1].default_zmp_offsets, abcp.default_zmp_offsets, 1e-6))
     if flag:
         print >> sys.stderr, "  setAutoBalancerParam() => OK"
     assert (flag), (ret[0], ret[1].default_zmp_offsets, abcp.default_zmp_offsets)
