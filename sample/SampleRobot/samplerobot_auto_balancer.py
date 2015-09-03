@@ -14,7 +14,7 @@ except:
     import time
 
 def init ():
-    global hcf, initial_pose, arm_front_pose, half_sitting_pose, root_rot_x_pose, root_rot_y_pose, pose_list, hrpsys_version
+    global hcf, initial_pose, arm_front_pose, half_sitting_pose, root_rot_x_pose, root_rot_y_pose, pose_list, hrpsys_version, four_legs_mode_pose
     hcf = HrpsysConfigurator()
     hcf.getRTCList = hcf.getRTCListUnstable
     hcf.init ("SampleRobot(Robot)0", "$(PROJECT_DIR)/../model/sample1.wrl")
@@ -24,7 +24,8 @@ def init ():
     half_sitting_pose = [-0.000158,-0.570987,-0.000232,1.26437,-0.692521,0.000277,0.31129,-0.159481,-0.115399,-0.636277,0.0,0.0,0.0,-0.000158,-0.570987,-0.000232,1.26437,-0.692521,0.000277,0.31129,0.159481,0.115399,-0.636277,0.0,0.0,0.0,0.0,0.0,0.0]
     root_rot_x_pose = [-0.241557,-0.634167,0.011778,1.30139,-0.668753,0.074236,0.31129,-0.159481,-0.115399,-0.636277,0.0,0.0,0.0,-0.233491,-0.555191,0.011181,1.13468,-0.580942,0.065086,0.31129,0.159481,0.115399,-0.636277,0.0,0.0,0.0,0.0,0.0,0.0]
     root_rot_y_pose = [8.251963e-05,-0.980029,-0.000384,1.02994,-0.398115,-0.000111,0.31129,-0.159481,-0.115399,-0.636277,0.0,0.0,0.0,8.252625e-05,-0.980033,-0.000384,1.02986,-0.398027,-0.000111,0.31129,0.159481,0.115399,-0.636277,0.0,0.0,0.0,0.0,0.0,0.0]
-    pose_list=[half_sitting_pose, root_rot_x_pose, root_rot_y_pose, arm_front_pose]
+    four_legs_mode_pose = [0.0, -0.349066, 0.0, 0.820305, -0.471239, 0.0, 0.493231, 0.008013, 0.000304, -1.608, 0.008019, -0.456023, 0.637045, 0.0, -0.349066, 0.0, 0.820305, -0.471239, 0.0, 0.493231, -0.008013, -0.000304, -1.608, -0.008019, -0.456023, -0.637045, 0.0, 0.0, 0.0]
+    pose_list=[half_sitting_pose, root_rot_x_pose, root_rot_y_pose, arm_front_pose, four_legs_mode_pose]
     hcf.seq_svc.setJointAngles(initial_pose, 2.0)
     hcf.waitInterpolation()
     hrpsys_version = hcf.seq.ref.get_component_profile().version
