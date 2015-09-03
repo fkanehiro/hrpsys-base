@@ -386,6 +386,35 @@ def demoGaitGeneratorHandFixWalking():
     # abc_svc.waitFootSteps()
     # abc_svc.stopABC()
 
+def demoGaitGeneratorSetFootStepsWithArms():
+    print >> sys.stderr, "14. Trot Walking"
+    hcf.stopAutoBalancer()
+    hcf.seq_svc.setJointAngles(four_legs_mode_pose, 1.0)
+    hcf.waitInterpolation()
+    # use arms
+    orig_abcp = abcp =hcf.abc_svc.getAutoBalancerParam()[1]
+    abcp.leg_names = ['rleg', 'lleg', 'rarm', 'larm']
+    hcf.abc_svc.setAutoBalancerParam(abcp)
+    # decrease zmp weight for arms
+    orig_ggp = ggp = hcf.abc_svc.getGaitGeneratorParam()[1]
+    ggp.zmp_weight_map = [1.0, 1.0, 0.01, 0.01]
+    ggp.default_step_height = 0.01
+    hcf.abc_svc.setGaitGeneratorParam(ggp)
+    # start walking
+    hcf.startAutoBalancer()
+    hcf.setFootSteps([OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([0,-0.09,0], [1,0,0,0], "rleg"),
+                                                             OpenHRP.AutoBalancerService.Footstep([0.23,0.21,0.86], [1,0,0,0], "larm")]),
+                      OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([0,0.09,0], [1,0,0,0], "lleg"),
+                                                             OpenHRP.AutoBalancerService.Footstep([0.23,-0.21,0.86], [1,0,0,0], "rarm")])])
+    hcf.abc_svc.waitFootSteps()
+    checkActualBaseAttitude()
+    print >> sys.stderr, "  setFootSteps()=>OK"
+    # reset params
+    hcf.stopAutoBalancer()
+    hcf.abc_svc.setAutoBalancerParam(orig_abcp)
+    hcf.abc_svc.setGaitGeneratorParam(orig_ggp)
+    hcf.startAutoBalancer()
+
 def demo():
     init()
     if hrpsys_version >= '315.5.0':
@@ -414,6 +443,7 @@ def demo():
         demoGaitGeneratorOverwriteFootsteps()
         demoGaitGeneratorOverwriteFootsteps(2)
         # demoGaitGeneratorHandFixWalking()
+        demoGaitGeneratorSetFootStepsWithArms()
 
 if __name__ == '__main__':
     demo()
