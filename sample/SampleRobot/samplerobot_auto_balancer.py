@@ -129,6 +129,23 @@ def demoAutoBalancerBalanceAgainstHandForce():
     hcf.stopAutoBalancer();
     checkActualBaseAttitude()
 
+def demoAutoBalancerBalanceWithArms():
+    print >> sys.stderr, "8. balance with arms"
+    hcf.seq_svc.setJointAngles(four_legs_mode_pose, 1.0)
+    hcf.waitInterpolation()
+    abcp=hcf.abc_svc.getAutoBalancerParam()[1]
+    abcp.leg_names = ['rleg', 'lleg', 'rarm', 'larm']
+    hcf.abc_svc.setAutoBalancerParam(abcp)
+    hcf.startAutoBalancer();
+    print >> sys.stderr, "  startAutoBalancer with arms"
+    hcf.stopAutoBalancer();
+    print >> sys.stderr, "  stopAutoBalancer"
+    abcp.leg_names = ['rleg', 'lleg']
+    hcf.abc_svc.setAutoBalancerParam(abcp)
+    checkActualBaseAttitude()
+    hcf.seq_svc.setJointAngles(initial_pose, 1.0)
+    hcf.waitInterpolation()
+
 def demoGaitGeneratorGoPos():
     print >> sys.stderr, "1. goPos"
     hcf.startAutoBalancer();
@@ -380,6 +397,7 @@ def demo():
         demoAutoBalancerTestPoses()
         demoAutoBalancerStartStopCheck()
         demoAutoBalancerBalanceAgainstHandForce()
+        demoAutoBalancerBalanceWithArms()
         # sample for walk pattern generation by AutoBalancer RTC
         demoGaitGeneratorGoPos()
         demoGaitGeneratorGoVelocity()
