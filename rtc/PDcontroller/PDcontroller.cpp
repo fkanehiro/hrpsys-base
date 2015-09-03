@@ -25,6 +25,9 @@ static const char* PDcontroller_spec[] =
     "language",          "C++",
     "lang_type",         "compile",
     // Configuration variables
+    // Configuration variables
+    "conf.default.dt", "0.005",
+    "conf.default.pdgains_sim.file_name", "",
     ""
   };
 // </rtc-template>
