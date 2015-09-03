@@ -25,9 +25,9 @@ static const char* PDcontroller_spec[] =
     "language",          "C++",
     "lang_type",         "compile",
     // Configuration variables
-    // Configuration variables
     "conf.default.dt", "0.005",
-    "conf.default.pdgains_sim.file_name", "",
+    "conf.default.t_limit", "1000",
+    "conf.default.pdgains_sim_file_name", "",
     ""
   };
 // </rtc-template>
@@ -53,12 +53,11 @@ RTC::ReturnCode_t PDcontroller::onInitialize()
 {
   std::cout << m_profile.instance_name << ": onInitialize() " << std::endl;
 
-  RTC::Properties& prop = getProperties();
-  coil::stringTo(dt, prop["dt"].c_str());
-  coil::stringTo(gain_fname, prop["pdgains_sim.file_name"].c_str());
-
   // <rtc-template block="bind_config">
   // Bind variables and configuration variable
+  bindParameter("dt", dt, "0.005");
+  bindParameter("t_limit", t_limit, "1000");
+  bindParameter("pdgains_sim_file_name", gain_fname, "");
 
   // Set InPort buffers
   addInPort("angle", m_angleIn);
@@ -98,6 +97,9 @@ RTC::ReturnCode_t PDcontroller::onShutdown(RTC::UniqueId ec_id)
 RTC::ReturnCode_t PDcontroller::onActivated(RTC::UniqueId ec_id)
 {
   std::cout << m_profile.instance_name << ": on Activated " << std::endl;
+  std::cout << "dt: " << dt << std::endl;
+  std::cout << "t_limit: " << t_limit << std::endl;
+  std::cout << "pdgains_sim_file_name: " << gain_fname << std::endl;
 
   if(m_angleIn.isNew()){
     m_angleIn.read();
@@ -165,6 +167,8 @@ RTC::ReturnCode_t PDcontroller::onExecute(RTC::UniqueId ec_id)
     qold[i] = q;
     qold_ref[i] = q_ref;
     m_torque.data[i] = -(q - q_ref) * Pgain[i] - (dq - dq_ref) * Dgain[i];
+    if (m_torque.data[i] > t_limit) m_torque.data[i] = t_limit;
+    if (m_torque.data[i] < t_limit) m_torque.data[i] = -t_limit;
     // std::cerr << i << " " << m_torque.data[i] << " (" << q << " " << q_ref << ") (" << dq << " " << dq_ref << ") " << Pgain[i] << " " << Dgain[i] << std::endl;
   }
   
