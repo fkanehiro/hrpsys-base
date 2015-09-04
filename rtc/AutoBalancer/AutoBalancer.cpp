@@ -597,46 +597,69 @@ void AutoBalancer::getTargetParameters()
           }
       }
       gg->get_swing_support_mid_coords(tmp_fix_coords);
-      // TODO : assume biped
-      switch (gg->get_current_support_states().front()) {
-      case BOTH:
-        m_contactStates.data[contact_states_index_map["rleg"]] = true;
-        m_contactStates.data[contact_states_index_map["lleg"]] = true;
-        break;
-      case RLEG:
-        m_contactStates.data[contact_states_index_map["rleg"]] = true;
-        m_contactStates.data[contact_states_index_map["lleg"]] = false;
-        break;
-      case LLEG:
-        m_contactStates.data[contact_states_index_map["rleg"]] = false;
-        m_contactStates.data[contact_states_index_map["lleg"]] = true;
-        break;
-      default:
-          if (DEBUGP) std::cerr << "not implemented yet " << std::endl;
-        break;
+      // set contactStates
+      {
+          std::vector<std::string> tmp_current_support_states_names;
+          {
+              std::vector<leg_type> tmp_current_support_states = gg->get_current_support_states();
+              std::map<leg_type, std::string> leg_type_map = gg->get_leg_type_map();
+              for (std::vector<leg_type>::const_iterator it = tmp_current_support_states.begin(); it != tmp_current_support_states.end(); it++)
+                  tmp_current_support_states_names.push_back(leg_type_map[*it]);
+          }
+          for (std::vector<std::string>::const_iterator it = leg_names.begin(); it != leg_names.end(); it++) {
+              std::vector<std::string>::const_iterator dst = std::find_if(tmp_current_support_states_names.begin(), tmp_current_support_states_names.end(), boost::lambda::_1 == *it);
+              if (dst != tmp_current_support_states_names.end()) {
+                  m_contactStates.data[contact_states_index_map[*it]] = true;
+              } else {
+                  m_contactStates.data[contact_states_index_map[*it]] = false;
+              }
+          }
       }
-      m_controlSwingSupportTime.data[contact_states_index_map["rleg"]] = gg->get_current_swing_time(0);
-      m_controlSwingSupportTime.data[contact_states_index_map["lleg"]] = gg->get_current_swing_time(1);
-      m_limbCOPOffset[contact_states_index_map[gg->get_swing_leg_names().front()]].data.x = gg->get_swing_foot_zmp_offsets().front()(0);
-      m_limbCOPOffset[contact_states_index_map[gg->get_swing_leg_names().front()]].data.y = gg->get_swing_foot_zmp_offsets().front()(1);
-      m_limbCOPOffset[contact_states_index_map[gg->get_swing_leg_names().front()]].data.z = gg->get_swing_foot_zmp_offsets().front()(2);
-      m_limbCOPOffset[contact_states_index_map[gg->get_support_leg_names().front()]].data.x = gg->get_support_foot_zmp_offsets().front()(0);
-      m_limbCOPOffset[contact_states_index_map[gg->get_support_leg_names().front()]].data.y = gg->get_support_foot_zmp_offsets().front()(1);
-      m_limbCOPOffset[contact_states_index_map[gg->get_support_leg_names().front()]].data.z = gg->get_support_foot_zmp_offsets().front()(2);
+      // set controlSwingSupportTime
+      {
+          std::map<leg_type, std::string> leg_type_map = gg->get_leg_type_map();
+          for (std::map<std::string, ABCIKparam>::const_iterator it = ikp.begin(); it != ikp.end(); it++) {
+              std::map<leg_type, std::string>::const_iterator dst = std::find_if(leg_type_map.begin(), leg_type_map.end(), (&boost::lambda::_1->* &std::map<leg_type, std::string>::value_type::second == it->first));
+              m_controlSwingSupportTime.data[contact_states_index_map[it->first]] = gg->get_current_swing_time(dst->first);
+          }
+      }
+      // set limbCOPOffset
+      {
+          std::vector<std::string> swg_leg_nms = gg->get_swing_leg_names();
+          for (size_t i = 0; i < swg_leg_nms.size(); i++) {
+              m_limbCOPOffset[contact_states_index_map[swg_leg_nms.at(i)]].data.x = gg->get_swing_foot_zmp_offsets().at(i)(0);
+              m_limbCOPOffset[contact_states_index_map[swg_leg_nms.at(i)]].data.y = gg->get_swing_foot_zmp_offsets().at(i)(1);
+              m_limbCOPOffset[contact_states_index_map[swg_leg_nms.at(i)]].data.z = gg->get_swing_foot_zmp_offsets().at(i)(2);
+          }
+      }
+      {
+          std::vector<std::string> sup_leg_nms = gg->get_support_leg_names();
+          for (size_t i = 0; i < sup_leg_nms.size(); i++) {
+              m_limbCOPOffset[contact_states_index_map[sup_leg_nms.at(i)]].data.x = gg->get_support_foot_zmp_offsets().at(i)(0);
+              m_limbCOPOffset[contact_states_index_map[sup_leg_nms.at(i)]].data.y = gg->get_support_foot_zmp_offsets().at(i)(1);
+              m_limbCOPOffset[contact_states_index_map[sup_leg_nms.at(i)]].data.z = gg->get_support_foot_zmp_offsets().at(i)(2);
+          }
+      }
     } else {
       tmp_fix_coords = fix_leg_coords;
       // double support by default
-      m_contactStates.data[contact_states_index_map["rleg"]] = true;
-      m_contactStates.data[contact_states_index_map["lleg"]] = true;
-      // controlSwingSupportTime is not used while double support period, 1.0 is neglected
-      m_controlSwingSupportTime.data[contact_states_index_map["rleg"]] = 1.0;
-      m_controlSwingSupportTime.data[contact_states_index_map["lleg"]] = 1.0;
-      m_limbCOPOffset[contact_states_index_map["rleg"]].data.x = default_zmp_offsets[0](0);
-      m_limbCOPOffset[contact_states_index_map["rleg"]].data.y = default_zmp_offsets[0](1);
-      m_limbCOPOffset[contact_states_index_map["rleg"]].data.z = default_zmp_offsets[0](2);
-      m_limbCOPOffset[contact_states_index_map["lleg"]].data.x = default_zmp_offsets[1](0);
-      m_limbCOPOffset[contact_states_index_map["lleg"]].data.y = default_zmp_offsets[1](1);
-      m_limbCOPOffset[contact_states_index_map["lleg"]].data.z = default_zmp_offsets[1](2);
+      {
+          std::map<leg_type, std::string> leg_type_map = gg->get_leg_type_map();
+          for (std::map<std::string, ABCIKparam>::const_iterator it = ikp.begin(); it != ikp.end(); it++) {
+              std::vector<std::string>::const_iterator dst = std::find_if(leg_names.begin(), leg_names.end(), (boost::lambda::_1 == it->first));
+              if (dst != leg_names.end()) {
+                  m_contactStates.data[contact_states_index_map[it->first]] = true;
+              } else {
+                  m_contactStates.data[contact_states_index_map[it->first]] = false;
+              }
+              // controlSwingSupportTime is not used while double support period, 1.0 is neglected
+              m_controlSwingSupportTime.data[contact_states_index_map[it->first]] = 1.0;
+              std::map<leg_type, std::string>::const_iterator dst2 = std::find_if(leg_type_map.begin(), leg_type_map.end(), (&boost::lambda::_1->* &std::map<leg_type, std::string>::value_type::second == it->first));
+              m_limbCOPOffset[contact_states_index_map[it->first]].data.x = default_zmp_offsets.at(dst2->first)(0);
+              m_limbCOPOffset[contact_states_index_map[it->first]].data.y = default_zmp_offsets.at(dst2->first)(1);
+              m_limbCOPOffset[contact_states_index_map[it->first]].data.z = default_zmp_offsets.at(dst2->first)(2);
+          }
+      }
     }
     if (!adjust_footstep_interpolator->isEmpty()) {
         double tmp = 0.0;

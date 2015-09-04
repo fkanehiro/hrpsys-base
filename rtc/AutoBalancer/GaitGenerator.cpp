@@ -258,8 +258,12 @@ namespace rats
       swing_ratio = static_cast<double>(current_swing_count-support_len/2)/swing_len;
       //std::cerr << "gp " << swing_ratio << " " << swing_rot_ratio << std::endl;
     }
-    current_swing_time[support_leg_types.front()] = (lcg_count + 0.5 * default_double_support_ratio * next_one_step_count) * dt;
-    current_swing_time[support_leg_types.front()==RLEG ? LLEG : RLEG] = tmp_current_swing_time;
+    for (std::vector<leg_type>::const_iterator it = support_leg_types.begin(); it != support_leg_types.end(); it++) {
+        current_swing_time.at(*it) = (lcg_count + 0.5 * default_double_support_ratio * next_one_step_count) * dt;
+    }
+    for (std::vector<leg_type>::const_iterator it = swing_leg_types.begin(); it != swing_leg_types.end(); it++) {
+        current_swing_time.at(*it) = tmp_current_swing_time;
+    }
     //std::cerr << "sl " << support_leg << " " << current_swing_time[support_leg==RLEG?0:1] << " " << current_swing_time[support_leg==RLEG?1:0] << " " << tmp_current_swing_time << " " << lcg_count << std::endl;
   };
 
