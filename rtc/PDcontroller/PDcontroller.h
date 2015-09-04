@@ -90,7 +90,6 @@ class PDcontroller
   // no corresponding operation exists in OpenRTm-aist-0.2.0
   // virtual RTC::ReturnCode_t onRateChanged(RTC::UniqueId ec_id);
 
-
  protected:
   // Configuration variable declaration
   // <rtc-template block="config_declare">
@@ -129,6 +128,7 @@ class PDcontroller
   // </rtc-template>
 
  private:
+  void readGainFile();
   hrp::BodyPtr m_robot;
   int dummy;
   double dt;

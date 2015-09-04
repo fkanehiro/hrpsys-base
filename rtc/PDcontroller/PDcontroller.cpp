@@ -37,7 +37,8 @@ PDcontroller::PDcontroller(RTC::Manager* manager)
     m_torqueOut("torque", m_torque),
     dt(0.005),
     // </rtc-template>
-    dummy(0)
+    dummy(0),
+    dof(0)
 {
 }
 
@@ -115,8 +116,55 @@ RTC::ReturnCode_t PDcontroller::onActivated(RTC::UniqueId ec_id)
 
   if(m_angleIn.isNew()){
     m_angleIn.read();
+  }
+  if(m_angleRefIn.isNew()){
+    m_angleRefIn.read();
+  }
+
+  return RTC::RTC_OK;
+}
+
+RTC::ReturnCode_t PDcontroller::onDeactivated(RTC::UniqueId ec_id)
+{
+  std::cout << m_profile.instance_name << ": on Deactivated " << std::endl;
+  return RTC::RTC_OK;
+}
+
+
+RTC::ReturnCode_t PDcontroller::onExecute(RTC::UniqueId ec_id)
+{
+  if(m_angleIn.isNew()){
+    m_angleIn.read();
+    if (dof == 0) {
+        dof = m_angle.data.length();
+        readGainFile();
+    }
+  }
+  if(m_angleRefIn.isNew()){
+    m_angleRefIn.read();
+  }
+
+  for(int i=0; i<dof; i++){
+    double q = m_angle.data[i];
+    double q_ref = m_angleRef.data[i];
+    double dq = (q - qold[i]) / dt;
+    double dq_ref = (q_ref - qold_ref[i]) / dt;
+    qold[i] = q;
+    qold_ref[i] = q_ref;
+    m_torque.data[i] = -(q - q_ref) * Pgain[i] - (dq - dq_ref) * Dgain[i];
+    double tlimit = m_robot->joint(i)->climit * m_robot->joint(i)->gearRatio * m_robot->joint(i)->torqueConst;
+    m_torque.data[i] = std::max(std::min(m_torque.data[i], tlimit), -tlimit);
+    // std::cerr << i << " " << m_torque.data[i] << " (" << q << " " << q_ref << ") (" << dq << " " << dq_ref << ") " << Pgain[i] << " " << Dgain[i] << std::endl;
+  }
+  
+  m_torqueOut.write();
+  
+  return RTC::RTC_OK;
+}
+
+void PDcontroller::readGainFile()
+{
     // initialize length of vectors
-    dof = m_angle.data.length();
     qold.resize(dof);
     qold_ref.resize(dof);
     m_torque.data.length(dof);
@@ -147,48 +195,7 @@ RTC::ReturnCode_t PDcontroller::onActivated(RTC::UniqueId ec_id)
     for(int i=0; i < dof; ++i){
       m_angleRef.data[i] = qold_ref[i] = qold[i] = m_angle.data[i];
     }
-  }
-  if(m_angleRefIn.isNew()){
-    m_angleRefIn.read();
-  }
-
-  return RTC::RTC_OK;
 }
-
-RTC::ReturnCode_t PDcontroller::onDeactivated(RTC::UniqueId ec_id)
-{
-  std::cout << m_profile.instance_name << ": on Deactivated " << std::endl;
-  return RTC::RTC_OK;
-}
-
-
-RTC::ReturnCode_t PDcontroller::onExecute(RTC::UniqueId ec_id)
-{
-  if(m_angleIn.isNew()){
-    m_angleIn.read();
-  }
-  if(m_angleRefIn.isNew()){
-    m_angleRefIn.read();
-  }
-
-  for(int i=0; i<dof; i++){
-    double q = m_angle.data[i];
-    double q_ref = m_angleRef.data[i];
-    double dq = (q - qold[i]) / dt;
-    double dq_ref = (q_ref - qold_ref[i]) / dt;
-    qold[i] = q;
-    qold_ref[i] = q_ref;
-    m_torque.data[i] = -(q - q_ref) * Pgain[i] - (dq - dq_ref) * Dgain[i];
-    double tlimit = m_robot->joint(i)->climit * m_robot->joint(i)->gearRatio * m_robot->joint(i)->torqueConst;
-    m_torque.data[i] = std::max(std::min(m_torque.data[i], tlimit), -tlimit);
-    // std::cerr << i << " " << m_torque.data[i] << " (" << q << " " << q_ref << ") (" << dq << " " << dq_ref << ") " << Pgain[i] << " " << Dgain[i] << std::endl;
-  }
-  
-  m_torqueOut.write();
-  
-  return RTC::RTC_OK;
-}
-
 
 /*
   RTC::ReturnCode_t PDcontroller::onAborting(RTC::UniqueId ec_id)
