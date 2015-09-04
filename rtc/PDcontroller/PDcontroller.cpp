@@ -54,6 +54,23 @@ RTC::ReturnCode_t PDcontroller::onInitialize()
   coil::stringTo(dt, prop["dt"].c_str());
   coil::stringTo(gain_fname, prop["pdgains_sim.file_name"].c_str());
 
+  m_robot = hrp::BodyPtr(new hrp::Body());
+
+  RTC::Manager& rtcManager = RTC::Manager::instance();
+  std::string nameServer = rtcManager.getConfig()["corba.nameservers"];
+  int comPos = nameServer.find(",");
+  if (comPos < 0){
+      comPos = nameServer.length();
+  }
+  nameServer = nameServer.substr(0, comPos);
+  RTC::CorbaNaming naming(rtcManager.getORB(), nameServer.c_str());
+  if (!loadBodyFromModelLoader(m_robot, prop["model"].c_str(), 
+                               CosNaming::NamingContext::_duplicate(naming.getRootContext())
+                               )){
+      std::cerr << "[" << m_profile.instance_name << "] failed to load model[" << prop["model"] << "]" 
+                << std::endl;
+  }
+
   // <rtc-template block="bind_config">
   // Bind variables and configuration variable
 
@@ -162,6 +179,8 @@ RTC::ReturnCode_t PDcontroller::onExecute(RTC::UniqueId ec_id)
     qold[i] = q;
     qold_ref[i] = q_ref;
     m_torque.data[i] = -(q - q_ref) * Pgain[i] - (dq - dq_ref) * Dgain[i];
+    double tlimit = m_robot->joint(i)->climit * m_robot->joint(i)->gearRatio * m_robot->joint(i)->torqueConst;
+    m_torque.data[i] = std::max(std::min(m_torque.data[i], tlimit), -tlimit);
     // std::cerr << i << " " << m_torque.data[i] << " (" << q << " " << q_ref << ") (" << dq << " " << dq_ref << ") " << Pgain[i] << " " << Dgain[i] << std::endl;
   }
   

@@ -13,12 +13,15 @@
 #include <rtm/Manager.h>
 #include <rtm/DataFlowComponentBase.h>
 #include <rtm/CorbaPort.h>
+#include <rtm/CorbaNaming.h>
 #include <rtm/DataInPort.h>
 #include <rtm/DataOutPort.h>
 #include <rtm/idl/BasicDataTypeSkel.h>
 
 #include <hrpUtil/EigenTypes.h>
-
+#include <hrpModel/ModelLoaderUtil.h>
+#include <hrpModel/Body.h>
+#include <hrpModel/Link.h>
 
 // Service implementation headers
 // <rtc-template block="service_impl_h">
@@ -126,6 +129,7 @@ class PDcontroller
   // </rtc-template>
 
  private:
+  hrp::BodyPtr m_robot;
   int dummy;
   double dt;
   std::ifstream gain;
