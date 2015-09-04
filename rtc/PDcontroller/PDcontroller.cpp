@@ -25,6 +25,7 @@ static const char* PDcontroller_spec[] =
     "language",          "C++",
     "lang_type",         "compile",
     // Configuration variables
+    "conf.default.pdgains_sim_file_name", "",
     ""
   };
 // </rtc-template>
@@ -38,6 +39,7 @@ PDcontroller::PDcontroller(RTC::Manager* manager)
     dt(0.005),
     // </rtc-template>
     dummy(0),
+    gain_fname(""),
     dof(0)
 {
 }
@@ -53,7 +55,6 @@ RTC::ReturnCode_t PDcontroller::onInitialize()
 
   RTC::Properties& prop = getProperties();
   coil::stringTo(dt, prop["dt"].c_str());
-  coil::stringTo(gain_fname, prop["pdgains_sim.file_name"].c_str());
 
   m_robot = hrp::BodyPtr(new hrp::Body());
 
@@ -74,6 +75,7 @@ RTC::ReturnCode_t PDcontroller::onInitialize()
 
   // <rtc-template block="bind_config">
   // Bind variables and configuration variable
+  bindParameter("pdgains_sim_file_name", gain_fname, "");
 
   // Set InPort buffers
   addInPort("angle", m_angleIn);
@@ -164,6 +166,10 @@ RTC::ReturnCode_t PDcontroller::onExecute(RTC::UniqueId ec_id)
 
 void PDcontroller::readGainFile()
 {
+    if (gain_fname == "") {
+        RTC::Properties& prop = getProperties();
+        coil::stringTo(gain_fname, prop["pdgains_sim_file_name"].c_str());
+    }
     // initialize length of vectors
     qold.resize(dof);
     qold_ref.resize(dof);
