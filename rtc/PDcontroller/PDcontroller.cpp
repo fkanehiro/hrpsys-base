@@ -26,6 +26,7 @@ static const char* PDcontroller_spec[] =
     "lang_type",         "compile",
     // Configuration variables
     "conf.default.pdgains_sim_file_name", "",
+    "conf.default.debugLevel", "0",
     ""
   };
 // </rtc-template>
@@ -40,7 +41,7 @@ PDcontroller::PDcontroller(RTC::Manager* manager)
     // </rtc-template>
     dummy(0),
     gain_fname(""),
-    dof(0)
+    dof(0), loop(0)
 {
 }
 
@@ -76,6 +77,7 @@ RTC::ReturnCode_t PDcontroller::onInitialize()
   // <rtc-template block="bind_config">
   // Bind variables and configuration variable
   bindParameter("pdgains_sim_file_name", gain_fname, "");
+  bindParameter("debugLevel", m_debugLevel, "0");
 
   // Set InPort buffers
   addInPort("angle", m_angleIn);
@@ -115,14 +117,6 @@ RTC::ReturnCode_t PDcontroller::onShutdown(RTC::UniqueId ec_id)
 RTC::ReturnCode_t PDcontroller::onActivated(RTC::UniqueId ec_id)
 {
   std::cout << m_profile.instance_name << ": on Activated " << std::endl;
-
-  if(m_angleIn.isNew()){
-    m_angleIn.read();
-  }
-  if(m_angleRefIn.isNew()){
-    m_angleRefIn.read();
-  }
-
   return RTC::RTC_OK;
 }
 
@@ -135,6 +129,7 @@ RTC::ReturnCode_t PDcontroller::onDeactivated(RTC::UniqueId ec_id)
 
 RTC::ReturnCode_t PDcontroller::onExecute(RTC::UniqueId ec_id)
 {
+  loop++;
   if(m_angleIn.isNew()){
     m_angleIn.read();
     if (dof == 0) {
@@ -156,7 +151,10 @@ RTC::ReturnCode_t PDcontroller::onExecute(RTC::UniqueId ec_id)
     m_torque.data[i] = -(q - q_ref) * Pgain[i] - (dq - dq_ref) * Dgain[i];
     double tlimit = m_robot->joint(i)->climit * m_robot->joint(i)->gearRatio * m_robot->joint(i)->torqueConst;
     m_torque.data[i] = std::max(std::min(m_torque.data[i], tlimit), -tlimit);
-    // std::cerr << i << " " << m_torque.data[i] << " (" << q << " " << q_ref << ") (" << dq << " " << dq_ref << ") " << Pgain[i] << " " << Dgain[i] << std::endl;
+    if (loop % 100 == 0 && m_debugLevel == 1) {
+        std::cerr << "[" << m_profile.instance_name << "] joint = "
+                  << i << ", tq = " << m_torque.data[i] << ", q,qref = (" << q << ", " << q_ref << "), dq,dqref = (" << dq << ", " << dq_ref << "), pd = (" << Pgain[i] << ", " << Dgain[i] << "), tlimit = " << tlimit << std::endl;
+    }
   }
   
   m_torqueOut.write();

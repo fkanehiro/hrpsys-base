@@ -135,7 +135,8 @@ class PDcontroller
   std::ifstream gain;
   std::string gain_fname;
   hrp::dvector qold, qold_ref, Pgain, Dgain;
-  size_t dof;
+  size_t dof, loop;
+  unsigned int m_debugLevel;
 };
 
 extern "C"
