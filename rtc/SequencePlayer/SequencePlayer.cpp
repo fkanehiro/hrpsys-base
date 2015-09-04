@@ -267,6 +267,7 @@ RTC::ReturnCode_t SequencePlayer::onExecute(RTC::UniqueId ec_id)
           m_wrenches[i].data[4] = wrenches[force_i++];
           m_wrenches[i].data[5] = wrenches[force_i++];
         }
+        m_qRef.tm = m_qInit.tm;
         m_qRefOut.write();
         m_tqRefOut.write();
         m_zmpRefOut.write();
