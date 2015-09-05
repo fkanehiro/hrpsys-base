@@ -279,6 +279,7 @@ RTC::ReturnCode_t EmergencyStopper::onExecute(RTC::UniqueId ec_id)
         }
         std::cerr << std::endl;
     }
+    m_q.tm = m_qRef.tm;
     m_qOut.write();
 
     m_emergencyMode.data = is_stop_mode;
