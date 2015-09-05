@@ -128,10 +128,12 @@ class PDcontroller
  private:
   int dummy;
   double dt;
+  double t_limit;
   std::ifstream gain;
   std::string gain_fname;
   hrp::dvector qold, qold_ref, Pgain, Dgain;
   size_t dof;
+  void readGainFile();
 };
 
 extern "C"

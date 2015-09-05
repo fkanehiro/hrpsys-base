@@ -25,6 +25,9 @@ static const char* PDcontroller_spec[] =
     "language",          "C++",
     "lang_type",         "compile",
     // Configuration variables
+    "conf.default.dt", "0.005",
+    "conf.default.t_limit", "1000",
+    "conf.default.pdgains_sim_file_name", "",
     ""
   };
 // </rtc-template>
@@ -50,12 +53,11 @@ RTC::ReturnCode_t PDcontroller::onInitialize()
 {
   std::cout << m_profile.instance_name << ": onInitialize() " << std::endl;
 
-  RTC::Properties& prop = getProperties();
-  coil::stringTo(dt, prop["dt"].c_str());
-  coil::stringTo(gain_fname, prop["pdgains_sim.file_name"].c_str());
-
   // <rtc-template block="bind_config">
   // Bind variables and configuration variable
+  bindParameter("dt", dt, "0.005");
+  bindParameter("t_limit", t_limit, "1000");
+  bindParameter("pdgains_sim_file_name", gain_fname, "");
 
   // Set InPort buffers
   addInPort("angle", m_angleIn);
@@ -95,47 +97,56 @@ RTC::ReturnCode_t PDcontroller::onShutdown(RTC::UniqueId ec_id)
 RTC::ReturnCode_t PDcontroller::onActivated(RTC::UniqueId ec_id)
 {
   std::cout << m_profile.instance_name << ": on Activated " << std::endl;
+  std::cout << "dt: " << dt << std::endl;
+  std::cout << "t_limit: " << t_limit << std::endl;
+  std::cout << "pdgains_sim_file_name: " << gain_fname << std::endl;
+  dof = 0;
 
   if(m_angleIn.isNew()){
     m_angleIn.read();
     // initialize length of vectors
     dof = m_angle.data.length();
-    qold.resize(dof);
-    qold_ref.resize(dof);
-    m_torque.data.length(dof);
-    m_angleRef.data.length(dof);
-    Pgain.resize(dof);
-    Dgain.resize(dof);
-    gain.open(gain_fname.c_str());
-    if (gain.is_open()){
-      double tmp;
-      for (int i=0; i<dof; i++){
-          if (gain >> tmp) {
-              Pgain[i] = tmp;
-          } else {
-              std::cerr << "[" << m_profile.instance_name << "] Gain file [" << gain_fname << "] is too short" << std::endl;
-          }
-          if (gain >> tmp) {
-              Dgain[i] = tmp;
-          } else {
-              std::cerr << "[" << m_profile.instance_name << "] Gain file [" << gain_fname << "] is too short" << std::endl;
-          }
-      }
-      gain.close();
-      std::cerr << "[" << m_profile.instance_name << "] Gain file [" << gain_fname << "] opened" << std::endl;
-    }else{
-      std::cerr << "[" << m_profile.instance_name << "] Gain file [" << gain_fname << "] not opened" << std::endl;
-    }
-    // initialize angleRef, old_ref and old with angle
-    for(int i=0; i < dof; ++i){
-      m_angleRef.data[i] = qold_ref[i] = qold[i] = m_angle.data[i];
-    }
+    readGainFile();
   }
   if(m_angleRefIn.isNew()){
     m_angleRefIn.read();
   }
 
   return RTC::RTC_OK;
+}
+
+void PDcontroller::readGainFile()
+{
+  qold.resize(dof);
+  qold_ref.resize(dof);
+  m_torque.data.length(dof);
+  m_angleRef.data.length(dof);
+  Pgain.resize(dof);
+  Dgain.resize(dof);
+  gain.open(gain_fname.c_str());
+  if (gain.is_open()){
+    double tmp;
+    for (int i=0; i<dof; i++){
+        if (gain >> tmp) {
+            Pgain[i] = tmp;
+        } else {
+            std::cerr << "[" << m_profile.instance_name << "] Gain file [" << gain_fname << "] is too short" << std::endl;
+        }
+        if (gain >> tmp) {
+            Dgain[i] = tmp;
+        } else {
+            std::cerr << "[" << m_profile.instance_name << "] Gain file [" << gain_fname << "] is too short" << std::endl;
+        }
+    }
+    gain.close();
+    std::cerr << "[" << m_profile.instance_name << "] Gain file [" << gain_fname << "] opened" << std::endl;
+  }else{
+    std::cerr << "[" << m_profile.instance_name << "] Gain file [" << gain_fname << "] not opened" << std::endl;
+  }
+  // initialize angleRef, old_ref and old with angle
+  for(int i=0; i < dof; ++i){
+    m_angleRef.data[i] = qold_ref[i] = qold[i] = m_angle.data[i];
+  }
 }
 
 RTC::ReturnCode_t PDcontroller::onDeactivated(RTC::UniqueId ec_id)
@@ -149,6 +160,10 @@ RTC::ReturnCode_t PDcontroller::onExecute(RTC::UniqueId ec_id)
 {
   if(m_angleIn.isNew()){
     m_angleIn.read();
+    if (dof == 0) {
+      dof = m_angle.data.length();
+      readGainFile();
+    }
   }
   if(m_angleRefIn.isNew()){
     m_angleRefIn.read();
@@ -162,6 +177,8 @@ RTC::ReturnCode_t PDcontroller::onExecute(RTC::UniqueId ec_id)
     qold[i] = q;
     qold_ref[i] = q_ref;
     m_torque.data[i] = -(q - q_ref) * Pgain[i] - (dq - dq_ref) * Dgain[i];
+    if (m_torque.data[i] > t_limit) m_torque.data[i] = t_limit;
+    if (m_torque.data[i] < t_limit) m_torque.data[i] = -t_limit;
     // std::cerr << i << " " << m_torque.data[i] << " (" << q << " " << q_ref << ") (" << dq << " " << dq_ref << ") " << Pgain[i] << " " << Dgain[i] << std::endl;
   }
   
