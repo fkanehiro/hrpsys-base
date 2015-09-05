@@ -528,7 +528,8 @@ namespace rats
       std::vector<step_node> support_leg_steps;
       // Swing leg coordinates is interpolated from swing_leg_src_coords to swing_leg_dst_coords during swing phase.
       std::vector<step_node> swing_leg_steps, swing_leg_src_steps, swing_leg_dst_steps;
-      double default_step_height, default_top_ratio, current_step_height, swing_ratio, swing_rot_ratio, foot_midcoords_ratio, dt, current_swing_time[2], current_toe_angle, current_heel_angle;
+      double default_step_height, default_top_ratio, current_step_height, swing_ratio, swing_rot_ratio, foot_midcoords_ratio, dt, current_toe_angle, current_heel_angle;
+      std::vector<double> current_swing_time;
       // Index for current footstep. footstep_index should be [0,footstep_node_list.size()]. Current footstep is footstep_node_list[footstep_index].
       size_t footstep_index;
       // one_step_count is total counter num of current steps (= step_time/dt). lcg_count is counter for lcg. During one step, lcg_count decreases from one_step_count to 0.
@@ -576,6 +577,7 @@ namespace rats
       {
         support_leg_types = boost::assign::list_of<leg_type>(RLEG);
         swing_leg_types = boost::assign::list_of<leg_type>(LLEG);
+        current_swing_time = boost::assign::list_of<double>(0.0)(0.0)(0.0)(0.0);
         rdtg.set_dt(dt);
         sdtg.set_dt(dt);
         cdtg.set_dt(dt);
@@ -703,7 +705,7 @@ namespace rats
       void update_leg_steps (const std::vector< std::vector<step_node> >& fnsl, const double default_double_support_ratio);
       size_t get_footstep_index() const { return footstep_index; };
       size_t get_lcg_count() const { return lcg_count; };
-      double get_current_swing_time(const size_t idx) const { return current_swing_time[idx]; };
+      double get_current_swing_time(const size_t idx) const { return current_swing_time.at(idx); };
       const std::vector<step_node>& get_swing_leg_steps() const { return swing_leg_steps; };
       const std::vector<step_node>& get_support_leg_steps() const { return support_leg_steps; };
       const std::vector<step_node>& get_swing_leg_src_steps() const { return swing_leg_src_steps; };
@@ -733,23 +735,14 @@ namespace rats
       };
       std::vector<leg_type> get_current_support_states () const
       {
-	if ( current_step_height > 0.0 ) {
-	  if ( 0.0 < swing_ratio && swing_ratio < 1.0 ) {
-            return get_support_leg_types();
-	  } else {
-            if (get_support_leg_types().size() == 1) {
-                return boost::assign::list_of(BOTH);
-            } else {
-                return boost::assign::list_of(ALL);
-            }
-	  }
-	} else {
-          if (get_support_leg_types().size() == 1) {
-              return boost::assign::list_of(BOTH);
+          if ( current_step_height > 0.0 && 0.0 < swing_ratio && swing_ratio < 1.0 ) {
+              return get_support_leg_types();
           } else {
-              return boost::assign::list_of(ALL);
+              std::vector<leg_type> tmp_sup_types = get_support_leg_types();
+              std::vector<leg_type> tmp_swg_types = get_swing_leg_types();
+              std::copy(tmp_swg_types.begin(), tmp_swg_types.end(), std::back_inserter(tmp_sup_types));
+              return tmp_sup_types;
           }
-	}
       };
       orbit_type get_default_orbit_type () const { return default_orbit_type; };
       double get_swing_trajectory_delay_time_offset () { return rdtg.get_swing_trajectory_delay_time_offset(); };
