@@ -13,12 +13,15 @@
 #include <rtm/Manager.h>
 #include <rtm/DataFlowComponentBase.h>
 #include <rtm/CorbaPort.h>
+#include <rtm/CorbaNaming.h>
 #include <rtm/DataInPort.h>
 #include <rtm/DataOutPort.h>
 #include <rtm/idl/BasicDataTypeSkel.h>
 
 #include <hrpUtil/EigenTypes.h>
-
+#include <hrpModel/ModelLoaderUtil.h>
+#include <hrpModel/Body.h>
+#include <hrpModel/Link.h>
 
 // Service implementation headers
 // <rtc-template block="service_impl_h">
@@ -87,7 +90,6 @@ class PDcontroller
   // no corresponding operation exists in OpenRTm-aist-0.2.0
   // virtual RTC::ReturnCode_t onRateChanged(RTC::UniqueId ec_id);
 
-
  protected:
   // Configuration variable declaration
   // <rtc-template block="config_declare">
@@ -126,12 +128,15 @@ class PDcontroller
   // </rtc-template>
 
  private:
+  void readGainFile();
+  hrp::BodyPtr m_robot;
   int dummy;
   double dt;
   std::ifstream gain;
   std::string gain_fname;
   hrp::dvector qold, qold_ref, Pgain, Dgain;
-  size_t dof;
+  size_t dof, loop;
+  unsigned int m_debugLevel;
 };
 
 extern "C"
