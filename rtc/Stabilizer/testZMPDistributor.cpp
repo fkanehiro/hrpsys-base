@@ -13,7 +13,8 @@ protected:
     double dt; // [s]
     double total_fz; // [N]
     SimpleZMPDistributor* szd;
-    bool use_qp, use_gnuplot;
+    bool use_gnuplot;
+    enum {EEFM, EEFMQP, EEFMQP2} distribution_algorithm;
     size_t sleep_msec;
     std::vector<hrp::Vector3> leg_pos;
     std::vector<hrp::Vector3> ee_pos;
@@ -23,8 +24,8 @@ protected:
 private:
     void gen_and_plot ()
     {
-        std::cerr << "use_qp = " << (use_qp==true?"true":"false") << ", sleep_msec = " << sleep_msec << "[msec]" << std::endl;
         parse_params();
+        std::cerr << "distribution_algorithm = " << ((distribution_algorithm==EEFM)?"EEFM": ((distribution_algorithm==EEFMQP)?"EEFMQP":"EEFMQP2") ) << ", sleep_msec = " << sleep_msec << "[msec]" << std::endl;
         szd->print_vertices("");
         szd->print_params(std::string(""));
         //
@@ -77,11 +78,11 @@ private:
         //
         for (size_t i = 0; i < refzmp_vec.size(); i++) {
             double alpha = szd->calcAlpha(refzmp_vec[i], ee_pos, ee_rot, names);
-            if (use_qp) {
+            if (distribution_algorithm == EEFMQP || distribution_algorithm == EEFMQP2) {
                 szd->distributeZMPToForceMomentsQP(ref_foot_force, ref_foot_moment,
                                                    ee_pos, cop_pos, ee_rot, names,
                                                    refzmp_vec[i], refzmp_vec[i],
-                                                   total_fz, dt);
+                                                   total_fz, dt, true, "", (distribution_algorithm == EEFMQP2));
             } else {
                 szd->distributeZMPToForceMoments(ref_foot_force, ref_foot_moment,
                                                  ee_pos, cop_pos, ee_rot, names,
@@ -169,7 +170,7 @@ private:
     };
 public:
     std::vector<std::string> arg_strs;
-    testZMPDistributor(const double _dt) : dt(_dt), use_qp(true), use_gnuplot(true), sleep_msec(100)
+    testZMPDistributor(const double _dt) : dt(_dt), distribution_algorithm(EEFMQP), use_gnuplot(true), sleep_msec(100)
     {
         szd = new SimpleZMPDistributor(_dt);
     };
@@ -184,8 +185,8 @@ public:
     void parse_params ()
     {
       for (int i = 0; i < arg_strs.size(); ++ i) {
-          if ( arg_strs[i]== "--use-qp" ) {
-              if (++i < arg_strs.size()) use_qp = (arg_strs[i].c_str()=="true"?true:false);
+          if ( arg_strs[i]== "--distribution-algorithm" ) {
+              if (++i < arg_strs.size()) distribution_algorithm = ((arg_strs[i]=="EEFM")? EEFM : ((arg_strs[i]=="EEFMQP")? EEFMQP : EEFMQP2) );
           } else if ( arg_strs[i]== "--sleep-msec" ) {
               if (++i < arg_strs.size()) sleep_msec = atoi(arg_strs[i].c_str());
           } else if ( arg_strs[i]== "--use-gnuplot" ) {

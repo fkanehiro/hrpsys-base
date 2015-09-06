@@ -187,6 +187,24 @@ public:
         return alpha;
     };
 
+    double calcAlphaFromCOP (const hrp::Vector3& tmprefzmp,
+                             const std::vector<hrp::Vector3>& cop_pos,
+                             const std::vector<std::string>& ee_name)
+    {
+        size_t l_idx, r_idx;
+        for (size_t i = 0; i < ee_name.size(); i++) {
+            if (ee_name[i]=="rleg") r_idx = i;
+            else l_idx = i;
+        }
+        hrp::Vector3 difp = (cop_pos[r_idx]-cop_pos[l_idx]);
+        double alpha = difp.dot(tmprefzmp - cop_pos[l_idx])/difp.dot(difp);
+
+        // limit
+        if (alpha>1.0) alpha = 1.0;
+        if (alpha<0.0) alpha = 0.0;
+        return alpha;
+    };
+
     void calcAlphaVector (std::vector<double>& alpha_vector,
                           std::vector<double>& fz_alpha_vector,
                           const std::vector<hrp::Vector3>& ee_pos,
@@ -196,6 +214,24 @@ public:
     {
         double fz_alpha =  calcAlpha(ref_zmp, ee_pos, ee_rot, ee_name);
         double tmpalpha = calcAlpha(new_refzmp, ee_pos, ee_rot, ee_name), alpha;
+        // LPF
+        alpha = alpha_filter->passFilter(tmpalpha);
+        // Blending
+        fz_alpha = wrench_alpha_blending * fz_alpha + (1-wrench_alpha_blending) * alpha;
+        for (size_t i = 0; i < ee_name.size(); i++) {
+            alpha_vector[i]= (ee_name[i]=="rleg") ? alpha : 1-alpha;
+            fz_alpha_vector[i]=(ee_name[i]=="rleg") ? fz_alpha : 1-fz_alpha;
+        }
+    };
+
+    void calcAlphaVectorFromCOP (std::vector<double>& alpha_vector,
+                                 std::vector<double>& fz_alpha_vector,
+                                 const std::vector<hrp::Vector3>& cop_pos,
+                                 const std::vector<std::string>& ee_name,
+                                 const hrp::Vector3& new_refzmp, const hrp::Vector3& ref_zmp)
+    {
+        double fz_alpha =  calcAlphaFromCOP(ref_zmp, cop_pos, ee_name);
+        double tmpalpha = calcAlphaFromCOP(new_refzmp, cop_pos, ee_name), alpha;
         // LPF
         alpha = alpha_filter->passFilter(tmpalpha);
         // Blending
@@ -373,16 +409,64 @@ public:
     };
 
 #ifdef USE_QPOASES
+    void solveForceMomentQPOASES (std::vector<hrp::dvector>& fret,
+                                  const size_t state_dim,
+                                  const size_t state_dim_half,
+                                  const hrp::dmatrix& Hmat,
+                                  const hrp::dvector& gvec)
+    {
+        real_t* H = new real_t[state_dim*state_dim];
+        real_t* g = new real_t[state_dim];
+        real_t* lb = new real_t[state_dim];
+        real_t* ub = new real_t[state_dim];
+        for (size_t i = 0; i < state_dim; i++) {
+            for (size_t j = 0; j < state_dim; j++) {
+                H[i*state_dim+j] = Hmat(i,j);
+            }
+            g[i] = gvec(i);
+            lb[i] = 0.0;
+            ub[i] = 1e10;
+        }
+        QProblemB example( state_dim );
+        Options options;
+        //options.enableFlippingBounds = BT_FALSE;
+        options.initialStatusBounds = ST_INACTIVE;
+        options.numRefinementSteps = 1;
+        options.enableCholeskyRefactorisation = 1;
+        //options.printLevel = PL_LOW;
+        options.printLevel = PL_NONE;
+        example.setOptions( options );
+        /* Solve first QP. */
+        int nWSR = 10;
+        example.init( H,g,lb,ub, nWSR,0 );
+        real_t* xOpt = new real_t[state_dim];
+        example.getPrimalSolution( xOpt );
+        for (size_t i = 0; i < state_dim_half; i++) {
+            fret[0](i) = xOpt[i];
+            fret[1](i) = xOpt[i+state_dim_half];
+        }
+        delete[] H;
+        delete[] g;
+        delete[] lb;
+        delete[] ub;
+        delete[] xOpt;
+    };
+
     void distributeZMPToForceMomentsQP (hrp::Vector3* ref_foot_force, hrp::Vector3* ref_foot_moment,
                                         const std::vector<hrp::Vector3>& ee_pos,
                                         const std::vector<hrp::Vector3>& cop_pos,
                                         const std::vector<hrp::Matrix33>& ee_rot,
                                         const std::vector<std::string>& ee_name,
                                         const hrp::Vector3& new_refzmp, const hrp::Vector3& ref_zmp,
-                                        const double total_fz, const double dt, const bool printp = true, const std::string& print_str = "")
+                                        const double total_fz, const double dt, const bool printp = true, const std::string& print_str = "",
+                                        const bool use_cop_distribution = false)
     {
         std::vector<double> alpha_vector(2), fz_alpha_vector(2);
-        calcAlphaVector(alpha_vector, fz_alpha_vector, ee_pos, ee_rot, ee_name, new_refzmp, ref_zmp);
+        if ( use_cop_distribution ) {
+            calcAlphaVectorFromCOP(alpha_vector, fz_alpha_vector, cop_pos, ee_name, new_refzmp, ref_zmp);
+        } else {
+            calcAlphaVector(alpha_vector, fz_alpha_vector, ee_pos, ee_rot, ee_name, new_refzmp, ref_zmp);
+        }
 
         // QP
         double norm_weight = 1e-7;
@@ -464,44 +548,7 @@ public:
         }
         // std::cerr << "H " << Hmat << std::endl;
         // std::cerr << "g " << gvec << std::endl;
-        {
-            real_t* H = new real_t[state_dim*state_dim];
-            real_t* g = new real_t[state_dim];
-            real_t* lb = new real_t[state_dim];
-            real_t* ub = new real_t[state_dim];
-            for (size_t i = 0; i < state_dim; i++) {
-                for (size_t j = 0; j < state_dim; j++) {
-                    H[i*state_dim+j] = Hmat(i,j);
-                }
-                g[i] = gvec(i);
-                lb[i] = 0.0;
-                ub[i] = 1e10;
-            }
-            QProblemB example( state_dim );
-            Options options;
-            //options.enableFlippingBounds = BT_FALSE;
-            options.initialStatusBounds = ST_INACTIVE;
-            options.numRefinementSteps = 1;
-            options.enableCholeskyRefactorisation = 1;
-            //options.printLevel = PL_LOW;
-            options.printLevel = PL_NONE;
-            example.setOptions( options );
-            /* Solve first QP. */
-            int nWSR = 10;
-            example.init( H,g,lb,ub, nWSR,0 );
-            real_t* xOpt = new real_t[state_dim];
-            example.getPrimalSolution( xOpt );
-            for (size_t i = 0; i < state_dim_half; i++) {
-                ff[0](i) = xOpt[i];
-                ff[1](i) = xOpt[i+state_dim_half];
-            }
-            //std::cerr << "f " << ff[0] << " " << ff[1] << std::endl;
-            delete[] H;
-            delete[] g;
-            delete[] lb;
-            delete[] ub;
-            delete[] xOpt;
-        }
+        solveForceMomentQPOASES(ff, state_dim, state_dim_half, Hmat, gvec);
         hrp::dvector tmpv(3);
         for (size_t fidx = 0; fidx < 2; fidx++) {
             tmpv = mm[fidx] * ff[fidx];
@@ -509,7 +556,7 @@ public:
             ref_foot_moment[fidx] = -1*hrp::Vector3(tmpv(1),tmpv(2),0);
         }
         if (printp) {
-            std::cerr << "[" << print_str << "] force moment distribution (QP)" << std::endl;
+            std::cerr << "[" << print_str << "] force moment distribution " << (use_cop_distribution ? "(QP COP)" : "(QP)") << std::endl;
             //std::cerr << "[" << print_str << "]   alpha = " << alpha << ", fz_alpha = " << fz_alpha << std::endl;
             // std::cerr << "[" << print_str << "]   "
             //           << "total_tau    = " << hrp::Vector3(tau_0).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[Nm]" << std::endl;
