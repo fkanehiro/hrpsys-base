@@ -231,7 +231,10 @@ RTC::ReturnCode_t EmergencyStopper::onExecute(RTC::UniqueId ec_id)
 
     if (m_emergencySignalIn.isNew()){
         m_emergencySignalIn.read();
-        if (!is_stop_mode) {
+        if ( m_emergencySignal.data == 0 ) {
+          std::cerr << "[" << m_profile.instance_name << "] emergencySignal is reset!" << std::endl;
+          is_stop_mode = false;
+        } else if (!is_stop_mode) {
             Guard guard(m_mutex);
             std::cerr << "[" << m_profile.instance_name << "] emergencySignal is set!" << std::endl;
             is_stop_mode = true;

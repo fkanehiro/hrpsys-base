@@ -319,6 +319,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
       if ( sen != NULL ) is_legged_robot = true;
   }
   is_emergency = false;
+  reset_emergency_flag = false;
 
   m_qCurrent.data.length(m_robot->numJoints());
   m_qRef.data.length(m_robot->numJoints());
@@ -562,8 +563,13 @@ RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
     }
     m_qRefOut.write();
     // emergencySignal
-    if (is_emergency) {
-        m_emergencySignalOut.write();
+    if (reset_emergency_flag) {
+      m_emergencySignal.data = 0;
+      m_emergencySignalOut.write();
+      reset_emergency_flag = false;
+    } else if (is_emergency) {
+      m_emergencySignal.data = 1;
+      m_emergencySignalOut.write();
     }
   }
 
@@ -885,6 +891,10 @@ void Stabilizer::getTargetParameters ()
   if ( transition_count < 0 ) {
     transition_count++;
   } else if ( transition_count > 0 ) {
+    if ( transition_count == 1 ) {
+      std::cerr << "[" << m_profile.instance_name << "] Move to MODE_IDLE" << std::endl;
+      reset_emergency_flag = true;
+    }
     transition_count--;
   }
   for ( int i = 0; i < m_robot->numJoints(); i++ ){
