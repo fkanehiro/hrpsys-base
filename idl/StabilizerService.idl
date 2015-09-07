@@ -116,8 +116,6 @@ module OpenHRP
       double eefm_ee_rot_error_p_gain;
       /// Pos rot error cutoff freq [Hz]
       double eefm_ee_error_cutoff_freq;
-      /// Is ik enable
-      BoolSequence is_ik_enable;
       // common
       /// Current Stabilizer algorithm
       STAlgorithm st_algorithm;
@@ -125,6 +123,12 @@ module OpenHRP
       ControllerMode controller_mode;
       /// Transition time [s] for start and stop Stabilizer
       double transition_time;
+      /// Bool sequence for all end effectors whether the end effector is used for limb IK.
+      BoolSequence is_ik_enable;
+      /// Bool sequence for all end effectors whether the end effector is used for feedback control (currently damping control).
+      BoolSequence is_feedback_control_enable;
+      /// Bool sequence for all end effectors whether the end effector is used for zmp calculation.
+      BoolSequence is_zmp_calc_enable;
       /// COP margin [m] from edges for COP checking
       double cop_check_margin;
       /// CP margin [m]
