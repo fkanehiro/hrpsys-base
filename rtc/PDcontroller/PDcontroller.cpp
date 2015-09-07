@@ -117,6 +117,13 @@ RTC::ReturnCode_t PDcontroller::onShutdown(RTC::UniqueId ec_id)
 RTC::ReturnCode_t PDcontroller::onActivated(RTC::UniqueId ec_id)
 {
   std::cout << m_profile.instance_name << ": on Activated " << std::endl;
+  if(m_angleIn.isNew()){
+    m_angleIn.read();
+    if (dof == 0) {
+        dof = m_angle.data.length();
+        readGainFile();
+    }
+  }
   return RTC::RTC_OK;
 }
 
