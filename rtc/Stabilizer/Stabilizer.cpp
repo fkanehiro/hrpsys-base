@@ -218,9 +218,11 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
       ikp.localR = Eigen::AngleAxis<double>(tmpv[3], hrp::Vector3(tmpv[0], tmpv[1], tmpv[2])).toRotationMatrix(); // rotation in VRML is represented by axis + angle
       ikp.target_name = ee_target;
       ikp.ee_name = ee_name;
-      if (ee_name == "rleg") ikp.sensor_name = "rfsensor";
-      else if (ee_name == "lleg") ikp.sensor_name = "lfsensor";
-      else ikp.sensor_name = "";
+      for (size_t j = 0; j < npforce; j++) {
+          if (m_robot->link(ee_target)->name == m_robot->sensor(hrp::Sensor::FORCE, j)->link->name) {
+              ikp.sensor_name = m_robot->sensor(hrp::Sensor::FORCE, j)->name;
+          }
+      }
       stikp.push_back(ikp);
       jpe_v.push_back(hrp::JointPathExPtr(new hrp::JointPathEx(m_robot, m_robot->link(ee_base), m_robot->link(ee_target), dt, false)));
       // Fix for toe joint
@@ -243,7 +245,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
       is_feedback_control_enable.push_back( (ee_name.find("leg") != std::string::npos ? true : false) ); // Hands feedback control => disabled, feet feedback control => enabled, by default
       is_zmp_calc_enable.push_back( (ee_name.find("leg") != std::string::npos ? true : false) ); // To zmp calculation, hands are disabled and feet are enabled, by default
       std::cerr << "[" << m_profile.instance_name << "] End Effector [" << ee_name << "]" << std::endl;
-      std::cerr << "[" << m_profile.instance_name << "]   target = " << m_robot->link(ikp.target_name)->name << ", base = " << ee_base << std::endl;
+      std::cerr << "[" << m_profile.instance_name << "]   target = " << m_robot->link(ikp.target_name)->name << ", base = " << ee_base << ", sensor_name = " << ikp.sensor_name << std::endl;
       std::cerr << "[" << m_profile.instance_name << "]   offset_pos = " << ikp.localp.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[m]" << std::endl;
     }
     m_contactStates.data.length(num);
@@ -722,7 +724,7 @@ void Stabilizer::getActualParameters ()
       std::vector<hrp::Matrix33> ee_rot;
       for (size_t i = 0; i < stikp.size(); i++) {
           STIKParam& ikp = stikp[i];
-          if (ikp.ee_name.find("leg") == std::string::npos) continue;
+          if (!is_feedback_control_enable[i]) continue;
           hrp::Link* target = m_robot->link(ikp.target_name);
           ee_pos.push_back(target->p + target->R * ikp.localp);
           cop_pos.push_back(target->p + target->R * ikp.localCOPPos);
@@ -768,7 +770,7 @@ void Stabilizer::getActualParameters ()
 #define deg2rad(x) ((x) * M_PI / 180.0)
       for (size_t i = 0; i < stikp.size(); i++) {
         STIKParam& ikp = stikp[i];
-        if (ikp.ee_name.find("leg") == std::string::npos) continue;
+        if (!is_feedback_control_enable[i]) continue;
         hrp::Sensor* sensor = m_robot->sensor<hrp::ForceSensor>(ikp.sensor_name);
         hrp::Link* target = m_robot->link(ikp.target_name);
         // Convert moment at COP => moment at ee
@@ -960,7 +962,7 @@ bool Stabilizer::calcZMP(hrp::Vector3& ret_zmp, const double zmp_z)
   double tmpzmpy = 0;
   double tmpfz = 0, tmpfz2 = 0.0;
   for (size_t i = 0; i < stikp.size(); i++) {
-    if (stikp[i].ee_name.find("leg") == std::string::npos) continue;
+    if (!is_zmp_calc_enable[i]) continue;
     hrp::ForceSensor* sensor = m_robot->sensor<hrp::ForceSensor>(stikp[i].sensor_name);
     hrp::Vector3 fsp = sensor->link->p + sensor->link->R * sensor->localPos;
     hrp::Matrix33 tmpR;
@@ -1169,7 +1171,7 @@ void Stabilizer::calcEEForceMomentControl() {
       for (size_t i = 0; i < stikp.size(); i++) {
           hrp::Vector3 tmpp; // modified ee Pos
           hrp::Matrix33 tmpR; // modified ee Rot
-          if ( stikp[i].ee_name.find("leg") != std::string::npos ) {
+          if (is_feedback_control_enable[i]) {
               // moment control
               rats::rotm3times(tmpR, target_ee_R[i], hrp::rotFromRpy(-stikp[i].ee_d_foot_rpy(0), -stikp[i].ee_d_foot_rpy(1), 0));
               // total_target_foot_p[i](0) = target_foot_p[i](0);
