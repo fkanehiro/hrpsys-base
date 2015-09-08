@@ -13,7 +13,8 @@ protected:
     double dt; // [s]
     double total_fz; // [N]
     SimpleZMPDistributor* szd;
-    bool use_qp, use_gnuplot;
+    bool use_gnuplot;
+    enum {EEFM, EEFMQP, EEFMQP2} distribution_algorithm;
     size_t sleep_msec;
     std::vector<hrp::Vector3> leg_pos;
     std::vector<hrp::Vector3> ee_pos;
@@ -23,8 +24,8 @@ protected:
 private:
     void gen_and_plot ()
     {
-        std::cerr << "use_qp = " << (use_qp==true?"true":"false") << ", sleep_msec = " << sleep_msec << "[msec]" << std::endl;
         parse_params();
+        std::cerr << "distribution_algorithm = " << ((distribution_algorithm==EEFM)?"EEFM": ((distribution_algorithm==EEFMQP)?"EEFMQP":"EEFMQP2") ) << ", sleep_msec = " << sleep_msec << "[msec]" << std::endl;
         szd->print_vertices("");
         szd->print_params(std::string(""));
         //
@@ -67,13 +68,21 @@ private:
         hrp::Vector3 ref_foot_force[2], ref_foot_moment[2];
         std::vector<std::vector<Eigen::Vector2d> > fs;
         szd->get_vertices(fs);
+        //
+        std::ostringstream oss_foot_params("");
+        oss_foot_params << "'/tmp/plotrleg.dat' using 1:2:3 with lines title 'rleg', "
+                        << "'/tmp/plotlleg.dat' using 1:2:3 with lines title 'lleg', "
+                        << "'/tmp/plotrleg-cop.dat' using 1:2:3 with points title 'rleg cop', "
+                        << "'/tmp/plotlleg-cop.dat' using 1:2:3 with points title 'lleg cop', ";
+        std::string foot_params_str = oss_foot_params.str();
+        //
         for (size_t i = 0; i < refzmp_vec.size(); i++) {
             double alpha = szd->calcAlpha(refzmp_vec[i], ee_pos, ee_rot, names);
-            if (use_qp) {
+            if (distribution_algorithm == EEFMQP || distribution_algorithm == EEFMQP2) {
                 szd->distributeZMPToForceMomentsQP(ref_foot_force, ref_foot_moment,
                                                    ee_pos, cop_pos, ee_rot, names,
                                                    refzmp_vec[i], refzmp_vec[i],
-                                                   total_fz, dt);
+                                                   total_fz, dt, true, "", (distribution_algorithm == EEFMQP2));
             } else {
                 szd->distributeZMPToForceMoments(ref_foot_force, ref_foot_moment,
                                                  ee_pos, cop_pos, ee_rot, names,
@@ -89,6 +98,12 @@ private:
                 }
                 hrp::Vector3 tmpf(hrp::Vector3(ee_rot[j] * hrp::Vector3(fs[j][0](0), fs[j][0](1), 0) + ee_pos[j]));
                 fprintf(fp, "%f %f %f\n", tmpf(0), tmpf(1), tmpf(2));
+                fclose(fp);
+            }
+            for (size_t j = 0; j < fs.size(); j++) {
+                std::string fname("/tmp/plot"+names[j]+"-cop.dat");
+                FILE* fp = fopen(fname.c_str(), "w");
+                fprintf(fp, "%f %f %f\n", ee_pos[j](0), ee_pos[j](1), ee_pos[j](2));
                 fclose(fp);
             }
             for (size_t j = 0; j < fs.size(); j++) {
@@ -114,32 +129,36 @@ private:
                 fclose(fp);
             }
             if (use_gnuplot) {
-                fprintf(gp, "splot [-0.5:0.5][-0.5:0.5][-1:1000] '/tmp/plotrleg.dat' using 1:2:3 with lines title 'rleg'\n");
-                fprintf(gp, "replot '/tmp/plotlleg.dat' using 1:2:3 with lines title 'lleg'\n");
-                fprintf(gp, "replot '/tmp/plotrlegfm.dat' using 1:2:3 with lines title 'rleg fm' lw 5\n");
-                fprintf(gp, "replot '/tmp/plotllegfm.dat' using 1:2:3 with lines title 'lleg fm' lw 5\n");
-                fprintf(gp, "replot '/tmp/plotzmp.dat' using 1:2:3 with points title 'zmp' lw 10\n");
+                std::ostringstream oss("");
+                oss << "splot [-0.5:0.5][-0.5:0.5][-1:1000] " << foot_params_str
+                    << "'/tmp/plotrlegfm.dat' using 1:2:3 with lines title 'rleg fm' lw 5, "
+                    << "'/tmp/plotllegfm.dat' using 1:2:3 with lines title 'lleg fm' lw 5, "
+                    << "'/tmp/plotzmp.dat' using 1:2:3 with points title 'zmp' lw 10";
+                fprintf(gp, "%s\n", oss.str().c_str());
                 fflush(gp);
                 usleep(1000*sleep_msec);
             }
         }
         fclose(fp_fm);
         if (use_gnuplot) {
-            fprintf(gp_m, "splot [-0.5:0.5][-0.5:0.5][-100:100] '/tmp/plotrleg.dat' using 1:2:3 with lines title 'rleg'\n");
-            fprintf(gp_m, "replot '/tmp/plotlleg.dat' using 1:2:3 with lines title 'lleg'\n");
-            fprintf(gp_m, "replot '/tmp/plot-fm.dat' using 1:2:5 with points title 'rleg nx' lw 5\n");
-            fprintf(gp_m, "replot '/tmp/plot-fm.dat' using 1:2:6 with points title 'lleg nx' lw 5\n");
-            fprintf(gp_m, "replot '/tmp/plot-fm.dat' using 1:2:7 with points title 'rleg ny' lw 5\n");
-            fprintf(gp_m, "replot '/tmp/plot-fm.dat' using 1:2:8 with points title 'lleg ny' lw 5\n");
+            std::ostringstream oss("");
+            oss << "splot [-0.5:0.5][-0.5:0.5][-100:100] " << foot_params_str
+                << "'/tmp/plot-fm.dat' using 1:2:5 with points title 'rleg nx' lw 5, "
+                << "'/tmp/plot-fm.dat' using 1:2:6 with points title 'lleg nx' lw 5, "
+                << "'/tmp/plot-fm.dat' using 1:2:7 with points title 'rleg ny' lw 5, "
+                << "'/tmp/plot-fm.dat' using 1:2:8 with points title 'lleg ny' lw 5";
+            fprintf(gp_m, "%s\n", oss.str().c_str());
             fflush(gp_m);
-            fprintf(gp_f, "splot [-0.5:0.5][-0.5:0.5][-50:%f] '/tmp/plotrleg.dat' using 1:2:3 with lines title 'rleg'\n", total_fz*1.1);
-            fprintf(gp_f, "replot '/tmp/plotlleg.dat' using 1:2:3 with lines title 'lleg'\n");
-            fprintf(gp_f, "replot '/tmp/plot-fm.dat' using 1:2:3 with points title 'rleg fz' lw 5\n");
-            fprintf(gp_f, "replot '/tmp/plot-fm.dat' using 1:2:4 with points title 'lleg fz' lw 5\n");
+            oss.str("");
+            oss << "splot [-0.5:0.5][-0.5:0.5][-50:" << total_fz*1.1 << "] " << foot_params_str
+                << "'/tmp/plot-fm.dat' using 1:2:3 with points title 'rleg fz' lw 5, "
+                << "'/tmp/plot-fm.dat' using 1:2:4 with points title 'lleg fz' lw 5";
+            fprintf(gp_f, "%s\n", oss.str().c_str());
             fflush(gp_f);
-            fprintf(gp_a, "splot [-0.5:0.5][-0.5:0.5][-0.1:1.1] '/tmp/plotrleg.dat' using 1:2:3 with lines title 'rleg'\n");
-            fprintf(gp_a, "replot '/tmp/plotlleg.dat' using 1:2:3 with lines title 'lleg'\n");
-            fprintf(gp_a, "replot '/tmp/plot-fm.dat' using 1:2:9 with points title 'alpha' lw 5\n");
+            oss.str("");
+            oss << "splot [-0.5:0.5][-0.5:0.5][-0.1:1.1] " << foot_params_str
+                << "'/tmp/plot-fm.dat' using 1:2:9 with points title 'alpha' lw 5";
+            fprintf(gp_a, "%s\n", oss.str().c_str());
             fflush(gp_a);
             double tmp;
             std::cin >> tmp;
@@ -151,7 +170,7 @@ private:
     };
 public:
     std::vector<std::string> arg_strs;
-    testZMPDistributor(const double _dt) : dt(_dt), use_qp(true), use_gnuplot(true), sleep_msec(100)
+    testZMPDistributor(const double _dt) : dt(_dt), distribution_algorithm(EEFMQP), use_gnuplot(true), sleep_msec(100)
     {
         szd = new SimpleZMPDistributor(_dt);
     };
@@ -166,8 +185,8 @@ public:
     void parse_params ()
     {
       for (int i = 0; i < arg_strs.size(); ++ i) {
-          if ( arg_strs[i]== "--use-qp" ) {
-              if (++i < arg_strs.size()) use_qp = (arg_strs[i].c_str()=="true"?true:false);
+          if ( arg_strs[i]== "--distribution-algorithm" ) {
+              if (++i < arg_strs.size()) distribution_algorithm = ((arg_strs[i]=="EEFM")? EEFM : ((arg_strs[i]=="EEFMQP")? EEFMQP : EEFMQP2) );
           } else if ( arg_strs[i]== "--sleep-msec" ) {
               if (++i < arg_strs.size()) sleep_msec = atoi(arg_strs[i].c_str());
           } else if ( arg_strs[i]== "--use-gnuplot" ) {

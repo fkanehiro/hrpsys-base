@@ -240,6 +240,8 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
       target_ee_diff_p_filter.push_back(boost::shared_ptr<FirstOrderLowPassFilter<hrp::Vector3> >(new FirstOrderLowPassFilter<hrp::Vector3>(50.0, dt, hrp::Vector3::Zero()))); // [Hz]
       contact_states_index_map.insert(std::pair<std::string, size_t>(ee_name, i));
       is_ik_enable.push_back( (ee_name.find("leg") != std::string::npos ? true : false) ); // Hands ik => disabled, feet ik => enabled, by default
+      is_feedback_control_enable.push_back( (ee_name.find("leg") != std::string::npos ? true : false) ); // Hands feedback control => disabled, feet feedback control => enabled, by default
+      is_zmp_calc_enable.push_back( (ee_name.find("leg") != std::string::npos ? true : false) ); // To zmp calculation, hands are disabled and feet are enabled, by default
       std::cerr << "[" << m_profile.instance_name << "] End Effector [" << ee_name << "]" << std::endl;
       std::cerr << "[" << m_profile.instance_name << "]   target = " << m_robot->link(ikp.target_name)->name << ", base = " << ee_base << std::endl;
       std::cerr << "[" << m_profile.instance_name << "]   offset_pos = " << ikp.localp.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[m]" << std::endl;
@@ -1366,6 +1368,15 @@ void Stabilizer::getParameter(OpenHRP::StabilizerService::stParam& i_stp)
   for (size_t i = 0; i < is_ik_enable.size(); i++) {
       i_stp.is_ik_enable[i] = is_ik_enable[i];
   }
+  i_stp.is_feedback_control_enable.length(is_feedback_control_enable.size());
+  for (size_t i = 0; i < is_feedback_control_enable.size(); i++) {
+      i_stp.is_feedback_control_enable[i] = is_feedback_control_enable[i];
+  }
+  i_stp.is_zmp_calc_enable.length(is_zmp_calc_enable.size());
+  for (size_t i = 0; i < is_zmp_calc_enable.size(); i++) {
+      i_stp.is_zmp_calc_enable[i] = is_zmp_calc_enable[i];
+  }
+
   i_stp.foot_origin_offset.length(2);
   for (size_t i = 0; i < i_stp.foot_origin_offset.length(); i++) {
       i_stp.foot_origin_offset[i].length(3);
@@ -1463,15 +1474,10 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
   for (size_t i = 0; i < target_ee_diff_p_filter.size(); i++) {
       target_ee_diff_p_filter[i]->setCutOffFreq(i_stp.eefm_ee_error_cutoff_freq);
   }
-  if (is_ik_enable.size() != i_stp.is_ik_enable.length()) {
-      std::cerr << "[" << m_profile.instance_name << "]   is_ik_enable cannot be set. Length " << is_ik_enable.size() << " != " << i_stp.is_ik_enable.length() << std::endl;
-  } else if (control_mode != MODE_IDLE) {
-      std::cerr << "[" << m_profile.instance_name << "]   is_ik_enable cannot be set. Current control_mode is " << control_mode << std::endl;
-  } else {
-      for (size_t i = 0; i < is_ik_enable.size(); i++) {
-          is_ik_enable[i] = i_stp.is_ik_enable[i];
-      }
-  }
+  setBoolSequenceParam(is_ik_enable, i_stp.is_ik_enable, std::string("is_ik_enable"));
+  setBoolSequenceParam(is_feedback_control_enable, i_stp.is_feedback_control_enable, "is_feedback_control_enable");
+  setBoolSequenceParam(is_zmp_calc_enable, i_stp.is_zmp_calc_enable, "is_zmp_calc_enable");
+
   transition_time = i_stp.transition_time;
   cop_check_margin = i_stp.cop_check_margin;
   cp_check_margin = i_stp.cp_check_margin;
@@ -1487,11 +1493,6 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
           foot_origin_offset[i](2) = i_stp.foot_origin_offset[i][2];
       }
   }
-  std::cerr << "[" << m_profile.instance_name << "]   is_ik_enable is ";
-  for (size_t i = 0; i < is_ik_enable.size(); i++) {
-      std::cerr <<"[" << is_ik_enable[i] << "]";
-  }
-  std::cerr << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   foot_origin_offset is ";
   for (size_t i = 0; i < 2; i++) {
       std::cerr << foot_origin_offset[i].format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]"));
@@ -1541,6 +1542,24 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
   std::cerr << "[" << m_profile.instance_name << "]  cp_check_margin = " << cp_check_margin << "[m]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]  contact_decision_threshold = " << contact_decision_threshold << "[N]" << std::endl;
 }
+
+void Stabilizer::setBoolSequenceParam (std::vector<bool>& st_bool_values, const OpenHRP::StabilizerService::BoolSequence& output_bool_values, const std::string& prop_name)
+{
+  if (st_bool_values.size() != output_bool_values.length()) {
+      std::cerr << "[" << m_profile.instance_name << "]   " << prop_name << " cannot be set. Length " << st_bool_values.size() << " != " << output_bool_values.length() << std::endl;
+  } else if (control_mode != MODE_IDLE) {
+      std::cerr << "[" << m_profile.instance_name << "]   " << prop_name << " cannot be set. Current control_mode is " << control_mode << std::endl;
+  } else {
+      for (size_t i = 0; i < st_bool_values.size(); i++) {
+          st_bool_values[i] = output_bool_values[i];
+      }
+  }
+  std::cerr << "[" << m_profile.instance_name << "]   " << prop_name << " is ";
+  for (size_t i = 0; i < st_bool_values.size(); i++) {
+      std::cerr <<"[" << st_bool_values[i] << "]";
+  }
+  std::cerr << std::endl;
+};
 
 void Stabilizer::waitSTTransition()
 {
