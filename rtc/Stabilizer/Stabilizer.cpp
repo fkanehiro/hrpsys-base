@@ -485,7 +485,7 @@ RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
       if ( transition_count == 0 && on_ground ) sync_2_st();
       break;
     case MODE_ST:
-      if (st_algorithm == OpenHRP::StabilizerService::EEFM || st_algorithm == OpenHRP::StabilizerService::EEFMQP) {
+      if (st_algorithm == OpenHRP::StabilizerService::EEFM || st_algorithm == OpenHRP::StabilizerService::EEFMQP || st_algorithm == OpenHRP::StabilizerService::EEFMQPCOP) {
         calcEEForceMomentControl();
       } else {
         calcTPCC();
@@ -625,7 +625,7 @@ void Stabilizer::getActualParameters ()
   // Actual world frame =>
   hrp::Vector3 foot_origin_pos;
   hrp::Matrix33 foot_origin_rot;
-  if (st_algorithm == OpenHRP::StabilizerService::EEFM || st_algorithm == OpenHRP::StabilizerService::EEFMQP) {
+  if (st_algorithm == OpenHRP::StabilizerService::EEFM || st_algorithm == OpenHRP::StabilizerService::EEFMQP || st_algorithm == OpenHRP::StabilizerService::EEFMQPCOP) {
     // update by current joint angles
     for ( int i = 0; i < m_robot->numJoints(); i++ ){
       m_robot->joint(i)->q = m_qCurrent.data[i];
@@ -653,7 +653,7 @@ void Stabilizer::getActualParameters ()
   act_cog = m_robot->calcCM();
   // zmp
   on_ground = false;
-  if (st_algorithm == OpenHRP::StabilizerService::EEFM || st_algorithm == OpenHRP::StabilizerService::EEFMQP) {
+  if (st_algorithm == OpenHRP::StabilizerService::EEFM || st_algorithm == OpenHRP::StabilizerService::EEFMQP || st_algorithm == OpenHRP::StabilizerService::EEFMQPCOP) {
     on_ground = calcZMP(act_zmp, zmp_origin_off+foot_origin_pos(2));
   } else {
     on_ground = calcZMP(act_zmp, ref_zmp(2));
@@ -665,7 +665,7 @@ void Stabilizer::getActualParameters ()
 
   // convert absolute (in st) -> root-link relative
   rel_act_zmp = m_robot->rootLink()->R.transpose() * (act_zmp - m_robot->rootLink()->p);
-  if (st_algorithm == OpenHRP::StabilizerService::EEFM || st_algorithm == OpenHRP::StabilizerService::EEFMQP) {
+  if (st_algorithm == OpenHRP::StabilizerService::EEFM || st_algorithm == OpenHRP::StabilizerService::EEFMQP || st_algorithm == OpenHRP::StabilizerService::EEFMQPCOP) {
     // Actual foot_origin frame =>
     act_zmp = foot_origin_rot.transpose() * (act_zmp - foot_origin_pos);
     act_cog = foot_origin_rot.transpose() * (act_cog - foot_origin_pos);
@@ -754,12 +754,13 @@ void Stabilizer::getActualParameters ()
                                            new_refzmp, hrp::Vector3(foot_origin_rot * ref_zmp + foot_origin_pos),
                                            eefm_gravitational_acceleration * total_mass, dt,
                                            DEBUGP, std::string(m_profile.instance_name));
-      } else if (st_algorithm == OpenHRP::StabilizerService::EEFMQP) {
+      } else if (st_algorithm == OpenHRP::StabilizerService::EEFMQP || st_algorithm == OpenHRP::StabilizerService::EEFMQPCOP) {
           szd->distributeZMPToForceMomentsQP(ref_force, ref_moment,
                                              ee_pos, cop_pos, ee_rot, ee_name,
                                              new_refzmp, hrp::Vector3(foot_origin_rot * ref_zmp + foot_origin_pos),
                                              eefm_gravitational_acceleration * total_mass, dt,
-                                             DEBUGP, std::string(m_profile.instance_name));
+                                             DEBUGP, std::string(m_profile.instance_name),
+                                             (st_algorithm == OpenHRP::StabilizerService::EEFMQPCOP));
       }
       // for debug output
       new_refzmp = foot_origin_rot.transpose() * (new_refzmp - foot_origin_pos);
@@ -913,7 +914,7 @@ void Stabilizer::getTargetParameters ()
   m_robot->rootLink()->R = target_root_R;
   m_robot->calcForwardKinematics();
   ref_zmp = m_robot->rootLink()->R * hrp::Vector3(m_zmpRef.data.x, m_zmpRef.data.y, m_zmpRef.data.z) + m_robot->rootLink()->p; // base frame -> world frame
-  if (st_algorithm == OpenHRP::StabilizerService::EEFM || st_algorithm == OpenHRP::StabilizerService::EEFMQP) {
+  if (st_algorithm == OpenHRP::StabilizerService::EEFM || st_algorithm == OpenHRP::StabilizerService::EEFMQP || st_algorithm == OpenHRP::StabilizerService::EEFMQPCOP) {
     // apply inverse system
     hrp::Vector3 tmp_ref_zmp = ref_zmp + eefm_zmp_delay_time_const[0] * (ref_zmp - prev_ref_zmp) / dt;
     prev_ref_zmp = ref_zmp;
@@ -928,7 +929,7 @@ void Stabilizer::getTargetParameters ()
   }
   // <= Reference world frame
 
-  if (st_algorithm == OpenHRP::StabilizerService::EEFM || st_algorithm == OpenHRP::StabilizerService::EEFMQP) {
+  if (st_algorithm == OpenHRP::StabilizerService::EEFM || st_algorithm == OpenHRP::StabilizerService::EEFMQP || st_algorithm == OpenHRP::StabilizerService::EEFMQPCOP) {
     // Reference foot_origin frame =>
     hrp::Vector3 foot_origin_pos;
     hrp::Matrix33 foot_origin_rot;
@@ -1536,10 +1537,10 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
   if (control_mode == MODE_IDLE) {
     st_algorithm = i_stp.st_algorithm;
     emergency_check_mode = i_stp.emergency_check_mode;
-    std::cerr << "[" << m_profile.instance_name << "]   st_algorithm changed to [" << (st_algorithm == OpenHRP::StabilizerService::EEFM?"EEFM":(st_algorithm == OpenHRP::StabilizerService::EEFMQP?"EEFMQP":"TPCC")) << "]" << std::endl;
+    std::cerr << "[" << m_profile.instance_name << "]   st_algorithm changed to [" << getStabilizerAlgorithmString(st_algorithm) << "]" << std::endl;
     std::cerr << "[" << m_profile.instance_name << "]   emergency_check_mode changed to [" << (emergency_check_mode == OpenHRP::StabilizerService::NO_CHECK?"NO_CHECK": (emergency_check_mode == OpenHRP::StabilizerService::COP?"COP":"CP") ) << "]" << std::endl;
   } else {
-    std::cerr << "[" << m_profile.instance_name << "]   st_algorithm cannot be changed to [" << (st_algorithm == OpenHRP::StabilizerService::EEFM?"EEFM":(st_algorithm == OpenHRP::StabilizerService::EEFMQP?"EEFMQP":"TPCC")) << "] during MODE_AIR or MODE_ST." << std::endl;
+    std::cerr << "[" << m_profile.instance_name << "]   st_algorithm cannot be changed to [" << getStabilizerAlgorithmString(st_algorithm) << "] during MODE_AIR or MODE_ST." << std::endl;
     std::cerr << "[" << m_profile.instance_name << "]   emergency_check_mode cannot be changed to [" << (emergency_check_mode == OpenHRP::StabilizerService::NO_CHECK?"NO_CHECK": (emergency_check_mode == OpenHRP::StabilizerService::COP?"COP":"CP") ) << "] during MODE_AIR or MODE_ST." << std::endl;
   }
   std::cerr << "[" << m_profile.instance_name << "]  transition_time = " << transition_time << "[s]" << std::endl;
@@ -1547,6 +1548,22 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
   std::cerr << "[" << m_profile.instance_name << "]  cp_check_margin = " << cp_check_margin << "[m]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]  contact_decision_threshold = " << contact_decision_threshold << "[N]" << std::endl;
 }
+
+std::string Stabilizer::getStabilizerAlgorithmString (OpenHRP::StabilizerService::STAlgorithm _st_algorithm)
+{
+    switch (_st_algorithm) {
+    case OpenHRP::StabilizerService::TPCC:
+        return "TPCC";
+    case OpenHRP::StabilizerService::EEFM:
+        return "EEFM";
+    case OpenHRP::StabilizerService::EEFMQP:
+        return "EEFMQP";
+    case OpenHRP::StabilizerService::EEFMQPCOP:
+        return "EEFMQPCOP";
+    default:
+        return "";
+    }
+};
 
 void Stabilizer::setBoolSequenceParam (std::vector<bool>& st_bool_values, const OpenHRP::StabilizerService::BoolSequence& output_bool_values, const std::string& prop_name)
 {
