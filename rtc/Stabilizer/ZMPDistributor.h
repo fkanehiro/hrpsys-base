@@ -117,6 +117,22 @@ public:
             tvec.push_back(Eigen::Vector2d(-1*leg_rear_margin, leg_outside_margin));
             vec.push_back(tvec);
         }
+        // {
+        //     std::vector<Eigen::Vector2d> tvec;
+        //     tvec.push_back(Eigen::Vector2d(leg_front_margin, leg_inside_margin));
+        //     tvec.push_back(Eigen::Vector2d(leg_front_margin, -1*leg_outside_margin));
+        //     tvec.push_back(Eigen::Vector2d(-1*leg_rear_margin, -1*leg_outside_margin));
+        //     tvec.push_back(Eigen::Vector2d(-1*leg_rear_margin, leg_inside_margin));
+        //     vec.push_back(tvec);
+        // }
+        // {
+        //     std::vector<Eigen::Vector2d> tvec;
+        //     tvec.push_back(Eigen::Vector2d(leg_front_margin, leg_inside_margin));
+        //     tvec.push_back(Eigen::Vector2d(leg_front_margin, -1*leg_outside_margin));
+        //     tvec.push_back(Eigen::Vector2d(-1*leg_rear_margin, -1*leg_outside_margin));
+        //     tvec.push_back(Eigen::Vector2d(-1*leg_rear_margin, leg_inside_margin));
+        //     vec.push_back(tvec);
+        // }
         set_vertices(vec);
     };
     // getter
@@ -239,6 +255,35 @@ public:
         for (size_t i = 0; i < ee_name.size(); i++) {
             alpha_vector[i]= (ee_name[i]=="rleg") ? alpha : 1-alpha;
             fz_alpha_vector[i]=(ee_name[i]=="rleg") ? fz_alpha : 1-fz_alpha;
+        }
+    };
+
+    void calcAlphaVectorFromCOPDistanceCommon (std::vector<double>& alpha_vector,
+                                               const std::vector<hrp::Vector3>& cop_pos,
+                                               const std::vector<std::string>& ee_name,
+                                               const hrp::Vector3& ref_zmp)
+    {
+        std::vector<double> distances;
+        double tmpdistance = 0;
+        for (size_t i = 0; i < ee_name.size(); i++) {
+            distances.push_back((cop_pos[i]-ref_zmp).norm());
+            tmpdistance += (cop_pos[i]-ref_zmp).norm();
+        }
+        for (size_t i = 0; i < ee_name.size(); i++) {
+            alpha_vector[i] = tmpdistance/distances[i];
+        }
+    };
+
+    void calcAlphaVectorFromCOPDistance (std::vector<double>& alpha_vector,
+                                         std::vector<double>& fz_alpha_vector,
+                                         const std::vector<hrp::Vector3>& cop_pos,
+                                         const std::vector<std::string>& ee_name,
+                                         const hrp::Vector3& new_refzmp, const hrp::Vector3& ref_zmp)
+    {
+        calcAlphaVectorFromCOPDistanceCommon(alpha_vector, cop_pos, ee_name, new_refzmp);
+        calcAlphaVectorFromCOPDistanceCommon(fz_alpha_vector, cop_pos, ee_name, ref_zmp);
+        for (size_t i = 0; i < ee_name.size(); i++) {
+            fz_alpha_vector[i] = wrench_alpha_blending * fz_alpha_vector[i] + (1-wrench_alpha_blending) * alpha_vector[i];
         }
     };
 
@@ -411,7 +456,7 @@ public:
 #ifdef USE_QPOASES
     void solveForceMomentQPOASES (std::vector<hrp::dvector>& fret,
                                   const size_t state_dim,
-                                  const size_t state_dim_half,
+                                  const size_t ee_num,
                                   const hrp::dmatrix& Hmat,
                                   const hrp::dvector& gvec)
     {
@@ -441,9 +486,11 @@ public:
         example.init( H,g,lb,ub, nWSR,0 );
         real_t* xOpt = new real_t[state_dim];
         example.getPrimalSolution( xOpt );
-        for (size_t i = 0; i < state_dim_half; i++) {
-            fret[0](i) = xOpt[i];
-            fret[1](i) = xOpt[i+state_dim_half];
+        size_t state_dim_one = state_dim / ee_num;
+        for (size_t fidx = 0; fidx < ee_num; fidx++) {
+            for (size_t i = 0; i < state_dim_one; i++) {
+                fret[fidx](i) = xOpt[i+state_dim_one*fidx];
+            }
         }
         delete[] H;
         delete[] g;
@@ -461,9 +508,11 @@ public:
                                         const double total_fz, const double dt, const bool printp = true, const std::string& print_str = "",
                                         const bool use_cop_distribution = false)
     {
-        std::vector<double> alpha_vector(2), fz_alpha_vector(2);
+        size_t ee_num = ee_name.size();
+        std::vector<double> alpha_vector(ee_num), fz_alpha_vector(ee_num);
         if ( use_cop_distribution ) {
             calcAlphaVectorFromCOP(alpha_vector, fz_alpha_vector, cop_pos, ee_name, new_refzmp, ref_zmp);
+            //calcAlphaVectorFromCOPDistance(alpha_vector, fz_alpha_vector, cop_pos, ee_name, new_refzmp, ref_zmp);
         } else {
             calcAlphaVector(alpha_vector, fz_alpha_vector, ee_pos, ee_rot, ee_name, new_refzmp, ref_zmp);
         }
@@ -475,14 +524,10 @@ public:
         total_fm(0) = total_fz;
         total_fm(1) = 0;
         total_fm(2) = 0;
-        size_t state_dim = 8, state_dim_half = state_dim/2;
+        size_t state_dim = 4*ee_num, state_dim_one = 4; // TODO
         //
-        std::vector<hrp::dvector> ff;
-        ff.push_back(hrp::dvector(state_dim_half));
-        ff.push_back(hrp::dvector(state_dim_half));
-        std::vector<hrp::dmatrix> mm;
-        mm.push_back(hrp::dmatrix(3,state_dim_half));
-        mm.push_back(hrp::dmatrix(3,state_dim_half));
+        std::vector<hrp::dvector> ff(ee_num, hrp::dvector(state_dim_one));
+        std::vector<hrp::dmatrix> mm(ee_num, hrp::dmatrix(3, state_dim_one));
         //
         hrp::dmatrix Hmat = hrp::dmatrix::Zero(state_dim,state_dim);
         hrp::dvector gvec = hrp::dvector::Zero(state_dim);
@@ -492,23 +537,22 @@ public:
             fz_alpha_vector[i] = (fz_alpha_vector[i] < alpha_thre) ? 1/alpha_thre : 1/fz_alpha_vector[i];
         }
         for (size_t j = 0; j < fz_alpha_vector.size(); j++) {
-            for (size_t i = 0; i < state_dim_half; i++) {
-                Hmat(i+j*state_dim_half,i+j*state_dim_half) = norm_weight * fz_alpha_vector[j];
+            for (size_t i = 0; i < state_dim_one; i++) {
+                Hmat(i+j*state_dim_one,i+j*state_dim_one) = norm_weight * fz_alpha_vector[j];
             }
         }
         hrp::dmatrix Gmat(3,state_dim);
         for (size_t i = 0; i < state_dim; i++) {
             Gmat(0,i) = 1.0;
         }
-        for (size_t i = 0; i < state_dim_half; i++) {
-            hrp::Vector3 fpos[2];
-            for (size_t fidx = 0; fidx < 2; fidx++) {
-                fpos[fidx] = ee_rot[fidx]*hrp::Vector3(fs.get_foot_vertex(fidx,i)(0), fs.get_foot_vertex(fidx,i)(1), 0) + ee_pos[fidx];
+        for (size_t fidx = 0; fidx < ee_num; fidx++) {
+            for (size_t i = 0; i < state_dim_one; i++) {
+                hrp::Vector3 fpos = ee_rot[fidx]*hrp::Vector3(fs.get_foot_vertex(fidx,i)(0), fs.get_foot_vertex(fidx,i)(1), 0) + ee_pos[fidx];
                 mm[fidx](0,i) = 1.0;
-                mm[fidx](1,i) = -(fpos[fidx](1)-cop_pos[fidx](1));
-                mm[fidx](2,i) = (fpos[fidx](0)-cop_pos[fidx](0));
-                Gmat(1,i+state_dim_half*fidx) = -(fpos[fidx](1)-new_refzmp(1));
-                Gmat(2,i+state_dim_half*fidx) = (fpos[fidx](0)-new_refzmp(0));
+                mm[fidx](1,i) = -(fpos(1)-cop_pos[fidx](1));
+                mm[fidx](2,i) = (fpos(0)-cop_pos[fidx](0));
+                Gmat(1,i+state_dim_one*fidx) = -(fpos(1)-new_refzmp(1));
+                Gmat(2,i+state_dim_one*fidx) = (fpos(0)-new_refzmp(0));
             }
             //std::cerr << "fpos " << fpos[0] << " " << fpos[1] << std::endl;
         }
@@ -520,12 +564,12 @@ public:
         // std::cerr << total_fm << std::endl;
         //
         {
-            hrp::dmatrix Kmat = hrp::dmatrix::Zero(2,state_dim);
-            hrp::dmatrix KW = hrp::dmatrix::Zero(2,2);
-            hrp::dvector reff(2);
-            for (size_t j = 0; j < 2; j++) {
-                for (size_t i = 0; i < state_dim_half; i++) {
-                    Kmat(j,i+j*state_dim_half) = 1.0;
+            hrp::dmatrix Kmat = hrp::dmatrix::Zero(ee_num,state_dim);
+            hrp::dmatrix KW = hrp::dmatrix::Zero(ee_num, ee_num);
+            hrp::dvector reff(ee_num);
+            for (size_t j = 0; j < ee_num; j++) {
+                for (size_t i = 0; i < state_dim_one; i++) {
+                    Kmat(j,i+j*state_dim_one) = 1.0;
                 }
                 reff(j) = total_fz/2.0;
             }
@@ -533,14 +577,14 @@ public:
             gvec += -1 * Kmat.transpose() * KW * reff;
         }
         {
-            hrp::dmatrix Cmat = hrp::dmatrix::Zero(4,state_dim);
-            hrp::dmatrix CW = hrp::dmatrix::Zero(4,4);
+            hrp::dmatrix Cmat = hrp::dmatrix::Zero(ee_num*2,state_dim);
+            hrp::dmatrix CW = hrp::dmatrix::Zero(ee_num*2,ee_num*2);
             hrp::Vector3 fpos;
-            for (size_t j = 0; j < 2; j++) {
-                for (size_t i = 0; i < state_dim_half; i++) {
+            for (size_t j = 0; j < ee_num; j++) {
+                for (size_t i = 0; i < state_dim_one; i++) {
                     fpos = ee_rot[j]*hrp::Vector3(fs.get_foot_vertex(j,i)(0), fs.get_foot_vertex(j,i)(1), 0) + ee_pos[j];
-                    Cmat(j*2,  i+j*state_dim_half) = fpos(0) - cop_pos[j](0);
-                    Cmat(j*2+1,i+j*state_dim_half) = fpos(1) - cop_pos[j](1);
+                    Cmat(j*2,  i+j*state_dim_one) = fpos(0) - cop_pos[j](0);
+                    Cmat(j*2+1,i+j*state_dim_one) = fpos(1) - cop_pos[j](1);
                 }
                 CW(j*2,j*2) = CW(j*2+1,j*2+1) = cop_weight;
             }
@@ -548,9 +592,9 @@ public:
         }
         // std::cerr << "H " << Hmat << std::endl;
         // std::cerr << "g " << gvec << std::endl;
-        solveForceMomentQPOASES(ff, state_dim, state_dim_half, Hmat, gvec);
+        solveForceMomentQPOASES(ff, state_dim, ee_num, Hmat, gvec);
         hrp::dvector tmpv(3);
-        for (size_t fidx = 0; fidx < 2; fidx++) {
+        for (size_t fidx = 0; fidx < ee_num; fidx++) {
             tmpv = mm[fidx] * ff[fidx];
             ref_foot_force[fidx] = hrp::Vector3(0,0,tmpv(0));
             ref_foot_moment[fidx] = -1*hrp::Vector3(tmpv(1),tmpv(2),0);
@@ -560,14 +604,12 @@ public:
             //std::cerr << "[" << print_str << "]   alpha = " << alpha << ", fz_alpha = " << fz_alpha << std::endl;
             // std::cerr << "[" << print_str << "]   "
             //           << "total_tau    = " << hrp::Vector3(tau_0).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[Nm]" << std::endl;
-            std::cerr << "[" << print_str << "]   "
-                      << "ref_force_R  = " << hrp::Vector3(ref_foot_force[0]).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[N]" << std::endl;
-            std::cerr << "[" << print_str << "]   "
-                      << "ref_force_L  = " << hrp::Vector3(ref_foot_force[1]).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[N]" << std::endl;
-            std::cerr << "[" << print_str << "]   "
-                      << "ref_moment_R = " << hrp::Vector3(ref_foot_moment[0]).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[Nm]" << std::endl;
-            std::cerr << "[" << print_str << "]   "
-                      << "ref_moment_L = " << hrp::Vector3(ref_foot_moment[1]).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[Nm]" << std::endl;
+            for (size_t i = 0; i < ee_num; i++) {
+                std::cerr << "[" << print_str << "]   "
+                          << "ref_force  [" << ee_name[i] << "] " << hrp::Vector3(ref_foot_force[i]).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[N]" << std::endl;
+                std::cerr << "[" << print_str << "]   "
+                          << "ref_moment [" << ee_name[i] << "] " << hrp::Vector3(ref_foot_moment[i]).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[Nm]" << std::endl;
+            }
         }
     };
 #else
