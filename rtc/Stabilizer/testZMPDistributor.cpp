@@ -65,7 +65,7 @@ private:
         std::vector<std::string> names;
         names.push_back("rleg");
         names.push_back("lleg");
-        hrp::Vector3 ref_foot_force[2], ref_foot_moment[2];
+        std::vector<hrp::Vector3> ref_foot_force, ref_foot_moment;
         std::vector<std::vector<Eigen::Vector2d> > fs;
         szd->get_vertices(fs);
         //

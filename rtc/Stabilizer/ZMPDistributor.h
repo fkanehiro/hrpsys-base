@@ -242,7 +242,7 @@ public:
         }
     };
 
-    void distributeZMPToForceMoments (hrp::Vector3* ref_foot_force, hrp::Vector3* ref_foot_moment,
+    void distributeZMPToForceMoments (std::vector<hrp::Vector3>& ref_foot_force, std::vector<hrp::Vector3>& ref_foot_moment,
                                       const std::vector<hrp::Vector3>& ee_pos,
                                       const std::vector<hrp::Vector3>& cop_pos,
                                       const std::vector<hrp::Matrix33>& ee_rot,
@@ -452,7 +452,7 @@ public:
         delete[] xOpt;
     };
 
-    void distributeZMPToForceMomentsQP (hrp::Vector3* ref_foot_force, hrp::Vector3* ref_foot_moment,
+    void distributeZMPToForceMomentsQP (std::vector<hrp::Vector3>& ref_foot_force, std::vector<hrp::Vector3>& ref_foot_moment,
                                         const std::vector<hrp::Vector3>& ee_pos,
                                         const std::vector<hrp::Vector3>& cop_pos,
                                         const std::vector<hrp::Matrix33>& ee_rot,
@@ -571,7 +571,7 @@ public:
         }
     };
 #else
-    void distributeZMPToForceMomentsQP (hrp::Vector3* ref_foot_force, hrp::Vector3* ref_foot_moment,
+    void distributeZMPToForceMomentsQP (std::vector<hrp::Vector3>& ref_foot_force, std::vector<hrp::Vector3>& ref_foot_moment,
                                         const std::vector<hrp::Vector3>& ee_pos,
                                         const std::vector<hrp::Vector3>& cop_pos,
                                         const std::vector<hrp::Matrix33>& ee_rot,

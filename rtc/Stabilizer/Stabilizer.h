@@ -239,6 +239,7 @@ class Stabilizer
     // For eefm
     hrp::Vector3 d_foot_pos, d_foot_rpy, ee_d_foot_rpy;
     hrp::Vector3 eefm_pos_damping_gain, eefm_pos_time_const_support, eefm_rot_damping_gain, eefm_rot_time_const;
+    hrp::Vector3 ref_foot_force, ref_foot_moment;
   };
   enum cmode {MODE_IDLE, MODE_AIR, MODE_ST, MODE_SYNC_TO_IDLE, MODE_SYNC_TO_AIR} control_mode;
   // members
@@ -279,8 +280,6 @@ class Stabilizer
   double eefm_k1[2], eefm_k2[2], eefm_k3[2], eefm_zmp_delay_time_const[2], eefm_body_attitude_control_gain[2], eefm_body_attitude_control_time_const[2];
   double eefm_pos_time_const_swing, eefm_pos_transition_time, eefm_pos_margin_time, eefm_gravitational_acceleration, eefm_ee_pos_error_p_gain, eefm_ee_rot_error_p_gain;
   hrp::Vector3 new_refzmp, rel_cog, ref_zmp_aux;
-  hrp::Vector3 ref_foot_force[2];
-  hrp::Vector3 ref_foot_moment[2];
   hrp::Vector3 pos_ctrl;
   double total_mass, transition_time, cop_check_margin, cp_check_margin, contact_decision_threshold;
   OpenHRP::StabilizerService::EmergencyCheckMode emergency_check_mode;
