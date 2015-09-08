@@ -247,6 +247,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
       std::cerr << "[" << m_profile.instance_name << "] End Effector [" << ee_name << "]" << std::endl;
       std::cerr << "[" << m_profile.instance_name << "]   target = " << m_robot->link(ikp.target_name)->name << ", base = " << ee_base << ", sensor_name = " << ikp.sensor_name << std::endl;
       std::cerr << "[" << m_profile.instance_name << "]   offset_pos = " << ikp.localp.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[m]" << std::endl;
+      prev_act_force_z.push_back(0.0);
     }
     m_contactStates.data.length(num);
   }
@@ -313,7 +314,6 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   pangx_ref = pangy_ref = pangx = pangy = 0;
   rdx = rdy = rx = ry = 0;
   pdr = hrp::Vector3::Zero();
-  prev_act_force_z[0] = prev_act_force_z[1] = 0.0;
 
   // Check is legged robot or not
   is_legged_robot = false;
@@ -986,8 +986,8 @@ bool Stabilizer::calcZMP(hrp::Vector3& ret_zmp, const double zmp_z)
     m_COPInfo.data[i*3+1] = tmpcopmy;
     m_COPInfo.data[i*3+2] = tmpcopfz;
     prev_act_force_z[i] = 0.85 * prev_act_force_z[i] + 0.15 * nf(2); // filter, cut off 5[Hz]
+    tmpfz2 += prev_act_force_z[i];
   }
-  tmpfz2 = prev_act_force_z[0] + prev_act_force_z[1];
   if (tmpfz2 < contact_decision_threshold) {
     ret_zmp = act_zmp;
     return false; // in the air
@@ -1477,8 +1477,8 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
       target_ee_diff_p_filter[i]->setCutOffFreq(i_stp.eefm_ee_error_cutoff_freq);
   }
   setBoolSequenceParam(is_ik_enable, i_stp.is_ik_enable, std::string("is_ik_enable"));
-  setBoolSequenceParam(is_feedback_control_enable, i_stp.is_feedback_control_enable, "is_feedback_control_enable");
-  setBoolSequenceParam(is_zmp_calc_enable, i_stp.is_zmp_calc_enable, "is_zmp_calc_enable");
+  setBoolSequenceParam(is_feedback_control_enable, i_stp.is_feedback_control_enable, std::string("is_feedback_control_enable"));
+  setBoolSequenceParam(is_zmp_calc_enable, i_stp.is_zmp_calc_enable, std::string("is_zmp_calc_enable"));
 
   transition_time = i_stp.transition_time;
   cop_check_margin = i_stp.cop_check_margin;

@@ -260,7 +260,8 @@ class Stabilizer
   hrp::Vector3 ref_zmp, ref_cog, ref_cp, ref_cogvel, prev_ref_cog, prev_ref_zmp;
   hrp::Vector3 act_zmp, act_cog, act_cogvel, act_cp, rel_act_zmp, prev_act_cog, act_base_rpy, current_base_rpy, current_base_pos;
   hrp::Vector3 foot_origin_offset[2];
-  double zmp_origin_off, transition_smooth_gain, prev_act_force_z[2];
+  std::vector<double> prev_act_force_z;
+  double zmp_origin_off, transition_smooth_gain;
   boost::shared_ptr<FirstOrderLowPassFilter<hrp::Vector3> > act_cogvel_filter;
   std::vector<boost::shared_ptr<FirstOrderLowPassFilter<hrp::Vector3> > > target_ee_diff_p_filter;
   OpenHRP::StabilizerService::STAlgorithm st_algorithm;
