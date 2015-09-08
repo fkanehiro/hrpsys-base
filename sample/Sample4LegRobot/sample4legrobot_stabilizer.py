@@ -46,10 +46,25 @@ def demoSetParameterAndStartST():
     stp_org.k_tpcc_x=[4.0, 4.0]
     stp_org.k_brot_p=[0.0, 0.0]
     # for eefm
-    stp_org.eefm_leg_inside_margin=71.12*1e-3
-    stp_org.eefm_leg_outside_margin=71.12*1e-3
-    stp_org.eefm_leg_front_margin=182.0*1e-3
-    stp_org.eefm_leg_rear_margin=72.0*1e-3
+    tmp_leg_inside_margin=71.12*1e-3
+    tmp_leg_outside_margin=71.12*1e-3
+    tmp_leg_front_margin=182.0*1e-3
+    tmp_leg_rear_margin=72.0*1e-3
+    rleg_vertices = [OpenHRP.StabilizerService.TwoDimensionVertex(pos=[tmp_leg_front_margin, tmp_leg_inside_margin]),
+                     OpenHRP.StabilizerService.TwoDimensionVertex(pos=[tmp_leg_front_margin, -1*tmp_leg_outside_margin]),
+                     OpenHRP.StabilizerService.TwoDimensionVertex(pos=[-1*tmp_leg_rear_margin, -1*tmp_leg_outside_margin]),
+                     OpenHRP.StabilizerService.TwoDimensionVertex(pos=[-1*tmp_leg_rear_margin, tmp_leg_inside_margin])]
+    lleg_vertices = [OpenHRP.StabilizerService.TwoDimensionVertex(pos=[tmp_leg_front_margin, tmp_leg_outside_margin]),
+                     OpenHRP.StabilizerService.TwoDimensionVertex(pos=[tmp_leg_front_margin, -1*tmp_leg_inside_margin]),
+                     OpenHRP.StabilizerService.TwoDimensionVertex(pos=[-1*tmp_leg_rear_margin, -1*tmp_leg_inside_margin]),
+                     OpenHRP.StabilizerService.TwoDimensionVertex(pos=[-1*tmp_leg_rear_margin, tmp_leg_outside_margin])]
+    rarm_vertices = rleg_vertices
+    larm_vertices = lleg_vertices
+    stp_org.eefm_support_polygon_vertices_sequence = map (lambda x : OpenHRP.StabilizerService.SupportPolygonVertices(vertices=x), [lleg_vertices, rleg_vertices, larm_vertices, rarm_vertices])
+    stp_org.eefm_leg_inside_margin=tmp_leg_inside_margin
+    stp_org.eefm_leg_outside_margin=tmp_leg_outside_margin
+    stp_org.eefm_leg_front_margin=tmp_leg_front_margin
+    stp_org.eefm_leg_rear_margin=tmp_leg_rear_margin
     stp_org.eefm_k1=[-1.39899,-1.39899]
     stp_org.eefm_k2=[-0.386111,-0.386111]
     stp_org.eefm_k3=[-0.175068,-0.175068]

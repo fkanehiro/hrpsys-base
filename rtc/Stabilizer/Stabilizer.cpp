@@ -370,6 +370,11 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
 
   //
   szd = new SimpleZMPDistributor(dt);
+  std::vector<std::vector<Eigen::Vector2d> > support_polygon_vec;
+  for (size_t i = 0; i < stikp.size(); i++) {
+      support_polygon_vec.push_back(std::vector<Eigen::Vector2d>(1,Eigen::Vector2d::Zero()));
+  }
+  szd->set_vertices(support_polygon_vec);
 
   return RTC::RTC_OK;
 }
@@ -720,7 +725,7 @@ void Stabilizer::getActualParameters ()
     std::vector<std::string> ee_name;
     // distribute new ZMP into foot force & moment
     std::vector<hrp::Vector3> ref_force, ref_moment;
-    {
+    if (control_mode == MODE_ST) {
       std::vector<hrp::Vector3> ee_pos, cop_pos;
       std::vector<hrp::Matrix33> ee_rot;
       for (size_t i = 0; i < stikp.size(); i++) {
@@ -767,7 +772,7 @@ void Stabilizer::getActualParameters ()
     }
 
     // foor modif
-    {
+    if (control_mode == MODE_ST) {
       hrp::Vector3 f_diff(hrp::Vector3::Zero());
       double fz[2];
       // moment control
@@ -1363,6 +1368,18 @@ void Stabilizer::getParameter(OpenHRP::StabilizerService::stParam& i_stp)
   i_stp.eefm_leg_outside_margin = szd->get_leg_outside_margin();
   i_stp.eefm_leg_front_margin = szd->get_leg_front_margin();
   i_stp.eefm_leg_rear_margin = szd->get_leg_rear_margin();
+
+  std::vector<std::vector<Eigen::Vector2d> > support_polygon_vec;
+  szd->get_vertices(support_polygon_vec);
+  i_stp.eefm_support_polygon_vertices_sequence.length(support_polygon_vec.size());
+  for (size_t ee_idx = 0; ee_idx < support_polygon_vec.size(); ee_idx++) {
+      i_stp.eefm_support_polygon_vertices_sequence[ee_idx].vertices.length(support_polygon_vec[ee_idx].size());
+      for (size_t v_idx = 0; v_idx < support_polygon_vec[ee_idx].size(); v_idx++) {
+          i_stp.eefm_support_polygon_vertices_sequence[ee_idx].vertices[v_idx].pos[0] = support_polygon_vec[ee_idx][v_idx](0);
+          i_stp.eefm_support_polygon_vertices_sequence[ee_idx].vertices[v_idx].pos[1] = support_polygon_vec[ee_idx][v_idx](1);
+      }
+  }
+
   i_stp.eefm_cogvel_cutoff_freq = act_cogvel_filter->getCutOffFreq();
   i_stp.eefm_wrench_alpha_blending = szd->get_wrench_alpha_blending();
   i_stp.eefm_alpha_cutoff_freq = szd->get_alpha_cutoff_freq();
@@ -1471,6 +1488,24 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
   szd->set_leg_front_margin(i_stp.eefm_leg_front_margin);
   szd->set_leg_rear_margin(i_stp.eefm_leg_rear_margin);
   szd->set_vertices_from_margin_params();
+
+  if (i_stp.eefm_support_polygon_vertices_sequence.length() != stikp.size()) {
+      std::cerr << "[" << m_profile.instance_name << "]   eefm_support_polygon_vertices_sequence cannot be set. Length " << i_stp.eefm_support_polygon_vertices_sequence.length() << " != " << stikp.size() << std::endl;
+  } else {
+      std::cerr << "[" << m_profile.instance_name << "]   eefm_support_polygon_vertices_sequence set" << std::endl;
+      std::vector<std::vector<Eigen::Vector2d> > support_polygon_vec;
+      for (size_t ee_idx = 0; ee_idx < i_stp.eefm_support_polygon_vertices_sequence.length(); ee_idx++) {
+          std::vector<Eigen::Vector2d> tvec;
+          for (size_t v_idx = 0; v_idx < i_stp.eefm_support_polygon_vertices_sequence[ee_idx].vertices.length(); v_idx++) {
+              tvec.push_back(Eigen::Vector2d(i_stp.eefm_support_polygon_vertices_sequence[ee_idx].vertices[v_idx].pos[0],
+                                             i_stp.eefm_support_polygon_vertices_sequence[ee_idx].vertices[v_idx].pos[1]));
+          }
+          support_polygon_vec.push_back(tvec);
+      }
+      szd->set_vertices(support_polygon_vec);
+      szd->print_vertices(std::string(m_profile.instance_name));
+  }
+
   act_cogvel_filter->setCutOffFreq(i_stp.eefm_cogvel_cutoff_freq);
   szd->set_wrench_alpha_blending(i_stp.eefm_wrench_alpha_blending);
   szd->set_alpha_cutoff_freq(i_stp.eefm_alpha_cutoff_freq);
@@ -1530,7 +1565,6 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
   std::cerr << "[" << m_profile.instance_name << "]   eefm_pos_transition_time = " << eefm_pos_transition_time << "[s], eefm_pos_margin_time = " << eefm_pos_margin_time << "[s] eefm_pos_time_const_swing = " << eefm_pos_time_const_swing << "[s]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   cogvel_cutoff_freq = " << act_cogvel_filter->getCutOffFreq() << "[Hz]" << std::endl;
   szd->print_params(std::string(m_profile.instance_name));
-  szd->print_vertices(std::string(m_profile.instance_name));
   std::cerr << "[" << m_profile.instance_name << "]   eefm_gravitational_acceleration = " << eefm_gravitational_acceleration << "[m/s^2]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   eefm_ee_pos_error_p_gain = " << eefm_ee_pos_error_p_gain << ", eefm_ee_rot_error_p_gain = " << eefm_ee_rot_error_p_gain << ", eefm_ee_error_cutoff_freq = " << target_ee_diff_p_filter[0]->getCutOffFreq() << "[Hz]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]  COMMON" << std::endl;

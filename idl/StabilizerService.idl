@@ -44,6 +44,22 @@ module OpenHRP
     };
 
     /**
+     * @enum TwoDimensionVertex
+     * @brief 2D vertex of a support polygon [m]
+     */
+    struct TwoDimensionVertex {
+        DblArray2 pos;
+    };
+
+    /**
+     * @enum SupportPolygonVertices
+     * @brief Vertices of a support polygon at the end effector
+     */
+    struct SupportPolygonVertices {
+        sequence<TwoDimensionVertex> vertices;
+    };
+
+    /**
      * @struct stParam
      * @brief Stabilizer Parameters.
      */
@@ -117,6 +133,8 @@ module OpenHRP
       double eefm_ee_rot_error_p_gain;
       /// Pos rot error cutoff freq [Hz]
       double eefm_ee_error_cutoff_freq;
+      /// Sequence of vertices for all end effectors
+      sequence< SupportPolygonVertices > eefm_support_polygon_vertices_sequence;
       // common
       /// Current Stabilizer algorithm
       STAlgorithm st_algorithm;
