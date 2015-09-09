@@ -118,6 +118,7 @@ class Stabilizer
   void getParameter(OpenHRP::StabilizerService::stParam& i_stp);
   void setParameter(const OpenHRP::StabilizerService::stParam& i_stp);
   void setBoolSequenceParam (std::vector<bool>& st_bool_values, const OpenHRP::StabilizerService::BoolSequence& output_bool_values, const std::string& prop_name);
+  std::string getStabilizerAlgorithmString (OpenHRP::StabilizerService::STAlgorithm _st_algorithm);
   void waitSTTransition();
   // funcitons for calc final torque output
   void calcContactMatrix (hrp::dmatrix& tm, const std::vector<hrp::Vector3>& contact_p);
@@ -239,6 +240,7 @@ class Stabilizer
     // For eefm
     hrp::Vector3 d_foot_pos, d_foot_rpy, ee_d_foot_rpy;
     hrp::Vector3 eefm_pos_damping_gain, eefm_pos_time_const_support, eefm_rot_damping_gain, eefm_rot_time_const;
+    hrp::Vector3 ref_force, ref_moment;
   };
   enum cmode {MODE_IDLE, MODE_AIR, MODE_ST, MODE_SYNC_TO_IDLE, MODE_SYNC_TO_AIR} control_mode;
   // members
@@ -260,7 +262,8 @@ class Stabilizer
   hrp::Vector3 ref_zmp, ref_cog, ref_cp, ref_cogvel, prev_ref_cog, prev_ref_zmp;
   hrp::Vector3 act_zmp, act_cog, act_cogvel, act_cp, rel_act_zmp, prev_act_cog, act_base_rpy, current_base_rpy, current_base_pos;
   hrp::Vector3 foot_origin_offset[2];
-  double zmp_origin_off, transition_smooth_gain, prev_act_force_z[2];
+  std::vector<double> prev_act_force_z;
+  double zmp_origin_off, transition_smooth_gain;
   boost::shared_ptr<FirstOrderLowPassFilter<hrp::Vector3> > act_cogvel_filter;
   std::vector<boost::shared_ptr<FirstOrderLowPassFilter<hrp::Vector3> > > target_ee_diff_p_filter;
   OpenHRP::StabilizerService::STAlgorithm st_algorithm;
@@ -278,8 +281,6 @@ class Stabilizer
   double eefm_k1[2], eefm_k2[2], eefm_k3[2], eefm_zmp_delay_time_const[2], eefm_body_attitude_control_gain[2], eefm_body_attitude_control_time_const[2];
   double eefm_pos_time_const_swing, eefm_pos_transition_time, eefm_pos_margin_time, eefm_gravitational_acceleration, eefm_ee_pos_error_p_gain, eefm_ee_rot_error_p_gain;
   hrp::Vector3 new_refzmp, rel_cog, ref_zmp_aux;
-  hrp::Vector3 ref_foot_force[2];
-  hrp::Vector3 ref_foot_moment[2];
   hrp::Vector3 pos_ctrl;
   double total_mass, transition_time, cop_check_margin, cp_check_margin, contact_decision_threshold;
   OpenHRP::StabilizerService::EmergencyCheckMode emergency_check_mode;
