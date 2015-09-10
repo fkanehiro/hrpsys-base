@@ -39,6 +39,8 @@ private:
         size_t i = 0;
         std::string fname("/tmp/plot.dat");
         FILE* fp = fopen(fname.c_str(), "w");
+        std::string fname_sstime("/tmp/plot-sstime.dat");
+        FILE* fp_sstime = fopen(fname_sstime.c_str(), "w");
         hrp::Vector3 prev_rfoot_pos, prev_lfoot_pos;
         hrp::Vector3 min_rfoot_pos(1e10,1e10,1e10), min_lfoot_pos(1e10,1e10,1e10), max_rfoot_pos(-1e10,-1e10,-1e10), max_lfoot_pos(-1e10,-1e10,-1e10);
         //
@@ -107,10 +109,6 @@ private:
             for (size_t ii = 0; ii < 3; ii++) {
                 fprintf(fp, "%f ", (gg->get_support_leg_names() == tmp_string_vector) ? gg->get_support_foot_zmp_offsets().front()(ii) : gg->get_swing_foot_zmp_offsets().front()(ii));
             }
-            // Swing time
-            fprintf(fp, "%f %f ",
-                    gg->get_current_swing_time(RLEG),
-                    gg->get_current_swing_time(LLEG));
             // Foot vel
             hrp::Vector3 tmpv;
             if ( i == 0 ) prev_rfoot_pos = rfoot_pos;
@@ -152,6 +150,16 @@ private:
                 max_lfoot_pos(ii) = std::max(max_lfoot_pos(ii), tmppos(ii));
             }
             fprintf(fp, "\n");
+            // Swing time
+            fprintf(fp_sstime, "%f ", i * dt);
+            fprintf(fp_sstime, "%f %f ",
+                    gg->get_current_swing_time(RLEG),
+                    gg->get_current_swing_time(LLEG));
+            std::vector<leg_type> tmp_current_support_states = gg->get_current_support_states();
+            fprintf(fp_sstime, "%d %d ",
+                    ((std::find_if(tmp_current_support_states.begin(), tmp_current_support_states.end(), boost::lambda::_1 == RLEG) != tmp_current_support_states.end()) ? 1 : 0),
+                    ((std::find_if(tmp_current_support_states.begin(), tmp_current_support_states.end(), boost::lambda::_1 == LLEG) != tmp_current_support_states.end()) ? 1 : 0));
+            fprintf(fp_sstime, "\n");
             // Error checking
             is_small_zmp_error = check_zmp_error(gg->get_cart_zmp(), gg->get_refzmp()) && is_small_zmp_error;
             if (i>0) {
@@ -161,6 +169,7 @@ private:
             i++;
         }
         fclose(fp);
+        fclose(fp_sstime);
 
         /* plot */
         if (use_gnuplot) {
@@ -237,20 +246,6 @@ private:
             }
             {
                 std::ostringstream oss("");
-                std::string gtitle("Swing_support_remain_time");
-                oss << "set multiplot layout 1, 1 title '" << gtitle << "'" << std::endl;
-                oss << "set title 'Remain Time'" << std::endl;
-                oss << "set xlabel 'Time [s]'" << std::endl;
-                oss << "set ylabel 'Time [s]'" << std::endl;
-                oss << "plot "
-                    << "'" << fname << "' using 1:" << (tmp_start+0) << " with lines title 'rleg',"
-                    << "'" << fname << "' using 1:" << (tmp_start+1) << " with lines title 'lleg'"
-                    << std::endl;
-                plot_and_save(gps[4], gtitle, oss.str());
-                tmp_start += 2;
-            }
-            {
-                std::ostringstream oss("");
                 std::string gtitle("Swing_support_vel");
                 oss << "set multiplot layout 3, 1 title '" << gtitle << "'" << std::endl;
                 std::string titles[3] = {"X", "Y", "Z"};
@@ -307,6 +302,21 @@ private:
                     << "'" << fname << "' using " << (tmp_start+3+3+3+1) << ":" << (tmp_start+3+3+3+2)  << " with lines title 'lleg heel'"
                     << std::endl;
                 plot_and_save(gps[6], gtitle, oss.str());
+            }
+            {
+                std::ostringstream oss("");
+                std::string gtitle("Swing_support_remain_time");
+                oss << "set multiplot layout 1, 1 title '" << gtitle << "'" << std::endl;
+                oss << "set title 'Remain Time'" << std::endl;
+                oss << "set xlabel 'Time [s]'" << std::endl;
+                oss << "set ylabel 'Time [s]'" << std::endl;
+                oss << "plot "
+                    << "'" << fname_sstime << "' using 1:" << 2 << " with lines title 'rleg remain time',"
+                    << "'" << fname_sstime << "' using 1:" << 3 << " with lines title 'lleg remain time',"
+                    << "'" << fname_sstime << "' using 1:" << 4 << " with lines title 'rleg contact states',"
+                    << "'" << fname_sstime << "' using 1:" << 5 << " with lines title 'lleg contact states'"
+                    << std::endl;
+                plot_and_save(gps[4], gtitle, oss.str());
             }
             double tmp;
             std::cin >> tmp;

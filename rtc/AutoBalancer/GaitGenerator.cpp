@@ -234,9 +234,11 @@ namespace rats
     if ( current_swing_count < support_len/2 ) { // First double support period
       swing_ratio = swing_rot_ratio = 0.0;
       tmp_current_swing_time = current_swing_len * dt - swing_len * dt;
+      is_swing_phase = false;
     } else if ( current_swing_count >= support_len/2+swing_len ) { // Last double support period
       swing_ratio = swing_rot_ratio = 1.0;
       tmp_current_swing_time = current_swing_len * dt + (default_double_support_ratio * one_step_count + next_one_step_count) * dt;
+      is_swing_phase = false;
     } else {
       if (current_swing_count == support_len/2) {
           double tmp = 0.0;
@@ -257,12 +259,18 @@ namespace rats
       tmp_current_swing_time = current_swing_len * dt;
       swing_ratio = static_cast<double>(current_swing_count-support_len/2)/swing_len;
       //std::cerr << "gp " << swing_ratio << " " << swing_rot_ratio << std::endl;
+      if (current_step_height > 0.0) is_swing_phase = true;
+      else is_swing_phase = false;
     }
     for (std::vector<leg_type>::const_iterator it = support_leg_types.begin(); it != support_leg_types.end(); it++) {
         current_swing_time.at(*it) = (lcg_count + 0.5 * default_double_support_ratio * next_one_step_count) * dt;
     }
     for (std::vector<leg_type>::const_iterator it = swing_leg_types.begin(); it != swing_leg_types.end(); it++) {
-        current_swing_time.at(*it) = tmp_current_swing_time;
+        if (current_step_height > 0.0) {
+            current_swing_time.at(*it) = tmp_current_swing_time;
+        } else {
+            current_swing_time.at(*it) = (lcg_count + 0.5 * default_double_support_ratio * next_one_step_count) * dt;
+        }
     }
     //std::cerr << "sl " << support_leg << " " << current_swing_time[support_leg==RLEG?0:1] << " " << current_swing_time[support_leg==RLEG?1:0] << " " << tmp_current_swing_time << " " << lcg_count << std::endl;
   };

@@ -73,15 +73,15 @@ module OpenHRP
       DblArray2 k_brot_p;
       /// Time constant for body posture control [s] (roll, pitch).
       DblArray2 k_brot_tc;
-      // for RUNST
-      DblArray2 k_run_b;
-      DblArray2 d_run_b;
-      DblArray2 tdfke;
-      DblArray2 tdftc;
-      double k_run_x;
-      double k_run_y;
-      double d_run_x;
-      double d_run_y;
+      // // for RUNST
+      // DblArray2 k_run_b;
+      // DblArray2 d_run_b;
+      // DblArray2 tdfke;
+      // DblArray2 tdftc;
+      // double k_run_x;
+      // double k_run_y;
+      // double d_run_x;
+      // double d_run_y;
       // for EEFM ST
       /// Feedback gain for COG position tracking error (x,y)
       DblArray2 eefm_k1;
@@ -135,6 +135,8 @@ module OpenHRP
       double eefm_ee_error_cutoff_freq;
       /// Sequence of vertices for all end effectors
       sequence< SupportPolygonVertices > eefm_support_polygon_vertices_sequence;
+      /// Use force difference control or each limb force control. True by default.
+      boolean eefm_use_force_difference_control;
       // common
       /// Current Stabilizer algorithm
       STAlgorithm st_algorithm;

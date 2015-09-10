@@ -51,11 +51,17 @@ N/A
 <table>
 <tr><th>name</th><th>type</th><th>unit</th><th>default value</th><th>description</th></tr>
 <tr><td>dt</td><td>double</td><td></td><td>0.005</td><td>sampling time</td></tr>
-<tr><td>pdgains_sim.file_name</td><td>string</td><td></td><td></td><td>File path for PD gain file.</td></tr>
+<tr><td>pdgains_sim_file_name</td><td>string</td><td></td><td></td><td>File path for PD gain file.</td></tr>
 </table>
 
 \section conf Configuration File
 
-N/A
+<table>
+<tr><th>key</th><th>type</th><th>unit</th><th>description</th></tr>
+<tr><td>dt</td><td>double</td><td>[s]</td><td>sampling time</td></tr>
+<tr><td>model</td><td>std::string</td><td></td><td>URL of a VRML model</td></tr>
+<tr><td>pdgains_sim_file_name</td><td>std::string</td><td></td><td>File path for PD gain file.</td></tr>
+<tr><td>pdcontrol_tlimit_ratio</td><td>vector</td><td></td><td>Ratio vector for torque limit of PDcontroller outputs. If not specified, 1.0 by default.</td></tr>
+</table>
 
  */
