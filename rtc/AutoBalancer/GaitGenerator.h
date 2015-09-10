@@ -537,6 +537,7 @@ namespace rats
       // Current support leg
       std::vector<leg_type> support_leg_types, swing_leg_types;
       orbit_type default_orbit_type;
+      bool is_swing_phase;
       // Foot trajectory generators
       rectangle_delay_hoffarbib_trajectory_generator rdtg;
       stair_delay_hoffarbib_trajectory_generator sdtg;
@@ -735,7 +736,7 @@ namespace rats
       };
       std::vector<leg_type> get_current_support_states () const
       {
-          if ( current_step_height > 0.0 && 0.0 < swing_ratio && swing_ratio < 1.0 ) {
+          if ( current_step_height > 0.0 && is_swing_phase ) {
               return get_support_leg_types();
           } else {
               std::vector<leg_type> tmp_sup_types = get_support_leg_types();
