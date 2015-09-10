@@ -786,9 +786,16 @@ void Stabilizer::getActualParameters ()
         if ( i == 0 ) f_diff += -1*sensor_force;
         else f_diff += sensor_force;
         // calcDampingControl
-        hrp::Vector3 tmp_damping_gain = (1-transition_smooth_gain) * ikp.eefm_rot_damping_gain * 10 + transition_smooth_gain * ikp.eefm_rot_damping_gain;
-        ikp.d_foot_rpy = calcDampingControl(ikp.ref_moment, ee_moment, ikp.d_foot_rpy, tmp_damping_gain, ikp.eefm_rot_time_const);
-        ikp.d_foot_rpy = vlimit(ikp.d_foot_rpy, deg2rad(-10.0), deg2rad(10.0));
+        { // Rot
+            hrp::Vector3 tmp_damping_gain = (1-transition_smooth_gain) * ikp.eefm_rot_damping_gain * 10 + transition_smooth_gain * ikp.eefm_rot_damping_gain;
+            ikp.d_foot_rpy = calcDampingControl(ikp.ref_moment, ee_moment, ikp.d_foot_rpy, tmp_damping_gain, ikp.eefm_rot_time_const);
+            ikp.d_foot_rpy = vlimit(ikp.d_foot_rpy, deg2rad(-10.0), deg2rad(10.0));
+        }
+        if (!eefm_use_force_difference_control) { // Pos
+            hrp::Vector3 tmp_damping_gain = (1-transition_smooth_gain) * ikp.eefm_pos_damping_gain * 10 + transition_smooth_gain * ikp.eefm_pos_damping_gain;
+            ikp.d_foot_pos = calcDampingControl(ikp.ref_force, sensor_force, ikp.d_foot_pos, tmp_damping_gain, ikp.eefm_pos_time_const_support);
+            ikp.d_foot_pos = foot_origin_rot.transpose() * vlimit(ikp.d_foot_pos, -0.025, 0.025);
+        }
         // Actual ee frame =>
         ikp.ee_d_foot_rpy = (target->R * ikp.localR).transpose() * ikp.d_foot_rpy;
         // Convert actual world frame => actual foot_origin frame for debug data port
