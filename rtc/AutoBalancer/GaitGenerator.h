@@ -736,7 +736,7 @@ namespace rats
       };
       std::vector<leg_type> get_current_support_states () const
       {
-          if ( current_step_height > 0.0 && is_swing_phase ) {
+          if ( is_swing_phase ) {
               return get_support_leg_types();
           } else {
               std::vector<leg_type> tmp_sup_types = get_support_leg_types();

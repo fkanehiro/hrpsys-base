@@ -1110,6 +1110,8 @@ void Stabilizer::calcSwingSupportLimbGain ()
         for (size_t i = 0; i < stikp.size(); i++) std::cerr << stikp[i].swing_support_gain << " ";
         std::cerr << "], contact_states = [";
         for (size_t i = 0; i < stikp.size(); i++) std::cerr << contact_states[i] << " ";
+        std::cerr << "], sstime = [";
+        for (size_t i = 0; i < stikp.size(); i++) std::cerr << m_controlSwingSupportTime.data[i] << " ";
         std::cerr << "]" << std::endl;
     }
 }
