@@ -1316,8 +1316,8 @@ void Stabilizer::getParameter(OpenHRP::StabilizerService::stParam& i_stp)
 {
   std::cerr << "[" << m_profile.instance_name << "] getParameter" << std::endl;
   for (size_t i = 0; i < 2; i++) {
-    i_stp.k_run_b[i] = k_run_b[i];
-    i_stp.d_run_b[i] = d_run_b[i];
+    // i_stp.k_run_b[i] = k_run_b[i];
+    // i_stp.d_run_b[i] = d_run_b[i];
     //m_tau_x[i].setup(i_stp.tdfke[0], i_stp.tdftc[0], dt);
     //m_tau_y[i].setup(i_stp.tdfke[0], i_stp.tdftc[0], dt);
     //m_f_z.setup(i_stp.tdfke[1], i_stp.tdftc[1], dt);
@@ -1326,10 +1326,10 @@ void Stabilizer::getParameter(OpenHRP::StabilizerService::stParam& i_stp)
     i_stp.k_brot_p[i] = k_brot_p[i];
     i_stp.k_brot_tc[i] = k_brot_tc[i];
   }
-  i_stp.k_run_x = m_torque_k[0];
-  i_stp.k_run_y = m_torque_k[1];
-  i_stp.d_run_x = m_torque_d[0];
-  i_stp.d_run_y = m_torque_d[1];
+  // i_stp.k_run_x = m_torque_k[0];
+  // i_stp.k_run_y = m_torque_k[1];
+  // i_stp.d_run_x = m_torque_d[0];
+  // i_stp.d_run_y = m_torque_d[1];
   for (size_t i = 0; i < 2; i++) {
     i_stp.eefm_k1[i] = eefm_k1[i];
     i_stp.eefm_k2[i] = eefm_k2[i];
@@ -1433,22 +1433,22 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
   std::cerr << "[" << m_profile.instance_name << "]   k_tpcc_x  = [" << k_tpcc_x[0] << ", " << k_tpcc_x[1] << "]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   k_brot_p  = [" << k_brot_p[0] << ", " << k_brot_p[1] << "]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   k_brot_tc = [" << k_brot_tc[0] << ", " << k_brot_tc[1] << "]" << std::endl;
-  for (size_t i = 0; i < 2; i++) {
-    k_run_b[i] = i_stp.k_run_b[i];
-    d_run_b[i] = i_stp.d_run_b[i];
-    m_tau_x[i].setup(i_stp.tdfke[0], i_stp.tdftc[0], dt);
-    m_tau_y[i].setup(i_stp.tdfke[0], i_stp.tdftc[0], dt);
-    m_f_z.setup(i_stp.tdfke[1], i_stp.tdftc[1], dt);
-  }
-  m_torque_k[0] = i_stp.k_run_x;
-  m_torque_k[1] = i_stp.k_run_y;
-  m_torque_d[0] = i_stp.d_run_x;
-  m_torque_d[1] = i_stp.d_run_y;
-  std::cerr << "[" << m_profile.instance_name << "]  RUNST" << std::endl;
-  std::cerr << "[" << m_profile.instance_name << "]   m_torque_k  = [" << m_torque_k[0] << ", " <<  m_torque_k[1] << "]" << std::endl;
-  std::cerr << "[" << m_profile.instance_name << "]   m_torque_d  = [" << m_torque_d[0] << ", " <<  m_torque_d[1] << "]" << std::endl;
-  std::cerr << "[" << m_profile.instance_name << "]   k_run_b  = [" << k_run_b[0] << ", " <<  k_run_b[1] << "]" << std::endl;
-  std::cerr << "[" << m_profile.instance_name << "]   d_run_b  = [" << d_run_b[0] << ", " <<  d_run_b[1] << "]" << std::endl;
+  // for (size_t i = 0; i < 2; i++) {
+  //   k_run_b[i] = i_stp.k_run_b[i];
+  //   d_run_b[i] = i_stp.d_run_b[i];
+  //   m_tau_x[i].setup(i_stp.tdfke[0], i_stp.tdftc[0], dt);
+  //   m_tau_y[i].setup(i_stp.tdfke[0], i_stp.tdftc[0], dt);
+  //   m_f_z.setup(i_stp.tdfke[1], i_stp.tdftc[1], dt);
+  // }
+  // m_torque_k[0] = i_stp.k_run_x;
+  // m_torque_k[1] = i_stp.k_run_y;
+  // m_torque_d[0] = i_stp.d_run_x;
+  // m_torque_d[1] = i_stp.d_run_y;
+  // std::cerr << "[" << m_profile.instance_name << "]  RUNST" << std::endl;
+  // std::cerr << "[" << m_profile.instance_name << "]   m_torque_k  = [" << m_torque_k[0] << ", " <<  m_torque_k[1] << "]" << std::endl;
+  // std::cerr << "[" << m_profile.instance_name << "]   m_torque_d  = [" << m_torque_d[0] << ", " <<  m_torque_d[1] << "]" << std::endl;
+  // std::cerr << "[" << m_profile.instance_name << "]   k_run_b  = [" << k_run_b[0] << ", " <<  k_run_b[1] << "]" << std::endl;
+  // std::cerr << "[" << m_profile.instance_name << "]   d_run_b  = [" << d_run_b[0] << ", " <<  d_run_b[1] << "]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]  EEFM" << std::endl;
   for (size_t i = 0; i < 2; i++) {
     eefm_k1[i] = i_stp.eefm_k1[i];
