@@ -162,11 +162,11 @@ class Stabilizer
   // for debug ouput
   RTC::TimedPoint3D m_originRefZmp, m_originRefCog, m_originRefCogVel, m_originNewZmp;
   RTC::TimedPoint3D m_originActZmp, m_originActCog, m_originActCogVel;
-  RTC::TimedDoubleSeq m_refWrenchR, m_refWrenchL;
-  RTC::TimedDoubleSeq m_footCompR, m_footCompL;
   RTC::TimedOrientation3D m_actBaseRpy;
   RTC::TimedPoint3D m_currentBasePos;
   RTC::TimedOrientation3D m_currentBaseRpy;
+  RTC::TimedDoubleSeq m_allRefWrench;
+  RTC::TimedDoubleSeq m_allEEComp;
   RTC::TimedDoubleSeq m_debugData;
   
   // DataInPort declaration
@@ -202,11 +202,11 @@ class Stabilizer
   // for debug output
   RTC::OutPort<RTC::TimedPoint3D> m_originRefZmpOut, m_originRefCogOut, m_originRefCogVelOut, m_originNewZmpOut;
   RTC::OutPort<RTC::TimedPoint3D> m_originActZmpOut, m_originActCogOut, m_originActCogVelOut;
-  RTC::OutPort<RTC::TimedDoubleSeq> m_refWrenchROut, m_refWrenchLOut;
-  RTC::OutPort<RTC::TimedDoubleSeq> m_footCompROut, m_footCompLOut;
   RTC::OutPort<RTC::TimedOrientation3D> m_actBaseRpyOut;
   RTC::OutPort<RTC::TimedPoint3D> m_currentBasePosOut;
   RTC::OutPort<RTC::TimedOrientation3D> m_currentBaseRpyOut;
+  RTC::OutPort<RTC::TimedDoubleSeq> m_allRefWrenchOut;
+  RTC::OutPort<RTC::TimedDoubleSeq> m_allEECompOut;
   RTC::OutPort<RTC::TimedDoubleSeq> m_debugDataOut;
   
   // </rtc-template>
