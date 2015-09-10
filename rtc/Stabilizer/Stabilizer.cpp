@@ -813,18 +813,11 @@ void Stabilizer::getActualParameters ()
                   remain_swing_time = m_controlSwingSupportTime.data[contact_states_index_map["lleg"]];
               }
               // std::cerr << "st " << remain_swing_time << " rleg " << contact_states[contact_states_index_map["rleg"]] << " lleg " << contact_states[contact_states_index_map["lleg"]] << std::endl;
-              if (eefm_pos_transition_time+eefm_pos_margin_time<remain_swing_time) {
-                  // Temporarily use first pos damping gain (stikp[0])
-                  hrp::Vector3 tmp_damping_gain = (1-transition_smooth_gain) * stikp[0].eefm_pos_damping_gain * 10 + transition_smooth_gain * stikp[0].eefm_pos_damping_gain;
-                  pos_ctrl = calcDampingControl (hrp::Vector3::Zero(), hrp::Vector3::Zero(), pos_ctrl,
-                                                 tmp_damping_gain, eefm_pos_time_const_swing * hrp::Vector3::Ones());
-              } else {
-                  double tmp_ratio = std::min(1.0, 1.0 - (remain_swing_time-eefm_pos_margin_time)/eefm_pos_transition_time); // 0=>1
-                  // Temporarily use first pos damping gain (stikp[0])
-                  hrp::Vector3 tmp_damping_gain = (1-transition_smooth_gain) * stikp[0].eefm_pos_damping_gain * 10 + transition_smooth_gain * stikp[0].eefm_pos_damping_gain;
-                  pos_ctrl = calcDampingControl (tmp_ratio * ref_f_diff, tmp_ratio * f_diff, pos_ctrl,
-                                                 tmp_damping_gain, ((1-tmp_ratio)*eefm_pos_time_const_swing*hrp::Vector3::Ones()+tmp_ratio*stikp[0].eefm_pos_time_const_support));
-              }
+              double tmp_ratio = std::max(0.0, std::min(1.0, 1.0 - (remain_swing_time-eefm_pos_margin_time)/eefm_pos_transition_time)); // 0=>1
+              // Temporarily use first pos damping gain (stikp[0])
+              hrp::Vector3 tmp_damping_gain = (1-transition_smooth_gain) * stikp[0].eefm_pos_damping_gain * 10 + transition_smooth_gain * stikp[0].eefm_pos_damping_gain;
+              hrp::Vector3 tmp_time_const = (1-tmp_ratio)*eefm_pos_time_const_swing*hrp::Vector3::Ones()+tmp_ratio*stikp[0].eefm_pos_time_const_support;
+              pos_ctrl = calcDampingControl (tmp_ratio * ref_f_diff, tmp_ratio * f_diff, pos_ctrl, tmp_damping_gain, tmp_time_const);
           }
           // zctrl = vlimit(zctrl, -0.02, 0.02);
           pos_ctrl = vlimit(pos_ctrl, -0.05, 0.05);
