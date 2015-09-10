@@ -9,6 +9,7 @@
 
 #include "PDcontroller.h"
 #include <iostream>
+#include <coil/stringutil.h>
 
 // Module specification
 // <rtc-template block="module_spec">
@@ -156,12 +157,12 @@ RTC::ReturnCode_t PDcontroller::onExecute(RTC::UniqueId ec_id)
     qold[i] = q;
     qold_ref[i] = q_ref;
     m_torque.data[i] = -(q - q_ref) * Pgain[i] - (dq - dq_ref) * Dgain[i];
-    double tlimit = m_robot->joint(i)->climit * m_robot->joint(i)->gearRatio * m_robot->joint(i)->torqueConst;
-    m_torque.data[i] = std::max(std::min(m_torque.data[i], tlimit), -tlimit);
+    double tlimit = m_robot->joint(i)->climit * m_robot->joint(i)->gearRatio * m_robot->joint(i)->torqueConst * tlimit_ratio[i];
     if (loop % 100 == 0 && m_debugLevel == 1) {
         std::cerr << "[" << m_profile.instance_name << "] joint = "
                   << i << ", tq = " << m_torque.data[i] << ", q,qref = (" << q << ", " << q_ref << "), dq,dqref = (" << dq << ", " << dq_ref << "), pd = (" << Pgain[i] << ", " << Dgain[i] << "), tlimit = " << tlimit << std::endl;
     }
+    m_torque.data[i] = std::max(std::min(m_torque.data[i], tlimit), -tlimit);
   }
   
   m_torqueOut.write();
@@ -183,6 +184,7 @@ void PDcontroller::readGainFile()
     Pgain.resize(dof);
     Dgain.resize(dof);
     gain.open(gain_fname.c_str());
+    tlimit_ratio.resize(dof);
     if (gain.is_open()){
       double tmp;
       for (int i=0; i<dof; i++){
@@ -201,6 +203,31 @@ void PDcontroller::readGainFile()
       std::cerr << "[" << m_profile.instance_name << "] Gain file [" << gain_fname << "] opened" << std::endl;
     }else{
       std::cerr << "[" << m_profile.instance_name << "] Gain file [" << gain_fname << "] not opened" << std::endl;
+    }
+    // tlimit_ratio initialize
+    {
+        RTC::Properties& prop = getProperties();
+        if (prop["pdcontrol_tlimit_ratio"] != "") {
+            coil::vstring tlimit_ratio_str = coil::split(prop["pdcontrol_tlimit_ratio"], ",");
+            if (tlimit_ratio_str.size() == dof) {
+                for (size_t i = 0; i < dof; i++) {
+                    coil::stringTo(tlimit_ratio[i], tlimit_ratio_str[i].c_str());
+                }
+                std::cerr << "[" << m_profile.instance_name << "] tlimit_ratio is set to " << prop["pdcontrol_tlimit_ratio"] << std::endl;
+            } else {
+                for (size_t i = 0; i < dof; i++) {
+                    tlimit_ratio[i] = 1.0;
+                }
+                std::cerr << "[" << m_profile.instance_name << "] pdcontrol_tlimit_ratio found, but invalid length (" << tlimit_ratio_str.size() << " != " << dof << ")." << std::endl;
+                std::cerr << "[" << m_profile.instance_name << "] All tlimit_ratio are set to 1.0." << std::endl;
+            }
+        } else {
+            for (size_t i = 0; i < dof; i++) {
+                tlimit_ratio[i] = 1.0;
+            }
+            std::cerr << "[" << m_profile.instance_name << "] No pdcontrol_tlimit_ratio found." << std::endl;
+            std::cerr << "[" << m_profile.instance_name << "] All tlimit_ratio are set to 1.0." << std::endl;
+        }
     }
     // initialize angleRef, old_ref and old with angle
     for(int i=0; i < dof; ++i){
