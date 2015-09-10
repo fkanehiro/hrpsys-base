@@ -959,6 +959,8 @@ void Stabilizer::getTargetParameters ()
     ref_cogvel = (ref_cog - prev_ref_cog)/dt;
   } // st_algorithm == OpenHRP::StabilizerService::EEFM
   prev_ref_cog = ref_cog;
+  // Calc swing support limb gain param
+  calcSwingSupportLimbGain();
 }
 
 bool Stabilizer::calcZMP(hrp::Vector3& ret_zmp, const double zmp_z)
@@ -1088,6 +1090,29 @@ void Stabilizer::moveBasePosRotForBodyRPYControl ()
     current_base_rpy = hrp::rpyFromRot(m_robot->rootLink()->R);
     current_base_pos = m_robot->rootLink()->p;
 };
+
+void Stabilizer::calcSwingSupportLimbGain ()
+{
+    for (size_t i = 0; i < stikp.size(); i++) {
+        STIKParam& ikp = stikp[i];
+        if (contact_states[i]) { // Support
+            if (false) { // first
+                ikp.swing_support_gain = 1.0;
+            } else {
+                ikp.swing_support_gain = std::max(0.0, std::min(1.0, (m_controlSwingSupportTime.data[i] / eefm_pos_transition_time)));
+            }
+        } else { // Swing
+            ikp.swing_support_gain = 0.0;
+        }
+    }
+    if (DEBUGP) {
+        std::cerr << "[" << m_profile.instance_name << "] SwingSupportLimbGain = [";
+        for (size_t i = 0; i < stikp.size(); i++) std::cerr << stikp[i].swing_support_gain << " ";
+        std::cerr << "], contact_states = [";
+        for (size_t i = 0; i < stikp.size(); i++) std::cerr << contact_states[i] << " ";
+        std::cerr << "]" << std::endl;
+    }
+}
 
 void Stabilizer::calcTPCC() {
     // stabilizer loop
