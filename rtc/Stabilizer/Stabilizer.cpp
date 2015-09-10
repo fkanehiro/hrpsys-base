@@ -296,6 +296,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   cop_check_margin = 20.0*1e-3; // [m]
   cp_check_margin = 60.0*1e-3; // [m]
   contact_decision_threshold = 50; // [N]
+  eefm_use_force_difference_control = true;
 
   // parameters for RUNST
   double ke = 0, tc = 0;
@@ -765,7 +766,6 @@ void Stabilizer::getActualParameters ()
     // foor modif
     if (control_mode == MODE_ST) {
       hrp::Vector3 f_diff(hrp::Vector3::Zero());
-      double fz[2];
       // moment control
 #define deg2rad(x) ((x) * M_PI / 180.0)
       for (size_t i = 0; i < stikp.size(); i++) {
@@ -785,7 +785,6 @@ void Stabilizer::getActualParameters ()
         // <= Actual world frame
         if ( i == 0 ) f_diff += -1*sensor_force;
         else f_diff += sensor_force;
-        fz[i] = sensor_force(2);
         // calcDampingControl
         hrp::Vector3 tmp_damping_gain = (1-transition_smooth_gain) * ikp.eefm_rot_damping_gain * 10 + transition_smooth_gain * ikp.eefm_rot_damping_gain;
         ikp.d_foot_rpy = calcDampingControl(ikp.ref_moment, ee_moment, ikp.d_foot_rpy, tmp_damping_gain, ikp.eefm_rot_time_const);
@@ -796,47 +795,51 @@ void Stabilizer::getActualParameters ()
         ikp.ref_moment = foot_origin_rot.transpose() * ikp.ref_moment;
       }
 
-      // fxyz control
-      // foot force difference control version
-      hrp::Vector3 ref_f_diff = (stikp[1].ref_force-stikp[0].ref_force);
-      if ( (contact_states[contact_states_index_map["rleg"]] && contact_states[contact_states_index_map["lleg"]]) // Reference : double support phase
-           || (isContact(0) && isContact(1)) ) { // Actual : double support phase
-          // Temporarily use first pos damping gain (stikp[0])
-          hrp::Vector3 tmp_damping_gain = (1-transition_smooth_gain) * stikp[0].eefm_pos_damping_gain * 10 + transition_smooth_gain * stikp[0].eefm_pos_damping_gain;
-          pos_ctrl = calcDampingControl (ref_f_diff, f_diff, pos_ctrl,
-                                         tmp_damping_gain, stikp[0].eefm_pos_time_const_support);
-      } else {
-        double remain_swing_time;
-        if ( !contact_states[contact_states_index_map["rleg"]] ) { // rleg swing
-          remain_swing_time = m_controlSwingSupportTime.data[contact_states_index_map["rleg"]];
-        } else { // lleg swing
-          remain_swing_time = m_controlSwingSupportTime.data[contact_states_index_map["lleg"]];
-        }
-        // std::cerr << "st " << remain_swing_time << " rleg " << contact_states[contact_states_index_map["rleg"]] << " lleg " << contact_states[contact_states_index_map["lleg"]] << std::endl;
-        if (eefm_pos_transition_time+eefm_pos_margin_time<remain_swing_time) {
-          // Temporarily use first pos damping gain (stikp[0])
-            hrp::Vector3 tmp_damping_gain = (1-transition_smooth_gain) * stikp[0].eefm_pos_damping_gain * 10 + transition_smooth_gain * stikp[0].eefm_pos_damping_gain;
-            pos_ctrl = calcDampingControl (hrp::Vector3::Zero(), hrp::Vector3::Zero(), pos_ctrl,
-                                           tmp_damping_gain, eefm_pos_time_const_swing * hrp::Vector3::Ones());
-        } else {
-          double tmp_ratio = std::min(1.0, 1.0 - (remain_swing_time-eefm_pos_margin_time)/eefm_pos_transition_time); // 0=>1
-          // Temporarily use first pos damping gain (stikp[0])
-          hrp::Vector3 tmp_damping_gain = (1-transition_smooth_gain) * stikp[0].eefm_pos_damping_gain * 10 + transition_smooth_gain * stikp[0].eefm_pos_damping_gain;
-          pos_ctrl = calcDampingControl (tmp_ratio * ref_f_diff, tmp_ratio * f_diff, pos_ctrl,
-                                         tmp_damping_gain, ((1-tmp_ratio)*eefm_pos_time_const_swing*hrp::Vector3::Ones()+tmp_ratio*stikp[0].eefm_pos_time_const_support));
-        }
+      if (eefm_use_force_difference_control) {
+          // fxyz control
+          // foot force difference control version
+          hrp::Vector3 ref_f_diff = (stikp[1].ref_force-stikp[0].ref_force);
+          if ( (contact_states[contact_states_index_map["rleg"]] && contact_states[contact_states_index_map["lleg"]]) // Reference : double support phase
+               || (isContact(0) && isContact(1)) ) { // Actual : double support phase
+              // Temporarily use first pos damping gain (stikp[0])
+              hrp::Vector3 tmp_damping_gain = (1-transition_smooth_gain) * stikp[0].eefm_pos_damping_gain * 10 + transition_smooth_gain * stikp[0].eefm_pos_damping_gain;
+              pos_ctrl = calcDampingControl (ref_f_diff, f_diff, pos_ctrl,
+                                             tmp_damping_gain, stikp[0].eefm_pos_time_const_support);
+          } else {
+              double remain_swing_time;
+              if ( !contact_states[contact_states_index_map["rleg"]] ) { // rleg swing
+                  remain_swing_time = m_controlSwingSupportTime.data[contact_states_index_map["rleg"]];
+              } else { // lleg swing
+                  remain_swing_time = m_controlSwingSupportTime.data[contact_states_index_map["lleg"]];
+              }
+              // std::cerr << "st " << remain_swing_time << " rleg " << contact_states[contact_states_index_map["rleg"]] << " lleg " << contact_states[contact_states_index_map["lleg"]] << std::endl;
+              if (eefm_pos_transition_time+eefm_pos_margin_time<remain_swing_time) {
+                  // Temporarily use first pos damping gain (stikp[0])
+                  hrp::Vector3 tmp_damping_gain = (1-transition_smooth_gain) * stikp[0].eefm_pos_damping_gain * 10 + transition_smooth_gain * stikp[0].eefm_pos_damping_gain;
+                  pos_ctrl = calcDampingControl (hrp::Vector3::Zero(), hrp::Vector3::Zero(), pos_ctrl,
+                                                 tmp_damping_gain, eefm_pos_time_const_swing * hrp::Vector3::Ones());
+              } else {
+                  double tmp_ratio = std::min(1.0, 1.0 - (remain_swing_time-eefm_pos_margin_time)/eefm_pos_transition_time); // 0=>1
+                  // Temporarily use first pos damping gain (stikp[0])
+                  hrp::Vector3 tmp_damping_gain = (1-transition_smooth_gain) * stikp[0].eefm_pos_damping_gain * 10 + transition_smooth_gain * stikp[0].eefm_pos_damping_gain;
+                  pos_ctrl = calcDampingControl (tmp_ratio * ref_f_diff, tmp_ratio * f_diff, pos_ctrl,
+                                                 tmp_damping_gain, ((1-tmp_ratio)*eefm_pos_time_const_swing*hrp::Vector3::Ones()+tmp_ratio*stikp[0].eefm_pos_time_const_support));
+              }
+          }
+          // zctrl = vlimit(zctrl, -0.02, 0.02);
+          pos_ctrl = vlimit(pos_ctrl, -0.05, 0.05);
+          // Convert pos_ctrl actual frame => foot origin frame
+          pos_ctrl = foot_origin_rot.transpose() * pos_ctrl;
+          // Divide pos_ctrl into rfoot and lfoot
+          stikp[0].d_foot_pos = -0.5 * pos_ctrl;
+          stikp[1].d_foot_pos = 0.5 * pos_ctrl;
       }
-      // zctrl = vlimit(zctrl, -0.02, 0.02);
-      pos_ctrl = vlimit(pos_ctrl, -0.05, 0.05);
-      // Convert pos_ctrl actual frame => foot origin frame
-      pos_ctrl = foot_origin_rot.transpose() * pos_ctrl;
-      // Divide pos_ctrl into rfoot and lfoot
-      stikp[0].d_foot_pos = -0.5 * pos_ctrl;
-      stikp[1].d_foot_pos = 0.5 * pos_ctrl;
       if (DEBUGP) {
         std::cerr << "[" << m_profile.instance_name << "] Control values" << std::endl;
-        std::cerr << "[" << m_profile.instance_name << "]   "
-                  << "pos_ctrl    = [" << pos_ctrl(0)*1e3 << " " << pos_ctrl(1)*1e3 << " "<< pos_ctrl(2)*1e3 << "] [mm]" << std::endl;
+        if (eefm_use_force_difference_control) {
+            std::cerr << "[" << m_profile.instance_name << "]   "
+                      << "pos_ctrl    = [" << pos_ctrl(0)*1e3 << " " << pos_ctrl(1)*1e3 << " "<< pos_ctrl(2)*1e3 << "] [mm]" << std::endl;
+        }
         for (size_t i = 0; i < ee_name.size(); i++) {
             std::cerr << "[" << m_profile.instance_name << "]   "
                       << "d_foot_rpy (" << ee_name[i] << ")  = [" << stikp[i].d_foot_rpy(0)*180.0/M_PI << " " << stikp[i].d_foot_rpy(1)*180.0/M_PI << "] [deg]" << std::endl;
@@ -1378,6 +1381,8 @@ void Stabilizer::getParameter(OpenHRP::StabilizerService::stParam& i_stp)
   i_stp.eefm_ee_pos_error_p_gain = eefm_ee_pos_error_p_gain;
   i_stp.eefm_ee_rot_error_p_gain = eefm_ee_rot_error_p_gain;
   i_stp.eefm_ee_error_cutoff_freq = target_ee_diff_p_filter[0]->getCutOffFreq();
+  i_stp.eefm_use_force_difference_control = eefm_use_force_difference_control;
+
   i_stp.is_ik_enable.length(is_ik_enable.size());
   for (size_t i = 0; i < is_ik_enable.size(); i++) {
       i_stp.is_ik_enable[i] = is_ik_enable[i];
@@ -1496,6 +1501,7 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
       szd->set_vertices(support_polygon_vec);
       szd->print_vertices(std::string(m_profile.instance_name));
   }
+  eefm_use_force_difference_control = i_stp.eefm_use_force_difference_control;
 
   act_cogvel_filter->setCutOffFreq(i_stp.eefm_cogvel_cutoff_freq);
   szd->set_wrench_alpha_blending(i_stp.eefm_wrench_alpha_blending);
@@ -1556,7 +1562,7 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
   std::cerr << "[" << m_profile.instance_name << "]   eefm_pos_transition_time = " << eefm_pos_transition_time << "[s], eefm_pos_margin_time = " << eefm_pos_margin_time << "[s] eefm_pos_time_const_swing = " << eefm_pos_time_const_swing << "[s]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   cogvel_cutoff_freq = " << act_cogvel_filter->getCutOffFreq() << "[Hz]" << std::endl;
   szd->print_params(std::string(m_profile.instance_name));
-  std::cerr << "[" << m_profile.instance_name << "]   eefm_gravitational_acceleration = " << eefm_gravitational_acceleration << "[m/s^2]" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   eefm_gravitational_acceleration = " << eefm_gravitational_acceleration << "[m/s^2], eefm_use_force_difference_control = " << (eefm_use_force_difference_control? "true":"false") << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   eefm_ee_pos_error_p_gain = " << eefm_ee_pos_error_p_gain << ", eefm_ee_rot_error_p_gain = " << eefm_ee_rot_error_p_gain << ", eefm_ee_error_cutoff_freq = " << target_ee_diff_p_filter[0]->getCutOffFreq() << "[Hz]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]  COMMON" << std::endl;
   if (control_mode == MODE_IDLE) {
