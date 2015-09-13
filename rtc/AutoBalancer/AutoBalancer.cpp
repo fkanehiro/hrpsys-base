@@ -1330,6 +1330,7 @@ bool AutoBalancer::getGaitGeneratorParam(OpenHRP::AutoBalancerService::GaitGener
 
 bool AutoBalancer::setAutoBalancerParam(const OpenHRP::AutoBalancerService::AutoBalancerParam& i_param)
 {
+  Guard guard(m_mutex);
   std::cerr << "[" << m_profile.instance_name << "] setAutoBalancerParam" << std::endl;
   double *default_zmp_offsets_array = new double[ikp.size()*3];
   move_base_gain = i_param.move_base_gain;
