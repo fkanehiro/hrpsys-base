@@ -224,6 +224,8 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     adjust_footstep_interpolator = new interpolator(1, m_dt, interpolator::HOFFARBIB, 1);
     transition_time = 2.0;
     adjust_footstep_transition_time = 2.0;
+    leg_names_interpolator = new interpolator(1, m_dt, interpolator::HOFFARBIB, 1);
+    leg_names_interpolator_ratio = 1.0;
 
     // setting stride limitations from conf file
     double stride_fwd_x_limit = 0.15;
@@ -312,6 +314,7 @@ RTC::ReturnCode_t AutoBalancer::onFinalize()
   delete zmp_offset_interpolator;
   delete transition_interpolator;
   delete adjust_footstep_interpolator;
+  delete leg_names_interpolator;
   return RTC::RTC_OK;
 }
 
@@ -571,6 +574,11 @@ void AutoBalancer::getTargetParameters()
         }
       }
     }
+    if (!leg_names_interpolator->isEmpty()) {
+        leg_names_interpolator->get(&leg_names_interpolator_ratio, true);
+    }else {
+        leg_names_interpolator_ratio = 1.0;
+    }
     if ( gg_is_walking ) {
       gg->set_default_zmp_offsets(default_zmp_offsets);
       gg_solved = gg->proc_one_tick();
@@ -816,8 +824,8 @@ bool AutoBalancer::solveLimbIKforLimb (ABCIKparam& param)
   hrp::Vector3 vel_p, vel_r;
   vel_p = param.target_p0 - param.current_p0;
   rats::difference_rotation(vel_r, param.current_r0, param.target_r0);
-  vel_p *= transition_interpolator_ratio;
-  vel_r *= transition_interpolator_ratio;
+  vel_p *= transition_interpolator_ratio * leg_names_interpolator_ratio;
+  vel_r *= transition_interpolator_ratio * leg_names_interpolator_ratio;
   param.manip->calcInverseKinematics2Loop(vel_p, vel_r, 1.0, 0.001, 0.01, &qrefv);
   // IK check
   vel_p = param.target_p0 - param.target_link->p;
@@ -859,6 +867,7 @@ void AutoBalancer::solveLimbIK ()
   hrp::Vector3 tmp_input_sbp = hrp::Vector3(0,0,0);
   static_balance_point_proc_one(tmp_input_sbp, ref_zmp(2));
   hrp::Vector3 dif_cog = tmp_input_sbp - ref_cog;
+  dif_cog *= leg_names_interpolator_ratio;
   dif_cog(2) = m_robot->rootLink()->p(2) - target_root_p(2);
   m_robot->rootLink()->p = m_robot->rootLink()->p + -1 * move_base_gain * dif_cog;
   m_robot->rootLink()->R = target_root_R;
@@ -1356,9 +1365,20 @@ bool AutoBalancer::setAutoBalancerParam(const OpenHRP::AutoBalancerService::Auto
                                                                           i_param.graspless_manip_reference_trans_rot[2],
                                                                           i_param.graspless_manip_reference_trans_rot[3]).normalized().toRotationMatrix()); // rtc: (x, y, z, w) but eigen: (w, x, y, z)
   transition_time = i_param.transition_time;
-  leg_names.clear();
-  for (size_t i = 0; i < i_param.leg_names.length(); i++) {
-      leg_names.push_back(std::string(i_param.leg_names[i]));
+  if (leg_names_interpolator->isEmpty()) {
+      leg_names.clear();
+      for (size_t i = 0; i < i_param.leg_names.length(); i++) {
+          leg_names.push_back(std::string(i_param.leg_names[i]));
+      }
+      if (control_mode == MODE_ABC) {
+          double tmp_ratio = 0.0;
+          leg_names_interpolator->set(&tmp_ratio);
+          tmp_ratio = 1.0;
+          leg_names_interpolator->go(&tmp_ratio, 5.0, true);
+          control_mode = MODE_SYNC_TO_ABC;
+      }
+  } else {
+      std::cerr << "[" << m_profile.instance_name << "]   leg_names cannot be set because interpolating." << std::endl;
   }
   pos_ik_thre = i_param.pos_ik_thre;
   rot_ik_thre = i_param.rot_ik_thre;
