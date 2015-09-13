@@ -186,6 +186,7 @@ RTC::ReturnCode_t KalmanFilter::onExecute(RTC::UniqueId ec_id)
     m_rpy.data.r = m_rate.data.avx;
     m_rpy.data.p = m_rate.data.avy;
     m_rpy.data.y = m_rate.data.avz;
+    m_rpy.tm = m_rate.tm;
     m_rpyOut.write();
     return RTC::RTC_OK;
   }
@@ -239,7 +240,10 @@ RTC::ReturnCode_t KalmanFilter::onExecute(RTC::UniqueId ec_id)
     m_baseRpyCurrent.data.r = baseRpyCurrent(0);
     m_baseRpyCurrent.data.p = baseRpyCurrent(1);
     m_baseRpyCurrent.data.y = baseRpyCurrent(2);
-
+    // add time stamp
+    m_rpyRaw.tm = m_acc.tm;
+    m_rpy.tm = m_acc.tm;
+    m_baseRpyCurrent.tm = m_acc.tm;
 
     m_rpyOut.write();
     m_rpyRawOut.write();
