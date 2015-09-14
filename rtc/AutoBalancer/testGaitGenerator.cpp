@@ -6,6 +6,8 @@ using namespace rats;
 #include <cstdio>
 #include <coil/stringutil.h>
 
+#define eps_eq(a,b,epsilon) (std::fabs((a)-(b)) < (epsilon))
+
 class testGaitGenerator
 {
 protected:
@@ -14,7 +16,7 @@ protected:
     std::vector<std::string> all_limbs;
     hrp::Vector3 cog;
     gait_generator* gg;
-    bool use_gnuplot, is_small_zmp_error, is_small_zmp_diff;
+    bool use_gnuplot, is_small_zmp_error, is_small_zmp_diff, is_contact_states_swing_support_time_validity;
 private:
     // error check
     bool check_zmp_error (const hrp::Vector3& czmp, const hrp::Vector3& refzmp)
@@ -46,6 +48,8 @@ private:
         //
         hrp::Vector3 prev_refzmp;
         std::vector<std::string> tmp_string_vector;
+        std::vector<bool> prev_contact_states(2, true); // RLEG, LLEG
+        std::vector<double> prev_swing_support_time(2, 1e2); // RLEG, LLEG
         while ( gg->proc_one_tick() ) {
             //std::cerr << gg->lcg.gp_count << std::endl;
             // if ( gg->lcg.gp_index == 4 && gg->lcg.gp_count == 100) {
@@ -156,16 +160,24 @@ private:
                     gg->get_current_swing_time(RLEG),
                     gg->get_current_swing_time(LLEG));
             std::vector<leg_type> tmp_current_support_states = gg->get_current_support_states();
-            fprintf(fp_sstime, "%d %d ",
-                    ((std::find_if(tmp_current_support_states.begin(), tmp_current_support_states.end(), boost::lambda::_1 == RLEG) != tmp_current_support_states.end()) ? 1 : 0),
-                    ((std::find_if(tmp_current_support_states.begin(), tmp_current_support_states.end(), boost::lambda::_1 == LLEG) != tmp_current_support_states.end()) ? 1 : 0));
+            bool rleg_contact_states = std::find_if(tmp_current_support_states.begin(), tmp_current_support_states.end(), boost::lambda::_1 == RLEG) != tmp_current_support_states.end();
+            bool lleg_contact_states = std::find_if(tmp_current_support_states.begin(), tmp_current_support_states.end(), boost::lambda::_1 == LLEG) != tmp_current_support_states.end();
+            fprintf(fp_sstime, "%d %d ", (rleg_contact_states ? 1 : 0), (lleg_contact_states ? 1 : 0));
             fprintf(fp_sstime, "\n");
             // Error checking
             is_small_zmp_error = check_zmp_error(gg->get_cart_zmp(), gg->get_refzmp()) && is_small_zmp_error;
             if (i>0) {
                 is_small_zmp_diff = check_zmp_diff(prev_refzmp, gg->get_refzmp()) && is_small_zmp_diff;
             }
+            //   If contact states are not change, prev_swing_support_time is not dt, otherwise prev_swing_support_time is dt.
+            is_contact_states_swing_support_time_validity = is_contact_states_swing_support_time_validity &&
+                ((prev_contact_states[0] == rleg_contact_states) ? !eps_eq(prev_swing_support_time[0],dt,1e-5) : eps_eq(prev_swing_support_time[0],dt,1e-5)) &&
+                ((prev_contact_states[1] == lleg_contact_states) ? !eps_eq(prev_swing_support_time[1],dt,1e-5) : eps_eq(prev_swing_support_time[1],dt,1e-5));
             prev_refzmp = gg->get_refzmp();
+            prev_contact_states[0] = rleg_contact_states;
+            prev_contact_states[1] = lleg_contact_states;
+            prev_swing_support_time[0] = gg->get_current_swing_time(RLEG);
+            prev_swing_support_time[1] = gg->get_current_swing_time(LLEG);
             i++;
         }
         fclose(fp);
@@ -329,6 +341,7 @@ private:
         std::cerr << "Checking" << std::endl;
         std::cerr << "  ZMP error : " << is_small_zmp_error << std::endl;
         std::cerr << "  ZMP diff : " << is_small_zmp_diff << std::endl;
+        std::cerr << "  Contact states & swing support time validity : " << is_contact_states_swing_support_time_validity << std::endl;
     };
 
     void gen_and_plot_walk_pattern(const step_node& initial_support_leg_step, const step_node& initial_swing_leg_dst_step)
@@ -357,7 +370,7 @@ private:
 
 public:
     std::vector<std::string> arg_strs;
-    testGaitGenerator() : use_gnuplot(true), is_small_zmp_error(true), is_small_zmp_diff(true) {};
+    testGaitGenerator() : use_gnuplot(true), is_small_zmp_error(true), is_small_zmp_diff(true), is_contact_states_swing_support_time_validity(true) {};
     virtual ~testGaitGenerator()
     {
         if (gg != NULL) {
@@ -697,7 +710,7 @@ public:
 
     bool check_all_results ()
     {
-        return is_small_zmp_error && is_small_zmp_diff;
+        return is_small_zmp_error && is_small_zmp_diff && is_contact_states_swing_support_time_validity;
     };
 };
 

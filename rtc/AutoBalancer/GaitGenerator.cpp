@@ -226,8 +226,8 @@ namespace rats
 
   void leg_coords_generator::calc_ratio_from_double_support_ratio (const double default_double_support_ratio)
   {
-    int swing_len = (1.0 - default_double_support_ratio) * one_step_count;
-    int support_len = one_step_count - swing_len;
+    int support_len = 2*static_cast<int>(one_step_count * default_double_support_ratio * 0.5);
+    int swing_len = one_step_count - support_len;
     int current_swing_len = lcg_count - support_len/2;
     double tmp_current_swing_time;
     int current_swing_count = (one_step_count - lcg_count); // 0->one_step_count

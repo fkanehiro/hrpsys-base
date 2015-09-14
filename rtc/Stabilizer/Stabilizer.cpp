@@ -1096,13 +1096,16 @@ void Stabilizer::calcSwingSupportLimbGain ()
     for (size_t i = 0; i < stikp.size(); i++) {
         STIKParam& ikp = stikp[i];
         if (contact_states[i]) { // Support
-            if (false) { // first
-                ikp.swing_support_gain = 1.0;
+            ikp.support_time += dt;
+            if (ikp.support_time > eefm_pos_transition_time) {
+                ikp.swing_support_gain = (m_controlSwingSupportTime.data[i] / eefm_pos_transition_time);
             } else {
-                ikp.swing_support_gain = std::max(0.0, std::min(1.0, (m_controlSwingSupportTime.data[i] / eefm_pos_transition_time)));
+                ikp.swing_support_gain = (ikp.support_time / eefm_pos_transition_time);
             }
+            ikp.swing_support_gain = std::max(0.0, std::min(1.0, ikp.swing_support_gain));
         } else { // Swing
             ikp.swing_support_gain = 0.0;
+            ikp.support_time = 0.0;
         }
     }
     if (DEBUGP) {
