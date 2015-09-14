@@ -510,13 +510,13 @@ RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
       m_zmp.data.y = rel_act_zmp(1);
       m_zmp.data.z = rel_act_zmp(2);
       m_zmpOut.write();
-      m_refCP.data.x = ref_cp(0);
-      m_refCP.data.y = ref_cp(1);
-      m_refCP.data.z = ref_cp(2);
+      m_refCP.data.x = rel_ref_cp(0);
+      m_refCP.data.y = rel_ref_cp(1);
+      m_refCP.data.z = rel_ref_cp(2);
       m_refCPOut.write();
-      m_actCP.data.x = act_cp(0);
-      m_actCP.data.y = act_cp(1);
-      m_actCP.data.z = act_cp(2);
+      m_actCP.data.x = rel_act_cp(0);
+      m_actCP.data.y = rel_act_cp(1);
+      m_actCP.data.z = rel_act_cp(2);
       m_actCPOut.write();
       m_actContactStates.tm = m_qRef.tm;
       m_actContactStatesOut.write();
@@ -655,6 +655,9 @@ void Stabilizer::getActualParameters ()
   } else {
     on_ground = calcZMP(act_zmp, ref_zmp(2));
   }
+  // for capture point
+  hrp::Vector3 tmp_act_cog = act_cog;
+  act_cp(2) = act_zmp(2);
   // set actual contact states
   m_actContactStates.data[contact_states_index_map["rleg"]] = isContact(contact_states_index_map["rleg"]);
   m_actContactStates.data[contact_states_index_map["lleg"]] = isContact(contact_states_index_map["lleg"]);
@@ -683,6 +686,12 @@ void Stabilizer::getActualParameters ()
       //target_ee_R[i] = target->R * stikp[i].localR;
       target_ee_diff_p[i] -= foot_origin_rot.transpose() * (act_ee_p - foot_origin_pos);
     }
+    // capture point
+    for(size_t i = 0; i < 2; i++) {
+      act_cp(i) = tmp_act_cog(i) + act_cogvel(i) / std::sqrt(eefm_gravitational_acceleration / act_cog(2));
+    }
+    rel_act_cp = m_robot->rootLink()->R.transpose() * (act_cp - m_robot->rootLink()->p);
+    act_cp = act_cog + act_cogvel / std::sqrt(eefm_gravitational_acceleration / act_cog(2));
     // <= Actual foot_origin frame
 
     // Actual world frame =>
@@ -922,6 +931,9 @@ void Stabilizer::getTargetParameters ()
     ref_zmp = tmp_ref_zmp;
   }
   ref_cog = m_robot->calcCM();
+  // for capture point
+  hrp::Vector3 tmp_ref_cog = ref_cog;
+  ref_cp(2) = ref_zmp(2);
   for (size_t i = 0; i < stikp.size(); i++) {
     hrp::Link* target = m_robot->link(stikp[i].target_name);
     //target_ee_p[i] = target->p + target->R * stikp[i].localCOPPos;
@@ -954,6 +966,12 @@ void Stabilizer::getTargetParameters ()
       target_ee_diff_p[i] = foot_origin_rot.transpose() * (target_ee_p[i] - foot_origin_pos);
     }
     target_foot_origin_rot = foot_origin_rot;
+    // capture point
+    for(size_t i = 0; i < 2; i++) {
+      ref_cp(i) = tmp_ref_cog(i) + ref_cogvel(i) / std::sqrt(eefm_gravitational_acceleration / ref_cog(2));
+    }
+    rel_ref_cp = m_robot->rootLink()->R.transpose() * (ref_cp - m_robot->rootLink()->p);
+    ref_cp = ref_cog + ref_cogvel / std::sqrt(eefm_gravitational_acceleration / ref_cog(2));
     // <= Reference foot_origin frame
   } else {
     ref_cogvel = (ref_cog - prev_ref_cog)/dt;
@@ -1040,11 +1058,7 @@ void Stabilizer::calcStateForEmergencySignal()
   // CP Check
   bool is_cp_outside = false;
   if (on_ground && transition_count == 0 && control_mode == MODE_ST) {
-    ref_cp = ref_cog + ref_cogvel/std::sqrt(eefm_gravitational_acceleration/ ref_cog(2));
-    act_cp = act_cog + act_cogvel/std::sqrt(eefm_gravitational_acceleration/ act_cog(2));
     hrp::Vector3 diff_cp = ref_cp - act_cp;
-    ref_cp(2) = rel_act_zmp(2);
-    act_cp(2) = rel_act_zmp(2);
     diff_cp(2) = 0.0;
     if (DEBUGP) {
         std::cerr << "[" << m_profile.instance_name << "] CP value " << diff_cp.norm() << std::endl;
@@ -1367,6 +1381,8 @@ void Stabilizer::getParameter(OpenHRP::StabilizerService::stParam& i_stp)
     i_stp.eefm_ref_zmp_aux[i] = ref_zmp_aux(i);
     i_stp.eefm_body_attitude_control_time_const[i] = eefm_body_attitude_control_time_const[i];
     i_stp.eefm_body_attitude_control_gain[i] = eefm_body_attitude_control_gain[i];
+    i_stp.ref_capture_point[i] = ref_cp(i);
+    i_stp.act_capture_point[i] = act_cp(i);
   }
   i_stp.eefm_pos_time_const_support.length(stikp.size());
   i_stp.eefm_pos_damping_gain.length(stikp.size());
@@ -1487,6 +1503,8 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
     ref_zmp_aux(i) = i_stp.eefm_ref_zmp_aux[i];
     eefm_body_attitude_control_gain[i] = i_stp.eefm_body_attitude_control_gain[i];
     eefm_body_attitude_control_time_const[i] = i_stp.eefm_body_attitude_control_time_const[i];
+    ref_cp(i) = i_stp.ref_capture_point[i];
+    act_cp(i) = i_stp.act_capture_point[i];
   }
   bool is_damping_parameter_ok = true;
   if ( i_stp.eefm_pos_damping_gain.length () == stikp.size() &&
