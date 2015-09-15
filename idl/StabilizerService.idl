@@ -154,6 +154,10 @@ module OpenHRP
       double cop_check_margin;
       /// CP margin [m]
       double cp_check_margin;
+      /// ref_CP [m] (x,y) (foot_origin relative coordinate)
+      DblArray2 ref_capture_point;
+      /// act_CP [m] (x,y) (foot_origin relative coordinate)
+      DblArray2 act_capture_point;
       /// contact decision threshold [N]
       double contact_decision_threshold;
       /// Foot origin position offset
