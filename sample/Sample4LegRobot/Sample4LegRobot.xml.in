@@ -14,7 +14,7 @@
    <property name="connection" value="HGcontroller0.dqOut:Sample4LegRobot(Robot)0.dqRef"/>
    <property name="connection" value="HGcontroller0.ddqOut:Sample4LegRobot(Robot)0.ddqRef"/>
   </item>
-  <item class="com.generalrobotix.ui.item.GrxModelItem" name="sample_4leg_robot_bush" url="@OPENHRP_DIR@/share/openhrp3/share/OpenHRP-3.1/sample/model/sample_4leg_robot_bush.wrl">
+  <item class="com.generalrobotix.ui.item.GrxModelItem" name="sample_4leg_robot" url="@OPENHRP_DIR@/share/openhrp3/share/OpenHRP-3.1/sample/model/sample_4leg_robot.wrl">
    <property name="rtcName" value="Sample4LegRobot(Robot)0"/>
    <property name="inport" value="qRef:JOINT_VALUE"/>
    <property name="inport" value="dqRef:JOINT_VELOCITY"/>
@@ -161,14 +161,14 @@
    <property name="showActualState" value="true"/>
    <property name="showScale" value="true"/>
   </view>
-  <item class="com.generalrobotix.ui.item.GrxCollisionPairItem" name="CP#longfloor_#sample_4leg_robot_bush_">
+  <item class="com.generalrobotix.ui.item.GrxCollisionPairItem" name="CP#longfloor_#sample_4leg_robot_">
    <property name="springConstant" value="0 0 0 0 0 0"/>
    <property name="slidingFriction" value="0.5"/>
    <property name="jointName2" value=""/>
    <property name="jointName1" value=""/>
    <property name="damperConstant" value="0 0 0 0 0 0"/>
    <property name="objectName2" value="longfloor"/>
-   <property name="objectName1" value="sample_4leg_robot_bush"/>
+   <property name="objectName1" value="sample_4leg_robot"/>
    <property name="springDamperModel" value="false"/>
    <property name="staticFriction" value="0.5"/>
   </item>
