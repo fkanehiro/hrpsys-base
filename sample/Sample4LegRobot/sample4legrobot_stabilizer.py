@@ -73,7 +73,8 @@ def demoSetParameterAndStartST():
     stp_org.is_ik_enable = [True]*4
     stp_org.is_feedback_control_enable = [True]*4
     stp_org.is_zmp_calc_enable = [True]*4
-    stp_org.st_algorithm=OpenHRP.StabilizerService.EEFMQP
+    stp_org.eefm_use_force_difference_control=False
+    stp_org.st_algorithm=OpenHRP.StabilizerService.EEFMQPCOP
     hcf.st_svc.setParameter(stp_org)
     hcf.startStabilizer ()
 
