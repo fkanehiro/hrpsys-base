@@ -5,7 +5,7 @@ NAME = 'test-pkgconfig'
 
 code = """
 #include <sys/types.h> /* iob.h need this */
-#include "io/iob.h"
+#include "hrpsys/io/iob.h"
 int main (int argc, char** argv)
 {
   open_iob();
