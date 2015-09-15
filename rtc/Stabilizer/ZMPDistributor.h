@@ -659,6 +659,9 @@ public:
         size_t ee_num = ee_name.size();
         std::vector<double> alpha_vector(ee_num), fz_alpha_vector(ee_num);
         calcAlphaVectorFromCOPDistance(alpha_vector, fz_alpha_vector, cop_pos, ee_name, new_refzmp, ref_zmp);
+        if (printp) {
+            std::cerr << "[" << print_str << "] force moment distribution (Pinv)" << std::endl;
+        }
 
         // ref_foot_force and ref_foot_moment should be set
         double norm_weight = 1e-7;
@@ -690,8 +693,20 @@ public:
             }
             for (size_t j = 0; j < ee_num; j++) {
                 for (size_t i = 0; i < 3; i++) {
-                    Wmat(i+j*3, i+j*3) = Wmat(i+j*3, i+j*3) * limb_gains[j];
+                    if (i != 2 && ee_num == 2)
+                        Wmat(i+j*3, i+j*3) = 0;
+                    else
+                        Wmat(i+j*3, i+j*3) = Wmat(i+j*3, i+j*3) * limb_gains[j];
                 }
+            }
+            if (printp) {
+                std::cerr << "[" << print_str << "]   Wmat(diag) = [";
+                for (size_t j = 0; j < ee_num; j++) {
+                    for (size_t i = 0; i < 3; i++) {
+                        std::cerr << Wmat(i+j*3, i+j*3) << " ";
+                    }
+                }
+                std::cerr << "]" << std::endl;
             }
             hrp::dvector ret(state_dim/2);
             hrp::dvector total_wrench = hrp::dvector::Zero(total_wrench_dim);
@@ -707,6 +722,14 @@ public:
             // std::cerr << Wmat << std::endl;
             // std::cerr << "ret" << std::endl;
             // std::cerr << ret << std::endl;
+        }
+        if (printp) {
+            for (size_t i = 0; i < ee_num; i++) {
+                std::cerr << "[" << print_str << "]   "
+                          << "ref_force  [" << ee_name[i] << "] " << hrp::Vector3(ref_foot_force[i]).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[N]" << std::endl;
+                std::cerr << "[" << print_str << "]   "
+                          << "ref_moment [" << ee_name[i] << "] " << hrp::Vector3(ref_foot_moment[i]).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[Nm]" << std::endl;
+            }
         }
 
         hrp::dvector total_wrench = hrp::dvector::Zero(total_wrench_dim);
@@ -744,8 +767,17 @@ public:
         for (size_t j = 0; j < ee_num; j++) {
             for (size_t i = 0; i < 3; i++) {
                 Wmat(i+j*6, i+j*6) = fz_alpha_vector[j] * limb_gains[j];
-                Wmat(i+j*6+3, i+j*6+3) = norm_moment_weight * fz_alpha_vector[j] * limb_gains[j];
+                Wmat(i+j*6+3, i+j*6+3) = (1.0/norm_moment_weight) * fz_alpha_vector[j] * limb_gains[j];
             }
+        }
+        if (printp) {
+            std::cerr << "[" << print_str << "]   newWmat(diag) = [";
+            for (size_t j = 0; j < ee_num; j++) {
+                for (size_t i = 0; i < 6; i++) {
+                    std::cerr << Wmat(i+j*6, i+j*6) << " ";
+                }
+            }
+            std::cerr << "]" << std::endl;
         }
         // std::cerr << "total_wrench" << std::endl;
         // std::cerr << total_wrench << std::endl;
@@ -762,15 +794,11 @@ public:
             ref_foot_moment[fidx] += hrp::Vector3(ret(6*fidx+3), ret(6*fidx+4), ret(6*fidx+5));
         }
         if (printp) {
-            std::cerr << "[" << print_str << "] force moment distribution (Pinv)" << std::endl;
-            //std::cerr << "[" << print_str << "]   alpha = " << alpha << ", fz_alpha = " << fz_alpha << std::endl;
-            // std::cerr << "[" << print_str << "]   "
-            //           << "total_tau    = " << hrp::Vector3(tau_0).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[Nm]" << std::endl;
             for (size_t i = 0; i < ee_num; i++) {
                 std::cerr << "[" << print_str << "]   "
-                          << "ref_force  [" << ee_name[i] << "] " << hrp::Vector3(ref_foot_force[i]).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[N]" << std::endl;
+                          << "new_ref_force  [" << ee_name[i] << "] " << hrp::Vector3(ref_foot_force[i]).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[N]" << std::endl;
                 std::cerr << "[" << print_str << "]   "
-                          << "ref_moment [" << ee_name[i] << "] " << hrp::Vector3(ref_foot_moment[i]).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[Nm]" << std::endl;
+                          << "new_ref_moment [" << ee_name[i] << "] " << hrp::Vector3(ref_foot_moment[i]).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[Nm]" << std::endl;
             }
         }
     };

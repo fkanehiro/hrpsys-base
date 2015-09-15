@@ -771,8 +771,15 @@ void Stabilizer::getActualParameters ()
                                            new_refzmp, hrp::Vector3(foot_origin_rot * ref_zmp + foot_origin_pos),
                                            eefm_gravitational_acceleration * total_mass, dt,
                                            DEBUGP, std::string(m_profile.instance_name));
-      } else if (st_algorithm == OpenHRP::StabilizerService::EEFMQP || st_algorithm == OpenHRP::StabilizerService::EEFMQPCOP) {
+      } else if (st_algorithm == OpenHRP::StabilizerService::EEFMQP) {
           szd->distributeZMPToForceMomentsQP(ref_force, ref_moment,
+                                             ee_pos, cop_pos, ee_rot, ee_name, limb_gains,
+                                             new_refzmp, hrp::Vector3(foot_origin_rot * ref_zmp + foot_origin_pos),
+                                             eefm_gravitational_acceleration * total_mass, dt,
+                                             DEBUGP, std::string(m_profile.instance_name),
+                                             (st_algorithm == OpenHRP::StabilizerService::EEFMQPCOP));
+      } else if (st_algorithm == OpenHRP::StabilizerService::EEFMQPCOP) {
+          szd->distributeZMPToForceMomentsPseudoInverse(ref_force, ref_moment,
                                              ee_pos, cop_pos, ee_rot, ee_name, limb_gains,
                                              new_refzmp, hrp::Vector3(foot_origin_rot * ref_zmp + foot_origin_pos),
                                              eefm_gravitational_acceleration * total_mass, dt,
