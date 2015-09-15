@@ -203,6 +203,10 @@ class AutoBalancer
   void static_balance_point_proc_one(hrp::Vector3& tmp_input_sbp, const double ref_com_height);
   void calc_static_balance_point_from_forces(hrp::Vector3& sb_point, const hrp::Vector3& tmpcog, const double ref_com_height, std::vector<hrp::Vector3>& tmp_forces);
   hrp::Vector3 calc_vel_from_hand_error (const rats::coordinates& tmp_fix_coords);
+  bool isOptionalDataContact (const std::string& ee_name)
+  {
+      return (std::fabs(m_optionalData.data[contact_states_index_map[ee_name]]-1.0)<0.1)?true:false;
+  };
 
   // for gg
   typedef boost::shared_ptr<rats::gait_generator> ggPtr;

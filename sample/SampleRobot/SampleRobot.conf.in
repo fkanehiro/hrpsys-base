@@ -23,3 +23,6 @@ alarm_ratio: 0.75
 # PDcontroller Setting
 pdgains_sim_file_name: @CMAKE_INSTALL_PREFIX@/share/hrpsys/samples/SampleRobot/SampleRobot.PDgain.dat
 pdcontrol_tlimit_ratio: 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1
+
+# SequencePlayer optional data
+seq_optional_data_dim: 8 # contactStates x 4 + controlSwingTime x 4 (4 is lfsensor, rfsensor, lhsensor, rhsensor)

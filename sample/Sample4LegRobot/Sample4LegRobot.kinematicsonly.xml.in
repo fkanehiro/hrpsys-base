@@ -1,7 +1,7 @@
 <grxui>
  <mode name="Simulation">
   <item class="com.generalrobotix.ui.item.GrxSimulationItem" name="simulationItem">
-   <property name="integrate" value="true"/>
+   <property name="integrate" value="false"/>
    <property name="timeStep" value="0.001"/>
    <property name="totalTime" value="2000000.0"/>
    <property name="method" value="RUNGE_KUTTA"/>
@@ -19,6 +19,7 @@
    <property name="inport" value="qRef:JOINT_VALUE"/>
    <property name="inport" value="dqRef:JOINT_VELOCITY"/>
    <property name="inport" value="ddqRef:JOINT_ACCELERATION"/>
+   <property name="inport" value="basePoseRef:WAIST:ABS_TRANSFORM"/>
    <property name="outport" value="q:JOINT_VALUE"/>
    <property name="outport" value="dq:JOINT_VELOCITY"/>
    <property name="outport" value="tau:JOINT_TORQUE"/>
@@ -32,7 +33,7 @@
    <property name="WAIST.translation" value="0  0  0.7235"/>
    <property name="WAIST.rotation" value="1 0 0 0"/>
    <property name="WAIST.mode" value="Torque"/>
-   <property name="controller" value="Sample4LegRobot"/>
+   <property name="controller" value="Sample4LegRobot_for_kinematicsonly"/>
    <property name="RLEG_JOINT0.angle" value="0.0"/>
    <property name="RLEG_JOINT0.mode" value="HighGain"/>
    <property name="RLEG_JOINT0.NumOfAABB" value="1"/>
@@ -135,6 +136,7 @@
    <property name="inport" value="qRef:JOINT_VALUE"/>
    <property name="inport" value="dqRef:JOINT_VELOCITY"/>
    <property name="inport" value="ddqRef:JOINT_ACCELERATION"/>
+   <property name="inport" value="basePoseRef:WAIST:ABS_TRANSFORM"/>
    <property name="outport" value="q:JOINT_VALUE"/>
    <property name="outport" value="dq:JOINT_VELOCITY"/>
    <property name="outport" value="tau:JOINT_TORQUE"/>

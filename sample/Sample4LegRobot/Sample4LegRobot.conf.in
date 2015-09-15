@@ -12,3 +12,6 @@ collision_pair: RLEG_JOINT5:LLEG_JOINT5 RARM_JOINT5:LARM_JOINT5
 
 # ThermoLimiter
 alarm_ratio: 0.75
+
+# SequencePlayer optional data
+seq_optional_data_dim: 8 # contactStates x 4 + controlSwingTime x 4 (4 is lfsensor, rfsensor, lhsensor, rhsensor)
