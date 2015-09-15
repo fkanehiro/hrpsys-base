@@ -688,6 +688,11 @@ public:
                     }
                 }
             }
+            for (size_t j = 0; j < ee_num; j++) {
+                for (size_t i = 0; i < 3; i++) {
+                    Wmat(i+j*3, i+j*3) = Wmat(i+j*3, i+j*3) * limb_gains[j];
+                }
+            }
             hrp::dvector ret(state_dim/2);
             hrp::dvector total_wrench = hrp::dvector::Zero(total_wrench_dim);
             total_wrench(total_wrench_dim-3) = total_fz;
