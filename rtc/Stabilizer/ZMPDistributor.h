@@ -293,6 +293,7 @@ public:
                                       const std::vector<hrp::Vector3>& cop_pos,
                                       const std::vector<hrp::Matrix33>& ee_rot,
                                       const std::vector<std::string>& ee_name,
+                                      const std::vector<double>& limb_gains,
                                       const hrp::Vector3& new_refzmp, const hrp::Vector3& ref_zmp,
                                       const double total_fz, const double dt, const bool printp = true, const std::string& print_str = "")
     {
@@ -505,6 +506,7 @@ public:
                                         const std::vector<hrp::Vector3>& cop_pos,
                                         const std::vector<hrp::Matrix33>& ee_rot,
                                         const std::vector<std::string>& ee_name,
+                                        const std::vector<double>& limb_gains,
                                         const hrp::Vector3& new_refzmp, const hrp::Vector3& ref_zmp,
                                         const double total_fz, const double dt, const bool printp = true, const std::string& print_str = "",
                                         const bool use_cop_distribution = false)
@@ -619,12 +621,13 @@ public:
                                         const std::vector<hrp::Vector3>& cop_pos,
                                         const std::vector<hrp::Matrix33>& ee_rot,
                                         const std::vector<std::string>& ee_name,
+                                        const std::vector<double>& limb_gains,
                                         const hrp::Vector3& new_refzmp, const hrp::Vector3& ref_zmp,
                                         const double total_fz, const double dt, const bool printp = true, const std::string& print_str = "",
                                         const bool use_cop_distribution = false)
     {
         distributeZMPToForceMoments(ref_foot_force, ref_foot_moment,
-                                    ee_pos, cop_pos, ee_rot, ee_name,
+                                    ee_pos, cop_pos, ee_rot, ee_name, limb_gains,
                                     new_refzmp, ref_zmp,
                                     total_fz, dt, printp, print_str);
     };
@@ -648,6 +651,7 @@ public:
                                                    const std::vector<hrp::Vector3>& cop_pos,
                                                    const std::vector<hrp::Matrix33>& ee_rot,
                                                    const std::vector<std::string>& ee_name,
+                                                   const std::vector<double>& limb_gains,
                                                    const hrp::Vector3& new_refzmp, const hrp::Vector3& ref_zmp,
                                                    const double total_fz, const double dt, const bool printp = true, const std::string& print_str = "",
                                                    const bool use_cop_distribution = true)
@@ -734,8 +738,8 @@ public:
         }
         for (size_t j = 0; j < ee_num; j++) {
             for (size_t i = 0; i < 3; i++) {
-                Wmat(i+j*6, i+j*6) = fz_alpha_vector[j];
-                Wmat(i+j*6+3, i+j*6+3) = norm_moment_weight * fz_alpha_vector[j];
+                Wmat(i+j*6, i+j*6) = fz_alpha_vector[j] * limb_gains[j];
+                Wmat(i+j*6+3, i+j*6+3) = norm_moment_weight * fz_alpha_vector[j] * limb_gains[j];
             }
         }
         // std::cerr << "total_wrench" << std::endl;

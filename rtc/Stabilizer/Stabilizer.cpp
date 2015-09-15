@@ -735,6 +735,7 @@ void Stabilizer::getActualParameters ()
     std::vector<std::string> ee_name;
     // distribute new ZMP into foot force & moment
     std::vector<hrp::Vector3> ref_force, ref_moment;
+    std::vector<double> limb_gains;
     if (control_mode == MODE_ST) {
       std::vector<hrp::Vector3> ee_pos, cop_pos;
       std::vector<hrp::Matrix33> ee_rot;
@@ -746,6 +747,7 @@ void Stabilizer::getActualParameters ()
           cop_pos.push_back(target->p + target->R * ikp.localCOPPos);
           ee_rot.push_back(target->R * ikp.localR);
           ee_name.push_back(ikp.ee_name);
+          limb_gains.push_back(ikp.swing_support_gain);
           ref_force.push_back(hrp::Vector3::Zero());
           ref_moment.push_back(hrp::Vector3::Zero());
       }
@@ -765,13 +767,13 @@ void Stabilizer::getActualParameters ()
       // Ref force and moment at COP
       if (st_algorithm == OpenHRP::StabilizerService::EEFM) {
           szd->distributeZMPToForceMoments(ref_force, ref_moment,
-                                           ee_pos, cop_pos, ee_rot, ee_name,
+                                           ee_pos, cop_pos, ee_rot, ee_name, limb_gains,
                                            new_refzmp, hrp::Vector3(foot_origin_rot * ref_zmp + foot_origin_pos),
                                            eefm_gravitational_acceleration * total_mass, dt,
                                            DEBUGP, std::string(m_profile.instance_name));
       } else if (st_algorithm == OpenHRP::StabilizerService::EEFMQP || st_algorithm == OpenHRP::StabilizerService::EEFMQPCOP) {
           szd->distributeZMPToForceMomentsQP(ref_force, ref_moment,
-                                             ee_pos, cop_pos, ee_rot, ee_name,
+                                             ee_pos, cop_pos, ee_rot, ee_name, limb_gains,
                                              new_refzmp, hrp::Vector3(foot_origin_rot * ref_zmp + foot_origin_pos),
                                              eefm_gravitational_acceleration * total_mass, dt,
                                              DEBUGP, std::string(m_profile.instance_name),

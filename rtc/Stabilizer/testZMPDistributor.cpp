@@ -65,6 +65,7 @@ private:
         std::vector<std::string> names;
         names.push_back("rleg");
         names.push_back("lleg");
+        std::vector<double> limb_gains(names.size(), 1.0);
         std::vector<hrp::Vector3> ref_foot_force(names.size(), hrp::Vector3::Zero()), ref_foot_moment(names.size(), hrp::Vector3::Zero());
         std::vector<std::vector<Eigen::Vector2d> > fs;
         szd->get_vertices(fs);
@@ -80,12 +81,12 @@ private:
             double alpha = szd->calcAlpha(refzmp_vec[i], ee_pos, ee_rot, names);
             if (distribution_algorithm == EEFMQP || distribution_algorithm == EEFMQP2) {
                 szd->distributeZMPToForceMomentsQP(ref_foot_force, ref_foot_moment,
-                                                   ee_pos, cop_pos, ee_rot, names,
+                                                   ee_pos, cop_pos, ee_rot, names, limb_gains,
                                                    refzmp_vec[i], refzmp_vec[i],
                                                    total_fz, dt, true, "", (distribution_algorithm == EEFMQP2));
             } else {
                 szd->distributeZMPToForceMoments(ref_foot_force, ref_foot_moment,
-                                                 ee_pos, cop_pos, ee_rot, names,
+                                                 ee_pos, cop_pos, ee_rot, names, limb_gains,
                                                  refzmp_vec[i], refzmp_vec[i],
                                                  total_fz, dt);
             }
