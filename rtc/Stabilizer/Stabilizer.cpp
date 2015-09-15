@@ -214,9 +214,18 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
       ikp.localR = Eigen::AngleAxis<double>(tmpv[3], hrp::Vector3(tmpv[0], tmpv[1], tmpv[2])).toRotationMatrix(); // rotation in VRML is represented by axis + angle
       ikp.target_name = ee_target;
       ikp.ee_name = ee_name;
-      for (size_t j = 0; j < npforce; j++) {
-          if (m_robot->link(ee_target)->name == m_robot->sensor(hrp::Sensor::FORCE, j)->link->name) {
-              ikp.sensor_name = m_robot->sensor(hrp::Sensor::FORCE, j)->name;
+      {
+          bool is_ee_exists = false;
+          for (size_t j = 0; j < npforce; j++) {
+              hrp::Sensor* sensor = m_robot->sensor(hrp::Sensor::FORCE, j);
+              hrp::Link* alink = m_robot->link(ikp.target_name);
+              while (alink != NULL && alink->name != ee_base && !is_ee_exists) {
+                  if ( alink->name == sensor->link->name ) {
+                      is_ee_exists = true;
+                      ikp.sensor_name = sensor->name;
+                  }
+                  alink = alink->parent;
+              }
           }
       }
       stikp.push_back(ikp);
