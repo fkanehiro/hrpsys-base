@@ -119,7 +119,9 @@ namespace RTC
                 fprintf(stderr, "[%d.%6.6d] Timeover: processing time = %4.2f[ms]\n",
                         tv.tv_sec, tv.tv_usec, dt*1e3);
                 for (unsigned int i=0; i< processes.size(); i++){
-                    fprintf(stderr, "%4.2f, ", processes[i]*1e3);
+                    RTC::RTObject_var rtc = RTC::RTObject::_narrow(m_comps[i]._ref);
+                    std::string iname(rtc->get_component_profile()->instance_name);
+                    fprintf(stderr, "%s(%4.2f), ", iname.c_str(),processes[i]*1e3);
                 }
                 fprintf(stderr, "\n");
 #endif
