@@ -1371,6 +1371,7 @@ void Stabilizer::stopStabilizer(void)
   if ( transition_count == 0 && (control_mode == MODE_ST || control_mode == MODE_AIR) ) {
     std::cerr << "[" << m_profile.instance_name << "] " << "Stop ST"  << std::endl;
     control_mode = MODE_SYNC_TO_IDLE;
+    while (control_mode != MODE_IDLE) { usleep(10); };
     waitSTTransition();
     std::cerr << "[" << m_profile.instance_name << "] " << "Stop ST DONE"  << std::endl;
   }
