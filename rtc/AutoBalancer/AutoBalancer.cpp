@@ -249,6 +249,8 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     int nforce  = npforce + nvforce;
     m_ref_force.resize(nforce);
     m_ref_forceIn.resize(nforce);
+    m_force.resize(nforce);
+    m_forceOut.resize(nforce);
     m_limbCOPOffset.resize(nforce);
     m_limbCOPOffsetOut.resize(nforce);
     for (unsigned int i=0; i<npforce; i++){
@@ -267,6 +269,15 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
         registerInPort(std::string("ref_"+sensor_names[i]).c_str(), *m_ref_forceIn[i]);
         std::cerr << "[" << m_profile.instance_name << "]   name = " << std::string("ref_"+sensor_names[i]) << std::endl;
         ref_forces.push_back(hrp::Vector3(0,0,0));
+    }
+    // set force port
+    for (unsigned int i=0; i<nforce; i++){
+        m_forceOut[i] = new OutPort<TimedDoubleSeq>(std::string(sensor_names[i]).c_str(), m_force[i]);
+        m_force[i].data.length(6);
+        m_force[i].data[0] = m_force[i].data[1] = m_force[i].data[2] = 0.0;
+        m_force[i].data[3] = m_force[i].data[4] = m_force[i].data[5] = 0.0;
+        registerOutPort(std::string(sensor_names[i]).c_str(), *m_forceOut[i]);
+        std::cerr << "[" << m_profile.instance_name << "]   name = " << std::string(sensor_names[i]) << std::endl;
     }
     // set limb cop offset port
     std::cerr << "[" << m_profile.instance_name << "] limbCOPOffset ports (" << nforce << ")" << std::endl;
@@ -523,6 +534,12 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
     m_contactStatesOut.write();
     m_controlSwingSupportTime.tm = m_qRef.tm;
     m_controlSwingSupportTimeOut.write();
+
+    for (unsigned int i=0; i<m_forceOut.size(); i++){
+        m_force[i].tm = m_qRef.tm;
+        m_force[i] = m_ref_force[i];
+        m_forceOut[i]->write();
+    }
 
     for (unsigned int i=0; i<m_limbCOPOffsetOut.size(); i++){
         m_limbCOPOffset[i].tm = m_qRef.tm;
