@@ -417,10 +417,11 @@ bool DataLogger::save(const char *i_basename)
     if (ofs.is_open()){
       m_ports[i]->dumpLog(ofs);
     }else{
-      std::cerr << "failed to open(" << fname << ")" << std::endl;
+      std::cerr << "[" << m_profile.instance_name << "] failed to open(" << fname << ")" << std::endl;
       ret = false;
     }
   }
+  if (ret) std::cerr << "[" << m_profile.instance_name << "] Save log to " << i_basename << ".*" << std::endl;
   resumeLogging();
   return ret;
 }
@@ -431,6 +432,7 @@ bool DataLogger::clear()
   for (unsigned int i=0; i<m_ports.size(); i++){
     m_ports[i]->clear();
   }
+  std::cerr << "[" << m_profile.instance_name << "] Log cleared" << std::endl;
   resumeLogging();
   return true;
 }
@@ -453,6 +455,7 @@ void DataLogger::maxLength(unsigned int len)
   for (unsigned int i=0; i<m_ports.size(); i++){
     m_ports[i]->maxLength(len);
   }
+  std::cerr << "[" << m_profile.instance_name << "] Log max length is set to " << len << std::endl;
   resumeLogging();
 }
 
