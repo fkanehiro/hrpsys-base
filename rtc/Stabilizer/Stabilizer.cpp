@@ -306,6 +306,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   cp_check_margin = 60.0*1e-3; // [m]
   contact_decision_threshold = 50; // [N]
   eefm_use_force_difference_control = true;
+  initial_cp_too_large_error = true;
 
   // parameters for RUNST
   double ke = 0, tc = 0;
@@ -748,8 +749,8 @@ void Stabilizer::getActualParameters ()
           ee_rot.push_back(target->R * ikp.localR);
           ee_name.push_back(ikp.ee_name);
           limb_gains.push_back(ikp.swing_support_gain);
-          ref_force.push_back(hrp::Vector3::Zero());
-          ref_moment.push_back(hrp::Vector3::Zero());
+          ref_force.push_back(hrp::Vector3(m_ref_wrenches[i].data[0], m_ref_wrenches[i].data[1], m_ref_wrenches[i].data[2]));
+          ref_moment.push_back(hrp::Vector3(m_ref_wrenches[i].data[3], m_ref_wrenches[i].data[4], m_ref_wrenches[i].data[5]));
       }
       // All state variables are foot_origin coords relative
       if (DEBUGP) {
@@ -1084,7 +1085,12 @@ void Stabilizer::calcStateForEmergencySignal()
     // check CP inside
     if (diff_cp.norm() > cp_check_margin) {
       is_cp_outside = true;
-      std::cerr << "[" << m_profile.instance_name << "] CP too large error " << diff_cp.norm() << std::endl;
+      if (initial_cp_too_large_error || loop % static_cast <int>(0.2/dt) ) { // once per 0.2[s]
+          std::cerr << "[" << m_profile.instance_name << "] CP too large error " << diff_cp.norm() << std::endl;
+      }
+      initial_cp_too_large_error = false;
+    } else {
+      initial_cp_too_large_error = true;
     }
   }
   // Total check for emergency signal
@@ -1371,6 +1377,7 @@ void Stabilizer::stopStabilizer(void)
   if ( transition_count == 0 && (control_mode == MODE_ST || control_mode == MODE_AIR) ) {
     std::cerr << "[" << m_profile.instance_name << "] " << "Stop ST"  << std::endl;
     control_mode = MODE_SYNC_TO_IDLE;
+    while (control_mode != MODE_IDLE) { usleep(10); };
     waitSTTransition();
     std::cerr << "[" << m_profile.instance_name << "] " << "Stop ST DONE"  << std::endl;
   }

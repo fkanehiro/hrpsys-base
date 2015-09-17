@@ -614,6 +614,10 @@ void AutoBalancer::getTargetParameters()
               for (std::vector<leg_type>::const_iterator it = tmp_current_support_states.begin(); it != tmp_current_support_states.end(); it++)
                   tmp_current_support_states_names.push_back(leg_type_map[*it]);
           }
+          // Set Contact States for ee not included in leg_names to false
+          for ( std::map<std::string, size_t>::iterator it = contact_states_index_map.begin(); it != contact_states_index_map.end(); it++ ) {
+              m_contactStates.data[it->second] = false;
+          }
           for (std::vector<std::string>::const_iterator it = leg_names.begin(); it != leg_names.end(); it++) {
               std::vector<std::string>::const_iterator dst = std::find_if(tmp_current_support_states_names.begin(), tmp_current_support_states_names.end(), boost::lambda::_1 == *it);
               if (dst != tmp_current_support_states_names.end()) {
