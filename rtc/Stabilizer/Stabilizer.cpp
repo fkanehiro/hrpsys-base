@@ -748,8 +748,8 @@ void Stabilizer::getActualParameters ()
           ee_rot.push_back(target->R * ikp.localR);
           ee_name.push_back(ikp.ee_name);
           limb_gains.push_back(ikp.swing_support_gain);
-          ref_force.push_back(hrp::Vector3::Zero());
-          ref_moment.push_back(hrp::Vector3::Zero());
+          ref_force.push_back(hrp::Vector3(m_ref_wrenches[i].data[0], m_ref_wrenches[i].data[1], m_ref_wrenches[i].data[2]));
+          ref_moment.push_back(hrp::Vector3(m_ref_wrenches[i].data[3], m_ref_wrenches[i].data[4], m_ref_wrenches[i].data[5]));
       }
       // All state variables are foot_origin coords relative
       if (DEBUGP) {
