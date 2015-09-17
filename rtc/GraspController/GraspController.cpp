@@ -200,6 +200,10 @@ RTC::ReturnCode_t GraspController::onActivated(RTC::UniqueId ec_id)
 RTC::ReturnCode_t GraspController::onDeactivated(RTC::UniqueId ec_id)
 {
   std::cout << m_profile.instance_name<< ": onDeactivated(" << ec_id << ")" << std::endl;
+  for (std::map<std::string, GraspParam >::iterator it = m_grasp_param.begin(); it != m_grasp_param.end(); it++ ) {
+    it->second.time = 2; // count down to 1
+    it->second.target_error = 0;
+  }
   return RTC::RTC_OK;
 }
 
