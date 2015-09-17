@@ -306,6 +306,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   cp_check_margin = 60.0*1e-3; // [m]
   contact_decision_threshold = 50; // [N]
   eefm_use_force_difference_control = true;
+  initial_cp_too_large_error = true;
 
   // parameters for RUNST
   double ke = 0, tc = 0;
@@ -1084,7 +1085,12 @@ void Stabilizer::calcStateForEmergencySignal()
     // check CP inside
     if (diff_cp.norm() > cp_check_margin) {
       is_cp_outside = true;
-      std::cerr << "[" << m_profile.instance_name << "] CP too large error " << diff_cp.norm() << std::endl;
+      if (initial_cp_too_large_error || loop % static_cast <int>(0.2/dt) ) { // once per 0.2[s]
+          std::cerr << "[" << m_profile.instance_name << "] CP too large error " << diff_cp.norm() << std::endl;
+      }
+      initial_cp_too_large_error = false;
+    } else {
+      initial_cp_too_large_error = true;
     }
   }
   // Total check for emergency signal
