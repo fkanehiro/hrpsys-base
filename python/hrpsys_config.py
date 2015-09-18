@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 import os
 import rtm
@@ -382,7 +381,7 @@ class HrpsysConfigurator:
         # ref force moment connection
         for sen in self.getForceSensorNames():
             if self.st:
-                connectPorts(self.abc.port(sen + "Out"),
+                connectPorts(self.abc.port(sen),
                              self.st.port(sen + "Ref"))
             if self.ic:
                 connectPorts(self.sh.port(sen+"Out"),
