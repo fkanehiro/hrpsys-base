@@ -251,6 +251,8 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     int nforce  = npforce + nvforce;
     m_ref_force.resize(nforce);
     m_ref_forceIn.resize(nforce);
+    m_force.resize(nforce);
+    m_ref_forceOut.resize(nforce);
     m_limbCOPOffset.resize(nforce);
     m_limbCOPOffsetOut.resize(nforce);
     for (unsigned int i=0; i<npforce; i++){
@@ -269,6 +271,15 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
         registerInPort(std::string("ref_"+sensor_names[i]).c_str(), *m_ref_forceIn[i]);
         std::cerr << "[" << m_profile.instance_name << "]   name = " << std::string("ref_"+sensor_names[i]) << std::endl;
         ref_forces.push_back(hrp::Vector3(0,0,0));
+    }
+    // set force port
+    for (unsigned int i=0; i<nforce; i++){
+        m_ref_forceOut[i] = new OutPort<TimedDoubleSeq>(std::string(sensor_names[i]).c_str(), m_force[i]);
+        m_force[i].data.length(6);
+        m_force[i].data[0] = m_force[i].data[1] = m_force[i].data[2] = 0.0;
+        m_force[i].data[3] = m_force[i].data[4] = m_force[i].data[5] = 0.0;
+        registerOutPort(std::string(sensor_names[i]).c_str(), *m_ref_forceOut[i]);
+        std::cerr << "[" << m_profile.instance_name << "]   name = " << std::string(sensor_names[i]) << std::endl;
     }
     // set limb cop offset port
     std::cerr << "[" << m_profile.instance_name << "] limbCOPOffset ports (" << nforce << ")" << std::endl;
@@ -527,6 +538,11 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
     m_controlSwingSupportTime.tm = m_qRef.tm;
     m_controlSwingSupportTimeOut.write();
 
+    for (unsigned int i=0; i<m_ref_forceOut.size(); i++){
+        m_force[i].tm = m_qRef.tm;
+        m_ref_forceOut[i]->write();
+    }
+
     for (unsigned int i=0; i<m_limbCOPOffsetOut.size(); i++){
         m_limbCOPOffset[i].tm = m_qRef.tm;
         m_limbCOPOffsetOut[i]->write();
@@ -634,6 +650,23 @@ void AutoBalancer::getTargetParameters()
               std::map<leg_type, std::string>::const_iterator dst = std::find_if(leg_type_map.begin(), leg_type_map.end(), (&boost::lambda::_1->* &std::map<leg_type, std::string>::value_type::second == it->first));
               m_controlSwingSupportTime.data[contact_states_index_map[it->first]] = gg->get_current_swing_time(dst->first);
           }
+      }
+      // set ref_forces
+      {
+          std::vector<hrp::Vector3> ee_pos;
+          for (size_t i = 0 ; i < leg_names.size(); i++) {
+              ABCIKparam& tmpikp = ikp[leg_names[i]];
+              ee_pos.push_back(tmpikp.target_p0 + tmpikp.target_r0 * tmpikp.localPos + tmpikp.target_r0 * tmpikp.localR * default_zmp_offsets[i]);
+          }
+          double alpha = (ref_zmp - ee_pos[1]).norm() / (ee_pos[0] - ee_pos[1]).norm();
+          if (alpha>1.0) alpha = 1.0;
+          if (alpha<0.0) alpha = 0.0;
+          if (DEBUGP) {
+          std::cerr << "[" << m_profile.instance_name << "] alpha:" << alpha << std::endl;
+          }
+          double mg = m_robot->totalMass() * gg->get_gravitational_acceleration();
+          m_force[0].data[0] = alpha * mg;
+          m_force[1].data[0] = (1-alpha) * mg;
       }
       // set limbCOPOffset
       {
