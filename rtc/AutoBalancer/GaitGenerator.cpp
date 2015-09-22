@@ -761,9 +761,9 @@ namespace rats
     }
     /* fill preview controller queue by new refzmp */
     hrp::Vector3 rzmp;
-    std::vector<hrp::Vector3> sfzos;
     bool not_solved = true;
     while (not_solved) {
+      std::vector<hrp::Vector3> sfzos;
       bool refzmp_exist_p = rg.get_current_refzmp(rzmp, sfzos, default_double_support_ratio, default_double_support_static_ratio);
       not_solved = !preview_controller_ptr->update(refzmp, cog, swing_foot_zmp_offsets, rzmp, sfzos, refzmp_exist_p);
       rg.update_refzmp(footstep_nodes_list);
