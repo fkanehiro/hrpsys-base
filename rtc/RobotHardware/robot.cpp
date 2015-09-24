@@ -615,6 +615,7 @@ bool robot::checkEmergency(emg_reason &o_reason, int &o_id)
 bool robot::setServoGainPercentage(const char *i_jname, double i_percentage)
 {
     if ( i_percentage < 0 && 100 < i_percentage ) {
+        std::cerr << "[RobotHardware] Invalid percentage " <<  i_percentage << "[%] for setServoGainPercentage. Percentage should be in (0, 100)[%]." << std::endl;
         return false;
     }
     Link *l = NULL;
@@ -626,12 +627,14 @@ bool robot::setServoGainPercentage(const char *i_jname, double i_percentage)
             dgain[i] = default_dgain[i] * i_percentage/100.0;
             gain_counter[i] = 0;
         }
+        std::cerr << "[RobotHardware] setServoGainPercentage " << i_percentage << "[%] for all joints" << std::endl;
     }else if ((l = link(i_jname))){
         if (!read_pgain(l->jointId, &old_pgain[l->jointId])) old_pgain[l->jointId] = pgain[l->jointId];
         pgain[l->jointId] = default_pgain[l->jointId] * i_percentage/100.0;
         if (!read_dgain(l->jointId, &old_dgain[l->jointId])) old_dgain[l->jointId] = dgain[l->jointId];
         dgain[l->jointId] = default_dgain[l->jointId] * i_percentage/100.0;
         gain_counter[l->jointId] = 0;
+        std::cerr << "[RobotHardware] setServoGainPercentage " << i_percentage << "[%] for " << i_jname << std::endl;
     }else{
         char *s = (char *)i_jname; while(*s) {*s=toupper(*s);s++;}
         const std::vector<int> jgroup = m_jointGroups[i_jname];
@@ -643,6 +646,7 @@ bool robot::setServoGainPercentage(const char *i_jname, double i_percentage)
             dgain[jgroup[i]] = default_dgain[jgroup[i]] * i_percentage/100.0;
             gain_counter[jgroup[i]] = 0;
         }
+        std::cerr << "[RobotHardware] setServoGainPercentage " << i_percentage << "[%] for " << i_jname << std::endl;
     }
     return true;
 }
