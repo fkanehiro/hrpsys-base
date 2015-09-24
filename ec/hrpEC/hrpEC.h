@@ -55,6 +55,7 @@ namespace RTC
     OpenHRP::ExecutionProfileService::Profile m_profile;
     struct timeval m_tv;
     int m_priority;
+    std::vector<std::string> rtc_names;
   };
 };
 
