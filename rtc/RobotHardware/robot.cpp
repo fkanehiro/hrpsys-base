@@ -426,6 +426,11 @@ int robot::readJointTorques(double *o_torques)
     return read_actual_torques(o_torques);
 }
 
+int robot::readJointCommandTorques(double *o_torques)
+{
+    return read_command_torques(o_torques);
+}
+
 void robot::readGyroSensor(unsigned int i_rank, double *o_rates)
 {
     read_gyro_sensor(i_rank, o_rates);

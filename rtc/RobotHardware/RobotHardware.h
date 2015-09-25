@@ -143,6 +143,10 @@ class RobotHardware
   */
   TimedDoubleSeq m_tau;
   /**
+     \brief array of commanded torques of joint with jointId
+  */
+  TimedDoubleSeq m_ctau;
+  /**
      \brief vector of actual acceleration (vector length = number of acceleration sensors)
   */
   std::vector<TimedAcceleration3D> m_acc;
@@ -163,6 +167,7 @@ class RobotHardware
   OutPort<TimedDoubleSeq> m_qOut;
   OutPort<TimedDoubleSeq> m_dqOut;
   OutPort<TimedDoubleSeq> m_tauOut;
+  OutPort<TimedDoubleSeq> m_ctauOut;
   std::vector<OutPort<TimedAcceleration3D> *> m_accOut;
   std::vector<OutPort<TimedAngularVelocity3D> *> m_rateOut;
   std::vector<OutPort<TimedDoubleSeq> *> m_forceOut;
