@@ -169,6 +169,13 @@ public:
     int readJointTorques(double *o_torques);
 
     /**
+       \brief read array of all commanded joint torques[Nm]
+       \param o_torques array of all commanded joint torques
+       \param TRUE if read successfully, FALSE otherwise
+     */
+    int readJointCommandTorques(double *o_torques);
+
+    /**
        \brief read gyro sensor output
        \param i_rank rank of gyro sensor
        \param o_rates array of angular velocities(length = 3) [rad/s]
