@@ -1341,8 +1341,8 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
         \verbatim
             robot.setTargetPoseRelative('rarm', 'RARM_JOINT5', dx=0.0001, tm=0.1)
         \endverbatim
-        @param gname str: Name of the joint group.
-        @param eename str: Name of the link.
+        @param gname str: Name of the joint group that is to be manipulated.
+        @param eename str: Name of the joint that the manipulated joint group references to.
         @param dx float: In meter.
         @param dy float: In meter.
         @param dz float: In meter.
