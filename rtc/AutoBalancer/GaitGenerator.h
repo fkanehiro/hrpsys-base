@@ -51,12 +51,12 @@ namespace rats
                                    (sn.l_r==RARM)?std::string("rarm"):
                                    (sn.l_r==LARM)?std::string("larm"):
                                    std::string("rleg")) << "]" << std::endl;
-            os << "  pos =" << std::endl;
-            os << (sn.worldcoords.pos).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << std::endl;
-            os << "  rot =" << std::endl;
-            os << (sn.worldcoords.rot).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", "\n", "    [", "]")) << std::endl;
-            os << "  step_height = " << sn.step_height << "[m], step_time = " << sn.step_time << "[s]" << std::endl;
-            os << "  toe_angle = " << sn.toe_angle << "[deg], heel_angle = " << sn.heel_angle << "[deg]" << std::endl;
+            os << "  pos =";
+            os << (sn.worldcoords.pos).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", " [", "]")) << std::endl;
+            os << "  rot =";
+            os << (sn.worldcoords.rot).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", "", " [", "]")) << std::endl;
+            os << "  step_height = " << sn.step_height << "[m], step_time = " << sn.step_time << "[s], "
+               << "toe_angle = " << sn.toe_angle << "[deg], heel_angle = " << sn.heel_angle << "[deg]";
             return os;
         };
     };
@@ -980,9 +980,8 @@ namespace rats
     void print_footstep_nodes_list (const std::vector< std::vector<step_node> > _footstep_nodes_list) const
     {
         for (size_t i = 0; i < _footstep_nodes_list.size(); i++) {
-            std::cerr << "foot step index : " << i << std::endl;
             for (size_t j = 0; j < _footstep_nodes_list.at(i).size(); j++) {
-                std::cerr << _footstep_nodes_list.at(i).at(j) << std::endl;
+                std::cerr << "[" << i << "] " << _footstep_nodes_list.at(i).at(j) << std::endl;
             }
         }
     };
