@@ -157,7 +157,15 @@ RTC::ReturnCode_t PDcontroller::onExecute(RTC::UniqueId ec_id)
     qold[i] = q;
     qold_ref[i] = q_ref;
     m_torque.data[i] = -(q - q_ref) * Pgain[i] - (dq - dq_ref) * Dgain[i];
-    double tlimit = m_robot->joint(i)->climit * m_robot->joint(i)->gearRatio * m_robot->joint(i)->torqueConst * tlimit_ratio[i];
+    double tlimit;
+    if (m_robot && m_robot->numJoints() == dof) {
+        tlimit = m_robot->joint(i)->climit * m_robot->joint(i)->gearRatio * m_robot->joint(i)->torqueConst * tlimit_ratio[i];
+    } else {
+        tlimit = (std::numeric_limits<double>::max)() * tlimit_ratio[i];
+        if (i == 0 && loop % 500 == 0) {
+            std::cerr << "[" << m_profile.instance_name << "] m_robot is not set properly!! Maybe ModelLoader is missing?" << std::endl;
+        }
+    }
     if (loop % 100 == 0 && m_debugLevel == 1) {
         std::cerr << "[" << m_profile.instance_name << "] joint = "
                   << i << ", tq = " << m_torque.data[i] << ", q,qref = (" << q << ", " << q_ref << "), dq,dqref = (" << dq << ", " << dq_ref << "), pd = (" << Pgain[i] << ", " << Dgain[i] << "), tlimit = " << tlimit << std::endl;
