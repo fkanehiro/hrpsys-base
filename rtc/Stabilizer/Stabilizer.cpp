@@ -1590,6 +1590,7 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
   setBoolSequenceParam(is_ik_enable, i_stp.is_ik_enable, std::string("is_ik_enable"));
   setBoolSequenceParam(is_feedback_control_enable, i_stp.is_feedback_control_enable, std::string("is_feedback_control_enable"));
   setBoolSequenceParam(is_zmp_calc_enable, i_stp.is_zmp_calc_enable, std::string("is_zmp_calc_enable"));
+  emergency_check_mode = i_stp.emergency_check_mode;
 
   transition_time = i_stp.transition_time;
   cop_check_margin = i_stp.cop_check_margin;
@@ -1642,13 +1643,11 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
   std::cerr << "[" << m_profile.instance_name << "]  COMMON" << std::endl;
   if (control_mode == MODE_IDLE) {
     st_algorithm = i_stp.st_algorithm;
-    emergency_check_mode = i_stp.emergency_check_mode;
     std::cerr << "[" << m_profile.instance_name << "]   st_algorithm changed to [" << getStabilizerAlgorithmString(st_algorithm) << "]" << std::endl;
-    std::cerr << "[" << m_profile.instance_name << "]   emergency_check_mode changed to [" << (emergency_check_mode == OpenHRP::StabilizerService::NO_CHECK?"NO_CHECK": (emergency_check_mode == OpenHRP::StabilizerService::COP?"COP":"CP") ) << "]" << std::endl;
   } else {
     std::cerr << "[" << m_profile.instance_name << "]   st_algorithm cannot be changed to [" << getStabilizerAlgorithmString(st_algorithm) << "] during MODE_AIR or MODE_ST." << std::endl;
-    std::cerr << "[" << m_profile.instance_name << "]   emergency_check_mode cannot be changed to [" << (emergency_check_mode == OpenHRP::StabilizerService::NO_CHECK?"NO_CHECK": (emergency_check_mode == OpenHRP::StabilizerService::COP?"COP":"CP") ) << "] during MODE_AIR or MODE_ST." << std::endl;
   }
+  std::cerr << "[" << m_profile.instance_name << "]   emergency_check_mode changed to [" << (emergency_check_mode == OpenHRP::StabilizerService::NO_CHECK?"NO_CHECK": (emergency_check_mode == OpenHRP::StabilizerService::COP?"COP":"CP") ) << "]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]  transition_time = " << transition_time << "[s]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]  cop_check_margin = " << cop_check_margin << "[m]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]  cp_check_margin = " << cp_check_margin << "[m]" << std::endl;
