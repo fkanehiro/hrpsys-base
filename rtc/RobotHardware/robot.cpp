@@ -731,12 +731,20 @@ void robot::readExtraServoState(int id, int *state)
 
 bool robot::readDigitalInput(char *o_din)
 {
+#ifndef NO_DIGITAL_INPUT
     return read_digital_input(o_din);
+#else
+    return false;
+#endif
 }
 
 int robot::lengthDigitalInput()
 {
+#ifndef NO_DIGITAL_INPUT
     return length_digital_input();
+#else
+    return 0;
+#endif
 }
 
 bool robot::writeDigitalOutput(const char *i_dout)
