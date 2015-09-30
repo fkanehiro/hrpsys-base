@@ -666,6 +666,8 @@ public:
                       gg->set_default_orbit_type(CYCLOIDDELAY);
                   } else if (arg_strs[i] == "CYCLOIDDELAYKICK") {
                       gg->set_default_orbit_type(CYCLOIDDELAYKICK);
+                  } else if (arg_strs[i] == "CROSS") {
+                      gg->set_default_orbit_type(CROSS);
                   } else {
                       std::cerr << "No such default-orbit-type " << arg_strs[i] << std::endl;
                   }

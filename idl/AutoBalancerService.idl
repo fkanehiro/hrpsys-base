@@ -95,7 +95,8 @@ module OpenHRP
       RECTANGLE,
       STAIR,
       CYCLOIDDELAY,
-      CYCLOIDDELAYKICK
+      CYCLOIDDELAYKICK,
+      CROSS
     };
 
     /**

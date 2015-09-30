@@ -1296,6 +1296,8 @@ bool AutoBalancer::setGaitGeneratorParam(const OpenHRP::AutoBalancerService::Gai
     gg->set_default_orbit_type(CYCLOIDDELAY);
   } else if (i_param.default_orbit_type == OpenHRP::AutoBalancerService::CYCLOIDDELAYKICK) {
     gg->set_default_orbit_type(CYCLOIDDELAYKICK);
+  } else if (i_param.default_orbit_type == OpenHRP::AutoBalancerService::CROSS) {
+    gg->set_default_orbit_type(CROSS);
   }
   gg->set_swing_trajectory_delay_time_offset(i_param.swing_trajectory_delay_time_offset);
   gg->set_swing_trajectory_final_distance_weight(i_param.swing_trajectory_final_distance_weight);
@@ -1349,6 +1351,8 @@ bool AutoBalancer::getGaitGeneratorParam(OpenHRP::AutoBalancerService::GaitGener
     i_param.default_orbit_type = OpenHRP::AutoBalancerService::CYCLOIDDELAY;
   } else if (gg->get_default_orbit_type() == CYCLOIDDELAYKICK) {
     i_param.default_orbit_type = OpenHRP::AutoBalancerService::CYCLOIDDELAYKICK;
+  } else if (gg->get_default_orbit_type() == CROSS) {
+    i_param.default_orbit_type = OpenHRP::AutoBalancerService::CROSS;
   }
 
   hrp::Vector3 tmpv = gg->get_stair_trajectory_way_point_offset();
