@@ -518,10 +518,12 @@ bool BodyRTC::checkEmergency(emg_reason &o_reason, int &o_id) {
 }
 
 bool BodyRTC::preOneStep() {
+    // Simulate servo off in HighGain mode simulation
     hrp::Vector3 g(0, 0, 9.8);
     calcCM();
     rootLink()->calcSubMassCM();
     bool all_servo_off = true;
+    bool emulate_highgain_servo_off_mode = (numJoints() > 0); // If no joints, do not use servo off emulation
     for(int i = 0; i < numJoints(); ++i){
         Link *j = joint(i);
         commands[i] = j->q;
@@ -551,12 +553,14 @@ bool BodyRTC::preOneStep() {
         rootLink()->setAttitude(m_lastServoOn_R);
         m_resetPosition = false;
     }
-    if ( all_servo_off ) { // when all servo is off, do not move root joint
-        rootLink()->p = m_lastServoOn_p;
-        rootLink()->setAttitude(m_lastServoOn_R);
-    } else {
-        m_lastServoOn_p = rootLink()->p;
-        m_lastServoOn_R = rootLink()->attitude();
+    if (emulate_highgain_servo_off_mode) {
+        if ( all_servo_off ) { // when all servo is off, do not move root joint
+            rootLink()->p = m_lastServoOn_p;
+            rootLink()->setAttitude(m_lastServoOn_R);
+        } else {
+            m_lastServoOn_p = rootLink()->p;
+            m_lastServoOn_R = rootLink()->attitude();
+        }
     }
 }
 
