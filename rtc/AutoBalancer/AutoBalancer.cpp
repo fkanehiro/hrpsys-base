@@ -1284,6 +1284,10 @@ bool AutoBalancer::setGaitGeneratorParam(const OpenHRP::AutoBalancerService::Gai
   gg->set_default_step_height(i_param.default_step_height);
   gg->set_default_double_support_ratio(i_param.default_double_support_ratio);
   gg->set_default_double_support_static_ratio(i_param.default_double_support_static_ratio);
+  gg->set_default_double_support_ratio_swing_before(i_param.default_double_support_ratio/2);
+  gg->set_default_double_support_ratio_swing_after(i_param.default_double_support_ratio/2);
+  // gg->set_default_double_support_ratio_swing_before(i_param.default_double_support_ratio_swing_before);
+  // gg->set_default_double_support_ratio_swing_after(i_param.default_double_support_ratio_swing_after);
   if (i_param.default_orbit_type == OpenHRP::AutoBalancerService::SHUFFLING) {
     gg->set_default_orbit_type(SHUFFLING);
   } else if (i_param.default_orbit_type == OpenHRP::AutoBalancerService::CYCLOID) {
@@ -1337,6 +1341,8 @@ bool AutoBalancer::getGaitGeneratorParam(OpenHRP::AutoBalancerService::GaitGener
   i_param.default_step_height = gg->get_default_step_height();
   i_param.default_double_support_ratio = gg->get_default_double_support_ratio();
   i_param.default_double_support_static_ratio = gg->get_default_double_support_static_ratio();
+  i_param.default_double_support_ratio_swing_before = gg->get_default_double_support_ratio_swing_before();
+  i_param.default_double_support_ratio_swing_after = gg->get_default_double_support_ratio_swing_after();
   if (gg->get_default_orbit_type() == SHUFFLING) {
     i_param.default_orbit_type = OpenHRP::AutoBalancerService::SHUFFLING;
   } else if (gg->get_default_orbit_type() == CYCLOID) {
