@@ -82,6 +82,13 @@ To learn test type, please execute testGaitGenerator without arguments.
 <tr><th>category</th><td>example</td></tr>
 </table>
 
+\subsection toejoint About Toe Joints
+AutoBalancer can support toe joints.
+Toe joint is defined as end-link joint in the case that end-effector link != force-sensor link. 
+Without toe joints, "end-effector link == force-sensor link" is assumed.
+With toe joints, "end-effector link != force-sensor link" is assumed.
+
+
 \section dataports Data Ports
 
 \subsection inports Input Ports

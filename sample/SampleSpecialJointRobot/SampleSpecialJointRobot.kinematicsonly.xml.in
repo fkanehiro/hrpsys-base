@@ -27,6 +27,7 @@
    <property name="outport" value="lfsensor:lfsensor:FORCE_SENSOR"/>
    <property name="outport" value="gyrometer:gyrometer:RATE_GYRO_SENSOR"/>
    <property name="outport" value="gsensor:gsensor:ACCELERATION_SENSOR"/>
+   <property name="outport" value="WAIST:WAIST:ABS_TRANSFORM"/>
    <property name="WAIST.NumOfAABB" value="1"/>
    <property name="WAIST.translation" value="0  0  1.0367"/>
    <property name="WAIST.rotation" value="1 0 0 0"/>

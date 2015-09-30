@@ -179,13 +179,16 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
         tp.localR = Eigen::AngleAxis<double>(tmpv[3], hrp::Vector3(tmpv[0], tmpv[1], tmpv[2])).toRotationMatrix(); // rotation in VRML is represented by axis + angle
         tp.manip = hrp::JointPathExPtr(new hrp::JointPathEx(m_robot, m_robot->link(ee_base), m_robot->link(ee_target), m_dt, false));
         // Fix for toe joint
-        if (ee_name.find("leg") != std::string::npos && tp.manip->numJoints() == 7) { // leg and 7dof joint (6dof leg +1dof toe)
-            std::vector<double> optw;
-            for (int j = 0; j < tp.manip->numJoints(); j++ ) {
-                if ( j == tp.manip->numJoints()-1 ) optw.push_back(0.0);
-                else optw.push_back(1.0);
-            }
+        //   Toe joint is defined as end-link joint in the case that end-effector link != force-sensor link
+        //   Without toe joints, "end-effector link == force-sensor link" is assumed.
+        //   With toe joints, "end-effector link != force-sensor link" is assumed.
+        if (m_robot->link(ee_target)->sensors.size() == 0) { // If end-effector link has no force sensor
+            std::vector<double> optw(tp.manip->numJoints(), 1.0);
+            optw.back() = 0.0; // Set weight = 0 for toe joint by default
             tp.manip->setOptionalWeightVector(optw);
+            tp.has_toe_joint = true;
+        } else {
+            tp.has_toe_joint = false;
         }
         tp.pos_ik_error_count = tp.rot_ik_error_count = 0;
         ikp.insert(std::pair<std::string, ABCIKparam>(ee_name , tp));
@@ -193,6 +196,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
         std::cerr << "[" << m_profile.instance_name << "] End Effector [" << ee_name << "]" << std::endl;
         std::cerr << "[" << m_profile.instance_name << "]   target = " << ikp[ee_name].target_link->name << ", base = " << ee_base << std::endl;
         std::cerr << "[" << m_profile.instance_name << "]   offset_pos = " << tp.localPos.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[m]" << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "]   has_toe_joint = " << (tp.has_toe_joint?"true":"false") << std::endl;
         contact_states_index_map.insert(std::pair<std::string, size_t>(ee_name, i));
       }
       m_contactStates.data.length(num);
@@ -910,7 +914,7 @@ void AutoBalancer::solveLimbIK ()
   m_robot->rootLink()->R = target_root_R;
   // Fix for toe joint
   for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
-      if (it->second.is_active && (it->first.find("leg") != std::string::npos) && it->second.manip->numJoints() == 7) {
+      if (it->second.is_active && it->second.has_toe_joint && gg->get_use_toe_joint()) {
           int i = it->second.target_link->jointId;
           if (gg->get_swing_leg_names().front() == it->first) {
               m_robot->joint(i)->q = qrefv[i] + -1 * gg->get_foot_dif_rot_angle();
