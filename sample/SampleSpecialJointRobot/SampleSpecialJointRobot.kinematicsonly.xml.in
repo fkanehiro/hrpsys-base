@@ -1,0 +1,174 @@
+<grxui>
+ <mode name="Simulation">
+  <item class="com.generalrobotix.ui.item.GrxSimulationItem" name="simulationItem">
+   <property name="integrate" value="false"/>
+   <property name="timeStep" value="0.001"/>
+   <property name="totalTime" value="2000000.0"/>
+   <property name="method" value="RUNGE_KUTTA"/>
+  </item>
+  <item class="com.generalrobotix.ui.item.GrxRTSItem" name="SampleSpecialJointRobot" select="true">
+   <property name="SampleSpecialJointRobot(Robot)0.period" value="0.002"/>
+   <property name="HGcontroller0.period" value="0.002"/>
+   <property name="HGcontroller0.factory" value="HGcontroller"/>
+   <property name="connection" value="HGcontroller0.qOut:SampleSpecialJointRobot(Robot)0.qRef"/>
+   <property name="connection" value="HGcontroller0.dqOut:SampleSpecialJointRobot(Robot)0.dqRef"/>
+   <property name="connection" value="HGcontroller0.ddqOut:SampleSpecialJointRobot(Robot)0.ddqRef"/>
+  </item>
+  <item class="com.generalrobotix.ui.item.GrxModelItem" name="sample_special_joint_robot" url="@OPENHRP_DIR@/share/openhrp3/share/OpenHRP-3.1/sample/model/sample_special_joint_robot.wrl">
+   <property name="rtcName" value="SampleSpecialJointRobot(Robot)0"/>
+   <property name="inport" value="qRef:JOINT_VALUE"/>
+   <property name="inport" value="dqRef:JOINT_VELOCITY"/>
+   <property name="inport" value="ddqRef:JOINT_ACCELERATION"/>
+   <property name="inport" value="basePoseRef:WAIST:ABS_TRANSFORM"/>
+   <property name="outport" value="q:JOINT_VALUE"/>
+   <property name="outport" value="dq:JOINT_VELOCITY"/>
+   <property name="outport" value="tau:JOINT_TORQUE"/>
+   <property name="outport" value="rfsensor:rfsensor:FORCE_SENSOR"/>
+   <property name="outport" value="lfsensor:lfsensor:FORCE_SENSOR"/>
+   <property name="outport" value="gyrometer:gyrometer:RATE_GYRO_SENSOR"/>
+   <property name="outport" value="gsensor:gsensor:ACCELERATION_SENSOR"/>
+   <property name="outport" value="WAIST:WAIST:ABS_TRANSFORM"/>
+   <property name="WAIST.NumOfAABB" value="1"/>
+   <property name="WAIST.translation" value="0  0  1.0367"/>
+   <property name="WAIST.rotation" value="1 0 0 0"/>
+   <property name="WAIST.mode" value="Torque"/>
+   <property name="controller" value="SampleSpecialJointRobot.kinematicsonly"/>
+   <property name="RLEG_HIP_R.angle" value="0.0"/>
+   <property name="RLEG_HIP_R.mode" value="HighGain"/>
+   <property name="RLEG_HIP_R.NumOfAABB" value="1"/>
+   <property name="RLEG_HIP_P0.angle" value="0.0"/>
+   <property name="RLEG_HIP_P0.mode" value="HighGain"/>
+   <property name="RLEG_HIP_P0.NumOfAABB" value="1"/>
+   <property name="RLEG_HIP_P1.angle" value="0.0"/>
+   <property name="RLEG_HIP_P1.mode" value="HighGain"/>
+   <property name="RLEG_HIP_P1.NumOfAABB" value="1"/>
+   <property name="RLEG_HIP_Y.angle" value="0.0"/>
+   <property name="RLEG_HIP_Y.mode" value="HighGain"/>
+   <property name="RLEG_HIP_Y.NumOfAABB" value="1"/>
+   <property name="RLEG_KNEE_P0.angle" value="0.0"/>
+   <property name="RLEG_KNEE_P0.mode" value="HighGain"/>
+   <property name="RLEG_KNEE_P0.NumOfAABB" value="1"/>
+   <property name="RLEG_KNEE_P1.angle" value="0.0"/>
+   <property name="RLEG_KNEE_P1.mode" value="HighGain"/>
+   <property name="RLEG_KNEE_P1.NumOfAABB" value="1"/>
+   <property name="RLEG_ANKLE_P0.angle" value="0.0"/>
+   <property name="RLEG_ANKLE_P0.mode" value="HighGain"/>
+   <property name="RLEG_ANKLE_P0.NumOfAABB" value="1"/>
+   <property name="RLEG_ANKLE_P1.angle" value="0.0"/>
+   <property name="RLEG_ANKLE_P1.mode" value="HighGain"/>
+   <property name="RLEG_ANKLE_P1.NumOfAABB" value="1"/>
+   <property name="RLEG_ANKLE_R.angle" value="0.0"/>
+   <property name="RLEG_ANKLE_R.mode" value="HighGain"/>
+   <property name="RLEG_ANKLE_R.NumOfAABB" value="1"/>
+   <property name="RLEG_TOE_P.angle" value="0.0"/>
+   <property name="RLEG_TOE_P.mode" value="HighGain"/>
+   <property name="RLEG_TOE_P.NumOfAABB" value="1"/>
+   <property name="LLEG_HIP_R.angle" value="0.0"/>
+   <property name="LLEG_HIP_R.mode" value="HighGain"/>
+   <property name="LLEG_HIP_R.NumOfAABB" value="1"/>
+   <property name="LLEG_HIP_P0.angle" value="0.0"/>
+   <property name="LLEG_HIP_P0.mode" value="HighGain"/>
+   <property name="LLEG_HIP_P0.NumOfAABB" value="1"/>
+   <property name="LLEG_HIP_P1.angle" value="0.0"/>
+   <property name="LLEG_HIP_P1.mode" value="HighGain"/>
+   <property name="LLEG_HIP_P1.NumOfAABB" value="1"/>
+   <property name="LLEG_HIP_Y.angle" value="0.0"/>
+   <property name="LLEG_HIP_Y.mode" value="HighGain"/>
+   <property name="LLEG_HIP_Y.NumOfAABB" value="1"/>
+   <property name="LLEG_KNEE_P0.angle" value="0.0"/>
+   <property name="LLEG_KNEE_P0.mode" value="HighGain"/>
+   <property name="LLEG_KNEE_P0.NumOfAABB" value="1"/>
+   <property name="LLEG_KNEE_P1.angle" value="0.0"/>
+   <property name="LLEG_KNEE_P1.mode" value="HighGain"/>
+   <property name="LLEG_KNEE_P1.NumOfAABB" value="1"/>
+   <property name="LLEG_ANKLE_P0.angle" value="0.0"/>
+   <property name="LLEG_ANKLE_P0.mode" value="HighGain"/>
+   <property name="LLEG_ANKLE_P0.NumOfAABB" value="1"/>
+   <property name="LLEG_ANKLE_P1.angle" value="0.0"/>
+   <property name="LLEG_ANKLE_P1.mode" value="HighGain"/>
+   <property name="LLEG_ANKLE_P1.NumOfAABB" value="1"/>
+   <property name="LLEG_ANKLE_R.angle" value="0.0"/>
+   <property name="LLEG_ANKLE_R.mode" value="HighGain"/>
+   <property name="LLEG_ANKLE_R.NumOfAABB" value="1"/>
+   <property name="LLEG_TOE_P.angle" value="0.0"/>
+   <property name="LLEG_TOE_P.mode" value="HighGain"/>
+   <property name="LLEG_TOE_P.NumOfAABB" value="1"/>
+   <property name="WAIST_P.angle" value="0.0"/>
+   <property name="WAIST_P.mode" value="HighGain"/>
+   <property name="WAIST_P.NumOfAABB" value="1"/>
+   <property name="WAIST_R.angle" value="0.0"/>
+   <property name="WAIST_R.mode" value="HighGain"/>
+   <property name="WAIST_R.NumOfAABB" value="1"/>
+   <property name="FLY_WHEEL_P.angle" value="0.0"/>
+   <property name="FLY_WHEEL_P.mode" value="HighGain"/>
+   <property name="FLY_WHEEL_P.NumOfAABB" value="1"/>
+  </item>
+  <view class="com.generalrobotix.ui.view.GrxRobotHardwareClientView" name="RobotHardware RTC Client">
+   <property name="robotHost" value="localhost"/>
+   <property name="StateHolderRTC" value="StateHolder0"/>
+   <property name="interval" value="100"/>
+   <property name="RobotHardwareServiceRTC" value="RobotHardware0"/>
+   <property name="robotPort" value="2809"/>
+   <property name="ROBOT" value="SampleSpecialJointRobot"/>
+  </view>
+  <view class="com.generalrobotix.ui.view.Grx3DView" name="3DView">
+   <property name="view.mode" value="Room"/>
+   <property name="showCoM" value="false"/>
+   <property name="showCoMonFloor" value="false"/>
+   <property name="showDistance" value="false"/>
+   <property name="showIntersection" value="false"/>
+   <property name="eyeHomePosition" value="-0.70711 -0 0.70711 2 0.70711 -0 0.70711 2 0 1 0 0.8 0 0 0 1 "/>
+   <property name="showCollision" value="true"/>
+   <property name="showActualState" value="true"/>
+   <property name="showScale" value="true"/>
+  </view>
+  <item class="com.generalrobotix.ui.item.GrxRTSItem" name="longfloor" select="true">
+   <property name="longfloor(Robot)0.period" value="0.002"/>
+   <property name="HGcontroller0.period" value="0.002"/>
+   <property name="HGcontroller0.factory" value="HGcontroller"/>
+  </item>
+  <item class="com.generalrobotix.ui.item.GrxModelItem" name="longfloor" url="@OPENHRP_DIR@/share/openhrp3/share/OpenHRP-3.1/sample/model/longfloor.wrl">
+   <property name="rtcName" value="longfloor(Robot)0"/>
+   <property name="inport" value="qRef:JOINT_VALUE"/>
+   <property name="inport" value="dqRef:JOINT_VELOCITY"/>
+   <property name="inport" value="ddqRef:JOINT_ACCELERATION"/>
+   <property name="inport" value="basePoseRef:WAIST:ABS_TRANSFORM"/>
+   <property name="outport" value="q:JOINT_VALUE"/>
+   <property name="outport" value="dq:JOINT_VELOCITY"/>
+   <property name="outport" value="tau:JOINT_TORQUE"/>
+   <property name="WAIST.NumOfAABB" value="1"/>
+   <property name="WAIST.translation" value="0  0  -0.1"/>
+   <property name="WAIST.rotation" value="1 0 0 0"/>
+  </item>
+  <view class="com.generalrobotix.ui.view.GrxRobotHardwareClientView" name="RobotHardware RTC Client">
+   <property name="robotHost" value="localhost"/>
+   <property name="StateHolderRTC" value="StateHolder0"/>
+   <property name="interval" value="100"/>
+   <property name="RobotHardwareServiceRTC" value="RobotHardware0"/>
+   <property name="robotPort" value="2809"/>
+   <property name="ROBOT" value="longfloor"/>
+  </view>
+  <view class="com.generalrobotix.ui.view.Grx3DView" name="3DView">
+   <property name="view.mode" value="Room"/>
+   <property name="showCoM" value="false"/>
+   <property name="showCoMonFloor" value="false"/>
+   <property name="showDistance" value="false"/>
+   <property name="showIntersection" value="false"/>
+   <property name="eyeHomePosition" value="-0.70711 -0 0.70711 2 0.70711 -0 0.70711 2 0 1 0 0.8 0 0 0 1 "/>
+   <property name="showCollision" value="true"/>
+   <property name="showActualState" value="true"/>
+   <property name="showScale" value="true"/>
+  </view>
+  <item class="com.generalrobotix.ui.item.GrxCollisionPairItem" name="CP#longfloor_#sample_special_joint_robot_">
+   <property name="springConstant" value="0 0 0 0 0 0"/>
+   <property name="slidingFriction" value="0.5"/>
+   <property name="jointName2" value=""/>
+   <property name="jointName1" value=""/>
+   <property name="damperConstant" value="0 0 0 0 0 0"/>
+   <property name="objectName2" value="longfloor"/>
+   <property name="objectName1" value="sample_special_joint_robot"/>
+   <property name="springDamperModel" value="false"/>
+   <property name="staticFriction" value="0.5"/>
+  </item>
+ </mode>
+</grxui>

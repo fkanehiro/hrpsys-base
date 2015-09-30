@@ -1,0 +1,19 @@
+model: file://@OPENHRP_DIR@/share/OpenHRP-3.1/sample/model/sample_special_joint_robot.wrl
+dt: 0.002
+
+abc_leg_offset: 0,0.09,0
+end_effectors: rleg,RLEG_TOE_P,WAIST,-0.08,0.0,-0.01,0.0,0.0,0.0,0.0, lleg,LLEG_TOE_P,WAIST,-0.08,0.0,-0.01,0.0,0.0,0.0,0.0,
+
+#interlocking_joints: RLEG_HIP_P0,RLEG_HIP_P1, RLEG_KNEE_P0,RLEG_KNEE_P1, RLEG_ANKLE_P0,RLEG_ANKLE_P1, LLEG_HIP_P0,LLEG_HIP_P1, LLEG_KNEE_P0,LLEG_KNEE_P1, LLEG_ANKLE_P0,LLEG_ANKLE_P1,
+
+# PDcontroller Setting
+pdgains_sim_file_name: @CMAKE_INSTALL_PREFIX@/share/hrpsys/samples/SampleSpecialJointRobot/SampleSpecialJointRobot.PDgain.dat
+
+# CollisionDetector Setting
+collision_pair: RLEG_ANKLE_R:LLEG_ANKLE_R
+
+# ThermoLimiter
+alarm_ratio: 0.75
+
+# SequencePlayer optional data
+seq_optional_data_dim: 4 # contactStates x 2 + controlSwingTime x 2 (4 is rfsensor, lfsensor)
