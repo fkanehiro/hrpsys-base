@@ -151,6 +151,10 @@ module OpenHRP
       double default_double_support_ratio;
       /// Ratio of double support static period in which reference ZMP does not move. Ratio is included in (0, 1). default_double_support_ratio >= default_double_support_static_ratio..
       double default_double_support_static_ratio;
+      /// Ratio of double support period before swing. Ratio is included in (0, 1).
+      double default_double_support_ratio_swing_before;
+      /// Ratio of double support period after swing. Ratio is included in (0, 1).
+      double default_double_support_ratio_swing_after;
       /// Stride limitation of forward x[m], y[m], theta[deg], and backward x[m] for goPos
       sequence<double, 4> stride_parameter;
       /// Default OrbitType
