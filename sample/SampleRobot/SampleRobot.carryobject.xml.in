@@ -19,6 +19,7 @@
    <property name="outport" value="q:JOINT_VALUE"/>
    <property name="outport" value="dq:JOINT_VELOCITY"/>
    <property name="outport" value="tau:JOINT_TORQUE"/>
+   <property name="outport" value="WAIST:WAIST:ABS_TRANSFORM"/>
    <property name="outport" value="lfsensor:lfsensor:FORCE_SENSOR"/>
    <property name="outport" value="rfsensor:rfsensor:FORCE_SENSOR"/>
    <property name="outport" value="lhsensor:lhsensor:FORCE_SENSOR"/>
@@ -148,6 +149,7 @@
    <property name="outport" value="q:JOINT_VALUE"/>
    <property name="outport" value="dq:JOINT_VELOCITY"/>
    <property name="outport" value="tau:JOINT_TORQUE"/>
+   <property name="outport" value="WAIST:WAIST:ABS_TRANSFORM"/>
    <property name="WAIST.NumOfAABB" value="1"/>
    <property name="WAIST.translation" value="0  0  -0.1"/>
    <property name="WAIST.rotation" value="1 0 0 0"/>
@@ -182,6 +184,7 @@
    <property name="outport" value="q:JOINT_VALUE"/>
    <property name="outport" value="dq:JOINT_VELOCITY"/>
    <property name="outport" value="tau:JOINT_TORQUE"/>
+   <property name="outport" value="root:root:ABS_TRANSFORM"/>
    <property name="root.NumOfAABB" value="1"/>
    <property name="root.translation" value="-1.1  0.8  -0.15"/>
    <property name="root.rotation" value="1 0 0 1.5708"/>
@@ -210,12 +213,13 @@
    <property name="PDcontroller0.period" value="0.002"/>
    <property name="PDcontroller0.factory" value="PDcontroller"/>
   </item>
-  <item class="com.generalrobotix.ui.item.GrxModelItem" name="Dumbbell.wrl,0.3,0,0.8,0" url="@CMAKE_INSTALL_PREFIX@/share/hrpsys/samples/environments/Dumbbell.wrl">
+  <item class="com.generalrobotix.ui.item.GrxModelItem" name="Dumbbell.wrl,0.3,0,0" url="@CMAKE_INSTALL_PREFIX@/share/hrpsys/samples/environments/Dumbbell.wrl">
    <property name="rtcName" value="Dumbbell(Robot)0"/>
    <property name="inport" value="tauRef:JOINT_TORQUE"/>
    <property name="outport" value="q:JOINT_VALUE"/>
    <property name="outport" value="dq:JOINT_VELOCITY"/>
    <property name="outport" value="tau:JOINT_TORQUE"/>
+   <property name="outport" value="WAIST:WAIST:ABS_TRANSFORM"/>
    <property name="WAIST.NumOfAABB" value="1"/>
    <property name="WAIST.translation" value="0.3  0  0.9"/>
    <property name="WAIST.rotation" value="1 0 0 0"/>
@@ -263,35 +267,35 @@
    <property name="springDamperModel" value="false"/>
    <property name="staticFriction" value="0.5"/>
   </item>
-  <item class="com.generalrobotix.ui.item.GrxCollisionPairItem" name="CP#Dumbbell.wrl,0.3,0,0.8,0_#sample1_bush_">
+  <item class="com.generalrobotix.ui.item.GrxCollisionPairItem" name="CP#Dumbbell.wrl,0.3,0,0_#sample1_bush_">
    <property name="springConstant" value="0 0 0 0 0 0"/>
    <property name="slidingFriction" value="0.5"/>
    <property name="jointName2" value=""/>
    <property name="jointName1" value=""/>
    <property name="damperConstant" value="0 0 0 0 0 0"/>
-   <property name="objectName2" value="Dumbbell.wrl,0.3,0,0.8,0"/>
+   <property name="objectName2" value="Dumbbell.wrl,0.3,0,0"/>
    <property name="objectName1" value="sample1_bush"/>
    <property name="springDamperModel" value="false"/>
    <property name="staticFriction" value="0.5"/>
   </item>
-  <item class="com.generalrobotix.ui.item.GrxCollisionPairItem" name="CP#Dumbbell.wrl,0.3,0,0.8,0_#longfloor_">
+  <item class="com.generalrobotix.ui.item.GrxCollisionPairItem" name="CP#Dumbbell.wrl,0.3,0,0_#longfloor_">
    <property name="springConstant" value="0 0 0 0 0 0"/>
    <property name="slidingFriction" value="0.5"/>
    <property name="jointName2" value=""/>
    <property name="jointName1" value=""/>
    <property name="damperConstant" value="0 0 0 0 0 0"/>
-   <property name="objectName2" value="Dumbbell.wrl,0.3,0,0.8,0"/>
+   <property name="objectName2" value="Dumbbell.wrl,0.3,0,0"/>
    <property name="objectName1" value="longfloor"/>
    <property name="springDamperModel" value="false"/>
    <property name="staticFriction" value="0.5"/>
   </item>
-  <item class="com.generalrobotix.ui.item.GrxCollisionPairItem" name="CP#Dumbbell.wrl,0.3,0,0.8,0_#table.wrl,-1.1,0.8,-0.15,1,0,0,1_">
+  <item class="com.generalrobotix.ui.item.GrxCollisionPairItem" name="CP#Dumbbell.wrl,0.3,0,0_#table.wrl,-1.1,0.8,-0.15,1,0,0,1_">
    <property name="springConstant" value="0 0 0 0 0 0"/>
    <property name="slidingFriction" value="0.5"/>
    <property name="jointName2" value=""/>
    <property name="jointName1" value=""/>
    <property name="damperConstant" value="0 0 0 0 0 0"/>
-   <property name="objectName2" value="Dumbbell.wrl,0.3,0,0.8,0"/>
+   <property name="objectName2" value="Dumbbell.wrl,0.3,0,0"/>
    <property name="objectName1" value="table.wrl,-1.1,0.8,-0.15,1,0,0,1"/>
    <property name="springDamperModel" value="false"/>
    <property name="staticFriction" value="0.5"/>

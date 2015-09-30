@@ -80,7 +80,7 @@ def init ():
     hcf.ic_svc.startImpedanceController("rarm")
     hcf.ic_svc.startImpedanceController("larm")
 
-def demoDualarmCarryup ():
+def demoDualarmCarryup (is_walk=True):
     print >> sys.stderr, "1. Dual-arm carry-up demo."
     print >> sys.stderr, "  Reaching"
     hcf.seq_svc.setJointAngles(dualarm_via_pose, 2.0)
@@ -93,6 +93,8 @@ def demoDualarmCarryup ():
     print >> sys.stderr, "  Lift up & down"
     hcf.seq_svc.setJointAngles(dualarm_liftup_pose, 2.0)
     hcf.waitInterpolation()
+    if is_walk:
+        demoWalk()
     hcf.seq_svc.setJointAngles(dualarm_reach_pose, 2.0)
     hcf.waitInterpolation()
     print >> sys.stderr, "  Reset operational force"
@@ -104,7 +106,7 @@ def demoDualarmCarryup ():
     hcf.seq_svc.setJointAngles(initial_pose, 2.0)
     hcf.waitInterpolation()
 
-def demoSinglearmCarryup ():
+def demoSinglearmCarryup (is_walk=True):
     print >> sys.stderr, "2. Single-arm carry-up demo."
     print >> sys.stderr, "  Reaching"
     hcf.seq_svc.setJointAngles(singlearm_via_pose, 2.0)
@@ -117,6 +119,10 @@ def demoSinglearmCarryup ():
     print >> sys.stderr, "  Lift up & down"
     hcf.seq_svc.setJointAngles(singlearm_liftup_pose, 2.0)
     hcf.waitInterpolation()
+    if is_walk:
+        hcf.setJointAngle("RARM_WRIST_R", 11, 0.3)
+        hcf.waitInterpolation()
+        demoWalk()
     hcf.seq_svc.setJointAngles(singlearm_reach_pose, 2.0)
     hcf.waitInterpolation()
     print >> sys.stderr, "  Reset operational force"
@@ -127,6 +133,16 @@ def demoSinglearmCarryup ():
     hcf.waitInterpolation()
     hcf.seq_svc.setJointAngles(initial_pose, 2.0)
     hcf.waitInterpolation()
+
+def demoWalk ():
+    hcf.abc_svc.goPos(-0.3,-0.1,0);
+    hcf.abc_svc.waitFootSteps();
+    hcf.abc_svc.goPos(0,0,30);
+    hcf.abc_svc.waitFootSteps();
+    hcf.abc_svc.goPos(0,0,-30);
+    hcf.abc_svc.waitFootSteps();
+    hcf.abc_svc.goPos(0.3,0.1,0);
+    hcf.abc_svc.waitFootSteps();
 
 def demo ():
     init()
