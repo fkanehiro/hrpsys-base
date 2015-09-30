@@ -17,6 +17,7 @@ foreach(_idx 0 1)
   file(APPEND ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.${_tmp_controller_period}.log.conf "exec_cxt.periodic.rate: ${_tmp_controller_period}\n")
 endforeach()
 configure_file(SampleRobot.kinematicsonly.xml.in ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.kinematicsonly.xml)
+configure_file(SampleRobot.carryobject.xml.in ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.carryobject.xml)
 
 # for virtual force sensor testing
 set(CONTROLLER_TIME 0.002)
@@ -60,6 +61,7 @@ install(FILES
   ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.TerrainFloor.StairDown.xml
   SampleRobot.DRCTestbed.xml
   ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.kinematicsonly.xml
+  ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.carryobject.xml
   DESTINATION share/hrpsys/samples/SampleRobot)
 
 file(GLOB python_scripts RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.py)
