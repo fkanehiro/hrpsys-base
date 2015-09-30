@@ -1,0 +1,62 @@
+<launch>
+  <!--
+
+ this is example file for PA10 robot
+
+ $ roslaunch hrpsys samplerobot.launch
+ $ rosrun    hrpsys samplerobot-walk.py
+
+  -->
+  <!-- BEGIN:common setting -->
+  <env name="LANG" value="C" />
+  <env name="ORBgiopMaxMsgSize" value="2147483648" />
+  <arg name="corbaport" default="15005" />
+  <arg name="GUI" default="true" />
+  <arg name="CONF_FILE" default="$(find hrpsys)/samples/SampleSpecialJointRobot/SampleSpecialJointRobot.conf" />
+  <arg name="TORQUE_CONTROL" default="false"/>
+  <arg unless="$(arg TORQUE_CONTROL)" name="PROJECT_FILE" default="$(find hrpsys)/samples/SampleSpecialJointRobot/SampleSpecialJointRobot.xml"/>
+  <arg     if="$(arg TORQUE_CONTROL)" name="PROJECT_FILE" default="$(find hrpsys)/samples/SampleSpecialJointRobot/SampleSpecialJointRobot.torque.xml"/>
+  <arg unless="$(arg TORQUE_CONTROL)" name="JOINT_CONTROLLER" default="HGcontroller" />
+  <arg     if="$(arg TORQUE_CONTROL)" name="JOINT_CONTROLLER" default="PDcontroller" />
+  <env name="ROS_HOME" value="$(find hrpsys)/samples/SampleSpecialJointRobot" />
+  <env     if="$(arg TORQUE_CONTROL)" name="BUSH_CUSTOMIZER_CONFIG_PATH" value="$(find openhrp3)/../OpenHRP-3.1/customizer/sample_4leg_robot_bush_customizer_param.conf" />
+  <env unless="$(arg TORQUE_CONTROL)" name="BUSH_CUSTOMIZER_CONFIG_PATH" value="" />
+  <!-- END:common setting -->
+
+  <arg unless="$(arg GUI)" name="hrpsys_gui_args" value="-endless -realtime -nodisplay" />
+  <arg     if="$(arg GUI)" name="hrpsys_gui_args" value="-endless -realtime " />
+
+
+  <node name="start_omninames" pkg="hrpsys" type="start_omninames.sh" args="$(arg corbaport)" />
+
+  <node name="modelloader" pkg="openhrp3" type="openhrp-model-loader"
+        args="-ORBInitRef NameService=corbaloc:iiop:localhost:$(arg corbaport)/NameService" output="screen"/>
+
+  <node name="hrpsys" pkg="hrpsys" type="hrpsys-simulator"
+        args='$(arg PROJECT_FILE) -o manager.is_master:YES -o naming.formats:%n.rtc -o exec_cxt.periodic.rate:1000000 -o manager.shutdown_onrtcs:NO -o manager.modules.load_path:$(find hrpsys)/lib
+              -o manager.modules.preload:$(arg JOINT_CONTROLLER).so -o manager.components.precreate:$(arg JOINT_CONTROLLER) -o exec_cxt.periodic.type:SynchExtTriggerEC -f $(arg CONF_FILE)
+              -o "example.RobotHardware.config_file:$(find hrpsys)/samples/SampleSpecialJointRobot/SampleSpecialJointRobot.RobotHardware.conf"
+              -o "example.SequencePlayer.config_file:$(arg CONF_FILE)"
+              -o "example.ForwardKinematics.config_file:$(arg CONF_FILE)"
+              -o "example.ImpedanceController.config_file:$(arg CONF_FILE)"
+              -o "example.AutoBalancer.config_file:$(arg CONF_FILE)"
+              -o "example.StateHolder.config_file:$(arg CONF_FILE)"
+              -o "example.DataLogger.config_file:$(arg CONF_FILE)"
+              -o "example.TorqueFilter.config_file:$(arg CONF_FILE)"
+              -o "example.TorqueController.config_file:$(arg CONF_FILE)"
+              -o "example.ThermoEstimator.config_file:$(arg CONF_FILE)"
+              -o "example.ThermoLimiter.config_file:$(arg CONF_FILE)"
+              -o "example.VirtualForceSensor.config_file:$(arg CONF_FILE)"
+              -o "example.AbsoluteForceSensor.config_file:$(arg CONF_FILE)"
+              -o "example.RemoveForceSensorLinkOffset.config_file:$(arg CONF_FILE)"
+              -o "example.KalmanFilter.config_file:$(arg CONF_FILE)"
+              -o "example.Stabilizer.config_file:$(arg CONF_FILE)"
+              -o "example.EmergencyStopper.config_file:$(arg CONF_FILE)"
+              -o "example.CollisionDetector.config_file:$(arg CONF_FILE)"
+              -o "example.SoftErrorLimiter.config_file:$(arg CONF_FILE)"
+              -o "example.$(arg JOINT_CONTROLLER).config_file:$(arg CONF_FILE)"
+              -o "corba.nameservers:localhost:$(arg corbaport)"
+              $(arg hrpsys_gui_args)'
+        output="screen"  cwd="node" />
+
+</launch>

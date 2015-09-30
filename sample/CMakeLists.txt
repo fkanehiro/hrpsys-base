@@ -10,6 +10,7 @@ add_subdirectory(HRP4C)
 add_subdirectory(SampleRobot)
 add_subdirectory(Sample6dofRobot)
 add_subdirectory(Sample4LegRobot)
+add_subdirectory(SampleSpecialJointRobot)
 add_subdirectory(environments)
 
 install(PROGRAMS
