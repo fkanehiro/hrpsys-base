@@ -107,7 +107,84 @@ rosrun hrpsys samplerobot_impedance_controller.py
  Please see 
  [Overview](http://fkanehiro.github.io/hrpsys-base/d2/d9f/ImpedanceController.html) 
  and [IDL API](http://fkanehiro.github.io/hrpsys-base/d9/d8b/interfaceOpenHRP_1_1ImpedanceControllerService.html).  
- 
+
+# samplerobot_emergency_stopper.py
+1. Launch hrpsys-simulator
+
+ ```
+rtmlaunch hrpsys samplerobot.launch
+ ```
+2. python example
+
+ ```
+rosrun hrpsys samplerobot_emergency_stopper.py
+ ```
+ See 
+ [hrpsys-base samplerobot_emergency_stopper.py](https://github.com/fkanehiro/hrpsys-base/blob/master/sample/SampleRobot/samplerobot_emergency_stopper.py) for more info.  
+3. RTC explanation  
+ - EmergencyStopper
+ EmergencyStopper is hrpsys-base RTC to stop robot's motion emergently. 
+
+# samplerobot_collision_detector.py
+1. Launch hrpsys-simulator
+
+ ```
+rtmlaunch hrpsys samplerobot.launch
+ ```
+2. python example
+
+ ```
+rosrun hrpsys samplerobot_collision_detector.py
+ ```
+ See 
+ [hrpsys-base samplerobot_collision_detector.py](https://github.com/fkanehiro/hrpsys-base/blob/master/sample/SampleRobot/samplerobot_collision_detector.py) for more info.  
+3. RTC explanation  
+ - CollisionDetector
+ CollisionDetector is hrpsys-base RTC to stop robot's motion when self-collision occurs and avoid from self-collision. 
+ Please see 
+ [Overview](http://fkanehiro.github.io/hrpsys-base/d7/de4/CollisionDetector.html) 
+ and [IDL API](http://fkanehiro.github.io/hrpsys-base/da/d18/interfaceOpenHRP_1_1CollisionDetectorService.html).  
+
+# samplerobot_kalman_filter.py
+1. Launch hrpsys-simulator
+
+ ```
+rtmlaunch hrpsys samplerobot.launch
+ ```
+2. python example
+
+ ```
+rosrun hrpsys samplerobot_kalman_filter.py
+ ```
+ See 
+ [hrpsys-base samplerobot_kalman_filter.py](https://github.com/fkanehiro/hrpsys-base/blob/master/sample/SampleRobot/samplerobot_kalman_filter.py) for more info.  
+3. RTC explanation  
+ - KalmanFilter
+ KalmanFilter is hrpsys-base RTC to estimate robot's attitude from gyro and acceleration sensor values.
+ Please see 
+ [Overview](http://fkanehiro.github.io/hrpsys-base/d3/de6/KalmanFilter.html) 
+ and [IDL API](http://fkanehiro.github.io/hrpsys-base/dd/d2d/interfaceOpenHRP_1_1KalmanFilterService.html).  
+
+# samplerobot_soft_error_limiter.py
+1. Launch hrpsys-simulator
+
+ ```
+rtmlaunch hrpsys samplerobot.launch
+ ```
+2. python example
+
+ ```
+rosrun hrpsys samplerobot_soft_error_limiter.py
+ ```
+ See 
+ [hrpsys-base samplerobot_soft_error_limiter.py](https://github.com/fkanehiro/hrpsys-base/blob/master/sample/SampleRobot/samplerobot_soft_error_limiter.py) for more info.  
+3. RTC explanation  
+ - SoftErrorLimiter
+ SoftErrorLimiter is hrpsys-base RTC to perform position, error, and velocity limitation.
+ Please see 
+ [Overview](http://fkanehiro.github.io/hrpsys-base/d9/de2/SoftErrorLimiter.htmlhttp://fkanehiro.github.io/hrpsys-base/de/d6d/interfaceOpenHRP_1_1SoftErrorLimit) 
+ and [IDL API](http://fkanehiro.github.io/hrpsys-base/de/d6d/interfaceOpenHRP_1_1SoftErrorLimiterService.html).  
+
 # samplerobot_auto_balancer.py
 1. Launch hrpsys-simulator
 
@@ -134,7 +211,7 @@ rosrun hrpsys samplerobot_auto_balancer.py
 1. Launch hrpsys-simulator
 
  ```
-rtmlaunch hrpsys samplerobot.launch
+rtmlaunch hrpsys samplerobot.launch TORQUE_CONTROL:=true
  ```
 2. python example
 
@@ -149,6 +226,22 @@ rosrun hrpsys samplerobot_stabilizer.py
  Please see 
  [Overview](http://fkanehiro.github.io/hrpsys-base/d6/d76/Stabilizer.html) 
  and [IDL API](http://fkanehiro.github.io/hrpsys-base/d5/dc8/interfaceOpenHRP_1_1StabilizerService.html).  
+
+# samplerobot_carry_object.py
+1. Launch hrpsys-simulator
+
+ ```
+rtmlaunch hrpsys samplerobot.launch TORQUE_CONTROL:=true PROJECT_FILE:=`rospack find hrpsys`/share/hrpsys/samples/SampleRobot/SampleRobot.carryobject.xml
+ ```
+2. python example
+
+ ```
+rosrun hrpsys samplerobot_carry_object.py
+ ```
+ See
+ [hrpsys-base samplerobot_carry_object.py](https://github.com/fkanehiro/hrpsys-base/blob/master/sample/SampleRobot/samplerobot_carry_object.py) for more info.  
+3. Sample explanation  
+  This sample shows dual-arm lift-up, single-arm lift-up, and pushing manipulation.
 
 # samplerobot_terrain_walk.py
 0. These examples are related with AutoBalancer RTC.  
