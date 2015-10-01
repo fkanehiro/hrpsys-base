@@ -17,6 +17,8 @@ option(ENABLE_INSTALL_RPATH "Enable RPATH setting for installed binary files" OF
 set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
+set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-std=c++11")
+
 # commands
 if(UNIX)
   set(RMDIR rm -fr)

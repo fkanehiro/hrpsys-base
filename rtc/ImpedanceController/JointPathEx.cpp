@@ -186,7 +186,7 @@ bool JointPathEx::calcJacobianInverseNullspace(dmatrix &J, dmatrix &Jinv, dmatri
         } else {
             r = fabs( (pow((jmax - jmin),2) * (( 2 * jang) - jmax - jmin)) /
                       (4 * pow((jmax - jang),2) * pow((jang - jmin),2)) );
-            if (isnan(r)) r = 0;
+            if (std::isnan((double)r)) r = 0;
         }
 
         // If use_inside_joint_weight_retrieval = true (true by default), use T. F. Chang and R.-V. Dubeby weight retrieval inward.
@@ -368,7 +368,7 @@ bool JointPathEx::calcInverseKinematics2Loop(const Vector3& dp, const Vector3& o
     // check nan / inf
     bool solve_linear_equation = true;
     for(int j=0; j < n; ++j){
-      if ( isnan(dq(j)) || isinf(dq(j)) ) {
+      if ( std::isnan((double)dq(j)) || std::isinf((double)dq(j)) ) {
         solve_linear_equation = false;
         break;
       }

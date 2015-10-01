@@ -167,7 +167,7 @@ class RemoveForceSensorLinkOffset
   void printForceMomentOffsetParam(const std::string& i_name_);
 
   std::map<std::string, ForceMomentOffsetParam> m_forcemoment_offset_param;
-  static const double grav = 9.80665; /* [m/s^2] */
+  static constexpr double grav = 9.80665; /* [m/s^2] */
   double m_dt;
   hrp::BodyPtr m_robot;
   unsigned int m_debugLevel;
