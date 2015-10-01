@@ -79,6 +79,7 @@ public:
         const_param = 2 * M_PI * cutoff_freq * dt;
     };
     double getCutOffFreq () const { return cutoff_freq; };
+    double getCurrentValue () const { return prev_value; };
 };
 
 #endif // IIRFilter_H
