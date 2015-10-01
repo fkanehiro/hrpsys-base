@@ -62,6 +62,7 @@ install(FILES
   SampleRobot.DRCTestbed.xml
   ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.kinematicsonly.xml
   ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.carryobject.xml
+  ForceSensorOffset_SampleRobot.txt
   DESTINATION share/hrpsys/samples/SampleRobot)
 
 file(GLOB python_scripts RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.py)

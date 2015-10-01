@@ -13,6 +13,8 @@ except:
     import socket
     import time
 
+from subprocess import check_output
+
 # set parameter
 def demoSetParameter():
     stp_org = hcf.st_svc.getParameter()
@@ -46,6 +48,7 @@ def demoSetParameter():
     stp_org.eefm_rot_damping_gain = [[20*1.6*1.5, 20*1.6*1.5, 1e5]]*4
     stp_org.eefm_pos_damping_gain = [[3500*50, 3500*50, 3500*1.0*1.5]]*4
     stp_org.st_algorithm=OpenHRP.StabilizerService.EEFMQP
+    stp_org.is_ik_enable=[True]*4
     hcf.st_svc.setParameter(stp_org)
 
 def init ():
@@ -66,23 +69,19 @@ def init ():
     hcf.waitInterpolation()
     # Initialize controllers
     hcf.co_svc.disableCollisionDetection()
-    hcf.startAutoBalancer(["rleg", "lleg", "rarm", "larm"])
     ggp=hcf.abc_svc.getGaitGeneratorParam()[1];
     ggp.stride_parameter=[0.15, 0.05, 25.0, 0.15];
     hcf.abc_svc.setGaitGeneratorParam(ggp);
-    stp=hcf.st_svc.getParameter()
-    stp.is_ik_enable=[True]*4
-    hcf.st_svc.setParameter(stp)
     demoSetParameter()
-    hcf.startStabilizer()
     icp=hcf.ic_svc.getImpedanceControllerParam("rarm")[1]
     icp.D_p = 400
     icp.K_r = 1e5
     icp.D_r = 1e5
     hcf.ic_svc.setImpedanceControllerParam("rarm", icp)
     hcf.ic_svc.setImpedanceControllerParam("larm", icp)
-    hcf.ic_svc.startImpedanceController("rarm")
-    hcf.ic_svc.startImpedanceController("larm")
+    hcf.startDefaultUnstableControllers(['rarm', 'larm'], ["rleg", "lleg", "rarm", "larm"])
+    HRPSYS_DIR=check_output(['pkg-config', 'hrpsys-base', '--variable=prefix']).rstrip()
+    hcf.rmfo_svc.loadForceMomentOffsetParams(HRPSYS_DIR+'/share/hrpsys/samples/SampleRobot/ForceSensorOffset_SampleRobot.txt')
 
 def demoDualarmCarryup (is_walk=True):
     print >> sys.stderr, "1. Dual-arm carry-up demo."
