@@ -187,7 +187,7 @@ class AutoBalancer
     hrp::Link* target_link;
     hrp::JointPathExPtr manip;
     size_t pos_ik_error_count, rot_ik_error_count;
-    bool is_active;
+    bool is_active, has_toe_joint;
   };
   void getCurrentParameters();
   void getTargetParameters();

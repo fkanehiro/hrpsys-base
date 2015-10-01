@@ -1,0 +1,5 @@
+model: file://@OPENHRP_DIR@/share/OpenHRP-3.1/sample/model/sample_special_joint_robot.wrl
+exec_cxt.periodic.type: hrpExecutionContext
+exec_cxt.periodic.rate: 500
+
+

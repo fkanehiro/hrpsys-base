@@ -154,6 +154,12 @@ install(FILES
 
 add_definitions(-DHRPSYS_PACKAGE_VERSION=\"\\"${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}\\"\")
 
+option(NO_DIGITAL_INPUT "Disable readDigitalInput and lengthDigitalInput" OFF)
+if(NO_DIGITAL_INPUT)
+  add_definitions(-DNO_DIGITAL_INPUT)
+  message(STATUS "Disablng readDigitalInput and lengthDigitalInput")
+endif()
+
 option(ROBOT_IOB_VERSION "Supported robot IOB version (lib/io/iob.h)")
 if("${ROBOT_IOB_VERSION}" STREQUAL "OFF")
   set(ROBOT_IOB_VERSION 2)

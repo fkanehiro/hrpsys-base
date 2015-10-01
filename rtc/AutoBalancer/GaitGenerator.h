@@ -322,25 +322,26 @@ namespace rats
     protected:
       double time_offset; // [s]
       double final_distance_weight;
-      size_t one_step_count, current_count, double_support_count_half; // time/dt
+      size_t one_step_count, current_count, double_support_count_before, double_support_count_after; // time/dt
       virtual hrp::Vector3 interpolate_antecedent_path (const hrp::Vector3& start, const hrp::Vector3& goal, const double height, const double tmp_ratio) = 0;
     public:
-      delay_hoffarbib_trajectory_generator () : time_offset(0.35), final_distance_weight(1.0), one_step_count(0), current_count(0), double_support_count_half(0) {};
+      delay_hoffarbib_trajectory_generator () : time_offset(0.35), final_distance_weight(1.0), one_step_count(0), current_count(0), double_support_count_before(0), double_support_count_after(0) {};
       ~delay_hoffarbib_trajectory_generator() { };
       void set_dt (const double _dt) { dt = _dt; };
       void set_swing_trajectory_delay_time_offset (const double _time_offset) { time_offset = _time_offset; };
       void set_swing_trajectory_final_distance_weight (const double _final_distance_weight) { final_distance_weight = _final_distance_weight; };
-      void reset (const size_t _one_step_len, const double default_double_support_ratio)
+      void reset (const size_t _one_step_len, const double default_double_support_ratio_before, const double default_double_support_ratio_after)
       {
         one_step_count = _one_step_len;
         current_count = 0;
-        double_support_count_half = (default_double_support_ratio*one_step_count/2.0);
+        double_support_count_before = (default_double_support_ratio_before*one_step_count);
+        double_support_count_after = (default_double_support_ratio_after*one_step_count);
       };
       void get_trajectory_point (hrp::Vector3& ret, const hrp::Vector3& start, const hrp::Vector3& goal, const double height)
       {
-        if ( double_support_count_half <= current_count && current_count < one_step_count - double_support_count_half ) { // swing phase
-          size_t swing_remain_count = one_step_count - current_count - double_support_count_half;
-          size_t swing_one_step_count = one_step_count - double_support_count_half*2;
+        if ( double_support_count_before <= current_count && current_count < one_step_count - double_support_count_after ) { // swing phase
+          size_t swing_remain_count = one_step_count - current_count - double_support_count_after;
+          size_t swing_one_step_count = one_step_count - double_support_count_before - double_support_count_after;
           if (swing_remain_count*dt > time_offset) { // antecedent path is still interpolating
             hoffarbib_interpolation (time_offset, interpolate_antecedent_path(start, goal, height, ((swing_one_step_count - swing_remain_count) / (swing_one_step_count - time_offset/dt))));
           } else if (swing_remain_count > 0) { // antecedent path already reached to goal
@@ -348,7 +349,7 @@ namespace rats
           } else {
             pos = goal;
           }
-        } else if ( current_count < double_support_count_half ) { // first double support phase
+        } else if ( current_count < double_support_count_before ) { // first double support phase
           pos = start;
           vel = hrp::Vector3::Zero();
           acc = hrp::Vector3::Zero();
@@ -562,8 +563,8 @@ namespace rats
       void cycloid_delay_midcoords (coordinates& ret, const coordinates& start,
                                     const coordinates& goal, const double height);
       void cycloid_delay_kick_midcoords (coordinates& ret, const coordinates& start,
-                                    const coordinates& goal, const double height);        
-      void calc_ratio_from_double_support_ratio (const double default_double_support_ratio);
+                                    const coordinates& goal, const double height);
+      void calc_ratio_from_double_support_ratio (const double default_double_support_ratio_before, const double default_double_support_ratio_after);
 #ifndef HAVE_MAIN
     public:
 #endif
@@ -612,14 +613,14 @@ namespace rats
         rdtg.set_swing_trajectory_delay_time_offset(_time_offset);
         sdtg.set_swing_trajectory_delay_time_offset(_time_offset);
         cdtg.set_swing_trajectory_delay_time_offset(_time_offset);
-        cdktg.set_swing_trajectory_delay_time_offset(_time_offset);        
+        cdktg.set_swing_trajectory_delay_time_offset(_time_offset);
       };
       void set_swing_trajectory_final_distance_weight (const double _final_distance_weight)
       {
         rdtg.set_swing_trajectory_final_distance_weight(_final_distance_weight);
         sdtg.set_swing_trajectory_final_distance_weight(_final_distance_weight);
         cdtg.set_swing_trajectory_final_distance_weight(_final_distance_weight);
-        cdktg.set_swing_trajectory_final_distance_weight(_final_distance_weight);        
+        cdktg.set_swing_trajectory_final_distance_weight(_final_distance_weight);
       };
       void set_stair_trajectory_way_point_offset (const hrp::Vector3 _offset) { sdtg.set_stair_trajectory_way_point_offset(_offset); };
       void set_cycloid_delay_kick_point_offset (const hrp::Vector3 _offset) { cdktg.set_cycloid_delay_kick_point_offset(_offset); };
@@ -660,7 +661,8 @@ namespace rats
                  const std::vector<step_node>& _swing_leg_dst_steps,
                  const std::vector<step_node>& _swing_leg_src_steps,
                  const std::vector<step_node>& _support_leg_steps,
-                 const double default_double_support_ratio)
+                 const double default_double_support_ratio_before,
+                 const double default_double_support_ratio_after)
       {
         support_leg_steps_list.clear();
         swing_leg_dst_steps_list.clear();
@@ -674,10 +676,10 @@ namespace rats
         thp_ptr->set_one_step_count(one_step_count);
         footstep_index = 0;
         current_step_height = 0.0;
-        rdtg.reset(one_step_count, default_double_support_ratio);
-        sdtg.reset(one_step_count, default_double_support_ratio);
-        cdtg.reset(one_step_count, default_double_support_ratio);
-        cdktg.reset(one_step_count, default_double_support_ratio);
+        rdtg.reset(one_step_count, default_double_support_ratio_before, default_double_support_ratio_after);
+        sdtg.reset(one_step_count, default_double_support_ratio_before, default_double_support_ratio_after);
+        cdtg.reset(one_step_count, default_double_support_ratio_before, default_double_support_ratio_after);
+        cdktg.reset(one_step_count, default_double_support_ratio_before, default_double_support_ratio_after);
         reset_foot_ratio_interpolator();
       };
       void reset_foot_ratio_interpolator ()
@@ -703,7 +705,7 @@ namespace rats
         }
       };
       bool is_same_footstep_nodes(const std::vector<step_node>& fns_1, const std::vector<step_node>& fns_2);
-      void update_leg_steps (const std::vector< std::vector<step_node> >& fnsl, const double default_double_support_ratio);
+      void update_leg_steps (const std::vector< std::vector<step_node> >& fnsl, const double default_double_support_ratio_before, const double default_double_support_ratio_after);
       size_t get_footstep_index() const { return footstep_index; };
       size_t get_lcg_count() const { return lcg_count; };
       double get_current_swing_time(const size_t idx) const { return current_swing_time.at(idx); };
@@ -786,6 +788,8 @@ namespace rats
     std::vector<std::string> all_limbs;
     double default_step_time;
     double default_double_support_ratio, default_double_support_static_ratio;
+    double default_double_support_ratio_swing_before; /*first double support time for leg coords generator */
+    double default_double_support_ratio_swing_after; /*last double support time for leg coords generator */
     double gravitational_acceleration;
     size_t finalize_count, optional_go_pos_finalize_footstep_num;
     // overwrite_footstep_index is used for footstep overwriting.
@@ -830,7 +834,7 @@ namespace rats
         : footstep_nodes_list(), overwrite_footstep_nodes_list(), thp(), rg(&thp, _dt), lcg(_dt, &thp), all_limbs(_all_limbs),
         footstep_param(_leg_pos, _stride_fwd_x, _stride_y, _stride_theta, _stride_bwd_x),
         vel_param(), offset_vel_param(), cog(hrp::Vector3::Zero()), refzmp(hrp::Vector3::Zero()), prev_que_rzmp(hrp::Vector3::Zero()),
-        dt(_dt), default_step_time(1.0), default_double_support_ratio(0.2), default_double_support_static_ratio(0.0), gravitational_acceleration(DEFAULT_GRAVITATIONAL_ACCELERATION),
+        dt(_dt), default_step_time(1.0), default_double_support_ratio(0.2), default_double_support_static_ratio(0.0), default_double_support_ratio_swing_before(0.1), default_double_support_ratio_swing_after(0.1), gravitational_acceleration(DEFAULT_GRAVITATIONAL_ACCELERATION),
         finalize_count(0), optional_go_pos_finalize_footstep_num(0), overwrite_footstep_index(0),
         velocity_mode_flg(VEL_IDLING), emergency_flg(IDLING),
         use_inside_step_limitation(true),
@@ -903,6 +907,8 @@ namespace rats
     void set_default_step_time (const double _default_step_time) { default_step_time = _default_step_time; };
     void set_default_double_support_ratio (const double _default_double_support_ratio) { default_double_support_ratio = _default_double_support_ratio; };
     void set_default_double_support_static_ratio (const double _default_double_support_static_ratio) { default_double_support_static_ratio = _default_double_support_static_ratio; };
+    void set_default_double_support_ratio_swing_before (const double _default_double_support_ratio_swing_before) { default_double_support_ratio_swing_before = _default_double_support_ratio_swing_before; };
+    void set_default_double_support_ratio_swing_after (const double _default_double_support_ratio_swing_after) { default_double_support_ratio_swing_after = _default_double_support_ratio_swing_after; };
     void set_default_zmp_offsets(const std::vector<hrp::Vector3>& tmp) { rg.set_default_zmp_offsets(tmp); };
     void set_toe_zmp_offset_x (const double _off) { rg.set_toe_zmp_offset_x(_off); };
     void set_heel_zmp_offset_x (const double _off) { rg.set_heel_zmp_offset_x(_off); };
@@ -1060,6 +1066,8 @@ namespace rats
     double get_default_step_height () const { return lcg.get_default_step_height(); };
     double get_default_double_support_ratio () const { return default_double_support_ratio; };
     double get_default_double_support_static_ratio () const { return default_double_support_static_ratio; };
+    double get_default_double_support_ratio_swing_before () const {return default_double_support_ratio_swing_before; };
+    double get_default_double_support_ratio_swing_after () const {return default_double_support_ratio_swing_after; };
     std::vector< std::vector<step_node> > get_remaining_footstep_nodes_list ()
     {
         std::vector< std::vector<step_node> > fsnl;
@@ -1101,7 +1109,7 @@ namespace rats
         std::cerr << std::endl;
         std::cerr << "[" << print_str << "]   default_step_time = " << get_default_step_time() << "[s]" << std::endl;
         std::cerr << "[" << print_str << "]   default_step_height = " << get_default_step_height() << "[m]" << std::endl;
-        std::cerr << "[" << print_str << "]   default_double_support_ratio = " << get_default_double_support_ratio() << ", default_double_support_static_ratio = " << get_default_double_support_static_ratio() << std::endl;
+        std::cerr << "[" << print_str << "]   default_double_support_ratio = " << get_default_double_support_ratio() << ", default_double_support_static_ratio = " << get_default_double_support_static_ratio() << ", default_double_support_static_ratio_swing_before = " << get_default_double_support_ratio_swing_before() << ", default_double_support_static_ratio_swing_after = " << get_default_double_support_ratio_swing_after() << std::endl;
         std::cerr << "[" << print_str << "]   default_orbit_type = ";
         if (get_default_orbit_type() == SHUFFLING) {
             std::cerr << "SHUFFLING" << std::endl;
