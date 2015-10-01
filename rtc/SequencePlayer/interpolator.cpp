@@ -4,6 +4,7 @@
 #include <cstring>
 using namespace std;
 #include "interpolator.h"
+#include <boost/thread/lock_guard.hpp>
 
 interpolator::interpolator(int dim_, double dt_, interpolation_mode imode_, double default_avg_vel_)
 {
@@ -267,6 +268,7 @@ void interpolator::push(const double *x_, const double *v_, const double *a_, bo
 
 void interpolator::pop()
 {
+  boost::lock_guard<boost::mutex> lock(pop_mutex_);
   if (length > 0){
     length--;
     double *&vs = q.front();
@@ -283,6 +285,7 @@ void interpolator::pop()
 
 void interpolator::pop_back()
 {
+  boost::lock_guard<boost::mutex> lock(pop_mutex_);
   if (length > 0){
     length--;
     double *&vs = q.back();

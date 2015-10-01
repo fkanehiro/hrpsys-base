@@ -3,6 +3,7 @@
 
 #include <deque>
 #include <string>
+#include <boost/thread/mutex.hpp>
 
 using namespace std;
 
@@ -89,6 +90,8 @@ private:
   void linear_interpolation(double &remain_t_,
 			    double gx,
 			    double &xx, double &vv, double &aa);
+  //Mutex to avoid poping twice the same element
+  boost::mutex pop_mutex_;
 };
 
 #endif
