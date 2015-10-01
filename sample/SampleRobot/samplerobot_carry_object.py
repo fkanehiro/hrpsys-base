@@ -49,7 +49,7 @@ def demoSetParameter():
     hcf.st_svc.setParameter(stp_org)
 
 def init ():
-    global hcf, initial_pose, dualarm_via_pose, dualarm_reach_pose, dualarm_liftup_pose, singlearm_via_pose, singlearm_reach_pose, singlearm_liftup_pose
+    global hcf, initial_pose, dualarm_via_pose, dualarm_reach_pose, dualarm_liftup_pose, singlearm_via_pose, singlearm_reach_pose, singlearm_liftup_pose, dualarm_push_pose
     hcf = HrpsysConfigurator()
     hcf.getRTCList = hcf.getRTCListUnstable
     hcf.init ("SampleRobot(Robot)0", "$(PROJECT_DIR)/../model/sample1.wrl")
@@ -61,11 +61,15 @@ def init ():
     singlearm_via_pose=[-0.068195,-0.335363,0.041187,0.813543,-0.456522,0.108135,0.83455,0.170568,0.507491,-1.69645,-0.425082,-0.50636,0.637045,-0.068541,-0.339426,0.041258,0.847517,-0.48645,0.108662,0.31129,0.159481,0.115399,-0.636277,0.0,0.0,0.0,-0.233088,0.756826,-0.278698]
     singlearm_reach_pose=[-0.040522,-0.379505,-0.014115,0.794016,-0.38533,0.061831,-0.165685,0.261435,0.40262,-1.16008,-0.970295,-0.539249,0.637045,-0.041204,-0.400725,-0.014227,0.8308,-0.400887,0.062193,0.31129,0.159481,0.115399,-0.636277,0.0,0.0,0.0,0.113797,0.471303,0.041281]
     singlearm_liftup_pose=[-0.009622,-0.351505,-0.02216,0.756859,-0.385877,0.020499,-0.107416,0.261774,0.382684,-1.24247,-1.20811,-0.592562,0.637045,-0.01006,-0.370083,-0.022316,0.783906,-0.39434,0.020496,0.31129,0.159481,0.115399,-0.636277,0.0,0.0,0.0,-0.000185,0.221567,0.116591]
+    dualarm_push_pose=[-3.998549e-05,-0.710564,-0.000264,1.41027,-0.680767,-2.335251e-05,-0.541944,-0.091558,0.122667,-1.02616,-1.71287,-0.056837,1.5708,-3.996804e-05,-0.710511,-0.000264,1.41016,-0.680706,-2.333505e-05,-0.542,0.091393,-0.122578,-1.02608,1.71267,-0.05677,-1.5708,0.006809,0.000101,-0.000163]
     hcf.seq_svc.setJointAngles(initial_pose, 2.0)
     hcf.waitInterpolation()
     # Initialize controllers
     hcf.co_svc.disableCollisionDetection()
     hcf.startAutoBalancer(["rleg", "lleg", "rarm", "larm"])
+    ggp=hcf.abc_svc.getGaitGeneratorParam()[1];
+    ggp.stride_parameter=[0.15, 0.05, 25.0, 0.15];
+    hcf.abc_svc.setGaitGeneratorParam(ggp);
     stp=hcf.st_svc.getParameter()
     stp.is_ik_enable=[True]*4
     hcf.st_svc.setParameter(stp)
@@ -80,7 +84,7 @@ def init ():
     hcf.ic_svc.startImpedanceController("rarm")
     hcf.ic_svc.startImpedanceController("larm")
 
-def demoDualarmCarryup ():
+def demoDualarmCarryup (is_walk=True):
     print >> sys.stderr, "1. Dual-arm carry-up demo."
     print >> sys.stderr, "  Reaching"
     hcf.seq_svc.setJointAngles(dualarm_via_pose, 2.0)
@@ -93,6 +97,8 @@ def demoDualarmCarryup ():
     print >> sys.stderr, "  Lift up & down"
     hcf.seq_svc.setJointAngles(dualarm_liftup_pose, 2.0)
     hcf.waitInterpolation()
+    if is_walk:
+        demoWalk()
     hcf.seq_svc.setJointAngles(dualarm_reach_pose, 2.0)
     hcf.waitInterpolation()
     print >> sys.stderr, "  Reset operational force"
@@ -104,7 +110,7 @@ def demoDualarmCarryup ():
     hcf.seq_svc.setJointAngles(initial_pose, 2.0)
     hcf.waitInterpolation()
 
-def demoSinglearmCarryup ():
+def demoSinglearmCarryup (is_walk=True):
     print >> sys.stderr, "2. Single-arm carry-up demo."
     print >> sys.stderr, "  Reaching"
     hcf.seq_svc.setJointAngles(singlearm_via_pose, 2.0)
@@ -117,6 +123,10 @@ def demoSinglearmCarryup ():
     print >> sys.stderr, "  Lift up & down"
     hcf.seq_svc.setJointAngles(singlearm_liftup_pose, 2.0)
     hcf.waitInterpolation()
+    if is_walk:
+        hcf.setJointAngle("RARM_WRIST_R", 11, 0.3)
+        hcf.waitInterpolation()
+        demoWalk()
     hcf.seq_svc.setJointAngles(singlearm_reach_pose, 2.0)
     hcf.waitInterpolation()
     print >> sys.stderr, "  Reset operational force"
@@ -128,10 +138,44 @@ def demoSinglearmCarryup ():
     hcf.seq_svc.setJointAngles(initial_pose, 2.0)
     hcf.waitInterpolation()
 
+def demoWalk ():
+    hcf.abc_svc.goPos(-0.3,-0.1,0);
+    hcf.abc_svc.waitFootSteps();
+    hcf.abc_svc.goPos(0,0,30);
+    hcf.abc_svc.waitFootSteps();
+    hcf.abc_svc.goPos(0,0,-30);
+    hcf.abc_svc.waitFootSteps();
+    hcf.abc_svc.goPos(0.3,0.1,0);
+    hcf.abc_svc.waitFootSteps();
+
+def demoDualarmPush ():
+    print >> sys.stderr, "3. Dual-arm push demo."
+    print >> sys.stderr, "  Move to"
+    hcf.abc_svc.goPos(-0.45,0,0);
+    hcf.abc_svc.waitFootSteps();
+    hcf.abc_svc.goPos(0,0,(math.degrees(rtm.readDataPort(rtm.findRTC("PushBox(Robot)0").port("WAIST")).data.orientation.y-rtm.readDataPort(hcf.rh.port("WAIST")).data.orientation.y)));
+    hcf.abc_svc.waitFootSteps();
+    print >> sys.stderr, "  Reaching"
+    hcf.abc_svc.goPos(0.25, -1*(rtm.readDataPort(rtm.findRTC("PushBox(Robot)0").port("WAIST")).data.position.x-rtm.readDataPort(hcf.rh.port("WAIST")).data.position.x), 0);
+    hcf.abc_svc.waitFootSteps();
+    hcf.seq_svc.setJointAngles(dualarm_via_pose, 1.0)
+    hcf.waitInterpolation()
+    hcf.seq_svc.setJointAngles(dualarm_push_pose, 1.0)
+    hcf.waitInterpolation()
+    print >> sys.stderr, "  Increase operational force"
+    hcf.seq_svc.setWrenches([0]*6+[0]*6+[-40,0,0,0,0,0]*2, 2.0)
+    hcf.waitInterpolation()
+    print >> sys.stderr, "  Push forward"
+    hcf.abc_svc.goPos(0.5,0,0)
+    hcf.abc_svc.waitFootSteps();
+    hcf.seq_svc.setWrenches([0]*24, 2.0)
+    hcf.waitInterpolation()
+
 def demo ():
     init()
     demoDualarmCarryup()
     demoSinglearmCarryup()
+    demoDualarmPush()
 
 if __name__ == '__main__':
     demo()
