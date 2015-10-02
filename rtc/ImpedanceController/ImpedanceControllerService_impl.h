@@ -23,6 +23,11 @@ public:
   CORBA::Boolean setImpedanceControllerParam(const char *i_name_, const OpenHRP::ImpedanceControllerService::impedanceParam &i_param_);
   CORBA::Boolean getImpedanceControllerParam(const char *i_name_, OpenHRP::ImpedanceControllerService::impedanceParam_out i_param_);
   void waitImpedanceControllerTransition(const char *i_name_);
+  void startObjectTurnaroundDetection(const CORBA::Double i_ref_diff_wrench, const CORBA::Double i_max_time, const OpenHRP::ImpedanceControllerService::StrSequence& i_ee_names);
+  CORBA::Boolean checkObjectTurnaroundDetection();
+  CORBA::Boolean setObjectTurnaroundDetectorParam(const OpenHRP::ImpedanceControllerService::objectTurnaroundDetectorParam &i_param_);
+  CORBA::Boolean getObjectTurnaroundDetectorParam(OpenHRP::ImpedanceControllerService::objectTurnaroundDetectorParam& i_param_);
+
   //
   void impedance(ImpedanceController *i_impedance);
 private:
