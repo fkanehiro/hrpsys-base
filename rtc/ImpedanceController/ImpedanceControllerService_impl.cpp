@@ -49,6 +49,32 @@ void ImpedanceControllerService_impl::waitImpedanceControllerTransition(const ch
   m_impedance->waitImpedanceControllerTransition(std::string(i_name_));
 }
 
+void ImpedanceControllerService_impl::startObjectTurnaroundDetection(const CORBA::Double i_ref_diff_wrench, const CORBA::Double i_max_time, const OpenHRP::ImpedanceControllerService::StrSequence& i_ee_names)
+{
+  m_impedance->startObjectTurnaroundDetection(i_ref_diff_wrench, i_max_time, i_ee_names);
+}
+
+CORBA::Boolean ImpedanceControllerService_impl::checkObjectTurnaroundDetection()
+{
+  return m_impedance->checkObjectTurnaroundDetection();
+}
+
+CORBA::Boolean ImpedanceControllerService_impl::setObjectTurnaroundDetectorParam(const OpenHRP::ImpedanceControllerService::objectTurnaroundDetectorParam &i_param_)
+{
+  return m_impedance->setObjectTurnaroundDetectorParam(i_param_);
+}
+
+CORBA::Boolean ImpedanceControllerService_impl::getObjectTurnaroundDetectorParam(OpenHRP::ImpedanceControllerService::objectTurnaroundDetectorParam& i_param_)
+{
+  i_param_ = OpenHRP::ImpedanceControllerService::objectTurnaroundDetectorParam();
+  return m_impedance->getObjectTurnaroundDetectorParam(i_param_);
+}
+
+CORBA::Boolean ImpedanceControllerService_impl::getObjectForcesMoments(OpenHRP::ImpedanceControllerService::Dbl3Sequence_out o_forces, OpenHRP::ImpedanceControllerService::Dbl3Sequence_out o_moments)
+{
+  return m_impedance->getObjectForcesMoments(o_forces, o_moments);
+}
+
 void ImpedanceControllerService_impl::impedance(ImpedanceController *i_impedance)
 {
   m_impedance = i_impedance;

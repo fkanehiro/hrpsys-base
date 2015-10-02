@@ -8,7 +8,10 @@ module OpenHRP
   interface ImpedanceControllerService
   {
     typedef sequence<double, 3> DblSequence3;
+    typedef double DblArray3[3];
     typedef sequence<double> DblSequence;
+    typedef sequence<string> StrSequence;
+    typedef sequence<sequence<double, 3> > Dbl3Sequence;
 
     /**
      * @enum ControllerMode
@@ -54,6 +57,23 @@ module OpenHRP
       DblSequence ik_optional_weight_vector;
       /// Use StateHolder basePos and baseRpy?
       boolean use_sh_base_pos_rpy;
+    };
+
+    /**
+     * @struct objectTurnaroundDetectorParam
+     * @brief ObjectTurnaroundDetectorParam parameters
+     */
+    struct objectTurnaroundDetectorParam {
+      /// Cutoff frequence for wrench value [Hz]
+      double wrench_cutoff_freq;
+      /// Cutoff frequence for dwrench value [Hz]
+      double dwrench_cutoff_freq;
+      /// Threshould for detection (0,1)
+      double detect_ratio_thre;
+      /// Threshould for starting detection (0,1)
+      double start_ratio_thre;
+      /// Axis
+      DblArray3 axis;
     };
 
     /**
@@ -105,5 +125,39 @@ module OpenHRP
      * @param name impedance controller param's name, which basically corresponds to force sensor name
      */
     void waitImpedanceControllerTransition(in string name);
+
+    /**
+     * @brief Start ObjectTurnaroundDetector.
+     * @param ref_diff_wrench is force or moment value.
+     * @param max_time is max time [s].
+     * @param i_ee_names is list of end effector
+     */
+    void startObjectTurnaroundDetection(in double i_ref_diff_wrench, in double i_max_time, in StrSequence i_ee_names);
+
+    /**
+     * @brief Check ObjectTurnaroundDetector. True = detected, False = not.
+     */
+    boolean checkObjectTurnaroundDetection();
+
+    /**
+     * @brief set object turnaround detector parameters.
+     * @param i_param input new parameters
+     * @return true if set successfully, false otherwise
+     */
+    boolean setObjectTurnaroundDetectorParam(in objectTurnaroundDetectorParam i_param);
+
+    /**
+     * @brief get object turnaround detector parameters.
+     * @param i_param input new parameters
+     * @return true if set successfully, false otherwise
+     */
+    boolean getObjectTurnaroundDetectorParam(out objectTurnaroundDetectorParam i_param);
+
+    /**
+     * @brief get Current force and moment for object
+     * @param i_param output force and moment
+     * @return true if set successfully, false otherwise
+     */
+    boolean getObjectForcesMoments(out Dbl3Sequence o_forces, out Dbl3Sequence o_moments);
   };
 };
