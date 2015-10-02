@@ -70,6 +70,11 @@ CORBA::Boolean ImpedanceControllerService_impl::getObjectTurnaroundDetectorParam
   return m_impedance->getObjectTurnaroundDetectorParam(i_param_);
 }
 
+CORBA::Boolean ImpedanceControllerService_impl::getObjectForcesMoments(OpenHRP::ImpedanceControllerService::Dbl3Sequence_out o_forces, OpenHRP::ImpedanceControllerService::Dbl3Sequence_out o_moments)
+{
+  return m_impedance->getObjectForcesMoments(o_forces, o_moments);
+}
+
 void ImpedanceControllerService_impl::impedance(ImpedanceController *i_impedance)
 {
   m_impedance = i_impedance;

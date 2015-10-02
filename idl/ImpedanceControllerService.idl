@@ -11,6 +11,7 @@ module OpenHRP
     typedef double DblArray3[3];
     typedef sequence<double> DblSequence;
     typedef sequence<string> StrSequence;
+    typedef sequence<sequence<double, 3> > Dbl3Sequence;
 
     /**
      * @enum ControllerMode
@@ -151,5 +152,12 @@ module OpenHRP
      * @return true if set successfully, false otherwise
      */
     boolean getObjectTurnaroundDetectorParam(out objectTurnaroundDetectorParam i_param);
+
+    /**
+     * @brief get Current force and moment for object
+     * @param i_param output force and moment
+     * @return true if set successfully, false otherwise
+     */
+    boolean getObjectForcesMoments(out Dbl3Sequence o_forces, out Dbl3Sequence o_moments);
   };
 };

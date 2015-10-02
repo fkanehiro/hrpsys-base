@@ -101,7 +101,7 @@ class ImpedanceController
   bool checkObjectTurnaroundDetection();
   bool setObjectTurnaroundDetectorParam(const OpenHRP::ImpedanceControllerService::objectTurnaroundDetectorParam &i_param_);
   bool getObjectTurnaroundDetectorParam(OpenHRP::ImpedanceControllerService::objectTurnaroundDetectorParam& i_param_);
-
+  bool getObjectForcesMoments(OpenHRP::ImpedanceControllerService::Dbl3Sequence_out o_forces, OpenHRP::ImpedanceControllerService::Dbl3Sequence_out o_moments);
 
  protected:
   // Configuration variable declaration
