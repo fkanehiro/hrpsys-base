@@ -4,7 +4,7 @@
 #include <cstring>
 using namespace std;
 #include "interpolator.h"
-#include <boost/thread/lock_guard.hpp>
+#include <boost/thread/locks.hpp>
 
 interpolator::interpolator(int dim_, double dt_, interpolation_mode imode_, double default_avg_vel_)
 {
