@@ -12,13 +12,14 @@ class ObjectTurnaroundDetector
     typedef enum {MODE_IDLE, MODE_STARTED, MODE_DETECTED, MODE_MAX_TIME} process_mode;
     boost::shared_ptr<FirstOrderLowPassFilter<double> > wrench_filter;
     boost::shared_ptr<FirstOrderLowPassFilter<double> > dwrench_filter;
+    hrp::Vector3 axis;
     double prev_wrench, dt;
     double detect_ratio_thre, start_ratio_thre, ref_dwrench, max_time, current_time;
     size_t count;
     process_mode pmode;
     std::string print_str;
  public:
-    ObjectTurnaroundDetector (const double _dt) : prev_wrench(0.0), dt(_dt), detect_ratio_thre(0.01), start_ratio_thre(0.5), pmode(MODE_IDLE)
+    ObjectTurnaroundDetector (const double _dt) : axis(-1*hrp::Vector3::UnitZ()), prev_wrench(0.0), dt(_dt), detect_ratio_thre(0.01), start_ratio_thre(0.5), pmode(MODE_IDLE)
     {
         double default_cutoff_freq = 1; // [Hz]
         wrench_filter = boost::shared_ptr<FirstOrderLowPassFilter<double> >(new FirstOrderLowPassFilter<double>(default_cutoff_freq, _dt, 0));
@@ -34,6 +35,14 @@ class ObjectTurnaroundDetector
         std::cerr << "[" << print_str << "] Start Object Turnaround Detection (ref_dwrench = " << ref_dwrench
                   << ", detect_thre = " << detect_ratio_thre * ref_dwrench << ", start_thre = " << start_ratio_thre * ref_dwrench << "), max_time = " << max_time << "[s]" << std::endl;
         pmode = MODE_IDLE;
+    };
+    bool checkDetection (const std::vector<hrp::Vector3>& fmv)
+    {
+        hrp::Vector3 tmpv = hrp::Vector3::Zero();
+        for (size_t i = 0; i < fmv.size(); i++) {
+            tmpv += fmv[i];
+        }
+        checkDetection(axis.dot(tmpv));
     };
     bool checkDetection (const double wrench_value)
     {
@@ -86,9 +95,14 @@ class ObjectTurnaroundDetector
     void setWrenchCutoffFreq (const double a) { wrench_filter->setCutOffFreq(a); };
     void setDwrenchCutoffFreq (const double a) { dwrench_filter->setCutOffFreq(a); };
     void setDetectRatioThre (const double a) { detect_ratio_thre = a; };
-    double getWrenchCutoffFreq () { return wrench_filter->getCutOffFreq(); };
-    double getDwrenchCutoffFreq () { return dwrench_filter->getCutOffFreq(); };
-    double getFilteredWrench () { return wrench_filter->getCurrentValue(); };
-    double getFilteredDwrench () { return dwrench_filter->getCurrentValue(); };
+    void setStartRatioThre (const double a) { start_ratio_thre = a; };
+    void setAxis (const hrp::Vector3& a) { axis = a; };
+    double getWrenchCutoffFreq () const { return wrench_filter->getCutOffFreq(); };
+    double getDwrenchCutoffFreq () const { return dwrench_filter->getCutOffFreq(); };
+    double getDetectRatioThre () const { return detect_ratio_thre; };
+    double getStartRatioThre () const { return start_ratio_thre; };
+    hrp::Vector3 getAxis () const { return axis; };
+    double getFilteredWrench () const { return wrench_filter->getCurrentValue(); };
+    double getFilteredDwrench () const { return dwrench_filter->getCurrentValue(); };
 };
 #endif // OBJECTTURNAROUNDDETECTOR_H
