@@ -232,10 +232,11 @@ DEF Dumbbell Humanoid{
              momentsOfInertia [ 1.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 1.0 ]
              children[
                 Transform {
+                   translation 0 0 -0.03
                    children[
                       Shape{
                          geometry Box{
-                            size 0.1 0.6 0.05
+                            size 0.1 0.6 0.02
                          }
                          appearance Appearance{
                             material Material{
