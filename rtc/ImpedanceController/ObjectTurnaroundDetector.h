@@ -14,21 +14,23 @@ class ObjectTurnaroundDetector
     boost::shared_ptr<FirstOrderLowPassFilter<double> > dwrench_filter;
     double prev_wrench, dt;
     double detect_ratio_thre, start_ratio_thre, ref_dwrench, max_time, current_time;
+    size_t count;
     process_mode pmode;
     std::string print_str;
  public:
-    ObjectTurnaroundDetector (const double _dt) : prev_wrench(0.0), dt(_dt), detect_ratio_thre(0.1), start_ratio_thre(0.2), pmode(MODE_IDLE)
+    ObjectTurnaroundDetector (const double _dt) : prev_wrench(0.0), dt(_dt), detect_ratio_thre(0.01), start_ratio_thre(0.5), pmode(MODE_IDLE)
     {
-        double default_cutoff_freq = 10; // [Hz]
+        double default_cutoff_freq = 1; // [Hz]
         wrench_filter = boost::shared_ptr<FirstOrderLowPassFilter<double> >(new FirstOrderLowPassFilter<double>(default_cutoff_freq, _dt, 0));
         dwrench_filter = boost::shared_ptr<FirstOrderLowPassFilter<double> >(new FirstOrderLowPassFilter<double>(default_cutoff_freq, _dt, 0));
     };
     ~ObjectTurnaroundDetector () {};
-    void startDetection (const double _ref_dwrench, const double _max_time)
+    void startDetection (const double _ref_diff_wrench, const double _max_time)
     {
-        ref_dwrench = _ref_dwrench;
+        ref_dwrench = _ref_diff_wrench/_max_time;
         max_time = _max_time;
         current_time = 0;
+        count = 0;
         std::cerr << "[" << print_str << "] Start Object Turnaround Detection (ref_dwrench = " << ref_dwrench
                   << ", detect_thre = " << detect_ratio_thre * ref_dwrench << ", start_thre = " << start_ratio_thre * ref_dwrench << "), max_time = " << max_time << "[s]" << std::endl;
         pmode = MODE_IDLE;
@@ -41,15 +43,23 @@ class ObjectTurnaroundDetector
         switch (pmode) {
         case MODE_IDLE:
             if (tmp_dwr > ref_dwrench*start_ratio_thre) {
-                pmode = MODE_STARTED;
-                std::cerr << "[" << print_str << "] Object Turnaround Detection Started." << std::endl;
+                count++;
+                if (count > 5) {
+                    pmode = MODE_STARTED;
+                    count = 0;
+                    std::cerr << "[" << print_str << "] Object Turnaround Detection Started." << std::endl;
+                }
             }
             break;
         case MODE_STARTED:
             if (tmp_dwr < ref_dwrench*detect_ratio_thre) {
-                pmode = MODE_DETECTED;
-                std::cerr << "[" << print_str << "] Object Turnaround Detected (time = " << current_time << "[s])" << std::endl;
+                count++;
+                if (count > 5) {
+                    pmode = MODE_DETECTED;
+                    std::cerr << "[" << print_str << "] Object Turnaround Detected (time = " << current_time << "[s])" << std::endl;
+                }
             }
+            //std::cerr << "[" << print_str << "] " << tmp_wr << " " << tmp_dwr << " " << count << std::endl;
             break;
         case MODE_DETECTED:
             break;
@@ -58,13 +68,14 @@ class ObjectTurnaroundDetector
         default:
             break;
         }
-        if (max_time <= current_time) {
+        if (max_time <= current_time && (pmode != MODE_DETECTED)) {
+            if (pmode != MODE_MAX_TIME) std::cerr << "[" << print_str << "] Object Turnaround Detection max time reached." << std::endl;
             pmode = MODE_MAX_TIME;
-            std::cerr << "[" << print_str << "] Object Turnaround Detection max time reached." << std::endl;
         }
         current_time += dt;
-        return (pmode == MODE_DETECTED);
+        return isDetected();
     };
+    bool isDetected () const { return (pmode == MODE_DETECTED); };
     void printParams () const
     {
         std::cerr << "[" << print_str << "]   ObjectTurnaroundDetector params" << std::endl;
