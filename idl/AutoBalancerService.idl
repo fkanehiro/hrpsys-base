@@ -111,6 +111,15 @@ module OpenHRP
     };
 
     /**
+     * @enum UseForceMode
+     * @brief Mode of use_force
+     */
+    enum UseForceMode {
+      MODE_NO_FORCE,
+      MODE_REF_FORCE
+    };
+
+    /**
      * @struct FootstepParam
      * @brief Foot step parameters.
      */
@@ -206,6 +215,7 @@ module OpenHRP
       sequence<DblSequence3> default_zmp_offsets;
       double move_base_gain;
       ControllerMode controller_mode;
+      UseForceMode use_force_mode;
       boolean graspless_manip_mode;
       string graspless_manip_arm;
       DblArray3 graspless_manip_p_gain;
