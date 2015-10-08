@@ -606,7 +606,7 @@ namespace rats
     start_ref_coords.difference(dp, dr, goal_ref_coords);
     dp = start_ref_coords.rot.transpose() * dp;
     dr = start_ref_coords.rot.transpose() * dr;
-    while ( !(eps_eq(dp.norm(), 0.0, 1e-3*0.1) && eps_eq(dr.norm(), 0.0, deg2rad(0.5))) ) {
+    while ( !(eps_eq(std::sqrt(dp(0)*dp(0)+dp(1)*dp(1)), 0.0, 1e-3*0.1) && eps_eq(dr(2), 0.0, deg2rad(0.5))) ) {
       set_velocity_param(dp(0)/default_step_time, dp(1)/default_step_time, rad2deg(dr(2))/default_step_time);
       append_footstep_list_velocity_mode();
       start_ref_coords = footstep_nodes_list.back().front().worldcoords;
