@@ -125,6 +125,7 @@ RTC::ReturnCode_t EmergencyStopper::onInitialize()
     //default_retrieve_time = 1.0/m_dt;
     m_stop_posture = new double[m_robot->numJoints()];
     m_interpolator = new interpolator(m_robot->numJoints(), recover_time_dt);
+    m_interpolator->setName(std::string(m_profile.instance_name)+" interpolator");
 
     m_q.data.length(m_robot->numJoints());
     for(int i=0; i<m_robot->numJoints(); i++){

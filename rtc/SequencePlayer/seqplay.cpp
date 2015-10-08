@@ -16,6 +16,15 @@ seqplay::seqplay(unsigned int i_dof, double i_dt, unsigned int i_fnum, unsigned 
     interpolators[TQ] = new interpolator(i_dof, i_dt);
     interpolators[WRENCHES] = new interpolator(6 * i_fnum, i_dt, interpolator::HOFFARBIB, 100); // wrenches = 6 * [number of force sensors]
 	interpolators[OPTIONAL_DATA] = new interpolator(optional_data_dim, i_dt);
+    // Set interpolator name
+    interpolators[Q]->setName("Q");
+    interpolators[ZMP]->setName("ZMP");
+    interpolators[ACC]->setName("ACC");
+    interpolators[P]->setName("P");
+    interpolators[RPY]->setName("RPY");
+    interpolators[TQ]->setName("TQ");
+    interpolators[WRENCHES]->setName("WRENCHES");
+    interpolators[OPTIONAL_DATA]->setName("OPTIONAL_DATA");
     //
 
 #ifdef WAIST_HEIGHT
