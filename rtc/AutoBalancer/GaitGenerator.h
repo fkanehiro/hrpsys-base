@@ -238,6 +238,7 @@ namespace rats
           zmp_weight_map = boost::assign::map_list_of<leg_type, double>(RLEG, zmp_weight_initial_value[0])(LLEG, zmp_weight_initial_value[1])(RARM, zmp_weight_initial_value[2])(LARM, zmp_weight_initial_value[3]);
           zmp_weight_interpolator = boost::shared_ptr<interpolator>(new interpolator(4, dt));
           zmp_weight_interpolator->set(zmp_weight_initial_value); /* set initial value */
+          zmp_weight_interpolator->setName("GaitGenerator zmp_weight_interpolator");
       };
       ~refzmp_generator()
       {
@@ -623,6 +624,9 @@ namespace rats
         if (swing_foot_rot_ratio_interpolator == NULL) swing_foot_rot_ratio_interpolator = new interpolator(1, dt);
         //if (foot_ratio_interpolator == NULL) foot_ratio_interpolator = new interpolator(1, dt, interpolator::LINEAR);
         if (toe_heel_interpolator == NULL) toe_heel_interpolator = new interpolator(1, dt);
+        foot_ratio_interpolator->setName("GaitGenerator foot_ratio_interpolator");
+        swing_foot_rot_ratio_interpolator->setName("GaitGenerator swing_foot_rot_ratio_interpolator");
+        toe_heel_interpolator->setName("GaitGenerator toe_heel_interpolator");
       };
       ~leg_coords_generator()
       {

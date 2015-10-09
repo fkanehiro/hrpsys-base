@@ -216,7 +216,7 @@ void interpolator::load(const char *fname, double time_to_start, double scale,
 {
   ifstream strm(fname);
   if (!strm.is_open()) {
-    cerr << "file not found(" << fname << ")" << endl;
+    cerr << "[interpolator " << name << "] file not found(" << fname << ")" << endl;
     return;
   }
   double *vs, ptime=-1,time, tmp;
@@ -353,17 +353,17 @@ void interpolator::get(double *x_, double *v_, double *a_, bool popp)
   if (length!=0){
     double *&vs = q.front();
     if (vs == NULL) {
-      cerr << "interpolator::get vs = NULL, q.size() = " << q.size() 
+      cerr << "[interpolator " << name << "] interpolator::get vs = NULL, q.size() = " << q.size() 
 	   << ", length = " << length << endl;
     }
     double *&dvs = dq.front();
     if (dvs == NULL) {
-      cerr << "interpolator::get dvs = NULL, dq.size() = " << dq.size() 
+      cerr << "[interpolator " << name << "] interpolator::get dvs = NULL, dq.size() = " << dq.size() 
 	   << ", length = " << length << endl;
     }
     double *&ddvs = ddq.front();
     if (ddvs == NULL) {
-      cerr << "interpolator::get ddvs = NULL, ddq.size() = " << ddq.size() 
+      cerr << "[interpolator " << name << "] interpolator::get ddvs = NULL, ddq.size() = " << ddq.size() 
 	   << ", length = " << length << endl;
     }
     memcpy(x_, vs, sizeof(double)*dim);

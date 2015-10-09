@@ -59,6 +59,7 @@ public:
   void interpolate(double& remain_t_);
   double deltaT() const { return dt; }
   double dimension() const { return dim; }
+  void setName (const std::string& _name) { name = _name; };
 private:
   // Current interpolation mode
   interpolation_mode imode;
@@ -81,6 +82,8 @@ private:
   double *a0, *a1, *a2, *a3, *a4, *a5;
   // Default average velocity for calc_interpolation_time
   double default_avg_vel;
+  // Interpolator name
+  std::string name;
 
   void hoffarbib(double &remain_t_,
 		 double a0, double a1, double a2,

@@ -222,13 +222,17 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     }
 
     zmp_offset_interpolator = new interpolator(ikp.size()*3, m_dt);
+    zmp_offset_interpolator->setName(std::string(m_profile.instance_name)+" zmp_offset_interpolator");
     zmp_transition_time = 1.0;
     transition_interpolator = new interpolator(1, m_dt, interpolator::HOFFARBIB, 1);
+    transition_interpolator->setName(std::string(m_profile.instance_name)+" transition_interpolator");
     transition_interpolator_ratio = 1.0;
     adjust_footstep_interpolator = new interpolator(1, m_dt, interpolator::HOFFARBIB, 1);
+    adjust_footstep_interpolator->setName(std::string(m_profile.instance_name)+" adjust_footstep_interpolator");
     transition_time = 2.0;
     adjust_footstep_transition_time = 2.0;
     leg_names_interpolator = new interpolator(1, m_dt, interpolator::HOFFARBIB, 1);
+    leg_names_interpolator->setName(std::string(m_profile.instance_name)+" leg_names_interpolator");
     leg_names_interpolator_ratio = 1.0;
 
     // setting stride limitations from conf file

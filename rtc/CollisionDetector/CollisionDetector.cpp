@@ -255,6 +255,7 @@ RTC::ReturnCode_t CollisionDetector::onInitialize()
     m_recover_jointdata = new double[m_robot->numJoints()];
     m_lastsafe_jointdata = new double[m_robot->numJoints()];
     m_interpolator = new interpolator(m_robot->numJoints(), i_dt);
+    m_interpolator->setName(std::string(m_profile.instance_name)+" interpolator");
     m_link_collision = new bool[m_robot->numLinks()];
 
     for(int i=0; i<m_robot->numJoints(); i++){
