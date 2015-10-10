@@ -8,8 +8,9 @@
 
 class ObjectTurnaroundDetector
 {
- private:
+ public:
     typedef enum {MODE_IDLE, MODE_STARTED, MODE_DETECTED, MODE_MAX_TIME} process_mode;
+ private:
     boost::shared_ptr<FirstOrderLowPassFilter<double> > wrench_filter;
     boost::shared_ptr<FirstOrderLowPassFilter<double> > dwrench_filter;
     hrp::Vector3 axis;
@@ -85,6 +86,7 @@ class ObjectTurnaroundDetector
         return isDetected();
     };
     bool isDetected () const { return (pmode == MODE_DETECTED); };
+    process_mode getMode () const { return pmode; };
     void printParams () const
     {
         std::cerr << "[" << print_str << "]   ObjectTurnaroundDetector params" << std::endl;

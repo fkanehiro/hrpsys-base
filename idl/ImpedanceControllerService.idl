@@ -60,6 +60,17 @@ module OpenHRP
     };
 
     /**
+     * @enum DetectorMode
+     * @brief Mode of object turnaround detector
+     */
+    enum DetectorMode {
+        MODE_DETECTOR_IDLE,
+        MODE_STARTED,
+        MODE_DETECTED,
+        MODE_MAX_TIME
+    };
+
+    /**
      * @struct objectTurnaroundDetectorParam
      * @brief ObjectTurnaroundDetectorParam parameters
      */
@@ -135,9 +146,9 @@ module OpenHRP
     void startObjectTurnaroundDetection(in double i_ref_diff_wrench, in double i_max_time, in StrSequence i_ee_names);
 
     /**
-     * @brief Check ObjectTurnaroundDetector. True = detected, False = not.
+     * @brief Check ObjectTurnaroundDetector.
      */
-    boolean checkObjectTurnaroundDetection();
+    DetectorMode checkObjectTurnaroundDetection();
 
     /**
      * @brief set object turnaround detector parameters.

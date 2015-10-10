@@ -814,9 +814,27 @@ void ImpedanceController::startObjectTurnaroundDetection(const double i_ref_diff
     }
 }
 
-bool ImpedanceController::checkObjectTurnaroundDetection()
+OpenHRP::ImpedanceControllerService::DetectorMode ImpedanceController::checkObjectTurnaroundDetection()
 {
-    return otd->isDetected();
+    OpenHRP::ImpedanceControllerService::DetectorMode tmpmode;
+    switch (otd->getMode()) {
+    case ObjectTurnaroundDetector::MODE_IDLE:
+        tmpmode = ImpedanceControllerService::MODE_DETECTOR_IDLE;
+        break;
+    case ObjectTurnaroundDetector::MODE_STARTED:
+        tmpmode = ImpedanceControllerService::MODE_STARTED;
+        break;
+    case ObjectTurnaroundDetector::MODE_DETECTED:
+        tmpmode = ImpedanceControllerService::MODE_DETECTED;
+        break;
+    case ObjectTurnaroundDetector::MODE_MAX_TIME:
+        tmpmode = ImpedanceControllerService::MODE_MAX_TIME;
+        break;
+    default:
+        tmpmode = ImpedanceControllerService::MODE_DETECTOR_IDLE;
+        break;
+    }
+    return tmpmode;
 }
 
 bool ImpedanceController::setObjectTurnaroundDetectorParam(const OpenHRP::ImpedanceControllerService::objectTurnaroundDetectorParam &i_param_)
