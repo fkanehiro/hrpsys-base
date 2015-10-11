@@ -234,6 +234,8 @@ module OpenHRP
       double pos_ik_thre;
       /// IK rotation threshold [rad]
       double rot_ik_thre;
+      /// Flag for fix hand while walking.
+      boolean is_hand_fix_mode;
     };
 
     /**

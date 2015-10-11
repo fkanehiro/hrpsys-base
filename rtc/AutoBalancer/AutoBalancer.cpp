@@ -318,6 +318,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
 
     is_stop_mode = false;
     has_ik_failed = false;
+    is_hand_fix_mode = false;
 
     pos_ik_thre = 0.1*1e-3; // [m]
     rot_ik_thre = (1e-2)*M_PI/180.0; // [rad]
@@ -742,6 +743,18 @@ void AutoBalancer::getTargetParameters()
       tmp_fix_coords.rot(0,0) = xv1(0); tmp_fix_coords.rot(1,0) = xv1(1); tmp_fix_coords.rot(2,0) = xv1(2);
       tmp_fix_coords.rot(0,1) = yv1(0); tmp_fix_coords.rot(1,1) = yv1(1); tmp_fix_coords.rot(2,1) = yv1(2);
       tmp_fix_coords.rot(0,2) = ez(0); tmp_fix_coords.rot(1,2) = ez(1); tmp_fix_coords.rot(2,2) = ez(2);
+    }
+    // Fix pos
+    if (false) { // Disabled
+        hrp::Vector3 proj_cog_pos(hrp::Vector3(gg->get_cog()(0), gg->get_cog()(1), tmp_fix_coords.pos(2)));
+        if (is_hand_fix_mode) {
+            hrp::Vector3 proj_foot_pos(tmp_fix_coords.pos);
+            hrp::Vector3 proj_tmp = tmp_fix_coords.rot.transpose() * (proj_cog_pos - tmp_fix_coords.pos);
+            proj_tmp(1) = 0;
+            tmp_fix_coords.pos = tmp_fix_coords.rot * proj_tmp + tmp_fix_coords.pos;
+        } else {
+            tmp_fix_coords.pos = proj_cog_pos;
+        }
     }
     fixLegToCoords(tmp_fix_coords.pos, tmp_fix_coords.rot);
 
@@ -1451,6 +1464,13 @@ bool AutoBalancer::setAutoBalancerParam(const OpenHRP::AutoBalancerService::Auto
   }
   pos_ik_thre = i_param.pos_ik_thre;
   rot_ik_thre = i_param.rot_ik_thre;
+  if (!gg_is_walking) {
+      is_hand_fix_mode = i_param.is_hand_fix_mode;
+      std::cerr << "[" << m_profile.instance_name << "]   is_hand_fix_mode = " << is_hand_fix_mode << std::endl;
+  } else {
+      std::cerr << "[" << m_profile.instance_name << "]   is_hand_fix_mode cannot be set in (gg_is_walking = true). Current is_hand_fix_mode is " << (is_hand_fix_mode?"true":"false") << std::endl;
+  }
+
   std::cerr << "[" << m_profile.instance_name << "]   move_base_gain = " << move_base_gain << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   default_zmp_offsets = ";
   for (size_t i = 0; i < ikp.size() * 3; i++) {
@@ -1510,6 +1530,7 @@ bool AutoBalancer::getAutoBalancerParam(OpenHRP::AutoBalancerService::AutoBalanc
   for (size_t i = 0; i < leg_names.size(); i++) i_param.leg_names[i] = leg_names.at(i).c_str();
   i_param.pos_ik_thre = pos_ik_thre;
   i_param.rot_ik_thre = rot_ik_thre;
+  i_param.is_hand_fix_mode = is_hand_fix_mode;
   return true;
 };
 

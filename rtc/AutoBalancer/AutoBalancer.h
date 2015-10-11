@@ -244,7 +244,7 @@ class AutoBalancer
   std::vector<hrp::Vector3> ref_forces;
 
   unsigned int m_debugLevel;
-  bool is_legged_robot, is_stop_mode, has_ik_failed;
+  bool is_legged_robot, is_stop_mode, has_ik_failed, is_hand_fix_mode;
   int loop, ik_error_debug_print_freq;
   bool graspless_manip_mode;
   std::string graspless_manip_arm;
