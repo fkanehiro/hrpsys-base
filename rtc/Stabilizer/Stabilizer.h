@@ -241,6 +241,7 @@ class Stabilizer
     // For eefm
     hrp::Vector3 d_foot_pos, d_foot_rpy, ee_d_foot_rpy;
     hrp::Vector3 eefm_pos_damping_gain, eefm_pos_time_const_support, eefm_rot_damping_gain, eefm_rot_time_const;
+    double eefm_pos_compensation_limit, eefm_rot_compensation_limit;
     hrp::Vector3 ref_force, ref_moment;
     double swing_support_gain, support_time;
   };

@@ -284,12 +284,15 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
     eefm_body_attitude_control_gain[i] = 0.5;
     eefm_body_attitude_control_time_const[i] = 1e5;
   }
+#define deg2rad(x) ((x) * M_PI / 180.0)
   for (size_t i = 0; i < stikp.size(); i++) {
       STIKParam& ikp = stikp[i];
       ikp.eefm_rot_damping_gain = hrp::Vector3(20*5, 20*5, 1e5);
       ikp.eefm_rot_time_const = hrp::Vector3(1.5, 1.5, 1.5);
+      ikp.eefm_rot_compensation_limit = deg2rad(10.0);
       ikp.eefm_pos_damping_gain = hrp::Vector3(3500*10, 3500*10, 3500);
       ikp.eefm_pos_time_const_support = hrp::Vector3(1.5, 1.5, 1.5);
+      ikp.eefm_pos_compensation_limit = 0.025;
   }
   eefm_pos_time_const_swing = 0.08;
   eefm_pos_transition_time = 0.01;
@@ -795,7 +798,6 @@ void Stabilizer::getActualParameters ()
     if (control_mode == MODE_ST) {
       hrp::Vector3 f_diff(hrp::Vector3::Zero());
       // moment control
-#define deg2rad(x) ((x) * M_PI / 180.0)
       for (size_t i = 0; i < stikp.size(); i++) {
         STIKParam& ikp = stikp[i];
         if (!is_feedback_control_enable[i]) continue;
@@ -817,12 +819,12 @@ void Stabilizer::getActualParameters ()
         { // Rot
             hrp::Vector3 tmp_damping_gain = (1-transition_smooth_gain) * ikp.eefm_rot_damping_gain * 10 + transition_smooth_gain * ikp.eefm_rot_damping_gain;
             ikp.d_foot_rpy = calcDampingControl(ikp.ref_moment, ee_moment, ikp.d_foot_rpy, tmp_damping_gain, ikp.eefm_rot_time_const);
-            ikp.d_foot_rpy = vlimit(ikp.d_foot_rpy, deg2rad(-10.0), deg2rad(10.0));
+            ikp.d_foot_rpy = vlimit(ikp.d_foot_rpy, -1 * ikp.eefm_rot_compensation_limit, ikp.eefm_rot_compensation_limit);
         }
         if (!eefm_use_force_difference_control) { // Pos
             hrp::Vector3 tmp_damping_gain = (1-transition_smooth_gain) * ikp.eefm_pos_damping_gain * 10 + transition_smooth_gain * ikp.eefm_pos_damping_gain;
             ikp.d_foot_pos = calcDampingControl(ikp.ref_force, sensor_force, ikp.d_foot_pos, tmp_damping_gain, ikp.eefm_pos_time_const_support);
-            ikp.d_foot_pos = foot_origin_rot.transpose() * vlimit(ikp.d_foot_pos, -0.025, 0.025);
+            ikp.d_foot_pos = foot_origin_rot.transpose() * vlimit(ikp.d_foot_pos, -1 * ikp.eefm_pos_compensation_limit, ikp.eefm_pos_compensation_limit);
         }
         // Actual ee frame =>
         ikp.ee_d_foot_rpy = (target->R * ikp.localR).transpose() * ikp.d_foot_rpy;
@@ -1414,8 +1416,10 @@ void Stabilizer::getParameter(OpenHRP::StabilizerService::stParam& i_stp)
   }
   i_stp.eefm_pos_time_const_support.length(stikp.size());
   i_stp.eefm_pos_damping_gain.length(stikp.size());
+  i_stp.eefm_pos_compensation_limit.length(stikp.size());
   i_stp.eefm_rot_time_const.length(stikp.size());
   i_stp.eefm_rot_damping_gain.length(stikp.size());
+  i_stp.eefm_rot_compensation_limit.length(stikp.size());
   for (size_t j = 0; j < stikp.size(); j++) {
       i_stp.eefm_pos_damping_gain[j].length(3);
       i_stp.eefm_pos_time_const_support[j].length(3);
@@ -1427,6 +1431,8 @@ void Stabilizer::getParameter(OpenHRP::StabilizerService::stParam& i_stp)
           i_stp.eefm_rot_damping_gain[j][i] = stikp[j].eefm_rot_damping_gain(i);
           i_stp.eefm_rot_time_const[j][i] = stikp[j].eefm_rot_time_const(i);
       }
+      i_stp.eefm_pos_compensation_limit[j] = stikp[j].eefm_pos_compensation_limit;
+      i_stp.eefm_rot_compensation_limit[j] = stikp[j].eefm_rot_compensation_limit;
   }
   i_stp.eefm_pos_time_const_swing = eefm_pos_time_const_swing;
   i_stp.eefm_pos_transition_time = eefm_pos_transition_time;
@@ -1537,8 +1543,10 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
   bool is_damping_parameter_ok = true;
   if ( i_stp.eefm_pos_damping_gain.length () == stikp.size() &&
        i_stp.eefm_pos_time_const_support.length () == stikp.size() &&
+       i_stp.eefm_pos_compensation_limit.length () == stikp.size() &&
        i_stp.eefm_rot_damping_gain.length () == stikp.size() &&
-       i_stp.eefm_rot_time_const.length () == stikp.size() ) {
+       i_stp.eefm_rot_time_const.length () == stikp.size() &&
+       i_stp.eefm_rot_compensation_limit.length () == stikp.size() ) {
       is_damping_parameter_ok = true;
       for (size_t j = 0; j < stikp.size(); j++) {
           for (size_t i = 0; i < 3; i++) {
@@ -1547,6 +1555,8 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
               stikp[j].eefm_rot_damping_gain(i) = i_stp.eefm_rot_damping_gain[j][i];
               stikp[j].eefm_rot_time_const(i) = i_stp.eefm_rot_time_const[j][i];
           }
+          stikp[j].eefm_pos_compensation_limit = i_stp.eefm_pos_compensation_limit[j];
+          stikp[j].eefm_rot_compensation_limit = i_stp.eefm_rot_compensation_limit[j];
       }
   } else {
       is_damping_parameter_ok = false;
@@ -1631,6 +1641,9 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
                     << ", eefm_pos_time_const_support = "
                     << stikp[j].eefm_pos_time_const_support.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]"))
                     << "[s]" << std::endl;
+          std::cerr << "[" << m_profile.instance_name << "]   [" << stikp[j].ee_name << "] "
+                    << "eefm_pos_compensation_limit = " << stikp[j].eefm_pos_compensation_limit << "[m], " << " "
+                    << "eefm_rot_compensation_limit = " << stikp[j].eefm_rot_compensation_limit << "[rad]" << std::endl;
       }
   } else {
       std::cerr << "[" << m_profile.instance_name << "]   eefm damping parameters cannot be set because of invalid param." << std::endl;
