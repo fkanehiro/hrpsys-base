@@ -54,7 +54,7 @@ void ImpedanceControllerService_impl::startObjectTurnaroundDetection(const CORBA
   m_impedance->startObjectTurnaroundDetection(i_ref_diff_wrench, i_max_time, i_ee_names);
 }
 
-CORBA::Boolean ImpedanceControllerService_impl::checkObjectTurnaroundDetection()
+OpenHRP::ImpedanceControllerService::DetectorMode ImpedanceControllerService_impl::checkObjectTurnaroundDetection()
 {
   return m_impedance->checkObjectTurnaroundDetection();
 }
