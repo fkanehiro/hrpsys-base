@@ -442,7 +442,7 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
 	while(it != m_impedance_param.end()){
             ImpedanceParam& param = it->second;
             if (param.is_active) {
-                if ( loop % 200 == 0 ) {
+                if (DEBUGP) {
                   std::cerr << "[" << m_profile.instance_name << "] impedance mode " << it->first << " transition count = " << param.transition_count << ", ";
                   std::cerr << "MDK = " << param.M_p << " " << param.D_p << " " << param.K_p << ", ";
                   std::cerr << "MDK = " << param.M_r << " " << param.D_r << " " << param.K_r << ", ";
