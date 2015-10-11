@@ -88,6 +88,19 @@ Toe joint is defined as end-link joint in the case that end-effector link != for
 Without toe joints, "end-effector link == force-sensor link" is assumed.
 With toe joints, "end-effector link != force-sensor link" is assumed.
 
+\subsection handfunc Hands and arms functionality
+In AutoBalancer, hands and arms has several functionality for two legs and two arms robot.
+1. No ik mode. If startAutoBalancer with ["rleg", "lleg"], arms IK are not solved while MODE_ABC.
+
+2. IK mode without fix. If startAutoBalancer with ["rleg", "lleg", "rarm", "larm"] and leg_names is ["rleg", "lleg"] and is_hand_fix_mode is false, arms IK are solved while MODE_ABC and 
+Hands target pos are determined according to COG velocity during walking. So, hands seems to follow upper body swinging and total behavior looks like No IK mode.
+
+3. IK mode with fix. If startAutoBalancer with ["rleg", "lleg", "rarm", "larm"] and leg_names is ["rleg", "lleg"] and is_hand_fix_mode is true, arms IK are solved while MODE_ABC.
+Hands target pos Y in foot coords are not change during walking and pos X in foot coords is determined according to COG velocity X. 
+So, hands seems to be fixed and follow foot projected coordinated. 
+
+4. Four legged walking mode. If startAutoBalancer with ["rleg", "lleg", "rarm", "larm"] and leg_names is ["rleg", "lleg", "rarm", "larm"],
+arms IK are solved while MODE_ABC and hand coords are determined by GaitGenerator as walking target.
 
 \section dataports Data Ports
 
