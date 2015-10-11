@@ -378,17 +378,57 @@ def demoGaitGeneratorOverwriteFootstepsBase(axis, overwrite_offset_idx = 1, init
              OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep(fpos4,          [1,0,0,0], support_fs.leg)])]
     hcf.abc_svc.setFootSteps(new_fs, overwrite_fs_idx);
 
+def demoGaitGeneratorFixHand():
+    print >> sys.stderr, "14. Fix arm walking"
+    hcf.stopAutoBalancer()
+    hcf.startAutoBalancer(['rleg', 'lleg', 'rarm', 'larm'])
+    # Set pose
+    abcp=hcf.abc_svc.getAutoBalancerParam()[1]
+    abcp.default_zmp_offsets=[[0.01, 0.0, 0.0], [0.01, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]] # Setting default_zmp_offsets is not necessary for fix mode. Just for debugging for default_zmp_offsets in hand fix mode.
+    hcf.abc_svc.setAutoBalancerParam(abcp)
+    dualarm_push_pose=[-3.998549e-05,-0.710564,-0.000264,1.41027,-0.680767,-2.335251e-05,-0.541944,-0.091558,0.122667,-1.02616,-1.71287,-0.056837,1.5708,-3.996804e-05,-0.710511,-0.000264,1.41016,-0.680706,-2.333505e-05,-0.542,0.091393,-0.122578,-1.02608,1.71267,-0.05677,-1.5708,0.006809,0.000101,-0.000163]
+    hcf.seq_svc.setJointAngles(dualarm_push_pose, 2.0)
+    hcf.waitInterpolation()
+    print >> sys.stderr, "  Walk without fixing arm" 
+    abcp=hcf.abc_svc.getAutoBalancerParam()[1]
+    abcp.is_hand_fix_mode=False
+    hcf.abc_svc.setAutoBalancerParam(abcp)
+    hcf.abc_svc.goPos(0.3,0,0)
+    hcf.abc_svc.waitFootSteps()
+    hcf.abc_svc.goPos(0,0.2,0)
+    hcf.abc_svc.waitFootSteps()
+    hcf.abc_svc.goPos(0,0,30)
+    hcf.abc_svc.waitFootSteps()
+    print >> sys.stderr, "  Walk with fixing arm" 
+    abcp=hcf.abc_svc.getAutoBalancerParam()[1]
+    abcp.is_hand_fix_mode=True
+    hcf.abc_svc.setAutoBalancerParam(abcp)
+    hcf.abc_svc.goPos(0.3,0,0)
+    hcf.abc_svc.waitFootSteps()
+    hcf.abc_svc.goPos(0,0.2,0)
+    hcf.abc_svc.waitFootSteps()
+    hcf.abc_svc.goPos(0,0,30)
+    hcf.abc_svc.waitFootSteps()
+    abcp=hcf.abc_svc.getAutoBalancerParam()[1]
+    abcp.default_zmp_offsets=[[0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]]
+    hcf.abc_svc.setAutoBalancerParam(abcp)
+    hcf.stopAutoBalancer()
+    checkActualBaseAttitude()
+    print >> sys.stderr, "  Fix hand=>OK"
+
 def demoGaitGeneratorSetFootStepsWithArms():
-    print >> sys.stderr, "14. Trot Walking"
+    print >> sys.stderr, "15. Trot Walking"
     hcf.stopAutoBalancer()
     hcf.seq_svc.setJointAngles(four_legs_mode_pose, 1.0)
     hcf.waitInterpolation()
     # use arms
-    orig_abcp = abcp =hcf.abc_svc.getAutoBalancerParam()[1]
+    orig_abcp = hcf.abc_svc.getAutoBalancerParam()[1]
+    abcp = hcf.abc_svc.getAutoBalancerParam()[1]
     abcp.leg_names = ['rleg', 'lleg', 'rarm', 'larm']
     hcf.abc_svc.setAutoBalancerParam(abcp)
     # decrease zmp weight for arms
-    orig_ggp = ggp = hcf.abc_svc.getGaitGeneratorParam()[1]
+    orig_ggp = hcf.abc_svc.getGaitGeneratorParam()[1]
+    ggp = hcf.abc_svc.getGaitGeneratorParam()[1]
     ggp.zmp_weight_map = [1.0, 1.0, 0.01, 0.01]
     ggp.default_step_height = 0.01
     hcf.abc_svc.setGaitGeneratorParam(ggp)
@@ -407,32 +447,6 @@ def demoGaitGeneratorSetFootStepsWithArms():
     hcf.abc_svc.setGaitGeneratorParam(orig_ggp)
     hcf.startAutoBalancer()
 
-def demoGaitGeneratorFixHand():
-    print >> sys.stderr, "15. Fix arm walking"
-    hcf.stopAutoBalancer()
-    hcf.startAutoBalancer(['rleg', 'lleg', 'rarm', 'larm'])
-    # Set pose
-    dualarm_push_pose=[-3.998549e-05,-0.710564,-0.000264,1.41027,-0.680767,-2.335251e-05,-0.541944,-0.091558,0.122667,-1.02616,-1.71287,-0.056837,1.5708,-3.996804e-05,-0.710511,-0.000264,1.41016,-0.680706,-2.333505e-05,-0.542,0.091393,-0.122578,-1.02608,1.71267,-0.05677,-1.5708,0.006809,0.000101,-0.000163]
-    hcf.seq_svc.setJointAngles(dualarm_push_pose, 2.0)
-    hcf.waitInterpolation()
-    print >> sys.stderr, "  Walk without fixing arm" 
-    hcf.abc_svc.goPos(0.3,0,0)
-    hcf.abc_svc.waitFootSteps()
-    hcf.abc_svc.goPos(0,0.2,0)
-    hcf.abc_svc.waitFootSteps()
-    hcf.abc_svc.goPos(0,0,30)
-    hcf.abc_svc.waitFootSteps()
-    print >> sys.stderr, "  Walk with fixing arm" 
-    abcp=hcf.abc_svc.getAutoBalancerParam()[1]
-    abcp.is_hand_fix_mode=True
-    hcf.abc_svc.setAutoBalancerParam(abcp)
-    hcf.abc_svc.goPos(0.3,0,0)
-    hcf.abc_svc.waitFootSteps()
-    hcf.abc_svc.goPos(0,0.2,0)
-    hcf.abc_svc.waitFootSteps()
-    hcf.abc_svc.goPos(0,0,30)
-    hcf.abc_svc.waitFootSteps()
-    hcf.stopAutoBalancer()
 
 def demo():
     init()
@@ -461,8 +475,8 @@ def demo():
         demoGaitGeneratorChangeStepParam()
         demoGaitGeneratorOverwriteFootsteps()
         demoGaitGeneratorOverwriteFootsteps(2)
-        demoGaitGeneratorSetFootStepsWithArms()
         demoGaitGeneratorFixHand()
+        demoGaitGeneratorSetFootStepsWithArms()
 
 if __name__ == '__main__':
     demo()

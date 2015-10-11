@@ -785,7 +785,8 @@ void AutoBalancer::getTargetParameters()
                 is_hand_control_while_walking = true;
             }
         }
-        if (is_hand_control_while_walking) {
+        //if (is_hand_control_while_walking) {
+        if (false) { // Disabled temporarily
             // Store hand_fix_initial_offset in the initialization of walking
             if (is_hand_fix_initial) hand_fix_initial_offset = (hrp::Vector3(gg->get_cog()(0), gg->get_cog()(1), tmp_fix_coords.pos(2)) - tmp_fix_coords.pos);
             is_hand_fix_initial = false;
