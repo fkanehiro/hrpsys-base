@@ -230,11 +230,13 @@ class AutoBalancer
   hrp::BodyPtr m_robot;
   coil::Mutex m_mutex;
 
-  double transition_interpolator_ratio, transition_time, zmp_transition_time, adjust_footstep_transition_time, leg_names_interpolator_ratio;
+  double transition_interpolator_ratio, transition_time, zmp_transition_time, adjust_footstep_transition_time, leg_names_interpolator_ratio, ik_interpolator_ratio;
+  std::vector<double> limbs_interpolator_ratio_vector;
   interpolator *zmp_offset_interpolator;
-  interpolator *transition_interpolator;
+  interpolator *transition_interpolator, *ik_interpolator;
   interpolator *adjust_footstep_interpolator;
   interpolator *leg_names_interpolator;
+  std::vector< boost::shared_ptr<interpolator> > limbs_interpolator_vector;
   hrp::Vector3 input_zmp, input_basePos;
   hrp::Matrix33 input_baseRot;
 

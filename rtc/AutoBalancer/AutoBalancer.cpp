@@ -234,6 +234,13 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     leg_names_interpolator = new interpolator(1, m_dt, interpolator::HOFFARBIB, 1);
     leg_names_interpolator->setName(std::string(m_profile.instance_name)+" leg_names_interpolator");
     leg_names_interpolator_ratio = 1.0;
+    for (size_t i = 0; i < ikp.size(); i++) {
+        limbs_interpolator_vector.push_back(boost::shared_ptr<interpolator>(new interpolator(1, m_dt, interpolator::HOFFARBIB, 1)));
+        limbs_interpolator_ratio_vector.push_back(1.0);
+    }
+    ik_interpolator = new interpolator(1, m_dt, interpolator::HOFFARBIB, 1);
+    ik_interpolator->setName(std::string(m_profile.instance_name)+" ik_interpolator");
+    ik_interpolator_ratio = 1.0;
 
     // setting stride limitations from conf file
     double stride_fwd_x_limit = 0.15;
@@ -335,6 +342,7 @@ RTC::ReturnCode_t AutoBalancer::onFinalize()
   delete transition_interpolator;
   delete adjust_footstep_interpolator;
   delete leg_names_interpolator;
+  delete ik_interpolator;
   return RTC::RTC_OK;
 }
 
@@ -441,6 +449,22 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
       } else {
         transition_interpolator_ratio = 1.0;
       }
+      bool is_ik_interpolator_empty = ik_interpolator->isEmpty();
+      if (!is_ik_interpolator_empty) {
+        ik_interpolator->get(&ik_interpolator_ratio, true);
+      } else {
+        ik_interpolator_ratio = 1.0;
+      }
+      std::vector<bool> is_limbs_interpolator_empty_vector;
+      for (size_t i = 0; i < limbs_interpolator_vector.size(); i++) {
+          if (!limbs_interpolator_vector.at(i)->isEmpty()) {
+              is_limbs_interpolator_empty_vector.push_back(false);
+              limbs_interpolator_vector.at(i)->get(&limbs_interpolator_ratio_vector.at(i), true);
+          } else {
+              is_limbs_interpolator_empty_vector.push_back(true);
+              limbs_interpolator_ratio_vector.at(i) = 1.0;
+          }
+      }
       if (control_mode != MODE_IDLE ) {
         solveLimbIK();
         rel_ref_zmp = m_robot->rootLink()->R.transpose() * (ref_zmp - m_robot->rootLink()->p);
@@ -460,12 +484,19 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
         ref_basePos = (1-transition_interpolator_ratio) * input_basePos + transition_interpolator_ratio * m_robot->rootLink()->p;
         rel_ref_zmp = (1-transition_interpolator_ratio) * input_zmp + transition_interpolator_ratio * rel_ref_zmp;
         rats::mid_rot(ref_baseRot, transition_interpolator_ratio, input_baseRot, m_robot->rootLink()->R);
-        for ( int i = 0; i < m_robot->numJoints(); i++ ) {
-          m_robot->joint(i)->q = (1-transition_interpolator_ratio) * m_qRef.data[i] + transition_interpolator_ratio * m_robot->joint(i)->q;
-        }
       } else {
         ref_basePos = m_robot->rootLink()->p;
         ref_baseRot = m_robot->rootLink()->R;
+      }
+      if (std::find(is_limbs_interpolator_empty_vector.begin(), is_limbs_interpolator_empty_vector.end(), false) != is_limbs_interpolator_empty_vector.end()) {
+          std::map<leg_type, std::string> leg_type_map = gg->get_leg_type_map();
+          for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
+              std::map<leg_type, std::string>::const_iterator dst = std::find_if(leg_type_map.begin(), leg_type_map.end(), (&boost::lambda::_1->* &std::map<leg_type, std::string>::value_type::second == it->first));
+              for ( int j = 0; j < it->second.manip->numJoints(); j++ ){
+                  int i = it->second.manip->joint(j)->jointId;
+                  m_robot->joint(i)->q = (1-limbs_interpolator_ratio_vector.at(dst->first)) * m_qRef.data[i] + limbs_interpolator_ratio_vector.at(dst->first) * m_robot->joint(i)->q;
+              }
+          }
       }
       // mode change for sync
       if (control_mode == MODE_SYNC_TO_ABC) {
@@ -882,13 +913,13 @@ bool AutoBalancer::solveLimbIKforLimb (ABCIKparam& param)
   hrp::Vector3 vel_p, vel_r;
   vel_p = param.target_p0 - param.current_p0;
   rats::difference_rotation(vel_r, param.current_r0, param.target_r0);
-  vel_p *= transition_interpolator_ratio * leg_names_interpolator_ratio;
-  vel_r *= transition_interpolator_ratio * leg_names_interpolator_ratio;
+  vel_p *= ik_interpolator_ratio;
+  vel_r *= ik_interpolator_ratio;
   param.manip->calcInverseKinematics2Loop(vel_p, vel_r, 1.0, 0.001, 0.01, &qrefv);
   // IK check
   vel_p = param.target_p0 - param.target_link->p;
   rats::difference_rotation(vel_r, param.target_link->R, param.target_r0);
-  if (vel_p.norm() > pos_ik_thre && transition_interpolator->isEmpty()) {
+  if (vel_p.norm() > pos_ik_thre && ik_interpolator->isEmpty()) {
       if (param.pos_ik_error_count % ik_error_debug_print_freq == 0) {
           std::cerr << "[" << m_profile.instance_name << "] Too large IK error (vel_p) = [" << vel_p(0) << " " << vel_p(1) << " " << vel_p(2) << "][m], count = " << param.pos_ik_error_count << std::endl;
       }
@@ -897,7 +928,7 @@ bool AutoBalancer::solveLimbIKforLimb (ABCIKparam& param)
   } else {
       param.pos_ik_error_count = 0;
   }
-  if (vel_r.norm() > rot_ik_thre && transition_interpolator->isEmpty()) {
+  if (vel_r.norm() > rot_ik_thre && ik_interpolator->isEmpty()) {
       if (param.rot_ik_error_count % ik_error_debug_print_freq == 0) {
           std::cerr << "[" << m_profile.instance_name << "] Too large IK error (vel_r) = [" << vel_r(0) << " " << vel_r(1) << " " << vel_r(2) << "][rad], count = " << param.rot_ik_error_count << std::endl;
       }
@@ -987,11 +1018,20 @@ void AutoBalancer::startABCparam(const OpenHRP::AutoBalancerService::StrSequence
 {
   std::cerr << "[" << m_profile.instance_name << "] start auto balancer mode" << std::endl;
   Guard guard(m_mutex);
-  double tmp_ratio = 0.0;
-  transition_interpolator->clear();
-  transition_interpolator->set(&tmp_ratio);
-  tmp_ratio = 1.0;
-  transition_interpolator->go(&tmp_ratio, transition_time, true);
+  {
+      double tmp_ratio = 0.0;
+      transition_interpolator->clear();
+      transition_interpolator->set(&tmp_ratio);
+      tmp_ratio = 1.0;
+      transition_interpolator->go(&tmp_ratio, transition_time, true);
+  }
+  {
+      double tmp_ratio = 0.0;
+      ik_interpolator->clear();
+      ik_interpolator->set(&tmp_ratio);
+      tmp_ratio = 1.0;
+      ik_interpolator->go(&tmp_ratio, transition_time, true);
+  }
   for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
     it->second.is_active = false;
   }
@@ -1002,6 +1042,17 @@ void AutoBalancer::startABCparam(const OpenHRP::AutoBalancerService::StrSequence
     std::cerr << "[" << m_profile.instance_name << "]   limb [" << std::string(limbs[i]) << "]" << std::endl;
   }
 
+  std::map<leg_type, std::string> leg_type_map = gg->get_leg_type_map();
+  for (std::map<std::string, ABCIKparam>::const_iterator it = ikp.begin(); it != ikp.end(); it++) {
+      std::map<leg_type, std::string>::const_iterator dst = std::find_if(leg_type_map.begin(), leg_type_map.end(), (&boost::lambda::_1->* &std::map<leg_type, std::string>::value_type::second == it->first));
+      if (it->second.is_active) {
+          double tmp_ratio = 0.0;
+          limbs_interpolator_vector.at(dst->first)->clear();
+          limbs_interpolator_vector.at(dst->first)->set(&tmp_ratio);
+          tmp_ratio = 1.0;
+          limbs_interpolator_vector.at(dst->first)->go(&tmp_ratio, transition_time, true);
+      }
+  }
   control_mode = MODE_SYNC_TO_ABC;
 }
 
@@ -1009,11 +1060,29 @@ void AutoBalancer::stopABCparam()
 {
   std::cerr << "[" << m_profile.instance_name << "] stop auto balancer mode" << std::endl;
   //Guard guard(m_mutex);
-  double tmp_ratio = 1.0;
-  transition_interpolator->clear();
-  transition_interpolator->set(&tmp_ratio);
-  tmp_ratio = 0.0;
-  transition_interpolator->go(&tmp_ratio, transition_time, true);
+  {
+      double tmp_ratio = 1.0;
+      transition_interpolator->clear();
+      transition_interpolator->set(&tmp_ratio);
+      tmp_ratio = 0.0;
+      transition_interpolator->go(&tmp_ratio, transition_time, true);
+  }
+  /* 
+   * {
+   *     double tmp_ratio = 1.0;
+   *     ik_interpolator->clear();
+   *     ik_interpolator->set(&tmp_ratio);
+   *     tmp_ratio = 0.0;
+   *     ik_interpolator->go(&tmp_ratio, transition_time, true);
+   * }
+   */
+  for (size_t i = 0; i < limbs_interpolator_vector.size(); i++) {
+      double tmp_ratio = 1.0;
+      limbs_interpolator_vector.at(i)->clear();
+      limbs_interpolator_vector.at(i)->set(&tmp_ratio);
+      tmp_ratio = 0.0;
+      limbs_interpolator_vector.at(i)->go(&tmp_ratio, transition_time, true);
+  }
   control_mode = MODE_SYNC_TO_IDLE;
 }
 
