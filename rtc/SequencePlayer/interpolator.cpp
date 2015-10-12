@@ -267,6 +267,7 @@ void interpolator::push(const double *x_, const double *v_, const double *a_, bo
 
 void interpolator::pop()
 {
+  std::lock_guard<std::mutex> lock(pop_mutex_);
   if (length > 0){
     length--;
     double *&vs = q.front();
@@ -283,6 +284,7 @@ void interpolator::pop()
 
 void interpolator::pop_back()
 {
+  std::lock_guard<std::mutex> lock(pop_mutex_);
   if (length > 0){
     length--;
     double *&vs = q.back();

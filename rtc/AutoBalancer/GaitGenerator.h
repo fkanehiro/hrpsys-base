@@ -235,7 +235,10 @@ namespace rats
           default_zmp_offsets.push_back(hrp::Vector3::Zero());
           default_zmp_offsets.push_back(hrp::Vector3::Zero());
           double zmp_weight_initial_value[4] = {1.0, 1.0, 0.1, 0.1};
-          zmp_weight_map = boost::assign::map_list_of<leg_type, double>(RLEG, zmp_weight_initial_value[0])(LLEG, zmp_weight_initial_value[1])(RARM, zmp_weight_initial_value[2])(LARM, zmp_weight_initial_value[3]);
+          zmp_weight_map = {{RLEG, zmp_weight_initial_value[0]},
+                            {LLEG, zmp_weight_initial_value[1]},
+                            {RARM, zmp_weight_initial_value[2]},
+                            {LARM, zmp_weight_initial_value[3]}};
           zmp_weight_interpolator = boost::shared_ptr<interpolator>(new interpolator(4, dt));
           zmp_weight_interpolator->set(zmp_weight_initial_value); /* set initial value */
           zmp_weight_interpolator->setName("GaitGenerator zmp_weight_interpolator");
@@ -300,7 +303,10 @@ namespace rats
           if (!zmp_weight_interpolator->isEmpty()) {
               double zmp_weight_output[4];
               zmp_weight_interpolator->get(zmp_weight_output, true);
-              zmp_weight_map = boost::assign::map_list_of<leg_type, double>(RLEG, zmp_weight_output[0])(LLEG, zmp_weight_output[1])(RARM, zmp_weight_output[2])(LARM, zmp_weight_output[3]);
+              zmp_weight_map = {{RLEG, zmp_weight_output[0]},
+                                {LLEG, zmp_weight_output[1]},
+                                {RARM, zmp_weight_output[2]},
+                                {LARM, zmp_weight_output[3]}};
           }
       };
     };
@@ -612,9 +618,9 @@ namespace rats
           foot_ratio_interpolator(NULL), swing_foot_rot_ratio_interpolator(NULL), toe_heel_interpolator(NULL),
           toe_pos_offset_x(0.0), heel_pos_offset_x(0.0), toe_angle(0.0), heel_angle(0.0), foot_dif_rot_angle(0.0), use_toe_joint(false)
       {
-        support_leg_types = boost::assign::list_of<leg_type>(RLEG);
-        swing_leg_types = boost::assign::list_of<leg_type>(LLEG);
-        current_swing_time = boost::assign::list_of<double>(0.0)(0.0)(0.0)(0.0);
+        support_leg_types = {RLEG};
+        swing_leg_types = {LLEG};
+        current_swing_time = {{0.0},{0.0},{0.0},{0.0}};
         rdtg.set_dt(dt);
         sdtg.set_dt(dt);
         cdtg.set_dt(dt);
@@ -881,9 +887,9 @@ namespace rats
         velocity_mode_flg(VEL_IDLING), emergency_flg(IDLING),
         use_inside_step_limitation(true),
         preview_controller_ptr(NULL) {
-        swing_foot_zmp_offsets = boost::assign::list_of<hrp::Vector3>(hrp::Vector3::Zero());
-        prev_que_sfzos = boost::assign::list_of<hrp::Vector3>(hrp::Vector3::Zero());
-        leg_type_map = boost::assign::map_list_of<leg_type, std::string>(RLEG, "rleg")(LLEG, "lleg")(RARM, "rarm")(LARM, "larm");
+        swing_foot_zmp_offsets = {hrp::Vector3::Zero()};
+        prev_que_sfzos = {hrp::Vector3::Zero()};
+        leg_type_map = {{RLEG, "rleg"},{LLEG, "lleg"},{RARM, "rarm"},{LARM, "larm"}};
     };
     ~gait_generator () {
       if ( preview_controller_ptr != NULL ) {

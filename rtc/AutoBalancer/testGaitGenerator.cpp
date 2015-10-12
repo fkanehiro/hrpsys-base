@@ -76,14 +76,14 @@ private:
                 fprintf(fp, "%f ", cogpos);
             }
             // Foot pos
-            tmp_string_vector = boost::assign::list_of("rleg");
+            tmp_string_vector = {"rleg"};
             hrp::Vector3 rfoot_pos = (gg->get_support_leg_names() == tmp_string_vector) ? gg->get_support_leg_steps().front().worldcoords.pos : gg->get_swing_leg_steps().front().worldcoords.pos;
             for (size_t ii = 0; ii < 3; ii++) {
                 fprintf(fp, "%f ", rfoot_pos(ii));
                 min_rfoot_pos(ii) = std::min(min_rfoot_pos(ii), rfoot_pos(ii));
                 max_rfoot_pos(ii) = std::max(max_rfoot_pos(ii), rfoot_pos(ii));
             }
-            tmp_string_vector = boost::assign::list_of("lleg");
+            tmp_string_vector = {"lleg"};
             hrp::Vector3 lfoot_pos = (gg->get_support_leg_names() == tmp_string_vector) ? gg->get_support_leg_steps().front().worldcoords.pos : gg->get_swing_leg_steps().front().worldcoords.pos;
             for (size_t ii = 0; ii < 3; ii++) {
                 fprintf(fp, "%f ", lfoot_pos(ii));
@@ -92,24 +92,24 @@ private:
             }
             // Foot rot
             hrp::Vector3 rpy;
-            tmp_string_vector = boost::assign::list_of("rleg");
+            tmp_string_vector = {"rleg"};
             hrp::Matrix33 rfoot_rot = (gg->get_support_leg_names() == tmp_string_vector) ? gg->get_support_leg_steps().front().worldcoords.rot : gg->get_swing_leg_steps().front().worldcoords.rot;
             rpy = hrp::rpyFromRot(rfoot_rot);
             for (size_t ii = 0; ii < 3; ii++) {
                 fprintf(fp, "%f ", 180.0*rpy(ii)/M_PI);
             }
-            tmp_string_vector = boost::assign::list_of("lleg");
+            tmp_string_vector = {"lleg"};
             hrp::Matrix33 lfoot_rot = (gg->get_support_leg_names() == tmp_string_vector) ? gg->get_support_leg_steps().front().worldcoords.rot : gg->get_swing_leg_steps().front().worldcoords.rot;
             rpy = hrp::rpyFromRot(lfoot_rot);
             for (size_t ii = 0; ii < 3; ii++) {
                 fprintf(fp, "%f ", 180.0*rpy(ii)/M_PI);
             }
             // ZMP offsets
-            tmp_string_vector = boost::assign::list_of("rleg");
+            tmp_string_vector = {"rleg"};
             for (size_t ii = 0; ii < 3; ii++) {
                 fprintf(fp, "%f ", (gg->get_support_leg_names() == tmp_string_vector) ? gg->get_support_foot_zmp_offsets().front()(ii) : gg->get_swing_foot_zmp_offsets().front()(ii));
             }
-            tmp_string_vector = boost::assign::list_of("lleg");
+            tmp_string_vector = {"lleg"};
             for (size_t ii = 0; ii < 3; ii++) {
                 fprintf(fp, "%f ", (gg->get_support_leg_names() == tmp_string_vector) ? gg->get_support_foot_zmp_offsets().front()(ii) : gg->get_swing_foot_zmp_offsets().front()(ii));
             }
@@ -348,7 +348,7 @@ private:
     {
         parse_params();
         gg->print_param();
-        gg->initialize_gait_parameter(cog, boost::assign::list_of(initial_support_leg_step), boost::assign::list_of(initial_swing_leg_dst_step));
+        gg->initialize_gait_parameter(cog, {initial_support_leg_step}, {initial_swing_leg_dst_step});
         while ( !gg->proc_one_tick() );
         //gg->print_footstep_list();
         plot_walk_pattern();
@@ -356,7 +356,7 @@ private:
 
     void gen_and_plot_walk_pattern()
     {
-        std::vector<std::string> tmp_string_vector = boost::assign::list_of("rleg");
+        std::vector<std::string> tmp_string_vector = {"rleg"};
         if (gg->get_footstep_front_leg_names() == tmp_string_vector) {
             step_node initial_support_leg_step = step_node(LLEG, coordinates(leg_pos[1]), 0, 0, 0, 0);
             step_node initial_swing_leg_dst_step = step_node(RLEG, coordinates(leg_pos[0]), 0, 0, 0, 0);
@@ -385,11 +385,11 @@ public:
         /* initialize sample footstep_list */
         parse_params();
         std::vector< std::vector<step_node> > fnsl;
-        fnsl.push_back(boost::assign::list_of(step_node("rleg", coordinates(hrp::Vector3(hrp::Vector3(0, 0, 0)+leg_pos[0])), gg->get_default_step_height(), gg->get_default_step_time(), gg->get_toe_angle(), gg->get_heel_angle())));
-        fnsl.push_back(boost::assign::list_of(step_node("lleg", coordinates(hrp::Vector3(hrp::Vector3(0, 0, 0)+leg_pos[1])), gg->get_default_step_height(), gg->get_default_step_time(), gg->get_toe_angle(), gg->get_heel_angle())));
-        fnsl.push_back(boost::assign::list_of(step_node("rleg", coordinates(hrp::Vector3(hrp::Vector3(100*1e-3, 0, 0)+leg_pos[0])), gg->get_default_step_height(), gg->get_default_step_time(), gg->get_toe_angle(), gg->get_heel_angle())));
-        fnsl.push_back(boost::assign::list_of(step_node("lleg", coordinates(hrp::Vector3(hrp::Vector3(200*1e-3, 0, 0)+leg_pos[1])), gg->get_default_step_height(), gg->get_default_step_time(), gg->get_toe_angle(), gg->get_heel_angle())));
-        fnsl.push_back(boost::assign::list_of(step_node("rleg", coordinates(hrp::Vector3(hrp::Vector3(200*1e-3, 0, 0)+leg_pos[0])), gg->get_default_step_height(), gg->get_default_step_time(), gg->get_toe_angle(), gg->get_heel_angle())));
+        fnsl.push_back({step_node("rleg", coordinates(hrp::Vector3(hrp::Vector3(0, 0, 0)+leg_pos[0])), gg->get_default_step_height(), gg->get_default_step_time(), gg->get_toe_angle(), gg->get_heel_angle())});
+        fnsl.push_back({step_node("lleg", coordinates(hrp::Vector3(hrp::Vector3(0, 0, 0)+leg_pos[1])), gg->get_default_step_height(), gg->get_default_step_time(), gg->get_toe_angle(), gg->get_heel_angle())});
+        fnsl.push_back({step_node("rleg", coordinates(hrp::Vector3(hrp::Vector3(100*1e-3, 0, 0)+leg_pos[0])), gg->get_default_step_height(), gg->get_default_step_time(), gg->get_toe_angle(), gg->get_heel_angle())});
+        fnsl.push_back({step_node("lleg", coordinates(hrp::Vector3(hrp::Vector3(200*1e-3, 0, 0)+leg_pos[1])), gg->get_default_step_height(), gg->get_default_step_time(), gg->get_toe_angle(), gg->get_heel_angle())});
+        fnsl.push_back({step_node("rleg", coordinates(hrp::Vector3(hrp::Vector3(200*1e-3, 0, 0)+leg_pos[0])), gg->get_default_step_height(), gg->get_default_step_time(), gg->get_toe_angle(), gg->get_heel_angle())});
         gg->set_foot_steps_list(fnsl);
         gen_and_plot_walk_pattern();
     };

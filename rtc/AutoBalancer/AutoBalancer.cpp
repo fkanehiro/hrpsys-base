@@ -1131,9 +1131,9 @@ bool AutoBalancer::goPos(const double& x, const double& y, const double& th)
     coordinates start_ref_coords;
     mid_coords(start_ref_coords, 0.5, ikp["rleg"].target_end_coords, ikp["lleg"].target_end_coords);
     gg->go_pos_param_2_footstep_nodes_list(x, y, th,
-                                           (y > 0 ? boost::assign::list_of(ikp["rleg"].target_end_coords) : boost::assign::list_of(ikp["lleg"].target_end_coords)),
+        {(y > 0 ? ikp["rleg"].target_end_coords : ikp["lleg"].target_end_coords)},
                                            start_ref_coords,
-                                           (y > 0 ? boost::assign::list_of(RLEG) : boost::assign::list_of(LLEG)));
+                                           {(y > 0 ? RLEG : LLEG)});
     startWalking();
     return true;
   } else {
