@@ -221,7 +221,8 @@ class AutoBalancer
   std::map<std::string, size_t> contact_states_index_map;
   std::map<std::string, hrp::VirtualForceSensorParam> m_vfs;
   std::vector<std::string> sensor_names, leg_names;
-  hrp::dvector qorg, qrefv;
+  std::vector<bool> deactivate_flag_list;
+  hrp::dvector qorg, qrefv, q_prev_deactivate;
   hrp::Vector3 current_root_p, target_root_p;
   hrp::Matrix33 current_root_R, target_root_R;
   rats::coordinates fix_leg_coords;
