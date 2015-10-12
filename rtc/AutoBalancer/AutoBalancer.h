@@ -230,12 +230,11 @@ class AutoBalancer
   hrp::BodyPtr m_robot;
   coil::Mutex m_mutex;
 
-  double transition_interpolator_ratio, transition_time, zmp_transition_time, adjust_footstep_transition_time, leg_names_interpolator_ratio, ik_interpolator_ratio;
+  double transition_interpolator_ratio, transition_time, zmp_transition_time, adjust_footstep_transition_time, ik_interpolator_ratio;
   std::vector<double> limbs_interpolator_ratio_vector;
   interpolator *zmp_offset_interpolator;
   interpolator *transition_interpolator, *ik_interpolator;
   interpolator *adjust_footstep_interpolator;
-  interpolator *leg_names_interpolator;
   std::vector< boost::shared_ptr<interpolator> > limbs_interpolator_vector;
   hrp::Vector3 input_zmp, input_basePos;
   hrp::Matrix33 input_baseRot;
@@ -249,6 +248,7 @@ class AutoBalancer
   bool is_legged_robot, is_stop_mode, has_ik_failed, is_hand_fix_mode;
   int loop, ik_error_debug_print_freq;
   bool graspless_manip_mode;
+  bool ik_initialize_flag;
   std::string graspless_manip_arm;
   hrp::Vector3 graspless_manip_p_gain;
   rats::coordinates graspless_manip_reference_trans_coords;
