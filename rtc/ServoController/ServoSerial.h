@@ -290,22 +290,38 @@ public:
       ret = -1;
     }
 
+#ifdef DONOT_USE_BINARY_FORMAT
+    if ( flags & 0x0002 ) {
+#else
     if ( flags & 0b00000010 ) {
+#endif
       fprintf(stderr, "[ServoSerial] Failed to receive packet from servo(id:%d) Fail to process received packet\n", id);
       ret = -1;
     }
 
+#ifdef DONOT_USE_BINARY_FORMAT
+    if ( flags & 0x0008 ) {
+#else
     if ( flags & 0b00001000 ) {
+#endif
       fprintf(stderr, "[ServoSerial] Failed to receive packet from servo(id:%d) fail to write Flash ROM\n", id);
       ret = -1;
     }
 
+#ifdef DONOT_USE_BINARY_FORMAT
+    if ( flags & 0x0020 ) {
+#else
     if ( flags & 0b00100000 ) {
+#endif
       fprintf(stderr, "[ServoSerial] Failed to receive packet from servo(id:%d) temperature limit warning\n", id);
       ret = -1;
     }
 
+#ifdef DONOT_USE_BINARY_FORMAT
+    if ( flags & 0x0080 ) {
+#else
     if ( flags & 0b10000000 ) {
+#endif
       fprintf(stderr, "[ServoSerial] Failed to receive packet from servo(id:%d) Temperature limit error\n", id);
       ret = -1;
     }

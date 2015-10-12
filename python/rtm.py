@@ -391,7 +391,10 @@ def findRTCmanager(hostname=None, rnc=None):
             mgr = None
         return mgr
 
-    import CORBA
+    try:
+        import CORBA
+    except:
+        print('import CORBA failed in findRTCmanager and neglect it for old python environment.')
     # fqdn
     mgr = None
     hostnames = [hostname, hostname.split(".")[0],
