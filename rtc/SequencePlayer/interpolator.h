@@ -3,6 +3,7 @@
 
 #include <deque>
 #include <string>
+#include <coil/Mutex.h>
 
 using namespace std;
 
@@ -92,6 +93,8 @@ private:
   void linear_interpolation(double &remain_t_,
 			    double gx,
 			    double &xx, double &vv, double &aa);
+  //Mutex to avoid poping twice the same element
+  coil::Mutex pop_mutex_;
 };
 
 #endif
