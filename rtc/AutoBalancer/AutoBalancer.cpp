@@ -785,12 +785,12 @@ void AutoBalancer::getTargetParameters()
                 is_hand_control_while_walking = true;
             }
         }
-        //if (is_hand_control_while_walking) {
-        if (false) { // Disabled temporarily
+        if (is_hand_control_while_walking) {
+        //if (false) { // Disabled temporarily
             // Store hand_fix_initial_offset in the initialization of walking
-            if (is_hand_fix_initial) hand_fix_initial_offset = (hrp::Vector3(gg->get_cog()(0), gg->get_cog()(1), tmp_fix_coords.pos(2)) - tmp_fix_coords.pos);
+            if (is_hand_fix_initial) hand_fix_initial_offset = tmp_fix_coords.rot.transpose() * (hrp::Vector3(gg->get_cog()(0), gg->get_cog()(1), tmp_fix_coords.pos(2)) - tmp_fix_coords.pos);
             is_hand_fix_initial = false;
-            hrp::Vector3 dif_p = hrp::Vector3(gg->get_cog()(0), gg->get_cog()(1), tmp_fix_coords.pos(2)) - tmp_fix_coords.pos - hand_fix_initial_offset;
+            hrp::Vector3 dif_p = hrp::Vector3(gg->get_cog()(0), gg->get_cog()(1), tmp_fix_coords.pos(2)) - tmp_fix_coords.pos - tmp_fix_coords.rot * hand_fix_initial_offset;
             if (is_hand_fix_mode) {
                 dif_p = tmp_fix_coords.rot.transpose() * dif_p;
                 dif_p(1) = 0;
