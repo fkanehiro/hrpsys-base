@@ -306,7 +306,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   eefm_ee_pos_error_p_gain = 0;
   eefm_ee_rot_error_p_gain = 0;
   cop_check_margin = 20.0*1e-3; // [m]
-  cp_check_margin = 60.0*1e-3; // [m]
+  cp_check_margin = 20.0*1e-3; // [m]
   contact_decision_threshold = 50; // [N]
   eefm_use_force_difference_control = true;
   initial_cp_too_large_error = true;
@@ -1078,17 +1078,31 @@ void Stabilizer::calcStateForEmergencySignal()
   }
   // CP Check
   bool is_cp_outside = false;
+  double width_offset = 0.0;
+  SimpleZMPDistributor::leg_type support_leg;
+  hrp::Vector3 leg_pos[2];
   if (on_ground && transition_count == 0 && control_mode == MODE_ST) {
-    hrp::Vector3 diff_cp = ref_cp - act_cp;
-    diff_cp(2) = 0.0;
     if (DEBUGP) {
-        std::cerr << "[" << m_profile.instance_name << "] CP value " << diff_cp.norm() << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "] CP value " << "[" << act_cp(0) - ref_cp(0) << "," << act_cp(1) - ref_cp(1) << "] [m]" << std::endl;
     }
     // check CP inside
-    if (diff_cp.norm() > cp_check_margin) {
-      is_cp_outside = true;
+    for (size_t i = 0; i < stikp.size(); i++) {
+        if (stikp[i].ee_name.find("leg") == std::string::npos) continue;
+        hrp::Link* target = m_robot->sensor<hrp::ForceSensor>(stikp[i].sensor_name)->link;
+        leg_pos[i] = target->p + target->R * foot_origin_offset[i];
+    }
+    if (isContact(contact_states_index_map["rleg"]) && isContact(contact_states_index_map["lleg"])) {
+        support_leg = SimpleZMPDistributor::BOTH;
+        width_offset = (leg_pos[contact_states_index_map["lleg"]](1) - leg_pos[contact_states_index_map["rleg"]](1)) / 2.0;
+    } else if (isContact(contact_states_index_map["rleg"])) {
+        support_leg = SimpleZMPDistributor::RLEG;
+    } else if (isContact(contact_states_index_map["lleg"])) {
+        support_leg = SimpleZMPDistributor::LLEG;
+    }
+    is_cp_outside = !szd->is_cp_inside_foot(act_cp - ref_cp, support_leg, cp_check_margin, width_offset);
+    if (is_cp_outside) {
       if (initial_cp_too_large_error || loop % static_cast <int>(0.2/dt) ) { // once per 0.2[s]
-          std::cerr << "[" << m_profile.instance_name << "] CP too large error " << diff_cp.norm() << std::endl;
+          std::cerr << "[" << m_profile.instance_name << "] CP too large error " << "[" << act_cp(0) - ref_cp(0) << "," << act_cp(1) - ref_cp(1)  << "] [m]" << std::endl;
       }
       initial_cp_too_large_error = false;
     } else {

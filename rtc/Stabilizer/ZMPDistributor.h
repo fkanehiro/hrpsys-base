@@ -56,6 +56,7 @@ class SimpleZMPDistributor
     double leg_inside_margin, leg_outside_margin, leg_front_margin, leg_rear_margin, wrench_alpha_blending;
     boost::shared_ptr<FirstOrderLowPassFilter<double> > alpha_filter;
 public:
+    enum leg_type {RLEG, LLEG, RARM, LARM, BOTH, ALL};
     SimpleZMPDistributor (const double _dt) : wrench_alpha_blending (0.5)
     {
         alpha_filter = boost::shared_ptr<FirstOrderLowPassFilter<double> >(new FirstOrderLowPassFilter<double>(1e7, _dt, 0.5)); // [Hz], Almost no filter by default
@@ -73,6 +74,13 @@ public:
     inline bool is_rear_of_foot (const hrp::Vector3& leg_pos, const double margin = 0.0)
     {
         return leg_pos(0) <= (-1 * leg_rear_margin + margin);
+    };
+    inline bool is_cp_inside_foot (const hrp::Vector3& cp, const leg_type support_leg, const double margin = 0.0, const double offset = 0.0)
+    {
+        if (support_leg == RLEG) return (cp(1) <= (leg_inside_margin - margin)) && (cp(1) >= (-1 * leg_outside_margin + margin)) && (cp(0) <= (leg_front_margin - margin)) && (cp(0) >= (-1 * leg_rear_margin + margin));
+        else if (support_leg == LLEG) return (cp(1) >= (-1 * leg_inside_margin + margin)) && (cp(1) <= (leg_outside_margin - margin)) && (cp(0) <= (leg_front_margin - margin)) && (cp(0) >= (-1 * leg_rear_margin + margin));
+        else if (support_leg == BOTH) return (cp(1) <= (leg_outside_margin + offset - margin)) && (cp(1) >= (-1 * (leg_outside_margin + offset) + margin)) && (cp(0) <= (leg_front_margin - margin)) && (cp(0) >= (-1 * leg_rear_margin + margin));
+        else return true;
     };
     void print_params (const std::string& str)
     {
