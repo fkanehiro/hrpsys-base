@@ -9,6 +9,7 @@
 
 #include "PDcontroller.h"
 #include <iostream>
+#include <sstream>
 #include <coil/stringutil.h>
 
 // Module specification
@@ -154,9 +155,19 @@ RTC::ReturnCode_t PDcontroller::onExecute(RTC::UniqueId ec_id)
     double q_ref = m_angleRef.data[i];
     double dq = (q - qold[i]) / dt;
     double dq_ref = (q_ref - qold_ref[i]) / dt;
+    double ddq = (dq - dqold[i]) / dt;
+    double ddq_ref = (dq_ref - dqold_ref[i]) / dt;
     qold[i] = q;
     qold_ref[i] = q_ref;
-    m_torque.data[i] = -(q - q_ref) * Pgain[i] - (dq - dq_ref) * Dgain[i];
+    dqold[i] = dq;
+    dqold_ref[i] = dq_ref;
+    if (controlType[i] == 1) {
+        // constant speed control
+        m_torque.data[i] = -(dq - q_ref) * Pgain[i] - (ddq - ddq_ref) * Dgain[i];
+    } else {
+        // joint angle control (default)
+        m_torque.data[i] = -(q - q_ref) * Pgain[i] - (dq - dq_ref) * Dgain[i];
+    }
     double tlimit;
     if (m_robot && m_robot->numJoints() == dof) {
         tlimit = m_robot->joint(i)->climit * m_robot->joint(i)->gearRatio * m_robot->joint(i)->torqueConst * tlimit_ratio[i];
@@ -187,30 +198,42 @@ void PDcontroller::readGainFile()
     // initialize length of vectors
     qold.resize(dof);
     qold_ref.resize(dof);
+    dqold.resize(dof);
+    dqold_ref.resize(dof);
     m_torque.data.length(dof);
     m_angleRef.data.length(dof);
     Pgain.resize(dof);
     Dgain.resize(dof);
     gain.open(gain_fname.c_str());
     tlimit_ratio.resize(dof);
+    controlType.resize(dof);
     if (gain.is_open()){
-      double tmp;
-      for (int i=0; i<dof; i++){
-          if (gain >> tmp) {
-              Pgain[i] = tmp;
-          } else {
-              std::cerr << "[" << m_profile.instance_name << "] Gain file [" << gain_fname << "] is too short" << std::endl;
-          }
-          if (gain >> tmp) {
-              Dgain[i] = tmp;
-          } else {
-              std::cerr << "[" << m_profile.instance_name << "] Gain file [" << gain_fname << "] is too short" << std::endl;
-          }
-      }
-      gain.close();
-      std::cerr << "[" << m_profile.instance_name << "] Gain file [" << gain_fname << "] opened" << std::endl;
-    }else{
-      std::cerr << "[" << m_profile.instance_name << "] Gain file [" << gain_fname << "] not opened" << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "] Gain file [" << gain_fname << "] opened" << std::endl;
+        for (int i=0; i<dof; i++){
+            controlType[i] = 0;
+            Pgain[i] = 10000;
+            Dgain[i] = 100;
+            std::string buf;
+            if (!getline(gain, buf)) {
+                std::cerr << "[" << m_profile.instance_name << "] Gain file [" << gain_fname << "] is too short (use default values)" << std::endl;
+            } else {
+                std::istringstream sbuf(buf);
+                double tmp;
+                if (sbuf >> tmp) {
+                    Pgain[i] = tmp;
+                }
+                if (sbuf >> tmp) {
+                    Dgain[i] = tmp;
+                }
+                if (sbuf >> tmp) {
+                    controlType[i] = tmp;
+                }
+            }
+            std::cerr << "[" << m_profile.instance_name << "] dof:" << i << ", Pgain:" << Pgain[i] << ", Dgain:" << Dgain[i] << ", controlType:" << controlType[i] << std::endl;
+        }
+        gain.close();
+    } else {
+        std::cerr << "[" << m_profile.instance_name << "] Gain file [" << gain_fname << "] not opened" << std::endl;
     }
     // tlimit_ratio initialize
     {
@@ -240,6 +263,7 @@ void PDcontroller::readGainFile()
     // initialize angleRef, old_ref and old with angle
     for(int i=0; i < dof; ++i){
       m_angleRef.data[i] = qold_ref[i] = qold[i] = m_angle.data[i];
+      dqold_ref[i] = dqold[i] = 0.0;
     }
 }
 
