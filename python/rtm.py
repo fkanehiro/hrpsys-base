@@ -418,7 +418,10 @@ def findRTCmanager(hostname=None, rnc=None):
 def findRTC(name, rnc=None):
     try:
         obj = findObject(name, "rtc", rnc)
-        rtc = RTcomponent(obj._narrow(RTC.RTObject))
+        try:
+            rtc = RTcomponent(obj._narrow(RTC.RTObject))
+        except TypeError:
+            rtc = RTcomponent(obj._narrow(RTC.DataFlowComponent))
         cxts = rtc.ref.get_participating_contexts()
         if len(cxts) > 0:
             rtc.ec = cxts[0]
