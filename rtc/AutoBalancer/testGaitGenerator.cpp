@@ -672,8 +672,10 @@ public:
                       std::cerr << "No such default-orbit-type " << arg_strs[i] << std::endl;
                   }
               }
-          } else if ( arg_strs[i]== "--default-double-support-static-ratio" ) {
-              if (++i < arg_strs.size()) gg->set_default_double_support_static_ratio(atof(arg_strs[i].c_str()));
+          } else if ( arg_strs[i]== "--default-double-support-static-ratio-before" ) {
+              if (++i < arg_strs.size()) gg->set_default_double_support_static_ratio_before(atof(arg_strs[i].c_str()));
+          } else if ( arg_strs[i]== "--default-double-support-static-ratio-after" ) {
+              if (++i < arg_strs.size()) gg->set_default_double_support_static_ratio_after(atof(arg_strs[i].c_str()));
           } else if ( arg_strs[i]== "--swing-trajectory-delay-time-offset" ) {
               if (++i < arg_strs.size()) gg->set_swing_trajectory_delay_time_offset(atof(arg_strs[i].c_str()));
           } else if ( arg_strs[i]== "--swing-trajectory-final-distance-weight" ) {
