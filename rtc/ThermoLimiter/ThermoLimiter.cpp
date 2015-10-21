@@ -320,7 +320,9 @@ void ThermoLimiter::calcMaxTorqueFromTemperature(hrp::dvector &tauMax)
 
       // determine tauMax
       if (squareTauMax[i] < 0) {
-        std::cerr << "[WARN] tauMax ** 2 = " << squareTauMax[i] << " < 0 in Joint " << i << std::endl;
+          if (isDebug()) {
+              std::cerr << "[WARN] tauMax ** 2 = " << squareTauMax[i] << " < 0 in Joint " << i << std::endl;
+          }
         tauMax[i] = m_robot->joint(i)->climit * m_robot->joint(i)->gearRatio * m_robot->joint(i)->torqueConst; // default tauMax from model file
       } else {
         tauMax[i] = std::sqrt(squareTauMax[i]); // tauMax is absolute value
