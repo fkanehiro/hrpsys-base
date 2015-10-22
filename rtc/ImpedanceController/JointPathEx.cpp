@@ -256,7 +256,7 @@ bool JointPathEx::calcInverseKinematics2Loop(const Vector3& dp, const Vector3& o
         v << dp, omega, dvector::Zero(ij_workspace_dim);
         hrp::dmatrix ee_J = dmatrix::Zero(ee_workspace_dim, n);
         calcJacobian(ee_J);
-        hrp::dmatrix ij_J(ij_workspace_dim, n);
+        hrp::dmatrix ij_J = dmatrix::Zero(ij_workspace_dim, n);
         for (size_t i = 0; i < ij_workspace_dim; i++) {
             std::pair<size_t, size_t>& pair = interlocking_joint_pair_indices[i];
             ij_J(i, pair.first) = 1;
