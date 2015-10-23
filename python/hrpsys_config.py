@@ -808,6 +808,8 @@ class HrpsysConfigurator:
             self.connectLoggerPort(self.st, 'currentBasePos')
             self.connectLoggerPort(self.st, 'currentBaseRpy')
             self.connectLoggerPort(self.st, 'debugData')
+        if self.el != None:
+            self.connectLoggerPort(self.el, 'q')
         if self.rh != None:
             self.connectLoggerPort(self.rh, 'emergencySignal',
                                    'emergencySignal')
