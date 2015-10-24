@@ -1,26 +1,32 @@
 // -*- mode: c++; indent-tabs-mode: t; tab-width: 4; c-basic-offset: 4; -*-
-#ifndef __NULL_SERVICE_H__
-#define __NULL_SERVICE_H__
+#ifndef THERMOLIMITERSERVICESVC_IMPL_H
+#define THERMOLIMITERSERVICESVC_IMPL_H
 
-#include "NullService.hh"
+#include "ThermoLimiterService.hh"
 
-class NullService_impl
-	: public virtual POA_OpenHRP::NullService,
+using namespace OpenHRP;
+
+class ThermoLimiter;
+
+class ThermoLimiterService_impl
+	: public virtual POA_OpenHRP::ThermoLimiterService,
 	  public virtual PortableServer::RefCountServantBase
 {
 public:
 	/**
 	   \brief constructor
 	*/
-	NullService_impl();
+	ThermoLimiterService_impl();
 
 	/**
 	   \brief destructor
 	*/
-	virtual ~NullService_impl();
-
-	void echo(const char *msg);
+	virtual ~ThermoLimiterService_impl();
+	CORBA::Boolean setParameter(const OpenHRP::ThermoLimiterService::tlParam& i_param);
+	CORBA::Boolean getParameter(OpenHRP::ThermoLimiterService::tlParam_out i_param);
+	void thermolimiter(ThermoLimiter *i_thermolimiter);
 private:
+	ThermoLimiter *m_thermolimiter;
 };
 
 #endif

@@ -25,6 +25,7 @@ set(idl_files
   RemoveForceSensorLinkOffsetService.idl
   ServoControllerService.idl
   TorqueControllerService.idl
+  ThermoLimiterService.idl
   )
 
 set(openhrp_idl_files

@@ -1,0 +1,33 @@
+/**
+ * @file ThermoLimiterService.idl
+ * @brief Services for the thermolimitter interface
+ */
+module OpenHRP
+{
+  interface ThermoLimiterService
+  {
+    /**
+     * @struct tlParam
+     * @brief ThermoLimiter Parameters.
+     */
+    struct tlParam {
+      unsigned long debug_print_freq;
+      double alarmRatio;
+    };
+
+    /**
+     * @brief Get ThermoLimiter parameters.
+     * @param i_param is output parameters
+     * @return true if get successfully, false otherwise
+     */
+    boolean getParameter(out tlParam i_param);
+
+    /**
+     * @brief Set ThermoLimiter parameters.
+     * @param i_param is input parameters
+     * @return true if set successfully, false otherwise
+     */
+    boolean setParameter(in tlParam i_param);
+  };
+};
+

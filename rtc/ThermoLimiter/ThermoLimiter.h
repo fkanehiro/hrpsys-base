@@ -25,7 +25,7 @@
 
 // Service implementation headers
 // <rtc-template block="service_impl_h">
-// #include "ThermoLimiterService_impl.h"
+#include "ThermoLimiterService_impl.h"
 
 // </rtc-template>
 
@@ -100,6 +100,8 @@ class ThermoLimiter
   // The action that is invoked when execution context's rate is changed
   // no corresponding operation exists in OpenRTm-aist-0.2.0
   // virtual RTC::ReturnCode_t onRateChanged(RTC::UniqueId ec_id);
+  bool setParameter(const OpenHRP::ThermoLimiterService::tlParam& i_tlp);
+  bool getParameter(OpenHRP::ThermoLimiterService::tlParam& i_tlp);
 
 
  protected:
@@ -129,13 +131,13 @@ class ThermoLimiter
 
   // Service declaration
   // <rtc-template block="service_declare">
-  // RTC::CorbaPort m_ThermoLimiterServicePort;
+  RTC::CorbaPort m_ThermoLimiterServicePort;
   
   // </rtc-template>
 
   // Consumer declaration
   // <rtc-template block="consumer_declare">
-  // ThermoLimiterService_impl m_ThermoLimiterService;
+  ThermoLimiterService_impl m_ThermoLimiterService;
   
   // </rtc-template>
 
@@ -147,6 +149,7 @@ class ThermoLimiter
   hrp::dvector m_motorTemperatureLimit;
   hrp::BodyPtr m_robot;
   std::vector<MotorHeatParam> m_motorHeatParams;
+  coil::Mutex m_mutex;
 
   void calcMaxTorqueFromTemperature(hrp::dvector &tauMax);
   double calcEmergencyRatio(RTC::TimedDoubleSeq &current, hrp::dvector &max, double alarmRatio, std::string &prefix);
