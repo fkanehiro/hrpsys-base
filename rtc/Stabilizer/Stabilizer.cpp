@@ -672,8 +672,10 @@ void Stabilizer::getActualParameters ()
   hrp::Vector3 tmp_act_cog = act_cog;
   act_cp(2) = act_zmp(2);
   // set actual contact states
-  m_actContactStates.data[contact_states_index_map["rleg"]] = isContact(contact_states_index_map["rleg"]);
-  m_actContactStates.data[contact_states_index_map["lleg"]] = isContact(contact_states_index_map["lleg"]);
+  for (size_t i = 0; i < stikp.size(); i++) {
+      std::string limb_name = stikp[i].ee_name;
+      m_actContactStates.data[contact_states_index_map[limb_name]] = isContact(contact_states_index_map[limb_name]);
+  }
   // <= Actual world frame
 
   // convert absolute (in st) -> root-link relative
