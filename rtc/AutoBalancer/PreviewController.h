@@ -1,4 +1,4 @@
-/* -*- coding:utf-8-unix mode:c++ -*- */
+// -*- coding:utf-8-unix; mode: c++; indent-tabs-mode: nil; c-basic-offset: 2; -*-
 #ifndef PREVIEW_H_
 #define PREVIEW_H_
 #include <iostream>

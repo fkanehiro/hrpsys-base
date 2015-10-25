@@ -1,3 +1,4 @@
+// -*- coding:utf-8-unix; mode: c++; indent-tabs-mode: nil; c-basic-offset: 2; -*-
 #ifndef TIME_UTIL_H
 #define TIME_UTIL_H
 

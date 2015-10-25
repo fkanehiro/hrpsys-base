@@ -1,4 +1,4 @@
-// -*- C++ -*-
+// -*- coding:utf-8-unix; mode: c++; indent-tabs-mode: nil; c-basic-offset: 2; -*-
 /*!
  * @file  Range2PointCloud.h
  * @brief range2pointcloud component

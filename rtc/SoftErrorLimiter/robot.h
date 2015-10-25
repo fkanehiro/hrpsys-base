@@ -1,3 +1,4 @@
+// -*- coding:utf-8-unix; mode: c++; indent-tabs-mode: nil; c-basic-offset: 2; -*-
 #include <hrpModel/Body.h>
 #include <hrpModel/Link.h>
 #include <boost/intrusive_ptr.hpp>

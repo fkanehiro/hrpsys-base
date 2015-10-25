@@ -1,3 +1,4 @@
+// -*- coding:utf-8-unix; mode: c++; indent-tabs-mode: nil; c-basic-offset: 2; -*-
 #ifndef RATSMATRIX_H
 #define RATSMATRIX_H
 #include <hrpUtil/Eigen3d.h>

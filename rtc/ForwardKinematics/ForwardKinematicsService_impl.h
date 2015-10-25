@@ -1,3 +1,4 @@
+// -*- coding:utf-8-unix; mode: c++; indent-tabs-mode: nil; c-basic-offset: 2; -*-
 #ifndef __FORWARD_KINEMATICS_SERVICE_IMPL_H__
 #define __FORWARD_KINEMATICS_SERVICE_IMPL_H__
 

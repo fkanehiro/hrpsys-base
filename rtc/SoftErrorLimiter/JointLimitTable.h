@@ -1,3 +1,4 @@
+// -*- coding:utf-8-unix; mode: c++; indent-tabs-mode: nil; c-basic-offset: 2; -*-
 #ifndef __JOINT_LIMIT_TABLE_H__
 #define __JOINT_LIMIT_TABLE_H__
 #include <hrpModel/Body.h>

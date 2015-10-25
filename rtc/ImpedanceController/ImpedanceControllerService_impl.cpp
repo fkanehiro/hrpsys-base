@@ -1,3 +1,4 @@
+// -*- coding:utf-8-unix; mode: c++; indent-tabs-mode: nil; c-basic-offset: 2; -*-
 #include "ImpedanceControllerService_impl.h"
 #include "ImpedanceController.h"
 #include <hrpModel/Body.h>

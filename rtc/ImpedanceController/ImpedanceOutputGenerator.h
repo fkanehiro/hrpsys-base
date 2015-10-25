@@ -1,3 +1,4 @@
+// -*- coding:utf-8-unix; mode: c++; indent-tabs-mode: nil; c-basic-offset: 2; -*-
 #ifndef IMPEDANCETRGETGENERATOR_H
 #define IMPEDANCETRGETGENERATOR_H
 

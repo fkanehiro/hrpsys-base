@@ -1,3 +1,4 @@
+// -*- coding:utf-8-unix; mode: c++; indent-tabs-mode: nil; c-basic-offset: 2; -*-
 #include "VclipLinkPair.h"
 
 VclipLinkPair::VclipLinkPair(hrp::Link* link0, Vclip::Polyhedron* vclip_model0, hrp::Link* link1, Vclip::Polyhedron* vclip_model1, double tolerance)
