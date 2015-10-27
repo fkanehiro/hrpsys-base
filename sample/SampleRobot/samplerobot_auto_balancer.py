@@ -433,7 +433,7 @@ def demoGaitGeneratorSetFootStepsWithArms():
     ggp.default_step_height = 0.01
     hcf.abc_svc.setGaitGeneratorParam(ggp)
     # start walking
-    hcf.startAutoBalancer()
+    hcf.startAutoBalancer(['rleg', 'lleg', 'rarm', 'larm'])
     hcf.setFootSteps([OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([0,-0.09,0], [1,0,0,0], "rleg"),
                                                              OpenHRP.AutoBalancerService.Footstep([0.23,0.21,0.86], [1,0,0,0], "larm")]),
                       OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([0,0.09,0], [1,0,0,0], "lleg"),

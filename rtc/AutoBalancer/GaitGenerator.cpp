@@ -221,7 +221,8 @@ namespace rats
       default: break;
       }
       if (std::fabs(step_height) > 1e-3*10) {
-        modif_foot_coords_for_toe_heel_phase(ret, _current_toe_angle, _current_heel_angle);
+          if (swing_leg_src_steps.size() == 1) /* only biped or crawl because there is only one toe_heel_interpolator */
+              modif_foot_coords_for_toe_heel_phase(ret, _current_toe_angle, _current_heel_angle);
       }
       rets.push_back(step_node(it1->l_r, ret, 0, 0, 0, 0));
     }
