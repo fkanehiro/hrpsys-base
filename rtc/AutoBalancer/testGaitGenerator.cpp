@@ -563,7 +563,8 @@ public:
         gg->set_toe_angle(20);
         gg->set_heel_angle(5);
         gg->set_default_step_time(1.5);
-        gg->set_default_double_support_ratio(0.2);
+        gg->set_default_double_support_ratio_before(0.1);
+        gg->set_default_double_support_ratio_after(0.1);
         double ratio[7] = {0.02, 0.28, 0.2, 0.0, 0.2, 0.25, 0.05};
         std::vector<double> ratio2(ratio, ratio+gg->get_NUM_TH_PHASES());
         gg->set_toe_heel_phase_ratio(ratio2);
@@ -650,8 +651,10 @@ public:
               if (++i < arg_strs.size()) gg->set_default_step_time(atof(arg_strs[i].c_str()));
           } else if ( arg_strs[i]== "--default-step-height" ) {
               if (++i < arg_strs.size()) gg->set_default_step_height(atof(arg_strs[i].c_str()));
-          } else if ( arg_strs[i]== "--default-double-support-ratio" ) {
-              if (++i < arg_strs.size()) gg->set_default_double_support_ratio(atof(arg_strs[i].c_str()));
+          } else if ( arg_strs[i]== "--default-double-support-ratio-before" ) {
+              if (++i < arg_strs.size()) gg->set_default_double_support_ratio_before(atof(arg_strs[i].c_str()));
+          } else if ( arg_strs[i]== "--default-double-support-ratio-after" ) {
+              if (++i < arg_strs.size()) gg->set_default_double_support_ratio_after(atof(arg_strs[i].c_str()));
           } else if ( arg_strs[i]== "--default-orbit-type" ) {
               if (++i < arg_strs.size()) {
                   if (arg_strs[i] == "SHUFFLING") {
@@ -672,8 +675,10 @@ public:
                       std::cerr << "No such default-orbit-type " << arg_strs[i] << std::endl;
                   }
               }
-          } else if ( arg_strs[i]== "--default-double-support-static-ratio" ) {
-              if (++i < arg_strs.size()) gg->set_default_double_support_static_ratio(atof(arg_strs[i].c_str()));
+          } else if ( arg_strs[i]== "--default-double-support-static-ratio-before" ) {
+              if (++i < arg_strs.size()) gg->set_default_double_support_static_ratio_before(atof(arg_strs[i].c_str()));
+          } else if ( arg_strs[i]== "--default-double-support-static-ratio-after" ) {
+              if (++i < arg_strs.size()) gg->set_default_double_support_static_ratio_after(atof(arg_strs[i].c_str()));
           } else if ( arg_strs[i]== "--swing-trajectory-delay-time-offset" ) {
               if (++i < arg_strs.size()) gg->set_swing_trajectory_delay_time_offset(atof(arg_strs[i].c_str()));
           } else if ( arg_strs[i]== "--swing-trajectory-final-distance-weight" ) {

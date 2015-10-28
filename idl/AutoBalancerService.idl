@@ -159,8 +159,16 @@ module OpenHRP
       double default_step_height;
       /// Ratio of double support period. Ratio is included in (0, 1). Double support period time is default_double_support_ratio*default_step_time.
       double default_double_support_ratio;
+      /// Ratio of first double support period. Ratio is included in (0, 1). First double support period time is default_double_support_ratio_before*default_step_time.
+      double default_double_support_ratio_before;
+      /// Ratio of last double support period. Ratio is included in (0, 1). Last double support period time is default_double_support_ratio_after*default_step_time.
+      double default_double_support_ratio_after;
       /// Ratio of double support static period in which reference ZMP does not move. Ratio is included in (0, 1). default_double_support_ratio >= default_double_support_static_ratio..
       double default_double_support_static_ratio;
+      /// Ratio of first double support static period in which reference ZMP does not move. Ratio is included in (0, 1). default_double_support_ratio_before >= default_double_support_static_ratio_before..
+      double default_double_support_static_ratio_before;
+      /// Ratio of last double support static period in which reference ZMP does not move. Ratio is included in (0, 1). default_double_support_ratio_after >= default_double_support_static_ratio_after..
+      double default_double_support_static_ratio_after;
       /// Ratio of double support period before swing. Ratio is included in (0, 1).
       double default_double_support_ratio_swing_before;
       /// Ratio of double support period after swing. Ratio is included in (0, 1).
