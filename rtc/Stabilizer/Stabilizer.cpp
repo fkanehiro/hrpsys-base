@@ -669,8 +669,8 @@ void Stabilizer::getActualParameters ()
     on_ground = calcZMP(act_zmp, ref_zmp(2));
   }
   // for capture point
-  hrp::Vector3 tmp_act_cog = act_cog;
-  act_cp(2) = act_zmp(2);
+  hrp::Vector3 rel_act_cog = m_robot->rootLink()->R.transpose() * (act_cog - m_robot->rootLink()->p);
+  rel_act_cp(2) = (m_robot->rootLink()->R.transpose() * (act_zmp - m_robot->rootLink()->p))(2);
   // set actual contact states
   for (size_t i = 0; i < stikp.size(); i++) {
       std::string limb_name = stikp[i].ee_name;
@@ -703,9 +703,8 @@ void Stabilizer::getActualParameters ()
     }
     // capture point
     for(size_t i = 0; i < 2; i++) {
-      act_cp(i) = tmp_act_cog(i) + act_cogvel(i) / std::sqrt(eefm_gravitational_acceleration / act_cog(2));
+      rel_act_cp(i) = rel_act_cog(i) + act_cogvel(i) / std::sqrt(eefm_gravitational_acceleration / act_cog(2));
     }
-    rel_act_cp = m_robot->rootLink()->R.transpose() * (act_cp - m_robot->rootLink()->p);
     act_cp = act_cog + act_cogvel / std::sqrt(eefm_gravitational_acceleration / act_cog(2));
     // <= Actual foot_origin frame
 
@@ -955,8 +954,8 @@ void Stabilizer::getTargetParameters ()
   }
   ref_cog = m_robot->calcCM();
   // for capture point
-  hrp::Vector3 tmp_ref_cog = ref_cog;
-  ref_cp(2) = ref_zmp(2);
+  hrp::Vector3 rel_ref_cog = m_robot->rootLink()->R.transpose() * (ref_cog - m_robot->rootLink()->p);
+  rel_ref_cp(2) = (m_robot->rootLink()->R.transpose() * (ref_zmp - m_robot->rootLink()->p))(2);
   for (size_t i = 0; i < stikp.size(); i++) {
     hrp::Link* target = m_robot->link(stikp[i].target_name);
     //target_ee_p[i] = target->p + target->R * stikp[i].localCOPPos;
@@ -991,9 +990,8 @@ void Stabilizer::getTargetParameters ()
     target_foot_origin_rot = foot_origin_rot;
     // capture point
     for(size_t i = 0; i < 2; i++) {
-      ref_cp(i) = tmp_ref_cog(i) + ref_cogvel(i) / std::sqrt(eefm_gravitational_acceleration / ref_cog(2));
+      rel_ref_cp(i) = rel_ref_cog(i) + ref_cogvel(i) / std::sqrt(eefm_gravitational_acceleration / ref_cog(2));
     }
-    rel_ref_cp = m_robot->rootLink()->R.transpose() * (ref_cp - m_robot->rootLink()->p);
     ref_cp = ref_cog + ref_cogvel / std::sqrt(eefm_gravitational_acceleration / ref_cog(2));
     // <= Reference foot_origin frame
   } else {
@@ -1095,7 +1093,8 @@ void Stabilizer::calcStateForEmergencySignal()
     }
     if (isContact(contact_states_index_map["rleg"]) && isContact(contact_states_index_map["lleg"])) {
         support_leg = SimpleZMPDistributor::BOTH;
-        width_offset = (leg_pos[contact_states_index_map["lleg"]](1) - leg_pos[contact_states_index_map["rleg"]](1)) / 2.0;
+        width_offset = ( (m_robot->rootLink()->R.transpose() * (leg_pos[contact_states_index_map["lleg"]]- m_robot->rootLink()->p))(1)
+                         - (m_robot->rootLink()->R.transpose() * (leg_pos[contact_states_index_map["rleg"]] - m_robot->rootLink()->p))(1) ) / 2.0;
     } else if (isContact(contact_states_index_map["rleg"])) {
         support_leg = SimpleZMPDistributor::RLEG;
     } else if (isContact(contact_states_index_map["lleg"])) {
