@@ -522,14 +522,17 @@ RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
       m_zmp.data.x = rel_act_zmp(0);
       m_zmp.data.y = rel_act_zmp(1);
       m_zmp.data.z = rel_act_zmp(2);
+      m_zmp.tm = m_qRef.tm;
       m_zmpOut.write();
       m_refCP.data.x = rel_ref_cp(0);
       m_refCP.data.y = rel_ref_cp(1);
       m_refCP.data.z = rel_ref_cp(2);
+      m_refCP.tm = m_qRef.tm;
       m_refCPOut.write();
       m_actCP.data.x = rel_act_cp(0);
       m_actCP.data.y = rel_act_cp(1);
       m_actCP.data.z = rel_act_cp(2);
+      m_actCP.tm = m_qRef.tm;
       m_actCPOut.write();
       m_actContactStates.tm = m_qRef.tm;
       m_actContactStatesOut.write();
@@ -544,12 +547,19 @@ RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
       m_originActZmp.data.x = act_zmp(0); m_originActZmp.data.y = act_zmp(1); m_originActZmp.data.z = act_zmp(2);
       m_originActCog.data.x = act_cog(0); m_originActCog.data.y = act_cog(1); m_originActCog.data.z = act_cog(2);
       m_originActCogVel.data.x = act_cogvel(0); m_originActCogVel.data.y = act_cogvel(1); m_originActCogVel.data.z = act_cogvel(2);
+      m_originRefZmp.tm = m_qRef.tm;
       m_originRefZmpOut.write();
+      m_originRefCog.tm = m_qRef.tm;
       m_originRefCogOut.write();
+      m_originRefCogVel.tm = m_qRef.tm;
       m_originRefCogVelOut.write();
+      m_originNewZmp.tm = m_qRef.tm;
       m_originNewZmpOut.write();
+      m_originActZmp.tm = m_qRef.tm;
       m_originActZmpOut.write();
+      m_originActCog.tm = m_qRef.tm;
       m_originActCogOut.write();
+      m_originActCogVel.tm = m_qRef.tm;
       m_originActCogVelOut.write();
       for (size_t i = 0; i < stikp.size(); i++) {
           for (size_t j = 0; j < 3; j++) {
@@ -559,20 +569,26 @@ RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
               m_allEEComp.data[6*i+j+3] = stikp[i].d_foot_rpy(j);
           }
       }
+      m_allRefWrench.tm = m_qRef.tm;
       m_allRefWrenchOut.write();
+      m_allEEComp.tm = m_qRef.tm;
       m_allEECompOut.write();
       m_actBaseRpy.data.r = act_base_rpy(0);
       m_actBaseRpy.data.p = act_base_rpy(1);
       m_actBaseRpy.data.y = act_base_rpy(2);
+      m_actBaseRpy.tm = m_qRef.tm;
       m_currentBaseRpy.data.r = current_base_rpy(0);
       m_currentBaseRpy.data.p = current_base_rpy(1);
       m_currentBaseRpy.data.y = current_base_rpy(2);
+      m_currentBaseRpy.tm = m_qRef.tm;
       m_currentBasePos.data.x = current_base_pos(0);
       m_currentBasePos.data.y = current_base_pos(1);
       m_currentBasePos.data.z = current_base_pos(2);
+      m_currentBasePos.tm = m_qRef.tm;
       m_actBaseRpyOut.write();
       m_currentBaseRpyOut.write();
       m_currentBasePosOut.write();
+      m_debugData.tm = m_qRef.tm;
       m_debugDataOut.write();
     }
     m_qRefOut.write();
