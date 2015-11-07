@@ -295,6 +295,26 @@ int write_dgain(int id, double gain)
     return FALSE;
 }
 
+int read_torque_pgain(int id, double *gain)
+{
+    return FALSE;
+}
+
+int write_torque_pgain(int id, double gain)
+{
+    return FALSE;
+}
+
+int read_torque_dgain(int id, double *gain)
+{
+    return FALSE;
+}
+
+int write_torque_dgain(int id, double gain)
+{
+    return FALSE;
+}
+
 int read_force_sensor(int id, double *forces)
 {
     for (int i=0; i<6; i++){

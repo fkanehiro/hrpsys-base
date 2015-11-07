@@ -63,6 +63,7 @@ extern "C"{
         JCM_POSITION, 	///< position control
         JCM_TORQUE,	///< torque control
         JCM_VELOCITY,   ///< velocity control
+        JCM_POSITION_TORQUE,  ///< position and torque control
         JCM_NUM 
     } joint_control_mode;
 
@@ -352,6 +353,38 @@ extern "C"{
      * @return		TRUE or E_ID
      */
     int write_dgain(int id, double gain);
+
+    /**
+     * @brief read P gain[Nm/Nm]
+     * @param id	joint id
+     * @param gain	P gain[Nm/Nm]
+     * @return		TRUE or E_ID
+     */
+    int read_torque_pgain(int id, double *gain);
+
+    /**
+     * @brief write P gain[Nm/Nm]
+     * @param id	joint id
+     * @param gain	P gain[Nm/Nm]
+     * @return		TRUE or E_ID
+     */
+    int write_torque_pgain(int id, double gain);
+
+    /**
+     * @brief read D gain[Nm/(Nm/s)]
+     * @param id	joint id
+     * @param gain	D gain[Nm/(Nm/s)]
+     * @return		TRUE or E_ID
+     */
+    int read_torque_dgain(int id, double *gain);
+
+    /**
+     * @brief write D gain[Nm/(Nm/s)]
+     * @param id	joint id
+     * @param gain	D gain[Nm/(Nm/s)]
+     * @return		TRUE or E_ID
+     */
+    int write_torque_dgain(int id, double gain);
 
     /**
      * @brief read actual angular velocity[rad/s]
