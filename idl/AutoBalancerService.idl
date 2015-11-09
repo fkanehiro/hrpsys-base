@@ -244,6 +244,7 @@ module OpenHRP
       double rot_ik_thre;
       /// Flag for fix hand while walking.
       boolean is_hand_fix_mode;
+      sequence<Footstep> end_effector_list;
     };
 
     /**
