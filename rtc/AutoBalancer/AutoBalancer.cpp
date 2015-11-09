@@ -1040,15 +1040,6 @@ void AutoBalancer::stopABCparam()
 
 void AutoBalancer::startWalking ()
 {
-  if ( control_mode != MODE_ABC ) {
-    return_control_mode = control_mode;
-    OpenHRP::AutoBalancerService::StrSequence fix_limbs;
-    fix_limbs.length(2);
-    fix_limbs[0] = "rleg";
-    fix_limbs[1] = "lleg";
-    startABCparam(fix_limbs);
-    waitABCTransition();
-  }
   {
     Guard guard(m_mutex);
     has_ik_failed = false;
@@ -1127,6 +1118,15 @@ void AutoBalancer::waitABCTransition()
 bool AutoBalancer::goPos(const double& x, const double& y, const double& th)
 {
   if ( !gg_is_walking && !is_stop_mode) {
+    if ( control_mode != MODE_ABC ) {
+      return_control_mode = control_mode;
+      OpenHRP::AutoBalancerService::StrSequence fix_limbs;
+      fix_limbs.length(2);
+      fix_limbs[0] = "rleg";
+      fix_limbs[1] = "lleg";
+      startABCparam(fix_limbs);
+      waitABCTransition();
+    }
     gg->set_all_limbs(leg_names);
     coordinates start_ref_coords;
     mid_coords(start_ref_coords, 0.5, ikp["rleg"].target_end_coords, ikp["lleg"].target_end_coords);
@@ -1147,6 +1147,15 @@ bool AutoBalancer::goVelocity(const double& vx, const double& vy, const double& 
   if (gg_is_walking && gg_solved) {
     gg->set_velocity_param(vx, vy, vth);
   } else {
+    if ( control_mode != MODE_ABC ) {
+      return_control_mode = control_mode;
+      OpenHRP::AutoBalancerService::StrSequence fix_limbs;
+      fix_limbs.length(2);
+      fix_limbs[0] = "rleg";
+      fix_limbs[1] = "lleg";
+      startABCparam(fix_limbs);
+      waitABCTransition();
+    }
     coordinates ref_coords;
     mid_coords(ref_coords, 0.5, ikp["rleg"].target_end_coords, ikp["lleg"].target_end_coords);
     gg->initialize_velocity_mode(ref_coords, vx, vy, vth);
@@ -1218,6 +1227,15 @@ bool AutoBalancer::setFootStepsWithParam(const OpenHRP::AutoBalancerService::Foo
                     return false;
                 }
             } else {
+                if ( control_mode != MODE_ABC ) {
+                    return_control_mode = control_mode;
+                    OpenHRP::AutoBalancerService::StrSequence fix_limbs;
+                    fix_limbs.length(2);
+                    fix_limbs[0] = "rleg";
+                    fix_limbs[1] = "lleg";
+                    startABCparam(fix_limbs);
+                    waitABCTransition();
+                }
                 // If walking, snap initial leg to current ABC foot coords.
                 for (size_t i = 0; i < fss[0].fs.length(); i++) {
                     initial_support_steps.push_back(step_node(std::string(fss[0].fs[i].leg), ikp[std::string(fss[0].fs[i].leg)].target_end_coords, 0, 0, 0, 0));
