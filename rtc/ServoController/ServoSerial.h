@@ -1,3 +1,4 @@
+// -*- coding:utf-8-unix; mode: c++; indent-tabs-mode: nil; c-basic-offset: 2; -*-
 #ifndef _SERVO_SERIAL_H_
 #define _SERVO_SERIAL_H_
 

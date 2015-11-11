@@ -1,4 +1,4 @@
-// -*- C++ -*-
+// -*- coding:utf-8-unix; mode: c++; indent-tabs-mode: nil; c-basic-offset: 2; -*-
 /*!
  * @file  TwoDofControllerPDModel.h
  * @brief Feedback and Feedforward Controller which use PDModel as motor model

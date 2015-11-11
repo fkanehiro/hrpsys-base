@@ -1,3 +1,4 @@
+// -*- coding:utf-8-unix; mode: idl; indent-tabs-mode: nil; c-basic-offset: 2; -*-
 #include "ExtendedDataTypes.idl"
 
 module OpenHRP

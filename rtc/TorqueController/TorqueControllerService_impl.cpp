@@ -1,5 +1,5 @@
+// -*- coding:utf-8-unix; mode: c++; indent-tabs-mode: nil; c-basic-offset: 2; -*-
 
-// -*- mode: c++; indent-tabs-mode: t; tab-width: 4; c-basic-offset: 4; -*-
 #include "TorqueControllerService_impl.h"
 #include "TorqueController.h"
 

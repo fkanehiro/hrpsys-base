@@ -1,3 +1,4 @@
+// -*- coding:utf-8-unix; mode: idl; indent-tabs-mode: nil; c-basic-offset: 2; -*-
 #ifndef __EMERGENCYSTOPPER_SERVICE_IDL__
 #define __EMERGENCYSTOPPER_SERVICE_IDL__
 

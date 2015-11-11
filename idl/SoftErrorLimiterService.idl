@@ -1,3 +1,4 @@
+// -*- coding:utf-8-unix; mode: idl; indent-tabs-mode: nil; c-basic-offset: 2; -*-
 /**
  * @file SoftErrorLimiterService.idl
  * @brief Services for the robot hardware interface

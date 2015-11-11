@@ -1,4 +1,4 @@
-// -*- mode: c++; -*-
+// -*- coding:utf-8-unix; mode: c++; indent-tabs-mode: nil; c-basic-offset: 2; -*-
 /*!
  * @file  PDcontroller.h
  * @brief Sample PD component

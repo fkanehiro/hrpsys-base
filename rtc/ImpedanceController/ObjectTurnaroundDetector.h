@@ -1,3 +1,4 @@
+// -*- coding:utf-8-unix; mode: c++; indent-tabs-mode: nil; c-basic-offset: 2; -*-
 #ifndef OBJECTTURNAROUNDDETECTOR_H
 #define OBJECTTURNAROUNDDETECTOR_H
 

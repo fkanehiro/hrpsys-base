@@ -1,4 +1,4 @@
-// -*- C++ -*-
+// -*- coding:utf-8-unix; mode: c++; indent-tabs-mode: nil; c-basic-offset: 2; -*-
 /*!
  * @file  Joystick2Velocity2D.h
  * @brief joystick out to velocity converter

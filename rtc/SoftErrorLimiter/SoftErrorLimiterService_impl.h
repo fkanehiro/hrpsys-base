@@ -1,4 +1,4 @@
-// -*- mode: c++; indent-tabs-mode: t; tab-width: 4; c-basic-offset: 4; -*-
+// -*- coding:utf-8-unix; mode: c++; indent-tabs-mode: nil; c-basic-offset: 2; -*-
 #ifndef __SOFT_ERROR_LIMITER_SERVICE_H__
 #define __SOFT_ERROR_LIMITER_SERVICE_H__
 

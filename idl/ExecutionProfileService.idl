@@ -1,3 +1,4 @@
+// -*- coding:utf-8-unix; mode: idl; indent-tabs-mode: nil; c-basic-offset: 2; -*-
 /**
  * @file ExecutionProfileService.idl
  * @brief Services for the execution profile interface
