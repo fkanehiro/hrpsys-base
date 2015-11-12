@@ -15,6 +15,7 @@
 #include "util/VectorConvert.h"
 #include <math.h>
 
+typedef coil::Guard<coil::Mutex> Guard;
 // Module specification
 // <rtc-template block="module_spec">
 static const char* stabilizer_spec[] =
@@ -417,6 +418,7 @@ RTC::ReturnCode_t Stabilizer::onActivated(RTC::UniqueId ec_id)
 
 RTC::ReturnCode_t Stabilizer::onDeactivated(RTC::UniqueId ec_id)
 {
+  Guard guard(m_mutex);
   std::cerr << "[" << m_profile.instance_name<< "] onDeactivated(" << ec_id << ")" << std::endl;
   if ( (control_mode == MODE_ST || control_mode == MODE_AIR) ) {
     sync_2_idle ();
@@ -470,6 +472,7 @@ RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
       m_ref_wrenchesIn[i]->read();
     }
   }
+  Guard guard(m_mutex);
   for (size_t i = 0; i < m_limbCOPOffsetIn.size(); ++i) {
     if ( m_limbCOPOffsetIn[i]->isNew() ) {
       m_limbCOPOffsetIn[i]->read();
@@ -1531,6 +1534,7 @@ void Stabilizer::getParameter(OpenHRP::StabilizerService::stParam& i_stp)
 
 void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
 {
+  Guard guard(m_mutex);
   std::cerr << "[" << m_profile.instance_name << "] setParameter" << std::endl;
   for (size_t i = 0; i < 2; i++) {
     k_tpcc_p[i] = i_stp.k_tpcc_p[i];

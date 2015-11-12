@@ -249,6 +249,7 @@ class Stabilizer
   // members
   std::vector<hrp::JointPathExPtr> jpe_v;
   hrp::BodyPtr m_robot;
+  coil::Mutex m_mutex;
   unsigned int m_debugLevel;
   hrp::dvector transition_joint_q, qorg, qrefv;
   std::vector<STIKParam> stikp;
