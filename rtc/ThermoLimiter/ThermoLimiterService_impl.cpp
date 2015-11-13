@@ -1,17 +1,28 @@
 // -*- mode: c++; indent-tabs-mode: t; tab-width: 4; c-basic-offset: 4; -*-
 #include <iostream>
-#include "NullService_impl.h"
+#include "ThermoLimiterService_impl.h"
+#include "ThermoLimiter.h"
 
-NullService_impl::NullService_impl()
+ThermoLimiterService_impl::ThermoLimiterService_impl() : m_thermolimiter(NULL)
 {
 }
 
-NullService_impl::~NullService_impl()
+ThermoLimiterService_impl::~ThermoLimiterService_impl()
 {
 }
 
-void NullService_impl::echo(const char *msg)
+CORBA::Boolean ThermoLimiterService_impl::setParameter(const OpenHRP::ThermoLimiterService::tlParam& i_param)
 {
-	std::cout << "NullService: " << msg << std::endl;
-}
+    return m_thermolimiter->setParameter(i_param);
+};
 
+CORBA::Boolean ThermoLimiterService_impl::getParameter(OpenHRP::ThermoLimiterService::tlParam_out i_param)
+{
+    i_param = OpenHRP::ThermoLimiterService::tlParam();
+    return m_thermolimiter->getParameter(i_param);
+};
+
+void ThermoLimiterService_impl::thermolimiter(ThermoLimiter *i_thermolimiter)
+{
+    m_thermolimiter = i_thermolimiter;
+}
