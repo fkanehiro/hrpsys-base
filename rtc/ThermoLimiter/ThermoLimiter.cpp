@@ -16,6 +16,8 @@
 
 #define DQ_MAX 1.0
 
+typedef coil::Guard<coil::Mutex> Guard;
+
 // Module specification
 // <rtc-template block="module_spec">
 static const char* thermolimiter_spec[] =
@@ -41,9 +43,11 @@ ThermoLimiter::ThermoLimiter(RTC::Manager* manager)
     // <rtc-template block="initializer">
     m_tempInIn("tempIn", m_tempIn),
     m_tauMaxOutOut("tauMax", m_tauMaxOut),
+    m_ThermoLimiterServicePort("ThermoLimiterService"),
     m_debugLevel(0)
 {
   init_beep();
+  m_ThermoLimiterService.thermolimiter(this);
 }
 
 ThermoLimiter::~ThermoLimiter()
@@ -68,11 +72,13 @@ RTC::ReturnCode_t ThermoLimiter::onInitialize()
   addOutPort("tauMax", m_tauMaxOutOut);
   
   // Set service provider to Ports
-  
+  m_ThermoLimiterServicePort.registerProvider("service0", "ThermoLimiterService", m_ThermoLimiterService);
+
   // Set service consumers to Ports
   
   // Set CORBA Service Ports
-  
+  addPort(m_ThermoLimiterServicePort);
+
   // </rtc-template>
 
   RTC::Properties& prop = getProperties();
@@ -225,6 +231,7 @@ RTC::ReturnCode_t ThermoLimiter::onExecute(RTC::UniqueId ec_id)
     m_tempInIn.read();
   }
 
+  Guard guard(m_mutex);
   if (isDebug()) {
     std::cerr << "temperature: ";
     for (int i = 0; i < m_tempIn.data.length(); i++) {
@@ -320,7 +327,9 @@ void ThermoLimiter::calcMaxTorqueFromTemperature(hrp::dvector &tauMax)
 
       // determine tauMax
       if (squareTauMax[i] < 0) {
-        std::cerr << "[WARN] tauMax ** 2 = " << squareTauMax[i] << " < 0 in Joint " << i << std::endl;
+          if (isDebug()) {
+              std::cerr << "[WARN] tauMax ** 2 = " << squareTauMax[i] << " < 0 in Joint " << i << std::endl;
+          }
         tauMax[i] = m_robot->joint(i)->climit * m_robot->joint(i)->gearRatio * m_robot->joint(i)->torqueConst; // default tauMax from model file
       } else {
         tauMax[i] = std::sqrt(squareTauMax[i]); // tauMax is absolute value
@@ -372,6 +381,24 @@ void ThermoLimiter::callBeep(double ratio, double alarmRatio)
 bool ThermoLimiter::isDebug(int cycle)
 {
   return ((m_debugLevel==1 && m_loop%cycle==0) || m_debugLevel > 1);
+}
+
+bool ThermoLimiter::setParameter(const OpenHRP::ThermoLimiterService::tlParam& i_tlp)
+{
+  Guard guard(m_mutex);
+  std::cerr << "[" << m_profile.instance_name << "] setThermoLimiterParam" << std::endl;
+  m_debug_print_freq = i_tlp.debug_print_freq;
+  m_alarmRatio = i_tlp.alarmRatio;
+  std::cerr << "[" << m_profile.instance_name << "] m_debug_print_freq = " << m_debug_print_freq << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "] m_alarmRatio = " << m_alarmRatio << std::endl;
+  return true;
+}
+
+bool ThermoLimiter::getParameter(OpenHRP::ThermoLimiterService::tlParam& i_tlp)
+{
+  i_tlp.debug_print_freq = m_debug_print_freq;
+  i_tlp.alarmRatio = m_alarmRatio;
+  return true;
 }
 
 extern "C"
