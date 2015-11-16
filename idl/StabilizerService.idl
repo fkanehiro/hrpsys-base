@@ -2,6 +2,8 @@
  * @file StabilizerService.idl
  * @brief Services for the stabilizer interface
  */
+#include "AutoBalancerService.idl"
+
 module OpenHRP
 {
   interface StabilizerService
@@ -168,6 +170,7 @@ module OpenHRP
       sequence< sequence<double, 3> > foot_origin_offset;
       /// Emergency signal checking mode
       EmergencyCheckMode emergency_check_mode;
+      sequence<AutoBalancerService::Footstep> end_effector_list;
     };
 
     /**
