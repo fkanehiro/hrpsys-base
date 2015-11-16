@@ -126,6 +126,11 @@ void RobotHardwareService_impl::setServoGainPercentage(const char *jname, double
     m_robot->setServoGainPercentage(jname, percentage);
 }
 
+void RobotHardwareService_impl::setServoTorqueGainPercentage(const char *jname, double percentage)
+{
+    m_robot->setServoTorqueGainPercentage(jname, percentage);
+}
+
 void RobotHardwareService_impl::setServoErrorLimit(const char *jname, double limit)
 {
     m_robot->setServoErrorLimit(jname, limit);
