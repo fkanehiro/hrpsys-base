@@ -1659,10 +1659,14 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
   cop_check_margin = i_stp.cop_check_margin;
   cp_check_margin = i_stp.cp_check_margin;
   contact_decision_threshold = i_stp.contact_decision_threshold;
-  for (size_t i = 0; i < i_stp.end_effector_list.length(); i++) {
-      std::vector<STIKParam>::iterator it = std::find_if(stikp.begin(), stikp.end(), (&boost::lambda::_1->* &std::vector<STIKParam>::value_type::ee_name == std::string(i_stp.end_effector_list[i].leg)));
-      memcpy(it->localp.data(), i_stp.end_effector_list[i].pos, sizeof(double)*3);
-      it->localR = (Eigen::Quaternion<double>(i_stp.end_effector_list[i].rot[0], i_stp.end_effector_list[i].rot[1], i_stp.end_effector_list[i].rot[2], i_stp.end_effector_list[i].rot[3])).normalized().toRotationMatrix();
+  if (control_mode == MODE_IDLE) {
+      for (size_t i = 0; i < i_stp.end_effector_list.length(); i++) {
+          std::vector<STIKParam>::iterator it = std::find_if(stikp.begin(), stikp.end(), (&boost::lambda::_1->* &std::vector<STIKParam>::value_type::ee_name == std::string(i_stp.end_effector_list[i].leg)));
+          memcpy(it->localp.data(), i_stp.end_effector_list[i].pos, sizeof(double)*3);
+          it->localR = (Eigen::Quaternion<double>(i_stp.end_effector_list[i].rot[0], i_stp.end_effector_list[i].rot[1], i_stp.end_effector_list[i].rot[2], i_stp.end_effector_list[i].rot[3])).normalized().toRotationMatrix();
+      }
+  } else {
+      std::cerr << "[" << m_profile.instance_name << "] cannot change end-effectors except during MODE_IDLE" << std::endl;
   }
   for (std::vector<STIKParam>::const_iterator it = stikp.begin(); it != stikp.end(); it++) {
       std::cerr << "[" << m_profile.instance_name << "] End Effector [" << it->ee_name << "]" << std::endl;

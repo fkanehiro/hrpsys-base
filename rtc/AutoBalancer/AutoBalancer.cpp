@@ -1504,10 +1504,14 @@ bool AutoBalancer::setAutoBalancerParam(const OpenHRP::AutoBalancerService::Auto
   } else {
       std::cerr << "[" << m_profile.instance_name << "]   is_hand_fix_mode cannot be set in (gg_is_walking = true). Current is_hand_fix_mode is " << (is_hand_fix_mode?"true":"false") << std::endl;
   }
-  for (size_t i = 0; i < i_param.end_effector_list.length(); i++) {
-      std::map<std::string, ABCIKparam>::iterator it = ikp.find(std::string(i_param.end_effector_list[i].leg));
-      memcpy(it->second.localPos.data(), i_param.end_effector_list[i].pos, sizeof(double)*3);
-      it->second.localR = (Eigen::Quaternion<double>(i_param.end_effector_list[i].rot[0], i_param.end_effector_list[i].rot[1], i_param.end_effector_list[i].rot[2], i_param.end_effector_list[i].rot[3])).normalized().toRotationMatrix();
+  if (control_mode == MODE_IDLE) {
+      for (size_t i = 0; i < i_param.end_effector_list.length(); i++) {
+          std::map<std::string, ABCIKparam>::iterator it = ikp.find(std::string(i_param.end_effector_list[i].leg));
+          memcpy(it->second.localPos.data(), i_param.end_effector_list[i].pos, sizeof(double)*3);
+          it->second.localR = (Eigen::Quaternion<double>(i_param.end_effector_list[i].rot[0], i_param.end_effector_list[i].rot[1], i_param.end_effector_list[i].rot[2], i_param.end_effector_list[i].rot[3])).normalized().toRotationMatrix();
+      }
+  } else {
+      std::cerr << "[" << m_profile.instance_name << "] cannot change end-effectors except during MODE_IDLE" << std::endl;
   }
   for (std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++) {
       std::cerr << "[" << m_profile.instance_name << "] End Effector [" << it->first << "]" << std::endl;
