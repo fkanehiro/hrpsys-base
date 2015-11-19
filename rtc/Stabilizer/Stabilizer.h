@@ -160,6 +160,7 @@ class Stabilizer
   RTC::TimedDoubleSeq m_COPInfo;
   RTC::TimedLong m_emergencySignal;
   RTC::TimedDoubleSeq m_qRefSeq;
+  RTC::TimedBoolean m_walkingStates;
   // for debug ouput
   RTC::TimedPoint3D m_originRefZmp, m_originRefCog, m_originRefCogVel, m_originNewZmp;
   RTC::TimedPoint3D m_originActZmp, m_originActCog, m_originActCogVel;
@@ -182,6 +183,7 @@ class Stabilizer
   RTC::InPort<RTC::TimedDoubleSeq> m_controlSwingSupportTimeIn;
   std::vector<RTC::InPort<RTC::TimedPoint3D> *> m_limbCOPOffsetIn;
   RTC::InPort<RTC::TimedDoubleSeq> m_qRefSeqIn;
+  RTC::InPort<RTC::TimedBoolean> m_walkingStatesIn;
 
   std::vector<RTC::TimedDoubleSeq> m_wrenches;
   std::vector<RTC::InPort<RTC::TimedDoubleSeq> *> m_wrenchesIn;
@@ -258,6 +260,7 @@ class Stabilizer
   double dt;
   int transition_count, loop;
   bool is_legged_robot, on_ground, is_emergency, is_seq_interpolating, reset_emergency_flag, eefm_use_force_difference_control, initial_cp_too_large_error;
+  bool is_walking, is_estop_while_walking;
   hrp::Vector3 current_root_p, target_root_p;
   hrp::Matrix33 current_root_R, target_root_R, prev_act_foot_origin_rot, prev_ref_foot_origin_rot, target_foot_origin_rot;
   std::vector <hrp::Vector3> target_ee_p, target_ee_diff_p, target_ee_diff_r, prev_target_ee_diff_r;
