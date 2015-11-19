@@ -60,6 +60,7 @@ AutoBalancer::AutoBalancer(RTC::Manager* manager)
       m_controlSwingSupportTimeOut("controlSwingSupportTime", m_controlSwingSupportTime),
       m_cogOut("cogOut", m_cog),
       m_AutoBalancerServicePort("AutoBalancerService"),
+      m_walkingStatesOut("walkingStates", m_walkingStates),
       // </rtc-template>
       move_base_gain(0.8),
       m_robot(hrp::BodyPtr()),
@@ -99,6 +100,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     addOutPort("contactStates", m_contactStatesOut);
     addOutPort("controlSwingSupportTime", m_controlSwingSupportTimeOut);
     addOutPort("cogOut", m_cogOut);
+    addOutPort("walkingStates", m_walkingStatesOut);
   
     // Set service provider to Ports
     m_AutoBalancerServicePort.registerProvider("service0", "AutoBalancerService", m_service0);
@@ -249,6 +251,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
       gg->set_default_zmp_offsets(default_zmp_offsets);
     }
     gg_is_walking = gg_solved = false;
+    m_walkingStates.data = false;
     fix_leg_coords = coordinates();
 
     // load virtual force sensors
@@ -546,6 +549,9 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
     m_contactStatesOut.write();
     m_controlSwingSupportTime.tm = m_qRef.tm;
     m_controlSwingSupportTimeOut.write();
+    m_walkingStates.data = gg_is_walking;
+    m_walkingStates.tm = m_qRef.tm;
+    m_walkingStatesOut.write();
 
     for (unsigned int i=0; i<m_ref_forceOut.size(); i++){
         m_force[i].tm = m_qRef.tm;

@@ -374,6 +374,7 @@ class HrpsysConfigurator:
             connectPorts(self.abc.port("controlSwingSupportTime"), self.st.port("controlSwingSupportTime"))
             connectPorts(self.rh.port("q"), self.st.port("qCurrent"))
             connectPorts(self.seq.port("qRef"), self.st.port("qRefSeq"))
+            connectPorts(self.abc.port("walkingStates"), self.st.port("walkingStates"))
             if self.es:
                 connectPorts(self.st.port("emergencySignal"), self.es.port("emergencySignal"))
             connectPorts(self.st.port("emergencySignal"), self.abc.port("emergencySignal"))

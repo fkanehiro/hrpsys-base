@@ -52,6 +52,7 @@ Stabilizer::Stabilizer(RTC::Manager* manager)
     m_contactStatesIn("contactStates", m_contactStates),
     m_controlSwingSupportTimeIn("controlSwingSupportTime", m_controlSwingSupportTime),
     m_qRefSeqIn("qRefSeq", m_qRefSeq),
+    m_walkingStatesIn("walkingStates", m_walkingStates),
     m_qRefOut("q", m_qRef),
     m_tauOut("tau", m_tau),
     m_zmpOut("zmp", m_zmp),
@@ -109,6 +110,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   addInPort("contactStates", m_contactStatesIn);
   addInPort("controlSwingSupportTime", m_controlSwingSupportTimeIn);
   addInPort("qRefSeq", m_qRefSeqIn);
+  addInPort("walkingStates", m_walkingStatesIn);
 
   // Set OutPort buffer
   addOutPort("q", m_qRefOut);
@@ -486,6 +488,9 @@ RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
     is_seq_interpolating = true;
   } else {
     is_seq_interpolating = false;
+  }
+  if (m_walkingStatesIn.isNew()){
+    m_walkingStatesIn.read();
   }
 
   if (is_legged_robot) {
