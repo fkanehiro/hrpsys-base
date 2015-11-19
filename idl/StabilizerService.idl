@@ -171,6 +171,8 @@ module OpenHRP
       /// Emergency signal checking mode
       EmergencyCheckMode emergency_check_mode;
       sequence<AutoBalancerService::Footstep> end_effector_list;
+      /// whether an emergency stop is used while walking
+      boolean is_estop_while_walking;
     };
 
     /**

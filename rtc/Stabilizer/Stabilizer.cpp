@@ -314,6 +314,8 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   contact_decision_threshold = 50; // [N]
   eefm_use_force_difference_control = true;
   initial_cp_too_large_error = true;
+  is_walking = false;
+  is_estop_while_walking = false;
 
   // parameters for RUNST
   double ke = 0, tc = 0;
@@ -491,6 +493,7 @@ RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
   }
   if (m_walkingStatesIn.isNew()){
     m_walkingStatesIn.read();
+    is_walking = m_walkingStates.data;
   }
 
   if (is_legged_robot) {
@@ -1125,7 +1128,7 @@ void Stabilizer::calcStateForEmergencySignal()
     } else if (isContact(contact_states_index_map["lleg"])) {
         support_leg = SimpleZMPDistributor::LLEG;
     }
-    is_cp_outside = !szd->is_cp_inside_foot(act_cp - ref_cp, support_leg, cp_check_margin, width_offset);
+    if (!is_walking || is_estop_while_walking) is_cp_outside = !szd->is_cp_inside_foot(act_cp - ref_cp, support_leg, cp_check_margin, width_offset);
     if (is_cp_outside) {
       if (initial_cp_too_large_error || loop % static_cast <int>(0.2/dt) == 0 ) { // once per 0.2[s]
           std::cerr << "[" << m_profile.instance_name << "] CP too large error " << "[" << act_cp(0) - ref_cp(0) << "," << act_cp(1) - ref_cp(1)  << "] [m]" << std::endl;
@@ -1527,6 +1530,7 @@ void Stabilizer::getParameter(OpenHRP::StabilizerService::stParam& i_stp)
   i_stp.cop_check_margin = cop_check_margin;
   i_stp.cp_check_margin = cp_check_margin;
   i_stp.contact_decision_threshold = contact_decision_threshold;
+  i_stp.is_estop_while_walking = is_estop_while_walking;
   switch(control_mode) {
   case MODE_IDLE: i_stp.controller_mode = OpenHRP::StabilizerService::MODE_IDLE; break;
   case MODE_AIR: i_stp.controller_mode = OpenHRP::StabilizerService::MODE_AIR; break;
@@ -1664,6 +1668,7 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
   cop_check_margin = i_stp.cop_check_margin;
   cp_check_margin = i_stp.cp_check_margin;
   contact_decision_threshold = i_stp.contact_decision_threshold;
+  is_estop_while_walking = i_stp.is_estop_while_walking;
   if (control_mode == MODE_IDLE) {
       for (size_t i = 0; i < i_stp.end_effector_list.length(); i++) {
           std::vector<STIKParam>::iterator it = std::find_if(stikp.begin(), stikp.end(), (&boost::lambda::_1->* &std::vector<STIKParam>::value_type::ee_name == std::string(i_stp.end_effector_list[i].leg)));
