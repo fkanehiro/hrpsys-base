@@ -14,7 +14,9 @@
 #include "Stabilizer.h"
 #include "util/VectorConvert.h"
 #include <math.h>
+#include <boost/lambda/lambda.hpp>
 
+typedef coil::Guard<coil::Mutex> Guard;
 // Module specification
 // <rtc-template block="module_spec">
 static const char* stabilizer_spec[] =
@@ -417,6 +419,7 @@ RTC::ReturnCode_t Stabilizer::onActivated(RTC::UniqueId ec_id)
 
 RTC::ReturnCode_t Stabilizer::onDeactivated(RTC::UniqueId ec_id)
 {
+  Guard guard(m_mutex);
   std::cerr << "[" << m_profile.instance_name<< "] onDeactivated(" << ec_id << ")" << std::endl;
   if ( (control_mode == MODE_ST || control_mode == MODE_AIR) ) {
     sync_2_idle ();
@@ -470,6 +473,7 @@ RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
       m_ref_wrenchesIn[i]->read();
     }
   }
+  Guard guard(m_mutex);
   for (size_t i = 0; i < m_limbCOPOffsetIn.size(); ++i) {
     if ( m_limbCOPOffsetIn[i]->isNew() ) {
       m_limbCOPOffsetIn[i]->read();
@@ -1527,10 +1531,28 @@ void Stabilizer::getParameter(OpenHRP::StabilizerService::stParam& i_stp)
   default: break;
   }
   i_stp.emergency_check_mode = emergency_check_mode;
+  i_stp.end_effector_list.length(stikp.size());
+  for (size_t i = 0; i < stikp.size(); i++) {
+      const rats::coordinates cur_ee = rats::coordinates(stikp.at(i).localp, stikp.at(i).localR);
+      OpenHRP::AutoBalancerService::Footstep ret_ee;
+      // position
+      memcpy(ret_ee.pos, cur_ee.pos.data(), sizeof(double)*3);
+      // rotation
+      Eigen::Quaternion<double> qt(cur_ee.rot);
+      ret_ee.rot[0] = qt.w();
+      ret_ee.rot[1] = qt.x();
+      ret_ee.rot[2] = qt.y();
+      ret_ee.rot[3] = qt.z();
+      // name
+      ret_ee.leg = stikp.at(i).ee_name.c_str();
+      // set
+      i_stp.end_effector_list[i] = ret_ee;
+  }
 };
 
 void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
 {
+  Guard guard(m_mutex);
   std::cerr << "[" << m_profile.instance_name << "] setParameter" << std::endl;
   for (size_t i = 0; i < 2; i++) {
     k_tpcc_p[i] = i_stp.k_tpcc_p[i];
@@ -1637,6 +1659,20 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
   cop_check_margin = i_stp.cop_check_margin;
   cp_check_margin = i_stp.cp_check_margin;
   contact_decision_threshold = i_stp.contact_decision_threshold;
+  if (control_mode == MODE_IDLE) {
+      for (size_t i = 0; i < i_stp.end_effector_list.length(); i++) {
+          std::vector<STIKParam>::iterator it = std::find_if(stikp.begin(), stikp.end(), (&boost::lambda::_1->* &std::vector<STIKParam>::value_type::ee_name == std::string(i_stp.end_effector_list[i].leg)));
+          memcpy(it->localp.data(), i_stp.end_effector_list[i].pos, sizeof(double)*3);
+          it->localR = (Eigen::Quaternion<double>(i_stp.end_effector_list[i].rot[0], i_stp.end_effector_list[i].rot[1], i_stp.end_effector_list[i].rot[2], i_stp.end_effector_list[i].rot[3])).normalized().toRotationMatrix();
+      }
+  } else {
+      std::cerr << "[" << m_profile.instance_name << "] cannot change end-effectors except during MODE_IDLE" << std::endl;
+  }
+  for (std::vector<STIKParam>::const_iterator it = stikp.begin(); it != stikp.end(); it++) {
+      std::cerr << "[" << m_profile.instance_name << "] End Effector [" << it->ee_name << "]" << std::endl;
+      std::cerr << "[" << m_profile.instance_name << "]   localpos = " << it->localp.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[m]" << std::endl;
+      std::cerr << "[" << m_profile.instance_name << "]   localR = " << it->localR.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", "\n", "    [", "]")) << std::endl;
+  }
   if (i_stp.foot_origin_offset.length () != 2) {
       std::cerr << "[" << m_profile.instance_name << "]   foot_origin_offset cannot be set. Length " << i_stp.foot_origin_offset.length() << " != " << 2 << std::endl;
   } else if (control_mode != MODE_IDLE) {
