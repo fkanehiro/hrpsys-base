@@ -171,13 +171,23 @@ RTC::ReturnCode_t EmergencyStopper::onInitialize()
     default_retrieve_time = 1;
     //default_retrieve_time = 1.0/m_dt;
     m_stop_posture = new double[m_robot->numJoints()];
+    m_stop_wrenches = new double[nforce*6];
+    m_tmp_wrenches = new double[nforce*6];
     m_interpolator = new interpolator(m_robot->numJoints(), recover_time_dt);
     m_interpolator->setName(std::string(m_profile.instance_name)+" interpolator");
+    m_wrenches_interpolator = new interpolator(nforce*6, recover_time_dt);
+    m_wrenches_interpolator->setName(std::string(m_profile.instance_name)+" interpolator wrenches");
 
     m_q.data.length(m_robot->numJoints());
     for(int i=0; i<m_robot->numJoints(); i++){
         m_q.data[i] = 0;
         m_stop_posture[i] = 0;
+    }
+    for(int i=0; i<nforce; i++){
+        for(int j=0; j<6; j++){
+            m_wrenches[i].data[j] = 0;
+            m_stop_wrenches[i*6+j] = 0;
+        }
     }
 
     m_servoState.data.length(m_robot->numJoints());
@@ -202,7 +212,10 @@ RTC::ReturnCode_t EmergencyStopper::onInitialize()
 RTC::ReturnCode_t EmergencyStopper::onFinalize()
 {
     delete m_interpolator;
+    delete m_wrenches_interpolator;
     delete m_stop_posture;
+    delete m_stop_wrenches;
+    delete m_tmp_wrenches;
     return RTC::RTC_OK;
 }
 
@@ -255,7 +268,9 @@ RTC::ReturnCode_t EmergencyStopper::onExecute(RTC::UniqueId ec_id)
         }
     }
 
+    // read data
     if (m_qRefIn.isNew()) {
+        // joint angle
         m_qRefIn.read();
         assert(m_qRef.data.length() == numJoints);
         std::vector<double> current_posture;
@@ -275,13 +290,41 @@ RTC::ReturnCode_t EmergencyStopper::onExecute(RTC::UniqueId ec_id)
                 }
             }
         }
+        // wrench
+        for ( size_t i = 0; i < m_wrenchesIn.size(); i++ ) {
+            if ( m_wrenchesIn[i]->isNew() ) {
+                m_wrenchesIn[i]->read();
+            }
+        }
+        std::vector<double> current_wrench;
+        for ( int i= 0; i < m_wrenchesRef.size(); i++ ) {
+            for (int j = 0; j < 6; j++ ) {
+                current_wrench.push_back(m_wrenchesRef[i].data[j]);
+            }
+        }
+        m_input_wrenches_queue.push(current_wrench);
+        while (m_input_wrenches_queue.size() > default_retrieve_time) {
+            m_input_wrenches_queue.pop();
+        }
+        if (!is_stop_mode) {
+            for ( int i= 0; i < m_wrenchesRef.size(); i++ ) {
+                for (int j = 0; j < 6; j++ ) {
+                    if (recover_time > 0) {
+                        m_stop_wrenches[i*6+j] = m_wrenches[i].data[j];
+                    } else {
+                        m_stop_wrenches[i*6+j] = m_input_wrenches_queue.front()[i*6+j];
+                    }
+                }
+            }
+        }
     }
 
     if (m_emergencySignalIn.isNew()){
         m_emergencySignalIn.read();
         if ( m_emergencySignal.data == 0 ) {
-          std::cerr << "[" << m_profile.instance_name << "] emergencySignal is reset!" << std::endl;
-          is_stop_mode = false;
+            Guard guard(m_mutex);
+            std::cerr << "[" << m_profile.instance_name << "] emergencySignal is reset!" << std::endl;
+            is_stop_mode = false;
         } else if (!is_stop_mode) {
             Guard guard(m_mutex);
             std::cerr << "[" << m_profile.instance_name << "] emergencySignal is set!" << std::endl;
@@ -292,6 +335,8 @@ RTC::ReturnCode_t EmergencyStopper::onExecute(RTC::UniqueId ec_id)
         retrieve_time = default_retrieve_time;
         // Reflect current output joint angles to interpolator state
         m_interpolator->set(m_q.data.get_buffer());
+        get_wrenches_array_from_data(m_wrenches, m_tmp_wrenches);
+        m_wrenches_interpolator->set(m_tmp_wrenches);
     }
 
     if (DEBUGP) {
@@ -307,9 +352,18 @@ RTC::ReturnCode_t EmergencyStopper::onExecute(RTC::UniqueId ec_id)
             recover_time = recover_time - recover_time_dt;
             m_interpolator->setGoal(m_qRef.data.get_buffer(), recover_time);
             m_interpolator->get(m_q.data.get_buffer());
+            get_wrenches_array_from_data(m_wrenchesRef, m_tmp_wrenches);
+            m_wrenches_interpolator->setGoal(m_tmp_wrenches, recover_time);
+            m_wrenches_interpolator->get(m_tmp_wrenches);
+            set_wrenches_data_from_array(m_wrenches, m_tmp_wrenches);
         } else {
             for ( int i = 0; i < m_q.data.length(); i++ ) {
                 m_q.data[i] = m_qRef.data[i];
+            }
+            for ( int i = 0; i < m_wrenches.size(); i++ ) {
+                for ( int j = 0; j < 6; j++ ) {
+                    m_wrenches[i].data[j] = m_wrenchesRef[i].data[j];
+                }
             }
         }
     } else { // stop mode
@@ -318,20 +372,37 @@ RTC::ReturnCode_t EmergencyStopper::onExecute(RTC::UniqueId ec_id)
             retrieve_time = retrieve_time - recover_time_dt;
             m_interpolator->setGoal(m_stop_posture, retrieve_time);
             m_interpolator->get(m_q.data.get_buffer());
+            m_wrenches_interpolator->setGoal(m_stop_wrenches, retrieve_time);
+            m_wrenches_interpolator->get(m_tmp_wrenches);
+            set_wrenches_data_from_array(m_wrenches, m_tmp_wrenches);
         } else {
             // Do nothing
         }
     }
 
+    // write data
     if (DEBUGP) {
         std::cerr << "q: ";
         for (int i = 0; i < numJoints; i++) {
             std::cerr << " " << m_q.data[i] ;
         }
         std::cerr << std::endl;
+        std::cerr << "wrenches: ";
+        for (int i = 0; i < m_wrenches.size(); i++) {
+            for (int j = 0; j < 6; j++ ) {
+                std::cerr << " " << m_wrenches[i].data[j];
+            }
+        }
+        std::cerr << std::endl;
     }
     m_q.tm = m_qRef.tm;
     m_qOut.write();
+    for (size_t i = 0; i < m_wrenches.size(); i++) {
+      m_wrenches[i].tm = m_qRef.tm;
+    }
+    for (size_t i = 0; i < m_wrenchesOut.size(); i++) {
+      m_wrenchesOut[i]->write();
+    }
 
     m_emergencyMode.data = is_stop_mode;
     m_emergencyMode.tm = m_qRef.tm;

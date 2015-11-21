@@ -153,6 +153,22 @@ protected:
     // </rtc-template>
 
 private:
+    void get_wrenches_array_from_data(const std::vector<TimedDoubleSeq> &wrenches_data, double *wrenches_array) {
+        for ( int i= 0; i < wrenches_data.size(); i++ ) {
+            for (int j = 0; j < 6; j++ ) {
+                wrenches_array[i*6+j] = wrenches_data[i].data[j];
+            }
+        }
+    }
+
+    void set_wrenches_data_from_array(std::vector<TimedDoubleSeq> &wrenches_data, const double *wrenches_array) {
+        for ( int i= 0; i < wrenches_data.size(); i++ ) {
+            for (int j = 0; j < 6; j++ ) {
+                wrenches_data[i].data[j] = wrenches_array[i*6+j];
+            }
+        }
+    }
+
     hrp::BodyPtr m_robot;
     double m_dt;
     unsigned int m_debugLevel;
@@ -163,8 +179,12 @@ private:
     double recover_time_dt;
     int default_recover_time, default_retrieve_time;
     double *m_stop_posture;
+    double *m_stop_wrenches;
+    double *m_tmp_wrenches;
     interpolator* m_interpolator;
+    interpolator* m_wrenches_interpolator;
     std::queue<std::vector<double> > m_input_posture_queue;
+    std::queue<std::vector<double> > m_input_wrenches_queue;
     int emergency_stopper_beep_count, emergency_stopper_beep_freq;
     coil::Mutex m_mutex;
 };
