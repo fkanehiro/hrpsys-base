@@ -481,6 +481,10 @@ class HrpsysConfigurator:
         if self.el:
             connectPorts(self.rh.port("q"), self.el.port("qCurrent"))
 
+        # connection for co
+        if self.es:
+            connectPorts(self.rh.port("servoState"), self.es.port("servoStateIn"))
+
     def activateComps(self):
         '''!@brief
         Activate components(plugins)
