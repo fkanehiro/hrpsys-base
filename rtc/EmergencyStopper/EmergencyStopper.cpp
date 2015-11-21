@@ -109,12 +109,59 @@ RTC::ReturnCode_t EmergencyStopper::onInitialize()
     }
     nameServer = nameServer.substr(0, comPos);
     RTC::CorbaNaming naming(rtcManager.getORB(), nameServer.c_str());
-    if (!loadBodyFromModelLoader(m_robot, prop["model"].c_str(),
-                                 CosNaming::NamingContext::_duplicate(naming.getRootContext())
-                                 )){
-        std::cerr << "[" << m_profile.instance_name << "] failed to load model[" << prop["model"] << "]" << std::endl;
+    OpenHRP::BodyInfo_var binfo;
+    binfo = hrp::loadBodyInfo(prop["model"].c_str(),
+                              CosNaming::NamingContext::_duplicate(naming.getRootContext()));
+    if (CORBA::is_nil(binfo)) {
+        std::cerr << "failed to load model[" << prop["model"] << "]"
+                  << std::endl;
+        return RTC::RTC_ERROR;
+    }
+    if (!loadBodyFromBodyInfo(m_robot, binfo)) {
+        std::cerr << "failed to load model[" << prop["model"] << "] in "
+                  << m_profile.instance_name << std::endl;
+        return RTC::RTC_ERROR;
     }
 
+    // Setting for wrench data ports (real + virtual)
+    OpenHRP::LinkInfoSequence_var lis = binfo->links();
+    std::vector<std::string> fsensor_names;
+    //   find names for real force sensors
+    for ( int k = 0; k < lis->length(); k++ ) {
+        OpenHRP::SensorInfoSequence& sensors = lis[k].sensors;
+        for ( int l = 0; l < sensors.length(); l++ ) {
+            if ( std::string(sensors[l].type) == "Force" ) {
+                fsensor_names.push_back(std::string(sensors[l].name));
+            }
+        }
+    }
+    int npforce = fsensor_names.size();
+    //   find names for virtual force sensors
+    coil::vstring virtual_force_sensor = coil::split(prop["virtual_force_sensor"], ",");
+    int nvforce = virtual_force_sensor.size()/10;
+    for (unsigned int i=0; i<nvforce; i++){
+        fsensor_names.push_back(virtual_force_sensor[i*10+0]);
+    }
+    //   add ports for all force sensors
+    int nforce  = npforce + nvforce;
+    m_wrenchesRef.resize(nforce);
+    m_wrenches.resize(nforce);
+    m_wrenchesIn.resize(nforce);
+    m_wrenchesOut.resize(nforce);
+    for (unsigned int i=0; i<nforce; i++){
+        m_wrenchesIn[i] = new InPort<TimedDoubleSeq>(std::string(fsensor_names[i]+"In").c_str(), m_wrenchesRef[i]);
+        m_wrenchesOut[i] = new OutPort<TimedDoubleSeq>(std::string(fsensor_names[i]+"Out").c_str(), m_wrenches[i]);
+        m_wrenchesRef[i].data.length(6);
+        m_wrenchesRef[i].data[0] = m_wrenchesRef[i].data[1] = m_wrenchesRef[i].data[2] = 0.0;
+        m_wrenchesRef[i].data[3] = m_wrenchesRef[i].data[4] = m_wrenchesRef[i].data[5] = 0.0;
+        m_wrenches[i].data.length(6);
+        m_wrenches[i].data[0] = m_wrenches[i].data[1] = m_wrenches[i].data[2] = 0.0;
+        m_wrenches[i].data[3] = m_wrenches[i].data[4] = m_wrenches[i].data[5] = 0.0;
+        registerInPort(std::string(fsensor_names[i]+"In").c_str(), *m_wrenchesIn[i]);
+        registerOutPort(std::string(fsensor_names[i]+"Out").c_str(), *m_wrenchesOut[i]);
+    }
+
+    // initialize member variables
     is_stop_mode = prev_is_stop_mode = false;
     is_initialized = false;
 
