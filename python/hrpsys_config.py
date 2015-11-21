@@ -279,20 +279,20 @@ class HrpsysConfigurator:
             print(self.configurator_name + "\033[31m connectComps : hrpsys requries rh, seq, sh and fk, please check rtcd.conf or rtcd arguments\033[0m")
             return
         # connection for reference joint angles
-        tmp_contollers = self.getJointAngleControllerList()
-        if len(tmp_contollers) > 0:
-            connectPorts(self.sh.port("qOut"), tmp_contollers[0].port("qRef"))
-            for i in range(len(tmp_contollers) - 1):
-                connectPorts(tmp_contollers[i].port("q"),
-                             tmp_contollers[i + 1].port("qRef"))
+        tmp_controllers = self.getJointAngleControllerList()
+        if len(tmp_controllers) > 0:
+            connectPorts(self.sh.port("qOut"), tmp_controllers[0].port("qRef"))
+            for i in range(len(tmp_controllers) - 1):
+                connectPorts(tmp_controllers[i].port("q"),
+                             tmp_controllers[i + 1].port("qRef"))
             if self.simulation_mode:
                 if self.pdc:
-                    connectPorts(tmp_contollers[-1].port("q"), self.pdc.port("angleRef"))
+                    connectPorts(tmp_controllers[-1].port("q"), self.pdc.port("angleRef"))
                 else:
-                    connectPorts(tmp_contollers[-1].port("q"), self.hgc.port("qIn"))
+                    connectPorts(tmp_controllers[-1].port("q"), self.hgc.port("qIn"))
                     connectPorts(self.hgc.port("qOut"), self.rh.port("qRef"))
             else:
-                connectPorts(tmp_contollers[-1].port("q"), self.rh.port("qRef"))
+                connectPorts(tmp_controllers[-1].port("q"), self.rh.port("qRef"))
         else:
             if self.simulation_mode:
                 if self.pdc:
