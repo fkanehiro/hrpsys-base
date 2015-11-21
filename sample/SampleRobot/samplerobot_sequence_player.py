@@ -22,16 +22,20 @@ def init ():
     #  torque and wrenches are non-realistic values, just for testing.
     dof = 29
     reset_pose_doc = {'pos':[-7.778932e-05,-0.378613,-0.00021,0.832039,-0.452564,0.000245,0.31129,-0.159481,-0.115399,-0.636277,0.0,0.0,0.0,-7.778932e-05,-0.378613,-0.00021,0.832039,-0.452564,0.000245,0.31129,0.159481,0.115399,-0.636277,0.0,0.0,0.0,0.0,0.0,0.0],
+                      'vel':[0]*dof,
                       'zmp':[-0.00081, 1.712907e-05, -0.66815],
 #                      'gsens':[0,0,0],
                       'waist':[0.000234, 0.000146, 0.66815, -0.000245, -0.000862, 0.000195],
+                      'waist_acc':[0]*3,
                       'torque':[0]*dof,
                       'wrenches':[0]*24
                       }
     move_base_pose_doc = {'pos':[8.251963e-05,-0.980029,-0.000384,1.02994,-0.398115,-0.000111,0.31129,-0.159481,-0.115399,-0.636277,0.0,0.0,0.0,8.252625e-05,-0.980033,-0.000384,1.02986,-0.398027,-0.000111,0.31129,0.159481,0.115399,-0.636277,0.0,0.0,0.0,0.0,0.0,0.0],
+                          'vel':[0]*dof,
                           'zmp':[0.302518, 0.000153, -0.562325],
 #                          'gsens':[0,0,0],
                           'waist':[-0.092492, -6.260780e-05, 0.6318, -0.000205, 0.348204, 0.000268],
+                          'waist_acc':[0]*3,
                           'torque':range(dof),
                           'wrenches':[1]*6+[-2]*6+[3]*6+[-4]*6
                           }
@@ -286,6 +290,73 @@ def demoSetJointAnglesSequenceOfGroup():
     hcf.seq_svc.clearJointAnglesOfGroup('larm')
     checkJointAnglesBetween(p1, p0)
 
+def demoSetJointAnglesSequenceFull():
+    print >> sys.stderr, "10. setJointAnglesSequenceFull"
+    hcf.seq_svc.setJointAnglesSequenceFull([move_base_pose_doc['pos'],reset_pose_doc['pos'],move_base_pose_doc['pos']],
+                                           [move_base_pose_doc['vel'],reset_pose_doc['vel'],move_base_pose_doc['vel']],
+                                           [move_base_pose_doc['torque'],reset_pose_doc['torque'],move_base_pose_doc['torque']],
+                                           [move_base_pose_doc['waist'][0:3],reset_pose_doc['waist'][0:3],move_base_pose_doc['waist'][0:3]],
+                                           [move_base_pose_doc['waist'][3:6],reset_pose_doc['waist'][3:6],move_base_pose_doc['waist'][3:6]],
+                                           [move_base_pose_doc['waist_acc'],reset_pose_doc['waist_acc'],move_base_pose_doc['waist_acc']],
+                                           [move_base_pose_doc['zmp'],reset_pose_doc['zmp'],move_base_pose_doc['zmp']],
+                                           [move_base_pose_doc['wrenches'],reset_pose_doc['wrenches'],move_base_pose_doc['wrenches']],
+                                           [[1.0],[1.0],[1.0]],
+                                           [1.0,1.0,1.0]);
+    hcf.seq_svc.waitInterpolation();
+    checkRobotState(move_base_pose_doc)
+    hcf.seq_svc.setJointAnglesSequenceFull([reset_pose_doc['pos']],
+                                           [reset_pose_doc['vel']],
+                                           [reset_pose_doc['torque']],
+                                           [reset_pose_doc['waist'][0:3]],
+                                           [reset_pose_doc['waist'][3:6]],
+                                           [reset_pose_doc['waist_acc']],
+                                           [reset_pose_doc['zmp']],
+                                           [reset_pose_doc['wrenches']],
+                                           [[1.0]],
+                                           [1.0])
+    hcf.seq_svc.waitInterpolation();
+    checkRobotState(reset_pose_doc)
+    # check override
+    print >> sys.stderr, "   check override"
+    hcf.seq_svc.setJointAnglesSequenceFull([move_base_pose_doc['pos'],reset_pose_doc['pos'],move_base_pose_doc['pos']],
+                                           [move_base_pose_doc['vel'],reset_pose_doc['vel'],move_base_pose_doc['vel']],
+                                           [move_base_pose_doc['torque'],reset_pose_doc['torque'],move_base_pose_doc['torque']],
+                                           [move_base_pose_doc['waist'][0:3],reset_pose_doc['waist'][0:3],move_base_pose_doc['waist'][0:3]],
+                                           [move_base_pose_doc['waist'][3:6],reset_pose_doc['waist'][3:6],move_base_pose_doc['waist'][3:6]],
+                                           [move_base_pose_doc['waist_acc'],reset_pose_doc['waist_acc'],move_base_pose_doc['waist_acc']],
+                                           [move_base_pose_doc['zmp'],reset_pose_doc['zmp'],move_base_pose_doc['zmp']],
+                                           [move_base_pose_doc['wrenches'],reset_pose_doc['wrenches'],move_base_pose_doc['wrenches']],
+                                           [[1.0],[1.0],[1.0]],
+                                           [1.0,1.0,5.0]);
+    time.sleep(3.5)
+    hcf.seq_svc.setJointAnglesSequenceFull([reset_pose_doc['pos'],move_base_pose_doc['pos'],reset_pose_doc['pos']],
+                                           [reset_pose_doc['vel'],move_base_pose_doc['vel'],reset_pose_doc['vel']],
+                                           [reset_pose_doc['torque'],move_base_pose_doc['torque'],reset_pose_doc['torque']],
+                                           [reset_pose_doc['waist'][0:3],move_base_pose_doc['waist'][0:3],reset_pose_doc['waist'][0:3]],
+                                           [reset_pose_doc['waist'][3:6],move_base_pose_doc['waist'][3:6],reset_pose_doc['waist'][3:6]],
+                                           [reset_pose_doc['waist_acc'],move_base_pose_doc['waist_acc'],reset_pose_doc['waist_acc']],
+                                           [reset_pose_doc['zmp'],move_base_pose_doc['zmp'],reset_pose_doc['zmp']],
+                                           [reset_pose_doc['wrenches'],move_base_pose_doc['wrenches'],reset_pose_doc['wrenches']],
+                                           [[1.0],[1.0],[1.0]],
+                                           [1.0,1.0,1.0]);
+    hcf.seq_svc.waitInterpolation()
+    checkRobotState(reset_pose_doc)
+    # check clear
+    print >> sys.stderr, "   check clear"
+    hcf.seq_svc.setJointAnglesSequenceFull([move_base_pose_doc['pos'],reset_pose_doc['pos'],move_base_pose_doc['pos']],
+                                           [move_base_pose_doc['vel'],reset_pose_doc['vel'],move_base_pose_doc['vel']],
+                                           [move_base_pose_doc['torque'],reset_pose_doc['torque'],move_base_pose_doc['torque']],
+                                           [move_base_pose_doc['waist'][0:3],reset_pose_doc['waist'][0:3],move_base_pose_doc['waist'][0:3]],
+                                           [move_base_pose_doc['waist'][3:6],reset_pose_doc['waist'][3:6],move_base_pose_doc['waist'][3:6]],
+                                           [move_base_pose_doc['waist_acc'],reset_pose_doc['waist_acc'],move_base_pose_doc['waist_acc']],
+                                           [move_base_pose_doc['zmp'],reset_pose_doc['zmp'],move_base_pose_doc['zmp']],
+                                           [move_base_pose_doc['wrenches'],reset_pose_doc['wrenches'],move_base_pose_doc['wrenches']],
+                                           [[1.0],[1.0],[1.0]],
+                                           [1.0,1.0,5.0]);
+    time.sleep(3.5)
+    hcf.seq_svc.clearJointAngles()
+    checkJointAnglesBetween(reset_pose_doc,move_base_pose_doc)
+
 
 def demo():
     init()
@@ -301,6 +372,7 @@ def demo():
     demoSetJointAnglesOfGroup()
     if hrpsys_version >= '315.5.0':
         demoSetJointAnglesSequenceOfGroup()
+        demoSetJointAnglesSequenceFull()
 
 if __name__ == '__main__':
     demo()
