@@ -143,7 +143,7 @@ CORBA::Boolean SequencePlayerService_impl::setJointAnglesSequenceFull(const dSeq
           std::cerr << __PRETTY_FUNCTION__ << " length of joint accocitys sequence and time sequence differ, joint accocity:" << accs.length() << ", time:" << tms.length() << std::endl;
           return false;
       }
-      if ( acc.length() != (unsigned int)(m_player->robot()->numJoints())) {
+      if ( acc.length() != 3) {
           std::cerr << __PRETTY_FUNCTION__ << " num of joint is differ, input:" << jvs.length() << ", acc:" << acc.length() << ", robot" << (unsigned int)(m_player->robot()->numJoints()) << std::endl;
           return false;
       }
