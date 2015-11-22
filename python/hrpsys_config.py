@@ -279,20 +279,20 @@ class HrpsysConfigurator:
             print(self.configurator_name + "\033[31m connectComps : hrpsys requries rh, seq, sh and fk, please check rtcd.conf or rtcd arguments\033[0m")
             return
         # connection for reference joint angles
-        tmp_contollers = self.getJointAngleControllerList()
-        if len(tmp_contollers) > 0:
-            connectPorts(self.sh.port("qOut"), tmp_contollers[0].port("qRef"))
-            for i in range(len(tmp_contollers) - 1):
-                connectPorts(tmp_contollers[i].port("q"),
-                             tmp_contollers[i + 1].port("qRef"))
+        tmp_controllers = self.getJointAngleControllerList()
+        if len(tmp_controllers) > 0:
+            connectPorts(self.sh.port("qOut"), tmp_controllers[0].port("qRef"))
+            for i in range(len(tmp_controllers) - 1):
+                connectPorts(tmp_controllers[i].port("q"),
+                             tmp_controllers[i + 1].port("qRef"))
             if self.simulation_mode:
                 if self.pdc:
-                    connectPorts(tmp_contollers[-1].port("q"), self.pdc.port("angleRef"))
+                    connectPorts(tmp_controllers[-1].port("q"), self.pdc.port("angleRef"))
                 else:
-                    connectPorts(tmp_contollers[-1].port("q"), self.hgc.port("qIn"))
+                    connectPorts(tmp_controllers[-1].port("q"), self.hgc.port("qIn"))
                     connectPorts(self.hgc.port("qOut"), self.rh.port("qRef"))
             else:
-                connectPorts(tmp_contollers[-1].port("q"), self.rh.port("qRef"))
+                connectPorts(tmp_controllers[-1].port("q"), self.rh.port("qRef"))
         else:
             if self.simulation_mode:
                 if self.pdc:
@@ -384,12 +384,22 @@ class HrpsysConfigurator:
             if self.st:
                 connectPorts(self.abc.port(sen),
                              self.st.port(sen + "Ref"))
-            if self.ic:
+            if self.es:
                 connectPorts(self.sh.port(sen+"Out"),
-                             self.ic.port("ref_" + sen+"In"))
-            if self.abc:
-                connectPorts(self.sh.port(sen+"Out"),
-                             self.abc.port("ref_" + sen))
+                                 self.es.port(sen+"In"))
+                if self.ic:
+                    connectPorts(self.es.port(sen+"Out"),
+                                 self.ic.port("ref_" + sen+"In"))
+                if self.abc:
+                    connectPorts(self.es.port(sen+"Out"),
+                                 self.abc.port("ref_" + sen))
+            else:
+                if self.ic:
+                    connectPorts(self.sh.port(sen+"Out"),
+                                 self.ic.port("ref_" + sen+"In"))
+                if self.abc:
+                    connectPorts(self.sh.port(sen+"Out"),
+                                 self.abc.port("ref_" + sen))
             if self.abc and self.st:
                 connectPorts(self.abc.port("limbCOPOffset_"+sen),
                              self.st.port("limbCOPOffset_"+sen))
@@ -480,6 +490,10 @@ class HrpsysConfigurator:
         # connection for el
         if self.el:
             connectPorts(self.rh.port("q"), self.el.port("qCurrent"))
+
+        # connection for co
+        if self.es:
+            connectPorts(self.rh.port("servoState"), self.es.port("servoStateIn"))
 
     def activateComps(self):
         '''!@brief
