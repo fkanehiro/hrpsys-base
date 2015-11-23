@@ -310,7 +310,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   eefm_ee_pos_error_p_gain = 0;
   eefm_ee_rot_error_p_gain = 0;
   cop_check_margin = 20.0*1e-3; // [m]
-  cp_check_margin = 20.0*1e-3; // [m]
+  cp_check_margin = hrp::Vector3(30.0*1e-3, 0.0, 40.0*1e-3) ; // [m]
   contact_decision_threshold = 50; // [N]
   eefm_use_force_difference_control = true;
   initial_cp_too_large_error = true;
@@ -387,6 +387,10 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
       support_polygon_vec.push_back(std::vector<Eigen::Vector2d>(1,Eigen::Vector2d::Zero()));
   }
   szd->set_vertices(support_polygon_vec);
+
+  rel_ee_pos.reserve(stikp.size());
+  rel_ee_rot.reserve(stikp.size());
+  rel_ee_name.reserve(stikp.size());
 
   return RTC::RTC_OK;
 }
@@ -783,6 +787,9 @@ void Stabilizer::getActualParameters ()
           limb_gains.push_back(ikp.swing_support_gain);
           ref_force.push_back(hrp::Vector3(m_ref_wrenches[i].data[0], m_ref_wrenches[i].data[1], m_ref_wrenches[i].data[2]));
           ref_moment.push_back(hrp::Vector3(m_ref_wrenches[i].data[3], m_ref_wrenches[i].data[4], m_ref_wrenches[i].data[5]));
+          rel_ee_pos.push_back(foot_origin_rot.transpose() * (ee_pos.back() - foot_origin_pos));
+          rel_ee_rot.push_back(foot_origin_rot.transpose() * ee_rot.back());
+          rel_ee_name.push_back(ee_name.back());
       }
       // All state variables are foot_origin coords relative
       if (DEBUGP) {
@@ -1106,32 +1113,27 @@ void Stabilizer::calcStateForEmergencySignal()
   }
   // CP Check
   bool is_cp_outside = false;
-  double width_offset = 0.0;
-  SimpleZMPDistributor::leg_type support_leg;
-  hrp::Vector3 leg_pos[2];
   if (on_ground && transition_count == 0 && control_mode == MODE_ST) {
+    SimpleZMPDistributor::leg_type support_leg;
+    size_t l_idx, r_idx;
+    Eigen::Vector2d tmp_cp;
+    for (size_t i = 0; i < rel_ee_name.size(); i++) {
+      if (rel_ee_name[i]=="rleg") r_idx = i;
+      else if (rel_ee_name[i]=="lleg") l_idx = i;
+    }
+    for (size_t i = 0; i < 2; i++) {
+      tmp_cp(i) = act_cp(i);
+    }
+    if (isContact(contact_states_index_map["rleg"]) && isContact(contact_states_index_map["lleg"])) support_leg = SimpleZMPDistributor::BOTH;
+    else if (isContact(contact_states_index_map["rleg"])) support_leg = SimpleZMPDistributor::RLEG;
+    else if (isContact(contact_states_index_map["lleg"])) support_leg = SimpleZMPDistributor::LLEG;
+    if (!is_walking || is_estop_while_walking) is_cp_outside = !szd->is_inside_support_polygon(tmp_cp, rel_ee_pos, rel_ee_rot, rel_ee_name, support_leg, cp_check_margin);
     if (DEBUGP) {
-        std::cerr << "[" << m_profile.instance_name << "] CP value " << "[" << act_cp(0) - ref_cp(0) << "," << act_cp(1) - ref_cp(1) << "] [m]" << std::endl;
+      std::cerr << "[" << m_profile.instance_name << "] CP value " << "[" << act_cp(0) << "," << act_cp(1) << "] [m]" << std::endl;
     }
-    // check CP inside
-    for (size_t i = 0; i < stikp.size(); i++) {
-        if (stikp[i].ee_name.find("leg") == std::string::npos) continue;
-        hrp::Link* target = m_robot->sensor<hrp::ForceSensor>(stikp[i].sensor_name)->link;
-        leg_pos[i] = target->p + target->R * foot_origin_offset[i];
-    }
-    if (isContact(contact_states_index_map["rleg"]) && isContact(contact_states_index_map["lleg"])) {
-        support_leg = SimpleZMPDistributor::BOTH;
-        width_offset = ( (m_robot->rootLink()->R.transpose() * (leg_pos[contact_states_index_map["lleg"]]- m_robot->rootLink()->p))(1)
-                         - (m_robot->rootLink()->R.transpose() * (leg_pos[contact_states_index_map["rleg"]] - m_robot->rootLink()->p))(1) ) / 2.0;
-    } else if (isContact(contact_states_index_map["rleg"])) {
-        support_leg = SimpleZMPDistributor::RLEG;
-    } else if (isContact(contact_states_index_map["lleg"])) {
-        support_leg = SimpleZMPDistributor::LLEG;
-    }
-    if (!is_walking || is_estop_while_walking) is_cp_outside = !szd->is_cp_inside_foot(act_cp - ref_cp, support_leg, cp_check_margin, width_offset);
     if (is_cp_outside) {
       if (initial_cp_too_large_error || loop % static_cast <int>(0.2/dt) == 0 ) { // once per 0.2[s]
-          std::cerr << "[" << m_profile.instance_name << "] CP too large error " << "[" << act_cp(0) - ref_cp(0) << "," << act_cp(1) - ref_cp(1)  << "] [m]" << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "] CP too large error " << "[" << act_cp(0) << "," << act_cp(1) << "] [m]" << std::endl;
       }
       initial_cp_too_large_error = false;
     } else {
@@ -1157,6 +1159,9 @@ void Stabilizer::calcStateForEmergencySignal()
                 << (emergency_check_mode == OpenHRP::StabilizerService::NO_CHECK?"NO_CHECK": (emergency_check_mode == OpenHRP::StabilizerService::COP?"COP":"CP") )
                 << ") " << (is_emergency?"emergency":"non-emergency") << std::endl;
   }
+  rel_ee_pos.clear();
+  rel_ee_rot.clear();
+  rel_ee_name.clear();
 };
 
 void Stabilizer::moveBasePosRotForBodyRPYControl ()
@@ -1528,7 +1533,9 @@ void Stabilizer::getParameter(OpenHRP::StabilizerService::stParam& i_stp)
   i_stp.st_algorithm = st_algorithm;
   i_stp.transition_time = transition_time;
   i_stp.cop_check_margin = cop_check_margin;
-  i_stp.cp_check_margin = cp_check_margin;
+  for (size_t i = 0; i < 3; i++) {
+    i_stp.cp_check_margin[i] = cp_check_margin(i);
+  }
   i_stp.contact_decision_threshold = contact_decision_threshold;
   i_stp.is_estop_while_walking = is_estop_while_walking;
   switch(control_mode) {
@@ -1666,7 +1673,9 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
 
   transition_time = i_stp.transition_time;
   cop_check_margin = i_stp.cop_check_margin;
-  cp_check_margin = i_stp.cp_check_margin;
+  for (size_t i = 0; i < 3; i++) {
+    cp_check_margin(i) = i_stp.cp_check_margin[i];
+  }
   contact_decision_threshold = i_stp.contact_decision_threshold;
   is_estop_while_walking = i_stp.is_estop_while_walking;
   if (control_mode == MODE_IDLE) {
@@ -1740,7 +1749,7 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
   std::cerr << "[" << m_profile.instance_name << "]   emergency_check_mode changed to [" << (emergency_check_mode == OpenHRP::StabilizerService::NO_CHECK?"NO_CHECK": (emergency_check_mode == OpenHRP::StabilizerService::COP?"COP":"CP") ) << "]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]  transition_time = " << transition_time << "[s]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]  cop_check_margin = " << cop_check_margin << "[m]" << std::endl;
-  std::cerr << "[" << m_profile.instance_name << "]  cp_check_margin = " << cp_check_margin << "[m]" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]  cp_check_margin = " << cp_check_margin.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[m]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]  contact_decision_threshold = " << contact_decision_threshold << "[N]" << std::endl;
 }
 
