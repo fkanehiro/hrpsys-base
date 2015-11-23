@@ -216,6 +216,14 @@ case $TEST_PACKAGE in
             travis_time_start  compile_and_install_downstream
 
             sudo dpkg -r --force-depends ros-hydro-hrpsys
+            if [ "USE_SRC_HRPSYS_ROS_BRIDGE" == true ] ; then
+                cd src
+                wstool set rtmros_common http://github.com/start-jsk/rtmros_common --git -y
+                wstool update
+                # sudo apt-get install -qq -y ros-hydro-urdf
+                sudo dpkg -r --force-depends ros-hydro-hrpsys-ros-bridge
+                cd ..
+            fi
 
             catkin_make_isolated --install -j1 -l1
             # you need to pretend this is catkin package since you only have hrpsys in catkin_ws

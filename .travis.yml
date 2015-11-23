@@ -28,6 +28,7 @@ env:
     - TEST_TYPE=work_with_315_1_10    TEST_PACKAGE=hironx-ros-bridge USE_SRC_OPENHRP3=true
     #    USE_SRC_OPENHRP3=false tests
     - TEST_TYPE=work_with_downstream  TEST_PACKAGE=hrpsys-base
+    - TEST_TYPE=work_with_downstream  TEST_PACKAGE=hrpsys-base USE_SRC_HRPSYS_ROS_BRIDGE=true
     - TEST_TYPE=work_with_315_1_10    TEST_PACKAGE=hrpsys-base
     - TEST_TYPE=work_with_downstream  TEST_PACKAGE=hrpsys-tools
     - TEST_TYPE=work_with_315_1_10    TEST_PACKAGE=hrpsys-tools
