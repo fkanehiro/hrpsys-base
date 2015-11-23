@@ -810,6 +810,25 @@ public:
             }
         }
     };
+
+  double calcCrossProduct(Eigen::Vector2d& a, Eigen::Vector2d& b, Eigen::Vector2d& o)
+  {
+    return (a(0) - o(0)) * (b(1) - o(1)) - (a(1) - o(1)) * (b(0) - o(0));
+  };
+
+  // assume that vertices are listed in clockwise order
+  std::vector<Eigen::Vector2d> calcConvexHull(std::vector<Eigen::Vector2d> vertices)
+  {
+    std::vector<Eigen::Vector2d> convex_vertices;
+
+    convex_vertices.push_back(vertices.front());
+    for (size_t i = 1; i < vertices.size() - 1; i++) {
+      if (calcCrossProduct(vertices[i + 1], vertices[i - 1], vertices[i]) < 0) convex_vertices.push_back(vertices[i]);
+    }
+    convex_vertices.push_back(vertices.back());
+
+    return convex_vertices;
+  };
 };
 
 #endif // ZMP_DISTRIBUTOR_H
