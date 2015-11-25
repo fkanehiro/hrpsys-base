@@ -194,6 +194,7 @@ namespace rats
               ((&boost::lambda::_1->* &step_node::l_r) < (&boost::lambda::_2->* &step_node::l_r)));
     std::sort(swing_leg_dst_steps.begin(), swing_leg_dst_steps.end(),
               ((&boost::lambda::_1->* &step_node::l_r) < (&boost::lambda::_2->* &step_node::l_r)));
+    size_t swing_trajectory_generator_idx = 0;
     for (std::vector<step_node>::iterator it1 = swing_leg_src_steps.begin(), it2 = swing_leg_dst_steps.begin();
          it1 != swing_leg_src_steps.end() && it2 != swing_leg_dst_steps.end();
          it1++, it2++) {
@@ -206,13 +207,13 @@ namespace rats
         cycloid_midcoords(ret, it1->worldcoords, it2->worldcoords, step_height);
         break;
       case RECTANGLE:
-        rectangle_midcoords(ret, it1->worldcoords, it2->worldcoords, step_height);
+        rectangle_midcoords(ret, it1->worldcoords, it2->worldcoords, step_height, swing_trajectory_generator_idx);
         break;
       case STAIR:
         stair_midcoords(ret, it1->worldcoords, it2->worldcoords, step_height);
         break;
       case CYCLOIDDELAY:
-        cycloid_delay_midcoords(ret, it1->worldcoords, it2->worldcoords, step_height);
+        cycloid_delay_midcoords(ret, it1->worldcoords, it2->worldcoords, step_height, swing_trajectory_generator_idx);
         break;
       case CYCLOIDDELAYKICK:
         cycloid_delay_kick_midcoords(ret, it1->worldcoords, it2->worldcoords, step_height);
@@ -222,6 +223,7 @@ namespace rats
         break;
       default: break;
       }
+      swing_trajectory_generator_idx++;
       if (std::fabs(step_height) > 1e-3*10) {
           if (swing_leg_src_steps.size() == 1) /* only biped or crawl because there is only one toe_heel_interpolator */
               modif_foot_coords_for_toe_heel_phase(ret, _current_toe_angle, _current_heel_angle);
@@ -348,10 +350,10 @@ namespace rats
   };
 
   void leg_coords_generator::rectangle_midcoords (coordinates& ret, const coordinates& start,
-                                                                  const coordinates& goal, const double height)
+                                                  const coordinates& goal, const double height, const size_t swing_trajectory_generator_idx)
   {
     mid_coords(ret, swing_rot_ratio, start, goal);
-    rdtg.get_trajectory_point(ret.pos, hrp::Vector3(start.pos), hrp::Vector3(goal.pos), height);
+    rdtg[swing_trajectory_generator_idx].get_trajectory_point(ret.pos, hrp::Vector3(start.pos), hrp::Vector3(goal.pos), height);
   };
 
   void leg_coords_generator::stair_midcoords (coordinates& ret, const coordinates& start,
@@ -362,10 +364,10 @@ namespace rats
   };
 
   void leg_coords_generator::cycloid_delay_midcoords (coordinates& ret, const coordinates& start,
-                                                                      const coordinates& goal, const double height)
+                                                      const coordinates& goal, const double height, const size_t swing_trajectory_generator_idx)
   {
     mid_coords(ret, swing_rot_ratio, start, goal);
-    cdtg.get_trajectory_point(ret.pos, hrp::Vector3(start.pos), hrp::Vector3(goal.pos), height);
+    cdtg[swing_trajectory_generator_idx].get_trajectory_point(ret.pos, hrp::Vector3(start.pos), hrp::Vector3(goal.pos), height);
   };
 
   void leg_coords_generator::cycloid_delay_kick_midcoords (coordinates& ret, const coordinates& start,
@@ -462,11 +464,27 @@ namespace rats
         next_one_step_count = static_cast<size_t>(fnsl[footstep_index+1].front().step_time/dt);
       }
       lcg_count = one_step_count;
-      rdtg.reset(one_step_count, default_double_support_ratio_before, default_double_support_ratio_after);
-      sdtg.reset(one_step_count, default_double_support_ratio_before, default_double_support_ratio_after);
-      cdtg.reset(one_step_count, default_double_support_ratio_before, default_double_support_ratio_after);
-      cdktg.reset(one_step_count, default_double_support_ratio_before, default_double_support_ratio_after);
-      crdtg.reset(one_step_count, default_double_support_ratio_before, default_double_support_ratio_after);
+      switch (default_orbit_type) {
+      case RECTANGLE:
+          for (size_t i = 0; i < rdtg.size(); i++)
+              rdtg[i].reset(one_step_count, default_double_support_ratio_before, default_double_support_ratio_after);
+          break;
+      case STAIR:
+          sdtg.reset(one_step_count, default_double_support_ratio_before, default_double_support_ratio_after);
+          break;
+      case CYCLOIDDELAY:
+          for (size_t i = 0; i < cdtg.size(); i++)
+              cdtg[i].reset(one_step_count, default_double_support_ratio_before, default_double_support_ratio_after);
+          break;
+      case CYCLOIDDELAYKICK:
+          cdktg.reset(one_step_count, default_double_support_ratio_before, default_double_support_ratio_after);
+          break;
+      case CROSS:
+          crdtg.reset(one_step_count, default_double_support_ratio_before, default_double_support_ratio_after);
+          break;
+      default:
+          break;
+      }
       reset_foot_ratio_interpolator();
     }
   };
