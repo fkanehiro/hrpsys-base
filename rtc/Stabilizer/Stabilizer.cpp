@@ -700,9 +700,6 @@ void Stabilizer::getActualParameters ()
   } else {
     on_ground = calcZMP(act_zmp, ref_zmp(2));
   }
-  // for capture point
-  hrp::Vector3 rel_act_cog = m_robot->rootLink()->R.transpose() * (act_cog - m_robot->rootLink()->p);
-  rel_act_cp(2) = (m_robot->rootLink()->R.transpose() * (act_zmp - m_robot->rootLink()->p))(2);
   // set actual contact states
   for (size_t i = 0; i < stikp.size(); i++) {
       std::string limb_name = stikp[i].ee_name;
@@ -734,10 +731,9 @@ void Stabilizer::getActualParameters ()
       target_ee_diff_p[i] -= foot_origin_rot.transpose() * (act_ee_p - foot_origin_pos);
     }
     // capture point
-    for(size_t i = 0; i < 2; i++) {
-      rel_act_cp(i) = rel_act_cog(i) + act_cogvel(i) / std::sqrt(eefm_gravitational_acceleration / act_cog(2));
-    }
     act_cp = act_cog + act_cogvel / std::sqrt(eefm_gravitational_acceleration / act_cog(2));
+    rel_act_cp = hrp::Vector3(act_cp(0), act_cp(1), act_zmp(2));
+    rel_act_cp = m_robot->rootLink()->R.transpose() * ((foot_origin_pos + foot_origin_rot * rel_act_cp) - m_robot->rootLink()->p);
     // <= Actual foot_origin frame
 
     // Actual world frame =>
@@ -988,9 +984,6 @@ void Stabilizer::getTargetParameters ()
     ref_zmp = tmp_ref_zmp;
   }
   ref_cog = m_robot->calcCM();
-  // for capture point
-  hrp::Vector3 rel_ref_cog = m_robot->rootLink()->R.transpose() * (ref_cog - m_robot->rootLink()->p);
-  rel_ref_cp(2) = (m_robot->rootLink()->R.transpose() * (ref_zmp - m_robot->rootLink()->p))(2);
   for (size_t i = 0; i < stikp.size(); i++) {
     hrp::Link* target = m_robot->link(stikp[i].target_name);
     //target_ee_p[i] = target->p + target->R * stikp[i].localCOPPos;
@@ -1024,10 +1017,9 @@ void Stabilizer::getTargetParameters ()
     }
     target_foot_origin_rot = foot_origin_rot;
     // capture point
-    for(size_t i = 0; i < 2; i++) {
-      rel_ref_cp(i) = rel_ref_cog(i) + ref_cogvel(i) / std::sqrt(eefm_gravitational_acceleration / ref_cog(2));
-    }
     ref_cp = ref_cog + ref_cogvel / std::sqrt(eefm_gravitational_acceleration / ref_cog(2));
+    rel_ref_cp = hrp::Vector3(ref_cp(0), ref_cp(1), ref_zmp(2));
+    rel_ref_cp = m_robot->rootLink()->R.transpose() * ((foot_origin_pos + foot_origin_rot * rel_ref_cp) - m_robot->rootLink()->p);
     // <= Reference foot_origin frame
   } else {
     ref_cogvel = (ref_cog - prev_ref_cog)/dt;
