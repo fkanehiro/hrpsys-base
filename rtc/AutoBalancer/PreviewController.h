@@ -119,6 +119,18 @@ namespace rats
       ret[1] = x_k(0,1);
       ret[2] = cog_z;
     };
+    void get_refcog_vel (double* ret)
+    {
+      ret[0] = x_k(1,0);
+      ret[1] = x_k(1,1);
+      ret[2] = 0;
+    };
+    void get_refcog_acc (double* ret)
+    {
+      ret[0] = x_k(2,0);
+      ret[1] = x_k(2,1);
+      ret[2] = 0;
+    };
     void get_cart_zmp (double* ret)
     {
       Eigen::Matrix<double, 1, 2> _p(tcc * x_k);
@@ -247,6 +259,8 @@ namespace rats
     }
 
     void get_cart_zmp (double* ret) { preview_controller.get_cart_zmp(ret);}
+    void get_refcog_vel (double* ret) { preview_controller.get_refcog_vel(ret);}
+    void get_refcog_acc (double* ret) { preview_controller.get_refcog_acc(ret);}
     void get_current_refzmp (double* ret) { preview_controller.get_current_refzmp(ret);}
     //void get_current_qdata (double* ret) { preview_controller.get_current_qdata(ret);}
     size_t get_delay () { return preview_controller.get_delay(); };

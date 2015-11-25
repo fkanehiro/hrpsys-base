@@ -1075,6 +1075,16 @@ namespace rats
     };
     /* parameter getting */
     const hrp::Vector3& get_cog () { return cog; };
+    hrp::Vector3 get_cog_vel () {
+      double refcog_vel[3];
+      preview_controller_ptr->get_refcog_vel(refcog_vel);
+      return hrp::Vector3(refcog_vel[0], refcog_vel[1], refcog_vel[2]);
+    };
+    hrp::Vector3 get_cog_acc () {
+      double refcog_acc[3];
+      preview_controller_ptr->get_refcog_acc(refcog_acc);
+      return hrp::Vector3(refcog_acc[0], refcog_acc[1], refcog_acc[2]);
+    };
     const hrp::Vector3& get_refzmp () { return refzmp;};
     hrp::Vector3 get_cart_zmp ()
     {
