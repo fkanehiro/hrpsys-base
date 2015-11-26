@@ -310,7 +310,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   eefm_ee_pos_error_p_gain = 0;
   eefm_ee_rot_error_p_gain = 0;
   cop_check_margin = 20.0*1e-3; // [m]
-  cp_check_margin = hrp::Vector3(30.0*1e-3, 0.0, 40.0*1e-3) ; // [m]
+  cp_check_margin.resize(4, 30*1e-3); // [m]
   contact_decision_threshold = 50; // [N]
   eefm_use_force_difference_control = true;
   initial_cp_too_large_error = true;
@@ -1525,8 +1525,8 @@ void Stabilizer::getParameter(OpenHRP::StabilizerService::stParam& i_stp)
   i_stp.st_algorithm = st_algorithm;
   i_stp.transition_time = transition_time;
   i_stp.cop_check_margin = cop_check_margin;
-  for (size_t i = 0; i < 3; i++) {
-    i_stp.cp_check_margin[i] = cp_check_margin(i);
+  for (size_t i = 0; i < cp_check_margin.size(); i++) {
+    i_stp.cp_check_margin[i] = cp_check_margin[i];
   }
   i_stp.contact_decision_threshold = contact_decision_threshold;
   i_stp.is_estop_while_walking = is_estop_while_walking;
@@ -1665,8 +1665,8 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
 
   transition_time = i_stp.transition_time;
   cop_check_margin = i_stp.cop_check_margin;
-  for (size_t i = 0; i < 3; i++) {
-    cp_check_margin(i) = i_stp.cp_check_margin[i];
+  for (size_t i = 0; i < cp_check_margin.size(); i++) {
+    cp_check_margin[i] = i_stp.cp_check_margin[i];
   }
   contact_decision_threshold = i_stp.contact_decision_threshold;
   is_estop_while_walking = i_stp.is_estop_while_walking;
@@ -1741,7 +1741,7 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
   std::cerr << "[" << m_profile.instance_name << "]   emergency_check_mode changed to [" << (emergency_check_mode == OpenHRP::StabilizerService::NO_CHECK?"NO_CHECK": (emergency_check_mode == OpenHRP::StabilizerService::COP?"COP":"CP") ) << "]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]  transition_time = " << transition_time << "[s]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]  cop_check_margin = " << cop_check_margin << "[m]" << std::endl;
-  std::cerr << "[" << m_profile.instance_name << "]  cp_check_margin = " << cp_check_margin.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[m]" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]  cp_check_margin = [" << cp_check_margin[0] << ", " << cp_check_margin[1] << ", " << cp_check_margin[2] << ", " << cp_check_margin[3] << "] [m]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]  contact_decision_threshold = " << contact_decision_threshold << "[N]" << std::endl;
 }
 
