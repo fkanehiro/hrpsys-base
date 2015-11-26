@@ -321,7 +321,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
 
     is_stop_mode = false;
     has_ik_failed = false;
-    is_hand_fix_mode = true;
+    is_hand_fix_mode = false;
 
     pos_ik_thre = 0.1*1e-3; // [m]
     rot_ik_thre = (1e-2)*M_PI/180.0; // [rad]
