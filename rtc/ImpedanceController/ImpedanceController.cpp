@@ -845,6 +845,8 @@ bool ImpedanceController::setObjectTurnaroundDetectorParam(const OpenHRP::Impeda
     otd->setDwrenchCutoffFreq(i_param_.dwrench_cutoff_freq);
     otd->setDetectRatioThre(i_param_.detect_ratio_thre);
     otd->setStartRatioThre(i_param_.start_ratio_thre);
+    otd->setDetectTimeThre(i_param_.detect_time_thre);
+    otd->setStartTimeThre(i_param_.start_time_thre);
     hrp::Vector3 tmp;
     for (size_t i = 0; i < 3; i++) tmp(i) = i_param_.axis[i];
     otd->setAxis(tmp);
@@ -859,6 +861,8 @@ bool ImpedanceController::getObjectTurnaroundDetectorParam(OpenHRP::ImpedanceCon
     i_param_.dwrench_cutoff_freq = otd->getDwrenchCutoffFreq();
     i_param_.detect_ratio_thre = otd->getDetectRatioThre();
     i_param_.start_ratio_thre = otd->getStartRatioThre();
+    i_param_.detect_time_thre = otd->getDetectTimeThre();
+    i_param_.start_time_thre = otd->getStartTimeThre();
     hrp::Vector3 tmp = otd->getAxis();
     for (size_t i = 0; i < 3; i++) i_param_.axis[i] = tmp(i);
     return true;
