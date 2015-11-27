@@ -822,6 +822,7 @@ class HrpsysConfigurator:
             self.connectLoggerPort(self.st, 'actBaseRpy')
             self.connectLoggerPort(self.st, 'currentBasePos')
             self.connectLoggerPort(self.st, 'currentBaseRpy')
+            self.connectLoggerPort(self.st, 'actCapturePoint')
             self.connectLoggerPort(self.st, 'debugData')
         if self.el != None:
             self.connectLoggerPort(self.el, 'q')
