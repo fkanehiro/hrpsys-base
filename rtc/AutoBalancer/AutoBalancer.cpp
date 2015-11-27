@@ -61,6 +61,7 @@ AutoBalancer::AutoBalancer(RTC::Manager* manager)
       m_cogOut("cogOut", m_cog),
       m_AutoBalancerServicePort("AutoBalancerService"),
       m_walkingStatesOut("walkingStates", m_walkingStates),
+      m_sbpCogOffsetOut("sbpCogOffset", m_sbpCogOffset),
       // </rtc-template>
       move_base_gain(0.8),
       m_robot(hrp::BodyPtr()),
@@ -101,6 +102,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     addOutPort("controlSwingSupportTime", m_controlSwingSupportTimeOut);
     addOutPort("cogOut", m_cogOut);
     addOutPort("walkingStates", m_walkingStatesOut);
+    addOutPort("sbpCogOffset", m_sbpCogOffsetOut);
   
     // Set service provider to Ports
     m_AutoBalancerServicePort.registerProvider("service0", "AutoBalancerService", m_service0);
@@ -523,6 +525,11 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
       m_cog.data.y = ref_cog(1);
       m_cog.data.z = ref_cog(2);
       m_cog.tm = m_qRef.tm;
+      // sbpCogOffset
+      m_sbpCogOffset.data.x = sbp_cog_offset(0);
+      m_sbpCogOffset.data.y = sbp_cog_offset(1);
+      m_sbpCogOffset.data.z = sbp_cog_offset(2);
+      m_sbpCogOffset.tm = m_qRef.tm;
     }
     m_basePosOut.write();
     m_baseRpyOut.write();
@@ -530,6 +537,7 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
     m_basePoseOut.write();
     m_zmpOut.write();
     m_cogOut.write();
+    m_sbpCogOffsetOut.write();
 
     // reference acceleration
     hrp::Sensor* sen = m_robot->sensor<hrp::RateGyroSensor>("gyrometer");

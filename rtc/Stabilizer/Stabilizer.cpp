@@ -53,6 +53,7 @@ Stabilizer::Stabilizer(RTC::Manager* manager)
     m_controlSwingSupportTimeIn("controlSwingSupportTime", m_controlSwingSupportTime),
     m_qRefSeqIn("qRefSeq", m_qRefSeq),
     m_walkingStatesIn("walkingStates", m_walkingStates),
+    m_sbpCogOffsetIn("sbpCogOffset", m_sbpCogOffset),
     m_qRefOut("q", m_qRef),
     m_tauOut("tau", m_tau),
     m_zmpOut("zmp", m_zmp),
@@ -111,6 +112,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   addInPort("controlSwingSupportTime", m_controlSwingSupportTimeIn);
   addInPort("qRefSeq", m_qRefSeqIn);
   addInPort("walkingStates", m_walkingStatesIn);
+  addInPort("sbpCogOffset", m_sbpCogOffsetIn);
 
   // Set OutPort buffer
   addOutPort("q", m_qRefOut);
@@ -316,6 +318,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   initial_cp_too_large_error = true;
   is_walking = false;
   is_estop_while_walking = false;
+  sbp_cog_offset = hrp::Vector3(0.0, 0.0, 0.0);
 
   // parameters for RUNST
   double ke = 0, tc = 0;
@@ -498,6 +501,12 @@ RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
   if (m_walkingStatesIn.isNew()){
     m_walkingStatesIn.read();
     is_walking = m_walkingStates.data;
+  }
+  if (m_sbpCogOffsetIn.isNew()){
+    m_sbpCogOffsetIn.read();
+    sbp_cog_offset(0) = m_sbpCogOffset.data.x;
+    sbp_cog_offset(1) = m_sbpCogOffset.data.y;
+    sbp_cog_offset(2) = m_sbpCogOffset.data.z;
   }
 
   if (is_legged_robot) {
@@ -1119,7 +1128,7 @@ void Stabilizer::calcStateForEmergencySignal()
     if (isContact(contact_states_index_map["rleg"]) && isContact(contact_states_index_map["lleg"])) support_leg = SimpleZMPDistributor::BOTH;
     else if (isContact(contact_states_index_map["rleg"])) support_leg = SimpleZMPDistributor::RLEG;
     else if (isContact(contact_states_index_map["lleg"])) support_leg = SimpleZMPDistributor::LLEG;
-    if (!is_walking || is_estop_while_walking) is_cp_outside = !szd->is_inside_support_polygon(tmp_cp, rel_ee_pos, rel_ee_rot, rel_ee_name, support_leg, cp_check_margin);
+    if (!is_walking || is_estop_while_walking) is_cp_outside = !szd->is_inside_support_polygon(tmp_cp, rel_ee_pos, rel_ee_rot, rel_ee_name, support_leg, cp_check_margin, - sbp_cog_offset);
     if (DEBUGP) {
       std::cerr << "[" << m_profile.instance_name << "] CP value " << "[" << act_cp(0) << "," << act_cp(1) << "] [m]" << std::endl;
     }

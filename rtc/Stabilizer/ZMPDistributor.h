@@ -83,7 +83,7 @@ public:
         else if (support_leg == BOTH) return (cp(1) <= (leg_outside_margin + offset - margin)) && (cp(1) >= (-1 * (leg_outside_margin + offset) + margin)) && (cp(0) <= (leg_front_margin - margin)) && (cp(0) >= (-1 * leg_rear_margin + margin));
         else return true;
     };
-    inline bool is_inside_support_polygon (Eigen::Vector2d& p, const std::vector<hrp::Vector3>& ee_pos, const std::vector <hrp::Matrix33>& ee_rot, const std::vector<std::string>& ee_name, const leg_type& support_leg, const std::vector<double>& tmp_margin = std::vector<double>())
+    inline bool is_inside_support_polygon (Eigen::Vector2d& p, const std::vector<hrp::Vector3>& ee_pos, const std::vector <hrp::Matrix33>& ee_rot, const std::vector<std::string>& ee_name, const leg_type& support_leg, const std::vector<double>& tmp_margin = std::vector<double>(), const hrp::Vector3& offset = hrp::Vector3(0.0, 0.0, 0.0))
     {
       size_t l_idx, r_idx;
       for (size_t i = 0; i < ee_name.size(); i++) {
@@ -100,15 +100,15 @@ public:
         margin[i] = tmp_margin[i];
       }
       // RLEG
-      rleg_vertices.push_back(Eigen::Vector2d(ee_pos[r_idx](0) + leg_front_margin - margin[0], ee_pos[r_idx](1) + leg_inside_margin - margin[2]));
-      rleg_vertices.push_back(Eigen::Vector2d(ee_pos[r_idx](0) + leg_front_margin - margin[0], ee_pos[r_idx](1) + -1*(leg_outside_margin - margin[3])));
-      rleg_vertices.push_back(Eigen::Vector2d(ee_pos[r_idx](0) + -1*(leg_rear_margin - margin[1]), ee_pos[r_idx](1) + -1*(leg_outside_margin - margin[3])));
-      rleg_vertices.push_back(Eigen::Vector2d(ee_pos[r_idx](0) + -1*(leg_rear_margin - margin[1]), ee_pos[r_idx](1) + leg_inside_margin - margin[2]));
+      rleg_vertices.push_back(Eigen::Vector2d(ee_pos[r_idx](0) + leg_front_margin - margin[0] + offset(0), ee_pos[r_idx](1) + leg_inside_margin - margin[2] + offset(1)));
+      rleg_vertices.push_back(Eigen::Vector2d(ee_pos[r_idx](0) + leg_front_margin - margin[0] + offset(0), ee_pos[r_idx](1) + -1*(leg_outside_margin - margin[3]) + offset(1)));
+      rleg_vertices.push_back(Eigen::Vector2d(ee_pos[r_idx](0) + -1*(leg_rear_margin - margin[1]) + offset(0), ee_pos[r_idx](1) + -1*(leg_outside_margin - margin[3]) + offset(1)));
+      rleg_vertices.push_back(Eigen::Vector2d(ee_pos[r_idx](0) + -1*(leg_rear_margin - margin[1]) + offset(0), ee_pos[r_idx](1) + leg_inside_margin - margin[2] + offset(1)));
       // LLEG
-      lleg_vertices.push_back(Eigen::Vector2d(ee_pos[l_idx](0) + leg_front_margin - margin[0], ee_pos[l_idx](1) + leg_outside_margin - margin[3]));
-      lleg_vertices.push_back(Eigen::Vector2d(ee_pos[l_idx](0) + leg_front_margin - margin[0], ee_pos[l_idx](1) + -1*(leg_inside_margin - margin[2])));
-      lleg_vertices.push_back(Eigen::Vector2d(ee_pos[l_idx](0) + -1*(leg_rear_margin - margin[1]), ee_pos[l_idx](1) + -1*(leg_inside_margin - margin[2])));
-      lleg_vertices.push_back(Eigen::Vector2d(ee_pos[l_idx](0) + -1*(leg_rear_margin - margin[1]), ee_pos[l_idx](1) + leg_outside_margin - margin[3]));
+      lleg_vertices.push_back(Eigen::Vector2d(ee_pos[l_idx](0) + leg_front_margin - margin[0] + offset(0), ee_pos[l_idx](1) + leg_outside_margin - margin[3] + offset(1)));
+      lleg_vertices.push_back(Eigen::Vector2d(ee_pos[l_idx](0) + leg_front_margin - margin[0] + offset(0), ee_pos[l_idx](1) + -1*(leg_inside_margin - margin[2]) + offset(1)));
+      lleg_vertices.push_back(Eigen::Vector2d(ee_pos[l_idx](0) + -1*(leg_rear_margin - margin[1]) + offset(0), ee_pos[l_idx](1) + -1*(leg_inside_margin - margin[2]) + offset(1)));
+      lleg_vertices.push_back(Eigen::Vector2d(ee_pos[l_idx](0) + -1*(leg_rear_margin - margin[1]) + offset(0), ee_pos[l_idx](1) + leg_outside_margin - margin[3] + offset(1)));
 
       if (support_leg == BOTH) {
         // sort vertices in clockwise order
