@@ -83,6 +83,10 @@ module OpenHRP
       double detect_ratio_thre;
       /// Threshould for starting detection (0,1)
       double start_ratio_thre;
+      /// Threshould for time [s] after the first object turnaround detection (Wait detect_time_thre [s] after first object turnaround detection).
+      double detect_time_thre;
+      /// Threshould for time [s] after the first starting detection (Wait start_time_thre [s] after first start detection).
+      double start_time_thre;
       /// Axis
       DblArray3 axis;
     };
