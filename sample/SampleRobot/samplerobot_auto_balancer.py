@@ -13,11 +13,21 @@ except:
     import socket
     import time
 
+def defJointGroups ():
+    rleg_6dof_group = ['rleg', ['RLEG_HIP_R', 'RLEG_HIP_P', 'RLEG_HIP_Y', 'RLEG_KNEE', 'RLEG_ANKLE_P', 'RLEG_ANKLE_R']]
+    lleg_6dof_group = ['lleg', ['LLEG_HIP_R', 'LLEG_HIP_P', 'LLEG_HIP_Y', 'LLEG_KNEE', 'LLEG_ANKLE_P', 'LLEG_ANKLE_R']]
+    torso_group = ['torso', ['WAIST_P', 'WAIST_R', 'CHEST']]
+    head_group = ['head', []]
+    rarm_group = ['rarm', ['RARM_SHOULDER_P', 'RARM_SHOULDER_R', 'RARM_SHOULDER_Y', 'RARM_ELBOW', 'RARM_WRIST_Y', 'RARM_WRIST_P', 'RARM_WRIST_R']]
+    larm_group = ['larm', ['LARM_SHOULDER_P', 'LARM_SHOULDER_R', 'LARM_SHOULDER_Y', 'LARM_ELBOW', 'LARM_WRIST_Y', 'LARM_WRIST_P', 'LARM_WRIST_R']]
+    return [rleg_6dof_group, lleg_6dof_group, torso_group, head_group, rarm_group, larm_group]
+
 def init ():
     global hcf, initial_pose, arm_front_pose, half_sitting_pose, root_rot_x_pose, root_rot_y_pose, pose_list, hrpsys_version, four_legs_mode_pose
     hcf = HrpsysConfigurator()
     hcf.getRTCList = hcf.getRTCListUnstable
     hcf.init ("SampleRobot(Robot)0", "$(PROJECT_DIR)/../model/sample1.wrl")
+    hcf.Groups = defJointGroups()
     # set initial pose from sample/controller/SampleController/etc/Sample.pos
     initial_pose = [-7.779e-005,  -0.378613,  -0.000209793,  0.832038,  -0.452564,  0.000244781,  0.31129,  -0.159481,  -0.115399,  -0.636277,  0,  0,  0.637045,  -7.77902e-005,  -0.378613,  -0.000209794,  0.832038,  -0.452564,  0.000244781,  0.31129,  0.159481,  0.115399,  -0.636277,  0,  0,  -0.637045,  0,  0,  0]
     arm_front_pose = [-7.778932e-05,-0.378613,-0.00021,0.832039,-0.452564,0.000245,-1.5708,-0.159481,-0.115399,-0.349066,0.0,0.0,0.0,-7.778932e-05,-0.378613,-0.00021,0.832039,-0.452564,0.000245,-1.5708,0.159481,0.115399,-0.349066,0.0,0.0,0.0,0.0,0.0,0.0]
@@ -47,7 +57,7 @@ def checkActualBaseAttitude():
 
 def demoAutoBalancerFixFeet ():
     print >> sys.stderr, "1. AutoBalancer mode by fixing feet"
-    hcf.startAutoBalancer();
+    hcf.startAutoBalancer(["rleg", "lleg"]);
     hcf.seq_svc.setJointAngles(arm_front_pose, 1.0)
     hcf.waitInterpolation()
     hcf.seq_svc.setJointAngles(initial_pose, 1.0)
@@ -58,7 +68,7 @@ def demoAutoBalancerFixFeet ():
 
 def demoAutoBalancerFixFeetHands ():
     print >> sys.stderr, "2. AutoBalancer mode by fixing hands and feet"
-    hcf.startAutoBalancer(["rleg", "lleg", "rarm", "larm"])
+    hcf.startAutoBalancer()
     hcf.seq_svc.setJointAngles(arm_front_pose, 1.0)
     hcf.waitInterpolation()
     hcf.seq_svc.setJointAngles(initial_pose, 1.0)
@@ -79,7 +89,7 @@ def demoAutoBalancerSetParam():
     abcp.default_zmp_offsets = [[0.1,0,0], [0.1,0,0], [0,0,0], [0,0,0]]
     hcf.abc_svc.setAutoBalancerParam(abcp)
     print >> sys.stderr, "  default_zmp_offsets setting check in start and stop"
-    hcf.startAutoBalancer();
+    hcf.startAutoBalancer(["rleg", "lleg"]);
     hcf.stopAutoBalancer();
     ret=hcf.abc_svc.getAutoBalancerParam()
     flag = (ret[0] and numpy.allclose(ret[1].default_zmp_offsets, abcp.default_zmp_offsets, 1e-6))
@@ -91,7 +101,7 @@ def demoAutoBalancerSetParam():
 
 def demoAutoBalancerTestPoses():
     print >> sys.stderr, "5. change base height, base rot x, base rot y, and upper body while AutoBalancer mode"
-    hcf.startAutoBalancer();
+    hcf.startAutoBalancer(["rleg", "lleg"]);
     testPoseList(pose_list, initial_pose)
     hcf.stopAutoBalancer();
     checkActualBaseAttitude()
@@ -106,7 +116,7 @@ def demoAutoBalancerStartStopCheck():
         hcf.seq_svc.setJointAngles(pose, 1.0)
         hcf.waitInterpolation()
         hcf.clearLog()
-        hcf.startAutoBalancer();
+        hcf.startAutoBalancer(["rleg", "lleg"]);
         hcf.stopAutoBalancer();
         hcf.saveLog("/tmp/test-samplerobot-abc-startstop-{0}".format(pose_list.index(pose)))
     abcp.default_zmp_offsets = [[0,0,0], [0,0,0], [0,0,0], [0,0,0]]
@@ -117,7 +127,7 @@ def demoAutoBalancerStartStopCheck():
 
 def demoAutoBalancerBalanceAgainstHandForce():
     print >> sys.stderr, "7. balance against hand force"
-    hcf.startAutoBalancer();
+    hcf.startAutoBalancer(["rleg", "lleg"]);
     hcf.seq_svc.setWrenches([0,0,0,0,0,0,
                              0,0,0,0,0,0,
                              0,0,0,0,0,0,
@@ -381,7 +391,7 @@ def demoGaitGeneratorOverwriteFootstepsBase(axis, overwrite_offset_idx = 1, init
 def demoGaitGeneratorFixHand():
     print >> sys.stderr, "14. Fix arm walking"
     hcf.stopAutoBalancer()
-    hcf.startAutoBalancer(['rleg', 'lleg', 'rarm', 'larm'])
+    hcf.startAutoBalancer()
     # Set pose
     abcp=hcf.abc_svc.getAutoBalancerParam()[1]
     abcp.default_zmp_offsets=[[0.01, 0.0, 0.0], [0.01, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]] # Setting default_zmp_offsets is not necessary for fix mode. Just for debugging for default_zmp_offsets in hand fix mode.
@@ -433,7 +443,7 @@ def demoGaitGeneratorSetFootStepsWithArms():
     ggp.default_step_height = 0.01
     hcf.abc_svc.setGaitGeneratorParam(ggp)
     # start walking
-    hcf.startAutoBalancer(['rleg', 'lleg', 'rarm', 'larm'])
+    hcf.startAutoBalancer()
     hcf.setFootSteps([OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([0,-0.09,0], [1,0,0,0], "rleg"),
                                                              OpenHRP.AutoBalancerService.Footstep([0.23,0.21,0.86], [1,0,0,0], "larm")]),
                       OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([0,0.09,0], [1,0,0,0], "lleg"),
