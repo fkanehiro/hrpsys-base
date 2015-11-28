@@ -1901,11 +1901,18 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
     # #
     # # service interface for Unstable RTC component
     # #
-    def startAutoBalancer(self, limbs=["rleg", "lleg"]):
+    def startAutoBalancer(self, limbs=None):
         '''!@brief
         Start AutoBalancer mode
-        @param limbs list of end-effector name to control. rleg and lleg by default.
+        @param limbs list of end-effector name to control.
+        If Groups has rarm and larm, rleg, lleg, rarm, larm by default.
+        If Groups is not defined or Groups does not have rarm and larm, rleg and lleg by default.
         '''
+        if limbs==None:
+            if self.Groups != None and "rarm" in map (lambda x : x[0], self.Groups) and "larm" in map (lambda x : x[0], self.Groups):
+                limbs=["rleg", "lleg", "rarm", "larm"]
+            else:
+                limbs=["rleg", "lleg"]
         self.abc_svc.startAutoBalancer(limbs)
 
     def stopAutoBalancer(self):
