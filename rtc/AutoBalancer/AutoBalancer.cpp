@@ -1491,17 +1491,24 @@ bool AutoBalancer::setAutoBalancerParam(const OpenHRP::AutoBalancerService::Auto
                                                                           i_param.graspless_manip_reference_trans_rot[2],
                                                                           i_param.graspless_manip_reference_trans_rot[3]).normalized().toRotationMatrix()); // rtc: (x, y, z, w) but eigen: (w, x, y, z)
   transition_time = i_param.transition_time;
-  if (leg_names_interpolator->isEmpty()) {
-      leg_names.clear();
-      for (size_t i = 0; i < i_param.leg_names.length(); i++) {
-          leg_names.push_back(std::string(i_param.leg_names[i]));
-      }
-      if (control_mode == MODE_ABC) {
-          double tmp_ratio = 0.0;
-          leg_names_interpolator->set(&tmp_ratio);
-          tmp_ratio = 1.0;
-          leg_names_interpolator->go(&tmp_ratio, 5.0, true);
-          control_mode = MODE_SYNC_TO_ABC;
+  std::vector<std::string> cur_leg_names, dst_leg_names;
+  cur_leg_names = leg_names;
+  for (size_t i = 0; i < i_param.leg_names.length(); i++) {
+      dst_leg_names.push_back(std::string(i_param.leg_names[i]));
+  }
+  std::sort(cur_leg_names.begin(), cur_leg_names.end());
+  std::sort(dst_leg_names.begin(), dst_leg_names.end());
+  if (cur_leg_names != dst_leg_names) {
+      if (leg_names_interpolator->isEmpty()) {
+          leg_names.clear();
+          leg_names = dst_leg_names;
+          if (control_mode == MODE_ABC) {
+              double tmp_ratio = 0.0;
+              leg_names_interpolator->set(&tmp_ratio);
+              tmp_ratio = 1.0;
+              leg_names_interpolator->go(&tmp_ratio, 5.0, true);
+              control_mode = MODE_SYNC_TO_ABC;
+          }
       }
   } else {
       std::cerr << "[" << m_profile.instance_name << "]   leg_names cannot be set because interpolating." << std::endl;
