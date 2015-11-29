@@ -34,7 +34,7 @@ def init ():
     ggp.zmp_weight_map = [1.0]*4
     ggp.default_step_height = 0.05
     hcf.abc_svc.setGaitGeneratorParam(ggp)
-    hcf.startAutoBalancer()
+    hcf.startAutoBalancer(['rleg', 'lleg', 'rarm', 'larm'])
     hrpsys_version = hcf.seq.ref.get_component_profile().version
     print("hrpsys_version = %s"%hrpsys_version)
 
@@ -78,9 +78,24 @@ def demoSetParameterAndStartST():
     hcf.st_svc.setParameter(stp_org)
     hcf.startStabilizer ()
 
+def demoSetFootStepsWithST():
+    print >> sys.stderr,"2. setFootSteps"
+    hcf.setFootSteps([OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([0.0+0.00,-0.19,0], [1,0,0,0], "rleg"),
+                                                             OpenHRP.AutoBalancerService.Footstep([0.7+0.00,+0.19,0], [1,0,0,0], "larm")]),
+                      OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([0.0+0.15,+0.19,0], [1,0,0,0], "lleg"),
+                                                             OpenHRP.AutoBalancerService.Footstep([0.7+0.15,-0.19,0], [1,0,0,0], "rarm")]),
+                      OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([0.0+0.30,-0.19,0], [1,0,0,0], "rleg"),
+                                                             OpenHRP.AutoBalancerService.Footstep([0.7+0.30,+0.19,0], [1,0,0,0], "larm")]),
+                      OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([0.0+0.45,+0.19,0], [1,0,0,0], "lleg"),
+                                                             OpenHRP.AutoBalancerService.Footstep([0.7+0.45,-0.19,0], [1,0,0,0], "rarm")]),
+                      OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([0.0+0.45,-0.19,0], [1,0,0,0], "rleg"),
+                                                             OpenHRP.AutoBalancerService.Footstep([0.7+0.45,+0.19,0], [1,0,0,0], "larm")])])
+    hcf.abc_svc.waitFootSteps()
+
 def demo():
     init()
     demoSetParameterAndStartST()
+    demoSetFootStepsWithST()
 
 if __name__ == '__main__':
     demo()

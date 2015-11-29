@@ -25,6 +25,7 @@ def init ():
                     0.0,      0.0,      0.0]
     hcf.seq_svc.setJointAngles(initial_pose, 2.0)
     hcf.waitInterpolation()
+    hcf.startAutoBalancer()
     hrpsys_version = hcf.seq.ref.get_component_profile().version
     print("hrpsys_version = %s"%hrpsys_version)
 
