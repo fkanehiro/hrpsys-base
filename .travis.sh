@@ -180,7 +180,9 @@ case $TEST_PACKAGE in
         pkg=$TEST_PACKAGE
         sudo apt-get install -qq -y python-wstool ros-hydro-catkin ros-hydro-mk ros-hydro-rostest ros-hydro-rtmbuild ros-hydro-roslint > /dev/null
 
-        sudo apt-get install -qq -y ros-hydro-pcl-ros ros-hydro-moveit-commander ros-hydro-rqt-robot-dashboard > /dev/null
+        sudo apt-get install -qq -y ros-hydro-pcl-ros > /dev/null
+        sudo apt-get install -qq -y ros-hydro-moveit-commander > /dev/null
+        sudo apt-get install -qq -y ros-hydro-rqt-robot-dashboard > /dev/null
 
         sudo apt-get install -qq -y ros-hydro-$pkg
 
