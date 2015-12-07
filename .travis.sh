@@ -182,7 +182,7 @@ case $TEST_PACKAGE in
 
         sudo apt-get install -qq -y ros-hydro-pcl-ros > /dev/null
         sudo apt-get install -qq -y ros-hydro-rqt-robot-dashboard > /dev/null
-        yes N | sudo apt-get install -y ros-hydro-moveit-commander
+        yes N | sudo apt-get install -y ros-hydro-moveit-commander > /dev/null
 
         sudo apt-get install -qq -y ros-hydro-$pkg
 
