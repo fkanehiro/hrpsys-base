@@ -748,6 +748,7 @@ void Stabilizer::getActualParameters ()
     // Actual world frame =>
     // new ZMP calculation
     // Kajita's feedback law
+    //   Basically Equation (26) in the paper [1].
     hrp::Vector3 dcog=foot_origin_rot * (ref_cog - act_cog);
     hrp::Vector3 dcogvel=foot_origin_rot * (ref_cogvel - act_cogvel);
     hrp::Vector3 dzmp=foot_origin_rot * (ref_zmp - act_zmp);
@@ -809,8 +810,9 @@ void Stabilizer::getActualParameters ()
           }
       }
 
-      // Ref force and moment at COP
+      // Distribute ZMP into each EE force/moment at each COP
       if (st_algorithm == OpenHRP::StabilizerService::EEFM) {
+          // Modified version of distribution in Equation (4)-(6) and (10)-(13) in the paper [1].
           szd->distributeZMPToForceMoments(ref_force, ref_moment,
                                            ee_pos, cop_pos, ee_rot, ee_name, limb_gains,
                                            new_refzmp, hrp::Vector3(foot_origin_rot * ref_zmp + foot_origin_pos),
@@ -864,6 +866,7 @@ void Stabilizer::getActualParameters ()
         // calcDampingControl
         // d_foot_rpy and d_foot_pos is (actual) foot origin coords relative value because these use foot origin coords relative force & moment
         { // Rot
+          //   Basically Equation (16) and (17) in the paper [1]
             hrp::Vector3 tmp_damping_gain = (1-transition_smooth_gain) * ikp.eefm_rot_damping_gain * 10 + transition_smooth_gain * ikp.eefm_rot_damping_gain;
             ikp.d_foot_rpy = calcDampingControl(ikp.ref_moment, ee_moment, ikp.d_foot_rpy, tmp_damping_gain, ikp.eefm_rot_time_const);
             ikp.d_foot_rpy = vlimit(ikp.d_foot_rpy, -1 * ikp.eefm_rot_compensation_limit, ikp.eefm_rot_compensation_limit);
@@ -882,6 +885,7 @@ void Stabilizer::getActualParameters ()
       if (eefm_use_force_difference_control) {
           // fxyz control
           // foot force difference control version
+          //   Basically Equation (18) in the paper [1]
           hrp::Vector3 ref_f_diff = (stikp[1].ref_force-stikp[0].ref_force);
           if ( (contact_states[contact_states_index_map["rleg"]] && contact_states[contact_states_index_map["lleg"]]) // Reference : double support phase
                || (isContact(0) && isContact(1)) ) { // Actual : double support phase
@@ -1174,6 +1178,7 @@ void Stabilizer::calcStateForEmergencySignal()
 void Stabilizer::moveBasePosRotForBodyRPYControl ()
 {
     // Body rpy control
+    //   Basically Equation (1) and (2) in the paper [1]
     hrp::Vector3 ref_root_rpy = hrp::rpyFromRot(target_root_R);
     for (size_t i = 0; i < 2; i++) {
         d_rpy[i] = transition_smooth_gain * (eefm_body_attitude_control_gain[i] * (ref_root_rpy(i) - act_base_rpy(i)) - 1/eefm_body_attitude_control_time_const[i] * d_rpy[i]) * dt + d_rpy[i];
@@ -1340,6 +1345,8 @@ void Stabilizer::calcEEForceMomentControl() {
       }
 }
 
+// Damping control functions
+//   Basically Equation (14) in the paper [1]
 double Stabilizer::calcDampingControl (const double tau_d, const double tau, const double prev_d,
                                        const double DD, const double TT)
 {
