@@ -894,11 +894,9 @@ void AutoBalancer::fixLegToCoords (const hrp::Vector3& fix_pos, const hrp::Matri
   // get current foot mid pos + rot
   std::vector<coordinates> foot_coords;
   for (size_t i = 0; i < leg_names.size(); i++) {
-      if (leg_names[i].find("leg") != std::string::npos) {
-          ABCIKparam& tmpikp = ikp[leg_names[i]];
-          foot_coords.push_back(coordinates((tmpikp.target_link->p + tmpikp.target_link->R * tmpikp.localPos),
-                                            (tmpikp.target_link->R * tmpikp.localR)));
-      }
+      ABCIKparam& tmpikp = ikp[leg_names[i]];
+      foot_coords.push_back(coordinates((tmpikp.target_link->p + tmpikp.target_link->R * tmpikp.localPos),
+                                        (tmpikp.target_link->R * tmpikp.localR)));
   }
   coordinates current_foot_mid_coords;
   multi_mid_coords(current_foot_mid_coords, foot_coords);
@@ -1099,9 +1097,7 @@ void AutoBalancer::stopWalking ()
 {
   std::vector<coordinates> tmp_end_coords_list;
   for (std::vector<string>::iterator it = leg_names.begin(); it != leg_names.end(); it++) {
-      if ((*it).find("leg") != std::string::npos) {
-          tmp_end_coords_list.push_back(ikp[*it].target_end_coords);
-      }
+      tmp_end_coords_list.push_back(ikp[*it].target_end_coords);
   }
   multi_mid_coords(fix_leg_coords, tmp_end_coords_list);
   fixLegToCoords(fix_leg_coords.pos, fix_leg_coords.rot);
