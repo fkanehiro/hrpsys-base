@@ -48,10 +48,12 @@ def testPoseList(pose_list, initial_pose):
         hcf.seq_svc.setJointAngles(initial_pose, 1.0)
         hcf.waitInterpolation()
 
-def checkActualBaseAttitude():
-    rpy = rtm.readDataPort(hcf.rh.port("WAIST")).data.orientation
-    ret = math.degrees(rpy.r) < 0.1 and math.degrees(rpy.p) < 0.1
-    print >> sys.stderr, "  actual base rpy = ", ret, "(", rpy, ")"
+def checkActualBaseAttitude(ref_rpy = None, thre=0.1): # degree
+    act_rpy = rtm.readDataPort(hcf.rh.port("WAIST")).data.orientation
+    if ref_rpy == None:
+        ref_rpy = rtm.readDataPort(hcf.abc.port("baseRpyOut")).data
+    ret = abs(math.degrees(act_rpy.r-ref_rpy.r)) < thre and abs(math.degrees(act_rpy.p-ref_rpy.p)) < thre
+    print >> sys.stderr, "  ret = ", ret, ", actual base rpy = (", act_rpy, "), ", "reference base rpy = (", ref_rpy, ")"
     assert (ret)
     return ret
 
@@ -422,8 +424,9 @@ def demoGaitGeneratorFixHand():
     abcp=hcf.abc_svc.getAutoBalancerParam()[1]
     abcp.default_zmp_offsets=[[0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]]
     hcf.abc_svc.setAutoBalancerParam(abcp)
+    ref_rpy = rtm.readDataPort(hcf.abc.port("baseRpyOut")).data
     hcf.stopAutoBalancer()
-    checkActualBaseAttitude()
+    checkActualBaseAttitude(ref_rpy)
     print >> sys.stderr, "  Fix hand=>OK"
 
 def demoGaitGeneratorSetFootStepsWithArms():
