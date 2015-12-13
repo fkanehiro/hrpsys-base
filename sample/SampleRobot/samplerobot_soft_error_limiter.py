@@ -43,9 +43,9 @@ def demo ():
     init()
     if hrpsys_version >= '315.5.0':
         demoTestAllLimitTables()
-    demoPositionLimit()
-    demoVelocityLimit()
-    demoErrorLimit()
+        demoPositionLimit()
+        demoVelocityLimit()
+        demoErrorLimit()
 
 def demoTestAllLimitTables():
     print >> sys.stderr, "1. demo all jointLimitTables"
