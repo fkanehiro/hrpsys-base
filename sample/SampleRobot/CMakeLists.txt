@@ -70,4 +70,4 @@ install(PROGRAMS
     ${python_scripts}
   DESTINATION share/hrpsys/samples/SampleRobot)
 add_subdirectory(rtc)
-
+add_subdirectory(data)
