@@ -37,7 +37,8 @@ travis_time_start mongo_hack
 
 # MongoDB hack
 dpkg -s mongodb || echo "ok"; export HAVE_MONGO_DB=$?
-if [ $HAVE_MONGO_DB == 0 ]; then sudo apt-get remove -qq -y mongodb mongodb-10gen || echo "ok"; fi
+# Remove configuration file for mongodb using --purge option (reported in https://github.com/fkanehiro/hrpsys-base/pull/900#issuecomment-162392884)
+if [ $HAVE_MONGO_DB == 0 ]; then sudo apt-get remove --purge -qq -y mongodb mongodb-10gen || echo "ok"; fi
 if [ $HAVE_MONGO_DB == 0 ]; then sudo apt-get install -qq -y mongodb-clients mongodb-server -o Dpkg::Options::="--force-confdef" || echo "ok"; fi # default actions
 
 travis_time_end
@@ -180,8 +181,7 @@ case $TEST_PACKAGE in
         pkg=$TEST_PACKAGE
         sudo apt-get install -qq -y python-wstool ros-hydro-catkin ros-hydro-mk ros-hydro-rostest ros-hydro-rtmbuild ros-hydro-roslint > /dev/null
 
-        # Add inputting of "N" for mongodb configuration during deb install reported in https://github.com/fkanehiro/hrpsys-base/pull/900#issuecomment-162392884
-        yes N | sudo apt-get install -qq -y ros-hydro-pcl-ros ros-hydro-moveit-commander ros-hydro-rqt-robot-dashboard > /dev/null
+        sudo apt-get install -qq -y ros-hydro-pcl-ros ros-hydro-moveit-commander ros-hydro-rqt-robot-dashboard > /dev/null
 
         sudo apt-get install -qq -y ros-hydro-$pkg
 
