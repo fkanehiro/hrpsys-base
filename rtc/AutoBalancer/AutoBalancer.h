@@ -155,6 +155,8 @@ class AutoBalancer
   OutPort<TimedDoubleSeq> m_controlSwingSupportTimeOut;
   TimedBoolean m_walkingStates;
   OutPort<TimedBoolean> m_walkingStatesOut;
+  TimedPoint3D m_sbpCogOffset;
+  OutPort<TimedPoint3D> m_sbpCogOffsetOut;
   std::vector<TimedDoubleSeq> m_force;
   std::vector<OutPort<TimedDoubleSeq> *> m_ref_forceOut;
   std::vector<TimedPoint3D> m_limbCOPOffset;

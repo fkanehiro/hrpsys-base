@@ -12,6 +12,7 @@
 
 #include <hrpModel/Body.h>
 #include <iostream>
+#include <iterator>
 #include "../ImpedanceController/JointPathEx.h"
 #include "../TorqueFilter/IIRFilter.h"
 #include <hrpUtil/MatrixSolvers.h>
@@ -81,6 +82,53 @@ public:
         else if (support_leg == LLEG) return (cp(1) >= (-1 * leg_inside_margin + margin)) && (cp(1) <= (leg_outside_margin - margin)) && (cp(0) <= (leg_front_margin - margin)) && (cp(0) >= (-1 * leg_rear_margin + margin));
         else if (support_leg == BOTH) return (cp(1) <= (leg_outside_margin + offset - margin)) && (cp(1) >= (-1 * (leg_outside_margin + offset) + margin)) && (cp(0) <= (leg_front_margin - margin)) && (cp(0) >= (-1 * leg_rear_margin + margin));
         else return true;
+    };
+    inline bool is_inside_support_polygon (Eigen::Vector2d& p, const std::vector<hrp::Vector3>& ee_pos, const std::vector <hrp::Matrix33>& ee_rot, const std::vector<std::string>& ee_name, const leg_type& support_leg, const std::vector<double>& tmp_margin = std::vector<double>(), const hrp::Vector3& offset = hrp::Vector3(0.0, 0.0, 0.0))
+    {
+      size_t l_idx, r_idx;
+      for (size_t i = 0; i < ee_name.size(); i++) {
+        if (ee_name[i]=="rleg") r_idx = i;
+        else if (ee_name[i]=="lleg") l_idx = i;
+      }
+      std::vector<Eigen::Vector2d> rleg_vertices;
+      std::vector<Eigen::Vector2d> lleg_vertices;
+      std::vector<Eigen::Vector2d> convex_vertices;
+
+      // assume that each foot vertices has four vertices
+      std::vector<double> margin(4, 0.0);
+      for (size_t i = 0; i < tmp_margin.size(); i++) {
+        margin[i] = tmp_margin[i];
+      }
+      // RLEG
+      rleg_vertices.push_back(Eigen::Vector2d(ee_pos[r_idx](0) + leg_front_margin - margin[0] + offset(0), ee_pos[r_idx](1) + leg_inside_margin - margin[2] + offset(1)));
+      rleg_vertices.push_back(Eigen::Vector2d(ee_pos[r_idx](0) + leg_front_margin - margin[0] + offset(0), ee_pos[r_idx](1) + -1*(leg_outside_margin - margin[3]) + offset(1)));
+      rleg_vertices.push_back(Eigen::Vector2d(ee_pos[r_idx](0) + -1*(leg_rear_margin - margin[1]) + offset(0), ee_pos[r_idx](1) + -1*(leg_outside_margin - margin[3]) + offset(1)));
+      rleg_vertices.push_back(Eigen::Vector2d(ee_pos[r_idx](0) + -1*(leg_rear_margin - margin[1]) + offset(0), ee_pos[r_idx](1) + leg_inside_margin - margin[2] + offset(1)));
+      // LLEG
+      lleg_vertices.push_back(Eigen::Vector2d(ee_pos[l_idx](0) + leg_front_margin - margin[0] + offset(0), ee_pos[l_idx](1) + leg_outside_margin - margin[3] + offset(1)));
+      lleg_vertices.push_back(Eigen::Vector2d(ee_pos[l_idx](0) + leg_front_margin - margin[0] + offset(0), ee_pos[l_idx](1) + -1*(leg_inside_margin - margin[2]) + offset(1)));
+      lleg_vertices.push_back(Eigen::Vector2d(ee_pos[l_idx](0) + -1*(leg_rear_margin - margin[1]) + offset(0), ee_pos[l_idx](1) + -1*(leg_inside_margin - margin[2]) + offset(1)));
+      lleg_vertices.push_back(Eigen::Vector2d(ee_pos[l_idx](0) + -1*(leg_rear_margin - margin[1]) + offset(0), ee_pos[l_idx](1) + leg_outside_margin - margin[3] + offset(1)));
+
+      if (support_leg == BOTH) {
+        // sort vertices in clockwise order
+        convex_vertices.push_back(lleg_vertices[0]);
+        convex_vertices.push_back(lleg_vertices[1]);
+        std::copy(rleg_vertices.begin(),rleg_vertices.end(),std::back_inserter(convex_vertices));
+        convex_vertices.push_back(lleg_vertices[2]);
+        convex_vertices.push_back(lleg_vertices[3]);
+        convex_vertices = calcConvexHull(convex_vertices);
+      } else if (support_leg == RLEG) {
+        convex_vertices = rleg_vertices;
+      } else if (support_leg == LLEG) {
+        convex_vertices = lleg_vertices;
+      }
+      // check whether p is inside support polygon
+      for (size_t i = 0; i < convex_vertices.size() - 1; i++) {
+        if (calcCrossProduct(p, convex_vertices[i + 1], convex_vertices[i]) < 0) return false;
+      }
+      if (calcCrossProduct(p, convex_vertices.front(), convex_vertices.back()) < 0) return false;
+      return true;
     };
     void print_params (const std::string& str)
     {
@@ -810,6 +858,25 @@ public:
             }
         }
     };
+
+  double calcCrossProduct(Eigen::Vector2d& a, Eigen::Vector2d& b, Eigen::Vector2d& o)
+  {
+    return (a(0) - o(0)) * (b(1) - o(1)) - (a(1) - o(1)) * (b(0) - o(0));
+  };
+
+  // assume that vertices are listed in clockwise order
+  std::vector<Eigen::Vector2d> calcConvexHull(std::vector<Eigen::Vector2d> vertices)
+  {
+    std::vector<Eigen::Vector2d> convex_vertices;
+
+    convex_vertices.push_back(vertices.front());
+    for (size_t i = 1; i < vertices.size() - 1; i++) {
+      if (calcCrossProduct(vertices[i + 1], vertices[i - 1], vertices[i]) < 0) convex_vertices.push_back(vertices[i]);
+    }
+    convex_vertices.push_back(vertices.back());
+
+    return convex_vertices;
+  };
 };
 
 #endif // ZMP_DISTRIBUTOR_H

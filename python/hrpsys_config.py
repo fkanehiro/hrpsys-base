@@ -279,20 +279,20 @@ class HrpsysConfigurator:
             print(self.configurator_name + "\033[31m connectComps : hrpsys requries rh, seq, sh and fk, please check rtcd.conf or rtcd arguments\033[0m")
             return
         # connection for reference joint angles
-        tmp_contollers = self.getJointAngleControllerList()
-        if len(tmp_contollers) > 0:
-            connectPorts(self.sh.port("qOut"), tmp_contollers[0].port("qRef"))
-            for i in range(len(tmp_contollers) - 1):
-                connectPorts(tmp_contollers[i].port("q"),
-                             tmp_contollers[i + 1].port("qRef"))
+        tmp_controllers = self.getJointAngleControllerList()
+        if len(tmp_controllers) > 0:
+            connectPorts(self.sh.port("qOut"), tmp_controllers[0].port("qRef"))
+            for i in range(len(tmp_controllers) - 1):
+                connectPorts(tmp_controllers[i].port("q"),
+                             tmp_controllers[i + 1].port("qRef"))
             if self.simulation_mode:
                 if self.pdc:
-                    connectPorts(tmp_contollers[-1].port("q"), self.pdc.port("angleRef"))
+                    connectPorts(tmp_controllers[-1].port("q"), self.pdc.port("angleRef"))
                 else:
-                    connectPorts(tmp_contollers[-1].port("q"), self.hgc.port("qIn"))
+                    connectPorts(tmp_controllers[-1].port("q"), self.hgc.port("qIn"))
                     connectPorts(self.hgc.port("qOut"), self.rh.port("qRef"))
             else:
-                connectPorts(tmp_contollers[-1].port("q"), self.rh.port("qRef"))
+                connectPorts(tmp_controllers[-1].port("q"), self.rh.port("qRef"))
         else:
             if self.simulation_mode:
                 if self.pdc:
@@ -375,6 +375,7 @@ class HrpsysConfigurator:
             connectPorts(self.rh.port("q"), self.st.port("qCurrent"))
             connectPorts(self.seq.port("qRef"), self.st.port("qRefSeq"))
             connectPorts(self.abc.port("walkingStates"), self.st.port("walkingStates"))
+            connectPorts(self.abc.port("sbpCogOffset"), self.st.port("sbpCogOffset"))
             if self.es:
                 connectPorts(self.st.port("emergencySignal"), self.es.port("emergencySignal"))
             connectPorts(self.st.port("emergencySignal"), self.abc.port("emergencySignal"))
@@ -384,12 +385,22 @@ class HrpsysConfigurator:
             if self.st:
                 connectPorts(self.abc.port(sen),
                              self.st.port(sen + "Ref"))
-            if self.ic:
+            if self.es:
                 connectPorts(self.sh.port(sen+"Out"),
-                             self.ic.port("ref_" + sen+"In"))
-            if self.abc:
-                connectPorts(self.sh.port(sen+"Out"),
-                             self.abc.port("ref_" + sen))
+                                 self.es.port(sen+"In"))
+                if self.ic:
+                    connectPorts(self.es.port(sen+"Out"),
+                                 self.ic.port("ref_" + sen+"In"))
+                if self.abc:
+                    connectPorts(self.es.port(sen+"Out"),
+                                 self.abc.port("ref_" + sen))
+            else:
+                if self.ic:
+                    connectPorts(self.sh.port(sen+"Out"),
+                                 self.ic.port("ref_" + sen+"In"))
+                if self.abc:
+                    connectPorts(self.sh.port(sen+"Out"),
+                                 self.abc.port("ref_" + sen))
             if self.abc and self.st:
                 connectPorts(self.abc.port("limbCOPOffset_"+sen),
                              self.st.port("limbCOPOffset_"+sen))
@@ -480,6 +491,10 @@ class HrpsysConfigurator:
         # connection for el
         if self.el:
             connectPorts(self.rh.port("q"), self.el.port("qCurrent"))
+
+        # connection for co
+        if self.es:
+            connectPorts(self.rh.port("servoState"), self.es.port("servoStateIn"))
 
     def activateComps(self):
         '''!@brief
@@ -1886,11 +1901,18 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
     # #
     # # service interface for Unstable RTC component
     # #
-    def startAutoBalancer(self, limbs=["rleg", "lleg"]):
+    def startAutoBalancer(self, limbs=None):
         '''!@brief
         Start AutoBalancer mode
-        @param limbs list of end-effector name to control. rleg and lleg by default.
+        @param limbs list of end-effector name to control.
+        If Groups has rarm and larm, rleg, lleg, rarm, larm by default.
+        If Groups is not defined or Groups does not have rarm and larm, rleg and lleg by default.
         '''
+        if limbs==None:
+            if self.Groups != None and "rarm" in map (lambda x : x[0], self.Groups) and "larm" in map (lambda x : x[0], self.Groups):
+                limbs=["rleg", "lleg", "rarm", "larm"]
+            else:
+                limbs=["rleg", "lleg"]
         self.abc_svc.startAutoBalancer(limbs)
 
     def stopAutoBalancer(self):
@@ -1970,7 +1992,7 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
         else:
             self.stopImpedance_315_4(arm)
 
-    def startDefaultUnstableControllers (self, ic_limbs=["rarm", "larm"], abc_limbs=["rleg", "lleg"]):
+    def startDefaultUnstableControllers (self, ic_limbs=["rarm", "larm"], abc_limbs=None):
         '''!@brief
         Start default unstable RTCs controller mode.
         Currently Stabilzier, AutoBalancer, and ImpedanceController are started.
@@ -1978,6 +2000,11 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
         self.startStabilizer()
         for limb in ic_limbs:
             self.ic_svc.startImpedanceControllerNoWait(limb)
+        if abc_limbs==None:
+            if self.Groups != None and "rarm" in map (lambda x : x[0], self.Groups) and "larm" in map (lambda x : x[0], self.Groups):
+                abc_limbs=["rleg", "lleg", "rarm", "larm"]
+            else:
+                abc_limbs=["rleg", "lleg"]
         self.startAutoBalancer(abc_limbs)
         for limb in ic_limbs:
             self.ic_svc.waitImpedanceControllerTransition(limb)

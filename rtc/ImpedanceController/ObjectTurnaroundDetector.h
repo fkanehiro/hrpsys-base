@@ -17,10 +17,15 @@ class ObjectTurnaroundDetector
     double prev_wrench, dt;
     double detect_ratio_thre, start_ratio_thre, ref_dwrench, max_time, current_time;
     size_t count;
+    // detect_count_thre*dt and start_ratio_thre*dt are threshould for time.
+    //   detect_count_thre*dt : Threshould for time [s] after the first object turnaround detection (Wait detect_time_thre [s] after first object turnaround detection).
+    //   start_count_thre*dt  : Threshould for time [s] after the first starting detection (Wait start_time_thre [s] after first start detection).
+    size_t detect_count_thre, start_count_thre;
     process_mode pmode;
     std::string print_str;
  public:
-    ObjectTurnaroundDetector (const double _dt) : axis(-1*hrp::Vector3::UnitZ()), prev_wrench(0.0), dt(_dt), detect_ratio_thre(0.01), start_ratio_thre(0.5), pmode(MODE_IDLE)
+    ObjectTurnaroundDetector (const double _dt) : axis(-1*hrp::Vector3::UnitZ()), prev_wrench(0.0), dt(_dt), detect_ratio_thre(0.01), start_ratio_thre(0.5),
+        count(0), detect_count_thre(5), start_count_thre(5), pmode(MODE_IDLE)
     {
         double default_cutoff_freq = 1; // [Hz]
         wrench_filter = boost::shared_ptr<FirstOrderLowPassFilter<double> >(new FirstOrderLowPassFilter<double>(default_cutoff_freq, _dt, 0));
@@ -54,20 +59,24 @@ class ObjectTurnaroundDetector
         case MODE_IDLE:
             if (tmp_dwr > ref_dwrench*start_ratio_thre) {
                 count++;
-                if (count > 5) {
+                if (count > start_count_thre) {
                     pmode = MODE_STARTED;
                     count = 0;
-                    std::cerr << "[" << print_str << "] Object Turnaround Detection Started." << std::endl;
+                    std::cerr << "[" << print_str << "] Object Turnaround Detection Started. (" << start_count_thre*dt << "[s] after the first start detection)" << std::endl;
                 }
+            } else {
+                /* count--; */
             }
             break;
         case MODE_STARTED:
             if (tmp_dwr < ref_dwrench*detect_ratio_thre) {
                 count++;
-                if (count > 5) {
+                if (count > detect_count_thre) {
                     pmode = MODE_DETECTED;
-                    std::cerr << "[" << print_str << "] Object Turnaround Detected (time = " << current_time << "[s])" << std::endl;
+                    std::cerr << "[" << print_str << "] Object Turnaround Detected (time = " << current_time << "[s], " << detect_count_thre*dt << "[s] after the first detection)" << std::endl;
                 }
+            } else {
+                /* count--; */
             }
             //std::cerr << "[" << print_str << "] " << tmp_wr << " " << tmp_dwr << " " << count << std::endl;
             break;
@@ -91,18 +100,23 @@ class ObjectTurnaroundDetector
     {
         std::cerr << "[" << print_str << "]   ObjectTurnaroundDetector params" << std::endl;
         std::cerr << "[" << print_str << "]    wrench_cutoff_freq = " << wrench_filter->getCutOffFreq() << "[Hz], dwrench_cutoff_freq = " << dwrench_filter->getCutOffFreq() << "[Hz]" << std::endl;
-        std::cerr << "[" << print_str << "]    detect_ratio_thre = " << detect_ratio_thre << ", start_ratio_thre = " << start_ratio_thre << std::endl;
+        std::cerr << "[" << print_str << "]    detect_ratio_thre = " << detect_ratio_thre << ", start_ratio_thre = " << start_ratio_thre
+                  << ", start_time_thre = " << start_count_thre*dt << "[s], detect_time_thre = " << detect_count_thre*dt << "[s]" << std::endl;
     };
     void setPrintStr (const std::string& str) { print_str = str; };
     void setWrenchCutoffFreq (const double a) { wrench_filter->setCutOffFreq(a); };
     void setDwrenchCutoffFreq (const double a) { dwrench_filter->setCutOffFreq(a); };
     void setDetectRatioThre (const double a) { detect_ratio_thre = a; };
     void setStartRatioThre (const double a) { start_ratio_thre = a; };
+    void setDetectTimeThre (const double a) { detect_count_thre = static_cast<size_t>(a/dt); };
+    void setStartTimeThre (const double a) { start_count_thre = static_cast<size_t>(a/dt); };
     void setAxis (const hrp::Vector3& a) { axis = a; };
     double getWrenchCutoffFreq () const { return wrench_filter->getCutOffFreq(); };
     double getDwrenchCutoffFreq () const { return dwrench_filter->getCutOffFreq(); };
     double getDetectRatioThre () const { return detect_ratio_thre; };
     double getStartRatioThre () const { return start_ratio_thre; };
+    double getDetectTimeThre () const { return detect_count_thre*dt; };
+    double getStartTimeThre () const { return start_count_thre*dt; };
     hrp::Vector3 getAxis () const { return axis; };
     double getFilteredWrench () const { return wrench_filter->getCurrentValue(); };
     double getFilteredDwrench () const { return dwrench_filter->getCurrentValue(); };

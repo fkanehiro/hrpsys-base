@@ -61,6 +61,7 @@ AutoBalancer::AutoBalancer(RTC::Manager* manager)
       m_cogOut("cogOut", m_cog),
       m_AutoBalancerServicePort("AutoBalancerService"),
       m_walkingStatesOut("walkingStates", m_walkingStates),
+      m_sbpCogOffsetOut("sbpCogOffset", m_sbpCogOffset),
       // </rtc-template>
       move_base_gain(0.8),
       m_robot(hrp::BodyPtr()),
@@ -101,6 +102,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     addOutPort("controlSwingSupportTime", m_controlSwingSupportTimeOut);
     addOutPort("cogOut", m_cogOut);
     addOutPort("walkingStates", m_walkingStatesOut);
+    addOutPort("sbpCogOffset", m_sbpCogOffsetOut);
   
     // Set service provider to Ports
     m_AutoBalancerServicePort.registerProvider("service0", "AutoBalancerService", m_service0);
@@ -321,7 +323,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
 
     is_stop_mode = false;
     has_ik_failed = false;
-    is_hand_fix_mode = true;
+    is_hand_fix_mode = false;
 
     pos_ik_thre = 0.1*1e-3; // [m]
     rot_ik_thre = (1e-2)*M_PI/180.0; // [rad]
@@ -523,6 +525,11 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
       m_cog.data.y = ref_cog(1);
       m_cog.data.z = ref_cog(2);
       m_cog.tm = m_qRef.tm;
+      // sbpCogOffset
+      m_sbpCogOffset.data.x = sbp_cog_offset(0);
+      m_sbpCogOffset.data.y = sbp_cog_offset(1);
+      m_sbpCogOffset.data.z = sbp_cog_offset(2);
+      m_sbpCogOffset.tm = m_qRef.tm;
     }
     m_basePosOut.write();
     m_baseRpyOut.write();
@@ -530,6 +537,7 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
     m_basePoseOut.write();
     m_zmpOut.write();
     m_cogOut.write();
+    m_sbpCogOffsetOut.write();
 
     // reference acceleration
     hrp::Sensor* sen = m_robot->sensor<hrp::RateGyroSensor>("gyrometer");
@@ -1487,17 +1495,24 @@ bool AutoBalancer::setAutoBalancerParam(const OpenHRP::AutoBalancerService::Auto
                                                                           i_param.graspless_manip_reference_trans_rot[2],
                                                                           i_param.graspless_manip_reference_trans_rot[3]).normalized().toRotationMatrix()); // rtc: (x, y, z, w) but eigen: (w, x, y, z)
   transition_time = i_param.transition_time;
-  if (leg_names_interpolator->isEmpty()) {
-      leg_names.clear();
-      for (size_t i = 0; i < i_param.leg_names.length(); i++) {
-          leg_names.push_back(std::string(i_param.leg_names[i]));
-      }
-      if (control_mode == MODE_ABC) {
-          double tmp_ratio = 0.0;
-          leg_names_interpolator->set(&tmp_ratio);
-          tmp_ratio = 1.0;
-          leg_names_interpolator->go(&tmp_ratio, 5.0, true);
-          control_mode = MODE_SYNC_TO_ABC;
+  std::vector<std::string> cur_leg_names, dst_leg_names;
+  cur_leg_names = leg_names;
+  for (size_t i = 0; i < i_param.leg_names.length(); i++) {
+      dst_leg_names.push_back(std::string(i_param.leg_names[i]));
+  }
+  std::sort(cur_leg_names.begin(), cur_leg_names.end());
+  std::sort(dst_leg_names.begin(), dst_leg_names.end());
+  if (cur_leg_names != dst_leg_names) {
+      if (leg_names_interpolator->isEmpty()) {
+          leg_names.clear();
+          leg_names = dst_leg_names;
+          if (control_mode == MODE_ABC) {
+              double tmp_ratio = 0.0;
+              leg_names_interpolator->set(&tmp_ratio);
+              tmp_ratio = 1.0;
+              leg_names_interpolator->go(&tmp_ratio, 5.0, true);
+              control_mode = MODE_SYNC_TO_ABC;
+          }
       }
   } else {
       std::cerr << "[" << m_profile.instance_name << "]   leg_names cannot be set because interpolating." << std::endl;

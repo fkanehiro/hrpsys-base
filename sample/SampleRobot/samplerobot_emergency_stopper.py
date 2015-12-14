@@ -14,24 +14,29 @@ except:
     import time
 
 def init ():
-    global hcf, init_pose, reset_pose, hrpsys_version
+    global hcf, init_pose, reset_pose, wrench_command0, wrench_command1, hrpsys_version
     hcf = HrpsysConfigurator()
     hcf.getRTCList = hcf.getRTCListUnstable
     hcf.init ("SampleRobot(Robot)0", "$(PROJECT_DIR)/../model/sample1.wrl")
     init_pose = [0]*29
     reset_pose = [0.0,-0.772215,0.0,1.8338,-1.06158,0.0,0.523599,0.0,0.0,-2.44346,0.15708,-0.113446,0.637045,0.0,-0.772215,0.0,1.8338,-1.06158,0.0,0.523599,0.0,0.0,-2.44346,-0.15708,-0.113446,-0.637045,0.0,0.0,0.0]
+    wrench_command0 = [0.0]*24
+    wrench_command1 = [1.0]*24
     hrpsys_version = hcf.seq.ref.get_component_profile().version
     print("hrpsys_version = %s"%hrpsys_version)
 
-def angleDistance (angle1, angle2):
+def arrayDistance (angle1, angle2):
     return sum([abs(i-j) for (i,j) in zip(angle1,angle2)])
 
-def angleApproxEqual (angle1, angle2, thre=1e-3):
-    return angleDistance(angle1, angle2) < thre
+def arrayApproxEqual (angle1, angle2, thre=1e-3):
+    return arrayDistance(angle1, angle2) < thre
+
+def getWrenchArray ():
+    return reduce(lambda x,y: x+y, (map(lambda fs : rtm.readDataPort(hcf.es.port(fs+"Out")).data, ['lfsensor', 'rfsensor', 'lhsensor', 'rhsensor'])))
 
 # demo functions
-def demoEmergencyStop ():
-    print >> sys.stderr, "1. test stopMotion and releaseMotion"
+def demoEmergencyStopJointAngle ():
+    print >> sys.stderr, "1. test stopMotion and releaseMotion for joint angle"
     hcf.es_svc.releaseMotion()
     hcf.seq_svc.setJointAngles(init_pose, 1.0)
     hcf.waitInterpolation()
@@ -43,9 +48,9 @@ def demoEmergencyStop ():
     time.sleep(4)
     print >> sys.stderr, "  check whether robot pose is changing"
     tmp_angle2 = hcf.getActualState().angle
-    if angleApproxEqual(init_pose, tmp_angle1) and not(angleApproxEqual(tmp_angle1, tmp_angle2)):
+    if arrayApproxEqual(init_pose, tmp_angle1) and not(arrayApproxEqual(tmp_angle1, tmp_angle2)):
         print >> sys.stderr, "  => robot is moving."
-    assert (angleApproxEqual(init_pose, tmp_angle1) and not(angleApproxEqual(tmp_angle1, tmp_angle2)))
+    assert (arrayApproxEqual(init_pose, tmp_angle1) and not(arrayApproxEqual(tmp_angle1, tmp_angle2)))
     print >> sys.stderr, "  stop motion"
     hcf.es_svc.stopMotion()
     time.sleep(0.1)
@@ -53,9 +58,9 @@ def demoEmergencyStop ():
     tmp_angle1 = hcf.getActualState().angle
     time.sleep(3)
     tmp_angle2 = hcf.getActualState().angle
-    if angleApproxEqual(tmp_angle1, tmp_angle2):
+    if arrayApproxEqual(tmp_angle1, tmp_angle2):
         print >> sys.stderr, "  => robot is not moving. stopMotion is working succesfully."
-    assert (angleApproxEqual(tmp_angle1, tmp_angle2))
+    assert (arrayApproxEqual(tmp_angle1, tmp_angle2))
     print >> sys.stderr, "  release motion"
     hcf.es_svc.releaseMotion()
     print >> sys.stderr, "  check whether robot pose changed"
@@ -63,12 +68,15 @@ def demoEmergencyStop ():
     hcf.waitInterpolation()
     time.sleep(0.1)
     tmp_angle2 = hcf.getActualState().angle
-    if (not(angleApproxEqual(tmp_angle1, tmp_angle2)) and angleApproxEqual(tmp_angle2, reset_pose)):
+    if (not(arrayApproxEqual(tmp_angle1, tmp_angle2)) and arrayApproxEqual(tmp_angle2, reset_pose)):
         print >> sys.stderr, "  => robot is moving. releaseMotion is working succesfully."
-    assert(not(angleApproxEqual(tmp_angle1, tmp_angle2)) and angleApproxEqual(tmp_angle2, reset_pose))
+    assert(not(arrayApproxEqual(tmp_angle1, tmp_angle2)) and arrayApproxEqual(tmp_angle2, reset_pose))
+    hcf.es_svc.releaseMotion()
+    hcf.seq_svc.setJointAngles(init_pose, 1.0)
+    hcf.waitInterpolation()
 
-def demoEmergencyStopWithKeyInteracton ():
-    print >> sys.stderr, "1. test stopMotion and releaseMotion with key interaction"
+def demoEmergencyStopJointAngleWithKeyInteracton ():
+    print >> sys.stderr, "1. test stopMotion and releaseMotion with key interaction for joint angle"
     pose_list = [reset_pose, init_pose] * 4
     play_time = 5
     hcf.seq_svc.playPattern(pose_list, [[0,0,0]]*len(pose_list), [[0,0,0]]*len(pose_list), [play_time]*len(pose_list))
@@ -85,8 +93,49 @@ def demoEmergencyStopWithKeyInteracton ():
         if hcf.seq_svc.isEmpty(): break
     hcf.es_svc.releaseMotion()
 
+def demoEmergencyStopWrench ():
+    print >> sys.stderr, "2. test stopMotion and releaseMotion for wrench"
+    hcf.es_svc.releaseMotion()
+    hcf.seq_svc.setJointAngles(init_pose, 1.0)
+    hcf.seq_svc.setWrenches(wrench_command0, 1.0)
+    hcf.waitInterpolation()
+    time.sleep(0.1)
+    tmp_wrench1 = getWrenchArray()
+    play_time = 10
+    hcf.seq_svc.setWrenches(wrench_command1, play_time)
+    print >> sys.stderr, "  send wrench command of %d [sec]" % play_time
+    time.sleep(4)
+    print >> sys.stderr, "  check whether wrench is changing"
+    tmp_wrench2 = getWrenchArray()
+    if arrayApproxEqual(wrench_command0, tmp_wrench1) and not(arrayApproxEqual(tmp_wrench1, tmp_wrench2)):
+        print >> sys.stderr, "  => wrench is changing."
+    assert (arrayApproxEqual(wrench_command0, tmp_wrench1) and not(arrayApproxEqual(tmp_wrench1, tmp_wrench2)))
+    print >> sys.stderr, "  stop motion"
+    hcf.es_svc.stopMotion()
+    time.sleep(0.1)
+    print >> sys.stderr, "  check whether wrench remained still"
+    tmp_wrench1 = getWrenchArray()
+    time.sleep(3)
+    tmp_wrench2 = getWrenchArray()
+    if arrayApproxEqual(tmp_wrench1, tmp_wrench2):
+        print >> sys.stderr, "  => wrench is not changing. stopMotion is working succesfully."
+    assert (arrayApproxEqual(tmp_wrench1, tmp_wrench2))
+    print >> sys.stderr, "  release motion"
+    hcf.es_svc.releaseMotion()
+    print >> sys.stderr, "  check whether wrench changed"
+    tmp_wrench1 = getWrenchArray()
+    hcf.waitInterpolation()
+    time.sleep(1.0)
+    tmp_wrench2 = getWrenchArray()
+    if (not(arrayApproxEqual(tmp_wrench1, tmp_wrench2)) and arrayApproxEqual(tmp_wrench2, wrench_command1)):
+        print >> sys.stderr, "  => wrench is changing. releaseMotion is working succesfully."
+    assert(not(arrayApproxEqual(tmp_wrench1, tmp_wrench2)) and arrayApproxEqual(tmp_wrench2, wrench_command1))
+    hcf.es_svc.releaseMotion()
+    hcf.seq_svc.setWrenches(wrench_command0, 1.0)
+    hcf.waitInterpolation()
+
 def demoEmergencyStopReleaseWhenDeactivated():
-    print >> sys.stderr, "2. test transition to release mode when deactivated"
+    print >> sys.stderr, "3. test transition to release mode when deactivated"
     print >> sys.stderr, "  stop motion"
     hcf.es_svc.stopMotion()
     hcf.hes_svc.stopMotion()
@@ -105,9 +154,10 @@ def demo(key_interaction=False):
     init()
     if hrpsys_version >= '315.6.0':
         if key_interaction:
-            demoEmergencyStopWithKeyInteracton()
+            demoEmergencyStopJointAngleWithKeyInteracton()
         else:
-            demoEmergencyStop()
+            demoEmergencyStopJointAngle()
+        demoEmergencyStopWrench()
         demoEmergencyStopReleaseWhenDeactivated()
 
 if __name__ == '__main__':

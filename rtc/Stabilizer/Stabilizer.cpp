@@ -53,6 +53,7 @@ Stabilizer::Stabilizer(RTC::Manager* manager)
     m_controlSwingSupportTimeIn("controlSwingSupportTime", m_controlSwingSupportTime),
     m_qRefSeqIn("qRefSeq", m_qRefSeq),
     m_walkingStatesIn("walkingStates", m_walkingStates),
+    m_sbpCogOffsetIn("sbpCogOffset", m_sbpCogOffset),
     m_qRefOut("q", m_qRef),
     m_tauOut("tau", m_tau),
     m_zmpOut("zmp", m_zmp),
@@ -111,6 +112,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   addInPort("controlSwingSupportTime", m_controlSwingSupportTimeIn);
   addInPort("qRefSeq", m_qRefSeqIn);
   addInPort("walkingStates", m_walkingStatesIn);
+  addInPort("sbpCogOffset", m_sbpCogOffsetIn);
 
   // Set OutPort buffer
   addOutPort("q", m_qRefOut);
@@ -310,12 +312,13 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   eefm_ee_pos_error_p_gain = 0;
   eefm_ee_rot_error_p_gain = 0;
   cop_check_margin = 20.0*1e-3; // [m]
-  cp_check_margin = 20.0*1e-3; // [m]
+  cp_check_margin.resize(4, 30*1e-3); // [m]
   contact_decision_threshold = 50; // [N]
   eefm_use_force_difference_control = true;
   initial_cp_too_large_error = true;
   is_walking = false;
   is_estop_while_walking = false;
+  sbp_cog_offset = hrp::Vector3(0.0, 0.0, 0.0);
 
   // parameters for RUNST
   double ke = 0, tc = 0;
@@ -387,6 +390,10 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
       support_polygon_vec.push_back(std::vector<Eigen::Vector2d>(1,Eigen::Vector2d::Zero()));
   }
   szd->set_vertices(support_polygon_vec);
+
+  rel_ee_pos.reserve(stikp.size());
+  rel_ee_rot.reserve(stikp.size());
+  rel_ee_name.reserve(stikp.size());
 
   return RTC::RTC_OK;
 }
@@ -494,6 +501,12 @@ RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
   if (m_walkingStatesIn.isNew()){
     m_walkingStatesIn.read();
     is_walking = m_walkingStates.data;
+  }
+  if (m_sbpCogOffsetIn.isNew()){
+    m_sbpCogOffsetIn.read();
+    sbp_cog_offset(0) = m_sbpCogOffset.data.x;
+    sbp_cog_offset(1) = m_sbpCogOffset.data.y;
+    sbp_cog_offset(2) = m_sbpCogOffset.data.z;
   }
 
   if (is_legged_robot) {
@@ -696,9 +709,6 @@ void Stabilizer::getActualParameters ()
   } else {
     on_ground = calcZMP(act_zmp, ref_zmp(2));
   }
-  // for capture point
-  hrp::Vector3 rel_act_cog = m_robot->rootLink()->R.transpose() * (act_cog - m_robot->rootLink()->p);
-  rel_act_cp(2) = (m_robot->rootLink()->R.transpose() * (act_zmp - m_robot->rootLink()->p))(2);
   // set actual contact states
   for (size_t i = 0; i < stikp.size(); i++) {
       std::string limb_name = stikp[i].ee_name;
@@ -730,15 +740,15 @@ void Stabilizer::getActualParameters ()
       target_ee_diff_p[i] -= foot_origin_rot.transpose() * (act_ee_p - foot_origin_pos);
     }
     // capture point
-    for(size_t i = 0; i < 2; i++) {
-      rel_act_cp(i) = rel_act_cog(i) + act_cogvel(i) / std::sqrt(eefm_gravitational_acceleration / act_cog(2));
-    }
     act_cp = act_cog + act_cogvel / std::sqrt(eefm_gravitational_acceleration / act_cog(2));
+    rel_act_cp = hrp::Vector3(act_cp(0), act_cp(1), act_zmp(2));
+    rel_act_cp = m_robot->rootLink()->R.transpose() * ((foot_origin_pos + foot_origin_rot * rel_act_cp) - m_robot->rootLink()->p);
     // <= Actual foot_origin frame
 
     // Actual world frame =>
     // new ZMP calculation
     // Kajita's feedback law
+    //   Basically Equation (26) in the paper [1].
     hrp::Vector3 dcog=foot_origin_rot * (ref_cog - act_cog);
     hrp::Vector3 dcogvel=foot_origin_rot * (ref_cogvel - act_cogvel);
     hrp::Vector3 dzmp=foot_origin_rot * (ref_zmp - act_zmp);
@@ -783,6 +793,9 @@ void Stabilizer::getActualParameters ()
           limb_gains.push_back(ikp.swing_support_gain);
           ref_force.push_back(hrp::Vector3(m_ref_wrenches[i].data[0], m_ref_wrenches[i].data[1], m_ref_wrenches[i].data[2]));
           ref_moment.push_back(hrp::Vector3(m_ref_wrenches[i].data[3], m_ref_wrenches[i].data[4], m_ref_wrenches[i].data[5]));
+          rel_ee_pos.push_back(foot_origin_rot.transpose() * (ee_pos.back() - foot_origin_pos));
+          rel_ee_rot.push_back(foot_origin_rot.transpose() * ee_rot.back());
+          rel_ee_name.push_back(ee_name.back());
       }
       // All state variables are foot_origin coords relative
       if (DEBUGP) {
@@ -797,8 +810,9 @@ void Stabilizer::getActualParameters ()
           }
       }
 
-      // Ref force and moment at COP
+      // Distribute ZMP into each EE force/moment at each COP
       if (st_algorithm == OpenHRP::StabilizerService::EEFM) {
+          // Modified version of distribution in Equation (4)-(6) and (10)-(13) in the paper [1].
           szd->distributeZMPToForceMoments(ref_force, ref_moment,
                                            ee_pos, cop_pos, ee_rot, ee_name, limb_gains,
                                            new_refzmp, hrp::Vector3(foot_origin_rot * ref_zmp + foot_origin_pos),
@@ -844,8 +858,15 @@ void Stabilizer::getActualParameters ()
         // <= Actual world frame
         if ( i == 0 ) f_diff += -1*sensor_force;
         else f_diff += sensor_force;
+        // Convert force & moment as foot origin coords relative
+        ikp.ref_moment = foot_origin_rot.transpose() * ikp.ref_moment;
+        ikp.ref_force = foot_origin_rot.transpose() * ikp.ref_force;
+        sensor_force = foot_origin_rot.transpose() * sensor_force;
+        ee_moment = foot_origin_rot.transpose() * ee_moment;
         // calcDampingControl
+        // d_foot_rpy and d_foot_pos is (actual) foot origin coords relative value because these use foot origin coords relative force & moment
         { // Rot
+          //   Basically Equation (16) and (17) in the paper [1]
             hrp::Vector3 tmp_damping_gain = (1-transition_smooth_gain) * ikp.eefm_rot_damping_gain * 10 + transition_smooth_gain * ikp.eefm_rot_damping_gain;
             ikp.d_foot_rpy = calcDampingControl(ikp.ref_moment, ee_moment, ikp.d_foot_rpy, tmp_damping_gain, ikp.eefm_rot_time_const);
             ikp.d_foot_rpy = vlimit(ikp.d_foot_rpy, -1 * ikp.eefm_rot_compensation_limit, ikp.eefm_rot_compensation_limit);
@@ -853,10 +874,10 @@ void Stabilizer::getActualParameters ()
         if (!eefm_use_force_difference_control) { // Pos
             hrp::Vector3 tmp_damping_gain = (1-transition_smooth_gain) * ikp.eefm_pos_damping_gain * 10 + transition_smooth_gain * ikp.eefm_pos_damping_gain;
             ikp.d_foot_pos = calcDampingControl(ikp.ref_force, sensor_force, ikp.d_foot_pos, tmp_damping_gain, ikp.eefm_pos_time_const_support);
-            ikp.d_foot_pos = foot_origin_rot.transpose() * vlimit(ikp.d_foot_pos, -1 * ikp.eefm_pos_compensation_limit, ikp.eefm_pos_compensation_limit);
+            ikp.d_foot_pos = vlimit(ikp.d_foot_pos, -1 * ikp.eefm_pos_compensation_limit, ikp.eefm_pos_compensation_limit);
         }
         // Actual ee frame =>
-        ikp.ee_d_foot_rpy = (target->R * ikp.localR).transpose() * ikp.d_foot_rpy;
+        ikp.ee_d_foot_rpy = (target->R * ikp.localR).transpose() * (foot_origin_rot * ikp.d_foot_rpy);
         // Convert actual world frame => actual foot_origin frame for debug data port
         ikp.ref_moment = foot_origin_rot.transpose() * ikp.ref_moment;
       }
@@ -864,6 +885,7 @@ void Stabilizer::getActualParameters ()
       if (eefm_use_force_difference_control) {
           // fxyz control
           // foot force difference control version
+          //   Basically Equation (18) in the paper [1]
           hrp::Vector3 ref_f_diff = (stikp[1].ref_force-stikp[0].ref_force);
           if ( (contact_states[contact_states_index_map["rleg"]] && contact_states[contact_states_index_map["lleg"]]) // Reference : double support phase
                || (isContact(0) && isContact(1)) ) { // Actual : double support phase
@@ -981,9 +1003,6 @@ void Stabilizer::getTargetParameters ()
     ref_zmp = tmp_ref_zmp;
   }
   ref_cog = m_robot->calcCM();
-  // for capture point
-  hrp::Vector3 rel_ref_cog = m_robot->rootLink()->R.transpose() * (ref_cog - m_robot->rootLink()->p);
-  rel_ref_cp(2) = (m_robot->rootLink()->R.transpose() * (ref_zmp - m_robot->rootLink()->p))(2);
   for (size_t i = 0; i < stikp.size(); i++) {
     hrp::Link* target = m_robot->link(stikp[i].target_name);
     //target_ee_p[i] = target->p + target->R * stikp[i].localCOPPos;
@@ -1017,10 +1036,9 @@ void Stabilizer::getTargetParameters ()
     }
     target_foot_origin_rot = foot_origin_rot;
     // capture point
-    for(size_t i = 0; i < 2; i++) {
-      rel_ref_cp(i) = rel_ref_cog(i) + ref_cogvel(i) / std::sqrt(eefm_gravitational_acceleration / ref_cog(2));
-    }
     ref_cp = ref_cog + ref_cogvel / std::sqrt(eefm_gravitational_acceleration / ref_cog(2));
+    rel_ref_cp = hrp::Vector3(ref_cp(0), ref_cp(1), ref_zmp(2));
+    rel_ref_cp = m_robot->rootLink()->R.transpose() * ((foot_origin_pos + foot_origin_rot * rel_ref_cp) - m_robot->rootLink()->p);
     // <= Reference foot_origin frame
   } else {
     ref_cogvel = (ref_cog - prev_ref_cog)/dt;
@@ -1106,32 +1124,27 @@ void Stabilizer::calcStateForEmergencySignal()
   }
   // CP Check
   bool is_cp_outside = false;
-  double width_offset = 0.0;
-  SimpleZMPDistributor::leg_type support_leg;
-  hrp::Vector3 leg_pos[2];
   if (on_ground && transition_count == 0 && control_mode == MODE_ST) {
+    SimpleZMPDistributor::leg_type support_leg;
+    size_t l_idx, r_idx;
+    Eigen::Vector2d tmp_cp;
+    for (size_t i = 0; i < rel_ee_name.size(); i++) {
+      if (rel_ee_name[i]=="rleg") r_idx = i;
+      else if (rel_ee_name[i]=="lleg") l_idx = i;
+    }
+    for (size_t i = 0; i < 2; i++) {
+      tmp_cp(i) = act_cp(i);
+    }
+    if (isContact(contact_states_index_map["rleg"]) && isContact(contact_states_index_map["lleg"])) support_leg = SimpleZMPDistributor::BOTH;
+    else if (isContact(contact_states_index_map["rleg"])) support_leg = SimpleZMPDistributor::RLEG;
+    else if (isContact(contact_states_index_map["lleg"])) support_leg = SimpleZMPDistributor::LLEG;
+    if (!is_walking || is_estop_while_walking) is_cp_outside = !szd->is_inside_support_polygon(tmp_cp, rel_ee_pos, rel_ee_rot, rel_ee_name, support_leg, cp_check_margin, - sbp_cog_offset);
     if (DEBUGP) {
-        std::cerr << "[" << m_profile.instance_name << "] CP value " << "[" << act_cp(0) - ref_cp(0) << "," << act_cp(1) - ref_cp(1) << "] [m]" << std::endl;
+      std::cerr << "[" << m_profile.instance_name << "] CP value " << "[" << act_cp(0) << "," << act_cp(1) << "] [m]" << std::endl;
     }
-    // check CP inside
-    for (size_t i = 0; i < stikp.size(); i++) {
-        if (stikp[i].ee_name.find("leg") == std::string::npos) continue;
-        hrp::Link* target = m_robot->sensor<hrp::ForceSensor>(stikp[i].sensor_name)->link;
-        leg_pos[i] = target->p + target->R * foot_origin_offset[i];
-    }
-    if (isContact(contact_states_index_map["rleg"]) && isContact(contact_states_index_map["lleg"])) {
-        support_leg = SimpleZMPDistributor::BOTH;
-        width_offset = ( (m_robot->rootLink()->R.transpose() * (leg_pos[contact_states_index_map["lleg"]]- m_robot->rootLink()->p))(1)
-                         - (m_robot->rootLink()->R.transpose() * (leg_pos[contact_states_index_map["rleg"]] - m_robot->rootLink()->p))(1) ) / 2.0;
-    } else if (isContact(contact_states_index_map["rleg"])) {
-        support_leg = SimpleZMPDistributor::RLEG;
-    } else if (isContact(contact_states_index_map["lleg"])) {
-        support_leg = SimpleZMPDistributor::LLEG;
-    }
-    if (!is_walking || is_estop_while_walking) is_cp_outside = !szd->is_cp_inside_foot(act_cp - ref_cp, support_leg, cp_check_margin, width_offset);
     if (is_cp_outside) {
       if (initial_cp_too_large_error || loop % static_cast <int>(0.2/dt) == 0 ) { // once per 0.2[s]
-          std::cerr << "[" << m_profile.instance_name << "] CP too large error " << "[" << act_cp(0) - ref_cp(0) << "," << act_cp(1) - ref_cp(1)  << "] [m]" << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "] CP too large error " << "[" << act_cp(0) << "," << act_cp(1) << "] [m]" << std::endl;
       }
       initial_cp_too_large_error = false;
     } else {
@@ -1157,11 +1170,15 @@ void Stabilizer::calcStateForEmergencySignal()
                 << (emergency_check_mode == OpenHRP::StabilizerService::NO_CHECK?"NO_CHECK": (emergency_check_mode == OpenHRP::StabilizerService::COP?"COP":"CP") )
                 << ") " << (is_emergency?"emergency":"non-emergency") << std::endl;
   }
+  rel_ee_pos.clear();
+  rel_ee_rot.clear();
+  rel_ee_name.clear();
 };
 
 void Stabilizer::moveBasePosRotForBodyRPYControl ()
 {
     // Body rpy control
+    //   Basically Equation (1) and (2) in the paper [1]
     hrp::Vector3 ref_root_rpy = hrp::rpyFromRot(target_root_R);
     for (size_t i = 0; i < 2; i++) {
         d_rpy[i] = transition_smooth_gain * (eefm_body_attitude_control_gain[i] * (ref_root_rpy(i) - act_base_rpy(i)) - 1/eefm_body_attitude_control_time_const[i] * d_rpy[i]) * dt + d_rpy[i];
@@ -1279,8 +1296,9 @@ void Stabilizer::calcEEForceMomentControl() {
       hrp::Vector3 foot_origin_pos;
       hrp::Matrix33 foot_origin_rot;
       calcFootOriginCoords (foot_origin_pos, foot_origin_rot);
-      for (size_t i = 0; i < 2; i++)
-          stikp[i].d_foot_pos = foot_origin_rot * stikp[i].d_foot_pos;
+      std::vector<hrp::Vector3> current_d_foot_pos;
+      for (size_t i = 0; i < stikp.size(); i++)
+          current_d_foot_pos.push_back(foot_origin_rot * stikp[i].d_foot_pos);
 
       // Feet and hands modification
       hrp::Vector3 target_link_p[stikp.size()];
@@ -1297,7 +1315,7 @@ void Stabilizer::calcEEForceMomentControl() {
               // foot force difference control version
               // total_target_foot_p[i](2) = target_foot_p[i](2) + (i==0?0.5:-0.5)*zctrl;
               // foot force independent damping control
-              tmpp = target_ee_p[i] - stikp[i].d_foot_pos;
+              tmpp = target_ee_p[i] - current_d_foot_pos[i];
           } else {
 //               target_link_p[i] = target_ee_p[i];
 //               target_link_R[i] = target_ee_R[i];
@@ -1327,6 +1345,8 @@ void Stabilizer::calcEEForceMomentControl() {
       }
 }
 
+// Damping control functions
+//   Basically Equation (14) in the paper [1]
 double Stabilizer::calcDampingControl (const double tau_d, const double tau, const double prev_d,
                                        const double DD, const double TT)
 {
@@ -1528,7 +1548,9 @@ void Stabilizer::getParameter(OpenHRP::StabilizerService::stParam& i_stp)
   i_stp.st_algorithm = st_algorithm;
   i_stp.transition_time = transition_time;
   i_stp.cop_check_margin = cop_check_margin;
-  i_stp.cp_check_margin = cp_check_margin;
+  for (size_t i = 0; i < cp_check_margin.size(); i++) {
+    i_stp.cp_check_margin[i] = cp_check_margin[i];
+  }
   i_stp.contact_decision_threshold = contact_decision_threshold;
   i_stp.is_estop_while_walking = is_estop_while_walking;
   switch(control_mode) {
@@ -1666,7 +1688,9 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
 
   transition_time = i_stp.transition_time;
   cop_check_margin = i_stp.cop_check_margin;
-  cp_check_margin = i_stp.cp_check_margin;
+  for (size_t i = 0; i < cp_check_margin.size(); i++) {
+    cp_check_margin[i] = i_stp.cp_check_margin[i];
+  }
   contact_decision_threshold = i_stp.contact_decision_threshold;
   is_estop_while_walking = i_stp.is_estop_while_walking;
   if (control_mode == MODE_IDLE) {
@@ -1740,7 +1764,7 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
   std::cerr << "[" << m_profile.instance_name << "]   emergency_check_mode changed to [" << (emergency_check_mode == OpenHRP::StabilizerService::NO_CHECK?"NO_CHECK": (emergency_check_mode == OpenHRP::StabilizerService::COP?"COP":"CP") ) << "]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]  transition_time = " << transition_time << "[s]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]  cop_check_margin = " << cop_check_margin << "[m]" << std::endl;
-  std::cerr << "[" << m_profile.instance_name << "]  cp_check_margin = " << cp_check_margin << "[m]" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]  cp_check_margin = [" << cp_check_margin[0] << ", " << cp_check_margin[1] << ", " << cp_check_margin[2] << ", " << cp_check_margin[3] << "] [m]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]  contact_decision_threshold = " << contact_decision_threshold << "[N]" << std::endl;
 }
 
