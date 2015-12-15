@@ -683,7 +683,7 @@ bool seqplay::setJointAnglesSequenceFull(std::vector<const double*> i_pos, std::
 	interpolators[ACC]->get(bacc, false);
 	interpolators[ACC]->set(bacc);
 	interpolators[ACC]->clear();
-	interpolators[RPY]->push(bacc, dummy_3, dummy_3, true);
+	interpolators[ACC]->push(bacc, dummy_3, dummy_3, true);
 	int fnum = interpolators[WRENCHES]->dimension()/6, optional_data_dim = interpolators[OPTIONAL_DATA]->dimension();
 	double zmp[3], wrench[6*fnum], dummy_fnum[6*fnum], optional[optional_data_dim], dummy_optional[optional_data_dim];
 	for (unsigned int j = 0; j < 6*fnum; j++) { dummy_dof[j] = 0.0; }
