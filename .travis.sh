@@ -39,7 +39,11 @@ travis_time_start mongo_hack
 dpkg -s mongodb || echo "ok"; export HAVE_MONGO_DB=$?
 # Remove configuration file for mongodb using --purge option (reported in https://github.com/fkanehiro/hrpsys-base/pull/900#issuecomment-162392884)
 if [ $HAVE_MONGO_DB == 0 ]; then sudo apt-get remove --purge -qq -y mongodb mongodb-10gen || echo "ok"; fi
-if [ $HAVE_MONGO_DB == 0 ]; then sudo apt-get install -qq -y mongodb-clients mongodb-server -o Dpkg::Options::="--force-confdef" || echo "ok"; fi # default actions
+if [ $HAVE_MONGO_DB == 0 ]; then sudo apt-get install -qq -y ccache mongodb-clients mongodb-server -o Dpkg::Options::="--force-confdef" || echo "ok"; fi # default actions
+# Create symlink for ccache
+sudo ln -sf /usr/bin/ccache /usr/local/bin/gcc
+sudo ln -sf /usr/bin/ccache /usr/local/bin/g++
+ccache -s
 
 travis_time_end
 travis_time_start setup_ros
@@ -260,7 +264,7 @@ case $TEST_PACKAGE in
             travis_time_end
             travis_time_start  compile_new_version
 
-            catkin_make_isolated -j1 -l1 --install --only-pkg-with-deps `echo $pkg | sed s/-/_/g` | grep -v '^-- \(Up-to-date\|Installing\):' | grep -v 'Generating \(Python\|C++\) code from' | grep -v '^Compiling .*.py ...$' | uniq
+             catkin_make_isolated -j1 -l1 --install --only-pkg-with-deps `echo $pkg | sed s/-/_/g` | grep -v '^-- \(Up-to-date\|Installing\):' | grep -v 'Generating \(Python\|C++\) code from' | grep -v '^Compiling .*.py ...$' | uniq
             rm -fr ./install_isolated/hrpsys/share/hrpsys ./install_isolated/hrpsys/lib/pkgconfig/hrpsys.pc
             source install_isolated/setup.bash
 
