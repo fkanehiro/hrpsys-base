@@ -66,19 +66,19 @@ def checkJointAngles (var_doc):
         p = var_doc
     else:
         p = var_doc['pos']
-    ret = checkArrayEquality(rtm.readDataPort(hcf.sh.port("qOut")).data, p)
+    ret = checkArrayEquality(hcf.sh_svc.getCommand().jointRefs, p)
     print "  pos => ", ret
 
 def checkJointAnglesBetween(from_doc, to_doc):
     p0 =  from_doc if isinstance(from_doc, list) else from_doc['pos']
     p1 =    to_doc if isinstance(  to_doc, list) else   to_doc['pos']
-    ret = checkArrayBetween(p0, rtm.readDataPort(hcf.sh.port("qOut")).data, p1)
+    ret = checkArrayBetween(p0, hcf.sh_svc.getCommand().jointRefs, p1)
     print "  pos => ", ret
     assert(ret is True)
 
 def checkZmp(var_doc):
-    zmp=rtm.readDataPort(hcf.sh.port("zmpOut")).data
-    ret = checkArrayEquality([zmp.x, zmp.y, zmp.z], var_doc['zmp'])
+    zmp=hcf.sh_svc.getCommand().zmp
+    ret = checkArrayEquality([zmp[0], zmp[1], zmp[2]], var_doc['zmp'])
     print "  zmp => ", ret
     assert(ret is True)
 
