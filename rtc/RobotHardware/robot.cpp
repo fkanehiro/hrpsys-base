@@ -122,6 +122,10 @@ bool robot::loadGain()
         strm >> default_pgain[i];
         strm >> dummy;
         strm >> default_dgain[i];
+        strm >> dummy;
+        strm >> default_tqpgain[i];
+        strm >> dummy;
+        strm >> default_tqdgain[i];
     }
     strm.close();
     // Print loaded gain
@@ -951,4 +955,27 @@ void robot::setDisturbanceObserverGain(double gain)
 #if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 2
     write_disturbance_observer_gain(gain);
 #endif
+}
+
+bool robot::setJointControlMode(const char *i_jname, joint_control_mode mode)
+{
+    Link *l = NULL;
+    if (strcmp(i_jname, "all") == 0 || strcmp(i_jname, "ALL") == 0){
+        for (int i=0; i<numJoints(); i++){
+            write_control_mode(i, mode);
+        }
+        std::cerr << "[RobotHardware] setJointControlMode for all joints" << std::endl;
+    }else if ((l = link(i_jname))){
+        write_control_mode(l->jointId, mode);
+        std::cerr << "[RobotHardware] setJointControlMode for " << i_jname << std::endl;
+    }else{
+        char *s = (char *)i_jname; while(*s) {*s=toupper(*s);s++;}
+        const std::vector<int> jgroup = m_jointGroups[i_jname];
+        if (jgroup.size()==0) return false;
+        for (unsigned int i=0; i<jgroup.size(); i++){
+            write_control_mode(jgroup[i], mode);
+        }
+        std::cerr << "[RobotHardware] setJointControlMode for " << i_jname << std::endl;
+    }
+    return true;
 }

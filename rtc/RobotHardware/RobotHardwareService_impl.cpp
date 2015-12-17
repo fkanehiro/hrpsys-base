@@ -205,3 +205,8 @@ void RobotHardwareService_impl::setDisturbanceObserverGain(::CORBA::Double gain)
 {
     m_robot->setDisturbanceObserverGain(gain);
 }
+
+void RobotHardwareService_impl::setJointControlMode(const char *jname, joint_control_mode mode)
+{
+    m_robot->setJointControlMode(jname, mode);
+}

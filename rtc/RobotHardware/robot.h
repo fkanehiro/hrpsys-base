@@ -4,6 +4,7 @@
 #include <boost/array.hpp>
 #include <semaphore.h>
 #include <hrpModel/Body.h>
+#include "io/iob.h"
 
 /**
    \brief 
@@ -347,6 +348,14 @@ public:
        \return the number of thermometers
     */
     int numThermometers();
+
+    /**
+       \brief set control mode of joint
+       \param name joint name, part name or "all"
+       \param mode control mode name
+       \return true if set successfully, false otherwise 
+     */
+    bool setJointControlMode(const char *i_jname, joint_control_mode mode);
 private:
     /**
        \brief calibrate inertia sensor for one sampling period
