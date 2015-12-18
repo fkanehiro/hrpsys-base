@@ -171,13 +171,17 @@ def demoSTLoadPattern ():
         print >> sys.stderr, "  This sample is neglected in High-gain mode simulation"
 
 def demo():
-    init()
-    if hrpsys_version >= '315.5.0':
-        demoGetParameter()
-        demoSetParameter()
-        demoStartStopTPCCST()
-        demoStartStopEEFMQPST()
-        demoSTLoadPattern()
+    OPENHRP3_DIR=check_output(['pkg-config', 'openhrp3.1', '--variable=prefix']).rstrip()
+    if os.path.exists(OPENHRP3_DIR+"/share/OpenHRP-3.1/sample/model/sample1_bush.wrl"):
+        init()
+        if hrpsys_version >= '315.5.0':
+            demoGetParameter()
+            demoSetParameter()
+            demoStartStopTPCCST()
+            demoStartStopEEFMQPST()
+            demoSTLoadPattern()
+    else:
+        print >> sys.stderr, "Skip st test because of missing sample1_bush.wrl"
 
 if __name__ == '__main__':
     demo()
