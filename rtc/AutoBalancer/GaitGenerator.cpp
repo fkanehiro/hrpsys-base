@@ -545,7 +545,7 @@ namespace rats
     if ( lcg.get_lcg_count() == static_cast<size_t>(footstep_nodes_list[lcg.get_footstep_index()][0].step_time/dt * 0.5) - 1 ) { // Almost middle of step time
       if (velocity_mode_flg != VEL_IDLING && lcg.get_footstep_index() > 0) {
         std::vector< std::vector<coordinates> > cv;
-        calc_next_coords_velocity_mode(cv, lcg.get_footstep_index() + 1);
+        calc_next_coords_velocity_mode(cv, get_overwritable_index());
         if (velocity_mode_flg == VEL_ENDING) velocity_mode_flg = VEL_IDLING;
         std::vector<leg_type> cur_leg;
         for (size_t i = 0; i < footstep_nodes_list[lcg.get_footstep_index()].size(); i++) {
@@ -730,7 +730,7 @@ namespace rats
     append_go_pos_step_nodes(ref_coords, calc_counter_leg_types_from_footstep_nodes(footstep_nodes_list.back(), all_limbs));
   };
 
-  void gait_generator::calc_next_coords_velocity_mode (std::vector< std::vector<coordinates> >& ret_list, const size_t idx)
+  void gait_generator::calc_next_coords_velocity_mode (std::vector< std::vector<coordinates> >& ret_list, const size_t idx, const size_t future_step_num)
   {
     coordinates ref_coords;
     hrp::Vector3 trans;
@@ -741,7 +741,7 @@ namespace rats
     for (size_t i = 0; i < footstep_nodes_list[idx-1].size(); i++) cur_sup_legs.push_back(footstep_nodes_list[idx-1].at(i).l_r);
     next_sup_legs = calc_counter_leg_types_from_footstep_nodes(footstep_nodes_list[idx-1], all_limbs);
 
-    for (size_t i = 0; i < 3; i++) {
+    for (size_t i = 0; i < future_step_num; i++) {
       std::vector<coordinates> ret;
       std::vector<leg_type> forcused_sup_legs;
       switch( i % 2) {
