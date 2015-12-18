@@ -422,6 +422,7 @@ def demoGaitGeneratorFixHand():
     hcf.abc_svc.goPos(0,0,30)
     hcf.abc_svc.waitFootSteps()
     abcp=hcf.abc_svc.getAutoBalancerParam()[1]
+    abcp.is_hand_fix_mode=False
     abcp.default_zmp_offsets=[[0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]]
     hcf.abc_svc.setAutoBalancerParam(abcp)
     ref_rpy = rtm.readDataPort(hcf.abc.port("baseRpyOut")).data
@@ -429,8 +430,32 @@ def demoGaitGeneratorFixHand():
     checkActualBaseAttitude(ref_rpy)
     print >> sys.stderr, "  Fix hand=>OK"
 
+def demoGaitGeneratorOverwriteCurrentFootstep():
+    print >> sys.stderr, "15. Overwrite current footstep"
+    hcf.seq_svc.setJointAngles(initial_pose, 1.0)
+    hcf.waitInterpolation()
+    hcf.startAutoBalancer()
+    # decrease zmp weight for arms
+    orig_ggp = hcf.abc_svc.getGaitGeneratorParam()[1]
+    ggp = hcf.abc_svc.getGaitGeneratorParam()[1]
+    ggp.overwritable_footstep_index_offset = 0
+    ggp.default_orbit_type=OpenHRP.AutoBalancerService.RECTANGLE
+    hcf.abc_svc.setGaitGeneratorParam(ggp)
+    # start walking
+    hcf.abc_svc.goVelocity(0,0,0);
+    hcf.seq_svc.setJointAngles(initial_pose, 2.0);hcf.waitInterpolation() #  wait 2 step using dummy waitInterpolation
+    hcf.abc_svc.goVelocity(0.1,0,0);
+    hcf.seq_svc.setJointAngles(initial_pose, 2.0);hcf.waitInterpolation() #  wait 2 step using dummy waitInterpolation
+    hcf.abc_svc.goVelocity(0,0.1,0);
+    hcf.seq_svc.setJointAngles(initial_pose, 2.0);hcf.waitInterpolation() #  wait 2 step using dummy waitInterpolation
+    hcf.abc_svc.goStop()
+    checkActualBaseAttitude()
+    print >> sys.stderr, "  Overwrite current footstep=>OK"
+    # reset params
+    hcf.abc_svc.setGaitGeneratorParam(orig_ggp)
+
 def demoGaitGeneratorSetFootStepsWithArms():
-    print >> sys.stderr, "15. Trot Walking"
+    print >> sys.stderr, "16. Trot Walking"
     hcf.stopAutoBalancer()
     hcf.seq_svc.setJointAngles(four_legs_mode_pose, 1.0)
     hcf.waitInterpolation()
@@ -460,7 +485,6 @@ def demoGaitGeneratorSetFootStepsWithArms():
     hcf.abc_svc.setGaitGeneratorParam(orig_ggp)
     hcf.startAutoBalancer()
 
-
 def demo():
     init()
     if hrpsys_version >= '315.5.0':
@@ -489,6 +513,7 @@ def demo():
         demoGaitGeneratorOverwriteFootsteps()
         demoGaitGeneratorOverwriteFootsteps(2)
         demoGaitGeneratorFixHand()
+        demoGaitGeneratorOverwriteCurrentFootstep()
         demoGaitGeneratorSetFootStepsWithArms()
 
 if __name__ == '__main__':
