@@ -26,6 +26,7 @@ env:
     #    Exec USE_SRC_OPENHRP3=true tests in faster orders to make debug of these tests easy.
     - TEST_TYPE=work_with_downstream  TEST_PACKAGE=hironx-ros-bridge USE_SRC_OPENHRP3=true
     - TEST_TYPE=work_with_315_1_10    TEST_PACKAGE=hironx-ros-bridge USE_SRC_OPENHRP3=true
+    - TEST_TYPE=work_with_downstream  TEST_PACKAGE=hrpsys-base USE_SRC_OPENHRP3=true
     #    USE_SRC_OPENHRP3=false tests
     - TEST_TYPE=work_with_downstream  TEST_PACKAGE=hrpsys-base
     - TEST_TYPE=work_with_315_1_10    TEST_PACKAGE=hrpsys-base
