@@ -68,11 +68,21 @@ def demoGaitGeneratorSetFootStepsCycloidDelay():
     hcf.abc_svc.setGaitGeneratorParam(ggp)
     demoGaitGeneratorSetFootSteps("3. setFootSteps with Cycloiddelay orbit");
 
+def demoGaitGeneratorSetFootStepsCrawl(print_str="4. setFootSteps in Crawl"):
+    print >> sys.stderr, print_str
+    hcf.setFootSteps([OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([0.0+0.00,-0.19,0], [1,0,0,0], "rleg")]),
+                      OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([0.7+0.01,+0.19,0], [1,0,0,0], "larm")]),
+                      OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([0.0+0.01,+0.19,0], [1,0,0,0], "lleg")]),
+                      OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([0.7+0.01,-0.19,0], [1,0,0,0], "rarm")]),
+                      OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([0.0+0.01,-0.19,0], [1,0,0,0], "rleg")])])
+    hcf.abc_svc.waitFootSteps()
+
 def demo():
     init()
     demoGaitGeneratorSetFootSteps()
     demoGaitGeneratorSetFootStepsRectangle()
     demoGaitGeneratorSetFootStepsCycloidDelay()
+    demoGaitGeneratorSetFootStepsCrawl()
 
 if __name__ == '__main__':
     demo()
