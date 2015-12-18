@@ -333,6 +333,7 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
             for ( int i = 0; i < m_q.data.length(); i++ ) {
                 m_q.data[i] = m_qRef.data[i];
             }
+            m_q.tm = m_qRef.tm;
             m_qOut.write();
         }
     }
@@ -516,6 +517,7 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
             }
         }
         //
+        m_q.tm = m_qRef.tm;
         m_qOut.write();
 
         // beep sound for collision alert
