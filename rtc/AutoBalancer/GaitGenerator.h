@@ -802,14 +802,14 @@ namespace rats
              it_src++, it_dst++) {
             coordinates tmp;
             mid_coords(tmp, foot_midcoords_ratio, it_src->worldcoords, it_dst->worldcoords);
-            swg_coords.push_back(tmp);
+            if (it_src->l_r == RLEG or it_src->l_r == LLEG) swg_coords.push_back(tmp);
         }
         for (std::vector<step_node>::const_iterator it = support_leg_steps.begin(); it != support_leg_steps.end(); it++) {
-            sup_coords.push_back(it->worldcoords);
+            if (it->l_r == RLEG or it->l_r == LLEG) sup_coords.push_back(it->worldcoords);
         }
         coordinates tmp_swg_mid, tmp_sup_mid;
-        multi_mid_coords(tmp_swg_mid, swg_coords);
-        multi_mid_coords(tmp_sup_mid, sup_coords);
+        if (swg_coords.size() > 0) multi_mid_coords(tmp_swg_mid, swg_coords);
+        if (sup_coords.size() > 0) multi_mid_coords(tmp_sup_mid, sup_coords);
         mid_coords(ret, static_cast<double>(sup_coords.size()) / (swg_coords.size() + sup_coords.size()), tmp_swg_mid, tmp_sup_mid);
       };
       std::vector<leg_type> get_current_support_states () const
