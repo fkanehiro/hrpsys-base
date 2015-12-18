@@ -769,16 +769,18 @@ namespace rats
     /* add new next steps ;; the number of next steps is fnsl.size() */
     footstep_nodes_list.insert(footstep_nodes_list.end(), fnsl.begin(), fnsl.end());
 
-    /* remove refzmp after idx for allocation of new refzmp by push_refzmp_from_footstep_nodes */
-    rg.remove_refzmp_cur_list_over_length(idx);
-    /* remove refzmp in preview contoroller queue */
-    preview_controller_ptr->remove_preview_queue(lcg.get_lcg_count());
+    /* Update lcg */
+    lcg.set_swing_support_steps_list(footstep_nodes_list);
 
-    /* reset index and counter */
+    /* Update refzmp_generator */
+    /*   Remove refzmp after idx for allocation of new refzmp by push_refzmp_from_footstep_nodes */
+    rg.remove_refzmp_cur_list_over_length(idx);
+    /*   Remove refzmp in preview contoroller queue */
+    preview_controller_ptr->remove_preview_queue(lcg.get_lcg_count());
+    /*   reset index and counter */
     rg.set_indices(idx);
     rg.set_refzmp_count(static_cast<size_t>(fnsl[0][0].step_time/dt));
-    lcg.set_swing_support_steps_list(footstep_nodes_list);
-    /* reset refzmp */
+    /*   reset refzmp */
     for (size_t i = 0; i < fnsl.size(); i++) {
         if (emergency_flg == EMERGENCY_STOP)
             rg.push_refzmp_from_footstep_nodes_for_dual(footstep_nodes_list[idx+i],
