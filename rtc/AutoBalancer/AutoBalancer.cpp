@@ -1382,6 +1382,7 @@ bool AutoBalancer::setGaitGeneratorParam(const OpenHRP::AutoBalancerService::Gai
   gg->set_use_toe_heel_transition(i_param.use_toe_heel_transition);
   gg->set_zmp_weight_map(boost::assign::map_list_of<leg_type, double>(RLEG, i_param.zmp_weight_map[0])(LLEG, i_param.zmp_weight_map[1])(RARM, i_param.zmp_weight_map[2])(LARM, i_param.zmp_weight_map[3]));
   gg->set_optional_go_pos_finalize_footstep_num(i_param.optional_go_pos_finalize_footstep_num);
+  gg->set_overwritable_footstep_index_offset(i_param.overwritable_footstep_index_offset);
 
   // print
   gg->print_param(std::string(m_profile.instance_name));
@@ -1450,6 +1451,7 @@ bool AutoBalancer::getGaitGeneratorParam(OpenHRP::AutoBalancerService::GaitGener
   i_param.zmp_weight_map[2] = tmp_zmp_weight_map[RARM];
   i_param.zmp_weight_map[3] = tmp_zmp_weight_map[LARM];
   i_param.optional_go_pos_finalize_footstep_num = gg->get_optional_go_pos_finalize_footstep_num();
+  i_param.overwritable_footstep_index_offset = gg->get_overwritable_footstep_index_offset();
   return true;
 };
 
