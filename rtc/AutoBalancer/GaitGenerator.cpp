@@ -752,12 +752,12 @@ namespace rats
       case 0: forcused_sup_legs = next_sup_legs; break;
       case 1: forcused_sup_legs = cur_sup_legs; break;
       }
+      if ( velocity_mode_flg != VEL_ENDING ) {
+          ref_coords.pos += ref_coords.rot * trans;
+          ref_coords.rotate(dth, hrp::Vector3(0,0,1));
+      }
       for (size_t j = 0; j < forcused_sup_legs.size(); j++) {
           ret.push_back(ref_coords);
-          if ( velocity_mode_flg != VEL_ENDING ) {
-              ret[j].pos += ret[j].rot * trans;
-              ret[j].rotate(dth, hrp::Vector3(0,0,1));
-          }
           ret[j].pos += ret[j].rot * footstep_param.leg_default_translate_pos[forcused_sup_legs.at(j)];
       }
       ret_list.push_back(ret);
