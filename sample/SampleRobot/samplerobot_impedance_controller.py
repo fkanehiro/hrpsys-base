@@ -26,6 +26,13 @@ def demo():
     hcf.seq_svc.setJointAngles(initial_pose, 2.0)
     hcf.seq_svc.waitInterpolation()
 
+    # 0. startImpedance + stopImpedance python interface
+    print >> sys.stderr, "0. startImpedance + stopImpedance python interface"
+    hcf.startImpedance("rarm")
+    hcf.startImpedance("larm")
+    hcf.stopImpedance("larm")
+    hcf.stopImpedance("rarm")
+
     # 1. Getter check
     print >> sys.stderr, "1. Getter check"
     ret1=hcf.ic_svc.getImpedanceControllerParam("rarm")
