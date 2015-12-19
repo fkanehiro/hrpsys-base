@@ -250,12 +250,7 @@ RTC::ReturnCode_t TorqueController::onExecute(RTC::UniqueId ec_id)
 { 
   m_loop++;
 
-  // make timestamp
-  coil::TimeValue coiltm(coil::gettimeofday());
   hrp::dvector dq(m_robot->numJoints());
-  RTC::Time tm;
-  tm.sec = coiltm.sec();
-  tm.nsec = coiltm.usec()*1000;
   
   // update port
   if (m_tauCurrentInIn.isNew()) {
@@ -303,7 +298,7 @@ RTC::ReturnCode_t TorqueController::onExecute(RTC::UniqueId ec_id)
     }
   }
 
-  m_qRefOut.tm = tm;
+  m_qRefOut.tm = m_qRefIn.tm;
   m_qRefOutOut.write();
 
   return RTC::RTC_OK;
