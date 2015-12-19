@@ -59,7 +59,7 @@ def checkArrayEquality (arr1, arr2, eps=1e-7):
     return all(map(lambda x,y : abs(x-y)<eps, arr1, arr2))
 
 def checkArrayBetween (arr1, arr2, arr3, eps=1e-7):
-    return all(map(lambda x,y,z : abs(x-y)<eps or (z-x)*(y-x) > 0, arr1, arr2, arr3))
+    return all(map(lambda x,y,z : (z-y)*(x-y) <= eps, arr1, arr2, arr3))
 
 def checkJointAngles (var_doc):
     if isinstance(var_doc, list):
