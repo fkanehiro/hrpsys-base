@@ -1193,6 +1193,7 @@ namespace rats
     const std::map<leg_type, std::string> get_leg_type_map () const { return leg_type_map; };
     size_t get_optional_go_pos_finalize_footstep_num () const { return optional_go_pos_finalize_footstep_num; };
     bool is_finalizing (const double tm) const { return ((preview_controller_ptr->get_delay()*2 - default_step_time/dt)-finalize_count) <= (tm/dt)-1; };
+    size_t get_overwrite_check_timing () const { return static_cast<size_t>(footstep_nodes_list[lcg.get_footstep_index()][0].step_time/dt * 0.5) - 1;}; // Almost middle of step time
     void print_param (const std::string& print_str = "")
     {
         double stride_fwd_x, stride_y, stride_th, stride_bwd_x;
