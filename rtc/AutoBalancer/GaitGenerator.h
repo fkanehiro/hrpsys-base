@@ -871,6 +871,9 @@ namespace rats
     // overwrite_footstep_index is used for footstep overwriting.
     //   When overwrite_footstep_index == get_overwritable_index(), overwrite footsteps after overwrite_footstep_index.
     size_t overwrite_footstep_index;
+    // overwritable_footstep_index_offset is used for emergency stop and velocity mode.
+    //   overwritable footstep index is "footstep_index + overwritable_footstep_index_offset", which is obtained by get_overwritable_index().
+    size_t overwritable_footstep_index_offset;
     velocity_mode_flag velocity_mode_flg;
     emergency_flag emergency_flg;
     bool use_inside_step_limitation;
@@ -894,7 +897,7 @@ namespace rats
     };
     void overwrite_refzmp_queue(const std::vector< std::vector<step_node> >& fnsl);
     void calc_ref_coords_trans_vector_velocity_mode (coordinates& ref_coords, hrp::Vector3& trans, double& dth, const std::vector<step_node>& sup_fns);
-    void calc_next_coords_velocity_mode (std::vector< std::vector<coordinates> >& ret_list, const size_t idx);
+    void calc_next_coords_velocity_mode (std::vector< std::vector<coordinates> >& ret_list, const size_t idx, const size_t future_step_num = 3);
     void append_footstep_list_velocity_mode ();
 
 #ifndef HAVE_MAIN
@@ -911,7 +914,7 @@ namespace rats
         footstep_param(_leg_pos, _stride_fwd_x, _stride_y, _stride_theta, _stride_bwd_x),
         vel_param(), offset_vel_param(), cog(hrp::Vector3::Zero()), refzmp(hrp::Vector3::Zero()), prev_que_rzmp(hrp::Vector3::Zero()),
         dt(_dt), default_step_time(1.0), default_double_support_ratio_before(0.1), default_double_support_ratio_after(0.1), default_double_support_static_ratio_before(0.0), default_double_support_static_ratio_after(0.0), default_double_support_ratio_swing_before(0.1), default_double_support_ratio_swing_after(0.1), gravitational_acceleration(DEFAULT_GRAVITATIONAL_ACCELERATION),
-        finalize_count(0), optional_go_pos_finalize_footstep_num(0), overwrite_footstep_index(0),
+        finalize_count(0), optional_go_pos_finalize_footstep_num(0), overwrite_footstep_index(0), overwritable_footstep_index_offset(1),
         velocity_mode_flg(VEL_IDLING), emergency_flg(IDLING),
         use_inside_step_limitation(true),
         preview_controller_ptr(NULL) {
@@ -1025,6 +1028,7 @@ namespace rats
     void set_leg_default_translate_pos (const std::vector<hrp::Vector3>& off) { footstep_param.leg_default_translate_pos = off;};
     void set_optional_go_pos_finalize_footstep_num (const size_t num) { optional_go_pos_finalize_footstep_num = num; };
     void set_all_limbs (const std::vector<std::string>& _all_limbs) { all_limbs = _all_limbs; };
+    void set_overwritable_footstep_index_offset (const size_t _of) { overwritable_footstep_index_offset = _of;};
     void set_foot_steps_list (const std::vector< std::vector<step_node> >& fnsl)
     {
         clear_footstep_nodes_list();
@@ -1039,9 +1043,10 @@ namespace rats
         append_finalize_footstep(overwrite_footstep_nodes_list);
         print_footstep_nodes_list(overwrite_footstep_nodes_list);
     };
+    /* Get overwritable footstep index. For example, if overwritable_footstep_index_offset = 1, overwrite next footstep. If overwritable_footstep_index_offset = 0, overwrite current swinging footstep. */
     size_t get_overwritable_index ()
     {
-        return lcg.get_footstep_index()+1;
+        return lcg.get_footstep_index()+overwritable_footstep_index_offset;
     };
     bool set_overwrite_foot_step_index (const size_t idx)
     {
@@ -1183,6 +1188,7 @@ namespace rats
     int get_NUM_TH_PHASES () { return thp.get_NUM_TH_PHASES(); };
     bool get_use_toe_joint () { return lcg.get_use_toe_joint(); };
     void get_leg_default_translate_pos (std::vector<hrp::Vector3>& off) { off = footstep_param.leg_default_translate_pos; };
+    size_t get_overwritable_footstep_index_offset () const { return overwritable_footstep_index_offset; };
     const std::vector<leg_type> calc_counter_leg_types_from_footstep_nodes (const std::vector<step_node>& fns, std::vector<std::string> _all_limbs) const;
     const std::map<leg_type, std::string> get_leg_type_map () const { return leg_type_map; };
     size_t get_optional_go_pos_finalize_footstep_num () const { return optional_go_pos_finalize_footstep_num; };
@@ -1233,7 +1239,7 @@ namespace rats
         std::cerr << "[" << print_str << "]   toe_heel_phase_ratio = [";
         for (int i = 0; i < get_NUM_TH_PHASES(); i++) std::cerr << tmp_ratio[i] << " ";
         std::cerr << "]" << std::endl;
-        std::cerr << "[" << print_str << "]   optional_go_pos_finalize_footstep_num = " << optional_go_pos_finalize_footstep_num << std::endl;
+        std::cerr << "[" << print_str << "]   optional_go_pos_finalize_footstep_num = " << optional_go_pos_finalize_footstep_num << ", overwritable_footstep_index_offset = " << overwritable_footstep_index_offset << std::endl;
     };
   };
 }

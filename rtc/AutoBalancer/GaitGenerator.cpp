@@ -544,16 +544,20 @@ namespace rats
     /* update refzmp */
     if ( lcg.get_lcg_count() == static_cast<size_t>(footstep_nodes_list[lcg.get_footstep_index()][0].step_time/dt * 0.5) - 1 ) { // Almost middle of step time
       if (velocity_mode_flg != VEL_IDLING && lcg.get_footstep_index() > 0) {
+        /* Currently biped only */
         std::vector< std::vector<coordinates> > cv;
-        calc_next_coords_velocity_mode(cv, lcg.get_footstep_index() + 1);
+        calc_next_coords_velocity_mode(cv, get_overwritable_index(),
+                                       (overwritable_footstep_index_offset == 0 ? 4 : 3) // Why?
+                                       );
         if (velocity_mode_flg == VEL_ENDING) velocity_mode_flg = VEL_IDLING;
-        std::vector<leg_type> cur_leg;
-        for (size_t i = 0; i < footstep_nodes_list[lcg.get_footstep_index()].size(); i++) {
-            cur_leg.push_back(footstep_nodes_list[lcg.get_footstep_index()].at(i).l_r);
+        std::vector<leg_type> first_overwrite_leg;
+        for (size_t i = 0; i < footstep_nodes_list[get_overwritable_index()].size(); i++) {
+            first_overwrite_leg.push_back(footstep_nodes_list[get_overwritable_index()].at(i).l_r);
         }
-        overwrite_footstep_nodes_list.push_back(boost::assign::list_of(step_node(cur_leg.front()==RLEG?LLEG:RLEG, cv[0][0], lcg.get_default_step_height(), default_step_time, lcg.get_toe_angle(), lcg.get_heel_angle())));
-        overwrite_footstep_nodes_list.push_back(boost::assign::list_of(step_node(cur_leg.front(), cv[1][0], lcg.get_default_step_height(), default_step_time, lcg.get_toe_angle(), lcg.get_heel_angle())));
-        overwrite_footstep_nodes_list.push_back(boost::assign::list_of(step_node(cur_leg.front()==RLEG?LLEG:RLEG, cv[2][0], lcg.get_default_step_height(), default_step_time, lcg.get_toe_angle(), lcg.get_heel_angle())));
+        for (size_t i = 0; i < cv.size(); i++) {
+            leg_type tmpleg = (i%2 == 0? first_overwrite_leg.front() : first_overwrite_leg.front()==RLEG?LLEG:RLEG );
+            overwrite_footstep_nodes_list.push_back(boost::assign::list_of(step_node(tmpleg, cv[i][0], lcg.get_default_step_height(), default_step_time, lcg.get_toe_angle(), lcg.get_heel_angle())));
+        }
         overwrite_refzmp_queue(overwrite_footstep_nodes_list);
         overwrite_footstep_nodes_list.clear();
       } else if ( !overwrite_footstep_nodes_list.empty() && // If overwrite_footstep_node_list exists
@@ -730,7 +734,7 @@ namespace rats
     append_go_pos_step_nodes(ref_coords, calc_counter_leg_types_from_footstep_nodes(footstep_nodes_list.back(), all_limbs));
   };
 
-  void gait_generator::calc_next_coords_velocity_mode (std::vector< std::vector<coordinates> >& ret_list, const size_t idx)
+  void gait_generator::calc_next_coords_velocity_mode (std::vector< std::vector<coordinates> >& ret_list, const size_t idx, const size_t future_step_num)
   {
     coordinates ref_coords;
     hrp::Vector3 trans;
@@ -741,19 +745,19 @@ namespace rats
     for (size_t i = 0; i < footstep_nodes_list[idx-1].size(); i++) cur_sup_legs.push_back(footstep_nodes_list[idx-1].at(i).l_r);
     next_sup_legs = calc_counter_leg_types_from_footstep_nodes(footstep_nodes_list[idx-1], all_limbs);
 
-    for (size_t i = 0; i < 3; i++) {
+    for (size_t i = 0; i < future_step_num; i++) {
       std::vector<coordinates> ret;
       std::vector<leg_type> forcused_sup_legs;
       switch( i % 2) {
       case 0: forcused_sup_legs = next_sup_legs; break;
       case 1: forcused_sup_legs = cur_sup_legs; break;
       }
+      if ( velocity_mode_flg != VEL_ENDING ) {
+          ref_coords.pos += ref_coords.rot * trans;
+          ref_coords.rotate(dth, hrp::Vector3(0,0,1));
+      }
       for (size_t j = 0; j < forcused_sup_legs.size(); j++) {
           ret.push_back(ref_coords);
-          if ( velocity_mode_flg != VEL_ENDING ) {
-              ret[j].pos += ret[j].rot * trans;
-              ret[j].rotate(dth, hrp::Vector3(0,0,1));
-          }
           ret[j].pos += ret[j].rot * footstep_param.leg_default_translate_pos[forcused_sup_legs.at(j)];
       }
       ret_list.push_back(ret);
@@ -762,23 +766,32 @@ namespace rats
 
   void gait_generator::overwrite_refzmp_queue(const std::vector< std::vector<step_node> >& fnsl)
   {
-    /* clear footstep and refzmp after footstep_index + 1, it means we do not modify current step */
     size_t idx = get_overwritable_index();
     footstep_nodes_list.erase(footstep_nodes_list.begin()+idx, footstep_nodes_list.end());
 
     /* add new next steps ;; the number of next steps is fnsl.size() */
     footstep_nodes_list.insert(footstep_nodes_list.end(), fnsl.begin(), fnsl.end());
 
-    /* remove refzmp after idx for allocation of new refzmp by push_refzmp_from_footstep_nodes */
-    rg.remove_refzmp_cur_list_over_length(idx);
-    /* remove refzmp in preview contoroller queue */
-    preview_controller_ptr->remove_preview_queue(lcg.get_lcg_count());
-
-    /* reset index and counter */
-    rg.set_indices(idx);
-    rg.set_refzmp_count(static_cast<size_t>(fnsl[0][0].step_time/dt));
+    /* Update lcg */
     lcg.set_swing_support_steps_list(footstep_nodes_list);
-    /* reset refzmp */
+
+    /* Update refzmp_generator */
+    /*   Remove refzmp after idx for allocation of new refzmp by push_refzmp_from_footstep_nodes */
+    rg.remove_refzmp_cur_list_over_length(idx);
+    /*   Remove refzmp in preview contoroller queue */
+    if (overwritable_footstep_index_offset == 0) {
+        preview_controller_ptr->remove_preview_queue(); // Remove all queue
+    } else {
+        preview_controller_ptr->remove_preview_queue(lcg.get_lcg_count()); // Remove queue except current footstep. ZMP queue for current footstep remains
+    }
+    /*   reset index and counter */
+    rg.set_indices(idx);
+    if (overwritable_footstep_index_offset == 0) {
+        rg.set_refzmp_count(lcg.get_lcg_count()); // Start refzmp_count from current remaining footstep count of swinging.
+    } else {
+        rg.set_refzmp_count(static_cast<size_t>(fnsl[0][0].step_time/dt)); // Start refzmp_count from step length of first overwrite step
+    }
+    /*   reset refzmp */
     for (size_t i = 0; i < fnsl.size(); i++) {
         if (emergency_flg == EMERGENCY_STOP)
             rg.push_refzmp_from_footstep_nodes_for_dual(footstep_nodes_list[idx+i],
