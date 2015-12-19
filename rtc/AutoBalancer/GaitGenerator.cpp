@@ -459,6 +459,7 @@ namespace rats
       }
       if (footstep_index < fnsl.size()) {
         one_step_count = static_cast<size_t>(fnsl[footstep_index].front().step_time/dt);
+        thp_ptr->set_one_step_count(one_step_count);
       }
       if (footstep_index + 1 < fnsl.size()) {
         next_one_step_count = static_cast<size_t>(fnsl[footstep_index+1].front().step_time/dt);
