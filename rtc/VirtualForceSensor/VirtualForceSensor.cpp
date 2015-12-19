@@ -52,7 +52,7 @@ VirtualForceSensor::~VirtualForceSensor()
 
 RTC::ReturnCode_t VirtualForceSensor::onInitialize()
 {
-  std::cout << m_profile.instance_name << ": onInitialize()" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "] onInitialize()" << std::endl;
   // <rtc-template block="bind_config">
   // Bind variables and configuration variable
   bindParameter("debugLevel", m_debugLevel, "0");
@@ -93,7 +93,7 @@ RTC::ReturnCode_t VirtualForceSensor::onInitialize()
   if (!loadBodyFromModelLoader(m_robot, prop["model"].c_str(),
 			       CosNaming::NamingContext::_duplicate(naming.getRootContext())
 	  )){
-    std::cerr << "failed to load model[" << prop["model"] << "] in "
+    std::cerr << "[" << m_profile.instance_name << "] failed to load model[" << prop["model"] << "] in "
               << m_profile.instance_name << std::endl;
     return RTC::RTC_ERROR;
   }
@@ -113,14 +113,14 @@ RTC::ReturnCode_t VirtualForceSensor::onInitialize()
     p.R = Eigen::AngleAxis<double>(tr[6], hrp::Vector3(tr[3],tr[4],tr[5])).toRotationMatrix(); // rotation in VRML is represented by axis + angle
     p.forceOffset = hrp::Vector3(0, 0, 0);
     p.momentOffset = hrp::Vector3(0, 0, 0);
-    std::cerr << "virtual force sensor : " << name << std::endl;
-    std::cerr << "                base : " << p.base_name << std::endl;
-    std::cerr << "              target : " << p.target_name << std::endl;
-    std::cerr << "                T, R : " << p.p[0] << " " << p.p[1] << " " << p.p[2] << std::endl << p.R << std::endl;
+    std::cerr << "[" << m_profile.instance_name << "] virtual force sensor : " << name << std::endl;
+    std::cerr << "[" << m_profile.instance_name << "]                 base : " << p.base_name << std::endl;
+    std::cerr << "[" << m_profile.instance_name << "]               target : " << p.target_name << std::endl;
+    std::cerr << "[" << m_profile.instance_name << "]                 T, R : " << p.p[0] << " " << p.p[1] << " " << p.p[2] << std::endl << p.R << std::endl;
     p.path = hrp::JointPathPtr(new hrp::JointPath(m_robot->link(p.base_name), m_robot->link(p.target_name)));
     m_sensors[name] = p;
     if ( m_sensors[name].path->numJoints() == 0 ) {
-      std::cerr << "ERROR : Unknown link path " << m_sensors[name].base_name << " " << m_sensors[name].target_name  << std::endl;
+      std::cerr << "[" << m_profile.instance_name << "] ERROR : Unknown link path " << m_sensors[name].base_name << " " << m_sensors[name].target_name  << std::endl;
       return RTC::RTC_ERROR;
     }
   }
@@ -164,13 +164,13 @@ RTC::ReturnCode_t VirtualForceSensor::onShutdown(RTC::UniqueId ec_id)
 
 RTC::ReturnCode_t VirtualForceSensor::onActivated(RTC::UniqueId ec_id)
 {
-  std::cout << m_profile.instance_name<< ": onActivated(" << ec_id << ")" << std::endl;
+  std::cerr << "[" << m_profile.instance_name<< "] onActivated(" << ec_id << ")" << std::endl;
   return RTC::RTC_OK;
 }
 
 RTC::ReturnCode_t VirtualForceSensor::onDeactivated(RTC::UniqueId ec_id)
 {
-  std::cout << m_profile.instance_name<< ": onDeactivated(" << ec_id << ")" << std::endl;
+  std::cerr << "[" << m_profile.instance_name<< "] onDeactivated(" << ec_id << ")" << std::endl;
   return RTC::RTC_OK;
 }
 

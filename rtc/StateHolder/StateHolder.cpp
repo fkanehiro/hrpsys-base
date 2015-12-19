@@ -73,6 +73,7 @@ StateHolder::~StateHolder()
 
 RTC::ReturnCode_t StateHolder::onInitialize()
 {
+  std::cerr << "[" << m_profile.instance_name << "] onInitialize()" << std::endl;
   // <rtc-template block="bind_config">
   // Bind variables and configuration variable
   

@@ -56,7 +56,7 @@ ThermoLimiter::~ThermoLimiter()
 
 RTC::ReturnCode_t ThermoLimiter::onInitialize()
 {
-  std::cout << m_profile.instance_name << ": onInitialize()" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "] : onInitialize()" << std::endl;
   // <rtc-template block="bind_config">
   // Bind variables and configuration variable
   bindParameter("debugLevel", m_debugLevel, "0");
@@ -97,14 +97,14 @@ RTC::ReturnCode_t ThermoLimiter::onInitialize()
   if (!loadBodyFromModelLoader(m_robot, prop["model"].c_str(),
                                CosNaming::NamingContext::_duplicate(naming.getRootContext())
         )){
-    std::cerr << "failed to load model[" << prop["model"] << "]"
+    std::cerr << "[" << m_profile.instance_name << "] failed to load model[" << prop["model"] << "]"
               << std::endl;
   }
   // set limit of motor temperature
   coil::vstring motorTemperatureLimitFromConf = coil::split(prop["motor_temperature_limit"], ",");
   m_motorTemperatureLimit.resize(m_robot->numJoints());
   if (motorTemperatureLimitFromConf.size() != m_robot->numJoints()) {
-    std::cerr <<  "[WARN]: size of motor_temperature_limit is " << motorTemperatureLimitFromConf.size() << ", not equal to " << m_robot->numJoints() << std::endl;
+    std::cerr << "[" << m_profile.instance_name << "] [WARN]: size of motor_temperature_limit is " << motorTemperatureLimitFromConf.size() << ", not equal to " << m_robot->numJoints() << std::endl;
     for (int i = 0; i < m_robot->numJoints(); i++) {
       m_motorTemperatureLimit[i] = 80.0;
     }
@@ -126,13 +126,13 @@ RTC::ReturnCode_t ThermoLimiter::onInitialize()
   if (prop["ambient_tmp"] != "") {
     coil::stringTo(ambientTemp, prop["ambient_tmp"].c_str());
   }
-  std::cerr <<  m_profile.instance_name << ": ambient temperature: " << ambientTemp << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "] : ambient temperature: " << ambientTemp << std::endl;
 
   // set limit of motor heat parameters
   coil::vstring motorHeatParamsFromConf = coil::split(prop["motor_heat_params"], ",");
   m_motorHeatParams.resize(m_robot->numJoints());
   if (motorHeatParamsFromConf.size() != 2 * m_robot->numJoints()) {
-    std::cerr <<  "[WARN]: size of motor_heat_param is " << motorHeatParamsFromConf.size() << ", not equal to 2 * " << m_robot->numJoints() << std::endl;
+    std::cerr << "[" << m_profile.instance_name << "] [WARN]: size of motor_heat_param is " << motorHeatParamsFromConf.size() << ", not equal to 2 * " << m_robot->numJoints() << std::endl;
     for (int i = 0; i < m_robot->numJoints(); i++) {
       m_motorHeatParams[i].defaultParams();
       m_motorHeatParams[i].temperature = ambientTemp;
@@ -197,13 +197,13 @@ RTC::ReturnCode_t ThermoLimiter::onShutdown(RTC::UniqueId ec_id)
 
 RTC::ReturnCode_t ThermoLimiter::onActivated(RTC::UniqueId ec_id)
 {
-  std::cout << m_profile.instance_name<< ": onActivated(" << ec_id << ")" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "] : onActivated(" << ec_id << ")" << std::endl;
   return RTC::RTC_OK;
 }
 
 RTC::ReturnCode_t ThermoLimiter::onDeactivated(RTC::UniqueId ec_id)
 {
-  std::cout << m_profile.instance_name<< ": onDeactivated(" << ec_id << ")" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "] : onDeactivated(" << ec_id << ")" << std::endl;
   return RTC::RTC_OK;
 }
 

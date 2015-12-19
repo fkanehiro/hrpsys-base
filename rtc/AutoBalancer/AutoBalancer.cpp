@@ -133,7 +133,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     if (!loadBodyFromModelLoader(m_robot, prop["model"].c_str(), 
                                  CosNaming::NamingContext::_duplicate(naming.getRootContext())
                                  )){
-      std::cerr << m_profile.instance_name << " failed to load model[" << prop["model"] << "]" << std::endl;
+      std::cerr << "[" << m_profile.instance_name << "] failed to load model[" << prop["model"] << "]" << std::endl;
       return RTC::RTC_ERROR;
     }
 
