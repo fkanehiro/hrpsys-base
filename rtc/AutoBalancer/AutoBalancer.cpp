@@ -838,7 +838,7 @@ void AutoBalancer::getTargetParameters()
     }
     //
     {
-        if ( gg_is_walking && gg->get_lcg_count() == static_cast<size_t>(gg->get_default_step_time()/(2*m_dt))-1) {
+        if ( gg_is_walking && gg->get_lcg_count() == gg->get_overwrite_check_timing()+2 ) {
             hrp::Vector3 vel_htc(calc_vel_from_hand_error(tmp_fix_coords));
             gg->set_offset_velocity_param(vel_htc(0), vel_htc(1) ,vel_htc(2));
         }//  else {
@@ -1800,14 +1800,16 @@ hrp::Vector3 AutoBalancer::calc_vel_from_hand_error (const coordinates& tmp_fix_
     ref_hand_coords.transform(graspless_manip_reference_trans_coords); // desired arm coords
     hrp::Vector3 foot_pos(gg->get_dst_foot_midcoords().pos);
     if ( graspless_manip_arm == "arms" ) {
-      // act_hand_coords.pos = (target_coords["rarm"].pos + target_coords["larm"].pos) / 2.0;
-      // vector3 cur_y(target_coords["larm"].pos - target_coords["rarm"].pos);
-      // cur_y(2) = 0;
-      // alias(cur_y) = normalize(cur_y);
-      // vector3 ref_y(ref_hand_coords.axis(AXIS_Y));
-      // ref_y(2) = 0;
-      // alias(ref_y) = normalize(ref_y);
-      // dr = 0,0,((vector3(cross(ref_y, cur_y))(2) > 0 ? 1.0 : -1.0) * std::acos(dot(ref_y, cur_y))); // fix for rotation
+        hrp::Vector3 rarm_pos = ikp["rarm"].target_p0 + ikp["rarm"].target_r0 * ikp["rarm"].localPos;
+        hrp::Vector3 larm_pos = ikp["larm"].target_p0 + ikp["larm"].target_r0 * ikp["larm"].localPos;
+        act_hand_coords.pos = (rarm_pos+larm_pos)/2.0;
+        hrp::Vector3 act_y = larm_pos-rarm_pos;
+        act_y(2) = 0;
+        act_y.normalize();
+        hrp::Vector3 ref_y(ref_hand_coords.rot * hrp::Vector3::UnitY());
+        ref_y(2) = 0;
+        ref_y.normalize();
+        dr = hrp::Vector3(0,0,(hrp::Vector3(ref_y.cross(act_y))(2) > 0 ? 1.0 : -1.0) * std::acos(ref_y.dot(act_y))); // fix for rotation
     } else {
       ABCIKparam& tmpikp = ikp[graspless_manip_arm];
       act_hand_coords = rats::coordinates(tmpikp.target_p0 + tmpikp.target_r0 * tmpikp.localPos,
