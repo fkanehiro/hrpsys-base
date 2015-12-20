@@ -830,8 +830,8 @@ namespace rats
       hrp::Vector3 get_cycloid_delay_kick_point_offset () { return cdktg.get_cycloid_delay_kick_point_offset() ; };
       double get_toe_pos_offset_x () { return toe_pos_offset_x; };
       double get_heel_pos_offset_x () { return heel_pos_offset_x; };
-      double get_toe_angle () { return toe_angle; };
-      double get_heel_angle () { return heel_angle; };
+      double get_toe_angle () const { return toe_angle; };
+      double get_heel_angle () const { return heel_angle; };
       double get_foot_dif_rot_angle () { return foot_dif_rot_angle; };
       bool get_use_toe_joint () { return use_toe_joint; };
     };
@@ -886,6 +886,13 @@ namespace rats
     void append_go_pos_step_nodes (const coordinates& _ref_coords,
                                    const std::vector<leg_type>& lts)
     {
+        append_go_pos_step_nodes(_ref_coords, lts, footstep_nodes_list);
+    };
+
+    void append_go_pos_step_nodes (const coordinates& _ref_coords,
+                                   const std::vector<leg_type>& lts,
+                                   std::vector< std::vector<step_node> >& _footstep_nodes_list) const
+    {
       std::vector<step_node> sns;
       for (size_t i = 0; i < lts.size(); i++) {
           sns.push_back(step_node(lts.at(i), _ref_coords,
@@ -893,12 +900,13 @@ namespace rats
                                   lcg.get_toe_angle(), lcg.get_heel_angle()));
           sns.at(i).worldcoords.pos += sns.at(i).worldcoords.rot * footstep_param.leg_default_translate_pos[lts.at(i)];
       }
-      footstep_nodes_list.push_back(sns);
+      _footstep_nodes_list.push_back(sns);
     };
     void overwrite_refzmp_queue(const std::vector< std::vector<step_node> >& fnsl);
-    void calc_ref_coords_trans_vector_velocity_mode (coordinates& ref_coords, hrp::Vector3& trans, double& dth, const std::vector<step_node>& sup_fns);
+    void calc_ref_coords_trans_vector_velocity_mode (coordinates& ref_coords, hrp::Vector3& trans, double& dth, const std::vector<step_node>& sup_fns) const;
     void calc_next_coords_velocity_mode (std::vector< std::vector<coordinates> >& ret_list, const size_t idx, const size_t future_step_num = 3);
     void append_footstep_list_velocity_mode ();
+    void append_footstep_list_velocity_mode (std::vector< std::vector<step_node> >& _footstep_nodes_list) const;
 
 #ifndef HAVE_MAIN
     /* inhibit copy constructor and copy insertion not by implementing */
@@ -1181,8 +1189,8 @@ namespace rats
     double get_gravitational_acceleration () { return gravitational_acceleration; } ;
     double get_toe_pos_offset_x () { return lcg.get_toe_pos_offset_x(); };
     double get_heel_pos_offset_x () { return lcg.get_heel_pos_offset_x(); };
-    double get_toe_angle () { return lcg.get_toe_angle(); };
-    double get_heel_angle () { return lcg.get_heel_angle(); };
+    double get_toe_angle () const { return lcg.get_toe_angle(); };
+    double get_heel_angle () const { return lcg.get_heel_angle(); };
     double get_foot_dif_rot_angle () { return lcg.get_foot_dif_rot_angle(); };
     void get_toe_heel_phase_ratio (std::vector<double>& ratio) { thp.get_toe_heel_phase_ratio(ratio); };
     int get_NUM_TH_PHASES () { return thp.get_NUM_TH_PHASES(); };
