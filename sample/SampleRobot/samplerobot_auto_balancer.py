@@ -49,12 +49,39 @@ def testPoseList(pose_list, initial_pose):
         hcf.waitInterpolation()
 
 def checkActualBaseAttitude(ref_rpy = None, thre=0.1): # degree
+    '''Check whether the robot falls down based on actual robot base-link attitude.
+    '''
     act_rpy = rtm.readDataPort(hcf.rh.port("WAIST")).data.orientation
     if ref_rpy == None:
         ref_rpy = rtm.readDataPort(hcf.abc.port("baseRpyOut")).data
     ret = abs(math.degrees(act_rpy.r-ref_rpy.r)) < thre and abs(math.degrees(act_rpy.p-ref_rpy.p)) < thre
     print >> sys.stderr, "  ret = ", ret, ", actual base rpy = (", act_rpy, "), ", "reference base rpy = (", ref_rpy, ")"
     assert (ret)
+    return ret
+
+def Quaternion2Angle(q):
+    w, v = q[0], q[1:]
+    theta = math.acos(w) * 2.0
+    return theta
+
+def Quaternion2RotMatrixZ(q):
+    theta = Quaternion2Angle(q)
+    return numpy.array([[numpy.cos(theta), -numpy.sin(theta), 0],
+                        [numpy.sin(theta),  numpy.cos(theta), 0],
+                        [               0,                 0, 1]])
+
+def checkGoPosParam (goalx, goaly, goalth, prev_dst_foot_midcoords):
+    '''Check whether goPos argument are correctly achieved based on dst_foot_midcoords values.
+    goPos params should be "new_dst_foot_midcoords - prev_dst_foot_midcoords"
+    '''
+    new_dst_foot_midcoords=hcf.abc_svc.getFootstepParam()[1].dst_foot_midcoords
+    # Check diff
+    difxy = (Quaternion2RotMatrixZ(prev_dst_foot_midcoords.rot).transpose()).dot((numpy.array([new_dst_foot_midcoords.pos])-numpy.array([prev_dst_foot_midcoords.pos])).transpose())
+    difth = math.degrees(Quaternion2Angle(new_dst_foot_midcoords.rot)-Quaternion2Angle(prev_dst_foot_midcoords.rot))
+    ret = (abs(difxy[0,0]-goalx) < 1e-5 and abs(difxy[1,0]-goaly) < 1e-5 and abs(difth-goalth) < 1e-5)
+    print >> sys.stderr, "  Check goPosParam (diff = ", (difxy[0,0]-goalx), "[m], ", (difxy[1,0]-goaly), "[m], ", (difth-goalth), "[deg])"
+    print >> sys.stderr, "  => ", ret
+    assert(ret)
     return ret
 
 def demoAutoBalancerFixFeet ():
@@ -163,8 +190,21 @@ def demoAutoBalancerBalanceWithArms():
 def demoGaitGeneratorGoPos():
     print >> sys.stderr, "1. goPos"
     hcf.startAutoBalancer();
-    hcf.abc_svc.goPos(0.1, 0.05, 20)
+    # initialize dst_foot_midcoords
+    hcf.abc_svc.goPos(0,0,0)
     hcf.abc_svc.waitFootSteps()
+    # gopos check 1
+    goalx=0.1;goaly=0.1;goalth=20.0
+    prev_dst_foot_midcoords=hcf.abc_svc.getFootstepParam()[1].dst_foot_midcoords
+    hcf.abc_svc.goPos(goalx, goaly, goalth)
+    hcf.abc_svc.waitFootSteps()
+    checkGoPosParam(goalx, goaly, goalth, prev_dst_foot_midcoords)
+    # gopos check 2
+    goalx=-0.1;goaly=-0.1;goalth=-10.0
+    prev_dst_foot_midcoords=hcf.abc_svc.getFootstepParam()[1].dst_foot_midcoords
+    hcf.abc_svc.goPos(goalx, goaly, goalth)
+    hcf.abc_svc.waitFootSteps()
+    checkGoPosParam(goalx, goaly, goalth, prev_dst_foot_midcoords)
     checkActualBaseAttitude()
     print >> sys.stderr, "  goPos()=>OK"
 
@@ -454,8 +494,32 @@ def demoGaitGeneratorOverwriteCurrentFootstep():
     # reset params
     hcf.abc_svc.setGaitGeneratorParam(orig_ggp)
 
+def demoGaitGeneratorGoPosOverwrite():
+    print >> sys.stderr, "16. goPos overwriting"
+    hcf.startAutoBalancer();
+    print >> sys.stderr, "  Overwrite goPos by goPos"
+    goalx=0.3;goaly=0.1;goalth=15.0
+    prev_dst_foot_midcoords=hcf.abc_svc.getFootstepParam()[1].dst_foot_midcoords
+    hcf.abc_svc.goPos(0.2,-0.1,-5) # initial gopos
+    hcf.seq_svc.setJointAngles(initial_pose, 2.0);hcf.waitInterpolation() #  wait 2 step using dummy waitInterpolation
+    hcf.abc_svc.goPos(goalx,goaly,goalth) # overwrite gopos
+    hcf.abc_svc.waitFootSteps()
+    checkGoPosParam(goalx, goaly, goalth, prev_dst_foot_midcoords)
+    print >> sys.stderr, "  Overwrite setFootSteps by goPos"
+    prev_dst_foot_midcoords=hcf.abc_svc.getFootstepParam()[1].dst_foot_midcoords
+    hcf.setFootSteps([OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([0,-0.09,0], [1,0,0,0], "rleg")]),
+                      OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([0.1,0.09,0], [1,0,0,0], "lleg")]),
+                      OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([0.2,-0.09,0], [1,0,0,0], "rleg")]),
+                      OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([0.3,0.09,0], [1,0,0,0], "lleg")]),
+                      OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([0.3,-0.09,0], [1,0,0,0], "rleg")])
+                      ]) # initial setfootsteps
+    hcf.seq_svc.setJointAngles(initial_pose, 2.0);hcf.waitInterpolation() #  wait 2 step using dummy waitInterpolation
+    hcf.abc_svc.goPos(goalx,goaly,goalth) # overwrite gopos
+    hcf.abc_svc.waitFootSteps()
+    checkGoPosParam(goalx, goaly, goalth, prev_dst_foot_midcoords)
+
 def demoGaitGeneratorSetFootStepsWithArms():
-    print >> sys.stderr, "16. Trot Walking"
+    print >> sys.stderr, "17. Trot Walking"
     hcf.stopAutoBalancer()
     hcf.seq_svc.setJointAngles(four_legs_mode_pose, 1.0)
     hcf.waitInterpolation()
@@ -514,6 +578,7 @@ def demo():
         demoGaitGeneratorOverwriteFootsteps(2)
         demoGaitGeneratorFixHand()
         demoGaitGeneratorOverwriteCurrentFootstep()
+        demoGaitGeneratorGoPosOverwrite()
         demoGaitGeneratorSetFootStepsWithArms()
 
 if __name__ == '__main__':
