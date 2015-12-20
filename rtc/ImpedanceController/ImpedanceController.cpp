@@ -227,7 +227,7 @@ RTC::ReturnCode_t ImpedanceController::onInitialize()
         // 3. Check whether joint path is adequate.
         hrp::Link* target_link = m_robot->link(ee_map[ee_name].target_name);
         ImpedanceParam p;
-        p.manip = hrp::JointPathExPtr(new hrp::JointPathEx(m_robot, m_robot->link(base_name_map[ee_name]), target_link, m_dt, false));
+        p.manip = hrp::JointPathExPtr(new hrp::JointPathEx(m_robot, m_robot->link(base_name_map[ee_name]), target_link, m_dt, false, std::string(m_profile.instance_name)));
         if ( ! p.manip ) {
             std::cerr << "[" << m_profile.instance_name << "]   Invalid joint path from " << base_name_map[ee_name] << " to " << target_link->name << "!! Impedance param for " << sensor_name << " cannot be added!!" << std::endl;
             continue;
