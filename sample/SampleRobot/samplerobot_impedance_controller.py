@@ -14,10 +14,12 @@ except:
     import time
 
 def init ():
-    global hcf
+    global hcf, hrpsys_version
     hcf = HrpsysConfigurator()
     hcf.getRTCList = hcf.getRTCListUnstable
     hcf.init ("SampleRobot(Robot)0", "$(PROJECT_DIR)/../model/sample1.wrl")
+    hrpsys_version = hcf.seq.ref.get_component_profile().version
+    print("hrpsys_version = %s"%hrpsys_version)
 
 def demo():
     init()
@@ -32,6 +34,8 @@ def demo():
     hcf.startImpedance("larm")
     hcf.stopImpedance("larm")
     hcf.stopImpedance("rarm")
+    if hrpsys_version < '315.5.0':
+        return
 
     # 1. Getter check
     print >> sys.stderr, "1. Getter check"
