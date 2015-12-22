@@ -878,8 +878,6 @@ void Stabilizer::getActualParameters ()
         }
         // Actual ee frame =>
         ikp.ee_d_foot_rpy = (target->R * ikp.localR).transpose() * (foot_origin_rot * ikp.d_foot_rpy);
-        // Convert actual world frame => actual foot_origin frame for debug data port
-        ikp.ref_moment = foot_origin_rot.transpose() * ikp.ref_moment;
       }
 
       if (eefm_use_force_difference_control) {
