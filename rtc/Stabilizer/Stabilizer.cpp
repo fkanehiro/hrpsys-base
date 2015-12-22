@@ -1565,7 +1565,7 @@ void Stabilizer::getParameter(OpenHRP::StabilizerService::stParam& i_stp)
   i_stp.end_effector_list.length(stikp.size());
   for (size_t i = 0; i < stikp.size(); i++) {
       const rats::coordinates cur_ee = rats::coordinates(stikp.at(i).localp, stikp.at(i).localR);
-      OpenHRP::AutoBalancerService::Footstep ret_ee;
+      OpenHRP::StabilizerService::EndEffector ret_ee;
       // position
       memcpy(ret_ee.pos, cur_ee.pos.data(), sizeof(double)*3);
       // rotation
@@ -1575,7 +1575,7 @@ void Stabilizer::getParameter(OpenHRP::StabilizerService::stParam& i_stp)
       ret_ee.rot[2] = qt.y();
       ret_ee.rot[3] = qt.z();
       // name
-      ret_ee.leg = stikp.at(i).ee_name.c_str();
+      ret_ee.name = stikp.at(i).ee_name.c_str();
       // set
       i_stp.end_effector_list[i] = ret_ee;
   }
@@ -1695,7 +1695,7 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
   is_estop_while_walking = i_stp.is_estop_while_walking;
   if (control_mode == MODE_IDLE) {
       for (size_t i = 0; i < i_stp.end_effector_list.length(); i++) {
-          std::vector<STIKParam>::iterator it = std::find_if(stikp.begin(), stikp.end(), (&boost::lambda::_1->* &std::vector<STIKParam>::value_type::ee_name == std::string(i_stp.end_effector_list[i].leg)));
+          std::vector<STIKParam>::iterator it = std::find_if(stikp.begin(), stikp.end(), (&boost::lambda::_1->* &std::vector<STIKParam>::value_type::ee_name == std::string(i_stp.end_effector_list[i].name)));
           memcpy(it->localp.data(), i_stp.end_effector_list[i].pos, sizeof(double)*3);
           it->localR = (Eigen::Quaternion<double>(i_stp.end_effector_list[i].rot[0], i_stp.end_effector_list[i].rot[1], i_stp.end_effector_list[i].rot[2], i_stp.end_effector_list[i].rot[3])).normalized().toRotationMatrix();
       }

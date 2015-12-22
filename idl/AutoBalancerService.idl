@@ -14,6 +14,19 @@ module OpenHRP
     typedef double DblArray4[4];
 
     /**
+     * @struct EndEffector
+     * @brief EndEffector for one limb.
+     */
+    struct EndEffector
+    {
+      /// position [m]
+      DblArray3 pos;
+      /// orientation by quaternion (w,x,y,z)
+      DblArray4 rot;
+      /// end effector name
+      string name;
+    };
+    /**
      * @struct Footstep
      * @brief Foot step for one leg.
      */
@@ -246,7 +259,7 @@ module OpenHRP
       double rot_ik_thre;
       /// Flag for fix hand while walking.
       boolean is_hand_fix_mode;
-      sequence<Footstep> end_effector_list;
+      sequence<EndEffector> end_effector_list;
     };
 
     /**

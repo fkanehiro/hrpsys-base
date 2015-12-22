@@ -2,7 +2,6 @@
  * @file StabilizerService.idl
  * @brief Services for the stabilizer interface
  */
-#include "AutoBalancerService.idl"
 
 module OpenHRP
 {
@@ -60,6 +59,20 @@ module OpenHRP
      */
     struct SupportPolygonVertices {
         sequence<TwoDimensionVertex> vertices;
+    };
+
+    /**
+     * @struct EndEffector
+     * @brief EndEffector for one limb.
+     */
+    struct EndEffector
+    {
+      /// position [m]
+      DblArray3 pos;
+      /// orientation by quaternion (w,x,y,z)
+      DblArray4 rot;
+      /// end effector name
+      string name;
     };
 
     /**
@@ -171,7 +184,7 @@ module OpenHRP
       sequence< sequence<double, 3> > foot_origin_offset;
       /// Emergency signal checking mode
       EmergencyCheckMode emergency_check_mode;
-      sequence<AutoBalancerService::Footstep> end_effector_list;
+      sequence<EndEffector> end_effector_list;
       /// whether an emergency stop is used while walking
       boolean is_estop_while_walking;
     };
