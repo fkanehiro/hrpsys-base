@@ -691,6 +691,8 @@ bool robot::setServoGainPercentage(const char *i_jname, double i_percentage)
             pgain[i] = default_pgain[i] * i_percentage/100.0;
             if (!read_dgain(i, &old_dgain[i])) old_dgain[i] = dgain[i];
             dgain[i] = default_dgain[i] * i_percentage/100.0;
+            if (!read_torque_pgain(i, &old_tqpgain[i])) old_tqpgain[i] = tqpgain[i];
+            if (!read_torque_dgain(i, &old_tqdgain[i])) old_tqdgain[i] = tqdgain[i];
             gain_counter[i] = 0;
         }
         std::cerr << "[RobotHardware] setServoGainPercentage " << i_percentage << "[%] for all joints" << std::endl;
@@ -699,6 +701,8 @@ bool robot::setServoGainPercentage(const char *i_jname, double i_percentage)
         pgain[l->jointId] = default_pgain[l->jointId] * i_percentage/100.0;
         if (!read_dgain(l->jointId, &old_dgain[l->jointId])) old_dgain[l->jointId] = dgain[l->jointId];
         dgain[l->jointId] = default_dgain[l->jointId] * i_percentage/100.0;
+        if (!read_torque_pgain(l->jointId, &old_tqpgain[l->jointId])) old_tqpgain[l->jointId] = tqpgain[l->jointId];
+        if (!read_torque_dgain(l->jointId, &old_tqdgain[l->jointId])) old_tqdgain[l->jointId] = tqdgain[l->jointId];
         gain_counter[l->jointId] = 0;
         std::cerr << "[RobotHardware] setServoGainPercentage " << i_percentage << "[%] for " << i_jname << std::endl;
     }else{
@@ -710,6 +714,8 @@ bool robot::setServoGainPercentage(const char *i_jname, double i_percentage)
             pgain[jgroup[i]] = default_pgain[jgroup[i]] * i_percentage/100.0;
             if (!read_dgain(jgroup[i], &old_dgain[jgroup[i]])) old_dgain[jgroup[i]] = dgain[jgroup[i]];
             dgain[jgroup[i]] = default_dgain[jgroup[i]] * i_percentage/100.0;
+            if (!read_torque_pgain(jgroup[i], &old_tqpgain[jgroup[i]])) old_tqpgain[jgroup[i]] = tqpgain[jgroup[i]];
+            if (!read_torque_dgain(jgroup[i], &old_tqdgain[jgroup[i]])) old_tqdgain[jgroup[i]] = tqdgain[jgroup[i]];
             gain_counter[jgroup[i]] = 0;
         }
         std::cerr << "[RobotHardware] setServoGainPercentage " << i_percentage << "[%] for " << i_jname << std::endl;
@@ -730,6 +736,8 @@ bool robot::setServoTorqueGainPercentage(const char *i_jname, double i_percentag
             tqpgain[i] = default_tqpgain[i] * i_percentage/100.0;
             if (!read_torque_dgain(i, &old_tqdgain[i])) old_tqdgain[i] = tqdgain[i];
             tqdgain[i] = default_tqdgain[i] * i_percentage/100.0;
+            if (!read_pgain(i, &old_pgain[i])) old_pgain[i] = pgain[i];
+            if (!read_dgain(i, &old_dgain[i])) old_dgain[i] = dgain[i];
             gain_counter[i] = 0;
         }
         std::cerr << "[RobotHardware] setServoTorqueGainPercentage " << i_percentage << "[%] for all joints" << std::endl;
@@ -738,6 +746,8 @@ bool robot::setServoTorqueGainPercentage(const char *i_jname, double i_percentag
         tqpgain[l->jointId] = default_tqpgain[l->jointId] * i_percentage/100.0;
         if (!read_torque_dgain(l->jointId, &old_tqdgain[l->jointId])) old_tqdgain[l->jointId] = tqdgain[l->jointId];
         tqdgain[l->jointId] = default_tqdgain[l->jointId] * i_percentage/100.0;
+        if (!read_pgain(l->jointId, &old_pgain[l->jointId])) old_pgain[l->jointId] = pgain[l->jointId];
+        if (!read_dgain(l->jointId, &old_dgain[l->jointId])) old_dgain[l->jointId] = dgain[l->jointId];
         gain_counter[l->jointId] = 0;
         std::cerr << "[RobotHardware] setServoTorqueGainPercentage " << i_percentage << "[%] for " << i_jname << std::endl;
     }else{
@@ -749,6 +759,8 @@ bool robot::setServoTorqueGainPercentage(const char *i_jname, double i_percentag
             tqpgain[jgroup[i]] = default_tqpgain[jgroup[i]] * i_percentage/100.0;
             if (!read_torque_dgain(jgroup[i], &old_tqdgain[jgroup[i]])) old_tqdgain[jgroup[i]] = tqdgain[jgroup[i]];
             tqdgain[jgroup[i]] = default_tqdgain[jgroup[i]] * i_percentage/100.0;
+            if (!read_pgain(jgroup[i], &old_pgain[jgroup[i]])) old_pgain[jgroup[i]] = pgain[jgroup[i]];
+            if (!read_dgain(jgroup[i], &old_dgain[jgroup[i]])) old_dgain[jgroup[i]] = dgain[jgroup[i]];
             gain_counter[jgroup[i]] = 0;
         }
         std::cerr << "[RobotHardware] setServoTorqueGainPercentage " << i_percentage << "[%] for " << i_jname << std::endl;
