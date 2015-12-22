@@ -67,6 +67,8 @@ module OpenHRP
 
     enum SwitchStatus {SWITCH_ON, SWITCH_OFF};
 
+    enum JointControlMode {POSITION, POSITION_TORQUE};
+
     /**
      * @brief turn on/off power supply for motor driver
      * @param name joint name, part name or "all"
@@ -105,6 +107,8 @@ module OpenHRP
      * @param limit the maximum joint servo error angle[rad]
      */
     void setServoErrorLimit(in string name, in double limit);
+
+    void setJointControlMode(in string jname, in JointControlMode jcm);
 
     /**
      * @brief remove offsets on sensor outputs form gyro sensors and accelerometers. This function takes 10[s]. Please keep the robot static.

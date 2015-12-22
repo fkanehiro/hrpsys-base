@@ -39,8 +39,7 @@ public:
     void enableDisturbanceObserver();
     void disableDisturbanceObserver();
     void setDisturbanceObserverGain(::CORBA::Double gain);
-    void setJointControlMode(const char *jname, joint_control_mode mode);
-
+    void setJointControlMode(const char *jname, OpenHRP::RobotHardwareService::JointControlMode jcm);
     //
     void setRobot(boost::shared_ptr<robot>& i_robot) { m_robot = i_robot; }
 private:

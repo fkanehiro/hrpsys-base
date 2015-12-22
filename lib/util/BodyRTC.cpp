@@ -667,6 +667,8 @@ void RobotHardwareServicePort::setServoTorqueGainPercentage(const char *jname, d
 void RobotHardwareServicePort::setServoErrorLimit(const char *jname, double limit) {
     m_robot->setServoErrorLimit(jname, limit);
 }
+void RobotHardwareServicePort::setJointControlMode(const char *jname, OpenHRP::RobotHardwareService::JointControlMode jcm){
+}
 void RobotHardwareServicePort::calibrateInertiaSensor() {
 }
 void RobotHardwareServicePort::removeForceSensorOffset() {
