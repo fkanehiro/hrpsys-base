@@ -39,6 +39,17 @@ rosrun hrpsys testZMPDistributor # ROS environment
 <tr><th>category</th><td>example</td></tr>
 </table>
 
+\subsection stalgo Stabilizer algorithm
+Stabilizer algorithm is based on the following papers:
+<br>
+<ul>
+<li> EEFM (partially, EEFMQP, EEFMQPCOP):<br>
+    [1] Shuuji Kajita, Mitsuharu Morisawa, Kanako Miura, Shin’ichiro Nakaoka,Kensuke Harada, Kenji Kaneko, Fumio Kanehiro and Kazuhito Yokoi "Biped Walking Stabilization Based on Linear Inverted Pendulum Tracking", The 2010 IEEE/RSJ International Conference on Intelligent Robots and Systems, p. 4489-4496, 2010
+<li> TPCC:<br>
+    [2] 長坂,稲葉,井上:"体幹位置コンプライアンスを用いた人間型ロボットの歩行安定化",第 17 回日本ロボット学会学術講演会予稿集, pp.1193–1194, 1999.<br>
+    [3] Y. Choi, D. Kim and B.-J. You: "On the Walking Control for Humanoid Robot based on the Kinematic Resolution of CoM Jacobian with Embedded Motion," Proc. of 2006 IEEE Inter. Conf. on Robotics and Automation, pp.2655–2660, 2006.
+</ul>
+
 \section dataports Data Ports
 
 \subsection inports Input Ports

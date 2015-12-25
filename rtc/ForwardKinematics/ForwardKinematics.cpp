@@ -58,7 +58,7 @@ ForwardKinematics::~ForwardKinematics()
 
 RTC::ReturnCode_t ForwardKinematics::onInitialize()
 {
-  std::cout << m_profile.instance_name << ": onInitialize()" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "] onInitialize()" << std::endl;
   // <rtc-template block="bind_config">
   // Bind variables and configuration variable
   coil::Properties& ref = getProperties();
@@ -101,15 +101,13 @@ RTC::ReturnCode_t ForwardKinematics::onInitialize()
   m_refBody = hrp::BodyPtr(new hrp::Body());
   if (!loadBodyFromModelLoader(m_refBody, prop["model"].c_str(), 
                                CosNaming::NamingContext::_duplicate(naming.getRootContext()))){
-    std::cerr << "failed to load model[" << prop["model"] << "] in "
-              << m_profile.instance_name << std::endl;
+    std::cerr << "[" << m_profile.instance_name << "] failed to load model[" << prop["model"] << "]" << std::endl;
     return RTC::RTC_ERROR;
   }
   m_actBody = hrp::BodyPtr(new hrp::Body());
   if (!loadBodyFromModelLoader(m_actBody, prop["model"].c_str(), 
                                CosNaming::NamingContext::_duplicate(naming.getRootContext()))){
-    std::cerr << "failed to load model[" << prop["model"] << "] in "
-              << m_profile.instance_name << std::endl;
+    std::cerr << "[" << m_profile.instance_name << "] failed to load model[" << prop["model"] << "]" << std::endl;
     return RTC::RTC_ERROR;
   }
 
@@ -144,7 +142,7 @@ RTC::ReturnCode_t ForwardKinematics::onShutdown(RTC::UniqueId ec_id)
 
 RTC::ReturnCode_t ForwardKinematics::onActivated(RTC::UniqueId ec_id)
 {
-  std::cout << m_profile.instance_name<< ": onActivated(" << ec_id << ")" << std::endl;
+  std::cerr << "[" << m_profile.instance_name<< "] onActivated(" << ec_id << ")" << std::endl;
   if (m_sensorAttachedLinkName == ""){
     m_sensorAttachedLink = NULL;
   }else{
@@ -160,7 +158,7 @@ RTC::ReturnCode_t ForwardKinematics::onActivated(RTC::UniqueId ec_id)
 
 RTC::ReturnCode_t ForwardKinematics::onDeactivated(RTC::UniqueId ec_id)
 {
-  std::cout << m_profile.instance_name<< ": onDeactivated(" << ec_id << ")" << std::endl;
+  std::cerr << "[" << m_profile.instance_name<< "] onDeactivated(" << ec_id << ")" << std::endl;
   return RTC::RTC_OK;
 }
 

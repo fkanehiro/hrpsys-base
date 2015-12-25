@@ -22,18 +22,24 @@ def init ():
     #  torque and wrenches are non-realistic values, just for testing.
     dof = 29
     reset_pose_doc = {'pos':[-7.778932e-05,-0.378613,-0.00021,0.832039,-0.452564,0.000245,0.31129,-0.159481,-0.115399,-0.636277,0.0,0.0,0.0,-7.778932e-05,-0.378613,-0.00021,0.832039,-0.452564,0.000245,0.31129,0.159481,0.115399,-0.636277,0.0,0.0,0.0,0.0,0.0,0.0],
+                      'vel':[0]*dof,
                       'zmp':[-0.00081, 1.712907e-05, -0.66815],
 #                      'gsens':[0,0,0],
                       'waist':[0.000234, 0.000146, 0.66815, -0.000245, -0.000862, 0.000195],
-                      'torque':[0]*dof,
-                      'wrenches':[0]*24
+                      'waist_acc':[0]*3,
+                      'torque':[0]*dof, # non realistic value
+                      'wrenches':[0]*24, # non realistic value
+                      'optionaldata':[1,1,0,0,1,1,1,1]
                       }
     move_base_pose_doc = {'pos':[8.251963e-05,-0.980029,-0.000384,1.02994,-0.398115,-0.000111,0.31129,-0.159481,-0.115399,-0.636277,0.0,0.0,0.0,8.252625e-05,-0.980033,-0.000384,1.02986,-0.398027,-0.000111,0.31129,0.159481,0.115399,-0.636277,0.0,0.0,0.0,0.0,0.0,0.0],
+                          'vel':[0]*dof,
                           'zmp':[0.302518, 0.000153, -0.562325],
 #                          'gsens':[0,0,0],
                           'waist':[-0.092492, -6.260780e-05, 0.6318, -0.000205, 0.348204, 0.000268],
-                          'torque':range(dof),
-                          'wrenches':[1]*6+[-2]*6+[3]*6+[-4]*6
+                          'waist_acc':[0]*3,
+                          'torque':range(dof), # non realistic value
+                          'wrenches':[1]*6+[-2]*6+[3]*6+[-4]*6, # non realistic value
+                          'optionaldata':[0,1,0,0,0.1,0.1,0.1,0.1] # non realistic value
                           }
     hrpsys_version = hcf.seq.ref.get_component_profile().version
     print("hrpsys_version = %s"%hrpsys_version)
@@ -53,26 +59,26 @@ def checkArrayEquality (arr1, arr2, eps=1e-7):
     return all(map(lambda x,y : abs(x-y)<eps, arr1, arr2))
 
 def checkArrayBetween (arr1, arr2, arr3, eps=1e-7):
-    return all(map(lambda x,y,z : abs(x-y)<eps or (z-x)*(y-x) > 0, arr1, arr2, arr3))
+    return all(map(lambda x,y,z : (z-y)*(x-y) <= eps, arr1, arr2, arr3))
 
 def checkJointAngles (var_doc):
     if isinstance(var_doc, list):
         p = var_doc
     else:
         p = var_doc['pos']
-    ret = checkArrayEquality(rtm.readDataPort(hcf.sh.port("qOut")).data, p)
+    ret = checkArrayEquality(hcf.sh_svc.getCommand().jointRefs, p)
     print "  pos => ", ret
 
 def checkJointAnglesBetween(from_doc, to_doc):
     p0 =  from_doc if isinstance(from_doc, list) else from_doc['pos']
     p1 =    to_doc if isinstance(  to_doc, list) else   to_doc['pos']
-    ret = checkArrayBetween(p0, rtm.readDataPort(hcf.sh.port("qOut")).data, p1)
+    ret = checkArrayBetween(p0, hcf.sh_svc.getCommand().jointRefs, p1)
     print "  pos => ", ret
     assert(ret is True)
 
 def checkZmp(var_doc):
-    zmp=rtm.readDataPort(hcf.sh.port("zmpOut")).data
-    ret = checkArrayEquality([zmp.x, zmp.y, zmp.z], var_doc['zmp'])
+    zmp=hcf.sh_svc.getCommand().zmp
+    ret = checkArrayEquality([zmp[0], zmp[1], zmp[2]], var_doc['zmp'])
     print "  zmp => ", ret
     assert(ret is True)
 
@@ -93,6 +99,11 @@ def checkWrenches (var_doc):
     print "  wrenches => ", ret
     assert(ret is True)
 
+def checkOptionalData (var_doc):
+    ret = checkArrayEquality(rtm.readDataPort(hcf.sh.port("optionalDataOut")).data, var_doc['optionaldata'])
+    print "  optionaldata => ", ret
+    assert(ret is True)
+
 def checkRobotState (var_doc):
     checkJointAngles(var_doc)
     checkZmp(var_doc)
@@ -100,6 +111,7 @@ def checkRobotState (var_doc):
     checkTorque(var_doc)
     if hrpsys_version >= '315.2.0':
         checkWrenches(var_doc)
+        checkOptionalData(var_doc)
 
 # demo functions
 def demoSetJointAngles():
@@ -285,6 +297,74 @@ def demoSetJointAnglesSequenceOfGroup():
     time.sleep(3.5)
     hcf.seq_svc.clearJointAnglesOfGroup('larm')
     checkJointAnglesBetween(p1, p0)
+    hcf.seq_svc.removeJointGroup('larm')
+
+def demoSetJointAnglesSequenceFull():
+    print >> sys.stderr, "10. setJointAnglesSequenceFull"
+    hcf.seq_svc.setJointAnglesSequenceFull([move_base_pose_doc['pos'],reset_pose_doc['pos'],move_base_pose_doc['pos']],
+                                           [move_base_pose_doc['vel'],reset_pose_doc['vel'],move_base_pose_doc['vel']],
+                                           [move_base_pose_doc['torque'],reset_pose_doc['torque'],move_base_pose_doc['torque']],
+                                           [move_base_pose_doc['waist'][0:3],reset_pose_doc['waist'][0:3],move_base_pose_doc['waist'][0:3]],
+                                           [move_base_pose_doc['waist'][3:6],reset_pose_doc['waist'][3:6],move_base_pose_doc['waist'][3:6]],
+                                           [move_base_pose_doc['waist_acc'],reset_pose_doc['waist_acc'],move_base_pose_doc['waist_acc']],
+                                           [move_base_pose_doc['zmp'],reset_pose_doc['zmp'],move_base_pose_doc['zmp']],
+                                           [move_base_pose_doc['wrenches'],reset_pose_doc['wrenches'],move_base_pose_doc['wrenches']],
+                                           [move_base_pose_doc['optionaldata'],reset_pose_doc['optionaldata'],move_base_pose_doc['optionaldata']],
+                                           [1.0,1.0,1.0]);
+    hcf.waitInterpolation();
+    checkRobotState(move_base_pose_doc)
+    hcf.seq_svc.setJointAnglesSequenceFull([reset_pose_doc['pos']],
+                                           [reset_pose_doc['vel']],
+                                           [reset_pose_doc['torque']],
+                                           [reset_pose_doc['waist'][0:3]],
+                                           [reset_pose_doc['waist'][3:6]],
+                                           [reset_pose_doc['waist_acc']],
+                                           [reset_pose_doc['zmp']],
+                                           [reset_pose_doc['wrenches']],
+                                           [reset_pose_doc['optionaldata']],
+                                           [1.0])
+    hcf.waitInterpolation();
+    checkRobotState(reset_pose_doc)
+    # check override
+    print >> sys.stderr, "   check override"
+    hcf.seq_svc.setJointAnglesSequenceFull([move_base_pose_doc['pos'],reset_pose_doc['pos'],move_base_pose_doc['pos']],
+                                           [move_base_pose_doc['vel'],reset_pose_doc['vel'],move_base_pose_doc['vel']],
+                                           [move_base_pose_doc['torque'],reset_pose_doc['torque'],move_base_pose_doc['torque']],
+                                           [move_base_pose_doc['waist'][0:3],reset_pose_doc['waist'][0:3],move_base_pose_doc['waist'][0:3]],
+                                           [move_base_pose_doc['waist'][3:6],reset_pose_doc['waist'][3:6],move_base_pose_doc['waist'][3:6]],
+                                           [move_base_pose_doc['waist_acc'],reset_pose_doc['waist_acc'],move_base_pose_doc['waist_acc']],
+                                           [move_base_pose_doc['zmp'],reset_pose_doc['zmp'],move_base_pose_doc['zmp']],
+                                           [move_base_pose_doc['wrenches'],reset_pose_doc['wrenches'],move_base_pose_doc['wrenches']],
+                                           [move_base_pose_doc['optionaldata'],reset_pose_doc['optionaldata'],move_base_pose_doc['optionaldata']],
+                                           [1.0,1.0,5.0]);
+    time.sleep(3.5)
+    hcf.seq_svc.setJointAnglesSequenceFull([reset_pose_doc['pos'],move_base_pose_doc['pos'],reset_pose_doc['pos']],
+                                           [reset_pose_doc['vel'],move_base_pose_doc['vel'],reset_pose_doc['vel']],
+                                           [reset_pose_doc['torque'],move_base_pose_doc['torque'],reset_pose_doc['torque']],
+                                           [reset_pose_doc['waist'][0:3],move_base_pose_doc['waist'][0:3],reset_pose_doc['waist'][0:3]],
+                                           [reset_pose_doc['waist'][3:6],move_base_pose_doc['waist'][3:6],reset_pose_doc['waist'][3:6]],
+                                           [reset_pose_doc['waist_acc'],move_base_pose_doc['waist_acc'],reset_pose_doc['waist_acc']],
+                                           [reset_pose_doc['zmp'],move_base_pose_doc['zmp'],reset_pose_doc['zmp']],
+                                           [reset_pose_doc['wrenches'],move_base_pose_doc['wrenches'],reset_pose_doc['wrenches']],
+                                           [reset_pose_doc['optionaldata'],move_base_pose_doc['optionaldata'],reset_pose_doc['optionaldata']],
+                                           [1.0,1.0,1.0]);
+    hcf.waitInterpolation()
+    checkRobotState(reset_pose_doc)
+    # check clear
+    print >> sys.stderr, "   check clear"
+    hcf.seq_svc.setJointAnglesSequenceFull([move_base_pose_doc['pos'],reset_pose_doc['pos'],move_base_pose_doc['pos']],
+                                           [move_base_pose_doc['vel'],reset_pose_doc['vel'],move_base_pose_doc['vel']],
+                                           [move_base_pose_doc['torque'],reset_pose_doc['torque'],move_base_pose_doc['torque']],
+                                           [move_base_pose_doc['waist'][0:3],reset_pose_doc['waist'][0:3],move_base_pose_doc['waist'][0:3]],
+                                           [move_base_pose_doc['waist'][3:6],reset_pose_doc['waist'][3:6],move_base_pose_doc['waist'][3:6]],
+                                           [move_base_pose_doc['waist_acc'],reset_pose_doc['waist_acc'],move_base_pose_doc['waist_acc']],
+                                           [move_base_pose_doc['zmp'],reset_pose_doc['zmp'],move_base_pose_doc['zmp']],
+                                           [move_base_pose_doc['wrenches'],reset_pose_doc['wrenches'],move_base_pose_doc['wrenches']],
+                                           [move_base_pose_doc['optionaldata'],reset_pose_doc['optionaldata'],move_base_pose_doc['optionaldata']],
+                                           [1.0,1.0,5.0]);
+    time.sleep(3.5)
+    hcf.seq_svc.clearJointAngles()
+    checkJointAnglesBetween(reset_pose_doc,move_base_pose_doc)
 
 
 def demo():
@@ -301,6 +381,7 @@ def demo():
     demoSetJointAnglesOfGroup()
     if hrpsys_version >= '315.5.0':
         demoSetJointAnglesSequenceOfGroup()
+        demoSetJointAnglesSequenceFull()
 
 if __name__ == '__main__':
     demo()

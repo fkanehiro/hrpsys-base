@@ -180,7 +180,7 @@ DataLogger::~DataLogger()
 
 RTC::ReturnCode_t DataLogger::onInitialize()
 {
-  std::cout << m_profile.instance_name << ": onInitialize()" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "] onInitialize()" << std::endl;
   // Registration: InPort/OutPort/Service
   // <rtc-template block="registration">
   // Set InPort buffers

@@ -1,0 +1,10 @@
+<launch>
+  <include file="$(find hrpsys)/launch/samplerobot.launch" >
+    <arg name="GUI" value="false" />
+    <arg name="corbaport" value="2809" />
+    <arg name="TORQUE_CONTROL" value="true"/>
+  </include>
+
+  <test test-name="samplerobot_st" pkg="hrpsys" type="test-samplerobot-st.py"
+        args="-ORBInitRef NameService=corbaloc:iiop:localhost:2809/NameService" retry="2" time-limit="300"/>
+</launch>

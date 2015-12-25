@@ -67,7 +67,7 @@ ImpedanceController::~ImpedanceController()
 
 RTC::ReturnCode_t ImpedanceController::onInitialize()
 {
-    std::cout << "ImpedanceController::onInitialize()" << std::endl;
+    std::cerr << "[" << m_profile.instance_name << "] onInitialize()" << std::endl;
     bindParameter("debugLevel", m_debugLevel, "0");
 
     // Registration: InPort/OutPort/Service
@@ -227,7 +227,7 @@ RTC::ReturnCode_t ImpedanceController::onInitialize()
         // 3. Check whether joint path is adequate.
         hrp::Link* target_link = m_robot->link(ee_map[ee_name].target_name);
         ImpedanceParam p;
-        p.manip = hrp::JointPathExPtr(new hrp::JointPathEx(m_robot, m_robot->link(base_name_map[ee_name]), target_link, m_dt, false));
+        p.manip = hrp::JointPathExPtr(new hrp::JointPathEx(m_robot, m_robot->link(base_name_map[ee_name]), target_link, m_dt, false, std::string(m_profile.instance_name)));
         if ( ! p.manip ) {
             std::cerr << "[" << m_profile.instance_name << "]   Invalid joint path from " << base_name_map[ee_name] << " to " << target_link->name << "!! Impedance param for " << sensor_name << " cannot be added!!" << std::endl;
             continue;
@@ -282,14 +282,14 @@ RTC::ReturnCode_t ImpedanceController::onFinalize()
 
 RTC::ReturnCode_t ImpedanceController::onActivated(RTC::UniqueId ec_id)
 {
-    std::cout << "ImpedanceController::onActivated(" << ec_id << ")" << std::endl;
+    std::cerr << "[" << m_profile.instance_name<< "] onActivated(" << ec_id << ")" << std::endl;
     
     return RTC::RTC_OK;
 }
 
 RTC::ReturnCode_t ImpedanceController::onDeactivated(RTC::UniqueId ec_id)
 {
-  std::cout << "ImpedanceController::onDeactivated(" << ec_id << ")" << std::endl;
+  std::cerr << "[" << m_profile.instance_name<< "] onDeactivated(" << ec_id << ")" << std::endl;
   for ( std::map<std::string, ImpedanceParam>::iterator it = m_impedance_param.begin(); it != m_impedance_param.end(); it++ ) {
       if (it->second.is_active) {
           stopImpedanceControllerNoWait(it->first);

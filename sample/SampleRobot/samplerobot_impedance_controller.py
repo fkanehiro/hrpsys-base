@@ -14,10 +14,12 @@ except:
     import time
 
 def init ():
-    global hcf
+    global hcf, hrpsys_version
     hcf = HrpsysConfigurator()
     hcf.getRTCList = hcf.getRTCListUnstable
     hcf.init ("SampleRobot(Robot)0", "$(PROJECT_DIR)/../model/sample1.wrl")
+    hrpsys_version = hcf.seq.ref.get_component_profile().version
+    print("hrpsys_version = %s"%hrpsys_version)
 
 def demo():
     init()
@@ -25,6 +27,15 @@ def demo():
     initial_pose = [-7.779e-005,  -0.378613,  -0.000209793,  0.832038,  -0.452564,  0.000244781,  0.31129,  -0.159481,  -0.115399,  -0.636277,  0,  0,  0,  -7.77902e-005,  -0.378613,  -0.000209794,  0.832038,  -0.452564,  0.000244781,  0.31129,  0.159481,  0.115399,  -0.636277,  0,  0,  0,  0,  0,  0]
     hcf.seq_svc.setJointAngles(initial_pose, 2.0)
     hcf.seq_svc.waitInterpolation()
+
+    # 0. startImpedance + stopImpedance python interface
+    print >> sys.stderr, "0. startImpedance + stopImpedance python interface"
+    hcf.startImpedance("rarm")
+    hcf.startImpedance("larm")
+    hcf.stopImpedance("larm")
+    hcf.stopImpedance("rarm")
+    if hrpsys_version < '315.5.0':
+        return
 
     # 1. Getter check
     print >> sys.stderr, "1. Getter check"

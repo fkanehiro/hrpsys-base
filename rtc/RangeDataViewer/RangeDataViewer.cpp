@@ -133,7 +133,7 @@ RTC::ReturnCode_t RangeDataViewer::onExecute(RTC::UniqueId ec_id)
     CvPoint center = cvPoint(WSIZE/2,WSIZE/2);
     CvScalar green = cvScalar(0,255,0);
     double th,d,x,y;
-#if 1
+#if 0
     std::cout << "minAngle:" << m_range.config.minAngle << std::endl;
     std::cout << "maxAngle:" << m_range.config.maxAngle << std::endl;
     std::cout << "angularRes:" << m_range.config.angularRes << std::endl;
@@ -144,8 +144,9 @@ RTC::ReturnCode_t RangeDataViewer::onExecute(RTC::UniqueId ec_id)
     std::cout << "ndata = " << m_range.ranges.length() << std::endl;
 #endif
     for (unsigned int i=0; i<m_range.ranges.length(); i++){
-      th = m_range.config.minAngle + m_range.config.angularRes*i;
       d = m_range.ranges[i];
+      if (isinf(d)) continue;
+      th = m_range.config.minAngle + m_range.config.angularRes*i;
       x = -d*sin(th)/m_maxRange*WSIZE/2 + WSIZE/2;
       y = -d*cos(th)/m_maxRange*WSIZE/2 + WSIZE/2;
       cvLine(m_cvImage, center, cvPoint(x, y), green, 1, 8, 0);

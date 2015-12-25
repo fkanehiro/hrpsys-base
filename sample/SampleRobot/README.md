@@ -169,7 +169,7 @@ rosrun hrpsys samplerobot_kalman_filter.py
 1. Launch hrpsys-simulator
 
  ```
-rtmlaunch hrpsys samplerobot.launch
+rtmlaunch hrpsys samplerobot.launch CONF_FILE:=`rospack find hrpsys`/samples/SampleRobot/SampleRobot.500.el.conf
  ```
 2. python example
 
