@@ -53,7 +53,8 @@ public:
   bool disable(void); // disable torque controller (emergency controller is also ignored)
 
   // for normal torque controller
-  void setupMotorControllerMinMaxDq(double _min_dq, double _max_dq); // set min/max dq for transition
+  void setupMotorControllerControlMinMaxDq(double _min_dq, double _max_dq); // set min/max dq for control
+  void setupMotorControllerTransitionMinMaxDq(double _min_transition_dq, double _max_transition_dq); // set min/max dq for transition
   bool activate(void); // set state of torque controller to ACTIVE
   bool deactivate(void); // set state of torque controller to STOP -> INACTIVE
   bool setReferenceTorque(double _tauRef); // set reference torque (does not activate controller)
@@ -80,8 +81,11 @@ private:
     double dq; //difference of joint angle from base(qRef) from tdc. it is calcurated by dq = integrate(qd * dt), dq*dt is output of tdc 
     double transition_dq; // for transition. first value is last difference of joint angle from qRef (dq + transition_dq) when state was changed to STOP
     double recovery_dq; // difference of joint angle in 1 cycle to be recoverd
-    double min_dq; // min dq when transition
-    double max_dq; // max dq when transition
+    double min_dq; // min total dq when control
+    double max_dq; // max total dq when control
+    double min_transition_dq; // min dq when transition
+    double max_transition_dq; // max dq when transition
+
     // for TwoDofController
     void setupTwoDofController(TwoDofController::TwoDofControllerParam &_param);
     bool updateTwoDofControllerParam(TwoDofController::TwoDofControllerParam &_param);

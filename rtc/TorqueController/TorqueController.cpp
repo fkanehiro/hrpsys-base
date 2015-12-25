@@ -201,9 +201,23 @@ RTC::ReturnCode_t TorqueController::onInitialize()
   }
 
   // parameter setttings for torque controller
+  bool dq_min_max_from_conf_is_valid = false;
+  coil::vstring dqMinMaxFromConf = coil::split(prop["torque_controler_min_max_dq"], ",");
+  if (dqMinMaxFromConf.size() == 2 * m_robot->numJoints()) {
+    dq_min_max_from_conf_is_valid = true;
+  } else {
+    std::cerr << "[" <<  m_profile.instance_name << "]" << "size of torque_controller_min_max_dq " << dqMinMaxFromConf.size() << " is not correct number " << 2 * m_robot->numJoints() << ". Use default values." << std::endl;
+    dq_min_max_from_conf_is_valid = false;
+  }
   for (int i = 0; i < m_robot->numJoints(); i++) {
     m_motorTorqueControllers[i].setErrorPrefix(std::string(m_profile.instance_name));
-    m_motorTorqueControllers[i].setupMotorControllerMinMaxDq(m_robot->joint(i)->lvlimit * m_dt, m_robot->joint(i)->uvlimit * m_dt);
+    m_motorTorqueControllers[i].setupMotorControllerTransitionMinMaxDq(m_robot->joint(i)->lvlimit * m_dt, m_robot->joint(i)->uvlimit * m_dt);
+    if(dq_min_max_from_conf_is_valid) {
+      double tmp_dq_min, tmp_dq_max;
+      coil::stringTo(tmp_dq_min, dqMinMaxFromConf[2 * i].c_str());
+      coil::stringTo(tmp_dq_max, dqMinMaxFromConf[2 * i + 1].c_str());
+      m_motorTorqueControllers[i].setupMotorControllerControlMinMaxDq(tmp_dq_min, tmp_dq_max);
+    }
   }
 
   // allocate memory for outPorts
@@ -468,6 +482,15 @@ bool TorqueController::startTorqueControl(std::string jname)
     if ((*it).getJointName() == jname){
       if (m_debugLevel > 0) {
         std::cerr << "[" <<  m_profile.instance_name << "]" << "Start torque control in " << jname << std::endl;
+      }
+      if (!(*it).isEnabled()) {
+        succeed = enableTorqueController(jname);
+        if (!succeed) {
+          if (m_debugLevel > 0) {
+            std::cerr << "[" <<  m_profile.instance_name << "]" << "Failed to enable torque control in " << jname << std::endl;
+          }
+          return succeed;
+        }
       }
       succeed = (*it).activate();
     }
