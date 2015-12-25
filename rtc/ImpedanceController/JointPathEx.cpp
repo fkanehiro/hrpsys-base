@@ -376,7 +376,7 @@ bool JointPathEx::calcInverseKinematics2Loop(const Vector3& dp, const Vector3& o
       }
     }
     if ( ! solve_linear_equation ) {
-      std::cerr << "ERROR nan/inf is found" << std::endl;
+      std::cerr << "[" << debug_print_prefix << "] ERROR nan/inf is found" << std::endl;
       return false;
     }
 
