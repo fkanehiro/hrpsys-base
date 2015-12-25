@@ -113,13 +113,12 @@ RTC::ReturnCode_t EmergencyStopper::onInitialize()
     binfo = hrp::loadBodyInfo(prop["model"].c_str(),
                               CosNaming::NamingContext::_duplicate(naming.getRootContext()));
     if (CORBA::is_nil(binfo)) {
-        std::cerr << "failed to load model[" << prop["model"] << "]"
+        std::cerr << "[" << m_profile.instance_name << "] failed to load model[" << prop["model"] << "]"
                   << std::endl;
         return RTC::RTC_ERROR;
     }
     if (!loadBodyFromBodyInfo(m_robot, binfo)) {
-        std::cerr << "failed to load model[" << prop["model"] << "] in "
-                  << m_profile.instance_name << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "] failed to load model[" << prop["model"] << "]" << std::endl;
         return RTC::RTC_ERROR;
     }
 
@@ -235,13 +234,13 @@ RTC::ReturnCode_t EmergencyStopper::onFinalize()
 
 RTC::ReturnCode_t EmergencyStopper::onActivated(RTC::UniqueId ec_id)
 {
-    std::cout << m_profile.instance_name<< ": onActivated(" << ec_id << ")" << std::endl;
+    std::cerr << "[" << m_profile.instance_name<< "] onActivated(" << ec_id << ")" << std::endl;
     return RTC::RTC_OK;
 }
 
 RTC::ReturnCode_t EmergencyStopper::onDeactivated(RTC::UniqueId ec_id)
 {
-    std::cout << m_profile.instance_name<< ": onDeactivated(" << ec_id << ")" << std::endl;
+    std::cerr << "[" << m_profile.instance_name<< "] onDeactivated(" << ec_id << ")" << std::endl;
     Guard guard(m_mutex);
     if (is_stop_mode) {
         is_stop_mode = false;

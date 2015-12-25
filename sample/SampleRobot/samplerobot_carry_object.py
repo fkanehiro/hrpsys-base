@@ -148,6 +148,8 @@ def demoSinglearmCarryup (is_walk=True, auto_detecion = True):
 
 def objectTurnaroundDetection(max_time = 4.0, max_ref_force = 9.8*6.0, limbs=["rarm", "larm"], axis=[0,0,-1]):
     otdp=hcf.ic_svc.getObjectTurnaroundDetectorParam()[1]
+    otdp.detect_time_thre=0.3
+    otdp.start_time_thre=0.3
     otdp.axis=axis
     hcf.ic_svc.setObjectTurnaroundDetectorParam(otdp)
     if limbs==['rarm']:
@@ -160,9 +162,9 @@ def objectTurnaroundDetection(max_time = 4.0, max_ref_force = 9.8*6.0, limbs=["r
     flg = True
     while flg:
         tmpflg = hcf.ic_svc.checkObjectTurnaroundDetection()
-        print rtm.readDataPort(hcf.rmfo.port("off_rhsensor")).data, rtm.readDataPort(hcf.rmfo.port("off_lhsensor")).data
+        #print rtm.readDataPort(hcf.rmfo.port("off_rhsensor")).data, rtm.readDataPort(hcf.rmfo.port("off_lhsensor")).data
         print "  flag = ", tmpflg, ", forces = ", hcf.ic_svc.getObjectForcesMoments()[1][0], ", moments = ", hcf.ic_svc.getObjectForcesMoments()[2][0]
-        flg = not tmpflg
+        flg = (tmpflg == OpenHRP.ImpedanceControllerService.MODE_DETECTOR_IDLE) or (tmpflg == OpenHRP.ImpedanceControllerService.MODE_STARTED)
         time.sleep(0.5)
     print "  flag = ", tmpflg, ", forces = ", hcf.ic_svc.getObjectForcesMoments()[1][0], ", moments = ", hcf.ic_svc.getObjectForcesMoments()[2][0]
     if limbs==['rarm']:
@@ -203,6 +205,9 @@ def demoDualarmPush (auto_detecion = True):
         hcf.seq_svc.setWrenches([0]*6+[0]*6+[-40,0,0,0,0,0]*2, 2.0)
         hcf.waitInterpolation()
     print >> sys.stderr, "  Push forward"
+    abcp=hcf.abc_svc.getAutoBalancerParam()[1]
+    abcp.is_hand_fix_mode = True
+    hcf.abc_svc.setAutoBalancerParam(abcp)
     hcf.abc_svc.goPos(0.5,0,0)
     hcf.abc_svc.waitFootSteps();
     hcf.seq_svc.setWrenches([0]*24, 2.0)

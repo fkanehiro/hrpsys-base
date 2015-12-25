@@ -58,7 +58,7 @@ TorqueController::~TorqueController()
 
 RTC::ReturnCode_t TorqueController::onInitialize()
 {
-  std::cout << m_profile.instance_name << ": onInitialize()" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "] onInitialize()" << std::endl;
   // <rtc-template block="bind_config">
   // Bind variables and configuration variable
   // <rtc-template block="bind_config">
@@ -107,7 +107,7 @@ RTC::ReturnCode_t TorqueController::onInitialize()
   if (!loadBodyFromModelLoader(m_robot, prop["model"].c_str(),
                                CosNaming::NamingContext::_duplicate(naming.getRootContext())
         )){
-    std::cerr << "failed to load model[" << prop["model"] << "]"
+    std::cerr << "[" << m_profile.instance_name << "] failed to load model[" << prop["model"] << "]"
               << std::endl;
   }
   // make torque controller settings
@@ -236,13 +236,13 @@ RTC::ReturnCode_t TorqueController::onShutdown(RTC::UniqueId ec_id)
 
 RTC::ReturnCode_t TorqueController::onActivated(RTC::UniqueId ec_id)
 {
-  std::cout << m_profile.instance_name<< ": onActivated(" << ec_id << ")" << std::endl;
+  std::cerr << "[" << m_profile.instance_name<< "] onActivated(" << ec_id << ")" << std::endl;
   return RTC::RTC_OK;
 }
 
 RTC::ReturnCode_t TorqueController::onDeactivated(RTC::UniqueId ec_id)
 {
-  std::cout << m_profile.instance_name<< ": onDeactivated(" << ec_id << ")" << std::endl;
+  std::cerr << "[" << m_profile.instance_name<< "] onDeactivated(" << ec_id << ")" << std::endl;
   return RTC::RTC_OK;
 }
 
@@ -250,12 +250,7 @@ RTC::ReturnCode_t TorqueController::onExecute(RTC::UniqueId ec_id)
 { 
   m_loop++;
 
-  // make timestamp
-  coil::TimeValue coiltm(coil::gettimeofday());
   hrp::dvector dq(m_robot->numJoints());
-  RTC::Time tm;
-  tm.sec = coiltm.sec();
-  tm.nsec = coiltm.usec()*1000;
   
   // update port
   if (m_tauCurrentInIn.isNew()) {

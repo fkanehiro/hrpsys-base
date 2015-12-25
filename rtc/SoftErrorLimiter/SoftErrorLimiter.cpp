@@ -66,7 +66,7 @@ SoftErrorLimiter::~SoftErrorLimiter()
 
 RTC::ReturnCode_t SoftErrorLimiter::onInitialize()
 {
-  std::cout << m_profile.instance_name << ": onInitialize()" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "] onInitialize()" << std::endl;
   // <rtc-template block="bind_config">
   // Bind variables and configuration variable
   bindParameter("debugLevel", m_debugLevel, "0");
@@ -108,12 +108,12 @@ RTC::ReturnCode_t SoftErrorLimiter::onInitialize()
   if (!loadBodyFromModelLoader(m_robot, prop["model"].c_str(), 
                                CosNaming::NamingContext::_duplicate(naming.getRootContext())
           )){
-      std::cerr << "failed to load model[" << prop["model"] << "] in "
+      std::cerr << "[" << m_profile.instance_name << "] failed to load model[" << prop["model"] << "] in "
                 << m_profile.instance_name << std::endl;
       return RTC::RTC_ERROR;
   }
 
-  std::cout << "dof = " << m_robot->numJoints() << std::endl;
+  std::cout << "[" << m_profile.instance_name << "] dof = " << m_robot->numJoints() << std::endl;
   if (!m_robot->init()) return RTC::RTC_ERROR;
   m_service0.setRobot(m_robot);
   m_servoState.data.length(m_robot->numJoints());
@@ -165,13 +165,13 @@ RTC::ReturnCode_t SoftErrorLimiter::onShutdown(RTC::UniqueId ec_id)
 
 RTC::ReturnCode_t SoftErrorLimiter::onActivated(RTC::UniqueId ec_id)
 {
-  std::cout << m_profile.instance_name<< ": onActivated(" << ec_id << ")" << std::endl;
+  std::cerr << "[" << m_profile.instance_name<< "] onActivated(" << ec_id << ")" << std::endl;
   return RTC::RTC_OK;
 }
 
 RTC::ReturnCode_t SoftErrorLimiter::onDeactivated(RTC::UniqueId ec_id)
 {
-  std::cout << m_profile.instance_name<< ": onDeactivated(" << ec_id << ")" << std::endl;
+  std::cerr << "[" << m_profile.instance_name<< "] onDeactivated(" << ec_id << ")" << std::endl;
   return RTC::RTC_OK;
 }
 
@@ -257,7 +257,7 @@ RTC::ReturnCode_t SoftErrorLimiter::onExecute(RTC::UniqueId ec_id)
       // fixed joint has ulimit = vlimit
       if ( servo_state[i] == 1 && (lvlimit < uvlimit) && ((lvlimit > qvel) || (uvlimit < qvel)) ) {
         if (loop % debug_print_freq == 0 || debug_print_velocity_first ) {
-          std::cerr << "velocity limit over " << m_robot->joint(i)->name << "(" << i << "), qvel=" << qvel
+          std::cerr << "[" << m_profile.instance_name<< "] velocity limit over " << m_robot->joint(i)->name << "(" << i << "), qvel=" << qvel
                     << ", lvlimit =" << lvlimit
                     << ", uvlimit =" << uvlimit
                     << ", servo_state = " <<  ( servo_state[i] ? "ON" : "OFF") << std::endl;
@@ -286,7 +286,7 @@ RTC::ReturnCode_t SoftErrorLimiter::onExecute(RTC::UniqueId ec_id)
       bool servo_limit_state = (llimit < ulimit) && ((llimit > m_qRef.data[i]) || (ulimit < m_qRef.data[i]));
       if ( servo_state[i] == 1 && servo_limit_state ) {
         if (loop % debug_print_freq == 0 || debug_print_position_first) {
-          std::cerr << "position limit over " << m_robot->joint(i)->name << "(" << i << "), qRef=" << m_qRef.data[i]
+          std::cerr << "[" << m_profile.instance_name<< "] position limit over " << m_robot->joint(i)->name << "(" << i << "), qRef=" << m_qRef.data[i]
                     << ", llimit =" << llimit
                     << ", ulimit =" << ulimit
                     << ", servo_state = " <<  ( servo_state[i] ? "ON" : "OFF")
@@ -310,7 +310,7 @@ RTC::ReturnCode_t SoftErrorLimiter::onExecute(RTC::UniqueId ec_id)
       double error = m_qRef.data[i] - m_qCurrent.data[i];
       if ( servo_state[i] == 1 && fabs(error) > limit ) {
         if (loop % debug_print_freq == 0 || debug_print_error_first ) {
-          std::cerr << "error limit over " << m_robot->joint(i)->name << "(" << i << "), qRef=" << m_qRef.data[i]
+          std::cerr << "[" << m_profile.instance_name<< "] error limit over " << m_robot->joint(i)->name << "(" << i << "), qRef=" << m_qRef.data[i]
                     << ", qCurrent=" << m_qCurrent.data[i] << " "
                     << ", Error=" << error << " > " << limit << " (limit)"
                     << ", servo_state = " <<  ( 1 ? "ON" : "OFF");

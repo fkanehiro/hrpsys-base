@@ -14,6 +14,7 @@ except:
     import time
 
 import math
+from subprocess import check_output
 
 def init ():
     global hcf, initial_pose, hrpsys_version
@@ -133,13 +134,54 @@ def demoStartStopEEFMQPST ():
     else:
         print >> sys.stderr, "  This sample is neglected in High-gain mode simulation"
 
+def demoSTLoadPattern ():
+    print >> sys.stderr, "5. EEFMQP st + SequencePlayer loadPattern"
+    if hcf.pdc:
+        stp = hcf.st_svc.getParameter()
+        stp.st_algorithm=OpenHRP.StabilizerService.EEFMQP
+        stp.emergency_check_mode=OpenHRP.StabilizerService.NO_CHECK # Disable checking of emergency error because currently this error checker does not work correctly during walking.
+        hcf.st_svc.setParameter(stp)
+        hcf.stopAutoBalancer()
+        # Set initial pose of samplerobot-gopos000 before starting of ST
+        hcf.seq_svc.setJointAnglesSequenceFull([[0.000242, -0.403476, -0.000185, 0.832071, -0.427767, -6.928952e-05, 0.31129, -0.159481, -0.115399, -0.636277, 0.0, 0.0, 0.0, 0.000242, -0.403469, -0.000185, 0.832073, -0.427775, -6.928781e-05, 0.31129, 0.159481, 0.115399, -0.636277, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]], # jvss
+                                               [[0]*29], # vels
+                                               [[0]*29], # torques
+                                               [[-0.014759, -4.336272e-05, 0.668138]], # poss
+                                               [[-0.000245, -0.000862, 0.000171]], # rpys
+                                               [[0]*3], # accs
+                                               [[0.014052, 0.000203, -0.66798]], # zmps
+                                               [[0]*6*4], # wrenchs
+                                               [[1,1,0,0,1,1,1,1]], # optionals
+                                               [2.0]); # tms
+        hcf.seq_svc.waitInterpolation()
+        hcf.startStabilizer ()
+        # Exec loadPattern
+        HRPSYS_DIR=check_output(['pkg-config', 'hrpsys-base', '--variable=prefix']).rstrip()
+        hcf.loadPattern(HRPSYS_DIR+'/share/hrpsys/samples/SampleRobot/data/samplerobot-gopos000', 0.0)
+        hcf.waitInterpolation()
+        hcf.stopStabilizer ()
+        # Wait for non-st osscilation being samall
+        hcf.seq_svc.setJointAngles(initial_pose, 2.0)
+        hcf.waitInterpolation()
+        ret = checkActualBaseAttitude()
+        if ret:
+            print >> sys.stderr, "  ST + loadPattern => OK"
+        assert(ret)
+    else:
+        print >> sys.stderr, "  This sample is neglected in High-gain mode simulation"
+
 def demo():
-    init()
-    if hrpsys_version >= '315.5.0':
-        demoGetParameter()
-        demoSetParameter()
-        demoStartStopTPCCST()
-        demoStartStopEEFMQPST()
+    OPENHRP3_DIR=check_output(['pkg-config', 'openhrp3.1', '--variable=prefix']).rstrip()
+    if os.path.exists(OPENHRP3_DIR+"/share/OpenHRP-3.1/sample/model/sample1_bush.wrl"):
+        init()
+        if hrpsys_version >= '315.5.0':
+            demoGetParameter()
+            demoSetParameter()
+            demoStartStopTPCCST()
+            demoStartStopEEFMQPST()
+            demoSTLoadPattern()
+    else:
+        print >> sys.stderr, "Skip st test because of missing sample1_bush.wrl"
 
 if __name__ == '__main__':
     demo()
