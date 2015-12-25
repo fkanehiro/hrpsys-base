@@ -284,10 +284,15 @@ RTC::ReturnCode_t TorqueController::onExecute(RTC::UniqueId ec_id)
       // calculate dq by torque controller
       executeTorqueControl(dq);
 
-      // output restricted qRef
+      // check range of motion and insert to output 
       for (int i = 0; i < m_robot->numJoints(); i++) {
-        m_qRefOut.data[i] = std::min(std::max(m_qRefIn.data[i] + dq[i], m_robot->joint(i)->llimit), m_robot->joint(i)->ulimit);
+        if (m_motorTorqueControllers[i].isEnabled()) {
+          m_qRefOut.data[i] = std::min(std::max(m_qRefIn.data[i] + dq[i], m_robot->joint(i)->llimit), m_robot->joint(i)->ulimit);
+        } else {
+          m_qRefOut.data[i] = m_qRefIn.data[i]; // pass joint angle when controller is disabled
+        }
       }
+
     } else {
       if (isDebug()) {
         std::cerr << "[" <<  m_profile.instance_name << "]" << "TorqueController input is not correct" << std::endl;
