@@ -201,9 +201,23 @@ RTC::ReturnCode_t TorqueController::onInitialize()
   }
 
   // parameter setttings for torque controller
+  bool dq_min_max_from_conf_is_valid = false;
+  coil::vstring dqMinMaxFromConf = coil::split(prop["torque_controler_min_max_dq"], ",");
+  if (dqMinMaxFromConf.size() == 2 * m_robot->numJoints()) {
+    dq_min_max_from_conf_is_valid = true;
+  } else {
+    std::cerr << "[" <<  m_profile.instance_name << "]" << "size of torque_controller_min_max_dq " << dqMinMaxFromConf.size() << " is not correct number " << 2 * m_robot->numJoints() << ". Use default values." << std::endl;
+    dq_min_max_from_conf_is_valid = false;
+  }
   for (int i = 0; i < m_robot->numJoints(); i++) {
     m_motorTorqueControllers[i].setErrorPrefix(std::string(m_profile.instance_name));
-    m_motorTorqueControllers[i].setupMotorControllerMinMaxDq(m_robot->joint(i)->lvlimit * m_dt, m_robot->joint(i)->uvlimit * m_dt);
+    m_motorTorqueControllers[i].setupMotorControllerTransitionMinMaxDq(m_robot->joint(i)->lvlimit * m_dt, m_robot->joint(i)->uvlimit * m_dt);
+    if(dq_min_max_from_conf_is_valid) {
+      double tmp_dq_min, tmp_dq_max;
+      coil::stringTo(tmp_dq_min, dqMinMaxFromConf[2 * i].c_str());
+      coil::stringTo(tmp_dq_max, dqMinMaxFromConf[2 * i + 1].c_str());
+      m_motorTorqueControllers[i].setupMotorControllerControlMinMaxDq(tmp_dq_min, tmp_dq_max);
+    }
   }
 
   // allocate memory for outPorts
@@ -266,40 +280,51 @@ RTC::ReturnCode_t TorqueController::onExecute(RTC::UniqueId ec_id)
     m_qRefInIn.read();
   }
 
-  if (m_qRefIn.data.length() == m_robot->numJoints() &&
-      m_tauCurrentIn.data.length() == m_robot->numJoints() &&
-      m_qCurrentIn.data.length() == m_robot->numJoints()) {
+  if (m_qRefIn.data.length() == m_robot->numJoints()) {
+    if (m_tauCurrentIn.data.length() == m_robot->numJoints() &&
+        m_qCurrentIn.data.length() == m_robot->numJoints()) {
 
-    // update model
-    for ( int i = 0; i < m_robot->numJoints(); i++ ){
+      // update model
+      for ( int i = 0; i < m_robot->numJoints(); i++ ){
         m_robot->joint(i)->q = m_qCurrentIn.data[i];
-    }
-    m_robot->calcForwardKinematics();   
+      }
+      m_robot->calcForwardKinematics();   
 
-    // calculate dq by torque controller
-    executeTorqueControl(dq);
+      // calculate dq by torque controller
+      executeTorqueControl(dq);
 
-    // output restricted qRef
-    for (int i = 0; i < m_robot->numJoints(); i++) {
-      m_qRefOut.data[i] = std::min(std::max(m_qRefIn.data[i] + dq[i], m_robot->joint(i)->llimit), m_robot->joint(i)->ulimit);
+      // check range of motion and insert to output 
+      for (int i = 0; i < m_robot->numJoints(); i++) {
+        if (m_motorTorqueControllers[i].isEnabled()) {
+          m_qRefOut.data[i] = std::min(std::max(m_qRefIn.data[i] + dq[i], m_robot->joint(i)->llimit), m_robot->joint(i)->ulimit);
+        } else {
+          m_qRefOut.data[i] = m_qRefIn.data[i]; // pass joint angle when controller is disabled
+        }
+      }
+
+    } else {
+      if (isDebug()) {
+        std::cerr << "[" <<  m_profile.instance_name << "]" << "TorqueController input is not correct" << std::endl;
+        std::cerr << "[" <<  m_profile.instance_name << "]" << " numJoints: " << m_robot->numJoints() << std::endl;
+        std::cerr << "[" <<  m_profile.instance_name << "]" << "  qCurrent: " << m_qCurrentIn.data.length() << std::endl;
+        std::cerr << "[" <<  m_profile.instance_name << "]" << "tauCurrent: " << m_tauCurrentIn.data.length() << std::endl;
+        std::cerr << std::endl;
+      }
+      // pass qRefIn to qRefOut
+      for (int i = 0; i < m_robot->numJoints(); i++) {
+        m_qRefOut.data[i] = m_qRefIn.data[i];
+      }
     }
+    m_qRefOut.tm = m_qRefIn.tm;
+    m_qRefOutOut.write();
   } else {
-    if (isDebug()) {
-      std::cerr << "[" <<  m_profile.instance_name << "]" << "TorqueController input is not correct" << std::endl;
-      std::cerr << "[" <<  m_profile.instance_name << "]" << " numJoints: " << m_robot->numJoints() << std::endl;
-      std::cerr << "[" <<  m_profile.instance_name << "]" << "  qCurrent: " << m_qCurrentIn.data.length() << std::endl;
-      std::cerr << "[" <<  m_profile.instance_name << "]" << "    qRefIn: " << m_qRefIn.data.length() << std::endl;
-      std::cerr << "[" <<  m_profile.instance_name << "]" << "tauCurrent: " << m_tauCurrentIn.data.length() << std::endl;
-      std::cerr << std::endl;
-    }
-    // pass qRefIn to qRefOut
-    for (int i = 0; i < m_robot->numJoints(); i++) {
-      m_qRefOut.data[i] = m_qRefIn.data[i];
-    }
+      if (isDebug()) {
+        std::cerr << "[" <<  m_profile.instance_name << "]" << "TorqueController has incorrect qRefIn" << std::endl;
+        std::cerr << "[" <<  m_profile.instance_name << "]" << " numJoints: " << m_robot->numJoints() << std::endl;
+        std::cerr << "[" <<  m_profile.instance_name << "]" << "    qRefIn: " << m_qRefIn.data.length() << std::endl;
+        std::cerr << std::endl;
+      }
   }
-
-  m_qRefOut.tm = m_qRefIn.tm;
-  m_qRefOutOut.write();
 
   return RTC::RTC_OK;
 }
@@ -452,6 +477,15 @@ bool TorqueController::startTorqueControl(std::string jname)
     if ((*it).getJointName() == jname){
       if (m_debugLevel > 0) {
         std::cerr << "[" <<  m_profile.instance_name << "]" << "Start torque control in " << jname << std::endl;
+      }
+      if (!(*it).isEnabled()) {
+        succeed = enableTorqueController(jname);
+        if (!succeed) {
+          if (m_debugLevel > 0) {
+            std::cerr << "[" <<  m_profile.instance_name << "]" << "Failed to enable torque control in " << jname << std::endl;
+          }
+          return succeed;
+        }
       }
       succeed = (*it).activate();
     }
