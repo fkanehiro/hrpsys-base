@@ -16,6 +16,7 @@
 #include "../ImpedanceController/JointPathEx.h"
 #include "../TorqueFilter/IIRFilter.h"
 #include <hrpUtil/MatrixSolvers.h>
+#include <boost/assign.hpp>
 
 #ifdef USE_QPOASES
 #include <qpOASES.hpp>
@@ -565,7 +566,7 @@ public:
                                         const std::vector<double>& limb_gains,
                                         const hrp::Vector3& new_refzmp, const hrp::Vector3& ref_zmp,
                                         const double total_fz, const double dt, const bool printp = true, const std::string& print_str = "",
-                                        const bool use_cop_distribution = false)
+                                        const bool use_cop_distribution = false, const std::vector<bool> is_contact_list = boost::assign::list_of(true)(true)(true)(true))
     {
         size_t ee_num = ee_name.size();
         std::vector<double> alpha_vector(ee_num), fz_alpha_vector(ee_num);
@@ -593,7 +594,7 @@ public:
         double alpha_thre = 1e-20;
         // fz_alpha inversion for weighing matrix
         for (size_t i = 0; i < fz_alpha_vector.size(); i++) {
-            fz_alpha_vector[i] = (fz_alpha_vector[i] < alpha_thre) ? 1/alpha_thre : 1/fz_alpha_vector[i];
+            fz_alpha_vector[i] = (fz_alpha_vector[i] < alpha_thre or is_contact_list.at(i) == false) ? 1/alpha_thre : 1/fz_alpha_vector[i];
         }
         for (size_t j = 0; j < fz_alpha_vector.size(); j++) {
             for (size_t i = 0; i < state_dim_one; i++) {
