@@ -315,7 +315,7 @@ RTC::ReturnCode_t TorqueController::onExecute(RTC::UniqueId ec_id)
         m_qRefOut.data[i] = m_qRefIn.data[i];
       }
     }
-    m_qRefOut.tm = tm;
+    m_qRefOut.tm = m_qRefIn.tm;
     m_qRefOutOut.write();
   } else {
       if (isDebug()) {
