@@ -247,6 +247,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
       }
       target_ee_p.push_back(hrp::Vector3::Zero());
       target_ee_R.push_back(hrp::Matrix33::Identity());
+      act_ee_R.push_back(hrp::Matrix33::Identity());
       target_ee_diff_p.push_back(hrp::Vector3::Zero());
       target_ee_diff_r.push_back(hrp::Vector3::Zero());
       prev_target_ee_diff_r.push_back(hrp::Vector3::Zero());
@@ -738,6 +739,7 @@ void Stabilizer::getActualParameters ()
       hrp::Vector3 act_ee_p = target->p + target->R * stikp[i].localp;
       //target_ee_R[i] = target->R * stikp[i].localR;
       target_ee_diff_p[i] -= foot_origin_rot.transpose() * (act_ee_p - foot_origin_pos);
+      act_ee_R[i] = foot_origin_rot.transpose() * (target->R * stikp[i].localR);
     }
     // capture point
     act_cp = act_cog + act_cogvel / std::sqrt(eefm_gravitational_acceleration / act_cog(2));
@@ -1303,6 +1305,8 @@ void Stabilizer::calcEEForceMomentControl() {
       // Feet and hands modification
       hrp::Vector3 target_link_p[stikp.size()];
       hrp::Matrix33 target_link_R[stikp.size()];
+      std::vector<hrp::Matrix33> tmpR_list; // modified ee Rot
+      std::vector<hrp::Vector3> tmpp_list; // modified ee Pos
 #define deg2rad(x) ((x) * M_PI / 180.0)
       for (size_t i = 0; i < stikp.size(); i++) {
           hrp::Vector3 tmpp; // modified ee Pos
@@ -1323,10 +1327,25 @@ void Stabilizer::calcEEForceMomentControl() {
             tmpp = target_ee_p[i] + eefm_ee_pos_error_p_gain * target_foot_origin_rot * target_ee_diff_p_filter[i]->passFilter(target_ee_diff_p[i]);// tempolarily disabled
             tmpR = target_ee_R[i];
           }
-          // target at ee => target at link-origin
-          rats::rotm3times(target_link_R[i], tmpR, stikp[i].localR.transpose());
+          tmpR_list.push_back(tmpR);
           //target_link_p[i] = tmpp - target_link_R[i] * stikp[i].localCOPPos;
-          target_link_p[i] = tmpp - target_link_R[i] * stikp[i].localp;
+          tmpp_list.push_back(tmpp);
+      }
+      // follow swing foot rotation to target one in single support phase on the assumption that the robot rotates around support foot.
+      if (isContact(0) != isContact(1)) { // single support phase
+          size_t sup_idx = isContact(0) ? 0 : 1;
+          size_t swg_idx = isContact(0) ? 1 : 0;
+          hrp::Matrix33 cur_sup_R = tmpR_list.at(sup_idx), cur_swg_R = tmpR_list.at(swg_idx), act_sup_R = act_ee_R.at(sup_idx);
+          hrp::Matrix33 swg_R_relative_to_sup_R = cur_sup_R.transpose() * cur_swg_R;
+          /* Actual foot_origin frame */
+          rats::rotm3times(cur_swg_R, act_sup_R, swg_R_relative_to_sup_R);
+          hrp::Vector3 delta_rpy = hrp::rpyFromRot(foot_origin_rot * cur_swg_R) - hrp::rpyFromRot(tmpR_list.at(swg_idx));
+          rats::rotm3times(tmpR_list.at(swg_idx), tmpR_list.at(swg_idx), hrp::rotFromRpy(delta_rpy[0] * 0.3, delta_rpy[1] * 0.3, 0));
+      }
+      // target at ee => target at link-origin
+      for (size_t i = 0; i < stikp.size(); i++){
+          rats::rotm3times(target_link_R[i], tmpR_list.at(i), stikp[i].localR.transpose());
+          target_link_p[i] = tmpp_list.at(i) - target_link_R[i] * stikp[i].localp;
       }
       // solveIK
       //   IK target is link origin pos and rot, not ee pos and rot.
