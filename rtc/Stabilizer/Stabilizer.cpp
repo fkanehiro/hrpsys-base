@@ -301,6 +301,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
       ikp.eefm_pos_damping_gain = hrp::Vector3(3500*10, 3500*10, 3500);
       ikp.eefm_pos_time_const_support = hrp::Vector3(1.5, 1.5, 1.5);
       ikp.eefm_pos_compensation_limit = 0.025;
+      ikp.eefm_swing_pos_spring_gain = hrp::Vector3(0.0, 0.0, 0.0);
   }
   eefm_pos_time_const_swing = 0.08;
   eefm_pos_transition_time = 0.01;
@@ -1337,11 +1338,16 @@ void Stabilizer::calcEEForceMomentControl() {
           size_t sup_idx = isContact(0) ? 0 : 1;
           size_t swg_idx = isContact(0) ? 1 : 0;
           hrp::Matrix33 cur_sup_R = tmpR_list.at(sup_idx), cur_swg_R = tmpR_list.at(swg_idx), act_sup_R = act_ee_R.at(sup_idx);
+          hrp::Vector3 cur_sup_p = tmpp_list.at(sup_idx), cur_swg_p = tmpp_list.at(swg_idx);
           hrp::Matrix33 swg_R_relative_to_sup_R = cur_sup_R.transpose() * cur_swg_R;
+          hrp::Vector3 swg_p_relative_to_sup_R = cur_sup_R.transpose() * (cur_swg_p - cur_sup_p);
           /* Actual foot_origin frame */
           rats::rotm3times(cur_swg_R, act_sup_R, swg_R_relative_to_sup_R);
+          cur_swg_p = act_sup_R * swg_p_relative_to_sup_R;
           hrp::Vector3 delta_rpy = hrp::rpyFromRot(tmpR_list.at(swg_idx)) - hrp::rpyFromRot(foot_origin_rot * cur_swg_R);
+          hrp::Vector3 delta_pos = tmpp_list.at(swg_idx) - (foot_origin_rot * cur_swg_p + cur_sup_p);
           rats::rotm3times(tmpR_list.at(swg_idx), tmpR_list.at(swg_idx), hrp::rotFromRpy(delta_rpy[0] * stikp[swg_idx].eefm_swing_rot_spring_gain[0], delta_rpy[1] * stikp[swg_idx].eefm_swing_rot_spring_gain[1], delta_rpy[2] * stikp[swg_idx].eefm_swing_rot_spring_gain[2]));
+          tmpp_list.at(swg_idx) = tmpp_list.at(swg_idx) + hrp::Vector3(delta_pos[0] * stikp[swg_idx].eefm_swing_pos_spring_gain[0], delta_pos[1] * stikp[swg_idx].eefm_swing_pos_spring_gain[1], delta_pos[2] * stikp[swg_idx].eefm_swing_pos_spring_gain[2]);
       }
       // target at ee => target at link-origin
       for (size_t i = 0; i < stikp.size(); i++){
@@ -1500,6 +1506,7 @@ void Stabilizer::getParameter(OpenHRP::StabilizerService::stParam& i_stp)
   i_stp.eefm_pos_time_const_support.length(stikp.size());
   i_stp.eefm_pos_damping_gain.length(stikp.size());
   i_stp.eefm_pos_compensation_limit.length(stikp.size());
+  i_stp.eefm_swing_pos_spring_gain.length(stikp.size());
   i_stp.eefm_rot_time_const.length(stikp.size());
   i_stp.eefm_rot_damping_gain.length(stikp.size());
   i_stp.eefm_rot_compensation_limit.length(stikp.size());
@@ -1507,12 +1514,14 @@ void Stabilizer::getParameter(OpenHRP::StabilizerService::stParam& i_stp)
   for (size_t j = 0; j < stikp.size(); j++) {
       i_stp.eefm_pos_damping_gain[j].length(3);
       i_stp.eefm_pos_time_const_support[j].length(3);
+      i_stp.eefm_swing_pos_spring_gain[j].length(3);
       i_stp.eefm_rot_damping_gain[j].length(3);
       i_stp.eefm_rot_time_const[j].length(3);
       i_stp.eefm_swing_rot_spring_gain[j].length(3);
       for (size_t i = 0; i < 3; i++) {
           i_stp.eefm_pos_damping_gain[j][i] = stikp[j].eefm_pos_damping_gain(i);
           i_stp.eefm_pos_time_const_support[j][i] = stikp[j].eefm_pos_time_const_support(i);
+          i_stp.eefm_swing_pos_spring_gain[j][i] = stikp[j].eefm_swing_pos_spring_gain(i);
           i_stp.eefm_rot_damping_gain[j][i] = stikp[j].eefm_rot_damping_gain(i);
           i_stp.eefm_rot_time_const[j][i] = stikp[j].eefm_rot_time_const(i);
           i_stp.eefm_swing_rot_spring_gain[j][i] = stikp[j].eefm_swing_rot_spring_gain(i);
@@ -1651,6 +1660,7 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
   if ( i_stp.eefm_pos_damping_gain.length () == stikp.size() &&
        i_stp.eefm_pos_time_const_support.length () == stikp.size() &&
        i_stp.eefm_pos_compensation_limit.length () == stikp.size() &&
+       i_stp.eefm_swing_pos_spring_gain.length () == stikp.size() &&
        i_stp.eefm_rot_damping_gain.length () == stikp.size() &&
        i_stp.eefm_rot_time_const.length () == stikp.size() &&
        i_stp.eefm_rot_compensation_limit.length () == stikp.size() &&
@@ -1660,6 +1670,7 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
           for (size_t i = 0; i < 3; i++) {
               stikp[j].eefm_pos_damping_gain(i) = i_stp.eefm_pos_damping_gain[j][i];
               stikp[j].eefm_pos_time_const_support(i) = i_stp.eefm_pos_time_const_support[j][i];
+              stikp[j].eefm_swing_pos_spring_gain(i) = i_stp.eefm_swing_pos_spring_gain[j][i];
               stikp[j].eefm_rot_damping_gain(i) = i_stp.eefm_rot_damping_gain[j][i];
               stikp[j].eefm_rot_time_const(i) = i_stp.eefm_rot_time_const[j][i];
               stikp[j].eefm_swing_rot_spring_gain(i) = i_stp.eefm_swing_rot_spring_gain[j][i];
@@ -1770,9 +1781,9 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
           std::cerr << "[" << m_profile.instance_name << "]   [" << stikp[j].ee_name << "] "
                     << "eefm_pos_compensation_limit = " << stikp[j].eefm_pos_compensation_limit << "[m], " << " "
                     << "eefm_rot_compensation_limit = " << stikp[j].eefm_rot_compensation_limit << "[rad]" << std::endl;
-          std::cerr << "[" << m_profile.instance_name << "]   [" << stikp[j].ee_name << "] eefm_swing_rot_spring_gain = "
-                    << stikp[j].eefm_swing_rot_spring_gain.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]"))
-                    << std::endl;
+          std::cerr << "[" << m_profile.instance_name << "]   [" << stikp[j].ee_name << "] "
+                    << "eefm_swing_pos_spring_gain = " << stikp[j].eefm_swing_pos_spring_gain.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << ", "
+                    << "eefm_swing_rot_spring_gain = " << stikp[j].eefm_swing_rot_spring_gain.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << std::endl;
       }
   } else {
       std::cerr << "[" << m_profile.instance_name << "]   eefm damping parameters cannot be set because of invalid param." << std::endl;
