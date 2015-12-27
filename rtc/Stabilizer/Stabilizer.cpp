@@ -906,7 +906,8 @@ void Stabilizer::getActualParameters ()
               pos_ctrl = calcDampingControl (tmp_ratio * ref_f_diff, tmp_ratio * f_diff, pos_ctrl, tmp_damping_gain, tmp_time_const);
           }
           // zctrl = vlimit(zctrl, -0.02, 0.02);
-          pos_ctrl = vlimit(pos_ctrl, -0.05, 0.05);
+          // Temporarily use first pos compensation limit (stikp[0])
+          pos_ctrl = vlimit(pos_ctrl, -1 * stikp[0].eefm_pos_compensation_limit * 2, stikp[0].eefm_pos_compensation_limit * 2);
           // Convert pos_ctrl actual frame => foot origin frame
           pos_ctrl = foot_origin_rot.transpose() * pos_ctrl;
           // Divide pos_ctrl into rfoot and lfoot
