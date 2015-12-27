@@ -178,6 +178,7 @@ class ImpedanceController
   void copyImpedanceParam (OpenHRP::ImpedanceControllerService::impedanceParam& i_param_, const ImpedanceParam& param);
   void updateRootLinkPosRot (TimedOrientation3D tmprpy);
   void calcForceMoment();
+  void calcObjectTurnaroundDetectorState();
 
   std::map<std::string, ImpedanceParam> m_impedance_param;
   std::map<std::string, ee_trans> ee_map;

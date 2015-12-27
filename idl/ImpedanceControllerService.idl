@@ -69,6 +69,10 @@ module OpenHRP
         MODE_DETECTED,
         MODE_MAX_TIME
     };
+    enum DetectorTotalWrench {
+        TOTAL_FORCE,
+        TOTAL_MOMENT
+    };
 
     /**
      * @struct objectTurnaroundDetectorParam
@@ -89,6 +93,10 @@ module OpenHRP
       double start_time_thre;
       /// Axis
       DblArray3 axis;
+      /// Moment center [m]
+      DblArray3 moment_center;
+      /// Moment center [m]
+      DetectorTotalWrench detector_total_wrench;
     };
 
     /**
