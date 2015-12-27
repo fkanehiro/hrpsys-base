@@ -681,7 +681,7 @@ public:
                                         const std::vector<double>& limb_gains,
                                         const hrp::Vector3& new_refzmp, const hrp::Vector3& ref_zmp,
                                         const double total_fz, const double dt, const bool printp = true, const std::string& print_str = "",
-                                        const bool use_cop_distribution = false)
+                                        const bool use_cop_distribution = false, const std::vector<bool> is_contact_list = boost::assign::list_of(true)(true)(true)(true))
     {
         distributeZMPToForceMoments(ref_foot_force, ref_foot_moment,
                                     ee_pos, cop_pos, ee_rot, ee_name, limb_gains,
