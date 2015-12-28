@@ -25,9 +25,10 @@ class ObjectTurnaroundDetector
     process_mode pmode;
     detector_total_wrench dtw;
     std::string print_str;
+    bool is_dwr_changed;
  public:
     ObjectTurnaroundDetector (const double _dt) : axis(-1*hrp::Vector3::UnitZ()), moment_center(hrp::Vector3::Zero()), prev_wrench(0.0), dt(_dt), detect_ratio_thre(0.01), start_ratio_thre(0.5),
-        count(0), detect_count_thre(5), start_count_thre(5), pmode(MODE_IDLE), dtw(TOTAL_FORCE)
+      count(0), detect_count_thre(5), start_count_thre(5), pmode(MODE_IDLE), dtw(TOTAL_FORCE), is_dwr_changed(false)
     {
         double default_cutoff_freq = 1; // [Hz]
         wrench_filter = boost::shared_ptr<FirstOrderLowPassFilter<double> >(new FirstOrderLowPassFilter<double>(default_cutoff_freq, _dt, 0));
@@ -75,6 +76,11 @@ class ObjectTurnaroundDetector
     };
     bool checkDetection (const double wrench_value)
     {
+        if (is_dwr_changed) {
+          wrench_filter->reset(wrench_value);
+          dwrench_filter->reset(0);
+          is_dwr_changed = false;
+        }
         double tmp_wr = wrench_filter->passFilter(wrench_value);
         double tmp_dwr = dwrench_filter->passFilter((tmp_wr-prev_wrench)/dt);
         prev_wrench = tmp_wr;
@@ -140,8 +146,7 @@ class ObjectTurnaroundDetector
     void setDetectorTotalWrench (const detector_total_wrench _dtw)
     {
         if (_dtw != dtw) {
-            wrench_filter->reset(0);
-            dwrench_filter->reset(0);
+          is_dwr_changed = true;
         }
         dtw = _dtw;
     };
