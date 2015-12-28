@@ -516,7 +516,8 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
             }
         }
 
-        calcObjectTurnaroundDetectorState();
+        if (ee_map.find("rleg") != ee_map.end() && ee_map.find("lleg") != ee_map.end()) // if legged robot
+            calcObjectTurnaroundDetectorState();
     } else {
         if ( DEBUGP || loop % 100 == 0 ) {
             std::cerr << "ImpedanceController is not working..." << std::endl;
@@ -637,6 +638,8 @@ void ImpedanceController::calcForceMoment ()
 
 void ImpedanceController::calcObjectTurnaroundDetectorState()
 {
+    // TODO
+    // Currently only for legged robots
     // Store org state
     hrp::dvector org_q(m_robot->numJoints());
     for ( int i = 0; i < m_robot->numJoints(); i++ ) {
