@@ -93,16 +93,16 @@ module OpenHRP
 
     /**
      * @brief set torque controller parameters
-     * @param t_param: new torque controller param (invariant parameters are expected as 0)
+     * @param i_param: new torque controller param (invariant parameters are expected as 0)
      * @return true if set all successfully, false otherwise
      */
-    boolean setTorqueControllerParam(in string jname, in torqueControllerParam t_param);
+    boolean setTorqueControllerParam(in string jname, in torqueControllerParam i_param);
 
     /**
      * @brief set torque controller parameters
-     * @param t_param: new torque controller param (invariant parameters are expected as 0)
+     * @param i_param: new torque controller param (invariant parameters are expected as 0)
      * @return true if set all successfully, false otherwise
      */
-    boolean getTorqueControllerParam(in string jname, out torqueControllerParam t_param);
+    boolean getTorqueControllerParam(in string jname, out torqueControllerParam i_param);
   };
 };
