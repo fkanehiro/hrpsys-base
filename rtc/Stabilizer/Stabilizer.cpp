@@ -1344,12 +1344,12 @@ void Stabilizer::calcEEForceMomentControl() {
           cur_swg_p = act_sup_R * swg_p_relative_to_sup_R;
           hrp::Vector3 delta_rpy = hrp::rpyFromRot(tmpR_list.at(swg_idx)) - hrp::rpyFromRot(foot_origin_rot * cur_swg_R);
           hrp::Vector3 delta_pos = tmpp_list.at(swg_idx) - (foot_origin_rot * cur_swg_p + cur_sup_p);
-          rats::rotm3times(tmpR_list.at(swg_idx), tmpR_list.at(swg_idx), hrp::rotFromRpy(delta_rpy[0] * 0.0,
-                                                                                         delta_rpy[1] * 0.0,
-                                                                                         delta_rpy[2] * 0.0));
-          tmpp_list.at(swg_idx) = tmpp_list.at(swg_idx) + hrp::Vector3(delta_pos[0] * 0.0,
-                                                                       delta_pos[1] * 0.0,
-                                                                       delta_pos[2] * 0.0);
+          rats::rotm3times(tmpR_list.at(swg_idx), tmpR_list.at(swg_idx), hrp::rotFromRpy(delta_rpy[0] * stikp[swg_idx].eefm_swing_rot_spring_gain[0],
+                                                                                         delta_rpy[1] * stikp[swg_idx].eefm_swing_rot_spring_gain[1],
+                                                                                         delta_rpy[2] * stikp[swg_idx].eefm_swing_rot_spring_gain[2]));
+          tmpp_list.at(swg_idx) = tmpp_list.at(swg_idx) + hrp::Vector3(delta_pos[0] * stikp[swg_idx].eefm_swing_pos_spring_gain[0],
+                                                                       delta_pos[1] * stikp[swg_idx].eefm_swing_pos_spring_gain[1],
+                                                                       delta_pos[2] * stikp[swg_idx].eefm_swing_pos_spring_gain[2]);
       }
       for (size_t i = 0; i < stikp.size(); i++){
           // target at ee => target at link-origin
