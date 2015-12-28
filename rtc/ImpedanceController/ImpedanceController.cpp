@@ -16,7 +16,7 @@
 #include <hrpModel/JointPath.h>
 #include <hrpUtil/MatrixSolvers.h>
 #include "util/Hrpsys.h"
-
+#include <boost/assign.hpp>
 
 #define MAX_TRANSITION_COUNT (static_cast<int>(2/m_dt))
 typedef coil::Guard<coil::Mutex> Guard;
@@ -516,7 +516,8 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
             }
         }
 
-        calcObjectTurnaroundDetectorState();
+        if (ee_map.find("rleg") != ee_map.end() && ee_map.find("lleg") != ee_map.end()) // if legged robot
+            calcObjectTurnaroundDetectorState();
     } else {
         if ( DEBUGP || loop % 100 == 0 ) {
             std::cerr << "ImpedanceController is not working..." << std::endl;
@@ -561,6 +562,20 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
   return RTC::RTC_OK;
   }
 */
+
+void ImpedanceController::calcFootMidCoords (hrp::Vector3& new_foot_mid_pos, hrp::Matrix33& new_foot_mid_rot)
+{
+  std::vector<hrp::Vector3> foot_pos;
+  std::vector<hrp::Matrix33> foot_rot;
+  std::vector<std::string> leg_names = boost::assign::list_of("rleg")("lleg");
+  for (size_t i = 0; i < leg_names.size(); i++) {
+    hrp::Link* target_link = m_robot->link(ee_map[leg_names[i]].target_name);
+    foot_pos.push_back(target_link->p + target_link->R * ee_map[leg_names[i]].localPos);
+    foot_rot.push_back(target_link->R * ee_map[leg_names[i]].localR);
+  }
+  new_foot_mid_pos = (foot_pos[0]+foot_pos[1])/2.0;
+  rats::mid_rot(new_foot_mid_rot, 0.5, foot_rot[0], foot_rot[1]);
+}
 
 void ImpedanceController::calcForceMoment ()
 {
@@ -623,6 +638,8 @@ void ImpedanceController::calcForceMoment ()
 
 void ImpedanceController::calcObjectTurnaroundDetectorState()
 {
+    // TODO
+    // Currently only for legged robots
     // Store org state
     hrp::dvector org_q(m_robot->numJoints());
     for ( int i = 0; i < m_robot->numJoints(); i++ ) {
@@ -636,6 +653,10 @@ void ImpedanceController::calcObjectTurnaroundDetectorState()
     updateRootLinkPosRot(m_rpy);
     // Calc
     std::vector<hrp::Vector3> otd_fmv, otd_hposv;
+    hrp::Vector3 fmpos;
+    hrp::Matrix33 fmrot, fmrotT;
+    calcFootMidCoords(fmpos, fmrot);
+    fmrotT = fmrot.transpose();
     for (unsigned int i=0; i<m_forceIn.size(); i++) {
         std::string sensor_name = m_forceIn[i]->name();
         if ( find(otd_sensor_names.begin(), otd_sensor_names.end(), sensor_name) != otd_sensor_names.end() ) {
@@ -643,13 +664,13 @@ void ImpedanceController::calcObjectTurnaroundDetectorState()
             hrp::Vector3 data_p(m_force[i].data[0], m_force[i].data[1], m_force[i].data[2]);
             hrp::Vector3 data_r(m_force[i].data[3], m_force[i].data[4], m_force[i].data[5]);
             hrp::Matrix33 sensorR = sensor->link->R * sensor->localR;
-            otd_fmv.push_back(sensorR*data_p);
+            otd_fmv.push_back(fmrotT*(sensorR*data_p));
             hrp::Vector3 eePos;
             for ( std::map<std::string, ImpedanceParam>::iterator it = m_impedance_param.begin(); it != m_impedance_param.end(); it++ ) {
                 if ( it->second.sensor_name == sensor_name ) {
                     ee_trans& eet = ee_map[it->first];
                     hrp::Link* target_link = m_robot->link(eet.target_name);
-                    eePos = target_link->p + target_link->R * eet.localPos;
+                    eePos = fmrotT * (target_link->p + target_link->R * eet.localPos - fmpos);
                 }
             }
             otd_hposv.push_back(eePos);
@@ -907,20 +928,17 @@ bool ImpedanceController::getObjectTurnaroundDetectorParam(OpenHRP::ImpedanceCon
     return true;
 }
 
-bool ImpedanceController::getObjectForcesMoments(OpenHRP::ImpedanceControllerService::Dbl3Sequence_out o_forces, OpenHRP::ImpedanceControllerService::Dbl3Sequence_out o_moments)
+bool ImpedanceController::getObjectForcesMoments(OpenHRP::ImpedanceControllerService::Dbl3Sequence_out o_forces, OpenHRP::ImpedanceControllerService::Dbl3Sequence_out o_moments, OpenHRP::ImpedanceControllerService::DblSequence3_out o_3dofwrench)
 {
     std::cerr << "[" << m_profile.instance_name << "] getObjectForcesMoments" << std::endl;
     if (otd_sensor_names.size() == 0) return false;
     hrp::Vector3 tmpv = otd->getAxis() * otd->getFilteredWrench();
-    std::cerr << "[" << m_profile.instance_name << "] getObjectForcesMoments" << std::endl;
     o_forces = new OpenHRP::ImpedanceControllerService::Dbl3Sequence ();
     o_moments = new OpenHRP::ImpedanceControllerService::Dbl3Sequence ();
     o_forces->length(otd_sensor_names.size());
     o_moments->length(otd_sensor_names.size());
-    std::cerr << "[" << m_profile.instance_name << "] getObjectForcesMoments" << std::endl;
     for (size_t i = 0; i < o_forces->length(); i++) o_forces[i].length(3);
     for (size_t i = 0; i < o_moments->length(); i++) o_moments[i].length(3);
-    std::cerr << "[" << m_profile.instance_name << "] getObjectForcesMoments" << std::endl;
     // Temp
     for (size_t i = 0; i < otd_sensor_names.size(); i++) {
         o_forces[i][0] = tmpv(0)/otd_sensor_names.size();
@@ -928,7 +946,9 @@ bool ImpedanceController::getObjectForcesMoments(OpenHRP::ImpedanceControllerSer
         o_forces[i][2] = tmpv(2)/otd_sensor_names.size();
         o_moments[i][0] = o_moments[i][1] = o_moments[i][2] = 0.0;
     }
-    std::cerr << "[" << m_profile.instance_name << "] getObjectForcesMoments" << std::endl;
+    o_3dofwrench = new OpenHRP::ImpedanceControllerService::DblSequence3 ();
+    o_3dofwrench->length(3);
+    for (size_t i = 0; i < 3; i++) (*o_3dofwrench)[i] = tmpv(i);
     return true;
 }
 
