@@ -104,6 +104,10 @@ module OpenHRP
       sequence<sequence<double, 3> > eefm_pos_damping_gain;
       /// Sequence of all end-effector position damping time constant for double support phase [s] (x,y,z).
       sequence<sequence<double, 3> > eefm_pos_time_const_support;
+      /// Sequence of all swing leg end-effector rotation spring gain (r,p,y).
+      sequence<sequence<double, 3> > eefm_swing_rot_spring_gain;
+      /// Sequence of all swing leg end-effector position spring gain (x,y,z).
+      sequence<sequence<double, 3> > eefm_swing_pos_spring_gain;
       /// Sequence of all end-effector position compensation limit [m]
       sequence<double> eefm_pos_compensation_limit;
       /// Sequence of all end-effector rot compensation limit [rad]
