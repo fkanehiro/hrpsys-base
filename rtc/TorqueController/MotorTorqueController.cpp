@@ -376,7 +376,7 @@ void MotorTorqueController::updateController(double _tau, double _tauRef, MotorT
     _mc.dq = std::min(std::max(_mc.min_dq, _mc.dq), _mc.max_dq);
     break;
   case STOP:
-    if (std::abs(_mc.recovery_dq) > std::abs(_mc.transition_dq)){
+    if (std::abs(_mc.recovery_dq) >= std::abs(_mc.transition_dq)){
         _mc.dq = 0;
         _mc.transition_dq = 0;
         _mc.state = INACTIVE;
