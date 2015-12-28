@@ -11,7 +11,6 @@ module OpenHRP
     typedef sequence<string> StrSequence;
 
     struct torqueControllerParam {
-      string name;
       double tc; // time constant
       double ke; // for TwoDofController and TwoDofControllerPDModel 
       double kd; // for TwoDofControllerPDModel 
@@ -97,7 +96,13 @@ module OpenHRP
      * @param t_param: new torque controller param (invariant parameters are expected as 0)
      * @return true if set all successfully, false otherwise
      */
-    boolean setTorqueControllerParam(in torqueControllerParam t_param);
-    
+    boolean setTorqueControllerParam(in string jname, in torqueControllerParam t_param);
+
+    /**
+     * @brief set torque controller parameters
+     * @param t_param: new torque controller param (invariant parameters are expected as 0)
+     * @return true if set all successfully, false otherwise
+     */
+    boolean getTorqueControllerParam(in string jname, out torqueControllerParam t_param);
   };
 };

@@ -38,14 +38,17 @@ public:
   // for TwoDofController
   MotorTorqueController(std::string _jname, TwoDofController::TwoDofControllerParam &_param);
   void setupController(TwoDofController::TwoDofControllerParam &_param);
+  bool getControllerParam(TwoDofController::TwoDofControllerParam &_param);
   bool updateControllerParam(TwoDofController::TwoDofControllerParam &_param);
   // for TwoDofControllerPDModel
   MotorTorqueController(std::string _jname, TwoDofControllerPDModel::TwoDofControllerPDModelParam &_param);
   void setupController(TwoDofControllerPDModel::TwoDofControllerPDModelParam &_param);
+  bool getControllerParam(TwoDofControllerPDModel::TwoDofControllerPDModelParam &_param);
   bool updateControllerParam(TwoDofControllerPDModel::TwoDofControllerPDModelParam &_param);
   // for TwoDofControllerDynamicsModel
   MotorTorqueController(std::string _jname, TwoDofControllerDynamicsModel::TwoDofControllerDynamicsModelParam &_param);
   void setupController(TwoDofControllerDynamicsModel::TwoDofControllerDynamicsModelParam &_param);
+  bool getControllerParam(TwoDofControllerDynamicsModel::TwoDofControllerDynamicsModelParam &_param);
   bool updateControllerParam(TwoDofControllerDynamicsModel::TwoDofControllerDynamicsModelParam &_param);
 
   // for normal/emergency torque contorller
@@ -88,12 +91,15 @@ private:
 
     // for TwoDofController
     void setupTwoDofController(TwoDofController::TwoDofControllerParam &_param);
+    bool getTwoDofControllerParam(TwoDofController::TwoDofControllerParam &_param);
     bool updateTwoDofControllerParam(TwoDofController::TwoDofControllerParam &_param);
     // for TwoDofControllerPDModel
     void setupTwoDofControllerPDModel(TwoDofControllerPDModel::TwoDofControllerPDModelParam &_param);
+    bool getTwoDofControllerPDModelParam(TwoDofControllerPDModel::TwoDofControllerPDModelParam &_param);
     bool updateTwoDofControllerPDModelParam(TwoDofControllerPDModel::TwoDofControllerPDModelParam &_param);
     // for TwoDofControllerDynamicsModel
     void setupTwoDofControllerDynamicsModel(TwoDofControllerDynamicsModel::TwoDofControllerDynamicsModelParam &_param);
+    bool getTwoDofControllerDynamiccsModelParam(TwoDofControllerDynamicsModel::TwoDofControllerDynamicsModelParam &_param);
     bool updateTwoDofControllerDynamiccsModelParam(TwoDofControllerDynamicsModel::TwoDofControllerDynamicsModelParam &_param);
     double getMotorControllerDq(void); // get according dq according to state
     void setErrorPrefix(const std::string& _error_prefix);
