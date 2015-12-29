@@ -1357,7 +1357,7 @@ void Stabilizer::calcEEForceMomentControl() {
                       hrp::Matrix33 new_swg_R;
                       rats::rotm3times(new_swg_R, act_sup_R, swg_R_relative_to_sup_R);
                       rats::rotm3times(new_swg_R, foot_origin_rot, new_swg_R);
-                      hrp::Vector3 tmp_diff_rpy = hrp::rpyFromRot(tmpR_list.at(i)) - hrp::rpyFromRot(new_swg_R);
+                      hrp::Vector3 tmp_diff_rpy = hrp::rpyFromRot(new_swg_R.transpose() * tmpR_list.at(i));
                       for (size_t j = 0; j < 3; j++) {
                           d_rpy_swing.at(i)[j] = tmp_diff_rpy[j] * stikp[i].eefm_swing_rot_spring_gain[j];
                       }
