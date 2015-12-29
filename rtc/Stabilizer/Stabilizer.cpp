@@ -1337,21 +1337,30 @@ void Stabilizer::calcEEForceMomentControl() {
       if (isContact(0) != isContact(1)) { // single support phase
           size_t sup_idx = isContact(0) ? 0 : 1;
           size_t swg_idx = isContact(0) ? 1 : 0;
-          hrp::Matrix33 cur_sup_R = tmpR_list.at(sup_idx), cur_swg_R = tmpR_list.at(swg_idx), act_sup_R = act_ee_R.at(sup_idx);
-          hrp::Vector3 cur_sup_p = tmpp_list.at(sup_idx), cur_swg_p = tmpp_list.at(swg_idx);
-          hrp::Matrix33 swg_R_relative_to_sup_R = cur_sup_R.transpose() * cur_swg_R;
-          hrp::Vector3 swg_p_relative_to_sup_R = cur_sup_R.transpose() * (cur_swg_p - cur_sup_p);
-          /* Actual foot_origin frame */
-          rats::rotm3times(cur_swg_R, act_sup_R, swg_R_relative_to_sup_R);
-          cur_swg_p = act_sup_R * swg_p_relative_to_sup_R;
-          d_rpy_swing.at(i) = hrp::rpyFromRot(tmpR_list.at(swg_idx)) - hrp::rpyFromRot(foot_origin_rot * cur_swg_R);
-          d_pos_swing.at(i) = tmpp_list.at(swg_idx) - (foot_origin_rot * cur_swg_p + cur_sup_p);
-          rats::rotm3times(tmpR_list.at(swg_idx), tmpR_list.at(swg_idx), hrp::rotFromRpy(d_rpy_swing.at(i)[0] * stikp[swg_idx].eefm_swing_rot_spring_gain[0],
-                                                                                         d_rpy_swing.at(i)[1] * stikp[swg_idx].eefm_swing_rot_spring_gain[1],
-                                                                                         d_rpy_swing.at(i)[2] * stikp[swg_idx].eefm_swing_rot_spring_gain[2]));
-          tmpp_list.at(swg_idx) = tmpp_list.at(swg_idx) + hrp::Vector3(d_pos_swing.at(i)[0] * stikp[swg_idx].eefm_swing_pos_spring_gain[0],
-                                                                       d_pos_swing.at(i)[1] * stikp[swg_idx].eefm_swing_pos_spring_gain[1],
-                                                                       d_pos_swing.at(i)[2] * stikp[swg_idx].eefm_swing_pos_spring_gain[2]);
+          hrp::Matrix33 cur_sup_R = tmpR_list.at(sup_idx), act_sup_R = act_ee_R.at(sup_idx);
+          hrp::Vector3 cur_sup_p = tmpp_list.at(sup_idx);
+          /* rotation */
+          {
+              hrp::Matrix33 cur_swg_R = tmpR_list.at(swg_idx);
+              hrp::Matrix33 swg_R_relative_to_sup_R = cur_sup_R.transpose() * cur_swg_R;
+              hrp::Matrix33 new_swg_R;
+              rats::rotm3times(new_swg_R, act_sup_R, swg_R_relative_to_sup_R);
+              rats::rotm3times(new_swg_R, foot_origin_rot, new_swg_R);
+              d_rpy_swing.at(i) = hrp::rpyFromRot(tmpR_list.at(swg_idx)) - hrp::rpyFromRot(new_swg_R);
+              rats::rotm3times(tmpR_list.at(swg_idx), tmpR_list.at(swg_idx), hrp::rotFromRpy(d_rpy_swing.at(i)[0] * stikp[swg_idx].eefm_swing_rot_spring_gain[0],
+                                                                                             d_rpy_swing.at(i)[1] * stikp[swg_idx].eefm_swing_rot_spring_gain[1],
+                                                                                             d_rpy_swing.at(i)[2] * stikp[swg_idx].eefm_swing_rot_spring_gain[2]));
+          }
+          /* position */
+          {
+              hrp::Vector3 cur_swg_p = tmpp_list.at(swg_idx);
+              hrp::Vector3 swg_p_relative_to_sup_R = cur_sup_R.transpose() * (cur_swg_p - cur_sup_p);
+              hrp::Vector3 new_swg_p = (foot_origin_rot * act_sup_R) * swg_p_relative_to_sup_R + cur_sup_p;
+              d_pos_swing.at(i) = tmpp_list.at(swg_idx) - new_swg_p;
+              tmpp_list.at(swg_idx) = tmpp_list.at(swg_idx) + hrp::Vector3(d_pos_swing.at(i)[0] * stikp[swg_idx].eefm_swing_pos_spring_gain[0],
+                                                                           d_pos_swing.at(i)[1] * stikp[swg_idx].eefm_swing_pos_spring_gain[1],
+                                                                           d_pos_swing.at(i)[2] * stikp[swg_idx].eefm_swing_pos_spring_gain[2]);
+          }
       }
       for (size_t i = 0; i < stikp.size(); i++){
           // target at ee => target at link-origin
