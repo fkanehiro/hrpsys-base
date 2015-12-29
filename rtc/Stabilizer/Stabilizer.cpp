@@ -251,6 +251,8 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
       target_ee_diff_p.push_back(hrp::Vector3::Zero());
       target_ee_diff_r.push_back(hrp::Vector3::Zero());
       prev_target_ee_diff_r.push_back(hrp::Vector3::Zero());
+      d_rpy_swing.push_back(hrp::Vector3::Zero());
+      d_pos_swing.push_back(hrp::Vector3::Zero());
       target_ee_diff_p_filter.push_back(boost::shared_ptr<FirstOrderLowPassFilter<hrp::Vector3> >(new FirstOrderLowPassFilter<hrp::Vector3>(50.0, dt, hrp::Vector3::Zero()))); // [Hz]
       contact_states_index_map.insert(std::pair<std::string, size_t>(ee_name, i));
       is_ik_enable.push_back( (ee_name.find("leg") != std::string::npos ? true : false) ); // Hands ik => disabled, feet ik => enabled, by default
@@ -1342,14 +1344,14 @@ void Stabilizer::calcEEForceMomentControl() {
           /* Actual foot_origin frame */
           rats::rotm3times(cur_swg_R, act_sup_R, swg_R_relative_to_sup_R);
           cur_swg_p = act_sup_R * swg_p_relative_to_sup_R;
-          hrp::Vector3 delta_rpy = hrp::rpyFromRot(tmpR_list.at(swg_idx)) - hrp::rpyFromRot(foot_origin_rot * cur_swg_R);
-          hrp::Vector3 delta_pos = tmpp_list.at(swg_idx) - (foot_origin_rot * cur_swg_p + cur_sup_p);
-          rats::rotm3times(tmpR_list.at(swg_idx), tmpR_list.at(swg_idx), hrp::rotFromRpy(delta_rpy[0] * stikp[swg_idx].eefm_swing_rot_spring_gain[0],
-                                                                                         delta_rpy[1] * stikp[swg_idx].eefm_swing_rot_spring_gain[1],
-                                                                                         delta_rpy[2] * stikp[swg_idx].eefm_swing_rot_spring_gain[2]));
-          tmpp_list.at(swg_idx) = tmpp_list.at(swg_idx) + hrp::Vector3(delta_pos[0] * stikp[swg_idx].eefm_swing_pos_spring_gain[0],
-                                                                       delta_pos[1] * stikp[swg_idx].eefm_swing_pos_spring_gain[1],
-                                                                       delta_pos[2] * stikp[swg_idx].eefm_swing_pos_spring_gain[2]);
+          d_rpy_swing.at(i) = hrp::rpyFromRot(tmpR_list.at(swg_idx)) - hrp::rpyFromRot(foot_origin_rot * cur_swg_R);
+          d_pos_swing.at(i) = tmpp_list.at(swg_idx) - (foot_origin_rot * cur_swg_p + cur_sup_p);
+          rats::rotm3times(tmpR_list.at(swg_idx), tmpR_list.at(swg_idx), hrp::rotFromRpy(d_rpy_swing.at(i)[0] * stikp[swg_idx].eefm_swing_rot_spring_gain[0],
+                                                                                         d_rpy_swing.at(i)[1] * stikp[swg_idx].eefm_swing_rot_spring_gain[1],
+                                                                                         d_rpy_swing.at(i)[2] * stikp[swg_idx].eefm_swing_rot_spring_gain[2]));
+          tmpp_list.at(swg_idx) = tmpp_list.at(swg_idx) + hrp::Vector3(d_pos_swing.at(i)[0] * stikp[swg_idx].eefm_swing_pos_spring_gain[0],
+                                                                       d_pos_swing.at(i)[1] * stikp[swg_idx].eefm_swing_pos_spring_gain[1],
+                                                                       d_pos_swing.at(i)[2] * stikp[swg_idx].eefm_swing_pos_spring_gain[2]);
       }
       for (size_t i = 0; i < stikp.size(); i++){
           // target at ee => target at link-origin
@@ -1435,6 +1437,8 @@ void Stabilizer::sync_2_st ()
     target_ee_diff_p[i] = hrp::Vector3::Zero();
     target_ee_diff_r[i] = hrp::Vector3::Zero();
     prev_target_ee_diff_r[i] = hrp::Vector3::Zero();
+    d_rpy_swing[i] = hrp::Vector3::Zero();
+    d_pos_swing[i] = hrp::Vector3::Zero();
     STIKParam& ikp = stikp[i];
     ikp.d_foot_pos = ikp.d_foot_rpy = ikp.ee_d_foot_rpy = hrp::Vector3::Zero();
   }
