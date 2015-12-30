@@ -1346,7 +1346,7 @@ void Stabilizer::calcEEForceMomentControl() {
               }
           }
           for (size_t i = 0; i < stikp.size(); i++) {
-              if (isContact(i)) {
+              if (isContact(i) or contact_states[contact_states_index_map[stikp[i].ee_name]]) {
                   d_rpy_swing.at(i) = hrp::Vector3::Zero();
                   d_pos_swing.at(i) = hrp::Vector3::Zero();
               } else {
