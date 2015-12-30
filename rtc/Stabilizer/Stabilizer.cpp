@@ -1347,6 +1347,12 @@ void Stabilizer::calcEEForceMomentControl() {
           }
           for (size_t i = 0; i < stikp.size(); i++) {
               if (isContact(i) or contact_states[contact_states_index_map[stikp[i].ee_name]]) {
+                  /* method A */
+                  // for (size_t j = 0; j < 3; j++) {
+                  //     d_rpy_swing.at(i)[j] = (-1 / 0.5 * d_rpy_swing.at(i)[j]) * dt + d_rpy_swing.at(i)[j];
+                  //     d_pos_swing.at(i)[j] = (-1 / 0.5 * d_pos_swing.at(i)[j]) * dt + d_pos_swing.at(i)[j];
+                  // }
+                  /* method B */
                   d_rpy_swing.at(i) = hrp::Vector3::Zero();
                   d_pos_swing.at(i) = hrp::Vector3::Zero();
               } else {
@@ -1359,6 +1365,9 @@ void Stabilizer::calcEEForceMomentControl() {
                       rats::rotm3times(new_swg_R, foot_origin_rot, new_swg_R);
                       hrp::Vector3 tmp_diff_rpy = hrp::rpyFromRot(new_swg_R.transpose() * tmpR_list.at(i));
                       for (size_t j = 0; j < 3; j++) {
+                          /* method A */
+                          // d_rpy_swing.at(i)[j] = (stikp[i].eefm_swing_rot_spring_gain[j] * tmp_diff_rpy[j] - 1 / 1.5 * d_rpy_swing.at(i)[j]) * dt + d_rpy_swing.at(i)[j];
+                          /* method B */
                           d_rpy_swing.at(i)[j] = tmp_diff_rpy[j] * stikp[i].eefm_swing_rot_spring_gain[j];
                       }
                       rats::rotm3times(tmpR_list.at(i), tmpR_list.at(i), hrp::rotFromRpy(d_rpy_swing.at(i)));
@@ -1370,6 +1379,9 @@ void Stabilizer::calcEEForceMomentControl() {
                       hrp::Vector3 new_swg_p = (foot_origin_rot * act_sup_R) * swg_p_relative_to_sup_R + cur_sup_p;
                       hrp::Vector3 tmp_diff_pos = tmpp_list.at(i) - new_swg_p;
                       for (size_t j = 0; j < 3; j++) {
+                          /* method A */
+                          // d_pos_swing.at(i)[j] = (stikp[i].eefm_swing_pos_spring_gain[j] * tmp_diff_pos[j] - 1 / 1.5 * d_pos_swing.at(i)[j]) * dt + d_pos_swing.at(i)[j];
+                          /* method B */
                           d_pos_swing.at(i)[j] = tmp_diff_pos[j] * stikp[i].eefm_swing_pos_spring_gain[j];
                       }
                       tmpp_list.at(i) = tmpp_list.at(i) + d_pos_swing.at(i);
