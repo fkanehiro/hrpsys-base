@@ -56,6 +56,18 @@ void MotorTorqueController::setupController(TwoDofController::TwoDofControllerPa
   m_emergencyController.setupTwoDofController(_param);
 }
 
+bool MotorTorqueController::getControllerParam(TwoDofController::TwoDofControllerParam &_param)
+{
+  if (m_motor_model_type == TWO_DOF_CONTROLLER) {
+    bool retval;
+    retval = m_normalController.getTwoDofControllerParam(_param); // assuming normalController and emergencyController has same parameters
+    return retval;
+  } else {
+    std::cerr << "motor model type is not TwoDofController" << std::endl;
+    return false;
+  }
+}
+
 bool MotorTorqueController::updateControllerParam(TwoDofController::TwoDofControllerParam &_param)
 {
   if (m_motor_model_type == TWO_DOF_CONTROLLER) {
@@ -84,6 +96,19 @@ void MotorTorqueController::setupController(TwoDofControllerPDModel::TwoDofContr
   m_normalController.setupTwoDofControllerPDModel(_param);
   m_emergencyController.setupTwoDofControllerPDModel(_param);
 }
+
+bool MotorTorqueController::getControllerParam(TwoDofControllerPDModel::TwoDofControllerPDModelParam &_param)
+{
+  if (m_motor_model_type == TWO_DOF_CONTROLLER_PD_MODEL) {
+    bool retval;
+    retval = m_normalController.updateTwoDofControllerPDModelParam(_param); // assuming normalController and emergencyController has same parameters
+    return retval;
+  } else {
+    std::cerr << "[" << m_error_prefix << "]" << "motor model type is not TwoDofControllerPDModel" << std::endl;
+    return false;
+  }
+}
+
 bool MotorTorqueController::updateControllerParam(TwoDofControllerPDModel::TwoDofControllerPDModelParam &_param)
 {
   if (m_motor_model_type == TWO_DOF_CONTROLLER_PD_MODEL) {
@@ -112,6 +137,19 @@ void MotorTorqueController::setupController(TwoDofControllerDynamicsModel::TwoDo
   m_normalController.setupTwoDofControllerDynamicsModel(_param);
   m_emergencyController.setupTwoDofControllerDynamicsModel(_param);
 }
+
+bool MotorTorqueController::getControllerParam(TwoDofControllerDynamicsModel::TwoDofControllerDynamicsModelParam &_param)
+{
+  if (m_motor_model_type == TWO_DOF_CONTROLLER_DYNAMICS_MODEL) {
+    bool retval;
+    retval = m_normalController.getTwoDofControllerDynamiccsModelParam(_param); // assuming normalController and emergencyController has same parameters
+    return retval;
+  } else {
+    std::cerr << "[" << m_error_prefix << "]" << "motor model type is not TwoDofControllerDynamicsModel" << std::endl;
+    return false;
+  }
+}
+
 bool MotorTorqueController::updateControllerParam(TwoDofControllerDynamicsModel::TwoDofControllerDynamicsModelParam &_param)
 {
   if (m_motor_model_type == TWO_DOF_CONTROLLER_DYNAMICS_MODEL) {
@@ -338,7 +376,7 @@ void MotorTorqueController::updateController(double _tau, double _tauRef, MotorT
     _mc.dq = std::min(std::max(_mc.min_dq, _mc.dq), _mc.max_dq);
     break;
   case STOP:
-    if (std::abs(_mc.recovery_dq) > std::abs(_mc.transition_dq)){
+    if (std::abs(_mc.recovery_dq) >= std::abs(_mc.transition_dq)){
         _mc.dq = 0;
         _mc.transition_dq = 0;
         _mc.state = INACTIVE;
@@ -377,6 +415,20 @@ void MotorTorqueController::MotorController::setupTwoDofController(TwoDofControl
   controller->reset();
 }
 
+bool MotorTorqueController::MotorController::getTwoDofControllerParam(TwoDofController::TwoDofControllerParam &_param)
+{
+  if (typeid(*controller) != typeid(TwoDofController) || boost::dynamic_pointer_cast<TwoDofController>(controller) == NULL) {
+    std::cerr << "[" << error_prefix << "]" << "incorrect controller type: TwoDofController" << std::endl;
+    return false;
+  }
+  TwoDofController::TwoDofControllerParam param;
+  (boost::dynamic_pointer_cast<TwoDofController>(controller))->getParameter(param);
+  updateParam(_param.ke, param.ke);
+  updateParam(_param.tc, param.tc);
+  updateParam(_param.dt, param.dt);
+  return true;
+}
+
 bool MotorTorqueController::MotorController::updateTwoDofControllerParam(TwoDofController::TwoDofControllerParam &_param)
 {
   if (typeid(*controller) != typeid(TwoDofController) || boost::dynamic_pointer_cast<TwoDofController>(controller) == NULL) {
@@ -401,6 +453,22 @@ void MotorTorqueController::MotorController::setupTwoDofControllerPDModel(TwoDof
 {
   controller.reset(new TwoDofControllerPDModel(_param));
   controller->reset();
+}
+
+bool MotorTorqueController::MotorController::getTwoDofControllerPDModelParam(TwoDofControllerPDModel::TwoDofControllerPDModelParam &_param)
+{
+  if (typeid(*controller) != typeid(TwoDofControllerPDModel) || boost::dynamic_pointer_cast<TwoDofControllerPDModel>(controller) == NULL) {
+    std::cerr << "[" << error_prefix << "]" << "incorrect controller type: TwoDofControllerPDModel" << std::endl;
+    return false;
+  }  
+  // update parameters which are not 0 using updateParam (parameter is not updated when _param is 0)
+  TwoDofControllerPDModel::TwoDofControllerPDModelParam param;
+  (boost::dynamic_pointer_cast<TwoDofControllerPDModel>(controller))->getParameter(param);
+  updateParam(_param.ke, param.ke);
+  updateParam(_param.kd, param.kd);
+  updateParam(_param.tc, param.tc);
+  updateParam(_param.dt, param.dt);
+  return true;
 }
 
 bool MotorTorqueController::MotorController::updateTwoDofControllerPDModelParam(TwoDofControllerPDModel::TwoDofControllerPDModelParam &_param)
@@ -428,6 +496,22 @@ void MotorTorqueController::MotorController::setupTwoDofControllerDynamicsModel(
 {
   controller.reset(new TwoDofControllerDynamicsModel(_param));
   controller->reset();
+}
+
+bool MotorTorqueController::MotorController::getTwoDofControllerDynamiccsModelParam(TwoDofControllerDynamicsModel::TwoDofControllerDynamicsModelParam &_param)
+{
+  if (typeid(*controller) != typeid(TwoDofControllerDynamicsModel) || boost::dynamic_pointer_cast<TwoDofControllerDynamicsModel>(controller) == NULL) {
+    std::cerr  << "[" << error_prefix << "]" << "incorrect controller type: TwoDofControllerDynamicsModel" << std::endl;
+    return false;
+  }
+  TwoDofControllerDynamicsModel::TwoDofControllerDynamicsModelParam param;
+  (boost::dynamic_pointer_cast<TwoDofControllerDynamicsModel>(controller))->getParameter(param);
+  updateParam(_param.alpha, param.alpha);
+  updateParam(_param.beta, param.beta);
+  updateParam(_param.ki, param.ki);
+  updateParam(_param.tc, param.tc);
+  updateParam(_param.dt, param.dt);
+  return true;
 }
 
 bool MotorTorqueController::MotorController::updateTwoDofControllerDynamiccsModelParam(TwoDofControllerDynamicsModel::TwoDofControllerDynamicsModelParam &_param)

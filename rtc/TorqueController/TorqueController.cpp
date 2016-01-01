@@ -571,19 +571,20 @@ bool TorqueController::setMultipleReferenceTorques(const OpenHRP::TorqueControll
   return succeed;
 }
 
-bool TorqueController::setTorqueControllerParam(const OpenHRP::TorqueControllerService::torqueControllerParam& t_param)
+bool TorqueController::setTorqueControllerParam(const std::string jname, const OpenHRP::TorqueControllerService::torqueControllerParam& i_param)
 {
+  Guard guard(m_mutex);
+
   // find target motor controller
-  std::string jname = std::string(t_param.name);
   MotorTorqueController *tgt_controller = NULL;
   for (std::vector<MotorTorqueController>::iterator it = m_motorTorqueControllers.begin(); it != m_motorTorqueControllers.end(); ++it) {
     if ((*it).getJointName() == jname){
-      std::cerr << "[" <<  m_profile.instance_name << "]" << "target joint:" << t_param.name << std::endl;
+      std::cerr << "[" <<  m_profile.instance_name << "]" << "target joint:" << jname << std::endl;
       tgt_controller = &(*it);
     }
   }
   if (tgt_controller == NULL) {
-    std::cerr << "[" <<  m_profile.instance_name << "]" << t_param.name << "does not found." << std::endl;
+    std::cerr << "[" <<  m_profile.instance_name << "]" << jname << "does not found." << std::endl;
     return false;
   }
 
@@ -593,26 +594,81 @@ bool TorqueController::setTorqueControllerParam(const OpenHRP::TorqueControllerS
   switch(model_type) { // dt is defined by controller cycle
   case MotorTorqueController::TWO_DOF_CONTROLLER:
   { // limit scope for param 
-    std::cerr << "[" <<  m_profile.instance_name << "]" << "new param:" << t_param.ke << " " << t_param.tc << " " << std::endl;
+    std::cerr << "[" <<  m_profile.instance_name << "]" << "new param:" << i_param.ke << " " << i_param.tc << " " << std::endl;
     TwoDofController::TwoDofControllerParam param;
-    param.ke = t_param.ke; param.tc = t_param.tc; param.dt = m_dt;
+    param.ke = i_param.ke; param.tc = i_param.tc; param.dt = m_dt;
     retval = tgt_controller->updateControllerParam(param);
     break;
   }
   case MotorTorqueController::TWO_DOF_CONTROLLER_PD_MODEL:
   { // limit scope for param 
-    std::cerr << "[" <<  m_profile.instance_name << "]" << "new param:" << t_param.ke << " " << t_param.kd << " " << t_param.tc << " " << std::endl;
+    std::cerr << "[" <<  m_profile.instance_name << "]" << "new param:" << i_param.ke << " " << i_param.kd << " " << i_param.tc << " " << std::endl;
     TwoDofControllerPDModel::TwoDofControllerPDModelParam param;
-    param.ke = t_param.ke; param.kd = t_param.kd; param.tc = t_param.tc; param.dt = m_dt;
+    param.ke = i_param.ke; param.kd = i_param.kd; param.tc = i_param.tc; param.dt = m_dt;
     retval = tgt_controller->updateControllerParam(param);
     break;
   }
   case MotorTorqueController::TWO_DOF_CONTROLLER_DYNAMICS_MODEL:
   { // limit scope for param 
-    std::cerr << "[" <<  m_profile.instance_name << "]" << "new param:" << t_param.alpha << " " << t_param.beta << " " << t_param.ki << " " << t_param.tc << " " << std::endl;
+    std::cerr << "[" <<  m_profile.instance_name << "]" << "new param:" << i_param.alpha << " " << i_param.beta << " " << i_param.ki << " " << i_param.tc << " " << std::endl;
     TwoDofControllerDynamicsModel::TwoDofControllerDynamicsModelParam param;
-    param.alpha = t_param.alpha; param.beta = t_param.beta; param.ki = t_param.ki; param.tc = t_param.tc; param.dt = m_dt;
+    param.alpha = i_param.alpha; param.beta = i_param.beta; param.ki = i_param.ki; param.tc = i_param.tc; param.dt = m_dt;
     retval = tgt_controller->updateControllerParam(param);
+    break;
+  }
+  default:
+    return false;
+  }
+  
+  return retval;
+}
+
+bool TorqueController::getTorqueControllerParam(const std::string jname, OpenHRP::TorqueControllerService::torqueControllerParam& i_param)
+{
+  Guard guard(m_mutex);
+  
+  // find target motor controller
+  MotorTorqueController *tgt_controller = NULL;
+  for (std::vector<MotorTorqueController>::iterator it = m_motorTorqueControllers.begin(); it != m_motorTorqueControllers.end(); ++it) {
+    if ((*it).getJointName() == jname) {
+      std::cerr << "[" <<  m_profile.instance_name << "]" << "target joint:" << jname << std::endl;
+      tgt_controller = &(*it);
+    }
+  }
+  if (tgt_controller == NULL) {
+    std::cerr << "[" <<  m_profile.instance_name << "]" << jname << "does not found." << std::endl;
+    return false;
+  }
+
+  // copy torque controller param
+  bool retval;
+  MotorTorqueController::motor_model_t model_type = tgt_controller->getMotorModelType();
+  switch(model_type) { 
+  case MotorTorqueController::TWO_DOF_CONTROLLER:
+  { // limit scope for param 
+    TwoDofController::TwoDofControllerParam param;
+    retval = tgt_controller->getControllerParam(param);    
+    i_param.ke = param.ke;
+    i_param.tc = param.tc;
+    break;
+  }
+  case MotorTorqueController::TWO_DOF_CONTROLLER_PD_MODEL:
+  { // limit scope for param 
+    TwoDofControllerPDModel::TwoDofControllerPDModelParam param;
+    retval = tgt_controller->getControllerParam(param);
+    i_param.ke = param.ke;
+    i_param.kd = param.kd;
+    i_param.tc = param.tc;
+    break;
+  }
+  case MotorTorqueController::TWO_DOF_CONTROLLER_DYNAMICS_MODEL:
+  { // limit scope for param 
+    TwoDofControllerDynamicsModel::TwoDofControllerDynamicsModelParam param;
+    retval = tgt_controller->getControllerParam(param);
+    i_param.alpha = param.alpha;
+    i_param.beta = param.beta;
+    i_param.ki = param.ki;
+    i_param.tc = param.tc;
     break;
   }
   default:
