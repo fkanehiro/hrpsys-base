@@ -150,14 +150,6 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     // GaitGenerator requires abc_leg_offset and abc_stride_parameter in robot conf file
     // setting leg_pos from conf file
     coil::vstring leg_offset_str = coil::split(prop["abc_leg_offset"], ",");
-    std::vector<hrp::Vector3> leg_pos;
-    if (leg_offset_str.size() > 0) {
-      hrp::Vector3 leg_offset;
-      for (size_t i = 0; i < 3; i++) coil::stringTo(leg_offset(i), leg_offset_str[i].c_str());
-      std::cerr << "[" << m_profile.instance_name << "] abc_leg_offset = " << leg_offset.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[m]" << std::endl;
-      leg_pos.push_back(hrp::Vector3(-1*leg_offset));
-      leg_pos.push_back(hrp::Vector3(leg_offset));
-    }
     leg_names.push_back("rleg");
     leg_names.push_back("lleg");
 
@@ -214,6 +206,14 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
       }
       m_controlSwingSupportTime.data.length(num);
       for (size_t i = 0; i < num; i++) m_controlSwingSupportTime.data[i] = 0.0;
+    }
+    std::vector<hrp::Vector3> leg_pos;
+    if (leg_offset_str.size() > 0) {
+      hrp::Vector3 leg_offset;
+      for (size_t i = 0; i < 3; i++) coil::stringTo(leg_offset(i), leg_offset_str[i].c_str());
+      std::cerr << "[" << m_profile.instance_name << "] abc_leg_offset = " << leg_offset.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[m]" << std::endl;
+      leg_pos.push_back(hrp::Vector3(-1*leg_offset));
+      leg_pos.push_back(hrp::Vector3(leg_offset));
     }
 
     std::vector<std::pair<hrp::Link*, hrp::Link*> > interlocking_joints;
