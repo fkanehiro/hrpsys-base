@@ -862,13 +862,13 @@ void Stabilizer::getActualParameters ()
         //hrp::Vector3 ee_moment = ((sensor->link->R * sensor->localPos + sensor->link->p) - (target->R * ikp.localCOPPos + target->p)).cross(sensor_force) + sensor_moment;
         hrp::Vector3 ee_moment = ((sensor->link->R * sensor->localPos + sensor->link->p) - (target->R * ikp.localp + target->p)).cross(sensor_force) + sensor_moment;
         // <= Actual world frame
-        if ( i == 0 ) f_diff += -1*sensor_force;
-        else f_diff += sensor_force;
         // Convert force & moment as foot origin coords relative
         ikp.ref_moment = foot_origin_rot.transpose() * ikp.ref_moment;
         ikp.ref_force = foot_origin_rot.transpose() * ikp.ref_force;
         sensor_force = foot_origin_rot.transpose() * sensor_force;
         ee_moment = foot_origin_rot.transpose() * ee_moment;
+        if ( i == 0 ) f_diff += -1*sensor_force;
+        else f_diff += sensor_force;
         // calcDampingControl
         // d_foot_rpy and d_foot_pos is (actual) foot origin coords relative value because these use foot origin coords relative force & moment
         { // Rot
@@ -914,8 +914,6 @@ void Stabilizer::getActualParameters ()
           // zctrl = vlimit(zctrl, -0.02, 0.02);
           // Temporarily use first pos compensation limit (stikp[0])
           pos_ctrl = vlimit(pos_ctrl, -1 * stikp[0].eefm_pos_compensation_limit * 2, stikp[0].eefm_pos_compensation_limit * 2);
-          // Convert pos_ctrl actual frame => foot origin frame
-          pos_ctrl = foot_origin_rot.transpose() * pos_ctrl;
           // Divide pos_ctrl into rfoot and lfoot
           stikp[0].d_foot_pos = -0.5 * pos_ctrl;
           stikp[1].d_foot_pos = 0.5 * pos_ctrl;
