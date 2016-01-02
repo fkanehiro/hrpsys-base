@@ -96,6 +96,21 @@ def demoGoPosQuadruped(gait_type=OpenHRP.AutoBalancerService.TROT, print_str="5.
     hcf.abc_svc.goPos(-0.5, +0.2, 20)
     hcf.abc_svc.waitFootSteps()
 
+def demoGoVelocityQuadruped(gait_type=OpenHRP.AutoBalancerService.TROT, print_str="7. go velocity in trot"):
+    print >> sys.stderr, print_str
+    # set gait type
+    abcp=hcf.abc_svc.getAutoBalancerParam()[1]
+    abcp.default_gait_type = gait_type
+    hcf.abc_svc.setAutoBalancerParam(abcp)
+    # set default translate pos
+    ggp = hcf.abc_svc.getGaitGeneratorParam()[1]
+    ggp.leg_default_translate_pos = [[0.0, -0.19, 0.0], [0.0, 0.19, 0.0], [0.7, -0.19, 0.0], [0.7, 0.19, 0.0]]
+    hcf.abc_svc.setGaitGeneratorParam(ggp)
+    # go pos
+    hcf.abc_svc.goVelocity(-0.1, -0.05, -20)
+    time.sleep(3)
+    hcf.abc_svc.goStop()
+
 def demo():
     init()
     demoGaitGeneratorSetFootSteps()
@@ -104,6 +119,7 @@ def demo():
     demoGaitGeneratorSetFootStepsCrawl()
     demoGoPosQuadruped(gait_type=OpenHRP.AutoBalancerService.TROT, print_str="5. go pos in trot")
     demoGoPosQuadruped(gait_type=OpenHRP.AutoBalancerService.PACE, print_str="6. go pos in pace")
+    demoGoVelocityQuadruped(gait_type=OpenHRP.AutoBalancerService.TROT, print_str="7. go velocity in trot")
 
 if __name__ == '__main__':
     demo()
