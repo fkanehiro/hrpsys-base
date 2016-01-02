@@ -1195,12 +1195,33 @@ bool AutoBalancer::goPos(const double& x, const double& y, const double& th)
 
 bool AutoBalancer::goVelocity(const double& vx, const double& vy, const double& vth)
 {
+  gg->set_all_limbs(leg_names);
   if (gg_is_walking && gg_solved) {
     gg->set_velocity_param(vx, vy, vth);
   } else {
     coordinates ref_coords;
     mid_coords(ref_coords, 0.5, ikp["rleg"].target_end_coords, ikp["lleg"].target_end_coords);
-    gg->initialize_velocity_mode(ref_coords, vx, vy, vth);
+    std::vector<leg_type> current_legs;
+    switch(gait_type) {
+    case BIPED:
+        current_legs = (vy > 0 ? boost::assign::list_of(RLEG) : boost::assign::list_of(LLEG));
+        break;
+    case TROT:
+        current_legs = (vy > 0 ? boost::assign::list_of(RLEG)(LARM) : boost::assign::list_of(LLEG)(RARM));
+        break;
+    case PACE:
+        current_legs = (vy > 0 ? boost::assign::list_of(RLEG)(RARM) : boost::assign::list_of(LLEG)(LARM));
+        break;
+    case CRAWL:
+        std::cerr << "[" << m_profile.instance_name << "] crawl walk[" << gait_type << "] is not implemented yet." << std::endl;
+        return false;
+    case GALLOP:
+        /* at least one leg shoud be in contact */
+        std::cerr << "[" << m_profile.instance_name << "] gallop walk[" << gait_type << "] is not implemented yet." << std::endl;
+        return false;
+    default: break;
+    }
+    gg->initialize_velocity_mode(ref_coords, vx, vy, vth, current_legs);
     startWalking();
   }
   return true;

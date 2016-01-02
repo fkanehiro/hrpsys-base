@@ -971,7 +971,8 @@ namespace rats
                                                const std::string& tmp_swing_leg,
                                                const coordinates& _support_leg_coords);
     void initialize_velocity_mode (const coordinates& _ref_coords,
-				   const double vel_x, const double vel_y, const double vel_theta); /* [mm/s] [mm/s] [deg/s] */
+				   const double vel_x, const double vel_y, const double vel_theta, /* [mm/s] [mm/s] [deg/s] */
+                                   const std::vector<leg_type>& current_legs);
     void finalize_velocity_mode ();
     void append_finalize_footstep ()
     {

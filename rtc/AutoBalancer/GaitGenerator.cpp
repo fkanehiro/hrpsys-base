@@ -723,14 +723,14 @@ namespace rats
   };
 
   void gait_generator::initialize_velocity_mode (const coordinates& _ref_coords,
-						 const double vel_x, const double vel_y, const double vel_theta)
+						 const double vel_x, const double vel_y, const double vel_theta,
+                                                 const std::vector<leg_type>& current_legs)
   {
     velocity_mode_flg = VEL_DOING;
     /* initialize */
-    leg_type current_leg = (vel_y > 0.0) ? RLEG : LLEG;
     clear_footstep_nodes_list();
     set_velocity_param (vel_x, vel_y, vel_theta);
-    append_go_pos_step_nodes(_ref_coords, boost::assign::list_of(current_leg));
+    append_go_pos_step_nodes(_ref_coords, current_legs);
     append_footstep_list_velocity_mode();
     append_footstep_list_velocity_mode();
     append_footstep_list_velocity_mode();
