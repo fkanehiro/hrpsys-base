@@ -36,6 +36,7 @@ def init ():
     hcf.abc_svc.setAutoBalancerParam(abcp)
     # set gg param
     ggp = hcf.abc_svc.getGaitGeneratorParam()[1]
+    ggp.leg_default_translate_pos = [[0.0, -0.19, 0.0], [0.0, 0.19, 0.0], [0.7, -0.19, 0.0], [0.7, 0.19, 0.0]]
     ggp.zmp_weight_map = [1.0]*4
     ggp.default_step_height = 0.065 # see https://github.com/fkanehiro/hrpsys-base/issues/801
     hcf.abc_svc.setGaitGeneratorParam(ggp)
@@ -81,12 +82,28 @@ def demoGaitGeneratorSetFootStepsCrawl(print_str="4. setFootSteps in Crawl"):
                       OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([0.0+0.01,-0.19,0], [1,0,0,0], "rleg")])])
     hcf.abc_svc.waitFootSteps()
 
+def demoGoPosQuadruped(gait_type=OpenHRP.AutoBalancerService.TROT, print_str="5. go pos in trot"):
+    print >> sys.stderr, print_str
+    # set gait type
+    abcp=hcf.abc_svc.getAutoBalancerParam()[1]
+    abcp.default_gait_type = gait_type
+    hcf.abc_svc.setAutoBalancerParam(abcp)
+    # set default translate pos
+    ggp = hcf.abc_svc.getGaitGeneratorParam()[1]
+    ggp.leg_default_translate_pos = [[0.0, -0.19, 0.0], [0.0, 0.19, 0.0], [0.7, -0.19, 0.0], [0.7, 0.19, 0.0]]
+    hcf.abc_svc.setGaitGeneratorParam(ggp)
+    # go pos
+    hcf.abc_svc.goPos(-0.5, +0.2, 20)
+    hcf.abc_svc.waitFootSteps()
+
 def demo():
     init()
     demoGaitGeneratorSetFootSteps()
     demoGaitGeneratorSetFootStepsRectangle()
     demoGaitGeneratorSetFootStepsCycloidDelay()
     demoGaitGeneratorSetFootStepsCrawl()
+    demoGoPosQuadruped(gait_type=OpenHRP.AutoBalancerService.TROT, print_str="5. go pos in trot")
+    demoGoPosQuadruped(gait_type=OpenHRP.AutoBalancerService.PACE, print_str="6. go pos in pace")
 
 if __name__ == '__main__':
     demo()
