@@ -563,8 +563,7 @@ namespace rats
         emergency_flg = STOPPING;
     } else if ( lcg.get_lcg_count() == get_overwrite_check_timing() ) {
       if (velocity_mode_flg != VEL_IDLING && lcg.get_footstep_index() > 0) {
-        /* Currently biped only */
-        std::vector< std::vector<coordinates> > cv;
+        std::vector< std::vector<step_node> > cv;
         calc_next_coords_velocity_mode(cv, get_overwritable_index(),
                                        (overwritable_footstep_index_offset == 0 ? 4 : 3) // Why?
                                        );
@@ -574,8 +573,12 @@ namespace rats
             first_overwrite_leg.push_back(footstep_nodes_list[get_overwritable_index()].at(i).l_r);
         }
         for (size_t i = 0; i < cv.size(); i++) {
-            leg_type tmpleg = (i%2 == 0? first_overwrite_leg.front() : first_overwrite_leg.front()==RLEG?LLEG:RLEG );
-            overwrite_footstep_nodes_list.push_back(boost::assign::list_of(step_node(tmpleg, cv[i][0], lcg.get_default_step_height(), default_step_time, lcg.get_toe_angle(), lcg.get_heel_angle())));
+            std::vector<step_node> tmp_fsn;
+            for (size_t j = 0; j < cv.at(i).size(); j++) {
+                tmp_fsn.push_back(step_node(cv.at(i).at(j).l_r, cv.at(i).at(j).worldcoords,
+                                            lcg.get_default_step_height(), default_step_time, lcg.get_toe_angle(), lcg.get_heel_angle()));
+            }
+            overwrite_footstep_nodes_list.push_back(tmp_fsn);
         }
         overwrite_refzmp_queue(overwrite_footstep_nodes_list);
         overwrite_footstep_nodes_list.clear();
@@ -783,7 +786,7 @@ namespace rats
     append_go_pos_step_nodes(ref_coords, calc_counter_leg_types_from_footstep_nodes(_footstep_nodes_list.back(), all_limbs), _footstep_nodes_list);
   };
 
-  void gait_generator::calc_next_coords_velocity_mode (std::vector< std::vector<coordinates> >& ret_list, const size_t idx, const size_t future_step_num)
+  void gait_generator::calc_next_coords_velocity_mode (std::vector< std::vector<step_node> >& ret_list, const size_t idx, const size_t future_step_num)
   {
     coordinates ref_coords;
     hrp::Vector3 trans;
@@ -795,7 +798,7 @@ namespace rats
     next_sup_legs = calc_counter_leg_types_from_footstep_nodes(footstep_nodes_list[idx-1], all_limbs);
 
     for (size_t i = 0; i < future_step_num; i++) {
-      std::vector<coordinates> ret;
+      std::vector<step_node> ret;
       std::vector<leg_type> forcused_sup_legs;
       switch( i % 2) {
       case 0: forcused_sup_legs = next_sup_legs; break;
@@ -806,8 +809,8 @@ namespace rats
           ref_coords.rotate(dth, hrp::Vector3(0,0,1));
       }
       for (size_t j = 0; j < forcused_sup_legs.size(); j++) {
-          ret.push_back(ref_coords);
-          ret[j].pos += ret[j].rot * footstep_param.leg_default_translate_pos[forcused_sup_legs.at(j)];
+          ret.push_back(step_node(forcused_sup_legs.at(j), ref_coords, 0, 0, 0, 0));
+          ret[j].worldcoords.pos += ret[j].worldcoords.rot * footstep_param.leg_default_translate_pos[forcused_sup_legs.at(j)];
       }
       ret_list.push_back(ret);
     }
