@@ -215,6 +215,12 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
       leg_pos.push_back(hrp::Vector3(-1*leg_offset));
       leg_pos.push_back(hrp::Vector3(leg_offset));
     }
+    if (leg_pos.size() < ikp.size()) {
+        size_t tmp_leg_pos_size = leg_pos.size();
+        for (size_t i = 0; i < ikp.size() - tmp_leg_pos_size; i++) {
+            leg_pos.push_back(hrp::Vector3::Zero());
+        }
+    }
 
     std::vector<std::pair<hrp::Link*, hrp::Link*> > interlocking_joints;
     readInterlockingJointsParamFromProperties(interlocking_joints, m_robot, prop["interlocking_joints"], std::string(m_profile.instance_name));
