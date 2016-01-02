@@ -1537,7 +1537,7 @@ bool AutoBalancer::setAutoBalancerParam(const OpenHRP::AutoBalancerService::Auto
   }
   if (control_mode == MODE_IDLE) {
       for (size_t i = 0; i < i_param.end_effector_list.length(); i++) {
-          std::map<std::string, ABCIKparam>::iterator it = ikp.find(std::string(i_param.end_effector_list[i].leg));
+          std::map<std::string, ABCIKparam>::iterator it = ikp.find(std::string(i_param.end_effector_list[i].name));
           memcpy(it->second.localPos.data(), i_param.end_effector_list[i].pos, sizeof(double)*3);
           it->second.localR = (Eigen::Quaternion<double>(i_param.end_effector_list[i].rot[0], i_param.end_effector_list[i].rot[1], i_param.end_effector_list[i].rot[2], i_param.end_effector_list[i].rot[3])).normalized().toRotationMatrix();
       }
@@ -1614,9 +1614,20 @@ bool AutoBalancer::getAutoBalancerParam(OpenHRP::AutoBalancerService::AutoBalanc
   {
       size_t i = 0;
       for (std::map<std::string, ABCIKparam>::const_iterator it = ikp.begin(); it != ikp.end(); it++) {
-          copyRatscoords2Footstep(i_param.end_effector_list[i],
-                                  coordinates(it->second.localPos, it->second.localR));
-          i_param.end_effector_list[i].leg = it->first.c_str();
+          const rats::coordinates cur_ee = rats::coordinates(it->second.localPos, it->second.localR);
+          OpenHRP::AutoBalancerService::EndEffector ret_ee;
+          // position
+          memcpy(ret_ee.pos, cur_ee.pos.data(), sizeof(double)*3);
+          // rotation
+          Eigen::Quaternion<double> qt(cur_ee.rot);
+          ret_ee.rot[0] = qt.w();
+          ret_ee.rot[1] = qt.x();
+          ret_ee.rot[2] = qt.y();
+          ret_ee.rot[3] = qt.z();
+          // name
+          ret_ee.name = it->first.c_str();
+          // set
+          i_param.end_effector_list[i] = ret_ee;
           i++;
       }
   }
