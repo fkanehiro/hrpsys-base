@@ -15,7 +15,7 @@ namespace hrp {
 namespace hrp {
     class JointPathEx : public JointPath {
   public:
-    JointPathEx(BodyPtr& robot, Link* base, Link* end, double control_cycle, bool _use_inside_joint_weight_retrieval = true);
+    JointPathEx(BodyPtr& robot, Link* base, Link* end, double control_cycle, bool _use_inside_joint_weight_retrieval = true, const std::string& _debug_print_prefix = "");
     bool calcJacobianInverseNullspace(dmatrix &J, dmatrix &Jinv, dmatrix &Jnull);
     bool calcInverseKinematics2Loop(const Vector3& dp, const Vector3& omega, const double LAMBDA, const double avoid_gain = 0.0, const double reference_gain = 0.0, const dvector* reference_q = NULL);
     bool calcInverseKinematics2(const Vector3& end_p, const Matrix33& end_R, const double avoid_gain = 0.0, const double reference_gain = 0.0, const dvector* reference_q = NULL);
@@ -53,6 +53,10 @@ namespace hrp {
         //  Currently joint1 = joint2 is assumed.
         std::vector<std::pair<size_t, size_t> > interlocking_joint_pair_indices;
         double sr_gain, manipulability_limit, manipulability_gain, dt;
+        std::string debug_print_prefix;
+        // Print message Hz management
+        std::vector<size_t> joint_limit_debug_print_counts;
+        size_t debug_print_freq_count;
         bool use_inside_joint_weight_retrieval;
     };
 

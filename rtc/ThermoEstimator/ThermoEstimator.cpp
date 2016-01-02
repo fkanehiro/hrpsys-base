@@ -59,7 +59,7 @@ ThermoEstimator::~ThermoEstimator()
 
 RTC::ReturnCode_t ThermoEstimator::onInitialize()
 {
-  std::cout << m_profile.instance_name << ": onInitialize()" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "] : onInitialize()" << std::endl;
   // <rtc-template block="bind_config">
   // Bind variables and configuration variable
   bindParameter("debugLevel", m_debugLevel, "0");
@@ -103,7 +103,7 @@ RTC::ReturnCode_t ThermoEstimator::onInitialize()
   if (!loadBodyFromModelLoader(m_robot, prop["model"].c_str(),
                                CosNaming::NamingContext::_duplicate(naming.getRootContext())
         )){
-    std::cerr << "failed to load model[" << prop["model"] << "]"
+    std::cerr << "[" << m_profile.instance_name << "] failed to load model[" << prop["model"] << "]"
               << std::endl;
   }
 
@@ -118,13 +118,13 @@ RTC::ReturnCode_t ThermoEstimator::onInitialize()
   } else {
     m_ambientTemp = 25.0;
   }
-  std::cerr <<  m_profile.instance_name << ": ambient temperature: " << m_ambientTemp << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "] : ambient temperature: " << m_ambientTemp << std::endl;
   
   // set motor heat parameters
   m_motorHeatParams.resize(m_robot->numJoints());
   coil::vstring motorHeatParamsFromConf = coil::split(prop["motor_heat_params"], ",");
   if (motorHeatParamsFromConf.size() != 2 * m_robot->numJoints()) {
-    std::cerr <<  "[WARN]: size of motorHeatParams is " << motorHeatParamsFromConf.size() << ", not equal to 2 * " << m_robot->numJoints() << std::endl;
+    std::cerr << "[" << m_profile.instance_name << "] [WARN]: size of motorHeatParams is " << motorHeatParamsFromConf.size() << ", not equal to 2 * " << m_robot->numJoints() << std::endl;
     // motorHeatParam has default values itself
   } else {
     for (int i = 0; i < m_robot->numJoints(); i++) {
@@ -143,7 +143,7 @@ RTC::ReturnCode_t ThermoEstimator::onInitialize()
   // set constant for joint error to torque conversion
   coil::vstring error2tauFromConf = coil::split(prop["error_to_tau_constant"], ",");
   if (error2tauFromConf.size() != m_robot->numJoints()) {
-    std::cerr <<  "[WARN]: size of error2tau is " << error2tauFromConf.size() << ", not equal to " << m_robot->numJoints() << std::endl;
+    std::cerr << "[" << m_profile.instance_name << "] [WARN]: size of error2tau is " << error2tauFromConf.size() << ", not equal to " << m_robot->numJoints() << std::endl;
     m_error2tau.resize(0); // invalid 
   } else {
     m_error2tau.resize(m_robot->numJoints());
@@ -187,13 +187,13 @@ RTC::ReturnCode_t ThermoEstimator::onInitialize()
 
 RTC::ReturnCode_t ThermoEstimator::onActivated(RTC::UniqueId ec_id)
 {
-  std::cout << m_profile.instance_name<< ": onActivated(" << ec_id << ")" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "] : onActivated(" << ec_id << ")" << std::endl;
   return RTC::RTC_OK;
 }
 
 RTC::ReturnCode_t ThermoEstimator::onDeactivated(RTC::UniqueId ec_id)
 {
-  std::cout << m_profile.instance_name<< ": onDeactivated(" << ec_id << ")" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "] : onDeactivated(" << ec_id << ")" << std::endl;
   return RTC::RTC_OK;
 }
 

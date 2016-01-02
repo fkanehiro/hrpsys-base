@@ -38,14 +38,17 @@ public:
   // for TwoDofController
   MotorTorqueController(std::string _jname, TwoDofController::TwoDofControllerParam &_param);
   void setupController(TwoDofController::TwoDofControllerParam &_param);
+  bool getControllerParam(TwoDofController::TwoDofControllerParam &_param);
   bool updateControllerParam(TwoDofController::TwoDofControllerParam &_param);
   // for TwoDofControllerPDModel
   MotorTorqueController(std::string _jname, TwoDofControllerPDModel::TwoDofControllerPDModelParam &_param);
   void setupController(TwoDofControllerPDModel::TwoDofControllerPDModelParam &_param);
+  bool getControllerParam(TwoDofControllerPDModel::TwoDofControllerPDModelParam &_param);
   bool updateControllerParam(TwoDofControllerPDModel::TwoDofControllerPDModelParam &_param);
   // for TwoDofControllerDynamicsModel
   MotorTorqueController(std::string _jname, TwoDofControllerDynamicsModel::TwoDofControllerDynamicsModelParam &_param);
   void setupController(TwoDofControllerDynamicsModel::TwoDofControllerDynamicsModelParam &_param);
+  bool getControllerParam(TwoDofControllerDynamicsModel::TwoDofControllerDynamicsModelParam &_param);
   bool updateControllerParam(TwoDofControllerDynamicsModel::TwoDofControllerDynamicsModelParam &_param);
 
   // for normal/emergency torque contorller
@@ -53,7 +56,8 @@ public:
   bool disable(void); // disable torque controller (emergency controller is also ignored)
 
   // for normal torque controller
-  void setupMotorControllerMinMaxDq(double _min_dq, double _max_dq); // set min/max dq for transition
+  void setupMotorControllerControlMinMaxDq(double _min_dq, double _max_dq); // set min/max dq for control
+  void setupMotorControllerTransitionMinMaxDq(double _min_transition_dq, double _max_transition_dq); // set min/max dq for transition
   bool activate(void); // set state of torque controller to ACTIVE
   bool deactivate(void); // set state of torque controller to STOP -> INACTIVE
   bool setReferenceTorque(double _tauRef); // set reference torque (does not activate controller)
@@ -80,16 +84,22 @@ private:
     double dq; //difference of joint angle from base(qRef) from tdc. it is calcurated by dq = integrate(qd * dt), dq*dt is output of tdc 
     double transition_dq; // for transition. first value is last difference of joint angle from qRef (dq + transition_dq) when state was changed to STOP
     double recovery_dq; // difference of joint angle in 1 cycle to be recoverd
-    double min_dq; // min dq when transition
-    double max_dq; // max dq when transition
+    double min_dq; // min total dq when control
+    double max_dq; // max total dq when control
+    double min_transition_dq; // min dq when transition
+    double max_transition_dq; // max dq when transition
+
     // for TwoDofController
     void setupTwoDofController(TwoDofController::TwoDofControllerParam &_param);
+    bool getTwoDofControllerParam(TwoDofController::TwoDofControllerParam &_param);
     bool updateTwoDofControllerParam(TwoDofController::TwoDofControllerParam &_param);
     // for TwoDofControllerPDModel
     void setupTwoDofControllerPDModel(TwoDofControllerPDModel::TwoDofControllerPDModelParam &_param);
+    bool getTwoDofControllerPDModelParam(TwoDofControllerPDModel::TwoDofControllerPDModelParam &_param);
     bool updateTwoDofControllerPDModelParam(TwoDofControllerPDModel::TwoDofControllerPDModelParam &_param);
     // for TwoDofControllerDynamicsModel
     void setupTwoDofControllerDynamicsModel(TwoDofControllerDynamicsModel::TwoDofControllerDynamicsModelParam &_param);
+    bool getTwoDofControllerDynamiccsModelParam(TwoDofControllerDynamicsModel::TwoDofControllerDynamicsModelParam &_param);
     bool updateTwoDofControllerDynamiccsModelParam(TwoDofControllerDynamicsModel::TwoDofControllerDynamicsModelParam &_param);
     double getMotorControllerDq(void); // get according dq according to state
     void setErrorPrefix(const std::string& _error_prefix);

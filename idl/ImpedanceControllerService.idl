@@ -71,6 +71,15 @@ module OpenHRP
     };
 
     /**
+     * @enum DetectorTotalWrench
+     * @brief Flag for whether total force or total moment is checked.
+     */
+    enum DetectorTotalWrench {
+        TOTAL_FORCE,
+        TOTAL_MOMENT
+    };
+
+    /**
      * @struct objectTurnaroundDetectorParam
      * @brief ObjectTurnaroundDetectorParam parameters
      */
@@ -89,6 +98,10 @@ module OpenHRP
       double start_time_thre;
       /// Axis
       DblArray3 axis;
+      /// Moment center [m] from foot mid frame (middle frame of rleg and lleg)
+      DblArray3 moment_center;
+      /// Current flag for whether total force or total moment is checked.
+      DetectorTotalWrench detector_total_wrench;
     };
 
     /**
@@ -173,6 +186,6 @@ module OpenHRP
      * @param i_param output force and moment
      * @return true if set successfully, false otherwise
      */
-    boolean getObjectForcesMoments(out Dbl3Sequence o_forces, out Dbl3Sequence o_moments);
+    boolean getObjectForcesMoments(out Dbl3Sequence o_forces, out Dbl3Sequence o_moments, out DblSequence3 o_3dofwrench);
   };
 };

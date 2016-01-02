@@ -244,7 +244,7 @@ class Stabilizer
     hrp::Matrix33 localR; // Rotation of ee in end link frame (^{l}R_e = R_l^T R_e)
     // For eefm
     hrp::Vector3 d_foot_pos, d_foot_rpy, ee_d_foot_rpy;
-    hrp::Vector3 eefm_pos_damping_gain, eefm_pos_time_const_support, eefm_rot_damping_gain, eefm_rot_time_const;
+    hrp::Vector3 eefm_pos_damping_gain, eefm_pos_time_const_support, eefm_rot_damping_gain, eefm_rot_time_const, eefm_swing_rot_spring_gain, eefm_swing_pos_spring_gain;
     double eefm_pos_compensation_limit, eefm_rot_compensation_limit;
     hrp::Vector3 ref_force, ref_moment;
     double swing_support_gain, support_time;
@@ -265,8 +265,8 @@ class Stabilizer
   bool is_walking, is_estop_while_walking;
   hrp::Vector3 current_root_p, target_root_p;
   hrp::Matrix33 current_root_R, target_root_R, prev_act_foot_origin_rot, prev_ref_foot_origin_rot, target_foot_origin_rot;
-  std::vector <hrp::Vector3> target_ee_p, target_ee_diff_p, target_ee_diff_r, prev_target_ee_diff_r, rel_ee_pos;
-  std::vector <hrp::Matrix33> target_ee_R, rel_ee_rot;
+  std::vector <hrp::Vector3> target_ee_p, target_ee_diff_p, target_ee_diff_r, prev_target_ee_diff_r, rel_ee_pos, d_pos_swing, d_rpy_swing;
+  std::vector <hrp::Matrix33> target_ee_R, rel_ee_rot, act_ee_R;
   std::vector<std::string> rel_ee_name;
   rats::coordinates target_foot_midcoords;
   hrp::Vector3 ref_zmp, ref_cog, ref_cp, ref_cogvel, rel_ref_cp, prev_ref_cog, prev_ref_zmp;

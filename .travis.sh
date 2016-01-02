@@ -386,7 +386,13 @@ case $TEST_PACKAGE in
                 rostest $test_file && travis_time_end || export TMP_EXIT_STATUS=$?
                 if [ "$TMP_EXIT_STATUS" != 0 ]; then
                     export EXIT_STATUS=$TMP_EXIT_STATUS
+                    # Print results of rostest-*.xml files
                     find ~/.ros/test_results -type f -iname "*`basename $test_file .test`.xml" -print -exec echo "=== {} ===" \; -exec cat {} \;
+                    # Print results of each rosunit-*.xml file
+                    #   Get rosunit*.xml file path from rostest-*.xml file by usig awk and cut.
+                    #   Files are assumed to include "xxx results are in [/home/xxx/rosunit-yy.xml]"
+                    rosunit_xml_result_files=$(find ~/.ros/test_results -type f -iname "*`basename $test_file .test`.xml" -print -exec echo "=== {} ===" \; -exec cat {} \; | grep "results are in" | awk -F'results are in ' '{print $2}' | cut -d\[ -f2 | cut -d\] -f1)
+                    if [ "${rosunit_xml_result_files}" != "" ]; then cat ${rosunit_xml_result_files}; fi
                     travis_time_end 31
                 fi
             done

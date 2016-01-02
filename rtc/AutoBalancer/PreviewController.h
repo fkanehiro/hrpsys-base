@@ -159,6 +159,12 @@ namespace rats
         qdata.pop_back();
       }
     };
+    void remove_preview_queue() // Remove all queue
+    {
+        p.clear();
+        pz.clear();
+        qdata.clear();
+    };
     void print_all_queue ()
     {
       std::cerr << "(list ";
@@ -252,6 +258,10 @@ namespace rats
     void remove_preview_queue(const size_t remain_length)
     {
       preview_controller.remove_preview_queue(remain_length);
+    };
+    void remove_preview_queue()
+    {
+      preview_controller.remove_preview_queue();
     };
     void print_all_queue ()
     {

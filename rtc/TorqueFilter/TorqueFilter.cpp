@@ -66,7 +66,7 @@ TorqueFilter::~TorqueFilter()
 
 RTC::ReturnCode_t TorqueFilter::onInitialize()
 {
-  std::cout << m_profile.instance_name << ": onInitialize()" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "] onInitialize()" << std::endl;
   // <rtc-template block="bind_config">
   // Bind variables and configuration variable
   bindParameter("debugLevel", m_debugLevel, "0");
@@ -106,7 +106,7 @@ RTC::ReturnCode_t TorqueFilter::onInitialize()
   if (!loadBodyFromModelLoader(m_robot, prop["model"].c_str(),
                                CosNaming::NamingContext::_duplicate(naming.getRootContext())
         )){
-    std::cerr << "failed to load model[" << prop["model"] << "] in "
+    std::cerr << "[" << m_profile.instance_name << "] failed to load model[" << prop["model"] << "] in "
               << m_profile.instance_name << std::endl;
     return RTC::RTC_ERROR;
   }
@@ -117,7 +117,7 @@ RTC::ReturnCode_t TorqueFilter::onInitialize()
   // set gravity compensation flag
   coil::stringTo(m_is_gravity_compensation, prop["gravity_compensation"].c_str());
   if (m_debugLevel > 0) {
-    std::cerr <<  m_profile.instance_name << " : gravity compensation flag: " << m_is_gravity_compensation << std::endl;
+    std::cerr << "[" << m_profile.instance_name << "] : gravity compensation flag: " << m_is_gravity_compensation << std::endl;
   }
   
   // set torque offset
@@ -230,13 +230,13 @@ RTC::ReturnCode_t TorqueFilter::onInitialize()
 
 RTC::ReturnCode_t TorqueFilter::onActivated(RTC::UniqueId ec_id)
 {
-  std::cout << m_profile.instance_name<< ": onActivated(" << ec_id << ")" << std::endl;
+  std::cerr << "[" << m_profile.instance_name<< "] onActivated(" << ec_id << ")" << std::endl;
   return RTC::RTC_OK;
 }
 
 RTC::ReturnCode_t TorqueFilter::onDeactivated(RTC::UniqueId ec_id)
 {
-  std::cout << m_profile.instance_name<< ": onDeactivated(" << ec_id << ")" << std::endl;
+  std::cerr << "[" << m_profile.instance_name<< "] onDeactivated(" << ec_id << ")" << std::endl;
   return RTC::RTC_OK;
 }
 

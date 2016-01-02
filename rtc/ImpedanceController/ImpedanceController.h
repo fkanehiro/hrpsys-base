@@ -101,7 +101,7 @@ class ImpedanceController
   OpenHRP::ImpedanceControllerService::DetectorMode checkObjectTurnaroundDetection();
   bool setObjectTurnaroundDetectorParam(const OpenHRP::ImpedanceControllerService::objectTurnaroundDetectorParam &i_param_);
   bool getObjectTurnaroundDetectorParam(OpenHRP::ImpedanceControllerService::objectTurnaroundDetectorParam& i_param_);
-  bool getObjectForcesMoments(OpenHRP::ImpedanceControllerService::Dbl3Sequence_out o_forces, OpenHRP::ImpedanceControllerService::Dbl3Sequence_out o_moments);
+  bool getObjectForcesMoments(OpenHRP::ImpedanceControllerService::Dbl3Sequence_out o_forces, OpenHRP::ImpedanceControllerService::Dbl3Sequence_out o_moments, OpenHRP::ImpedanceControllerService::DblSequence3_out o_3dofwrench);
 
  protected:
   // Configuration variable declaration
@@ -177,7 +177,9 @@ class ImpedanceController
 
   void copyImpedanceParam (OpenHRP::ImpedanceControllerService::impedanceParam& i_param_, const ImpedanceParam& param);
   void updateRootLinkPosRot (TimedOrientation3D tmprpy);
+  void calcFootMidCoords (hrp::Vector3& new_foot_mid_pos, hrp::Matrix33& new_foot_mid_rot);
   void calcForceMoment();
+  void calcObjectTurnaroundDetectorState();
 
   std::map<std::string, ImpedanceParam> m_impedance_param;
   std::map<std::string, ee_trans> ee_map;
