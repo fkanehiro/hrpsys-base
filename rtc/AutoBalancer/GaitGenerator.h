@@ -802,14 +802,14 @@ namespace rats
              it_src++, it_dst++) {
             coordinates tmp;
             mid_coords(tmp, foot_midcoords_ratio, it_src->worldcoords, it_dst->worldcoords);
-            swg_coords.push_back(tmp);
+            if (it_src->l_r == RLEG or it_src->l_r == LLEG) swg_coords.push_back(tmp);
         }
         for (std::vector<step_node>::const_iterator it = support_leg_steps.begin(); it != support_leg_steps.end(); it++) {
-            sup_coords.push_back(it->worldcoords);
+            if (it->l_r == RLEG or it->l_r == LLEG) sup_coords.push_back(it->worldcoords);
         }
         coordinates tmp_swg_mid, tmp_sup_mid;
-        multi_mid_coords(tmp_swg_mid, swg_coords);
-        multi_mid_coords(tmp_sup_mid, sup_coords);
+        if (swg_coords.size() > 0) multi_mid_coords(tmp_swg_mid, swg_coords);
+        if (sup_coords.size() > 0) multi_mid_coords(tmp_sup_mid, sup_coords);
         mid_coords(ret, static_cast<double>(sup_coords.size()) / (swg_coords.size() + sup_coords.size()), tmp_swg_mid, tmp_sup_mid);
       };
       std::vector<leg_type> get_current_support_states () const
@@ -905,7 +905,7 @@ namespace rats
     };
     void overwrite_refzmp_queue(const std::vector< std::vector<step_node> >& fnsl);
     void calc_ref_coords_trans_vector_velocity_mode (coordinates& ref_coords, hrp::Vector3& trans, double& dth, const std::vector<step_node>& sup_fns) const;
-    void calc_next_coords_velocity_mode (std::vector< std::vector<coordinates> >& ret_list, const size_t idx, const size_t future_step_num = 3);
+    void calc_next_coords_velocity_mode (std::vector< std::vector<step_node> >& ret_list, const size_t idx, const size_t future_step_num = 3);
     void append_footstep_list_velocity_mode ();
     void append_footstep_list_velocity_mode (std::vector< std::vector<step_node> >& _footstep_nodes_list) const;
 
@@ -971,7 +971,8 @@ namespace rats
                                                const std::string& tmp_swing_leg,
                                                const coordinates& _support_leg_coords);
     void initialize_velocity_mode (const coordinates& _ref_coords,
-				   const double vel_x, const double vel_y, const double vel_theta); /* [mm/s] [mm/s] [deg/s] */
+				   const double vel_x, const double vel_y, const double vel_theta, /* [mm/s] [mm/s] [deg/s] */
+                                   const std::vector<leg_type>& current_legs);
     void finalize_velocity_mode ();
     void append_finalize_footstep ()
     {

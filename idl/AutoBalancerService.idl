@@ -100,6 +100,18 @@ module OpenHRP
     };
 
     /**
+     * @enum GaitType
+     * @brief Gait type
+     */
+    enum GaitType {
+      BIPED,
+      TROT,
+      PACE,
+      CRAWL,
+      GALLOP
+    };
+
+    /**
      * @enum ControllerMode
      * @brief Mode of controller
      */
@@ -247,6 +259,8 @@ module OpenHRP
       /// Flag for fix hand while walking.
       boolean is_hand_fix_mode;
       sequence<Footstep> end_effector_list;
+      /// Default GaitType
+      GaitType default_gait_type;
     };
 
     /**

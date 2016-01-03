@@ -150,14 +150,6 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     // GaitGenerator requires abc_leg_offset and abc_stride_parameter in robot conf file
     // setting leg_pos from conf file
     coil::vstring leg_offset_str = coil::split(prop["abc_leg_offset"], ",");
-    std::vector<hrp::Vector3> leg_pos;
-    if (leg_offset_str.size() > 0) {
-      hrp::Vector3 leg_offset;
-      for (size_t i = 0; i < 3; i++) coil::stringTo(leg_offset(i), leg_offset_str[i].c_str());
-      std::cerr << "[" << m_profile.instance_name << "] abc_leg_offset = " << leg_offset.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[m]" << std::endl;
-      leg_pos.push_back(hrp::Vector3(-1*leg_offset));
-      leg_pos.push_back(hrp::Vector3(leg_offset));
-    }
     leg_names.push_back("rleg");
     leg_names.push_back("lleg");
 
@@ -214,6 +206,20 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
       }
       m_controlSwingSupportTime.data.length(num);
       for (size_t i = 0; i < num; i++) m_controlSwingSupportTime.data[i] = 0.0;
+    }
+    std::vector<hrp::Vector3> leg_pos;
+    if (leg_offset_str.size() > 0) {
+      hrp::Vector3 leg_offset;
+      for (size_t i = 0; i < 3; i++) coil::stringTo(leg_offset(i), leg_offset_str[i].c_str());
+      std::cerr << "[" << m_profile.instance_name << "] abc_leg_offset = " << leg_offset.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[m]" << std::endl;
+      leg_pos.push_back(hrp::Vector3(-1*leg_offset));
+      leg_pos.push_back(hrp::Vector3(leg_offset));
+    }
+    if (leg_pos.size() < ikp.size()) {
+        size_t tmp_leg_pos_size = leg_pos.size();
+        for (size_t i = 0; i < ikp.size() - tmp_leg_pos_size; i++) {
+            leg_pos.push_back(hrp::Vector3::Zero());
+        }
     }
 
     std::vector<std::pair<hrp::Link*, hrp::Link*> > interlocking_joints;
@@ -895,8 +901,8 @@ void AutoBalancer::fixLegToCoords (const hrp::Vector3& fix_pos, const hrp::Matri
   std::vector<coordinates> foot_coords;
   for (size_t i = 0; i < leg_names.size(); i++) {
       ABCIKparam& tmpikp = ikp[leg_names[i]];
-      foot_coords.push_back(coordinates((tmpikp.target_link->p + tmpikp.target_link->R * tmpikp.localPos),
-                                        (tmpikp.target_link->R * tmpikp.localR)));
+      if (leg_names[i].find("leg") != std::string::npos) foot_coords.push_back(coordinates((tmpikp.target_link->p + tmpikp.target_link->R * tmpikp.localPos),
+                                                                                           (tmpikp.target_link->R * tmpikp.localR)));
   }
   coordinates current_foot_mid_coords;
   multi_mid_coords(current_foot_mid_coords, foot_coords);
@@ -1097,7 +1103,7 @@ void AutoBalancer::stopWalking ()
 {
   std::vector<coordinates> tmp_end_coords_list;
   for (std::vector<string>::iterator it = leg_names.begin(); it != leg_names.end(); it++) {
-      tmp_end_coords_list.push_back(ikp[*it].target_end_coords);
+      if ((*it).find("leg") != std::string::npos) tmp_end_coords_list.push_back(ikp[*it].target_end_coords);
   }
   multi_mid_coords(fix_leg_coords, tmp_end_coords_list);
   fixLegToCoords(fix_leg_coords.pos, fix_leg_coords.rot);
@@ -1144,13 +1150,42 @@ bool AutoBalancer::goPos(const double& x, const double& y, const double& th)
   if ( !is_stop_mode) {
     gg->set_all_limbs(leg_names);
     coordinates start_ref_coords;
+    std::vector<coordinates> initial_support_legs_coords;
+    std::vector<leg_type> initial_support_legs;
+    switch(gait_type) {
+    case BIPED:
+        initial_support_legs_coords = (y > 0 ?
+                                       boost::assign::list_of(ikp["rleg"].target_end_coords)
+                                       : boost::assign::list_of(ikp["lleg"].target_end_coords));
+        initial_support_legs = (y > 0 ? boost::assign::list_of(RLEG) : boost::assign::list_of(LLEG));
+        break;
+    case TROT:
+        initial_support_legs_coords = (y > 0 ?
+                                       boost::assign::list_of(ikp["rleg"].target_end_coords)(ikp["larm"].target_end_coords)
+                                       : boost::assign::list_of(ikp["lleg"].target_end_coords)(ikp["rarm"].target_end_coords));
+        initial_support_legs = (y > 0 ? boost::assign::list_of(RLEG)(LARM) : boost::assign::list_of(LLEG)(RARM));
+        break;
+    case PACE:
+        initial_support_legs_coords = (y > 0 ?
+                                       boost::assign::list_of(ikp["rleg"].target_end_coords)(ikp["rarm"].target_end_coords)
+                                       : boost::assign::list_of(ikp["lleg"].target_end_coords)(ikp["larm"].target_end_coords));
+        initial_support_legs = (y > 0 ? boost::assign::list_of(RLEG)(RARM) : boost::assign::list_of(LLEG)(LARM));
+        break;
+    case CRAWL:
+        std::cerr << "[" << m_profile.instance_name << "] crawl walk[" << gait_type << "] is not implemented yet." << std::endl;
+        return false;
+    case GALLOP:
+        /* at least one leg shoud be in contact */
+        std::cerr << "[" << m_profile.instance_name << "] gallop walk[" << gait_type << "] is not implemented yet." << std::endl;
+        return false;
+    default: break;
+    }
     mid_coords(start_ref_coords, 0.5, ikp["rleg"].target_end_coords, ikp["lleg"].target_end_coords);
     bool ret = gg->go_pos_param_2_footstep_nodes_list(x, y, th,
-                                                      (y > 0 ? boost::assign::list_of(ikp["rleg"].target_end_coords) : boost::assign::list_of(ikp["lleg"].target_end_coords)), // Dummy if gg_is_walking
-                                                      start_ref_coords, // Dummy if gg_is_walking
-                                                      (y > 0 ? boost::assign::list_of(RLEG) : boost::assign::list_of(LLEG)), // Dummy if gg_is_walking
+                                                      initial_support_legs_coords, // Dummy if gg_is_walking
+                                                      start_ref_coords,            // Dummy if gg_is_walking
+                                                      initial_support_legs,        // Dummy if gg_is_walking
                                                       (!gg_is_walking)); // If gg_is_walking, initialize. Otherwise, not initialize and overwrite footsteps.
-
     if ( !gg_is_walking ) { // Initializing
         startWalking();
     }
@@ -1166,12 +1201,33 @@ bool AutoBalancer::goPos(const double& x, const double& y, const double& th)
 
 bool AutoBalancer::goVelocity(const double& vx, const double& vy, const double& vth)
 {
+  gg->set_all_limbs(leg_names);
   if (gg_is_walking && gg_solved) {
     gg->set_velocity_param(vx, vy, vth);
   } else {
     coordinates ref_coords;
     mid_coords(ref_coords, 0.5, ikp["rleg"].target_end_coords, ikp["lleg"].target_end_coords);
-    gg->initialize_velocity_mode(ref_coords, vx, vy, vth);
+    std::vector<leg_type> current_legs;
+    switch(gait_type) {
+    case BIPED:
+        current_legs = (vy > 0 ? boost::assign::list_of(RLEG) : boost::assign::list_of(LLEG));
+        break;
+    case TROT:
+        current_legs = (vy > 0 ? boost::assign::list_of(RLEG)(LARM) : boost::assign::list_of(LLEG)(RARM));
+        break;
+    case PACE:
+        current_legs = (vy > 0 ? boost::assign::list_of(RLEG)(RARM) : boost::assign::list_of(LLEG)(LARM));
+        break;
+    case CRAWL:
+        std::cerr << "[" << m_profile.instance_name << "] crawl walk[" << gait_type << "] is not implemented yet." << std::endl;
+        return false;
+    case GALLOP:
+        /* at least one leg shoud be in contact */
+        std::cerr << "[" << m_profile.instance_name << "] gallop walk[" << gait_type << "] is not implemented yet." << std::endl;
+        return false;
+    default: break;
+    }
+    gg->initialize_velocity_mode(ref_coords, vx, vy, vth, current_legs);
     startWalking();
   }
   return true;
@@ -1544,6 +1600,17 @@ bool AutoBalancer::setAutoBalancerParam(const OpenHRP::AutoBalancerService::Auto
   } else {
       std::cerr << "[" << m_profile.instance_name << "] cannot change end-effectors except during MODE_IDLE" << std::endl;
   }
+  if (i_param.default_gait_type == OpenHRP::AutoBalancerService::BIPED) {
+      gait_type = BIPED;
+  } else if (i_param.default_gait_type == OpenHRP::AutoBalancerService::TROT) {
+      gait_type = TROT;
+  } else if (i_param.default_gait_type == OpenHRP::AutoBalancerService::PACE) {
+      gait_type = PACE;
+  } else if (i_param.default_gait_type == OpenHRP::AutoBalancerService::CRAWL) {
+      gait_type = CRAWL;
+  } else if (i_param.default_gait_type == OpenHRP::AutoBalancerService::GALLOP) {
+      gait_type = GALLOP;
+  }
   for (std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++) {
       std::cerr << "[" << m_profile.instance_name << "] End Effector [" << it->first << "]" << std::endl;
       std::cerr << "[" << m_profile.instance_name << "]   localpos = " << it->second.localPos.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[m]" << std::endl;
@@ -1566,6 +1633,7 @@ bool AutoBalancer::setAutoBalancerParam(const OpenHRP::AutoBalancerService::Auto
   std::cerr << "[" << m_profile.instance_name << "]   transition_time = " << transition_time << "[s], zmp_transition_time = " << zmp_transition_time << "[s], adjust_footstep_transition_time = " << adjust_footstep_transition_time << "[s]" << std::endl;
   for (std::vector<std::string>::iterator it = leg_names.begin(); it != leg_names.end(); it++) std::cerr << "[" << m_profile.instance_name << "]   leg_names [" << *it << "]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   pos_ik_thre = " << pos_ik_thre << "[m], rot_ik_thre = " << rot_ik_thre << "[rad]" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   default_gait_type = " << gait_type << std::endl;
   return true;
 };
 
@@ -1619,6 +1687,14 @@ bool AutoBalancer::getAutoBalancerParam(OpenHRP::AutoBalancerService::AutoBalanc
           i_param.end_effector_list[i].leg = it->first.c_str();
           i++;
       }
+  }
+  switch(gait_type) {
+  case BIPED:  i_param.default_gait_type = OpenHRP::AutoBalancerService::BIPED;  break;
+  case TROT:   i_param.default_gait_type = OpenHRP::AutoBalancerService::TROT;   break;
+  case PACE:   i_param.default_gait_type = OpenHRP::AutoBalancerService::PACE;   break;
+  case CRAWL:  i_param.default_gait_type = OpenHRP::AutoBalancerService::CRAWL;  break;
+  case GALLOP: i_param.default_gait_type = OpenHRP::AutoBalancerService::GALLOP; break;
+  default: break;
   }
   return true;
 };
