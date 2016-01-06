@@ -108,6 +108,8 @@ module OpenHRP
       sequence<sequence<double, 3> > eefm_swing_rot_spring_gain;
       /// Sequence of all swing leg end-effector position spring gain (x,y,z).
       sequence<sequence<double, 3> > eefm_swing_pos_spring_gain;
+      /// Sequence of all end-effector end-effector-frame moment limit [Nm]
+      sequence<sequence<double, 3> > eefm_ee_moment_limit;
       /// Sequence of all end-effector position compensation limit [m]
       sequence<double> eefm_pos_compensation_limit;
       /// Sequence of all end-effector rot compensation limit [rad]
