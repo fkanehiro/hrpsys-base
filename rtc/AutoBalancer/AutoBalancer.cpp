@@ -63,6 +63,7 @@ AutoBalancer::AutoBalancer(RTC::Manager* manager)
       m_walkingStatesOut("walkingStates", m_walkingStates),
       m_sbpCogOffsetOut("sbpCogOffset", m_sbpCogOffset),
       // </rtc-template>
+      gait_type(BIPED),
       move_base_gain(0.8),
       m_robot(hrp::BodyPtr()),
       m_debugLevel(0)
