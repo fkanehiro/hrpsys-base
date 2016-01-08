@@ -904,10 +904,10 @@ namespace rats
       _footstep_nodes_list.push_back(sns);
     };
     void overwrite_refzmp_queue(const std::vector< std::vector<step_node> >& fnsl);
-    void calc_ref_coords_trans_vector_velocity_mode (coordinates& ref_coords, hrp::Vector3& trans, double& dth, const std::vector<step_node>& sup_fns) const;
+    void calc_ref_coords_trans_vector_velocity_mode (coordinates& ref_coords, hrp::Vector3& trans, double& dth, const std::vector<step_node>& sup_fns, const velocity_mode_parameter& cur_vel_param) const;
     void calc_next_coords_velocity_mode (std::vector< std::vector<step_node> >& ret_list, const size_t idx, const size_t future_step_num = 3);
     void append_footstep_list_velocity_mode ();
-    void append_footstep_list_velocity_mode (std::vector< std::vector<step_node> >& _footstep_nodes_list) const;
+    void append_footstep_list_velocity_mode (std::vector< std::vector<step_node> >& _footstep_nodes_list, const velocity_mode_parameter& cur_vel_param) const;
 
 #ifndef HAVE_MAIN
     /* inhibit copy constructor and copy insertion not by implementing */

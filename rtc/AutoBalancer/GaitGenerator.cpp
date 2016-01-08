@@ -672,8 +672,9 @@ namespace rats
     dp = start_ref_coords.rot.transpose() * dp;
     dr = start_ref_coords.rot.transpose() * dr;
     while ( !(eps_eq(std::sqrt(dp(0)*dp(0)+dp(1)*dp(1)), 0.0, 1e-3*0.1) && eps_eq(dr(2), 0.0, deg2rad(0.5))) ) {
-      set_velocity_param(dp(0)/default_step_time, dp(1)/default_step_time, rad2deg(dr(2))/default_step_time);
-      append_footstep_list_velocity_mode(new_footstep_nodes_list);
+      velocity_mode_parameter cur_vel_param;
+      cur_vel_param.set(dp(0)/default_step_time, dp(1)/default_step_time, rad2deg(dr(2))/default_step_time);
+      append_footstep_list_velocity_mode(new_footstep_nodes_list, cur_vel_param);
       start_ref_coords = new_footstep_nodes_list.back().front().worldcoords;
       start_ref_coords.pos += start_ref_coords.rot * hrp::Vector3(footstep_param.leg_default_translate_pos[new_footstep_nodes_list.back().front().l_r] * -1.0);
       start_ref_coords.difference(dp, dr, goal_ref_coords);
@@ -744,25 +745,25 @@ namespace rats
     if (velocity_mode_flg == VEL_DOING) velocity_mode_flg = VEL_ENDING;
   };
 
-  void gait_generator::calc_ref_coords_trans_vector_velocity_mode (coordinates& ref_coords, hrp::Vector3& trans, double& dth, const std::vector<step_node>& sup_fns) const
+  void gait_generator::calc_ref_coords_trans_vector_velocity_mode (coordinates& ref_coords, hrp::Vector3& trans, double& dth, const std::vector<step_node>& sup_fns, const velocity_mode_parameter& cur_vel_param) const
   {
     ref_coords = sup_fns.front().worldcoords;
     hrp::Vector3 tmpv(footstep_param.leg_default_translate_pos[sup_fns.front().l_r] * -1.0); /* not fair to every support legs */
     ref_coords.pos += ref_coords.rot * tmpv;
-    double dx = vel_param.velocity_x + offset_vel_param.velocity_x, dy = vel_param.velocity_y + offset_vel_param.velocity_y;
-    dth = vel_param.velocity_theta + offset_vel_param.velocity_theta;
+    double dx = cur_vel_param.velocity_x + offset_vel_param.velocity_x, dy = cur_vel_param.velocity_y + offset_vel_param.velocity_y;
+    dth = cur_vel_param.velocity_theta + offset_vel_param.velocity_theta;
     /* velocity limitation by stride parameters <- this should be based on footstep candidates */
     dx  = std::max(-1 * footstep_param.stride_bwd_x / default_step_time, std::min(footstep_param.stride_fwd_x / default_step_time, dx ));
     dy  = std::max(-1 * footstep_param.stride_y     / default_step_time, std::min(footstep_param.stride_y     / default_step_time, dy ));
     dth = std::max(-1 * footstep_param.stride_theta / default_step_time, std::min(footstep_param.stride_theta / default_step_time, dth));
     /* inside step limitation */
     if (use_inside_step_limitation) {
-        if (vel_param.velocity_y > 0) {
+        if (cur_vel_param.velocity_y > 0) {
             if (std::count_if(sup_fns.begin(), sup_fns.end(), (&boost::lambda::_1->* &step_node::l_r == LLEG || &boost::lambda::_1->* &step_node::l_r == LARM)) > 0) dy *= 0.5;
         } else {
             if (std::count_if(sup_fns.begin(), sup_fns.end(), (&boost::lambda::_1->* &step_node::l_r == RLEG || &boost::lambda::_1->* &step_node::l_r == RARM)) > 0) dy *= 0.5;
         }
-        if (vel_param.velocity_theta > 0) {
+        if (cur_vel_param.velocity_theta > 0) {
             if (std::count_if(sup_fns.begin(), sup_fns.end(), (&boost::lambda::_1->* &step_node::l_r == LLEG || &boost::lambda::_1->* &step_node::l_r == LARM)) > 0) dth *= 0.5;
         } else {
             if (std::count_if(sup_fns.begin(), sup_fns.end(), (&boost::lambda::_1->* &step_node::l_r == RLEG || &boost::lambda::_1->* &step_node::l_r == RARM)) > 0) dth *= 0.5;
@@ -774,15 +775,15 @@ namespace rats
 
   void gait_generator::append_footstep_list_velocity_mode ()
   {
-      append_footstep_list_velocity_mode(footstep_nodes_list);
+      append_footstep_list_velocity_mode(footstep_nodes_list, vel_param);
   };
 
-  void gait_generator::append_footstep_list_velocity_mode (std::vector< std::vector<step_node> >& _footstep_nodes_list) const
+  void gait_generator::append_footstep_list_velocity_mode (std::vector< std::vector<step_node> >& _footstep_nodes_list, const velocity_mode_parameter& cur_vel_param) const
   {
     coordinates ref_coords;
     hrp::Vector3 trans;
     double dth;
-    calc_ref_coords_trans_vector_velocity_mode(ref_coords, trans, dth, _footstep_nodes_list.back());
+    calc_ref_coords_trans_vector_velocity_mode(ref_coords, trans, dth, _footstep_nodes_list.back(), cur_vel_param);
 
     ref_coords.pos += ref_coords.rot * trans;
     ref_coords.rotate(dth, hrp::Vector3(0,0,1));
@@ -794,7 +795,7 @@ namespace rats
     coordinates ref_coords;
     hrp::Vector3 trans;
     double dth;
-    calc_ref_coords_trans_vector_velocity_mode(ref_coords, trans, dth, footstep_nodes_list[idx-1]);
+    calc_ref_coords_trans_vector_velocity_mode(ref_coords, trans, dth, footstep_nodes_list[idx-1], vel_param);
 
     std::vector<leg_type> cur_sup_legs, next_sup_legs;
     for (size_t i = 0; i < footstep_nodes_list[idx-1].size(); i++) cur_sup_legs.push_back(footstep_nodes_list[idx-1].at(i).l_r);
