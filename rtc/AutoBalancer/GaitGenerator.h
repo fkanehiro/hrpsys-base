@@ -972,15 +972,18 @@ namespace rats
                                                    initial_support_legs_coords, start_ref_coords,
                                                    initial_support_legs,
                                                    new_footstep_nodes_list,
-                                                   is_initialize,
-                                                   true);
+                                                   is_initialize);
     };
     bool go_pos_param_2_footstep_nodes_list (const double goal_x, const double goal_y, const double goal_theta, /* [mm] [mm] [deg] */
                                              const std::vector<coordinates>& initial_support_legs_coords, coordinates start_ref_coords,
                                              const std::vector<leg_type>& initial_support_legs,
                                              std::vector< std::vector<step_node> >& new_footstep_nodes_list,
-                                             const bool is_initialize = true,
-                                             const bool is_start_walk = true);
+                                             const bool is_initialize = true);
+    void go_pos_param_2_footstep_nodes_list_core (const double goal_x, const double goal_y, const double goal_theta, /* [mm] [mm] [deg] */
+                                                  const std::vector<coordinates>& initial_support_legs_coords, coordinates start_ref_coords,
+                                                  const std::vector<leg_type>& initial_support_legs,
+                                                  std::vector< std::vector<step_node> >& new_footstep_nodes_list,
+                                                  const bool is_initialize, const size_t overwritable_fs_index) const;
     void go_single_step_param_2_footstep_nodes_list (const double goal_x, const double goal_y, const double goal_z, const double goal_theta, /* [mm] [mm] [mm] [deg] */
                                                const std::string& tmp_swing_leg,
                                                const coordinates& _support_leg_coords);

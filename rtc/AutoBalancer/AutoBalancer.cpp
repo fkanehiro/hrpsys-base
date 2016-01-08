@@ -1805,13 +1805,10 @@ bool AutoBalancer::getGoPosFootstepsSequence(const double& x, const double& y, c
         std::vector<leg_type> initial_support_legs;
         bool is_valid_gait_type = calc_inital_support_legs(y, initial_support_legs_coords, initial_support_legs, start_ref_coords);
         if (is_valid_gait_type == false) return false;
-        bool ret = gg->go_pos_param_2_footstep_nodes_list(x, y, th,
-                                                          initial_support_legs_coords, // Dummy if gg_is_walking
-                                                          start_ref_coords,            // Dummy if gg_is_walking
-                                                          initial_support_legs,        // Dummy if gg_is_walking
-                                                          new_footstep_nodes_list,
-                                                          (!gg_is_walking), // If gg_is_walking, initialize. Otherwise, not initialize and overwrite footsteps.
-                                                          false);
+        /* go_pos_param_2_footstep_nodes_list_core is const member function  */
+        gg->go_pos_param_2_footstep_nodes_list_core (x, y, th,
+                                                     initial_support_legs_coords, start_ref_coords, initial_support_legs,
+                                                     new_footstep_nodes_list, true, 0);
         o_footstep->length(new_footstep_nodes_list.size());
         for (size_t i = 0; i < new_footstep_nodes_list.size(); i++) {
             o_footstep[i].fs.length(new_footstep_nodes_list.at(i).size());

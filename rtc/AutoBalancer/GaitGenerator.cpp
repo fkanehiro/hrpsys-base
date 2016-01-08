@@ -617,8 +617,7 @@ namespace rats
                                                            const std::vector<coordinates>& initial_support_legs_coords, coordinates start_ref_coords,
                                                            const std::vector<leg_type>& initial_support_legs,
                                                            std::vector< std::vector<step_node> >& new_footstep_nodes_list,
-                                                           const bool is_initialize,
-                                                           const bool is_start_walk)
+                                                           const bool is_initialize)
   {
     // Get overwrite footstep index
     size_t overwritable_fs_index = 0;
@@ -631,6 +630,27 @@ namespace rats
     }
     // Check overwritable_fs_index
     if (overwritable_fs_index > footstep_nodes_list.size()-1) return false;
+    go_pos_param_2_footstep_nodes_list_core (goal_x, goal_y, goal_theta,
+                                             initial_support_legs_coords, start_ref_coords, initial_support_legs,
+                                             new_footstep_nodes_list, is_initialize, overwritable_fs_index);
+    //   For Last double support period
+    if (is_initialize) {
+        clear_footstep_nodes_list();
+        footstep_nodes_list = new_footstep_nodes_list;
+    } else {
+        set_overwrite_foot_steps_list(new_footstep_nodes_list);
+        set_overwrite_foot_step_index(overwritable_fs_index);
+    }
+    print_footstep_nodes_list();
+    return true;
+  };
+
+  void gait_generator::go_pos_param_2_footstep_nodes_list_core (const double goal_x, const double goal_y, const double goal_theta, /* [mm] [mm] [deg] */
+                                                                const std::vector<coordinates>& initial_support_legs_coords, coordinates start_ref_coords,
+                                                                const std::vector<leg_type>& initial_support_legs,
+                                                                std::vector< std::vector<step_node> >& new_footstep_nodes_list,
+                                                                const bool is_initialize, const size_t overwritable_fs_index) const
+  {
     // Calc goal ref
     coordinates goal_ref_coords;
     if (is_initialize) {
@@ -699,16 +719,8 @@ namespace rats
     //   For Last double support period
     if (is_initialize) {
         append_finalize_footstep(new_footstep_nodes_list);
-        if (is_start_walk) {
-            clear_footstep_nodes_list();
-            footstep_nodes_list = new_footstep_nodes_list;
-        }
-    } else {
-        set_overwrite_foot_steps_list(new_footstep_nodes_list);
-        set_overwrite_foot_step_index(overwritable_fs_index);
     }
-    print_footstep_nodes_list();
-    return true;
+    return;
   };
 
   void gait_generator::go_single_step_param_2_footstep_nodes_list (const double goal_x, const double goal_y, const double goal_z, const double goal_theta,
