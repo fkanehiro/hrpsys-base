@@ -1790,6 +1790,44 @@ bool AutoBalancer::getRemainingFootstepSequence(OpenHRP::AutoBalancerService::Fo
     }
 };
 
+bool AutoBalancer::getGoPosFootstepsSequence(const double& x, const double& y, const double& th, OpenHRP::AutoBalancerService::FootstepsSequence_out o_footstep)
+{
+    std::cerr << "[" << m_profile.instance_name << "] getGoPosFootstepsSequence" << std::endl;
+    o_footstep = new OpenHRP::AutoBalancerService::FootstepsSequence;
+    if (gg_is_walking) {
+        std::cerr << "[" << m_profile.instance_name << "] Cannot call getGoPosFootstepsSequence in walking" << std::endl;
+        return false;
+    } else {
+        gg->set_all_limbs(leg_names);
+        std::vector< std::vector<step_node> > new_footstep_nodes_list;
+        coordinates start_ref_coords;
+        std::vector<coordinates> initial_support_legs_coords;
+        std::vector<leg_type> initial_support_legs;
+        bool is_valid_gait_type = calc_inital_support_legs(y, initial_support_legs_coords, initial_support_legs, start_ref_coords);
+        if (is_valid_gait_type == false) return false;
+        bool ret = gg->go_pos_param_2_footstep_nodes_list(x, y, th,
+                                                          initial_support_legs_coords, // Dummy if gg_is_walking
+                                                          start_ref_coords,            // Dummy if gg_is_walking
+                                                          initial_support_legs,        // Dummy if gg_is_walking
+                                                          new_footstep_nodes_list,
+                                                          (!gg_is_walking), // If gg_is_walking, initialize. Otherwise, not initialize and overwrite footsteps.
+                                                          false);
+        o_footstep->length(new_footstep_nodes_list.size());
+        for (size_t i = 0; i < new_footstep_nodes_list.size(); i++) {
+            o_footstep[i].fs.length(new_footstep_nodes_list.at(i).size());
+            for (size_t j = 0; j < new_footstep_nodes_list.at(i).size(); j++) {
+                leg_type tmp_leg_type = new_footstep_nodes_list.at(i).at(j).l_r;
+                o_footstep[i].fs[j].leg = ((tmp_leg_type == RLEG) ? "rleg":
+                                           (tmp_leg_type == LLEG) ? "lleg":
+                                           (tmp_leg_type == RARM) ? "rarm":
+                                           "larm");
+                copyRatscoords2Footstep(o_footstep[i].fs[j], new_footstep_nodes_list.at(i).at(j).worldcoords);
+            }
+        }
+        return true;
+    }
+};
+
 void AutoBalancer::static_balance_point_proc_one(hrp::Vector3& tmp_input_sbp, const double ref_com_height)
 {
   hrp::Vector3 target_sbp = hrp::Vector3(0, 0, 0);

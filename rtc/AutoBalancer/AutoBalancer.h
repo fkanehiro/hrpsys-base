@@ -108,6 +108,7 @@ class AutoBalancer
   bool getFootstepParam(OpenHRP::AutoBalancerService::FootstepParam& i_param);
   bool adjustFootSteps(const OpenHRP::AutoBalancerService::Footstep& rfootstep, const OpenHRP::AutoBalancerService::Footstep& lfootstep);
   bool getRemainingFootstepSequence(OpenHRP::AutoBalancerService::FootstepSequence_out o_footstep, CORBA::Long& o_current_fs_idx);
+  bool getGoPosFootstepsSequence(const double& x, const double& y, const double& th, OpenHRP::AutoBalancerService::FootstepsSequence_out o_footstep);
   bool releaseEmergencyStop();
 
  protected:
