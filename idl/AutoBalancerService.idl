@@ -386,6 +386,13 @@ module OpenHRP
     boolean getRemainingFootstepSequence(out FootstepSequence o_footstep, out long o_current_fs_idx);
 
     /**
+     * @brief Get GoPos Footstep list.
+     * @param i_x[m], i_y[m], and i_th[deg] are goal x-y-position and z-orientation from the current mid-coords of right foot and left foot. o_footstep is footstep sequence.
+     * @return true if set successfully, false otherwise
+     */
+    boolean getGoPosFootstepsSequence(in double x, in double y, in double th, out FootstepsSequence o_footstep);
+
+    /**
      * @brief Release emergency stop mode.
      * @param
      * @return true if set successfully, false otherwise

@@ -1153,35 +1153,8 @@ bool AutoBalancer::goPos(const double& x, const double& y, const double& th)
     coordinates start_ref_coords;
     std::vector<coordinates> initial_support_legs_coords;
     std::vector<leg_type> initial_support_legs;
-    switch(gait_type) {
-    case BIPED:
-        initial_support_legs_coords = (y > 0 ?
-                                       boost::assign::list_of(ikp["rleg"].target_end_coords)
-                                       : boost::assign::list_of(ikp["lleg"].target_end_coords));
-        initial_support_legs = (y > 0 ? boost::assign::list_of(RLEG) : boost::assign::list_of(LLEG));
-        break;
-    case TROT:
-        initial_support_legs_coords = (y > 0 ?
-                                       boost::assign::list_of(ikp["rleg"].target_end_coords)(ikp["larm"].target_end_coords)
-                                       : boost::assign::list_of(ikp["lleg"].target_end_coords)(ikp["rarm"].target_end_coords));
-        initial_support_legs = (y > 0 ? boost::assign::list_of(RLEG)(LARM) : boost::assign::list_of(LLEG)(RARM));
-        break;
-    case PACE:
-        initial_support_legs_coords = (y > 0 ?
-                                       boost::assign::list_of(ikp["rleg"].target_end_coords)(ikp["rarm"].target_end_coords)
-                                       : boost::assign::list_of(ikp["lleg"].target_end_coords)(ikp["larm"].target_end_coords));
-        initial_support_legs = (y > 0 ? boost::assign::list_of(RLEG)(RARM) : boost::assign::list_of(LLEG)(LARM));
-        break;
-    case CRAWL:
-        std::cerr << "[" << m_profile.instance_name << "] crawl walk[" << gait_type << "] is not implemented yet." << std::endl;
-        return false;
-    case GALLOP:
-        /* at least one leg shoud be in contact */
-        std::cerr << "[" << m_profile.instance_name << "] gallop walk[" << gait_type << "] is not implemented yet." << std::endl;
-        return false;
-    default: break;
-    }
-    mid_coords(start_ref_coords, 0.5, ikp["rleg"].target_end_coords, ikp["lleg"].target_end_coords);
+    bool is_valid_gait_type = calc_inital_support_legs(y, initial_support_legs_coords, initial_support_legs, start_ref_coords);
+    if (is_valid_gait_type == false) return false;
     bool ret = gg->go_pos_param_2_footstep_nodes_list(x, y, th,
                                                       initial_support_legs_coords, // Dummy if gg_is_walking
                                                       start_ref_coords,            // Dummy if gg_is_walking
@@ -1817,6 +1790,41 @@ bool AutoBalancer::getRemainingFootstepSequence(OpenHRP::AutoBalancerService::Fo
     }
 };
 
+bool AutoBalancer::getGoPosFootstepsSequence(const double& x, const double& y, const double& th, OpenHRP::AutoBalancerService::FootstepsSequence_out o_footstep)
+{
+    std::cerr << "[" << m_profile.instance_name << "] getGoPosFootstepsSequence" << std::endl;
+    o_footstep = new OpenHRP::AutoBalancerService::FootstepsSequence;
+    if (gg_is_walking) {
+        std::cerr << "[" << m_profile.instance_name << "] Cannot call getGoPosFootstepsSequence in walking" << std::endl;
+        return false;
+    } else {
+        gg->set_all_limbs(leg_names);
+        std::vector< std::vector<step_node> > new_footstep_nodes_list;
+        coordinates start_ref_coords;
+        std::vector<coordinates> initial_support_legs_coords;
+        std::vector<leg_type> initial_support_legs;
+        bool is_valid_gait_type = calc_inital_support_legs(y, initial_support_legs_coords, initial_support_legs, start_ref_coords);
+        if (is_valid_gait_type == false) return false;
+        /* go_pos_param_2_footstep_nodes_list_core is const member function  */
+        gg->go_pos_param_2_footstep_nodes_list_core (x, y, th,
+                                                     initial_support_legs_coords, start_ref_coords, initial_support_legs,
+                                                     new_footstep_nodes_list, true, 0);
+        o_footstep->length(new_footstep_nodes_list.size());
+        for (size_t i = 0; i < new_footstep_nodes_list.size(); i++) {
+            o_footstep[i].fs.length(new_footstep_nodes_list.at(i).size());
+            for (size_t j = 0; j < new_footstep_nodes_list.at(i).size(); j++) {
+                leg_type tmp_leg_type = new_footstep_nodes_list.at(i).at(j).l_r;
+                o_footstep[i].fs[j].leg = ((tmp_leg_type == RLEG) ? "rleg":
+                                           (tmp_leg_type == LLEG) ? "lleg":
+                                           (tmp_leg_type == RARM) ? "rarm":
+                                           "larm");
+                copyRatscoords2Footstep(o_footstep[i].fs[j], new_footstep_nodes_list.at(i).at(j).worldcoords);
+            }
+        }
+        return true;
+    }
+};
+
 void AutoBalancer::static_balance_point_proc_one(hrp::Vector3& tmp_input_sbp, const double ref_com_height)
 {
   hrp::Vector3 target_sbp = hrp::Vector3(0, 0, 0);
@@ -1907,6 +1915,39 @@ hrp::Vector3 AutoBalancer::calc_vel_from_hand_error (const coordinates& tmp_fix_
   } else {
     return hrp::Vector3::Zero();
   }
+};
+
+bool AutoBalancer::calc_inital_support_legs(const double& y, std::vector<coordinates>& initial_support_legs_coords, std::vector<leg_type>& initial_support_legs, coordinates& start_ref_coords) {
+    switch(gait_type) {
+    case BIPED:
+        initial_support_legs_coords = (y > 0 ?
+                                       boost::assign::list_of(ikp["rleg"].target_end_coords)
+                                       : boost::assign::list_of(ikp["lleg"].target_end_coords));
+        initial_support_legs = (y > 0 ? boost::assign::list_of(RLEG) : boost::assign::list_of(LLEG));
+        break;
+    case TROT:
+        initial_support_legs_coords = (y > 0 ?
+                                       boost::assign::list_of(ikp["rleg"].target_end_coords)(ikp["larm"].target_end_coords)
+                                       : boost::assign::list_of(ikp["lleg"].target_end_coords)(ikp["rarm"].target_end_coords));
+        initial_support_legs = (y > 0 ? boost::assign::list_of(RLEG)(LARM) : boost::assign::list_of(LLEG)(RARM));
+        break;
+    case PACE:
+        initial_support_legs_coords = (y > 0 ?
+                                       boost::assign::list_of(ikp["rleg"].target_end_coords)(ikp["rarm"].target_end_coords)
+                                       : boost::assign::list_of(ikp["lleg"].target_end_coords)(ikp["larm"].target_end_coords));
+        initial_support_legs = (y > 0 ? boost::assign::list_of(RLEG)(RARM) : boost::assign::list_of(LLEG)(LARM));
+        break;
+    case CRAWL:
+        std::cerr << "[" << m_profile.instance_name << "] crawl walk[" << gait_type << "] is not implemented yet." << std::endl;
+        return false;
+    case GALLOP:
+        /* at least one leg shoud be in contact */
+        std::cerr << "[" << m_profile.instance_name << "] gallop walk[" << gait_type << "] is not implemented yet." << std::endl;
+        return false;
+    default: break;
+    }
+    mid_coords(start_ref_coords, 0.5, ikp["rleg"].target_end_coords, ikp["lleg"].target_end_coords);
+    return true;
 };
 
 //

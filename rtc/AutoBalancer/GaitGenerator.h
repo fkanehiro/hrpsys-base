@@ -904,10 +904,10 @@ namespace rats
       _footstep_nodes_list.push_back(sns);
     };
     void overwrite_refzmp_queue(const std::vector< std::vector<step_node> >& fnsl);
-    void calc_ref_coords_trans_vector_velocity_mode (coordinates& ref_coords, hrp::Vector3& trans, double& dth, const std::vector<step_node>& sup_fns) const;
+    void calc_ref_coords_trans_vector_velocity_mode (coordinates& ref_coords, hrp::Vector3& trans, double& dth, const std::vector<step_node>& sup_fns, const velocity_mode_parameter& cur_vel_param) const;
     void calc_next_coords_velocity_mode (std::vector< std::vector<step_node> >& ret_list, const size_t idx, const size_t future_step_num = 3);
     void append_footstep_list_velocity_mode ();
-    void append_footstep_list_velocity_mode (std::vector< std::vector<step_node> >& _footstep_nodes_list) const;
+    void append_footstep_list_velocity_mode (std::vector< std::vector<step_node> >& _footstep_nodes_list, const velocity_mode_parameter& cur_vel_param) const;
 
 #ifndef HAVE_MAIN
     /* inhibit copy constructor and copy insertion not by implementing */
@@ -966,7 +966,24 @@ namespace rats
     bool go_pos_param_2_footstep_nodes_list (const double goal_x, const double goal_y, const double goal_theta, /* [mm] [mm] [deg] */
                                              const std::vector<coordinates>& initial_support_legs_coords, coordinates start_ref_coords,
                                              const std::vector<leg_type>& initial_support_legs,
+                                             const bool is_initialize = true) {
+        std::vector< std::vector<step_node> > new_footstep_nodes_list;
+        return go_pos_param_2_footstep_nodes_list (goal_x, goal_y, goal_theta,
+                                                   initial_support_legs_coords, start_ref_coords,
+                                                   initial_support_legs,
+                                                   new_footstep_nodes_list,
+                                                   is_initialize);
+    };
+    bool go_pos_param_2_footstep_nodes_list (const double goal_x, const double goal_y, const double goal_theta, /* [mm] [mm] [deg] */
+                                             const std::vector<coordinates>& initial_support_legs_coords, coordinates start_ref_coords,
+                                             const std::vector<leg_type>& initial_support_legs,
+                                             std::vector< std::vector<step_node> >& new_footstep_nodes_list,
                                              const bool is_initialize = true);
+    void go_pos_param_2_footstep_nodes_list_core (const double goal_x, const double goal_y, const double goal_theta, /* [mm] [mm] [deg] */
+                                                  const std::vector<coordinates>& initial_support_legs_coords, coordinates start_ref_coords,
+                                                  const std::vector<leg_type>& initial_support_legs,
+                                                  std::vector< std::vector<step_node> >& new_footstep_nodes_list,
+                                                  const bool is_initialize, const size_t overwritable_fs_index) const;
     void go_single_step_param_2_footstep_nodes_list (const double goal_x, const double goal_y, const double goal_z, const double goal_theta, /* [mm] [mm] [mm] [deg] */
                                                const std::string& tmp_swing_leg,
                                                const coordinates& _support_leg_coords);

@@ -100,6 +100,11 @@ CORBA::Boolean AutoBalancerService_impl::getRemainingFootstepSequence(OpenHRP::A
     return m_autobalancer->getRemainingFootstepSequence(o_footstep, o_current_fs_idx);
 };
 
+CORBA::Boolean AutoBalancerService_impl::getGoPosFootstepsSequence(CORBA::Double x, CORBA::Double y, CORBA::Double th, OpenHRP::AutoBalancerService::FootstepsSequence_out o_footstep)
+{
+    return m_autobalancer->getGoPosFootstepsSequence(x, y, th, o_footstep);
+};
+
 CORBA::Boolean AutoBalancerService_impl::releaseEmergencyStop()
 {
     return m_autobalancer->releaseEmergencyStop();
