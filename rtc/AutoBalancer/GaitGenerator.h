@@ -879,6 +879,7 @@ namespace rats
     bool use_inside_step_limitation;
     std::map<leg_type, std::string> leg_type_map;
     coordinates initial_foot_mid_coords;
+    bool solved;
 
     /* preview controller parameters */
     //preview_dynamics_filter<preview_control>* preview_controller_ptr;
