@@ -137,10 +137,6 @@ module OpenHRP
      */
     struct FootstepParam
     {
-      /// Current right foot coords
-      Footstep rleg_coords;
-      /// Current left foot coords
-      Footstep lleg_coords;
       /// Support foot coords
       Footstep support_leg_coords;
       /// Swing foot coords, which is interpolation betwee swing_leg_src_coords and swing_leg_dst_coords

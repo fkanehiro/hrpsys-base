@@ -457,12 +457,6 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
         solveLimbIK();
         rel_ref_zmp = m_robot->rootLink()->R.transpose() * (ref_zmp - m_robot->rootLink()->p);
       } else {
-        for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
-          if (std::find(leg_names.begin(), leg_names.end(), it->first) != leg_names.end() ) {
-            it->second.current_p0 = it->second.target_link->p;
-            it->second.current_r0 = it->second.target_link->R;
-          }
-        }
         rel_ref_zmp = input_zmp;
       }
       // transition
@@ -918,12 +912,9 @@ void AutoBalancer::fixLegToCoords (const hrp::Vector3& fix_pos, const hrp::Matri
 
 bool AutoBalancer::solveLimbIKforLimb (ABCIKparam& param)
 {
-  param.current_p0 = param.target_link->p;
-  param.current_r0 = param.target_link->R;
-
   hrp::Vector3 vel_p, vel_r;
-  vel_p = param.target_p0 - param.current_p0;
-  rats::difference_rotation(vel_r, param.current_r0, param.target_r0);
+  vel_p = param.target_p0 - param.target_link->p;
+  rats::difference_rotation(vel_r, param.target_link->R, param.target_r0);
   vel_p *= transition_interpolator_ratio * leg_names_interpolator_ratio;
   vel_r *= transition_interpolator_ratio * leg_names_interpolator_ratio;
   param.manip->calcInverseKinematics2Loop(vel_p, vel_r, 1.0, 0.001, 0.01, &qrefv);
@@ -1685,14 +1676,6 @@ void AutoBalancer::copyRatscoords2Footstep(OpenHRP::AutoBalancerService::Footste
 
 bool AutoBalancer::getFootstepParam(OpenHRP::AutoBalancerService::FootstepParam& i_param)
 {
-  std::vector<rats::coordinates> leg_coords;
-  for (size_t i = 0; i < leg_names.size(); i++) {
-      ABCIKparam& tmpikp = ikp[leg_names[i]];
-      leg_coords.push_back(coordinates(tmpikp.current_p0 + tmpikp.current_r0 * tmpikp.localPos,
-                                       tmpikp.current_r0 * tmpikp.localR));
-  }
-  copyRatscoords2Footstep(i_param.rleg_coords, leg_coords[0]);
-  copyRatscoords2Footstep(i_param.lleg_coords, leg_coords[1]);
   copyRatscoords2Footstep(i_param.support_leg_coords, gg->get_support_leg_steps().front().worldcoords);
   copyRatscoords2Footstep(i_param.swing_leg_coords, gg->get_swing_leg_steps().front().worldcoords);
   copyRatscoords2Footstep(i_param.swing_leg_src_coords, gg->get_swing_leg_src_steps().front().worldcoords);
