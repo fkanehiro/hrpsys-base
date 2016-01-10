@@ -190,6 +190,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
         tp.pos_ik_error_count = tp.rot_ik_error_count = 0;
         ikp.insert(std::pair<std::string, ABCIKparam>(ee_name , tp));
         ikp[ee_name].target_link = m_robot->link(ee_target);
+        ee_vec.push_back(ee_name);
         std::cerr << "[" << m_profile.instance_name << "] End Effector [" << ee_name << "]" << std::endl;
         std::cerr << "[" << m_profile.instance_name << "]   target = " << ikp[ee_name].target_link->name << ", base = " << ee_base << std::endl;
         std::cerr << "[" << m_profile.instance_name << "]   offset_pos = " << tp.localPos.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[m]" << std::endl;
@@ -1572,6 +1573,15 @@ bool AutoBalancer::setAutoBalancerParam(const OpenHRP::AutoBalancerService::Auto
   } else if (i_param.default_gait_type == OpenHRP::AutoBalancerService::GALLOP) {
       gait_type = GALLOP;
   }
+  for (size_t i = 0; i < ee_vec.size(); i++) {
+      ABCIKparam& param = ikp[ee_vec[i]];
+      std::vector<double> ov;
+      ov.resize(param.manip->numJoints());
+      for (size_t j = 0; j < param.manip->numJoints(); j++) {
+          ov[j] = i_param.ik_optional_weight_vectors[i][j];
+      }
+      param.manip->setOptionalWeightVector(ov);
+  }
   for (std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++) {
       std::cerr << "[" << m_profile.instance_name << "] End Effector [" << it->first << "]" << std::endl;
       std::cerr << "[" << m_profile.instance_name << "]   localpos = " << it->second.localPos.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[m]" << std::endl;
@@ -1595,6 +1605,19 @@ bool AutoBalancer::setAutoBalancerParam(const OpenHRP::AutoBalancerService::Auto
   for (std::vector<std::string>::iterator it = leg_names.begin(); it != leg_names.end(); it++) std::cerr << "[" << m_profile.instance_name << "]   leg_names [" << *it << "]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   pos_ik_thre = " << pos_ik_thre << "[m], rot_ik_thre = " << rot_ik_thre << "[rad]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   default_gait_type = " << gait_type << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   ik_optional_weight_vectors = ";
+  for (size_t i = 0; i < ee_vec.size(); i++) {
+      ABCIKparam& param = ikp[ee_vec[i]];
+      std::vector<double> ov;
+      ov.resize(param.manip->numJoints());
+      param.manip->getOptionalWeightVector(ov);
+      std::cerr << "[";
+      for (size_t j = 0; j < param.manip->numJoints(); j++) {
+          std::cerr << ov[j] << " ";
+      }
+      std::cerr << "]";
+  }
+  std::cerr << std::endl;
   return true;
 };
 
@@ -1656,6 +1679,17 @@ bool AutoBalancer::getAutoBalancerParam(OpenHRP::AutoBalancerService::AutoBalanc
   case CRAWL:  i_param.default_gait_type = OpenHRP::AutoBalancerService::CRAWL;  break;
   case GALLOP: i_param.default_gait_type = OpenHRP::AutoBalancerService::GALLOP; break;
   default: break;
+  }
+  i_param.ik_optional_weight_vectors.length(ee_vec.size());
+  for (size_t i = 0; i < ee_vec.size(); i++) {
+      ABCIKparam& param = ikp[ee_vec[i]];
+      i_param.ik_optional_weight_vectors[i].length(param.manip->numJoints());
+      std::vector<double> ov;
+      ov.resize(param.manip->numJoints());
+      param.manip->getOptionalWeightVector(ov);
+      for (size_t j = 0; j < param.manip->numJoints(); j++) {
+          i_param.ik_optional_weight_vectors[i][j] = ov[j];
+      }
   }
   return true;
 };

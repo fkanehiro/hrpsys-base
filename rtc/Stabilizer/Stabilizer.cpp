@@ -1652,6 +1652,16 @@ void Stabilizer::getParameter(OpenHRP::StabilizerService::stParam& i_stp)
       // set
       i_stp.end_effector_list[i] = ret_ee;
   }
+  i_stp.ik_optional_weight_vectors.length(jpe_v.size());
+  for (size_t i = 0; i < jpe_v.size(); i++) {
+      i_stp.ik_optional_weight_vectors[i].length(jpe_v[i]->numJoints());
+      std::vector<double> ov;
+      ov.resize(jpe_v[i]->numJoints());
+      jpe_v[i]->getOptionalWeightVector(ov);
+      for (size_t j = 0; j < jpe_v[i]->numJoints(); j++) {
+          i_stp.ik_optional_weight_vectors[i][j] = ov[j];
+      }
+  }
 };
 
 void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
@@ -1772,6 +1782,14 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
   }
   contact_decision_threshold = i_stp.contact_decision_threshold;
   is_estop_while_walking = i_stp.is_estop_while_walking;
+  for (size_t i = 0; i < jpe_v.size(); i++) {
+      std::vector<double> ov;
+      ov.resize(jpe_v[i]->numJoints());
+      for (size_t j = 0; j < jpe_v[i]->numJoints(); j++) {
+          ov[j] = i_stp.ik_optional_weight_vectors[i][j];
+      }
+      jpe_v[i]->setOptionalWeightVector(ov);
+  }
   if (control_mode == MODE_IDLE) {
       for (size_t i = 0; i < i_stp.end_effector_list.length(); i++) {
           std::vector<STIKParam>::iterator it = std::find_if(stikp.begin(), stikp.end(), (&boost::lambda::_1->* &std::vector<STIKParam>::value_type::ee_name == std::string(i_stp.end_effector_list[i].leg)));
@@ -1850,6 +1868,18 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
   std::cerr << "[" << m_profile.instance_name << "]  cop_check_margin = " << cop_check_margin << "[m]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]  cp_check_margin = [" << cp_check_margin[0] << ", " << cp_check_margin[1] << ", " << cp_check_margin[2] << ", " << cp_check_margin[3] << "] [m]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]  contact_decision_threshold = " << contact_decision_threshold << "[N]" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   ik_optional_weight_vectors = ";
+  for (size_t i = 0; i < jpe_v.size(); i++) {
+      std::vector<double> ov;
+      ov.resize(jpe_v[i]->numJoints());
+      jpe_v[i]->getOptionalWeightVector(ov);
+      std::cerr << "[";
+      for (size_t j = 0; j < jpe_v[i]->numJoints(); j++) {
+          std::cerr << ov[j] << " ";
+      }
+      std::cerr << "]";
+  }
+  std::cerr << std::endl;
 }
 
 std::string Stabilizer::getStabilizerAlgorithmString (OpenHRP::StabilizerService::STAlgorithm _st_algorithm)

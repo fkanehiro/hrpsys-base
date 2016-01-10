@@ -227,7 +227,7 @@ class AutoBalancer
   std::map<std::string, ABCIKparam> ikp;
   std::map<std::string, size_t> contact_states_index_map;
   std::map<std::string, hrp::VirtualForceSensorParam> m_vfs;
-  std::vector<std::string> sensor_names, leg_names;
+  std::vector<std::string> sensor_names, leg_names, ee_vec;
   hrp::dvector qorg, qrefv;
   hrp::Vector3 current_root_p, target_root_p;
   hrp::Matrix33 current_root_R, target_root_R;

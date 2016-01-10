@@ -257,6 +257,8 @@ module OpenHRP
       sequence<Footstep> end_effector_list;
       /// Default GaitType
       GaitType default_gait_type;
+      /// Sequence of joint weight for Inverse Kinematics calculation. Sequence for all end-effectors.
+      sequence<sequence<double> > ik_optional_weight_vectors;
     };
 
     /**
