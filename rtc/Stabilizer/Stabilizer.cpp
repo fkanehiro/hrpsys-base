@@ -1304,8 +1304,6 @@ void Stabilizer::calcEEForceMomentControl() {
           current_d_foot_pos.push_back(foot_origin_rot * stikp[i].d_foot_pos);
 
       // Feet and hands modification
-      hrp::Vector3 target_link_p[stikp.size()];
-      hrp::Matrix33 target_link_R[stikp.size()];
       std::vector<hrp::Vector3> tmpp_list; // modified ee Pos
       std::vector<hrp::Matrix33> tmpR_list; // modified ee Rot
 #define deg2rad(x) ((x) * M_PI / 180.0)
@@ -1322,8 +1320,6 @@ void Stabilizer::calcEEForceMomentControl() {
               // foot force independent damping control
               tmpp = target_ee_p[i] - current_d_foot_pos[i];
           } else {
-//               target_link_p[i] = target_ee_p[i];
-//               target_link_R[i] = target_ee_R[i];
             target_ee_diff_p[i] *= transition_smooth_gain;
             tmpp = target_ee_p[i] + eefm_ee_pos_error_p_gain * target_foot_origin_rot * target_ee_diff_p_filter[i]->passFilter(target_ee_diff_p[i]);// tempolarily disabled
             tmpR = target_ee_R[i];
@@ -1397,18 +1393,15 @@ void Stabilizer::calcEEForceMomentControl() {
               }
           }
       }
-      for (size_t i = 0; i < stikp.size(); i++){
-          // target at ee => target at link-origin
-          rats::rotm3times(target_link_R[i], tmpR_list.at(i), stikp[i].localR.transpose());
-          //target_link_p[i] = tmpp_list.at(i) - target_link_R[i] * stikp[i].localCOPPos;
-          target_link_p[i] = tmpp_list.at(i) - target_link_R[i] * stikp[i].localp;
-      }
       // solveIK
       //   IK target is link origin pos and rot, not ee pos and rot.
       for (size_t jj = 0; jj < 3; jj++) {
         for (size_t i = 0; i < stikp.size(); i++) {
           if (is_ik_enable[i]) {
-              jpe_v[i]->calcInverseKinematics2Loop(target_link_p[i], target_link_R[i], 1.0, 0.001, 0.01, &qrefv, transition_smooth_gain);
+              jpe_v[i]->calcInverseKinematics2Loop(tmpp_list.at(i), tmpR_list.at(i), 1.0, 0.001, 0.01, &qrefv, transition_smooth_gain,
+                                                   //stikp[i].localCOPPos;
+                                                   stikp[i].localp,
+                                                   stikp[i].localR);
           }
         }
       }

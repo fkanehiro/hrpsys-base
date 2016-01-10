@@ -451,10 +451,13 @@ hrp::Vector3 matrix_logEx(const hrp::Matrix33& m) {
     return mlog;
 }
 
-bool JointPathEx::calcInverseKinematics2Loop(const Vector3& target_link_p, const Matrix33& target_link_R,
+bool JointPathEx::calcInverseKinematics2Loop(const Vector3& end_effector_p, const Matrix33& end_effector_R,
                                              const double LAMBDA, const double avoid_gain, const double reference_gain, const hrp::dvector* reference_q,
-                                             const double vel_gain)
+                                             const double vel_gain,
+                                             const hrp::Vector3& localPos, const hrp::Matrix33& localR)
 {
+    hrp::Matrix33 target_link_R(end_effector_R * localR.transpose());
+    hrp::Vector3 target_link_p(end_effector_p - target_link_R * localPos);
     hrp::Vector3 vel_p(target_link_p - endLink()->p);
     // TODO : matrix_logEx should be omegaFromRotEx after checking on real robot testing.
     //hrp::Vector3 vel_r(endLink()->R * omegaFromRotEx(endLink()->R.transpose() * target_link_R));
