@@ -93,6 +93,39 @@ def checkGoPosParam (goalx, goaly, goalth, prev_dst_foot_midcoords):
     assert(ret)
     return ret
 
+def calcVelListFromPosList(pos_list, dt):
+    '''Calculate velocity list from position list.
+    Element of pos_list and vel_list should be list like [0,0,0].
+    '''
+    vel_list=[]
+    ppos=pos_list[0]
+    for pos in pos_list:
+        vel_list.append(map(lambda x, y: (x-y)/dt, pos, ppos));
+        ppos=pos
+    return vel_list
+
+def checkTooLargeABCCogAcc (acc_thre = 5.0): # [m/s^2]
+    '''Check ABC too large cog acceleration.
+    This is used discontinuous cog trajectory.
+    '''
+    # Parse COG [m] and tm [s]
+    cog_list=[]
+    tm_list=[]
+    for line in open("/tmp/test-abc-log.abc_cogOut", "r"):
+        tm_list.append(float(line.split(" ")[0]));
+        cog_list.append(map(float, line.split(" ")[1:-1]));
+    cog_list=cog_list[:-1000] # ?? Neglect latter elements
+    dt = tm_list[1]-tm_list[0] # [s]
+    # Calculate velocity and acceleration
+    dcog_list=calcVelListFromPosList(cog_list, dt)
+    ddcog_list=calcVelListFromPosList(dcog_list, dt)
+    # Check max
+    max_cogx_acc = max(map(lambda x : abs(x[0]), ddcog_list))
+    max_cogy_acc = max(map(lambda x : abs(x[1]), ddcog_list))
+    ret = (max_cogx_acc < acc_thre) and (max_cogy_acc < acc_thre)
+    print >> sys.stderr, "  Check acc x = ", max_cogx_acc, ", y = ", max_cogy_acc, ", thre = ", acc_thre, "[m/s^2], ret = ", ret
+    assert(ret)
+
 def demoAutoBalancerFixFeet ():
     print >> sys.stderr, "1. AutoBalancer mode by fixing feet"
     hcf.startAutoBalancer(["rleg", "lleg"]);
@@ -219,11 +252,19 @@ def demoGaitGeneratorGoPos():
 
 def demoGaitGeneratorGoVelocity():
     print >> sys.stderr, "2. goVelocity and goStop"
+    print >> sys.stderr, "  goVelocity few steps"
     hcf.abc_svc.goVelocity(-0.1, -0.05, -20)
     time.sleep(1)
     hcf.abc_svc.goStop()
     checkActualBaseAttitude()
-    print >> sys.stderr, "  goVelocity()=>OK"
+    print >> sys.stderr, "  goVelocity few steps=>OK"
+    print >> sys.stderr, "  Check discontinuity of COG by checking too large COG acc."
+    hcf.setMaxLogLength(10000)
+    hcf.clearLog()
+    hcf.abc_svc.goVelocity(0,0,0) # One step overwrite
+    hcf.abc_svc.goStop()
+    hcf.saveLog("/tmp/test-abc-log");
+    checkTooLargeABCCogAcc()
 
 def demoGaitGeneratorSetFootSteps():
     print >> sys.stderr, "3. setFootSteps"

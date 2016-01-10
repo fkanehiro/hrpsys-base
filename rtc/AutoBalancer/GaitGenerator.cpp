@@ -540,18 +540,7 @@ namespace rats
 
   bool gait_generator::proc_one_tick ()
   {
-    hrp::Vector3 rzmp;
-    std::vector<hrp::Vector3> sfzos;
-    bool refzmp_exist_p = rg.get_current_refzmp(rzmp, sfzos, default_double_support_ratio_before, default_double_support_ratio_after, default_double_support_static_ratio_before, default_double_support_static_ratio_after);
-    if (!refzmp_exist_p) {
-      finalize_count++;
-      rzmp = prev_que_rzmp;
-      sfzos = prev_que_sfzos;
-    } else {
-      prev_que_rzmp = rzmp;
-      prev_que_sfzos = sfzos;
-    }
-    bool solved = preview_controller_ptr->update(refzmp, cog, swing_foot_zmp_offsets, rzmp, sfzos, (refzmp_exist_p || finalize_count < preview_controller_ptr->get_delay()-default_step_time/dt));
+    solved = false;
     /* update refzmp */
     if (emergency_flg == EMERGENCY_STOP && lcg.get_footstep_index() > 0) {
         leg_type cur_leg = footstep_nodes_list[lcg.get_footstep_index()].front().l_r;
@@ -589,6 +578,22 @@ namespace rats
         overwrite_footstep_nodes_list.clear();
       }
     }
+
+    if ( !solved ) {
+      hrp::Vector3 rzmp;
+      std::vector<hrp::Vector3> sfzos;
+      bool refzmp_exist_p = rg.get_current_refzmp(rzmp, sfzos, default_double_support_ratio_before, default_double_support_ratio_after, default_double_support_static_ratio_before, default_double_support_static_ratio_after);
+      if (!refzmp_exist_p) {
+        finalize_count++;
+        rzmp = prev_que_rzmp;
+        sfzos = prev_que_sfzos;
+      } else {
+        prev_que_rzmp = rzmp;
+        prev_que_sfzos = sfzos;
+      }
+      solved = preview_controller_ptr->update(refzmp, cog, swing_foot_zmp_offsets, rzmp, sfzos, (refzmp_exist_p || finalize_count < preview_controller_ptr->get_delay()-default_step_time/dt));
+    }
+
     rg.update_refzmp(footstep_nodes_list);
     // { // debug
     //   double cart_zmp[3];
@@ -877,11 +882,10 @@ namespace rats
     }
     /* fill preview controller queue by new refzmp */
     hrp::Vector3 rzmp;
-    bool not_solved = true;
-    while (not_solved) {
+    while ( !solved ) {
       std::vector<hrp::Vector3> sfzos;
       bool refzmp_exist_p = rg.get_current_refzmp(rzmp, sfzos, default_double_support_ratio_before, default_double_support_ratio_after, default_double_support_static_ratio_before, default_double_support_static_ratio_after);
-      not_solved = !preview_controller_ptr->update(refzmp, cog, swing_foot_zmp_offsets, rzmp, sfzos, refzmp_exist_p);
+      solved = preview_controller_ptr->update(refzmp, cog, swing_foot_zmp_offsets, rzmp, sfzos, refzmp_exist_p);
       rg.update_refzmp(footstep_nodes_list);
     }
   };
