@@ -487,12 +487,10 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
                     hrp::Matrix33 link_frame_rot;
                     link_frame_rot = param.getOutputRot() * ee_map[it->first].localR.transpose();
                     link_frame_pos = param.getOutputPos() - link_frame_rot * ee_map[it->first].localPos;
-                    vel_p = link_frame_pos - target->p;
-                    rats::difference_rotation(vel_r, target->R, link_frame_rot);
                     hrp::JointPathExPtr manip = param.manip;
                     assert(manip);
                     //const int n = manip->numJoints();
-                    manip->calcInverseKinematics2Loop(vel_p, vel_r, 1.0, param.avoid_gain, param.reference_gain, &qrefv);
+                    manip->calcInverseKinematics2Loop(link_frame_pos, link_frame_rot, 1.0, param.avoid_gain, param.reference_gain, &qrefv);
 
                     if ( param.transition_count < 0 ) {
                         param.transition_count++;

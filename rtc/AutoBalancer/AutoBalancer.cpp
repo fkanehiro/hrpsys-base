@@ -912,13 +912,9 @@ void AutoBalancer::fixLegToCoords (const hrp::Vector3& fix_pos, const hrp::Matri
 
 bool AutoBalancer::solveLimbIKforLimb (ABCIKparam& param)
 {
-  hrp::Vector3 vel_p, vel_r;
-  vel_p = param.target_p0 - param.target_link->p;
-  rats::difference_rotation(vel_r, param.target_link->R, param.target_r0);
-  vel_p *= transition_interpolator_ratio * leg_names_interpolator_ratio;
-  vel_r *= transition_interpolator_ratio * leg_names_interpolator_ratio;
-  param.manip->calcInverseKinematics2Loop(vel_p, vel_r, 1.0, 0.001, 0.01, &qrefv);
+  param.manip->calcInverseKinematics2Loop(param.target_p0, param.target_r0, 1.0, 0.001, 0.01, &qrefv, transition_interpolator_ratio * leg_names_interpolator_ratio);
   // IK check
+  hrp::Vector3 vel_p, vel_r;
   vel_p = param.target_p0 - param.target_link->p;
   rats::difference_rotation(vel_r, param.target_link->R, param.target_r0);
   if (vel_p.norm() > pos_ik_thre && transition_interpolator->isEmpty()) {

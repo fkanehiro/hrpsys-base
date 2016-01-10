@@ -1259,11 +1259,7 @@ void Stabilizer::calcTPCC() {
         m_robot->calcForwardKinematics();
         for (size_t i = 0; i < stikp.size(); i++) {
           if (is_ik_enable[i]) {
-              hrp::Link* target = m_robot->link(stikp[i].target_name);
-              hrp::Vector3 vel_p, vel_r;
-              vel_p = target_link_p[i] - target->p;
-              rats::difference_rotation(vel_r, target->R, target_link_R[i]);
-              jpe_v[i]->calcInverseKinematics2Loop(vel_p, vel_r, 1.0, 0.001, 0.01, &qrefv);
+              jpe_v[i]->calcInverseKinematics2Loop(target_link_p[i], target_link_R[i], 1.0, 0.001, 0.01, &qrefv, transition_smooth_gain);
           }
         }
       }
@@ -1412,13 +1408,7 @@ void Stabilizer::calcEEForceMomentControl() {
       for (size_t jj = 0; jj < 3; jj++) {
         for (size_t i = 0; i < stikp.size(); i++) {
           if (is_ik_enable[i]) {
-              hrp::Link* target = m_robot->link(stikp[i].target_name);
-              hrp::Vector3 vel_p, vel_r;
-              vel_p = target_link_p[i] - target->p;
-              rats::difference_rotation(vel_r, target->R, target_link_R[i]);
-              vel_p *= transition_smooth_gain;
-              vel_r *= transition_smooth_gain;
-              jpe_v[i]->calcInverseKinematics2Loop(vel_p, vel_r, 1.0, 0.001, 0.01, &qrefv);
+              jpe_v[i]->calcInverseKinematics2Loop(target_link_p[i], target_link_R[i], 1.0, 0.001, 0.01, &qrefv, transition_smooth_gain);
           }
         }
       }
