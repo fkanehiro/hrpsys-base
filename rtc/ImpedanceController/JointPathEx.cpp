@@ -425,6 +425,47 @@ bool JointPathEx::calcInverseKinematics2Loop(const Vector3& dp, const Vector3& o
     return true;
 }
 
+// TODO : matrix_logEx should be omegaFromRotEx after checking on real robot testing.
+hrp::Vector3 matrix_logEx(const hrp::Matrix33& m) {
+    hrp::Vector3 mlog;
+    double q0, th;
+    hrp::Vector3 q;
+    double norm;
+  
+    Eigen::Quaternion<double> eiq(m);
+    q0 = eiq.w();
+    q = eiq.vec();
+    norm = q.norm();
+    if (norm > 0) {
+        if ((q0 > 1.0e-10) || (q0 < -1.0e-10)) {
+            th = 2 * std::atan(norm / q0);
+        } else if (q0 > 0) {
+            th = M_PI / 2;
+        } else {
+            th = -M_PI / 2;
+        }
+        mlog = (th / norm) * q ;
+    } else {
+        mlog = hrp::Vector3::Zero();
+    }
+    return mlog;
+}
+
+bool JointPathEx::calcInverseKinematics2Loop(const Vector3& end_effector_p, const Matrix33& end_effector_R,
+                                             const double LAMBDA, const double avoid_gain, const double reference_gain, const hrp::dvector* reference_q,
+                                             const double vel_gain,
+                                             const hrp::Vector3& localPos, const hrp::Matrix33& localR)
+{
+    hrp::Matrix33 target_link_R(end_effector_R * localR.transpose());
+    hrp::Vector3 target_link_p(end_effector_p - target_link_R * localPos);
+    hrp::Vector3 vel_p(target_link_p - endLink()->p);
+    // TODO : matrix_logEx should be omegaFromRotEx after checking on real robot testing.
+    //hrp::Vector3 vel_r(endLink()->R * omegaFromRotEx(endLink()->R.transpose() * target_link_R));
+    hrp::Vector3 vel_r(endLink()->R * matrix_logEx(endLink()->R.transpose() * target_link_R));
+    vel_p *= vel_gain;
+    vel_r *= vel_gain;
+    return calcInverseKinematics2Loop(vel_p, vel_r, LAMBDA, avoid_gain, reference_gain, reference_q);
+}
 
 bool JointPathEx::calcInverseKinematics2(const Vector3& end_p, const Matrix33& end_R,
                                          const double avoid_gain, const double reference_gain, const hrp::dvector* reference_q)

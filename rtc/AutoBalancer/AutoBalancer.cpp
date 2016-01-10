@@ -190,6 +190,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
         tp.pos_ik_error_count = tp.rot_ik_error_count = 0;
         ikp.insert(std::pair<std::string, ABCIKparam>(ee_name , tp));
         ikp[ee_name].target_link = m_robot->link(ee_target);
+        ee_vec.push_back(ee_name);
         std::cerr << "[" << m_profile.instance_name << "] End Effector [" << ee_name << "]" << std::endl;
         std::cerr << "[" << m_profile.instance_name << "]   target = " << ikp[ee_name].target_link->name << ", base = " << ee_base << std::endl;
         std::cerr << "[" << m_profile.instance_name << "]   offset_pos = " << tp.localPos.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[m]" << std::endl;
@@ -457,12 +458,6 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
         solveLimbIK();
         rel_ref_zmp = m_robot->rootLink()->R.transpose() * (ref_zmp - m_robot->rootLink()->p);
       } else {
-        for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
-          if (std::find(leg_names.begin(), leg_names.end(), it->first) != leg_names.end() ) {
-            it->second.current_p0 = it->second.target_link->p;
-            it->second.current_r0 = it->second.target_link->R;
-          }
-        }
         rel_ref_zmp = input_zmp;
       }
       // transition
@@ -918,16 +913,9 @@ void AutoBalancer::fixLegToCoords (const hrp::Vector3& fix_pos, const hrp::Matri
 
 bool AutoBalancer::solveLimbIKforLimb (ABCIKparam& param)
 {
-  param.current_p0 = param.target_link->p;
-  param.current_r0 = param.target_link->R;
-
-  hrp::Vector3 vel_p, vel_r;
-  vel_p = param.target_p0 - param.current_p0;
-  rats::difference_rotation(vel_r, param.current_r0, param.target_r0);
-  vel_p *= transition_interpolator_ratio * leg_names_interpolator_ratio;
-  vel_r *= transition_interpolator_ratio * leg_names_interpolator_ratio;
-  param.manip->calcInverseKinematics2Loop(vel_p, vel_r, 1.0, 0.001, 0.01, &qrefv);
+  param.manip->calcInverseKinematics2Loop(param.target_p0, param.target_r0, 1.0, 0.001, 0.01, &qrefv, transition_interpolator_ratio * leg_names_interpolator_ratio);
   // IK check
+  hrp::Vector3 vel_p, vel_r;
   vel_p = param.target_p0 - param.target_link->p;
   rats::difference_rotation(vel_r, param.target_link->R, param.target_r0);
   if (vel_p.norm() > pos_ik_thre && transition_interpolator->isEmpty()) {
@@ -1585,6 +1573,15 @@ bool AutoBalancer::setAutoBalancerParam(const OpenHRP::AutoBalancerService::Auto
   } else if (i_param.default_gait_type == OpenHRP::AutoBalancerService::GALLOP) {
       gait_type = GALLOP;
   }
+  for (size_t i = 0; i < ee_vec.size(); i++) {
+      ABCIKparam& param = ikp[ee_vec[i]];
+      std::vector<double> ov;
+      ov.resize(param.manip->numJoints());
+      for (size_t j = 0; j < param.manip->numJoints(); j++) {
+          ov[j] = i_param.ik_optional_weight_vectors[i][j];
+      }
+      param.manip->setOptionalWeightVector(ov);
+  }
   for (std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++) {
       std::cerr << "[" << m_profile.instance_name << "] End Effector [" << it->first << "]" << std::endl;
       std::cerr << "[" << m_profile.instance_name << "]   localpos = " << it->second.localPos.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[m]" << std::endl;
@@ -1608,6 +1605,19 @@ bool AutoBalancer::setAutoBalancerParam(const OpenHRP::AutoBalancerService::Auto
   for (std::vector<std::string>::iterator it = leg_names.begin(); it != leg_names.end(); it++) std::cerr << "[" << m_profile.instance_name << "]   leg_names [" << *it << "]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   pos_ik_thre = " << pos_ik_thre << "[m], rot_ik_thre = " << rot_ik_thre << "[rad]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   default_gait_type = " << gait_type << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   ik_optional_weight_vectors = ";
+  for (size_t i = 0; i < ee_vec.size(); i++) {
+      ABCIKparam& param = ikp[ee_vec[i]];
+      std::vector<double> ov;
+      ov.resize(param.manip->numJoints());
+      param.manip->getOptionalWeightVector(ov);
+      std::cerr << "[";
+      for (size_t j = 0; j < param.manip->numJoints(); j++) {
+          std::cerr << ov[j] << " ";
+      }
+      std::cerr << "]";
+  }
+  std::cerr << std::endl;
   return true;
 };
 
@@ -1670,6 +1680,17 @@ bool AutoBalancer::getAutoBalancerParam(OpenHRP::AutoBalancerService::AutoBalanc
   case GALLOP: i_param.default_gait_type = OpenHRP::AutoBalancerService::GALLOP; break;
   default: break;
   }
+  i_param.ik_optional_weight_vectors.length(ee_vec.size());
+  for (size_t i = 0; i < ee_vec.size(); i++) {
+      ABCIKparam& param = ikp[ee_vec[i]];
+      i_param.ik_optional_weight_vectors[i].length(param.manip->numJoints());
+      std::vector<double> ov;
+      ov.resize(param.manip->numJoints());
+      param.manip->getOptionalWeightVector(ov);
+      for (size_t j = 0; j < param.manip->numJoints(); j++) {
+          i_param.ik_optional_weight_vectors[i][j] = ov[j];
+      }
+  }
   return true;
 };
 
@@ -1685,14 +1706,6 @@ void AutoBalancer::copyRatscoords2Footstep(OpenHRP::AutoBalancerService::Footste
 
 bool AutoBalancer::getFootstepParam(OpenHRP::AutoBalancerService::FootstepParam& i_param)
 {
-  std::vector<rats::coordinates> leg_coords;
-  for (size_t i = 0; i < leg_names.size(); i++) {
-      ABCIKparam& tmpikp = ikp[leg_names[i]];
-      leg_coords.push_back(coordinates(tmpikp.current_p0 + tmpikp.current_r0 * tmpikp.localPos,
-                                       tmpikp.current_r0 * tmpikp.localR));
-  }
-  copyRatscoords2Footstep(i_param.rleg_coords, leg_coords[0]);
-  copyRatscoords2Footstep(i_param.lleg_coords, leg_coords[1]);
   copyRatscoords2Footstep(i_param.support_leg_coords, gg->get_support_leg_steps().front().worldcoords);
   copyRatscoords2Footstep(i_param.swing_leg_coords, gg->get_swing_leg_steps().front().worldcoords);
   copyRatscoords2Footstep(i_param.swing_leg_src_coords, gg->get_swing_leg_src_steps().front().worldcoords);

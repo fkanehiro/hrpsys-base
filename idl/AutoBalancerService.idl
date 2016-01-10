@@ -137,10 +137,6 @@ module OpenHRP
      */
     struct FootstepParam
     {
-      /// Current right foot coords
-      Footstep rleg_coords;
-      /// Current left foot coords
-      Footstep lleg_coords;
       /// Support foot coords
       Footstep support_leg_coords;
       /// Swing foot coords, which is interpolation betwee swing_leg_src_coords and swing_leg_dst_coords
@@ -261,6 +257,8 @@ module OpenHRP
       sequence<Footstep> end_effector_list;
       /// Default GaitType
       GaitType default_gait_type;
+      /// Sequence of joint weight for Inverse Kinematics calculation. Sequence for all end-effectors.
+      sequence<sequence<double> > ik_optional_weight_vectors;
     };
 
     /**

@@ -18,6 +18,10 @@ namespace hrp {
     JointPathEx(BodyPtr& robot, Link* base, Link* end, double control_cycle, bool _use_inside_joint_weight_retrieval = true, const std::string& _debug_print_prefix = "");
     bool calcJacobianInverseNullspace(dmatrix &J, dmatrix &Jinv, dmatrix &Jnull);
     bool calcInverseKinematics2Loop(const Vector3& dp, const Vector3& omega, const double LAMBDA, const double avoid_gain = 0.0, const double reference_gain = 0.0, const dvector* reference_q = NULL);
+    bool calcInverseKinematics2Loop(const Vector3& end_effector_p, const Matrix33& end_effector_R,
+                                    const double LAMBDA, const double avoid_gain = 0.0, const double reference_gain = 0.0, const hrp::dvector* reference_q = NULL,
+                                    const double vel_gain = 1.0,
+                                    const hrp::Vector3& localPos = hrp::Vector3::Zero(), const hrp::Matrix33& localR = hrp::Matrix33::Identity());
     bool calcInverseKinematics2(const Vector3& end_p, const Matrix33& end_R, const double avoid_gain = 0.0, const double reference_gain = 0.0, const dvector* reference_q = NULL);
     double getSRGain() { return sr_gain; }
     bool setSRGain(double g) { sr_gain = g; }

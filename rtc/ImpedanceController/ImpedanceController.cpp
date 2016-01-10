@@ -482,17 +482,11 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
                                              DEBUGP, std::string(m_profile.instance_name), it->first);
 
                     // Solve ik
-                    //   Fix ee frame objective vel => link frame objective vel
-                    hrp::Vector3 link_frame_pos;
-                    hrp::Matrix33 link_frame_rot;
-                    link_frame_rot = param.getOutputRot() * ee_map[it->first].localR.transpose();
-                    link_frame_pos = param.getOutputPos() - link_frame_rot * ee_map[it->first].localPos;
-                    vel_p = link_frame_pos - target->p;
-                    rats::difference_rotation(vel_r, target->R, link_frame_rot);
                     hrp::JointPathExPtr manip = param.manip;
                     assert(manip);
                     //const int n = manip->numJoints();
-                    manip->calcInverseKinematics2Loop(vel_p, vel_r, 1.0, param.avoid_gain, param.reference_gain, &qrefv);
+                    manip->calcInverseKinematics2Loop(param.getOutputPos(), param.getOutputRot(), 1.0, param.avoid_gain, param.reference_gain, &qrefv, 1.0,
+                                                      ee_map[it->first].localPos, ee_map[it->first].localR);
 
                     if ( param.transition_count < 0 ) {
                         param.transition_count++;

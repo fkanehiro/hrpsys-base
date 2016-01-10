@@ -180,6 +180,8 @@ module OpenHRP
       sequence<AutoBalancerService::Footstep> end_effector_list;
       /// whether an emergency stop is used while walking
       boolean is_estop_while_walking;
+      /// Sequence of joint weight for Inverse Kinematics calculation. Sequence for all end-effectors.
+      sequence<sequence<double> > ik_optional_weight_vectors;
     };
 
     /**
