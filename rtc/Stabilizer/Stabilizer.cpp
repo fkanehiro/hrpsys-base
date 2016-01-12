@@ -234,6 +234,8 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
               }
           }
       }
+      ikp.avoid_gain = 0.001;
+      ikp.reference_gain = 0.01;
       stikp.push_back(ikp);
       jpe_v.push_back(hrp::JointPathExPtr(new hrp::JointPathEx(m_robot, m_robot->link(ee_base), m_robot->link(ee_target), dt, false, std::string(m_profile.instance_name))));
       // Fix for toe joint
@@ -1259,7 +1261,7 @@ void Stabilizer::calcTPCC() {
         m_robot->calcForwardKinematics();
         for (size_t i = 0; i < stikp.size(); i++) {
           if (is_ik_enable[i]) {
-              jpe_v[i]->calcInverseKinematics2Loop(target_link_p[i], target_link_R[i], 1.0, 0.001, 0.01, &qrefv, transition_smooth_gain);
+              jpe_v[i]->calcInverseKinematics2Loop(target_link_p[i], target_link_R[i], 1.0, stikp[i].avoid_gain, stikp[i].reference_gain, &qrefv, transition_smooth_gain);
           }
         }
       }
@@ -1653,6 +1655,10 @@ void Stabilizer::getParameter(OpenHRP::StabilizerService::stParam& i_stp)
       i_stp.end_effector_list[i] = ret_ee;
   }
   i_stp.ik_optional_weight_vectors.length(jpe_v.size());
+  i_stp.sr_gains.length(jpe_v.size());
+  i_stp.avoid_gains.length(jpe_v.size());
+  i_stp.reference_gains.length(jpe_v.size());
+  i_stp.manipulability_limits.length(jpe_v.size());
   for (size_t i = 0; i < jpe_v.size(); i++) {
       i_stp.ik_optional_weight_vectors[i].length(jpe_v[i]->numJoints());
       std::vector<double> ov;
@@ -1661,6 +1667,10 @@ void Stabilizer::getParameter(OpenHRP::StabilizerService::stParam& i_stp)
       for (size_t j = 0; j < jpe_v[i]->numJoints(); j++) {
           i_stp.ik_optional_weight_vectors[i][j] = ov[j];
       }
+      i_stp.sr_gains[i] = jpe_v[i]->getSRGain();
+      i_stp.avoid_gains[i] = stikp[i].avoid_gain;
+      i_stp.reference_gains[i] = stikp[i].reference_gain;
+      i_stp.manipulability_limits[i] = jpe_v[i]->getManipulabilityLimit();
   }
 };
 
@@ -1789,6 +1799,10 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
           ov[j] = i_stp.ik_optional_weight_vectors[i][j];
       }
       jpe_v[i]->setOptionalWeightVector(ov);
+      jpe_v[i]->setSRGain(i_stp.sr_gains[i]);
+      stikp[i].avoid_gain = i_stp.avoid_gains[i];
+      stikp[i].reference_gain = i_stp.reference_gains[i];
+      jpe_v[i]->setManipulabilityLimit(i_stp.manipulability_limits[i]);
   }
   if (control_mode == MODE_IDLE) {
       for (size_t i = 0; i < i_stp.end_effector_list.length(); i++) {
@@ -1880,6 +1894,26 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
       std::cerr << "]";
   }
   std::cerr << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   sr_gains = [";
+  for (size_t i = 0; i < jpe_v.size(); i++) {
+      std::cerr << jpe_v[i]->getSRGain() << ", ";
+  }
+  std::cerr << "]" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   avoid_gains = [";
+  for (size_t i = 0; i < stikp.size(); i++) {
+      std::cerr << stikp[i].avoid_gain << ", ";
+  }
+  std::cerr << "]" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   reference_gains = [";
+  for (size_t i = 0; i < stikp.size(); i++) {
+      std::cerr << stikp[i].reference_gain << ", ";
+  }
+  std::cerr << "]" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   manipulability_limits = [";
+  for (size_t i = 0; i < jpe_v.size(); i++) {
+      std::cerr << jpe_v[i]->getManipulabilityLimit() << ", ";
+  }
+  std::cerr << "]" << std::endl;
 }
 
 std::string Stabilizer::getStabilizerAlgorithmString (OpenHRP::StabilizerService::STAlgorithm _st_algorithm)
