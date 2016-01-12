@@ -187,6 +187,8 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
         } else {
             tp.has_toe_joint = false;
         }
+        tp.avoid_gain = 0.001;
+        tp.reference_gain = 0.01;
         tp.pos_ik_error_count = tp.rot_ik_error_count = 0;
         ikp.insert(std::pair<std::string, ABCIKparam>(ee_name , tp));
         ikp[ee_name].target_link = m_robot->link(ee_target);
@@ -913,7 +915,7 @@ void AutoBalancer::fixLegToCoords (const hrp::Vector3& fix_pos, const hrp::Matri
 
 bool AutoBalancer::solveLimbIKforLimb (ABCIKparam& param)
 {
-  param.manip->calcInverseKinematics2Loop(param.target_p0, param.target_r0, 1.0, 0.001, 0.01, &qrefv, transition_interpolator_ratio * leg_names_interpolator_ratio);
+  param.manip->calcInverseKinematics2Loop(param.target_p0, param.target_r0, 1.0, param.avoid_gain, param.reference_gain, &qrefv, transition_interpolator_ratio * leg_names_interpolator_ratio);
   // IK check
   hrp::Vector3 vel_p, vel_r;
   vel_p = param.target_p0 - param.target_link->p;
@@ -1581,6 +1583,10 @@ bool AutoBalancer::setAutoBalancerParam(const OpenHRP::AutoBalancerService::Auto
           ov[j] = i_param.ik_optional_weight_vectors[i][j];
       }
       param.manip->setOptionalWeightVector(ov);
+      param.manip->setSRGain(i_param.sr_gains[i]);
+      param.avoid_gain = i_param.avoid_gains[i];
+      param.reference_gain = i_param.reference_gains[i];
+      param.manip->setManipulabilityLimit(i_param.manipulability_limits[i]);
   }
   for (std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++) {
       std::cerr << "[" << m_profile.instance_name << "] End Effector [" << it->first << "]" << std::endl;
@@ -1618,6 +1624,26 @@ bool AutoBalancer::setAutoBalancerParam(const OpenHRP::AutoBalancerService::Auto
       std::cerr << "]";
   }
   std::cerr << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   sr_gains = [";
+  for (size_t i = 0; i < ee_vec.size(); i++) {
+      std::cerr << ikp[ee_vec[i]].manip->getSRGain() << ", ";
+  }
+  std::cerr << "]" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   avoid_gains = [";
+  for (size_t i = 0; i < ee_vec.size(); i++) {
+      std::cerr << ikp[ee_vec[i]].avoid_gain << ", ";
+  }
+  std::cerr << "]" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   reference_gains = [";
+  for (size_t i = 0; i < ee_vec.size(); i++) {
+      std::cerr << ikp[ee_vec[i]].reference_gain << ", ";
+  }
+  std::cerr << "]" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   manipulability_limits = [";
+  for (size_t i = 0; i < ee_vec.size(); i++) {
+      std::cerr << ikp[ee_vec[i]].manip->getManipulabilityLimit() << ", ";
+  }
+  std::cerr << "]" << std::endl;
   return true;
 };
 
@@ -1681,6 +1707,10 @@ bool AutoBalancer::getAutoBalancerParam(OpenHRP::AutoBalancerService::AutoBalanc
   default: break;
   }
   i_param.ik_optional_weight_vectors.length(ee_vec.size());
+  i_param.sr_gains.length(ee_vec.size());
+  i_param.avoid_gains.length(ee_vec.size());
+  i_param.reference_gains.length(ee_vec.size());
+  i_param.manipulability_limits.length(ee_vec.size());
   for (size_t i = 0; i < ee_vec.size(); i++) {
       ABCIKparam& param = ikp[ee_vec[i]];
       i_param.ik_optional_weight_vectors[i].length(param.manip->numJoints());
@@ -1690,6 +1720,10 @@ bool AutoBalancer::getAutoBalancerParam(OpenHRP::AutoBalancerService::AutoBalanc
       for (size_t j = 0; j < param.manip->numJoints(); j++) {
           i_param.ik_optional_weight_vectors[i][j] = ov[j];
       }
+      i_param.sr_gains[i] = param.manip->getSRGain();
+      i_param.avoid_gains[i] = param.avoid_gain;
+      i_param.reference_gains[i] = param.reference_gain;
+      i_param.manipulability_limits[i] = param.manip->getManipulabilityLimit();
   }
   return true;
 };

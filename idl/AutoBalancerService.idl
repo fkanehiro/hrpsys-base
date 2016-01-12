@@ -259,6 +259,14 @@ module OpenHRP
       GaitType default_gait_type;
       /// Sequence of joint weight for Inverse Kinematics calculation. Sequence for all end-effectors.
       sequence<sequence<double> > ik_optional_weight_vectors;
+      /// Sequence of SR-inverse gain for inverse kinematics. Sequence for all end-effectors.
+      sequence<double> sr_gains;
+      /// Sequence of avoid joint limit gain for inverse kinematics. Sequence for all end-effectors.
+      sequence<double> avoid_gains;
+      /// Sequence of reference joint angles tracking gain for inverse kinematics. Sequence for all end-effectors.
+      sequence<double> reference_gains;
+      /// Sequence of manipulability limit for inverse kinematics. Sequence for all end-effectors.
+      sequence<double> manipulability_limits;
     };
 
     /**

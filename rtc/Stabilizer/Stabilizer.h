@@ -249,6 +249,8 @@ class Stabilizer
     double eefm_pos_compensation_limit, eefm_rot_compensation_limit;
     hrp::Vector3 ref_force, ref_moment;
     double swing_support_gain, support_time;
+    // IK parameter
+    double avoid_gain, reference_gain;
   };
   enum cmode {MODE_IDLE, MODE_AIR, MODE_ST, MODE_SYNC_TO_IDLE, MODE_SYNC_TO_AIR} control_mode;
   // members

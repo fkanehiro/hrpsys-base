@@ -191,6 +191,7 @@ class AutoBalancer
     rats::coordinates target_end_coords;
     hrp::Link* target_link;
     hrp::JointPathExPtr manip;
+    double avoid_gain, reference_gain;
     size_t pos_ik_error_count, rot_ik_error_count;
     bool is_active, has_toe_joint;
   };
