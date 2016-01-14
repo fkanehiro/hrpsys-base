@@ -1577,16 +1577,17 @@ bool AutoBalancer::setAutoBalancerParam(const OpenHRP::AutoBalancerService::Auto
   }
   for (size_t i = 0; i < ee_vec.size(); i++) {
       ABCIKparam& param = ikp[ee_vec[i]];
+      const OpenHRP::AutoBalancerService::IKLimbParameters& ilp = i_param.ik_limb_parameters[i];
       std::vector<double> ov;
       ov.resize(param.manip->numJoints());
       for (size_t j = 0; j < param.manip->numJoints(); j++) {
-          ov[j] = i_param.ik_optional_weight_vectors[i][j];
+          ov[j] = ilp.ik_optional_weight_vector[j];
       }
       param.manip->setOptionalWeightVector(ov);
-      param.manip->setSRGain(i_param.sr_gains[i]);
-      param.avoid_gain = i_param.avoid_gains[i];
-      param.reference_gain = i_param.reference_gains[i];
-      param.manip->setManipulabilityLimit(i_param.manipulability_limits[i]);
+      param.manip->setSRGain(ilp.sr_gain);
+      param.avoid_gain = ilp.avoid_gain;
+      param.reference_gain = ilp.reference_gain;
+      param.manip->setManipulabilityLimit(ilp.manipulability_limit);
   }
   for (std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++) {
       std::cerr << "[" << m_profile.instance_name << "] End Effector [" << it->first << "]" << std::endl;
@@ -1706,24 +1707,21 @@ bool AutoBalancer::getAutoBalancerParam(OpenHRP::AutoBalancerService::AutoBalanc
   case GALLOP: i_param.default_gait_type = OpenHRP::AutoBalancerService::GALLOP; break;
   default: break;
   }
-  i_param.ik_optional_weight_vectors.length(ee_vec.size());
-  i_param.sr_gains.length(ee_vec.size());
-  i_param.avoid_gains.length(ee_vec.size());
-  i_param.reference_gains.length(ee_vec.size());
-  i_param.manipulability_limits.length(ee_vec.size());
+  i_param.ik_limb_parameters.length(ee_vec.size());
   for (size_t i = 0; i < ee_vec.size(); i++) {
       ABCIKparam& param = ikp[ee_vec[i]];
-      i_param.ik_optional_weight_vectors[i].length(param.manip->numJoints());
+      OpenHRP::AutoBalancerService::IKLimbParameters& ilp = i_param.ik_limb_parameters[i];
+      ilp.ik_optional_weight_vector.length(param.manip->numJoints());
       std::vector<double> ov;
       ov.resize(param.manip->numJoints());
       param.manip->getOptionalWeightVector(ov);
       for (size_t j = 0; j < param.manip->numJoints(); j++) {
-          i_param.ik_optional_weight_vectors[i][j] = ov[j];
+          ilp.ik_optional_weight_vector[j] = ov[j];
       }
-      i_param.sr_gains[i] = param.manip->getSRGain();
-      i_param.avoid_gains[i] = param.avoid_gain;
-      i_param.reference_gains[i] = param.reference_gain;
-      i_param.manipulability_limits[i] = param.manip->getManipulabilityLimit();
+      ilp.sr_gain = param.manip->getSRGain();
+      ilp.avoid_gain = param.avoid_gain;
+      ilp.reference_gain = param.reference_gain;
+      ilp.manipulability_limit = param.manip->getManipulabilityLimit();
   }
   return true;
 };

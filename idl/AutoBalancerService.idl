@@ -224,6 +224,23 @@ module OpenHRP
     };
 
     /**
+     * @enum IKLimbParameters
+     * @brief IKLimbParameters
+     */
+    struct IKLimbParameters {
+        /// Joint weight for Inverse Kinematics calculation.
+        sequence<double> ik_optional_weight_vector;
+        /// SR-inverse gain for inverse kinematics.
+        double sr_gain;
+        /// Avoid joint limit gain for inverse kinematics.
+        double avoid_gain;
+        /// Reference joint angles tracking gain for inverse kinematics.
+        double reference_gain;
+        /// Manipulability limit for inverse kinematics.
+        double manipulability_limit;
+    };
+
+    /**
      * @struct AutoBalancerParam
      * @brief Parameters for AutoBalancer
      */
@@ -257,16 +274,8 @@ module OpenHRP
       sequence<Footstep> end_effector_list;
       /// Default GaitType
       GaitType default_gait_type;
-      /// Sequence of joint weight for Inverse Kinematics calculation. Sequence for all end-effectors.
-      sequence<sequence<double> > ik_optional_weight_vectors;
-      /// Sequence of SR-inverse gain for inverse kinematics. Sequence for all end-effectors.
-      sequence<double> sr_gains;
-      /// Sequence of avoid joint limit gain for inverse kinematics. Sequence for all end-effectors.
-      sequence<double> avoid_gains;
-      /// Sequence of reference joint angles tracking gain for inverse kinematics. Sequence for all end-effectors.
-      sequence<double> reference_gains;
-      /// Sequence of manipulability limit for inverse kinematics. Sequence for all end-effectors.
-      sequence<double> manipulability_limits;
+      /// Sequence for all end-effectors' ik limb parameters
+      sequence<IKLimbParameters> ik_limb_parameters;
     };
 
     /**
