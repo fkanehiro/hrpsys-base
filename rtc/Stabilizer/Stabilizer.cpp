@@ -1654,23 +1654,20 @@ void Stabilizer::getParameter(OpenHRP::StabilizerService::stParam& i_stp)
       // set
       i_stp.end_effector_list[i] = ret_ee;
   }
-  i_stp.ik_optional_weight_vectors.length(jpe_v.size());
-  i_stp.sr_gains.length(jpe_v.size());
-  i_stp.avoid_gains.length(jpe_v.size());
-  i_stp.reference_gains.length(jpe_v.size());
-  i_stp.manipulability_limits.length(jpe_v.size());
+  i_stp.ik_limb_parameters.length(jpe_v.size());
   for (size_t i = 0; i < jpe_v.size(); i++) {
-      i_stp.ik_optional_weight_vectors[i].length(jpe_v[i]->numJoints());
+      OpenHRP::StabilizerService::IKLimbParameters& ilp = i_stp.ik_limb_parameters[i];
+      ilp.ik_optional_weight_vector.length(jpe_v[i]->numJoints());
       std::vector<double> ov;
       ov.resize(jpe_v[i]->numJoints());
       jpe_v[i]->getOptionalWeightVector(ov);
       for (size_t j = 0; j < jpe_v[i]->numJoints(); j++) {
-          i_stp.ik_optional_weight_vectors[i][j] = ov[j];
+          ilp.ik_optional_weight_vector[j] = ov[j];
       }
-      i_stp.sr_gains[i] = jpe_v[i]->getSRGain();
-      i_stp.avoid_gains[i] = stikp[i].avoid_gain;
-      i_stp.reference_gains[i] = stikp[i].reference_gain;
-      i_stp.manipulability_limits[i] = jpe_v[i]->getManipulabilityLimit();
+      ilp.sr_gain = jpe_v[i]->getSRGain();
+      ilp.avoid_gain = stikp[i].avoid_gain;
+      ilp.reference_gain = stikp[i].reference_gain;
+      ilp.manipulability_limit = jpe_v[i]->getManipulabilityLimit();
   }
 };
 
@@ -1793,16 +1790,17 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
   contact_decision_threshold = i_stp.contact_decision_threshold;
   is_estop_while_walking = i_stp.is_estop_while_walking;
   for (size_t i = 0; i < jpe_v.size(); i++) {
+      const OpenHRP::StabilizerService::IKLimbParameters& ilp = i_stp.ik_limb_parameters[i];
       std::vector<double> ov;
       ov.resize(jpe_v[i]->numJoints());
       for (size_t j = 0; j < jpe_v[i]->numJoints(); j++) {
-          ov[j] = i_stp.ik_optional_weight_vectors[i][j];
+          ov[j] = ilp.ik_optional_weight_vector[j];
       }
       jpe_v[i]->setOptionalWeightVector(ov);
-      jpe_v[i]->setSRGain(i_stp.sr_gains[i]);
-      stikp[i].avoid_gain = i_stp.avoid_gains[i];
-      stikp[i].reference_gain = i_stp.reference_gains[i];
-      jpe_v[i]->setManipulabilityLimit(i_stp.manipulability_limits[i]);
+      jpe_v[i]->setSRGain(ilp.sr_gain);
+      stikp[i].avoid_gain = ilp.avoid_gain;
+      stikp[i].reference_gain = ilp.reference_gain;
+      jpe_v[i]->setManipulabilityLimit(ilp.manipulability_limit);
   }
   if (control_mode == MODE_IDLE) {
       for (size_t i = 0; i < i_stp.end_effector_list.length(); i++) {
