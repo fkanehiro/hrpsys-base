@@ -87,10 +87,20 @@ def demoSetParameter():
         print >> sys.stderr, "  setParameter() => OK", vcheck
     assert(vcheck)
 
-def checkActualBaseAttitude(thre=5.0):
-    rpy = rtm.readDataPort(hcf.rh.port("WAIST")).data.orientation
-    ret = abs(math.degrees(rpy.r)) < thre and abs(math.degrees(rpy.p)) < thre
-    print >> sys.stderr, "  actual base rpy = ", ret, "(", rpy, ")"
+def saveLogForCheckParameter(log_fname="/tmp/test-samplerobot-stabilizer-check-param"):
+    hcf.setMaxLogLength(1);hcf.clearLog();time.sleep(0.1);hcf.saveLog(log_fname)
+
+def checkParameterFromLog(port_name, log_fname="/tmp/test-samplerobot-stabilizer-check-param", save_log=True, rtc_name="SampleRobot(Robot)0"):
+    if save_log:
+        saveLogForCheckParameter(log_fname)
+    return map(float, open(log_fname+"."+rtc_name+"_"+port_name, "r").readline().split(" ")[1:-1])
+
+def checkActualBaseAttitude(thre=5.0): # degree
+    '''Check whether the robot falls down based on actual robot base-link attitude.
+    '''
+    act_rpy = checkParameterFromLog("WAIST")[3:]
+    ret = abs(math.degrees(act_rpy[0])) < thre and abs(math.degrees(act_rpy[1])) < thre
+    print >> sys.stderr, "  ret = ", ret, ", actual base rpy = (", act_rpy, ")"
     return ret
 
 def demoStartStopTPCCST ():
