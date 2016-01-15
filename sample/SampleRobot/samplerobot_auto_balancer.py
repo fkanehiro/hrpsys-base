@@ -27,6 +27,7 @@ def init ():
     hcf = HrpsysConfigurator()
     hcf.getRTCList = hcf.getRTCListUnstable
     hcf.init ("SampleRobot(Robot)0", "$(PROJECT_DIR)/../model/sample1.wrl")
+    hcf.connectLoggerPort(hcf.abc, 'baseRpyOut') # Just for checking
     hcf.Groups = defJointGroups()
     # set initial pose from sample/controller/SampleController/etc/Sample.pos
     initial_pose = [-7.779e-005,  -0.378613,  -0.000209793,  0.832038,  -0.452564,  0.000244781,  0.31129,  -0.159481,  -0.115399,  -0.636277,  0,  0,  0.637045,  -7.77902e-005,  -0.378613,  -0.000209794,  0.832038,  -0.452564,  0.000244781,  0.31129,  0.159481,  0.115399,  -0.636277,  0,  0,  -0.637045,  0,  0,  0]
@@ -48,13 +49,21 @@ def testPoseList(pose_list, initial_pose):
         hcf.seq_svc.setJointAngles(initial_pose, 1.0)
         hcf.waitInterpolation()
 
+def saveLogForCheckParameter(log_fname="/tmp/test-samplerobot-auto-balancer-check-param"):
+    hcf.setMaxLogLength(1);hcf.clearLog();time.sleep(0.1);hcf.saveLog(log_fname)
+
+def checkParameterFromLog(port_name, log_fname="/tmp/test-samplerobot-auto-balancer-check-param", save_log=True, rtc_name="SampleRobot(Robot)0"):
+    if save_log:
+        saveLogForCheckParameter(log_fname)
+    return map(float, open(log_fname+"."+rtc_name+"_"+port_name, "r").readline().split(" ")[1:-1])
+
 def checkActualBaseAttitude(ref_rpy = None, thre=0.1): # degree
     '''Check whether the robot falls down based on actual robot base-link attitude.
     '''
-    act_rpy = rtm.readDataPort(hcf.rh.port("WAIST")).data.orientation
+    act_rpy = checkParameterFromLog("WAIST")[3:]
     if ref_rpy == None:
-        ref_rpy = rtm.readDataPort(hcf.abc.port("baseRpyOut")).data
-    ret = abs(math.degrees(act_rpy.r-ref_rpy.r)) < thre and abs(math.degrees(act_rpy.p-ref_rpy.p)) < thre
+        ref_rpy = checkParameterFromLog("baseRpyOut", rtc_name="sh", save_log=False)
+    ret = abs(math.degrees(act_rpy[0]-ref_rpy[0])) < thre and abs(math.degrees(act_rpy[1]-ref_rpy[1])) < thre
     print >> sys.stderr, "  ret = ", ret, ", actual base rpy = (", act_rpy, "), ", "reference base rpy = (", ref_rpy, ")"
     assert (ret)
     return ret
@@ -515,7 +524,7 @@ def demoGaitGeneratorFixHand():
     abcp.is_hand_fix_mode=False
     abcp.default_zmp_offsets=[[0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]]
     hcf.abc_svc.setAutoBalancerParam(abcp)
-    ref_rpy = rtm.readDataPort(hcf.abc.port("baseRpyOut")).data
+    ref_rpy = checkParameterFromLog("baseRpyOut", rtc_name="abc")
     hcf.stopAutoBalancer()
     checkActualBaseAttitude(ref_rpy)
     print >> sys.stderr, "  Fix hand=>OK"
@@ -664,9 +673,9 @@ def demoGaitGeneratorSetFootStepsWithArms():
 
 def demoStandingPosResetting():
     print >> sys.stderr, "demoStandingPosResetting"
-    hcf.abc_svc.goPos(0,0,math.degrees(-1*rtm.readDataPort(hcf.rh.port("WAIST")).data.orientation.y));
+    hcf.abc_svc.goPos(0,0,math.degrees(-1*checkParameterFromLog("WAIST")[5])); # Rot yaw
     hcf.abc_svc.waitFootSteps()
-    hcf.abc_svc.goPos(0,-1*rtm.readDataPort(hcf.rh.port("WAIST")).data.position.y,0);
+    hcf.abc_svc.goPos(0,-1*checkParameterFromLog("WAIST")[1],0); # Pos Y
     hcf.abc_svc.waitFootSteps()
 
 def demo():
