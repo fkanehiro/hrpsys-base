@@ -1789,18 +1789,40 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
   }
   contact_decision_threshold = i_stp.contact_decision_threshold;
   is_estop_while_walking = i_stp.is_estop_while_walking;
-  for (size_t i = 0; i < jpe_v.size(); i++) {
-      const OpenHRP::StabilizerService::IKLimbParameters& ilp = i_stp.ik_limb_parameters[i];
-      std::vector<double> ov;
-      ov.resize(jpe_v[i]->numJoints());
-      for (size_t j = 0; j < jpe_v[i]->numJoints(); j++) {
-          ov[j] = ilp.ik_optional_weight_vector[j];
+  bool is_ik_limb_parameter_valid_length = true;
+  if (i_stp.ik_limb_parameters.length() != jpe_v.size()) {
+      is_ik_limb_parameter_valid_length = false;
+      std::cerr << "[" << m_profile.instance_name << "]   ik_limb_parameters invalid length! Cannot be set. (input = " << i_stp.ik_limb_parameters.length() << ", desired = " << jpe_v.size() << ")" << std::endl;
+  } else {
+      for (size_t i = 0; i < jpe_v.size(); i++) {
+          if (jpe_v[i]->numJoints() != i_stp.ik_limb_parameters[i].ik_optional_weight_vector.length())
+              is_ik_limb_parameter_valid_length = false;
       }
-      jpe_v[i]->setOptionalWeightVector(ov);
-      jpe_v[i]->setSRGain(ilp.sr_gain);
-      stikp[i].avoid_gain = ilp.avoid_gain;
-      stikp[i].reference_gain = ilp.reference_gain;
-      jpe_v[i]->setManipulabilityLimit(ilp.manipulability_limit);
+      if (is_ik_limb_parameter_valid_length) {
+          for (size_t i = 0; i < jpe_v.size(); i++) {
+              const OpenHRP::StabilizerService::IKLimbParameters& ilp = i_stp.ik_limb_parameters[i];
+              std::vector<double> ov;
+              ov.resize(jpe_v[i]->numJoints());
+              for (size_t j = 0; j < jpe_v[i]->numJoints(); j++) {
+                  ov[j] = ilp.ik_optional_weight_vector[j];
+              }
+              jpe_v[i]->setOptionalWeightVector(ov);
+              jpe_v[i]->setSRGain(ilp.sr_gain);
+              stikp[i].avoid_gain = ilp.avoid_gain;
+              stikp[i].reference_gain = ilp.reference_gain;
+              jpe_v[i]->setManipulabilityLimit(ilp.manipulability_limit);
+          }
+      } else {
+          std::cerr << "[" << m_profile.instance_name << "]   ik_optional_weight_vector invalid length! Cannot be set. (input = [";
+          for (size_t i = 0; i < jpe_v.size(); i++) {
+              std::cerr << i_stp.ik_limb_parameters[i].ik_optional_weight_vector.length() << ", ";
+          }
+          std::cerr << "], desired = [";
+          for (size_t i = 0; i < jpe_v.size(); i++) {
+              std::cerr << jpe_v[i]->numJoints() << ", ";
+          }
+          std::cerr << "])" << std::endl;
+      }
   }
   if (control_mode == MODE_IDLE) {
       for (size_t i = 0; i < i_stp.end_effector_list.length(); i++) {
@@ -1880,38 +1902,40 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
   std::cerr << "[" << m_profile.instance_name << "]  cop_check_margin = " << cop_check_margin << "[m]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]  cp_check_margin = [" << cp_check_margin[0] << ", " << cp_check_margin[1] << ", " << cp_check_margin[2] << ", " << cp_check_margin[3] << "] [m]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]  contact_decision_threshold = " << contact_decision_threshold << "[N]" << std::endl;
-  std::cerr << "[" << m_profile.instance_name << "]   ik_optional_weight_vectors = ";
-  for (size_t i = 0; i < jpe_v.size(); i++) {
-      std::vector<double> ov;
-      ov.resize(jpe_v[i]->numJoints());
-      jpe_v[i]->getOptionalWeightVector(ov);
-      std::cerr << "[";
-      for (size_t j = 0; j < jpe_v[i]->numJoints(); j++) {
-          std::cerr << ov[j] << " ";
+  if (is_ik_limb_parameter_valid_length) {
+      std::cerr << "[" << m_profile.instance_name << "]   ik_optional_weight_vectors = ";
+      for (size_t i = 0; i < jpe_v.size(); i++) {
+          std::vector<double> ov;
+          ov.resize(jpe_v[i]->numJoints());
+          jpe_v[i]->getOptionalWeightVector(ov);
+          std::cerr << "[";
+          for (size_t j = 0; j < jpe_v[i]->numJoints(); j++) {
+              std::cerr << ov[j] << " ";
+          }
+          std::cerr << "]";
       }
-      std::cerr << "]";
+      std::cerr << std::endl;
+      std::cerr << "[" << m_profile.instance_name << "]   sr_gains = [";
+      for (size_t i = 0; i < jpe_v.size(); i++) {
+          std::cerr << jpe_v[i]->getSRGain() << ", ";
+      }
+      std::cerr << "]" << std::endl;
+      std::cerr << "[" << m_profile.instance_name << "]   avoid_gains = [";
+      for (size_t i = 0; i < stikp.size(); i++) {
+          std::cerr << stikp[i].avoid_gain << ", ";
+      }
+      std::cerr << "]" << std::endl;
+      std::cerr << "[" << m_profile.instance_name << "]   reference_gains = [";
+      for (size_t i = 0; i < stikp.size(); i++) {
+          std::cerr << stikp[i].reference_gain << ", ";
+      }
+      std::cerr << "]" << std::endl;
+      std::cerr << "[" << m_profile.instance_name << "]   manipulability_limits = [";
+      for (size_t i = 0; i < jpe_v.size(); i++) {
+          std::cerr << jpe_v[i]->getManipulabilityLimit() << ", ";
+      }
+      std::cerr << "]" << std::endl;
   }
-  std::cerr << std::endl;
-  std::cerr << "[" << m_profile.instance_name << "]   sr_gains = [";
-  for (size_t i = 0; i < jpe_v.size(); i++) {
-      std::cerr << jpe_v[i]->getSRGain() << ", ";
-  }
-  std::cerr << "]" << std::endl;
-  std::cerr << "[" << m_profile.instance_name << "]   avoid_gains = [";
-  for (size_t i = 0; i < stikp.size(); i++) {
-      std::cerr << stikp[i].avoid_gain << ", ";
-  }
-  std::cerr << "]" << std::endl;
-  std::cerr << "[" << m_profile.instance_name << "]   reference_gains = [";
-  for (size_t i = 0; i < stikp.size(); i++) {
-      std::cerr << stikp[i].reference_gain << ", ";
-  }
-  std::cerr << "]" << std::endl;
-  std::cerr << "[" << m_profile.instance_name << "]   manipulability_limits = [";
-  for (size_t i = 0; i < jpe_v.size(); i++) {
-      std::cerr << jpe_v[i]->getManipulabilityLimit() << ", ";
-  }
-  std::cerr << "]" << std::endl;
 }
 
 std::string Stabilizer::getStabilizerAlgorithmString (OpenHRP::StabilizerService::STAlgorithm _st_algorithm)

@@ -1575,19 +1575,41 @@ bool AutoBalancer::setAutoBalancerParam(const OpenHRP::AutoBalancerService::Auto
   } else if (i_param.default_gait_type == OpenHRP::AutoBalancerService::GALLOP) {
       gait_type = GALLOP;
   }
-  for (size_t i = 0; i < ee_vec.size(); i++) {
-      ABCIKparam& param = ikp[ee_vec[i]];
-      const OpenHRP::AutoBalancerService::IKLimbParameters& ilp = i_param.ik_limb_parameters[i];
-      std::vector<double> ov;
-      ov.resize(param.manip->numJoints());
-      for (size_t j = 0; j < param.manip->numJoints(); j++) {
-          ov[j] = ilp.ik_optional_weight_vector[j];
+  bool is_ik_limb_parameter_valid_length = true;
+  if (i_param.ik_limb_parameters.length() != ee_vec.size()) {
+      is_ik_limb_parameter_valid_length = false;
+      std::cerr << "[" << m_profile.instance_name << "]   ik_limb_parameters invalid length! Cannot be set. (input = " << i_param.ik_limb_parameters.length() << ", desired = " << ee_vec.size() << ")" << std::endl;
+  } else {
+      for (size_t i = 0; i < ee_vec.size(); i++) {
+          if (ikp[ee_vec[i]].manip->numJoints() != i_param.ik_limb_parameters[i].ik_optional_weight_vector.length())
+              is_ik_limb_parameter_valid_length = false;
       }
-      param.manip->setOptionalWeightVector(ov);
-      param.manip->setSRGain(ilp.sr_gain);
-      param.avoid_gain = ilp.avoid_gain;
-      param.reference_gain = ilp.reference_gain;
-      param.manip->setManipulabilityLimit(ilp.manipulability_limit);
+      if (is_ik_limb_parameter_valid_length) {
+          for (size_t i = 0; i < ee_vec.size(); i++) {
+              ABCIKparam& param = ikp[ee_vec[i]];
+              const OpenHRP::AutoBalancerService::IKLimbParameters& ilp = i_param.ik_limb_parameters[i];
+              std::vector<double> ov;
+              ov.resize(param.manip->numJoints());
+              for (size_t j = 0; j < param.manip->numJoints(); j++) {
+                  ov[j] = ilp.ik_optional_weight_vector[j];
+              }
+              param.manip->setOptionalWeightVector(ov);
+              param.manip->setSRGain(ilp.sr_gain);
+              param.avoid_gain = ilp.avoid_gain;
+              param.reference_gain = ilp.reference_gain;
+              param.manip->setManipulabilityLimit(ilp.manipulability_limit);
+          }
+      } else {
+          std::cerr << "[" << m_profile.instance_name << "]   ik_optional_weight_vector invalid length! Cannot be set. (input = [";
+          for (size_t i = 0; i < ee_vec.size(); i++) {
+              std::cerr << i_param.ik_limb_parameters[i].ik_optional_weight_vector.length() << ", ";
+          }
+          std::cerr << "], desired = [";
+          for (size_t i = 0; i < ee_vec.size(); i++) {
+              std::cerr << ikp[ee_vec[i]].manip->numJoints() << ", ";
+          }
+          std::cerr << "])" << std::endl;
+      }
   }
   for (std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++) {
       std::cerr << "[" << m_profile.instance_name << "] End Effector [" << it->first << "]" << std::endl;
@@ -1612,39 +1634,41 @@ bool AutoBalancer::setAutoBalancerParam(const OpenHRP::AutoBalancerService::Auto
   for (std::vector<std::string>::iterator it = leg_names.begin(); it != leg_names.end(); it++) std::cerr << "[" << m_profile.instance_name << "]   leg_names [" << *it << "]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   pos_ik_thre = " << pos_ik_thre << "[m], rot_ik_thre = " << rot_ik_thre << "[rad]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   default_gait_type = " << gait_type << std::endl;
-  std::cerr << "[" << m_profile.instance_name << "]   ik_optional_weight_vectors = ";
-  for (size_t i = 0; i < ee_vec.size(); i++) {
-      ABCIKparam& param = ikp[ee_vec[i]];
-      std::vector<double> ov;
-      ov.resize(param.manip->numJoints());
-      param.manip->getOptionalWeightVector(ov);
-      std::cerr << "[";
-      for (size_t j = 0; j < param.manip->numJoints(); j++) {
-          std::cerr << ov[j] << " ";
+  if (is_ik_limb_parameter_valid_length) {
+      std::cerr << "[" << m_profile.instance_name << "]   ik_optional_weight_vectors = ";
+      for (size_t i = 0; i < ee_vec.size(); i++) {
+          ABCIKparam& param = ikp[ee_vec[i]];
+          std::vector<double> ov;
+          ov.resize(param.manip->numJoints());
+          param.manip->getOptionalWeightVector(ov);
+          std::cerr << "[";
+          for (size_t j = 0; j < param.manip->numJoints(); j++) {
+              std::cerr << ov[j] << " ";
+          }
+          std::cerr << "]";
       }
-      std::cerr << "]";
+      std::cerr << std::endl;
+      std::cerr << "[" << m_profile.instance_name << "]   sr_gains = [";
+      for (size_t i = 0; i < ee_vec.size(); i++) {
+          std::cerr << ikp[ee_vec[i]].manip->getSRGain() << ", ";
+      }
+      std::cerr << "]" << std::endl;
+      std::cerr << "[" << m_profile.instance_name << "]   avoid_gains = [";
+      for (size_t i = 0; i < ee_vec.size(); i++) {
+          std::cerr << ikp[ee_vec[i]].avoid_gain << ", ";
+      }
+      std::cerr << "]" << std::endl;
+      std::cerr << "[" << m_profile.instance_name << "]   reference_gains = [";
+      for (size_t i = 0; i < ee_vec.size(); i++) {
+          std::cerr << ikp[ee_vec[i]].reference_gain << ", ";
+      }
+      std::cerr << "]" << std::endl;
+      std::cerr << "[" << m_profile.instance_name << "]   manipulability_limits = [";
+      for (size_t i = 0; i < ee_vec.size(); i++) {
+          std::cerr << ikp[ee_vec[i]].manip->getManipulabilityLimit() << ", ";
+      }
+      std::cerr << "]" << std::endl;
   }
-  std::cerr << std::endl;
-  std::cerr << "[" << m_profile.instance_name << "]   sr_gains = [";
-  for (size_t i = 0; i < ee_vec.size(); i++) {
-      std::cerr << ikp[ee_vec[i]].manip->getSRGain() << ", ";
-  }
-  std::cerr << "]" << std::endl;
-  std::cerr << "[" << m_profile.instance_name << "]   avoid_gains = [";
-  for (size_t i = 0; i < ee_vec.size(); i++) {
-      std::cerr << ikp[ee_vec[i]].avoid_gain << ", ";
-  }
-  std::cerr << "]" << std::endl;
-  std::cerr << "[" << m_profile.instance_name << "]   reference_gains = [";
-  for (size_t i = 0; i < ee_vec.size(); i++) {
-      std::cerr << ikp[ee_vec[i]].reference_gain << ", ";
-  }
-  std::cerr << "]" << std::endl;
-  std::cerr << "[" << m_profile.instance_name << "]   manipulability_limits = [";
-  for (size_t i = 0; i < ee_vec.size(); i++) {
-      std::cerr << ikp[ee_vec[i]].manip->getManipulabilityLimit() << ", ";
-  }
-  std::cerr << "]" << std::endl;
   return true;
 };
 
