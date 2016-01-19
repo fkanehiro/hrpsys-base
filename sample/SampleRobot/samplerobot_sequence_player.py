@@ -17,6 +17,7 @@ def init ():
     global hcf, hrpsys_version
     hcf = HrpsysConfigurator()
     hcf.init ("SampleRobot(Robot)0", "$(PROJECT_DIR)/../model/sample1.wrl")
+    hcf.connectLoggerPort(hcf.sh, 'optionalDataOut') # Just for checking
     global reset_pose_doc, move_base_pose_doc, doc
     # doc for patterns.
     #  torque and wrenches are non-realistic values, just for testing.
@@ -61,6 +62,14 @@ def checkArrayEquality (arr1, arr2, eps=1e-7):
 def checkArrayBetween (arr1, arr2, arr3, eps=1e-7):
     return all(map(lambda x,y,z : (z-y)*(x-y) <= eps, arr1, arr2, arr3))
 
+def saveLogForCheckParameter(log_fname="/tmp/test-samplerobot-sequence-player-check-param"):
+    hcf.setMaxLogLength(1);hcf.clearLog();time.sleep(0.1);hcf.saveLog(log_fname)
+
+def checkParameterFromLog(port_name, log_fname="/tmp/test-samplerobot-sequence-player-check-param", save_log=True, rtc_name="sh"):
+    if save_log:
+        saveLogForCheckParameter(log_fname)
+    return map(float, open(log_fname+"."+rtc_name+"_"+port_name, "r").readline().split(" ")[1:-1])
+
 def checkJointAngles (var_doc):
     if isinstance(var_doc, list):
         p = var_doc
@@ -82,25 +91,27 @@ def checkZmp(var_doc):
     print "  zmp => ", ret
     assert(ret is True)
 
-def checkWaist(var_doc):
-    bpos=rtm.readDataPort(hcf.sh.port("basePosOut")).data
-    brpy=rtm.readDataPort(hcf.sh.port("baseRpyOut")).data
-    ret = checkArrayEquality([bpos.x, bpos.y, bpos.z, brpy.r, brpy.p, brpy.y], var_doc['waist'])
+def checkWaist(var_doc, save_log=True):
+    bpos=checkParameterFromLog("basePosOut", save_log=save_log)
+    brpy=checkParameterFromLog("baseRpyOut", save_log=False)
+    ret = checkArrayEquality([bpos[0], bpos[1], bpos[2], brpy[0], brpy[1], brpy[2]], var_doc['waist'], eps=1e-5)
     print "  waist => ", ret
     assert(ret is True)
 
-def checkTorque (var_doc):
-    ret = checkArrayEquality(rtm.readDataPort(hcf.sh.port("tqOut")).data, var_doc['torque'])
+def checkTorque (var_doc, save_log=True):
+    ret = checkArrayEquality(checkParameterFromLog("tqOut", save_log=save_log), var_doc['torque'], eps=1e-5)
     print "  torque => ", ret
     assert(ret is True)
 
-def checkWrenches (var_doc):
-    ret = checkArrayEquality(reduce(lambda x,y:x+y, map(lambda fs : rtm.readDataPort(hcf.sh.port(fs+"Out")).data, ['lfsensor', 'rfsensor', 'lhsensor', 'rhsensor'])), var_doc['wrenches'])
+def checkWrenches (var_doc, save_log=True):
+    if save_log:
+        saveLogForCheckParameter()
+    ret = checkArrayEquality(reduce(lambda x,y:x+y, map(lambda fs : checkParameterFromLog(fs+"Out", save_log=False), ['lfsensor', 'rfsensor', 'lhsensor', 'rhsensor'])), var_doc['wrenches'], eps=1e-5)
     print "  wrenches => ", ret
     assert(ret is True)
 
-def checkOptionalData (var_doc):
-    ret = checkArrayEquality(rtm.readDataPort(hcf.sh.port("optionalDataOut")).data, var_doc['optionaldata'])
+def checkOptionalData (var_doc, save_log=True):
+    ret = checkArrayEquality(checkParameterFromLog("optionalDataOut", save_log=save_log), var_doc['optionaldata'], eps=1e-5)
     print "  optionaldata => ", ret
     assert(ret is True)
 
@@ -108,10 +119,10 @@ def checkRobotState (var_doc):
     checkJointAngles(var_doc)
     checkZmp(var_doc)
     checkWaist(var_doc)
-    checkTorque(var_doc)
+    checkTorque(var_doc, save_log=False)
     if hrpsys_version >= '315.2.0':
-        checkWrenches(var_doc)
-        checkOptionalData(var_doc)
+        checkWrenches(var_doc, save_log=False)
+        checkOptionalData(var_doc, save_log=False)
 
 # demo functions
 def demoSetJointAngles():

@@ -4,26 +4,29 @@
     <arg name="corbaport" value="2809" />
   </include>
 
-  <test test-name="samplerobot_test" pkg="hrpsys" type="test-samplerobot.py" args="--host 127.0.0.1 --port 2809" retry="2" />
-  <test test-name="samplerobot_walk" pkg="hrpsys" type="samplerobot-walk.py"
+  <test test-name="samplerobot_00_test" pkg="hrpsys" type="test-samplerobot.py" args="--host 127.0.0.1 --port 2809" retry="2" />
+
+  <!-- Stable RTC tests -->
+  <test test-name="samplerobot_01_walk" pkg="hrpsys" type="samplerobot-walk.py"
         args="-ORBInitRef NameService=corbaloc:iiop:localhost:2809/NameService" retry="2" />
-  <test test-name="samplerobot_impedance" pkg="hrpsys" type="test-samplerobot-impedance.py"
-        args="-ORBInitRef NameService=corbaloc:iiop:localhost:2809/NameService" retry="2" />
-  <test test-name="samplerobot_sequence" pkg="hrpsys" type="test-samplerobot-sequence.py"
-        args="-ORBInitRef NameService=corbaloc:iiop:localhost:2809/NameService" retry="2" time-limit="120"/>
-  <test test-name="samplerobot_data_logger" pkg="hrpsys" type="test-samplerobot-datalogger.py"
+  <test test-name="samplerobot_02_data_logger" pkg="hrpsys" type="test-samplerobot-datalogger.py"
         args="-ORBInitRef NameService=corbaloc:iiop:localhost:2809/NameService" retry="2"/>
-  <test test-name="samplerobot_collision_detector" pkg="hrpsys" type="test-samplerobot-collision.py"
+  <test test-name="samplerobot_03_sequence" pkg="hrpsys" type="test-samplerobot-sequence.py"
+        args="-ORBInitRef NameService=corbaloc:iiop:localhost:2809/NameService" retry="2" time-limit="120"/>
+  <test test-name="samplerobot_04_collision_detector" pkg="hrpsys" type="test-samplerobot-collision.py"
         args="-ORBInitRef NameService=corbaloc:iiop:localhost:2809/NameService" retry="2"/>
 
-  <test test-name="samplerobot_st" pkg="hrpsys" type="test-samplerobot-st.py"
+  <!-- Unstable RTC tests (impedance is pseudo stable?) -->
+  <test test-name="samplerobot_05_es" pkg="hrpsys" type="test-samplerobot-emergency.py"
         args="-ORBInitRef NameService=corbaloc:iiop:localhost:2809/NameService" retry="2"/>
-  <test test-name="samplerobot_rmfo" pkg="hrpsys" type="test-samplerobot-rmfo.py"
+  <test test-name="samplerobot_06_kf" pkg="hrpsys" type="test-samplerobot-kf.py"
         args="-ORBInitRef NameService=corbaloc:iiop:localhost:2809/NameService" retry="2"/>
-  <test test-name="samplerobot_kf" pkg="hrpsys" type="test-samplerobot-kf.py"
+  <test test-name="samplerobot_07_rmfo" pkg="hrpsys" type="test-samplerobot-rmfo.py"
         args="-ORBInitRef NameService=corbaloc:iiop:localhost:2809/NameService" retry="2"/>
-  <test test-name="samplerobot_abc" pkg="hrpsys" type="test-samplerobot-abc.py"
+  <test test-name="samplerobot_08_impedance" pkg="hrpsys" type="test-samplerobot-impedance.py"
+        args="-ORBInitRef NameService=corbaloc:iiop:localhost:2809/NameService" retry="2" />
+  <test test-name="samplerobot_09_abc" pkg="hrpsys" type="test-samplerobot-abc.py"
         args="-ORBInitRef NameService=corbaloc:iiop:localhost:2809/NameService" retry="2" time-limit="600"/>
-  <test test-name="samplerobot_es" pkg="hrpsys" type="test-samplerobot-emergency.py"
+  <test test-name="samplerobot_10_st" pkg="hrpsys" type="test-samplerobot-st.py"
         args="-ORBInitRef NameService=corbaloc:iiop:localhost:2809/NameService" retry="2"/>
 </launch>
