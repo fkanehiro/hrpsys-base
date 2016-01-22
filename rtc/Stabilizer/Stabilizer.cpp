@@ -1176,10 +1176,18 @@ void Stabilizer::calcStateForEmergencySignal()
   }
   // tilt Check
   hrp::Vector3 fall_direction = hrp::Vector3::Zero();
+  bool is_falling = false, will_fall = false;
   {
       double total_force = 0.0;
       for (size_t i = 0; i < stikp.size(); i++) {
           if (is_zmp_calc_enable[i]) {
+              if (projected_normal.at(i).norm() > sin(deg2rad(10))) {
+                  will_fall = true;
+                  if (loop % static_cast <int>(1.0/dt) == 0 ) { // once per 1.0[s]
+                      std::cerr << "[" << m_profile.instance_name << "] " << stikp[i].ee_name << " cannot support total weight, "
+                                << "otherwise robot will fall down toward " << "(" << projected_normal.at(i)(0) << "," << projected_normal.at(i)(1) << ") direction" << std::endl;
+                  }
+              }
               fall_direction += projected_normal.at(i) * act_force.at(i).norm();
               total_force += act_force.at(i).norm();
           }
@@ -1188,6 +1196,12 @@ void Stabilizer::calcStateForEmergencySignal()
           fall_direction = fall_direction / total_force;
       } else {
           fall_direction = hrp::Vector3::Zero();
+      }
+      if (fall_direction.norm() > sin(deg2rad(10))) {
+          is_falling = true;
+          if (loop % static_cast <int>(0.2/dt) == 0 ) { // once per 0.2[s]
+              std::cerr << "[" << m_profile.instance_name << "] robot is falling down toward " << "(" << fall_direction(0) << "," << fall_direction(1) << ") direction" << std::endl;
+          }
       }
   }
   // Total check for emergency signal
@@ -1200,6 +1214,9 @@ void Stabilizer::calcStateForEmergencySignal()
       break;
   case OpenHRP::StabilizerService::CP:
       is_emergency = is_cp_outside;
+      break;
+  case OpenHRP::StabilizerService::TILT:
+      is_emergency = will_fall | is_falling;
       break;
   default:
       break;

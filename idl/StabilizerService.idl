@@ -43,7 +43,8 @@ module OpenHRP
     enum EmergencyCheckMode {
       NO_CHECK,
       COP,
-      CP
+      CP,
+      TILT
     };
 
     /**
