@@ -439,6 +439,7 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
         // if (!is_stop_mode) {
         //     std::cerr << "[" << m_profile.instance_name << "] emergencySignal is set!" << std::endl;
         //     is_stop_mode = true;
+        //     gg->emergency_stop();
         // }
     }
 
