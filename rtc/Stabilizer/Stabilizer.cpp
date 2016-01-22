@@ -1182,11 +1182,14 @@ void Stabilizer::calcStateForEmergencySignal()
       double total_force = 0.0;
       for (size_t i = 0; i < stikp.size(); i++) {
           if (is_zmp_calc_enable[i]) {
-              if (projected_normal.at(i).norm() > sin(tilt_margin[0])) {
-                  will_fall = true;
-                  if (loop % static_cast <int>(1.0/dt) == 0 ) { // once per 1.0[s]
-                      std::cerr << "[" << m_profile.instance_name << "] " << stikp[i].ee_name << " cannot support total weight, "
-                                << "otherwise robot will fall down toward " << "(" << projected_normal.at(i)(0) << "," << projected_normal.at(i)(1) << ") direction" << std::endl;
+              if (is_walking) {
+                  if (projected_normal.at(i).norm() > sin(tilt_margin[0])) {
+                      will_fall = true;
+                      std::cerr << "swgsuptime : " << m_controlSwingSupportTime.data[i] << ", state : " << contact_states[i] << std::endl;
+                      if (loop % static_cast <int>(1.0/dt) == 0 ) { // once per 1.0[s]
+                          std::cerr << "[" << m_profile.instance_name << "] " << stikp[i].ee_name << " cannot support total weight, "
+                                    << "otherwise robot will fall down toward " << "(" << projected_normal.at(i)(0) << "," << projected_normal.at(i)(1) << ") direction" << std::endl;
+                      }
                   }
               }
               fall_direction += projected_normal.at(i) * act_force.at(i).norm();
