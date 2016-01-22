@@ -325,6 +325,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   eefm_ee_rot_error_p_gain = 0;
   cop_check_margin = 20.0*1e-3; // [m]
   cp_check_margin.resize(4, 30*1e-3); // [m]
+  tilt_margin.resize(2, 30 * M_PI / 180); // [rad]
   contact_decision_threshold = 50; // [N]
   eefm_use_force_difference_control = true;
   initial_cp_too_large_error = true;
@@ -1181,7 +1182,7 @@ void Stabilizer::calcStateForEmergencySignal()
       double total_force = 0.0;
       for (size_t i = 0; i < stikp.size(); i++) {
           if (is_zmp_calc_enable[i]) {
-              if (projected_normal.at(i).norm() > sin(deg2rad(10))) {
+              if (projected_normal.at(i).norm() > sin(tilt_margin[0])) {
                   will_fall = true;
                   if (loop % static_cast <int>(1.0/dt) == 0 ) { // once per 1.0[s]
                       std::cerr << "[" << m_profile.instance_name << "] " << stikp[i].ee_name << " cannot support total weight, "
@@ -1197,7 +1198,7 @@ void Stabilizer::calcStateForEmergencySignal()
       } else {
           fall_direction = hrp::Vector3::Zero();
       }
-      if (fall_direction.norm() > sin(deg2rad(10))) {
+      if (fall_direction.norm() > sin(tilt_margin[1])) {
           is_falling = true;
           if (loop % static_cast <int>(0.2/dt) == 0 ) { // once per 0.2[s]
               std::cerr << "[" << m_profile.instance_name << "] robot is falling down toward " << "(" << fall_direction(0) << "," << fall_direction(1) << ") direction" << std::endl;
@@ -1679,6 +1680,9 @@ void Stabilizer::getParameter(OpenHRP::StabilizerService::stParam& i_stp)
   for (size_t i = 0; i < cp_check_margin.size(); i++) {
     i_stp.cp_check_margin[i] = cp_check_margin[i];
   }
+  for (size_t i = 0; i < tilt_margin.size(); i++) {
+    i_stp.tilt_margin[i] = tilt_margin[i];
+  }
   i_stp.contact_decision_threshold = contact_decision_threshold;
   i_stp.is_estop_while_walking = is_estop_while_walking;
   switch(control_mode) {
@@ -1844,6 +1848,9 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
   for (size_t i = 0; i < cp_check_margin.size(); i++) {
     cp_check_margin[i] = i_stp.cp_check_margin[i];
   }
+  for (size_t i = 0; i < tilt_margin.size(); i++) {
+    tilt_margin[i] = i_stp.tilt_margin[i];
+  }
   contact_decision_threshold = i_stp.contact_decision_threshold;
   is_estop_while_walking = i_stp.is_estop_while_walking;
   if (control_mode == MODE_IDLE) {
@@ -1926,6 +1933,7 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
   std::cerr << "[" << m_profile.instance_name << "]  transition_time = " << transition_time << "[s]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]  cop_check_margin = " << cop_check_margin << "[m]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]  cp_check_margin = [" << cp_check_margin[0] << ", " << cp_check_margin[1] << ", " << cp_check_margin[2] << ", " << cp_check_margin[3] << "] [m]" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]  tilt_margin = [" << tilt_margin[0] << ", " << tilt_margin[1] << "] [rad]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]  contact_decision_threshold = " << contact_decision_threshold << "[N]" << std::endl;
   // IK limb parameters
   std::cerr << "[" << m_profile.instance_name << "]  IK limb parameters" << std::endl;
