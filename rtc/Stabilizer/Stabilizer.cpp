@@ -255,6 +255,8 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
       prev_target_ee_diff_r.push_back(hrp::Vector3::Zero());
       d_rpy_swing.push_back(hrp::Vector3::Zero());
       d_pos_swing.push_back(hrp::Vector3::Zero());
+      projected_normal.push_back(hrp::Vector3::Zero());
+      act_force.push_back(hrp::Vector3::Zero());
       target_ee_diff_p_filter.push_back(boost::shared_ptr<FirstOrderLowPassFilter<hrp::Vector3> >(new FirstOrderLowPassFilter<hrp::Vector3>(50.0, dt, hrp::Vector3::Zero()))); // [Hz]
       contact_states_index_map.insert(std::pair<std::string, size_t>(ee_name, i));
       is_ik_enable.push_back( (ee_name.find("leg") != std::string::npos ? true : false) ); // Hands ik => disabled, feet ik => enabled, by default
@@ -892,6 +894,16 @@ void Stabilizer::getActualParameters ()
         }
         // Actual ee frame =>
         ikp.ee_d_foot_rpy = ee_R.transpose() * (foot_origin_rot * ikp.d_foot_rpy);
+        // tilt Check : only flat plane is supported
+        {
+            hrp::Vector3 plane_x = target_ee_R[i].col(0);
+            hrp::Vector3 plane_y = target_ee_R[i].col(1);
+            hrp::Matrix33 act_ee_R_world = target->R * stikp[i].localR;
+            hrp::Vector3 normal_vector = act_ee_R_world.col(2);
+            /* projected_normal = c1 * plane_x + c2 * plane_y : c1 = plane_x.dot(normal_vector), c2 = plane_y.dot(normal_vector) because (normal-vector - projected_normal) is orthogonal to plane */
+            projected_normal.at(i) = plane_x.dot(normal_vector) * plane_x + plane_y.dot(normal_vector) * plane_y;
+            act_force.at(i) = sensor_force;
+        }
       }
 
       if (eefm_use_force_difference_control) {
@@ -1161,6 +1173,22 @@ void Stabilizer::calcStateForEmergencySignal()
     } else {
       initial_cp_too_large_error = true;
     }
+  }
+  // tilt Check
+  hrp::Vector3 fall_direction = hrp::Vector3::Zero();
+  {
+      double total_force = 0.0;
+      for (size_t i = 0; i < stikp.size(); i++) {
+          if (is_zmp_calc_enable[i]) {
+              fall_direction += projected_normal.at(i) * act_force.at(i).norm();
+              total_force += act_force.at(i).norm();
+          }
+      }
+      if (on_ground && transition_count == 0 && control_mode == MODE_ST) {
+          fall_direction = fall_direction / total_force;
+      } else {
+          fall_direction = hrp::Vector3::Zero();
+      }
   }
   // Total check for emergency signal
   switch (emergency_check_mode) {
