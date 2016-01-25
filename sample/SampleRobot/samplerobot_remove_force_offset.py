@@ -25,6 +25,14 @@ def init ():
     hrpsys_version = hcf.seq.ref.get_component_profile().version
     print("hrpsys_version = %s"%hrpsys_version)
 
+def saveLogForCheckParameter(log_fname="/tmp/test-samplerobot-remove-force-offset-check-param"):
+    hcf.setMaxLogLength(1);hcf.clearLog();time.sleep(0.1);hcf.saveLog(log_fname)
+
+def checkParameterFromLog(port_name, log_fname="/tmp/test-samplerobot-remove-force-offset-check-param", save_log=True, rtc_name="rmfo"):
+    if save_log:
+        saveLogForCheckParameter(log_fname)
+    return map(float, open(log_fname+"."+rtc_name+"_"+port_name, "r").readline().split(" ")[1:-1])
+
 def demoGetForceMomentOffsetParam ():
     print >> sys.stderr, "1. GetForceMomentOffsetParam"
     for fs_name in ["rhsensor", "lhsensor"]:
@@ -36,8 +44,9 @@ def demoGetForceMomentOffsetParam ():
 def demoSetForceMomentOffsetParam ():
     print >> sys.stderr, "2. SetForceMomentOffsetParam"
     print >> sys.stderr, "  Force and moment are large because of link offsets"
+    saveLogForCheckParameter()
     for fs_name in ["rhsensor", "lhsensor"]:
-        fm = numpy.linalg.norm(rtm.readDataPort(hcf.rmfo.port("off_"+fs_name)).data)
+        fm = numpy.linalg.norm(checkParameterFromLog("off_"+fs_name, save_log=False))
         vret = fm > 5e-2
         print >> sys.stderr, "    no-offset-removed force moment (",fs_name,") ", fm, "=> ", vret
         assert(vret)
@@ -62,8 +71,9 @@ def demoSetForceMomentOffsetParam ():
         print >> sys.stderr, "    getForceMomentOffsetParam('lhsensor') => OK"
     assert((ret[0] and ret[1].link_offset_mass == l_fmop.link_offset_mass and ret[1].link_offset_centroid == l_fmop.link_offset_centroid))
     print >> sys.stderr, "  Force and moment are reduced"
+    saveLogForCheckParameter()
     for fs_name in ["rhsensor", "lhsensor"]:
-        fm = numpy.linalg.norm(rtm.readDataPort(hcf.rmfo.port("off_"+fs_name)).data)
+        fm = numpy.linalg.norm(checkParameterFromLog("off_"+fs_name, save_log=False))
         vret = fm < 5e-2
         print >> sys.stderr, "    no-offset-removed force moment (",fs_name,") ", fm, "=> ", vret
         assert(vret)
