@@ -18,6 +18,9 @@ def init ():
     hcf = HrpsysConfigurator()
     hcf.getRTCList = hcf.getRTCListUnstable
     hcf.init ("SampleRobot(Robot)0", "$(PROJECT_DIR)/../model/sample1.wrl")
+    if hcf.es != None:
+        for sen in filter(lambda x: x.type == "Force", hcf.sensors):
+            hcf.connectLoggerPort(hcf.es, sen.name+"Out")
     init_pose = [0]*29
     reset_pose = [0.0,-0.772215,0.0,1.8338,-1.06158,0.0,0.523599,0.0,0.0,-2.44346,0.15708,-0.113446,0.637045,0.0,-0.772215,0.0,1.8338,-1.06158,0.0,0.523599,0.0,0.0,-2.44346,-0.15708,-0.113446,-0.637045,0.0,0.0,0.0]
     wrench_command0 = [0.0]*24
@@ -31,8 +34,17 @@ def arrayDistance (angle1, angle2):
 def arrayApproxEqual (angle1, angle2, thre=1e-3):
     return arrayDistance(angle1, angle2) < thre
 
+def saveLogForCheckParameter(log_fname="/tmp/test-samplerobot-emergency-stopper-check-param"):
+    hcf.setMaxLogLength(1);hcf.clearLog();time.sleep(0.1);hcf.saveLog(log_fname)
+
+def checkParameterFromLog(port_name, log_fname="/tmp/test-samplerobot-emergency-stopper-check-param", save_log=True, rtc_name="es"):
+    if save_log:
+        saveLogForCheckParameter(log_fname)
+    return map(float, open(log_fname+"."+rtc_name+"_"+port_name, "r").readline().split(" ")[1:-1])
+
 def getWrenchArray ():
-    return reduce(lambda x,y: x+y, (map(lambda fs : rtm.readDataPort(hcf.es.port(fs+"Out")).data, ['lfsensor', 'rfsensor', 'lhsensor', 'rhsensor'])))
+    saveLogForCheckParameter()
+    return reduce(lambda x,y: x+y, (map(lambda fs : checkParameterFromLog(fs+"Out", save_log=False), ['lfsensor', 'rfsensor', 'lhsensor', 'rhsensor'])))
 
 # demo functions
 def demoEmergencyStopJointAngle ():
