@@ -249,6 +249,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
       }
       target_ee_p.push_back(hrp::Vector3::Zero());
       target_ee_R.push_back(hrp::Matrix33::Identity());
+      act_ee_p.push_back(hrp::Vector3::Zero());
       act_ee_R.push_back(hrp::Matrix33::Identity());
       target_ee_diff_p.push_back(hrp::Vector3::Zero());
       target_ee_diff_r.push_back(hrp::Vector3::Zero());
@@ -745,9 +746,10 @@ void Stabilizer::getActualParameters ()
     for (size_t i = 0; i < stikp.size(); i++) {
       hrp::Link* target = m_robot->link(stikp[i].target_name);
       //hrp::Vector3 act_ee_p = target->p + target->R * stikp[i].localCOPPos;
-      hrp::Vector3 act_ee_p = target->p + target->R * stikp[i].localp;
+      hrp::Vector3 _act_ee_p = target->p + target->R * stikp[i].localp;
       //target_ee_R[i] = target->R * stikp[i].localR;
-      target_ee_diff_p[i] -= foot_origin_rot.transpose() * (act_ee_p - foot_origin_pos);
+      target_ee_diff_p[i] -= foot_origin_rot.transpose() * (_act_ee_p - foot_origin_pos);
+      act_ee_p[i] = foot_origin_rot.transpose() * (_act_ee_p - foot_origin_pos);
       act_ee_R[i] = foot_origin_rot.transpose() * (target->R * stikp[i].localR);
     }
     // capture point
@@ -1334,57 +1336,60 @@ void Stabilizer::calcEEForceMomentControl() {
       // follow swing foot rotation to target one in single support phase on the assumption that the robot rotates around support foot.
       {
           hrp::Matrix33 cur_sup_R, act_sup_R;
-          hrp::Vector3 cur_sup_p;
+          hrp::Vector3 cur_sup_p, act_sup_p;
           for (size_t i = 0; i < stikp.size(); i++) {
-              if (isContact(i)) {
-                  cur_sup_R = tmpR_list.at(i);
-                  cur_sup_p = tmpp_list.at(i);
+              if (contact_states[contact_states_index_map[stikp[i].ee_name]]) {
+                  cur_sup_R = foot_origin_rot.transpose() * tmpR_list.at(i);
+                  cur_sup_p = foot_origin_rot.transpose() * (tmpp_list.at(i) - foot_origin_pos);
                   act_sup_R = act_ee_R.at(i);
+                  act_sup_p = act_ee_p.at(i);
                   break;
               }
           }
           for (size_t i = 0; i < stikp.size(); i++) {
-              if (isContact(i) or contact_states[contact_states_index_map[stikp[i].ee_name]]) {
-                  /* method A */
-                  // for (size_t j = 0; j < 3; j++) {
-                  //     d_rpy_swing.at(i)[j] = (-1 / stikp[i].eefm_swing_rot_time_const[j] * d_rpy_swing.at(i)[j]) * dt + d_rpy_swing.at(i)[j];
-                  //     d_pos_swing.at(i)[j] = (-1 / stikp[i].eefm_swing_pos_time_const[j] * d_pos_swing.at(i)[j]) * dt + d_pos_swing.at(i)[j];
-                  // }
-                  /* method B */
-                  d_rpy_swing.at(i) = hrp::Vector3::Zero();
-                  d_pos_swing.at(i) = hrp::Vector3::Zero();
+              if (contact_states[contact_states_index_map[stikp[i].ee_name]]) {
+                  for (size_t j = 0; j < 3; j++) {
+                      d_rpy_swing.at(i)[j] = (-1 / stikp[i].eefm_swing_rot_time_const[j] * d_rpy_swing.at(i)[j]) * dt + d_rpy_swing.at(i)[j];
+                      d_pos_swing.at(i)[j] = (-1 / stikp[i].eefm_swing_pos_time_const[j] * d_pos_swing.at(i)[j]) * dt + d_pos_swing.at(i)[j];
+                  }
               } else {
                   /* rotation */
                   {
-                      hrp::Matrix33 cur_swg_R = tmpR_list.at(i);
-                      hrp::Matrix33 swg_R_relative_to_sup_R = cur_sup_R.transpose() * cur_swg_R;
-                      hrp::Matrix33 new_swg_R;
-                      rats::rotm3times(new_swg_R, act_sup_R, swg_R_relative_to_sup_R);
-                      rats::rotm3times(new_swg_R, foot_origin_rot, new_swg_R);
-                      hrp::Vector3 tmp_diff_rpy = hrp::rpyFromRot(new_swg_R.transpose() * tmpR_list.at(i));
+                      hrp::Matrix33 cur_swg_R = foot_origin_rot.transpose() * tmpR_list.at(i);
+                      hrp::Matrix33 new_swg_R = cur_sup_R * (act_sup_R.transpose() * cur_swg_R);
+                      hrp::Vector3 tmp_diff_rpy = hrp::rpyFromRot(cur_swg_R.transpose() * new_swg_R);
                       for (size_t j = 0; j < 3; j++) {
-                          /* method A */
-                          // d_rpy_swing.at(i)[j] = (stikp[i].eefm_swing_rot_spring_gain[j] * tmp_diff_rpy[j] - 1 / stikp[i].eefm_swing_rot_time_const[j] * d_rpy_swing.at(i)[j]) * dt + d_rpy_swing.at(i)[j];
-                          /* method B */
-                          d_rpy_swing.at(i)[j] = tmp_diff_rpy[j] * stikp[i].eefm_swing_rot_spring_gain[j];
+                          d_rpy_swing.at(i)[j] = (stikp[i].eefm_swing_rot_spring_gain[j] * tmp_diff_rpy[j] - 1 / stikp[i].eefm_swing_rot_time_const[j] * d_rpy_swing.at(i)[j]) * dt + d_rpy_swing.at(i)[j];
                       }
-                      rats::rotm3times(tmpR_list.at(i), tmpR_list.at(i), hrp::rotFromRpy(d_rpy_swing.at(i)));
+                      /* 
+                       * if (is_feedback_control_enable[i] && loop % static_cast <int>(0.2/dt) == 0 ) { // once per 0.2[s]
+                       *     std::cerr << "[" << m_profile.instance_name << "] [" << stikp[i].ee_name << "]  actual support : " << (hrp::rpyFromRot(act_sup_R) / M_PI * 180.0).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[deg]" << std::endl;
+                       *     std::cerr << "[" << m_profile.instance_name << "] [" << stikp[i].ee_name << "] current support : " << (hrp::rpyFromRot(cur_sup_R) / M_PI * 180.0).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[deg]" << std::endl;
+                       *     std::cerr << "[" << m_profile.instance_name << "] [" << stikp[i].ee_name << "] current   swing : " << (hrp::rpyFromRot(cur_swg_R) / M_PI * 180.0).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[deg]" << std::endl;
+                       *     std::cerr << "[" << m_profile.instance_name << "] [" << stikp[i].ee_name << "] current  *swing : " << (hrp::rpyFromRot(new_swg_R) / M_PI * 180.0).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[deg]" << std::endl;
+                       * }
+                       */
                   }
                   /* position */
                   {
-                      hrp::Vector3 cur_swg_p = tmpp_list.at(i);
-                      hrp::Vector3 swg_p_relative_to_sup_R = cur_sup_R.transpose() * (cur_swg_p - cur_sup_p);
-                      hrp::Vector3 new_swg_p = (foot_origin_rot * act_sup_R) * swg_p_relative_to_sup_R + cur_sup_p;
-                      hrp::Vector3 tmp_diff_pos = tmpp_list.at(i) - new_swg_p;
+                      hrp::Vector3 cur_swg_p = foot_origin_rot.transpose() * (tmpp_list.at(i) - foot_origin_pos);
+                      hrp::Vector3 new_swg_p = cur_sup_p + cur_sup_R * (act_sup_R.transpose() * (cur_swg_p - act_sup_p));
+                      hrp::Vector3 tmp_diff_pos = new_swg_p - cur_swg_p;
                       for (size_t j = 0; j < 3; j++) {
-                          /* method A */
-                          // d_pos_swing.at(i)[j] = (stikp[i].eefm_swing_pos_spring_gain[j] * tmp_diff_pos[j] - 1 / stikp[i].eefm_swing_pos_time_const[j] * d_pos_swing.at(i)[j]) * dt + d_pos_swing.at(i)[j];
-                          /* method B */
-                          d_pos_swing.at(i)[j] = tmp_diff_pos[j] * stikp[i].eefm_swing_pos_spring_gain[j];
+                          d_pos_swing.at(i)[j] = (stikp[i].eefm_swing_pos_spring_gain[j] * tmp_diff_pos[j] - 1 / stikp[i].eefm_swing_pos_time_const[j] * d_pos_swing.at(i)[j]) * dt + d_pos_swing.at(i)[j];
                       }
-                      tmpp_list.at(i) = tmpp_list.at(i) + d_pos_swing.at(i);
+                      /* 
+                       * if (is_feedback_control_enable[i] && loop % static_cast <int>(0.2/dt) == 0 ) { // once per 0.2[s]
+                       *     std::cerr << "[" << m_profile.instance_name << "] [" << stikp[i].ee_name << "]  actual support : " << (act_sup_p * 1e3).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[mm]" << std::endl;
+                       *     std::cerr << "[" << m_profile.instance_name << "] [" << stikp[i].ee_name << "] current support : " << (cur_sup_p * 1e3).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[mm]" << std::endl;
+                       *     std::cerr << "[" << m_profile.instance_name << "] [" << stikp[i].ee_name << "] current   swing : " << (cur_swg_p * 1e3).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[mm]" << std::endl;
+                       *     std::cerr << "[" << m_profile.instance_name << "] [" << stikp[i].ee_name << "] current  *swing : " << (new_swg_p * 1e3).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[mm]" << std::endl;
+                       * }
+                       */
                   }
               }
+              rats::rotm3times(tmpR_list.at(i), tmpR_list.at(i), hrp::rotFromRpy(d_rpy_swing.at(i)));
+              tmpp_list.at(i) = tmpp_list.at(i) + foot_origin_rot * d_pos_swing.at(i);
           }
           if (DEBUGP) {
               for (size_t i = 0; i < stikp.size(); i++) {
