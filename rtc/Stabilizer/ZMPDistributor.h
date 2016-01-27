@@ -85,6 +85,7 @@ public:
     };
     inline bool is_inside_support_polygon (Eigen::Vector2d& p, const std::vector<hrp::Vector3>& ee_pos, const std::vector <hrp::Matrix33>& ee_rot, const std::vector<std::string>& ee_name, const leg_type& support_leg, const std::vector<double>& tmp_margin = std::vector<double>(), const hrp::Vector3& offset = hrp::Vector3(0.0, 0.0, 0.0))
     {
+      if (ee_pos.size() == 0 || ee_rot.size() == 0 || ee_name.size() == 0 ) return true;
       size_t l_idx, r_idx;
       for (size_t i = 0; i < ee_name.size(); i++) {
         if (ee_name[i]=="rleg") r_idx = i;

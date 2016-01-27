@@ -2,7 +2,7 @@ prefix=@CMAKE_INSTALL_PREFIX@
 exec_prefix=${prefix}/bin
 libdir=${prefix}/lib
 idldir=${prefix}/share/hrpsys/idl
-includedir=-I${prefix}/include
+includedir=${prefix}/include
 link_shared_files=@PKG_CONF_LINK_SHARED_FILES@
 link_static_files=@PKG_CONF_LINK_STATIC_FILES@
 link_depend_dirs=@PKG_CONF_LINK_DEPEND_DIRS@
@@ -17,4 +17,4 @@ Requires: openhrp3.1
 Version: 3.1
 Libs: ${link_depend_dirs} -L${libdir} ${link_shared_files} ${link_depend_options} ${link_depend_files} 
 Libs.private: ${link_static_files}
-Cflags: ${cflag_defs} ${cflag_options} ${includedir}
+Cflags: ${cflag_defs} ${cflag_options} -I${includedir}

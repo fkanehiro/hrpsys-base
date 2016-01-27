@@ -791,6 +791,17 @@ void AutoBalancer::getTargetParameters()
         it->second.target_r0 = it->second.target_link->R;
       }
     }
+    // Just for ik initial value
+    if (control_mode == MODE_SYNC_TO_ABC) {
+        current_root_p = target_root_p;
+        current_root_R = target_root_R;
+        for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
+            if ( std::find(leg_names.begin(), leg_names.end(), it->first) != leg_names.end() ) {
+                it->second.target_p0 = it->second.target_link->p;
+                it->second.target_r0 = it->second.target_link->R;
+            }
+        }
+    }
     // Move hand for hand fix mode
     //   If arms' ABCIKparam.is_active is true, move hands according to cog velocity.
     //   If is_hand_fix_mode is false, no hand fix mode and move hands according to cog velocity.
@@ -868,17 +879,6 @@ void AutoBalancer::getTargetParameters()
       ref_zmp(0) = ref_cog(0);
       ref_zmp(1) = ref_cog(1);
       ref_zmp(2) = tmp_foot_mid_pos(2);
-    }
-  }
-  // Just for ik initial value
-  if (control_mode == MODE_SYNC_TO_ABC) {
-    current_root_p = target_root_p;
-    current_root_R = target_root_R;
-    for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
-      if ( std::find(leg_names.begin(), leg_names.end(), it->first) != leg_names.end() ) {
-        it->second.target_p0 = it->second.target_link->p;
-        it->second.target_r0 = it->second.target_link->R;
-      }
     }
   }
 };
