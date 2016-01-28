@@ -256,6 +256,8 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
       prev_target_ee_diff_r.push_back(hrp::Vector3::Zero());
       d_rpy_swing.push_back(hrp::Vector3::Zero());
       d_pos_swing.push_back(hrp::Vector3::Zero());
+      projected_normal.push_back(hrp::Vector3::Zero());
+      act_force.push_back(hrp::Vector3::Zero());
       target_ee_diff_p_filter.push_back(boost::shared_ptr<FirstOrderLowPassFilter<hrp::Vector3> >(new FirstOrderLowPassFilter<hrp::Vector3>(50.0, dt, hrp::Vector3::Zero()))); // [Hz]
       contact_states_index_map.insert(std::pair<std::string, size_t>(ee_name, i));
       is_ik_enable.push_back( (ee_name.find("leg") != std::string::npos ? true : false) ); // Hands ik => disabled, feet ik => enabled, by default
@@ -324,6 +326,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   eefm_ee_rot_error_p_gain = 0;
   cop_check_margin = 20.0*1e-3; // [m]
   cp_check_margin.resize(4, 30*1e-3); // [m]
+  tilt_margin.resize(2, 30 * M_PI / 180); // [rad]
   contact_decision_threshold = 50; // [N]
   eefm_use_force_difference_control = true;
   initial_cp_too_large_error = true;
@@ -894,6 +897,16 @@ void Stabilizer::getActualParameters ()
         }
         // Actual ee frame =>
         ikp.ee_d_foot_rpy = ee_R.transpose() * (foot_origin_rot * ikp.d_foot_rpy);
+        // tilt Check : only flat plane is supported
+        {
+            hrp::Vector3 plane_x = target_ee_R[i].col(0);
+            hrp::Vector3 plane_y = target_ee_R[i].col(1);
+            hrp::Matrix33 act_ee_R_world = target->R * stikp[i].localR;
+            hrp::Vector3 normal_vector = act_ee_R_world.col(2);
+            /* projected_normal = c1 * plane_x + c2 * plane_y : c1 = plane_x.dot(normal_vector), c2 = plane_y.dot(normal_vector) because (normal-vector - projected_normal) is orthogonal to plane */
+            projected_normal.at(i) = plane_x.dot(normal_vector) * plane_x + plane_y.dot(normal_vector) * plane_y;
+            act_force.at(i) = sensor_force;
+        }
       }
 
       if (eefm_use_force_difference_control) {
@@ -1164,6 +1177,39 @@ void Stabilizer::calcStateForEmergencySignal()
       initial_cp_too_large_error = true;
     }
   }
+  // tilt Check
+  hrp::Vector3 fall_direction = hrp::Vector3::Zero();
+  bool is_falling = false, will_fall = false;
+  {
+      double total_force = 0.0;
+      for (size_t i = 0; i < stikp.size(); i++) {
+          if (is_zmp_calc_enable[i]) {
+              if (is_walking) {
+                  if (projected_normal.at(i).norm() > sin(tilt_margin[0])) {
+                      will_fall = true;
+                      std::cerr << "swgsuptime : " << m_controlSwingSupportTime.data[i] << ", state : " << contact_states[i] << std::endl;
+                      if (loop % static_cast <int>(1.0/dt) == 0 ) { // once per 1.0[s]
+                          std::cerr << "[" << m_profile.instance_name << "] " << stikp[i].ee_name << " cannot support total weight, "
+                                    << "otherwise robot will fall down toward " << "(" << projected_normal.at(i)(0) << "," << projected_normal.at(i)(1) << ") direction" << std::endl;
+                      }
+                  }
+              }
+              fall_direction += projected_normal.at(i) * act_force.at(i).norm();
+              total_force += act_force.at(i).norm();
+          }
+      }
+      if (on_ground && transition_count == 0 && control_mode == MODE_ST) {
+          fall_direction = fall_direction / total_force;
+      } else {
+          fall_direction = hrp::Vector3::Zero();
+      }
+      if (fall_direction.norm() > sin(tilt_margin[1])) {
+          is_falling = true;
+          if (loop % static_cast <int>(0.2/dt) == 0 ) { // once per 0.2[s]
+              std::cerr << "[" << m_profile.instance_name << "] robot is falling down toward " << "(" << fall_direction(0) << "," << fall_direction(1) << ") direction" << std::endl;
+          }
+      }
+  }
   // Total check for emergency signal
   switch (emergency_check_mode) {
   case OpenHRP::StabilizerService::NO_CHECK:
@@ -1174,6 +1220,9 @@ void Stabilizer::calcStateForEmergencySignal()
       break;
   case OpenHRP::StabilizerService::CP:
       is_emergency = is_cp_outside;
+      break;
+  case OpenHRP::StabilizerService::TILT:
+      is_emergency = will_fall | is_falling;
       break;
   default:
       break;
@@ -1639,6 +1688,9 @@ void Stabilizer::getParameter(OpenHRP::StabilizerService::stParam& i_stp)
   for (size_t i = 0; i < cp_check_margin.size(); i++) {
     i_stp.cp_check_margin[i] = cp_check_margin[i];
   }
+  for (size_t i = 0; i < tilt_margin.size(); i++) {
+    i_stp.tilt_margin[i] = tilt_margin[i];
+  }
   i_stp.contact_decision_threshold = contact_decision_threshold;
   i_stp.is_estop_while_walking = is_estop_while_walking;
   switch(control_mode) {
@@ -1804,6 +1856,9 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
   for (size_t i = 0; i < cp_check_margin.size(); i++) {
     cp_check_margin[i] = i_stp.cp_check_margin[i];
   }
+  for (size_t i = 0; i < tilt_margin.size(); i++) {
+    tilt_margin[i] = i_stp.tilt_margin[i];
+  }
   contact_decision_threshold = i_stp.contact_decision_threshold;
   is_estop_while_walking = i_stp.is_estop_while_walking;
   if (control_mode == MODE_IDLE) {
@@ -1886,6 +1941,7 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
   std::cerr << "[" << m_profile.instance_name << "]  transition_time = " << transition_time << "[s]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]  cop_check_margin = " << cop_check_margin << "[m]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]  cp_check_margin = [" << cp_check_margin[0] << ", " << cp_check_margin[1] << ", " << cp_check_margin[2] << ", " << cp_check_margin[3] << "] [m]" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]  tilt_margin = [" << tilt_margin[0] << ", " << tilt_margin[1] << "] [rad]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]  contact_decision_threshold = " << contact_decision_threshold << "[N]" << std::endl;
   // IK limb parameters
   std::cerr << "[" << m_profile.instance_name << "]  IK limb parameters" << std::endl;

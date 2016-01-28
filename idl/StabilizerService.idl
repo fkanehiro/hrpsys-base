@@ -43,7 +43,8 @@ module OpenHRP
     enum EmergencyCheckMode {
       NO_CHECK,
       COP,
-      CP
+      CP,
+      TILT
     };
 
     /**
@@ -188,6 +189,8 @@ module OpenHRP
       double cop_check_margin;
       /// CP margin [m] (front, rear, inside, outside)
       DblArray4 cp_check_margin;
+      /// tilt margin [rad] (single support phase, double support phase) from reference floor
+      DblArray2 tilt_margin;
       /// ref_CP [m] (x,y) (foot_origin relative coordinate)
       DblArray2 ref_capture_point;
       /// act_CP [m] (x,y) (foot_origin relative coordinate)
