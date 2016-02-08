@@ -12,7 +12,7 @@ std::istream& operator>>(std::istream& is, std::vector<T>& v)
 {
   std::string s;
   std::vector<std::string> sv;
-  is >> s;
+  getline(is,s);
   sv = coil::split(s ,",");
   v.resize(sv.size());
   for (int i(0), len(sv.size()); i < len; ++i)
@@ -30,7 +30,7 @@ std::istream& operator>>(std::istream& is, hrp::dvector& v)
 {
   std::string s;
   std::vector<std::string> sv;
-  is >> s;
+  getline(is,s);
   sv = coil::split(s ,",");
   v.resize(sv.size());
   for (int i(0), len(sv.size()); i < len; ++i)
@@ -48,7 +48,7 @@ std::istream& operator>>(std::istream& is, hrp::Vector3& v)
 {
   std::string s;
   std::vector<std::string> sv;
-  is >> s;
+  getline(is,s);
   sv = coil::split(s ,",");
   for (int i(0); i < 3; ++i)
     {
