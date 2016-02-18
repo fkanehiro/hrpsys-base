@@ -57,6 +57,10 @@ RTC::ReturnCode_t PDcontroller::onInitialize()
 
   RTC::Properties& prop = getProperties();
   coil::stringTo(dt, prop["dt"].c_str());
+  ref_dt = dt;
+  coil::stringTo(ref_dt, prop["ref_dt"].c_str());
+  nstep = ref_dt/dt;
+  step = nstep;
 
   m_robot = hrp::BodyPtr(new hrp::Body());
 
@@ -147,11 +151,12 @@ RTC::ReturnCode_t PDcontroller::onExecute(RTC::UniqueId ec_id)
   }
   if(m_angleRefIn.isNew()){
     m_angleRefIn.read();
+    step = nstep;
   }
 
   for(int i=0; i<dof; i++){
     double q = m_angle.data[i];
-    double q_ref = m_angleRef.data[i];
+    double q_ref = step > 0 ? qold_ref[i] + (m_angleRef.data[i] - qold_ref[i])/step : qold_ref[i];
     double dq = (q - qold[i]) / dt;
     double dq_ref = (q_ref - qold_ref[i]) / dt;
     qold[i] = q;
@@ -172,6 +177,7 @@ RTC::ReturnCode_t PDcontroller::onExecute(RTC::UniqueId ec_id)
     }
     m_torque.data[i] = std::max(std::min(m_torque.data[i], tlimit), -tlimit);
   }
+  step--; 
   
   m_torqueOut.write();
   

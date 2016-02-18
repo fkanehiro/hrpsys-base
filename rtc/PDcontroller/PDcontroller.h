@@ -131,7 +131,10 @@ class PDcontroller
   void readGainFile();
   hrp::BodyPtr m_robot;
   int dummy;
-  double dt;
+  double dt;     // sampling time of pd control
+  double ref_dt; // sampling time of renference angles
+  int step;      // current interpolation step
+  int nstep;     // the number of steps to interpolate references
   std::ifstream gain;
   std::string gain_fname;
   hrp::dvector qold, qold_ref, Pgain, Dgain, tlimit_ratio;
