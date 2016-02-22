@@ -19,20 +19,6 @@ public:
 
   Eigen::Matrix<double, 7, 1> getx() { return x; }
 
-  Eigen::Matrix<double, 3, 1> accelerationToRpy(const double& acc_x, const double& acc_y, const double& acc_z) {
-    /*
-     * acc = \dot{v} + w \times v + R^T g;
-     * -> R^T g = acc - \dot{v} + w \times v;
-     * -> R^T g = acc;
-     * -> acc_x = -sinb g, acc_y = sina cosb g, acc_z = cosa cosb g;
-     */
-    double roll = atan2(acc_y, acc_z);
-    double pitch = atan2(-acc_x, sqrt(acc_y * acc_y + acc_z * acc_z));
-    double yaw = 0;             /* cannot be defined only by acceleration */
-    Eigen::Vector3d rpy = Eigen::Vector3d(roll, pitch, yaw);
-    return rpy;
-  }
-
   Eigen::Matrix<double, 4, 4> calcOmega(const Eigen::Vector3d& w) {
     /* \dot{q} = \frac{1}{2} omega q */
     Eigen::Matrix<double, 4, 4> omega;
@@ -91,31 +77,14 @@ public:
   }
 
   Eigen::Vector3d calcAcc(Eigen::Matrix<double, 4, 1> q) {
-    /* acc = \dot{v} + w \times v + R^T g; */
     Eigen::Quaternion<double> q_tmp = Eigen::Quaternion<double>(q[0], q[1], q[2], q[3]);
     Eigen::Vector3d acc = q_tmp.toRotationMatrix().transpose() * g_vec;
-    /* 
-     * Eigen::Vector3d hoge;
-     * hoge <<
-     *   -2 * q_tmp2.w() * q_tmp2.y() + 2 * q_tmp2.x() * q_tmp2.z(),
-     *   2 * q_tmp2.w() * q_tmp2.x() + 2 * q_tmp2.y() * q_tmp2.z(),
-     *   q_tmp2.w() * q_tmp2.w()  - q_tmp2.x() * q_tmp2.x() - q_tmp2.y() * q_tmp2.y() + q_tmp2.z() * q_tmp2.z();
-     * hoge *= g_vec[2];
-     * std::cerr << "diff 2" << std::endl << acc - hoge << std::endl;
-     */
     return acc;
   }
 
   Eigen::Matrix<double, 3, 7> calcH(Eigen::Matrix<double, 4, 1> q) {
     Eigen::Matrix<double, 3, 7> H;
     double w = q[0], x = q[1], y = q[2], z = q[3];
-    /* 
-     * H <<
-     *   2 * y,  2 * z,  2 * w,  2 * x, 0, 0, 0,
-     *   -2 * x, -2 * w,  2 * z,  2 * y, 0, 0, 0,
-     *   2 * w, -2 * x, -2 * y,  2 * z, 0, 0, 0;
-     * H *= g_vec[2];
-     */
     H <<
       -y, +z, -w, +x, 0, 0, 0,
       +x, +w, +z, +y, 0, 0, 0,
@@ -128,11 +97,6 @@ public:
                                           Eigen::Matrix<double, 4, 1> q) {
     /* y = z - h(x) */
     Eigen::Vector3d y = acc_measured - calcAcc(q);
-    /* 
-     * std::cerr << "acc_measured" << std::endl << acc_measured << std::endl;
-     * std::cerr << "calc acc" << std::endl << calcAcc(q, vel_ref, acc_ref, angular_rate_ref) << std::endl;
-     * std::cerr << "diff" << std::endl << y << std::endl;
-     */
     return y;
   }
 
@@ -151,7 +115,6 @@ public:
     Eigen::Matrix<double, 3, 3> S;
     Eigen::Matrix<double, 7, 3> K;
     Eigen::Vector3d y;
-    /* need to normalize q_a_priori ? */
     y = calcMeasurementResidual(z, q_a_priori);
     H = calcH(q_a_priori);
     S = H * P_a_priori * H.transpose() + R;
@@ -191,7 +154,6 @@ private:
   Eigen::Matrix<double, 7, 1> x, x_a_priori;
   Eigen::Matrix<double, 7, 7> P, P_a_priori;
   Eigen::Matrix<double, 3, 3> Q, R;
-  /* static const Eigen::Vector3d g_vec = Eigen::Vector3d(0.0, 0.0, 9.80665); */
   Eigen::Vector3d g_vec;
   double dt;
 };
