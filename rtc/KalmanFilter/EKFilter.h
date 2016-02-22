@@ -84,15 +84,10 @@ public:
     return F * P * F.transpose() + Q;
   }
 
-  Eigen::Vector3d calcAcc(Eigen::Matrix<double, 4, 1> q,
-                          const Eigen::Vector3d& vel_ref,
-                          const Eigen::Vector3d& acc_ref,
-                          const Eigen::Vector3d& angular_rate_ref) {
+  Eigen::Vector3d calcAcc(Eigen::Matrix<double, 4, 1> q) {
     /* acc = \dot{v} + w \times v + R^T g; */
     Eigen::Quaternion<double> q_tmp = Eigen::Quaternion<double>(q[0], q[1], q[2], q[3]);
-    Eigen::Vector3d acc =
-      acc_ref + angular_rate_ref.cross(vel_ref) +
-      q_tmp.toRotationMatrix().transpose() * g_vec;
+    Eigen::Vector3d acc = q_tmp.toRotationMatrix().transpose() * g_vec;
     /* 
      * Eigen::Vector3d hoge;
      * hoge <<
@@ -124,12 +119,9 @@ public:
   }
 
   Eigen::Vector3d calcMeasurementResidual(const Eigen::Vector3d& acc_measured,
-                                          const Eigen::Vector3d& vel_ref,
-                                          const Eigen::Vector3d& acc_ref,
-                                          const Eigen::Vector3d& angular_rate_ref,
                                           Eigen::Matrix<double, 4, 1> q) {
     /* y = z - h(x) */
-    Eigen::Vector3d y = acc_measured - calcAcc(q, vel_ref, acc_ref, angular_rate_ref);
+    Eigen::Vector3d y = acc_measured - calcAcc(q);
     /* 
      * std::cerr << "acc_measured" << std::endl << acc_measured << std::endl;
      * std::cerr << "calc acc" << std::endl << calcAcc(q, vel_ref, acc_ref, angular_rate_ref) << std::endl;
@@ -147,17 +139,14 @@ public:
     P_a_priori = calcPredictedCovariance(F);
   }
 
-  void correction(const Eigen::Vector3d& z,
-                  const Eigen::Vector3d& vel_ref,
-                  const Eigen::Vector3d& acc_ref,
-                  const Eigen::Vector3d& angular_rate_ref) {
+  void correction(const Eigen::Vector3d& z) {
     Eigen::Matrix<double, 4, 1> q_a_priori = x_a_priori.block<4, 1>(0, 0).normalized();
     Eigen::Matrix<double, 3, 7> H;
     Eigen::Matrix<double, 3, 3> S;
     Eigen::Matrix<double, 7, 3> K;
     Eigen::Vector3d y;
     /* need to normalize q_a_priori ? */
-    y = calcMeasurementResidual(z, vel_ref, acc_ref, angular_rate_ref, q_a_priori);
+    y = calcMeasurementResidual(z, q_a_priori);
     H = calcH(q_a_priori);
     S = H * P_a_priori * H.transpose() + R;
     K = P_a_priori * H.transpose() * S.inverse();
@@ -181,7 +170,7 @@ public:
   void main_one (hrp::Vector3& rpy, hrp::Vector3& rpyRaw, const hrp::Vector3& acc, const hrp::Vector3& gyro)
   {
       prediction(gyro);
-      correction(acc, Eigen::Vector3d(0, 0, 0), Eigen::Vector3d(0, 0, 0), Eigen::Vector3d(0, 0, 0));
+      correction(acc);
       /* ekf_filter.printAll(); */
       Eigen::Matrix<double, 7, 1> x = getx();
       Eigen::Quaternion<double> q = Eigen::Quaternion<double>(x[0], x[1], x[2], x[3]);
