@@ -56,7 +56,7 @@ public:
     Eigen::Matrix<double, 4, 1> q_a_priori;
     Eigen::Vector3d gyro_compensated = gyro - drift;
     q_a_priori = q + dt / 2 * calcOmega(gyro_compensated) * q;
-    ret.block<4, 1>(0, 0) = q_a_priori;
+    ret.block<4, 1>(0, 0) = q_a_priori.normalized();
     ret.block<3, 1>(4, 0) = drift;
     return ret;
   }
@@ -140,7 +140,7 @@ public:
   }
 
   void correction(const Eigen::Vector3d& z) {
-    Eigen::Matrix<double, 4, 1> q_a_priori = x_a_priori.block<4, 1>(0, 0).normalized();
+    Eigen::Matrix<double, 4, 1> q_a_priori = x_a_priori.block<4, 1>(0, 0);
     Eigen::Matrix<double, 3, 7> H;
     Eigen::Matrix<double, 3, 3> S;
     Eigen::Matrix<double, 7, 3> K;
