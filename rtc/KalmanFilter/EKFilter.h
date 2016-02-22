@@ -32,8 +32,7 @@ public:
 
   Eigen::Matrix<double, 7, 1> calcPredictedState(Eigen::Matrix<double, 4, 1> q,
                                                  Eigen::Vector3d gyro,
-                                                 Eigen::Vector3d drift,
-                                                 const double& dt) const {
+                                                 Eigen::Vector3d drift) const {
     /* x_a_priori = f(x, u) */
     Eigen::Matrix<double, 7, 1> ret;
     Eigen::Matrix<double, 4, 1> q_a_priori;
@@ -46,8 +45,7 @@ public:
 
   Eigen::Matrix<double, 7, 7> calcF(Eigen::Matrix<double, 4, 1> q,
                                     const Eigen::Vector3d& gyro,
-                                    Eigen::Vector3d drift,
-                                    const double& dt) const {
+                                    Eigen::Vector3d drift) const {
     Eigen::Matrix<double, 7, 7> F = Eigen::Matrix<double, 7, 7>::Identity();
     Eigen::Vector3d gyro_compensated = gyro - drift;
     F.block<4, 4>(0, 0) += dt / 2 * calcOmega(gyro_compensated);
@@ -101,8 +99,8 @@ public:
   void prediction(const Eigen::Vector3d& u) {
     Eigen::Matrix<double, 4, 1> q = x.block<4, 1>(0, 0);
     Eigen::Vector3d drift = x.block<3, 1>(4, 0);
-    Eigen::Matrix<double, 7, 7> F = calcF(q, u, drift, dt);
-    x_a_priori = calcPredictedState(q, u, drift, dt);
+    Eigen::Matrix<double, 7, 7> F = calcF(q, u, drift);
+    x_a_priori = calcPredictedState(q, u, drift);
     P_a_priori = calcPredictedCovariance(F, q);
   }
 
