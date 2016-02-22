@@ -7,15 +7,13 @@
 
 class EKFilter {
 public:
-  EKFilter() {
+  EKFilter()
+      : P(Eigen::Matrix<double, 7, 7>::Identity() * 0.1),
+        Q(Eigen::Matrix3d::Identity() * 0.001),
+        R(Eigen::Matrix3d::Identity() * 0.03),
+        g_vec(Eigen::Vector3d(0.0, 0.0, 9.80665))
+  {
     x << 1, 0, 0, 0, 0, 0, 0;
-    P = Eigen::Matrix<double, 7, 7>::Identity() * 5;
-    Q = Eigen::Matrix<double, 3, 3>::Identity() * 0.001;
-    R = Eigen::Matrix<double, 3, 3>::Zero();
-    R(0, 0) = 4;
-    R(1, 1) = 4;
-    R(2, 2) = 2;
-    g_vec = Eigen::Vector3d(0.0, 0.0, 9.80665);
   }
 
   Eigen::Matrix<double, 7, 1> getx() { return x; }
