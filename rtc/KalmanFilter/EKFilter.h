@@ -48,17 +48,14 @@ public:
                                     const Eigen::Vector3d& gyro,
                                     Eigen::Vector3d drift,
                                     const double& dt) const {
-    Eigen::Matrix<double, 7, 7> F;
+    Eigen::Matrix<double, 7, 7> F = Eigen::Matrix<double, 7, 7>::Identity();
     Eigen::Vector3d gyro_compensated = gyro - drift;
-    F.block<4, 4>(0, 0) =
-      Eigen::Matrix<double, 4, 4>::Identity() + dt / 2 * calcOmega(gyro_compensated);
+    F.block<4, 4>(0, 0) += dt / 2 * calcOmega(gyro_compensated);
     F.block<4, 3>(0, 4) <<
-      dt / 2 * q[1],   dt / 2 * q[2],   dt / 2 * q[3],
-      - dt / 2 * q[0],   dt / 2 * q[3], - dt / 2 * q[2],
-      - dt / 2 * q[3], - dt / 2 * q[0],   dt / 2 * q[1],
-      dt / 2 * q[2], - dt / 2 * q[1], - dt / 2 * q[0];
-    F.block<3, 4>(0, 4) = Eigen::Matrix<double, 3, 4>::Zero();
-    F.block<3, 3>(4, 4) = Eigen::Matrix<double, 3, 3>::Identity();
+      + dt / 2 * q[1], + dt / 2 * q[2], + dt / 2 * q[3],
+      - dt / 2 * q[0], + dt / 2 * q[3], - dt / 2 * q[2],
+      - dt / 2 * q[3], - dt / 2 * q[0], + dt / 2 * q[1],
+      + dt / 2 * q[2], - dt / 2 * q[1], - dt / 2 * q[0];
     return F;
   }
 
