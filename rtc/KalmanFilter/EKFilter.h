@@ -162,7 +162,8 @@ public:
     S = H * P_a_priori * H.transpose() + R;
     K = P_a_priori * H.transpose() * S.inverse();
     Eigen::Matrix<double, 7, 1> x_tmp = x_a_priori + K * y;
-    x = x_tmp.normalized();
+    x.block<4, 1>(0, 0) = x_tmp.block<4, 1>(0, 0).normalized(); /* quaternion */
+    x.block<3, 1>(4, 0) = x_tmp.block<3, 1>(4, 0); /* bias */
     P = (Eigen::Matrix<double, 7, 7>::Identity() - K * H) * P_a_priori;
   }
 
