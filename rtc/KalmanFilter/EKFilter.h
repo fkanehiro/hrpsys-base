@@ -10,9 +10,7 @@ public:
   EKFilter() {
     x << 1, 0, 0, 0, 0, 0, 0;
     P = Eigen::Matrix<double, 7, 7>::Identity() * 5;
-    Q = Eigen::Matrix<double, 7, 7>::Identity();
-    Q.block<4, 4>(0, 0) *= 0.1;
-    Q.block<3, 3>(4, 4) *= 0.001;
+    Q = Eigen::Matrix<double, 3, 3>::Identity() * 0.001;
     R = Eigen::Matrix<double, 3, 3>::Zero();
     R(0, 0) = 4;
     R(1, 1) = 4;
@@ -79,9 +77,18 @@ public:
     return F;
   }
 
-  Eigen::Matrix<double, 7, 7> calcPredictedCovariance(Eigen::Matrix<double, 7, 7> F) {
+  Eigen::Matrix<double, 7, 7> calcPredictedCovariance(Eigen::Matrix<double, 7, 7> F,
+                                                      Eigen::Matrix<double, 4, 1>& q) {
     /* P_a_priori = F P F^T + Q */
-    return F * P * F.transpose() + Q;
+    Eigen::Matrix<double, 4, 3> V_upper;
+    V_upper <<
+        - dt / 2 * q[1], - dt / 2 * q[2], - dt / 2 * q[3],
+        + dt / 2 * q[0], - dt / 2 * q[3], + dt / 2 * q[2],
+        + dt / 2 * q[3], + dt / 2 * q[0], - dt / 2 * q[1],
+        - dt / 2 * q[2], + dt / 2 * q[1], + dt / 2 * q[0];
+    Eigen::Matrix<double, 7, 7> VQVt = Eigen::Matrix<double, 7, 7>::Zero();
+    VQVt.block<4, 4>(0, 0) = V_upper * Q * V_upper.transpose();
+    return F * P * F.transpose() + VQVt;
   }
 
   Eigen::Vector3d calcAcc(Eigen::Matrix<double, 4, 1> q) {
@@ -136,7 +143,7 @@ public:
     Eigen::Vector3d drift = x.block<3, 1>(4, 0);
     Eigen::Matrix<double, 7, 7> F = calcF(q, u, drift, dt);
     x_a_priori = calcPredictedState(q, u, drift, dt);
-    P_a_priori = calcPredictedCovariance(F);
+    P_a_priori = calcPredictedCovariance(F, q);
   }
 
   void correction(const Eigen::Vector3d& z) {
@@ -184,8 +191,7 @@ public:
 private:
   Eigen::Matrix<double, 7, 1> x, x_a_priori;
   Eigen::Matrix<double, 7, 7> P, P_a_priori;
-  Eigen::Matrix<double, 7, 7> Q;
-  Eigen::Matrix<double, 3, 3> R;
+  Eigen::Matrix<double, 3, 3> Q, R;
   /* static const Eigen::Vector3d g_vec = Eigen::Vector3d(0.0, 0.0, 9.80665); */
   Eigen::Vector3d g_vec;
   double dt;
