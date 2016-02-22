@@ -1,3 +1,4 @@
+// -*- coding:utf-8-unix; mode: c++; indent-tabs-mode: nil; c-basic-offset: 2; -*-
 #ifndef EKFILTER_H
 #define EKFILTER_H
 
@@ -8,10 +9,10 @@
 class EKFilter {
 public:
   EKFilter()
-      : P(Eigen::Matrix<double, 7, 7>::Identity() * 0.1),
-        Q(Eigen::Matrix3d::Identity() * 0.001),
-        R(Eigen::Matrix3d::Identity() * 0.03),
-        g_vec(Eigen::Vector3d(0.0, 0.0, 9.80665))
+    : P(Eigen::Matrix<double, 7, 7>::Identity() * 0.1),
+      Q(Eigen::Matrix3d::Identity() * 0.001),
+      R(Eigen::Matrix3d::Identity() * 0.03),
+      g_vec(Eigen::Vector3d(0.0, 0.0, 9.80665))
   {
     x << 1, 0, 0, 0, 0, 0, 0;
   }
@@ -80,10 +81,10 @@ public:
     /* P_a_priori = F P F^T + Q */
     Eigen::Matrix<double, 4, 3> V_upper;
     V_upper <<
-        - dt / 2 * q[1], - dt / 2 * q[2], - dt / 2 * q[3],
-        + dt / 2 * q[0], - dt / 2 * q[3], + dt / 2 * q[2],
-        + dt / 2 * q[3], + dt / 2 * q[0], - dt / 2 * q[1],
-        - dt / 2 * q[2], + dt / 2 * q[1], + dt / 2 * q[0];
+      - dt / 2 * q[1], - dt / 2 * q[2], - dt / 2 * q[3],
+      + dt / 2 * q[0], - dt / 2 * q[3], + dt / 2 * q[2],
+      + dt / 2 * q[3], + dt / 2 * q[0], - dt / 2 * q[1],
+      - dt / 2 * q[2], + dt / 2 * q[1], + dt / 2 * q[0];
     Eigen::Matrix<double, 7, 7> VQVt = Eigen::Matrix<double, 7, 7>::Zero();
     VQVt.block<4, 4>(0, 0) = V_upper * Q * V_upper.transpose();
     return F * P * F.transpose() + VQVt;
@@ -116,9 +117,9 @@ public:
      * H *= g_vec[2];
      */
     H <<
-      -y,  z, -w, x, 0, 0, 0,
-       x,  w,  z, y, 0, 0, 0,
-       w, -x, -y, z, 0, 0, 0;
+      -y, +z, -w, +x, 0, 0, 0,
+      +x, +w, +z, +y, 0, 0, 0,
+      +w, -x, -y, +z, 0, 0, 0;
     H *= 2 * g_vec[2];
     return H;
   }
@@ -174,15 +175,15 @@ public:
 
   void main_one (hrp::Vector3& rpy, hrp::Vector3& rpyRaw, const hrp::Vector3& acc, const hrp::Vector3& gyro)
   {
-      prediction(gyro);
-      correction(acc);
-      /* ekf_filter.printAll(); */
-      Eigen::Matrix<double, 7, 1> x = getx();
-      Eigen::Quaternion<double> q = Eigen::Quaternion<double>(x[0], x[1], x[2], x[3]);
-      hrp::Vector3 eulerZYX = q.toRotationMatrix().eulerAngles(2,1,0);
-      rpy(2) = eulerZYX(0);
-      rpy(1) = eulerZYX(1);
-      rpy(0) = eulerZYX(2);
+    prediction(gyro);
+    correction(acc);
+    /* ekf_filter.printAll(); */
+    Eigen::Matrix<double, 7, 1> x = getx();
+    Eigen::Quaternion<double> q = Eigen::Quaternion<double>(x[0], x[1], x[2], x[3]);
+    hrp::Vector3 eulerZYX = q.toRotationMatrix().eulerAngles(2,1,0);
+    rpy(2) = eulerZYX(0);
+    rpy(1) = eulerZYX(1);
+    rpy(0) = eulerZYX(2);
   };
 
   void setdt (const double _dt) { dt = _dt;};
