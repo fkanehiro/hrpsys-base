@@ -61,7 +61,7 @@ public:
   void calcPredictedCovariance(Eigen::Matrix<double, 7, 7>& _P_a_priori,
                                const Eigen::Matrix<double, 7, 7>& F,
                                const Eigen::Matrix<double, 4, 1>& q) const {
-    /* P_a_priori = F P F^T + Q */
+    /* P_a_priori = F P F^T + V Q V^T */
     Eigen::Matrix<double, 4, 3> V_upper;
     V_upper <<
       - dt / 2 * q[1], - dt / 2 * q[2], - dt / 2 * q[3],
@@ -112,12 +112,10 @@ public:
   void correction(const Eigen::Vector3d& z) {
     Eigen::Matrix<double, 4, 1> q_a_priori = x_a_priori.block<4, 1>(0, 0);
     Eigen::Matrix<double, 3, 7> H;
-    Eigen::Matrix<double, 3, 3> S;
-    Eigen::Matrix<double, 7, 3> K;
     Eigen::Vector3d y = calcMeasurementResidual(z, q_a_priori);
     calcH(H, q_a_priori);
-    S = H * P_a_priori * H.transpose() + R;
-    K = P_a_priori * H.transpose() * S.inverse();
+    Eigen::Matrix<double, 3, 3> S = H * P_a_priori * H.transpose() + R;
+    Eigen::Matrix<double, 7, 3> K = P_a_priori * H.transpose() * S.inverse();
     Eigen::Matrix<double, 7, 1> x_tmp = x_a_priori + K * y;
     x.block<4, 1>(0, 0) = x_tmp.block<4, 1>(0, 0).normalized(); /* quaternion */
     x.block<3, 1>(4, 0) = x_tmp.block<3, 1>(4, 0); /* bias */
@@ -129,10 +127,6 @@ public:
     std::cerr << "x_a_priori" << std::endl << x_a_priori << std::endl;
     std::cerr << "P" << std::endl << P << std::endl << std::endl;
     std::cerr << "P_a_priori" << std::endl << P_a_priori << std::endl << std::endl;
-    /*
-     * std::cerr << "Q" << std::endl << Q << std::endl << std::endl;
-     * std::cerr << "R" << std::endl << R << std::endl << std::endl;
-     */
   }
 
   void main_one (hrp::Vector3& rpy, hrp::Vector3& rpyRaw, const hrp::Vector3& acc, const hrp::Vector3& gyro)
