@@ -19,46 +19,48 @@ public:
 
   Eigen::Matrix<double, 7, 1> getx() const { return x; }
 
-  Eigen::Matrix<double, 4, 4> calcOmega(const Eigen::Vector3d& w) const {
+  void calcOmega(Eigen::Matrix<double, 4, 4>& omega, const Eigen::Vector3d& w) const {
     /* \dot{q} = \frac{1}{2} omega q */
-    Eigen::Matrix<double, 4, 4> omega;
     omega <<
       0, -w[0], -w[1], -w[2],
       w[0],     0,  w[2], -w[1],
       w[1], -w[2],     0,  w[0],
       w[2],  w[1], -w[0],     0;
-    return omega;
   }
 
-  Eigen::Matrix<double, 7, 1> calcPredictedState(const Eigen::Matrix<double, 4, 1>& q,
-                                                 const Eigen::Vector3d& gyro,
-                                                 const Eigen::Vector3d& drift) const {
+  void calcPredictedState(Eigen::Matrix<double, 7, 1>& _x_a_priori,
+                          const Eigen::Matrix<double, 4, 1>& q,
+                          const Eigen::Vector3d& gyro,
+                          const Eigen::Vector3d& drift) const {
     /* x_a_priori = f(x, u) */
-    Eigen::Matrix<double, 7, 1> ret;
     Eigen::Matrix<double, 4, 1> q_a_priori;
     Eigen::Vector3d gyro_compensated = gyro - drift;
-    q_a_priori = q + dt / 2 * calcOmega(gyro_compensated) * q;
-    ret.block<4, 1>(0, 0) = q_a_priori.normalized();
-    ret.block<3, 1>(4, 0) = drift;
-    return ret;
+    Eigen::Matrix<double, 4, 4> omega;
+    calcOmega(omega, gyro_compensated);
+    q_a_priori = q + dt / 2 * omega * q;
+    _x_a_priori.block<4, 1>(0, 0) = q_a_priori.normalized();
+    _x_a_priori.block<3, 1>(4, 0) = drift;
   }
 
-  Eigen::Matrix<double, 7, 7> calcF(const Eigen::Matrix<double, 4, 1>& q,
-                                    const Eigen::Vector3d& gyro,
-                                    const Eigen::Vector3d& drift) const {
-    Eigen::Matrix<double, 7, 7> F = Eigen::Matrix<double, 7, 7>::Identity();
+  void calcF(Eigen::Matrix<double, 7, 7>& F,
+             const Eigen::Matrix<double, 4, 1>& q,
+             const Eigen::Vector3d& gyro,
+             const Eigen::Vector3d& drift) const {
+    F = Eigen::Matrix<double, 7, 7>::Identity();
     Eigen::Vector3d gyro_compensated = gyro - drift;
-    F.block<4, 4>(0, 0) += dt / 2 * calcOmega(gyro_compensated);
+    Eigen::Matrix<double, 4, 4> omega;
+    calcOmega(omega, gyro_compensated);
+    F.block<4, 4>(0, 0) += dt / 2 * omega;
     F.block<4, 3>(0, 4) <<
       + dt / 2 * q[1], + dt / 2 * q[2], + dt / 2 * q[3],
       - dt / 2 * q[0], + dt / 2 * q[3], - dt / 2 * q[2],
       - dt / 2 * q[3], - dt / 2 * q[0], + dt / 2 * q[1],
       + dt / 2 * q[2], - dt / 2 * q[1], - dt / 2 * q[0];
-    return F;
   }
 
-  Eigen::Matrix<double, 7, 7> calcPredictedCovariance(const Eigen::Matrix<double, 7, 7>& F,
-                                                      const Eigen::Matrix<double, 4, 1>& q) const {
+  void calcPredictedCovariance(Eigen::Matrix<double, 7, 7>& _P_a_priori,
+                               const Eigen::Matrix<double, 7, 7>& F,
+                               const Eigen::Matrix<double, 4, 1>& q) const {
     /* P_a_priori = F P F^T + Q */
     Eigen::Matrix<double, 4, 3> V_upper;
     V_upper <<
@@ -68,7 +70,7 @@ public:
       - dt / 2 * q[2], + dt / 2 * q[1], + dt / 2 * q[0];
     Eigen::Matrix<double, 7, 7> VQVt = Eigen::Matrix<double, 7, 7>::Zero();
     VQVt.block<4, 4>(0, 0) = V_upper * Q * V_upper.transpose();
-    return F * P * F.transpose() + VQVt;
+    _P_a_priori = F * P * F.transpose() + VQVt;
   }
 
   Eigen::Vector3d calcAcc(const Eigen::Matrix<double, 4, 1>& q) const {
@@ -77,15 +79,13 @@ public:
     return acc;
   }
 
-  Eigen::Matrix<double, 3, 7> calcH(Eigen::Matrix<double, 4, 1> q) const {
-    Eigen::Matrix<double, 3, 7> H;
+  void calcH(Eigen::Matrix<double, 3, 7>& H, const Eigen::Matrix<double, 4, 1>& q) const {
     double w = q[0], x = q[1], y = q[2], z = q[3];
     H <<
       -y, +z, -w, +x, 0, 0, 0,
       +x, +w, +z, +y, 0, 0, 0,
       +w, -x, -y, +z, 0, 0, 0;
     H *= 2 * g_vec[2];
-    return H;
   }
 
   Eigen::Vector3d calcMeasurementResidual(const Eigen::Vector3d& acc_measured,
@@ -99,9 +99,14 @@ public:
   void prediction(const Eigen::Vector3d& u) {
     Eigen::Matrix<double, 4, 1> q = x.block<4, 1>(0, 0);
     Eigen::Vector3d drift = x.block<3, 1>(4, 0);
-    Eigen::Matrix<double, 7, 7> F = calcF(q, u, drift);
-    x_a_priori = calcPredictedState(q, u, drift);
-    P_a_priori = calcPredictedCovariance(F, q);
+    Eigen::Matrix<double, 7, 7> F;
+    calcF(F, q, u, drift);
+    Eigen::Matrix<double, 7, 1> x_tmp;
+    calcPredictedState(x_tmp, q, u, drift);
+    x_a_priori = x_tmp;
+    Eigen::Matrix<double, 7, 7> P_tmp;
+    calcPredictedCovariance(P_tmp, F, q);
+    P_a_priori = P_tmp;
   }
 
   void correction(const Eigen::Vector3d& z) {
@@ -109,9 +114,8 @@ public:
     Eigen::Matrix<double, 3, 7> H;
     Eigen::Matrix<double, 3, 3> S;
     Eigen::Matrix<double, 7, 3> K;
-    Eigen::Vector3d y;
-    y = calcMeasurementResidual(z, q_a_priori);
-    H = calcH(q_a_priori);
+    Eigen::Vector3d y = calcMeasurementResidual(z, q_a_priori);
+    calcH(H, q_a_priori);
     S = H * P_a_priori * H.transpose() + R;
     K = P_a_priori * H.transpose() * S.inverse();
     Eigen::Matrix<double, 7, 1> x_tmp = x_a_priori + K * y;
