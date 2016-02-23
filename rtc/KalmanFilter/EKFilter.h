@@ -73,7 +73,7 @@ public:
 
   Eigen::Vector3d calcAcc(const Eigen::Matrix<double, 4, 1>& q) const {
     Eigen::Quaternion<double> q_tmp = Eigen::Quaternion<double>(q[0], q[1], q[2], q[3]);
-    Eigen::Vector3d acc = q_tmp.toRotationMatrix().transpose() * g_vec;
+    Eigen::Vector3d acc = q_tmp.conjugate()._transformVector(g_vec);
     return acc;
   }
 
