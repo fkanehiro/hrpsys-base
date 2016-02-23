@@ -138,10 +138,10 @@ public:
     /* ekf_filter.printAll(); */
     Eigen::Matrix<double, 7, 1> x = getx();
     Eigen::Quaternion<double> q = Eigen::Quaternion<double>(x[0], x[1], x[2], x[3]);
-    hrp::Vector3 eulerZYX = q.toRotationMatrix().eulerAngles(2,1,0);
-    rpy(2) = eulerZYX(0);
-    rpy(1) = eulerZYX(1);
-    rpy(0) = eulerZYX(2);
+    hrp::Vector3 eulerXYZ = hrp::rpyFromRot(q.toRotationMatrix());
+    rpy(0) = eulerXYZ(0);
+    rpy(1) = eulerXYZ(1);
+    rpy(2) = eulerXYZ(2);
   };
 
   void setdt (const double _dt) { dt = _dt;};
