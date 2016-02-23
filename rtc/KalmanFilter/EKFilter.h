@@ -30,9 +30,9 @@ public:
     return omega;
   }
 
-  Eigen::Matrix<double, 7, 1> calcPredictedState(Eigen::Matrix<double, 4, 1> q,
-                                                 Eigen::Vector3d gyro,
-                                                 Eigen::Vector3d drift) const {
+  Eigen::Matrix<double, 7, 1> calcPredictedState(const Eigen::Matrix<double, 4, 1>& q,
+                                                 const Eigen::Vector3d& gyro,
+                                                 const Eigen::Vector3d& drift) const {
     /* x_a_priori = f(x, u) */
     Eigen::Matrix<double, 7, 1> ret;
     Eigen::Matrix<double, 4, 1> q_a_priori;
@@ -43,9 +43,9 @@ public:
     return ret;
   }
 
-  Eigen::Matrix<double, 7, 7> calcF(Eigen::Matrix<double, 4, 1> q,
+  Eigen::Matrix<double, 7, 7> calcF(const Eigen::Matrix<double, 4, 1>& q,
                                     const Eigen::Vector3d& gyro,
-                                    Eigen::Vector3d drift) const {
+                                    const Eigen::Vector3d& drift) const {
     Eigen::Matrix<double, 7, 7> F = Eigen::Matrix<double, 7, 7>::Identity();
     Eigen::Vector3d gyro_compensated = gyro - drift;
     F.block<4, 4>(0, 0) += dt / 2 * calcOmega(gyro_compensated);
@@ -57,8 +57,8 @@ public:
     return F;
   }
 
-  Eigen::Matrix<double, 7, 7> calcPredictedCovariance(Eigen::Matrix<double, 7, 7> F,
-                                                      Eigen::Matrix<double, 4, 1>& q) const {
+  Eigen::Matrix<double, 7, 7> calcPredictedCovariance(const Eigen::Matrix<double, 7, 7>& F,
+                                                      const Eigen::Matrix<double, 4, 1>& q) const {
     /* P_a_priori = F P F^T + Q */
     Eigen::Matrix<double, 4, 3> V_upper;
     V_upper <<
@@ -71,7 +71,7 @@ public:
     return F * P * F.transpose() + VQVt;
   }
 
-  Eigen::Vector3d calcAcc(Eigen::Matrix<double, 4, 1> q) const {
+  Eigen::Vector3d calcAcc(const Eigen::Matrix<double, 4, 1>& q) const {
     Eigen::Quaternion<double> q_tmp = Eigen::Quaternion<double>(q[0], q[1], q[2], q[3]);
     Eigen::Vector3d acc = q_tmp.toRotationMatrix().transpose() * g_vec;
     return acc;
@@ -89,7 +89,7 @@ public:
   }
 
   Eigen::Vector3d calcMeasurementResidual(const Eigen::Vector3d& acc_measured,
-                                          Eigen::Matrix<double, 4, 1> q) const {
+                                          const Eigen::Matrix<double, 4, 1>& q) const {
     /* y = z - h(x) */
     Eigen::Vector3d y = acc_measured - calcAcc(q);
     return y;
