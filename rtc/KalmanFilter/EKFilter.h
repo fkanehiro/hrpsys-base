@@ -136,12 +136,8 @@ public:
     prediction(gyro);
     correction(acc);
     /* ekf_filter.printAll(); */
-    Eigen::Matrix<double, 7, 1> x = getx();
     Eigen::Quaternion<double> q = Eigen::Quaternion<double>(x[0], x[1], x[2], x[3]);
-    hrp::Vector3 eulerXYZ = hrp::rpyFromRot(q.toRotationMatrix());
-    rpy(0) = eulerXYZ(0);
-    rpy(1) = eulerXYZ(1);
-    rpy(2) = eulerXYZ(2);
+    rpy = hrp::rpyFromRot(q.toRotationMatrix());
   };
 
   void setdt (const double _dt) { dt = _dt;};
