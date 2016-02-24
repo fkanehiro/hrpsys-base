@@ -157,6 +157,8 @@ def demo():
         demoSetKalmanFilterParameter()
 
         # 3. check log and plot
+        hcf.abc_svc.startAutoBalancer(["rleg", "lleg"])
+
         hcf.kf_svc.resetKalmanFilterState()
         hcf.seq_svc.setJointAngles(pitch_poses[0], 1.0)
         hcf.seq_svc.waitInterpolation()
@@ -181,7 +183,6 @@ def demo():
         #hcf.seq_svc.waitInterpolation()
         #hcf.kf_svc.resetKalmanFilterState()
         #hcf.seq_svc.setJointAngles(initial_pose, 1.0)
-        hcf.abc_svc.startAutoBalancer(["rleg", "lleg"])
         hcf.seq_svc.waitInterpolation()
         test_kf_plot(test_walk, "test_walk")
 
