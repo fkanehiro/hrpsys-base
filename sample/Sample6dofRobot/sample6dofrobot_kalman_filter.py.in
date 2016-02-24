@@ -52,7 +52,7 @@ def test_kf_plot (time, av1, av2, av3, optional_out_file_name): # time [s]
     plt.title("KF actual-estimated data (motion time = {0}[s], {1})".format(time,optional_out_file_name))
     plt.legend(("Actual roll", "Estimated roll",
                 "Actual pitch", "Estimated pitch",
-                "Actual yaw", "Estimated yaw"))
+                "Actual yaw", "Estimated yaw"), loc=0)
     plt.savefig("/tmp/test-kf-sample6dofrobot-data-{0}s-{1}.eps".format(time,optional_out_file_name))
 
 def demo():
