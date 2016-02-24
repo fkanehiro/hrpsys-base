@@ -37,21 +37,22 @@ def test_kf_plot (time, av1, av2, av3, optional_out_file_name): # time [s]
     kf_ret=[]
     for line in open("/tmp/test-kf-sample6dofrobot-{0}s.kf_rpy".format(time), "r"):
         kf_ret.append(line.split(" ")[0:-1])
-    seq_ret=[]
-    for line in open("/tmp/test-kf-sample6dofrobot-{0}s.sh_qOut".format(time,optional_out_file_name), "r"):
-        seq_ret.append(line.split(" ")[0:-1])
-    initial_sec=int(seq_ret[0][0].split(".")[0])
-    tm_list=map (lambda x : int(x[0].split(".")[0])-initial_sec + float(x[0].split(".")[1]) * 1e-6, seq_ret)
+    #  Actual rpy from simualtor : time, posx, posy, posz, roll, pitch, yaw
+    act_rpy_ret=[]
+    for line in open("/tmp/test-kf-sample6dofrobot-{0}s.Sample6dofRobot(Robot)0_WAIST".format(time), "r"):
+        act_rpy_ret.append(line.split(" ")[0:-1])
+    initial_sec=int(act_rpy_ret[0][0].split(".")[0])
+    tm_list=map (lambda x : int(x[0].split(".")[0])-initial_sec + float(x[0].split(".")[1]) * 1e-6, act_rpy_ret)
     plt.clf()
     for idx in range(3):
-        plt.plot(tm_list, map(lambda x : 180.0 * float(x[4+(2-idx)]) / math.pi, seq_ret))
+        plt.plot(tm_list, map(lambda x : 180.0 * float(x[4+idx]) / math.pi, act_rpy_ret))
         plt.plot(tm_list, map(lambda x : 180.0 * float(x[1+idx]) / math.pi, kf_ret), ":")
     plt.xlabel("Time [s]")
     plt.ylabel("Angle [deg]")
     plt.title("KF actual-estimated data (motion time = {0}[s], {1})".format(time,optional_out_file_name))
     plt.legend(("Actual roll", "Estimated roll",
                 "Actual pitch", "Estimated pitch",
-                "Actual yaw", "Estimated yaw"))
+                "Actual yaw", "Estimated yaw"), loc=0)
     plt.savefig("/tmp/test-kf-sample6dofrobot-data-{0}s-{1}.eps".format(time,optional_out_file_name))
 
 def demo():
@@ -74,9 +75,17 @@ def demo():
         print "setKalmanFilterParam() => OK"
 
     # 3. check log and plot
+    offset = math.radians(85)   # we need this because we rotate waist of this robot in xml file.
     for tm in [4, 1]:
-        test_kf_plot(tm, [0,0,0,0,1,0],   [0,0,0,0,-1,0],    [0,0,0,0,0,0],   "r0-ptest")
-        test_kf_plot(tm, [0,0,0,0,1,0.8], [0,0,0,0,-1,0.8],  [0,0,0,0,0,0.8], "r1-ptest")
-        test_kf_plot(tm, [0,0,0,0,0,0.8], [0,0,0,0,0,-0.8],  [0,0,0,0,0,0],   "p0-rtest")
-        test_kf_plot(tm, [0,0,0,0,1,0.8], [0,0,0,0,1,-0.8],  [0,0,0,0.0,1,0], "p1-rtest")
-        test_kf_plot(tm, [0,0,0,0,1,0.8], [0,0,0,0,-1,-0.8], [0,0,0,0,0,0],   "rptest")
+        test_kf_plot(tm, [0,0,0,0,1-offset,0],   [0,0,0,0,-1-offset,0],    [0,0,0,0,0-offset,0],   "r0-ptest")
+        test_kf_plot(tm, [0,0,0,0,1-offset,0.8], [0,0,0,0,-1-offset,0.8],  [0,0,0,0,0-offset,0.8], "r1-ptest")
+        test_kf_plot(tm, [0,0,0,0,0-offset,0.8], [0,0,0,0,0-offset,-0.8],  [0,0,0,0,0-offset,0],   "p0-rtest")
+        test_kf_plot(tm, [0,0,0,0,1-offset,0.8], [0,0,0,0,1-offset,-0.8],  [0,0,0,0.0,1-offset,0], "p1-rtest")
+        test_kf_plot(tm, [0,0,0,0,1-offset,0.8], [0,0,0,0,-1-offset,-0.8], [0,0,0,0,0-offset,0],   "rptest")
+
+    # 4. check singularity
+    for alg in [OpenHRP.KalmanFilterService.RPYKalmanFilter, OpenHRP.KalmanFilterService.QuaternionExtendedKalmanFilter]:
+        kfp.kf_algorithm = alg
+        hcf.kf_svc.setKalmanFilterParam(kfp)
+        test_kf_plot(3, [0,0,0,0,math.radians(90),0],   [0,0,0,0,math.radians(-90),0],    [0,0,0,0,0,0],   "singularity-test-pitch-"+str(alg))
+        test_kf_plot(3, [0,0,0,math.radians(90),0,0],   [0,0,0,math.radians(-90),0,0],    [0,0,0,0,0,0],   "singularity-test-yaw-"+str(alg))
