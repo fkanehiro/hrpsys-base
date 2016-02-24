@@ -74,9 +74,10 @@ def demo():
         print "setKalmanFilterParam() => OK"
 
     # 3. check log and plot
+    offset = math.radians(85)   # we need this because we rotate waist of this robot in xml file.
     for tm in [4, 1]:
-        test_kf_plot(tm, [0,0,0,0,1,0],   [0,0,0,0,-1,0],    [0,0,0,0,0,0],   "r0-ptest")
-        test_kf_plot(tm, [0,0,0,0,1,0.8], [0,0,0,0,-1,0.8],  [0,0,0,0,0,0.8], "r1-ptest")
-        test_kf_plot(tm, [0,0,0,0,0,0.8], [0,0,0,0,0,-0.8],  [0,0,0,0,0,0],   "p0-rtest")
-        test_kf_plot(tm, [0,0,0,0,1,0.8], [0,0,0,0,1,-0.8],  [0,0,0,0.0,1,0], "p1-rtest")
-        test_kf_plot(tm, [0,0,0,0,1,0.8], [0,0,0,0,-1,-0.8], [0,0,0,0,0,0],   "rptest")
+        test_kf_plot(tm, [0,0,0,0,1-offset,0],   [0,0,0,0,-1-offset,0],    [0,0,0,0,0-offset,0],   "r0-ptest")
+        test_kf_plot(tm, [0,0,0,0,1-offset,0.8], [0,0,0,0,-1-offset,0.8],  [0,0,0,0,0-offset,0.8], "r1-ptest")
+        test_kf_plot(tm, [0,0,0,0,0-offset,0.8], [0,0,0,0,0-offset,-0.8],  [0,0,0,0,0-offset,0],   "p0-rtest")
+        test_kf_plot(tm, [0,0,0,0,1-offset,0.8], [0,0,0,0,1-offset,-0.8],  [0,0,0,0.0,1-offset,0], "p1-rtest")
+        test_kf_plot(tm, [0,0,0,0,1-offset,0.8], [0,0,0,0,-1-offset,-0.8], [0,0,0,0,0-offset,0],   "rptest")
