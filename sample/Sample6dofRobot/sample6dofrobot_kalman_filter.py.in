@@ -82,3 +82,10 @@ def demo():
         test_kf_plot(tm, [0,0,0,0,0-offset,0.8], [0,0,0,0,0-offset,-0.8],  [0,0,0,0,0-offset,0],   "p0-rtest")
         test_kf_plot(tm, [0,0,0,0,1-offset,0.8], [0,0,0,0,1-offset,-0.8],  [0,0,0,0.0,1-offset,0], "p1-rtest")
         test_kf_plot(tm, [0,0,0,0,1-offset,0.8], [0,0,0,0,-1-offset,-0.8], [0,0,0,0,0-offset,0],   "rptest")
+
+    # 4. check singularity
+    for alg in [OpenHRP.KalmanFilterService.RPYKalmanFilter, OpenHRP.KalmanFilterService.QuaternionExtendedKalmanFilter]:
+        kfp.kf_algorithm = alg
+        hcf.kf_svc.setKalmanFilterParam(kfp)
+        test_kf_plot(3, [0,0,0,0,math.radians(90),0],   [0,0,0,0,math.radians(-90),0],    [0,0,0,0,0,0],   "singularity-test-pitch-"+str(alg))
+        test_kf_plot(3, [0,0,0,math.radians(90),0,0],   [0,0,0,math.radians(-90),0,0],    [0,0,0,0,0,0],   "singularity-test-yaw-"+str(alg))
