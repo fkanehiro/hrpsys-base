@@ -159,32 +159,37 @@ def demo():
         # 3. check log and plot
         hcf.abc_svc.startAutoBalancer(["rleg", "lleg"])
 
-        hcf.kf_svc.resetKalmanFilterState()
-        hcf.seq_svc.setJointAngles(pitch_poses[0], 1.0)
-        hcf.seq_svc.waitInterpolation()
-        test_kf_plot(test_pitch_bending_2s, "pitch-bending-2s")
+        for alg in [OpenHRP.KalmanFilterService.RPYKalmanFilter, OpenHRP.KalmanFilterService.QuaternionExtendedKalmanFilter]:
+            kfp=hcf.kf_svc.getKalmanFilterParam()[1]
+            kfp.kf_algorithm = alg
+            hcf.kf_svc.setKalmanFilterParam(kfp)
 
-        #hcf.kf_svc.resetKalmanFilterState()
-        hcf.seq_svc.setJointAngles(roll_poses[0], 1.0)
-        hcf.seq_svc.waitInterpolation()
-        test_kf_plot(test_roll_bending_2s, "roll-bending-2s")
+            hcf.kf_svc.resetKalmanFilterState()
+            hcf.seq_svc.setJointAngles(pitch_poses[0], 1.0)
+            hcf.seq_svc.waitInterpolation()
+            test_kf_plot(test_pitch_bending_2s, "pitch-bending-2s"+str(alg))
 
-        #hcf.kf_svc.resetKalmanFilterState()
-        hcf.seq_svc.setJointAngles(yaw_poses[0], 1.0)
-        hcf.seq_svc.waitInterpolation()
-        test_kf_plot(test_yaw_bending_2s, "yaw-bending-4s")
+            #hcf.kf_svc.resetKalmanFilterState()
+            hcf.seq_svc.setJointAngles(roll_poses[0], 1.0)
+            hcf.seq_svc.waitInterpolation()
+            test_kf_plot(test_roll_bending_2s, "roll-bending-2s"+str(alg))
 
-        #hcf.kf_svc.resetKalmanFilterState()
-        hcf.seq_svc.setJointAngles(roll_pitch_poses[0], 1.0)
-        hcf.seq_svc.waitInterpolation()
-        test_kf_plot(test_roll_pitch_bending_4s, "roll-pitch-bending-4s")
+            #hcf.kf_svc.resetKalmanFilterState()
+            hcf.seq_svc.setJointAngles(yaw_poses[0], 1.0)
+            hcf.seq_svc.waitInterpolation()
+            test_kf_plot(test_yaw_bending_2s, "yaw-bending-4s"+str(alg))
 
-        hcf.seq_svc.setJointAngles(initial_pose, 1.0)
-        #hcf.seq_svc.waitInterpolation()
-        #hcf.kf_svc.resetKalmanFilterState()
-        #hcf.seq_svc.setJointAngles(initial_pose, 1.0)
-        hcf.seq_svc.waitInterpolation()
-        test_kf_plot(test_walk, "test_walk")
+            #hcf.kf_svc.resetKalmanFilterState()
+            hcf.seq_svc.setJointAngles(roll_pitch_poses[0], 1.0)
+            hcf.seq_svc.waitInterpolation()
+            test_kf_plot(test_roll_pitch_bending_4s, "roll-pitch-bending-4s"+str(alg))
+
+            hcf.seq_svc.setJointAngles(initial_pose, 1.0)
+            #hcf.seq_svc.waitInterpolation()
+            #hcf.kf_svc.resetKalmanFilterState()
+            #hcf.seq_svc.setJointAngles(initial_pose, 1.0)
+            hcf.seq_svc.waitInterpolation()
+            test_kf_plot(test_walk, "test_walk"+str(alg))
 
 if __name__ == '__main__':
     demo()
