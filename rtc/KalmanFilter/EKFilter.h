@@ -17,7 +17,8 @@ public:
     : P(hrp::Matrix77::Identity() * 0.1),
       Q(Eigen::Matrix3d::Identity() * 0.001),
       R(Eigen::Matrix3d::Identity() * 0.03),
-      g_vec(Eigen::Vector3d(0.0, 0.0, 9.80665))
+      g_vec(Eigen::Vector3d(0.0, 0.0, 9.80665)),
+      z_k(Eigen::Vector3d(0.0, 0.0, 9.80665))
   {
     x << 1, 0, 0, 0, 0, 0, 0;
   }
@@ -119,6 +120,7 @@ public:
   void correction(const Eigen::Vector3d& z) {
     Eigen::Vector4d q_a_priori = x_a_priori.head<4>();
     Eigen::Matrix<double, 3, 7> H;
+    z_k = z;
     Eigen::Vector3d y = calcMeasurementResidual(z, q_a_priori);
     calcH(H, q_a_priori);
     Eigen::Matrix3d S = H * P_a_priori * H.transpose() + R;
@@ -146,11 +148,16 @@ public:
   };
 
   void setdt (const double _dt) { dt = _dt;};
+  void resetKalmanFilterState() {
+    Eigen::Quaternion<double> tmp_q;
+    tmp_q.setFromTwoVectors(z_k, g_vec);
+    x << tmp_q.w(), tmp_q.x(), tmp_q.y(), tmp_q.z(), 0, 0, 0;
+  };
 private:
   hrp::Vector7 x, x_a_priori;
   hrp::Matrix77 P, P_a_priori;
   Eigen::Matrix3d Q, R;
-  Eigen::Vector3d g_vec;
+  Eigen::Vector3d g_vec, z_k;
   double dt;
 };
 
