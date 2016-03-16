@@ -22,6 +22,7 @@
 // Service implementation headers
 // <rtc-template block="service_impl_h">
 #include "SoftErrorLimiterService_impl.h"
+#include "beep.h"
 
 // </rtc-template>
 
@@ -107,6 +108,7 @@ class SoftErrorLimiter
   TimedDoubleSeq m_qRef;
   TimedDoubleSeq m_qCurrent;
   OpenHRP::TimedLongSeqSeq m_servoState;
+  TimedLongSeq m_beepCommand;
 
   // DataInPort declaration
   // <rtc-template block="inport_declare">
@@ -120,6 +122,7 @@ class SoftErrorLimiter
   // <rtc-template block="outport_declare">
   OutPort<TimedDoubleSeq> m_qOut;
   OutPort<OpenHRP::TimedLongSeqSeq> m_servoStateOut;
+  OutPort<TimedLongSeq> m_beepCommandOut;
   
   // </rtc-template>
 
@@ -146,6 +149,10 @@ class SoftErrorLimiter
   unsigned int m_debugLevel;
   int dummy, position_limit_error_beep_freq, soft_limit_error_beep_freq, debug_print_freq;
   double dt;
+  BeepClient bc;
+  // Since this RTC is stable RTC, we support both direct beeping from this RTC and beepring through BeeperRTC.
+  // If m_beepCommand is connected to BeeperRTC, is_beep_port_connected is true.
+  bool is_beep_port_connected;
 };
 
 

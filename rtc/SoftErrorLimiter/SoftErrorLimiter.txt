@@ -31,6 +31,8 @@ At the same time, this component makes beep sound 2 times per 1[s].
 
 If the cause of errors are removed, error flags and beep sound are removed.
 
+Since this RTC is stable RTC, we support both direct beeping from this RTC and beepring through BeeperRTC.
+
 <table>
 <tr><th>implementation_id</th><td>NullComponent</td></tr>
 <tr><th>category</th><td>example</td></tr>
