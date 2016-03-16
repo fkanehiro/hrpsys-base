@@ -22,7 +22,6 @@
 #include "RobotHardwareService.hh"
 
 #include "CollisionDetector.h"
-#include "../SoftErrorLimiter/beep.h"
 
 #define deg2rad(x)	((x)*M_PI/180)
 #define rad2deg(x)      ((x)*180/M_PI)
@@ -54,6 +53,7 @@ CollisionDetector::CollisionDetector(RTC::Manager* manager)
       m_qCurrentIn("qCurrent", m_qCurrent),
       m_servoStateIn("servoStateIn", m_servoState),
       m_qOut("q", m_q),
+      m_beepCommandOut("beepCommand", m_beepCommand),
       m_CollisionDetectorServicePort("CollisionDetectorService"),
       // </rtc-template>
       m_loop_for_check(0),
@@ -71,7 +71,8 @@ CollisionDetector::CollisionDetector(RTC::Manager* manager)
       m_debugLevel(0),
       m_enable(true),
       collision_beep_count(0),
-      dummy(0)
+      dummy(0),
+      is_beep_port_connected(false)
 {
     m_service0.collision(this);
 #ifdef USE_HRPSYSUTIL
@@ -106,6 +107,7 @@ RTC::ReturnCode_t CollisionDetector::onInitialize()
 
     // Set OutPort buffer
     addOutPort("q", m_qOut);
+    addOutPort("beepCommand", m_beepCommandOut);
   
     // Set service provider to Ports
     m_CollisionDetectorServicePort.registerProvider("service0", "CollisionDetectorService", m_service0);
@@ -275,6 +277,7 @@ RTC::ReturnCode_t CollisionDetector::onInitialize()
     }
 
     collision_beep_freq = static_cast<int>(1.0/(3.0*m_dt)); // 3 times / 1[s]
+    m_beepCommand.data.length(bc.get_num_beep_info());
     return RTC::RTC_OK;
 }
 
@@ -321,6 +324,17 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
 {
     static int loop = 0;
     loop++;
+
+    // Connection check of m_beepCommand to BeeperRTC
+    //   If m_beepCommand is not connected to BeeperRTC and sometimes, check connection.
+    //   If once connection is found, never check connection.
+    if (!is_beep_port_connected && (loop % 500 == 0) ) {
+      if ( m_beepCommandOut.connectors().size() > 0 ) {
+        is_beep_port_connected = true;
+        std::cerr << "[" << m_profile.instance_name<< "] beepCommand data port connection found! Use BeeperRTC." << std::endl;
+      }
+    }
+
     if (m_servoStateIn.isNew()) {
         m_servoStateIn.read();
     }
@@ -533,10 +547,16 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
         }
         //  beep
         if ( !m_safe_posture && has_servoOn ) { // If collided and some joint is servoOn
-          if ( collision_beep_count % collision_beep_freq == 0 && collision_beep_count % (collision_beep_freq * 3) != 0 ) start_beep(2352, collision_beep_freq*0.7);
-          else stop_beep();
+          if (is_beep_port_connected) {
+            if ( collision_beep_count % collision_beep_freq == 0 && collision_beep_count % (collision_beep_freq * 3) != 0 ) bc.startBeep(2352, collision_beep_freq*0.7);
+            else bc.stopBeep();
+          } else {
+            if ( collision_beep_count % collision_beep_freq == 0 && collision_beep_count % (collision_beep_freq * 3) != 0 ) start_beep(2352, collision_beep_freq*0.7);
+            else stop_beep();
+          }
           collision_beep_count++;
         } else {
+          if (is_beep_port_connected) bc.stopBeep();
           collision_beep_count = 0;
         }
 
@@ -579,6 +599,10 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
         m_state.safe_posture = m_safe_posture;
         m_state.recover_time = m_recover_time;
         m_state.loop_for_check = m_loop_for_check;
+    }
+    if (is_beep_port_connected) {
+      bc.setDataPort(m_beepCommand);
+      if (bc.isWritable()) m_beepCommandOut.write();
     }
 #ifdef USE_HRPSYSUTIL
     if ( m_use_viewer ) m_window.oneStep();

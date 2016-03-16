@@ -1,14 +1,14 @@
 // -*- C++ -*-
 /*!
- * @file  ThermoLimiter.h
- * @brief null component
+ * @file  Beeper.h
+ * @brief Beeper component
  * @date  $Date$
  *
  * $Id$
  */
 
-#ifndef THERMO_LIMITER_SERVICE_H
-#define THERMO_LIMITER_SERVICE_H
+#ifndef BEEPER_H
+#define BEEPER_H
 
 #include <rtm/Manager.h>
 #include <rtm/DataFlowComponentBase.h>
@@ -16,17 +16,10 @@
 #include <rtm/DataInPort.h>
 #include <rtm/DataOutPort.h>
 #include <rtm/idl/BasicDataTypeSkel.h>
-
-#include <hrpModel/Body.h>
-#include <hrpModel/Link.h>
-#include <hrpModel/JointPath.h>
-
-#include "../ThermoEstimator/MotorHeatParam.h"
+#include "../SoftErrorLimiter/beep.h"
 
 // Service implementation headers
 // <rtc-template block="service_impl_h">
-#include "ThermoLimiterService_impl.h"
-#include "../SoftErrorLimiter/beep.h"
 
 // </rtc-template>
 
@@ -40,7 +33,7 @@ using namespace RTC;
 /**
    \brief sample RT component which has one data input port and one data output port
  */
-class ThermoLimiter
+class Beeper
   : public RTC::DataFlowComponentBase
 {
  public:
@@ -48,11 +41,11 @@ class ThermoLimiter
      \brief Constructor
      \param manager pointer to the Manager
   */
-  ThermoLimiter(RTC::Manager* manager);
+  Beeper(RTC::Manager* manager);
   /**
      \brief Destructor
   */
-  virtual ~ThermoLimiter();
+  virtual ~Beeper();
 
   // The initialize action (on CREATED->ALIVE transition)
   // formaer rtc_init_entry()
@@ -101,29 +94,22 @@ class ThermoLimiter
   // The action that is invoked when execution context's rate is changed
   // no corresponding operation exists in OpenRTm-aist-0.2.0
   // virtual RTC::ReturnCode_t onRateChanged(RTC::UniqueId ec_id);
-  bool setParameter(const OpenHRP::ThermoLimiterService::tlParam& i_tlp);
-  bool getParameter(OpenHRP::ThermoLimiterService::tlParam& i_tlp);
-
 
  protected:
   // Configuration variable declaration
   // <rtc-template block="config_declare">
   
   // </rtc-template>
-  TimedDoubleSeq m_tempIn;
-  TimedDoubleSeq m_tauMaxOut;
-  TimedLongSeq m_beepCommandOut;
-  
+  TimedLongSeq m_beepCommand;
+
   // DataInPort declaration
   // <rtc-template block="inport_declare">
-  InPort<TimedDoubleSeq> m_tempInIn;
+  InPort<TimedLongSeq> m_beepCommandIn;
   
   // </rtc-template>
 
   // DataOutPort declaration
   // <rtc-template block="outport_declare">
-  OutPort<TimedDoubleSeq> m_tauMaxOutOut;
-  OutPort<TimedLongSeq> m_beepCommandOutOut;
   
   // </rtc-template>
 
@@ -134,37 +120,25 @@ class ThermoLimiter
 
   // Service declaration
   // <rtc-template block="service_declare">
-  RTC::CorbaPort m_ThermoLimiterServicePort;
   
   // </rtc-template>
 
   // Consumer declaration
   // <rtc-template block="consumer_declare">
-  ThermoLimiterService_impl m_ThermoLimiterService;
   
   // </rtc-template>
 
  private:
   double m_dt;
   long long m_loop;
-  unsigned int m_debugLevel, m_debug_print_freq;
-  double m_alarmRatio;
-  hrp::dvector m_motorTemperatureLimit;
-  hrp::BodyPtr m_robot;
-  std::vector<MotorHeatParam> m_motorHeatParams;
-  coil::Mutex m_mutex;
-  BeepClient bc;
-
-  void calcMaxTorqueFromTemperature(hrp::dvector &tauMax);
-  double calcEmergencyRatio(RTC::TimedDoubleSeq &current, hrp::dvector &max, double alarmRatio, std::string &prefix);
-  void callBeep(double ratio, double alarmRatio);
-  bool isDebug(int cycle = 200);
+  unsigned int m_debugLevel;
+  pthread_t beep_thread;
 };
 
 
 extern "C"
 {
-  void ThermoLimiterInit(RTC::Manager* manager);
+  void BeeperInit(RTC::Manager* manager);
 };
 
-#endif // NULL_COMPONENT_H
+#endif // BEEPER_H

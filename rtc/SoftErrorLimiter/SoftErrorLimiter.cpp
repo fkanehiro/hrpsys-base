@@ -18,8 +18,6 @@
 #include <limits>
 #define deg2rad(x)((x)*M_PI/180)
 
-#include "beep.h"
-
 // Module specification
 // <rtc-template block="module_spec">
 static const char* softerrorlimiter_spec[] =
@@ -48,10 +46,12 @@ SoftErrorLimiter::SoftErrorLimiter(RTC::Manager* manager)
     m_servoStateIn("servoStateIn", m_servoState),
     m_qOut("q", m_qRef),
     m_servoStateOut("servoStateOut", m_servoState),
+    m_beepCommandOut("beepCommand", m_beepCommand),
     m_SoftErrorLimiterServicePort("SoftErrorLimiterService"),
     // </rtc-template>
     m_debugLevel(0),
-	dummy(0)
+    dummy(0),
+    is_beep_port_connected(false)
 {
   init_beep();
   start_beep(3136);
@@ -83,6 +83,7 @@ RTC::ReturnCode_t SoftErrorLimiter::onInitialize()
   // Set OutPort buffer
   addOutPort("q", m_qOut);
   addOutPort("servoState", m_servoStateOut);
+  addOutPort("beepCommand", m_beepCommandOut);
   
   // Set service provider to Ports
   m_SoftErrorLimiterServicePort.registerProvider("service0", "SoftErrorLimiterService", m_service0);
@@ -135,6 +136,7 @@ RTC::ReturnCode_t SoftErrorLimiter::onInitialize()
   debug_print_freq = static_cast<int>(0.2/dt); // once per 0.2 [s]
   /* If you print debug message for all controller loop, please comment in here */
   // debug_print_freq = 1;
+  m_beepCommand.data.length(bc.get_num_beep_info());
 
   // load joint limit table
   hrp::readJointLimitTableFromProperties (joint_limit_tables, m_robot, prop["joint_limit_table"], std::string(m_profile.instance_name));
@@ -183,6 +185,16 @@ RTC::ReturnCode_t SoftErrorLimiter::onExecute(RTC::UniqueId ec_id)
   static bool debug_print_position_first = false;
   static bool debug_print_error_first = false;
   loop ++;
+
+  // Connection check of m_beepCommand to BeeperRTC
+  //   If m_beepCommand is not connected to BeeperRTC and sometimes, check connection.
+  //   If once connection is found, never check connection.
+  if (!is_beep_port_connected && (loop % 500 == 0) ) {
+    if ( m_beepCommandOut.connectors().size() > 0 ) {
+      is_beep_port_connected = true;
+      std::cerr << "[" << m_profile.instance_name<< "] beepCommand data port connection found! Use BeeperRTC." << std::endl;
+    }
+  }
 
   if (m_qRefIn.isNew()) {
     m_qRefIn.read();
@@ -338,22 +350,44 @@ RTC::ReturnCode_t SoftErrorLimiter::onExecute(RTC::UniqueId ec_id)
 
     // Beep sound
     if ( soft_limit_error ) { // play beep
-      if ( loop % soft_limit_error_beep_freq == 0 ) start_beep(3136, soft_limit_error_beep_freq*0.8);
+      if (is_beep_port_connected) {
+        if ( loop % soft_limit_error_beep_freq == 0 ) bc.startBeep(3136, soft_limit_error_beep_freq*0.8);
+        else bc.stopBeep();
+      } else {
+        if ( loop % soft_limit_error_beep_freq == 0 ) start_beep(3136, soft_limit_error_beep_freq*0.8);
+      }
     }else if ( position_limit_error || velocity_limit_error ) { // play beep
-      if ( loop % position_limit_error_beep_freq == 0 ) start_beep(3520, position_limit_error_beep_freq*0.8);
+      if (is_beep_port_connected) {
+        if ( loop % position_limit_error_beep_freq == 0 ) bc.startBeep(3520, position_limit_error_beep_freq*0.8);
+        else bc.stopBeep();
+      } else {
+        if ( loop % position_limit_error_beep_freq == 0 ) start_beep(3520, position_limit_error_beep_freq*0.8);
+      }
     } else {
-      stop_beep();
+      if (is_beep_port_connected) {
+        bc.stopBeep();
+      } else {
+        stop_beep();
+      }
     }
     m_qOut.write();
     m_servoStateOut.write();
   } else {
-    start_beep(3136);
+    if (is_beep_port_connected) {
+      bc.startBeep(3136);
+    } else {
+      start_beep(3136);
+    }
     if ( loop % 100 == 1 ) {
         std::cerr << "SoftErrorLimiter is not working..." << std::endl;
         std::cerr << "         m_qRef " << m_qRef.data.length() << std::endl;
         std::cerr << "     m_qCurrent " << m_qCurrent.data.length() << std::endl;
         std::cerr << "   m_servoState " << m_servoState.data.length() << std::endl;
     }
+  }
+  if (is_beep_port_connected) {
+    bc.setDataPort(m_beepCommand);
+    if (bc.isWritable()) m_beepCommandOut.write();
   }
 
   return RTC::RTC_OK;

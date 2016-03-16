@@ -24,6 +24,10 @@ Transition from overwrite mode to non-overwrite mode
 is implemented as min-jerk interplation by default. 
 Transition time is 1.0[s] by default.
 
+In collision, this component makes beep sound.
+If the cause of errors are removed, error flags and beep sound are removed.
+Since this RTC is stable RTC, we support both direct beeping from this RTC and beepring through BeeperRTC.
+
 \section dataports Data Ports
 
 \subsection inports Input Ports

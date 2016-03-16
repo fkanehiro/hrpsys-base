@@ -247,6 +247,11 @@ class HrpsysConfigurator:
     log_version = None
     log_use_owned_ec = False
 
+    # Beeper
+    bp = None
+    bp_svc = None
+    bp_version = None
+
     # rtm manager
     ms = None
 
@@ -496,6 +501,16 @@ class HrpsysConfigurator:
         if self.es:
             connectPorts(self.rh.port("servoState"), self.es.port("servoStateIn"))
 
+        if self.bp:
+            if self.tl:
+                connectPorts(self.tl.port("beepCommand"), self.bp.port("beepCommand"))
+            if self.es:
+                connectPorts(self.es.port("beepCommand"), self.bp.port("beepCommand"))
+            if self.el:
+                connectPorts(self.el.port("beepCommand"), self.bp.port("beepCommand"))
+            if self.co:
+                connectPorts(self.co.port("beepCommand"), self.bp.port("beepCommand"))
+
     def activateComps(self):
         '''!@brief
         Activate components(plugins)
@@ -676,9 +691,10 @@ class HrpsysConfigurator:
             ['co', "CollisionDetector"],
             ['tc', "TorqueController"],
             ['te', "ThermoEstimator"],
-            ['tl', "ThermoLimiter"],
             ['hes', "EmergencyStopper"],
             ['el', "SoftErrorLimiter"],
+            ['tl', "ThermoLimiter"],
+            ['bp', "Beeper"],
             ['log', "DataLogger"]
             ]
 

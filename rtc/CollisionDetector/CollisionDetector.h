@@ -30,6 +30,7 @@
 
 #include "VclipLinkPair.h"
 #include "CollisionDetectorService_impl.h"
+#include "../SoftErrorLimiter/beep.h"
 
 // Service implementation headers
 // <rtc-template block="service_impl_h">
@@ -136,6 +137,8 @@ class CollisionDetector
   // <rtc-template block="outport_declare">
   TimedDoubleSeq m_q;
   OutPort<TimedDoubleSeq> m_qOut;
+  TimedLongSeq m_beepCommand;
+  OutPort<TimedLongSeq> m_beepCommandOut;
   
   // </rtc-template>
 
@@ -197,6 +200,10 @@ class CollisionDetector
   int collision_beep_freq, collision_beep_count;
   bool m_have_safe_posture;
   OpenHRP::CollisionDetectorService::CollisionState m_state;
+  BeepClient bc;
+  // Since this RTC is stable RTC, we support both direct beeping from this RTC and beepring through BeeperRTC.
+  // If m_beepCommand is connected to BeeperRTC, is_beep_port_connected is true.
+  bool is_beep_port_connected;
 };
 
 #ifndef USE_HRPSYSUTIL

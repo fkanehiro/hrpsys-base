@@ -8,7 +8,6 @@
  */
 
 #include "ThermoLimiter.h"
-#include "../SoftErrorLimiter/beep.h"
 #include <rtm/CorbaNaming.h>
 #include <hrpModel/ModelLoaderUtil.h>
 #include <hrpUtil/MatrixSolvers.h>
@@ -43,10 +42,10 @@ ThermoLimiter::ThermoLimiter(RTC::Manager* manager)
     // <rtc-template block="initializer">
     m_tempInIn("tempIn", m_tempIn),
     m_tauMaxOutOut("tauMax", m_tauMaxOut),
+    m_beepCommandOutOut("beepCommand", m_beepCommandOut),
     m_ThermoLimiterServicePort("ThermoLimiterService"),
     m_debugLevel(0)
 {
-  init_beep();
   m_ThermoLimiterService.thermolimiter(this);
 }
 
@@ -70,6 +69,7 @@ RTC::ReturnCode_t ThermoLimiter::onInitialize()
 
   // Set OutPort buffer
   addOutPort("tauMax", m_tauMaxOutOut);
+  addOutPort("beepCommand", m_beepCommandOutOut);
   
   // Set service provider to Ports
   m_ThermoLimiterServicePort.registerProvider("service0", "ThermoLimiterService", m_ThermoLimiterService);
@@ -170,6 +170,7 @@ RTC::ReturnCode_t ThermoLimiter::onInitialize()
   // allocate memory for outPorts
   m_tauMaxOut.data.length(m_robot->numJoints());
   m_debug_print_freq = static_cast<int>(0.1/m_dt); // once per 0.1 [s]
+  m_beepCommandOut.data.length(bc.get_num_beep_info());
   
   return RTC::RTC_OK;
 }
@@ -271,6 +272,8 @@ RTC::ReturnCode_t ThermoLimiter::onExecute(RTC::UniqueId ec_id)
   }
   m_tauMaxOut.tm = tm;
   m_tauMaxOutOut.write();
+  m_beepCommandOut.tm = tm;
+  if (bc.isWritable()) m_beepCommandOutOut.write();
   return RTC::RTC_OK;
 }
 
@@ -365,16 +368,17 @@ void ThermoLimiter::callBeep(double ratio, double alarmRatio)
     const int emergency_beep_cycle = 200;
     int current_emergency_beep_cycle = m_loop % emergency_beep_cycle;
     if (current_emergency_beep_cycle <= (emergency_beep_cycle / 2)) {
-      start_beep(4000, 60);
+      bc.startBeep(4000, 60);
     } else {
-      start_beep(2000, 60);
+      bc.startBeep(2000, 60);
     }
   } else if (ratio > alarmRatio) { // normal warning
     int freq = minFreq + (maxFreq - minFreq) * ((ratio - alarmRatio) / (1.0 - alarmRatio));
-    start_beep(freq, 500);
+    bc.startBeep(freq, 500);
   } else {
-    stop_beep();
+    bc.stopBeep();
   }
+  bc.setDataPort(m_beepCommandOut);
   return;
 }
 
