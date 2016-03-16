@@ -25,6 +25,7 @@
 // Service implementation headers
 // <rtc-template block="service_impl_h">
 #include "EmergencyStopperService_impl.h"
+#include "../SoftErrorLimiter/beep.h"
 
 // </rtc-template>
 
@@ -117,6 +118,7 @@ protected:
     OpenHRP::TimedLongSeqSeq m_servoState;
     std::vector<TimedDoubleSeq> m_wrenchesRef;
     std::vector<TimedDoubleSeq> m_wrenches;
+    TimedLongSeq m_beepCommand;
 
     // DataInPort declaration
     // <rtc-template block="inport_declare">
@@ -132,6 +134,7 @@ protected:
     OutPort<TimedDoubleSeq> m_qOut;
     OutPort<TimedLong> m_emergencyModeOut;
     std::vector<OutPort<TimedDoubleSeq> *> m_wrenchesOut;
+    OutPort<TimedLongSeq> m_beepCommandOut;
   
     // </rtc-template>
 
@@ -187,6 +190,7 @@ private:
     std::queue<std::vector<double> > m_input_wrenches_queue;
     int emergency_stopper_beep_count, emergency_stopper_beep_freq;
     coil::Mutex m_mutex;
+    BeepClient bc;
 };
 
 

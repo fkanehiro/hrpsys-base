@@ -26,6 +26,7 @@
 // Service implementation headers
 // <rtc-template block="service_impl_h">
 #include "ThermoLimiterService_impl.h"
+#include "../SoftErrorLimiter/beep.h"
 
 // </rtc-template>
 
@@ -111,6 +112,7 @@ class ThermoLimiter
   // </rtc-template>
   TimedDoubleSeq m_tempIn;
   TimedDoubleSeq m_tauMaxOut;
+  TimedLongSeq m_beepCommandOut;
   
   // DataInPort declaration
   // <rtc-template block="inport_declare">
@@ -121,6 +123,7 @@ class ThermoLimiter
   // DataOutPort declaration
   // <rtc-template block="outport_declare">
   OutPort<TimedDoubleSeq> m_tauMaxOutOut;
+  OutPort<TimedLongSeq> m_beepCommandOutOut;
   
   // </rtc-template>
 
@@ -150,6 +153,7 @@ class ThermoLimiter
   hrp::BodyPtr m_robot;
   std::vector<MotorHeatParam> m_motorHeatParams;
   coil::Mutex m_mutex;
+  BeepClient bc;
 
   void calcMaxTorqueFromTemperature(hrp::dvector &tauMax);
   double calcEmergencyRatio(RTC::TimedDoubleSeq &current, hrp::dvector &max, double alarmRatio, std::string &prefix);

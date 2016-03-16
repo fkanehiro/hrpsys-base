@@ -16,7 +16,6 @@
 #include "RobotHardwareService.hh"
 
 #include "EmergencyStopper.h"
-#include "../SoftErrorLimiter/beep.h"
 
 typedef coil::Guard<coil::Mutex> Guard;
 
@@ -47,6 +46,7 @@ EmergencyStopper::EmergencyStopper(RTC::Manager* manager)
       m_emergencySignalIn("emergencySignal", m_emergencySignal),
       m_qOut("q", m_q),
       m_emergencyModeOut("emergencyMode", m_emergencyMode),
+      m_beepCommandOut("beepCommand", m_beepCommand),
       m_EmergencyStopperServicePort("EmergencyStopperService"),
       m_servoStateIn("servoStateIn", m_servoState),
       // </rtc-template>
@@ -57,13 +57,10 @@ EmergencyStopper::EmergencyStopper(RTC::Manager* manager)
       emergency_stopper_beep_count(0)
 {
     m_service0.emergencystopper(this);
-    init_beep();
-    start_beep(3136);
 }
 
 EmergencyStopper::~EmergencyStopper()
 {
-    quit_beep();
 }
 
 
@@ -85,6 +82,7 @@ RTC::ReturnCode_t EmergencyStopper::onInitialize()
     // Set OutPort buffer
     addOutPort("q", m_qOut);
     addOutPort("emergencyMode", m_emergencyModeOut);
+    addOutPort("beepCommand", m_beepCommandOut);
 
     // Set service provider to Ports
     m_EmergencyStopperServicePort.registerProvider("service0", "EmergencyStopperService", m_service0);
@@ -202,6 +200,7 @@ RTC::ReturnCode_t EmergencyStopper::onInitialize()
     }
 
     emergency_stopper_beep_freq = static_cast<int>(1.0/(2.0*m_dt)); // 2 times / 1[s]
+    m_beepCommand.data.length(bc.get_num_beep_info());
     return RTC::RTC_OK;
 }
 
@@ -418,12 +417,19 @@ RTC::ReturnCode_t EmergencyStopper::onExecute(RTC::UniqueId ec_id)
     }
     //  beep
     if ( is_stop_mode && has_servoOn ) { // If stop mode and some joint is servoOn
-        if ( emergency_stopper_beep_count % emergency_stopper_beep_freq == 0 && emergency_stopper_beep_count % (emergency_stopper_beep_freq * 3) != 0 ) start_beep(2352, emergency_stopper_beep_freq*0.7);
-        else stop_beep();
+      if ( emergency_stopper_beep_count % emergency_stopper_beep_freq == 0 && emergency_stopper_beep_count % (emergency_stopper_beep_freq * 3) != 0 ) {
+        bc.startBeep(2352, emergency_stopper_beep_freq*0.7);
+      } else {
+        bc.stopBeep();
+      }
         emergency_stopper_beep_count++;
     } else {
         emergency_stopper_beep_count = 0;
+        bc.stopBeep();
     }
+    bc.setDataPort(m_beepCommand);
+    m_beepCommand.tm = m_qRef.tm;
+    if (bc.isWritable()) m_beepCommandOut.write();
     return RTC::RTC_OK;
 }
 
