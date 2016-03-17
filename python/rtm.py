@@ -556,7 +556,7 @@ def connectPorts(outP, inPs, subscription="flush", dataflow="Push", bufferlength
         con_prof = RTC.ConnectorProfile("connector0", "", [outP, inP],
                                         [nv1, nv2, nv3, nv4, nv5, nv6, nv7])
         print('[rtm.py]    Connect ' + outP.get_port_profile().name + ' - ' + \
-              inP.get_port_profile().name)
+              inP.get_port_profile().name+' (dataflow_type='+dataflow+', subscription_type='+ subscription+', bufferlength='+str(bufferlength)+', push_rate='+str(rate)+', push_policy='+pushpolicy+')')
         ret, prof = inP.connect(con_prof)
         if ret != RTC.RTC_OK:
             print("failed to connect")
