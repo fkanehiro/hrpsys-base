@@ -148,6 +148,21 @@ def demo():
         hcf.seq_svc.waitInterpolation();
     else:
         print >> sys.stderr, "8. World frame ref-force check is not executed in non-kinematics-only-mode"
+    # 9. Object Turnaround Detector set param check
+    print >> sys.stderr, "9. Object Turnaround Detector set param check"
+    ret9 = True
+    detect_time_thre = 0.3
+    start_time_thre=0.3
+    for number_disturbance in [0, 1e-5, -1e-5]: # 1e-5 is smaller than dt
+        otdp=hcf.ic_svc.getObjectTurnaroundDetectorParam()[1];
+        otdp.detect_time_thre = detect_time_thre + number_disturbance
+        otdp.start_time_thre = start_time_thre + number_disturbance
+        hcf.ic_svc.setObjectTurnaroundDetectorParam(otdp);
+        otdp2=hcf.ic_svc.getObjectTurnaroundDetectorParam()[1];
+        print >> sys.stderr, "  ", otdp2
+        ret9 = ret9 and (otdp2.detect_time_thre == detect_time_thre and otdp2.start_time_thre == start_time_thre)
+    assert(ret9)
+    print >> sys.stderr, "  => OK"
 
 if __name__ == '__main__':
     demo()

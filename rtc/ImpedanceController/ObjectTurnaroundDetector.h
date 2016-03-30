@@ -5,6 +5,7 @@
 #include "../TorqueFilter/IIRFilter.h"
 #include <boost/shared_ptr.hpp>
 #include <iostream>
+#include <cmath>
 
 class ObjectTurnaroundDetector
 {
@@ -139,8 +140,8 @@ class ObjectTurnaroundDetector
     void setDwrenchCutoffFreq (const double a) { dwrench_filter->setCutOffFreq(a); };
     void setDetectRatioThre (const double a) { detect_ratio_thre = a; };
     void setStartRatioThre (const double a) { start_ratio_thre = a; };
-    void setDetectTimeThre (const double a) { detect_count_thre = static_cast<size_t>(a/dt); };
-    void setStartTimeThre (const double a) { start_count_thre = static_cast<size_t>(a/dt); };
+    void setDetectTimeThre (const double a) { detect_count_thre = round(a/dt); };
+    void setStartTimeThre (const double a) { start_count_thre = round(a/dt); };
     void setAxis (const hrp::Vector3& a) { axis = a; };
     void setMomentCenter (const hrp::Vector3& a) { moment_center = a; };
     void setDetectorTotalWrench (const detector_total_wrench _dtw)
