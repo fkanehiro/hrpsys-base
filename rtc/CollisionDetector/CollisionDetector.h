@@ -21,12 +21,12 @@
 #include <hrpModel/ModelLoaderUtil.h>
 #ifdef USE_HRPSYSUTIL
 #include "GLscene.h"
-#include "util/SDLUtil.h"
-#include "util/LogManager.h"
+#include "hrpsys/util/SDLUtil.h"
+#include "hrpsys/util/LogManager.h"
 #endif // USE_HRPSYSUTIL
 #include "TimedPosture.h"
 #include "interpolator.h"
-#include "HRPDataTypes.hh"
+#include "hrpsys/idl/HRPDataTypes.hh"
 
 #include "VclipLinkPair.h"
 #include "CollisionDetectorService_impl.h"

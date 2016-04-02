@@ -7,13 +7,13 @@
 #include <GL/glut.h>
 #endif
 #include <sys/time.h>
-#include "util/GLcamera.h"
-#include "util/GLlink.h"
-#include "util/GLbody.h"
-#include "util/LogManager.h"
+#include "hrpsys/util/GLcamera.h"
+#include "hrpsys/util/GLlink.h"
+#include "hrpsys/util/GLbody.h"
+#include "hrpsys/util/LogManager.h"
 #include "TimedPosture.h"
 #include "GLscene.h"
-#include "CollisionDetectorService.hh"
+#include "hrpsys/idl/CollisionDetectorService.hh"
 
 
 using namespace OpenHRP;

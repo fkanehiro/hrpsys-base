@@ -10,7 +10,7 @@
 #include <math.h>
 #include <limits>
 #include "AverageFilter.h"
-#include "pointcloud.hh"
+#include "hrpsys/idl/pointcloud.hh"
 
 // Module specification
 // <rtc-template block="module_spec">

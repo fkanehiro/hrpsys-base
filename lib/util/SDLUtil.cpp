@@ -7,11 +7,11 @@
 #include <GL/glut.h>
 #endif
 #include <SDL.h>
-#include "util/ThreadedObject.h"
-#include "util/LogManagerBase.h"
-#include "util/GLsceneBase.h"
-#include "util/GLcamera.h"
-#include "util/GLlink.h"
+#include "hrpsys/util/ThreadedObject.h"
+#include "hrpsys/util/LogManagerBase.h"
+#include "hrpsys/util/GLsceneBase.h"
+#include "hrpsys/util/GLcamera.h"
+#include "hrpsys/util/GLlink.h"
 #include "SDLUtil.h"
 
 

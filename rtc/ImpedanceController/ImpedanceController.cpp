@@ -15,7 +15,7 @@
 #include "JointPathEx.h"
 #include <hrpModel/JointPath.h>
 #include <hrpUtil/MatrixSolvers.h>
-#include "util/Hrpsys.h"
+#include "hrpsys/util/Hrpsys.h"
 #include <boost/assign.hpp>
 
 #define MAX_TRANSITION_COUNT (static_cast<int>(2/m_dt))

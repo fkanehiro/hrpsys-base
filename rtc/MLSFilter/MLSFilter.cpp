@@ -11,7 +11,7 @@
 #include <pcl/point_types.h>
 #include <pcl/surface/mls.h>
 #include "MLSFilter.h"
-#include "pointcloud.hh"
+#include "hrpsys/idl/pointcloud.hh"
 
 // Module specification
 // <rtc-template block="module_spec">

@@ -9,10 +9,10 @@
 #endif
 #include <boost/bind.hpp>
 #include <hrpModel/Sensor.h>
-#include "util/GLcamera.h"
-#include "util/GLlink.h"
-#include "util/GLbody.h"
-#include "util/LogManager.h"
+#include "hrpsys/util/GLcamera.h"
+#include "hrpsys/util/GLlink.h"
+#include "hrpsys/util/GLbody.h"
+#include "hrpsys/util/LogManager.h"
 #include "SceneState.h"
 #include "GLscene.h"
 

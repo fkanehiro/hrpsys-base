@@ -11,7 +11,7 @@
 #include <hrpModel/Link.h>
 #include <hrpModel/ModelLoaderUtil.h>
 #include "ServoController.h"
-#include "util/VectorConvert.h"
+#include "hrpsys/util/VectorConvert.h"
 
 #include "ServoSerial.h"
 

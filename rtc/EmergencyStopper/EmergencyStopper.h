@@ -19,7 +19,7 @@
 #include <rtm/idl/ExtendedDataTypesSkel.h>
 #include <hrpModel/Body.h>
 #include "interpolator.h"
-#include "HRPDataTypes.hh"
+#include "hrpsys/idl/HRPDataTypes.hh"
 #include <queue>
 
 // Service implementation headers

@@ -2,7 +2,7 @@
 #ifndef STATEHOLDERSERVICE_IMPL_H
 #define STATEHOLDERSERVICE_IMPL_H
 
-#include "StateHolderService.hh"
+#include "hrpsys/idl/StateHolderService.hh"
 
 using namespace OpenHRP;
 

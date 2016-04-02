@@ -16,7 +16,7 @@
 #include <rtm/DataInPort.h>
 #include <rtm/DataOutPort.h>
 #include <rtm/idl/BasicDataTypeSkel.h>
-#include "Img.hh"
+#include "hrpsys/idl/Img.hh"
 #include "camera.h"
 
 // Service implementation headers

@@ -11,7 +11,7 @@
 #include <pcl/point_types.h>
 #include <pcl/filters/statistical_outlier_removal.h>
 #include "PCDLoader.h"
-#include "pointcloud.hh"
+#include "hrpsys/idl/pointcloud.hh"
 
 // Module specification
 // <rtc-template block="module_spec">

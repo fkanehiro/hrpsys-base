@@ -1,9 +1,9 @@
 #include <cstdio>
 #include <iostream>
 #include <hrpModel/ModelLoaderUtil.h>
-#include "util/GLbody.h"
-#include "util/GLlink.h"
-#include "util/GLutil.h"
+#include "hrpsys/util/GLbody.h"
+#include "hrpsys/util/GLlink.h"
+#include "hrpsys/util/GLutil.h"
 #include "OnlineViewer_impl.h"
 #include "GLscene.h"
 

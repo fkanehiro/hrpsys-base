@@ -3,7 +3,7 @@
 
 #include <hrpUtil/EigenTypes.h>
 #include <hrpUtil/Eigen3d.h>
-#include "util/Hrpsys.h"
+#include "hrpsys/util/Hrpsys.h"
 namespace hrp{
   typedef Eigen::Vector2d Vector2;
   typedef Eigen::Matrix2d Matrix22;

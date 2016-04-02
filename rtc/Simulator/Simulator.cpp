@@ -14,7 +14,7 @@
 #include <hrpModel/ModelLoaderUtil.h>
 #include <hrpModel/OnlineViewerUtil.h>
 #include <hrpModel/Link.h>
-#include "util/Project.h"
+#include "hrpsys/util/Project.h"
 
 // Module specification
 // <rtc-template block="module_spec">

@@ -3,8 +3,8 @@
 #if 0
 #include "IrrModel.h"
 #else
-#include "util/GLbody.h"
-#include "util/GLlink.h"
+#include "hrpsys/util/GLbody.h"
+#include "hrpsys/util/GLlink.h"
 #endif
 
 RTCGLbody::RTCGLbody(GLbody *i_body, RTC::DataFlowComponentBase *comp) : 

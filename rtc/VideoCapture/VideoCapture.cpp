@@ -7,7 +7,7 @@
  * $Id$
  */
 
-#include "util/VectorConvert.h"
+#include "hrpsys/util/VectorConvert.h"
 #include "VideoCapture.h"
 
 // Module specification

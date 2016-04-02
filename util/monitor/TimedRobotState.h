@@ -1,8 +1,8 @@
 #ifndef __TIMED_ROBOT_STATE_H__
 #define __TIMED_ROBOT_STATE_H__
 
-#include "RobotHardwareService.hh"
-#include "StateHolderService.hh"
+#include "hrpsys/idl/RobotHardwareService.hh"
+#include "hrpsys/idl/StateHolderService.hh"
 
 typedef struct
 {

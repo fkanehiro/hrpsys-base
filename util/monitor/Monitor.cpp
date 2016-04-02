@@ -1,6 +1,6 @@
 #include <rtm/CorbaNaming.h>
 #include "Monitor.h"
-#include "util/OpenRTMUtil.h"
+#include "hrpsys/util/OpenRTMUtil.h"
 #include "GLscene.h"
 
 Monitor::Monitor(CORBA::ORB_var orb, const std::string &i_hostname,

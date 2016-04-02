@@ -9,11 +9,11 @@
 
 #include <rtm/CorbaNaming.h>
 
-#include "util/Project.h"
+#include "hrpsys/util/Project.h"
 #include <hrpModel/ModelLoaderUtil.h>
-#include "util/GLbody.h"
-#include "util/GLlink.h"
-#include "util/GLutil.h"
+#include "hrpsys/util/GLbody.h"
+#include "hrpsys/util/GLlink.h"
+#include "hrpsys/util/GLutil.h"
 #include "GLscene.h"
 #include "RTCGLbody.h"
 #include "Viewer.h"

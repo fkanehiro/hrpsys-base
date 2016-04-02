@@ -1,7 +1,7 @@
 #ifndef __GLSCENE_H__
 #define __GLSCENE_H__
 
-#include "util/GLsceneBase.h"
+#include "hrpsys/util/GLsceneBase.h"
 
 class GLscene : public GLsceneBase
 {

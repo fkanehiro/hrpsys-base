@@ -7,10 +7,10 @@
 #else
 #include <GL/gl.h>
 #endif
-#include "util/GLcamera.h"
-#include "util/GLlink.h"
-#include "util/GLbody.h"
-#include "util/LogManager.h"
+#include "hrpsys/util/GLcamera.h"
+#include "hrpsys/util/GLlink.h"
+#include "hrpsys/util/GLbody.h"
+#include "hrpsys/util/LogManager.h"
 #include "GLscene.h"
 
 using namespace OpenHRP;

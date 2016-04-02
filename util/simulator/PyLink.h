@@ -2,7 +2,7 @@
 #define __PYLINK_H__
 
 #include <boost/python.hpp>
-#include "util/GLlink.h"
+#include "hrpsys/util/GLlink.h"
 
 class PyShape;
 

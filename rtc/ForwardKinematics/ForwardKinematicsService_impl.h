@@ -1,7 +1,7 @@
 #ifndef __FORWARD_KINEMATICS_SERVICE_IMPL_H__
 #define __FORWARD_KINEMATICS_SERVICE_IMPL_H__
 
-#include "ForwardKinematicsService.hh"
+#include "hrpsys/idl/ForwardKinematicsService.hh"
 
 class ForwardKinematics;
 

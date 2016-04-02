@@ -14,7 +14,7 @@
 #include "AutoBalancer.h"
 #include <hrpModel/JointPath.h>
 #include <hrpUtil/MatrixSolvers.h>
-#include "util/Hrpsys.h"
+#include "hrpsys/util/Hrpsys.h"
 
 
 typedef coil::Guard<coil::Mutex> Guard;

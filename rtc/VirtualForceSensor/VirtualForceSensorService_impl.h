@@ -2,7 +2,7 @@
 #ifndef IMPEDANCESERVICESVC_IMPL_H
 #define IMPEDANCESERVICESVC_IMPL_H
 
-#include "VirtualForceSensorService.hh"
+#include "hrpsys/idl/VirtualForceSensorService.hh"
 
 using namespace OpenHRP;
 

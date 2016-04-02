@@ -2,9 +2,9 @@
 #define __PORT_HANDLER_H__
 
 #include <rtm/idl/InterfaceDataTypes.hh>
-#include "HRPDataTypes.hh"
+#include "hrpsys/idl/HRPDataTypes.hh"
 #include "BodyRTC.h"
-#include "pointcloud.hh"
+#include "hrpsys/idl/pointcloud.hh"
 
 namespace hrp{
     class ForceSensor;

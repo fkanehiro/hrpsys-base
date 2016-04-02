@@ -3,7 +3,7 @@
 
 #include <SDL/SDL_thread.h>
 #include <hrpCorba/ModelLoader.hh>
-#include "util/GLsceneBase.h"
+#include "hrpsys/util/GLsceneBase.h"
 
 class LogManagerBase;
 

@@ -11,7 +11,7 @@
 #include <rtm/Manager.h>
 #include <rtm/PeriodicExecutionContext.h>
 
-#include "ExecutionProfileService.hh"
+#include "hrpsys/idl/ExecutionProfileService.hh"
 
 namespace RTC
 {

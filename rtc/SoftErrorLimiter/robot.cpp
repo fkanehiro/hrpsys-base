@@ -1,5 +1,5 @@
 #include "robot.h"
-#include "util/Hrpsys.h"
+#include "hrpsys/util/Hrpsys.h"
 
 #define DEFAULT_ANGLE_ERROR_LIMIT (0.2 - 0.02) // [rad]
 

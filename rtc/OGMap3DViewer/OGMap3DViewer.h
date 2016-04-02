@@ -20,7 +20,7 @@
 //Open CV headder
 #include <cv.h>
 #include <highgui.h>
-#include "OGMap3DService.hh"
+#include "hrpsys/idl/OGMap3DService.hh"
 
 class GLbody;
 class CMapSceneNode;

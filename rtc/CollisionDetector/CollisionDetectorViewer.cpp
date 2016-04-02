@@ -7,16 +7,16 @@
 #else
 #include <GL/glut.h>
 #endif
-#include "util/ProjectUtil.h"
-#include "util/GLbody.h"
-#include "util/GLlink.h"
-#include "util/GLutil.h"
-#include "util/SDLUtil.h"
-#include "util/LogManager.h"
-#include "util/BVutil.h"
+#include "hrpsys/util/ProjectUtil.h"
+#include "hrpsys/util/GLbody.h"
+#include "hrpsys/util/GLlink.h"
+#include "hrpsys/util/GLutil.h"
+#include "hrpsys/util/SDLUtil.h"
+#include "hrpsys/util/LogManager.h"
+#include "hrpsys/util/BVutil.h"
 #include "TimedPosture.h"
 #include "GLscene.h"
-#include "CollisionDetectorService.hh"
+#include "hrpsys/idl/CollisionDetectorService.hh"
 
 using namespace hrp;
 using namespace OpenHRP;

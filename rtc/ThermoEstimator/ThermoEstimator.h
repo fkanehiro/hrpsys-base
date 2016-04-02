@@ -21,7 +21,7 @@
 #include <hrpModel/Link.h>
 #include <hrpModel/JointPath.h>
 
-#include "HRPDataTypes.hh"
+#include "hrpsys/idl/HRPDataTypes.hh"
 #include "MotorHeatParam.h"
 
 // Service implementation headers

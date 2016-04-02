@@ -17,7 +17,7 @@
 #include <rtm/DataOutPort.h>
 #include <rtm/idl/BasicDataTypeSkel.h>
 #include <rtm/idl/ExtendedDataTypesSkel.h>
-#include "HRPDataTypes.hh"
+#include "hrpsys/idl/HRPDataTypes.hh"
 
 #include <hrpModel/Body.h>
 

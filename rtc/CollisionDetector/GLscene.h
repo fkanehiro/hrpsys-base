@@ -2,7 +2,7 @@
 #define __GLSCENE_H__
 
 #include <hrpModel/ColdetLinkPair.h>
-#include "util/GLsceneBase.h"
+#include "hrpsys/util/GLsceneBase.h"
 
 class LogManagerBase;
 

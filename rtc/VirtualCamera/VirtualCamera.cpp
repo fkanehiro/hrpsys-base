@@ -14,12 +14,12 @@
 #endif
 #include <rtm/CorbaNaming.h>
 #include <hrpModel/ModelLoaderUtil.h>
-#include "util/Project.h"
-#include "util/VectorConvert.h"
-#include "util/GLcamera.h"
-#include "util/GLbody.h"
-#include "util/GLlink.h"
-#include "util/GLutil.h"
+#include "hrpsys/util/Project.h"
+#include "hrpsys/util/VectorConvert.h"
+#include "hrpsys/util/GLcamera.h"
+#include "hrpsys/util/GLbody.h"
+#include "hrpsys/util/GLlink.h"
+#include "hrpsys/util/GLutil.h"
 #include "VirtualCamera.h"
 #include "RTCGLbody.h"
 #include "GLscene.h"

@@ -10,13 +10,13 @@
 #include <GL/glut.h>
 #endif
 #include <SDL_thread.h>
-#include "util/GLbodyRTC.h"
-#include "util/GLlink.h"
-#include "util/GLutil.h"
-#include "util/Project.h"
-#include "util/OpenRTMUtil.h"
-#include "util/SDLUtil.h"
-#include "util/BVutil.h"
+#include "hrpsys/util/GLbodyRTC.h"
+#include "hrpsys/util/GLlink.h"
+#include "hrpsys/util/GLutil.h"
+#include "hrpsys/util/Project.h"
+#include "hrpsys/util/OpenRTMUtil.h"
+#include "hrpsys/util/SDLUtil.h"
+#include "hrpsys/util/BVutil.h"
 #include "Simulator.h"
 #include "GLscene.h"
 

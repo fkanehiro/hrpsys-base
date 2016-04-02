@@ -1,6 +1,6 @@
 #include <boost/python.hpp>
-#include "util/BodyRTC.h"
-#include "util/GLbody.h"
+#include "hrpsys/util/BodyRTC.h"
+#include "hrpsys/util/GLbody.h"
 
 class PyLink;
 class PySimulator;

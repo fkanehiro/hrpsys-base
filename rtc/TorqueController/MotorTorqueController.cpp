@@ -9,7 +9,7 @@
  */
 
 #include "MotorTorqueController.h"
-// #include "util/Hrpsys.h"
+// #include "hrpsys/util/Hrpsys.h"
 #include <iostream>
 #include <cmath>
 #include <boost/version.hpp>

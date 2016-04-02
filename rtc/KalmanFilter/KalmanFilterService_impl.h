@@ -2,7 +2,7 @@
 #ifndef __KALMANFILTER_SERVICE_H__
 #define __KALMANFILTER_SERVICE_H__
 
-#include "KalmanFilterService.hh"
+#include "hrpsys/idl/KalmanFilterService.hh"
 
 class KalmanFilter;
 

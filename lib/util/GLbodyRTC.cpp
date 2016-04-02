@@ -1,4 +1,4 @@
-#include "util/GLbodyRTC.h"
+#include "hrpsys/util/GLbodyRTC.h"
 
 const char* GLbodyRTC::glbodyrtc_spec[] =
 {

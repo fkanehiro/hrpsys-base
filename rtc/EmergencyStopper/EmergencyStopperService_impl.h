@@ -1,7 +1,7 @@
 #ifndef __EMERGENCYSTOPPER_SERVICE_H__
 #define __EMERGENCYSTOPPER_SERVICE_H__
 
-#include "EmergencyStopperService.hh"
+#include "hrpsys/idl/EmergencyStopperService.hh"
 
 class EmergencyStopper;
 
