@@ -1,5 +1,5 @@
 #include "hrpEC.h"
-#include "io/iob.h"
+#include "hrpsys/io/iob.h"
 #ifdef OPENRTM_VERSION_TRUNK
 #include <rtm/RTObjectStateMachine.h>
 #endif

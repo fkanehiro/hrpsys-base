@@ -8,10 +8,10 @@
  */
 
 #include "GraspController.h"
-#include "util/VectorConvert.h"
+#include "hrpsys/util/VectorConvert.h"
 #include <rtm/CorbaNaming.h>
 #include <hrpModel/ModelLoaderUtil.h>
-#include "RobotHardwareService.hh"
+#include "hrpsys/idl/RobotHardwareService.hh"
 
 #include <hrpModel/Link.h>
 

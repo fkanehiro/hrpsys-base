@@ -2,7 +2,7 @@
 #ifndef THERMOLIMITERSERVICESVC_IMPL_H
 #define THERMOLIMITERSERVICESVC_IMPL_H
 
-#include "ThermoLimiterService.hh"
+#include "hrpsys/idl/ThermoLimiterService.hh"
 
 using namespace OpenHRP;
 

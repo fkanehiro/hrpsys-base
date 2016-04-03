@@ -15,11 +15,11 @@
 #include <hrpUtil/Eigen4d.h>
 #include <hrpCollision/ColdetModel.h>
 #ifdef USE_HRPSYSUTIL
-#include "util/GLbody.h"
-#include "util/GLutil.h"
+#include "hrpsys/util/GLbody.h"
+#include "hrpsys/util/GLutil.h"
 #endif // USE_HRPSYSUTIL
-#include "util/BVutil.h"
-#include "RobotHardwareService.hh"
+#include "hrpsys/util/BVutil.h"
+#include "hrpsys/idl/RobotHardwareService.hh"
 
 #include "CollisionDetector.h"
 

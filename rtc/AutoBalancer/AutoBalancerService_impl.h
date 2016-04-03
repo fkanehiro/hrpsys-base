@@ -2,7 +2,7 @@
 #ifndef AUTOBALANCERSERVICESVC_IMPL_H
 #define AUTOBALANCERSERVICESVC_IMPL_H
 
-#include "AutoBalancerService.hh"
+#include "hrpsys/idl/AutoBalancerService.hh"
 
 using namespace OpenHRP;
 

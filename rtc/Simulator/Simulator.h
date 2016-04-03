@@ -21,7 +21,7 @@
 #include <hrpModel/World.h>
 #include <hrpUtil/OnlineViewerUtil.h>
 
-#include "HRPDataTypes.hh"
+#include "hrpsys/idl/HRPDataTypes.hh"
 #include "RTCBody.h"
 
 // Service implementation headers

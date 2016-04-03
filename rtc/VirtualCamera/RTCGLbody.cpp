@@ -1,6 +1,6 @@
 #include <rtm/DataFlowComponentBase.h>
-#include "util/GLbody.h"
-#include "util/GLlink.h"
+#include "hrpsys/util/GLbody.h"
+#include "hrpsys/util/GLlink.h"
 #include "RTCGLbody.h"
 
 RTCGLbody::RTCGLbody(GLbody *i_body, RTC::DataFlowComponentBase *comp) : 

@@ -2,7 +2,7 @@
 #ifndef __DATA_LOGGER_SERVICE_IMPL_H__
 #define __DATA_LOGGER_SERVICE_IMPL_H__
 
-#include "DataLoggerService.hh"
+#include "hrpsys/idl/DataLoggerService.hh"
 
 using namespace OpenHRP;
 

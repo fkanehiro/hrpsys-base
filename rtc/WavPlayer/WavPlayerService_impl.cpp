@@ -2,7 +2,7 @@
 #include <cstdlib>
 #include <cstdio>
 #include <pthread.h>
-#include "util/Hrpsys.h"
+#include "hrpsys/util/Hrpsys.h"
 #include "WavPlayerService_impl.h"
 
 

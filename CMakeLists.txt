@@ -47,8 +47,25 @@ if(UNIX)
     add_definitions(${OPENHRP_DEFINITIONS})
 endif()
 
-include_directories(${PROJECT_SOURCE_DIR}/lib)
-include_directories(${CMAKE_BINARY_DIR}/idl)
+execute_process(
+  COMMAND mkdir -p ${CMAKE_BINARY_DIR}/hrpsys
+)
+if (NOT EXISTS ${CMAKE_BINARY_DIR}/hrpsys/io)
+  execute_process(
+    COMMAND ln -s ${PROJECT_SOURCE_DIR}/lib/io ${CMAKE_BINARY_DIR}/hrpsys/io
+   )
+endif()
+if (NOT EXISTS ${CMAKE_BINARY_DIR}/hrpsys/util)
+  execute_process(
+    COMMAND ln -s ${PROJECT_SOURCE_DIR}/lib/util ${CMAKE_BINARY_DIR}/hrpsys/util
+   )
+endif()
+if (NOT EXISTS ${CMAKE_BINARY_DIR}/hrpsys/idl)
+  execute_process(
+    COMMAND ln -s ${CMAKE_BINARY_DIR}/idl ${CMAKE_BINARY_DIR}/hrpsys/idl
+   )
+endif()
+include_directories(${CMAKE_BINARY_DIR})
 
 if(ENABLE_INSTALL_RPATH)
   set(CMAKE_INSTALL_RPATH "$ORIGIN/../lib:$ORIGIN/../../../lib:${OPENHRP_LIBRARY_DIRS}")

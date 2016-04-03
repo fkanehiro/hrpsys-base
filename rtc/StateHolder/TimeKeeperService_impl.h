@@ -2,7 +2,7 @@
 #ifndef TIMEKEEPERSERVICE_IMPL_H
 #define TIMEKEEPERSERVICE_IMPL_H
 
-#include "TimeKeeperService.hh"
+#include "hrpsys/idl/TimeKeeperService.hh"
 
 using namespace OpenHRP;
 

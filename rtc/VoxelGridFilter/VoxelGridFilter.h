@@ -16,7 +16,7 @@
 #include <rtm/DataInPort.h>
 #include <rtm/DataOutPort.h>
 #include <rtm/idl/BasicDataTypeSkel.h>
-#include "pointcloud.hh"
+#include "hrpsys/idl/pointcloud.hh"
 
 // Service implementation headers
 // <rtc-template block="service_impl_h">

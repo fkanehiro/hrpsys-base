@@ -4,7 +4,7 @@
 #define ROBOTHARDWARESERVICE_IMPL_H
 
 #include <boost/intrusive_ptr.hpp>
-#include "RobotHardwareService.hh"
+#include "hrpsys/idl/RobotHardwareService.hh"
 
 #include "robot.h"
 

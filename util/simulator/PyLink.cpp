@@ -2,7 +2,7 @@
 #include <rtm/Manager.h>
 #include <rtm/CorbaNaming.h>
 #include <hrpModel/ModelLoaderUtil.h>
-#include <util/GLutil.h>
+#include "hrpsys/util/GLutil.h"
 #include "PyLink.h"
 #include "PyBody.h"
 #include "PyShape.h"

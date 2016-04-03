@@ -2,7 +2,7 @@
 #ifndef WAVPLAYSERVICESVC_IMPL_H
 #define WAVPLAYSERVICESVC_IMPL_H
 
-#include "WavPlayerService.hh"
+#include "hrpsys/idl/WavPlayerService.hh"
 
 using namespace OpenHRP;
 

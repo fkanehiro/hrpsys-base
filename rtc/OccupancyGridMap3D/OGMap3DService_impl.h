@@ -2,7 +2,7 @@
 #ifndef __OGMap3DService_H__
 #define __OGMap3DService_H__
 
-#include "OGMap3DService.hh"
+#include "hrpsys/idl/OGMap3DService.hh"
 
 class OccupancyGridMap3D;
 

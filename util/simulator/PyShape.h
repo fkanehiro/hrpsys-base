@@ -2,7 +2,7 @@
 #define __PYSHAPE_H__
 
 #include <boost/python.hpp>
-#include "util/GLshape.h"
+#include "hrpsys/util/GLshape.h"
 
 class PyShape : public GLshape
 {

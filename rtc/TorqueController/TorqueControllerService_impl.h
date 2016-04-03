@@ -2,7 +2,7 @@
 #ifndef __NULL_SERVICE_H__
 #define __NULL_SERVICE_H__
 
-#include "TorqueControllerService.hh"
+#include "hrpsys/idl/TorqueControllerService.hh"
 
 using namespace OpenHRP;
 

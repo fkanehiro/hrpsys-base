@@ -7,13 +7,13 @@
  * $Id$
  */
 
-#include "util/VectorConvert.h"
+#include "hrpsys/util/VectorConvert.h"
 #include <rtm/CorbaNaming.h>
 #include <hrpModel/ModelLoaderUtil.h>
 #include <math.h>
 #include <hrpModel/Link.h>
 #include <hrpModel/Sensor.h>
-#include "RobotHardwareService.hh"
+#include "hrpsys/idl/RobotHardwareService.hh"
 
 #include "EmergencyStopper.h"
 

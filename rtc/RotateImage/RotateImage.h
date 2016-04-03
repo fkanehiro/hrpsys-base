@@ -17,7 +17,7 @@
 #include <rtm/DataOutPort.h>
 #include <rtm/idl/BasicDataTypeSkel.h>
 #include <cv.h>
-#include "Img.hh"
+#include "hrpsys/idl/Img.hh"
 
 // Service implementation headers
 // <rtc-template block="service_impl_h">

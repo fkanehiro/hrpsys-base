@@ -12,7 +12,7 @@
 #include <pcl/segmentation/sac_segmentation.h>
 #include <pcl/filters/extract_indices.h>
 #include "PlaneRemover.h"
-#include "pointcloud.hh"
+#include "hrpsys/idl/pointcloud.hh"
 
 // Module specification
 // <rtc-template block="module_spec">

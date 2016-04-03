@@ -1,8 +1,8 @@
 #ifndef __GLBODYRTC_H__
 #define __GLBODYRTC_H__
 
-#include "util/BodyRTC.h"
-#include "util/GLbody.h"
+#include "hrpsys/util/BodyRTC.h"
+#include "hrpsys/util/GLbody.h"
 
 class GLbodyRTC : public BodyRTC, public GLbody
 {

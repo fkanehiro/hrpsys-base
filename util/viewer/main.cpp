@@ -7,10 +7,10 @@
 #endif
 #include <SDL/SDL_timer.h>
 #include <hrpModel/ModelLoaderUtil.h>
-#include "util/GLlink.h"
-#include "util/GLbody.h"
-#include "util/GLutil.h"
-#include "util/SDLUtil.h"
+#include "hrpsys/util/GLlink.h"
+#include "hrpsys/util/GLbody.h"
+#include "hrpsys/util/GLutil.h"
+#include "hrpsys/util/SDLUtil.h"
 #include "OnlineViewer_impl.h"
 #include "GLscene.h"
 

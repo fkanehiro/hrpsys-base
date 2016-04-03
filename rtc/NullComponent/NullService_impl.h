@@ -2,7 +2,7 @@
 #ifndef __NULL_SERVICE_H__
 #define __NULL_SERVICE_H__
 
-#include "NullService.hh"
+#include "hrpsys/idl/NullService.hh"
 
 class NullService_impl
 	: public virtual POA_OpenHRP::NullService,

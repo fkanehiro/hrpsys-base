@@ -3,8 +3,8 @@
 #include <hrpModel/Body.h>
 #include <hrpModel/ConstraintForceSolver.h>
 #include <hrpModel/ColdetLinkPair.h>
-#include "util/Project.h"
-#include "util/OpenRTMUtil.h"
+#include "hrpsys/util/Project.h"
+#include "hrpsys/util/OpenRTMUtil.h"
 
 typedef boost::function2<hrp::BodyPtr, const std::string&, const ModelItem&> BodyFactory;
 

@@ -1,7 +1,7 @@
 #include <hrpCorba/OnlineViewer.hh>
 #include <map>
 #include <string>
-#include "util/LogManager.h"
+#include "hrpsys/util/LogManager.h"
 
 class GLscene;
 class GLbody;

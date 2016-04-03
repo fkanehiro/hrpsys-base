@@ -2,7 +2,7 @@
 #ifndef IMPEDANCESERVICESVC_IMPL_H
 #define IMPEDANCESERVICESVC_IMPL_H
 
-#include "ImpedanceControllerService.hh"
+#include "hrpsys/idl/ImpedanceControllerService.hh"
 
 using namespace OpenHRP;
 

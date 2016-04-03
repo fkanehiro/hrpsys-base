@@ -2,7 +2,7 @@
 #include <iostream>
 #include "hrpEC.h"
 #include <rtm/ECFactory.h>
-#include "io/iob.h"
+#include "hrpsys/io/iob.h"
 #include <linux/art_task.h>
 
 namespace RTC

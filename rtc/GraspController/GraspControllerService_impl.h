@@ -2,7 +2,7 @@
 #ifndef __GRAP_CONTROLLER_SERVICE_H__
 #define __GRAP_CONTROLLER_SERVICE_H__
 
-#include "GraspControllerService.hh"
+#include "hrpsys/idl/GraspControllerService.hh"
 
 class GraspController;
 

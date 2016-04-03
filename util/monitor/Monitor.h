@@ -1,7 +1,7 @@
 #include <string>
-#include "util/ThreadedObject.h"
-#include "util/LogManager.h"
-#include "StateHolderService.hh"
+#include "hrpsys/util/ThreadedObject.h"
+#include "hrpsys/util/LogManager.h"
+#include "hrpsys/idl/StateHolderService.hh"
 #include "TimedRobotState.h"
 #include "hrpModel/Body.h"
 

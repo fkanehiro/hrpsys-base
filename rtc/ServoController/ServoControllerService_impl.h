@@ -2,7 +2,7 @@
 #ifndef __SERVOCONTROLLER_SERVICE_H__
 #define __SERVOCONTROLLER_SERVICE_H__
 
-#include "ServoControllerService.hh"
+#include "hrpsys/idl/ServoControllerService.hh"
 
 using namespace OpenHRP;
 

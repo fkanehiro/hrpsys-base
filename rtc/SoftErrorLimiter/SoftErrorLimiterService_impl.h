@@ -2,7 +2,7 @@
 #ifndef __SOFT_ERROR_LIMITER_SERVICE_H__
 #define __SOFT_ERROR_LIMITER_SERVICE_H__
 
-#include "SoftErrorLimiterService.hh"
+#include "hrpsys/idl/SoftErrorLimiterService.hh"
 #include "robot.h"
 
 class SoftErrorLimiterService_impl

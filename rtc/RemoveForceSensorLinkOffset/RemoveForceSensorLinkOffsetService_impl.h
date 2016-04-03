@@ -2,7 +2,7 @@
 #ifndef REMOVEFORCESENSORLINKOFFSETSERVICE_IMPL_H
 #define REMOVEFORCESENSORLINKOFFSETSERVICE_IMPL_H
 
-#include "RemoveForceSensorLinkOffsetService.hh"
+#include "hrpsys/idl/RemoveForceSensorLinkOffsetService.hh"
 
 using namespace OpenHRP;
 

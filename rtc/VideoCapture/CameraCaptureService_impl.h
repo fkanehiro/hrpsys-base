@@ -2,7 +2,7 @@
 #ifndef __CAMERA_CAPTURE_SERVICE_H__
 #define __CAMERA_CAPTURE_SERVICE_H__
 
-#include "Img.hh"
+#include "hrpsys/idl/Img.hh"
 
 class VideoCapture;
 

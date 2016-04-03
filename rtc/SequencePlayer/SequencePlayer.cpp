@@ -11,7 +11,7 @@
 #include <hrpModel/Link.h>
 #include <hrpModel/ModelLoaderUtil.h>
 #include "SequencePlayer.h"
-#include "util/VectorConvert.h"
+#include "hrpsys/util/VectorConvert.h"
 #include <hrpModel/JointPath.h>
 #include <hrpUtil/MatrixSolvers.h>
 #include "../ImpedanceController/JointPathEx.h"

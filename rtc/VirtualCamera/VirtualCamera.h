@@ -21,11 +21,11 @@
 #include <cv.h>
 #include <highgui.h>
 //
-#include "util/LogManager.h"
-#include "util/SDLUtil.h"
-#include "Img.hh"
-#include "HRPDataTypes.hh"
-#include "pointcloud.hh"
+#include "hrpsys/util/LogManager.h"
+#include "hrpsys/util/SDLUtil.h"
+#include "hrpsys/idl/Img.hh"
+#include "hrpsys/idl/HRPDataTypes.hh"
+#include "hrpsys/idl/pointcloud.hh"
 #include "GLscene.h"
 class GLcamera;
 class RTCGLbody;

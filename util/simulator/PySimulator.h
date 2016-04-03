@@ -1,7 +1,7 @@
 #ifndef __PYSIMULATOR_H__
 #define __PYSIMULATOR_H__
 
-#include "util/SDLUtil.h"
+#include "hrpsys/util/SDLUtil.h"
 #include "Simulator.h"
 #include "GLscene.h"
 

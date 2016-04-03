@@ -2,10 +2,10 @@
 #include <hrpModel/World.h>
 #include <hrpModel/ConstraintForceSolver.h>
 #include <hrpUtil/TimeMeasure.h>
-#include "util/Project.h"
-#include "util/ThreadedObject.h"
-#include "util/LogManager.h"
-#include "util/ProjectUtil.h"
+#include "hrpsys/util/Project.h"
+#include "hrpsys/util/ThreadedObject.h"
+#include "hrpsys/util/LogManager.h"
+#include "hrpsys/util/ProjectUtil.h"
 #include "SceneState.h"
 
 class BodyRTC;

@@ -12,7 +12,7 @@
 #include <hrpModel/Sensor.h>
 #include <hrpModel/ModelLoaderUtil.h>
 #include "Stabilizer.h"
-#include "util/VectorConvert.h"
+#include "hrpsys/util/VectorConvert.h"
 #include <math.h>
 #include <boost/lambda/lambda.hpp>
 

@@ -2,7 +2,7 @@
 #ifndef COLLISIONDETECTORSERVICE_IMPL_H
 #define COLLISIONDETECTORSERVICE_IMPL_H
 
-#include "CollisionDetectorService.hh"
+#include "hrpsys/idl/CollisionDetectorService.hh"
 
 using namespace OpenHRP;
 

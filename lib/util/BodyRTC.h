@@ -10,8 +10,8 @@
 #include <rtm/DataOutPort.h>
 #include <rtm/idl/BasicDataTypeSkel.h>
 #include <rtm/idl/ExtendedDataTypesSkel.h>
-#include "Img.hh"
-#include "RobotHardwareService.hh"
+#include "hrpsys/idl/Img.hh"
+#include "hrpsys/idl/RobotHardwareService.hh"
 
 class InPortHandlerBase;
 class OutPortHandlerBase;
