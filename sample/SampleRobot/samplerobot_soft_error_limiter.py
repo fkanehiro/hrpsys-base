@@ -215,12 +215,12 @@ def setAndCheckJointErrorLimit (joint_name, thre=1e-5):
     for is_upper_limit in [True, False]: # uvlimit or lvlimit
         print >> sys.stderr, "  ", joint_name, ", uvlimit" if is_upper_limit else ", lvlimit"
         # Disable error limit for checking vel limit
-        error_limit = 1.0 if is_upper_limit else -1.0 # [deg]
-        hcf.el_svc.setServoErrorLimit("all", abs(math.radians(error_limit)))
+        error_limit = 0.002 if is_upper_limit else -0.002 # [rad]
+        hcf.el_svc.setServoErrorLimit("all", abs(error_limit))
         # Test motion and logging
         hcf.clearLog()
         target_angle = 3.0 if is_upper_limit else -3.0 # [deg]
-        wait_time = abs(target_angle/error_limit * 1.1) # 1.1 is margin
+        wait_time = 0.2
         hcf.setJointAngle(joint_name, math.degrees(initial_pose[link_info.jointId]), 0.1)
         hcf.waitInterpolation()
         hcf.setJointAngle(joint_name, target_angle, 0.002)
@@ -238,16 +238,19 @@ def setAndCheckJointErrorLimit (joint_name, thre=1e-5):
         poslist=[]
         for line in open("/tmp/test-samplerobot-el-err-check.SampleRobot(Robot)0_q", "r"):
             poslist.append(float(line.split(" ")[link_info.jointId+1]))
-        tmp = map(lambda x,y : x-y, poslist[1:], poslist[0:-1])
+        refposlist=[]
+        for line in open("/tmp/test-samplerobot-el-err-check.el_q", "r"):
+            refposlist.append(float(line.split(" ")[link_info.jointId+1]))
+        tmp = map(lambda x,y : x-y, refposlist, poslist)
         max_ret_err = max(tmp) if is_upper_limit else min(tmp)
-        is_err_limited = abs(max_ret_err - math.radians(error_limit)) < thre
+        is_err_limited = abs(max_ret_err - error_limit) < thre
         # Enable error limit by reverting limit value and reset joint angle
         hcf.el_svc.setServoErrorLimit("all", (0.2-0.02))
         hcf.setJointAngle(joint_name, math.degrees(initial_pose[link_info.jointId]), 0.5)
         hcf.waitInterpolation()
         # Check flags and print
         print >> sys.stderr, "    is_reached =", is_reached, ", is_err_limited =", is_err_limited,
-        print >> sys.stderr, ", target_angle =", target_angle, "[deg], reach_angle =", reach_angle, "[deg], max_ret_err =", max_ret_err, "[rad], err_limit =", math.radians(error_limit), "[rad]"
+        print >> sys.stderr, ", target_angle =", target_angle, "[deg], reach_angle =", reach_angle, "[deg], max_ret_err =", max_ret_err, "[rad], err_limit =", error_limit, "[rad]"
         assert(is_reached and is_err_limited)
 
 def demoErrorLimit():

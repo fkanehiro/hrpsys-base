@@ -317,12 +317,15 @@ RTC::ReturnCode_t SoftErrorLimiter::onExecute(RTC::UniqueId ec_id)
       }
 
       // Servo error limitation between reference joint angles and actual joint angles
+      //   pos_vel_limited_angle is current output joint angle which arleady finished position limit and velocity limit.
+      //   Check and limit error between pos_vel_limited_angle and current actual joint angle.
       {
+      double pos_vel_limited_angle = std::min(total_upper_limit, std::max(total_lower_limit, m_qRef.data[i]));
       double limit = m_robot->m_servoErrorLimit[i];
-      double error = m_qRef.data[i] - m_qCurrent.data[i];
+      double error = pos_vel_limited_angle - m_qCurrent.data[i];
       if ( servo_state[i] == 1 && fabs(error) > limit ) {
         if (loop % debug_print_freq == 0 || debug_print_error_first ) {
-          std::cerr << "[" << m_profile.instance_name<< "] error limit over " << m_robot->joint(i)->name << "(" << i << "), qRef=" << m_qRef.data[i]
+          std::cerr << "[" << m_profile.instance_name<< "] error limit over " << m_robot->joint(i)->name << "(" << i << "), qRef=" << pos_vel_limited_angle
                     << ", qCurrent=" << m_qCurrent.data[i] << " "
                     << ", Error=" << error << " > " << limit << " (limit)"
                     << ", servo_state = " <<  ( 1 ? "ON" : "OFF");
