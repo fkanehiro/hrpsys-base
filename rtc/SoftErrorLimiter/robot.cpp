@@ -1,5 +1,6 @@
 #include "robot.h"
 #include "hrpsys/util/Hrpsys.h"
+#include <iostream>
 
 #define DEFAULT_ANGLE_ERROR_LIMIT (0.2 - 0.02) // [rad]
 
@@ -23,9 +24,12 @@ bool robot::setServoErrorLimit(const char *i_jname, double i_limit) {
     for (int i=0; i<numJoints(); i++){
       m_servoErrorLimit[i] = i_limit;
     }
+    std::cerr << "[el] setServoErrorLimit " << i_limit << "[rad] for all joints" << std::endl;
   }else if ((l = link(i_jname))){
     m_servoErrorLimit[l->jointId] = i_limit;
+    std::cerr << "[el] setServoErrorLimit " << i_limit << "[rad] for " << i_jname << std::endl;
   }else{
+    std::cerr << "[el] Invalid joint name of setServoErrorLimit " << i_jname << "!" << std::endl;
     return false;
   }
   return true;
