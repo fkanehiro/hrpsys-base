@@ -13,6 +13,10 @@
 
 #include "hrpsys/idl/ExecutionProfileService.hh"
 
+#ifdef __QNX__
+using std::fprintf;
+#endif
+
 namespace RTC
 {
   class hrpExecutionContext
@@ -52,6 +56,14 @@ namespace RTC
           }
       }
     }
+    void printRTCProcessingTime (std::vector<double>& processes)
+    {
+      fprintf(stderr, "[hrpEC] ");
+      for (unsigned int i=0; i< processes.size(); i++){
+        fprintf(stderr, "%s(%4.2f), ", rtc_names[i].c_str(),processes[i]*1e3);
+      }
+      fprintf(stderr, "[ms]\n");
+    };
     OpenHRP::ExecutionProfileService::Profile m_profile;
     struct timeval m_tv;
     int m_priority;

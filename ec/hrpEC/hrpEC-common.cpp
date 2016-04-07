@@ -4,9 +4,8 @@
 #include <rtm/RTObjectStateMachine.h>
 #endif
 
-#ifdef __QNX__
-using std::fprintf;
-#endif
+//#define ENABLE_DEBUG_PRINT (true)
+#define ENABLE_DEBUG_PRINT (false)
 
 namespace RTC
 {
@@ -36,6 +35,9 @@ namespace RTC
         set_signal_period(period_nsec/nsubstep);
         std::cout << "period = " << get_signal_period()*nsubstep/1e6
                   << "[ms], priority = " << m_priority << std::endl;
+        struct timeval debug_tv1, debug_tv2, debug_tv3, debug_tv4, debug_tv5;
+        int loop = 0;
+        int debug_count = 5000.0/(get_signal_period()*nsubstep/1e6); // Loop count for debug print. Once per 5000.0 [ms].
 
         if (!enterRT()){
             unlock_iob();
@@ -43,6 +45,8 @@ namespace RTC
             return 0;
         }
         do{
+            loop++;
+            if (loop % debug_count == 0 && ENABLE_DEBUG_PRINT) gettimeofday(&debug_tv1, NULL);
             if (!waitForNextPeriod()){
                 unlock_iob();
                 close_iob();
@@ -51,7 +55,7 @@ namespace RTC
             struct timeval tv;
             gettimeofday(&tv, NULL);
             if (m_profile.count > 0){
-#define DELTA_SEC(start, end) end.tv_sec - start.tv_sec + (end.tv_usec - start.tv_usec)/1e6;
+#define DELTA_SEC(start, end) (end.tv_sec - start.tv_sec + (end.tv_usec - start.tv_usec)/1e6)
                 double dt = DELTA_SEC(m_tv, tv);
                 if (dt > m_profile.max_period) m_profile.max_period = dt;
                 if (dt < m_profile.min_period) m_profile.min_period = dt;
@@ -59,6 +63,7 @@ namespace RTC
             }
             m_profile.count++;
             m_tv = tv;
+            if (loop % debug_count == 0 && ENABLE_DEBUG_PRINT) gettimeofday(&debug_tv2, NULL);
 
 #ifndef OPENRTM_VERSION_TRUNK
             invoke_worker iw;
@@ -86,6 +91,11 @@ namespace RTC
                 tbegin = tend;
             }
 #endif
+            if (loop % debug_count == 0 && ENABLE_DEBUG_PRINT &&
+                rtc_names.size() == processes.size()) {
+              printRTCProcessingTime(processes);
+            }
+            if (loop % debug_count == 0 && ENABLE_DEBUG_PRINT) gettimeofday(&debug_tv3, NULL);
 
             gettimeofday(&tv, NULL);
             double dt = DELTA_SEC(m_tv, tv);
@@ -116,7 +126,7 @@ namespace RTC
             if (dt > period_sec*nsubstep){
   	        m_profile.timeover++; 
 #ifdef NDEBUG
-                fprintf(stderr, "[%d.%6.6d] Timeover: processing time = %4.2f[ms]\n",
+                fprintf(stderr, "[hrpEC][%d.%6.6d] Timeover: processing time = %4.2f[ms]\n",
                         tv.tv_sec, tv.tv_usec, dt*1e3);
                 // Update rtc_names only when rtcs length change.
                 if (processes.size() != rtc_names.size()){
@@ -126,14 +136,20 @@ namespace RTC
                         rtc_names.push_back(std::string(rtc->get_component_profile()->instance_name));
                     }
                 }
-                for (unsigned int i=0; i< processes.size(); i++){
-                    fprintf(stderr, "%s(%4.2f), ", rtc_names[i].c_str(),processes[i]*1e3);
-                }
-                fprintf(stderr, "\n");
+                printRTCProcessingTime(processes);
 #endif
             }
 
 #ifndef OPENRTM_VERSION_TRUNK
+            if (loop % debug_count == 0 && ENABLE_DEBUG_PRINT) {
+              gettimeofday(&debug_tv4, NULL);
+              fprintf(stderr, "[hrpEC] Processing time breakdown : waitForNextPeriod %f[ms], warker (onExecute) %f[ms], ExecutionProfile %f[ms], time from prev cicle %f[ms]\n",
+                      DELTA_SEC(debug_tv1, debug_tv2)*1e3,
+                      DELTA_SEC(debug_tv2, debug_tv3)*1e3,
+                      DELTA_SEC(debug_tv3, debug_tv4)*1e3,
+                      DELTA_SEC(debug_tv5, debug_tv1)*1e3);
+            }
+            if (loop % debug_count == (debug_count-1) && ENABLE_DEBUG_PRINT) gettimeofday(&debug_tv5, NULL);
         } while (m_running);
 #else
         } while (isRunning());
