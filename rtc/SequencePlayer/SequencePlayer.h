@@ -10,7 +10,7 @@
 #ifndef SEQUENCEPLAYER_H
 #define SEQUENCEPLAYER_H
 
-#include <boost/interprocess/sync/interprocess_semaphore.hpp>
+#include <semaphore.h>
 #include <rtm/Manager.h>
 #include <rtm/DataFlowComponentBase.h>
 #include <rtm/CorbaPort.h>
@@ -181,7 +181,7 @@ class SequencePlayer
  private:
   seqplay *m_seq;
   bool m_clearFlag, m_waitFlag;
-  boost::interprocess::interprocess_semaphore m_waitSem;
+  sem_t m_waitSem;
   hrp::BodyPtr m_robot;
   std::string m_gname;
   unsigned int m_debugLevel;

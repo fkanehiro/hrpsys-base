@@ -54,8 +54,6 @@ StateHolder::StateHolder(RTC::Manager* manager)
     m_TimeKeeperServicePort("TimeKeeperService"),
     // </rtc-template>
     m_timeCount(0),
-    m_waitSem(0),
-    m_timeSem(0),
     dummy(0)
 {
 
@@ -63,6 +61,8 @@ StateHolder::StateHolder(RTC::Manager* manager)
   m_service1.setComponent(this);
   m_requestGoActual = false;
 
+  sem_init(&m_waitSem, 0, 0);
+  sem_init(&m_timeSem, 0, 0);
 }
 
 StateHolder::~StateHolder()
@@ -253,7 +253,7 @@ RTC::ReturnCode_t StateHolder::onExecute(RTC::UniqueId ec_id)
 
     if (m_requestGoActual){
         m_requestGoActual = false;
-        m_waitSem.post();
+        sem_post(&m_waitSem);
     }
 
     if (m_basePosIn.isNew()){
@@ -321,7 +321,7 @@ RTC::ReturnCode_t StateHolder::onExecute(RTC::UniqueId ec_id)
 
     if (m_timeCount > 0){
         m_timeCount--;
-        if (m_timeCount == 0) m_timeSem.post();
+        if (m_timeCount == 0) sem_post(&m_timeSem);
     }
 
     return RTC::RTC_OK;
@@ -367,7 +367,7 @@ void StateHolder::goActual()
 {
     std::cout << "StateHolder::goActual()" << std::endl;
     m_requestGoActual = true;
-    m_waitSem.wait();
+    sem_wait(&m_waitSem);
 }
 
 void StateHolder::getCommand(StateHolderService::Command &com)
@@ -388,7 +388,7 @@ void StateHolder::getCommand(StateHolderService::Command &com)
 void StateHolder::wait(CORBA::Double tm)
 {
     m_timeCount = tm/m_dt;
-    m_timeSem.wait();
+    sem_wait(&m_timeSem);
 }
  
 extern "C"

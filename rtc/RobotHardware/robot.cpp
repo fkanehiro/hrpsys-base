@@ -19,8 +19,9 @@
 using namespace hrp;
 
 
-robot::robot(double dt) : m_fzLimitRatio(0), m_maxZmpError(DEFAULT_MAX_ZMP_ERROR), m_calibRequested(false), m_pdgainsFilename("PDgains.sav"), wait_sem(0), m_reportedEmergency(true), m_dt(dt), m_accLimit(0)
+robot::robot(double dt) : m_fzLimitRatio(0), m_maxZmpError(DEFAULT_MAX_ZMP_ERROR), m_calibRequested(false), m_pdgainsFilename("PDgains.sav"), m_reportedEmergency(true), m_dt(dt), m_accLimit(0)
 {
+    sem_init(&wait_sem, 0, 0);
     m_rLegForceSensorId = m_lLegForceSensorId = -1;
 }
 
@@ -145,7 +146,7 @@ void robot::startInertiaSensorCalibration()
 
     inertia_calib_counter=CALIB_COUNT;
 
-    wait_sem.wait();
+    sem_wait(&wait_sem);
 }
 
 void robot::startForceSensorCalibration()
@@ -162,7 +163,7 @@ void robot::startForceSensorCalibration()
 
     force_calib_counter=CALIB_COUNT;
 
-    wait_sem.wait();
+    sem_wait(&wait_sem);
 }
 
 void robot::initializeJointAngle(const char *name, const char *option)
@@ -170,7 +171,7 @@ void robot::initializeJointAngle(const char *name, const char *option)
     m_calibJointName = name;
     m_calibOptions   = option;
     m_calibRequested = true;
-    wait_sem.wait();
+    sem_wait(&wait_sem);
 }
 
 void robot::calibrateInertiaSensorOneStep()
@@ -228,7 +229,7 @@ void robot::calibrateInertiaSensorOneStep()
             }
 #endif
 
-            wait_sem.post();
+            sem_post(&wait_sem);
         }
     }
 }
@@ -252,7 +253,7 @@ void robot::calibrateForceSensorOneStep()
                 write_force_offset(j,  force_sum[j].data());
             }
 
-            wait_sem.post();
+            sem_post(&wait_sem);
         }
     }
 }
@@ -284,7 +285,7 @@ void robot::oneStep()
         ::initializeJointAngle(m_calibJointName.c_str(), 
                                m_calibOptions.c_str());
         m_calibRequested = false;
-        wait_sem.post();
+        sem_post(&wait_sem);
     }
 }
 
