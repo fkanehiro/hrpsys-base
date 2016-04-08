@@ -10,7 +10,7 @@
 #ifndef NULL_COMPONENT_H
 #define NULL_COMPONENT_H
 
-#include <boost/interprocess/sync/interprocess_semaphore.hpp>
+#include <semaphore.h>
 #include <rtm/Manager.h>
 #include <rtm/DataFlowComponentBase.h>
 #include <rtm/CorbaPort.h>
@@ -165,7 +165,7 @@ class StateHolder
 
  private:
   int m_timeCount;
-  boost::interprocess::interprocess_semaphore m_waitSem, m_timeSem;
+  sem_t m_waitSem, m_timeSem;
   bool m_requestGoActual;
   double m_dt;
   int dummy;

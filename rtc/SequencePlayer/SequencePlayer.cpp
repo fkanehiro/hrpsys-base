@@ -55,7 +55,6 @@ SequencePlayer::SequencePlayer(RTC::Manager* manager)
       m_optionalDataOut("optionalData", m_optionalData),
       m_SequencePlayerServicePort("SequencePlayerService"),
       // </rtc-template>
-      m_waitSem(0),
       m_robot(hrp::BodyPtr()),
       m_debugLevel(0),
       m_error_pos(0.0001),
@@ -63,6 +62,7 @@ SequencePlayer::SequencePlayer(RTC::Manager* manager)
       m_iteration(50),
       dummy(0)
 {
+    sem_init(&m_waitSem, 0, 0);
     m_service0.player(this);
     m_clearFlag = false;
     m_waitFlag = false;
@@ -232,14 +232,14 @@ RTC::ReturnCode_t SequencePlayer::onExecute(RTC::UniqueId ec_id)
         if (m_waitFlag){
             m_gname = "";
             m_waitFlag = false;
-            m_waitSem.post();
+            sem_post(&m_waitSem);
         }
     }
     if (m_seq->isEmpty()){
         m_clearFlag = false;
         if (m_waitFlag){
             m_waitFlag = false;
-            m_waitSem.post();
+            sem_post(&m_waitSem);
         }
     }else{
 	Guard guard(m_mutex);
@@ -335,7 +335,7 @@ void SequencePlayer::waitInterpolation()
         std::cerr << __PRETTY_FUNCTION__ << std::endl;
     }
     m_waitFlag = true;
-    m_waitSem.wait();
+    sem_wait(&m_waitSem);
 }
 
 bool SequencePlayer::waitInterpolationOfGroup(const char *gname)
@@ -345,7 +345,7 @@ bool SequencePlayer::waitInterpolationOfGroup(const char *gname)
     }
     m_gname = gname;
     m_waitFlag = true;
-    m_waitSem.wait();
+    sem_wait(&m_waitSem);
     return true;
 }
 
