@@ -6,6 +6,7 @@
 #include <boost/shared_ptr.hpp>
 #include <iostream>
 #include <cmath>
+#include "hrpsys/util/Hrpsys.h"
 
 class ObjectTurnaroundDetector
 {
