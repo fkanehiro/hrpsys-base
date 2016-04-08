@@ -33,20 +33,10 @@ elseif(WIN32)
   set(SH_SFX "bat")
 endif()
 
-# OpenRTM-aist(>= 1.0.0)
-find_package(OpenRTM REQUIRED)
-if(EXISTS "${OPENRTM_DIR}/include/openrtm-1.1/rtm/RTObjectStateMachine.h")
-add_definitions(-DOPENRTM_VERSION_TRUNK)
-endif()
-
-# OpenHRP
-find_package(OpenHRP REQUIRED)
-include_directories(${OPENHRP_INCLUDE_DIRS})
-link_directories(${OPENHRP_LIBRARY_DIRS})
-if(UNIX)
-    add_definitions(${OPENHRP_DEFINITIONS})
-endif()
-
+# Specify include directory.
+#   After https://github.com/fkanehiro/hrpsys-base/pull/842, hrpsys-base local include files are used as "hrpsys/xx/yy.h".
+#   For this reason, we make ${CMAKE_BINARY_DIR}/hrpsys directory and generate symbolic link for related include files under it.
+#   To deal with include files in ${CMAKE_BINARY_DIR}/hrpsys as hrpsys-base local include files, we set cmake's include_directories before other include_directories setting to set higher priority for ${CMAKE_BINARY_DIR}/hrpsys.
 execute_process(
   COMMAND mkdir -p ${CMAKE_BINARY_DIR}/hrpsys
 )
@@ -66,6 +56,20 @@ if (NOT EXISTS ${CMAKE_BINARY_DIR}/hrpsys/idl)
    )
 endif()
 include_directories(${CMAKE_BINARY_DIR})
+
+# OpenRTM-aist(>= 1.0.0)
+find_package(OpenRTM REQUIRED)
+if(EXISTS "${OPENRTM_DIR}/include/openrtm-1.1/rtm/RTObjectStateMachine.h")
+add_definitions(-DOPENRTM_VERSION_TRUNK)
+endif()
+
+# OpenHRP
+find_package(OpenHRP REQUIRED)
+include_directories(${OPENHRP_INCLUDE_DIRS})
+link_directories(${OPENHRP_LIBRARY_DIRS})
+if(UNIX)
+    add_definitions(${OPENHRP_DEFINITIONS})
+endif()
 
 if(ENABLE_INSTALL_RPATH)
   set(CMAKE_INSTALL_RPATH "$ORIGIN/../lib:$ORIGIN/../../../lib:${OPENHRP_LIBRARY_DIRS}")
