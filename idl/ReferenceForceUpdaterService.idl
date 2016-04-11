@@ -1,0 +1,59 @@
+/**
+ * @file ReferenceForceUpdaterService.idl
+ * @brief Services for the reference force updater interface
+ */
+module OpenHRP
+{
+  interface ReferenceForceUpdaterService
+  {
+      typedef sequence<double, 3> DblSequence3;
+
+      /**
+       * @struct ReferenceForceUpdaterParam
+       * @brief ReferenceForceUpdater Parameters.
+       */
+      struct ReferenceForceUpdaterParam
+      {
+          /// Motion direction to update reference force
+          DblSequence3 motion_dir;
+          /// Name of used arm
+          string arm;
+          /// Update frequency [Hz]
+          double update_freq;
+          /// Update time ratio \in [0,1]
+          double update_time_ratio;
+          /// P gain
+          double p_gain;
+          /// D gain
+          double d_gain;
+          /// I gain
+          double i_gain;
+      };
+
+      /**
+       * @brief Set ReferenceForceUpdater parameters
+       * @param i_param is input parameter
+       * @return true if set successfully, false otherwise
+       */
+      boolean setReferenceForceUpdaterParam(in ReferenceForceUpdaterParam i_param);
+
+      /**
+       * @brief Get ReferenceForceUpdater parameters
+       * @param i_param is input parameter
+       * @return true if set successfully, false otherwise
+       */
+      boolean getReferenceForceUpdaterParam(out ReferenceForceUpdaterParam i_param);
+
+      /**
+       * @brief Start ReferenceForceUpdater
+       * @return true if set successfully, false otherwise
+       */
+      boolean startReferenceForceUpdater();
+
+      /**
+       * @brief Stop ReferenceForceUpdater
+       * @return true if set successfully, false otherwise
+       */
+      boolean stopReferenceForceUpdater();
+  };
+};
