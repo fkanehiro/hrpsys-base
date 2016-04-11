@@ -56,6 +56,7 @@
               -o "example.EmergencyStopper.config_file:$(arg CONF_FILE)"
               -o "example.CollisionDetector.config_file:$(arg CONF_FILE)"
               -o "example.SoftErrorLimiter.config_file:$(arg CONF_FILE)"
+              -o "example.ReferenceForceUpdater.config_file:$(arg CONF_FILE)"
               -o "example.$(arg JOINT_CONTROLLER).config_file:$(arg CONF_FILE)"
               -o "corba.nameservers:localhost:$(arg corbaport)"
               $(arg hrpsys_gui_args)'
