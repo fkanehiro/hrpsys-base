@@ -500,6 +500,7 @@ INPUT		      =  @CMAKE_CURRENT_SOURCE_DIR@/package.h \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/Range2PointCloud \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/RangeDataViewer \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/RangeNoiseMixer \
+		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/ReferenceForceUpdater \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/RemoveForceSensorLinkOffset \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/ResizeImage \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/RobotHardware \

@@ -29,6 +29,7 @@ set(input_files package.h utilities.h
 		      ../rtc/AutoBalancer/AutoBalancer.txt
 		      ../rtc/KalmanFilter/KalmanFilter.txt
 		      ../rtc/ImpedanceController/ImpedanceController.txt
+		      ../rtc/ReferenceForceUpdater/ReferenceForceUpdater.txt
 		      ../rtc/RemoveForceSensorLinkOffset/RemoveForceSensorLinkOffset.txt
 		      ../rtc/CollisionDetector/CollisionDetector.txt
 		      ../rtc/PDcontroller/PDcontroller.txt
@@ -49,6 +50,7 @@ set(input_files package.h utilities.h
 		      ../idl/StabilizerService.idl
 		      ../idl/KalmanFilterService.idl
 		      ../idl/RemoveForceSensorLinkOffsetService.idl
+		      ../idl/ReferenceForceUpdaterService.idl
 		      )
 configure_file(Doxyfile.in ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)
 set(output_dir ${CMAKE_CURRENT_BINARY_DIR}/html)
