@@ -1,0 +1,74 @@
+/**
+
+\page ReferenceForceUpdater
+
+\section introduction Overview
+
+This component ,ReferenceForceUpdater(rfu), helps biped robot keep balance in accordance with the forces applied on the arm end effectors.
+
+ReferenceForceUpdater should be used with AutoBalancer or ImpedanceController, because the output of this component is modified reference force, which is input of AutoBalancer or ImpedanceController.
+
+ReferenceForceUpdater modifies reference force so that reference force follows actual forces measured by sensors on arms' end effector.
+
+AutoBalancer and ImpedanceController modifies joint angles, assuming that reference force is applied on end effecters. 
+
+Therefore ReferenceForceUpder is effective when you want to controll biped robot, based on actual force applied on end effecters.
+
+\subsection mode Mode
+This component has two mode:Active and NotActive.
+
+Active mode: ReferenceForceUpdater get actual force measuerd by sensors and reference force from SequencePlayer or StateHolder, and modifies reference force so that reference force follows actual forces.
+
+NotActive mode: ReferenceForceUpdater do not modify reference force. It output the same value as input reference force.
+
+
+<table>
+<tr><th>implementation_id</th><td>ReferenceForceUpdater</td></tr>
+<tr><th>category</th><td>example</td></tr>
+</table>
+
+\section dataports Data Ports
+
+\subsection inports Input Ports
+
+<table>
+<tr><th>port name</th><th>data type</th><th>unit</th><th>description</th></tr>
+<tr><td>qRef</td><td>RTC::TimedDoubleSeq</td><td>[rad]</td><td>Reference joint angles</td></tr>
+<tr><td>rpy</td><td>RTC::TimedOrientation3D</td><td>[rad]</td><td>Actual attitude sensor's Roll-Pitch-Yaw angle </td></tr>
+<tr><td>basePosIn</td><td>RTC::TimedPoint3D</td><td>[m]</td><td>Input base position</td></tr>
+<tr><td>baseRpyIn</td><td>RTC::TimedOrientation3D</td><td>[rad]</td><td>Input base orientation (RPY) </td></tr>
+<tr><td>name of force/torque sensor defined in a VRML model, such as "rhsensor"</td><td>RTC::TimedDoubleSeq</td><td>[N],[Nm]</td><td>raw force/torque in the sensor frame</td></tr>
+</table>
+
+\subsection outports Output Ports
+
+<table>
+<tr><th>port name</th><th>data type</th><th>unit</th><th>description</th></tr>
+<tr><td>"Ref_" + name of force sensor defined in a VRML model + "Out", such as "Ref_rhsensorOut"</td><td>RTC::TimedDoubleSeq</td><td>[N]</td><td>reference force in the sensor frame</td></tr>
+</table>
+</table>
+
+\section serviceports Service Ports
+
+\subsection provider Service Providers
+
+<table>
+<tr><th>port name</th><th>interface name</th><th>service type</th><th>IDL</th><th>description</th></tr>
+<tr><td>ReferenceForceUpdaterService</td><td>service0</td><td>ReferenceForceUpdaterService</td><td>\ref OpenHRP::ReferenceForceUpdaterService</td><td></td></tr>
+</table>
+
+\subsection consumer Service Consumers
+
+N/A
+
+\section configuration Configuration Variables
+
+<table>
+<tr><th>name</th><th>type</th><th>unit</th><th>default value</th><th>description</th></tr>
+<tr><td>debugLevel</td><td>int</td><td></td><td>0</td><td>debug level</td></tr>
+
+\section conf Configuration File
+
+N/A
+
+ */
