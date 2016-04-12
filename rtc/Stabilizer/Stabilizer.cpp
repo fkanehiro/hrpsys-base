@@ -169,33 +169,53 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
     return RTC::RTC_ERROR;
   }
 
+  // Setting for wrench data ports (real + virtual)
+  std::vector<std::string> force_sensor_names;
+
+  // Find names for real force sensors
   int npforce = m_robot->numSensors(hrp::Sensor::FORCE);
-  m_wrenches.resize(npforce);
-  m_wrenchesIn.resize(npforce);
-  m_ref_wrenches.resize(npforce);
-  m_ref_wrenchesIn.resize(npforce);
-  m_limbCOPOffset.resize(npforce);
-  m_limbCOPOffsetIn.resize(npforce);
+  for (unsigned int i=0; i<npforce; ++i) {
+      force_sensor_names.push_back(m_robot->sensor(hrp::Sensor::FORCE, i)->name);
+  }
+
+  // load virtual force sensors
+  readVirtualForceSensorParamFromProperties(m_vfs, m_robot, prop["virtual_force_sensor"], std::string(m_profile.instance_name));
+  int nvforce = m_vfs.size();
+  for (unsigned int i=0; i<nvforce; ++i) {
+      for ( std::map<std::string, hrp::VirtualForceSensorParam>::iterator it = m_vfs.begin(); it != m_vfs.end(); it++ ) {
+          if (it->second.id == i) {
+              force_sensor_names.push_back(it->first);
+          }
+      }
+  }
+
+  int nforce = npforce + nvforce;
+  m_wrenches.resize(nforce);
+  m_wrenchesIn.resize(nforce);
+  m_ref_wrenches.resize(nforce);
+  m_ref_wrenchesIn.resize(nforce);
+  m_limbCOPOffset.resize(nforce);
+  m_limbCOPOffsetIn.resize(nforce);
   std::cerr << "[" << m_profile.instance_name << "] force sensor ports (" << npforce << ")" << std::endl;
-  for (unsigned int i=0; i<npforce; ++i){
-    hrp::Sensor *s = m_robot->sensor(hrp::Sensor::FORCE, i);
-    // act
-    m_wrenchesIn[i] = new RTC::InPort<RTC::TimedDoubleSeq>(s->name.c_str(), m_wrenches[i]);
-    m_wrenches[i].data.length(6);
-    registerInPort(s->name.c_str(), *m_wrenchesIn[i]);
-    // ref
-    m_ref_wrenchesIn[i] = new RTC::InPort<RTC::TimedDoubleSeq>(std::string(s->name+"Ref").c_str(), m_ref_wrenches[i]);
-    m_ref_wrenches[i].data.length(6);
-    registerInPort(std::string(s->name+"Ref").c_str(), *m_ref_wrenchesIn[i]);
-    std::cerr << "[" << m_profile.instance_name << "]   name = " << s->name << std::endl;
+  for (unsigned int i=0; i<nforce; ++i) {
+      std::string force_sensor_name = force_sensor_names[i];
+      // actual inport
+      m_wrenchesIn[i] = new RTC::InPort<RTC::TimedDoubleSeq>(force_sensor_name.c_str(), m_wrenches[i]);
+      m_wrenches[i].data.length(6);
+      registerInPort(force_sensor_name.c_str(), *m_wrenchesIn[i]);
+      // referecen inport
+      m_ref_wrenchesIn[i] = new RTC::InPort<RTC::TimedDoubleSeq>(std::string(force_sensor_name+"Ref").c_str(), m_ref_wrenches[i]);
+      m_ref_wrenches[i].data.length(6);
+      registerInPort(std::string(force_sensor_name+"Ref").c_str(), *m_ref_wrenchesIn[i]);
+      std::cerr << "[" << m_profile.instance_name << "]   name = " << force_sensor_name << std::endl;
   }
   std::cerr << "[" << m_profile.instance_name << "] limbCOPOffset ports (" << npforce << ")" << std::endl;
-  for (unsigned int i=0; i<npforce; ++i){
-    hrp::Sensor *s = m_robot->sensor(hrp::Sensor::FORCE, i);
-    std::string nm("limbCOPOffset_"+s->name);
-    m_limbCOPOffsetIn[i] = new RTC::InPort<RTC::TimedPoint3D>(nm.c_str(), m_limbCOPOffset[i]);
-    registerInPort(nm.c_str(), *m_limbCOPOffsetIn[i]);
-    std::cerr << "[" << m_profile.instance_name << "]   name = " << nm << std::endl;
+  for (unsigned int i=0; i<nforce; ++i) {
+      std::string force_sensor_name = force_sensor_names[i];
+      std::string nm("limbCOPOffset_"+force_sensor_name);
+      m_limbCOPOffsetIn[i] = new RTC::InPort<RTC::TimedPoint3D>(nm.c_str(), m_limbCOPOffset[i]);
+      registerInPort(nm.c_str(), *m_limbCOPOffsetIn[i]);
+      std::cerr << "[" << m_profile.instance_name << "]   name = " << nm << std::endl;
   }
 
   // setting from conf file

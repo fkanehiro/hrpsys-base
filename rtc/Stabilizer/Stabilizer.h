@@ -254,6 +254,7 @@ class Stabilizer
   };
   enum cmode {MODE_IDLE, MODE_AIR, MODE_ST, MODE_SYNC_TO_IDLE, MODE_SYNC_TO_AIR} control_mode;
   // members
+  std::map<std::string, hrp::VirtualForceSensorParam> m_vfs;
   std::vector<hrp::JointPathExPtr> jpe_v;
   hrp::BodyPtr m_robot;
   coil::Mutex m_mutex;
