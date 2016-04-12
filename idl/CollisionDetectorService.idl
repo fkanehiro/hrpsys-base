@@ -21,7 +21,7 @@ module OpenHRP
     /**
      * @brief set tolerance value for collision detector
      * @param link_pair_name name of link pair
-     * @param tolerance tolerance
+     * @param tolerance tolerance [m]
      * @return true if set successfully, false otherwise
      */
     boolean setTolerance(in string link_pair_name, in double tolerance);
