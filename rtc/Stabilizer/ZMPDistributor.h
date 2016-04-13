@@ -580,6 +580,7 @@ public:
         // QP
         double norm_weight = 1e-7;
         double cop_weight = 1e-3;
+        double ref_force_weight = 0;// 1e-3;
         hrp::dvector total_fm(3);
         total_fm(0) = total_fz;
         total_fm(1) = 0;
@@ -632,7 +633,8 @@ public:
                 for (size_t i = 0; i < state_dim_one; i++) {
                     Kmat(j,i+j*state_dim_one) = 1.0;
                 }
-                reff(j) = total_fz/2.0;
+                reff(j) = ref_foot_force[j](2);// total_fz/2.0;
+                KW(j,j) = ref_force_weight;
             }
             Hmat += Kmat.transpose() * KW * Kmat;
             gvec += -1 * Kmat.transpose() * KW * reff;
