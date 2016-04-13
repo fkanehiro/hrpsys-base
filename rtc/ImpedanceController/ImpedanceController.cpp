@@ -201,6 +201,17 @@ RTC::ReturnCode_t ImpedanceController::onInitialize()
     for (unsigned int i=0; i<m_forceIn.size(); i++){
         std::string sensor_name = m_forceIn[i]->name();
         hrp::ForceSensor* sensor = m_robot->sensor<hrp::ForceSensor>(sensor_name);
+        std::string sensor_link_name;
+        if ( sensor ) {
+            // real force sensor
+            sensor_link_name = sensor->link->name;
+        } else if ( m_vfs.find(sensor_name) !=  m_vfs.end()) {
+            // virtual force sensor
+            sensor_link_name = m_vfs[sensor_name].link->name;
+        } else {
+            std::cerr << "[" << m_profile.instance_name << "]   unknown force param" << std::endl;
+            continue;
+        }
         // 1. Check whether adequate ee_map exists for the sensor.
         std::string ee_name;
         bool is_ee_exists = false;
@@ -208,7 +219,7 @@ RTC::ReturnCode_t ImpedanceController::onInitialize()
             hrp::Link* alink = m_robot->link(it->second.target_name);
             std::string tmp_base_name = base_name_map[it->first];
             while (alink != NULL && alink->name != tmp_base_name && !is_ee_exists) {
-                if ( alink->name == sensor->link->name ) {
+                if ( alink->name == sensor_link_name ) {
                     is_ee_exists = true;
                     ee_name = it->first;
                 }
@@ -216,12 +227,12 @@ RTC::ReturnCode_t ImpedanceController::onInitialize()
             }
         }
         if (!is_ee_exists) {
-            std::cerr << "[" << m_profile.instance_name << "]   No such ee setting for " << sensor_name << " and " << sensor->link->name << "!!. Impedance param for " << sensor_name << " cannot be added!!" << std::endl;
+            std::cerr << "[" << m_profile.instance_name << "]   No such ee setting for " << sensor_name << " and " << sensor_link_name << "!!. Impedance param for " << sensor_name << " cannot be added!!" << std::endl;
             continue;
         }
         // 2. Check whether already impedance param exists, which has the same target link as the sensor.
         if (m_impedance_param.find(ee_name) != m_impedance_param.end()) {
-            std::cerr << "[" << m_profile.instance_name << "]   Already impedance param (target_name=" << sensor->link->name << ", ee_name=" << ee_name << ") exists!!. Impedance param for " << sensor_name << " cannot be added!!" << std::endl;
+            std::cerr << "[" << m_profile.instance_name << "]   Already impedance param (target_name=" << sensor_link_name << ", ee_name=" << ee_name << ") exists!!. Impedance param for " << sensor_name << " cannot be added!!" << std::endl;
             continue;
         }
         // 3. Check whether joint path is adequate.
@@ -236,7 +247,7 @@ RTC::ReturnCode_t ImpedanceController::onInitialize()
         p.transition_joint_q.resize(m_robot->numJoints());
         p.sensor_name = sensor_name;
         m_impedance_param[ee_name] = p;
-        std::cerr << "[" << m_profile.instance_name << "]   sensor = " << sensor_name << ", sensor-link = " << sensor->link->name << ", ee_name = " << ee_name << ", ee-link = " << target_link->name << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "]   sensor = " << sensor_name << ", sensor-link = " << sensor_link_name << ", ee_name = " << ee_name << ", ee-link = " << target_link->name << std::endl;
     }
 
     std::vector<std::pair<hrp::Link*, hrp::Link*> > interlocking_joints;
@@ -958,5 +969,3 @@ extern "C"
     }
 
 };
-
-
