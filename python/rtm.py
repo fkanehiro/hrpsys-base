@@ -538,7 +538,7 @@ def connectPorts(outP, inPs, subscription="flush", dataflow="Push", bufferlength
             print('[rtm.py] \033[31m   Failed to connect %s to %s(%s)\033[0m' % \
                   (outP.get_port_profile().name, inP, inPs))
             continue
-        if isConnected(outP, inP) == True and False:
+        if isConnected(outP, inP) == True:
             print('[rtm.py]      %s and %s are already connected' % \
                   (outP.get_port_profile().name, inP.get_port_profile().name))
             continue
