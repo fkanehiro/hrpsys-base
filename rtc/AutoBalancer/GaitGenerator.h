@@ -311,10 +311,10 @@ namespace rats
       hrp::Vector3 pos, vel, acc; // [m], [m/s], [m/s^2]
       double dt; // [s]
       // Implement hoffarbib to configure remain_time;
-      void hoffarbib_interpolation (const double tmp_remain_time, const hrp::Vector3& tmp_goal)
+      void hoffarbib_interpolation (const double tmp_remain_time, const hrp::Vector3& tmp_goal, const hrp::Vector3 tmp_goal_vel = hrp::Vector3::Zero(), const hrp::Vector3 tmp_goal_acc = hrp::Vector3::Zero())
       {
-        hrp::Vector3 jerk = (-9.0/ tmp_remain_time) * acc +
-          (-36.0 / (tmp_remain_time * tmp_remain_time)) * vel +
+        hrp::Vector3 jerk = (-9.0/ tmp_remain_time) * (acc - tmp_goal_acc / 3.0) +
+          (-36.0 / (tmp_remain_time * tmp_remain_time)) * (tmp_goal_vel * 2.0 / 3.0 + vel) +
           (60.0 / (tmp_remain_time * tmp_remain_time * tmp_remain_time)) * (tmp_goal - pos);
         acc = acc + dt * jerk;
         vel = vel + dt * acc;
