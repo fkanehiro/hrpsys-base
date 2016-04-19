@@ -2,6 +2,370 @@
 Changelog for package hrpsys
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+315.9.0 (2016-04-19)
+--------------------
+
+Stable RTCs
+=============
+
+* SequencePlayer
+
+  * fix bug of setJointAnglesSequenceFull function in SequencePlayer (updated by snozawa) (`#908 <https://github.com/fkanehiro/hrpsys-base/issues/908>`_)
+
+    * [sample/SampleRobot/samplerobot_sequence_player.py] Add optionalData check and comment out clear joint angle check currently not working.
+    * [rtc/SequencePlayer/seqplay.cpp] Fix typo : RPY->ACC.
+    * rtc/SequencePlayer/SequencePlayer.cpp: fix bug of setJointAnglesSequenceFull function in SequencePlayer.
+    * rtc/SequencePlayer/SequencePlayerService_impl.cpp: fix the expected length of acc array in setJointAnglesSequenceFull.
+    * sample/SampleRobot/samplerobot_sequence_player.py: add test of setJointAnglesSequenceFull in samplerobot_sequence_player.py
+
+  * sample/SampleRobot/samplerobot_sequence_player.py: remove joint group when finishing test. enable clear test of setJointAnglesSequenceFull. (`#914 <https://github.com/fkanehiro/hrpsys-base/issues/914>`_)
+
+* DataLogger
+
+  * Make more explicit the dependence of PointCloudViewer on VTK and on IO package of PCL  (`#65 <https://github.com/fkanehiro/hrpsys-base/issues/968>`_)
+
+* fix include directory for iob.h/idl/util (`#842 <https://github.com/fkanehiro/hrpsys-base/issues/842>`_)
+  (io/iob.h -> hrpsys/io/iob.h,
+  xxx.hh -> hrpsys/idl/xxx.hh,
+  util/xxx.h -> hrpsys/util/xxx.h)
+
+* Update semaphore and EcexutionContext (`#970 <https://github.com/fkanehiro/hrpsys-base/issues/970>`_)
+
+  * [ec/hrpEC/hrpEC-common.cpp, hrpEC.h] Add ordinaly debug message for processing time if ENABLE_DEBUG_PRINT is true. Update print message for processing time. Move QNX ifdef for fprintf to header file.
+  * [rtc/RobotHardware/robot.[cpp,h] ,rtc/SequencePlayer/SequencePlayer.[cpp,h], rtc/StateHolder/StateHolder.[cpp,h]] Use semaphore.h instead of interprocess_semaphore because we do not use interprocess_semaphore specific functionality. On old OS, interprocess_semaphore cannot be used (boost version <= 1.35.0). This commit is related with the discussion : https://github.com/fkanehiro/hrpsys-base/issues/969
+
+* rtm.py
+
+  * rtm.py : fix wrong commit on #634 (isConnected() and False: ) (`#978 <https://github.com/fkanehiro/hrpsys-base/issues/978>`_)
+  * test/test-hrpsysconf.py: add check do not connect again if already connected for https://github.com/fkanehiro/hrpsys-base/issues/979
+
+* PDController
+
+  * adds a function to interpolate reference angles (`#954 <https://github.com/fkanehiro/hrpsys-base/issues/954>`_)
+
+    * updates description of ref_dt
+    * adds a function to interpolate reference angles
+
+* lib/util/VectorConvert
+   * fixes a parse problem (`#954 <https://github.com/fkanehiro/hrpsys-base/issues/954>`_)
+
+* Update docs (`#975 <https://github.com/fkanehiro/hrpsys-base/issues/975>`_)
+
+  * [idl/CollisionDetectorService.idl, RobotHardwareService.idl] Update documentation of idl
+  * [doc/Doxyfile.in, doc/package.h] Add beeper RTC documentation links.
+  * [README.md] Add documentation for directories, papers, and ros wiki
+
+* Fix include dir for QNX build (`#971 <https://github.com/fkanehiro/hrpsys-base/issues/971>`_)
+
+  * [rtc/ImpedanceController/ObjectTurnaroundDetector.h] Add including of Hrpsys.h to pass QNX build.
+  * [CMakeLists.txt] Specify include_directories as higher priority to pass QNX build.
+
+* [sample/SampleRobot/samplerobot_emergency_stopper.py,samplerobot_remove_force_offset.py] Use DataLogger instead of readDataPort for sample. (`#950 <https://github.com/fkanehiro/hrpsys-base/issues/950>`_)
+
+* sample/SampleRobot/samplerobot_sequence_player.py: fix checkArrayBetween function (`#919 <https://github.com/fkanehiro/hrpsys-base/issues/919>`_)
+
+  * Add loadpatternst sample (`#907 <https://github.com/fkanehiro/hrpsys-base/issues/907>`_)
+
+    * [sample/SampleRobot/samplerobot_stabilizer.py] Add example for loadPattern + Stabilizer.
+    * [sample/SampleRobot/data, CMakeLists.txt] Add generated walking pattern file for SampleRobot. Add installation of data.
+
+  * Update carry sample  (`#909 <https://github.com/fkanehiro/hrpsys-base/issues/909>`_)
+
+   * [.travis.sh] Download and overwrite deb installed tests for downstream hrpsys-ros-bridge
+   * [sample/SampleRobot/samplerobot_carry_object.py] Define object turnaround detection time threshold and use hand fix mode during pushing manipulation.
+   * [sample/SampleRobot/README.md] Add conf file setting for el sample README.
+
+  * Update st, abc, el, and travis.sh to pass travis tests (`#903 <https://github.com/fkanehiro/hrpsys-base/issues/903>`_)
+
+    * [sample/SampleRobot/samplerobot_soft_error_limiter.py] Check soft error limit checking after version '315.5.0'
+    * [.travis.sh] Add inputting of N for mongodb configuration during deb install reported in https://github.com/fkanehiro/hrpsys-base/pull/900#issuecomment-162392884
+    * [sample/SampleRobot/samplerobot_soft_error_limiter.py] Use getActualState().command instead of rtm.readDataPort of el joint angle output to keep thread safety.
+    * [rtc/AutoBalancer/AutoBalancer.cpp] Revert AutoBalancer 7a8bc6781608d4251b6c268123d99781ea4d405b change which does not pass samplerobot_auto_balancer.py test.
+    * [sample/SampleRobot/samplerobot_auto_balancer.py] Use abs for Base RPY error checking and check base RPY error between reference and actual.
+    * [rtc/Stabilizer/Stabilizer.*] Update Stabilizer doc including paper names and equation numbers.
+
+  * Update samplerobot python unittest (`#912 <https://github.com/fkanehiro/hrpsys-base/issues/912>`_)
+
+   * [sample/SampleRobot/samplerobot_sequence_player.py] Use StateHolder's getCommand to get seq results.
+   * [test/test-samplerobot-*.py] Use Unittest for samplerobot example testing to enable test results output and respawn of rostest.
+   * [.travis.sh] Print rosunit-*.xml if rostest fails
+
+* Fix pkg-config file, includedir should be the include directory, not the compiler flag. (`#947 <https://github.com/fkanehiro/hrpsys-base/issues/947>`_)
+
+* [.travis.sh] Use --purge option for mongodb apt-get remove in order to remove configuration file. (reported in https://github.com/fkanehiro/hrpsys-base/pull/900#issuecomment-162392884) (`#906 <https://github.com/fkanehiro/hrpsys-base/issues/906>`_)
+
+
+
+Unstable RTCs
+=============
+
+* ImpedanceController
+
+  * Fix bug of virtualforce (`#976 <https://github.com/fkanehiro/hrpsys-base/issues/976>`_)
+
+    * Modified Stabilizer to fix bug of virtual force
+    * Modified ImpedanceController for enabling VirtualForce
+
+  * [rtc/ImpedanceController/ObjectTurnaroundDetector.h,sample/SampleRobot/samplerobot_impedance_controller.py] Fix to  use round to convert double time parameter to size_t time count. (`#964 <https://github.com/fkanehiro/hrpsys-base/issues/964>`_)
+
+  * Add FFI for JointPathEx (`#938 <https://github.com/fkanehiro/hrpsys-base/issues/938>`_)
+
+    * [sample/euslisp/eus-joint-path-ex.l] Add FFI example using euslisp. Keeping hrpsys-base working without euslisp existence.
+    * [rtc/ImpedanceController/CMakeLists.txt, JointPathExC.cpp] Add JointPathEx example externed into C used for FFI.
+
+  * [rtc/ImpedanceController/JointPathEx.cpp] Add debug print for nan from Inverse Kinematics calculations (`#925 <https://github.com/fkanehiro/hrpsys-base/issues/925>`_)
+
+* ReferenceForceUpdater Add reference force updater (`#974 <https://github.com/fkanehiro/hrpsys-base/issues/974>`_)
+
+  * [doc/, rtc/ReferenceForceUpdater/ReferenceForceUpdater.txt] add document for ReferenceForceUpdater
+  * [python/hrpsys_config.py, launch/samplerobot.launch] enable to use rfu in robots
+  * [idl/, rtc/CMakeLists, rtc/ReferenceForceUpdater/] add new RTC named ReferenceForceUpdater(rfu)
+
+* SoftErrorLimitter
+
+  * [rtc/SoftErrorLimiter/robot.cpp] Add print message for setServoErrorLimit (`#967 <https://github.com/fkanehiro/hrpsys-base/issues/967>`_)
+  * [rtc/SoftErrorLimiter/SoftErrorLimiter.cpp, sample/SampleRobot/samplerobot_soft_error_limiter.py] Fix reference joint angle used to calculate error. Use joint angle which consider position limit and velocity limit.  (`#966 <https://github.com/fkanehiro/hrpsys-base/issues/966>`_)
+
+* Beeper
+
+  * Add commenttoconnect and build beeper (`#964 <https://github.com/fkanehiro/hrpsys-base/issues/964>`_)
+
+    * [python/rtm.py] Add print message for dataflow_type, subscription_type, and so on.
+    * [rtc/CMakeLists.txt] Build Beeper RTC.
+
+  * Add Beeper RTC (`#963 <https://github.com/fkanehiro/hrpsys-base/issues/963>`_)
+
+    * [python/hrpsys_config.py] Add Beeper to getUnstableRTC. Change order of el and tl to make tl higher priority for beeping.
+    * [rtc/SoftErrorLimiter/SoftErrorLimiter.*, rtc/CollisionDetector/CollisionDetector.*] Support both BeepClient to use BeeperRTC and start_beep for stable beeping RTCs because stable RTC does not support BeeperRTC.
+    * [rtc/ThermoLimiter/ThermoLimiter*, rtc/EmergencyStopper/EmergencyStopper.*] Use BeepClient to use BeeperRTC instead of start_beep for unstable beeping RTCs.
+    * [rtc/SoftErrorLimiter/beep.h] Add BeepClient class to use BeepRTC
+    * [rtc/Beeper] Add RTC to beep which takes input from several RTCs.
+
+* Kalman Filter
+
+  * [EKFilter.h] fix typo : fussy -> fuzzy  (`#958 <https://github.com/fkanehiro/hrpsys-base/issues/958>`_)
+
+  * Fussy tuned kalman filter (`#957 <https://github.com/fkanehiro/hrpsys-base/issues/957>`_)
+
+    * [KalmanFilter/EKFilter.h] use fuzzy logic to tune R matrix
+    * [samplerobot_kalman_filter.py] run test programs both with RPYKalmanFilter and with QuaternionExtendedKalmanFilter
+    * [samplerobot_kalman_filter.py] start auto balancer at the beginning to avoid slip
+    * [samplerobot_kalman_filter.py] compare kf_baseRpyCurrent with SampleRobot(Robot)0_WAIST not kf_rpy
+
+  * Add quaternion kf test  (`#956 <https://github.com/fkanehiro/hrpsys-base/issues/956>`_)
+
+    * [sample6dofrobot_kalman_filter.py.in] optimize label location
+    * [sample6dofrobot_kalman_filter.py.in] add quaternion estimator test
+    * [EKFilter.h, KalmanFilter.cpp] implement resetKalmanFilterState in EKFFilter
+    * [sample6dofrobot_kalman_filter.py.in] use actual rpy from simualtor
+    * [sample/Sample6dofRobot] rotate initial pose
+
+  * Update quaternion ekf (`#955 <https://github.com/fkanehiro/hrpsys-base/issues/955>`_)
+
+    * [KalmanFilter/EKFilter.h] update coding styles for readability
+    * [KalmanFilter/EKFilter.h] refectering
+    * [KalmanFilter/EKFilter.h] use reference instead of returning value
+    * [KalmanFilter/EKFilter.h] clean up redundant codes
+    * [KalmanFilter/EKFilter.h] use rotation quaternion to rotate coordinate instead of rotation matrix
+    * [KalmanFilter/EKFilter.h] use hrpUtil to get Euler Angles from Rotation Matrix
+    * [KalmanFilter/EKFilter.h] use const reference parameters
+    * [KalmanFilter/EKFilter.h] do not pass a member variable to member functions
+    * [KalmanFilter/EKFilter.h] update calcF for readability
+    * [KalmanFilter/EKFilter.h] use const member functions
+    * [KalmanFilter/EKFilter.h] remove unused old comments
+    * [KalmanFilter/EKFilter.h] add a magic comment to use a 2 space indentation
+    * [KalmanFilter/EKFilter.h] use initializer list at EKFilter
+    * [KalmanFilter/EKFilter.h] Q should be gyro noise covariance in order to make it easy to tune parameters
+    * [KalmanFilter/EKFilter.h] normalize rotation quaternion as soon as possible
+    * [KalmanFilter/EKFilter.h] acceleration reference is to handle in KalmanFilter.cpp
+    * [KalmanFilter/EKFilter.h] fix bug : we should normalize only rotation quaternion
+
+* TorqueController
+
+  * Add getter method to torque controller (`#933 <https://github.com/fkanehiro/hrpsys-base/issues/933>`_)
+
+    * [TorqueController] Fix transition time expression bag
+    * [TorqueController] Rename paramter argument name in torque controller to corersponding rtm-ros-robot-interface: t_param -> i_param
+    * [TorqueController] Add get parameter methods for torque controller
+
+  * Fix torque controller pass qref mode  (`#926 <https://github.com/fkanehiro/hrpsys-base/issues/926>`_)
+
+    * [TorqueController] Fix merge miss in timestamp
+    * [TorqueController] Supress dq from torque controller by min/max_dq
+    * [TorqueController] Pass qRefIn without checking range of motion when motor torque contorller is disabled
+    * [MotorTorqueController] tauMax should be not zero when tau is zero
+    * [TorqueController] Check size of qRef to prevent accessing qRefIn when qRefIn size is not same as joint_num
+
+* AutoBalancer
+
+  * [rtc/AutoBalancer/GaitGenerator.h] Add boundary conditions of velocity and acceleration to GaitGenerator (`#981 <https://github.com/fkanehiro/hrpsys-base/issues/981>`_)
+  * [rtc/AutoBalancer/GaitGenerator.h] Fix zmp weight interpolation and use setGoal instead of go. (`#973 <https://github.com/fkanehiro/hrpsys-base/issues/973>`_)
+
+  * Get foosteps (`#939 <https://github.com/fkanehiro/hrpsys-base/issues/939>`_)
+
+    * [AutoBalancer.cpp, GaitGenerator.cpp, GaitGenerator.h] use const member function in getGoPosFootstepsSequence
+    * [GaitGenerator.cpp, GaitGenerator.h] pass vel_param for argument in go_pos_param_2_footstep_nodes_list
+    * [AutoBalancerService.idl, AutoBalancer.cpp, AutoBalancer.h, AutoBalancerService_impl.cpp, AutoBalancerService_impl.h] add getFootstepsSequence function
+    * [GaitGenerator.cpp, GaitGenerator.h] overload go_pos_param_2_footstep_nodes_list to get new_footstep_nodes_list
+    * [AutoBalancer.cpp, AutoBalancer.h] move initial_support_legs calculation method from inside goPos to a new method
+
+  * [rtc/AutoBalancer/AutoBalancer.cpp] Initialize gait_type as BIPED.  (`#937 <https://github.com/fkanehiro/hrpsys-base/issues/937>`_)
+
+  * Update JointPathEx IK (`#942 <https://github.com/fkanehiro/hrpsys-base/issues/942>`_)
+
+    * [idl/AutoBalancerService.idl,idl/StabilizerService.idl,rtc/AutoBalancer/AutoBalancer.*,rtc/Stabilizer/Stabilizer.cpp] Enable to set IK weight vector for STtabilizer and Autobalancer like ImpedanceController.
+    * [rtc/ImpedanceController/ImpedanceController.cpp,rtc/ImpedanceController/JointPathEx.*,rtc/Stabilizer/Stabilizer.cpp] Move end-effector version inverse kinematics to JointPathEx and use it in IC and ST.
+    * [rtc/ImpedanceController/ImpedanceController.cpp,JointPathEx.*,rtc/Stabilizer/Stabilizer.cpp,rtc/AutoBalancer/AutoBalancer.cpp] Add calcInverseKinematics2Loop function to take target pos and Rot and use it in ic, abc, and st. Currently omegaFromRot is under checking and tempolarily use old matrix_log function, so program behaviour does not change.
+    * [idl/AutoBalancerService.idl,rtc/AutoBalancer/AutoBalancer.*] Remove deprecated footstep information lleg_coords and rleg_coords. Remove unused current\_* parameter from ABCIKparam.
+
+  * fix bug when overwriting footstep (`#940 <https://github.com/fkanehiro/hrpsys-base/issues/940>`_)
+
+    * [rtc/AutoBalancer/GaitGenerator.cpp, rtc/AutoBalancer/PreviewController.h] fix bug when overwriting footstep
+    * [sample/SampleRobot/samplerobot_auto_balancer.py] Add checking for discontinuity of COG trajectory during footstep overwriting by checking COG too large acc.
+
+  * Update gaitgenerator and fix bugs  (`#918 <https://github.com/fkanehiro/hrpsys-base/issues/918>`_)
+
+    * [rtc/AutoBalancer/GaitGenerator.cpp,h] Add get_overwrite_check_timing
+    * [.travis.sh] Print if rosunit_xml_result_files exists
+    * [rtc/AutoBalancer/GaitGenerator.cpp] Enable emergencyStop for walking anytime. Previously, emergency flag is checked at half of step time.
+    * [rtc/AutoBalancer/GaitGenerator.cpp] Set toe heel time count based on each footstep step count
+
+  * Update gopos (`#877 <https://github.com/fkanehiro/hrpsys-base/issues/877>`_)
+
+    * [sample/SampleRobot/samplerobot_impedance_controller.py] Check hrpsys_version for samplerobot impedance test
+    * [rtc/ImpedanceController/JointPathEx.*, AutoBalancer, ImpedanceController, SequencePlayer, Stabilizer] Reduce limit over print message frequence in JointPathEx and add more information for it.
+    * [sample/SampleRobot/samplerobot_impedance_controller.py, test/test-samplerobot-impedance.py] Test samplerobot_impedance_controller python example
+    * [rtc/*] Update print message from RTCs like [el]
+    * [rtc/AutoBalancer/GaitGenerator.*] Update appending of footstep function. Define both const and non-const member function.
+    * [rtc/AutoBalancer/GaitGenerator.*, AutoBalancer.cpp] Enable to overwrite goPos target goal.
+    * [sample/SampleRobot/samplerobot_auto_balancer.py] Add check test for goPos final dst_foot_midcoords and add example for goPos overwrite.
+    * [rtc/AutoBalancer/GaitGenerator.h] Set is_initialize for gopos true by default to pass tests with default argument.
+    * [rtc/AutoBalancer/GaitGenerator.*] Use const member function for getter and printing functions.
+
+
+  * Overwrite current footstep  (`#916 <https://github.com/fkanehiro/hrpsys-base/issues/916>`_)
+
+    * [rtc/AutoBalancer/GaitGenerator.cpp] Fix for future velocity footsteps. Integrate future steps.
+    * [sample/SampleRobot/samplerobot_auto_balancer.py] Add example for current footstep overwrite
+    * [rtc/AutoBalancer/GaitGenerator.cpp,rtc/AutoBalancer/PreviewController.h] Enable to set overwritable_footstep_index_offset = 0.
+    * [idl/AutoBalancerService.idl, rtc/AutoBalancer/AutoBalancer.cpp,GaitGenerator.h] Enable to set overwritable_footstep_index_offset.
+    * [rtc/AutoBalancer/GaitGenerator.cpp] Fix order of overwrite zmp processing and add comments. This should not change behaviour.
+    * [rtc/AutoBalancer/GaitGenerator.cpp,h] Enable to set future_step_num and use get_overwritable_index.
+
+* Stabilizer
+
+  * Add refforce weight to eefmqp  (`#977 <https://github.com/fkanehiro/hrpsys-base/issues/977>`_)
+
+    * [rtc/Stabilizer/Stabilizer.cpp,ZMPDistributor] Add ref force weight to eefmqp
+    * [rtc/AutoBalancer/AutoBalancer.cpp] Modify ref force output
+
+  * [rtc/Stabilizer/ZMPDistributor.h] do not distribute ForceMoment to swing foot (`#972 <https://github.com/fkanehiro/hrpsys-base/issues/972>`_)
+
+  * Add fall direction  (`#948 <https://github.com/fkanehiro/hrpsys-base/issues/948>`_)
+
+    * merge origin/master by hand
+    * [AutoBalancer.cpp] stop walking if emergency signal is set
+    * [Stabilizer.cpp] check single support phase only in wailking for recovery
+    * [StabilizerService.idl, Stabilizer.cpp, Stabilizer.h] add tilt_margin parameter for single support phase and double support phase
+    * [StabilizerService.idl, Stabilizer.cpp] add TILT emergency mode
+    * [Stabilizer.cpp, Stabilizer.h] add fall direction caulculator
+
+
+  * Fix abc st segfo (`#951 <https://github.com/fkanehiro/hrpsys-base/issues/951>`_)
+
+    * [rtc/AutoBalancer/AutoBalancer.cpp] Fix initialization of target_p0 and target_r0
+    * [rtc/Stabilizer/ZMPDistributor.h] Check size of ee params to avoid segfo.
+
+  * [Stabilizer.cpp, Stabilizer.h] fix swing leg modification rule (`#949 <https://github.com/fkanehiro/hrpsys-base/issues/949>`_)
+
+  * [StabilizerService.idl, Stabilizer.cpp, Stabilizer.h] add eefm_swing_pos_time_const/eefm_swing_rot_time_const parameter (`#949 <https://github.com/fkanehiro/hrpsys-base/issues/949>`_)
+
+  * Add argument check st abc (`#945 <https://github.com/fkanehiro/hrpsys-base/issues/945>`_)
+
+    * [sample/SampleRobot/samplerobot\_*.py] Use DataLogger log for check robot's state for testing
+    * [test/test-samplerobot.test] Set order for samplerobot test execution. For example, DataLogger, SequencePlayer, ...
+    * [rtc/AutoBalancer/AutoBalancer.cpp,rtc/Stabilizer/Stabilizer.cpp] Fix location of set Ik parameter and add comments and message
+    * [rtc/AutoBalancer/AutoBalancer.cpp,rtc/Stabilizer/Stabilizer.cpp] Add argument length check for IK parameter for AutoBalancer and Stabilizer
+
+  * [idl/AutoBalancerService.idl,idl/StabilizerService.idl,rtc/AutoBalancer/AutoBalancer.cpp,rtc/Stabilizer/Stabilizer.cpp] Use IKLimbParameters instead of each sequence paraemters for IK of AutoBalancer and Stabilizer.  (`#944 <https://github.com/fkanehiro/hrpsys-base/issues/944>`_)
+
+  * [idl/AutoBalancerService.idl,idl/StabilizerService.idl,rtc/AutoBalancer/AutoBalancer.*,rtc/Stabilizer/Stabilizer.*] Add IK parameter interface for AutoBalancer and Stabilizer. (`#943 <https://github.com/fkanehiro/hrpsys-base/issues/943>`_)
+
+  * Add moment limit and test for turnwalk (`#936 <https://github.com/fkanehiro/hrpsys-base/issues/936>`_)
+
+    * [sample/SampleRobot/samplerobot_stabilizer.py] Add test for turn walk abount 180[deg] yaw rotation.
+    * [idl/StabilizerService.idl, rtc/Stabilizer/Stabilizer.*] Add limitation for end-effector frame local reference moment to avoid hardware break.
+
+  + [Stabilizer.cpp] match f_diff frame to ref_f_diff one (`#935 <https://github.com/fkanehiro/hrpsys-base/issues/935>`_)
+
+  * Fix fixed coords again  (`#917 <https://github.com/fkanehiro/hrpsys-base/issues/917>`_)
+
+    * [AutoBalancer.cpp] resize leg_pos to end-effector size
+    * [AutoBalancer.cpp] move leg_pos initialization position
+    * [Stabilizer.cpp] match f_diff frame to ref_f_diff one
+    * [sample4legrobot_auto_balancer.py] add goVelocity in trot sample
+    * [AutoBalancer.cpp, GaitGenerator.cpp, GaitGenerator.h] support multileg in go velocity
+    * [GaitGenerator.cpp, GaitGenerator.h] support multi legs for overwirte
+    * [sample4legrobot_auto_balancer.py] add goPos in trot and in pace samples
+    * [sample4legrobot_auto_balancer.py] move all end-pos +50mm in z axis to get manipulability
+    * [AutoBalancerService.idl, AutoBalancer.cpp, AutoBalancer.h] add gait_type to AutoBalancer param to realize multiple gait in goPos
+    * [sample4legrobot_auto_balancer.py] add crawl mode test
+    * [AutoBalancer.cpp, GaitGenerator.h] fix fixed coordinates in multiple legs : only use legs / re-revert and update https://github.com/fkanehiro/hrpsys-base/commit/ad4eb10d05f98aca9f243bb72a81ffba4b51dd77
+
+  * Modify swing leg end coords  (`#934 <https://github.com/fkanehiro/hrpsys-base/issues/934>`_)
+
+    * [Stabilizer.cpp] add a new modification law as a comment
+    * [Stabilizer.cpp] modify swing leg coods only in actual and reference swing time
+    * [Stabilizer.cpp] calulate difference rpy in new_swg_R coordinates at swing leg modification
+    * [Stabilizer.cpp] print d_rpy_swing / d_pos_swing for DEBUG
+    * [Stabilizer.cpp] support multiple legs for swing leg modification
+    * [Stabilizer.cpp] separte rotation scope and position one for readability
+    * [Stabilizer.cpp, Stabilizer.h] rename delta_pos / delta_rpy to d_rpy_swing / d_pos_swing and keep these variables as member variables for extensibility
+    * [Stabilizer.cpp] use eefm_swing_rot_spring_gain / eefm_swing_rot_spring_gain param
+    * [StabilizerService.idl, Stabilizer.cpp, Stabilizer.h] add eefm_swing_rot_spring_gain / eefm_swing_rot_spring_gain as st param
+    * [Stabilizer.cpp, Stabilizer.h] modify swing leg end-coords to follow target one in world coordinates
+
+  * Return total force or moment from getObjectForcesMoments and consider moment_center as foot mid frame. (`#932 <https://github.com/fkanehiro/hrpsys-base/issues/932>`_)
+
+    * [rtc/ImpedanceController/ImpedanceController.cpp] Check for legged robot.
+    * [rtc/ImpedanceController/ObjectTurnaroundDetector.h] Reset current filtered param when detect mode switched.
+    * [idl/ImpedanceControllerService.idl, rtc/ImpedanceController/*] Return total force or moment from getObjectForcesMoments and consider moment_center as foot mid frame.
+
+  * Enable total moment detection by object turnaround detection. (`#930 <https://github.com/fkanehiro/hrpsys-base/issues/930>`_)
+
+    * [idl/ImpedanceControllerService.idl,rtc/ImpedanceController/ImpedanceController.cpp,rtc/ImpedanceController/ImpedanceController.h,rtc/ImpedanceController/ObjectTurnaroundDetector.h] Enable total moment detection by object turnaround detection.
+
+  * [Stabilizer.cpp] enable to change compensation limit : omission of https://github.com/fkanehiro/hrpsys-base/pull/852 (`#929 <https://github.com/fkanehiro/hrpsys-base/issues/929>`_)
+
+  * [Stabilizer.cpp] fix com height of LIPM in Capture Point calculation (`#924 <https://github.com/fkanehiro/hrpsys-base/issues/924>`_)
+
+  * [hrpsys_config.py] start stabilizer after auto-balancer in startDefaultUnstableControllers (`#928 <https://github.com/fkanehiro/hrpsys-base/issues/928>`_)
+
+  * [Stabilizer.cpp] fix typo of https://github.com/fkanehiro/hrpsys-base/pull/895 (`#922 <https://github.com/fkanehiro/hrpsys-base/issues/922>`_)
+
+  * Update graspless manip mode (`#921 <https://github.com/fkanehiro/hrpsys-base/issues/921>`_)
+
+    * [sample/SampleRobot/samplerobot_auto_balancer.py] Add example for dual-arm graspless manip walking.
+    * [rtc/AutoBalancer/AutoBalancer.cpp] Support dual-arm graspless mode while walking.
+
+  * Add rostest for stabilizer.  (`#910 <https://github.com/fkanehiro/hrpsys-base/issues/910>`_)
+
+    * [sample/SampleRobot/samplerobot_stabilizer.py] Check existence of sample1_bush.wrl because openhrp3 <= 3.1.8 does not have it.
+    * [test/test-samplerobot-st.test, .travis.yml] Add test for samplerobot st with torque + pdcontrol + bush. Add travis job for testing st test.
+
+
+* RangeDataViewer
+
+  * rtc/RangeDataViewer/RangeDataViewer.cpp: suppresses debug messages and ignores inf
+
+* get all q log (`#915 <https://github.com/fkanehiro/hrpsys-base/issues/915>`_)
+
+  * [CollisionDetector.cpp] set timestamp for out port
+  * [TorqueController.cpp] use upstream timestamp instead of current timestamp
+
+
+* Contributors: Benjamin Chrétien, Eisoku Kuroiwa, Fumio Kanehiro, Iori Kumagai, Kei Okada, Kohei Kimura, Masaki Murooka, Mehdi Benallegue, Ryo Koyama, Shunichi Nozawa, Takasugi Noriaki, Yohei Kakiuchi, Yuta Kojio, Iori Yanokura
+
 315.8.0 (2015-11-29)
 --------------------
 
