@@ -943,6 +943,11 @@ class HrpsysConfigurator:
         print(self.configurator_name + "simulation_mode : %s" % self.simulation_mode)
 
     def waitForRTCManagerAndRoboHardware(self, robotname="Robot", managerhost=nshost):
+        print("\033[93m%s waitForRTCManagerAndRoboHardware has renamed to \
+        waitForRTCManagerAndRoboHardware: Please update your code\033[0m" % self.configurator_name)
+        return self.waitForRTCManagerAndRobotHardware(robotname=robotname, managerhost=nshost)
+
+    def waitForRTCManagerAndRobotHardware(self, robotname="Robot", managerhost=nshost):
         '''!@brief
         Wait for both RTC Manager (waitForRTCManager()) and RobotHardware (waitForRobotHardware())
 
@@ -2094,7 +2099,7 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
         print(self.configurator_name + "start hrpsys")
 
         print(self.configurator_name + "finding RTCManager and RobotHardware")
-        self.waitForRTCManagerAndRoboHardware(robotname)
+        self.waitForRTCManagerAndRobotHardware(robotname)
         self.sensors = self.getSensors(url)
 
         print(self.configurator_name + "creating components")
