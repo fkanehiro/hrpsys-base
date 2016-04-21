@@ -1,3 +1,4 @@
+cmake_policy(SET CMP0015 NEW)
 set(comp_source  robot.cpp RobotHardware.cpp RobotHardwareService_impl.cpp)
 set(libs hrpIo hrpModel-3.1 hrpCollision-3.1 hrpUtil-3.1 hrpsysBaseStub)
 link_directories(${LIBIO_DIR})

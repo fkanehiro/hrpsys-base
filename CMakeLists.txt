@@ -173,7 +173,7 @@ install(FILES
   ${CMAKE_CURRENT_BINARY_DIR}/hrpsys-base.pc
   DESTINATION lib/pkgconfig)
 
-add_definitions(-DHRPSYS_PACKAGE_VERSION=\"\\"${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}\\"\")
+add_definitions(-DHRPSYS_PACKAGE_VERSION=\"\\\"${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}\"\\\")
 
 option(NO_DIGITAL_INPUT "Disable readDigitalInput and lengthDigitalInput" OFF)
 if(NO_DIGITAL_INPUT)
@@ -207,7 +207,7 @@ if (NOT QNXNTO)
   add_subdirectory(util)
 endif()
 add_subdirectory(sample)
-add_subdirectory(test)
+# add_subdirectory(test)
 
 #if catkin environment
 string(REGEX MATCH "catkin" need_catkin "$ENV{_}")
