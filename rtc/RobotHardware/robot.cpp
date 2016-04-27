@@ -93,7 +93,9 @@ bool robot::init()
 
 void robot::removeForceSensorOffset()
 {
+    std::cerr << "[RobotHardware] removeForceSensorOffset..." << std::endl;
     startForceSensorCalibration();
+    std::cerr << "[RobotHardware] removeForceSensorOffset...done." << std::endl;
 }
 
 bool robot::loadGain()
@@ -116,6 +118,7 @@ bool robot::loadGain()
 
 void robot::startInertiaSensorCalibration()
 {
+    std::cerr << "[RobotHardware] startInertiaSensorCalibration..." << std::endl;
     if (numSensors(Sensor::ACCELERATION)==0 
         && numSensors(Sensor::RATE_GYRO)==0)  return;
 
@@ -147,6 +150,7 @@ void robot::startInertiaSensorCalibration()
     inertia_calib_counter=CALIB_COUNT;
 
     sem_wait(&wait_sem);
+    std::cerr << "[RobotHardware] startInertiaSensorCalibration...done." << std::endl;
 }
 
 void robot::startForceSensorCalibration()
