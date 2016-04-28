@@ -943,9 +943,9 @@ class HrpsysConfigurator:
         print(self.configurator_name + "simulation_mode : %s" % self.simulation_mode)
 
     def waitForRTCManagerAndRoboHardware(self, robotname="Robot", managerhost=nshost):
-        print("\033[93m%s waitForRTCManagerAndRoboHardware has renamed to \
-        waitForRTCManagerAndRoboHardware: Please update your code\033[0m" % self.configurator_name)
-        return self.waitForRTCManagerAndRobotHardware(robotname=robotname, managerhost=nshost)
+        print("\033[93m%s waitForRTCManagerAndRoboHardware has renamed to " % self.configurator_name + \
+              "waitForRTCManagerAndRoboHardware: Please update your code\033[0m")
+        return self.waitForRTCManagerAndRobotHardware(robotname=robotname, managerhost=managerhost)
 
     def waitForRTCManagerAndRobotHardware(self, robotname="Robot", managerhost=nshost):
         '''!@brief
