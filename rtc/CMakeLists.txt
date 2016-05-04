@@ -70,6 +70,10 @@ if (OCTOMAP_FOUND)
 endif()
 
 find_package(PCL)
+if (NOT "${PCL_LIBRARIES}" STREQUAL "")
+  list(REMOVE_ITEM PCL_LIBRARIES "vtkproj4")
+endif()
+
 if (PCL_FOUND)
   add_subdirectory(SORFilter)
   add_subdirectory(MLSFilter)
