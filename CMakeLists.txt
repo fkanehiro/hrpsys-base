@@ -105,7 +105,7 @@ set(CPACK_PACKAGE_NAME hrpsys-base)
 set(CPACK_PACKAGE_VENDOR "AIST")
 set(CPACK_PACKAGE_CONTACT "Fumio Kanehiro <f-kanehiro@aist.go.jp>")
 set(CPACK_PACKAGE_VERSION_MAJOR 315)
-set(CPACK_PACKAGE_VERSION_MINOR 7)
+set(CPACK_PACKAGE_VERSION_MINOR 9)
 set(CPACK_PACKAGE_VERSION_PATCH 0)
 execute_process(
   COMMAND date +%Y%m%d%H%M
@@ -212,6 +212,13 @@ add_subdirectory(test)
 #if catkin environment
 string(REGEX MATCH "catkin" need_catkin "$ENV{_}")
 if(need_catkin OR "${CATKIN_BUILD_BINARY_PACKAGE}")
+  find_package(catkin)
+  if(catkin_FOUND)
+    catkin_package_xml()
+    if(NOT hrpsys_VERSION VERSION_EQUAL CPACK_PACKAGE_VERSION)
+      message( FATAL_ERROR "hrpsys_version (from package.xml): ${hrpsys_VERSION} is not equal CPACK_PACKAGE_VERSION: ${CPACK_PACKAGE_VERSION}" )
+    endif()
+  endif()
   install(CODE "file(WRITE \$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/share/doc/hrpsys/rospack_nosubdirs)")
   install(FILES package.xml DESTINATION share/hrpsys/)
   install(CODE "
