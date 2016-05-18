@@ -133,8 +133,7 @@ def demo():
 
 def demo_co_loop():
     init()
-    ##if hrpsys_version >= '315.10.0':
-    if True:
+    if hrpsys_version >= '315.10.0':
         demoCollisionCheckSafe()
         demoCollisionCheckFail()
         demoCollisionCheckFailWithSetTolerance()
