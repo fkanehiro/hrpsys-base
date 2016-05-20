@@ -1,6 +1,7 @@
 # generate .conf and .xml files for two controller period
 set(controller_time_list 0.002 0.005) # [s]
 set(controller_period_list 500 200) # [Hz]
+set(COLLISION_LOOP 1)
 foreach(_idx 0 1)
   list(GET controller_time_list ${_idx} _tmp_controller_time)
   list(GET controller_period_list ${_idx} _tmp_controller_period)
@@ -27,6 +28,8 @@ configure_file(SampleRobot.conf.in ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.500.v
 set(VirtualForceSensorSetting "#virtual_force_sensor") # comment out
 set(JointLimitTableSetting "joint_limit_table")
 configure_file(SampleRobot.conf.in ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.500.el.conf)
+set(COLLISION_LOOP 3)
+configure_file(SampleRobot.conf.in ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.500.co_loop.conf)
 
 set(robot_waist_translation "-0.8  0  0" "-4.15  -0.2  0" "-5.83  -0.2  -0.6096")
 set(file_suffix "SlopeUpDown" "StairUp" "StairDown")
@@ -55,6 +58,8 @@ install(FILES
   # for SoftErrorLimiter
   ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.500.el.conf
   SampleRobot.PDgain.dat
+  # for collision_loop
+  ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.500.co_loop.conf
   # TerrainFloor
   ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.TerrainFloor.SlopeUpDown.xml
   ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.TerrainFloor.StairUp.xml

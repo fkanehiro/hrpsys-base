@@ -14,13 +14,15 @@ except:
     import time
 
 def init ():
-    global hcf, init_pose, col_safe_pose, col_fail_pose
+    global hcf, init_pose, col_safe_pose, col_fail_pose, hrpsys_version
     hcf = HrpsysConfigurator()
     hcf.getRTCList = hcf.getRTCListUnstable
     hcf.init ("SampleRobot(Robot)0", "$(PROJECT_DIR)/../model/sample1.wrl")
     init_pose = [0]*29
     col_safe_pose = [0.0,-0.349066,0.0,0.820305,-0.471239,0.0,0.523599,0.0,0.0,-1.74533,0.15708,-0.113446,0.0,0.0,-0.349066,0.0,0.820305,-0.471239,0.0,0.523599,0.0,0.0,-1.74533,-0.15708,-0.113446,0.0,0.0,0.0,0.0]
     col_fail_pose = [0.0,-0.349066,0.0,0.820305,-0.471239,0.0,0.845363,0.03992,0.250074,-1.32816,0.167513,0.016204,0.0,0.0,-0.349066,0.0,0.820305,-0.471239,0.0,0.523599,0.0,0.0,-1.74533,-0.15708,-0.113446,0.0,0.0,0.0,0.0]
+    hrpsys_version = hcf.co.ref.get_component_profile().version
+    print >> sys.stderr, "hrpsys_version = %s"%hrpsys_version
 
 # demo functions
 def demoCollisionCheckSafe ():
@@ -128,6 +130,14 @@ def demo():
     demoCollisionCheckFailWithSetTolerance()
     demoCollisionDisableEnable()
     #demoCollisionMask()
+
+def demo_co_loop():
+    init()
+    if hrpsys_version >= '315.10.0':
+        demoCollisionCheckSafe()
+        demoCollisionCheckFail()
+        demoCollisionCheckFailWithSetTolerance()
+        demoCollisionDisableEnable()
 
 if __name__ == '__main__':
     demo()
