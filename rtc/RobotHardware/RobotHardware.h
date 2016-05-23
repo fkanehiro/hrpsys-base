@@ -198,6 +198,7 @@ class RobotHardware
   
   // </rtc-template>
 
+  robot *robot_ptr(void) { return m_robot.get(); };
  private:
   int dummy;
   boost::shared_ptr<robot> m_robot;
