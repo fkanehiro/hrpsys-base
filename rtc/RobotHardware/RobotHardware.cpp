@@ -219,10 +219,8 @@ RTC::ReturnCode_t RobotHardware::onDeactivated(RTC::UniqueId ec_id)
 RTC::ReturnCode_t RobotHardware::onExecute(RTC::UniqueId ec_id)
 {
     //std::cout << "RobotHardware:onExecute(" << ec_id << ")" << std::endl;
-  coil::TimeValue coiltm(coil::gettimeofday());
-  Time tm; 
-  tm.sec  = coiltm.sec();
-  tm.nsec = coiltm.usec() * 1000;
+  Time tm;
+  this->getTimeNow(tm);
 
   if (!m_isDemoMode){
       robot::emg_reason reason;
