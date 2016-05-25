@@ -51,6 +51,7 @@ ReferenceForceUpdater::ReferenceForceUpdater(RTC::Manager* manager)
     m_rpyIn("rpy", m_rpy),
     // </rtc-template>
     m_robot(hrp::BodyPtr()),
+    use_sh_base_pos_rpy(false),
     m_debugLevel(0)
 {
   m_ReferenceForceUpdaterService.rfu(this);
