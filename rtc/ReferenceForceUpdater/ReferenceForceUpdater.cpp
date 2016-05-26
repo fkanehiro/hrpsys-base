@@ -373,43 +373,53 @@ RTC::ReturnCode_t ReferenceForceUpdater::onExecute(RTC::UniqueId ec_id)
 
       // Update reference force
       hrp::Vector3 internal_force = hrp::Vector3::Zero();
-      size_t arm_idx = ee_index_map[arm];
       double interpolation_time = 0;
-      if (is_active && loop % update_count == 0) {
-          hrp::Link* target_link = m_robot->link(ee_map[arm].target_name);
-          hrp::Vector3 abs_motion_dir, tmp_act_force, df;
-          hrp::Matrix33 ee_rot, sensor_rot;
-          ee_rot = target_link->R * ee_map[arm].localR;
-          abs_motion_dir = ee_rot * motion_dir;
-          for (size_t i = 0; i < 3; i++) tmp_act_force(i) = m_force[arm_idx].data[i];
-          hrp::Sensor* sensor = m_robot->sensor(hrp::Sensor::FORCE, arm_idx);
-          sensor_rot = sensor->link->R * sensor->localR;
-          tmp_act_force = sensor_rot * tmp_act_force;
-          // Calc abs force diff
-          df = tmp_act_force - ref_force[arm_idx];
-          double inner_product = 0;
-          if ( !std::fabs((abs_motion_dir.norm()- 0.0)) < 1e-5) {
-              abs_motion_dir.normalize();
-              inner_product = df.dot(abs_motion_dir);
-              if ( !(inner_product < 0 && ref_force[arm_idx].dot(abs_motion_dir) < 0.0) ) {
-                  hrp::Vector3 in_f = ee_rot * internal_force;
-                  ref_force[arm_idx] = ref_force[arm_idx].dot(abs_motion_dir) * abs_motion_dir + in_f + (p_gain * inner_product * transition_interpolator_ratio) * abs_motion_dir;
-                  interpolation_time = (1/update_freq) * update_time_ratio;
-                  if (ref_force_interpolator[arm]->isEmpty()) {
-                      ref_force_interpolator[arm]->setGoal(ref_force[arm_idx].data(), interpolation_time, true);
+      vector<std::string> arm_name_list;
+      if (arm == "arms") {
+          arm_name_list.push_back("larm");
+          arm_name_list.push_back("rarm");
+      } else {
+          arm_name_list.push_back(arm);
+      }
+      for(int i = 0; i < arm_name_list.size(); ++i) {
+          std::string arm_name = arm_name_list[i];
+          size_t arm_idx = ee_index_map[arm_name];
+          if (is_active && loop % update_count == 0) {
+              hrp::Link* target_link = m_robot->link(ee_map[arm_name].target_name);
+              hrp::Vector3 abs_motion_dir, tmp_act_force, df;
+              hrp::Matrix33 ee_rot, sensor_rot;
+              ee_rot = target_link->R * ee_map[arm_name].localR;
+              abs_motion_dir = ee_rot * motion_dir;
+              for (size_t i = 0; i < 3; i++) tmp_act_force(i) = m_force[arm_idx].data[i];
+              hrp::Sensor* sensor = m_robot->sensor(hrp::Sensor::FORCE, arm_idx);
+              sensor_rot = sensor->link->R * sensor->localR;
+              tmp_act_force = sensor_rot * tmp_act_force;
+              // Calc abs force diff
+              df = tmp_act_force - ref_force[arm_idx];
+              double inner_product = 0;
+              if ( !std::fabs((abs_motion_dir.norm()- 0.0)) < 1e-5) {
+                  abs_motion_dir.normalize();
+                  inner_product = df.dot(abs_motion_dir);
+                  if ( !(inner_product < 0 && ref_force[arm_idx].dot(abs_motion_dir) < 0.0) ) {
+                      hrp::Vector3 in_f = ee_rot * internal_force;
+                      ref_force[arm_idx] = ref_force[arm_idx].dot(abs_motion_dir) * abs_motion_dir + in_f + (p_gain * inner_product * transition_interpolator_ratio) * abs_motion_dir;
+                      interpolation_time = (1/update_freq) * update_time_ratio;
+                      if (ref_force_interpolator[arm_name]->isEmpty()) {
+                          ref_force_interpolator[arm_name]->setGoal(ref_force[arm_idx].data(), interpolation_time, true);
+                      }
                   }
               }
+              if (DEBUGP) {
+                  std::cerr << "[" << m_profile.instance_name << "] Updating reference force" << std::endl;
+                  std::cerr << "[" << m_profile.instance_name << "]   inner_product = " << inner_product << ", ref_force = " << ref_force[arm_idx].dot(abs_motion_dir) << ", interpolation_time = " << interpolation_time << "[s]" << std::endl;
+                  std::cerr << "[" << m_profile.instance_name << "]   new ref_force = " << ref_force[arm_idx].format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << std::endl;
+                  std::cerr << "[" << m_profile.instance_name << "]   act_force = " << tmp_act_force.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << std::endl;
+                  std::cerr << "[" << m_profile.instance_name << "]   df = " << df.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << std::endl;
+              }
           }
-          if (DEBUGP) {
-              std::cerr << "[" << m_profile.instance_name << "] Updating reference force" << std::endl;
-              std::cerr << "[" << m_profile.instance_name << "]   inner_product = " << inner_product << ", ref_force = " << ref_force[arm_idx].dot(abs_motion_dir) << ", interpolation_time = " << interpolation_time << "[s]" << std::endl;
-              std::cerr << "[" << m_profile.instance_name << "]   new ref_force = " << ref_force[arm_idx].format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << std::endl;
-              std::cerr << "[" << m_profile.instance_name << "]   act_force = " << tmp_act_force.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << std::endl;
-              std::cerr << "[" << m_profile.instance_name << "]   df = " << df.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << std::endl;
+          if (!ref_force_interpolator[arm_name]->isEmpty()) {
+              ref_force_interpolator[arm_name]->get(ref_force[arm_idx].data(), true);
           }
-      }
-      if (!ref_force_interpolator[arm]->isEmpty()) {
-          ref_force_interpolator[arm]->get(ref_force[arm_idx].data(), true);
       }
   }
 
