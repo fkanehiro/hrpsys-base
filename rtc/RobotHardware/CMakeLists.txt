@@ -12,7 +12,7 @@ target_link_libraries(RobotHardwareComp ${libs})
 set(target RobotHardware RobotHardwareComp)
 
 install(TARGETS ${target}
-  RUNTIME DESTINATION bin CONFIGURATIONS Release Debug
-  LIBRARY DESTINATION lib CONFIGURATIONS Release Debug
+  RUNTIME DESTINATION bin
+  LIBRARY DESTINATION lib
 )
 

@@ -52,8 +52,8 @@ install(PROGRAMS
 )
 
 install(TARGETS ${target}
-  RUNTIME DESTINATION bin CONFIGURATIONS Release Debug
-  LIBRARY DESTINATION lib CONFIGURATIONS Release Debug
+  RUNTIME DESTINATION bin
+  LIBRARY DESTINATION lib
 )
 install(CODE "
 execute_process(COMMAND cmake -E create_symlink ../../../lib/SampleComponent.so SampleComponent.so WORKING_DIRECTORY \$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/share/hrpsys/lib)

@@ -10,6 +10,6 @@ target_link_libraries(Range2PointCloudComp ${libs})
 set(target Range2PointCloud Range2PointCloudComp)
 
 install(TARGETS ${target}
-  RUNTIME DESTINATION bin CONFIGURATIONS Release Debug
-  LIBRARY DESTINATION lib CONFIGURATIONS Release Debug
+  RUNTIME DESTINATION bin
+  LIBRARY DESTINATION lib
 )

@@ -105,7 +105,7 @@ add_library(${target} SHARED ${sources})
 target_link_libraries(${target} ${OPENRTM_LIBRARIES})
 
 install(TARGETS ${target}
-	LIBRARY DESTINATION lib CONFIGURATIONS Release Debug
+	LIBRARY DESTINATION lib
 )
 
 if(COMPILE_JAVA_STUFF)

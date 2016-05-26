@@ -39,6 +39,6 @@ add_test(testZMPDistributorJAXONREDTest1 testZMPDistributor --jaxon_red --test1 
 add_test(testZMPDistributorJAXONREDTest2 testZMPDistributor --jaxon_red --test2 --use-gnuplot false)
 
 install(TARGETS ${target}
-  RUNTIME DESTINATION bin CONFIGURATIONS Release Debug
-  LIBRARY DESTINATION lib CONFIGURATIONS Release Debug
+  RUNTIME DESTINATION bin
+  LIBRARY DESTINATION lib
 )

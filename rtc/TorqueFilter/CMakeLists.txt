@@ -16,6 +16,6 @@ add_test(testIIRFilterDoubleTest0 testIIRFilter --double --test0 --use-gnuplot f
 add_test(testIIRFilterVector3Test0 testIIRFilter --double --test0 --use-gnuplot false)
 
 install(TARGETS ${target}
-  RUNTIME DESTINATION bin CONFIGURATIONS Release Debug
-  LIBRARY DESTINATION lib CONFIGURATIONS Release Debug
+  RUNTIME DESTINATION bin
+  LIBRARY DESTINATION lib
 )

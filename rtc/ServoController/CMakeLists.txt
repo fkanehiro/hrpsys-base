@@ -12,6 +12,6 @@ add_executable(testServoSerial testServoSerial.cpp)
 set(target ServoController ServoControllerComp)
 
 install(TARGETS ${target}
-  RUNTIME DESTINATION bin CONFIGURATIONS Release Debug
-  LIBRARY DESTINATION lib CONFIGURATIONS Release Debug
+  RUNTIME DESTINATION bin
+  LIBRARY DESTINATION lib
 )
