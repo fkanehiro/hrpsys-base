@@ -546,7 +546,7 @@ def connectPorts(outP, inPs, subscription="flush", dataflow="Push", bufferlength
             print('[rtm.py] \033[31m     %s and %s have different data types\033[0m' % \
                   (outP.get_port_profile().name, inP.get_port_profile().name))
             continue
-        nv1 = SDOPackage.NameValue("dataport.interface_type", any.to_any(interface_type))
+        nv1 = SDOPackage.NameValue("dataport.interface_type", any.to_any(interfaceType))
         nv2 = SDOPackage.NameValue("dataport.dataflow_type", any.to_any(dataflow))
         nv3 = SDOPackage.NameValue("dataport.subscription_type", any.to_any(subscription))
         nv4 = SDOPackage.NameValue("dataport.buffer.length", any.to_any(str(bufferlength)))
