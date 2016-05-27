@@ -54,7 +54,7 @@ install(TARGETS ${target}
   )
 
 install(TARGETS hrpsysext
-  LIBRARY DESTINATION ${python_dist_pkg_dir}/hrpsys CONFIGURATIONS Release Debug
+  LIBRARY DESTINATION ${python_dist_pkg_dir}/hrpsys
 )
 
 install(PROGRAMS 

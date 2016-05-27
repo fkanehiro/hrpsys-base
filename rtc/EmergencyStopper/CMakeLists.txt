@@ -12,6 +12,6 @@ target_link_libraries(EmergencyStopperComp ${libs})
 set(target EmergencyStopper EmergencyStopperComp)
 
 install(TARGETS ${target}
-  RUNTIME DESTINATION bin CONFIGURATIONS Release Debug
-  LIBRARY DESTINATION lib CONFIGURATIONS Release Debug
+  RUNTIME DESTINATION bin
+  LIBRARY DESTINATION lib
 )

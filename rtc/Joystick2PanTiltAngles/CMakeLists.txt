@@ -8,6 +8,6 @@ target_link_libraries(Joystick2PanTiltAnglesComp ${OPENRTM_LIBRARIES})
 set(target Joystick2PanTiltAngles Joystick2PanTiltAnglesComp)
 
 install(TARGETS ${target}
-  RUNTIME DESTINATION bin CONFIGURATIONS Release Debug
-  LIBRARY DESTINATION lib CONFIGURATIONS Release Debug
+  RUNTIME DESTINATION bin
+  LIBRARY DESTINATION lib
 )

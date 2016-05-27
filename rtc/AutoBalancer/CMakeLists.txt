@@ -33,7 +33,7 @@ add_test(testGaitGeneratorTest11 testGaitGenerator --test11 --use-gnuplot false)
 add_test(testGaitGeneratorTest12 testGaitGenerator --test12 --use-gnuplot false)
 
 install(TARGETS ${target}
-  RUNTIME DESTINATION bin CONFIGURATIONS Release Debug
-  LIBRARY DESTINATION lib CONFIGURATIONS Release Debug
+  RUNTIME DESTINATION bin
+  LIBRARY DESTINATION lib
 )
 

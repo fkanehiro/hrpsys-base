@@ -12,8 +12,8 @@ option(INSTALL_HRPIO "Install dummy implementation of hrpIo" ON)
 
 if(INSTALL_HRPIO)
   install(TARGETS ${target}
-    RUNTIME DESTINATION bin CONFIGURATIONS Release Debug
-    LIBRARY DESTINATION lib CONFIGURATIONS Release Debug
+    RUNTIME DESTINATION bin
+    LIBRARY DESTINATION lib
     )
 endif()
 

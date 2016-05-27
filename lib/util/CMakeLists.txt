@@ -64,8 +64,8 @@ target_link_libraries(hrpsysUtil
 set(target hrpsysUtil)
 
 install(TARGETS ${target}
-  RUNTIME DESTINATION bin CONFIGURATIONS Release Debug
-  LIBRARY DESTINATION lib CONFIGURATIONS Release Debug
+  RUNTIME DESTINATION bin
+  LIBRARY DESTINATION lib
 )
 
 install(FILES ${headers} DESTINATION include/hrpsys/util)

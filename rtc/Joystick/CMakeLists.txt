@@ -16,6 +16,6 @@ target_link_libraries(JoystickComp ${OPENRTM_LIBRARIES} ${js_lib})
 set(target Joystick JoystickComp)
 
 install(TARGETS ${target}
-  RUNTIME DESTINATION bin CONFIGURATIONS Release Debug
-  LIBRARY DESTINATION lib CONFIGURATIONS Release Debug
+  RUNTIME DESTINATION bin
+  LIBRARY DESTINATION lib
 )
