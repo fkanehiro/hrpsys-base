@@ -639,7 +639,8 @@ def readDataPort(port, timeout=1.0):
     for prop in pprof.properties:
         if prop.name == "dataport.data_type":
             classname = any.from_any(prop.value)
-            break
+        if prop.name == "dataport.data_value":
+            return any._to_tc_value(prop.value)[1]
     nv1 = SDOPackage.NameValue("dataport.interface_type", any.to_any("corba_cdr"))
     nv2 = SDOPackage.NameValue("dataport.dataflow_type", any.to_any("Pull"))
     nv3 = SDOPackage.NameValue("dataport.subscription_type", any.to_any("flush"))
