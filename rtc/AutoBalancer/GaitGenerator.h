@@ -279,7 +279,7 @@ namespace rats
               zmp_weight_interpolator->clear();
               double zmp_weight_initial_value[4] = {zmp_weight_map[RLEG], zmp_weight_map[LLEG], zmp_weight_map[RARM], zmp_weight_map[LARM]};
               zmp_weight_interpolator->set(zmp_weight_initial_value);
-              zmp_weight_interpolator->setGoal(zmp_weight_array, 2.0, true);
+              zmp_weight_interpolator->go(zmp_weight_array, 2.0, true);
           } else {
               std::cerr << "zmp_weight_map cannot be set because interpolating." << std::endl;
           }
@@ -311,10 +311,10 @@ namespace rats
       hrp::Vector3 pos, vel, acc; // [m], [m/s], [m/s^2]
       double dt; // [s]
       // Implement hoffarbib to configure remain_time;
-      void hoffarbib_interpolation (const double tmp_remain_time, const hrp::Vector3& tmp_goal, const hrp::Vector3 tmp_goal_vel = hrp::Vector3::Zero(), const hrp::Vector3 tmp_goal_acc = hrp::Vector3::Zero())
+      void hoffarbib_interpolation (const double tmp_remain_time, const hrp::Vector3& tmp_goal)
       {
-        hrp::Vector3 jerk = (-9.0/ tmp_remain_time) * (acc - tmp_goal_acc / 3.0) +
-          (-36.0 / (tmp_remain_time * tmp_remain_time)) * (tmp_goal_vel * 2.0 / 3.0 + vel) +
+        hrp::Vector3 jerk = (-9.0/ tmp_remain_time) * acc +
+          (-36.0 / (tmp_remain_time * tmp_remain_time)) * vel +
           (60.0 / (tmp_remain_time * tmp_remain_time * tmp_remain_time)) * (tmp_goal - pos);
         acc = acc + dt * jerk;
         vel = vel + dt * acc;

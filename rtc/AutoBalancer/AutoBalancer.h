@@ -135,6 +135,19 @@ class AutoBalancer
   InPort<TimedLong> m_emergencySignalIn;
   // for debug
   TimedPoint3D m_cog;
+  //for human tracker
+  TimedPoint3D m_htzmp;
+  InPort<TimedPoint3D> m_htzmpIn;
+  TimedPoint3D m_htcom;
+  InPort<TimedPoint3D> m_htcomIn;
+  TimedPoint3D m_htrf;
+  InPort<TimedPoint3D> m_htrfIn;
+  TimedPoint3D m_htlf;
+  InPort<TimedPoint3D> m_htlfIn;
+  TimedPoint3D m_htrh;
+  InPort<TimedPoint3D> m_htrhIn;
+  TimedPoint3D m_htlh;
+  InPort<TimedPoint3D> m_htlhIn;
   
   // </rtc-template>
 
@@ -250,6 +263,9 @@ class AutoBalancer
   hrp::Vector3 sbp_offset, sbp_cog_offset;
   enum {MODE_NO_FORCE, MODE_REF_FORCE} use_force;
   std::vector<hrp::Vector3> ref_forces;
+
+  //for human tracker
+  hrp::Vector3 input_htzmp, input_htcom, input_htrf, input_htlf, input_htrh, input_htlh;
 
   unsigned int m_debugLevel;
   bool is_legged_robot, is_stop_mode, has_ik_failed, is_hand_fix_mode, is_hand_fix_initial;

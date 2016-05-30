@@ -16,6 +16,28 @@
 #include <hrpUtil/MatrixSolvers.h>
 #include "hrpsys/util/Hrpsys.h"
 
+//SHM関連
+#include <errno.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+int     shmid;
+key_t   key;
+typedef struct{
+	double com[3];
+	double rfpos[3];
+	double lfpos[3];
+	double rhpos[3];
+	double lhpos[3];
+	double rfwrench[6];
+	double lfwrench[6];
+	double zmp[3];
+	bool startsync;
+}humanpose_t;
+humanpose_t *humanpose;
+humanpose_t filt_hp_data,hp_data_old;
+
 
 typedef coil::Guard<coil::Mutex> Guard;
 using namespace rats;
@@ -49,6 +71,14 @@ AutoBalancer::AutoBalancer(RTC::Manager* manager)
       m_zmpIn("zmpIn", m_zmp),
       m_optionalDataIn("optionalData", m_optionalData),
       m_emergencySignalIn("emergencySignal", m_emergencySignal),
+      //ishiguro
+      m_htzmpIn("htzmpIn", m_htzmp),
+      m_htcomIn("htcomIn", m_htcom),
+      m_htrfIn("htrfIn", m_htrf),
+      m_htlfIn("htlfIn", m_htlf),
+      m_htrhIn("htrhIn", m_htrh),
+      m_htlhIn("htlhIn", m_htlh),
+
       m_qOut("q", m_qRef),
       m_zmpOut("zmpOut", m_zmp),
       m_basePosOut("basePosOut", m_basePos),
@@ -90,6 +120,13 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     addInPort("zmpIn", m_zmpIn);
     addInPort("optionalData", m_optionalDataIn);
     addInPort("emergencySignal", m_emergencySignalIn);
+    //ishiguro
+    addInPort("htzmpIn", m_htzmpIn);
+    addInPort("htcomIn", m_htcomIn);
+    addInPort("htrfIn", m_htrfIn);
+    addInPort("htlfIn", m_htlfIn);
+    addInPort("htrhIn", m_htrhIn);
+    addInPort("htlhIn", m_htlhIn);
 
     // Set OutPort buffer
     addOutPort("q", m_qOut);
@@ -339,6 +376,30 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     rot_ik_thre = (1e-2)*M_PI/180.0; // [rad]
     ik_error_debug_print_freq = static_cast<int>(0.2/m_dt); // once per 0.2 [s]
 
+
+    //SHM my2
+	if((key = ftok("/tmp/shm.dat", 'R')) == -1){
+		printf("WARN: ftok() failed retry\n");
+		system("touch /tmp/shm.dat");
+		if((key = ftok("/tmp/shm.dat", 'R')) == -1){
+	    	perror("ERROR: ftok() failed exit\n");
+	        return RTC::RTC_ERROR;
+		}
+	}
+	if((shmid = shmget(key, sizeof(humanpose_t), 0666)) < 0){
+		printf("WARN: shmget() failed retry\n");
+		shmid = shmget(key, sizeof(humanpose_t), S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH | IPC_CREAT);
+	    if (shmid == -1)  {
+	    	perror("ERROR: shmget() failed exit\n");
+	        return RTC::RTC_ERROR;
+	    }
+	}
+    humanpose = (humanpose_t *)shmat(shmid, (void *)0, 0);
+    if (humanpose == NULL) {
+        perror("shmat");
+        return RTC::RTC_ERROR;
+    }
+
     return RTC::RTC_OK;
 }
 
@@ -346,6 +407,10 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
 
 RTC::ReturnCode_t AutoBalancer::onFinalize()
 {
+	//SHM
+    if (shmdt(humanpose) == -1){       perror("shmdt");    }
+    if (shmctl(shmid, IPC_RMID, 0) == -1){        perror("shmctl");    }
+
   delete zmp_offset_interpolator;
   delete transition_interpolator;
   delete adjust_footstep_interpolator;
@@ -442,6 +507,43 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
         //     gg->emergency_stop();
         // }
     }
+    //for human tracker
+    if (m_htzmpIn.isNew()){
+    	m_htzmpIn.read();
+    	input_htzmp(0) = m_htzmp.data.x;
+    	input_htzmp(1) = m_htzmp.data.y;
+    	input_htzmp(2) = m_htzmp.data.z;
+    }
+    if (m_htcomIn.isNew()){
+    	m_htcomIn.read();
+    	input_htcom(0) = m_htcom.data.x;
+    	input_htcom(1) = m_htcom.data.y;
+    	input_htcom(2) = m_htcom.data.z;
+    }
+    if (m_htrfIn.isNew()){
+    	m_htrfIn.read();
+    	input_htrf(0) = m_htrf.data.x;
+    	input_htrf(1) = m_htrf.data.y;
+    	input_htrf(2) = m_htrf.data.z;
+    }
+    if (m_htlfIn.isNew()){
+    	m_htlfIn.read();
+    	input_htlf(0) = m_htlf.data.x;
+    	input_htlf(1) = m_htlf.data.y;
+    	input_htlf(2) = m_htlf.data.z;
+    }
+    if (m_htrhIn.isNew()){
+    	m_htrhIn.read();
+    	input_htrh(0) = m_htrh.data.x;
+    	input_htrh(1) = m_htrh.data.y;
+    	input_htrh(2) = m_htrh.data.z;
+    }
+    if (m_htlhIn.isNew()){
+    	m_htlhIn.read();
+    	input_htlh(0) = m_htlh.data.x;
+    	input_htlh(1) = m_htlh.data.y;
+    	input_htlh(2) = m_htlh.data.z;
+    }
 
     Guard guard(m_mutex);
     hrp::Vector3 ref_basePos;
@@ -530,6 +632,45 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
       m_cog.data.y = ref_cog(1);
       m_cog.data.z = ref_cog(2);
       m_cog.tm = m_qRef.tm;
+
+
+      // my test zmp SHM
+
+      double rfzmp[2],lfzmp[2];
+      const double F_H_OFFSET = 0.03;
+      const double rfpos[3] = {0,-0.1,0},lfpos[3] = {0,0.1,0};
+
+		if( humanpose->rfwrench[2] > 1.0e-6 ){
+			rfzmp[0] = ( -humanpose->rfwrench[4] - humanpose->rfwrench[0] * F_H_OFFSET + humanpose->rfwrench[2] * 0 ) / humanpose->rfwrench[2];
+			rfzmp[1] = ( humanpose->rfwrench[3] - humanpose->rfwrench[1] * F_H_OFFSET + humanpose->rfwrench[2] * 0 ) / humanpose->rfwrench[2];
+		}
+		if( humanpose->lfwrench[2] > 1.0e-6 ){
+			lfzmp[0] = ( -humanpose->lfwrench[4] - humanpose->lfwrench[0] * F_H_OFFSET + humanpose->lfwrench[2] * 0 ) / humanpose->lfwrench[2];
+			lfzmp[1] = ( humanpose->lfwrench[3] - humanpose->lfwrench[1] * F_H_OFFSET + humanpose->lfwrench[2] * 0 ) / humanpose->lfwrench[2];
+		}
+		humanpose->zmp[0] = ( rfzmp[0]*humanpose->rfwrench[2] + lfzmp[0]*humanpose->lfwrench[2] ) / ( humanpose->rfwrench[2] + humanpose->lfwrench[2] );
+		humanpose->zmp[1] = ( rfzmp[1]*humanpose->rfwrench[2] + lfzmp[1]*humanpose->lfwrench[2] ) / ( humanpose->rfwrench[2] + humanpose->lfwrench[2]);
+		humanpose->zmp[2] = 0;
+
+//	      for(int i=0;i<6;i++)cout<<"rfw["<<i<<"]"<<humanpose->rfwrench[i];
+//	      for(int i=0;i<6;i++)cout<<"lfw["<<i<<"]"<<humanpose->lfwrench[i];
+//	      for(int i=0;i<2;i++)cout<<"zmp["<<i<<"]"<<humanpose->zmp[i];
+
+      //debug表示
+//			printf("[L] %+06.1f,%+06.1f,%+06.1f,%+06.1f,%+06.1f,%+06.1f [R] %+06.1f,%+06.1f,%+06.1f,%+06.1f,%+06.1f,%+06.1f [ZMP] %+06.3f,%+06.3f\n",
+//					humanpose->lfwrench[0],humanpose->lfwrench[1],humanpose->lfwrench[2],humanpose->lfwrench[3],humanpose->lfwrench[4],humanpose->lfwrench[5],
+//					humanpose->rfwrench[0],humanpose->rfwrench[1],humanpose->rfwrench[2],humanpose->rfwrench[3],humanpose->rfwrench[4],humanpose->rfwrench[5],
+//					humanpose->zmp[0],humanpose->zmp[1]);
+      humanpose->startsync = true;//test
+	   if(humanpose->startsync){
+//ZMP上書き
+//	      m_zmp.data.x = humanpose->zmp[0]*0.5 - filt_hp_data.com[0];//
+		  m_zmp.data.y = filt_hp_data.zmp[1] - filt_hp_data.com[1];//
+// COM上書き
+//	  m_cog.data.x = 0.0558423 + filt_hp_data.com[0];
+	  m_cog.data.y = filt_hp_data.com[1];
+	  }
+
       // sbpCogOffset
       m_sbpCogOffset.data.x = sbp_cog_offset(0);
       m_sbpCogOffset.data.y = sbp_cog_offset(1);
@@ -686,15 +827,15 @@ void AutoBalancer::getTargetParameters()
               ABCIKparam& tmpikp = ikp[leg_names[i]];
               ee_pos.push_back(tmpikp.target_p0 + tmpikp.target_r0 * tmpikp.localPos + tmpikp.target_r0 * tmpikp.localR * default_zmp_offsets[i]);
           }
-          double alpha = (ref_zmp - ee_pos[1]).norm() / ((ee_pos[0] - ref_zmp).norm() + (ee_pos[1] - ref_zmp).norm());
+          double alpha = (ref_zmp - ee_pos[1]).norm() / (ee_pos[0] - ee_pos[1]).norm();
           if (alpha>1.0) alpha = 1.0;
           if (alpha<0.0) alpha = 0.0;
           if (DEBUGP) {
           std::cerr << "[" << m_profile.instance_name << "] alpha:" << alpha << std::endl;
           }
           double mg = m_robot->totalMass() * gg->get_gravitational_acceleration();
-          m_force[0].data[2] = alpha * mg;
-          m_force[1].data[2] = (1-alpha) * mg;
+          m_force[0].data[0] = alpha * mg;
+          m_force[1].data[0] = (1-alpha) * mg;
       }
       // set limbCOPOffset
       {
@@ -857,6 +998,7 @@ void AutoBalancer::getTargetParameters()
         if ( gg_is_walking && gg->get_lcg_count() == gg->get_overwrite_check_timing()+2 ) {
             hrp::Vector3 vel_htc(calc_vel_from_hand_error(tmp_fix_coords));
             gg->set_offset_velocity_param(vel_htc(0), vel_htc(1) ,vel_htc(2));
+            gg->set_offset_velocity_param(1,2,3);
         }//  else {
         //     if ( gg_is_walking && gg->get_lcg_count() == static_cast<size_t>(gg->get_default_step_time()/(2*m_dt))-1) {
         //         gg->set_offset_velocity_param(0,0,0);
@@ -914,8 +1056,66 @@ void AutoBalancer::fixLegToCoords (const hrp::Vector3& fix_pos, const hrp::Matri
   m_robot->calcForwardKinematics();
 }
 
+static bool moveleft = false;
 bool AutoBalancer::solveLimbIKforLimb (ABCIKparam& param)
 {
+//  cout<<"****************** test ********************"<<endl;
+	static int rfuplevel,lfuplevel;
+
+	if(humanpose->startsync){
+		if(param.target_link->name == "RLEG_JOINT5"){
+			if(humanpose->rfwrench[2] < 20.0 && humanpose->lfwrench[2] > 20.0){
+//			if(humanpose->rfwrench[2] < 20.0){
+				if(rfuplevel < 100){
+					rfuplevel++;
+					filt_hp_data.rfpos[2] = 0.025 - 0.025*cos(M_PI*rfuplevel/100);
+					//filt_hp_data.rfpos[1] -= 0.001;//歩行遊び
+				}
+				cout<<"RUP"<<endl;
+			}else{
+				if(rfuplevel > 0){
+					rfuplevel--;
+					filt_hp_data.rfpos[2] = 0.025 - 0.025*cos(M_PI*rfuplevel/100);
+					//if(filt_hp_data.rfpos[2] == 0.0)moveleft = true;//歩行遊び
+				}
+			}
+			param.target_p0(0) = 0.0 + filt_hp_data.rfpos[0];
+			param.target_p0(1) = -0.1 + filt_hp_data.rfpos[1];
+			param.target_p0(2) = 0.1 + filt_hp_data.rfpos[2];
+		}
+		if(param.target_link->name == "LLEG_JOINT5"){
+			if(humanpose->lfwrench[2] < 20.0 && humanpose->rfwrench[2] > 20.0){
+//			if(humanpose->lfwrench[2] < 20.0){
+				if(lfuplevel < 100){
+					lfuplevel++;
+					filt_hp_data.lfpos[2] = 0.025 - 0.025*cos(M_PI*lfuplevel/100);
+					//filt_hp_data.lfpos[1] -= 0.001;//歩行遊び
+				}
+				cout<<"LUP"<<endl;
+			}else{
+				if(lfuplevel > 0){
+					lfuplevel--;
+					filt_hp_data.lfpos[2] = 0.025 - 0.025*cos(M_PI*lfuplevel/100);
+					//if(filt_hp_data.lfpos[2] == 0.0)moveleft = true;//歩行遊び
+				}
+			}
+			param.target_p0(0) = 0.0 + filt_hp_data.lfpos[0];
+			param.target_p0(1) = 0.1 + filt_hp_data.lfpos[1];
+			param.target_p0(2) = 0.1 + filt_hp_data.lfpos[2];
+		}
+		if(param.target_link->name == "RARM_JOINT7"){
+			param.target_p0(0) = 0.151 + filt_hp_data.rhpos[0];
+			param.target_p0(1) = -0.374 + filt_hp_data.rhpos[1];
+			param.target_p0(2) = 0.973 + filt_hp_data.rhpos[2];
+		}
+		if(param.target_link->name == "LARM_JOINT7"){
+			param.target_p0(0) = 0.151 + filt_hp_data.lhpos[0];
+			param.target_p0(1) = 0.374 + filt_hp_data.lhpos[1];
+			param.target_p0(2) = 0.973 + filt_hp_data.lhpos[2];
+		}
+	}
+
+
   param.manip->calcInverseKinematics2Loop(param.target_p0, param.target_r0, 1.0, param.avoid_gain, param.reference_gain, &qrefv, transition_interpolator_ratio * leg_names_interpolator_ratio);
   // IK check
   hrp::Vector3 vel_p, vel_r;
@@ -942,6 +1142,7 @@ bool AutoBalancer::solveLimbIKforLimb (ABCIKparam& param)
   return true;
 }
 
+
 void AutoBalancer::solveLimbIK ()
 {
   for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
@@ -962,6 +1163,48 @@ void AutoBalancer::solveLimbIK ()
   dif_cog(2) = m_robot->rootLink()->p(2) - target_root_p(2);
   m_robot->rootLink()->p = m_robot->rootLink()->p + -1 * move_base_gain * dif_cog;
   m_robot->rootLink()->R = target_root_R;
+//mytest
+  #define MAXVEL 0.002
+
+  for(int i=0;i<3;i++){
+//	  filt_hp_data.com[i] = 0.99*filt_hp_data.com[i] + 0.01*(humanpose->com[i]);
+//	  filt_hp_data.rfpos[i] = 0.99*filt_hp_data.rfpos[i] + 0.01*(humanpose->rfpos[i]);//足ロック
+//	  filt_hp_data.lfpos[i] = 0.99*filt_hp_data.lfpos[i] + 0.01*(humanpose->lfpos[i]);//足ロック
+//	  filt_hp_data.rhpos[i] = 0.99*filt_hp_data.rhpos[i] + 0.01*(humanpose->rhpos[i]);
+//	  filt_hp_data.lhpos[i] = 0.99*filt_hp_data.lhpos[i] + 0.01*(humanpose->lhpos[i]);
+//	  filt_hp_data.zmp[i] = 0.99*filt_hp_data.zmp[i] + 0.01*(humanpose->zmp[i]);
+
+	  filt_hp_data.zmp[i] = 0.99*filt_hp_data.zmp[i] + 0.01*(input_htzmp(i));
+	  filt_hp_data.com[i] = 0.99*filt_hp_data.com[i] + 0.01*(input_htcom(i));
+	  filt_hp_data.rfpos[i] = 0.99*filt_hp_data.rfpos[i] + 0.01*(input_htrf(i));
+	  filt_hp_data.lfpos[i] = 0.99*filt_hp_data.lfpos[i] + 0.01*(input_htlf(i));
+	  filt_hp_data.rhpos[i] = 0.99*filt_hp_data.rhpos[i] + 0.01*(input_htrh(i));
+	  filt_hp_data.lhpos[i] = 0.99*filt_hp_data.lhpos[i] + 0.01*(input_htlh(i));
+
+
+
+	  if(filt_hp_data.com[i] - hp_data_old.com[i] > MAXVEL)filt_hp_data.com[i] = hp_data_old.com[i] + MAXVEL;
+	  if(filt_hp_data.com[i] - hp_data_old.com[i] < -MAXVEL)filt_hp_data.com[i] = hp_data_old.com[i] - MAXVEL;
+	  hp_data_old.com[i] = filt_hp_data.com[i];
+  }
+//  cout<<"COM"<<m_robot->calcCM()[0]<<","<<m_robot->calcCM()[1]<<","<<m_robot->calcCM()[2]<<endl;
+  filt_hp_data.com[0] = 0.0;//重心前方向ロック
+
+  m_robot->rootLink()->p(0) = 0.0558423 + filt_hp_data.com[0];
+  m_robot->rootLink()->p(1) = 0+ filt_hp_data.com[1];//safetest
+  m_robot->rootLink()->p(2) = 0.976372 + filt_hp_data.com[2];
+
+static int movelcnt;
+	if(moveleft){
+		if(movelcnt<5000){
+			m_robot->rootLink()->p(1) += 0.00001;//遊び
+			movelcnt++;
+		}else{
+			movelcnt = 0;
+			moveleft = false;
+		}
+	}
+
   // Fix for toe joint
   for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
       if (it->second.is_active && it->second.has_toe_joint && gg->get_use_toe_joint()) {
