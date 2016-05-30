@@ -109,15 +109,15 @@ RTC::ReturnCode_t RobotHardware::onInitialize()
   }
   nameServer = nameServer.substr(0, comPos);
   RTC::CorbaNaming naming(rtcManager.getORB(), nameServer.c_str());
-  if (prop["model"] == ""){
-      std::cerr << "[" << m_profile.instance_name << "] path to the model file is not defined. Please check the configuration file" << std::endl;
-      abort();
-  }
   if (!loadBodyFromModelLoader(m_robot, prop["model"].c_str(), 
                                CosNaming::NamingContext::_duplicate(naming.getRootContext())
           )){
-      std::cerr << "failed to load model[" << prop["model"] << "]" 
-                << std::endl;
+      if (prop["model"] == ""){
+          std::cerr << "[" << m_profile.instance_name << "] path to the model file is not defined. Please check the configuration file" << std::endl;
+      }else{
+          std::cerr << "[" << m_profile.instance_name << "] failed to load model[" << prop["model"] << "]" << std::endl;
+      }
+      return RTC::RTC_ERROR;
   }
 
   std::vector<std::string> keys = prop.propertyNames();
