@@ -3,7 +3,7 @@ link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
 set(comp_sources SORFilter.cpp)
-set(libs hrpsysBaseStub ${PCL_LIBRARIES})
+set(libs hrpsysBaseStub ${PCL_COMMON_LIBRARIES} ${PCL_FILTERS_LIBRARIES})
 add_library(SORFilter SHARED ${comp_sources})
 target_link_libraries(SORFilter ${libs})
 set_target_properties(SORFilter PROPERTIES PREFIX "")
