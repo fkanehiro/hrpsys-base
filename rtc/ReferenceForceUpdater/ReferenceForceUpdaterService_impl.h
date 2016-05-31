@@ -23,10 +23,10 @@ public:
     */
     virtual ~ReferenceForceUpdaterService_impl();
 
-    CORBA::Boolean setReferenceForceUpdaterParam(const OpenHRP::ReferenceForceUpdaterService::ReferenceForceUpdaterParam& i_param);
-    CORBA::Boolean getReferenceForceUpdaterParam(OpenHRP::ReferenceForceUpdaterService::ReferenceForceUpdaterParam_out i_param);
-    CORBA::Boolean startReferenceForceUpdater();
-    CORBA::Boolean stopReferenceForceUpdater();
+    CORBA::Boolean setReferenceForceUpdaterParam(const char *i_name_, const OpenHRP::ReferenceForceUpdaterService::ReferenceForceUpdaterParam& i_param);
+    CORBA::Boolean getReferenceForceUpdaterParam(const char *i_name_, OpenHRP::ReferenceForceUpdaterService::ReferenceForceUpdaterParam_out i_param);
+    CORBA::Boolean startReferenceForceUpdater(const char *i_name_);
+    CORBA::Boolean stopReferenceForceUpdater(const char *i_name_);
 
     void rfu(ReferenceForceUpdater *i_rfu);
 private:
