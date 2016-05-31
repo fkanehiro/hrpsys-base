@@ -117,7 +117,6 @@ RTC::ReturnCode_t RobotHardware::onInitialize()
       }else{
           std::cerr << "[" << m_profile.instance_name << "] failed to load model[" << prop["model"] << "]" << std::endl;
       }
-      return RTC::RTC_ERROR;
   }
 
   std::vector<std::string> keys = prop.propertyNames();
