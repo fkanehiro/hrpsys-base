@@ -1,4 +1,4 @@
-set(comp_sources AutoBalancer.cpp AutoBalancerService_impl.cpp ../ImpedanceController/JointPathEx.cpp ../ImpedanceController/RatsMatrix.cpp ../SequencePlayer/interpolator.cpp PreviewController.cpp GaitGenerator.cpp SimpleFullbodyInverseKinematicsSolver.h ../TorqueFilter/IIRFilter.cpp)
+set(comp_sources AutoBalancer.cpp AutoBalancerService_impl.cpp ../ImpedanceController/JointPathEx.cpp ../ImpedanceController/RatsMatrix.cpp ../SequencePlayer/interpolator.cpp PreviewController.cpp GaitGenerator.cpp SimpleFullbodyInverseKinematicsSolver.h ../TorqueFilter/IIRFilter.cpp ResolvedMomentumControl.cpp)
 set(libs hrpModel-3.1 hrpCollision-3.1 hrpUtil-3.1 hrpsysBaseStub)
 add_library(AutoBalancer SHARED ${comp_sources})
 target_link_libraries(AutoBalancer ${libs})
@@ -11,14 +11,18 @@ add_executable(testGaitGenerator testGaitGenerator.cpp ../ImpedanceController/Ra
 target_link_libraries(testGaitGenerator ${libs})
 set_target_properties(testGaitGenerator PROPERTIES COMPILE_DEFINITIONS "FOR_TESTGAITGENERATOR=1")
 
+add_executable(testResolvedMomentumControl testResolvedMomentumControl.cpp ResolvedMomentumControl.cpp)
+target_link_libraries(testResolvedMomentumControl ${libs})
+
 add_executable(AutoBalancerComp AutoBalancerComp.cpp ${comp_sources})
 target_link_libraries(AutoBalancerComp ${libs})
 
 include_directories(${PROJECT_SOURCE_DIR}/rtc/SequencePlayer)
 
-set(target AutoBalancer AutoBalancerComp testPreviewController testGaitGenerator)
+set(target AutoBalancer AutoBalancerComp testPreviewController testGaitGenerator testResolvedMomentumControl)
 
 add_test(testPreviewControllerNoGP testPreviewController --use-gnuplot false)
+add_test(testResolvedMomentumControlNoGP testResolvedMomentumControl --use-gnuplot false)
 add_test(testGaitGeneratorTest0 testGaitGenerator --test0 --use-gnuplot false)
 add_test(testGaitGeneratorTest1 testGaitGenerator --test1 --use-gnuplot false)
 add_test(testGaitGeneratorTest2 testGaitGenerator --test2 --use-gnuplot false)
@@ -43,4 +47,3 @@ install(TARGETS ${target}
   RUNTIME DESTINATION bin
   LIBRARY DESTINATION lib
 )
-
