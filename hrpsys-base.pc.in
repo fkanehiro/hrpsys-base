@@ -14,7 +14,7 @@ cflag_options=@PKG_CONF_CXXFLAG_OPTIONS@
 Name: hrpsys-base
 Description: Basic RT components and utilities to control robots using OpenRTM
 Requires: openhrp3.1
-Version: 3.1
+Version: @CPACK_PACKAGE_VERSION_MAJOR@.@CPACK_PACKAGE_VERSION_MINOR@.@CPACK_PACKAGE_VERSION_PATCH@
 Libs: ${link_depend_dirs} -L${libdir} ${link_shared_files} ${link_depend_options} ${link_depend_files} 
 Libs.private: ${link_static_files}
 Cflags: ${cflag_defs} ${cflag_options} -I${includedir}
