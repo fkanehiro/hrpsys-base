@@ -413,5 +413,12 @@ module OpenHRP
      * @return true if set successfully, false otherwise
      */
     boolean releaseEmergencyStop();
+
+    /**
+     * @brief Stop stepping immediately.
+     * @param
+     * @return true if set successfully, false otherwise
+     */
+    boolean startHumanSyncAfter5sec();
   };
 };

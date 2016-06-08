@@ -110,6 +110,7 @@ class AutoBalancer
   bool getRemainingFootstepSequence(OpenHRP::AutoBalancerService::FootstepSequence_out o_footstep, CORBA::Long& o_current_fs_idx);
   bool getGoPosFootstepsSequence(const double& x, const double& y, const double& th, OpenHRP::AutoBalancerService::FootstepsSequence_out o_footstep);
   bool releaseEmergencyStop();
+  bool startHumanSyncAfter5sec();
 
  protected:
   // Configuration variable declaration
@@ -138,6 +139,10 @@ class AutoBalancer
   //for human tracker
   TimedPoint3D m_htzmp;
   InPort<TimedPoint3D> m_htzmpIn;
+  TimedDoubleSeq m_htrfw;
+  InPort<TimedDoubleSeq> m_htrfwIn;
+  TimedDoubleSeq m_htlfw;
+  InPort<TimedDoubleSeq> m_htlfwIn;
   TimedPoint3D m_htcom;
   InPort<TimedPoint3D> m_htcomIn;
   TimedPoint3D m_htrf;
@@ -263,9 +268,6 @@ class AutoBalancer
   hrp::Vector3 sbp_offset, sbp_cog_offset;
   enum {MODE_NO_FORCE, MODE_REF_FORCE} use_force;
   std::vector<hrp::Vector3> ref_forces;
-
-  //for human tracker
-  hrp::Vector3 input_htzmp, input_htcom, input_htrf, input_htlf, input_htrh, input_htlh;
 
   unsigned int m_debugLevel;
   bool is_legged_robot, is_stop_mode, has_ik_failed, is_hand_fix_mode, is_hand_fix_initial;

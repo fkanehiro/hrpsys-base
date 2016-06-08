@@ -113,5 +113,10 @@ CORBA::Boolean AutoBalancerService_impl::releaseEmergencyStop()
 void AutoBalancerService_impl::autobalancer(AutoBalancer *i_autobalancer)
 {
   m_autobalancer = i_autobalancer;
-} 
+}
+
+CORBA::Boolean AutoBalancerService_impl::startHumanSyncAfter5sec()
+{
+    return m_autobalancer->startHumanSyncAfter5sec();
+};
 

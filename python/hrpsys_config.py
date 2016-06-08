@@ -2080,6 +2080,14 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
         '''
         self.abc_svc.setFootStepsWithParam(footstep, stepparams, overwrite_fs_idx)
 
+
+    def startHumanSyncAfter5sec(self):
+        '''!@brief
+        startHumanSyncAfter5sec mode
+        '''
+        self.abc_svc.startHumanSyncAfter5sec()
+
+
     # ##
     # ## initialize
     # ##

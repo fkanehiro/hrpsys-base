@@ -34,6 +34,7 @@ public:
   CORBA::Boolean getRemainingFootstepSequence(OpenHRP::AutoBalancerService::FootstepSequence_out o_footstep , CORBA::Long& o_current_fs_idx);
   CORBA::Boolean getGoPosFootstepsSequence(CORBA::Double x, CORBA::Double y, CORBA::Double th, OpenHRP::AutoBalancerService::FootstepsSequence_out o_footstep);
   CORBA::Boolean releaseEmergencyStop();
+  CORBA::Boolean startHumanSyncAfter5sec();
   //
   //
   void autobalancer(AutoBalancer *i_autobalancer);

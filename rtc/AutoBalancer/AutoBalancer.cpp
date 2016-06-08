@@ -17,13 +17,13 @@
 #include "hrpsys/util/Hrpsys.h"
 
 //SHM関連
-#include <errno.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <sys/ipc.h>
-#include <sys/shm.h>
-int     shmid;
-key_t   key;
+//#include <errno.h>
+//#include <sys/stat.h>
+//#include <sys/types.h>
+//#include <sys/ipc.h>
+//#include <sys/shm.h>
+//int     shmid;
+//key_t   key;
 typedef struct{
 	double com[3];
 	double rfpos[3];
@@ -35,8 +35,10 @@ typedef struct{
 	double zmp[3];
 	bool startsync;
 }humanpose_t;
-humanpose_t *humanpose;
+humanpose_t humanpose;
 humanpose_t filt_hp_data,hp_data_old;
+bool startCountdownForHumanSync = false;
+bool HumanSyncOn = false;
 
 
 typedef coil::Guard<coil::Mutex> Guard;
@@ -73,6 +75,8 @@ AutoBalancer::AutoBalancer(RTC::Manager* manager)
       m_emergencySignalIn("emergencySignal", m_emergencySignal),
       //ishiguro
       m_htzmpIn("htzmpIn", m_htzmp),
+      m_htrfwIn("htrfwIn", m_htrfw),
+      m_htlfwIn("htlfwIn", m_htlfw),
       m_htcomIn("htcomIn", m_htcom),
       m_htrfIn("htrfIn", m_htrf),
       m_htlfIn("htlfIn", m_htlf),
@@ -122,6 +126,8 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     addInPort("emergencySignal", m_emergencySignalIn);
     //ishiguro
     addInPort("htzmpIn", m_htzmpIn);
+    addInPort("htrfwIn", m_htrfwIn);
+    addInPort("htlfwIn", m_htlfwIn);
     addInPort("htcomIn", m_htcomIn);
     addInPort("htrfIn", m_htrfIn);
     addInPort("htlfIn", m_htlfIn);
@@ -180,6 +186,9 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     qorg.resize(m_robot->numJoints());
     qrefv.resize(m_robot->numJoints());
     m_baseTform.data.length(12);
+    //ishiguro
+    m_htrfw.data.length(6);
+    m_htlfw.data.length(6);
 
     control_mode = MODE_IDLE;
     loop = 0;
@@ -377,28 +386,28 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     ik_error_debug_print_freq = static_cast<int>(0.2/m_dt); // once per 0.2 [s]
 
 
-    //SHM my2
-	if((key = ftok("/tmp/shm.dat", 'R')) == -1){
-		printf("WARN: ftok() failed retry\n");
-		system("touch /tmp/shm.dat");
-		if((key = ftok("/tmp/shm.dat", 'R')) == -1){
-	    	perror("ERROR: ftok() failed exit\n");
-	        return RTC::RTC_ERROR;
-		}
-	}
-	if((shmid = shmget(key, sizeof(humanpose_t), 0666)) < 0){
-		printf("WARN: shmget() failed retry\n");
-		shmid = shmget(key, sizeof(humanpose_t), S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH | IPC_CREAT);
-	    if (shmid == -1)  {
-	    	perror("ERROR: shmget() failed exit\n");
-	        return RTC::RTC_ERROR;
-	    }
-	}
-    humanpose = (humanpose_t *)shmat(shmid, (void *)0, 0);
-    if (humanpose == NULL) {
-        perror("shmat");
-        return RTC::RTC_ERROR;
-    }
+//    //SHM my2
+//	if((key = ftok("/tmp/shm.dat", 'R')) == -1){
+//		printf("WARN: ftok() failed retry\n");
+//		system("touch /tmp/shm.dat");
+//		if((key = ftok("/tmp/shm.dat", 'R')) == -1){
+//	    	perror("ERROR: ftok() failed exit\n");
+//	        return RTC::RTC_ERROR;
+//		}
+//	}
+//	if((shmid = shmget(key, sizeof(humanpose_t), 0666)) < 0){
+//		printf("WARN: shmget() failed retry\n");
+//		shmid = shmget(key, sizeof(humanpose_t), S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH | IPC_CREAT);
+//	    if (shmid == -1)  {
+//	    	perror("ERROR: shmget() failed exit\n");
+//	        return RTC::RTC_ERROR;
+//	    }
+//	}
+//    humanpose = (humanpose_t *)shmat(shmid, (void *)0, 0);
+//    if (humanpose == NULL) {
+//        perror("shmat");
+//        return RTC::RTC_ERROR;
+//    }
 
     return RTC::RTC_OK;
 }
@@ -408,8 +417,8 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
 RTC::ReturnCode_t AutoBalancer::onFinalize()
 {
 	//SHM
-    if (shmdt(humanpose) == -1){       perror("shmdt");    }
-    if (shmctl(shmid, IPC_RMID, 0) == -1){        perror("shmctl");    }
+//    if (shmdt(humanpose) == -1){       perror("shmdt");    }
+//    if (shmctl(shmid, IPC_RMID, 0) == -1){        perror("shmctl");    }
 
   delete zmp_offset_interpolator;
   delete transition_interpolator;
@@ -510,39 +519,51 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
     //for human tracker
     if (m_htzmpIn.isNew()){
     	m_htzmpIn.read();
-    	input_htzmp(0) = m_htzmp.data.x;
-    	input_htzmp(1) = m_htzmp.data.y;
-    	input_htzmp(2) = m_htzmp.data.z;
+//    	humanpose.zmp[0] = m_htzmp.data.x;//zmpはこっちで計算
+//    	humanpose.zmp[1] = m_htzmp.data.y;
+//    	humanpose.zmp[2] = m_htzmp.data.z;
+    }
+    if (m_htrfwIn.isNew()){
+    	m_htrfwIn.read();
+    	for(int i=0;i<6;i++){
+    		humanpose.rfwrench[i] = m_htrfw.data[i];
+    	}
+    }
+    if (m_htlfwIn.isNew()){
+    	m_htlfwIn.read();
+    	for(int i=0;i<6;i++){
+    		humanpose.lfwrench[i] = m_htlfw.data[i];
+    	}
     }
     if (m_htcomIn.isNew()){
     	m_htcomIn.read();
-    	input_htcom(0) = m_htcom.data.x;
-    	input_htcom(1) = m_htcom.data.y;
-    	input_htcom(2) = m_htcom.data.z;
+    	humanpose.com[0] = m_htcom.data.x;
+    	humanpose.com[1] = m_htcom.data.y;
+    	humanpose.com[2] = m_htcom.data.z;
     }
     if (m_htrfIn.isNew()){
     	m_htrfIn.read();
-    	input_htrf(0) = m_htrf.data.x;
-    	input_htrf(1) = m_htrf.data.y;
-    	input_htrf(2) = m_htrf.data.z;
+    	humanpose.rfpos[0] = m_htrf.data.x;
+    	humanpose.rfpos[1] = m_htrf.data.y;
+    	humanpose.rfpos[2] = m_htrf.data.z;
     }
     if (m_htlfIn.isNew()){
     	m_htlfIn.read();
-    	input_htlf(0) = m_htlf.data.x;
-    	input_htlf(1) = m_htlf.data.y;
-    	input_htlf(2) = m_htlf.data.z;
+    	humanpose.lfpos[0] = m_htlf.data.x;
+    	humanpose.lfpos[1] = m_htlf.data.y;
+    	humanpose.lfpos[2] = m_htlf.data.z;
     }
     if (m_htrhIn.isNew()){
     	m_htrhIn.read();
-    	input_htrh(0) = m_htrh.data.x;
-    	input_htrh(1) = m_htrh.data.y;
-    	input_htrh(2) = m_htrh.data.z;
+    	humanpose.rhpos[0] = m_htrh.data.x;
+    	humanpose.rhpos[1] = m_htrh.data.y;
+    	humanpose.rhpos[2] = m_htrh.data.z;
     }
     if (m_htlhIn.isNew()){
     	m_htlhIn.read();
-    	input_htlh(0) = m_htlh.data.x;
-    	input_htlh(1) = m_htlh.data.y;
-    	input_htlh(2) = m_htlh.data.z;
+    	humanpose.lhpos[0] = m_htlh.data.x;
+    	humanpose.lhpos[1] = m_htlh.data.y;
+    	humanpose.lhpos[2] = m_htlh.data.z;
     }
 
     Guard guard(m_mutex);
@@ -640,32 +661,33 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
       const double F_H_OFFSET = 0.03;
       const double rfpos[3] = {0,-0.1,0},lfpos[3] = {0,0.1,0};
 
-		if( humanpose->rfwrench[2] > 1.0e-6 ){
-			rfzmp[0] = ( -humanpose->rfwrench[4] - humanpose->rfwrench[0] * F_H_OFFSET + humanpose->rfwrench[2] * 0 ) / humanpose->rfwrench[2];
-			rfzmp[1] = ( humanpose->rfwrench[3] - humanpose->rfwrench[1] * F_H_OFFSET + humanpose->rfwrench[2] * 0 ) / humanpose->rfwrench[2];
+		if( humanpose.rfwrench[2] > 1.0e-6 ){
+			rfzmp[0] = ( -humanpose.rfwrench[4] - humanpose.rfwrench[0] * F_H_OFFSET + humanpose.rfwrench[2] * 0 ) / humanpose.rfwrench[2] + rfpos[0];
+			rfzmp[1] = ( humanpose.rfwrench[3] - humanpose.rfwrench[1] * F_H_OFFSET + humanpose.rfwrench[2] * 0 ) / humanpose.rfwrench[2] + rfpos[1];
 		}
-		if( humanpose->lfwrench[2] > 1.0e-6 ){
-			lfzmp[0] = ( -humanpose->lfwrench[4] - humanpose->lfwrench[0] * F_H_OFFSET + humanpose->lfwrench[2] * 0 ) / humanpose->lfwrench[2];
-			lfzmp[1] = ( humanpose->lfwrench[3] - humanpose->lfwrench[1] * F_H_OFFSET + humanpose->lfwrench[2] * 0 ) / humanpose->lfwrench[2];
+		if( humanpose.lfwrench[2] > 1.0e-6 ){
+			lfzmp[0] = ( -humanpose.lfwrench[4] - humanpose.lfwrench[0] * F_H_OFFSET + humanpose.lfwrench[2] * 0 ) / humanpose.lfwrench[2] + lfpos[0];
+			lfzmp[1] = ( humanpose.lfwrench[3] - humanpose.lfwrench[1] * F_H_OFFSET + humanpose.lfwrench[2] * 0 ) / humanpose.lfwrench[2] + lfpos[1];
 		}
-		humanpose->zmp[0] = ( rfzmp[0]*humanpose->rfwrench[2] + lfzmp[0]*humanpose->lfwrench[2] ) / ( humanpose->rfwrench[2] + humanpose->lfwrench[2] );
-		humanpose->zmp[1] = ( rfzmp[1]*humanpose->rfwrench[2] + lfzmp[1]*humanpose->lfwrench[2] ) / ( humanpose->rfwrench[2] + humanpose->lfwrench[2]);
-		humanpose->zmp[2] = 0;
+		//humanpose.zmpをrfw,lfwから計算して上書き
 
-//	      for(int i=0;i<6;i++)cout<<"rfw["<<i<<"]"<<humanpose->rfwrench[i];
-//	      for(int i=0;i<6;i++)cout<<"lfw["<<i<<"]"<<humanpose->lfwrench[i];
-//	      for(int i=0;i<2;i++)cout<<"zmp["<<i<<"]"<<humanpose->zmp[i];
+		if( humanpose.rfwrench[2] > 1.0e-6 || humanpose.lfwrench[2] > 1.0e-6 ){
+			humanpose.zmp[0] = ( rfzmp[0]*humanpose.rfwrench[2] + lfzmp[0]*humanpose.lfwrench[2] ) / ( humanpose.rfwrench[2] + humanpose.lfwrench[2]);
+			humanpose.zmp[1] = ( rfzmp[1]*humanpose.rfwrench[2] + lfzmp[1]*humanpose.lfwrench[2] ) / ( humanpose.rfwrench[2] + humanpose.lfwrench[2]);
+			humanpose.zmp[2] = 0;
+		}else{
+			humanpose.zmp[0] = 0;	humanpose.zmp[1] = 0;	humanpose.zmp[2] = 0;
+		}
 
       //debug表示
 //			printf("[L] %+06.1f,%+06.1f,%+06.1f,%+06.1f,%+06.1f,%+06.1f [R] %+06.1f,%+06.1f,%+06.1f,%+06.1f,%+06.1f,%+06.1f [ZMP] %+06.3f,%+06.3f\n",
-//					humanpose->lfwrench[0],humanpose->lfwrench[1],humanpose->lfwrench[2],humanpose->lfwrench[3],humanpose->lfwrench[4],humanpose->lfwrench[5],
-//					humanpose->rfwrench[0],humanpose->rfwrench[1],humanpose->rfwrench[2],humanpose->rfwrench[3],humanpose->rfwrench[4],humanpose->rfwrench[5],
-//					humanpose->zmp[0],humanpose->zmp[1]);
-      humanpose->startsync = true;//test
-	   if(humanpose->startsync){
+//					humanpose.lfwrench[0],humanpose.lfwrench[1],humanpose.lfwrench[2],humanpose.lfwrench[3],humanpose.lfwrench[4],humanpose.lfwrench[5],
+//					humanpose.rfwrench[0],humanpose.rfwrench[1],humanpose.rfwrench[2],humanpose.rfwrench[3],humanpose.rfwrench[4],humanpose.rfwrench[5],
+//					humanpose.zmp[0],humanpose.zmp[1]);
+	   if(HumanSyncOn){
 //ZMP上書き
-//	      m_zmp.data.x = humanpose->zmp[0]*0.5 - filt_hp_data.com[0];//
-		  m_zmp.data.y = filt_hp_data.zmp[1] - filt_hp_data.com[1];//
+//	      m_zmp.data.x = humanpose.zmp[0]*0.5 - filt_hp_data.com[0];//
+		  m_zmp.data.y = filt_hp_data.zmp[1] - filt_hp_data.com[1];//test
 // COM上書き
 //	  m_cog.data.x = 0.0558423 + filt_hp_data.com[0];
 	  m_cog.data.y = filt_hp_data.com[1];
@@ -1059,13 +1081,12 @@ void AutoBalancer::fixLegToCoords (const hrp::Vector3& fix_pos, const hrp::Matri
 static bool moveleft = false;
 bool AutoBalancer::solveLimbIKforLimb (ABCIKparam& param)
 {
-//  cout<<"****************** test ********************"<<endl;
 	static int rfuplevel,lfuplevel;
 
-	if(humanpose->startsync){
+	if(HumanSyncOn){
 		if(param.target_link->name == "RLEG_JOINT5"){
-			if(humanpose->rfwrench[2] < 20.0 && humanpose->lfwrench[2] > 20.0){
-//			if(humanpose->rfwrench[2] < 20.0){
+			if(humanpose.rfwrench[2] < 20.0 && humanpose.lfwrench[2] > 20.0){
+//			if(humanpose.rfwrench[2] < 20.0){
 				if(rfuplevel < 100){
 					rfuplevel++;
 					filt_hp_data.rfpos[2] = 0.025 - 0.025*cos(M_PI*rfuplevel/100);
@@ -1084,8 +1105,8 @@ bool AutoBalancer::solveLimbIKforLimb (ABCIKparam& param)
 			param.target_p0(2) = 0.1 + filt_hp_data.rfpos[2];
 		}
 		if(param.target_link->name == "LLEG_JOINT5"){
-			if(humanpose->lfwrench[2] < 20.0 && humanpose->rfwrench[2] > 20.0){
-//			if(humanpose->lfwrench[2] < 20.0){
+			if(humanpose.lfwrench[2] < 20.0 && humanpose.rfwrench[2] > 20.0){
+//			if(humanpose.lfwrench[2] < 20.0){
 				if(lfuplevel < 100){
 					lfuplevel++;
 					filt_hp_data.lfpos[2] = 0.025 - 0.025*cos(M_PI*lfuplevel/100);
@@ -1164,30 +1185,42 @@ void AutoBalancer::solveLimbIK ()
   m_robot->rootLink()->p = m_robot->rootLink()->p + -1 * move_base_gain * dif_cog;
   m_robot->rootLink()->R = target_root_R;
 //mytest
-  #define MAXVEL 0.002
+  #define MAXVEL 0.004
 
-  for(int i=0;i<3;i++){
-//	  filt_hp_data.com[i] = 0.99*filt_hp_data.com[i] + 0.01*(humanpose->com[i]);
-//	  filt_hp_data.rfpos[i] = 0.99*filt_hp_data.rfpos[i] + 0.01*(humanpose->rfpos[i]);//足ロック
-//	  filt_hp_data.lfpos[i] = 0.99*filt_hp_data.lfpos[i] + 0.01*(humanpose->lfpos[i]);//足ロック
-//	  filt_hp_data.rhpos[i] = 0.99*filt_hp_data.rhpos[i] + 0.01*(humanpose->rhpos[i]);
-//	  filt_hp_data.lhpos[i] = 0.99*filt_hp_data.lhpos[i] + 0.01*(humanpose->lhpos[i]);
-//	  filt_hp_data.zmp[i] = 0.99*filt_hp_data.zmp[i] + 0.01*(humanpose->zmp[i]);
-
-	  filt_hp_data.zmp[i] = 0.99*filt_hp_data.zmp[i] + 0.01*(input_htzmp(i));
-	  filt_hp_data.com[i] = 0.99*filt_hp_data.com[i] + 0.01*(input_htcom(i));
-	  filt_hp_data.rfpos[i] = 0.99*filt_hp_data.rfpos[i] + 0.01*(input_htrf(i));
-	  filt_hp_data.lfpos[i] = 0.99*filt_hp_data.lfpos[i] + 0.01*(input_htlf(i));
-	  filt_hp_data.rhpos[i] = 0.99*filt_hp_data.rhpos[i] + 0.01*(input_htrh(i));
-	  filt_hp_data.lhpos[i] = 0.99*filt_hp_data.lhpos[i] + 0.01*(input_htlh(i));
-
-
-
-	  if(filt_hp_data.com[i] - hp_data_old.com[i] > MAXVEL)filt_hp_data.com[i] = hp_data_old.com[i] + MAXVEL;
-	  if(filt_hp_data.com[i] - hp_data_old.com[i] < -MAXVEL)filt_hp_data.com[i] = hp_data_old.com[i] - MAXVEL;
-	  hp_data_old.com[i] = filt_hp_data.com[i];
+  static humanpose_t init_humanpose;
+  static int HumanSyncCountdownNum = 5 * (1/m_dt);
+  if(startCountdownForHumanSync){
+	  if(HumanSyncCountdownNum == 0){
+		  HumanSyncOn = true;
+	  }else{
+		  HumanSyncCountdownNum--;
+	  }
   }
-//  cout<<"COM"<<m_robot->calcCM()[0]<<","<<m_robot->calcCM()[1]<<","<<m_robot->calcCM()[2]<<endl;
+
+  if(HumanSyncOn){
+	  for(int i=0;i<3;i++){
+		  filt_hp_data.zmp[i] = 0.99*filt_hp_data.zmp[i] + 0.01*(humanpose.zmp[i]);
+		  filt_hp_data.com[i] = 0.99*filt_hp_data.com[i] + 0.01*(humanpose.com[i] - init_humanpose.com[i]);
+		  filt_hp_data.rfwrench[i] = 0.99*filt_hp_data.rfwrench[i] + 0.01*(humanpose.rfwrench[i]);
+		  filt_hp_data.lfwrench[i] = 0.99*filt_hp_data.lfwrench[i] + 0.01*(humanpose.lfwrench[i]);
+	//	  filt_hp_data.rfpos[i] = 0.99*filt_hp_data.rfpos[i] + 0.01*(humanpose.rfpos[i] - init_humanpose.rfpos[i]);//足ロック
+	//	  filt_hp_data.lfpos[i] = 0.99*filt_hp_data.lfpos[i] + 0.01*(humanpose.lfpos[i] - init_humanpose.lfpos[i]);//足ロック
+		  filt_hp_data.rhpos[i] = 0.99*filt_hp_data.rhpos[i] + 0.01*(humanpose.rhpos[i] - init_humanpose.rhpos[i]);
+		  filt_hp_data.lhpos[i] = 0.99*filt_hp_data.lhpos[i] + 0.01*(humanpose.lhpos[i] - init_humanpose.lhpos[i]);
+
+		  if(filt_hp_data.com[i] - hp_data_old.com[i] > MAXVEL)filt_hp_data.com[i] = hp_data_old.com[i] + MAXVEL;
+		  if(filt_hp_data.com[i] - hp_data_old.com[i] < -MAXVEL)filt_hp_data.com[i] = hp_data_old.com[i] - MAXVEL;
+		  hp_data_old.com[i] = filt_hp_data.com[i];
+	  }
+
+	  printf("[COM] %+06.3f,%+06.3f,%+06.3f [ZMP] %+06.3f,%+06.3f\n", filt_hp_data.com[0],filt_hp_data.com[1],filt_hp_data.com[2],filt_hp_data.zmp[0],filt_hp_data.zmp[1],filt_hp_data.zmp[2]);
+  }else{
+	  for(int i=0;i<3;i++)init_humanpose.com[i] = humanpose.com[i];
+	  for(int i=0;i<3;i++)init_humanpose.rfpos[i] = humanpose.rfpos[i];
+	  for(int i=0;i<3;i++)init_humanpose.lfpos[i] = humanpose.lfpos[i];
+	  for(int i=0;i<3;i++)init_humanpose.rhpos[i] = humanpose.rhpos[i];
+	  for(int i=0;i<3;i++)init_humanpose.lhpos[i] = humanpose.lhpos[i];
+  }
   filt_hp_data.com[0] = 0.0;//重心前方向ロック
 
   m_robot->rootLink()->p(0) = 0.0558423 + filt_hp_data.com[0];
@@ -1258,6 +1291,14 @@ static int movelcnt;
   return RTC::RTC_OK;
   }
 */
+
+
+bool AutoBalancer::startHumanSyncAfter5sec()
+{
+	std::cerr << "[" << m_profile.instance_name << "] start HumanSync after 5 sec" << std::endl;
+	startCountdownForHumanSync = true;
+	return true;
+}
 
 void AutoBalancer::startABCparam(const OpenHRP::AutoBalancerService::StrSequence& limbs)
 {
