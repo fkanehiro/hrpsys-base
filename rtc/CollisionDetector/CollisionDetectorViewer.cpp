@@ -59,7 +59,7 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    char *coname = "co";
+    const char *coname = "co";
     int wsize = 0;
     float bgColor[] = {0,0,0};
     for (int i = 2; i<argc; i++){

@@ -24,7 +24,7 @@ class ServoSerial {
 public:
   int fd;
 
-  ServoSerial(char *devname)  {
+  ServoSerial(const char *devname)  {
     fd = open(devname, O_RDWR);
     if (fd<0) {
       char *pmesg = strerror(errno);

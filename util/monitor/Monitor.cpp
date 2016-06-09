@@ -231,7 +231,7 @@ void Monitor::showStatus(hrp::BodyPtr &body)
             // driver temperature
             int temp = temperature(ss);
             if (!temp){
-                fprintf(stdout, "-- ", temp);
+                fprintf(stdout, "-- ");
             }else{
                 if (temp >= 60) red();
                 fprintf(stdout, "%2d ", temp);
