@@ -159,7 +159,7 @@ void GLscene::showStatus()
                 // driver temperature
                 int temp = temperature(ss);
                 if (!temp){
-                    sprintf(buf, "--", temp);
+                    sprintf(buf, "--");
                 }else{
                     sprintf(buf, "%2d", temp);
                 }
