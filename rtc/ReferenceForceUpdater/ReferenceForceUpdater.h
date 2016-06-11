@@ -175,7 +175,7 @@ class ReferenceForceUpdater
     // Motion direction to update reference force
     hrp::Vector3 motion_dir;
     int update_count;
-    bool is_active,is_stopping;
+    bool is_active, is_stopping;
     ReferenceForceUpdaterParam () {
       //params defined in idl
       motion_dir = hrp::Vector3::UnitZ();

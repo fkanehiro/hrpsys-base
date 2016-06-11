@@ -44,7 +44,6 @@ ReferenceForceUpdater::ReferenceForceUpdater(RTC::Manager* manager)
   : RTC::DataFlowComponentBase(manager),
     // <rtc-template block="initializer">
     m_ReferenceForceUpdaterServicePort("ReferenceForceUpdaterService"),
-
     m_qRefIn("qRef", m_qRef),
     m_basePosIn("basePosIn", m_basePos),
     m_baseRpyIn("baseRpyIn", m_baseRpy),
@@ -71,7 +70,7 @@ RTC::ReturnCode_t ReferenceForceUpdater::onInitialize()
   // <rtc-template block="bind_config">
   // Bind variables and configuration variable
   bindParameter("debugLevel", m_debugLevel, "0");
-  
+
   // </rtc-template>
 
   // Registration: InPort/OutPort/Service
@@ -90,7 +89,7 @@ RTC::ReturnCode_t ReferenceForceUpdater::onInitialize()
   addPort(m_ReferenceForceUpdaterServicePort);
 
   // Get dt
-  RTC::Properties& prop = getProperties();//get properties information from .wrl file
+  RTC::Properties& prop = getProperties(); // get properties information from .wrl file
   coil::stringTo(m_dt, prop["dt"].c_str());
 
   // Make m_robot instance
@@ -103,7 +102,7 @@ RTC::ReturnCode_t ReferenceForceUpdater::onInitialize()
   }
   nameServer = nameServer.substr(0, comPos);
   RTC::CorbaNaming naming(rtcManager.getORB(), nameServer.c_str());
-  if (!loadBodyFromModelLoader(m_robot, prop["model"].c_str(), //load robot model for m_robot
+  if (!loadBodyFromModelLoader(m_robot, prop["model"].c_str(), // load robot model for m_robot
                                CosNaming::NamingContext::_duplicate(naming.getRootContext())
                                )){
     std::cerr << "[" << m_profile.instance_name << "] failed to load model[" << prop["model"] << "]" << std::endl;
@@ -400,7 +399,7 @@ RTC::ReturnCode_t ReferenceForceUpdater::onExecute(RTC::UniqueId ec_id)
         // Calc abs force diff
         df = tmp_act_force - ref_force[arm_idx];
         double inner_product = 0;
-        if ( ! std::fabs((abs_motion_dir.norm()- 0.0)) < 1e-5 ) {
+        if ( ! std::fabs((abs_motion_dir.norm() - 0.0)) < 1e-5 ) {
           abs_motion_dir.normalize();
           inner_product = df.dot(abs_motion_dir);
           if ( ! (inner_product < 0 && ref_force[arm_idx].dot(abs_motion_dir) < 0.0) ) {
