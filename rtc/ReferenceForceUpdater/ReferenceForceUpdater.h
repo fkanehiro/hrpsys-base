@@ -112,8 +112,6 @@ class ReferenceForceUpdater
   
   // </rtc-template>
 
-  TimedDouble m_data;
-
   // DataInPort declaration
   // <rtc-template block="inport_declare">
   TimedDoubleSeq m_qRef;
