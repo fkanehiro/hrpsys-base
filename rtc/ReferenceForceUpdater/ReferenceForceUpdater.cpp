@@ -154,7 +154,6 @@ RTC::ReturnCode_t ReferenceForceUpdater::onInitialize()
   // setting from conf file
   // rleg,TARGET_LINK,BASE_LINK,x,y,z,rx,ry,rz,rth #<=pos + rot (axis+angle)
   coil::vstring end_effectors_str = coil::split(prop["end_effectors"], ",");
-  std::map<std::string, std::string> base_name_map;
   if (end_effectors_str.size() > 0) {
     size_t prop_num = 10;
     size_t num = end_effectors_str.size()/prop_num;
@@ -181,7 +180,6 @@ RTC::ReturnCode_t ReferenceForceUpdater::onInitialize()
       if (( ee_name != "rleg" ) && ( ee_name != "lleg" ))
         m_RFUParam.insert(std::pair<std::string, ReferenceForceUpdaterParam>(ee_name , rfu_param));
 
-      base_name_map.insert(std::pair<std::string, std::string>(ee_name, ee_base));
       ee_index_map.insert(std::pair<std::string, size_t>(ee_name, i));
       ref_force.push_back(hrp::Vector3::Zero());
       //ref_force_interpolator.insert(std::pair<std::string, interpolator*>(ee_name, new interpolator(3, m_dt)));
