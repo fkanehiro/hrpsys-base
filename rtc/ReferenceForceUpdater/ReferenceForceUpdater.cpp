@@ -319,6 +319,7 @@ RTC::ReturnCode_t ReferenceForceUpdater::onExecute(RTC::UniqueId ec_id)
           for (unsigned int j=0; j<6; j++ ) {
             m_ref_force_out[i].data[j] = m_ref_force_in[i].data[j];
           }
+          m_ref_force_out[i].tm = m_ref_force_in[i].tm;
           m_ref_forceOut[i]->write();
         }
         return RTC::RTC_OK;
@@ -433,6 +434,7 @@ RTC::ReturnCode_t ReferenceForceUpdater::onExecute(RTC::UniqueId ec_id)
     for (unsigned int j=0; j<3; j++ ) {
       m_ref_force_out[i].data[j] = ref_force[i](j) * transition_interpolator_ratio[i] + m_ref_force_in[i].data[j] * (1-transition_interpolator_ratio[i]);
     }
+    m_ref_force_out[i].tm = m_ref_force_in[i].tm;
     m_ref_forceOut[i]->write();
   }
 
