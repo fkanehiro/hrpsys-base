@@ -54,12 +54,10 @@ ReferenceForceUpdater::ReferenceForceUpdater(RTC::Manager* manager)
     m_debugLevel(0)
 {
   m_ReferenceForceUpdaterService.rfu(this);
-  std::cout << "ReferenceForceUpdater::ReferenceForceUpdater()" << std::endl;
 }
 
 ReferenceForceUpdater::~ReferenceForceUpdater()
 {
-  std::cout << "ReferenceForceUpdater::~ReferenceForceUpdater()" << std::endl;
 }
 
 
