@@ -173,9 +173,6 @@ RTC::ReturnCode_t ReferenceForceUpdater::onInitialize()
       }
       eet.localR = Eigen::AngleAxis<double>(tmpv[3], hrp::Vector3(tmpv[0], tmpv[1], tmpv[2])).toRotationMatrix(); // rotation in VRML is represented by axis + angle
       eet.target_name = ee_target;
-      // tmp
-      if (ee_name == "rarm") eet.sensor_name = "rhsensor";
-      else eet.sensor_name = "lhsensor";
       ee_map.insert(std::pair<std::string, ee_trans>(ee_name , eet));
 
       ReferenceForceUpdaterParam rfu_param;
