@@ -44,7 +44,6 @@ ReferenceForceUpdater::ReferenceForceUpdater(RTC::Manager* manager)
   : RTC::DataFlowComponentBase(manager),
     // <rtc-template block="initializer">
     m_ReferenceForceUpdaterServicePort("ReferenceForceUpdaterService"),
-
     m_qRefIn("qRef", m_qRef),
     m_basePosIn("basePosIn", m_basePos),
     m_baseRpyIn("baseRpyIn", m_baseRpy),
@@ -55,12 +54,10 @@ ReferenceForceUpdater::ReferenceForceUpdater(RTC::Manager* manager)
     m_debugLevel(0)
 {
   m_ReferenceForceUpdaterService.rfu(this);
-  std::cout << "ReferenceForceUpdater::ReferenceForceUpdater()" << std::endl;
 }
 
 ReferenceForceUpdater::~ReferenceForceUpdater()
 {
-  std::cout << "ReferenceForceUpdater::~ReferenceForceUpdater()" << std::endl;
 }
 
 
@@ -71,7 +68,7 @@ RTC::ReturnCode_t ReferenceForceUpdater::onInitialize()
   // <rtc-template block="bind_config">
   // Bind variables and configuration variable
   bindParameter("debugLevel", m_debugLevel, "0");
-  
+
   // </rtc-template>
 
   // Registration: InPort/OutPort/Service
@@ -90,7 +87,7 @@ RTC::ReturnCode_t ReferenceForceUpdater::onInitialize()
   addPort(m_ReferenceForceUpdaterServicePort);
 
   // Get dt
-  RTC::Properties& prop = getProperties();//get properties information from .wrl file
+  RTC::Properties& prop = getProperties(); // get properties information from .wrl file
   coil::stringTo(m_dt, prop["dt"].c_str());
 
   // Make m_robot instance
@@ -103,7 +100,7 @@ RTC::ReturnCode_t ReferenceForceUpdater::onInitialize()
   }
   nameServer = nameServer.substr(0, comPos);
   RTC::CorbaNaming naming(rtcManager.getORB(), nameServer.c_str());
-  if (!loadBodyFromModelLoader(m_robot, prop["model"].c_str(), //load robot model for m_robot
+  if (!loadBodyFromModelLoader(m_robot, prop["model"].c_str(), // load robot model for m_robot
                                CosNaming::NamingContext::_duplicate(naming.getRootContext())
                                )){
     std::cerr << "[" << m_profile.instance_name << "] failed to load model[" << prop["model"] << "]" << std::endl;
@@ -157,7 +154,6 @@ RTC::ReturnCode_t ReferenceForceUpdater::onInitialize()
   // setting from conf file
   // rleg,TARGET_LINK,BASE_LINK,x,y,z,rx,ry,rz,rth #<=pos + rot (axis+angle)
   coil::vstring end_effectors_str = coil::split(prop["end_effectors"], ",");
-  std::map<std::string, std::string> base_name_map;
   if (end_effectors_str.size() > 0) {
     size_t prop_num = 10;
     size_t num = end_effectors_str.size()/prop_num;
@@ -176,9 +172,6 @@ RTC::ReturnCode_t ReferenceForceUpdater::onInitialize()
       }
       eet.localR = Eigen::AngleAxis<double>(tmpv[3], hrp::Vector3(tmpv[0], tmpv[1], tmpv[2])).toRotationMatrix(); // rotation in VRML is represented by axis + angle
       eet.target_name = ee_target;
-      // tmp
-      if (ee_name == "rarm") eet.sensor_name = "rhsensor";
-      else eet.sensor_name = "lhsensor";
       ee_map.insert(std::pair<std::string, ee_trans>(ee_name , eet));
 
       ReferenceForceUpdaterParam rfu_param;
@@ -187,7 +180,6 @@ RTC::ReturnCode_t ReferenceForceUpdater::onInitialize()
       if (( ee_name != "rleg" ) && ( ee_name != "lleg" ))
         m_RFUParam.insert(std::pair<std::string, ReferenceForceUpdaterParam>(ee_name , rfu_param));
 
-      base_name_map.insert(std::pair<std::string, std::string>(ee_name, ee_base));
       ee_index_map.insert(std::pair<std::string, size_t>(ee_name, i));
       ref_force.push_back(hrp::Vector3::Zero());
       //ref_force_interpolator.insert(std::pair<std::string, interpolator*>(ee_name, new interpolator(3, m_dt)));
@@ -400,7 +392,7 @@ RTC::ReturnCode_t ReferenceForceUpdater::onExecute(RTC::UniqueId ec_id)
         // Calc abs force diff
         df = tmp_act_force - ref_force[arm_idx];
         double inner_product = 0;
-        if ( ! std::fabs((abs_motion_dir.norm()- 0.0)) < 1e-5 ) {
+        if ( ! std::fabs((abs_motion_dir.norm() - 0.0)) < 1e-5 ) {
           abs_motion_dir.normalize();
           inner_product = df.dot(abs_motion_dir);
           if ( ! (inner_product < 0 && ref_force[arm_idx].dot(abs_motion_dir) < 0.0) ) {
