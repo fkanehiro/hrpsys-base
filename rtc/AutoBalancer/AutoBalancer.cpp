@@ -1081,19 +1081,18 @@ void AutoBalancer::fixLegToCoords (const hrp::Vector3& fix_pos, const hrp::Matri
 static bool moveleft = false;
 static bool ht_first_call = true;
 hrp::Vector3 rfinitpos,lfinitpos;
+static int rfuplevel,lfuplevel;
 bool AutoBalancer::solveLimbIKforLimb (ABCIKparam& param)
 {
-	static int rfuplevel,lfuplevel;
-	if(HumanSyncOn){
 		if(param.target_link->name == "RLEG_JOINT5"){
-			if(humanpose.rfwrench[2] < 20.0 && humanpose.lfwrench[2] > 20.0){
+			if(humanpose.rfwrench[2] < 20.0 && humanpose.lfwrench[2] > 20.0 && HumanSyncOn){
 //			if(humanpose.rfwrench[2] < 20.0){
 				if(rfuplevel < 100){
 					rfuplevel++;
 					filt_hp_data.rfpos[2] = 0.025 - 0.025*cos(M_PI*rfuplevel/100);
 					//filt_hp_data.rfpos[1] -= 0.001;//歩行遊び
 				}
-				cout<<"RUP"<<endl;
+				if(loop%100==0)cout<<"RUP"<<endl;
 			}else{
 				if(rfuplevel > 0){
 					rfuplevel--;
@@ -1106,14 +1105,14 @@ bool AutoBalancer::solveLimbIKforLimb (ABCIKparam& param)
 			param.target_p0(2) = rfinitpos(2) + filt_hp_data.rfpos[2];
 		}
 		if(param.target_link->name == "LLEG_JOINT5"){
-			if(humanpose.lfwrench[2] < 20.0 && humanpose.rfwrench[2] > 20.0){
+			if(humanpose.lfwrench[2] < 20.0 && humanpose.rfwrench[2] > 20.0 && HumanSyncOn){
 //			if(humanpose.lfwrench[2] < 20.0){
 				if(lfuplevel < 100){
 					lfuplevel++;
 					filt_hp_data.lfpos[2] = 0.025 - 0.025*cos(M_PI*lfuplevel/100);
 					//filt_hp_data.lfpos[1] -= 0.001;//歩行遊び
 				}
-				cout<<"LUP"<<endl;
+				if(loop%100==0)cout<<"LUP"<<endl;
 			}else{
 				if(lfuplevel > 0){
 					lfuplevel--;
@@ -1125,17 +1124,16 @@ bool AutoBalancer::solveLimbIKforLimb (ABCIKparam& param)
 			param.target_p0(1) = lfinitpos(1) + filt_hp_data.lfpos[1];
 			param.target_p0(2) = lfinitpos(2) + filt_hp_data.lfpos[2];
 		}
-		if(param.target_link->name == "RARM_JOINT7"){
+		if(param.target_link->name == "RARM_JOINT7" && HumanSyncOn){
 			param.target_p0(0) = 0.151 + filt_hp_data.rhpos[0];
 			param.target_p0(1) = -0.374 + filt_hp_data.rhpos[1];
 			param.target_p0(2) = 0.973 + filt_hp_data.rhpos[2];
 		}
-		if(param.target_link->name == "LARM_JOINT7"){
+		if(param.target_link->name == "LARM_JOINT7" && HumanSyncOn){
 			param.target_p0(0) = 0.151 + filt_hp_data.lhpos[0];
 			param.target_p0(1) = 0.374 + filt_hp_data.lhpos[1];
 			param.target_p0(2) = 0.973 + filt_hp_data.lhpos[2];
 		}
-	}
 
 
   param.manip->calcInverseKinematics2Loop(param.target_p0, param.target_r0, 1.0, param.avoid_gain, param.reference_gain, &qrefv, transition_interpolator_ratio * leg_names_interpolator_ratio);
@@ -1195,9 +1193,15 @@ void AutoBalancer::solveLimbIK ()
 	  if(HumanSyncCountdownNum == 0){
 		  HumanSyncOn = true;
 		  startCountdownForHumanSync = false;
+		  HumanSyncCountdownNum = 5 * (1/m_dt);
 	  }else{
 		  HumanSyncCountdownNum--;
 	  }
+  }
+  if(ht_first_call){
+	  rfinitpos = ikp["rleg"].target_p0;
+	  lfinitpos = ikp["lleg"].target_p0;
+	  ht_first_call=false;
   }
 
   if(HumanSyncOn){
@@ -1213,31 +1217,27 @@ void AutoBalancer::solveLimbIK ()
 
 		  if(filt_hp_data.com[i] - hp_data_old.com[i] > MAXVEL)filt_hp_data.com[i] = hp_data_old.com[i] + MAXVEL;
 		  if(filt_hp_data.com[i] - hp_data_old.com[i] < -MAXVEL)filt_hp_data.com[i] = hp_data_old.com[i] - MAXVEL;
-		  hp_data_old.com[i] = filt_hp_data.com[i];
 	  }
 
 	  if(loop%100==0)printf("[COM] %+06.3f,%+06.3f,%+06.3f [ZMP] %+06.3f,%+06.3f\n", filt_hp_data.com[0],filt_hp_data.com[1],filt_hp_data.com[2],filt_hp_data.zmp[0],filt_hp_data.zmp[1],filt_hp_data.zmp[2]);
-	  if(ht_first_call){ht_first_call=false;
-		  rfinitpos = ikp["rleg"].target_p0;
-		  lfinitpos = ikp["lleg"].target_p0;
-	  }
   }else{
 	  for(int i=0;i<3;i++)init_humanpose.com[i] = humanpose.com[i];
 	  for(int i=0;i<3;i++)init_humanpose.rfpos[i] = humanpose.rfpos[i];
 	  for(int i=0;i<3;i++)init_humanpose.lfpos[i] = humanpose.lfpos[i];
 	  for(int i=0;i<3;i++)init_humanpose.rhpos[i] = humanpose.rhpos[i];
 	  for(int i=0;i<3;i++)init_humanpose.lhpos[i] = humanpose.lhpos[i];
+	  for(int i=0;i<3;i++){
+		  if(filt_hp_data.com[i]>0)filt_hp_data.com[i] -= 0.0001;
+		  if(filt_hp_data.com[i]<0)filt_hp_data.com[i] += 0.0001;
+	  }
 	  if(loop%100==0)printf("[pre-COM] %+06.3f,%+06.3f,%+06.3f [pre-ZMP] %+06.3f,%+06.3f\n", humanpose.com[0],humanpose.com[1],humanpose.com[2],humanpose.zmp[0],humanpose.zmp[1],humanpose.zmp[2]);
 
   }
   filt_hp_data.com[0] = 0.0;//重心前方向ロック
-
-//  m_robot->rootLink()->p(0) = 0.0558423 + filt_hp_data.com[0];
-//  m_robot->rootLink()->p(1) = 0+ filt_hp_data.com[1];//safetest
-//  m_robot->rootLink()->p(2) = 0.976372 + filt_hp_data.com[2];
   m_robot->rootLink()->p(0) += filt_hp_data.com[0];
-  m_robot->rootLink()->p(1) += filt_hp_data.com[1];//safetest
+  m_robot->rootLink()->p(1) += filt_hp_data.com[1];
   m_robot->rootLink()->p(2) += filt_hp_data.com[2];
+  for(int i=0;i<3;i++)hp_data_old.com[i] = filt_hp_data.com[i];
 
 static int movelcnt;
 	if(moveleft){
