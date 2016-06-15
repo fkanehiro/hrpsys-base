@@ -111,6 +111,7 @@ class AutoBalancer
   bool getGoPosFootstepsSequence(const double& x, const double& y, const double& th, OpenHRP::AutoBalancerService::FootstepsSequence_out o_footstep);
   bool releaseEmergencyStop();
   bool startHumanSyncAfter5sec();
+  bool stopHumanSync();
 
  protected:
   // Configuration variable declaration

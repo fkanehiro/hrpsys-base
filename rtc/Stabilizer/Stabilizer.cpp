@@ -1320,12 +1320,12 @@ void Stabilizer::calcTPCC() {
                                   + k_tpcc_x[i] * transition_smooth_gain * dcog(i);
         newcog(i) = uu * dt + cog(i);
       }
-
       moveBasePosRotForBodyRPYControl ();
 
       // target at ee => target at link-origin
       hrp::Vector3 target_link_p[stikp.size()];
       hrp::Matrix33 target_link_R[stikp.size()];
+        
       for (size_t i = 0; i < stikp.size(); i++) {
         rats::rotm3times(target_link_R[i], target_ee_R[i], stikp[i].localR.transpose());
         target_link_p[i] = target_ee_p[i] - target_ee_R[i] * stikp[i].localCOPPos;

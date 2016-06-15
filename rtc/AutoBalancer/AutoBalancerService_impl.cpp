@@ -120,3 +120,8 @@ CORBA::Boolean AutoBalancerService_impl::startHumanSyncAfter5sec()
     return m_autobalancer->startHumanSyncAfter5sec();
 };
 
+CORBA::Boolean AutoBalancerService_impl::stopHumanSync()
+{
+    return m_autobalancer->stopHumanSync();
+};
+
