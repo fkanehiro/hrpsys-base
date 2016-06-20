@@ -27,7 +27,7 @@ def init ():
 # demo functions
 def demoCollisionCheckSafe ():
     print >> sys.stderr, "1. CollisionCheck in safe pose"
-    hcf.seq_svc.setJointAngles(col_safe_pose, 1.0);
+    hcf.seq_svc.setJointAngles(col_safe_pose, 3.0);
     hcf.waitInterpolation();
     cs=hcf.co_svc.getCollisionStatus()[1]
     if cs.safe_posture:

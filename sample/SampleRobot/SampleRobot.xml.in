@@ -93,7 +93,7 @@
    <property name="LARM_SHOULDER_P.angle" value="0.0"/>
    <property name="LARM_SHOULDER_P.mode" value="HighGain"/>
    <property name="LARM_SHOULDER_P.NumOfAABB" value="1"/>
-   <property name="LARM_SHOULDER_R.angle" value="0.0"/>
+   <property name="LARM_SHOULDER_R.angle" value="@L_SHOULDER_R_INITIAL@"/>
    <property name="LARM_SHOULDER_R.mode" value="HighGain"/>
    <property name="LARM_SHOULDER_R.NumOfAABB" value="1"/>
    <property name="LARM_SHOULDER_Y.angle" value="0.0"/>
