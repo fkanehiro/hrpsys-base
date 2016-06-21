@@ -1140,8 +1140,8 @@ class HrpsysConfigurator:
 
     def setInterpolationMode(self, mode):
         '''!@brief
-        set interpolation mode.
-        @param i_mode_ new interpolation mode
+        Set interpolation mode. You may need to import OpenHRP in order to pass an argument. For more info See https://github.com/fkanehiro/hrpsys-base/pull/1012#issue-160802911. 
+        @param mode new interpolation mode. Either { OpenHRP.SequencePlayerService.LINEAR, OpenHRP.SequencePlayerService.HOFFARBIB }.
         @return true if set successfully, false otherwise
         '''
         return self.seq_svc.setInterpolationMode(mode)
