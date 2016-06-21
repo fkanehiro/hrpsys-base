@@ -1138,6 +1138,14 @@ class HrpsysConfigurator:
         '''
         self.seq_svc.waitInterpolationOfGroup(gname)
 
+    def setInterpolationMode(self, mode):
+        '''!@brief
+        set interpolation mode.
+        @param i_mode_ new interpolation mode
+        @return true if set successfully, false otherwise
+        '''
+        return self.seq_svc.setInterpolationMode(mode)
+
     def getJointAngles(self):
         '''!@brief
         Returns the commanded joint angle values.
