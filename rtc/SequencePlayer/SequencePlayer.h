@@ -10,6 +10,8 @@
 #ifndef SEQUENCEPLAYER_H
 #define SEQUENCEPLAYER_H
 
+#include <rtm/idl/BasicDataType.hh>
+#include <rtm/idl/ExtendedDataTypes.hh>
 #include <semaphore.h>
 #include <rtm/Manager.h>
 #include <rtm/DataFlowComponentBase.h>

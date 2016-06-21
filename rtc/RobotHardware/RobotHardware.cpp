@@ -8,9 +8,9 @@
  */
 
 #include <rtm/CorbaNaming.h>
+#include "hrpsys/util/VectorConvert.h"
 #include "RobotHardware.h"
 #include "robot.h"
-#include "hrpsys/util/VectorConvert.h"
 
 #include <hrpModel/Sensor.h>
 #include <hrpModel/ModelLoaderUtil.h>

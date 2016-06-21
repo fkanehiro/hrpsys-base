@@ -1,13 +1,15 @@
 #ifndef __RTCBODY_H__
 #define __RTCBODY_H__
 
+#include <rtm/idl/BasicDataType.hh>
+#include <rtm/idl/ExtendedDataTypes.hh>
+#include "hrpsys/idl/HRPDataTypes.hh"
 #include <hrpModel/Body.h>
 #include <rtm/DataFlowComponentBase.h>
 #include <rtm/DataInPort.h>
 #include <rtm/DataOutPort.h>
 #include <rtm/idl/BasicDataTypeSkel.h>
 #include <rtm/idl/ExtendedDataTypesSkel.h>
-#include "hrpsys/idl/HRPDataTypes.hh"
 
 class RTCBody : public hrp::Body
 {

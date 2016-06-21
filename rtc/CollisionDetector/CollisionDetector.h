@@ -10,6 +10,8 @@
 #ifndef COLLISION_DETECTOR_H
 #define COLLISION_DETECTOR_H
 
+#include <rtm/idl/BasicDataType.hh>
+#include "hrpsys/idl/HRPDataTypes.hh"
 #include <rtm/Manager.h>
 #include <rtm/DataFlowComponentBase.h>
 #include <rtm/CorbaPort.h>
@@ -26,7 +28,6 @@
 #endif // USE_HRPSYSUTIL
 #include "TimedPosture.h"
 #include "interpolator.h"
-#include "hrpsys/idl/HRPDataTypes.hh"
 
 #include "VclipLinkPair.h"
 #include "CollisionDetectorService_impl.h"

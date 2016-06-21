@@ -10,6 +10,7 @@
 #ifndef PDcontroller_H
 #define PDcontroller_H
 
+#include <rtm/idl/BasicDataType.hh>
 #include <rtm/Manager.h>
 #include <rtm/DataFlowComponentBase.h>
 #include <rtm/CorbaPort.h>

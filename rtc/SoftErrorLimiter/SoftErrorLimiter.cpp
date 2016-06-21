@@ -9,9 +9,9 @@
 
 #include "SoftErrorLimiter.h"
 #include "hrpsys/util/VectorConvert.h"
+#include "hrpsys/idl/RobotHardwareService.hh"
 #include <rtm/CorbaNaming.h>
 #include <hrpModel/ModelLoaderUtil.h>
-#include "hrpsys/idl/RobotHardwareService.hh"
 
 #include <math.h>
 #include <vector>

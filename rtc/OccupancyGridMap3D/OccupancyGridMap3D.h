@@ -10,14 +10,15 @@
 #ifndef NULL_COMPONENT_H
 #define NULL_COMPONENT_H
 
+#include <rtm/idl/BasicDataType.hh>
+#include <rtm/idl/InterfaceDataTypes.hh>
+#include "hrpsys/idl/pointcloud.hh"
 #include <rtm/Manager.h>
 #include <rtm/DataFlowComponentBase.h>
 #include <rtm/CorbaPort.h>
 #include <rtm/DataInPort.h>
 #include <rtm/DataOutPort.h>
 #include <rtm/idl/BasicDataTypeSkel.h>
-#include <rtm/idl/InterfaceDataTypes.hh>
-#include "hrpsys/idl/pointcloud.hh"
 
 namespace octomap{
     class OcTree;

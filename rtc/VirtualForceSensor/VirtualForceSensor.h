@@ -10,6 +10,7 @@
 #ifndef VIRTUAL_FORCE_SENSOR_H
 #define VIRTUAL_FORCE_SENSOR_H
 
+#include <rtm/idl/BasicDataType.hh>
 #include <rtm/Manager.h>
 #include <rtm/DataFlowComponentBase.h>
 #include <rtm/CorbaPort.h>
