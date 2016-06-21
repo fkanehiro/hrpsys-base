@@ -21,7 +21,8 @@ module OpenHRP
       TPCC,
       EEFM,
       EEFMQP,
-      EEFMQPCOP
+      EEFMQPCOP,
+      EEFMQPCOP2
     };
 
     /**
@@ -172,6 +173,8 @@ module OpenHRP
       sequence< SupportPolygonVertices > eefm_support_polygon_vertices_sequence;
       /// Use force difference control or each limb force control. True by default.
       boolean eefm_use_force_difference_control;
+      /// Sequence of all end-effector force/moment distribution weight
+      sequence<sequence<double, 6> > eefm_ee_forcemoment_distribution_weight;
       // common
       /// Current Stabilizer algorithm
       STAlgorithm st_algorithm;

@@ -248,6 +248,7 @@ class Stabilizer
     hrp::Vector3 eefm_pos_damping_gain, eefm_pos_time_const_support, eefm_rot_damping_gain, eefm_rot_time_const, eefm_swing_rot_spring_gain, eefm_swing_pos_spring_gain, eefm_swing_rot_time_const, eefm_swing_pos_time_const, eefm_ee_moment_limit;
     double eefm_pos_compensation_limit, eefm_rot_compensation_limit;
     hrp::Vector3 ref_force, ref_moment;
+    hrp::dvector6 eefm_ee_forcemoment_distribution_weight;
     double swing_support_gain, support_time;
     // IK parameter
     double avoid_gain, reference_gain;
@@ -296,6 +297,7 @@ class Stabilizer
   double eefm_pos_time_const_swing, eefm_pos_transition_time, eefm_pos_margin_time, eefm_gravitational_acceleration, eefm_ee_pos_error_p_gain, eefm_ee_rot_error_p_gain;
   hrp::Vector3 new_refzmp, rel_cog, ref_zmp_aux;
   hrp::Vector3 pos_ctrl;
+  hrp::Vector3 ref_total_force, ref_total_moment;
   double total_mass, transition_time, cop_check_margin, contact_decision_threshold;
   std::vector<double> cp_check_margin, tilt_margin;
   OpenHRP::StabilizerService::EmergencyCheckMode emergency_check_mode;
