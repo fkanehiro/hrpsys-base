@@ -132,7 +132,11 @@ namespace RTC
                 if (processes.size() != rtc_names.size()){
                     rtc_names.clear();
                     for (unsigned int i=0; i< processes.size(); i++){
+#ifndef OPENRTM_VERSION_TRUNK 
                         RTC::RTObject_var rtc = RTC::RTObject::_narrow(m_comps[i]._ref);
+#else
+                        RTC::RTObject_var rtc = list[i];
+#endif
                         rtc_names.push_back(std::string(rtc->get_component_profile()->instance_name));
                     }
                 }
