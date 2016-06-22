@@ -197,7 +197,7 @@ class AutoBalancer
   };
   void getCurrentParameters();
   void getTargetParameters();
-  bool solveLimbIKforLimb (ABCIKparam& param);
+  bool solveLimbIKforLimb (ABCIKparam& param, const std::string& limb_name);
   void solveLimbIK();
   void startABCparam(const ::OpenHRP::AutoBalancerService::StrSequence& limbs);
   void stopABCparam();

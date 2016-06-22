@@ -914,7 +914,7 @@ void AutoBalancer::fixLegToCoords (const hrp::Vector3& fix_pos, const hrp::Matri
   m_robot->calcForwardKinematics();
 }
 
-bool AutoBalancer::solveLimbIKforLimb (ABCIKparam& param)
+bool AutoBalancer::solveLimbIKforLimb (ABCIKparam& param, const std::string& limb_name)
 {
   param.manip->calcInverseKinematics2Loop(param.target_p0, param.target_r0, 1.0, param.avoid_gain, param.reference_gain, &qrefv, transition_interpolator_ratio * leg_names_interpolator_ratio);
   // IK check
@@ -923,7 +923,7 @@ bool AutoBalancer::solveLimbIKforLimb (ABCIKparam& param)
   rats::difference_rotation(vel_r, param.target_link->R, param.target_r0);
   if (vel_p.norm() > pos_ik_thre && transition_interpolator->isEmpty()) {
       if (param.pos_ik_error_count % ik_error_debug_print_freq == 0) {
-          std::cerr << "[" << m_profile.instance_name << "] Too large IK error (vel_p) = [" << vel_p(0) << " " << vel_p(1) << " " << vel_p(2) << "][m], count = " << param.pos_ik_error_count << std::endl;
+          std::cerr << "[" << m_profile.instance_name << "] Too large IK error in " << limb_name << " (vel_p) = [" << vel_p(0) << " " << vel_p(1) << " " << vel_p(2) << "][m], count = " << param.pos_ik_error_count << std::endl;
       }
       param.pos_ik_error_count++;
       has_ik_failed = true;
@@ -932,7 +932,7 @@ bool AutoBalancer::solveLimbIKforLimb (ABCIKparam& param)
   }
   if (vel_r.norm() > rot_ik_thre && transition_interpolator->isEmpty()) {
       if (param.rot_ik_error_count % ik_error_debug_print_freq == 0) {
-          std::cerr << "[" << m_profile.instance_name << "] Too large IK error (vel_r) = [" << vel_r(0) << " " << vel_r(1) << " " << vel_r(2) << "][rad], count = " << param.rot_ik_error_count << std::endl;
+          std::cerr << "[" << m_profile.instance_name << "] Too large IK error in " << limb_name << " (vel_r) = [" << vel_r(0) << " " << vel_r(1) << " " << vel_r(2) << "][rad], count = " << param.rot_ik_error_count << std::endl;
       }
       param.rot_ik_error_count++;
       has_ik_failed = true;
@@ -976,7 +976,7 @@ void AutoBalancer::solveLimbIK ()
   m_robot->calcForwardKinematics();
 
   for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
-    if (it->second.is_active) solveLimbIKforLimb(it->second);
+    if (it->second.is_active) solveLimbIKforLimb(it->second, it->first);
   }
   if (gg_is_walking && !gg_solved) stopWalking ();
 }
