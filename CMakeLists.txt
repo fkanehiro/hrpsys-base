@@ -196,7 +196,7 @@ add_subdirectory(idl)
 add_subdirectory(lib)
 add_subdirectory(ec)
 # option for 3rdparty
-option(USE_QPOASES "Build qpOASES" OFF)
+option(USE_QPOASES "Build qpOASES" ON)
 add_subdirectory(3rdparty)
 add_subdirectory(rtc)
 option(ENABLE_DOXYGEN "Use Doxygen" ON)

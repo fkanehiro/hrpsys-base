@@ -420,5 +420,6 @@ module OpenHRP
      * @return true if set successfully, false otherwise
      */
     boolean startHumanSyncAfter5sec();
+    boolean stopHumanSync();
   };
 };
