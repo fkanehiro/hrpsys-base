@@ -454,7 +454,9 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
             if ( m_safe_posture ) {
                 if (! m_have_safe_posture ) {
                     // first transition collision -> safe
-                    std::cerr << "[" << m_profile.instance_name << "] set safe posture" << std::endl;
+                    if ( loop%200==0 ) {
+                        std::cerr << "[" << m_profile.instance_name << "] set safe posture" << std::endl;
+                    }
                     for ( int i = 0; i < m_q.data.length(); i++ ) {
                         m_lastsafe_jointdata[i] = m_robot->joint(i)->q;
                     }
