@@ -80,6 +80,7 @@ if (PCL_FOUND)
   add_subdirectory(PCDLoader)
   add_subdirectory(PlaneRemover)
   add_subdirectory(VoxelGridFilter)
+  add_subdirectory(OpenNIGrabber)
 endif()
 
 set(EXTRA_RTC_DIRS "" CACHE PATH "directories of extra RTCs")
