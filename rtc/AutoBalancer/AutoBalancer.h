@@ -154,6 +154,8 @@ class AutoBalancer
   InPort<TimedPoint3D> m_htrhIn;
   TimedPoint3D m_htlh;
   InPort<TimedPoint3D> m_htlhIn;
+  TimedPoint3D m_actzmp;
+  InPort<TimedPoint3D> m_actzmpIn;
   
   // </rtc-template>
 

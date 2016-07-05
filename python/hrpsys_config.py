@@ -386,6 +386,8 @@ class HrpsysConfigurator:
             connectPorts(self.seq.port("qRef"), self.st.port("qRefSeq"))
             connectPorts(self.abc.port("walkingStates"), self.st.port("walkingStates"))
             connectPorts(self.abc.port("sbpCogOffset"), self.st.port("sbpCogOffset"))
+            # for human tracker calib
+            connectPorts(self.st.port("zmp"), self.abc.port("actzmpIn"))
             if self.es:
                 connectPorts(self.st.port("emergencySignal"), self.es.port("emergencySignal"))
             connectPorts(self.st.port("emergencySignal"), self.abc.port("emergencySignal"))

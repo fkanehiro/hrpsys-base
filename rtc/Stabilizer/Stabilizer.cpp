@@ -1045,7 +1045,6 @@ void Stabilizer::getTargetParameters ()
   m_robot->rootLink()->R = target_root_R;
   m_robot->calcForwardKinematics();
   ref_zmp = m_robot->rootLink()->R * hrp::Vector3(m_zmpRef.data.x, m_zmpRef.data.y, m_zmpRef.data.z) + m_robot->rootLink()->p; // base frame -> world frame
- std::cout<<"debug"<<m_zmpRef.data.x<<" , "<<m_zmpRef.data.y<<" , "<<m_zmpRef.data.z<<std::endl;
   if (st_algorithm == OpenHRP::StabilizerService::EEFM || st_algorithm == OpenHRP::StabilizerService::EEFMQP || st_algorithm == OpenHRP::StabilizerService::EEFMQPCOP) {
     // apply inverse system
     hrp::Vector3 tmp_ref_zmp = ref_zmp + eefm_zmp_delay_time_const[0] * (ref_zmp - prev_ref_zmp) / dt;
