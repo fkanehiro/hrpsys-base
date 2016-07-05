@@ -388,30 +388,6 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     rot_ik_thre = (1e-2)*M_PI/180.0; // [rad]
     ik_error_debug_print_freq = static_cast<int>(0.2/m_dt); // once per 0.2 [s]
 
-
-//    //SHM my2
-//	if((key = ftok("/tmp/shm.dat", 'R')) == -1){
-//		printf("WARN: ftok() failed retry\n");
-//		system("touch /tmp/shm.dat");
-//		if((key = ftok("/tmp/shm.dat", 'R')) == -1){
-//	    	perror("ERROR: ftok() failed exit\n");
-//	        return RTC::RTC_ERROR;
-//		}
-//	}
-//	if((shmid = shmget(key, sizeof(humanpose_t), 0666)) < 0){
-//		printf("WARN: shmget() failed retry\n");
-//		shmid = shmget(key, sizeof(humanpose_t), S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH | IPC_CREAT);
-//	    if (shmid == -1)  {
-//	    	perror("ERROR: shmget() failed exit\n");
-//	        return RTC::RTC_ERROR;
-//	    }
-//	}
-//    humanpose = (humanpose_t *)shmat(shmid, (void *)0, 0);
-//    if (humanpose == NULL) {
-//        perror("shmat");
-//        return RTC::RTC_ERROR;
-//    }
-
     return RTC::RTC_OK;
 }
 
@@ -685,27 +661,14 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
 			humanpose.zmp[0] = 0;	humanpose.zmp[1] = 0;	humanpose.zmp[2] = 0;
 		}
 
-      //debug表示
-//			printf("[L] %+06.1f,%+06.1f,%+06.1f,%+06.1f,%+06.1f,%+06.1f [R] %+06.1f,%+06.1f,%+06.1f,%+06.1f,%+06.1f,%+06.1f [ZMP] %+06.3f,%+06.3f\n",
-//					humanpose.lfwrench[0],humanpose.lfwrench[1],humanpose.lfwrench[2],humanpose.lfwrench[3],humanpose.lfwrench[4],humanpose.lfwrench[5],
-//					humanpose.rfwrench[0],humanpose.rfwrench[1],humanpose.rfwrench[2],humanpose.rfwrench[3],humanpose.rfwrench[4],humanpose.rfwrench[5],
-//					humanpose.zmp[0],humanpose.zmp[1]);
-	   if(HumanSyncOn){
-//ZMP上書き
-			if(USEX)m_zmp.data.x = filt_hp_data.zmp[0]*0.5 - filt_hp_data.com[0];//
-			m_zmp.data.y = filt_hp_data.zmp[1]*0.5 - filt_hp_data.com[1];//
-//			if(USEX)m_zmp.data.x = filt_hp_data.zmp[0];//
-//			m_zmp.data.y = filt_hp_data.zmp[1];//
-
-//			std::cout<<"debug0"<<m_zmp.data.x<<" , "<<m_zmp.data.y<<" , "<<m_zmp.data.z<<std::endl;
-
-
-//		m_zmp.data.x = 0;//
-//		m_zmp.data.y = 0;//
-// COM上書き
-//		if(USEX)m_cog.data.x = filt_hp_data.com[0]*0.7;//ここの.comは今はhumanのbaseposなので適当調整
-//		m_cog.data.y = filt_hp_data.com[1]*0.7;
-	  }
+		if(HumanSyncOn){
+		//ZMP上書き
+			if(USEX)m_zmp.data.x = filt_hp_data.zmp[0] - m_robot->rootLink()->p(0);//
+			m_zmp.data.y = filt_hp_data.zmp[1] - m_robot->rootLink()->p(1);//
+		// COM上書き
+		//		if(USEX)m_cog.data.x = filt_hp_data.com[0]*0.7;//ここの.comは今はhumanのbaseposなので適当調整
+		//		m_cog.data.y = filt_hp_data.com[1]*0.7;
+		}
 
       // sbpCogOffset
       m_sbpCogOffset.data.x = sbp_cog_offset(0);
@@ -1065,6 +1028,7 @@ void AutoBalancer::getTargetParameters()
     }
     //ishiguro
     if (HumanSyncOn) {
+        ref_cog = tmp_ref_cog;
 		if(USEX)ref_zmp(0) = humanpose.zmp[0];
 		ref_zmp(1) = humanpose.zmp[1];
 		ref_zmp(2) = tmp_foot_mid_pos(2);
@@ -1103,14 +1067,14 @@ void AutoBalancer::fixLegToCoords (const hrp::Vector3& fix_pos, const hrp::Matri
   m_robot->calcForwardKinematics();
 }
 
-static bool moveleft = false;
 static bool ht_first_call = true;
-hrp::Vector3 rfinitpos,lfinitpos;
+hrp::Vector3 rfinitpos,lfinitpos,baseinitpos;
 static int rfuplevel,lfuplevel;
 #define LEVELNUM 200
 #define FUPHIGHT 0.05
 bool AutoBalancer::solveLimbIKforLimb (ABCIKparam& param)
 {
+	  if(HumanSyncOn){
 		if(param.target_link->name == "RLEG_JOINT5"){
 			if(humanpose.rfwrench[2] < 20.0 && humanpose.lfwrench[2] > 20.0 && HumanSyncOn){
 				if(rfuplevel < LEVELNUM){
@@ -1158,6 +1122,7 @@ bool AutoBalancer::solveLimbIKforLimb (ABCIKparam& param)
 			param.target_p0(1) = 0.374 + filt_hp_data.lhpos[1];
 			param.target_p0(2) = 0.973 + filt_hp_data.lhpos[2];
 		}
+	  }
 
 
   param.manip->calcInverseKinematics2Loop(param.target_p0, param.target_r0, 1.0, param.avoid_gain, param.reference_gain, &qrefv, transition_interpolator_ratio * leg_names_interpolator_ratio);
@@ -1209,12 +1174,11 @@ void AutoBalancer::solveLimbIK ()
   m_robot->rootLink()->R = target_root_R;
 //mytest
 #define MAXVEL 0.004
-#define MAXPOS 0.2
+#define MAXPOS 0.25
 #define FNUM 0.01
 
   static bool isCalibState=false;
-  static double h2r_ratio = 0.55;//human 1.1 vs chidori 0.69
-
+  static double h2r_ratio = 0.62;//human 1.1 vs chidori 0.69
   static humanpose_t init_humanpose;
   static int HumanSyncCountdownNum = 5 * (1/m_dt);
   if(startCountdownForHumanSync){
@@ -1228,13 +1192,14 @@ void AutoBalancer::solveLimbIK ()
 		  HumanSyncCountdownNum--;
 	  }
   }
-  if(ht_first_call){
-	  rfinitpos = ikp["rleg"].target_p0;
-	  lfinitpos = ikp["lleg"].target_p0;
-	  ht_first_call=false;
-  }
 
   if(HumanSyncOn){
+	  if(ht_first_call){
+		  rfinitpos = ikp["rleg"].target_p0;
+		  lfinitpos = ikp["lleg"].target_p0;
+		  baseinitpos = m_robot->rootLink()->p;
+		  ht_first_call=false;
+	  }
 	  for(int i=0;i<3;i++){
 		  filt_hp_data.zmp[i] = (1-FNUM)*filt_hp_data.zmp[i] + FNUM*(humanpose.zmp[i]);
 		  filt_hp_data.com[i] = (1-FNUM)*filt_hp_data.com[i] + FNUM*(humanpose.com[i] - init_humanpose.com[i] + init_humanpose.zmp[i]);//Sync開始時のzmpのオフセットはつまり重心のオフセット
@@ -1250,7 +1215,6 @@ void AutoBalancer::solveLimbIK ()
 		  if(filt_hp_data.com[i] > MAXPOS)filt_hp_data.com[i] = MAXPOS;
 		  if(filt_hp_data.com[i] < -MAXPOS)filt_hp_data.com[i] = -MAXPOS;
 	  }
-
 //	  if(loop%100==0)printf("[COM] %+06.3f,%+06.3f,%+06.3f [ZMP] %+06.3f,%+06.3f\n", filt_hp_data.com[0],filt_hp_data.com[1],filt_hp_data.com[2],filt_hp_data.zmp[0],filt_hp_data.zmp[1]);
   }else{
 	  for(int i=0;i<3;i++)init_humanpose.com[i] = humanpose.com[i];
@@ -1301,11 +1265,16 @@ void AutoBalancer::solveLimbIK ()
 //		fflush(fp);
   }
 
+  const double c2b_ratio = 1.38;
 
-  if(USEX)m_robot->rootLink()->p(0) += h2r_ratio*filt_hp_data.com[0];
-  m_robot->rootLink()->p(1) += h2r_ratio*filt_hp_data.com[1];
-  m_robot->rootLink()->p(2) += h2r_ratio*filt_hp_data.com[2];
-  for(int i=0;i<3;i++)hp_data_old.com[i] = filt_hp_data.com[i];
+  if(HumanSyncOn){
+	  if(USEX)m_robot->rootLink()->p(0) = baseinitpos(0) + h2r_ratio * c2b_ratio * filt_hp_data.com[0];
+	  m_robot->rootLink()->p(1) = baseinitpos(1) + h2r_ratio * c2b_ratio * filt_hp_data.com[1];
+	  m_robot->rootLink()->p(2) = baseinitpos(2) + h2r_ratio * c2b_ratio * filt_hp_data.com[2];
+	  std::cout<<"filt_hp_data.com[1]:"<<filt_hp_data.com[1]<<std::endl;
+	  std::cout<<"m_robot->rootLink()->p(1):"<<m_robot->rootLink()->p(1)<<std::endl;
+	  for(int i=0;i<3;i++)hp_data_old.com[i] = filt_hp_data.com[i];
+  }
 
   // Fix for toe joint
   for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
