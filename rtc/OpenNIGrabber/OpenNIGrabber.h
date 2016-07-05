@@ -139,6 +139,7 @@ class OpenNIGrabber
   void grabberCallback(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr &cloud);
 
   pcl::Grabber *m_interface;
+  int m_debugLevel;
   int dummy;
 };
 

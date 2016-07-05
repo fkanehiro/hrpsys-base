@@ -28,6 +28,7 @@ static const char* spec[] =
     "language",          "C++",
     "lang_type",         "compile",
     // Configuration variables
+    "conf.default.debugLevel", "0",
 
     ""
   };
@@ -39,6 +40,7 @@ OpenNIGrabber::OpenNIGrabber(RTC::Manager* manager)
     m_cloudOut("cloud", m_cloud),
     m_imageOut("image", m_image),
     // </rtc-template>
+    m_interface(NULL),
     dummy(0)
 {
 }
@@ -54,6 +56,7 @@ RTC::ReturnCode_t OpenNIGrabber::onInitialize()
   std::cout << m_profile.instance_name << ": onInitialize()" << std::endl;
   // <rtc-template block="bind_config">
   // Bind variables and configuration variable
+  bindParameter("debugLevel", m_debugLevel, "0");
   
   // </rtc-template>
 
@@ -165,12 +168,18 @@ RTC::ReturnCode_t OpenNIGrabber::onActivated(RTC::UniqueId ec_id)
 {
   std::cout << m_profile.instance_name<< ": onActivated(" << ec_id << ")" << std::endl;
 
-  m_interface = new pcl::io::OpenNI2Grabber();
-  boost::function<void (const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr&)> f = boost::bind(&OpenNIGrabber::grabberCallback, this, _1);
+  try {
+      m_interface = new pcl::io::OpenNI2Grabber();
+      boost::function<void (const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr&)> f = boost::bind(&OpenNIGrabber::grabberCallback, this, _1);
 
-  m_interface->registerCallback(f);
+      m_interface->registerCallback(f);
 
-  m_interface->start();
+      m_interface->start();
+  }catch(...){
+      std::cerr << "[" << m_profile.instance_name
+                << "] An exception occurred while starting grabber" << std::endl;
+      return RTC::RTC_ERROR;
+  }
 
   return RTC::RTC_OK;
 }
@@ -179,9 +188,11 @@ RTC::ReturnCode_t OpenNIGrabber::onDeactivated(RTC::UniqueId ec_id)
 {
   std::cout << m_profile.instance_name<< ": onDeactivated(" << ec_id << ")" << std::endl;
 
-  m_interface->stop();
+  if (m_interface){
+      m_interface->stop();
 
-  delete m_interface;
+      delete m_interface;
+  }
 
   return RTC::RTC_OK;
 }
@@ -189,8 +200,16 @@ RTC::ReturnCode_t OpenNIGrabber::onDeactivated(RTC::UniqueId ec_id)
 RTC::ReturnCode_t OpenNIGrabber::onExecute(RTC::UniqueId ec_id)
 {
   //std::cout << m_profile.instance_name<< ": onExecute(" << ec_id << ")" << std::endl;
-
-  return RTC::RTC_OK;
+    if (m_debugLevel>0){
+        if (m_interface->isRunning()){
+            std::cerr << "[" << m_profile.instance_name
+                      << "] grabber is running. frame rate=" << m_interface->getFramesPerSecond() << std::endl;
+        }else{
+            std::cerr << "[" << m_profile.instance_name
+                      << "] grabber is not running" << std::endl;
+        }
+    }
+    return RTC::RTC_OK;
 }
 
 /*
