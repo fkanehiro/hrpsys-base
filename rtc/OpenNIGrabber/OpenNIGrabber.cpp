@@ -218,6 +218,9 @@ RTC::ReturnCode_t OpenNIGrabber::onActivated(RTC::UniqueId ec_id)
       }
 
       m_interface->start();
+  }catch(pcl::IOException& ex){
+      std::cerr << "[" << m_profile.instance_name << "] Error: " << ex.what() << std::endl;
+      return RTC::RTC_ERROR;
   }catch(...){
       std::cerr << "[" << m_profile.instance_name
                 << "] Error: An exception occurred while starting grabber" << std::endl;
