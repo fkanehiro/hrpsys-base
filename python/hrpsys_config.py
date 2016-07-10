@@ -1061,15 +1061,15 @@ class HrpsysConfigurator:
 
     def setJointAnglesSequence(self, angless, tms):
         '''!@brief
-        Set all joint angles.
+        Set all joint angles. len(angless) should be equal to len(tms).
         \verbatim
         NOTE: While this method does not check angle value range,
               any joints could emit position limit over error, which has not yet
               been thrown by hrpsys so that there's no way to catch on this python client. 
               Worthwhile opening an enhancement ticket at designated issue tracker.
         \endverbatim
-        @param sequence angles list of float: In degree.
-        @param tm sequence of float: Time to complete, In Second
+        @param sequential list of angles in float: In rad
+        @param tm sequential list of time in float: Time to complete, In Second
         '''
         for angles in angless:
             for i in range(len(angles)):
@@ -1086,8 +1086,8 @@ class HrpsysConfigurator:
               Worthwhile opening an enhancement ticket at designated issue tracker.
         \endverbatim
         @param gname str: Name of the joint group.
-        @param sequence angles list of float: In degree.
-        @param tm sequence of float: Time to complete, In Second
+        @param sequential list of angles in float: In rad
+        @param tm sequential list of time in float: Time to complete, In Second
         '''
         for angles in angless:
             for i in range(len(angles)):
@@ -1140,8 +1140,8 @@ class HrpsysConfigurator:
 
     def setInterpolationMode(self, mode):
         '''!@brief
-        set interpolation mode.
-        @param i_mode_ new interpolation mode
+        Set interpolation mode. You may need to import OpenHRP in order to pass an argument. For more info See https://github.com/fkanehiro/hrpsys-base/pull/1012#issue-160802911. 
+        @param mode new interpolation mode. Either { OpenHRP.SequencePlayerService.LINEAR, OpenHRP.SequencePlayerService.HOFFARBIB }.
         @return true if set successfully, false otherwise
         '''
         return self.seq_svc.setInterpolationMode(mode)
