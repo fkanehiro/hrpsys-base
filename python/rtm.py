@@ -105,13 +105,19 @@ class RTcomponent:
         if ec == None:
             ec = self.ec
         if ec != None:
-            ec.activate_component(self.ref)
+            ret = ec.activate_component(self.ref)
+            if  ret != RTC.RTC_OK:
+                print ('[rtm.py] \033[31m   Failed to start %s(%s)\033[0m' % \
+                       (self.name(), ret))
+                return False
             tm = 0 
             while tm < timeout:
                 if self.isActive(ec):
                     return True
                 time.sleep(0.01)
                 tm += 0.01
+        print ('[rtm.py] \033[31m   Failed to start %s(timeout)\033[0m' % \
+               self.name())
         return False
 
     ##
@@ -124,13 +130,19 @@ class RTcomponent:
         if ec == None:
             ec = self.ec
         if ec != None:
-            ec.deactivate_component(self.ref)
+            ret = ec.deactivate_component(self.ref)
+            if  ret != RTC.RTC_OK:
+                print ('[rtm.py] \033[31m   Failed to stop %s(%s)\033[0m' % \
+                       (self.name(), ret))
+                return False
             tm = 0
             while tm < timeout:
                 if self.isInactive(ec):
                     return True
                 time.sleep(0.01)
                 tm += 0.01
+        print ('[rtm.py] \033[31m   Failed to stop %s(timeout)\033[0m' % \
+               self.name())
         return False
 
     ##
