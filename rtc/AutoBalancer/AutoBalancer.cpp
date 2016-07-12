@@ -439,6 +439,10 @@ RTC::ReturnCode_t AutoBalancer::onDeactivated(RTC::UniqueId ec_id)
   return RTC::RTC_OK;
 }
 
+
+static double h2r_ratio = 0.62;//human 1.1 vs chidori 0.69
+
+
 #define DEBUGP ((m_debugLevel==1 && loop%200==0) || m_debugLevel > 1 )
 //#define DEBUGP2 ((loop%200==0))
 #define DEBUGP2 (false)
@@ -641,7 +645,7 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
 
       double rfzmp[2],lfzmp[2];
       const double F_H_OFFSET = 0.03;
-      const double rfpos[3] = {0,-0.1,0},lfpos[3] = {0,0.1,0};
+      const double rfpos[3] = {0,-0.1/h2r_ratio,0},lfpos[3] = {0,0.1/h2r_ratio,0};
 
 		if( humanpose.rfwrench[2] > 1.0e-6 ){
 			rfzmp[0] = ( -humanpose.rfwrench[4] - humanpose.rfwrench[0] * F_H_OFFSET + humanpose.rfwrench[2] * 0 ) / humanpose.rfwrench[2] + rfpos[0];
@@ -663,11 +667,11 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
 
 		if(HumanSyncOn){
 		//ZMP上書き
-			if(USEX)m_zmp.data.x = filt_hp_data.zmp[0] - m_robot->rootLink()->p(0);//
-			m_zmp.data.y = filt_hp_data.zmp[1] - m_robot->rootLink()->p(1);//
-		// COM上書き
-		//		if(USEX)m_cog.data.x = filt_hp_data.com[0]*0.7;//ここの.comは今はhumanのbaseposなので適当調整
-		//		m_cog.data.y = filt_hp_data.com[1]*0.7;
+			if(USEX)m_zmp.data.x = h2r_ratio*filt_hp_data.zmp[0] - m_robot->rootLink()->p(0);
+			m_zmp.data.y = h2r_ratio*filt_hp_data.zmp[1] - m_robot->rootLink()->p(1);//
+//		// COM上書き
+//			if(USEX)m_cog.data.x = filt_hp_data.com[0]*0.7;//ここの.comは今はhumanのbaseposなので適当調整
+//			m_cog.data.y = filt_hp_data.com[1]*0.7;
 		}
 
       // sbpCogOffset
@@ -715,11 +719,6 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
         m_limbCOPOffset[i].tm = m_qRef.tm;
         m_limbCOPOffsetOut[i]->write();
     }
-
-//ishiguro
-//    std::cout<<"out "<<m_controlSwingSupportTime.data[contact_states_index_map["rleg"]]<<" "<<gg->get_current_swing_time(0)<<" "<<m_controlSwingSupportTime.data[contact_states_index_map["lleg"]]<<" "<<gg->get_current_swing_time(1)<<std::endl;
-//    std::cout<<"out2"<<m_controlSwingSupportTime.data[contact_states_index_map[2]]<<" , "<<gg->get_current_swing_time(2)<<std::endl;
-//    std::cout<<"out3"<<m_controlSwingSupportTime.data[contact_states_index_map[3]]<<" , "<<gg->get_current_swing_time(3)<<std::endl;
 
     return RTC::RTC_OK;
 }
@@ -1028,7 +1027,7 @@ void AutoBalancer::getTargetParameters()
     }
     //ishiguro
     if (HumanSyncOn) {
-        ref_cog = tmp_ref_cog;
+//        ref_cog = tmp_ref_cog;
 		if(USEX)ref_zmp(0) = humanpose.zmp[0];
 		ref_zmp(1) = humanpose.zmp[1];
 		ref_zmp(2) = tmp_foot_mid_pos(2);
@@ -1102,10 +1101,13 @@ bool AutoBalancer::solveLimbIKforLimb (ABCIKparam& param)
 					filt_hp_data.lfpos[2] = FUPHIGHT/2*(1-cos(M_PI*lfuplevel/LEVELNUM));
 				}
 				if(loop%100==0)cout<<"LUP"<<endl;
+		        m_contactStates.data[contact_states_index_map["lleg"]] = false;
 			}else{
 				if(lfuplevel > 0){
 					lfuplevel--;
 					filt_hp_data.lfpos[2] = FUPHIGHT/2*(1-cos(M_PI*lfuplevel/LEVELNUM));
+				}else{
+			        m_contactStates.data[contact_states_index_map["lleg"]] = true;
 				}
 			}
 			param.target_p0(0) = lfinitpos(0) + filt_hp_data.lfpos[0];
@@ -1178,7 +1180,6 @@ void AutoBalancer::solveLimbIK ()
 #define FNUM 0.01
 
   static bool isCalibState=false;
-  static double h2r_ratio = 0.62;//human 1.1 vs chidori 0.69
   static humanpose_t init_humanpose;
   static int HumanSyncCountdownNum = 5 * (1/m_dt);
   if(startCountdownForHumanSync){
@@ -1271,8 +1272,12 @@ void AutoBalancer::solveLimbIK ()
 	  if(USEX)m_robot->rootLink()->p(0) = baseinitpos(0) + h2r_ratio * c2b_ratio * filt_hp_data.com[0];
 	  m_robot->rootLink()->p(1) = baseinitpos(1) + h2r_ratio * c2b_ratio * filt_hp_data.com[1];
 	  m_robot->rootLink()->p(2) = baseinitpos(2) + h2r_ratio * c2b_ratio * filt_hp_data.com[2];
-	  std::cout<<"filt_hp_data.com[1]:"<<filt_hp_data.com[1]<<std::endl;
-	  std::cout<<"m_robot->rootLink()->p(1):"<<m_robot->rootLink()->p(1)<<std::endl;
+	// COM上書き
+		if(USEX)ref_cog(0) = baseinitpos(0) + h2r_ratio * filt_hp_data.com[0];
+		ref_cog(1) = baseinitpos(1) + h2r_ratio * filt_hp_data.com[1];
+		ref_cog(2) = baseinitpos(2) + h2r_ratio * filt_hp_data.com[2];
+//	  std::cout<<"filt_hp_data.com[1]:"<<filt_hp_data.com[1]<<std::endl;
+//	  std::cout<<"m_robot->rootLink()->p(1):"<<m_robot->rootLink()->p(1)<<std::endl;
 	  for(int i=0;i<3;i++)hp_data_old.com[i] = filt_hp_data.com[i];
   }
 
