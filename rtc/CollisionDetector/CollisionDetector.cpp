@@ -354,6 +354,13 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
     if (m_enable && m_qRefIn.isNew()) {
 	m_qRefIn.read();
 
+        // check servo for collision beep sound
+        bool has_servoOn = false;
+        for (int i = 0; i < m_robot->numJoints(); i++ ){
+          int servo_state = (m_servoState.data[i][0] & OpenHRP::RobotHardwareService::SERVO_STATE_MASK) >> OpenHRP::RobotHardwareService::SERVO_STATE_SHIFT;
+          has_servoOn = has_servoOn || (servo_state == 1);
+        }
+
         TimedPosture tp;
 
 	assert(m_qRef.data.length() == m_robot->numJoints());
@@ -452,6 +459,7 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
                 }
             }
             if ( m_safe_posture ) {
+                if (has_servoOn) {
                 if (! m_have_safe_posture ) {
                     // first transition collision -> safe
                     std::cerr << "[" << m_profile.instance_name << "] set safe posture" << std::endl;
@@ -461,6 +469,7 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
                     m_interpolator->set(m_lastsafe_jointdata); // Set current angles as initial angle for recover
                 }
                 m_have_safe_posture = true;
+                }
                 if (m_recover_time != default_recover_time) {
                     // sefe or recover
                     // in collision, robot->q may differ from m_q.
@@ -562,18 +571,11 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
         m_q.tm = m_qRef.tm;
         m_qOut.write();
 
-        // beep sound for collision alert
-        //  check servo for collision beep sound
-        bool has_servoOn = false;
-        for (int i = 0; i < m_robot->numJoints(); i++ ){
-          int servo_state = (m_servoState.data[i][0] & OpenHRP::RobotHardwareService::SERVO_STATE_MASK) >> OpenHRP::RobotHardwareService::SERVO_STATE_SHIFT;
-          has_servoOn = has_servoOn || (servo_state == 1);
-        }
         // if servo off, we do not know last safe posture
         if (! has_servoOn ) {
             m_have_safe_posture = false;
         }
-        //  beep
+        // beep sound for collision alert
         if ( !m_safe_posture && has_servoOn ) { // If collided and some joint is servoOn
           if (is_beep_port_connected) {
             if ( collision_beep_count % collision_beep_freq == 0 && collision_beep_count % (collision_beep_freq * 3) != 0 ) bc.startBeep(2352, collision_beep_freq*0.7);
