@@ -24,19 +24,30 @@
 //#include <sys/shm.h>
 //int     shmid;
 //key_t   key;
+//typedef struct{
+//	double com[3];
+//	double rfpos[3];
+//	double lfpos[3];
+//	double rhpos[3];
+//	double lhpos[3];
+//	double rfwrench[6];
+//	double lfwrench[6];
+//	double zmp[3];
+//	bool startsync;
+//}humanpose_t;
 typedef struct{
-	double com[3];
-	double rfpos[3];
-	double lfpos[3];
-	double rhpos[3];
-	double lhpos[3];
+	hrp::Vector3 com;
+	hrp::Vector3 zmp;
+	hrp::Vector3 rfpos;
+	hrp::Vector3 lfpos;
+	hrp::Vector3 rhpos;
+	hrp::Vector3 lhpos;
 	double rfwrench[6];
 	double lfwrench[6];
-	double zmp[3];
 	bool startsync;
 }humanpose_t;
 humanpose_t humanpose;
-humanpose_t filt_hp_data,hp_data_old;
+humanpose_t robot_ref_pose,hp_data_old;
 bool startCountdownForHumanSync = false;
 bool HumanSyncOn = false;
 #define USEX true
@@ -672,11 +683,11 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
 
 		if(HumanSyncOn){
 		//ZMP上書き
-			if(USEX)m_zmp.data.x = h2r_ratio*filt_hp_data.zmp[0] - m_robot->rootLink()->p(0);
-			m_zmp.data.y = h2r_ratio*filt_hp_data.zmp[1] - m_robot->rootLink()->p(1);//
+			if(USEX)m_zmp.data.x = robot_ref_pose.zmp[0] - m_robot->rootLink()->p(0);
+			m_zmp.data.y = robot_ref_pose.zmp[1] - m_robot->rootLink()->p(1);//
 //		// COM上書き
-//			if(USEX)m_cog.data.x = filt_hp_data.com[0]*0.7;//ここの.comは今はhumanのbaseposなので適当調整
-//			m_cog.data.y = filt_hp_data.com[1]*0.7;
+//			if(USEX)m_cog.data.x = robot_ref_pose.com(0)*0.7;//ここの.comは今はhumanのbaseposなので適当調整
+//			m_cog.data.y = robot_ref_pose.com(1)*0.7;
 		}
 
       // sbpCogOffset
@@ -1079,78 +1090,6 @@ static humanpose_t init_humanpose;
 #define FUPHIGHT 0.05
 bool AutoBalancer::solveLimbIKforLimb (ABCIKparam& param)
 {
-	  if(HumanSyncOn){
-		if(param.target_link->name == "RLEG_JOINT5"){
-			if(humanpose.rfwrench[2] < 20.0 && humanpose.lfwrench[2] > 20.0 && HumanSyncOn){
-				if(rfuplevel < LEVELNUM){
-					rfuplevel++;
-					filt_hp_data.rfpos[2] = FUPHIGHT/2*(1-cos(M_PI*rfuplevel/LEVELNUM));
-				}else{
-					filt_hp_data.rfpos[2] = FUPHIGHT;
-				}
-				if(loop%100==0)cout<<"RUP"<<endl;
-		        m_contactStates.data[contact_states_index_map["rleg"]] = false;
-			}else{
-				if(rfuplevel > 0){
-					rfuplevel--;
-					filt_hp_data.rfpos[2] = FUPHIGHT/2*(1-cos(M_PI*rfuplevel/LEVELNUM));
-					if(rfuplevel==0){
-						pre_cont_rfpos(0) = filt_hp_data.rfpos[0];
-						pre_cont_rfpos(1) = filt_hp_data.rfpos[1];
-					}
-				}else{
-			        m_contactStates.data[contact_states_index_map["rleg"]] = true;
-					filt_hp_data.rfpos[0] = pre_cont_rfpos(0);
-					filt_hp_data.rfpos[1] = pre_cont_rfpos(1);
-					filt_hp_data.rfpos[2] = 0;
-				}
-			}
-			param.target_p0(0) = rfinitpos(0) + h2r_ratio * filt_hp_data.rfpos[0];
-			param.target_p0(1) = rfinitpos(1) + h2r_ratio * filt_hp_data.rfpos[1];
-			param.target_p0(2) = rfinitpos(2) + filt_hp_data.rfpos[2];
-		}
-		if(param.target_link->name == "LLEG_JOINT5"){
-			if(humanpose.lfwrench[2] < 20.0 && humanpose.rfwrench[2] > 20.0 && HumanSyncOn){
-				if(lfuplevel < LEVELNUM){
-					lfuplevel++;
-					filt_hp_data.lfpos[2] = FUPHIGHT/2*(1-cos(M_PI*lfuplevel/LEVELNUM));
-				}else{
-					filt_hp_data.lfpos[2] = FUPHIGHT;
-				}
-				if(loop%100==0)cout<<"LUP"<<endl;
-		        m_contactStates.data[contact_states_index_map["lleg"]] = false;
-			}else{
-				if(lfuplevel > 0){
-					lfuplevel--;
-					filt_hp_data.lfpos[2] = FUPHIGHT/2*(1-cos(M_PI*lfuplevel/LEVELNUM));
-					if(lfuplevel==0){
-						pre_cont_lfpos(0) = filt_hp_data.lfpos[0];
-						pre_cont_lfpos(1) = filt_hp_data.lfpos[1];
-					}
-				}else{
-			        m_contactStates.data[contact_states_index_map["lleg"]] = true;
-			        filt_hp_data.lfpos[0] = pre_cont_lfpos(0);
-			        filt_hp_data.lfpos[1] = pre_cont_lfpos(1);
-			        filt_hp_data.lfpos[2] = 0;
-				}
-			}
-			param.target_p0(0) = lfinitpos(0) + h2r_ratio * filt_hp_data.lfpos[0];
-			param.target_p0(1) = lfinitpos(1) + h2r_ratio * filt_hp_data.lfpos[1];
-			param.target_p0(2) = lfinitpos(2) + filt_hp_data.lfpos[2];
-		}
-		if(param.target_link->name == "RARM_JOINT7" && HumanSyncOn){
-			param.target_p0(0) = 0.151 + filt_hp_data.rhpos[0];
-			param.target_p0(1) = -0.374 + filt_hp_data.rhpos[1];
-			param.target_p0(2) = 0.973 + filt_hp_data.rhpos[2];
-		}
-		if(param.target_link->name == "LARM_JOINT7" && HumanSyncOn){
-			param.target_p0(0) = 0.151 + filt_hp_data.lhpos[0];
-			param.target_p0(1) = 0.374 + filt_hp_data.lhpos[1];
-			param.target_p0(2) = 0.973 + filt_hp_data.lhpos[2];
-		}
-	  }
-
-
   param.manip->calcInverseKinematics2Loop(param.target_p0, param.target_r0, 1.0, param.avoid_gain, param.reference_gain, &qrefv, transition_interpolator_ratio * leg_names_interpolator_ratio);
   // IK check
   hrp::Vector3 vel_p, vel_r;
@@ -1176,6 +1115,7 @@ bool AutoBalancer::solveLimbIKforLimb (ABCIKparam& param)
   }
   return true;
 }
+
 
 
 void AutoBalancer::solveLimbIK ()
@@ -1220,90 +1160,162 @@ void AutoBalancer::solveLimbIK ()
 
   if(HumanSyncOn){
 	  if(ht_first_call){
-		  rfinitpos = ikp["rleg"].target_p0;
-		  lfinitpos = ikp["lleg"].target_p0;
+		  rfinitpos = ikp["rleg"].target_link->p;
+		  lfinitpos = ikp["lleg"].target_link->p;
 		  baseinitpos = m_robot->rootLink()->p;
 		  ht_first_call=false;
 	  }
-	  for(int i=0;i<3;i++){
-		  filt_hp_data.zmp[i] = (1-FNUM)*filt_hp_data.zmp[i] + FNUM*(humanpose.zmp[i]);
-		  filt_hp_data.com[i] = (1-FNUM)*filt_hp_data.com[i] + FNUM*(humanpose.com[i] - init_humanpose.com[i] + init_humanpose.zmp[i]);//Sync開始時のzmpのオフセットはつまり重心のオフセット
-		  filt_hp_data.rfwrench[i] = (1-FNUM)*filt_hp_data.rfwrench[i] + FNUM*(humanpose.rfwrench[i]);
-		  filt_hp_data.lfwrench[i] = (1-FNUM)*filt_hp_data.lfwrench[i] + FNUM*(humanpose.lfwrench[i]);
-		  filt_hp_data.rfpos[i] = (1-FNUM)*filt_hp_data.rfpos[i] + FNUM*(humanpose.rfpos[i] - init_humanpose.rfpos[i]);//足ロック
-		  filt_hp_data.lfpos[i] = (1-FNUM)*filt_hp_data.lfpos[i] + FNUM*(humanpose.lfpos[i] - init_humanpose.lfpos[i]);//足ロック
-		  filt_hp_data.rhpos[i] = (1-FNUM)*filt_hp_data.rhpos[i] + FNUM*(humanpose.rhpos[i] - init_humanpose.rhpos[i]);
-		  filt_hp_data.lhpos[i] = (1-FNUM)*filt_hp_data.lhpos[i] + FNUM*(humanpose.lhpos[i] - init_humanpose.lhpos[i]);
-
-		  if(filt_hp_data.com[i] - hp_data_old.com[i] > MAXVEL)filt_hp_data.com[i] = hp_data_old.com[i] + MAXVEL;
-		  if(filt_hp_data.com[i] - hp_data_old.com[i] < -MAXVEL)filt_hp_data.com[i] = hp_data_old.com[i] - MAXVEL;
-		  if(filt_hp_data.com[i] > MAXPOS)filt_hp_data.com[i] = MAXPOS;
-		  if(filt_hp_data.com[i] < -MAXPOS)filt_hp_data.com[i] = -MAXPOS;
+	  ///////入力データによる更新/////
+	  robot_ref_pose.zmp = (1-FNUM)*robot_ref_pose.zmp + FNUM*(h2r_ratio*humanpose.zmp);
+	  robot_ref_pose.com = (1-FNUM)*robot_ref_pose.com + FNUM*(h2r_ratio*(humanpose.com - init_humanpose.com + init_humanpose.zmp));//Sync開始時のzmpのオフセットはつまり重心のオフセット
+	  robot_ref_pose.rfpos = (1-FNUM)*robot_ref_pose.rfpos + FNUM*(humanpose.rfpos - init_humanpose.rfpos);//足ロック
+	  robot_ref_pose.lfpos = (1-FNUM)*robot_ref_pose.lfpos + FNUM*(humanpose.lfpos - init_humanpose.lfpos);//足ロック
+	  robot_ref_pose.rhpos = (1-FNUM)*robot_ref_pose.rhpos + FNUM*(humanpose.rhpos - init_humanpose.rhpos);
+	  robot_ref_pose.lhpos = (1-FNUM)*robot_ref_pose.lhpos + FNUM*(humanpose.lhpos - init_humanpose.lhpos);
+	  for(int i=0;i<6;i++){
+		  robot_ref_pose.rfwrench[i] = (1-FNUM)*robot_ref_pose.rfwrench[i] + FNUM*(humanpose.rfwrench[i]);
+		  robot_ref_pose.lfwrench[i] = (1-FNUM)*robot_ref_pose.lfwrench[i] + FNUM*(humanpose.lfwrench[i]);
 	  }
-//	  if(loop%100==0)printf("[COM] %+06.3f,%+06.3f,%+06.3f [ZMP] %+06.3f,%+06.3f\n", filt_hp_data.com[0],filt_hp_data.com[1],filt_hp_data.com[2],filt_hp_data.zmp[0],filt_hp_data.zmp[1]);
-  }else{
-	  for(int i=0;i<3;i++)init_humanpose.com[i] = humanpose.com[i];
-	  for(int i=0;i<3;i++)init_humanpose.zmp[i] = humanpose.zmp[i];
-	  for(int i=0;i<3;i++)init_humanpose.rfpos[i] = humanpose.rfpos[i];
-	  for(int i=0;i<3;i++)init_humanpose.lfpos[i] = humanpose.lfpos[i];
-	  for(int i=0;i<3;i++)init_humanpose.rhpos[i] = humanpose.rhpos[i];
-	  for(int i=0;i<3;i++)init_humanpose.lhpos[i] = humanpose.lhpos[i];
+	  ///////指令値範囲の制限/////
 	  for(int i=0;i<3;i++){
-		  if(filt_hp_data.com[i]>0)filt_hp_data.com[i] -= 0.0001;
-		  if(filt_hp_data.com[i]<0)filt_hp_data.com[i] += 0.0001;
+		  if(robot_ref_pose.com[i] - hp_data_old.com[i] > MAXVEL)robot_ref_pose.com[i] = hp_data_old.com[i] + MAXVEL;
+		  if(robot_ref_pose.com[i] - hp_data_old.com[i] < -MAXVEL)robot_ref_pose.com[i] = hp_data_old.com[i] - MAXVEL;
+		  if(robot_ref_pose.com[i] > MAXPOS)robot_ref_pose.com[i] = MAXPOS;
+		  if(robot_ref_pose.com[i] < -MAXPOS)robot_ref_pose.com[i] = -MAXPOS;
+	  }
+//	  if(robot_ref_pose.rfpos(1) > -0.07)robot_ref_pose.rfpos(1) = -0.07;
+//	  if(robot_ref_pose.lfpos(1) <  0.07)robot_ref_pose.lfpos(1) =  0.07;
+
+
+
+//	  if(loop%100==0)printf("[COM] %+06.3f,%+06.3f,%+06.3f [ZMP] %+06.3f,%+06.3f\n", robot_ref_pose.com(0),robot_ref_pose.com(1),robot_ref_pose.com(2),robot_ref_pose.zmp[0],robot_ref_pose.zmp[1]);
+  }else{
+	  init_humanpose.com = humanpose.com;
+	  init_humanpose.zmp = humanpose.zmp;
+	  init_humanpose.rfpos = humanpose.rfpos;
+	  init_humanpose.lfpos = humanpose.lfpos;
+	  init_humanpose.rhpos = humanpose.rhpos;
+	  init_humanpose.lhpos = humanpose.lhpos;
+	  for(int i=0;i<3;i++){
+		  if(robot_ref_pose.com[i]>0)robot_ref_pose.com[i] -= 0.0001;
+		  if(robot_ref_pose.com[i]<0)robot_ref_pose.com[i] += 0.0001;
 	  }
 //	  if(loop%100==0)printf("[pre-COM] %+06.3f,%+06.3f,%+06.3f [pre-ZMP] %+06.3f,%+06.3f\n", humanpose.com[0],humanpose.com[1],humanpose.com[2],humanpose.zmp[0],humanpose.zmp[1]);
   }
 
-  static double filt_actzmp[3];
-  if(isCalibState){
-	  filt_actzmp[0] = (1-FNUM)*filt_actzmp[0] + FNUM*m_actzmp.data.x;
-	  filt_actzmp[1] = (1-FNUM)*filt_actzmp[1] + FNUM*m_actzmp.data.y;
-	  filt_actzmp[2] = (1-FNUM)*filt_actzmp[2] + FNUM*m_actzmp.data.z;
-	    const int errnum = 500*5;
-	    const int errdelay = 500;
-	    double zmp_robot[3],zmp_human[3];
-	    static double zmp_human_old[3][errdelay];
-	    static double err_sum[3] = {0};
-	    for(int i=0;i<3;i++){
-		    for(int j=errdelay-1;j>0;j--){
-		    	zmp_human_old[i][j] = zmp_human_old[i][j-1];
-		    }
-		    zmp_human_old[i][0] = filt_hp_data.zmp[i] - current_root_p(i);
-		    zmp_human[i] = filt_hp_data.zmp[i] - current_root_p(i);
-//		    zmp_human[i] = zmp_human_old[i][errdelay-1];//位相遅れ見越して
-			zmp_robot[i] = filt_actzmp[i];
-			err_sum[i] += fabs(zmp_human[i]) - fabs(zmp_robot[i]);
-	    }
-
-//	    if(loop%errnum==0){
-//			if(err_sum[1]/errnum>0.01 ){h2r_ratio -= 0.01;std::cout<<"h2r_ratio UP:"<<h2r_ratio<<" (EP):"<<err_sum[1]<<std::endl;}
-//			else if(err_sum[1]/errnum<-0.01 ){h2r_ratio += 0.01;std::cout<<"h2r_ratio DOWN:"<<h2r_ratio<<" (EP):"<<err_sum[1]<<std::endl;}
-//			else{std::cout<<"h2r_ratio KEEP:"<<h2r_ratio<<" (EP):"<<err_sum[1]<<std::endl;}
+//  static double filt_actzmp[3];
+//  if(isCalibState){
+//	  filt_actzmp[0] = (1-FNUM)*filt_actzmp[0] + FNUM*m_actzmp.data.x;
+//	  filt_actzmp[1] = (1-FNUM)*filt_actzmp[1] + FNUM*m_actzmp.data.y;
+//	  filt_actzmp[2] = (1-FNUM)*filt_actzmp[2] + FNUM*m_actzmp.data.z;
+//	    const int errnum = 500*5;
+//	    const int errdelay = 500;
+//	    double zmp_robot[3],zmp_human[3];
+//	    static double zmp_human_old[3][errdelay];
+//	    static double err_sum[3] = {0};
+//	    for(int i=0;i<3;i++){
+//		    for(int j=errdelay-1;j>0;j--){
+//		    	zmp_human_old[i][j] = zmp_human_old[i][j-1];
+//		    }
+//		    zmp_human_old[i][0] = robot_ref_pose.zmp[i] - current_root_p(i);
+//		    zmp_human[i] = robot_ref_pose.zmp[i] - current_root_p(i);
+////		    zmp_human[i] = zmp_human_old[i][errdelay-1];//位相遅れ見越して
+//			zmp_robot[i] = filt_actzmp[i];
+//			err_sum[i] += fabs(zmp_human[i]) - fabs(zmp_robot[i]);
 //	    }
+//
+////	    if(loop%errnum==0){
+////			if(err_sum[1]/errnum>0.01 ){h2r_ratio -= 0.01;std::cout<<"h2r_ratio UP:"<<h2r_ratio<<" (EP):"<<err_sum[1]<<std::endl;}
+////			else if(err_sum[1]/errnum<-0.01 ){h2r_ratio += 0.01;std::cout<<"h2r_ratio DOWN:"<<h2r_ratio<<" (EP):"<<err_sum[1]<<std::endl;}
+////			else{std::cout<<"h2r_ratio KEEP:"<<h2r_ratio<<" (EP):"<<err_sum[1]<<std::endl;}
+////	    }
+//
+//	    //debug
+////	    static FILE *fp;
+////	    static bool fp_isOpen=false;
+////		if(!fp_isOpen){fp = fopen("/home/ishiguro/hcflog/nilog.log","w+");fp_isOpen=true;}
+////		if(fp!=NULL)fprintf(fp,"zmp: %f %f %f %f %f\n",zmp_human[0],zmp_human[1],zmp_robot[0],zmp_robot[1],h2r_ratio);
+////		fflush(fp);
+//  }
 
-	    //debug
-//	    static FILE *fp;
-//	    static bool fp_isOpen=false;
-//		if(!fp_isOpen){fp = fopen("/home/ishiguro/hcflog/nilog.log","w+");fp_isOpen=true;}
-//		if(fp!=NULL)fprintf(fp,"zmp: %f %f %f %f %f\n",zmp_human[0],zmp_human[1],zmp_robot[0],zmp_robot[1],h2r_ratio);
-//		fflush(fp);
-  }
 
-  const double c2b_ratio = 1.38;
 
   if(HumanSyncOn){
-	  if(USEX)m_robot->rootLink()->p(0) = baseinitpos(0) + h2r_ratio * c2b_ratio * filt_hp_data.com[0];
-	  m_robot->rootLink()->p(1) = baseinitpos(1) + h2r_ratio * c2b_ratio * filt_hp_data.com[1];
-	  m_robot->rootLink()->p(2) = baseinitpos(2) + h2r_ratio * c2b_ratio * filt_hp_data.com[2];
+	  ////////////////////// 右足拘束位置設定 /////////////////////////
+	if(humanpose.rfwrench[2] < 20.0 && humanpose.lfwrench[2] > 20.0 && HumanSyncOn){
+		if(rfuplevel < LEVELNUM){
+			rfuplevel++;
+			robot_ref_pose.rfpos[2] = FUPHIGHT/2*(1-cos(M_PI*rfuplevel/LEVELNUM));
+		}else{
+			robot_ref_pose.rfpos[2] = FUPHIGHT;
+		}
+		if(loop%100==0)cout<<"RUP"<<endl;
+		m_contactStates.data[contact_states_index_map["rleg"]] = false;
+	}else{
+		if(rfuplevel > 0){
+			rfuplevel--;
+			robot_ref_pose.rfpos[2] = FUPHIGHT/2*(1-cos(M_PI*rfuplevel/LEVELNUM));
+			if(rfuplevel==0){
+				pre_cont_rfpos(0) = robot_ref_pose.rfpos[0];
+				pre_cont_rfpos(1) = robot_ref_pose.rfpos[1];
+			}
+		}else{
+			m_contactStates.data[contact_states_index_map["rleg"]] = true;
+			robot_ref_pose.rfpos[0] = pre_cont_rfpos(0);
+			robot_ref_pose.rfpos[1] = pre_cont_rfpos(1);
+			robot_ref_pose.rfpos[2] = 0;
+		}
+	}
+	ikp["rleg"].target_p0 = rfinitpos + robot_ref_pose.rfpos;
+
+	  ////////////////////// 左足拘束位置設定 /////////////////////////
+	if(humanpose.lfwrench[2] < 20.0 && humanpose.rfwrench[2] > 20.0 && HumanSyncOn){
+		if(lfuplevel < LEVELNUM){
+			lfuplevel++;
+			robot_ref_pose.lfpos[2] = FUPHIGHT/2*(1-cos(M_PI*lfuplevel/LEVELNUM));
+		}else{
+			robot_ref_pose.lfpos[2] = FUPHIGHT;
+		}
+		if(loop%100==0)cout<<"LUP"<<endl;
+		m_contactStates.data[contact_states_index_map["lleg"]] = false;
+	}else{
+		if(lfuplevel > 0){
+			lfuplevel--;
+			robot_ref_pose.lfpos[2] = FUPHIGHT/2*(1-cos(M_PI*lfuplevel/LEVELNUM));
+			if(lfuplevel==0){
+				pre_cont_lfpos(0) = robot_ref_pose.lfpos[0];
+				pre_cont_lfpos(1) = robot_ref_pose.lfpos[1];
+			}
+		}else{
+			m_contactStates.data[contact_states_index_map["lleg"]] = true;
+			robot_ref_pose.lfpos[0] = pre_cont_lfpos(0);
+			robot_ref_pose.lfpos[1] = pre_cont_lfpos(1);
+			robot_ref_pose.lfpos[2] = 0;
+		}
+	}
+	ikp["lleg"].target_p0 = lfinitpos + robot_ref_pose.lfpos;
+
+	  ////////////////////// 右足拘束位置設定 /////////////////////////
+//	if(param.target_link->name == "RARM_JOINT7" && HumanSyncOn){
+//		param.target_p0(0) = 0.151 + robot_ref_pose.rhpos[0];
+//		param.target_p0(1) = -0.374 + robot_ref_pose.rhpos[1];
+//		param.target_p0(2) = 0.973 + robot_ref_pose.rhpos[2];
+//	}
+	  ////////////////////// 右足拘束位置設定 /////////////////////////
+//	if(param.target_link->name == "LARM_JOINT7" && HumanSyncOn){
+//		param.target_p0(0) = 0.151 + robot_ref_pose.lhpos[0];
+//		param.target_p0(1) = 0.374 + robot_ref_pose.lhpos[1];
+//		param.target_p0(2) = 0.973 + robot_ref_pose.lhpos[2];
+//	}
+
+	  ////////////////////// 重心拘束位置設定 /////////////////////////
+	  m_robot->rootLink()->p = cominitpos + robot_ref_pose.com;//まずは重心目標分，体幹を動かす
+	  m_robot->rootLink()->p(2) = baseinitpos(2)+ robot_ref_pose.com(2);//高さだけはベース基準
 	// COM上書き
-		if(USEX)ref_cog(0) = baseinitpos(0) + h2r_ratio * filt_hp_data.com[0];
-		ref_cog(1) = baseinitpos(1) + h2r_ratio * filt_hp_data.com[1];
-		ref_cog(2) = baseinitpos(2) + h2r_ratio * filt_hp_data.com[2];
-//	  std::cout<<"filt_hp_data.com[1]:"<<filt_hp_data.com[1]<<std::endl;
-//	  std::cout<<"m_robot->rootLink()->p(1):"<<m_robot->rootLink()->p(1)<<std::endl;
-	  for(int i=0;i<3;i++)hp_data_old.com[i] = filt_hp_data.com[i];
+	  ref_cog = cominitpos + robot_ref_pose.com;
+	  hp_data_old.com = robot_ref_pose.com;
   }
+
 
   // Fix for toe joint
   for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
@@ -1318,9 +1330,36 @@ void AutoBalancer::solveLimbIK ()
   }
   m_robot->calcForwardKinematics();
 
-  for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
-    if (it->second.is_active) solveLimbIKforLimb(it->second);
+
+
+  // additional COM fitting IK ishiguro
+  hrp::Vector3 tmp_com_err = robot_ref_pose.com + cominitpos - m_robot->calcCM();
+  int com_ik_loop=0;
+  const int COM_IK_MAX_LOOP = 10;
+  const double COM_IK_MAX_ERROR = 0.0001;//1mm
+
+  if(HumanSyncOn){
+	  while(fabs(tmp_com_err(0))>COM_IK_MAX_ERROR || fabs(tmp_com_err(1))>COM_IK_MAX_ERROR){//Z方向のCOM合わせはなんか調子悪い
+
+		  m_robot->rootLink()->p(0) += tmp_com_err(0);
+		  m_robot->rootLink()->p(1) += tmp_com_err(1);//Z方向のCOM合わせはなんか調子悪い
+
+		  m_robot->calcForwardKinematics();
+
+		  for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
+			if (it->second.is_active) solveLimbIKforLimb(it->second);
+		  }
+		  m_robot->calcForwardKinematics();
+		  tmp_com_err = (robot_ref_pose.com + cominitpos - m_robot->calcCM());
+		  if(com_ik_loop++ > COM_IK_MAX_LOOP){std::cerr << "[" << m_profile.instance_name << "] COM constraint IK MAX loop [="<<COM_IK_MAX_LOOP<<"] exceeded!!" << std::endl; break; };
+	  }
+	  if(com_ik_loop>1)std::cerr << "[" << m_profile.instance_name << "] COM_IK_LOOP ="<<com_ik_loop<< std::endl;//ややCOMのIKに手間取った時プリント
+  }else{
+	  for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {//本来のIK部分
+		if (it->second.is_active) solveLimbIKforLimb(it->second);
+	  }
   }
+
   if (gg_is_walking && !gg_solved) stopWalking ();
 }
 

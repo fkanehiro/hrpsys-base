@@ -280,6 +280,9 @@ class AutoBalancer
   hrp::Vector3 graspless_manip_p_gain;
   rats::coordinates graspless_manip_reference_trans_coords;
   double pos_ik_thre, rot_ik_thre;
+
+  //ishiguro
+  hrp::Vector3 cominitpos;
 };
 
 
