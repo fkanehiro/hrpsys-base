@@ -3,24 +3,36 @@
 
 using namespace hrp;
 
-SelfCollisionChecker::SelfCollisionChecker(hrp::BodyPtr body) : m_robot(body)
+SelfCollisionChecker::SelfCollisionChecker(hrp::BodyPtr body, const hrp::LinkNamePairList &pairs) : m_robot(body)
 {
     for (int i=0; i<m_robot->numLinks(); i++){
         Link *link1 = m_robot->link(i);
         for (int j=i+1; j<m_robot->numLinks(); j++){
             Link *link2 = m_robot->link(j);
             if (link1->parent != link2 && link2->parent != link1){
-                m_checkPairs.push_back(ColdetModelPair(link1->coldetModel,
-                                                       link2->coldetModel));
+                bool skip = false;
+                for (unsigned int k=0; k<pairs.size(); k++){
+                    if ((pairs[k].first == link1->name
+                         && pairs[k].second == link2->name)
+                        ||(pairs[k].first == link2->name
+                           && pairs[k].second == link1->name)){
+                        skip = true;
+                        break;
+                    }
+                }
+                if (!skip){
+                    m_checkPairs.push_back(ColdetModelPair(link1->coldetModel,
+                                                           link2->coldetModel));
+                }
             }
         }
     }
 }
 
 
-std::vector<std::pair<std::string, std::string> > SelfCollisionChecker::check(const double *q)
+LinkNamePairList SelfCollisionChecker::check(const double *q)
 {
-    std::vector<std::pair<std::string, std::string> > pairs;
+    LinkNamePairList pairs;
 
     for (int i=0; i<m_robot->numJoints(); i++){
         m_robot->joint(i)->q = q[i];
@@ -28,7 +40,7 @@ std::vector<std::pair<std::string, std::string> > SelfCollisionChecker::check(co
     m_robot->calcForwardKinematics();
     for (int i=0; i<m_robot->numLinks(); i++){
         Link *l = m_robot->link(i);
-        l->coldetModel->setPosition(l->R, l->p);
+        l->coldetModel->setPosition(l->attitude(), l->p);
     }
     for (unsigned int i=0; i<m_checkPairs.size(); i++){
         if (m_checkPairs[i].checkCollision()){
@@ -38,5 +50,3 @@ std::vector<std::pair<std::string, std::string> > SelfCollisionChecker::check(co
     }
     return pairs;
 }
-
-

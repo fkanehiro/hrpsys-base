@@ -11,6 +11,18 @@ int main(int argc, char *argv[])
         return 1;
     }
 
+    hrp::LinkNamePairList pairs;
+    for (int i=3; i<argc; i++){
+        std::string str = argv[i];
+        int pos;
+        if ((pos = str.find(":")) != std::string::npos){
+            std::string link1 = str.substr(0, pos);
+            std::string link2 = str.substr(pos+1);
+            std::cerr << "[" << link1 << "],[" << link2 << "]" << std::endl;
+            pairs.push_back(std::make_pair(link1, link2));
+        }
+    }
+
     hrp::BodyPtr robot = hrp::BodyPtr(new hrp::Body());
     if (!loadBodyFromModelLoader(robot, argv[1], 
                                  argc, argv, true)){
@@ -19,13 +31,11 @@ int main(int argc, char *argv[])
         return 2;
     }
 
-    hrp::SelfCollisionChecker scc(robot);
-
+    hrp::SelfCollisionChecker scc(robot, pairs);
     std::cerr << scc.numOfCheckPairs() << " pairs are defined" << std::endl;
     
     std::ifstream ifs(argv[2]);
     double tm, q[robot->numJoints()];
-    std::vector<std::pair<std::string, std::string> > pairs;
 
     ifs >> tm;
     while (!ifs.eof()){
@@ -34,7 +44,7 @@ int main(int argc, char *argv[])
         }
         pairs = scc.check(q);
         for (unsigned int i=0; i<pairs.size(); i++){
-            std::cout << tm << " " << pairs[i].first << ":" << pairs[2].second
+            std::cout << tm << " " << pairs[i].first << ":" << pairs[i].second
                       << std::endl;
         }
         ifs >> tm;
