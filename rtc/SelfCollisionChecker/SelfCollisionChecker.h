@@ -16,8 +16,10 @@
 #include <rtm/DataInPort.h>
 #include <rtm/DataOutPort.h>
 #include <rtm/idl/BasicDataTypeSkel.h>
-#include <hrpModel/Body.h>
-#include <hrpCollision/ColdetModelPair.h>
+
+namespace hrp{
+    class SelfCollisionChecker;
+}
 
 // Service implementation headers
 // <rtc-template block="service_impl_h">
@@ -54,7 +56,7 @@ class SelfCollisionChecker
 
   // The finalize action (on ALIVE->END transition)
   // formaer rtc_exiting_entry()
-  // virtual RTC::ReturnCode_t onFinalize();
+  virtual RTC::ReturnCode_t onFinalize();
 
   // The startup action when ExecutionContext startup
   // former rtc_starting_entry()
@@ -134,9 +136,8 @@ class SelfCollisionChecker
  private:
   int m_interval;
   int m_count;
-  hrp::BodyPtr m_robot;
   std::ofstream m_log;
-  std::vector<hrp::ColdetModelPair> m_checkPairs;
+  hrp::SelfCollisionChecker *m_scc;
   int dummy;
 };
 

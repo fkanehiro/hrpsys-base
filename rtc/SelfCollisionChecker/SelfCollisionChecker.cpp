@@ -8,11 +8,9 @@
  */
 
 #include <rtm/CorbaNaming.h>
-#include <hrpModel/Link.h>
 #include <hrpModel/ModelLoaderUtil.h>
 #include "SelfCollisionChecker.h"
-
-using namespace hrp;
+#include "scc.h"
 
 // Module specification
 // <rtc-template block="module_spec">
@@ -75,7 +73,7 @@ RTC::ReturnCode_t SelfCollisionChecker::onInitialize()
   // </rtc-template>
 
   RTC::Properties& prop = getProperties();
-  m_robot = hrp::BodyPtr(new Body());
+  hrp::BodyPtr robot = hrp::BodyPtr(new hrp::Body());
   
   RTC::Manager& rtcManager = RTC::Manager::instance();
   std::string nameServer = rtcManager.getConfig()["corba.nameservers"];
@@ -85,36 +83,28 @@ RTC::ReturnCode_t SelfCollisionChecker::onInitialize()
   }
   nameServer = nameServer.substr(0, comPos);
   RTC::CorbaNaming naming(rtcManager.getORB(), nameServer.c_str());
-  if (!loadBodyFromModelLoader(m_robot, prop["model"].c_str(), 
+  if (!loadBodyFromModelLoader(robot, prop["model"].c_str(),
                                CosNaming::NamingContext::_duplicate(naming.getRootContext()), true)){
       std::cerr << "[" << m_profile.instance_name << "] Error: failed to load model[" << prop["model"] << "]" 
                 << std::endl;
       return RTC::RTC_ERROR;
   }
 
-  for (int i=0; i<m_robot->numLinks(); i++){
-      Link *link1 = m_robot->link(i);
-      for (int j=i+1; j<m_robot->numLinks(); j++){
-          Link *link2 = m_robot->link(j);
-          if (link1->parent != link2 && link2->parent != link1){
-              m_checkPairs.push_back(ColdetModelPair(link1->coldetModel,
-                                                     link2->coldetModel));
-          }
-      }
-  }
-  std::cout << "[" << m_profile.instance_name << "] " << m_checkPairs.size()
-            << " pairs are defined" << std::endl;
+  m_scc = new hrp::SelfCollisionChecker(robot);
+
+  std::cout << "[" << m_profile.instance_name << "] "
+            << m_scc->numOfCheckPairs() << " pairs are defined" << std::endl;
   
   return RTC::RTC_OK;
 }
 
 
-/*
 RTC::ReturnCode_t SelfCollisionChecker::onFinalize()
 {
+  delete m_scc;
+
   return RTC::RTC_OK;
 }
-*/
 
 /*
 RTC::ReturnCode_t SelfCollisionChecker::onStartup(RTC::UniqueId ec_id)
@@ -158,20 +148,13 @@ RTC::ReturnCode_t SelfCollisionChecker::onExecute(RTC::UniqueId ec_id)
         if (!m_qIn.isNew()) return RTC::RTC_OK;
 
         while (m_qIn.isNew()) m_qIn.read();
-        for (unsigned int i=0; i<m_q.data.length(); i++){
-            m_robot->joint(i)->q = m_q.data[i];
-        }
-        m_robot->calcForwardKinematics();
-        for (int i=0; i<m_robot->numLinks(); i++){
-            Link *l = m_robot->link(i);
-            l->coldetModel->setPosition(l->R, l->p);
-        }
-        for (unsigned int i=0; i<m_checkPairs.size(); i++){
-            if (m_checkPairs[i].checkCollision()){
-                double tm = m_q.tm.sec + m_q.tm.nsec/1e9;
-                m_log << tm << " " << m_checkPairs[i].model(0)->name()
-                      << " " << m_checkPairs[i].model(1)->name() << std::endl;
-            }
+
+        std::vector<std::pair<std::string, std::string> > pairs;
+        pairs = m_scc->check(m_q.data.get_buffer());
+        double tm = m_q.tm.sec + m_q.tm.nsec/1e9;
+        for (unsigned int i=0; i<pairs.size(); i++){
+            m_log << tm << " " << pairs[i].first
+                  << " " << pairs[i].second << std::endl;
         }
     }
 
