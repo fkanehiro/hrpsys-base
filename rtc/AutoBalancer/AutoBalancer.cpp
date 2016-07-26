@@ -451,7 +451,7 @@ RTC::ReturnCode_t AutoBalancer::onDeactivated(RTC::UniqueId ec_id)
 }
 
 
-static double h2r_ratio = 0.62;//human 1.1 vs chidori 0.69
+
 hrp::Vector3 pre_cont_rfpos,pre_cont_lfpos;
 
 #define DEBUGP ((m_debugLevel==1 && loop%200==0) || m_debugLevel > 1 )
@@ -1083,7 +1083,7 @@ void AutoBalancer::fixLegToCoords (const hrp::Vector3& fix_pos, const hrp::Matri
 }
 
 static bool ht_first_call = true;
-hrp::Vector3 rfinitpos,lfinitpos,baseinitpos;
+hrp::Vector3 rfinitpos,lfinitpos,rhinitpos,lhinitpos,baseinitpos;
 static int rfuplevel,lfuplevel;
 static humanpose_t init_humanpose;
 #define LEVELNUM 200
@@ -1162,16 +1162,18 @@ void AutoBalancer::solveLimbIK ()
 	  if(ht_first_call){
 		  rfinitpos = ikp["rleg"].target_link->p;
 		  lfinitpos = ikp["lleg"].target_link->p;
+		  rhinitpos = ikp["rarm"].target_link->p;
+		  lhinitpos = ikp["larm"].target_link->p;
 		  baseinitpos = m_robot->rootLink()->p;
 		  ht_first_call=false;
 	  }
 	  ///////入力データによる更新/////
-	  robot_ref_pose.zmp = (1-FNUM)*robot_ref_pose.zmp + FNUM*(h2r_ratio*humanpose.zmp);
-	  robot_ref_pose.com = (1-FNUM)*robot_ref_pose.com + FNUM*(h2r_ratio*(humanpose.com - init_humanpose.com + init_humanpose.zmp));//Sync開始時のzmpのオフセットはつまり重心のオフセット
-	  robot_ref_pose.rfpos = (1-FNUM)*robot_ref_pose.rfpos + FNUM*(humanpose.rfpos - init_humanpose.rfpos);//足ロック
-	  robot_ref_pose.lfpos = (1-FNUM)*robot_ref_pose.lfpos + FNUM*(humanpose.lfpos - init_humanpose.lfpos);//足ロック
-	  robot_ref_pose.rhpos = (1-FNUM)*robot_ref_pose.rhpos + FNUM*(humanpose.rhpos - init_humanpose.rhpos);
-	  robot_ref_pose.lhpos = (1-FNUM)*robot_ref_pose.lhpos + FNUM*(humanpose.lhpos - init_humanpose.lhpos);
+	  robot_ref_pose.zmp =   (1-FNUM)*robot_ref_pose.zmp   + FNUM * h2r_ratio *  humanpose.zmp;
+	  robot_ref_pose.com =   (1-FNUM)*robot_ref_pose.com   + FNUM * h2r_ratio * (humanpose.com - init_humanpose.com + init_humanpose.zmp);//Sync開始時のzmpのオフセットはつまり重心のオフセット
+	  robot_ref_pose.rfpos = (1-FNUM)*robot_ref_pose.rfpos + FNUM * h2r_ratio * (humanpose.rfpos - init_humanpose.rfpos);//足ロック
+	  robot_ref_pose.lfpos = (1-FNUM)*robot_ref_pose.lfpos + FNUM * h2r_ratio * (humanpose.lfpos - init_humanpose.lfpos);//足ロック
+	  robot_ref_pose.rhpos = (1-FNUM)*robot_ref_pose.rhpos + FNUM * h2r_ratio * (humanpose.rhpos - init_humanpose.rhpos);
+	  robot_ref_pose.lhpos = (1-FNUM)*robot_ref_pose.lhpos + FNUM * h2r_ratio * (humanpose.lhpos - init_humanpose.lhpos);
 	  for(int i=0;i<6;i++){
 		  robot_ref_pose.rfwrench[i] = (1-FNUM)*robot_ref_pose.rfwrench[i] + FNUM*(humanpose.rfwrench[i]);
 		  robot_ref_pose.lfwrench[i] = (1-FNUM)*robot_ref_pose.lfwrench[i] + FNUM*(humanpose.lfwrench[i]);
@@ -1183,6 +1185,8 @@ void AutoBalancer::solveLimbIK ()
 		  if(robot_ref_pose.com[i] > MAXPOS)robot_ref_pose.com[i] = MAXPOS;
 		  if(robot_ref_pose.com[i] < -MAXPOS)robot_ref_pose.com[i] = -MAXPOS;
 	  }
+	  if(robot_ref_pose.com(1) < robot_ref_pose.rfpos(1)-0.1-0.03)robot_ref_pose.com(1) = robot_ref_pose.rfpos(1)-0.1-0.03;
+	  if(robot_ref_pose.com(1) > robot_ref_pose.lfpos(1)+0.1+0.03)robot_ref_pose.com(1) = robot_ref_pose.lfpos(1)+0.1+0.03;
 //	  if(robot_ref_pose.rfpos(1) > -0.07)robot_ref_pose.rfpos(1) = -0.07;
 //	  if(robot_ref_pose.lfpos(1) <  0.07)robot_ref_pose.lfpos(1) =  0.07;
 
@@ -1295,13 +1299,16 @@ void AutoBalancer::solveLimbIK ()
 	}
 	ikp["lleg"].target_p0 = lfinitpos + robot_ref_pose.lfpos;
 
-	  ////////////////////// 右足拘束位置設定 /////////////////////////
+	  ////////////////////// 右手拘束位置設定 /////////////////////////
+	ikp["rarm"].target_p0(1) = rhinitpos(1) + current_root_p(1);
+
 //	if(param.target_link->name == "RARM_JOINT7" && HumanSyncOn){
 //		param.target_p0(0) = 0.151 + robot_ref_pose.rhpos[0];
 //		param.target_p0(1) = -0.374 + robot_ref_pose.rhpos[1];
 //		param.target_p0(2) = 0.973 + robot_ref_pose.rhpos[2];
 //	}
-	  ////////////////////// 右足拘束位置設定 /////////////////////////
+	  ////////////////////// 左手拘束位置設定 /////////////////////////
+	ikp["larm"].target_p0(1) = lhinitpos(1) + current_root_p(1);
 //	if(param.target_link->name == "LARM_JOINT7" && HumanSyncOn){
 //		param.target_p0(0) = 0.151 + robot_ref_pose.lhpos[0];
 //		param.target_p0(1) = 0.374 + robot_ref_pose.lhpos[1];
@@ -1353,7 +1360,7 @@ void AutoBalancer::solveLimbIK ()
 		  tmp_com_err = (robot_ref_pose.com + cominitpos - m_robot->calcCM());
 		  if(com_ik_loop++ > COM_IK_MAX_LOOP){std::cerr << "[" << m_profile.instance_name << "] COM constraint IK MAX loop [="<<COM_IK_MAX_LOOP<<"] exceeded!!" << std::endl; break; };
 	  }
-	  if(com_ik_loop>1)std::cerr << "[" << m_profile.instance_name << "] COM_IK_LOOP ="<<com_ik_loop<< std::endl;//ややCOMのIKに手間取った時プリント
+	  if(loop%100==0)if(com_ik_loop>1)std::cerr << "[" << m_profile.instance_name << "] COM_IK_LOOP ="<<com_ik_loop<< std::endl;//ややCOMのIKに手間取った時プリント
   }else{
 	  for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {//本来のIK部分
 		if (it->second.is_active) solveLimbIKforLimb(it->second);

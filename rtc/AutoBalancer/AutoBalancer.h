@@ -283,6 +283,10 @@ class AutoBalancer
 
   //ishiguro
   hrp::Vector3 cominitpos;
+  //double h2r_ratio = 0.62;//human 1.1 vs chidori 0.69
+//  double h2r_ratio = 0.69;//human 1.0(with heavy foot sensor) vs chidori 0.69
+  double h2r_ratio = 0.96;//human 1.1 vs jaxon 1.06
+//    double h2r_ratio = 1.06;//human 1.0(with heavy foot sensor) vs jaxon 1.06
 };
 
 
