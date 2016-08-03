@@ -31,6 +31,71 @@
 // Service Consumer stub headers
 // <rtc-template block="consumer_stub_h">
 
+
+  //ishiguro
+typedef struct{
+	hrp::Vector3 com;
+	hrp::Vector3 rfpos;
+	hrp::Vector3 lfpos;
+	hrp::Vector3 rhpos;
+	hrp::Vector3 lhpos;
+	hrp::Vector3 zmp;
+	double rfwrench[6];
+	double lfwrench[6];
+}humanpose_t;
+
+class HumanSynchronizer
+{
+
+
+	public:
+		HumanSynchronizer(){
+			 h2r_ratio = 0.96;//human 1.1 vs jaxon 1.06
+			//h2r_ratio = 0.62;//human 1.1 vs chidori 0.69
+			//h2r_ratio = 0.69;//human 1.0(with heavy foot sensor) vs chidori 0.69
+			//h2r_ratio = 1.06;//human 1.0(with heavy foot sensor) vs jaxon 1.06
+		}
+		~HumanSynchronizer(){}
+
+		void UpdateInputData(){
+
+		}
+		hrp::Vector3 CalcWorldZMP(hrp::Vector3 rfpos, hrp::Vector3 lfpos, double * rfwin, double * lfwin){
+			hrp::Vector3 rfzmp,lfzmp,zmp_ans;
+			const double F_H_OFFSET = 0.03;//地面から6軸センサ原点への高さ
+			if( rfwin[2] > 1.0e-6 ){
+				rfzmp(0) = ( - rfwin[4] - rfwin[0] * F_H_OFFSET + rfwin[2] * 0 ) / rfwin[2] + rfpos(0);
+				rfzmp(1) = (   rfwin[3] - rfwin[1] * F_H_OFFSET + rfwin[2] * 0 ) / rfwin[2] + rfpos(1);
+			}
+			if( lfwin[2] > 1.0e-6 ){
+				lfzmp(0) = ( - lfwin[4] - lfwin[0] * F_H_OFFSET + lfwin[2] * 0 ) / lfwin[2] + lfpos(0);
+				lfzmp(1) = (   lfwin[3] - lfwin[1] * F_H_OFFSET + lfwin[2] * 0 ) / lfwin[2] + lfpos(1);
+			}
+			if( rfwin[2] > 1.0e-6 || lfwin[2] > 1.0e-6 ){
+				zmp_ans(0) = ( rfzmp(0)*rfwin[2] + lfzmp(0)*lfwin[2] ) / ( rfwin[2] + lfwin[2]);
+				zmp_ans(1) = ( rfzmp(1)*rfwin[2] + lfzmp(1)*lfwin[2] ) / ( rfwin[2] + lfwin[2]);
+			}else{
+				zmp_ans(0) = 0;	zmp_ans(1) = 0;
+			}
+			zmp_ans(2) = 0;
+			return zmp_ans;
+		}
+
+		hrp::Vector3 cominitpos;
+		double h2r_ratio;
+
+		humanpose_t raw_in;
+
+	 private:
+
+		humanpose_t ref_out;
+
+
+
+};
+
+
+
 // </rtc-template>
 
 using namespace RTC;
@@ -281,14 +346,9 @@ class AutoBalancer
   rats::coordinates graspless_manip_reference_trans_coords;
   double pos_ik_thre, rot_ik_thre;
 
-  //ishiguro
-  hrp::Vector3 cominitpos;
-  //double h2r_ratio = 0.62;//human 1.1 vs chidori 0.69
-//  double h2r_ratio = 0.69;//human 1.0(with heavy foot sensor) vs chidori 0.69
-  double h2r_ratio = 0.96;//human 1.1 vs jaxon 1.06
-//    double h2r_ratio = 1.06;//human 1.0(with heavy foot sensor) vs jaxon 1.06
-};
+  boost::shared_ptr<HumanSynchronizer> hsp;
 
+};
 
 extern "C"
 {
