@@ -31,67 +31,214 @@
 // Service Consumer stub headers
 // <rtc-template block="consumer_stub_h">
 
-
-  //ishiguro
-typedef struct{
-	hrp::Vector3 com;
-	hrp::Vector3 rfpos;
-	hrp::Vector3 lfpos;
-	hrp::Vector3 rhpos;
-	hrp::Vector3 lhpos;
-	hrp::Vector3 zmp;
-	double rfwrench[6];
-	double lfwrench[6];
-}humanpose_t;
-
-class HumanSynchronizer
-{
-
-
-	public:
-		HumanSynchronizer(){
-			 h2r_ratio = 0.96;//human 1.1 vs jaxon 1.06
-			//h2r_ratio = 0.62;//human 1.1 vs chidori 0.69
-			//h2r_ratio = 0.69;//human 1.0(with heavy foot sensor) vs chidori 0.69
-			//h2r_ratio = 1.06;//human 1.0(with heavy foot sensor) vs jaxon 1.06
-		}
-		~HumanSynchronizer(){}
-
-		void UpdateInputData(){
-
-		}
-		hrp::Vector3 CalcWorldZMP(hrp::Vector3 rfpos, hrp::Vector3 lfpos, double * rfwin, double * lfwin){
-			hrp::Vector3 rfzmp,lfzmp,zmp_ans;
-			const double F_H_OFFSET = 0.03;//地面から6軸センサ原点への高さ
-			if( rfwin[2] > 1.0e-6 ){
-				rfzmp(0) = ( - rfwin[4] - rfwin[0] * F_H_OFFSET + rfwin[2] * 0 ) / rfwin[2] + rfpos(0);
-				rfzmp(1) = (   rfwin[3] - rfwin[1] * F_H_OFFSET + rfwin[2] * 0 ) / rfwin[2] + rfpos(1);
-			}
-			if( lfwin[2] > 1.0e-6 ){
-				lfzmp(0) = ( - lfwin[4] - lfwin[0] * F_H_OFFSET + lfwin[2] * 0 ) / lfwin[2] + lfpos(0);
-				lfzmp(1) = (   lfwin[3] - lfwin[1] * F_H_OFFSET + lfwin[2] * 0 ) / lfwin[2] + lfpos(1);
-			}
-			if( rfwin[2] > 1.0e-6 || lfwin[2] > 1.0e-6 ){
-				zmp_ans(0) = ( rfzmp(0)*rfwin[2] + lfzmp(0)*lfwin[2] ) / ( rfwin[2] + lfwin[2]);
-				zmp_ans(1) = ( rfzmp(1)*rfwin[2] + lfzmp(1)*lfwin[2] ) / ( rfwin[2] + lfwin[2]);
-			}else{
-				zmp_ans(0) = 0;	zmp_ans(1) = 0;
-			}
-			zmp_ans(2) = 0;
-			return zmp_ans;
-		}
-
-		hrp::Vector3 cominitpos;
-		double h2r_ratio;
-
-		humanpose_t raw_in;
-
-	 private:
-
-		humanpose_t ref_out;
+class humanpose_t{
+  public:
+    hrp::Vector3 com;
+    hrp::Vector3 rfpos;
+    hrp::Vector3 lfpos;
+    hrp::Vector3 rhpos;
+    hrp::Vector3 lhpos;
+    hrp::Vector3 zmp;
+    Eigen::VectorXd rfw;
+    Eigen::VectorXd lfw;
+    humanpose_t(){ clear(); }
+    ~humanpose_t(){cout<<"humanpose_t destructed"<<endl;}
+    void clear(){
+      com = hrp::Vector3::Zero();
+      rfpos = hrp::Vector3::Zero();
+      lfpos = hrp::Vector3::Zero();
+      rhpos = hrp::Vector3::Zero();
+      lhpos = hrp::Vector3::Zero();
+      zmp = hrp::Vector3::Zero();
+      rfw.resize(6); rfw = Eigen::VectorXd::Zero(6);
+      lfw.resize(6); lfw = Eigen::VectorXd::Zero(6);
+    }
+};
 
 
+class HumanSynchronizer{
+  private:
 
+    double FNUM;
+    int FUPLEVELNUM;
+    int cur_rfup_level,cur_lfup_level;
+    double FUPHIGHT;
+    double CNT_F_TH;
+    bool HumanSyncOn;
+    bool is_rf_contact,is_lf_contact;
+    hrp::Vector3 pre_cont_rfpos,pre_cont_lfpos;
+    double MAXVEL,MAXACC;
+    humanpose_t hp_wld_initpos;
+    humanpose_t hp_rel_raw;
+    humanpose_t hp_filtered;
+    humanpose_t rp_ref_out_old;
+
+  public:
+
+    hrp::Vector3 cominitpos;
+    double h2r_ratio;
+
+    humanpose_t hp_wld_in;
+    humanpose_t rp_ref_out;
+
+    HumanSynchronizer(){
+//      h2r_ratio = 0.96;//human 1.1m vs jaxon 1.06m
+      h2r_ratio = 0.62;//human 1.1m vs chidori 0.69m
+      //h2r_ratio = 0.69;//human 1.0(with heavy foot sensor) vs chidori 0.69
+      //h2r_ratio = 1.06;//human 1.0(with heavy foot sensor) vs jaxon 1.06
+      cur_rfup_level = 0;       cur_lfup_level = 0;
+      is_rf_contact = true;     is_lf_contact = true;
+      pre_cont_rfpos.Zero();    pre_cont_lfpos.Zero();
+      FNUM = 0.01;
+      FUPLEVELNUM = 200;
+      FUPHIGHT = 0.05;
+      CNT_F_TH = 20.0;
+      MAXVEL = 0.004;
+      HumanSyncOn = false;
+    }
+
+    ~HumanSynchronizer(){cout<<"HumanSynchronizer destructed"<<endl;}
+
+    void setInitOffsetPose(const humanpose_t& abs_in){ hp_wld_initpos = abs_in; }
+
+    void startHumanSync(){
+      setInitOffsetPose(hp_wld_in);
+      HumanSyncOn = true;
+    }
+
+    void updateInputData(){
+      removeInitOffsetPose(hp_wld_in, hp_wld_initpos, hp_rel_raw);
+      applyLPFilter(hp_rel_raw, hp_filtered);
+      calcWorldZMP(hp_filtered.rfpos, hp_filtered.lfpos, hp_filtered.rfw, hp_filtered.lfw, hp_filtered.zmp);//足の位置はworldにしないと・・・
+      convertHumanToRobot(hp_filtered,rp_ref_out);
+      judgeFootContactStates(rp_ref_out.rfw, rp_ref_out.lfw, is_rf_contact, is_lf_contact);
+      overwriteFootZFromContactStates(rp_ref_out, is_rf_contact, is_lf_contact, rp_ref_out);
+      lockFootXYOnContact(rp_ref_out, is_rf_contact, is_lf_contact, rp_ref_out);
+      applyWorkspaceLimit(rp_ref_out, rp_ref_out);
+      applyCOMToSupportRegionLimit(rp_ref_out, rp_ref_out);
+      applyVelLimit(rp_ref_out, rp_ref_out_old, rp_ref_out);
+      rp_ref_out_old = rp_ref_out;
+    }
+
+    void calcWorldZMP(const hrp::Vector3& rfpos, const hrp::Vector3& lfpos,
+        const Eigen::VectorXd& rfwin, const Eigen::VectorXd& lfwin, hrp::Vector3& zmp_ans){
+      hrp::Vector3 rfzmp,lfzmp;
+      const double F_H_OFFSET = 0.03;//地面から6軸センサ原点への高さ
+      if( rfwin[2] > 1.0e-6 ){
+        rfzmp(0) = ( - rfwin[4] - rfwin[0] * F_H_OFFSET + rfwin[2] * 0 ) / rfwin[2] + rfpos(0);
+        rfzmp(1) = (   rfwin[3] - rfwin[1] * F_H_OFFSET + rfwin[2] * 0 ) / rfwin[2] + rfpos(1);
+      }
+      if( lfwin[2] > 1.0e-6 ){
+        lfzmp(0) = ( - lfwin[4] - lfwin[0] * F_H_OFFSET + lfwin[2] * 0 ) / lfwin[2] + lfpos(0);
+        lfzmp(1) = (   lfwin[3] - lfwin[1] * F_H_OFFSET + lfwin[2] * 0 ) / lfwin[2] + lfpos(1);
+      }
+      if( rfwin[2] > 1.0e-6 || lfwin[2] > 1.0e-6 ){
+        zmp_ans(0) = ( rfzmp(0)*rfwin[2] + lfzmp(0)*lfwin[2] ) / ( rfwin[2] + lfwin[2]);
+        zmp_ans(1) = ( rfzmp(1)*rfwin[2] + lfzmp(1)*lfwin[2] ) / ( rfwin[2] + lfwin[2]);
+      }else{ zmp_ans(0) = 0; zmp_ans(1) = 0; }
+      zmp_ans(2) = 0;
+    }
+    static hrp::Vector3 Point3DToVector3(const RTC::Point3D& in){
+      hrp::Vector3 out(in.x,in.y,in.z); return out;
+    }
+
+  private:
+
+    void removeInitOffsetPose(const humanpose_t& abs_in, const humanpose_t& init_offset, humanpose_t& rel_out){
+      rel_out.com   = abs_in.com   - init_offset.com;
+      rel_out.rfpos = abs_in.rfpos - init_offset.rfpos;
+      rel_out.lfpos = abs_in.lfpos - init_offset.lfpos;
+      rel_out.rhpos = abs_in.rhpos - init_offset.rhpos;
+      rel_out.lhpos = abs_in.lhpos - init_offset.lhpos;
+      rel_out.rfw = abs_in.rfw;
+      rel_out.lfw = abs_in.lfw;
+    }
+    void applyLPFilter(const humanpose_t& raw_in, humanpose_t& filt_out){
+      filt_out.com   = (1-FNUM) * filt_out.com   + FNUM * raw_in.com;
+      filt_out.rfpos = (1-FNUM) * filt_out.rfpos + FNUM * raw_in.rfpos;
+      filt_out.lfpos = (1-FNUM) * filt_out.lfpos + FNUM * raw_in.lfpos;
+      filt_out.rhpos = (1-FNUM) * filt_out.rhpos + FNUM * raw_in.rhpos;
+      filt_out.lhpos = (1-FNUM) * filt_out.lhpos + FNUM * raw_in.lhpos;
+      filt_out.zmp   = (1-FNUM) * filt_out.zmp   + FNUM * raw_in.zmp;
+      filt_out.rfw = (1-FNUM) * filt_out.rfw + FNUM * raw_in.rfw;
+      filt_out.lfw = (1-FNUM) * filt_out.lfw + FNUM * raw_in.lfw;
+    }
+    void convertHumanToRobot(const humanpose_t& hp_in, humanpose_t& rp_out){
+      rp_out.com   = h2r_ratio * hp_in.com;
+      rp_out.rfpos = h2r_ratio * hp_in.rfpos;
+      rp_out.lfpos = h2r_ratio * hp_in.lfpos;
+      rp_out.rhpos = h2r_ratio * hp_in.rhpos;
+      rp_out.lhpos = h2r_ratio * hp_in.lhpos;
+      rp_out.zmp   = h2r_ratio * hp_in.zmp;
+      rp_out.rfw = hp_in.rfw;
+      rp_out.lfw = hp_in.lfw;
+    }
+    void judgeFootContactStates(const Eigen::VectorXd& rfw_in, const Eigen::VectorXd& lfw_in, bool& rfcs_ans, bool& lfcs_ans){
+      //他のプログラムは足に荷重時に力センサの値がZ軸マイナスに出るっぽい？(のでTODO FIX)
+      if      (rfw_in(2)<CNT_F_TH && lfw_in(2)>CNT_F_TH){rfcs_ans = false;  lfcs_ans = true;}//右足浮遊かつ左足接地
+      else if (rfw_in(2)>CNT_F_TH && lfw_in(2)<CNT_F_TH){rfcs_ans = true;   lfcs_ans = false;}//右足接地かつ左足浮遊
+      else                                              {rfcs_ans = true;   lfcs_ans = true;}//両足接地または両足浮遊
+    }
+
+    void overwriteFootZFromContactStates(const humanpose_t& in, const bool& rfcs_in, const bool& lfcs_in, humanpose_t& out){
+      out = in;
+      if(!rfcs_in){//右足浮遊時
+        if(cur_rfup_level < FUPLEVELNUM){
+          cur_rfup_level++;
+          out.rfpos(2) = FUPHIGHT/2*(1-cos(M_PI*cur_rfup_level/FUPLEVELNUM));
+        }else{
+          out.rfpos(2) = FUPHIGHT;
+        }
+      }else{
+        if(cur_rfup_level > 0){
+          cur_rfup_level--;
+          out.rfpos(2) = FUPHIGHT/2*(1-cos(M_PI*cur_rfup_level/FUPLEVELNUM));
+        }else{
+          out.rfpos(2) = 0;
+        }
+      }
+      if(!lfcs_in){//左足浮遊時
+        if(cur_lfup_level < FUPLEVELNUM){
+          cur_lfup_level++;
+          out.lfpos(2) = FUPHIGHT/2*(1-cos(M_PI*cur_lfup_level/FUPLEVELNUM));
+        }else{
+          out.lfpos(2) = FUPHIGHT;
+        }
+      }else{
+        if(cur_lfup_level > 0){
+          cur_lfup_level--;
+          out.lfpos(2) = FUPHIGHT/2*(1-cos(M_PI*cur_lfup_level/FUPLEVELNUM));
+        }else{
+          out.lfpos(2) = 0;
+        }
+      }
+    }
+    void lockFootXYOnContact(const humanpose_t& in, const bool& rfcs_in, const bool& lfcs_in, humanpose_t& out){
+      out = in;
+      if(rfcs_in){
+        out.rfpos(0) = pre_cont_rfpos(0);
+        out.rfpos(1) = pre_cont_rfpos(1);
+      }else{
+        pre_cont_rfpos(0) = in.rfpos(0);
+        pre_cont_rfpos(1) = in.rfpos(1);
+      }
+      if(lfcs_in){
+        out.lfpos(0) = pre_cont_lfpos(0);
+        out.lfpos(1) = pre_cont_lfpos(1);
+      }else{
+        pre_cont_lfpos(0) = in.lfpos(0);
+        pre_cont_lfpos(1) = in.lfpos(1);
+      }
+    }
+    void applyWorkspaceLimit(const humanpose_t& in, humanpose_t& out){}
+    void applyCOMToSupportRegionLimit(const humanpose_t& in, humanpose_t& out){}
+    void applyVelLimit(const humanpose_t& in, const humanpose_t& in_old, humanpose_t& out){
+      for(int i=0;i<3;i++){if(in.com(i) - in_old.com(i) > MAXVEL){out.com(i) = in_old.com(i) + MAXVEL;}else if(in.com(i) - in_old.com(i) < -MAXVEL){out.com(i) = in_old.com(i) - MAXVEL;}}
+      for(int i=0;i<3;i++){if(in.rfpos(i) - in_old.rfpos(i) > MAXVEL){out.rfpos(i) = in_old.rfpos(i) + MAXVEL;}else if(in.rfpos(i) - in_old.rfpos(i) < -MAXVEL){out.rfpos(i) = in_old.rfpos(i) - MAXVEL;}}
+      for(int i=0;i<3;i++){if(in.lfpos(i) - in_old.lfpos(i) > MAXVEL){out.lfpos(i) = in_old.lfpos(i) + MAXVEL;}else if(in.lfpos(i) - in_old.lfpos(i) < -MAXVEL){out.lfpos(i) = in_old.lfpos(i) - MAXVEL;}}
+      for(int i=0;i<3;i++){if(in.rhpos(i) - in_old.rhpos(i) > MAXVEL){out.rhpos(i) = in_old.rhpos(i) + MAXVEL;}else if(in.rhpos(i) - in_old.rhpos(i) < -MAXVEL){out.rhpos(i) = in_old.rhpos(i) - MAXVEL;}}
+      for(int i=0;i<3;i++){if(in.lhpos(i) - in_old.lhpos(i) > MAXVEL){out.lhpos(i) = in_old.lhpos(i) + MAXVEL;}else if(in.lhpos(i) - in_old.lhpos(i) < -MAXVEL){out.lhpos(i) = in_old.lhpos(i) - MAXVEL;}}
+    }
 };
 
 
