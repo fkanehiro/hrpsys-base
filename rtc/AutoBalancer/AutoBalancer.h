@@ -107,7 +107,6 @@ class HumanSynchronizer{
     HumanPose hp_filtered;
     HumanPose rp_ref_out_old;
     int countdown_num;
-    bool countdown_flag;
     bool HumanSyncOn;
     struct timeval t_calc_start, t_calc_end;
 
@@ -122,8 +121,8 @@ class HumanSynchronizer{
     HumanPose rp_ref_out;
 
     HumanSynchronizer(){
-//      h2r_ratio = 0.96;//human 1.1m vs jaxon 1.06m
-      h2r_ratio = 0.62;//human 1.1m vs chidori 0.69m
+      h2r_ratio = 0.96;//human 1.1m vs jaxon 1.06m
+//      h2r_ratio = 0.62;//human 1.1m vs chidori 0.69m
 //      h2r_ratio = 0.69;//human 1.0(with heavy foot sensor) vs chidori 0.69
       //h2r_ratio = 1.06;//human 1.0(with heavy foot sensor) vs jaxon 1.06
       cur_rfup_level = 0;       cur_lfup_level = 0;
@@ -142,7 +141,7 @@ class HumanSynchronizer{
       MAXVEL = 0.001;
       HumanSyncOn = false;
       ht_first_call = true;
-      countdown_flag = false;
+      startCountdownForHumanSync = false;
       countdown_num = 5*500;
     }
     ~HumanSynchronizer(){cout<<"HumanSynchronizer destructed"<<endl;}
@@ -211,11 +210,11 @@ class HumanSynchronizer{
       out = in;
       out.com = in.com + com_offs;
     }
-    void startHumanSync(){
-      countdown_flag = true;
-      setInitOffsetPose();
-      HumanSyncOn = true;
-    }
+//    void startHumanSync(){
+//      countdown_flag = true;
+//      setInitOffsetPose();
+//      HumanSyncOn = true;
+//    }
     void removeInitOffsetPose(const HumanPose& abs_in, const HumanPose& init_offset, HumanPose& rel_out){
       for(int i=0;i<rel_out.idsize-5;i++){
         rel_out.Seq(i) =  abs_in.Seq(i) - init_offset.Seq(i);
@@ -229,6 +228,10 @@ class HumanSynchronizer{
       }
     }
     void convertRelHumanPoseToRelRobotPose(const HumanPose& hp_in, HumanPose& rp_out){//Wldと言いつつまだRel
+
+      if(rp_wld_initpos.com(2) > 0.6 && rp_wld_initpos.com(2) < 0.7)h2r_ratio = 0.62;//CHIDORIと自動判定
+      else if(rp_wld_initpos.com(2) > 1.0 && rp_wld_initpos.com(2) < 1.2)h2r_ratio = 0.96;//JAXONと自動判定
+
       for(int i=0;i<rp_out.idsize-4;i++){
         rp_out.Seq(i) =  h2r_ratio * hp_in.Seq(i);
       }

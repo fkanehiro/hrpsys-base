@@ -1033,8 +1033,8 @@ void AutoBalancer::solveLimbIK ()
   }
 
   hsp->update();//////HumanSynchronizerの主要処理
-  hsp->rp_ref_out.print();
-  cerr<<"getUpdateTime:"<<hsp->getUpdateTime()*1000<<"[ms]"<<endl;
+  if(loop%100==0)hsp->rp_ref_out.print();
+  if(loop%100==0)cerr<<"getUpdateTime:"<<hsp->getUpdateTime()*1000<<"[ms]"<<endl;
 
   if(hsp->isHumanSyncOn()){
 	  ////////////////////// 重心拘束位置設定 /////////////////////////
@@ -1100,7 +1100,7 @@ void AutoBalancer::solveLimbIK ()
 	  if(loop%100==0)if(com_ik_loop>1)std::cerr << "[" << m_profile.instance_name << "] COM_IK_LOOP ="<<com_ik_loop<< std::endl;//ややCOMのIKに手間取った時プリント
   }else{
 	  for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {//本来のIK部分
-		if (it->second.is_active) solveLimbIKforLimb(it->second);
+	    if (it->second.is_active) solveLimbIKforLimb(it->second);
 	  }
   }
   if (gg_is_walking && !gg_solved) stopWalking ();
