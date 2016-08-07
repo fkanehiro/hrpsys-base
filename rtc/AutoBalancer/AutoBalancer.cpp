@@ -473,13 +473,13 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
     }
     //for HumanSynchronizer
     if (m_htzmpIn.isNew()){	m_htzmpIn.read(); }
-    if (m_htrfwIn.isNew()){ m_htrfwIn.read(); for(int i=0;i<6;i++)hp_raw_data.rfw[i] = m_htrfw.data[i]; }
-    if (m_htlfwIn.isNew()){ m_htlfwIn.read(); for(int i=0;i<6;i++)hp_raw_data.lfw[i] = m_htlfw.data[i]; }
-    if (m_htcomIn.isNew()){ m_htcomIn.read(); hp_raw_data.com   = HumanSynchronizer::Point3DToVector3(m_htcom.data); }
-    if (m_htrfIn.isNew()) { m_htrfIn.read();  hp_raw_data.rf = HumanSynchronizer::Point3DToVector3(m_htrf.data); }
-    if (m_htlfIn.isNew()) { m_htlfIn.read();  hp_raw_data.lf = HumanSynchronizer::Point3DToVector3(m_htlf.data); }
-    if (m_htrhIn.isNew()){  m_htrhIn.read();  hp_raw_data.rh = HumanSynchronizer::Point3DToVector3(m_htrh.data); }
-    if (m_htlhIn.isNew()){  m_htlhIn.read();  hp_raw_data.lh = HumanSynchronizer::Point3DToVector3(m_htlh.data); }
+    if (m_htrfwIn.isNew()){ m_htrfwIn.read(); hp_raw_data.rfw = HumanSynchronizer::DoubleSeqToWrench6(m_htrfw); }
+    if (m_htlfwIn.isNew()){ m_htlfwIn.read(); hp_raw_data.lfw = HumanSynchronizer::DoubleSeqToWrench6(m_htlfw); }
+    if (m_htcomIn.isNew()){ m_htcomIn.read(); hp_raw_data.com = HumanSynchronizer::Point3DToVector3(m_htcom); }
+    if (m_htrfIn.isNew()) { m_htrfIn.read();  hp_raw_data.rf  = HumanSynchronizer::Point3DToVector3(m_htrf); }
+    if (m_htlfIn.isNew()) { m_htlfIn.read();  hp_raw_data.lf  = HumanSynchronizer::Point3DToVector3(m_htlf); }
+    if (m_htrhIn.isNew()) { m_htrhIn.read();  hp_raw_data.rh  = HumanSynchronizer::Point3DToVector3(m_htrh); }
+    if (m_htlhIn.isNew()) { m_htlhIn.read();  hp_raw_data.lh  = HumanSynchronizer::Point3DToVector3(m_htlh); }
     if (m_actzmpIn.isNew()){m_actzmpIn.read(); }
     hsp->readInput(hp_raw_data);
 
@@ -1009,7 +1009,7 @@ void AutoBalancer::solveLimbIK ()
   //for HumanSynchronizer
 //  static int HumanSyncCountdownNum = 5 * (1/m_dt);
   if(hsp->startCountdownForHumanSync){
-	  printf("Start Count Down for HumanSync [%d]\r", hsp->getRemainingCountDown());
+    std::cerr << "[" << m_profile.instance_name << "] Count Down for HumanSync ["<<hsp->getRemainingCountDown()<<"]\r";//ややCOMのIKに手間取った時プリント
 	  hsp->updateCountDown();
   }
   if(hsp->isHumanSyncOn()){
@@ -1023,7 +1023,9 @@ void AutoBalancer::solveLimbIK ()
       if(ikp.count("larm"))hsp->rp_wld_initpos.lh = ikp["larm"].target_link->p;
       hsp->ht_first_call = false;
 
-      hsp->calibInitHumanComPos();
+      hsp->calibInitHumanCOMFromZMP();
+
+      std::cerr << "\n[" << m_profile.instance_name << "] Start HumanSync"<< std::endl;//ややCOMのIKに手間取った時プリント
 
 	  }
   }else{
@@ -1032,6 +1034,7 @@ void AutoBalancer::solveLimbIK ()
 
   hsp->update();//////HumanSynchronizerの主要処理
   hsp->rp_ref_out.print();
+  cerr<<"getUpdateTime:"<<hsp->getUpdateTime()*1000<<"[ms]"<<endl;
 
   if(hsp->isHumanSyncOn()){
 	  ////////////////////// 重心拘束位置設定 /////////////////////////
@@ -1063,6 +1066,8 @@ void AutoBalancer::solveLimbIK ()
   if(hsp->isHumanSyncOn()){
     ikp["rleg"].target_p0 = hsp->rp_wld_initpos.rf + hsp->rp_ref_out.rf;
     ikp["lleg"].target_p0 = hsp->rp_wld_initpos.lf + hsp->rp_ref_out.lf;
+    if(ikp.count("rarm"))ikp["rarm"].target_p0 = hsp->rp_wld_initpos.rh + hsp->rp_ref_out.rh;
+    if(ikp.count("larm"))ikp["larm"].target_p0 = hsp->rp_wld_initpos.lh + hsp->rp_ref_out.lh;
     while(fabs(tmp_com_err(0))>COM_IK_MAX_ERROR || fabs(tmp_com_err(1))>COM_IK_MAX_ERROR || fabs(tmp_com_err(2))>COM_IK_MAX_ERROR){//Z方向のCOM合わせは要注意(たまに怪しい)
 		  m_robot->rootLink()->p(0) += tmp_com_err(0);
       m_robot->rootLink()->p(1) += tmp_com_err(1);
@@ -1086,7 +1091,7 @@ void AutoBalancer::solveLimbIK ()
 //    }
 //    pre_ik_basepos = m_robot->rootLink()->p;
 
-    //out用のデータ上書き
+    //outport用のデータ上書き
     ref_zmp(0) = hsp->rp_ref_out.zmp(0);
     ref_zmp(1) = hsp->rp_ref_out.zmp(1);
     ref_zmp(2) = 0;
