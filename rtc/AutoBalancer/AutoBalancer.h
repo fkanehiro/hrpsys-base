@@ -121,9 +121,9 @@ class HumanSynchronizer{
     HumanPose rp_ref_out;
 
     HumanSynchronizer(){
-      h2r_ratio = 0.96;//human 1.1m vs jaxon 1.06m
+//      h2r_ratio = 0.96;//human 1.1m vs jaxon 1.06m
 //      h2r_ratio = 0.62;//human 1.1m vs chidori 0.69m
-//      h2r_ratio = 0.69;//human 1.0(with heavy foot sensor) vs chidori 0.69
+      h2r_ratio = 0.69;//human 1.0(with heavy foot sensor) vs chidori 0.69
       //h2r_ratio = 1.06;//human 1.0(with heavy foot sensor) vs jaxon 1.06
       cur_rfup_level = 0;       cur_lfup_level = 0;
       is_rf_contact = true;     is_lf_contact = true;
@@ -164,14 +164,16 @@ class HumanSynchronizer{
       removeInitOffsetPose(hp_wld_raw, hp_wld_initpos, hp_rel_raw);
       applyInitHumanCOMOffset(hp_wld_raw, init_hp_calibcom, hp_wld_raw);
       applyLPFilter(hp_rel_raw, hp_filtered, hp_filtered);
+      lockFootXYOnContact(hp_filtered, is_rf_contact, is_lf_contact, hp_filtered);//根本から改変すべき
       calcWorldZMP((hp_filtered.rf+init_wld_hp_rfpos), (hp_filtered.lf+init_wld_hp_lfpos), hp_filtered.rfw, hp_filtered.lfw, hp_filtered.zmp);//足の位置はworldにしないと・・・
       convertRelHumanPoseToRelRobotPose(hp_filtered,rp_ref_out);
       judgeFootContactStates(rp_ref_out.rfw, rp_ref_out.lfw, is_rf_contact, is_lf_contact);
       overwriteFootZFromContactStates(rp_ref_out, is_rf_contact, is_lf_contact, rp_ref_out);
-      lockFootXYOnContact(rp_ref_out, is_rf_contact, is_lf_contact, rp_ref_out);
+//      lockFootXYOnContact(rp_ref_out, is_rf_contact, is_lf_contact, rp_ref_out);//ここで改変するとLPFかかってないからジャンプする
       applyWorkspaceLimit(rp_ref_out, rp_ref_out);
       applyCOMToSupportRegionLimit(rp_ref_out, rp_ref_out);
       applyVelLimit(rp_ref_out, rp_ref_out_old, rp_ref_out);
+//      rp_ref_out.com(2) = 0;//Z方向固定
       rp_ref_out_old = rp_ref_out;
       gettimeofday(&t_calc_end, NULL);
     }
@@ -206,6 +208,13 @@ class HumanSynchronizer{
 
   private:
 
+    void removeInitOffsetPose(const HumanPose& abs_in, const HumanPose& init_offset, HumanPose& rel_out){
+      for(int i=0;i<rel_out.idsize-5;i++){
+        rel_out.Seq(i) =  abs_in.Seq(i) - init_offset.Seq(i);
+      }
+      rel_out.rfw = abs_in.rfw;
+      rel_out.lfw = abs_in.lfw;
+    }
     void applyInitHumanCOMOffset(const HumanPose& in, const hrp::Vector3& com_offs, HumanPose& out){
       out = in;
       out.com = in.com + com_offs;
@@ -215,23 +224,12 @@ class HumanSynchronizer{
 //      setInitOffsetPose();
 //      HumanSyncOn = true;
 //    }
-    void removeInitOffsetPose(const HumanPose& abs_in, const HumanPose& init_offset, HumanPose& rel_out){
-      for(int i=0;i<rel_out.idsize-5;i++){
-        rel_out.Seq(i) =  abs_in.Seq(i) - init_offset.Seq(i);
-      }
-      rel_out.rfw = abs_in.rfw;
-      rel_out.lfw = abs_in.lfw;
-    }
     void applyLPFilter(const HumanPose& raw_in, const HumanPose& out_old, HumanPose& filt_out){
       for(int i=0;i<filt_out.idsize;i++){
         filt_out.Seq(i) = (1-FNUM) * out_old.Seq(i) + FNUM * raw_in.Seq(i);
       }
     }
-    void convertRelHumanPoseToRelRobotPose(const HumanPose& hp_in, HumanPose& rp_out){//Wldと言いつつまだRel
-
-      if(rp_wld_initpos.com(2) > 0.6 && rp_wld_initpos.com(2) < 0.7)h2r_ratio = 0.62;//CHIDORIと自動判定
-      else if(rp_wld_initpos.com(2) > 1.0 && rp_wld_initpos.com(2) < 1.2)h2r_ratio = 0.96;//JAXONと自動判定
-
+    void convertRelHumanPoseToRelRobotPose(const HumanPose& hp_in, HumanPose& rp_out){//結局初期指定からの移動量(=Rel)で計算をしてゆく
       for(int i=0;i<rp_out.idsize-4;i++){
         rp_out.Seq(i) =  h2r_ratio * hp_in.Seq(i);
       }
@@ -296,30 +294,37 @@ class HumanSynchronizer{
 //      out.rf(0) = 0; out.rf(1) = 0; out.lf(0) = 0; out.lf(1) = 0;//足固定テスト
     }
     void applyWorkspaceLimit(const HumanPose& in, HumanPose& out){
+      if(!is_rf_contact && is_lf_contact){//右足浮遊時
+        if(in.rf(1) + rp_wld_initpos.rf(1) > in.lf(1) + rp_wld_initpos.lf(1) - 0.15)out.rf(1) = in.lf(1) + rp_wld_initpos.lf(1) - rp_wld_initpos.rf(1) - 0.15;
+      }
+      else if(is_rf_contact && !is_lf_contact){//左足浮遊時
+        if(in.lf(1) + rp_wld_initpos.lf(1) < in.rf(1) + rp_wld_initpos.rf(1) + 0.15)out.lf(1) = in.rf(1) + rp_wld_initpos.rf(1) - rp_wld_initpos.lf(1) + 0.15;
+      }
     }
     void applyCOMToSupportRegionLimit(const HumanPose& in, HumanPose& out){
       out = in;
+      const double XUMARGIN = 0.08;
+      const double XLMARGIN = 0.04;
+      const double YLRMARGIN = 0.03;
       double x_upper_region,x_lower_region,y_upper_region,y_lower_region;
       if(rp_wld_initpos.rf(0) + in.rf(0) > rp_wld_initpos.lf(0) + in.lf(0)){
-        x_upper_region = rp_wld_initpos.rf(0) + in.rf(0) + 0.13;
-        x_lower_region = rp_wld_initpos.lf(0) + in.lf(0) - 0.08;
+        x_upper_region = rp_wld_initpos.rf(0) + in.rf(0) + XUMARGIN;
+        x_lower_region = rp_wld_initpos.lf(0) + in.lf(0) - XLMARGIN;
       }else{
-        x_upper_region = rp_wld_initpos.lf(0) + in.lf(0) + 0.13;
-        x_lower_region = rp_wld_initpos.rf(0) + in.rf(0) - 0.08;
+        x_upper_region = rp_wld_initpos.lf(0) + in.lf(0) + XUMARGIN;
+        x_lower_region = rp_wld_initpos.rf(0) + in.rf(0) - XLMARGIN;
       }
-      y_upper_region = rp_wld_initpos.lf(1) + in.lf(1) + 0.03;
-      y_lower_region = rp_wld_initpos.rf(1) + in.rf(1) - 0.03;
-      if(in.com(0) < x_lower_region){ out.com(0) = x_lower_region; }
-      else if(in.com(0) > x_upper_region){ out.com(0) = x_upper_region; }
-      if(in.com(1) < y_lower_region){ out.com(1) = y_lower_region; }
-      else if(in.com(1) > y_upper_region){ out.com(1) = y_upper_region; }
+      y_upper_region = rp_wld_initpos.lf(1) + in.lf(1) + YLRMARGIN;
+      y_lower_region = rp_wld_initpos.rf(1) + in.rf(1) - YLRMARGIN;
+      if(in.com(0) < x_lower_region){ out.com(0) = x_lower_region; cerr<<"[WARN] COM X Lower Limit!"<<endl;}
+      else if(in.com(0) > x_upper_region){ out.com(0) = x_upper_region; cerr<<"[WARN] COM X Upper Limit!"<<endl;}
+      if(in.com(1) < y_lower_region){ out.com(1) = y_lower_region; cerr<<"[WARN] COM Y Lower Limit!"<<endl;}
+      else if(in.com(1) > y_upper_region){ out.com(1) = y_upper_region; cerr<<"[WARN] COM Y Upper Limit!"<<endl;}
     }
     void applyVelLimit(const HumanPose& in, const HumanPose& in_old, HumanPose& out){
       for(int i=0;i<3;i++){if(in.com(i) - in_old.com(i) > MAXVEL){out.com(i) = in_old.com(i) + MAXVEL;}else if(in.com(i) - in_old.com(i) < -MAXVEL){out.com(i) = in_old.com(i) - MAXVEL;}}
-//      for(int i=0;i<3;i++){if(in.rf(i)  - in_old.rf(i)  > MAXVEL){out.rf(i)  = in_old.rf(i)  + MAXVEL;}else if(in.rf(i)  - in_old.rf(i)  < -MAXVEL){out.rf(i)  = in_old.rf(i)  - MAXVEL;}}
-//      for(int i=0;i<3;i++){if(in.lf(i)  - in_old.lf(i)  > MAXVEL){out.lf(i)  = in_old.lf(i)  + MAXVEL;}else if(in.lf(i)  - in_old.lf(i)  < -MAXVEL){out.lf(i)  = in_old.lf(i)  - MAXVEL;}}
-      for(int i=0;i<3;i++){if(in.rf(i)  - in_old.rf(i)  > MAXVEL/2){out.rf(i)  = in_old.rf(i)  + MAXVEL/2;}else if(in.rf(i)  - in_old.rf(i)  < -MAXVEL/2){out.rf(i)  = in_old.rf(i)  - MAXVEL/2;}}
-      for(int i=0;i<3;i++){if(in.lf(i)  - in_old.lf(i)  > MAXVEL/2){out.lf(i)  = in_old.lf(i)  + MAXVEL/2;}else if(in.lf(i)  - in_old.lf(i)  < -MAXVEL/2){out.lf(i)  = in_old.lf(i)  - MAXVEL/2;}}
+      for(int i=0;i<3;i++){if(in.rf(i)  - in_old.rf(i)  > MAXVEL){out.rf(i)  = in_old.rf(i)  + MAXVEL;}else if(in.rf(i)  - in_old.rf(i)  < -MAXVEL){out.rf(i)  = in_old.rf(i)  - MAXVEL;}}
+      for(int i=0;i<3;i++){if(in.lf(i)  - in_old.lf(i)  > MAXVEL){out.lf(i)  = in_old.lf(i)  + MAXVEL;}else if(in.lf(i)  - in_old.lf(i)  < -MAXVEL){out.lf(i)  = in_old.lf(i)  - MAXVEL;}}
       for(int i=0;i<3;i++){if(in.rh(i)  - in_old.rh(i)  > MAXVEL){out.rh(i)  = in_old.rh(i)  + MAXVEL;}else if(in.rh(i)  - in_old.rh(i)  < -MAXVEL){out.rh(i)  = in_old.rh(i)  - MAXVEL;}}
       for(int i=0;i<3;i++){if(in.lh(i)  - in_old.lh(i)  > MAXVEL){out.lh(i)  = in_old.lh(i)  + MAXVEL;}else if(in.lh(i)  - in_old.lh(i)  < -MAXVEL){out.lh(i)  = in_old.lh(i)  - MAXVEL;}}
     }
