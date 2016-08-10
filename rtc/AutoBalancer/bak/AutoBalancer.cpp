@@ -584,9 +584,6 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
     m_cogOut.write();
     m_sbpCogOffsetOut.write();
 
-
-//printf("m_zmp:%f, abs:%f\n",m_zmp.data.y,m_basePos.data.y+m_zmp.data.y);
-
     // reference acceleration
     hrp::Sensor* sen = m_robot->sensor<hrp::RateGyroSensor>("gyrometer");
     if (sen != NULL) {
@@ -1028,7 +1025,7 @@ void AutoBalancer::solveLimbIK ()
 
       hsp->calibInitHumanCOMFromZMP();
 
-      std::cerr << "\n[" << m_profile.instance_name << "] Start HumanSync"<< std::endl;
+      std::cerr << "\n[" << m_profile.instance_name << "] Start HumanSync"<< std::endl;//ややCOMのIKに手間取った時プリント
 
 	  }
   }else{
@@ -1101,11 +1098,6 @@ void AutoBalancer::solveLimbIK ()
     ref_cog = hsp->rp_wld_initpos.com + hsp->rp_ref_out.com;
 
 	  if(loop%100==0)if(com_ik_loop>1)std::cerr << "[" << m_profile.instance_name << "] COM_IK_LOOP ="<<com_ik_loop<< std::endl;//ややCOMのIKに手間取った時プリント
-
-
-//	  printf("root:%f, calcCM:%f, refCM:%f\n",m_robot->rootLink()->p(1),m_robot->calcCM()(1),hsp->rp_ref_out.com(1) + hsp->rp_wld_initpos.com(1));
-
-
   }else{
 	  for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {//本来のIK部分
 	    if (it->second.is_active) solveLimbIKforLimb(it->second);

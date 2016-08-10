@@ -119,13 +119,12 @@ class HumanSynchronizer{
     double h2r_ratio;
     hrp::Vector3 init_wld_rp_basepos;
     HumanPose rp_ref_out;
-    FILE* log;
 
     HumanSynchronizer(){
       h2r_ratio = 0.96;//human 1.1m vs jaxon 1.06m
 //      h2r_ratio = 0.62;//human 1.1m vs chidori 0.69m
 //      h2r_ratio = 0.69;//human 1.0(with heavy foot sensor) vs chidori 0.69
-//      h2r_ratio = 1.06;//human 1.0(with heavy foot sensor) vs jaxon 1.06
+      //h2r_ratio = 1.06;//human 1.0(with heavy foot sensor) vs jaxon 1.06
       cur_rfup_level = 0;       cur_lfup_level = 0;
       is_rf_contact = true;     is_lf_contact = true;
       pre_cont_rfpos = hrp::Vector3::Zero();    pre_cont_lfpos = hrp::Vector3::Zero();
@@ -139,17 +138,13 @@ class HumanSynchronizer{
       FUPHIGHT = 0.05;
       CNT_F_TH = 20.0;
       MAXVEL = 0.004;
-//      MAXVEL = 0.001;
+      //      MAXVEL = 0.001;
       HumanSyncOn = false;
       ht_first_call = true;
       startCountdownForHumanSync = false;
       countdown_num = 5*500;
-      log = fopen("/home/ishiguro/HumanSyncLog.txt","w+");
     }
-    ~HumanSynchronizer(){
-      fclose(log);
-      cout<<"HumanSynchronizer destructed"<<endl;
-    }
+    ~HumanSynchronizer(){cout<<"HumanSynchronizer destructed"<<endl;}
 
     void readInput(const HumanPose& raw_in){ hp_wld_raw = raw_in; }
     void setInitOffsetPose(){ hp_wld_initpos = hp_wld_raw; }
@@ -167,22 +162,19 @@ class HumanSynchronizer{
     void update(){
       gettimeofday(&t_calc_start, NULL);
       removeInitOffsetPose(hp_wld_raw, hp_wld_initpos, hp_rel_raw);
-//      applyInitHumanCOMOffset(hp_rel_raw, init_hp_calibcom, hp_rel_raw);
+      applyInitHumanCOMOffset(hp_wld_raw, init_hp_calibcom, hp_wld_raw);
       applyLPFilter(hp_rel_raw, hp_filtered, hp_filtered);
       lockFootXYOnContact(hp_filtered, is_rf_contact, is_lf_contact, hp_filtered);//根本から改変すべき
       calcWorldZMP((hp_filtered.rf+init_wld_hp_rfpos), (hp_filtered.lf+init_wld_hp_lfpos), hp_filtered.rfw, hp_filtered.lfw, hp_filtered.zmp);//足の位置はworldにしないと・・・
       convertRelHumanPoseToRelRobotPose(hp_filtered,rp_ref_out);
-//      judgeFootContactStates(rp_ref_out.rfw, rp_ref_out.lfw, is_rf_contact, is_lf_contact);
-      judgeFootContactStates(hp_wld_raw.rfw, hp_wld_raw.lfw, is_rf_contact, is_lf_contact);//frwはすでに1000->100Hzにフィルタリングされている
+      judgeFootContactStates(rp_ref_out.rfw, rp_ref_out.lfw, is_rf_contact, is_lf_contact);
       overwriteFootZFromContactStates(rp_ref_out, is_rf_contact, is_lf_contact, rp_ref_out);
 //      lockFootXYOnContact(rp_ref_out, is_rf_contact, is_lf_contact, rp_ref_out);//ここで改変するとLPFかかってないからジャンプする
       applyWorkspaceLimit(rp_ref_out, rp_ref_out);
       applyCOMToSupportRegionLimit(rp_ref_out, rp_ref_out);
       applyVelLimit(rp_ref_out, rp_ref_out_old, rp_ref_out);
-      rp_ref_out.com(2) = 0;//Z方向固定
+//      rp_ref_out.com(2) = 0;//Z方向固定
       rp_ref_out_old = rp_ref_out;
-      fprintf(log,"%f %f %f %f\n", rp_ref_out.com(0), rp_ref_out.com(1), rp_ref_out.zmp(0), rp_ref_out.zmp(1));
-
       gettimeofday(&t_calc_end, NULL);
     }
     void calibInitHumanCOMFromZMP(){
