@@ -415,11 +415,11 @@ module OpenHRP
     boolean releaseEmergencyStop();
 
     /**
-     * @brief Stop stepping immediately.
-     * @param
-     * @return true if set successfully, false otherwise
+     * HumanSync
      */
     boolean startHumanSyncAfter5sec();
+    boolean setHumanToRobotRatio(in double h2r);
+    boolean setAllowedXYZSync(in boolean x_on, in boolean y_on, in boolean z_on);
     boolean stopHumanSync();
   };
 };

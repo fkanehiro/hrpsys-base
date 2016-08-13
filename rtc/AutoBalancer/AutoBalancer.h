@@ -117,6 +117,7 @@ class HumanSynchronizer{
     bool is_rf_contact,is_lf_contact;
     HumanPose rp_wld_initpos;
     double h2r_ratio;
+    bool use_x,use_y,use_z;
     hrp::Vector3 init_wld_rp_basepos;
     HumanPose rp_ref_out;
     FILE* log;
@@ -126,6 +127,7 @@ class HumanSynchronizer{
 //      h2r_ratio = 0.62;//human 1.1m vs chidori 0.69m
 //      h2r_ratio = 0.69;//human 1.0(with heavy foot sensor) vs chidori 0.69
 //      h2r_ratio = 1.06;//human 1.0(with heavy foot sensor) vs jaxon 1.06
+      use_x = true; use_y = true; use_z = true;
       cur_rfup_level = 0;       cur_lfup_level = 0;
       is_rf_contact = true;     is_lf_contact = true;
       pre_cont_rfpos = hrp::Vector3::Zero();    pre_cont_lfpos = hrp::Vector3::Zero();
@@ -144,10 +146,10 @@ class HumanSynchronizer{
       ht_first_call = true;
       startCountdownForHumanSync = false;
       countdown_num = 5*500;
-      log = fopen("/home/ishiguro/HumanSyncLog.txt","w+");
+//      log = fopen("/home/ishiguro/HumanSyncLog.txt","w+");
     }
     ~HumanSynchronizer(){
-      fclose(log);
+//      fclose(log);
       cout<<"HumanSynchronizer destructed"<<endl;
     }
 
@@ -167,7 +169,7 @@ class HumanSynchronizer{
     void update(){
       gettimeofday(&t_calc_start, NULL);
       removeInitOffsetPose(hp_wld_raw, hp_wld_initpos, hp_rel_raw);
-//      applyInitHumanCOMOffset(hp_rel_raw, init_hp_calibcom, hp_rel_raw);
+      applyInitHumanCOMOffset(hp_rel_raw, init_hp_calibcom, hp_rel_raw);
       applyLPFilter(hp_rel_raw, hp_filtered, hp_filtered);
       lockFootXYOnContact(hp_filtered, is_rf_contact, is_lf_contact, hp_filtered);//根本から改変すべき
       calcWorldZMP((hp_filtered.rf+init_wld_hp_rfpos), (hp_filtered.lf+init_wld_hp_lfpos), hp_filtered.rfw, hp_filtered.lfw, hp_filtered.zmp);//足の位置はworldにしないと・・・
@@ -179,9 +181,10 @@ class HumanSynchronizer{
       applyWorkspaceLimit(rp_ref_out, rp_ref_out);
       applyCOMToSupportRegionLimit(rp_ref_out, rp_ref_out);
       applyVelLimit(rp_ref_out, rp_ref_out_old, rp_ref_out);
+      applyXYZLock(rp_ref_out, rp_ref_out);
       rp_ref_out.com(2) = 0;//Z方向固定
       rp_ref_out_old = rp_ref_out;
-      fprintf(log,"%f %f %f %f\n", rp_ref_out.com(0), rp_ref_out.com(1), rp_ref_out.zmp(0), rp_ref_out.zmp(1));
+//      fprintf(log,"%f %f %f %f\n", rp_ref_out.com(0), rp_ref_out.com(1), rp_ref_out.zmp(0), rp_ref_out.zmp(1));
 
       gettimeofday(&t_calc_end, NULL);
     }
@@ -336,6 +339,14 @@ class HumanSynchronizer{
       for(int i=0;i<3;i++){if(in.rh(i)  - in_old.rh(i)  > MAXVEL){out.rh(i)  = in_old.rh(i)  + MAXVEL;}else if(in.rh(i)  - in_old.rh(i)  < -MAXVEL){out.rh(i)  = in_old.rh(i)  - MAXVEL;}}
       for(int i=0;i<3;i++){if(in.lh(i)  - in_old.lh(i)  > MAXVEL){out.lh(i)  = in_old.lh(i)  + MAXVEL;}else if(in.lh(i)  - in_old.lh(i)  < -MAXVEL){out.lh(i)  = in_old.lh(i)  - MAXVEL;}}
     }
+    void applyXYZLock(const HumanPose& in, HumanPose& out){
+      out = in;
+      for(int i=0;i<out.idsize-4;i++){
+        if(!use_x)out.Seq(i)(0) = 0;
+        if(!use_y)out.Seq(i)(1) = 0;
+        if(!use_z)out.Seq(i)(2) = 0;
+      }
+    }
 };
 
 
@@ -420,6 +431,8 @@ class AutoBalancer
   bool getGoPosFootstepsSequence(const double& x, const double& y, const double& th, OpenHRP::AutoBalancerService::FootstepsSequence_out o_footstep);
   bool releaseEmergencyStop();
   bool startHumanSyncAfter5sec();
+  bool setHumanToRobotRatio(const double h2r);
+  bool setAllowedXYZSync(const bool x_on,const bool y_on,const bool z_on);
   bool stopHumanSync();
 
  protected:

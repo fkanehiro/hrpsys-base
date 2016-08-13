@@ -120,6 +120,16 @@ CORBA::Boolean AutoBalancerService_impl::startHumanSyncAfter5sec()
     return m_autobalancer->startHumanSyncAfter5sec();
 };
 
+CORBA::Boolean AutoBalancerService_impl::setHumanToRobotRatio(const CORBA::Double h2r)
+{
+    return m_autobalancer->setHumanToRobotRatio(h2r);
+};
+
+CORBA::Boolean AutoBalancerService_impl::setAllowedXYZSync(const CORBA::Boolean x_on,const CORBA::Boolean y_on,const CORBA::Boolean z_on)
+{
+    return m_autobalancer->setAllowedXYZSync(x_on,y_on,z_on);
+};
+
 CORBA::Boolean AutoBalancerService_impl::stopHumanSync()
 {
     return m_autobalancer->stopHumanSync();

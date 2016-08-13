@@ -1151,9 +1151,25 @@ void AutoBalancer::solveLimbIK ()
 
 bool AutoBalancer::startHumanSyncAfter5sec()
 {
-	std::cerr << "[" << m_profile.instance_name << "] start HumanSync after 5 sec" << std::endl;
-	hsp->startCountdownForHumanSync = true;
-	return true;
+  std::cerr << "[" << m_profile.instance_name << "] start HumanSync after 5 sec" << std::endl;
+  hsp->startCountdownForHumanSync = true;
+  return true;
+}
+
+bool AutoBalancer::setHumanToRobotRatio(const double h2r)
+{
+  std::cerr << "[" << m_profile.instance_name << "] set h2r_ratio as "<< h2r << std::endl;
+  if(!hsp->isHumanSyncOn())hsp->h2r_ratio = h2r;
+  return true;
+}
+
+bool AutoBalancer::setAllowedXYZSync(const bool x_on,const bool y_on,const bool z_on)
+{
+  std::cerr << "[" << m_profile.instance_name << "] set allowed XYZ move direction as ("<<x_on<<","<<y_on<<","<<z_on<<")" << std::endl;
+  hsp->use_x = x_on;
+  hsp->use_y = y_on;
+  hsp->use_z = z_on;
+  return true;
 }
 
 bool AutoBalancer::stopHumanSync()

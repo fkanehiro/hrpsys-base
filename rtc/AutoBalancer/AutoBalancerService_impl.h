@@ -35,6 +35,8 @@ public:
   CORBA::Boolean getGoPosFootstepsSequence(CORBA::Double x, CORBA::Double y, CORBA::Double th, OpenHRP::AutoBalancerService::FootstepsSequence_out o_footstep);
   CORBA::Boolean releaseEmergencyStop();
   CORBA::Boolean startHumanSyncAfter5sec();
+  CORBA::Boolean setHumanToRobotRatio(const CORBA::Double h2r);
+  CORBA::Boolean setAllowedXYZSync(const CORBA::Boolean x_on,const CORBA::Boolean y_on,const CORBA::Boolean z_on);
   CORBA::Boolean stopHumanSync();
   //
   //
