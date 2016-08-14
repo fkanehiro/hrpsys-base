@@ -578,6 +578,22 @@ namespace rats
         overwrite_footstep_nodes_list.clear();
       }
     }
+    // limit stride
+    if (use_stride_limitation && lcg.get_footstep_index() > 0 && lcg.get_footstep_index() < footstep_nodes_list.size()-overwritable_footstep_index_offset-2 &&
+        (overwritable_footstep_index_offset == 0 || lcg.get_lcg_count() == get_overwrite_check_timing())) {
+      if (lcg.get_footstep_index() == footstep_nodes_list.size()-overwritable_footstep_index_offset-3) {
+        hrp::Vector3 orig_footstep_pos = footstep_nodes_list[get_overwritable_index()].front().worldcoords.pos;
+        limit_stride(footstep_nodes_list[get_overwritable_index()].front(), footstep_nodes_list[get_overwritable_index()-1].front());
+        for (size_t i = get_overwritable_index() + 1; i < footstep_nodes_list.size(); i++) {
+          footstep_nodes_list[i].front().worldcoords.pos -= orig_footstep_pos - footstep_nodes_list[get_overwritable_index()].front().worldcoords.pos;
+        }
+      } else {
+        limit_stride(footstep_nodes_list[get_overwritable_index()].front(), footstep_nodes_list[get_overwritable_index()-1].front());
+      }
+      overwrite_footstep_nodes_list.insert(overwrite_footstep_nodes_list.end(), footstep_nodes_list.begin()+get_overwritable_index(), footstep_nodes_list.end());
+      overwrite_refzmp_queue(overwrite_footstep_nodes_list);
+      overwrite_footstep_nodes_list.clear();
+    }
 
     if ( !solved ) {
       hrp::Vector3 rzmp;

@@ -223,6 +223,8 @@ module OpenHRP
       long overwritable_footstep_index_offset;
       /// Stride limitation when overwriting footsteps (front, rear, outside, inside) [m]
       DblArray4 overwritable_stride_limitation;
+      /// Use stride limitation or not
+      boolean use_stride_limitation;
     };
 
     /**
