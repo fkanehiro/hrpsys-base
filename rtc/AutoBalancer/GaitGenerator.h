@@ -880,6 +880,7 @@ namespace rats
     std::map<leg_type, std::string> leg_type_map;
     coordinates initial_foot_mid_coords;
     bool solved;
+    double leg_margin[4];
 
     /* preview controller parameters */
     //preview_dynamics_filter<preview_control>* preview_controller_ptr;
@@ -931,6 +932,7 @@ namespace rats
         swing_foot_zmp_offsets = boost::assign::list_of<hrp::Vector3>(hrp::Vector3::Zero());
         prev_que_sfzos = boost::assign::list_of<hrp::Vector3>(hrp::Vector3::Zero());
         leg_type_map = boost::assign::map_list_of<leg_type, std::string>(RLEG, "rleg")(LLEG, "lleg")(RARM, "rarm")(LARM, "larm");
+        for (size_t i = 0; i < 4; i++) leg_margin[i] = 0.1;
     };
     ~gait_generator () {
       if ( preview_controller_ptr != NULL ) {
@@ -1071,6 +1073,9 @@ namespace rats
         overwrite_footstep_nodes_list = fnsl;
         append_finalize_footstep(overwrite_footstep_nodes_list);
         print_footstep_nodes_list(overwrite_footstep_nodes_list);
+    };
+    void set_leg_margin (const double _leg_margin, const size_t idx) {
+        leg_margin[idx] = _leg_margin;
     };
     /* Get overwritable footstep index. For example, if overwritable_footstep_index_offset = 1, overwrite next footstep. If overwritable_footstep_index_offset = 0, overwrite current swinging footstep. */
     size_t get_overwritable_index () const

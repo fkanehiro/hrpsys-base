@@ -62,6 +62,7 @@ AutoBalancer::AutoBalancer(RTC::Manager* manager)
       m_AutoBalancerServicePort("AutoBalancerService"),
       m_walkingStatesOut("walkingStates", m_walkingStates),
       m_sbpCogOffsetOut("sbpCogOffset", m_sbpCogOffset),
+      m_legMarginIn("legMargin", m_legMargin),
       // </rtc-template>
       gait_type(BIPED),
       move_base_gain(0.8),
@@ -90,6 +91,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     addInPort("zmpIn", m_zmpIn);
     addInPort("optionalData", m_optionalDataIn);
     addInPort("emergencySignal", m_emergencySignalIn);
+    addInPort("legMargin", m_legMarginIn);
 
     // Set OutPort buffer
     addOutPort("q", m_qOut);
@@ -441,6 +443,12 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
         //     is_stop_mode = true;
         //     gg->emergency_stop();
         // }
+    }
+    if (m_legMarginIn.isNew()) {
+      m_legMarginIn.read();
+      for (size_t i = 0; i < 4; i++) {
+        gg->set_leg_margin(m_legMargin.data[i], i);
+      }
     }
 
     Guard guard(m_mutex);
