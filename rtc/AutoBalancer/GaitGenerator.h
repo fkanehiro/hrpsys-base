@@ -880,7 +880,7 @@ namespace rats
     std::map<leg_type, std::string> leg_type_map;
     coordinates initial_foot_mid_coords;
     bool solved;
-    double leg_margin[4];
+    double leg_margin[4], overwritable_stride_limitation[4];
 
     /* preview controller parameters */
     //preview_dynamics_filter<preview_control>* preview_controller_ptr;
@@ -933,6 +933,7 @@ namespace rats
         prev_que_sfzos = boost::assign::list_of<hrp::Vector3>(hrp::Vector3::Zero());
         leg_type_map = boost::assign::map_list_of<leg_type, std::string>(RLEG, "rleg")(LLEG, "lleg")(RARM, "rarm")(LARM, "larm");
         for (size_t i = 0; i < 4; i++) leg_margin[i] = 0.1;
+        for (size_t i = 0; i < 4; i++) overwritable_stride_limitation[i] = 0.2;
     };
     ~gait_generator () {
       if ( preview_controller_ptr != NULL ) {
@@ -945,6 +946,7 @@ namespace rats
                                     const std::vector<step_node>& initial_swing_leg_dst_steps,
                                     const double delay = 1.6);
     bool proc_one_tick ();
+    void limit_stride (step_node& cur_fs, const step_node& prev_fs);
     void append_footstep_nodes (const std::vector<std::string>& _legs, const std::vector<coordinates>& _fss)
     {
         std::vector<step_node> tmp_sns;
@@ -1076,6 +1078,11 @@ namespace rats
     };
     void set_leg_margin (const double _leg_margin, const size_t idx) {
         leg_margin[idx] = _leg_margin;
+    };
+    void set_overwritable_stride_limitation (const double _overwritable_stride_limitation[4]) {
+      for (size_t i = 0; i < 4; i++) {
+        overwritable_stride_limitation[i] = _overwritable_stride_limitation[i];
+      }
     };
     /* Get overwritable footstep index. For example, if overwritable_footstep_index_offset = 1, overwrite next footstep. If overwritable_footstep_index_offset = 0, overwrite current swinging footstep. */
     size_t get_overwritable_index () const
@@ -1228,6 +1235,7 @@ namespace rats
     size_t get_optional_go_pos_finalize_footstep_num () const { return optional_go_pos_finalize_footstep_num; };
     bool is_finalizing (const double tm) const { return ((preview_controller_ptr->get_delay()*2 - default_step_time/dt)-finalize_count) <= (tm/dt)-1; };
     size_t get_overwrite_check_timing () const { return static_cast<size_t>(footstep_nodes_list[lcg.get_footstep_index()][0].step_time/dt * 0.5) - 1;}; // Almost middle of step time
+    double get_overwritable_stride_limitation (const size_t idx) const { return overwritable_stride_limitation[idx]; };
     void print_param (const std::string& print_str = "") const
     {
         double stride_fwd_x, stride_y, stride_th, stride_bwd_x;

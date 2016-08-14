@@ -614,6 +614,37 @@ namespace rats
     return solved;
   };
 
+  void gait_generator::limit_stride (step_node& cur_fs, const step_node& prev_fs)
+  {
+    leg_type cur_leg = cur_fs.l_r;
+    // prev_fs frame
+    cur_fs.worldcoords.pos = prev_fs.worldcoords.rot.transpose() * (cur_fs.worldcoords.pos - prev_fs.worldcoords.pos);
+    double stride_r = std::pow(cur_fs.worldcoords.pos(0), 2.0) + std::pow(cur_fs.worldcoords.pos(1) + (cur_leg == LLEG ? -1 : 1) * overwritable_stride_limitation[3], 2.0);
+    // front, rear, outside limitation
+    double stride_r_limit = std::pow(std::max(overwritable_stride_limitation[cur_fs.worldcoords.pos(0) >= 0 ? 0 : 1], overwritable_stride_limitation[2] - overwritable_stride_limitation[3]), 2.0);
+    if (stride_r > stride_r_limit) {
+        cur_fs.worldcoords.pos(0) *= sqrt(stride_r_limit / stride_r);
+        cur_fs.worldcoords.pos(1) = (cur_leg == LLEG ? 1 : -1) * overwritable_stride_limitation[3] + sqrt(stride_r_limit / stride_r) * (cur_fs.worldcoords.pos(1) + (cur_leg == LLEG ? -1 : 1) * overwritable_stride_limitation[3]);
+    }
+    if (cur_fs.worldcoords.pos(0) > overwritable_stride_limitation[0]) cur_fs.worldcoords.pos(0) = overwritable_stride_limitation[0];
+    if (cur_fs.worldcoords.pos(0) < -1 * overwritable_stride_limitation[0]) cur_fs.worldcoords.pos(0) = -1 * overwritable_stride_limitation[1];
+    if ((cur_leg == LLEG ? 1 : -1) * cur_fs.worldcoords.pos(1) > overwritable_stride_limitation[2]) cur_fs.worldcoords.pos(1) = (cur_leg == LLEG ? 1 : -1) * overwritable_stride_limitation[2];
+    // inside limitation
+    std::vector<double> cur_leg_vertices_y;
+    cur_leg_vertices_y.reserve(4);
+    cur_leg_vertices_y.push_back((cur_fs.worldcoords.pos + prev_fs.worldcoords.rot.transpose() * cur_fs.worldcoords.rot * hrp::Vector3(leg_margin[0], (cur_leg == LLEG ? 1 : -1) * leg_margin[2], 0.0))(1));
+    cur_leg_vertices_y.push_back((cur_fs.worldcoords.pos + prev_fs.worldcoords.rot.transpose() * cur_fs.worldcoords.rot * hrp::Vector3(leg_margin[0], (cur_leg == LLEG ? -1 : 1) * leg_margin[3], 0.0))(1));
+    cur_leg_vertices_y.push_back((cur_fs.worldcoords.pos + prev_fs.worldcoords.rot.transpose() * cur_fs.worldcoords.rot * hrp::Vector3(-1 * leg_margin[1], (cur_leg == LLEG ? 1 : -1) * leg_margin[2], 0.0))(1));
+    cur_leg_vertices_y.push_back((cur_fs.worldcoords.pos + prev_fs.worldcoords.rot.transpose() * cur_fs.worldcoords.rot * hrp::Vector3(-1 * leg_margin[1], (cur_leg == LLEG ? -1 : 1) * leg_margin[3], 0.0))(1));
+    if (cur_leg == LLEG) {
+      if (*std::min_element(cur_leg_vertices_y.begin(), cur_leg_vertices_y.end()) < overwritable_stride_limitation[3]) cur_fs.worldcoords.pos(1) += overwritable_stride_limitation[3] - *std::min_element(cur_leg_vertices_y.begin(), cur_leg_vertices_y.end());
+    } else {
+      if (*std::max_element(cur_leg_vertices_y.begin(), cur_leg_vertices_y.end()) > -1 * overwritable_stride_limitation[3]) cur_fs.worldcoords.pos(1) += -1 * overwritable_stride_limitation[3] - *std::max_element(cur_leg_vertices_y.begin(), cur_leg_vertices_y.end());
+    }
+    // world frame
+    cur_fs.worldcoords.pos = prev_fs.worldcoords.pos + prev_fs.worldcoords.rot * cur_fs.worldcoords.pos;
+  };
+
   /* generate vector of step_node from :go-pos params
    *  x, y and theta are simply divided by using stride params
    *  unit system -> x [mm], y [mm], theta [deg]
