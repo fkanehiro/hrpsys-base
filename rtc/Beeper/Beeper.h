@@ -129,7 +129,6 @@ class Beeper
   // </rtc-template>
 
  private:
-  double m_dt;
   long long m_loop;
   unsigned int m_debugLevel;
   pthread_t beep_thread;
