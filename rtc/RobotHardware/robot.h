@@ -4,7 +4,7 @@
 #include <boost/array.hpp>
 #include <semaphore.h>
 #include <hrpModel/Body.h>
-#include "io/iob.h"
+#include "hrpsys/io/iob.h"
 
 /**
    \brief 
