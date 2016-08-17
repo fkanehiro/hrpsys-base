@@ -947,7 +947,7 @@ namespace rats
                                     const std::vector<step_node>& initial_swing_leg_dst_steps,
                                     const double delay = 1.6);
     bool proc_one_tick ();
-    void limit_stride (step_node& cur_fs, const step_node& prev_fs);
+    void limit_stride (step_node& cur_fs, const step_node& prev_fs) const;
     void append_footstep_nodes (const std::vector<std::string>& _legs, const std::vector<coordinates>& _fss)
     {
         std::vector<step_node> tmp_sns;
