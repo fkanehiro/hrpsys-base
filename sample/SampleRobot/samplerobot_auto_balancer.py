@@ -671,6 +671,35 @@ def demoGaitGeneratorSetFootStepsWithArms():
     hcf.abc_svc.setGaitGeneratorParam(orig_ggp)
     hcf.startAutoBalancer()
 
+def demoGaitGeneratorChangeStrideLimitationType():
+    print >> sys.stderr, "19. Change stride limitation type to CIRCLE"
+    hcf.startAutoBalancer();
+    # initialize dst_foot_midcoords
+    hcf.abc_svc.goPos(0,0,0)
+    hcf.abc_svc.waitFootSteps()
+    # set params
+    orig_ggp = hcf.abc_svc.getGaitGeneratorParam()[1]
+    ggp = hcf.abc_svc.getGaitGeneratorParam()[1]
+    ggp.stride_limitation_type = OpenHRP.AutoBalancerService.CIRCLE;
+    ggp.overwritable_stride_limitation = [0.15, 0.1, 0.25, 0.1];
+    hcf.abc_svc.setGaitGeneratorParam(ggp)
+    # gopos check 1
+    goalx=0.5;goaly=0.5;goalth=20.0
+    prev_dst_foot_midcoords=hcf.abc_svc.getFootstepParam()[1].dst_foot_midcoords
+    hcf.abc_svc.goPos(goalx, goaly, goalth)
+    hcf.abc_svc.waitFootSteps()
+    checkGoPosParam(goalx, goaly, goalth, prev_dst_foot_midcoords)
+    # gopos check 2
+    goalx=-0.5;goaly=-0.5;goalth=-10.0
+    prev_dst_foot_midcoords=hcf.abc_svc.getFootstepParam()[1].dst_foot_midcoords
+    hcf.abc_svc.goPos(goalx, goaly, goalth)
+    hcf.abc_svc.waitFootSteps()
+    checkGoPosParam(goalx, goaly, goalth, prev_dst_foot_midcoords)
+    checkActualBaseAttitude()
+    print >> sys.stderr, "  Change stride limitation type to CIRCLE=>OK"
+    # reset params
+    hcf.abc_svc.setGaitGeneratorParam(orig_ggp)
+
 def demoStandingPosResetting():
     print >> sys.stderr, "demoStandingPosResetting"
     hcf.abc_svc.goPos(0,0,math.degrees(-1*checkParameterFromLog("WAIST")[5])); # Rot yaw
@@ -711,6 +740,7 @@ def demo():
         demoGaitGeneratorGoPosOverwrite()
         demoGaitGeneratorGrasplessManipMode()
         demoGaitGeneratorSetFootStepsWithArms()
+        demoGaitGeneratorChangeStrideLimitationType()
 
 if __name__ == '__main__':
     demo()
