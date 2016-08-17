@@ -818,11 +818,12 @@ namespace rats
     double dx = cur_vel_param.velocity_x + offset_vel_param.velocity_x, dy = cur_vel_param.velocity_y + offset_vel_param.velocity_y;
     dth = cur_vel_param.velocity_theta + offset_vel_param.velocity_theta;
     /* velocity limitation by stride parameters <- this should be based on footstep candidates */
-    dx  = std::max(-1 * footstep_param.stride_bwd_x / default_step_time, std::min(footstep_param.stride_fwd_x / default_step_time, dx ));
-    dy  = std::max(-1 * footstep_param.stride_y     / default_step_time, std::min(footstep_param.stride_y     / default_step_time, dy ));
     dth = std::max(-1 * footstep_param.stride_theta / default_step_time, std::min(footstep_param.stride_theta / default_step_time, dth));
-    /* inside step limitation */
-    if (use_inside_step_limitation) {
+    if (default_stride_limitation_type == SQUARE) {
+      dx  = std::max(-1 * footstep_param.stride_bwd_x / default_step_time, std::min(footstep_param.stride_fwd_x / default_step_time, dx ));
+      dy  = std::max(-1 * footstep_param.stride_y     / default_step_time, std::min(footstep_param.stride_y     / default_step_time, dy ));
+      /* inside step limitation */
+      if (use_inside_step_limitation) {
         if (cur_vel_param.velocity_y > 0) {
             if (std::count_if(sup_fns.begin(), sup_fns.end(), (&boost::lambda::_1->* &step_node::l_r == LLEG || &boost::lambda::_1->* &step_node::l_r == LARM)) > 0) dy *= 0.5;
         } else {
@@ -833,6 +834,7 @@ namespace rats
         } else {
             if (std::count_if(sup_fns.begin(), sup_fns.end(), (&boost::lambda::_1->* &step_node::l_r == RLEG || &boost::lambda::_1->* &step_node::l_r == RARM)) > 0) dth *= 0.5;
         }
+      }
     }
     trans = hrp::Vector3(dx * default_step_time, dy * default_step_time, 0);
     dth = deg2rad(dth * default_step_time);
@@ -853,6 +855,7 @@ namespace rats
     ref_coords.pos += ref_coords.rot * trans;
     ref_coords.rotate(dth, hrp::Vector3(0,0,1));
     append_go_pos_step_nodes(ref_coords, calc_counter_leg_types_from_footstep_nodes(_footstep_nodes_list.back(), all_limbs), _footstep_nodes_list);
+    if (default_stride_limitation_type == CIRCLE) limit_stride(_footstep_nodes_list[_footstep_nodes_list.size()-1].front(), _footstep_nodes_list[_footstep_nodes_list.size()-2].front());
   };
 
   void gait_generator::calc_next_coords_velocity_mode (std::vector< std::vector<step_node> >& ret_list, const size_t idx, const size_t future_step_num)
@@ -880,6 +883,7 @@ namespace rats
       for (size_t j = 0; j < forcused_sup_legs.size(); j++) {
           ret.push_back(step_node(forcused_sup_legs.at(j), ref_coords, 0, 0, 0, 0));
           ret[j].worldcoords.pos += ret[j].worldcoords.rot * footstep_param.leg_default_translate_pos[forcused_sup_legs.at(j)];
+          if (default_stride_limitation_type == CIRCLE) limit_stride(ret[j], (i == 0 ? footstep_nodes_list[idx-1].at(j) : ret_list[i -1].at(j)));
       }
       ret_list.push_back(ret);
     }

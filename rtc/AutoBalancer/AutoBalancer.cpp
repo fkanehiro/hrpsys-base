@@ -1422,6 +1422,11 @@ bool AutoBalancer::setGaitGeneratorParam(const OpenHRP::AutoBalancerService::Gai
   gg->set_overwritable_footstep_index_offset(i_param.overwritable_footstep_index_offset);
   gg->set_overwritable_stride_limitation(i_param.overwritable_stride_limitation);
   gg->set_use_stride_limitation(i_param.use_stride_limitation);
+  if (i_param.stride_limitation_type == OpenHRP::AutoBalancerService::SQUARE) {
+    gg->set_stride_limitation_type(SQUARE);
+  } else if (i_param.stride_limitation_type == OpenHRP::AutoBalancerService::CIRCLE) {
+    gg->set_stride_limitation_type(CIRCLE);
+  }
 
   // print
   gg->print_param(std::string(m_profile.instance_name));
@@ -1495,6 +1500,11 @@ bool AutoBalancer::getGaitGeneratorParam(OpenHRP::AutoBalancerService::GaitGener
     i_param.overwritable_stride_limitation[i] = gg->get_overwritable_stride_limitation(i);
   }
   i_param.use_stride_limitation = gg->get_use_stride_limitation();
+  if (gg->get_stride_limitation_type() == SQUARE) {
+    i_param.stride_limitation_type = OpenHRP::AutoBalancerService::SQUARE;
+  } else if (gg->get_stride_limitation_type() == CIRCLE) {
+    i_param.stride_limitation_type = OpenHRP::AutoBalancerService::CIRCLE;
+  }
   return true;
 };
 
