@@ -236,6 +236,8 @@ module OpenHRP
       boolean use_stride_limitation;
       /// Stride limitation type
       StrideLimitationType stride_limitation_type;
+      /// Leg margin between foot end effector position and foot edge (front, rear, outside, inside) [m]
+      DblArray4 leg_margin;
     };
 
     /**

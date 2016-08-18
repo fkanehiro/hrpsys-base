@@ -62,7 +62,6 @@ Stabilizer::Stabilizer(RTC::Manager* manager)
     m_actContactStatesOut("actContactStates", m_actContactStates),
     m_COPInfoOut("COPInfo", m_COPInfo),
     m_emergencySignalOut("emergencySignal", m_emergencySignal),
-    m_legMarginOut("legMargin", m_legMargin),
     // for debug output
     m_originRefZmpOut("originRefZmp", m_originRefZmp),
     m_originRefCogOut("originRefCog", m_originRefCog),
@@ -124,7 +123,6 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   addOutPort("actContactStates", m_actContactStatesOut);
   addOutPort("COPInfo", m_COPInfoOut);
   addOutPort("emergencySignal", m_emergencySignalOut);
-  addOutPort("legMargin", m_legMarginOut);
   // for debug output
   addOutPort("originRefZmp", m_originRefZmpOut);
   addOutPort("originRefCog", m_originRefCogOut);
@@ -391,7 +389,6 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   total_mass = m_robot->totalMass();
   ref_zmp_aux = hrp::Vector3::Zero();
   m_actContactStates.data.length(m_contactStates.data.length());
-  m_legMargin.data.length(4);
   for (size_t i = 0; i < m_contactStates.data.length(); i++) {
     contact_states.push_back(true);
     prev_contact_states.push_back(true);
@@ -600,12 +597,6 @@ RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
       m_actContactStatesOut.write();
       m_COPInfo.tm = m_qRef.tm;
       m_COPInfoOut.write();
-      m_legMargin.data[0] = szd->get_leg_front_margin();
-      m_legMargin.data[1] = szd->get_leg_rear_margin();
-      m_legMargin.data[2] = szd->get_leg_outside_margin();
-      m_legMargin.data[3] = szd->get_leg_inside_margin();
-      m_legMargin.tm = m_qRef.tm;
-      m_legMarginOut.write();
       //m_tauOut.write();
       // for debug output
       m_originRefZmp.data.x = ref_zmp(0); m_originRefZmp.data.y = ref_zmp(1); m_originRefZmp.data.z = ref_zmp(2);

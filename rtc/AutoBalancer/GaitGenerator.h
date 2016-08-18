@@ -1079,8 +1079,10 @@ namespace rats
         append_finalize_footstep(overwrite_footstep_nodes_list);
         print_footstep_nodes_list(overwrite_footstep_nodes_list);
     };
-    void set_leg_margin (const double _leg_margin, const size_t idx) {
-        leg_margin[idx] = _leg_margin;
+    void set_leg_margin (const double _leg_margin[4]) {
+      for (size_t i = 0; i < 4; i++) {
+        leg_margin[i] = _leg_margin[i];
+      }
     };
     void set_overwritable_stride_limitation (const double _overwritable_stride_limitation[4]) {
       for (size_t i = 0; i < 4; i++) {
@@ -1240,6 +1242,7 @@ namespace rats
     size_t get_optional_go_pos_finalize_footstep_num () const { return optional_go_pos_finalize_footstep_num; };
     bool is_finalizing (const double tm) const { return ((preview_controller_ptr->get_delay()*2 - default_step_time/dt)-finalize_count) <= (tm/dt)-1; };
     size_t get_overwrite_check_timing () const { return static_cast<size_t>(footstep_nodes_list[lcg.get_footstep_index()][0].step_time/dt * 0.5) - 1;}; // Almost middle of step time
+    double get_leg_margin (const size_t idx) const { return leg_margin[idx]; };
     double get_overwritable_stride_limitation (const size_t idx) const { return overwritable_stride_limitation[idx]; };
     bool get_use_stride_limitation () const { return use_stride_limitation; };
     stride_limitation_type get_stride_limitation_type () const { return default_stride_limitation_type; };
