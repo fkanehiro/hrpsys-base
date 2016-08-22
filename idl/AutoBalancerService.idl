@@ -132,6 +132,15 @@ module OpenHRP
     };
 
     /**
+     * @enum StrideLimitationType
+     * @brief Type of stride limitation
+     */
+    enum StrideLimitationType {
+      SQUARE,
+      CIRCLE
+    };
+
+    /**
      * @struct FootstepParam
      * @brief Foot step parameters.
      */
@@ -225,6 +234,10 @@ module OpenHRP
       DblArray4 overwritable_stride_limitation;
       /// Use stride limitation or not
       boolean use_stride_limitation;
+      /// Stride limitation type
+      StrideLimitationType stride_limitation_type;
+      /// Leg margin between foot end effector position and foot edge (front, rear, outside, inside) [m]
+      DblArray4 leg_margin;
     };
 
     /**

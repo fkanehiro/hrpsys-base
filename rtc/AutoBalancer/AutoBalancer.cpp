@@ -62,7 +62,6 @@ AutoBalancer::AutoBalancer(RTC::Manager* manager)
       m_AutoBalancerServicePort("AutoBalancerService"),
       m_walkingStatesOut("walkingStates", m_walkingStates),
       m_sbpCogOffsetOut("sbpCogOffset", m_sbpCogOffset),
-      m_legMarginIn("legMargin", m_legMargin),
       // </rtc-template>
       gait_type(BIPED),
       move_base_gain(0.8),
@@ -91,7 +90,6 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     addInPort("zmpIn", m_zmpIn);
     addInPort("optionalData", m_optionalDataIn);
     addInPort("emergencySignal", m_emergencySignalIn);
-    addInPort("legMargin", m_legMarginIn);
 
     // Set OutPort buffer
     addOutPort("q", m_qOut);
@@ -443,12 +441,6 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
         //     is_stop_mode = true;
         //     gg->emergency_stop();
         // }
-    }
-    if (m_legMarginIn.isNew()) {
-      m_legMarginIn.read();
-      for (size_t i = 0; i < 4; i++) {
-        gg->set_leg_margin(m_legMargin.data[i], i);
-      }
     }
 
     Guard guard(m_mutex);
@@ -1420,8 +1412,14 @@ bool AutoBalancer::setGaitGeneratorParam(const OpenHRP::AutoBalancerService::Gai
   gg->set_zmp_weight_map(boost::assign::map_list_of<leg_type, double>(RLEG, i_param.zmp_weight_map[0])(LLEG, i_param.zmp_weight_map[1])(RARM, i_param.zmp_weight_map[2])(LARM, i_param.zmp_weight_map[3]));
   gg->set_optional_go_pos_finalize_footstep_num(i_param.optional_go_pos_finalize_footstep_num);
   gg->set_overwritable_footstep_index_offset(i_param.overwritable_footstep_index_offset);
+  gg->set_leg_margin(i_param.leg_margin);
   gg->set_overwritable_stride_limitation(i_param.overwritable_stride_limitation);
   gg->set_use_stride_limitation(i_param.use_stride_limitation);
+  if (i_param.stride_limitation_type == OpenHRP::AutoBalancerService::SQUARE) {
+    gg->set_stride_limitation_type(SQUARE);
+  } else if (i_param.stride_limitation_type == OpenHRP::AutoBalancerService::CIRCLE) {
+    gg->set_stride_limitation_type(CIRCLE);
+  }
 
   // print
   gg->print_param(std::string(m_profile.instance_name));
@@ -1492,9 +1490,17 @@ bool AutoBalancer::getGaitGeneratorParam(OpenHRP::AutoBalancerService::GaitGener
   i_param.optional_go_pos_finalize_footstep_num = gg->get_optional_go_pos_finalize_footstep_num();
   i_param.overwritable_footstep_index_offset = gg->get_overwritable_footstep_index_offset();
   for (size_t i=0; i<4; i++) {
+    i_param.leg_margin[i] = gg->get_leg_margin(i);
+  }
+  for (size_t i=0; i<4; i++) {
     i_param.overwritable_stride_limitation[i] = gg->get_overwritable_stride_limitation(i);
   }
   i_param.use_stride_limitation = gg->get_use_stride_limitation();
+  if (gg->get_stride_limitation_type() == SQUARE) {
+    i_param.stride_limitation_type = OpenHRP::AutoBalancerService::SQUARE;
+  } else if (gg->get_stride_limitation_type() == CIRCLE) {
+    i_param.stride_limitation_type = OpenHRP::AutoBalancerService::CIRCLE;
+  }
   return true;
 };
 

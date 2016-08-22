@@ -20,6 +20,7 @@ namespace rats
 
     enum orbit_type {SHUFFLING, CYCLOID, RECTANGLE, STAIR, CYCLOIDDELAY, CYCLOIDDELAYKICK, CROSS};
     enum leg_type {RLEG, LLEG, RARM, LARM, BOTH, ALL};
+    enum stride_limitation_type {SQUARE, CIRCLE};
 
     struct step_node
     {
@@ -882,6 +883,7 @@ namespace rats
     bool solved;
     double leg_margin[4], overwritable_stride_limitation[4];
     bool use_stride_limitation;
+    stride_limitation_type default_stride_limitation_type;
 
     /* preview controller parameters */
     //preview_dynamics_filter<preview_control>* preview_controller_ptr;
@@ -928,7 +930,7 @@ namespace rats
         dt(_dt), default_step_time(1.0), default_double_support_ratio_before(0.1), default_double_support_ratio_after(0.1), default_double_support_static_ratio_before(0.0), default_double_support_static_ratio_after(0.0), default_double_support_ratio_swing_before(0.1), default_double_support_ratio_swing_after(0.1), gravitational_acceleration(DEFAULT_GRAVITATIONAL_ACCELERATION),
         finalize_count(0), optional_go_pos_finalize_footstep_num(0), overwrite_footstep_index(0), overwritable_footstep_index_offset(1),
         velocity_mode_flg(VEL_IDLING), emergency_flg(IDLING),
-        use_inside_step_limitation(true), use_stride_limitation(false),
+        use_inside_step_limitation(true), use_stride_limitation(false), default_stride_limitation_type(SQUARE),
         preview_controller_ptr(NULL) {
         swing_foot_zmp_offsets = boost::assign::list_of<hrp::Vector3>(hrp::Vector3::Zero());
         prev_que_sfzos = boost::assign::list_of<hrp::Vector3>(hrp::Vector3::Zero());
@@ -947,7 +949,7 @@ namespace rats
                                     const std::vector<step_node>& initial_swing_leg_dst_steps,
                                     const double delay = 1.6);
     bool proc_one_tick ();
-    void limit_stride (step_node& cur_fs, const step_node& prev_fs);
+    void limit_stride (step_node& cur_fs, const step_node& prev_fs) const;
     void append_footstep_nodes (const std::vector<std::string>& _legs, const std::vector<coordinates>& _fss)
     {
         std::vector<step_node> tmp_sns;
@@ -1077,8 +1079,10 @@ namespace rats
         append_finalize_footstep(overwrite_footstep_nodes_list);
         print_footstep_nodes_list(overwrite_footstep_nodes_list);
     };
-    void set_leg_margin (const double _leg_margin, const size_t idx) {
-        leg_margin[idx] = _leg_margin;
+    void set_leg_margin (const double _leg_margin[4]) {
+      for (size_t i = 0; i < 4; i++) {
+        leg_margin[i] = _leg_margin[i];
+      }
     };
     void set_overwritable_stride_limitation (const double _overwritable_stride_limitation[4]) {
       for (size_t i = 0; i < 4; i++) {
@@ -1086,6 +1090,7 @@ namespace rats
       }
     };
     void set_use_stride_limitation (const bool _use_stride_limitation) { use_stride_limitation = _use_stride_limitation; };
+    void set_stride_limitation_type (const stride_limitation_type _tmp) { default_stride_limitation_type = _tmp; };
     /* Get overwritable footstep index. For example, if overwritable_footstep_index_offset = 1, overwrite next footstep. If overwritable_footstep_index_offset = 0, overwrite current swinging footstep. */
     size_t get_overwritable_index () const
     {
@@ -1237,8 +1242,10 @@ namespace rats
     size_t get_optional_go_pos_finalize_footstep_num () const { return optional_go_pos_finalize_footstep_num; };
     bool is_finalizing (const double tm) const { return ((preview_controller_ptr->get_delay()*2 - default_step_time/dt)-finalize_count) <= (tm/dt)-1; };
     size_t get_overwrite_check_timing () const { return static_cast<size_t>(footstep_nodes_list[lcg.get_footstep_index()][0].step_time/dt * 0.5) - 1;}; // Almost middle of step time
+    double get_leg_margin (const size_t idx) const { return leg_margin[idx]; };
     double get_overwritable_stride_limitation (const size_t idx) const { return overwritable_stride_limitation[idx]; };
     bool get_use_stride_limitation () const { return use_stride_limitation; };
+    stride_limitation_type get_stride_limitation_type () const { return default_stride_limitation_type; };
     void print_param (const std::string& print_str = "") const
     {
         double stride_fwd_x, stride_y, stride_th, stride_bwd_x;
@@ -1286,6 +1293,12 @@ namespace rats
         for (int i = 0; i < get_NUM_TH_PHASES(); i++) std::cerr << tmp_ratio[i] << " ";
         std::cerr << "]" << std::endl;
         std::cerr << "[" << print_str << "]   optional_go_pos_finalize_footstep_num = " << optional_go_pos_finalize_footstep_num << ", overwritable_footstep_index_offset = " << overwritable_footstep_index_offset << std::endl;
+        std::cerr << "[" << print_str << "]   default_stride_limitation_type = ";
+        if (default_stride_limitation_type == SQUARE) {
+          std::cerr << "SQUARE" << std::endl;
+        } else if (default_stride_limitation_type == CIRCLE) {
+          std::cerr << "CIRCLE" << std::endl;
+        }
     };
   };
 }
