@@ -384,7 +384,21 @@ RTC::ReturnCode_t ReferenceForceUpdater::onExecute(RTC::UniqueId ec_id)
         hrp::Vector3 abs_motion_dir, tmp_act_force, df;
         hrp::Matrix33 ee_rot, sensor_rot;
         ee_rot = target_link->R * ee_map[arm].localR;
-        abs_motion_dir = ee_rot * m_RFUParam[arm].motion_dir;
+        if ( m_RFUParam[arm].frame=="local" )
+            abs_motion_dir = ee_rot * m_RFUParam[arm].motion_dir;
+        else {
+            hrp::Matrix33 current_foot_mid_rot;
+            std::vector<hrp::Matrix33> foot_rot;
+            std::vector<std::string> leg_names;
+            leg_names.push_back("rleg");
+            leg_names.push_back("lleg");
+            for (size_t i = 0; i < leg_names.size(); i++) {
+                hrp::Link* target_link = m_robot->link(ee_map[leg_names[i]].target_name);
+                foot_rot.push_back(target_link->R * ee_map[leg_names[i]].localR);
+            }
+            rats::mid_rot(current_foot_mid_rot, 0.5, foot_rot[0], foot_rot[1]);
+            abs_motion_dir = current_foot_mid_rot * m_RFUParam[arm].motion_dir;
+        }
         for (size_t i = 0; i < 3; i++ ) tmp_act_force(i) = m_force[arm_idx].data[i];
         hrp::Sensor* sensor = m_robot->sensor(hrp::Sensor::FORCE, arm_idx);
         sensor_rot = sensor->link->R * sensor->localR;
@@ -482,18 +496,24 @@ bool ReferenceForceUpdater::setReferenceForceUpdaterParam(const std::string& i_n
     std::cerr << "[" << m_profile.instance_name << "] Could not set parameters because rfu [" << i_name_ << "] is active" << std::endl;
     return false;
   }
+  if ( std::string(i_param.frame) != "local" && std::string(i_param.frame) != "world" ) {
+    std::cerr << "[" << m_profile.instance_name << "] \"frame\" parameter must be local/world. could not set \"" << std::string(i_param.frame) << "\"" <<std::endl;
+    return false;
+  }
   m_RFUParam[arm].p_gain = i_param.p_gain;
   m_RFUParam[arm].d_gain = i_param.d_gain;
   m_RFUParam[arm].i_gain = i_param.i_gain;
   m_RFUParam[arm].update_freq = i_param.update_freq;
   m_RFUParam[arm].update_time_ratio = i_param.update_time_ratio;
   m_RFUParam[arm].update_count=round((1/m_RFUParam[arm].update_freq)/m_dt);
+  m_RFUParam[arm].frame=std::string(i_param.frame);
 
   for (size_t i = 0; i < 3; i++ ) m_RFUParam[arm].motion_dir(i) = i_param.motion_dir[i];
 
   std::cerr << "[" << m_profile.instance_name << "]   p_gain = " << m_RFUParam[arm].p_gain << ", d_gain = " << m_RFUParam[arm].d_gain << ", i_gain = " << m_RFUParam[arm].i_gain << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   update_freq = " << m_RFUParam[arm].update_freq << "[Hz], update_time_ratio = " << m_RFUParam[arm].update_time_ratio << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   motion_dir = " << m_RFUParam[arm].motion_dir.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   frame = " << m_RFUParam[arm].frame << std::endl;
   return true;
 };
 
@@ -511,6 +531,7 @@ bool ReferenceForceUpdater::getReferenceForceUpdaterParam(const std::string& i_n
   i_param->i_gain = m_RFUParam[arm].i_gain;
   i_param->update_freq = m_RFUParam[arm].update_freq;
   i_param->update_time_ratio = m_RFUParam[arm].update_time_ratio;
+  i_param->frame = m_RFUParam[arm].frame.c_str();
   for (size_t i = 0; i < 3; i++ ) i_param->motion_dir[i] = m_RFUParam[arm].motion_dir(i);
   return true;
 };
