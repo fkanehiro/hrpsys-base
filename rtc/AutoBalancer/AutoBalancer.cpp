@@ -568,6 +568,10 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
 
     for (unsigned int i=0; i<m_ref_forceOut.size(); i++){
         m_force[i].tm = m_qRef.tm;
+        for (unsigned int j=0; j<6; j++){
+            if (control_mode != MODE_IDLE) m_force[i].data[j] = transition_interpolator_ratio * m_force[i].data[j] + (1-transition_interpolator_ratio) * m_ref_force[i].data[j];
+            else m_force[i].data[j] = m_ref_force[i].data[j];
+        }
         m_ref_forceOut[i]->write();
     }
 
@@ -678,23 +682,6 @@ void AutoBalancer::getTargetParameters()
               std::map<leg_type, std::string>::const_iterator dst = std::find_if(leg_type_map.begin(), leg_type_map.end(), (&boost::lambda::_1->* &std::map<leg_type, std::string>::value_type::second == it->first));
               m_controlSwingSupportTime.data[contact_states_index_map[it->first]] = gg->get_current_swing_time(dst->first);
           }
-      }
-      // set ref_forces
-      {
-          std::vector<hrp::Vector3> ee_pos;
-          for (size_t i = 0 ; i < leg_names.size(); i++) {
-              ABCIKparam& tmpikp = ikp[leg_names[i]];
-              ee_pos.push_back(tmpikp.target_p0 + tmpikp.target_r0 * tmpikp.localPos + tmpikp.target_r0 * tmpikp.localR * default_zmp_offsets[i]);
-          }
-          double alpha = (ref_zmp - ee_pos[1]).norm() / ((ee_pos[0] - ref_zmp).norm() + (ee_pos[1] - ref_zmp).norm());
-          if (alpha>1.0) alpha = 1.0;
-          if (alpha<0.0) alpha = 0.0;
-          if (DEBUGP) {
-          std::cerr << "[" << m_profile.instance_name << "] alpha:" << alpha << std::endl;
-          }
-          double mg = m_robot->totalMass() * gg->get_gravitational_acceleration();
-          m_force[0].data[2] = alpha * mg;
-          m_force[1].data[2] = (1-alpha) * mg;
       }
       // set limbCOPOffset
       {
@@ -833,6 +820,24 @@ void AutoBalancer::getTargetParameters()
                 }
             }
         }
+    }
+
+    // set ref_forces
+    {
+          std::vector<hrp::Vector3> ee_pos;
+          for (size_t i = 0 ; i < leg_names.size(); i++) {
+              ABCIKparam& tmpikp = ikp[leg_names[i]];
+              ee_pos.push_back(tmpikp.target_p0 + tmpikp.target_r0 * tmpikp.localPos + tmpikp.target_r0 * tmpikp.localR * default_zmp_offsets[i]);
+          }
+          double alpha = (ref_zmp - ee_pos[1]).norm() / ((ee_pos[0] - ref_zmp).norm() + (ee_pos[1] - ref_zmp).norm());
+          if (alpha>1.0) alpha = 1.0;
+          if (alpha<0.0) alpha = 0.0;
+          if (DEBUGP) {
+          std::cerr << "[" << m_profile.instance_name << "] alpha:" << alpha << std::endl;
+          }
+          double mg = m_robot->totalMass() * gg->get_gravitational_acceleration();
+          m_force[0].data[2] = alpha * mg;
+          m_force[1].data[2] = (1-alpha) * mg;
     }
 
     hrp::Vector3 tmp_foot_mid_pos(hrp::Vector3::Zero());
