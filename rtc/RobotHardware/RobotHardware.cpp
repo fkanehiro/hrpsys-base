@@ -229,7 +229,7 @@ RTC::ReturnCode_t RobotHardware::onExecute(RTC::UniqueId ec_id)
       robot::emg_reason reason;
       int id;
       if (m_robot->checkEmergency(reason, id)){
-          if (reason == robot::EMG_SERVO_ERROR){
+          if (reason == robot::EMG_SERVO_ERROR || reason == robot::EMG_POWER_OFF){
               m_robot->servo("all", false);
               m_emergencySignal.data = reason;
               m_emergencySignalOut.write();
