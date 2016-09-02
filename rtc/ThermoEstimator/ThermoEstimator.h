@@ -10,6 +10,8 @@
 #ifndef THERMO_ESTIMATOR_H
 #define THERMO_ESTIMATOR_H
 
+#include <rtm/idl/BasicDataType.hh>
+#include "hrpsys/idl/HRPDataTypes.hh"
 #include <rtm/Manager.h>
 #include <rtm/DataFlowComponentBase.h>
 #include <rtm/CorbaPort.h>
@@ -21,7 +23,6 @@
 #include <hrpModel/Link.h>
 #include <hrpModel/JointPath.h>
 
-#include "hrpsys/idl/HRPDataTypes.hh"
 #include "MotorHeatParam.h"
 
 // Service implementation headers

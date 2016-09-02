@@ -10,6 +10,8 @@
 #ifndef JOYSTICK2PANTILTANGLES_H
 #define JOYSTICK2PANTILTANGLES_H
 
+#include <rtm/idl/BasicDataType.hh>
+#include <rtm/idl/InterfaceDataTypes.hh>
 #include <rtm/Manager.h>
 #include <rtm/DataFlowComponentBase.h>
 #include <rtm/CorbaPort.h>

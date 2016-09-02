@@ -10,6 +10,9 @@
 #ifndef EMERGENCY_STOPPER_H
 #define EMERGENCY_STOPPER_H
 
+#include <rtm/idl/BasicDataType.hh>
+#include <rtm/idl/ExtendedDataTypes.hh>
+#include "hrpsys/idl/HRPDataTypes.hh"
 #include <rtm/Manager.h>
 #include <rtm/DataFlowComponentBase.h>
 #include <rtm/CorbaPort.h>
@@ -19,7 +22,6 @@
 #include <rtm/idl/ExtendedDataTypesSkel.h>
 #include <hrpModel/Body.h>
 #include "interpolator.h"
-#include "hrpsys/idl/HRPDataTypes.hh"
 #include <queue>
 
 // Service implementation headers

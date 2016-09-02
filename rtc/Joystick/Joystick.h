@@ -10,6 +10,9 @@
 #ifndef JOYSTICK_H
 #define JOYSTICK_H
 
+#include <rtm/idl/BasicDataType.hh>
+#include <rtm/idl/ExtendedDataTypes.hh>
+#include <rtm/idl/InterfaceDataTypes.hh>
 #include <rtm/Manager.h>
 #include <rtm/DataFlowComponentBase.h>
 #include <rtm/CorbaPort.h>

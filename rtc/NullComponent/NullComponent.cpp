@@ -7,8 +7,8 @@
  * $Id$
  */
 
-#include "NullComponent.h"
 #include "hrpsys/util/VectorConvert.h"
+#include "NullComponent.h"
 
 // Module specification
 // <rtc-template block="module_spec">

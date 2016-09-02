@@ -13,6 +13,9 @@
 #include <deque>
 #include <iomanip>
 
+#include <rtm/idl/BasicDataType.hh>
+#include <rtm/idl/ExtendedDataTypes.hh>
+#include "hrpsys/idl/HRPDataTypes.hh"
 #include <rtm/Manager.h>
 #include <rtm/DataFlowComponentBase.h>
 #include <rtm/CorbaPort.h>
@@ -20,7 +23,6 @@
 #include <rtm/DataOutPort.h>
 #include <rtm/idl/BasicDataTypeSkel.h>
 #include <rtm/idl/ExtendedDataTypesSkel.h>
-#include "hrpsys/idl/HRPDataTypes.hh"
 
 // Service implementation headers
 // <rtc-template block="service_impl_h">

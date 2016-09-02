@@ -10,16 +10,17 @@
 #ifndef CAPTURE_CONTROLLER_H
 #define CAPTURE_CONTROLLER_H
 
+// Service implementation headers
+// <rtc-template block="service_impl_h">
+#include "CameraCaptureService_impl.h"
+
+#include <rtm/idl/BasicDataType.hh>
 #include <rtm/Manager.h>
 #include <rtm/DataFlowComponentBase.h>
 #include <rtm/CorbaPort.h>
 #include <rtm/DataInPort.h>
 #include <rtm/DataOutPort.h>
 #include <rtm/idl/BasicDataTypeSkel.h>
-
-// Service implementation headers
-// <rtc-template block="service_impl_h">
-#include "CameraCaptureService_impl.h"
 
 // </rtc-template>
 

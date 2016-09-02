@@ -1,6 +1,10 @@
 ﻿#ifndef BODY_EXT_H_INCLUDED
 #define BODY_EXT_H_INCLUDED
 
+#include <rtm/idl/BasicDataType.hh>
+#include <rtm/idl/ExtendedDataTypes.hh>
+#include "hrpsys/idl/Img.hh"
+#include "hrpsys/idl/RobotHardwareService.hh"
 #include <hrpModel/Body.h>
 #include <hrpCorba/OpenHRPCommon.hh>
 #include <rtm/Manager.h>
@@ -10,8 +14,6 @@
 #include <rtm/DataOutPort.h>
 #include <rtm/idl/BasicDataTypeSkel.h>
 #include <rtm/idl/ExtendedDataTypesSkel.h>
-#include "hrpsys/idl/Img.hh"
-#include "hrpsys/idl/RobotHardwareService.hh"
 
 class InPortHandlerBase;
 class OutPortHandlerBase;

@@ -10,6 +10,8 @@
 #ifndef SIMULATOR_H
 #define SIMULATOR_H
 
+#include <rtm/idl/BasicDataType.hh>
+#include "hrpsys/idl/HRPDataTypes.hh"
 #include <rtm/Manager.h>
 #include <rtm/DataFlowComponentBase.h>
 #include <rtm/CorbaPort.h>
@@ -21,7 +23,6 @@
 #include <hrpModel/World.h>
 #include <hrpUtil/OnlineViewerUtil.h>
 
-#include "hrpsys/idl/HRPDataTypes.hh"
 #include "RTCBody.h"
 
 // Service implementation headers
