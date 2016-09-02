@@ -19,7 +19,7 @@
 using namespace hrp;
 
 
-robot::robot(double dt) : m_fzLimitRatio(0), m_maxZmpError(DEFAULT_MAX_ZMP_ERROR), m_calibRequested(false), m_pdgainsFilename("PDgains.sav"), m_reportedEmergency(true), m_dt(dt), m_accLimit(0)
+robot::robot(double dt) : m_fzLimitRatio(0), m_maxZmpError(DEFAULT_MAX_ZMP_ERROR), m_calibRequested(false), m_pdgainsFilename("PDgains.sav"), m_reportedEmergency(true), m_dt(dt), m_accLimit(0), m_enable_poweroff_check(false)
 {
     sem_init(&wait_sem, 0, 0);
     m_rLegForceSensorId = m_lLegForceSensorId = -1;
@@ -619,6 +619,23 @@ bool robot::checkEmergency(emg_reason &o_reason, int &o_id)
         }
     }
     m_reportedEmergency = false;
+    // Power state check
+    if (m_enable_poweroff_check) {
+      int pstate, sstate;
+      for (int i=0; i<numJoints(); i++){
+        read_power_state(i, &pstate);
+        read_servo_state(i, &sstate);
+        // If power OFF while servo ON
+        if (!m_reportedEmergency && (pstate == OFF) && (sstate == ON) ) {
+          m_reportedEmergency = true;
+          o_reason = EMG_POWER_OFF;
+          o_id = i;
+          std::cerr << time_string() << ": power off detected : joint = " << joint(i)->name << std::endl;
+          return true;
+        }
+      }
+      m_reportedEmergency = false;
+    }
     return false;
 }
 
@@ -692,6 +709,10 @@ void robot::setProperty(const char *i_key, const char *i_value)
         iss >> m_lLegForceSensorId;
     }else if (key == "pdgains.file_name"){
         iss >> m_pdgainsFilename;
+    }else if (key == "enable_poweroff_check"){
+        std::string tmp;
+        iss >> tmp;
+        m_enable_poweroff_check = (tmp=="true");
     }else{
         isKnownKey = false;
     }
