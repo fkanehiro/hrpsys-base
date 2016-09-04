@@ -15,6 +15,7 @@
 #include "hrpsys/util/GLlink.h"
 #include "hrpsys/util/GLutil.h"
 #include "GLscene.h"
+#include "hrpsys/idl/HRPDataTypes.hh"
 #include "RTCGLbody.h"
 #include "Viewer.h"
 

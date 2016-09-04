@@ -7,8 +7,10 @@
  * $Id$
  */
 
-#include "Joystick2Velocity3D.h"
+#include <rtm/idl/BasicDataType.hh>
+#include <rtm/idl/ExtendedDataTypes.hh>
 #include "hrpsys/util/VectorConvert.h"
+#include "Joystick2Velocity3D.h"
 
 // Module specification
 // <rtc-template block="module_spec">

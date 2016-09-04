@@ -10,13 +10,14 @@
 #ifndef PCD_LOADER_H
 #define PCD_LOADER_H
 
+#include <rtm/idl/BasicDataType.hh>
+#include "hrpsys/idl/pointcloud.hh"
 #include <rtm/Manager.h>
 #include <rtm/DataFlowComponentBase.h>
 #include <rtm/CorbaPort.h>
 #include <rtm/DataInPort.h>
 #include <rtm/DataOutPort.h>
 #include <rtm/idl/BasicDataTypeSkel.h>
-#include "hrpsys/idl/pointcloud.hh"
 
 // Service implementation headers
 // <rtc-template block="service_impl_h">

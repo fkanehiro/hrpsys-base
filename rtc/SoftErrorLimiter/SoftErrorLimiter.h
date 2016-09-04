@@ -10,13 +10,14 @@
 #ifndef SOFT_ERROR_LIMITER_H
 #define SOFT_ERROR_LIMITER_H
 
+#include <rtm/idl/BasicDataType.hh>
+#include "hrpsys/idl/HRPDataTypes.hh"
 #include <rtm/Manager.h>
 #include <rtm/DataFlowComponentBase.h>
 #include <rtm/CorbaPort.h>
 #include <rtm/DataInPort.h>
 #include <rtm/DataOutPort.h>
 #include <rtm/idl/BasicDataTypeSkel.h>
-#include "hrpsys/idl/HRPDataTypes.hh"
 #include "JointLimitTable.h"
 
 // Service implementation headers

@@ -10,13 +10,14 @@
 #ifndef VIDEO_CAPTURE_H
 #define VIDEO_CAPTURE_H
 
+#include <rtm/idl/BasicDataType.hh>
+#include "hrpsys/idl/Img.hh"
 #include <rtm/Manager.h>
 #include <rtm/DataFlowComponentBase.h>
 #include <rtm/CorbaPort.h>
 #include <rtm/DataInPort.h>
 #include <rtm/DataOutPort.h>
 #include <rtm/idl/BasicDataTypeSkel.h>
-#include "hrpsys/idl/Img.hh"
 #include "camera.h"
 
 // Service implementation headers

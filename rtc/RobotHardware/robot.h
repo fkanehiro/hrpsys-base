@@ -237,7 +237,7 @@ public:
     /**
        \brief reasons of emergency
      */
-    typedef enum {EMG_SERVO_ERROR, EMG_FZ, EMG_SERVO_ALARM} emg_reason;
+    typedef enum {EMG_SERVO_ERROR, EMG_FZ, EMG_SERVO_ALARM, EMG_POWER_OFF} emg_reason;
 
     /**
        \brief check occurrence of emergency state
@@ -339,6 +339,7 @@ private:
     double m_dt;
     std::vector<double> m_commandOld, m_velocityOld;
     hrp::Vector3 G;
+    bool m_enable_poweroff_check;
 };
 
 #endif

@@ -1,6 +1,8 @@
 #ifndef __RTCGLBODY_H__
 #define __RTCGLBODY_H__
 
+#include <rtm/idl/BasicDataType.hh>
+#include <rtm/idl/ExtendedDataTypes.hh>
 #include <rtm/DataInPort.h>
 #include <rtm/idl/BasicDataTypeSkel.h>
 #include <rtm/idl/ExtendedDataTypesSkel.h>

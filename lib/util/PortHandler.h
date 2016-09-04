@@ -3,8 +3,8 @@
 
 #include <rtm/idl/InterfaceDataTypes.hh>
 #include "hrpsys/idl/HRPDataTypes.hh"
-#include "BodyRTC.h"
 #include "hrpsys/idl/pointcloud.hh"
+#include "BodyRTC.h"
 
 namespace hrp{
     class ForceSensor;

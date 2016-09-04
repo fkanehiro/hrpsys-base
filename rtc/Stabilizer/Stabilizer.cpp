@@ -839,8 +839,6 @@ void Stabilizer::getActualParameters ()
               ee_forcemoment_distribution_weight[i][j] = ikp.eefm_ee_forcemoment_distribution_weight[j];
           }
       }
-      //for ABC ref force
-      if ( ref_force[0](2) + ref_force[1](2) == 0 ) ref_force[0](2) = ref_force[1](2) = eefm_gravitational_acceleration * total_mass / 2.0;
 
       // All state variables are foot_origin coords relative
       if (DEBUGP) {
