@@ -56,23 +56,21 @@ CollisionDetector::CollisionDetector(RTC::Manager* manager)
       m_beepCommandOut("beepCommand", m_beepCommand),
       m_CollisionDetectorServicePort("CollisionDetectorService"),
       // </rtc-template>
-      m_loop_for_check(0),
-      m_collision_loop(1),
-      m_use_limb_collision(false),
-#ifdef USE_HRPSYSUTIL
-      m_glbody(NULL),
-#endif // USE_HRPSYSUTIL
-      m_use_viewer(false),
-      m_robot(hrp::BodyPtr()),
 #ifdef USE_HRPSYSUTIL
       m_scene(&m_log),
       m_window(&m_scene, &m_log),
+      m_glbody(NULL),
 #endif // USE_HRPSYSUTIL
+      m_use_limb_collision(false),
+      m_use_viewer(false),
+      m_robot(hrp::BodyPtr()),
+      m_loop_for_check(0),
+      m_collision_loop(1),
       m_debugLevel(0),
       m_enable(true),
       collision_beep_count(0),
-      dummy(0),
-      is_beep_port_connected(false)
+      is_beep_port_connected(false),
+      dummy(0)
 {
     m_service0.collision(this);
 #ifdef USE_HRPSYSUTIL

@@ -131,7 +131,6 @@ class PDcontroller
  private:
   void readGainFile();
   hrp::BodyPtr m_robot;
-  int dummy;
   double dt;     // sampling time of pd control
   double ref_dt; // sampling time of renference angles
   int step;      // current interpolation step
@@ -141,6 +140,7 @@ class PDcontroller
   hrp::dvector qold, qold_ref, Pgain, Dgain, tlimit_ratio;
   size_t dof, loop;
   unsigned int m_debugLevel;
+  int dummy;
 };
 
 extern "C"

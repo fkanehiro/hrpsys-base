@@ -189,7 +189,6 @@ class CollisionDetector
   bool m_safe_posture;
   int m_recover_time;
   double m_dt;
-  int dummy;
   //
   double *m_recover_jointdata, *m_lastsafe_jointdata;
   bool *m_link_collision;
@@ -205,6 +204,7 @@ class CollisionDetector
   // Since this RTC is stable RTC, we support both direct beeping from this RTC and beepring through BeeperRTC.
   // If m_beepCommand is connected to BeeperRTC, is_beep_port_connected is true.
   bool is_beep_port_connected;
+  int dummy;
 };
 
 #ifndef USE_HRPSYSUTIL

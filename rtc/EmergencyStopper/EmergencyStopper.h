@@ -177,7 +177,7 @@ private:
     hrp::BodyPtr m_robot;
     double m_dt;
     unsigned int m_debugLevel;
-    int dummy, loop;
+    int loop;
     bool is_stop_mode, prev_is_stop_mode;
     bool is_initialized;
     int recover_time, retrieve_time;
@@ -193,6 +193,7 @@ private:
     int emergency_stopper_beep_count, emergency_stopper_beep_freq;
     coil::Mutex m_mutex;
     BeepClient bc;
+    int dummy;
 };
 
 

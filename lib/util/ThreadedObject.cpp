@@ -10,7 +10,7 @@ static int threadMain(void *arg)
 }
 
 ThreadedObject::ThreadedObject() : 
-    m_thread(NULL), m_isPausing(false), m_isRunning(false)
+    m_isPausing(false), m_isRunning(false), m_thread(NULL)
 {
     m_sem = SDL_CreateSemaphore(0);
 }

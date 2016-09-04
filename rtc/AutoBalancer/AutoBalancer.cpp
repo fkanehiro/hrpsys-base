@@ -58,10 +58,10 @@ AutoBalancer::AutoBalancer(RTC::Manager* manager)
       m_accRefOut("accRef", m_accRef),
       m_contactStatesOut("contactStates", m_contactStates),
       m_controlSwingSupportTimeOut("controlSwingSupportTime", m_controlSwingSupportTime),
-      m_cogOut("cogOut", m_cog),
-      m_AutoBalancerServicePort("AutoBalancerService"),
       m_walkingStatesOut("walkingStates", m_walkingStates),
       m_sbpCogOffsetOut("sbpCogOffset", m_sbpCogOffset),
+      m_cogOut("cogOut", m_cog),
+      m_AutoBalancerServicePort("AutoBalancerService"),
       // </rtc-template>
       gait_type(BIPED),
       move_base_gain(0.8),

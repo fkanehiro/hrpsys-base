@@ -10,7 +10,7 @@
 #include "GLshape.h"
 #include "GLtexture.h"
 
-GLshape::GLshape() : m_texture(NULL), m_requestCompile(false), m_shininess(0.2), m_shadingList(0), m_wireFrameList(0), m_highlight(false)
+GLshape::GLshape() : m_shininess(0.2), m_texture(NULL), m_requestCompile(false), m_shadingList(0), m_wireFrameList(0), m_highlight(false)
 {
     for (int i=0; i<16; i++) m_trans[i] = 0.0;
     m_trans[0] = m_trans[5] = m_trans[10] = m_trans[15] = 1.0;

@@ -21,9 +21,9 @@ using namespace hrp;
 GLcamera::GLcamera(int i_width, int i_height, 
                    double i_near, double i_far, double i_fovy,
                    GLlink *i_link, int i_id) : 
+    m_link(i_link),
     m_near(i_near), m_far(i_far), 
     m_fovy(i_fovy), m_width(i_width), m_height(i_height), 
-    m_link(i_link), 
     m_frameBuffer(0), m_renderBuffer(0), m_texture(0),
     m_sensor(NULL), m_colorBuffer(NULL)
 {

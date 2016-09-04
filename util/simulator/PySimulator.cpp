@@ -85,14 +85,14 @@ hrp::BodyPtr createBody(const std::string& name, const ModelItem& mitem,
 }
 
 PySimulator::PySimulator() : 
-    manager(NULL), Simulator(&log), scene(&log), window(&scene, &log, this),
+    Simulator(&log), scene(&log), window(&scene, &log, this), manager(NULL),
     useBBox(false), maxLogLen(60)
 {
     initRTCmanager();
 }
 
 PySimulator::PySimulator(PyObject *pyo) : 
-    manager(NULL), Simulator(&log), scene(&log), window(&scene, &log, this),
+    Simulator(&log), scene(&log), window(&scene, &log, this), manager(NULL),
     useBBox(false)
 {
     initRTCmanager(pyo);
