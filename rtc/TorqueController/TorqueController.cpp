@@ -43,8 +43,8 @@ TorqueController::TorqueController(RTC::Manager* manager)
     // <rtc-template block="initializer">
     m_tauCurrentInIn("tauCurrent", m_tauCurrentIn),
     m_tauMaxInIn("tauMax", m_tauMaxIn),
-    m_qRefInIn("qRef", m_qRefIn),
     m_qCurrentInIn("qCurrent", m_qCurrentIn),
+    m_qRefInIn("qRef", m_qRefIn),
     m_qRefOutOut("q", m_qRefOut),
     m_TorqueControllerServicePort("TorqueControllerService"),
     m_debugLevel(0)

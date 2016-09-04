@@ -43,15 +43,15 @@ static const char* ReferenceForceUpdater_spec[] =
 ReferenceForceUpdater::ReferenceForceUpdater(RTC::Manager* manager)
   : RTC::DataFlowComponentBase(manager),
     // <rtc-template block="initializer">
-    m_ReferenceForceUpdaterServicePort("ReferenceForceUpdaterService"),
     m_qRefIn("qRef", m_qRef),
     m_basePosIn("basePosIn", m_basePos),
     m_baseRpyIn("baseRpyIn", m_baseRpy),
     m_rpyIn("rpy", m_rpy),
+    m_ReferenceForceUpdaterServicePort("ReferenceForceUpdaterService"),
     // </rtc-template>
     m_robot(hrp::BodyPtr()),
-    use_sh_base_pos_rpy(false),
-    m_debugLevel(0)
+    m_debugLevel(0),
+    use_sh_base_pos_rpy(false)
 {
   m_ReferenceForceUpdaterService.rfu(this);
 }

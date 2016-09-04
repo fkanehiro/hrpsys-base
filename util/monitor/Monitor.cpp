@@ -8,8 +8,8 @@ Monitor::Monitor(CORBA::ORB_var orb, const std::string &i_hostname,
     m_orb(orb),
     m_rhCompName("RobotHardware0"),
     m_shCompName("StateHolder0"),
-    m_interval(i_interval),
-    m_log(i_log)
+    m_log(i_log),
+    m_interval(i_interval)
 {
     char buf[128];
     try {

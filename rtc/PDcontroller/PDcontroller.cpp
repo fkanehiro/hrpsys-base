@@ -40,9 +40,9 @@ PDcontroller::PDcontroller(RTC::Manager* manager)
     m_torqueOut("torque", m_torque),
     dt(0.005),
     // </rtc-template>
-    dummy(0),
     gain_fname(""),
-    dof(0), loop(0)
+    dof(0), loop(0),
+    dummy(0)
 {
 }
 

@@ -26,9 +26,9 @@ static void drawString(const char *str)
 }
 
 GLsceneBase::GLsceneBase(LogManagerBase *i_log) : 
-    m_width(DEFAULT_W), m_height(DEFAULT_H),
     m_showingStatus(false), m_showSlider(false),
-    m_log(i_log), m_videoWriter(NULL), m_cvImage(NULL), 
+    m_width(DEFAULT_W), m_height(DEFAULT_H),
+    m_videoWriter(NULL), m_cvImage(NULL), m_log(i_log),
     m_showFloorGrid(true), m_showInfo(true), m_defaultLights(true),
     m_request(REQ_NONE), 
     m_maxEdgeLen(0),

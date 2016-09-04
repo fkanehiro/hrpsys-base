@@ -44,17 +44,17 @@ EmergencyStopper::EmergencyStopper(RTC::Manager* manager)
       // <rtc-template block="initializer">
       m_qRefIn("qRef", m_qRef),
       m_emergencySignalIn("emergencySignal", m_emergencySignal),
+      m_servoStateIn("servoStateIn", m_servoState),
       m_qOut("q", m_q),
       m_emergencyModeOut("emergencyMode", m_emergencyMode),
       m_beepCommandOut("beepCommand", m_beepCommand),
       m_EmergencyStopperServicePort("EmergencyStopperService"),
-      m_servoStateIn("servoStateIn", m_servoState),
       // </rtc-template>
       m_robot(hrp::BodyPtr()),
       m_debugLevel(0),
-      dummy(0),
       loop(0),
-      emergency_stopper_beep_count(0)
+      emergency_stopper_beep_count(0),
+      dummy(0)
 {
     m_service0.emergencystopper(this);
 }
