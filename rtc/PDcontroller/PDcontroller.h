@@ -137,7 +137,7 @@ class PDcontroller
   int nstep;     // the number of steps to interpolate references
   std::ifstream gain;
   std::string gain_fname;
-  hrp::dvector qold, qold_ref, Pgain, Dgain, tlimit_ratio;
+  hrp::dvector qold, dqold, qold_ref, dqold_ref, Pgain, Dgain, tlimit_ratio, controlType;
   size_t dof, loop;
   unsigned int m_debugLevel;
   int dummy;
