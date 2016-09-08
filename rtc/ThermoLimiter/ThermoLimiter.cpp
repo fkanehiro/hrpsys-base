@@ -105,11 +105,11 @@ RTC::ReturnCode_t ThermoLimiter::onInitialize()
   m_motorTemperatureLimit.resize(m_robot->numJoints());
   if (motorTemperatureLimitFromConf.size() != m_robot->numJoints()) {
     std::cerr << "[" << m_profile.instance_name << "] [WARN]: size of motor_temperature_limit is " << motorTemperatureLimitFromConf.size() << ", not equal to " << m_robot->numJoints() << std::endl;
-    for (int i = 0; i < m_robot->numJoints(); i++) {
+    for (unsigned int i = 0; i < m_robot->numJoints(); i++) {
       m_motorTemperatureLimit[i] = 80.0;
     }
   } else {
-    for (int i = 0; i < m_robot->numJoints(); i++) {
+    for (unsigned int i = 0; i < m_robot->numJoints(); i++) {
       coil::stringTo(m_motorTemperatureLimit[i], motorTemperatureLimitFromConf[i].c_str());
     }
   }
@@ -133,13 +133,13 @@ RTC::ReturnCode_t ThermoLimiter::onInitialize()
   m_motorHeatParams.resize(m_robot->numJoints());
   if (motorHeatParamsFromConf.size() != 2 * m_robot->numJoints()) {
     std::cerr << "[" << m_profile.instance_name << "] [WARN]: size of motor_heat_param is " << motorHeatParamsFromConf.size() << ", not equal to 2 * " << m_robot->numJoints() << std::endl;
-    for (int i = 0; i < m_robot->numJoints(); i++) {
+    for (unsigned int i = 0; i < m_robot->numJoints(); i++) {
       m_motorHeatParams[i].defaultParams();
       m_motorHeatParams[i].temperature = ambientTemp;
     }
 
   } else {
-    for (int i = 0; i < m_robot->numJoints(); i++) {
+    for (unsigned int i = 0; i < m_robot->numJoints(); i++) {
       m_motorHeatParams[i].temperature = ambientTemp;
       coil::stringTo(m_motorHeatParams[i].currentCoeffs, motorHeatParamsFromConf[2 * i].c_str());
       coil::stringTo(m_motorHeatParams[i].thermoCoeffs, motorHeatParamsFromConf[2 * i + 1].c_str());
@@ -153,7 +153,7 @@ RTC::ReturnCode_t ThermoLimiter::onInitialize()
     }
     std::cerr << std::endl;
     std::cerr << "default torque limit from model:" << std::endl;
-    for (int i = 0; i < m_robot->numJoints(); i++) {
+    for (unsigned int i = 0; i < m_robot->numJoints(); i++) {
       std::cerr << m_robot->joint(i)->name << ":" << m_robot->joint(i)->climit * m_robot->joint(i)->gearRatio * m_robot->joint(i)->torqueConst << std::endl;
     }
   }
@@ -235,7 +235,7 @@ RTC::ReturnCode_t ThermoLimiter::onExecute(RTC::UniqueId ec_id)
   Guard guard(m_mutex);
   if (isDebug()) {
     std::cerr << "temperature: ";
-    for (int i = 0; i < m_tempIn.data.length(); i++) {
+    for (unsigned int i = 0; i < m_tempIn.data.length(); i++) {
       std::cerr << " " << m_tempIn.data[i];
     }
     std::cerr << std::endl;
@@ -245,7 +245,7 @@ RTC::ReturnCode_t ThermoLimiter::onExecute(RTC::UniqueId ec_id)
   if (m_tempIn.data.length() == m_robot->numJoints()) {
     calcMaxTorqueFromTemperature(tauMax);
   } else {
-    for (int i = 0; i < m_robot->numJoints(); i++) {
+    for (unsigned int i = 0; i < m_robot->numJoints(); i++) {
       tauMax[i] = m_robot->joint(i)->climit * m_robot->joint(i)->gearRatio * m_robot->joint(i)->torqueConst; // default torque limit from model
     }
   }
@@ -267,7 +267,7 @@ RTC::ReturnCode_t ThermoLimiter::onExecute(RTC::UniqueId ec_id)
   callBeep(thermoLimitRatio, m_alarmRatio);
   
   // output restricted tauMax
-  for (int i = 0; i < m_robot->numJoints(); i++) {
+  for (unsigned int i = 0; i < m_robot->numJoints(); i++) {
     m_tauMaxOut.data[i] = tauMax[i];
   }
   m_tauMaxOut.tm = tm;
@@ -314,13 +314,13 @@ RTC::ReturnCode_t ThermoLimiter::onRateChanged(RTC::UniqueId ec_id)
 
 void ThermoLimiter::calcMaxTorqueFromTemperature(hrp::dvector &tauMax)
 {
-  int numJoints = m_robot->numJoints();
+  unsigned int numJoints = m_robot->numJoints();
   double temp, tempLimit;
   hrp::dvector squareTauMax(numJoints);
   
   if (m_tempIn.data.length() ==  m_robot->numJoints()) {
 
-    for (int i = 0; i < numJoints; i++) {
+    for (unsigned int i = 0; i < numJoints; i++) {
       temp = m_tempIn.data[i];
       tempLimit = m_motorTemperatureLimit[i];
 
@@ -346,7 +346,7 @@ double ThermoLimiter::calcEmergencyRatio(RTC::TimedDoubleSeq &current, hrp::dvec
 {
   double maxEmergencyRatio = 0.0;
   if (current.data.length() == max.size()) { // estimate same dimension
-    for (int i = 0; i < current.data.length(); i++) {
+    for (unsigned int i = 0; i < current.data.length(); i++) {
       double tmpEmergencyRatio = std::abs(current.data[i] / max[i]);
       if (tmpEmergencyRatio > alarmRatio && m_loop % m_debug_print_freq == 0) {
           std::cerr << prefix << "[" << m_robot->joint(i)->name << "]" << " is over " << alarmRatio << " of the limit (" << current.data[i] << "/" << max[i] << ")" << std::endl;

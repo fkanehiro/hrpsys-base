@@ -172,7 +172,7 @@ RTC::ReturnCode_t UndistortImage::onExecute(RTC::UniqueId ec_id)
         {
             // RGB -> BGR
             char *dst = m_cvImage->imageData;
-            for (int i=0; i<m_image.data.image.raw_data.length(); i+=3){
+            for (unsigned int i=0; i<m_image.data.image.raw_data.length(); i+=3){
                 dst[i  ] = m_image.data.image.raw_data[i+2]; 
                 dst[i+1] = m_image.data.image.raw_data[i+1]; 
                 dst[i+2] = m_image.data.image.raw_data[i  ]; 
@@ -197,7 +197,7 @@ RTC::ReturnCode_t UndistortImage::onExecute(RTC::UniqueId ec_id)
         {
             // BGR -> RGB
             char *src = dst_img->imageData;
-            for (int i=0; i<m_image.data.image.raw_data.length(); i+=3){
+            for (unsigned int i=0; i<m_image.data.image.raw_data.length(); i+=3){
                 m_image.data.image.raw_data[i+2] = src[i  ]; 
                 m_image.data.image.raw_data[i+1] = src[i+1]; 
                 m_image.data.image.raw_data[i  ] = src[i+2]; 

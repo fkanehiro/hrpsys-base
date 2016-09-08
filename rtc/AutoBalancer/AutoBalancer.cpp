@@ -269,9 +269,9 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     // load virtual force sensors
     readVirtualForceSensorParamFromProperties(m_vfs, m_robot, prop["virtual_force_sensor"], std::string(m_profile.instance_name));
     // ref force port
-    int npforce = m_robot->numSensors(hrp::Sensor::FORCE);
-    int nvforce = m_vfs.size();
-    int nforce  = npforce + nvforce;
+    unsigned int npforce = m_robot->numSensors(hrp::Sensor::FORCE);
+    unsigned int nvforce = m_vfs.size();
+    unsigned int nforce  = npforce + nvforce;
     m_ref_force.resize(nforce);
     m_ref_forceIn.resize(nforce);
     m_force.resize(nforce);
@@ -283,7 +283,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     }
     for (unsigned int i=0; i<nvforce; i++){
         for ( std::map<std::string, hrp::VirtualForceSensorParam>::iterator it = m_vfs.begin(); it != m_vfs.end(); it++ ) {
-            if (it->second.id == i) sensor_names.push_back(it->first);
+            if (it->second.id == (int)i) sensor_names.push_back(it->first);
         }
     }
     // set ref force port
@@ -470,7 +470,7 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
         ref_basePos = (1-transition_interpolator_ratio) * input_basePos + transition_interpolator_ratio * m_robot->rootLink()->p;
         rel_ref_zmp = (1-transition_interpolator_ratio) * input_zmp + transition_interpolator_ratio * rel_ref_zmp;
         rats::mid_rot(ref_baseRot, transition_interpolator_ratio, input_baseRot, m_robot->rootLink()->R);
-        for ( int i = 0; i < m_robot->numJoints(); i++ ) {
+        for ( unsigned int i = 0; i < m_robot->numJoints(); i++ ) {
           m_robot->joint(i)->q = (1-transition_interpolator_ratio) * m_qRef.data[i] + transition_interpolator_ratio * m_robot->joint(i)->q;
         }
       } else {
@@ -487,7 +487,7 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
     }
     if ( m_qRef.data.length() != 0 ) { // initialized
       if (is_legged_robot) {
-        for ( int i = 0; i < m_robot->numJoints(); i++ ){
+        for ( unsigned int i = 0; i < m_robot->numJoints(); i++ ){
           m_qRef.data[i] = m_robot->joint(i)->q;
         }
       }
@@ -587,7 +587,7 @@ void AutoBalancer::getCurrentParameters()
 {
   current_root_p = m_robot->rootLink()->p;
   current_root_R = m_robot->rootLink()->R;
-  for ( int i = 0; i < m_robot->numJoints(); i++ ){
+  for ( unsigned int i = 0; i < m_robot->numJoints(); i++ ){
     qorg[i] = m_robot->joint(i)->q;
   }
 }
@@ -595,7 +595,7 @@ void AutoBalancer::getCurrentParameters()
 void AutoBalancer::getTargetParameters()
 {
   // joint angles
-  for ( int i = 0; i < m_robot->numJoints(); i++ ){
+  for ( unsigned int i = 0; i < m_robot->numJoints(); i++ ){
     m_robot->joint(i)->q = m_qRef.data[i];
     qrefv[i] = m_robot->joint(i)->q;
   }
@@ -951,7 +951,7 @@ void AutoBalancer::solveLimbIK ()
 {
   for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
     if (it->second.is_active) {
-      for ( int j = 0; j < it->second.manip->numJoints(); j++ ){
+      for ( unsigned int j = 0; j < it->second.manip->numJoints(); j++ ){
 	int i = it->second.manip->joint(j)->jointId;
 	m_robot->joint(i)->q = qorg[i];
       }

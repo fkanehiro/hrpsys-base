@@ -14,7 +14,7 @@ int main(int argc, char *argv[])
     hrp::LinkNamePairList pairs;
     for (int i=3; i<argc; i++){
         std::string str = argv[i];
-        int pos;
+        unsigned int pos;
         if ((pos = str.find(":")) != std::string::npos){
             std::string link1 = str.substr(0, pos);
             std::string link2 = str.substr(pos+1);
@@ -39,7 +39,7 @@ int main(int argc, char *argv[])
 
     ifs >> tm;
     while (!ifs.eof()){
-        for (int i=0; i<robot->numJoints(); i++){
+        for (unsigned int i=0; i<robot->numJoints(); i++){
             ifs >> q[i];
         }
         pairs = scc.check(q);

@@ -148,7 +148,7 @@ RTC::ReturnCode_t SORFilter::onExecute(RTC::UniqueId ec_id)
 
     cloud->points.resize(m_original.width*m_original.height);
     float *src = (float *)m_original.data.get_buffer();
-    for (int i=0; i<cloud->points.size(); i++){
+    for (unsigned int i=0; i<cloud->points.size(); i++){
       cloud->points[i].x = src[0];
       cloud->points[i].y = src[1];
       cloud->points[i].z = src[2];
@@ -165,7 +165,7 @@ RTC::ReturnCode_t SORFilter::onExecute(RTC::UniqueId ec_id)
     m_filtered.row_step = m_filtered.point_step*m_filtered.width;
     m_filtered.data.length(m_filtered.height*m_filtered.row_step);
     float *dst = (float *)m_filtered.data.get_buffer();
-    for (int i=0; i<cloud_filtered->points.size(); i++){
+    for (unsigned int i=0; i<cloud_filtered->points.size(); i++){
       dst[0] = cloud_filtered->points[i].x;
       dst[1] = cloud_filtered->points[i].y;
       dst[2] = cloud_filtered->points[i].z;

@@ -30,7 +30,7 @@ class IIRFilter
      \param fb_coeffs coeeficients of feedback
      \param ff_coeffs coefficients of feedforward
   */
-  IIRFilter(int dim, std::vector<double>& fb_coeffs, std::vector<double>& ff_coeffs, const std::string& error_prefix = "");
+  IIRFilter(unsigned int dim, std::vector<double>& fb_coeffs, std::vector<double>& ff_coeffs, const std::string& error_prefix = "");
   /**
      \brief Destructor
   */

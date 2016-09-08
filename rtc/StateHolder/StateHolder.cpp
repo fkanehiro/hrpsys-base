@@ -150,9 +150,9 @@ RTC::ReturnCode_t StateHolder::onInitialize()
   // Setting for wrench data ports (real + virtual)
   std::vector<std::string> fsensor_names;
   //   find names for real force sensors
-  for ( int k = 0; k < lis->length(); k++ ) {
+  for ( unsigned int k = 0; k < lis->length(); k++ ) {
     OpenHRP::SensorInfoSequence& sensors = lis[k].sensors;
-    for ( int l = 0; l < sensors.length(); l++ ) {
+    for ( unsigned int l = 0; l < sensors.length(); l++ ) {
       if ( std::string(sensors[l].type) == "Force" ) {
         fsensor_names.push_back(std::string(sensors[l].name));
       }
@@ -161,12 +161,12 @@ RTC::ReturnCode_t StateHolder::onInitialize()
   int npforce = fsensor_names.size();
   //   find names for virtual force sensors
   coil::vstring virtual_force_sensor = coil::split(prop["virtual_force_sensor"], ",");
-  int nvforce = virtual_force_sensor.size()/10;
+  unsigned int nvforce = virtual_force_sensor.size()/10;
   for (unsigned int i=0; i<nvforce; i++){
     fsensor_names.push_back(virtual_force_sensor[i*10+0]);
   }
   //   add ports for all force sensors
-  int nforce  = npforce + nvforce;
+  unsigned int nforce  = npforce + nvforce;
   m_wrenches.resize(nforce);
   m_wrenchesIn.resize(nforce);
   m_wrenchesOut.resize(nforce);

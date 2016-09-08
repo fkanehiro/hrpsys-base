@@ -132,7 +132,7 @@ RTC::ReturnCode_t CameraImageLoader::onExecute(RTC::UniqueId ec_id)
       {
           // BGR -> RGB
           char *src = image->imageData;
-          for (int i=0; i<m_image.data.image.raw_data.length(); i+=3){
+          for (unsigned int i=0; i<m_image.data.image.raw_data.length(); i+=3){
               m_image.data.image.raw_data[i+2] = src[i  ]; 
               m_image.data.image.raw_data[i+1] = src[i+1]; 
               m_image.data.image.raw_data[i  ] = src[i+2]; 

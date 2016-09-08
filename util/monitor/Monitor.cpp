@@ -157,7 +157,7 @@ void Monitor::showStatus(hrp::BodyPtr &body)
     m_log->tail();
     fprintf(stdout, "\e[2KID PW                 NAME    ANGLE  COMMAND    ERROR VELOCITY   ACCEL. TORQUE SERVO TEMP\n"); // greep backgroupd
     char buf[256];
-    for (int i=0; i<body->numJoints(); i++){
+    for (unsigned int i=0; i<body->numJoints(); i++){
         hrp::Link *l = body->joint(i);
         if (l){
             fprintf(stdout,"\e[2K");

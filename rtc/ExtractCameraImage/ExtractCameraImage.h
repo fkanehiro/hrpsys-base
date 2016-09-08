@@ -134,7 +134,7 @@ class ExtractCameraImage
   // </rtc-template>
 
  private:
-  int m_index;
+  unsigned int m_index;
   int dummy;
 };
 

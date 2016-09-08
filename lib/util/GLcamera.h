@@ -27,8 +27,8 @@ public:
     double near() { return m_near; }
     double far() { return m_far; }
     double fovy() { return m_fovy; }
-    int width() { return m_width; }
-    int height() { return m_height; }
+    unsigned int width() { return m_width; }
+    unsigned int height() { return m_height; }
     void setViewPoint(double x, double y, double z);
     void setViewTarget(double x, double y, double z);
     size_t draw(int i_mode);
@@ -46,7 +46,7 @@ private:
     double m_absTrans[16];
     GLlink *m_link;
     double m_near, m_far, m_fovy;
-    int m_width, m_height;
+    unsigned int m_width, m_height;
     double m_viewPoint[3], m_viewTarget[3];
     std::vector<GLshape *> m_shapes;
     GLuint m_frameBuffer, m_renderBuffer, m_texture;
