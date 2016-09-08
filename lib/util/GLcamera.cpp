@@ -160,7 +160,7 @@ void GLcamera::render(GLsceneBase *i_scene)
             }else{
                 unsigned char *src=m_colorBuffer;
                 unsigned char *dst=&m_sensor->image[m_width*(m_height-1)*3];
-                for (int i=0; i<m_height; i++){
+                for (unsigned int i=0; i<m_height; i++){
                     memcpy(dst, src, m_width*3);
                     src += m_width*3;
                     dst -= m_width*3;
@@ -174,8 +174,8 @@ void GLcamera::render(GLsceneBase *i_scene)
             }else{
                 unsigned char *src=m_colorBuffer;
                 unsigned char *dst=&m_sensor->image[m_width*(m_height-1)];
-                for (int i=0; i<m_height; i++){
-                    for (int j=0; j<m_width; j++){
+                for (unsigned int i=0; i<m_height; i++){
+                    for (unsigned int j=0; j<m_width; j++){
                         *dst = 0.299*src[0] + 0.587*src[1] + 0.114*src[2];
                         dst++;
                         src+=3;

@@ -616,7 +616,7 @@ bool seqplay::setJointAnglesSequence(std::vector<const double*> pos, std::vector
 			}
 			const double *q_next = pos[i+1];
 			const double *q_prev = i==0?x:pos[i-1];
-			for (unsigned int j = 0; j < m_dof; j++) {
+			for (int j = 0; j < m_dof; j++) {
 				double d0, d1, v0, v1;
 				d0 = (q[j] - q_prev[j]);
 				d1 = (q_next[j] - q[j]);
@@ -629,7 +629,7 @@ bool seqplay::setJointAnglesSequence(std::vector<const double*> pos, std::vector
 				}
 			}
 		} else {
-			for (unsigned int j = 0; j < m_dof; j++) { v[j] = 0.0; }
+			for (int j = 0; j < m_dof; j++) { v[j] = 0.0; }
 		}
 
 		interpolators[Q]->setGoal(pos[i], v, tm[i], false);
@@ -666,7 +666,7 @@ bool seqplay::setJointAnglesSequenceFull(std::vector<const double*> i_pos, std::
 	interpolators[Q]->clear();
 	interpolators[Q]->push(x, v, a, true);
 	double torque[m_dof], dummy_dof[m_dof];
-	for (unsigned int j = 0; j < m_dof; j++) { dummy_dof[j] = 0.0; }
+	for (int j = 0; j < m_dof; j++) { dummy_dof[j] = 0.0; }
 	interpolators[TQ]->get(torque, false);
 	interpolators[TQ]->set(torque);
 	interpolators[TQ]->clear();
@@ -686,8 +686,8 @@ bool seqplay::setJointAnglesSequenceFull(std::vector<const double*> i_pos, std::
 	interpolators[ACC]->push(bacc, dummy_3, dummy_3, true);
 	int fnum = interpolators[WRENCHES]->dimension()/6, optional_data_dim = interpolators[OPTIONAL_DATA]->dimension();
 	double zmp[3], wrench[6*fnum], dummy_fnum[6*fnum], optional[optional_data_dim], dummy_optional[optional_data_dim];
-	for (unsigned int j = 0; j < 6*fnum; j++) { dummy_dof[j] = 0.0; }
-	for (unsigned int j = 0; j < optional_data_dim; j++) { dummy_optional[j] = 0.0; }
+	for (int j = 0; j < 6*fnum; j++) { dummy_dof[j] = 0.0; }
+	for (int j = 0; j < optional_data_dim; j++) { dummy_optional[j] = 0.0; }
 	interpolators[ZMP]->get(zmp, false);
 	interpolators[ZMP]->set(zmp);
 	interpolators[ZMP]->clear();
@@ -704,7 +704,7 @@ bool seqplay::setJointAnglesSequenceFull(std::vector<const double*> i_pos, std::
     const double *q=NULL;
     for (unsigned int i=0; i<i_pos.size(); i++){
 		if (i_vel.size() > 0 ) {
-			for (unsigned int j = 0; j < m_dof; j++) {
+			for (int j = 0; j < m_dof; j++) {
 				v[j] = i_vel[i][j];
 			}
 		}else{
@@ -718,7 +718,7 @@ bool seqplay::setJointAnglesSequenceFull(std::vector<const double*> i_pos, std::
 				}
 				const double *q_next = i_pos[i+1];
 				const double *q_prev = i==0?x:i_pos[i-1];
-				for (unsigned int j = 0; j < m_dof; j++) {
+				for (int j = 0; j < m_dof; j++) {
 					double d0, d1, v0, v1;
 					d0 = (q[j] - q_prev[j]);
 					d1 = (q_next[j] - q[j]);
@@ -731,7 +731,7 @@ bool seqplay::setJointAnglesSequenceFull(std::vector<const double*> i_pos, std::
 					}
 				}
 			} else {
-				for (unsigned int j = 0; j < m_dof; j++) { v[j] = 0.0; }
+				for (int j = 0; j < m_dof; j++) { v[j] = 0.0; }
 			}
 		}
 
@@ -792,7 +792,7 @@ bool seqplay::setJointAnglesSequenceOfGroup(const char *gname, std::vector<const
 			}
 			const double *q_next = pos[j+1];
 			const double *q_prev = j==0?x:pos[j-1];
-			for (unsigned int k = 0; k < len; k++) {
+			for (int k = 0; k < len; k++) {
 				double d0, d1, v0, v1;
 				d0 = (q_curr[k] - q_prev[k]);
 				d1 = (q_next[k] - q_curr[k]);
@@ -805,7 +805,7 @@ bool seqplay::setJointAnglesSequenceOfGroup(const char *gname, std::vector<const
 				}
 			}
 		} else {
-			for (unsigned int k = 0; k < len; k++) { v[k] = 0.0; }
+			for (int k = 0; k < len; k++) { v[k] = 0.0; }
 		}
 		if (i->state == groupInterpolator::created){
 			interpolators[Q]->get(q, dq, false);

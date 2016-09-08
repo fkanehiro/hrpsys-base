@@ -133,7 +133,7 @@ RTC::ReturnCode_t SampleComponent::onExecute(RTC::UniqueId ec_id)
   if ( m_qCurrent.data.length() != m_q.data.length() ) {
       m_q.data.length(m_qCurrent.data.length());
   }
-  for ( int i = 0; i < m_qCurrent.data.length(); i++ ){
+  for ( unsigned int i = 0; i < m_qCurrent.data.length(); i++ ){
       m_q.data[i] = m_qCurrent.data[i];
   }
   if ( loop < 1000 ) {

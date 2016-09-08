@@ -10,7 +10,7 @@ void BodyState::set(BodyPtr i_body)
     p = root->p;
     R = root->attitude();
     q.resize(i_body->numLinks());
-    for (int i=0; i<i_body->numLinks(); i++){
+    for (unsigned int i=0; i<i_body->numLinks(); i++){
         q[i] = i_body->link(i)->q;
     }
     int n;

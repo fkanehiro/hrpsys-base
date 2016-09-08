@@ -172,7 +172,7 @@ RTC::ReturnCode_t ForwardKinematics::onExecute(RTC::UniqueId ec_id)
 
   if (m_qIn.isNew()) {
       m_qIn.read();
-      for (int i=0; i<m_actBody->numJoints(); i++){
+      for (unsigned int i=0; i<m_actBody->numJoints(); i++){
           m_actBody->joint(i)->q = m_q.data[i];
       }
   }
@@ -197,7 +197,7 @@ RTC::ReturnCode_t ForwardKinematics::onExecute(RTC::UniqueId ec_id)
 
   if (m_qRefIn.isNew()) {
       m_qRefIn.read();
-      for (int i=0; i<m_refBody->numJoints(); i++){
+      for (unsigned int i=0; i<m_refBody->numJoints(); i++){
           m_refBody->joint(i)->q = m_qRef.data[i];
       }
   }

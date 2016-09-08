@@ -90,7 +90,7 @@ void GLscene::showStatus()
         int width = m_width - 410;
         int height = m_height-HEIGHT_STEP;
         char buf[256];
-        for (int i=0; i<glbody->numJoints(); i++){
+        for (unsigned int i=0; i<glbody->numJoints(); i++){
             hrp::Link *l = glbody->joint(i);
             if (l){
                 int x = width;

@@ -5,9 +5,9 @@ using namespace hrp;
 
 SelfCollisionChecker::SelfCollisionChecker(hrp::BodyPtr body, const hrp::LinkNamePairList &pairs) : m_robot(body)
 {
-    for (int i=0; i<m_robot->numLinks(); i++){
+    for (unsigned int i=0; i<m_robot->numLinks(); i++){
         Link *link1 = m_robot->link(i);
-        for (int j=i+1; j<m_robot->numLinks(); j++){
+        for (unsigned int j=i+1; j<m_robot->numLinks(); j++){
             Link *link2 = m_robot->link(j);
             if (link1->parent != link2 && link2->parent != link1){
                 bool skip = false;
@@ -34,11 +34,11 @@ LinkNamePairList SelfCollisionChecker::check(const double *q)
 {
     LinkNamePairList pairs;
 
-    for (int i=0; i<m_robot->numJoints(); i++){
+    for (unsigned int i=0; i<m_robot->numJoints(); i++){
         m_robot->joint(i)->q = q[i];
     }
     m_robot->calcForwardKinematics();
-    for (int i=0; i<m_robot->numLinks(); i++){
+    for (unsigned int i=0; i<m_robot->numLinks(); i++){
         Link *l = m_robot->link(i);
         l->coldetModel->setPosition(l->attitude(), l->p);
     }

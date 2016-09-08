@@ -131,7 +131,7 @@ RTC::ReturnCode_t JpegEncoder::onExecute(RTC::UniqueId ec_id)
 	{
 	  // RGB -> BGR
 	  uchar r,g,b, *raw=idat.raw_data.get_buffer();
-	  for (int i=0; i<idat.raw_data.length(); i+=3, raw+=3){
+	  for (unsigned int i=0; i<idat.raw_data.length(); i+=3, raw+=3){
 	    r = raw[0]; g = raw[1]; b = raw[2];
 	    raw[0] = b; raw[1] = g; raw[2] = r;
 	  }

@@ -12,7 +12,7 @@ robot::~robot() {
 }
 bool robot::init() {
   m_servoErrorLimit.resize(numJoints());
-  for (int i=0; i<numJoints(); i++){
+  for (unsigned int i=0; i<numJoints(); i++){
     m_servoErrorLimit[i] = DEFAULT_ANGLE_ERROR_LIMIT;
   }
   return true;
@@ -21,7 +21,7 @@ bool robot::init() {
 bool robot::setServoErrorLimit(const char *i_jname, double i_limit) {
   hrp::Link *l = NULL;
   if (strcmp(i_jname, "all") == 0 || strcmp(i_jname, "ALL") == 0){
-    for (int i=0; i<numJoints(); i++){
+    for (unsigned int i=0; i<numJoints(); i++){
       m_servoErrorLimit[i] = i_limit;
     }
     std::cerr << "[el] setServoErrorLimit " << i_limit << "[rad] for all joints" << std::endl;

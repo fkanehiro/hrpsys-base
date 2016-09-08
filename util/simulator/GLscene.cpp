@@ -100,11 +100,11 @@ void GLscene::showStatus()
         int height = m_height-HEIGHT_STEP;
         char buf[256];
         double q[glbody->numJoints()];
-        for (int i=0; i<glbody->numLinks(); i++){
+        for (unsigned int i=0; i<glbody->numLinks(); i++){
             Link* l = glbody->link(i);
             if (l->jointId >= 0) q[l->jointId] = bstate->q[i];
         }
-        for (int i=0; i<glbody->numJoints(); i++){
+        for (unsigned int i=0; i<glbody->numJoints(); i++){
             GLlink *l = (GLlink *)glbody->joint(i);
             if (l){
                 sprintf(buf, "%2d %15s %8.3f", i, l->name.c_str(),
@@ -230,7 +230,7 @@ void GLscene::drawSensorOutput(Body *body, Sensor *sensor)
             bool colored = v->imageType == VisionSensor::COLOR_DEPTH;
             glBegin(GL_POINTS);
             float *ptr = (float *)&v->depth[0];
-            for (int i=0; i<v->depth.size()/16; i++){
+            for (unsigned int i=0; i<v->depth.size()/16; i++){
                 glVertex3f(ptr[0], ptr[1], ptr[2]);
                 if (colored){
                     ptr += 3;

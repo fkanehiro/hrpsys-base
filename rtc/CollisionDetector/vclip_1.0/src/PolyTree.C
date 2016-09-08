@@ -617,7 +617,7 @@ int Polyhedron::buildHull()
   npts = verts_.size();
 
 
-  if (npts > hullVerts.capacity()) {
+  if (npts > (int)hullVerts.capacity()) {
     array.reserve(3 * npts);
     hullVerts.reserve(npts);
     vertUsed.reserve(npts);
@@ -970,7 +970,7 @@ const PolyTree *PolyTreeLibrary::lookup(int i) const
 {
   list< Handle<PolyTree> >::const_iterator libi;
 
-  if (i < 0 || i >= lib.size()) return NULL;
+  if (i < 0 || i >= (int)lib.size()) return NULL;
   for (libi = lib.begin(); i-- > 0; ++libi);
   return &**libi;
 }

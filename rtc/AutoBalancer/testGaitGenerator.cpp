@@ -646,7 +646,7 @@ public:
 
     void parse_params ()
     {
-      for (int i = 0; i < arg_strs.size(); ++ i) {
+      for (unsigned int i = 0; i < arg_strs.size(); ++ i) {
           if ( arg_strs[i]== "--default-step-time" ) {
               if (++i < arg_strs.size()) gg->set_default_step_time(atof(arg_strs[i].c_str()));
           } else if ( arg_strs[i]== "--default-step-height" ) {

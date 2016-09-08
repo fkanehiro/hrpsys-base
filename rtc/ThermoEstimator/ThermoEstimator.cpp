@@ -127,14 +127,14 @@ RTC::ReturnCode_t ThermoEstimator::onInitialize()
     std::cerr << "[" << m_profile.instance_name << "] [WARN]: size of motorHeatParams is " << motorHeatParamsFromConf.size() << ", not equal to 2 * " << m_robot->numJoints() << std::endl;
     // motorHeatParam has default values itself
   } else {
-    for (int i = 0; i < m_robot->numJoints(); i++) {
+    for (unsigned int i = 0; i < m_robot->numJoints(); i++) {
       m_motorHeatParams[i].temperature = m_ambientTemp;
       coil::stringTo(m_motorHeatParams[i].currentCoeffs, motorHeatParamsFromConf[2 * i].c_str());
       coil::stringTo(m_motorHeatParams[i].thermoCoeffs, motorHeatParamsFromConf[2 * i + 1].c_str());
     }
     if (m_debugLevel > 0) {
       std::cerr <<  "motorHeatParams is " << std::endl;
-      for (int i = 0; i < m_robot->numJoints(); i++) {
+      for (unsigned int i = 0; i < m_robot->numJoints(); i++) {
         std::cerr << m_motorHeatParams[i].currentCoeffs << " " << m_motorHeatParams[i].thermoCoeffs << std::endl;
       }
     }
@@ -147,12 +147,12 @@ RTC::ReturnCode_t ThermoEstimator::onInitialize()
     m_error2tau.resize(0); // invalid 
   } else {
     m_error2tau.resize(m_robot->numJoints());
-    for (int i = 0; i < m_robot->numJoints(); i++) {
+    for (unsigned int i = 0; i < m_robot->numJoints(); i++) {
       coil::stringTo(m_error2tau[i], error2tauFromConf[i].c_str());
     }
     if (m_debugLevel > 0) {
       std::cerr <<  "motorHeatParams:" << std::endl;
-      for (int i = 0; i < m_robot->numJoints(); i++) {
+      for (unsigned int i = 0; i < m_robot->numJoints(); i++) {
         std::cerr << " " << m_error2tau[i];
       }
       std::cerr << std::endl;      
@@ -200,7 +200,7 @@ RTC::ReturnCode_t ThermoEstimator::onDeactivated(RTC::UniqueId ec_id)
 RTC::ReturnCode_t ThermoEstimator::onExecute(RTC::UniqueId ec_id)
 {
   // std::cout << m_profile.instance_name<< ": onExecute(" << ec_id << ")" << std::endl;
-  int numJoints = m_robot->numJoints();
+  unsigned int numJoints = m_robot->numJoints();
   m_loop++;
   
   coil::TimeValue coiltm(coil::gettimeofday());
@@ -225,12 +225,12 @@ RTC::ReturnCode_t ThermoEstimator::onExecute(RTC::UniqueId ec_id)
   hrp::dvector jointTorque;
   if (m_tauIn.data.length() == numJoints) { // use raw torque
     jointTorque.resize(numJoints);
-    for (int i = 0; i < numJoints; i++) {
+    for (unsigned int i = 0; i < numJoints; i++) {
       jointTorque[i] = m_tauIn.data[i];
     }
     if (isDebug()) {
       std::cerr << "raw torque: ";
-      for (int i = 0; i < numJoints; i++) {
+      for (unsigned int i = 0; i < numJoints; i++) {
         std::cerr << " " << m_tauIn.data[i] ;
       }
       std::cerr << std::endl;
@@ -239,18 +239,18 @@ RTC::ReturnCode_t ThermoEstimator::onExecute(RTC::UniqueId ec_id)
              && m_qCurrentIn.data.length() == numJoints) { // estimate torque from joint error
     jointTorque.resize(numJoints);
     hrp::dvector jointError(numJoints);
-    for (int i = 0; i < numJoints; i++) {
+    for (unsigned int i = 0; i < numJoints; i++) {
       jointError[i] = m_qRefIn.data[i] - m_qCurrentIn.data[i];
     }
     estimateJointTorqueFromJointError(jointError, jointTorque);
     if (isDebug()) {
       std::cerr << "qRef: ";
-      for (int i = 0; i < numJoints; i++) {
+      for (unsigned int i = 0; i < numJoints; i++) {
         std::cerr << " " << m_qRefIn.data[i] ;
       }
       std::cerr << std::endl;
       std::cerr << "qCurrent: ";
-      for (int i = 0; i < numJoints; i++) {
+      for (unsigned int i = 0; i < numJoints; i++) {
         std::cerr << " " << m_qCurrentIn.data[i] ;
       }
       std::cerr << std::endl;
@@ -261,7 +261,7 @@ RTC::ReturnCode_t ThermoEstimator::onExecute(RTC::UniqueId ec_id)
 
   // calculate temperature from joint torque
   if (jointTorque.size() ==  m_robot->numJoints()) {
-    for (int i = 0; i < numJoints; i++) {
+    for (unsigned int i = 0; i < numJoints; i++) {
       // Thermo estimation
       calculateJointTemperature(jointTorque[i], m_motorHeatParams[i]);
       // output
@@ -269,7 +269,7 @@ RTC::ReturnCode_t ThermoEstimator::onExecute(RTC::UniqueId ec_id)
     }
     if (isDebug()) {
       std::cerr << std::endl << "temperature  : ";
-      for (int i = 0; i < numJoints; i++) {
+      for (unsigned int i = 0; i < numJoints; i++) {
         std::cerr << " " << m_motorHeatParams[i].temperature;
       }
       std::cerr << std::endl;
@@ -292,7 +292,7 @@ RTC::ReturnCode_t ThermoEstimator::onExecute(RTC::UniqueId ec_id)
     }
   } else { // pass servoStateIn to servoStateOut
     m_servoStateOut.data.length(m_servoStateIn.data.length());
-    for (int i = 0; i < m_servoStateIn.data.length(); i++) {
+    for (unsigned int i = 0; i < m_servoStateIn.data.length(); i++) {
       m_servoStateOut.data[i] = m_servoStateIn.data[i];
     }
   }
@@ -341,12 +341,12 @@ void ThermoEstimator::estimateJointTorqueFromJointError(hrp::dvector &error, hrp
   if (error.size() == m_robot->numJoints()
       && m_error2tau.size() == m_robot->numJoints()) {
     tau.resize(m_robot->numJoints());
-    for (int i = 0; i < m_robot->numJoints(); i++) {
+    for (unsigned int i = 0; i < m_robot->numJoints(); i++) {
       tau[i] = m_error2tau[i] * error[i];
     }
     if (isDebug()) {
       std::cerr << "estimated torque: ";
-      for (int i = 0; i < m_robot->numJoints(); i++) {
+      for (unsigned int i = 0; i < m_robot->numJoints(); i++) {
         std::cerr << " " << tau[i] ;
       }
       std::cerr << std::endl;

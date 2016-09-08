@@ -1,7 +1,7 @@
 #include <iostream>
 #include "IIRFilter.h"
 
-IIRFilter::IIRFilter(int dim, std::vector<double>& fb_coeffs, std::vector<double>& ff_coeffs, const std::string& error_prefix)
+IIRFilter::IIRFilter(unsigned int dim, std::vector<double>& fb_coeffs, std::vector<double>& ff_coeffs, const std::string& error_prefix)
 {
   // init dimention
   m_dimention = dim;

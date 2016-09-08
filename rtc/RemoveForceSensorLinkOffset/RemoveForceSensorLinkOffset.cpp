@@ -98,11 +98,11 @@ RTC::ReturnCode_t RemoveForceSensorLinkOffset::onInitialize()
       return RTC::RTC_ERROR;
   }
 
-  int nforce = m_robot->numSensors(hrp::Sensor::FORCE);
+  unsigned int nforce = m_robot->numSensors(hrp::Sensor::FORCE);
   m_force.resize(nforce);
   m_forceOut.resize(nforce);
   m_forceIn.resize(nforce);
-  for (size_t i = 0; i < nforce; i++) {
+  for (unsigned int i = 0; i < nforce; i++) {
     hrp::Sensor *s = m_robot->sensor(hrp::Sensor::FORCE, i);
     m_forceOut[i] = new OutPort<TimedDoubleSeq>(std::string("off_"+s->name).c_str(), m_force[i]);
     m_forceIn[i] = new InPort<TimedDoubleSeq>(s->name.c_str(), m_force[i]);
@@ -167,7 +167,7 @@ RTC::ReturnCode_t RemoveForceSensorLinkOffset::onExecute(RTC::UniqueId ec_id)
   }
   if (m_qCurrentIn.isNew()) {
     m_qCurrentIn.read();
-    for ( int i = 0; i < m_robot->numJoints(); i++ ){
+    for ( unsigned int i = 0; i < m_robot->numJoints(); i++ ){
       m_robot->joint(i)->q = m_qCurrent.data[i];
     }
     //

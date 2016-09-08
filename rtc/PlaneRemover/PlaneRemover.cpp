@@ -148,7 +148,7 @@ RTC::ReturnCode_t PlaneRemover::onExecute(RTC::UniqueId ec_id)
     pcl::PointCloud<pcl::PointXYZ>::Ptr original (new pcl::PointCloud<pcl::PointXYZ>);
     original->points.resize(m_original.width*m_original.height);
     float *src = (float *)m_original.data.get_buffer();
-    for (int i=0; i<original->points.size(); i++){
+    for (unsigned int i=0; i<original->points.size(); i++){
       original->points[i].x = src[0];
       original->points[i].y = src[1];
       original->points[i].z = src[2];
@@ -193,7 +193,7 @@ RTC::ReturnCode_t PlaneRemover::onExecute(RTC::UniqueId ec_id)
     m_filtered.row_step = m_filtered.point_step*m_filtered.width;
     m_filtered.data.length(m_filtered.height*m_filtered.row_step);
     float *dst = (float *)m_filtered.data.get_buffer();
-    for (int i=0; i<cloud->points.size(); i++){
+    for (unsigned int i=0; i<cloud->points.size(); i++){
       dst[0] = cloud->points[i].x;
       dst[1] = cloud->points[i].y;
       dst[2] = cloud->points[i].z;

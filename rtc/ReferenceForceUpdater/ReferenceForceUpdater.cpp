@@ -110,21 +110,21 @@ RTC::ReturnCode_t ReferenceForceUpdater::onInitialize()
   // Setting for wrench data ports (real + virtual)
   std::vector<std::string> fsensor_names;
   //   find names for real force sensors
-  int npforce = m_robot->numSensors(hrp::Sensor::FORCE);
+  unsigned int npforce = m_robot->numSensors(hrp::Sensor::FORCE);
   for (unsigned int i=0; i<npforce; i++){
     fsensor_names.push_back(m_robot->sensor(hrp::Sensor::FORCE, i)->name);
   }
   // load virtual force sensors
   readVirtualForceSensorParamFromProperties(m_vfs, m_robot, prop["virtual_force_sensor"], std::string(m_profile.instance_name));
-  int nvforce = m_vfs.size();
+  unsigned int nvforce = m_vfs.size();
   for (unsigned int i=0; i<nvforce; i++){
     for ( std::map<std::string, hrp::VirtualForceSensorParam>::iterator it = m_vfs.begin(); it != m_vfs.end(); it++ ) {
-      if (it->second.id == i) fsensor_names.push_back(it->first);
+      if (it->second.id == (int)i) fsensor_names.push_back(it->first);
     }
   }
 
   //   add ports for all force sensors (real force, input and output of ref_force)
-  int nforce  = npforce + nvforce;
+  unsigned int nforce  = npforce + nvforce;
   m_force.resize(nforce);
   m_forceIn.resize(nforce);
   m_ref_force_in.resize(nforce);
@@ -194,8 +194,8 @@ RTC::ReturnCode_t ReferenceForceUpdater::onInitialize()
 
   // check if the dof of m_robot match the number of joint in m_robot
   unsigned int dof = m_robot->numJoints();
-  for ( int i = 0 ; i < dof; i++ ){
-    if ( i != m_robot->joint(i)->jointId ) {
+  for ( unsigned int i = 0 ; i < dof; i++ ){
+    if ( (int)i != m_robot->joint(i)->jointId ) {
       std::cerr << "[" << m_profile.instance_name << "] jointId is not equal to the index number" << std::endl;
       return RTC::RTC_ERROR;
     }
@@ -203,7 +203,7 @@ RTC::ReturnCode_t ReferenceForceUpdater::onInitialize()
 
   loop = 0;
   transition_interpolator_ratio.reserve(transition_interpolator.size());
-  for (int i=0; i<transition_interpolator.size(); i++ ) transition_interpolator_ratio[i] = 0;
+  for (unsigned int i=0; i<transition_interpolator.size(); i++ ) transition_interpolator_ratio[i] = 0;
 
   return RTC::RTC_OK;
 }
@@ -323,7 +323,7 @@ RTC::ReturnCode_t ReferenceForceUpdater::onExecute(RTC::UniqueId ec_id)
       hrp::dvector qorg(m_robot->numJoints());
 
       // reference model
-      for ( int i = 0; i < m_robot->numJoints(); i++ ){
+      for ( unsigned int i = 0; i < m_robot->numJoints(); i++ ){
         qorg[i] = m_robot->joint(i)->q;
         m_robot->joint(i)->q = m_qRef.data[i];
       }

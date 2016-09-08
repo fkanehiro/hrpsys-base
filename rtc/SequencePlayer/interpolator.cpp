@@ -228,13 +228,13 @@ void interpolator::load(const char *fname, double time_to_start, double scale,
   vs = new double[dim];
   strm >> time;
   while(strm.eof()==0){
-    for (int i=0; i<offset1; i++){
+    for (size_t i=0; i<offset1; i++){
       strm >> tmp;
     }
     for (int i=0; i<dim; i++){
       strm >> vs[i];
     }
-    for (int i=0; i<offset2; i++){
+    for (size_t i=0; i<offset2; i++){
       strm >> tmp;
     }
     if (ptime <0){

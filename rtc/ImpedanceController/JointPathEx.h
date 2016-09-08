@@ -33,7 +33,7 @@ namespace hrp {
     void setMaxIKIteration(int iter);
     void setOptionalWeightVector(const std::vector<double>& _opt_w)
     {
-        for (int i = 0 ; i < numJoints(); i++ ) {
+        for (unsigned int i = 0 ; i < numJoints(); i++ ) {
             optional_weight_vector[i] = _opt_w[i];
         }
     };
@@ -42,7 +42,7 @@ namespace hrp {
     void getInterlockingJointPairIndices (std::vector<std::pair<size_t, size_t> >& pairs);
     void getOptionalWeightVector(std::vector<double>& _opt_w)
     {
-        for (int i = 0 ; i < numJoints(); i++ ) {
+        for (unsigned int i = 0 ; i < numJoints(); i++ ) {
             _opt_w[i] = optional_weight_vector[i];
         }
     };
