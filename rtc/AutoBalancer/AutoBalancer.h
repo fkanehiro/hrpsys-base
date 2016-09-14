@@ -26,6 +26,17 @@
 #include "AutoBalancerService_impl.h"
 #include "interpolator.h"
 
+//ishiguro
+#include <boost/assert.hpp>
+#include <boost/assign/list_of.hpp>
+#include <boost/geometry.hpp>
+#include <boost/geometry/geometries/point_xy.hpp>
+#include <boost/geometry/geometries/box.hpp>
+#include <boost/geometry/geometries/polygon.hpp>
+#include <boost/geometry/algorithms/disjoint.hpp>
+#include <boost/geometry/geometries/geometries.hpp>
+
+
 // </rtc-template>
 
 // Service Consumer stub headers
@@ -87,6 +98,10 @@ class HumanPose{
 };
 
 
+
+
+
+
 class HumanSynchronizer{
   private:
 
@@ -109,6 +124,7 @@ class HumanSynchronizer{
     int countdown_num;
     bool HumanSyncOn;
     struct timeval t_calc_start, t_calc_end;
+    unsigned int loop;
 
   public:
 
@@ -120,7 +136,7 @@ class HumanSynchronizer{
     bool use_x,use_y,use_z;
     hrp::Vector3 init_wld_rp_basepos;
     HumanPose rp_ref_out;
-    FILE* log;
+    FILE *sr_log,*cz_log;
 
     HumanSynchronizer(){
       h2r_ratio = 0.96;//human 1.1m vs jaxon 1.06m
@@ -136,20 +152,25 @@ class HumanSynchronizer{
       init_wld_rp_rfpos = hrp::Vector3(0,-0.1,0);
       init_wld_rp_lfpos = hrp::Vector3(0, 0.1,0);
       init_hp_calibcom.Zero();
-      FNUM = 0.01;
+      FNUM = 0.01;//0.01でも荒い?
       FUPLEVELNUM = 200;
       FUPHIGHT = 0.05;
       CNT_F_TH = 20.0;
       MAXVEL = 0.004;
 //      MAXVEL = 0.001;
+//      MAXVEL = 0.0001;
       HumanSyncOn = false;
       ht_first_call = true;
       startCountdownForHumanSync = false;
       countdown_num = 5*500;
-//      log = fopen("/home/ishiguro/HumanSyncLog.txt","w+");
+      loop = 0;
+      std::string home_path(std::getenv("HOME"));
+      sr_log = fopen((home_path+"/HumanSync_support_region.log").c_str(),"w+");
+      cz_log = fopen((home_path+"/HumanSync_com_zmp.log").c_str(),"w+");
     }
     ~HumanSynchronizer(){
-//      fclose(log);
+      fclose(sr_log);
+      fclose(cz_log);
       cout<<"HumanSynchronizer destructed"<<endl;
     }
 
@@ -179,13 +200,13 @@ class HumanSynchronizer{
       overwriteFootZFromContactStates(rp_ref_out, is_rf_contact, is_lf_contact, rp_ref_out);
 //      lockFootXYOnContact(rp_ref_out, is_rf_contact, is_lf_contact, rp_ref_out);//ここで改変するとLPFかかってないからジャンプする
       applyWorkspaceLimit(rp_ref_out, rp_ref_out);
-      applyCOMToSupportRegionLimit(rp_ref_out, rp_ref_out);
+//      applyCOMToSupportRegionLimit(rp_ref_out, rp_ref_out);
       applyVelLimit(rp_ref_out, rp_ref_out_old, rp_ref_out);
-      applyXYZLock(rp_ref_out, rp_ref_out);
-      rp_ref_out.com(2) = 0;//Z方向固定
+      applyCOMZMPXYZLock(rp_ref_out, rp_ref_out);
       rp_ref_out_old = rp_ref_out;
-//      fprintf(log,"%f %f %f %f\n", rp_ref_out.com(0), rp_ref_out.com(1), rp_ref_out.zmp(0), rp_ref_out.zmp(1));
-
+//      fprintf(log,"%f %f %f %f %f %f\n", rp_ref_out.com(0), rp_ref_out.com(1), rp_ref_out.zmp(0), rp_ref_out.zmp(1), hp_rel_raw.com(0), hp_rel_raw.com(1));
+      isCOMInSupportRegion(rp_ref_out.lf+init_wld_rp_lfpos,rp_ref_out.rf+init_wld_rp_rfpos,rp_ref_out.com);
+      loop++;
       gettimeofday(&t_calc_end, NULL);
     }
     void calibInitHumanCOMFromZMP(){
@@ -237,8 +258,12 @@ class HumanSynchronizer{
 //    }
     void applyLPFilter(const HumanPose& raw_in, const HumanPose& out_old, HumanPose& filt_out){
       for(int i=0;i<filt_out.idsize;i++){
+//      for(int i=0;i<filt_out.idsize-5;i++){//ここではrfw,zmpとかはフィルターしないほうがいい
         filt_out.Seq(i) = (1-FNUM) * out_old.Seq(i) + FNUM * raw_in.Seq(i);
       }
+//      for(int i=filt_out.idsize-5;i<filt_out.idsize;i++){//ここではrfw,zmpとかはフィルターしないほうがいい
+//        filt_out.Seq(i) = raw_in.Seq(i);
+//      }
     }
     void convertRelHumanPoseToRelRobotPose(const HumanPose& hp_in, HumanPose& rp_out){//結局初期指定からの移動量(=Rel)で計算をしてゆく
       for(int i=0;i<rp_out.idsize-4;i++){
@@ -248,7 +273,6 @@ class HumanSynchronizer{
       rp_out.lfw  = hp_in.lfw;
     }
     void judgeFootContactStates(const HumanPose::Wrench6& rfw_in, const HumanPose::Wrench6& lfw_in, bool& rfcs_ans, bool& lfcs_ans){
-      //他のプログラムは足に荷重時に力センサの値がZ軸マイナスに出るっぽい？(のでTODO FIX)
       if      (rfw_in.f(2)<CNT_F_TH && lfw_in.f(2)>CNT_F_TH){rfcs_ans = false;  lfcs_ans = true;}//右足浮遊かつ左足接地
       else if (rfw_in.f(2)>CNT_F_TH && lfw_in.f(2)<CNT_F_TH){rfcs_ans = true;   lfcs_ans = false;}//右足接地かつ左足浮遊
       else                                              {rfcs_ans = true;   lfcs_ans = true;}//両足接地または両足浮遊
@@ -316,7 +340,8 @@ class HumanSynchronizer{
       out = in;
       const double XUMARGIN = 0.08;
       const double XLMARGIN = 0.04;
-      const double YLRMARGIN = 0.03;
+//      const double YLRMARGIN = 0.03;
+      const double YLRMARGIN = 0.0;
       double x_upper_region,x_lower_region,y_upper_region,y_lower_region;
       if(rp_wld_initpos.rf(0) + in.rf(0) > rp_wld_initpos.lf(0) + in.lf(0)){
         x_upper_region = rp_wld_initpos.rf(0) + in.rf(0) + XUMARGIN;
@@ -327,10 +352,90 @@ class HumanSynchronizer{
       }
       y_upper_region = rp_wld_initpos.lf(1) + in.lf(1) + YLRMARGIN;
       y_lower_region = rp_wld_initpos.rf(1) + in.rf(1) - YLRMARGIN;
-      if(in.com(0) < x_lower_region){ out.com(0) = x_lower_region; cerr<<"[WARN] COM X Lower Limit!"<<endl;}
-      else if(in.com(0) > x_upper_region){ out.com(0) = x_upper_region; cerr<<"[WARN] COM X Upper Limit!"<<endl;}
-      if(in.com(1) < y_lower_region){ out.com(1) = y_lower_region; cerr<<"[WARN] COM Y Lower Limit!"<<endl;}
-      else if(in.com(1) > y_upper_region){ out.com(1) = y_upper_region; cerr<<"[WARN] COM Y Upper Limit!"<<endl;}
+      if(HumanSyncOn){
+        if(in.com(0) < x_lower_region){ out.com(0) = x_lower_region;}//cerr<<"[WARN] COM X Lower Limit!"<<endl;}
+        else if(in.com(0) > x_upper_region){ out.com(0) = x_upper_region; }//cerr<<"[WARN] COM X Upper Limit!"<<endl;}
+        if(in.com(1) < y_lower_region){
+          out.com(1) = y_lower_region;// cerr<<"[WARN] COM Y Lower Limit!"<<endl;
+//          out.zmp(1) = out.com(1);
+
+          if(loop%50==0)cout<<"rp_wld_initpos"<<rp_wld_initpos.lf<<endl;
+          if(loop%50==0)cout<<"y_upper_region"<<y_upper_region<<"in.com(1)"<<in.com(1)<<endl;
+        }
+        else if(in.com(1) > y_upper_region){
+         out.com(1) = y_upper_region; //cerr<<"[WARN] COM Y Upper Limit!"<<endl;
+//         out.zmp(1) = out.com(1);
+      }
+      }
+    }
+    bool isCOMInSupportRegion(const hrp::Vector3& lfin_abs, const hrp::Vector3& rfin_abs, hrp::Vector3& comin_abs){
+      namespace bg = boost::geometry;
+      typedef bg::model::d2::point_xy<double> point;
+      typedef bg::model::polygon<point> polygon;
+      polygon lr_region,s_region;
+      const double XUMARGIN = 0.04;
+      const double XLMARGIN = -0.02;
+      const double YUMARGIN = 0.01;
+      const double YLMARGIN = -0.01;
+      bg::model::linestring<point> s_line = boost::assign::list_of<point>
+        (lfin_abs(0) + XLMARGIN, lfin_abs(1) + YLMARGIN)//LFの右下
+        (lfin_abs(0) + XLMARGIN, lfin_abs(1) + YUMARGIN)//LFの左下
+        (lfin_abs(0) + XUMARGIN, lfin_abs(1) + YUMARGIN)//LFの左上
+        (lfin_abs(0) + XUMARGIN, lfin_abs(1) + YLMARGIN)//LFの右上
+        (rfin_abs(0) + XLMARGIN, rfin_abs(1) + YLMARGIN)//RFの右下
+        (rfin_abs(0) + XLMARGIN, rfin_abs(1) + YUMARGIN)//RFの左下
+        (rfin_abs(0) + XUMARGIN, rfin_abs(1) + YUMARGIN)//RFの左上
+        (rfin_abs(0) + XUMARGIN, rfin_abs(1) + YLMARGIN)//RFの右上
+             ;
+      bg::convex_hull(s_line, s_region);
+
+//      std::cout<< "lr_region: " << bg::dsv(lr_region) << std::endl << "s_region: " << bg::dsv(s_region) << std::endl;
+      point com2d(comin_abs(0),comin_abs(1));
+      Eigen::Vector2d ans_point(comin_abs(0),comin_abs(1));
+      if(!bg::within(com2d, s_region)){//対象の点が凸包の外部に存在するかチェックする
+        cout<<"COM out of s_region"<<endl;
+        Eigen::Vector2d check_point(com2d.x(),com2d.y());
+        int ans_lid=-1;
+        for(int i=0;i<s_region.outer().size()-1;i++){//対象の点がある線分への垂線を有するかチェックする
+          Eigen::Vector2d cur_vert(s_region.outer()[i].x(),s_region.outer()[i].y());
+          Eigen::Vector2d next_vert(s_region.outer()[i+1].x(),s_region.outer()[i+1].y());
+          Eigen::Vector2d edge_v = next_vert - cur_vert;
+          Eigen::Vector2d tgt_pt_v = check_point - cur_vert;
+          //ある線分への垂線を有し，かつ外側(時計回りエッジに対して左側)に存在するなら，対象の点からそのエッジへの垂線の交点が最近傍点
+          if(edge_v.dot(tgt_pt_v)/edge_v.norm() > 0 && edge_v.dot(tgt_pt_v)/edge_v.norm() < edge_v.norm() && (edge_v(0)*tgt_pt_v(1)-edge_v(1)*tgt_pt_v(0)) > 0){
+            ans_lid = i;
+            ans_point = cur_vert + edge_v.normalized() * (edge_v.dot(tgt_pt_v)/edge_v.norm());
+            break;
+          }
+        }
+        if(ans_lid != -1){
+          cout<<"point will on the line:"<<ans_lid<<" point:"<<ans_point(0)<<","<<ans_point(1)<<endl;
+        }else{//対象の点が線分への垂線を持たなければ答えを頂点に絞ってチェックする
+          double cur_min_dis = bg::distance(com2d, s_region.outer()[0]);
+          int ans_pid = 0;
+          for(int i=1;i<s_region.outer().size();i++){
+            if(bg::distance(com2d, s_region.outer()[i]) < cur_min_dis){
+              cur_min_dis = bg::distance(com2d, s_region.outer()[i]);
+              ans_pid = i;
+            }
+          }
+          ans_point(0) = s_region.outer()[ans_pid].x();
+          ans_point(1) = s_region.outer()[ans_pid].y();
+          cout<<"point will on the vertex:"<<ans_pid<<" point:"<<ans_point(0)<<","<<ans_point(1)<<endl;
+        }
+      }
+      if(loop%50==0){
+        for(int i=0;i<s_region.outer().size();i++){
+          fprintf(sr_log,"%f %f %f\n",s_region.outer().at(i).x(), s_region.outer().at(i).y(),(double)loop/500.0);
+        }
+        fprintf(sr_log,"\n");
+        fprintf(cz_log,"%f %f %f %f %f %f %f %f %f\n",(double)loop/500.0,comin_abs(0),comin_abs(1),comin_abs(2),rp_ref_out.zmp(0),rp_ref_out.zmp(1),rp_ref_out.zmp(2),ans_point(0),ans_point(1));
+        fprintf(cz_log,"\n");
+      }
+      comin_abs(0) = ans_point(0);
+      comin_abs(0) = ans_point(0);
+      rp_ref_out.zmp = rp_ref_out.com;
+      return true;
     }
     void applyVelLimit(const HumanPose& in, const HumanPose& in_old, HumanPose& out){
       for(int i=0;i<3;i++){if(in.com(i) - in_old.com(i) > MAXVEL){out.com(i) = in_old.com(i) + MAXVEL;}else if(in.com(i) - in_old.com(i) < -MAXVEL){out.com(i) = in_old.com(i) - MAXVEL;}}
@@ -339,13 +444,22 @@ class HumanSynchronizer{
       for(int i=0;i<3;i++){if(in.rh(i)  - in_old.rh(i)  > MAXVEL){out.rh(i)  = in_old.rh(i)  + MAXVEL;}else if(in.rh(i)  - in_old.rh(i)  < -MAXVEL){out.rh(i)  = in_old.rh(i)  - MAXVEL;}}
       for(int i=0;i<3;i++){if(in.lh(i)  - in_old.lh(i)  > MAXVEL){out.lh(i)  = in_old.lh(i)  + MAXVEL;}else if(in.lh(i)  - in_old.lh(i)  < -MAXVEL){out.lh(i)  = in_old.lh(i)  - MAXVEL;}}
     }
-    void applyXYZLock(const HumanPose& in, HumanPose& out){
+    void applyCOMZMPXYZLock(const HumanPose& in, HumanPose& out){
       out = in;
-      for(int i=0;i<out.idsize-4;i++){
-        if(!use_x)out.Seq(i)(0) = 0;
-        if(!use_y)out.Seq(i)(1) = 0;
-        if(!use_z)out.Seq(i)(2) = 0;
-      }
+//      for(int i=0;i<out.idsize-4;i++){
+//        if(!use_x)out.Seq(i)(0) = 0;
+//        if(!use_y)out.Seq(i)(1) = 0;
+//        if(!use_z)out.Seq(i)(2) = 0;
+//      }
+        if(!use_x){out.com(0) = 0;out.zmp(0) = 0;}
+        if(!use_y){out.com(1) = 0;out.zmp(1) = 0;}
+        if(!use_z){out.com(2) = 0;}
+        out.rh(0)=0;
+        out.rh(1)=out.com(1);
+        out.rh(2)=0;
+        out.lh(0)=0;
+        out.lh(1)=out.com(1);
+        out.lh(2)=0;
     }
 };
 
