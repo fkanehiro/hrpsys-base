@@ -26,16 +26,6 @@
 #include "AutoBalancerService_impl.h"
 #include "interpolator.h"
 
-//ishiguro
-#include <boost/assert.hpp>
-#include <boost/assign/list_of.hpp>
-#include <boost/geometry.hpp>
-#include <boost/geometry/geometries/point_xy.hpp>
-#include <boost/geometry/geometries/box.hpp>
-#include <boost/geometry/geometries/polygon.hpp>
-#include <boost/geometry/algorithms/disjoint.hpp>
-#include <boost/geometry/geometries/geometries.hpp>
-
 
 // </rtc-template>
 
@@ -202,12 +192,11 @@ class HumanSynchronizer{
       overwriteFootZFromContactStates(rp_ref_out, is_rf_contact, is_lf_contact, rp_ref_out);
 //      lockFootXYOnContact(rp_ref_out, is_rf_contact, is_lf_contact, rp_ref_out);//ここで改変するとLPFかかってないからジャンプする
       applyWorkspaceLimit(rp_ref_out, rp_ref_out);
-//      applyCOMToSupportRegionLimit(rp_ref_out, rp_ref_out);
       applyVelLimit(rp_ref_out, rp_ref_out_old, rp_ref_out);
       applyCOMZMPXYZLock(rp_ref_out, rp_ref_out);
 
 
-      isCOMInSupportRegion(rp_ref_out.lf+init_wld_rp_lfpos,rp_ref_out.rf+init_wld_rp_rfpos,rp_ref_out.com);
+      applyCOMToSupportRegionLimit(rp_ref_out.lf+init_wld_rp_lfpos,rp_ref_out.rf+init_wld_rp_rfpos,rp_ref_out.com);
 
 
       rp_ref_out_old = rp_ref_out;
@@ -342,97 +331,161 @@ class HumanSynchronizer{
         if(in.lf(1) + rp_wld_initpos.lf(1) < in.rf(1) + rp_wld_initpos.rf(1) + 0.15)out.lf(1) = in.rf(1) + rp_wld_initpos.rf(1) - rp_wld_initpos.lf(1) + 0.15;
       }
     }
-    void applyCOMToSupportRegionLimit(const HumanPose& in, HumanPose& out){
-      out = in;
-      const double XUMARGIN = 0.08;
-      const double XLMARGIN = 0.04;
-      const double YLRMARGIN = 0.03;
-      double x_upper_region,x_lower_region,y_upper_region,y_lower_region;
-      if(rp_wld_initpos.rf(0) + in.rf(0) > rp_wld_initpos.lf(0) + in.lf(0)){
-        x_upper_region = rp_wld_initpos.rf(0) + in.rf(0) + XUMARGIN;
-        x_lower_region = rp_wld_initpos.lf(0) + in.lf(0) - XLMARGIN;
+//    bool applyCOMToSupportRegionLimit_boost_geometry(const hrp::Vector3& lfin_abs, const hrp::Vector3& rfin_abs, hrp::Vector3& comin_abs){
+////      ishiguro(ロボット体内のboostが古くて対応してない！！！)
+//      #include <boost/assert.hpp>
+//      #include <boost/assign/list_of.hpp>
+//      #include <boost/geometry.hpp>
+//      #include <boost/geometry/geometries/point_xy.hpp>
+//      #include <boost/geometry/geometries/box.hpp>
+//      #include <boost/geometry/geometries/polygon.hpp>
+//      #include <boost/geometry/algorithms/disjoint.hpp>
+//      #include <boost/geometry/geometries/geometries.hpp>
+//      namespace bg = boost::geometry;
+//      typedef bg::model::d2::point_xy<double> point;
+//      typedef bg::model::polygon<point> polygon;
+//      polygon lr_region,s_region;
+//      const double XUMARGIN = 0.04;//CHIDORI
+//      const double XLMARGIN = -0.02;
+//      const double YUMARGIN = 0.01;
+//      const double YLMARGIN = -0.01;
+//      bg::model::linestring<point> s_line = boost::assign::list_of<point>
+//        (lfin_abs(0) + XLMARGIN, lfin_abs(1) + YLMARGIN)//LFの右下
+//        (lfin_abs(0) + XLMARGIN, lfin_abs(1) + YUMARGIN)//LFの左下
+//        (lfin_abs(0) + XUMARGIN, lfin_abs(1) + YUMARGIN)//LFの左上
+//        (lfin_abs(0) + XUMARGIN, lfin_abs(1) + YLMARGIN)//LFの右上
+//        (rfin_abs(0) + XLMARGIN, rfin_abs(1) + YLMARGIN)//RFの右下
+//        (rfin_abs(0) + XLMARGIN, rfin_abs(1) + YUMARGIN)//RFの左下
+//        (rfin_abs(0) + XUMARGIN, rfin_abs(1) + YUMARGIN)//RFの左上
+//        (rfin_abs(0) + XUMARGIN, rfin_abs(1) + YLMARGIN)//RFの右上
+//             ;
+//      bg::convex_hull(s_line, s_region);
+//      point com2d(comin_abs(0),comin_abs(1));
+//      Eigen::Vector2d ans_point(comin_abs(0),comin_abs(1));
+//      enum point_state_t {PT_IN_NO_PATTERN = -1, PT_IN_REGION, PT_FIX_TO_EDGE, PT_FIX_TO_VERTEX};
+//      point_state_t pt_state = PT_IN_NO_PATTERN;
+//      if(bg::within(com2d, s_region)){//対象の点が凸包の内部に存在するかチェックする
+//        pt_state = PT_IN_REGION;
+//      }else{
+//        Eigen::Vector2d check_point(com2d.x(),com2d.y());
+//        int ans_lid=-1;
+//        for(int i=0;i<s_region.outer().size()-1;i++){//対象の点がある線分への垂線を有するかチェックする
+//          Eigen::Vector2d cur_vert(s_region.outer()[i].x(),s_region.outer()[i].y());
+//          Eigen::Vector2d next_vert(s_region.outer()[i+1].x(),s_region.outer()[i+1].y());
+//          Eigen::Vector2d edge_v = next_vert - cur_vert;
+//          Eigen::Vector2d tgt_pt_v = check_point - cur_vert;
+//          //ある線分への垂線を有し，かつ外側(時計回りエッジに対して左側)に存在するなら，対象の点からそのエッジへの垂線の交点が最近傍点
+//          if(edge_v.dot(tgt_pt_v)/edge_v.norm() > 0 && edge_v.dot(tgt_pt_v)/edge_v.norm() < edge_v.norm() && (edge_v(0)*tgt_pt_v(1)-edge_v(1)*tgt_pt_v(0)) > 0){
+//            ans_lid = i;
+//            ans_point = cur_vert + edge_v.normalized() * (edge_v.dot(tgt_pt_v)/edge_v.norm());
+//            pt_state = PT_FIX_TO_EDGE;
+//            break;
+//          }
+//        }
+//        if(pt_state == PT_FIX_TO_EDGE){
+//          cout<<"point will on the line:"<<ans_lid<<" point:"<<ans_point(0)<<","<<ans_point(1)<<endl;
+//        }else{//対象の点が線分への垂線を持たなければ答えを頂点に絞ってチェックする
+//          double cur_min_dis = bg::distance(com2d, s_region.outer()[0]);
+//          int ans_pid = 0;
+//          for(int i=1;i<s_region.outer().size();i++){
+//            if(bg::distance(com2d, s_region.outer()[i]) < cur_min_dis){
+//              cur_min_dis = bg::distance(com2d, s_region.outer()[i]);
+//              ans_pid = i;
+//            }
+//          }
+//          ans_point(0) = s_region.outer()[ans_pid].x();
+//          ans_point(1) = s_region.outer()[ans_pid].y();
+//          cout<<"point will on the vertex:"<<ans_pid<<" point:"<<ans_point(0)<<","<<ans_point(1)<<endl;
+//          pt_state = PT_FIX_TO_VERTEX;
+//        }
+//      }
+//      if(loop%50==0){
+//        if(pt_state != PT_IN_REGION){
+//          std::cout<<"COM out of Support Region pt_state="<<pt_state<<std::endl;
+//        }
+//        for(int i=0;i<s_region.outer().size();i++){
+//          fprintf(sr_log,"%f %f %f\n",s_region.outer().at(i).x(), s_region.outer().at(i).y(),(double)loop/500.0);
+//        }
+//        fprintf(sr_log,"\n");
+//        fprintf(cz_log,"%f %f %f %f %f %f %f %f %f",(double)loop/500.0,comin_abs(0),comin_abs(1),comin_abs(2),rp_ref_out.zmp(0),rp_ref_out.zmp(1),rp_ref_out.zmp(2),ans_point(0),ans_point(1));
+//        fprintf(cz_log,"\n\n");
+//      }
+//      comin_abs(0) = ans_point(0);
+//      comin_abs(1) = ans_point(1);
+//      return true;
+//    }
+    bool applyCOMToSupportRegionLimit(const hrp::Vector3& lfin_abs, const hrp::Vector3& rfin_abs, hrp::Vector3& comin_abs){
+//      const double XUMARGIN = 0.04;//CHIDORI
+//      const double XLMARGIN = -0.02;
+//      const double YUMARGIN = 0.01;
+//      const double YLMARGIN = -0.01;
+      const double XUMARGIN = 0.02;//JAXON
+      const double XLMARGIN = -0.01;
+      const double YUMARGIN = 0.0;
+      const double YLMARGIN = -0.0;
+      std::vector<hrp::Vector2> convex_hull;
+      if(lfin_abs(0)>rfin_abs(0)){
+        convex_hull.push_back(hrp::Vector2(lfin_abs(0) + XLMARGIN, lfin_abs(1) + YUMARGIN));//LFの左下
+        convex_hull.push_back(hrp::Vector2(lfin_abs(0) + XUMARGIN, lfin_abs(1) + YUMARGIN));//LFの左上
+        convex_hull.push_back(hrp::Vector2(lfin_abs(0) + XUMARGIN, lfin_abs(1) + YLMARGIN));//LFの右上
+        convex_hull.push_back(hrp::Vector2(rfin_abs(0) + XUMARGIN, rfin_abs(1) + YLMARGIN));//RFの右上
+        convex_hull.push_back(hrp::Vector2(rfin_abs(0) + XLMARGIN, rfin_abs(1) + YLMARGIN));//RFの右下
+        convex_hull.push_back(hrp::Vector2(rfin_abs(0) + XLMARGIN, rfin_abs(1) + YUMARGIN));//RFの左下
+        convex_hull.push_back(hrp::Vector2(lfin_abs(0) + XLMARGIN, lfin_abs(1) + YUMARGIN));//LFの左下
       }else{
-        x_upper_region = rp_wld_initpos.lf(0) + in.lf(0) + XUMARGIN;
-        x_lower_region = rp_wld_initpos.rf(0) + in.rf(0) - XLMARGIN;
+        convex_hull.push_back(hrp::Vector2(lfin_abs(0) + XLMARGIN, lfin_abs(1) + YLMARGIN));//LFの右下
+        convex_hull.push_back(hrp::Vector2(lfin_abs(0) + XLMARGIN, lfin_abs(1) + YUMARGIN));//LFの左下
+        convex_hull.push_back(hrp::Vector2(lfin_abs(0) + XUMARGIN, lfin_abs(1) + YUMARGIN));//LFの左上
+        convex_hull.push_back(hrp::Vector2(rfin_abs(0) + XUMARGIN, rfin_abs(1) + YUMARGIN));//RFの左上
+        convex_hull.push_back(hrp::Vector2(rfin_abs(0) + XUMARGIN, rfin_abs(1) + YLMARGIN));//RFの右上
+        convex_hull.push_back(hrp::Vector2(rfin_abs(0) + XLMARGIN, rfin_abs(1) + YLMARGIN));//RFの右下
+        convex_hull.push_back(hrp::Vector2(lfin_abs(0) + XLMARGIN, lfin_abs(1) + YLMARGIN));//LFの右下
       }
-      y_upper_region = rp_wld_initpos.lf(1) + in.lf(1) + YLRMARGIN;
-      y_lower_region = rp_wld_initpos.rf(1) + in.rf(1) - YLRMARGIN;
-      if(HumanSyncOn){
-        if(in.com(0) < x_lower_region){ out.com(0) = x_lower_region;}//cerr<<"[WARN] COM X Lower Limit!"<<endl;}
-        else if(in.com(0) > x_upper_region){ out.com(0) = x_upper_region; }//cerr<<"[WARN] COM X Upper Limit!"<<endl;}
-        if(in.com(1) < y_lower_region){
-          out.com(1) = y_lower_region;// cerr<<"[WARN] COM Y Lower Limit!"<<endl;
-
-          if(loop%50==0)cout<<"rp_wld_initpos"<<rp_wld_initpos.lf<<endl;
-          if(loop%50==0)cout<<"y_upper_region"<<y_upper_region<<"in.com(1)"<<in.com(1)<<endl;
-        }
-        else if(in.com(1) > y_upper_region){
-         out.com(1) = y_upper_region; //cerr<<"[WARN] COM Y Upper Limit!"<<endl;
-        }
-      }
-    }
-    bool isCOMInSupportRegion(const hrp::Vector3& lfin_abs, const hrp::Vector3& rfin_abs, hrp::Vector3& comin_abs){
-      namespace bg = boost::geometry;
-      typedef bg::model::d2::point_xy<double> point;
-      typedef bg::model::polygon<point> polygon;
-      polygon lr_region,s_region;
-      const double XUMARGIN = 0.04;//CHIDORI
-      const double XLMARGIN = -0.02;
-      const double YUMARGIN = 0.01;
-      const double YLMARGIN = -0.01;
-//      const double XUMARGIN = 0.02;//JAXON
-//      const double XLMARGIN = -0.01;
-//      const double YUMARGIN = 0.0;
-//      const double YLMARGIN = -0.0;
-      bg::model::linestring<point> s_line = boost::assign::list_of<point>
-        (lfin_abs(0) + XLMARGIN, lfin_abs(1) + YLMARGIN)//LFの右下
-        (lfin_abs(0) + XLMARGIN, lfin_abs(1) + YUMARGIN)//LFの左下
-        (lfin_abs(0) + XUMARGIN, lfin_abs(1) + YUMARGIN)//LFの左上
-        (lfin_abs(0) + XUMARGIN, lfin_abs(1) + YLMARGIN)//LFの右上
-        (rfin_abs(0) + XLMARGIN, rfin_abs(1) + YLMARGIN)//RFの右下
-        (rfin_abs(0) + XLMARGIN, rfin_abs(1) + YUMARGIN)//RFの左下
-        (rfin_abs(0) + XUMARGIN, rfin_abs(1) + YUMARGIN)//RFの左上
-        (rfin_abs(0) + XUMARGIN, rfin_abs(1) + YLMARGIN)//RFの右上
-             ;
-      bg::convex_hull(s_line, s_region);
-//      std::cout<< "lr_region: " << bg::dsv(lr_region) << std::endl << "s_region: " << bg::dsv(s_region) << std::endl;
-      point com2d(comin_abs(0),comin_abs(1));
-      Eigen::Vector2d ans_point(comin_abs(0),comin_abs(1));
+      hrp::Vector2 check_point(comin_abs(0),comin_abs(1));
+      hrp::Vector2 ans_point = check_point;
       enum point_state_t {PT_IN_NO_PATTERN = -1, PT_IN_REGION, PT_FIX_TO_EDGE, PT_FIX_TO_VERTEX};
-      point_state_t pt_state = PT_IN_NO_PATTERN;
-      if(bg::within(com2d, s_region)){//対象の点が凸包の内部に存在するかチェックする
-        pt_state = PT_IN_REGION;
-      }else{
-//        cout<<"COM out of s_region"<<endl;
-        Eigen::Vector2d check_point(com2d.x(),com2d.y());
+      point_state_t pt_state = PT_IN_REGION;
+
+      for(int i=0;i<convex_hull.size()-1;i++){//対象の点が凸包の内部に存在するかチェックする
+        hrp::Vector2 cur_vert(convex_hull[i](0),convex_hull[i](1));
+        hrp::Vector2 next_vert(convex_hull[i+1](0),convex_hull[i+1](1));
+        hrp::Vector2 edge_v = next_vert - cur_vert;
+        hrp::Vector2 tgt_pt_v = check_point - cur_vert;
+        if((edge_v(0)*tgt_pt_v(1)-edge_v(1)*tgt_pt_v(0)) > 0){
+          pt_state = PT_IN_NO_PATTERN;
+//          cout<<"COM out of s_region"<<endl;
+          break;
+        }
+      }
+
+      if(pt_state != PT_IN_REGION){
         int ans_lid=-1;
-        for(int i=0;i<s_region.outer().size()-1;i++){//対象の点がある線分への垂線を有するかチェックする
-          Eigen::Vector2d cur_vert(s_region.outer()[i].x(),s_region.outer()[i].y());
-          Eigen::Vector2d next_vert(s_region.outer()[i+1].x(),s_region.outer()[i+1].y());
-          Eigen::Vector2d edge_v = next_vert - cur_vert;
-          Eigen::Vector2d tgt_pt_v = check_point - cur_vert;
+        for(int i=0;i<convex_hull.size()-1;i++){//対象の点がある線分への垂線を有するかチェックする
+          hrp::Vector2 cur_vert(convex_hull[i](0),convex_hull[i](1));
+          hrp::Vector2 next_vert(convex_hull[i+1](0),convex_hull[i+1](1));
+          hrp::Vector2 edge_v = next_vert - cur_vert;
+          hrp::Vector2 tgt_pt_v = check_point - cur_vert;
           //ある線分への垂線を有し，かつ外側(時計回りエッジに対して左側)に存在するなら，対象の点からそのエッジへの垂線の交点が最近傍点
           if(edge_v.dot(tgt_pt_v)/edge_v.norm() > 0 && edge_v.dot(tgt_pt_v)/edge_v.norm() < edge_v.norm() && (edge_v(0)*tgt_pt_v(1)-edge_v(1)*tgt_pt_v(0)) > 0){
             ans_lid = i;
             ans_point = cur_vert + edge_v.normalized() * (edge_v.dot(tgt_pt_v)/edge_v.norm());
             pt_state = PT_FIX_TO_EDGE;
+//            cout<<"point will on the line:"<<ans_lid<<" point:"<<ans_point(0)<<","<<ans_point(1)<<endl;
             break;
           }
         }
-        if(pt_state == PT_FIX_TO_EDGE){
-          cout<<"point will on the line:"<<ans_lid<<" point:"<<ans_point(0)<<","<<ans_point(1)<<endl;
-        }else{//対象の点が線分への垂線を持たなければ答えを頂点に絞ってチェックする
-          double cur_min_dis = bg::distance(com2d, s_region.outer()[0]);
+        if(pt_state != PT_FIX_TO_EDGE){//対象の点が線分への垂線を持たなければ答えを頂点に絞ってチェックする
+          double cur_min_dis = (check_point - convex_hull[0]).norm();
           int ans_pid = 0;
-          for(int i=1;i<s_region.outer().size();i++){
-            if(bg::distance(com2d, s_region.outer()[i]) < cur_min_dis){
-              cur_min_dis = bg::distance(com2d, s_region.outer()[i]);
+          for(int i=1;i<convex_hull.size();i++){
+            if((check_point - convex_hull[i]).norm() < cur_min_dis){
+              cur_min_dis = (check_point - convex_hull[i]).norm();
               ans_pid = i;
             }
           }
-          ans_point(0) = s_region.outer()[ans_pid].x();
-          ans_point(1) = s_region.outer()[ans_pid].y();
-          cout<<"point will on the vertex:"<<ans_pid<<" point:"<<ans_point(0)<<","<<ans_point(1)<<endl;
+          ans_point(0) = convex_hull[ans_pid](0);
+          ans_point(1) = convex_hull[ans_pid](1);
+//          cout<<"point will on the vertex:"<<ans_pid<<" point:"<<ans_point(0)<<","<<ans_point(1)<<endl;
           pt_state = PT_FIX_TO_VERTEX;
         }
       }
@@ -443,18 +496,18 @@ class HumanSynchronizer{
 //      rp_ref_out.zmp(0) = ans_point(0) + hpf_zmp(0);
 //      rp_ref_out.zmp(1) = ans_point(1) + hpf_zmp(1);
 
-      if(loop%50==0){
-        if(pt_state != PT_IN_REGION){
-          std::cout<<"COM out of Support Region pt_state="<<pt_state<<std::endl;
-        }
-        for(int i=0;i<s_region.outer().size();i++){
-          fprintf(sr_log,"%f %f %f\n",s_region.outer().at(i).x(), s_region.outer().at(i).y(),(double)loop/500.0);
-        }
-        fprintf(sr_log,"\n");
-        fprintf(cz_log,"%f %f %f %f %f %f %f %f %f",(double)loop/500.0,comin_abs(0),comin_abs(1),comin_abs(2),rp_ref_out.zmp(0),rp_ref_out.zmp(1),rp_ref_out.zmp(2),ans_point(0),ans_point(1));
-        fprintf(cz_log," %f %f %f %f",rp_ref_out.zmp(1),hpf_zmp(1),ans_point(1),ans_point(1) + hpf_zmp(1));
-        fprintf(cz_log,"\n\n");
-      }
+//      if(loop%50==0){//ログ
+//        if(pt_state != PT_IN_REGION){
+//          std::cout<<"COM out of Support Region pt_state="<<pt_state<<std::endl;
+//        }
+//        for(int i=0;i<convex_hull.size();i++){
+//          fprintf(sr_log,"%f %f %f\n",convex_hull[i](0), convex_hull[i](1),(double)loop/500.0);
+//        }
+//        fprintf(sr_log,"\n");
+//        fprintf(cz_log,"%f %f %f %f %f %f %f %f %f",(double)loop/500.0,comin_abs(0),comin_abs(1),comin_abs(2),rp_ref_out.zmp(0),rp_ref_out.zmp(1),rp_ref_out.zmp(2),ans_point(0),ans_point(1));
+//        fprintf(cz_log," %f %f %f %f",rp_ref_out.zmp(1),hpf_zmp(1),ans_point(1),ans_point(1) + hpf_zmp(1));
+//        fprintf(cz_log,"\n\n");
+//      }
       comin_abs(0) = ans_point(0);
       comin_abs(1) = ans_point(1);
 //      rp_ref_out.zmp(0) = comin_abs(0);
@@ -470,11 +523,6 @@ class HumanSynchronizer{
     }
     void applyCOMZMPXYZLock(const HumanPose& in, HumanPose& out){
       out = in;
-//      for(int i=0;i<out.idsize-4;i++){
-//        if(!use_x)out.Seq(i)(0) = 0;
-//        if(!use_y)out.Seq(i)(1) = 0;
-//        if(!use_z)out.Seq(i)(2) = 0;
-//      }
         if(!use_x){out.com(0) = 0;out.zmp(0) = 0;}
         if(!use_y){out.com(1) = 0;out.zmp(1) = 0;}
         if(!use_z){out.com(2) = 0;}
