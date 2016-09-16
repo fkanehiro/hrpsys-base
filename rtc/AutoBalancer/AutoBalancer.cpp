@@ -73,6 +73,7 @@ AutoBalancer::AutoBalancer(RTC::Manager* manager)
       m_AutoBalancerServicePort("AutoBalancerService"),
       m_walkingStatesOut("walkingStates", m_walkingStates),
       m_sbpCogOffsetOut("sbpCogOffset", m_sbpCogOffset),
+      m_legMarginIn("legMargin", m_legMargin),
       // </rtc-template>
       gait_type(BIPED),
       move_base_gain(0.8),
@@ -111,6 +112,9 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     addInPort("htrhIn", m_htrhIn);
     addInPort("htlhIn", m_htlhIn);
     addInPort("actzmpIn", m_actzmpIn);
+
+
+    addInPort("legMargin", m_legMarginIn);
 
     // Set OutPort buffer
     addOutPort("q", m_qOut);
@@ -482,6 +486,14 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
     if (m_htlhIn.isNew()) { m_htlhIn.read();  hp_raw_data.lh  = HumanSynchronizer::Point3DToVector3(m_htlh); }
     if (m_actzmpIn.isNew()){m_actzmpIn.read(); }
     hsp->readInput(hp_raw_data);
+
+
+    if (m_legMarginIn.isNew()) {
+      m_legMarginIn.read();
+      for (size_t i = 0; i < 4; i++) {
+        gg->set_leg_margin(m_legMargin.data[i], i);
+      }
+    }
 
     Guard guard(m_mutex);
     hrp::Vector3 ref_basePos;
@@ -956,8 +968,7 @@ void AutoBalancer::fixLegToCoords (const hrp::Vector3& fix_pos, const hrp::Matri
   m_robot->calcForwardKinematics();
 }
 
-
-bool AutoBalancer::solveLimbIKforLimb (ABCIKparam& param)
+bool AutoBalancer::solveLimbIKforLimb (ABCIKparam& param, const std::string& limb_name)
 {
   param.manip->calcInverseKinematics2Loop(param.target_p0, param.target_r0, 1.0, param.avoid_gain, param.reference_gain, &qrefv, transition_interpolator_ratio * leg_names_interpolator_ratio);
   // IK check
@@ -966,7 +977,7 @@ bool AutoBalancer::solveLimbIKforLimb (ABCIKparam& param)
   rats::difference_rotation(vel_r, param.target_link->R, param.target_r0);
   if (vel_p.norm() > pos_ik_thre && transition_interpolator->isEmpty()) {
       if (param.pos_ik_error_count % ik_error_debug_print_freq == 0) {
-          std::cerr << "[" << m_profile.instance_name << "] Too large IK error (vel_p) = [" << vel_p(0) << " " << vel_p(1) << " " << vel_p(2) << "][m], count = " << param.pos_ik_error_count << std::endl;
+          std::cerr << "[" << m_profile.instance_name << "] Too large IK error in " << limb_name << " (vel_p) = [" << vel_p(0) << " " << vel_p(1) << " " << vel_p(2) << "][m], count = " << param.pos_ik_error_count << std::endl;
       }
       param.pos_ik_error_count++;
       has_ik_failed = true;
@@ -975,7 +986,7 @@ bool AutoBalancer::solveLimbIKforLimb (ABCIKparam& param)
   }
   if (vel_r.norm() > rot_ik_thre && transition_interpolator->isEmpty()) {
       if (param.rot_ik_error_count % ik_error_debug_print_freq == 0) {
-          std::cerr << "[" << m_profile.instance_name << "] Too large IK error (vel_r) = [" << vel_r(0) << " " << vel_r(1) << " " << vel_r(2) << "][rad], count = " << param.rot_ik_error_count << std::endl;
+          std::cerr << "[" << m_profile.instance_name << "] Too large IK error in " << limb_name << " (vel_r) = [" << vel_r(0) << " " << vel_r(1) << " " << vel_r(2) << "][rad], count = " << param.rot_ik_error_count << std::endl;
       }
       param.rot_ik_error_count++;
       has_ik_failed = true;
@@ -1077,7 +1088,7 @@ void AutoBalancer::solveLimbIK ()
       m_robot->rootLink()->p(2) += tmp_com_err(2);
 		  m_robot->calcForwardKinematics();
 		  for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
-		    if (it->second.is_active) solveLimbIKforLimb(it->second);
+		    if (it->second.is_active) solveLimbIKforLimb(it->second, it->first);
 		  }
 		  m_robot->calcForwardKinematics();
       tmp_com_err = (hsp->rp_ref_out.com + hsp->rp_wld_initpos.com - m_robot->calcCM());
@@ -1108,7 +1119,7 @@ void AutoBalancer::solveLimbIK ()
 
   }else{
 	  for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {//本来のIK部分
-	    if (it->second.is_active) solveLimbIKforLimb(it->second);
+	    if (it->second.is_active) solveLimbIKforLimb(it->second, it->first);
 	  }
   }
   if (gg_is_walking && !gg_solved) stopWalking ();
@@ -1574,6 +1585,8 @@ bool AutoBalancer::setGaitGeneratorParam(const OpenHRP::AutoBalancerService::Gai
   gg->set_zmp_weight_map(boost::assign::map_list_of<leg_type, double>(RLEG, i_param.zmp_weight_map[0])(LLEG, i_param.zmp_weight_map[1])(RARM, i_param.zmp_weight_map[2])(LARM, i_param.zmp_weight_map[3]));
   gg->set_optional_go_pos_finalize_footstep_num(i_param.optional_go_pos_finalize_footstep_num);
   gg->set_overwritable_footstep_index_offset(i_param.overwritable_footstep_index_offset);
+  gg->set_overwritable_stride_limitation(i_param.overwritable_stride_limitation);
+  gg->set_use_stride_limitation(i_param.use_stride_limitation);
 
   // print
   gg->print_param(std::string(m_profile.instance_name));
@@ -1643,6 +1656,10 @@ bool AutoBalancer::getGaitGeneratorParam(OpenHRP::AutoBalancerService::GaitGener
   i_param.zmp_weight_map[3] = tmp_zmp_weight_map[LARM];
   i_param.optional_go_pos_finalize_footstep_num = gg->get_optional_go_pos_finalize_footstep_num();
   i_param.overwritable_footstep_index_offset = gg->get_overwritable_footstep_index_offset();
+  for (size_t i=0; i<4; i++) {
+    i_param.overwritable_stride_limitation[i] = gg->get_overwritable_stride_limitation(i);
+  }
+  i_param.use_stride_limitation = gg->get_use_stride_limitation();
   return true;
 };
 

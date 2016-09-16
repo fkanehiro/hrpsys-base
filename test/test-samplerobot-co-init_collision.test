@@ -1,0 +1,11 @@
+<launch>
+  <include file="$(find hrpsys)/launch/samplerobot.launch" >
+    <arg name="GUI" value="false" />
+    <arg name="corbaport" value="2809" />
+    <arg name="PROJECT_FILE" value="$(find hrpsys)/samples/SampleRobot/SampleRobot.500_init_col.xml"/>
+    <arg name="CONF_FILE" value="$(find hrpsys)/samples/SampleRobot/SampleRobot.500.conf"/>
+  </include>
+
+  <test test-name="samplerobot_init_collision" pkg="hrpsys" type="test-samplerobot-collision.py"
+        args="-ORBInitRef NameService=corbaloc:iiop:localhost:2809/NameService" retry="2"/>
+</launch>

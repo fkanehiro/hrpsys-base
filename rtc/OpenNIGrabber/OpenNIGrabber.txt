@@ -1,0 +1,53 @@
+/**
+
+\page OpenNIGrabber
+
+\section introduction Overview
+
+This component applies moving least squares filter to an input point cloud.
+
+<table>
+<tr><th>implementation_id</th><td>OpenNIGrabber</td></tr>
+<tr><th>category</th><td>example</td></tr>
+</table>
+
+\section dataports Data Ports
+
+\subsection inports Input Ports
+
+<table>
+<tr><th>port name</th><th>data type</th><th>unit</th><th>description</th></tr>
+<tr><td>original</td><td>PointCloudTypes::PointCloud</td><td></td><td></td></tr>
+</table>
+
+\subsection outports Output Ports
+
+<table>
+<tr><th>port name</th><th>data type</th><th>unit</th><th>description</th></tr>
+<tr><td>filtered</td><td>PointCloudTypes::PointCloud</td><td></td><td></td></tr>
+</table>
+
+\section serviceports Service Ports
+
+\subsection provider Service Providers
+
+<table>
+<tr><th>port name</th><th>interface name</th><th>service type</th><th>IDL</th><th>description</th></tr>
+</table>
+
+\subsection consumer Service Consumers
+
+N/A
+
+\section configuration Configuration Variables
+
+<table>
+<tr><th>name</th><th>type</th><th>unit</th><th>default value</th><th>description</th></tr>
+<tr><td>radius</td><td>double</td><td>[m]</td><td>0.03</td><td>the sphere radius that is to be used for determining the k-nearest neighbors used for fitting</td></tr>
+</table>
+
+\section conf Configuration File
+
+N/A
+
+ */

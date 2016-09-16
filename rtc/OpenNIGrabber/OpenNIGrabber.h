@@ -1,14 +1,14 @@
 // -*- C++ -*-
 /*!
- * @file  Beeper.h
- * @brief Beeper component
+ * @file  OpenNIGrabber.h
+ * @brief Moving Least Squares Filter
  * @date  $Date$
  *
  * $Id$
  */
 
-#ifndef BEEPER_H
-#define BEEPER_H
+#ifndef OPENNI_GRABBER_H
+#define OPENNI_GRABBER_H
 
 #include <rtm/Manager.h>
 #include <rtm/DataFlowComponentBase.h>
@@ -16,7 +16,10 @@
 #include <rtm/DataInPort.h>
 #include <rtm/DataOutPort.h>
 #include <rtm/idl/BasicDataTypeSkel.h>
-#include "../SoftErrorLimiter/beep.h"
+#include <pcl/io/openni2_grabber.h>
+#include <pcl/io/pcd_io.h>
+#include "hrpsys/idl/pointcloud.hh"
+#include "hrpsys/idl/Img.hh"
 
 // Service implementation headers
 // <rtc-template block="service_impl_h">
@@ -33,7 +36,7 @@ using namespace RTC;
 /**
    \brief sample RT component which has one data input port and one data output port
  */
-class Beeper
+class OpenNIGrabber
   : public RTC::DataFlowComponentBase
 {
  public:
@@ -41,11 +44,11 @@ class Beeper
      \brief Constructor
      \param manager pointer to the Manager
   */
-  Beeper(RTC::Manager* manager);
+  OpenNIGrabber(RTC::Manager* manager);
   /**
      \brief Destructor
   */
-  virtual ~Beeper();
+  virtual ~OpenNIGrabber();
 
   // The initialize action (on CREATED->ALIVE transition)
   // formaer rtc_init_entry()
@@ -95,21 +98,25 @@ class Beeper
   // no corresponding operation exists in OpenRTm-aist-0.2.0
   // virtual RTC::ReturnCode_t onRateChanged(RTC::UniqueId ec_id);
 
+
  protected:
   // Configuration variable declaration
   // <rtc-template block="config_declare">
   
   // </rtc-template>
-  TimedLongSeq m_beepCommand;
+
+  Img::TimedCameraImage m_image;
+  PointCloudTypes::PointCloud m_cloud;
 
   // DataInPort declaration
   // <rtc-template block="inport_declare">
-  InPort<TimedLongSeq> m_beepCommandIn;
   
   // </rtc-template>
 
   // DataOutPort declaration
   // <rtc-template block="outport_declare">
+  OutPort<PointCloudTypes::PointCloud> m_cloudOut;
+  OutPort<Img::TimedCameraImage> m_imageOut;
   
   // </rtc-template>
 
@@ -129,15 +136,19 @@ class Beeper
   // </rtc-template>
 
  private:
-  long long m_loop;
-  unsigned int m_debugLevel;
-  pthread_t beep_thread;
+  void grabberCallbackDepthAndColor(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr &cloud);
+  void grabberCallbackDepth(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr &cloud);
+
+  pcl::Grabber *m_interface;
+  int m_debugLevel;
+  std::string m_mode;
+  int dummy;
 };
 
 
 extern "C"
 {
-  void BeeperInit(RTC::Manager* manager);
+  void OpenNIGrabberInit(RTC::Manager* manager);
 };
 
-#endif // BEEPER_H
+#endif // OPENNI_GRABBER_H

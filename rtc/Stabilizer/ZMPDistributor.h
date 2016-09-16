@@ -863,6 +863,156 @@ public:
         }
     };
 
+    void distributeZMPToForceMomentsPseudoInverse2 (std::vector<hrp::Vector3>& ref_foot_force, std::vector<hrp::Vector3>& ref_foot_moment,
+                                                   const std::vector<hrp::Vector3>& ee_pos,
+                                                   const std::vector<hrp::Vector3>& cop_pos,
+                                                   const std::vector<hrp::Matrix33>& ee_rot,
+                                                   const std::vector<std::string>& ee_name,
+                                                   const std::vector<double>& limb_gains,
+                                                   const hrp::Vector3& new_refzmp, const hrp::Vector3& ref_zmp,
+                                                   const hrp::Vector3& total_force, const hrp::Vector3& total_moment,
+                                                   const std::vector<hrp::dvector6>& ee_forcemoment_distribution_weight,
+                                                   const double total_fz, const double dt, const bool printp = true, const std::string& print_str = "")
+    {
+#define FORCE_MOMENT_DIFF_CONTROL
+
+        size_t ee_num = ee_name.size();
+        std::vector<double> alpha_vector(ee_num), fz_alpha_vector(ee_num);
+        calcAlphaVectorFromCOPDistance(alpha_vector, fz_alpha_vector, cop_pos, ee_name, new_refzmp, ref_zmp);
+        if (printp) {
+            std::cerr << "[" << print_str << "] force moment distribution (Pinv2) ";
+#ifdef FORCE_MOMENT_DIFF_CONTROL
+            std::cerr << "(FORCE_MOMENT_DIFF_CONTROL)" << std::endl;
+#else
+            std::cerr << "(NOT FORCE_MOMENT_DIFF_CONTROL)" << std::endl;
+#endif
+        }
+        // ref_foot_force and ref_foot_moment should be set
+        size_t state_dim = 6*ee_num;
+        if (printp) {
+            std::cerr << "[" << print_str << "]   fz_alpha_vector [";
+            for (size_t j = 0; j < ee_num; j++) {
+                std::cerr << fz_alpha_vector[j] << " ";
+            }
+            std::cerr << std::endl;
+        }
+
+        hrp::dvector total_wrench = hrp::dvector::Zero(6);
+#ifndef FORCE_MOMENT_DIFF_CONTROL
+        total_wrench(0) = total_force(0);
+        total_wrench(1) = total_force(1);
+        total_wrench(2) = total_force(2);
+#endif
+        total_wrench(3) = total_moment(0);
+        total_wrench(4) = total_moment(1);
+        total_wrench(5) = total_moment(2);
+#ifdef FORCE_MOMENT_DIFF_CONTROL
+        for (size_t fidx = 0; fidx < ee_num; fidx++) {
+            double tmp_tau_x = -(cop_pos[fidx](2)-new_refzmp(2)) * ref_foot_force[fidx](1) + (cop_pos[fidx](1)-new_refzmp(1)) * ref_foot_force[fidx](2);
+            total_wrench(3) -= tmp_tau_x;
+            double tmp_tau_y = (cop_pos[fidx](2)-new_refzmp(2)) * ref_foot_force[fidx](0) - (cop_pos[fidx](0)-new_refzmp(0)) * ref_foot_force[fidx](2);
+            total_wrench(4) -= tmp_tau_y;
+        }
+#endif
+
+        hrp::dmatrix Wmat = hrp::dmatrix::Zero(state_dim, state_dim);
+        hrp::dmatrix Gmat = hrp::dmatrix::Zero(6, state_dim);
+        for (size_t j = 0; j < ee_num; j++) {
+            for (size_t k = 0; k < 6; k++) Gmat(k,6*j+k) = 1.0;
+        }
+        for (size_t i = 0; i < 6; i++) {
+            for (size_t j = 0; j < ee_num; j++) {
+                if ( i == 3 ) { // Nx
+                    Gmat(i,6*j+1) = -(cop_pos[j](2) - new_refzmp(2));
+                    Gmat(i,6*j+2) = (cop_pos[j](1) - new_refzmp(1));
+                } else if ( i == 4 ) { // Ny
+                    Gmat(i,6*j) = (cop_pos[j](2) - new_refzmp(2));
+                    Gmat(i,6*j+2) = -(cop_pos[j](0) - new_refzmp(0));
+                }
+            }
+        }
+        for (size_t j = 0; j < ee_num; j++) {
+            for (size_t i = 0; i < 3; i++) {
+                Wmat(i+j*6, i+j*6) = ee_forcemoment_distribution_weight[j][i] * fz_alpha_vector[j] * limb_gains[j];
+                //double norm_moment_weight = 1e2;
+                //Wmat(i+j*6+3, i+j*6+3) = ee_forcemoment_distribution_weight[j][i+3] * (1.0/norm_moment_weight) * fz_alpha_vector[j] * limb_gains[j];
+                Wmat(i+j*6+3, i+j*6+3) = ee_forcemoment_distribution_weight[j][i+3] * fz_alpha_vector[j] * limb_gains[j];
+            }
+        }
+        if (printp) {
+            std::cerr << "[" << print_str << "]   newWmat(diag) = [";
+            for (size_t j = 0; j < ee_num; j++) {
+                for (size_t i = 0; i < 6; i++) {
+                    std::cerr << Wmat(i+j*6, i+j*6) << " ";
+                }
+            }
+            std::cerr << std::endl;
+            // std::cerr << "[" << print_str << "]   Gmat";
+            // std::cerr << Gmat << std::endl;
+            // std::cerr << "Wmat" << std::endl;
+            // std::cerr << Wmat << std::endl;
+        }
+
+        hrp::dvector ret(state_dim);
+        //hrp::dmatrix selection_matrix = hrp::dmatrix::Identity(6,6);
+        hrp::dmatrix selection_matrix = hrp::dmatrix::Zero(3,6);
+        selection_matrix(0,2) = 1.0;
+        selection_matrix(1,3) = 1.0;
+        selection_matrix(2,4) = 1.0;
+        {
+            hrp::dvector selected_total_wrench = hrp::dvector::Zero(selection_matrix.rows());
+            hrp::dmatrix selected_Gmat = hrp::dmatrix::Zero(selection_matrix.rows(), Gmat.cols());
+            selected_total_wrench = selection_matrix * total_wrench;
+            selected_Gmat = selection_matrix * Gmat;
+            calcWeightedLinearEquation(ret, selected_Gmat, Wmat, selected_total_wrench);
+        }
+
+        if (printp) {
+            hrp::dvector tmpretv(total_wrench.size());
+            tmpretv = Gmat * ret - total_wrench;
+            std::cerr << "[" << print_str << "]   "
+                      << "test_diff " << tmpretv.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[N][Nm]" << std::endl;
+            std::cerr << "[" << print_str << "]   "
+                      << "total_wrench " << total_wrench.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[N][Nm]" << std::endl;
+            for (size_t i = 0; i < ee_num; i++) {
+                std::cerr << "[" << print_str << "]   "
+                          << "ref_force  [" << ee_name[i] << "] " << hrp::Vector3(ref_foot_force[i]).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[N]" << std::endl;
+                std::cerr << "[" << print_str << "]   "
+                          << "ref_moment [" << ee_name[i] << "] " << hrp::Vector3(ref_foot_moment[i]).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[Nm]" << std::endl;
+            }
+            for (size_t i = 0; i < ee_num; i++) {
+#ifdef FORCE_MOMENT_DIFF_CONTROL
+                std::cerr << "[" << print_str << "]   "
+                          << "dif_ref_force  [" << ee_name[i] << "] " << hrp::Vector3(hrp::Vector3(ret(6*i), ret(6*i+1), ret(6*i+2))).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[N]" << std::endl;
+                std::cerr << "[" << print_str << "]   "
+                          << "dif_ref_moment [" << ee_name[i] << "] " << hrp::Vector3(hrp::Vector3(ret(6*i+3), ret(6*i+4), ret(6*i+5))).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[Nm]" << std::endl;
+#else
+                std::cerr << "[" << print_str << "]   "
+                          << "dif_ref_force  [" << ee_name[i] << "] " << hrp::Vector3(hrp::Vector3(ret(6*i), ret(6*i+1), ret(6*i+2))-ref_foot_force[i]).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[N]" << std::endl;
+                std::cerr << "[" << print_str << "]   "
+                          << "dif_ref_moment [" << ee_name[i] << "] " << hrp::Vector3(hrp::Vector3(ret(6*i+3), ret(6*i+4), ret(6*i+5))-ref_foot_moment[i]).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[Nm]" << std::endl;
+#endif
+            }
+        }
+        for (size_t fidx = 0; fidx < ee_num; fidx++) {
+#ifdef FORCE_MOMENT_DIFF_CONTROL
+            ref_foot_force[fidx] += hrp::Vector3(ret(6*fidx), ret(6*fidx+1), ret(6*fidx+2));
+            ref_foot_moment[fidx] += hrp::Vector3(ret(6*fidx+3), ret(6*fidx+4), ret(6*fidx+5));
+#else
+            ref_foot_force[fidx] = hrp::Vector3(ret(6*fidx), ret(6*fidx+1), ret(6*fidx+2));
+            ref_foot_moment[fidx] = hrp::Vector3(ret(6*fidx+3), ret(6*fidx+4), ret(6*fidx+5));
+#endif
+        }
+        if (printp){
+            for (size_t i = 0; i < ee_num; i++) {
+                std::cerr << "[" << print_str << "]   "
+                          << "new_ref_force  [" << ee_name[i] << "] " << hrp::Vector3(ref_foot_force[i]).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[N]" << std::endl;
+                std::cerr << "[" << print_str << "]   "
+                          << "new_ref_moment [" << ee_name[i] << "] " << hrp::Vector3(ref_foot_moment[i]).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[Nm]" << std::endl;
+            }
+        }
+    };
+
   double calcCrossProduct(Eigen::Vector2d& a, Eigen::Vector2d& b, Eigen::Vector2d& o)
   {
     return (a(0) - o(0)) * (b(1) - o(1)) - (a(1) - o(1)) * (b(0) - o(0));

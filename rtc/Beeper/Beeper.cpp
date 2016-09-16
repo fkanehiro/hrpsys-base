@@ -9,12 +9,20 @@
 
 #include "Beeper.h"
 #include <rtm/CorbaNaming.h>
+#include<deque>
 
 // Variables for beep_thread
-int beep_length = 0;
-int beep_freq = 1000;
-bool beep_start = false;
+struct BeepData
+{
+  bool _beep_start;
+  int _beep_freq;
+  int _beep_length;
+};
+
+bool is_initialized = false;
 pthread_mutex_t beep_mutex;  // Mutex
+double m_dt = 0.002;
+std::deque<BeepData> beep_command_buffer; // Used for communication between beepthread and real-time thread
 
 // Module specification
 // <rtc-template block="module_spec">
@@ -38,16 +46,36 @@ static const char* beeper_spec[] =
 
 void* call_beep (void* args)
 {
+  // Initialize
   init_beep();
-  while (1) {
-    usleep(1000);
+  bool wait_for_initialized = true;
+  while (wait_for_initialized) { // Wait until m_dt is set
+    usleep(2000);
     pthread_mutex_lock( &beep_mutex );
-    if (beep_start) {
-      start_beep(beep_freq, beep_length);
-    } else {
+    wait_for_initialized = !is_initialized;
+    pthread_mutex_unlock( &beep_mutex );
+  }
+  // Loop
+  bool prev_beep_start=false;
+  while (1) {
+    usleep(static_cast<size_t>(1000000*m_dt));
+    // Get beepCommand from buffer
+    pthread_mutex_lock( &beep_mutex );
+    BeepData bd = beep_command_buffer.front();
+    if (beep_command_buffer.size() > 1) beep_command_buffer.pop_front();
+    pthread_mutex_unlock( &beep_mutex );
+//     if (!prev_beep_start && tmp_beep_start) {
+//       std::cerr << "BP START" << std::endl;
+//     } else if (prev_beep_start && !tmp_beep_start) {
+//       std::cerr << "BP STOP" << std::endl;
+//     }
+    // Beep
+    if (bd._beep_start) {
+      start_beep(bd._beep_freq, bd._beep_length);
+    } else if (prev_beep_start) { // If !beep_start and prev_beep_start, stop_beep just once.
       stop_beep();
     }
-    pthread_mutex_unlock( &beep_mutex );
+    prev_beep_start = bd._beep_start;
   }
   quit_beep();
 }
@@ -55,8 +83,8 @@ void* call_beep (void* args)
 Beeper::Beeper(RTC::Manager* manager)
   : RTC::DataFlowComponentBase(manager),
     // <rtc-template block="initializer">
-    m_dt(0.002),
     m_beepCommandIn("beepCommand", m_beepCommand),
+    m_loop(0),
     m_debugLevel(0)
 {
   pthread_create(&beep_thread, NULL, call_beep, (void*)NULL);
@@ -89,6 +117,13 @@ RTC::ReturnCode_t Beeper::onInitialize()
   // Set CORBA Service Ports
 
   // </rtc-template>
+
+  RTC::Properties& prop =  getProperties();
+  coil::stringTo(m_dt, prop["dt"].c_str());
+  pthread_mutex_lock( &beep_mutex );
+  is_initialized = true;
+  pthread_mutex_unlock( &beep_mutex );
+  std::cerr << "[" << m_profile.instance_name << "] : Beep thread dt = " << m_dt << "[s]" << std::endl;
 
   return RTC::RTC_OK;
 }
@@ -133,19 +168,25 @@ RTC::ReturnCode_t Beeper::onExecute(RTC::UniqueId ec_id)
   m_loop++;
 
   if (m_beepCommandIn.isNew()) {
+    // Read beepCommand from data port
     m_beepCommandIn.read();
+    BeepData bd;
+    bd._beep_start = (m_beepCommand.data[BEEP_INFO_START] == 1);
+    bd._beep_freq = m_beepCommand.data[BEEP_INFO_FREQ];
+    bd._beep_length = m_beepCommand.data[BEEP_INFO_LENGTH];
+    // Push beepCommand to buffer
+    size_t max_buffer_length = 10;
     pthread_mutex_lock( &beep_mutex );
-    beep_start = (m_beepCommand.data[BEEP_INFO_START] == 1);
-    beep_freq = m_beepCommand.data[BEEP_INFO_FREQ];
-    beep_length = m_beepCommand.data[BEEP_INFO_LENGTH];
+    beep_command_buffer.push_back(bd);
+    while (beep_command_buffer.size() > max_buffer_length) beep_command_buffer.pop_front();
     pthread_mutex_unlock( &beep_mutex );
-  } else {
-    pthread_mutex_lock( &beep_mutex );
-    beep_start = false;
-    pthread_mutex_unlock( &beep_mutex );
-  }
-  if (DEBUGP) {
-    std::cerr << "[" << m_profile.instance_name<< "] start " << beep_start << " freq " << beep_freq << " length " << beep_length << std::endl;
+    // print
+    if (m_debugLevel > 0) {
+      if (bd._beep_start)
+        std::cerr << "[" << m_profile.instance_name<< "] isNew : beep start (freq=" << bd._beep_freq << ", length=" << bd._beep_length << ", loop=" << m_loop << ")" << std::endl;
+      else
+        std::cerr << "[" << m_profile.instance_name<< "] isNew : beep stop (loop=" << m_loop << ")" << std::endl;
+    }
   }
 //   if (beep_start) {
 //     start_beep(beep_freq, beep_length, true);

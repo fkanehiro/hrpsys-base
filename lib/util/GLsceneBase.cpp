@@ -245,7 +245,7 @@ void GLsceneBase::drawInfo(double fps, size_t ntri)
     drawString(buf);
     h -= 15;
     glRasterPos2f(10, h);
-    sprintf(buf, "FPS %2.0f(%6dtris)", fps, ntri);
+    sprintf(buf, "FPS %2.0f(%6zutris)", fps, ntri);
     drawString(buf);
     if (m_camera != m_default_camera){
         sprintf(buf, "Camera: %s.%s", 

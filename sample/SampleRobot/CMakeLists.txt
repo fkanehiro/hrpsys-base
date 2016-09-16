@@ -2,6 +2,7 @@
 set(controller_time_list 0.002 0.005) # [s]
 set(controller_period_list 500 200) # [Hz]
 set(COLLISION_LOOP 1)
+set(L_SHOULDER_R_INITIAL 0.0)
 foreach(_idx 0 1)
   list(GET controller_time_list ${_idx} _tmp_controller_time)
   list(GET controller_period_list ${_idx} _tmp_controller_period)
@@ -19,6 +20,13 @@ foreach(_idx 0 1)
 endforeach()
 configure_file(SampleRobot.kinematicsonly.xml.in ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.kinematicsonly.xml)
 configure_file(SampleRobot.carryobject.xml.in ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.carryobject.xml)
+
+##
+set(CONTROLLER_TIME 0.002)
+set(CONTROLLER_PERIOD 500)
+set(L_SHOULDER_R_INITIAL -0.15) ##
+configure_file(SampleRobot.xml.in ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.500_init_col.xml)
+set(L_SHOULDER_R_INITIAL 0.0)  ## revert initial angle
 
 # for virtual force sensor testing
 set(CONTROLLER_TIME 0.002)
@@ -45,6 +53,7 @@ install(FILES
   ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.500.conf
   ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.500.log.conf
   ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.500.xml
+  ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.500_init_col.xml
   ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.500.torque.xml
   ${CMAKE_CURRENT_BINARY_DIR}/SampleRobot.RobotHardware.500.conf
   # files for 200[Hz]  = 0.005[s]

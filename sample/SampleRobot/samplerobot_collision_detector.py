@@ -13,6 +13,15 @@ except:
     import socket
     import time
 
+def vector_equal_eps (vec1, vec2, eps=1e-5):
+    if len(vec1) == len(vec2):
+        for e1, e2 in zip(vec1, vec2):
+            if abs(e1 - e2) > eps:
+                return False
+        return True
+    else:
+        return False
+
 def init ():
     global hcf, init_pose, col_safe_pose, col_fail_pose, hrpsys_version
     hcf = HrpsysConfigurator()
@@ -27,8 +36,13 @@ def init ():
 # demo functions
 def demoCollisionCheckSafe ():
     print >> sys.stderr, "1. CollisionCheck in safe pose"
-    hcf.seq_svc.setJointAngles(col_safe_pose, 1.0);
+    hcf.seq_svc.setJointAngles(col_safe_pose, 3.0);
     hcf.waitInterpolation();
+    counter = 0
+    while (counter < 20) and (not vector_equal_eps([x / 180 * math.pi  for x in hcf.getJointAngles()], col_safe_pose)):
+        time.sleep(0.2)
+        counter = counter + 1
+    assert(counter != 20)
     cs=hcf.co_svc.getCollisionStatus()[1]
     if cs.safe_posture:
         print >> sys.stderr, "  => Safe pose"
@@ -36,7 +50,7 @@ def demoCollisionCheckSafe ():
 
 def demoCollisionCheckFail ():
     print >> sys.stderr, "2. CollisionCheck in fail pose"
-    hcf.seq_svc.setJointAngles(col_fail_pose, 1.0);
+    hcf.seq_svc.setJointAngles(col_fail_pose, 3.0);
     hcf.waitInterpolation();
     cs=hcf.co_svc.getCollisionStatus()[1]
     if not cs.safe_posture:
