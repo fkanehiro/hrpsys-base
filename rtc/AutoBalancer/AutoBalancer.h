@@ -137,6 +137,7 @@ class HumanSynchronizer{
     hrp::Vector3 init_wld_rp_basepos;
     HumanPose rp_ref_out;
     FILE *sr_log,*cz_log;
+    hrp::Vector3 lpf_zmp;
 
     HumanSynchronizer(){
       h2r_ratio = 0.96;//human 1.1m vs jaxon 1.06m
@@ -152,6 +153,7 @@ class HumanSynchronizer{
       init_wld_rp_rfpos = hrp::Vector3(0,-0.1,0);
       init_wld_rp_lfpos = hrp::Vector3(0, 0.1,0);
       init_hp_calibcom.Zero();
+      lpf_zmp.Zero();
       FNUM = 0.01;//0.01でも荒い?
       FUPLEVELNUM = 200;
       FUPHIGHT = 0.05;
@@ -203,9 +205,13 @@ class HumanSynchronizer{
 //      applyCOMToSupportRegionLimit(rp_ref_out, rp_ref_out);
       applyVelLimit(rp_ref_out, rp_ref_out_old, rp_ref_out);
       applyCOMZMPXYZLock(rp_ref_out, rp_ref_out);
+
+
+      isCOMInSupportRegion(rp_ref_out.lf+init_wld_rp_lfpos,rp_ref_out.rf+init_wld_rp_rfpos,rp_ref_out.com);
+
+
       rp_ref_out_old = rp_ref_out;
 //      fprintf(log,"%f %f %f %f %f %f\n", rp_ref_out.com(0), rp_ref_out.com(1), rp_ref_out.zmp(0), rp_ref_out.zmp(1), hp_rel_raw.com(0), hp_rel_raw.com(1));
-      isCOMInSupportRegion(rp_ref_out.lf+init_wld_rp_lfpos,rp_ref_out.rf+init_wld_rp_rfpos,rp_ref_out.com);
       loop++;
       gettimeofday(&t_calc_end, NULL);
     }
@@ -340,8 +346,7 @@ class HumanSynchronizer{
       out = in;
       const double XUMARGIN = 0.08;
       const double XLMARGIN = 0.04;
-//      const double YLRMARGIN = 0.03;
-      const double YLRMARGIN = 0.0;
+      const double YLRMARGIN = 0.03;
       double x_upper_region,x_lower_region,y_upper_region,y_lower_region;
       if(rp_wld_initpos.rf(0) + in.rf(0) > rp_wld_initpos.lf(0) + in.lf(0)){
         x_upper_region = rp_wld_initpos.rf(0) + in.rf(0) + XUMARGIN;
@@ -357,15 +362,13 @@ class HumanSynchronizer{
         else if(in.com(0) > x_upper_region){ out.com(0) = x_upper_region; }//cerr<<"[WARN] COM X Upper Limit!"<<endl;}
         if(in.com(1) < y_lower_region){
           out.com(1) = y_lower_region;// cerr<<"[WARN] COM Y Lower Limit!"<<endl;
-//          out.zmp(1) = out.com(1);
 
           if(loop%50==0)cout<<"rp_wld_initpos"<<rp_wld_initpos.lf<<endl;
           if(loop%50==0)cout<<"y_upper_region"<<y_upper_region<<"in.com(1)"<<in.com(1)<<endl;
         }
         else if(in.com(1) > y_upper_region){
          out.com(1) = y_upper_region; //cerr<<"[WARN] COM Y Upper Limit!"<<endl;
-//         out.zmp(1) = out.com(1);
-      }
+        }
       }
     }
     bool isCOMInSupportRegion(const hrp::Vector3& lfin_abs, const hrp::Vector3& rfin_abs, hrp::Vector3& comin_abs){
@@ -373,10 +376,14 @@ class HumanSynchronizer{
       typedef bg::model::d2::point_xy<double> point;
       typedef bg::model::polygon<point> polygon;
       polygon lr_region,s_region;
-      const double XUMARGIN = 0.04;
+      const double XUMARGIN = 0.04;//CHIDORI
       const double XLMARGIN = -0.02;
       const double YUMARGIN = 0.01;
       const double YLMARGIN = -0.01;
+//      const double XUMARGIN = 0.02;//JAXON
+//      const double XLMARGIN = -0.01;
+//      const double YUMARGIN = 0.0;
+//      const double YLMARGIN = -0.0;
       bg::model::linestring<point> s_line = boost::assign::list_of<point>
         (lfin_abs(0) + XLMARGIN, lfin_abs(1) + YLMARGIN)//LFの右下
         (lfin_abs(0) + XLMARGIN, lfin_abs(1) + YUMARGIN)//LFの左下
@@ -388,12 +395,15 @@ class HumanSynchronizer{
         (rfin_abs(0) + XUMARGIN, rfin_abs(1) + YLMARGIN)//RFの右上
              ;
       bg::convex_hull(s_line, s_region);
-
 //      std::cout<< "lr_region: " << bg::dsv(lr_region) << std::endl << "s_region: " << bg::dsv(s_region) << std::endl;
       point com2d(comin_abs(0),comin_abs(1));
       Eigen::Vector2d ans_point(comin_abs(0),comin_abs(1));
-      if(!bg::within(com2d, s_region)){//対象の点が凸包の外部に存在するかチェックする
-        cout<<"COM out of s_region"<<endl;
+      enum point_state_t {PT_IN_NO_PATTERN = -1, PT_IN_REGION, PT_FIX_TO_EDGE, PT_FIX_TO_VERTEX};
+      point_state_t pt_state = PT_IN_NO_PATTERN;
+      if(bg::within(com2d, s_region)){//対象の点が凸包の内部に存在するかチェックする
+        pt_state = PT_IN_REGION;
+      }else{
+//        cout<<"COM out of s_region"<<endl;
         Eigen::Vector2d check_point(com2d.x(),com2d.y());
         int ans_lid=-1;
         for(int i=0;i<s_region.outer().size()-1;i++){//対象の点がある線分への垂線を有するかチェックする
@@ -405,10 +415,11 @@ class HumanSynchronizer{
           if(edge_v.dot(tgt_pt_v)/edge_v.norm() > 0 && edge_v.dot(tgt_pt_v)/edge_v.norm() < edge_v.norm() && (edge_v(0)*tgt_pt_v(1)-edge_v(1)*tgt_pt_v(0)) > 0){
             ans_lid = i;
             ans_point = cur_vert + edge_v.normalized() * (edge_v.dot(tgt_pt_v)/edge_v.norm());
+            pt_state = PT_FIX_TO_EDGE;
             break;
           }
         }
-        if(ans_lid != -1){
+        if(pt_state == PT_FIX_TO_EDGE){
           cout<<"point will on the line:"<<ans_lid<<" point:"<<ans_point(0)<<","<<ans_point(1)<<endl;
         }else{//対象の点が線分への垂線を持たなければ答えを頂点に絞ってチェックする
           double cur_min_dis = bg::distance(com2d, s_region.outer()[0]);
@@ -422,19 +433,32 @@ class HumanSynchronizer{
           ans_point(0) = s_region.outer()[ans_pid].x();
           ans_point(1) = s_region.outer()[ans_pid].y();
           cout<<"point will on the vertex:"<<ans_pid<<" point:"<<ans_point(0)<<","<<ans_point(1)<<endl;
+          pt_state = PT_FIX_TO_VERTEX;
         }
       }
+//      double FNUM_Z = 0.005;
+      double FNUM_Z = 0.01;
+      lpf_zmp = (1-FNUM_Z) * lpf_zmp + FNUM_Z * rp_ref_out.zmp;
+      hrp::Vector3 hpf_zmp = rp_ref_out.zmp - lpf_zmp;
+//      rp_ref_out.zmp(0) = ans_point(0) + hpf_zmp(0);
+//      rp_ref_out.zmp(1) = ans_point(1) + hpf_zmp(1);
+
       if(loop%50==0){
+        if(pt_state != PT_IN_REGION){
+          std::cout<<"COM out of Support Region pt_state="<<pt_state<<std::endl;
+        }
         for(int i=0;i<s_region.outer().size();i++){
           fprintf(sr_log,"%f %f %f\n",s_region.outer().at(i).x(), s_region.outer().at(i).y(),(double)loop/500.0);
         }
         fprintf(sr_log,"\n");
-        fprintf(cz_log,"%f %f %f %f %f %f %f %f %f\n",(double)loop/500.0,comin_abs(0),comin_abs(1),comin_abs(2),rp_ref_out.zmp(0),rp_ref_out.zmp(1),rp_ref_out.zmp(2),ans_point(0),ans_point(1));
-        fprintf(cz_log,"\n");
+        fprintf(cz_log,"%f %f %f %f %f %f %f %f %f",(double)loop/500.0,comin_abs(0),comin_abs(1),comin_abs(2),rp_ref_out.zmp(0),rp_ref_out.zmp(1),rp_ref_out.zmp(2),ans_point(0),ans_point(1));
+        fprintf(cz_log," %f %f %f %f",rp_ref_out.zmp(1),hpf_zmp(1),ans_point(1),ans_point(1) + hpf_zmp(1));
+        fprintf(cz_log,"\n\n");
       }
       comin_abs(0) = ans_point(0);
-      comin_abs(0) = ans_point(0);
-      rp_ref_out.zmp = rp_ref_out.com;
+      comin_abs(1) = ans_point(1);
+//      rp_ref_out.zmp(0) = comin_abs(0);
+//      rp_ref_out.zmp(1) = comin_abs(1);
       return true;
     }
     void applyVelLimit(const HumanPose& in, const HumanPose& in_old, HumanPose& out){
