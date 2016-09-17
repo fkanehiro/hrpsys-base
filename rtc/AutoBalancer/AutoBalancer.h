@@ -80,8 +80,9 @@ class HumanPose{
       }
     }
     static void hp_printf(HumanPose& in){
-      const std::string cap[] = {"com:","rf:","lf:","rh:","lh:","zmp:","rfw:","","lfw:",""};
-      for(int i=0;i<10;i++){ printf("\x1b[31m%s\x1b[39m%+05.2f %+05.2f %+05.2f ",cap[i].c_str(),in.Seq(i)(0),in.Seq(i)(1),in.Seq(i)(2)); }
+      const std::string cap[] = {"c","rf","lf","rh","lh","z","rw","","lw",""};
+      for(int i=0;i<6;i++){ printf("\x1b[31m%s\x1b[39m%+05.2f %+05.2f %+05.2f ",cap[i].c_str(),in.Seq(i)(0),in.Seq(i)(1),in.Seq(i)(2)); }
+      for(int i=6;i<10;i++){ printf("\x1b[31m%s\x1b[39m%+05.1f %+05.1f %+05.1f ",cap[i].c_str(),in.Seq(i)(0),in.Seq(i)(1),in.Seq(i)(2)); }
       printf("\n");
     }
     void print(){ hp_printf(*this); }
@@ -115,6 +116,9 @@ class HumanSynchronizer{
     bool HumanSyncOn;
     struct timeval t_calc_start, t_calc_end;
     unsigned int loop;
+    double h2r_ratio, tgt_h2r_ratio;
+    double cmmr, tgt_cmmr;
+    hrp::Vector3 lpf_zmp;
 
   public:
 
@@ -122,23 +126,22 @@ class HumanSynchronizer{
     bool ht_first_call;
     bool is_rf_contact,is_lf_contact;
     HumanPose rp_wld_initpos;
-    double h2r_ratio;
     bool use_x,use_y,use_z;
     hrp::Vector3 init_wld_rp_basepos;
     HumanPose rp_ref_out;
     FILE *sr_log,*cz_log;
-    hrp::Vector3 lpf_zmp;
 
     HumanSynchronizer(){
-      h2r_ratio = 0.96;//human 1.1m vs jaxon 1.06m
-//      h2r_ratio = 0.62;//human 1.1m vs chidori 0.69m
-//      h2r_ratio = 0.69;//human 1.0(with heavy foot sensor) vs chidori 0.69
-//      h2r_ratio = 1.06;//human 1.0(with heavy foot sensor) vs jaxon 1.06
+      tgt_h2r_ratio = h2r_ratio = 0.96;//human 1.1m vs jaxon 1.06m
+//      tgt_h2r_ratio = h2r_ratio = 0.62;//human 1.1m vs chidori 0.69m
+//      tgt_h2r_ratio = h2r_ratio = 0.69;//human 1.0(with heavy foot sensor) vs chidori 0.69
+//      tgt_h2r_ratio = h2r_ratio = 1.06;//human 1.0(with heavy foot sensor) vs jaxon 1.06
+      tgt_cmmr = cmmr = 1.0;
       use_x = true; use_y = true; use_z = true;
       cur_rfup_level = 0;       cur_lfup_level = 0;
       is_rf_contact = true;     is_lf_contact = true;
       pre_cont_rfpos = hrp::Vector3::Zero();    pre_cont_lfpos = hrp::Vector3::Zero();
-      init_wld_hp_rfpos = hrp::Vector3(0,-0.1/h2r_ratio,0);
+      init_wld_hp_rfpos = hrp::Vector3(0,-0.1/h2r_ratio,0);//h2r_ratioは可変なので後の値変更に注意
       init_wld_hp_lfpos = hrp::Vector3(0, 0.1/h2r_ratio,0);
       init_wld_rp_rfpos = hrp::Vector3(0,-0.1,0);
       init_wld_rp_lfpos = hrp::Vector3(0, 0.1,0);
@@ -149,20 +152,19 @@ class HumanSynchronizer{
       FUPHIGHT = 0.05;
       CNT_F_TH = 20.0;
       MAXVEL = 0.004;
-//      MAXVEL = 0.001;
-//      MAXVEL = 0.0001;
       HumanSyncOn = false;
       ht_first_call = true;
       startCountdownForHumanSync = false;
       countdown_num = 5*500;
       loop = 0;
-      std::string home_path(std::getenv("HOME"));
-      sr_log = fopen((home_path+"/HumanSync_support_region.log").c_str(),"w+");
-      cz_log = fopen((home_path+"/HumanSync_com_zmp.log").c_str(),"w+");
+//      std::string home_path(std::getenv("HOME"));
+//      sr_log = fopen((home_path+"/HumanSync_support_region.log").c_str(),"w+");
+//      cz_log = fopen((home_path+"/HumanSync_com_zmp.log").c_str(),"w+");
+      cout<<"HumanSynchronizer constructed"<<endl;
     }
     ~HumanSynchronizer(){
-      fclose(sr_log);
-      fclose(cz_log);
+//      fclose(sr_log);
+//      fclose(cz_log);
       cout<<"HumanSynchronizer destructed"<<endl;
     }
 
@@ -171,6 +173,8 @@ class HumanSynchronizer{
     const int getRemainingCountDown() const { return countdown_num; }
     const bool isHumanSyncOn() const { return HumanSyncOn; }
     const double getUpdateTime() const { return (double)(t_calc_end.tv_sec - t_calc_start.tv_sec) + (t_calc_end.tv_usec - t_calc_start.tv_usec)/1000000.0; }
+    void setTargetHumanToRobotRatio(const double tgt_h2r_r_in){ tgt_h2r_ratio = tgt_h2r_r_in; }
+    void setTargetCOMMoveModRatio(const double tgt_mod_ratio){ tgt_cmmr = tgt_mod_ratio; }
     void updateCountDown(){
       if(countdown_num>0){
         countdown_num--;
@@ -181,13 +185,15 @@ class HumanSynchronizer{
     }
     void update(){
       gettimeofday(&t_calc_start, NULL);
+      updateHumanToRobotRatio(tgt_h2r_ratio);
+      updateCOMModRatio(tgt_cmmr);
       removeInitOffsetPose(hp_wld_raw, hp_wld_initpos, hp_rel_raw);
       applyInitHumanCOMOffset(hp_rel_raw, init_hp_calibcom, hp_rel_raw);
       applyLPFilter(hp_rel_raw, hp_filtered, hp_filtered);
       lockFootXYOnContact(hp_filtered, is_rf_contact, is_lf_contact, hp_filtered);//根本から改変すべき
       calcWorldZMP((hp_filtered.rf+init_wld_hp_rfpos), (hp_filtered.lf+init_wld_hp_lfpos), hp_filtered.rfw, hp_filtered.lfw, hp_filtered.zmp);//足の位置はworldにしないと・・・
       convertRelHumanPoseToRelRobotPose(hp_filtered,rp_ref_out);
-//      judgeFootContactStates(rp_ref_out.rfw, rp_ref_out.lfw, is_rf_contact, is_lf_contact);
+      applyCOMMoveModRatio(rp_ref_out,rp_ref_out);
       judgeFootContactStates(hp_wld_raw.rfw, hp_wld_raw.lfw, is_rf_contact, is_lf_contact);//frwはすでに1000->100Hzにフィルタリングされている
       overwriteFootZFromContactStates(rp_ref_out, is_rf_contact, is_lf_contact, rp_ref_out);
 //      lockFootXYOnContact(rp_ref_out, is_rf_contact, is_lf_contact, rp_ref_out);//ここで改変するとLPFかかってないからジャンプする
@@ -195,9 +201,7 @@ class HumanSynchronizer{
       applyVelLimit(rp_ref_out, rp_ref_out_old, rp_ref_out);
       applyCOMZMPXYZLock(rp_ref_out, rp_ref_out);
 
-
       applyCOMToSupportRegionLimit(rp_ref_out.lf+init_wld_rp_lfpos,rp_ref_out.rf+init_wld_rp_rfpos,rp_ref_out.com);
-
 
       rp_ref_out_old = rp_ref_out;
 //      fprintf(log,"%f %f %f %f %f %f\n", rp_ref_out.com(0), rp_ref_out.com(1), rp_ref_out.zmp(0), rp_ref_out.zmp(1), hp_rel_raw.com(0), hp_rel_raw.com(1));
@@ -234,7 +238,20 @@ class HumanSynchronizer{
     }
 
   private:
-
+    void updateHumanToRobotRatio(const double h2r_r_goal){//h2r_ratioに伴って変わる変数の処理もここに書く
+      const double step = 0.001;
+      if(h2r_r_goal - h2r_ratio > step){h2r_ratio += step; cout<<"Interpolating HumanToRobotRatio as "<<h2r_ratio<<endl;}
+      else if(h2r_r_goal - h2r_ratio < (-1)*step){h2r_ratio -= step; cout<<"Interpolating HumanToRobotRatio as "<<h2r_ratio<<endl;}
+      else{h2r_ratio = h2r_r_goal;}
+      init_wld_hp_rfpos = hrp::Vector3(0,-0.1/h2r_ratio,0);
+      init_wld_hp_lfpos = hrp::Vector3(0, 0.1/h2r_ratio,0);
+    }
+    void updateCOMModRatio(const double cmmr_goal){
+      const double step = 0.001;
+      if(cmmr_goal - cmmr > step){cmmr += step; cout<<"Interpolating COMMoveModRatio as "<<cmmr<<endl;}
+      else if(cmmr_goal - cmmr < (-1)*step){cmmr -= step; cout<<"Interpolating COMMoveModRatio as "<<cmmr<<endl;}
+      else{cmmr = cmmr_goal;}
+    };
     void removeInitOffsetPose(const HumanPose& abs_in, const HumanPose& init_offset, HumanPose& rel_out){
       for(int i=0;i<rel_out.idsize-5;i++){
         rel_out.Seq(i) =  abs_in.Seq(i) - init_offset.Seq(i);
@@ -266,6 +283,10 @@ class HumanSynchronizer{
       }
       rp_out.rfw  = hp_in.rfw;
       rp_out.lfw  = hp_in.lfw;
+    }
+    void applyCOMMoveModRatio(const HumanPose& in, HumanPose& out){//結局初期指定からの移動量(=Rel)で計算をしてゆく
+      out = in;
+      out.com = cmmr * in.com;
     }
     void judgeFootContactStates(const HumanPose::Wrench6& rfw_in, const HumanPose::Wrench6& lfw_in, bool& rfcs_ans, bool& lfcs_ans){
       if      (rfw_in.f(2)<CNT_F_TH && lfw_in.f(2)>CNT_F_TH){rfcs_ans = false;  lfcs_ans = true;}//右足浮遊かつ左足接地
@@ -415,14 +436,14 @@ class HumanSynchronizer{
 //      return true;
 //    }
     bool applyCOMToSupportRegionLimit(const hrp::Vector3& lfin_abs, const hrp::Vector3& rfin_abs, hrp::Vector3& comin_abs){
-//      const double XUMARGIN = 0.04;//CHIDORI
-//      const double XLMARGIN = -0.02;
-//      const double YUMARGIN = 0.01;
-//      const double YLMARGIN = -0.01;
-      const double XUMARGIN = 0.02;//JAXON
-      const double XLMARGIN = -0.01;
-      const double YUMARGIN = 0.0;
-      const double YLMARGIN = -0.0;
+      const double XUMARGIN = 0.04;//CHIDORI
+      const double XLMARGIN = -0.02;
+      const double YUMARGIN = 0.01;
+      const double YLMARGIN = -0.01;
+//      const double XUMARGIN = 0.02;//JAXON
+//      const double XLMARGIN = -0.01;
+//      const double YUMARGIN = 0.0;
+//      const double YLMARGIN = -0.0;
       std::vector<hrp::Vector2> convex_hull;
       if(lfin_abs(0)>rfin_abs(0)){
         convex_hull.push_back(hrp::Vector2(lfin_abs(0) + XLMARGIN, lfin_abs(1) + YUMARGIN));//LFの左下
@@ -618,6 +639,7 @@ class AutoBalancer
   bool releaseEmergencyStop();
   bool startHumanSyncAfter5sec();
   bool setHumanToRobotRatio(const double h2r);
+  bool setCOMMoveModRatio(const double cmr);
   bool setAllowedXYZSync(const bool x_on,const bool y_on,const bool z_on);
   bool stopHumanSync();
 

@@ -423,6 +423,7 @@ module OpenHRP
      */
     boolean startHumanSyncAfter5sec();
     boolean setHumanToRobotRatio(in double h2r);
+    boolean setCOMMoveModRatio(in double cmmr);
     boolean setAllowedXYZSync(in boolean x_on, in boolean y_on, in boolean z_on);
     boolean stopHumanSync();
   };

@@ -36,6 +36,7 @@ public:
   CORBA::Boolean releaseEmergencyStop();
   CORBA::Boolean startHumanSyncAfter5sec();
   CORBA::Boolean setHumanToRobotRatio(const CORBA::Double h2r);
+  CORBA::Boolean setCOMMoveModRatio(const CORBA::Double cmmr);
   CORBA::Boolean setAllowedXYZSync(const CORBA::Boolean x_on,const CORBA::Boolean y_on,const CORBA::Boolean z_on);
   CORBA::Boolean stopHumanSync();
   //

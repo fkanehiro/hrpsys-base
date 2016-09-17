@@ -1169,18 +1169,28 @@ bool AutoBalancer::startHumanSyncAfter5sec()
 
 bool AutoBalancer::setHumanToRobotRatio(const double h2r)
 {
-  std::cerr << "[" << m_profile.instance_name << "] set h2r_ratio as "<< h2r << std::endl;
-  if(!hsp->isHumanSyncOn())hsp->h2r_ratio = h2r;
+  std::cerr << "[" << m_profile.instance_name << "] set target h2r_ratio as "<< h2r << std::endl;
+  hsp->setTargetHumanToRobotRatio(h2r);
+  return true;
+}
+
+bool AutoBalancer::setCOMMoveModRatio(const double cmmr)
+{
+  std::cerr << "[" << m_profile.instance_name << "] set target com_move_mod_ratio as "<< cmmr << std::endl;
+  hsp->setTargetCOMMoveModRatio(cmmr);
   return true;
 }
 
 bool AutoBalancer::setAllowedXYZSync(const bool x_on,const bool y_on,const bool z_on)
 {
-  std::cerr << "[" << m_profile.instance_name << "] set allowed XYZ move direction as ("<<x_on<<","<<y_on<<","<<z_on<<")" << std::endl;
-  hsp->use_x = x_on;
-  hsp->use_y = y_on;
-  hsp->use_z = z_on;
-  return true;
+  if(!hsp->isHumanSyncOn()){
+    std::cerr << "[" << m_profile.instance_name << "] set allowed XYZ move direction as ("<<x_on<<","<<y_on<<","<<z_on<<")" << std::endl;
+    hsp->use_x = x_on;    hsp->use_y = y_on;    hsp->use_z = z_on;
+    return true;
+  }else{
+    std::cerr << "[" << m_profile.instance_name << "] allowed XYZ move direction cannot be changed in runtime "<< std::endl;
+    return false;
+  }
 }
 
 bool AutoBalancer::stopHumanSync()

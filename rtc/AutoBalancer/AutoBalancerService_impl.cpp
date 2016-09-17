@@ -125,6 +125,11 @@ CORBA::Boolean AutoBalancerService_impl::setHumanToRobotRatio(const CORBA::Doubl
     return m_autobalancer->setHumanToRobotRatio(h2r);
 };
 
+CORBA::Boolean AutoBalancerService_impl::setCOMMoveModRatio(const CORBA::Double cmmr)
+{
+    return m_autobalancer->setCOMMoveModRatio(cmmr);
+};
+
 CORBA::Boolean AutoBalancerService_impl::setAllowedXYZSync(const CORBA::Boolean x_on,const CORBA::Boolean y_on,const CORBA::Boolean z_on)
 {
     return m_autobalancer->setAllowedXYZSync(x_on,y_on,z_on);
