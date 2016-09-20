@@ -114,6 +114,7 @@ class HumanSynchronizer{
     HumanPose rp_ref_out_old;
     int countdown_num;
     bool HumanSyncOn;
+    bool is_rf_in_air,is_lf_in_air;
     struct timeval t_calc_start, t_calc_end;
     unsigned int loop;
     double h2r_ratio, tgt_h2r_ratio;
@@ -157,6 +158,7 @@ class HumanSynchronizer{
       startCountdownForHumanSync = false;
       countdown_num = 5*500;
       loop = 0;
+      is_rf_in_air = false; is_lf_in_air = false;
 //      std::string home_path(std::getenv("HOME"));
 //      sr_log = fopen((home_path+"/HumanSync_support_region.log").c_str(),"w+");
 //      cz_log = fopen((home_path+"/HumanSync_com_zmp.log").c_str(),"w+");
@@ -289,9 +291,14 @@ class HumanSynchronizer{
       out.com = cmmr * in.com;
     }
     void judgeFootContactStates(const HumanPose::Wrench6& rfw_in, const HumanPose::Wrench6& lfw_in, bool& rfcs_ans, bool& lfcs_ans){
-      if      (rfw_in.f(2)<CNT_F_TH && lfw_in.f(2)>CNT_F_TH){rfcs_ans = false;  lfcs_ans = true;}//右足浮遊かつ左足接地
-      else if (rfw_in.f(2)>CNT_F_TH && lfw_in.f(2)<CNT_F_TH){rfcs_ans = true;   lfcs_ans = false;}//右足接地かつ左足浮遊
-      else                                              {rfcs_ans = true;   lfcs_ans = true;}//両足接地または両足浮遊
+      if      (rfcs_ans  && lfcs_ans && rfw_in.f(2)<CNT_F_TH   ){rfcs_ans = false;}//右足ついた状態から上げる
+      else if (!rfcs_ans && lfcs_ans && rfw_in.f(2)>CNT_F_TH+30){rfcs_ans = true;}//右足浮いた状態から下げる
+      if      (lfcs_ans  && rfcs_ans && lfw_in.f(2)<CNT_F_TH   ){lfcs_ans = false;}//左足ついた状態から上げる
+      else if (!lfcs_ans && rfcs_ans && lfw_in.f(2)>CNT_F_TH+30){lfcs_ans = true;}//左足浮いた状態から下げる
+
+
+      //else if (rfw_in.f(2)>CNT_F_TH && lfw_in.f(2)<CNT_F_TH){rfcs_ans = true;   lfcs_ans = false;}//右足接地かつ左足浮遊
+      //else                                              {rfcs_ans = true;   lfcs_ans = true;}//両足接地または両足浮遊
     }
     void overwriteFootZFromContactStates(const HumanPose& in, const bool& rfcs_in, const bool& lfcs_in, HumanPose& out){
       out = in;
@@ -436,14 +443,14 @@ class HumanSynchronizer{
 //      return true;
 //    }
     bool applyCOMToSupportRegionLimit(const hrp::Vector3& lfin_abs, const hrp::Vector3& rfin_abs, hrp::Vector3& comin_abs){
-      const double XUMARGIN = 0.04;//CHIDORI
-      const double XLMARGIN = -0.02;
-      const double YUMARGIN = 0.01;
-      const double YLMARGIN = -0.01;
-//      const double XUMARGIN = 0.02;//JAXON
-//      const double XLMARGIN = -0.01;
-//      const double YUMARGIN = 0.0;
-//      const double YLMARGIN = -0.0;
+//      const double XUMARGIN = 0.04;//CHIDORI
+//      const double XLMARGIN = -0.02;
+//      const double YUMARGIN = 0.01;
+//      const double YLMARGIN = -0.01;
+      const double XUMARGIN = 0.02;//JAXON
+      const double XLMARGIN = -0.01;
+      const double YUMARGIN = 0.0;
+      const double YLMARGIN = -0.0;
       std::vector<hrp::Vector2> convex_hull;
       if(lfin_abs(0)>rfin_abs(0)){
         convex_hull.push_back(hrp::Vector2(lfin_abs(0) + XLMARGIN, lfin_abs(1) + YUMARGIN));//LFの左下

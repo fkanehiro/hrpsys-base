@@ -1,0 +1,753 @@
+diff --git a/rtc/KalmanFilter/CMakeLists.txt b/rtc/KalmanFilter/CMakeLists.txt
+index 711cf31..92be2d3 100644
+--- a/rtc/KalmanFilter/CMakeLists.txt
++++ b/rtc/KalmanFilter/CMakeLists.txt
+@@ -21,6 +21,6 @@ target_link_libraries(testKalmanFilterEstimation ${libs})
+ set(target KalmanFilter KalmanFilterComp testKalmanFilterEstimation)
+ 
+ install(TARGETS ${target}
+-  RUNTIME DESTINATION bin
+-  LIBRARY DESTINATION lib
++  RUNTIME DESTINATION bin CONFIGURATIONS Release Debug
++  LIBRARY DESTINATION lib CONFIGURATIONS Release Debug
+ )
+diff --git a/rtc/KalmanFilter/EKFilter.h b/rtc/KalmanFilter/EKFilter.h
+index a6b34c8..8927f62 100644
+--- a/rtc/KalmanFilter/EKFilter.h
++++ b/rtc/KalmanFilter/EKFilter.h
+@@ -1,188 +1,204 @@
+-// -*- coding:utf-8-unix; mode: c++; indent-tabs-mode: nil; c-basic-offset: 2; -*-
+ #ifndef EKFILTER_H
+ #define EKFILTER_H
+ 
+ #include <hrpUtil/EigenTypes.h>
+ #include <iostream>
+-#include "hrpsys/util/Hrpsys.h"
+-
+-namespace hrp{
+-  typedef Eigen::Matrix<double, 7, 7> Matrix77;
+-  typedef Eigen::Matrix<double, 7, 1> Vector7;
+-};
++#include "util/Hrpsys.h"
+ 
+ class EKFilter {
+ public:
+-  EKFilter()
+-    : P(hrp::Matrix77::Identity() * 0.1),
+-      Q(Eigen::Matrix3d::Identity() * 0.001),
+-      R(Eigen::Matrix3d::Identity() * 0.03),
+-      g_vec(Eigen::Vector3d(0.0, 0.0, 9.80665)),
+-      z_k(Eigen::Vector3d(0.0, 0.0, 9.80665)),
+-      min_mag_thre_acc(0.005), max_mag_thre_acc(0.05),
+-      min_mag_thre_gyro(0.0075), max_mag_thre_gyro(0.035)
+-  {
++  EKFilter() {
+     x << 1, 0, 0, 0, 0, 0, 0;
++    P = Eigen::Matrix<double, 7, 7>::Identity() * 5;
++    Q = Eigen::Matrix<double, 7, 7>::Identity();
++    Q.block<4, 4>(0, 0) *= 0.1;
++    Q.block<3, 3>(4, 4) *= 0.001;
++    R = Eigen::Matrix<double, 3, 3>::Zero();
++    R(0, 0) = 4;
++    R(1, 1) = 4;
++    R(2, 2) = 2;
++    g_vec = Eigen::Vector3d(0.0, 0.0, 9.80665);
+   }
+ 
+-  hrp::Vector7 getx() const { return x; }
++  Eigen::Matrix<double, 7, 1> getx() { return x; }
++
++  Eigen::Matrix<double, 3, 1> accelerationToRpy(const double& acc_x, const double& acc_y, const double& acc_z) {
++    /*
++     * acc = \dot{v} + w \times v + R^T g;
++     * -> R^T g = acc - \dot{v} + w \times v;
++     * -> R^T g = acc;
++     * -> acc_x = -sinb g, acc_y = sina cosb g, acc_z = cosa cosb g;
++     */
++    double roll = atan2(acc_y, acc_z);
++    double pitch = atan2(-acc_x, sqrt(acc_y * acc_y + acc_z * acc_z));
++    double yaw = 0;             /* cannot be defined only by acceleration */
++    Eigen::Vector3d rpy = Eigen::Vector3d(roll, pitch, yaw);
++    return rpy;
++  }
+ 
+-  void calcOmega(Eigen::Matrix4d& omega, const Eigen::Vector3d& w) const {
++  Eigen::Matrix<double, 4, 4> calcOmega(const Eigen::Vector3d& w) {
+     /* \dot{q} = \frac{1}{2} omega q */
++    Eigen::Matrix<double, 4, 4> omega;
+     omega <<
+       0, -w[0], -w[1], -w[2],
+       w[0],     0,  w[2], -w[1],
+       w[1], -w[2],     0,  w[0],
+       w[2],  w[1], -w[0],     0;
++    return omega;
+   }
+ 
+-  void calcPredictedState(hrp::Vector7& _x_a_priori,
+-                          const Eigen::Vector4d& q,
+-                          const Eigen::Vector3d& gyro,
+-                          const Eigen::Vector3d& drift) const {
++  Eigen::Matrix<double, 7, 1> calcPredictedState(Eigen::Matrix<double, 4, 1> q,
++                                                 Eigen::Vector3d gyro,
++                                                 Eigen::Vector3d drift,
++                                                 const double& dt) {
+     /* x_a_priori = f(x, u) */
+-    Eigen::Vector4d q_a_priori;
++    Eigen::Matrix<double, 7, 1> ret;
++    Eigen::Matrix<double, 4, 1> q_a_priori;
+     Eigen::Vector3d gyro_compensated = gyro - drift;
+-    Eigen::Matrix4d omega;
+-    calcOmega(omega, gyro_compensated);
+-    q_a_priori = q + dt / 2 * omega * q;
+-    _x_a_priori.head<4>() = q_a_priori.normalized();
+-    _x_a_priori.tail<3>() = drift;
++    q_a_priori = q + dt / 2 * calcOmega(gyro_compensated) * q;
++    ret.block<4, 1>(0, 0) = q_a_priori;
++    ret.block<3, 1>(4, 0) = drift;
++    return ret;
+   }
+ 
+-  void calcF(hrp::Matrix77& F,
+-             const Eigen::Vector4d& q,
+-             const Eigen::Vector3d& gyro,
+-             const Eigen::Vector3d& drift) const {
+-    F = hrp::Matrix77::Identity();
++  Eigen::Matrix<double, 7, 7> calcF(Eigen::Matrix<double, 4, 1> q,
++                                    const Eigen::Vector3d& gyro,
++                                    Eigen::Vector3d drift,
++                                    const double& dt) {
++    Eigen::Matrix<double, 7, 7> F;
+     Eigen::Vector3d gyro_compensated = gyro - drift;
+-    Eigen::Matrix4d omega;
+-    calcOmega(omega, gyro_compensated);
+-    F.block<4, 4>(0, 0) += dt / 2 * omega;
++    F.block<4, 4>(0, 0) =
++      Eigen::Matrix<double, 4, 4>::Identity() + dt / 2 * calcOmega(gyro_compensated);
+     F.block<4, 3>(0, 4) <<
+-      + q[1], + q[2], + q[3],
+-      - q[0], + q[3], - q[2],
+-      - q[3], - q[0], + q[1],
+-      + q[2], - q[1], - q[0];
+-    F.block<4, 3>(0, 4) *= dt / 2;
++      dt / 2 * q[1],   dt / 2 * q[2],   dt / 2 * q[3],
++      - dt / 2 * q[0],   dt / 2 * q[3], - dt / 2 * q[2],
++      - dt / 2 * q[3], - dt / 2 * q[0],   dt / 2 * q[1],
++      dt / 2 * q[2], - dt / 2 * q[1], - dt / 2 * q[0];
++    F.block<3, 4>(0, 4) = Eigen::Matrix<double, 3, 4>::Zero();
++    F.block<3, 3>(4, 4) = Eigen::Matrix<double, 3, 3>::Identity();
++    return F;
+   }
+ 
+-  void calcPredictedCovariance(hrp::Matrix77& _P_a_priori,
+-                               const hrp::Matrix77& F,
+-                               const Eigen::Vector4d& q) const {
+-    /* P_a_priori = F P F^T + V Q V^T */
+-    Eigen::Matrix<double, 4, 3> V_upper;
+-    V_upper <<
+-      - q[1], - q[2], - q[3],
+-      + q[0], - q[3], + q[2],
+-      + q[3], + q[0], - q[1],
+-      - q[2], + q[1], + q[0];
+-    V_upper *= dt / 2;
+-    hrp::Matrix77 VQVt = hrp::Matrix77::Zero();
+-    VQVt.block<4, 4>(0, 0) = V_upper * Q * V_upper.transpose();
+-    _P_a_priori = F * P * F.transpose() + VQVt;
++  Eigen::Matrix<double, 7, 7> calcPredictedCovariance(Eigen::Matrix<double, 7, 7> F) {
++    /* P_a_priori = F P F^T + Q */
++    return F * P * F.transpose() + Q;
+   }
+ 
+-  Eigen::Vector3d calcAcc(const Eigen::Vector4d& q) const {
+-    Eigen::Quaternion<double> q_tmp(q[0], q[1], q[2], q[3]);
+-    Eigen::Vector3d acc = q_tmp.conjugate()._transformVector(g_vec);
++  Eigen::Vector3d calcAcc(Eigen::Matrix<double, 4, 1> q,
++                          const Eigen::Vector3d& vel_ref,
++                          const Eigen::Vector3d& acc_ref,
++                          const Eigen::Vector3d& angular_rate_ref) {
++    /* acc = \dot{v} + w \times v + R^T g; */
++    Eigen::Quaternion<double> q_tmp = Eigen::Quaternion<double>(q[0], q[1], q[2], q[3]);
++    Eigen::Vector3d acc =
++      acc_ref + angular_rate_ref.cross(vel_ref) +
++      q_tmp.toRotationMatrix().transpose() * g_vec;
++    /* 
++     * Eigen::Vector3d hoge;
++     * hoge <<
++     *   -2 * q_tmp2.w() * q_tmp2.y() + 2 * q_tmp2.x() * q_tmp2.z(),
++     *   2 * q_tmp2.w() * q_tmp2.x() + 2 * q_tmp2.y() * q_tmp2.z(),
++     *   q_tmp2.w() * q_tmp2.w()  - q_tmp2.x() * q_tmp2.x() - q_tmp2.y() * q_tmp2.y() + q_tmp2.z() * q_tmp2.z();
++     * hoge *= g_vec[2];
++     * std::cerr << "diff 2" << std::endl << acc - hoge << std::endl;
++     */
+     return acc;
+   }
+ 
+-  void calcH(Eigen::Matrix<double, 3, 7>& H, const Eigen::Vector4d& q) const {
++  Eigen::Matrix<double, 3, 7> calcH(Eigen::Matrix<double, 4, 1> q) {
++    Eigen::Matrix<double, 3, 7> H;
+     double w = q[0], x = q[1], y = q[2], z = q[3];
++    /* 
++     * H <<
++     *   2 * y,  2 * z,  2 * w,  2 * x, 0, 0, 0,
++     *   -2 * x, -2 * w,  2 * z,  2 * y, 0, 0, 0,
++     *   2 * w, -2 * x, -2 * y,  2 * z, 0, 0, 0;
++     * H *= g_vec[2];
++     */
+     H <<
+-      -y, +z, -w, +x, 0, 0, 0,
+-      +x, +w, +z, +y, 0, 0, 0,
+-      +w, -x, -y, +z, 0, 0, 0;
++      -y,  z, -w, x, 0, 0, 0,
++       x,  w,  z, y, 0, 0, 0,
++       w, -x, -y, z, 0, 0, 0;
+     H *= 2 * g_vec[2];
++    return H;
+   }
+ 
+   Eigen::Vector3d calcMeasurementResidual(const Eigen::Vector3d& acc_measured,
+-                                          const Eigen::Vector4d& q) const {
++                                          const Eigen::Vector3d& vel_ref,
++                                          const Eigen::Vector3d& acc_ref,
++                                          const Eigen::Vector3d& angular_rate_ref,
++                                          Eigen::Matrix<double, 4, 1> q) {
+     /* y = z - h(x) */
+-    Eigen::Vector3d y = acc_measured - calcAcc(q);
++    Eigen::Vector3d y = acc_measured - calcAcc(q, vel_ref, acc_ref, angular_rate_ref);
++    /* 
++     * std::cerr << "acc_measured" << std::endl << acc_measured << std::endl;
++     * std::cerr << "calc acc" << std::endl << calcAcc(q, vel_ref, acc_ref, angular_rate_ref) << std::endl;
++     * std::cerr << "diff" << std::endl << y << std::endl;
++     */
+     return y;
+   }
+ 
+ 
+   void prediction(const Eigen::Vector3d& u) {
+-    Eigen::Vector4d q = x.head<4>();
+-    Eigen::Vector3d drift = x.tail<3>();
+-    hrp::Matrix77 F;
+-    calcF(F, q, u, drift);
+-    hrp::Vector7 x_tmp;
+-    calcPredictedState(x_tmp, q, u, drift);
+-    x_a_priori = x_tmp;
+-    hrp::Matrix77 P_tmp;
+-    calcPredictedCovariance(P_tmp, F, q);
+-    P_a_priori = P_tmp;
++    Eigen::Matrix<double, 4, 1> q = x.block<4, 1>(0, 0);
++    Eigen::Vector3d drift = x.block<3, 1>(4, 0);
++    Eigen::Matrix<double, 7, 7> F = calcF(q, u, drift, dt);
++    x_a_priori = calcPredictedState(q, u, drift, dt);
++    P_a_priori = calcPredictedCovariance(F);
+   }
+ 
+-  void correction(const Eigen::Vector3d& z, const Eigen::Matrix3d& fuzzyR) {
+-    Eigen::Vector4d q_a_priori = x_a_priori.head<4>();
++  void correction(const Eigen::Vector3d& z,
++                  const Eigen::Vector3d& vel_ref,
++                  const Eigen::Vector3d& acc_ref,
++                  const Eigen::Vector3d& angular_rate_ref) {
++    Eigen::Matrix<double, 4, 1> q_a_priori = x_a_priori.block<4, 1>(0, 0).normalized();
+     Eigen::Matrix<double, 3, 7> H;
+-    z_k = z;
+-    Eigen::Vector3d y = calcMeasurementResidual(z, q_a_priori);
+-    calcH(H, q_a_priori);
+-    Eigen::Matrix3d S = H * P_a_priori * H.transpose() + fuzzyR;
+-    Eigen::Matrix<double, 7, 3> K = P_a_priori * H.transpose() * S.inverse();
+-    hrp::Vector7 x_tmp = x_a_priori + K * y;
+-    x.head<4>() = x_tmp.head<4>().normalized(); /* quaternion */
+-    x.tail<3>() = x_tmp.tail<3>(); /* bias */
+-    P = (hrp::Matrix77::Identity() - K * H) * P_a_priori;
++    Eigen::Matrix<double, 3, 3> S;
++    Eigen::Matrix<double, 7, 3> K;
++    Eigen::Vector3d y;
++    /* need to normalize q_a_priori ? */
++    y = calcMeasurementResidual(z, vel_ref, acc_ref, angular_rate_ref, q_a_priori);
++    H = calcH(q_a_priori);
++    S = H * P_a_priori * H.transpose() + R;
++    K = P_a_priori * H.transpose() * S.inverse();
++    Eigen::Matrix<double, 7, 1> x_tmp = x_a_priori + K * y;
++    x = x_tmp.normalized();
++    P = (Eigen::Matrix<double, 7, 7>::Identity() - K * H) * P_a_priori;
+   }
+ 
+-  void printAll() const {
++  void printAll() {
+     std::cerr << "x" << std::endl << x << std::endl;
+     std::cerr << "x_a_priori" << std::endl << x_a_priori << std::endl;
+     std::cerr << "P" << std::endl << P << std::endl << std::endl;
+     std::cerr << "P_a_priori" << std::endl << P_a_priori << std::endl << std::endl;
++    /*
++     * std::cerr << "Q" << std::endl << Q << std::endl << std::endl;
++     * std::cerr << "R" << std::endl << R << std::endl << std::endl;
++     */
+   }
+ 
+-
+-  // Basically Equation (23), (24) and (25) in the paper [1]
+-  // [1] Chul Woo Kang and Chan Gook Park. Attitude estimation with accelerometers and gyros using fuzzy tuned Kalman filter.
+-  //     In European Control Conference, 2009.
+-  void calcRWithFuzzyRule(Eigen::Matrix3d& fuzzyR, const hrp::Vector3& acc, const hrp::Vector3& gyro) const {
+-    double alpha = std::min(std::fabs(acc.norm() - g_vec.norm()) / g_vec.norm(), 0.1);
+-    double beta = std::min(gyro.norm(), 0.05);
+-    double large_mu_acc = std::max(std::min((alpha - min_mag_thre_acc) / (max_mag_thre_acc - min_mag_thre_acc), 1.0), 0.0);
+-    double large_mu_gyro = std::max(std::min((beta - min_mag_thre_gyro) / (max_mag_thre_gyro - min_mag_thre_gyro), 1.0), 0.0);
+-    double w1, w2, w3, w4;
+-    w1 = (1.0 - large_mu_acc) * (1.0 - large_mu_gyro);
+-    w2 = (1.0 - large_mu_acc) * large_mu_gyro;
+-    w3 = large_mu_acc * (1.0 - large_mu_gyro);
+-    w4 = large_mu_acc * large_mu_gyro;
+-    double z = (w1 * 0.0 + w2 * (3.5 * alpha + 8.0 * beta + 0.5) + w3 * (3.5 * alpha + 8.0 * beta + 0.5) + w4 * 1.0) / (w1 + w2 + w3 + w4);
+-    double k1 = 400;
+-    fuzzyR = R + k1 * z * z * Eigen::Matrix3d::Identity();
+-  };
+-
+   void main_one (hrp::Vector3& rpy, hrp::Vector3& rpyRaw, const hrp::Vector3& acc, const hrp::Vector3& gyro)
+   {
+-    Eigen::Matrix3d fuzzyR;
+-    calcRWithFuzzyRule(fuzzyR, acc, gyro);
+-    prediction(gyro);
+-    correction(acc, fuzzyR);
+-    /* ekf_filter.printAll(); */
+-    Eigen::Quaternion<double> q(x[0], x[1], x[2], x[3]);
+-    rpy = hrp::rpyFromRot(q.toRotationMatrix());
++      prediction(gyro);
++      correction(acc, Eigen::Vector3d(0, 0, 0), Eigen::Vector3d(0, 0, 0), Eigen::Vector3d(0, 0, 0));
++      /* ekf_filter.printAll(); */
++      Eigen::Matrix<double, 7, 1> x = getx();
++      Eigen::Quaternion<double> q = Eigen::Quaternion<double>(x[0], x[1], x[2], x[3]);
++      hrp::Vector3 eulerZYX = q.toRotationMatrix().eulerAngles(2,1,0);
++      rpy(2) = eulerZYX(0);
++      rpy(1) = eulerZYX(1);
++      rpy(0) = eulerZYX(2);
+   };
+ 
+   void setdt (const double _dt) { dt = _dt;};
+-  void resetKalmanFilterState() {
+-    Eigen::Quaternion<double> tmp_q;
+-    tmp_q.setFromTwoVectors(z_k, g_vec);
+-    x << tmp_q.w(), tmp_q.x(), tmp_q.y(), tmp_q.z(), 0, 0, 0;
+-  };
+ private:
+-  hrp::Vector7 x, x_a_priori;
+-  hrp::Matrix77 P, P_a_priori;
+-  Eigen::Matrix3d Q, R;
+-  Eigen::Vector3d g_vec, z_k;
++  Eigen::Matrix<double, 7, 1> x, x_a_priori;
++  Eigen::Matrix<double, 7, 7> P, P_a_priori;
++  Eigen::Matrix<double, 7, 7> Q;
++  Eigen::Matrix<double, 3, 3> R;
++  /* static const Eigen::Vector3d g_vec = Eigen::Vector3d(0.0, 0.0, 9.80665); */
++  Eigen::Vector3d g_vec;
+   double dt;
+-  double min_mag_thre_acc, max_mag_thre_acc, min_mag_thre_gyro, max_mag_thre_gyro;
+ };
+ 
+ #endif /* EKFILTER_H */
+diff --git a/rtc/KalmanFilter/KalmanFilter.cpp b/rtc/KalmanFilter/KalmanFilter.cpp
+index 8084418..4280b51 100644
+--- a/rtc/KalmanFilter/KalmanFilter.cpp
++++ b/rtc/KalmanFilter/KalmanFilter.cpp
+@@ -8,7 +8,7 @@
+  */
+ 
+ #include "KalmanFilter.h"
+-#include "hrpsys/util/VectorConvert.h"
++#include "util/VectorConvert.h"
+ #include <rtm/CorbaNaming.h>
+ #include <hrpModel/ModelLoaderUtil.h>
+ #include <math.h>
+@@ -49,6 +49,13 @@ KalmanFilter::KalmanFilter(RTC::Manager* manager)
+     m_rpyRawOut("rpy_raw", m_rpyRaw),
+     m_baseRpyCurrentOut("baseRpyCurrent", m_baseRpyCurrent),
+     m_KalmanFilterServicePort("KalmanFilterService"),
++#ifdef CALC_VEL_N_ANGVEL
++    //added by karasawa for chidori
++    m_velOut("vel", m_vel),
++    m_angvelOut("angvel", m_angvel),
++    m_accOut("acc_output", m_acc_output),
++    m_emergency_step_flagIn("emergency_step_flag", m_emergency_step_flag),
++#endif
+     // </rtc-template>
+     m_robot(hrp::BodyPtr()),
+     m_debugLevel(0),
+@@ -71,6 +78,7 @@ RTC::ReturnCode_t KalmanFilter::onInitialize()
+   // Bind variables and configuration variable
+   bindParameter("debugLevel", m_debugLevel, "0");
+   
++  
+   // </rtc-template>
+ 
+   // Registration: InPort/OutPort/Service
+@@ -86,6 +94,14 @@ RTC::ReturnCode_t KalmanFilter::onInitialize()
+   addOutPort("rpy", m_rpyOut);
+   addOutPort("rpy_raw", m_rpyRawOut);
+   addOutPort("baseRpyCurrent", m_baseRpyCurrentOut);
++#ifdef CALC_VEL_N_ANGVEL
++  //added by karasawa for chidori
++  addOutPort("vel", m_velOut);
++  addOutPort("angvel", m_angvelOut);
++  addOutPort("acc_output", m_accOut);
++  addInPort("emergency_step_flag", m_emergency_step_flagIn);
++  m_emergency_step_flag.data = false;
++#endif
+ 
+   // Set service provider to Ports
+   m_KalmanFilterServicePort.registerProvider("service0", "KalmanFilterService", m_service0);
+@@ -123,6 +139,18 @@ RTC::ReturnCode_t KalmanFilter::onInitialize()
+   m_rpy.data.r = 0;
+   m_rpy.data.p = 0;
+   m_rpy.data.y = 0;
++#ifdef CALC_VEL_N_ANGVEL
++  //added by karasawa for chidori
++  m_vel.data.vx = 0.0;
++  m_vel.data.vy = 0.0;
++  m_vel.data.vz = 0.0;
++  m_angvel.data.avx = 0.0;
++  m_angvel.data.avy = 0.0;
++  m_angvel.data.avz = 0.0;
++  m_acc_output.data.ax = 0.0;
++  m_acc_output.data.ay = 0.0;
++  m_acc_output.data.az = 0.0;
++#endif
+ 
+   if (m_robot->numSensors(hrp::Sensor::ACCELERATION) > 0) {
+     hrp::Sensor* sensor = m_robot->sensor(hrp::Sensor::ACCELERATION, 0);
+@@ -201,9 +229,14 @@ RTC::ReturnCode_t KalmanFilter::onExecute(RTC::UniqueId ec_id)
+   }
+   double sx_ref = 0.0, sy_ref = 0.0, sz_ref = 0.0;
+   if (m_accRefIn.isNew()){
+-    m_accRefIn.read();
+-    sx_ref = m_accRef.data.ax, sy_ref = m_accRef.data.ay, sz_ref = m_accRef.data.az;
++      m_accRefIn.read();
++      sx_ref = m_accRef.data.ax, sy_ref = m_accRef.data.ay, sz_ref = m_accRef.data.az;
++  }
++#ifdef CALC_VEL_N_ANGVEL
++  if (m_emergency_step_flagIn.isNew()) {
++      m_emergency_step_flagIn.read();
+   }
++#endif
+   if (m_accIn.isNew()){
+     m_accIn.read();
+ 
+@@ -231,6 +264,59 @@ RTC::ReturnCode_t KalmanFilter::onExecute(RTC::UniqueId ec_id)
+         }
+         rpy_kf.main_one(rpy, rpyRaw, baseRpyCurrent, acc, gyro, sl_y, BtoS);
+     }
++#ifdef CALC_VEL_N_ANGVEL
++    //calc_vel_n_angvel(vel, angvel, acc, gyro, rpy, BtoS);
++    if(m_robot->numSensors(hrp::Sensor::ACCELERATION) >0) {
++        if(m_emergency_step_flag.data == SequencePlayer::EMERGENCY) {
++           // std::cerr << "\x1b[33m" << "emergency step flag!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << "\x1b[0m" << std::endl;
++        }
++        hrp::Vector3 vel;
++        vel(0)= m_vel.data.vx;
++        vel(1)= m_vel.data.vy;
++        vel(2)= m_vel.data.vz;
++        hrp::Vector3 angvel;
++        hrp::Vector3 acc_without_g;
++        //angvel(0)= m_angvel.data.avx;
++        //angvel(1)= m_angvel.data.avy;
++        //angvel(2)= m_angvel.data.avz;
++        hrp::Sensor* sensor = m_robot->sensor(hrp::Sensor::ACCELERATION, 0);
++        rpy_kf.calc_vel_n_angvel(vel, angvel, acc_without_g,acc, gyro, rpy, sensor->localPos);
++        m_vel.data.vx = vel(0);
++        m_vel.data.vy = vel(1);
++        m_vel.data.vz = vel(2);
++        m_angvel.data.avx = angvel(0);
++        m_angvel.data.avy = angvel(1);
++        m_angvel.data.avz = angvel(2);
++        m_acc_output.data.ax = acc_without_g(0);
++        m_acc_output.data.ay = acc_without_g(1);
++        m_acc_output.data.az = acc_without_g(2);
++        /* 
++         * hrp::Vector3 testvec;
++         * testvec << 1, 0, 0;
++         * testvec = sensor->localR*testvec;
++         * std::cerr << "1 0 0  | x:" << testvec(0) << "  y:" << testvec(1) << "  z:" << testvec(2) << std::endl;
++         * testvec << 0, 1, 0;
++         * testvec = sensor->localR*testvec;
++         * std::cerr << "0 1 0  | x:" << testvec(0) << "  y:" << testvec(1) << "  z:" << testvec(2) << std::endl;
++         * testvec << 0, 0, 1;
++         * testvec = sensor->localR*testvec;
++         * std::cerr << "0 0 1  | x:" << testvec(0) << "  y:" << testvec(1) << "  z:" << testvec(2) << std::endl;
++         */
++
++    }
++    //std::cerr << "acc x:" << acc(0) << "  y:" << acc(1) << "  z:" << acc(2) << std::endl;
++
++    /* 
++     * hrp::Sensor* sensor = m_robot->sensor(hrp::Sensor::ACCELERATION, 0);
++     * hrp::Vector3 Body2Sensor_pos_relative_to_world = sensor->link->R * sensor->localPos;
++     * //std::cerr << "sensor pos  x:" << sensor->localPos(0) << "  y:" << sensor->localPos(1) << "  z:" << sensor->localPos(2) << std::endl;
++     * std::cerr << "posture::" << std::endl;
++     * std::cerr << sensor->link->R(0,0) << "  " << sensor->link->R(0,1) << "  "<< sensor->link->R(0,2) << std::endl;
++     * std::cerr << sensor->link->R(1,0) << "  " << sensor->link->R(1,1) << "  "<< sensor->link->R(1,2) << std::endl;
++     * std::cerr << sensor->link->R(2,0) << "  " << sensor->link->R(2,1) << "  "<< sensor->link->R(2,2) << std::endl;
++     * std::cerr << std::endl;
++     */
++#endif
+     m_rpyRaw.data.r = rpyRaw(0);
+     m_rpyRaw.data.p = rpyRaw(1);
+     m_rpyRaw.data.y = rpyRaw(2);
+@@ -244,10 +330,22 @@ RTC::ReturnCode_t KalmanFilter::onExecute(RTC::UniqueId ec_id)
+     m_rpyRaw.tm = m_acc.tm;
+     m_rpy.tm = m_acc.tm;
+     m_baseRpyCurrent.tm = m_acc.tm;
++#ifdef CALC_VEL_N_ANGVEL
++    //added by karasawa for chidori
++    m_vel.tm = m_acc.tm;
++    m_angvel.tm = m_acc.tm;
++    m_acc_output.tm = m_acc.tm;
++#endif
+ 
+     m_rpyOut.write();
+     m_rpyRawOut.write();
+     m_baseRpyCurrentOut.write();
++#ifdef CALC_VEL_N_ANGVEL
++    //added by karasawa for chidori
++    m_velOut.write();
++    m_angvelOut.write();
++    m_accOut.write();
++#endif
+   }
+   return RTC::RTC_OK;
+ }
+@@ -309,7 +407,6 @@ bool KalmanFilter::setKalmanFilterParam(const OpenHRP::KalmanFilterService::Kalm
+ bool KalmanFilter::resetKalmanFilterState()
+ {
+     rpy_kf.resetKalmanFilterState();
+-    ekf_filter.resetKalmanFilterState();
+ };
+ 
+ bool KalmanFilter::getKalmanFilterParam(OpenHRP::KalmanFilterService::KalmanFilterParam& i_param)
+diff --git a/rtc/KalmanFilter/KalmanFilter.h b/rtc/KalmanFilter/KalmanFilter.h
+index 7b48040..70a2c57 100644
+--- a/rtc/KalmanFilter/KalmanFilter.h
++++ b/rtc/KalmanFilter/KalmanFilter.h
+@@ -10,6 +10,9 @@
+ #ifndef NULL_COMPONENT_H
+ #define NULL_COMPONENT_H
+ 
++//define if you use velocity and angular velocity of root link
++#define CALC_VEL_N_ANGVEL
++
+ #include <rtm/Manager.h>
+ #include <rtm/DataFlowComponentBase.h>
+ #include <rtm/CorbaPort.h>
+@@ -22,6 +25,10 @@
+ #include "RPYKalmanFilter.h"
+ #include "EKFilter.h"
+ 
++#ifdef CALC_VEL_N_ANGVEL
++#include "../SequencePlayer/SequencePlayer.h"
++#endif
++
+ // Service implementation headers
+ // <rtc-template block="service_impl_h">
+ #include "KalmanFilterService_impl.h"
+@@ -134,6 +141,18 @@ protected:
+   RTC::InPort<RTC::TimedDoubleSeq> m_qCurrentIn;
+   RTC::TimedOrientation3D m_baseRpyCurrent;
+   RTC::OutPort<RTC::TimedOrientation3D> m_baseRpyCurrentOut;
++
++#ifdef CALC_VEL_N_ANGVEL
++  //added by karasawa for chidori
++  TimedVelocity3D m_vel;
++  TimedAngularVelocity3D m_angvel;
++  TimedAcceleration3D m_acc_output;
++  RTC::TimedLong m_emergency_step_flag;
++  RTC::OutPort<RTC::TimedVelocity3D> m_velOut;
++  RTC::OutPort<RTC::TimedAngularVelocity3D> m_angvelOut;
++  RTC::OutPort<RTC::TimedAcceleration3D> m_accOut;
++  RTC::InPort<RTC::TimedLong> m_emergency_step_flagIn;
++#endif
+   
+   // </rtc-template>
+ 
+diff --git a/rtc/KalmanFilter/KalmanFilter.xml b/rtc/KalmanFilter/KalmanFilter.xml
+deleted file mode 100644
+index b0c9dc3..0000000
+--- a/rtc/KalmanFilter/KalmanFilter.xml
++++ /dev/null
+@@ -1,35 +0,0 @@
+-<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+-<rtc:RtcProfile rtc:version="0.2" rtc:id="RTC:AIST:example:KalmanFilter:1.0" xmlns:rtcExt="http://www.openrtp.org/namespaces/rtc_ext" xmlns:rtcDoc="http://www.openrtp.org/namespaces/rtc_doc" xmlns:rtc="http://www.openrtp.org/namespaces/rtc" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+-    <rtc:BasicInfo xsi:type="rtcExt:basic_info_ext" rtcExt:saveProject="KalmanFilter" rtc:updateDate="2015-11-18T14:10:18+09:00" rtc:creationDate="2015-11-18T05:07:28Z" rtc:version="1.0" rtc:vendor="AIST" rtc:maxInstances="10" rtc:executionType="PeriodicExecutionContext" rtc:executionRate="0.0" rtc:description="Kalman filter component" rtc:category="example" rtc:componentKind="DataFlowComponent" rtc:activityType="PERIODIC" rtc:componentType="STATIC" rtc:name="KalmanFilter"/>
+-    <rtc:Actions>
+-        <rtc:OnInitialize xsi:type="rtcDoc:action_status_doc" rtc:implemented="true"/>
+-        <rtc:OnFinalize xsi:type="rtcDoc:action_status_doc" rtc:implemented="false"/>
+-        <rtc:OnStartup xsi:type="rtcDoc:action_status_doc" rtc:implemented="false"/>
+-        <rtc:OnShutdown xsi:type="rtcDoc:action_status_doc" rtc:implemented="false"/>
+-        <rtc:OnActivated xsi:type="rtcDoc:action_status_doc" rtc:implemented="false"/>
+-        <rtc:OnDeactivated xsi:type="rtcDoc:action_status_doc" rtc:implemented="false"/>
+-        <rtc:OnAborting xsi:type="rtcDoc:action_status_doc" rtc:implemented="false"/>
+-        <rtc:OnError xsi:type="rtcDoc:action_status_doc" rtc:implemented="false"/>
+-        <rtc:OnReset xsi:type="rtcDoc:action_status_doc" rtc:implemented="false"/>
+-        <rtc:OnExecute xsi:type="rtcDoc:action_status_doc" rtc:implemented="false"/>
+-        <rtc:OnStateUpdate xsi:type="rtcDoc:action_status_doc" rtc:implemented="false"/>
+-        <rtc:OnRateChanged xsi:type="rtcDoc:action_status_doc" rtc:implemented="false"/>
+-        <rtc:OnAction xsi:type="rtcDoc:action_status_doc" rtc:implemented="false"/>
+-        <rtc:OnModeChanged xsi:type="rtcDoc:action_status_doc" rtc:implemented="false"/>
+-    </rtc:Actions>
+-    <rtc:ConfigurationSet>
+-        <rtc:Configuration xsi:type="rtcExt:configuration_ext" rtc:defaultValue="1" rtc:type="string" rtc:name="compensateMode"/>
+-        <rtc:Configuration xsi:type="rtcExt:configuration_ext" rtc:defaultValue="0,0,0" rtc:type="string" rtc:name="offset"/>
+-        <rtc:Configuration xsi:type="rtcExt:configuration_ext" rtc:defaultValue="0.01" rtc:type="string" rtc:name="Q"/>
+-        <rtc:Configuration xsi:type="rtcExt:configuration_ext" rtc:defaultValue="0.0001" rtc:type="string" rtc:name="Qbw"/>
+-        <rtc:Configuration xsi:type="rtcExt:configuration_ext" rtc:defaultValue="0.1" rtc:type="string" rtc:name="R"/>
+-        <rtc:Configuration xsi:type="rtcExt:configuration_ext" rtc:defaultValue="0.15" rtc:type="string" rtc:name="Tgsens"/>
+-        <rtc:Configuration xsi:type="rtcExt:configuration_ext" rtc:defaultValue="3" rtc:type="string" rtc:name="filter_order"/>
+-        <rtc:Configuration xsi:type="rtcExt:configuration_ext" rtc:defaultValue="0" rtc:type="string" rtc:name="debugLevel"/>
+-    </rtc:ConfigurationSet>
+-    <rtc:DataPorts xsi:type="rtcExt:dataport_ext" rtcExt:position="LEFT" rtc:subscriptionType="Any" rtc:dataflowType="push,pull" rtc:interfaceType="corba_cdr" rtc:type="RTC::TimedAcceleration3D" rtc:name="acc" rtc:portType="DataInPort"/>
+-    <rtc:DataPorts xsi:type="rtcExt:dataport_ext" rtcExt:position="LEFT" rtc:subscriptionType="Any" rtc:dataflowType="push,pull" rtc:interfaceType="corba_cdr" rtc:type="RTC::TimedAcceleration3D" rtc:name="accRef" rtc:portType="DataInPort"/>
+-    <rtc:DataPorts xsi:type="rtcExt:dataport_ext" rtcExt:position="LEFT" rtc:subscriptionType="Any" rtc:dataflowType="push,pull" rtc:interfaceType="corba_cdr" rtc:type="RTC::TimedAngularVelocity3D" rtc:name="rate" rtc:portType="DataInPort"/>
+-    <rtc:DataPorts xsi:type="rtcExt:dataport_ext" rtcExt:position="RIGHT" rtc:subscriptionType="flush,new,periodic" rtc:dataflowType="push,pull" rtc:interfaceType="corba_cdr" rtc:type="RTC::TimedOrientation3D" rtc:name="rpy" rtc:portType="DataOutPort"/>
+-    <rtc:Language xsi:type="rtcExt:language_ext" rtc:kind="C++"/>
+-</rtc:RtcProfile>
+diff --git a/rtc/KalmanFilter/KalmanFilterService_impl.h b/rtc/KalmanFilter/KalmanFilterService_impl.h
+index 48aef9a..645205d 100644
+--- a/rtc/KalmanFilter/KalmanFilterService_impl.h
++++ b/rtc/KalmanFilter/KalmanFilterService_impl.h
+@@ -2,7 +2,7 @@
+ #ifndef __KALMANFILTER_SERVICE_H__
+ #define __KALMANFILTER_SERVICE_H__
+ 
+-#include "hrpsys/idl/KalmanFilterService.hh"
++#include "KalmanFilterService.hh"
+ 
+ class KalmanFilter;
+ 
+diff --git a/rtc/KalmanFilter/RPYKalmanFilter.h b/rtc/KalmanFilter/RPYKalmanFilter.h
+index 4c3967a..197af98 100644
+--- a/rtc/KalmanFilter/RPYKalmanFilter.h
++++ b/rtc/KalmanFilter/RPYKalmanFilter.h
+@@ -3,7 +3,7 @@
+ 
+ #include <hrpUtil/EigenTypes.h>
+ #include <hrpUtil/Eigen3d.h>
+-#include "hrpsys/util/Hrpsys.h"
++#include "util/Hrpsys.h"
+ namespace hrp{
+   typedef Eigen::Vector2d Vector2;
+   typedef Eigen::Matrix2d Matrix22;
+@@ -70,7 +70,12 @@ private:
+ 
+ class RPYKalmanFilter {
+ public:
+-    RPYKalmanFilter() : m_sensorR(hrp::Matrix33::Identity()) {};
++#ifndef CALC_VEL_N_ANGVEL
++    RPYKalmanFilter() : m_sensorR(hrp::Matrix33::Identity()){
++#else
++    RPYKalmanFilter() : m_sensorR(hrp::Matrix33::Identity()), dt(0.002), G(9.80665), loop_count(0), count(0), rpy_for_calc_vel_n_angvel(0){
++#endif
++    };
+     void main_one (hrp::Vector3& rpy, hrp::Vector3& rpyRaw, hrp::Vector3& baseRpyCurrent, const hrp::Vector3& acc, const hrp::Vector3& gyro, const double& sl_y, const hrp::Matrix33& BtoS)
+     {
+       //
+@@ -158,10 +163,106 @@ public:
+     double getQangle () const { return Q_angle;};
+     double getQrate () const { return Q_rate;};
+     double getRangle () const { return R_angle;};
++#ifdef CALC_VEL_N_ANGVEL
++    void calc_vel_n_angvel (hrp::Vector3& vel, hrp::Vector3& angvel,hrp::Vector3& acc_without_g, const hrp::Vector3& acc, const hrp::Vector3& gyro, const hrp::Vector3& rpy, const hrp::Vector3& sensorPosition) {
++        loop_count++;
++        if(loop_count > 200) {
++            loop_count = 0;
++            count = 0;
++        }
++
++        double g_norm = sqrt(acc(0)*acc(0) + acc(1)*acc(1) + acc(2)*acc(2));
++        if( ((g_norm-G) < 0.005) && ((g_norm-G) > -0.005) ) {
++            count++;
++        }
++        if (loop_count == 0) {
++            //std::cerr << "\x1b[33m" << "g_norm |" << g_norm << "\x1b[0m" << std::endl;
++        }
++        if(count > 5) {
++            //std::cerr << "\x1b[31m" << "rpy angles is updated by acc!!" << "\x1b[0m" <<std::endl;
++            double r, p;
++            p = atan2( acc(0), sqrt( acc(1) * acc(1) + acc(2) * acc(2) ) );
++            r = atan2( acc(1) , acc(2) );
++            rpy_for_calc_vel_n_angvel(0) = r;
++            rpy_for_calc_vel_n_angvel(1) = p;
++            count = 0;
++            loop_count = 0;
++            //std::cerr << " r:" << r << "  p:" << p << std::endl;
++        }
++
++        hrp::Vector3 rpy_dot;
++        rpy_dot(0) = (gyro(1)*sin(rpy_for_calc_vel_n_angvel(2))+gyro(0)*cos(rpy_for_calc_vel_n_angvel(2)))/cos(rpy_for_calc_vel_n_angvel(1));
++        rpy_dot(1) = gyro(1)*cos(rpy_for_calc_vel_n_angvel(2))-gyro(0)*sin(rpy_for_calc_vel_n_angvel(2));
++        rpy_dot(2) = gyro(2)-rpy_dot(0)*sin(rpy_for_calc_vel_n_angvel(1));
++
++        rpy_for_calc_vel_n_angvel(0) += dt*rpy_dot(0);
++        rpy_for_calc_vel_n_angvel(1) += dt*rpy_dot(1);
++        rpy_for_calc_vel_n_angvel(2) += dt*rpy_dot(2);
++        rpy_for_calc_vel_n_angvel(2) *= 0.99;
++        //hrp::Vector3 modified_rpy = rpy;
++        //modified_rpy(0) = rpy(0) - 3.141592/2.0;
++        //std::cerr << "modified_rpy | r:" << modified_rpy(0) << "  p:" << modified_rpy(1) << "  y:" << modified_rpy(2) << std::endl;
++        //std::cerr << "rpy_for_calc_vel_n_angvel  | r:" << rpy_for_calc_vel_n_angvel(0) << "  p:" << rpy_for_calc_vel_n_angvel(1) << "  y:" << rpy_for_calc_vel_n_angvel(2) << std::endl;
++        hrp::Matrix33 realRotationMatrix = hrp::rotFromRpy(rpy_for_calc_vel_n_angvel);
++        //std::cerr << "realRotationMatrix ::" << std::endl;
++        //std::cerr << realRotationMatrix(0,0) << "  " << realRotationMatrix(0,1) << "  " << realRotationMatrix(0,2) << std::endl;
++        //std::cerr << realRotationMatrix(1,0) << "  " << realRotationMatrix(1,1) << "  " << realRotationMatrix(1,2) << std::endl;
++        //std::cerr << realRotationMatrix(2,0) << "  " << realRotationMatrix(2,1) << "  " << realRotationMatrix(2,2) << std::endl;
++        //std::cerr << std::endl;
++        angvel = gyro;
++
++        hrp::Matrix33 angvel_Matrix;
++        angvel_Matrix <<          0, -angvel(2),  angvel(1),
++                          angvel(2),          0, -angvel(0),
++                         -angvel(1),  angvel(0),          0;
++        hrp::Vector3 sensorPosition_relative_to_world = realRotationMatrix * sensorPosition;
++
++        hrp::Vector3 Body_acc = acc;// + gyro.cross(realRotationMatrix*sensorPosition_relative_to_world) + angvel.cross(angvel_Matrix*realRotationMatrix*sensorPosition_relative_to_world);
++        hrp::Vector3 g;
++        g << 0.0, 0.0, 9.80665;
++        g = realRotationMatrix*g;
++        //std::cerr << "g    x:" << g(0) << "  y:" << g(1) << "  z:" << g(2) << std::endl;
++        Body_acc = Body_acc - g;
++        acc_without_g = Body_acc;
++        /* 
++         * if(Body_acc(0) < 0.05 && Body_acc(0) > -0.05) {
++         *     Body_acc(0) = 0.0;
++         * }
++         * if(Body_acc(1) < 0.05 && Body_acc(1) > -0.05) {
++         *     Body_acc(1) = 0.0;
++         * }
++         * if(Body_acc(2) < 0.05 && Body_acc(2) > -0.05) {
++         *     Body_acc(2) = 0.0;
++         * }
++         */
++        //std::cerr << "acc_norm | " << (acc.norm()) << std::endl;
++        /* 
++         * if ( Body_acc(0) < -2.0 || Body_acc(0) > 2.0 ) {
++         *     std::cerr << "\x1b[33m"  << "body_acc | x:" << Body_acc(0) << "  y:" << Body_acc(1) << "  z:" << Body_acc(2) << "    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << "\x1b[0m" << std::endl;
++         * } else if ( Body_acc(1) < -2.0 || Body_acc(1) > 2.0 ) {
++         *     std::cerr << "\x1b[33m" <<  "body_acc | x:" << Body_acc(0) << "  y:" << Body_acc(1) << "  z:" << Body_acc(2) << "    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << "\x1b[0m" << std::endl;
++         * } else if ( !(loop_count % 100) ) {
++         *     std::cerr << "body_acc | x:" << Body_acc(0) << "  y:" << Body_acc(1) << "  z:" << Body_acc(2) << std::endl;
++         * }
++         */
++        if( (Body_acc(0) < 0.25) && (Body_acc(0) > -0.25) && (Body_acc(1) < 0.25) && (Body_acc(1) > -0.25) ) {
++            vel = (vel + Body_acc*dt)*0.99;//*0.9995;
++        } else {
++            vel = vel + Body_acc*dt;
++        }
++    }
++#endif
+ private:
+     KFilter r_filter, p_filter, y_filter;
+     double Q_angle, Q_rate, R_angle;
+     hrp::Matrix33 m_sensorR;
++#ifdef CALC_VEL_N_ANGVEL
++    int loop_count;
++    char count;
++    const double dt;
++    const double G;
++    hrp::Vector3 rpy_for_calc_vel_n_angvel;
++#endif
+ };
+ 
+ #endif /* RPYKALMANFILTER_H */
