@@ -136,7 +136,7 @@ class OpenNIGrabber
   // </rtc-template>
 
  private:
-  void grabberCallbackDepthAndColor(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr &cloud);
+  void grabberCallbackDepthAndColor(const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &cloud);
   void grabberCallbackDepth(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr &cloud);
 
   pcl::Grabber *m_interface;
