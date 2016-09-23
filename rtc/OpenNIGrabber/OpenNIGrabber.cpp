@@ -84,7 +84,7 @@ RTC::ReturnCode_t OpenNIGrabber::onInitialize()
 }
 
 
-void OpenNIGrabber::grabberCallbackDepthAndColor(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr &cloud)
+void OpenNIGrabber::grabberCallbackDepthAndColor(const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &cloud)
 {
     m_cloud.width = cloud->width;
     m_cloud.height = cloud->height;
@@ -209,7 +209,7 @@ RTC::ReturnCode_t OpenNIGrabber::onActivated(RTC::UniqueId ec_id)
           m_cloud.is_bigendian = false;
           m_cloud.point_step = 16;
           m_cloud.is_dense = false;
-          boost::function<void (const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr&)> f = boost::bind(&OpenNIGrabber::grabberCallbackDepthAndColor, this, _1);
+          boost::function<void (const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr&)> f = boost::bind(&OpenNIGrabber::grabberCallbackDepthAndColor, this, _1);
           m_interface->registerCallback(f);
       }else{
           std::cerr << "[" << m_profile.instance_name << "] Error: unknown mode ("
