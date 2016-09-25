@@ -360,13 +360,27 @@ namespace rats
           size_t swing_one_step_count = one_step_count - double_support_count_before - double_support_count_after;
           double final_path_distance_ratio = calc_antecedent_path(start, goal, height);
           size_t tmp_time_offset_count = time_offset/dt;
+          //size_t final_path_count = 0; // Revert to previous version
+          size_t final_path_count = final_path_distance_ratio * swing_one_step_count;
+          //if (final_path_count>static_cast<size_t>(0.1/dt)) final_path_count = static_cast<size_t>(0.1/dt);
+          // XY interpolation
+          if (swing_remain_count > final_path_count+tmp_time_offset_count) { // antecedent path is still interpolating
+            hrp::Vector3 tmpgoal = interpolate_antecedent_path((swing_one_step_count - swing_remain_count) / static_cast<double>(swing_one_step_count - (final_path_count+tmp_time_offset_count)));
+            for (size_t i = 0; i < 2; i++) hoffarbib_interpolation (pos(i), vel(i), acc(i), time_offset, tmpgoal(i));
+          } else if (swing_remain_count > final_path_count) { // antecedent path already reached to goal
+            double tmprt = (swing_remain_count-final_path_count)*dt;
+            for (size_t i = 0; i < 2; i++) hoffarbib_interpolation (pos(i), vel(i), acc(i), tmprt, goal(i));
+          } else {
+            for (size_t i = 0; i < 2; i++) pos(i) = goal(i);
+          }
+          // Z interpolation
           if (swing_remain_count > tmp_time_offset_count) { // antecedent path is still interpolating
             hrp::Vector3 tmpgoal = interpolate_antecedent_path((swing_one_step_count - swing_remain_count) / static_cast<double>(swing_one_step_count - tmp_time_offset_count));
-            for (size_t i = 0; i < 3; i++) hoffarbib_interpolation (pos(i), vel(i), acc(i), time_offset, tmpgoal(i));
+            hoffarbib_interpolation (pos(2), vel(2), acc(2), time_offset, tmpgoal(2));
           } else if (swing_remain_count > 0) { // antecedent path already reached to goal
-            for (size_t i = 0; i < 3; i++) hoffarbib_interpolation (pos(i), vel(i), acc(i), swing_remain_count*dt, goal(i));
+            hoffarbib_interpolation (pos(2), vel(2), acc(2), swing_remain_count*dt, goal(2));
           } else {
-            pos = goal;
+            pos(2) = goal(2);
           }
         } else if ( current_count < double_support_count_before ) { // first double support phase
           pos = start;
