@@ -330,7 +330,7 @@ namespace rats
       double time_offset; // [s]
       double final_distance_weight;
       size_t one_step_count, current_count, double_support_count_before, double_support_count_after; // time/dt
-      virtual void calc_antecedent_path (const hrp::Vector3& start, const hrp::Vector3& goal, const double height) = 0;
+      virtual double calc_antecedent_path (const hrp::Vector3& start, const hrp::Vector3& goal, const double height) = 0;
     public:
       delay_hoffarbib_trajectory_generator () : time_offset(0.35), final_distance_weight(1.0), one_step_count(0), current_count(0), double_support_count_before(0), double_support_count_after(0) {};
       ~delay_hoffarbib_trajectory_generator() { };
@@ -358,7 +358,7 @@ namespace rats
         if ( double_support_count_before <= current_count && current_count < one_step_count - double_support_count_after ) { // swing phase
           size_t swing_remain_count = one_step_count - current_count - double_support_count_after;
           size_t swing_one_step_count = one_step_count - double_support_count_before - double_support_count_after;
-          calc_antecedent_path(start, goal, height);
+          double final_path_distance_ratio = calc_antecedent_path(start, goal, height);
           if (swing_remain_count*dt > time_offset) { // antecedent path is still interpolating
             hrp::Vector3 tmpgoal = interpolate_antecedent_path((swing_one_step_count - swing_remain_count) / (swing_one_step_count - time_offset/dt));
             for (size_t i = 0; i < 3; i++) hoffarbib_interpolation (pos(i), vel(i), acc(i), time_offset, tmpgoal(i));
@@ -385,7 +385,7 @@ namespace rats
       //   tmp_ratio : ratio value [0, 1]
       //   org_point_vec : vector of via points
       //   e.g., move tmp_ratio from 0 to 1 => move point from org_point_vec.front() to org_point_vec.back()
-      void calc_antecedent_path_base (const std::vector<hrp::Vector3> org_point_vec)
+      double calc_antecedent_path_base (const std::vector<hrp::Vector3> org_point_vec)
       {
         total_path_length = 0;
         point_vec.clear();
@@ -402,7 +402,7 @@ namespace rats
           }
         }
         if ( total_path_length < 1e-5 ) { // if total path is zero, return goal point.
-          return;
+          return 0;
         }
         // point_vec        : [p0, p1, ..., pN-1, pN]
         // distance_vec     : [  d0, ...,     dN-1  ]
@@ -414,6 +414,7 @@ namespace rats
           sum_distance_vec.push_back(tmp_dist + distance_vec[i]);
           tmp_dist += distance_vec[i];
         }
+        return distance_vec.back()/total_path_length;
       };
       hrp::Vector3 interpolate_antecedent_path (const double tmp_ratio) const
       {
@@ -436,7 +437,7 @@ namespace rats
 
     class rectangle_delay_hoffarbib_trajectory_generator : public delay_hoffarbib_trajectory_generator
     {
-      void calc_antecedent_path (const hrp::Vector3& start, const hrp::Vector3& goal, const double height)
+      double calc_antecedent_path (const hrp::Vector3& start, const hrp::Vector3& goal, const double height)
       {
         std::vector<hrp::Vector3> rectangle_path;
         double max_height = std::max(start(2), goal(2))+height;
@@ -444,14 +445,14 @@ namespace rats
         rectangle_path.push_back(hrp::Vector3(start(0), start(1), max_height));
         rectangle_path.push_back(hrp::Vector3(goal(0), goal(1), max_height));
         rectangle_path.push_back(goal);
-        calc_antecedent_path_base(rectangle_path);
+        return calc_antecedent_path_base(rectangle_path);
       };
     };
 
     class stair_delay_hoffarbib_trajectory_generator : public delay_hoffarbib_trajectory_generator
     {
       hrp::Vector3 way_point_offset;
-      void calc_antecedent_path (const hrp::Vector3& start, const hrp::Vector3& goal, const double height)
+      double calc_antecedent_path (const hrp::Vector3& start, const hrp::Vector3& goal, const double height)
       {
         std::vector<hrp::Vector3> path;
         double max_height = std::max(start(2), goal(2))+height;
@@ -473,7 +474,7 @@ namespace rats
         //   path.push_back(hrp::Vector3(goal(0), goal(1), 20*1e-3+goal(2)));
         // }
         path.push_back(goal);
-        calc_antecedent_path_base(path);
+        return calc_antecedent_path_base(path);
       };
     public:
       stair_delay_hoffarbib_trajectory_generator () : delay_hoffarbib_trajectory_generator(), way_point_offset(hrp::Vector3(0.03, 0.0, 0.0)) {};
@@ -484,7 +485,7 @@ namespace rats
 
     class cycloid_delay_hoffarbib_trajectory_generator : public delay_hoffarbib_trajectory_generator
     {
-      void calc_antecedent_path (const hrp::Vector3& start, const hrp::Vector3& goal, const double height)
+      double calc_antecedent_path (const hrp::Vector3& start, const hrp::Vector3& goal, const double height)
       {
         std::vector<hrp::Vector3> cycloid_path;
         hrp::Vector3 tmpv, via_goal(goal);
@@ -502,7 +503,7 @@ namespace rats
         cycloid_path.push_back(tmpv);
         cycloid_path.push_back(via_goal);
         cycloid_path.push_back(goal);
-        calc_antecedent_path_base(cycloid_path);
+        return calc_antecedent_path_base(cycloid_path);
       };
     };
 
@@ -516,7 +517,7 @@ namespace rats
       void set_cycloid_delay_kick_point_offset (const hrp::Vector3 _offset) { kick_point_offset = _offset; };
       void set_start_rot (const hrp::Matrix33 _offset) { start_rot = _offset; };
       hrp::Vector3 get_cycloid_delay_kick_point_offset () const { return kick_point_offset; };
-      void calc_antecedent_path (const hrp::Vector3& start, const hrp::Vector3& goal, const double height)
+      double calc_antecedent_path (const hrp::Vector3& start, const hrp::Vector3& goal, const double height)
       {
         std::vector<hrp::Vector3> cycloid_path;
         hrp::Vector3 tmpv, via_goal(goal);
@@ -538,7 +539,7 @@ namespace rats
         }
         cycloid_path.push_back(via_goal);
         cycloid_path.push_back(goal);
-        calc_antecedent_path_base(cycloid_path);
+        return calc_antecedent_path_base(cycloid_path);
       };
     };
     
@@ -551,7 +552,7 @@ namespace rats
       ~cross_delay_hoffarbib_trajectory_generator () {};
       void set_swing_leg (leg_type _lr) { swing_leg = _lr; };
       hrp::Vector3 way_point_offset;
-      void calc_antecedent_path (const hrp::Vector3& start, const hrp::Vector3& goal, const double height)
+      double calc_antecedent_path (const hrp::Vector3& start, const hrp::Vector3& goal, const double height)
       {
         std::vector<hrp::Vector3> path;
         double max_height = std::max(start(2), goal(2))+height;
@@ -569,7 +570,7 @@ namespace rats
           path.push_back(hrp::Vector3(goal(0), goal(1), 30*1e-3+goal(2)));
         }
         path.push_back(goal);
-        calc_antecedent_path_base(path);
+        return calc_antecedent_path_base(path);
       };
     };
 
