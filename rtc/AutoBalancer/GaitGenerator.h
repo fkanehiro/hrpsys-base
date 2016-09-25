@@ -359,8 +359,9 @@ namespace rats
           size_t swing_remain_count = one_step_count - current_count - double_support_count_after;
           size_t swing_one_step_count = one_step_count - double_support_count_before - double_support_count_after;
           double final_path_distance_ratio = calc_antecedent_path(start, goal, height);
-          if (swing_remain_count*dt > time_offset) { // antecedent path is still interpolating
-            hrp::Vector3 tmpgoal = interpolate_antecedent_path((swing_one_step_count - swing_remain_count) / (swing_one_step_count - time_offset/dt));
+          size_t tmp_time_offset_count = time_offset/dt;
+          if (swing_remain_count > tmp_time_offset_count) { // antecedent path is still interpolating
+            hrp::Vector3 tmpgoal = interpolate_antecedent_path((swing_one_step_count - swing_remain_count) / static_cast<double>(swing_one_step_count - tmp_time_offset_count));
             for (size_t i = 0; i < 3; i++) hoffarbib_interpolation (pos(i), vel(i), acc(i), time_offset, tmpgoal(i));
           } else if (swing_remain_count > 0) { // antecedent path already reached to goal
             for (size_t i = 0; i < 3; i++) hoffarbib_interpolation (pos(i), vel(i), acc(i), swing_remain_count*dt, goal(i));
