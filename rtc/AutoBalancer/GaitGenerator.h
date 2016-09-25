@@ -312,14 +312,14 @@ namespace rats
       hrp::Vector3 pos, vel, acc; // [m], [m/s], [m/s^2]
       double dt; // [s]
       // Implement hoffarbib to configure remain_time;
-      void hoffarbib_interpolation (const double tmp_remain_time, const hrp::Vector3& tmp_goal, const hrp::Vector3 tmp_goal_vel = hrp::Vector3::Zero(), const hrp::Vector3 tmp_goal_acc = hrp::Vector3::Zero())
+      void hoffarbib_interpolation (double& _pos, double& _vel, double& _acc, const double tmp_remain_time, const double tmp_goal, const double tmp_goal_vel = 0, const double tmp_goal_acc = 0)
       {
-        hrp::Vector3 jerk = (-9.0/ tmp_remain_time) * (acc - tmp_goal_acc / 3.0) +
-          (-36.0 / (tmp_remain_time * tmp_remain_time)) * (tmp_goal_vel * 2.0 / 3.0 + vel) +
-          (60.0 / (tmp_remain_time * tmp_remain_time * tmp_remain_time)) * (tmp_goal - pos);
-        acc = acc + dt * jerk;
-        vel = vel + dt * acc;
-        pos = pos + dt * vel;
+        double jerk = (-9.0/ tmp_remain_time) * (_acc - tmp_goal_acc / 3.0) +
+            (-36.0 / (tmp_remain_time * tmp_remain_time)) * (tmp_goal_vel * 2.0 / 3.0 + _vel) +
+            (60.0 / (tmp_remain_time * tmp_remain_time * tmp_remain_time)) * (tmp_goal - _pos);
+        _acc = _acc + dt * jerk;
+        _vel = _vel + dt * _acc;
+        _pos = _pos + dt * _vel;
       };
     protected:
       double time_offset; // [s]
@@ -354,9 +354,10 @@ namespace rats
           size_t swing_remain_count = one_step_count - current_count - double_support_count_after;
           size_t swing_one_step_count = one_step_count - double_support_count_before - double_support_count_after;
           if (swing_remain_count*dt > time_offset) { // antecedent path is still interpolating
-            hoffarbib_interpolation (time_offset, interpolate_antecedent_path(start, goal, height, ((swing_one_step_count - swing_remain_count) / (swing_one_step_count - time_offset/dt))));
+            hrp::Vector3 tmpgoal = interpolate_antecedent_path(start, goal, height, ((swing_one_step_count - swing_remain_count) / (swing_one_step_count - time_offset/dt)));
+            for (size_t i = 0; i < 3; i++) hoffarbib_interpolation (pos(i), vel(i), acc(i), time_offset, tmpgoal(i));
           } else if (swing_remain_count > 0) { // antecedent path already reached to goal
-            hoffarbib_interpolation (swing_remain_count*dt, goal);
+            for (size_t i = 0; i < 3; i++) hoffarbib_interpolation (pos(i), vel(i), acc(i), swing_remain_count*dt, goal(i));
           } else {
             pos = goal;
           }
