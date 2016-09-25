@@ -329,14 +329,16 @@ namespace rats
     protected:
       double time_offset; // [s]
       double final_distance_weight;
+      double time_offset_xy2z; // [s]
       size_t one_step_count, current_count, double_support_count_before, double_support_count_after; // time/dt
       virtual double calc_antecedent_path (const hrp::Vector3& start, const hrp::Vector3& goal, const double height) = 0;
     public:
-      delay_hoffarbib_trajectory_generator () : time_offset(0.35), final_distance_weight(1.0), one_step_count(0), current_count(0), double_support_count_before(0), double_support_count_after(0) {};
+      delay_hoffarbib_trajectory_generator () : time_offset(0.35), final_distance_weight(1.0), time_offset_xy2z(0), one_step_count(0), current_count(0), double_support_count_before(0), double_support_count_after(0) {};
       ~delay_hoffarbib_trajectory_generator() { };
       void set_dt (const double _dt) { dt = _dt; };
       void set_swing_trajectory_delay_time_offset (const double _time_offset) { time_offset = _time_offset; };
       void set_swing_trajectory_final_distance_weight (const double _final_distance_weight) { final_distance_weight = _final_distance_weight; };
+      void set_swing_trajectory_time_offset_xy2z (const double _tmp) { time_offset_xy2z = _tmp; };
       void reset (const size_t _one_step_len, const double default_double_support_ratio_before, const double default_double_support_ratio_after)
       {
         one_step_count = _one_step_len;
@@ -346,12 +348,13 @@ namespace rats
       };
       void reset_all (const double _dt, const size_t _one_step_len,
                       const double default_double_support_ratio_before, const double default_double_support_ratio_after,
-                      const double _time_offset, const double _final_distance_weight)
+                      const double _time_offset, const double _final_distance_weight, const double _time_offset_xy2z)
       {
           set_dt(_dt);
           reset (_one_step_len, default_double_support_ratio_before, default_double_support_ratio_after);
           set_swing_trajectory_delay_time_offset(_time_offset);
           set_swing_trajectory_final_distance_weight(_final_distance_weight);
+          set_swing_trajectory_time_offset_xy2z(_time_offset_xy2z);
       };
       void get_trajectory_point (hrp::Vector3& ret, const hrp::Vector3& start, const hrp::Vector3& goal, const double height)
       {
@@ -362,7 +365,7 @@ namespace rats
           size_t tmp_time_offset_count = time_offset/dt;
           //size_t final_path_count = 0; // Revert to previous version
           size_t final_path_count = final_path_distance_ratio * swing_one_step_count;
-          //if (final_path_count>static_cast<size_t>(0.1/dt)) final_path_count = static_cast<size_t>(0.1/dt);
+          if (final_path_count>static_cast<size_t>(time_offset_xy2z/dt)) final_path_count = static_cast<size_t>(time_offset_xy2z/dt);
           // XY interpolation
           if (swing_remain_count > final_path_count+tmp_time_offset_count) { // antecedent path is still interpolating
             hrp::Vector3 tmpgoal = interpolate_antecedent_path((swing_one_step_count - swing_remain_count) / static_cast<double>(swing_one_step_count - (final_path_count+tmp_time_offset_count)));
@@ -396,6 +399,7 @@ namespace rats
       };
       double get_swing_trajectory_delay_time_offset () const { return time_offset; };
       double get_swing_trajectory_final_distance_weight () const { return final_distance_weight; };
+      double get_swing_trajectory_time_offset_xy2z () const { return time_offset_xy2z; };
       // interpolate path vector
       //   tmp_ratio : ratio value [0, 1]
       //   org_point_vec : vector of via points
@@ -601,7 +605,7 @@ namespace rats
       // Swing leg coordinates is interpolated from swing_leg_src_coords to swing_leg_dst_coords during swing phase.
       std::vector<step_node> swing_leg_steps, swing_leg_src_steps, swing_leg_dst_steps;
       double default_step_height, default_top_ratio, current_step_height, swing_ratio, swing_rot_ratio, foot_midcoords_ratio, dt, current_toe_angle, current_heel_angle;
-      double time_offset, final_distance_weight;
+      double time_offset, final_distance_weight, time_offset_xy2z;
       std::vector<double> current_swing_time;
       // Index for current footstep. footstep_index should be [0,footstep_node_list.size()]. Current footstep is footstep_node_list[footstep_index].
       size_t footstep_index;
@@ -647,7 +651,7 @@ namespace rats
         : support_leg_steps(), swing_leg_steps(), swing_leg_src_steps(), swing_leg_dst_steps(),
           default_step_height(0.05), default_top_ratio(0.5), current_step_height(0.0), swing_ratio(0), swing_rot_ratio(0), foot_midcoords_ratio(0), dt(_dt),
           current_toe_angle(0), current_heel_angle(0),
-          time_offset(0.35), final_distance_weight(1.0),
+          time_offset(0.35), final_distance_weight(1.0), time_offset_xy2z(0),
           footstep_index(0), lcg_count(0), default_orbit_type(CYCLOID),
           rdtg(), cdtg(),
           thp_ptr(_thp_ptr),
@@ -700,6 +704,13 @@ namespace rats
         cdktg.set_swing_trajectory_final_distance_weight(_final_distance_weight);
         crdtg.set_swing_trajectory_final_distance_weight(_final_distance_weight);
         final_distance_weight = _final_distance_weight;
+      };
+      void set_swing_trajectory_time_offset_xy2z (const double _tmp)
+      {
+        sdtg.set_swing_trajectory_time_offset_xy2z(_tmp);
+        cdktg.set_swing_trajectory_time_offset_xy2z(_tmp);
+        crdtg.set_swing_trajectory_time_offset_xy2z(_tmp);
+        time_offset_xy2z = _tmp;
       };
       void set_stair_trajectory_way_point_offset (const hrp::Vector3 _offset) { sdtg.set_stair_trajectory_way_point_offset(_offset); };
       void set_cycloid_delay_kick_point_offset (const hrp::Vector3 _offset) { cdktg.set_cycloid_delay_kick_point_offset(_offset); };
@@ -762,7 +773,7 @@ namespace rats
                 rdtg.push_back(rectangle_delay_hoffarbib_trajectory_generator());
                 rdtg.back().reset_all(dt, one_step_count,
                                       default_double_support_ratio_before, default_double_support_ratio_after,
-                                      time_offset, final_distance_weight);
+                                      time_offset, final_distance_weight, time_offset_xy2z);
             }
             break;
         case STAIR:
@@ -774,7 +785,7 @@ namespace rats
                 cdtg.push_back(cycloid_delay_hoffarbib_trajectory_generator());
                 cdtg.back().reset_all(dt, one_step_count,
                                       default_double_support_ratio_before, default_double_support_ratio_after,
-                                      time_offset, final_distance_weight);
+                                      time_offset, final_distance_weight, time_offset_xy2z);
             }
             break;
         case CYCLOIDDELAYKICK:
@@ -856,6 +867,7 @@ namespace rats
       orbit_type get_default_orbit_type () const { return default_orbit_type; };
       double get_swing_trajectory_delay_time_offset () const { return time_offset; };
       double get_swing_trajectory_final_distance_weight () const { return final_distance_weight; };
+      double get_swing_trajectory_time_offset_xy2z () const { return time_offset_xy2z; };
       hrp::Vector3 get_stair_trajectory_way_point_offset () const { return sdtg.get_stair_trajectory_way_point_offset(); };
       hrp::Vector3 get_cycloid_delay_kick_point_offset () const { return cdktg.get_cycloid_delay_kick_point_offset() ; };
       double get_toe_pos_offset_x () const { return toe_pos_offset_x; };
@@ -1081,6 +1093,7 @@ namespace rats
     void set_default_orbit_type (const orbit_type type) { lcg.set_default_orbit_type(type); };
     void set_swing_trajectory_delay_time_offset (const double _time_offset) { lcg.set_swing_trajectory_delay_time_offset(_time_offset); };
     void set_swing_trajectory_final_distance_weight (const double _final_distance_weight) { lcg.set_swing_trajectory_final_distance_weight(_final_distance_weight); };
+    void set_swing_trajectory_time_offset_xy2z (const double _tmp) { lcg.set_swing_trajectory_time_offset_xy2z(_tmp); };
     void set_stair_trajectory_way_point_offset (const hrp::Vector3 _offset) { lcg.set_stair_trajectory_way_point_offset(_offset); };
     void set_cycloid_delay_kick_point_offset (const hrp::Vector3 _offset) { lcg.set_cycloid_delay_kick_point_offset(_offset); };
     void set_gravitational_acceleration (const double ga) { gravitational_acceleration = ga; };
@@ -1253,6 +1266,7 @@ namespace rats
     orbit_type get_default_orbit_type () const { return lcg.get_default_orbit_type(); };
     double get_swing_trajectory_delay_time_offset () const { return lcg.get_swing_trajectory_delay_time_offset(); };
     double get_swing_trajectory_final_distance_weight () const { return lcg.get_swing_trajectory_final_distance_weight(); };
+    double get_swing_trajectory_time_offset_xy2z () const { return lcg.get_swing_trajectory_time_offset_xy2z(); };
     hrp::Vector3 get_stair_trajectory_way_point_offset () const { return lcg.get_stair_trajectory_way_point_offset(); };
     hrp::Vector3 get_cycloid_delay_kick_point_offset () const { return lcg.get_cycloid_delay_kick_point_offset(); };
     double get_gravitational_acceleration () const { return gravitational_acceleration; } ;
