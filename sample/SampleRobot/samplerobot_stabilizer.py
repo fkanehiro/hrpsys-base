@@ -15,6 +15,7 @@ except:
 
 import math
 from subprocess import check_output
+from distutils.version import StrictVersion
 
 def init ():
     global hcf, initial_pose, hrpsys_version
@@ -27,7 +28,7 @@ def init ():
     hcf.seq_svc.waitInterpolation()
     hrpsys_version = hcf.seq.ref.get_component_profile().version
     print("hrpsys_version = %s"%hrpsys_version)
-    if hrpsys_version >= '315.5.0':
+    if StrictVersion(hrpsys_version) >= StrictVersion('315.5.0'):
         # Start AutoBalancer
         hcf.startAutoBalancer()
         # Remove offset
@@ -212,7 +213,7 @@ def demo():
     OPENHRP3_DIR=check_output(['pkg-config', 'openhrp3.1', '--variable=prefix']).rstrip()
     if os.path.exists(OPENHRP3_DIR+"/share/OpenHRP-3.1/sample/model/sample1_bush.wrl"):
         init()
-        if hrpsys_version >= '315.5.0':
+        if StrictVersion(hrpsys_version) >= StrictVersion('315.5.0'):
             demoGetParameter()
             demoSetParameter()
             demoStartStopTPCCST()

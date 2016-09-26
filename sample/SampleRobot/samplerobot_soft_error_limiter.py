@@ -41,7 +41,8 @@ def init ():
 
 def demo ():
     init()
-    if hrpsys_version >= '315.5.0':
+    from distutils.version import StrictVersion
+    if StrictVersion(hrpsys_version) >= StrictVersion('315.5.0'):
         demoTestAllLimitTables()
         demoPositionLimit()
         demoVelocityLimit()

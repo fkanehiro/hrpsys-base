@@ -80,7 +80,8 @@ def checkDataPortFromLog(port_name, log_fname="/tmp/test-samplerobot-reference-f
 
 def demo():
     init()
-    if hrpsys_version >= '315.9.0':
+    from distutils.version import StrictVersion
+    if StrictVersion(hrpsys_version) >= StrictVersion('315.9.0'):
         demoReferenceForceUpdater()
 
 if __name__ == '__main__':
