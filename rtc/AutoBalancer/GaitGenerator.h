@@ -1318,7 +1318,8 @@ namespace rats
         } else if (get_default_orbit_type() == CROSS) {
             std::cerr << "CROSS" << std::endl;
         }
-        std::cerr << "[" << print_str << "]   swing_trajectory_delay_time_offset = " << get_swing_trajectory_delay_time_offset() << "[s], swing_trajectory_final_distance_weight = " << get_swing_trajectory_final_distance_weight() << std::endl;
+        std::cerr << "[" << print_str << "]   swing_trajectory_delay_time_offset = " << get_swing_trajectory_delay_time_offset() << "[s], swing_trajectory_final_distance_weight = " << get_swing_trajectory_final_distance_weight()
+                  << ", swing_trajectory_time_offset_xy2z = " << get_swing_trajectory_time_offset_xy2z() << std::endl;
         hrp::Vector3 tmpv;
         tmpv = get_stair_trajectory_way_point_offset();
         std::cerr << "[" << print_str << "]   stair_trajectory_way_point_offset = " << tmpv.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[m]" << std::endl;
