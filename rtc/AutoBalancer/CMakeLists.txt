@@ -31,6 +31,9 @@ add_test(testGaitGeneratorTest9 testGaitGenerator --test9 --use-gnuplot false)
 add_test(testGaitGeneratorTest10 testGaitGenerator --test10 --use-gnuplot false)
 add_test(testGaitGeneratorTest11 testGaitGenerator --test11 --use-gnuplot false)
 add_test(testGaitGeneratorTest12 testGaitGenerator --test12 --use-gnuplot false)
+add_test(testGaitGeneratorTest13 testGaitGenerator --test13 --use-gnuplot false)
+add_test(testGaitGeneratorTest14 testGaitGenerator --test14 --use-gnuplot false)
+add_test(testGaitGeneratorTest15 testGaitGenerator --test15 --use-gnuplot false)
 
 install(TARGETS ${target}
   RUNTIME DESTINATION bin
