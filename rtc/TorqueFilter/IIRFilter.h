@@ -29,7 +29,7 @@ public:
     */
     IIRFilter(const std::string& error_prefix = "");
     /**
-       \brief Constructor, this is obsolated method
+       \brief Constructor, this constructure will be obsolated
        \param dim dimension of the filter
        \param fb_coeffs coeeficients of feedback
        \param ff_coeffs coefficients of feedforward
@@ -52,10 +52,10 @@ public:
     bool setParameter(int dim, std::vector<double>& A, std::vector<double> B);
 
     /**
-       \brief Execute filtering, this is obsolated method
+       \brief Execute filtering, this method will be obsolated
     */
     double executeFilter(double input) {
-        std::cerr << "executeFilter is obsolated method." << std::endl;
+        // std::cerr << "executeFilter will be obsolated." << std::endl;
         return passFilter(input);
     };
     /**
