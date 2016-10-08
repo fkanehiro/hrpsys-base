@@ -2,6 +2,53 @@
 Changelog for package hrpsys
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
+Stable RTCs
+=============
+
+* [python/hrpsys_config.py, sample/SampleRobot/*.py] Fix bug of hrpsys version checking. Use StrictVersion for version checking. (`#1044 <https://github.com/fkanehiro/hrpsys-base/issues/1044>`_)
+
+  * Closes https://github.com/tork-a/rtmros_nextage/issues/260
+
+Unstable RTCs
+=============
+
+* IIRFilter
+
+  * Add setParameter, passFilter methods (`#1046 <https://github.com/fkanehiro/hrpsys-base/issues/1046>`_)
+   * [IIRFilter] remove warning message
+   * [IIRFilter] add test code for IIRFilter to testIIRFilter
+   * [IIRFilter] fix indent on IIRFilter.h IIRFilter.cpp
+   * [IIRFilter] add new method for using IIRFilter
+
+* AutoBalancer
+
+  * [rtc/AutoBalancer/GaitGenerator.cpp] fix bug of emergency stop (`#1045 <https://github.com/fkanehiro/hrpsys-base/issues/1045>`_)
+
+  * Add GaitGenerator Sample codes (`#1043 <https://github.com/fkanehiro/hrpsys-base/issues/1043>`_)
+
+    * [rtc/AutoBalancer/testGaitGenerator.cpp] Add test for stairdown
+    * [rtc/AutoBalancer/GaitGenerator.h] Add print message for swing_trajectory_time_offset_xy2z
+
+  * Update swing trajectory xy and z convergence (`#1042 <https://github.com/fkanehiro/hrpsys-base/issues/1042>`_)
+
+    * [rtc/AutoBalancer/testGaitGenerator.cpp] Add --swing-trajectory-time-offset-xy2z option for testGaitGenerator
+    * [idl/AutoBalancerService.idl, rtc/AutoBalancer/AutoBalancer.cpp,GaitGenerator.h] Add swing_trajectory_time_offset_xy2z for time between Z convergence time and XY convergence time. 0 by default, which does not change default behavior.
+    * [rtc/AutoBalancer/GaitGenerator.h] Separate xy interpolation and z interpolation
+    * [rtc/AutoBalancer/GaitGenerator.h] Use int for if check
+    * [rtc/AutoBalancer/GaitGenerator.h] Return final distance antecedent path ratio
+    * [rtc/AutoBalancer/GaitGenerator.h] Separate calc function and interpolate function for antecedent path
+    * [rtc/AutoBalancer/GaitGenerator.h] Define foot hoffarbib_interpolation as double type interpolation
+   * [rtc/AutoBalancer/GaitGenerator.h] Define interpolate_antecedent_path functions as const member functions.
+
+* OpenNIGrabber
+
+  * Changes point type for depth_and_color (`#1041 <https://github.com/fkanehiro/hrpsys-base/issues/1041>`_)
+
+* Contributors: Fumio Kanehiro, Shunichi Nozawa, Tatsuya Ishikawa, Yohei Kakiuchi
+
 315.10.0 (2016-09-13)
 ---------------------
 
