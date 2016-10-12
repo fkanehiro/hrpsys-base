@@ -13,6 +13,8 @@ except:
     import socket
     import time
 
+from distutils.version import StrictVersion
+
 def init ():
     global hcf, hrpsys_version
     hcf = HrpsysConfigurator()
@@ -120,7 +122,7 @@ def checkRobotState (var_doc):
     checkZmp(var_doc)
     checkWaist(var_doc)
     checkTorque(var_doc, save_log=False)
-    if hrpsys_version >= '315.2.0':
+    if StrictVersion(hrpsys_version) >= StrictVersion('315.2.0'):
         checkWrenches(var_doc, save_log=False)
         checkOptionalData(var_doc, save_log=False)
 
@@ -141,7 +143,7 @@ def demoSetJointAngles():
     hcf.seq_svc.waitInterpolation();
     checkJointAngles(reset_pose_doc)
     # check clear
-    if hrpsys_version < '315.5.0':
+    if StrictVersion(hrpsys_version) < StrictVersion('315.5.0'):
         return
     print >> sys.stderr, "   check clear"
     hcf.seq_svc.setJointAngles(move_base_pose_doc['pos'], 5.0);
@@ -268,7 +270,7 @@ def demoSetJointAnglesOfGroup():
     hcf.seq_svc.waitInterpolationOfGroup('larm');
     checkJointAngles(p1)
     # check clear
-    if hrpsys_version < '315.5.0':
+    if StrictVersion(hrpsys_version) < StrictVersion('315.5.0'):
         return
     print >> sys.stderr, "   check clear"
     hcf.seq_svc.setJointAnglesOfGroup('larm', larm_pos0, 5.0);
@@ -381,16 +383,16 @@ def demoSetJointAnglesSequenceFull():
 def demo():
     init()
     demoSetJointAngles()
-    if hrpsys_version >= '315.5.0':
+    if StrictVersion(hrpsys_version) >= StrictVersion('315.5.0'):
         demoSetJointAnglesSequence()
     demoSetJointAngle()
     demoLoadPattern()
     demoSetZmp()
     demoSetBasePosRpy()
-    if hrpsys_version >= '315.2.0':
+    if StrictVersion(hrpsys_version) >= StrictVersion('315.2.0'):
         demoSetWrenches()
     demoSetJointAnglesOfGroup()
-    if hrpsys_version >= '315.5.0':
+    if StrictVersion(hrpsys_version) >= StrictVersion('315.5.0'):
         demoSetJointAnglesSequenceOfGroup()
         demoSetJointAnglesSequenceFull()
 

@@ -40,9 +40,9 @@ PDcontroller::PDcontroller(RTC::Manager* manager)
     m_torqueOut("torque", m_torque),
     dt(0.005),
     // </rtc-template>
-    dummy(0),
     gain_fname(""),
-    dof(0), loop(0)
+    dof(0), loop(0),
+    dummy(0)
 {
 }
 
@@ -154,7 +154,7 @@ RTC::ReturnCode_t PDcontroller::onExecute(RTC::UniqueId ec_id)
     step = nstep;
   }
 
-  for(int i=0; i<dof; i++){
+  for(size_t i=0; i<dof; i++){
     double q = m_angle.data[i];
     double q_ref = step > 0 ? qold_ref[i] + (m_angleRef.data[i] - qold_ref[i])/step : qold_ref[i];
     double dq = (q - qold[i]) / dt;
@@ -201,7 +201,7 @@ void PDcontroller::readGainFile()
     tlimit_ratio.resize(dof);
     if (gain.is_open()){
       double tmp;
-      for (int i=0; i<dof; i++){
+      for (unsigned int i=0; i<dof; i++){
           if (gain >> tmp) {
               Pgain[i] = tmp;
           } else {
@@ -244,7 +244,7 @@ void PDcontroller::readGainFile()
         }
     }
     // initialize angleRef, old_ref and old with angle
-    for(int i=0; i < dof; ++i){
+    for(unsigned int i=0; i < dof; ++i){
       m_angleRef.data[i] = qold_ref[i] = qold[i] = m_angle.data[i];
     }
 }

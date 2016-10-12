@@ -34,7 +34,8 @@ def demo():
     hcf.startImpedance("larm")
     hcf.stopImpedance("larm")
     hcf.stopImpedance("rarm")
-    if hrpsys_version < '315.5.0':
+    from distutils.version import StrictVersion
+    if StrictVersion(hrpsys_version) < StrictVersion('315.5.0'):
         return
 
     # 1. Getter check

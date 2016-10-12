@@ -10,6 +10,8 @@
 #ifndef REFERENCEFORCEUPDATOR_COMPONENT_H
 #define REFERENCEFORCEUPDATOR_COMPONENT_H
 
+#include <rtm/idl/BasicDataType.hh>
+#include <rtm/idl/ExtendedDataTypes.hh>
 #include <rtm/Manager.h>
 #include <rtm/DataFlowComponentBase.h>
 #include <rtm/CorbaPort.h>
@@ -172,11 +174,13 @@ class ReferenceForceUpdater
     double i_gain;
     // Motion direction to update reference force
     hrp::Vector3 motion_dir;
+    std::string frame;
     int update_count;
     bool is_active, is_stopping;
     ReferenceForceUpdaterParam () {
       //params defined in idl
       motion_dir = hrp::Vector3::UnitZ();
+      frame="local";
       update_freq = 50; // Hz
       update_time_ratio = 0.5;
       p_gain = 0.02;

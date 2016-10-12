@@ -37,7 +37,7 @@ void GLscene::updateScene()
     GLbody *glbody = dynamic_cast<GLbody *>(body(0).get());
     OpenHRP::CollisionDetectorService::CollisionState &co = lm->state();
     if (co.angle.length() == glbody->numJoints()){
-        for (int i=0; i<glbody->numJoints(); i++){
+        for (unsigned int i=0; i<glbody->numJoints(); i++){
             GLlink *j = (GLlink *)glbody->joint(i);
             if (j){
                 j->setQ(co.angle[i]);
@@ -50,7 +50,7 @@ void GLscene::updateScene()
     GLbody *glbody = dynamic_cast<GLbody *>(body(0).get());
     TimedPosture &ts = lm->state();
     if (ts.posture.size() == glbody->numJoints()){
-        for (int i=0; i<glbody->numJoints(); i++){
+        for (unsigned int i=0; i<glbody->numJoints(); i++){
             GLlink *j = (GLlink *)glbody->joint(i);
             if (j){
                 j->setQ(ts.posture[i]);
@@ -135,7 +135,7 @@ void GLscene::showStatus()
     int height = m_height-HEIGHT_STEP;
     int x = width;
 
-    for (int i=0; i<glbody->numLinks(); i++){
+    for (unsigned int i=0; i<glbody->numLinks(); i++){
         hrp::Link *l = glbody->link(i);
         if (l){
             sprintf(buf, "%13s %4d tris",

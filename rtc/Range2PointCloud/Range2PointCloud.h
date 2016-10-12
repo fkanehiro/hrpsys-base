@@ -10,6 +10,9 @@
 #ifndef RANGE2POINTCLOUD_H
 #define RANGE2POINTCLOUD_H
 
+#include <rtm/idl/BasicDataType.hh>
+#include <rtm/idl/InterfaceDataTypes.hh>
+#include "hrpsys/idl/pointcloud.hh"
 #include <rtm/Manager.h>
 #include <rtm/DataFlowComponentBase.h>
 #include <rtm/CorbaPort.h>
@@ -17,7 +20,6 @@
 #include <rtm/DataOutPort.h>
 #include <rtm/idl/BasicDataTypeSkel.h>
 #include <rtm/idl/InterfaceDataTypes.hh>
-#include "hrpsys/idl/pointcloud.hh"
 
 // Service implementation headers
 // <rtc-template block="service_impl_h">

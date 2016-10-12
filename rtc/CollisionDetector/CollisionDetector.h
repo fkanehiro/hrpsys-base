@@ -10,6 +10,8 @@
 #ifndef COLLISION_DETECTOR_H
 #define COLLISION_DETECTOR_H
 
+#include <rtm/idl/BasicDataType.hh>
+#include "hrpsys/idl/HRPDataTypes.hh"
 #include <rtm/Manager.h>
 #include <rtm/DataFlowComponentBase.h>
 #include <rtm/CorbaPort.h>
@@ -26,7 +28,6 @@
 #endif // USE_HRPSYSUTIL
 #include "TimedPosture.h"
 #include "interpolator.h"
-#include "hrpsys/idl/HRPDataTypes.hh"
 
 #include "VclipLinkPair.h"
 #include "CollisionDetectorService_impl.h"
@@ -188,7 +189,6 @@ class CollisionDetector
   bool m_safe_posture;
   int m_recover_time;
   double m_dt;
-  int dummy;
   //
   double *m_recover_jointdata, *m_lastsafe_jointdata;
   bool *m_link_collision;
@@ -204,6 +204,7 @@ class CollisionDetector
   // Since this RTC is stable RTC, we support both direct beeping from this RTC and beepring through BeeperRTC.
   // If m_beepCommand is connected to BeeperRTC, is_beep_port_connected is true.
   bool is_beep_port_connected;
+  int dummy;
 };
 
 #ifndef USE_HRPSYSUTIL

@@ -121,7 +121,8 @@ def demoDumpLoadForceMomentOffsetParams():
 def demo():
     import numpy
     init()
-    if hrpsys_version >= '315.5.0':
+    from distutils.version import StrictVersion
+    if StrictVersion(hrpsys_version) >= StrictVersion('315.5.0'):
         demoGetForceMomentOffsetParam()
         demoSetForceMomentOffsetParam()
         demoDumpLoadForceMomentOffsetParams()

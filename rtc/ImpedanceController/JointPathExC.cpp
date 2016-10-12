@@ -65,7 +65,7 @@ extern "C" {
 
     int _setJointAngles (double* ja)
     {
-        for ( int i = 0; i < m_robot->numJoints(); i++ ) {
+        for ( unsigned int i = 0; i < m_robot->numJoints(); i++ ) {
             m_robot->joint(i)->q = ja[i];
         }
         m_robot->calcForwardKinematics();
@@ -74,7 +74,7 @@ extern "C" {
 
     int _getJointAngles (double* ja)
     {
-        for ( int i = 0; i < m_robot->numJoints(); i++ ) {
+        for ( unsigned int i = 0; i < m_robot->numJoints(); i++ ) {
             ja[i] = m_robot->joint(i)->q;
         }
     }

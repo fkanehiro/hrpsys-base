@@ -120,20 +120,20 @@ RTC::ReturnCode_t ImpedanceController::onInitialize()
     // Setting for wrench data ports (real + virtual)
     std::vector<std::string> fsensor_names;
     //   find names for real force sensors
-    int npforce = m_robot->numSensors(hrp::Sensor::FORCE);
+    unsigned int npforce = m_robot->numSensors(hrp::Sensor::FORCE);
     for (unsigned int i=0; i<npforce; i++){
         fsensor_names.push_back(m_robot->sensor(hrp::Sensor::FORCE, i)->name);
     }
     // load virtual force sensors
     readVirtualForceSensorParamFromProperties(m_vfs, m_robot, prop["virtual_force_sensor"], std::string(m_profile.instance_name));
-    int nvforce = m_vfs.size();
+    unsigned int nvforce = m_vfs.size();
     for (unsigned int i=0; i<nvforce; i++){
         for ( std::map<std::string, hrp::VirtualForceSensorParam>::iterator it = m_vfs.begin(); it != m_vfs.end(); it++ ) {
-            if (it->second.id == i) fsensor_names.push_back(it->first);
+            if (it->second.id == (int)i) fsensor_names.push_back(it->first);
         }
     }
     //   add ports for all force sensors
-    int nforce  = npforce + nvforce;
+    unsigned int nforce  = npforce + nvforce;
     m_force.resize(nforce);
     m_forceIn.resize(nforce);
     m_ref_force.resize(nforce);
@@ -158,8 +158,8 @@ RTC::ReturnCode_t ImpedanceController::onInitialize()
     }
 
     unsigned int dof = m_robot->numJoints();
-    for ( int i = 0 ; i < dof; i++ ){
-      if ( i != m_robot->joint(i)->jointId ) {
+    for ( unsigned int i = 0 ; i < dof; i++ ){
+      if ( (int)i != m_robot->joint(i)->jointId ) {
         std::cerr << "[" << m_profile.instance_name << "] jointId is not equal to the index number" << std::endl;
         return RTC::RTC_ERROR;
       }
@@ -346,7 +346,7 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
 
         if ( DEBUGP ) {
           std::cerr << "[" << m_profile.instance_name << "] qRef = ";
-            for ( int i = 0; i <  m_qRef.data.length(); i++ ){
+            for ( unsigned int i = 0; i <  m_qRef.data.length(); i++ ){
                 std::cerr << " " << m_qRef.data[i];
             }
             std::cerr << std::endl;
@@ -359,7 +359,7 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
             is_active = is_active || it->second.is_active;
         }
         if ( !is_active ) {
-          for ( int i = 0; i < m_qRef.data.length(); i++ ){
+          for ( unsigned int i = 0; i < m_qRef.data.length(); i++ ){
             m_q.data[i] = m_qRef.data[i];
             m_robot->joint(i)->q = m_qRef.data[i];
           }
@@ -371,7 +371,7 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
 	  hrp::dvector qorg(m_robot->numJoints());
 	  
 	  // reference model
-	  for ( int i = 0; i < m_robot->numJoints(); i++ ){
+	  for ( unsigned int i = 0; i < m_robot->numJoints(); i++ ){
 	    qorg[i] = m_robot->joint(i)->q;
             m_robot->joint(i)->q = m_qRef.data[i];
             qrefv[i] = m_qRef.data[i];
@@ -433,7 +433,7 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
 	  for ( std::map<std::string, ImpedanceParam>::iterator it = m_impedance_param.begin(); it != m_impedance_param.end(); it++ ) {
             ImpedanceParam& param = it->second;
             if (param.is_active) {
-                for ( int j = 0; j < param.manip->numJoints(); j++ ){
+                for ( unsigned int j = 0; j < param.manip->numJoints(); j++ ){
                     int i = param.manip->joint(j)->jointId;
                     m_robot->joint(i)->q = qorg[i];
                 }
@@ -457,7 +457,7 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
                 }
                 if ( param.transition_count > 0 ) {
                     hrp::JointPathExPtr manip = param.manip;
-                    for ( int j = 0; j < manip->numJoints(); j++ ) {
+                    for ( unsigned int j = 0; j < manip->numJoints(); j++ ) {
                         int i = manip->joint(j)->jointId; // index in robot model
                         hrp::Link* joint =  m_robot->joint(i);
                         // transition_smooth_gain moves from 0 to 1
@@ -508,13 +508,13 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
         } // while
 
         if ( m_q.data.length() != 0 ) { // initialized
-            for ( int i = 0; i < m_robot->numJoints(); i++ ){
+            for ( unsigned int i = 0; i < m_robot->numJoints(); i++ ){
                 m_q.data[i] = m_robot->joint(i)->q;
             }
             m_qOut.write();
             if ( DEBUGP ) {
                 std::cerr << "[" << m_profile.instance_name << "] q = ";
-                for ( int i = 0; i < m_q.data.length(); i++ ){
+                for ( unsigned int i = 0; i < m_q.data.length(); i++ ){
                     std::cerr << " " << m_q.data[i];
                 }
                 std::cerr << std::endl;
@@ -647,12 +647,12 @@ void ImpedanceController::calcObjectTurnaroundDetectorState()
     // Currently only for legged robots
     // Store org state
     hrp::dvector org_q(m_robot->numJoints());
-    for ( int i = 0; i < m_robot->numJoints(); i++ ) {
+    for ( unsigned int i = 0; i < m_robot->numJoints(); i++ ) {
         org_q[i] = m_robot->joint(i)->q;
     }
     hrp::Matrix33 orgR = m_robot->rootLink()->R;
     // Set actual state
-    for ( int i = 0; i < m_robot->numJoints(); i++ ) {
+    for ( unsigned int i = 0; i < m_robot->numJoints(); i++ ) {
         m_robot->joint(i)->q = m_qCurrent.data[i];
     }
     updateRootLinkPosRot(m_rpy);
@@ -683,7 +683,7 @@ void ImpedanceController::calcObjectTurnaroundDetectorState()
     }
     otd->checkDetection(otd_fmv, otd_hposv);
     // Revert to org state
-    for ( int i = 0; i < m_robot->numJoints(); i++ ) {
+    for ( unsigned int i = 0; i < m_robot->numJoints(); i++ ) {
         m_robot->joint(i)->q = org_q[i];
     }
     m_robot->rootLink()->R = orgR;
@@ -731,7 +731,7 @@ bool ImpedanceController::stopImpedanceControllerNoWait(const std::string& i_nam
             return false;
         }
         std::cerr << "[" << m_profile.instance_name << "] Stop impedance control [" << i_name_ << "]" << std::endl;
-        for (int i = 0; i < m_robot->numJoints(); i++ ) {
+        for (unsigned int i = 0; i < m_robot->numJoints(); i++ ) {
             m_impedance_param[i_name_].transition_joint_q[i] = m_robot->joint(i)->q;
         }
         m_impedance_param[i_name_].transition_count = MAX_TRANSITION_COUNT; // when stop impedance, count down to 0

@@ -1,6 +1,6 @@
 <package>
   <name>hrpsys</name>
-  <version>315.9.0</version>
+  <version>315.10.1</version>
   <description>
    <p>An <a href = "http://www.openrtm.org/pub/OpenRTM-aist/">OpenRTM-aist</a>-based robot controller. This package is the most tailored for humanoid (dual-arm and/or biped) robots for historical reason.</p>
    <p>hrpsys package does not only wraps but build and installs the code from its mainstream repository (<a href = "https://github.com/fkanehiro/hrpsys-base/">github.com/fkanehiro/hrpsys-base</a>).</p>

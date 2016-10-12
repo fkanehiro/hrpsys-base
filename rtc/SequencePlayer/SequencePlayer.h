@@ -10,6 +10,8 @@
 #ifndef SEQUENCEPLAYER_H
 #define SEQUENCEPLAYER_H
 
+#include <rtm/idl/BasicDataType.hh>
+#include <rtm/idl/ExtendedDataTypes.hh>
 #include <semaphore.h>
 #include <rtm/Manager.h>
 #include <rtm/DataFlowComponentBase.h>
@@ -185,11 +187,11 @@ class SequencePlayer
   hrp::BodyPtr m_robot;
   std::string m_gname;
   unsigned int m_debugLevel;
-  int dummy;
   size_t optional_data_dim;
   coil::Mutex m_mutex;
   double m_error_pos, m_error_rot;
   short m_iteration;
+  int dummy;
 };
 
 

@@ -10,6 +10,8 @@
 #ifndef NULL_COMPONENT_H
 #define NULL_COMPONENT_H
 
+#include <rtm/idl/BasicDataType.hh>
+#include "hrpsys/idl/Img.hh"
 #include <rtm/Manager.h>
 #include <rtm/DataFlowComponentBase.h>
 #include <rtm/CorbaPort.h>
@@ -18,7 +20,6 @@
 #include <rtm/idl/BasicDataTypeSkel.h>
 #include <cv.h>
 #include <highgui.h>
-#include "hrpsys/idl/Img.hh"
 
 // Service implementation headers
 // <rtc-template block="service_impl_h">

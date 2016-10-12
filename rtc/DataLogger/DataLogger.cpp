@@ -7,9 +7,9 @@
  * $Id$
  */
 
-#include "DataLogger.h"
 #include "hrpsys/util/Hrpsys.h"
 #include "hrpsys/idl/pointcloud.hh"
+#include "DataLogger.h"
 
 
 typedef coil::Guard<coil::Mutex> Guard;

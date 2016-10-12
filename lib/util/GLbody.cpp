@@ -93,7 +93,7 @@ boost::function2<void, hrp::Body *, hrp::Sensor *> GLbody::getSensorDrawCallback
 
 void GLbody::divideLargeTriangles(double maxEdgeLen)
 {
-    for (int i=0; i<numLinks(); i++){
+    for (unsigned int i=0; i<numLinks(); i++){
         GLlink *l = (GLlink *)link(i);
         l->divideLargeTriangles(maxEdgeLen);
     }

@@ -21,9 +21,9 @@ using namespace hrp;
 GLcamera::GLcamera(int i_width, int i_height, 
                    double i_near, double i_far, double i_fovy,
                    GLlink *i_link, int i_id) : 
+    m_link(i_link),
     m_near(i_near), m_far(i_far), 
     m_fovy(i_fovy), m_width(i_width), m_height(i_height), 
-    m_link(i_link), 
     m_frameBuffer(0), m_renderBuffer(0), m_texture(0),
     m_sensor(NULL), m_colorBuffer(NULL)
 {
@@ -160,7 +160,7 @@ void GLcamera::render(GLsceneBase *i_scene)
             }else{
                 unsigned char *src=m_colorBuffer;
                 unsigned char *dst=&m_sensor->image[m_width*(m_height-1)*3];
-                for (int i=0; i<m_height; i++){
+                for (unsigned int i=0; i<m_height; i++){
                     memcpy(dst, src, m_width*3);
                     src += m_width*3;
                     dst -= m_width*3;
@@ -174,8 +174,8 @@ void GLcamera::render(GLsceneBase *i_scene)
             }else{
                 unsigned char *src=m_colorBuffer;
                 unsigned char *dst=&m_sensor->image[m_width*(m_height-1)];
-                for (int i=0; i<m_height; i++){
-                    for (int j=0; j<m_width; j++){
+                for (unsigned int i=0; i<m_height; i++){
+                    for (unsigned int j=0; j<m_width; j++){
                         *dst = 0.299*src[0] + 0.587*src[1] + 0.114*src[2];
                         dst++;
                         src+=3;

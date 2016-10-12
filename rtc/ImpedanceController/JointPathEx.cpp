@@ -87,16 +87,16 @@ Vector3 omegaFromRotEx(const Matrix33& r)
 }
 
 JointPathEx::JointPathEx(BodyPtr& robot, Link* base, Link* end, double control_cycle, bool _use_inside_joint_weight_retrieval, const std::string& _debug_print_prefix)
-    : JointPath(base, end), sr_gain(1.0), manipulability_limit(0.1), manipulability_gain(0.001), maxIKPosErrorSqr(1.0e-8), maxIKRotErrorSqr(1.0e-6), maxIKIteration(50), interlocking_joint_pair_indices(), dt(control_cycle),
+    : JointPath(base, end), maxIKPosErrorSqr(1.0e-8), maxIKRotErrorSqr(1.0e-6), maxIKIteration(50), interlocking_joint_pair_indices(), sr_gain(1.0), manipulability_limit(0.1), manipulability_gain(0.001), dt(control_cycle),
       debug_print_prefix(_debug_print_prefix+",JointPathEx"), joint_limit_debug_print_counts(numJoints(), 0),
       debug_print_freq_count(static_cast<size_t>(0.25/dt)), // once per 0.25[s]
       use_inside_joint_weight_retrieval(_use_inside_joint_weight_retrieval) {
-  for (int i = 0 ; i < numJoints(); i++ ) {
+  for (unsigned int i = 0 ; i < numJoints(); i++ ) {
     joints.push_back(joint(i));
   }
   avoid_weight_gain.resize(numJoints());
   optional_weight_vector.resize(numJoints());
-  for (int i = 0 ; i < numJoints(); i++ ) {
+  for (unsigned int i = 0 ; i < numJoints(); i++ ) {
       optional_weight_vector[i] = 1.0;
   }
 }
@@ -316,7 +316,7 @@ bool JointPathEx::calcInverseKinematics2Loop(const Vector3& dp, const Vector3& o
       //
       // qref - qcurr
       hrp::dvector u(n);
-      for ( int j = 0; j < numJoints(); j++ ) {
+      for ( unsigned int j = 0; j < numJoints(); j++ ) {
         u[j] = optional_weight_vector[j] * reference_gain * ( (*reference_q)[joint(j)->jointId] - joint(j)->q );
       }
       if ( DEBUG ) {
@@ -571,7 +571,7 @@ void hrp::readVirtualForceSensorParamFromProperties (std::map<std::string, hrp::
                                                      const std::string& instance_name)
 {
     coil::vstring virtual_force_sensor = coil::split(prop_string, ",");
-    int nvforce = virtual_force_sensor.size()/10;
+    unsigned int nvforce = virtual_force_sensor.size()/10;
     for (unsigned int i=0; i<nvforce; i++){
         std::string name = virtual_force_sensor[i*10+0];
         hrp::dvector tr(7);

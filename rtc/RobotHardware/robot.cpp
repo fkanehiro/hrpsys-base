@@ -19,7 +19,7 @@
 using namespace hrp;
 
 
-robot::robot(double dt) : m_fzLimitRatio(0), m_maxZmpError(DEFAULT_MAX_ZMP_ERROR), m_calibRequested(false), m_pdgainsFilename("PDgains.sav"), m_reportedEmergency(true), m_dt(dt), m_accLimit(0)
+robot::robot(double dt) : m_fzLimitRatio(0), m_maxZmpError(DEFAULT_MAX_ZMP_ERROR), m_accLimit(0), m_calibRequested(false), m_pdgainsFilename("PDgains.sav"), m_reportedEmergency(true), m_dt(dt), m_enable_poweroff_check(false)
 {
     sem_init(&wait_sem, 0, 0);
     m_rLegForceSensorId = m_lLegForceSensorId = -1;
@@ -34,7 +34,7 @@ bool robot::init()
 {
     int i;
     gain_counter.resize(numJoints());
-    for (i=0; i<numJoints(); i++){
+    for (unsigned i=0; i<numJoints(); i++){
 	gain_counter[i] = GAIN_COUNT;
     }
 
@@ -46,19 +46,19 @@ bool robot::init()
     old_dgain.resize(numJoints());
     default_pgain.resize(numJoints());
     default_dgain.resize(numJoints());
-    for (int i=0; i<numJoints(); i++){
+    for (unsigned int i=0; i<numJoints(); i++){
         pgain[i] = dgain[i] = 0.0;
         old_pgain[i] = old_dgain[i] = 0.0;
         default_pgain[i] = default_dgain[i] = 0.0;
     } 
     loadGain();
-    for (int i=0; i<numJoints(); i++){
+    for (unsigned int i=0; i<numJoints(); i++){
         pgain[i] = default_pgain[i];
         dgain[i] = default_dgain[i];
     }
 
     m_servoErrorLimit.resize(numJoints());
-    for (int i=0; i<numJoints(); i++){
+    for (unsigned int i=0; i<numJoints(); i++){
         m_servoErrorLimit[i] = DEFAULT_ANGLE_ERROR_LIMIT;
     }
 
@@ -73,10 +73,10 @@ bool robot::init()
     accel_sum.resize(numSensors(Sensor::ACCELERATION));
     force_sum.resize(numSensors(Sensor::FORCE));
 
-    if ((number_of_joints() != numJoints())
-	|| (number_of_force_sensors() != numSensors(Sensor::FORCE))
-	|| (number_of_gyro_sensors() != numSensors(Sensor::RATE_GYRO))
-	|| (number_of_accelerometers() != numSensors(Sensor::ACCELERATION))){
+    if ((number_of_joints() != (int)numJoints())
+	|| (number_of_force_sensors() != (int)numSensors(Sensor::FORCE))
+	|| (number_of_gyro_sensors() != (int)numSensors(Sensor::RATE_GYRO))
+	|| (number_of_accelerometers() != (int)numSensors(Sensor::ACCELERATION))){
       std::cerr << "VRML and IOB are inconsistent" << std::endl;
       std::cerr << "  joints:" << numJoints() << "(VRML), " << number_of_joints() << "(IOB)"  << std::endl;
       std::cerr << "  force sensor:" << numSensors(Sensor::FORCE) << "(VRML), " << number_of_force_sensors() << "(IOB)"  << std::endl;
@@ -107,7 +107,7 @@ bool robot::loadGain()
     }
 
     double dummy;
-    for (int i=0; i<numJoints(); i++){
+    for (unsigned int i=0; i<numJoints(); i++){
         strm >> default_pgain[i];
         strm >> dummy;
         strm >> default_dgain[i];
@@ -124,14 +124,14 @@ void robot::startInertiaSensorCalibration()
 
     if (isBusy()) return;
 
-    for (int j=0; j<numSensors(Sensor::RATE_GYRO); j++) {
+    for (unsigned int j=0; j<numSensors(Sensor::RATE_GYRO); j++) {
         for (int i=0; i<3; i++) {
             gyro_sum[j][i] = 0;
         }
         write_gyro_sensor_offset(j, gyro_sum[j].data());
     }
 
-    for(int j=0; j<numSensors(Sensor::ACCELERATION); j++) {
+    for(unsigned int j=0; j<numSensors(Sensor::ACCELERATION); j++) {
         for (int i=0; i<3; i++) {
             accel_sum[j][i] = 0;
         }
@@ -159,7 +159,7 @@ void robot::startForceSensorCalibration()
 
     if (isBusy()) return;
 
-    for (int j=0; j<numSensors(Sensor::FORCE); j++) {
+    for (unsigned int j=0; j<numSensors(Sensor::FORCE); j++) {
         for (int i=0; i<6; i++) {
             force_sum[j][i] = 0;
         }
@@ -181,14 +181,14 @@ void robot::initializeJointAngle(const char *name, const char *option)
 void robot::calibrateInertiaSensorOneStep()
 {
     if (inertia_calib_counter>0) {
-        for (int j=0; j<numSensors(Sensor::RATE_GYRO); j++){
+        for (unsigned int j=0; j<numSensors(Sensor::RATE_GYRO); j++){
             double rate[3];
             read_gyro_sensor(j, rate);
             for (int i=0; i<3; i++)
                 gyro_sum[j][i] += rate[i];
         }
         
-        for (int j=0; j<numSensors(Sensor::ACCELERATION); j++){
+        for (unsigned int j=0; j<numSensors(Sensor::ACCELERATION); j++){
             double acc[3];
             read_accelerometer(j, acc);
             for (int i=0; i<3; i++)
@@ -207,14 +207,14 @@ void robot::calibrateInertiaSensorOneStep()
         inertia_calib_counter--;
         if (inertia_calib_counter==0) {
 
-            for (int j=0; j<numSensors(Sensor::RATE_GYRO); j++) {
+            for (unsigned int j=0; j<numSensors(Sensor::RATE_GYRO); j++) {
                 for (int i=0; i<3; i++) {
                     gyro_sum[j][i] = -gyro_sum[j][i]/CALIB_COUNT;
                 }
                 write_gyro_sensor_offset(j,  gyro_sum[j].data());
             }
 
-            for (int j=0; j<numSensors(Sensor::ACCELERATION); j++) {
+            for (unsigned int j=0; j<numSensors(Sensor::ACCELERATION); j++) {
                 hrp::Sensor* m_sensor = sensor(hrp::Sensor::ACCELERATION, j);
                 hrp::Matrix33 m_sensorR = m_sensor->link->R * m_sensor->localR;
                 hrp::Vector3 G_rotated = m_sensorR.transpose() * G;
@@ -241,7 +241,7 @@ void robot::calibrateInertiaSensorOneStep()
 void robot::calibrateForceSensorOneStep()
 {
     if (force_calib_counter>0) {
-        for (int j=0; j<numSensors(Sensor::FORCE); j++){
+        for (unsigned int j=0; j<numSensors(Sensor::FORCE); j++){
             double force[6];
             read_force_sensor(j, force);
             for (int i=0; i<6; i++)
@@ -250,7 +250,7 @@ void robot::calibrateForceSensorOneStep()
         force_calib_counter--;
         if (force_calib_counter==0) {
 
-            for (int j=0; j<numSensors(Sensor::FORCE); j++) {
+            for (unsigned int j=0; j<numSensors(Sensor::FORCE); j++) {
                 for (int i=0; i<6; i++) {
                     force_sum[j][i] = -force_sum[j][i]/CALIB_COUNT;
                 }
@@ -277,7 +277,7 @@ void robot::gain_control(int i)
 void robot::gain_control()
 {
     int i;
-    for (i=0; i<numJoints(); i++) gain_control(i);
+    for (unsigned i=0; i<numJoints(); i++) gain_control(i);
 }
 
 void robot::oneStep()
@@ -298,7 +298,7 @@ bool robot::servo(const char *jname, bool turnon)
     Link *l = NULL;
     if (strcmp(jname, "all") == 0 || strcmp(jname, "ALL") == 0){
         bool ret = true;
-        for (int i=0; i<numJoints(); i++){
+        for (unsigned int i=0; i<numJoints(); i++){
             ret = ret && servo(i, turnon);
         }
         m_reportedEmergency = false;
@@ -320,7 +320,7 @@ bool robot::servo(const char *jname, bool turnon)
 
 bool robot::servo(int jid, bool turnon)
 {
-    if (jid == JID_INVALID || jid >= numJoints()) return false;
+    if (jid == JID_INVALID || jid >= (int)numJoints()) return false;
     
     int com = OFF;
 
@@ -360,12 +360,12 @@ bool robot::power(const char *jname, bool turnon)
 
 bool robot::power(int jid, bool turnon)
 {
-    if (jid == JID_INVALID || jid >= numJoints()) return false;
+    if (jid == JID_INVALID || jid >= (int)numJoints()) return false;
   
     int com = OFF;
 
     if (turnon) {
-        for(int i=0; i<numJoints(); i++) {
+        for(unsigned int i=0; i<numJoints(); i++) {
             int s;
             read_servo_state(i, &s);
             if (s == ON)
@@ -379,14 +379,14 @@ bool robot::power(int jid, bool turnon)
 
     if(jid == JID_ALL) {
         if (com == OFF) {
-            for (int i=0; i<numJoints(); i++) {
+            for (unsigned int i=0; i<numJoints(); i++) {
                 write_pgain(i, 0);
                 write_dgain(i, 0);
                 write_servo(i, com);
                 write_power_command(i, com);
             }
         } else       
-            for (int i=0; i<numJoints(); i++)
+            for (unsigned int i=0; i<numJoints(); i++)
                 write_power_command(i, com);
     } else {
         if (com == OFF) {
@@ -407,7 +407,7 @@ bool robot::isBusy() const
     if (inertia_calib_counter > 0 || force_calib_counter > 0)
         return true;
 
-    for (int i=0; i<numJoints(); i++) {
+    for (unsigned int i=0; i<numJoints(); i++) {
         if (gain_counter[i] < GAIN_COUNT) {
             return true;
         }
@@ -457,7 +457,7 @@ void robot::writeJointCommands(const double *i_commands)
         m_commandOld.resize(numJoints());
         m_velocityOld.resize(numJoints());
     }
-    for (int i=0; i<numJoints(); i++){
+    for (unsigned int i=0; i<numJoints(); i++){
         m_velocityOld[i] = (i_commands[i] - m_commandOld[i])/m_dt;
         m_commandOld[i] = i_commands[i];
     }
@@ -535,7 +535,7 @@ bool robot::checkJointCommands(const double *i_commands)
     if (!m_commandOld.size()) return false;
 
     int state;
-    for (int i=0; i<numJoints(); i++){
+    for (unsigned int i=0; i<numJoints(); i++){
         read_servo_state(i, &state);
         if (state == ON){
             double command_old=m_commandOld[i], command=i_commands[i];
@@ -567,7 +567,7 @@ bool robot::checkJointCommands(const double *i_commands)
 bool robot::checkEmergency(emg_reason &o_reason, int &o_id)
 {
     int state;
-    for (int i=0; i<numJoints(); i++){
+    for (unsigned int i=0; i<numJoints(); i++){
         read_servo_state(i, &state);
         if (state == ON && m_servoErrorLimit[i] != 0){
             double angle, command;
@@ -607,7 +607,7 @@ bool robot::checkEmergency(emg_reason &o_reason, int &o_id)
         }
     } 
     int alarm;
-    for (int i=0; i<numJoints(); i++){
+    for (unsigned int i=0; i<numJoints(); i++){
         if (!read_servo_alarm(i, &alarm)) continue;
         if (alarm & SS_EMERGENCY) {
             if (!m_reportedEmergency) {
@@ -619,6 +619,23 @@ bool robot::checkEmergency(emg_reason &o_reason, int &o_id)
         }
     }
     m_reportedEmergency = false;
+    // Power state check
+    if (m_enable_poweroff_check) {
+      int pstate, sstate;
+      for (unsigned int i=0; i<numJoints(); i++){
+        read_power_state(i, &pstate);
+        read_servo_state(i, &sstate);
+        // If power OFF while servo ON
+        if (!m_reportedEmergency && (pstate == OFF) && (sstate == ON) ) {
+          m_reportedEmergency = true;
+          o_reason = EMG_POWER_OFF;
+          o_id = i;
+          std::cerr << time_string() << ": power off detected : joint = " << joint(i)->name << std::endl;
+          return true;
+        }
+      }
+      m_reportedEmergency = false;
+    }
     return false;
 }
 
@@ -630,7 +647,7 @@ bool robot::setServoGainPercentage(const char *i_jname, double i_percentage)
     }
     Link *l = NULL;
     if (strcmp(i_jname, "all") == 0 || strcmp(i_jname, "ALL") == 0){
-        for (int i=0; i<numJoints(); i++){
+        for (unsigned int i=0; i<numJoints(); i++){
             if (!read_pgain(i, &old_pgain[i])) old_pgain[i] = pgain[i];
             pgain[i] = default_pgain[i] * i_percentage/100.0;
             if (!read_dgain(i, &old_dgain[i])) old_dgain[i] = dgain[i];
@@ -665,7 +682,7 @@ bool robot::setServoErrorLimit(const char *i_jname, double i_limit)
 {
     Link *l = NULL;
     if (strcmp(i_jname, "all") == 0 || strcmp(i_jname, "ALL") == 0){
-        for (int i=0; i<numJoints(); i++){
+        for (unsigned int i=0; i<numJoints(); i++){
             m_servoErrorLimit[i] = i_limit;
         }
     }else if ((l = link(i_jname))){
@@ -692,6 +709,10 @@ void robot::setProperty(const char *i_key, const char *i_value)
         iss >> m_lLegForceSensorId;
     }else if (key == "pdgains.file_name"){
         iss >> m_pdgainsFilename;
+    }else if (key == "enable_poweroff_check"){
+        std::string tmp;
+        iss >> tmp;
+        m_enable_poweroff_check = (tmp=="true");
     }else{
         isKnownKey = false;
     }

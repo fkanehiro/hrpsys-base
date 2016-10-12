@@ -177,7 +177,7 @@ int main (int argc, char** argv)
     xmlTextWriterWriteProperty(writer, "outport", "tau:JOINT_TORQUE");
 
     // set outport for sensros
-    int nforce = body->numSensors(hrp::Sensor::FORCE);
+    unsigned int nforce = body->numSensors(hrp::Sensor::FORCE);
     if ( nforce > 0 ) std::cerr << "hrp::Sensor::FORCE";
     for (unsigned int i=0; i<nforce; i++){
         hrp::Sensor *s = body->sensor(hrp::Sensor::FORCE, i);
@@ -186,7 +186,7 @@ int main (int argc, char** argv)
         std::cerr << " " << s->name;
     }
     if ( nforce > 0 ) std::cerr << std::endl;
-    int ngyro = body->numSensors(hrp::Sensor::RATE_GYRO);
+    unsigned int ngyro = body->numSensors(hrp::Sensor::RATE_GYRO);
     if ( ngyro > 0 ) std::cerr << "hrp::Sensor::GYRO";
     if(ngyro == 1){
       // port is named with no number when there is only one gyro
@@ -203,7 +203,7 @@ int main (int argc, char** argv)
       }
     }
     if ( ngyro > 0 ) std::cerr << std::endl;
-    int nacc = body->numSensors(hrp::Sensor::ACCELERATION);
+    unsigned int nacc = body->numSensors(hrp::Sensor::ACCELERATION);
     if ( nacc > 0 ) std::cerr << "hrp::Sensor::ACCELERATION";
     if(nacc == 1){
       // port is named with no number when there is only one acc
@@ -253,7 +253,7 @@ int main (int argc, char** argv)
           joint_properties_map.insert(std::pair<std::string, std::string>(joint_properties_arg_str[i*2], joint_properties_arg_str[i*2+1]));
         }
         if ( body->numJoints() > 0 ) std::cerr << "hrp::Joint";
-	for(int i = 0; i < body->numJoints(); i++){
+	for(unsigned int i = 0; i < body->numJoints(); i++){
 	  if ( body->joint(i)->index > 0 ) {
 	    std::cerr << " " << body->joint(i)->name << "(" << body->joint(i)->jointId << ")";
 	    std::string joint_name = body->joint(i)->name;

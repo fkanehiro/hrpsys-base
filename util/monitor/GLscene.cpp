@@ -83,7 +83,7 @@ void GLscene::updateScene()
             tform[9], tform[10], tform[11];
     }
     if (com.jointRefs.length() == glbody->numJoints()){
-        for (int i=0; i<glbody->numJoints(); i++){
+        for (unsigned int i=0; i<glbody->numJoints(); i++){
             GLlink *j = (GLlink *)glbody->joint(i);
             if (j){
                 j->q = com.jointRefs[i];
@@ -93,7 +93,7 @@ void GLscene::updateScene()
     }
     glbody->calcForwardKinematics();
     glbody->updateLinkColdetModelPositions();
-    for (int i=0; i<glbody->numLinks(); i++){
+    for (unsigned int i=0; i<glbody->numLinks(); i++){
         ((GLlink *)glbody->link(i))->highlight(false);
     }
     for (size_t i=0; i<m_pairs.size(); i++){
@@ -119,7 +119,7 @@ void GLscene::showStatus()
         int width = m_width - 410;
         int height = m_height-HEIGHT_STEP;
         char buf[256];
-        for (int i=0; i<glbody->numJoints(); i++){
+        for (unsigned int i=0; i<glbody->numJoints(); i++){
             hrp::Link *l = glbody->joint(i);
             if (l){
                 int ss = rstate.servoState[i][0];

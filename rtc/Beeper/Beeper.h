@@ -10,6 +10,7 @@
 #ifndef BEEPER_H
 #define BEEPER_H
 
+#include <rtm/idl/BasicDataType.hh>
 #include <rtm/Manager.h>
 #include <rtm/DataFlowComponentBase.h>
 #include <rtm/CorbaPort.h>

@@ -2,6 +2,209 @@
 Changelog for package hrpsys
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+315.10.1 (2016-10-08)
+---------------------
+
+Stable RTCs
+=============
+
+* [python/hrpsys_config.py, sample/SampleRobot/*.py] Fix bug of hrpsys version checking. Use StrictVersion for version checking. (`#1044 <https://github.com/fkanehiro/hrpsys-base/issues/1044>`_)
+
+  * Closes https://github.com/tork-a/rtmros_nextage/issues/260
+
+Unstable RTCs
+=============
+
+* IIRFilter
+
+  * Add setParameter, passFilter methods (`#1046 <https://github.com/fkanehiro/hrpsys-base/issues/1046>`_)
+   * [IIRFilter] remove warning message
+   * [IIRFilter] add test code for IIRFilter to testIIRFilter
+   * [IIRFilter] fix indent on IIRFilter.h IIRFilter.cpp
+   * [IIRFilter] add new method for using IIRFilter
+
+* AutoBalancer
+
+  * [rtc/AutoBalancer/GaitGenerator.cpp] fix bug of emergency stop (`#1045 <https://github.com/fkanehiro/hrpsys-base/issues/1045>`_)
+
+  * Add GaitGenerator Sample codes (`#1043 <https://github.com/fkanehiro/hrpsys-base/issues/1043>`_)
+
+    * [rtc/AutoBalancer/testGaitGenerator.cpp] Add test for stairdown
+    * [rtc/AutoBalancer/GaitGenerator.h] Add print message for swing_trajectory_time_offset_xy2z
+
+  * Update swing trajectory xy and z convergence (`#1042 <https://github.com/fkanehiro/hrpsys-base/issues/1042>`_)
+
+    * [rtc/AutoBalancer/testGaitGenerator.cpp] Add --swing-trajectory-time-offset-xy2z option for testGaitGenerator
+    * [idl/AutoBalancerService.idl, rtc/AutoBalancer/AutoBalancer.cpp,GaitGenerator.h] Add swing_trajectory_time_offset_xy2z for time between Z convergence time and XY convergence time. 0 by default, which does not change default behavior.
+    * [rtc/AutoBalancer/GaitGenerator.h] Separate xy interpolation and z interpolation
+    * [rtc/AutoBalancer/GaitGenerator.h] Use int for if check
+    * [rtc/AutoBalancer/GaitGenerator.h] Return final distance antecedent path ratio
+    * [rtc/AutoBalancer/GaitGenerator.h] Separate calc function and interpolate function for antecedent path
+    * [rtc/AutoBalancer/GaitGenerator.h] Define foot hoffarbib_interpolation as double type interpolation
+   * [rtc/AutoBalancer/GaitGenerator.h] Define interpolate_antecedent_path functions as const member functions.
+
+* OpenNIGrabber
+
+  * Changes point type for depth_and_color (`#1041 <https://github.com/fkanehiro/hrpsys-base/issues/1041>`_)
+
+* Contributors: Fumio Kanehiro, Shunichi Nozawa, Tatsuya Ishikawa, Yohei Kakiuchi
+
+315.10.0 (2016-09-13)
+---------------------
+
+Stable RTCs
+=============
+
+* SequencePlayer
+
+  * [rtc/SequencePlayer/timeUtil.cpp] get_tick(): add support for ARM_ARCH_7A and AARCH64EL (`#1018 <https://github.com/fkanehiro/hrpsys-base/issues/1018>`_ )
+
+* RobotHardware
+
+  * [rtc/RobotHardware/robot.*] Check read_power_state flags to servo off. If power OFF is detected while servo ON, servo OFF all and write EMG_POWER_OFF. Do not used by default. (`#1036 <https://github.com/fkanehiro/hrpsys-base/issues/1036>`_)
+
+  * [rtc/RobotHardware/RobotHardware.cpp] checks if model path is given before trying to load(`#1001 <https://github.com/fkanehiro/hrpsys-base/issues/1001>`_)
+
+    * doesn't return RTC_ERROR to pass tests
+    * returns RTC_ERROR is the model path is not given instead of calling abort()
+    * checks if model path is given before trying to load
+
+  * Use robothardware with simulation(`#995 <https://github.com/fkanehiro/hrpsys-base/issues/995>`_)
+
+    * [RobotHardware] add accessor to m_robot
+    * [RobotHardware] base time is taken by a virtual method
+
+* CollisionDetector
+
+  * [CollisionDetector] fix warning message while servo off (`#1023 <https://github.com/fkanehiro/hrpsys-base/issues/1023>`_)
+
+  * get out from initial collision state (`#1015 <https://github.com/fkanehiro/hrpsys-base/issues/1015>`_)
+
+    * [CollisionDetector] update test code for collision detector
+    * [CollisionDetector] fix, get out from initial collision state
+    * add test for CollisionDetector on initial collision state
+
+  * [CollisionDetector] Fix problem when set collision_loop (`#993 <https://github.com/fkanehiro/hrpsys-base/issues/993>`_, `#990 <https://github.com/fkanehiro/hrpsys-base/issues/990>`_)
+
+    * add version check to test-collision-loop
+    * [CollisionDetector] fix behavior when using collision_loop
+    * add version check to samplerobot_collision_detector.py
+    * add test for collision_loop on CollisionDetector
+
+* fixes warnings detected by -Wsign-compare (`#1039 <https://github.com/fkanehiro/hrpsys-base/issues/1039>`_)
+* fixes warnings detected by -Wreorder (`#1038 <https://github.com/fkanehiro/hrpsys-base/issues/1038>`_)
+* Support clang (`#1037 <https://github.com/fkanehiro/hrpsys-base/issues/1037>`_)
+* [ec/hrpEC/hrpEC-common.cpp] supports trunk version of OpenRTM-aist (https://github.com/fkanehiro/hrpsys-base/commit/efce7d47dc3723c868b66bf6205f93bab99b1537)
+* [lib/util, rtc/CollisionDetector, rtc/ServoController, util/monitor] fixes some of compile warnings (`#1007 <https://github.com/fkanehiro/hrpsys-base/issues/1007>`)
+* [hrpsys-base.pc] fix version in hrpsys-base.pc(`#1004 <https://github.com/fkanehiro/hrpsys-base/issues/1004>`_)
+* [CMakeLists.txt] enables to use RelWithDebInfo (`#997 <https://github.com/fkanehiro/hrpsys-base/issues/997>`_)
+* [CMakeLists.txt] check version in CMakeLists.txt against package.xml (`#991 <https://github.com/fkanehiro/hrpsys-base/issues/991>`_)
+* [CMakeLists.txt] supports ubuntu16.04 (`#989 <https://github.com/fkanehiro/hrpsys-base/issues/989>`_)
+
+* python
+
+  * [python/rtm.py] checks if component is already activated/deactivated (`#1024 <https://github.com/fkanehiro/hrpsys-base/issues/1024>`_)
+  * [python/rtm.py] checks return values of activate_component() and deactivate_component() (`#1022 <https://github.com/fkanehiro/hrpsys-base/issues/1022>`_)
+  * [python/hrpsys_config.py] add method for setInterpolationMode (`#1012 <https://github.com/fkanehiro/hrpsys-base/issues/1012>`_)
+  * [python/hrpsys_config.py] save ReferenceForceUpdater output with DataLogger (`#1008 <https://github.com/fkanehiro/hrpsys-base/issues/1008>`_)
+  * [python/rtm.py] improves efficiency of readDataPort() by returning value of dataport.data_value property if available (`#1000 <https://github.com/fkanehiro/hrpsys-base/issues/1000>`_)
+  * [python/rtm.py] enables to specify interface_type (`#998 <https://github.com/fkanehiro/hrpsys-base/issues/998>`_)
+  * [python/hrpsys_config.py] Fixed mistake of waitForRTCManagerAndRoboHardware's argument (`#988 <https://github.com/fkanehiro/hrpsys-base/issues/988>`_)
+  * [pyrhon/hrpsys_config.py] Renamed waitForRTCManagerAndRoboHardware to waitForRTCManagerAndRobotHardware `#980 <https://github.com/fkanehiro/hrpsys-base/issues/980>`_ (`#984 <https://github.com/fkanehiro/hrpsys-base/issues/984>`_)
+
+* [doc] hrpsys_config.py comment update (`#1016 <https://github.com/fkanehiro/hrpsys-base/issues/1016>`_)
+
+  * [doc for setJointAnglesSequence*] Wrong param type. Better description.
+  * [doc] Add in-code comment for the addition `#1012 <https://github.com/fkanehiro/hrpsys-base/issues/1012>`_.
+
+Unstable RTCs
+=============
+
+* AutoBalancer
+
+  * [rtc/AutoBalancer/AutoBalancer.cpp,rtc/Stabilizer/Stabilizer.cpp] Modify ref force output from ABC to ST (`#1035 <https://github.com/fkanehiro/hrpsys-base/issues/1035>`_)
+
+  * add new stride limitation type when goPos and goVelocity (`#1031 <https://github.com/fkanehiro/hrpsys-base/issues/1031>`_)
+
+    * [AutoBalancerService.idl, hrpsys_config.py, AutoBalancer.*, GaitGenerator.h, Stabilizer.*] add idl for leg_margin
+    * [samplerobot_auto_balancer.py] add test to check goPos when changing stride limitation type to circle
+    * [AutoBalancerService.idl, AutoBalancer.cpp, GaitGenerator.*] add new stride limitation type when goPos and goVelocity
+    * [GaitGenerator.*] fix region of stride limitation
+
+  * add a function to limit stride (`#1029 <https://github.com/fkanehiro/hrpsys-base/issues/1029>`_)
+
+    * [AutoBalancerService.idl, AutoBalancer.cpp, GaitGenerator.*] limit stride when use_stride_limitation is true
+    * [AutoBalancerService.idl, AutoBalancer.cpp, GaitGenerator.*] add function to limit stride
+    * [hrpsys_config.py, AutoBalancer.*, GaitGenerator.h, Stabilizer.*] get leg_margin from st
+
+  * [AutoBalancer/PreviewController.h] get preview_control_gain f (`#1027 <https://github.com/fkanehiro/hrpsys-base/issues/1027>`_)
+
+  * [rtc/AutoBalancer/AutoBalancer.{cpp,h}] print limb neame in the case of  too large IK error. (`#1017 <https://github.com/fkanehiro/hrpsys-base/issues/1017>`_)
+
+* Stabilizer
+
+  *  Add new st distribution and add interpolator printing. (`#1013 <https://github.com/fkanehiro/hrpsys-base/issues/1013>`_)
+
+    * [idl/StabilizerService.idl, rtc/Stabilizer/] Add new st_algorithm to check multi contact distribution.
+    * [rtc/Stabilizer/Stabilizer.cpp] Update checking of st_algorithm (TPCC or not). This commit should not change behavior.
+    * [rtc/SequencePlayer/interpolator.cpp] Add print message for MIN_INTERPOLATION_TIME in interpolator.
+
+  * Update stabilizer sbp_cog_offset and add RobotHardware comment (`#987 <https://github.com/fkanehiro/hrpsys-base/issues/987>`_)
+
+    * [rtc/RobotHardware/robot.cpp] Add print message for removeForceSensorOffset and calibrateInertiaSensor
+    * [rtc/Stabilizer/Stabilizer.cpp] Fix orientation of sbp_cog_offset (reference world frame -> foot origin frame).
+
+* ReferenceForceUpdater
+
+  * [rtc/ReferenceForceUpdater/,idl/ReferenceForceUpdaterService.idl] add frame parameter to set move_dir in world coordinates (`#1033 <https://github.com/fkanehiro/hrpsys-base/issues/1033>`_)
+
+  * [rtc/ReferenceForceUpdater] Arrange Reference Force Updater(`#1010 <https://github.com/fkanehiro/hrpsys-base/issues/1010>`_)
+
+    * [ReferenceForceUpdater/ReferenceForceUpdater.cpp] remove unused local variable, base_name_map.
+    * [ReferenceForceUpdater/ReferenceForceUpdater.cpp] remove unncessary lines: setting eet.sensor_name.
+    * [ReferenceForceUpdater/ReferenceForceUpdater.h] remove unused variable, m_data.
+    * [ReferenceForceUpdater/ReferenceForceUpdater.cpp] remove debug print in constructor and deconstructor because oth    er rtc does not have debug print.
+    * [ReferenceForceUpdater/ReferenceForceUpdater.cpp] fix indent.
+
+  * [rtc/ReferenceForceUpdater] set time for ReferenceForceUpdater output variable (`#1009 <https://github.com/fkanehiro/hrpsys-base/issues/1009>`_ )
+
+  * support both arm in ReferenceForceUpdater (`#1005 <https://github.com/fkanehiro/hrpsys-base/issues/1005>`_)
+
+    * [rtc/ReferenceForceUpdater/ReferenceForceUpdater.cpp] fix indent
+    * [sample/SampleRobot/samplerobot_reference_force_updater.py] update rfu sample to check data port
+    * [idl/ReferenceForceUpdaterService.idl] remove arm parameter from ReferenceForceUpdaterParam and add arm arg to interfaces of rfu
+      [rtc/ReferenceForceUpdater/ReferenceForceUpdaterService_impl{.h,.cpp}] remove arm parameter from ReferenceForceUpdaterParam
+      [rtc/ReferenceForceUpdater/ReferenceForceUpdater.h] add ReferenceForceUpdaterParam structure
+      [rtc/ReferenceForceUpdater/ReferenceForceUpdater.cpp] add Initialization for use_sh_base_pos_rpy
+      [rtc/ReferenceForceUpdater/ReferenceForceUpdater.cpp] enable to set both arms parameters independently in rfu
+
+  * add sample and test for ReferenceForceUpdater(`#1003 <https://github.com/fkanehiro/hrpsys-base/issues/1003>`_)
+
+    * [test] add test for ReferenceForceUpdater.
+    * [sample/SampleRobot] add sample for ReferenceForceUpdater.
+
+* TorqueFilter
+
+  * [rtc/TorqueFilter/IIRFilter.h] Fix type of getCurrentValue (`#1032 <https://github.com/fkanehiro/hrpsys-base/issues/1032>`_)
+
+* Beeper
+
+  * [rtc/Beeper] Update mutex lock and use buffer for communication between beep thread and real-time thread. (`#1030 <https://github.com/fkanehiro/hrpsys-base/issues/1030>`_)
+
+* SelfCollisionChecker
+
+  * adds a tool, hrpsys-self-collision-checker (`#1026 <https://github.com/fkanehiro/hrpsys-base/issues/1026>`_)
+
+* OpenNIGrabber  (`#1021 <https://github.com/fkanehiro/hrpsys-base/issues/1021>`_)
+
+  * checks if OpenNI2 is installed
+  * makes error message from OpenNIGrabber more informative
+  * adds a configuration variable, mode
+  * improves error handling
+  * adds a new component, OpenNIGrabber
+
+* Contributors: Fumio Kanehiro, Isaac I.Y. Saito, Jun Inoue, Ryo Koyama, Kei Okada, Masaki Murooka, Noriaki Takasugi, Shunichi Nozawa, Yohei Kakiuchi, Yuta Kojio, Iori Yanokura
+
 315.9.0 (2016-04-19)
 --------------------
 

@@ -9,9 +9,9 @@
 
 #include "SoftErrorLimiter.h"
 #include "hrpsys/util/VectorConvert.h"
+#include "hrpsys/idl/RobotHardwareService.hh"
 #include <rtm/CorbaNaming.h>
 #include <hrpModel/ModelLoaderUtil.h>
-#include "hrpsys/idl/RobotHardwareService.hh"
 
 #include <math.h>
 #include <vector>
@@ -118,7 +118,7 @@ RTC::ReturnCode_t SoftErrorLimiter::onInitialize()
   if (!m_robot->init()) return RTC::RTC_ERROR;
   m_service0.setRobot(m_robot);
   m_servoState.data.length(m_robot->numJoints());
-  for(int i = 0; i < m_robot->numJoints(); i++) {
+  for(unsigned int i = 0; i < m_robot->numJoints(); i++) {
     m_servoState.data[i].length(1);
     int status = 0;
     status |= 1<< OpenHRP::RobotHardwareService::CALIB_STATE_SHIFT;
@@ -229,13 +229,13 @@ RTC::ReturnCode_t SoftErrorLimiter::onExecute(RTC::UniqueId ec_id)
     static std::vector<double> prev_angle;
     if ( prev_angle.size() != m_qRef.data.length() ) { // initialize prev_angle
       prev_angle.resize(m_qRef.data.length(), 0);
-      for ( int i = 0; i < m_qRef.data.length(); i++ ){
+      for ( unsigned int i = 0; i < m_qRef.data.length(); i++ ){
         prev_angle[i] = m_qCurrent.data[i];
       }
     }
     std::vector<int> servo_state;
     servo_state.resize(m_qRef.data.length(), 0);
-    for ( int i = 0; i < m_qRef.data.length(); i++ ){
+    for ( unsigned int i = 0; i < m_qRef.data.length(); i++ ){
         servo_state[i] = (m_servoState.data[i][0] & OpenHRP::RobotHardwareService::SERVO_STATE_MASK) >> OpenHRP::RobotHardwareService::SERVO_STATE_SHIFT; // enum SwitchStatus {SWITCH_ON, SWITCH_OFF};
     }
 
@@ -256,7 +256,7 @@ RTC::ReturnCode_t SoftErrorLimiter::onExecute(RTC::UniqueId ec_id)
        */
 
     // Velocity limitation for reference joint angles
-    for ( int i = 0; i < m_qRef.data.length(); i++ ){
+    for ( unsigned int i = 0; i < m_qRef.data.length(); i++ ){
       // Determin total upper-lower limit considering velocity, position, and error limits.
       // e.g.,
       //  total lower limit = max (vel, pos, err) <= severest lower limit

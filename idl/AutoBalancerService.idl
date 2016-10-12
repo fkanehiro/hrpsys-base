@@ -132,6 +132,15 @@ module OpenHRP
     };
 
     /**
+     * @enum StrideLimitationType
+     * @brief Type of stride limitation
+     */
+    enum StrideLimitationType {
+      SQUARE,
+      CIRCLE
+    };
+
+    /**
      * @struct FootstepParam
      * @brief Foot step parameters.
      */
@@ -193,6 +202,8 @@ module OpenHRP
       DblArray3 stair_trajectory_way_point_offset;
       /// Kick point offset 3D vector [m] for cycloid_delay_kick_hoffarbib_trajectory_generator.
       DblArray3 cycloid_delay_kick_point_offset;
+      /// Time offset between Z convergence to antecedent path and XY convergence. [swing time]=[Z convergence time]=[XY convergence time]-[swing_trajectory_xy_time_offset]. 0 by default, this means Z convergence time and XY convergence time are same.
+      double swing_trajectory_time_offset_xy2z;
       /// Gravitational acceleration [m/s^2]
       double gravitational_acceleration;
       /// Toe position offset [m] in end-effector frame x axis
@@ -225,6 +236,10 @@ module OpenHRP
       DblArray4 overwritable_stride_limitation;
       /// Use stride limitation or not
       boolean use_stride_limitation;
+      /// Stride limitation type
+      StrideLimitationType stride_limitation_type;
+      /// Leg margin between foot end effector position and foot edge (front, rear, outside, inside) [m]
+      DblArray4 leg_margin;
     };
 
     /**

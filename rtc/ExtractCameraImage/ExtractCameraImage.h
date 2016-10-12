@@ -10,13 +10,14 @@
 #ifndef EXTRACT_CAMERA_IMAGE_H
 #define EXTRACT_CAMERA_IMAGE_H
 
+#include <rtm/idl/BasicDataType.hh>
+#include "hrpsys/idl/Img.hh"
 #include <rtm/Manager.h>
 #include <rtm/DataFlowComponentBase.h>
 #include <rtm/CorbaPort.h>
 #include <rtm/DataInPort.h>
 #include <rtm/DataOutPort.h>
 #include <rtm/idl/BasicDataTypeSkel.h>
-#include "hrpsys/idl/Img.hh"
 
 // Service implementation headers
 // <rtc-template block="service_impl_h">
@@ -133,7 +134,7 @@ class ExtractCameraImage
   // </rtc-template>
 
  private:
-  int m_index;
+  unsigned int m_index;
   int dummy;
 };
 

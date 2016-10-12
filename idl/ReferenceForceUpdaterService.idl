@@ -16,6 +16,9 @@ module OpenHRP
       {
           /// Motion direction to update reference force
           DblSequence3 motion_dir;
+          /// frame of motion_dir ("local" or "world").
+          /// "local" is coordinate at end effector, and "world" is the coordinate between the feet.
+          string frame;
           /// Update frequency [Hz]
           double update_freq;
           /// Update time ratio \in [0,1]

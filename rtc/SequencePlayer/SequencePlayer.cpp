@@ -134,18 +134,18 @@ RTC::ReturnCode_t SequencePlayer::onInitialize()
     // Setting for wrench data ports (real + virtual)
     std::vector<std::string> fsensor_names;
     //   find names for real force sensors
-    int npforce = m_robot->numSensors(hrp::Sensor::FORCE);
+    unsigned int npforce = m_robot->numSensors(hrp::Sensor::FORCE);
     for (unsigned int i=0; i<npforce; i++){
       fsensor_names.push_back(m_robot->sensor(hrp::Sensor::FORCE, i)->name);
     }
     //   find names for virtual force sensors
     coil::vstring virtual_force_sensor = coil::split(prop["virtual_force_sensor"], ",");
-    int nvforce = virtual_force_sensor.size()/10;
+    unsigned int nvforce = virtual_force_sensor.size()/10;
     for (unsigned int i=0; i<nvforce; i++){
       fsensor_names.push_back(virtual_force_sensor[i*10+0]);
     }
     //   add ports for all force sensors
-    int nforce  = npforce + nvforce;
+    unsigned int nforce  = npforce + nvforce;
     m_wrenches.resize(nforce);
     m_wrenchesOut.resize(nforce);
     for (unsigned int i=0; i<nforce; i++){
@@ -360,7 +360,7 @@ bool SequencePlayer::setJointAngle(short id, double angle, double tm)
     dvector q(m_robot->numJoints());
     m_seq->getJointAngles(q.data());
     q[id] = angle;
-    for (int i=0; i<m_robot->numJoints(); i++){
+    for (unsigned int i=0; i<m_robot->numJoints(); i++){
         hrp::Link *j = m_robot->joint(i);
         if (j) j->q = q[i];
     }
@@ -381,7 +381,7 @@ bool SequencePlayer::setJointAngles(const double *angles, double tm)
     }
     Guard guard(m_mutex);
     if (!setInitialState()) return false;
-    for (int i=0; i<m_robot->numJoints(); i++){
+    for (unsigned int i=0; i<m_robot->numJoints(); i++){
         hrp::Link *j = m_robot->joint(i);
         if (j) j->q = angles[i];
     }
@@ -410,7 +410,7 @@ bool SequencePlayer::setJointAngles(const double *angles, const bool *mask,
     if (!setInitialState()) return false;
 
     double pose[m_robot->numJoints()];
-    for (int i=0; i<m_robot->numJoints(); i++){
+    for (unsigned int i=0; i<m_robot->numJoints(); i++){
         pose[i] = mask[i] ? angles[i] : m_qInit.data[i];
     }
     m_seq->setJointAngles(pose, tm);
@@ -428,15 +428,15 @@ bool SequencePlayer::setJointAnglesSequence(const OpenHRP::dSequenceSequence ang
 
     bool tmp_mask[robot()->numJoints()];
     if (mask.length() != robot()->numJoints()) {
-        for (int i=0; i < robot()->numJoints(); i++) tmp_mask[i] = true;
+        for (unsigned int i=0; i < robot()->numJoints(); i++) tmp_mask[i] = true;
     }else{
-        for (int i=0; i < robot()->numJoints(); i++) tmp_mask[i] = mask.get_buffer()[i];
+        for (unsigned int i=0; i < robot()->numJoints(); i++) tmp_mask[i] = mask.get_buffer()[i];
     }
     int len = angless.length();
     std::vector<const double*> v_poss;
     std::vector<double> v_tms;
-    for ( int i = 0; i < angless.length(); i++ ) v_poss.push_back(angless[i].get_buffer());
-    for ( int i = 0; i <  times.length();  i++ )  v_tms.push_back(times[i]);
+    for ( unsigned int i = 0; i < angless.length(); i++ ) v_poss.push_back(angless[i].get_buffer());
+    for ( unsigned int i = 0; i <  times.length();  i++ )  v_tms.push_back(times[i]);
     return m_seq->setJointAnglesSequence(v_poss, v_tms);
 }
 
@@ -464,8 +464,8 @@ bool SequencePlayer::setJointAnglesSequenceOfGroup(const char *gname, const Open
 
     std::vector<const double*> v_poss;
     std::vector<double> v_tms;
-    for ( int i = 0; i < angless.length(); i++ ) v_poss.push_back(angless[i].get_buffer());
-    for ( int i = 0; i <  times.length();  i++ )  v_tms.push_back(times[i]);
+    for ( unsigned int i = 0; i < angless.length(); i++ ) v_poss.push_back(angless[i].get_buffer());
+    for ( unsigned int i = 0; i <  times.length();  i++ )  v_tms.push_back(times[i]);
     return m_seq->setJointAnglesSequenceOfGroup(gname, v_poss, v_tms, angless.length()>0?angless[0].length():0);
 }
 
@@ -494,16 +494,16 @@ bool SequencePlayer::setJointAnglesSequenceFull(const OpenHRP::dSequenceSequence
     int len = i_jvss.length();
     std::vector<const double*> v_jvss, v_vels, v_torques, v_poss, v_rpys, v_accs, v_zmps, v_wrenches, v_optionals;
     std::vector<double> v_tms;
-    for ( int i = 0; i < i_jvss.length(); i++ ) v_jvss.push_back(i_jvss[i].get_buffer());
-    for ( int i = 0; i < i_vels.length(); i++ ) v_vels.push_back(i_vels[i].get_buffer());
-    for ( int i = 0; i < i_torques.length(); i++ ) v_torques.push_back(i_torques[i].get_buffer());
-    for ( int i = 0; i < i_poss.length(); i++ ) v_poss.push_back(i_poss[i].get_buffer());
-    for ( int i = 0; i < i_rpys.length(); i++ ) v_rpys.push_back(i_rpys[i].get_buffer());
-    for ( int i = 0; i < i_accs.length(); i++ ) v_accs.push_back(i_accs[i].get_buffer());
-    for ( int i = 0; i < i_zmps.length(); i++ ) v_zmps.push_back(i_zmps[i].get_buffer());
-    for ( int i = 0; i < i_wrenches.length(); i++ ) v_wrenches.push_back(i_wrenches[i].get_buffer());
-    for ( int i = 0; i < i_optionals.length(); i++ ) v_optionals.push_back(i_optionals[i].get_buffer());
-    for ( int i = 0; i < i_tms.length();  i++ )  v_tms.push_back(i_tms[i]);
+    for ( unsigned int i = 0; i < i_jvss.length(); i++ ) v_jvss.push_back(i_jvss[i].get_buffer());
+    for ( unsigned int i = 0; i < i_vels.length(); i++ ) v_vels.push_back(i_vels[i].get_buffer());
+    for ( unsigned int i = 0; i < i_torques.length(); i++ ) v_torques.push_back(i_torques[i].get_buffer());
+    for ( unsigned int i = 0; i < i_poss.length(); i++ ) v_poss.push_back(i_poss[i].get_buffer());
+    for ( unsigned int i = 0; i < i_rpys.length(); i++ ) v_rpys.push_back(i_rpys[i].get_buffer());
+    for ( unsigned int i = 0; i < i_accs.length(); i++ ) v_accs.push_back(i_accs[i].get_buffer());
+    for ( unsigned int i = 0; i < i_zmps.length(); i++ ) v_zmps.push_back(i_zmps[i].get_buffer());
+    for ( unsigned int i = 0; i < i_wrenches.length(); i++ ) v_wrenches.push_back(i_wrenches[i].get_buffer());
+    for ( unsigned int i = 0; i < i_optionals.length(); i++ ) v_optionals.push_back(i_optionals[i].get_buffer());
+    for ( unsigned int i = 0; i < i_tms.length();  i++ )  v_tms.push_back(i_tms[i]);
     return m_seq->setJointAnglesSequenceFull(v_jvss, v_vels, v_torques, v_poss, v_rpys, v_accs, v_zmps, v_wrenches, v_optionals, v_tms);
 }
 
@@ -573,12 +573,12 @@ bool SequencePlayer::setTargetPose(const char* gname, const double *xyz, const d
     hrp::JointPathExPtr manip = hrp::JointPathExPtr(new hrp::JointPathEx(m_robot, m_robot->link(base_parent_name), m_robot->link(target_name), dt, true, std::string(m_profile.instance_name)));
 
     // calc fk
-    for (int i=0; i<m_robot->numJoints(); i++){
+    for (unsigned int i=0; i<m_robot->numJoints(); i++){
         hrp::Link *j = m_robot->joint(i);
         if (j) j->q = m_qRef.data.get_buffer()[i];
     }
     m_robot->calcForwardKinematics();
-    for ( int i = 0; i < manip->numJoints(); i++ ){
+    for ( unsigned int i = 0; i < manip->numJoints(); i++ ){
         start_av[i] = manip->joint(i)->q;
     }
 
@@ -636,7 +636,7 @@ bool SequencePlayer::setTargetPose(const char* gname, const double *xyz, const d
             return false;
         }
         v_pos[i] = (const double *)malloc(sizeof(double)*manip->numJoints());
-        for ( int j = 0; j < manip->numJoints(); j++ ){
+        for ( unsigned int j = 0; j < manip->numJoints(); j++ ){
             ((double *)v_pos[i])[j] = manip->joint(j)->q;
         }
         v_tm[i] = tm/len;
@@ -686,7 +686,7 @@ bool SequencePlayer::setInitialState(double tm)
         return false;
     }else{
         m_seq->setJointAngles(m_qInit.data.get_buffer(), tm);
-        for (int i=0; i<m_robot->numJoints(); i++){
+        for (unsigned int i=0; i<m_robot->numJoints(); i++){
             Link *l = m_robot->joint(i);
             l->q = m_qInit.data[i];
             m_qRef.data[i] = m_qInit.data[i]; // update m_qRef for setTargetPose()
@@ -723,10 +723,10 @@ void SequencePlayer::playPattern(const dSequenceSequence& pos, const dSequenceSe
 
     std::vector<const double *> v_pos, v_rpy, v_zmp;
     std::vector<double> v_tm;
-    for ( int i = 0; i < pos.length(); i++ ) v_pos.push_back(pos[i].get_buffer());
-    for ( int i = 0; i < rpy.length(); i++ ) v_rpy.push_back(rpy[i].get_buffer());
-    for ( int i = 0; i < zmp.length(); i++ ) v_zmp.push_back(zmp[i].get_buffer());
-    for ( int i = 0; i < tm.length() ; i++ ) v_tm.push_back(tm[i]);
+    for ( unsigned int i = 0; i < pos.length(); i++ ) v_pos.push_back(pos[i].get_buffer());
+    for ( unsigned int i = 0; i < rpy.length(); i++ ) v_rpy.push_back(rpy[i].get_buffer());
+    for ( unsigned int i = 0; i < zmp.length(); i++ ) v_zmp.push_back(zmp[i].get_buffer());
+    for ( unsigned int i = 0; i < tm.length() ; i++ ) v_tm.push_back(tm[i]);
     return m_seq->playPattern(v_pos, v_rpy, v_zmp, v_tm, m_qInit.data.get_buffer(), pos.length()>0?pos[0].length():0);
 }
 
@@ -803,8 +803,8 @@ bool SequencePlayer::playPatternOfGroup(const char *gname, const dSequenceSequen
 
     std::vector<const double *> v_pos;
     std::vector<double> v_tm;
-    for ( int i = 0; i < pos.length(); i++ ) v_pos.push_back(pos[i].get_buffer());
-    for ( int i = 0; i < tm.length() ; i++ ) v_tm.push_back(tm[i]);
+    for ( unsigned int i = 0; i < pos.length(); i++ ) v_pos.push_back(pos[i].get_buffer());
+    for ( unsigned int i = 0; i < tm.length() ; i++ ) v_tm.push_back(tm[i]);
     return m_seq->playPatternOfGroup(gname, v_pos, v_tm, m_qInit.data.get_buffer(), pos.length()>0?pos[0].length():0);
 }
 

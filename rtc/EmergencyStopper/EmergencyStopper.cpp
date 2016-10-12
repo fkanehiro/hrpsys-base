@@ -44,17 +44,17 @@ EmergencyStopper::EmergencyStopper(RTC::Manager* manager)
       // <rtc-template block="initializer">
       m_qRefIn("qRef", m_qRef),
       m_emergencySignalIn("emergencySignal", m_emergencySignal),
+      m_servoStateIn("servoStateIn", m_servoState),
       m_qOut("q", m_q),
       m_emergencyModeOut("emergencyMode", m_emergencyMode),
       m_beepCommandOut("beepCommand", m_beepCommand),
       m_EmergencyStopperServicePort("EmergencyStopperService"),
-      m_servoStateIn("servoStateIn", m_servoState),
       // </rtc-template>
       m_robot(hrp::BodyPtr()),
       m_debugLevel(0),
-      dummy(0),
       loop(0),
-      emergency_stopper_beep_count(0)
+      emergency_stopper_beep_count(0),
+      dummy(0)
 {
     m_service0.emergencystopper(this);
 }
@@ -124,23 +124,23 @@ RTC::ReturnCode_t EmergencyStopper::onInitialize()
     OpenHRP::LinkInfoSequence_var lis = binfo->links();
     std::vector<std::string> fsensor_names;
     //   find names for real force sensors
-    for ( int k = 0; k < lis->length(); k++ ) {
+    for ( unsigned int k = 0; k < lis->length(); k++ ) {
         OpenHRP::SensorInfoSequence& sensors = lis[k].sensors;
-        for ( int l = 0; l < sensors.length(); l++ ) {
+        for ( unsigned int l = 0; l < sensors.length(); l++ ) {
             if ( std::string(sensors[l].type) == "Force" ) {
                 fsensor_names.push_back(std::string(sensors[l].name));
             }
         }
     }
-    int npforce = fsensor_names.size();
+    unsigned int npforce = fsensor_names.size();
     //   find names for virtual force sensors
     coil::vstring virtual_force_sensor = coil::split(prop["virtual_force_sensor"], ",");
-    int nvforce = virtual_force_sensor.size()/10;
+    unsigned int nvforce = virtual_force_sensor.size()/10;
     for (unsigned int i=0; i<nvforce; i++){
         fsensor_names.push_back(virtual_force_sensor[i*10+0]);
     }
     //   add ports for all force sensors
-    int nforce  = npforce + nvforce;
+    unsigned int nforce  = npforce + nvforce;
     m_wrenchesRef.resize(nforce);
     m_wrenches.resize(nforce);
     m_wrenchesIn.resize(nforce);
@@ -176,11 +176,11 @@ RTC::ReturnCode_t EmergencyStopper::onInitialize()
     m_wrenches_interpolator->setName(std::string(m_profile.instance_name)+" interpolator wrenches");
 
     m_q.data.length(m_robot->numJoints());
-    for(int i=0; i<m_robot->numJoints(); i++){
+    for(unsigned int i=0; i<m_robot->numJoints(); i++){
         m_q.data[i] = 0;
         m_stop_posture[i] = 0;
     }
-    for(int i=0; i<nforce; i++){
+    for(unsigned int i=0; i<nforce; i++){
         for(int j=0; j<6; j++){
             m_wrenches[i].data[j] = 0;
             m_stop_wrenches[i*6+j] = 0;
@@ -188,7 +188,7 @@ RTC::ReturnCode_t EmergencyStopper::onInitialize()
     }
 
     m_servoState.data.length(m_robot->numJoints());
-    for(int i = 0; i < m_robot->numJoints(); i++) {
+    for(unsigned int i = 0; i < m_robot->numJoints(); i++) {
         m_servoState.data[i].length(1);
         int status = 0;
         status |= 1<< OpenHRP::RobotHardwareService::CALIB_STATE_SHIFT;
@@ -252,7 +252,7 @@ RTC::ReturnCode_t EmergencyStopper::onDeactivated(RTC::UniqueId ec_id)
 
 RTC::ReturnCode_t EmergencyStopper::onExecute(RTC::UniqueId ec_id)
 {
-    int numJoints = m_robot->numJoints();
+    unsigned int numJoints = m_robot->numJoints();
     loop++;
     if (m_servoStateIn.isNew()) {
         m_servoStateIn.read();
@@ -272,15 +272,15 @@ RTC::ReturnCode_t EmergencyStopper::onExecute(RTC::UniqueId ec_id)
         m_qRefIn.read();
         assert(m_qRef.data.length() == numJoints);
         std::vector<double> current_posture;
-        for ( int i = 0; i < m_qRef.data.length(); i++ ) {
+        for ( unsigned int i = 0; i < m_qRef.data.length(); i++ ) {
             current_posture.push_back(m_qRef.data[i]);
         }
         m_input_posture_queue.push(current_posture);
-        while (m_input_posture_queue.size() > default_retrieve_time) {
+        while ((int)m_input_posture_queue.size() > default_retrieve_time) {
             m_input_posture_queue.pop();
         }
         if (!is_stop_mode) {
-            for ( int i = 0; i < m_qRef.data.length(); i++ ) {
+            for ( unsigned int i = 0; i < m_qRef.data.length(); i++ ) {
                 if (recover_time > 0) { // Until releasing is finished, do not use m_stop_posture in input queue because too large error.
                     m_stop_posture[i] = m_q.data[i];
                 } else {
@@ -295,17 +295,17 @@ RTC::ReturnCode_t EmergencyStopper::onExecute(RTC::UniqueId ec_id)
             }
         }
         std::vector<double> current_wrench;
-        for ( int i= 0; i < m_wrenchesRef.size(); i++ ) {
+        for ( unsigned int i= 0; i < m_wrenchesRef.size(); i++ ) {
             for (int j = 0; j < 6; j++ ) {
                 current_wrench.push_back(m_wrenchesRef[i].data[j]);
             }
         }
         m_input_wrenches_queue.push(current_wrench);
-        while (m_input_wrenches_queue.size() > default_retrieve_time) {
+        while ((int)m_input_wrenches_queue.size() > default_retrieve_time) {
             m_input_wrenches_queue.pop();
         }
         if (!is_stop_mode) {
-            for ( int i= 0; i < m_wrenchesRef.size(); i++ ) {
+            for ( unsigned int i= 0; i < m_wrenchesRef.size(); i++ ) {
                 for (int j = 0; j < 6; j++ ) {
                     if (recover_time > 0) {
                         m_stop_wrenches[i*6+j] = m_wrenches[i].data[j];
@@ -355,10 +355,10 @@ RTC::ReturnCode_t EmergencyStopper::onExecute(RTC::UniqueId ec_id)
             m_wrenches_interpolator->get(m_tmp_wrenches);
             set_wrenches_data_from_array(m_wrenches, m_tmp_wrenches);
         } else {
-            for ( int i = 0; i < m_q.data.length(); i++ ) {
+            for ( unsigned int i = 0; i < m_q.data.length(); i++ ) {
                 m_q.data[i] = m_qRef.data[i];
             }
-            for ( int i = 0; i < m_wrenches.size(); i++ ) {
+            for ( unsigned int i = 0; i < m_wrenches.size(); i++ ) {
                 for ( int j = 0; j < 6; j++ ) {
                     m_wrenches[i].data[j] = m_wrenchesRef[i].data[j];
                 }
@@ -381,12 +381,12 @@ RTC::ReturnCode_t EmergencyStopper::onExecute(RTC::UniqueId ec_id)
     // write data
     if (DEBUGP) {
         std::cerr << "q: ";
-        for (int i = 0; i < numJoints; i++) {
+        for (unsigned int i = 0; i < numJoints; i++) {
             std::cerr << " " << m_q.data[i] ;
         }
         std::cerr << std::endl;
         std::cerr << "wrenches: ";
-        for (int i = 0; i < m_wrenches.size(); i++) {
+        for (unsigned int i = 0; i < m_wrenches.size(); i++) {
             for (int j = 0; j < 6; j++ ) {
                 std::cerr << " " << m_wrenches[i].data[j];
             }
@@ -411,7 +411,7 @@ RTC::ReturnCode_t EmergencyStopper::onExecute(RTC::UniqueId ec_id)
     // beep sound for emergency stop alert
     //  check servo for emergency stop beep sound
     bool has_servoOn = false;
-    for (int i = 0; i < m_robot->numJoints(); i++ ){
+    for (unsigned int i = 0; i < m_robot->numJoints(); i++ ){
         int servo_state = (m_servoState.data[i][0] & OpenHRP::RobotHardwareService::SERVO_STATE_MASK) >> OpenHRP::RobotHardwareService::SERVO_STATE_SHIFT;
         has_servoOn = has_servoOn || (servo_state == 1);
     }

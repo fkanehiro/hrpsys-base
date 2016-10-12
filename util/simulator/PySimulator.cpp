@@ -85,14 +85,14 @@ hrp::BodyPtr createBody(const std::string& name, const ModelItem& mitem,
 }
 
 PySimulator::PySimulator() : 
-    manager(NULL), Simulator(&log), scene(&log), window(&scene, &log, this),
+    Simulator(&log), scene(&log), window(&scene, &log, this), manager(NULL),
     useBBox(false), maxLogLen(60)
 {
     initRTCmanager();
 }
 
 PySimulator::PySimulator(PyObject *pyo) : 
-    manager(NULL), Simulator(&log), scene(&log), window(&scene, &log, this),
+    Simulator(&log), scene(&log), window(&scene, &log, this), manager(NULL),
     useBBox(false)
 {
     initRTCmanager(pyo);
@@ -195,7 +195,7 @@ bool PySimulator::loadProject(std::string fname){
     BodyFactory factory = boost::bind(::createBody, _1, _2, modelloader, 
                                       &scene, useBBox);
     init(prj, factory);
-    for (int i=0; i<numBodies(); i++){
+    for (unsigned int i=0; i<numBodies(); i++){
         PyBody *pybody = dynamic_cast<PyBody *>(body(i).get());
         pybody->setListener(this);
     }
@@ -274,7 +274,7 @@ PyBody *PySimulator::createBody(std::string name)
 PyObject *PySimulator::bodies()
 {
     boost::python::list retval;
-    for (int i=0; i<numBodies(); i++){
+    for (unsigned int i=0; i<numBodies(); i++){
         PyBody *b = dynamic_cast<PyBody *>(body(i).get());
         retval.append(boost::python::ptr(b));
     }
@@ -325,7 +325,7 @@ void PySimulator::reset()
 {
     log.clear();
     setCurrentTime(0.0);
-    for (int i=0; i<numBodies(); i++){
+    for (unsigned int i=0; i<numBodies(); i++){
         body(i)->initializeConfiguration();
     }
     checkCollision();

@@ -73,7 +73,7 @@ RTC::ReturnCode_t BodyRTC::setup(){
     servo_status.resize(numJoints());
     power_status.resize(numJoints());
     m_servoErrorLimit.resize(numJoints());
-    for(int i = 0; i < numJoints(); i++) {
+    for(unsigned int i = 0; i < numJoints(); i++) {
         calib_status[i] = servo_status[i] = power_status[i] = OpenHRP::RobotHardwareService::SWITCH_ON;
         m_servoErrorLimit[i] = DEFAULT_ANGLE_ERROR_LIMIT;
     }
@@ -118,7 +118,7 @@ bool getJointList(hrp::Body *body, const std::vector<std::string> &elements,
                   std::vector<hrp::Link *> &joints)
 {
     if (elements.size() == 0){
-        for (int i=0; i<body->numJoints(); i++){
+        for (unsigned int i=0; i<body->numJoints(); i++){
             joints.push_back(body->joint(i));
         }
     }else{
@@ -462,7 +462,7 @@ bool BodyRTC::setServoErrorLimit(const char *i_jname, double i_limit)
 {
     Link *l = NULL;
     if (strcmp(i_jname, "all") == 0 || strcmp(i_jname, "ALL") == 0){
-        for (int i=0; i<numJoints(); i++){
+        for (unsigned int i=0; i<numJoints(); i++){
             m_servoErrorLimit[i] = i_limit;
         }
     }else if ((l = link(i_jname))){
@@ -496,7 +496,7 @@ bool BodyRTC::checkEmergency(emg_reason &o_reason, int &o_id) {
     o_reason = EMG_NONE; // clear
     o_id = -1;
 
-    for (int i=0; i<numJoints(); i++){
+    for (unsigned int i=0; i<numJoints(); i++){
         state = readServoState(i);
         if (state == ON && m_servoErrorLimit[i] != 0){
             double angle, command;
@@ -524,7 +524,7 @@ bool BodyRTC::preOneStep() {
     rootLink()->calcSubMassCM();
     bool all_servo_off = true;
     bool emulate_highgain_servo_off_mode = (numJoints() > 0); // If no joints, do not use servo off emulation
-    for(int i = 0; i < numJoints(); ++i){
+    for(unsigned int i = 0; i < numJoints(); ++i){
         Link *j = joint(i);
         commands[i] = j->q;
         int p = readPowerState(i);
@@ -566,22 +566,22 @@ bool BodyRTC::preOneStep() {
 
 bool BodyRTC::postOneStep() {
 
-    for(int i = 0; i < numJoints(); ++i){
+    for(unsigned int i = 0; i < numJoints(); ++i){
         angles[i] = joint(i)->q;
     }
-    for(int i = 0; i < numSensors(hrp::Sensor::ACCELERATION); i++ ){
+    for(unsigned int i = 0; i < numSensors(hrp::Sensor::ACCELERATION); i++ ){
         hrp::AccelSensor *s = sensor<AccelSensor>(i);
         accels[i][0] =  s->dv[0];
         accels[i][1] =  s->dv[1];
         accels[i][2] =  s->dv[2];
     }
-    for(int i = 0; i < numSensors(hrp::Sensor::RATE_GYRO); i++ ){
+    for(unsigned int i = 0; i < numSensors(hrp::Sensor::RATE_GYRO); i++ ){
         hrp::RateGyroSensor *s = sensor<RateGyroSensor>(i);
         gyros[i][0] =  s->w[0];
         gyros[i][1] =  s->w[1];
         gyros[i][2] =  s->w[2];
     }
-    for(int i = 0; i < numSensors(hrp::Sensor::FORCE); i++ ){
+    for(unsigned int i = 0; i < numSensors(hrp::Sensor::FORCE); i++ ){
         hrp::ForceSensor *s = sensor<ForceSensor>(i);
         forces[i][0] =  s->f[0];
         forces[i][1] =  s->f[1];
@@ -605,7 +605,7 @@ bool BodyRTC::servo(const char *jname, bool turnon)
     Link *l = NULL;
     if (strcmp(jname, "all") == 0 || strcmp(jname, "ALL") == 0){
         bool ret = true;
-        for (int i=0; i<numJoints(); i++){
+        for (unsigned int i=0; i<numJoints(); i++){
             ret = ret && servo(i, turnon);
         }
         return ret;

@@ -643,10 +643,30 @@ public:
         gen_and_plot_walk_pattern();
     };
 
+    void test15 ()
+    {
+        std::cerr << "test15 : Stair walk down" << std::endl;
+        /* initialize sample footstep_list */
+        parse_params();
+        gg->clear_footstep_nodes_list();
+        gg->set_default_orbit_type(STAIR);
+        gg->set_swing_trajectory_delay_time_offset (0.2);
+        std::vector< std::vector<step_node> > fnsl;
+        fnsl.push_back(boost::assign::list_of(step_node("rleg", coordinates(hrp::Vector3(hrp::Vector3(0, 0, 0)+leg_pos[0])), gg->get_default_step_height(), gg->get_default_step_time(), gg->get_toe_angle(), gg->get_heel_angle())));
+        fnsl.push_back(boost::assign::list_of(step_node("lleg", coordinates(hrp::Vector3(hrp::Vector3(0, 0, 0)+leg_pos[1])), gg->get_default_step_height(), gg->get_default_step_time(), gg->get_toe_angle(), gg->get_heel_angle())));
+        fnsl.push_back(boost::assign::list_of(step_node("rleg", coordinates(hrp::Vector3(hrp::Vector3(250*1e-3, 0, -200*1e-3)+leg_pos[0])), gg->get_default_step_height(), gg->get_default_step_time(), gg->get_toe_angle(), gg->get_heel_angle())));
+        fnsl.push_back(boost::assign::list_of(step_node("lleg", coordinates(hrp::Vector3(hrp::Vector3(250*1e-3, 0, -200*1e-3)+leg_pos[1])), gg->get_default_step_height(), gg->get_default_step_time(), gg->get_toe_angle(), gg->get_heel_angle())));
+        fnsl.push_back(boost::assign::list_of(step_node("rleg", coordinates(hrp::Vector3(hrp::Vector3(500*1e-3, 0, -400*1e-3)+leg_pos[0])), gg->get_default_step_height(), gg->get_default_step_time(), gg->get_toe_angle(), gg->get_heel_angle())));
+        fnsl.push_back(boost::assign::list_of(step_node("lleg", coordinates(hrp::Vector3(hrp::Vector3(500*1e-3, 0, -400*1e-3)+leg_pos[1])), gg->get_default_step_height(), gg->get_default_step_time(), gg->get_toe_angle(), gg->get_heel_angle())));
+        fnsl.push_back(boost::assign::list_of(step_node("rleg", coordinates(hrp::Vector3(hrp::Vector3(750*1e-3, 0, -600*1e-3)+leg_pos[0])), gg->get_default_step_height(), gg->get_default_step_time(), gg->get_toe_angle(), gg->get_heel_angle())));
+        fnsl.push_back(boost::assign::list_of(step_node("lleg", coordinates(hrp::Vector3(hrp::Vector3(750*1e-3, 0, -600*1e-3)+leg_pos[1])), gg->get_default_step_height(), gg->get_default_step_time(), gg->get_toe_angle(), gg->get_heel_angle())));
+        gg->set_foot_steps_list(fnsl);
+        gen_and_plot_walk_pattern();
+    };
 
     void parse_params ()
     {
-      for (int i = 0; i < arg_strs.size(); ++ i) {
+      for (unsigned int i = 0; i < arg_strs.size(); ++ i) {
           if ( arg_strs[i]== "--default-step-time" ) {
               if (++i < arg_strs.size()) gg->set_default_step_time(atof(arg_strs[i].c_str()));
           } else if ( arg_strs[i]== "--default-step-height" ) {
@@ -683,6 +703,8 @@ public:
               if (++i < arg_strs.size()) gg->set_swing_trajectory_delay_time_offset(atof(arg_strs[i].c_str()));
           } else if ( arg_strs[i]== "--swing-trajectory-final-distance-weight" ) {
               if (++i < arg_strs.size()) gg->set_swing_trajectory_final_distance_weight(atof(arg_strs[i].c_str()));
+          } else if ( arg_strs[i]== "--swing-trajectory-time-offset-xy2z" ) {
+              if (++i < arg_strs.size()) gg->set_swing_trajectory_time_offset_xy2z(atof(arg_strs[i].c_str()));
           } else if ( arg_strs[i]== "--stair-trajectory-way-point-offset" ) {
               if (++i < arg_strs.size()) {
                   coil::vstring strs = coil::split(std::string(arg_strs[i].c_str()), ",");
@@ -751,11 +773,11 @@ void print_usage ()
     std::cerr << "  --test8 : Toe heel walk on slope" << std::endl;
     std::cerr << "  --test9 : Stair walk" << std::endl;
     std::cerr << "  --test10 : Stair walk + toe heel contact" << std::endl;
-    std::cerr << "  --test10 : Stair walk + toe heel contact" << std::endl;
     std::cerr << "  --test11 : Foot rot change" << std::endl;
     std::cerr << "  --test12 : Change step param in set foot steps" << std::endl;
     std::cerr << "  --test13 : Arbitrary leg switching" << std::endl;
     std::cerr << "  --test14 : kick walk" << std::endl;
+    std::cerr << "  --test15 : Stair walk down" << std::endl;
 };
 
 int main(int argc, char* argv[])
@@ -796,6 +818,8 @@ int main(int argc, char* argv[])
           tgg.test13();
       } else if (std::string(argv[1]) == "--test14") {
           tgg.test14();
+      } else if (std::string(argv[1]) == "--test15") {
+          tgg.test15();
       } else {
           print_usage();
           ret = 1;

@@ -26,9 +26,9 @@ static void drawString(const char *str)
 }
 
 GLsceneBase::GLsceneBase(LogManagerBase *i_log) : 
-    m_width(DEFAULT_W), m_height(DEFAULT_H),
     m_showingStatus(false), m_showSlider(false),
-    m_log(i_log), m_videoWriter(NULL), m_cvImage(NULL), 
+    m_width(DEFAULT_W), m_height(DEFAULT_H),
+    m_videoWriter(NULL), m_cvImage(NULL), m_log(i_log),
     m_showFloorGrid(true), m_showInfo(true), m_defaultLights(true),
     m_request(REQ_NONE), 
     m_maxEdgeLen(0),
@@ -67,9 +67,9 @@ void GLsceneBase::setCamera(GLcamera *i_camera)
 void GLsceneBase::nextCamera()
 {
     bool found = m_camera == m_default_camera ? true : false;
-    for (int i=0; i<numBodies(); i++){
+    for (unsigned int i=0; i<numBodies(); i++){
         hrp::BodyPtr b = body(i);
-        for (int j=0; j<b->numLinks(); j++){
+        for (unsigned int j=0; j<b->numLinks(); j++){
             GLlink *l = dynamic_cast<GLlink *>(b->link(j));
             const std::vector<GLcamera *>& cameras = l->cameras();
             for (size_t k=0; k<cameras.size(); k++){
@@ -88,7 +88,7 @@ void GLsceneBase::nextCamera()
 void GLsceneBase::nextObject()
 {
     m_targetObject++;
-    if (m_targetObject == numBodies()) m_targetObject = -1;
+    if (m_targetObject == (int)numBodies()) m_targetObject = -1;
 }
 
 GLcamera *GLsceneBase::getCamera()
@@ -255,7 +255,7 @@ void GLsceneBase::drawInfo(double fps, size_t ntri)
         glRasterPos2f(10, h);
         drawString(buf);
     }
-    if (m_targetObject >=0 && m_targetObject < numBodies()){
+    if (m_targetObject >=0 && m_targetObject < (int)numBodies()){
         sprintf(buf, "Target: %s", targetObject()->name().c_str());
         h -= 15;
         glRasterPos2f(10, h);
@@ -272,7 +272,7 @@ size_t GLsceneBase::drawObjects(bool showSensors)
 {
     size_t ntri = 0;
     boost::function2<void, hrp::Body *, hrp::Sensor *> callback;
-    for (int i=0; i<numBodies(); i++){
+    for (unsigned int i=0; i<numBodies(); i++){
         GLbody *glbody = dynamic_cast<GLbody *>(body(i).get());
         if (!glbody) std::cout << "dynamic_cast failed" << std::endl;
         if (!showSensors) {
@@ -369,9 +369,9 @@ void GLsceneBase::draw()
     }
 
     // offscreen redering
-    for (int i=0; i<numBodies(); i++){
+    for (unsigned int i=0; i<numBodies(); i++){
         hrp::BodyPtr b = body(i);
-        for (int j=0; j<b->numLinks(); j++){
+        for (unsigned int j=0; j<b->numLinks(); j++){
             GLlink *l = dynamic_cast<GLlink *>(b->link(j));
             const std::vector<GLcamera *>& cameras = l->cameras();
             for (size_t k=0; k<cameras.size(); k++){
@@ -427,7 +427,7 @@ void GLsceneBase::maxEdgeLen(double i_len)
 
 hrp::BodyPtr GLsceneBase::targetObject()
 {
-    if (m_targetObject >= 0 && m_targetObject < numBodies()){
+    if (m_targetObject >= 0 && m_targetObject < (int)numBodies()){
         return body(m_targetObject);
     }else{
         return hrp::BodyPtr();
@@ -442,7 +442,7 @@ void GLsceneBase::setBackGroundColor(float rgb[3])
 hrp::Vector3 GLsceneBase::center()
 {
     hrp::Vector3 mi,ma,min,max;
-    for (int i=0; i<numBodies(); i++){
+    for (unsigned int i=0; i<numBodies(); i++){
         GLbody *glbody = dynamic_cast<GLbody *>(body(i).get());
         glbody->computeAABB(mi,ma);
         if (i==0){

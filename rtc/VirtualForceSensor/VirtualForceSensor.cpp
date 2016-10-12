@@ -100,7 +100,7 @@ RTC::ReturnCode_t VirtualForceSensor::onInitialize()
 
   // virtual_force_sensor: <name>, <base>, <target>, 0, 0, 0,  0, 0, 1, 0
   coil::vstring virtual_force_sensor = coil::split(prop["virtual_force_sensor"], ",");
-  for(int i = 0; i < virtual_force_sensor.size()/10; i++ ){
+  for(unsigned int i = 0; i < virtual_force_sensor.size()/10; i++ ){
     std::string name = virtual_force_sensor[i*10+0];
     VirtualForceSensorParam p;
     p.base_name = virtual_force_sensor[i*10+1];
@@ -196,7 +196,7 @@ RTC::ReturnCode_t VirtualForceSensor::onExecute(RTC::UniqueId ec_id)
   if ( m_qCurrent.data.length() ==  m_robot->numJoints() &&
        m_tauIn.data.length() ==  m_robot->numJoints() ) {
     // reference model
-    for ( int i = 0; i < m_robot->numJoints(); i++ ){
+    for ( unsigned int i = 0; i < m_robot->numJoints(); i++ ){
       m_robot->joint(i)->q = m_qCurrent.data[i];
     }
     m_robot->calcForwardKinematics();

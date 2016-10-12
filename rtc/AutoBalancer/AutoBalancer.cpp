@@ -69,11 +69,10 @@ AutoBalancer::AutoBalancer(RTC::Manager* manager)
       m_accRefOut("accRef", m_accRef),
       m_contactStatesOut("contactStates", m_contactStates),
       m_controlSwingSupportTimeOut("controlSwingSupportTime", m_controlSwingSupportTime),
-      m_cogOut("cogOut", m_cog),
-      m_AutoBalancerServicePort("AutoBalancerService"),
       m_walkingStatesOut("walkingStates", m_walkingStates),
       m_sbpCogOffsetOut("sbpCogOffset", m_sbpCogOffset),
-      m_legMarginIn("legMargin", m_legMargin),
+      m_cogOut("cogOut", m_cog),
+      m_AutoBalancerServicePort("AutoBalancerService"),
       // </rtc-template>
       gait_type(BIPED),
       move_base_gain(0.8),
@@ -112,9 +111,6 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     addInPort("htrhIn", m_htrhIn);
     addInPort("htlhIn", m_htlhIn);
     addInPort("actzmpIn", m_actzmpIn);
-
-
-    addInPort("legMargin", m_legMarginIn);
 
     // Set OutPort buffer
     addOutPort("q", m_qOut);
@@ -297,9 +293,9 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     // load virtual force sensors
     readVirtualForceSensorParamFromProperties(m_vfs, m_robot, prop["virtual_force_sensor"], std::string(m_profile.instance_name));
     // ref force port
-    int npforce = m_robot->numSensors(hrp::Sensor::FORCE);
-    int nvforce = m_vfs.size();
-    int nforce  = npforce + nvforce;
+    unsigned int npforce = m_robot->numSensors(hrp::Sensor::FORCE);
+    unsigned int nvforce = m_vfs.size();
+    unsigned int nforce  = npforce + nvforce;
     m_ref_force.resize(nforce);
     m_ref_forceIn.resize(nforce);
     m_force.resize(nforce);
@@ -311,7 +307,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     }
     for (unsigned int i=0; i<nvforce; i++){
         for ( std::map<std::string, hrp::VirtualForceSensorParam>::iterator it = m_vfs.begin(); it != m_vfs.end(); it++ ) {
-            if (it->second.id == i) sensor_names.push_back(it->first);
+            if (it->second.id == (int)i) sensor_names.push_back(it->first);
         }
     }
     // set ref force port
@@ -488,13 +484,6 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
     hsp->readInput(hp_raw_data);
 
 
-    if (m_legMarginIn.isNew()) {
-      m_legMarginIn.read();
-      for (size_t i = 0; i < 4; i++) {
-        gg->set_leg_margin(m_legMargin.data[i], i);
-      }
-    }
-
     Guard guard(m_mutex);
     hrp::Vector3 ref_basePos;
     hrp::Matrix33 ref_baseRot;
@@ -522,7 +511,7 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
         ref_basePos = (1-transition_interpolator_ratio) * input_basePos + transition_interpolator_ratio * m_robot->rootLink()->p;
         rel_ref_zmp = (1-transition_interpolator_ratio) * input_zmp + transition_interpolator_ratio * rel_ref_zmp;
         rats::mid_rot(ref_baseRot, transition_interpolator_ratio, input_baseRot, m_robot->rootLink()->R);
-        for ( int i = 0; i < m_robot->numJoints(); i++ ) {
+        for ( unsigned int i = 0; i < m_robot->numJoints(); i++ ) {
           m_robot->joint(i)->q = (1-transition_interpolator_ratio) * m_qRef.data[i] + transition_interpolator_ratio * m_robot->joint(i)->q;
         }
       } else {
@@ -539,7 +528,7 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
     }
     if ( m_qRef.data.length() != 0 ) { // initialized
       if (is_legged_robot) {
-        for ( int i = 0; i < m_robot->numJoints(); i++ ){
+        for ( unsigned int i = 0; i < m_robot->numJoints(); i++ ){
           m_qRef.data[i] = m_robot->joint(i)->q;
         }
       }
@@ -623,6 +612,10 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
 
     for (unsigned int i=0; i<m_ref_forceOut.size(); i++){
         m_force[i].tm = m_qRef.tm;
+        for (unsigned int j=0; j<6; j++){
+            if (control_mode != MODE_IDLE) m_force[i].data[j] = transition_interpolator_ratio * m_force[i].data[j] + (1-transition_interpolator_ratio) * m_ref_force[i].data[j];
+            else m_force[i].data[j] = m_ref_force[i].data[j];
+        }
         m_ref_forceOut[i]->write();
     }
 
@@ -638,7 +631,7 @@ void AutoBalancer::getCurrentParameters()
 {
   current_root_p = m_robot->rootLink()->p;
   current_root_R = m_robot->rootLink()->R;
-  for ( int i = 0; i < m_robot->numJoints(); i++ ){
+  for ( unsigned int i = 0; i < m_robot->numJoints(); i++ ){
     qorg[i] = m_robot->joint(i)->q;
   }
 }
@@ -646,7 +639,7 @@ void AutoBalancer::getCurrentParameters()
 void AutoBalancer::getTargetParameters()
 {
   // joint angles
-  for ( int i = 0; i < m_robot->numJoints(); i++ ){
+  for ( unsigned int i = 0; i < m_robot->numJoints(); i++ ){
     m_robot->joint(i)->q = m_qRef.data[i];
     qrefv[i] = m_robot->joint(i)->q;
   }
@@ -733,23 +726,6 @@ void AutoBalancer::getTargetParameters()
               std::map<leg_type, std::string>::const_iterator dst = std::find_if(leg_type_map.begin(), leg_type_map.end(), (&boost::lambda::_1->* &std::map<leg_type, std::string>::value_type::second == it->first));
               m_controlSwingSupportTime.data[contact_states_index_map[it->first]] = gg->get_current_swing_time(dst->first);
           }
-      }
-      // set ref_forces
-      {
-          std::vector<hrp::Vector3> ee_pos;
-          for (size_t i = 0 ; i < leg_names.size(); i++) {
-              ABCIKparam& tmpikp = ikp[leg_names[i]];
-              ee_pos.push_back(tmpikp.target_p0 + tmpikp.target_r0 * tmpikp.localPos + tmpikp.target_r0 * tmpikp.localR * default_zmp_offsets[i]);
-          }
-          double alpha = (ref_zmp - ee_pos[1]).norm() / (ee_pos[0] - ee_pos[1]).norm();
-          if (alpha>1.0) alpha = 1.0;
-          if (alpha<0.0) alpha = 0.0;
-          if (DEBUGP) {
-          std::cerr << "[" << m_profile.instance_name << "] alpha:" << alpha << std::endl;
-          }
-          double mg = m_robot->totalMass() * gg->get_gravitational_acceleration();
-          m_force[0].data[0] = alpha * mg;
-          m_force[1].data[0] = (1-alpha) * mg;
       }
       // set limbCOPOffset
       {
@@ -890,6 +866,24 @@ void AutoBalancer::getTargetParameters()
         }
     }
 
+    // set ref_forces
+    {
+          std::vector<hrp::Vector3> ee_pos;
+          for (size_t i = 0 ; i < leg_names.size(); i++) {
+              ABCIKparam& tmpikp = ikp[leg_names[i]];
+              ee_pos.push_back(tmpikp.target_p0 + tmpikp.target_r0 * tmpikp.localPos + tmpikp.target_r0 * tmpikp.localR * default_zmp_offsets[i]);
+          }
+          double alpha = (ref_zmp - ee_pos[1]).norm() / ((ee_pos[0] - ref_zmp).norm() + (ee_pos[1] - ref_zmp).norm());
+          if (alpha>1.0) alpha = 1.0;
+          if (alpha<0.0) alpha = 0.0;
+          if (DEBUGP) {
+          std::cerr << "[" << m_profile.instance_name << "] alpha:" << alpha << std::endl;
+          }
+          double mg = m_robot->totalMass() * gg->get_gravitational_acceleration();
+          m_force[0].data[2] = alpha * mg;
+          m_force[1].data[2] = (1-alpha) * mg;
+    }
+
     hrp::Vector3 tmp_foot_mid_pos(hrp::Vector3::Zero());
     {
         std::map<leg_type, std::string> leg_type_map = gg->get_leg_type_map();
@@ -1002,9 +996,9 @@ void AutoBalancer::solveLimbIK ()
 {
   for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
     if (it->second.is_active) {
-      for ( int j = 0; j < it->second.manip->numJoints(); j++ ){
-	int i = it->second.manip->joint(j)->jointId;
-	m_robot->joint(i)->q = qorg[i];
+      for ( unsigned int j = 0; j < it->second.manip->numJoints(); j++ ){
+        int i = it->second.manip->joint(j)->jointId;
+        m_robot->joint(i)->q = qorg[i];
       }
     }
   }
@@ -1073,6 +1067,11 @@ void AutoBalancer::solveLimbIK ()
 
 
   // additional COM fitting IK for HumanSynchronizer
+
+
+//  if(ikp.count("rarm"))ikp["rarm"].is_active = false;
+//  if(ikp.count("larm"))ikp["larm"].is_active = false;
+
   hrp::Vector3 tmp_com_err = hsp->rp_ref_out.com + hsp->rp_wld_initpos.com - m_robot->calcCM();
   int com_ik_loop=0;
   const int COM_IK_MAX_LOOP = 10;
@@ -1578,6 +1577,7 @@ bool AutoBalancer::setGaitGeneratorParam(const OpenHRP::AutoBalancerService::Gai
   }
   gg->set_swing_trajectory_delay_time_offset(i_param.swing_trajectory_delay_time_offset);
   gg->set_swing_trajectory_final_distance_weight(i_param.swing_trajectory_final_distance_weight);
+  gg->set_swing_trajectory_time_offset_xy2z(i_param.swing_trajectory_time_offset_xy2z);
   gg->set_stair_trajectory_way_point_offset(hrp::Vector3(i_param.stair_trajectory_way_point_offset[0], i_param.stair_trajectory_way_point_offset[1], i_param.stair_trajectory_way_point_offset[2]));
   gg->set_cycloid_delay_kick_point_offset(hrp::Vector3(i_param.cycloid_delay_kick_point_offset[0], i_param.cycloid_delay_kick_point_offset[1], i_param.cycloid_delay_kick_point_offset[2]));  
   gg->set_gravitational_acceleration(i_param.gravitational_acceleration);
@@ -1595,8 +1595,14 @@ bool AutoBalancer::setGaitGeneratorParam(const OpenHRP::AutoBalancerService::Gai
   gg->set_zmp_weight_map(boost::assign::map_list_of<leg_type, double>(RLEG, i_param.zmp_weight_map[0])(LLEG, i_param.zmp_weight_map[1])(RARM, i_param.zmp_weight_map[2])(LARM, i_param.zmp_weight_map[3]));
   gg->set_optional_go_pos_finalize_footstep_num(i_param.optional_go_pos_finalize_footstep_num);
   gg->set_overwritable_footstep_index_offset(i_param.overwritable_footstep_index_offset);
+  gg->set_leg_margin(i_param.leg_margin);
   gg->set_overwritable_stride_limitation(i_param.overwritable_stride_limitation);
   gg->set_use_stride_limitation(i_param.use_stride_limitation);
+  if (i_param.stride_limitation_type == OpenHRP::AutoBalancerService::SQUARE) {
+    gg->set_stride_limitation_type(SQUARE);
+  } else if (i_param.stride_limitation_type == OpenHRP::AutoBalancerService::CIRCLE) {
+    gg->set_stride_limitation_type(CIRCLE);
+  }
 
   // print
   gg->print_param(std::string(m_profile.instance_name));
@@ -1647,6 +1653,7 @@ bool AutoBalancer::getGaitGeneratorParam(OpenHRP::AutoBalancerService::GaitGener
   for (size_t i = 0; i < 3; i++) i_param.cycloid_delay_kick_point_offset[i] = tmpv(i);
   i_param.swing_trajectory_delay_time_offset = gg->get_swing_trajectory_delay_time_offset();
   i_param.swing_trajectory_final_distance_weight = gg->get_swing_trajectory_final_distance_weight();
+  i_param.swing_trajectory_time_offset_xy2z = gg->get_swing_trajectory_time_offset_xy2z();
   i_param.gravitational_acceleration = gg->get_gravitational_acceleration();
   i_param.toe_angle = gg->get_toe_angle();
   i_param.heel_angle = gg->get_heel_angle();
@@ -1667,9 +1674,17 @@ bool AutoBalancer::getGaitGeneratorParam(OpenHRP::AutoBalancerService::GaitGener
   i_param.optional_go_pos_finalize_footstep_num = gg->get_optional_go_pos_finalize_footstep_num();
   i_param.overwritable_footstep_index_offset = gg->get_overwritable_footstep_index_offset();
   for (size_t i=0; i<4; i++) {
+    i_param.leg_margin[i] = gg->get_leg_margin(i);
+  }
+  for (size_t i=0; i<4; i++) {
     i_param.overwritable_stride_limitation[i] = gg->get_overwritable_stride_limitation(i);
   }
   i_param.use_stride_limitation = gg->get_use_stride_limitation();
+  if (gg->get_stride_limitation_type() == SQUARE) {
+    i_param.stride_limitation_type = OpenHRP::AutoBalancerService::SQUARE;
+  } else if (gg->get_stride_limitation_type() == CIRCLE) {
+    i_param.stride_limitation_type = OpenHRP::AutoBalancerService::CIRCLE;
+  }
   return true;
 };
 

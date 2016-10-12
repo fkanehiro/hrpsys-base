@@ -10,7 +10,7 @@
 #include "GLshape.h"
 #include "GLtexture.h"
 
-GLshape::GLshape() : m_texture(NULL), m_requestCompile(false), m_shininess(0.2), m_shadingList(0), m_wireFrameList(0), m_highlight(false)
+GLshape::GLshape() : m_shininess(0.2), m_texture(NULL), m_requestCompile(false), m_shadingList(0), m_wireFrameList(0), m_highlight(false)
 {
     for (int i=0; i<16; i++) m_trans[i] = 0.0;
     m_trans[0] = m_trans[5] = m_trans[10] = m_trans[15] = 1.0;
@@ -41,7 +41,7 @@ size_t GLshape::draw(int i_mode)
     return m_triangles.size();
 }
 
-void GLshape::setVertices(int nvertices, const float *vertices)
+void GLshape::setVertices(unsigned int nvertices, const float *vertices)
 {
     m_vertices.resize(nvertices);
     for (size_t i=0; i<nvertices; i++){
@@ -51,7 +51,7 @@ void GLshape::setVertices(int nvertices, const float *vertices)
     }
 }
 
-void GLshape::setTriangles(int ntriangles, const int *vertexIndices)
+void GLshape::setTriangles(unsigned int ntriangles, const int *vertexIndices)
 {
     m_triangles.resize(ntriangles);
     for (size_t i=0; i<ntriangles; i++){
@@ -61,7 +61,7 @@ void GLshape::setTriangles(int ntriangles, const int *vertexIndices)
     }
 }
 
-void GLshape::setNormals(int nnormal, const float *normals)
+void GLshape::setNormals(unsigned int nnormal, const float *normals)
 {
     m_normals.resize(nnormal);
     for (size_t i=0; i<nnormal; i++){
@@ -76,7 +76,7 @@ void GLshape::setDiffuseColor(float r, float g, float b, float a)
     m_diffuse[0] = r; m_diffuse[1] = g; m_diffuse[2] = b; m_diffuse[3] = a; 
 }
 
-void GLshape::setColors(int ncolors, const float *colors)
+void GLshape::setColors(unsigned int ncolors, const float *colors)
 {
     m_colors.resize(ncolors);
     for (size_t i=0; i<ncolors; i++){
@@ -96,7 +96,7 @@ void GLshape::solid(bool flag)
     m_solid = flag;
 }
 
-void GLshape::setNormalIndices(int len, const int *normalIndices)
+void GLshape::setNormalIndices(unsigned int len, const int *normalIndices)
 {
     m_normalIndices.resize(len);
     for (size_t i=0; i<len; i++){
@@ -104,7 +104,7 @@ void GLshape::setNormalIndices(int len, const int *normalIndices)
     }
 }
 
-void GLshape::setTextureCoordinates(int ncoords, const float *coordinates)
+void GLshape::setTextureCoordinates(unsigned int ncoords, const float *coordinates)
 {
     m_textureCoordinates.resize(ncoords);
     for (size_t i=0; i<ncoords; i++){
@@ -113,7 +113,7 @@ void GLshape::setTextureCoordinates(int ncoords, const float *coordinates)
     }
 }
 
-void GLshape::setTextureCoordIndices(int len, const int *coordIndices)
+void GLshape::setTextureCoordIndices(unsigned int len, const int *coordIndices)
 {
     m_textureCoordIndices.resize(len);
     for (size_t i=0; i<len; i++){
@@ -208,7 +208,7 @@ int GLshape::doCompile(bool isWireFrameMode)
     for(size_t j=0; j < m_triangles.size(); ++j){
         if (isWireFrameMode) glBegin(GL_LINE_LOOP);
         if (!m_normalPerVertex){
-            int p;
+            unsigned int p;
             if (m_normalIndices.size() == 0){
                 p = j;
             }else{

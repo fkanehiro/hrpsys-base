@@ -56,23 +56,21 @@ CollisionDetector::CollisionDetector(RTC::Manager* manager)
       m_beepCommandOut("beepCommand", m_beepCommand),
       m_CollisionDetectorServicePort("CollisionDetectorService"),
       // </rtc-template>
-      m_loop_for_check(0),
-      m_collision_loop(1),
-      m_use_limb_collision(false),
-#ifdef USE_HRPSYSUTIL
-      m_glbody(NULL),
-#endif // USE_HRPSYSUTIL
-      m_use_viewer(false),
-      m_robot(hrp::BodyPtr()),
 #ifdef USE_HRPSYSUTIL
       m_scene(&m_log),
       m_window(&m_scene, &m_log),
+      m_glbody(NULL),
 #endif // USE_HRPSYSUTIL
+      m_use_limb_collision(false),
+      m_use_viewer(false),
+      m_robot(hrp::BodyPtr()),
+      m_loop_for_check(0),
+      m_collision_loop(1),
       m_debugLevel(0),
       m_enable(true),
       collision_beep_count(0),
-      dummy(0),
-      is_beep_port_connected(false)
+      is_beep_port_connected(false),
+      dummy(0)
 {
     m_service0.collision(this);
 #ifdef USE_HRPSYSUTIL
@@ -182,7 +180,7 @@ RTC::ReturnCode_t CollisionDetector::onInitialize()
             if ( m_robot->link(name1)==NULL ) {
                 std::cerr << "[" << m_profile.instance_name << "] Could not find robot link " << name1 << std::endl;
 		std::cerr << "[" << m_profile.instance_name << "] please choose one of following :";
-		for (int i=0; i < m_robot->numLinks(); i++) {
+		for (unsigned int i=0; i < m_robot->numLinks(); i++) {
 		  std::cerr << " " << m_robot->link(i)->name;
 		}
 		std::cerr << std::endl;
@@ -191,7 +189,7 @@ RTC::ReturnCode_t CollisionDetector::onInitialize()
             if ( m_robot->link(name2)==NULL ) {
                 std::cerr << "[" << m_profile.instance_name << "] Could not find robot link " << name2 << std::endl;
 		std::cerr << "[" << m_profile.instance_name << "] please choose one of following :";
-		for (int i=0; i < m_robot->numLinks(); i++) {
+		for (unsigned int i=0; i < m_robot->numLinks(); i++) {
 		  std::cerr << " " << m_robot->link(i)->name;
 		}
 		std::cerr << std::endl;
@@ -260,12 +258,12 @@ RTC::ReturnCode_t CollisionDetector::onInitialize()
     m_interpolator->setName(std::string(m_profile.instance_name)+" interpolator");
     m_link_collision = new bool[m_robot->numLinks()];
 
-    for(int i=0; i<m_robot->numJoints(); i++){
+    for(unsigned int i=0; i<m_robot->numJoints(); i++){
       m_q.data[i] = 0;
     }
 
     m_servoState.data.length(m_robot->numJoints());
-    for(int i = 0; i < m_robot->numJoints(); i++) {
+    for(unsigned int i = 0; i < m_robot->numJoints(); i++) {
         m_servoState.data[i].length(1);
         int status = 0;
         status |= 1<< OpenHRP::RobotHardwareService::CALIB_STATE_SHIFT;
@@ -344,7 +342,7 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
         }
         if ( m_qRefIn.isNew()) {
             m_qRefIn.read();
-            for ( int i = 0; i < m_q.data.length(); i++ ) {
+            for ( unsigned int i = 0; i < m_q.data.length(); i++ ) {
                 m_q.data[i] = m_qRef.data[i];
             }
             m_q.tm = m_qRef.tm;
@@ -356,7 +354,7 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
 
         // check servo for collision beep sound
         bool has_servoOn = false;
-        for (int i = 0; i < m_robot->numJoints(); i++ ){
+        for (unsigned int i = 0; i < m_robot->numJoints(); i++ ){
           int servo_state = (m_servoState.data[i][0] & OpenHRP::RobotHardwareService::SERVO_STATE_MASK) >> OpenHRP::RobotHardwareService::SERVO_STATE_SHIFT;
           has_servoOn = has_servoOn || (servo_state == 1);
         }
@@ -366,15 +364,15 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
 	assert(m_qRef.data.length() == m_robot->numJoints());
 #ifdef USE_HRPSYSUTIL
         if ( m_use_viewer ) {
-          for (int i=0; i<m_glbody->numLinks(); i++){
+          for (unsigned int i=0; i<m_glbody->numLinks(); i++){
             ((GLlink *)m_glbody->link(i))->highlight(false);
           }
         }
-        for (int i=0; i<m_glbody->numLinks(); i++){
+        for (unsigned int i=0; i<m_glbody->numLinks(); i++){
             m_link_collision[m_glbody->link(i)->index] = false;
         }
 #else
-        for (int i=0; i<m_robot->numLinks(); i++){
+        for (unsigned int i=0; i<m_robot->numLinks(); i++){
             m_link_collision[m_robot->link(i)->index] = false;
         }
 #endif // USE_HRPSYSUTIL
@@ -384,12 +382,12 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
         //  2. recovery                               .. check based on q'(m_recover_jointdata)
         if (m_recover_time == 0 || m_recover_time == default_recover_time ) {  // 1. current safe angle or collision angle
             if ( m_loop_for_check == 0 ) { // update robot posutre for each m_loop_for_check timing
-                for ( int i = 0; i < m_robot->numJoints(); i++ ){
+                for ( unsigned int i = 0; i < m_robot->numJoints(); i++ ){
                     m_robot->joint(i)->q = m_qRef.data[i];
                 }
             }
         }else{  // 2. recovery
-          for ( int i = 0; i < m_robot->numJoints(); i++ ){
+          for ( unsigned int i = 0; i < m_robot->numJoints(); i++ ){
             if ( m_loop_for_check == 0 ) { // update robot posutre for each m_loop_for_check timing
               if ( m_curr_collision_mask[i] == 1) {// joint with 1 (do not move when collide :default), need to be updated using recover(safe) data
                   m_robot->joint(i)->q = m_recover_jointdata[i];
@@ -404,7 +402,7 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
 	m_robot->calcForwardKinematics();
 	coil::TimeValue tm1 = coil::gettimeofday();
         std::map<std::string, CollisionLinkPair *>::iterator it = m_pair.begin();
-	for (unsigned int i = 0; it != m_pair.end(); it++, i++){
+	for (int i = 0; it != m_pair.end(); it++, i++){
             int sub_size = (m_pair.size() + m_collision_loop -1) / m_collision_loop;  // 10 / 3 = 3  / floor
             // 0 : 0 .. sub_size-1                            // 0 .. 2
             // 1 : sub_size ... sub_size*2-1                  // 3 .. 5
@@ -437,8 +435,8 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
                         bool stop_all = true;
                         // if all joint is within false(0:move even if collide) in initial mask ( for example leg to leg ) we stop them
                         // if some joint is not within true(1:do not move within collide) on initial mask, stop only true joint (for exmple leg to arm)
-                        for ( int i = 0; i < jointPath->numJoints(); i++ ){ if ( m_init_collision_mask[jointPath->joint(i)->jointId] == 1) stop_all = false; }
-                        for ( int i = 0; i < jointPath->numJoints(); i++ ){
+                        for ( unsigned int i = 0; i < jointPath->numJoints(); i++ ){ if ( m_init_collision_mask[jointPath->joint(i)->jointId] == 1) stop_all = false; }
+                        for ( unsigned int i = 0; i < jointPath->numJoints(); i++ ){
                             int id = jointPath->joint(i)->jointId;
                             // collision_mask used to select output                0: passthough reference data, 1 output safe data
                             if ( stop_all ) {
@@ -463,7 +461,7 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
                 if (! m_have_safe_posture ) {
                     // first transition collision -> safe
                     std::cerr << "[" << m_profile.instance_name << "] set safe posture" << std::endl;
-                    for ( int i = 0; i < m_q.data.length(); i++ ) {
+                    for ( unsigned int i = 0; i < m_q.data.length(); i++ ) {
                         m_lastsafe_jointdata[i] = m_robot->joint(i)->q;
                     }
                     m_interpolator->set(m_lastsafe_jointdata); // Set current angles as initial angle for recover
@@ -473,12 +471,12 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
                 if (m_recover_time != default_recover_time) {
                     // sefe or recover
                     // in collision, robot->q may differ from m_q.
-                    for ( int i = 0; i < m_q.data.length(); i++ ) {
+                    for ( unsigned int i = 0; i < m_q.data.length(); i++ ) {
                         m_lastsafe_jointdata[i] = m_robot->joint(i)->q;
                     }
                 }
             }else{
-                for ( int i = 0; i < m_q.data.length(); i++ ) {
+                for ( unsigned int i = 0; i < m_q.data.length(); i++ ) {
                     if ( m_curr_collision_mask[i] == 0 ) { // if collisoin_mask is 0 (move even if collide), we update lastsafe_joint_data from input data
                         m_lastsafe_jointdata[i] = m_robot->joint(i)->q;
                     }
@@ -502,7 +500,7 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
         coil::TimeValue tm2 = coil::gettimeofday();
         if (m_safe_posture && m_recover_time == 0){ // safe mode
           //std::cerr << "safe-------------- " << std::endl;
-          for ( int i = 0; i < m_q.data.length(); i++ ) {
+          for ( unsigned int i = 0; i < m_q.data.length(); i++ ) {
             m_q.data[i] = m_qRef.data[i];
           }
           // collision_mask used to select output                0: passthough reference data, 1 output safe data
@@ -511,7 +509,7 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
           static int collision_loop_recover = 0;
           if(m_safe_posture){  //recover
             //std::cerr << "recover-------------- " << std::endl;
-            for ( int i = 0; i < m_q.data.length(); i++ ) {
+            for ( unsigned int i = 0; i < m_q.data.length(); i++ ) {
               m_q.data[i] = m_recover_jointdata[i];
             }
             m_recover_time = m_recover_time - i_dt;
@@ -526,7 +524,7 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
             m_interpolator->set(m_lastsafe_jointdata); //Set last safe joint data as initial angle
             //m_interpolator->set(m_q.data.get_buffer()); //Set initial angle
           }
-          for ( int i = 0; i < m_q.data.length(); i++ ) {
+          for ( unsigned int i = 0; i < m_q.data.length(); i++ ) {
               if (m_curr_collision_mask[i] == 0) { // 0: passthough reference data, 1 output safe data, stop joints only joint with 1
                   m_q.data[i] = m_qRef.data[i];
               }
@@ -540,7 +538,7 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
 #else
           if (collision_loop_recover != 0) {
             collision_loop_recover--;
-            for ( int i = 0; i < m_q.data.length(); i++ ) {
+            for ( unsigned int i = 0; i < m_q.data.length(); i++ ) {
               m_q.data[i] =
                   m_lastsafe_jointdata[i] + collision_loop_recover * ((m_q.data[i] - m_lastsafe_jointdata[i])/m_collision_loop);
             }
@@ -563,7 +561,7 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
             if ( DEBUGP || (loop % ((int)(5/m_dt))) == 1) {
                 std::cerr << "[" << m_profile.instance_name << "] CAUTION!! The robot is moving while collision detection!!!, since we do not get safe_posture yet" << std::endl;
             }
-            for ( int i = 0; i < m_q.data.length(); i++ ) {
+            for ( unsigned int i = 0; i < m_q.data.length(); i++ ) {
                 m_lastsafe_jointdata[i] = m_recover_jointdata[i] = m_q.data[i] = m_qRef.data[i];
             }
         }
@@ -599,17 +597,17 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
 
         // set collisoin state
         m_state.time = tm2;
-        for (int i = 0; i < m_robot->numJoints(); i++ ){
+        for (unsigned int i = 0; i < m_robot->numJoints(); i++ ){
             m_state.angle[i] = m_robot->joint(i)->q;
         }
 
         if ( m_loop_for_check == 0 ) {
-            for (int i = 0; i < m_robot->numLinks(); i++ ){
+            for (unsigned int i = 0; i < m_robot->numLinks(); i++ ){
                 m_state.collide[i] = m_link_collision[i];
             }
 
             m_state.lines.length(tp.lines.size());
-            for(int i = 0; i < tp.lines.size(); i++ ){
+            for(unsigned int i = 0; i < tp.lines.size(); i++ ){
                 const std::pair<hrp::Vector3, hrp::Vector3>& line = tp.lines[i];
                 double *v;
                 m_state.lines[i].length(2);
@@ -698,7 +696,7 @@ void CollisionDetector::setupVClipModel(hrp::BodyPtr i_body)
 {
     m_VclipLinks.resize(i_body->numLinks());
     //std::cerr << i_body->numLinks() << std::endl;
-    for (int i=0; i<i_body->numLinks(); i++) {
+    for (unsigned int i=0; i<i_body->numLinks(); i++) {
       assert(i_body->link(i)->index == i);
       setupVClipModel(i_body->link(i));
     }
@@ -706,7 +704,7 @@ void CollisionDetector::setupVClipModel(hrp::BodyPtr i_body)
 
 bool CollisionDetector::checkIsSafeTransition(void)
 {
-    for ( int i = 0; i < m_q.data.length(); i++ ) {
+    for ( unsigned int i = 0; i < m_q.data.length(); i++ ) {
         // If servoOn, check too large joint angle gap. Otherwise (servoOff), neglect too large joint angle gap.
         int servo_state = (m_servoState.data[i][0] & OpenHRP::RobotHardwareService::SERVO_STATE_MASK) >> OpenHRP::RobotHardwareService::SERVO_STATE_SHIFT; // enum SwitchStatus {SWITCH_ON, SWITCH_OFF};
         if (servo_state == 1 && abs(m_q.data[i] - m_qRef.data[i]) > 0.017) return false;
@@ -727,7 +725,7 @@ bool CollisionDetector::enable(void)
     }
 
     // check collision
-    for ( int i = 0; i < m_robot->numJoints(); i++ ){
+    for ( unsigned int i = 0; i < m_robot->numJoints(); i++ ){
         m_robot->joint(i)->q = m_qRef.data[i];
     }
     m_robot->calcForwardKinematics();

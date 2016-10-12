@@ -30,7 +30,7 @@ RTC::ReturnCode_t setupCollisionModel(hrp::BodyPtr m_robot, const char *url, Ope
     // do qhull
     OpenHRP::ShapeInfoSequence_var sis = binfo->shapes();
     OpenHRP::LinkInfoSequence_var lis = binfo->links();
-    for(int i = 0; i < m_robot->numLinks(); i++ ) {
+    for(unsigned int i = 0; i < m_robot->numLinks(); i++ ) {
 	const OpenHRP::LinkInfo& i_li = lis[i];
 	const OpenHRP::TransformedShapeIndexSequence& tsis = i_li.shapeIndices;
 	// setup
@@ -134,7 +134,7 @@ RTC::ReturnCode_t setupCollisionModel(hrp::BodyPtr m_robot, const char *url, Ope
 
 bool checkCollisionForAllJointRange(int i, hrp::JointPathPtr jointPath, std::vector<hrp::ColdetLinkPairPtr> &collisionPairs)
 {
-    if ( i >= jointPath->numJoints() ) return false;
+    if ( i >= (int)jointPath->numJoints() ) return false;
     if ( collisionPairs.size() == 0 ) return true;
     hrp::Link *l = jointPath->joint(i);
 
@@ -197,9 +197,9 @@ void setupCollisionLinkPair()
     // need AABBCollision?
     //
     // set all collisoin pair
-    for (int i=0; i<m_robot->numLinks(); i++) {
+    for (unsigned int i=0; i<m_robot->numLinks(); i++) {
 	hrp::Link *l1 = m_robot->link(i);
-	for (int j=i+1; j<m_robot->numLinks(); j++) {
+	for (unsigned int j=i+1; j<m_robot->numLinks(); j++) {
 	    hrp::Link *l2 = m_robot->link(j);
 	    if ( l1->coldetModel && l2->coldetModel
 		 &&  (!(checkBlackListJoint(l1) ||  checkBlackListJoint(l2) || checkBlackListJointPair(l1, l2)))
@@ -289,7 +289,7 @@ void setupCollisionLinkPair()
 	    hrp::JointPathPtr jointPath2 = m_robot->getJointPath(((*ii).first)->link(0),((*ii).first)->link(1));
 	    // check if JointPath1 is included in jointPath2
 	    bool find_key = true;
-	    for (int j = 0; j < jointPath1->numJoints() ; j++ ) {
+	    for (unsigned int j = 0; j < jointPath1->numJoints() ; j++ ) {
 		if ( jointPath1->joint(j)->name != jointPath2->joint(j)->name ) {
 		    find_key = false;
 		    break;
@@ -319,7 +319,7 @@ void setupCollisionLinkPair()
 	i += (*ii).second.size();
 	for(std::vector<hrp::ColdetLinkPairPtr>::iterator it = sub_pairs.begin(); it != sub_pairs.end(); it++ ) {
 	    hrp::JointPathPtr jointPath = m_robot->getJointPath((*it)->link(0),(*it)->link(1));
-	    for ( int j = 0; j < jointPath->numJoints(); j++ ) {
+	    for ( unsigned int j = 0; j < jointPath->numJoints(); j++ ) {
 		std::cerr << jointPath->joint(j)->name << " ";
 	    }
 	    std::cerr << std::endl;

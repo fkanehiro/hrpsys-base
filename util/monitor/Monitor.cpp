@@ -8,8 +8,8 @@ Monitor::Monitor(CORBA::ORB_var orb, const std::string &i_hostname,
     m_orb(orb),
     m_rhCompName("RobotHardware0"),
     m_shCompName("StateHolder0"),
-    m_interval(i_interval),
-    m_log(i_log)
+    m_log(i_log),
+    m_interval(i_interval)
 {
     char buf[128];
     try {
@@ -157,7 +157,7 @@ void Monitor::showStatus(hrp::BodyPtr &body)
     m_log->tail();
     fprintf(stdout, "\e[2KID PW                 NAME    ANGLE  COMMAND    ERROR VELOCITY   ACCEL. TORQUE SERVO TEMP\n"); // greep backgroupd
     char buf[256];
-    for (int i=0; i<body->numJoints(); i++){
+    for (unsigned int i=0; i<body->numJoints(); i++){
         hrp::Link *l = body->joint(i);
         if (l){
             fprintf(stdout,"\e[2K");

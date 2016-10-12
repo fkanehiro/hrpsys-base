@@ -84,7 +84,7 @@ RTC::ReturnCode_t OpenNIGrabber::onInitialize()
 }
 
 
-void OpenNIGrabber::grabberCallbackDepthAndColor(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr &cloud)
+void OpenNIGrabber::grabberCallbackDepthAndColor(const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &cloud)
 {
     m_cloud.width = cloud->width;
     m_cloud.height = cloud->height;
@@ -98,7 +98,7 @@ void OpenNIGrabber::grabberCallbackDepthAndColor(const pcl::PointCloud<pcl::Poin
 
     float *dst_cloud = (float *)m_cloud.data.get_buffer();
     unsigned char *dst_image = (unsigned char*)m_image.data.image.raw_data.get_buffer();
-    for (int i=0; i<cloud->points.size(); i++){
+    for (unsigned int i=0; i<cloud->points.size(); i++){
         dst_cloud[0] = cloud->points[i].x;
         dst_cloud[1] = cloud->points[i].y;
         dst_cloud[2] = cloud->points[i].z;
@@ -122,7 +122,7 @@ void OpenNIGrabber::grabberCallbackDepth(const pcl::PointCloud<pcl::PointXYZ>::C
     m_cloud.data.length(m_cloud.height*m_cloud.row_step);
 
     float *dst_cloud = (float *)m_cloud.data.get_buffer();
-    for (int i=0; i<cloud->points.size(); i++){
+    for (unsigned int i=0; i<cloud->points.size(); i++){
         dst_cloud[0] = cloud->points[i].x;
         dst_cloud[1] = cloud->points[i].y;
         dst_cloud[2] = cloud->points[i].z;
@@ -209,7 +209,7 @@ RTC::ReturnCode_t OpenNIGrabber::onActivated(RTC::UniqueId ec_id)
           m_cloud.is_bigendian = false;
           m_cloud.point_step = 16;
           m_cloud.is_dense = false;
-          boost::function<void (const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr&)> f = boost::bind(&OpenNIGrabber::grabberCallbackDepthAndColor, this, _1);
+          boost::function<void (const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr&)> f = boost::bind(&OpenNIGrabber::grabberCallbackDepthAndColor, this, _1);
           m_interface->registerCallback(f);
       }else{
           std::cerr << "[" << m_profile.instance_name << "] Error: unknown mode ("
