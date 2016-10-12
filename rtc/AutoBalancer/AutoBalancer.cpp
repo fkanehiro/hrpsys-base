@@ -1023,7 +1023,7 @@ void AutoBalancer::solveLimbIK ()
   //for HumanSynchronizer
 //  static int HumanSyncCountdownNum = 5 * (1/m_dt);
   if(hsp->startCountdownForHumanSync){
-    std::cerr << "[" << m_profile.instance_name << "] Count Down for HumanSync ["<<hsp->getRemainingCountDown()<<"]\r";//ややCOMのIKに手間取った時プリント
+    std::cerr << "[" << m_profile.instance_name << "] Count Down for HumanSync ["<<hsp->getRemainingCountDown()<<"]\r";
 	  hsp->updateCountDown();
   }
   if(hsp->isHumanSyncOn()){

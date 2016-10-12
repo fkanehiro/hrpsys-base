@@ -25,6 +25,7 @@
 // <rtc-template block="service_impl_h">
 #include "AutoBalancerService_impl.h"
 #include "interpolator.h"
+#include "../TorqueFilter/IIRFilter.h"
 
 
 // </rtc-template>
@@ -90,9 +91,6 @@ class HumanPose{
 
 
 
-
-
-
 class HumanSynchronizer{
   private:
 
@@ -120,6 +118,8 @@ class HumanSynchronizer{
     double h2r_ratio, tgt_h2r_ratio;
     double cmmr, tgt_cmmr;
     hrp::Vector3 lpf_zmp;
+    double HZ,DT,G;
+    hrp::Vector3 com_old,com_oldold,comacc;
 
   public:
 
@@ -131,12 +131,21 @@ class HumanSynchronizer{
     hrp::Vector3 init_wld_rp_basepos;
     HumanPose rp_ref_out;
     FILE *sr_log,*cz_log;
+    std::vector<double> fb_coeffs;
+    std::vector<double> ff_coeffs;
+
+
+
 
     HumanSynchronizer(){
       tgt_h2r_ratio = h2r_ratio = 0.96;//human 1.1m vs jaxon 1.06m
 //      tgt_h2r_ratio = h2r_ratio = 0.62;//human 1.1m vs chidori 0.69m
 //      tgt_h2r_ratio = h2r_ratio = 0.69;//human 1.0(with heavy foot sensor) vs chidori 0.69
 //      tgt_h2r_ratio = h2r_ratio = 1.06;//human 1.0(with heavy foot sensor) vs jaxon 1.06
+
+      HZ = 500;
+      DT = 1.0/HZ;
+      G = 9.80665;
       tgt_cmmr = cmmr = 1.0;
       use_x = true; use_y = true; use_z = true;
       cur_rfup_level = 0;       cur_lfup_level = 0;
@@ -156,17 +165,34 @@ class HumanSynchronizer{
       HumanSyncOn = false;
       ht_first_call = true;
       startCountdownForHumanSync = false;
-      countdown_num = 5*500;
+      countdown_num = 5*HZ;
       loop = 0;
       is_rf_in_air = false; is_lf_in_air = false;
-//      std::string home_path(std::getenv("HOME"));
-//      sr_log = fopen((home_path+"/HumanSync_support_region.log").c_str(),"w+");
-//      cz_log = fopen((home_path+"/HumanSync_com_zmp.log").c_str(),"w+");
+
+      double fc_digital = 0.5;
+      double fc = tan(fc_digital * M_PI / HZ) / (2 * M_PI);
+      double denom = 1 + (2 * sqrt(2) * M_PI * fc) + 4 * M_PI * M_PI * fc*fc;
+      ff_coeffs.assign(3,0.0);
+      fb_coeffs.assign(3,0.0);
+      ff_coeffs[0] = (4 * M_PI * M_PI * fc*fc) / denom;
+      ff_coeffs[1] = (8 * M_PI * M_PI * fc*fc) / denom;
+      ff_coeffs[2] = (4 * M_PI * M_PI * fc*fc) / denom;
+      fb_coeffs[0] = 1.0;
+      fb_coeffs[1] = (8 * M_PI * M_PI * fc*fc - 2) / denom;
+      fb_coeffs[2] = (1 - (2 * sqrt(2) * M_PI * fc) + 4 * M_PI * M_PI * fc*fc) / denom;
+
+
+//      IIRFilter com_iir = IIRFilter(2, fb_coeffs, ff_coeffs);
+
+
+      std::string home_path(std::getenv("HOME"));
+      sr_log = fopen((home_path+"/HumanSync_support_region.log").c_str(),"w+");
+      cz_log = fopen((home_path+"/HumanSync_com_zmp.log").c_str(),"w+");
       cout<<"HumanSynchronizer constructed"<<endl;
     }
     ~HumanSynchronizer(){
-//      fclose(sr_log);
-//      fclose(cz_log);
+      fclose(sr_log);
+      fclose(cz_log);
       cout<<"HumanSynchronizer destructed"<<endl;
     }
 
@@ -204,6 +230,7 @@ class HumanSynchronizer{
       applyCOMZMPXYZLock(rp_ref_out, rp_ref_out);
 
       applyCOMToSupportRegionLimit(rp_ref_out.lf+init_wld_rp_lfpos,rp_ref_out.rf+init_wld_rp_rfpos,rp_ref_out.com);
+      applyZMPCalcFromCOM(rp_ref_out.com,rp_ref_out.zmp);
 
       rp_ref_out_old = rp_ref_out;
 //      fprintf(log,"%f %f %f %f %f %f\n", rp_ref_out.com(0), rp_ref_out.com(1), rp_ref_out.zmp(0), rp_ref_out.zmp(1), hp_rel_raw.com(0), hp_rel_raw.com(1));
@@ -275,6 +302,14 @@ class HumanSynchronizer{
 //      for(int i=0;i<filt_out.idsize-5;i++){//ここではrfw,zmpとかはフィルターしないほうがいい
         filt_out.Seq(i) = (1-FNUM) * out_old.Seq(i) + FNUM * raw_in.Seq(i);
       }
+
+//      filt_out.com(1) = com_iir.executeFilter(raw_in.com[1]);
+      static double y[3],x[3];
+      x[0] = raw_in.com(1);
+      y[0] = ff_coeffs[0]*x[0] + ff_coeffs[1]*x[1] + ff_coeffs[2]*x[2] - fb_coeffs[1]*y[1] - fb_coeffs[2]*y[2];
+      x[2] = x[1];      x[1] = x[0];      y[2] = y[1];      y[1] = y[0];
+
+      filt_out.com(1) = y[0];
 //      for(int i=filt_out.idsize-5;i<filt_out.idsize;i++){//ここではrfw,zmpとかはフィルターしないほうがいい
 //        filt_out.Seq(i) = raw_in.Seq(i);
 //      }
@@ -349,7 +384,6 @@ class HumanSynchronizer{
         pre_cont_lfpos(0) = in.lf(0);
         pre_cont_lfpos(1) = in.lf(1);
       }
-//      out.rf(0) = 0; out.rf(1) = 0; out.lf(0) = 0; out.lf(1) = 0;//足固定テスト
     }
     void applyWorkspaceLimit(const HumanPose& in, HumanPose& out){
       if(!is_rf_contact && is_lf_contact){//右足浮遊時
@@ -359,89 +393,6 @@ class HumanSynchronizer{
         if(in.lf(1) + rp_wld_initpos.lf(1) < in.rf(1) + rp_wld_initpos.rf(1) + 0.15)out.lf(1) = in.rf(1) + rp_wld_initpos.rf(1) - rp_wld_initpos.lf(1) + 0.15;
       }
     }
-//    bool applyCOMToSupportRegionLimit_boost_geometry(const hrp::Vector3& lfin_abs, const hrp::Vector3& rfin_abs, hrp::Vector3& comin_abs){
-////      ishiguro(ロボット体内のboostが古くて対応してない！！！)
-//      #include <boost/assert.hpp>
-//      #include <boost/assign/list_of.hpp>
-//      #include <boost/geometry.hpp>
-//      #include <boost/geometry/geometries/point_xy.hpp>
-//      #include <boost/geometry/geometries/box.hpp>
-//      #include <boost/geometry/geometries/polygon.hpp>
-//      #include <boost/geometry/algorithms/disjoint.hpp>
-//      #include <boost/geometry/geometries/geometries.hpp>
-//      namespace bg = boost::geometry;
-//      typedef bg::model::d2::point_xy<double> point;
-//      typedef bg::model::polygon<point> polygon;
-//      polygon lr_region,s_region;
-//      const double XUMARGIN = 0.04;//CHIDORI
-//      const double XLMARGIN = -0.02;
-//      const double YUMARGIN = 0.01;
-//      const double YLMARGIN = -0.01;
-//      bg::model::linestring<point> s_line = boost::assign::list_of<point>
-//        (lfin_abs(0) + XLMARGIN, lfin_abs(1) + YLMARGIN)//LFの右下
-//        (lfin_abs(0) + XLMARGIN, lfin_abs(1) + YUMARGIN)//LFの左下
-//        (lfin_abs(0) + XUMARGIN, lfin_abs(1) + YUMARGIN)//LFの左上
-//        (lfin_abs(0) + XUMARGIN, lfin_abs(1) + YLMARGIN)//LFの右上
-//        (rfin_abs(0) + XLMARGIN, rfin_abs(1) + YLMARGIN)//RFの右下
-//        (rfin_abs(0) + XLMARGIN, rfin_abs(1) + YUMARGIN)//RFの左下
-//        (rfin_abs(0) + XUMARGIN, rfin_abs(1) + YUMARGIN)//RFの左上
-//        (rfin_abs(0) + XUMARGIN, rfin_abs(1) + YLMARGIN)//RFの右上
-//             ;
-//      bg::convex_hull(s_line, s_region);
-//      point com2d(comin_abs(0),comin_abs(1));
-//      Eigen::Vector2d ans_point(comin_abs(0),comin_abs(1));
-//      enum point_state_t {PT_IN_NO_PATTERN = -1, PT_IN_REGION, PT_FIX_TO_EDGE, PT_FIX_TO_VERTEX};
-//      point_state_t pt_state = PT_IN_NO_PATTERN;
-//      if(bg::within(com2d, s_region)){//対象の点が凸包の内部に存在するかチェックする
-//        pt_state = PT_IN_REGION;
-//      }else{
-//        Eigen::Vector2d check_point(com2d.x(),com2d.y());
-//        int ans_lid=-1;
-//        for(int i=0;i<s_region.outer().size()-1;i++){//対象の点がある線分への垂線を有するかチェックする
-//          Eigen::Vector2d cur_vert(s_region.outer()[i].x(),s_region.outer()[i].y());
-//          Eigen::Vector2d next_vert(s_region.outer()[i+1].x(),s_region.outer()[i+1].y());
-//          Eigen::Vector2d edge_v = next_vert - cur_vert;
-//          Eigen::Vector2d tgt_pt_v = check_point - cur_vert;
-//          //ある線分への垂線を有し，かつ外側(時計回りエッジに対して左側)に存在するなら，対象の点からそのエッジへの垂線の交点が最近傍点
-//          if(edge_v.dot(tgt_pt_v)/edge_v.norm() > 0 && edge_v.dot(tgt_pt_v)/edge_v.norm() < edge_v.norm() && (edge_v(0)*tgt_pt_v(1)-edge_v(1)*tgt_pt_v(0)) > 0){
-//            ans_lid = i;
-//            ans_point = cur_vert + edge_v.normalized() * (edge_v.dot(tgt_pt_v)/edge_v.norm());
-//            pt_state = PT_FIX_TO_EDGE;
-//            break;
-//          }
-//        }
-//        if(pt_state == PT_FIX_TO_EDGE){
-//          cout<<"point will on the line:"<<ans_lid<<" point:"<<ans_point(0)<<","<<ans_point(1)<<endl;
-//        }else{//対象の点が線分への垂線を持たなければ答えを頂点に絞ってチェックする
-//          double cur_min_dis = bg::distance(com2d, s_region.outer()[0]);
-//          int ans_pid = 0;
-//          for(int i=1;i<s_region.outer().size();i++){
-//            if(bg::distance(com2d, s_region.outer()[i]) < cur_min_dis){
-//              cur_min_dis = bg::distance(com2d, s_region.outer()[i]);
-//              ans_pid = i;
-//            }
-//          }
-//          ans_point(0) = s_region.outer()[ans_pid].x();
-//          ans_point(1) = s_region.outer()[ans_pid].y();
-//          cout<<"point will on the vertex:"<<ans_pid<<" point:"<<ans_point(0)<<","<<ans_point(1)<<endl;
-//          pt_state = PT_FIX_TO_VERTEX;
-//        }
-//      }
-//      if(loop%50==0){
-//        if(pt_state != PT_IN_REGION){
-//          std::cout<<"COM out of Support Region pt_state="<<pt_state<<std::endl;
-//        }
-//        for(int i=0;i<s_region.outer().size();i++){
-//          fprintf(sr_log,"%f %f %f\n",s_region.outer().at(i).x(), s_region.outer().at(i).y(),(double)loop/500.0);
-//        }
-//        fprintf(sr_log,"\n");
-//        fprintf(cz_log,"%f %f %f %f %f %f %f %f %f",(double)loop/500.0,comin_abs(0),comin_abs(1),comin_abs(2),rp_ref_out.zmp(0),rp_ref_out.zmp(1),rp_ref_out.zmp(2),ans_point(0),ans_point(1));
-//        fprintf(cz_log,"\n\n");
-//      }
-//      comin_abs(0) = ans_point(0);
-//      comin_abs(1) = ans_point(1);
-//      return true;
-//    }
     bool applyCOMToSupportRegionLimit(const hrp::Vector3& lfin_abs, const hrp::Vector3& rfin_abs, hrp::Vector3& comin_abs){
 //      const double XUMARGIN = 0.04;//CHIDORI
 //      const double XLMARGIN = -0.02;
@@ -451,6 +402,10 @@ class HumanSynchronizer{
       const double XLMARGIN = -0.01;
       const double YUMARGIN = 0.0;
       const double YLMARGIN = -0.0;
+//      const double XUMARGIN = 0.10;//test
+//      const double XLMARGIN = -0.05;
+//      const double YUMARGIN = 0.03;
+//      const double YLMARGIN = -0.03;
       std::vector<hrp::Vector2> convex_hull;
       if(lfin_abs(0)>rfin_abs(0)){
         convex_hull.push_back(hrp::Vector2(lfin_abs(0) + XLMARGIN, lfin_abs(1) + YUMARGIN));//LFの左下
@@ -529,17 +484,51 @@ class HumanSynchronizer{
 //          std::cout<<"COM out of Support Region pt_state="<<pt_state<<std::endl;
 //        }
 //        for(int i=0;i<convex_hull.size();i++){
-//          fprintf(sr_log,"%f %f %f\n",convex_hull[i](0), convex_hull[i](1),(double)loop/500.0);
+//          fprintf(sr_log,"%f %f %f\n",convex_hull[i](0), convex_hull[i](1),(double)loop/HZ);
 //        }
 //        fprintf(sr_log,"\n");
-//        fprintf(cz_log,"%f %f %f %f %f %f %f %f %f",(double)loop/500.0,comin_abs(0),comin_abs(1),comin_abs(2),rp_ref_out.zmp(0),rp_ref_out.zmp(1),rp_ref_out.zmp(2),ans_point(0),ans_point(1));
+//        fprintf(cz_log,"%f %f %f %f %f %f %f %f %f",(double)loop/HZ,comin_abs(0),comin_abs(1),comin_abs(2),rp_ref_out.zmp(0),rp_ref_out.zmp(1),rp_ref_out.zmp(2),ans_point(0),ans_point(1));
 //        fprintf(cz_log," %f %f %f %f",rp_ref_out.zmp(1),hpf_zmp(1),ans_point(1),ans_point(1) + hpf_zmp(1));
 //        fprintf(cz_log,"\n\n");
 //      }
+
       comin_abs(0) = ans_point(0);
       comin_abs(1) = ans_point(1);
-//      rp_ref_out.zmp(0) = comin_abs(0);
-//      rp_ref_out.zmp(1) = comin_abs(1);
+
+      return true;
+    }
+    bool applyZMPCalcFromCOM(const hrp::Vector3& comin, hrp::Vector3& zmpout){
+
+      comacc = (comin - 2 * com_old + com_oldold)/(DT*DT);
+
+      const double MAXACC = 5;
+      if(comacc(0)>MAXACC)comacc(0)=MAXACC;else if(comacc(0)<-MAXACC)comacc(0)=-MAXACC;
+      if(comacc(1)>MAXACC)comacc(1)=MAXACC;else if(comacc(1)<-MAXACC)comacc(1)=-MAXACC;
+
+      static hrp::Vector3 comacc_old;
+
+
+
+//      static double y[3],x[3];
+//      x[0] = comacc(1);
+//      y[0] = ff_coeffs[0]*x[0] + ff_coeffs[1]*x[1] + ff_coeffs[2]*x[2] - fb_coeffs[1]*y[1] - fb_coeffs[2]*y[2];
+//      x[2] = x[1];      x[1] = x[0];      y[2] = y[1];      y[1] = y[0];
+//      comacc(1) = y[0];
+//
+//      comacc = 0.999*comacc_old + 0.001*comacc;
+      comacc = 0.99*comacc_old + 0.01*comacc;
+
+      comacc_old = comacc;
+
+      fprintf(cz_log,"%f %f %f %f %f %f %f\n",(double)loop/HZ,comin(0),comin(1),rp_ref_out.zmp(0),rp_ref_out.zmp(1),comin(0)-(1.06/G)*comacc(0),comin(1)-(1.06/G)*comacc(1));
+
+      zmpout(0) = comin(0)-(1.06/G)*comacc(0);
+      zmpout(1) = comin(1)-(1.06/G)*comacc(1);
+
+
+      com_oldold = com_old;
+      com_old = comin;
+
       return true;
     }
     void applyVelLimit(const HumanPose& in, const HumanPose& in_old, HumanPose& out){
@@ -563,6 +552,64 @@ class HumanSynchronizer{
     }
 };
 
+
+
+
+
+//class IIR2D{
+//  private: hrp::Vector3 zero;
+//  public:
+//    hrp::Vector3 com,rf,lf,rh,lh;
+//    hrp::Vector3 zmp;
+//    int idsize;
+//    typedef struct{ hrp::Vector3 f; hrp::Vector3 t; }Wrench6;
+//    Wrench6 rfw,lfw;
+//    HumanPose() : idsize(10){
+//      clear();
+//    }
+//    ~HumanPose(){cerr<<"HumanPose destructed"<<endl;}
+//    void clear(){
+//      for(int i=0;i<idsize;i++){ Seq(i) = hrp::Vector3::Zero(); }
+//    }
+//    hrp::Vector3& Seq(const int i){
+//      switch(i){
+//        case 0: return com;
+//        case 1: return rf;
+//        case 2: return lf;
+//        case 3: return rh;
+//        case 4: return lh;
+//        case 5: return zmp;
+//        case 6: return rfw.f;
+//        case 7: return rfw.t;
+//        case 8: return lfw.f;
+//        case 9: return lfw.t;
+//        default: std::cerr <<"[WARN] HumanPose::getSeq(int) invalid index"<<std::endl;return zero;
+//      }
+//    }
+//    const hrp::Vector3& Seq(const int i) const{//const指定オブジェクトからオーバーロードする時のためのオーバーライド
+////      return Seq(i);//呼べない・・・うーん
+//      switch(i){
+//        case 0: return com;
+//        case 1: return rf;
+//        case 2: return lf;
+//        case 3: return rh;
+//        case 4: return lh;
+//        case 5: return zmp;
+//        case 6: return rfw.f;
+//        case 7: return rfw.t;
+//        case 8: return lfw.f;
+//        case 9: return lfw.t;
+//        default: std::cerr <<"[WARN] HumanPose::getSeq(int) invalid index"<<std::endl;return zero;
+//      }
+//    }
+//    static void hp_printf(HumanPose& in){
+//      const std::string cap[] = {"c","rf","lf","rh","lh","z","rw","","lw",""};
+//      for(int i=0;i<6;i++){ printf("\x1b[31m%s\x1b[39m%+05.2f %+05.2f %+05.2f ",cap[i].c_str(),in.Seq(i)(0),in.Seq(i)(1),in.Seq(i)(2)); }
+//      for(int i=6;i<10;i++){ printf("\x1b[31m%s\x1b[39m%+05.1f %+05.1f %+05.1f ",cap[i].c_str(),in.Seq(i)(0),in.Seq(i)(1),in.Seq(i)(2)); }
+//      printf("\n");
+//    }
+//    void print(){ hp_printf(*this); }
+//};
 
 
 // </rtc-template>
