@@ -1069,8 +1069,8 @@ void AutoBalancer::solveLimbIK ()
   // additional COM fitting IK for HumanSynchronizer
 
 
-//  if(ikp.count("rarm"))ikp["rarm"].is_active = false;
-//  if(ikp.count("larm"))ikp["larm"].is_active = false;
+  if(ikp.count("rarm") && !hsp->use_rh)ikp["rarm"].is_active = false;
+  if(ikp.count("larm") && !hsp->use_lh)ikp["larm"].is_active = false;
 
   hrp::Vector3 tmp_com_err = hsp->rp_ref_out.com + hsp->rp_wld_initpos.com - m_robot->calcCM();
   int com_ik_loop=0;

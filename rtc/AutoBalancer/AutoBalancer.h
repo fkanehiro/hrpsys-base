@@ -36,6 +36,47 @@
 // <rtc-template block="consumer_stub_h">
 
 
+class D2IIRFilterVec
+{
+private:
+    IIRFilter x_filters,y_filters,z_filters;
+    hrp::Vector3 ans;
+public:
+    D2IIRFilterVec(const std::string& error_prefix = ""){
+    };
+    ~D2IIRFilterVec() {};
+    bool setParameter(const double fc_in, const double HZ){
+      std::vector<double> fb_coeffs, ff_coeffs;
+      double fc = tan(fc_in * M_PI / HZ) / (2 * M_PI);
+      double denom = 1 + (2 * sqrt(2) * M_PI * fc) + 4 * M_PI * M_PI * fc*fc;
+      ff_coeffs.resize(3);
+      fb_coeffs.resize(3);
+      ff_coeffs[0] = (4 * M_PI * M_PI * fc*fc) / denom;
+      ff_coeffs[1] = (8 * M_PI * M_PI * fc*fc) / denom;
+      ff_coeffs[2] = (4 * M_PI * M_PI * fc*fc) / denom;
+      fb_coeffs[0] = 1.0;
+      fb_coeffs[1] = (8 * M_PI * M_PI * fc*fc - 2) / denom;
+      fb_coeffs[2] = (1 - (2 * sqrt(2) * M_PI * fc) + 4 * M_PI * M_PI * fc*fc) / denom;
+      return (
+        x_filters.setParameter(2,fb_coeffs,ff_coeffs) &&
+        y_filters.setParameter(2,fb_coeffs,ff_coeffs) &&
+        z_filters.setParameter(2,fb_coeffs,ff_coeffs)
+      );
+    };
+    hrp::Vector3 passFilter(const hrp::Vector3& input){
+      ans(0) = x_filters.passFilter(input(0));
+      ans(1) = y_filters.passFilter(input(1));
+      ans(2) = z_filters.passFilter(input(2));
+      return ans;
+    };
+
+};
+
+
+
+
+
+
 class HumanPose{
   private: hrp::Vector3 zero;
   public:
@@ -122,6 +163,8 @@ class HumanSynchronizer{
     hrp::Vector3 lpf_zmp;
     double HZ,DT,G;
     hrp::Vector3 com_old,com_oldold,comacc;
+    std::vector<D2IIRFilterVec> iir_v_filters;
+    D2IIRFilterVec comacc_v_filters;
 
   public:
 
@@ -133,8 +176,8 @@ class HumanSynchronizer{
     hrp::Vector3 init_wld_rp_basepos;
     HumanPose rp_ref_out;
     FILE *sr_log,*cz_log;
-    std::vector<double> fb_coeffs;
-    std::vector<double> ff_coeffs;
+    std::vector<double> fb_coeffs, ff_coeffs;
+    bool use_rh,use_lh;
 
 
 
@@ -144,15 +187,14 @@ class HumanSynchronizer{
 //      tgt_h2r_ratio = h2r_ratio = 0.62;//human 1.1m vs chidori 0.69m
 //      tgt_h2r_ratio = h2r_ratio = 0.69;//human 1.0(with heavy foot sensor) vs chidori 0.69
 //      tgt_h2r_ratio = h2r_ratio = 1.06;//human 1.0(with heavy foot sensor) vs jaxon 1.06
-
       HZ = 500;
       DT = 1.0/HZ;
       G = 9.80665;
       tgt_cmmr = cmmr = 1.0;
-      use_x = true; use_y = true; use_z = true;
-      cur_rfup_level = 0;       cur_lfup_level = 0;
-      is_rf_contact = true;     is_lf_contact = true;
-      pre_cont_rfpos = hrp::Vector3::Zero();    pre_cont_lfpos = hrp::Vector3::Zero();
+      use_x = use_y = use_z = true;
+      cur_rfup_level = cur_lfup_level = 0;
+      is_rf_contact = is_lf_contact = true;
+      pre_cont_rfpos = pre_cont_lfpos = hrp::Vector3::Zero();
       init_wld_hp_rfpos = hrp::Vector3(0,-0.1/h2r_ratio,0);//h2r_ratioは可変なので後の値変更に注意
       init_wld_hp_lfpos = hrp::Vector3(0, 0.1/h2r_ratio,0);
       init_wld_rp_rfpos = hrp::Vector3(0,-0.1,0);
@@ -169,23 +211,14 @@ class HumanSynchronizer{
       startCountdownForHumanSync = false;
       countdown_num = 5*HZ;
       loop = 0;
-      is_rf_in_air = false; is_lf_in_air = false;
+      is_rf_in_air = is_lf_in_air = false;
 
-      double fc_digital = 0.5;
-      double fc = tan(fc_digital * M_PI / HZ) / (2 * M_PI);
-      double denom = 1 + (2 * sqrt(2) * M_PI * fc) + 4 * M_PI * M_PI * fc*fc;
-      ff_coeffs.assign(3,0.0);
-      fb_coeffs.assign(3,0.0);
-      ff_coeffs[0] = (4 * M_PI * M_PI * fc*fc) / denom;
-      ff_coeffs[1] = (8 * M_PI * M_PI * fc*fc) / denom;
-      ff_coeffs[2] = (4 * M_PI * M_PI * fc*fc) / denom;
-      fb_coeffs[0] = 1.0;
-      fb_coeffs[1] = (8 * M_PI * M_PI * fc*fc - 2) / denom;
-      fb_coeffs[2] = (1 - (2 * sqrt(2) * M_PI * fc) + 4 * M_PI * M_PI * fc*fc) / denom;
+      iir_v_filters.resize(5);
+      for(int i=0;i<iir_v_filters.size();i++)iir_v_filters[i].setParameter(0.5,HZ);
+      comacc_v_filters.setParameter(1,HZ);
 
-
-//      IIRFilter com_iir = IIRFilter(2, fb_coeffs, ff_coeffs);
-
+//      use_rh = use_lh = false;
+      use_rh = use_lh = true;
 
       std::string home_path(std::getenv("HOME"));
       sr_log = fopen((home_path+"/HumanSync_support_region.log").c_str(),"w+");
@@ -213,26 +246,35 @@ class HumanSynchronizer{
         startCountdownForHumanSync = false;
       }
     }
-    void update(){
+    void update(){//////////  メインループ  ////////////
       gettimeofday(&t_calc_start, NULL);
-      updateHumanToRobotRatio(tgt_h2r_ratio);
-      updateCOMModRatio(tgt_cmmr);
-      removeInitOffsetPose(hp_wld_raw, hp_wld_initpos, hp_rel_raw);
-      applyInitHumanCOMOffset(hp_rel_raw, init_hp_calibcom, hp_rel_raw);
-      applyLPFilter(hp_rel_raw, hp_filtered, hp_filtered);
-      lockFootXYOnContact(hp_filtered, is_rf_contact, is_lf_contact, hp_filtered);//根本から改変すべき
-      calcWorldZMP((hp_filtered.rf+init_wld_hp_rfpos), (hp_filtered.lf+init_wld_hp_lfpos), hp_filtered.rfw, hp_filtered.lfw, hp_filtered.zmp);//足の位置はworldにしないと・・・
-      convertRelHumanPoseToRelRobotPose(hp_filtered,rp_ref_out);
-      applyCOMMoveModRatio(rp_ref_out,rp_ref_out);
-      judgeFootContactStates(hp_wld_raw.rfw, hp_wld_raw.lfw, is_rf_contact, is_lf_contact);//frwはすでに1000->100Hzにフィルタリングされている
-      overwriteFootZFromContactStates(rp_ref_out, is_rf_contact, is_lf_contact, rp_ref_out);
-//      lockFootXYOnContact(rp_ref_out, is_rf_contact, is_lf_contact, rp_ref_out);//ここで改変するとLPFかかってないからジャンプする
-      applyWorkspaceLimit(rp_ref_out, rp_ref_out);
-      applyVelLimit(rp_ref_out, rp_ref_out_old, rp_ref_out);
-      applyCOMZMPXYZLock(rp_ref_out, rp_ref_out);
+      updateHumanToRobotRatio             (tgt_h2r_ratio);
+      updateCOMModRatio                   (tgt_cmmr);
+      removeInitOffsetPose                (hp_wld_raw, hp_wld_initpos, hp_rel_raw);
+      applyInitHumanCOMOffset             (hp_rel_raw, init_hp_calibcom, hp_rel_raw);
+      lockFootXYOnContact                 (is_rf_contact, is_lf_contact, hp_rel_raw);//根本から改変すべき2
 
-      applyCOMToSupportRegionLimit(rp_ref_out.lf+init_wld_rp_lfpos,rp_ref_out.rf+init_wld_rp_rfpos,rp_ref_out.com);
-      applyZMPCalcFromCOM(rp_ref_out.com,rp_ref_out.zmp);
+      hp_filtered = hp_rel_raw;
+
+//      applyLPFilterToEE(hp_rel_raw, hp_filtered);//次に使う.rf,.lfのためにEEだけは先にフィルターしておかないといけない説もある
+      calcWorldZMP                        ((hp_filtered.rf+init_wld_hp_rfpos), (hp_filtered.lf+init_wld_hp_lfpos), hp_filtered.rfw, hp_filtered.lfw, hp_filtered.zmp);//足の位置はworldにしないと・・・
+      convertRelHumanPoseToRelRobotPose   (hp_filtered,rp_ref_out);
+      applyCOMMoveModRatio                (rp_ref_out);
+      judgeFootContactStates              (hp_wld_raw.rfw, hp_wld_raw.lfw, is_rf_contact, is_lf_contact);//frwはすでに1000->100Hzにフィルタリングされている
+
+      applyEEWorkspaceLimit               (rp_ref_out);
+
+      applyCOMToSupportRegionLimit        (rp_ref_out.lf+init_wld_rp_lfpos,rp_ref_out.rf+init_wld_rp_rfpos,rp_ref_out.com);
+
+      applyLPFilter                       (rp_ref_out);
+      applyZMPCalcFromCOM                 (rp_ref_out.com,rp_ref_out.zmp);
+      lockSwingFootIfZMPOutOfSupportFoot  (rp_ref_out, is_rf_contact, is_lf_contact);//
+
+      applyVelLimit                       (rp_ref_out, rp_ref_out_old, rp_ref_out);
+      applyCOMZMPXYZLock                  (rp_ref_out);
+
+
+      overwriteFootZFromContactStates     (is_rf_contact, is_lf_contact, rp_ref_out);
 
       rp_ref_out_old = rp_ref_out;
 //      fprintf(log,"%f %f %f %f %f %f\n", rp_ref_out.com(0), rp_ref_out.com(1), rp_ref_out.zmp(0), rp_ref_out.zmp(1), hp_rel_raw.com(0), hp_rel_raw.com(1));
@@ -299,22 +341,8 @@ class HumanSynchronizer{
 //      setInitOffsetPose();
 //      HumanSyncOn = true;
 //    }
-    void applyLPFilter(const HumanPose& raw_in, const HumanPose& out_old, HumanPose& filt_out){
-      for(int i=0;i<filt_out.idsize;i++){
-//      for(int i=0;i<filt_out.idsize-5;i++){//ここではrfw,zmpとかはフィルターしないほうがいい
-        filt_out.Seq(i) = (1-FNUM) * out_old.Seq(i) + FNUM * raw_in.Seq(i);
-      }
-
-//      filt_out.com(1) = com_iir.executeFilter(raw_in.com[1]);
-      static double y[3],x[3];
-      x[0] = raw_in.com(1);
-      y[0] = ff_coeffs[0]*x[0] + ff_coeffs[1]*x[1] + ff_coeffs[2]*x[2] - fb_coeffs[1]*y[1] - fb_coeffs[2]*y[2];
-      x[2] = x[1];      x[1] = x[0];      y[2] = y[1];      y[1] = y[0];
-
-      filt_out.com(1) = y[0];
-//      for(int i=filt_out.idsize-5;i<filt_out.idsize;i++){//ここではrfw,zmpとかはフィルターしないほうがいい
-//        filt_out.Seq(i) = raw_in.Seq(i);
-//      }
+    void applyLPFilter(HumanPose& tgt){
+      for(int i=0;i<iir_v_filters.size();i++){ tgt.Seq(i) = iir_v_filters[i].passFilter(tgt.Seq(i)); }
     }
     void convertRelHumanPoseToRelRobotPose(const HumanPose& hp_in, HumanPose& rp_out){//結局初期指定からの移動量(=Rel)で計算をしてゆく
       for(int i=0;i<rp_out.idsize-4;i++){
@@ -323,79 +351,101 @@ class HumanSynchronizer{
       rp_out.rfw  = hp_in.rfw;
       rp_out.lfw  = hp_in.lfw;
     }
-    void applyCOMMoveModRatio(const HumanPose& in, HumanPose& out){//結局初期指定からの移動量(=Rel)で計算をしてゆく
-      out = in;
-      out.com = cmmr * in.com;
+    void applyCOMMoveModRatio(HumanPose& tgt){//結局初期指定からの移動量(=Rel)で計算をしてゆく
+      tgt.com = cmmr * tgt.com;
     }
     void judgeFootContactStates(const HumanPose::Wrench6& rfw_in, const HumanPose::Wrench6& lfw_in, bool& rfcs_ans, bool& lfcs_ans){
-      if      (rfcs_ans  && lfcs_ans && rfw_in.f(2)<CNT_F_TH   ){rfcs_ans = false;}//右足ついた状態から上げる
-      else if (!rfcs_ans && lfcs_ans && rfw_in.f(2)>CNT_F_TH+30){rfcs_ans = true;}//右足浮いた状態から下げる
-      if      (lfcs_ans  && rfcs_ans && lfw_in.f(2)<CNT_F_TH   ){lfcs_ans = false;}//左足ついた状態から上げる
-      else if (!lfcs_ans && rfcs_ans && lfw_in.f(2)>CNT_F_TH+30){lfcs_ans = true;}//左足浮いた状態から下げる
+//      if      (rfcs_ans  && lfcs_ans && rfw_in.f(2)<CNT_F_TH   ){rfcs_ans = false;}//右足ついた状態から上げる
+//      else if (!rfcs_ans && lfcs_ans && rfw_in.f(2)>CNT_F_TH+30){rfcs_ans = true;}//右足浮いた状態から下げる
+//      if      (lfcs_ans  && rfcs_ans && lfw_in.f(2)<CNT_F_TH   ){lfcs_ans = false;}//左足ついた状態から上げる
+//      else if (!lfcs_ans && rfcs_ans && lfw_in.f(2)>CNT_F_TH+30){lfcs_ans = true;}//左足浮いた状態から下げる
+
+//      if(rfw_in.f(2)>CNT_F_TH+30 || lfw_in.f(2)>CNT_F_TH+30 ){
+      if(HumanSyncOn){
+        if      (rfcs_ans  && rfw_in.f(2)<CNT_F_TH   ){rfcs_ans = false;}//右足ついた状態から上げる
+        else if (!rfcs_ans && rfw_in.f(2)>CNT_F_TH+30){rfcs_ans = true;}//右足浮いた状態から下げる
+        if      (lfcs_ans  && lfw_in.f(2)<CNT_F_TH   ){lfcs_ans = false;}//左足ついた状態から上げる
+        else if (!lfcs_ans && lfw_in.f(2)>CNT_F_TH+30){lfcs_ans = true;}//左足浮いた状態から下げる
+      }
+      if(!rfcs_ans && !lfcs_ans){rfcs_ans = lfcs_ans = true;}//両足ジャンプは禁止
 
 
-      //else if (rfw_in.f(2)>CNT_F_TH && lfw_in.f(2)<CNT_F_TH){rfcs_ans = true;   lfcs_ans = false;}//右足接地かつ左足浮遊
-      //else                                              {rfcs_ans = true;   lfcs_ans = true;}//両足接地または両足浮遊
     }
-    void overwriteFootZFromContactStates(const HumanPose& in, const bool& rfcs_in, const bool& lfcs_in, HumanPose& out){
-      out = in;
+    void lockSwingFootIfZMPOutOfSupportFoot(const HumanPose& tgt, bool& rfcs_ans, bool& lfcs_ans){
+      if(rfcs_ans && !lfcs_ans){
+        if(tgt.zmp(1) > tgt.rf(1) + init_wld_rp_rfpos(1) + 0.03){
+          lfcs_ans = true;
+          cout<<"LF lock"<<endl;
+        }
+      }
+      if(!rfcs_ans && lfcs_ans){
+        if(tgt.zmp(1) < tgt.lf(1) + init_wld_rp_lfpos(1) - 0.03){
+          rfcs_ans = true;
+          cout<<"RF lock"<<endl;
+        }
+      }
+
+
+    }
+
+
+    void overwriteFootZFromContactStates(const bool& rfcs_in, const bool& lfcs_in, HumanPose& tgt){
       if(!rfcs_in){//右足浮遊時
         if(cur_rfup_level < FUPLEVELNUM){
           cur_rfup_level++;
-          out.rf(2) = FUPHIGHT/2*(1-cos(M_PI*cur_rfup_level/FUPLEVELNUM));
+          tgt.rf(2) = FUPHIGHT/2*(1-cos(M_PI*cur_rfup_level/FUPLEVELNUM));
         }else{
-          out.rf(2) = FUPHIGHT;
+          tgt.rf(2) = FUPHIGHT;
         }
       }else{
         if(cur_rfup_level > 0){
           cur_rfup_level--;
-          out.rf(2) = FUPHIGHT/2*(1-cos(M_PI*cur_rfup_level/FUPLEVELNUM));
+          tgt.rf(2) = FUPHIGHT/2*(1-cos(M_PI*cur_rfup_level/FUPLEVELNUM));
         }else{
-          out.rf(2) = 0;
+          tgt.rf(2) = 0;
         }
       }
       if(!lfcs_in){//左足浮遊時
         if(cur_lfup_level < FUPLEVELNUM){
           cur_lfup_level++;
-          out.lf(2) = FUPHIGHT/2*(1-cos(M_PI*cur_lfup_level/FUPLEVELNUM));
+          tgt.lf(2) = FUPHIGHT/2*(1-cos(M_PI*cur_lfup_level/FUPLEVELNUM));
         }else{
-          out.lf(2) = FUPHIGHT;
+          tgt.lf(2) = FUPHIGHT;
         }
       }else{
         if(cur_lfup_level > 0){
           cur_lfup_level--;
-          out.lf(2) = FUPHIGHT/2*(1-cos(M_PI*cur_lfup_level/FUPLEVELNUM));
+          tgt.lf(2) = FUPHIGHT/2*(1-cos(M_PI*cur_lfup_level/FUPLEVELNUM));
         }else{
-          out.lf(2) = 0;
+          tgt.lf(2) = 0;
         }
       }
     }
-    void lockFootXYOnContact(const HumanPose& in, const bool& rfcs_in, const bool& lfcs_in, HumanPose& out){
-      out = in;
+    void lockFootXYOnContact(const bool& rfcs_in, const bool& lfcs_in, HumanPose& tgt){
       if(rfcs_in){
-        out.rf(0) = pre_cont_rfpos(0);
-        out.rf(1) = pre_cont_rfpos(1);
+        tgt.rf(0) = pre_cont_rfpos(0);
+        tgt.rf(1) = pre_cont_rfpos(1);
       }else{
-        pre_cont_rfpos(0) = in.rf(0);
-        pre_cont_rfpos(1) = in.rf(1);
+        pre_cont_rfpos(0) = tgt.rf(0);
+        pre_cont_rfpos(1) = tgt.rf(1);
       }
       if(lfcs_in){
-        out.lf(0) = pre_cont_lfpos(0);
-        out.lf(1) = pre_cont_lfpos(1);
+        tgt.lf(0) = pre_cont_lfpos(0);
+        tgt.lf(1) = pre_cont_lfpos(1);
       }else{
-        pre_cont_lfpos(0) = in.lf(0);
-        pre_cont_lfpos(1) = in.lf(1);
+        pre_cont_lfpos(0) = tgt.lf(0);
+        pre_cont_lfpos(1) = tgt.lf(1);
       }
     }
-    void applyWorkspaceLimit(const HumanPose& in, HumanPose& out){
+    void applyEEWorkspaceLimit(HumanPose& tgt){
       if(!is_rf_contact && is_lf_contact){//右足浮遊時
-        if(in.rf(1) + rp_wld_initpos.rf(1) > in.lf(1) + rp_wld_initpos.lf(1) - 0.15)out.rf(1) = in.lf(1) + rp_wld_initpos.lf(1) - rp_wld_initpos.rf(1) - 0.15;
+        if(tgt.rf(1) + rp_wld_initpos.rf(1) > tgt.lf(1) + rp_wld_initpos.lf(1) - 0.15)tgt.rf(1) = tgt.lf(1) + rp_wld_initpos.lf(1) - rp_wld_initpos.rf(1) - 0.15;
       }
       else if(is_rf_contact && !is_lf_contact){//左足浮遊時
-        if(in.lf(1) + rp_wld_initpos.lf(1) < in.rf(1) + rp_wld_initpos.rf(1) + 0.15)out.lf(1) = in.rf(1) + rp_wld_initpos.rf(1) - rp_wld_initpos.lf(1) + 0.15;
+        if(tgt.lf(1) + rp_wld_initpos.lf(1) < tgt.rf(1) + rp_wld_initpos.rf(1) + 0.15)tgt.lf(1) = tgt.rf(1) + rp_wld_initpos.rf(1) - rp_wld_initpos.lf(1) + 0.15;
       }
     }
-    bool applyCOMToSupportRegionLimit(const hrp::Vector3& lfin_abs, const hrp::Vector3& rfin_abs, hrp::Vector3& comin_abs){
+    bool applyCOMToSupportRegionLimit(const hrp::Vector3& lfin_abs, const hrp::Vector3& rfin_abs, hrp::Vector3& comin_abs){//boost::geometryがUbuntu12だとないから・・・
 //      const double XUMARGIN = 0.04;//CHIDORI
 //      const double XLMARGIN = -0.02;
 //      const double YUMARGIN = 0.01;
@@ -474,12 +524,6 @@ class HumanSynchronizer{
           pt_state = PT_FIX_TO_VERTEX;
         }
       }
-//      double FNUM_Z = 0.005;
-      double FNUM_Z = 0.01;
-      lpf_zmp = (1-FNUM_Z) * lpf_zmp + FNUM_Z * rp_ref_out.zmp;
-      hrp::Vector3 hpf_zmp = rp_ref_out.zmp - lpf_zmp;
-//      rp_ref_out.zmp(0) = ans_point(0) + hpf_zmp(0);
-//      rp_ref_out.zmp(1) = ans_point(1) + hpf_zmp(1);
 
 //      if(loop%50==0){//ログ
 //        if(pt_state != PT_IN_REGION){
@@ -499,39 +543,17 @@ class HumanSynchronizer{
 
       return true;
     }
-    bool applyZMPCalcFromCOM(const hrp::Vector3& comin, hrp::Vector3& zmpout){
-
+    void applyZMPCalcFromCOM(const hrp::Vector3& comin, hrp::Vector3& zmpout){
       comacc = (comin - 2 * com_old + com_oldold)/(DT*DT);
-
       const double MAXACC = 5;
       if(comacc(0)>MAXACC)comacc(0)=MAXACC;else if(comacc(0)<-MAXACC)comacc(0)=-MAXACC;
       if(comacc(1)>MAXACC)comacc(1)=MAXACC;else if(comacc(1)<-MAXACC)comacc(1)=-MAXACC;
-
-      static hrp::Vector3 comacc_old;
-
-
-
-//      static double y[3],x[3];
-//      x[0] = comacc(1);
-//      y[0] = ff_coeffs[0]*x[0] + ff_coeffs[1]*x[1] + ff_coeffs[2]*x[2] - fb_coeffs[1]*y[1] - fb_coeffs[2]*y[2];
-//      x[2] = x[1];      x[1] = x[0];      y[2] = y[1];      y[1] = y[0];
-//      comacc(1) = y[0];
-//
-//      comacc = 0.999*comacc_old + 0.001*comacc;
-      comacc = 0.99*comacc_old + 0.01*comacc;
-
-      comacc_old = comacc;
-
-      fprintf(cz_log,"%f %f %f %f %f %f %f\n",(double)loop/HZ,comin(0),comin(1),rp_ref_out.zmp(0),rp_ref_out.zmp(1),comin(0)-(1.06/G)*comacc(0),comin(1)-(1.06/G)*comacc(1));
-
+      comacc = comacc_v_filters.passFilter(comacc);
       zmpout(0) = comin(0)-(1.06/G)*comacc(0);
       zmpout(1) = comin(1)-(1.06/G)*comacc(1);
-
-
+      fprintf(cz_log,"%f %f %f %f %f %f %f\n",(double)loop/HZ,comin(0),comin(1),rp_ref_out.zmp(0),rp_ref_out.zmp(1),zmpout(0),zmpout(1));
       com_oldold = com_old;
       com_old = comin;
-
-      return true;
     }
     void applyVelLimit(const HumanPose& in, const HumanPose& in_old, HumanPose& out){
       for(int i=0;i<3;i++){if(in.com(i) - in_old.com(i) > MAXVEL){out.com(i) = in_old.com(i) + MAXVEL;}else if(in.com(i) - in_old.com(i) < -MAXVEL){out.com(i) = in_old.com(i) - MAXVEL;}}
@@ -540,78 +562,12 @@ class HumanSynchronizer{
       for(int i=0;i<3;i++){if(in.rh(i)  - in_old.rh(i)  > MAXVEL){out.rh(i)  = in_old.rh(i)  + MAXVEL;}else if(in.rh(i)  - in_old.rh(i)  < -MAXVEL){out.rh(i)  = in_old.rh(i)  - MAXVEL;}}
       for(int i=0;i<3;i++){if(in.lh(i)  - in_old.lh(i)  > MAXVEL){out.lh(i)  = in_old.lh(i)  + MAXVEL;}else if(in.lh(i)  - in_old.lh(i)  < -MAXVEL){out.lh(i)  = in_old.lh(i)  - MAXVEL;}}
     }
-    void applyCOMZMPXYZLock(const HumanPose& in, HumanPose& out){
-      out = in;
-        if(!use_x){out.com(0) = 0;out.zmp(0) = 0;}
-        if(!use_y){out.com(1) = 0;out.zmp(1) = 0;}
-        if(!use_z){out.com(2) = 0;}
-        out.rh(0)=0;
-        out.rh(1)=out.com(1);
-        out.rh(2)=0;
-        out.lh(0)=0;
-        out.lh(1)=out.com(1);
-        out.lh(2)=0;
+    void applyCOMZMPXYZLock(HumanPose& tgt){
+        if(!use_x){tgt.com(0) = 0;tgt.zmp(0) = 0;}
+        if(!use_y){tgt.com(1) = 0;tgt.zmp(1) = 0;}
+        if(!use_z){tgt.com(2) = 0;}
     }
 };
-
-
-
-
-
-//class IIR2D{
-//  private: hrp::Vector3 zero;
-//  public:
-//    hrp::Vector3 com,rf,lf,rh,lh;
-//    hrp::Vector3 zmp;
-//    int idsize;
-//    typedef struct{ hrp::Vector3 f; hrp::Vector3 t; }Wrench6;
-//    Wrench6 rfw,lfw;
-//    HumanPose() : idsize(10){
-//      clear();
-//    }
-//    ~HumanPose(){cerr<<"HumanPose destructed"<<endl;}
-//    void clear(){
-//      for(int i=0;i<idsize;i++){ Seq(i) = hrp::Vector3::Zero(); }
-//    }
-//    hrp::Vector3& Seq(const int i){
-//      switch(i){
-//        case 0: return com;
-//        case 1: return rf;
-//        case 2: return lf;
-//        case 3: return rh;
-//        case 4: return lh;
-//        case 5: return zmp;
-//        case 6: return rfw.f;
-//        case 7: return rfw.t;
-//        case 8: return lfw.f;
-//        case 9: return lfw.t;
-//        default: std::cerr <<"[WARN] HumanPose::getSeq(int) invalid index"<<std::endl;return zero;
-//      }
-//    }
-//    const hrp::Vector3& Seq(const int i) const{//const指定オブジェクトからオーバーロードする時のためのオーバーライド
-////      return Seq(i);//呼べない・・・うーん
-//      switch(i){
-//        case 0: return com;
-//        case 1: return rf;
-//        case 2: return lf;
-//        case 3: return rh;
-//        case 4: return lh;
-//        case 5: return zmp;
-//        case 6: return rfw.f;
-//        case 7: return rfw.t;
-//        case 8: return lfw.f;
-//        case 9: return lfw.t;
-//        default: std::cerr <<"[WARN] HumanPose::getSeq(int) invalid index"<<std::endl;return zero;
-//      }
-//    }
-//    static void hp_printf(HumanPose& in){
-//      const std::string cap[] = {"c","rf","lf","rh","lh","z","rw","","lw",""};
-//      for(int i=0;i<6;i++){ printf("\x1b[31m%s\x1b[39m%+05.2f %+05.2f %+05.2f ",cap[i].c_str(),in.Seq(i)(0),in.Seq(i)(1),in.Seq(i)(2)); }
-//      for(int i=6;i<10;i++){ printf("\x1b[31m%s\x1b[39m%+05.1f %+05.1f %+05.1f ",cap[i].c_str(),in.Seq(i)(0),in.Seq(i)(1),in.Seq(i)(2)); }
-//      printf("\n");
-//    }
-//    void print(){ hp_printf(*this); }
-//};
 
 
 // </rtc-template>
