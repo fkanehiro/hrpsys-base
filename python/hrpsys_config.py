@@ -158,7 +158,7 @@ def euler_from_matrix(matrix, axes='sxyz'):
 
 # class for configure hrpsys RTCs and ports
 #   In order to specify robot-dependent code, please inherit this HrpsysConfigurator
-class HrpsysConfigurator:
+class HrpsysConfigurator(object):
 
     # RobotHardware
     rh = None
