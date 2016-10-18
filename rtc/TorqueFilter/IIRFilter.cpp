@@ -29,7 +29,7 @@ IIRFilter::IIRFilter(const std::string& error_prefix) :
     m_error_prefix = error_prefix;
 }
 
-bool IIRFilter::setParameter(int dim, std::vector<double>& A, std::vector<double> B) {
+bool IIRFilter::setParameter(int dim, std::vector<double>& A, std::vector<double>& B) {
     m_dimension = dim;
 
     // init coefficients
@@ -59,6 +59,27 @@ bool IIRFilter::setParameter(int dim, std::vector<double>& A, std::vector<double
     m_previous_values.assign(dim, 0.0);
     m_initialized = true;
     return true;
+}
+
+void IIRFilter::getParameter(int &dim, std::vector<double>& A, std::vector<double>& B)
+{
+    dim = m_dimension;
+    B.resize(m_ff_coefficients.size());
+    std::copy(m_ff_coefficients.begin(), m_ff_coefficients.end(), B.begin());
+    A.resize(0);
+    for(std::vector<double>::iterator it = m_fb_coefficients.begin();
+        it != m_fb_coefficients.end(); it++) {
+        if (it == m_fb_coefficients.begin()) {
+            A.push_back(*it);
+        } else {
+            A.push_back(- *it);
+        }
+    }
+}
+
+void IIRFilter::reset(double initial_input)
+{
+    m_previous_values.assign(m_dimension, initial_input);
 }
 
 double IIRFilter::passFilter(double input)

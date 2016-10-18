@@ -49,7 +49,15 @@ public:
        butterworth filter (dimension = 2, cutoff_freq = 8Hz)
        [B, A] = butter(2, 2 * 0.004 * 8) ;;; dimension=2, 2 * dt * cutoff_freq
     */
-    bool setParameter(int dim, std::vector<double>& A, std::vector<double> B);
+    bool setParameter(int dim, std::vector<double>& A, std::vector<double>& B);
+
+    /**
+     */
+    void getParameter(int &dim, std::vector<double>&A, std::vector<double>& B);
+
+    /**
+     */
+    void reset(double initial_input = 0.0);
 
     /**
        \brief Execute filtering, this method will be obsolated
