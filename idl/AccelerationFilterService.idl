@@ -1,0 +1,51 @@
+/**
+ * @file AccelerationFilterService.idl
+ * @brief Services for the acceleration-filter interface
+ */
+module OpenHRP
+{
+    interface AccelerationFilterService
+    {
+        typedef double DblArray3[3];
+        /**
+         * @enum ControlMode
+         * @brief Mode of control
+         */
+        enum ControlMode {
+            MODE_IDLE,
+            MODE_ZERO_VELOCITY,
+            MODE_RELATIVE_LOCAL_VELOCITY,
+            MODE_ABSOLUTE_LOCAL_VELOCITY,
+            MODE_RELATIVE_GLOBAL_VELOCITY,
+            MODE_ABSOLUTE_GLOBAL_VELOCITY
+        };
+
+        struct AccelerationFilterParam
+        {
+            //
+            double gravity;
+            boolean  use_filter;
+            sequence<double> filter_param;
+        };
+
+        /**
+         * @brief Set AccelerationFilter parameters
+         * @param i_param is input parameter
+         * @return true if set successfully, false otherwise
+         */
+        boolean setAccelerationFilterParam(in AccelerationFilterParam i_param);
+
+        /**
+         * @brief Get AccelerationFilter parameters
+         * @param i_param is input parameter
+         * @return true if set successfully, false otherwise
+         */
+        boolean getAccelerationFilterParam(out AccelerationFilterParam i_param);
+
+        /**
+         * @brief reset filter
+         * @return true if set successfully, false otherwise
+         */
+        boolean resetFilter(in ControlMode mode, in DblArray3 vel);
+    };
+};
