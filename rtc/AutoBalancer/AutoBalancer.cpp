@@ -365,6 +365,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
 
     //for HumanSynchronizer
     hsp = boost::shared_ptr<HumanSynchronizer>(new HumanSynchronizer());
+    if(leg_pos.size()>=2){ hsp->init_wld_rp_rfpos = leg_pos[0]; hsp->init_wld_rp_lfpos = leg_pos[1]; }
 
     return RTC::RTC_OK;
 }
@@ -482,6 +483,36 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
     if (m_htlhIn.isNew()) { m_htlhIn.read();  hp_raw_data.lh  = HumanSynchronizer::Point3DToVector3(m_htlh); }
     if (m_actzmpIn.isNew()){m_actzmpIn.read(); }
     hsp->readInput(hp_raw_data);
+    hsp->current_basepos = m_robot->rootLink()->p;
+
+//    if(hsp->startCountdownForHumanSync){
+//      std::cerr << "[" << m_profile.instance_name << "] Count Down for HumanSync ["<<hsp->getRemainingCountDown()<<"]\r";
+//      hsp->updateCountDown();
+//    }
+//    if(hsp->isHumanSyncOn()){
+//      if(hsp->ht_first_call){
+//        std::cerr << "\n[" << m_profile.instance_name << "] Start HumanSync"<< std::endl;
+//        hsp->ht_first_call = false;
+//      }
+//    }else{
+//      hsp->calibInitHumanCOMFromZMP();
+//      hsp->setInitOffsetPose();
+//      hsp->rp_wld_initpos.com = m_robot->calcCM();
+//      hsp->rp_wld_initpos.rf = ikp["rleg"].target_link->p;
+//      hsp->rp_wld_initpos.lf = ikp["lleg"].target_link->p;
+//      if(ikp.count("rarm"))hsp->rp_wld_initpos.rh = ikp["rarm"].target_link->p;
+//      if(ikp.count("larm"))hsp->rp_wld_initpos.lh = ikp["larm"].target_link->p;
+//    }
+//    hsp->update();//////HumanSynchronizerの主要処理
+//    if(loop%100==0)hsp->rp_ref_out.print();
+  //  if(loop%100==0)cerr<<"getUpdateTime:"<<hsp->getUpdateTime()*1000<<"[ms]"<<endl;
+
+
+
+    if(ikp.count("rarm") && !hsp->use_rh)ikp["rarm"].is_active = false;
+    if(ikp.count("larm") && !hsp->use_lh)ikp["larm"].is_active = false;
+    m_contactStates.data[contact_states_index_map["rleg"]] = hsp->is_rf_contact;
+    m_contactStates.data[contact_states_index_map["lleg"]] = hsp->is_lf_contact;
 
 
     Guard guard(m_mutex);
@@ -584,9 +615,6 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
     m_zmpOut.write();
     m_cogOut.write();
     m_sbpCogOffsetOut.write();
-
-
-//printf("m_zmp:%f, abs:%f\n",m_zmp.data.y,m_basePos.data.y+m_zmp.data.y);
 
     // reference acceleration
     hrp::Sensor* sen = m_robot->sensor<hrp::RateGyroSensor>("gyrometer");
@@ -1015,41 +1043,34 @@ void AutoBalancer::solveLimbIK ()
 
 
   //for HumanSynchronizer
-//  static int HumanSyncCountdownNum = 5 * (1/m_dt);
   if(hsp->startCountdownForHumanSync){
     std::cerr << "[" << m_profile.instance_name << "] Count Down for HumanSync ["<<hsp->getRemainingCountDown()<<"]\r";
 	  hsp->updateCountDown();
   }
   if(hsp->isHumanSyncOn()){
-	  if(hsp->ht_first_call){
-		  hsp->init_wld_rp_basepos = m_robot->rootLink()->p;
-      hsp->setInitOffsetPose();
-      hsp->rp_wld_initpos.com = m_robot->calcCM();
-      hsp->rp_wld_initpos.rf = ikp["rleg"].target_link->p;
-      hsp->rp_wld_initpos.lf = ikp["lleg"].target_link->p;
-      if(ikp.count("rarm"))hsp->rp_wld_initpos.rh = ikp["rarm"].target_link->p;
-      if(ikp.count("larm"))hsp->rp_wld_initpos.lh = ikp["larm"].target_link->p;
-      hsp->ht_first_call = false;
-
+    if(hsp->ht_first_call){
       hsp->calibInitHumanCOMFromZMP();
-
       std::cerr << "\n[" << m_profile.instance_name << "] Start HumanSync"<< std::endl;
-
-	  }
+      hsp->ht_first_call = false;
+    }
   }else{
     hsp->setInitOffsetPose();
+//    hsp->calibInitHumanCOMFromZMP();
+    hsp->rp_wld_initpos.com = m_robot->calcCM();
+    hsp->rp_wld_initpos.rf = ikp["rleg"].target_link->p;
+    hsp->rp_wld_initpos.lf = ikp["lleg"].target_link->p;
+    if(ikp.count("rarm"))hsp->rp_wld_initpos.rh = ikp["rarm"].target_link->p;
+    if(ikp.count("larm"))hsp->rp_wld_initpos.lh = ikp["larm"].target_link->p;
+    hsp->init_basepos = m_robot->rootLink()->p;
   }
-
   hsp->update();//////HumanSynchronizerの主要処理
   if(loop%100==0)hsp->rp_ref_out.print();
-  if(loop%100==0)cerr<<"getUpdateTime:"<<hsp->getUpdateTime()*1000<<"[ms]"<<endl;
+//  if(loop%100==0)cerr<<"getUpdateTime:"<<hsp->getUpdateTime()*1000<<"[ms]"<<endl;
 
-  if(hsp->isHumanSyncOn()){
-	  ////////////////////// 重心拘束位置設定 /////////////////////////
+
+  //for HumanSynchronizer
+  if(hsp->isHumanSyncOn()){	  ////////////////////// 重心拘束位置設定 /////////////////////////
     m_robot->rootLink()->p = hsp->rp_wld_initpos.com + hsp->rp_ref_out.com;//まずは重心目標分，体幹を動かす
-    m_robot->rootLink()->p(2) = hsp->init_wld_rp_basepos(2)+ hsp->rp_ref_out.com(2);//高さだけはベース基準
-    m_contactStates.data[contact_states_index_map["rleg"]] = hsp->is_rf_contact;
-    m_contactStates.data[contact_states_index_map["lleg"]] = hsp->is_lf_contact;
   }
 
   // Fix for toe joint
@@ -1067,11 +1088,6 @@ void AutoBalancer::solveLimbIK ()
 
 
   // additional COM fitting IK for HumanSynchronizer
-
-
-  if(ikp.count("rarm") && !hsp->use_rh)ikp["rarm"].is_active = false;
-  if(ikp.count("larm") && !hsp->use_lh)ikp["larm"].is_active = false;
-
   hrp::Vector3 tmp_com_err = hsp->rp_ref_out.com + hsp->rp_wld_initpos.com - m_robot->calcCM();
   int com_ik_loop=0;
   const int COM_IK_MAX_LOOP = 10;
@@ -1082,9 +1098,7 @@ void AutoBalancer::solveLimbIK ()
     if(ikp.count("rarm"))ikp["rarm"].target_p0 = hsp->rp_wld_initpos.rh + hsp->rp_ref_out.rh;
     if(ikp.count("larm"))ikp["larm"].target_p0 = hsp->rp_wld_initpos.lh + hsp->rp_ref_out.lh;
     while(fabs(tmp_com_err(0))>COM_IK_MAX_ERROR || fabs(tmp_com_err(1))>COM_IK_MAX_ERROR || fabs(tmp_com_err(2))>COM_IK_MAX_ERROR){//Z方向のCOM合わせは要注意(たまに怪しい)
-		  m_robot->rootLink()->p(0) += tmp_com_err(0);
-      m_robot->rootLink()->p(1) += tmp_com_err(1);
-      m_robot->rootLink()->p(2) += tmp_com_err(2);
+		  m_robot->rootLink()->p += tmp_com_err;
 		  m_robot->calcForwardKinematics();
 		  for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
 		    if (it->second.is_active) solveLimbIKforLimb(it->second, it->first);
@@ -1094,20 +1108,8 @@ void AutoBalancer::solveLimbIK ()
 		  if(com_ik_loop++ > COM_IK_MAX_LOOP){std::cerr << "[" << m_profile.instance_name << "] COM constraint IK MAX loop [="<<COM_IK_MAX_LOOP<<"] exceeded!!" << std::endl; break; };
 	  }
 
-//    static hrp::Vector3 pre_ik_basepos;
-//    for(int i=0;i<3;i++){//重心拘束で解いた結果の体幹軌道の滑らかさは保証されていないので体幹位置に速度制限＆再度IK
-//      if(m_robot->rootLink()->p(i) - pre_ik_basepos(i) > 0.0002){ m_robot->rootLink()->p(i) =  pre_ik_basepos(i) + 0.0002; }
-//      else if(m_robot->rootLink()->p(i) - pre_ik_basepos(i) < -0.0002){ m_robot->rootLink()->p(i) =  pre_ik_basepos(i) - 0.0002; }
-//    }
-//    for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
-//      if (it->second.is_active) solveLimbIKforLimb(it->second);
-//    }
-//    pre_ik_basepos = m_robot->rootLink()->p;
-
     //outport用のデータ上書き
-    ref_zmp(0) = hsp->rp_ref_out.zmp(0);
-    ref_zmp(1) = hsp->rp_ref_out.zmp(1);
-    ref_zmp(2) = 0;
+    ref_zmp = hsp->rp_ref_out.zmp;
     ref_cog = hsp->rp_wld_initpos.com + hsp->rp_ref_out.com;
 
 	  if(loop%100==0)if(com_ik_loop>1)std::cerr << "[" << m_profile.instance_name << "] COM_IK_LOOP ="<<com_ik_loop<< std::endl;//ややCOMのIKに手間取った時プリント

@@ -35,16 +35,15 @@
 // Service Consumer stub headers
 // <rtc-template block="consumer_stub_h">
 
-
-class D2IIRFilterVec
+class BiquadIIRFilterVec
 {
 private:
     IIRFilter x_filters,y_filters,z_filters;
     hrp::Vector3 ans;
 public:
-    D2IIRFilterVec(const std::string& error_prefix = ""){
+    BiquadIIRFilterVec(const std::string& error_prefix = ""){
     };
-    ~D2IIRFilterVec() {};
+    ~BiquadIIRFilterVec() {};
     bool setParameter(const double fc_in, const double HZ){
       std::vector<double> fb_coeffs, ff_coeffs;
       double fc = tan(fc_in * M_PI / HZ) / (2 * M_PI);
@@ -69,7 +68,6 @@ public:
       ans(2) = z_filters.passFilter(input(2));
       return ans;
     };
-
 };
 
 
@@ -144,8 +142,6 @@ class HumanSynchronizer{
     double CNT_F_TH;
     hrp::Vector3 pre_cont_rfpos,pre_cont_lfpos;
     hrp::Vector3 init_wld_rp_compos;
-    hrp::Vector3 init_wld_hp_rfpos,init_wld_hp_lfpos;
-    hrp::Vector3 init_wld_rp_rfpos,init_wld_rp_lfpos;
     hrp::Vector3 init_hp_calibcom;
     double MAXVEL,MAXACC;
     HumanPose hp_wld_raw;
@@ -163,24 +159,27 @@ class HumanSynchronizer{
     hrp::Vector3 lpf_zmp;
     double HZ,DT,G;
     hrp::Vector3 com_old,com_oldold,comacc;
-    std::vector<D2IIRFilterVec> iir_v_filters;
-    D2IIRFilterVec comacc_v_filters;
+    std::vector<BiquadIIRFilterVec> iir_v_filters;
+    BiquadIIRFilterVec comacc_v_filters;
 
   public:
 
     bool startCountdownForHumanSync;
     bool ht_first_call;
     bool is_rf_contact,is_lf_contact;
-    HumanPose rp_wld_initpos;
+    HumanPose rp_wld_initpos;//IKでのリンク原点の位置(足首，手首など)
     bool use_x,use_y,use_z;
-    hrp::Vector3 init_wld_rp_basepos;
     HumanPose rp_ref_out;
     FILE *sr_log,*cz_log;
     std::vector<double> fb_coeffs, ff_coeffs;
     bool use_rh,use_lh;
+    hrp::Vector3 init_wld_rp_rfpos,init_wld_rp_lfpos;
+    hrp::Vector3 init_wld_hp_rfpos,init_wld_hp_lfpos;
+    hrp::Vector3 current_basepos,init_basepos;
 
 
-
+    interpolator *init_zmp_com_offset_interpolator;
+    double zmp_com_offset_ip_ratio;
 
     HumanSynchronizer(){
       tgt_h2r_ratio = h2r_ratio = 0.96;//human 1.1m vs jaxon 1.06m
@@ -195,10 +194,6 @@ class HumanSynchronizer{
       cur_rfup_level = cur_lfup_level = 0;
       is_rf_contact = is_lf_contact = true;
       pre_cont_rfpos = pre_cont_lfpos = hrp::Vector3::Zero();
-      init_wld_hp_rfpos = hrp::Vector3(0,-0.1/h2r_ratio,0);//h2r_ratioは可変なので後の値変更に注意
-      init_wld_hp_lfpos = hrp::Vector3(0, 0.1/h2r_ratio,0);
-      init_wld_rp_rfpos = hrp::Vector3(0,-0.1,0);
-      init_wld_rp_lfpos = hrp::Vector3(0, 0.1,0);
       init_hp_calibcom.Zero();
       lpf_zmp.Zero();
       FNUM = 0.01;//0.01でも荒い?
@@ -220,6 +215,13 @@ class HumanSynchronizer{
 //      use_rh = use_lh = false;
       use_rh = use_lh = true;
 
+      init_zmp_com_offset_interpolator = new interpolator(1, DT, interpolator::HOFFARBIB, 1);
+      init_zmp_com_offset_interpolator->setName("zmp_com_offset_interpolator");
+      double start_ratio = 0.0;
+      init_zmp_com_offset_interpolator->set(&start_ratio);
+      double goal_ratio = 1.0;
+      init_zmp_com_offset_interpolator->go(&goal_ratio, 3.0, true);//3s
+
       std::string home_path(std::getenv("HOME"));
       sr_log = fopen((home_path+"/HumanSync_support_region.log").c_str(),"w+");
       cz_log = fopen((home_path+"/HumanSync_com_zmp.log").c_str(),"w+");
@@ -228,6 +230,7 @@ class HumanSynchronizer{
     ~HumanSynchronizer(){
       fclose(sr_log);
       fclose(cz_log);
+      delete init_zmp_com_offset_interpolator;
       cout<<"HumanSynchronizer destructed"<<endl;
     }
 
@@ -251,7 +254,7 @@ class HumanSynchronizer{
       updateHumanToRobotRatio             (tgt_h2r_ratio);
       updateCOMModRatio                   (tgt_cmmr);
       removeInitOffsetPose                (hp_wld_raw, hp_wld_initpos, hp_rel_raw);
-      applyInitHumanCOMOffset             (hp_rel_raw, init_hp_calibcom, hp_rel_raw);
+      applyInitHumanZMPToCOMOffset        (hp_rel_raw, init_hp_calibcom, hp_rel_raw);
       lockFootXYOnContact                 (is_rf_contact, is_lf_contact, hp_rel_raw);//根本から改変すべき2
 
       hp_filtered = hp_rel_raw;
@@ -273,9 +276,7 @@ class HumanSynchronizer{
       applyVelLimit                       (rp_ref_out, rp_ref_out_old, rp_ref_out);
       applyCOMZMPXYZLock                  (rp_ref_out);
 
-
       overwriteFootZFromContactStates     (is_rf_contact, is_lf_contact, rp_ref_out);
-
       rp_ref_out_old = rp_ref_out;
 //      fprintf(log,"%f %f %f %f %f %f\n", rp_ref_out.com(0), rp_ref_out.com(1), rp_ref_out.zmp(0), rp_ref_out.zmp(1), hp_rel_raw.com(0), hp_rel_raw.com(1));
       loop++;
@@ -316,8 +317,8 @@ class HumanSynchronizer{
       if(h2r_r_goal - h2r_ratio > step){h2r_ratio += step; cout<<"Interpolating HumanToRobotRatio as "<<h2r_ratio<<endl;}
       else if(h2r_r_goal - h2r_ratio < (-1)*step){h2r_ratio -= step; cout<<"Interpolating HumanToRobotRatio as "<<h2r_ratio<<endl;}
       else{h2r_ratio = h2r_r_goal;}
-      init_wld_hp_rfpos = hrp::Vector3(0,-0.1/h2r_ratio,0);
-      init_wld_hp_lfpos = hrp::Vector3(0, 0.1/h2r_ratio,0);
+      init_wld_hp_rfpos = init_wld_rp_rfpos/h2r_ratio;
+      init_wld_hp_lfpos = init_wld_rp_lfpos/h2r_ratio;
     }
     void updateCOMModRatio(const double cmmr_goal){
       const double step = 0.001;
@@ -332,15 +333,17 @@ class HumanSynchronizer{
       rel_out.rfw = abs_in.rfw;
       rel_out.lfw = abs_in.lfw;
     }
-    void applyInitHumanCOMOffset(const HumanPose& in, const hrp::Vector3& com_offs, HumanPose& out){
+    void applyInitHumanZMPToCOMOffset(const HumanPose& in, const hrp::Vector3& com_offs, HumanPose& out){
+      if(isHumanSyncOn()){
+        if(!init_zmp_com_offset_interpolator->isEmpty()){
+          init_zmp_com_offset_interpolator->get(&zmp_com_offset_ip_ratio, true);
+        }
+      }else{
+        zmp_com_offset_ip_ratio = 0;
+      }
       out = in;
-      out.com = in.com + com_offs;
+      out.com = in.com + zmp_com_offset_ip_ratio * com_offs;
     }
-//    void startHumanSync(){
-//      countdown_flag = true;
-//      setInitOffsetPose();
-//      HumanSyncOn = true;
-//    }
     void applyLPFilter(HumanPose& tgt){
       for(int i=0;i<iir_v_filters.size();i++){ tgt.Seq(i) = iir_v_filters[i].passFilter(tgt.Seq(i)); }
     }
@@ -351,16 +354,10 @@ class HumanSynchronizer{
       rp_out.rfw  = hp_in.rfw;
       rp_out.lfw  = hp_in.lfw;
     }
-    void applyCOMMoveModRatio(HumanPose& tgt){//結局初期指定からの移動量(=Rel)で計算をしてゆく
+    void applyCOMMoveModRatio(HumanPose& tgt){//
       tgt.com = cmmr * tgt.com;
     }
     void judgeFootContactStates(const HumanPose::Wrench6& rfw_in, const HumanPose::Wrench6& lfw_in, bool& rfcs_ans, bool& lfcs_ans){
-//      if      (rfcs_ans  && lfcs_ans && rfw_in.f(2)<CNT_F_TH   ){rfcs_ans = false;}//右足ついた状態から上げる
-//      else if (!rfcs_ans && lfcs_ans && rfw_in.f(2)>CNT_F_TH+30){rfcs_ans = true;}//右足浮いた状態から下げる
-//      if      (lfcs_ans  && rfcs_ans && lfw_in.f(2)<CNT_F_TH   ){lfcs_ans = false;}//左足ついた状態から上げる
-//      else if (!lfcs_ans && rfcs_ans && lfw_in.f(2)>CNT_F_TH+30){lfcs_ans = true;}//左足浮いた状態から下げる
-
-//      if(rfw_in.f(2)>CNT_F_TH+30 || lfw_in.f(2)>CNT_F_TH+30 ){
       if(HumanSyncOn){
         if      (rfcs_ans  && rfw_in.f(2)<CNT_F_TH   ){rfcs_ans = false;}//右足ついた状態から上げる
         else if (!rfcs_ans && rfw_in.f(2)>CNT_F_TH+30){rfcs_ans = true;}//右足浮いた状態から下げる
@@ -368,8 +365,6 @@ class HumanSynchronizer{
         else if (!lfcs_ans && lfw_in.f(2)>CNT_F_TH+30){lfcs_ans = true;}//左足浮いた状態から下げる
       }
       if(!rfcs_ans && !lfcs_ans){rfcs_ans = lfcs_ans = true;}//両足ジャンプは禁止
-
-
     }
     void lockSwingFootIfZMPOutOfSupportFoot(const HumanPose& tgt, bool& rfcs_ans, bool& lfcs_ans){
       if(rfcs_ans && !lfcs_ans){
@@ -384,11 +379,7 @@ class HumanSynchronizer{
           cout<<"RF lock"<<endl;
         }
       }
-
-
     }
-
-
     void overwriteFootZFromContactStates(const bool& rfcs_in, const bool& lfcs_in, HumanPose& tgt){
       if(!rfcs_in){//右足浮遊時
         if(cur_rfup_level < FUPLEVELNUM){
@@ -443,6 +434,15 @@ class HumanSynchronizer{
       }
       else if(is_rf_contact && !is_lf_contact){//左足浮遊時
         if(tgt.lf(1) + rp_wld_initpos.lf(1) < tgt.rf(1) + rp_wld_initpos.rf(1) + 0.15)tgt.lf(1) = tgt.rf(1) + rp_wld_initpos.rf(1) - rp_wld_initpos.lf(1) + 0.15;
+      }
+      hrp::Vector3 hand_ulimit = hrp::Vector3(0.1,0.1,0.1);
+      hrp::Vector3 hand_llimit = hrp::Vector3(-0.1,-0.1,-0.1);
+      for(int i=0;i<3;i++){
+        if      (tgt.rh(i) > hand_ulimit(i) + current_basepos(i) - init_basepos(i) ){ tgt.rh(i) = hand_ulimit(i) + current_basepos(i) - init_basepos(i); }
+        else if (tgt.rh(i) < hand_llimit(i) + current_basepos(i) - init_basepos(i) ){ tgt.rh(i) = hand_llimit(i) + current_basepos(i) - init_basepos(i); }
+        if      (tgt.lh(i) > hand_ulimit(i) + current_basepos(i) - init_basepos(i) ){ tgt.lh(i) = hand_ulimit(i) + current_basepos(i) - init_basepos(i); }
+        else if (tgt.lh(i) < hand_llimit(i) + current_basepos(i) - init_basepos(i) ){ tgt.lh(i) = hand_llimit(i) + current_basepos(i) - init_basepos(i); }
+
       }
     }
     bool applyCOMToSupportRegionLimit(const hrp::Vector3& lfin_abs, const hrp::Vector3& rfin_abs, hrp::Vector3& comin_abs){//boost::geometryがUbuntu12だとないから・・・
@@ -537,10 +537,8 @@ class HumanSynchronizer{
 //        fprintf(cz_log," %f %f %f %f",rp_ref_out.zmp(1),hpf_zmp(1),ans_point(1),ans_point(1) + hpf_zmp(1));
 //        fprintf(cz_log,"\n\n");
 //      }
-
       comin_abs(0) = ans_point(0);
       comin_abs(1) = ans_point(1);
-
       return true;
     }
     void applyZMPCalcFromCOM(const hrp::Vector3& comin, hrp::Vector3& zmpout){
@@ -549,8 +547,8 @@ class HumanSynchronizer{
       if(comacc(0)>MAXACC)comacc(0)=MAXACC;else if(comacc(0)<-MAXACC)comacc(0)=-MAXACC;
       if(comacc(1)>MAXACC)comacc(1)=MAXACC;else if(comacc(1)<-MAXACC)comacc(1)=-MAXACC;
       comacc = comacc_v_filters.passFilter(comacc);
-      zmpout(0) = comin(0)-(1.06/G)*comacc(0);
-      zmpout(1) = comin(1)-(1.06/G)*comacc(1);
+      zmpout(0) = comin(0)-(rp_wld_initpos.com(2)/G)*comacc(0);
+      zmpout(1) = comin(1)-(rp_wld_initpos.com(2)/G)*comacc(1);
       fprintf(cz_log,"%f %f %f %f %f %f %f\n",(double)loop/HZ,comin(0),comin(1),rp_ref_out.zmp(0),rp_ref_out.zmp(1),zmpout(0),zmpout(1));
       com_oldold = com_old;
       com_old = comin;
