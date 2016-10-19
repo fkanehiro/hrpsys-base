@@ -170,7 +170,6 @@ namespace rats
         {
             for (size_t i = 0; i < NUM_TH_PHASES; i++) ratio[i] = toe_heel_phase_ratio[i];
         };
-        int get_NUM_TH_PHASES () const { return NUM_TH_PHASES; };
         // functions for checking phase and calculating phase time and ratio
         bool is_phase_starting (const size_t current_count, const toe_heel_phase _phase) const
         {
@@ -1276,7 +1275,7 @@ namespace rats
     double get_heel_angle () const { return lcg.get_heel_angle(); };
     double get_foot_dif_rot_angle () const { return lcg.get_foot_dif_rot_angle(); };
     void get_toe_heel_phase_ratio (std::vector<double>& ratio) const { thp.get_toe_heel_phase_ratio(ratio); };
-    int get_NUM_TH_PHASES () const { return thp.get_NUM_TH_PHASES(); };
+    int get_NUM_TH_PHASES () const { return NUM_TH_PHASES; };
     bool get_use_toe_joint () const { return lcg.get_use_toe_joint(); };
     void get_leg_default_translate_pos (std::vector<hrp::Vector3>& off) const { off = footstep_param.leg_default_translate_pos; };
     size_t get_overwritable_footstep_index_offset () const { return overwritable_footstep_index_offset; };
