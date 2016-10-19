@@ -664,6 +664,34 @@ public:
         gen_and_plot_walk_pattern();
     };
 
+    void test16 ()
+    {
+        std::cerr << "test16 : Set foot steps with param (toe heel contact)" << std::endl;
+        /* initialize sample footstep_list */
+        parse_params();
+        gg->clear_footstep_nodes_list();
+        gg->set_toe_zmp_offset_x(137*1e-3);
+        gg->set_heel_zmp_offset_x(-105*1e-3);
+        gg->set_toe_pos_offset_x(137*1e-3);
+        gg->set_heel_pos_offset_x(-105*1e-3);
+        gg->set_toe_angle(20);
+        gg->set_heel_angle(5);
+        gg->set_default_step_time(1);
+        gg->set_default_double_support_ratio_before(0.1);
+        gg->set_default_double_support_ratio_after(0.1);
+        gg->set_use_toe_heel_transition(true);
+        double ratio[7] = {0.02, 0.28, 0.2, 0.0, 0.2, 0.25, 0.05};
+        std::vector<double> ratio2(ratio, ratio+gg->get_NUM_TH_PHASES());
+        gg->set_toe_heel_phase_ratio(ratio2);
+        std::vector< std::vector<step_node> > fnsl;
+        fnsl.push_back(boost::assign::list_of(step_node("rleg", coordinates(hrp::Vector3(hrp::Vector3(0, 0, 0)+leg_pos[0])), gg->get_default_step_height()*0.5, gg->get_default_step_time()*0.5, gg->get_toe_angle()*0.5, gg->get_heel_angle()*0.5)));
+        fnsl.push_back(boost::assign::list_of(step_node("lleg", coordinates(hrp::Vector3(hrp::Vector3(100*1e-3, 0, 0)+leg_pos[1])), gg->get_default_step_height()*2.0, gg->get_default_step_time()*2.0, gg->get_toe_angle()*2.0, gg->get_heel_angle()*2.0)));
+        fnsl.push_back(boost::assign::list_of(step_node("rleg", coordinates(hrp::Vector3(hrp::Vector3(400*1e-3, 0, 0)+leg_pos[0])), gg->get_default_step_height()*0.5, gg->get_default_step_time()*0.5, gg->get_toe_angle()*0.5, gg->get_heel_angle()*0.5)));
+        fnsl.push_back(boost::assign::list_of(step_node("lleg", coordinates(hrp::Vector3(hrp::Vector3(400*1e-3, 0, 0)+leg_pos[1])), gg->get_default_step_height()*2.0, gg->get_default_step_time()*2.0, gg->get_toe_angle()*2.0, gg->get_heel_angle()*2.0)));
+        gg->set_foot_steps_list(fnsl);
+        gen_and_plot_walk_pattern();
+    };
+
     void parse_params ()
     {
       for (unsigned int i = 0; i < arg_strs.size(); ++ i) {
@@ -778,6 +806,7 @@ void print_usage ()
     std::cerr << "  --test13 : Arbitrary leg switching" << std::endl;
     std::cerr << "  --test14 : kick walk" << std::endl;
     std::cerr << "  --test15 : Stair walk down" << std::endl;
+    std::cerr << "  --test16 : Set foot steps with param (toe heel contact)" << std::endl;
 };
 
 int main(int argc, char* argv[])
@@ -820,6 +849,8 @@ int main(int argc, char* argv[])
           tgg.test14();
       } else if (std::string(argv[1]) == "--test15") {
           tgg.test15();
+      } else if (std::string(argv[1]) == "--test16") {
+          tgg.test16();
       } else {
           print_usage();
           ret = 1;
