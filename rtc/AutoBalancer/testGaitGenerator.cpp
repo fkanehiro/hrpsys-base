@@ -25,7 +25,7 @@ private:
     }
     bool check_zmp_diff (const hrp::Vector3& prev_zmp, const hrp::Vector3& zmp)
     {
-        return (prev_zmp - zmp).norm() < 10.0*1e-3; // [mm]
+        return (prev_zmp - zmp).norm() < 20.0*1e-3; // [mm]
     }
     // plot and pattern generation
     void plot_and_save (FILE* gp, const std::string graph_fname, const std::string plot_str)
@@ -670,13 +670,17 @@ public:
         /* initialize sample footstep_list */
         parse_params();
         gg->clear_footstep_nodes_list();
+        std::vector<hrp::Vector3> dzo;
+        dzo.push_back(hrp::Vector3(20*1e-3,-30*1e-3,0));
+        dzo.push_back(hrp::Vector3(20*1e-3,30*1e-3,0));
+        gg->set_default_zmp_offsets(dzo);
         gg->set_toe_zmp_offset_x(137*1e-3);
         gg->set_heel_zmp_offset_x(-105*1e-3);
         gg->set_toe_pos_offset_x(137*1e-3);
         gg->set_heel_pos_offset_x(-105*1e-3);
         gg->set_toe_angle(20);
         gg->set_heel_angle(5);
-        gg->set_default_step_time(1);
+        gg->set_default_step_time(2);
         gg->set_default_double_support_ratio_before(0.1);
         gg->set_default_double_support_ratio_after(0.1);
         gg->set_use_toe_heel_transition(true);
