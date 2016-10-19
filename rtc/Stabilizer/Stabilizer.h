@@ -271,7 +271,7 @@ class Stabilizer
   std::vector<double> toeheel_ratio;
   double dt;
   int transition_count, loop;
-  bool is_legged_robot, on_ground, is_emergency, is_seq_interpolating, reset_emergency_flag, eefm_use_force_difference_control, initial_cp_too_large_error;
+  bool is_legged_robot, on_ground, is_emergency, is_seq_interpolating, reset_emergency_flag, eefm_use_force_difference_control, eefm_use_swing_damping, initial_cp_too_large_error;
   bool is_walking, is_estop_while_walking;
   hrp::Vector3 current_root_p, target_root_p;
   hrp::Matrix33 current_root_R, target_root_R, prev_act_foot_origin_rot, prev_ref_foot_origin_rot, target_foot_origin_rot;
@@ -303,6 +303,7 @@ class Stabilizer
   hrp::Vector3 new_refzmp, rel_cog, ref_zmp_aux;
   hrp::Vector3 pos_ctrl;
   hrp::Vector3 ref_total_force, ref_total_moment;
+  hrp::Vector3 eefm_swing_pos_damping_gain, eefm_swing_rot_damping_gain;
   double total_mass, transition_time, cop_check_margin, contact_decision_threshold;
   std::vector<double> cp_check_margin, tilt_margin;
   OpenHRP::StabilizerService::EmergencyCheckMode emergency_check_mode;

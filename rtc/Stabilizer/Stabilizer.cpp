@@ -336,6 +336,8 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
       ikp.eefm_swing_pos_time_const = hrp::Vector3(1.5, 1.5, 1.5);
       ikp.eefm_ee_moment_limit = hrp::Vector3(1e4, 1e4, 1e4); // Default limit [Nm] is too large. Same as no limit.
   }
+  eefm_swing_rot_damping_gain = hrp::Vector3(20*5, 20*5, 1e5);
+  eefm_swing_pos_damping_gain = hrp::Vector3(33600, 33600, 7000);
   eefm_pos_time_const_swing = 0.08;
   eefm_pos_transition_time = 0.01;
   eefm_pos_margin_time = 0.02;
@@ -352,6 +354,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   tilt_margin.resize(2, 30 * M_PI / 180); // [rad]
   contact_decision_threshold = 50; // [N]
   eefm_use_force_difference_control = true;
+  eefm_use_swing_damping = false;
   initial_cp_too_large_error = true;
   is_walking = false;
   is_estop_while_walking = false;
@@ -933,9 +936,11 @@ void Stabilizer::getActualParameters ()
         // d_foot_rpy and d_foot_pos is (actual) foot origin coords relative value because these use foot origin coords relative force & moment
         { // Rot
           //   Basically Equation (16) and (17) in the paper [1]
-            hrp::Vector3 tmp_damping_gain = (1-transition_smooth_gain) * ikp.eefm_rot_damping_gain * 10 + transition_smooth_gain * ikp.eefm_rot_damping_gain;
-            ikp.d_foot_rpy = calcDampingControl(ikp.ref_moment, ee_moment, ikp.d_foot_rpy, tmp_damping_gain, ikp.eefm_rot_time_const);
-            ikp.d_foot_rpy = vlimit(ikp.d_foot_rpy, -1 * ikp.eefm_rot_compensation_limit, ikp.eefm_rot_compensation_limit);
+          hrp::Vector3 tmp_damping_gain;
+          if (!eefm_use_swing_damping || (contact_states[i] && isContact(i))) tmp_damping_gain = (1-transition_smooth_gain) * ikp.eefm_rot_damping_gain * 10 + transition_smooth_gain * ikp.eefm_rot_damping_gain;
+          else tmp_damping_gain = (1-transition_smooth_gain) * eefm_swing_rot_damping_gain * 10 + transition_smooth_gain * eefm_swing_rot_damping_gain;
+          ikp.d_foot_rpy = calcDampingControl(ikp.ref_moment, ee_moment, ikp.d_foot_rpy, tmp_damping_gain, ikp.eefm_rot_time_const);
+          ikp.d_foot_rpy = vlimit(ikp.d_foot_rpy, -1 * ikp.eefm_rot_compensation_limit, ikp.eefm_rot_compensation_limit);
         }
         if (!eefm_use_force_difference_control) { // Pos
             hrp::Vector3 tmp_damping_gain = (1-transition_smooth_gain) * ikp.eefm_pos_damping_gain * 10 + transition_smooth_gain * ikp.eefm_pos_damping_gain;
@@ -961,13 +966,21 @@ void Stabilizer::getActualParameters ()
           // foot force difference control version
           //   Basically Equation (18) in the paper [1]
           hrp::Vector3 ref_f_diff = (stikp[1].ref_force-stikp[0].ref_force);
-          if ( (contact_states[contact_states_index_map["rleg"]] && contact_states[contact_states_index_map["lleg"]]) // Reference : double support phase
-               || (isContact(0) && isContact(1)) ) { // Actual : double support phase
+          if (eefm_use_swing_damping) {
+            hrp::Vector3 tmp_damping_gain;
+            if (contact_states[contact_states_index_map["rleg"]] && contact_states[contact_states_index_map["lleg"]]
+                && isContact(0) && isContact(1)) tmp_damping_gain = (1-transition_smooth_gain) * stikp[0].eefm_pos_damping_gain * 10 + transition_smooth_gain * stikp[0].eefm_pos_damping_gain;
+            else tmp_damping_gain = (1-transition_smooth_gain) * eefm_swing_pos_damping_gain * 10 + transition_smooth_gain * eefm_swing_pos_damping_gain;
+            pos_ctrl = calcDampingControl (ref_f_diff, f_diff, pos_ctrl,
+                                           tmp_damping_gain, stikp[0].eefm_pos_time_const_support);
+          } else {
+            if ( (contact_states[contact_states_index_map["rleg"]] && contact_states[contact_states_index_map["lleg"]]) // Reference : double support phase
+                 || (isContact(0) && isContact(1)) ) { // Actual : double support phase
               // Temporarily use first pos damping gain (stikp[0])
               hrp::Vector3 tmp_damping_gain = (1-transition_smooth_gain) * stikp[0].eefm_pos_damping_gain * 10 + transition_smooth_gain * stikp[0].eefm_pos_damping_gain;
               pos_ctrl = calcDampingControl (ref_f_diff, f_diff, pos_ctrl,
                                              tmp_damping_gain, stikp[0].eefm_pos_time_const_support);
-          } else {
+            } else {
               double remain_swing_time;
               if ( !contact_states[contact_states_index_map["rleg"]] ) { // rleg swing
                   remain_swing_time = m_controlSwingSupportTime.data[contact_states_index_map["rleg"]];
@@ -980,6 +993,7 @@ void Stabilizer::getActualParameters ()
               hrp::Vector3 tmp_damping_gain = (1-transition_smooth_gain) * stikp[0].eefm_pos_damping_gain * 10 + transition_smooth_gain * stikp[0].eefm_pos_damping_gain;
               hrp::Vector3 tmp_time_const = (1-tmp_ratio)*eefm_pos_time_const_swing*hrp::Vector3::Ones()+tmp_ratio*stikp[0].eefm_pos_time_const_support;
               pos_ctrl = calcDampingControl (tmp_ratio * ref_f_diff, tmp_ratio * f_diff, pos_ctrl, tmp_damping_gain, tmp_time_const);
+            }
           }
           // zctrl = vlimit(zctrl, -0.02, 0.02);
           // Temporarily use first pos compensation limit (stikp[0])
@@ -1699,6 +1713,10 @@ void Stabilizer::getParameter(OpenHRP::StabilizerService::stParam& i_stp)
       i_stp.eefm_pos_compensation_limit[j] = stikp[j].eefm_pos_compensation_limit;
       i_stp.eefm_rot_compensation_limit[j] = stikp[j].eefm_rot_compensation_limit;
   }
+  for (size_t i = 0; i < 3; i++) {
+    i_stp.eefm_swing_pos_damping_gain[i] = eefm_swing_pos_damping_gain(i);
+    i_stp.eefm_swing_rot_damping_gain[i] = eefm_swing_rot_damping_gain(i);
+  }
   i_stp.eefm_pos_time_const_swing = eefm_pos_time_const_swing;
   i_stp.eefm_pos_transition_time = eefm_pos_transition_time;
   i_stp.eefm_pos_margin_time = eefm_pos_margin_time;
@@ -1726,6 +1744,7 @@ void Stabilizer::getParameter(OpenHRP::StabilizerService::stParam& i_stp)
   i_stp.eefm_ee_rot_error_p_gain = eefm_ee_rot_error_p_gain;
   i_stp.eefm_ee_error_cutoff_freq = target_ee_diff_p_filter[0]->getCutOffFreq();
   i_stp.eefm_use_force_difference_control = eefm_use_force_difference_control;
+  i_stp.eefm_use_swing_damping = eefm_use_swing_damping;
 
   i_stp.is_ik_enable.length(is_ik_enable.size());
   for (size_t i = 0; i < is_ik_enable.size(); i++) {
@@ -1878,6 +1897,10 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
   } else {
       is_damping_parameter_ok = false;
   }
+  for (size_t i = 0; i < 3; i++) {
+    eefm_swing_pos_damping_gain(i) = i_stp.eefm_swing_pos_damping_gain[i];
+    eefm_swing_rot_damping_gain(i) = i_stp.eefm_swing_rot_damping_gain[i];
+  }
   eefm_pos_time_const_swing = i_stp.eefm_pos_time_const_swing;
   eefm_pos_transition_time = i_stp.eefm_pos_transition_time;
   eefm_pos_margin_time = i_stp.eefm_pos_margin_time;
@@ -1904,6 +1927,7 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
       szd->print_vertices(std::string(m_profile.instance_name));
   }
   eefm_use_force_difference_control = i_stp.eefm_use_force_difference_control;
+  eefm_use_swing_damping = i_stp.eefm_use_swing_damping;
 
   act_cogvel_filter->setCutOffFreq(i_stp.eefm_cogvel_cutoff_freq);
   szd->set_wrench_alpha_blending(i_stp.eefm_wrench_alpha_blending);
@@ -1998,7 +2022,7 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
   std::cerr << "[" << m_profile.instance_name << "]   eefm_pos_transition_time = " << eefm_pos_transition_time << "[s], eefm_pos_margin_time = " << eefm_pos_margin_time << "[s] eefm_pos_time_const_swing = " << eefm_pos_time_const_swing << "[s]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   cogvel_cutoff_freq = " << act_cogvel_filter->getCutOffFreq() << "[Hz]" << std::endl;
   szd->print_params(std::string(m_profile.instance_name));
-  std::cerr << "[" << m_profile.instance_name << "]   eefm_gravitational_acceleration = " << eefm_gravitational_acceleration << "[m/s^2], eefm_use_force_difference_control = " << (eefm_use_force_difference_control? "true":"false") << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   eefm_gravitational_acceleration = " << eefm_gravitational_acceleration << "[m/s^2], eefm_use_force_difference_control = " << (eefm_use_force_difference_control? "true":"false") << ", eefm_use_swing_damping = " << (eefm_use_swing_damping? "true":"false") << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   eefm_ee_pos_error_p_gain = " << eefm_ee_pos_error_p_gain << ", eefm_ee_rot_error_p_gain = " << eefm_ee_rot_error_p_gain << ", eefm_ee_error_cutoff_freq = " << target_ee_diff_p_filter[0]->getCutOffFreq() << "[Hz]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]  COMMON" << std::endl;
   if (control_mode == MODE_IDLE) {
