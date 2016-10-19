@@ -170,7 +170,6 @@ namespace rats
         {
             for (size_t i = 0; i < NUM_TH_PHASES; i++) ratio[i] = toe_heel_phase_ratio[i];
         };
-        int get_NUM_TH_PHASES () const { return NUM_TH_PHASES; };
         // functions for checking phase and calculating phase time and ratio
         bool is_phase_starting (const size_t current_count, const toe_heel_phase _phase) const
         {
@@ -214,7 +213,7 @@ namespace rats
       size_t refzmp_index, refzmp_count, one_step_count;
       double toe_zmp_offset_x, heel_zmp_offset_x; // [m]
       double dt;
-      toe_heel_phase_counter* thp_ptr;
+      toe_heel_phase_counter thp;
       bool use_toe_heel_transition;
       boost::shared_ptr<interpolator> zmp_weight_interpolator;
       void calc_current_refzmp (hrp::Vector3& ret, std::vector<hrp::Vector3>& swing_foot_zmp_offsets, const double default_double_support_ratio_before, const double default_double_support_ratio_after, const double default_double_support_static_ratio_before, const double default_double_support_static_ratio_after);
@@ -225,11 +224,11 @@ namespace rats
 #ifndef HAVE_MAIN
     public:
 #endif
-      refzmp_generator(toe_heel_phase_counter* _thp_ptr, const double _dt)
+      refzmp_generator(const double _dt)
         : refzmp_cur_list(), foot_x_axises_list(), swing_leg_types_list(), step_count_list(), default_zmp_offsets(),
           refzmp_index(0), refzmp_count(0), one_step_count(0),
           toe_zmp_offset_x(0), heel_zmp_offset_x(0), dt(_dt),
-          thp_ptr(_thp_ptr), use_toe_heel_transition(false)
+          thp(), use_toe_heel_transition(false)
       {
           default_zmp_offsets.push_back(hrp::Vector3::Zero());
           default_zmp_offsets.push_back(hrp::Vector3::Zero());
@@ -243,7 +242,6 @@ namespace rats
       };
       ~refzmp_generator()
       {
-          thp_ptr = NULL;
       };
       void remove_refzmp_cur_list_over_length (const size_t len)
       {
@@ -261,6 +259,7 @@ namespace rats
         foot_x_axises_list.clear();
         swing_leg_types_list.clear();
         step_count_list.clear();
+        thp.set_one_step_count(one_step_count);
       };
       void push_refzmp_from_footstep_nodes_for_dual (const std::vector<step_node>& fns,
                                                      const std::vector<step_node>& _support_leg_steps,
@@ -285,6 +284,7 @@ namespace rats
               std::cerr << "zmp_weight_map cannot be set because interpolating." << std::endl;
           }
       };
+      bool set_toe_heel_phase_ratio (const std::vector<double>& ratio) { return thp.set_toe_heel_phase_ratio(ratio); };
       // getter
       bool get_current_refzmp (hrp::Vector3& rzmp, std::vector<hrp::Vector3>& swing_foot_zmp_offsets, const double default_double_support_ratio_before, const double default_double_support_ratio_after, const double default_double_support_static_ratio_before, const double default_double_support_static_ratio_after)
       {
@@ -621,7 +621,7 @@ namespace rats
       std::vector<cycloid_delay_hoffarbib_trajectory_generator> cdtg;
       cycloid_delay_kick_hoffarbib_trajectory_generator cdktg;
       cross_delay_hoffarbib_trajectory_generator crdtg;
-      toe_heel_phase_counter* thp_ptr;
+      toe_heel_phase_counter thp;
       interpolator* foot_ratio_interpolator;
       interpolator* swing_foot_rot_ratio_interpolator;
       // Parameters for toe-heel contact
@@ -647,14 +647,14 @@ namespace rats
 #ifndef HAVE_MAIN
     public:
 #endif
-      leg_coords_generator(const double _dt, toe_heel_phase_counter* _thp_ptr)
+      leg_coords_generator(const double _dt)
         : support_leg_steps(), swing_leg_steps(), swing_leg_src_steps(), swing_leg_dst_steps(),
           default_step_height(0.05), default_top_ratio(0.5), current_step_height(0.0), swing_ratio(0), swing_rot_ratio(0), foot_midcoords_ratio(0), dt(_dt),
           current_toe_angle(0), current_heel_angle(0),
           time_offset(0.35), final_distance_weight(1.0), time_offset_xy2z(0),
           footstep_index(0), lcg_count(0), default_orbit_type(CYCLOID),
           rdtg(), cdtg(),
-          thp_ptr(_thp_ptr),
+          thp(),
           foot_ratio_interpolator(NULL), swing_foot_rot_ratio_interpolator(NULL), toe_heel_interpolator(NULL),
           toe_pos_offset_x(0.0), heel_pos_offset_x(0.0), toe_angle(0.0), heel_angle(0.0), foot_dif_rot_angle(0.0), use_toe_joint(false)
       {
@@ -686,7 +686,6 @@ namespace rats
             delete toe_heel_interpolator;
             toe_heel_interpolator = NULL;
         }
-        thp_ptr = NULL;
       };
       void set_default_step_height (const double _tmp) { default_step_height = _tmp; };
       void set_default_top_ratio (const double _tmp) { default_top_ratio = _tmp; };
@@ -747,6 +746,7 @@ namespace rats
             }
           }
       };
+      bool set_toe_heel_phase_ratio (const std::vector<double>& ratio) { return thp.set_toe_heel_phase_ratio(ratio); };
       void reset(const size_t _one_step_count, const size_t _next_one_step_count,
                  const std::vector<step_node>& _swing_leg_dst_steps,
                  const std::vector<step_node>& _swing_leg_src_steps,
@@ -763,7 +763,7 @@ namespace rats
         support_leg_steps_list.push_back(support_leg_steps);
         one_step_count = lcg_count = _one_step_count;
         next_one_step_count = _next_one_step_count;
-        thp_ptr->set_one_step_count(one_step_count);
+        thp.set_one_step_count(one_step_count);
         footstep_index = 0;
         current_step_height = 0.0;
         switch (default_orbit_type) {
@@ -876,6 +876,7 @@ namespace rats
       double get_heel_angle () const { return heel_angle; };
       double get_foot_dif_rot_angle () const { return foot_dif_rot_angle; };
       bool get_use_toe_joint () const { return use_toe_joint; };
+      void get_toe_heel_phase_ratio (std::vector<double>& ratio) const { thp.get_toe_heel_phase_ratio(ratio); };
     };
 
   class gait_generator
@@ -895,7 +896,6 @@ namespace rats
     std::vector< std::vector<step_node> > footstep_nodes_list;
     // Footstep list for overwriting future footstep queue
     std::vector< std::vector<step_node> > overwrite_footstep_nodes_list;
-    toe_heel_phase_counter thp;
     refzmp_generator rg;
     leg_coords_generator lcg;
     footstep_parameter footstep_param;
@@ -965,7 +965,7 @@ namespace rats
                     /* arguments for footstep_parameter */
                     const std::vector<hrp::Vector3>& _leg_pos, std::vector<std::string> _all_limbs,
                     const double _stride_fwd_x, const double _stride_y, const double _stride_theta, const double _stride_bwd_x)
-        : footstep_nodes_list(), overwrite_footstep_nodes_list(), thp(), rg(&thp, _dt), lcg(_dt, &thp),
+        : footstep_nodes_list(), overwrite_footstep_nodes_list(), rg(_dt), lcg(_dt),
         footstep_param(_leg_pos, _stride_fwd_x, _stride_y, _stride_theta, _stride_bwd_x),
         vel_param(), offset_vel_param(), cog(hrp::Vector3::Zero()), refzmp(hrp::Vector3::Zero()), prev_que_rzmp(hrp::Vector3::Zero()),
         dt(_dt), all_limbs(_all_limbs), default_step_time(1.0), default_double_support_ratio_before(0.1), default_double_support_ratio_after(0.1), default_double_support_static_ratio_before(0.0), default_double_support_static_ratio_after(0.0), default_double_support_ratio_swing_before(0.1), default_double_support_ratio_swing_after(0.1), gravitational_acceleration(DEFAULT_GRAVITATIONAL_ACCELERATION),
@@ -1101,7 +1101,12 @@ namespace rats
     void set_heel_pos_offset_x (const double _offx) { lcg.set_heel_pos_offset_x(_offx); };
     void set_toe_angle (const double _angle) { lcg.set_toe_angle(_angle); };
     void set_heel_angle (const double _angle) { lcg.set_heel_angle(_angle); };
-    bool set_toe_heel_phase_ratio (const std::vector<double>& ratio) { return thp.set_toe_heel_phase_ratio(ratio); };
+    bool set_toe_heel_phase_ratio (const std::vector<double>& ratio)
+    {
+        bool lcgret = lcg.set_toe_heel_phase_ratio(ratio);
+        bool rgret = rg.set_toe_heel_phase_ratio(ratio);
+        return lcgret && rgret;
+    };
     void set_use_toe_joint (const bool ut) { lcg.set_use_toe_joint(ut); };
     void set_leg_default_translate_pos (const std::vector<hrp::Vector3>& off) { footstep_param.leg_default_translate_pos = off;};
     void set_optional_go_pos_finalize_footstep_num (const size_t num) { optional_go_pos_finalize_footstep_num = num; };
@@ -1275,8 +1280,8 @@ namespace rats
     double get_toe_angle () const { return lcg.get_toe_angle(); };
     double get_heel_angle () const { return lcg.get_heel_angle(); };
     double get_foot_dif_rot_angle () const { return lcg.get_foot_dif_rot_angle(); };
-    void get_toe_heel_phase_ratio (std::vector<double>& ratio) const { thp.get_toe_heel_phase_ratio(ratio); };
-    int get_NUM_TH_PHASES () const { return thp.get_NUM_TH_PHASES(); };
+    void get_toe_heel_phase_ratio (std::vector<double>& ratio) const { lcg.get_toe_heel_phase_ratio(ratio); };
+    int get_NUM_TH_PHASES () const { return NUM_TH_PHASES; };
     bool get_use_toe_joint () const { return lcg.get_use_toe_joint(); };
     void get_leg_default_translate_pos (std::vector<hrp::Vector3>& off) const { off = footstep_param.leg_default_translate_pos; };
     size_t get_overwritable_footstep_index_offset () const { return overwritable_footstep_index_offset; };
