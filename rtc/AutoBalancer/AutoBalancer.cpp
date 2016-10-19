@@ -335,7 +335,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     has_ik_failed = false;
     is_hand_fix_mode = false;
 
-    pos_ik_thre = 0.1*1e-3; // [m]
+    pos_ik_thre = 0.5*1e-3; // [m]
     rot_ik_thre = (1e-2)*M_PI/180.0; // [rad]
     ik_error_debug_print_freq = static_cast<int>(0.2/m_dt); // once per 0.2 [s]
 
