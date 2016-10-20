@@ -57,6 +57,7 @@ AutoBalancer::AutoBalancer(RTC::Manager* manager)
       m_basePoseOut("basePoseOut", m_basePose),
       m_accRefOut("accRef", m_accRef),
       m_contactStatesOut("contactStates", m_contactStates),
+      m_toeheelRatioOut("toeheelRatio", m_toeheelRatio),
       m_controlSwingSupportTimeOut("controlSwingSupportTime", m_controlSwingSupportTime),
       m_walkingStatesOut("walkingStates", m_walkingStates),
       m_sbpCogOffsetOut("sbpCogOffset", m_sbpCogOffset),
@@ -100,6 +101,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     addOutPort("basePoseOut", m_basePoseOut);
     addOutPort("accRef", m_accRefOut);
     addOutPort("contactStates", m_contactStatesOut);
+    addOutPort("toeheelRatio", m_toeheelRatioOut);
     addOutPort("controlSwingSupportTime", m_controlSwingSupportTimeOut);
     addOutPort("cogOut", m_cogOut);
     addOutPort("walkingStates", m_walkingStatesOut);
@@ -200,6 +202,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
         contact_states_index_map.insert(std::pair<std::string, size_t>(ee_name, i));
       }
       m_contactStates.data.length(num);
+      m_toeheelRatio.data.length(num);
       if (ikp.find("rleg") != ikp.end() && ikp.find("lleg") != ikp.end()) {
         m_contactStates.data[contact_states_index_map["rleg"]] = true;
         m_contactStates.data[contact_states_index_map["lleg"]] = true;
@@ -210,6 +213,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
       }
       m_controlSwingSupportTime.data.length(num);
       for (size_t i = 0; i < num; i++) m_controlSwingSupportTime.data[i] = 0.0;
+      for (size_t i = 0; i < num; i++) m_toeheelRatio.data[i] = rats::no_using_toe_heel_ratio;
     }
     std::vector<hrp::Vector3> leg_pos;
     if (leg_offset_str.size() > 0) {
@@ -562,6 +566,8 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
     m_contactStatesOut.write();
     m_controlSwingSupportTime.tm = m_qRef.tm;
     m_controlSwingSupportTimeOut.write();
+    m_toeheelRatio.tm = m_qRef.tm;
+    m_toeheelRatioOut.write();
     m_walkingStates.data = gg_is_walking;
     m_walkingStates.tm = m_qRef.tm;
     m_walkingStatesOut.write();
@@ -698,6 +704,18 @@ void AutoBalancer::getTargetParameters()
               m_limbCOPOffset[contact_states_index_map[sup_leg_nms.at(i)]].data.x = gg->get_support_foot_zmp_offsets().at(i)(0);
               m_limbCOPOffset[contact_states_index_map[sup_leg_nms.at(i)]].data.y = gg->get_support_foot_zmp_offsets().at(i)(1);
               m_limbCOPOffset[contact_states_index_map[sup_leg_nms.at(i)]].data.z = gg->get_support_foot_zmp_offsets().at(i)(2);
+          }
+      }
+      // Set toe heel ratio which can be used force moment distribution
+      {
+          std::map<leg_type, std::string> leg_type_map = gg->get_leg_type_map();
+          // for support leg
+          for (std::vector<step_node>::const_iterator it = gg->get_support_leg_steps().begin(); it != gg->get_support_leg_steps().end(); it++) {
+              m_toeheelRatio.data[contact_states_index_map[leg_type_map[it->l_r]]] = rats::no_using_toe_heel_ratio;
+          }
+          // for swing leg
+          for (std::vector<step_node>::const_iterator it = gg->get_swing_leg_steps().begin(); it != gg->get_swing_leg_steps().end(); it++) {
+              m_toeheelRatio.data[contact_states_index_map[leg_type_map[it->l_r]]] = gg->get_current_toe_heel_ratio();
           }
       }
     } else {

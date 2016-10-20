@@ -351,6 +351,7 @@ public:
                                       const std::vector<hrp::Matrix33>& ee_rot,
                                       const std::vector<std::string>& ee_name,
                                       const std::vector<double>& limb_gains,
+                                      const std::vector<double>& toeheel_ratio,
                                       const hrp::Vector3& new_refzmp, const hrp::Vector3& ref_zmp,
                                       const double total_fz, const double dt, const bool printp = true, const std::string& print_str = "")
     {
@@ -564,6 +565,7 @@ public:
                                         const std::vector<hrp::Matrix33>& ee_rot,
                                         const std::vector<std::string>& ee_name,
                                         const std::vector<double>& limb_gains,
+                                        const std::vector<double>& toeheel_ratio,
                                         const hrp::Vector3& new_refzmp, const hrp::Vector3& ref_zmp,
                                         const double total_fz, const double dt, const bool printp = true, const std::string& print_str = "",
                                         const bool use_cop_distribution = false)
@@ -682,12 +684,13 @@ public:
                                         const std::vector<hrp::Matrix33>& ee_rot,
                                         const std::vector<std::string>& ee_name,
                                         const std::vector<double>& limb_gains,
+                                        const std::vector<double>& toeheel_ratio,
                                         const hrp::Vector3& new_refzmp, const hrp::Vector3& ref_zmp,
                                         const double total_fz, const double dt, const bool printp = true, const std::string& print_str = "",
                                         const bool use_cop_distribution = false)
     {
         distributeZMPToForceMoments(ref_foot_force, ref_foot_moment,
-                                    ee_pos, cop_pos, ee_rot, ee_name, limb_gains,
+                                    ee_pos, cop_pos, ee_rot, ee_name, limb_gains, toeheel_ratio,
                                     new_refzmp, ref_zmp,
                                     total_fz, dt, printp, print_str);
     };
@@ -712,6 +715,7 @@ public:
                                                    const std::vector<hrp::Matrix33>& ee_rot,
                                                    const std::vector<std::string>& ee_name,
                                                    const std::vector<double>& limb_gains,
+                                                   const std::vector<double>& toeheel_ratio,
                                                    const hrp::Vector3& new_refzmp, const hrp::Vector3& ref_zmp,
                                                    const double total_fz, const double dt, const bool printp = true, const std::string& print_str = "",
                                                    const bool use_cop_distribution = true)
@@ -728,7 +732,9 @@ public:
         double norm_moment_weight = 1e2;
         size_t total_wrench_dim = 5;
         size_t state_dim = 6*ee_num;
-        { // Temp
+
+        // Temporarily set ref_foot_force and ref_foot_moment based on reference values
+        {
             size_t total_wrench_dim = 5;
             //size_t total_wrench_dim = 3;
             hrp::dmatrix Wmat = hrp::dmatrix::Identity(state_dim/2, state_dim/2);
@@ -792,6 +798,9 @@ public:
             }
         }
 
+        // Calculate force/moment distribution matrix and vector
+        //   We assume F = G f, calculate F and G. f is absolute here.
+        //   1. Calculate F (total_wrench)
         hrp::dvector total_wrench = hrp::dvector::Zero(total_wrench_dim);
         hrp::Vector3 ref_total_force = hrp::Vector3::Zero();
         for (size_t fidx = 0; fidx < ee_num; fidx++) {
@@ -807,8 +816,7 @@ public:
         }
         total_wrench(3) -= -(ref_zmp(2) - new_refzmp(2)) * ref_total_force(1) + (ref_zmp(1) - new_refzmp(1)) * ref_total_force(2);
         total_wrench(4) -= (ref_zmp(2) - new_refzmp(2)) * ref_total_force(0) - (ref_zmp(0) - new_refzmp(0)) * ref_total_force(2);
-
-        hrp::dmatrix Wmat = hrp::dmatrix::Zero(state_dim, state_dim);
+        //   2. Calculate G (Gmat)
         hrp::dmatrix Gmat = hrp::dmatrix::Zero(total_wrench_dim, state_dim);
         for (size_t j = 0; j < ee_num; j++) {
             for (size_t k = 0; k < total_wrench_dim; k++) Gmat(k,6*j+k) = 1.0;
@@ -824,13 +832,49 @@ public:
                 }
             }
         }
+        // Calc rotation matrix to introduce local frame
+        //   G = [tmpsubG_0, tmpsubG_1, ...]
+        //   R = diag[tmpR_0,    tmpR_1,    ...]
+        //   f = R f_l
+        //   f : absolute, f_l : local
+        //   G f = G R f_l
+        //   G R = [tmpsubG_0 tmpR_0, tmpsubG_1 tmpR_1, ...] -> inserted to Gmat
+        hrp::dmatrix tmpsubG = hrp::dmatrix::Zero(total_wrench_dim, 6);
+        hrp::dmatrix tmpR = hrp::dmatrix::Zero(6,6);
+        for (size_t ei = 0; ei < ee_num; ei++) {
+            for (size_t i = 0; i < total_wrench_dim; i++) {
+                for (size_t j = 0; j < 6; j++) {
+                    tmpsubG(i,j) = Gmat(i,6*ei+j);
+                }
+            }
+            for (size_t i = 0; i < 3; i++) {
+                for (size_t j = 0; j < 3; j++) {
+                    tmpR(i,j) = tmpR(i+3,j+3) = ee_rot[ei](i,j);
+                }
+            }
+            tmpsubG = tmpsubG * tmpR;
+            for (size_t i = 0; i < total_wrench_dim; i++) {
+                for (size_t j = 0; j < 6; j++) {
+                    Gmat(i,6*ei+j) = tmpsubG(i,j);
+                }
+            }
+        }
+
+        // Calc weighting matrix
+        hrp::dmatrix Wmat = hrp::dmatrix::Zero(state_dim, state_dim);
         for (size_t j = 0; j < ee_num; j++) {
             for (size_t i = 0; i < 3; i++) {
                 Wmat(i+j*6, i+j*6) = fz_alpha_vector[j] * limb_gains[j];
                 Wmat(i+j*6+3, i+j*6+3) = (1.0/norm_moment_weight) * fz_alpha_vector[j] * limb_gains[j];
+                // Set local Y moment
+                //   If toeheel_ratio is 0, toe and heel contact and local Y moment should be 0.
+                if (i == 1) {
+                    Wmat(i+j*6+3, i+j*6+3) = toeheel_ratio[j] * Wmat(i+j*6+3, i+j*6+3);
+                }
             }
         }
         if (printp) {
+            std::cerr << "]" << std::endl;
             std::cerr << "[" << print_str << "]   newWmat(diag) = [";
             for (size_t j = 0; j < ee_num; j++) {
                 for (size_t i = 0; i < 6; i++) {
@@ -846,12 +890,14 @@ public:
         // std::cerr << "Wmat" << std::endl;
         // std::cerr << Wmat << std::endl;
 
+        // Solve
         hrp::dvector ret(state_dim);
         calcWeightedLinearEquation(ret, Gmat, Wmat, total_wrench);
 
+        // Extract force and moment with converting local frame -> absolute frame (ret is local frame)
         for (size_t fidx = 0; fidx < ee_num; fidx++) {
-            ref_foot_force[fidx] += hrp::Vector3(ret(6*fidx), ret(6*fidx+1), ret(6*fidx+2));
-            ref_foot_moment[fidx] += hrp::Vector3(ret(6*fidx+3), ret(6*fidx+4), ret(6*fidx+5));
+            ref_foot_force[fidx] += ee_rot[fidx] * hrp::Vector3(ret(6*fidx), ret(6*fidx+1), ret(6*fidx+2));
+            ref_foot_moment[fidx] += ee_rot[fidx] * hrp::Vector3(ret(6*fidx+3), ret(6*fidx+4), ret(6*fidx+5));
         }
         if (printp) {
             for (size_t i = 0; i < ee_num; i++) {
@@ -869,6 +915,7 @@ public:
                                                    const std::vector<hrp::Matrix33>& ee_rot,
                                                    const std::vector<std::string>& ee_name,
                                                    const std::vector<double>& limb_gains,
+                                                   const std::vector<double>& toeheel_ratio,
                                                    const hrp::Vector3& new_refzmp, const hrp::Vector3& ref_zmp,
                                                    const hrp::Vector3& total_force, const hrp::Vector3& total_moment,
                                                    const std::vector<hrp::dvector6>& ee_forcemoment_distribution_weight,

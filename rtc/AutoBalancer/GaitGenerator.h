@@ -93,15 +93,17 @@ namespace rats
     };
 
     /* Phase name of toe heel contact.
-     *   SOLE0 : Sole contact (start). Foot angle is 0.
-     *   SOLE2TOE : Transition of foot angle (0 -> toe_angle).
-     *   TOE2SOLE : Transition of foot angle (toe_angle -> 0).
+     *   SOLE0 : Sole contact (start). Foot angle is 0. ZMP transition is ee -> toe.
+     *   SOLE2TOE : Transition of foot angle (0 -> toe_angle). ZMP is on toe.
+     *   TOE2SOLE : Transition of foot angle (toe_angle -> 0). ZMP is on toe.
      *   SOLE1 : Foot_angle is 0.
-     *   SOLE2HEEL : Transition of foot angle (0 -> -1 * heel_angle).
-     *   HEEL2SOLE : Transition of foot angle (-1 * heel_angle -> 0).
-     *   SOLE2 : Sole contact (end). Foot angle is 0.
+     *   SOLE2HEEL : Transition of foot angle (0 -> -1 * heel_angle). ZMP is on heel.
+     *   HEEL2SOLE : Transition of foot angle (-1 * heel_angle -> 0). ZMP is on heel.
+     *   SOLE2 : Sole contact (end). Foot angle is 0. ZMP transition is heel -> ee.
      */
     enum toe_heel_phase {SOLE0, SOLE2TOE, TOE2SOLE, SOLE1, SOLE2HEEL, HEEL2SOLE, SOLE2, NUM_TH_PHASES};
+    static double no_using_toe_heel_ratio = 1.0; // Ratio not to use toe and heel contact
+    static double using_toe_heel_ratio = 0.0; // Ratio to use toe and heel contact
 
     /* Manager for toe heel phase. */
     class toe_heel_phase_counter
@@ -184,17 +186,38 @@ namespace rats
             return (current_count < toe_heel_phase_count[phase1]);
         };
         bool is_no_SOLE1_phase () const { return toe_heel_phase_count[TOE2SOLE] == toe_heel_phase_count[SOLE1]; };
+        // Calculate period [s] between start_phase and goal_phase
         double calc_phase_period (const toe_heel_phase start_phase, const toe_heel_phase goal_phase, const double _dt) const
         {
             return _dt * (toe_heel_phase_count[goal_phase]-toe_heel_phase_count[start_phase]);
         };
+        // Calculate ratio between start_phase and goal_phase.
+        //   If current_count is 0->goal_phase_count, start_phase : 0 -> goal_phase : 1
         double calc_phase_ratio (const size_t current_count, const toe_heel_phase start_phase, const toe_heel_phase goal_phase) const
         {
             return static_cast<double>(current_count-toe_heel_phase_count[start_phase]) / (toe_heel_phase_count[goal_phase]-toe_heel_phase_count[start_phase]);
         };
+        // Calculate ratio to goal_phase.
+        //   If current_count is 0->goal_phase_count, start : 0 -> goal_phase : 1
         double calc_phase_ratio (const size_t current_count, const toe_heel_phase goal_phase) const
         {
             return static_cast<double>(current_count) / (toe_heel_phase_count[goal_phase]);
+        };
+        // Calculate ratio for toe heel transition.
+        //   If toe or heel are used, ratio is 0.0. Otherwise, ratio is (0.0, 1.0].
+        //   We assume current_count is 0->goal_phase_count.
+        double calc_phase_ratio_for_toe_heel_transition (const size_t current_count) const
+        {
+            if (is_between_phases(current_count, SOLE0)) {
+                // ratio : 1 -> 0
+                return 1-calc_phase_ratio(current_count, SOLE0);
+            } else if (is_between_phases(current_count, HEEL2SOLE, SOLE2) || toe_heel_phase_count[SOLE2] == current_count) {
+                // ratio : 0 -> 1
+                return calc_phase_ratio(current_count, HEEL2SOLE, SOLE2);
+            } else {
+                // If using toe or heel, 0
+                return using_toe_heel_ratio;
+            }
         };
     };
 
@@ -877,6 +900,14 @@ namespace rats
       double get_foot_dif_rot_angle () const { return foot_dif_rot_angle; };
       bool get_use_toe_joint () const { return use_toe_joint; };
       void get_toe_heel_phase_ratio (std::vector<double>& ratio) const { thp.get_toe_heel_phase_ratio(ratio); };
+      double get_current_toe_heel_ratio (const bool _use_toe_heel_transition) const
+      {
+          if (_use_toe_heel_transition && current_step_height > 0.0) { // If swing phase
+              return thp.calc_phase_ratio_for_toe_heel_transition(one_step_count - lcg_count);
+          } else { // If support phase such as double support phase of starting and ending.
+              return no_using_toe_heel_ratio;
+          }
+      };
     };
 
   class gait_generator
@@ -1283,6 +1314,7 @@ namespace rats
     void get_toe_heel_phase_ratio (std::vector<double>& ratio) const { lcg.get_toe_heel_phase_ratio(ratio); };
     int get_NUM_TH_PHASES () const { return NUM_TH_PHASES; };
     bool get_use_toe_joint () const { return lcg.get_use_toe_joint(); };
+    double get_current_toe_heel_ratio () const { return lcg.get_current_toe_heel_ratio(get_use_toe_heel_transition()); };
     void get_leg_default_translate_pos (std::vector<hrp::Vector3>& off) const { off = footstep_param.leg_default_translate_pos; };
     size_t get_overwritable_footstep_index_offset () const { return overwritable_footstep_index_offset; };
     const std::vector<leg_type> calc_counter_leg_types_from_footstep_nodes (const std::vector<step_node>& fns, std::vector<std::string> _all_limbs) const;

@@ -50,6 +50,7 @@ Stabilizer::Stabilizer(RTC::Manager* manager)
     m_basePosIn("basePosIn", m_basePos),
     m_baseRpyIn("baseRpyIn", m_baseRpy),
     m_contactStatesIn("contactStates", m_contactStates),
+    m_toeheelRatioIn("toeheelRatio", m_toeheelRatio),
     m_controlSwingSupportTimeIn("controlSwingSupportTime", m_controlSwingSupportTime),
     m_qRefSeqIn("qRefSeq", m_qRefSeq),
     m_walkingStatesIn("walkingStates", m_walkingStates),
@@ -109,6 +110,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   addInPort("basePosIn", m_basePosIn);
   addInPort("baseRpyIn", m_baseRpyIn);
   addInPort("contactStates", m_contactStatesIn);
+  addInPort("toeheelRatio", m_toeheelRatioIn);
   addInPort("controlSwingSupportTime", m_controlSwingSupportTimeIn);
   addInPort("qRefSeq", m_qRefSeqIn);
   addInPort("walkingStates", m_walkingStatesIn);
@@ -289,6 +291,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
       prev_act_force_z.push_back(0.0);
     }
     m_contactStates.data.length(num);
+    m_toeheelRatio.data.length(num);
   }
 
   std::vector<std::pair<hrp::Link*, hrp::Link*> > interlocking_joints;
@@ -393,6 +396,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
     contact_states.push_back(true);
     prev_contact_states.push_back(true);
     m_actContactStates.data[i] = false;
+    toeheel_ratio.push_back(1.0);
   }
   m_COPInfo.data.length(m_contactStates.data.length()*3); // nx, ny, fz for each end-effectors
   for (size_t i = 0; i < m_COPInfo.data.length(); i++) {
@@ -503,6 +507,12 @@ RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
     m_contactStatesIn.read();
     for (size_t i = 0; i < m_contactStates.data.length(); i++) {
       contact_states[i] = m_contactStates.data[i];
+    }
+  }
+  if (m_toeheelRatioIn.isNew()){
+    m_toeheelRatioIn.read();
+    for (size_t i = 0; i < m_toeheelRatio.data.length(); i++) {
+      toeheel_ratio[i] = m_toeheelRatio.data[i];
     }
   }
   if (m_controlSwingSupportTimeIn.isNew()){
@@ -816,6 +826,7 @@ void Stabilizer::getActualParameters ()
     std::vector<hrp::Vector3> ref_force, ref_moment;
     std::vector<double> limb_gains;
     std::vector<hrp::dvector6> ee_forcemoment_distribution_weight;
+    std::vector<double> tmp_toeheel_ratio;
     if (control_mode == MODE_ST) {
       std::vector<hrp::Vector3> ee_pos, cop_pos;
       std::vector<hrp::Matrix33> ee_rot;
@@ -838,6 +849,7 @@ void Stabilizer::getActualParameters ()
           for (size_t j = 0; j < 6; j++) {
               ee_forcemoment_distribution_weight[i][j] = ikp.eefm_ee_forcemoment_distribution_weight[j];
           }
+          tmp_toeheel_ratio.push_back(toeheel_ratio[i]);
       }
 
       // All state variables are foot_origin coords relative
@@ -857,27 +869,27 @@ void Stabilizer::getActualParameters ()
       if (st_algorithm == OpenHRP::StabilizerService::EEFM) {
           // Modified version of distribution in Equation (4)-(6) and (10)-(13) in the paper [1].
           szd->distributeZMPToForceMoments(ref_force, ref_moment,
-                                           ee_pos, cop_pos, ee_rot, ee_name, limb_gains,
+                                           ee_pos, cop_pos, ee_rot, ee_name, limb_gains, tmp_toeheel_ratio,
                                            new_refzmp, hrp::Vector3(foot_origin_rot * ref_zmp + foot_origin_pos),
                                            eefm_gravitational_acceleration * total_mass, dt,
                                            DEBUGP, std::string(m_profile.instance_name));
       } else if (st_algorithm == OpenHRP::StabilizerService::EEFMQP) {
           szd->distributeZMPToForceMomentsQP(ref_force, ref_moment,
-                                             ee_pos, cop_pos, ee_rot, ee_name, limb_gains,
+                                             ee_pos, cop_pos, ee_rot, ee_name, limb_gains, tmp_toeheel_ratio,
                                              new_refzmp, hrp::Vector3(foot_origin_rot * ref_zmp + foot_origin_pos),
                                              eefm_gravitational_acceleration * total_mass, dt,
                                              DEBUGP, std::string(m_profile.instance_name),
                                              (st_algorithm == OpenHRP::StabilizerService::EEFMQPCOP));
       } else if (st_algorithm == OpenHRP::StabilizerService::EEFMQPCOP) {
           szd->distributeZMPToForceMomentsPseudoInverse(ref_force, ref_moment,
-                                             ee_pos, cop_pos, ee_rot, ee_name, limb_gains,
+                                             ee_pos, cop_pos, ee_rot, ee_name, limb_gains, tmp_toeheel_ratio,
                                              new_refzmp, hrp::Vector3(foot_origin_rot * ref_zmp + foot_origin_pos),
                                              eefm_gravitational_acceleration * total_mass, dt,
                                              DEBUGP, std::string(m_profile.instance_name),
                                              (st_algorithm == OpenHRP::StabilizerService::EEFMQPCOP));
       } else if (st_algorithm == OpenHRP::StabilizerService::EEFMQPCOP2) {
           szd->distributeZMPToForceMomentsPseudoInverse2(ref_force, ref_moment,
-                                                         ee_pos, cop_pos, ee_rot, ee_name, limb_gains,
+                                                         ee_pos, cop_pos, ee_rot, ee_name, limb_gains, tmp_toeheel_ratio,
                                                          new_refzmp, hrp::Vector3(foot_origin_rot * ref_zmp + foot_origin_pos),
                                                          ref_total_force, ref_total_moment,
                                                          ee_forcemoment_distribution_weight,
@@ -1324,6 +1336,8 @@ void Stabilizer::calcSwingSupportLimbGain ()
         for (size_t i = 0; i < stikp.size(); i++) std::cerr << contact_states[i] << " ";
         std::cerr << "], sstime = [";
         for (size_t i = 0; i < stikp.size(); i++) std::cerr << m_controlSwingSupportTime.data[i] << " ";
+        std::cerr << "], toeheel_ratio = [";
+        for (size_t i = 0; i < stikp.size(); i++) std::cerr << toeheel_ratio[i] << " ";
         std::cerr << "]" << std::endl;
     }
 }
