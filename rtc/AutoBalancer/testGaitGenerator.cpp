@@ -159,10 +159,13 @@ private:
             fprintf(fp_sstime, "%f %f ",
                     gg->get_current_swing_time(RLEG),
                     gg->get_current_swing_time(LLEG));
+            // Contact States
             std::vector<leg_type> tmp_current_support_states = gg->get_current_support_states();
             bool rleg_contact_states = std::find_if(tmp_current_support_states.begin(), tmp_current_support_states.end(), boost::lambda::_1 == RLEG) != tmp_current_support_states.end();
             bool lleg_contact_states = std::find_if(tmp_current_support_states.begin(), tmp_current_support_states.end(), boost::lambda::_1 == LLEG) != tmp_current_support_states.end();
-            fprintf(fp_sstime, "%d %d ", (rleg_contact_states ? 1 : 0), (lleg_contact_states ? 1 : 0));
+            fprintf(fp_sstime, "%d %d %f",
+                    (rleg_contact_states ? 1 : 0), (lleg_contact_states ? 1 : 0),
+                    0.8*gg->get_current_toe_heel_ratio()+0.1); // scale+translation just for visualization
             fprintf(fp_sstime, "\n");
             // Error checking
             is_small_zmp_error = check_zmp_error(gg->get_cart_zmp(), gg->get_refzmp()) && is_small_zmp_error;
@@ -326,7 +329,8 @@ private:
                     << "'" << fname_sstime << "' using 1:" << 2 << " with lines title 'rleg remain time',"
                     << "'" << fname_sstime << "' using 1:" << 3 << " with lines title 'lleg remain time',"
                     << "'" << fname_sstime << "' using 1:" << 4 << " with lines title 'rleg contact states',"
-                    << "'" << fname_sstime << "' using 1:" << 5 << " with lines title 'lleg contact states'"
+                    << "'" << fname_sstime << "' using 1:" << 5 << " with lines title 'lleg contact states',"
+                    << "'" << fname_sstime << "' using 1:" << 6 << " with lines title 'toe_heel_ratio*0.8+0.1'"
                     << std::endl;
                 plot_and_save(gps[4], gtitle, oss.str());
             }
@@ -684,7 +688,8 @@ public:
         gg->set_default_double_support_ratio_before(0.1);
         gg->set_default_double_support_ratio_after(0.1);
         gg->set_use_toe_heel_transition(true);
-        double ratio[7] = {0.02, 0.28, 0.2, 0.0, 0.2, 0.25, 0.05};
+        //double ratio[7] = {0.02, 0.28, 0.2, 0.0, 0.2, 0.25, 0.05};
+        double ratio[7] = {0.07, 0.20, 0.2, 0.0, 0.2, 0.25, 0.08};
         std::vector<double> ratio2(ratio, ratio+gg->get_NUM_TH_PHASES());
         gg->set_toe_heel_phase_ratio(ratio2);
         std::vector< std::vector<step_node> > fnsl;
