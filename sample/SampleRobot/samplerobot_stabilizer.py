@@ -209,6 +209,62 @@ def demoSTTurnWalk ():
     else:
         print >> sys.stderr, "  This sample is neglected in High-gain mode simulation"
 
+def demoSTToeHeelWalk ():
+    print >> sys.stderr, "7. EEFMQPCOP + toeheel"
+    if hcf.pdc:
+        # set st param
+        stp = hcf.st_svc.getParameter()
+        stp.st_algorithm=OpenHRP.StabilizerService.EEFMQPCOP
+        hcf.st_svc.setParameter(stp)
+        # initialize controllers
+        hcf.startAutoBalancer()
+        hcf.startStabilizer ()
+        hcf.seq_svc.setJointAngles(initial_pose, 2.0);
+        hcf.waitInterpolation();
+        # set gg param
+        ggp = hcf.abc_svc.getGaitGeneratorParam()[1]
+        org_ggp = hcf.abc_svc.getGaitGeneratorParam()[1]
+        #ggp.default_orbit_type = OpenHRP.AutoBalancerService.CYCLOIDDELAY
+        ggp.default_orbit_type = OpenHRP.AutoBalancerService.RECTANGLE
+        ggp.swing_trajectory_time_offset_xy2z=0.1
+        ggp.swing_trajectory_delay_time_offset=0.2
+        #ggp.toe_heel_phase_ratio=[0.01, 0.25, 0.23, 0.0, 0.22, 0.28, 0.01]
+        ggp.toe_heel_phase_ratio=[0.05, 0.35, 0.20, 0.0, 0.13, 0.13, 0.14]
+        ggp.toe_pos_offset_x = 1e-3*182.0;
+        ggp.heel_pos_offset_x = 1e-3*-72.0;
+        ggp.toe_zmp_offset_x = 1e-3*182.0;
+        ggp.heel_zmp_offset_x = 1e-3*-72.0;
+        ggp.use_toe_heel_transition=True
+        # test setFootStepsWithParam
+        ggp.default_double_support_ratio=0.7
+        hcf.abc_svc.setGaitGeneratorParam(ggp)
+        hcf.setFootStepsWithParam([OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([0,-0.09,0], [1,0,0,0], "rleg")]),
+                                   OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([0.22,0.09,0], [1,0,0,0], "lleg")]),
+                                   OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([0.44,-0.09,0], [1,0,0,0], "rleg")]),
+                                   OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([0.44,0.09,0], [1,0,0,0], "lleg")])],
+                                  [OpenHRP.AutoBalancerService.StepParams([OpenHRP.AutoBalancerService.StepParam(step_height=0.0, step_time=1.0, toe_angle=0.0, heel_angle=0.0)]),
+                                   OpenHRP.AutoBalancerService.StepParams([OpenHRP.AutoBalancerService.StepParam(step_height=0.05, step_time=4.0, toe_angle=20.0, heel_angle=10.0)]),
+                                   OpenHRP.AutoBalancerService.StepParams([OpenHRP.AutoBalancerService.StepParam(step_height=0.05, step_time=4.0, toe_angle=20.0, heel_angle=10.0)]),
+                                   OpenHRP.AutoBalancerService.StepParams([OpenHRP.AutoBalancerService.StepParam(step_height=0.05, step_time=4.0, toe_angle=20.0, heel_angle=10.0)])])
+        hcf.abc_svc.waitFootSteps();
+        # test goPos
+        ggp.default_double_support_ratio=0.2
+        ggp.stride_parameter=[0.22,0.1,20.0,0.05]
+        ggp.toe_angle = 20;
+        ggp.heel_angle = 10;
+        hcf.abc_svc.setGaitGeneratorParam(ggp)
+        hcf.abc_svc.goPos(0.66,0.2,40);
+        hcf.abc_svc.waitFootSteps();
+        # finish
+        hcf.stopStabilizer ()
+        hcf.abc_svc.setGaitGeneratorParam(org_ggp)
+        ret = checkActualBaseAttitude()
+        if ret:
+            print >> sys.stderr, "  ST + ToeHeel => OK"
+        assert(ret)
+    else:
+        print >> sys.stderr, "  This sample is neglected in High-gain mode simulation"
+
 def demo():
     OPENHRP3_DIR=check_output(['pkg-config', 'openhrp3.1', '--variable=prefix']).rstrip()
     if os.path.exists(OPENHRP3_DIR+"/share/OpenHRP-3.1/sample/model/sample1_bush.wrl"):
@@ -220,6 +276,7 @@ def demo():
             demoStartStopEEFMQPST()
             demoSTLoadPattern()
             demoSTTurnWalk()
+            demoSTToeHeelWalk()
     else:
         print >> sys.stderr, "Skip st test because of missing sample1_bush.wrl"
 
