@@ -125,19 +125,22 @@ namespace rats
     // Calculate swing foot zmp offset for toe heel zmp transition
     if (use_toe_heel_transition &&
         !(is_start_double_support_phase() || is_end_double_support_phase())) { // Do not use toe heel zmp transition during start and end double support period because there is no swing foot
+        double first_zmp_offset_x = toe_zmp_offset_x, second_zmp_offset_x = heel_zmp_offset_x;
+        // double second_zmp_offset_x = toe_zmp_offset_x, first_zmp_offset_x = heel_zmp_offset_x;
+        // double second_zmp_offset_x = toe_zmp_offset_x, first_zmp_offset_x = toe_zmp_offset_x;
         if (thp.is_between_phases(cnt, SOLE0)) {
             double ratio = thp.calc_phase_ratio(cnt+1, SOLE0);
-            swing_foot_zmp_offsets.front()(0) = (1-ratio)*swing_foot_zmp_offsets.front()(0) + ratio*toe_zmp_offset_x;
+            swing_foot_zmp_offsets.front()(0) = (1-ratio)*swing_foot_zmp_offsets.front()(0) + ratio*first_zmp_offset_x;
         } else if (thp.is_between_phases(cnt, HEEL2SOLE, SOLE2)) {
             double ratio = thp.calc_phase_ratio(cnt, HEEL2SOLE, SOLE2);
-            swing_foot_zmp_offsets.front()(0) = ratio*swing_foot_zmp_offsets.front()(0) + (1-ratio)*heel_zmp_offset_x;
+            swing_foot_zmp_offsets.front()(0) = ratio*swing_foot_zmp_offsets.front()(0) + (1-ratio)*second_zmp_offset_x;
         } else if (thp.is_between_phases(cnt, SOLE0, SOLE2TOE)) {
-            swing_foot_zmp_offsets.front()(0) = toe_zmp_offset_x;
+            swing_foot_zmp_offsets.front()(0) = first_zmp_offset_x;
         } else if (thp.is_between_phases(cnt, SOLE2HEEL, HEEL2SOLE)) {
-            swing_foot_zmp_offsets.front()(0) = heel_zmp_offset_x;
+            swing_foot_zmp_offsets.front()(0) = second_zmp_offset_x;
         } else if (thp.is_between_phases(cnt, SOLE2TOE, SOLE2HEEL)) {
             double ratio = thp.calc_phase_ratio(cnt, SOLE2TOE, SOLE2HEEL);
-            swing_foot_zmp_offsets.front()(0) = ratio * heel_zmp_offset_x + (1-ratio) * toe_zmp_offset_x;
+            swing_foot_zmp_offsets.front()(0) = ratio * second_zmp_offset_x + (1-ratio) * first_zmp_offset_x;
         }
         zmp_diff = swing_foot_zmp_offsets.front()(0)-default_zmp_offsets[swing_leg_types_list[refzmp_index].front()](0);
         if ((is_second_phase() && ( cnt < double_support_count_half_before )) ||
@@ -311,27 +314,35 @@ namespace rats
       size_t current_count = one_step_count - lcg_count;
       double dif_angle = 0.0;
       hrp::Vector3 ee_local_pivot_pos(hrp::Vector3(0,0,0));
+      double first_goal_angle = _current_toe_angle, second_goal_angle = -1 * _current_heel_angle;
+      double first_pos_offset_x = toe_pos_offset_x, second_pos_offset_x = heel_pos_offset_x;
+      // double second_goal_angle = _current_toe_angle, first_goal_angle = -1 * _current_heel_angle;
+      // double second_pos_offset_x = toe_pos_offset_x, first_pos_offset_x = heel_pos_offset_x;
+      // double second_goal_angle = _current_toe_angle, first_goal_angle = _current_toe_angle;
+      // double second_pos_offset_x = toe_pos_offset_x, first_pos_offset_x = toe_pos_offset_x;
       if ( thp.is_between_phases(current_count, SOLE0, SOLE2TOE) ) {
-          dif_angle = calc_interpolated_toe_heel_angle(SOLE0, SOLE2TOE, 0.0, _current_toe_angle);
-          ee_local_pivot_pos(0) = toe_pos_offset_x;
+          dif_angle = calc_interpolated_toe_heel_angle(SOLE0, SOLE2TOE, 0.0, first_goal_angle);
+          ee_local_pivot_pos(0) = first_pos_offset_x;
       } else if ( thp.is_between_phases(current_count, SOLE2HEEL, HEEL2SOLE) ) {
-          dif_angle = calc_interpolated_toe_heel_angle(SOLE2HEEL, HEEL2SOLE, -1 * _current_heel_angle, 0.0);
-          ee_local_pivot_pos(0) = heel_pos_offset_x;
+          dif_angle = calc_interpolated_toe_heel_angle(SOLE2HEEL, HEEL2SOLE, second_goal_angle, 0.0);
+          ee_local_pivot_pos(0) = second_pos_offset_x;
       } else if ( thp.is_between_phases(current_count, SOLE2TOE, SOLE2HEEL) ) {
           // If SOLE1 phase does not exist, interpolate toe => heel smoothly, without 0 velocity phase.
           if ( thp.is_no_SOLE1_phase() ) {
-              dif_angle = calc_interpolated_toe_heel_angle(SOLE2TOE, SOLE2HEEL, _current_toe_angle, -1 * _current_heel_angle);
-              double tmpd = (-1*_current_heel_angle-_current_toe_angle);
+              dif_angle = calc_interpolated_toe_heel_angle(SOLE2TOE, SOLE2HEEL, first_goal_angle, second_goal_angle);
+              double tmpd = (second_goal_angle-first_goal_angle);
               if (std::fabs(tmpd) > 1e-5) {
-                  ee_local_pivot_pos(0) = (heel_pos_offset_x - toe_pos_offset_x) * (dif_angle - _current_toe_angle) / tmpd + toe_pos_offset_x;
+                  ee_local_pivot_pos(0) = (second_pos_offset_x - first_pos_offset_x) * (dif_angle - first_goal_angle) / tmpd + first_pos_offset_x;
+              } else {
+                  ee_local_pivot_pos(0) = first_pos_offset_x;
               }
           } else {
               if ( thp.is_between_phases(current_count, SOLE2TOE, TOE2SOLE) ) {
-                  dif_angle = calc_interpolated_toe_heel_angle(SOLE2TOE, TOE2SOLE, _current_toe_angle, 0.0);
-                  ee_local_pivot_pos(0) = toe_pos_offset_x;
+                  dif_angle = calc_interpolated_toe_heel_angle(SOLE2TOE, TOE2SOLE, first_goal_angle, 0.0);
+                  ee_local_pivot_pos(0) = first_pos_offset_x;
               } else if ( thp.is_between_phases(current_count, SOLE1, SOLE2HEEL) ) {
-                  dif_angle = calc_interpolated_toe_heel_angle(SOLE1, SOLE2HEEL, 0.0, -1 * _current_heel_angle);
-                  ee_local_pivot_pos(0) = heel_pos_offset_x;
+                  dif_angle = calc_interpolated_toe_heel_angle(SOLE1, SOLE2HEEL, 0.0, second_goal_angle);
+                  ee_local_pivot_pos(0) = second_pos_offset_x;
               }
           }
       }
