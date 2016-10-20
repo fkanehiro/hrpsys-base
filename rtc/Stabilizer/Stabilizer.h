@@ -157,6 +157,7 @@ class Stabilizer
   RTC::TimedPoint3D m_basePos;
   RTC::TimedOrientation3D m_baseRpy;
   RTC::TimedBooleanSeq m_contactStates;
+  RTC::TimedDoubleSeq m_toeheelRatio;
   RTC::TimedDoubleSeq m_controlSwingSupportTime;
   std::vector<RTC::TimedPoint3D> m_limbCOPOffset;
   RTC::TimedBooleanSeq m_actContactStates;
@@ -184,6 +185,7 @@ class Stabilizer
   RTC::InPort<RTC::TimedPoint3D> m_basePosIn;
   RTC::InPort<RTC::TimedOrientation3D> m_baseRpyIn;
   RTC::InPort<RTC::TimedBooleanSeq> m_contactStatesIn;
+  RTC::InPort<RTC::TimedDoubleSeq> m_toeheelRatioIn;
   RTC::InPort<RTC::TimedDoubleSeq> m_controlSwingSupportTimeIn;
   std::vector<RTC::InPort<RTC::TimedPoint3D> *> m_limbCOPOffsetIn;
   RTC::InPort<RTC::TimedDoubleSeq> m_qRefSeqIn;
@@ -266,6 +268,7 @@ class Stabilizer
   std::vector<STIKParam> stikp;
   std::map<std::string, size_t> contact_states_index_map;
   std::vector<bool> contact_states, prev_contact_states, is_ik_enable, is_feedback_control_enable, is_zmp_calc_enable;
+  std::vector<double> toeheel_ratio;
   double dt;
   int transition_count, loop;
   bool is_legged_robot, on_ground, is_emergency, is_seq_interpolating, reset_emergency_flag, eefm_use_force_difference_control, initial_cp_too_large_error;
