@@ -1428,11 +1428,14 @@ bool AutoBalancer::setGaitGeneratorParam(const OpenHRP::AutoBalancerService::Gai
   gg->set_heel_pos_offset_x(i_param.heel_pos_offset_x);
   gg->set_toe_zmp_offset_x(i_param.toe_zmp_offset_x);
   gg->set_heel_zmp_offset_x(i_param.heel_zmp_offset_x);
+  gg->set_toe_check_thre(i_param.toe_check_thre);
+  gg->set_heel_check_thre(i_param.heel_check_thre);
   std::vector<double> tmp_ratio(i_param.toe_heel_phase_ratio.get_buffer(), i_param.toe_heel_phase_ratio.get_buffer()+i_param.toe_heel_phase_ratio.length());
   std::cerr << "[" << m_profile.instance_name << "]   "; // for set_toe_heel_phase_ratio
   gg->set_toe_heel_phase_ratio(tmp_ratio);
   gg->set_use_toe_joint(i_param.use_toe_joint);
   gg->set_use_toe_heel_transition(i_param.use_toe_heel_transition);
+  gg->set_use_toe_heel_auto_set(i_param.use_toe_heel_auto_set);
   gg->set_zmp_weight_map(boost::assign::map_list_of<leg_type, double>(RLEG, i_param.zmp_weight_map[0])(LLEG, i_param.zmp_weight_map[1])(RARM, i_param.zmp_weight_map[2])(LARM, i_param.zmp_weight_map[3]));
   gg->set_optional_go_pos_finalize_footstep_num(i_param.optional_go_pos_finalize_footstep_num);
   gg->set_overwritable_footstep_index_offset(i_param.overwritable_footstep_index_offset);
@@ -1502,11 +1505,14 @@ bool AutoBalancer::getGaitGeneratorParam(OpenHRP::AutoBalancerService::GaitGener
   i_param.heel_pos_offset_x = gg->get_heel_pos_offset_x();
   i_param.toe_zmp_offset_x = gg->get_toe_zmp_offset_x();
   i_param.heel_zmp_offset_x = gg->get_heel_zmp_offset_x();
+  i_param.toe_check_thre = gg->get_toe_check_thre();
+  i_param.heel_check_thre = gg->get_heel_check_thre();
   std::vector<double> ratio(gg->get_NUM_TH_PHASES(),0.0);
   gg->get_toe_heel_phase_ratio(ratio);
   for (int i = 0; i < gg->get_NUM_TH_PHASES(); i++) i_param.toe_heel_phase_ratio[i] = ratio[i];
   i_param.use_toe_joint = gg->get_use_toe_joint();
   i_param.use_toe_heel_transition = gg->get_use_toe_heel_transition();
+  i_param.use_toe_heel_auto_set = gg->get_use_toe_heel_auto_set();
   std::map<leg_type, double> tmp_zmp_weight_map = gg->get_zmp_weight_map();
   i_param.zmp_weight_map[0] = tmp_zmp_weight_map[RLEG];
   i_param.zmp_weight_map[1] = tmp_zmp_weight_map[LLEG];
