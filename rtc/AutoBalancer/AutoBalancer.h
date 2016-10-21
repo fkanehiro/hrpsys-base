@@ -166,6 +166,8 @@ class AutoBalancer
   std::vector<OutPort<TimedDoubleSeq> *> m_ref_forceOut;
   std::vector<TimedPoint3D> m_limbCOPOffset;
   std::vector<OutPort<TimedPoint3D> *> m_limbCOPOffsetOut;
+  OpenHRP::AutoBalancerService::TimedSerializedStateData m_serializedStateData;
+  RTC::OutPort<OpenHRP::AutoBalancerService::TimedSerializedStateData> m_serializedStateDataOut;
   // for debug
   OutPort<TimedPoint3D> m_cogOut;
   

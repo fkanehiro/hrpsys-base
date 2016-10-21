@@ -38,6 +38,7 @@ RemoveForceSensorLinkOffset::RemoveForceSensorLinkOffset(RTC::Manager* manager)
     // <rtc-template block="initializer">
     m_qCurrentIn("qCurrent", m_qCurrent),
     m_rpyIn("rpy", m_rpy),
+    m_serializedStateDataOut("serializedStateData", m_serializedStateData),
     m_RemoveForceSensorLinkOffsetServicePort("RemoveForceSensorLinkOffsetService"),
     // </rtc-template>
     m_debugLevel(0)
@@ -67,6 +68,7 @@ RTC::ReturnCode_t RemoveForceSensorLinkOffset::onInitialize()
   addInPort("rpy", m_rpyIn);
 
   // Set OutPort buffer
+  addOutPort("serializedStateData", m_serializedStateDataOut);
   
   // Set service provider to Ports
   m_RemoveForceSensorLinkOffsetServicePort.registerProvider("service0", "RemoveForceSensorLinkOffsetService", m_service0);
@@ -111,6 +113,8 @@ RTC::ReturnCode_t RemoveForceSensorLinkOffset::onInitialize()
     registerOutPort(std::string("off_"+s->name).c_str(), *m_forceOut[i]);
     m_forcemoment_offset_param.insert(std::pair<std::string, ForceMomentOffsetParam>(s->name, ForceMomentOffsetParam()));
   }
+  // serialized data
+  m_serializedStateData.data.wrenches.length(6*m_forceIn.size());
   return RTC::RTC_OK;
 }
 
@@ -197,6 +201,8 @@ RTC::ReturnCode_t RemoveForceSensorLinkOffset::onExecute(RTC::UniqueId ec_id)
           for (size_t j = 0; j < 3; j++) {
             m_force[i].data[j] = off_force(j);
             m_force[i].data[3+j] = off_moment(j);
+            m_serializedStateData.data.wrenches[i*6+j] = m_force[i].data[j];
+            m_serializedStateData.data.wrenches[i*6+3+j] = m_force[i].data[3+j];
           }
           if ( DEBUGP ) {
             std::cerr << "[" << m_profile.instance_name << "]   off force = " << off_force.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << std::endl;
@@ -211,6 +217,8 @@ RTC::ReturnCode_t RemoveForceSensorLinkOffset::onExecute(RTC::UniqueId ec_id)
   for (unsigned int i=0; i<m_forceOut.size(); i++){
     m_forceOut[i]->write();
   }
+  m_serializedStateData.tm = m_force[0].tm;
+  m_serializedStateDataOut.write();
   return RTC::RTC_OK;
 }
 
