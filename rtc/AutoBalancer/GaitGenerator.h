@@ -846,6 +846,43 @@ namespace rats
       };
       bool is_same_footstep_nodes(const std::vector<step_node>& fns_1, const std::vector<step_node>& fns_2) const;
       void update_leg_steps (const std::vector< std::vector<step_node> >& fnsl, const double default_double_support_ratio_before, const double default_double_support_ratio_after);
+      void calc_swing_leg_src_steps (std::vector<step_node>& ret_swing_leg_src_steps, const std::vector< std::vector<step_node> >& fnsl, const size_t _footstep_index)
+      {
+          if (_footstep_index > 0) {
+              if (is_same_footstep_nodes(fnsl[_footstep_index], fnsl[_footstep_index-1])) {
+                  ret_swing_leg_src_steps = swing_leg_dst_steps_list[_footstep_index-1];
+              } else {
+                  /* current swing leg src coords = (previout support leg coords + previous swing leg dst coords) - current support leg coords */
+                  std::vector<step_node> tmp_swing_leg_src_steps = support_leg_steps_list[_footstep_index-1];
+                  std::copy(swing_leg_dst_steps_list[_footstep_index-1].begin(),
+                            swing_leg_dst_steps_list[_footstep_index-1].end(),
+                            std::back_inserter(tmp_swing_leg_src_steps));
+                  for (size_t i = 0; i < support_leg_steps.size(); i++) {
+                      std::vector<step_node>::iterator it = std::remove_if(tmp_swing_leg_src_steps.begin(), tmp_swing_leg_src_steps.end(), (&boost::lambda::_1->* &step_node::l_r == support_leg_steps.at(i).l_r));
+                      tmp_swing_leg_src_steps.erase(it, tmp_swing_leg_src_steps.end());
+                  }
+                  ret_swing_leg_src_steps = tmp_swing_leg_src_steps;
+              }
+          }
+      };
+      void calc_swing_support_params_from_footstep_nodes_list (const std::vector< std::vector<step_node> >& fnsl)
+      {
+          // Get current swing coords, support coords, and support leg parameters
+          size_t current_footstep_index = (footstep_index < fnsl.size() - 1 ? footstep_index : fnsl.size()-1);
+          swing_leg_dst_steps = fnsl[current_footstep_index];
+          if (footstep_index != 0) { // If not initial step, support_leg_coords is previous swing_leg_dst_coords // why we need this?
+              support_leg_steps = support_leg_steps_list[current_footstep_index];
+          }
+          support_leg_types.clear();
+          for (std::vector<step_node>::iterator it = support_leg_steps.begin(); it != support_leg_steps.end(); it++) {
+              support_leg_types.push_back(it->l_r);
+          }
+          swing_leg_types.clear();
+          for (std::vector<step_node>::iterator it = swing_leg_dst_steps.begin(); it != swing_leg_dst_steps.end(); it++) {
+              swing_leg_types.push_back(it->l_r);
+          }
+          calc_swing_leg_src_steps(swing_leg_src_steps, fnsl, current_footstep_index);
+      };
       size_t get_footstep_index() const { return footstep_index; };
       size_t get_lcg_count() const { return lcg_count; };
       double get_current_swing_time(const size_t idx) const { return current_swing_time.at(idx); };
