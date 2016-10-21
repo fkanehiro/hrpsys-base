@@ -35,6 +35,10 @@
 // Service Consumer stub headers
 // <rtc-template block="consumer_stub_h">
 
+//実機だとログ出力で落ちる？getenv("HOME")ダメ？
+#define DEBUG 0
+
+
 class BiquadIIRFilterVec
 {
 private:
@@ -69,8 +73,6 @@ public:
       return ans;
     };
 };
-
-
 
 
 
@@ -141,7 +143,6 @@ class HumanSynchronizer{
     double FUPHIGHT;
     double CNT_F_TH;
     hrp::Vector3 pre_cont_rfpos,pre_cont_lfpos;
-    hrp::Vector3 init_wld_rp_compos;
     hrp::Vector3 init_hp_calibcom;
     double MAXVEL,MAXACC;
     HumanPose hp_wld_raw;
@@ -156,12 +157,11 @@ class HumanSynchronizer{
     unsigned int loop;
     double h2r_ratio, tgt_h2r_ratio;
     double cmmr, tgt_cmmr;
-    hrp::Vector3 lpf_zmp;
     double HZ,DT,G;
     hrp::Vector3 com_old,com_oldold,comacc;
     std::vector<BiquadIIRFilterVec> iir_v_filters;
     BiquadIIRFilterVec comacc_v_filters;
-
+    hrp::Vector3 r_zmp_raw;
   public:
 
     bool startCountdownForHumanSync;
@@ -171,7 +171,6 @@ class HumanSynchronizer{
     bool use_x,use_y,use_z;
     HumanPose rp_ref_out;
     FILE *sr_log,*cz_log;
-    std::vector<double> fb_coeffs, ff_coeffs;
     bool use_rh,use_lh;
     hrp::Vector3 init_wld_rp_rfpos,init_wld_rp_lfpos;
     hrp::Vector3 init_wld_hp_rfpos,init_wld_hp_lfpos;
@@ -195,7 +194,6 @@ class HumanSynchronizer{
       is_rf_contact = is_lf_contact = true;
       pre_cont_rfpos = pre_cont_lfpos = hrp::Vector3::Zero();
       init_hp_calibcom.Zero();
-      lpf_zmp.Zero();
       FNUM = 0.01;//0.01でも荒い?
       FUPLEVELNUM = 200;
       FUPHIGHT = 0.05;
@@ -208,12 +206,22 @@ class HumanSynchronizer{
       loop = 0;
       is_rf_in_air = is_lf_in_air = false;
 
+      com_old = com_oldold = comacc = hrp::Vector3::Zero();
+      r_zmp_raw = hrp::Vector3::Zero();
+
+      init_wld_rp_rfpos = init_wld_rp_lfpos = hrp::Vector3::Zero();
+      init_wld_hp_rfpos = init_wld_hp_lfpos = hrp::Vector3::Zero();
+      current_basepos = init_basepos = hrp::Vector3::Zero();
+
       iir_v_filters.resize(5);
-      for(int i=0;i<iir_v_filters.size();i++)iir_v_filters[i].setParameter(0.5,HZ);
+      for(int i=0;i<iir_v_filters.size();i++)iir_v_filters[i].setParameter(1.0,HZ);
       comacc_v_filters.setParameter(1,HZ);
 
 //      use_rh = use_lh = false;
       use_rh = use_lh = true;
+
+//      zmp_com_offset_ip_ratio = 0;
+
 
       init_zmp_com_offset_interpolator = new interpolator(1, DT, interpolator::HOFFARBIB, 1);
       init_zmp_com_offset_interpolator->setName("zmp_com_offset_interpolator");
@@ -223,13 +231,13 @@ class HumanSynchronizer{
       init_zmp_com_offset_interpolator->go(&goal_ratio, 3.0, true);//3s
 
       std::string home_path(std::getenv("HOME"));
-      sr_log = fopen((home_path+"/HumanSync_support_region.log").c_str(),"w+");
-      cz_log = fopen((home_path+"/HumanSync_com_zmp.log").c_str(),"w+");
+      if(DEBUG)sr_log = fopen((home_path+"/HumanSync_support_region.log").c_str(),"w+");
+      if(DEBUG)cz_log = fopen((home_path+"/HumanSync_com_zmp.log").c_str(),"w+");
       cout<<"HumanSynchronizer constructed"<<endl;
     }
     ~HumanSynchronizer(){
-      fclose(sr_log);
-      fclose(cz_log);
+      if(DEBUG)fclose(sr_log);
+      if(DEBUG)fclose(cz_log);
       delete init_zmp_com_offset_interpolator;
       cout<<"HumanSynchronizer destructed"<<endl;
     }
@@ -256,7 +264,6 @@ class HumanSynchronizer{
       removeInitOffsetPose                (hp_wld_raw, hp_wld_initpos, hp_rel_raw);
       applyInitHumanZMPToCOMOffset        (hp_rel_raw, init_hp_calibcom, hp_rel_raw);
       lockFootXYOnContact                 (is_rf_contact, is_lf_contact, hp_rel_raw);//根本から改変すべき2
-
       hp_filtered = hp_rel_raw;
 
 //      applyLPFilterToEE(hp_rel_raw, hp_filtered);//次に使う.rf,.lfのためにEEだけは先にフィルターしておかないといけない説もある
@@ -267,15 +274,16 @@ class HumanSynchronizer{
 
       applyEEWorkspaceLimit               (rp_ref_out);
 
-      applyCOMToSupportRegionLimit        (rp_ref_out.lf+init_wld_rp_lfpos,rp_ref_out.rf+init_wld_rp_rfpos,rp_ref_out.com);
+      applyCOMToSupportRegionLimit        (rp_ref_out.rf+init_wld_rp_rfpos, rp_ref_out.lf+init_wld_rp_lfpos, rp_ref_out.com);
 
       applyLPFilter                       (rp_ref_out);
+//      applyLPFilter_o                       (rp_ref_out, rp_ref_out_old, rp_ref_out);
+      r_zmp_raw = rp_ref_out.zmp;
       applyZMPCalcFromCOM                 (rp_ref_out.com,rp_ref_out.zmp);
       lockSwingFootIfZMPOutOfSupportFoot  (rp_ref_out, is_rf_contact, is_lf_contact);//
 
       applyVelLimit                       (rp_ref_out, rp_ref_out_old, rp_ref_out);
       applyCOMZMPXYZLock                  (rp_ref_out);
-
       overwriteFootZFromContactStates     (is_rf_contact, is_lf_contact, rp_ref_out);
       rp_ref_out_old = rp_ref_out;
 //      fprintf(log,"%f %f %f %f %f %f\n", rp_ref_out.com(0), rp_ref_out.com(1), rp_ref_out.zmp(0), rp_ref_out.zmp(1), hp_rel_raw.com(0), hp_rel_raw.com(1));
@@ -283,8 +291,10 @@ class HumanSynchronizer{
       gettimeofday(&t_calc_end, NULL);
     }
     void calibInitHumanCOMFromZMP(){
-      init_hp_calibcom(0) = hp_filtered.zmp(0);
-      init_hp_calibcom(1) = hp_filtered.zmp(1);
+//      init_hp_calibcom(0) = hp_filtered.zmp(0);
+//      init_hp_calibcom(1) = hp_filtered.zmp(1);
+      init_hp_calibcom(0) = r_zmp_raw(0);
+      init_hp_calibcom(1) = r_zmp_raw(1);
     }
     void calcWorldZMP(const hrp::Vector3& rfpos, const hrp::Vector3& lfpos, const HumanPose::Wrench6& rfwin, const HumanPose::Wrench6& lfwin, hrp::Vector3& zmp_ans){
       hrp::Vector3 rfzmp,lfzmp;
@@ -347,6 +357,11 @@ class HumanSynchronizer{
     void applyLPFilter(HumanPose& tgt){
       for(int i=0;i<iir_v_filters.size();i++){ tgt.Seq(i) = iir_v_filters[i].passFilter(tgt.Seq(i)); }
     }
+    void applyLPFilter_o(const HumanPose& raw_in, const HumanPose& out_old, HumanPose& filt_out){
+      for(int i=0;i<filt_out.idsize;i++){
+        filt_out.Seq(i) = (1-FNUM) * out_old.Seq(i) + FNUM * raw_in.Seq(i);
+      }
+    }
     void convertRelHumanPoseToRelRobotPose(const HumanPose& hp_in, HumanPose& rp_out){//結局初期指定からの移動量(=Rel)で計算をしてゆく
       for(int i=0;i<rp_out.idsize-4;i++){
         rp_out.Seq(i) =  h2r_ratio * hp_in.Seq(i);
@@ -368,13 +383,13 @@ class HumanSynchronizer{
     }
     void lockSwingFootIfZMPOutOfSupportFoot(const HumanPose& tgt, bool& rfcs_ans, bool& lfcs_ans){
       if(rfcs_ans && !lfcs_ans){
-        if(tgt.zmp(1) > tgt.rf(1) + init_wld_rp_rfpos(1) + 0.03){
+        if(tgt.zmp(1) > tgt.rf(1) + init_wld_rp_rfpos(1) + 0.02){
           lfcs_ans = true;
           cout<<"LF lock"<<endl;
         }
       }
       if(!rfcs_ans && lfcs_ans){
-        if(tgt.zmp(1) < tgt.lf(1) + init_wld_rp_lfpos(1) - 0.03){
+        if(tgt.zmp(1) < tgt.lf(1) + init_wld_rp_lfpos(1) - 0.02){
           rfcs_ans = true;
           cout<<"RF lock"<<endl;
         }
@@ -445,15 +460,15 @@ class HumanSynchronizer{
 
       }
     }
-    bool applyCOMToSupportRegionLimit(const hrp::Vector3& lfin_abs, const hrp::Vector3& rfin_abs, hrp::Vector3& comin_abs){//boost::geometryがUbuntu12だとないから・・・
-//      const double XUMARGIN = 0.04;//CHIDORI
-//      const double XLMARGIN = -0.02;
-//      const double YUMARGIN = 0.01;
-//      const double YLMARGIN = -0.01;
-      const double XUMARGIN = 0.02;//JAXON
-      const double XLMARGIN = -0.01;
-      const double YUMARGIN = 0.0;
-      const double YLMARGIN = -0.0;
+    bool applyCOMToSupportRegionLimit(const hrp::Vector3& rfin_abs, const hrp::Vector3& lfin_abs, hrp::Vector3& comin_abs){//boost::geometryがUbuntu12だとないから・・・
+      const double XUMARGIN = 0.04;//CHIDORI
+      const double XLMARGIN = -0.02;
+      const double YUMARGIN = 0.01;
+      const double YLMARGIN = -0.01;
+//      const double XUMARGIN = 0.02;//JAXON
+//      const double XLMARGIN = -0.01;
+//      const double YUMARGIN = 0.0;
+//      const double YLMARGIN = -0.0;
 //      const double XUMARGIN = 0.10;//test
 //      const double XLMARGIN = -0.05;
 //      const double YUMARGIN = 0.03;
@@ -549,7 +564,7 @@ class HumanSynchronizer{
       comacc = comacc_v_filters.passFilter(comacc);
       zmpout(0) = comin(0)-(rp_wld_initpos.com(2)/G)*comacc(0);
       zmpout(1) = comin(1)-(rp_wld_initpos.com(2)/G)*comacc(1);
-      fprintf(cz_log,"%f %f %f %f %f %f %f\n",(double)loop/HZ,comin(0),comin(1),rp_ref_out.zmp(0),rp_ref_out.zmp(1),zmpout(0),zmpout(1));
+      if(DEBUG)fprintf(cz_log,"%f %f %f %f %f %f %f\n",(double)loop/HZ,comin(0),comin(1),rp_ref_out.zmp(0),rp_ref_out.zmp(1),zmpout(0),zmpout(1));
       com_oldold = com_old;
       com_old = comin;
     }

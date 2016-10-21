@@ -1049,13 +1049,12 @@ void AutoBalancer::solveLimbIK ()
   }
   if(hsp->isHumanSyncOn()){
     if(hsp->ht_first_call){
-      hsp->calibInitHumanCOMFromZMP();
       std::cerr << "\n[" << m_profile.instance_name << "] Start HumanSync"<< std::endl;
       hsp->ht_first_call = false;
     }
   }else{
     hsp->setInitOffsetPose();
-//    hsp->calibInitHumanCOMFromZMP();
+    hsp->calibInitHumanCOMFromZMP();
     hsp->rp_wld_initpos.com = m_robot->calcCM();
     hsp->rp_wld_initpos.rf = ikp["rleg"].target_link->p;
     hsp->rp_wld_initpos.lf = ikp["lleg"].target_link->p;
