@@ -484,6 +484,8 @@ public:
         gg->set_heel_zmp_offset_x(-105*1e-3);
         gg->set_toe_pos_offset_x(137*1e-3);
         gg->set_heel_pos_offset_x(-105*1e-3);
+        gg->set_stride_parameters(0.2,0.1,20,0.2);
+        gg->set_use_toe_heel_auto_set(true);
         gg->set_toe_angle(30);
         gg->set_heel_angle(10);
         // gg->set_use_toe_heel_transition(false);
@@ -491,7 +493,7 @@ public:
         gg->clear_footstep_nodes_list();
         coordinates start_ref_coords;
         mid_coords(start_ref_coords, 0.5, coordinates(leg_pos[1]), coordinates(leg_pos[0]));
-        gg->go_pos_param_2_footstep_nodes_list(100*1e-3, 0, 0, boost::assign::list_of(coordinates(leg_pos[1])), start_ref_coords, boost::assign::list_of(LLEG));
+        gg->go_pos_param_2_footstep_nodes_list(400*1e-3, 0, 0, boost::assign::list_of(coordinates(leg_pos[1])), start_ref_coords, boost::assign::list_of(LLEG));
         gen_and_plot_walk_pattern();
     };
 
@@ -687,6 +689,7 @@ public:
         gg->set_default_step_time(2);
         gg->set_default_double_support_ratio_before(0.1);
         gg->set_default_double_support_ratio_after(0.1);
+        gg->set_use_toe_heel_auto_set(true);
         gg->set_use_toe_heel_transition(true);
         //double ratio[7] = {0.02, 0.28, 0.2, 0.0, 0.2, 0.25, 0.05};
         double ratio[7] = {0.07, 0.20, 0.2, 0.0, 0.2, 0.25, 0.08};
