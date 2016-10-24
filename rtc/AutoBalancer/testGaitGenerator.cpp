@@ -25,7 +25,7 @@ private:
     }
     bool check_zmp_diff (const hrp::Vector3& prev_zmp, const hrp::Vector3& zmp)
     {
-        return (prev_zmp - zmp).norm() < 10.0*1e-3; // [mm]
+        return (prev_zmp - zmp).norm() < 20.0*1e-3; // [mm]
     }
     // plot and pattern generation
     void plot_and_save (FILE* gp, const std::string graph_fname, const std::string plot_str)
@@ -159,10 +159,13 @@ private:
             fprintf(fp_sstime, "%f %f ",
                     gg->get_current_swing_time(RLEG),
                     gg->get_current_swing_time(LLEG));
+            // Contact States
             std::vector<leg_type> tmp_current_support_states = gg->get_current_support_states();
             bool rleg_contact_states = std::find_if(tmp_current_support_states.begin(), tmp_current_support_states.end(), boost::lambda::_1 == RLEG) != tmp_current_support_states.end();
             bool lleg_contact_states = std::find_if(tmp_current_support_states.begin(), tmp_current_support_states.end(), boost::lambda::_1 == LLEG) != tmp_current_support_states.end();
-            fprintf(fp_sstime, "%d %d ", (rleg_contact_states ? 1 : 0), (lleg_contact_states ? 1 : 0));
+            fprintf(fp_sstime, "%d %d %f",
+                    (rleg_contact_states ? 1 : 0), (lleg_contact_states ? 1 : 0),
+                    0.8*gg->get_current_toe_heel_ratio()+0.1); // scale+translation just for visualization
             fprintf(fp_sstime, "\n");
             // Error checking
             is_small_zmp_error = check_zmp_error(gg->get_cart_zmp(), gg->get_refzmp()) && is_small_zmp_error;
@@ -326,7 +329,8 @@ private:
                     << "'" << fname_sstime << "' using 1:" << 2 << " with lines title 'rleg remain time',"
                     << "'" << fname_sstime << "' using 1:" << 3 << " with lines title 'lleg remain time',"
                     << "'" << fname_sstime << "' using 1:" << 4 << " with lines title 'rleg contact states',"
-                    << "'" << fname_sstime << "' using 1:" << 5 << " with lines title 'lleg contact states'"
+                    << "'" << fname_sstime << "' using 1:" << 5 << " with lines title 'lleg contact states',"
+                    << "'" << fname_sstime << "' using 1:" << 6 << " with lines title 'toe_heel_ratio*0.8+0.1'"
                     << std::endl;
                 plot_and_save(gps[4], gtitle, oss.str());
             }
@@ -480,6 +484,8 @@ public:
         gg->set_heel_zmp_offset_x(-105*1e-3);
         gg->set_toe_pos_offset_x(137*1e-3);
         gg->set_heel_pos_offset_x(-105*1e-3);
+        gg->set_stride_parameters(0.2,0.1,20,0.2);
+        gg->set_use_toe_heel_auto_set(true);
         gg->set_toe_angle(30);
         gg->set_heel_angle(10);
         // gg->set_use_toe_heel_transition(false);
@@ -487,7 +493,7 @@ public:
         gg->clear_footstep_nodes_list();
         coordinates start_ref_coords;
         mid_coords(start_ref_coords, 0.5, coordinates(leg_pos[1]), coordinates(leg_pos[0]));
-        gg->go_pos_param_2_footstep_nodes_list(100*1e-3, 0, 0, boost::assign::list_of(coordinates(leg_pos[1])), start_ref_coords, boost::assign::list_of(LLEG));
+        gg->go_pos_param_2_footstep_nodes_list(400*1e-3, 0, 0, boost::assign::list_of(coordinates(leg_pos[1])), start_ref_coords, boost::assign::list_of(LLEG));
         gen_and_plot_walk_pattern();
     };
 
@@ -664,6 +670,40 @@ public:
         gen_and_plot_walk_pattern();
     };
 
+    void test16 ()
+    {
+        std::cerr << "test16 : Set foot steps with param (toe heel contact)" << std::endl;
+        /* initialize sample footstep_list */
+        parse_params();
+        gg->clear_footstep_nodes_list();
+        std::vector<hrp::Vector3> dzo;
+        dzo.push_back(hrp::Vector3(20*1e-3,-30*1e-3,0));
+        dzo.push_back(hrp::Vector3(20*1e-3,30*1e-3,0));
+        gg->set_default_zmp_offsets(dzo);
+        gg->set_toe_zmp_offset_x(137*1e-3);
+        gg->set_heel_zmp_offset_x(-105*1e-3);
+        gg->set_toe_pos_offset_x(137*1e-3);
+        gg->set_heel_pos_offset_x(-105*1e-3);
+        gg->set_toe_angle(20);
+        gg->set_heel_angle(5);
+        gg->set_default_step_time(2);
+        gg->set_default_double_support_ratio_before(0.1);
+        gg->set_default_double_support_ratio_after(0.1);
+        gg->set_use_toe_heel_auto_set(true);
+        gg->set_use_toe_heel_transition(true);
+        //double ratio[7] = {0.02, 0.28, 0.2, 0.0, 0.2, 0.25, 0.05};
+        double ratio[7] = {0.07, 0.20, 0.2, 0.0, 0.2, 0.25, 0.08};
+        std::vector<double> ratio2(ratio, ratio+gg->get_NUM_TH_PHASES());
+        gg->set_toe_heel_phase_ratio(ratio2);
+        std::vector< std::vector<step_node> > fnsl;
+        fnsl.push_back(boost::assign::list_of(step_node("rleg", coordinates(hrp::Vector3(hrp::Vector3(0, 0, 0)+leg_pos[0])), gg->get_default_step_height()*0.5, gg->get_default_step_time()*0.5, gg->get_toe_angle()*0.5, gg->get_heel_angle()*0.5)));
+        fnsl.push_back(boost::assign::list_of(step_node("lleg", coordinates(hrp::Vector3(hrp::Vector3(100*1e-3, 0, 0)+leg_pos[1])), gg->get_default_step_height()*2.0, gg->get_default_step_time()*2.0, gg->get_toe_angle()*2.0, gg->get_heel_angle()*2.0)));
+        fnsl.push_back(boost::assign::list_of(step_node("rleg", coordinates(hrp::Vector3(hrp::Vector3(400*1e-3, 0, 0)+leg_pos[0])), gg->get_default_step_height()*0.5, gg->get_default_step_time()*0.5, gg->get_toe_angle()*0.5, gg->get_heel_angle()*0.5)));
+        fnsl.push_back(boost::assign::list_of(step_node("lleg", coordinates(hrp::Vector3(hrp::Vector3(400*1e-3, 0, 0)+leg_pos[1])), gg->get_default_step_height()*2.0, gg->get_default_step_time()*2.0, gg->get_toe_angle()*2.0, gg->get_heel_angle()*2.0)));
+        gg->set_foot_steps_list(fnsl);
+        gen_and_plot_walk_pattern();
+    };
+
     void parse_params ()
     {
       for (unsigned int i = 0; i < arg_strs.size(); ++ i) {
@@ -778,6 +818,7 @@ void print_usage ()
     std::cerr << "  --test13 : Arbitrary leg switching" << std::endl;
     std::cerr << "  --test14 : kick walk" << std::endl;
     std::cerr << "  --test15 : Stair walk down" << std::endl;
+    std::cerr << "  --test16 : Set foot steps with param (toe heel contact)" << std::endl;
 };
 
 int main(int argc, char* argv[])
@@ -820,6 +861,8 @@ int main(int argc, char* argv[])
           tgg.test14();
       } else if (std::string(argv[1]) == "--test15") {
           tgg.test15();
+      } else if (std::string(argv[1]) == "--test16") {
+          tgg.test16();
       } else {
           print_usage();
           ret = 1;
