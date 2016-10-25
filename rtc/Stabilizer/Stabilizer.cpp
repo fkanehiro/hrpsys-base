@@ -335,6 +335,14 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
       ikp.eefm_swing_pos_spring_gain = hrp::Vector3(0.0, 0.0, 0.0);
       ikp.eefm_swing_pos_time_const = hrp::Vector3(1.5, 1.5, 1.5);
       ikp.eefm_ee_moment_limit = hrp::Vector3(1e4, 1e4, 1e4); // Default limit [Nm] is too large. Same as no limit.
+      if (ikp.ee_name.find("leg") == std::string::npos) { // Arm default
+          ikp.eefm_ee_forcemoment_distribution_weight = Eigen::Matrix<double, 6,1>::Zero();
+      } else { // Leg default
+          for (size_t j = 0; j < 3; j++) {
+              ikp.eefm_ee_forcemoment_distribution_weight[j] = 1; // Force
+              ikp.eefm_ee_forcemoment_distribution_weight[j+3] = 1e-2; // Moment
+          }
+      }
   }
   eefm_swing_rot_damping_gain = hrp::Vector3(20*5, 20*5, 1e5);
   eefm_swing_pos_damping_gain = hrp::Vector3(33600, 33600, 7000);
