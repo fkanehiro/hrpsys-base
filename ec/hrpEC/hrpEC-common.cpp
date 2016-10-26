@@ -147,7 +147,8 @@ namespace RTC
 #ifndef OPENRTM_VERSION_TRUNK
             if (loop % debug_count == 0 && ENABLE_DEBUG_PRINT) {
               gettimeofday(&debug_tv4, NULL);
-              fprintf(stderr, "[hrpEC] Processing time breakdown : waitForNextPeriod %f[ms], warker (onExecute) %f[ms], ExecutionProfile %f[ms], time from prev cicle %f[ms]\n",
+              fprintf(stderr, "[hrpEC] [%d.%6.6d] Processing time breakdown : waitForNextPeriod %f[ms], warker (onExecute) %f[ms], ExecutionProfile %f[ms], time from prev cicle %f[ms]\n",
+                      tv.tv_sec, tv.tv_usec,
                       DELTA_SEC(debug_tv1, debug_tv2)*1e3,
                       DELTA_SEC(debug_tv2, debug_tv3)*1e3,
                       DELTA_SEC(debug_tv3, debug_tv4)*1e3,

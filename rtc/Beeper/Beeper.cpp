@@ -176,10 +176,13 @@ RTC::ReturnCode_t Beeper::onExecute(RTC::UniqueId ec_id)
     bd._beep_length = m_beepCommand.data[BEEP_INFO_LENGTH];
     // Push beepCommand to buffer
     size_t max_buffer_length = 10;
-    pthread_mutex_lock( &beep_mutex );
-    beep_command_buffer.push_back(bd);
-    while (beep_command_buffer.size() > max_buffer_length) beep_command_buffer.pop_front();
-    pthread_mutex_unlock( &beep_mutex );
+    if (pthread_mutex_trylock( &beep_mutex ) == 0) {
+        beep_command_buffer.push_back(bd);
+        while (beep_command_buffer.size() > max_buffer_length) beep_command_buffer.pop_front();
+        pthread_mutex_unlock( &beep_mutex );
+    } else {
+        std::cerr << "[" << m_profile.instance_name<< "] Mutex trylock failed (loop=" << m_loop << ")" << std::endl;
+    }
     // print
     if (m_debugLevel > 0) {
       if (bd._beep_start)
