@@ -246,7 +246,9 @@ namespace rats
         {
             hrp::Vector3 local_toe_pos = support_coords.rot.transpose() * (swing_coords.rot * hrp::Vector3(toe_pos_offset_x,0,0) + swing_coords.pos - support_coords.pos);
             hrp::Vector3 local_heel_pos = support_coords.rot.transpose() * (swing_coords.rot * hrp::Vector3(heel_pos_offset_x,0,0) + swing_coords.pos - support_coords.pos);
-            if (local_toe_pos(0) + toe_check_thre < 0) {
+            if (local_toe_pos(2) < -50*1e-3 && (local_toe_pos(0) + toe_check_thre < 0 || local_heel_pos(0) - heel_check_thre > 0) ) {
+                return TOE;
+            } else if (local_toe_pos(0) + toe_check_thre < 0) {
                 return TOE;
             } else if (local_heel_pos(0) - heel_check_thre > 0) {
                 return HEEL;
