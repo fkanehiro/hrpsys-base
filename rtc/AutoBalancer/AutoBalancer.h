@@ -152,7 +152,6 @@ class HumanSynchronizer{
     HumanPose rp_ref_out_old;
     int countdown_num;
     bool HumanSyncOn;
-    bool is_rf_in_air,is_lf_in_air;
     struct timeval t_calc_start, t_calc_end;
     unsigned int loop;
     double h2r_ratio, tgt_h2r_ratio;
@@ -166,7 +165,8 @@ class HumanSynchronizer{
 
     bool startCountdownForHumanSync;
     bool ht_first_call;
-    bool is_rf_contact,is_lf_contact;
+    bool is_rf_contact,is_lf_contact;//足上げ高さ0に到達しているか否か
+    bool land_on_rf,land_on_lf;//足上げ指令の有無
     HumanPose rp_wld_initpos;//IKでのリンク原点の位置(足首，手首など)
     bool use_x,use_y,use_z;
     HumanPose rp_ref_out;
@@ -192,6 +192,7 @@ class HumanSynchronizer{
       use_x = use_y = use_z = true;
       cur_rfup_level = cur_lfup_level = 0;
       is_rf_contact = is_lf_contact = true;
+      land_on_rf = land_on_lf = false;
       pre_cont_rfpos = pre_cont_lfpos = hrp::Vector3::Zero();
       init_hp_calibcom.Zero();
       FNUM = 0.01;//0.01でも荒い?
@@ -204,7 +205,6 @@ class HumanSynchronizer{
       startCountdownForHumanSync = false;
       countdown_num = 5*HZ;
       loop = 0;
-      is_rf_in_air = is_lf_in_air = false;
 
       com_old = com_oldold = comacc = hrp::Vector3::Zero();
       r_zmp_raw = hrp::Vector3::Zero();
@@ -214,8 +214,8 @@ class HumanSynchronizer{
       current_basepos = init_basepos = hrp::Vector3::Zero();
 
       iir_v_filters.resize(5);
-      for(int i=0;i<iir_v_filters.size();i++)iir_v_filters[i].setParameter(1.0,HZ);
-      comacc_v_filters.setParameter(1,HZ);
+      for(int i=0;i<iir_v_filters.size();i++)iir_v_filters[i].setParameter(0.5,HZ);
+      comacc_v_filters.setParameter(0.5,HZ);
 
 //      use_rh = use_lh = false;
       use_rh = use_lh = true;
@@ -230,9 +230,11 @@ class HumanSynchronizer{
       double goal_ratio = 1.0;
       init_zmp_com_offset_interpolator->go(&goal_ratio, 3.0, true);//3s
 
-      std::string home_path(std::getenv("HOME"));
-      if(DEBUG)sr_log = fopen((home_path+"/HumanSync_support_region.log").c_str(),"w+");
-      if(DEBUG)cz_log = fopen((home_path+"/HumanSync_com_zmp.log").c_str(),"w+");
+      if(DEBUG){
+        std::string home_path(std::getenv("HOME"));
+        sr_log = fopen((home_path+"/HumanSync_support_region.log").c_str(),"w+");
+        cz_log = fopen((home_path+"/HumanSync_com_zmp.log").c_str(),"w+");
+      }
       cout<<"HumanSynchronizer constructed"<<endl;
     }
     ~HumanSynchronizer(){
@@ -263,14 +265,14 @@ class HumanSynchronizer{
       updateCOMModRatio                   (tgt_cmmr);
       removeInitOffsetPose                (hp_wld_raw, hp_wld_initpos, hp_rel_raw);
       applyInitHumanZMPToCOMOffset        (hp_rel_raw, init_hp_calibcom, hp_rel_raw);
-      lockFootXYOnContact                 (is_rf_contact, is_lf_contact, hp_rel_raw);//根本から改変すべき2
+      lockFootXYOnContact                 (land_on_rf, land_on_lf, hp_rel_raw);//根本から改変すべき2
       hp_filtered = hp_rel_raw;
 
 //      applyLPFilterToEE(hp_rel_raw, hp_filtered);//次に使う.rf,.lfのためにEEだけは先にフィルターしておかないといけない説もある
       calcWorldZMP                        ((hp_filtered.rf+init_wld_hp_rfpos), (hp_filtered.lf+init_wld_hp_lfpos), hp_filtered.rfw, hp_filtered.lfw, hp_filtered.zmp);//足の位置はworldにしないと・・・
       convertRelHumanPoseToRelRobotPose   (hp_filtered,rp_ref_out);
       applyCOMMoveModRatio                (rp_ref_out);
-      judgeFootContactStates              (hp_wld_raw.rfw, hp_wld_raw.lfw, is_rf_contact, is_lf_contact);//frwはすでに1000->100Hzにフィルタリングされている
+      judgeFootLandOnCommand              (hp_wld_raw.rfw, hp_wld_raw.lfw, land_on_rf, land_on_lf);//frwはすでに1000->100Hzにフィルタリングされている
 
       applyEEWorkspaceLimit               (rp_ref_out);
 
@@ -280,11 +282,11 @@ class HumanSynchronizer{
 //      applyLPFilter_o                       (rp_ref_out, rp_ref_out_old, rp_ref_out);
       r_zmp_raw = rp_ref_out.zmp;
       applyZMPCalcFromCOM                 (rp_ref_out.com,rp_ref_out.zmp);
-      lockSwingFootIfZMPOutOfSupportFoot  (rp_ref_out, is_rf_contact, is_lf_contact);//
+      lockSwingFootIfZMPOutOfSupportFoot  (rp_ref_out, land_on_rf, land_on_lf);//
 
       applyVelLimit                       (rp_ref_out, rp_ref_out_old, rp_ref_out);
       applyCOMZMPXYZLock                  (rp_ref_out);
-      overwriteFootZFromContactStates     (is_rf_contact, is_lf_contact, rp_ref_out);
+      overwriteFootZFromFootLandOnCommand (land_on_rf, land_on_lf, rp_ref_out);
       rp_ref_out_old = rp_ref_out;
 //      fprintf(log,"%f %f %f %f %f %f\n", rp_ref_out.com(0), rp_ref_out.com(1), rp_ref_out.zmp(0), rp_ref_out.zmp(1), hp_rel_raw.com(0), hp_rel_raw.com(1));
       loop++;
@@ -372,14 +374,14 @@ class HumanSynchronizer{
     void applyCOMMoveModRatio(HumanPose& tgt){//
       tgt.com = cmmr * tgt.com;
     }
-    void judgeFootContactStates(const HumanPose::Wrench6& rfw_in, const HumanPose::Wrench6& lfw_in, bool& rfcs_ans, bool& lfcs_ans){
+    void judgeFootLandOnCommand(const HumanPose::Wrench6& rfw_in, const HumanPose::Wrench6& lfw_in, bool& rfloc_ans, bool& lfloc_ans){
       if(HumanSyncOn){
-        if      (rfcs_ans  && rfw_in.f(2)<CNT_F_TH   ){rfcs_ans = false;}//右足ついた状態から上げる
-        else if (!rfcs_ans && rfw_in.f(2)>CNT_F_TH+30){rfcs_ans = true;}//右足浮いた状態から下げる
-        if      (lfcs_ans  && lfw_in.f(2)<CNT_F_TH   ){lfcs_ans = false;}//左足ついた状態から上げる
-        else if (!lfcs_ans && lfw_in.f(2)>CNT_F_TH+30){lfcs_ans = true;}//左足浮いた状態から下げる
+        if      (rfloc_ans  && rfw_in.f(2)<CNT_F_TH   ){rfloc_ans = false;}//右足ついた状態から上げる
+        else if (!rfloc_ans && rfw_in.f(2)>CNT_F_TH+30){rfloc_ans = true;}//右足浮いた状態から下げる
+        if      (lfloc_ans  && lfw_in.f(2)<CNT_F_TH   ){lfloc_ans = false;}//左足ついた状態から上げる
+        else if (!lfloc_ans && lfw_in.f(2)>CNT_F_TH+30){lfloc_ans = true;}//左足浮いた状態から下げる
       }
-      if(!rfcs_ans && !lfcs_ans){rfcs_ans = lfcs_ans = true;}//両足ジャンプは禁止
+      if(!rfloc_ans && !lfloc_ans){rfloc_ans = lfloc_ans = true;}//両足ジャンプは禁止
     }
     void lockSwingFootIfZMPOutOfSupportFoot(const HumanPose& tgt, bool& rfcs_ans, bool& lfcs_ans){
       if(rfcs_ans && !lfcs_ans){
@@ -395,35 +397,41 @@ class HumanSynchronizer{
         }
       }
     }
-    void overwriteFootZFromContactStates(const bool& rfcs_in, const bool& lfcs_in, HumanPose& tgt){
-      if(!rfcs_in){//右足浮遊時
+    void overwriteFootZFromFootLandOnCommand(const bool& rfloc_in, const bool& lfloc_in, HumanPose& tgt){
+      if(!rfloc_in){//右足浮遊時
         if(cur_rfup_level < FUPLEVELNUM){
           cur_rfup_level++;
           tgt.rf(2) = FUPHIGHT/2*(1-cos(M_PI*cur_rfup_level/FUPLEVELNUM));
         }else{
           tgt.rf(2) = FUPHIGHT;
         }
+        is_rf_contact = false;
       }else{
         if(cur_rfup_level > 0){
           cur_rfup_level--;
           tgt.rf(2) = FUPHIGHT/2*(1-cos(M_PI*cur_rfup_level/FUPLEVELNUM));
+          is_rf_contact = false;
         }else{
           tgt.rf(2) = 0;
+          is_rf_contact = true;
         }
       }
-      if(!lfcs_in){//左足浮遊時
+      if(!lfloc_in){//左足浮遊時
         if(cur_lfup_level < FUPLEVELNUM){
           cur_lfup_level++;
           tgt.lf(2) = FUPHIGHT/2*(1-cos(M_PI*cur_lfup_level/FUPLEVELNUM));
         }else{
           tgt.lf(2) = FUPHIGHT;
         }
+        is_lf_contact = false;
       }else{
         if(cur_lfup_level > 0){
           cur_lfup_level--;
           tgt.lf(2) = FUPHIGHT/2*(1-cos(M_PI*cur_lfup_level/FUPLEVELNUM));
+          is_lf_contact = false;
         }else{
           tgt.lf(2) = 0;
+          is_lf_contact = true;
         }
       }
     }
