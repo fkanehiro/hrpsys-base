@@ -118,6 +118,7 @@ class Stabilizer
   void calcSwingSupportLimbGain();
   void calcTPCC();
   void calcEEForceMomentControl();
+  void calcSwingEEModification ();
   void getParameter(OpenHRP::StabilizerService::stParam& i_stp);
   void setParameter(const OpenHRP::StabilizerService::stParam& i_stp);
   void setBoolSequenceParam (std::vector<bool>& st_bool_values, const OpenHRP::StabilizerService::BoolSequence& output_bool_values, const std::string& prop_name);
