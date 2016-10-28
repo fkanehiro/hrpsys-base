@@ -131,6 +131,7 @@ class Stabilizer
   void getFootmidCoords (rats::coordinates& ret);
   double calcDampingControl (const double tau_d, const double tau, const double prev_d,
                              const double DD, const double TT);
+  hrp::Vector3 calcDampingControl (const hrp::Vector3& prev_d, const hrp::Vector3& TT);
   hrp::Vector3 calcDampingControl (const hrp::Vector3& tau_d, const hrp::Vector3& tau, const hrp::Vector3& prev_d,
                                    const hrp::Vector3& DD, const hrp::Vector3& TT);
   double vlimit(double value, double llimit_value, double ulimit_value);

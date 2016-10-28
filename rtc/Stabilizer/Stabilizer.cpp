@@ -1524,19 +1524,14 @@ void Stabilizer::calcSwingEEModification ()
         double limit_rot = deg2rad(10); // 10[deg] limit
         if (contact_states[contact_states_index_map[stikp[i].ee_name]] || isContact(contact_states_index_map[stikp[i].ee_name])) {
             // If actual contact or target contact is ON, do not use swing ee compensation. Exponential zero retrieving.
-            for (size_t j = 0; j < 3; j++) {
-                stikp[i].d_rpy_swing[j] = (-1 / stikp[i].eefm_swing_rot_time_const[j] * stikp[i].d_rpy_swing[j]) * dt + stikp[i].d_rpy_swing[j];
-                stikp[i].d_pos_swing[j] = (-1 / stikp[i].eefm_swing_pos_time_const[j] * stikp[i].d_pos_swing[j]) * dt + stikp[i].d_pos_swing[j];
-            }
+            stikp[i].d_rpy_swing = calcDampingControl(stikp[i].d_rpy_swing, stikp[i].eefm_swing_rot_time_const);
+            stikp[i].d_pos_swing = calcDampingControl(stikp[i].d_pos_swing, stikp[i].eefm_swing_pos_time_const);
             stikp[i].target_ee_diff_p_filter->reset(stikp[i].d_pos_swing);
             stikp[i].target_ee_diff_r_filter->reset(stikp[i].d_rpy_swing);
         } else {
             /* position */
             {
-                hrp::Vector3 tmpdiffp = stikp[i].target_ee_diff_p_filter->passFilter(stikp[i].target_ee_diff_p);
-                for (size_t j = 0; j < 3; j++) {
-                    tmpdiffp(j) = stikp[i].eefm_swing_pos_spring_gain[j] * tmpdiffp(j);
-                }
+                hrp::Vector3 tmpdiffp = stikp[i].eefm_swing_pos_spring_gain.cwiseProduct(stikp[i].target_ee_diff_p_filter->passFilter(stikp[i].target_ee_diff_p));
                 double lvlimit = -50 * 1e-3 * dt, uvlimit = 50 * 1e-3 * dt; // 50 [mm/s]
                 hrp::Vector3 limit_by_lvlimit = stikp[i].prev_d_pos_swing + lvlimit * hrp::Vector3::Ones();
                 hrp::Vector3 limit_by_uvlimit = stikp[i].prev_d_pos_swing + uvlimit * hrp::Vector3::Ones();
@@ -1544,10 +1539,7 @@ void Stabilizer::calcSwingEEModification ()
             }
             /* rotation */
             {
-                hrp::Vector3 tmpdiffr = stikp[i].target_ee_diff_r_filter->passFilter(hrp::rpyFromRot(stikp[i].target_ee_diff_r));
-                for (size_t j = 0; j < 3; j++) {
-                    tmpdiffr(j) = stikp[i].eefm_swing_rot_spring_gain[j] * tmpdiffr(j);
-                }
+                hrp::Vector3 tmpdiffr = stikp[i].eefm_swing_rot_spring_gain.cwiseProduct(stikp[i].target_ee_diff_r_filter->passFilter(hrp::rpyFromRot(stikp[i].target_ee_diff_r)));
                 double lvlimit = deg2rad(-20.0*dt), uvlimit = deg2rad(20.0*dt); // 20 [deg/s]
                 hrp::Vector3 limit_by_lvlimit = stikp[i].prev_d_rpy_swing + lvlimit * hrp::Vector3::Ones();
                 hrp::Vector3 limit_by_uvlimit = stikp[i].prev_d_rpy_swing + uvlimit * hrp::Vector3::Ones();
@@ -1573,6 +1565,12 @@ double Stabilizer::calcDampingControl (const double tau_d, const double tau, con
                                        const double DD, const double TT)
 {
   return (1/DD * (tau_d - tau) - 1/TT * prev_d) * dt + prev_d;
+};
+
+// Retrieving only
+hrp::Vector3 Stabilizer::calcDampingControl (const hrp::Vector3& prev_d, const hrp::Vector3& TT)
+{
+  return (- prev_d.cwiseQuotient(TT)) * dt + prev_d;
 };
 
 hrp::Vector3 Stabilizer::calcDampingControl (const hrp::Vector3& tau_d, const hrp::Vector3& tau, const hrp::Vector3& prev_d,
