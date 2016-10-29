@@ -3,6 +3,7 @@
  * @brief Services for the autobalancer interface
  */
 //#include "OpenHRPCommon.idl"
+#include "BasicDataType.idl"
 module OpenHRP
 {
   
@@ -301,6 +302,21 @@ module OpenHRP
       GaitType default_gait_type;
       /// Sequence for all end-effectors' ik limb parameters
       sequence<IKLimbParameters> ik_limb_parameters;
+    };
+
+    /**
+     * @struct SerializedStateData
+     * @brief SerializedStateData for AutoBalancer
+     */
+    struct SerializedStateData
+    {
+        sequence<boolean> contactStates;
+        sequence<double> controlSwingSupportTime;
+    };
+    struct TimedSerializedStateData
+    {
+        RTC::Time tm;
+        SerializedStateData data;
     };
 
     /**

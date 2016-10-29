@@ -2,6 +2,7 @@
  * @file RemoveForceSensorLinkOffsetService.idl
  * @brief Services for removing link offset of force sensors
  */
+#include "BasicDataType.idl"
 module OpenHRP
 {
   interface RemoveForceSensorLinkOffsetService
@@ -20,6 +21,20 @@ module OpenHRP
       DblSequence3 link_offset_centroid;
       /// Link msas [kg].
       double link_offset_mass;
+    };
+
+    /**
+     * @struct SerializedStateData
+     * @brief SerializedStateData for RemoveForceSensorLinkOffset
+     */
+    struct SerializedStateData
+    {
+        sequence<double> wrenches;
+    };
+    struct TimedSerializedStateData
+    {
+        RTC::Time tm;
+        SerializedStateData data;
     };
 
     /**

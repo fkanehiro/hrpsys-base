@@ -130,6 +130,8 @@ class RemoveForceSensorLinkOffset
   std::vector<TimedDoubleSeq> m_force;
   std::vector<InPort<TimedDoubleSeq> *> m_forceIn;
   std::vector<OutPort<TimedDoubleSeq> *> m_forceOut;
+  OpenHRP::RemoveForceSensorLinkOffsetService::TimedSerializedStateData  m_serializedStateData;
+  RTC::OutPort<OpenHRP::RemoveForceSensorLinkOffsetService::TimedSerializedStateData> m_serializedStateDataOut;
   
   // </rtc-template>
 
