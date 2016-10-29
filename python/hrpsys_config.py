@@ -1227,10 +1227,22 @@ class HrpsysConfigurator(object):
                 eef_name = item[1][-1]
                 print("{}: {}".format(eef_name, self.getCurrentPose(eef_name)))
             raise RuntimeError("need to specify joint name")
-        if frame_name:
-            lname = lname + ':' + frame_name
-        if StrictVersion(self.fk_version) < StrictVersion('315.2.5') and ':' in lname:
-            raise RuntimeError('frame_name ('+lname+') is not supported')
+        ####
+        #### for hrpsys >= 315.2.5, frame_name is supported
+        ####   default_frame_name is set, call with lname:default_frame_name
+        ####   frame_name is given, call with lname:frame_name
+        ####   frame_name is none, call with lname
+        #### for hrpsys <= 315.2.5, frame_name is not supported
+        ####   frame_name is given, call with lname with warning / oerror
+        ####   frame_name is none, call with lname
+        if StrictVersion(self.fk_version) >= StrictVersion('315.2.5'):                         ### CHANGED
+            if self.default_frame_name and frame_name is None:
+                frame_name = self.default_frame_name
+            if frame_name and not ':' in lname:
+                lname = lname + ':' + frame_name
+        else: # hrpsys < 315.2.4
+            if frame_name:
+                print('frame_name ('+lname+') is not supported') ### CHANGED
         pose = self.fk_svc.getCurrentPose(lname)
         if not pose[0]:
             raise RuntimeError("Could not find reference : " + lname)
@@ -1327,10 +1339,14 @@ class HrpsysConfigurator(object):
                 eef_name = item[1][-1]
                 print("{}: {}".format(eef_name, self.getReferencePose(eef_name)))
             raise RuntimeError("need to specify joint name")
-        if frame_name:
-            lname = lname + ':' + frame_name
-        if StrictVersion(self.fk_version) < StrictVersion('315.2.5') and ':' in lname:
-            raise RuntimeError('frame_name ('+lname+') is not supported')
+        if StrictVersion(self.fk_version) >= StrictVersion('315.2.5'):                         ### CHANGED
+            if self.default_frame_name and frame_name is None:
+                frame_name = self.default_frame_name
+            if frame_name and not ':' in lname:
+                lname = lname + ':' + frame_name
+        else: # hrpsys < 315.2.4
+            if frame_name:
+                print('frame_name ('+lname+') is not supported') ### CHANGED
         pose = self.fk_svc.getReferencePose(lname)
         if not pose[0]:
             raise RuntimeError("Could not find reference : " + lname)
@@ -1413,8 +1429,14 @@ class HrpsysConfigurator(object):
         @return bool: False if unreachable.
         '''
         print(gname, frame_name, pos, rpy, tm)
-        if frame_name:
-            gname = gname + ':' + frame_name
+        if StrictVersion(self.seq_version) >= StrictVersion('315.2.5'):                         ### CHANGED
+            if self.default_frame_name and frame_name is None:
+                frame_name = self.default_frame_name
+            if frame_name and not ':' in gname:
+                gname = gname + ':' + frame_name
+        else: # hrpsys < 315.2.4
+            if frame_name and not ':' in gname:
+                print('frame_name ('+gname+') is not supported') ### CHANGED
         result = self.seq_svc.setTargetPose(gname, pos, rpy, tm)
         if not result:
             print("setTargetPose failed. Maybe SequencePlayer failed to solve IK.\n"
