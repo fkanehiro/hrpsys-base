@@ -2114,6 +2114,23 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
         '''
         self.abc_svc.setFootStepsWithParam(footstep, stepparams, overwrite_fs_idx)
 
+    def clearJointAngles(self):
+        '''!@brief
+        Cancels the commanded sequence of joint angle, by overwriting the command by the values of instant the method was invoked.
+        Note that this only cancels the queue once. Icoming commands after this method is called will be processed as usual.
+        @return bool
+        '''
+        return self.seq_svc.clearJointAngles()
+
+    def clearJointAnglesOfGroup(self, gname):
+        '''!@brief
+        Cancels the commanded sequence of joint angle for the specified joint group, by overwriting the command by the values of instant the method was invoked.
+        Note that this only cancels the queue once. Icoming commands after this method is called will be processed as usual.
+        @param gname: Name of the joint group.
+        @return bool
+        '''
+        return self.seq_svc.clearJointAngles(gname)
+
     # ##
     # ## initialize
     # ##
