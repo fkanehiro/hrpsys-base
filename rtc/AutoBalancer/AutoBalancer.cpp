@@ -903,6 +903,15 @@ void AutoBalancer::getTargetParameters()
       ref_zmp(1) = ref_cog(1);
       ref_zmp(2) = tmp_foot_mid_pos(2);
     }
+  } else { // MODE_IDLE
+      // Update fix_leg_coords based on input basePos and rot if MODE_IDLE
+      std::vector<coordinates> tmp_end_coords_list;
+      for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
+          if ( std::find(leg_names.begin(), leg_names.end(), it->first) != leg_names.end() ) {
+              tmp_end_coords_list.push_back(coordinates(it->second.target_link->p+it->second.target_link->R*it->second.localPos, it->second.target_link->R*it->second.localR));
+          }
+      }
+      multi_mid_coords(fix_leg_coords, tmp_end_coords_list);
   }
 };
 
