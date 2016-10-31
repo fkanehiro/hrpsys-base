@@ -96,7 +96,7 @@ def checkGoPosParam (goalx, goaly, goalth, prev_dst_foot_midcoords):
     '''
     # Check diff
     [difx, dify, difth] = calcDiffFootMidCoords(prev_dst_foot_midcoords)
-    ret = (abs(difx-goalx) < 1e-5 and abs(dify-goaly) < 1e-5 and abs(difth-goalth) < 1e-5)
+    ret = (abs(difx-goalx) < 5e-5 and abs(dify-goaly) < 5e-5 and abs(difth-goalth) < 1e-2)
     print >> sys.stderr, "  Check goPosParam (diff = ", (difx-goalx), "[m], ", (dify-goaly), "[m], ", (difth-goalth), "[deg])"
     print >> sys.stderr, "  => ", ret
     assert(ret)
@@ -237,6 +237,63 @@ def demoAutoBalancerBalanceWithArms():
     checkActualBaseAttitude()
     hcf.seq_svc.setJointAngles(initial_pose, 1.0)
     hcf.waitInterpolation()
+
+def demoGaitGeneratorBaseTformCheck ():
+    print >> sys.stderr, "0. baseTform check"
+    # Set parameter
+    orig_ggp = hcf.abc_svc.getGaitGeneratorParam()[1]
+    orig_abcp = hcf.abc_svc.getAutoBalancerParam()[1]
+    hcf.co_svc.disableCollisionDetection()
+    ggp = hcf.abc_svc.getGaitGeneratorParam()[1]
+    ggp.stride_parameter = [0.2, 0.1, 20, 0.15]
+    ggp.default_step_time = 0.5
+    hcf.abc_svc.setGaitGeneratorParam(ggp)
+    abcp = hcf.abc_svc.getAutoBalancerParam()[1]
+    abcp.transition_time = 0.1
+    hcf.abc_svc.setAutoBalancerParam(abcp)
+    btf0 = checkParameterFromLog("baseTformOut", rtc_name="abc")
+    # Check start ABC
+    hcf.seq_svc.setJointAnglesSequenceFull([[0.000242, -0.403476, -0.000185, 0.832071, -0.427767, -6.928952e-05, 0.31129, -0.159481, -0.115399, -0.636277, 0.0, 0.0, 0.0, 0.000242, -0.403469, -0.000185, 0.832073, -0.427775, -6.928781e-05, 0.31129, 0.159481, 0.115399, -0.636277, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]], # jvss
+                                           [[0]*29], # vels
+                                           [[0]*29], # torques
+                                           [[btf0[0]+0.2+-0.014759, btf0[1]+-0.1+-4.336272e-05, 0.668138]], # poss
+                                           [[-0.000245, -0.000862, 0.000171]], # rpys
+                                           [[0]*3], # accs
+                                           [[0.014052, 0.000203, -0.66798]], # zmps
+                                           [[0]*6*4], # wrenchs
+                                           [[1,1,0,0,1,1,1,1]], # optionals
+                                           [0.5]); # tms
+    hcf.waitInterpolation()
+    btf1 = checkParameterFromLog("baseTformOut", rtc_name="abc")
+    hcf.startAutoBalancer()
+    btf2 = checkParameterFromLog("baseTformOut", rtc_name="abc")
+    # Check stop ABC
+    hcf.abc_svc.goPos(-0.2, 0.1, 0)
+    hcf.abc_svc.waitFootSteps()
+    btf3 = checkParameterFromLog("baseTformOut", rtc_name="abc")
+    hcf.seq_svc.setJointAnglesSequenceFull([[0.000242, -0.403476, -0.000185, 0.832071, -0.427767, -6.928952e-05, 0.31129, -0.159481, -0.115399, -0.636277, 0.0, 0.0, 0.0, 0.000242, -0.403469, -0.000185, 0.832073, -0.427775, -6.928781e-05, 0.31129, 0.159481, 0.115399, -0.636277, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]], # jvss
+                                           [[0]*29], # vels
+                                           [[0]*29], # torques
+                                           [[btf0[0]+-0.014759, btf0[1]+-4.336272e-05, 0.668138]], # poss
+                                           [[-0.000245, -0.000862, 0.000171]], # rpys
+                                           [[0]*3], # accs
+                                           [[0.014052, 0.000203, -0.66798]], # zmps
+                                           [[0]*6*4], # wrenchs
+                                           [[1,1,0,0,1,1,1,1]], # optionals
+                                           [0.1]); # tms
+    hcf.waitInterpolation()
+    hcf.stopAutoBalancer()
+    btf4 = checkParameterFromLog("baseTformOut", rtc_name="abc")
+    # Finalize
+    hcf.abc_svc.setGaitGeneratorParam(orig_ggp)
+    hcf.abc_svc.setAutoBalancerParam(orig_abcp)
+    hcf.co_svc.enableCollisionDetection()
+    # Check values (currently pos x,y only 1[mm])
+    startABC_OK = all(map (lambda x,y : abs(x-y)<1*1e-3, btf1[0:3], btf2[0:3]))
+    stopABC_OK  = all(map (lambda x,y : abs(x-y)<1*1e-3, btf3[0:3], btf4[0:3]))
+    print >> sys.stderr, "  before startABC = ", btf1[0:3], ", after startABC = ", btf2[0:3], ", diff = ", startABC_OK
+    print >> sys.stderr, "  before stopABC  = ", btf3[0:3], ", after stopABC  = ", btf4[0:3], ", diff = ", stopABC_OK
+    assert(startABC_OK and stopABC_OK)
 
 def demoGaitGeneratorGoPos():
     print >> sys.stderr, "1. goPos"
@@ -557,6 +614,9 @@ def demoGaitGeneratorGoPosOverwrite():
     print >> sys.stderr, "16. goPos overwriting"
     hcf.startAutoBalancer();
     print >> sys.stderr, "  Overwrite goPos by goPos"
+    # Initialize dst_foot_midcoords
+    hcf.abc_svc.goPos(0,0.001,0);
+    hcf.abc_svc.waitFootSteps();
     goalx=0.3;goaly=0.1;goalth=15.0
     prev_dst_foot_midcoords=hcf.abc_svc.getFootstepParam()[1].dst_foot_midcoords
     hcf.abc_svc.goPos(0.2,-0.1,-5) # initial gopos
@@ -722,6 +782,7 @@ def demo():
         demoAutoBalancerBalanceAgainstHandForce()
         demoAutoBalancerBalanceWithArms()
         # sample for walk pattern generation by AutoBalancer RTC
+        demoGaitGeneratorBaseTformCheck()
         demoGaitGeneratorGoPos()
         demoGaitGeneratorGoVelocity()
         demoGaitGeneratorSetFootSteps()
