@@ -276,6 +276,12 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     unsigned int npforce = m_robot->numSensors(hrp::Sensor::FORCE);
     unsigned int nvforce = m_vfs.size();
     unsigned int nforce  = npforce + nvforce;
+    // check number of force sensors
+    if (nforce < m_contactStates.data.length()) {
+        std::cerr << "[" << m_profile.instance_name << "] WARNING! This robot model has less force sensors(" << nforce;
+        std::cerr << ") than end-effector settings(" << m_contactStates.data.length() << ") !" << std::endl;
+    }
+
     m_ref_force.resize(nforce);
     m_ref_forceIn.resize(nforce);
     m_force.resize(nforce);
@@ -343,6 +349,10 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     rot_ik_thre = (1e-2)*M_PI/180.0; // [rad]
     ik_error_debug_print_freq = static_cast<int>(0.2/m_dt); // once per 0.2 [s]
 
+    hrp::Sensor* sen = m_robot->sensor<hrp::RateGyroSensor>("gyrometer");
+    if (sen == NULL) {
+        std::cerr << "[" << m_profile.instance_name << "] WARNING! This robot model has no GyroSensor named 'gyrometer'! " << std::endl;
+    }
     return RTC::RTC_OK;
 }
 

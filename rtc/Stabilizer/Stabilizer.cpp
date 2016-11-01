@@ -450,6 +450,10 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   rel_ee_rot.reserve(stikp.size());
   rel_ee_name.reserve(stikp.size());
 
+  hrp::Sensor* sen = m_robot->sensor<hrp::RateGyroSensor>("gyrometer");
+  if (sen == NULL) {
+      std::cerr << "[" << m_profile.instance_name << "] WARNING! This robot model has no GyroSensor named 'gyrometer'! " << std::endl;
+  }
   return RTC::RTC_OK;
 }
 
