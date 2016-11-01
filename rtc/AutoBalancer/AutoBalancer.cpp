@@ -1145,8 +1145,8 @@ void AutoBalancer::solveLimbIK ()
 	  }
 
     //outport用のデータ上書き
-    ref_zmp = hsp->rp_ref_out.zmp;
-    ref_cog = hsp->rp_wld_initpos.com + hsp->rp_ref_out.com;
+    ref_zmp = hsp->rp_ref_out.zmp + hsp->rp_wld_initpos.com;//hsp->rp_wld_initpos.comはtmp_foot_mid_posと同じ
+    ref_cog = hsp->rp_ref_out.com + hsp->rp_wld_initpos.com;
 
 	  if(loop%100==0)if(com_ik_loop>1)std::cerr << "[" << m_profile.instance_name << "] COM_IK_LOOP ="<<com_ik_loop<< std::endl;//ややCOMのIKに手間取った時プリント
 
