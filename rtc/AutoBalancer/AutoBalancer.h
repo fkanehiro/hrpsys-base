@@ -136,11 +136,9 @@ class HumanPose{
 
 class HumanSynchronizer{
   private:
-
-    double FNUM;
-    int FUPLEVELNUM;
+    double FUP_TIME;
     int cur_rfup_level,cur_lfup_level;
-    double FUPHIGHT;
+    double FUP_HIGHT;
     double CNT_F_TH;
     hrp::Vector3 pre_cont_rfpos,pre_cont_lfpos;
     hrp::Vector3 init_hp_calibcom;
@@ -161,12 +159,12 @@ class HumanSynchronizer{
     std::vector<BiquadIIRFilterVec> iir_v_filters;
     BiquadIIRFilterVec comacc_v_filters;
     hrp::Vector3 r_zmp_raw;
-  public:
 
+  public:
     bool startCountdownForHumanSync;
     bool ht_first_call;
     bool is_rf_contact,is_lf_contact;//足上げ高さ0に到達しているか否か
-    bool land_on_rf,land_on_lf;//足上げ指令の有無
+    bool go_rf_landing,go_lf_landing;//足上げ指令の有無
     HumanPose rp_wld_initpos;//IKでのリンク原点の位置(足首，手首など)
     bool use_x,use_y,use_z;
     HumanPose rp_ref_out;
@@ -192,12 +190,11 @@ class HumanSynchronizer{
       use_x = use_y = use_z = true;
       cur_rfup_level = cur_lfup_level = 0;
       is_rf_contact = is_lf_contact = true;
-      land_on_rf = land_on_lf = false;
+      go_rf_landing = go_lf_landing = false;
       pre_cont_rfpos = pre_cont_lfpos = hrp::Vector3::Zero();
       init_hp_calibcom.Zero();
-      FNUM = 0.01;//0.01でも荒い?
-      FUPLEVELNUM = 200;
-      FUPHIGHT = 0.05;
+      FUP_TIME = 0.4;
+      FUP_HIGHT = 0.05;
       CNT_F_TH = 20.0;
       MAXVEL = 0.004;
       HumanSyncOn = false;
@@ -265,14 +262,14 @@ class HumanSynchronizer{
       updateCOMModRatio                   (tgt_cmmr);
       removeInitOffsetPose                (hp_wld_raw, hp_wld_initpos, hp_rel_raw);
       applyInitHumanZMPToCOMOffset        (hp_rel_raw, init_hp_calibcom, hp_rel_raw);
-      lockFootXYOnContact                 (land_on_rf, land_on_lf, hp_rel_raw);//根本から改変すべき2
+      lockFootXYOnContact                 (go_rf_landing, go_lf_landing, hp_rel_raw);//根本から改変すべき2
       hp_filtered = hp_rel_raw;
 
 //      applyLPFilterToEE(hp_rel_raw, hp_filtered);//次に使う.rf,.lfのためにEEだけは先にフィルターしておかないといけない説もある
       calcWorldZMP                        ((hp_filtered.rf+init_wld_hp_rfpos), (hp_filtered.lf+init_wld_hp_lfpos), hp_filtered.rfw, hp_filtered.lfw, hp_filtered.zmp);//足の位置はworldにしないと・・・
       convertRelHumanPoseToRelRobotPose   (hp_filtered,rp_ref_out);
       applyCOMMoveModRatio                (rp_ref_out);
-      judgeFootLandOnCommand              (hp_wld_raw.rfw, hp_wld_raw.lfw, land_on_rf, land_on_lf);//frwはすでに1000->100Hzにフィルタリングされている
+      judgeFootLandOnCommand              (hp_wld_raw.rfw, hp_wld_raw.lfw, go_rf_landing, go_lf_landing);//frwはすでに1000->100Hzにフィルタリングされている
 
       applyEEWorkspaceLimit               (rp_ref_out);
 
@@ -282,11 +279,11 @@ class HumanSynchronizer{
 //      applyLPFilter_o                       (rp_ref_out, rp_ref_out_old, rp_ref_out);
       r_zmp_raw = rp_ref_out.zmp;
       applyZMPCalcFromCOM                 (rp_ref_out.com,rp_ref_out.zmp);
-      lockSwingFootIfZMPOutOfSupportFoot  (rp_ref_out, land_on_rf, land_on_lf);//
+      lockSwingFootIfZMPOutOfSupportFoot  (rp_ref_out, go_rf_landing, go_lf_landing);//
 
       applyVelLimit                       (rp_ref_out, rp_ref_out_old, rp_ref_out);
       applyCOMZMPXYZLock                  (rp_ref_out);
-      overwriteFootZFromFootLandOnCommand (land_on_rf, land_on_lf, rp_ref_out);
+      overwriteFootZFromFootLandOnCommand (go_rf_landing, go_lf_landing, rp_ref_out);
       rp_ref_out_old = rp_ref_out;
 //      fprintf(log,"%f %f %f %f %f %f\n", rp_ref_out.com(0), rp_ref_out.com(1), rp_ref_out.zmp(0), rp_ref_out.zmp(1), hp_rel_raw.com(0), hp_rel_raw.com(1));
       loop++;
@@ -360,6 +357,7 @@ class HumanSynchronizer{
       for(int i=0;i<iir_v_filters.size();i++){ tgt.Seq(i) = iir_v_filters[i].passFilter(tgt.Seq(i)); }
     }
     void applyLPFilter_o(const HumanPose& raw_in, const HumanPose& out_old, HumanPose& filt_out){
+      double FNUM = 0.01;//0.01でも荒い?
       for(int i=0;i<filt_out.idsize;i++){
         filt_out.Seq(i) = (1-FNUM) * out_old.Seq(i) + FNUM * raw_in.Seq(i);
       }
@@ -397,43 +395,19 @@ class HumanSynchronizer{
         }
       }
     }
-    void overwriteFootZFromFootLandOnCommand(const bool& rfloc_in, const bool& lfloc_in, HumanPose& tgt){
-      if(!rfloc_in){//右足浮遊時
-        if(cur_rfup_level < FUPLEVELNUM){
-          cur_rfup_level++;
-          tgt.rf(2) = FUPHIGHT/2*(1-cos(M_PI*cur_rfup_level/FUPLEVELNUM));
-        }else{
-          tgt.rf(2) = FUPHIGHT;
-        }
-        is_rf_contact = false;
-      }else{
-        if(cur_rfup_level > 0){
-          cur_rfup_level--;
-          tgt.rf(2) = FUPHIGHT/2*(1-cos(M_PI*cur_rfup_level/FUPLEVELNUM));
-          is_rf_contact = false;
-        }else{
-          tgt.rf(2) = 0;
-          is_rf_contact = true;
-        }
+    void calcFootUpCurveAndJudgeFootContact(const bool& go_land_in, int& cur_fup_count_in, hrp::Vector3& f_height_out, bool& is_f_contact_out){
+      int FUP_COUNT = (int)(HZ*0.4);
+      if(!go_land_in){//足下げ命令入力時
+        if(cur_fup_count_in < FUP_COUNT){ cur_fup_count_in++; }
+      }else{//足上げ命令入力時
+        if(cur_fup_count_in > 0){ cur_fup_count_in--; }
       }
-      if(!lfloc_in){//左足浮遊時
-        if(cur_lfup_level < FUPLEVELNUM){
-          cur_lfup_level++;
-          tgt.lf(2) = FUPHIGHT/2*(1-cos(M_PI*cur_lfup_level/FUPLEVELNUM));
-        }else{
-          tgt.lf(2) = FUPHIGHT;
-        }
-        is_lf_contact = false;
-      }else{
-        if(cur_lfup_level > 0){
-          cur_lfup_level--;
-          tgt.lf(2) = FUPHIGHT/2*(1-cos(M_PI*cur_lfup_level/FUPLEVELNUM));
-          is_lf_contact = false;
-        }else{
-          tgt.lf(2) = 0;
-          is_lf_contact = true;
-        }
-      }
+      f_height_out(2) = FUP_HIGHT/2*(1-cos(M_PI*cur_fup_count_in/FUP_COUNT));
+      is_f_contact_out = (cur_fup_count_in <= 0);
+    }
+    void overwriteFootZFromFootLandOnCommand(const bool& rf_goland_in, const bool& lf_goland_in, HumanPose& tgt){
+      calcFootUpCurveAndJudgeFootContact(rf_goland_in, cur_rfup_level, tgt.rf, is_rf_contact);
+      calcFootUpCurveAndJudgeFootContact(lf_goland_in, cur_lfup_level, tgt.lf, is_lf_contact);
     }
     void lockFootXYOnContact(const bool& rfcs_in, const bool& lfcs_in, HumanPose& tgt){
       if(rfcs_in){
