@@ -7,8 +7,9 @@
  * $Id$
  */
 
-#include <cv.h>
-#include <highgui.h>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/core/core.hpp>
 #include "RGB2Gray.h"
 
 // Module specification
@@ -122,7 +123,7 @@ RTC::ReturnCode_t RGB2Gray::onExecute(RTC::UniqueId ec_id)
       cv::Mat src(idat.height, idat.width, CV_8UC3, 
 		  idat.raw_data.get_buffer());
       cv::Mat dst;
-      cvtColor(src, dst, CV_RGB2GRAY);
+      cv::cvtColor(src, dst, CV_RGB2GRAY);
 
       m_gray.data.image.width  = idat.width;
       m_gray.data.image.height = idat.height;

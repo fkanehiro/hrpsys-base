@@ -14,7 +14,7 @@ protected:
     double total_fz; // [N]
     SimpleZMPDistributor* szd;
     bool use_gnuplot;
-    enum {EEFM, EEFMQP, EEFMQP2} distribution_algorithm;
+    enum {EEFM, EEFMQP, EEFMQP2, EEFMQPCOP, EEFMQPCOP2} distribution_algorithm;
     size_t sleep_msec;
     std::vector<hrp::Vector3> leg_pos;
     std::vector<hrp::Vector3> ee_pos;
@@ -25,7 +25,14 @@ private:
     void gen_and_plot ()
     {
         parse_params();
-        std::cerr << "distribution_algorithm = " << ((distribution_algorithm==EEFM)?"EEFM": ((distribution_algorithm==EEFMQP)?"EEFMQP":"EEFMQP2") ) << ", sleep_msec = " << sleep_msec << "[msec]" << std::endl;
+        std::cerr << "distribution_algorithm = ";
+        if (distribution_algorithm==EEFM) std::cerr << "EEFM";
+        else if (distribution_algorithm==EEFMQP) std::cerr << "EEFMQP";
+        else if (distribution_algorithm==EEFMQP2) std::cerr << "EEFMQP(cop_distribution)";
+        else if (distribution_algorithm==EEFMQPCOP) std::cerr << "EEFMQPCOP";
+        else if (distribution_algorithm==EEFMQPCOP2) std::cerr << "EEFMQPCOP2";
+        else std::cerr << "None?";
+        std::cerr << ", sleep_msec = " << sleep_msec << "[msec]" << std::endl;
         szd->print_vertices("");
         szd->print_params(std::string(""));
         //
@@ -66,6 +73,7 @@ private:
         names.push_back("rleg");
         names.push_back("lleg");
         std::vector<double> limb_gains(names.size(), 1.0);
+        std::vector<double> toeheel_ratio(names.size(), 1.0);
         std::vector<hrp::Vector3> ref_foot_force(names.size(), hrp::Vector3::Zero()), ref_foot_moment(names.size(), hrp::Vector3::Zero());
         std::vector<std::vector<Eigen::Vector2d> > fs;
         szd->get_vertices(fs);
@@ -79,16 +87,27 @@ private:
         //
         for (size_t i = 0; i < refzmp_vec.size(); i++) {
             double alpha = szd->calcAlpha(refzmp_vec[i], ee_pos, ee_rot, names);
-            if (distribution_algorithm == EEFMQP || distribution_algorithm == EEFMQP2) {
-                szd->distributeZMPToForceMomentsQP(ref_foot_force, ref_foot_moment,
-                                                   ee_pos, cop_pos, ee_rot, names, limb_gains,
-                                                   refzmp_vec[i], refzmp_vec[i],
-                                                   total_fz, dt, true, "", (distribution_algorithm == EEFMQP2));
-            } else {
+            if (distribution_algorithm == EEFMQP) {
                 szd->distributeZMPToForceMoments(ref_foot_force, ref_foot_moment,
-                                                 ee_pos, cop_pos, ee_rot, names, limb_gains,
+                                                 ee_pos, cop_pos, ee_rot, names, limb_gains, toeheel_ratio,
                                                  refzmp_vec[i], refzmp_vec[i],
                                                  total_fz, dt);
+            } else if (distribution_algorithm == EEFMQP || distribution_algorithm == EEFMQP2) {
+                szd->distributeZMPToForceMomentsQP(ref_foot_force, ref_foot_moment,
+                                                   ee_pos, cop_pos, ee_rot, names, limb_gains, toeheel_ratio,
+                                                   refzmp_vec[i], refzmp_vec[i],
+                                                   total_fz, dt, true, "", (distribution_algorithm == EEFMQP2));
+            } else if (distribution_algorithm == EEFMQPCOP) {
+                szd->distributeZMPToForceMomentsPseudoInverse(ref_foot_force, ref_foot_moment,
+                                                              ee_pos, cop_pos, ee_rot, names, limb_gains, toeheel_ratio,
+                                                              refzmp_vec[i], refzmp_vec[i],
+                                                              total_fz, dt, true, "");
+            } else if (distribution_algorithm == EEFMQPCOP2) {
+                // std::vector<double> ee_forcemoment_distribution_weight(names.size(), 1.0);
+                // szd->distributeZMPToForceMomentsPseudoInverse2(ref_foot_force, ref_foot_moment,
+                //                                                ee_pos, cop_pos, ee_rot, names, limb_gains, toeheel_ratio,
+                //                                                refzmp_vec[i], refzmp_vec[i],
+                //                                                total_fz, dt, true, "");
             }
             for (size_t j = 0; j < fs.size(); j++) {
                 std::string fname("/tmp/plot"+names[j]+".dat");
@@ -187,7 +206,23 @@ public:
     {
       for (int i = 0; i < arg_strs.size(); ++ i) {
           if ( arg_strs[i]== "--distribution-algorithm" ) {
-              if (++i < arg_strs.size()) distribution_algorithm = ((arg_strs[i]=="EEFM")? EEFM : ((arg_strs[i]=="EEFMQP")? EEFMQP : EEFMQP2) );
+              if (++i < arg_strs.size()) {
+                  if (arg_strs[i]=="EEFM") {
+                      distribution_algorithm = EEFM;
+                  } else if (arg_strs[i]=="EEFMQP") {
+                      distribution_algorithm = EEFMQP;
+                  } else if (arg_strs[i]=="EEFMQP2") {
+                      distribution_algorithm = EEFMQP2;
+                  } else if (arg_strs[i]=="EEFMQPCOP") {
+                      distribution_algorithm = EEFMQPCOP;
+                  } else if (arg_strs[i]=="EEFMQPCOP") {
+                      distribution_algorithm = EEFMQPCOP;
+                  } else if (arg_strs[i]=="EEFMQPCOP2") {
+                      distribution_algorithm = EEFMQPCOP2;
+                  } else {
+                      distribution_algorithm = EEFM;
+                  }
+              }
           } else if ( arg_strs[i]== "--sleep-msec" ) {
               if (++i < arg_strs.size()) sleep_msec = atoi(arg_strs[i].c_str());
           } else if ( arg_strs[i]== "--use-gnuplot" ) {

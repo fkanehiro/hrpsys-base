@@ -158,7 +158,7 @@ def euler_from_matrix(matrix, axes='sxyz'):
 
 # class for configure hrpsys RTCs and ports
 #   In order to specify robot-dependent code, please inherit this HrpsysConfigurator
-class HrpsysConfigurator:
+class HrpsysConfigurator(object):
 
     # RobotHardware
     rh = None
@@ -257,6 +257,11 @@ class HrpsysConfigurator:
     rfu = None
     rfu_svc = None
     rfu_version = None
+
+    # Acceleration Filter
+    acf = None
+    acf_svc = None
+    acf_version = None
 
     # rtm manager
     ms = None
@@ -389,6 +394,8 @@ class HrpsysConfigurator:
             connectPorts(self.abc.port("sbpCogOffset"), self.st.port("sbpCogOffset"))
             # for human tracker calib
             connectPorts(self.st.port("zmp"), self.abc.port("actzmpIn"))
+
+            connectPorts(self.abc.port("toeheelRatio"), self.st.port("toeheelRatio"))
             if self.es:
                 connectPorts(self.st.port("emergencySignal"), self.es.port("emergencySignal"))
             connectPorts(self.st.port("emergencySignal"), self.abc.port("emergencySignal"))
@@ -520,10 +527,11 @@ class HrpsysConfigurator:
         if self.el:
             connectPorts(self.rh.port("q"), self.el.port("qCurrent"))
 
-        # connection for co
+        # connection for es
         if self.es:
             connectPorts(self.rh.port("servoState"), self.es.port("servoStateIn"))
 
+        # connection for bp
         if self.bp:
             if self.tl:
                 connectPorts(self.tl.port("beepCommand"), self.bp.port("beepCommand"))
@@ -533,6 +541,20 @@ class HrpsysConfigurator:
                 connectPorts(self.el.port("beepCommand"), self.bp.port("beepCommand"))
             if self.co:
                 connectPorts(self.co.port("beepCommand"), self.bp.port("beepCommand"))
+
+        # connection for acf
+        if self.acf:
+            #   currently use first acc and rate sensors for acf
+            s_acc = filter(lambda s: s.type == 'Acceleration', self.sensors)
+            if (len(s_acc) > 0) and self.rh.port(s_acc[0].name) != None:
+                connectPorts(self.rh.port(s_acc[0].name), self.acf.port('accIn'))
+            s_rate = filter(lambda s: s.type == 'RateGyro', self.sensors)
+            if (len(s_rate) > 0) and self.rh.port(s_rate[0].name) != None:
+                connectPorts(self.rh.port(s_rate[0].name), self.acf.port("rateIn"))
+            if self.kf:
+                connectPorts(self.kf.port("rpy"), self.acf.port("rpyIn"))
+            if self.abc:
+                connectPorts(self.abc.port("basePosOut"), self.acf.port("posIn"))
 
     def activateComps(self):
         '''!@brief
@@ -719,6 +741,7 @@ class HrpsysConfigurator:
             ['el', "SoftErrorLimiter"],
             ['tl', "ThermoLimiter"],
             ['bp', "Beeper"],
+            ['acf', "AccelerationFilter"],
             ['log', "DataLogger"]
             ]
 
@@ -2094,6 +2117,22 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
         '''
         self.abc_svc.setFootStepsWithParam(footstep, stepparams, overwrite_fs_idx)
 
+    def clearJointAngles(self):
+        '''!@brief
+        Cancels the commanded sequence of joint angle, by overwriting the command by the values of instant the method was invoked.
+        Note that this only cancels the queue once. Icoming commands after this method is called will be processed as usual.
+        @return bool
+        '''
+        return self.seq_svc.clearJointAngles()
+
+    def clearJointAnglesOfGroup(self, gname):
+        '''!@brief
+        Cancels the commanded sequence of joint angle for the specified joint group, by overwriting the command by the values of instant the method was invoked.
+        Note that this only cancels the queue once. Icoming commands after this method is called will be processed as usual.
+        @param gname: Name of the joint group.
+        @return bool
+        '''
+        return self.seq_svc.clearJointAngles(gname)
 
     # ##
     # ## initialize

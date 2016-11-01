@@ -25,18 +25,24 @@ target_link_libraries(StabilizerComp ${libs})
 
 set(target Stabilizer StabilizerComp)
 
-add_executable(testTwoDofController testTwoDofController.cpp ${comp_sources})
+add_executable(testTwoDofController testTwoDofController.cpp TwoDofController.cpp Integrator.cpp)
 target_link_libraries(testTwoDofController ${libs})
 add_executable(testZMPDistributor testZMPDistributor.cpp ZMPDistributor.h ../ImpedanceController/JointPathEx.cpp)
 target_link_libraries(testZMPDistributor ${libs})
 set(target Stabilizer StabilizerComp testTwoDofController testZMPDistributor)
 
-add_test(testZMPDistributorHRP2JSKTest0 testZMPDistributor --hrp2jsk --test0 --use-gnuplot false)
-add_test(testZMPDistributorHRP2JSKTest1 testZMPDistributor --hrp2jsk --test1 --use-gnuplot false)
-add_test(testZMPDistributorHRP2JSKTest2 testZMPDistributor --hrp2jsk --test2 --use-gnuplot false)
-add_test(testZMPDistributorJAXONREDTest0 testZMPDistributor --jaxon_red --test0 --use-gnuplot false)
-add_test(testZMPDistributorJAXONREDTest1 testZMPDistributor --jaxon_red --test1 --use-gnuplot false)
-add_test(testZMPDistributorJAXONREDTest2 testZMPDistributor --jaxon_red --test2 --use-gnuplot false)
+add_test(testZMPDistributor_HRP2JSK_EEFM_Test0 testZMPDistributor --hrp2jsk --test0 --use-gnuplot false)
+add_test(testZMPDistributor_HRP2JSK_EEFM_Test1 testZMPDistributor --hrp2jsk --test1 --use-gnuplot false)
+add_test(testZMPDistributor_HRP2JSK_EEFM_Test2 testZMPDistributor --hrp2jsk --test2 --use-gnuplot false)
+add_test(testZMPDistributor_JAXONRED_EEFM_Test0 testZMPDistributor --jaxon_red --test0 --use-gnuplot false)
+add_test(testZMPDistributor_JAXONRED_EEFM_Test1 testZMPDistributor --jaxon_red --test1 --use-gnuplot false)
+add_test(testZMPDistributor_JAXONRED_EEFM_Test2 testZMPDistributor --jaxon_red --test2 --use-gnuplot false)
+add_test(testZMPDistributor_HRP2JSK_EEFMQPCOP_Test0 testZMPDistributor --hrp2jsk --test0 --use-gnuplot false --distribution-algorithm EEFMQPCOP)
+add_test(testZMPDistributor_HRP2JSK_EEFMQPCOP_Test1 testZMPDistributor --hrp2jsk --test1 --use-gnuplot false --distribution-algorithm EEFMQPCOP)
+add_test(testZMPDistributor_HRP2JSK_EEFMQPCOP_Test2 testZMPDistributor --hrp2jsk --test2 --use-gnuplot false --distribution-algorithm EEFMQPCOP)
+add_test(testZMPDistributor_JAXONRED_EEFMQPCOP_Test0 testZMPDistributor --jaxon_red --test0 --use-gnuplot false --distribution-algorithm EEFMQPCOP)
+add_test(testZMPDistributor_JAXONRED_EEFMQPCOP_Test1 testZMPDistributor --jaxon_red --test1 --use-gnuplot false --distribution-algorithm EEFMQPCOP)
+add_test(testZMPDistributor_JAXONRED_EEFMQPCOP_Test2 testZMPDistributor --jaxon_red --test2 --use-gnuplot false --distribution-algorithm EEFMQPCOP)
 
 install(TARGETS ${target}
   RUNTIME DESTINATION bin

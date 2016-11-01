@@ -7,8 +7,9 @@
  * $Id$
  */
 
-#include <cv.h>
-#include <highgui.h>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/core/core.hpp>
 #include "JpegEncoder.h"
 
 // Module specification
@@ -138,7 +139,7 @@ RTC::ReturnCode_t JpegEncoder::onExecute(RTC::UniqueId ec_id)
 	  
 	  cv::Mat src(idat.height, idat.width, CV_8UC3, 
 		      idat.raw_data.get_buffer());
-	  imencode(".jpg", src, buf, param);
+      cv::imencode(".jpg", src, buf, param);
 	  m_encoded.data.image.format = Img::CF_RGB_JPEG;
 	}
 	break;
@@ -146,7 +147,7 @@ RTC::ReturnCode_t JpegEncoder::onExecute(RTC::UniqueId ec_id)
 	{
 	  cv::Mat src(idat.height, idat.width, CV_8U, 
 		      idat.raw_data.get_buffer());
-	  imencode(".jpg", src, buf, param);
+      cv::imencode(".jpg", src, buf, param);
 	  m_encoded.data.image.format = Img::CF_GRAY_JPEG;
 	}
 	break;

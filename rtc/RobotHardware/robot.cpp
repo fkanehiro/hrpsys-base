@@ -113,6 +113,10 @@ bool robot::loadGain()
         strm >> default_dgain[i];
     }
     strm.close();
+    // Print loaded gain
+    std::cerr << "[RobotHardware] loadGain" << std::endl;
+    for (unsigned int i=0; i<numJoints(); i++) {                                                                                                                                               std::cerr << "[RobotHardware]   " << joint(i)->name << ", pgain = " << default_pgain[i] << ", dgain = " << default_dgain[i] << std::endl;
+    }
     return true;
 }
 

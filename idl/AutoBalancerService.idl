@@ -218,12 +218,18 @@ module OpenHRP
       double toe_angle;
       /// Maximum heel angle [deg] for heel-contact motion
       double heel_angle;
+      /// Threshould [m] (>=0) whether toe is used or not. This is used only if use_toe_heel_auto_set == true.
+      double toe_check_thre;
+      /// Threshould [m] (>=0) whether heel is used or not. This is used only if use_toe_heel_auto_set == true.
+      double heel_check_thre;
       /// Sequence of phase ratio of toe-off and heel-contact. Sum of toe_heel_phase_ratio should be 1.0.
       sequence<double> toe_heel_phase_ratio;
       /// Use toe joint or not in toe-off heel-contact motion.
       boolean use_toe_joint;
       /// Use toe heel zmp transition. If true, zmp moves among default position, toe position (described by toe_zmp_offset_x), and heel position (described by heel_zmp_offset_x).
       boolean use_toe_heel_transition;
+      /// Use toe heel auto setting. If true, gait generator autonomously determine whether toe and heel are used.
+      boolean use_toe_heel_auto_set;
       /// ZMP weight of RLEG, LLEG, RARM and LARM
       sequence<double, 4> zmp_weight_map;
       /// Foot position offset[m] (rleg and lleg)

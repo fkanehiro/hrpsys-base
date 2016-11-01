@@ -304,3 +304,12 @@ ipython -i `rospack find hrpsys`/samples/SampleRobot/samplerobot_terrain_walk.py
  moves shoulder pitch joint of left arm to 90 degree, with 1 seconds.
  Please see [Pyton API](http://fkanehiro.github.io/hrpsys-base/df/d98/classpython_1_1hrpsys__config_1_1HrpsysConfigurator.html) for the avilable method functions, and [SampleRobot Model](http://www.openrtp.jp/openhrp3/en/sample_model.html) for the list of joint names.
 
+# How to generate SampleRobot*.xml.in
+ Go to hrpsys source directory.
+1. SampleRobot.torque.xml.in
+ ```
+ openhrp-project-generator `rospack find openhrp3`/share/OpenHRP-3.1/sample/model/sample1_bush.wrl `rospack find openhrp3`/share/OpenHRP-3.1/sample/model/longfloor.wrl `rospack find openhrp3`/share/OpenHRP-3.1/sample/model/box.wrl,0.78,0,0,1,0,0,0 --use-highgain-mode false --output /tmp/SampleRobot.xml --timeStep 0.001 --dt "@CONTROLLER_TIME@" --method RUNGE_KUTTA
+ TMP=$(rospack find openhrp3); sed -i -e "s/${TMP//\//\\/}/@OPENHRP\_DIR@/g" /tmp/SampleRobot.xml
+ yes | cp /tmp/SampleRobot.xml sample/SampleRobot/SampleRobot.torque.xml.in
+ ```
+
