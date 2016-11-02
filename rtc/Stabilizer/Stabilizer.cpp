@@ -849,6 +849,8 @@ void Stabilizer::getActualParameters ()
     if (control_mode == MODE_ST) {
       std::vector<hrp::Vector3> ee_pos, cop_pos;
       std::vector<hrp::Matrix33> ee_rot;
+      std::vector<bool> is_contact_list;
+      is_contact_list.reserve(stikp.size());
       for (size_t i = 0; i < stikp.size(); i++) {
           STIKParam& ikp = stikp[i];
           if (!is_feedback_control_enable[i]) continue;
@@ -863,6 +865,7 @@ void Stabilizer::getActualParameters ()
           rel_ee_pos.push_back(foot_origin_rot.transpose() * (ee_pos.back() - foot_origin_pos));
           rel_ee_rot.push_back(foot_origin_rot.transpose() * ee_rot.back());
           rel_ee_name.push_back(ee_name.back());
+          is_contact_list.push_back(isContact(i));
           // std::cerr << ee_forcemoment_distribution_weight[i] << std::endl;
           ee_forcemoment_distribution_weight.push_back(hrp::dvector6::Zero(6,1));
           for (size_t j = 0; j < 6; j++) {
@@ -905,7 +908,7 @@ void Stabilizer::getActualParameters ()
                                              new_refzmp, hrp::Vector3(foot_origin_rot * ref_zmp + foot_origin_pos),
                                              eefm_gravitational_acceleration * total_mass, dt,
                                              DEBUGP, std::string(m_profile.instance_name),
-                                             (st_algorithm == OpenHRP::StabilizerService::EEFMQPCOP));
+                                             (st_algorithm == OpenHRP::StabilizerService::EEFMQPCOP), is_contact_list);
       } else if (st_algorithm == OpenHRP::StabilizerService::EEFMQPCOP2) {
           szd->distributeZMPToForceMomentsPseudoInverse2(ref_force, ref_moment,
                                                          ee_pos, cop_pos, ee_rot, ee_name, limb_gains, tmp_toeheel_ratio,
