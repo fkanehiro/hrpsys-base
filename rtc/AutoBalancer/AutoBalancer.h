@@ -161,6 +161,7 @@ class HumanSynchronizer{
     hrp::Vector3 r_zmp_raw;
 
   public:
+    double tgt_FUP_TIME;
     bool startCountdownForHumanSync;
     bool ht_first_call;
     bool is_rf_contact,is_lf_contact;//足上げ高さ0に到達しているか否か
@@ -193,7 +194,7 @@ class HumanSynchronizer{
       go_rf_landing = go_lf_landing = false;
       pre_cont_rfpos = pre_cont_lfpos = hrp::Vector3::Zero();
       init_hp_calibcom.Zero();
-      FUP_TIME = 0.4;
+      tgt_FUP_TIME = FUP_TIME = 0.4;
       FUP_HIGHT = 0.05;
       CNT_F_TH = 20.0;
       MAXVEL = 0.004;
@@ -396,7 +397,8 @@ class HumanSynchronizer{
       }
     }
     void calcFootUpCurveAndJudgeFootContact(const bool& go_land_in, int& cur_fup_count_in, hrp::Vector3& f_height_out, bool& is_f_contact_out){
-      int FUP_COUNT = (int)(HZ*0.4);
+      int FUP_COUNT = (int)(HZ*FUP_TIME);
+      if(cur_fup_count_in > FUP_COUNT){cur_fup_count_in = FUP_COUNT;} if(cur_fup_count_in < 0){cur_fup_count_in = 0;}
       if(!go_land_in){//足下げ命令入力時
         if(cur_fup_count_in < FUP_COUNT){ cur_fup_count_in++; }
       }else{//足上げ命令入力時
@@ -406,6 +408,7 @@ class HumanSynchronizer{
       is_f_contact_out = (cur_fup_count_in <= 0);
     }
     void overwriteFootZFromFootLandOnCommand(const bool& rf_goland_in, const bool& lf_goland_in, HumanPose& tgt){
+      if(is_rf_contact&&is_lf_contact)FUP_TIME = tgt_FUP_TIME;//両足設置しているタイミングでのみ更新
       calcFootUpCurveAndJudgeFootContact(rf_goland_in, cur_rfup_level, tgt.rf, is_rf_contact);
       calcFootUpCurveAndJudgeFootContact(lf_goland_in, cur_lfup_level, tgt.lf, is_lf_contact);
     }
@@ -647,6 +650,7 @@ class AutoBalancer
   bool startHumanSyncAfter5sec();
   bool setHumanToRobotRatio(const double h2r);
   bool setCOMMoveModRatio(const double cmr);
+  bool setFootUpTime(const double fupt);
   bool setAllowedXYZSync(const bool x_on,const bool y_on,const bool z_on);
   bool stopHumanSync();
 

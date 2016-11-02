@@ -1095,15 +1095,13 @@ void AutoBalancer::solveLimbIK ()
     hsp->rp_wld_initpos.com = m_robot->calcCM();
     hsp->rp_wld_initpos.rf = ikp["rleg"].target_link->p;
     hsp->rp_wld_initpos.lf = ikp["lleg"].target_link->p;
+    hsp->rp_wld_initpos.zmp = ref_zmp;
     if(ikp.count("rarm"))hsp->rp_wld_initpos.rh = ikp["rarm"].target_link->p;
     if(ikp.count("larm"))hsp->rp_wld_initpos.lh = ikp["larm"].target_link->p;
     hsp->init_basepos = m_robot->rootLink()->p;
   }
   hsp->update();//////HumanSynchronizerの主要処理
   if(loop%100==0)hsp->rp_ref_out.print();
-//  if(loop%100==0)cerr<<"getUpdateTime:"<<hsp->getUpdateTime()*1000<<"[ms]"<<endl;
-
-
   //for HumanSynchronizer
   if(hsp->isHumanSyncOn()){	  ////////////////////// 重心拘束位置設定 /////////////////////////
     m_robot->rootLink()->p = hsp->rp_wld_initpos.com + hsp->rp_ref_out.com;//まずは重心目標分，体幹を動かす
@@ -1145,14 +1143,10 @@ void AutoBalancer::solveLimbIK ()
 	  }
 
     //outport用のデータ上書き
-    ref_zmp = hsp->rp_ref_out.zmp + hsp->rp_wld_initpos.com;//hsp->rp_wld_initpos.comはtmp_foot_mid_posと同じ
+    ref_zmp = hsp->rp_ref_out.zmp + hsp->rp_wld_initpos.zmp;
     ref_cog = hsp->rp_ref_out.com + hsp->rp_wld_initpos.com;
 
 	  if(loop%100==0)if(com_ik_loop>1)std::cerr << "[" << m_profile.instance_name << "] COM_IK_LOOP ="<<com_ik_loop<< std::endl;//ややCOMのIKに手間取った時プリント
-
-
-//	  printf("root:%f, calcCM:%f, refCM:%f\n",m_robot->rootLink()->p(1),m_robot->calcCM()(1),hsp->rp_ref_out.com(1) + hsp->rp_wld_initpos.com(1));
-
 
   }else{
 	  for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {//本来のIK部分
@@ -1218,6 +1212,12 @@ bool AutoBalancer::setCOMMoveModRatio(const double cmmr)
   return true;
 }
 
+bool AutoBalancer::setFootUpTime(const double fupt)
+{
+  std::cerr << "[" << m_profile.instance_name << "] set Foot Up Time as"<< fupt <<" [s]"<< std::endl;
+  if(fupt > 0.05 && fupt < 5){ hsp->tgt_FUP_TIME = fupt; return true; }else{ return false; }//おかしな値は弾く
+}
+
 bool AutoBalancer::setAllowedXYZSync(const bool x_on,const bool y_on,const bool z_on)
 {
   if(!hsp->isHumanSyncOn()){
@@ -1229,6 +1229,7 @@ bool AutoBalancer::setAllowedXYZSync(const bool x_on,const bool y_on,const bool 
     return false;
   }
 }
+
 
 bool AutoBalancer::stopHumanSync()
 {

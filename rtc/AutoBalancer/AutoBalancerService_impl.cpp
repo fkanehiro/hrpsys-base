@@ -130,6 +130,11 @@ CORBA::Boolean AutoBalancerService_impl::setCOMMoveModRatio(const CORBA::Double 
     return m_autobalancer->setCOMMoveModRatio(cmmr);
 };
 
+CORBA::Boolean AutoBalancerService_impl::setFootUpTime(const CORBA::Double fupt)
+{
+    return m_autobalancer->setFootUpTime(fupt);
+};
+
 CORBA::Boolean AutoBalancerService_impl::setAllowedXYZSync(const CORBA::Boolean x_on,const CORBA::Boolean y_on,const CORBA::Boolean z_on)
 {
     return m_autobalancer->setAllowedXYZSync(x_on,y_on,z_on);
