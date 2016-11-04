@@ -4,6 +4,7 @@
 #include <rtm/CorbaNaming.h>
 #include <hrpModel/ModelLoaderUtil.h>
 #include <cmath>
+// #include <boost/filesystem.hpp>
 
 inline double deg2rad (double deg) { return deg * M_PI / 180.0; }
 
@@ -50,51 +51,51 @@ private:
     {
         std::string fname("/tmp/plot.dat");
         FILE* fp = fopen(fname.c_str(), "w");
-        hrp::Vector3 Pref, Lref, ref_basePos, P, L, CM_old, CM, CMref;
-        hrp::Matrix33 ref_baseRot;
+        hrp::Vector3 Pref, Lref, cur_basePos, ref_basePos, P, L, CM;
+        hrp::Matrix33 cur_baseRot, ref_baseRot;
 
         for (double tm = 0; tm < max_tm; tm += dt) {
+            cur_basePos = m_robot->rootLink()->p;
+            cur_baseRot = m_robot->rootLink()->R;
             Pref = calcP(m_robot, tm, max_tm);
             Lref = calcL(m_robot, tm, max_tm);
-            CM_old = m_robot->calcCM();
-
-            if (tm < 0.2) std::cout << "root_p: " << (m_robot->rootLink()->p).transpose() << std::endl << "root_R: " << std::endl << (m_robot->rootLink()->R) << std::endl;
-            std::cout << "CM_old: " << CM_old.transpose() << std::endl;
 
             hrp::dvector dq(m_robot->numJoints());
             for (size_t i = 0; i < m_robot->numJoints(); ++i) {
                 dq(i) = -m_robot->joint(i)->q;
             }
 
-            ref_basePos = m_robot->rootLink()->p + Pref / m_robot->totalMass();
-            ref_baseRot = m_robot->rootLink()->R;
+            ref_basePos = cur_basePos + Pref / m_robot->totalMass() * dt;
+            ref_baseRot = cur_baseRot;
 
             rmc->rmControl(m_robot, Pref, Lref, xi_ref, ref_basePos, ref_baseRot, dt);
 
-            hrp::Vector3 omega;
-            hrp::dmatrix dRRT = ((ref_baseRot - m_robot->rootLink()->R) / dt) * (m_robot->rootLink()->R).transpose();
-            omega(0) = (-dRRT(1, 2) + dRRT(2, 1)) / 2.0;
-            omega(1) = (-dRRT(2, 0) + dRRT(0, 2)) / 2.0;
-            omega(2) = (-dRRT(0, 1) + dRRT(1, 0)) / 2.0;
+            m_robot->rootLink()->v = (m_robot->rootLink()->p - cur_basePos) / dt;
+            hrp::dmatrix dRRT = ((m_robot->rootLink()->R - cur_baseRot) / dt) * (cur_baseRot).transpose();
+            m_robot->rootLink()->w(0) = (-dRRT(1, 2) + dRRT(2, 1)) / 2.0;
+            m_robot->rootLink()->w(1) = (-dRRT(2, 0) + dRRT(0, 2)) / 2.0;
+            m_robot->rootLink()->w(2) = (-dRRT(0, 1) + dRRT(1, 0)) / 2.0;
 
-            std::cerr << "dif root_p: " << (ref_basePos - m_robot->rootLink()->p).transpose() << std::endl;
-
-            m_robot->rootLink()->p = ref_basePos;
-            m_robot->rootLink()->R = ref_baseRot;
-            m_robot->calcForwardKinematics();
-            // P
-            CM = m_robot->calcCM();
-            P = m_robot->totalMass() * (CM - CM_old) / dt;
-            // L
-            hrp::dmatrix Jl;
-            m_robot->calcAngularMomentumJacobian(NULL, Jl); // Eq.1 lower [H 0 I]
             for (size_t i = 0; i < m_robot->numJoints(); ++i) {
                 dq(i) += m_robot->joint(i)->q;
                 dq(i) /= dt;
+                m_robot->joint(i)->dq = dq(i);
             }
-            hrp::dvector v_vec(6 + m_robot->numJoints());
-            v_vec << dq, hrp::Vector3::Zero(), omega;
-            L = Jl * v_vec;
+
+            m_robot->calcTotalMomentumFromJacobian(P, L);
+            // // P
+            // CM = m_robot->calcCM();
+            // P = m_robot->totalMass() * (CM - CM_old) / dt;
+            // // L
+            // hrp::dmatrix Jl;
+            // m_robot->calcAngularMomentumJacobian(NULL, Jl); // Eq.1 lower [H 0 I]
+            // for (size_t i = 0; i < m_robot->numJoints(); ++i) {
+            //     dq(i) += m_robot->joint(i)->q;
+            //     dq(i) /= dt;
+            // }
+            // hrp::dvector v_vec(6 + m_robot->numJoints());
+            // v_vec << dq, hrp::Vector3::Zero(), omega;
+            // L = Jl * v_vec;
 
             fprintf(fp, "%f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n",
                     tm,
@@ -137,8 +138,8 @@ private:
                 oss << "set xlabel 'Time [s]'" << std::endl;
                 oss << "set ylabel '" << titles[ii] << "[kg m/s]'" << std::endl;
                 oss << "plot "
-                    << "'" << fname << "' using 1:" << (start + ii * 2) << " with lines title 'Pref',"
-                    << "'" << fname << "' using 1:" << (start + ii * 2 + 1) << " with lines title 'P'"
+                    << "'" << fname << "' using 1:" << (start + ii * 2) << " with points ps 0.1 title 'Pref',"
+                    << "'" << fname << "' using 1:" << (start + ii * 2 + 1) << " with points ps 0.1 title 'P'"
                     << std::endl;
             }
             plot_and_save(gps[0], gtitle, oss.str());
@@ -154,8 +155,8 @@ private:
                 oss << "set xlabel 'Time [s]'" << std::endl;
                 oss << "set ylabel '" << titles[ii] << "[mNs]'" << std::endl;
                 oss << "plot "
-                    << "'" << fname << "' using 1:" << (start + ii * 2) << " with lines title 'Lref',"
-                    << "'" << fname << "' using 1:" << (start + ii * 2 + 1) << " with lines title 'L'"
+                    << "'" << fname << "' using 1:" << (start + ii * 2) << " with points ps 0.1 title 'Lref',"
+                    << "'" << fname << "' using 1:" << (start + ii * 2 + 1) << " with points ps 0.1 title 'L'"
                     << std::endl;
             }
             plot_and_save(gps[1], gtitle, oss.str());
@@ -183,10 +184,6 @@ private:
             fflush(gps[ii]);
             pclose(gps[ii]);
         }
-        // std::cerr << "Checking" << std::endl;
-        // std::cerr << "  ZMP error : " << is_small_zmp_error << std::endl;
-        // std::cerr << "  ZMP diff : " << is_small_zmp_diff << std::endl;
-        // std::cerr << "  Contact states & swing support time validity : " << is_contact_states_swing_support_time_validity << std::endl;
     }
 
     void setEndeffectorConstraint(std::string &limb)
@@ -214,7 +211,7 @@ public:
         std::cerr << "test0 : Control All Momentum" << std::endl;
         setResetPose();
 
-        double max_tm = 8.0;
+        double max_tm = 4.0;
         hrp::dvector6 Svec;
         Svec << 1, 1, 1, 1, 1, 1;
         rmc->setSelectionMatrix(Svec);
@@ -256,7 +253,7 @@ public:
         std::cerr << "test1 : Move only P_z" << std::endl;
         setResetPose();
 
-        double max_tm = 8.0;
+        double max_tm = 4.0;
         hrp::dvector6 Svec;
         Svec << 1, 1, 1, 1, 1, 1;
         rmc->setSelectionMatrix(Svec);
@@ -374,24 +371,15 @@ public:
         end_effectors["lleg"] = "LLEG_ANKLE_R";
         end_effectors["rarm"] = "RARM_WRIST_P";
         end_effectors["larm"] = "LARM_WRIST_P";
-        loadModel("file://../share/openhrp3/share/OpenHRP-3.1/sample/model/sample1.wrl");
+#ifdef OPENHRP_DIR
+        std::string model_path = "file:///" + std::string(OPENHRP_DIR) + "/share/openhrp3/share/OpenHRP-3.1/sample/model/sample1.wrl";
+        loadModel(model_path.c_str());
         rmc = new rats::RMController(m_robot);
+#else
+        std::cerr << "OPENHRP_DIR not found"  << std::endl;
+        exit(1);
+#endif
     }
-};
-
-class testResolvedMomentumControlHRP2JSK : public testResolvedMomentumControl
-{
-public:
-    testResolvedMomentumControlHRP2JSK ()
-    {
-        dt = 0.004;
-        end_effectors["rleg"] = "RLEG_JOINT5";
-        end_effectors["lleg"] = "LLEG_JOINT5";
-        end_effectors["rarm"] = "RARM_JOINT6";
-        end_effectors["larm"] = "LARM_JOINT6";
-        loadModel("file://../share/openhrp3/share/OpenHRP-3.1/sample/model/sample1.wrl");
-        rmc = new rats::RMController(m_robot);
-    };
 };
 
 void print_usage ()

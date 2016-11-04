@@ -13,68 +13,6 @@ namespace rats
         std::cerr << "[RMC] Updated selection matrix" << std::endl;
     }
 
-    // void RMController::addConstraintLimb(const hrp::BodyPtr m_robot, const std::string &limb)
-    // {
-    //     if (constraints_.count(limb) == 1) {
-    //         std::cerr << limb << "has already been added to constraints_" << std::endl;
-    //         return;
-    //     }
-    //     RTC::Properties& prop =  getProperties();
-    //     size_t prop_num = 10;
-    //     coil::vstring end_effectors_str = coil::split(prop["end_effectors"], ",");
-    //     if (end_effectors_str.size() > 0) {
-    //         size_t num = end_effectors_str.size() / prop_num;
-    //         for (size_t i = 0; i < num; i++) {
-    //             std::string ee_name, ee_target, ee_base;
-    //             coil::stringTo(ee_name, end_effectors_str[i*prop_num].c_str());
-    //             if (ee_name == limb) {
-    //                 ConstraintValue cs;
-    //                 coil::stringTo(ee_target, end_effectors_str[i*prop_num+1].c_str());
-    //                 coil::stringTo(ee_base, end_effectors_str[i*prop_num+2].c_str());
-    //                 hrp::JointPathPtr jpp = hrp::JointPathPtr(new hrp::JointPath(m_robot->link(ee_base), m_robot->link(ee_target)));
-    //                 cs.joint_path = jpp;
-    //                 cs.num_joints = jpp->numJoints();
-    //                 size_t last_id = jpp->endLink()->index - 1;
-    //                 cs.first_id = last_id - (cs.num_joints - 1);
-    //                 constraints_.insert(map<std::string, ConstraintValue>::value_type(ee_name, cs));
-    //                 // free_id_.erase(std::remove_if(free_id_.begin(), free_id_.end(),
-    //                 //                               [] (size_t id) (return (cs.first_id <= id && id <= last_id))), // lambda eq
-    //                 // free_id_.erase(std::remove_if(free_id_.begin(), free_id_.end(),
-    //                 //                               (cs.first_id <= _1 && _1 <= last_id)),
-    //                 //                vec.end());
-    //                 return;
-    //             }
-    //         }
-    //         std::cerr << "Robot doesn't have " << limb << std::endl;
-    //     }
-    // }
-
-    // void RMController::addConstraintLimb(const hrp::BodyPtr m_robot, std::map<std::string, AutoBalancer::ABCIKparam> ikp, const std::string &limb)
-    // {
-    //     if (constraints_.count(limb) == 1) {
-    //         std::cerr << limb << "has already been added to constraints_" << std::endl;
-    //         return;
-    //     }
-
-    //     if (ikp.find(limb)) {
-    //         ConstraintValue cs;
-    //         // hrp::JointPathPtr jpp = hrp::JointPathPtr(new hrp::JointPath(m_robot->link(ee_base), m_robot->link(ee_target)));
-    //         hrp::JointPathExPtr jpp = ikp[limb].manip;
-    //         cs.joint_path = jpp;
-    //         cs.num_joints = jpp->numJoints();
-    //         size_t last_id = jpp->endLink()->index - 1;
-    //         cs.first_id = last_id - (cs.num_joints - 1);
-    //         constraints_.insert(map<std::string, ConstraintValue>::value_type(limb, cs));
-    //         // free_id_.erase(std::remove_if(free_id_.begin(), free_id_.end(),
-    //         //                               [] (size_t id) (return (cs.first_id <= id && id <= last_id))), // lambda eq
-    //         free_id_.erase(std::remove_if(free_id_.begin(), free_id_.end(),
-    //                                       (cs.first_id <= boost::lambda::_1 && boost::lambda::_1 <= last_id)),
-    //                        free_id_.end());
-    //         return;
-    //     }
-    //     std::cerr << "Robot doesn't have " << limb << std::endl;
-    // }
-
     bool RMController::addConstraintLink(const hrp::BodyPtr m_robot, const std::string &name)
     {
         if (constraints_.count(name) == 1) {
@@ -88,13 +26,10 @@ namespace rats
             return false;
         }
 
-        hrp::Link* root = link;
-        while (!root->isRoot()) root = root->parent;
         ConstraintValue cs;
-        hrp::JointPathPtr jpp = hrp::JointPathPtr(new hrp::JointPath(root, link));
-        cs.joint_path = jpp;
-        cs.num_joints = jpp->numJoints();
-        size_t last_id = jpp->endLink()->index - 1;
+        cs.joint_path = hrp::JointPathPtr(new hrp::JointPath(m_robot->rootLink(), link));
+        cs.num_joints = cs.joint_path->numJoints();
+        size_t last_id = cs.joint_path->endLink()->index - 1;
         cs.first_id = last_id - (cs.num_joints - 1);
         cs.r.resize(6, 6);
 
@@ -105,11 +40,6 @@ namespace rats
         std::cerr << "[RMC] Succeeded to add " << name << " to constraints_" << std::endl;
         return true;
     }
-
-    // bool RMController::removeConstraintLimb(const std::string &name)
-    // {
-
-    // }
 
     bool RMController::removeConstraintLink(const std::string &name)
     {
@@ -146,14 +76,14 @@ namespace rats
         for (std::map<std::string, ConstraintValue>::iterator it = constraints_.begin(); it != constraints_.end(); ++it) {
             (*it).second.jacobian_inv = ((*it).second.joint_path->Jacobian()).inverse(); // 6自由度以上のときにどうするか
             (*it).second.inertia_mat = Jpl.block(0, (*it).second.first_id, 6, (*it).second.num_joints) * (*it).second.jacobian_inv;
-            (*it).second.r << hrp::Matrix33::Identity(), -hrp::hat(root_p - (*it).second.joint_path->endLink()->p),
+            (*it).second.r << hrp::Matrix33::Identity(), -hrp::hat((*it).second.joint_path->endLink()->p - root_p),
                               hrp::Matrix33::Zero(), hrp::Matrix33::Identity();
         }
     }
 
     void RMController::rmControl(hrp::BodyPtr &m_robot, const hrp::Vector3 Pref, const hrp::Vector3 Lref,
-                                 const std::map<std::string, hrp::dvector6> xi_ref, hrp::Vector3 &ref_basePos,
-                                 hrp::Matrix33 &ref_baseRot, const double dt)
+                                 const std::map<std::string, hrp::dvector6> xi_ref, const hrp::Vector3 ref_basePos,
+                                 const hrp::Matrix33 ref_baseRot, const double dt)
 
     {
         const double EPS = 1e-6;
@@ -174,7 +104,6 @@ namespace rats
         for (it = constraints_.begin(); it != constraints_.end(); ++it) {
             MHb -= (*it).second.inertia_mat * (*it).second.r;
             refmom -= (*it).second.inertia_mat * xi_ref.at((*it).first);
-            ++it;
         }
 
         size_t free_dof = free_id_.size();
@@ -219,7 +148,6 @@ namespace rats
         xi_b = val_vec.segment(0, 6);
         dq_free = val_vec.segment(6, free_dof);
 
-        it = constraints_.begin();
         // std::cerr << "xi_b: " << xi_b.transpose() << std::endl;
         // std::cerr << "eq.(6) right: " << (MHbf * val_vec + (*it).second.inertia_mat * xi_ref.at((*it).first) + (*(++it)).second.inertia_mat * xi_ref.at((*it).first)).transpose() << std::endl;
 
@@ -228,8 +156,7 @@ namespace rats
             (*it).second.dq = (*it).second.jacobian_inv * (xi_ref.at((*it).first) - (*it).second.r * xi_b);
         }
 
-        it = constraints_.begin();
-        std::cerr << "ee speed(eq.3): " << ((*it).second.jacobian_inv * (*it).second.dq + (*it).second.r * xi_b).transpose() << std::endl;
+        // std::cerr << "ee speed(eq.3): " << ((*it).second.jacobian_inv * (*it).second.dq + (*it).second.r * xi_b).transpose() << std::endl;
         // std::cerr << "eq.13 right: " << (xi_ref.at((*it).first) - (*it).second.r * xi_b).transpose() << std::endl;
 
         // Step6
@@ -244,13 +171,13 @@ namespace rats
             dq.segment((*it).second.first_id, (*it).second.num_joints) = (*it).second.dq;
         }
 
-        ref_basePos = m_robot->rootLink()->p + xi_b.segment(0, 3) * dt;
-        ref_baseRot = m_robot->rootLink()->R;
+        m_robot->rootLink()->p += xi_b.segment(0, 3) * dt;
         hrp::Vector3 omega = xi_b.segment(3, 3);
-        if (omega.norm() > EPS) ref_baseRot *= hrp::rodrigues(omega.normalized(), omega.norm() * dt);
+        if (omega.norm() > EPS) m_robot->rootLink()->R *= hrp::rodrigues(omega.normalized(), omega.norm() * dt);
 
         for (size_t i = 0; i < m_robot->numJoints(); ++i) {
             m_robot->joint(i)->q += dq(i) * dt;
         }
+        m_robot->calcForwardKinematics();
     }
 }
