@@ -219,6 +219,14 @@ module OpenHRP
       boolean is_estop_while_walking;
       /// Sequence for all end-effectors' ik limb parameters
       sequence<IKLimbParameters> ik_limb_parameters;
+      /// Whether change root link height depending on limb length
+      boolean use_root_height_control;
+      /// Root link height time constant [s]
+      double root_height_time_const;
+      /// Root link height change limitation [m/s] (lower, upper)
+      DblArray2 root_height_vlimit;
+      /// Sequence of limb length margin from max limb length [m]
+      sequence<double> limb_length_margin;
     };
 
     /**

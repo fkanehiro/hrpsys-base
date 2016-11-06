@@ -381,6 +381,10 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   is_walking = false;
   is_estop_while_walking = false;
   sbp_cog_offset = hrp::Vector3(0.0, 0.0, 0.0);
+  use_root_height_control = false;
+  root_height_time_const = 1.5;
+  root_height_vlimit[0] = -10 * 1e-3 * dt; // lower limit
+  root_height_vlimit[1] = 150 * 1e-3 * dt; // upper limit
 
   // parameters for RUNST
   double ke = 0, tc = 0;
@@ -1527,10 +1531,10 @@ void Stabilizer::calcEEForceMomentControl() {
         }
       }
       // Change root link height depending on limb length
-      double lvlimit = -10 * 1e-3 * dt, uvlimit = 150 * 1e-3 * dt, prev_d_pos_z_root = d_pos_z_root;
-      d_pos_z_root = tmp_d_pos_z_root == 0.0 ? calcDampingControl(d_pos_z_root, 1.5) : tmp_d_pos_z_root;
-      d_pos_z_root = vlimit(d_pos_z_root, prev_d_pos_z_root + lvlimit, prev_d_pos_z_root + uvlimit);
-      m_robot->rootLink()->p -= m_robot->rootLink()->R * hrp::Vector3(0.0, 0.0, d_pos_z_root);
+      double prev_d_pos_z_root = d_pos_z_root;
+      d_pos_z_root = tmp_d_pos_z_root == 0.0 ? calcDampingControl(d_pos_z_root, root_height_time_const) : tmp_d_pos_z_root;
+      d_pos_z_root = vlimit(d_pos_z_root, prev_d_pos_z_root + root_height_vlimit[0], prev_d_pos_z_root + root_height_vlimit[1]);
+      if (use_root_height_control) m_robot->rootLink()->p -= m_robot->rootLink()->R * hrp::Vector3(0.0, 0.0, d_pos_z_root);
       // IK
       for (size_t i = 0; i < stikp.size(); i++) {
         if (is_ik_enable[i]) {
@@ -1811,7 +1815,6 @@ void Stabilizer::getParameter(OpenHRP::StabilizerService::stParam& i_stp)
   i_stp.eefm_use_swing_damping = eefm_use_swing_damping;
   i_stp.eefm_swing_damping_force_thre = eefm_swing_damping_force_thre;
   i_stp.eefm_swing_damping_moment_thre = eefm_swing_damping_moment_thre;
-
   i_stp.is_ik_enable.length(is_ik_enable.size());
   for (size_t i = 0; i < is_ik_enable.size(); i++) {
       i_stp.is_ik_enable[i] = is_ik_enable[i];
@@ -1853,6 +1856,12 @@ void Stabilizer::getParameter(OpenHRP::StabilizerService::stParam& i_stp)
   }
   i_stp.emergency_check_mode = emergency_check_mode;
   i_stp.end_effector_list.length(stikp.size());
+  i_stp.use_root_height_control = use_root_height_control;
+  i_stp.root_height_time_const = root_height_time_const;
+  i_stp.limb_length_margin.length(stikp.size());
+  for (size_t i = 0; i < 2; i++) {
+    i_stp.root_height_vlimit[i] = root_height_vlimit[i];
+  }
   for (size_t i = 0; i < stikp.size(); i++) {
       const rats::coordinates cur_ee = rats::coordinates(stikp.at(i).localp, stikp.at(i).localR);
       OpenHRP::AutoBalancerService::Footstep ret_ee;
@@ -1868,6 +1877,7 @@ void Stabilizer::getParameter(OpenHRP::StabilizerService::stParam& i_stp)
       ret_ee.leg = stikp.at(i).ee_name.c_str();
       // set
       i_stp.end_effector_list[i] = ret_ee;
+      i_stp.limb_length_margin[i] = stikp[i].limb_length_margin;
   }
   i_stp.ik_limb_parameters.length(jpe_v.size());
   for (size_t i = 0; i < jpe_v.size(); i++) {
@@ -2006,6 +2016,7 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
   for (size_t i = 0; i < stikp.size(); i++) {
       stikp[i].target_ee_diff_p_filter->setCutOffFreq(i_stp.eefm_ee_error_cutoff_freq);
       stikp[i].target_ee_diff_r_filter->setCutOffFreq(i_stp.eefm_ee_error_cutoff_freq);
+      stikp[i].limb_length_margin = i_stp.limb_length_margin[i];
   }
   setBoolSequenceParam(is_ik_enable, i_stp.is_ik_enable, std::string("is_ik_enable"));
   setBoolSequenceParam(is_feedback_control_enable, i_stp.is_feedback_control_enable, std::string("is_feedback_control_enable"));
@@ -2022,6 +2033,11 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
   }
   contact_decision_threshold = i_stp.contact_decision_threshold;
   is_estop_while_walking = i_stp.is_estop_while_walking;
+  use_root_height_control = i_stp.use_root_height_control;
+  root_height_time_const = i_stp.root_height_time_const;
+  for (size_t i = 0; i < 2; i++) {
+    root_height_vlimit[i] = i_stp.root_height_vlimit[i];
+  }
   if (control_mode == MODE_IDLE) {
       for (size_t i = 0; i < i_stp.end_effector_list.length(); i++) {
           std::vector<STIKParam>::iterator it = std::find_if(stikp.begin(), stikp.end(), (&boost::lambda::_1->* &std::vector<STIKParam>::value_type::ee_name == std::string(i_stp.end_effector_list[i].leg)));
