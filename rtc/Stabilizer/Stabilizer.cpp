@@ -383,8 +383,8 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   sbp_cog_offset = hrp::Vector3(0.0, 0.0, 0.0);
   use_root_height_control = false;
   root_height_time_const = 1.5;
-  root_height_vlimit[0] = -10 * 1e-3 * dt; // lower limit
-  root_height_vlimit[1] = 150 * 1e-3 * dt; // upper limit
+  root_height_vlimit[0] = -5 * 1e-3 * dt; // lower limit
+  root_height_vlimit[1] = 100 * 1e-3 * dt; // upper limit
 
   // parameters for RUNST
   double ke = 0, tc = 0;
@@ -1523,10 +1523,10 @@ void Stabilizer::calcEEForceMomentControl() {
           tmpp[i] = tmpp[i] + foot_origin_rot * stikp[i].d_pos_swing;
           // Check whether inside limb length limitation
           hrp::Link* parent_link = m_robot->link(stikp[i].parent_name);
-          hrp::Vector3 rel_targetp = m_robot->rootLink()->R.transpose() * ((tmpp[i] - tmpR[i] * stikp[i].localR.transpose() * stikp[i].localp) - parent_link->p); //parent link relative
+          hrp::Vector3 targetp = (tmpp[i] - tmpR[i] * stikp[i].localR.transpose() * stikp[i].localp) - parent_link->p; // position from parent to target link (world frame)
           double limb_length_limitation = stikp[i].max_limb_length - stikp[i].limb_length_margin;
-          if (rel_targetp.norm() > limb_length_limitation && limb_length_limitation * limb_length_limitation > rel_targetp(0) * rel_targetp(0) + rel_targetp(1) * rel_targetp(1)) {
-            tmp_d_pos_z_root = std::max(tmp_d_pos_z_root, fabs(rel_targetp(2) + sqrt(limb_length_limitation * limb_length_limitation - rel_targetp(0) * rel_targetp(0) + rel_targetp(1) * rel_targetp(1))));
+          if (targetp.norm() > limb_length_limitation && limb_length_limitation * limb_length_limitation > targetp(0) * targetp(0) + targetp(1) * targetp(1)) {
+            tmp_d_pos_z_root = std::max(tmp_d_pos_z_root, fabs(targetp(2) + sqrt(limb_length_limitation * limb_length_limitation - targetp(0) * targetp(0) + targetp(1) * targetp(1))));
           }
         }
       }
@@ -1534,7 +1534,7 @@ void Stabilizer::calcEEForceMomentControl() {
       double prev_d_pos_z_root = d_pos_z_root;
       d_pos_z_root = tmp_d_pos_z_root == 0.0 ? calcDampingControl(d_pos_z_root, root_height_time_const) : tmp_d_pos_z_root;
       d_pos_z_root = vlimit(d_pos_z_root, prev_d_pos_z_root + root_height_vlimit[0], prev_d_pos_z_root + root_height_vlimit[1]);
-      if (use_root_height_control) m_robot->rootLink()->p -= m_robot->rootLink()->R * hrp::Vector3(0.0, 0.0, d_pos_z_root);
+      if (use_root_height_control) m_robot->rootLink()->p(2) -= d_pos_z_root;
       // IK
       for (size_t i = 0; i < stikp.size(); i++) {
         if (is_ik_enable[i]) {
@@ -1815,6 +1815,7 @@ void Stabilizer::getParameter(OpenHRP::StabilizerService::stParam& i_stp)
   i_stp.eefm_use_swing_damping = eefm_use_swing_damping;
   i_stp.eefm_swing_damping_force_thre = eefm_swing_damping_force_thre;
   i_stp.eefm_swing_damping_moment_thre = eefm_swing_damping_moment_thre;
+
   i_stp.is_ik_enable.length(is_ik_enable.size());
   for (size_t i = 0; i < is_ik_enable.size(); i++) {
       i_stp.is_ik_enable[i] = is_ik_enable[i];
