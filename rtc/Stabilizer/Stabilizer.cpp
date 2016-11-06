@@ -328,6 +328,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
 #define deg2rad(x) ((x) * M_PI / 180.0)
   for (size_t i = 0; i < stikp.size(); i++) {
       STIKParam& ikp = stikp[i];
+      hrp::Link* root = m_robot->link(ikp.target_name);
       ikp.eefm_rot_damping_gain = hrp::Vector3(20*5, 20*5, 1e5);
       ikp.eefm_rot_time_const = hrp::Vector3(1.5, 1.5, 1.5);
       ikp.eefm_rot_compensation_limit = deg2rad(10.0);
@@ -347,6 +348,13 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
               ikp.eefm_ee_forcemoment_distribution_weight[j+3] = 1e-2; // Moment
           }
       }
+      ikp.max_limb_length = 0.0;
+      while (!root->isRoot()) {
+        ikp.max_limb_length += root->b.norm();
+        ikp.parent_name = root->name;
+        root = root->parent;
+      }
+      ikp.limb_length_margin = 0.13;
   }
   eefm_swing_rot_damping_gain = hrp::Vector3(20*5, 20*5, 1e5);
   eefm_swing_pos_damping_gain = hrp::Vector3(33600, 33600, 7000);
@@ -1490,30 +1498,47 @@ void Stabilizer::calcEEForceMomentControl() {
 
       // solveIK
       //   IK target is link origin pos and rot, not ee pos and rot.
-      for (size_t jj = 0; jj < 3; jj++) {
-        for (size_t i = 0; i < stikp.size(); i++) {
-            if (is_ik_enable[i]) {
-              hrp::Vector3 tmpp;
-              hrp::Matrix33 tmpR;
-              // Add damping_control compensation to target value
-              if (is_feedback_control_enable[i]) {
-                  rats::rotm3times(tmpR, target_ee_R[i], hrp::rotFromRpy(-stikp[i].ee_d_foot_rpy(0), -stikp[i].ee_d_foot_rpy(1), 0));
-                  // foot force difference control version
-                  // total_target_foot_p[i](2) = target_foot_p[i](2) + (i==0?0.5:-0.5)*zctrl;
-                  // foot force independent damping control
-                  tmpp = target_ee_p[i] - current_d_foot_pos[i];
-              } else {
-                  tmpp = target_ee_p[i];
-                  tmpR = target_ee_R[i];
-              }
-              // Add swing ee compensation
-              rats::rotm3times(tmpR, tmpR, hrp::rotFromRpy(stikp[i].d_rpy_swing));
-              tmpp = tmpp + foot_origin_rot * stikp[i].d_pos_swing;
-              // IK
-              jpe_v[i]->calcInverseKinematics2Loop(tmpp, tmpR, 1.0, 0.001, 0.01, &qrefv, transition_smooth_gain,
-                                                   //stikp[i].localCOPPos;
-                                                   stikp[i].localp,
-                                                   stikp[i].localR);
+      std::vector<hrp::Vector3> tmpp(stikp.size());
+      std::vector<hrp::Matrix33> tmpR(stikp.size());
+      double tmp_d_pos_z_root = 0.0;
+      for (size_t i = 0; i < stikp.size(); i++) {
+        if (is_ik_enable[i]) {
+          // Add damping_control compensation to target value
+          if (is_feedback_control_enable[i]) {
+            rats::rotm3times(tmpR[i], target_ee_R[i], hrp::rotFromRpy(-stikp[i].ee_d_foot_rpy(0), -stikp[i].ee_d_foot_rpy(1), 0));
+            // foot force difference control version
+            // total_target_foot_p[i](2) = target_foot_p[i](2) + (i==0?0.5:-0.5)*zctrl;
+            // foot force independent damping control
+            tmpp[i] = target_ee_p[i] - current_d_foot_pos[i];
+          } else {
+            tmpp[i] = target_ee_p[i];
+            tmpR[i] = target_ee_R[i];
+          }
+          // Add swing ee compensation
+          rats::rotm3times(tmpR[i], tmpR[i], hrp::rotFromRpy(stikp[i].d_rpy_swing));
+          tmpp[i] = tmpp[i] + foot_origin_rot * stikp[i].d_pos_swing;
+          // Check whether inside limb length limitation
+          hrp::Link* parent_link = m_robot->link(stikp[i].parent_name);
+          hrp::Vector3 rel_targetp = m_robot->rootLink()->R.transpose() * ((tmpp[i] - tmpR[i] * stikp[i].localR.transpose() * stikp[i].localp) - parent_link->p); //parent link relative
+          double limb_length_limitation = stikp[i].max_limb_length - stikp[i].limb_length_margin;
+          if (rel_targetp.norm() > limb_length_limitation && limb_length_limitation * limb_length_limitation > rel_targetp(0) * rel_targetp(0) + rel_targetp(1) * rel_targetp(1)) {
+            tmp_d_pos_z_root = std::max(tmp_d_pos_z_root, fabs(rel_targetp(2) + sqrt(limb_length_limitation * limb_length_limitation - rel_targetp(0) * rel_targetp(0) + rel_targetp(1) * rel_targetp(1))));
+          }
+        }
+      }
+      // Change root link height depending on limb length
+      double lvlimit = -10 * 1e-3 * dt, uvlimit = 150 * 1e-3 * dt, prev_d_pos_z_root = d_pos_z_root;
+      d_pos_z_root = tmp_d_pos_z_root == 0.0 ? calcDampingControl(d_pos_z_root, 1.5) : tmp_d_pos_z_root;
+      d_pos_z_root = vlimit(d_pos_z_root, prev_d_pos_z_root + lvlimit, prev_d_pos_z_root + uvlimit);
+      m_robot->rootLink()->p -= m_robot->rootLink()->R * hrp::Vector3(0.0, 0.0, d_pos_z_root);
+      // IK
+      for (size_t i = 0; i < stikp.size(); i++) {
+        if (is_ik_enable[i]) {
+          for (size_t jj = 0; jj < 3; jj++) {
+            jpe_v[i]->calcInverseKinematics2Loop(tmpp[i], tmpR[i], 1.0, 0.001, 0.01, &qrefv, transition_smooth_gain,
+                                                 //stikp[i].localCOPPos;
+                                                 stikp[i].localp,
+                                                 stikp[i].localR);
           }
         }
       }
@@ -1578,6 +1603,12 @@ double Stabilizer::calcDampingControl (const double tau_d, const double tau, con
 hrp::Vector3 Stabilizer::calcDampingControl (const hrp::Vector3& prev_d, const hrp::Vector3& TT)
 {
   return (- prev_d.cwiseQuotient(TT)) * dt + prev_d;
+};
+
+// Retrieving only
+double Stabilizer::calcDampingControl (const double prev_d, const double TT)
+{
+  return - 1/TT * prev_d * dt + prev_d;
 };
 
 hrp::Vector3 Stabilizer::calcDampingControl (const hrp::Vector3& tau_d, const hrp::Vector3& tau, const hrp::Vector3& prev_d,
