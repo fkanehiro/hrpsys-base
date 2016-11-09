@@ -328,6 +328,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
 #define deg2rad(x) ((x) * M_PI / 180.0)
   for (size_t i = 0; i < stikp.size(); i++) {
       STIKParam& ikp = stikp[i];
+      hrp::Link* root = m_robot->link(ikp.target_name);
       ikp.eefm_rot_damping_gain = hrp::Vector3(20*5, 20*5, 1e5);
       ikp.eefm_rot_time_const = hrp::Vector3(1.5, 1.5, 1.5);
       ikp.eefm_rot_compensation_limit = deg2rad(10.0);
@@ -347,6 +348,13 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
               ikp.eefm_ee_forcemoment_distribution_weight[j+3] = 1e-2; // Moment
           }
       }
+      ikp.max_limb_length = 0.0;
+      while (!root->isRoot()) {
+        ikp.max_limb_length += root->b.norm();
+        ikp.parent_name = root->name;
+        root = root->parent;
+      }
+      ikp.limb_length_margin = 0.13;
   }
   eefm_swing_rot_damping_gain = hrp::Vector3(20*5, 20*5, 1e5);
   eefm_swing_pos_damping_gain = hrp::Vector3(33600, 33600, 7000);
@@ -373,6 +381,10 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   is_walking = false;
   is_estop_while_walking = false;
   sbp_cog_offset = hrp::Vector3(0.0, 0.0, 0.0);
+  use_limb_stretch_avoidance = false;
+  limb_stretch_avoidance_time_const = 1.5;
+  limb_stretch_avoidance_vlimit[0] = -100 * 1e-3 * dt; // lower limit
+  limb_stretch_avoidance_vlimit[1] = 50 * 1e-3 * dt; // upper limit
 
   // parameters for RUNST
   double ke = 0, tc = 0;
@@ -1490,30 +1502,38 @@ void Stabilizer::calcEEForceMomentControl() {
 
       // solveIK
       //   IK target is link origin pos and rot, not ee pos and rot.
-      for (size_t jj = 0; jj < 3; jj++) {
-        for (size_t i = 0; i < stikp.size(); i++) {
-            if (is_ik_enable[i]) {
-              hrp::Vector3 tmpp;
-              hrp::Matrix33 tmpR;
-              // Add damping_control compensation to target value
-              if (is_feedback_control_enable[i]) {
-                  rats::rotm3times(tmpR, target_ee_R[i], hrp::rotFromRpy(-stikp[i].ee_d_foot_rpy(0), -stikp[i].ee_d_foot_rpy(1), 0));
-                  // foot force difference control version
-                  // total_target_foot_p[i](2) = target_foot_p[i](2) + (i==0?0.5:-0.5)*zctrl;
-                  // foot force independent damping control
-                  tmpp = target_ee_p[i] - current_d_foot_pos[i];
-              } else {
-                  tmpp = target_ee_p[i];
-                  tmpR = target_ee_R[i];
-              }
-              // Add swing ee compensation
-              rats::rotm3times(tmpR, tmpR, hrp::rotFromRpy(stikp[i].d_rpy_swing));
-              tmpp = tmpp + foot_origin_rot * stikp[i].d_pos_swing;
-              // IK
-              jpe_v[i]->calcInverseKinematics2Loop(tmpp, tmpR, 1.0, 0.001, 0.01, &qrefv, transition_smooth_gain,
-                                                   //stikp[i].localCOPPos;
-                                                   stikp[i].localp,
-                                                   stikp[i].localR);
+      std::vector<hrp::Vector3> tmpp(stikp.size());
+      std::vector<hrp::Matrix33> tmpR(stikp.size());
+      double tmp_d_pos_z_root = 0.0;
+      for (size_t i = 0; i < stikp.size(); i++) {
+        if (is_ik_enable[i]) {
+          // Add damping_control compensation to target value
+          if (is_feedback_control_enable[i]) {
+            rats::rotm3times(tmpR[i], target_ee_R[i], hrp::rotFromRpy(-stikp[i].ee_d_foot_rpy(0), -stikp[i].ee_d_foot_rpy(1), 0));
+            // foot force difference control version
+            // total_target_foot_p[i](2) = target_foot_p[i](2) + (i==0?0.5:-0.5)*zctrl;
+            // foot force independent damping control
+            tmpp[i] = target_ee_p[i] - current_d_foot_pos[i];
+          } else {
+            tmpp[i] = target_ee_p[i];
+            tmpR[i] = target_ee_R[i];
+          }
+          // Add swing ee compensation
+          rats::rotm3times(tmpR[i], tmpR[i], hrp::rotFromRpy(stikp[i].d_rpy_swing));
+          tmpp[i] = tmpp[i] + foot_origin_rot * stikp[i].d_pos_swing;
+        }
+      }
+
+      if (use_limb_stretch_avoidance) limbStretchAvoidanceControl(tmpp ,tmpR);
+
+      // IK
+      for (size_t i = 0; i < stikp.size(); i++) {
+        if (is_ik_enable[i]) {
+          for (size_t jj = 0; jj < 3; jj++) {
+            jpe_v[i]->calcInverseKinematics2Loop(tmpp[i], tmpR[i], 1.0, 0.001, 0.01, &qrefv, transition_smooth_gain,
+                                                 //stikp[i].localCOPPos;
+                                                 stikp[i].localp,
+                                                 stikp[i].localR);
           }
         }
       }
@@ -1566,6 +1586,28 @@ void Stabilizer::calcSwingEEModification ()
     }
 };
 
+void Stabilizer::limbStretchAvoidanceControl (const std::vector<hrp::Vector3>& ee_p, const std::vector<hrp::Matrix33>& ee_R)
+{
+  double tmp_d_pos_z_root = 0.0;
+  for (size_t i = 0; i < stikp.size(); i++) {
+    if (is_ik_enable[i]) {
+      // Check whether inside limb length limitation
+      hrp::Link* parent_link = m_robot->link(stikp[i].parent_name);
+      hrp::Vector3 targetp = (ee_p[i] - ee_R[i] * stikp[i].localR.transpose() * stikp[i].localp) - parent_link->p; // position from parent to target link (world frame)
+      double limb_length_limitation = stikp[i].max_limb_length - stikp[i].limb_length_margin;
+      double tmp = limb_length_limitation * limb_length_limitation - targetp(0) * targetp(0) - targetp(1) * targetp(1);
+      if (targetp.norm() > limb_length_limitation && tmp >= 0) {
+        tmp_d_pos_z_root = std::min(tmp_d_pos_z_root, targetp(2) + std::sqrt(tmp));
+      }
+    }
+  }
+  // Change root link height depending on limb length
+  double prev_d_pos_z_root = d_pos_z_root;
+  d_pos_z_root = tmp_d_pos_z_root == 0.0 ? calcDampingControl(d_pos_z_root, limb_stretch_avoidance_time_const) : tmp_d_pos_z_root;
+  d_pos_z_root = vlimit(d_pos_z_root, prev_d_pos_z_root + limb_stretch_avoidance_vlimit[0], prev_d_pos_z_root + limb_stretch_avoidance_vlimit[1]);
+  m_robot->rootLink()->p(2) += d_pos_z_root;
+}
+
 // Damping control functions
 //   Basically Equation (14) in the paper [1]
 double Stabilizer::calcDampingControl (const double tau_d, const double tau, const double prev_d,
@@ -1578,6 +1620,12 @@ double Stabilizer::calcDampingControl (const double tau_d, const double tau, con
 hrp::Vector3 Stabilizer::calcDampingControl (const hrp::Vector3& prev_d, const hrp::Vector3& TT)
 {
   return (- prev_d.cwiseQuotient(TT)) * dt + prev_d;
+};
+
+// Retrieving only
+double Stabilizer::calcDampingControl (const double prev_d, const double TT)
+{
+  return - 1/TT * prev_d * dt + prev_d;
 };
 
 hrp::Vector3 Stabilizer::calcDampingControl (const hrp::Vector3& tau_d, const hrp::Vector3& tau, const hrp::Vector3& prev_d,
@@ -1822,6 +1870,12 @@ void Stabilizer::getParameter(OpenHRP::StabilizerService::stParam& i_stp)
   }
   i_stp.emergency_check_mode = emergency_check_mode;
   i_stp.end_effector_list.length(stikp.size());
+  i_stp.use_limb_stretch_avoidance = use_limb_stretch_avoidance;
+  i_stp.limb_stretch_avoidance_time_const = limb_stretch_avoidance_time_const;
+  i_stp.limb_length_margin.length(stikp.size());
+  for (size_t i = 0; i < 2; i++) {
+    i_stp.limb_stretch_avoidance_vlimit[i] = limb_stretch_avoidance_vlimit[i];
+  }
   for (size_t i = 0; i < stikp.size(); i++) {
       const rats::coordinates cur_ee = rats::coordinates(stikp.at(i).localp, stikp.at(i).localR);
       OpenHRP::AutoBalancerService::Footstep ret_ee;
@@ -1837,6 +1891,7 @@ void Stabilizer::getParameter(OpenHRP::StabilizerService::stParam& i_stp)
       ret_ee.leg = stikp.at(i).ee_name.c_str();
       // set
       i_stp.end_effector_list[i] = ret_ee;
+      i_stp.limb_length_margin[i] = stikp[i].limb_length_margin;
   }
   i_stp.ik_limb_parameters.length(jpe_v.size());
   for (size_t i = 0; i < jpe_v.size(); i++) {
@@ -1975,6 +2030,7 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
   for (size_t i = 0; i < stikp.size(); i++) {
       stikp[i].target_ee_diff_p_filter->setCutOffFreq(i_stp.eefm_ee_error_cutoff_freq);
       stikp[i].target_ee_diff_r_filter->setCutOffFreq(i_stp.eefm_ee_error_cutoff_freq);
+      stikp[i].limb_length_margin = i_stp.limb_length_margin[i];
   }
   setBoolSequenceParam(is_ik_enable, i_stp.is_ik_enable, std::string("is_ik_enable"));
   setBoolSequenceParam(is_feedback_control_enable, i_stp.is_feedback_control_enable, std::string("is_feedback_control_enable"));
@@ -1991,6 +2047,11 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
   }
   contact_decision_threshold = i_stp.contact_decision_threshold;
   is_estop_while_walking = i_stp.is_estop_while_walking;
+  use_limb_stretch_avoidance = i_stp.use_limb_stretch_avoidance;
+  limb_stretch_avoidance_time_const = i_stp.limb_stretch_avoidance_time_const;
+  for (size_t i = 0; i < 2; i++) {
+    limb_stretch_avoidance_vlimit[i] = i_stp.limb_stretch_avoidance_vlimit[i];
+  }
   if (control_mode == MODE_IDLE) {
       for (size_t i = 0; i < i_stp.end_effector_list.length(); i++) {
           std::vector<STIKParam>::iterator it = std::find_if(stikp.begin(), stikp.end(), (&boost::lambda::_1->* &std::vector<STIKParam>::value_type::ee_name == std::string(i_stp.end_effector_list[i].leg)));
