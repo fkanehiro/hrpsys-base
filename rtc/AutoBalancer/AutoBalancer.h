@@ -166,6 +166,8 @@ class AutoBalancer
   std::vector<OutPort<TimedDoubleSeq> *> m_ref_forceOut;
   std::vector<TimedPoint3D> m_limbCOPOffset;
   std::vector<OutPort<TimedPoint3D> *> m_limbCOPOffsetOut;
+  TimedDouble m_interpolatedRootHeight;
+  OutPort<TimedDouble> m_interpolatedRootHeightOut;
   // for debug
   OutPort<TimedPoint3D> m_cogOut;
   
@@ -242,12 +244,14 @@ class AutoBalancer
   double m_dt, move_base_gain;
   hrp::BodyPtr m_robot;
   coil::Mutex m_mutex;
+  double d_root_z_pos, prev_d_root_z_pos;
 
   double transition_interpolator_ratio, transition_time, zmp_transition_time, adjust_footstep_transition_time, leg_names_interpolator_ratio;
   interpolator *zmp_offset_interpolator;
   interpolator *transition_interpolator;
   interpolator *adjust_footstep_interpolator;
   interpolator *leg_names_interpolator;
+  interpolator *limb_stretch_avoidance_interpolator;
   hrp::Vector3 input_zmp, input_basePos;
   hrp::Matrix33 input_baseRot;
 

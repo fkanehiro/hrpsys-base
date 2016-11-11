@@ -642,10 +642,10 @@ namespace rats
       double omega = std::sqrt(gravitational_acceleration / cog(2) - refzmp(2));
       future_d_ee_pos.resize(all_limbs.size(), hrp::Vector3::Zero());
       std::vector<step_node> swg_leg_stps = lcg.get_swing_leg_steps();
-      if (lcg.get_lcg_count() <= static_cast<size_t>(footstep_nodes_list[lcg.get_footstep_index()][0].step_time/dt * (1.0 - default_double_support_ratio_before)) - 1
-          && lcg.get_lcg_count() > static_cast<size_t>(footstep_nodes_list[lcg.get_footstep_index()][0].step_time/dt * default_double_support_ratio_after) - 1) { // single support phase
-        double remain_time = static_cast<double>(lcg.get_lcg_count() + 1) * dt - footstep_nodes_list[lcg.get_footstep_index()][0].step_time * default_double_support_ratio_after;
-        hrp::Vector3 future_cog = (cog - refzmp) * std::cosh(omega * remain_time) + (cog - prev_cog) / dt / omega * std::sinh(omega * remain_time) + refzmp;
+      if (lcg.get_lcg_count() < static_cast<size_t>(footstep_nodes_list[lcg.get_footstep_index()][0].step_time/dt * (1.0 - default_double_support_ratio_before)) - 1
+          && lcg.get_lcg_count() >= static_cast<size_t>(footstep_nodes_list[lcg.get_footstep_index()][0].step_time/dt * default_double_support_ratio_after) - 1) { // single support phase
+        limb_stretch_remain_time = static_cast<double>(lcg.get_lcg_count() + 1) * dt - footstep_nodes_list[lcg.get_footstep_index()][0].step_time * default_double_support_ratio_after;
+        hrp::Vector3 future_cog = (cog - refzmp) * std::cosh(omega * limb_stretch_remain_time) + (cog - prev_cog) / dt / omega * std::sinh(omega * limb_stretch_remain_time) + refzmp;
         future_cog(2) = cog(2);
         for (size_t i = 0; i < all_limbs.size(); i++) {
           bool is_swing = false;
@@ -657,16 +657,16 @@ namespace rats
           }
           if (!is_swing) future_d_ee_pos[i] = cog - future_cog;
         }
-      } else if (lcg.get_lcg_count() > static_cast<size_t>(footstep_nodes_list[lcg.get_footstep_index()][0].step_time/dt * (1.0 - default_double_support_ratio_before)) - 1) { // double support (before) phase
-        double remain_time = static_cast<double>(lcg.get_lcg_count() + 1) * dt - footstep_nodes_list[lcg.get_footstep_index()][0].step_time * (1.0 - default_double_support_ratio_before);
-        hrp::Vector3 future_cog = (cog - refzmp) * std::cosh(omega * remain_time) + ((cog - prev_cog)/dt - (refzmp - prev_refzmp)/dt) / omega * std::sinh(omega * remain_time) + refzmp + (refzmp - prev_refzmp)/dt * remain_time;
+      } else if (lcg.get_lcg_count() >= static_cast<size_t>(footstep_nodes_list[lcg.get_footstep_index()][0].step_time/dt * (1.0 - default_double_support_ratio_before)) - 1) { // double support (before) phase
+        limb_stretch_remain_time = static_cast<double>(lcg.get_lcg_count() + 1) * dt - footstep_nodes_list[lcg.get_footstep_index()][0].step_time * (1.0 - default_double_support_ratio_before);
+        hrp::Vector3 future_cog = (cog - refzmp) * std::cosh(omega * limb_stretch_remain_time) + ((cog - prev_cog)/dt - (refzmp - prev_refzmp)/dt) / omega * std::sinh(omega * limb_stretch_remain_time) + refzmp + (refzmp - prev_refzmp)/dt * limb_stretch_remain_time;
         future_cog(2) = cog(2);
         for (size_t i = 0; i < all_limbs.size(); i++) {
           future_d_ee_pos[i] = cog - future_cog;
         }
       } else {  // double support (after) phase
-        double remain_time = static_cast<double>(lcg.get_lcg_count() + 1) * dt;
-        hrp::Vector3 future_cog = (cog - refzmp) * std::cosh(omega * remain_time) + ((cog - prev_cog)/dt - (refzmp - prev_refzmp)/dt) / omega * std::sinh(omega * remain_time) + refzmp + (refzmp - prev_refzmp)/dt * remain_time;
+        limb_stretch_remain_time = static_cast<double>(lcg.get_lcg_count() + 1) * dt + footstep_nodes_list[lcg.get_footstep_index() + (get_footstep_index()<footstep_nodes_list.size()-1?1:0)][0].step_time * default_double_support_ratio_before;
+        hrp::Vector3 future_cog = (cog - refzmp) * std::cosh(omega * limb_stretch_remain_time) + ((cog - prev_cog)/dt - (refzmp - prev_refzmp)/dt) / omega * std::sinh(omega * limb_stretch_remain_time) + refzmp + (refzmp - prev_refzmp)/dt * limb_stretch_remain_time;
         future_cog(2) = cog(2);
         for (size_t i = 0; i < all_limbs.size(); i++) {
           future_d_ee_pos[i] = cog - future_cog;

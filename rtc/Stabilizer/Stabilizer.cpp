@@ -55,6 +55,7 @@ Stabilizer::Stabilizer(RTC::Manager* manager)
     m_qRefSeqIn("qRefSeq", m_qRefSeq),
     m_walkingStatesIn("walkingStates", m_walkingStates),
     m_sbpCogOffsetIn("sbpCogOffset", m_sbpCogOffset),
+    m_interpolatedRootHeightIn("interpolatedRootHeight", m_interpolatedRootHeight),
     m_qRefOut("q", m_qRef),
     m_tauOut("tau", m_tau),
     m_zmpOut("zmp", m_zmp),
@@ -115,6 +116,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   addInPort("qRefSeq", m_qRefSeqIn);
   addInPort("walkingStates", m_walkingStatesIn);
   addInPort("sbpCogOffset", m_sbpCogOffsetIn);
+  addInPort("interpolatedRootHeight", m_interpolatedRootHeightIn);
 
   // Set OutPort buffer
   addOutPort("q", m_qRefOut);
@@ -584,6 +586,10 @@ RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
     sbp_cog_offset(0) = m_sbpCogOffset.data.x;
     sbp_cog_offset(1) = m_sbpCogOffset.data.y;
     sbp_cog_offset(2) = m_sbpCogOffset.data.z;
+  }
+  if (m_interpolatedRootHeightIn.isNew()){
+    m_interpolatedRootHeightIn.read();
+    interpolated_d_pos_z_root = m_interpolatedRootHeight.data;
   }
 
   if (is_legged_robot) {
@@ -1601,6 +1607,7 @@ void Stabilizer::limbStretchAvoidanceControl (const std::vector<hrp::Vector3>& e
       }
     }
   }
+  tmp_d_pos_z_root = std::min(tmp_d_pos_z_root, interpolated_d_pos_z_root);
   // Change root link height depending on limb length
   double prev_d_pos_z_root = d_pos_z_root;
   d_pos_z_root = tmp_d_pos_z_root == 0.0 ? calcDampingControl(d_pos_z_root, limb_stretch_avoidance_time_const) : tmp_d_pos_z_root;

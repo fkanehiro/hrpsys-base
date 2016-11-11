@@ -1054,6 +1054,7 @@ namespace rats
     double leg_margin[4], overwritable_stride_limitation[4];
     bool use_stride_limitation;
     stride_limitation_type default_stride_limitation_type;
+    double limb_stretch_remain_time;
     std::vector<hrp::Vector3> future_d_ee_pos;
 
     /* preview controller parameters */
@@ -1101,7 +1102,7 @@ namespace rats
         dt(_dt), all_limbs(_all_limbs), default_step_time(1.0), default_double_support_ratio_before(0.1), default_double_support_ratio_after(0.1), default_double_support_static_ratio_before(0.0), default_double_support_static_ratio_after(0.0), default_double_support_ratio_swing_before(0.1), default_double_support_ratio_swing_after(0.1), gravitational_acceleration(DEFAULT_GRAVITATIONAL_ACCELERATION),
         finalize_count(0), optional_go_pos_finalize_footstep_num(0), overwrite_footstep_index(0), overwritable_footstep_index_offset(1),
         velocity_mode_flg(VEL_IDLING), emergency_flg(IDLING),
-        use_inside_step_limitation(true), use_stride_limitation(false), default_stride_limitation_type(SQUARE),
+        use_inside_step_limitation(true), use_stride_limitation(false), default_stride_limitation_type(SQUARE), limb_stretch_remain_time(0.0),
         preview_controller_ptr(NULL) {
         swing_foot_zmp_offsets = boost::assign::list_of<hrp::Vector3>(hrp::Vector3::Zero());
         prev_que_sfzos = boost::assign::list_of<hrp::Vector3>(hrp::Vector3::Zero());
@@ -1434,6 +1435,7 @@ namespace rats
     double get_toe_check_thre () const { return thtc.get_toe_check_thre(); };
     double get_heel_check_thre () const { return thtc.get_heel_check_thre(); };
     std::vector<hrp::Vector3> get_future_d_ee_pos () const { return future_d_ee_pos; };
+    double get_limb_stretch_remain_time () const { return limb_stretch_remain_time; };
     void print_param (const std::string& print_str = "") const
     {
         double stride_fwd_x, stride_y, stride_th, stride_bwd_x;
