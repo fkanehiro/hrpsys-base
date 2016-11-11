@@ -168,6 +168,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
         coil::stringTo(ee_target, end_effectors_str[i*prop_num+1].c_str());
         coil::stringTo(ee_base, end_effectors_str[i*prop_num+2].c_str());
         ABCIKparam tp;
+        hrp::Link* root = m_robot->link(ee_target);
         for (size_t j = 0; j < 3; j++) {
           coil::stringTo(tp.localPos(j), end_effectors_str[i*prop_num+3+j].c_str());
         }
@@ -192,6 +193,13 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
         tp.avoid_gain = 0.001;
         tp.reference_gain = 0.01;
         tp.pos_ik_error_count = tp.rot_ik_error_count = 0;
+        tp.max_limb_length = 0.0;
+        while (!root->isRoot()) {
+          tp.max_limb_length += root->b.norm();
+          tp.parent_name = root->name;
+          root = root->parent;
+        }
+        tp.limb_length_margin = 0.13;
         ikp.insert(std::pair<std::string, ABCIKparam>(ee_name , tp));
         ikp[ee_name].target_link = m_robot->link(ee_target);
         ee_vec.push_back(ee_name);
@@ -477,6 +485,23 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
       } else {
         rel_ref_zmp = input_zmp;
       }
+
+      {
+        std::vector<hrp::Vector3> future_d_ee_pos = gg->get_future_d_ee_pos();
+        double tmp_d_root_z_pos = 0.0;
+        for (size_t i = 0; i < leg_names.size(); i++) {
+          // Check whether inside limb length limitation
+          hrp::Link* parent_link = m_robot->link(ikp[leg_names[i]].parent_name);
+          hrp::Vector3 future_targetp = ikp[leg_names[i]].target_p0 + future_d_ee_pos[i] - parent_link->p; // position from parent to target link in future (world frame)
+          double limb_length_limitation = ikp[leg_names[i]].max_limb_length - ikp[leg_names[i]].limb_length_margin;
+          double tmp = limb_length_limitation * limb_length_limitation - future_targetp(0) * future_targetp(0) - future_targetp(1) * future_targetp(1);
+          if (future_targetp.norm() > limb_length_limitation && tmp >= 0) {
+            tmp_d_root_z_pos = std::min(tmp_d_root_z_pos, future_targetp(2) + std::sqrt(tmp));
+          }
+        }
+        gg->clear_future_d_ee_pos();
+      }
+
       // transition
       if (!is_transition_interpolator_empty) {
         // transition_interpolator_ratio 0=>1 : IDLE => ABC
@@ -922,10 +947,6 @@ void AutoBalancer::getTargetParameters()
           }
       }
       multi_mid_coords(fix_leg_coords, tmp_end_coords_list);
-  }
-
-  {
-    std::vector<hrp::Vector3> future_d_ee_pos = gg->get_future_d_ee_pos();
   }
 };
 

@@ -646,27 +646,30 @@ namespace rats
           && lcg.get_lcg_count() > static_cast<size_t>(footstep_nodes_list[lcg.get_footstep_index()][0].step_time/dt * default_double_support_ratio_after) - 1) { // single support phase
         double remain_time = static_cast<double>(lcg.get_lcg_count() + 1) * dt - footstep_nodes_list[lcg.get_footstep_index()][0].step_time * default_double_support_ratio_after;
         hrp::Vector3 future_cog = (cog - refzmp) * std::cosh(omega * remain_time) + (cog - prev_cog) / dt / omega * std::sinh(omega * remain_time) + refzmp;
+        future_cog(2) = cog(2);
         for (size_t i = 0; i < all_limbs.size(); i++) {
           bool is_swing = false;
           for (size_t j = 0; j < swg_leg_stps.size(); j++) {
             if (all_limbs[i] ==  leg_type_map[swg_leg_stps[j].l_r]) {
-              future_d_ee_pos[i] = (prev_cog - swg_leg_stps[j].worldcoords.pos) - (future_cog - footstep_nodes_list[lcg.get_footstep_index()][j].worldcoords.pos);
+              future_d_ee_pos[i] = (cog - swg_leg_stps[j].worldcoords.pos) - (future_cog - footstep_nodes_list[lcg.get_footstep_index()][j].worldcoords.pos);
               is_swing = true;
             }
           }
-          if (!is_swing) future_d_ee_pos[i] = prev_cog - future_cog;
+          if (!is_swing) future_d_ee_pos[i] = cog - future_cog;
         }
       } else if (lcg.get_lcg_count() > static_cast<size_t>(footstep_nodes_list[lcg.get_footstep_index()][0].step_time/dt * (1.0 - default_double_support_ratio_before)) - 1) { // double support (before) phase
         double remain_time = static_cast<double>(lcg.get_lcg_count() + 1) * dt - footstep_nodes_list[lcg.get_footstep_index()][0].step_time * (1.0 - default_double_support_ratio_before);
         hrp::Vector3 future_cog = (cog - refzmp) * std::cosh(omega * remain_time) + ((cog - prev_cog)/dt - (refzmp - prev_refzmp)/dt) / omega * std::sinh(omega * remain_time) + refzmp + (refzmp - prev_refzmp)/dt * remain_time;
+        future_cog(2) = cog(2);
         for (size_t i = 0; i < all_limbs.size(); i++) {
-          future_d_ee_pos[i] = prev_cog - future_cog;
+          future_d_ee_pos[i] = cog - future_cog;
         }
       } else {  // double support (after) phase
         double remain_time = static_cast<double>(lcg.get_lcg_count() + 1) * dt;
         hrp::Vector3 future_cog = (cog - refzmp) * std::cosh(omega * remain_time) + ((cog - prev_cog)/dt - (refzmp - prev_refzmp)/dt) / omega * std::sinh(omega * remain_time) + refzmp + (refzmp - prev_refzmp)/dt * remain_time;
+        future_cog(2) = cog(2);
         for (size_t i = 0; i < all_limbs.size(); i++) {
-          future_d_ee_pos[i] = prev_cog - future_cog;
+          future_d_ee_pos[i] = cog - future_cog;
         }
       }
       prev_cog = cog;
