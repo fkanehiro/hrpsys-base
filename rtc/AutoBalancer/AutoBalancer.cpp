@@ -923,6 +923,10 @@ void AutoBalancer::getTargetParameters()
       }
       multi_mid_coords(fix_leg_coords, tmp_end_coords_list);
   }
+
+  {
+    std::vector<hrp::Vector3> future_d_ee_pos = gg->get_future_d_ee_pos();
+  }
 };
 
 hrp::Matrix33 AutoBalancer::OrientRotationMatrix (const hrp::Matrix33& rot, const hrp::Vector3& axis1, const hrp::Vector3& axis2)
