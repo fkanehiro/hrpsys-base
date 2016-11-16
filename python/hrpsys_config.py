@@ -1093,6 +1093,7 @@ class HrpsysConfigurator(object):
         \endverbatim
         @param sequential list of angles in float: In rad
         @param tm sequential list of time in float: Time to complete, In Second
+        @since 315.5.0
         '''
         for angles in angless:
             for i in range(len(angles)):
@@ -1109,8 +1110,9 @@ class HrpsysConfigurator(object):
               Worthwhile opening an enhancement ticket at designated issue tracker.
         \endverbatim
         @param gname str: Name of the joint group.
-        @param sequential list of angles in float: In rad
+        @param angless list of angles in float: In rad. Eg. [[0.0, 0.1,,,0.9], [1.0, 1.1,,,1.9]]
         @param tm sequential list of time in float: Time to complete, In Second
+        @since 315.5.0
         '''
         for angles in angless:
             for i in range(len(angles)):
@@ -2119,6 +2121,7 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
         Cancels the commanded sequence of joint angle, by overwriting the command by the values of instant the method was invoked.
         Note that this only cancels the queue once. Icoming commands after this method is called will be processed as usual.
         @return bool
+        @since 315.5.0
         '''
         return self.seq_svc.clearJointAngles()
 
@@ -2128,6 +2131,7 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
         Note that this only cancels the queue once. Icoming commands after this method is called will be processed as usual.
         @param gname: Name of the joint group.
         @return bool
+        @since 315.5.0
         '''
         return self.seq_svc.clearJointAngles(gname)
 
