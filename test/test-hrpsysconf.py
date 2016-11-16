@@ -3,6 +3,7 @@
 PKG = 'hrpsys'
 NAME = 'test-hrpsys-config'
 
+from distutils.version import StrictVersion
 import imp  ## for rosbuild
 try:
     imp.find_module(PKG)
@@ -62,6 +63,7 @@ class TestHrpsysConfig(unittest.TestCase):
         if args.port:
             rtm.nsport = args.port
         h = SampleHrpsysConfigurator()
+        self.hrpsys_version = h.fk.ref.get_component_profile().version
 
         h.waitForRTCManager()
         # look for name
@@ -70,6 +72,12 @@ class TestHrpsysConfig(unittest.TestCase):
                 h.waitForRobotHardware(c.name())  # get robot hardware name
                 break;
         self.rh = h.rh
+
+    def test_clearJointAngles(self):
+        if StrictVersion(self.seq_version) < StrictVersion('315.5.0'):
+            self.assertRaises(RuntimeError, h.clearJointAngles())
+        else:
+            self.assertTrue(h.clearJointAngles())
 
 #unittest.main()
 if __name__ == '__main__':
