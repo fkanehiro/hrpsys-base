@@ -2123,6 +2123,8 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
         @return bool
         @since 315.5.0
         '''
+        if StrictVersion(self.seq_version) < StrictVersion('315.5.0'):
+            raise RuntimeError('clearJointAngles is not available with your version of software.')
         return self.seq_svc.clearJointAngles()
 
     def clearJointAnglesOfGroup(self, gname):
@@ -2133,6 +2135,8 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
         @return bool
         @since 315.5.0
         '''
+        if StrictVersion(self.seq_version) < StrictVersion('315.5.0'):
+            raise RuntimeError('clearJointAnglesOfGroup is not available with your version of software.')
         return self.seq_svc.clearJointAngles(gname)
 
     # ##
