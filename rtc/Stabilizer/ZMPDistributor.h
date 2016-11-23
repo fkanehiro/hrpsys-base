@@ -39,13 +39,15 @@ public:
     void get_vertices (std::vector<std::vector<Eigen::Vector2d> >& vs) { vs = foot_vertices; };
     void print_vertices (const std::string& str)
     {
+        std::cerr << "[" << str << "]     ";
         for (size_t i = 0; i < foot_vertices.size(); i++) {
-            std::cerr << "[" << str << "]   vs = ";
+            std::cerr << "vs = ";
             for (size_t j = 0; j < foot_vertices[i].size(); j++) {
                 std::cerr << "[" << foot_vertices[i][j](0) << " " << foot_vertices[i][j](1) << "] ";
             }
-            std::cerr << "[m]" << std::endl;;
+            std::cerr << ((i==foot_vertices.size()-1)?"[m]":"[m], ");
         }
+        std::cerr << std::endl;;
     }
 };
 
