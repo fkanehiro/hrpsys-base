@@ -36,7 +36,7 @@
 // <rtc-template block="consumer_stub_h">
 
 //実機だとログ出力で落ちる？getenv("HOME")ダメ？
-#define DEBUG 0
+#define DEBUG 1
 
 
 class BiquadIIRFilterVec
@@ -74,6 +74,13 @@ public:
     };
 };
 
+class margin_t{
+  public:
+    hrp::Vector3 pt;
+    double x_u, x_l, y_u, y_l;
+    margin_t(){pt = hrp::Vector3::Zero(); x_u = x_l = y_u = y_l = 0;}
+    bool isRagulated(){return (x_u == 0 || x_l == 0 || y_u == 0 || y_l == 0);}
+};
 
 
 
@@ -151,13 +158,13 @@ class HumanSynchronizer{
     int countdown_num;
     bool HumanSyncOn;
     struct timeval t_calc_start, t_calc_end;
-    unsigned int loop;
     double h2r_ratio, tgt_h2r_ratio;
     double cmmr, tgt_cmmr;
     double HZ,DT,G;
     hrp::Vector3 com_old,com_oldold,comacc;
+    hrp::Vector3 comacc_ref;
     std::vector<BiquadIIRFilterVec> iir_v_filters;
-    BiquadIIRFilterVec comacc_v_filters;
+    BiquadIIRFilterVec calcacc_v_filters, acc4zmp_v_filters;
     hrp::Vector3 r_zmp_raw;
 
   public:
@@ -171,9 +178,11 @@ class HumanSynchronizer{
     HumanPose rp_ref_out;
     FILE *sr_log,*cz_log;
     bool use_rh,use_lh;
-    hrp::Vector3 init_wld_rp_rfpos,init_wld_rp_lfpos;
+    hrp::Vector3 init_wld_rp_rfeepos,init_wld_rp_lfeepos;
     hrp::Vector3 init_wld_hp_rfpos,init_wld_hp_lfpos;
     hrp::Vector3 current_basepos,init_basepos;
+    hrp::Vector3 com_vel_old;
+    unsigned int loop;
 
 
     interpolator *init_zmp_com_offset_interpolator;
@@ -193,7 +202,7 @@ class HumanSynchronizer{
       is_rf_contact = is_lf_contact = true;
       go_rf_landing = go_lf_landing = false;
       pre_cont_rfpos = pre_cont_lfpos = hrp::Vector3::Zero();
-      init_hp_calibcom.Zero();
+      init_hp_calibcom = hrp::Vector3::Zero();
       tgt_FUP_TIME = FUP_TIME = 0.4;
       FUP_HIGHT = 0.05;
       CNT_F_TH = 20.0;
@@ -204,22 +213,26 @@ class HumanSynchronizer{
       countdown_num = 5*HZ;
       loop = 0;
 
+      //////////  hrp::Vector は初期化必要  ///////////
       com_old = com_oldold = comacc = hrp::Vector3::Zero();
+      comacc_ref = hrp::Vector3::Zero();
       r_zmp_raw = hrp::Vector3::Zero();
 
-      init_wld_rp_rfpos = init_wld_rp_lfpos = hrp::Vector3::Zero();
+      init_wld_rp_rfeepos = init_wld_rp_lfeepos = hrp::Vector3::Zero();
       init_wld_hp_rfpos = init_wld_hp_lfpos = hrp::Vector3::Zero();
       current_basepos = init_basepos = hrp::Vector3::Zero();
 
-      iir_v_filters.resize(5);
-      for(int i=0;i<iir_v_filters.size();i++)iir_v_filters[i].setParameter(0.5,HZ);
-      comacc_v_filters.setParameter(0.5,HZ);
+      com_vel_old= hrp::Vector3::Zero();
 
-//      use_rh = use_lh = false;
+      iir_v_filters.resize(5);
+      for(int i=0;i<iir_v_filters.size();i++)iir_v_filters[i].setParameter(0.5,HZ);//重心＋四肢拘束点用
+      calcacc_v_filters.setParameter(5,HZ);//加速度計算用
+      acc4zmp_v_filters.setParameter(0.5,HZ);//ZMP生成用ほぼこの値でいい
+
       use_rh = use_lh = true;
 
-//      zmp_com_offset_ip_ratio = 0;
-
+      rp_ref_out_old.clear();
+      rp_ref_out.clear();
 
       init_zmp_com_offset_interpolator = new interpolator(1, DT, interpolator::HOFFARBIB, 1);
       init_zmp_com_offset_interpolator->setName("zmp_com_offset_interpolator");
@@ -229,9 +242,11 @@ class HumanSynchronizer{
       init_zmp_com_offset_interpolator->go(&goal_ratio, 3.0, true);//3s
 
       if(DEBUG){
-        std::string home_path(std::getenv("HOME"));
-        sr_log = fopen((home_path+"/HumanSync_support_region.log").c_str(),"w+");
-        cz_log = fopen((home_path+"/HumanSync_com_zmp.log").c_str(),"w+");
+//        std::string home_path(std::getenv("HOME"));
+//        sr_log = fopen((home_path+"/HumanSync_support_region.log").c_str(),"w+");
+//        cz_log = fopen((home_path+"/HumanSync_com_zmp.log").c_str(),"w+");
+        sr_log = fopen("/home/ishiguro/HumanSync_support_region.log","w+");
+        cz_log = fopen("/home/ishiguro/HumanSync_com_zmp.log","w+");
       }
       cout<<"HumanSynchronizer constructed"<<endl;
     }
@@ -265,34 +280,26 @@ class HumanSynchronizer{
       applyInitHumanZMPToCOMOffset        (hp_rel_raw, init_hp_calibcom, hp_rel_raw);
       lockFootXYOnContact                 (go_rf_landing, go_lf_landing, hp_rel_raw);//根本から改変すべき2
       hp_filtered = hp_rel_raw;
-
-//      applyLPFilterToEE(hp_rel_raw, hp_filtered);//次に使う.rf,.lfのためにEEだけは先にフィルターしておかないといけない説もある
       calcWorldZMP                        ((hp_filtered.rf+init_wld_hp_rfpos), (hp_filtered.lf+init_wld_hp_lfpos), hp_filtered.rfw, hp_filtered.lfw, hp_filtered.zmp);//足の位置はworldにしないと・・・
       convertRelHumanPoseToRelRobotPose   (hp_filtered,rp_ref_out);
       applyCOMMoveModRatio                (rp_ref_out);
       judgeFootLandOnCommand              (hp_wld_raw.rfw, hp_wld_raw.lfw, go_rf_landing, go_lf_landing);//frwはすでに1000->100Hzにフィルタリングされている
-
       applyEEWorkspaceLimit               (rp_ref_out);
-
-      applyCOMToSupportRegionLimit        (rp_ref_out.rf+init_wld_rp_rfpos, rp_ref_out.lf+init_wld_rp_lfpos, rp_ref_out.com);
-
+      applyCOMToSupportRegionLimit        (rp_ref_out.rf+init_wld_rp_rfeepos, rp_ref_out.lf+init_wld_rp_lfeepos, rp_ref_out.com);
       applyLPFilter                       (rp_ref_out);
-//      applyLPFilter_o                       (rp_ref_out, rp_ref_out_old, rp_ref_out);
+      applyCOMStateLimitByCapturePoint    (rp_ref_out.com, rp_ref_out_old.com, com_vel_old, rp_ref_out.rf+init_wld_rp_rfeepos, rp_ref_out.lf+init_wld_rp_lfeepos, rp_ref_out.com);
       r_zmp_raw = rp_ref_out.zmp;
       applyZMPCalcFromCOM                 (rp_ref_out.com,rp_ref_out.zmp);
       lockSwingFootIfZMPOutOfSupportFoot  (rp_ref_out, go_rf_landing, go_lf_landing);//
-
       applyVelLimit                       (rp_ref_out, rp_ref_out_old, rp_ref_out);
       applyCOMZMPXYZLock                  (rp_ref_out);
       overwriteFootZFromFootLandOnCommand (go_rf_landing, go_lf_landing, rp_ref_out);
+      com_vel_old = (rp_ref_out.com - rp_ref_out_old.com)/DT;
       rp_ref_out_old = rp_ref_out;
-//      fprintf(log,"%f %f %f %f %f %f\n", rp_ref_out.com(0), rp_ref_out.com(1), rp_ref_out.zmp(0), rp_ref_out.zmp(1), hp_rel_raw.com(0), hp_rel_raw.com(1));
       loop++;
       gettimeofday(&t_calc_end, NULL);
     }
     void calibInitHumanCOMFromZMP(){
-//      init_hp_calibcom(0) = hp_filtered.zmp(0);
-//      init_hp_calibcom(1) = hp_filtered.zmp(1);
       init_hp_calibcom(0) = r_zmp_raw(0);
       init_hp_calibcom(1) = r_zmp_raw(1);
     }
@@ -327,8 +334,8 @@ class HumanSynchronizer{
       if(h2r_r_goal - h2r_ratio > step){h2r_ratio += step; cout<<"Interpolating HumanToRobotRatio as "<<h2r_ratio<<endl;}
       else if(h2r_r_goal - h2r_ratio < (-1)*step){h2r_ratio -= step; cout<<"Interpolating HumanToRobotRatio as "<<h2r_ratio<<endl;}
       else{h2r_ratio = h2r_r_goal;}
-      init_wld_hp_rfpos = init_wld_rp_rfpos/h2r_ratio;
-      init_wld_hp_lfpos = init_wld_rp_lfpos/h2r_ratio;
+      init_wld_hp_rfpos = init_wld_rp_rfeepos/h2r_ratio;
+      init_wld_hp_lfpos = init_wld_rp_lfeepos/h2r_ratio;
     }
     void updateCOMModRatio(const double cmmr_goal){
       const double step = 0.001;
@@ -384,15 +391,15 @@ class HumanSynchronizer{
     }
     void lockSwingFootIfZMPOutOfSupportFoot(const HumanPose& tgt, bool& rfcs_ans, bool& lfcs_ans){
       if(rfcs_ans && !lfcs_ans){
-        if(tgt.zmp(1) > tgt.rf(1) + init_wld_rp_rfpos(1) + 0.02){
+        if(tgt.zmp(1) > tgt.rf(1) + init_wld_rp_rfeepos(1) + 0.02){
           lfcs_ans = true;
-          cout<<"LF lock"<<endl;
+          if(loop%100==0)cout<<"LF Auto lock"<<endl;
         }
       }
       if(!rfcs_ans && lfcs_ans){
-        if(tgt.zmp(1) < tgt.lf(1) + init_wld_rp_lfpos(1) - 0.02){
+        if(tgt.zmp(1) < tgt.lf(1) + init_wld_rp_lfeepos(1) - 0.02){
           rfcs_ans = true;
-          cout<<"RF lock"<<endl;
+          if(loop%100==0)cout<<"RF Auto lock"<<endl;
         }
       }
     }
@@ -492,7 +499,6 @@ class HumanSynchronizer{
           break;
         }
       }
-
       if(pt_state != PT_IN_REGION){
         int ans_lid=-1;
         for(int i=0;i<convex_hull.size()-1;i++){//対象の点がある線分への垂線を有するかチェックする
@@ -524,29 +530,209 @@ class HumanSynchronizer{
           pt_state = PT_FIX_TO_VERTEX;
         }
       }
-
-//      if(loop%50==0){//ログ
-//        if(pt_state != PT_IN_REGION){
-//          std::cout<<"COM out of Support Region pt_state="<<pt_state<<std::endl;
-//        }
-//        for(int i=0;i<convex_hull.size();i++){
-//          fprintf(sr_log,"%f %f %f\n",convex_hull[i](0), convex_hull[i](1),(double)loop/HZ);
-//        }
-//        fprintf(sr_log,"\n");
-//        fprintf(cz_log,"%f %f %f %f %f %f %f %f %f",(double)loop/HZ,comin_abs(0),comin_abs(1),comin_abs(2),rp_ref_out.zmp(0),rp_ref_out.zmp(1),rp_ref_out.zmp(2),ans_point(0),ans_point(1));
-//        fprintf(cz_log," %f %f %f %f",rp_ref_out.zmp(1),hpf_zmp(1),ans_point(1),ans_point(1) + hpf_zmp(1));
-//        fprintf(cz_log,"\n\n");
-//      }
       comin_abs(0) = ans_point(0);
       comin_abs(1) = ans_point(1);
       return true;
     }
+
+
+    bool applyCOMStateLimitByCapturePoint(const hrp::Vector3& com_in, const hrp::Vector3& com_old, const hrp::Vector3& com_vel_old, const hrp::Vector3& rfin_abs, const hrp::Vector3& lfin_abs, hrp::Vector3& com_ans){
+      com_ans = com_in;
+      hrp::Vector3 com_vel = (com_in - com_old)/DT;
+      hrp::Vector3 com_acc = (com_vel - com_vel_old)/DT;//命名規則
+      hrp::Vector3 com_vel_zmpOk, com_vel_zmpOk_cpOk;
+
+      comacc_ref = calcacc_v_filters.passFilter(com_acc);
+
+      const double H = rp_wld_initpos.com(2);
+
+      double maxacc[2],minacc[2];
+      maxacc[0] = (com_old(0) - (-0.05)) * (G/H); if(maxacc[0] < 0){maxacc[0]=0;}
+      minacc[0] = (com_old(0) - (0.10)) * (G/H); if(minacc[0] > 0){minacc[0]=0;}
+      maxacc[1] = (com_old(1) - (-0.04-0.1)) * (G/H); if(maxacc[1] < 0){maxacc[1]=0;}
+      minacc[1] = (com_old(1) - (0.04+0.1)) * (G/H); if(minacc[1] > 0){minacc[1]=0;}
+//      if(com_vel(0) > maxacc[0] * DT + com_vel_old(0)){com_vel(0) = maxacc[0] * DT + com_vel_old(0); cout<<"maxacc[0] over"<<endl;}
+//      if(com_vel(0) < minacc[0] * DT + com_vel_old(0)){com_vel(0) = minacc[0] * DT + com_vel_old(0); cout<<"minacc[0] over"<<endl;}
+//      if(com_vel(1) > maxacc[1] * DT + com_vel_old(1)){com_vel(1) = maxacc[1] * DT + com_vel_old(1); cout<<"maxacc[1] over"<<endl;}
+//      if(com_vel(1) < minacc[1] * DT + com_vel_old(1)){com_vel(1) = minacc[1] * DT + com_vel_old(1); cout<<"minacc[1] over"<<endl;}
+      if(comacc_ref(0) > maxacc[0]){com_vel(0) = maxacc[0] * DT + com_vel_old(0); cout<<"maxacc[0] over"<<endl;}
+      if(comacc_ref(0) < minacc[0]){com_vel(0) = minacc[0] * DT + com_vel_old(0); cout<<"minacc[0] over"<<endl;}
+      if(comacc_ref(1) > maxacc[1]){com_vel(1) = maxacc[1] * DT + com_vel_old(1); cout<<"maxacc[1] over"<<endl;}
+      if(comacc_ref(1) < minacc[1]){com_vel(1) = minacc[1] * DT + com_vel_old(1); cout<<"minacc[1] over"<<endl;}
+
+
+
+////      cout<<"maxacc "<<maxacc[1]<<" minacc "<<minacc[1]<< " acc " << (com_vel(1)-com_vel_old(1))/DT <<endl;
+//
+      hrp::Vector3 bb;
+      hrp::Vector3 cp_ragulated;
+
+      margin_t margin_from_4maxcp;
+      checkMarginToFootSupportRegion(com_old, com_old, rfin_abs, lfin_abs, 0.04, 0.02, 0.01, 0.01, margin_from_4maxcp, bb);
+      hrp::Vector3 max_com_vel,min_com_vel;
+      max_com_vel(0) = margin_from_4maxcp.x_u / sqrt( H / G );
+      min_com_vel(0) = margin_from_4maxcp.x_l / sqrt( H / G );
+      max_com_vel(1) = margin_from_4maxcp.y_u / sqrt( H / G );
+      min_com_vel(1) = margin_from_4maxcp.y_l / sqrt( H / G );
+      if(com_vel(0) > max_com_vel(0)){ com_vel(0) = max_com_vel(0); cout<<"F cp over"<<endl;}//ここブレーキ時のZMP条件に変えたほうがいいかもしれない
+      if(com_vel(0) < min_com_vel(0)){ com_vel(0) = min_com_vel(0); cout<<"B cp over"<<endl;}
+      if(com_vel(1) > max_com_vel(1)){ com_vel(1) = max_com_vel(1); cout<<"L cp over"<<endl;}
+      if(com_vel(1) < min_com_vel(1)){ com_vel(1) = min_com_vel(1); cout<<"R cp over"<<endl;}
+
+      com_ans(0) = com_old(0) + com_vel(0) * DT;
+      com_ans(1) = com_old(1) + com_vel(1) * DT;
+//      cout<<"max_com_vel(0)"<<max_com_vel(0)<<endl;
+//      cout<<"min_com_vel(0)"<<min_com_vel(0)<<endl;
+//      cout<<"com_vel(0)"<<com_vel(0)<<endl;
+//      cout<<"com_ans(0)"<<com_ans(0)<<endl;
+//      cout<<"max_com_vel(1)"<<max_com_vel(1)<<endl;
+//      cout<<"min_com_vel(1)"<<min_com_vel(1)<<endl;
+//      cout<<"com_vel(1)"<<com_vel(1)<<endl;
+//      cout<<"com_ans(1)"<<com_ans(1)<<endl;
+
+//      //ここからはcom_inがそんなに領域外に出ていない仮定
+//      checkMarginToFootSupportRegion(com_in, com_old, rfin_abs, lfin_abs, 0.04, 0.02, 0.01, 0.01, margin_from_4maxcp, cp_ragulated);
+//      hrp::Vector2 com_raw_vel2d,cp_ragulated_2d,com_old_2d;
+//      com_raw_vel2d(0) = (com_in(0) - com_old(0))/DT;
+//      com_raw_vel2d(1) = (com_in(1) - com_old(1))/DT;
+//      cp_ragulated_2d(0) = cp_ragulated(0);
+//      cp_ragulated_2d(1) = cp_ragulated(1);
+//      com_old_2d(0) = com_old(0);
+//      com_old_2d(1) = com_old(1);
+//      if( com_raw_vel2d.norm() * sqrt(H/G) > (cp_ragulated_2d - com_old_2d).norm()){
+//        com_raw_vel2d *= (cp_ragulated_2d - com_old_2d).norm()/( com_raw_vel2d.norm() * sqrt(H/G) );
+//        std::cerr << "CP work" << std::endl;
+//        com_ans(0) = com_old(0) + com_raw_vel2d(0) * DT;
+//        com_ans(1) = com_old(1) + com_raw_vel2d(1) * DT;
+//
+//      }
+      return true;
+    }
+
+
+    bool checkMarginToFootSupportRegion(const hrp::Vector3& pt_in, const hrp::Vector3& pt_old, const hrp::Vector3& rfin_abs, const hrp::Vector3& lfin_abs, const double& forward_mgn, const double& back_mgn, const double& outer_mgn, const double& inner_mgn, margin_t& mgn_ans, hrp::Vector3& pt_ans){
+      std::vector<hrp::Vector2> convex_hull;
+      if(forward_mgn< -back_mgn || outer_mgn< -inner_mgn ){std::cerr << "Invalid margin input!" << std::endl;return false;}
+      if(lfin_abs(0)>rfin_abs(0)){
+        convex_hull.push_back(hrp::Vector2(lfin_abs(0) - back_mgn,    lfin_abs(1) + outer_mgn));//LFの左下
+        convex_hull.push_back(hrp::Vector2(lfin_abs(0) + forward_mgn, lfin_abs(1) + outer_mgn));//LFの左上
+        convex_hull.push_back(hrp::Vector2(lfin_abs(0) + forward_mgn, lfin_abs(1) - inner_mgn));//LFの右上
+        convex_hull.push_back(hrp::Vector2(rfin_abs(0) + forward_mgn, rfin_abs(1) - outer_mgn));//RFの右上
+        convex_hull.push_back(hrp::Vector2(rfin_abs(0) - back_mgn,    rfin_abs(1) - outer_mgn));//RFの右下
+        convex_hull.push_back(hrp::Vector2(rfin_abs(0) - back_mgn,    rfin_abs(1) + inner_mgn));//RFの左下
+        convex_hull.push_back(hrp::Vector2(lfin_abs(0) - back_mgn,    lfin_abs(1) + outer_mgn));//LFの左下
+      }else{
+        convex_hull.push_back(hrp::Vector2(lfin_abs(0) - back_mgn,    lfin_abs(1) - inner_mgn));//LFの右下
+        convex_hull.push_back(hrp::Vector2(lfin_abs(0) - back_mgn,    lfin_abs(1) + outer_mgn));//LFの左下
+        convex_hull.push_back(hrp::Vector2(lfin_abs(0) + forward_mgn, lfin_abs(1) + outer_mgn));//LFの左上
+        convex_hull.push_back(hrp::Vector2(rfin_abs(0) + forward_mgn, rfin_abs(1) + inner_mgn));//RFの左上
+        convex_hull.push_back(hrp::Vector2(rfin_abs(0) + forward_mgn, rfin_abs(1) - outer_mgn));//RFの右上
+        convex_hull.push_back(hrp::Vector2(rfin_abs(0) - back_mgn,    rfin_abs(1) - outer_mgn));//RFの右下
+        convex_hull.push_back(hrp::Vector2(lfin_abs(0) - back_mgn,    lfin_abs(1) - inner_mgn));//LFの右下
+      }
+      hrp::Vector2 check_point(pt_in(0),pt_in(1));
+      hrp::Vector2 ans_point = check_point;
+      enum point_state_t {PT_IN_NO_PATTERN = -1, PT_IN_REGION, PT_FIX_TO_EDGE, PT_FIX_TO_VERTEX};
+      point_state_t pt_state = PT_IN_REGION;
+      for(int i=0;i<convex_hull.size()-1;i++){//対象の点が凸包の内部に存在するかチェックする
+        hrp::Vector2 cur_vert(convex_hull[i](0),convex_hull[i](1));
+        hrp::Vector2 next_vert(convex_hull[i+1](0),convex_hull[i+1](1));
+        hrp::Vector2 edge_v = next_vert - cur_vert;
+        hrp::Vector2 tgt_pt_v = check_point - cur_vert;
+        if((edge_v(0)*tgt_pt_v(1)-edge_v(1)*tgt_pt_v(0)) > 0){  pt_state = PT_IN_NO_PATTERN; break; }
+      }
+      if(pt_state != PT_IN_REGION){
+        int ans_lid=-1;
+        for(int i=0;i<convex_hull.size()-1;i++){//対象の点がある線分への垂線を有するかチェックする
+          hrp::Vector2 cur_vert(convex_hull[i](0),convex_hull[i](1));
+          hrp::Vector2 next_vert(convex_hull[i+1](0),convex_hull[i+1](1));
+          hrp::Vector2 edge_v = next_vert - cur_vert;
+          hrp::Vector2 tgt_pt_v = check_point - cur_vert;
+          //ある線分への垂線を有し，かつ外側(時計回りエッジに対して左側)に存在するなら，対象の点からそのエッジへの垂線の交点が最近傍点
+          if(edge_v.dot(tgt_pt_v)/edge_v.norm() > 0 && edge_v.dot(tgt_pt_v)/edge_v.norm() < edge_v.norm() && (edge_v(0)*tgt_pt_v(1)-edge_v(1)*tgt_pt_v(0)) > 0){
+            ans_lid = i;
+            ans_point = cur_vert + edge_v.normalized() * (edge_v.dot(tgt_pt_v)/edge_v.norm());
+            pt_state = PT_FIX_TO_EDGE;
+            break;
+          }
+        }
+        if(pt_state != PT_FIX_TO_EDGE){//対象の点が線分への垂線を持たなければ答えを頂点に絞ってチェックする
+          double cur_min_dis = (check_point - convex_hull[0]).norm();
+          int ans_pid = 0;
+          for(int i=1;i<convex_hull.size();i++){
+            if((check_point - convex_hull[i]).norm() < cur_min_dis){
+              cur_min_dis = (check_point - convex_hull[i]).norm();
+              ans_pid = i;
+            }
+          }
+          ans_point(0) = convex_hull[ans_pid](0);
+          ans_point(1) = convex_hull[ans_pid](1);
+          pt_state = PT_FIX_TO_VERTEX;
+        }
+      }
+      pt_ans(0) = ans_point(0);//領域はみ出ている場合この答えは点から領域への最近傍点(だからちょっと意味が違う)
+      pt_ans(1) = ans_point(1);//
+
+      hrp::Vector2 anchor_vec[4] = {hrp::Vector2(1,0), hrp::Vector2(-1,0), hrp::Vector2(0,1), hrp::Vector2(0,-1)};//前後左右に伸ばしたアンカーとの交点を見る
+      hrp::Vector2 cross_pt;
+      double margin[4] = {0};
+      for(int direc=0;direc<4;direc++){
+        for(int i=0;i<convex_hull.size()-1;i++){
+          double dBunbo = anchor_vec[direc](0) * ( convex_hull[i+1](1) - convex_hull[i](1) ) - anchor_vec[direc](1) * ( convex_hull[i+1](0) - convex_hull[i](0) );
+          if( dBunbo != 0.0)  {//平行の場合を外す
+            hrp::Vector2 vectorAC = convex_hull[i] - ans_point;
+            double dR = ( ( convex_hull[i+1](1) - convex_hull[i](1) ) * vectorAC(0) - ( convex_hull[i+1](0) - convex_hull[i](0) ) * vectorAC(1) ) / dBunbo;
+            double dS = ( anchor_vec[direc](1) * vectorAC(0) - anchor_vec[direc](0) * vectorAC(1) ) / dBunbo;
+            //dR==0のときは含めないことで，点が境界上でも領域内側向きのマージンをチェックさせる
+            //dRの上限が無いのはアンカーベクトルの無限遠まで交点を許可するから(アンカーベクトルの長さは1で定義しているため)
+            //点が斜線境界上にあるとまれに dR = 8.67362e-18 とかいう0でない値がでたりする．
+            //恐らく点を斜線境界で打ち切った時に数値誤差で完全に斜線に乗り切らず，数値誤差分はみ出ている状況と思われる．
+            if(dR > 1e-9 && dS >= 0.0 && dS <= 1.0){
+              cross_pt = ans_point + dR * anchor_vec[direc];
+              margin[direc] = dR * anchor_vec[direc].norm();
+            }
+          }
+        }
+      }
+      mgn_ans.x_u = margin[0];
+      mgn_ans.x_l = -margin[1];
+      mgn_ans.y_u = margin[2];
+      mgn_ans.y_l = -margin[3];
+
+//      //X,Y独立のマージンチェックではなくXY平面内の二次元距離でマージンを計算したい
+//      hrp::Vector2 cmd_vec,pt_in_2d,pt_old_2d;
+//      pt_in_2d(0) = pt_in(0);      pt_in_2d(1) = pt_in(1);
+//      pt_old_2d(0) = pt_old(0);    pt_old_2d(1) = pt_old(1);
+//      cmd_vec = pt_in_2d - pt_old_2d;
+//      hrp::Vector2 cross_pt;
+//      double margin[4] = {0};
+//      for(int i=0;i<convex_hull.size()-1;i++){
+//        double dBunbo = cmd_vec(0) * ( convex_hull[i+1](1) - convex_hull[i](1) ) - cmd_vec(1) * ( convex_hull[i+1](0) - convex_hull[i](0) );
+//        if( dBunbo != 0.0)  {//平行の場合を外す
+//          hrp::Vector2 vectorAC = convex_hull[i] - pt_old_2d;
+//          double dR = ( ( convex_hull[i+1](1) - convex_hull[i](1) ) * vectorAC(0) - ( convex_hull[i+1](0) - convex_hull[i](0) ) * vectorAC(1) ) / dBunbo;
+//          double dS = ( cmd_vec(1) * vectorAC(0) - cmd_vec(0) * vectorAC(1) ) / dBunbo;
+//          //dR==0のときは含めないことで，点が境界上でも領域内側向きのマージンをチェックさせる
+//          //dRの上限が無いのはアンカーベクトルの無限遠まで交点を許可するから(アンカーベクトルの長さは1で定義しているため)
+//          //点が斜線境界上にあるとまれに dR = 8.67362e-18 とかいう0でない値がでたりする．
+//          //恐らく点を斜線境界で打ち切った時に数値誤差で完全に斜線に乗り切らず，数値誤差分はみ出ている状況と思われる．
+//          if(dR > 1e-9 && dS >= 0.0 && dS <= 1.0){
+//            cross_pt = pt_old_2d + dR * cmd_vec;
+//          }
+//        }
+//      }
+//      pt_ans(0) = cross_pt(0);
+//      pt_ans(1) = cross_pt(1);
+
+      return true;
+    }
+
     void applyZMPCalcFromCOM(const hrp::Vector3& comin, hrp::Vector3& zmpout){
       comacc = (comin - 2 * com_old + com_oldold)/(DT*DT);
       const double MAXACC = 5;
       if(comacc(0)>MAXACC)comacc(0)=MAXACC;else if(comacc(0)<-MAXACC)comacc(0)=-MAXACC;
       if(comacc(1)>MAXACC)comacc(1)=MAXACC;else if(comacc(1)<-MAXACC)comacc(1)=-MAXACC;
-      comacc = comacc_v_filters.passFilter(comacc);
+      comacc = acc4zmp_v_filters.passFilter(comacc);
       zmpout(0) = comin(0)-(rp_wld_initpos.com(2)/G)*comacc(0);
       zmpout(1) = comin(1)-(rp_wld_initpos.com(2)/G)*comacc(1);
       if(DEBUG)fprintf(cz_log,"%f %f %f %f %f %f %f\n",(double)loop/HZ,comin(0),comin(1),rp_ref_out.zmp(0),rp_ref_out.zmp(1),zmpout(0),zmpout(1));

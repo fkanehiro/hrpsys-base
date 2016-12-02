@@ -375,7 +375,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
 
     //for HumanSynchronizer
     hsp = boost::shared_ptr<HumanSynchronizer>(new HumanSynchronizer());
-    if(leg_pos.size()>=2){ hsp->init_wld_rp_rfpos = leg_pos[0]; hsp->init_wld_rp_lfpos = leg_pos[1]; }
+    if(leg_pos.size()>=2){ hsp->init_wld_rp_rfeepos = leg_pos[0]; hsp->init_wld_rp_lfeepos = leg_pos[1]; }
 
     hrp::Sensor* sen = m_robot->sensor<hrp::RateGyroSensor>("gyrometer");
     if (sen == NULL) {
@@ -1078,6 +1078,18 @@ void AutoBalancer::solveLimbIK ()
   m_robot->rootLink()->p = m_robot->rootLink()->p + -1 * move_base_gain * dif_cog;
   m_robot->rootLink()->R = target_root_R;
 
+////////////////////  逆動力学補償テスト  /////////////////////
+//  hrp::Matrix33 rot;
+//  Eigen::Matrix3f AxisAngle;
+//  Eigen::Vector3f axis(1,0,0);
+//  static int loop_l = 0;
+//  AxisAngle=Eigen::AngleAxisf(0.2*sin(2*M_PI*loop_l*m_dt),axis);  //Z軸周りに90度反時計回りに回転
+//  m_robot->rootLink()->R << AxisAngle(0,0), AxisAngle(0,1), AxisAngle(0,2), AxisAngle(1,0), AxisAngle(1,1), AxisAngle(1,2), AxisAngle(2,0), AxisAngle(2,1), AxisAngle(2,2);
+//if(loop>4000)loop_l++;
+//  if(loop_l>250)loop_l=250;
+////////////////////  逆動力学補償テスト  /////////////////////
+
+
 
   //for HumanSynchronizer
   if(hsp->startCountdownForHumanSync){
@@ -1142,6 +1154,9 @@ void AutoBalancer::solveLimbIK ()
 		  if(com_ik_loop++ > COM_IK_MAX_LOOP){std::cerr << "[" << m_profile.instance_name << "] COM constraint IK MAX loop [="<<COM_IK_MAX_LOOP<<"] exceeded!!" << std::endl; break; };
 	  }
 
+
+
+
     //outport用のデータ上書き
     ref_zmp = hsp->rp_ref_out.zmp + hsp->rp_wld_initpos.zmp;
     ref_cog = hsp->rp_ref_out.com + hsp->rp_wld_initpos.com;
@@ -1154,6 +1169,89 @@ void AutoBalancer::solveLimbIK ()
 	  }
   }
   if (gg_is_walking && !gg_solved) stopWalking ();
+
+
+
+
+
+
+  ////////////////////  逆動力学補償テスト  /////////////////////
+//  //  for(int i=0;i<m_robot->numLinks();i++)cout<<"m_robot->link("<<i<<")->name: "<<m_robot->link(i)->name<<endl;
+//  static std::vector<double> q,q_old,dq,dq_old,ddq,ddq_f;
+//  static hrp::Vector3 base_acc(0,0,0),base_pos(0,0,0),base_pos_old(0,0,0),base_vel(0,0,0),base_vel_old(0,0,0);
+//
+//  static bool first = true;
+//  if(first){
+//    q.resize(m_robot->numJoints());
+//    q_old.resize(m_robot->numJoints());
+//    dq.resize(m_robot->numJoints());
+//    dq_old.resize(m_robot->numJoints());
+//    ddq.resize(m_robot->numJoints());
+//    ddq_f.resize(m_robot->numJoints(),0);
+//    for(int i=0;i<m_robot->numJoints();i++)q[i] = m_robot->joint(i)->q;
+//    q_old=q;
+//    for(int i=0;i<m_robot->numJoints();i++)dq[i] = (q[i] - q_old[i])/m_dt;
+//    dq_old=dq;
+//    first=false;
+//  }
+//
+//  for(int i=0;i<m_robot->numJoints();i++)q[i] = m_robot->joint(i)->q;
+//  for(int i=0;i<m_robot->numJoints();i++)dq[i] = (q[i] - q_old[i])/m_dt;
+//  for(int i=0;i<m_robot->numJoints();i++)ddq[i] = (dq[i] - dq_old[i])/m_dt;
+//  q_old = q;
+//  dq_old = dq;
+//  for(int i=0;i<m_robot->numJoints();i++)m_robot->joint(i)->dq = dq[i];
+//
+//  for(int i=0;i<m_robot->numJoints();i++)ddq_f[i] = 0.99*ddq_f[i] + 0.01*ddq[i];
+//  for(int i=0;i<m_robot->numJoints();i++)m_robot->joint(i)->ddq = ddq_f[i];
+//
+//base_pos = m_robot->rootLink()->p;
+//  base_vel = (base_pos - base_pos_old)/m_dt;
+//  base_acc = 0.99*base_acc + 0.01*(base_vel - base_vel_old)/m_dt;
+//  base_pos_old = base_pos;
+//  base_vel_old = base_vel;
+//
+////    cout<<"m_robot->link(\"RLEG_JOINT1\")->ddq: "<<m_robot->link("RLEG_JOINT1")->ddq<<endl;
+////    cout<<"m_robot->link(\"RLEG_JOINT1\")->dq: "<<m_robot->link("RLEG_JOINT1")->dq<<endl;
+////    cout<<"m_robot->link(\"RLEG_JOINT1\")->q: "<<m_robot->link("RLEG_JOINT1")->q<<endl;
+//
+//  m_robot->calcForwardKinematics(true,true);
+//
+//    static hrp::Vector3 fff,ttt;
+//    m_robot->calcInverseDynamics(m_robot->rootLink(),fff,ttt);
+//    hrp::Vector3 g(0,0,9.80665);
+////    m_robot->rootLink()->dvo = base_acc;
+//    cout<<"m_robot->rootLink()->dvo\n"<<m_robot->rootLink()->dvo<<endl;
+//    cout<<"m_robot->rootLink()->dw\n"<<m_robot->rootLink()->dw<<endl;
+//
+//    cout<<"calcInverseDynamics["<<loop<<"]\nfff\n"<<fff<<"\nttt\n"<<ttt<<endl;
+//    static hrp::Vector3 fff_f = hrp::Vector3::Zero(),ttt_f = hrp::Vector3::Zero();
+////    fff_f = 0.99*fff_f + 0.01*fff;
+////    ttt_f = 0.99*ttt_f + 0.01*ttt;
+//    //    fff_f = 0.95*fff_f + 0.05*fff;
+//    //    ttt_f = 0.95*ttt_f + 0.05*ttt;
+//        fff_f =fff;
+//        ttt_f =ttt;
+//
+//    hrp::Vector3 ppp,lll;
+//
+//    m_robot->calcTotalMomentum(ppp,lll);
+//    cout<<"calcTotalMomentum\nppp\n"<<ppp<<"\nlll\n"<<lll<<endl;
+//
+////    ref_zmp(0) += ( - 0*ppp(0)*m_robot->calcCM()(2) - lll(1))/(m_robot->totalMass()*9.8);
+////    ref_zmp(1) += ( - 0*ppp(1)*m_robot->calcCM()(2) - lll(0))/(m_robot->totalMass()*9.8);
+////      ref_zmp(0) += ( - fff_f(0)*m_robot->calcCM()(2)*0 + ttt_f(1))/(m_robot->totalMass()*9.8)*1;
+////      ref_zmp(1) += ( - fff_f(1)*m_robot->calcCM()(2)*0 - ttt_f(0))/(m_robot->totalMass()*9.8)*1;
+//
+////    if(hsp->sr_log!=NULL)fprintf(hsp->sr_log,"%f %f %f %f %f\n",m_robot->link("WAIST")->p(0),fff(0),ttt(0),ppp(0),lll(0));
+//    if(hsp->sr_log!=NULL)fprintf(hsp->sr_log,"%f %f %f %f %f %f %f\n",(hrp::rpyFromRot(m_robot->link("WAIST")->R)(0))*100,fff_f(1),ttt_f(0),ppp(1),lll(0),ref_zmp(1)*1000,m_dt);
+
+    ////////////////////  逆動力学補償テスト  /////////////////////
+
+
+
+
+
 }
 
 /*
