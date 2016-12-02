@@ -59,7 +59,7 @@ include_directories(${CMAKE_BINARY_DIR})
 
 # OpenRTM-aist(>= 1.0.0)
 find_package(OpenRTM REQUIRED)
-if(EXISTS "${OPENRTM_DIR}/include/openrtm-1.1/rtm/RTObjectStateMachine.h")
+if(EXISTS "${OPENRTM_DIR}/include/openrtm-1.2/rtm/RTObjectStateMachine.h")
 add_definitions(-DOPENRTM_VERSION_TRUNK)
 endif()
 
