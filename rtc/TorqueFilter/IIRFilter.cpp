@@ -38,6 +38,10 @@ bool IIRFilter::setParameter(int dim, std::vector<double>& A, std::vector<double
         return false;
     }
 
+    // clear previous coefficients
+    m_fb_coefficients.clear();
+    m_ff_coefficients.clear();
+
     if (A.size() == dim) {
         m_fb_coefficients.push_back(1.0);
     }
