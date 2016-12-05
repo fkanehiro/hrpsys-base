@@ -225,9 +225,10 @@ class HumanSynchronizer{
       com_vel_old= hrp::Vector3::Zero();
 
       iir_v_filters.resize(5);
-      for(int i=0;i<iir_v_filters.size();i++)iir_v_filters[i].setParameter(0.5,HZ);//重心＋四肢拘束点用
+      for(int i=0;i<iir_v_filters.size();i++)iir_v_filters[i].setParameter(1,HZ);//四肢拘束点用
+      iir_v_filters[0].setParameter(0.5,HZ);//重心用
       calcacc_v_filters.setParameter(5,HZ);//加速度計算用
-      acc4zmp_v_filters.setParameter(0.5,HZ);//ZMP生成用ほぼこの値でいい
+      acc4zmp_v_filters.setParameter(1,HZ);//ZMP生成用ほぼこの値でいい
 
       use_rh = use_lh = true;
 
@@ -287,7 +288,6 @@ class HumanSynchronizer{
       applyEEWorkspaceLimit               (rp_ref_out);
       applyCOMToSupportRegionLimit        (rp_ref_out.rf+init_wld_rp_rfeepos, rp_ref_out.lf+init_wld_rp_lfeepos, rp_ref_out.com);
       applyLPFilter                       (rp_ref_out);
-      applyCOMStateLimitByCapturePoint    (rp_ref_out.com, rp_ref_out_old.com, com_vel_old, rp_ref_out.rf+init_wld_rp_rfeepos, rp_ref_out.lf+init_wld_rp_lfeepos, rp_ref_out.com);
       r_zmp_raw = rp_ref_out.zmp;
       applyZMPCalcFromCOM                 (rp_ref_out.com,rp_ref_out.zmp);
       lockSwingFootIfZMPOutOfSupportFoot  (rp_ref_out, go_rf_landing, go_lf_landing);//
@@ -541,24 +541,27 @@ class HumanSynchronizer{
       hrp::Vector3 com_vel = (com_in - com_old)/DT;
       hrp::Vector3 com_acc = (com_vel - com_vel_old)/DT;//命名規則
       hrp::Vector3 com_vel_zmpOk, com_vel_zmpOk_cpOk;
+      double accel[4] = {0.05, -0.03, 0.02, -0.02};
+      double decel[4] = {0.04, -0.02, 0.01, -0.01};
 
       comacc_ref = calcacc_v_filters.passFilter(com_acc);
 
       const double H = rp_wld_initpos.com(2);
 
       double maxacc[2],minacc[2];
-      maxacc[0] = (com_old(0) - (-0.05)) * (G/H); if(maxacc[0] < 0){maxacc[0]=0;}
-      minacc[0] = (com_old(0) - (0.10)) * (G/H); if(minacc[0] > 0){minacc[0]=0;}
-      maxacc[1] = (com_old(1) - (-0.04-0.1)) * (G/H); if(maxacc[1] < 0){maxacc[1]=0;}
-      minacc[1] = (com_old(1) - (0.04+0.1)) * (G/H); if(minacc[1] > 0){minacc[1]=0;}
+      maxacc[0] = (com_old(0) - accel[1]) * (G/H); if(maxacc[0] < 0){maxacc[0]=0;}
+      minacc[0] = (com_old(0) - accel[0]) * (G/H); if(minacc[0] > 0){minacc[0]=0;}
+      maxacc[1] = (com_old(1) - (accel[3]-0.1)) * (G/H); if(maxacc[1] < 0){maxacc[1]=0;}
+      minacc[1] = (com_old(1) - (accel[2]+0.1)) * (G/H); if(minacc[1] > 0){minacc[1]=0;}
 //      if(com_vel(0) > maxacc[0] * DT + com_vel_old(0)){com_vel(0) = maxacc[0] * DT + com_vel_old(0); cout<<"maxacc[0] over"<<endl;}
 //      if(com_vel(0) < minacc[0] * DT + com_vel_old(0)){com_vel(0) = minacc[0] * DT + com_vel_old(0); cout<<"minacc[0] over"<<endl;}
 //      if(com_vel(1) > maxacc[1] * DT + com_vel_old(1)){com_vel(1) = maxacc[1] * DT + com_vel_old(1); cout<<"maxacc[1] over"<<endl;}
 //      if(com_vel(1) < minacc[1] * DT + com_vel_old(1)){com_vel(1) = minacc[1] * DT + com_vel_old(1); cout<<"minacc[1] over"<<endl;}
-      if(comacc_ref(0) > maxacc[0]){com_vel(0) = maxacc[0] * DT + com_vel_old(0); cout<<"maxacc[0] over"<<endl;}
-      if(comacc_ref(0) < minacc[0]){com_vel(0) = minacc[0] * DT + com_vel_old(0); cout<<"minacc[0] over"<<endl;}
-      if(comacc_ref(1) > maxacc[1]){com_vel(1) = maxacc[1] * DT + com_vel_old(1); cout<<"maxacc[1] over"<<endl;}
-      if(comacc_ref(1) < minacc[1]){com_vel(1) = minacc[1] * DT + com_vel_old(1); cout<<"minacc[1] over"<<endl;}
+//      if(comacc_ref(0) > maxacc[0]){com_vel(0) = maxacc[0] * DT + com_vel_old(0); cout<<"maxacc[0] over"<<endl;}
+//      if(comacc_ref(0) < minacc[0]){com_vel(0) = minacc[0] * DT + com_vel_old(0); cout<<"minacc[0] over"<<endl;}
+//      if(comacc_ref(1) > maxacc[1]){com_vel(1) = maxacc[1] * DT + com_vel_old(1); cout<<"maxacc[1] over"<<endl;}
+//      if(comacc_ref(1) < minacc[1]){com_vel(1) = minacc[1] * DT + com_vel_old(1); cout<<"minacc[1] over"<<endl;}
+//      cout<<"comacc_ref(1) "<<comacc_ref(1)<<" minacc[1] "<<minacc[1]<<endl;
 
 
 
@@ -579,8 +582,13 @@ class HumanSynchronizer{
       if(com_vel(1) > max_com_vel(1)){ com_vel(1) = max_com_vel(1); cout<<"L cp over"<<endl;}
       if(com_vel(1) < min_com_vel(1)){ com_vel(1) = min_com_vel(1); cout<<"R cp over"<<endl;}
 
+
+
       com_ans(0) = com_old(0) + com_vel(0) * DT;
       com_ans(1) = com_old(1) + com_vel(1) * DT;
+
+
+//      if(DEBUG)fprintf(cz_log,"%f %f %f %f %f %f %f\n",(double)loop/HZ,com_ans(0),com_ans(1),com_vel(0),com_vel(1),margin_from_4maxcp.y_u,margin_from_4maxcp.y_l);
 //      cout<<"max_com_vel(0)"<<max_com_vel(0)<<endl;
 //      cout<<"min_com_vel(0)"<<min_com_vel(0)<<endl;
 //      cout<<"com_vel(0)"<<com_vel(0)<<endl;
