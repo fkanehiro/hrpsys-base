@@ -29,44 +29,67 @@ static const char* nullcomponent_spec[] =
     "language",          "C++",
     "lang_type",         "compile",
     // Configuration variables
+    "conf.default.log_precision", "0",
     ""
   };
 // </rtc-template>
 
+#define LOG_SET_PRECISION(strm)                                         \
+    int prc;                                                            \
+    if (precision != 0) {                                               \
+        prc = os.precision();                                           \
+        os << std::scientific << std::setprecision(precision);          \
+    }                                                                   \
 
-void printData(std::ostream& os, const RTC::Acceleration3D& data)
+#define LOG_UNSET_PRECISION(strm)                                       \
+    if (precision != 0)                                                 \
+        os << std::fixed << std::setprecision(prc);                     \
+
+void printData(std::ostream& os, const RTC::Acceleration3D& data, unsigned int precision = 0)
 {
+    LOG_SET_PRECISION(os);
     os << data.ax << " " << data.ay << " " << data.az << " ";
+    LOG_UNSET_PRECISION(os);
 }
 
-void printData(std::ostream& os, const RTC::Velocity2D& data)
+void printData(std::ostream& os, const RTC::Velocity2D& data, unsigned int precision = 0)
 {
+    LOG_SET_PRECISION(os);
     os << data.vx << " " << data.vy << " " << data.va << " ";
+    LOG_UNSET_PRECISION(os);
 }
 
-void printData(std::ostream& os, const RTC::Pose3D& data)
+void printData(std::ostream& os, const RTC::Pose3D& data, unsigned int precision = 0)
 {
+    LOG_SET_PRECISION(os);
     os << data.position.x << " " << data.position.y << " " 
        << data.position.z << " " << data.orientation.r << " "
        << data.orientation.p << " " << data.orientation.y << " ";
+    LOG_UNSET_PRECISION(os);
 }
 
-void printData(std::ostream& os, const RTC::AngularVelocity3D& data)
+void printData(std::ostream& os, const RTC::AngularVelocity3D& data, unsigned int precision = 0)
 {
+    LOG_SET_PRECISION(os);
     os << data.avx << " " << data.avy << " " << data.avz << " ";
+    LOG_UNSET_PRECISION(os);
 }
 
-void printData(std::ostream& os, const RTC::Point3D& data)
+void printData(std::ostream& os, const RTC::Point3D& data, unsigned int precision = 0)
 {
+    LOG_SET_PRECISION(os);
     os << data.x << " " << data.y << " " << data.z << " ";
+    LOG_UNSET_PRECISION(os);
 }
 
-void printData(std::ostream& os, const RTC::Orientation3D& data)
+void printData(std::ostream& os, const RTC::Orientation3D& data, unsigned int precision = 0)
 {
+    LOG_SET_PRECISION(os);
     os << data.r << " " << data.p << " " << data.y << " ";
+    LOG_UNSET_PRECISION(os);
 }
 
-void printData(std::ostream& os, const PointCloudTypes::PointCloud& data)
+void printData(std::ostream& os, const PointCloudTypes::PointCloud& data, unsigned int precision = 0)
 {
   uint npoint = data.data.length()/data.point_step;
   os << data.width << " " << data.height << " " << data.type << " " << npoint;
@@ -97,11 +120,13 @@ std::ostream& operator<<(std::ostream& os, const _CORBA_Unbounded_Sequence<T > &
 }
 
 template <class T>
-void printData(std::ostream& os, const T& data)
+void printData(std::ostream& os, const T& data, unsigned int precision = 0)
 {
+    LOG_SET_PRECISION(os);
     for (unsigned int j=0; j<data.length(); j++){
         os << data[j] << " ";
     }
+    LOG_UNSET_PRECISION(os);
 }
 
 template <class T>
@@ -112,15 +137,17 @@ public:
     const char *name(){
         return m_port.name();
     }
-    virtual void dumpLog(std::ostream& os){
+    virtual void dumpLog(std::ostream& os, unsigned int precision = 0){
         os.setf(std::ios::fixed, std::ios::floatfield);
         for (unsigned int i=0; i<m_log.size(); i++){
-            // time
-            os << std::setprecision(6) << (m_log[i].tm.sec + m_log[i].tm.nsec/1e9) << " ";
-            // data
-            printData(os, m_log[i].data);
-            os << std::endl;
+            printLog(os, m_log[i], precision);
         }
+    }
+    void printLog(std::ostream& os, T &data, unsigned int precision = 0){
+        os << std::setprecision(6) << (data.tm.sec + data.tm.nsec/1e9) << " ";
+        // data
+        printData(os, data.data, precision);
+        os << std::endl;
     }
     InPort<T>& port(){
             return m_port;
@@ -147,13 +174,13 @@ class LoggerPortForPointCloud : public LoggerPort<PointCloudTypes::PointCloud>
 {
 public:
     LoggerPortForPointCloud(const char *name) : LoggerPort<PointCloudTypes::PointCloud>(name) {}
-    void dumpLog(std::ostream& os){
+    void dumpLog(std::ostream& os, unsigned int precision = 0){
         os.setf(std::ios::fixed, std::ios::floatfield);
         for (unsigned int i=0; i<m_log.size(); i++){
             // time
             os << std::setprecision(6) << (m_log[i].tm.sec + m_log[i].tm.nsec/1e9) << " ";
             // data
-            printData(os, m_log[i]);
+            printData(os, m_log[i], precision);
             os << std::endl;
         }
     }
@@ -167,6 +194,7 @@ DataLogger::DataLogger(RTC::Manager* manager)
     m_DataLoggerServicePort("DataLoggerService"),
     // </rtc-template>
     m_suspendFlag(false),
+    m_log_precision(0),
 	dummy(0)
 {
   m_service0.setLogger(this);
@@ -181,6 +209,8 @@ DataLogger::~DataLogger()
 RTC::ReturnCode_t DataLogger::onInitialize()
 {
   std::cerr << "[" << m_profile.instance_name << "] onInitialize()" << std::endl;
+  bindParameter("log_precision", m_log_precision, "0");
+
   // Registration: InPort/OutPort/Service
   // <rtc-template block="registration">
   // Set InPort buffers
@@ -415,7 +445,7 @@ bool DataLogger::save(const char *i_basename)
     fname.append(m_ports[i]->name());
     std::ofstream ofs(fname.c_str());
     if (ofs.is_open()){
-      m_ports[i]->dumpLog(ofs);
+      m_ports[i]->dumpLog(ofs, m_log_precision);
     }else{
       std::cerr << "[" << m_profile.instance_name << "] failed to open(" << fname << ")" << std::endl;
       ret = false;
