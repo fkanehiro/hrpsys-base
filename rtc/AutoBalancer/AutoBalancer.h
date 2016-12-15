@@ -36,7 +36,7 @@
 // <rtc-template block="consumer_stub_h">
 
 //実機だとログ出力で落ちる？getenv("HOME")ダメ？
-#define DEBUG 1
+#define DEBUG 0
 
 
 class BiquadIIRFilterVec
@@ -44,12 +44,12 @@ class BiquadIIRFilterVec
 private:
     IIRFilter x_filters,y_filters,z_filters;
     hrp::Vector3 ans;
+    std::vector<double> fb_coeffs, ff_coeffs;
 public:
     BiquadIIRFilterVec(const std::string& error_prefix = ""){
     };
     ~BiquadIIRFilterVec() {};
     bool setParameter(const double fc_in, const double HZ){
-      std::vector<double> fb_coeffs, ff_coeffs;
       double fc = tan(fc_in * M_PI / HZ) / (2 * M_PI);
       double denom = 1 + (2 * sqrt(2) * M_PI * fc) + 4 * M_PI * M_PI * fc*fc;
       ff_coeffs.resize(3);
@@ -165,6 +165,7 @@ class HumanSynchronizer{
     hrp::Vector3 comacc_ref;
     std::vector<BiquadIIRFilterVec> iir_v_filters;
     BiquadIIRFilterVec calcacc_v_filters, acc4zmp_v_filters;
+    BiquadIIRFilterVec cam_rpy_filter;
     hrp::Vector3 r_zmp_raw;
 
   public:
@@ -183,6 +184,7 @@ class HumanSynchronizer{
     hrp::Vector3 current_basepos,init_basepos;
     hrp::Vector3 com_vel_old;
     unsigned int loop;
+    hrp::Vector3 cam_pos,cam_rpy,cam_pos_filtered,cam_rpy_filtered;
 
 
     interpolator *init_zmp_com_offset_interpolator;
@@ -203,7 +205,7 @@ class HumanSynchronizer{
       go_rf_landing = go_lf_landing = false;
       pre_cont_rfpos = pre_cont_lfpos = hrp::Vector3::Zero();
       init_hp_calibcom = hrp::Vector3::Zero();
-      tgt_FUP_TIME = FUP_TIME = 0.4;
+      tgt_FUP_TIME = FUP_TIME = 0.8;
       FUP_HIGHT = 0.05;
       CNT_F_TH = 20.0;
       MAXVEL = 0.004;
@@ -222,15 +224,18 @@ class HumanSynchronizer{
       init_wld_hp_rfpos = init_wld_hp_lfpos = hrp::Vector3::Zero();
       current_basepos = init_basepos = hrp::Vector3::Zero();
 
-      com_vel_old= hrp::Vector3::Zero();
+      com_vel_old = hrp::Vector3::Zero();
+      cam_pos = cam_rpy = cam_pos_filtered = cam_rpy_filtered = hrp::Vector3::Zero();
 
       iir_v_filters.resize(5);
-      for(int i=0;i<iir_v_filters.size();i++)iir_v_filters[i].setParameter(1,HZ);//四肢拘束点用
+      for(int i=0;i<iir_v_filters.size();i++)iir_v_filters[i].setParameter(0.5,HZ);//四肢拘束点用
       iir_v_filters[0].setParameter(0.5,HZ);//重心用
       calcacc_v_filters.setParameter(5,HZ);//加速度計算用
       acc4zmp_v_filters.setParameter(1,HZ);//ZMP生成用ほぼこの値でいい
+      cam_rpy_filter.setParameter(1,HZ);//カメラアングル
 
-      use_rh = use_lh = true;
+
+      use_rh = use_lh = false;
 
       rp_ref_out_old.clear();
       rp_ref_out.clear();
@@ -279,15 +284,24 @@ class HumanSynchronizer{
       updateCOMModRatio                   (tgt_cmmr);
       removeInitOffsetPose                (hp_wld_raw, hp_wld_initpos, hp_rel_raw);
       applyInitHumanZMPToCOMOffset        (hp_rel_raw, init_hp_calibcom, hp_rel_raw);
-      lockFootXYOnContact                 (go_rf_landing, go_lf_landing, hp_rel_raw);//根本から改変すべき2
+//      lockFootXYOnContact                 (go_rf_landing, go_lf_landing, hp_rel_raw);//根本から改変すべき2
       hp_filtered = hp_rel_raw;
       calcWorldZMP                        ((hp_filtered.rf+init_wld_hp_rfpos), (hp_filtered.lf+init_wld_hp_lfpos), hp_filtered.rfw, hp_filtered.lfw, hp_filtered.zmp);//足の位置はworldにしないと・・・
       convertRelHumanPoseToRelRobotPose   (hp_filtered,rp_ref_out);
       applyCOMMoveModRatio                (rp_ref_out);
-      judgeFootLandOnCommand              (hp_wld_raw.rfw, hp_wld_raw.lfw, go_rf_landing, go_lf_landing);//frwはすでに1000->100Hzにフィルタリングされている
+      judgeFootLandOnCommand              (hp_wld_raw.rfw, hp_wld_raw.lfw, go_rf_landing, go_lf_landing);//fwはすでに1000->100Hzにフィルタリングされている
+
+
       applyEEWorkspaceLimit               (rp_ref_out);
+      lockFootXYOnContact                 (go_rf_landing, go_lf_landing, rp_ref_out);//根本から改変すべき3
+
       applyCOMToSupportRegionLimit        (rp_ref_out.rf+init_wld_rp_rfeepos, rp_ref_out.lf+init_wld_rp_lfeepos, rp_ref_out.com);
       applyLPFilter                       (rp_ref_out);
+      applyCOMStateLimitByCapturePoint    (rp_ref_out.com, rp_ref_out_old.com, com_vel_old, rp_ref_out.rf+init_wld_rp_rfeepos, rp_ref_out.lf+init_wld_rp_lfeepos, rp_ref_out.com);
+
+      cam_rpy_filtered = cam_rpy_filter.passFilter(cam_rpy);
+
+
       r_zmp_raw = rp_ref_out.zmp;
       applyZMPCalcFromCOM                 (rp_ref_out.com,rp_ref_out.zmp);
       lockSwingFootIfZMPOutOfSupportFoot  (rp_ref_out, go_rf_landing, go_lf_landing);//
@@ -320,12 +334,12 @@ class HumanSynchronizer{
       }else{ zmp_ans(0) = 0; zmp_ans(1) = 0; }
       zmp_ans(2) = 0;
     }
-    static hrp::Vector3 Point3DToVector3(const RTC::TimedPoint3D& in){ hrp::Vector3 out(in.data.x,in.data.y,in.data.z); return out; }
-    static HumanPose::Wrench6 DoubleSeqToWrench6(const RTC::TimedDoubleSeq& in){
-      HumanPose::Wrench6 out;
-      if(in.data.length() == 6){out.f(0)=in.data[0]; out.f(1)=in.data[1]; out.f(2)=in.data[2]; out.t(0)=in.data[3]; out.t(1)=in.data[4]; out.t(2)=in.data[5];
+    static void Point3DToVector3(const RTC::Point3D& in, hrp::Vector3& out){ out(0) = in.x; out(1) = in.y; out(2) = in.z;}
+    static void Oriantation3DToVector3(const RTC::Orientation3D& in, hrp::Vector3& out){ out(0) = in.r; out(1) = in.p; out(2) = in.y;}
+    static void Pose3DToVector3(const RTC::Pose3D& in, hrp::Vector3& out_pos, hrp::Vector3& out_rpy){ Point3DToVector3(in.position,out_pos); Oriantation3DToVector3(in.orientation,out_rpy); }
+    static void DoubleSeqToWrench6(const RTC::TimedDoubleSeq::_data_seq& in, HumanPose::Wrench6& out){
+      if(in.length() == 6){out.f(0)=in[0]; out.f(1)=in[1]; out.f(2)=in[2]; out.t(0)=in[3]; out.t(1)=in[4]; out.t(2)=in[5];
       }else{ std::cerr<<"[WARN] HumanPose::Wrench6 DoubleSeqToWrench6() invalid data length"<<std::endl; out.f.Zero(); out.t.Zero(); }
-      return out;
     }
 
   private:
@@ -436,11 +450,21 @@ class HumanSynchronizer{
       }
     }
     void applyEEWorkspaceLimit(HumanPose& tgt){
+//      const hrp::Vector2 rf2lf_vec( (tgt.lf(0)+rp_wld_initpos.lf(0))-(tgt.rf(0)+rp_wld_initpos.rf(0)) , (tgt.lf(1)+rp_wld_initpos.lf(1))-(tgt.rf(1)+rp_wld_initpos.rf(1)) );
+      const hrp::Vector2 rf2lf_vec( tgt.lf(0)-tgt.rf(0), tgt.lf(1)-tgt.rf(1) );
+      const hrp::Vector2 lf2rf_vec = - rf2lf_vec;
+      const double MAX = 0.15;
       if(!is_rf_contact && is_lf_contact){//右足浮遊時
-        if(tgt.rf(1) + rp_wld_initpos.rf(1) > tgt.lf(1) + rp_wld_initpos.lf(1) - 0.15)tgt.rf(1) = tgt.lf(1) + rp_wld_initpos.lf(1) - rp_wld_initpos.rf(1) - 0.15;
+        if(lf2rf_vec.norm() > MAX){
+          tgt.rf(0) = (lf2rf_vec.normalized())(0) * MAX + tgt.lf(0);
+          tgt.rf(1) = (lf2rf_vec.normalized())(1) * MAX + tgt.lf(1);
+        }
       }
       else if(is_rf_contact && !is_lf_contact){//左足浮遊時
-        if(tgt.lf(1) + rp_wld_initpos.lf(1) < tgt.rf(1) + rp_wld_initpos.rf(1) + 0.15)tgt.lf(1) = tgt.rf(1) + rp_wld_initpos.rf(1) - rp_wld_initpos.lf(1) + 0.15;
+        if(rf2lf_vec.norm() > MAX){
+          tgt.lf(0) = (rf2lf_vec.normalized())(0) * MAX + tgt.rf(0);
+          tgt.lf(1) = (rf2lf_vec.normalized())(1) * MAX + tgt.rf(1);
+        }
       }
       hrp::Vector3 hand_ulimit = hrp::Vector3(0.1,0.1,0.1);
       hrp::Vector3 hand_llimit = hrp::Vector3(-0.1,-0.1,-0.1);
@@ -453,14 +477,14 @@ class HumanSynchronizer{
       }
     }
     bool applyCOMToSupportRegionLimit(const hrp::Vector3& rfin_abs, const hrp::Vector3& lfin_abs, hrp::Vector3& comin_abs){//boost::geometryがUbuntu12だとないから・・・
-      const double XUMARGIN = 0.04;//CHIDORI
-      const double XLMARGIN = -0.02;
-      const double YUMARGIN = 0.01;
-      const double YLMARGIN = -0.01;
-//      const double XUMARGIN = 0.02;//JAXON
-//      const double XLMARGIN = -0.01;
-//      const double YUMARGIN = 0.0;
-//      const double YLMARGIN = -0.0;
+//      const double XUMARGIN = 0.04;//CHIDORI
+//      const double XLMARGIN = -0.02;
+//      const double YUMARGIN = 0.01;
+//      const double YLMARGIN = -0.01;
+      const double XUMARGIN = 0.02;//JAXON
+      const double XLMARGIN = -0.01;
+      const double YUMARGIN = 0.0;
+      const double YLMARGIN = -0.0;
 //      const double XUMARGIN = 0.10;//test
 //      const double XLMARGIN = -0.05;
 //      const double YUMARGIN = 0.03;
@@ -571,16 +595,16 @@ class HumanSynchronizer{
       hrp::Vector3 cp_ragulated;
 
       margin_t margin_from_4maxcp;
-      checkMarginToFootSupportRegion(com_old, com_old, rfin_abs, lfin_abs, 0.04, 0.02, 0.01, 0.01, margin_from_4maxcp, bb);
+      checkMarginToFootSupportRegion(com_old, com_old, rfin_abs, lfin_abs, 0.02, 0.01, 0.00, 0.00, margin_from_4maxcp, bb);
       hrp::Vector3 max_com_vel,min_com_vel;
       max_com_vel(0) = margin_from_4maxcp.x_u / sqrt( H / G );
       min_com_vel(0) = margin_from_4maxcp.x_l / sqrt( H / G );
       max_com_vel(1) = margin_from_4maxcp.y_u / sqrt( H / G );
       min_com_vel(1) = margin_from_4maxcp.y_l / sqrt( H / G );
-      if(com_vel(0) > max_com_vel(0)){ com_vel(0) = max_com_vel(0); cout<<"F cp over"<<endl;}//ここブレーキ時のZMP条件に変えたほうがいいかもしれない
-      if(com_vel(0) < min_com_vel(0)){ com_vel(0) = min_com_vel(0); cout<<"B cp over"<<endl;}
-      if(com_vel(1) > max_com_vel(1)){ com_vel(1) = max_com_vel(1); cout<<"L cp over"<<endl;}
-      if(com_vel(1) < min_com_vel(1)){ com_vel(1) = min_com_vel(1); cout<<"R cp over"<<endl;}
+      if(com_vel(0) > max_com_vel(0)){ com_vel(0) = max_com_vel(0); if(loop%100==0)cout<<"F cp over"<<endl;}//ここブレーキ時のZMP条件に変えたほうがいいかもしれない
+      if(com_vel(0) < min_com_vel(0)){ com_vel(0) = min_com_vel(0); if(loop%100==0)cout<<"B cp over"<<endl;}
+      if(com_vel(1) > max_com_vel(1)){ com_vel(1) = max_com_vel(1); if(loop%100==0)cout<<"L cp over"<<endl;}
+      if(com_vel(1) < min_com_vel(1)){ com_vel(1) = min_com_vel(1); if(loop%100==0)cout<<"R cp over"<<endl;}
 
 
 
@@ -891,6 +915,8 @@ class AutoBalancer
   InPort<TimedPoint3D> m_htlhIn;
   TimedPoint3D m_actzmp;
   InPort<TimedPoint3D> m_actzmpIn;
+  TimedPose3D m_htcam;
+  InPort<TimedPose3D> m_htcamIn;
   
   // </rtc-template>
 

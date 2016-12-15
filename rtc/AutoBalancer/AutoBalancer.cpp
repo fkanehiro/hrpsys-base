@@ -59,6 +59,7 @@ AutoBalancer::AutoBalancer(RTC::Manager* manager)
       m_htrhIn("htrhIn", m_htrh),
       m_htlhIn("htlhIn", m_htlh),
       m_actzmpIn("actzmpIn", m_actzmp),
+      m_htcamIn("htcamIn", m_htcam),
 
       m_qOut("q", m_qRef),
       m_zmpOut("zmpOut", m_zmp),
@@ -112,6 +113,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     addInPort("htrhIn", m_htrhIn);
     addInPort("htlhIn", m_htlhIn);
     addInPort("actzmpIn", m_actzmpIn);
+    addInPort("htcamIn", m_htcamIn);
 
     // Set OutPort buffer
     addOutPort("q", m_qOut);
@@ -488,13 +490,14 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
     }
     //for HumanSynchronizer
     if (m_htzmpIn.isNew()){	m_htzmpIn.read(); }
-    if (m_htrfwIn.isNew()){ m_htrfwIn.read(); hp_raw_data.rfw = HumanSynchronizer::DoubleSeqToWrench6(m_htrfw); }
-    if (m_htlfwIn.isNew()){ m_htlfwIn.read(); hp_raw_data.lfw = HumanSynchronizer::DoubleSeqToWrench6(m_htlfw); }
-    if (m_htcomIn.isNew()){ m_htcomIn.read(); hp_raw_data.com = HumanSynchronizer::Point3DToVector3(m_htcom); }
-    if (m_htrfIn.isNew()) { m_htrfIn.read();  hp_raw_data.rf  = HumanSynchronizer::Point3DToVector3(m_htrf); }
-    if (m_htlfIn.isNew()) { m_htlfIn.read();  hp_raw_data.lf  = HumanSynchronizer::Point3DToVector3(m_htlf); }
-    if (m_htrhIn.isNew()) { m_htrhIn.read();  hp_raw_data.rh  = HumanSynchronizer::Point3DToVector3(m_htrh); }
-    if (m_htlhIn.isNew()) { m_htlhIn.read();  hp_raw_data.lh  = HumanSynchronizer::Point3DToVector3(m_htlh); }
+    if (m_htrfwIn.isNew()){ m_htrfwIn.read(); HumanSynchronizer::DoubleSeqToWrench6(m_htrfw.data,hp_raw_data.rfw); }
+    if (m_htlfwIn.isNew()){ m_htlfwIn.read(); HumanSynchronizer::DoubleSeqToWrench6(m_htlfw.data,hp_raw_data.lfw); }
+    if (m_htcomIn.isNew()){ m_htcomIn.read(); HumanSynchronizer::Point3DToVector3(m_htcom.data,hp_raw_data.com); }
+    if (m_htrfIn.isNew()) { m_htrfIn.read();  HumanSynchronizer::Point3DToVector3(m_htrf.data,hp_raw_data.rf); }
+    if (m_htlfIn.isNew()) { m_htlfIn.read();  HumanSynchronizer::Point3DToVector3(m_htlf.data,hp_raw_data.lf); }
+    if (m_htrhIn.isNew()) { m_htrhIn.read();  HumanSynchronizer::Point3DToVector3(m_htrh.data,hp_raw_data.rh); }
+    if (m_htlhIn.isNew()) { m_htlhIn.read();  HumanSynchronizer::Point3DToVector3(m_htlh.data,hp_raw_data.lh); }
+    if (m_htcamIn.isNew()){ m_htcamIn.read(); HumanSynchronizer::Pose3DToVector3(m_htcam.data,hsp->cam_pos,hsp->cam_rpy); }
     if (m_actzmpIn.isNew()){m_actzmpIn.read(); }
     hsp->readInput(hp_raw_data);
     hsp->current_basepos = m_robot->rootLink()->p;
@@ -1132,7 +1135,6 @@ void AutoBalancer::solveLimbIK ()
   }
   m_robot->calcForwardKinematics();
 
-
   // additional COM fitting IK for HumanSynchronizer
   hrp::Vector3 tmp_com_err = hsp->rp_ref_out.com + hsp->rp_wld_initpos.com - m_robot->calcCM();
   int com_ik_loop=0;
@@ -1154,6 +1156,10 @@ void AutoBalancer::solveLimbIK ()
 		  if(com_ik_loop++ > COM_IK_MAX_LOOP){std::cerr << "[" << m_profile.instance_name << "] COM constraint IK MAX loop [="<<COM_IK_MAX_LOOP<<"] exceeded!!" << std::endl; break; };
 	  }
 
+
+    m_robot->joint(15)->q = hsp->cam_rpy_filtered(2);
+    m_robot->joint(16)->q = hsp->cam_rpy_filtered(1);
+//    if(loop%50==0)cout<<"cam_rpy_filtered:\n"<<hsp->cam_rpy_filtered<<endl;
 
 
 
