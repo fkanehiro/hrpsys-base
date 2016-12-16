@@ -1509,7 +1509,7 @@ void Stabilizer::calcEEForceMomentControl() {
         if (is_ik_enable[i]) {
           // Add damping_control compensation to target value
           if (is_feedback_control_enable[i]) {
-            rats::rotm3times(tmpR[i], target_ee_R[i], hrp::rotFromRpy(-stikp[i].ee_d_foot_rpy(0), -stikp[i].ee_d_foot_rpy(1), 0));
+            rats::rotm3times(tmpR[i], target_ee_R[i], hrp::rotFromRpy(-1*stikp[i].ee_d_foot_rpy));
             // foot force difference control version
             // total_target_foot_p[i](2) = target_foot_p[i](2) + (i==0?0.5:-0.5)*zctrl;
             // foot force independent damping control
