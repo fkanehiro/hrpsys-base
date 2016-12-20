@@ -235,13 +235,15 @@ class HumanSynchronizer{
 
       iir_v_filters.resize(5);
       for(int i=0;i<iir_v_filters.size();i++)iir_v_filters[i].setParameter(0.5,HZ);//四肢拘束点用
-      iir_v_filters[0].setParameter(0.5,HZ);//重心用
+      iir_v_filters[0].setParameter(0.4,HZ);//重心用
       calcacc_v_filters.setParameter(5,HZ);//加速度計算用
       acc4zmp_v_filters.setParameter(1,HZ);//ZMP生成用ほぼこの値でいい
       cam_rpy_filter.setParameter(1,HZ);//カメラアングル
 
       rf_safe_region = hrp::Vector4(0.02, -0.01,  0.02,  0.01);
       lf_safe_region = hrp::Vector4(0.02, -0.01, -0.01, -0.02);
+//      rf_safe_region = hrp::Vector4(0.02, -0.01,  0.02,  0.0);
+//      lf_safe_region = hrp::Vector4(0.02, -0.01, -0.0, -0.02);
 
       use_rh = use_lh = false;
 
@@ -298,21 +300,22 @@ class HumanSynchronizer{
       convertRelHumanPoseToRelRobotPose   (hp_filtered,rp_ref_out);
       applyCOMMoveModRatio                (rp_ref_out);
       judgeFootLandOnCommand              (hp_wld_raw.rfw, hp_wld_raw.lfw, go_rf_landing, go_lf_landing);//fwはすでに1000->100Hzにフィルタリングされている
+      lockSwingFootIfZMPOutOfSupportFoot  (rp_ref_out_old, go_rf_landing, go_lf_landing);//ここ
 
 
       applyEEWorkspaceLimit               (rp_ref_out);
       lockFootXYOnContact                 (go_rf_landing, go_lf_landing, rp_ref_out);//根本から改変すべき3
 
-//      applyCOMToSupportRegionLimit        (rp_ref_out.rf+init_wld_rp_rfeepos, rp_ref_out.lf+init_wld_rp_lfeepos, rp_ref_out.com);
+      applyCOMToSupportRegionLimit        (rp_ref_out.rf+init_wld_rp_rfeepos, rp_ref_out.lf+init_wld_rp_lfeepos, rp_ref_out.com);
       applyLPFilter                       (rp_ref_out);
-//      applyCOMStateLimitByCapturePoint    (rp_ref_out.com, rp_ref_out_old.com, com_vel_old, rp_ref_out.rf+init_wld_rp_rfeepos, rp_ref_out.lf+init_wld_rp_lfeepos, rp_ref_out.com);
+      applyCOMStateLimitByCapturePoint    (rp_ref_out.com, rp_ref_out_old.com, com_vel_old, rp_ref_out.rf+init_wld_rp_rfeepos, rp_ref_out.lf+init_wld_rp_lfeepos, rp_ref_out.com);
 
       cam_rpy_filtered = cam_rpy_filter.passFilter(cam_rpy);
 
 
       r_zmp_raw = rp_ref_out.zmp;
       applyZMPCalcFromCOM                 (rp_ref_out.com,rp_ref_out.zmp);
-      lockSwingFootIfZMPOutOfSupportFoot  (rp_ref_out, go_rf_landing, go_lf_landing);//
+//      lockSwingFootIfZMPOutOfSupportFoot  (rp_ref_out, go_rf_landing, go_lf_landing);//ここじゃ判定遅い
       applyVelLimit                       (rp_ref_out, rp_ref_out_old, rp_ref_out);
       applyCOMZMPXYZLock                  (rp_ref_out);
       overwriteFootZFromFootLandOnCommand (go_rf_landing, go_lf_landing, rp_ref_out);
@@ -428,9 +431,9 @@ class HumanSynchronizer{
     void calcFootUpCurveAndJudgeFootContact(const bool& go_land_in, int& cur_fup_count_in, hrp::Vector3& f_height_out, bool& is_f_contact_out){
       int FUP_COUNT = (int)(HZ*FUP_TIME);
       if(cur_fup_count_in > FUP_COUNT){cur_fup_count_in = FUP_COUNT;} if(cur_fup_count_in < 0){cur_fup_count_in = 0;}
-      if(!go_land_in){//足下げ命令入力時
+      if(!go_land_in){//足上げ命令入力時
         if(cur_fup_count_in < FUP_COUNT){ cur_fup_count_in++; }
-      }else{//足上げ命令入力時
+      }else{//足下げ命令入力時
         if(cur_fup_count_in > 0){ cur_fup_count_in--; }
       }
       f_height_out(2) = FUP_HIGHT/2*(1-cos(M_PI*cur_fup_count_in/FUP_COUNT));
@@ -458,19 +461,19 @@ class HumanSynchronizer{
       }
     }
     void applyEEWorkspaceLimit(HumanPose& tgt){
-      const hrp::Vector2 rf2lf_vec( tgt.lf(0)-tgt.rf(0), tgt.lf(1)-tgt.rf(1) );
-      const hrp::Vector2 lf2rf_vec = - rf2lf_vec;
-      const double MAX = 10.15;
+      const double MAX = 0.15;
       if(!is_rf_contact && is_lf_contact){//右足浮遊時
+        const hrp::Vector2 lf2rf_vec( tgt.rf(0)-pre_cont_lfpos(0), tgt.rf(1)-pre_cont_lfpos(1) );
         if(lf2rf_vec.norm() > MAX){
-          tgt.rf(0) = (lf2rf_vec.normalized())(0) * MAX + tgt.lf(0);
-          tgt.rf(1) = (lf2rf_vec.normalized())(1) * MAX + tgt.lf(1);
+          tgt.rf(0) = (lf2rf_vec.normalized())(0) * MAX + pre_cont_lfpos(0);
+          tgt.rf(1) = (lf2rf_vec.normalized())(1) * MAX + pre_cont_lfpos(1);
         }
       }
       else if(is_rf_contact && !is_lf_contact){//左足浮遊時
+        const hrp::Vector2 rf2lf_vec( tgt.lf(0)-pre_cont_rfpos(0), tgt.lf(1)-pre_cont_rfpos(1) );
         if(rf2lf_vec.norm() > MAX){
-          tgt.lf(0) = (rf2lf_vec.normalized())(0) * MAX + tgt.rf(0);
-          tgt.lf(1) = (rf2lf_vec.normalized())(1) * MAX + tgt.rf(1);
+          tgt.lf(0) = (rf2lf_vec.normalized())(0) * MAX + pre_cont_rfpos(0);
+          tgt.lf(1) = (rf2lf_vec.normalized())(1) * MAX + pre_cont_rfpos(1);
         }
       }
       hrp::Vector3 hand_ulimit = hrp::Vector3(0.1,0.1,0.1);
