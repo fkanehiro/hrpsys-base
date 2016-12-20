@@ -12,6 +12,8 @@
 #include <cstdlib>
 #include <sys/syspage.h>
 #include <string.h>
+#include <ctype.h>
+#include <time.h>
 #include <stdio.h>
 using std::FILE;
 using std::exp;
