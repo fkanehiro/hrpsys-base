@@ -798,7 +798,7 @@ def demo():
         demoGaitGeneratorChangeStepParam()
         demoGaitGeneratorOverwriteFootsteps()
         demoGaitGeneratorOverwriteFootsteps(2)
-        demoStandingPosResetting()
+        #demoStandingPosResetting()
         demoGaitGeneratorFixHand()
         demoGaitGeneratorOverwriteCurrentFootstep()
         demoGaitGeneratorGoPosOverwrite()
