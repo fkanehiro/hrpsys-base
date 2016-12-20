@@ -20,14 +20,15 @@
    <property name="inport" value="dqRef:JOINT_VELOCITY"/>
    <property name="inport" value="ddqRef:JOINT_ACCELERATION"/>
    <property name="outport" value="q:JOINT_VALUE"/>
+   <property name="outport" value="dq:JOINT_VELOCITY"/>
    <property name="outport" value="tau:JOINT_TORQUE"/>
+   <property name="outport" value="WAIST:WAIST:ABS_TRANSFORM"/>
    <property name="outport" value="lfsensor:lfsensor:FORCE_SENSOR"/>
    <property name="outport" value="rfsensor:rfsensor:FORCE_SENSOR"/>
    <property name="outport" value="lhsensor:lhsensor:FORCE_SENSOR"/>
    <property name="outport" value="rhsensor:rhsensor:FORCE_SENSOR"/>
    <property name="outport" value="gyrometer:gyrometer:RATE_GYRO_SENSOR"/>
    <property name="outport" value="gsensor:gsensor:ACCELERATION_SENSOR"/>
-   <property name="outport" value="WAIST:WAIST:ABS_TRANSFORM"/>
    <property name="WAIST.NumOfAABB" value="1"/>
    <property name="WAIST.translation" value="0  0  0.7235"/>
    <property name="WAIST.rotation" value="1 0 0 0"/>
@@ -140,21 +141,20 @@
    <property name="showActualState" value="true"/>
    <property name="showScale" value="true"/>
   </view>
-  <item class="com.generalrobotix.ui.item.GrxRTSItem" name="longfloor" select="true">
-   <property name="longfloor(Robot)0.period" value="@CONTROLLER_TIME@"/>
+  <item class="com.generalrobotix.ui.item.GrxRTSItem" name="floor" select="true">
+   <property name="floor(Robot)0.period" value="@CONTROLLER_TIME@"/>
    <property name="HGcontroller0.period" value="@CONTROLLER_TIME@"/>
    <property name="HGcontroller0.factory" value="HGcontroller"/>
-   <property name="connection" value="HGcontroller0.qOut:longfloor(Robot)0.qRef"/>
-   <property name="connection" value="HGcontroller0.dqOut:longfloor(Robot)0.dqRef"/>
-   <property name="connection" value="HGcontroller0.ddqOut:longfloor(Robot)0.ddqRef"/>
   </item>
-  <item class="com.generalrobotix.ui.item.GrxModelItem" name="longfloor" url="@OPENHRP_DIR@/share/OpenHRP-3.1/sample/model/longfloor.wrl">
-   <property name="rtcName" value="longfloor(Robot)0"/>
+  <item class="com.generalrobotix.ui.item.GrxModelItem" name="floor5" url="@OPENHRP_DIR@/share/OpenHRP-3.1/sample/model/floor5.wrl">
+   <property name="rtcName" value="floor(Robot)0"/>
    <property name="inport" value="qRef:JOINT_VALUE"/>
    <property name="inport" value="dqRef:JOINT_VELOCITY"/>
    <property name="inport" value="ddqRef:JOINT_ACCELERATION"/>
    <property name="outport" value="q:JOINT_VALUE"/>
+   <property name="outport" value="dq:JOINT_VELOCITY"/>
    <property name="outport" value="tau:JOINT_TORQUE"/>
+   <property name="outport" value="WAIST:WAIST:ABS_TRANSFORM"/>
    <property name="WAIST.NumOfAABB" value="1"/>
    <property name="WAIST.translation" value="0  0  -0.1"/>
    <property name="WAIST.rotation" value="1 0 0 0"/>
@@ -165,7 +165,7 @@
    <property name="interval" value="100"/>
    <property name="RobotHardwareServiceRTC" value="RobotHardware0"/>
    <property name="robotPort" value="2809"/>
-   <property name="ROBOT" value="longfloor"/>
+   <property name="ROBOT" value="floor"/>
   </view>
   <view class="com.generalrobotix.ui.view.Grx3DView" name="3DView">
    <property name="view.mode" value="Room"/>
@@ -178,13 +178,13 @@
    <property name="showActualState" value="true"/>
    <property name="showScale" value="true"/>
   </view>
-  <item class="com.generalrobotix.ui.item.GrxCollisionPairItem" name="CP#longfloor_#sample1_">
+  <item class="com.generalrobotix.ui.item.GrxCollisionPairItem" name="CP#floor5_#sample1_">
    <property name="springConstant" value="0 0 0 0 0 0"/>
    <property name="slidingFriction" value="0.5"/>
    <property name="jointName2" value=""/>
    <property name="jointName1" value=""/>
    <property name="damperConstant" value="0 0 0 0 0 0"/>
-   <property name="objectName2" value="longfloor"/>
+   <property name="objectName2" value="floor5"/>
    <property name="objectName1" value="sample1"/>
    <property name="springDamperModel" value="false"/>
    <property name="staticFriction" value="0.5"/>
