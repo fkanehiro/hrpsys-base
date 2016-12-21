@@ -1103,7 +1103,7 @@ void Stabilizer::getTargetParameters ()
     transition_count++;
   } else if ( transition_count > 0 ) {
     if ( transition_count == 1 ) {
-      std::cerr << "[" << m_profile.instance_name << "] Move to MODE_IDLE" << std::endl;
+      std::cerr << "[" << m_profile.instance_name << "] [" << (m_qRef.tm.sec + m_qRef.tm.nsec/1e9) << "] Move to MODE_IDLE" << std::endl;
       reset_emergency_flag = true;
     }
     transition_count--;
@@ -1277,7 +1277,8 @@ void Stabilizer::calcStateForEmergencySignal()
     }
     if (is_cp_outside) {
       if (initial_cp_too_large_error || loop % static_cast <int>(0.2/dt) == 0 ) { // once per 0.2[s]
-        std::cerr << "[" << m_profile.instance_name << "] CP too large error " << "[" << act_cp(0) << "," << act_cp(1) << "] [m]" << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "] [" << (m_qRef.tm.sec + m_qRef.tm.nsec/1e9)
+                  << "] CP too large error " << "[" << act_cp(0) << "," << act_cp(1) << "] [m]" << std::endl;
       }
       initial_cp_too_large_error = false;
     } else {
@@ -1296,7 +1297,8 @@ void Stabilizer::calcStateForEmergencySignal()
                       will_fall = true;
                       std::cerr << "swgsuptime : " << m_controlSwingSupportTime.data[i] << ", state : " << contact_states[i] << std::endl;
                       if (loop % static_cast <int>(1.0/dt) == 0 ) { // once per 1.0[s]
-                          std::cerr << "[" << m_profile.instance_name << "] " << stikp[i].ee_name << " cannot support total weight, "
+                          std::cerr << "[" << m_profile.instance_name << "] [" << (m_qRef.tm.sec + m_qRef.tm.nsec/1e9)
+                                    << "] " << stikp[i].ee_name << " cannot support total weight, "
                                     << "otherwise robot will fall down toward " << "(" << projected_normal.at(i)(0) << "," << projected_normal.at(i)(1) << ") direction" << std::endl;
                       }
                   }
@@ -1313,7 +1315,8 @@ void Stabilizer::calcStateForEmergencySignal()
       if (fall_direction.norm() > sin(tilt_margin[1])) {
           is_falling = true;
           if (loop % static_cast <int>(0.2/dt) == 0 ) { // once per 0.2[s]
-              std::cerr << "[" << m_profile.instance_name << "] robot is falling down toward " << "(" << fall_direction(0) << "," << fall_direction(1) << ") direction" << std::endl;
+              std::cerr << "[" << m_profile.instance_name << "] [" << (m_qRef.tm.sec + m_qRef.tm.nsec/1e9)
+                        << "] robot is falling down toward " << "(" << fall_direction(0) << "," << fall_direction(1) << ") direction" << std::endl;
           }
       }
   }
@@ -1671,7 +1674,8 @@ RTC::ReturnCode_t Stabilizer::onRateChanged(RTC::UniqueId ec_id)
 
 void Stabilizer::sync_2_st ()
 {
-  std::cerr << "[" << m_profile.instance_name << "] " << "Sync IDLE => ST"  << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "] [" << (m_qRef.tm.sec + m_qRef.tm.nsec/1e9)
+            << "] Sync IDLE => ST"  << std::endl;
   pangx_ref = pangy_ref = pangx = pangy = 0;
   rdx = rdy = rx = ry = 0;
   d_rpy[0] = d_rpy[1] = 0;
@@ -1698,7 +1702,8 @@ void Stabilizer::sync_2_st ()
 
 void Stabilizer::sync_2_idle ()
 {
-  std::cerr << "[" << m_profile.instance_name << "] " << "Sync ST => IDLE"  << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "] [" << (m_qRef.tm.sec + m_qRef.tm.nsec/1e9)
+            << "] Sync ST => IDLE"  << std::endl;
   transition_count = transition_time / dt;
   for (int i = 0; i < m_robot->numJoints(); i++ ) {
     transition_joint_q[i] = m_robot->joint(i)->q;
