@@ -302,7 +302,6 @@ class HumanSynchronizer{
       judgeFootLandOnCommand              (hp_wld_raw.rfw, hp_wld_raw.lfw, go_rf_landing, go_lf_landing);//fwはすでに1000->100Hzにフィルタリングされている
       lockSwingFootIfZMPOutOfSupportFoot  (rp_ref_out_old, go_rf_landing, go_lf_landing);//ここ
 
-
       applyEEWorkspaceLimit               (rp_ref_out);
       lockFootXYOnContact                 (go_rf_landing, go_lf_landing, rp_ref_out);//根本から改変すべき3
 
@@ -310,6 +309,10 @@ class HumanSynchronizer{
       applyLPFilter                       (rp_ref_out);
       applyCOMStateLimitByCapturePoint    (rp_ref_out.com, rp_ref_out_old.com, com_vel_old, rp_ref_out.rf+init_wld_rp_rfeepos, rp_ref_out.lf+init_wld_rp_lfeepos, rp_ref_out.com);
 
+      if(cam_rpy(1) > 20*M_PI/180)cam_rpy(1) = 20*M_PI/180;
+      if(cam_rpy(1) < -20*M_PI/180)cam_rpy(1) = -20*M_PI/180;
+      if(cam_rpy(2) > 20*M_PI/180)cam_rpy(2) = 20*M_PI/180;
+      if(cam_rpy(2) < -20*M_PI/180)cam_rpy(2) = -20*M_PI/180;
       cam_rpy_filtered = cam_rpy_filter.passFilter(cam_rpy);
 
 
@@ -488,6 +491,8 @@ class HumanSynchronizer{
     bool applyCOMToSupportRegionLimit(const hrp::Vector3& rfin_abs, const hrp::Vector3& lfin_abs, hrp::Vector3& comin_abs){//boost::geometryがUbuntu12だとないから・・・
       hrp::Vector4 margin;
       checkMarginToFootSupportRegionCV(comin_abs, rfin_abs, lfin_abs, rf_safe_region, lf_safe_region, margin, comin_abs);
+      if( comin_abs(2) > 0.03 ) comin_abs(2) = 0.03;
+      if( comin_abs(2) < -0.15 ) comin_abs(2) = -0.15;
       return true;
     }
     bool applyCOMStateLimitByCapturePoint(const hrp::Vector3& com_in, const hrp::Vector3& com_old, const hrp::Vector3& com_vel_old, const hrp::Vector3& rfin_abs, const hrp::Vector3& lfin_abs, hrp::Vector3& com_ans){
