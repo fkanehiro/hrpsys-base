@@ -307,6 +307,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
     }
     m_contactStates.data.length(num);
     m_toeheelRatio.data.length(num);
+    m_will_fall_counter.resize(num);
   }
 
   std::vector<std::pair<hrp::Link*, hrp::Link*> > interlocking_joints;
@@ -429,6 +430,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   qrefv.resize(m_robot->numJoints());
   transition_count = 0;
   loop = 0;
+  m_is_falling_counter = 0;
   total_mass = m_robot->totalMass();
   ref_zmp_aux = hrp::Vector3::Zero();
   m_actContactStates.data.length(m_contactStates.data.length());
@@ -1306,12 +1308,15 @@ void Stabilizer::calcStateForEmergencySignal()
               if (is_walking) {
                   if (projected_normal.at(i).norm() > sin(tilt_margin[0])) {
                       will_fall = true;
-                      std::cerr << "swgsuptime : " << m_controlSwingSupportTime.data[i] << ", state : " << contact_states[i] << std::endl;
-                      if (loop % static_cast <int>(1.0/dt) == 0 ) { // once per 1.0[s]
+                      if (m_will_fall_counter[i] % static_cast <int>(1.0/dt) == 0 ) { // once per 1.0[s]
                           std::cerr << "[" << m_profile.instance_name << "] [" << m_qRef.tm
                                     << "] " << stikp[i].ee_name << " cannot support total weight, "
-                                    << "otherwise robot will fall down toward " << "(" << projected_normal.at(i)(0) << "," << projected_normal.at(i)(1) << ") direction" << std::endl;
+                                    << "swgsuptime : " << m_controlSwingSupportTime.data[i] << ", state : " << contact_states[i]
+                                    << ", otherwise robot will fall down toward " << "(" << projected_normal.at(i)(0) << "," << projected_normal.at(i)(1) << ") direction" << std::endl;
                       }
+                      m_will_fall_counter[i]++;
+                  } else {
+                      m_will_fall_counter[i] = 0;
                   }
               }
               fall_direction += projected_normal.at(i) * act_force.at(i).norm();
@@ -1325,10 +1330,13 @@ void Stabilizer::calcStateForEmergencySignal()
       }
       if (fall_direction.norm() > sin(tilt_margin[1])) {
           is_falling = true;
-          if (loop % static_cast <int>(0.2/dt) == 0 ) { // once per 0.2[s]
+          if (m_is_falling_counter % static_cast <int>(0.2/dt) == 0) { // once per 0.2[s]
               std::cerr << "[" << m_profile.instance_name << "] [" << m_qRef.tm
                         << "] robot is falling down toward " << "(" << fall_direction(0) << "," << fall_direction(1) << ") direction" << std::endl;
           }
+          m_is_falling_counter++;
+      } else {
+          m_is_falling_counter = 0;
       }
   }
   // Total check for emergency signal
@@ -1343,7 +1351,7 @@ void Stabilizer::calcStateForEmergencySignal()
       is_emergency = is_cp_outside;
       break;
   case OpenHRP::StabilizerService::TILT:
-      is_emergency = will_fall | is_falling;
+      is_emergency = will_fall || is_falling;
       break;
   default:
       break;
