@@ -40,6 +40,17 @@ static const char* autobalancer_spec[] =
     };
 // </rtc-template>
 
+static std::ostream& operator<<(std::ostream& os, const struct RTC::Time &tm)
+{
+    int pre = os.precision();
+    os.setf(std::ios::fixed);
+    os << std::setprecision(6)
+       << (tm.sec + tm.nsec/1e9)
+       << std::setprecision(pre);
+    os.unsetf(std::ios::fixed);
+    return os;
+}
+
 AutoBalancer::AutoBalancer(RTC::Manager* manager)
     : RTC::DataFlowComponentBase(manager),
       // <rtc-template block="initializer">
@@ -495,7 +506,7 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
       if (control_mode == MODE_SYNC_TO_ABC) {
         control_mode = MODE_ABC;
       } else if (control_mode == MODE_SYNC_TO_IDLE && transition_interpolator->isEmpty() ) {
-        std::cerr << "[" << m_profile.instance_name << "] [" << (m_qRef.tm.sec + m_qRef.tm.nsec/1e9)
+        std::cerr << "[" << m_profile.instance_name << "] [" << m_qRef.tm
                   << "] Finished cleanup" << std::endl;
         control_mode = MODE_IDLE;
       }
@@ -966,7 +977,7 @@ bool AutoBalancer::solveLimbIKforLimb (ABCIKparam& param, const std::string& lim
   rats::difference_rotation(vel_r, param.target_link->R, param.target_r0);
   if (vel_p.norm() > pos_ik_thre && transition_interpolator->isEmpty()) {
       if (param.pos_ik_error_count % ik_error_debug_print_freq == 0) {
-          std::cerr << "[" << m_profile.instance_name << "] [" << (m_qRef.tm.sec + m_qRef.tm.nsec/1e9)
+          std::cerr << "[" << m_profile.instance_name << "] [" << m_qRef.tm
                     << "] Too large IK error in " << limb_name << " (vel_p) = [" << vel_p(0) << " " << vel_p(1) << " " << vel_p(2) << "][m], count = " << param.pos_ik_error_count << std::endl;
       }
       param.pos_ik_error_count++;
@@ -976,7 +987,7 @@ bool AutoBalancer::solveLimbIKforLimb (ABCIKparam& param, const std::string& lim
   }
   if (vel_r.norm() > rot_ik_thre && transition_interpolator->isEmpty()) {
       if (param.rot_ik_error_count % ik_error_debug_print_freq == 0) {
-          std::cerr << "[" << m_profile.instance_name << "] [" << (m_qRef.tm.sec + m_qRef.tm.nsec/1e9)
+          std::cerr << "[" << m_profile.instance_name << "] [" << m_qRef.tm
                     << "] Too large IK error in " << limb_name << " (vel_r) = [" << vel_r(0) << " " << vel_r(1) << " " << vel_r(2) << "][rad], count = " << param.rot_ik_error_count << std::endl;
       }
       param.rot_ik_error_count++;
@@ -1859,7 +1870,7 @@ bool AutoBalancer::getFootstepParam(OpenHRP::AutoBalancerService::FootstepParam&
 
 bool AutoBalancer::adjustFootSteps(const OpenHRP::AutoBalancerService::Footstep& rfootstep, const OpenHRP::AutoBalancerService::Footstep& lfootstep)
 {
-  std::cerr << "[" << m_profile.instance_name << "] [" << (m_qRef.tm.sec + m_qRef.tm.nsec/1e9)
+  std::cerr << "[" << m_profile.instance_name << "] [" << m_qRef.tm
             << "] adjustFootSteps" << std::endl;
   if (control_mode == MODE_ABC && !gg_is_walking && adjust_footstep_interpolator->isEmpty()) {
       Guard guard(m_mutex);
