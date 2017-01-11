@@ -39,13 +39,15 @@ public:
     void get_vertices (std::vector<std::vector<Eigen::Vector2d> >& vs) { vs = foot_vertices; };
     void print_vertices (const std::string& str)
     {
+        std::cerr << "[" << str << "]     ";
         for (size_t i = 0; i < foot_vertices.size(); i++) {
-            std::cerr << "[" << str << "]   vs = ";
+            std::cerr << "vs = ";
             for (size_t j = 0; j < foot_vertices[i].size(); j++) {
                 std::cerr << "[" << foot_vertices[i][j](0) << " " << foot_vertices[i][j](1) << "] ";
             }
-            std::cerr << "[m]" << std::endl;;
+            std::cerr << ((i==foot_vertices.size()-1)?"[m]":"[m], ");
         }
+        std::cerr << std::endl;;
     }
 };
 
@@ -718,7 +720,7 @@ public:
                                                    const std::vector<double>& toeheel_ratio,
                                                    const hrp::Vector3& new_refzmp, const hrp::Vector3& ref_zmp,
                                                    const double total_fz, const double dt, const bool printp = true, const std::string& print_str = "",
-                                                   const bool use_cop_distribution = true)
+                                                   const bool use_cop_distribution = true, const std::vector<bool> is_contact_list = std::vector<bool>())
     {
         size_t ee_num = ee_name.size();
         std::vector<double> alpha_vector(ee_num), fz_alpha_vector(ee_num);
@@ -870,6 +872,10 @@ public:
                 //   If toeheel_ratio is 0, toe and heel contact and local Y moment should be 0.
                 if (i == 1) {
                     Wmat(i+j*6+3, i+j*6+3) = toeheel_ratio[j] * Wmat(i+j*6+3, i+j*6+3);
+                }
+                // In actual swing phase, X/Y momoment should be 0.
+                if (!is_contact_list.empty()) {
+                  if (!is_contact_list[j]) Wmat(i+j*6+3, i+j*6+3) = 0;
                 }
             }
         }
