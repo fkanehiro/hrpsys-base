@@ -167,6 +167,7 @@ class HumanSynchronizer{
   private:
     double FUP_TIME;
     int cur_rfup_level,cur_lfup_level;
+    double cur_rfup_rad,cur_lfup_rad;
     double FUP_HIGHT;
     double CNT_F_TH;
     hrp::Vector3 pre_cont_rfpos,pre_cont_lfpos;
@@ -223,11 +224,12 @@ class HumanSynchronizer{
       tgt_cmmr = cmmr = 1.0;
       use_x = use_y = use_z = true;
       cur_rfup_level = cur_lfup_level = 0;
+      cur_rfup_rad = cur_lfup_rad = 0;
       is_rf_contact = is_lf_contact = true;
       go_rf_landing = go_lf_landing = false;
       pre_cont_rfpos = pre_cont_lfpos = hrp::Vector3::Zero();
       init_hp_calibcom = hrp::Vector3::Zero();
-      tgt_FUP_TIME = FUP_TIME = 0.8;
+      tgt_FUP_TIME = FUP_TIME = 0.4;
       FUP_HIGHT = 0.05;
       CNT_F_TH = 20.0;
       MAXVEL = 0.004;
@@ -446,6 +448,13 @@ class HumanSynchronizer{
         }
       }
     }
+    void overwriteFootZFromFootLandOnCommand(const bool& rf_goland_in, const bool& lf_goland_in, HumanPose& tgt){
+      if(is_rf_contact&&is_lf_contact)FUP_TIME = tgt_FUP_TIME;//両足接地しているタイミングでのみ更新
+      double RFDOWN_TIME = fabs(tgt.rf(1) - tgt.com(1))*4 + FUP_TIME;//下ろす速度は遊脚の重心からの距離に比例したペナルティ
+      double LFDOWN_TIME = fabs(tgt.lf(1) - tgt.com(1))*4 + FUP_TIME;
+      calcFootUpCurveAndJudgeFootContact2(rf_goland_in, FUP_TIME, RFDOWN_TIME, cur_rfup_rad, tgt.rf, is_rf_contact);
+      calcFootUpCurveAndJudgeFootContact2(lf_goland_in, FUP_TIME, LFDOWN_TIME, cur_lfup_rad, tgt.lf, is_lf_contact);
+    }
     void calcFootUpCurveAndJudgeFootContact(const bool& go_land_in, int& cur_fup_count_in, hrp::Vector3& f_height_out, bool& is_f_contact_out){
       int FUP_COUNT = (int)(HZ*FUP_TIME);
       if(cur_fup_count_in > FUP_COUNT){cur_fup_count_in = FUP_COUNT;} if(cur_fup_count_in < 0){cur_fup_count_in = 0;}
@@ -457,10 +466,18 @@ class HumanSynchronizer{
       f_height_out(2) = FUP_HIGHT/2*(1-cos(M_PI*cur_fup_count_in/FUP_COUNT));
       is_f_contact_out = (cur_fup_count_in <= 0);
     }
-    void overwriteFootZFromFootLandOnCommand(const bool& rf_goland_in, const bool& lf_goland_in, HumanPose& tgt){
-      if(is_rf_contact&&is_lf_contact)FUP_TIME = tgt_FUP_TIME;//両足接地しているタイミングでのみ更新
-      calcFootUpCurveAndJudgeFootContact(rf_goland_in, cur_rfup_level, tgt.rf, is_rf_contact);
-      calcFootUpCurveAndJudgeFootContact(lf_goland_in, cur_lfup_level, tgt.lf, is_lf_contact);
+    void calcFootUpCurveAndJudgeFootContact2(const bool& go_land_in, const double& fup_time_in, const double& fdown_time_in,  double& cur_fup_phase_in,hrp::Vector3& f_height_out, bool& is_f_contact_out){
+      const double omega_up = M_PI / fup_time_in;
+      const double omega_down = M_PI / fdown_time_in;
+      if(!go_land_in){//足上げ命令入力時
+        cur_fup_phase_in += omega_up * DT;
+      }else{//足下げ命令入力時
+        cur_fup_phase_in -= omega_down * DT;
+      }
+      if(cur_fup_phase_in > M_PI){cur_fup_phase_in = M_PI;}
+      else if(cur_fup_phase_in < 0){cur_fup_phase_in = 0;}
+      f_height_out(2) = FUP_HIGHT/2*(1-cos(cur_fup_phase_in));
+      is_f_contact_out = (cur_fup_phase_in <= 0);
     }
     void lockFootXYOnContact(const bool& rfcs_in, const bool& lfcs_in, HumanPose& tgt){
       if(rfcs_in){
@@ -486,6 +503,7 @@ class HumanSynchronizer{
           tgt.rf(0) = (lf2rf_vec.normalized())(0) * MAX + pre_cont_lfpos(0);
           tgt.rf(1) = (lf2rf_vec.normalized())(1) * MAX + pre_cont_lfpos(1);
         }
+        if(tgt.rf(1) > pre_cont_lfpos(1) + 0.05 ) tgt.rf(1) = pre_cont_lfpos(1) + 0.05;
       }
       else if(is_rf_contact && !is_lf_contact){//左足浮遊時
         const hrp::Vector2 rf2lf_vec( tgt.lf(0)-pre_cont_rfpos(0), tgt.lf(1)-pre_cont_rfpos(1) );
@@ -493,6 +511,7 @@ class HumanSynchronizer{
           tgt.lf(0) = (rf2lf_vec.normalized())(0) * MAX + pre_cont_rfpos(0);
           tgt.lf(1) = (rf2lf_vec.normalized())(1) * MAX + pre_cont_rfpos(1);
         }
+        if(tgt.lf(1) < pre_cont_rfpos(1) - 0.05 ) tgt.lf(1) = pre_cont_rfpos(1) - 0.05;
       }
       hrp::Vector3 hand_ulimit = hrp::Vector3(0.1,0.1,0.1);
       hrp::Vector3 hand_llimit = hrp::Vector3(-0.1,-0.1,-0.1);
@@ -523,11 +542,11 @@ class HumanSynchronizer{
       double decel[4] = {0.04, -0.02, 0.01, -0.01};
       comacc_ref = calcacc_v_filters.passFilter(com_acc);
       const double H = rp_wld_initpos.com(2);
-      double maxacc[2],minacc[2];
-      maxacc[0] = (com_old(0) - accel[1]) * (G/H); if(maxacc[0] < 0){maxacc[0]=0;}
-      minacc[0] = (com_old(0) - accel[0]) * (G/H); if(minacc[0] > 0){minacc[0]=0;}
-      maxacc[1] = (com_old(1) - (accel[3]-0.1)) * (G/H); if(maxacc[1] < 0){maxacc[1]=0;}
-      minacc[1] = (com_old(1) - (accel[2]+0.1)) * (G/H); if(minacc[1] > 0){minacc[1]=0;}
+//      double maxacc[2],minacc[2];
+//      maxacc[0] = (com_old(0) - accel[1]) * (G/H); if(maxacc[0] < 0){maxacc[0]=0;}
+//      minacc[0] = (com_old(0) - accel[0]) * (G/H); if(minacc[0] > 0){minacc[0]=0;}
+//      maxacc[1] = (com_old(1) - (accel[3]-0.1)) * (G/H); if(maxacc[1] < 0){maxacc[1]=0;}
+//      minacc[1] = (com_old(1) - (accel[2]+0.1)) * (G/H); if(minacc[1] > 0){minacc[1]=0;}
 //      if(com_vel(0) > maxacc[0] * DT + com_vel_old(0)){com_vel(0) = maxacc[0] * DT + com_vel_old(0); cout<<"maxacc[0] over"<<endl;}
 //      if(com_vel(0) < minacc[0] * DT + com_vel_old(0)){com_vel(0) = minacc[0] * DT + com_vel_old(0); cout<<"minacc[0] over"<<endl;}
 //      if(com_vel(1) > maxacc[1] * DT + com_vel_old(1)){com_vel(1) = maxacc[1] * DT + com_vel_old(1); cout<<"maxacc[1] over"<<endl;}
@@ -541,7 +560,7 @@ class HumanSynchronizer{
       std::vector<hrp::Vector2> hull;
       createSupportRegionByFootPos(rfin_abs, lfin_abs, rf_safe_region, lf_safe_region, hull);
       hrp::Vector2 com_vel_ans_2d;
-      regulateCOMVelocityByCapturePointVec( hrp::Vector2(com_old(0),com_old(1)), hrp::Vector2(com_vel(0),com_vel(1)), hull, com_vel_ans_2d);
+//      regulateCOMVelocityByCapturePointVec( hrp::Vector2(com_old(0),com_old(1)), hrp::Vector2(com_vel(0),com_vel(1)), hull, com_vel_ans_2d);
       regulateCOMVelocityByCapturePointXY( hrp::Vector2(com_old(0),com_old(1)), hrp::Vector2(com_vel(0),com_vel(1)), hull, com_vel_ans_2d);//XY独立に計算する手法のほうがエッジで引っかからない・・・
       com_ans(0) = com_old(0) + com_vel_ans_2d(0) * DT;
       com_ans(1) = com_old(1) + com_vel_ans_2d(1) * DT;
