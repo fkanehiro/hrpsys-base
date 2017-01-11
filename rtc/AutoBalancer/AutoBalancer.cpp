@@ -501,31 +501,6 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
     if (m_actzmpIn.isNew()){m_actzmpIn.read(); }
     hsp->readInput(hp_raw_data);
     hsp->current_basepos = m_robot->rootLink()->p;
-
-//    if(hsp->startCountdownForHumanSync){
-//      std::cerr << "[" << m_profile.instance_name << "] Count Down for HumanSync ["<<hsp->getRemainingCountDown()<<"]\r";
-//      hsp->updateCountDown();
-//    }
-//    if(hsp->isHumanSyncOn()){
-//      if(hsp->ht_first_call){
-//        std::cerr << "\n[" << m_profile.instance_name << "] Start HumanSync"<< std::endl;
-//        hsp->ht_first_call = false;
-//      }
-//    }else{
-//      hsp->calibInitHumanCOMFromZMP();
-//      hsp->setInitOffsetPose();
-//      hsp->rp_wld_initpos.com = m_robot->calcCM();
-//      hsp->rp_wld_initpos.rf = ikp["rleg"].target_link->p;
-//      hsp->rp_wld_initpos.lf = ikp["lleg"].target_link->p;
-//      if(ikp.count("rarm"))hsp->rp_wld_initpos.rh = ikp["rarm"].target_link->p;
-//      if(ikp.count("larm"))hsp->rp_wld_initpos.lh = ikp["larm"].target_link->p;
-//    }
-//    hsp->update();//////HumanSynchronizerの主要処理
-//    if(loop%100==0)hsp->rp_ref_out.print();
-  //  if(loop%100==0)cerr<<"getUpdateTime:"<<hsp->getUpdateTime()*1000<<"[ms]"<<endl;
-
-
-
     if(ikp.count("rarm") && !hsp->use_rh)ikp["rarm"].is_active = false;
     if(ikp.count("larm") && !hsp->use_lh)ikp["larm"].is_active = false;
     m_contactStates.data[contact_states_index_map["rleg"]] = hsp->is_rf_contact;
@@ -1057,7 +1032,30 @@ bool AutoBalancer::solveLimbIKforLimb (ABCIKparam& param, const std::string& lim
   }
   return true;
 }
-
+void AutoBalancer::solveWholeBodyCOMIK(const hrp::Vector3& com_ref, const hrp::Vector3& rf_ref, const hrp::Vector3& lf_ref, const hrp::Vector3& rh_ref, const hrp::Vector3& lh_ref, const hrp::Vector3& head_ref){
+  int com_ik_loop=0;
+  const int COM_IK_MAX_LOOP = 5;
+  const double COM_IK_MAX_ERROR = 1e-4;
+  m_robot->rootLink()->p = com_ref;//move base link at first
+  m_robot->calcForwardKinematics();//apply
+  hrp::Vector3 tmp_com_err = com_ref - m_robot->calcCM();
+  ikp["rleg"].target_p0 = rf_ref;
+  ikp["lleg"].target_p0 = lf_ref;
+  if(ikp.count("rarm"))ikp["rarm"].target_p0 = rh_ref;
+  if(ikp.count("larm"))ikp["larm"].target_p0 = lh_ref;
+  while(tmp_com_err.norm() > COM_IK_MAX_ERROR){
+    m_robot->rootLink()->p += tmp_com_err;
+    m_robot->calcForwardKinematics();
+    for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
+      if (it->second.is_active) solveLimbIKforLimb(it->second, it->first);
+    }
+    m_robot->calcForwardKinematics();
+    tmp_com_err = com_ref - m_robot->calcCM();
+    if(com_ik_loop++ > COM_IK_MAX_LOOP){std::cerr << "COM constraint IK MAX loop [="<<COM_IK_MAX_LOOP<<"] exceeded!!" << std::endl; break; };
+  }
+  if(m_robot->link("HEAD_JOINT0") != NULL)m_robot->joint(15)->q = head_ref(2);
+  if(m_robot->link("HEAD_JOINT1") != NULL)m_robot->joint(16)->q = head_ref(1);
+}
 
 
 void AutoBalancer::solveLimbIK ()
@@ -1093,7 +1091,6 @@ void AutoBalancer::solveLimbIK ()
 ////////////////////  逆動力学補償テスト  /////////////////////
 
 
-
   //for HumanSynchronizer
   if(hsp->startCountdownForHumanSync){
     std::cerr << "[" << m_profile.instance_name << "] Count Down for HumanSync ["<<hsp->getRemainingCountDown()<<"]\r";
@@ -1117,10 +1114,6 @@ void AutoBalancer::solveLimbIK ()
   }
   hsp->update();//////HumanSynchronizerの主要処理
   if(loop%100==0)hsp->rp_ref_out.print();
-  //for HumanSynchronizer
-  if(hsp->isHumanSyncOn()){	  ////////////////////// 重心拘束位置設定 /////////////////////////
-    m_robot->rootLink()->p = hsp->rp_wld_initpos.com + hsp->rp_ref_out.com;//まずは重心目標分，体幹を動かす
-  }
 
   // Fix for toe joint
   for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
@@ -1136,38 +1129,17 @@ void AutoBalancer::solveLimbIK ()
   m_robot->calcForwardKinematics();
 
   // additional COM fitting IK for HumanSynchronizer
-  hrp::Vector3 tmp_com_err = hsp->rp_ref_out.com + hsp->rp_wld_initpos.com - m_robot->calcCM();
-  int com_ik_loop=0;
-  const int COM_IK_MAX_LOOP = 10;
-  const double COM_IK_MAX_ERROR = 0.0001;//0.001だとたまにカクッとなる
   if(hsp->isHumanSyncOn()){
-    ikp["rleg"].target_p0 = hsp->rp_wld_initpos.rf + hsp->rp_ref_out.rf;
-    ikp["lleg"].target_p0 = hsp->rp_wld_initpos.lf + hsp->rp_ref_out.lf;
-    if(ikp.count("rarm"))ikp["rarm"].target_p0 = hsp->rp_wld_initpos.rh + hsp->rp_ref_out.rh;
-    if(ikp.count("larm"))ikp["larm"].target_p0 = hsp->rp_wld_initpos.lh + hsp->rp_ref_out.lh;
-    while(fabs(tmp_com_err(0))>COM_IK_MAX_ERROR || fabs(tmp_com_err(1))>COM_IK_MAX_ERROR || fabs(tmp_com_err(2))>COM_IK_MAX_ERROR){//Z方向のCOM合わせは要注意(たまに怪しい)
-		  m_robot->rootLink()->p += tmp_com_err;
-		  m_robot->calcForwardKinematics();
-		  for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
-		    if (it->second.is_active) solveLimbIKforLimb(it->second, it->first);
-		  }
-		  m_robot->calcForwardKinematics();
-      tmp_com_err = (hsp->rp_ref_out.com + hsp->rp_wld_initpos.com - m_robot->calcCM());
-		  if(com_ik_loop++ > COM_IK_MAX_LOOP){std::cerr << "[" << m_profile.instance_name << "] COM constraint IK MAX loop [="<<COM_IK_MAX_LOOP<<"] exceeded!!" << std::endl; break; };
-	  }
-
-
-    m_robot->joint(15)->q = hsp->cam_rpy_filtered(2);
-    m_robot->joint(16)->q = hsp->cam_rpy_filtered(1);
-//    if(loop%50==0)cout<<"cam_rpy_filtered:\n"<<hsp->cam_rpy_filtered<<endl;
-
-
-
+	  solveWholeBodyCOMIK(
+	      hsp->rp_wld_initpos.com + hsp->rp_ref_out.com,
+	      hsp->rp_wld_initpos.rf + hsp->rp_ref_out.rf,
+	      hsp->rp_wld_initpos.lf + hsp->rp_ref_out.lf,
+	      hsp->rp_wld_initpos.rh + hsp->rp_ref_out.rh,
+	      hsp->rp_wld_initpos.lh + hsp->rp_ref_out.lh,
+	      hsp->cam_rpy_filtered );
     //outport用のデータ上書き
     ref_zmp = hsp->rp_ref_out.zmp + hsp->rp_wld_initpos.zmp;
     ref_cog = hsp->rp_ref_out.com + hsp->rp_wld_initpos.com;
-
-	  if(loop%100==0)if(com_ik_loop>1)std::cerr << "[" << m_profile.instance_name << "] COM_IK_LOOP ="<<com_ik_loop<< std::endl;//ややCOMのIKに手間取った時プリント
 
   }else{
 	  for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {//本来のIK部分
