@@ -16,6 +16,7 @@
 #include "hrpsys/idl/RobotHardwareService.hh"
 
 #include "EmergencyStopper.h"
+#include <iomanip>
 
 typedef coil::Guard<coil::Mutex> Guard;
 
@@ -38,6 +39,17 @@ static const char* emergencystopper_spec[] =
     ""
 };
 // </rtc-template>
+
+static std::ostream& operator<<(std::ostream& os, const struct RTC::Time &tm)
+{
+    int pre = os.precision();
+    os.setf(std::ios::fixed);
+    os << std::setprecision(6)
+       << (tm.sec + tm.nsec/1e9)
+       << std::setprecision(pre);
+    os.unsetf(std::ios::fixed);
+    return os;
+}
 
 EmergencyStopper::EmergencyStopper(RTC::Manager* manager)
     : RTC::DataFlowComponentBase(manager),
@@ -321,11 +333,13 @@ RTC::ReturnCode_t EmergencyStopper::onExecute(RTC::UniqueId ec_id)
         m_emergencySignalIn.read();
         if ( m_emergencySignal.data == 0 ) {
             Guard guard(m_mutex);
-            std::cerr << "[" << m_profile.instance_name << "] emergencySignal is reset!" << std::endl;
+            std::cerr << "[" << m_profile.instance_name << "] [" << m_qRef.tm
+                      << "] emergencySignal is reset!" << std::endl;
             is_stop_mode = false;
         } else if (!is_stop_mode) {
             Guard guard(m_mutex);
-            std::cerr << "[" << m_profile.instance_name << "] emergencySignal is set!" << std::endl;
+            std::cerr << "[" << m_profile.instance_name << "] [" << m_qRef.tm
+                      << "] emergencySignal is set!" << std::endl;
             is_stop_mode = true;
         }
     }

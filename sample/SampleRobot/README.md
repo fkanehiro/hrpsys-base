@@ -305,11 +305,23 @@ ipython -i `rospack find hrpsys`/samples/SampleRobot/samplerobot_terrain_walk.py
  Please see [Pyton API](http://fkanehiro.github.io/hrpsys-base/df/d98/classpython_1_1hrpsys__config_1_1HrpsysConfigurator.html) for the avilable method functions, and [SampleRobot Model](http://www.openrtp.jp/openhrp3/en/sample_model.html) for the list of joint names.
 
 # How to generate SampleRobot*.xml.in
- Go to hrpsys source directory.
+ Go to hrpsys source (top) directory.
 1. SampleRobot.torque.xml.in
  ```
- openhrp-project-generator `rospack find openhrp3`/share/OpenHRP-3.1/sample/model/sample1_bush.wrl `rospack find openhrp3`/share/OpenHRP-3.1/sample/model/longfloor.wrl `rospack find openhrp3`/share/OpenHRP-3.1/sample/model/box.wrl,0.78,0,0,1,0,0,0 --use-highgain-mode false --output /tmp/SampleRobot.xml --timeStep 0.001 --dt "@CONTROLLER_TIME@" --method RUNGE_KUTTA
+ openhrp-project-generator `rospack find openhrp3`/share/OpenHRP-3.1/sample/model/sample1_bush.wrl `rospack find openhrp3`/share/OpenHRP-3.1/sample/model/floor5.wrl `rospack find openhrp3`/share/OpenHRP-3.1/sample/model/box.wrl,0.78,0,0,1,0,0,0 --use-highgain-mode false --output /tmp/SampleRobot.xml --timeStep 0.001 --dt "@CONTROLLER_TIME@" --method RUNGE_KUTTA
  TMP=$(rospack find openhrp3); sed -i -e "s/${TMP//\//\\/}/@OPENHRP\_DIR@/g" /tmp/SampleRobot.xml
  yes | cp /tmp/SampleRobot.xml sample/SampleRobot/SampleRobot.torque.xml.in
+ ```
+2. SampleRobot.xml.in
+ ```
+ openhrp-project-generator `rospack find openhrp3`/share/OpenHRP-3.1/sample/model/sample1.wrl `rospack find openhrp3`/share/OpenHRP-3.1/sample/model/floor5.wrl  --output /tmp/SampleRobot.xml --timeStep "@CONTROLLER_TIME@" --dt "@CONTROLLER_TIME@" --method EULER --joint-properties "LARM_SHOULDER_R.angle,@L_SHOULDER_R_INITIAL@"
+ TMP=$(rospack find openhrp3); sed -i -e "s/${TMP//\//\\/}/@OPENHRP\_DIR@/g" /tmp/SampleRobot.xml
+ yes | cp /tmp/SampleRobot.xml sample/SampleRobot/SampleRobot.xml.in
+ ```
+3. SampleRobot.kinematicsonly.xml.in
+ ```
+ openhrp-project-generator `rospack find openhrp3`/share/OpenHRP-3.1/sample/model/sample1.wrl `rospack find openhrp3`/share/OpenHRP-3.1/sample/model/floor5.wrl  --output /tmp/SampleRobot.xml --timeStep 0.002 --dt 0.002 --method EULER --integrate false
+ TMP=$(rospack find openhrp3); sed -i -e "s/${TMP//\//\\/}/@OPENHRP\_DIR@/g" /tmp/SampleRobot.xml
+ yes | cp /tmp/SampleRobot.xml sample/SampleRobot/SampleRobot.kinematicsonly.xml.in
  ```
 

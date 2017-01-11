@@ -46,6 +46,17 @@ static const char* component_spec[] =
 };
 // </rtc-template>
 
+static std::ostream& operator<<(std::ostream& os, const struct RTC::Time &tm)
+{
+    int pre = os.precision();
+    os.setf(std::ios::fixed);
+    os << std::setprecision(6)
+       << (tm.sec + tm.nsec/1e9)
+       << std::setprecision(pre);
+    os.unsetf(std::ios::fixed);
+    return os;
+}
+
 CollisionDetector::CollisionDetector(RTC::Manager* manager)
     : RTC::DataFlowComponentBase(manager),
       // <rtc-template block="initializer">
@@ -460,7 +471,8 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
                 if (has_servoOn) {
                 if (! m_have_safe_posture ) {
                     // first transition collision -> safe
-                    std::cerr << "[" << m_profile.instance_name << "] set safe posture" << std::endl;
+                    std::cerr << "[" << m_profile.instance_name << "] [" << m_qRef.tm
+                              << "] set safe posture" << std::endl;
                     for ( unsigned int i = 0; i < m_q.data.length(); i++ ) {
                         m_lastsafe_jointdata[i] = m_robot->joint(i)->q;
                     }

@@ -16,6 +16,7 @@
 #include <math.h>
 #include <vector>
 #include <limits>
+#include <iomanip>
 #define deg2rad(x)((x)*M_PI/180)
 
 // Module specification
@@ -37,6 +38,17 @@ static const char* softerrorlimiter_spec[] =
     ""
   };
 // </rtc-template>
+
+static std::ostream& operator<<(std::ostream& os, const struct RTC::Time &tm)
+{
+    int pre = os.precision();
+    os.setf(std::ios::fixed);
+    os << std::setprecision(6)
+       << (tm.sec + tm.nsec/1e9)
+       << std::setprecision(pre);
+    os.unsetf(std::ios::fixed);
+    return os;
+}
 
 SoftErrorLimiter::SoftErrorLimiter(RTC::Manager* manager)
   : RTC::DataFlowComponentBase(manager),
@@ -269,7 +281,8 @@ RTC::ReturnCode_t SoftErrorLimiter::onExecute(RTC::UniqueId ec_id)
       // fixed joint has ulimit = vlimit
       if ( servo_state[i] == 1 && (lvlimit < uvlimit) && ((lvlimit > qvel) || (uvlimit < qvel)) ) {
         if (loop % debug_print_freq == 0 || debug_print_velocity_first ) {
-          std::cerr << "[" << m_profile.instance_name<< "] velocity limit over " << m_robot->joint(i)->name << "(" << i << "), qvel=" << qvel
+          std::cerr << "[" << m_profile.instance_name<< "] [" << m_qRef.tm
+                    << "] velocity limit over " << m_robot->joint(i)->name << "(" << i << "), qvel=" << qvel
                     << ", lvlimit =" << lvlimit
                     << ", uvlimit =" << uvlimit
                     << ", servo_state = " <<  ( servo_state[i] ? "ON" : "OFF") << std::endl;
@@ -298,7 +311,8 @@ RTC::ReturnCode_t SoftErrorLimiter::onExecute(RTC::UniqueId ec_id)
       bool servo_limit_state = (llimit < ulimit) && ((llimit > m_qRef.data[i]) || (ulimit < m_qRef.data[i]));
       if ( servo_state[i] == 1 && servo_limit_state ) {
         if (loop % debug_print_freq == 0 || debug_print_position_first) {
-          std::cerr << "[" << m_profile.instance_name<< "] position limit over " << m_robot->joint(i)->name << "(" << i << "), qRef=" << m_qRef.data[i]
+          std::cerr << "[" << m_profile.instance_name<< "] [" << m_qRef.tm
+                    << "] position limit over " << m_robot->joint(i)->name << "(" << i << "), qRef=" << m_qRef.data[i]
                     << ", llimit =" << llimit
                     << ", ulimit =" << ulimit
                     << ", servo_state = " <<  ( servo_state[i] ? "ON" : "OFF")
@@ -325,7 +339,8 @@ RTC::ReturnCode_t SoftErrorLimiter::onExecute(RTC::UniqueId ec_id)
       double error = pos_vel_limited_angle - m_qCurrent.data[i];
       if ( servo_state[i] == 1 && fabs(error) > limit ) {
         if (loop % debug_print_freq == 0 || debug_print_error_first ) {
-          std::cerr << "[" << m_profile.instance_name<< "] error limit over " << m_robot->joint(i)->name << "(" << i << "), qRef=" << pos_vel_limited_angle
+          std::cerr << "[" << m_profile.instance_name<< "] [" << m_qRef.tm
+                    << "] error limit over " << m_robot->joint(i)->name << "(" << i << "), qRef=" << pos_vel_limited_angle
                     << ", qCurrent=" << m_qCurrent.data[i] << " "
                     << ", Error=" << error << " > " << limit << " (limit)"
                     << ", servo_state = " <<  ( 1 ? "ON" : "OFF");

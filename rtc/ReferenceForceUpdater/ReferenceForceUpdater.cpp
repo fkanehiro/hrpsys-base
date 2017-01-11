@@ -40,6 +40,17 @@ static const char* ReferenceForceUpdater_spec[] =
   };
 // </rtc-template>
 
+static std::ostream& operator<<(std::ostream& os, const struct RTC::Time &tm)
+{
+    int pre = os.precision();
+    os.setf(std::ios::fixed);
+    os << std::setprecision(6)
+       << (tm.sec + tm.nsec/1e9)
+       << std::setprecision(pre);
+    os.unsetf(std::ios::fixed);
+    return os;
+}
+
 ReferenceForceUpdater::ReferenceForceUpdater(RTC::Manager* manager)
   : RTC::DataFlowComponentBase(manager),
     // <rtc-template block="initializer">
@@ -290,7 +301,7 @@ RTC::ReturnCode_t ReferenceForceUpdater::onExecute(RTC::UniqueId ec_id)
       if ( ! transition_interpolator_isEmpty ) {
         transition_interpolator[arm]->get(&transition_interpolator_ratio[arm_idx], true);
         if ( transition_interpolator[arm]->isEmpty() && m_RFUParam[arm].is_active && m_RFUParam[arm].is_stopping ) {
-          std::cerr << "[" << m_profile.instance_name << "] ReferenceForceUpdater active => inactive." << std::endl;
+          std::cerr << "[" << m_profile.instance_name << "] [" << m_qRef.tm << "] ReferenceForceUpdater active => inactive." << std::endl;
           m_RFUParam[arm].is_active = false;
           m_RFUParam[arm].is_stopping = false;
         }

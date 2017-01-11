@@ -138,13 +138,13 @@
    <property name="showActualState" value="true"/>
    <property name="showScale" value="true"/>
   </view>
-  <item class="com.generalrobotix.ui.item.GrxRTSItem" name="longfloor" select="true">
-   <property name="longfloor(Robot)0.period" value="@CONTROLLER_TIME@"/>
+  <item class="com.generalrobotix.ui.item.GrxRTSItem" name="floor" select="true">
+   <property name="floor(Robot)0.period" value="@CONTROLLER_TIME@"/>
    <property name="PDcontroller0.period" value="@CONTROLLER_TIME@"/>
    <property name="PDcontroller0.factory" value="PDcontroller"/>
   </item>
-  <item class="com.generalrobotix.ui.item.GrxModelItem" name="longfloor" url="@OPENHRP_DIR@/share/OpenHRP-3.1/sample/model/longfloor.wrl">
-   <property name="rtcName" value="longfloor(Robot)0"/>
+  <item class="com.generalrobotix.ui.item.GrxModelItem" name="floor5" url="@OPENHRP_DIR@/share/OpenHRP-3.1/sample/model/floor5.wrl">
+   <property name="rtcName" value="floor(Robot)0"/>
    <property name="inport" value="tauRef:JOINT_TORQUE"/>
    <property name="outport" value="q:JOINT_VALUE"/>
    <property name="outport" value="dq:JOINT_VELOCITY"/>
@@ -160,7 +160,7 @@
    <property name="interval" value="100"/>
    <property name="RobotHardwareServiceRTC" value="RobotHardware0"/>
    <property name="robotPort" value="2809"/>
-   <property name="ROBOT" value="longfloor"/>
+   <property name="ROBOT" value="floor"/>
   </view>
   <view class="com.generalrobotix.ui.view.Grx3DView" name="3DView">
    <property name="view.mode" value="Room"/>
@@ -208,13 +208,13 @@
    <property name="showActualState" value="true"/>
    <property name="showScale" value="true"/>
   </view>
-  <item class="com.generalrobotix.ui.item.GrxCollisionPairItem" name="CP#longfloor_#sample1_bush_">
+  <item class="com.generalrobotix.ui.item.GrxCollisionPairItem" name="CP#floor5_#sample1_bush_">
    <property name="springConstant" value="0 0 0 0 0 0"/>
    <property name="slidingFriction" value="0.5"/>
    <property name="jointName2" value=""/>
    <property name="jointName1" value=""/>
    <property name="damperConstant" value="0 0 0 0 0 0"/>
-   <property name="objectName2" value="longfloor"/>
+   <property name="objectName2" value="floor5"/>
    <property name="objectName1" value="sample1_bush"/>
    <property name="springDamperModel" value="false"/>
    <property name="staticFriction" value="0.5"/>
@@ -230,14 +230,14 @@
    <property name="springDamperModel" value="false"/>
    <property name="staticFriction" value="0.5"/>
   </item>
-  <item class="com.generalrobotix.ui.item.GrxCollisionPairItem" name="CP#box.wrl,0_#longfloor_">
+  <item class="com.generalrobotix.ui.item.GrxCollisionPairItem" name="CP#box.wrl,0_#floor5_">
    <property name="springConstant" value="0 0 0 0 0 0"/>
    <property name="slidingFriction" value="0.5"/>
    <property name="jointName2" value=""/>
    <property name="jointName1" value=""/>
    <property name="damperConstant" value="0 0 0 0 0 0"/>
    <property name="objectName2" value="box.wrl,0"/>
-   <property name="objectName1" value="longfloor"/>
+   <property name="objectName1" value="floor5"/>
    <property name="springDamperModel" value="false"/>
    <property name="staticFriction" value="0.5"/>
   </item>

@@ -769,6 +769,7 @@ def demoStandingPosResetting():
     hcf.abc_svc.waitFootSteps()
 
 def demo():
+    start_time = time.time()
     init()
     from distutils.version import StrictVersion
     if StrictVersion(hrpsys_version) >= StrictVersion('315.5.0'):
@@ -797,13 +798,14 @@ def demo():
         demoGaitGeneratorChangeStepParam()
         demoGaitGeneratorOverwriteFootsteps()
         demoGaitGeneratorOverwriteFootsteps(2)
-        demoStandingPosResetting()
+        #demoStandingPosResetting()
         demoGaitGeneratorFixHand()
         demoGaitGeneratorOverwriteCurrentFootstep()
         demoGaitGeneratorGoPosOverwrite()
         demoGaitGeneratorGrasplessManipMode()
         demoGaitGeneratorSetFootStepsWithArms()
         demoGaitGeneratorChangeStrideLimitationType()
+    print >> sys.stderr, "All samplerobot_auto_balancer.py demo time ", (time.time()-start_time), "[s]"
 
 if __name__ == '__main__':
     demo()
