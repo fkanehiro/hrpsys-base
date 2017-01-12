@@ -37,6 +37,8 @@ extern "C"
 }
 #endif
 
+#define LIMIT(x,min,max) ((x= (x<min  ? min : x<max ? x : max)))
+
 //実機だとログ出力で落ちる？getenv("HOME")ダメ？
 #define DEBUG 0
 
@@ -76,62 +78,55 @@ public:
 };
 
 
-class HumanPose{
-  private: hrp::Vector3 zero;
+class HRPPose3D{
   public:
-    hrp::Vector3 com,rf,lf,rh,lh;
-    hrp::Vector3 zmp;
-    int idsize;
-    typedef struct{ hrp::Vector3 f; hrp::Vector3 t; }Wrench6;
-    Wrench6 rfw,lfw;
-    hrp::Vector3 neck;
-    HumanPose() : idsize(10){
+    hrp::Vector3 p;
+    hrp::Matrix33 R;
+    HRPPose3D(){ clear(); }
+    ~HRPPose3D(){}
+    void clear(){
+      p = hrp::Vector3::Zero();
+      R = hrp::Matrix33::Zero();
+    }
+};
+class Wrench6{
+  public:
+    hrp::Vector3 f,t;
+    Wrench6(){ clear(); }
+    ~Wrench6(){}
+    void clear(){ f = t = hrp::Vector3::Zero(); }
+};
+
+class HumanPose{
+  public:
+    std::map <std::string, HRPPose3D> P;
+    std::map <std::string, Wrench6> w;
+    HumanPose(){
+      P["com"] = HRPPose3D();
+      P["rf"] = HRPPose3D();
+      P["lf"] = HRPPose3D();
+      P["rh"] = HRPPose3D();
+      P["lh"] = HRPPose3D();
+      P["zmp"] = HRPPose3D();
+      P["head"] = HRPPose3D();
+      w["rfw"] = Wrench6();
+      w["lfw"] = Wrench6();
       clear();
     }
     ~HumanPose(){cerr<<"HumanPose destructed"<<endl;}
     void clear(){
-      zero = hrp::Vector3::Zero();
-      for(int i=0;i<idsize;i++){ Seq(i) = hrp::Vector3::Zero(); }
-    }
-    hrp::Vector3& Seq(const int i){
-      switch(i){
-        case 0: return com;
-        case 1: return rf;
-        case 2: return lf;
-        case 3: return rh;
-        case 4: return lh;
-        case 5: return zmp;
-        case 6: return rfw.f;
-        case 7: return rfw.t;
-        case 8: return lfw.f;
-        case 9: return lfw.t;
-        default: std::cerr <<"[WARN] HumanPose::getSeq(int) invalid index"<<std::endl;return zero;
-      }
-    }
-    const hrp::Vector3& Seq(const int i) const{//const指定オブジェクトからオーバーロードする時のためのオーバーライド
-      switch(i){
-        case 0: return com;
-        case 1: return rf;
-        case 2: return lf;
-        case 3: return rh;
-        case 4: return lh;
-        case 5: return zmp;
-        case 6: return rfw.f;
-        case 7: return rfw.t;
-        case 8: return lfw.f;
-        case 9: return lfw.t;
-        default: std::cerr <<"[WARN] HumanPose::getSeq(int) invalid index"<<std::endl;return zero;
-      }
+      for(std::map<std::string, HRPPose3D>::iterator it = P.begin(); it != P.end(); it++){ it->second.clear(); }
+      for(std::map<std::string, Wrench6>::iterator it = w.begin(); it != w.end(); it++){ it->second.clear(); }
     }
     static void hp_printf(HumanPose& in){
-      const std::string cap[] = {"c","rf","lf","rh","lh","z","rw","","lw",""};
-      for(int i=0;i<6;i++){ printf("\x1b[31m%s\x1b[39m%+05.2f %+05.2f %+05.2f ",cap[i].c_str(),in.Seq(i)(0),in.Seq(i)(1),in.Seq(i)(2)); }
-      for(int i=6;i<10;i++){ printf("\x1b[31m%s\x1b[39m%+05.1f %+05.1f %+05.1f ",cap[i].c_str(),in.Seq(i)(0),in.Seq(i)(1),in.Seq(i)(2)); }
+      const std::string ns[] = {"com","rf","lf","rh","lh","zmp","rfw","lfw"};
+      const std::string cap[] = {"c","rf","lf","rh","lh","z","rw","lw"};
+      for(int i=0;i<6;i++){ printf("\x1b[31m%s\x1b[39m%+05.2f %+05.2f %+05.2f ",cap[i].c_str(),in.P[ns[i]].p(0),in.P[ns[i]].p(1),in.P[ns[i]].p(2)); }
+      for(int i=6;i<8;i++){ printf("\x1b[31m%s\x1b[39m%+05.1f %+05.1f %+05.1f %+05.1f %+05.1f %+05.1f ",cap[i].c_str(),in.w[ns[i]].f(0),in.w[ns[i]].f(1),in.w[ns[i]].f(2),in.w[ns[i]].t(0),in.w[ns[i]].t(1),in.w[ns[i]].t(2)); }
       printf("\n");
     }
     void print(){ hp_printf(*this); }
 };
-
 
 
 class HumanSynchronizer{
@@ -201,7 +196,7 @@ class HumanSynchronizer{
       tgt_FUP_TIME = FUP_TIME = 0.4;
       FUP_HIGHT = 0.05;
       CNT_F_TH = 20.0;
-      MAXVEL = 0.004;
+      MAXVEL = 2.0;
       HumanSyncOn = false;
       ht_first_call = true;
       startCountdownForHumanSync = false;
@@ -282,32 +277,29 @@ class HumanSynchronizer{
       removeInitOffsetPose                (hp_wld_raw, hp_wld_initpos, hp_rel_raw);
       applyInitHumanZMPToCOMOffset        (hp_rel_raw, init_hp_calibcom, hp_rel_raw);
 //      lockFootXYOnContact                 (go_rf_landing, go_lf_landing, hp_rel_raw);//根本から改変すべき2
-      calcWorldZMP                        ((hp_rel_raw.rf+init_wld_hp_rfpos), (hp_rel_raw.lf+init_wld_hp_lfpos), hp_rel_raw.rfw, hp_rel_raw.lfw, hp_rel_raw.zmp);//足の位置はworldにしないと・・・
+      calcWorldZMP                        ((hp_rel_raw.P["rf"].p+init_wld_hp_rfpos), (hp_rel_raw.P["lf"].p+init_wld_hp_lfpos), hp_rel_raw.w["rfw"], hp_rel_raw.w["lfw"], hp_rel_raw.P["zmp"].p);//足の位置はworldにしないと・・・
       convertRelHumanPoseToRelRobotPose   (hp_rel_raw, rp_ref_out);
+
       applyCOMMoveModRatio                (rp_ref_out);
-      judgeFootLandOnCommand              (hp_wld_raw.rfw, hp_wld_raw.lfw, go_rf_landing, go_lf_landing);//fwはすでに1000->100Hzにフィルタリングされている
+      judgeFootLandOnCommand              (hp_wld_raw.w["rfw"], hp_wld_raw.w["lfw"], go_rf_landing, go_lf_landing);//fwはすでに1000->100Hzにフィルタリングされている
       lockSwingFootIfZMPOutOfSupportFoot  (rp_ref_out_old, go_rf_landing, go_lf_landing);//ここ
 
       applyEEWorkspaceLimit               (rp_ref_out);
       lockFootXYOnContact                 (go_rf_landing, go_lf_landing, rp_ref_out);//根本から改変すべき3
 
-      applyCOMToSupportRegionLimit        (rp_ref_out.rf+init_wld_rp_rfeepos, rp_ref_out.lf+init_wld_rp_lfeepos, rp_ref_out.com);
+      applyCOMToSupportRegionLimit        (rp_ref_out.P["rf"].p+init_wld_rp_rfeepos, rp_ref_out.P["lf"].p+init_wld_rp_lfeepos, rp_ref_out.P["com"].p);
       applyLPFilter                       (rp_ref_out);
-      applyCOMStateLimitByCapturePoint    (rp_ref_out.com, rp_ref_out_old.com, com_vel_old, rp_ref_out.rf+init_wld_rp_rfeepos, rp_ref_out.lf+init_wld_rp_lfeepos, rp_ref_out.com);
+      applyCOMStateLimitByCapturePoint    (rp_ref_out.P["com"].p, rp_ref_out_old.P["com"].p, com_vel_old, rp_ref_out.P["rf"].p+init_wld_rp_rfeepos, rp_ref_out.P["lf"].p+init_wld_rp_lfeepos, rp_ref_out.P["com"].p);
 
-      if(cam_rpy(1) > 20*M_PI/180)cam_rpy(1) = 20*M_PI/180;
-      if(cam_rpy(1) < -20*M_PI/180)cam_rpy(1) = -20*M_PI/180;
-      if(cam_rpy(2) > 20*M_PI/180)cam_rpy(2) = 20*M_PI/180;
-      if(cam_rpy(2) < -20*M_PI/180)cam_rpy(2) = -20*M_PI/180;
       cam_rpy_filtered = cam_rpy_filter.passFilter(cam_rpy);
 
-      r_zmp_raw = rp_ref_out.zmp;
-      applyZMPCalcFromCOM                 (rp_ref_out.com,rp_ref_out.zmp);
+      r_zmp_raw = rp_ref_out.P["zmp"].p;
+      applyZMPCalcFromCOM                 (rp_ref_out.P["com"].p,rp_ref_out.P["zmp"].p);
 //      lockSwingFootIfZMPOutOfSupportFoot  (rp_ref_out, go_rf_landing, go_lf_landing);//ここじゃ判定遅い
       applyVelLimit                       (rp_ref_out, rp_ref_out_old, rp_ref_out);
       applyCOMZMPXYZLock                  (rp_ref_out);
       overwriteFootZFromFootLandOnCommand (go_rf_landing, go_lf_landing, rp_ref_out);
-      com_vel_old = (rp_ref_out.com - rp_ref_out_old.com)/DT;
+      com_vel_old = (rp_ref_out.P["com"].p - rp_ref_out_old.P["com"].p)/DT;
       rp_ref_out_old = rp_ref_out;
       loop++;
       gettimeofday(&t_calc_end, NULL);
@@ -319,9 +311,9 @@ class HumanSynchronizer{
     static void Point3DToVector3(const RTC::Point3D& in, hrp::Vector3& out){ out(0) = in.x; out(1) = in.y; out(2) = in.z;}
     static void Oriantation3DToVector3(const RTC::Orientation3D& in, hrp::Vector3& out){ out(0) = in.r; out(1) = in.p; out(2) = in.y;}
     static void Pose3DToVector3(const RTC::Pose3D& in, hrp::Vector3& out_pos, hrp::Vector3& out_rpy){ Point3DToVector3(in.position,out_pos); Oriantation3DToVector3(in.orientation,out_rpy); }
-    static void DoubleSeqToWrench6(const RTC::TimedDoubleSeq::_data_seq& in, HumanPose::Wrench6& out){
+    static void DoubleSeqToWrench6(const RTC::TimedDoubleSeq::_data_seq& in, Wrench6& out){
       if(in.length() == 6){out.f(0)=in[0]; out.f(1)=in[1]; out.f(2)=in[2]; out.t(0)=in[3]; out.t(1)=in[4]; out.t(2)=in[5];
-      }else{ std::cerr<<"[WARN] HumanPose::Wrench6 DoubleSeqToWrench6() invalid data length"<<std::endl; out.f.Zero(); out.t.Zero(); }
+      }else{ std::cerr<<"[WARN] HumanPose::Wrench6 DoubleSeqToWrench6() invalid data length"<<std::endl; out.clear(); }
     }
     static double hrpVector2Cross(const hrp::Vector2& a, const hrp::Vector2& b){ return a(0)*b(1)-a(1)*b(0); }
 
@@ -340,14 +332,13 @@ class HumanSynchronizer{
       else if(cmmr_goal - cmmr < (-1)*step){cmmr -= step; cout<<"Interpolating COMMoveModRatio as "<<cmmr<<endl;}
       else{cmmr = cmmr_goal;}
     };
-    void removeInitOffsetPose(const HumanPose& abs_in, const HumanPose& init_offset, HumanPose& rel_out){
-      for(int i=0;i<rel_out.idsize-5;i++){
-        rel_out.Seq(i) =  abs_in.Seq(i) - init_offset.Seq(i);
-      }
-      rel_out.rfw = abs_in.rfw;
-      rel_out.lfw = abs_in.lfw;
+    void removeInitOffsetPose(/*const*/ HumanPose& abs_in, /*const*/ HumanPose& init_offset, HumanPose& rel_out){
+      std::string ns[5] = {"com","rf","lf","rh","lh"};
+      for(int i=0;i<5;i++){ rel_out.P[ns[i]].p = abs_in.P[ns[i]].p - init_offset.P[ns[i]].p; }
+      rel_out.w["rfw"] = abs_in.w["rfw"];
+      rel_out.w["lfw"] = abs_in.w["lfw"];
     }
-    void applyInitHumanZMPToCOMOffset(const HumanPose& in, const hrp::Vector3& com_offs, HumanPose& out){
+    void applyInitHumanZMPToCOMOffset(/*const*/ HumanPose& in, const hrp::Vector3& com_offs, HumanPose& out){
       if(isHumanSyncOn()){
         if(!init_zmp_com_offset_interpolator->isEmpty()){
           init_zmp_com_offset_interpolator->get(&zmp_com_offset_ip_ratio, true);
@@ -356,22 +347,22 @@ class HumanSynchronizer{
         zmp_com_offset_ip_ratio = 0;
       }
       out = in;
-      out.com = in.com + zmp_com_offset_ip_ratio * com_offs;
+      out.P["com"].p = in.P["com"].p + zmp_com_offset_ip_ratio * com_offs;
     }
     void applyLPFilter(HumanPose& tgt){
-      for(int i=0;i<iir_v_filters.size();i++){ tgt.Seq(i) = iir_v_filters[i].passFilter(tgt.Seq(i)); }
+      std::string ns[5] = {"com","rf","lf","rh","lh"};
+      for(int i=0;i<iir_v_filters.size();i++){ tgt.P[ns[i]].p = iir_v_filters[i].passFilter(tgt.P[ns[i]].p); }
     }
-    void convertRelHumanPoseToRelRobotPose(const HumanPose& hp_in, HumanPose& rp_out){//結局初期指定からの移動量(=Rel)で計算をしてゆく
-      for(int i=0;i<rp_out.idsize-4;i++){
-        rp_out.Seq(i) =  h2r_ratio * hp_in.Seq(i);
-      }
-      rp_out.rfw  = hp_in.rfw;
-      rp_out.lfw  = hp_in.lfw;
+    void convertRelHumanPoseToRelRobotPose(/*const*/ HumanPose& hp_in, HumanPose& rp_out){//結局初期指定からの移動量(=Rel)で計算をしてゆく
+      std::string ns[6] = {"com","rf","lf","rh","lh","zmp"};
+      for(int i=0;i<6;i++){ rp_out.P[ns[i]].p =  h2r_ratio * hp_in.P[ns[i]].p; }
+      rp_out.w["rfw"]  = hp_in.w["rfw"];
+      rp_out.w["lfw"]  = hp_in.w["lfw"];
     }
     void applyCOMMoveModRatio(HumanPose& tgt){//
-      tgt.com = cmmr * tgt.com;
+      tgt.P["com"].p = cmmr * tgt.P["com"].p;
     }
-    void judgeFootLandOnCommand(const HumanPose::Wrench6& rfw_in, const HumanPose::Wrench6& lfw_in, bool& rfloc_ans, bool& lfloc_ans){
+    void judgeFootLandOnCommand(const Wrench6& rfw_in, const Wrench6& lfw_in, bool& rfloc_ans, bool& lfloc_ans){
       if(HumanSyncOn){
         if      (rfloc_ans  && rfw_in.f(2)<CNT_F_TH   ){rfloc_ans = false;}//右足ついた状態から上げる
         else if (!rfloc_ans && rfw_in.f(2)>CNT_F_TH+30){rfloc_ans = true;}//右足浮いた状態から下げる
@@ -380,15 +371,15 @@ class HumanSynchronizer{
       }
       if(!rfloc_ans && !lfloc_ans){rfloc_ans = lfloc_ans = true;}//両足ジャンプは禁止
     }
-    void lockSwingFootIfZMPOutOfSupportFoot(const HumanPose& tgt, bool& rfcs_ans, bool& lfcs_ans){
+    void lockSwingFootIfZMPOutOfSupportFoot(/*const*/ HumanPose& tgt, bool& rfcs_ans, bool& lfcs_ans){
       if(rfcs_ans && !lfcs_ans){
-        if(tgt.zmp(1) > tgt.rf(1) + init_wld_rp_rfeepos(1) + 0.02){
+        if(tgt.P["zmp"].p(1) > tgt.P["rf"].p(1) + init_wld_rp_rfeepos(1) + 0.03){
           lfcs_ans = true;
           if(loop%100==0)cout<<"LF Auto lock"<<endl;
         }
       }
       if(!rfcs_ans && lfcs_ans){
-        if(tgt.zmp(1) < tgt.lf(1) + init_wld_rp_lfeepos(1) - 0.02){
+        if(tgt.P["zmp"].p(1) < tgt.P["lf"].p(1) + init_wld_rp_lfeepos(1) - 0.03){
           rfcs_ans = true;
           if(loop%100==0)cout<<"RF Auto lock"<<endl;
         }
@@ -396,23 +387,12 @@ class HumanSynchronizer{
     }
     void overwriteFootZFromFootLandOnCommand(const bool& rf_goland_in, const bool& lf_goland_in, HumanPose& tgt){
       if(is_rf_contact&&is_lf_contact)FUP_TIME = tgt_FUP_TIME;//両足接地しているタイミングでのみ更新
-      double RFDOWN_TIME = fabs(tgt.rf(1) - tgt.com(1))*4 + FUP_TIME;//下ろす速度は遊脚の重心からの距離に比例したペナルティ
-      double LFDOWN_TIME = fabs(tgt.lf(1) - tgt.com(1))*4 + FUP_TIME;
-      calcFootUpCurveAndJudgeFootContact2(rf_goland_in, FUP_TIME, RFDOWN_TIME, cur_rfup_rad, tgt.rf, is_rf_contact);
-      calcFootUpCurveAndJudgeFootContact2(lf_goland_in, FUP_TIME, LFDOWN_TIME, cur_lfup_rad, tgt.lf, is_lf_contact);
+      double RFDOWN_TIME = fabs(tgt.P["rf"].p(1) - tgt.P["com"].p(1))*2 + FUP_TIME;//下ろす速度は遊脚の重心からの距離に比例したペナルティ
+      double LFDOWN_TIME = fabs(tgt.P["lf"].p(1) - tgt.P["com"].p(1))*2 + FUP_TIME;
+      calcFootUpCurveAndJudgeFootContact(rf_goland_in, FUP_TIME, RFDOWN_TIME, cur_rfup_rad, tgt.P["rf"].p, is_rf_contact);
+      calcFootUpCurveAndJudgeFootContact(lf_goland_in, FUP_TIME, LFDOWN_TIME, cur_lfup_rad, tgt.P["lf"].p, is_lf_contact);
     }
-    void calcFootUpCurveAndJudgeFootContact(const bool& go_land_in, int& cur_fup_count_in, hrp::Vector3& f_height_out, bool& is_f_contact_out){
-      int FUP_COUNT = (int)(HZ*FUP_TIME);
-      if(cur_fup_count_in > FUP_COUNT){cur_fup_count_in = FUP_COUNT;} if(cur_fup_count_in < 0){cur_fup_count_in = 0;}
-      if(!go_land_in){//足上げ命令入力時
-        if(cur_fup_count_in < FUP_COUNT){ cur_fup_count_in++; }
-      }else{//足下げ命令入力時
-        if(cur_fup_count_in > 0){ cur_fup_count_in--; }
-      }
-      f_height_out(2) = FUP_HIGHT/2*(1-cos(M_PI*cur_fup_count_in/FUP_COUNT));
-      is_f_contact_out = (cur_fup_count_in <= 0);
-    }
-    void calcFootUpCurveAndJudgeFootContact2(const bool& go_land_in, const double& fup_time_in, const double& fdown_time_in,  double& cur_fup_phase_in,hrp::Vector3& f_height_out, bool& is_f_contact_out){
+    void calcFootUpCurveAndJudgeFootContact(const bool& go_land_in, const double& fup_time_in, const double& fdown_time_in,  double& cur_fup_phase_in,hrp::Vector3& f_height_out, bool& is_f_contact_out){
       const double omega_up = M_PI / fup_time_in;
       const double omega_down = M_PI / fdown_time_in;
       if(!go_land_in){//足上げ命令入力時
@@ -425,48 +405,60 @@ class HumanSynchronizer{
       f_height_out(2) = FUP_HIGHT/2*(1-cos(cur_fup_phase_in));
       is_f_contact_out = (cur_fup_phase_in <= 0);
     }
+//    void calcFootUpCurveAndJudgeFootContact_o(const bool& go_land_in, int& cur_fup_count_in, hrp::Vector3& f_height_out, bool& is_f_contact_out){
+//      int FUP_COUNT = (int)(HZ*FUP_TIME);
+//      if(cur_fup_count_in > FUP_COUNT){cur_fup_count_in = FUP_COUNT;} if(cur_fup_count_in < 0){cur_fup_count_in = 0;}
+//      if(!go_land_in){//足上げ命令入力時
+//        if(cur_fup_count_in < FUP_COUNT){ cur_fup_count_in++; }
+//      }else{//足下げ命令入力時
+//        if(cur_fup_count_in > 0){ cur_fup_count_in--; }
+//      }
+//      f_height_out(2) = FUP_HIGHT/2*(1-cos(M_PI*cur_fup_count_in/FUP_COUNT));
+//      is_f_contact_out = (cur_fup_count_in <= 0);
+//    }
     void lockFootXYOnContact(const bool& rfcs_in, const bool& lfcs_in, HumanPose& tgt){
       if(rfcs_in){
-        tgt.rf(0) = pre_cont_rfpos(0);
-        tgt.rf(1) = pre_cont_rfpos(1);
+        tgt.P["rf"].p(0) = pre_cont_rfpos(0);
+        tgt.P["rf"].p(1) = pre_cont_rfpos(1);
       }else{
-        pre_cont_rfpos(0) = tgt.rf(0);
-        pre_cont_rfpos(1) = tgt.rf(1);
+        pre_cont_rfpos(0) = tgt.P["rf"].p(0);
+        pre_cont_rfpos(1) = tgt.P["rf"].p(1);
       }
       if(lfcs_in){
-        tgt.lf(0) = pre_cont_lfpos(0);
-        tgt.lf(1) = pre_cont_lfpos(1);
+        tgt.P["lf"].p(0) = pre_cont_lfpos(0);
+        tgt.P["lf"].p(1) = pre_cont_lfpos(1);
       }else{
-        pre_cont_lfpos(0) = tgt.lf(0);
-        pre_cont_lfpos(1) = tgt.lf(1);
+        pre_cont_lfpos(0) = tgt.P["lf"].p(0);
+        pre_cont_lfpos(1) = tgt.P["lf"].p(1);
       }
     }
     void applyEEWorkspaceLimit(HumanPose& tgt){
       const double MAX = 0.15;
       if(!is_rf_contact && is_lf_contact){//右足浮遊時
-        const hrp::Vector2 lf2rf_vec( tgt.rf(0)-pre_cont_lfpos(0), tgt.rf(1)-pre_cont_lfpos(1) );
+        const hrp::Vector2 lf2rf_vec( tgt.P["rf"].p(0)-pre_cont_lfpos(0), tgt.P["rf"].p(1)-pre_cont_lfpos(1) );
         if(lf2rf_vec.norm() > MAX){
-          tgt.rf(0) = (lf2rf_vec.normalized())(0) * MAX + pre_cont_lfpos(0);
-          tgt.rf(1) = (lf2rf_vec.normalized())(1) * MAX + pre_cont_lfpos(1);
+          tgt.P["rf"].p(0) = (lf2rf_vec.normalized())(0) * MAX + pre_cont_lfpos(0);
+          tgt.P["rf"].p(1) = (lf2rf_vec.normalized())(1) * MAX + pre_cont_lfpos(1);
         }
-        if(tgt.rf(1) > pre_cont_lfpos(1) + 0.05 ) tgt.rf(1) = pre_cont_lfpos(1) + 0.05;
+        if(tgt.P["rf"].p(1) > pre_cont_lfpos(1) + 0.05 ) tgt.P["rf"].p(1) = pre_cont_lfpos(1) + 0.05;
       }
       else if(is_rf_contact && !is_lf_contact){//左足浮遊時
-        const hrp::Vector2 rf2lf_vec( tgt.lf(0)-pre_cont_rfpos(0), tgt.lf(1)-pre_cont_rfpos(1) );
+        const hrp::Vector2 rf2lf_vec( tgt.P["lf"].p(0)-pre_cont_rfpos(0), tgt.P["lf"].p(1)-pre_cont_rfpos(1) );
         if(rf2lf_vec.norm() > MAX){
-          tgt.lf(0) = (rf2lf_vec.normalized())(0) * MAX + pre_cont_rfpos(0);
-          tgt.lf(1) = (rf2lf_vec.normalized())(1) * MAX + pre_cont_rfpos(1);
+          tgt.P["lf"].p(0) = (rf2lf_vec.normalized())(0) * MAX + pre_cont_rfpos(0);
+          tgt.P["lf"].p(1) = (rf2lf_vec.normalized())(1) * MAX + pre_cont_rfpos(1);
         }
-        if(tgt.lf(1) < pre_cont_rfpos(1) - 0.05 ) tgt.lf(1) = pre_cont_rfpos(1) - 0.05;
+        if(tgt.P["lf"].p(1) < pre_cont_rfpos(1) - 0.05 ) tgt.P["lf"].p(1) = pre_cont_rfpos(1) - 0.05;
       }
       hrp::Vector3 hand_ulimit = hrp::Vector3(0.1,0.1,0.1);
       hrp::Vector3 hand_llimit = hrp::Vector3(-0.1,-0.1,-0.1);
       for(int i=0;i<3;i++){
-        if      (tgt.rh(i) > hand_ulimit(i) + current_basepos(i) - init_basepos(i) ){ tgt.rh(i) = hand_ulimit(i) + current_basepos(i) - init_basepos(i); }
-        else if (tgt.rh(i) < hand_llimit(i) + current_basepos(i) - init_basepos(i) ){ tgt.rh(i) = hand_llimit(i) + current_basepos(i) - init_basepos(i); }
-        if      (tgt.lh(i) > hand_ulimit(i) + current_basepos(i) - init_basepos(i) ){ tgt.lh(i) = hand_ulimit(i) + current_basepos(i) - init_basepos(i); }
-        else if (tgt.lh(i) < hand_llimit(i) + current_basepos(i) - init_basepos(i) ){ tgt.lh(i) = hand_llimit(i) + current_basepos(i) - init_basepos(i); }
+        LIMIT( tgt.P["rh"].p(i), hand_llimit(i) + current_basepos(i) - init_basepos(i), hand_ulimit(i) + current_basepos(i) - init_basepos(i) );
+        LIMIT( tgt.P["lh"].p(i), hand_llimit(i) + current_basepos(i) - init_basepos(i), hand_ulimit(i) + current_basepos(i) - init_basepos(i) );
       }
+      LIMIT( cam_rpy(1), -20*M_PI/180, 20*M_PI/180 );
+      LIMIT( cam_rpy(2), -20*M_PI/180, 20*M_PI/180 );
+
     }
     bool applyCOMToSupportRegionLimit(const hrp::Vector3& rfin_abs, const hrp::Vector3& lfin_abs, hrp::Vector3& comin_abs){//boost::geometryがUbuntu12だとないから・・・
       std::vector<hrp::Vector2> hull;
@@ -487,7 +479,7 @@ class HumanSynchronizer{
       double accel[4] = {0.05, -0.03, 0.02, -0.02};
       double decel[4] = {0.04, -0.02, 0.01, -0.01};
       comacc_ref = calcacc_v_filters.passFilter(com_acc);
-      const double H = rp_wld_initpos.com(2);
+      const double H = rp_wld_initpos.P["com"].p(2);
 //      double maxacc[2],minacc[2];
 //      maxacc[0] = (com_old(0) - accel[1]) * (G/H); if(maxacc[0] < 0){maxacc[0]=0;}
 //      minacc[0] = (com_old(0) - accel[0]) * (G/H); if(minacc[0] > 0){minacc[0]=0;}
@@ -514,7 +506,7 @@ class HumanSynchronizer{
     }
     void regulateCOMVelocityByCapturePointVec(const hrp::Vector2& com_pos, const hrp::Vector2& com_vel, const std::vector<hrp::Vector2>& hull, hrp::Vector2& com_vel_ans){
       com_vel_ans = com_vel;
-      const double H = rp_wld_initpos.com(2);
+      const double H = rp_wld_initpos.P["com"].p(2);
       hrp::Vector2 cp = com_pos + com_vel * sqrt( H / G );
       hrp::Vector2 cp_ragulated;
       if(!isPointInHullOpenCV(cp,hull)){
@@ -525,7 +517,7 @@ class HumanSynchronizer{
     }
     void regulateCOMVelocityByCapturePointXY(const hrp::Vector2& com_pos, const hrp::Vector2& com_vel, const std::vector<hrp::Vector2>& hull, hrp::Vector2& com_vel_ans){
       com_vel_ans = com_vel;
-      const double H = rp_wld_initpos.com(2);
+      const double H = rp_wld_initpos.P["com"].p(2);
       hrp::Vector4 margin_from_4maxcp;
       calcXYMarginToHull(com_pos, hull, margin_from_4maxcp);
       hrp::Vector3 max_com_vel,min_com_vel;
@@ -538,7 +530,7 @@ class HumanSynchronizer{
       if(com_vel(1) > max_com_vel(1)){ com_vel_ans(1) = max_com_vel(1); if(loop%100==0)cout<<"L cp over"<<endl;}
       if(com_vel(1) < min_com_vel(1)){ com_vel_ans(1) = min_com_vel(1); if(loop%100==0)cout<<"R cp over"<<endl;}
     }
-    void calcWorldZMP(const hrp::Vector3& rfpos, const hrp::Vector3& lfpos, const HumanPose::Wrench6& rfwin, const HumanPose::Wrench6& lfwin, hrp::Vector3& zmp_ans);
+    void calcWorldZMP(const hrp::Vector3& rfpos, const hrp::Vector3& lfpos, const Wrench6& rfwin, const Wrench6& lfwin, hrp::Vector3& zmp_ans);
     void createSupportRegionByFootPos(const hrp::Vector3& rfin_abs, const hrp::Vector3& lfin_abs, const hrp::Vector4& rf_mgn, const hrp::Vector4& lf_mgn, std::vector<hrp::Vector2>& hull_ans);
     void calcXYMarginToHull(const hrp::Vector2& check_point, const std::vector<hrp::Vector2>& hull, hrp::Vector4& margin_ans);
     bool calcCrossPointOnHull(const hrp::Vector2& pt_in_start, const hrp::Vector2& pt_out_goal, const std::vector<hrp::Vector2>& hull, hrp::Vector2& pt_will_cross);
@@ -547,7 +539,7 @@ class HumanSynchronizer{
     void makeConvexHullQHull(const std::vector<hrp::Vector2>& pts, std::vector<hrp::Vector2>& hull_ans);
     bool isPointInHullOpenCV(const hrp::Vector2& pt, const std::vector<hrp::Vector2>& hull);
     void applyZMPCalcFromCOM(const hrp::Vector3& comin, hrp::Vector3& zmpout);
-    void applyVelLimit(const HumanPose& in, const HumanPose& in_old, HumanPose& out);
+    void applyVelLimit(/*const*/ HumanPose& in, /*const*/ HumanPose& in_old, HumanPose& out);
     void applyCOMZMPXYZLock(HumanPose& tgt);
 };
 

@@ -1,6 +1,6 @@
 #include "HumanMasterSlave.h"
 
-void HumanSynchronizer::calcWorldZMP(const hrp::Vector3& rfpos, const hrp::Vector3& lfpos, const HumanPose::Wrench6& rfwin, const HumanPose::Wrench6& lfwin, hrp::Vector3& zmp_ans){
+void HumanSynchronizer::calcWorldZMP(const hrp::Vector3& rfpos, const hrp::Vector3& lfpos, const Wrench6& rfwin, const Wrench6& lfwin, hrp::Vector3& zmp_ans){
   hrp::Vector3 rfzmp,lfzmp;
   const double F_H_OFFSET = 0.03;//地面から6軸センサ原点への高さ
   if( rfwin.f(2) > 1.0e-6 ){
@@ -114,24 +114,25 @@ bool HumanSynchronizer::isPointInHullOpenCV(const hrp::Vector2& pt, const std::v
 void HumanSynchronizer::applyZMPCalcFromCOM(const hrp::Vector3& comin, hrp::Vector3& zmpout){
   comacc = (comin - 2 * com_old + com_oldold)/(DT*DT);
   const double MAXACC = 5;
-  if(comacc(0)>MAXACC)comacc(0)=MAXACC;else if(comacc(0)<-MAXACC)comacc(0)=-MAXACC;
-  if(comacc(1)>MAXACC)comacc(1)=MAXACC;else if(comacc(1)<-MAXACC)comacc(1)=-MAXACC;
+  LIMIT( comacc(0), -MAXACC, MAXACC);
+  LIMIT( comacc(1), -MAXACC, MAXACC);
   comacc = acc4zmp_v_filters.passFilter(comacc);
-  zmpout(0) = comin(0)-(rp_wld_initpos.com(2)/G)*comacc(0);
-  zmpout(1) = comin(1)-(rp_wld_initpos.com(2)/G)*comacc(1);
-  if(DEBUG)fprintf(cz_log,"%f %f %f %f %f %f %f\n",(double)loop/HZ,comin(0),comin(1),rp_ref_out.zmp(0),rp_ref_out.zmp(1),zmpout(0),zmpout(1));
+  zmpout(0) = comin(0)-(rp_wld_initpos.P["com"].p(2)/G)*comacc(0);
+  zmpout(1) = comin(1)-(rp_wld_initpos.P["com"].p(2)/G)*comacc(1);
+  if(DEBUG)fprintf(cz_log,"%f %f %f %f %f %f %f\n",(double)loop/HZ,comin(0),comin(1),rp_ref_out.P["zmp"].p(0),rp_ref_out.P["zmp"].p(1),zmpout(0),zmpout(1));
   com_oldold = com_old;
   com_old = comin;
 }
-void HumanSynchronizer::applyVelLimit(const HumanPose& in, const HumanPose& in_old, HumanPose& out){
-  for(int i=0;i<3;i++){if(in.com(i) - in_old.com(i) > MAXVEL){out.com(i) = in_old.com(i) + MAXVEL;}else if(in.com(i) - in_old.com(i) < -MAXVEL){out.com(i) = in_old.com(i) - MAXVEL;}}
-  for(int i=0;i<3;i++){if(in.rf(i)  - in_old.rf(i)  > MAXVEL){out.rf(i)  = in_old.rf(i)  + MAXVEL;}else if(in.rf(i)  - in_old.rf(i)  < -MAXVEL){out.rf(i)  = in_old.rf(i)  - MAXVEL;}}
-  for(int i=0;i<3;i++){if(in.lf(i)  - in_old.lf(i)  > MAXVEL){out.lf(i)  = in_old.lf(i)  + MAXVEL;}else if(in.lf(i)  - in_old.lf(i)  < -MAXVEL){out.lf(i)  = in_old.lf(i)  - MAXVEL;}}
-  for(int i=0;i<3;i++){if(in.rh(i)  - in_old.rh(i)  > MAXVEL){out.rh(i)  = in_old.rh(i)  + MAXVEL;}else if(in.rh(i)  - in_old.rh(i)  < -MAXVEL){out.rh(i)  = in_old.rh(i)  - MAXVEL;}}
-  for(int i=0;i<3;i++){if(in.lh(i)  - in_old.lh(i)  > MAXVEL){out.lh(i)  = in_old.lh(i)  + MAXVEL;}else if(in.lh(i)  - in_old.lh(i)  < -MAXVEL){out.lh(i)  = in_old.lh(i)  - MAXVEL;}}
+void HumanSynchronizer::applyVelLimit(/*const*/ HumanPose& in, /*const*/ HumanPose& in_old, HumanPose& out){
+  std::string names[5] = {"com","rf","lf","rh","lh"};
+  for(int i=0;i<5;i++){
+    hrp::Vector3 diff = in.P[names[i]].p  - in_old.P[names[i]].p;
+    for(int j=0;j<3;j++)LIMIT( diff(j), -MAXVEL*DT, MAXVEL*DT);
+    out.P[names[i]].p = in_old.P[names[i]].p + diff;
+  }
 }
 void HumanSynchronizer::applyCOMZMPXYZLock(HumanPose& tgt){
-    if(!use_x){tgt.com(0) = 0;tgt.zmp(0) = 0;}
-    if(!use_y){tgt.com(1) = 0;tgt.zmp(1) = 0;}
-    if(!use_z){tgt.com(2) = 0;}
+    if(!use_x){tgt.P["com"].p(0) = 0;tgt.P["zmp"].p(0) = 0;}
+    if(!use_y){tgt.P["com"].p(1) = 0;tgt.P["zmp"].p(1) = 0;}
+    if(!use_z){tgt.P["com"].p(2) = 0;}
 }
