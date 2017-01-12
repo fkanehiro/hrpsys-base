@@ -501,13 +501,13 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
     }
     //for HumanSynchronizer
     if (m_htzmpIn.isNew()){	m_htzmpIn.read(); }
-    if (m_htrfwIn.isNew()){ m_htrfwIn.read(); HumanSynchronizer::DoubleSeqToWrench6(m_htrfw.data,hp_raw_data.w["rfw"]); }
-    if (m_htlfwIn.isNew()){ m_htlfwIn.read(); HumanSynchronizer::DoubleSeqToWrench6(m_htlfw.data,hp_raw_data.w["lfw"]); }
-    if (m_htcomIn.isNew()){ m_htcomIn.read(); HumanSynchronizer::Point3DToVector3(m_htcom.data,hp_raw_data.P["com"].p); }
-    if (m_htrfIn.isNew()) { m_htrfIn.read();  HumanSynchronizer::Point3DToVector3(m_htrf.data,hp_raw_data.P["rf"].p); }
-    if (m_htlfIn.isNew()) { m_htlfIn.read();  HumanSynchronizer::Point3DToVector3(m_htlf.data,hp_raw_data.P["lf"].p); }
-    if (m_htrhIn.isNew()) { m_htrhIn.read();  HumanSynchronizer::Point3DToVector3(m_htrh.data,hp_raw_data.P["rh"].p); }
-    if (m_htlhIn.isNew()) { m_htlhIn.read();  HumanSynchronizer::Point3DToVector3(m_htlh.data,hp_raw_data.P["lh"].p); }
+    if (m_htrfwIn.isNew()){ m_htrfwIn.read(); HumanSynchronizer::DoubleSeqToWrench6(m_htrfw.data,hp_raw_data.getw("rfw")); }
+    if (m_htlfwIn.isNew()){ m_htlfwIn.read(); HumanSynchronizer::DoubleSeqToWrench6(m_htlfw.data,hp_raw_data.getw("lfw")); }
+    if (m_htcomIn.isNew()){ m_htcomIn.read(); HumanSynchronizer::Point3DToVector3(m_htcom.data,hp_raw_data.getP("com").p); }
+    if (m_htrfIn.isNew()) { m_htrfIn.read();  HumanSynchronizer::Point3DToVector3(m_htrf.data,hp_raw_data.getP("rf").p); }
+    if (m_htlfIn.isNew()) { m_htlfIn.read();  HumanSynchronizer::Point3DToVector3(m_htlf.data,hp_raw_data.getP("lf").p); }
+    if (m_htrhIn.isNew()) { m_htrhIn.read();  HumanSynchronizer::Point3DToVector3(m_htrh.data,hp_raw_data.getP("rh").p); }
+    if (m_htlhIn.isNew()) { m_htlhIn.read();  HumanSynchronizer::Point3DToVector3(m_htlh.data,hp_raw_data.getP("lh").p); }
     if (m_htcamIn.isNew()){ m_htcamIn.read(); HumanSynchronizer::Pose3DToVector3(m_htcam.data,hsp->cam_pos,hsp->cam_rpy); }
     if (m_actzmpIn.isNew()){m_actzmpIn.read(); }
     hsp->readInput(hp_raw_data);
@@ -1118,12 +1118,12 @@ void AutoBalancer::solveLimbIK ()
   }else{
     hsp->setInitOffsetPose();
     hsp->calibInitHumanCOMFromZMP();
-    hsp->rp_wld_initpos.P["com"].p = m_robot->calcCM();
-    hsp->rp_wld_initpos.P["rf"].p = ikp["rleg"].target_link->p;
-    hsp->rp_wld_initpos.P["lf"].p = ikp["lleg"].target_link->p;
-    hsp->rp_wld_initpos.P["zmp"].p = ref_zmp;
-    if(ikp.count("rarm"))hsp->rp_wld_initpos.P["rh"].p = ikp["rarm"].target_link->p;
-    if(ikp.count("larm"))hsp->rp_wld_initpos.P["lh"].p = ikp["larm"].target_link->p;
+    hsp->rp_wld_initpos.getP("com").p = m_robot->calcCM();
+    hsp->rp_wld_initpos.getP("rf").p = ikp["rleg"].target_link->p;
+    hsp->rp_wld_initpos.getP("lf").p = ikp["lleg"].target_link->p;
+    hsp->rp_wld_initpos.getP("zmp").p = ref_zmp;
+    if(ikp.count("rarm"))hsp->rp_wld_initpos.getP("rh").p = ikp["rarm"].target_link->p;
+    if(ikp.count("larm"))hsp->rp_wld_initpos.getP("lh").p = ikp["larm"].target_link->p;
     hsp->init_basepos = m_robot->rootLink()->p;
   }
   hsp->update();//////HumanSynchronizerの主要処理
@@ -1146,15 +1146,15 @@ void AutoBalancer::solveLimbIK ()
   // additional COM fitting IK for HumanSynchronizer
   if(hsp->isHumanSyncOn()){
 	  solveWholeBodyCOMIK(
-	      hsp->rp_wld_initpos.P["com"].p + hsp->rp_ref_out.P["com"].p,
-	      hsp->rp_wld_initpos.P["rf"].p + hsp->rp_ref_out.P["rf"].p,
-	      hsp->rp_wld_initpos.P["lf"].p + hsp->rp_ref_out.P["lf"].p,
-	      hsp->rp_wld_initpos.P["rh"].p + hsp->rp_ref_out.P["rh"].p,
-	      hsp->rp_wld_initpos.P["lh"].p + hsp->rp_ref_out.P["lh"].p,
+	      hsp->rp_wld_initpos.getP("com").p + hsp->rp_ref_out.getP("com").p,
+	      hsp->rp_wld_initpos.getP("rf").p + hsp->rp_ref_out.getP("rf").p,
+	      hsp->rp_wld_initpos.getP("lf").p + hsp->rp_ref_out.getP("lf").p,
+	      hsp->rp_wld_initpos.getP("rh").p + hsp->rp_ref_out.getP("rh").p,
+	      hsp->rp_wld_initpos.getP("lh").p + hsp->rp_ref_out.getP("lh").p,
 	      hsp->cam_rpy_filtered );
     //outport用のデータ上書き
-    ref_zmp = hsp->rp_ref_out.P["zmp"].p + hsp->rp_wld_initpos.P["zmp"].p;
-    ref_cog = hsp->rp_ref_out.P["com"].p + hsp->rp_wld_initpos.P["com"].p;
+    ref_zmp = hsp->rp_ref_out.getP("zmp").p + hsp->rp_wld_initpos.getP("zmp").p;
+    ref_cog = hsp->rp_ref_out.getP("com").p + hsp->rp_wld_initpos.getP("com").p;
 
   }else{
 	  for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {//本来のIK部分

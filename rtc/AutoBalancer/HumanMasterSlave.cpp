@@ -114,25 +114,25 @@ bool HumanSynchronizer::isPointInHullOpenCV(const hrp::Vector2& pt, const std::v
 void HumanSynchronizer::applyZMPCalcFromCOM(const hrp::Vector3& comin, hrp::Vector3& zmpout){
   comacc = (comin - 2 * com_old + com_oldold)/(DT*DT);
   const double MAXACC = 5;
-  LIMIT( comacc(0), -MAXACC, MAXACC);
-  LIMIT( comacc(1), -MAXACC, MAXACC);
+  LIMIT_MINMAX( comacc(0), -MAXACC, MAXACC);
+  LIMIT_MINMAX( comacc(1), -MAXACC, MAXACC);
   comacc = acc4zmp_v_filters.passFilter(comacc);
-  zmpout(0) = comin(0)-(rp_wld_initpos.P["com"].p(2)/G)*comacc(0);
-  zmpout(1) = comin(1)-(rp_wld_initpos.P["com"].p(2)/G)*comacc(1);
-  if(DEBUG)fprintf(cz_log,"%f %f %f %f %f %f %f\n",(double)loop/HZ,comin(0),comin(1),rp_ref_out.P["zmp"].p(0),rp_ref_out.P["zmp"].p(1),zmpout(0),zmpout(1));
+  zmpout(0) = comin(0)-(rp_wld_initpos.getP("com").p(2)/G)*comacc(0);
+  zmpout(1) = comin(1)-(rp_wld_initpos.getP("com").p(2)/G)*comacc(1);
+  if(DEBUG)fprintf(cz_log,"%f %f %f %f %f %f %f\n",(double)loop/HZ,comin(0),comin(1),rp_ref_out.getP("zmp").p(0),rp_ref_out.getP("zmp").p(1),zmpout(0),zmpout(1));
   com_oldold = com_old;
   com_old = comin;
 }
-void HumanSynchronizer::applyVelLimit(/*const*/ HumanPose& in, /*const*/ HumanPose& in_old, HumanPose& out){
-  std::string names[5] = {"com","rf","lf","rh","lh"};
+void HumanSynchronizer::applyVelLimit(const HumanPose& in, const HumanPose& in_old, HumanPose& out){
+  std::string ns[5] = {"com","rf","lf","rh","lh"};
   for(int i=0;i<5;i++){
-    hrp::Vector3 diff = in.P[names[i]].p  - in_old.P[names[i]].p;
-    for(int j=0;j<3;j++)LIMIT( diff(j), -MAXVEL*DT, MAXVEL*DT);
-    out.P[names[i]].p = in_old.P[names[i]].p + diff;
+    hrp::Vector3 diff = in.P.find(ns[i])->second.p  - in_old.P.find(ns[i])->second.p;
+    for(int j=0;j<3;j++)LIMIT_MINMAX( diff(j), -MAXVEL*DT, MAXVEL*DT);
+    out.P.find(ns[i])->second.p = in_old.P.find(ns[i])->second.p + diff;
   }
 }
 void HumanSynchronizer::applyCOMZMPXYZLock(HumanPose& tgt){
-    if(!use_x){tgt.P["com"].p(0) = 0;tgt.P["zmp"].p(0) = 0;}
-    if(!use_y){tgt.P["com"].p(1) = 0;tgt.P["zmp"].p(1) = 0;}
-    if(!use_z){tgt.P["com"].p(2) = 0;}
+    if(!use_x){tgt.getP("com").p(0) = 0;tgt.getP("zmp").p(0) = 0;}
+    if(!use_y){tgt.getP("com").p(1) = 0;tgt.getP("zmp").p(1) = 0;}
+    if(!use_z){tgt.getP("com").p(2) = 0;}
 }
