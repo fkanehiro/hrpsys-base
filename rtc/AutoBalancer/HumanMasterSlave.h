@@ -77,13 +77,16 @@ class BiquadIIRFilterVec{
 
 class HRPPose3D{
   public:
-    hrp::Vector3 p;
+    hrp::Vector3 p,offs;
     hrp::Matrix33 R;
     HRPPose3D(){ clear(); }
     ~HRPPose3D(){}
     void clear(){
       p = hrp::Vector3::Zero();
       R = hrp::Matrix33::Zero();
+    }
+    const hrp::Vector3& wldp() const {
+      return p+offs;
     }
 };
 class Wrench6{
@@ -296,9 +299,11 @@ class HumanSynchronizer{
       lockSwingFootIfZMPOutOfSupportFoot  (rp_ref_out_old, go_rf_landing, go_lf_landing);//ここ
       applyEEWorkspaceLimit               (rp_ref_out);
       lockFootXYOnContact                 (go_rf_landing, go_lf_landing, rp_ref_out);//根本から改変すべき3
-      applyCOMToSupportRegionLimit        (rp_ref_out.getP("rf").p+init_wld_rp_rfeepos, rp_ref_out.getP("lf").p+init_wld_rp_lfeepos, rp_ref_out.getP("com").p);
+      rp_ref_out.getP("rf").offs = init_wld_rp_rfeepos;
+      rp_ref_out.getP("lf").offs = init_wld_rp_lfeepos;
+      applyCOMToSupportRegionLimit        (rp_ref_out.getP("rf").wldp(), rp_ref_out.getP("lf").wldp(), rp_ref_out.getP("com").p);
       applyLPFilter                       (rp_ref_out);
-      applyCOMStateLimitByCapturePoint    (rp_ref_out.getP("com").p, rp_ref_out_old.getP("com").p, com_vel_old, rp_ref_out.getP("rf").p+init_wld_rp_rfeepos, rp_ref_out.getP("lf").p+init_wld_rp_lfeepos, rp_ref_out.getP("com").p);
+      applyCOMStateLimitByCapturePoint    (rp_ref_out.getP("com").p, rp_ref_out_old.getP("com").p, com_vel_old, rp_ref_out.getP("rf").wldp(), rp_ref_out.getP("lf").wldp(), rp_ref_out.getP("com").p);
       cam_rpy_filtered = cam_rpy_filter.passFilter(cam_rpy);
       r_zmp_raw = rp_ref_out.getP("zmp").p;
       applyZMPCalcFromCOM                 (rp_ref_out.getP("com").p,rp_ref_out.getP("zmp").p);
