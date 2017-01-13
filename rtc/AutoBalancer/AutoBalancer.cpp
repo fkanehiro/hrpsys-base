@@ -1124,6 +1124,16 @@ void AutoBalancer::solveLimbIK ()
     hsp->rp_wld_initpos.getP("zmp").p = ref_zmp;
     if(ikp.count("rarm"))hsp->rp_wld_initpos.getP("rh").p = ikp["rarm"].target_link->p;
     if(ikp.count("larm"))hsp->rp_wld_initpos.getP("lh").p = ikp["larm"].target_link->p;
+
+    hsp->rp_ref_out.getP("com").offs = m_robot->calcCM();
+    hsp->rp_ref_out.getP("rf").offs = ikp["rleg"].target_link->p;
+    hsp->rp_ref_out.getP("lf").offs = ikp["lleg"].target_link->p;
+    hsp->rp_ref_out.getP("zmp").offs = ref_zmp;
+    if(ikp.count("rarm"))hsp->rp_ref_out.getP("rh").offs = ikp["rarm"].target_link->p;
+    if(ikp.count("larm"))hsp->rp_ref_out.getP("lh").offs = ikp["larm"].target_link->p;
+    hsp->pre_cont_rfpos = hsp->rp_ref_out.getP("rf").offs;
+    hsp->pre_cont_lfpos = hsp->rp_ref_out.getP("lf").offs;
+
     hsp->init_basepos = m_robot->rootLink()->p;
   }
   hsp->update();//////HumanSynchronizerの主要処理
@@ -1145,16 +1155,10 @@ void AutoBalancer::solveLimbIK ()
 
   // additional COM fitting IK for HumanSynchronizer
   if(hsp->isHumanSyncOn()){
-	  solveWholeBodyCOMIK(
-	      hsp->rp_wld_initpos.getP("com").p + hsp->rp_ref_out.getP("com").p,
-	      hsp->rp_wld_initpos.getP("rf").p + hsp->rp_ref_out.getP("rf").p,
-	      hsp->rp_wld_initpos.getP("lf").p + hsp->rp_ref_out.getP("lf").p,
-	      hsp->rp_wld_initpos.getP("rh").p + hsp->rp_ref_out.getP("rh").p,
-	      hsp->rp_wld_initpos.getP("lh").p + hsp->rp_ref_out.getP("lh").p,
-	      hsp->cam_rpy_filtered );
+    solveWholeBodyCOMIK( hsp->rp_ref_out.getP("com").p, hsp->rp_ref_out.getP("rf").p, hsp->rp_ref_out.getP("lf").p, hsp->rp_ref_out.getP("rh").p, hsp->rp_ref_out.getP("lh").p, hsp->cam_rpy_filtered );
     //outport用のデータ上書き
-    ref_zmp = hsp->rp_ref_out.getP("zmp").p + hsp->rp_wld_initpos.getP("zmp").p;
-    ref_cog = hsp->rp_ref_out.getP("com").p + hsp->rp_wld_initpos.getP("com").p;
+    ref_zmp = hsp->rp_ref_out.getP("zmp").p;
+    ref_cog = hsp->rp_ref_out.getP("com").p;
 
   }else{
 	  for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {//本来のIK部分
