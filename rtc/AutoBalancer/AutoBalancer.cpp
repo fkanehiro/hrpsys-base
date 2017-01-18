@@ -503,12 +503,12 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
     if (m_htzmpIn.isNew()){	m_htzmpIn.read(); }
     if (m_htrfwIn.isNew()){ m_htrfwIn.read(); HumanSynchronizer::DoubleSeqToWrench6(m_htrfw.data,hp_raw_data.getw("rfw")); }
     if (m_htlfwIn.isNew()){ m_htlfwIn.read(); HumanSynchronizer::DoubleSeqToWrench6(m_htlfw.data,hp_raw_data.getw("lfw")); }
-    if (m_htcomIn.isNew()){ m_htcomIn.read(); HumanSynchronizer::Point3DToVector3(m_htcom.data,hp_raw_data.getP("com").p); }
-    if (m_htrfIn.isNew()) { m_htrfIn.read();  HumanSynchronizer::Point3DToVector3(m_htrf.data,hp_raw_data.getP("rf").p); }
-    if (m_htlfIn.isNew()) { m_htlfIn.read();  HumanSynchronizer::Point3DToVector3(m_htlf.data,hp_raw_data.getP("lf").p); }
-    if (m_htrhIn.isNew()) { m_htrhIn.read();  HumanSynchronizer::Point3DToVector3(m_htrh.data,hp_raw_data.getP("rh").p); }
-    if (m_htlhIn.isNew()) { m_htlhIn.read();  HumanSynchronizer::Point3DToVector3(m_htlh.data,hp_raw_data.getP("lh").p); }
-    if (m_htcamIn.isNew()){ m_htcamIn.read(); HumanSynchronizer::Pose3DToVector3(m_htcam.data,hsp->cam_pos,hsp->cam_rpy); }
+    if (m_htcomIn.isNew()){ m_htcomIn.read(); HumanSynchronizer::Pose3DToHRPPose3D(m_htcom.data,hp_raw_data.getP("com")); }
+    if (m_htrfIn.isNew()) { m_htrfIn.read();  HumanSynchronizer::Pose3DToHRPPose3D(m_htrf.data,hp_raw_data.getP("rf")); }
+    if (m_htlfIn.isNew()) { m_htlfIn.read();  HumanSynchronizer::Pose3DToHRPPose3D(m_htlf.data,hp_raw_data.getP("lf")); }
+    if (m_htrhIn.isNew()) { m_htrhIn.read();  HumanSynchronizer::Pose3DToHRPPose3D(m_htrh.data,hp_raw_data.getP("rh")); }
+    if (m_htlhIn.isNew()) { m_htlhIn.read();  HumanSynchronizer::Pose3DToHRPPose3D(m_htlh.data,hp_raw_data.getP("lh")); }
+    if (m_htcamIn.isNew()){ m_htcamIn.read(); HumanSynchronizer::Pose3DToHRPPose3D(m_htcam.data,hsp->head_cam_pose); }
     if (m_actzmpIn.isNew()){m_actzmpIn.read(); }
     hsp->readInput(hp_raw_data);
     hsp->current_basepos = m_robot->rootLink()->p;
@@ -1046,17 +1046,20 @@ bool AutoBalancer::solveLimbIKforLimb (ABCIKparam& param, const std::string& lim
   }
   return true;
 }
-void AutoBalancer::solveWholeBodyCOMIK(const hrp::Vector3& com_ref, const hrp::Vector3& rf_ref, const hrp::Vector3& lf_ref, const hrp::Vector3& rh_ref, const hrp::Vector3& lh_ref, const hrp::Vector3& head_ref){
+void AutoBalancer::solveWholeBodyCOMIK(const HRPPose3D& com_ref, const HRPPose3D& rf_ref, const HRPPose3D& lf_ref, const HRPPose3D& rh_ref, const HRPPose3D& lh_ref, const hrp::Vector3& head_ref){
   int com_ik_loop=0;
   const int COM_IK_MAX_LOOP = 5;
   const double COM_IK_MAX_ERROR = 1e-4;
-  m_robot->rootLink()->p = com_ref;//move base link at first
+  m_robot->rootLink()->p = com_ref.p;//move base link at first
+  m_robot->rootLink()->R = hrp::rotFromRpy(com_ref.rpy);//move base link at first
   m_robot->calcForwardKinematics();//apply
-  hrp::Vector3 tmp_com_err = com_ref - m_robot->calcCM();
-  ikp["rleg"].target_p0 = rf_ref;
-  ikp["lleg"].target_p0 = lf_ref;
-  if(ikp.count("rarm"))ikp["rarm"].target_p0 = rh_ref;
-  if(ikp.count("larm"))ikp["larm"].target_p0 = lh_ref;
+  hrp::Vector3 tmp_com_err = com_ref.p - m_robot->calcCM();
+  ikp["rleg"].target_p0 = rf_ref.p;
+  ikp["rleg"].target_r0 = hrp::rotFromRpy(rf_ref.rpy);
+  ikp["lleg"].target_p0 = lf_ref.p;
+  ikp["lleg"].target_r0 = hrp::rotFromRpy(lf_ref.rpy);
+  if(ikp.count("rarm")){ ikp["rarm"].target_p0 = rh_ref.p; ikp["rarm"].target_r0 = hrp::rotFromRpy(rh_ref.rpy); }
+  if(ikp.count("larm")){ ikp["larm"].target_p0 = lh_ref.p; ikp["larm"].target_r0 = hrp::rotFromRpy(lh_ref.rpy); }
   while(tmp_com_err.norm() > COM_IK_MAX_ERROR){
     m_robot->rootLink()->p += tmp_com_err;
     m_robot->calcForwardKinematics();
@@ -1064,7 +1067,7 @@ void AutoBalancer::solveWholeBodyCOMIK(const hrp::Vector3& com_ref, const hrp::V
       if (it->second.is_active) solveLimbIKforLimb(it->second, it->first);
     }
     m_robot->calcForwardKinematics();
-    tmp_com_err = com_ref - m_robot->calcCM();
+    tmp_com_err = com_ref.p - m_robot->calcCM();
     if(com_ik_loop++ > COM_IK_MAX_LOOP){std::cerr << "COM constraint IK MAX loop [="<<COM_IK_MAX_LOOP<<"] exceeded!!" << std::endl; break; };
   }
   if(m_robot->link("HEAD_JOINT0") != NULL)m_robot->joint(15)->q = head_ref(2);
@@ -1155,7 +1158,7 @@ void AutoBalancer::solveLimbIK ()
 
   // additional COM fitting IK for HumanSynchronizer
   if(hsp->isHumanSyncOn()){
-    solveWholeBodyCOMIK( hsp->rp_ref_out.getP("com").p, hsp->rp_ref_out.getP("rf").p, hsp->rp_ref_out.getP("lf").p, hsp->rp_ref_out.getP("rh").p, hsp->rp_ref_out.getP("lh").p, hsp->cam_rpy_filtered );
+    solveWholeBodyCOMIK( hsp->rp_ref_out.getP("com"), hsp->rp_ref_out.getP("rf"), hsp->rp_ref_out.getP("lf"), hsp->rp_ref_out.getP("rh"), hsp->rp_ref_out.getP("lh"), hsp->cam_rpy_filtered );
     //outport用のデータ上書き
     ref_zmp = hsp->rp_ref_out.getP("zmp").p;
     ref_cog = hsp->rp_ref_out.getP("com").p;

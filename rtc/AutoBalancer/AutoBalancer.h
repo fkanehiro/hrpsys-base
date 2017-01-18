@@ -143,26 +143,26 @@ class AutoBalancer
   // for debug
   TimedPoint3D m_cog;
   //for human tracker
+  TimedPose3D m_htcom;
+  InPort<TimedPose3D> m_htcomIn;
+  TimedPose3D m_htrf;
+  InPort<TimedPose3D> m_htrfIn;
+  TimedPose3D m_htlf;
+  InPort<TimedPose3D> m_htlfIn;
+  TimedPose3D m_htrh;
+  InPort<TimedPose3D> m_htrhIn;
+  TimedPose3D m_htlh;
+  InPort<TimedPose3D> m_htlhIn;
+  TimedPose3D m_htcam;
+  InPort<TimedPose3D> m_htcamIn;
   TimedPoint3D m_htzmp;
   InPort<TimedPoint3D> m_htzmpIn;
+  TimedPoint3D m_actzmp;
+  InPort<TimedPoint3D> m_actzmpIn;
   TimedDoubleSeq m_htrfw;
   InPort<TimedDoubleSeq> m_htrfwIn;
   TimedDoubleSeq m_htlfw;
   InPort<TimedDoubleSeq> m_htlfwIn;
-  TimedPoint3D m_htcom;
-  InPort<TimedPoint3D> m_htcomIn;
-  TimedPoint3D m_htrf;
-  InPort<TimedPoint3D> m_htrfIn;
-  TimedPoint3D m_htlf;
-  InPort<TimedPoint3D> m_htlfIn;
-  TimedPoint3D m_htrh;
-  InPort<TimedPoint3D> m_htrhIn;
-  TimedPoint3D m_htlh;
-  InPort<TimedPoint3D> m_htlhIn;
-  TimedPoint3D m_actzmp;
-  InPort<TimedPoint3D> m_actzmpIn;
-  TimedPose3D m_htcam;
-  InPort<TimedPose3D> m_htcamIn;
   
   // </rtc-template>
 
@@ -228,7 +228,7 @@ class AutoBalancer
   void getCurrentParameters();
   void getTargetParameters();
   bool solveLimbIKforLimb (ABCIKparam& param, const std::string& limb_name);
-  void solveWholeBodyCOMIK(const hrp::Vector3& com_ref, const hrp::Vector3& rf_ref, const hrp::Vector3& lf_ref, const hrp::Vector3& rh_ref, const hrp::Vector3& lh_ref, const hrp::Vector3& head_ref);
+  void solveWholeBodyCOMIK(const HRPPose3D& com_ref, const HRPPose3D& rf_ref, const HRPPose3D& lf_ref, const HRPPose3D& rh_ref, const HRPPose3D& lh_ref, const hrp::Vector3& head_ref);
   void solveLimbIK();
   void startABCparam(const ::OpenHRP::AutoBalancerService::StrSequence& limbs);
   void stopABCparam();
