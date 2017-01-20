@@ -191,7 +191,6 @@ class HumanSynchronizer{
     HRPPose3D head_cam_pose;
     hrp::Vector3 pre_cont_rfpos,pre_cont_lfpos;
 
-
     interpolator *init_zmp_com_offset_interpolator;
     double zmp_com_offset_ip_ratio;
 
@@ -235,9 +234,9 @@ class HumanSynchronizer{
       tgt_rot_filters.resize(5);
 //      for(int i=0;i<iir_v_filters.size();i++)iir_v_filters[i].setParameter(0.5,HZ);//四肢拘束点用
       for(int i=0;i<tgt_pos_filters.size();i++)tgt_pos_filters[i].setParameter(0.6,HZ);//四肢拘束点用(position)
-      for(int i=0;i<tgt_rot_filters.size();i++)tgt_rot_filters[i].setParameter(0.6,HZ);//四肢拘束点用(Rotation)
-      tgt_pos_filters[0].setParameter(0.4,HZ);//重心用
-      tgt_rot_filters[0].setParameter(0.4,HZ);//重心用
+      for(int i=0;i<tgt_rot_filters.size();i++)tgt_rot_filters[i].setParameter(1,HZ);//四肢拘束点用(Rotation)
+      tgt_pos_filters[0].setParameter(0.4,HZ);//重心pos用
+      tgt_rot_filters[0].setParameter(0.4,HZ);//重心rot用
       calcacc_v_filters.setParameter(5,HZ);//加速度計算用
       acc4zmp_v_filters.setParameter(1,HZ);//ZMP生成用ほぼこの値でいい
       cam_rpy_filter.setParameter(1,HZ);//カメラアングル
@@ -302,6 +301,8 @@ class HumanSynchronizer{
       lockFootXYOnContact                 (go_rf_landing, go_lf_landing, rp_ref_out);//根本から改変すべき3
 
       applyCOMToSupportRegionLimit        (rp_ref_out.getP("rf").p, rp_ref_out.getP("lf").p, rp_ref_out.getP("com"));
+
+      setFootRotHorizontalIfGoLanding     (rp_ref_out_old, rp_ref_out);
       applyLPFilter                       (rp_ref_out);
       applyCOMStateLimitByCapturePoint    (rp_ref_out.getP("com").p, rp_ref_out_old.getP("com").p, com_vel_old, rp_ref_out.getP("rf").p, rp_ref_out.getP("lf").p, rp_ref_out.getP("com").p);
 
@@ -405,6 +406,10 @@ class HumanSynchronizer{
         }
       }
     }
+    void setFootRotHorizontalIfGoLanding(const HumanPose& rp_ref_out_old, HumanPose& rp_ref_out){
+      if(rp_ref_out_old.getP("rf").p(2)-rp_ref_out_old.getP("rf").offs(2)<0.05){ rp_ref_out.getP("rf").rpy(0) = rp_ref_out.getP("rf").rpy(1) = 0; }
+      if(rp_ref_out_old.getP("lf").p(2)-rp_ref_out_old.getP("lf").offs(2)<0.05){ rp_ref_out.getP("lf").rpy(0) = rp_ref_out.getP("lf").rpy(1) = 0; }
+    }
     void overwriteFootZFromFootLandOnCommand(const bool& rf_goland_in, const bool& lf_goland_in, HumanPose& tgt){
       if(is_rf_contact&&is_lf_contact)FUP_TIME = tgt_FUP_TIME;//両足接地しているタイミングでのみ更新
       double RFDOWN_TIME = fabs(tgt.getP("rf").p(1) - tgt.getP("com").p(1))*2 + FUP_TIME;//下ろす速度は遊脚の重心からの距離に比例したペナルティ
@@ -473,6 +478,17 @@ class HumanSynchronizer{
         LIMIT_MINMAX( tgt.getP("rf").p(2), tgt.getP("rf").offs(2), tgt.getP("rf").offs(2)+0.10);
         LIMIT_MINMAX( tgt.getP("lf").p(2), tgt.getP("lf").offs(2), tgt.getP("lf").offs(2)+0.10);
       }
+      std::string ns[5] = {"com","rf","lf","rh","lh"};
+      for(int i=0;i<5;i++){
+        LIMIT_MINMAX( tgt.getP(ns[i]).rpy(0), -30*M_PI/180, 30*M_PI/180 );
+        LIMIT_MINMAX( tgt.getP(ns[i]).rpy(1), -30*M_PI/180, 30*M_PI/180 );
+      }
+      LIMIT_MINMAX( tgt.getP("rf").rpy(2), -30*M_PI/180+tgt.getP("com").rpy(2), 30*M_PI/180+tgt.getP("com").rpy(2) );
+      LIMIT_MINMAX( tgt.getP("lf").rpy(2), -30*M_PI/180+tgt.getP("com").rpy(2), 30*M_PI/180+tgt.getP("com").rpy(2) );
+      LIMIT_MINMAX( tgt.getP("rh").rpy(2), -30*M_PI/180+tgt.getP("com").rpy(2), 30*M_PI/180+tgt.getP("com").rpy(2) );
+      LIMIT_MINMAX( tgt.getP("lh").rpy(2), -30*M_PI/180+tgt.getP("com").rpy(2), 30*M_PI/180+tgt.getP("com").rpy(2) );
+
+
       LIMIT_MINMAX( head_cam_pose.rpy(1), -20*M_PI/180, 20*M_PI/180 );
       LIMIT_MINMAX( head_cam_pose.rpy(2), -20*M_PI/180, 20*M_PI/180 );
     }
@@ -499,8 +515,8 @@ class HumanSynchronizer{
       hrp::Vector4 marginDelta(+0.001,-0.001,0.001,-0.001);
       createSupportRegionByFootPos(rfin_abs, lfin_abs, rf_safe_region+marginDelta, lf_safe_region+marginDelta, hull);
       hrp::Vector2 com_vel_ans_2d;
-//      regulateCOMVelocityByCapturePointVec( hrp::Vector2(com_old(0),com_old(1)), hrp::Vector2(com_vel(0),com_vel(1)), hull, com_vel_ans_2d);
-      regulateCOMVelocityByCapturePointXY( hrp::Vector2(com_old(0),com_old(1)), hrp::Vector2(com_vel(0),com_vel(1)), hull, com_vel_ans_2d);//XY独立に計算する手法のほうがエッジで引っかからない・・・
+      regulateCOMVelocityByCapturePointVec( hrp::Vector2(com_old(0),com_old(1)), hrp::Vector2(com_vel(0),com_vel(1)), hull, com_vel_ans_2d);
+//      regulateCOMVelocityByCapturePointXY( hrp::Vector2(com_old(0),com_old(1)), hrp::Vector2(com_vel(0),com_vel(1)), hull, com_vel_ans_2d);//XY独立に計算する手法のほうがエッジで引っかからない・・・
       com_ans(0) = com_old(0) + com_vel_ans_2d(0) * DT;
       com_ans(1) = com_old(1) + com_vel_ans_2d(1) * DT;
       return true;
