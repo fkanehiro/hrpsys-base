@@ -272,6 +272,16 @@ VisionSensorPortHandler::VisionSensorPortHandler(
         m_data.data.image.format = Img::CF_RGB;
         int len = m_sensor->width*m_sensor->height*3;
         m_data.data.image.raw_data.length(len);
+        m_data.data.intrinsic.distortion_coefficient.length(5);
+        for(int i = 0; i < 5; i++){
+            m_data.data.intrinsic.distortion_coefficient[i] = 0;
+        }
+        double fovx = m_sensor->width/m_sensor->height*m_sensor->fovy;
+        m_data.data.intrinsic.matrix_element[0]=0.5 * m_sensor->width/tan(fovx/2.0);
+        m_data.data.intrinsic.matrix_element[1]=0.0;
+        m_data.data.intrinsic.matrix_element[2]=m_sensor->width/2;
+        m_data.data.intrinsic.matrix_element[3]=0.5 * m_sensor->height/tan(m_sensor->fovy/2.0);
+        m_data.data.intrinsic.matrix_element[4]=m_sensor->height/2;
     }else if(m_sensor->imageType == VisionSensor::MONO
              || m_sensor->imageType == VisionSensor::MONO_DEPTH){
         m_data.data.image.width = m_sensor->width;
@@ -279,6 +289,16 @@ VisionSensorPortHandler::VisionSensorPortHandler(
         m_data.data.image.format = Img::CF_GRAY;
         int len = m_sensor->width*m_sensor->height;
         m_data.data.image.raw_data.length(len);
+        m_data.data.intrinsic.distortion_coefficient.length(5);
+        for(int i = 0; i < 5; i++){
+            m_data.data.intrinsic.distortion_coefficient[i] = 0;
+        }
+        double fovx = m_sensor->width/m_sensor->height*m_sensor->fovy;
+        m_data.data.intrinsic.matrix_element[0]=0.5 * m_sensor->width/tan(fovx/2.0);
+        m_data.data.intrinsic.matrix_element[1]=0.0;
+        m_data.data.intrinsic.matrix_element[2]=m_sensor->width/2;
+        m_data.data.intrinsic.matrix_element[3]=0.5 * m_sensor->height/tan(m_sensor->fovy/2.0);
+        m_data.data.intrinsic.matrix_element[4]=m_sensor->height/2;
     }
 }
 
