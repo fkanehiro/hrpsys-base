@@ -506,8 +506,8 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
     if (m_htcomIn.isNew()){ m_htcomIn.read(); HumanSynchronizer::Pose3DToHRPPose3D(m_htcom.data,hp_raw_data.getP("com")); }
     if (m_htrfIn.isNew()) { m_htrfIn.read();  HumanSynchronizer::Pose3DToHRPPose3D(m_htrf.data,hp_raw_data.getP("rf")); }
     if (m_htlfIn.isNew()) { m_htlfIn.read();  HumanSynchronizer::Pose3DToHRPPose3D(m_htlf.data,hp_raw_data.getP("lf")); }
-    if (m_htrhIn.isNew()) { m_htrhIn.read();  HumanSynchronizer::Pose3DToHRPPose3D(m_htrh.data,hp_raw_data.getP("rh")); }
-    if (m_htlhIn.isNew()) { m_htlhIn.read();  HumanSynchronizer::Pose3DToHRPPose3D(m_htlh.data,hp_raw_data.getP("lh")); }
+    if (m_htrhIn.isNew()) { m_htrhIn.read();  HumanSynchronizer::Pose3DToHRPPose3D(m_htrh.data,hp_raw_data.getP("rh"));}
+    if (m_htlhIn.isNew()) { m_htlhIn.read();  HumanSynchronizer::Pose3DToHRPPose3D(m_htlh.data,hp_raw_data.getP("lh"));}
     if (m_htcamIn.isNew()){ m_htcamIn.read(); HumanSynchronizer::Pose3DToHRPPose3D(m_htcam.data,hsp->head_cam_pose); }
     if (m_actzmpIn.isNew()){m_actzmpIn.read(); }
     hsp->readInput(hp_raw_data);
@@ -1020,6 +1020,8 @@ void AutoBalancer::fixLegToCoords (const hrp::Vector3& fix_pos, const hrp::Matri
 bool AutoBalancer::solveLimbIKforLimb (ABCIKparam& param, const std::string& limb_name)
 {
   param.manip->calcInverseKinematics2Loop(param.target_p0, param.target_r0, 1.0, param.avoid_gain, param.reference_gain, &qrefv, transition_interpolator_ratio * leg_names_interpolator_ratio);
+//  param.manip->calcInverseKinematics2Loop(param.target_p0, param.target_r0, 1.0, param.avoid_gain, param.reference_gain, &qrefv, transition_interpolator_ratio * leg_names_interpolator_ratio,
+//      ikp[limb_name].localPos,ikp[limb_name].localR );
   // IK check
   hrp::Vector3 vel_p, vel_r;
   vel_p = param.target_p0 - param.target_link->p;
@@ -1054,12 +1056,22 @@ void AutoBalancer::solveWholeBodyCOMIK(const HRPPose3D& com_ref, const HRPPose3D
   m_robot->rootLink()->R = hrp::rotFromRpy(com_ref.rpy);//move base link at first
   m_robot->calcForwardKinematics();//apply
   hrp::Vector3 tmp_com_err = com_ref.p - m_robot->calcCM();
-  ikp["rleg"].target_p0 = rf_ref.p;
-  ikp["rleg"].target_r0 = hrp::rotFromRpy(rf_ref.rpy);
-  ikp["lleg"].target_p0 = lf_ref.p;
-  ikp["lleg"].target_r0 = hrp::rotFromRpy(lf_ref.rpy);
-  if(ikp.count("rarm")){ ikp["rarm"].target_p0 = rh_ref.p; ikp["rarm"].target_r0 = hrp::rotFromRpy(rh_ref.rpy); }
-  if(ikp.count("larm")){ ikp["larm"].target_p0 = lh_ref.p; ikp["larm"].target_r0 = hrp::rotFromRpy(lh_ref.rpy); }
+  if(ikp.count("rleg")){
+    ikp["rleg"].target_r0 = hrp::rotFromRpy(rf_ref.rpy) * ikp["rleg"].localR.transpose();//convert End Effector pos into link origin pos
+    ikp["rleg"].target_p0 = rf_ref.p - ikp["rleg"].target_r0 * ikp["rleg"].localPos;
+  }
+  if(ikp.count("lleg")){
+    ikp["lleg"].target_r0 = hrp::rotFromRpy(lf_ref.rpy) * ikp["lleg"].localR.transpose();
+    ikp["lleg"].target_p0 = lf_ref.p - ikp["lleg"].target_r0 * ikp["lleg"].localPos;
+  }
+  if(ikp.count("rarm")){
+    ikp["rarm"].target_r0 = hrp::rotFromRpy(rh_ref.rpy) * ikp["rarm"].localR.transpose();
+    ikp["rarm"].target_p0 = rh_ref.p - ikp["rarm"].target_r0 * ikp["rarm"].localPos;
+  }
+  if(ikp.count("larm")){
+    ikp["larm"].target_r0 = hrp::rotFromRpy(lh_ref.rpy) * ikp["larm"].localR.transpose();
+    ikp["larm"].target_p0 = lh_ref.p - ikp["larm"].target_r0 * ikp["larm"].localPos;
+  }
   while(tmp_com_err.norm() > COM_IK_MAX_ERROR){
     m_robot->rootLink()->p += tmp_com_err;
     m_robot->calcForwardKinematics();
@@ -1128,15 +1140,17 @@ void AutoBalancer::solveLimbIK ()
     if(ikp.count("rarm"))hsp->rp_wld_initpos.getP("rh").p = ikp["rarm"].target_link->p;
     if(ikp.count("larm"))hsp->rp_wld_initpos.getP("lh").p = ikp["larm"].target_link->p;
 
-    hsp->rp_ref_out.getP("com").offs = m_robot->calcCM();
-    hsp->rp_ref_out.getP("rf").offs = ikp["rleg"].target_link->p;
-    hsp->rp_ref_out.getP("lf").offs = ikp["lleg"].target_link->p;
-    hsp->rp_ref_out.getP("zmp").offs = ref_zmp;
-    if(ikp.count("rarm"))hsp->rp_ref_out.getP("rh").offs = ikp["rarm"].target_link->p;
-    if(ikp.count("larm"))hsp->rp_ref_out.getP("lh").offs = ikp["larm"].target_link->p;
-    hsp->pre_cont_rfpos = hsp->rp_ref_out.getP("rf").offs;
-    hsp->pre_cont_lfpos = hsp->rp_ref_out.getP("lf").offs;
-
+    hsp->rp_ref_out.getP("com").p_offs = m_robot->calcCM();
+    hsp->rp_ref_out.getP("zmp").p_offs = ref_zmp;
+    const std::string robot_l_names[4] = {"rleg","lleg","rarm","larm"}, human_l_names[4] = {"rf","lf","rh","lh"};
+    for(int i=0;i<4;i++){
+      if(ikp.count(robot_l_names[i])){
+        hsp->rp_ref_out.getP(human_l_names[i]).p_offs = ikp[robot_l_names[i]].target_link->p + ikp[robot_l_names[i]].target_link->R * ikp[robot_l_names[i]].localPos;
+        hsp->rp_ref_out.getP(human_l_names[i]).rpy_offs = hrp::rpyFromRot(ikp[robot_l_names[i]].target_link->R * ikp[robot_l_names[i]].localR);
+      }
+    }
+    hsp->pre_cont_rfpos = hsp->rp_ref_out.getP("rf").p_offs;
+    hsp->pre_cont_lfpos = hsp->rp_ref_out.getP("lf").p_offs;
     hsp->init_basepos = m_robot->rootLink()->p;
   }
   hsp->update();//////HumanSynchronizerの主要処理
@@ -1162,7 +1176,6 @@ void AutoBalancer::solveLimbIK ()
     //outport用のデータ上書き
     ref_zmp = hsp->rp_ref_out.getP("zmp").p;
     ref_cog = hsp->rp_ref_out.getP("com").p;
-
   }else{
 	  for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {//本来のIK部分
 	    if (it->second.is_active) solveLimbIKforLimb(it->second, it->first);
