@@ -307,7 +307,7 @@ class HumanSynchronizer{
       if(loop==0)rp_ref_out_old = rp_ref_out;
 
       applyCOMMoveModRatio                (rp_ref_out);
-      judgeFootLandOnCommand              (hp_wld_raw.getw("rfw"), hp_wld_raw.getw("lfw"), go_rf_landing, go_lf_landing);//fwはすでに1000->100Hzにフィルタリングされている
+//      judgeFootLandOnCommand              (hp_wld_raw.getw("rfw"), hp_wld_raw.getw("lfw"), go_rf_landing, go_lf_landing);//fwはすでに1000->100Hzにフィルタリングされている
       lockSwingFootIfZMPOutOfSupportFoot  (rp_ref_out_old, go_rf_landing, go_lf_landing);//ここ
       applyEEWorkspaceLimit               (rp_ref_out);
       lockFootXYOnContact                 (go_rf_landing, go_lf_landing, rp_ref_out);//根本から改変すべき3
@@ -610,8 +610,30 @@ class HumanSynchronizer{
       LIMIT_MINMAX( com_vel_ans(0), com_vel_accel_limit(B), com_vel_accel_limit(F) );//加速時のCP
       LIMIT_MINMAX( com_vel_ans(1), com_vel_accel_limit(R), com_vel_accel_limit(L) );
     }
+    void createSupportRegionByFootPos(const hrp::Vector3& rfin_abs, const hrp::Vector3& lfin_abs, const hrp::Vector4& rf_mgn, const hrp::Vector4& lf_mgn, std::vector<hrp::Vector2>& hull_ans){
+      std::vector<hrp::Vector2> points;
+      for(int i=0;i<2;i++){
+        for(int j=2;j<4;j++){
+          points.push_back(hrp::Vector2(rfin_abs(0) + rf_mgn(i),    rfin_abs(1) + rf_mgn(j)));
+          points.push_back(hrp::Vector2(lfin_abs(0) + lf_mgn(i),    lfin_abs(1) + lf_mgn(j)));
+        }
+      }
+//      static unsigned int edge_time = 0;
+//      if(rp_ref_out_old.getP("rf").rpy(1)>0.001){
+//        points.clear();
+//        double mod = rfin_abs(0) + 0.13 * edge_time * 0.002;
+////        LIMIT_MAX( mod, rfin_abs(0) + 0.13 );
+//        for(int i=0;i<2;i++){
+//          for(int j=2;j<4;j++){
+//            points.push_back(hrp::Vector2(rfin_abs(0) + 0.13,    rfin_abs(1) + rf_mgn(j)));
+//            points.push_back(hrp::Vector2(lfin_abs(0) + lf_mgn(i),    lfin_abs(1) + lf_mgn(j)));
+//          }
+//        }
+//        edge_time++;
+//      }
+      makeConvexHullOpenCV(points, hull_ans);
+    }
     void calcWorldZMP(const hrp::Vector3& rfpos, const hrp::Vector3& lfpos, const Wrench6& rfwin, const Wrench6& lfwin, hrp::Vector3& zmp_ans);
-    void createSupportRegionByFootPos(const hrp::Vector3& rfin_abs, const hrp::Vector3& lfin_abs, const hrp::Vector4& rf_mgn, const hrp::Vector4& lf_mgn, std::vector<hrp::Vector2>& hull_ans);
     void calcXYMarginToHull(const hrp::Vector2& check_point, const std::vector<hrp::Vector2>& hull, hrp::Vector4& margin_ans);
     bool calcCrossPointOnHull(const hrp::Vector2& pt_in_start, const hrp::Vector2& pt_out_goal, const std::vector<hrp::Vector2>& hull, hrp::Vector2& pt_will_cross);
     double calcNearestPointOnHull(const hrp::Vector2& tgt_pt, const std::vector<hrp::Vector2>& hull, hrp::Vector2& pt_ans);

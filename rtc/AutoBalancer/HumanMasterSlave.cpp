@@ -17,17 +17,6 @@ void HumanSynchronizer::calcWorldZMP(const hrp::Vector3& rfpos, const hrp::Vecto
   }else{ zmp_ans(0) = 0; zmp_ans(1) = 0; }
   zmp_ans(2) = 0;
 }
-
-void HumanSynchronizer::createSupportRegionByFootPos(const hrp::Vector3& rfin_abs, const hrp::Vector3& lfin_abs, const hrp::Vector4& rf_mgn, const hrp::Vector4& lf_mgn, std::vector<hrp::Vector2>& hull_ans){
-  std::vector<hrp::Vector2> points;
-  for(int i=0;i<2;i++){
-    for(int j=2;j<4;j++){
-      points.push_back(hrp::Vector2(rfin_abs(0) + rf_mgn(i),    rfin_abs(1) + rf_mgn(j)));
-      points.push_back(hrp::Vector2(lfin_abs(0) + lf_mgn(i),    lfin_abs(1) + lf_mgn(j)));
-    }
-  }
-  makeConvexHullOpenCV(points, hull_ans);
-}
 void HumanSynchronizer::calcXYMarginToHull(const hrp::Vector2& check_point, const std::vector<hrp::Vector2>& hull, hrp::Vector4& margin_ans){
   hrp::Vector4 margin_abs;
   hrp::Vector2 cross_pt, anchor_vec[4] = {hrp::Vector2(1,0), hrp::Vector2(-1,0), hrp::Vector2(0,1), hrp::Vector2(0,-1)};//前後左右に伸ばしたアンカーとの交点を見る

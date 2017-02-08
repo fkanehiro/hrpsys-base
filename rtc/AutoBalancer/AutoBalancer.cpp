@@ -70,7 +70,7 @@ AutoBalancer::AutoBalancer(RTC::Manager* manager)
       m_htrhIn("htrhIn", m_htrh),
       m_htlhIn("htlhIn", m_htlh),
       m_actzmpIn("actzmpIn", m_actzmp),
-      m_htcamIn("htcamIn", m_htcam),
+      m_htheadIn("htheadIn", m_hthead),
 
       m_qOut("q", m_qRef),
       m_zmpOut("zmpOut", m_zmp),
@@ -124,7 +124,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     addInPort("htrhIn", m_htrhIn);
     addInPort("htlhIn", m_htlhIn);
     addInPort("actzmpIn", m_actzmpIn);
-    addInPort("htcamIn", m_htcamIn);
+    addInPort("htheadIn", m_htheadIn);
 
     // Set OutPort buffer
     addOutPort("q", m_qOut);
@@ -508,7 +508,7 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
     if (m_htlfIn.isNew()) { m_htlfIn.read();  HumanSynchronizer::Pose3DToHRPPose3D(m_htlf.data,hp_raw_data.getP("lf")); }
     if (m_htrhIn.isNew()) { m_htrhIn.read();  HumanSynchronizer::Pose3DToHRPPose3D(m_htrh.data,hp_raw_data.getP("rh"));}
     if (m_htlhIn.isNew()) { m_htlhIn.read();  HumanSynchronizer::Pose3DToHRPPose3D(m_htlh.data,hp_raw_data.getP("lh"));}
-    if (m_htcamIn.isNew()){ m_htcamIn.read(); HumanSynchronizer::Pose3DToHRPPose3D(m_htcam.data,hsp->head_cam_pose); }
+    if (m_htheadIn.isNew()){ m_htheadIn.read(); HumanSynchronizer::Pose3DToHRPPose3D(m_hthead.data,hsp->head_cam_pose); }
     if (m_actzmpIn.isNew()){m_actzmpIn.read(); }
     hsp->readInput(hp_raw_data);
     hsp->current_basepos = m_robot->rootLink()->p;

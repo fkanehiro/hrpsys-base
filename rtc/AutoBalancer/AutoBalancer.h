@@ -153,8 +153,8 @@ class AutoBalancer
   InPort<TimedPose3D> m_htrhIn;
   TimedPose3D m_htlh;
   InPort<TimedPose3D> m_htlhIn;
-  TimedPose3D m_htcam;
-  InPort<TimedPose3D> m_htcamIn;
+  TimedPose3D m_hthead;
+  InPort<TimedPose3D> m_htheadIn;
   TimedPoint3D m_htzmp;
   InPort<TimedPoint3D> m_htzmpIn;
   TimedPoint3D m_actzmp;
