@@ -179,20 +179,20 @@ module OpenHRP
     boolean playPatternOfGroup(in string gname, in dSequenceSequence pos, in dSequence tm);
 
     /**
-     * @brief set parameters to solve ik, used in setTargetPose
+     * @brief set parameters to solve ik, used in setTargetPose [>= 315.1.5]
      * @param pos error threshold for position
      * @param rot error threshold for rotation
      */
     void setMaxIKError(in double pos, in double rot);
 
     /**
-     * @brief set parameters to solve ik, used in setTargetPose
+     * @brief set parameters to solve ik, used in setTargetPose [>= 315.1.5]
      * @param max_iteration max iteration
      */
     void setMaxIKIteration(in short max_iteration);
 
     /**
-     * @brief Interpolate Wrenches. Function returns without waiting for interpolation to finish
+     * @brief Interpolate Wrenches. Function returns without waiting for interpolation to finish  [>= 315.2.0]
      * @param wrenches Wrenches [N], [Nm]
      * @param tm duration [s]
      * @return true if set successfully, false otherwise
@@ -200,7 +200,7 @@ module OpenHRP
     boolean setWrenches(in dSequence wrenches, in double tm);
 
     /**
-     * @brief Interpolate all joint angles on robot using duration specified by \em tm. Returns without waiting for whole sequence to be sent to robot. If this function called during the robot moves, it overwrite current goal.
+     * @brief Interpolate all joint angles on robot using duration specified by \em tm. Returns without waiting for whole sequence to be sent to robot. If this function called during the robot moves, it overwrite current goal. [>= 315.5.0]
      * @param jvs sequence of sequence of joint angles [rad]
      * @param tm sequence of duration [s]
      * @return true joint angles are set successfully, false otherwise
@@ -208,7 +208,7 @@ module OpenHRP
     boolean setJointAnglesSequence(in dSequenceSequence jvss, in dSequence tms);
 
     /**
-     * @brief Interpolate all joint angles on robot using duration specified by \em tm. Returns without waiting for whole sequence to be sent to robot. If this function called during the robot moves, it overwrite current goal.
+     * @brief Interpolate all joint angles on robot using duration specified by \em tm. Returns without waiting for whole sequence to be sent to robot. If this function called during the robot moves, it overwrite current goal. [>= 315.5.0]
      * @param jvs sequence of sequence of joint angles  [rad]
      * @param mask binary vector which selects joints to be interpolated
      * @param tm sequence of duration [s]
@@ -217,7 +217,7 @@ module OpenHRP
     boolean setJointAnglesSequenceWithMask(in dSequenceSequence jvss, in bSequence mask, in dSequence tms);
 
     /**
-     * @brief Interpolate all joint angles in groups, using duration specified by \em tm. Returns without waiting for whole sequence to be sent to robot. If this function called during the robot moves, it overwrite current goal.
+     * @brief Interpolate all joint angles in groups, using duration specified by \em tm. Returns without waiting for whole sequence to be sent to robot. If this function called during the robot moves, it overwrite current goal. [>= 315.5.0]
      * @param gname name of the joint group
      * @param jvs sequence of sequence of joint angles [rad]
      * @param tm sequence of duration [s]
@@ -226,7 +226,7 @@ module OpenHRP
     boolean setJointAnglesSequenceOfGroup(in string gname, in dSequenceSequence jvss, in dSequence tms);
 
     /**
-     * @brief Interpolate all joint angles, using duration specified by \em tm. Returns without waiting for whole sequence to be sent to robot. If this function called during the robot moves, it overwrite current goal.
+     * @brief Interpolate all joint angles, using duration specified by \em tm. Returns without waiting for whole sequence to be sent to robot. If this function called during the robot moves, it overwrite current goal.  [>= 315.5.0]
      * @param jvss sequence of sequence of joint angles [rad]
      * @param vels sequence of sequence of velocities [rad/s]
      * @param torques sequence of sequence of torques [Nm]
@@ -242,12 +242,12 @@ module OpenHRP
     boolean setJointAnglesSequenceFull(in dSequenceSequence jvss, in dSequenceSequence vels,  in dSequenceSequence torques, in dSequenceSequence poss, in dSequenceSequence rpys, in dSequenceSequence accs, in dSequenceSequence zmps, in dSequenceSequence wrenchs, in dSequenceSequence optionals, in dSequence tms);
 
     /**
-     * @brief clear current JointAngles
+     * @brief clear current JointAngles [>= 315.5.0]
      * @return true joint angles are set successfully, false otherwise
      */
     boolean clearJointAngles();
     /**
-     * @brief clear current JointAnglesOfGroup
+     * @brief clear current JointAnglesOfGroup [>= 315.5.0]
      * @param gname name of the joint group
      * @return true joint angles are set successfully, false otherwise
      */
