@@ -73,25 +73,6 @@ RTC::ReturnCode_t PCDLoader::onInitialize()
 
   RTC::Properties& prop = getProperties();
 
-  m_cloud.height = 1;
-  m_cloud.type = "xyz";
-  m_cloud.fields.length(3);
-  m_cloud.fields[0].name = "x";
-  m_cloud.fields[0].offset = 0;
-  m_cloud.fields[0].data_type = PointCloudTypes::FLOAT32;
-  m_cloud.fields[0].count = 4;
-  m_cloud.fields[1].name = "y";
-  m_cloud.fields[1].offset = 4;
-  m_cloud.fields[1].data_type = PointCloudTypes::FLOAT32;
-  m_cloud.fields[1].count = 4;
-  m_cloud.fields[2].name = "z";
-  m_cloud.fields[2].offset = 8;
-  m_cloud.fields[2].data_type = PointCloudTypes::FLOAT32;
-  m_cloud.fields[2].count = 4;
-  m_cloud.is_bigendian = false;
-  m_cloud.point_step = 16;
-  m_cloud.is_dense = true;
-
   return RTC::RTC_OK;
 }
 
@@ -133,26 +114,98 @@ RTC::ReturnCode_t PCDLoader::onDeactivated(RTC::UniqueId ec_id)
 RTC::ReturnCode_t PCDLoader::onExecute(RTC::UniqueId ec_id)
 {
   //std::cout << m_profile.instance_name<< ": onExecute(" << ec_id << ")" << std::endl;
-  std::cerr << "PCD filename: " << std::flush;
-  std::string filename;
-  std::cin >> filename;
+  std::cerr << "PCD filename and fields: " << std::flush;
+  std::string filename, fields="XYZ";
+  std::cin >> filename >> fields;
   
-  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
-
   pcl::PCDReader reader;
-  reader.read (filename, *cloud);
-  int npoint = cloud->points.size();
-  m_cloud.width = npoint;
-  m_cloud.height = 1;
-  m_cloud.data.length(npoint*m_cloud.point_step);
-  m_cloud.row_step = m_cloud.data.length();
-  float *ptr = (float *)m_cloud.data.get_buffer();
-  std::cout << "npoint = " << npoint << std::endl;
-  for (int i=0; i<npoint; i++){
-    ptr[0] = cloud->points[i].x;
-    ptr[1] = cloud->points[i].y;
-    ptr[2] = cloud->points[i].z;
-    ptr += 4;
+
+  if (fields=="XYZ"){
+      pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
+      reader.read (filename, *cloud);
+      int npoint = cloud->points.size();
+
+      m_cloud.type = "xyz";
+      m_cloud.fields.length(3);
+      m_cloud.fields[0].name = "x";
+      m_cloud.fields[0].offset = 0;
+      m_cloud.fields[0].data_type = PointCloudTypes::FLOAT32;
+      m_cloud.fields[0].count = 4;
+      m_cloud.fields[1].name = "y";
+      m_cloud.fields[1].offset = 4;
+      m_cloud.fields[1].data_type = PointCloudTypes::FLOAT32;
+      m_cloud.fields[1].count = 4;
+      m_cloud.fields[2].name = "z";
+      m_cloud.fields[2].offset = 8;
+      m_cloud.fields[2].data_type = PointCloudTypes::FLOAT32;
+      m_cloud.fields[2].count = 4;
+      m_cloud.is_bigendian = false;
+      m_cloud.point_step = 16;
+      m_cloud.width = cloud->width;
+      m_cloud.height = cloud->height;
+      m_cloud.data.length(npoint*m_cloud.point_step);
+      m_cloud.row_step = m_cloud.width*m_cloud.point_step;
+      m_cloud.is_dense = cloud->is_dense;
+      float *ptr = (float *)m_cloud.data.get_buffer();
+      std::cout << "npoint = " << npoint << std::endl;
+      for (int i=0; i<npoint; i++){
+          ptr[0] = cloud->points[i].x;
+          ptr[1] = cloud->points[i].y;
+          ptr[2] = cloud->points[i].z;
+          ptr += 4;
+      }
+  }else if(fields=="XYZRGB"){
+      pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
+      reader.read (filename, *cloud);
+      int npoint = cloud->points.size();
+
+      m_cloud.type = "xyzrgb";
+      m_cloud.fields.length(6);
+      m_cloud.fields[0].name = "x";
+      m_cloud.fields[0].offset = 0;
+      m_cloud.fields[0].data_type = PointCloudTypes::FLOAT32;
+      m_cloud.fields[0].count = 4;
+      m_cloud.fields[1].name = "y";
+      m_cloud.fields[1].offset = 4;
+      m_cloud.fields[1].data_type = PointCloudTypes::FLOAT32;
+      m_cloud.fields[1].count = 4;
+      m_cloud.fields[2].name = "z";
+      m_cloud.fields[2].offset = 8;
+      m_cloud.fields[2].data_type = PointCloudTypes::FLOAT32;
+      m_cloud.fields[2].count = 4;
+      m_cloud.fields[2].name = "r";
+      m_cloud.fields[2].offset = 12;
+      m_cloud.fields[2].data_type = PointCloudTypes::UINT8;
+      m_cloud.fields[2].count = 1;
+      m_cloud.fields[2].name = "g";
+      m_cloud.fields[2].offset = 13;
+      m_cloud.fields[2].data_type = PointCloudTypes::UINT8;
+      m_cloud.fields[2].count = 1;
+      m_cloud.fields[2].name = "b";
+      m_cloud.fields[2].offset = 14;
+      m_cloud.fields[2].data_type = PointCloudTypes::UINT8;
+      m_cloud.fields[2].count = 1;
+      m_cloud.is_bigendian = false;
+      m_cloud.point_step = 16;
+      m_cloud.width = cloud->width;
+      m_cloud.height = cloud->height;
+      m_cloud.data.length(npoint*m_cloud.point_step);
+      m_cloud.row_step = m_cloud.width*m_cloud.point_step;
+      m_cloud.is_dense = cloud->is_dense;
+      float *ptr = (float *)m_cloud.data.get_buffer();
+      std::cout << "npoint = " << npoint << std::endl;
+      for (int i=0; i<npoint; i++){
+          ptr[0] = cloud->points[i].x;
+          ptr[1] = cloud->points[i].y;
+          ptr[2] = cloud->points[i].z;
+          unsigned char *rgb = (unsigned char *)(ptr+3);
+          rgb[0] = cloud->points[i].r;
+          rgb[1] = cloud->points[i].g;
+          rgb[2] = cloud->points[i].b;
+          ptr += 4;
+      }
+  }else{
+      std::cerr << "fields[" << fields << "] is not supported" << std::endl;
   }
 
   m_cloudOut.write();
