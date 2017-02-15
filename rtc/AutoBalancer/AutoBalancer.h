@@ -113,7 +113,6 @@ class AutoBalancer
   bool releaseEmergencyStop();
   bool startHumanSyncAfter5sec();
   bool setHumanToRobotRatio(const double h2r);
-  bool setCOMMoveModRatio(const double cmr);
   bool setFootUpTime(const double fupt);
   bool setAllowedXYZSync(const bool x_on,const bool y_on,const bool z_on);
   bool stopHumanSync();
@@ -293,8 +292,6 @@ class AutoBalancer
 
   //for HumanSynchronizer
   boost::shared_ptr<HumanSynchronizer> hsp;
-  HumanPose hp_raw_data;
-
 };
 
 extern "C"

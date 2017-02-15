@@ -125,11 +125,6 @@ CORBA::Boolean AutoBalancerService_impl::setHumanToRobotRatio(const CORBA::Doubl
     return m_autobalancer->setHumanToRobotRatio(h2r);
 };
 
-CORBA::Boolean AutoBalancerService_impl::setCOMMoveModRatio(const CORBA::Double cmmr)
-{
-    return m_autobalancer->setCOMMoveModRatio(cmmr);
-};
-
 CORBA::Boolean AutoBalancerService_impl::setFootUpTime(const CORBA::Double fupt)
 {
     return m_autobalancer->setFootUpTime(fupt);

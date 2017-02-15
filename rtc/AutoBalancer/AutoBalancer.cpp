@@ -501,16 +501,15 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
     }
     //for HumanSynchronizer
     if (m_htzmpIn.isNew()){	m_htzmpIn.read(); }
-    if (m_htrfwIn.isNew()){ m_htrfwIn.read(); HumanSynchronizer::DoubleSeqToWrench6(m_htrfw.data,hp_raw_data.getw("rfw")); }
-    if (m_htlfwIn.isNew()){ m_htlfwIn.read(); HumanSynchronizer::DoubleSeqToWrench6(m_htlfw.data,hp_raw_data.getw("lfw")); }
-    if (m_htcomIn.isNew()){ m_htcomIn.read(); HumanSynchronizer::Pose3DToHRPPose3D(m_htcom.data,hp_raw_data.getP("com")); }
-    if (m_htrfIn.isNew()) { m_htrfIn.read();  HumanSynchronizer::Pose3DToHRPPose3D(m_htrf.data,hp_raw_data.getP("rf")); }
-    if (m_htlfIn.isNew()) { m_htlfIn.read();  HumanSynchronizer::Pose3DToHRPPose3D(m_htlf.data,hp_raw_data.getP("lf")); }
-    if (m_htrhIn.isNew()) { m_htrhIn.read();  HumanSynchronizer::Pose3DToHRPPose3D(m_htrh.data,hp_raw_data.getP("rh"));}
-    if (m_htlhIn.isNew()) { m_htlhIn.read();  HumanSynchronizer::Pose3DToHRPPose3D(m_htlh.data,hp_raw_data.getP("lh"));}
+    if (m_htrfwIn.isNew()){ m_htrfwIn.read(); HumanSynchronizer::DoubleSeqToWrench6(m_htrfw.data,hsp->hp_wld_raw.getw("rfw")); }
+    if (m_htlfwIn.isNew()){ m_htlfwIn.read(); HumanSynchronizer::DoubleSeqToWrench6(m_htlfw.data,hsp->hp_wld_raw.getw("lfw")); }
+    if (m_htcomIn.isNew()){ m_htcomIn.read(); HumanSynchronizer::Pose3DToHRPPose3D(m_htcom.data,hsp->hp_wld_raw.getP("com")); }
+    if (m_htrfIn.isNew()) { m_htrfIn.read();  HumanSynchronizer::Pose3DToHRPPose3D(m_htrf.data,hsp->hp_wld_raw.getP("rf")); }
+    if (m_htlfIn.isNew()) { m_htlfIn.read();  HumanSynchronizer::Pose3DToHRPPose3D(m_htlf.data,hsp->hp_wld_raw.getP("lf")); }
+    if (m_htrhIn.isNew()) { m_htrhIn.read();  HumanSynchronizer::Pose3DToHRPPose3D(m_htrh.data,hsp->hp_wld_raw.getP("rh"));}
+    if (m_htlhIn.isNew()) { m_htlhIn.read();  HumanSynchronizer::Pose3DToHRPPose3D(m_htlh.data,hsp->hp_wld_raw.getP("lh"));}
     if (m_htheadIn.isNew()){ m_htheadIn.read(); HumanSynchronizer::Pose3DToHRPPose3D(m_hthead.data,hsp->head_cam_pose);}
     if (m_actzmpIn.isNew()){m_actzmpIn.read(); }
-    hsp->readInput(hp_raw_data);
     hsp->current_basepos = m_robot->rootLink()->p;
     if(ikp.count("rarm") && !hsp->use_rh)ikp["rarm"].is_active = false;
     if(ikp.count("larm") && !hsp->use_lh)ikp["larm"].is_active = false;
@@ -1131,7 +1130,7 @@ void AutoBalancer::solveLimbIK ()
       hsp->ht_first_call = false;
     }
   }else{
-    hsp->setInitOffsetPose();
+    hsp->setCurrentInputAsOffset(hsp->hp_wld_raw);
     hsp->calibInitHumanCOMFromZMP();
     hsp->rp_wld_initpos.getP("com").p = m_robot->calcCM();
     hsp->rp_wld_initpos.getP("rf").p = ikp["rleg"].target_link->p;
@@ -1313,13 +1312,6 @@ bool AutoBalancer::setHumanToRobotRatio(const double h2r)
 {
   std::cerr << "[" << m_profile.instance_name << "] set target h2r_ratio as "<< h2r << std::endl;
   hsp->setTargetHumanToRobotRatio(h2r);
-  return true;
-}
-
-bool AutoBalancer::setCOMMoveModRatio(const double cmmr)
-{
-  std::cerr << "[" << m_profile.instance_name << "] set target com_move_mod_ratio as "<< cmmr << std::endl;
-  hsp->setTargetCOMMoveModRatio(cmmr);
   return true;
 }
 
