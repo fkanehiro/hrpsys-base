@@ -92,7 +92,7 @@ class HRPPose3D{
     HRPPose3D(){ clear(); }
     ~HRPPose3D(){}
     void clear(){
-      p = p_offs = rpy = hrp::Vector3::Zero();
+      p = p_offs = rpy = rpy_offs = hrp::Vector3::Zero();
     }
 };
 class Wrench6{
@@ -182,7 +182,7 @@ class HumanSynchronizer{
     double CNT_F_TH;
     hrp::Vector3 init_hp_calibcom;
     double MAXVEL,MAXACC;
-    HumanPose rp_ref_out_old;
+    HumanPose rp_ref_out_old,hp_swap_checked;
     int countdown_num;
     bool HumanSyncOn;
     struct timeval t_calc_start, t_calc_end;
@@ -330,7 +330,8 @@ class HumanSynchronizer{
       updateHumanToRobotRatio             (tgt_h2r_ratio);
 //      applyInitHumanZMPToCOMOffset        (hp_rel_raw, init_hp_calibcom, hp_rel_raw);//怪しいので要修正
 //      calcWorldZMP                        ((hp_rel_raw.getP("rf").p+init_wld_hp_rfpos), (hp_rel_raw.getP("lf").p+init_wld_hp_lfpos), hp_rel_raw.getw("rfw"), hp_rel_raw.getw("lfw"), hp_rel_raw.getP("zmp").p);//足の位置はworldにしないと・・・
-      convertRelHumanPoseToRelRobotPose   (hp_wld_raw, rp_ref_out);
+      autoLRSwapCheck                     (hp_wld_raw,hp_swap_checked);
+      convertRelHumanPoseToRelRobotPose   (hp_swap_checked, rp_ref_out);
       if(loop==0)rp_ref_out_old = rp_ref_out;
 
       judgeFootLandOnCommand              (hp_wld_raw.getw("rfw"), hp_wld_raw.getw("lfw"), go_rf_landing, go_lf_landing);//fwはすでに1000->100Hzにフィルタリングされている
@@ -380,6 +381,17 @@ class HumanSynchronizer{
       else{h2r_ratio = h2r_r_goal;}
       init_wld_hp_rfpos = init_wld_rp_rfeepos/h2r_ratio;
       init_wld_hp_lfpos = init_wld_rp_lfeepos/h2r_ratio;
+    }
+    void autoLRSwapCheck(const HumanPose& in, HumanPose& out){
+      out = in;
+      if(in.getP("rh").p_offs(Y) > in.getP("lh").p_offs(Y) ){
+        out.getP("rh") = in.getP("lh");
+        out.getP("lh") = in.getP("rh");
+      }
+      if(in.getP("rf").p_offs(Y) > in.getP("lf").p_offs(Y) ){
+        out.getP("rf") = in.getP("lf");
+        out.getP("lf") = in.getP("rf");
+      }
     }
     void applyInitHumanZMPToCOMOffset(const HumanPose& in, const hrp::Vector3& com_offs, HumanPose& out){
       if(isHumanSyncOn()){
