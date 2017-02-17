@@ -106,9 +106,9 @@ void HumanSynchronizer::applyZMPCalcFromCOM(const hrp::Vector3& comin, hrp::Vect
   LIMIT_MINMAX( comacc(0), -MAXACC, MAXACC);
   LIMIT_MINMAX( comacc(1), -MAXACC, MAXACC);
   comacc = acc4zmp_v_filters.passFilter(comacc);
-  zmpout(0) = comin(0)-(rp_wld_initpos.getP("com").p(2)/G)*comacc(0);
-  zmpout(1) = comin(1)-(rp_wld_initpos.getP("com").p(2)/G)*comacc(1);
-  if(DEBUG)fprintf(cz_log,"%f %f %f %f %f %f %f\n",(double)loop/HZ,comin(0),comin(1),rp_ref_out.getP("zmp").p(0),rp_ref_out.getP("zmp").p(1),zmpout(0),zmpout(1));
+  zmpout(0) = comin(0)-(rp_ref_out.getP("com").p(2)/G)*comacc(0);
+  zmpout(1) = comin(1)-(rp_ref_out.getP("com").p(2)/G)*comacc(1);
+//  if(DEBUG)fprintf(cz_log,"%f %f %f %f %f %f %f\n",(double)loop/HZ,comin(0),comin(1),rp_ref_out.getP("zmp").p(0),rp_ref_out.getP("zmp").p(1),zmpout(0),zmpout(1));
   com_oldold = com_old;
   com_old = comin;
 }
@@ -121,7 +121,7 @@ void HumanSynchronizer::applyVelLimit(const HumanPose& in, const HumanPose& in_o
   }
 }
 void HumanSynchronizer::applyCOMZMPXYZLock(HumanPose& tgt){
-    if(!use_x){tgt.getP("com").p(0) = 0;tgt.getP("zmp").p(0) = 0;}
-    if(!use_y){tgt.getP("com").p(1) = 0;tgt.getP("zmp").p(1) = 0;}
-    if(!use_z){tgt.getP("com").p(2) = 0;}
+//    if(!use_x){tgt.getP("com").p(0) = 0;tgt.getP("zmp").p(0) = 0;}
+//    if(!use_y){tgt.getP("com").p(1) = 0;tgt.getP("zmp").p(1) = 0;}
+    if(!use_z){tgt.getP("com").p(2) = tgt.getP("com").p_offs(2);}
 }

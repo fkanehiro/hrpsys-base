@@ -20,6 +20,7 @@ IIRFilter::IIRFilter(unsigned int dim, std::vector<double>& fb_coeffs, std::vect
 
     // init previous values
     m_previous_values.assign(dim, 0.0);
+    m_previous_inputs.assign(dim, 0.0);
     m_initialized = true;
     return;
 }
@@ -37,10 +38,6 @@ bool IIRFilter::setParameter(int dim, std::vector<double>& A, std::vector<double
         std::cout << "[" <<  m_error_prefix << "]" << "IIRFilter coefficients size error" << std::endl;
         return false;
     }
-    // clear previous coefficients
-    m_fb_coefficients.clear();
-    m_ff_coefficients.clear();
-
     // clear previous coefficients
     m_fb_coefficients.clear();
     m_ff_coefficients.clear();
@@ -64,6 +61,7 @@ bool IIRFilter::setParameter(int dim, std::vector<double>& A, std::vector<double
 
     // init previous values
     m_previous_values.assign(dim, 0.0);
+    m_previous_inputs.assign(dim, 0.0);
     m_initialized = true;
     return true;
 }
@@ -87,6 +85,7 @@ void IIRFilter::getParameter(int &dim, std::vector<double>& A, std::vector<doubl
 void IIRFilter::reset(double initial_input)
 {
     m_previous_values.assign(m_dimension, initial_input);
+    m_previous_inputs.assign(m_dimension, initial_input);
 }
 
 double IIRFilter::passFilter(double input)
@@ -94,19 +93,36 @@ double IIRFilter::passFilter(double input)
     if (! m_initialized) {
         return 0.0;
     }
-    double feedback, filtered;
-    // calcurate retval
-    feedback = m_fb_coefficients[0] * input;
-    for (int i = 0; i < m_dimension; i++) {
-        feedback += m_fb_coefficients[i + 1] * m_previous_values[i];
-    }
-    filtered = m_ff_coefficients[0] * feedback;
-    for(int i = 0; i < m_dimension; i++) {
-        filtered += m_ff_coefficients[i + 1] * m_previous_values[i];
-    }
-    // update previous values
-    m_previous_values.push_front(feedback);
-    m_previous_values.pop_back();
+    //    double feedback, filtered;
+    //    // calcurate retval
+    //    feedback = m_fb_coefficients[0] * input;
+    //    for (int i = 0; i < m_dimension; i++) {
+    //        feedback += m_fb_coefficients[i + 1] * m_previous_values[i];
+    //    }
+    //    filtered = m_ff_coefficients[0] * feedback;
+    //    for(int i = 0; i < m_dimension; i++) {
+    //        filtered += m_ff_coefficients[i + 1] * m_previous_values[i];
+    //    }
+    //    // update previous values
+    //    m_previous_values.push_front(feedback);
+    //    m_previous_values.pop_back();
+    //    return filtered;
 
+    double feedback, feedforward, filtered;
+    // calcurate retval
+    feedback = 0;
+    for (int i = 0; i < m_dimension; i++) {
+      feedback += m_fb_coefficients[i + 1] * m_previous_values[i];
+    }
+    feedforward = m_ff_coefficients[0] * input;
+    for(int i = 0; i < m_dimension; i++) {
+      feedforward += m_ff_coefficients[i + 1] * m_previous_inputs[i];
+    }
+    filtered = feedback + feedforward;
+    // update previous values
+    m_previous_values.push_front(filtered);
+    m_previous_values.pop_back();
+    m_previous_inputs.push_front(input);
+    m_previous_inputs.pop_back();
     return filtered;
 }

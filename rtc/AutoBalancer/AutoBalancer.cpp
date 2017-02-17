@@ -1132,12 +1132,6 @@ void AutoBalancer::solveLimbIK ()
   }else{
     hsp->setCurrentInputAsOffset(hsp->hp_wld_raw);
     hsp->calibInitHumanCOMFromZMP();
-    hsp->rp_wld_initpos.getP("com").p = m_robot->calcCM();
-    hsp->rp_wld_initpos.getP("rf").p = ikp["rleg"].target_link->p;
-    hsp->rp_wld_initpos.getP("lf").p = ikp["lleg"].target_link->p;
-    hsp->rp_wld_initpos.getP("zmp").p = ref_zmp;
-    if(ikp.count("rarm"))hsp->rp_wld_initpos.getP("rh").p = ikp["rarm"].target_link->p;
-    if(ikp.count("larm"))hsp->rp_wld_initpos.getP("lh").p = ikp["larm"].target_link->p;
 
     hsp->rp_ref_out.getP("com").p_offs = m_robot->calcCM();
     hsp->rp_ref_out.getP("zmp").p_offs = ref_zmp;
@@ -1146,6 +1140,8 @@ void AutoBalancer::solveLimbIK ()
       if(ikp.count(robot_l_names[i])){
         hsp->rp_ref_out.getP(human_l_names[i]).p_offs = ikp[robot_l_names[i]].target_link->p + ikp[robot_l_names[i]].target_link->R * ikp[robot_l_names[i]].localPos;
         hsp->rp_ref_out.getP(human_l_names[i]).rpy_offs = hrp::rpyFromRot(ikp[robot_l_names[i]].target_link->R * ikp[robot_l_names[i]].localR);
+        hsp->rp_ref_out.getP(human_l_names[i]).p = hsp->rp_ref_out.getP(human_l_names[i]).p_offs;
+        hsp->rp_ref_out.getP(human_l_names[i]).rpy = hsp->rp_ref_out.getP(human_l_names[i]).rpy_offs;
       }
     }
     hsp->pre_cont_rfpos = hsp->rp_ref_out.getP("rf").p_offs;

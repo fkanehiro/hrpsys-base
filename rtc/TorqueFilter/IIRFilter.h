@@ -78,6 +78,7 @@ private:
     std::vector<double> m_fb_coefficients; // fb parameters (dim must be m_dimension + 1, m_fb_coefficients[0] would be 1.0)
     std::vector<double> m_ff_coefficients; // ff parameters (dim must be m_dimension + 1)
     std::deque<double> m_previous_values;
+    std::deque<double> m_previous_inputs;
     // double m_prev_output;
     bool m_initialized;
     std::string m_error_prefix;
