@@ -1144,6 +1144,8 @@ void AutoBalancer::solveLimbIK ()
         hsp->rp_ref_out.getP(human_l_names[i]).rpy = hsp->rp_ref_out.getP(human_l_names[i]).rpy_offs;
       }
     }
+    hsp->H_def = hsp->rp_ref_out.getP("com").p_offs(2) - (hsp->rp_ref_out.getP("rf").p_offs(2) + hsp->rp_ref_out.getP("lf").p_offs(2)) / 2;
+
     hsp->pre_cont_rfpos = hsp->rp_ref_out.getP("rf").p_offs;
     hsp->pre_cont_lfpos = hsp->rp_ref_out.getP("lf").p_offs;
     hsp->init_basepos = m_robot->rootLink()->p;

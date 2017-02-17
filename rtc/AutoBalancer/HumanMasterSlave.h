@@ -225,6 +225,8 @@ class HumanSynchronizer{
     interpolator *init_zmp_com_offset_interpolator;
     double zmp_com_offset_ip_ratio;
 
+    double H_def;
+
     HumanSynchronizer(){
       tgt_h2r_ratio = h2r_ratio = 0.96;//human 1.1m vs jaxon 1.06m
 //      tgt_h2r_ratio = h2r_ratio = 0.62;//human 1.1m vs chidori 0.69m
@@ -363,6 +365,8 @@ class HumanSynchronizer{
 
       if(DEBUG)fprintf(cz_log,"com_ans_zmp: %f %f ",rp_ref_out.getP("zmp").p(X),rp_ref_out.getP("zmp").p(Y));
       if(DEBUG)fprintf(cz_log,"\n");
+
+      if(loop%100==0)cout<<"H_def: "<<H_def<<endl;
 
       applyVelLimit                       (rp_ref_out, rp_ref_out_old, rp_ref_out);
       applyCOMZMPXYZLock                  (rp_ref_out);
@@ -588,7 +592,7 @@ class HumanSynchronizer{
 //      double accel[4] = {0.05, -0.03, 0.02, -0.02};
 //      double decel[4] = {0.04, -0.02, 0.01, -0.01};
 //      comacc_ref = calcacc_v_filters.passFilter(com_acc);
-      const double H = rp_ref_out.getP("com").p(Z);
+//      const double H = rp_ref_out.getP("com").p(Z);
       std::vector<hrp::Vector2> hull;
       hrp::Vector4 marginDelta(+0.001,-0.001,0.001,-0.001);
       createSupportRegionByFootPos(rfin_abs, lfin_abs, rf_safe_region+marginDelta, lf_safe_region+marginDelta, hull);
@@ -599,7 +603,7 @@ class HumanSynchronizer{
       com_ans(Y) = com_old(Y) + com_vel_ans_2d(Y) * DT;
       if(DEBUG){
         fprintf(cz_log,"com_ans: %f %f ",com_ans(X),com_ans(Y));
-        hrp::Vector2 cp_plot = hrp::Vector2(com_ans(X),com_ans(Y)) + com_vel_ans_2d * sqrt( H / G );
+        hrp::Vector2 cp_plot = hrp::Vector2(com_ans(X),com_ans(Y)) + com_vel_ans_2d * sqrt( H_def / G );
         fprintf(cz_log,"com_ans_cp: %f %f ",cp_plot(X),cp_plot(Y));
         for(int i=0;i<hull.size();i++)fprintf(sr_log,"hull_vert%d: %f %f\n",i,hull[i](X),hull[i](Y));
         fprintf(sr_log,"hull_vert%d: %f %f\n",(int)hull.size(),hull[0](X),hull[0](Y));//閉じる
@@ -610,21 +614,21 @@ class HumanSynchronizer{
     void regulateCOMVelocityByCapturePointVec(const hrp::Vector2& com_pos, const hrp::Vector2& com_vel, const std::vector<hrp::Vector2>& hull, hrp::Vector2& com_vel_ans){
       hrp::Vector2 com_vel_decel_ok,com_vel_accel_ok;
       com_vel_decel_ok = com_vel_accel_ok = com_vel_ans = com_vel;
-      const double H = rp_ref_out.getP("com").p(Z);
+//      const double H = rp_ref_out.getP("com").p(Z);
       //減速CP条件
-      hrp::Vector2 cp_dec = com_pos + com_vel * sqrt( H / G );
+      hrp::Vector2 cp_dec = com_pos + com_vel * sqrt( H_def / G );
       hrp::Vector2 cp_dec_ragulated;
       if(!isPointInHullOpenCV(cp_dec,hull)){
         calcCrossPointOnHull(com_pos, cp_dec, hull, cp_dec_ragulated);
 //        calcNearestPointOnHull(cp, hull, cp_ragulated);
-        com_vel_decel_ok = (cp_dec_ragulated - com_pos) / sqrt( H / G );
+        com_vel_decel_ok = (cp_dec_ragulated - com_pos) / sqrt( H_def / G );
       }
       //加速CP条件
-      hrp::Vector2 cp_acc = com_pos - com_vel * sqrt( H / G );
+      hrp::Vector2 cp_acc = com_pos - com_vel * sqrt( H_def / G );
       hrp::Vector2 cp_acc_ragulated;
       if(!isPointInHullOpenCV(cp_acc,hull)){
         calcCrossPointOnHull(com_pos, cp_acc, hull, cp_acc_ragulated);
-        com_vel_accel_ok = (-cp_acc_ragulated + com_pos) / sqrt( H / G );
+        com_vel_accel_ok = (-cp_acc_ragulated + com_pos) / sqrt( H_def / G );
       }
       if(com_vel_decel_ok.norm() < com_vel_accel_ok.norm()){
         com_vel_ans = com_vel_decel_ok;
