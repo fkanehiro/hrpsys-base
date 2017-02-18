@@ -2,6 +2,171 @@
 Changelog for package hrpsys
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+315.11.0 (2017-02-17)
+---------------------
+
+Stable RTCs
+=============
+
+* supports OpenRTM-aist 1.2.0 (`#1076 <https://github.com/fkanehiro/hrpsys-base/issues/1076>`_ from fkanehiro/openrtm_1.2.0)
+
+* add ctype and time to Hrpsys.h for QNX (`#1085 <https://github.com/fkanehiro/hrpsys-base/issues/1085>`_)
+
+  * add include time.h in lib/util/Hrpsys.h for QNX
+  * include ctype.h in lib/util/Hrpsys.h for QNX
+
+* Documentation
+
+  * idl/SequencePlayerService.idl: add suppored version in @brief (`#1092 <https://github.com/fkanehiro/hrpsys-base/issues/1092>`_)
+  * idl/SequencePlayerService.idl: Fix documentation of setJointAngleSequenceFull (fix typoes and unit systems). (`#1067 <https://github.com/fkanehiro/hrpsys-base/issues/1067>`_)
+
+* DataLogger
+
+  * rtc/DataLogger/DataLogger.cpp: add log_precision (configuration variable)  (`#1081 <https://github.com/fkanehiro/hrpsys-base/issues/1081>`_)
+
+* RobotHardware
+
+  * [rtc/RobotHardware/robot.cpp] Fix bugs in setServoGainPercentage condition (`#1074 <https://github.com/fkanehiro/hrpsys-base/issues/1074>`_)
+
+* Add beep trylock, print PDgain, print time in EC debug (`#1060 <https://github.com/fkanehiro/hrpsys-base/issues/1060>`_)
+
+  * [rtc/RobotHardware/robot.cpp] Print loaded PD gain.
+  * [ec/hrpEC/hrpEC-common.cpp] Print gettimeofday time in ENABLE_DEBUG_PRINT
+  * [rtc/Beeper/Beeper.cpp] Use mutex trylock not to block realtime thread
+
+* lib/util/PortHandler.cpp : add VisionSensorPortHandler intrinsic paramter to TimedCamera (`#1091 <https://github.com/fkanehiro/hrpsys-base/issues/1091>`_ from k-okada/add_camera_info)
+
+* [rtm.py] try to re-connecting to name server, when failed (`#1083 <https://github.com/fkanehiro/hrpsys-base/issues/1083>`_)
+* [hrpsys_config.py] Add clearJointAngles* methods. (`#1064 <https://github.com/fkanehiro/hrpsys-base/issues/1064>`_)
+* [hrpsys_config.py] set HrpsysConfigurator as object class (`#1048 <https://github.com/fkanehiro/hrpsys-base/issues/1048>`_)
+
+Unstable RTCs
+=============
+
+* fix time stamp of warning messages ( `#1089 <https://github.com/fkanehiro/hrpsys-base/issues/1089>`_)
+
+  * [Stabilizer] reduce number of print messages
+  * [AutoBalancer, CollisionDetector, EmergencyStopper, SoftErrorLimitter, Stabilizer, ReferenceForceUpdater] fix time stamp of warning messages
+* [AutoBalancer, CollisionDetector, EmergencyStopper, SoftErrorLimitter, Stabilizer] add time stamp to warning messages (`#1087 <https://github.com/fkanehiro/hrpsys-base/issues/1087>`_)
+
+* PCDLoader
+
+  * rtc/PCDLoader/PCDLoader.cpp: support XYZRGB in PCDLoader (`#1093 <https://github.com/fkanehiro/hrpsys-base/issues/1093>`_)
+
+* Stabilizer
+
+  * Fix st damping compensation bug. Enable yaw rotation. (`#1082 <https://github.com/fkanehiro/hrpsys-base/issues/1082>`_)
+
+    * [rtc/Stabilizer/Stabilizer.cpp] Fix st damping compensation bug. Enable yaw rotation.
+
+  * Update st debug messages ( `#1075 <https://github.com/fkanehiro/hrpsys-base/issues/1075>`_)
+
+    * [sample/SampleRobot/samplerobot_stabilizer.py] Add printing of actual base pos during st testing.
+    * [rtc/Stabilizer/ZMPDistributor.h, Stabilizer.cpp] Reduce lines of st debug message in setParameter (total information is same).
+
+  * Change root link height depending on limb length (`#1069 <https://github.com/fkanehiro/hrpsys-base/issues/1069>`_)
+
+    * [StabilizerService.idl, Stabilizer.*] rename variable and add function for avoiding limb stretch
+    * [Stabilizer.cpp] change root link height on world frame not root link frame
+    * [StabilizerService.idl, Stabilizer.*] add idl for changing root link height
+    * [Stabilizer.*] change root link height depending on limb length
+
+  * do not distribute moment to swing leg (`#1068 <https://github.com/fkanehiro/hrpsys-base/issues/1068>`_)
+
+    * [Stabilizer.cpp, ZMPDistributor.h] do not distribute moment to swing leg
+
+  * [AutoBalancer, Stabilizer] add warning message (`#1066 <https://github.com/fkanehiro/hrpsys-base/issues/1066>`_)
+  * Update st swing modif (`#1062 <https://github.com/fkanehiro/hrpsys-base/issues/1062>`_)
+
+    * [rtc/Stabilizer/CMakeLists.txt] Fix build dependency not to depends on Stabilizer codes.
+    * [rtc/Stabilizer/Stabilizer.cpp] Use Eigen cwise functions for swing ee modif calculation.
+    * [rtc/Stabilizer/Stabilizer.cpp,h] Move vectors for swing ee modif to stikp.
+    * [rtc/Stabilizer/Stabilizer.cpp] Enable retrieving of swing ee modif during support phase.
+    * [rtc/Stabilizer/Stabilizer.cpp,h] Separate swing foot modif function and re-organize calcEEForceMomentControl
+    * [rtc/Stabilizer/Stabilizer.cpp,h] Update swing ee modification to use current state.
+
+  * Initialize st eefm_ee_forcemoment_distribution_weight parameter. (`#1059 <https://github.com/fkanehiro/hrpsys-base/issues/1059>`_)
+
+    * [rtc/Stabilizer/Stabilizer.cpp] Initialize st eefm_ee_forcemoment_distribution_weight parameter.
+
+  * Use damping control in swing phase (`#1058 <https://github.com/fkanehiro/hrpsys-base/issues/1058>`_)
+
+    * [StabilizerService.idl, Stabilizer.*] use swing damping only when exceeding threthold
+    * [StabilizerService.idl, Stabilizer.*] use damping control in swing phase
+
+* AutoBalancer
+
+  * Add and update test for sync sh baseTform (`#1065 <https://github.com/fkanehiro/hrpsys-base/issues/1065>`_)
+
+    * [rtc/AutoBalancer/AutoBalancer.cpp] Set fix_leg_coords according to basePos and rpy from StateHolder during MODE_IDLE.
+    * [sample/SampleRobot/samplerobot_auto_balancer.py] Add and update test for sync sh baseTform
+
+  * Enable auto toeheel (`#1056 <https://github.com/fkanehiro/hrpsys-base/issues/1056>`_)
+
+    * [idl/AutoBalancerService.idl, rtc/AutoBalancer/AutoBalancer.cpp] Enable to set use_toe_heel_auto_set, toe,heel_check_thre from idl.
+    * [rtc/AutoBalancer/*GaitGenerator.*] Fix typo (double -> bool) and add flag whether use auto toe heel set or not. Update test to use use_toe_heel_auto_set flag.
+    * [rtc/AutoBalancer/GaitGenerator.h] Add toe_heel_type_checker to determin autonomusly whether toe or heel is used.
+    * [rtc/AutoBalancer/GaitGenerator.*] Separate calc swing support leg steps as functions
+    * [rtc/AutoBalancer/GaitGenerator.cpp] Use first_xx and second_xx instead of toe_xx and heel_xx. Renaming and fix transition.
+
+  * Update toeheel and st (`#1054 <https://github.com/fkanehiro/hrpsys-base/issues/1054>`_)
+
+    * [rtc/Stabilizer/testZMPDistributor.cpp, CMakeLists.txt] Update testZMPDistributor to switch distribute algorithm and add cmake test for them.
+    * [sample/SampleRobot/samplerobot_stabilizer.py] Add test for st+toe heel usage
+    * [python/hrpsys_config.py, rtc/Autobalancer, rtc/Stabilizer] Add and connect ports to send toe heel ratio between AutoBalancer and Stabilizer. Add weighting matrix update based on toe heel ratio.
+    * [rtc/AutoBalancer/testGaitGenerator.cpp, GaitGenerator.h] Add functions to obtain toe heel ratio and add test for it. Update comment in codes.
+
+  * Fix toe heel phase count of refzmp_generator (`#1053 <https://github.com/fkanehiro/hrpsys-base/issues/1053>`_)
+
+    * [rtc/AutoBalancer/CMakeLists.txt] Enable cmake test for testGaitGenerator test16
+    * [rtc/AutoBalancer/GaitGenerator.*] Fix bug of toe heel phase. Make independent toe heel phase for leg_coords_generator and refzmp_generator. Use thp instead of thp_ptr->.
+    * [rtc/AutoBalancer/testGaitGenerator.cpp] Update zmp diff check thre (10mm->20mm). Update test16. Update step time. Add default zmp offsets.
+    * [rtc/AutoBalancer/GaitGenerator.h] Use NUM_TH_PHASES directly.
+
+  * Update abc posik ggtest (`#1052 <https://github.com/fkanehiro/hrpsys-base/issues/1052>`_)
+
+    * [rtc/AutoBalancer/testGaitGenerator.cpp, CMakeLists.txt] Add test for setFootStepWithParam related functions. CMake test is disabled currently.
+    * [rtc/AutoBalancer/AutoBalancer.cpp] Update default value for pos_ik_thre according to hrp2 reset manip pose. 0.1[mm] -> 0.5 [mm].
+
+* sample
+
+  * Update SampleRobot xml project file (`#1086 <https://github.com/fkanehiro/hrpsys-base/issues/1086>`_)
+
+    * [sample/SampleRobot/samplerobot_auto_balancer.py] Omit demoStandingPosResetting because we use floor5 and we do not need to worry about falling down from the floor.
+    * [sample/SampleRobot/samplerobot_auto_balancer.py] Add print message for all autobalancer sample time.
+    * [sample/SampleRobot/README.md,SampleRobot.*.xml.in] Use floor5 instead of longfloor
+    * [sample/SampleRobot/SampleRobot*.xml.in] Update to sample's xml.in files using latest openhrp-project-generator
+
+  * [sample/SampleRobot/README.md] Add readme to generate sample's xml.in files
+  * Update st tests (`#1061 <https://github.com/fkanehiro/hrpsys-base/issues/1061>`_)
+
+    * [sample/SampleRobot/README.md] Add command documentation to generate xml
+    * [rtc/AutoBalancer/GaitGenerator.h] Add toe usage for down-stair walking.
+    * [sample/SampleRobot/samplerobot_stabilizer.py] Update st tests. Add stair test. Re-organize all tests. Use swing damping mode.
+    * [sample/SampleRobot/SampleRobot.torque.xml.in] Add box for stair walking tests.
+
+* IIRFilter.cpp
+
+  * [rtc/TorqueFilter/IIRFilter.cpp] Fix problem of resetting coefficient value in setParameter (`#1077 <https://github.com/fkanehiro/hrpsys-base/issues/1077>`_)
+  * [TorqueFilter, IIRFilter.h] add getParameter and reset method (`#1050 <https://github.com/fkanehiro/hrpsys-base/issues/1050>`_)
+
+* AccelerationFilter
+
+  * add AccelerationFilter (`#1051 <https://github.com/fkanehiro/hrpsys-base/issues/1051>`_)
+  * [AccelerationFilter] fix compile AccelerationFilterService.idl
+  * [AccelerationFilter] add AccelerationFilter to hrpsys_config.py
+  * [AccelerationFilter] add Acceleration Filter
+
+* util/SelfCollisionChecker/main.cpp
+
+  * enables to visualize motion with -olv option (`#1055 <https://github.com/fkanehiro/hrpsys-base/issues/1055>`_)
+
+* JpegDetector/JpegEncoder/RGB2Gray/VideoCapture
+
+  * Add opencv missing header and namespace for OpenCV3 (`#1049 <https://github.com/fkanehiro/hrpsys-base/issues/1049>`_)
+
+* Contributors: Fumio KANEHIRO, Isaac Saito, Kei Okada, Shunichi Nozawa, Tatsuya Ishikawa, Yohei Kakiuchi, Yuta Kojio, Iori Yanokura, Yasuhiro Ishiguro
+
 315.10.1 (2016-10-08)
 ---------------------
 
