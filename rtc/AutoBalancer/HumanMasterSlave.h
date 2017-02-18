@@ -275,10 +275,10 @@ class HumanSynchronizer{
       acc4zmp_v_filters.setParameter(1,HZ);//ZMP生成用ほぼこの値でいい
       cam_rpy_filter.setParameter(1,HZ);//カメラアングル
 
-//      rf_safe_region = hrp::Vector4(0.02, -0.01,  0.02,  0.01);
-//      lf_safe_region = hrp::Vector4(0.02, -0.01, -0.01, -0.02);
-      rf_safe_region = hrp::Vector4(0.02, -0.01,  0.03,  0.02);
-      lf_safe_region = hrp::Vector4(0.02, -0.01, -0.02, -0.03);
+            rf_safe_region = hrp::Vector4(0.02, -0.01,  0.02,  0.01);
+      lf_safe_region = hrp::Vector4(0.02, -0.01, -0.01, -0.02);
+      //      rf_safe_region = hrp::Vector4(0.02, -0.01,  0.03,  0.02);
+      //lf_safe_region = hrp::Vector4(0.02, -0.01, -0.02, -0.03);
       rf_vert.push_back(hrp::Vector3(0.13,-0.08,0));
       rf_vert.push_back(hrp::Vector3(-0.10,-0.08,0));
       rf_vert.push_back(hrp::Vector3(-0.10,0.06,0));
@@ -288,8 +288,8 @@ class HumanSynchronizer{
       lf_vert.push_back(hrp::Vector3(-0.10,0.08,0));
       lf_vert.push_back(hrp::Vector3(0.13,0.08,0));
 
-      use_rh = use_lh = false;
-//      use_rh = use_lh = true;
+            use_rh = use_lh = false;
+      //use_rh = use_lh = true;
 
       rp_ref_out_old.clear();
       rp_ref_out.clear();
@@ -340,13 +340,17 @@ class HumanSynchronizer{
       autoLRSwapCheck                     (hp_wld_raw,hp_swap_checked);
       convertRelHumanPoseToRelRobotPose   (hp_swap_checked, rp_ref_out);
       if(loop==0)rp_ref_out_old = rp_ref_out;
-
+      if(isHumanSyncOn())rp_ref_out.getP("com").p(Z) = rp_ref_out.getP("com").p_offs(Z) + 0.03;
       judgeFootLandOnCommand              (hp_wld_raw.getw("rfw"), hp_wld_raw.getw("lfw"), go_rf_landing, go_lf_landing);//fwはすでに1000->100Hzにフィルタリングされている
       lockSwingFootIfZMPOutOfSupportFoot  (rp_ref_out_old, go_rf_landing, go_lf_landing);//ここ
       applyEEWorkspaceLimit               (rp_ref_out);
       lockFootXYOnContact                 (go_rf_landing, go_lf_landing, rp_ref_out);//根本から改変すべき3
       if(go_rf_landing)rp_ref_out.getP("rf").p(Z) = rp_ref_out.getP("rf").p_offs(Z);
       if(go_lf_landing)rp_ref_out.getP("lf").p(Z) = rp_ref_out.getP("lf").p_offs(Z);
+
+      if(!go_rf_landing)rp_ref_out.getP("rf").p(Z) += 0.03;
+      if(!go_lf_landing)rp_ref_out.getP("lf").p(Z) += 0.03;
+
 
 
       if(DEBUG)fprintf(cz_log,"com_ref: %f %f ", rp_ref_out.getP("com").p(X), rp_ref_out.getP("com").p(Y));
@@ -369,7 +373,7 @@ class HumanSynchronizer{
       if(loop%100==0)cout<<"H_def: "<<H_def<<endl;
 
       applyVelLimit                       (rp_ref_out, rp_ref_out_old, rp_ref_out);
-      applyCOMZMPXYZLock                  (rp_ref_out);
+      //      applyCOMZMPXYZLock                  (rp_ref_out);
       overwriteFootZFromFootLandOnCommand (go_rf_landing, go_lf_landing, rp_ref_out);
       modifyFootRotAndXYForContact        (rp_ref_out.getP("rf"), rp_ref_out.getP("lf"));
       com_vel_old = (rp_ref_out.getP("com").p - rp_ref_out_old.getP("com").p)/DT;
@@ -486,7 +490,7 @@ class HumanSynchronizer{
       LIMIT_MINMAX( penalty, 1.0, 2.0);
       LIMIT_MIN( f_in_out.p(Z), f_in_out.p_offs(Z));
       double input_vel = (f_in_out.p(Z) - f_old_in.p(Z)) / DT;
-      const double vel_limit_k = 8.0 * penalty;//地面から0.02[m]地点で0.02*8=0.16[m/s]出ている計算
+      const double vel_limit_k = 2.0 * penalty;//地面から0.02[m]地点で0.02*8=0.16[m/s]出ている計算
       double limit_vel = - vel_limit_k * (f_old_in.p(Z) - f_old_in.p_offs(Z));//sinの時は平均0.05~0.10[m/s]
       const double max_vel_threshold = -0.01;
       LIMIT_MAX( limit_vel, max_vel_threshold);//速度0に近づくと目標になかなか到達しないから
@@ -563,8 +567,8 @@ class HumanSynchronizer{
         LIMIT_MINMAX( tgt.getP("rh").p(i), (current_basepos+base2rh+hand_llimit)(i), (current_basepos+base2rh+hand_ulimit)(i) );
         LIMIT_MINMAX( tgt.getP("lh").p(i), (current_basepos+base2lh+hand_llimit)(i), (current_basepos+base2lh+hand_ulimit)(i) );
       }
-      LIMIT_MINMAX( tgt.getP("rf").p(Z), tgt.getP("rf").p_offs(Z), tgt.getP("rf").p_offs(Z)+0.10);
-      LIMIT_MINMAX( tgt.getP("lf").p(Z), tgt.getP("lf").p_offs(Z), tgt.getP("lf").p_offs(Z)+0.10);
+      LIMIT_MINMAX( tgt.getP("rf").p(Z), tgt.getP("rf").p_offs(Z), tgt.getP("rf").p_offs(Z)+0.05);
+      LIMIT_MINMAX( tgt.getP("lf").p(Z), tgt.getP("lf").p_offs(Z), tgt.getP("lf").p_offs(Z)+0.05);
 
       std::string ns[5] = {"com","rf","lf","rh","lh"};
       for(int i=0;i<XYZ;i++){ LIMIT_MINMAX( tgt.getP("com").rpy(i), rc.ee_rot_limit["com"][MIN](i), rc.ee_rot_limit["com"][MAX](i) ); }
@@ -626,10 +630,10 @@ class HumanSynchronizer{
       //加速CP条件
       hrp::Vector2 cp_acc = com_pos - com_vel * sqrt( H_def / G );
       hrp::Vector2 cp_acc_ragulated;
-      if(!isPointInHullOpenCV(cp_acc,hull)){
-        calcCrossPointOnHull(com_pos, cp_acc, hull, cp_acc_ragulated);
-        com_vel_accel_ok = (-cp_acc_ragulated + com_pos) / sqrt( H_def / G );
-      }
+      //if(!isPointInHullOpenCV(cp_acc,hull)){
+      //       calcCrossPointOnHull(com_pos, cp_acc, hull, cp_acc_ragulated);
+      //        com_vel_accel_ok = (-cp_acc_ragulated + com_pos ) / sqrt( H_def / G );
+      //      }
       if(com_vel_decel_ok.norm() < com_vel_accel_ok.norm()){
         com_vel_ans = com_vel_decel_ok;
       }else{
