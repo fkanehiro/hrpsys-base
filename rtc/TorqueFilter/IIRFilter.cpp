@@ -1,4 +1,5 @@
 #include "IIRFilter.h"
+#include <numeric>
 
 IIRFilter::IIRFilter(unsigned int dim, std::vector<double>& fb_coeffs, std::vector<double>& ff_coeffs, const std::string& error_prefix)
 {
@@ -83,7 +84,9 @@ void IIRFilter::getParameter(int &dim, std::vector<double>& A, std::vector<doubl
 
 void IIRFilter::reset(double initial_input)
 {
-    m_previous_values.assign(m_dimension, initial_input);
+    double sum_ff_coeffs = std::accumulate(m_ff_coefficients.begin(), m_ff_coefficients.end(), 0.0);
+    double reset_val = initial_input / sum_ff_coeffs;
+    m_previous_values.assign(m_dimension, reset_val);
 }
 
 double IIRFilter::passFilter(double input)
