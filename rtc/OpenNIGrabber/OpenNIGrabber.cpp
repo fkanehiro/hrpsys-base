@@ -42,6 +42,7 @@ OpenNIGrabber::OpenNIGrabber(RTC::Manager* manager)
     m_imageOut("image", m_image),
     // </rtc-template>
     m_interface(NULL),
+    m_requestToWrite(false),
     dummy(0)
 {
 }
@@ -86,6 +87,8 @@ RTC::ReturnCode_t OpenNIGrabber::onInitialize()
 
 void OpenNIGrabber::grabberCallbackDepthAndColor(const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &cloud)
 {
+    if (!m_requestToWrite) return;
+
     setTimestamp(m_cloud);
     setTimestamp(m_image);
 
@@ -115,10 +118,13 @@ void OpenNIGrabber::grabberCallbackDepthAndColor(const pcl::PointCloud<pcl::Poin
     }
     m_cloudOut.write();
     m_imageOut.write();
+    m_requestToWrite = false;
 }
 
 void OpenNIGrabber::grabberCallbackDepth(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr &cloud)
 {
+    if (!m_requestToWrite) return;
+
     setTimestamp(m_cloud);
     m_cloud.width = cloud->width;
     m_cloud.height = cloud->height;
@@ -133,6 +139,7 @@ void OpenNIGrabber::grabberCallbackDepth(const pcl::PointCloud<pcl::PointXYZ>::C
         dst_cloud += 4;
     }
     m_cloudOut.write();
+    m_requestToWrite = false;
 }
 
 /*
@@ -259,6 +266,8 @@ RTC::ReturnCode_t OpenNIGrabber::onExecute(RTC::UniqueId ec_id)
                       << "] grabber is not running" << std::endl;
         }
     }
+    m_requestToWrite = true;
+
     return RTC::RTC_OK;
 }
 
