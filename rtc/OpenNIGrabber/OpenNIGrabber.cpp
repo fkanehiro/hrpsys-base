@@ -105,10 +105,10 @@ void OpenNIGrabber::grabberCallbackDepthAndColor(const pcl::PointCloud<pcl::Poin
     float *dst_cloud = (float *)m_cloud.data.get_buffer();
     unsigned char *dst_image = (unsigned char*)m_image.data.image.raw_data.get_buffer();
     for (unsigned int i=0; i<cloud->points.size(); i++){
-        dst_cloud[0] = cloud->points[i].x;
-        dst_cloud[1] = cloud->points[i].y;
-        dst_cloud[2] = cloud->points[i].z;
-        dst_cloud[3] = cloud->points[i].rgb;
+        dst_cloud[0] =  cloud->points[i].x;
+        dst_cloud[1] = -cloud->points[i].y;
+        dst_cloud[2] = -cloud->points[i].z;
+        dst_cloud[3] =  cloud->points[i].rgb;
         dst_cloud += 4;
 
         dst_image[0] = cloud->points[i].r;
@@ -133,9 +133,9 @@ void OpenNIGrabber::grabberCallbackDepth(const pcl::PointCloud<pcl::PointXYZ>::C
 
     float *dst_cloud = (float *)m_cloud.data.get_buffer();
     for (unsigned int i=0; i<cloud->points.size(); i++){
-        dst_cloud[0] = cloud->points[i].x;
-        dst_cloud[1] = cloud->points[i].y;
-        dst_cloud[2] = cloud->points[i].z;
+        dst_cloud[0] =  cloud->points[i].x;
+        dst_cloud[1] = -cloud->points[i].y;
+        dst_cloud[2] = -cloud->points[i].z;
         dst_cloud += 4;
     }
     m_cloudOut.write();
