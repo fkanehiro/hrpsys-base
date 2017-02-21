@@ -86,6 +86,9 @@ RTC::ReturnCode_t OpenNIGrabber::onInitialize()
 
 void OpenNIGrabber::grabberCallbackDepthAndColor(const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &cloud)
 {
+    setTimestamp(m_cloud);
+    setTimestamp(m_image);
+
     m_cloud.width = cloud->width;
     m_cloud.height = cloud->height;
     m_cloud.row_step = m_cloud.point_step*m_cloud.width;
@@ -116,6 +119,7 @@ void OpenNIGrabber::grabberCallbackDepthAndColor(const pcl::PointCloud<pcl::Poin
 
 void OpenNIGrabber::grabberCallbackDepth(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr &cloud)
 {
+    setTimestamp(m_cloud);
     m_cloud.width = cloud->width;
     m_cloud.height = cloud->height;
     m_cloud.row_step = m_cloud.point_step*m_cloud.width;
