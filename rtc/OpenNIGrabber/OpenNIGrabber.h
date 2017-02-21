@@ -142,6 +142,7 @@ class OpenNIGrabber
   pcl::Grabber *m_interface;
   int m_debugLevel;
   std::string m_mode;
+  bool m_requestToWrite;
   int dummy;
 };
 
