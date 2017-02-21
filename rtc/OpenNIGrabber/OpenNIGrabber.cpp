@@ -176,7 +176,7 @@ RTC::ReturnCode_t OpenNIGrabber::onActivated(RTC::UniqueId ec_id)
           m_cloud.fields[2].count = 4;
           m_cloud.is_bigendian = false;
           m_cloud.point_step = 16;
-          m_cloud.is_dense = false;
+          m_cloud.is_dense = true;
           boost::function<void (const pcl::PointCloud<pcl::PointXYZ>::ConstPtr&)> f = boost::bind(&OpenNIGrabber::grabberCallbackDepth, this, _1);
           m_interface->registerCallback(f);
       }else if(m_mode == "depth_and_color"){
@@ -208,7 +208,7 @@ RTC::ReturnCode_t OpenNIGrabber::onActivated(RTC::UniqueId ec_id)
           m_cloud.fields[5].count = 1;
           m_cloud.is_bigendian = false;
           m_cloud.point_step = 16;
-          m_cloud.is_dense = false;
+          m_cloud.is_dense = true;
           boost::function<void (const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr&)> f = boost::bind(&OpenNIGrabber::grabberCallbackDepthAndColor, this, _1);
           m_interface->registerCallback(f);
       }else{
