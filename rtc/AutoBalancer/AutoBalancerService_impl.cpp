@@ -115,28 +115,25 @@ void AutoBalancerService_impl::autobalancer(AutoBalancer *i_autobalancer)
   m_autobalancer = i_autobalancer;
 }
 
-CORBA::Boolean AutoBalancerService_impl::startHumanSyncAfter5sec()
+CORBA::Boolean AutoBalancerService_impl::startCountDownForWholeBodyMasterSlave(CORBA::Double sec)
 {
-    return m_autobalancer->startHumanSyncAfter5sec();
-};
-
-CORBA::Boolean AutoBalancerService_impl::setHumanToRobotRatio(const CORBA::Double h2r)
-{
-    return m_autobalancer->setHumanToRobotRatio(h2r);
-};
-
-CORBA::Boolean AutoBalancerService_impl::setFootUpTime(const CORBA::Double fupt)
-{
-    return m_autobalancer->setFootUpTime(fupt);
-};
-
-CORBA::Boolean AutoBalancerService_impl::setAllowedXYZSync(const CORBA::Boolean x_on,const CORBA::Boolean y_on,const CORBA::Boolean z_on)
-{
-    return m_autobalancer->setAllowedXYZSync(x_on,y_on,z_on);
+    return m_autobalancer->startCountDownForWholeBodyMasterSlave(sec);
 };
 
 CORBA::Boolean AutoBalancerService_impl::stopHumanSync()
 {
     return m_autobalancer->stopHumanSync();
+};
+
+void AutoBalancerService_impl::setWholeBodyMasterSlaveParam(const OpenHRP::AutoBalancerService::WholeBodyMasterSlaveParam& i_param)
+{
+  m_autobalancer->setWholeBodyMasterSlaveParam(i_param);
+};
+
+void AutoBalancerService_impl::getWholeBodyMasterSlaveParam(OpenHRP::AutoBalancerService::WholeBodyMasterSlaveParam_out i_param)
+{
+//  i_param = new OpenHRP::WholeBodyMasterSlaveParam::AutoBalancerParam();
+//  return  m_autobalancer->getWholeBodyMasterSlaveParam(*i_param);
+  m_autobalancer->getWholeBodyMasterSlaveParam(i_param);
 };
 

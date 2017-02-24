@@ -510,9 +510,8 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
     if (m_htlhIn.isNew()) { m_htlhIn.read();  HumanSynchronizer::Pose3DToHRPPose3D(m_htlh.data,hsp->hp_wld_raw.getP("lh"));}
     if (m_htheadIn.isNew()){ m_htheadIn.read(); HumanSynchronizer::Pose3DToHRPPose3D(m_hthead.data,hsp->head_cam_pose);}
     if (m_actzmpIn.isNew()){m_actzmpIn.read(); }
-    hsp->current_basepos = m_robot->rootLink()->p;
-    if(ikp.count("rarm") && !hsp->use_rh)ikp["rarm"].is_active = false;
-    if(ikp.count("larm") && !hsp->use_lh)ikp["larm"].is_active = false;
+    hsp->baselinkpose.p = m_robot->rootLink()->p;
+    hsp->baselinkpose.rpy = hrp::rpyFromRot(m_robot->rootLink()->R);
     m_contactStates.data[contact_states_index_map["rleg"]] = hsp->is_rf_contact;
     m_contactStates.data[contact_states_index_map["lleg"]] = hsp->is_lf_contact;
 
@@ -1132,7 +1131,6 @@ void AutoBalancer::solveLimbIK ()
   }else{
     hsp->setCurrentInputAsOffset(hsp->hp_wld_raw);
     hsp->calibInitHumanCOMFromZMP();
-
     hsp->rp_ref_out.getP("com").p_offs = m_robot->calcCM();
     hsp->rp_ref_out.getP("zmp").p_offs = ref_zmp;
     const std::string robot_l_names[4] = {"rleg","lleg","rarm","larm"}, human_l_names[4] = {"rf","lf","rh","lh"};
@@ -1144,12 +1142,14 @@ void AutoBalancer::solveLimbIK ()
         hsp->rp_ref_out.getP(human_l_names[i]).rpy = hsp->rp_ref_out.getP(human_l_names[i]).rpy_offs;
       }
     }
-    hsp->H_def = hsp->rp_ref_out.getP("com").p_offs(2) - (hsp->rp_ref_out.getP("rf").p_offs(2) + hsp->rp_ref_out.getP("lf").p_offs(2)) / 2;
-
     hsp->pre_cont_rfpos = hsp->rp_ref_out.getP("rf").p_offs;
     hsp->pre_cont_lfpos = hsp->rp_ref_out.getP("lf").p_offs;
-    hsp->init_basepos = m_robot->rootLink()->p;
+    hsp->baselinkpose.p_offs = m_robot->rootLink()->p;
+    hsp->baselinkpose.rpy_offs = hrp::rpyFromRot(m_robot->rootLink()->R);
   }
+  hrp::Vector3 rsole_pos = ikp["rleg"].target_link->p+ ikp["rleg"].target_link->R * ikp["rleg"].localPos;
+  hrp::Vector3 lsole_pos = ikp["lleg"].target_link->p+ ikp["lleg"].target_link->R * ikp["lleg"].localPos;
+  hsp->H_cur = m_robot->calcCM()(2) - std::min((double)rsole_pos(2), (double)lsole_pos(2));
   hsp->update();//////HumanSynchronizerの主要処理
   if(loop%100==0)hsp->rp_ref_out.print();
 //  if(loop%100==0)cout<<"time[ms]:"<<hsp->getUpdateTime()*1000<<endl;
@@ -1299,43 +1299,44 @@ void AutoBalancer::solveLimbIK ()
   }
 */
 
-bool AutoBalancer::startHumanSyncAfter5sec()
+bool AutoBalancer::startCountDownForWholeBodyMasterSlave(const double sec)
 {
-  std::cerr << "[" << m_profile.instance_name << "] start HumanSync after 5 sec" << std::endl;
-  hsp->startCountdownForHumanSync = true;
-  return true;
-}
-
-bool AutoBalancer::setHumanToRobotRatio(const double h2r)
-{
-  std::cerr << "[" << m_profile.instance_name << "] set target h2r_ratio as "<< h2r << std::endl;
-  hsp->setTargetHumanToRobotRatio(h2r);
-  return true;
-}
-
-bool AutoBalancer::setFootUpTime(const double fupt)
-{
-  std::cerr << "[" << m_profile.instance_name << "] set Foot Up Time as"<< fupt <<" [s]"<< std::endl;
-  if(fupt > 0.05 && fupt < 5){ hsp->tgt_FUP_TIME = fupt; return true; }else{ return false; }//おかしな値は弾く
-}
-
-bool AutoBalancer::setAllowedXYZSync(const bool x_on,const bool y_on,const bool z_on)
-{
-  if(!hsp->isHumanSyncOn()){
-    std::cerr << "[" << m_profile.instance_name << "] set allowed XYZ move direction as ("<<x_on<<","<<y_on<<","<<z_on<<")" << std::endl;
-    hsp->use_x = x_on;    hsp->use_y = y_on;    hsp->use_z = z_on;
+  if(sec >= 0.0 && sec <= 30.0){
+    std::cerr << "[" << m_profile.instance_name << "] start Synchronization after "<<sec<<" [s]" << std::endl;
+    hsp->countdown_sec = sec;
+    hsp->startCountdownForHumanSync = true;
     return true;
   }else{
-    std::cerr << "[" << m_profile.instance_name << "] allowed XYZ move direction cannot be changed in runtime "<< std::endl;
+    std::cerr << "[" << m_profile.instance_name << "] Count Down Time must be 0 < T < 30 [s]"<< std::endl;
     return false;
   }
 }
-
 
 bool AutoBalancer::stopHumanSync()
 {
 	std::cerr << "[" << m_profile.instance_name << "] stop HumanSync Now" << std::endl;
 	return true;
+}
+
+bool AutoBalancer::setWholeBodyMasterSlaveParam(const OpenHRP::AutoBalancerService::WholeBodyMasterSlaveParam& i_param){
+  std::cerr << "[" << m_profile.instance_name << "] setWholeBodyMasterSlaveParam" << std::endl;
+  hsp->WBMSparam.use_rh = hsp->WBMSparam.use_lh = i_param.use_hands;
+  hsp->WBMSparam.use_head = i_param.use_head;
+  hsp->WBMSparam.set_com_height_fix = i_param.set_com_height_fix;
+  hsp->WBMSparam.set_com_height_fix_val = i_param.set_com_height_fix_val;
+  hsp->WBMSparam.foot_vertical_vel_limit_coeff = i_param.foot_vertical_vel_limit_coeff;
+  hsp->WBMSparam.human_com_height = i_param.human_com_height;
+  return true;
+}
+bool AutoBalancer::getWholeBodyMasterSlaveParam(OpenHRP::AutoBalancerService::WholeBodyMasterSlaveParam& i_param){
+  std::cerr << "[" << m_profile.instance_name << "] getWholeBodyMasterSlaveParam" << std::endl;
+  i_param.set_com_height_fix = hsp->WBMSparam.set_com_height_fix;
+  i_param.set_com_height_fix_val = hsp->WBMSparam.set_com_height_fix_val;
+  i_param.foot_vertical_vel_limit_coeff = hsp->WBMSparam.foot_vertical_vel_limit_coeff;
+  i_param.human_com_height = hsp->WBMSparam.human_com_height;
+  i_param.use_hands = (hsp->WBMSparam.use_rh || hsp->WBMSparam.use_lh);
+  i_param.use_head = hsp->WBMSparam.use_head;
+  return true;
 }
 
 void AutoBalancer::startABCparam(const OpenHRP::AutoBalancerService::StrSequence& limbs)

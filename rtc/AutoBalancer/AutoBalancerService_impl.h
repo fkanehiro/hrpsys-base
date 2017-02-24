@@ -34,11 +34,10 @@ public:
   CORBA::Boolean getRemainingFootstepSequence(OpenHRP::AutoBalancerService::FootstepSequence_out o_footstep , CORBA::Long& o_current_fs_idx);
   CORBA::Boolean getGoPosFootstepsSequence(CORBA::Double x, CORBA::Double y, CORBA::Double th, OpenHRP::AutoBalancerService::FootstepsSequence_out o_footstep);
   CORBA::Boolean releaseEmergencyStop();
-  CORBA::Boolean startHumanSyncAfter5sec();
-  CORBA::Boolean setHumanToRobotRatio(const CORBA::Double h2r);
-  CORBA::Boolean setFootUpTime(const CORBA::Double fupt);
-  CORBA::Boolean setAllowedXYZSync(const CORBA::Boolean x_on,const CORBA::Boolean y_on,const CORBA::Boolean z_on);
+  CORBA::Boolean startCountDownForWholeBodyMasterSlave(const CORBA::Double sec);
   CORBA::Boolean stopHumanSync();
+  void setWholeBodyMasterSlaveParam(const OpenHRP::AutoBalancerService::WholeBodyMasterSlaveParam& i_param);
+  void getWholeBodyMasterSlaveParam(OpenHRP::AutoBalancerService::WholeBodyMasterSlaveParam_out i_param);
   //
   //
   void autobalancer(AutoBalancer *i_autobalancer);

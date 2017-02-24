@@ -111,11 +111,10 @@ class AutoBalancer
   bool getRemainingFootstepSequence(OpenHRP::AutoBalancerService::FootstepSequence_out o_footstep, CORBA::Long& o_current_fs_idx);
   bool getGoPosFootstepsSequence(const double& x, const double& y, const double& th, OpenHRP::AutoBalancerService::FootstepsSequence_out o_footstep);
   bool releaseEmergencyStop();
-  bool startHumanSyncAfter5sec();
-  bool setHumanToRobotRatio(const double h2r);
-  bool setFootUpTime(const double fupt);
-  bool setAllowedXYZSync(const bool x_on,const bool y_on,const bool z_on);
+  bool startCountDownForWholeBodyMasterSlave(const double sec);
   bool stopHumanSync();
+  bool setWholeBodyMasterSlaveParam(const OpenHRP::AutoBalancerService::WholeBodyMasterSlaveParam& i_param);
+  bool getWholeBodyMasterSlaveParam(OpenHRP::AutoBalancerService::WholeBodyMasterSlaveParam& i_param);
 
  protected:
   // Configuration variable declaration
