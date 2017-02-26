@@ -656,6 +656,7 @@ void ImpedanceController::calcObjectTurnaroundDetectorState()
         m_robot->joint(i)->q = m_qCurrent.data[i];
     }
     updateRootLinkPosRot(m_rpy);
+    m_robot->calcForwardKinematics();
     // Calc
     std::vector<hrp::Vector3> otd_fmv, otd_hposv;
     hrp::Vector3 fmpos;
@@ -687,6 +688,7 @@ void ImpedanceController::calcObjectTurnaroundDetectorState()
         m_robot->joint(i)->q = org_q[i];
     }
     m_robot->rootLink()->R = orgR;
+    m_robot->calcForwardKinematics();
 };
 
 //
