@@ -123,6 +123,7 @@ class Stabilizer
   void getParameter(OpenHRP::StabilizerService::stParam& i_stp);
   void setParameter(const OpenHRP::StabilizerService::stParam& i_stp);
   void setBoolSequenceParam (std::vector<bool>& st_bool_values, const OpenHRP::StabilizerService::BoolSequence& output_bool_values, const std::string& prop_name);
+  void setBoolSequenceParamWithCheckContact (std::vector<bool>& st_bool_values, const OpenHRP::StabilizerService::BoolSequence& output_bool_values, const std::string& prop_name);
   std::string getStabilizerAlgorithmString (OpenHRP::StabilizerService::STAlgorithm _st_algorithm);
   void waitSTTransition();
   // funcitons for calc final torque output
