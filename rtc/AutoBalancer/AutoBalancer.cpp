@@ -605,6 +605,10 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
 
     for (unsigned int i=0; i<m_limbCOPOffsetOut.size(); i++){
         m_limbCOPOffset[i].tm = m_qRef.tm;
+        // transition (TODO:set stopABCmode value instead of 0)
+        m_limbCOPOffset[i].data.x = transition_interpolator_ratio * m_limbCOPOffset[i].data.x;// + (1-transition_interpolator_ratio) * 0;
+        m_limbCOPOffset[i].data.y = transition_interpolator_ratio * m_limbCOPOffset[i].data.y;// + (1-transition_interpolator_ratio) * 0;
+        m_limbCOPOffset[i].data.z = transition_interpolator_ratio * m_limbCOPOffset[i].data.z;// + (1-transition_interpolator_ratio) * 0;
         m_limbCOPOffsetOut[i]->write();
     }
 
@@ -631,7 +635,6 @@ void AutoBalancer::getTargetParameters()
   m_robot->rootLink()->p = input_basePos;
   m_robot->rootLink()->R = input_baseRot;
   m_robot->calcForwardKinematics();
-  //
   if (control_mode != MODE_IDLE) {
     coordinates tmp_fix_coords;
     if (!zmp_offset_interpolator->isEmpty()) {
@@ -934,6 +937,12 @@ void AutoBalancer::getTargetParameters()
           }
       }
       multi_mid_coords(fix_leg_coords, tmp_end_coords_list);
+      // limbCOPOffset
+      for (unsigned int i=0; i<m_limbCOPOffsetOut.size(); i++){
+          m_limbCOPOffset[i].data.x = 0;
+          m_limbCOPOffset[i].data.y = 0;
+          m_limbCOPOffset[i].data.z = 0;
+      }
   }
 };
 
