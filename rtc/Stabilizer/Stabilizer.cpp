@@ -2054,7 +2054,7 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
       stikp[i].limb_length_margin = i_stp.limb_length_margin[i];
   }
   setBoolSequenceParam(is_ik_enable, i_stp.is_ik_enable, std::string("is_ik_enable"));
-  setBoolSequenceParam(is_feedback_control_enable, i_stp.is_feedback_control_enable, std::string("is_feedback_control_enable"));
+  setBoolSequenceParamWithCheckContact(is_feedback_control_enable, i_stp.is_feedback_control_enable, std::string("is_feedback_control_enable"));
   setBoolSequenceParam(is_zmp_calc_enable, i_stp.is_zmp_calc_enable, std::string("is_zmp_calc_enable"));
   emergency_check_mode = i_stp.emergency_check_mode;
 
@@ -2245,9 +2245,12 @@ std::string Stabilizer::getStabilizerAlgorithmString (OpenHRP::StabilizerService
 
 void Stabilizer::setBoolSequenceParam (std::vector<bool>& st_bool_values, const OpenHRP::StabilizerService::BoolSequence& output_bool_values, const std::string& prop_name)
 {
+  std::vector<bool> prev_values;
+  prev_values.resize(st_bool_values.size());
+  copy (st_bool_values.begin(), st_bool_values.end(), prev_values.begin());
   if (st_bool_values.size() != output_bool_values.length()) {
       std::cerr << "[" << m_profile.instance_name << "]   " << prop_name << " cannot be set. Length " << st_bool_values.size() << " != " << output_bool_values.length() << std::endl;
-  } else if (control_mode != MODE_IDLE) {
+  } else if ( (control_mode != MODE_IDLE) ) {
       std::cerr << "[" << m_profile.instance_name << "]   " << prop_name << " cannot be set. Current control_mode is " << control_mode << std::endl;
   } else {
       for (size_t i = 0; i < st_bool_values.size(); i++) {
@@ -2258,7 +2261,60 @@ void Stabilizer::setBoolSequenceParam (std::vector<bool>& st_bool_values, const 
   for (size_t i = 0; i < st_bool_values.size(); i++) {
       std::cerr <<"[" << st_bool_values[i] << "]";
   }
-  std::cerr << std::endl;
+  std::cerr << "(set = ";
+  for (size_t i = 0; i < output_bool_values.length(); i++) {
+      std::cerr <<"[" << output_bool_values[i] << "]";
+  }
+  std::cerr << ", prev = ";
+  for (size_t i = 0; i < prev_values.size(); i++) {
+      std::cerr <<"[" << prev_values[i] << "]";
+  }
+  std::cerr << ")" << std::endl;
+};
+
+void Stabilizer::setBoolSequenceParamWithCheckContact (std::vector<bool>& st_bool_values, const OpenHRP::StabilizerService::BoolSequence& output_bool_values, const std::string& prop_name)
+{
+  std::vector<bool> prev_values;
+  prev_values.resize(st_bool_values.size());
+  copy (st_bool_values.begin(), st_bool_values.end(), prev_values.begin());
+  if (st_bool_values.size() != output_bool_values.length()) {
+      std::cerr << "[" << m_profile.instance_name << "]   " << prop_name << " cannot be set. Length " << st_bool_values.size() << " != " << output_bool_values.length() << std::endl;
+  } else if ( control_mode == MODE_IDLE ) {
+    for (size_t i = 0; i < st_bool_values.size(); i++) {
+      st_bool_values[i] = output_bool_values[i];
+    }
+  } else {
+    std::vector<size_t> failed_indices;
+    for (size_t i = 0; i < st_bool_values.size(); i++) {
+      if ( (st_bool_values[i] != output_bool_values[i]) ) { // If mode change
+        if (!contact_states[i] ) { // reference contact_states should be OFF
+          st_bool_values[i] = output_bool_values[i];
+        } else {
+          failed_indices.push_back(i);
+        }
+      }
+    }
+    if (failed_indices.size() > 0) {
+      std::cerr << "[" << m_profile.instance_name << "]   " << prop_name << " cannot be set partially. failed_indices is [";
+      for (size_t i = 0; i < failed_indices.size(); i++) {
+        std::cerr << failed_indices[i] << " ";
+      }
+      std::cerr << "]" << std::endl;
+    }
+  }
+  std::cerr << "[" << m_profile.instance_name << "]   " << prop_name << " is ";
+  for (size_t i = 0; i < st_bool_values.size(); i++) {
+      std::cerr <<"[" << st_bool_values[i] << "]";
+  }
+  std::cerr << "(set = ";
+  for (size_t i = 0; i < output_bool_values.length(); i++) {
+      std::cerr <<"[" << output_bool_values[i] << "]";
+  }
+  std::cerr << ", prev = ";
+  for (size_t i = 0; i < prev_values.size(); i++) {
+      std::cerr <<"[" << prev_values[i] << "]";
+  }
+  std::cerr << ")" << std::endl;
 };
 
 void Stabilizer::waitSTTransition()

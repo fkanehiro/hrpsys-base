@@ -50,6 +50,7 @@ ImpedanceController::ImpedanceController(RTC::Manager* manager)
       m_baseRpyIn("baseRpyIn", m_baseRpy),
       m_rpyIn("rpy", m_rpy),
       m_qOut("q", m_q),
+      m_otdDataOut("otdData", m_otdData),
       m_ImpedanceControllerServicePort("ImpedanceControllerService"),
       // </rtc-template>
       m_robot(hrp::BodyPtr()),
@@ -81,6 +82,7 @@ RTC::ReturnCode_t ImpedanceController::onInitialize()
 
     // Set OutPort buffer
     addOutPort("q", m_qOut);
+    addOutPort("otdData", m_otdDataOut);
   
     // Set service provider to Ports
     m_ImpedanceControllerServicePort.registerProvider("service0", "ImpedanceControllerService", m_service0);
@@ -266,6 +268,7 @@ RTC::ReturnCode_t ImpedanceController::onInitialize()
     m_q.data.length(dof);
     qrefv.resize(dof);
     loop = 0;
+    m_otdData.data.length(4); // mode, raw, filtered, dfiltered
 
     return RTC::RTC_OK;
 }
@@ -340,6 +343,7 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
     if (m_qRefIn.isNew()) {
         m_qRefIn.read();
         m_q.tm = m_qRef.tm;
+        m_otdData.tm = m_qRef.tm;
     }
     if ( m_qRef.data.length() ==  m_robot->numJoints() &&
          m_qCurrent.data.length() ==  m_robot->numJoints() ) {
@@ -364,6 +368,12 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
             m_robot->joint(i)->q = m_qRef.data[i];
           }
           m_qOut.write();
+          if (ee_map.find("rleg") != ee_map.end() && ee_map.find("lleg") != ee_map.end()) { // if legged robot, output default value
+            m_otdData.data[0] = static_cast<double>(ObjectTurnaroundDetector::MODE_MAX_TIME);
+            m_otdData.data[1] = 0;
+            m_otdData.data[2] = 0;
+            m_otdDataOut.write();
+          }
           return RTC_OK;
         }
 
@@ -521,8 +531,10 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
             }
         }
 
-        if (ee_map.find("rleg") != ee_map.end() && ee_map.find("lleg") != ee_map.end()) // if legged robot
+        if (ee_map.find("rleg") != ee_map.end() && ee_map.find("lleg") != ee_map.end()) {// if legged robot
             calcObjectTurnaroundDetectorState();
+            m_otdDataOut.write();
+        }
     } else {
         if ( DEBUGP || loop % 100 == 0 ) {
             std::cerr << "ImpedanceController is not working..." << std::endl;
@@ -656,6 +668,7 @@ void ImpedanceController::calcObjectTurnaroundDetectorState()
         m_robot->joint(i)->q = m_qCurrent.data[i];
     }
     updateRootLinkPosRot(m_rpy);
+    m_robot->calcForwardKinematics();
     // Calc
     std::vector<hrp::Vector3> otd_fmv, otd_hposv;
     hrp::Vector3 fmpos;
@@ -682,11 +695,17 @@ void ImpedanceController::calcObjectTurnaroundDetectorState()
         }
     }
     otd->checkDetection(otd_fmv, otd_hposv);
+    // otdData
+    m_otdData.data[0] = static_cast<double>(otd->getMode());
+    m_otdData.data[1] = otd->getRawWrench();
+    m_otdData.data[2] = otd->getFilteredWrench();
+    m_otdData.data[3] = otd->getFilteredDwrench();
     // Revert to org state
     for ( unsigned int i = 0; i < m_robot->numJoints(); i++ ) {
         m_robot->joint(i)->q = org_q[i];
     }
     m_robot->rootLink()->R = orgR;
+    m_robot->calcForwardKinematics();
 };
 
 //

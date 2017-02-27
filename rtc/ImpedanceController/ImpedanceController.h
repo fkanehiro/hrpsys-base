@@ -134,6 +134,8 @@ class ImpedanceController
   // <rtc-template block="outport_declare">
   TimedDoubleSeq m_q;
   OutPort<TimedDoubleSeq> m_qOut;
+  TimedDoubleSeq m_otdData;
+  OutPort<TimedDoubleSeq> m_otdDataOut;
   
   // </rtc-template>
 
