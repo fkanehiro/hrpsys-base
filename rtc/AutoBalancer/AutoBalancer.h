@@ -161,6 +161,43 @@ class AutoBalancer
   InPort<TimedDoubleSeq> m_htrfwIn;
   TimedDoubleSeq m_htlfw;
   InPort<TimedDoubleSeq> m_htlfwIn;
+  //ishiguro dbg
+  TimedPose3D m_htcom_dbg;
+  OutPort<TimedPose3D> m_htcom_dbgOut;
+  TimedPose3D m_htrf_dbg;
+  OutPort<TimedPose3D> m_htrf_dbgOut;
+  TimedPose3D m_htlf_dbg;
+  OutPort<TimedPose3D> m_htlf_dbgOut;
+  TimedPose3D m_htrh_dbg;
+  OutPort<TimedPose3D> m_htrh_dbgOut;
+  TimedPose3D m_htlh_dbg;
+  OutPort<TimedPose3D> m_htlh_dbgOut;
+  TimedPose3D m_hthead_dbg;
+  OutPort<TimedPose3D> m_hthead_dbgOut;
+  TimedPoint3D m_htzmp_dbg;
+  OutPort<TimedPoint3D> m_htzmp_dbgOut;
+  TimedDoubleSeq m_htrfw_dbg;
+  OutPort<TimedDoubleSeq> m_htrfw_dbgOut;
+  TimedDoubleSeq m_htlfw_dbg;
+  OutPort<TimedDoubleSeq> m_htlfw_dbgOut;
+  TimedPose3D m_rpcom_dbg;
+  OutPort<TimedPose3D> m_rpcom_dbgOut;
+  TimedPose3D m_rprf_dbg;
+  OutPort<TimedPose3D> m_rprf_dbgOut;
+  TimedPose3D m_rplf_dbg;
+  OutPort<TimedPose3D> m_rplf_dbgOut;
+  TimedPose3D m_rprh_dbg;
+  OutPort<TimedPose3D> m_rprh_dbgOut;
+  TimedPose3D m_rplh_dbg;
+  OutPort<TimedPose3D> m_rplh_dbgOut;
+  TimedPose3D m_rphead_dbg;
+  OutPort<TimedPose3D> m_rphead_dbgOut;
+  TimedPoint3D m_rpzmp_dbg;
+  OutPort<TimedPoint3D> m_rpzmp_dbgOut;
+  TimedPoint3D m_rpdcp_dbg;
+  OutPort<TimedPoint3D> m_rpdcp_dbgOut;
+  TimedPoint3D m_rpacp_dbg;
+  OutPort<TimedPoint3D> m_rpacp_dbgOut;
   
   // </rtc-template>
 

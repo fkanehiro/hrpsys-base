@@ -112,11 +112,12 @@ void HumanSynchronizer::applyZMPCalcFromCOM(const hrp::Vector3& comin, hrp::Vect
   com_oldold = com_old;
   com_old = comin;
 }
-void HumanSynchronizer::applyVelLimit(const HumanPose& in, const HumanPose& in_old, HumanPose& out){
+void HumanSynchronizer::applyVelLimit(const HumanPose& in, HumanPose& out_old, HumanPose& out){
   std::string ns[5] = {"com","rf","lf","rh","lh"};
   for(int i=0;i<5;i++){
-    hrp::Vector3 diff = in.getP(ns[i]).p  - in_old.getP(ns[i]).p;
+    hrp::Vector3 diff = in.getP(ns[i]).p  - out_old.getP(ns[i]).p;
     for(int j=0;j<3;j++)LIMIT_MINMAX( diff(j), -MAXVEL*DT, MAXVEL*DT);
-    out.getP(ns[i]).p = in_old.getP(ns[i]).p + diff;
+    out.getP(ns[i]).p = out_old.getP(ns[i]).p + diff;
   }
+  out_old = out;
 }

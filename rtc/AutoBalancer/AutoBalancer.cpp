@@ -72,6 +72,25 @@ AutoBalancer::AutoBalancer(RTC::Manager* manager)
       m_actzmpIn("actzmpIn", m_actzmp),
       m_htheadIn("htheadIn", m_hthead),
 
+      m_htcom_dbgOut("htcom_dbgOut", m_htcom_dbg),
+      m_htrf_dbgOut("htrf_dbgOut", m_htrf_dbg),
+      m_htlf_dbgOut("htlf_dbgOut", m_htlf_dbg),
+      m_htrh_dbgOut("htrh_dbgOut", m_htrh_dbg),
+      m_htlh_dbgOut("htlh_dbgOut", m_htlh_dbg),
+      m_hthead_dbgOut("hthead_dbgOut", m_hthead_dbg),
+      m_htzmp_dbgOut("htzmp_dbgOut", m_htzmp_dbg),
+      m_htrfw_dbgOut("htrfw_dbgOut", m_htrfw_dbg),
+      m_htlfw_dbgOut("htlfw_dbgOut", m_htlfw_dbg),
+      m_rpcom_dbgOut("rpcom_dbgOut", m_rpcom_dbg),
+      m_rprf_dbgOut("rprf_dbgOut", m_rprf_dbg),
+      m_rplf_dbgOut("rplf_dbgOut", m_rplf_dbg),
+      m_rprh_dbgOut("rprh_dbgOut", m_rprh_dbg),
+      m_rplh_dbgOut("rplh_dbgOut", m_rplh_dbg),
+      m_rphead_dbgOut("rphead_dbgOut", m_rphead_dbg),
+      m_rpzmp_dbgOut("rpzmp_dbgOut", m_rpzmp_dbg),
+      m_rpdcp_dbgOut("rpdcp_dbgOut", m_rpdcp_dbg),
+      m_rpacp_dbgOut("rpacp_dbgOut", m_rpacp_dbg),
+
       m_qOut("q", m_qRef),
       m_zmpOut("zmpOut", m_zmp),
       m_basePosOut("basePosOut", m_basePos),
@@ -125,6 +144,25 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     addInPort("htlhIn", m_htlhIn);
     addInPort("actzmpIn", m_actzmpIn);
     addInPort("htheadIn", m_htheadIn);
+
+    addOutPort("htcom_dbgOut", m_htcom_dbgOut);
+    addOutPort("htrf_dbgOut", m_htrf_dbgOut);
+    addOutPort("htlf_dbgOut", m_htlf_dbgOut);
+    addOutPort("htrh_dbgOut", m_htrh_dbgOut);
+    addOutPort("htlh_dbgOut", m_htlh_dbgOut);
+    addOutPort("hthead_dbgOut", m_hthead_dbgOut);
+    addOutPort("htzmp_dbgOut", m_htzmp_dbgOut);
+    addOutPort("htrfw_dbgOut", m_htrfw_dbgOut);
+    addOutPort("htlfw_dbgOut", m_htlfw_dbgOut);
+    addOutPort("rpcom_dbgOut", m_rpcom_dbgOut);
+    addOutPort("rprf_dbgOut", m_rprf_dbgOut);
+    addOutPort("rplf_dbgOut", m_rplf_dbgOut);
+    addOutPort("rprh_dbgOut", m_rprh_dbgOut);
+    addOutPort("rplh_dbgOut", m_rplh_dbgOut);
+    addOutPort("rphead_dbgOut", m_rphead_dbgOut);
+    addOutPort("rpzmp_dbgOut", m_rpzmp_dbgOut);
+    addOutPort("rpdcp_dbgOut", m_rpdcp_dbgOut);
+    addOutPort("rpacp_dbgOut", m_rpacp_dbgOut);
 
     // Set OutPort buffer
     addOutPort("q", m_qOut);
@@ -512,6 +550,8 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
     if (m_actzmpIn.isNew()){m_actzmpIn.read(); }
     hsp->baselinkpose.p = m_robot->rootLink()->p;
     hsp->baselinkpose.rpy = hrp::rpyFromRot(m_robot->rootLink()->R);
+    if(ikp.count("rarm"))ikp["rarm"].is_active = false;
+    if(ikp.count("larm"))ikp["larm"].is_active = false;
     m_contactStates.data[contact_states_index_map["rleg"]] = hsp->is_rf_contact;
     m_contactStates.data[contact_states_index_map["lleg"]] = hsp->is_lf_contact;
 
@@ -655,6 +695,65 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
         m_limbCOPOffset[i].tm = m_qRef.tm;
         m_limbCOPOffsetOut[i]->write();
     }
+
+    //ishiguro dbg plot
+    m_htcom.tm = m_qRef.tm;
+    HumanSynchronizer::HRPPose3DToPose3D(hsp->hp_plot.getP("com"),m_htcom_dbg.data);
+    m_htcom_dbgOut.write();
+    m_htrf.tm = m_qRef.tm;
+    HumanSynchronizer::HRPPose3DToPose3D(hsp->hp_plot.getP("rf"),m_htrf_dbg.data);
+    m_htrf_dbgOut.write();
+    m_htlf.tm = m_qRef.tm;
+    HumanSynchronizer::HRPPose3DToPose3D(hsp->hp_plot.getP("lf"),m_htlf_dbg.data);
+    m_htlf_dbgOut.write();
+    m_htrh.tm = m_qRef.tm;
+    HumanSynchronizer::HRPPose3DToPose3D(hsp->hp_plot.getP("rh"),m_htrh_dbg.data);
+    m_htrh_dbgOut.write();
+    m_htlh.tm = m_qRef.tm;
+    HumanSynchronizer::HRPPose3DToPose3D(hsp->hp_plot.getP("lh"),m_htlh_dbg.data);
+    m_htlh_dbgOut.write();
+    m_hthead.tm = m_qRef.tm;
+    HumanSynchronizer::HRPPose3DToPose3D(hsp->hp_plot.getP("head"),m_hthead_dbg.data);
+    m_hthead_dbgOut.write();
+    m_htzmp.tm = m_qRef.tm;
+    HumanSynchronizer::Vector3ToPoint3D(hsp->rp_ref_out.getP("zmp").p,m_rpzmp_dbg.data);
+    m_htzmp_dbgOut.write();
+    m_htrfw.tm = m_qRef.tm;
+    m_htrfw_dbg.data.length(6);
+    HumanSynchronizer::Wrench6ToDoubleSeq(hsp->hp_plot.getw("rfw"),m_htrfw_dbg.data);
+    m_htrfw_dbgOut.write();
+    m_htlfw.tm = m_qRef.tm;
+    m_htlfw_dbg.data.length(6);
+    HumanSynchronizer::Wrench6ToDoubleSeq(hsp->hp_plot.getw("lfw"),m_htlfw_dbg.data);
+    m_htlfw_dbgOut.write();
+    m_rpcom_dbg.tm = m_qRef.tm;
+    HumanSynchronizer::HRPPose3DToPose3D(hsp->rp_ref_out.getP("com"),m_rpcom_dbg.data);
+    m_rpcom_dbgOut.write();
+    m_rprf_dbg.tm = m_qRef.tm;
+    HumanSynchronizer::HRPPose3DToPose3D(hsp->rp_ref_out.getP("rf"),m_rprf_dbg.data);
+    m_rprf_dbgOut.write();
+    m_rplf_dbg.tm = m_qRef.tm;
+    HumanSynchronizer::HRPPose3DToPose3D(hsp->rp_ref_out.getP("lf"),m_rplf_dbg.data);
+    m_rplf_dbgOut.write();
+    m_rprh_dbg.tm = m_qRef.tm;
+    HumanSynchronizer::HRPPose3DToPose3D(hsp->rp_ref_out.getP("rh"),m_rprh_dbg.data);
+    m_rprh_dbgOut.write();
+    m_rplh_dbg.tm = m_qRef.tm;
+    HumanSynchronizer::HRPPose3DToPose3D(hsp->rp_ref_out.getP("lh"),m_rplh_dbg.data);
+    m_rplh_dbgOut.write();
+    m_rphead_dbg.tm = m_qRef.tm;
+    HumanSynchronizer::HRPPose3DToPose3D(hsp->rp_ref_out.getP("head"),m_rphead_dbg.data);
+    m_rphead_dbgOut.write();
+    m_rpzmp_dbg.tm = m_qRef.tm;
+    HumanSynchronizer::Vector3ToPoint3D(hsp->rp_ref_out.getP("zmp").p,m_rpzmp_dbg.data);
+    m_rpzmp_dbgOut.write();
+    m_rpdcp_dbg.tm = m_qRef.tm;
+    HumanSynchronizer::Vector3ToPoint3D(hsp->cp_dec,m_rpdcp_dbg.data);
+    m_rpdcp_dbgOut.write();
+    m_rpacp_dbg.tm = m_qRef.tm;
+    HumanSynchronizer::Vector3ToPoint3D(hsp->cp_acc,m_rpacp_dbg.data);
+    m_rpacp_dbgOut.write();
+
 
     return RTC::RTC_OK;
 }
@@ -1326,6 +1425,9 @@ bool AutoBalancer::setWholeBodyMasterSlaveParam(const OpenHRP::AutoBalancerServi
   hsp->WBMSparam.set_com_height_fix_val = i_param.set_com_height_fix_val;
   hsp->WBMSparam.foot_vertical_vel_limit_coeff = i_param.foot_vertical_vel_limit_coeff;
   hsp->WBMSparam.human_com_height = i_param.human_com_height;
+  hsp->WBMSparam.swing_foot_height_offset = i_param.swing_foot_height_offset;
+  hsp->WBMSparam.swing_foot_max_height = i_param.swing_foot_max_height;
+  hsp->WBMSparam.auto_swing_foot_landing_threshold = i_param.auto_swing_foot_landing_threshold;
   return true;
 }
 bool AutoBalancer::getWholeBodyMasterSlaveParam(OpenHRP::AutoBalancerService::WholeBodyMasterSlaveParam& i_param){
@@ -1336,6 +1438,9 @@ bool AutoBalancer::getWholeBodyMasterSlaveParam(OpenHRP::AutoBalancerService::Wh
   i_param.human_com_height = hsp->WBMSparam.human_com_height;
   i_param.use_hands = (hsp->WBMSparam.use_rh || hsp->WBMSparam.use_lh);
   i_param.use_head = hsp->WBMSparam.use_head;
+  i_param.swing_foot_height_offset = hsp->WBMSparam.swing_foot_height_offset;
+  i_param.swing_foot_max_height = hsp->WBMSparam.swing_foot_max_height;
+  i_param.auto_swing_foot_landing_threshold = hsp->WBMSparam.auto_swing_foot_landing_threshold;
   return true;
 }
 
