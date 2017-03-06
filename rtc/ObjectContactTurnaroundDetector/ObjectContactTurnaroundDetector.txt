@@ -1,0 +1,59 @@
+/**
+
+\page ObjectContactTurnaroundDetector
+
+\section introduction Overview
+
+This component is otd.
+
+\subsection feature Feature
+
+<table>
+<tr><th>implementation_id</th><td>ObjectContactTurnaroundDetector</td></tr>
+<tr><th>category</th><td>example</td></tr>
+</table>
+
+\section dataports Data Ports
+
+\subsection inports Input Ports
+
+<table>
+<tr><th>port name</th><th>data type</th><th>unit</th><th>description</th></tr>
+<tr><td>qCurrent</td><td>RTC::TimedDoubleSeq</td><td>[rad]</td><td>Actual joint angles</td></tr>
+<tr><td>rpy</td><td>RTC::TimedOrientation3D</td><td>[rad]</td><td>
+Actual attitude sensor's Roll-Pitch-Yaw angle </td></tr>
+<tr><td>name of force/torque sensor defined in a VRML model, such as "rhsensor"</td><td>RTC::TimedDoubleSeq</td><td>[N],[Nm]</td><td>Actual force/torque in the sensor frame</td></tr>
+</table>
+
+\subsection outports Output Ports
+
+<table>
+<tr><th>port name</th><th>data type</th><th>unit</th><th>description</th></tr>
+</table>
+
+\section serviceports Service Ports
+
+\subsection provider Service Providers
+
+<table>
+<tr><th>port name</th><th>interface name</th><th>service type</th><th>IDL</th><th>description</th></tr>
+<tr><td>ObjectContactTurnaroundDetectorService</td><td>service0</td><td>ObjectContactTurnaroundDetectorService</td><td>\ref OpenHRP::ObjectContactTurnaroundDetectorService</td><td>ObjectContactTurnaroundDetectorService</td></tr>
+</table>
+
+\subsection consumer Service Consumers
+
+N/A
+
+\section configuration Configuration Variables
+
+<table>
+<tr><th>name</th><th>type</th><th>unit</th><th>default
+value</th><th>description</th></tr>
+<tr><td>debugLevel</td><td>int</td><td></td><td>0</td><td>debug level</td></tr>
+</table>
+
+\section conf Configuration File
+
+N/A
+
+ */

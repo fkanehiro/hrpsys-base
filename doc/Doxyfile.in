@@ -494,6 +494,7 @@ INPUT		      =  @CMAKE_CURRENT_SOURCE_DIR@/package.h \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/EmergencyStopper \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/OGMap3DViewer \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/OccupancyGridMap3D \
+		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/ObjectContactTurnaroundDetector \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/PCDLoader \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/PDcontroller \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/PlaneRemover \
