@@ -146,6 +146,10 @@ class Stabilizer
   {
     return (prev_act_force_z[idx] > 25.0);
   };
+  inline int calcMaxTransitionCount ()
+  {
+      return (transition_time / dt);
+  };
 
  protected:
   // Configuration variable declaration

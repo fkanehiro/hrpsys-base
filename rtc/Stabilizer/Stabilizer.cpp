@@ -1100,7 +1100,7 @@ void Stabilizer::getTargetParameters ()
   if ( transition_count == 0 ) {
     transition_smooth_gain = 1.0;
   } else {
-    double max_transition_count = transition_time / dt;
+    double max_transition_count = calcMaxTransitionCount();
     transition_smooth_gain = 1/(1+exp(-9.19*(((max_transition_count - std::fabs(transition_count)) / max_transition_count) - 0.5)));
   }
   if (transition_count > 0) {
@@ -1152,6 +1152,12 @@ void Stabilizer::getTargetParameters ()
     //     + hrp::Vector3(m_ref_wrenches[i].data[3], m_ref_wrenches[i].data[4], m_ref_wrenches[i].data[5]);
   }
   // <= Reference world frame
+
+  // Reset prev_ref_cog for transition (MODE_IDLE=>MODE_ST) because the coordinates for ref_cog differs among st algorithms.
+  if (transition_count == (-1 * calcMaxTransitionCount() + 1)) { // max transition count. In MODE_IDLE => MODE_ST, transition_count is < 0 and upcounter. "+ 1" is upcount at the beginning of this function.
+      prev_ref_cog = ref_cog;
+      std::cerr << "[" << m_profile.instance_name << "]   Reset prev_ref_cog for transition (MODE_IDLE=>MODE_ST)." << std::endl;
+  }
 
   if (st_algorithm != OpenHRP::StabilizerService::TPCC) {
     // Reference foot_origin frame =>
@@ -1711,7 +1717,7 @@ void Stabilizer::sync_2_st ()
     ikp.d_foot_pos = ikp.d_foot_rpy = ikp.ee_d_foot_rpy = hrp::Vector3::Zero();
   }
   if (on_ground) {
-    transition_count = -1 * transition_time / dt;
+    transition_count = -1 * calcMaxTransitionCount();
     control_mode = MODE_ST;
   } else {
     transition_count = 0;
@@ -1723,7 +1729,7 @@ void Stabilizer::sync_2_idle ()
 {
   std::cerr << "[" << m_profile.instance_name << "] [" << m_qRef.tm
             << "] Sync ST => IDLE"  << std::endl;
-  transition_count = transition_time / dt;
+  transition_count = calcMaxTransitionCount();
   for (int i = 0; i < m_robot->numJoints(); i++ ) {
     transition_joint_q[i] = m_robot->joint(i)->q;
   }
