@@ -1731,23 +1731,33 @@ void Stabilizer::sync_2_idle ()
 
 void Stabilizer::startStabilizer(void)
 {
-  if ( transition_count == 0 && control_mode == MODE_IDLE ) {
-    std::cerr << "[" << m_profile.instance_name << "] " << "Start ST"  << std::endl;
-    sync_2_st();
+    {
+        Guard guard(m_mutex);
+        if ( transition_count == 0 && control_mode == MODE_IDLE ) {
+            std::cerr << "[" << m_profile.instance_name << "] " << "Start ST"  << std::endl;
+            sync_2_st();
+        }
+    }
     waitSTTransition();
     std::cerr << "[" << m_profile.instance_name << "] " << "Start ST DONE"  << std::endl;
-  }
 }
 
 void Stabilizer::stopStabilizer(void)
 {
-  if ( transition_count == 0 && (control_mode == MODE_ST || control_mode == MODE_AIR) ) {
-    std::cerr << "[" << m_profile.instance_name << "] " << "Stop ST"  << std::endl;
-    control_mode = MODE_SYNC_TO_IDLE;
-    while (control_mode != MODE_IDLE) { usleep(10); };
+    bool is_stop_st = false;
+    {
+        Guard guard(m_mutex);
+        if ( transition_count == 0 && (control_mode == MODE_ST || control_mode == MODE_AIR) ) {
+            std::cerr << "[" << m_profile.instance_name << "] " << "Stop ST"  << std::endl;
+            control_mode = MODE_SYNC_TO_IDLE;
+            is_stop_st = true;
+        }
+    }
+    if (is_stop_st) {
+        while (control_mode != MODE_IDLE) { usleep(10); };
+    }
     waitSTTransition();
     std::cerr << "[" << m_profile.instance_name << "] " << "Stop ST DONE"  << std::endl;
-  }
 }
 
 void Stabilizer::getParameter(OpenHRP::StabilizerService::stParam& i_stp)
