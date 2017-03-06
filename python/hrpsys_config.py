@@ -263,6 +263,11 @@ class HrpsysConfigurator(object):
     acf_svc = None
     acf_version = None
 
+    # ObjectContactTurnaroundDetector
+    octd = None
+    octd_svc = None
+    octd_version = None
+
     # rtm manager
     ms = None
 
@@ -481,7 +486,14 @@ class HrpsysConfigurator(object):
         if self.co:
             connectPorts(self.rh.port("q"), self.co.port("qCurrent"))
             connectPorts(self.rh.port("servoState"), self.co.port("servoStateIn"))
-
+        # connection for octd
+        if self.octd:
+            connectPorts(self.rh.port("q"), self.octd.port("qCurrent"))
+            if self.kf:
+                connectPorts(self.kf.port("rpy"), self.octd.port("rpy"))
+            if self.rmfo:
+                for sen in filter(lambda x: x.type == "Force", self.sensors):
+                    connectPorts(self.rmfo.port("off_" + sen.name), self.octd.port(sen.name))
 
         # connection for gc
         if self.gc:
@@ -726,6 +738,7 @@ class HrpsysConfigurator(object):
             ['kf', "KalmanFilter"],
             ['vs', "VirtualForceSensor"],
             ['rmfo', "RemoveForceSensorLinkOffset"],
+            ['octd', "ObjectContactTurnaroundDetector"],
             ['es', "EmergencyStopper"],
             ['rfu', "ReferenceForceUpdater"],
             ['ic', "ImpedanceController"],
