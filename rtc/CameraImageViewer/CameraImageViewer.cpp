@@ -135,6 +135,7 @@ RTC::ReturnCode_t CameraImageViewer::onExecute(RTC::UniqueId ec_id)
                                           IPL_DEPTH_8U, 3);
                 break;
             case Img::CF_GRAY:
+            case Img::CF_DEPTH:
                 m_cvImage = cvCreateImage(cvSize(m_image.data.image.width,
                                                  m_image.data.image.height),
                                           IPL_DEPTH_8U, 1);
@@ -161,6 +162,17 @@ RTC::ReturnCode_t CameraImageViewer::onExecute(RTC::UniqueId ec_id)
             memcpy(m_cvImage->imageData, 
                    m_image.data.image.raw_data.get_buffer(),
                    m_image.data.image.raw_data.length());
+            break;
+        case Img::CF_DEPTH:
+            {
+                // depth -> gray scale
+                char *dst = m_cvImage->imageData;
+                Img::ImageData &id = m_image.data.image;
+                unsigned short *src = (unsigned short *)id.raw_data.get_buffer();
+                for (unsigned int i=0; i<id.width*id.height; i++){
+                    dst[i] = src[i]>>8;
+                }
+            }
             break;
         default:
             break;
