@@ -1737,9 +1737,10 @@ void Stabilizer::sync_2_idle ()
 
 void Stabilizer::startStabilizer(void)
 {
+    waitSTTransition(); // Wait until all transition has finished
     {
         Guard guard(m_mutex);
-        if ( transition_count == 0 && control_mode == MODE_IDLE ) {
+        if ( control_mode == MODE_IDLE ) {
             std::cerr << "[" << m_profile.instance_name << "] " << "Start ST"  << std::endl;
             sync_2_st();
         }
@@ -1750,17 +1751,13 @@ void Stabilizer::startStabilizer(void)
 
 void Stabilizer::stopStabilizer(void)
 {
-    bool is_stop_st = false;
+    waitSTTransition(); // Wait until all transition has finished
     {
         Guard guard(m_mutex);
-        if ( transition_count == 0 && (control_mode == MODE_ST || control_mode == MODE_AIR) ) {
+        if ( (control_mode == MODE_ST || control_mode == MODE_AIR) ) {
             std::cerr << "[" << m_profile.instance_name << "] " << "Stop ST"  << std::endl;
-            control_mode = MODE_SYNC_TO_IDLE;
-            is_stop_st = true;
+            control_mode = (control_mode == MODE_ST) ? MODE_SYNC_TO_IDLE : MODE_IDLE;
         }
-    }
-    if (is_stop_st) {
-        while (control_mode != MODE_IDLE) { usleep(10); };
     }
     waitSTTransition();
     std::cerr << "[" << m_profile.instance_name << "] " << "Stop ST DONE"  << std::endl;
@@ -2335,7 +2332,15 @@ void Stabilizer::setBoolSequenceParamWithCheckContact (std::vector<bool>& st_boo
 
 void Stabilizer::waitSTTransition()
 {
-  while (transition_count != 0) usleep(10);
+  // Wait condition
+  //   1. Check transition_count : Wait until transition is finished
+  //   2. Check control_mode : Once control_mode is SYNC mode, wait until control_mode moves to the next mode (MODE_AIR or MODE_IDLE)
+  bool flag = (control_mode == MODE_SYNC_TO_AIR || control_mode == MODE_SYNC_TO_IDLE);
+  while (transition_count != 0 ||
+         (flag ? !(control_mode == MODE_IDLE || control_mode == MODE_AIR) : false) ) {
+      usleep(10);
+      flag = (control_mode == MODE_SYNC_TO_AIR || control_mode == MODE_SYNC_TO_IDLE);
+  }
   usleep(10);
 }
 
