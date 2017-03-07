@@ -14,6 +14,7 @@ set(input_files package.h utilities.h
 		      ../rtc/EmergencyStopper/EmergencyStopper.txt
 		      ../rtc/OccupancyGridMap3D/OccupancyGridMap3D.txt
 		      ../rtc/OGMap3DViewer/OGMap3DViewer.txt
+		      ../rtc/OpenNIGrabber/OpenNIGrabber.txt
 		      ../rtc/Range2PointCloud/Range2PointCloud.txt
 		      ../rtc/RobotHardware/RobotHardware.txt
 		      ../rtc/SequencePlayer/SequencePlayer.txt

@@ -4,7 +4,7 @@
 
 \section introduction Overview
 
-This component applies moving least squares filter to an input point cloud.
+This component outputs data obtained by a RGBD sensor.
 
 <table>
 <tr><th>implementation_id</th><td>OpenNIGrabber</td></tr>
@@ -15,25 +15,22 @@ This component applies moving least squares filter to an input point cloud.
 
 \subsection inports Input Ports
 
-<table>
-<tr><th>port name</th><th>data type</th><th>unit</th><th>description</th></tr>
-<tr><td>original</td><td>PointCloudTypes::PointCloud</td><td></td><td></td></tr>
-</table>
+N/A
 
 \subsection outports Output Ports
 
 <table>
 <tr><th>port name</th><th>data type</th><th>unit</th><th>description</th></tr>
-<tr><td>filtered</td><td>PointCloudTypes::PointCloud</td><td></td><td></td></tr>
+<tr><td>image</td><td>Img::TimedCameraImage</td><td></td><td>color image</td></tr>
+<tr><td>depth</td><td>Img::TimedCameraImage</td><td></td><td>depth image</td></tr>
+<tr><td>cloud</td><td>PointCloudTypes::PointCloud</td><td></td><td>Point cloud</td></tr>
 </table>
 
 \section serviceports Service Ports
 
 \subsection provider Service Providers
 
-<table>
-<tr><th>port name</th><th>interface name</th><th>service type</th><th>IDL</th><th>description</th></tr>
-</table>
+N/A
 
 \subsection consumer Service Consumers
 
@@ -43,7 +40,11 @@ N/A
 
 <table>
 <tr><th>name</th><th>type</th><th>unit</th><th>default value</th><th>description</th></tr>
-<tr><td>radius</td><td>double</td><td>[m]</td><td>0.03</td><td>the sphere radius that is to be used for determining the k-nearest neighbors used for fitting</td></tr>
+<tr><td>outputColorImage</td><td>bool</td><td></td><td>0</td><td>flag to output color images</td></tr>
+<tr><td>outputDepthImage</td><td>bool</td><td></td><td>0</td><td>flag to output depth images</td></tr>
+<tr><td>outputPointCloud</td><td>bool</td><td></td><td>0</td><td>flag to output point clouds (XYZ format)</td></tr>
+<tr><td>outputPointCloudRGBA</td><td>bool</td><td></td><td>0</td><td>flag to output point clouds (XYZRGBA format)</td></tr>
+<tr><td>debugLevel</td><td>int</td><td></td><td>0</td><td>debug level</td></tr>
 </table>
 
 \section conf Configuration File
