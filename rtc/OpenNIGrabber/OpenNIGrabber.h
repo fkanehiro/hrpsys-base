@@ -152,7 +152,8 @@ class OpenNIGrabber
   bool m_outputDepthImage;
   bool m_outputPointCloud;
   bool m_outputPointCloudRGBA;
-  bool m_requestToWrite;
+  bool m_requestToWriteImage;
+  bool m_requestToWritePointCloud;
   int dummy;
 };
 

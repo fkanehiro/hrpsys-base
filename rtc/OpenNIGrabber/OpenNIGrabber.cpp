@@ -46,7 +46,8 @@ OpenNIGrabber::OpenNIGrabber(RTC::Manager* manager)
     m_depthOut("depth", m_depth),
     // </rtc-template>
     m_interface(NULL),
-    m_requestToWrite(false),
+    m_requestToWriteImage(false),
+    m_requestToWritePointCloud(false),
     dummy(0)
 {
 }
@@ -95,11 +96,11 @@ RTC::ReturnCode_t OpenNIGrabber::onInitialize()
 
 void OpenNIGrabber::grabberCallbackColorImage(const boost::shared_ptr<pcl::io::Image>& image)
 {
-    if (!m_requestToWrite) return;
+    if (!m_requestToWriteImage) return;
 
     outputColorImage(image);
 
-    m_requestToWrite = false;
+    m_requestToWriteImage = false;
 }
 
 void OpenNIGrabber::outputColorImage(const boost::shared_ptr<pcl::io::Image>& image)
@@ -121,11 +122,11 @@ void OpenNIGrabber::outputColorImage(const boost::shared_ptr<pcl::io::Image>& im
 
 void OpenNIGrabber::grabberCallbackDepthImage(const boost::shared_ptr<pcl::io::DepthImage>& image)
 {
-    if (!m_requestToWrite) return;
+    if (!m_requestToWriteImage) return;
 
     outputDepthImage(image);
 
-    m_requestToWrite = false;
+    m_requestToWriteImage = false;
 }
 
 void OpenNIGrabber::outputDepthImage(const boost::shared_ptr<pcl::io::DepthImage>& image)
@@ -147,17 +148,17 @@ void OpenNIGrabber::outputDepthImage(const boost::shared_ptr<pcl::io::DepthImage
 
 void OpenNIGrabber::grabberCallbackColorAndDepthImage(const boost::shared_ptr<pcl::io::Image>& image, const boost::shared_ptr<pcl::io::DepthImage>& depth, float reciprocalFocalLength)
 {
-    if (!m_requestToWrite) return;
+    if (!m_requestToWriteImage) return;
 
     outputColorImage(image);
     outputDepthImage(depth);
 
-    m_requestToWrite = false;
+    m_requestToWriteImage = false;
 }
 
 void OpenNIGrabber::grabberCallbackPointCloudRGBA(const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &cloud)
 {
-    if (!m_requestToWrite) return;
+    if (!m_requestToWritePointCloud) return;
 
     setTimestamp(m_cloud);
 
@@ -175,12 +176,12 @@ void OpenNIGrabber::grabberCallbackPointCloudRGBA(const pcl::PointCloud<pcl::Poi
         dst_cloud += 4;
     }
     m_cloudOut.write();
-    m_requestToWrite = false;
+    m_requestToWritePointCloud = false;
 }
 
 void OpenNIGrabber::grabberCallbackPointCloud(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr &cloud)
 {
-    if (!m_requestToWrite) return;
+    if (!m_requestToWritePointCloud) return;
 
     setTimestamp(m_cloud);
     m_cloud.width = cloud->width;
@@ -196,7 +197,7 @@ void OpenNIGrabber::grabberCallbackPointCloud(const pcl::PointCloud<pcl::PointXY
         dst_cloud += 4;
     }
     m_cloudOut.write();
-    m_requestToWrite = false;
+    m_requestToWritePointCloud = false;
 }
 
 /*
@@ -329,7 +330,8 @@ RTC::ReturnCode_t OpenNIGrabber::onExecute(RTC::UniqueId ec_id)
                       << "] grabber is not running" << std::endl;
         }
     }
-    m_requestToWrite = true;
+    m_requestToWriteImage      = true;
+    m_requestToWritePointCloud = true;
 
     return RTC::RTC_OK;
 }
