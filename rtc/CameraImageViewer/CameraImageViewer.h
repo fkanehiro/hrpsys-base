@@ -135,6 +135,7 @@ class CameraImageViewer
 
  private:
     IplImage* m_cvImage;
+    int m_depthBits;
     int dummy;
 };
 
