@@ -1100,7 +1100,7 @@ void Stabilizer::getTargetParameters ()
   if ( transition_count == 0 ) {
     transition_smooth_gain = 1.0;
   } else {
-    double max_transition_count = transition_time / dt;
+    double max_transition_count = calcMaxTransitionCount();
     transition_smooth_gain = 1/(1+exp(-9.19*(((max_transition_count - std::fabs(transition_count)) / max_transition_count) - 0.5)));
   }
   if (transition_count > 0) {
@@ -1152,6 +1152,12 @@ void Stabilizer::getTargetParameters ()
     //     + hrp::Vector3(m_ref_wrenches[i].data[3], m_ref_wrenches[i].data[4], m_ref_wrenches[i].data[5]);
   }
   // <= Reference world frame
+
+  // Reset prev_ref_cog for transition (MODE_IDLE=>MODE_ST) because the coordinates for ref_cog differs among st algorithms.
+  if (transition_count == (-1 * calcMaxTransitionCount() + 1)) { // max transition count. In MODE_IDLE => MODE_ST, transition_count is < 0 and upcounter. "+ 1" is upcount at the beginning of this function.
+      prev_ref_cog = ref_cog;
+      std::cerr << "[" << m_profile.instance_name << "]   Reset prev_ref_cog for transition (MODE_IDLE=>MODE_ST)." << std::endl;
+  }
 
   if (st_algorithm != OpenHRP::StabilizerService::TPCC) {
     // Reference foot_origin frame =>
@@ -1711,7 +1717,7 @@ void Stabilizer::sync_2_st ()
     ikp.d_foot_pos = ikp.d_foot_rpy = ikp.ee_d_foot_rpy = hrp::Vector3::Zero();
   }
   if (on_ground) {
-    transition_count = -1 * transition_time / dt;
+    transition_count = -1 * calcMaxTransitionCount();
     control_mode = MODE_ST;
   } else {
     transition_count = 0;
@@ -1723,7 +1729,7 @@ void Stabilizer::sync_2_idle ()
 {
   std::cerr << "[" << m_profile.instance_name << "] [" << m_qRef.tm
             << "] Sync ST => IDLE"  << std::endl;
-  transition_count = transition_time / dt;
+  transition_count = calcMaxTransitionCount();
   for (int i = 0; i < m_robot->numJoints(); i++ ) {
     transition_joint_q[i] = m_robot->joint(i)->q;
   }
@@ -1731,23 +1737,30 @@ void Stabilizer::sync_2_idle ()
 
 void Stabilizer::startStabilizer(void)
 {
-  if ( transition_count == 0 && control_mode == MODE_IDLE ) {
-    std::cerr << "[" << m_profile.instance_name << "] " << "Start ST"  << std::endl;
-    sync_2_st();
+    waitSTTransition(); // Wait until all transition has finished
+    {
+        Guard guard(m_mutex);
+        if ( control_mode == MODE_IDLE ) {
+            std::cerr << "[" << m_profile.instance_name << "] " << "Start ST"  << std::endl;
+            sync_2_st();
+        }
+    }
     waitSTTransition();
     std::cerr << "[" << m_profile.instance_name << "] " << "Start ST DONE"  << std::endl;
-  }
 }
 
 void Stabilizer::stopStabilizer(void)
 {
-  if ( transition_count == 0 && (control_mode == MODE_ST || control_mode == MODE_AIR) ) {
-    std::cerr << "[" << m_profile.instance_name << "] " << "Stop ST"  << std::endl;
-    control_mode = MODE_SYNC_TO_IDLE;
-    while (control_mode != MODE_IDLE) { usleep(10); };
+    waitSTTransition(); // Wait until all transition has finished
+    {
+        Guard guard(m_mutex);
+        if ( (control_mode == MODE_ST || control_mode == MODE_AIR) ) {
+            std::cerr << "[" << m_profile.instance_name << "] " << "Stop ST"  << std::endl;
+            control_mode = (control_mode == MODE_ST) ? MODE_SYNC_TO_IDLE : MODE_IDLE;
+        }
+    }
     waitSTTransition();
     std::cerr << "[" << m_profile.instance_name << "] " << "Stop ST DONE"  << std::endl;
-  }
 }
 
 void Stabilizer::getParameter(OpenHRP::StabilizerService::stParam& i_stp)
@@ -2054,7 +2067,7 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
       stikp[i].limb_length_margin = i_stp.limb_length_margin[i];
   }
   setBoolSequenceParam(is_ik_enable, i_stp.is_ik_enable, std::string("is_ik_enable"));
-  setBoolSequenceParam(is_feedback_control_enable, i_stp.is_feedback_control_enable, std::string("is_feedback_control_enable"));
+  setBoolSequenceParamWithCheckContact(is_feedback_control_enable, i_stp.is_feedback_control_enable, std::string("is_feedback_control_enable"));
   setBoolSequenceParam(is_zmp_calc_enable, i_stp.is_zmp_calc_enable, std::string("is_zmp_calc_enable"));
   emergency_check_mode = i_stp.emergency_check_mode;
 
@@ -2245,9 +2258,12 @@ std::string Stabilizer::getStabilizerAlgorithmString (OpenHRP::StabilizerService
 
 void Stabilizer::setBoolSequenceParam (std::vector<bool>& st_bool_values, const OpenHRP::StabilizerService::BoolSequence& output_bool_values, const std::string& prop_name)
 {
+  std::vector<bool> prev_values;
+  prev_values.resize(st_bool_values.size());
+  copy (st_bool_values.begin(), st_bool_values.end(), prev_values.begin());
   if (st_bool_values.size() != output_bool_values.length()) {
       std::cerr << "[" << m_profile.instance_name << "]   " << prop_name << " cannot be set. Length " << st_bool_values.size() << " != " << output_bool_values.length() << std::endl;
-  } else if (control_mode != MODE_IDLE) {
+  } else if ( (control_mode != MODE_IDLE) ) {
       std::cerr << "[" << m_profile.instance_name << "]   " << prop_name << " cannot be set. Current control_mode is " << control_mode << std::endl;
   } else {
       for (size_t i = 0; i < st_bool_values.size(); i++) {
@@ -2258,12 +2274,73 @@ void Stabilizer::setBoolSequenceParam (std::vector<bool>& st_bool_values, const 
   for (size_t i = 0; i < st_bool_values.size(); i++) {
       std::cerr <<"[" << st_bool_values[i] << "]";
   }
-  std::cerr << std::endl;
+  std::cerr << "(set = ";
+  for (size_t i = 0; i < output_bool_values.length(); i++) {
+      std::cerr <<"[" << output_bool_values[i] << "]";
+  }
+  std::cerr << ", prev = ";
+  for (size_t i = 0; i < prev_values.size(); i++) {
+      std::cerr <<"[" << prev_values[i] << "]";
+  }
+  std::cerr << ")" << std::endl;
+};
+
+void Stabilizer::setBoolSequenceParamWithCheckContact (std::vector<bool>& st_bool_values, const OpenHRP::StabilizerService::BoolSequence& output_bool_values, const std::string& prop_name)
+{
+  std::vector<bool> prev_values;
+  prev_values.resize(st_bool_values.size());
+  copy (st_bool_values.begin(), st_bool_values.end(), prev_values.begin());
+  if (st_bool_values.size() != output_bool_values.length()) {
+      std::cerr << "[" << m_profile.instance_name << "]   " << prop_name << " cannot be set. Length " << st_bool_values.size() << " != " << output_bool_values.length() << std::endl;
+  } else if ( control_mode == MODE_IDLE ) {
+    for (size_t i = 0; i < st_bool_values.size(); i++) {
+      st_bool_values[i] = output_bool_values[i];
+    }
+  } else {
+    std::vector<size_t> failed_indices;
+    for (size_t i = 0; i < st_bool_values.size(); i++) {
+      if ( (st_bool_values[i] != output_bool_values[i]) ) { // If mode change
+        if (!contact_states[i] ) { // reference contact_states should be OFF
+          st_bool_values[i] = output_bool_values[i];
+        } else {
+          failed_indices.push_back(i);
+        }
+      }
+    }
+    if (failed_indices.size() > 0) {
+      std::cerr << "[" << m_profile.instance_name << "]   " << prop_name << " cannot be set partially. failed_indices is [";
+      for (size_t i = 0; i < failed_indices.size(); i++) {
+        std::cerr << failed_indices[i] << " ";
+      }
+      std::cerr << "]" << std::endl;
+    }
+  }
+  std::cerr << "[" << m_profile.instance_name << "]   " << prop_name << " is ";
+  for (size_t i = 0; i < st_bool_values.size(); i++) {
+      std::cerr <<"[" << st_bool_values[i] << "]";
+  }
+  std::cerr << "(set = ";
+  for (size_t i = 0; i < output_bool_values.length(); i++) {
+      std::cerr <<"[" << output_bool_values[i] << "]";
+  }
+  std::cerr << ", prev = ";
+  for (size_t i = 0; i < prev_values.size(); i++) {
+      std::cerr <<"[" << prev_values[i] << "]";
+  }
+  std::cerr << ")" << std::endl;
 };
 
 void Stabilizer::waitSTTransition()
 {
-  while (transition_count != 0) usleep(10);
+  // Wait condition
+  //   1. Check transition_count : Wait until transition is finished
+  //   2. Check control_mode : Once control_mode is SYNC mode, wait until control_mode moves to the next mode (MODE_AIR or MODE_IDLE)
+  bool flag = (control_mode == MODE_SYNC_TO_AIR || control_mode == MODE_SYNC_TO_IDLE);
+  while (transition_count != 0 ||
+         (flag ? !(control_mode == MODE_IDLE || control_mode == MODE_AIR) : false) ) {
+      usleep(10);
+      flag = (control_mode == MODE_SYNC_TO_AIR || control_mode == MODE_SYNC_TO_IDLE);
+  }
   usleep(10);
 }
 

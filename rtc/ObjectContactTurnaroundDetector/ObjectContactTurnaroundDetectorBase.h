@@ -1,14 +1,14 @@
-#ifndef OBJECTTURNAROUNDDETECTOR_H
-#define OBJECTTURNAROUNDDETECTOR_H
+#ifndef OBJECTCONTACTTURNAROUNDDETECTORBASE_H
+#define OBJECTCONTACTTURNAROUNDDETECTORBASE_H
 
-#include "RatsMatrix.h"
 #include "../TorqueFilter/IIRFilter.h"
 #include <boost/shared_ptr.hpp>
 #include <iostream>
 #include <cmath>
 #include "hrpsys/util/Hrpsys.h"
+#include <hrpUtil/Eigen3d.h>
 
-class ObjectTurnaroundDetector
+class ObjectContactTurnaroundDetectorBase
 {
  public:
     typedef enum {MODE_IDLE, MODE_STARTED, MODE_DETECTED, MODE_MAX_TIME} process_mode;
@@ -21,7 +21,7 @@ class ObjectTurnaroundDetector
     double detect_ratio_thre, start_ratio_thre, ref_dwrench, max_time, current_time, current_wrench;
     size_t count;
     // detect_count_thre*dt and start_ratio_thre*dt are threshould for time.
-    //   detect_count_thre*dt : Threshould for time [s] after the first object turnaround detection (Wait detect_time_thre [s] after first object turnaround detection).
+    //   detect_count_thre*dt : Threshould for time [s] after the first object contact turnaround detection (Wait detect_time_thre [s] after first object contact turnaround detection).
     //   start_count_thre*dt  : Threshould for time [s] after the first starting detection (Wait start_time_thre [s] after first start detection).
     size_t detect_count_thre, start_count_thre;
     process_mode pmode;
@@ -29,14 +29,14 @@ class ObjectTurnaroundDetector
     std::string print_str;
     bool is_dwr_changed;
  public:
-    ObjectTurnaroundDetector (const double _dt) : axis(-1*hrp::Vector3::UnitZ()), moment_center(hrp::Vector3::Zero()), prev_wrench(0.0), dt(_dt), detect_ratio_thre(0.01), start_ratio_thre(0.5),
+    ObjectContactTurnaroundDetectorBase (const double _dt) : axis(-1*hrp::Vector3::UnitZ()), moment_center(hrp::Vector3::Zero()), prev_wrench(0.0), dt(_dt), detect_ratio_thre(0.01), start_ratio_thre(0.5),
       count(0), detect_count_thre(5), start_count_thre(5), pmode(MODE_IDLE), dtw(TOTAL_FORCE), is_dwr_changed(false)
     {
         double default_cutoff_freq = 1; // [Hz]
         wrench_filter = boost::shared_ptr<FirstOrderLowPassFilter<double> >(new FirstOrderLowPassFilter<double>(default_cutoff_freq, _dt, 0));
         dwrench_filter = boost::shared_ptr<FirstOrderLowPassFilter<double> >(new FirstOrderLowPassFilter<double>(default_cutoff_freq, _dt, 0));
     };
-    ~ObjectTurnaroundDetector () {};
+    ~ObjectContactTurnaroundDetectorBase () {};
     void startDetection (const double _ref_diff_wrench, const double _max_time)
     {
         ref_dwrench = _ref_diff_wrench/_max_time;
@@ -130,7 +130,7 @@ class ObjectTurnaroundDetector
     process_mode getMode () const { return pmode; };
     void printParams () const
     {
-        std::cerr << "[" << print_str << "]   ObjectTurnaroundDetector params (" << (dtw==TOTAL_FORCE?"TOTAL_FORCE":"TOTAL_MOMENT") << ")" << std::endl;
+        std::cerr << "[" << print_str << "]   ObjectContactTurnaroundDetectorBase params (" << (dtw==TOTAL_FORCE?"TOTAL_FORCE":"TOTAL_MOMENT") << ")" << std::endl;
         std::cerr << "[" << print_str << "]    wrench_cutoff_freq = " << wrench_filter->getCutOffFreq() << "[Hz], dwrench_cutoff_freq = " << dwrench_filter->getCutOffFreq() << "[Hz]" << std::endl;
         std::cerr << "[" << print_str << "]    detect_ratio_thre = " << detect_ratio_thre << ", start_ratio_thre = " << start_ratio_thre
                   << ", start_time_thre = " << start_count_thre*dt << "[s], detect_time_thre = " << detect_count_thre*dt << "[s]" << std::endl;
@@ -166,4 +166,4 @@ class ObjectTurnaroundDetector
     double getFilteredDwrench () const { return dwrench_filter->getCurrentValue(); };
     double getRawWrench () const { return current_wrench; };
 };
-#endif // OBJECTTURNAROUNDDETECTOR_H
+#endif // OBJECTCONTACTTURNAROUNDDETECTORBASE_H

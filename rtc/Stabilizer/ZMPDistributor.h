@@ -1007,11 +1007,13 @@ public:
         }
 
         hrp::dvector ret(state_dim);
-        //hrp::dmatrix selection_matrix = hrp::dmatrix::Identity(6,6);
-        hrp::dmatrix selection_matrix = hrp::dmatrix::Zero(3,6);
-        selection_matrix(0,2) = 1.0;
-        selection_matrix(1,3) = 1.0;
-        selection_matrix(2,4) = 1.0;
+        // Consider 6DOF total wrench (Fx, Fy, Fz, Mx, My, Mz)
+        hrp::dmatrix selection_matrix = hrp::dmatrix::Identity(6,6);
+        // Consdier 3DOF total wrench (Fz, Mx, My)
+//         hrp::dmatrix selection_matrix = hrp::dmatrix::Zero(3,6);
+//         selection_matrix(0,2) = 1.0;
+//         selection_matrix(1,3) = 1.0;
+//         selection_matrix(2,4) = 1.0;
         {
             hrp::dvector selected_total_wrench = hrp::dvector::Zero(selection_matrix.rows());
             hrp::dmatrix selected_Gmat = hrp::dmatrix::Zero(selection_matrix.rows(), Gmat.cols());

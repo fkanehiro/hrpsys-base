@@ -68,8 +68,9 @@ To use python scripts to create RT components, connect ports and get/set propert
     <li>\ref MLSFilter</li>
     <li>\ref NullComponent</li>
     <li>\ref EmergencyStopper</li>
-    <li>\ref OGMap3DViewer</li>
+    <li>\ref ObjectContactTurnaroundDetector</li>
     <li>\ref OccupancyGridMap3D</li>
+    <li>\ref OGMap3DViewer</li>
     <li>\ref OpenNIGrabber</li>
     <li>\ref PCDLoader</li>
     <li>\ref PDcontroller</li>

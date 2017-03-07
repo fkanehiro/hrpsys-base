@@ -1,14 +1,14 @@
 // -*- C++ -*-
 /*!
- * @file  ImpedanceController.h
- * @brief impedance control component
+ * @file  ObjectContactTurnaroundDetector.h
+ * @brief object contact turnaround detector component
  * @date  $Date$
  *
  * $Id$
  */
 
-#ifndef IMPEDANCE_H
-#define IMPEDANCE_H
+#ifndef OBJECTCONTACTTURNAROUNDDETECTOR_H
+#define OBJECTCONTACTTURNAROUNDDETECTOR_H
 
 #include <rtm/idl/BasicDataType.hh>
 #include <rtm/idl/ExtendedDataTypes.hh>
@@ -19,13 +19,12 @@
 #include <rtm/DataOutPort.h>
 #include <rtm/idl/BasicDataTypeSkel.h>
 #include <rtm/idl/ExtendedDataTypesSkel.h>
+#include <hrpUtil/Eigen3d.h>
 #include <hrpModel/Body.h>
-#include "JointPathEx.h"
-#include "RatsMatrix.h"
-#include "ImpedanceOutputGenerator.h"
+#include "ObjectContactTurnaroundDetectorBase.h"
 // Service implementation headers
 // <rtc-template block="service_impl_h">
-#include "ImpedanceControllerService_impl.h"
+#include "ObjectContactTurnaroundDetectorService_impl.h"
 
 // </rtc-template>
 
@@ -36,12 +35,12 @@
 
 using namespace RTC;
 
-class ImpedanceController
+class ObjectContactTurnaroundDetector
   : public RTC::DataFlowComponentBase
 {
  public:
-  ImpedanceController(RTC::Manager* manager);
-  virtual ~ImpedanceController();
+  ObjectContactTurnaroundDetector(RTC::Manager* manager);
+  virtual ~ObjectContactTurnaroundDetector();
 
   // The initialize action (on CREATED->ALIVE transition)
   // formaer rtc_init_entry()
@@ -91,13 +90,11 @@ class ImpedanceController
   // no corresponding operation exists in OpenRTm-aist-0.2.0
   // virtual RTC::ReturnCode_t onRateChanged(RTC::UniqueId ec_id);
 
-  bool startImpedanceController(const std::string& i_name_);
-  bool startImpedanceControllerNoWait(const std::string& i_name_);
-  bool stopImpedanceController(const std::string& i_name_);
-  bool stopImpedanceControllerNoWait(const std::string& i_name_);
-  bool setImpedanceControllerParam(const std::string& i_name_, OpenHRP::ImpedanceControllerService::impedanceParam i_param_);
-  bool getImpedanceControllerParam(const std::string& i_name_, OpenHRP::ImpedanceControllerService::impedanceParam& i_param_);
-  void waitImpedanceControllerTransition(std::string i_name_);
+  void startObjectContactTurnaroundDetection(const double i_ref_diff_wrench, const double i_max_time, const OpenHRP::ObjectContactTurnaroundDetectorService::StrSequence& i_ee_names);
+  OpenHRP::ObjectContactTurnaroundDetectorService::DetectorMode checkObjectContactTurnaroundDetection();
+  bool setObjectContactTurnaroundDetectorParam(const OpenHRP::ObjectContactTurnaroundDetectorService::objectContactTurnaroundDetectorParam &i_param_);
+  bool getObjectContactTurnaroundDetectorParam(OpenHRP::ObjectContactTurnaroundDetectorService::objectContactTurnaroundDetectorParam& i_param_);
+  bool getObjectForcesMoments(OpenHRP::ObjectContactTurnaroundDetectorService::Dbl3Sequence_out o_forces, OpenHRP::ObjectContactTurnaroundDetectorService::Dbl3Sequence_out o_moments, OpenHRP::ObjectContactTurnaroundDetectorService::DblSequence3_out o_3dofwrench);
 
  protected:
   // Configuration variable declaration
@@ -109,16 +106,8 @@ class ImpedanceController
   // <rtc-template block="inport_declare">
   TimedDoubleSeq m_qCurrent;
   InPort<TimedDoubleSeq> m_qCurrentIn;
-  TimedDoubleSeq m_qRef;
-  InPort<TimedDoubleSeq> m_qRefIn;
-  TimedPoint3D m_basePos;
-  InPort<TimedPoint3D> m_basePosIn;
-  TimedOrientation3D m_baseRpy;
-  InPort<TimedOrientation3D> m_baseRpyIn;
   std::vector<TimedDoubleSeq> m_force;
   std::vector<InPort<TimedDoubleSeq> *> m_forceIn;
-  std::vector<TimedDoubleSeq> m_ref_force;
-  std::vector<InPort<TimedDoubleSeq> *> m_ref_forceIn;
   TimedOrientation3D m_rpy;
   InPort<TimedOrientation3D> m_rpyIn;
   
@@ -126,20 +115,20 @@ class ImpedanceController
 
   // DataOutPort declaration
   // <rtc-template block="outport_declare">
-  TimedDoubleSeq m_q;
-  OutPort<TimedDoubleSeq> m_qOut;
+  TimedDoubleSeq m_otdData;
+  OutPort<TimedDoubleSeq> m_otdDataOut;
   
   // </rtc-template>
 
   // CORBA Port declaration
   // <rtc-template block="corbaport_declare">
-  RTC::CorbaPort m_ImpedanceControllerServicePort;
+  RTC::CorbaPort m_ObjectContactTurnaroundDetectorServicePort;
 
   // </rtc-template>
 
   // Service declaration
   // <rtc-template block="service_declare">
-  ImpedanceControllerService_impl m_service0;
+  ObjectContactTurnaroundDetectorService_impl m_service0;
 
   // </rtc-template>
 
@@ -150,49 +139,32 @@ class ImpedanceController
 
  private:
 
-  struct ImpedanceParam : public ImpedanceOutputGenerator {
-    std::string sensor_name;
-    hrp::Vector3 ref_force, ref_moment;
-    double sr_gain, avoid_gain, reference_gain, manipulability_limit;
-    int transition_count; // negative value when initing and positive value when deleting
-    hrp::dvector transition_joint_q;
-    hrp::JointPathExPtr manip;
-    bool is_active;
-
-    ImpedanceParam ()
-      : ImpedanceOutputGenerator(),
-        ref_force(hrp::Vector3::Zero()), ref_moment(hrp::Vector3::Zero()),
-        sr_gain(1.0), avoid_gain(0.001), reference_gain(0.01), manipulability_limit(0.1), transition_count(0), is_active(false)
-    {};
-  };
   struct ee_trans {
-    std::string target_name;
+    std::string target_name, sensor_name;
     hrp::Vector3 localPos;
     hrp::Matrix33 localR;
   };
 
-  void copyImpedanceParam (OpenHRP::ImpedanceControllerService::impedanceParam& i_param_, const ImpedanceParam& param);
   void updateRootLinkPosRot (TimedOrientation3D tmprpy);
-  void calcForceMoment();
+  void calcFootMidCoords (hrp::Vector3& new_foot_mid_pos, hrp::Matrix33& new_foot_mid_rot);
+  void calcObjectContactTurnaroundDetectorState();
 
-  std::map<std::string, ImpedanceParam> m_impedance_param;
   std::map<std::string, ee_trans> ee_map;
-  std::map<std::string, hrp::VirtualForceSensorParam> m_vfs;
-  std::map<std::string, hrp::Vector3> abs_forces, abs_moments, abs_ref_forces, abs_ref_moments;
+  boost::shared_ptr<ObjectContactTurnaroundDetectorBase > otd;
+  std::vector<std::string> otd_sensor_names;
+  hrp::Vector3 otd_axis;
   double m_dt;
   hrp::BodyPtr m_robot;
   coil::Mutex m_mutex;
-  hrp::dvector qrefv;
   unsigned int m_debugLevel;
   int dummy;
   int loop;
-  bool use_sh_base_pos_rpy;
 };
 
 
 extern "C"
 {
-  void ImpedanceControllerInit(RTC::Manager* manager);
+  void ObjectContactTurnaroundDetectorInit(RTC::Manager* manager);
 };
 
-#endif // IMPEDANCE_H
+#endif // OBJECTCONTACTTURNAROUNDDETECTOR_H

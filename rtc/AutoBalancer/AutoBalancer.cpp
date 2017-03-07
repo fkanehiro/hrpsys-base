@@ -406,7 +406,7 @@ RTC::ReturnCode_t AutoBalancer::onDeactivated(RTC::UniqueId ec_id)
   if (control_mode == MODE_ABC) {
     control_mode = MODE_SYNC_TO_IDLE;
     double tmp_ratio = 0.0;
-    transition_interpolator->go(&tmp_ratio, m_dt, true); // sync in one controller loop
+    transition_interpolator->setGoal(&tmp_ratio, m_dt, true); // sync in one controller loop
   }
   return RTC::RTC_OK;
 }
@@ -605,6 +605,10 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
 
     for (unsigned int i=0; i<m_limbCOPOffsetOut.size(); i++){
         m_limbCOPOffset[i].tm = m_qRef.tm;
+        // transition (TODO:set stopABCmode value instead of 0)
+        m_limbCOPOffset[i].data.x = transition_interpolator_ratio * m_limbCOPOffset[i].data.x;// + (1-transition_interpolator_ratio) * 0;
+        m_limbCOPOffset[i].data.y = transition_interpolator_ratio * m_limbCOPOffset[i].data.y;// + (1-transition_interpolator_ratio) * 0;
+        m_limbCOPOffset[i].data.z = transition_interpolator_ratio * m_limbCOPOffset[i].data.z;// + (1-transition_interpolator_ratio) * 0;
         m_limbCOPOffsetOut[i]->write();
     }
 
@@ -631,7 +635,6 @@ void AutoBalancer::getTargetParameters()
   m_robot->rootLink()->p = input_basePos;
   m_robot->rootLink()->R = input_baseRot;
   m_robot->calcForwardKinematics();
-  //
   if (control_mode != MODE_IDLE) {
     coordinates tmp_fix_coords;
     if (!zmp_offset_interpolator->isEmpty()) {
@@ -934,6 +937,12 @@ void AutoBalancer::getTargetParameters()
           }
       }
       multi_mid_coords(fix_leg_coords, tmp_end_coords_list);
+      // limbCOPOffset
+      for (unsigned int i=0; i<m_limbCOPOffsetOut.size(); i++){
+          m_limbCOPOffset[i].data.x = 0;
+          m_limbCOPOffset[i].data.y = 0;
+          m_limbCOPOffset[i].data.z = 0;
+      }
   }
 };
 
@@ -1080,7 +1089,7 @@ void AutoBalancer::startABCparam(const OpenHRP::AutoBalancerService::StrSequence
   transition_interpolator->clear();
   transition_interpolator->set(&tmp_ratio);
   tmp_ratio = 1.0;
-  transition_interpolator->go(&tmp_ratio, transition_time, true);
+  transition_interpolator->setGoal(&tmp_ratio, transition_time, true);
   for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
     it->second.is_active = false;
   }
@@ -1102,7 +1111,7 @@ void AutoBalancer::stopABCparam()
   transition_interpolator->clear();
   transition_interpolator->set(&tmp_ratio);
   tmp_ratio = 0.0;
-  transition_interpolator->go(&tmp_ratio, transition_time, true);
+  transition_interpolator->setGoal(&tmp_ratio, transition_time, true);
   control_mode = MODE_SYNC_TO_IDLE;
 }
 
@@ -1581,7 +1590,7 @@ bool AutoBalancer::setAutoBalancerParam(const OpenHRP::AutoBalancerService::Auto
   adjust_footstep_transition_time = i_param.adjust_footstep_transition_time;
   if (zmp_offset_interpolator->isEmpty()) {
       zmp_offset_interpolator->clear();
-      zmp_offset_interpolator->go(default_zmp_offsets_array, zmp_transition_time, true);
+      zmp_offset_interpolator->setGoal(default_zmp_offsets_array, zmp_transition_time, true);
   } else {
       std::cerr << "[" << m_profile.instance_name << "]   default_zmp_offsets cannot be set because interpolating." << std::endl;
   }
@@ -1625,7 +1634,7 @@ bool AutoBalancer::setAutoBalancerParam(const OpenHRP::AutoBalancerService::Auto
               double tmp_ratio = 0.0;
               leg_names_interpolator->set(&tmp_ratio);
               tmp_ratio = 1.0;
-              leg_names_interpolator->go(&tmp_ratio, 5.0, true);
+              leg_names_interpolator->setGoal(&tmp_ratio, 5.0, true);
               control_mode = MODE_SYNC_TO_ABC;
           }
       }
@@ -1924,7 +1933,7 @@ bool AutoBalancer::adjustFootSteps(const OpenHRP::AutoBalancerService::Footstep&
       double tmp = 0.0;
       adjust_footstep_interpolator->set(&tmp);
       tmp = 1.0;
-      adjust_footstep_interpolator->go(&tmp, adjust_footstep_transition_time, true);
+      adjust_footstep_interpolator->setGoal(&tmp, adjust_footstep_transition_time, true);
   }
   while (!adjust_footstep_interpolator->isEmpty() )
     usleep(1000);
