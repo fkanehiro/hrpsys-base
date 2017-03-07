@@ -262,7 +262,7 @@ if(EXISTS \${_catkin_marker_file})
     # append to existing list of sourcespaces if it's not in the list
     list(FIND _existing_sourcespaces \"${CMAKE_INSTALL_PREFIX}/${CATKIN_PACKAGE_SHARE_DESTINATION}\" _existing_sourcespace_index)
     if(_existing_sourcespace_index EQUAL -1)
-      file(APPEND \${_catkin_marker_file} \";${CMAKE_INSTALL_PREFIX}/${CATKIN_PACKAGE_SHARE_DESTINATION}\")
+      file(APPEND \${_catkin_marker_file} \"\;${CMAKE_INSTALL_PREFIX}/${CATKIN_PACKAGE_SHARE_DESTINATION}\")
     endif()
   endif()
 else()
