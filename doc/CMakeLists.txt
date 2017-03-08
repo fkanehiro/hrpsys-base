@@ -12,9 +12,10 @@ set(input_files package.h utilities.h
 		      ../rtc/JpegDecoder/JpegDecoder.txt
 		      ../rtc/NullComponent/NullComponent.txt
 		      ../rtc/EmergencyStopper/EmergencyStopper.txt
+		      ../rtc/ObjectContactTurnaroundDetector/ObjectContactTurnaroundDetector.txt
 		      ../rtc/OccupancyGridMap3D/OccupancyGridMap3D.txt
 		      ../rtc/OGMap3DViewer/OGMap3DViewer.txt
-		      ../rtc/ObjectContactTurnaroundDetector/ObjectContactTurnaroundDetector.txt
+		      ../rtc/OpenNIGrabber/OpenNIGrabber.txt
 		      ../rtc/Range2PointCloud/Range2PointCloud.txt
 		      ../rtc/RobotHardware/RobotHardware.txt
 		      ../rtc/SequencePlayer/SequencePlayer.txt
