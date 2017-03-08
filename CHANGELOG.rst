@@ -2,6 +2,79 @@
 Changelog for package hrpsys
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+315.12.0 (2017-03-08)
+---------------------
+
+Stable RTCs
+=============
+
+* Do not store history of gh-pages
+  * Do not store history of gh-pages (`#1107 <https://github.com/fkanehiro/hrpsys-base/issues/1107>`_)
+    * .travis.yml : do not keep history in gh-pages
+  * Fix git push for gh-pages (`#1108 <https://github.com/fkanehiro/hrpsys-base/issues/1108>`_)
+    * fix `#1107 <https://github.com/fkanehiro/hrpsys-base/issues/1107>`_: need to push with -f
+
+* Fix bug of cmake for latest catkin (`#1103 <https://github.com/fkanehiro/hrpsys-base/issues/1103>`_)
+  * fix https://github.com/start-jsk/rtmros_common/pull/998, for latest catkin
+
+* Update maintainer and docs (`#1100 <https://github.com/fkanehiro/hrpsys-base/issues/1100>`_)
+  * Update maintainer
+  * [doc] Clarify workspace for get*Pose methods. [doc] Add missing rtype for setJoint* methods.
+
+
+Unstable RTCs
+=============
+
+* CameraImageViewer OpenNIGrabber
+  * Update for depth image(`#1106 <https://github.com/fkanehiro/hrpsys-base/issues/1106>`_)
+    * resolve conflicts
+    * enable output both of image and point cloud
+    * update document
+    * add a configuration variable depthBits to CameraImageViewer
+    * support depth image (not tested yet)
+    * support CF_DEPTH (not tested yet)
+    * add CF_RGB to ColorFormat
+  * Update for OpenNIGrabber (`#1096 <https://github.com/fkanehiro/hrpsys-base/issues/1096>`_)
+    * flip Y and Z coordinates
+    * enable to change execution period
+    * set timestamps to output data
+    * set true to is_dense
+
+* Stabilizer
+  * Bug fix of transition among stop, start, ground, and air mode (`#1104 <https://github.com/fkanehiro/hrpsys-base/issues/1104>`_)
+    * [rtc/Stabilizer/Stabilizer.cpp] Fix bug of st transition related with air and ground (https://github.com/fkanehiro/hrpsys-base/issues/1098, https://github.com/fkanehiro/hrpsys-base/pull/1102)
+    * [sample/SampleRobot/samplerobot_stabilizer.py] Add test code to check ST transition problem (https://github.com/fkanehiro/hrpsys-base/issues/1098, https://github.com/fkanehiro/hrpsys-base/pull/1102).
+  * Bug fix of stop/start transition (`#1102 <https://github.com/fkanehiro/hrpsys-base/issues/1102>`_)
+    * [rtc/Stabilizer/Stabilizer.cpp] Reset prev_ref_cog for transition (MODE_IDLE=>MODE_ST) because the coordinates for ref_cog differs among st algorithms.
+    * [rtc/Stabilizer/Stabilizer.cpp] Wait for MODE transition regardless of whether the client program is mode changer or not (https://github.com/fkanehiro/hrpsys-base/issues/1098)
+  * Update for st control low (`#1099 <https://github.com/fkanehiro/hrpsys-base/issues/1099>`_)
+    * [rtc/Stabilizer/Stabilizer.*] Enable to update is_feedback_control_enable flag while MODE_ST
+    * [rtc/Stabilizer/ZMPDistributor.h] Use 6dof total wrench in ZMPdistribution in EEFMQPCOP2
+
+* ObjectContactTurnaroundDetector (Add new RTC separated from ImpedanceController) (`#1101 <https://github.com/fkanehiro/hrpsys-base/issues/1101>`_)
+  * [idl/ImpedanceControllerService.idl,rtc/ImpedanceController] Remove ObjectContactTurnaroundDetector from ImpedanceController.
+  * [sample/SampleRobot/samplerobot_carry_object.py, samplerobot_impedancecontroller.py] Use OCTD RTC instead of ImpedanceController
+  * [python/hrpsys_config.py,launch/samplerobot.launch,doc] Update hrpsyspy, launch, and doc for ObjectContactTurnaroundDetector RTC
+  * [rtc/CMakeLists.txt,idl/CMakeLists.txt,rtc/ObjectContactTurnaroundDetector,idl/ObjectContactTurnaroundDetectorService.idl] Add ObjectContactTurnaroundDetector RTC for object manipulation separated from ImpedanceController
+
+* TorqueFilter/IIRFilter (`#1097 <https://github.com/fkanehiro/hrpsys-base/issues/1097>`_)
+  * [rtc/TorqueFilter] Add comments for IIR Filter implementation
+  * [rtc/TorqueFilter] Fix reset function to output initial_value
+
+* ImpedanceController (`#1099 <https://github.com/fkanehiro/hrpsys-base/issues/1099>`_)
+  * [rtc/ImpedanceController/ImpedanceController.cpp,h,ObjectTurnaroundDetector.h] Add port for otd data (mode, wrench values)
+  * [rtc/ImpedanceController/ImpedanceController.cpp] Add calcForwardKinematics for state calculation.
+
+* AutoBalancer (`#1099 <https://github.com/fkanehiro/hrpsys-base/issues/1099>`_)
+  * [rtc/AutoBalancer/AutoBalancer.cpp] Transition m_limbCOPOffset in ABC (in MODE_IDLE, set to 0).
+  * [rtc/AutoBalancer/AutoBalancer.cpp] Use setGoal instead of go for autobalancer transition.
+
+* KalmanFilter (`#1099 <https://github.com/fkanehiro/hrpsys-base/issues/1099>`_)
+  * [rtc/KalmanFilter/CMakeLists.txt, testKFilter.cpp] Add test code for KFilter class.
+  * [rtc/KalmanFilter/KalmanFilter.cpp] Consider sensor offset for gyro value.
+
+* Contributors: Fumio KANEHIRO, Isaac I.Y. Saito, Kei Okada, Shunichi Nozawa, Iori Kumagai
+
 315.11.0 (2017-02-17)
 ---------------------
 
