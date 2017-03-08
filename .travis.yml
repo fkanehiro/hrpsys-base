@@ -55,7 +55,7 @@ after_success:
   - if [ "$TRAVIS_PULL_REQUEST" == "false" -a "$TRAVIS_BRANCH" == "master" -a "$TEST_PACKAGE" == "hrpsys" -a "$TEST_TYPE" == "" ]; then git branch -D gh-pages; fi
   - if [ "$TRAVIS_PULL_REQUEST" == "false" -a "$TRAVIS_BRANCH" == "master" -a "$TEST_PACKAGE" == "hrpsys" -a "$TEST_TYPE" == "" ]; then git branch -m gh-pages; fi
   - if [ "$TRAVIS_PULL_REQUEST" == "false" -a "$TRAVIS_BRANCH" == "master" -a "$TEST_PACKAGE" == "hrpsys" -a "$TEST_TYPE" == "" ]; then git remote -v; fi
-  - if [ "$TRAVIS_PULL_REQUEST" == "false" -a "$TRAVIS_BRANCH" == "master" -a "$TEST_PACKAGE" == "hrpsys" -a "$TEST_TYPE" == "" ]; then git push --quiet https://$GH_TOKEN@github.com/$TRAVIS_REPO_SLUG.git gh-pages; fi
+  - if [ "$TRAVIS_PULL_REQUEST" == "false" -a "$TRAVIS_BRANCH" == "master" -a "$TEST_PACKAGE" == "hrpsys" -a "$TEST_TYPE" == "" ]; then git push -f --quiet https://$GH_TOKEN@github.com/$TRAVIS_REPO_SLUG.git gh-pages; fi
 
 
 
