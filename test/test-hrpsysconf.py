@@ -61,15 +61,19 @@ class TestHrpsysConfig(unittest.TestCase):
             rtm.nshost = args.host
         if args.port:
             rtm.nsport = args.port
-        h = SampleHrpsysConfigurator()
+        self.h = SampleHrpsysConfigurator()
 
-        h.waitForRTCManager()
+        self.h.waitForRTCManager()
         # look for name
-        for c in h.ms.get_components():
+        for c in self.h.ms.get_components():
             if '(Robot)' in c.name() or 'RobotHardware' in c.name():
-                h.waitForRobotHardware(c.name())  # get robot hardware name
+                self.h.waitForRobotHardware(c.name())  # get robot hardware name
                 break;
-        self.rh = h.rh
+        self.rh = self.h.rh
+
+    def test_clearJointAngles(self):
+        self.h.setJointAngles(h.getJointAngles(), 0.25)
+        self.h.clearJointAngles()
 
 #unittest.main()
 if __name__ == '__main__':
