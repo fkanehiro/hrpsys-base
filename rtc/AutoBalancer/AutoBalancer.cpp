@@ -928,9 +928,6 @@ hrp::Vector3 AutoBalancer::calcFootMidPosUsingZMPWeightMap ()
     double sum_of_weight = 0.0;
     for (size_t i = 0; i < leg_names.size(); i++) {
         ABCIKparam& tmpikp = ikp[leg_names[i]];
-        // get target_end_coords
-        tmpikp.target_end_coords.pos = tmpikp.target_p0;
-        tmpikp.target_end_coords.rot = tmpikp.target_r0;
         // for foot_mid_pos
         std::map<leg_type, std::string>::const_iterator dst = std::find_if(leg_type_map.begin(), leg_type_map.end(), (&boost::lambda::_1->* &std::map<leg_type, std::string>::value_type::second == leg_names[i]));
         tmp_foot_mid_pos += (tmpikp.target_p0 + tmpikp.target_r0 * default_zmp_offsets[i]) * zmp_weight_map[dst->first];
@@ -1177,9 +1174,9 @@ void AutoBalancer::startWalking ()
                         std::back_inserter(init_support_leg_names));
     std::vector<step_node> init_support_leg_steps, init_swing_leg_dst_steps;
     for (std::vector<std::string>::iterator it = init_support_leg_names.begin(); it != init_support_leg_names.end(); it++)
-        init_support_leg_steps.push_back(step_node(*it, ikp[*it].target_end_coords, 0, 0, 0, 0));
+        init_support_leg_steps.push_back(step_node(*it, coordinates(ikp[*it].target_p0, ikp[*it].target_r0), 0, 0, 0, 0));
     for (std::vector<std::string>::iterator it = init_swing_leg_names.begin(); it != init_swing_leg_names.end(); it++)
-        init_swing_leg_dst_steps.push_back(step_node(*it, ikp[*it].target_end_coords, 0, 0, 0, 0));
+        init_swing_leg_dst_steps.push_back(step_node(*it, coordinates(ikp[*it].target_p0, ikp[*it].target_r0), 0, 0, 0, 0));
     gg->set_default_zmp_offsets(default_zmp_offsets);
     gg->initialize_gait_parameter(ref_cog, init_support_leg_steps, init_swing_leg_dst_steps);
   }
@@ -1195,7 +1192,7 @@ void AutoBalancer::stopWalking ()
 {
   std::vector<coordinates> tmp_end_coords_list;
   for (std::vector<string>::iterator it = leg_names.begin(); it != leg_names.end(); it++) {
-      if ((*it).find("leg") != std::string::npos) tmp_end_coords_list.push_back(ikp[*it].target_end_coords);
+      if ((*it).find("leg") != std::string::npos) tmp_end_coords_list.push_back(coordinates(ikp[*it].target_p0, ikp[*it].target_r0));
   }
   multi_mid_coords(fix_leg_coords, tmp_end_coords_list);
   fixLegToCoords(fix_leg_coords.pos, fix_leg_coords.rot);
@@ -1271,7 +1268,8 @@ bool AutoBalancer::goVelocity(const double& vx, const double& vy, const double& 
     gg->set_velocity_param(vx, vy, vth);
   } else {
     coordinates ref_coords;
-    mid_coords(ref_coords, 0.5, ikp["rleg"].target_end_coords, ikp["lleg"].target_end_coords);
+    ref_coords.pos = (ikp["rleg"].target_p0+ikp["lleg"].target_p0)*0.5;
+    mid_rot(ref_coords.rot, 0.5, ikp["rleg"].target_r0, ikp["lleg"].target_r0);
     std::vector<leg_type> current_legs;
     switch(gait_type) {
     case BIPED:
@@ -1363,7 +1361,8 @@ bool AutoBalancer::setFootStepsWithParam(const OpenHRP::AutoBalancerService::Foo
             } else {
                 // If walking, snap initial leg to current ABC foot coords.
                 for (size_t i = 0; i < fss[0].fs.length(); i++) {
-                    initial_support_steps.push_back(step_node(std::string(fss[0].fs[i].leg), ikp[std::string(fss[0].fs[i].leg)].target_end_coords, 0, 0, 0, 0));
+                    ABCIKparam& tmpikp = ikp[std::string(fss[0].fs[i].leg)];
+                    initial_support_steps.push_back(step_node(std::string(fss[0].fs[i].leg), coordinates(tmpikp.target_p0, tmpikp.target_r0), 0, 0, 0, 0));
                 }
             }
             initial_support_step = initial_support_steps.front(); /* use only one leg for representation */
@@ -2122,20 +2121,20 @@ bool AutoBalancer::calc_inital_support_legs(const double& y, std::vector<coordin
     switch(gait_type) {
     case BIPED:
         initial_support_legs_coords = (y > 0 ?
-                                       boost::assign::list_of(ikp["rleg"].target_end_coords)
-                                       : boost::assign::list_of(ikp["lleg"].target_end_coords));
+                                       boost::assign::list_of(coordinates(ikp["rleg"].target_p0, ikp["rleg"].target_r0))
+                                       : boost::assign::list_of(coordinates(ikp["lleg"].target_p0, ikp["lleg"].target_r0)));
         initial_support_legs = (y > 0 ? boost::assign::list_of(RLEG) : boost::assign::list_of(LLEG));
         break;
     case TROT:
         initial_support_legs_coords = (y > 0 ?
-                                       boost::assign::list_of(ikp["rleg"].target_end_coords)(ikp["larm"].target_end_coords)
-                                       : boost::assign::list_of(ikp["lleg"].target_end_coords)(ikp["rarm"].target_end_coords));
+                                       boost::assign::list_of(coordinates(ikp["rleg"].target_p0, ikp["rleg"].target_r0))(coordinates(ikp["larm"].target_p0, ikp["larm"].target_r0))
+                                       : boost::assign::list_of(coordinates(ikp["lleg"].target_p0, ikp["lleg"].target_r0))(coordinates(ikp["rarm"].target_p0, ikp["rarm"].target_r0)));
         initial_support_legs = (y > 0 ? boost::assign::list_of(RLEG)(LARM) : boost::assign::list_of(LLEG)(RARM));
         break;
     case PACE:
         initial_support_legs_coords = (y > 0 ?
-                                       boost::assign::list_of(ikp["rleg"].target_end_coords)(ikp["rarm"].target_end_coords)
-                                       : boost::assign::list_of(ikp["lleg"].target_end_coords)(ikp["larm"].target_end_coords));
+                                       boost::assign::list_of(coordinates(ikp["rleg"].target_p0, ikp["rleg"].target_r0))(coordinates(ikp["rarm"].target_p0, ikp["rarm"].target_r0))
+                                       : boost::assign::list_of(coordinates(ikp["lleg"].target_p0, ikp["lleg"].target_r0))(coordinates(ikp["larm"].target_p0, ikp["larm"].target_r0)));
         initial_support_legs = (y > 0 ? boost::assign::list_of(RLEG)(RARM) : boost::assign::list_of(LLEG)(LARM));
         break;
     case CRAWL:
@@ -2147,7 +2146,8 @@ bool AutoBalancer::calc_inital_support_legs(const double& y, std::vector<coordin
         return false;
     default: break;
     }
-    mid_coords(start_ref_coords, 0.5, ikp["rleg"].target_end_coords, ikp["lleg"].target_end_coords);
+    start_ref_coords.pos = (ikp["rleg"].target_p0+ikp["lleg"].target_p0)*0.5;
+    mid_rot(start_ref_coords.rot, 0.5, ikp["rleg"].target_r0, ikp["lleg"].target_r0);
     return true;
 };
 

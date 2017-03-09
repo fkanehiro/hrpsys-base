@@ -192,7 +192,6 @@ class AutoBalancer
   struct ABCIKparam {
     hrp::Vector3 target_p0, localPos, adjust_interpolation_target_p0, adjust_interpolation_org_p0;
     hrp::Matrix33 target_r0, localR, adjust_interpolation_target_r0, adjust_interpolation_org_r0;
-    rats::coordinates target_end_coords;
     hrp::Link* target_link;
     hrp::JointPathExPtr manip;
     double avoid_gain, reference_gain;
