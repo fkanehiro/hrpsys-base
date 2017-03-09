@@ -638,6 +638,8 @@ namespace rats
     //   std::cerr << ")" << std::endl;
     // }
 
+    calc_future_cog();
+
     /* update swing_leg_coords, support_leg_coords */
     if ( solved ) {
       lcg.update_leg_steps(footstep_nodes_list, default_double_support_ratio_swing_before, default_double_support_ratio_swing_after, thtc);
@@ -677,6 +679,48 @@ namespace rats
     }
     // world frame
     cur_fs.worldcoords.pos = prev_fs.worldcoords.pos + prev_fs.worldcoords.rot * cur_fs.worldcoords.pos;
+  };
+
+  /* calculate future cog when touching down and taking off
+   * and difference between current and future end-effector position
+   * based on LIPM daynamics
+   */
+  void gait_generator::calc_future_cog ()
+  {
+    double omega = std::sqrt(gravitational_acceleration / cog(2) - refzmp(2));
+    std::vector<step_node> swg_leg_stps = lcg.get_swing_leg_steps();
+    if (lcg.get_lcg_count() < static_cast<size_t>(footstep_nodes_list[lcg.get_footstep_index()][0].step_time/dt * (1.0 - default_double_support_ratio_before)) - 1
+        && lcg.get_lcg_count() >= static_cast<size_t>(footstep_nodes_list[lcg.get_footstep_index()][0].step_time/dt * default_double_support_ratio_after) - 1) { // single support phase
+      limb_stretch_remain_time = static_cast<double>(lcg.get_lcg_count() + 1) * dt - footstep_nodes_list[lcg.get_footstep_index()][0].step_time * default_double_support_ratio_after;
+      hrp::Vector3 future_cog = (cog - refzmp) * std::cosh(omega * limb_stretch_remain_time) + (cog - prev_cog) / dt / omega * std::sinh(omega * limb_stretch_remain_time) + refzmp;
+      future_cog(2) = cog(2);
+      for (size_t i = 0; i < all_limbs.size(); i++) {
+        bool is_swing = false;
+        for (size_t j = 0; j < swg_leg_stps.size(); j++) {
+          if (all_limbs[i] ==  leg_type_map[swg_leg_stps[j].l_r]) {
+            future_d_ee_pos[i] = (cog - swg_leg_stps[j].worldcoords.pos) - (future_cog - footstep_nodes_list[lcg.get_footstep_index()][j].worldcoords.pos);
+            is_swing = true;
+          }
+        }
+        if (!is_swing) future_d_ee_pos[i] = cog - future_cog;
+      }
+    } else if (lcg.get_lcg_count() >= static_cast<size_t>(footstep_nodes_list[lcg.get_footstep_index()][0].step_time/dt * (1.0 - default_double_support_ratio_before)) - 1) { // double support (before) phase
+      limb_stretch_remain_time = static_cast<double>(lcg.get_lcg_count() + 1) * dt - footstep_nodes_list[lcg.get_footstep_index()][0].step_time * (1.0 - default_double_support_ratio_before);
+      hrp::Vector3 future_cog = (cog - refzmp) * std::cosh(omega * limb_stretch_remain_time) + ((cog - prev_cog)/dt - (refzmp - prev_refzmp)/dt) / omega * std::sinh(omega * limb_stretch_remain_time) + refzmp + (refzmp - prev_refzmp)/dt * limb_stretch_remain_time;
+      future_cog(2) = cog(2);
+      for (size_t i = 0; i < all_limbs.size(); i++) {
+        future_d_ee_pos[i] = cog - future_cog;
+      }
+    } else {  // double support (after) phase
+      limb_stretch_remain_time = static_cast<double>(lcg.get_lcg_count() + 1) * dt + footstep_nodes_list[lcg.get_footstep_index() + (get_footstep_index()<footstep_nodes_list.size()-1?1:0)][0].step_time * default_double_support_ratio_before;
+      hrp::Vector3 future_cog = (cog - refzmp) * std::cosh(omega * limb_stretch_remain_time) + ((cog - prev_cog)/dt - (refzmp - prev_refzmp)/dt) / omega * std::sinh(omega * limb_stretch_remain_time) + refzmp + (refzmp - prev_refzmp)/dt * limb_stretch_remain_time;
+      future_cog(2) = cog(2);
+      for (size_t i = 0; i < all_limbs.size(); i++) {
+        future_d_ee_pos[i] = cog - future_cog;
+      }
+    }
+    prev_cog = cog;
+    prev_refzmp = refzmp;
   };
 
   /* generate vector of step_node from :go-pos params

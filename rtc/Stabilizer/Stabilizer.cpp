@@ -66,6 +66,7 @@ Stabilizer::Stabilizer(RTC::Manager* manager)
     m_qRefSeqIn("qRefSeq", m_qRefSeq),
     m_walkingStatesIn("walkingStates", m_walkingStates),
     m_sbpCogOffsetIn("sbpCogOffset", m_sbpCogOffset),
+    m_interpolatedRootHeightIn("interpolatedRootHeight", m_interpolatedRootHeight),
     m_qRefOut("q", m_qRef),
     m_tauOut("tau", m_tau),
     m_zmpOut("zmp", m_zmp),
@@ -126,6 +127,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   addInPort("qRefSeq", m_qRefSeqIn);
   addInPort("walkingStates", m_walkingStatesIn);
   addInPort("sbpCogOffset", m_sbpCogOffsetIn);
+  addInPort("interpolatedRootHeight", m_interpolatedRootHeightIn);
 
   // Set OutPort buffer
   addOutPort("q", m_qRefOut);
@@ -598,6 +600,10 @@ RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
     sbp_cog_offset(1) = m_sbpCogOffset.data.y;
     sbp_cog_offset(2) = m_sbpCogOffset.data.z;
   }
+  if (m_interpolatedRootHeightIn.isNew()){
+    m_interpolatedRootHeightIn.read();
+    interpolated_d_pos_z_root = m_interpolatedRootHeight.data;
+  }
 
   if (is_legged_robot) {
     getCurrentParameters();
@@ -627,6 +633,7 @@ RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
       control_mode = MODE_AIR;
       break;
     }
+    if (control_mode != MODE_ST) d_pos_z_root = 0.0;
   }
   if ( m_robot->numJoints() == m_qRef.data.length() ) {
     if (is_legged_robot) {
@@ -1532,7 +1539,6 @@ void Stabilizer::calcEEForceMomentControl() {
       //   IK target is link origin pos and rot, not ee pos and rot.
       std::vector<hrp::Vector3> tmpp(stikp.size());
       std::vector<hrp::Matrix33> tmpR(stikp.size());
-      double tmp_d_pos_z_root = 0.0;
       for (size_t i = 0; i < stikp.size(); i++) {
         if (is_ik_enable[i]) {
           // Add damping_control compensation to target value
@@ -1552,7 +1558,7 @@ void Stabilizer::calcEEForceMomentControl() {
         }
       }
 
-      if (use_limb_stretch_avoidance) limbStretchAvoidanceControl(tmpp ,tmpR);
+      limbStretchAvoidanceControl(tmpp ,tmpR);
 
       // IK
       for (size_t i = 0; i < stikp.size(); i++) {
@@ -1616,22 +1622,26 @@ void Stabilizer::calcSwingEEModification ()
 
 void Stabilizer::limbStretchAvoidanceControl (const std::vector<hrp::Vector3>& ee_p, const std::vector<hrp::Matrix33>& ee_R)
 {
-  double tmp_d_pos_z_root = 0.0;
-  for (size_t i = 0; i < stikp.size(); i++) {
-    if (is_ik_enable[i]) {
-      // Check whether inside limb length limitation
-      hrp::Link* parent_link = m_robot->link(stikp[i].parent_name);
-      hrp::Vector3 targetp = (ee_p[i] - ee_R[i] * stikp[i].localR.transpose() * stikp[i].localp) - parent_link->p; // position from parent to target link (world frame)
-      double limb_length_limitation = stikp[i].max_limb_length - stikp[i].limb_length_margin;
-      double tmp = limb_length_limitation * limb_length_limitation - targetp(0) * targetp(0) - targetp(1) * targetp(1);
-      if (targetp.norm() > limb_length_limitation && tmp >= 0) {
-        tmp_d_pos_z_root = std::min(tmp_d_pos_z_root, targetp(2) + std::sqrt(tmp));
+  double tmp_d_pos_z_root = 0.0, prev_d_pos_z_root = d_pos_z_root;
+  if (use_limb_stretch_avoidance) {
+    for (size_t i = 0; i < stikp.size(); i++) {
+      if (is_ik_enable[i]) {
+        // Check whether inside limb length limitation
+        hrp::Link* parent_link = m_robot->link(stikp[i].parent_name);
+        hrp::Vector3 targetp = (ee_p[i] - ee_R[i] * stikp[i].localR.transpose() * stikp[i].localp) - parent_link->p; // position from parent to target link (world frame)
+        double limb_length_limitation = stikp[i].max_limb_length - stikp[i].limb_length_margin;
+        double tmp = limb_length_limitation * limb_length_limitation - targetp(0) * targetp(0) - targetp(1) * targetp(1);
+        if (targetp.norm() > limb_length_limitation && tmp >= 0) {
+          tmp_d_pos_z_root = std::min(tmp_d_pos_z_root, targetp(2) + std::sqrt(tmp));
+        }
       }
     }
+    tmp_d_pos_z_root = std::min(tmp_d_pos_z_root, interpolated_d_pos_z_root);
+    // Change root link height depending on limb length
+    d_pos_z_root = tmp_d_pos_z_root == 0.0 ? calcDampingControl(d_pos_z_root, limb_stretch_avoidance_time_const) : tmp_d_pos_z_root;
+  } else {
+    d_pos_z_root = calcDampingControl(d_pos_z_root, limb_stretch_avoidance_time_const);
   }
-  // Change root link height depending on limb length
-  double prev_d_pos_z_root = d_pos_z_root;
-  d_pos_z_root = tmp_d_pos_z_root == 0.0 ? calcDampingControl(d_pos_z_root, limb_stretch_avoidance_time_const) : tmp_d_pos_z_root;
   d_pos_z_root = vlimit(d_pos_z_root, prev_d_pos_z_root + limb_stretch_avoidance_vlimit[0], prev_d_pos_z_root + limb_stretch_avoidance_vlimit[1]);
   m_robot->rootLink()->p(2) += d_pos_z_root;
 }

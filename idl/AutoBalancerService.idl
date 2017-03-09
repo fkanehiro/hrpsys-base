@@ -301,6 +301,8 @@ module OpenHRP
       GaitType default_gait_type;
       /// Sequence for all end-effectors' ik limb parameters
       sequence<IKLimbParameters> ik_limb_parameters;
+      /// Sequence of limb length margin from max limb length [m]
+      sequence<double> limb_length_margin;
     };
 
     /**

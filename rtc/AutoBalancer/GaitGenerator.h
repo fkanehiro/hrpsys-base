@@ -1029,7 +1029,7 @@ namespace rats
     footstep_parameter footstep_param;
     velocity_mode_parameter vel_param, offset_vel_param;
     toe_heel_type_checker thtc;
-    hrp::Vector3 cog, refzmp, prev_que_rzmp; /* cog by calculating proc_one_tick */
+    hrp::Vector3 cog, prev_cog, refzmp, prev_refzmp, prev_que_rzmp; /* cog by calculating proc_one_tick */
     std::vector<hrp::Vector3> swing_foot_zmp_offsets, prev_que_sfzos;
     double dt; /* control loop [s] */
     std::vector<std::string> all_limbs;
@@ -1054,6 +1054,8 @@ namespace rats
     double leg_margin[4], overwritable_stride_limitation[4];
     bool use_stride_limitation;
     stride_limitation_type default_stride_limitation_type;
+    double limb_stretch_remain_time;
+    std::vector<hrp::Vector3> future_d_ee_pos;
 
     /* preview controller parameters */
     //preview_dynamics_filter<preview_control>* preview_controller_ptr;
@@ -1096,17 +1098,18 @@ namespace rats
                     const double _stride_fwd_x, const double _stride_y, const double _stride_theta, const double _stride_bwd_x)
         : footstep_nodes_list(), overwrite_footstep_nodes_list(), rg(_dt), lcg(_dt),
         footstep_param(_leg_pos, _stride_fwd_x, _stride_y, _stride_theta, _stride_bwd_x),
-        vel_param(), offset_vel_param(), thtc(), cog(hrp::Vector3::Zero()), refzmp(hrp::Vector3::Zero()), prev_que_rzmp(hrp::Vector3::Zero()),
+        vel_param(), offset_vel_param(), thtc(), cog(hrp::Vector3::Zero()), prev_cog(hrp::Vector3::Zero()), refzmp(hrp::Vector3::Zero()), prev_refzmp(hrp::Vector3::Zero()), prev_que_rzmp(hrp::Vector3::Zero()),
         dt(_dt), all_limbs(_all_limbs), default_step_time(1.0), default_double_support_ratio_before(0.1), default_double_support_ratio_after(0.1), default_double_support_static_ratio_before(0.0), default_double_support_static_ratio_after(0.0), default_double_support_ratio_swing_before(0.1), default_double_support_ratio_swing_after(0.1), gravitational_acceleration(DEFAULT_GRAVITATIONAL_ACCELERATION),
         finalize_count(0), optional_go_pos_finalize_footstep_num(0), overwrite_footstep_index(0), overwritable_footstep_index_offset(1),
         velocity_mode_flg(VEL_IDLING), emergency_flg(IDLING),
-        use_inside_step_limitation(true), use_stride_limitation(false), default_stride_limitation_type(SQUARE),
+        use_inside_step_limitation(true), use_stride_limitation(false), default_stride_limitation_type(SQUARE), limb_stretch_remain_time(0.0),
         preview_controller_ptr(NULL) {
         swing_foot_zmp_offsets = boost::assign::list_of<hrp::Vector3>(hrp::Vector3::Zero());
         prev_que_sfzos = boost::assign::list_of<hrp::Vector3>(hrp::Vector3::Zero());
         leg_type_map = boost::assign::map_list_of<leg_type, std::string>(RLEG, "rleg")(LLEG, "lleg")(RARM, "rarm")(LARM, "larm");
         for (size_t i = 0; i < 4; i++) leg_margin[i] = 0.1;
         for (size_t i = 0; i < 4; i++) overwritable_stride_limitation[i] = 0.2;
+        future_d_ee_pos.resize(_all_limbs.size(), hrp::Vector3::Zero());
     };
     ~gait_generator () {
       if ( preview_controller_ptr != NULL ) {
@@ -1120,6 +1123,7 @@ namespace rats
                                     const double delay = 1.6);
     bool proc_one_tick ();
     void limit_stride (step_node& cur_fs, const step_node& prev_fs) const;
+    void calc_future_cog ();
     void append_footstep_nodes (const std::vector<std::string>& _legs, const std::vector<coordinates>& _fss)
     {
         std::vector<step_node> tmp_sns;
@@ -1270,6 +1274,7 @@ namespace rats
     void set_stride_limitation_type (const stride_limitation_type _tmp) { default_stride_limitation_type = _tmp; };
     void set_toe_check_thre (const double _a) { thtc.set_toe_check_thre(_a); };
     void set_heel_check_thre (const double _a) { thtc.set_heel_check_thre(_a); };
+    void clear_future_d_ee_pos () { future_d_ee_pos.assign(all_limbs.size(), hrp::Vector3::Zero()); };
     /* Get overwritable footstep index. For example, if overwritable_footstep_index_offset = 1, overwrite next footstep. If overwritable_footstep_index_offset = 0, overwrite current swinging footstep. */
     size_t get_overwritable_index () const
     {
@@ -1430,6 +1435,8 @@ namespace rats
     stride_limitation_type get_stride_limitation_type () const { return default_stride_limitation_type; };
     double get_toe_check_thre () const { return thtc.get_toe_check_thre(); };
     double get_heel_check_thre () const { return thtc.get_heel_check_thre(); };
+    std::vector<hrp::Vector3> get_future_d_ee_pos () const { return future_d_ee_pos; };
+    double get_limb_stretch_remain_time () const { return limb_stretch_remain_time; };
     void print_param (const std::string& print_str = "") const
     {
         double stride_fwd_x, stride_y, stride_th, stride_bwd_x;

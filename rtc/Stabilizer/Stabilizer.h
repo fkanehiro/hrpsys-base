@@ -176,6 +176,7 @@ class Stabilizer
   RTC::TimedDoubleSeq m_qRefSeq;
   RTC::TimedBoolean m_walkingStates;
   RTC::TimedPoint3D m_sbpCogOffset;
+  RTC::TimedDouble m_interpolatedRootHeight;
   // for debug ouput
   RTC::TimedPoint3D m_originRefZmp, m_originRefCog, m_originRefCogVel, m_originNewZmp;
   RTC::TimedPoint3D m_originActZmp, m_originActCog, m_originActCogVel;
@@ -201,6 +202,7 @@ class Stabilizer
   RTC::InPort<RTC::TimedDoubleSeq> m_qRefSeqIn;
   RTC::InPort<RTC::TimedBoolean> m_walkingStatesIn;
   RTC::InPort<RTC::TimedPoint3D> m_sbpCogOffsetIn;
+  RTC::InPort<RTC::TimedDouble> m_interpolatedRootHeightIn;
 
   std::vector<RTC::TimedDoubleSeq> m_wrenches;
   std::vector<RTC::InPort<RTC::TimedDoubleSeq> *> m_wrenchesIn;
@@ -300,7 +302,7 @@ class Stabilizer
   hrp::Vector3 act_zmp, act_cog, act_cogvel, act_cp, rel_act_zmp, rel_act_cp, prev_act_cog, act_base_rpy, current_base_rpy, current_base_pos, sbp_cog_offset;
   hrp::Vector3 foot_origin_offset[2];
   std::vector<double> prev_act_force_z;
-  double zmp_origin_off, transition_smooth_gain, d_pos_z_root, limb_stretch_avoidance_time_const, limb_stretch_avoidance_vlimit[2];
+  double zmp_origin_off, transition_smooth_gain, d_pos_z_root, interpolated_d_pos_z_root, limb_stretch_avoidance_time_const, limb_stretch_avoidance_vlimit[2];
   boost::shared_ptr<FirstOrderLowPassFilter<hrp::Vector3> > act_cogvel_filter;
   OpenHRP::StabilizerService::STAlgorithm st_algorithm;
   SimpleZMPDistributor* szd;

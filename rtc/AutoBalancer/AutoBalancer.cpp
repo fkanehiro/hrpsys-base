@@ -73,6 +73,7 @@ AutoBalancer::AutoBalancer(RTC::Manager* manager)
       m_walkingStatesOut("walkingStates", m_walkingStates),
       m_sbpCogOffsetOut("sbpCogOffset", m_sbpCogOffset),
       m_cogOut("cogOut", m_cog),
+      m_interpolatedRootHeightOut("interpolatedRootHeight", m_interpolatedRootHeight),
       m_AutoBalancerServicePort("AutoBalancerService"),
       // </rtc-template>
       gait_type(BIPED),
@@ -117,6 +118,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     addOutPort("cogOut", m_cogOut);
     addOutPort("walkingStates", m_walkingStatesOut);
     addOutPort("sbpCogOffset", m_sbpCogOffsetOut);
+    addOutPort("interpolatedRootHeight", m_interpolatedRootHeightOut);
   
     // Set service provider to Ports
     m_AutoBalancerServicePort.registerProvider("service0", "AutoBalancerService", m_service0);
@@ -179,6 +181,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
         coil::stringTo(ee_target, end_effectors_str[i*prop_num+1].c_str());
         coil::stringTo(ee_base, end_effectors_str[i*prop_num+2].c_str());
         ABCIKparam tp;
+        hrp::Link* root = m_robot->link(ee_target);
         for (size_t j = 0; j < 3; j++) {
           coil::stringTo(tp.localPos(j), end_effectors_str[i*prop_num+3+j].c_str());
         }
@@ -203,6 +206,13 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
         tp.avoid_gain = 0.001;
         tp.reference_gain = 0.01;
         tp.pos_ik_error_count = tp.rot_ik_error_count = 0;
+        tp.max_limb_length = 0.0;
+        while (!root->isRoot()) {
+          tp.max_limb_length += root->b.norm();
+          tp.parent_name = root->name;
+          root = root->parent;
+        }
+        tp.limb_length_margin = 0.13;
         ikp.insert(std::pair<std::string, ABCIKparam>(ee_name , tp));
         ikp[ee_name].target_link = m_robot->link(ee_target);
         ee_vec.push_back(ee_name);
@@ -263,6 +273,8 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     leg_names_interpolator = new interpolator(1, m_dt, interpolator::HOFFARBIB, 1);
     leg_names_interpolator->setName(std::string(m_profile.instance_name)+" leg_names_interpolator");
     leg_names_interpolator_ratio = 1.0;
+    limb_stretch_avoidance_interpolator = new interpolator(1, m_dt, interpolator::HOFFARBIB, 1);
+    limb_stretch_avoidance_interpolator->setName(std::string(m_profile.instance_name)+" limb_stretch_avoidance_interpolator");
 
     // setting stride limitations from conf file
     double stride_fwd_x_limit = 0.15;
@@ -360,6 +372,8 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     rot_ik_thre = (1e-2)*M_PI/180.0; // [rad]
     ik_error_debug_print_freq = static_cast<int>(0.2/m_dt); // once per 0.2 [s]
 
+    prev_d_root_z_pos = 0.0;
+
     hrp::Sensor* sen = m_robot->sensor<hrp::RateGyroSensor>("gyrometer");
     if (sen == NULL) {
         std::cerr << "[" << m_profile.instance_name << "] WARNING! This robot model has no GyroSensor named 'gyrometer'! " << std::endl;
@@ -375,6 +389,7 @@ RTC::ReturnCode_t AutoBalancer::onFinalize()
   delete transition_interpolator;
   delete adjust_footstep_interpolator;
   delete leg_names_interpolator;
+  delete limb_stretch_avoidance_interpolator;
   return RTC::RTC_OK;
 }
 
@@ -510,6 +525,7 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
                   << "] Finished cleanup" << std::endl;
         control_mode = MODE_IDLE;
       }
+      interpolateLimbStretch();
     }
     if ( m_qRef.data.length() != 0 ) { // initialized
       if (is_legged_robot) {
@@ -593,6 +609,8 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
     m_walkingStates.data = gg_is_walking;
     m_walkingStates.tm = m_qRef.tm;
     m_walkingStatesOut.write();
+    m_interpolatedRootHeight.tm = m_qRef.tm;
+    m_interpolatedRootHeightOut.write();
 
     for (unsigned int i=0; i<m_ref_forceOut.size(); i++){
         m_force[i].tm = m_qRef.tm;
@@ -975,6 +993,30 @@ void AutoBalancer::fixLegToCoords (const hrp::Vector3& fix_pos, const hrp::Matri
   m_robot->rootLink()->p = fix_pos + tmpR * (m_robot->rootLink()->p - current_foot_mid_pos);
   rats::rotm3times(m_robot->rootLink()->R, tmpR, m_robot->rootLink()->R);
   m_robot->calcForwardKinematics();
+}
+
+void AutoBalancer::interpolateLimbStretch ()
+{
+  std::vector<hrp::Vector3> future_d_ee_pos = gg->get_future_d_ee_pos();
+  double tmp_d_root_z_pos = 0.0, tmp_time = gg->get_limb_stretch_remain_time() + m_dt;
+  static double prev_v;
+  for (size_t i = 0; i < leg_names.size(); i++) {
+    // Check whether inside limb length limitation
+    hrp::Link* parent_link = m_robot->link(ikp[leg_names[i]].parent_name);
+    hrp::Vector3 future_targetp = ikp[leg_names[i]].target_p0 + future_d_ee_pos[i] - parent_link->p; // position from parent to target link in future (world frame)
+    double limb_length_limitation = ikp[leg_names[i]].max_limb_length - ikp[leg_names[i]].limb_length_margin;
+    double tmp = limb_length_limitation * limb_length_limitation - future_targetp(0) * future_targetp(0) - future_targetp(1) * future_targetp(1);
+    if (future_targetp.norm() > limb_length_limitation && tmp >= 0) {
+      tmp_d_root_z_pos = std::min(tmp_d_root_z_pos, future_targetp(2) + std::sqrt(tmp));
+    }
+  }
+  gg->clear_future_d_ee_pos();
+  limb_stretch_avoidance_interpolator->set(&prev_d_root_z_pos, &prev_v);
+  limb_stretch_avoidance_interpolator->setGoal(&tmp_d_root_z_pos, tmp_time, true);
+  for (size_t i = 0; i < 2; i++) {
+    limb_stretch_avoidance_interpolator->get(&d_root_z_pos, &prev_v, true);
+  }
+  m_interpolatedRootHeight.data = prev_d_root_z_pos = std::min(0.0, d_root_z_pos);
 }
 
 bool AutoBalancer::solveLimbIKforLimb (ABCIKparam& param, const std::string& limb_name)
@@ -1669,6 +1711,9 @@ bool AutoBalancer::setAutoBalancerParam(const OpenHRP::AutoBalancerService::Auto
   } else if (i_param.default_gait_type == OpenHRP::AutoBalancerService::GALLOP) {
       gait_type = GALLOP;
   }
+  for (size_t i = 0; i < ikp.size(); i++) {
+    ikp[ee_vec[i]].limb_length_margin = i_param.limb_length_margin[i];
+  }
   for (std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++) {
       std::cerr << "[" << m_profile.instance_name << "] End Effector [" << it->first << "]" << std::endl;
       std::cerr << "[" << m_profile.instance_name << "]   localpos = " << it->second.localPos.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[m]" << std::endl;
@@ -1772,11 +1817,13 @@ bool AutoBalancer::getAutoBalancerParam(OpenHRP::AutoBalancerService::AutoBalanc
 {
   i_param.move_base_gain = move_base_gain;
   i_param.default_zmp_offsets.length(ikp.size());
+  i_param.limb_length_margin.length(ikp.size());
   for (size_t i = 0; i < ikp.size(); i++) {
       i_param.default_zmp_offsets[i].length(3);
       for (size_t j = 0; j < 3; j++) {
           i_param.default_zmp_offsets[i][j] = default_zmp_offsets[i](j);
       }
+      i_param.limb_length_margin[i] = ikp[ee_vec[i]].limb_length_margin;
   }
   switch(control_mode) {
   case MODE_IDLE: i_param.controller_mode = OpenHRP::AutoBalancerService::MODE_IDLE; break;
