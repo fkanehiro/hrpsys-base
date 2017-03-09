@@ -626,15 +626,14 @@ void AutoBalancer::getTargetParameters()
   m_robot->calcForwardKinematics();
   if (control_mode != MODE_IDLE) {
     interpolateLegNamesAndZMPOffsets();
+    // Calculate tmp_fix_coords and something
     coordinates tmp_fix_coords;
     if ( gg_is_walking ) {
       gg->set_default_zmp_offsets(default_zmp_offsets);
       gg_solved = gg->proc_one_tick();
       gg->get_swing_support_mid_coords(tmp_fix_coords);
-      getOutputParametersForWalking();
     } else {
       tmp_fix_coords = fix_leg_coords;
-      getOutputParametersForABC();
     }
     if (!adjust_footstep_interpolator->isEmpty()) {
         calcFixCoordsForAdjustFootstep(tmp_fix_coords);
@@ -643,15 +642,15 @@ void AutoBalancer::getTargetParameters()
     // TODO : see explanation in this function
     fixLegToCoords2(tmp_fix_coords);
 
+    // Get output parameters and target EE coords
     target_root_p = m_robot->rootLink()->p;
     target_root_R = m_robot->rootLink()->R;
-    for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
-      if ( control_mode == MODE_IDLE || std::find(leg_names.begin(), leg_names.end(), it->first) == leg_names.end() ) {
-        it->second.target_p0 = it->second.target_link->p + it->second.target_link->R * it->second.localPos;
-        it->second.target_r0 = it->second.target_link->R * it->second.localR;
-      }
+    if ( gg_is_walking ) {
+      getOutputParametersForWalking();
+    } else {
+      getOutputParametersForABC();
     }
-    // Just for ik initial value
+    //   Just for ik initial value
     if (control_mode == MODE_SYNC_TO_ABC) {
         current_root_p = target_root_p;
         current_root_R = target_root_R;
@@ -663,6 +662,7 @@ void AutoBalancer::getTargetParameters()
         }
     }
 
+    // Calculate other parameters
     updateTargetCoordsForHandFixMode (tmp_fix_coords);
     rotateRefForcesForFixCoords (tmp_fix_coords);
     // TODO : see explanation in this function
@@ -670,6 +670,7 @@ void AutoBalancer::getTargetParameters()
     // TODO : see explanation in this function
     updateWalkingVelocityFromHandError(tmp_fix_coords);
 
+    // Calculate ZMP and COG targets
     hrp::Vector3 tmp_ref_cog(m_robot->calcCM());
     hrp::Vector3 tmp_foot_mid_pos = calcFootMidPosUsingZMPWeightMap ();
     if (gg_is_walking) {
@@ -727,6 +728,9 @@ void AutoBalancer::getOutputParametersForWalking ()
             gg->get_current_toe_heel_ratio_from_ee_name(tmp, it->first);
             m_toeheelRatio.data[idx] = tmp;
         } else { // Not included in leg_names
+            // Set EE coords
+            it->second.target_p0 = it->second.target_link->p + it->second.target_link->R * it->second.localPos;
+            it->second.target_r0 = it->second.target_link->R * it->second.localR;
             // contactStates is OFF other than leg_names
             m_contactStates.data[idx] = false;
             // controlSwingSupportTime is not used while double support period, 1.0 is neglected
@@ -744,8 +748,15 @@ void AutoBalancer::getOutputParametersForWalking ()
 void AutoBalancer::getOutputParametersForABC ()
 {
     // double support by default
-    for (std::map<std::string, ABCIKparam>::const_iterator it = ikp.begin(); it != ikp.end(); it++) {
+    for (std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++) {
         size_t idx = contact_states_index_map[it->first];
+        // Set EE coords.
+        //   If not included in leg_names, calculate EE coords because of not being used in GaitGenerator.
+        //   Otherwise, keep previous EE coords derived from GaitGenerator or initial value.
+        if ( std::find(leg_names.begin(), leg_names.end(), it->first) == leg_names.end() ) {
+            it->second.target_p0 = it->second.target_link->p + it->second.target_link->R * it->second.localPos;
+            it->second.target_r0 = it->second.target_link->R * it->second.localR;
+        }
         // Set contactStates
         std::vector<std::string>::const_iterator dst = std::find_if(leg_names.begin(), leg_names.end(), (boost::lambda::_1 == it->first));
         if (dst != leg_names.end()) {
