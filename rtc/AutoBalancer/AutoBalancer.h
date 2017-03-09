@@ -206,6 +206,11 @@ class AutoBalancer
   void startABCparam(const ::OpenHRP::AutoBalancerService::StrSequence& limbs);
   void stopABCparam();
   void waitABCTransition();
+  // Functions to calculate parameters for ABC output.
+  // Output parameters are EE, limbCOPOffset, contactStates, controlSwingSupportTime, toeheelPhaseRatio
+  void getOutputParametersForWalking ();
+  void getOutputParametersForABC ();
+  void getOutputParametersForIDLE ();
   hrp::Matrix33 OrientRotationMatrix (const hrp::Matrix33& rot, const hrp::Vector3& axis1, const hrp::Vector3& axis2);
   void fixLegToCoords (const hrp::Vector3& fix_pos, const hrp::Matrix33& fix_rot);
   void startWalking ();

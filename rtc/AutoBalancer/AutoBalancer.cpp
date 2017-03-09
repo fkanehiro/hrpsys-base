@@ -255,7 +255,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     zmp_transition_time = 1.0;
     transition_interpolator = new interpolator(1, m_dt, interpolator::HOFFARBIB, 1);
     transition_interpolator->setName(std::string(m_profile.instance_name)+" transition_interpolator");
-    transition_interpolator_ratio = 1.0;
+    transition_interpolator_ratio = 0.0;
     adjust_footstep_interpolator = new interpolator(1, m_dt, interpolator::HOFFARBIB, 1);
     adjust_footstep_interpolator->setName(std::string(m_profile.instance_name)+" adjust_footstep_interpolator");
     transition_time = 2.0;
@@ -444,20 +444,6 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
     }
     if (m_optionalDataIn.isNew()) {
         m_optionalDataIn.read();
-        if (is_legged_robot) {
-          if (m_optionalData.data.length() >= contact_states_index_map.size()*2) {
-            // current optionalData is contactstates x limb and controlSwingSupportTime x limb
-            //   If contactStates in optionalData is 1.0, m_contactStates is true. Otherwise, false.
-            for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
-                m_contactStates.data[contact_states_index_map[it->first]] = isOptionalDataContact(it->first);
-                m_controlSwingSupportTime.data[contact_states_index_map[it->first]] = m_optionalData.data[contact_states_index_map[it->first]+contact_states_index_map.size()];
-            }
-            if ( !m_contactStates.data[contact_states_index_map["rleg"]] && !m_contactStates.data[contact_states_index_map["lleg"]] ) { // If two feet have no contact, force set double support contact
-              m_contactStates.data[contact_states_index_map["rleg"]] = true;
-              m_contactStates.data[contact_states_index_map["lleg"]] = true;
-            }
-          }
-        }
     }
     if (m_emergencySignalIn.isNew()){
         m_emergencySignalIn.read();
@@ -480,7 +466,7 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
       if (!is_transition_interpolator_empty) {
         transition_interpolator->get(&transition_interpolator_ratio, true);
       } else {
-        transition_interpolator_ratio = 1.0;
+        transition_interpolator_ratio = (control_mode == MODE_IDLE) ? 0.0 : 1.0;
       }
       if (control_mode != MODE_IDLE ) {
         solveLimbIK();
@@ -497,6 +483,17 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
         rats::mid_rot(ref_baseRot, transition_interpolator_ratio, input_baseRot, m_robot->rootLink()->R);
         for ( unsigned int i = 0; i < m_robot->numJoints(); i++ ) {
           m_robot->joint(i)->q = (1-transition_interpolator_ratio) * m_qRef.data[i] + transition_interpolator_ratio * m_robot->joint(i)->q;
+        }
+        for (unsigned int i=0; i< m_force.size(); i++) {
+            for (unsigned int j=0; j<6; j++) {
+                m_force[i].data[j] = transition_interpolator_ratio * m_force[i].data[j] + (1-transition_interpolator_ratio) * m_ref_force[i].data[j];
+            }
+        }
+        for (unsigned int i=0; i< m_limbCOPOffset.size(); i++) {
+            // transition (TODO:set stopABCmode value instead of 0)
+            m_limbCOPOffset[i].data.x = transition_interpolator_ratio * m_limbCOPOffset[i].data.x;// + (1-transition_interpolator_ratio) * 0;
+            m_limbCOPOffset[i].data.y = transition_interpolator_ratio * m_limbCOPOffset[i].data.y;// + (1-transition_interpolator_ratio) * 0;
+            m_limbCOPOffset[i].data.z = transition_interpolator_ratio * m_limbCOPOffset[i].data.z;// + (1-transition_interpolator_ratio) * 0;
         }
       } else {
         ref_basePos = m_robot->rootLink()->p;
@@ -596,19 +593,11 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
 
     for (unsigned int i=0; i<m_ref_forceOut.size(); i++){
         m_force[i].tm = m_qRef.tm;
-        for (unsigned int j=0; j<6; j++){
-            if (control_mode != MODE_IDLE) m_force[i].data[j] = transition_interpolator_ratio * m_force[i].data[j] + (1-transition_interpolator_ratio) * m_ref_force[i].data[j];
-            else m_force[i].data[j] = m_ref_force[i].data[j];
-        }
         m_ref_forceOut[i]->write();
     }
 
     for (unsigned int i=0; i<m_limbCOPOffsetOut.size(); i++){
         m_limbCOPOffset[i].tm = m_qRef.tm;
-        // transition (TODO:set stopABCmode value instead of 0)
-        m_limbCOPOffset[i].data.x = transition_interpolator_ratio * m_limbCOPOffset[i].data.x;// + (1-transition_interpolator_ratio) * 0;
-        m_limbCOPOffset[i].data.y = transition_interpolator_ratio * m_limbCOPOffset[i].data.y;// + (1-transition_interpolator_ratio) * 0;
-        m_limbCOPOffset[i].data.z = transition_interpolator_ratio * m_limbCOPOffset[i].data.z;// + (1-transition_interpolator_ratio) * 0;
         m_limbCOPOffsetOut[i]->write();
     }
 
@@ -661,53 +650,11 @@ void AutoBalancer::getTargetParameters()
     if ( gg_is_walking ) {
       gg->set_default_zmp_offsets(default_zmp_offsets);
       gg_solved = gg->proc_one_tick();
-      for (std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++) {
-          // Check whether "it->first" ee_name is included in leg_names. leg_names is equivalent to "swing" + "support" in gg.
-          if (std::find(leg_names.begin(), leg_names.end(), it->first) != leg_names.end()) {
-              size_t idx = contact_states_index_map[it->first];
-              // Set EE coords
-              gg->get_swing_support_ee_coords_from_ee_name(it->second.target_p0, it->second.target_r0, it->first);
-              // Set contactStates
-              m_contactStates.data[idx] = gg->get_current_support_state_from_ee_name(it->first);
-              // Set controlSwingSupportTime
-              m_controlSwingSupportTime.data[idx] = gg->get_current_swing_time_from_ee_name(it->first);
-              // Set limbCOPOffset
-              hrp::Vector3 tmpzmpoff(m_limbCOPOffset[idx].data.x, m_limbCOPOffset[idx].data.y, m_limbCOPOffset[idx].data.z);
-              gg->get_swing_support_foot_zmp_offsets_from_ee_name(tmpzmpoff, it->first);
-              m_limbCOPOffset[idx].data.x = tmpzmpoff(0);
-              m_limbCOPOffset[idx].data.y = tmpzmpoff(1);
-              m_limbCOPOffset[idx].data.z = tmpzmpoff(2);
-              // Set toe heel ratio which can be used force moment distribution
-              double tmp = m_toeheelRatio.data[idx];
-              gg->get_current_toe_heel_ratio_from_ee_name(tmp, it->first);
-              m_toeheelRatio.data[idx] = tmp;
-          }
-      }
       gg->get_swing_support_mid_coords(tmp_fix_coords);
+      getOutputParametersForWalking();
     } else {
       tmp_fix_coords = fix_leg_coords;
-      // double support by default
-      {
-          std::map<leg_type, std::string> leg_type_map = gg->get_leg_type_map();
-          for (std::map<std::string, ABCIKparam>::const_iterator it = ikp.begin(); it != ikp.end(); it++) {
-              size_t idx = contact_states_index_map[it->first];
-              // Set contactStates
-              std::vector<std::string>::const_iterator dst = std::find_if(leg_names.begin(), leg_names.end(), (boost::lambda::_1 == it->first));
-              if (dst != leg_names.end()) {
-                  m_contactStates.data[idx] = true;
-              } else {
-                  m_contactStates.data[idx] = false;
-              }
-              // controlSwingSupportTime is not used while double support period, 1.0 is neglected
-              m_controlSwingSupportTime.data[idx] = 1.0;
-              // Set limbCOPOffset
-              m_limbCOPOffset[idx].data.x = default_zmp_offsets[idx](0);
-              m_limbCOPOffset[idx].data.y = default_zmp_offsets[idx](1);
-              m_limbCOPOffset[idx].data.z = default_zmp_offsets[idx](2);
-              // Set toe heel ratio is not used while double support
-              m_toeheelRatio.data[idx] = rats::no_using_toe_heel_ratio;
-          }
-      }
+      getOutputParametersForABC();
     }
     if (!adjust_footstep_interpolator->isEmpty()) {
         double tmp = 0.0;
@@ -860,6 +807,7 @@ void AutoBalancer::getTargetParameters()
     //
 
     hrp::Vector3 tmp_ref_cog(m_robot->calcCM());
+
     if (gg_is_walking) {
       ref_cog = gg->get_cog();
     } else {
@@ -882,13 +830,101 @@ void AutoBalancer::getTargetParameters()
           }
       }
       multi_mid_coords(fix_leg_coords, tmp_end_coords_list);
-      // limbCOPOffset
-      for (unsigned int i=0; i<m_limbCOPOffsetOut.size(); i++){
-          m_limbCOPOffset[i].data.x = 0;
-          m_limbCOPOffset[i].data.y = 0;
-          m_limbCOPOffset[i].data.z = 0;
+      getOutputParametersForIDLE();
+      // Set force
+      for (unsigned int i=0; i< m_force.size(); i++) {
+          for (unsigned int j=0; j<6; j++) {
+              m_force[i].data[j] = m_ref_force[i].data[j];
+          }
       }
   }
+};
+
+void AutoBalancer::getOutputParametersForWalking ()
+{
+    for (std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++) {
+        size_t idx = contact_states_index_map[it->first];
+        // Check whether "it->first" ee_name is included in leg_names. leg_names is equivalent to "swing" + "support" in gg.
+        if (std::find(leg_names.begin(), leg_names.end(), it->first) != leg_names.end()) {
+            // Set EE coords
+            gg->get_swing_support_ee_coords_from_ee_name(it->second.target_p0, it->second.target_r0, it->first);
+            // Set contactStates
+            m_contactStates.data[idx] = gg->get_current_support_state_from_ee_name(it->first);
+            // Set controlSwingSupportTime
+            m_controlSwingSupportTime.data[idx] = gg->get_current_swing_time_from_ee_name(it->first);
+            // Set limbCOPOffset
+            hrp::Vector3 tmpzmpoff(m_limbCOPOffset[idx].data.x, m_limbCOPOffset[idx].data.y, m_limbCOPOffset[idx].data.z);
+            gg->get_swing_support_foot_zmp_offsets_from_ee_name(tmpzmpoff, it->first);
+            m_limbCOPOffset[idx].data.x = tmpzmpoff(0);
+            m_limbCOPOffset[idx].data.y = tmpzmpoff(1);
+            m_limbCOPOffset[idx].data.z = tmpzmpoff(2);
+            // Set toe heel ratio which can be used force moment distribution
+            double tmp = m_toeheelRatio.data[idx];
+            gg->get_current_toe_heel_ratio_from_ee_name(tmp, it->first);
+            m_toeheelRatio.data[idx] = tmp;
+        } else { // Not included in leg_names
+            // contactStates is OFF other than leg_names
+            m_contactStates.data[idx] = false;
+            // controlSwingSupportTime is not used while double support period, 1.0 is neglected
+            m_controlSwingSupportTime.data[idx] = 1.0;
+            // Set limbCOPOffset
+            m_limbCOPOffset[idx].data.x = default_zmp_offsets[idx](0);
+            m_limbCOPOffset[idx].data.y = default_zmp_offsets[idx](1);
+            m_limbCOPOffset[idx].data.z = default_zmp_offsets[idx](2);
+            // Set toe heel ratio which can be used force moment distribution
+            m_toeheelRatio.data[idx] = rats::no_using_toe_heel_ratio;
+        }
+    }
+};
+
+void AutoBalancer::getOutputParametersForABC ()
+{
+    // double support by default
+    for (std::map<std::string, ABCIKparam>::const_iterator it = ikp.begin(); it != ikp.end(); it++) {
+        size_t idx = contact_states_index_map[it->first];
+        // Set contactStates
+        std::vector<std::string>::const_iterator dst = std::find_if(leg_names.begin(), leg_names.end(), (boost::lambda::_1 == it->first));
+        if (dst != leg_names.end()) {
+            m_contactStates.data[idx] = true;
+        } else {
+            m_contactStates.data[idx] = false;
+        }
+        // controlSwingSupportTime is not used while double support period, 1.0 is neglected
+        m_controlSwingSupportTime.data[idx] = 1.0;
+        // Set limbCOPOffset
+        m_limbCOPOffset[idx].data.x = default_zmp_offsets[idx](0);
+        m_limbCOPOffset[idx].data.y = default_zmp_offsets[idx](1);
+        m_limbCOPOffset[idx].data.z = default_zmp_offsets[idx](2);
+        // Set toe heel ratio is not used while double support
+        m_toeheelRatio.data[idx] = rats::no_using_toe_heel_ratio;
+    }
+};
+
+void AutoBalancer::getOutputParametersForIDLE ()
+{
+    // Set contactStates and controlSwingSupportTime
+    if (m_optionalData.data.length() >= contact_states_index_map.size()*2) {
+        // current optionalData is contactstates x limb and controlSwingSupportTime x limb
+        //   If contactStates in optionalData is 1.0, m_contactStates is true. Otherwise, false.
+        for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
+            m_contactStates.data[contact_states_index_map[it->first]] = isOptionalDataContact(it->first);
+            m_controlSwingSupportTime.data[contact_states_index_map[it->first]] = m_optionalData.data[contact_states_index_map[it->first]+contact_states_index_map.size()];
+        }
+        // If two feet have no contact, force set double support contact
+        if ( !m_contactStates.data[contact_states_index_map["rleg"]] && !m_contactStates.data[contact_states_index_map["lleg"]] ) {
+            m_contactStates.data[contact_states_index_map["rleg"]] = true;
+            m_contactStates.data[contact_states_index_map["lleg"]] = true;
+        }
+    }
+    for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
+        size_t idx = contact_states_index_map[it->first];
+        // Set limbCOPOffset
+        m_limbCOPOffset[idx].data.x = 0;
+        m_limbCOPOffset[idx].data.y = 0;
+        m_limbCOPOffset[idx].data.z = 0;
+        // Set toe heel ratio is not used while double support
+        m_toeheelRatio.data[idx] = rats::no_using_toe_heel_ratio;
+    }
 };
 
 hrp::Matrix33 AutoBalancer::OrientRotationMatrix (const hrp::Matrix33& rot, const hrp::Vector3& axis1, const hrp::Vector3& axis2)
