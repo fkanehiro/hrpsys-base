@@ -418,6 +418,8 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
 {
   // std::cerr << "AutoBalancer::onExecute(" << ec_id << ")" << std::endl;
     loop ++;
+
+    // Read Inport
     if (m_qRefIn.isNew()) {
         m_qRefIn.read();
     }
@@ -454,13 +456,16 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
         // }
     }
 
+    // Calculation
     Guard guard(m_mutex);
     hrp::Vector3 ref_basePos;
     hrp::Matrix33 ref_baseRot;
     hrp::Vector3 rel_ref_zmp; // ref zmp in base frame
     if ( is_legged_robot ) {
+      // For parameters
       getCurrentParameters();
       getTargetParameters();
+      // Get transition ratio
       bool is_transition_interpolator_empty = transition_interpolator->isEmpty();
       if (!is_transition_interpolator_empty) {
         transition_interpolator->get(&transition_interpolator_ratio, true);
@@ -473,7 +478,7 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
       } else {
         rel_ref_zmp = input_zmp;
       }
-      // transition
+      // Transition
       if (!is_transition_interpolator_empty) {
         // transition_interpolator_ratio 0=>1 : IDLE => ABC
         // transition_interpolator_ratio 1=>0 : ABC => IDLE
@@ -507,6 +512,8 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
         control_mode = MODE_IDLE;
       }
     }
+
+    // Write Outport
     if ( m_qRef.data.length() != 0 ) { // initialized
       if (is_legged_robot) {
         for ( unsigned int i = 0; i < m_robot->numJoints(); i++ ){
@@ -557,47 +564,48 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
       m_sbpCogOffset.data.y = sbp_cog_offset(1);
       m_sbpCogOffset.data.z = sbp_cog_offset(2);
       m_sbpCogOffset.tm = m_qRef.tm;
-    }
-    m_basePosOut.write();
-    m_baseRpyOut.write();
-    m_baseTformOut.write();
-    m_basePoseOut.write();
-    m_zmpOut.write();
-    m_cogOut.write();
-    m_sbpCogOffsetOut.write();
+      // write
+      m_basePosOut.write();
+      m_baseRpyOut.write();
+      m_baseTformOut.write();
+      m_basePoseOut.write();
+      m_zmpOut.write();
+      m_cogOut.write();
+      m_sbpCogOffsetOut.write();
 
-    // reference acceleration
-    hrp::Sensor* sen = m_robot->sensor<hrp::RateGyroSensor>("gyrometer");
-    if (sen != NULL) {
-      hrp::Vector3 imu_sensor_pos = sen->link->p + sen->link->R * sen->localPos;
-      hrp::Vector3 imu_sensor_vel = (imu_sensor_pos - prev_imu_sensor_pos)/m_dt;
-      // convert to imu sensor local acceleration
-      hrp::Vector3 acc = (sen->link->R * sen->localR).transpose() * (imu_sensor_vel - prev_imu_sensor_vel)/m_dt;
-      m_accRef.data.ax = acc(0); m_accRef.data.ay = acc(1); m_accRef.data.az = acc(2);
-      m_accRefOut.write();
-      prev_imu_sensor_pos = imu_sensor_pos;
-      prev_imu_sensor_vel = imu_sensor_vel;
-    }
+      // reference acceleration
+      hrp::Sensor* sen = m_robot->sensor<hrp::RateGyroSensor>("gyrometer");
+      if (sen != NULL) {
+          hrp::Vector3 imu_sensor_pos = sen->link->p + sen->link->R * sen->localPos;
+          hrp::Vector3 imu_sensor_vel = (imu_sensor_pos - prev_imu_sensor_pos)/m_dt;
+          // convert to imu sensor local acceleration
+          hrp::Vector3 acc = (sen->link->R * sen->localR).transpose() * (imu_sensor_vel - prev_imu_sensor_vel)/m_dt;
+          m_accRef.data.ax = acc(0); m_accRef.data.ay = acc(1); m_accRef.data.az = acc(2);
+          m_accRefOut.write();
+          prev_imu_sensor_pos = imu_sensor_pos;
+          prev_imu_sensor_vel = imu_sensor_vel;
+      }
 
-    // control parameters
-    m_contactStates.tm = m_qRef.tm;
-    m_contactStatesOut.write();
-    m_controlSwingSupportTime.tm = m_qRef.tm;
-    m_controlSwingSupportTimeOut.write();
-    m_toeheelRatio.tm = m_qRef.tm;
-    m_toeheelRatioOut.write();
-    m_walkingStates.data = gg_is_walking;
-    m_walkingStates.tm = m_qRef.tm;
-    m_walkingStatesOut.write();
+      // control parameters
+      m_contactStates.tm = m_qRef.tm;
+      m_contactStatesOut.write();
+      m_controlSwingSupportTime.tm = m_qRef.tm;
+      m_controlSwingSupportTimeOut.write();
+      m_toeheelRatio.tm = m_qRef.tm;
+      m_toeheelRatioOut.write();
+      m_walkingStates.data = gg_is_walking;
+      m_walkingStates.tm = m_qRef.tm;
+      m_walkingStatesOut.write();
 
-    for (unsigned int i=0; i<m_ref_forceOut.size(); i++){
-        m_force[i].tm = m_qRef.tm;
-        m_ref_forceOut[i]->write();
-    }
+      for (unsigned int i=0; i<m_ref_forceOut.size(); i++){
+          m_force[i].tm = m_qRef.tm;
+          m_ref_forceOut[i]->write();
+      }
 
-    for (unsigned int i=0; i<m_limbCOPOffsetOut.size(); i++){
-        m_limbCOPOffset[i].tm = m_qRef.tm;
-        m_limbCOPOffsetOut[i]->write();
+      for (unsigned int i=0; i<m_limbCOPOffsetOut.size(); i++){
+          m_limbCOPOffset[i].tm = m_qRef.tm;
+          m_limbCOPOffsetOut[i]->write();
+      }
     }
 
     return RTC::RTC_OK;
