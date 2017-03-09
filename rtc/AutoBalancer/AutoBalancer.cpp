@@ -661,79 +661,29 @@ void AutoBalancer::getTargetParameters()
     if ( gg_is_walking ) {
       gg->set_default_zmp_offsets(default_zmp_offsets);
       gg_solved = gg->proc_one_tick();
-      {
-          std::map<leg_type, std::string> leg_type_map = gg->get_leg_type_map();
-          // for support leg
-          for (std::vector<step_node>::const_iterator it = gg->get_support_leg_steps().begin(); it != gg->get_support_leg_steps().end(); it++) {
-              ikp[leg_type_map[it->l_r]].target_p0 = it->worldcoords.pos;
-              ikp[leg_type_map[it->l_r]].target_r0 = it->worldcoords.rot;
-          }
-          // for swing leg
-          for (std::vector<step_node>::const_iterator it = gg->get_swing_leg_steps().begin(); it != gg->get_swing_leg_steps().end(); it++) {
-              ikp[leg_type_map[it->l_r]].target_p0 = it->worldcoords.pos;
-              ikp[leg_type_map[it->l_r]].target_r0 = it->worldcoords.rot;
+      for (std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++) {
+          // Check whether "it->first" ee_name is included in leg_names. leg_names is equivalent to "swing" + "support" in gg.
+          if (std::find(leg_names.begin(), leg_names.end(), it->first) != leg_names.end()) {
+              size_t idx = contact_states_index_map[it->first];
+              // Set EE coords
+              gg->get_swing_support_ee_coords_from_ee_name(it->second.target_p0, it->second.target_r0, it->first);
+              // Set contactStates
+              m_contactStates.data[idx] = gg->get_current_support_state_from_ee_name(it->first);
+              // Set controlSwingSupportTime
+              m_controlSwingSupportTime.data[idx] = gg->get_current_swing_time_from_ee_name(it->first);
+              // Set limbCOPOffset
+              hrp::Vector3 tmpzmpoff(m_limbCOPOffset[idx].data.x, m_limbCOPOffset[idx].data.y, m_limbCOPOffset[idx].data.z);
+              gg->get_swing_support_foot_zmp_offsets_from_ee_name(tmpzmpoff, it->first);
+              m_limbCOPOffset[idx].data.x = tmpzmpoff(0);
+              m_limbCOPOffset[idx].data.y = tmpzmpoff(1);
+              m_limbCOPOffset[idx].data.z = tmpzmpoff(2);
+              // Set toe heel ratio which can be used force moment distribution
+              double tmp = m_toeheelRatio.data[idx];
+              gg->get_current_toe_heel_ratio_from_ee_name(tmp, it->first);
+              m_toeheelRatio.data[idx] = tmp;
           }
       }
       gg->get_swing_support_mid_coords(tmp_fix_coords);
-      // set contactStates
-      {
-          std::vector<std::string> tmp_current_support_states_names;
-          {
-              std::vector<leg_type> tmp_current_support_states = gg->get_current_support_states();
-              std::map<leg_type, std::string> leg_type_map = gg->get_leg_type_map();
-              for (std::vector<leg_type>::const_iterator it = tmp_current_support_states.begin(); it != tmp_current_support_states.end(); it++)
-                  tmp_current_support_states_names.push_back(leg_type_map[*it]);
-          }
-          // Set Contact States for ee not included in leg_names to false
-          for ( std::map<std::string, size_t>::iterator it = contact_states_index_map.begin(); it != contact_states_index_map.end(); it++ ) {
-              m_contactStates.data[it->second] = false;
-          }
-          for (std::vector<std::string>::const_iterator it = leg_names.begin(); it != leg_names.end(); it++) {
-              std::vector<std::string>::const_iterator dst = std::find_if(tmp_current_support_states_names.begin(), tmp_current_support_states_names.end(), boost::lambda::_1 == *it);
-              if (dst != tmp_current_support_states_names.end()) {
-                  m_contactStates.data[contact_states_index_map[*it]] = true;
-              } else {
-                  m_contactStates.data[contact_states_index_map[*it]] = false;
-              }
-          }
-      }
-      // set controlSwingSupportTime
-      {
-          std::map<leg_type, std::string> leg_type_map = gg->get_leg_type_map();
-          for (std::map<std::string, ABCIKparam>::const_iterator it = ikp.begin(); it != ikp.end(); it++) {
-              std::map<leg_type, std::string>::const_iterator dst = std::find_if(leg_type_map.begin(), leg_type_map.end(), (&boost::lambda::_1->* &std::map<leg_type, std::string>::value_type::second == it->first));
-              m_controlSwingSupportTime.data[contact_states_index_map[it->first]] = gg->get_current_swing_time(dst->first);
-          }
-      }
-      // set limbCOPOffset
-      {
-          std::vector<std::string> swg_leg_nms = gg->get_swing_leg_names();
-          for (size_t i = 0; i < swg_leg_nms.size(); i++) {
-              m_limbCOPOffset[contact_states_index_map[swg_leg_nms.at(i)]].data.x = gg->get_swing_foot_zmp_offsets().at(i)(0);
-              m_limbCOPOffset[contact_states_index_map[swg_leg_nms.at(i)]].data.y = gg->get_swing_foot_zmp_offsets().at(i)(1);
-              m_limbCOPOffset[contact_states_index_map[swg_leg_nms.at(i)]].data.z = gg->get_swing_foot_zmp_offsets().at(i)(2);
-          }
-      }
-      {
-          std::vector<std::string> sup_leg_nms = gg->get_support_leg_names();
-          for (size_t i = 0; i < sup_leg_nms.size(); i++) {
-              m_limbCOPOffset[contact_states_index_map[sup_leg_nms.at(i)]].data.x = gg->get_support_foot_zmp_offsets().at(i)(0);
-              m_limbCOPOffset[contact_states_index_map[sup_leg_nms.at(i)]].data.y = gg->get_support_foot_zmp_offsets().at(i)(1);
-              m_limbCOPOffset[contact_states_index_map[sup_leg_nms.at(i)]].data.z = gg->get_support_foot_zmp_offsets().at(i)(2);
-          }
-      }
-      // Set toe heel ratio which can be used force moment distribution
-      {
-          std::map<leg_type, std::string> leg_type_map = gg->get_leg_type_map();
-          // for support leg
-          for (std::vector<step_node>::const_iterator it = gg->get_support_leg_steps().begin(); it != gg->get_support_leg_steps().end(); it++) {
-              m_toeheelRatio.data[contact_states_index_map[leg_type_map[it->l_r]]] = rats::no_using_toe_heel_ratio;
-          }
-          // for swing leg
-          for (std::vector<step_node>::const_iterator it = gg->get_swing_leg_steps().begin(); it != gg->get_swing_leg_steps().end(); it++) {
-              m_toeheelRatio.data[contact_states_index_map[leg_type_map[it->l_r]]] = gg->get_current_toe_heel_ratio();
-          }
-      }
     } else {
       tmp_fix_coords = fix_leg_coords;
       // double support by default
