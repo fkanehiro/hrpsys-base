@@ -625,28 +625,8 @@ void AutoBalancer::getTargetParameters()
   m_robot->rootLink()->R = input_baseRot;
   m_robot->calcForwardKinematics();
   if (control_mode != MODE_IDLE) {
+    interpolateLegNamesAndZMPOffsets();
     coordinates tmp_fix_coords;
-    if (!zmp_offset_interpolator->isEmpty()) {
-      double *default_zmp_offsets_output = new double[ikp.size()*3];
-      zmp_offset_interpolator->get(default_zmp_offsets_output, true);
-      for (size_t i = 0; i < ikp.size(); i++)
-        for (size_t j = 0; j < 3; j++)
-          default_zmp_offsets[i](j) = default_zmp_offsets_output[i*3+j];
-      delete[] default_zmp_offsets_output;
-      if (DEBUGP) {
-        std::cerr << "[" << m_profile.instance_name << "] default_zmp_offsets (interpolated)" << std::endl;
-        std::map<leg_type, std::string> leg_type_map = gg->get_leg_type_map();
-        for (size_t i = 0; i < leg_names.size(); i++) {
-            std::map<leg_type, std::string>::const_iterator dst = std::find_if(leg_type_map.begin(), leg_type_map.end(), (&boost::lambda::_1->* &std::map<leg_type, std::string>::value_type::second == leg_names[i]));
-            std::cerr << "[" << m_profile.instance_name << "]   " << leg_names[i] << " = " << default_zmp_offsets[dst->first].format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[m]" << std::endl;
-        }
-      }
-    }
-    if (!leg_names_interpolator->isEmpty()) {
-        leg_names_interpolator->get(&leg_names_interpolator_ratio, true);
-    }else {
-        leg_names_interpolator_ratio = 1.0;
-    }
     if ( gg_is_walking ) {
       gg->set_default_zmp_offsets(default_zmp_offsets);
       gg_solved = gg->proc_one_tick();
@@ -657,53 +637,11 @@ void AutoBalancer::getTargetParameters()
       getOutputParametersForABC();
     }
     if (!adjust_footstep_interpolator->isEmpty()) {
-        double tmp = 0.0;
-        adjust_footstep_interpolator->get(&tmp, true);
-        //std::cerr << "[" << m_profile.instance_name << "] adjust ratio " << tmp << std::endl;
-        ikp["rleg"].target_p0 = (1-tmp) * ikp["rleg"].adjust_interpolation_org_p0 + tmp*ikp["rleg"].adjust_interpolation_target_p0;
-        ikp["lleg"].target_p0 = (1-tmp) * ikp["lleg"].adjust_interpolation_org_p0 + tmp*ikp["lleg"].adjust_interpolation_target_p0;
-        rats::mid_rot(ikp["rleg"].target_r0, tmp, ikp["rleg"].adjust_interpolation_org_r0, ikp["rleg"].adjust_interpolation_target_r0);
-        rats::mid_rot(ikp["lleg"].target_r0, tmp, ikp["lleg"].adjust_interpolation_org_r0, ikp["lleg"].adjust_interpolation_target_r0);
-        coordinates tmprc, tmplc;
-        tmprc.pos = ikp["rleg"].target_p0;
-        tmprc.rot = ikp["rleg"].target_r0;
-        tmplc.pos = ikp["lleg"].target_p0;
-        tmplc.rot = ikp["lleg"].target_r0;
-        rats::mid_coords(fix_leg_coords, 0.5, tmprc, tmplc);
-        tmp_fix_coords = fix_leg_coords;
+        calcFixCoordsForAdjustFootstep(tmp_fix_coords);
+        fix_leg_coords = tmp_fix_coords;
     }
-    // Tempolarily modify tmp_fix_coords
-    // This will be removed after seq outputs adequate waistRPY discussed in https://github.com/fkanehiro/hrpsys-base/issues/272
-    {
-      hrp::Vector3 ex = hrp::Vector3::UnitX();
-      hrp::Vector3 ez = hrp::Vector3::UnitZ();
-      hrp::Vector3 xv1 (tmp_fix_coords.rot * ex);
-      xv1(2) = 0.0;
-      xv1.normalize();
-      hrp::Vector3 yv1(ez.cross(xv1));
-      tmp_fix_coords.rot(0,0) = xv1(0); tmp_fix_coords.rot(1,0) = xv1(1); tmp_fix_coords.rot(2,0) = xv1(2);
-      tmp_fix_coords.rot(0,1) = yv1(0); tmp_fix_coords.rot(1,1) = yv1(1); tmp_fix_coords.rot(2,1) = yv1(2);
-      tmp_fix_coords.rot(0,2) = ez(0); tmp_fix_coords.rot(1,2) = ez(1); tmp_fix_coords.rot(2,2) = ez(2);
-    }
-    // Fix pos
-    fixLegToCoords(tmp_fix_coords.pos, tmp_fix_coords.rot);
-
-    /* update ref_forces ;; sp's absolute -> rmc's absolute */
-    for (size_t i = 0; i < m_ref_forceIn.size(); i++) {
-      hrp::Matrix33 eeR;
-      hrp::Link* parentlink;
-      hrp::ForceSensor* sensor = m_robot->sensor<hrp::ForceSensor>(sensor_names[i]);
-      if (sensor) parentlink = sensor->link;
-      else parentlink = m_vfs[sensor_names[i]].link;
-      for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
-          if (it->second.target_link->name == parentlink->name) eeR = parentlink->R * it->second.localR;
-      }
-      // End effector frame
-      //ref_forces[i] = eeR * hrp::Vector3(m_ref_force[i].data[0], m_ref_force[i].data[1], m_ref_force[i].data[2]);
-      // world frame
-      ref_forces[i] = tmp_fix_coords.rot * hrp::Vector3(m_ref_force[i].data[0], m_ref_force[i].data[1], m_ref_force[i].data[2]);
-    }
-    sbp_offset = tmp_fix_coords.rot * hrp::Vector3(sbp_offset);
+    // TODO : see explanation in this function
+    fixLegToCoords2(tmp_fix_coords);
 
     target_root_p = m_robot->rootLink()->p;
     target_root_R = m_robot->rootLink()->R;
@@ -724,90 +662,16 @@ void AutoBalancer::getTargetParameters()
             }
         }
     }
-    // Move hand for hand fix mode
-    //   If arms' ABCIKparam.is_active is true, move hands according to cog velocity.
-    //   If is_hand_fix_mode is false, no hand fix mode and move hands according to cog velocity.
-    //   If is_hand_fix_mode is true, hand fix mode and do not move hands in Y axis in tmp_fix_coords.rot.    
-    if (gg_is_walking) {
-        // hand control while walking = solve hand ik with is_hand_fix_mode and solve hand ik without is_hand_fix_mode
-        bool is_hand_control_while_walking = false;
-        for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
-            if ( it->second.is_active && std::find(leg_names.begin(), leg_names.end(), it->first) == leg_names.end()
-                 && it->first.find("arm") != std::string::npos ) {
-                is_hand_control_while_walking = true;
-            }
-        }
-        if (is_hand_control_while_walking) {
-        //if (false) { // Disabled temporarily
-            // Store hand_fix_initial_offset in the initialization of walking
-            if (is_hand_fix_initial) hand_fix_initial_offset = tmp_fix_coords.rot.transpose() * (hrp::Vector3(gg->get_cog()(0), gg->get_cog()(1), tmp_fix_coords.pos(2)) - tmp_fix_coords.pos);
-            is_hand_fix_initial = false;
-            hrp::Vector3 dif_p = hrp::Vector3(gg->get_cog()(0), gg->get_cog()(1), tmp_fix_coords.pos(2)) - tmp_fix_coords.pos - tmp_fix_coords.rot * hand_fix_initial_offset;
-            if (is_hand_fix_mode) {
-                dif_p = tmp_fix_coords.rot.transpose() * dif_p;
-                dif_p(1) = 0;
-                dif_p = tmp_fix_coords.rot * dif_p;
-            }
-            for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
-                if ( it->second.is_active && std::find(leg_names.begin(), leg_names.end(), it->first) == leg_names.end()
-                     && it->first.find("arm") != std::string::npos ) {
-                    it->second.target_p0 = it->second.target_p0 + dif_p;
-                }
-            }
-        }
-    }
 
-    // set ref_forces
-    {
-          std::vector<hrp::Vector3> ee_pos;
-          for (size_t i = 0 ; i < leg_names.size(); i++) {
-              ABCIKparam& tmpikp = ikp[leg_names[i]];
-              ee_pos.push_back(tmpikp.target_p0 + tmpikp.target_r0 * default_zmp_offsets[i]);
-          }
-          double alpha = (ref_zmp - ee_pos[1]).norm() / ((ee_pos[0] - ref_zmp).norm() + (ee_pos[1] - ref_zmp).norm());
-          if (alpha>1.0) alpha = 1.0;
-          if (alpha<0.0) alpha = 0.0;
-          if (DEBUGP) {
-          std::cerr << "[" << m_profile.instance_name << "] alpha:" << alpha << std::endl;
-          }
-          double mg = m_robot->totalMass() * gg->get_gravitational_acceleration();
-          m_force[0].data[2] = alpha * mg;
-          m_force[1].data[2] = (1-alpha) * mg;
-    }
-
-    hrp::Vector3 tmp_foot_mid_pos(hrp::Vector3::Zero());
-    {
-        std::map<leg_type, std::string> leg_type_map = gg->get_leg_type_map();
-        std::map<leg_type, double> zmp_weight_map = gg->get_zmp_weight_map();
-        double sum_of_weight = 0.0;
-        for (size_t i = 0; i < leg_names.size(); i++) {
-            ABCIKparam& tmpikp = ikp[leg_names[i]];
-            // get target_end_coords
-            tmpikp.target_end_coords.pos = tmpikp.target_p0;
-            tmpikp.target_end_coords.rot = tmpikp.target_r0;
-            // for foot_mid_pos
-            std::map<leg_type, std::string>::const_iterator dst = std::find_if(leg_type_map.begin(), leg_type_map.end(), (&boost::lambda::_1->* &std::map<leg_type, std::string>::value_type::second == leg_names[i]));
-            tmp_foot_mid_pos += (tmpikp.target_p0 + tmpikp.target_r0 * default_zmp_offsets[i]) * zmp_weight_map[dst->first];
-            sum_of_weight += zmp_weight_map[dst->first];
-        }
-        tmp_foot_mid_pos *= (1.0 / sum_of_weight);
-    }
-    //
-    {
-        if ( gg_is_walking && gg->get_lcg_count() == gg->get_overwrite_check_timing()+2 ) {
-            hrp::Vector3 vel_htc(calc_vel_from_hand_error(tmp_fix_coords));
-            gg->set_offset_velocity_param(vel_htc(0), vel_htc(1) ,vel_htc(2));
-        }//  else {
-        //     if ( gg_is_walking && gg->get_lcg_count() == static_cast<size_t>(gg->get_default_step_time()/(2*m_dt))-1) {
-        //         gg->set_offset_velocity_param(0,0,0);
-        //     }
-        // }
-    }
-
-    //
+    updateTargetCoordsForHandFixMode (tmp_fix_coords);
+    rotateRefForcesForFixCoords (tmp_fix_coords);
+    // TODO : see explanation in this function
+    calculateOutputRefForces ();
+    // TODO : see explanation in this function
+    updateWalkingVelocityFromHandError(tmp_fix_coords);
 
     hrp::Vector3 tmp_ref_cog(m_robot->calcCM());
-
+    hrp::Vector3 tmp_foot_mid_pos = calcFootMidPosUsingZMPWeightMap ();
     if (gg_is_walking) {
       ref_cog = gg->get_cog();
     } else {
@@ -927,6 +791,155 @@ void AutoBalancer::getOutputParametersForIDLE ()
     }
 };
 
+void AutoBalancer::interpolateLegNamesAndZMPOffsets()
+{
+    if (!zmp_offset_interpolator->isEmpty()) {
+      double *default_zmp_offsets_output = new double[ikp.size()*3];
+      zmp_offset_interpolator->get(default_zmp_offsets_output, true);
+      for (size_t i = 0; i < ikp.size(); i++)
+        for (size_t j = 0; j < 3; j++)
+          default_zmp_offsets[i](j) = default_zmp_offsets_output[i*3+j];
+      delete[] default_zmp_offsets_output;
+      if (DEBUGP) {
+        std::cerr << "[" << m_profile.instance_name << "] default_zmp_offsets (interpolated)" << std::endl;
+        for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
+            std::cerr << "[" << m_profile.instance_name << "]   " << it->first << " = " << default_zmp_offsets[contact_states_index_map[it->first]].format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[m]" << std::endl;
+        }
+      }
+    }
+    if (!leg_names_interpolator->isEmpty()) {
+        leg_names_interpolator->get(&leg_names_interpolator_ratio, true);
+    }else {
+        leg_names_interpolator_ratio = 1.0;
+    }
+};
+
+void AutoBalancer::calcFixCoordsForAdjustFootstep (coordinates& tmp_fix_coords)
+{
+    double tmp = 0.0;
+    adjust_footstep_interpolator->get(&tmp, true);
+    //std::cerr << "[" << m_profile.instance_name << "] adjust ratio " << tmp << std::endl;
+    ikp["rleg"].target_p0 = (1-tmp) * ikp["rleg"].adjust_interpolation_org_p0 + tmp*ikp["rleg"].adjust_interpolation_target_p0;
+    ikp["lleg"].target_p0 = (1-tmp) * ikp["lleg"].adjust_interpolation_org_p0 + tmp*ikp["lleg"].adjust_interpolation_target_p0;
+    rats::mid_rot(ikp["rleg"].target_r0, tmp, ikp["rleg"].adjust_interpolation_org_r0, ikp["rleg"].adjust_interpolation_target_r0);
+    rats::mid_rot(ikp["lleg"].target_r0, tmp, ikp["lleg"].adjust_interpolation_org_r0, ikp["lleg"].adjust_interpolation_target_r0);
+    coordinates tmprc, tmplc;
+    tmprc.pos = ikp["rleg"].target_p0;
+    tmprc.rot = ikp["rleg"].target_r0;
+    tmplc.pos = ikp["lleg"].target_p0;
+    tmplc.rot = ikp["lleg"].target_r0;
+    rats::mid_coords(tmp_fix_coords, 0.5, tmprc, tmplc);
+    //fix_leg_coords = tmp_fix_coords;
+};
+
+void AutoBalancer::rotateRefForcesForFixCoords (coordinates& tmp_fix_coords)
+{
+    /* update ref_forces ;; StateHolder's absolute -> AutoBalancer's absolute */
+    for (size_t i = 0; i < m_ref_forceIn.size(); i++) {
+      // hrp::Matrix33 eeR;
+      // hrp::Link* parentlink;
+      // hrp::ForceSensor* sensor = m_robot->sensor<hrp::ForceSensor>(sensor_names[i]);
+      // if (sensor) parentlink = sensor->link;
+      // else parentlink = m_vfs[sensor_names[i]].link;
+      // for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
+      //     if (it->second.target_link->name == parentlink->name) eeR = parentlink->R * it->second.localR;
+      // }
+      // End effector frame
+      //ref_forces[i] = eeR * hrp::Vector3(m_ref_force[i].data[0], m_ref_force[i].data[1], m_ref_force[i].data[2]);
+      // world frame
+      ref_forces[i] = tmp_fix_coords.rot * hrp::Vector3(m_ref_force[i].data[0], m_ref_force[i].data[1], m_ref_force[i].data[2]);
+    }
+    sbp_offset = tmp_fix_coords.rot * hrp::Vector3(sbp_offset);
+};
+
+void AutoBalancer::updateTargetCoordsForHandFixMode (coordinates& tmp_fix_coords)
+{
+    // Move hand for hand fix mode
+    //   If arms' ABCIKparam.is_active is true, move hands according to cog velocity.
+    //   If is_hand_fix_mode is false, no hand fix mode and move hands according to cog velocity.
+    //   If is_hand_fix_mode is true, hand fix mode and do not move hands in Y axis in tmp_fix_coords.rot.    
+    if (gg_is_walking) {
+        // hand control while walking = solve hand ik with is_hand_fix_mode and solve hand ik without is_hand_fix_mode
+        bool is_hand_control_while_walking = false;
+        for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
+            if ( it->second.is_active && std::find(leg_names.begin(), leg_names.end(), it->first) == leg_names.end()
+                 && it->first.find("arm") != std::string::npos ) {
+                is_hand_control_while_walking = true;
+            }
+        }
+        if (is_hand_control_while_walking) {
+        //if (false) { // Disabled temporarily
+            // Store hand_fix_initial_offset in the initialization of walking
+            if (is_hand_fix_initial) hand_fix_initial_offset = tmp_fix_coords.rot.transpose() * (hrp::Vector3(gg->get_cog()(0), gg->get_cog()(1), tmp_fix_coords.pos(2)) - tmp_fix_coords.pos);
+            is_hand_fix_initial = false;
+            hrp::Vector3 dif_p = hrp::Vector3(gg->get_cog()(0), gg->get_cog()(1), tmp_fix_coords.pos(2)) - tmp_fix_coords.pos - tmp_fix_coords.rot * hand_fix_initial_offset;
+            if (is_hand_fix_mode) {
+                dif_p = tmp_fix_coords.rot.transpose() * dif_p;
+                dif_p(1) = 0;
+                dif_p = tmp_fix_coords.rot * dif_p;
+            }
+            for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
+                if ( it->second.is_active && std::find(leg_names.begin(), leg_names.end(), it->first) == leg_names.end()
+                     && it->first.find("arm") != std::string::npos ) {
+                    it->second.target_p0 = it->second.target_p0 + dif_p;
+                }
+            }
+        }
+    }
+};
+
+void AutoBalancer::calculateOutputRefForces ()
+{
+    // TODO : need to be updated for multicontact and other walking
+    std::vector<hrp::Vector3> ee_pos;
+    for (size_t i = 0 ; i < leg_names.size(); i++) {
+        ABCIKparam& tmpikp = ikp[leg_names[i]];
+        ee_pos.push_back(tmpikp.target_p0 + tmpikp.target_r0 * default_zmp_offsets[i]);
+    }
+    double alpha = (ref_zmp - ee_pos[1]).norm() / ((ee_pos[0] - ref_zmp).norm() + (ee_pos[1] - ref_zmp).norm());
+    if (alpha>1.0) alpha = 1.0;
+    if (alpha<0.0) alpha = 0.0;
+    if (DEBUGP) {
+        std::cerr << "[" << m_profile.instance_name << "] alpha:" << alpha << std::endl;
+    }
+    double mg = m_robot->totalMass() * gg->get_gravitational_acceleration();
+    m_force[0].data[2] = alpha * mg;
+    m_force[1].data[2] = (1-alpha) * mg;
+};
+
+hrp::Vector3 AutoBalancer::calcFootMidPosUsingZMPWeightMap ()
+{
+    hrp::Vector3 tmp_foot_mid_pos(hrp::Vector3::Zero());
+    std::map<leg_type, std::string> leg_type_map = gg->get_leg_type_map();
+    std::map<leg_type, double> zmp_weight_map = gg->get_zmp_weight_map();
+    double sum_of_weight = 0.0;
+    for (size_t i = 0; i < leg_names.size(); i++) {
+        ABCIKparam& tmpikp = ikp[leg_names[i]];
+        // get target_end_coords
+        tmpikp.target_end_coords.pos = tmpikp.target_p0;
+        tmpikp.target_end_coords.rot = tmpikp.target_r0;
+        // for foot_mid_pos
+        std::map<leg_type, std::string>::const_iterator dst = std::find_if(leg_type_map.begin(), leg_type_map.end(), (&boost::lambda::_1->* &std::map<leg_type, std::string>::value_type::second == leg_names[i]));
+        tmp_foot_mid_pos += (tmpikp.target_p0 + tmpikp.target_r0 * default_zmp_offsets[i]) * zmp_weight_map[dst->first];
+        sum_of_weight += zmp_weight_map[dst->first];
+    }
+    tmp_foot_mid_pos *= (1.0 / sum_of_weight);
+    return tmp_foot_mid_pos;
+};
+
+void AutoBalancer::updateWalkingVelocityFromHandError (coordinates& tmp_fix_coords)
+{
+    // TODO : check frame and robot state for this calculation
+    if ( gg_is_walking && gg->get_lcg_count() == gg->get_overwrite_check_timing()+2 ) {
+        hrp::Vector3 vel_htc(calc_vel_from_hand_error(tmp_fix_coords));
+        gg->set_offset_velocity_param(vel_htc(0), vel_htc(1) ,vel_htc(2));
+    }//  else {
+    //     if ( gg_is_walking && gg->get_lcg_count() == static_cast<size_t>(gg->get_default_step_time()/(2*m_dt))-1) {
+    //         gg->set_offset_velocity_param(0,0,0);
+    //     }
+    // }
+};
+
 hrp::Matrix33 AutoBalancer::OrientRotationMatrix (const hrp::Matrix33& rot, const hrp::Vector3& axis1, const hrp::Vector3& axis2)
 {
   hrp::Vector3 vv = axis1.cross(axis2);
@@ -956,6 +969,25 @@ void AutoBalancer::fixLegToCoords (const hrp::Vector3& fix_pos, const hrp::Matri
   m_robot->rootLink()->p = fix_pos + tmpR * (m_robot->rootLink()->p - current_foot_mid_pos);
   rats::rotm3times(m_robot->rootLink()->R, tmpR, m_robot->rootLink()->R);
   m_robot->calcForwardKinematics();
+}
+
+void AutoBalancer::fixLegToCoords2 (coordinates& tmp_fix_coords)
+{
+    // Tempolarily modify tmp_fix_coords
+    // This will be removed after seq outputs adequate waistRPY discussed in https://github.com/fkanehiro/hrpsys-base/issues/272
+    // Snap input tmp_fix_coords to XY plan projection.
+    {
+      hrp::Vector3 ex = hrp::Vector3::UnitX();
+      hrp::Vector3 ez = hrp::Vector3::UnitZ();
+      hrp::Vector3 xv1 (tmp_fix_coords.rot * ex);
+      xv1(2) = 0.0;
+      xv1.normalize();
+      hrp::Vector3 yv1(ez.cross(xv1));
+      tmp_fix_coords.rot(0,0) = xv1(0); tmp_fix_coords.rot(1,0) = xv1(1); tmp_fix_coords.rot(2,0) = xv1(2);
+      tmp_fix_coords.rot(0,1) = yv1(0); tmp_fix_coords.rot(1,1) = yv1(1); tmp_fix_coords.rot(2,1) = yv1(2);
+      tmp_fix_coords.rot(0,2) = ez(0); tmp_fix_coords.rot(1,2) = ez(1); tmp_fix_coords.rot(2,2) = ez(2);
+    }
+    fixLegToCoords(tmp_fix_coords.pos, tmp_fix_coords.rot);
 }
 
 bool AutoBalancer::solveLimbIKforLimb (ABCIKparam& param, const std::string& limb_name)

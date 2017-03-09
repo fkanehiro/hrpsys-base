@@ -211,8 +211,16 @@ class AutoBalancer
   void getOutputParametersForWalking ();
   void getOutputParametersForABC ();
   void getOutputParametersForIDLE ();
+  void interpolateLegNamesAndZMPOffsets();
+  void calcFixCoordsForAdjustFootstep (rats::coordinates& tmp_fix_coords);
+  void rotateRefForcesForFixCoords (rats::coordinates& tmp_fix_coords);
+  void updateTargetCoordsForHandFixMode (rats::coordinates& tmp_fix_coords);
+  void calculateOutputRefForces ();
+  hrp::Vector3 calcFootMidPosUsingZMPWeightMap ();
+  void updateWalkingVelocityFromHandError (rats::coordinates& tmp_fix_coords);
   hrp::Matrix33 OrientRotationMatrix (const hrp::Matrix33& rot, const hrp::Vector3& axis1, const hrp::Vector3& axis2);
   void fixLegToCoords (const hrp::Vector3& fix_pos, const hrp::Matrix33& fix_rot);
+  void fixLegToCoords2 (rats::coordinates& tmp_fix_coords);
   void startWalking ();
   void stopWalking ();
   void copyRatscoords2Footstep(OpenHRP::AutoBalancerService::Footstep& out_fs, const rats::coordinates& in_fs);
