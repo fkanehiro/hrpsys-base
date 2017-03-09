@@ -40,17 +40,6 @@ static const char* autobalancer_spec[] =
     };
 // </rtc-template>
 
-static std::ostream& operator<<(std::ostream& os, const struct RTC::Time &tm)
-{
-    int pre = os.precision();
-    os.setf(std::ios::fixed);
-    os << std::setprecision(6)
-       << (tm.sec + tm.nsec/1e9)
-       << std::setprecision(pre);
-    os.unsetf(std::ios::fixed);
-    return os;
-}
-
 AutoBalancer::AutoBalancer(RTC::Manager* manager)
     : RTC::DataFlowComponentBase(manager),
       // <rtc-template block="initializer">
@@ -76,7 +65,6 @@ AutoBalancer::AutoBalancer(RTC::Manager* manager)
       m_AutoBalancerServicePort("AutoBalancerService"),
       // </rtc-template>
       gait_type(BIPED),
-      move_base_gain(0.8),
       m_robot(hrp::BodyPtr()),
       m_debugLevel(0)
 {
@@ -153,8 +141,6 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
 
     // allocate memory for outPorts
     m_qRef.data.length(m_robot->numJoints());
-    qorg.resize(m_robot->numJoints());
-    qrefv.resize(m_robot->numJoints());
     m_baseTform.data.length(12);
 
     control_mode = MODE_IDLE;
@@ -166,6 +152,9 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     coil::vstring leg_offset_str = coil::split(prop["abc_leg_offset"], ",");
     leg_names.push_back("rleg");
     leg_names.push_back("lleg");
+
+    // Generate FIK
+    fik = fikPtr(new SimpleFullbodyInverseKinematicsSolver(m_robot, std::string(m_profile.instance_name), m_dt));
 
     // setting from conf file
     // rleg,TARGET_LINK,BASE_LINK
@@ -187,24 +176,27 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
           coil::stringTo(tmpv[j], end_effectors_str[i*prop_num+6+j].c_str());
         }
         tp.localR = Eigen::AngleAxis<double>(tmpv[3], hrp::Vector3(tmpv[0], tmpv[1], tmpv[2])).toRotationMatrix(); // rotation in VRML is represented by axis + angle
-        tp.manip = hrp::JointPathExPtr(new hrp::JointPathEx(m_robot, m_robot->link(ee_base), m_robot->link(ee_target), m_dt, false, std::string(m_profile.instance_name)));
+        // FIK param
+        SimpleFullbodyInverseKinematicsSolver::IKparam tmp_fikp;
+        tmp_fikp.manip = hrp::JointPathExPtr(new hrp::JointPathEx(m_robot, m_robot->link(ee_base), m_robot->link(ee_target), m_dt, false, std::string(m_profile.instance_name)));
+        tmp_fikp.target_link = m_robot->link(ee_target);
+        tmp_fikp.localPos = tp.localPos;
+        tmp_fikp.localR = tp.localR;
+        fik->ikp.insert(std::pair<std::string, SimpleFullbodyInverseKinematicsSolver::IKparam>(ee_name, tmp_fikp));
         // Fix for toe joint
         //   Toe joint is defined as end-link joint in the case that end-effector link != force-sensor link
         //   Without toe joints, "end-effector link == force-sensor link" is assumed.
         //   With toe joints, "end-effector link != force-sensor link" is assumed.
         if (m_robot->link(ee_target)->sensors.size() == 0) { // If end-effector link has no force sensor
-            std::vector<double> optw(tp.manip->numJoints(), 1.0);
+            std::vector<double> optw(fik->ikp[ee_name].manip->numJoints(), 1.0);
             optw.back() = 0.0; // Set weight = 0 for toe joint by default
-            tp.manip->setOptionalWeightVector(optw);
+            fik->ikp[ee_name].manip->setOptionalWeightVector(optw);
             tp.has_toe_joint = true;
         } else {
             tp.has_toe_joint = false;
         }
-        tp.avoid_gain = 0.001;
-        tp.reference_gain = 0.01;
-        tp.pos_ik_error_count = tp.rot_ik_error_count = 0;
+        tp.target_link = m_robot->link(ee_target);
         ikp.insert(std::pair<std::string, ABCIKparam>(ee_name , tp));
-        ikp[ee_name].target_link = m_robot->link(ee_target);
         ee_vec.push_back(ee_name);
         std::cerr << "[" << m_profile.instance_name << "] End Effector [" << ee_name << "]" << std::endl;
         std::cerr << "[" << m_profile.instance_name << "]   target = " << ikp[ee_name].target_link->name << ", base = " << ee_base << std::endl;
@@ -244,10 +236,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     std::vector<std::pair<hrp::Link*, hrp::Link*> > interlocking_joints;
     readInterlockingJointsParamFromProperties(interlocking_joints, m_robot, prop["interlocking_joints"], std::string(m_profile.instance_name));
     if (interlocking_joints.size() > 0) {
-        for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
-            std::cerr << "[" << m_profile.instance_name << "] Interlocking Joints for [" << it->first << "]" << std::endl;
-            it->second.manip->setInterlockingJointPairIndices(interlocking_joints, std::string(m_profile.instance_name));
-        }
+        fik->initializeInterlockingJoints(interlocking_joints);
     }
 
     zmp_offset_interpolator = new interpolator(ikp.size()*3, m_dt);
@@ -353,12 +342,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     graspless_manip_p_gain = hrp::Vector3::Zero();
 
     is_stop_mode = false;
-    has_ik_failed = false;
     is_hand_fix_mode = false;
-
-    pos_ik_thre = 0.5*1e-3; // [m]
-    rot_ik_thre = (1e-2)*M_PI/180.0; // [rad]
-    ik_error_debug_print_freq = static_cast<int>(0.2/m_dt); // once per 0.2 [s]
 
     hrp::Sensor* sen = m_robot->sensor<hrp::RateGyroSensor>("gyrometer");
     if (sen == NULL) {
@@ -463,7 +447,7 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
     hrp::Vector3 rel_ref_zmp; // ref zmp in base frame
     if ( is_legged_robot ) {
       // For parameters
-      getCurrentParameters();
+      fik->storeCurrentParameters();
       getTargetParameters();
       // Get transition ratio
       bool is_transition_interpolator_empty = transition_interpolator->isEmpty();
@@ -473,7 +457,7 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
         transition_interpolator_ratio = (control_mode == MODE_IDLE) ? 0.0 : 1.0;
       }
       if (control_mode != MODE_IDLE ) {
-        solveLimbIK();
+        solveFullbodyIK();
         rel_ref_zmp = m_robot->rootLink()->R.transpose() * (ref_zmp - m_robot->rootLink()->p);
       } else {
         rel_ref_zmp = input_zmp;
@@ -611,22 +595,13 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
     return RTC::RTC_OK;
 }
 
-void AutoBalancer::getCurrentParameters()
-{
-  current_root_p = m_robot->rootLink()->p;
-  current_root_R = m_robot->rootLink()->R;
-  for ( unsigned int i = 0; i < m_robot->numJoints(); i++ ){
-    qorg[i] = m_robot->joint(i)->q;
-  }
-}
-
 void AutoBalancer::getTargetParameters()
 {
   // joint angles
   for ( unsigned int i = 0; i < m_robot->numJoints(); i++ ){
     m_robot->joint(i)->q = m_qRef.data[i];
-    qrefv[i] = m_robot->joint(i)->q;
   }
+  fik->setReferenceJointAngles();
   // basepos, rot, zmp
   m_robot->rootLink()->p = input_basePos;
   m_robot->rootLink()->R = input_baseRot;
@@ -660,8 +635,8 @@ void AutoBalancer::getTargetParameters()
     }
     //   Just for ik initial value
     if (control_mode == MODE_SYNC_TO_ABC) {
-        current_root_p = target_root_p;
-        current_root_R = target_root_R;
+        fik->current_root_p = target_root_p;
+        fik->current_root_R = target_root_R;
         for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
             if ( std::find(leg_names.begin(), leg_names.end(), it->first) != leg_names.end() ) {
                 it->second.target_p0 = it->second.target_link->p + it->second.target_link->R * it->second.localPos;
@@ -961,15 +936,15 @@ void AutoBalancer::updateWalkingVelocityFromHandError (coordinates& tmp_fix_coor
 
 void AutoBalancer::calcReferenceJointAnglesForIK ()
 {
-    overwrite_ref_ja_index_vec.clear();
+    fik->overwrite_ref_ja_index_vec.clear();
     // Fix for toe joint
     for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
         if (it->second.is_active && it->second.has_toe_joint && gg->get_use_toe_joint()) {
             int i = it->second.target_link->jointId;
             if (gg->get_swing_leg_names().front() == it->first) {
-                qrefv[i] = qrefv[i] + -1 * gg->get_foot_dif_rot_angle();
+                fik->qrefv[i] = fik->qrefv[i] + -1 * gg->get_foot_dif_rot_angle();
             }
-            overwrite_ref_ja_index_vec.push_back(i);
+            fik->overwrite_ref_ja_index_vec.push_back(i);
         }
     }
 };
@@ -1024,67 +999,28 @@ void AutoBalancer::fixLegToCoords2 (coordinates& tmp_fix_coords)
     fixLegToCoords(tmp_fix_coords.pos, tmp_fix_coords.rot);
 }
 
-bool AutoBalancer::solveLimbIKforLimb (ABCIKparam& param, const std::string& limb_name, const double ratio_for_vel)
+void AutoBalancer::solveFullbodyIK ()
 {
-  param.manip->calcInverseKinematics2Loop(param.target_p0, param.target_r0, 1.0, param.avoid_gain, param.reference_gain, &qrefv, ratio_for_vel,
-                                          param.localPos, param.localR);
-  // IK check
-  hrp::Vector3 vel_p, vel_r;
-  vel_p = param.target_p0 - (param.target_link->p + param.target_link->R * param.localPos);
-  rats::difference_rotation(vel_r, (param.target_link->R * param.localR), param.target_r0);
-  if (vel_p.norm() > pos_ik_thre && transition_interpolator->isEmpty()) {
-      if (param.pos_ik_error_count % ik_error_debug_print_freq == 0) {
-          std::cerr << "[" << m_profile.instance_name << "] [" << m_qRef.tm
-                    << "] Too large IK error in " << limb_name << " (vel_p) = [" << vel_p(0) << " " << vel_p(1) << " " << vel_p(2) << "][m], count = " << param.pos_ik_error_count << std::endl;
-      }
-      param.pos_ik_error_count++;
-      has_ik_failed = true;
-  } else {
-      param.pos_ik_error_count = 0;
+  // Set ik target params
+  fik->target_root_p = target_root_p;
+  fik->target_root_R = target_root_R;
+  for ( std::map<std::string, SimpleFullbodyInverseKinematicsSolver::IKparam>::iterator it = fik->ikp.begin(); it != fik->ikp.end(); it++ ) {
+      it->second.target_p0 = ikp[it->first].target_p0;
+      it->second.target_r0 = ikp[it->first].target_r0;
   }
-  if (vel_r.norm() > rot_ik_thre && transition_interpolator->isEmpty()) {
-      if (param.rot_ik_error_count % ik_error_debug_print_freq == 0) {
-          std::cerr << "[" << m_profile.instance_name << "] [" << m_qRef.tm
-                    << "] Too large IK error in " << limb_name << " (vel_r) = [" << vel_r(0) << " " << vel_r(1) << " " << vel_r(2) << "][rad], count = " << param.rot_ik_error_count << std::endl;
-      }
-      param.rot_ik_error_count++;
-      has_ik_failed = true;
-  } else {
-      param.rot_ik_error_count = 0;
-  }
-  return true;
-}
-
-void AutoBalancer::solveLimbIK ()
-{
+  fik->ratio_for_vel = transition_interpolator_ratio * leg_names_interpolator_ratio;
+  fik->current_tm = m_qRef.tm;
   for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
-    if (it->second.is_active) {
-      for ( unsigned int j = 0; j < it->second.manip->numJoints(); j++ ){
-	int i = it->second.manip->joint(j)->jointId;
-	m_robot->joint(i)->q = qorg[i];
-      }
-    }
+      fik->ikp[it->first].is_ik_enable = it->second.is_active;
   }
-  m_robot->rootLink()->p = current_root_p;
-  m_robot->rootLink()->R = current_root_R;
-  m_robot->calcForwardKinematics();
-  double ratio_for_vel = transition_interpolator_ratio * leg_names_interpolator_ratio;
+  // Revert
+  fik->revertRobotStateToCurrent();
+  // TODO : SBP calculation is outside of solve ik?
   hrp::Vector3 tmp_input_sbp = hrp::Vector3(0,0,0);
   static_balance_point_proc_one(tmp_input_sbp, ref_zmp(2));
   hrp::Vector3 dif_cog = tmp_input_sbp - ref_cog;
-  dif_cog *= leg_names_interpolator_ratio;
-  dif_cog(2) = m_robot->rootLink()->p(2) - target_root_p(2);
-  m_robot->rootLink()->p = m_robot->rootLink()->p + -1 * move_base_gain * dif_cog;
-  m_robot->rootLink()->R = target_root_R;
-  // Overwrite by ref joint angle
-  for (size_t i = 0; i < overwrite_ref_ja_index_vec.size(); i++) {
-      m_robot->joint(overwrite_ref_ja_index_vec[i])->q = qrefv[overwrite_ref_ja_index_vec[i]];
-  }
-  m_robot->calcForwardKinematics();
-
-  for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
-    if (it->second.is_active) solveLimbIKforLimb(it->second, it->first, ratio_for_vel);
-  }
+  // Solve IK
+  fik->solveFullbodyIK (dif_cog, transition_interpolator->isEmpty());
 }
 
 /*
@@ -1164,10 +1100,7 @@ bool AutoBalancer::startWalking ()
   }
   {
     Guard guard(m_mutex);
-    has_ik_failed = false;
-    for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
-        it->second.pos_ik_error_count = it->second.rot_ik_error_count = 0;
-    }
+    fik->resetIKFailParam();
     std::vector<std::string> init_swing_leg_names(gg->get_footstep_front_leg_names());
     std::vector<std::string> tmp_all_limbs(leg_names);
     std::vector<std::string> init_support_leg_names;
@@ -1208,10 +1141,7 @@ void AutoBalancer::stopWalking ()
 bool AutoBalancer::startAutoBalancer (const OpenHRP::AutoBalancerService::StrSequence& limbs)
 {
   if (control_mode == MODE_IDLE) {
-    has_ik_failed = false;
-    for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
-        it->second.pos_ik_error_count = it->second.rot_ik_error_count = 0;
-    }
+    fik->resetIKFailParam();
     startABCparam(limbs);
     waitABCTransition();
     return true;
@@ -1621,7 +1551,6 @@ bool AutoBalancer::setAutoBalancerParam(const OpenHRP::AutoBalancerService::Auto
   Guard guard(m_mutex);
   std::cerr << "[" << m_profile.instance_name << "] setAutoBalancerParam" << std::endl;
   double *default_zmp_offsets_array = new double[ikp.size()*3];
-  move_base_gain = i_param.move_base_gain;
   for (size_t i = 0; i < ikp.size(); i++)
     for (size_t j = 0; j < 3; j++)
       default_zmp_offsets_array[i*3+j] = i_param.default_zmp_offsets[i][j];
@@ -1680,8 +1609,6 @@ bool AutoBalancer::setAutoBalancerParam(const OpenHRP::AutoBalancerService::Auto
   } else {
       std::cerr << "[" << m_profile.instance_name << "]   leg_names cannot be set because interpolating." << std::endl;
   }
-  pos_ik_thre = i_param.pos_ik_thre;
-  rot_ik_thre = i_param.rot_ik_thre;
   if (!gg_is_walking) {
       is_hand_fix_mode = i_param.is_hand_fix_mode;
       std::cerr << "[" << m_profile.instance_name << "]   is_hand_fix_mode = " << is_hand_fix_mode << std::endl;
@@ -1714,7 +1641,6 @@ bool AutoBalancer::setAutoBalancerParam(const OpenHRP::AutoBalancerService::Auto
       std::cerr << "[" << m_profile.instance_name << "]   localR = " << it->second.localR.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", "\n", "    [", "]")) << std::endl;
   }
 
-  std::cerr << "[" << m_profile.instance_name << "]   move_base_gain = " << move_base_gain << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   default_zmp_offsets = ";
   for (size_t i = 0; i < ikp.size() * 3; i++) {
       std::cerr << default_zmp_offsets_array[i] << " ";
@@ -1729,87 +1655,19 @@ bool AutoBalancer::setAutoBalancerParam(const OpenHRP::AutoBalancerService::Auto
   std::cerr << "[" << m_profile.instance_name << "]   graspless_manip_reference_trans_rot = " << graspless_manip_reference_trans_coords.rot.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", "\n", "    [", "]")) << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   transition_time = " << transition_time << "[s], zmp_transition_time = " << zmp_transition_time << "[s], adjust_footstep_transition_time = " << adjust_footstep_transition_time << "[s]" << std::endl;
   for (std::vector<std::string>::iterator it = leg_names.begin(); it != leg_names.end(); it++) std::cerr << "[" << m_profile.instance_name << "]   leg_names [" << *it << "]" << std::endl;
-  std::cerr << "[" << m_profile.instance_name << "]   pos_ik_thre = " << pos_ik_thre << "[m], rot_ik_thre = " << rot_ik_thre << "[rad]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   default_gait_type = " << gait_type << std::endl;
+  // FIK
+  fik->move_base_gain = i_param.move_base_gain;
+  fik->pos_ik_thre = i_param.pos_ik_thre;
+  fik->rot_ik_thre = i_param.rot_ik_thre;
+  fik->printParam();
   // IK limb parameters
-  std::cerr << "[" << m_profile.instance_name << "]  IK limb parameters" << std::endl;
-  bool is_ik_limb_parameter_valid_length = true;
-  if (i_param.ik_limb_parameters.length() != ee_vec.size()) {
-      is_ik_limb_parameter_valid_length = false;
-      std::cerr << "[" << m_profile.instance_name << "]   ik_limb_parameters invalid length! Cannot be set. (input = " << i_param.ik_limb_parameters.length() << ", desired = " << ee_vec.size() << ")" << std::endl;
-  } else {
-      for (size_t i = 0; i < ee_vec.size(); i++) {
-          if (ikp[ee_vec[i]].manip->numJoints() != i_param.ik_limb_parameters[i].ik_optional_weight_vector.length())
-              is_ik_limb_parameter_valid_length = false;
-      }
-      if (is_ik_limb_parameter_valid_length) {
-          for (size_t i = 0; i < ee_vec.size(); i++) {
-              ABCIKparam& param = ikp[ee_vec[i]];
-              const OpenHRP::AutoBalancerService::IKLimbParameters& ilp = i_param.ik_limb_parameters[i];
-              std::vector<double> ov;
-              ov.resize(param.manip->numJoints());
-              for (size_t j = 0; j < param.manip->numJoints(); j++) {
-                  ov[j] = ilp.ik_optional_weight_vector[j];
-              }
-              param.manip->setOptionalWeightVector(ov);
-              param.manip->setSRGain(ilp.sr_gain);
-              param.avoid_gain = ilp.avoid_gain;
-              param.reference_gain = ilp.reference_gain;
-              param.manip->setManipulabilityLimit(ilp.manipulability_limit);
-          }
-      } else {
-          std::cerr << "[" << m_profile.instance_name << "]   ik_optional_weight_vector invalid length! Cannot be set. (input = [";
-          for (size_t i = 0; i < ee_vec.size(); i++) {
-              std::cerr << i_param.ik_limb_parameters[i].ik_optional_weight_vector.length() << ", ";
-          }
-          std::cerr << "], desired = [";
-          for (size_t i = 0; i < ee_vec.size(); i++) {
-              std::cerr << ikp[ee_vec[i]].manip->numJoints() << ", ";
-          }
-          std::cerr << "])" << std::endl;
-      }
-  }
-  if (is_ik_limb_parameter_valid_length) {
-      std::cerr << "[" << m_profile.instance_name << "]   ik_optional_weight_vectors = ";
-      for (size_t i = 0; i < ee_vec.size(); i++) {
-          ABCIKparam& param = ikp[ee_vec[i]];
-          std::vector<double> ov;
-          ov.resize(param.manip->numJoints());
-          param.manip->getOptionalWeightVector(ov);
-          std::cerr << "[";
-          for (size_t j = 0; j < param.manip->numJoints(); j++) {
-              std::cerr << ov[j] << " ";
-          }
-          std::cerr << "]";
-      }
-      std::cerr << std::endl;
-      std::cerr << "[" << m_profile.instance_name << "]   sr_gains = [";
-      for (size_t i = 0; i < ee_vec.size(); i++) {
-          std::cerr << ikp[ee_vec[i]].manip->getSRGain() << ", ";
-      }
-      std::cerr << "]" << std::endl;
-      std::cerr << "[" << m_profile.instance_name << "]   avoid_gains = [";
-      for (size_t i = 0; i < ee_vec.size(); i++) {
-          std::cerr << ikp[ee_vec[i]].avoid_gain << ", ";
-      }
-      std::cerr << "]" << std::endl;
-      std::cerr << "[" << m_profile.instance_name << "]   reference_gains = [";
-      for (size_t i = 0; i < ee_vec.size(); i++) {
-          std::cerr << ikp[ee_vec[i]].reference_gain << ", ";
-      }
-      std::cerr << "]" << std::endl;
-      std::cerr << "[" << m_profile.instance_name << "]   manipulability_limits = [";
-      for (size_t i = 0; i < ee_vec.size(); i++) {
-          std::cerr << ikp[ee_vec[i]].manip->getManipulabilityLimit() << ", ";
-      }
-      std::cerr << "]" << std::endl;
-  }
+  fik->setIKParam(ee_vec, i_param.ik_limb_parameters);
   return true;
 };
 
 bool AutoBalancer::getAutoBalancerParam(OpenHRP::AutoBalancerService::AutoBalancerParam& i_param)
 {
-  i_param.move_base_gain = move_base_gain;
   i_param.default_zmp_offsets.length(ikp.size());
   for (size_t i = 0; i < ikp.size(); i++) {
       i_param.default_zmp_offsets[i].length(3);
@@ -1845,8 +1703,6 @@ bool AutoBalancer::getAutoBalancerParam(OpenHRP::AutoBalancerService::AutoBalanc
   i_param.adjust_footstep_transition_time = adjust_footstep_transition_time;
   i_param.leg_names.length(leg_names.size());
   for (size_t i = 0; i < leg_names.size(); i++) i_param.leg_names[i] = leg_names.at(i).c_str();
-  i_param.pos_ik_thre = pos_ik_thre;
-  i_param.rot_ik_thre = rot_ik_thre;
   i_param.is_hand_fix_mode = is_hand_fix_mode;
   i_param.end_effector_list.length(ikp.size());
   {
@@ -1866,22 +1722,12 @@ bool AutoBalancer::getAutoBalancerParam(OpenHRP::AutoBalancerService::AutoBalanc
   case GALLOP: i_param.default_gait_type = OpenHRP::AutoBalancerService::GALLOP; break;
   default: break;
   }
-  i_param.ik_limb_parameters.length(ee_vec.size());
-  for (size_t i = 0; i < ee_vec.size(); i++) {
-      ABCIKparam& param = ikp[ee_vec[i]];
-      OpenHRP::AutoBalancerService::IKLimbParameters& ilp = i_param.ik_limb_parameters[i];
-      ilp.ik_optional_weight_vector.length(param.manip->numJoints());
-      std::vector<double> ov;
-      ov.resize(param.manip->numJoints());
-      param.manip->getOptionalWeightVector(ov);
-      for (size_t j = 0; j < param.manip->numJoints(); j++) {
-          ilp.ik_optional_weight_vector[j] = ov[j];
-      }
-      ilp.sr_gain = param.manip->getSRGain();
-      ilp.avoid_gain = param.avoid_gain;
-      ilp.reference_gain = param.reference_gain;
-      ilp.manipulability_limit = param.manip->getManipulabilityLimit();
-  }
+  // FIK
+  i_param.move_base_gain = fik->move_base_gain;
+  i_param.pos_ik_thre = fik->pos_ik_thre;
+  i_param.rot_ik_thre = fik->rot_ik_thre;
+  // IK limb parameters
+  fik->getIKParam(ee_vec, i_param.ik_limb_parameters);
   return true;
 };
 
