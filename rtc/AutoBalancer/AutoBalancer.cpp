@@ -690,18 +690,22 @@ void AutoBalancer::getTargetParameters()
       {
           std::map<leg_type, std::string> leg_type_map = gg->get_leg_type_map();
           for (std::map<std::string, ABCIKparam>::const_iterator it = ikp.begin(); it != ikp.end(); it++) {
+              size_t idx = contact_states_index_map[it->first];
+              // Set contactStates
               std::vector<std::string>::const_iterator dst = std::find_if(leg_names.begin(), leg_names.end(), (boost::lambda::_1 == it->first));
               if (dst != leg_names.end()) {
-                  m_contactStates.data[contact_states_index_map[it->first]] = true;
+                  m_contactStates.data[idx] = true;
               } else {
-                  m_contactStates.data[contact_states_index_map[it->first]] = false;
+                  m_contactStates.data[idx] = false;
               }
               // controlSwingSupportTime is not used while double support period, 1.0 is neglected
-              m_controlSwingSupportTime.data[contact_states_index_map[it->first]] = 1.0;
-              std::map<leg_type, std::string>::const_iterator dst2 = std::find_if(leg_type_map.begin(), leg_type_map.end(), (&boost::lambda::_1->* &std::map<leg_type, std::string>::value_type::second == it->first));
-              m_limbCOPOffset[contact_states_index_map[it->first]].data.x = default_zmp_offsets.at(dst2->first)(0);
-              m_limbCOPOffset[contact_states_index_map[it->first]].data.y = default_zmp_offsets.at(dst2->first)(1);
-              m_limbCOPOffset[contact_states_index_map[it->first]].data.z = default_zmp_offsets.at(dst2->first)(2);
+              m_controlSwingSupportTime.data[idx] = 1.0;
+              // Set limbCOPOffset
+              m_limbCOPOffset[idx].data.x = default_zmp_offsets[idx](0);
+              m_limbCOPOffset[idx].data.y = default_zmp_offsets[idx](1);
+              m_limbCOPOffset[idx].data.z = default_zmp_offsets[idx](2);
+              // Set toe heel ratio is not used while double support
+              m_toeheelRatio.data[idx] = rats::no_using_toe_heel_ratio;
           }
       }
     }
