@@ -663,24 +663,15 @@ void AutoBalancer::getTargetParameters()
       gg_solved = gg->proc_one_tick();
       {
           std::map<leg_type, std::string> leg_type_map = gg->get_leg_type_map();
-          coordinates tmpc;
           // for support leg
           for (std::vector<step_node>::const_iterator it = gg->get_support_leg_steps().begin(); it != gg->get_support_leg_steps().end(); it++) {
-              coordinates sp_coords = it->worldcoords;
-              coordinates(ikp[leg_type_map[it->l_r]].localPos,
-                          ikp[leg_type_map[it->l_r]].localR).inverse_transformation(tmpc);
-              sp_coords.transform(tmpc);
-              ikp[leg_type_map[it->l_r]].target_p0 = sp_coords.pos;
-              ikp[leg_type_map[it->l_r]].target_r0 = sp_coords.rot;
+              ikp[leg_type_map[it->l_r]].target_p0 = it->worldcoords.pos;
+              ikp[leg_type_map[it->l_r]].target_r0 = it->worldcoords.rot;
           }
           // for swing leg
           for (std::vector<step_node>::const_iterator it = gg->get_swing_leg_steps().begin(); it != gg->get_swing_leg_steps().end(); it++) {
-              coordinates sw_coords = it->worldcoords;
-              coordinates(ikp[leg_type_map[it->l_r]].localPos,
-                          ikp[leg_type_map[it->l_r]].localR).inverse_transformation(tmpc);
-              sw_coords.transform(tmpc);
-              ikp[leg_type_map[it->l_r]].target_p0 = sw_coords.pos;
-              ikp[leg_type_map[it->l_r]].target_r0 = sw_coords.rot;
+              ikp[leg_type_map[it->l_r]].target_p0 = it->worldcoords.pos;
+              ikp[leg_type_map[it->l_r]].target_r0 = it->worldcoords.rot;
           }
       }
       gg->get_swing_support_mid_coords(tmp_fix_coords);
@@ -773,10 +764,10 @@ void AutoBalancer::getTargetParameters()
         rats::mid_rot(ikp["rleg"].target_r0, tmp, ikp["rleg"].adjust_interpolation_org_r0, ikp["rleg"].adjust_interpolation_target_r0);
         rats::mid_rot(ikp["lleg"].target_r0, tmp, ikp["lleg"].adjust_interpolation_org_r0, ikp["lleg"].adjust_interpolation_target_r0);
         coordinates tmprc, tmplc;
-        tmprc.pos = ikp["rleg"].target_p0 + ikp["rleg"].target_r0 * ikp["rleg"].localPos;
-        tmprc.rot = ikp["rleg"].target_r0 * ikp["rleg"].localR;
-        tmplc.pos = ikp["lleg"].target_p0 + ikp["lleg"].target_r0 * ikp["lleg"].localPos;
-        tmplc.rot = ikp["lleg"].target_r0 * ikp["lleg"].localR;
+        tmprc.pos = ikp["rleg"].target_p0;
+        tmprc.rot = ikp["rleg"].target_r0;
+        tmplc.pos = ikp["lleg"].target_p0;
+        tmplc.rot = ikp["lleg"].target_r0;
         rats::mid_coords(fix_leg_coords, 0.5, tmprc, tmplc);
         tmp_fix_coords = fix_leg_coords;
     }
@@ -817,8 +808,8 @@ void AutoBalancer::getTargetParameters()
     target_root_R = m_robot->rootLink()->R;
     for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
       if ( control_mode == MODE_IDLE || std::find(leg_names.begin(), leg_names.end(), it->first) == leg_names.end() ) {
-        it->second.target_p0 = it->second.target_link->p;
-        it->second.target_r0 = it->second.target_link->R;
+        it->second.target_p0 = it->second.target_link->p + it->second.target_link->R * it->second.localPos;
+        it->second.target_r0 = it->second.target_link->R * it->second.localR;
       }
     }
     // Just for ik initial value
@@ -827,8 +818,8 @@ void AutoBalancer::getTargetParameters()
         current_root_R = target_root_R;
         for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
             if ( std::find(leg_names.begin(), leg_names.end(), it->first) != leg_names.end() ) {
-                it->second.target_p0 = it->second.target_link->p;
-                it->second.target_r0 = it->second.target_link->R;
+                it->second.target_p0 = it->second.target_link->p + it->second.target_link->R * it->second.localPos;
+                it->second.target_r0 = it->second.target_link->R * it->second.localR;
             }
         }
     }
@@ -870,7 +861,7 @@ void AutoBalancer::getTargetParameters()
           std::vector<hrp::Vector3> ee_pos;
           for (size_t i = 0 ; i < leg_names.size(); i++) {
               ABCIKparam& tmpikp = ikp[leg_names[i]];
-              ee_pos.push_back(tmpikp.target_p0 + tmpikp.target_r0 * tmpikp.localPos + tmpikp.target_r0 * tmpikp.localR * default_zmp_offsets[i]);
+              ee_pos.push_back(tmpikp.target_p0 + tmpikp.target_r0 * default_zmp_offsets[i]);
           }
           double alpha = (ref_zmp - ee_pos[1]).norm() / ((ee_pos[0] - ref_zmp).norm() + (ee_pos[1] - ref_zmp).norm());
           if (alpha>1.0) alpha = 1.0;
@@ -891,11 +882,11 @@ void AutoBalancer::getTargetParameters()
         for (size_t i = 0; i < leg_names.size(); i++) {
             ABCIKparam& tmpikp = ikp[leg_names[i]];
             // get target_end_coords
-            tmpikp.target_end_coords.pos = tmpikp.target_p0 + tmpikp.target_r0 * tmpikp.localPos;
-            tmpikp.target_end_coords.rot = tmpikp.target_r0 * tmpikp.localR;
+            tmpikp.target_end_coords.pos = tmpikp.target_p0;
+            tmpikp.target_end_coords.rot = tmpikp.target_r0;
             // for foot_mid_pos
             std::map<leg_type, std::string>::const_iterator dst = std::find_if(leg_type_map.begin(), leg_type_map.end(), (&boost::lambda::_1->* &std::map<leg_type, std::string>::value_type::second == leg_names[i]));
-            tmp_foot_mid_pos += (tmpikp.target_p0 + tmpikp.target_r0 * tmpikp.localPos + tmpikp.target_r0 * tmpikp.localR * default_zmp_offsets[i]) * zmp_weight_map[dst->first];
+            tmp_foot_mid_pos += (tmpikp.target_p0 + tmpikp.target_r0 * default_zmp_offsets[i]) * zmp_weight_map[dst->first];
             sum_of_weight += zmp_weight_map[dst->first];
         }
         tmp_foot_mid_pos *= (1.0 / sum_of_weight);
@@ -979,11 +970,12 @@ void AutoBalancer::fixLegToCoords (const hrp::Vector3& fix_pos, const hrp::Matri
 
 bool AutoBalancer::solveLimbIKforLimb (ABCIKparam& param, const std::string& limb_name)
 {
-  param.manip->calcInverseKinematics2Loop(param.target_p0, param.target_r0, 1.0, param.avoid_gain, param.reference_gain, &qrefv, transition_interpolator_ratio * leg_names_interpolator_ratio);
+  param.manip->calcInverseKinematics2Loop(param.target_p0, param.target_r0, 1.0, param.avoid_gain, param.reference_gain, &qrefv, transition_interpolator_ratio * leg_names_interpolator_ratio,
+                                          param.localPos, param.localR);
   // IK check
   hrp::Vector3 vel_p, vel_r;
-  vel_p = param.target_p0 - param.target_link->p;
-  rats::difference_rotation(vel_r, param.target_link->R, param.target_r0);
+  vel_p = param.target_p0 - (param.target_link->p + param.target_link->R * param.localPos);
+  rats::difference_rotation(vel_r, (param.target_link->R * param.localR), param.target_r0);
   if (vel_p.norm() > pos_ik_thre && transition_interpolator->isEmpty()) {
       if (param.pos_ik_error_count % ik_error_debug_print_freq == 0) {
           std::cerr << "[" << m_profile.instance_name << "] [" << m_qRef.tm
@@ -1901,12 +1893,12 @@ bool AutoBalancer::adjustFootSteps(const OpenHRP::AutoBalancerService::Footstep&
       //   Output : link coords
       memcpy(eepos.data(), rfootstep.pos, sizeof(double)*3);
       eerot = (Eigen::Quaternion<double>(rfootstep.rot[0], rfootstep.rot[1], rfootstep.rot[2], rfootstep.rot[3])).normalized().toRotationMatrix(); // rtc: 
-      ikp["rleg"].adjust_interpolation_target_r0 = eerot * ikp["rleg"].localR.transpose();
-      ikp["rleg"].adjust_interpolation_target_p0 = eepos - ikp["rleg"].adjust_interpolation_target_r0 * ikp["rleg"].localPos;
+      ikp["rleg"].adjust_interpolation_target_r0 = eerot;
+      ikp["rleg"].adjust_interpolation_target_p0 = eepos;
       memcpy(eepos.data(), lfootstep.pos, sizeof(double)*3);
       eerot = (Eigen::Quaternion<double>(lfootstep.rot[0], lfootstep.rot[1], lfootstep.rot[2], lfootstep.rot[3])).normalized().toRotationMatrix(); // rtc: 
-      ikp["lleg"].adjust_interpolation_target_r0 = eerot * ikp["lleg"].localR.transpose();
-      ikp["lleg"].adjust_interpolation_target_p0 = eepos - ikp["lleg"].adjust_interpolation_target_r0 * ikp["lleg"].localPos;
+      ikp["lleg"].adjust_interpolation_target_r0 = eerot;
+      ikp["lleg"].adjust_interpolation_target_p0 = eepos;
       mid_coords(target_mid_coords, 0.5,
                  coordinates(ikp["rleg"].adjust_interpolation_target_p0, ikp["rleg"].adjust_interpolation_target_r0),
                  coordinates(ikp["lleg"].adjust_interpolation_target_p0, ikp["lleg"].adjust_interpolation_target_r0));
@@ -2051,8 +2043,8 @@ hrp::Vector3 AutoBalancer::calc_vel_from_hand_error (const coordinates& tmp_fix_
     ref_hand_coords.transform(graspless_manip_reference_trans_coords); // desired arm coords
     hrp::Vector3 foot_pos(gg->get_dst_foot_midcoords().pos);
     if ( graspless_manip_arm == "arms" ) {
-        hrp::Vector3 rarm_pos = ikp["rarm"].target_p0 + ikp["rarm"].target_r0 * ikp["rarm"].localPos;
-        hrp::Vector3 larm_pos = ikp["larm"].target_p0 + ikp["larm"].target_r0 * ikp["larm"].localPos;
+        hrp::Vector3 rarm_pos = ikp["rarm"].target_p0;
+        hrp::Vector3 larm_pos = ikp["larm"].target_p0;
         act_hand_coords.pos = (rarm_pos+larm_pos)/2.0;
         hrp::Vector3 act_y = larm_pos-rarm_pos;
         act_y(2) = 0;
@@ -2063,8 +2055,8 @@ hrp::Vector3 AutoBalancer::calc_vel_from_hand_error (const coordinates& tmp_fix_
         dr = hrp::Vector3(0,0,(hrp::Vector3(ref_y.cross(act_y))(2) > 0 ? 1.0 : -1.0) * std::acos(ref_y.dot(act_y))); // fix for rotation
     } else {
       ABCIKparam& tmpikp = ikp[graspless_manip_arm];
-      act_hand_coords = rats::coordinates(tmpikp.target_p0 + tmpikp.target_r0 * tmpikp.localPos,
-                                          tmpikp.target_r0 * tmpikp.localR);
+      act_hand_coords = rats::coordinates(tmpikp.target_p0,
+                                          tmpikp.target_r0);
       rats::difference_rotation(dr, ref_hand_coords.rot, act_hand_coords.rot);
       dr(0) = 0; dr(1) = 0;
     }
