@@ -459,7 +459,6 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
     hrp::Matrix33 ref_baseRot;
     hrp::Vector3 rel_ref_zmp; // ref zmp in base frame
     if ( is_legged_robot ) {
-      gg->proc_zmp_weight_map_interpolation();
       getCurrentParameters();
       getTargetParameters();
       bool is_transition_interpolator_empty = transition_interpolator->isEmpty();
@@ -470,7 +469,6 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
       }
       if (control_mode != MODE_IDLE ) {
         solveLimbIK();
-        if (gg_is_walking && !gg_solved) stopWalking ();
         rel_ref_zmp = m_robot->rootLink()->R.transpose() * (ref_zmp - m_robot->rootLink()->p);
       } else {
         rel_ref_zmp = input_zmp;
@@ -625,6 +623,7 @@ void AutoBalancer::getTargetParameters()
   m_robot->rootLink()->p = input_basePos;
   m_robot->rootLink()->R = input_baseRot;
   m_robot->calcForwardKinematics();
+  gg->proc_zmp_weight_map_interpolation();
   if (control_mode != MODE_IDLE) {
     interpolateLegNamesAndZMPOffsets();
     // Calculate tmp_fix_coords and something
@@ -705,6 +704,8 @@ void AutoBalancer::getTargetParameters()
           }
       }
   }
+  // Just for stop walking
+  if (gg_is_walking && !gg_solved) stopWalking ();
 };
 
 void AutoBalancer::getOutputParametersForWalking ()
@@ -1147,16 +1148,11 @@ void AutoBalancer::stopABCparam()
   control_mode = MODE_SYNC_TO_IDLE;
 }
 
-void AutoBalancer::startWalking ()
+bool AutoBalancer::startWalking ()
 {
   if ( control_mode != MODE_ABC ) {
-    return_control_mode = control_mode;
-    OpenHRP::AutoBalancerService::StrSequence fix_limbs;
-    fix_limbs.length(2);
-    fix_limbs[0] = "rleg";
-    fix_limbs[1] = "lleg";
-    startABCparam(fix_limbs);
-    waitABCTransition();
+    std::cerr << "[" << m_profile.instance_name << "] Cannot start walking without MODE_ABC. Please startAutoBalancer." << std::endl;
+    return false;
   }
   {
     Guard guard(m_mutex);
@@ -1186,6 +1182,7 @@ void AutoBalancer::startWalking ()
     Guard guard(m_mutex);
     gg_is_walking = gg_solved = true;
   }
+  return true;
 }
 
 void AutoBalancer::stopWalking ()
@@ -1197,7 +1194,6 @@ void AutoBalancer::stopWalking ()
   multi_mid_coords(fix_leg_coords, tmp_end_coords_list);
   fixLegToCoords(fix_leg_coords.pos, fix_leg_coords.rot);
   gg->clear_footstep_nodes_list();
-  if (return_control_mode == MODE_IDLE) stopABCparam();
   gg_is_walking = false;
 }
 
@@ -1210,7 +1206,6 @@ bool AutoBalancer::startAutoBalancer (const OpenHRP::AutoBalancerService::StrSeq
     }
     startABCparam(limbs);
     waitABCTransition();
-    return_control_mode = MODE_ABC;
     return true;
   } else {
     return false;
@@ -1248,11 +1243,11 @@ bool AutoBalancer::goPos(const double& x, const double& y, const double& th)
                                                       start_ref_coords,            // Dummy if gg_is_walking
                                                       initial_support_legs,        // Dummy if gg_is_walking
                                                       (!gg_is_walking)); // If gg_is_walking, initialize. Otherwise, not initialize and overwrite footsteps.
-    if ( !gg_is_walking ) { // Initializing
-        startWalking();
-    }
     if (!ret) {
         std::cerr << "[" << m_profile.instance_name << "] Cannot goPos because of invalid timing." << std::endl;
+    }
+    if ( !gg_is_walking ) { // Initializing
+        ret = startWalking();
     }
     return ret;
   } else {
@@ -1264,6 +1259,7 @@ bool AutoBalancer::goPos(const double& x, const double& y, const double& th)
 bool AutoBalancer::goVelocity(const double& vx, const double& vy, const double& vth)
 {
   gg->set_all_limbs(leg_names);
+  bool ret = true;
   if (gg_is_walking && gg_solved) {
     gg->set_velocity_param(vx, vy, vth);
   } else {
@@ -1291,9 +1287,9 @@ bool AutoBalancer::goVelocity(const double& vx, const double& vy, const double& 
     default: break;
     }
     gg->initialize_velocity_mode(ref_coords, vx, vy, vth, current_legs);
-    startWalking();
+    ret = startWalking();
   }
-  return true;
+  return ret;
 }
 
 bool AutoBalancer::goStop ()
@@ -1418,6 +1414,7 @@ bool AutoBalancer::setFootStepsWithParam(const OpenHRP::AutoBalancerService::Foo
                 fnsl.push_back(tmp_fns);
             }
         }
+        bool ret = true;
         if (gg_is_walking) {
             std::cerr << "[" << m_profile.instance_name << "]  Set overwrite footsteps" << std::endl;
             gg->set_overwrite_foot_steps_list(fnsl);
@@ -1425,9 +1422,9 @@ bool AutoBalancer::setFootStepsWithParam(const OpenHRP::AutoBalancerService::Foo
         } else {
             std::cerr << "[" << m_profile.instance_name << "]  Set normal footsteps" << std::endl;
             gg->set_foot_steps_list(fnsl);
-            startWalking();
+            ret = startWalking();
         }
-        return true;
+        return ret;
     } else {
         std::cerr << "[" << m_profile.instance_name << "] Cannot setFootSteps while walking." << std::endl;
         return false;
