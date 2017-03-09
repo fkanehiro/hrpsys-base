@@ -470,6 +470,7 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
       }
       if (control_mode != MODE_IDLE ) {
         solveLimbIK();
+        if (gg_is_walking && !gg_solved) stopWalking ();
         rel_ref_zmp = m_robot->rootLink()->R.transpose() * (ref_zmp - m_robot->rootLink()->p);
       } else {
         rel_ref_zmp = input_zmp;
@@ -669,8 +670,9 @@ void AutoBalancer::getTargetParameters()
     calculateOutputRefForces ();
     // TODO : see explanation in this function
     updateWalkingVelocityFromHandError(tmp_fix_coords);
+    calcReferenceJointAnglesForIK();
 
-    // Calculate ZMP and COG targets
+    // Calculate ZMP, COG, and sbp targets
     hrp::Vector3 tmp_ref_cog(m_robot->calcCM());
     hrp::Vector3 tmp_foot_mid_pos = calcFootMidPosUsingZMPWeightMap ();
     if (gg_is_walking) {
@@ -951,6 +953,21 @@ void AutoBalancer::updateWalkingVelocityFromHandError (coordinates& tmp_fix_coor
     // }
 };
 
+void AutoBalancer::calcReferenceJointAnglesForIK ()
+{
+    overwrite_ref_ja_index_vec.clear();
+    // Fix for toe joint
+    for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
+        if (it->second.is_active && it->second.has_toe_joint && gg->get_use_toe_joint()) {
+            int i = it->second.target_link->jointId;
+            if (gg->get_swing_leg_names().front() == it->first) {
+                qrefv[i] = qrefv[i] + -1 * gg->get_foot_dif_rot_angle();
+            }
+            overwrite_ref_ja_index_vec.push_back(i);
+        }
+    }
+};
+
 hrp::Matrix33 AutoBalancer::OrientRotationMatrix (const hrp::Matrix33& rot, const hrp::Vector3& axis1, const hrp::Vector3& axis2)
 {
   hrp::Vector3 vv = axis1.cross(axis2);
@@ -1001,9 +1018,9 @@ void AutoBalancer::fixLegToCoords2 (coordinates& tmp_fix_coords)
     fixLegToCoords(tmp_fix_coords.pos, tmp_fix_coords.rot);
 }
 
-bool AutoBalancer::solveLimbIKforLimb (ABCIKparam& param, const std::string& limb_name)
+bool AutoBalancer::solveLimbIKforLimb (ABCIKparam& param, const std::string& limb_name, const double ratio_for_vel)
 {
-  param.manip->calcInverseKinematics2Loop(param.target_p0, param.target_r0, 1.0, param.avoid_gain, param.reference_gain, &qrefv, transition_interpolator_ratio * leg_names_interpolator_ratio,
+  param.manip->calcInverseKinematics2Loop(param.target_p0, param.target_r0, 1.0, param.avoid_gain, param.reference_gain, &qrefv, ratio_for_vel,
                                           param.localPos, param.localR);
   // IK check
   hrp::Vector3 vel_p, vel_r;
@@ -1045,6 +1062,7 @@ void AutoBalancer::solveLimbIK ()
   m_robot->rootLink()->p = current_root_p;
   m_robot->rootLink()->R = current_root_R;
   m_robot->calcForwardKinematics();
+  double ratio_for_vel = transition_interpolator_ratio * leg_names_interpolator_ratio;
   hrp::Vector3 tmp_input_sbp = hrp::Vector3(0,0,0);
   static_balance_point_proc_one(tmp_input_sbp, ref_zmp(2));
   hrp::Vector3 dif_cog = tmp_input_sbp - ref_cog;
@@ -1052,23 +1070,15 @@ void AutoBalancer::solveLimbIK ()
   dif_cog(2) = m_robot->rootLink()->p(2) - target_root_p(2);
   m_robot->rootLink()->p = m_robot->rootLink()->p + -1 * move_base_gain * dif_cog;
   m_robot->rootLink()->R = target_root_R;
-  // Fix for toe joint
-  for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
-      if (it->second.is_active && it->second.has_toe_joint && gg->get_use_toe_joint()) {
-          int i = it->second.target_link->jointId;
-          if (gg->get_swing_leg_names().front() == it->first) {
-              m_robot->joint(i)->q = qrefv[i] + -1 * gg->get_foot_dif_rot_angle();
-          } else {
-              m_robot->joint(i)->q = qrefv[i];
-          }
-      }
+  // Overwrite by ref joint angle
+  for (size_t i = 0; i < overwrite_ref_ja_index_vec.size(); i++) {
+      m_robot->joint(overwrite_ref_ja_index_vec[i])->q = qrefv[overwrite_ref_ja_index_vec[i]];
   }
   m_robot->calcForwardKinematics();
 
   for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
-    if (it->second.is_active) solveLimbIKforLimb(it->second, it->first);
+    if (it->second.is_active) solveLimbIKforLimb(it->second, it->first, ratio_for_vel);
   }
-  if (gg_is_walking && !gg_solved) stopWalking ();
 }
 
 /*

@@ -201,7 +201,7 @@ class AutoBalancer
   };
   void getCurrentParameters();
   void getTargetParameters();
-  bool solveLimbIKforLimb (ABCIKparam& param, const std::string& limb_name);
+  bool solveLimbIKforLimb (ABCIKparam& param, const std::string& limb_name, const double ratio_for_vel);
   void solveLimbIK();
   void startABCparam(const ::OpenHRP::AutoBalancerService::StrSequence& limbs);
   void stopABCparam();
@@ -218,6 +218,7 @@ class AutoBalancer
   void calculateOutputRefForces ();
   hrp::Vector3 calcFootMidPosUsingZMPWeightMap ();
   void updateWalkingVelocityFromHandError (rats::coordinates& tmp_fix_coords);
+  void calcReferenceJointAnglesForIK ();
   hrp::Matrix33 OrientRotationMatrix (const hrp::Matrix33& rot, const hrp::Vector3& axis1, const hrp::Vector3& axis2);
   void fixLegToCoords (const hrp::Vector3& fix_pos, const hrp::Matrix33& fix_rot);
   void fixLegToCoords2 (rats::coordinates& tmp_fix_coords);
@@ -246,6 +247,7 @@ class AutoBalancer
   std::map<std::string, size_t> contact_states_index_map;
   std::map<std::string, hrp::VirtualForceSensorParam> m_vfs;
   std::vector<std::string> sensor_names, leg_names, ee_vec;
+  std::vector<int> overwrite_ref_ja_index_vec;
   hrp::dvector qorg, qrefv;
   hrp::Vector3 current_root_p, target_root_p;
   hrp::Matrix33 current_root_R, target_root_R;
