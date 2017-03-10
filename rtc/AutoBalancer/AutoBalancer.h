@@ -27,6 +27,7 @@
 // <rtc-template block="service_impl_h">
 #include "AutoBalancerService_impl.h"
 #include "interpolator.h"
+#include "../TorqueFilter/IIRFilter.h"
 
 // </rtc-template>
 
@@ -478,6 +479,7 @@ class AutoBalancer
   };
   void getTargetParameters();
   void solveFullbodyIK ();
+  void solveWholeBodyID(const hrp::BodyPtr robot, hrp::Vector3& f_ans, hrp::Vector3& t_ans);
   void startABCparam(const ::OpenHRP::AutoBalancerService::StrSequence& limbs);
   void stopABCparam();
   void waitABCTransition();
@@ -517,8 +519,6 @@ class AutoBalancer
   // for abc
   typedef boost::shared_ptr<SimpleFullbodyInverseKinematicsSolver> fikPtr;
   fikPtr fik;
-  typedef boost::shared_ptr<SimpleFullbodyInverseDynamicsSolver> fidPtr;
-  fidPtr fid;
   hrp::Vector3 ref_cog, ref_zmp, prev_imu_sensor_pos, prev_imu_sensor_vel, hand_fix_initial_offset;
   enum {BIPED, TROT, PACE, CRAWL, GALLOP} gait_type;
   enum {MODE_IDLE, MODE_ABC, MODE_SYNC_TO_IDLE, MODE_SYNC_TO_ABC} control_mode;
@@ -533,6 +533,17 @@ class AutoBalancer
   double m_dt;
   hrp::BodyPtr m_robot;
   coil::Mutex m_mutex;
+  //for inverse dynamics
+  struct ABCIDparam {
+    hrp::dvector q, q_old, q_oldold, dq, ddq, ddq_filtered;
+    hrp::Vector3 base_p, base_p_old, base_p_oldold, base_v, base_dv, base_dv_filtered;
+    hrp::Matrix33 base_R, base_R_old, base_dR, base_w_hat;
+    hrp::Vector3 base_w, base_w_old, base_dw, base_dw_filtered;
+    std::vector<IIRFilter> ddq_filter, base_dv_filter, base_dw_filter;
+    double filter_fc;
+    bool is_initialized = false;
+  };
+  ABCIDparam idp;
 
   double transition_interpolator_ratio, transition_time, zmp_transition_time, adjust_footstep_transition_time, leg_names_interpolator_ratio;
   interpolator *zmp_offset_interpolator;
