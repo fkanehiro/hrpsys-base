@@ -156,6 +156,9 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     // Generate FIK
     fik = fikPtr(new SimpleFullbodyInverseKinematicsSolver(m_robot, std::string(m_profile.instance_name), m_dt));
 
+    // Generate FID
+    fid = fidPtr(new SimpleFullbodyInverseDynamicsSolver(m_robot, m_dt, 25.0));
+
     // setting from conf file
     // rleg,TARGET_LINK,BASE_LINK
     coil::vstring end_effectors_str = coil::split(prop["end_effectors"], ",");
@@ -459,8 +462,8 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
       if (control_mode != MODE_IDLE ) {
         solveFullbodyIK();
 //        hrp::Vector3 f_invdyn, t_invdyn;
-//        solveWholeBodyID(m_robot,f_invdyn,t_invdyn);
-//        if(gg_is_walking){  // inv dyn answers jumps at the mode transition
+//        fid->solveFullbodyID(f_invdyn,t_invdyn);
+//        if(gg_is_walking){
 //          ref_zmp(0) = -t_invdyn(1)/f_invdyn(2);
 //          ref_zmp(1) =  t_invdyn(0)/f_invdyn(2);
 //        }
@@ -1028,69 +1031,6 @@ void AutoBalancer::solveFullbodyIK ()
   // Solve IK
   fik->solveFullbodyIK (dif_cog, transition_interpolator->isEmpty());
 }
-
-void AutoBalancer::solveWholeBodyID(const hrp::BodyPtr robot, hrp::Vector3& f_ans, hrp::Vector3& t_ans)
-{
-  if(!idp.is_initialized){   // Initialization at once
-    idp.q.resize(m_robot->numJoints());
-    idp.q_old = idp.q_oldold = idp.dq = idp.ddq = idp.ddq_filtered = idp.q;
-    for(int i=0;i<m_robot->numJoints();i++)idp.q[i] = m_robot->joint(i)->q;
-    idp.q_oldold = idp.q_old = idp.q;
-    idp.ddq_filter.resize(m_robot->numJoints());
-    idp.base_dv_filter.resize(3);
-    idp.base_dw_filter.resize(3);
-    idp.filter_fc = 1/m_dt/20;// Theoretical sampling noise frequency is HZ/2 but needs to find more low cutoff parameter
-    //set up filters as 2nd order Biquad IIR
-    std::vector<double> fb_coeffs(3), ff_coeffs(3);
-    const double fc = tan(idp.filter_fc * M_PI * m_dt) / (2 * M_PI);
-    const double denom = 1 + (2 * sqrt(2) * M_PI * fc) + 4 * M_PI * M_PI * fc*fc;
-    ff_coeffs[0] = (4 * M_PI * M_PI * fc*fc) / denom;
-    ff_coeffs[1] = (8 * M_PI * M_PI * fc*fc) / denom;
-    ff_coeffs[2] = (4 * M_PI * M_PI * fc*fc) / denom;
-    fb_coeffs[0] = 1.0;
-    fb_coeffs[1] = (8 * M_PI * M_PI * fc*fc - 2) / denom;
-    fb_coeffs[2] = (1 - (2 * sqrt(2) * M_PI * fc) + 4 * M_PI * M_PI * fc*fc) / denom;
-    for(int i=0;i<m_robot->numJoints();i++)idp.ddq_filter[i].setParameter(2,fb_coeffs,ff_coeffs);
-    for(int i=0;i<3;i++)idp.base_dv_filter[i].setParameter(2,fb_coeffs,ff_coeffs);
-    for(int i=0;i<3;i++)idp.base_dw_filter[i].setParameter(2,fb_coeffs,ff_coeffs);
-    idp.is_initialized = true;
-  }
-  // set joint velocity and acceleration
-  for(int i=0;i<m_robot->numJoints();i++)idp.q(i) = m_robot->joint(i)->q;
-  idp.dq = (idp.q - idp.q_old) / m_dt;
-  idp.ddq = (idp.q - 2 * idp.q_old + idp.q_oldold) / (m_dt * m_dt);
-  for(int i=0;i<m_robot->numJoints();i++)idp.ddq_filtered[i] = idp.ddq_filter[i].passFilter(idp.ddq[i]);
-  idp.q_oldold = idp.q_old;
-  idp.q_old = idp.q;
-  for(int i=0;i<m_robot->numJoints();i++)m_robot->joint(i)->dq = idp.dq(i);
-  for(int i=0;i<m_robot->numJoints();i++)m_robot->joint(i)->ddq = idp.ddq_filtered(i);
-  // set base link velocity and acceleration
-  const hrp::Vector3 g(0,0,9.80665);
-  idp.base_p = m_robot->rootLink()->p;
-  idp.base_v = (idp.base_p - idp.base_p_old) / m_dt;
-  idp.base_dv = g + (idp.base_p - 2 * idp.base_p_old + idp.base_p_oldold) / (m_dt * m_dt);
-  for(int i=0;i<3;i++)idp.base_dv_filtered[i] = idp.base_dv_filter[i].passFilter(idp.base_dv[i]);
-  idp.base_p_oldold = idp.base_p_old;
-  idp.base_p_old = idp.base_p;
-  // set base link angle velocity and angle acceleration
-  idp.base_R =  m_robot->rootLink()->R;
-  idp.base_dR = (idp.base_R - idp.base_R_old) / m_dt;
-  idp.base_w_hat = idp.base_dR * idp.base_R.transpose();
-  idp.base_w = hrp::Vector3(idp.base_w_hat(2,1), - idp.base_w_hat(0,2), idp.base_w_hat(1,0));
-  idp.base_dw = (idp.base_w - idp.base_w_old) / m_dt;
-  for(int i=0;i<3;i++)idp.base_dw_filtered[i] = idp.base_dw_filter[i].passFilter(idp.base_dw[i]);
-  idp.base_R_old = idp.base_R;
-  idp.base_w_old = idp.base_w;
-  // set as spacial velocity and acceleration
-  m_robot->rootLink()->vo = idp.base_v - idp.base_w.cross(idp.base_p);
-//  static hrp::Vector3 vo_old; m_robot->rootLink()->dvo = g + (m_robot->rootLink()->vo - vo_old)/m_dt; vo_old = m_robot->rootLink()->vo; // calc in incremental way
-  m_robot->rootLink()->dvo = idp.base_dv_filtered - idp.base_dw_filtered.cross(idp.base_p) - idp.base_w.cross(idp.base_v); // calc in differential way
-  m_robot->rootLink()->w = idp.base_w;
-  m_robot->rootLink()->dw = idp.base_dw_filtered;
-  m_robot->calcForwardKinematics(true,true);// calc every link's acc and vel
-  m_robot->calcInverseDynamics(m_robot->rootLink(),f_ans,t_ans);// this returns f,t at the coordinate origin !! (not at base link pos)
-}
-
 
 
 /*
