@@ -397,7 +397,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   limb_stretch_avoidance_time_const = 1.5;
   limb_stretch_avoidance_vlimit[0] = -100 * 1e-3 * dt; // lower limit
   limb_stretch_avoidance_vlimit[1] = 50 * 1e-3 * dt; // upper limit
-  sync_to_air_max_counter = static_cast<int>(0.0 / dt);
+  detection_count_to_air = static_cast<int>(0.0 / dt);
 
   // parameters for RUNST
   double ke = 0, tc = 0;
@@ -432,7 +432,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   transition_count = 0;
   loop = 0;
   m_is_falling_counter = 0;
-  sync_to_air_counter = 0;
+  is_air_counter = 0;
   total_mass = m_robot->totalMass();
   ref_zmp_aux = hrp::Vector3::Zero();
   m_actContactStates.data.length(m_contactStates.data.length());
@@ -620,9 +620,9 @@ RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
         calcTPCC();
       }
       if ( transition_count == 0 && !on_ground ) {
-          if (sync_to_air_counter < sync_to_air_max_counter) ++sync_to_air_counter;
+          if (is_air_counter < detection_count_to_air) ++is_air_counter;
           else control_mode = MODE_SYNC_TO_AIR;
-      } else sync_to_air_counter = 0;
+      } else is_air_counter = 0;
       break;
     case MODE_SYNC_TO_IDLE:
       sync_2_idle();
@@ -1918,7 +1918,7 @@ void Stabilizer::getParameter(OpenHRP::StabilizerService::stParam& i_stp)
   i_stp.use_limb_stretch_avoidance = use_limb_stretch_avoidance;
   i_stp.limb_stretch_avoidance_time_const = limb_stretch_avoidance_time_const;
   i_stp.limb_length_margin.length(stikp.size());
-  i_stp.sync_to_air_max_time = sync_to_air_max_counter * dt;
+  i_stp.detection_time_to_air = detection_count_to_air * dt;
   for (size_t i = 0; i < 2; i++) {
     i_stp.limb_stretch_avoidance_vlimit[i] = limb_stretch_avoidance_vlimit[i];
   }
@@ -2095,7 +2095,7 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
   for (size_t i = 0; i < 2; i++) {
     limb_stretch_avoidance_vlimit[i] = i_stp.limb_stretch_avoidance_vlimit[i];
   }
-  sync_to_air_max_counter = static_cast<int>(i_stp.sync_to_air_max_time / dt);
+  detection_count_to_air = static_cast<int>(i_stp.detection_time_to_air / dt);
   if (control_mode == MODE_IDLE) {
       for (size_t i = 0; i < i_stp.end_effector_list.length(); i++) {
           std::vector<STIKParam>::iterator it = std::find_if(stikp.begin(), stikp.end(), (&boost::lambda::_1->* &std::vector<STIKParam>::value_type::ee_name == std::string(i_stp.end_effector_list[i].leg)));
@@ -2175,6 +2175,7 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
   std::cerr << "[" << m_profile.instance_name << "]  cp_check_margin = [" << cp_check_margin[0] << ", " << cp_check_margin[1] << ", " << cp_check_margin[2] << ", " << cp_check_margin[3] << "] [m]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]  tilt_margin = [" << tilt_margin[0] << ", " << tilt_margin[1] << "] [rad]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]  contact_decision_threshold = " << contact_decision_threshold << "[N]" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]  detection_time_to_air = " << detection_count_to_air * dt << "[s]" << std::endl;
   // IK limb parameters
   std::cerr << "[" << m_profile.instance_name << "]  IK limb parameters" << std::endl;
   bool is_ik_limb_parameter_valid_length = true;
