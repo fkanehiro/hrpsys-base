@@ -1083,6 +1083,10 @@ namespace rats
     void calc_next_coords_velocity_mode (std::vector< std::vector<step_node> >& ret_list, const size_t idx, const size_t future_step_num = 3);
     void append_footstep_list_velocity_mode ();
     void append_footstep_list_velocity_mode (std::vector< std::vector<step_node> >& _footstep_nodes_list, const velocity_mode_parameter& cur_vel_param) const;
+    inline leg_type get_leg_type_from_ee_name (const std::string& ee_name) const
+    {
+        return std::find_if(leg_type_map.begin(), leg_type_map.end(), (&boost::lambda::_1->* &std::map<leg_type, std::string>::value_type::second == ee_name))->first;
+    };
 
 #ifndef HAVE_MAIN
     /* inhibit copy constructor and copy insertion not by implementing */
@@ -1339,6 +1343,23 @@ namespace rats
       }
       return ret;
     };
+    // Get foot zmp offsets by checking whether given EE name is swing or support
+    bool get_swing_support_foot_zmp_offsets_from_ee_name (hrp::Vector3& ret, const std::string& ee_name) const
+    {
+        leg_type lt = get_leg_type_from_ee_name(ee_name);
+        std::vector<leg_type>::const_iterator it = std::find(lcg.get_support_leg_types().begin(), lcg.get_support_leg_types().end(), lt);
+        if (it != lcg.get_support_leg_types().end()) { // If support leg
+            ret = get_support_foot_zmp_offsets()[std::distance(lcg.get_support_leg_types().begin(), it)];
+        } else {
+            it = std::find(lcg.get_swing_leg_types().begin(), lcg.get_swing_leg_types().end(), lt);
+            if (it != lcg.get_swing_leg_types().end()) { // If swing leg
+                ret = get_swing_foot_zmp_offsets()[std::distance(lcg.get_swing_leg_types().begin(), it)];
+            } else { // Otherwise
+                return false;
+            }
+        }
+        return true;
+    };
     double get_toe_zmp_offset_x () const { return rg.get_toe_zmp_offset_x(); };
     double get_heel_zmp_offset_x () const { return rg.get_heel_zmp_offset_x(); };
     bool get_use_toe_heel_transition () const { return rg.get_use_toe_heel_transition(); };
@@ -1382,6 +1403,11 @@ namespace rats
     size_t get_footstep_index() const { return lcg.get_footstep_index(); };
     size_t get_lcg_count() const { return lcg.get_lcg_count(); };
     double get_current_swing_time(const size_t idx) const { return lcg.get_current_swing_time(idx); };
+    // Get current swing time by checking whether given EE name is swing or support
+    double get_current_swing_time_from_ee_name (const std::string ee_name) const
+    {
+        return get_current_swing_time( get_leg_type_from_ee_name(ee_name) );
+    };
     std::vector<leg_type> get_current_support_states() const { return lcg.get_current_support_states();};
     double get_default_step_time () const { return default_step_time; };
     double get_default_step_height () const { return lcg.get_default_step_height(); };
@@ -1417,6 +1443,19 @@ namespace rats
     int get_NUM_TH_PHASES () const { return NUM_TH_PHASES; };
     bool get_use_toe_joint () const { return lcg.get_use_toe_joint(); };
     double get_current_toe_heel_ratio () const { return lcg.get_current_toe_heel_ratio(get_use_toe_heel_transition()); };
+    // Get current toe heel ratio by checking whether given EE name is swing or support
+    bool get_current_toe_heel_ratio_from_ee_name (double& ret, const std::string& ee_name) const
+    {
+        leg_type lt = get_leg_type_from_ee_name(ee_name);
+        if (std::find(lcg.get_support_leg_types().begin(), lcg.get_support_leg_types().end(), lt)!=lcg.get_support_leg_types().end()) { // If support
+            ret = rats::no_using_toe_heel_ratio;
+        } else if (std::find(lcg.get_swing_leg_types().begin(), lcg.get_support_leg_types().end(), lt)!=lcg.get_swing_leg_types().end()) { // If swing
+            ret = get_current_toe_heel_ratio();
+        } else { // Otherwise
+            return false;
+        }
+        return true;
+    };
     void get_leg_default_translate_pos (std::vector<hrp::Vector3>& off) const { off = footstep_param.leg_default_translate_pos; };
     size_t get_overwritable_footstep_index_offset () const { return overwritable_footstep_index_offset; };
     const std::vector<leg_type> calc_counter_leg_types_from_footstep_nodes (const std::vector<step_node>& fns, std::vector<std::string> _all_limbs) const;
@@ -1430,6 +1469,30 @@ namespace rats
     stride_limitation_type get_stride_limitation_type () const { return default_stride_limitation_type; };
     double get_toe_check_thre () const { return thtc.get_toe_check_thre(); };
     double get_heel_check_thre () const { return thtc.get_heel_check_thre(); };
+    // Get ee coords by checking whether given EE name is swing or support
+    bool get_swing_support_ee_coords_from_ee_name (hrp::Vector3& cpos, hrp::Matrix33& crot, const std::string& ee_name) const
+    {
+        leg_type lt = get_leg_type_from_ee_name(ee_name);
+        if (std::find(lcg.get_support_leg_types().begin(), lcg.get_support_leg_types().end(), lt) != lcg.get_support_leg_types().end()) { // If support
+            coordinates tmpc = std::find_if(lcg.get_support_leg_steps().begin(), lcg.get_support_leg_steps().end(), (&boost::lambda::_1->* &step_node::l_r == lt))->worldcoords;
+            cpos = tmpc.pos;
+            crot = tmpc.rot;
+        } else if (std::find(lcg.get_swing_leg_types().begin(), lcg.get_swing_leg_types().end(), lt) != lcg.get_swing_leg_types().end()) { // If swing
+            coordinates tmpc = std::find_if(lcg.get_swing_leg_steps().begin(), lcg.get_swing_leg_steps().end(), (&boost::lambda::_1->* &step_node::l_r == lt))->worldcoords;
+            cpos = tmpc.pos;
+            crot = tmpc.rot;
+        } else { // Otherwise
+            return false;
+        }
+        return true;
+    };
+    // Get current support state (true=support, false=swing) by checking whether given EE name is swing or support
+    bool get_current_support_state_from_ee_name (const std::string& ee_name) const
+    {
+        leg_type lt = get_leg_type_from_ee_name(ee_name);
+        std::vector<leg_type> tmp = lcg.get_current_support_states();
+        return std::find(tmp.begin(), tmp.end(), lt) != tmp.end();
+    };
     void print_param (const std::string& print_str = "") const
     {
         double stride_fwd_x, stride_y, stride_th, stride_bwd_x;

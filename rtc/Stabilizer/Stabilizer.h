@@ -282,7 +282,7 @@ class Stabilizer
   hrp::dvector transition_joint_q, qorg, qrefv;
   std::vector<STIKParam> stikp;
   std::map<std::string, size_t> contact_states_index_map;
-  std::vector<bool> contact_states, prev_contact_states, is_ik_enable, is_feedback_control_enable, is_zmp_calc_enable;
+  std::vector<bool> ref_contact_states, prev_ref_contact_states, act_contact_states, is_ik_enable, is_feedback_control_enable, is_zmp_calc_enable;
   std::vector<double> toeheel_ratio;
   double dt;
   int transition_count, loop;
