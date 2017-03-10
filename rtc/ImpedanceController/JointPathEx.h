@@ -157,7 +157,7 @@ class SimpleFullbodyInverseDynamicsSolver{
       base_dv_filter.resize(3);
       base_dw_filter.resize(3);
       std::vector<double> fb_coeffs(3), ff_coeffs(3);
-      const double fc = tan(_fc_in * M_PI * _dt) / (2 * M_PI);
+      const double fc = std::tan(_fc_in * M_PI * _dt) / (2 * M_PI);
       const double denom = 1 + (2 * sqrt(2) * M_PI * fc) + 4 * M_PI * M_PI * fc*fc;
       ff_coeffs[0] = (4 * M_PI * M_PI * fc*fc) / denom;
       ff_coeffs[1] = (8 * M_PI * M_PI * fc*fc) / denom;
