@@ -397,7 +397,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   limb_stretch_avoidance_time_const = 1.5;
   limb_stretch_avoidance_vlimit[0] = -100 * 1e-3 * dt; // lower limit
   limb_stretch_avoidance_vlimit[1] = 50 * 1e-3 * dt; // upper limit
-  sync_to_air_max_counter = static_cast<int>(0.2 / dt); // [s]
+  sync_to_air_max_counter = static_cast<int>(0.0 / dt);
 
   // parameters for RUNST
   double ke = 0, tc = 0;
