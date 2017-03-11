@@ -1427,7 +1427,7 @@ class HrpsysConfigurator(object):
         Move the end-effector to the given absolute pose.
         All d* arguments are in meter.
 
-        @param gname str: Name of the joint group.
+        @param gname str: Name of the joint group. Case-insensitive.
         @param pos list of float: In meter.
         @param rpy list of float: In radian.
         @param tm float: Second to complete the command.
@@ -1436,6 +1436,10 @@ class HrpsysConfigurator(object):
         @return bool: False if unreachable.
         '''
         print(gname, frame_name, pos, rpy, tm)
+        if gname.upper() not in map (lambda x : x[0].upper(), self.Groups):
+            print("setTargetPose failed. {} is not available in the kinematic groups. "
+                  "Check available Groups (by e.g. self.Groups/robot.Groups).".format(gname))
+            return False
         if frame_name:
             gname = gname + ':' + frame_name
         result = self.seq_svc.setTargetPose(gname, pos, rpy, tm)
