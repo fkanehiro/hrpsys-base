@@ -1437,14 +1437,14 @@ class HrpsysConfigurator(object):
         '''
         print(gname, frame_name, pos, rpy, tm)
         if gname.upper() not in map (lambda x : x[0].upper(), self.Groups):
-            print("setTargetPose failed. {} is not available in the kinematic groups. "
+            print(self.configurator_name + " setTargetPose failed. {} is not available in the kinematic groups. "
                   "Check available Groups (by e.g. self.Groups/robot.Groups).".format(gname))
             return False
         if frame_name:
             gname = gname + ':' + frame_name
         result = self.seq_svc.setTargetPose(gname, pos, rpy, tm)
         if not result:
-            print("setTargetPose failed. Maybe SequencePlayer failed to solve IK.\n"
+            print(self.configurator_name + " setTargetPose failed. Maybe SequencePlayer failed to solve IK.\n"
                    + "Currently, returning IK result error\n"
                    + "(like the one in https://github.com/start-jsk/rtmros_hironx/issues/103)"
                    + " is not implemented. Patch is welcomed.")
