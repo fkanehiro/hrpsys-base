@@ -51,6 +51,8 @@ public:
     */
     bool setParameter(int dim, std::vector<double>& A, std::vector<double>& B);
 
+    bool setParameterAsBiquadButterworth(const double _fc_in, const double _dt);
+
     /**
      */
     void getParameter(int &dim, std::vector<double>&A, std::vector<double>& B);

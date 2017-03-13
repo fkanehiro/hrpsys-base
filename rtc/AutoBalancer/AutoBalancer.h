@@ -27,6 +27,7 @@
 // <rtc-template block="service_impl_h">
 #include "AutoBalancerService_impl.h"
 #include "interpolator.h"
+#include "../TorqueFilter/IIRFilter.h"
 
 // </rtc-template>
 
@@ -517,8 +518,6 @@ class AutoBalancer
   // for abc
   typedef boost::shared_ptr<SimpleFullbodyInverseKinematicsSolver> fikPtr;
   fikPtr fik;
-  typedef boost::shared_ptr<SimpleFullbodyInverseDynamicsSolver> fidPtr;
-  fidPtr fid;
   hrp::Vector3 ref_cog, ref_zmp, prev_imu_sensor_pos, prev_imu_sensor_vel, hand_fix_initial_offset;
   enum {BIPED, TROT, PACE, CRAWL, GALLOP} gait_type;
   enum {MODE_IDLE, MODE_ABC, MODE_SYNC_TO_IDLE, MODE_SYNC_TO_ABC} control_mode;
@@ -554,6 +553,9 @@ class AutoBalancer
   std::string graspless_manip_arm;
   hrp::Vector3 graspless_manip_p_gain;
   rats::coordinates graspless_manip_reference_trans_coords;
+
+  hrp::InvDynStateBuffer idsb;
+  std::vector<IIRFilter> invdyn_zmp_filters;
 };
 
 

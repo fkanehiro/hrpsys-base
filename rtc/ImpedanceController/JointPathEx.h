@@ -23,7 +23,6 @@ namespace hrp {
                                     const double vel_gain = 1.0,
                                     const hrp::Vector3& localPos = hrp::Vector3::Zero(), const hrp::Matrix33& localR = hrp::Matrix33::Identity());
     bool calcInverseKinematics2(const Vector3& end_p, const Matrix33& end_R, const double avoid_gain = 0.0, const double reference_gain = 0.0, const dvector* reference_q = NULL);
-    void solveFullbodyID(const hrp::BodyPtr robot, hrp::Vector3& f_ans, hrp::Vector3& t_ans);
     double getSRGain() { return sr_gain; }
     bool setSRGain(double g) { sr_gain = g; }
     double getManipulabilityLimit() { return manipulability_limit; }
@@ -86,109 +85,45 @@ namespace hrp {
 };
 
 
-#include "../TorqueFilter/IIRFilter.h"
-class SimpleFullbodyInverseDynamicsSolver{
-  private:
-    hrp::BodyPtr m_robot;
-    hrp::dvector q, q_old, q_oldold, dq, ddq, ddq_filtered;
-    hrp::Vector3 base_p, base_p_old, base_p_oldold, base_v, base_dv, base_dv_filtered;
-    hrp::Matrix33 base_R, base_R_old, base_dR, base_w_hat;
-    hrp::Vector3 base_w, base_w_old, base_dw, base_dw_filtered;
-    std::vector<IIRFilter> ddq_filter, base_dv_filter, base_dw_filter;
-    double DT;
-    bool is_RobotStateInitialized;
-
-    void calcAccelerationsForInverseDynamics(){
-      for(int i=0;i<m_robot->numJoints();i++)q(i) = m_robot->joint(i)->q;
-      dq = (q - q_old) / DT;
-      ddq = (q - 2 * q_old + q_oldold) / (DT * DT);
-      q_oldold = q_old;
-      q_old = q;
-      const hrp::Vector3 g(0, 0, 9.80665);
-      base_p = m_robot->rootLink()->p;
-      base_v = (base_p - base_p_old) / DT;
-      base_dv = g + (base_p - 2 * base_p_old + base_p_oldold) / (DT * DT);
-      base_p_oldold = base_p_old;
-      base_p_old = base_p;
-      base_R =  m_robot->rootLink()->R;
-      base_dR = (base_R - base_R_old) / DT;
-      base_w_hat = base_dR * base_R.transpose();
-      base_w = hrp::Vector3(base_w_hat(2,1), - base_w_hat(0,2), base_w_hat(1,0));
-      base_dw = (base_w - base_w_old) / DT;
-      base_R_old = base_R;
-      base_w_old = base_w;
-    };
-    void passAccelerationFilters(){
-      for(int i=0;i<m_robot->numJoints();i++)ddq_filtered[i] = ddq_filter[i].passFilter(ddq[i]);
-      for(int i=0;i<3;i++){
-        base_dv_filtered[i] = base_dv_filter[i].passFilter(base_dv[i]);
-        base_dw_filtered[i] = base_dw_filter[i].passFilter(base_dw[i]);
-      }
-    };
-    void setCurrentRobotState(){
-      for(int i=0;i<m_robot->numJoints();i++){
-        m_robot->joint(i)->dq = dq(i);
-        m_robot->joint(i)->ddq = ddq_filtered(i);
-      }
-      m_robot->rootLink()->vo = base_v - base_w.cross(base_p);
-      //static hrp::Vector3 vo_old; m_robot->rootLink()->dvo = g + (m_robot->rootLink()->vo - vo_old)/DT; vo_old = m_robot->rootLink()->vo; // calc in incremental way
-      m_robot->rootLink()->dvo = base_dv_filtered - base_dw_filtered.cross(base_p) - base_w.cross(base_v); // calc in differential way
-      m_robot->rootLink()->w = base_w;
-      m_robot->rootLink()->dw = base_dw_filtered;
-    };
-
-  public:
-    SimpleFullbodyInverseDynamicsSolver(const hrp::BodyPtr& _robot, const double _dt, const double _acceleration_filter_fc = 25.0)
-        : m_robot(_robot),
-          DT(_dt),
-          is_RobotStateInitialized(false)
-    {
-      q.resize(m_robot->numJoints());
-      q_old.resize(m_robot->numJoints());
-      q_oldold.resize(m_robot->numJoints());
-      dq.resize(m_robot->numJoints());
-      ddq.resize(m_robot->numJoints());
-      ddq_filtered.resize(m_robot->numJoints());
-      initializeAccelerationFilters(_acceleration_filter_fc, _dt);
-    };
-    ~SimpleFullbodyInverseDynamicsSolver(){};
-    void initializeAccelerationFilters(const double _fc_in, const double _dt){//set up filters as 2nd order Biquad IIR
-      ddq_filter.resize(m_robot->numJoints());
-      base_dv_filter.resize(3);
-      base_dw_filter.resize(3);
-      std::vector<double> fb_coeffs(3), ff_coeffs(3);
-      const double fc = std::tan(_fc_in * M_PI * _dt) / (2 * M_PI);
-      const double denom = 1 + (2 * sqrt(2) * M_PI * fc) + 4 * M_PI * M_PI * fc*fc;
-      ff_coeffs[0] = (4 * M_PI * M_PI * fc*fc) / denom;
-      ff_coeffs[1] = (8 * M_PI * M_PI * fc*fc) / denom;
-      ff_coeffs[2] = (4 * M_PI * M_PI * fc*fc) / denom;
-      fb_coeffs[0] = 1.0;
-      fb_coeffs[1] = (8 * M_PI * M_PI * fc*fc - 2) / denom;
-      fb_coeffs[2] = (1 - (2 * sqrt(2) * M_PI * fc) + 4 * M_PI * M_PI * fc*fc) / denom;
-      for(int i=0;i<m_robot->numJoints();i++)ddq_filter[i].setParameter(2,fb_coeffs,ff_coeffs);
-      for(int i=0;i<3;i++)base_dv_filter[i].setParameter(2,fb_coeffs,ff_coeffs);
-      for(int i=0;i<3;i++)base_dw_filter[i].setParameter(2,fb_coeffs,ff_coeffs);
-    };
-    void initializeRobotState(){
-      for(int i=0;i<m_robot->numJoints();i++)q(i) = m_robot->joint(i)->q;
-      q_oldold = q_old = q;
-      dq = ddq = ddq_filtered = hrp::dvector::Zero(m_robot->numJoints());
-      base_p_oldold = base_p_old = base_p = m_robot->rootLink()->p;
-      base_R_old = base_R = m_robot->rootLink()->R;
-      base_dR = base_w_hat = hrp::Matrix33::Zero();
-      base_w_old = base_w = base_dw = base_dw_filtered = hrp::Vector3::Zero();
-      is_RobotStateInitialized = true;
-    };
-    void solveFullbodyID(hrp::Vector3& f_ans, hrp::Vector3& t_ans){
-      if(!is_RobotStateInitialized) initializeRobotState();
-      calcAccelerationsForInverseDynamics();
-      passAccelerationFilters();
-      setCurrentRobotState();
-      m_robot->calcForwardKinematics(true,true);// calc every link's acc and vel
-      m_robot->calcInverseDynamics(m_robot->rootLink(),f_ans,t_ans);// this returns f,t at the coordinate origin (not at base link pos)
-    };
-};
-
+namespace hrp {
+  class InvDynStateBuffer{
+    public:
+      int N_DOF;
+      bool is_initialized;
+      double DT;
+      hrp::dvector q, q_old, q_oldold, dq, ddq;
+      hrp::Vector3 base_p, base_p_old, base_p_oldold, base_v, base_dv;
+      hrp::Matrix33 base_R, base_R_old, base_dR, base_w_hat;
+      hrp::Vector3 base_w, base_w_old, base_dw;
+      InvDynStateBuffer():is_initialized(false){};
+      ~InvDynStateBuffer(){};
+      void setInitState(const hrp::BodyPtr _m_robot, const double _dt){
+        N_DOF = _m_robot->numJoints();
+        DT = _dt;
+        q.resize(N_DOF);
+        q_old.resize(N_DOF);
+        q_oldold.resize(N_DOF);
+        dq.resize(N_DOF);
+        ddq.resize(N_DOF);
+        for(int i=0;i<N_DOF;i++)q(i) = _m_robot->joint(i)->q;
+        q_oldold = q_old = q;
+        dq = ddq = hrp::dvector::Zero(N_DOF);
+        base_p_oldold = base_p_old = base_p = _m_robot->rootLink()->p;
+        base_R_old = base_R = _m_robot->rootLink()->R;
+        base_dR = base_w_hat = hrp::Matrix33::Zero();
+        base_w_old = base_w = base_dw = hrp::Vector3::Zero();
+        is_initialized = true;
+      };
+  };
+  // set current Body q,base_p,base_R into InvDynStateBuffer and update vel and acc
+  void calcAccelerationsForInverseDynamics(const hrp::BodyPtr _m_robot, InvDynStateBuffer& _idsb);
+  // set all vel and acc into Body, and call Body::calcInverseDynamics()
+  void calcRootLinkWrenchFromInverseDynamics(hrp::BodyPtr _m_robot, InvDynStateBuffer& _idsb, hrp::Vector3& _f_ans, hrp::Vector3& _t_ans);
+  // call calcRootLinkWrenchFromInverseDynamics() and convert f,tau into ZMP
+  void calcWorldZMPFromInverseDynamics(hrp::BodyPtr _m_robot, InvDynStateBuffer& _idsb, hrp::Vector3& _zmp_ans);
+  // increment InvDynStateBuffer for 1 step
+  void updateInvDynStateBuffer(InvDynStateBuffer& _idsb);
+}
 
 #include <iomanip>
 

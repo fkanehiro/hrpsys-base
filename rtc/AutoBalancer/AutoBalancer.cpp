@@ -156,9 +156,6 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     // Generate FIK
     fik = fikPtr(new SimpleFullbodyInverseKinematicsSolver(m_robot, std::string(m_profile.instance_name), m_dt));
 
-    // Generate FID
-    fid = fidPtr(new SimpleFullbodyInverseDynamicsSolver(m_robot, m_dt, 25.0));
-
     // setting from conf file
     // rleg,TARGET_LINK,BASE_LINK
     coil::vstring end_effectors_str = coil::split(prop["end_effectors"], ",");
@@ -461,12 +458,22 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
       }
       if (control_mode != MODE_IDLE ) {
         solveFullbodyIK();
-//        hrp::Vector3 f_invdyn, t_invdyn;
-//        fid->solveFullbodyID(f_invdyn,t_invdyn);
-//        if(gg_is_walking){
-//          ref_zmp(0) = -t_invdyn(1)/f_invdyn(2);
-//          ref_zmp(1) =  t_invdyn(0)/f_invdyn(2);
+//        /////// Inverse Dynamics /////////
+//        if(!idsb.is_initialized){
+//          idsb.setInitState(m_robot, m_dt);
+//          invdyn_zmp_filters.resize(3);
+//          for(int i=0;i<3;i++){
+//            invdyn_zmp_filters[i].setParameterAsBiquadButterworth(25, m_dt);
+//            invdyn_zmp_filters[i].reset(ref_zmp(i));
+//          }
 //        }
+//        calcAccelerationsForInverseDynamics(m_robot, idsb);
+//        if(gg_is_walking){
+//          calcWorldZMPFromInverseDynamics(m_robot, idsb, ref_zmp);
+//          for(int i=0;i<3;i++) ref_zmp(i) = invdyn_zmp_filters[i].passFilter(ref_zmp(i));
+//        }
+//        updateInvDynStateBuffer(idsb);
+
         rel_ref_zmp = m_robot->rootLink()->R.transpose() * (ref_zmp - m_robot->rootLink()->p);
       } else {
         rel_ref_zmp = input_zmp;
