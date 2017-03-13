@@ -75,7 +75,7 @@ bool IIRFilter::setParameterAsBiquadButterworth(const double _fc_in, const doubl
     ff_coeffs[2] = (4 * M_PI*M_PI * fc*fc) / denom;
     fb_coeffs[0] = 1.0;
     fb_coeffs[1] = (8 * M_PI*M_PI * fc*fc - 2) / denom;
-    fb_coeffs[2] = (1 - (2 * sqrt(2) * M_PI * fc) + 4 * M_PI*M_PI * fc*fc) / denom;
+    fb_coeffs[2] = (1 - (2 * std::sqrt(2) * M_PI * fc) + 4 * M_PI*M_PI * fc*fc) / denom;
     return this->setParameter(2, fb_coeffs, ff_coeffs);
 };
 
