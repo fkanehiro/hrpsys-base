@@ -227,6 +227,8 @@ module OpenHRP
       DblArray2 limb_stretch_avoidance_vlimit;
       /// Sequence of limb length margin from max limb length [m]
       sequence<double> limb_length_margin;
+      /// Detection time whether is in air [s]
+      double detection_time_to_air;
     };
 
     /**
