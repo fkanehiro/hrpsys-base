@@ -171,6 +171,8 @@ RTC::ReturnCode_t VoxelGridFilter::onExecute(RTC::UniqueId ec_id)
       dst[2] = cloud_filtered->points[i].z;
       dst += 4;
     }
+    m_filtered.tm = m_original.tm;
+
     m_filteredOut.write();
   }
 
