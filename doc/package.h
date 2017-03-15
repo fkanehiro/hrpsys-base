@@ -75,6 +75,7 @@ To use python scripts to create RT components, connect ports and get/set propert
     <li>\ref PCDLoader</li>
     <li>\ref PDcontroller</li>
     <li>\ref PlaneRemover</li>
+    <li>\ref PointCloudViewer</li>
     <li>\ref RGB2Gray</li>
     <li>\ref Range2PointCloud</li>
     <li>\ref RangeDataViewer</li>
