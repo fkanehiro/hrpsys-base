@@ -155,7 +155,7 @@ RTC::ReturnCode_t VoxelGridFilter::onExecute(RTC::UniqueId ec_id)
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered (new pcl::PointCloud<pcl::PointXYZ>);
 
     // RTM -> PCL
-    cloud->is_dense = false;
+    cloud->is_dense = m_original.is_dense;
     cloud->points.resize(m_original.width*m_original.height);
     float *src = (float *)m_original.data.get_buffer();
     for (unsigned int i=0; i<cloud->points.size(); i++){
