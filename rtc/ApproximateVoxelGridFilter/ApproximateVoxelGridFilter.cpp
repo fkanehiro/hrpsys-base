@@ -9,7 +9,7 @@
 
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
-#include <pcl/filters/voxel_grid.h>
+#include <pcl/filters/approximate_voxel_grid.h>
 #include "ApproximateVoxelGridFilter.h"
 #include "hrpsys/idl/pointcloud.hh"
 
@@ -155,7 +155,7 @@ RTC::ReturnCode_t ApproximateVoxelGridFilter::onExecute(RTC::UniqueId ec_id)
     }
     
     // PCL Processing 
-    pcl::VoxelGrid<pcl::PointXYZ> sor;
+    pcl::ApproximateVoxelGrid<pcl::PointXYZ> sor;
     sor.setInputCloud (cloud);
     sor.setLeafSize(m_size, m_size, m_size);
     sor.filter(*cloud_filtered);
