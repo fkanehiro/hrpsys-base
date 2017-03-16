@@ -1286,7 +1286,7 @@ class HrpsysConfigurator(object):
         pose = self.getCurrentPose(lname, frame_name)
         return [pose[3], pose[7], pose[11]]
 
-    def getCurrentRotation(self, lname, frame_name=None):
+    def getCurrentRotation(self, lname=None, frame_name=None):
         '''!@brief
         Returns the current physical rotation of the specified joint.
         cf. getReferenceRotation that returns commanded value.
@@ -1311,7 +1311,7 @@ class HrpsysConfigurator(object):
         pose = self.getCurrentPose(lname, frame_name)
         return [pose[0:3], pose[4:7], pose[8:11]]
 
-    def getCurrentRPY(self, lname, frame_name=None):
+    def getCurrentRPY(self, lname=None, frame_name=None):
         '''!@brief
         Returns the current physical rotation in RPY of the specified joint.
         cf. getReferenceRPY that returns commanded value.
@@ -1329,7 +1329,7 @@ class HrpsysConfigurator(object):
             raise RuntimeError("need to specify joint name")
         return euler_from_matrix(self.getCurrentRotation(lname), 'sxyz')
 
-    def getReferencePose(self, lname, frame_name=None):
+    def getReferencePose(self, lname=None, frame_name=None):
         '''!@brief
         Returns the current commanded pose of the specified joint in the joint space.
         cf. getCurrentPose that returns physical pose.
@@ -1361,7 +1361,7 @@ class HrpsysConfigurator(object):
             raise RuntimeError("Could not find reference : " + lname)
         return pose[1].data
 
-    def getReferencePosition(self, lname, frame_name=None):
+    def getReferencePosition(self, lname=None, frame_name=None):
         '''!@brief
         Returns the current commanded position of the specified joint in Cartesian space.
         cf. getCurrentPosition that returns physical value.
@@ -1381,7 +1381,7 @@ class HrpsysConfigurator(object):
         pose = self.getReferencePose(lname, frame_name)
         return [pose[3], pose[7], pose[11]]
 
-    def getReferenceRotation(self, lname, frame_name=None):
+    def getReferenceRotation(self, lname=None, frame_name=None):
         '''!@brief
         Returns the current commanded rotation of the specified joint.
         cf. getCurrentRotation that returns physical value.
@@ -1406,7 +1406,7 @@ class HrpsysConfigurator(object):
         pose = self.getReferencePose(lname, frame_name)
         return [pose[0:3], pose[4:7], pose[8:11]]
 
-    def getReferenceRPY(self, lname, frame_name=None):
+    def getReferenceRPY(self, lname=None, frame_name=None):
         '''!@brief
         Returns the current commanded rotation in RPY of the specified joint.
         cf. getCurrentRPY that returns physical value.
