@@ -77,6 +77,7 @@ if (NOT "${PCL_LIBRARIES}" STREQUAL "")
 endif()
 
 if (PCL_FOUND)
+  add_subdirectory(ApproximateVoxelGridFilter)
   add_subdirectory(SORFilter)
   add_subdirectory(MLSFilter)
   add_subdirectory(PCDLoader)

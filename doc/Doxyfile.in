@@ -469,6 +469,7 @@ INPUT		      =  @CMAKE_CURRENT_SOURCE_DIR@/package.h \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../python/hrpsys_config.py \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../python/rtm.py \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/AccelerationChecker \
+		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/ApproximateVoxelGridFilter \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/AutoBalancer \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/AverageFilter \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/Beeper \

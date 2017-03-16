@@ -1,6 +1,7 @@
 set(input_files package.h utilities.h
 		      ../python/hrpsys_config.py
 		      ../python/rtm.py
+		      ../rtc/ApproximateVoxelGridFilter/ApproximateVoxelGridFilter.txt
 		      ../rtc/CameraImageViewer/CameraImageViewer.txt
 		      ../rtc/DataLogger/DataLogger.txt
 		      ../rtc/ForwardKinematics/ForwardKinematics.txt
