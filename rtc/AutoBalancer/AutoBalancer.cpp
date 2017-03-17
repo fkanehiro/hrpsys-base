@@ -463,7 +463,7 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
 //          idsb.setInitState(m_robot, m_dt);
 //          invdyn_zmp_filters.resize(3);
 //          for(int i=0;i<3;i++){
-//            invdyn_zmp_filters[i].setParameterAsBiquadButterworth(25, m_dt);
+//            invdyn_zmp_filters[i].setParameterAsBiquad(25, 1/std::sqrt(2), 1.0/m_dt);
 //            invdyn_zmp_filters[i].reset(ref_zmp(i));
 //          }
 //        }

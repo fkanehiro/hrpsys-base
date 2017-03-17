@@ -51,7 +51,13 @@ public:
     */
     bool setParameter(int dim, std::vector<double>& A, std::vector<double>& B);
 
-    bool setParameterAsBiquadButterworth(const double _fc_in, const double _dt);
+    /**
+       \brief Simple user interface of setParameter
+       \param f_cutoff cut off frequency
+       \param Q quality factor: 1/2 = no overshoot, 1/sqrt(2) = Butterworth
+       \param hz sampling rate
+    */
+    bool setParameterAsBiquad(const double f_cutoff, const double Q, const double hz);
 
     /**
      */

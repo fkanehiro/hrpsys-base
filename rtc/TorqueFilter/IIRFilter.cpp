@@ -66,18 +66,20 @@ bool IIRFilter::setParameter(int dim, std::vector<double>& A, std::vector<double
     return true;
 }
 
-bool IIRFilter::setParameterAsBiquadButterworth(const double _fc_in, const double _dt){
-    std::vector<double> fb_coeffs(3), ff_coeffs(3);
-    const double fc = std::tan(_fc_in * M_PI * _dt) / (2 * M_PI);
-    const double denom = 1 + (2 * std::sqrt(2) * M_PI * fc) + 4 * M_PI*M_PI * fc*fc;
-    ff_coeffs[0] = (4 * M_PI*M_PI * fc*fc) / denom;
-    ff_coeffs[1] = (8 * M_PI*M_PI * fc*fc) / denom;
-    ff_coeffs[2] = (4 * M_PI*M_PI * fc*fc) / denom;
-    fb_coeffs[0] = 1.0;
-    fb_coeffs[1] = (8 * M_PI*M_PI * fc*fc - 2) / denom;
-    fb_coeffs[2] = (1 - (2 * std::sqrt(2) * M_PI * fc) + 4 * M_PI*M_PI * fc*fc) / denom;
-    return this->setParameter(2, fb_coeffs, ff_coeffs);
+bool IIRFilter::setParameterAsBiquad(const double f_cutoff, const double Q, const double hz){
+  std::vector<double> fb_coeffs(3), ff_coeffs(3);
+  const double omega = 2 * 3.14159265 * f_cutoff / hz;
+  const double alpha = std::sin(omega) / (2 * Q);
+  const double denom = 1 + alpha;
+  fb_coeffs[0] = 1;
+  fb_coeffs[1] = -2 * std::cos(omega) / denom;
+  fb_coeffs[2] = (1 - alpha) / denom;
+  ff_coeffs[0] = (1 - std::cos(omega)) / 2 / denom;
+  ff_coeffs[1] = (1 - std::cos(omega)) / denom;
+  ff_coeffs[2] = (1 - std::cos(omega)) / 2 / denom;
+  return this->setParameter(2, fb_coeffs, ff_coeffs);
 };
+
 
 void IIRFilter::getParameter(int &dim, std::vector<double>& A, std::vector<double>& B)
 {
