@@ -1,6 +1,7 @@
 set(input_files package.h utilities.h
 		      ../python/hrpsys_config.py
 		      ../python/rtm.py
+		      ../rtc/ApproximateVoxelGridFilter/ApproximateVoxelGridFilter.txt
 		      ../rtc/CameraImageViewer/CameraImageViewer.txt
 		      ../rtc/DataLogger/DataLogger.txt
 		      ../rtc/ForwardKinematics/ForwardKinematics.txt
@@ -16,6 +17,7 @@ set(input_files package.h utilities.h
 		      ../rtc/OccupancyGridMap3D/OccupancyGridMap3D.txt
 		      ../rtc/OGMap3DViewer/OGMap3DViewer.txt
 		      ../rtc/OpenNIGrabber/OpenNIGrabber.txt
+		      ../rtc/PointCloudViewer/PointCloudViewer.txt
 		      ../rtc/Range2PointCloud/Range2PointCloud.txt
 		      ../rtc/RobotHardware/RobotHardware.txt
 		      ../rtc/SequencePlayer/SequencePlayer.txt

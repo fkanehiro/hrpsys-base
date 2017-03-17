@@ -1,6 +1,6 @@
 // -*- C++ -*-
 /*!
- * @file  VoxelGridFilter.h
+ * @file  ApproximateVoxelGridFilter.h
  * @brief Moving Least Squares Filter
  * @date  $Date$
  *
@@ -34,7 +34,7 @@ using namespace RTC;
 /**
    \brief sample RT component which has one data input port and one data output port
  */
-class VoxelGridFilter
+class ApproximateVoxelGridFilter
   : public RTC::DataFlowComponentBase
 {
  public:
@@ -42,11 +42,11 @@ class VoxelGridFilter
      \brief Constructor
      \param manager pointer to the Manager
   */
-  VoxelGridFilter(RTC::Manager* manager);
+  ApproximateVoxelGridFilter(RTC::Manager* manager);
   /**
      \brief Destructor
   */
-  virtual ~VoxelGridFilter();
+  virtual ~ApproximateVoxelGridFilter();
 
   // The initialize action (on CREATED->ALIVE transition)
   // formaer rtc_init_entry()
@@ -134,7 +134,6 @@ class VoxelGridFilter
   // </rtc-template>
 
  private:
-  int m_debugLevel;
   int dummy;
   double m_size;
 };
@@ -142,7 +141,7 @@ class VoxelGridFilter
 
 extern "C"
 {
-  void VoxelGridFilterInit(RTC::Manager* manager);
+  void ApproximateVoxelGridFilterInit(RTC::Manager* manager);
 };
 
 #endif // VOXEL_GRID_FILTER_H

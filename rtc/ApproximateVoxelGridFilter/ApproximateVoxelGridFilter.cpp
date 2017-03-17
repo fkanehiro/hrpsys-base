@@ -1,6 +1,6 @@
 // -*- C++ -*-
 /*!
- * @file  VoxelGridFilter.cpp
+ * @file  ApproximateVoxelGridFilter.cpp
  * @brief Moving Least Squares Filter
  * $Date$
  *
@@ -9,16 +9,16 @@
 
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
-#include <pcl/filters/voxel_grid.h>
-#include "VoxelGridFilter.h"
+#include <pcl/filters/approximate_voxel_grid.h>
+#include "ApproximateVoxelGridFilter.h"
 #include "hrpsys/idl/pointcloud.hh"
 
 // Module specification
 // <rtc-template block="module_spec">
 static const char* spec[] =
   {
-    "implementation_id", "VoxelGridFilter",
-    "type_name",         "VoxelGridFilter",
+    "implementation_id", "ApproximateVoxelGridFilter",
+    "type_name",         "ApproximateVoxelGridFilter",
     "description",       "Voxel Grid Filter",
     "version",           HRPSYS_PACKAGE_VERSION,
     "vendor",            "AIST",
@@ -29,13 +29,12 @@ static const char* spec[] =
     "lang_type",         "compile",
     // Configuration variables
     "conf.default.size", "0.01",
-    "conf.default.debugLevel", "0",
 
     ""
   };
 // </rtc-template>
 
-VoxelGridFilter::VoxelGridFilter(RTC::Manager* manager)
+ApproximateVoxelGridFilter::ApproximateVoxelGridFilter(RTC::Manager* manager)
   : RTC::DataFlowComponentBase(manager),
     // <rtc-template block="initializer">
     m_originalIn("original", m_original),
@@ -45,19 +44,18 @@ VoxelGridFilter::VoxelGridFilter(RTC::Manager* manager)
 {
 }
 
-VoxelGridFilter::~VoxelGridFilter()
+ApproximateVoxelGridFilter::~ApproximateVoxelGridFilter()
 {
 }
 
 
 
-RTC::ReturnCode_t VoxelGridFilter::onInitialize()
+RTC::ReturnCode_t ApproximateVoxelGridFilter::onInitialize()
 {
   //std::cout << m_profile.instance_name << ": onInitialize()" << std::endl;
   // <rtc-template block="bind_config">
   // Bind variables and configuration variable
   bindParameter("size", m_size, "0.01");
-  bindParameter("debugLevel", m_debugLevel, "0");
   
   // </rtc-template>
 
@@ -104,58 +102,49 @@ RTC::ReturnCode_t VoxelGridFilter::onInitialize()
 
 
 /*
-RTC::ReturnCode_t VoxelGridFilter::onFinalize()
+RTC::ReturnCode_t ApproximateVoxelGridFilter::onFinalize()
 {
   return RTC::RTC_OK;
 }
 */
 
 /*
-RTC::ReturnCode_t VoxelGridFilter::onStartup(RTC::UniqueId ec_id)
+RTC::ReturnCode_t ApproximateVoxelGridFilter::onStartup(RTC::UniqueId ec_id)
 {
   return RTC::RTC_OK;
 }
 */
 
 /*
-RTC::ReturnCode_t VoxelGridFilter::onShutdown(RTC::UniqueId ec_id)
+RTC::ReturnCode_t ApproximateVoxelGridFilter::onShutdown(RTC::UniqueId ec_id)
 {
   return RTC::RTC_OK;
 }
 */
 
-RTC::ReturnCode_t VoxelGridFilter::onActivated(RTC::UniqueId ec_id)
+RTC::ReturnCode_t ApproximateVoxelGridFilter::onActivated(RTC::UniqueId ec_id)
 {
   std::cout << m_profile.instance_name<< ": onActivated(" << ec_id << ")" << std::endl;
   return RTC::RTC_OK;
 }
 
-RTC::ReturnCode_t VoxelGridFilter::onDeactivated(RTC::UniqueId ec_id)
+RTC::ReturnCode_t ApproximateVoxelGridFilter::onDeactivated(RTC::UniqueId ec_id)
 {
   std::cout << m_profile.instance_name<< ": onDeactivated(" << ec_id << ")" << std::endl;
   return RTC::RTC_OK;
 }
 
-RTC::ReturnCode_t VoxelGridFilter::onExecute(RTC::UniqueId ec_id)
+RTC::ReturnCode_t ApproximateVoxelGridFilter::onExecute(RTC::UniqueId ec_id)
 {
-  if (m_debugLevel > 0){
-    std::cout << m_profile.instance_name<< ": onExecute(" << ec_id << ")" << std::endl;
-  }
+  //std::cout << m_profile.instance_name<< ": onExecute(" << ec_id << ")" << std::endl;
 
   if (m_originalIn.isNew()){
     m_originalIn.read();
-
-    if (!m_size){
-        m_filtered = m_original;
-        m_filteredOut.write();
-        return RTC::RTC_OK;
-    }
 
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered (new pcl::PointCloud<pcl::PointXYZ>);
 
     // RTM -> PCL
-    cloud->is_dense = m_original.is_dense;
     cloud->points.resize(m_original.width*m_original.height);
     float *src = (float *)m_original.data.get_buffer();
     for (unsigned int i=0; i<cloud->points.size(); i++){
@@ -166,19 +155,13 @@ RTC::ReturnCode_t VoxelGridFilter::onExecute(RTC::UniqueId ec_id)
     }
     
     // PCL Processing 
-    pcl::VoxelGrid<pcl::PointXYZ> sor;
+    pcl::ApproximateVoxelGrid<pcl::PointXYZ> sor;
     sor.setInputCloud (cloud);
     sor.setLeafSize(m_size, m_size, m_size);
     sor.filter(*cloud_filtered);
 
-    if (m_debugLevel > 0){
-      std::cout << "original:" << cloud->points.size() << ", filterd:" << cloud_filtered->points.size() << std::endl;
-    }
-
-
     // PCL -> RTM
     m_filtered.width = cloud_filtered->points.size();
-    m_filtered.height = 1;
     m_filtered.row_step = m_filtered.point_step*m_filtered.width;
     m_filtered.data.length(m_filtered.height*m_filtered.row_step);
     float *dst = (float *)m_filtered.data.get_buffer();
@@ -195,35 +178,35 @@ RTC::ReturnCode_t VoxelGridFilter::onExecute(RTC::UniqueId ec_id)
 }
 
 /*
-RTC::ReturnCode_t VoxelGridFilter::onAborting(RTC::UniqueId ec_id)
+RTC::ReturnCode_t ApproximateVoxelGridFilter::onAborting(RTC::UniqueId ec_id)
 {
   return RTC::RTC_OK;
 }
 */
 
 /*
-RTC::ReturnCode_t VoxelGridFilter::onError(RTC::UniqueId ec_id)
+RTC::ReturnCode_t ApproximateVoxelGridFilter::onError(RTC::UniqueId ec_id)
 {
   return RTC::RTC_OK;
 }
 */
 
 /*
-RTC::ReturnCode_t VoxelGridFilter::onReset(RTC::UniqueId ec_id)
+RTC::ReturnCode_t ApproximateVoxelGridFilter::onReset(RTC::UniqueId ec_id)
 {
   return RTC::RTC_OK;
 }
 */
 
 /*
-RTC::ReturnCode_t VoxelGridFilter::onStateUpdate(RTC::UniqueId ec_id)
+RTC::ReturnCode_t ApproximateVoxelGridFilter::onStateUpdate(RTC::UniqueId ec_id)
 {
   return RTC::RTC_OK;
 }
 */
 
 /*
-RTC::ReturnCode_t VoxelGridFilter::onRateChanged(RTC::UniqueId ec_id)
+RTC::ReturnCode_t ApproximateVoxelGridFilter::onRateChanged(RTC::UniqueId ec_id)
 {
   return RTC::RTC_OK;
 }
@@ -234,12 +217,12 @@ RTC::ReturnCode_t VoxelGridFilter::onRateChanged(RTC::UniqueId ec_id)
 extern "C"
 {
 
-  void VoxelGridFilterInit(RTC::Manager* manager)
+  void ApproximateVoxelGridFilterInit(RTC::Manager* manager)
   {
     RTC::Properties profile(spec);
     manager->registerFactory(profile,
-                             RTC::Create<VoxelGridFilter>,
-                             RTC::Delete<VoxelGridFilter>);
+                             RTC::Create<ApproximateVoxelGridFilter>,
+                             RTC::Delete<ApproximateVoxelGridFilter>);
   }
 
 };

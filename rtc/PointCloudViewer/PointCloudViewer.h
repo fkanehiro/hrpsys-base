@@ -1,14 +1,14 @@
 // -*- C++ -*-
 /*!
- * @file  VoxelGridFilter.h
- * @brief Moving Least Squares Filter
+ * @file  PointCloudViewer.h
+ * @brief Point Cloud Viewer
  * @date  $Date$
  *
  * $Id$
  */
 
-#ifndef VOXEL_GRID_FILTER_H
-#define VOXEL_GRID_FILTER_H
+#ifndef POINT_CLOUD_VIEWER_H
+#define POINT_CLOUD_VIEWER_H
 
 #include <rtm/idl/BasicDataType.hh>
 #include "hrpsys/idl/pointcloud.hh"
@@ -18,6 +18,7 @@
 #include <rtm/DataInPort.h>
 #include <rtm/DataOutPort.h>
 #include <rtm/idl/BasicDataTypeSkel.h>
+#include <pcl/visualization/cloud_viewer.h>
 
 // Service implementation headers
 // <rtc-template block="service_impl_h">
@@ -34,7 +35,7 @@ using namespace RTC;
 /**
    \brief sample RT component which has one data input port and one data output port
  */
-class VoxelGridFilter
+class PointCloudViewer
   : public RTC::DataFlowComponentBase
 {
  public:
@@ -42,11 +43,11 @@ class VoxelGridFilter
      \brief Constructor
      \param manager pointer to the Manager
   */
-  VoxelGridFilter(RTC::Manager* manager);
+  PointCloudViewer(RTC::Manager* manager);
   /**
      \brief Destructor
   */
-  virtual ~VoxelGridFilter();
+  virtual ~PointCloudViewer();
 
   // The initialize action (on CREATED->ALIVE transition)
   // formaer rtc_init_entry()
@@ -103,18 +104,16 @@ class VoxelGridFilter
   
   // </rtc-template>
 
-  PointCloudTypes::PointCloud m_original;
-  PointCloudTypes::PointCloud m_filtered;
+  PointCloudTypes::PointCloud m_cloud;
 
   // DataInPort declaration
   // <rtc-template block="inport_declare">
-  InPort<PointCloudTypes::PointCloud> m_originalIn;
+  InPort<PointCloudTypes::PointCloud> m_cloudIn;
   
   // </rtc-template>
 
   // DataOutPort declaration
   // <rtc-template block="outport_declare">
-  OutPort<PointCloudTypes::PointCloud> m_filteredOut;
   
   // </rtc-template>
 
@@ -134,15 +133,14 @@ class VoxelGridFilter
   // </rtc-template>
 
  private:
-  int m_debugLevel;
+  pcl::visualization::CloudViewer m_viewer;
   int dummy;
-  double m_size;
 };
 
 
 extern "C"
 {
-  void VoxelGridFilterInit(RTC::Manager* manager);
+  void PointCloudViewerInit(RTC::Manager* manager);
 };
 
-#endif // VOXEL_GRID_FILTER_H
+#endif // POINT_CLOUD_VIEWER_H
