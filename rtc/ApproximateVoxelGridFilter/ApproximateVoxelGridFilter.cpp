@@ -29,6 +29,7 @@ static const char* spec[] =
     "lang_type",         "compile",
     // Configuration variables
     "conf.default.size", "0.01",
+    "conf.default.debugLevel", "0",
 
     ""
   };
@@ -56,6 +57,7 @@ RTC::ReturnCode_t ApproximateVoxelGridFilter::onInitialize()
   // <rtc-template block="bind_config">
   // Bind variables and configuration variable
   bindParameter("size", m_size, "0.01");
+  bindParameter("debugLevel", m_debugLevel, "0");
   
   // </rtc-template>
 
@@ -136,10 +138,18 @@ RTC::ReturnCode_t ApproximateVoxelGridFilter::onDeactivated(RTC::UniqueId ec_id)
 
 RTC::ReturnCode_t ApproximateVoxelGridFilter::onExecute(RTC::UniqueId ec_id)
 {
-  //std::cout << m_profile.instance_name<< ": onExecute(" << ec_id << ")" << std::endl;
+  if (m_debugLevel > 0){
+   std::cout << m_profile.instance_name<< ": onExecute(" << ec_id << ")" << std::endl;
+  }
 
   if (m_originalIn.isNew()){
     m_originalIn.read();
+
+    if (!m_size){
+        m_filtered = m_original;
+        m_filteredOut.write();
+        return RTC::RTC_OK;
+    }
 
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered (new pcl::PointCloud<pcl::PointXYZ>);
@@ -159,6 +169,11 @@ RTC::ReturnCode_t ApproximateVoxelGridFilter::onExecute(RTC::UniqueId ec_id)
     sor.setInputCloud (cloud);
     sor.setLeafSize(m_size, m_size, m_size);
     sor.filter(*cloud_filtered);
+    if (m_debugLevel > 0){
+      std::cout << cloud->points.size() << " points are reduced to "
+                << cloud_filtered->points.size() << " points" << std::endl;
+    }
+      
 
     // PCL -> RTM
     m_filtered.width = cloud_filtered->points.size();
