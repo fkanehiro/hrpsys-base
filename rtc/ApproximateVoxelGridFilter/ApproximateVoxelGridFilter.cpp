@@ -179,6 +179,7 @@ RTC::ReturnCode_t ApproximateVoxelGridFilter::onExecute(RTC::UniqueId ec_id)
     m_filtered.width = cloud_filtered->points.size();
     m_filtered.row_step = m_filtered.point_step*m_filtered.width;
     m_filtered.data.length(m_filtered.height*m_filtered.row_step);
+    m_filtered.tm = m_original.tm;
     float *dst = (float *)m_filtered.data.get_buffer();
     for (unsigned int i=0; i<cloud_filtered->points.size(); i++){
       dst[0] = cloud_filtered->points[i].x;
