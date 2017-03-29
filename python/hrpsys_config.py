@@ -1432,7 +1432,8 @@ class HrpsysConfigurator(object):
         @param gname str: Name of the joint group.
         @param pos list of float: In meter.
         @param rpy list of float: In radian.
-        @param tm float: Second to complete the command.
+        @param tm float: Second to complete the command. This only includes the time taken for execution
+                         (i.e. time for planning and other misc. processes are not considered).
         @param frame_name str: Name of the frame that this particular command
                            references to.
         @return bool: False if unreachable.
@@ -1468,7 +1469,8 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
         @param dr float: In radian.
         @param dp float: In radian.
         @param dw float: In radian.
-        @param tm float: Second to complete the command.
+        @param tm float: Second to complete the command. This only includes the time taken for execution
+                         (i.e. time for planning and other misc. processes are not considered).
         @param wait bool: If true, all other subsequent commands wait until
                           the movement commanded by this method call finishes.
         @return bool: False if unreachable.
@@ -1940,7 +1942,8 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
                             of the 1st degree in the list consists of the joint angles.
         @param rpy list of float: Orientation in rpy.
         @param zmp list of float: TODO: description
-        @param tm float: Time to complete the task.
+        @param tm float: Second to complete the command. This only includes the time taken for execution
+                         (i.e. time for planning and other misc. processes are not considered).
         @return bool:
         '''
         return self.seq_svc.playPattern(jointangles, rpy, zmp, tm)
