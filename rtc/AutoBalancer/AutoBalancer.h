@@ -27,6 +27,7 @@
 // <rtc-template block="service_impl_h">
 #include "AutoBalancerService_impl.h"
 #include "interpolator.h"
+#include "../TorqueFilter/IIRFilter.h"
 
 // </rtc-template>
 
@@ -552,6 +553,9 @@ class AutoBalancer
   std::string graspless_manip_arm;
   hrp::Vector3 graspless_manip_p_gain;
   rats::coordinates graspless_manip_reference_trans_coords;
+
+  hrp::InvDynStateBuffer idsb;
+  std::vector<IIRFilter> invdyn_zmp_filters;
 };
 
 

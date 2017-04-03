@@ -458,6 +458,22 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
       }
       if (control_mode != MODE_IDLE ) {
         solveFullbodyIK();
+//        /////// Inverse Dynamics /////////
+//        if(!idsb.is_initialized){
+//          idsb.setInitState(m_robot, m_dt);
+//          invdyn_zmp_filters.resize(3);
+//          for(int i=0;i<3;i++){
+//            invdyn_zmp_filters[i].setParameterAsBiquad(25, 1/std::sqrt(2), 1.0/m_dt);
+//            invdyn_zmp_filters[i].reset(ref_zmp(i));
+//          }
+//        }
+//        calcAccelerationsForInverseDynamics(m_robot, idsb);
+//        if(gg_is_walking){
+//          calcWorldZMPFromInverseDynamics(m_robot, idsb, ref_zmp);
+//          for(int i=0;i<3;i++) ref_zmp(i) = invdyn_zmp_filters[i].passFilter(ref_zmp(i));
+//        }
+//        updateInvDynStateBuffer(idsb);
+
         rel_ref_zmp = m_robot->rootLink()->R.transpose() * (ref_zmp - m_robot->rootLink()->p);
       } else {
         rel_ref_zmp = input_zmp;
@@ -1022,6 +1038,7 @@ void AutoBalancer::solveFullbodyIK ()
   // Solve IK
   fik->solveFullbodyIK (dif_cog, transition_interpolator->isEmpty());
 }
+
 
 /*
   RTC::ReturnCode_t AutoBalancer::onAborting(RTC::UniqueId ec_id)

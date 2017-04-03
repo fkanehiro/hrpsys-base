@@ -613,3 +613,47 @@ void hrp::readInterlockingJointsParamFromProperties (std::vector<std::pair<Link*
         };
     }
 };
+
+void hrp::calcAccelerationsForInverseDynamics(const hrp::BodyPtr _m_robot, InvDynStateBuffer& _idsb){
+  for(int i=0;i<_m_robot->numJoints();i++)_idsb.q(i) = _m_robot->joint(i)->q;
+  _idsb.dq = (_idsb.q - _idsb.q_old) / _idsb.DT;
+  _idsb.ddq = (_idsb.q - 2 * _idsb.q_old + _idsb.q_oldold) / (_idsb.DT * _idsb.DT);
+  const hrp::Vector3 g(0, 0, 9.80665);
+  _idsb.base_p = _m_robot->rootLink()->p;
+  _idsb.base_v = (_idsb.base_p - _idsb.base_p_old) / _idsb.DT;
+  _idsb.base_dv = g + (_idsb.base_p - 2 * _idsb.base_p_old + _idsb.base_p_oldold) / (_idsb.DT * _idsb.DT);
+  _idsb.base_R =  _m_robot->rootLink()->R;
+  _idsb.base_dR = (_idsb.base_R - _idsb.base_R_old) / _idsb.DT;
+  _idsb.base_w_hat = _idsb.base_dR * _idsb.base_R.transpose();
+  _idsb.base_w = hrp::Vector3(_idsb.base_w_hat(2,1), - _idsb.base_w_hat(0,2), _idsb.base_w_hat(1,0));
+  _idsb.base_dw = (_idsb.base_w - _idsb.base_w_old) / _idsb.DT;
+};
+
+void hrp::calcRootLinkWrenchFromInverseDynamics(hrp::BodyPtr _m_robot, InvDynStateBuffer& _idsb, hrp::Vector3& _f_ans, hrp::Vector3& _t_ans){
+  for(int i=0;i<_m_robot->numJoints();i++){
+    _m_robot->joint(i)->dq = _idsb.dq(i);
+    _m_robot->joint(i)->ddq = _idsb.ddq(i);
+  }
+  _m_robot->rootLink()->vo = _idsb.base_v - _idsb.base_w.cross(_idsb.base_p);
+  _m_robot->rootLink()->dvo = _idsb.base_dv - _idsb.base_dw.cross(_idsb.base_p) - _idsb.base_w.cross(_idsb.base_v); // calc in differential way
+  _m_robot->rootLink()->w = _idsb.base_w;
+  _m_robot->rootLink()->dw = _idsb.base_dw;
+  _m_robot->calcForwardKinematics(true,true);// calc every link's acc and vel
+  _m_robot->calcInverseDynamics(_m_robot->rootLink(), _f_ans, _t_ans);// this returns f,t at the coordinate origin (not at base link pos)
+};
+
+void hrp::calcWorldZMPFromInverseDynamics(hrp::BodyPtr _m_robot, InvDynStateBuffer& _idsb, hrp::Vector3& _zmp_ans){
+  hrp::Vector3 f_tmp, t_tmp;
+  calcRootLinkWrenchFromInverseDynamics(_m_robot, _idsb, f_tmp, t_tmp);
+  _zmp_ans(0) = -t_tmp(1)/f_tmp(2);
+  _zmp_ans(1) = t_tmp(0)/f_tmp(2);
+};
+
+void hrp::updateInvDynStateBuffer(InvDynStateBuffer& _idsb){
+   _idsb.q_oldold = _idsb.q_old;
+   _idsb.q_old = _idsb.q;
+   _idsb.base_p_oldold = _idsb.base_p_old;
+   _idsb.base_p_old = _idsb.base_p;
+   _idsb.base_R_old = _idsb.base_R;
+   _idsb.base_w_old = _idsb.base_w;
+};
