@@ -2,6 +2,80 @@
 Changelog for package hrpsys
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+315.12.1 (2017-04-04)
+---------------------
+
+Stable RTCs
+=============
+
+* Fix bug of https://github.com/fkanehiro/hrpsys-base/pull/1103 (`#1114 <https://github.com/fkanehiro/hrpsys-base/issues/1114>`_)
+  * [CMakeLists.txt] use separate_arguments to set semicolon to variable.
+
+Unstable RTCs
+=============
+
+* Update for 3rdparty (`#1115 <https://github.com/fkanehiro/hrpsys-base/issues/1115>`_)
+  * [3rdparty/qpOASES/CMakeLists.txt] trust server of QPOASES
+
+* Add ApproximateVoxelGridFilter (`#1117 <https://github.com/fkanehiro/hrpsys-base/issues/1117>`_)
+  * replace VoxelGridFilter with ApproximateVoxelGridFilter
+  * add a new RT component, ApproximateVoxelGridFilter
+
+* Update for ApproximateVoxelGridFilter
+  * copy timestamp from input cloud to output cloud
+  * add debug mode and pass through mode
+
+* Add PointCloudViewer (`#1116 <https://github.com/fkanehiro/hrpsys-base/issues/1116>`_)
+  * add a new RT component, PointCloudViewer
+
+* Update for VoxelGridFilter
+  * copy is_dense attribute from input point cloud
+  * add debugLevel property and support pass-through mode
+
+* Update Stabilizer in-the-air behavior (`#1090 <https://github.com/fkanehiro/hrpsys-base/issues/1090>`_)
+  * [Stabilizer] Set default detection time whether robot is in air to zero
+  * [Stabilizer] Set detection time whether robot is in air
+  * [Stabilizer] Rename variables
+
+* Rename and separate functions (`#1111 <https://github.com/fkanehiro/hrpsys-base/issues/1111>`_)
+  * Stabilizer
+    * [rtc/Stabilizer/Stabilizer.*] Rename contact_states -> ref_contact_states. Rename isContact -> act_contact_states
+  * AutoBalancer
+    * [rtc/AutoBalancer/AutoBalancer.*] Separate solving IK codes as class. Currently, transition and SBP calculation is not separated. (This is expected not to change behavior).
+    * [rtc/AutoBalancer/AutoBalancer.cpp] Output and set OutPort only for legged robots.
+    * [rtc/AutoBalancer/AutoBalancer.*] Make startWalking without ABC deprecated and fix position of calling of stopWalking and zmp_weight_mzp interpolation.
+    * [rtc/AutoBalancer/AutoBalancer.*] Remove unnecessary member vaiable (target_end_coords)
+    * [rtc/AutoBalancer/AutoBalancer*] Separate codes from IK parts. (This commit is expected not to change the behavior)
+    * [rtc/AutoBalancer/AutoBalancer.*] Include target EE coords calculation in separated functions. (This commit is expected not to change the behavior).
+    * [rtc/AutoBalancer/AutoBalancer.*] Separate procedures in getTargetParameters as fucntions. (This commit is expected not to change the behavior).
+    * [rtc/AutoBalancer/AutoBalancer.*] Fix order of transition code. Separate functions to calculate output from ABC. (This commit is expected not to change the behavior).
+    * [rtc/AutoBalancer/AutoBalancer.cpp] Fix parameter setting section in non-GaitGenerator parts. Fix index of default_zmp_offsets usage.
+    * [rtc/AutoBalancer/AutoBalancer, GaitGenerator] Separate and move codes from AutoBalancer to GaitGenrator, in order to get GaitGenerator results in AutoBalancer. (This commit is expected not to change the behavior)
+    * [rtc/AutoBalancer/AutoBalancer.cpp] Use target EE pos and rot instead of target link origin pos and rot from SequencePlayer target. (This commit is expected not to change the behavior)
+  * ImpedanceController
+    * [rtc/ImpedanceController/ImpedanceController.*] Separate functions, add comments, and fix order and calculation of calcForceMoment. (This commit is expected not to change the behavior)
+  * Update samples for unstable RTCs
+    * [launch/sample4legrobot.launch,sample6dofrobot.launch,samplespecialjointrobot.launch] Update conf_file setting for launch samples
+    * [sample/SampleRobot/samplerobot_impedance_controller.py] Separate tests as functions and improve execution time and result checking.
+
+* AutoBalancer update by adding inverse dynamics function (`#1110 <https://github.com/fkanehiro/hrpsys-base/issues/1110>`_)
+  * refactor IIRFilter::setParameterAsBiquadButterworth -> IIRFilter::setParameterAsBiquad
+  * sqrt -> std::sqrt one more
+  * sqrt -> std::sqrt
+  * seperate InverseDynamics calculation sequence
+  * tan -> std::tan
+  * Revert "remove unused dependency from AutoBalancer/CMakeLists.txt"
+    This reverts commit 933edb0a1d05b7104e22eccc96f5639cedd607b4.
+  * remove unused dependency from AutoBalancer/CMakeLists.txt
+  * Revert "move InverseDynamics from ABC to IC/JointPathEx"
+    This reverts commit 9b2a76ea3d6e0f871b4460002ded668649711a19.
+  * move InverseDynamics from ABC to IC/JointPathEx
+  * move InverseDynamics from ABC to IC/JointPathEx
+  * merge from master
+  * Add inverse dynamics function
+
+* Contributors: Fumio KANEHIRO, Masaki Murooka, Ryo KOYAMA, Shunichi Nozawa, Tatsuya Ishikawa, Yasuhiro Ishiguro
+
 315.12.0 (2017-03-08)
 ---------------------
 
