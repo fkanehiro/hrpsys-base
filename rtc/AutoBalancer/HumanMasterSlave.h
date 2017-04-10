@@ -19,6 +19,9 @@
 #include <opencv2/imgproc/types_c.h>
 #include <hrpUtil/Eigen4d.h>
 
+
+#include <numeric>
+
 #if defined(__cplusplus)
 extern "C" {
 #endif
@@ -48,7 +51,8 @@ namespace myconst{
   const int r = 0, p = 1, y = 2, rpy = 3;
   const int L = 0, R = 1, LR = 2;
   const int MIN = 0, MAX = 1, MINMAX = 2;
-  const double INFMIN = std::numeric_limits<double>::min(), INFMAX = std::numeric_limits<double>::max();
+//  const double INFMIN = std::numeric_limits<double>::min(), INFMAX = std::numeric_limits<double>::max();
+  const double INFMIN = - std::numeric_limits<double>::max(), INFMAX = std::numeric_limits<double>::max();
   const double D2R = M_PI/180.0;
 }
 using namespace myconst;
@@ -65,16 +69,18 @@ class BiquadIIRFilterVec{
     void setParameter(const hrp::Vector3 fc_in, const double HZ){
       ff_coeffs.resize(3);
       fb_coeffs.resize(3);
-      for(int i=0;i<3;i++){
-        const double fc = tan((double)fc_in(i) * M_PI / HZ) / (2 * M_PI);
-        const double denom = 1 + (2 * sqrt(2) * M_PI * fc) + 4 * M_PI * M_PI * fc*fc;
-        ff_coeffs[0] = (4 * M_PI * M_PI * fc*fc) / denom;
-        ff_coeffs[1] = (8 * M_PI * M_PI * fc*fc) / denom;
-        ff_coeffs[2] = (4 * M_PI * M_PI * fc*fc) / denom;
-        fb_coeffs[0] = 1.0;
-        fb_coeffs[1] = (8 * M_PI * M_PI * fc*fc - 2) / denom;
-        fb_coeffs[2] = (1 - (2 * sqrt(2) * M_PI * fc) + 4 * M_PI * M_PI * fc*fc) / denom;
-        filters[i].setParameter(2,fb_coeffs,ff_coeffs);
+      const double Q = 1.0/2;
+     for(int i=0;i<3;i++){
+       const double omega = 2 * 3.14159265 * fc_in(i) / HZ;
+       const double alpha = std::sin(omega) / (2 * Q);
+       const double denom = 1 + alpha;
+       fb_coeffs[0] = 1;
+       fb_coeffs[1] = -2 * cos(omega) / denom;
+       fb_coeffs[2] = (1 - alpha) / denom;
+       ff_coeffs[0] = (1 - cos(omega)) / 2 / denom;
+       ff_coeffs[1] = (1 - cos(omega)) / denom;
+       ff_coeffs[2] = (1 - cos(omega)) / 2 / denom;
+       filters[i].setParameter(2, fb_coeffs, ff_coeffs);
       }
     };
     void setParameter(const double fc_in, const double HZ){
@@ -88,6 +94,31 @@ class BiquadIIRFilterVec{
       for(int i=0;i<3;i++){ filters[i].reset((double)initial_input(i));}
     }
 };
+
+
+
+
+
+template <class T> class IIRFilter_vec
+{
+  public:
+    IIRFilter_vec(const std::string& error_prefix = "");
+    ~IIRFilter_vec() {};
+    bool setParameter(int dim, std::vector<double>& A, std::vector<double>& B);
+    bool setParameterAsBiquad(const double f_cutoff, const double Q, const double hz);
+    void getParameter(int &dim, std::vector<double>&A, std::vector<double>& B);
+    void reset(T initial_input = T::Zero());
+    T passFilter(T input);
+  private:
+    int m_dimension;
+    std::vector<double> m_fb_coefficients; // fb parameters (dim must be m_dimension + 1, m_fb_coefficients[0] would be 1.0)
+    std::vector<double> m_ff_coefficients; // ff parameters (dim must be m_dimension + 1)
+    std::deque<T> m_previous_values;
+    bool m_initialized;
+    std::string m_error_prefix;
+};
+
+
 
 class HRPPose3D{
   public:
@@ -212,6 +243,7 @@ class HumanSynchronizer{
     HumanPose hp_plot;
     HumanPose rp_ref_out;
     FILE *sr_log,*cz_log;
+    FILE *id_log;
     hrp::Vector3 init_wld_rp_rfeepos,init_wld_rp_lfeepos;
     hrp::Vector3 init_wld_hp_rfpos,init_wld_hp_lfpos;
     HRPPose3D baselinkpose;
@@ -223,6 +255,7 @@ class HumanSynchronizer{
     std::vector<hrp::Vector3> rf_vert,lf_vert;
     double countdown_sec;
     hrp::Vector3 cp_dec,cp_acc;
+    Wrench6 invdyn_ft;
 
     interpolator *init_zmp_com_offset_interpolator;
     double zmp_com_offset_ip_ratio;
@@ -301,7 +334,8 @@ class HumanSynchronizer{
 
       WBMSparam.use_rh = WBMSparam.use_lh = true;
       WBMSparam.use_head = true;
-      WBMSparam.set_com_height_fix = true;
+//      WBMSparam.set_com_height_fix = true;
+      WBMSparam.set_com_height_fix = false;
       WBMSparam.set_com_height_fix_val = 0.02;
       WBMSparam.foot_vertical_vel_limit_coeff = 4.0;
       WBMSparam.human_com_height = 1.00;
@@ -322,12 +356,14 @@ class HumanSynchronizer{
       if(DEBUG){
         sr_log = fopen("/home/ishiguro/HumanSync_support_region.log","w+");
         cz_log = fopen("/home/ishiguro/HumanSync_com_zmp.log","w+");
+        id_log = fopen("/home/ishiguro/HumanSync_invdyn.log","w+");
       }
       cout<<"HumanSynchronizer constructed"<<endl;
     }
     ~HumanSynchronizer(){
       if(DEBUG)fclose(sr_log);
       if(DEBUG)fclose(cz_log);
+      if(DEBUG)fclose(id_log);
       delete init_zmp_com_offset_interpolator;
       cout<<"HumanSynchronizer destructed"<<endl;
     }
@@ -566,7 +602,7 @@ class HumanSynchronizer{
       }
     }
     void applyEEWorkspaceLimit(HumanPose& tgt){
-      const double MAX_FW = 0.30;
+      const double MAX_FW = 0.25;
       const double FOOT_2_FOOT_COLLISION_MARGIIN = 0.16;
       if(!is_rf_contact && is_lf_contact){//右足浮遊時
         const hrp::Vector2 lf2rf_vec( tgt.getP("rf").p(X)-pre_cont_lfpos(X), tgt.getP("rf").p(Y)-pre_cont_lfpos(Y) );
@@ -712,6 +748,110 @@ class HumanSynchronizer{
     void applyCOMZMPXYZLock(HumanPose& tgt);
 };
 
+//
+//class SimpleFullbodyInverseDynamicsSolver{
+//  private:
+//    hrp::BodyPtr m_robot;
+//    hrp::dvector q, q_old, q_oldold, dq, ddq, ddq_filtered;
+//    hrp::Vector3 base_p, base_p_old, base_p_oldold, base_v, base_dv, base_dv_filtered;
+//    hrp::Matrix33 base_R, base_R_old, base_dR, base_w_hat;
+//    hrp::Vector3 base_w, base_w_old, base_dw, base_dw_filtered;
+//    std::vector<IIRFilter> ddq_filter, base_dv_filter, base_dw_filter;
+//    double DT;
+//    bool is_RobotStateInitialized;
+//
+//  public:
+//    SimpleFullbodyInverseDynamicsSolver(const hrp::BodyPtr& _robot, const double _dt, const double _acceleration_filter_fc = 25.0)
+//        : m_robot(_robot),
+//          DT(_dt),
+//          is_RobotStateInitialized(false)
+//    {
+//      q.resize(m_robot->numJoints());
+//      q_old.resize(m_robot->numJoints());
+//      q_oldold.resize(m_robot->numJoints());
+//      dq.resize(m_robot->numJoints());
+//      ddq.resize(m_robot->numJoints());
+//      ddq_filtered.resize(m_robot->numJoints());
+//      initializeAccelerationFilters(_acceleration_filter_fc, _dt);
+//    };
+//    ~SimpleFullbodyInverseDynamicsSolver(){
+//    };
+//    void initializeAccelerationFilters(const double _fc_in, const double _dt){//set up filters as 2nd order Biquad IIR
+//      ddq_filter.resize(m_robot->numJoints());
+//      base_dv_filter.resize(3);
+//      base_dw_filter.resize(3);
+//      std::vector<double> fb_coeffs(3), ff_coeffs(3);
+//      const double fc = std::tan(_fc_in * M_PI * _dt) / (2 * M_PI);
+//      const double denom = 1 + (2 * sqrt(2) * M_PI * fc) + 4 * M_PI * M_PI * fc*fc;
+//      ff_coeffs[0] = (4 * M_PI * M_PI * fc*fc) / denom;
+//      ff_coeffs[1] = (8 * M_PI * M_PI * fc*fc) / denom;
+//      ff_coeffs[2] = (4 * M_PI * M_PI * fc*fc) / denom;
+//      fb_coeffs[0] = 1.0;
+//      fb_coeffs[1] = (8 * M_PI * M_PI * fc*fc - 2) / denom;
+//      fb_coeffs[2] = (1 - (2 * sqrt(2) * M_PI * fc) + 4 * M_PI * M_PI * fc*fc) / denom;
+//      for(int i=0;i<m_robot->numJoints();i++)ddq_filter[i].setParameter(2,fb_coeffs,ff_coeffs);
+//      for(int i=0;i<3;i++)base_dv_filter[i].setParameter(2,fb_coeffs,ff_coeffs);
+//      for(int i=0;i<3;i++)base_dw_filter[i].setParameter(2,fb_coeffs,ff_coeffs);
+//    };
+//    void initializeRobotState(){
+//      for(int i=0;i<m_robot->numJoints();i++)q(i) = m_robot->joint(i)->q;
+//      q_oldold = q_old = q;
+//      dq = ddq = ddq_filtered = hrp::dvector::Zero(m_robot->numJoints());
+//      base_p_oldold = base_p_old = base_p = m_robot->rootLink()->p;
+//      base_R_old = base_R = m_robot->rootLink()->R;
+//      base_dR = base_w_hat = hrp::Matrix33::Zero();
+//      base_w_old = base_w = base_dw = base_dw_filtered = hrp::Vector3::Zero();
+//      is_RobotStateInitialized = true;
+//    };
+//    void solveFullbodyID(hrp::Vector3& f_ans, hrp::Vector3& t_ans){
+//      if(!is_RobotStateInitialized) initializeRobotState();
+//      calcAccelerationsForInverseDynamics();
+//      passAccelerationFilters();
+//      setCurrentRobotState();
+//      m_robot->calcForwardKinematics(true,true);// calc every link's acc and vel
+//      m_robot->calcInverseDynamics(m_robot->rootLink(),f_ans,t_ans);// this returns f,t at the coordinate origin (not at base link pos)
+//    };
+//
+//  private:
+//    void calcAccelerationsForInverseDynamics(){
+//      for(int i=0;i<m_robot->numJoints();i++)q(i) = m_robot->joint(i)->q;
+//      dq = (q - q_old) / DT;
+//      ddq = (q - 2 * q_old + q_oldold) / (DT * DT);
+//      q_oldold = q_old;
+//      q_old = q;
+//      const hrp::Vector3 g(0, 0, 9.80665);
+//      base_p = m_robot->rootLink()->p;
+//      base_v = (base_p - base_p_old) / DT;
+//      base_dv = g + (base_p - 2 * base_p_old + base_p_oldold) / (DT * DT);
+//      base_p_oldold = base_p_old;
+//      base_p_old = base_p;
+//      base_R =  m_robot->rootLink()->R;
+//      base_dR = (base_R - base_R_old) / DT;
+//      base_w_hat = base_dR * base_R.transpose();
+//      base_w = hrp::Vector3(base_w_hat(2,1), - base_w_hat(0,2), base_w_hat(1,0));
+//      base_dw = (base_w - base_w_old) / DT;
+//      base_R_old = base_R;
+//      base_w_old = base_w;
+//    };
+//    void passAccelerationFilters(){
+//      for(int i=0;i<m_robot->numJoints();i++)ddq_filtered[i] = ddq_filter[i].passFilter(ddq[i]);
+//      for(int i=0;i<3;i++){
+//        base_dv_filtered[i] = base_dv_filter[i].passFilter(base_dv[i]);
+//        base_dw_filtered[i] = base_dw_filter[i].passFilter(base_dw[i]);
+//      }
+//    };
+//    void setCurrentRobotState(){
+//      for(int i=0;i<m_robot->numJoints();i++){
+//        m_robot->joint(i)->dq = dq(i);
+//        m_robot->joint(i)->ddq = ddq_filtered(i);
+//      }
+//      m_robot->rootLink()->vo = base_v - base_w.cross(base_p);
+//      //static hrp::Vector3 vo_old; m_robot->rootLink()->dvo = g + (m_robot->rootLink()->vo - vo_old)/DT; vo_old = m_robot->rootLink()->vo; // calc in incremental way
+//      m_robot->rootLink()->dvo = base_dv_filtered - base_dw_filtered.cross(base_p) - base_w.cross(base_v); // calc in differential way
+//      m_robot->rootLink()->w = base_w;
+//      m_robot->rootLink()->dw = base_dw_filtered;
+//    };
+//};
 
 
 #endif // HUMANMASTERSLAVE_H

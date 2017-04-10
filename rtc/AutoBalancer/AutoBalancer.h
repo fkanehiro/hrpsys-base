@@ -198,7 +198,12 @@ class AutoBalancer
   OutPort<TimedPoint3D> m_rpdcp_dbgOut;
   TimedPoint3D m_rpacp_dbg;
   OutPort<TimedPoint3D> m_rpacp_dbgOut;
+
+  TimedDoubleSeq m_invdyn_dbg;
+  OutPort<TimedDoubleSeq> m_invdyn_dbgOut;
   
+
+
   // </rtc-template>
 
   // DataOutPort declaration
@@ -265,6 +270,7 @@ class AutoBalancer
   bool solveLimbIKforLimb (ABCIKparam& param, const std::string& limb_name);
   void solveWholeBodyCOMIK(const HRPPose3D& com_ref, const HRPPose3D& rf_ref, const HRPPose3D& lf_ref, const HRPPose3D& rh_ref, const HRPPose3D& lh_ref, const hrp::Vector3& head_ref);
   void solveLimbIK();
+  void solveWholeBodyID(const hrp::BodyPtr robot, hrp::Vector3& f_ans, hrp::Vector3& t_ans);
   void startABCparam(const ::OpenHRP::AutoBalancerService::StrSequence& limbs);
   void stopABCparam();
   void waitABCTransition();
@@ -303,6 +309,18 @@ class AutoBalancer
   double m_dt, move_base_gain;
   hrp::BodyPtr m_robot;
   coil::Mutex m_mutex;
+  //for invdyn
+  struct ABCIDparam {
+    hrp::dvector q, q_old, q_oldold, dq, ddq, ddq_filtered;
+    hrp::Vector3 base_p, base_p_old, base_p_oldold, base_v, base_dv, base_dv_filtered;
+    hrp::Matrix33 base_R, base_R_old, base_dR, base_w_hat;
+    hrp::Vector3 base_w, base_w_old, base_dw, base_dw_filtered;
+    std::vector<IIRFilter> ddq_filter, base_dv_filter, base_dw_filter;
+    double filter_fc;
+    bool is_initialized = false;
+  };
+  ABCIDparam idp;
+
 
   double transition_interpolator_ratio, transition_time, zmp_transition_time, adjust_footstep_transition_time, leg_names_interpolator_ratio;
   interpolator *zmp_offset_interpolator;

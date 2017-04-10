@@ -91,6 +91,8 @@ AutoBalancer::AutoBalancer(RTC::Manager* manager)
       m_rpdcp_dbgOut("rpdcp_dbgOut", m_rpdcp_dbg),
       m_rpacp_dbgOut("rpacp_dbgOut", m_rpacp_dbg),
 
+      m_invdyn_dbgOut("invdyn_dbgOut", m_invdyn_dbg),
+
       m_qOut("q", m_qRef),
       m_zmpOut("zmpOut", m_zmp),
       m_basePosOut("basePosOut", m_basePos),
@@ -163,6 +165,8 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     addOutPort("rpzmp_dbgOut", m_rpzmp_dbgOut);
     addOutPort("rpdcp_dbgOut", m_rpdcp_dbgOut);
     addOutPort("rpacp_dbgOut", m_rpacp_dbgOut);
+
+    addOutPort("invdyn_dbgOut", m_invdyn_dbgOut);
 
     // Set OutPort buffer
     addOutPort("q", m_qOut);
@@ -572,6 +576,8 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
       }
       if (control_mode != MODE_IDLE ) {
         solveLimbIK();
+        hrp::Vector3 f,t;
+        solveWholeBodyID(m_robot,f,t);
         rel_ref_zmp = m_robot->rootLink()->R.transpose() * (ref_zmp - m_robot->rootLink()->p);
       } else {
         rel_ref_zmp = input_zmp;
@@ -753,7 +759,10 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
     m_rpacp_dbg.tm = m_qRef.tm;
     HumanSynchronizer::Vector3ToPoint3D(hsp->cp_acc,m_rpacp_dbg.data);
     m_rpacp_dbgOut.write();
-
+    m_invdyn_dbg.tm = m_qRef.tm;
+    m_invdyn_dbg.data.length(6);
+    HumanSynchronizer::Wrench6ToDoubleSeq(hsp->invdyn_ft,m_invdyn_dbg.data);
+    m_invdyn_dbgOut.write();
 
     return RTC::RTC_OK;
 }
@@ -1145,6 +1154,7 @@ bool AutoBalancer::solveLimbIKforLimb (ABCIKparam& param, const std::string& lim
   }
   return true;
 }
+
 void AutoBalancer::solveWholeBodyCOMIK(const HRPPose3D& com_ref, const HRPPose3D& rf_ref, const HRPPose3D& lf_ref, const HRPPose3D& rh_ref, const HRPPose3D& lh_ref, const hrp::Vector3& head_ref){
   int com_ik_loop=0;
   const int COM_IK_MAX_LOOP = 5;
@@ -1204,19 +1214,6 @@ void AutoBalancer::solveLimbIK ()
   dif_cog(2) = m_robot->rootLink()->p(2) - target_root_p(2);
   m_robot->rootLink()->p = m_robot->rootLink()->p + -1 * move_base_gain * dif_cog;
   m_robot->rootLink()->R = target_root_R;
-
-////////////////////  逆動力学補償テスト  /////////////////////
-//  hrp::Matrix33 rot;
-//  Eigen::Matrix3f AxisAngle;
-//  Eigen::Vector3f axis(1,0,0);
-//  static int loop_l = 0;
-//  AxisAngle=Eigen::AngleAxisf(0.2*sin(2*M_PI*loop_l*m_dt),axis);  //Z軸周りに90度反時計回りに回転
-//  m_robot->rootLink()->R << AxisAngle(0,0), AxisAngle(0,1), AxisAngle(0,2), AxisAngle(1,0), AxisAngle(1,1), AxisAngle(1,2), AxisAngle(2,0), AxisAngle(2,1), AxisAngle(2,2);
-//if(loop>4000)loop_l++;
-//  if(loop_l>250)loop_l=250;
-////////////////////  逆動力学補償テスト  /////////////////////
-
-
   //for HumanSynchronizer
   if(hsp->startCountdownForHumanSync){
     std::cerr << "[" << m_profile.instance_name << "] Count Down for HumanSync ["<<hsp->getRemainingCountDown()<<"]\r";
@@ -1252,7 +1249,6 @@ void AutoBalancer::solveLimbIK ()
   hsp->update();//////HumanSynchronizerの主要処理
   if(loop%100==0)hsp->rp_ref_out.print();
 //  if(loop%100==0)cout<<"time[ms]:"<<hsp->getUpdateTime()*1000<<endl;
-
   // Fix for toe joint
   for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
       if (it->second.is_active && it->second.has_toe_joint && gg->get_use_toe_joint()) {
@@ -1265,7 +1261,6 @@ void AutoBalancer::solveLimbIK ()
       }
   }
   m_robot->calcForwardKinematics();
-
   // additional COM fitting IK for HumanSynchronizer
   if(hsp->isHumanSyncOn()){
     solveWholeBodyCOMIK( hsp->rp_ref_out.getP("com"), hsp->rp_ref_out.getP("rf"), hsp->rp_ref_out.getP("lf"), hsp->rp_ref_out.getP("rh"), hsp->rp_ref_out.getP("lh"), hsp->cam_rpy_filtered );
@@ -1278,90 +1273,81 @@ void AutoBalancer::solveLimbIK ()
 	  }
   }
   if (gg_is_walking && !gg_solved) stopWalking ();
-
-
-
-
-
-
-  ////////////////////  逆動力学補償テスト  /////////////////////
-//  //  for(int i=0;i<m_robot->numLinks();i++)cout<<"m_robot->link("<<i<<")->name: "<<m_robot->link(i)->name<<endl;
-//  static std::vector<double> q,q_old,dq,dq_old,ddq,ddq_f;
-//  static hrp::Vector3 base_acc(0,0,0),base_pos(0,0,0),base_pos_old(0,0,0),base_vel(0,0,0),base_vel_old(0,0,0);
-//
-//  static bool first = true;
-//  if(first){
-//    q.resize(m_robot->numJoints());
-//    q_old.resize(m_robot->numJoints());
-//    dq.resize(m_robot->numJoints());
-//    dq_old.resize(m_robot->numJoints());
-//    ddq.resize(m_robot->numJoints());
-//    ddq_f.resize(m_robot->numJoints(),0);
-//    for(int i=0;i<m_robot->numJoints();i++)q[i] = m_robot->joint(i)->q;
-//    q_old=q;
-//    for(int i=0;i<m_robot->numJoints();i++)dq[i] = (q[i] - q_old[i])/m_dt;
-//    dq_old=dq;
-//    first=false;
-//  }
-//
-//  for(int i=0;i<m_robot->numJoints();i++)q[i] = m_robot->joint(i)->q;
-//  for(int i=0;i<m_robot->numJoints();i++)dq[i] = (q[i] - q_old[i])/m_dt;
-//  for(int i=0;i<m_robot->numJoints();i++)ddq[i] = (dq[i] - dq_old[i])/m_dt;
-//  q_old = q;
-//  dq_old = dq;
-//  for(int i=0;i<m_robot->numJoints();i++)m_robot->joint(i)->dq = dq[i];
-//
-//  for(int i=0;i<m_robot->numJoints();i++)ddq_f[i] = 0.99*ddq_f[i] + 0.01*ddq[i];
-//  for(int i=0;i<m_robot->numJoints();i++)m_robot->joint(i)->ddq = ddq_f[i];
-//
-//base_pos = m_robot->rootLink()->p;
-//  base_vel = (base_pos - base_pos_old)/m_dt;
-//  base_acc = 0.99*base_acc + 0.01*(base_vel - base_vel_old)/m_dt;
-//  base_pos_old = base_pos;
-//  base_vel_old = base_vel;
-//
-////    cout<<"m_robot->link(\"RLEG_JOINT1\")->ddq: "<<m_robot->link("RLEG_JOINT1")->ddq<<endl;
-////    cout<<"m_robot->link(\"RLEG_JOINT1\")->dq: "<<m_robot->link("RLEG_JOINT1")->dq<<endl;
-////    cout<<"m_robot->link(\"RLEG_JOINT1\")->q: "<<m_robot->link("RLEG_JOINT1")->q<<endl;
-//
-//  m_robot->calcForwardKinematics(true,true);
-//
-//    static hrp::Vector3 fff,ttt;
-//    m_robot->calcInverseDynamics(m_robot->rootLink(),fff,ttt);
-//    hrp::Vector3 g(0,0,9.80665);
-////    m_robot->rootLink()->dvo = base_acc;
-//    cout<<"m_robot->rootLink()->dvo\n"<<m_robot->rootLink()->dvo<<endl;
-//    cout<<"m_robot->rootLink()->dw\n"<<m_robot->rootLink()->dw<<endl;
-//
-//    cout<<"calcInverseDynamics["<<loop<<"]\nfff\n"<<fff<<"\nttt\n"<<ttt<<endl;
-//    static hrp::Vector3 fff_f = hrp::Vector3::Zero(),ttt_f = hrp::Vector3::Zero();
-////    fff_f = 0.99*fff_f + 0.01*fff;
-////    ttt_f = 0.99*ttt_f + 0.01*ttt;
-//    //    fff_f = 0.95*fff_f + 0.05*fff;
-//    //    ttt_f = 0.95*ttt_f + 0.05*ttt;
-//        fff_f =fff;
-//        ttt_f =ttt;
-//
-//    hrp::Vector3 ppp,lll;
-//
-//    m_robot->calcTotalMomentum(ppp,lll);
-//    cout<<"calcTotalMomentum\nppp\n"<<ppp<<"\nlll\n"<<lll<<endl;
-//
-////    ref_zmp(0) += ( - 0*ppp(0)*m_robot->calcCM()(2) - lll(1))/(m_robot->totalMass()*9.8);
-////    ref_zmp(1) += ( - 0*ppp(1)*m_robot->calcCM()(2) - lll(0))/(m_robot->totalMass()*9.8);
-////      ref_zmp(0) += ( - fff_f(0)*m_robot->calcCM()(2)*0 + ttt_f(1))/(m_robot->totalMass()*9.8)*1;
-////      ref_zmp(1) += ( - fff_f(1)*m_robot->calcCM()(2)*0 - ttt_f(0))/(m_robot->totalMass()*9.8)*1;
-//
-////    if(hsp->sr_log!=NULL)fprintf(hsp->sr_log,"%f %f %f %f %f\n",m_robot->link("WAIST")->p(0),fff(0),ttt(0),ppp(0),lll(0));
-//    if(hsp->sr_log!=NULL)fprintf(hsp->sr_log,"%f %f %f %f %f %f %f\n",(hrp::rpyFromRot(m_robot->link("WAIST")->R)(0))*100,fff_f(1),ttt_f(0),ppp(1),lll(0),ref_zmp(1)*1000,m_dt);
-
-    ////////////////////  逆動力学補償テスト  /////////////////////
-
-
-
-
-
 }
+
+
+void AutoBalancer::solveWholeBodyID(const hrp::BodyPtr robot, hrp::Vector3& f_ans, hrp::Vector3& t_ans)
+{
+  if(!idp.is_initialized){   // Initialization at once
+    idp.q.resize(m_robot->numJoints());
+    idp.q_old = idp.q_oldold = idp.dq = idp.ddq = idp.ddq_filtered = idp.q;
+    for(int i=0;i<m_robot->numJoints();i++)idp.q[i] = m_robot->joint(i)->q;
+    idp.q_oldold = idp.q_old = idp.q;
+    idp.ddq_filter.resize(m_robot->numJoints());
+    idp.base_dv_filter.resize(3);
+    idp.base_dw_filter.resize(3);
+    idp.filter_fc = 1/m_dt/10;// Theoretical sampling noise frequency is HZ/2
+    //set up filters
+    std::vector<double> fb_coeffs(3), ff_coeffs(3);
+    const double fc = tan(idp.filter_fc * M_PI * m_dt) / (2 * M_PI);
+    const double denom = 1 + (2 * sqrt(2) * M_PI * fc) + 4 * M_PI * M_PI * fc*fc;
+    ff_coeffs[0] = (4 * M_PI * M_PI * fc*fc) / denom;
+    ff_coeffs[1] = (8 * M_PI * M_PI * fc*fc) / denom;
+    ff_coeffs[2] = (4 * M_PI * M_PI * fc*fc) / denom;
+    fb_coeffs[0] = 1.0;
+    fb_coeffs[1] = (8 * M_PI * M_PI * fc*fc - 2) / denom;
+    fb_coeffs[2] = (1 - (2 * sqrt(2) * M_PI * fc) + 4 * M_PI * M_PI * fc*fc) / denom;
+    for(int i=0;i<m_robot->numJoints();i++)idp.ddq_filter[i].setParameter(2,fb_coeffs,ff_coeffs);
+    for(int i=0;i<3;i++)idp.base_dv_filter[i].setParameter(2,fb_coeffs,ff_coeffs);
+    for(int i=0;i<3;i++)idp.base_dw_filter[i].setParameter(2,fb_coeffs,ff_coeffs);
+    idp.is_initialized = true;
+  }
+  // set joint velocity and acceleration
+  for(int i=0;i<m_robot->numJoints();i++)idp.q(i) = m_robot->joint(i)->q;
+  idp.dq = (idp.q - idp.q_old) / m_dt;
+  idp.ddq = (idp.q - 2 * idp.q_old + idp.q_oldold) / (m_dt * m_dt);
+  for(int i=0;i<m_robot->numJoints();i++)idp.ddq_filtered[i] = idp.ddq_filter[i].passFilter(idp.ddq[i]);
+  idp.q_oldold = idp.q_old;
+  idp.q_old = idp.q;
+  for(int i=0;i<m_robot->numJoints();i++)m_robot->joint(i)->dq = idp.dq(i);
+  for(int i=0;i<m_robot->numJoints();i++)m_robot->joint(i)->ddq = idp.ddq_filtered(i);
+  // set base link velocity and acceleration
+  const hrp::Vector3 g(0,0,9.80665);
+  idp.base_p = m_robot->rootLink()->p;
+  idp.base_v = (idp.base_p - idp.base_p_old) / m_dt;
+  idp.base_dv = g + (idp.base_p - 2 * idp.base_p_old + idp.base_p_oldold) / (m_dt * m_dt);
+  for(int i=0;i<3;i++)idp.base_dv_filtered[i] = idp.base_dv_filter[i].passFilter(idp.base_dv[i]);
+  idp.base_p_oldold = idp.base_p_old;
+  idp.base_p_old = idp.base_p;
+  // set base link angle velocity and angle acceleration
+  idp.base_R =  m_robot->rootLink()->R;
+  idp.base_dR = (idp.base_R - idp.base_R_old) / m_dt;
+  idp.base_w_hat = idp.base_dR * idp.base_R.transpose();
+  idp.base_w = hrp::Vector3(idp.base_w_hat(2,1), - idp.base_w_hat(0,2), idp.base_w_hat(1,0));
+  idp.base_dw = (idp.base_w - idp.base_w_old) / m_dt;
+  for(int i=0;i<3;i++)idp.base_dw_filtered[i] = idp.base_dw_filter[i].passFilter(idp.base_w[i]);
+  idp.base_R_old = idp.base_R;
+  idp.base_w_old = idp.base_w;
+  // set as spacial velocity and acceleration
+  m_robot->rootLink()->vo = idp.base_v - idp.base_w.cross(idp.base_p);
+//  static hrp::Vector3 vo_old; m_robot->rootLink()->dvo = g + (m_robot->rootLink()->vo - vo_old)/m_dt; vo_old = m_robot->rootLink()->vo; // calc from increments
+  m_robot->rootLink()->dvo = idp.base_dv_filtered - idp.base_dw_filtered.cross(idp.base_p) - idp.base_w.cross(idp.base_v); // calc from differential
+  m_robot->rootLink()->w = idp.base_w;
+  m_robot->rootLink()->dw = idp.base_dw_filtered;
+
+  m_robot->calcForwardKinematics(true,true);// calc every link's acc and vel
+  m_robot->calcInverseDynamics(m_robot->rootLink(),f_ans,t_ans);// this returns f,t at the coordinate origin !! (not at base link pos)
+
+  hrp::Vector3 zmp4;
+  zmp4(0) = - t_ans(1)/f_ans(2);
+  zmp4(1) = t_ans(0)/f_ans(2);
+
+  fprintf(hsp->id_log,"com: %f %f ",m_robot->calcCM()(0),m_robot->calcCM()(1));
+  fprintf(hsp->id_log,"ref_zmp: %f %f ",ref_zmp(0),ref_zmp(1));
+  fprintf(hsp->id_log,"id_zmp4: %f %f ",zmp4(0),zmp4(1));
+  fprintf(hsp->id_log,"\n");
+}
+
 
 /*
   RTC::ReturnCode_t AutoBalancer::onAborting(RTC::UniqueId ec_id)
