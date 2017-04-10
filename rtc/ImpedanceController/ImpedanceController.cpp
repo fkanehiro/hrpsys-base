@@ -259,9 +259,6 @@ RTC::ReturnCode_t ImpedanceController::onInitialize()
         }
     }
 
-    otd = boost::shared_ptr<ObjectTurnaroundDetector>(new ObjectTurnaroundDetector(m_dt));
-    otd->setPrintStr(std::string(m_profile.instance_name));
-
     // allocate memory for outPorts
     m_q.data.length(dof);
     qrefv.resize(dof);
@@ -354,81 +351,16 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
 
         Guard guard(m_mutex);
 
-        bool is_active = false;
-        for ( std::map<std::string, ImpedanceParam>::iterator it = m_impedance_param.begin(); it != m_impedance_param.end(); it++ ) {
-            is_active = is_active || it->second.is_active;
-        }
-        if ( !is_active ) {
-          for ( unsigned int i = 0; i < m_qRef.data.length(); i++ ){
-            m_q.data[i] = m_qRef.data[i];
-            m_robot->joint(i)->q = m_qRef.data[i];
-          }
-          m_qOut.write();
-          return RTC_OK;
-        }
-
 	{
+          // Store current robot state
 	  hrp::dvector qorg(m_robot->numJoints());
-	  
-	  // reference model
 	  for ( unsigned int i = 0; i < m_robot->numJoints(); i++ ){
 	    qorg[i] = m_robot->joint(i)->q;
-            m_robot->joint(i)->q = m_qRef.data[i];
-            qrefv[i] = m_qRef.data[i];
-	  }
-          m_robot->rootLink()->p = hrp::Vector3(m_basePos.data.x, m_basePos.data.y, m_basePos.data.z);
-          m_robot->rootLink()->R = hrp::rotFromRpy(m_baseRpy.data.r, m_baseRpy.data.p, m_baseRpy.data.y);
-          m_robot->calcForwardKinematics();
-          if ( (ee_map.find("rleg") != ee_map.end() && ee_map.find("lleg") != ee_map.end()) // if legged robot
-               && !use_sh_base_pos_rpy ) {
-              // TODO
-              //  Tempolarily modify root coords to fix foot pos rot
-              //  This will be removed after seq outputs adequate waistRPY discussed in https://github.com/fkanehiro/hrpsys-base/issues/272
-
-              // get current foot mid pos + rot
-              std::vector<hrp::Vector3> foot_pos;
-              std::vector<hrp::Matrix33> foot_rot;
-              std::vector<std::string> leg_names;
-              leg_names.push_back("rleg");
-              leg_names.push_back("lleg");
-              for (size_t i = 0; i < leg_names.size(); i++) {
-                  hrp::Link* target_link = m_robot->link(ee_map[leg_names[i]].target_name);
-                  foot_pos.push_back(target_link->p + target_link->R * ee_map[leg_names[i]].localPos);
-                  foot_rot.push_back(target_link->R * ee_map[leg_names[i]].localR);
-              }
-              hrp::Vector3 current_foot_mid_pos ((foot_pos[0]+foot_pos[1])/2.0);
-              hrp::Matrix33 current_foot_mid_rot;
-              rats::mid_rot(current_foot_mid_rot, 0.5, foot_rot[0], foot_rot[1]);
-              // calculate fix pos + rot
-              hrp::Vector3 new_foot_mid_pos(current_foot_mid_pos);
-              hrp::Matrix33 new_foot_mid_rot;
-              {
-                  hrp::Vector3 ex = hrp::Vector3::UnitX();
-                  hrp::Vector3 ez = hrp::Vector3::UnitZ();
-                  hrp::Vector3 xv1 (current_foot_mid_rot * ex);
-                  xv1(2) = 0.0;
-                  xv1.normalize();
-                  hrp::Vector3 yv1(ez.cross(xv1));
-                  new_foot_mid_rot(0,0) = xv1(0); new_foot_mid_rot(1,0) = xv1(1); new_foot_mid_rot(2,0) = xv1(2);
-                  new_foot_mid_rot(0,1) = yv1(0); new_foot_mid_rot(1,1) = yv1(1); new_foot_mid_rot(2,1) = yv1(2);
-                  new_foot_mid_rot(0,2) = ez(0); new_foot_mid_rot(1,2) = ez(1); new_foot_mid_rot(2,2) = ez(2);
-              }
-              // fix root pos + rot to fix "coords" = "current_foot_mid_xx"
-              hrp::Matrix33 tmpR (new_foot_mid_rot * current_foot_mid_rot.transpose());
-              m_robot->rootLink()->p = new_foot_mid_pos + tmpR * (m_robot->rootLink()->p - current_foot_mid_pos);
-              rats::rotm3times(m_robot->rootLink()->R, tmpR, m_robot->rootLink()->R);
-              m_robot->calcForwardKinematics();
           }
+          // Get target parameters mainly from SequencePlayer
+          getTargetParameters();
+          // Calculate act/ref absolute force/moment
           calcForceMoment();
-
-	  // set sequencer position to target_p0
-	  for ( std::map<std::string, ImpedanceParam>::iterator it = m_impedance_param.begin(); it != m_impedance_param.end(); it++ ) {
-            ImpedanceParam& param = it->second;
-            std::string target_name = ee_map[it->first].target_name;
-            param.target_p0 = m_robot->link(target_name)->p + m_robot->link(target_name)->R * ee_map[it->first].localPos;
-            param.target_r0 = m_robot->link(target_name)->R * ee_map[it->first].localR;
-            if (param.transition_count == -MAX_TRANSITION_COUNT) param.resetPreviousTargetParam();
-          }
           // back to impedance robot model (only for controlled joint)
 	  for ( std::map<std::string, ImpedanceParam>::iterator it = m_impedance_param.begin(); it != m_impedance_param.end(); it++ ) {
             ImpedanceParam& param = it->second;
@@ -443,70 +375,24 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
 
 	}
 
-	// set m_robot to qRef when deleting status
-        std::map<std::string, ImpedanceParam>::iterator it = m_impedance_param.begin();
-	while(it != m_impedance_param.end()){
-            ImpedanceParam& param = it->second;
-            if (param.is_active) {
-                if (DEBUGP) {
-                  std::cerr << "[" << m_profile.instance_name << "] impedance mode " << it->first << " transition count = " << param.transition_count << ", ";
-                  std::cerr << "MDK = " << param.M_p << " " << param.D_p << " " << param.K_p << ", ";
-                  std::cerr << "MDK = " << param.M_r << " " << param.D_r << " " << param.K_r << ", ";
-                  std::cerr << "ref_force = " << param.ref_force[0] << " " << param.ref_force[1] << " " << param.ref_force[2] << ", ";
-                  std::cerr << "ref_moment = " << param.ref_moment[0] << " " << param.ref_moment[1] << " " << param.ref_moment[2] << std::endl;
-                }
-                if ( param.transition_count > 0 ) {
-                    hrp::JointPathExPtr manip = param.manip;
-                    for ( unsigned int j = 0; j < manip->numJoints(); j++ ) {
-                        int i = manip->joint(j)->jointId; // index in robot model
-                        hrp::Link* joint =  m_robot->joint(i);
-                        // transition_smooth_gain moves from 0 to 1
-                        // (/ (log (/ (- 1 0.99) 0.99)) 0.5)
-                        double transition_smooth_gain = 1/(1+exp(-9.19*((static_cast<double>(MAX_TRANSITION_COUNT - param.transition_count) / MAX_TRANSITION_COUNT) - 0.5)));
-                        joint->q = ( m_qRef.data[i] - param.transition_joint_q[i] ) * transition_smooth_gain + param.transition_joint_q[i];
-                    }
-                    param.transition_count--;
-                    if(param.transition_count <= 0){ // erase impedance param
-                        std::cerr << "[" << m_profile.instance_name << "] Finished cleanup and erase impedance param " << it->first << std::endl;
-                        param.is_active = false;
-                    }
-                } else {
-                    // use impedance model
+        // Check if all limb is non-is_active mode.
+        bool is_active = false;
+        for ( std::map<std::string, ImpedanceParam>::iterator it = m_impedance_param.begin(); it != m_impedance_param.end(); it++ ) {
+            is_active = is_active || it->second.is_active;
+        }
+        if ( !is_active ) {
+          for ( unsigned int i = 0; i < m_qRef.data.length(); i++ ){
+            m_q.data[i] = m_qRef.data[i];
+            m_robot->joint(i)->q = m_qRef.data[i];
+          }
+          m_qOut.write();
+          return RTC_OK;
+        }
 
-                    hrp::Link* target = m_robot->link(ee_map[it->first].target_name);
-                    assert(target);
-                    param.current_p1 = target->p + target->R * ee_map[it->first].localPos;
-                    param.current_r1 = target->R * ee_map[it->first].localR;
-                    if (param.transition_count == -MAX_TRANSITION_COUNT) param.resetPreviousCurrentParam();
+        // Caculate ImpedanceControl and solve IK
+        calcImpedanceControl();
 
-                    hrp::Vector3 vel_p, vel_r;
-                    //std::cerr << "MDK = " << param.M_p << " " << param.D_p << " " << param.K_p << std::endl;
-                    //std::cerr << "MDK = " << param.M_r << " " << param.D_r << " " << param.K_r << std::endl;
-                    // std::cerr << "ref_force = " << param.ref_force[0] << " " << param.ref_force[1] << " " << param.ref_force[2] << std::endl;
-                    // std::cerr << "ref_moment = " << param.ref_moment[0] << " " << param.ref_moment[1] << " " << param.ref_moment[2] << std::endl;
-
-                    // ref_force/ref_moment and force_gain/moment_gain are expressed in global coordinates. 
-                    hrp::Matrix33 eeR = target->R * ee_map[it->first].localR;
-                    hrp::Vector3 force_diff = abs_forces[it->second.sensor_name] - abs_ref_forces[it->second.sensor_name];
-                    hrp::Vector3 moment_diff = abs_moments[it->second.sensor_name] - abs_ref_moments[it->second.sensor_name];
-                    param.calcTargetVelocity(vel_p, vel_r, eeR, force_diff, moment_diff, m_dt,
-                                             DEBUGP, std::string(m_profile.instance_name), it->first);
-
-                    // Solve ik
-                    hrp::JointPathExPtr manip = param.manip;
-                    assert(manip);
-                    //const int n = manip->numJoints();
-                    manip->calcInverseKinematics2Loop(param.getOutputPos(), param.getOutputRot(), 1.0, param.avoid_gain, param.reference_gain, &qrefv, 1.0,
-                                                      ee_map[it->first].localPos, ee_map[it->first].localR);
-
-                    if ( param.transition_count < 0 ) {
-                        param.transition_count++;
-                    }
-                } // else
-            }
-            it++;
-        } // while
-
+        // Output
         if ( m_q.data.length() != 0 ) { // initialized
             for ( unsigned int i = 0; i < m_robot->numJoints(); i++ ){
                 m_q.data[i] = m_robot->joint(i)->q;
@@ -520,9 +406,6 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
                 std::cerr << std::endl;
             }
         }
-
-        if (ee_map.find("rleg") != ee_map.end() && ee_map.find("lleg") != ee_map.end()) // if legged robot
-            calcObjectTurnaroundDetectorState();
     } else {
         if ( DEBUGP || loop % 100 == 0 ) {
             std::cerr << "ImpedanceController is not working..." << std::endl;
@@ -568,19 +451,67 @@ RTC::ReturnCode_t ImpedanceController::onExecute(RTC::UniqueId ec_id)
   }
 */
 
-void ImpedanceController::calcFootMidCoords (hrp::Vector3& new_foot_mid_pos, hrp::Matrix33& new_foot_mid_rot)
+void ImpedanceController::getTargetParameters ()
 {
-  std::vector<hrp::Vector3> foot_pos;
-  std::vector<hrp::Matrix33> foot_rot;
-  std::vector<std::string> leg_names = boost::assign::list_of("rleg")("lleg");
-  for (size_t i = 0; i < leg_names.size(); i++) {
-    hrp::Link* target_link = m_robot->link(ee_map[leg_names[i]].target_name);
-    foot_pos.push_back(target_link->p + target_link->R * ee_map[leg_names[i]].localPos);
-    foot_rot.push_back(target_link->R * ee_map[leg_names[i]].localR);
-  }
-  new_foot_mid_pos = (foot_pos[0]+foot_pos[1])/2.0;
-  rats::mid_rot(new_foot_mid_rot, 0.5, foot_rot[0], foot_rot[1]);
-}
+    // Get reference robot state
+    for ( unsigned int i = 0; i < m_robot->numJoints(); i++ ){
+        m_robot->joint(i)->q = m_qRef.data[i];
+        qrefv[i] = m_qRef.data[i];
+    }
+    m_robot->rootLink()->p = hrp::Vector3(m_basePos.data.x, m_basePos.data.y, m_basePos.data.z);
+    m_robot->rootLink()->R = hrp::rotFromRpy(m_baseRpy.data.r, m_baseRpy.data.p, m_baseRpy.data.y);
+    m_robot->calcForwardKinematics();
+    // Fix leg for legged robot
+    if ( (ee_map.find("rleg") != ee_map.end() && ee_map.find("lleg") != ee_map.end()) // if legged robot
+         && !use_sh_base_pos_rpy ) {
+        // TODO
+        //  Tempolarily modify root coords to fix foot pos rot
+        //  This will be removed after seq outputs adequate waistRPY discussed in https://github.com/fkanehiro/hrpsys-base/issues/272
+
+        // get current foot mid pos + rot
+        std::vector<hrp::Vector3> foot_pos;
+        std::vector<hrp::Matrix33> foot_rot;
+        std::vector<std::string> leg_names;
+        leg_names.push_back("rleg");
+        leg_names.push_back("lleg");
+        for (size_t i = 0; i < leg_names.size(); i++) {
+            hrp::Link* target_link = m_robot->link(ee_map[leg_names[i]].target_name);
+            foot_pos.push_back(target_link->p + target_link->R * ee_map[leg_names[i]].localPos);
+            foot_rot.push_back(target_link->R * ee_map[leg_names[i]].localR);
+        }
+        hrp::Vector3 current_foot_mid_pos ((foot_pos[0]+foot_pos[1])/2.0);
+        hrp::Matrix33 current_foot_mid_rot;
+        rats::mid_rot(current_foot_mid_rot, 0.5, foot_rot[0], foot_rot[1]);
+        // calculate fix pos + rot
+        hrp::Vector3 new_foot_mid_pos(current_foot_mid_pos);
+        hrp::Matrix33 new_foot_mid_rot;
+        {
+            hrp::Vector3 ex = hrp::Vector3::UnitX();
+            hrp::Vector3 ez = hrp::Vector3::UnitZ();
+            hrp::Vector3 xv1 (current_foot_mid_rot * ex);
+            xv1(2) = 0.0;
+            xv1.normalize();
+            hrp::Vector3 yv1(ez.cross(xv1));
+            new_foot_mid_rot(0,0) = xv1(0); new_foot_mid_rot(1,0) = xv1(1); new_foot_mid_rot(2,0) = xv1(2);
+            new_foot_mid_rot(0,1) = yv1(0); new_foot_mid_rot(1,1) = yv1(1); new_foot_mid_rot(2,1) = yv1(2);
+            new_foot_mid_rot(0,2) = ez(0); new_foot_mid_rot(1,2) = ez(1); new_foot_mid_rot(2,2) = ez(2);
+        }
+        // fix root pos + rot to fix "coords" = "current_foot_mid_xx"
+        hrp::Matrix33 tmpR (new_foot_mid_rot * current_foot_mid_rot.transpose());
+        m_robot->rootLink()->p = new_foot_mid_pos + tmpR * (m_robot->rootLink()->p - current_foot_mid_pos);
+        rats::rotm3times(m_robot->rootLink()->R, tmpR, m_robot->rootLink()->R);
+        m_robot->calcForwardKinematics();
+    }
+
+    // Set sequencer position and orientation to target_p0 and target_r0
+    for ( std::map<std::string, ImpedanceParam>::iterator it = m_impedance_param.begin(); it != m_impedance_param.end(); it++ ) {
+        ImpedanceParam& param = it->second;
+        std::string target_name = ee_map[it->first].target_name;
+        param.target_p0 = m_robot->link(target_name)->p + m_robot->link(target_name)->R * ee_map[it->first].localPos;
+        param.target_r0 = m_robot->link(target_name)->R * ee_map[it->first].localR;
+        if (param.transition_count == -MAX_TRANSITION_COUNT) param.resetPreviousTargetParam();
+    }
+};
 
 void ImpedanceController::calcForceMoment ()
 {
@@ -617,11 +548,7 @@ void ImpedanceController::calcForceMoment ()
           }
           abs_forces[sensor_name] = sensorR * data_p;
           for ( std::map<std::string, ImpedanceParam>::iterator it = m_impedance_param.begin(); it != m_impedance_param.end(); it++ ) {
-              if ( it->second.sensor_name == sensor_name ) {
-                  std::string ee_name = it->first;
-                  hrp::Link* target_link = m_robot->link(ee_map[ee_name].target_name);
-                  eePos = target_link->p + target_link->R * ee_map[ee_name].localPos;
-              }
+              if ( it->second.sensor_name == sensor_name ) eePos = it->second.target_p0;
           }
           abs_moments[sensor_name] = sensorR * data_r + (sensorPos - eePos).cross(abs_forces[sensor_name]);
           // End effector local frame
@@ -641,52 +568,72 @@ void ImpedanceController::calcForceMoment ()
       }
 };
 
-void ImpedanceController::calcObjectTurnaroundDetectorState()
+void ImpedanceController::calcImpedanceControl ()
 {
-    // TODO
-    // Currently only for legged robots
-    // Store org state
-    hrp::dvector org_q(m_robot->numJoints());
-    for ( unsigned int i = 0; i < m_robot->numJoints(); i++ ) {
-        org_q[i] = m_robot->joint(i)->q;
-    }
-    hrp::Matrix33 orgR = m_robot->rootLink()->R;
-    // Set actual state
-    for ( unsigned int i = 0; i < m_robot->numJoints(); i++ ) {
-        m_robot->joint(i)->q = m_qCurrent.data[i];
-    }
-    updateRootLinkPosRot(m_rpy);
-    // Calc
-    std::vector<hrp::Vector3> otd_fmv, otd_hposv;
-    hrp::Vector3 fmpos;
-    hrp::Matrix33 fmrot, fmrotT;
-    calcFootMidCoords(fmpos, fmrot);
-    fmrotT = fmrot.transpose();
-    for (unsigned int i=0; i<m_forceIn.size(); i++) {
-        std::string sensor_name = m_forceIn[i]->name();
-        if ( find(otd_sensor_names.begin(), otd_sensor_names.end(), sensor_name) != otd_sensor_names.end() ) {
-            hrp::ForceSensor* sensor = m_robot->sensor<hrp::ForceSensor>(sensor_name);
-            hrp::Vector3 data_p(m_force[i].data[0], m_force[i].data[1], m_force[i].data[2]);
-            hrp::Vector3 data_r(m_force[i].data[3], m_force[i].data[4], m_force[i].data[5]);
-            hrp::Matrix33 sensorR = sensor->link->R * sensor->localR;
-            otd_fmv.push_back(fmrotT*(sensorR*data_p));
-            hrp::Vector3 eePos;
-            for ( std::map<std::string, ImpedanceParam>::iterator it = m_impedance_param.begin(); it != m_impedance_param.end(); it++ ) {
-                if ( it->second.sensor_name == sensor_name ) {
-                    ee_trans& eet = ee_map[it->first];
-                    hrp::Link* target_link = m_robot->link(eet.target_name);
-                    eePos = fmrotT * (target_link->p + target_link->R * eet.localPos - fmpos);
-                }
+    std::map<std::string, ImpedanceParam>::iterator it = m_impedance_param.begin();
+    while(it != m_impedance_param.end()){
+        ImpedanceParam& param = it->second;
+        if (param.is_active) {
+            if (DEBUGP) {
+                std::cerr << "[" << m_profile.instance_name << "] impedance mode " << it->first << " transition count = " << param.transition_count << ", ";
+                std::cerr << "MDK = " << param.M_p << " " << param.D_p << " " << param.K_p << ", ";
+                std::cerr << "MDK = " << param.M_r << " " << param.D_r << " " << param.K_r << ", ";
+                std::cerr << "ref_force = " << param.ref_force[0] << " " << param.ref_force[1] << " " << param.ref_force[2] << ", ";
+                std::cerr << "ref_moment = " << param.ref_moment[0] << " " << param.ref_moment[1] << " " << param.ref_moment[2] << std::endl;
             }
-            otd_hposv.push_back(eePos);
+            if ( param.transition_count > 0 ) {
+                // set m_robot to qRef when deleting status
+                hrp::JointPathExPtr manip = param.manip;
+                // transition_smooth_gain moves from 0 to 1
+                // (/ (log (/ (- 1 0.99) 0.99)) 0.5)
+                double transition_smooth_gain = 1/(1+exp(-9.19*((static_cast<double>(MAX_TRANSITION_COUNT - param.transition_count) / MAX_TRANSITION_COUNT) - 0.5)));
+                for ( unsigned int j = 0; j < manip->numJoints(); j++ ) {
+                    int i = manip->joint(j)->jointId; // index in robot model
+                    hrp::Link* joint =  m_robot->joint(i);
+                    joint->q = ( m_qRef.data[i] - param.transition_joint_q[i] ) * transition_smooth_gain + param.transition_joint_q[i];
+                }
+                // transition_count update
+                param.transition_count--;
+                if(param.transition_count <= 0){ // erase impedance param
+                    std::cerr << "[" << m_profile.instance_name << "] Finished cleanup and erase impedance param " << it->first << std::endl;
+                    param.is_active = false;
+                }
+            } else {
+                // use impedance model
+
+                hrp::Link* target = m_robot->link(ee_map[it->first].target_name);
+                assert(target);
+                param.current_p1 = target->p + target->R * ee_map[it->first].localPos;
+                param.current_r1 = target->R * ee_map[it->first].localR;
+                if (param.transition_count == -MAX_TRANSITION_COUNT) param.resetPreviousCurrentParam();
+
+                hrp::Vector3 vel_p, vel_r;
+                //std::cerr << "MDK = " << param.M_p << " " << param.D_p << " " << param.K_p << std::endl;
+                //std::cerr << "MDK = " << param.M_r << " " << param.D_r << " " << param.K_r << std::endl;
+                // std::cerr << "ref_force = " << param.ref_force[0] << " " << param.ref_force[1] << " " << param.ref_force[2] << std::endl;
+                // std::cerr << "ref_moment = " << param.ref_moment[0] << " " << param.ref_moment[1] << " " << param.ref_moment[2] << std::endl;
+
+                // ref_force/ref_moment and force_gain/moment_gain are expressed in global coordinates. 
+                hrp::Matrix33 eeR = target->R * ee_map[it->first].localR;
+                hrp::Vector3 force_diff = abs_forces[it->second.sensor_name] - abs_ref_forces[it->second.sensor_name];
+                hrp::Vector3 moment_diff = abs_moments[it->second.sensor_name] - abs_ref_moments[it->second.sensor_name];
+                param.calcTargetVelocity(vel_p, vel_r, eeR, force_diff, moment_diff, m_dt,
+                                         DEBUGP, std::string(m_profile.instance_name), it->first);
+
+                // Solve ik
+                hrp::JointPathExPtr manip = param.manip;
+                assert(manip);
+                //const int n = manip->numJoints();
+                manip->calcInverseKinematics2Loop(param.getOutputPos(), param.getOutputRot(), 1.0, param.avoid_gain, param.reference_gain, &qrefv, 1.0,
+                                                  ee_map[it->first].localPos, ee_map[it->first].localR);
+                // transition_count update
+                if ( param.transition_count < 0 ) {
+                    param.transition_count++;
+                }
+            } // else
         }
-    }
-    otd->checkDetection(otd_fmv, otd_hposv);
-    // Revert to org state
-    for ( unsigned int i = 0; i < m_robot->numJoints(); i++ ) {
-        m_robot->joint(i)->q = org_q[i];
-    }
-    m_robot->rootLink()->R = orgR;
+        it++;
+    } // while
 };
 
 //
@@ -858,103 +805,6 @@ void ImpedanceController::waitImpedanceControllerTransition(std::string i_name_)
       usleep(10);
     }
     return;
-}
-
-//
-// ObjectTurnaroundDetector
-//
-
-void ImpedanceController::startObjectTurnaroundDetection(const double i_ref_diff_wrench, const double i_max_time, const OpenHRP::ImpedanceControllerService::StrSequence& i_ee_names)
-{
-    otd->startDetection(i_ref_diff_wrench, i_max_time);
-    otd_sensor_names.clear();
-    for (size_t i = 0; i < i_ee_names.length(); i++) {
-        otd_sensor_names.push_back(m_impedance_param[std::string(i_ee_names[i])].sensor_name);
-    }
-}
-
-OpenHRP::ImpedanceControllerService::DetectorMode ImpedanceController::checkObjectTurnaroundDetection()
-{
-    OpenHRP::ImpedanceControllerService::DetectorMode tmpmode;
-    switch (otd->getMode()) {
-    case ObjectTurnaroundDetector::MODE_IDLE:
-        tmpmode = ImpedanceControllerService::MODE_DETECTOR_IDLE;
-        break;
-    case ObjectTurnaroundDetector::MODE_STARTED:
-        tmpmode = ImpedanceControllerService::MODE_STARTED;
-        break;
-    case ObjectTurnaroundDetector::MODE_DETECTED:
-        tmpmode = ImpedanceControllerService::MODE_DETECTED;
-        break;
-    case ObjectTurnaroundDetector::MODE_MAX_TIME:
-        tmpmode = ImpedanceControllerService::MODE_MAX_TIME;
-        break;
-    default:
-        tmpmode = ImpedanceControllerService::MODE_DETECTOR_IDLE;
-        break;
-    }
-    return tmpmode;
-}
-
-bool ImpedanceController::setObjectTurnaroundDetectorParam(const OpenHRP::ImpedanceControllerService::objectTurnaroundDetectorParam &i_param_)
-{
-    std::cerr << "[" << m_profile.instance_name << "] setObjectTurnaroundDetectorParam" << std::endl;
-    Guard guard(m_mutex);
-    otd->setWrenchCutoffFreq(i_param_.wrench_cutoff_freq);
-    otd->setDwrenchCutoffFreq(i_param_.dwrench_cutoff_freq);
-    otd->setDetectRatioThre(i_param_.detect_ratio_thre);
-    otd->setStartRatioThre(i_param_.start_ratio_thre);
-    otd->setDetectTimeThre(i_param_.detect_time_thre);
-    otd->setStartTimeThre(i_param_.start_time_thre);
-    hrp::Vector3 tmp;
-    for (size_t i = 0; i < 3; i++) tmp(i) = i_param_.axis[i];
-    otd->setAxis(tmp);
-    for (size_t i = 0; i < 3; i++) tmp(i) = i_param_.moment_center[i];
-    otd->setMomentCenter(tmp);
-    otd->setDetectorTotalWrench((i_param_.detector_total_wrench==OpenHRP::ImpedanceControllerService::TOTAL_FORCE)?ObjectTurnaroundDetector::TOTAL_FORCE:ObjectTurnaroundDetector::TOTAL_MOMENT);
-    otd->printParams();
-    return true;
-};
-
-bool ImpedanceController::getObjectTurnaroundDetectorParam(OpenHRP::ImpedanceControllerService::objectTurnaroundDetectorParam& i_param_)
-{
-    std::cerr << "[" << m_profile.instance_name << "] getObjectTurnaroundDetectorParam" << std::endl;
-    i_param_.wrench_cutoff_freq = otd->getWrenchCutoffFreq();
-    i_param_.dwrench_cutoff_freq = otd->getDwrenchCutoffFreq();
-    i_param_.detect_ratio_thre = otd->getDetectRatioThre();
-    i_param_.start_ratio_thre = otd->getStartRatioThre();
-    i_param_.detect_time_thre = otd->getDetectTimeThre();
-    i_param_.start_time_thre = otd->getStartTimeThre();
-    hrp::Vector3 tmp = otd->getAxis();
-    for (size_t i = 0; i < 3; i++) i_param_.axis[i] = tmp(i);
-    tmp = otd->getMomentCenter();
-    for (size_t i = 0; i < 3; i++) i_param_.moment_center[i] = tmp(i);
-    i_param_.detector_total_wrench = (otd->getDetectorTotalWrench()==ObjectTurnaroundDetector::TOTAL_FORCE)?OpenHRP::ImpedanceControllerService::TOTAL_FORCE:OpenHRP::ImpedanceControllerService::TOTAL_MOMENT;
-    return true;
-}
-
-bool ImpedanceController::getObjectForcesMoments(OpenHRP::ImpedanceControllerService::Dbl3Sequence_out o_forces, OpenHRP::ImpedanceControllerService::Dbl3Sequence_out o_moments, OpenHRP::ImpedanceControllerService::DblSequence3_out o_3dofwrench)
-{
-    std::cerr << "[" << m_profile.instance_name << "] getObjectForcesMoments" << std::endl;
-    if (otd_sensor_names.size() == 0) return false;
-    hrp::Vector3 tmpv = otd->getAxis() * otd->getFilteredWrench();
-    o_forces = new OpenHRP::ImpedanceControllerService::Dbl3Sequence ();
-    o_moments = new OpenHRP::ImpedanceControllerService::Dbl3Sequence ();
-    o_forces->length(otd_sensor_names.size());
-    o_moments->length(otd_sensor_names.size());
-    for (size_t i = 0; i < o_forces->length(); i++) o_forces[i].length(3);
-    for (size_t i = 0; i < o_moments->length(); i++) o_moments[i].length(3);
-    // Temp
-    for (size_t i = 0; i < otd_sensor_names.size(); i++) {
-        o_forces[i][0] = tmpv(0)/otd_sensor_names.size();
-        o_forces[i][1] = tmpv(1)/otd_sensor_names.size();
-        o_forces[i][2] = tmpv(2)/otd_sensor_names.size();
-        o_moments[i][0] = o_moments[i][1] = o_moments[i][2] = 0.0;
-    }
-    o_3dofwrench = new OpenHRP::ImpedanceControllerService::DblSequence3 ();
-    o_3dofwrench->length(3);
-    for (size_t i = 0; i < 3; i++) (*o_3dofwrench)[i] = tmpv(i);
-    return true;
 }
 
 extern "C"

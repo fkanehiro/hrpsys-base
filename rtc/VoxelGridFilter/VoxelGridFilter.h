@@ -134,6 +134,7 @@ class VoxelGridFilter
   // </rtc-template>
 
  private:
+  int m_debugLevel;
   int dummy;
   double m_size;
 };

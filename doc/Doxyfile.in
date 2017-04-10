@@ -469,6 +469,7 @@ INPUT		      =  @CMAKE_CURRENT_SOURCE_DIR@/package.h \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../python/hrpsys_config.py \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../python/rtm.py \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/AccelerationChecker \
+		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/ApproximateVoxelGridFilter \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/AutoBalancer \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/AverageFilter \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/Beeper \
@@ -492,11 +493,14 @@ INPUT		      =  @CMAKE_CURRENT_SOURCE_DIR@/package.h \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/MLSFilter \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/NullComponent \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/EmergencyStopper \
-		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/OGMap3DViewer \
+		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/ObjectContactTurnaroundDetector \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/OccupancyGridMap3D \
+		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/OGMap3DViewer \
+		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/OpenNIGrabber \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/PCDLoader \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/PDcontroller \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/PlaneRemover \
+		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/PointCloudViewer \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/RGB2Gray \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/Range2PointCloud \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/RangeDataViewer \

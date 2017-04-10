@@ -263,6 +263,11 @@ class HrpsysConfigurator(object):
     acf_svc = None
     acf_version = None
 
+    # ObjectContactTurnaroundDetector
+    octd = None
+    octd_svc = None
+    octd_version = None
+
     # rtm manager
     ms = None
 
@@ -484,7 +489,14 @@ class HrpsysConfigurator(object):
         if self.co:
             connectPorts(self.rh.port("q"), self.co.port("qCurrent"))
             connectPorts(self.rh.port("servoState"), self.co.port("servoStateIn"))
-
+        # connection for octd
+        if self.octd:
+            connectPorts(self.rh.port("q"), self.octd.port("qCurrent"))
+            if self.kf:
+                connectPorts(self.kf.port("rpy"), self.octd.port("rpy"))
+            if self.rmfo:
+                for sen in filter(lambda x: x.type == "Force", self.sensors):
+                    connectPorts(self.rmfo.port("off_" + sen.name), self.octd.port(sen.name))
 
         # connection for gc
         if self.gc:
@@ -729,6 +741,7 @@ class HrpsysConfigurator(object):
             ['kf', "KalmanFilter"],
             ['vs', "VirtualForceSensor"],
             ['rmfo', "RemoveForceSensorLinkOffset"],
+            ['octd', "ObjectContactTurnaroundDetector"],
             ['es', "EmergencyStopper"],
             ['rfu', "ReferenceForceUpdater"],
             ['ic', "ImpedanceController"],
@@ -1060,6 +1073,8 @@ class HrpsysConfigurator(object):
         @param jname str: name of joint
         @param angle float: In degree.
         @param tm float: Time to complete.
+        @rtype bool
+        @return False upon any problem during execution.
         '''
         radangle = angle / 180.0 * math.pi
         return self.seq_svc.setJointAngle(jname, radangle, tm)
@@ -1075,6 +1090,8 @@ class HrpsysConfigurator(object):
         \endverbatim
         @param angles list of float: In degree.
         @param tm float: Time to complete.
+        @rtype bool
+        @return False upon any problem during execution.
         '''
         ret = []
         for angle in angles:
@@ -1098,6 +1115,8 @@ class HrpsysConfigurator(object):
         @param tm float: Time to complete.
         @param wait bool: If true, all other subsequent commands wait until
                           the movement commanded by this method call finishes.
+        @rtype bool
+        @return False upon any problem during execution.
         '''
         angles = [x / 180.0 * math.pi for x in pose]
         ret = self.seq_svc.setJointAnglesOfGroup(gname, angles, tm)
@@ -1116,6 +1135,8 @@ class HrpsysConfigurator(object):
         \endverbatim
         @param sequential list of angles in float: In rad
         @param tm sequential list of time in float: Time to complete, In Second
+        @rtype bool
+        @return False upon any problem during execution.
         '''
         for angles in angless:
             for i in range(len(angles)):
@@ -1134,6 +1155,8 @@ class HrpsysConfigurator(object):
         @param gname str: Name of the joint group.
         @param sequential list of angles in float: In rad
         @param tm sequential list of time in float: Time to complete, In Second
+        @rtype bool
+        @return False upon any problem during execution.
         '''
         for angles in angless:
             for i in range(len(angles)):
@@ -1208,7 +1231,7 @@ class HrpsysConfigurator(object):
 
     def getCurrentPose(self, lname=None, frame_name=None):
         '''!@brief
-        Returns the current physical pose of the specified joint.
+        Returns the current physical pose of the specified joint in the joint space.
         cf. getReferencePose that returns commanded value.
 
         eg.
@@ -1261,7 +1284,7 @@ class HrpsysConfigurator(object):
 
     def getCurrentPosition(self, lname=None, frame_name=None):
         '''!@brief
-        Returns the current physical position of the specified joint.
+        Returns the current physical position of the specified joint in Cartesian space.
         cf. getReferencePosition that returns commanded value.
 
         eg.
@@ -1329,7 +1352,7 @@ class HrpsysConfigurator(object):
 
     def getReferencePose(self, lname, frame_name=None):
         '''!@brief
-        Returns the current commanded pose of the specified joint.
+        Returns the current commanded pose of the specified joint in the joint space.
         cf. getCurrentPose that returns physical pose.
 
         @type lname: str
@@ -1361,7 +1384,7 @@ class HrpsysConfigurator(object):
 
     def getReferencePosition(self, lname, frame_name=None):
         '''!@brief
-        Returns the current commanded position of the specified joint.
+        Returns the current commanded position of the specified joint in Cartesian space.
         cf. getCurrentPosition that returns physical value.
 
         @type lname: str
@@ -1680,7 +1703,7 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
         Get actual states of the robot that includes current reference joint angles and joint torques.
         @return: This returns actual states of the robot, which is defined in
         RobotHardware.idl
-        (https://github.com/fkanehiro/hrpsys-base/blob/master/idl/RobotHardwareService.idl#L33)
+        (found at https://github.com/fkanehiro/hrpsys-base/blob/3fd7671de5129101a4ade3f98e2eac39fd6b26c0/idl/RobotHardwareService.idl#L32_L57 as of version 315.11.0)
         \verbatim
             /**
              * @brief status of the robot

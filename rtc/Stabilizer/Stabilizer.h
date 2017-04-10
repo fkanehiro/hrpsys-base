@@ -123,6 +123,7 @@ class Stabilizer
   void getParameter(OpenHRP::StabilizerService::stParam& i_stp);
   void setParameter(const OpenHRP::StabilizerService::stParam& i_stp);
   void setBoolSequenceParam (std::vector<bool>& st_bool_values, const OpenHRP::StabilizerService::BoolSequence& output_bool_values, const std::string& prop_name);
+  void setBoolSequenceParamWithCheckContact (std::vector<bool>& st_bool_values, const OpenHRP::StabilizerService::BoolSequence& output_bool_values, const std::string& prop_name);
   std::string getStabilizerAlgorithmString (OpenHRP::StabilizerService::STAlgorithm _st_algorithm);
   void waitSTTransition();
   // funcitons for calc final torque output
@@ -144,6 +145,10 @@ class Stabilizer
   inline bool isContact (const size_t idx) // 0 = right, 1 = left
   {
     return (prev_act_force_z[idx] > 25.0);
+  };
+  inline int calcMaxTransitionCount ()
+  {
+      return (transition_time / dt);
   };
 
  protected:
@@ -277,12 +282,13 @@ class Stabilizer
   hrp::dvector transition_joint_q, qorg, qrefv;
   std::vector<STIKParam> stikp;
   std::map<std::string, size_t> contact_states_index_map;
-  std::vector<bool> contact_states, prev_contact_states, is_ik_enable, is_feedback_control_enable, is_zmp_calc_enable;
+  std::vector<bool> ref_contact_states, prev_ref_contact_states, act_contact_states, is_ik_enable, is_feedback_control_enable, is_zmp_calc_enable;
   std::vector<double> toeheel_ratio;
   double dt;
   int transition_count, loop;
   int m_is_falling_counter;
   std::vector<int> m_will_fall_counter;
+  int is_air_counter, detection_count_to_air;
   bool is_legged_robot, on_ground, is_emergency, is_seq_interpolating, reset_emergency_flag, eefm_use_force_difference_control, eefm_use_swing_damping, initial_cp_too_large_error, use_limb_stretch_avoidance;
   bool is_walking, is_estop_while_walking;
   hrp::Vector3 current_root_p, target_root_p;

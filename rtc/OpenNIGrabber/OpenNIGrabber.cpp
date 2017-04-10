@@ -28,7 +28,10 @@ static const char* spec[] =
     "language",          "C++",
     "lang_type",         "compile",
     // Configuration variables
-    "conf.default.mode", "depth",
+    "conf.default.outputColorImage", "0",
+    "conf.default.outputDepthImage", "0",
+    "conf.default.outputPointCloud", "0",
+    "conf.default.outputPointCloudRGBA", "0",
     "conf.default.debugLevel", "0",
 
     ""
@@ -40,8 +43,11 @@ OpenNIGrabber::OpenNIGrabber(RTC::Manager* manager)
     // <rtc-template block="initializer">
     m_cloudOut("cloud", m_cloud),
     m_imageOut("image", m_image),
+    m_depthOut("depth", m_depth),
     // </rtc-template>
     m_interface(NULL),
+    m_requestToWriteImage(false),
+    m_requestToWritePointCloud(false),
     dummy(0)
 {
 }
@@ -57,7 +63,10 @@ RTC::ReturnCode_t OpenNIGrabber::onInitialize()
   std::cout << m_profile.instance_name << ": onInitialize()" << std::endl;
   // <rtc-template block="bind_config">
   // Bind variables and configuration variable
-  bindParameter("mode", m_mode, "depth");
+  bindParameter("outputColorImage", m_outputColorImage, "0");
+  bindParameter("outputDepthImage", m_outputDepthImage, "0");
+  bindParameter("outputPointCloud", m_outputPointCloud, "0");
+  bindParameter("outputPointCloudRGBA", m_outputPointCloudRGBA, "0");
   bindParameter("debugLevel", m_debugLevel, "0");
   
   // </rtc-template>
@@ -69,6 +78,7 @@ RTC::ReturnCode_t OpenNIGrabber::onInitialize()
   // Set OutPort buffer
   addOutPort("cloudOut", m_cloudOut);
   addOutPort("imageOut", m_imageOut);
+  addOutPort("depthOut", m_depthOut);
   
   // Set service provider to Ports
   
@@ -84,38 +94,74 @@ RTC::ReturnCode_t OpenNIGrabber::onInitialize()
 }
 
 
-void OpenNIGrabber::grabberCallbackDepthAndColor(const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &cloud)
+void OpenNIGrabber::grabberCallbackColorImage(const boost::shared_ptr<pcl::io::Image>& image)
 {
-    m_cloud.width = cloud->width;
-    m_cloud.height = cloud->height;
-    m_cloud.row_step = m_cloud.point_step*m_cloud.width;
-    m_cloud.data.length(m_cloud.height*m_cloud.row_step);
+    if (!m_requestToWriteImage) return;
 
-    m_image.data.image.width = cloud->width;
-    m_image.data.image.height = cloud->height;
-    m_image.data.image.format = Img::CF_RGB;
-    m_image.data.image.raw_data.length(cloud->width*cloud->height*3);
+    outputColorImage(image);
 
-    float *dst_cloud = (float *)m_cloud.data.get_buffer();
-    unsigned char *dst_image = (unsigned char*)m_image.data.image.raw_data.get_buffer();
-    for (unsigned int i=0; i<cloud->points.size(); i++){
-        dst_cloud[0] = cloud->points[i].x;
-        dst_cloud[1] = cloud->points[i].y;
-        dst_cloud[2] = cloud->points[i].z;
-        dst_cloud[3] = cloud->points[i].rgb;
-        dst_cloud += 4;
+    m_requestToWriteImage = false;
+}
 
-        dst_image[0] = cloud->points[i].r;
-        dst_image[1] = cloud->points[i].g;
-        dst_image[2] = cloud->points[i].b;
-        dst_image += 3;
-    }
-    m_cloudOut.write();
+void OpenNIGrabber::outputColorImage(const boost::shared_ptr<pcl::io::Image>& image)
+{
+    setTimestamp(m_image);
+
+    Img::ImageData &id = m_image.data.image;
+    id.width = image->getWidth();
+    id.height = image->getHeight();
+    id.format = Img::CF_RGB;
+    id.raw_data.length(id.width*id.height*3);
+
+    unsigned char *dst = (unsigned char*)id.raw_data.get_buffer();
+    unsigned char *src = (unsigned char*)image->getData();
+    memcpy(dst, src, id.raw_data.length());
+
     m_imageOut.write();
 }
 
-void OpenNIGrabber::grabberCallbackDepth(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr &cloud)
+void OpenNIGrabber::grabberCallbackDepthImage(const boost::shared_ptr<pcl::io::DepthImage>& image)
 {
+    if (!m_requestToWriteImage) return;
+
+    outputDepthImage(image);
+
+    m_requestToWriteImage = false;
+}
+
+void OpenNIGrabber::outputDepthImage(const boost::shared_ptr<pcl::io::DepthImage>& image)
+{
+    setTimestamp(m_depth);
+
+    Img::ImageData &id = m_depth.data.image;
+    id.width = image->getWidth();
+    id.height = image->getHeight();
+    id.format = Img::CF_DEPTH;
+    id.raw_data.length(id.width*id.height*2);
+
+    unsigned char *dst = (unsigned char*)id.raw_data.get_buffer();
+    unsigned char *src = (unsigned char*)image->getData();
+    memcpy(dst, src, id.raw_data.length());
+
+    m_depthOut.write();
+}
+
+void OpenNIGrabber::grabberCallbackColorAndDepthImage(const boost::shared_ptr<pcl::io::Image>& image, const boost::shared_ptr<pcl::io::DepthImage>& depth, float reciprocalFocalLength)
+{
+    if (!m_requestToWriteImage) return;
+
+    outputColorImage(image);
+    outputDepthImage(depth);
+
+    m_requestToWriteImage = false;
+}
+
+void OpenNIGrabber::grabberCallbackPointCloudRGBA(const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &cloud)
+{
+    if (!m_requestToWritePointCloud) return;
+
+    setTimestamp(m_cloud);
+
     m_cloud.width = cloud->width;
     m_cloud.height = cloud->height;
     m_cloud.row_step = m_cloud.point_step*m_cloud.width;
@@ -123,12 +169,35 @@ void OpenNIGrabber::grabberCallbackDepth(const pcl::PointCloud<pcl::PointXYZ>::C
 
     float *dst_cloud = (float *)m_cloud.data.get_buffer();
     for (unsigned int i=0; i<cloud->points.size(); i++){
-        dst_cloud[0] = cloud->points[i].x;
-        dst_cloud[1] = cloud->points[i].y;
-        dst_cloud[2] = cloud->points[i].z;
+        dst_cloud[0] =  cloud->points[i].x;
+        dst_cloud[1] = -cloud->points[i].y;
+        dst_cloud[2] = -cloud->points[i].z;
+        dst_cloud[3] =  cloud->points[i].rgb;
         dst_cloud += 4;
     }
     m_cloudOut.write();
+    m_requestToWritePointCloud = false;
+}
+
+void OpenNIGrabber::grabberCallbackPointCloud(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr &cloud)
+{
+    if (!m_requestToWritePointCloud) return;
+
+    setTimestamp(m_cloud);
+    m_cloud.width = cloud->width;
+    m_cloud.height = cloud->height;
+    m_cloud.row_step = m_cloud.point_step*m_cloud.width;
+    m_cloud.data.length(m_cloud.height*m_cloud.row_step);
+
+    float *dst_cloud = (float *)m_cloud.data.get_buffer();
+    for (unsigned int i=0; i<cloud->points.size(); i++){
+        dst_cloud[0] =  cloud->points[i].x;
+        dst_cloud[1] = -cloud->points[i].y;
+        dst_cloud[2] = -cloud->points[i].z;
+        dst_cloud += 4;
+    }
+    m_cloudOut.write();
+    m_requestToWritePointCloud = false;
 }
 
 /*
@@ -159,7 +228,17 @@ RTC::ReturnCode_t OpenNIGrabber::onActivated(RTC::UniqueId ec_id)
   try {
       m_interface = new pcl::io::OpenNI2Grabber();
 
-      if (m_mode == "depth"){
+      if (m_outputColorImage && !m_outputDepthImage){
+          boost::function<void (const boost::shared_ptr<pcl::io::Image>&)> f = boost::bind(&OpenNIGrabber::grabberCallbackColorImage, this, _1);
+          m_interface->registerCallback(f);
+      }else if (!m_outputColorImage && m_outputDepthImage){
+          boost::function<void (const boost::shared_ptr<pcl::io::DepthImage>&)> f = boost::bind(&OpenNIGrabber::grabberCallbackDepthImage, this, _1);
+          m_interface->registerCallback(f);
+      }else if (m_outputColorImage && m_outputDepthImage){
+          boost::function<void (const boost::shared_ptr<pcl::io::Image>&, const boost::shared_ptr<pcl::io::DepthImage>&, float)> f = boost::bind(&OpenNIGrabber::grabberCallbackColorAndDepthImage, this, _1, _2, _3);
+          m_interface->registerCallback(f);
+      }
+      if (m_outputPointCloud){
           m_cloud.type = "xyz";
           m_cloud.fields.length(3);
           m_cloud.fields[0].name = "x";
@@ -176,10 +255,10 @@ RTC::ReturnCode_t OpenNIGrabber::onActivated(RTC::UniqueId ec_id)
           m_cloud.fields[2].count = 4;
           m_cloud.is_bigendian = false;
           m_cloud.point_step = 16;
-          m_cloud.is_dense = false;
-          boost::function<void (const pcl::PointCloud<pcl::PointXYZ>::ConstPtr&)> f = boost::bind(&OpenNIGrabber::grabberCallbackDepth, this, _1);
+          m_cloud.is_dense = true;
+          boost::function<void (const pcl::PointCloud<pcl::PointXYZ>::ConstPtr&)> f = boost::bind(&OpenNIGrabber::grabberCallbackPointCloud, this, _1);
           m_interface->registerCallback(f);
-      }else if(m_mode == "depth_and_color"){
+      }else if(m_outputPointCloudRGBA){
           m_cloud.type = "xyzrgb";
           m_cloud.fields.length(6);
           m_cloud.fields[0].name = "x";
@@ -208,13 +287,9 @@ RTC::ReturnCode_t OpenNIGrabber::onActivated(RTC::UniqueId ec_id)
           m_cloud.fields[5].count = 1;
           m_cloud.is_bigendian = false;
           m_cloud.point_step = 16;
-          m_cloud.is_dense = false;
-          boost::function<void (const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr&)> f = boost::bind(&OpenNIGrabber::grabberCallbackDepthAndColor, this, _1);
+          m_cloud.is_dense = true;
+          boost::function<void (const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr&)> f = boost::bind(&OpenNIGrabber::grabberCallbackPointCloudRGBA, this, _1);
           m_interface->registerCallback(f);
-      }else{
-          std::cerr << "[" << m_profile.instance_name << "] Error: unknown mode ("
-                    << m_mode << ")" << std::endl;
-          return RTC::RTC_ERROR;
       }
 
       m_interface->start();
@@ -255,6 +330,9 @@ RTC::ReturnCode_t OpenNIGrabber::onExecute(RTC::UniqueId ec_id)
                       << "] grabber is not running" << std::endl;
         }
     }
+    m_requestToWriteImage      = true;
+    m_requestToWritePointCloud = true;
+
     return RTC::RTC_OK;
 }
 

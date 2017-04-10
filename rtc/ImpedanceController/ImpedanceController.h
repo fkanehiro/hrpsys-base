@@ -23,7 +23,6 @@
 #include "JointPathEx.h"
 #include "RatsMatrix.h"
 #include "ImpedanceOutputGenerator.h"
-#include "ObjectTurnaroundDetector.h"
 // Service implementation headers
 // <rtc-template block="service_impl_h">
 #include "ImpedanceControllerService_impl.h"
@@ -99,11 +98,6 @@ class ImpedanceController
   bool setImpedanceControllerParam(const std::string& i_name_, OpenHRP::ImpedanceControllerService::impedanceParam i_param_);
   bool getImpedanceControllerParam(const std::string& i_name_, OpenHRP::ImpedanceControllerService::impedanceParam& i_param_);
   void waitImpedanceControllerTransition(std::string i_name_);
-  void startObjectTurnaroundDetection(const double i_ref_diff_wrench, const double i_max_time, const OpenHRP::ImpedanceControllerService::StrSequence& i_ee_names);
-  OpenHRP::ImpedanceControllerService::DetectorMode checkObjectTurnaroundDetection();
-  bool setObjectTurnaroundDetectorParam(const OpenHRP::ImpedanceControllerService::objectTurnaroundDetectorParam &i_param_);
-  bool getObjectTurnaroundDetectorParam(OpenHRP::ImpedanceControllerService::objectTurnaroundDetectorParam& i_param_);
-  bool getObjectForcesMoments(OpenHRP::ImpedanceControllerService::Dbl3Sequence_out o_forces, OpenHRP::ImpedanceControllerService::Dbl3Sequence_out o_moments, OpenHRP::ImpedanceControllerService::DblSequence3_out o_3dofwrench);
 
  protected:
   // Configuration variable declaration
@@ -179,17 +173,14 @@ class ImpedanceController
 
   void copyImpedanceParam (OpenHRP::ImpedanceControllerService::impedanceParam& i_param_, const ImpedanceParam& param);
   void updateRootLinkPosRot (TimedOrientation3D tmprpy);
-  void calcFootMidCoords (hrp::Vector3& new_foot_mid_pos, hrp::Matrix33& new_foot_mid_rot);
+  void getTargetParameters ();
+  void calcImpedanceControl ();
   void calcForceMoment();
-  void calcObjectTurnaroundDetectorState();
 
   std::map<std::string, ImpedanceParam> m_impedance_param;
   std::map<std::string, ee_trans> ee_map;
   std::map<std::string, hrp::VirtualForceSensorParam> m_vfs;
   std::map<std::string, hrp::Vector3> abs_forces, abs_moments, abs_ref_forces, abs_ref_moments;
-  boost::shared_ptr<ObjectTurnaroundDetector > otd;
-  std::vector<std::string> otd_sensor_names;
-  hrp::Vector3 otd_axis;
   double m_dt;
   hrp::BodyPtr m_robot;
   coil::Mutex m_mutex;

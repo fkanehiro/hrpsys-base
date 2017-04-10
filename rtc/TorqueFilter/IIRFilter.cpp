@@ -1,4 +1,5 @@
 #include "IIRFilter.h"
+#include <numeric>
 
 IIRFilter::IIRFilter(unsigned int dim, std::vector<double>& fb_coeffs, std::vector<double>& ff_coeffs, const std::string& error_prefix)
 {
@@ -66,6 +67,21 @@ bool IIRFilter::setParameter(int dim, std::vector<double>& A, std::vector<double
     return true;
 }
 
+bool IIRFilter::setParameterAsBiquad(const double f_cutoff, const double Q, const double hz){
+  std::vector<double> fb_coeffs(3), ff_coeffs(3);
+  const double omega = 2 * 3.14159265 * f_cutoff / hz;
+  const double alpha = std::sin(omega) / (2 * Q);
+  const double denom = 1 + alpha;
+  fb_coeffs[0] = 1;
+  fb_coeffs[1] = -2 * std::cos(omega) / denom;
+  fb_coeffs[2] = (1 - alpha) / denom;
+  ff_coeffs[0] = (1 - std::cos(omega)) / 2 / denom;
+  ff_coeffs[1] = (1 - std::cos(omega)) / denom;
+  ff_coeffs[2] = (1 - std::cos(omega)) / 2 / denom;
+  return this->setParameter(2, fb_coeffs, ff_coeffs);
+};
+
+
 void IIRFilter::getParameter(int &dim, std::vector<double>& A, std::vector<double>& B)
 {
     dim = m_dimension;
@@ -84,12 +100,18 @@ void IIRFilter::getParameter(int &dim, std::vector<double>& A, std::vector<doubl
 
 void IIRFilter::reset(double initial_input)
 {
-    m_previous_values.assign(m_dimension, initial_input);
-    m_previous_inputs.assign(m_dimension, initial_input);
+    // y[n] = b[0]*w[n] + b[1]*w[n-1] + ... + b[m]*w[n-m] in DirectForm-II.
+    // When n->inf, y[n]->initial_input and w[n], w[n-1], ..., w[n-m] -> w,
+    // m_previous_values should preserve w
+    double sum_ff_coeffs = std::accumulate(m_ff_coefficients.begin(), m_ff_coefficients.end(), 0.0);
+    double reset_val = initial_input / sum_ff_coeffs;
+    m_previous_values.assign(m_dimension, reset_val);
 }
 
 double IIRFilter::passFilter(double input)
 {
+    // IIRFilter implementation based on DirectForm-II.
+    // Cf. https://en.wikipedia.org/wiki/Digital_filter
     if (! m_initialized) {
         return 0.0;
     }

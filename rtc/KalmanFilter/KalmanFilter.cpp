@@ -210,6 +210,7 @@ RTC::ReturnCode_t KalmanFilter::onExecute(RTC::UniqueId ec_id)
     Eigen::Vector3d acc = m_sensorR * hrp::Vector3(m_acc.data.ax-sx_ref+acc_offset(0), m_acc.data.ay-sy_ref+acc_offset(1), m_acc.data.az-sz_ref+acc_offset(2)); // transform to imaginary acc data
     acc = sensorR_offset * acc;
     Eigen::Vector3d gyro = m_sensorR * hrp::Vector3(m_rate.data.avx, m_rate.data.avy, m_rate.data.avz); // transform to imaginary rate data
+    gyro = sensorR_offset * gyro;
     if (DEBUGP) {
         std::cerr << "[" << m_profile.instance_name << "] raw data acc : " << std::endl << acc << std::endl;
         std::cerr << "[" << m_profile.instance_name << "] raw data gyro : " << std::endl << gyro << std::endl;

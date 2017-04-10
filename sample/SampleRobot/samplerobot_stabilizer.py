@@ -90,6 +90,17 @@ def demoSetParameter():
         print >> sys.stderr, "  setParameter() => OK", vcheck
     assert(vcheck)
 
+def changeContactDecisionThre (thre):
+    stp = hcf.st_svc.getParameter()
+    stp.contact_decision_threshold=thre
+    hcf.st_svc.setParameter(stp)
+
+def mimicInTheAir ():
+    changeContactDecisionThre(10000) # [N]
+
+def mimicOnTheGround ():
+    changeContactDecisionThre(50) # [N], default
+
 def saveLogForCheckParameter(log_fname="/tmp/test-samplerobot-stabilizer-check-param"):
     hcf.setMaxLogLength(1);hcf.clearLog();time.sleep(0.1);hcf.saveLog(log_fname)
 
@@ -316,6 +327,47 @@ def demoSTTurnWalk ():
     else:
         print >> sys.stderr, "  This sample is neglected in High-gain mode simulation"
 
+
+def demoSTTransitionAirGround ():
+    # This example is from YoheiKakiuchi's comment : https://github.com/fkanehiro/hrpsys-base/issues/1098, https://github.com/fkanehiro/hrpsys-base/pull/1102#issuecomment-284609203
+    print >> sys.stderr, "9. ST Transition (in the air and on the ground)"
+    # Init
+    stp_org = hcf.st_svc.getParameter()
+    stp = hcf.st_svc.getParameter()
+    stp.transition_time = 0.1; # for fast checking
+    hcf.st_svc.setParameter(stp)
+    # Tests
+    print >> sys.stderr, "  9-1. Check in the air"
+    hcf.startStabilizer()
+    mimicInTheAir()
+    hcf.setJointAngles(hcf.getJointAngles(), stp.transition_time);hcf.waitInterpolation() # Wait transition
+    cmode1 = hcf.st_svc.getParameter().controller_mode
+    vcheck1 = (cmode1 == OpenHRP.StabilizerService.MODE_AIR)
+    print >> sys.stderr, "  9-2. Check on the ground"
+    mimicOnTheGround()
+    hcf.setJointAngles(hcf.getJointAngles(), stp.transition_time);hcf.waitInterpolation() # Wait transition
+    cmode2 = hcf.st_svc.getParameter().controller_mode
+    vcheck2 = (cmode2 == OpenHRP.StabilizerService.MODE_ST)
+    print >> sys.stderr, "  9-3. Check in the air and then stopST"
+    mimicInTheAir()
+    hcf.setJointAngles(hcf.getJointAngles(), 0.01);hcf.waitInterpolation() # Wait until in the air flag is invoked in onExecute
+    hcf.stopStabilizer()
+    cmode3 = hcf.st_svc.getParameter().controller_mode
+    vcheck3 = (cmode3 == OpenHRP.StabilizerService.MODE_IDLE)
+    print >> sys.stderr, "  9-4. Check on the ground"
+    mimicOnTheGround()
+    hcf.setJointAngles(hcf.getJointAngles(), 0.01);hcf.waitInterpolation() # Wait until on the ground flag is invoked in onExecute
+    hcf.startStabilizer()
+    cmode4 = hcf.st_svc.getParameter().controller_mode
+    vcheck4 = (cmode4 == OpenHRP.StabilizerService.MODE_ST)
+    # Finsh
+    hcf.st_svc.setParameter(stp_org)
+    vcheck_list = [vcheck1, vcheck2, vcheck3, vcheck4]
+    print >> sys.stderr, "  ST Transition Air Ground vcheck = ", vcheck_list, ", cmode = ", [cmode1, cmode2, cmode3, cmode4]
+    if all(vcheck_list):
+        print >> sys.stderr, "  ST Transition Air Ground => OK"
+    assert(all(vcheck_list))
+
 def demo():
     OPENHRP3_DIR=check_output(['pkg-config', 'openhrp3.1', '--variable=prefix']).rstrip()
     if os.path.exists(OPENHRP3_DIR+"/share/OpenHRP-3.1/sample/model/sample1_bush.wrl"):
@@ -329,6 +381,7 @@ def demo():
             demoSTStairWalk()
             demoSTToeHeelWalk()
             demoSTTurnWalk()
+            demoSTTransitionAirGround()
     else:
         print >> sys.stderr, "Skip st test because of missing sample1_bush.wrl"
 

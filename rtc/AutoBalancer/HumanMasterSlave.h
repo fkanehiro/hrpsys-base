@@ -61,26 +61,13 @@ class BiquadIIRFilterVec{
   private:
     IIRFilter filters[3];
     hrp::Vector3 ans;
-    std::vector<double> fb_coeffs, ff_coeffs;
   public:
     BiquadIIRFilterVec(const std::string& error_prefix = ""){
     };
     ~BiquadIIRFilterVec() {};
     void setParameter(const hrp::Vector3 fc_in, const double HZ){
-      ff_coeffs.resize(3);
-      fb_coeffs.resize(3);
-      const double Q = 1.0/2;
      for(int i=0;i<3;i++){
-       const double omega = 2 * 3.14159265 * fc_in(i) / HZ;
-       const double alpha = std::sin(omega) / (2 * Q);
-       const double denom = 1 + alpha;
-       fb_coeffs[0] = 1;
-       fb_coeffs[1] = -2 * cos(omega) / denom;
-       fb_coeffs[2] = (1 - alpha) / denom;
-       ff_coeffs[0] = (1 - cos(omega)) / 2 / denom;
-       ff_coeffs[1] = (1 - cos(omega)) / denom;
-       ff_coeffs[2] = (1 - cos(omega)) / 2 / denom;
-       filters[i].setParameter(2, fb_coeffs, ff_coeffs);
+       filters[i].setParameterAsBiquad((double)fc_in(i), 0.5, HZ);
       }
     };
     void setParameter(const double fc_in, const double HZ){
@@ -94,31 +81,6 @@ class BiquadIIRFilterVec{
       for(int i=0;i<3;i++){ filters[i].reset((double)initial_input(i));}
     }
 };
-
-
-
-
-
-template <class T> class IIRFilter_vec
-{
-  public:
-    IIRFilter_vec(const std::string& error_prefix = "");
-    ~IIRFilter_vec() {};
-    bool setParameter(int dim, std::vector<double>& A, std::vector<double>& B);
-    bool setParameterAsBiquad(const double f_cutoff, const double Q, const double hz);
-    void getParameter(int &dim, std::vector<double>&A, std::vector<double>& B);
-    void reset(T initial_input = T::Zero());
-    T passFilter(T input);
-  private:
-    int m_dimension;
-    std::vector<double> m_fb_coefficients; // fb parameters (dim must be m_dimension + 1, m_fb_coefficients[0] would be 1.0)
-    std::vector<double> m_ff_coefficients; // ff parameters (dim must be m_dimension + 1)
-    std::deque<T> m_previous_values;
-    bool m_initialized;
-    std::string m_error_prefix;
-};
-
-
 
 class HRPPose3D{
   public:
@@ -311,12 +273,21 @@ class HumanSynchronizer{
 
       tgt_pos_filters.resize(5);
       tgt_rot_filters.resize(5);
-      for(int i=0;i<tgt_pos_filters.size();i++)tgt_pos_filters[i].setParameter(0.6,HZ);//四肢拘束点用(position)
+//      for(int i=0;i<tgt_pos_filters.size();i++)tgt_pos_filters[i].setParameter(0.6,HZ);//四肢拘束点用(position)
+//      for(int i=0;i<tgt_rot_filters.size();i++)tgt_rot_filters[i].setParameter(1.0,HZ);//四肢拘束点用(Rotation)
+//      tgt_pos_filters[0].setParameter(0.6,HZ);//重心pos用
+//      tgt_rot_filters[0].setParameter(0.4,HZ);//重心rot用
+//      tgt_pos_filters[1].setParameter(hrp::Vector3(0.6,0.6,1.0),HZ);//右足pos用
+//      tgt_pos_filters[2].setParameter(hrp::Vector3(0.6,0.6,1.0),HZ);//左足pos用
+//      calcacc_v_filters.setParameter(5,HZ);//加速度計算用
+//      acc4zmp_v_filters.setParameter(1,HZ);//ZMP生成用ほぼこの値でいい
+//      cam_rpy_filter.setParameter(1,HZ);//カメラアングル
+      for(int i=0;i<tgt_pos_filters.size();i++)tgt_pos_filters[i].setParameter(1.0,HZ);//四肢拘束点用(position)
       for(int i=0;i<tgt_rot_filters.size();i++)tgt_rot_filters[i].setParameter(1.0,HZ);//四肢拘束点用(Rotation)
-      tgt_pos_filters[0].setParameter(0.6,HZ);//重心pos用
-      tgt_rot_filters[0].setParameter(0.4,HZ);//重心rot用
-      tgt_pos_filters[1].setParameter(hrp::Vector3(0.6,0.6,1.0),HZ);//右足pos用
-      tgt_pos_filters[2].setParameter(hrp::Vector3(0.6,0.6,1.0),HZ);//左足pos用
+      tgt_pos_filters[0].setParameter(1.0,HZ);//重心pos用
+      tgt_rot_filters[0].setParameter(0.6,HZ);//重心rot用
+      tgt_pos_filters[1].setParameter(hrp::Vector3(1.0,1.0,1.2),HZ);//右足pos用
+      tgt_pos_filters[2].setParameter(hrp::Vector3(1.0,1.0,1.2),HZ);//左足pos用
       calcacc_v_filters.setParameter(5,HZ);//加速度計算用
       acc4zmp_v_filters.setParameter(1,HZ);//ZMP生成用ほぼこの値でいい
       cam_rpy_filter.setParameter(1,HZ);//カメラアングル

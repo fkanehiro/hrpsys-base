@@ -49,10 +49,13 @@ after_success:
   - if [ "$TRAVIS_PULL_REQUEST" == "false" -a "$TRAVIS_BRANCH" == "master" -a "$TEST_PACKAGE" == "hrpsys" -a "$TEST_TYPE" == "" ]; then cd doc;           fi
   - if [ "$TRAVIS_PULL_REQUEST" == "false" -a "$TRAVIS_BRANCH" == "master" -a "$TEST_PACKAGE" == "hrpsys" -a "$TEST_TYPE" == "" ]; then cp -r ~/build/doc/html/* ./; fi
   - if [ "$TRAVIS_PULL_REQUEST" == "false" -a "$TRAVIS_BRANCH" == "master" -a "$TEST_PACKAGE" == "hrpsys" -a "$TEST_TYPE" == "" ]; then git status;                  fi
+  - if [ "$TRAVIS_PULL_REQUEST" == "false" -a "$TRAVIS_BRANCH" == "master" -a "$TEST_PACKAGE" == "hrpsys" -a "$TEST_TYPE" == "" ]; then git checkout --orphan gh-pages-new; fi
   - if [ "$TRAVIS_PULL_REQUEST" == "false" -a "$TRAVIS_BRANCH" == "master" -a "$TEST_PACKAGE" == "hrpsys" -a "$TEST_TYPE" == "" ]; then git add -f .;                  fi
   - if [ "$TRAVIS_PULL_REQUEST" == "false" -a "$TRAVIS_BRANCH" == "master" -a "$TEST_PACKAGE" == "hrpsys" -a "$TEST_TYPE" == "" ]; then git commit -m "Build documents from $TRAVIS_COMMIT" . ; fi
+  - if [ "$TRAVIS_PULL_REQUEST" == "false" -a "$TRAVIS_BRANCH" == "master" -a "$TEST_PACKAGE" == "hrpsys" -a "$TEST_TYPE" == "" ]; then git branch -D gh-pages; fi
+  - if [ "$TRAVIS_PULL_REQUEST" == "false" -a "$TRAVIS_BRANCH" == "master" -a "$TEST_PACKAGE" == "hrpsys" -a "$TEST_TYPE" == "" ]; then git branch -m gh-pages; fi
   - if [ "$TRAVIS_PULL_REQUEST" == "false" -a "$TRAVIS_BRANCH" == "master" -a "$TEST_PACKAGE" == "hrpsys" -a "$TEST_TYPE" == "" ]; then git remote -v; fi
-  - if [ "$TRAVIS_PULL_REQUEST" == "false" -a "$TRAVIS_BRANCH" == "master" -a "$TEST_PACKAGE" == "hrpsys" -a "$TEST_TYPE" == "" ]; then git push --quiet https://$GH_TOKEN@github.com/$TRAVIS_REPO_SLUG.git gh-pages; fi
+  - if [ "$TRAVIS_PULL_REQUEST" == "false" -a "$TRAVIS_BRANCH" == "master" -a "$TEST_PACKAGE" == "hrpsys" -a "$TEST_TYPE" == "" ]; then git push -f --quiet https://$GH_TOKEN@github.com/$TRAVIS_REPO_SLUG.git gh-pages; fi
 
 
 

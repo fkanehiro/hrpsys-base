@@ -106,6 +106,7 @@ class OpenNIGrabber
   // </rtc-template>
 
   Img::TimedCameraImage m_image;
+  Img::TimedCameraImage m_depth;
   PointCloudTypes::PointCloud m_cloud;
 
   // DataInPort declaration
@@ -117,6 +118,7 @@ class OpenNIGrabber
   // <rtc-template block="outport_declare">
   OutPort<PointCloudTypes::PointCloud> m_cloudOut;
   OutPort<Img::TimedCameraImage> m_imageOut;
+  OutPort<Img::TimedCameraImage> m_depthOut;
   
   // </rtc-template>
 
@@ -136,12 +138,22 @@ class OpenNIGrabber
   // </rtc-template>
 
  private:
-  void grabberCallbackDepthAndColor(const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &cloud);
-  void grabberCallbackDepth(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr &cloud);
+  void grabberCallbackColorImage(const boost::shared_ptr<pcl::io::Image>& image);
+  void grabberCallbackDepthImage(const boost::shared_ptr<pcl::io::DepthImage>& image);
+  void grabberCallbackColorAndDepthImage(const boost::shared_ptr<pcl::io::Image>& image, const boost::shared_ptr<pcl::io::DepthImage>& depth, float reciprocalFocalLength);
+  void grabberCallbackPointCloudRGBA(const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &cloud);
+  void grabberCallbackPointCloud(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr &cloud);
+  void outputColorImage(const boost::shared_ptr<pcl::io::Image>& image);
+  void outputDepthImage(const boost::shared_ptr<pcl::io::DepthImage>& image);
 
   pcl::Grabber *m_interface;
   int m_debugLevel;
-  std::string m_mode;
+  bool m_outputColorImage;
+  bool m_outputDepthImage;
+  bool m_outputPointCloud;
+  bool m_outputPointCloudRGBA;
+  bool m_requestToWriteImage;
+  bool m_requestToWritePointCloud;
   int dummy;
 };
 
