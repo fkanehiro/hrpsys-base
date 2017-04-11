@@ -7,7 +7,7 @@ set_target_properties(DataLogger PROPERTIES PREFIX "")
 add_executable(DataLoggerComp DataLoggerComp.cpp ${comp_sources})
 target_link_libraries(DataLoggerComp ${libs})
 
-find_package(VTK)
+find_package(VTK 5.8 EXACT)
 if (NOT "${VTK_LIBRARIES}" STREQUAL "")
   list(REMOVE_ITEM VTK_LIBRARIES "vtkproj4")
 endif()
