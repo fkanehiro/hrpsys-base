@@ -544,6 +544,7 @@ class AutoBalancer
   };
   void getTargetParameters();
   void solveFullbodyIKStrictCOM(const HRPPose3D& com_ref, const HRPPose3D& rf_ref, const HRPPose3D& lf_ref, const HRPPose3D& rh_ref, const HRPPose3D& lh_ref, const hrp::Vector3& head_ref);
+  void processWholeBodyMasterSlave();
   void solveFullbodyIK ();
   void startABCparam(const ::OpenHRP::AutoBalancerService::StrSequence& limbs);
   void stopABCparam();
