@@ -61,7 +61,7 @@ private:
     {
         std::string fname("/tmp/plot.dat");
         // FILE* fp = fopen(fname.c_str(), "w");
-        std::ofstream fp("/tmp/plot.dat");
+        std::ofstream fp(fname.c_str());
         hrp::Vector3 Pref, Lref, cur_basePos, ref_basePos, P, L, CM;
         hrp::Matrix33 cur_baseRot, ref_baseRot;
 
@@ -140,19 +140,19 @@ private:
                << " " << L(1)
                << " " << Lref(2)
                << " " << L(2);
-            for (size_t i = 0; i < dq.size(); ++i) {
-                fp << " " << dq(i);
-            }
+            // for (size_t i = 0; i < dq.size(); ++i) {
+            //     fp << " " << dq(i);
+            // }
             fp << "\n";
         }
 
         for (std::map<std::string, hrp::dvector6>::iterator it = xi_ref.begin(); it != xi_ref.end(); ++it) {
             rmc->removeConstraintLink(m_robot, (*it).first, xi_ref);
         }
-        delete(calcRef);
+        delete calcRef;
         // fclose(fp);
 
-        size_t gpsize = 3;
+        size_t gpsize = 2;
         size_t start = 2;
         FILE* gps[gpsize];
         for (size_t ii = 0; ii < gpsize; ii++) {
@@ -208,21 +208,21 @@ private:
         // }
 
         // dq
-        {
-            std::ostringstream oss("");
-            std::string gtitle("dq");
-            oss << "set multiplot layout 1, 1 title '" << gtitle << "'" << std::endl;
-            oss << "set xlabel 'Time [s]'" << std::endl;
-            oss << "set ylabel '" << "[rad / s]'" << std::endl;
-            oss << "plot ";
-            size_t i;
-            for (i = 0; i < m_robot->numJoints() - 1; ++i) {
-                oss << "'" << fname << "' using 1:" << (start + i) << " with lines title '" << m_robot->joint(i)->name << "',";
-            }
-            oss << "'" << fname << "' using 1:" << (start + i) << " with lines title '" << m_robot->joint(i)->name << "'";
-            oss << std::endl;
-            plot_and_save(gps[2], gtitle, oss.str());
-        }
+        // {
+        //     std::ostringstream oss("");
+        //     std::string gtitle("dq");
+        //     oss << "set multiplot layout 1, 1 title '" << gtitle << "'" << std::endl;
+        //     oss << "set xlabel 'Time [s]'" << std::endl;
+        //     oss << "set ylabel '" << "[rad / s]'" << std::endl;
+        //     oss << "plot ";
+        //     size_t i;
+        //     for (i = 0; i < m_robot->numJoints() - 1; ++i) {
+        //         oss << "'" << fname << "' using 1:" << (start + i) << " with lines title '" << m_robot->joint(i)->name << "',";
+        //     }
+        //     oss << "'" << fname << "' using 1:" << (start + i) << " with lines title '" << m_robot->joint(i)->name << "'";
+        //     oss << std::endl;
+        //     plot_and_save(gps[2], gtitle, oss.str());
+        // }
 
         double tmp;
         std::cin >> tmp;
@@ -275,9 +275,9 @@ public:
             hrp::Vector3 calcPref(const hrp::BodyPtr m_robot, const double tm, const double max_tm)
             {
                 hrp::Vector3 Pref;
-                Pref(0) = 0.001 * sin(tm * M_PI / max_tm * 4);
-                Pref(1) = 0.001 * sin(tm * M_PI / max_tm * 4);
-                Pref(2) = 0.002 * sin(tm * M_PI / max_tm * 4);
+                Pref(0) = 0.01 * sin(tm * M_PI / max_tm * 4);
+                Pref(1) = 0.01 * sin(tm * M_PI / max_tm * 4);
+                Pref(2) = 0.02 * sin(tm * M_PI / max_tm * 4);
                 Pref *= m_robot->totalMass();
                 return Pref;
             }
@@ -285,9 +285,9 @@ public:
             hrp::Vector3 calcLref(const hrp::BodyPtr m_robot, const double tm, const double max_tm)
             {
                 hrp::Vector3 Lref;
-                Lref(0) = 0.001 * sin(tm * M_PI / max_tm * 4);
-                Lref(1) = 0.001 * sin(tm * M_PI / max_tm * 4);
-                Lref(2) = 0.002 * sin(tm * M_PI / max_tm * 4);
+                Lref(0) = 0.1 * sin(tm * M_PI / max_tm * 4);
+                Lref(1) = 0.1 * sin(tm * M_PI / max_tm * 4);
+                Lref(2) = 0.2 * sin(tm * M_PI / max_tm * 4);
                 return Lref;
             }
             hrp::dvector6 calcXiref(const hrp::BodyPtr m_robot, const std::string &constraint, const double tm, const double max_tm)
@@ -324,9 +324,9 @@ public:
             hrp::Vector3 calcPref(const hrp::BodyPtr m_robot, const double tm, const double max_tm)
             {
                 hrp::Vector3 Pref;
-                Pref(0) = 0.001 * cos(tm * M_PI / max_tm * 4);
-                Pref(1) = 0.001 * sin(tm * M_PI / max_tm * 4);
-                Pref(2) = 0.002 * cos(tm * M_PI / max_tm * 4);
+                Pref(0) = 0.01 * cos(tm * M_PI / max_tm * 4);
+                Pref(1) = 0.01 * sin(tm * M_PI / max_tm * 4);
+                Pref(2) = 0.02 * cos(tm * M_PI / max_tm * 4);
                 Pref *= m_robot->totalMass();
                 return Pref;
             }
@@ -334,9 +334,9 @@ public:
             hrp::Vector3 calcLref(const hrp::BodyPtr m_robot, const double tm, const double max_tm)
             {
                 hrp::Vector3 Lref;
-                Lref(0) = 0.01 * cos(tm * M_PI / max_tm * 4);
-                Lref(1) = 0.01 * sin(tm * M_PI / max_tm * 4);
-                Lref(2) = 0.02 * cos(tm * M_PI / max_tm * 4);
+                Lref(0) = 0.1 * cos(tm * M_PI / max_tm * 4);
+                Lref(1) = 0.1 * sin(tm * M_PI / max_tm * 4);
+                Lref(2) = 0.2 * cos(tm * M_PI / max_tm * 4);
                 return Lref;
             }
             hrp::dvector6 calcXiref(const hrp::BodyPtr m_robot, const std::string &constraint, const double tm, const double max_tm)
@@ -372,9 +372,9 @@ public:
             hrp::Vector3 calcPref(const hrp::BodyPtr m_robot, const double tm, const double max_tm)
             {
                 hrp::Vector3 Pref;
-                Pref(0) = 0.001 * cos(tm * M_PI / max_tm * 4);
-                Pref(1) = 0.001 * sin(tm * M_PI / max_tm * 4);
-                Pref(2) = 0.002 * cos(tm * M_PI / max_tm * 4);
+                Pref(0) = 0.01 * cos(tm * M_PI / max_tm * 4);
+                Pref(1) = 0.01 * sin(tm * M_PI / max_tm * 4);
+                Pref(2) = 0.02 * cos(tm * M_PI / max_tm * 4);
                 Pref *= m_robot->totalMass();
                 return Pref;
             }
@@ -382,9 +382,9 @@ public:
             hrp::Vector3 calcLref(const hrp::BodyPtr m_robot, const double tm, const double max_tm)
             {
                 hrp::Vector3 Lref;
-                Lref(0) = 0.01 * cos(tm * M_PI / max_tm * 4);
-                Lref(1) = 0.01 * sin(tm * M_PI / max_tm * 4);
-                Lref(2) = 0.02 * cos(tm * M_PI / max_tm * 4);
+                Lref(0) = 0.1 * cos(tm * M_PI / max_tm * 4);
+                Lref(1) = 0.1 * sin(tm * M_PI / max_tm * 4);
+                Lref(2) = 0.2 * cos(tm * M_PI / max_tm * 4);
                 return Lref;
             }
             hrp::dvector6 calcXiref(const hrp::BodyPtr m_robot, const std::string &constraint, const double tm, const double max_tm)
