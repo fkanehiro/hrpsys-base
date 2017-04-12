@@ -6,11 +6,15 @@ namespace rats
     void RMController::setSelectionMatrix(const hrp::dvector6 Svec)
     {
         const size_t num_selects = (Svec.array() != 0).count();
-        s_.resize(num_selects, 6);
-        for (size_t i = 0; i < num_selects; ++i) {
-            if (Svec(i) != 0) s_.row(i) = Svec(i) * hrp::dmatrix::Identity(6, 6).row(i);
+        s_ = hrp::dmatrix::Zero(num_selects, 6);
+        size_t i = 0;
+        for (size_t j = 0; j < 6; ++j) {
+            if (Svec(j) != 0) {
+                s_(i, j) = Svec(j);
+                ++i;
+            }
         }
-        std::cerr << "[RMC] Updated selection matrix " << Svec.transpose() << std::endl;
+        std::cerr << "[RMC] Updated selection matrix by " << Svec.transpose() << std::endl;
     }
 
     hrp::dvector6 RMController::getSelectionVector()

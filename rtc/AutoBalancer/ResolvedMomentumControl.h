@@ -1,4 +1,4 @@
-/* -*- coding:utf-8-unix mode:c++ -*- */
+/* -*- coding:utf-8-unix; mode:c++; -*- */
 #ifndef RMC_H_
 #define RMC_H_
 #include <iostream>
