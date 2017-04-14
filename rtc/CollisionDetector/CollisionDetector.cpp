@@ -340,6 +340,7 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
     if (!is_beep_port_connected && (loop % 500 == 0) ) {
       if ( m_beepCommandOut.connectors().size() > 0 ) {
         is_beep_port_connected = true;
+        quit_beep();
         std::cerr << "[" << m_profile.instance_name<< "] beepCommand data port connection found! Use BeeperRTC." << std::endl;
       }
     }
