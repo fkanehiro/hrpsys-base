@@ -4,7 +4,7 @@ configure_file(hrpsys-simulator-python.in ${CMAKE_CURRENT_BINARY_DIR}/hrpsys-sim
 include_directories(${OpenCV_INCLUDE_DIRS})
 include_directories(${LIBXML2_INCLUDE_DIR})
 include_directories(${SDL_INCLUDE_DIR})
-find_package(PythonLibs)
+find_package(PythonLibs ${PYTHON_VERSION} REQUIRED)
 include_directories(${PYTHON_INCLUDE_DIRS})
 
 set(target hrpsys-simulator)
