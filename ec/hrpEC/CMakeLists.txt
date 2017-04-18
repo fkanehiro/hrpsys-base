@@ -1,3 +1,4 @@
+cmake_policy(SET CMP0015 NEW)
 set(common_libs ${OPENRTM_LIBRARIES} hrpIo hrpsysBaseStub)
 find_package(ART REQUIRED)
 
