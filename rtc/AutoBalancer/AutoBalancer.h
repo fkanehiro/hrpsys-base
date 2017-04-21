@@ -545,6 +545,7 @@ class AutoBalancer
   void getTargetParameters();
   void solveFullbodyIKStrictCOM(const HRPPose3D& com_ref, const HRPPose3D& rf_ref, const HRPPose3D& lf_ref, const HRPPose3D& rh_ref, const HRPPose3D& lh_ref, const hrp::Vector3& head_ref);
   void processWholeBodyMasterSlave();
+  void calcDynamicsFilterCompensation(const hrp::Vector3 zmp_lip, const hrp::Vector3 zmp_fullbody);
   void solveFullbodyIK ();
   void startABCparam(const ::OpenHRP::AutoBalancerService::StrSequence& limbs);
   void stopABCparam();
@@ -623,6 +624,12 @@ class AutoBalancer
 
   hrp::InvDynStateBuffer idsb;
   std::vector<IIRFilter> invdyn_zmp_filters;
+
+  hrp::InvDynStateBuffer idsb2;
+  std::vector<IIRFilter> invdyn_zmp_filters2;
+
+
+  hrp::Vector3 ref_zmp_invdyn2;
 
   //for HumanSynchronizer
   boost::shared_ptr<HumanSynchronizer> hsp;

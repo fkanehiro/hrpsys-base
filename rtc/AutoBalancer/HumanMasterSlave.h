@@ -286,7 +286,7 @@ class HumanSynchronizer{
       for(int i=0;i<tgt_rot_filters.size();i++)tgt_rot_filters[i].setParameter(1.0,HZ);//四肢拘束点用(Rotation)
       tgt_pos_filters[0].setParameter(1.0,HZ);//重心pos用
       tgt_rot_filters[0].setParameter(0.6,HZ);//重心rot用
-      tgt_pos_filters[1].setParameter(hrp::Vector3(1.0,1.0,1.2),HZ);//右足pos用
+      tgt_pos_filters[1].setParameter(hrp::Vector3(10.0,10.0,1.2),HZ);//右足pos用
       tgt_pos_filters[2].setParameter(hrp::Vector3(1.0,1.0,1.2),HZ);//左足pos用
       calcacc_v_filters.setParameter(5,HZ);//加速度計算用
       acc4zmp_v_filters.setParameter(1,HZ);//ZMP生成用ほぼこの値でいい
@@ -311,11 +311,13 @@ class HumanSynchronizer{
       WBMSparam.foot_vertical_vel_limit_coeff = 4.0;
       WBMSparam.human_com_height = 1.00;
       WBMSparam.swing_foot_height_offset = 0.01;
-      WBMSparam.swing_foot_max_height = 0.10;
+//      WBMSparam.swing_foot_max_height = 0.10;
+      WBMSparam.swing_foot_max_height = 0.5;
       WBMSparam.auto_swing_foot_landing_threshold = 0.02;
 
       rp_ref_out_old.clear();
       rp_ref_out.clear();
+
 
       init_zmp_com_offset_interpolator = new interpolator(1, DT, interpolator::HOFFARBIB, 1);
       init_zmp_com_offset_interpolator->setName("zmp_com_offset_interpolator");
@@ -366,8 +368,11 @@ class HumanSynchronizer{
       convertRelHumanPoseToRelRobotPose   (hp_swap_checked, rp_ref_out);
       hp_plot = rp_ref_out;
       if(loop==0)rp_ref_out_old = rp_ref_out;
+
+//      rp_ref_out.getP("com").p += torso_rot;
+
       if(isHumanSyncOn() && WBMSparam.set_com_height_fix)rp_ref_out.getP("com").p(Z) = rp_ref_out.getP("com").p_offs(Z) + WBMSparam.set_com_height_fix_val;//膝曲げトルクで落ちるときの応急措置
-      judgeFootLandOnCommand              (hp_wld_raw.getw("rfw"), hp_wld_raw.getw("lfw"), go_rf_landing, go_lf_landing);//fwはすでに1000->100Hzにフィルタリングされている
+      judgeFootLandOnCommand              (hp_wld_raw.getw("rfw"), hp_wld_raw.getw("lfw"), go_rf_landing, go_lf_landing);
       lockSwingFootIfZMPOutOfSupportFoot  (rp_ref_out_old, go_rf_landing, go_lf_landing);//ここ
       applyEEWorkspaceLimit               (rp_ref_out);
       lockFootXYOnContact                 (go_rf_landing, go_lf_landing, rp_ref_out);//根本から改変すべき3
@@ -398,6 +403,7 @@ class HumanSynchronizer{
       cam_rpy_filtered = cam_rpy_filter.passFilter(head_cam_pose.rpy);
       r_zmp_raw = rp_ref_out.getP("zmp").p;
       applyZMPCalcFromCOM                 (rp_ref_out.getP("com").p,rp_ref_out.getP("zmp").p);
+
 
       if(DEBUG)fprintf(cz_log,"com_ans_zmp: %f %f ",rp_ref_out.getP("zmp").p(X),rp_ref_out.getP("zmp").p(Y));
       if(DEBUG)fprintf(cz_log,"com_ans2: %f %f ",rp_ref_out.getP("com").p(X),rp_ref_out.getP("com").p(Y));
@@ -573,7 +579,8 @@ class HumanSynchronizer{
       }
     }
     void applyEEWorkspaceLimit(HumanPose& tgt){
-      const double MAX_FW = 0.25;
+//      const double MAX_FW = 0.25;
+      const double MAX_FW = 0.5;
       const double FOOT_2_FOOT_COLLISION_MARGIIN = 0.16;
       if(!is_rf_contact && is_lf_contact){//右足浮遊時
         const hrp::Vector2 lf2rf_vec( tgt.getP("rf").p(X)-pre_cont_lfpos(X), tgt.getP("rf").p(Y)-pre_cont_lfpos(Y) );

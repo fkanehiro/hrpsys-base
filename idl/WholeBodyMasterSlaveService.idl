@@ -1,0 +1,54 @@
+/**
+ * @file WholeBodyMasterSlaveService.idl
+ * @brief Services for the WholeBodyMasterSlave interface
+ */
+//#include "OpenHRPCommon.idl"
+module OpenHRP
+{
+  
+  interface WholeBodyMasterSlaveService
+  {
+    typedef sequence<double, 3> DblSequence3;
+    //typedef sequence<double, 4> DblSequence4;
+    typedef double DblArray3[3];
+    typedef double DblArray4[4];
+    typedef sequence<string> StrSequence;
+
+//    /**
+//     * @enum IKLimbParameters
+//     * @brief IKLimbParameters
+//     */
+//    struct IKLimbParameters {
+//        /// Joint weight for Inverse Kinematics calculation.
+//        sequence<double> ik_optional_weight_vector;
+//        /// SR-inverse gain for inverse kinematics.
+//        double sr_gain;
+//        /// Avoid joint limit gain for inverse kinematics.
+//        double avoid_gain;
+//        /// Reference joint angles tracking gain for inverse kinematics.
+//        double reference_gain;
+//        /// Manipulability limit for inverse kinematics.
+//        double manipulability_limit;
+//    };
+
+    /**
+     * HumanSync
+     */
+    struct WholeBodyMasterSlaveParam
+    {
+        double human_com_height;
+        double foot_vertical_vel_limit_coeff;
+        boolean set_com_height_fix;
+        double set_com_height_fix_val;
+        boolean use_hands;
+        boolean use_head;
+        double swing_foot_height_offset;
+        double swing_foot_max_height;
+        double auto_swing_foot_landing_threshold;
+    };
+    boolean startCountDownForWholeBodyMasterSlave(in double sec);
+    boolean stopHumanSync();
+    void setWholeBodyMasterSlaveParam(in WholeBodyMasterSlaveParam i_param);
+    void getWholeBodyMasterSlaveParam(out WholeBodyMasterSlaveParam i_param);
+  };
+};

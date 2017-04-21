@@ -267,6 +267,11 @@ class HrpsysConfigurator(object):
     octd = None
     octd_svc = None
     octd_version = None
+    
+    # WholeBodyMasterSLave
+    wbms = None
+    wbms_svc = None
+    wbms_version = None
 
     # rtm manager
     ms = None
@@ -379,14 +384,30 @@ class HrpsysConfigurator(object):
             connectPorts(self.seq.port(sen + "Ref"),
                          self.sh.port(sen + "In"))
 
+        # connection for wbms
+        if self.wbms:
+            connectPorts(self.sh.port("qOut"), self.wbms.port("qRef"))
+            connectPorts(self.sh.port("zmpOut"), self.wbms.port("zmpIn"))
+            connectPorts(self.sh.port("basePosOut"), self.wbms.port("basePosIn"))
+            connectPorts(self.sh.port("baseRpyOut"), self.wbms.port("baseRpyIn"))
+            connectPorts(self.sh.port("optionalDataOut"), self.wbms.port("optionalData"))
+
         # connection for st
         if rtm.findPort(self.rh.ref, "lfsensor") and rtm.findPort(
                                      self.rh.ref, "rfsensor") and self.st:
             connectPorts(self.kf.port("rpy"), self.st.port("rpy"))
-            connectPorts(self.sh.port("zmpOut"), self.abc.port("zmpIn"))
-            connectPorts(self.sh.port("basePosOut"), self.abc.port("basePosIn"))
-            connectPorts(self.sh.port("baseRpyOut"), self.abc.port("baseRpyIn"))
-            connectPorts(self.sh.port("optionalDataOut"), self.abc.port("optionalData"))
+            #### normal
+#            connectPorts(self.sh.port("zmpOut"), self.abc.port("zmpIn"))
+#            connectPorts(self.sh.port("basePosOut"), self.abc.port("basePosIn"))
+#            connectPorts(self.sh.port("baseRpyOut"), self.abc.port("baseRpyIn"))
+#            connectPorts(self.sh.port("optionalDataOut"), self.abc.port("optionalData"))
+            #### wbms
+            connectPorts(self.wbms.port("q"), self.abc.port("qRef"))
+            connectPorts(self.wbms.port("zmpOut"), self.abc.port("zmpIn"))
+            connectPorts(self.wbms.port("basePosOut"), self.abc.port("basePosIn"))
+            connectPorts(self.wbms.port("baseRpyOut"), self.abc.port("baseRpyIn"))
+            connectPorts(self.wbms.port("optionalDataOut"), self.abc.port("optionalData"))
+            
             connectPorts(self.abc.port("zmpOut"), self.st.port("zmpRef"))
             connectPorts(self.abc.port("baseRpyOut"), self.st.port("baseRpyIn"))
             connectPorts(self.abc.port("basePosOut"), self.st.port("basePosIn"))
@@ -397,8 +418,6 @@ class HrpsysConfigurator(object):
             connectPorts(self.seq.port("qRef"), self.st.port("qRefSeq"))
             connectPorts(self.abc.port("walkingStates"), self.st.port("walkingStates"))
             connectPorts(self.abc.port("sbpCogOffset"), self.st.port("sbpCogOffset"))
-            # for human tracker calib
-            connectPorts(self.st.port("zmp"), self.abc.port("actzmpIn"))
 
             connectPorts(self.abc.port("toeheelRatio"), self.st.port("toeheelRatio"))
             if self.es:
@@ -497,7 +516,6 @@ class HrpsysConfigurator(object):
             if self.rmfo:
                 for sen in filter(lambda x: x.type == "Force", self.sensors):
                     connectPorts(self.rmfo.port("off_" + sen.name), self.octd.port(sen.name))
-
         # connection for gc
         if self.gc:
             connectPorts(self.rh.port("q"), self.gc.port("qCurrent"))  # other connections
@@ -745,6 +763,7 @@ class HrpsysConfigurator(object):
             ['es', "EmergencyStopper"],
             ['rfu', "ReferenceForceUpdater"],
             ['ic', "ImpedanceController"],
+            ['wbms', "WholeBodyMasterSlave"],
             ['abc', "AutoBalancer"],
             ['st', "Stabilizer"],
             ['co', "CollisionDetector"],
