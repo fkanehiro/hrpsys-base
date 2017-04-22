@@ -44,7 +44,7 @@ extern "C" {
 #define LIMIT_MINMAX(x,min,max) ((x= (x<min  ? min : x<max ? x : max)))
 
 //実機だとログ出力で落ちる？getenv("HOME")ダメ？
-#define DEBUG 1
+#define DEBUG 0
 
 namespace myconst{
   const int X = 0, Y = 1, Z = 2, XYZ = 3;
@@ -286,7 +286,7 @@ class HumanSynchronizer{
       for(int i=0;i<tgt_rot_filters.size();i++)tgt_rot_filters[i].setParameter(1.0,HZ);//四肢拘束点用(Rotation)
       tgt_pos_filters[0].setParameter(1.0,HZ);//重心pos用
       tgt_rot_filters[0].setParameter(0.6,HZ);//重心rot用
-      tgt_pos_filters[1].setParameter(hrp::Vector3(10.0,10.0,1.2),HZ);//右足pos用
+      tgt_pos_filters[1].setParameter(hrp::Vector3(1.0,1.0,1.2),HZ);//右足pos用
       tgt_pos_filters[2].setParameter(hrp::Vector3(1.0,1.0,1.2),HZ);//左足pos用
       calcacc_v_filters.setParameter(5,HZ);//加速度計算用
       acc4zmp_v_filters.setParameter(1,HZ);//ZMP生成用ほぼこの値でいい
