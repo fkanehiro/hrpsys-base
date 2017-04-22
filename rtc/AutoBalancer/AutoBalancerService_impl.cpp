@@ -113,27 +113,5 @@ CORBA::Boolean AutoBalancerService_impl::releaseEmergencyStop()
 void AutoBalancerService_impl::autobalancer(AutoBalancer *i_autobalancer)
 {
   m_autobalancer = i_autobalancer;
-}
-
-CORBA::Boolean AutoBalancerService_impl::startCountDownForWholeBodyMasterSlave(CORBA::Double sec)
-{
-    return m_autobalancer->startCountDownForWholeBodyMasterSlave(sec);
-};
-
-CORBA::Boolean AutoBalancerService_impl::stopHumanSync()
-{
-    return m_autobalancer->stopHumanSync();
-};
-
-void AutoBalancerService_impl::setWholeBodyMasterSlaveParam(const OpenHRP::AutoBalancerService::WholeBodyMasterSlaveParam& i_param)
-{
-  m_autobalancer->setWholeBodyMasterSlaveParam(i_param);
-};
-
-void AutoBalancerService_impl::getWholeBodyMasterSlaveParam(OpenHRP::AutoBalancerService::WholeBodyMasterSlaveParam_out i_param)
-{
-//  i_param = new OpenHRP::WholeBodyMasterSlaveParam::AutoBalancerParam();
-//  return  m_autobalancer->getWholeBodyMasterSlaveParam(*i_param);
-  m_autobalancer->getWholeBodyMasterSlaveParam(i_param);
-};
+} 
 

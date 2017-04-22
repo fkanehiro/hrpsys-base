@@ -1,4 +1,4 @@
-#include "HumanMasterSlave.h"
+#include "wbms_core.h"
 
 void HumanSynchronizer::calcWorldZMP(const hrp::Vector3& rfpos, const hrp::Vector3& lfpos, const Wrench6& rfwin, const Wrench6& lfwin, hrp::Vector3& zmp_ans){
   hrp::Vector3 rfzmp,lfzmp;

@@ -1,5 +1,5 @@
-set(comp_sources AutoBalancer.cpp AutoBalancerService_impl.cpp ../ImpedanceController/JointPathEx.cpp ../ImpedanceController/RatsMatrix.cpp ../SequencePlayer/interpolator.cpp PreviewController.cpp GaitGenerator.cpp ../TorqueFilter/IIRFilter.cpp HumanMasterSlave.cpp)
-set(libs ${OpenCV_LIBRARIES} hrpModel-3.1 hrpCollision-3.1 hrpUtil-3.1 hrpsysBaseStub)
+set(comp_sources AutoBalancer.cpp AutoBalancerService_impl.cpp ../ImpedanceController/JointPathEx.cpp ../ImpedanceController/RatsMatrix.cpp ../SequencePlayer/interpolator.cpp PreviewController.cpp GaitGenerator.cpp ../TorqueFilter/IIRFilter.cpp)
+set(libs hrpModel-3.1 hrpCollision-3.1 hrpUtil-3.1 hrpsysBaseStub)
 add_library(AutoBalancer SHARED ${comp_sources})
 target_link_libraries(AutoBalancer ${libs})
 set_target_properties(AutoBalancer PROPERTIES PREFIX "")
@@ -37,7 +37,7 @@ add_test(testGaitGeneratorTest15 testGaitGenerator --test15 --use-gnuplot false)
 add_test(testGaitGeneratorTest16 testGaitGenerator --test16 --use-gnuplot false)
 
 install(TARGETS ${target}
-  RUNTIME DESTINATION bin CONFIGURATIONS Release Debug
-  LIBRARY DESTINATION lib CONFIGURATIONS Release Debug
+  RUNTIME DESTINATION bin
+  LIBRARY DESTINATION lib
 )
 

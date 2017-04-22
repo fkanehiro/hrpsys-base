@@ -27,10 +27,8 @@
 #include "WholeBodyMasterSlaveService_impl.h"
 #include "interpolator.h"
 #include "../TorqueFilter/IIRFilter.h"
-#include "../AutoBalancer/HumanMasterSlave.h"
+#include "wbms_core.h"
 #include "../AutoBalancer/AutoBalancer.h"
-
-// </rtc-template>
 
 using namespace RTC;
 
@@ -73,13 +71,7 @@ class WholeBodyMasterSlave
   InPort<TimedPoint3D> m_zmpIn;
   TimedDoubleSeq m_optionalData;
   InPort<TimedDoubleSeq> m_optionalDataIn;
-  std::vector<TimedDoubleSeq> m_ref_force;
-  std::vector<InPort<TimedDoubleSeq> *> m_ref_forceIn;
-  TimedLong m_emergencySignal;
-  InPort<TimedLong> m_emergencySignalIn;
-  // for debug
-  TimedPoint3D m_cog;
-  //for human tracker
+
   TimedPose3D m_htcom;
   InPort<TimedPose3D> m_htcomIn;
   TimedPose3D m_htrf;
@@ -100,7 +92,7 @@ class WholeBodyMasterSlave
   InPort<TimedDoubleSeq> m_htrfwIn;
   TimedDoubleSeq m_htlfw;
   InPort<TimedDoubleSeq> m_htlfwIn;
-  //ishiguro dbg
+
   TimedPose3D m_htcom_dbg;
   OutPort<TimedPose3D> m_htcom_dbgOut;
   TimedPose3D m_htrf_dbg;
@@ -137,7 +129,6 @@ class WholeBodyMasterSlave
   OutPort<TimedPoint3D> m_rpdcp_dbgOut;
   TimedPoint3D m_rpacp_dbg;
   OutPort<TimedPoint3D> m_rpacp_dbgOut;
-
   TimedDoubleSeq m_invdyn_dbg;
   OutPort<TimedDoubleSeq> m_invdyn_dbgOut;
 
@@ -145,31 +136,7 @@ class WholeBodyMasterSlave
   RTC::OutPort<RTC::TimedPoint3D> m_zmpOut;
   OutPort<TimedPoint3D> m_basePosOut;
   OutPort<TimedOrientation3D> m_baseRpyOut;
-  TimedDoubleSeq m_baseTform;
-  OutPort<TimedDoubleSeq> m_baseTformOut;
-  TimedDoubleSeq m_optionalData2;
   OutPort<TimedDoubleSeq> m_optionalDataOut;
-  TimedPose3D m_basePose;
-  OutPort<TimedPose3D> m_basePoseOut;
-  TimedAcceleration3D m_accRef;
-  OutPort<TimedAcceleration3D> m_accRefOut;
-  TimedBooleanSeq m_contactStates;
-  OutPort<TimedBooleanSeq> m_contactStatesOut;
-  TimedDoubleSeq m_toeheelRatio;
-  OutPort<TimedDoubleSeq> m_toeheelRatioOut;
-  TimedDoubleSeq m_controlSwingSupportTime;
-  OutPort<TimedDoubleSeq> m_controlSwingSupportTimeOut;
-  TimedBoolean m_walkingStates;
-  OutPort<TimedBoolean> m_walkingStatesOut;
-  TimedPoint3D m_sbpCogOffset;
-  OutPort<TimedPoint3D> m_sbpCogOffsetOut;
-  std::vector<TimedDoubleSeq> m_force;
-  std::vector<OutPort<TimedDoubleSeq> *> m_ref_forceOut;
-  std::vector<TimedPoint3D> m_limbCOPOffset;
-  std::vector<OutPort<TimedPoint3D> *> m_limbCOPOffsetOut;
-  // for debug
-  OutPort<TimedPoint3D> m_cogOut;
-  
   RTC::CorbaPort m_WholeBodyMasterSlaveServicePort;
 
   WholeBodyMasterSlaveService_impl m_service0;
@@ -181,87 +148,26 @@ class WholeBodyMasterSlave
     hrp::Link* target_link;
     bool is_active, has_toe_joint;
   };
-//  void getTargetParameters();
   void solveFullbodyIKStrictCOM(const HRPPose3D& com_ref, const HRPPose3D& rf_ref, const HRPPose3D& lf_ref, const HRPPose3D& rh_ref, const HRPPose3D& lh_ref, const hrp::Vector3& head_ref);
   void processWholeBodyMasterSlave();
-//  void calcDynamicsFilterCompensation(const hrp::Vector3 zmp_lip, const hrp::Vector3 zmp_fullbody);
-//  void solveFullbodyIK ();
-//  void startABCparam(const ::OpenHRP::WholeBodyMasterSlaveService::StrSequence& limbs);
-//  void stopABCparam();
-//  void waitABCTransition();
-//  // Functions to calculate parameters for ABC output.
-//  // Output parameters are EE, limbCOPOffset, contactStates, controlSwingSupportTime, toeheelPhaseRatio
-//  void getOutputParametersForWalking ();
-//  void getOutputParametersForABC ();
-//  void getOutputParametersForIDLE ();
-//  void interpolateLegNamesAndZMPOffsets();
-//  void calcFixCoordsForAdjustFootstep (rats::coordinates& tmp_fix_coords);
-//  void rotateRefForcesForFixCoords (rats::coordinates& tmp_fix_coords);
-//  void updateTargetCoordsForHandFixMode (rats::coordinates& tmp_fix_coords);
-//  void calculateOutputRefForces ();
-//  hrp::Vector3 calcFootMidPosUsingZMPWeightMap ();
-//  void updateWalkingVelocityFromHandError (rats::coordinates& tmp_fix_coords);
-//  void calcReferenceJointAnglesForIK ();
-//  hrp::Matrix33 OrientRotationMatrix (const hrp::Matrix33& rot, const hrp::Vector3& axis1, const hrp::Vector3& axis2);
-//  void fixLegToCoords (const hrp::Vector3& fix_pos, const hrp::Matrix33& fix_rot);
-//  void fixLegToCoords2 (rats::coordinates& tmp_fix_coords);
-//  bool startWalking ();
-//  void stopWalking ();
-//  void copyRatscoords2Footstep(OpenHRP::WholeBodyMasterSlaveService::Footstep& out_fs, const rats::coordinates& in_fs);
-//  // static balance point offsetting
-//  void static_balance_point_proc_one(hrp::Vector3& tmp_input_sbp, const double ref_com_height);
-//  void calc_static_balance_point_from_forces(hrp::Vector3& sb_point, const hrp::Vector3& tmpcog, const double ref_com_height, std::vector<hrp::Vector3>& tmp_forces);
-//  hrp::Vector3 calc_vel_from_hand_error (const rats::coordinates& tmp_fix_coords);
+  void calcDynamicsFilterCompensation(const hrp::Vector3 zmp_lip, const hrp::Vector3 zmp_fullbody);
   bool isOptionalDataContact (const std::string& ee_name)
   {
       return (std::fabs(m_optionalData.data[contact_states_index_map[ee_name]]-1.0)<0.1)?true:false;
   };
-//  bool calc_inital_support_legs(const double& y, std::vector<rats::coordinates>& initial_support_legs_coords, std::vector<rats::leg_type>& initial_support_legs, rats::coordinates& start_ref_coords);
-//
-//  // for gg
-//  typedef boost::shared_ptr<rats::gait_generator> ggPtr;
-//  ggPtr gg;
-//  bool gg_is_walking, gg_solved;
-//  // for abc
   typedef boost::shared_ptr<SimpleFullbodyInverseKinematicsSolver> fikPtr;
   fikPtr fik;
-//  hrp::Vector3 ref_cog, ref_zmp, prev_imu_sensor_pos, prev_imu_sensor_vel, hand_fix_initial_offset;
-//  enum {BIPED, TROT, PACE, CRAWL, GALLOP} gait_type;
-//  enum {MODE_IDLE, MODE_ABC, MODE_SYNC_TO_IDLE, MODE_SYNC_TO_ABC} control_mode;
-//  std::map<std::string, ABCIKparam> ikp;
   std::map<std::string, size_t> contact_states_index_map;
-//  std::map<std::string, hrp::VirtualForceSensorParam> m_vfs;
-//  std::vector<std::string> sensor_names, leg_names, ee_vec;
-//  hrp::Vector3 target_root_p;
-//  hrp::Matrix33 target_root_R;
-//  rats::coordinates fix_leg_coords;
-//  std::vector<hrp::Vector3> default_zmp_offsets;
   double m_dt;
   hrp::BodyPtr m_robot;
-//  coil::Mutex m_mutex;
-//
-//  double transition_interpolator_ratio, transition_time, zmp_transition_time, adjust_footstep_transition_time, leg_names_interpolator_ratio;
-//  interpolator *zmp_offset_interpolator;
-//  interpolator *transition_interpolator;
-//  interpolator *adjust_footstep_interpolator;
-//  interpolator *leg_names_interpolator;
   hrp::Vector3 input_zmp, input_basePos;
   hrp::Matrix33 input_baseRot;
 
   hrp::Vector3 rel_ref_zmp; // ref zmp in base frame
 
-//  // static balance point offsetting
-//  hrp::Vector3 sbp_offset, sbp_cog_offset;
-//  enum {MODE_NO_FORCE, MODE_REF_FORCE} use_force;
-//  std::vector<hrp::Vector3> ref_forces;
-//
   unsigned int m_debugLevel;
   bool is_legged_robot;// is_stop_mode, is_hand_fix_mode, is_hand_fix_initial;
   int loop;
-//  bool graspless_manip_mode;
-//  std::string graspless_manip_arm;
-//  hrp::Vector3 graspless_manip_p_gain;
-//  rats::coordinates graspless_manip_reference_trans_coords;
 
   hrp::InvDynStateBuffer idsb;
   std::vector<IIRFilter> invdyn_zmp_filters;
@@ -269,10 +175,8 @@ class WholeBodyMasterSlave
   hrp::InvDynStateBuffer idsb2;
   std::vector<IIRFilter> invdyn_zmp_filters2;
 
-
   hrp::Vector3 ref_zmp_invdyn2;
 
-  //for HumanSynchronizer
   boost::shared_ptr<HumanSynchronizer> hsp;
 };
 

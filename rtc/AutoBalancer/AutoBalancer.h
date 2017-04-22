@@ -29,8 +29,10 @@
 #include "interpolator.h"
 #include "../TorqueFilter/IIRFilter.h"
 
-#include "HumanMasterSlave.h"
+// </rtc-template>
 
+// Service Consumer stub headers
+// <rtc-template block="consumer_stub_h">
 
 // </rtc-template>
 
@@ -392,10 +394,6 @@ class AutoBalancer
   bool getRemainingFootstepSequence(OpenHRP::AutoBalancerService::FootstepSequence_out o_footstep, CORBA::Long& o_current_fs_idx);
   bool getGoPosFootstepsSequence(const double& x, const double& y, const double& th, OpenHRP::AutoBalancerService::FootstepsSequence_out o_footstep);
   bool releaseEmergencyStop();
-  bool startCountDownForWholeBodyMasterSlave(const double sec);
-  bool stopHumanSync();
-  bool setWholeBodyMasterSlaveParam(const OpenHRP::AutoBalancerService::WholeBodyMasterSlaveParam& i_param);
-  bool getWholeBodyMasterSlaveParam(OpenHRP::AutoBalancerService::WholeBodyMasterSlaveParam& i_param);
 
  protected:
   // Configuration variable declaration
@@ -421,70 +419,7 @@ class AutoBalancer
   InPort<TimedLong> m_emergencySignalIn;
   // for debug
   TimedPoint3D m_cog;
-  //for human tracker
-  TimedPose3D m_htcom;
-  InPort<TimedPose3D> m_htcomIn;
-  TimedPose3D m_htrf;
-  InPort<TimedPose3D> m_htrfIn;
-  TimedPose3D m_htlf;
-  InPort<TimedPose3D> m_htlfIn;
-  TimedPose3D m_htrh;
-  InPort<TimedPose3D> m_htrhIn;
-  TimedPose3D m_htlh;
-  InPort<TimedPose3D> m_htlhIn;
-  TimedPose3D m_hthead;
-  InPort<TimedPose3D> m_htheadIn;
-  TimedPoint3D m_htzmp;
-  InPort<TimedPoint3D> m_htzmpIn;
-  TimedPoint3D m_actzmp;
-  InPort<TimedPoint3D> m_actzmpIn;
-  TimedDoubleSeq m_htrfw;
-  InPort<TimedDoubleSeq> m_htrfwIn;
-  TimedDoubleSeq m_htlfw;
-  InPort<TimedDoubleSeq> m_htlfwIn;
-  //ishiguro dbg
-  TimedPose3D m_htcom_dbg;
-  OutPort<TimedPose3D> m_htcom_dbgOut;
-  TimedPose3D m_htrf_dbg;
-  OutPort<TimedPose3D> m_htrf_dbgOut;
-  TimedPose3D m_htlf_dbg;
-  OutPort<TimedPose3D> m_htlf_dbgOut;
-  TimedPose3D m_htrh_dbg;
-  OutPort<TimedPose3D> m_htrh_dbgOut;
-  TimedPose3D m_htlh_dbg;
-  OutPort<TimedPose3D> m_htlh_dbgOut;
-  TimedPose3D m_hthead_dbg;
-  OutPort<TimedPose3D> m_hthead_dbgOut;
-  TimedPoint3D m_htzmp_dbg;
-  OutPort<TimedPoint3D> m_htzmp_dbgOut;
-  TimedDoubleSeq m_htrfw_dbg;
-  OutPort<TimedDoubleSeq> m_htrfw_dbgOut;
-  TimedDoubleSeq m_htlfw_dbg;
-  OutPort<TimedDoubleSeq> m_htlfw_dbgOut;
-  TimedPose3D m_rpcom_dbg;
-  OutPort<TimedPose3D> m_rpcom_dbgOut;
-  TimedPose3D m_rprf_dbg;
-  OutPort<TimedPose3D> m_rprf_dbgOut;
-  TimedPose3D m_rplf_dbg;
-  OutPort<TimedPose3D> m_rplf_dbgOut;
-  TimedPose3D m_rprh_dbg;
-  OutPort<TimedPose3D> m_rprh_dbgOut;
-  TimedPose3D m_rplh_dbg;
-  OutPort<TimedPose3D> m_rplh_dbgOut;
-  TimedPose3D m_rphead_dbg;
-  OutPort<TimedPose3D> m_rphead_dbgOut;
-  TimedPoint3D m_rpzmp_dbg;
-  OutPort<TimedPoint3D> m_rpzmp_dbgOut;
-  TimedPoint3D m_rpdcp_dbg;
-  OutPort<TimedPoint3D> m_rpdcp_dbgOut;
-  TimedPoint3D m_rpacp_dbg;
-  OutPort<TimedPoint3D> m_rpacp_dbgOut;
-
-  TimedDoubleSeq m_invdyn_dbg;
-  OutPort<TimedDoubleSeq> m_invdyn_dbgOut;
   
-
-
   // </rtc-template>
 
   // DataOutPort declaration
@@ -543,9 +478,6 @@ class AutoBalancer
     bool is_active, has_toe_joint;
   };
   void getTargetParameters();
-  void solveFullbodyIKStrictCOM(const HRPPose3D& com_ref, const HRPPose3D& rf_ref, const HRPPose3D& lf_ref, const HRPPose3D& rh_ref, const HRPPose3D& lh_ref, const hrp::Vector3& head_ref);
-  void processWholeBodyMasterSlave();
-  void calcDynamicsFilterCompensation(const hrp::Vector3 zmp_lip, const hrp::Vector3 zmp_fullbody);
   void solveFullbodyIK ();
   void startABCparam(const ::OpenHRP::AutoBalancerService::StrSequence& limbs);
   void stopABCparam();
@@ -624,16 +556,8 @@ class AutoBalancer
 
   hrp::InvDynStateBuffer idsb;
   std::vector<IIRFilter> invdyn_zmp_filters;
-
-  hrp::InvDynStateBuffer idsb2;
-  std::vector<IIRFilter> invdyn_zmp_filters2;
-
-
-  hrp::Vector3 ref_zmp_invdyn2;
-
-  //for HumanSynchronizer
-  boost::shared_ptr<HumanSynchronizer> hsp;
 };
+
 
 extern "C"
 {

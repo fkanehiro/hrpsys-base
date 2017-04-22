@@ -252,7 +252,7 @@ class HumanSynchronizer{
       tgt_FUP_TIME = FUP_TIME = 0.4;
       FUP_HIGHT = 0.05;
       CNT_F_TH = 20.0;
-      MAXVEL = 0.4;
+      MAXVEL = 0.4*10;
       HumanSyncOn = false;
       ht_first_call = true;
       startCountdownForHumanSync = false;

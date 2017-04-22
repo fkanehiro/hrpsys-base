@@ -355,7 +355,7 @@ namespace rats
               zmp_weight_interpolator->clear();
               double zmp_weight_initial_value[4] = {zmp_weight_map[RLEG], zmp_weight_map[LLEG], zmp_weight_map[RARM], zmp_weight_map[LARM]};
               zmp_weight_interpolator->set(zmp_weight_initial_value);
-              zmp_weight_interpolator->go(zmp_weight_array, 2.0, true);
+              zmp_weight_interpolator->setGoal(zmp_weight_array, 2.0, true);
           } else {
               std::cerr << "zmp_weight_map cannot be set because interpolating." << std::endl;
           }
