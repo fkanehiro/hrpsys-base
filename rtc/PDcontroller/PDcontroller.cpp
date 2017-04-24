@@ -247,6 +247,11 @@ void PDcontroller::readGainFile()
     for(unsigned int i=0; i < dof; ++i){
       m_angleRef.data[i] = qold_ref[i] = qold[i] = m_angle.data[i];
     }
+    // Print loaded gain
+    std::cerr << "[" << m_profile.instance_name << "] loadGain" << std::endl;
+    for (unsigned int i=0; i<m_robot->numJoints(); i++) {
+        std::cerr << "[" << m_profile.instance_name << "]   " << m_robot->joint(i)->name << ", pgain = " << Pgain[i] << ", dgain = " << Dgain[i] << std::endl;
+    }
 }
 
 /*
