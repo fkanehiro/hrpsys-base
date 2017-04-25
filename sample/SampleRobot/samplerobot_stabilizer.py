@@ -331,42 +331,104 @@ def demoSTTurnWalk ():
 def demoSTTransitionAirGround ():
     # This example is from YoheiKakiuchi's comment : https://github.com/fkanehiro/hrpsys-base/issues/1098, https://github.com/fkanehiro/hrpsys-base/pull/1102#issuecomment-284609203
     print >> sys.stderr, "9. ST Transition (in the air and on the ground)"
-    # Init
-    stp_org = hcf.st_svc.getParameter()
-    stp = hcf.st_svc.getParameter()
-    stp.transition_time = 0.1; # for fast checking
-    hcf.st_svc.setParameter(stp)
-    # Tests
-    print >> sys.stderr, "  9-1. Check in the air"
-    hcf.startStabilizer()
-    mimicInTheAir()
-    hcf.setJointAngles(hcf.getJointAngles(), stp.transition_time);hcf.waitInterpolation() # Wait transition
-    cmode1 = hcf.st_svc.getParameter().controller_mode
-    vcheck1 = (cmode1 == OpenHRP.StabilizerService.MODE_AIR)
-    print >> sys.stderr, "  9-2. Check on the ground"
-    mimicOnTheGround()
-    hcf.setJointAngles(hcf.getJointAngles(), stp.transition_time);hcf.waitInterpolation() # Wait transition
-    cmode2 = hcf.st_svc.getParameter().controller_mode
-    vcheck2 = (cmode2 == OpenHRP.StabilizerService.MODE_ST)
-    print >> sys.stderr, "  9-3. Check in the air and then stopST"
-    mimicInTheAir()
-    hcf.setJointAngles(hcf.getJointAngles(), 0.01);hcf.waitInterpolation() # Wait until in the air flag is invoked in onExecute
-    hcf.stopStabilizer()
-    cmode3 = hcf.st_svc.getParameter().controller_mode
-    vcheck3 = (cmode3 == OpenHRP.StabilizerService.MODE_IDLE)
-    print >> sys.stderr, "  9-4. Check on the ground"
-    mimicOnTheGround()
-    hcf.setJointAngles(hcf.getJointAngles(), 0.01);hcf.waitInterpolation() # Wait until on the ground flag is invoked in onExecute
-    hcf.startStabilizer()
-    cmode4 = hcf.st_svc.getParameter().controller_mode
-    vcheck4 = (cmode4 == OpenHRP.StabilizerService.MODE_ST)
-    # Finsh
-    hcf.st_svc.setParameter(stp_org)
-    vcheck_list = [vcheck1, vcheck2, vcheck3, vcheck4]
-    print >> sys.stderr, "  ST Transition Air Ground vcheck = ", vcheck_list, ", cmode = ", [cmode1, cmode2, cmode3, cmode4]
-    if all(vcheck_list):
-        print >> sys.stderr, "  ST Transition Air Ground => OK"
-    assert(all(vcheck_list))
+    if hcf.pdc:
+        # Init
+        stp_org = hcf.st_svc.getParameter()
+        stp = hcf.st_svc.getParameter()
+        stp.transition_time = 0.1; # for fast checking
+        hcf.st_svc.setParameter(stp)
+        # Tests
+        print >> sys.stderr, "  9-1. Check in the air"
+        hcf.startStabilizer()
+        mimicInTheAir()
+        hcf.setJointAngles(hcf.getJointAngles(), stp.transition_time);hcf.waitInterpolation() # Wait transition
+        cmode1 = hcf.st_svc.getParameter().controller_mode
+        vcheck1 = (cmode1 == OpenHRP.StabilizerService.MODE_AIR)
+        print >> sys.stderr, "  9-2. Check on the ground"
+        mimicOnTheGround()
+        hcf.setJointAngles(hcf.getJointAngles(), stp.transition_time);hcf.waitInterpolation() # Wait transition
+        cmode2 = hcf.st_svc.getParameter().controller_mode
+        vcheck2 = (cmode2 == OpenHRP.StabilizerService.MODE_ST)
+        print >> sys.stderr, "  9-3. Check in the air and then stopST"
+        mimicInTheAir()
+        hcf.setJointAngles(hcf.getJointAngles(), 0.01);hcf.waitInterpolation() # Wait until in the air flag is invoked in onExecute
+        hcf.stopStabilizer()
+        cmode3 = hcf.st_svc.getParameter().controller_mode
+        vcheck3 = (cmode3 == OpenHRP.StabilizerService.MODE_IDLE)
+        print >> sys.stderr, "  9-4. Check on the ground"
+        mimicOnTheGround()
+        hcf.setJointAngles(hcf.getJointAngles(), 0.01);hcf.waitInterpolation() # Wait until on the ground flag is invoked in onExecute
+        hcf.startStabilizer()
+        cmode4 = hcf.st_svc.getParameter().controller_mode
+        vcheck4 = (cmode4 == OpenHRP.StabilizerService.MODE_ST)
+        # Finsh
+        hcf.st_svc.setParameter(stp_org)
+        vcheck_list = [vcheck1, vcheck2, vcheck3, vcheck4]
+        print >> sys.stderr, "  ST Transition Air Ground vcheck = ", vcheck_list, ", cmode = ", [cmode1, cmode2, cmode3, cmode4]
+        if all(vcheck_list):
+            print >> sys.stderr, "  ST Transition Air Ground => OK"
+        assert(all(vcheck_list))
+    else:
+        print >> sys.stderr, "  This sample is neglected in High-gain mode simulation"
+
+def demoSTRootRotChange ():
+    print >> sys.stderr, "10. ST root rot change"
+    if hcf.pdc:
+        # 10deg
+        root_rot_x_pose=[-0.240857,-0.634561,0.012382,1.30211,-0.669201,0.073893,0.31129,-0.159481,-0.115399,-0.636277,0.0,0.0,0.0,-0.232865,-0.555515,0.011753,1.1356,-0.581653,0.06476,0.31129,0.159481,0.115399,-0.636277,0.0,0.0,0.0,0.0,0.0,0.0]
+        # 35deg
+        root_rot_y_pose=[-1.706033e-05,-1.04708,-0.000479,0.497763,-0.060719,-0.000105,0.31129,-0.159481,-0.115399,-0.636277,0.0,0.0,0.0,-1.690260e-05,-1.04693,-0.000479,0.497318,-0.060422,-0.000105,0.31129,0.159481,0.115399,-0.636277,0.0,0.0,0.0,0.0,0.0,0.0]
+        # 25deg
+        root_rot_z_pose=[-0.261382,-0.479591,-0.490714,1.26471,-0.722778,0.018041,0.31129,-0.159481,-0.115399,-0.636277,0.0,0.0,0.0,-0.313108,-0.610397,-0.535653,1.24943,-0.571839,-0.013257,0.31129,0.159481,0.115399,-0.636277,0.0,0.0,0.0,0.0,0.0,0.0]
+        # all 10deg
+        root_rot_xyz_pose=[-0.378611,-0.81283,-0.238181,1.23534,-0.577915,0.061071,0.31129,-0.159481,-0.115399,-0.636277,0.0,0.0,0.0,-0.351695,-0.768514,-0.225097,1.05221,-0.442267,0.050849,0.31129,0.159481,0.115399,-0.636277,0.0,0.0,0.0,0.0,0.0,0.0]
+        hcf.startAutoBalancer();
+        changeSTAlgorithm (OpenHRP.StabilizerService.EEFMQPCOP)
+        print >> sys.stderr, "  init"
+        checkActualBaseAttitude()
+        hcf.seq_svc.setJointAngles(root_rot_x_pose, 1.0);hcf.waitInterpolation();
+        hcf.seq_svc.setJointAngles(root_rot_x_pose, 1.0);hcf.waitInterpolation(); # dummy for wait
+        print >> sys.stderr, "  root rot x done."
+        checkActualBaseAttitude()
+        hcf.seq_svc.setJointAngles(root_rot_y_pose, 1.0);hcf.waitInterpolation();
+        hcf.seq_svc.setJointAngles(root_rot_y_pose, 1.0);hcf.waitInterpolation(); # dummy for wait
+        print >> sys.stderr, "  root rot y done."
+        checkActualBaseAttitude()
+        hcf.seq_svc.setJointAngles(root_rot_z_pose, 1.0);hcf.waitInterpolation();
+        hcf.seq_svc.setJointAngles(root_rot_z_pose, 1.0);hcf.waitInterpolation(); # dummy for wait
+        print >> sys.stderr, "  root rot z done."
+        checkActualBaseAttitude()
+        hcf.seq_svc.setJointAngles(root_rot_xyz_pose, 1.0);hcf.waitInterpolation();
+        hcf.seq_svc.setJointAngles(root_rot_xyz_pose, 1.0);hcf.waitInterpolation(); # dummy for wait
+        hcf.seq_svc.setJointAngles(initial_pose, 1.0);hcf.waitInterpolation();
+        print >> sys.stderr, "  root rot xyz done."
+        ret = checkActualBaseAttitude()
+        if ret:
+            print >> sys.stderr, "  ST root rot change => OK"
+        assert(ret)
+    else:
+        print >> sys.stderr, "  This sample is neglected in High-gain mode simulation"
+
+def demoSTMimicRouchTerrainWalk (terrain_height_diff = 0.04):
+    print >> sys.stderr, "11. ST mimic rough terrain walk"
+    if hcf.pdc:
+        hcf.setFootSteps([OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([0,-0.09,0], [1,0,0,0], "rleg")]),
+                          OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([0.22,0.09,terrain_height_diff], [1,0,0,0], "lleg")]),
+                          OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([0.44,-0.09,0], [1,0,0,0], "rleg")]),
+                          OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([0.44,0.09,0], [1,0,0,0], "lleg")])]);
+        hcf.abc_svc.waitFootSteps();
+        hcf.setFootSteps([OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([0,-0.09,0], [1,0,0,0], "rleg")]),
+                          OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([0.22,0.09,-1*terrain_height_diff], [1,0,0,0], "lleg")]),
+                          OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([0.44,-0.09,0], [1,0,0,0], "rleg")]),
+                          OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([0.44,0.09,0], [1,0,0,0], "lleg")])]);
+        hcf.abc_svc.waitFootSteps();
+        ret = checkActualBaseAttitude()
+        if ret:
+            print >> sys.stderr, "  ST mimic rough terrain walk => OK"
+        assert(ret)
+    else:
+        print >> sys.stderr, "  This sample is neglected in High-gain mode simulation"
+
 
 def demo():
     OPENHRP3_DIR=check_output(['pkg-config', 'openhrp3.1', '--variable=prefix']).rstrip()
@@ -382,6 +444,8 @@ def demo():
             demoSTToeHeelWalk()
             demoSTTurnWalk()
             demoSTTransitionAirGround()
+            demoSTRootRotChange()
+            demoSTMimicRouchTerrainWalk()
     else:
         print >> sys.stderr, "Skip st test because of missing sample1_bush.wrl"
 
