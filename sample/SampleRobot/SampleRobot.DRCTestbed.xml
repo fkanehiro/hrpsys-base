@@ -268,6 +268,17 @@
    <property name="WAIST.translation" value="12 0.665 0"/>
    <property name="WAIST.rotation" value="0 0 1 -1.5708"/>
   </item>
+  <item class="com.generalrobotix.ui.item.GrxModelItem" name="Floor" url="$(PROJECT_DIR)/../model/floor5.wrl">
+   <property name="rtcName" value="Floor(Robot)0"/>
+   <property name="inport" value="qRef:JOINT_VALUE"/>
+   <property name="inport" value="dqRef:JOINT_VELOCITY"/>
+   <property name="inport" value="ddqRef:JOINT_ACCELERATION"/>
+   <property name="outport" value="q:JOINT_VALUE"/>
+   <property name="outport" value="tau:JOINT_TORQUE"/>
+   <property name="WAIST.NumOfAABB" value="1"/>
+   <property name="WAIST.translation" value="0 0 -0.1"/>
+   <property name="WAIST.rotation" value="0 0 1 0"/>
+  </item>
   <view class="com.generalrobotix.ui.view.GrxRobotHardwareClientView" name="RobotHardware RTC Client">
    <property name="robotHost" value="localhost"/>
    <property name="StateHolderRTC" value="StateHolder0"/>
@@ -404,6 +415,17 @@
    <property name="jointName1" value=""/>
    <property name="damperConstant" value="0 0 0 0 0 0"/>
    <property name="objectName2" value="TestbedRpose"/>
+   <property name="objectName1" value="sample1"/>
+   <property name="springDamperModel" value="false"/>
+   <property name="staticFriction" value="0.5"/>
+  </item>
+  <item class="com.generalrobotix.ui.item.GrxCollisionPairItem" name="CP#Floor_#sample1_">
+   <property name="springConstant" value="0 0 0 0 0 0"/>
+   <property name="slidingFriction" value="0.5"/>
+   <property name="jointName2" value=""/>
+   <property name="jointName1" value=""/>
+   <property name="damperConstant" value="0 0 0 0 0 0"/>
+   <property name="objectName2" value="Floor"/>
    <property name="objectName1" value="sample1"/>
    <property name="springDamperModel" value="false"/>
    <property name="staticFriction" value="0.5"/>
