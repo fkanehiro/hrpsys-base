@@ -197,7 +197,7 @@ To learn more about API, please refer to [API DOC in hrpsys-base](http://fkanehi
     rosrun hrpsys samplerobot_auto_balancer.py
     ```
 
-    <div align="center"><p><img src="https://github.com/fkanehiro/hrpsys-base/tree/master/sample/SampleRobot/img/ABC.png" alt="AutoBalancer" title="AutoBalancer" width=300/></p></div>  
+    <div align="center"><p><img src="https://raw.githubusercontent.com/fkanehiro/hrpsys-base/master/sample/SampleRobot/img/ABC.png" alt="AutoBalancer" title="AutoBalancer" width=300/></p></div>  
 
     See [hrpsys-base samplerobot_auto_balancer.py](https://github.com/fkanehiro/hrpsys-base/blob/master/sample/SampleRobot/samplerobot_auto_balancer.py) for more info.  
 
@@ -231,9 +231,9 @@ To learn more about API, please refer to [API DOC in hrpsys-base](http://fkanehi
 
 # samplerobot_carry_object.py
 <div align="center"><p>
-<img src="https://github.com/fkanehiro/hrpsys-base/tree/master/sample/SampleRobot/img/DualarmCarry.png" alt="DualarmCarry" title="DualarmCarry" height=200/>
-<img src="https://github.com/fkanehiro/hrpsys-base/tree/master/sample/SampleRobot/img/SinglearmCarry.png" alt="SinglearmCarry" title="SinglearmCarry" height=200/>
-<img src="https://github.com/fkanehiro/hrpsys-base/tree/master/sample/SampleRobot/img/DualarmPush.png" alt="DualarmPush" title="DualarmPush" height=200/>
+<img src="https://raw.githubusercontent.com/fkanehiro/hrpsys-base/master/sample/SampleRobot/img/DualarmCarry.png" alt="DualarmCarry" title="DualarmCarry" height=200/>
+<img src="https://raw.githubusercontent.com/fkanehiro/hrpsys-base/master/sample/SampleRobot/img/SinglearmCarry.png" alt="SinglearmCarry" title="SinglearmCarry" height=200/>
+<img src="https://raw.githubusercontent.com/fkanehiro/hrpsys-base/master/sample/SampleRobot/img/DualarmPush.png" alt="DualarmPush" title="DualarmPush" height=200/>
 </p></div>
 
 1. Launch hrpsys-simulator
@@ -255,7 +255,7 @@ To learn more about API, please refer to [API DOC in hrpsys-base](http://fkanehi
 0. These examples are related with AutoBalancer RTC.  
 1. Example for slope walking  
 
-    <div align="center"><p><img src="https://github.com/fkanehiro/hrpsys-base/tree/master/sample/SampleRobot/img/Slope.png" alt="Slope" title="Slope" width=300/></p></div>  
+    <div align="center"><p><img src="https://raw.githubusercontent.com/fkanehiro/hrpsys-base/master/sample/SampleRobot/img/Slope.png" alt="Slope" title="Slope" width=300/></p></div>  
 
     1-1. Launch hrpsys-simulator
     ```
@@ -270,7 +270,7 @@ To learn more about API, please refer to [API DOC in hrpsys-base](http://fkanehi
 
 2. Example for stair climbing-up
 
-    <div align="center"><p><img src="https://github.com/fkanehiro/hrpsys-base/tree/master/sample/SampleRobot/img/StairUp.png" alt="StairUp" title="StairUp" width=300/></p></div>  
+    <div align="center"><p><img src="https://raw.githubusercontent.com/fkanehiro/hrpsys-base/master/sample/SampleRobot/img/StairUp.png" alt="StairUp" title="StairUp" width=300/></p></div>  
 
     2-1. Launch hrpsys-simulator
     ```
@@ -285,7 +285,7 @@ To learn more about API, please refer to [API DOC in hrpsys-base](http://fkanehi
 
 3. Example for stair climbing-down  
 
-    <div align="center"><p><img src="https://github.com/fkanehiro/hrpsys-base/tree/master/sample/SampleRobot/img/StairDown.png" alt="StairDown" title="StairDown" width=300/></p></div>  
+    <div align="center"><p><img src="https://raw.githubusercontent.com/fkanehiro/hrpsys-base/master/sample/SampleRobot/img/StairDown.png" alt="StairDown" title="StairDown" width=300/></p></div>  
 
     3-1. Launch hrpsys-simulator
     ```
@@ -312,7 +312,7 @@ To learn more about API, please refer to [API DOC in hrpsys-base](http://fkanehi
 
 3. Programming
 
-    <div align="center"><p><img src="https://github.com/fkanehiro/hrpsys-base/tree/master/sample/SampleRobot/img/DRCTestbed.png" alt="DRC Testbed" title="DRC Testbed" height=300/></p></div>  
+    <div align="center"><p><img src="https://raw.githubusercontent.com/fkanehiro/hrpsys-base/master/sample/SampleRobot/img/DRCTestbed.png" alt="DRC Testbed" title="DRC Testbed" height=300/></p></div>  
 
    - Python Interface  
       From python iterface, we can use `hcf` as interface object to the robot, for example
