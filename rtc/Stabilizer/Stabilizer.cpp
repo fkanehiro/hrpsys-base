@@ -385,8 +385,8 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   contact_decision_threshold = 50; // [N]
   eefm_use_force_difference_control = true;
   eefm_use_swing_damping = false;
-  eefm_swing_damping_force_thre = 300;
-  eefm_swing_damping_moment_thre = 15;
+  eefm_swing_damping_force_thre.resize(3, 300);
+  eefm_swing_damping_moment_thre.resize(3, 15);
   initial_cp_too_large_error = true;
   is_walking = false;
   is_estop_while_walking = false;
@@ -956,11 +956,11 @@ void Stabilizer::getActualParameters ()
     // foor modif
     if (control_mode == MODE_ST) {
       hrp::Vector3 f_diff(hrp::Vector3::Zero());
-      bool large_swing_f_diff = false;
+      std::vector<bool> large_swing_f_diff(3, false);
       // moment control
       for (size_t i = 0; i < stikp.size(); i++) {
         STIKParam& ikp = stikp[i];
-        bool large_swing_m_diff = false;
+        std::vector<bool> large_swing_m_diff(3, false);
         if (!is_feedback_control_enable[i]) continue;
         hrp::Sensor* sensor = m_robot->sensor<hrp::ForceSensor>(ikp.sensor_name);
         hrp::Link* target = m_robot->link(ikp.target_name);
@@ -981,8 +981,10 @@ void Stabilizer::getActualParameters ()
         ee_moment = foot_origin_rot.transpose() * ee_moment;
         if ( i == 0 ) f_diff += -1*sensor_force;
         else f_diff += sensor_force;
-        if ((!ref_contact_states[i] || !act_contact_states[i]) && fabs(ikp.ref_force(2) - sensor_force(2)) > eefm_swing_damping_force_thre) large_swing_f_diff = true;
-        if ((!ref_contact_states[i] || !act_contact_states[i]) && (fabs(ikp.ref_moment(0) - ee_moment(0)) > eefm_swing_damping_moment_thre || fabs(ikp.ref_moment(1) - ee_moment(1)) > eefm_swing_damping_moment_thre)) large_swing_m_diff = true;
+        for (size_t j = 0; j < 3; ++j) {
+            if ((!ref_contact_states[i] || !act_contact_states[i]) && fabs(ikp.ref_force(j) - sensor_force(j)) > eefm_swing_damping_force_thre[j]) large_swing_f_diff[j] = true;
+            if ((!ref_contact_states[i] || !act_contact_states[i]) && (fabs(ikp.ref_moment(j) - ee_moment(j)) > eefm_swing_damping_moment_thre[j])) large_swing_m_diff[j] = true;
+        }
         // Moment limitation
         hrp::Matrix33 ee_R(target->R * ikp.localR);
         ikp.ref_moment = ee_R * vlimit((ee_R.transpose() * ikp.ref_moment), ikp.eefm_ee_moment_limit);
@@ -991,8 +993,10 @@ void Stabilizer::getActualParameters ()
         { // Rot
           //   Basically Equation (16) and (17) in the paper [1]
           hrp::Vector3 tmp_damping_gain;
-          if (!eefm_use_swing_damping || !large_swing_m_diff) tmp_damping_gain = (1-transition_smooth_gain) * ikp.eefm_rot_damping_gain * 10 + transition_smooth_gain * ikp.eefm_rot_damping_gain;
-          else tmp_damping_gain = (1-transition_smooth_gain) * eefm_swing_rot_damping_gain * 10 + transition_smooth_gain * eefm_swing_rot_damping_gain;
+          for (size_t j = 0; j < 3; ++j) {
+              if (!eefm_use_swing_damping || !large_swing_m_diff[j]) tmp_damping_gain(j) = (1-transition_smooth_gain) * ikp.eefm_rot_damping_gain(j) * 10 + transition_smooth_gain * ikp.eefm_rot_damping_gain(j);
+              else tmp_damping_gain(j) = (1-transition_smooth_gain) * eefm_swing_rot_damping_gain(j) * 10 + transition_smooth_gain * eefm_swing_rot_damping_gain(j);
+          }
           ikp.d_foot_rpy = calcDampingControl(ikp.ref_moment, ee_moment, ikp.d_foot_rpy, tmp_damping_gain, ikp.eefm_rot_time_const);
           ikp.d_foot_rpy = vlimit(ikp.d_foot_rpy, -1 * ikp.eefm_rot_compensation_limit, ikp.eefm_rot_compensation_limit);
         }
@@ -1022,8 +1026,10 @@ void Stabilizer::getActualParameters ()
           hrp::Vector3 ref_f_diff = (stikp[1].ref_force-stikp[0].ref_force);
           if (eefm_use_swing_damping) {
             hrp::Vector3 tmp_damping_gain;
-            if (!large_swing_f_diff) tmp_damping_gain = (1-transition_smooth_gain) * stikp[0].eefm_pos_damping_gain * 10 + transition_smooth_gain * stikp[0].eefm_pos_damping_gain;
-            else tmp_damping_gain = (1-transition_smooth_gain) * eefm_swing_pos_damping_gain * 10 + transition_smooth_gain * eefm_swing_pos_damping_gain;
+            for (size_t i = 0; i < 3; ++i) {
+                if (!large_swing_f_diff[i]) tmp_damping_gain(i) = (1-transition_smooth_gain) * stikp[0].eefm_pos_damping_gain(i) * 10 + transition_smooth_gain * stikp[0].eefm_pos_damping_gain(i);
+                else tmp_damping_gain(i) = (1-transition_smooth_gain) * eefm_swing_pos_damping_gain(i) * 10 + transition_smooth_gain * eefm_swing_pos_damping_gain(i);
+            }
             pos_ctrl = calcDampingControl (ref_f_diff, f_diff, pos_ctrl,
                                            tmp_damping_gain, stikp[0].eefm_pos_time_const_support);
           } else {
@@ -1867,9 +1873,10 @@ void Stabilizer::getParameter(OpenHRP::StabilizerService::stParam& i_stp)
   i_stp.eefm_ee_error_cutoff_freq = stikp[0].target_ee_diff_p_filter->getCutOffFreq();
   i_stp.eefm_use_force_difference_control = eefm_use_force_difference_control;
   i_stp.eefm_use_swing_damping = eefm_use_swing_damping;
-  i_stp.eefm_swing_damping_force_thre = eefm_swing_damping_force_thre;
-  i_stp.eefm_swing_damping_moment_thre = eefm_swing_damping_moment_thre;
-
+  for (size_t i = 0; i < 3; ++i) {
+      i_stp.eefm_swing_damping_force_thre[i] = eefm_swing_damping_force_thre[i];
+      i_stp.eefm_swing_damping_moment_thre[i] = eefm_swing_damping_moment_thre[i];
+  }
   i_stp.is_ik_enable.length(is_ik_enable.size());
   for (size_t i = 0; i < is_ik_enable.size(); i++) {
       i_stp.is_ik_enable[i] = is_ik_enable[i];
@@ -2057,9 +2064,10 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
   }
   eefm_use_force_difference_control = i_stp.eefm_use_force_difference_control;
   eefm_use_swing_damping = i_stp.eefm_use_swing_damping;
-  eefm_swing_damping_force_thre = i_stp.eefm_swing_damping_force_thre;
-  eefm_swing_damping_moment_thre = i_stp.eefm_swing_damping_moment_thre;
-
+  for (size_t i = 0; i < 3; ++i) {
+      eefm_swing_damping_force_thre[i] = i_stp.eefm_swing_damping_force_thre[i];
+      eefm_swing_damping_moment_thre[i] = i_stp.eefm_swing_damping_moment_thre[i];
+  }
   act_cogvel_filter->setCutOffFreq(i_stp.eefm_cogvel_cutoff_freq);
   szd->set_wrench_alpha_blending(i_stp.eefm_wrench_alpha_blending);
   szd->set_alpha_cutoff_freq(i_stp.eefm_alpha_cutoff_freq);
