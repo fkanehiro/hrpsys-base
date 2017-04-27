@@ -17,12 +17,6 @@ namespace rats
         std::cerr << "[RMC] Updated selection matrix by " << Svec.transpose() << std::endl;
     }
 
-    hrp::dvector6 RMController::getSelectionVector()
-    {
-        hrp::dvector ones = hrp::dvector::Ones(s_.rows());
-        return ones.transpose() * s_;
-    }
-
     bool RMController::addConstraintLink(const hrp::BodyPtr m_robot, const std::string &name)
     {
         if (constraints_.count(name) == 1) {
@@ -199,7 +193,6 @@ namespace rats
 
         // Step4
         hrp::dvector dq_free(free_dof);
-        // dq_free.resize(free_dof);
         for (size_t i = 0; i < free_dof; ++i) {
             dq_free(i) = m_robot->joint(free_id_[i])->dq; // reference
         }
@@ -210,10 +203,6 @@ namespace rats
             root_v = (ref_basePos - m_robot->rootLink()->p) / dt;
             hrp::Matrix33 dR = m_robot->rootLink()->R.transpose() * ref_baseRot;
             root_omega = hrp::omegaFromRot(dR) / dt;
-            // hrp::dmatrix dRRT = dR / dt * m_robot->rootLink()->R.transpose();
-            // root_omega(0) = (-dRRT(1, 2) + dRRT(2, 1)) / 2.0;
-            // root_omega(1) = (-dRRT(2, 0) + dRRT(0, 2)) / 2.0;
-            // root_omega(2) = (-dRRT(0, 1) + dRRT(1, 0)) / 2.0;
             xi_b << root_v, root_omega; // reference
         }
 

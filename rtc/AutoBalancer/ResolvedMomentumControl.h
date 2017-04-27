@@ -48,7 +48,7 @@ namespace rats
         std::vector<size_t> free_id_; // initialize to 0 ~ numjoints-1
     public:
         void setSelectionMatrix(const hrp::dvector6 Svec);
-        hrp::dvector6 getSelectionVector();
+        hrp::dvector6 getSelectionVector() { return hrp::dvector::Ones(s_.rows()).transpose() * s_; }
         bool addConstraintLink(const hrp::BodyPtr m_robot, const std::string &name);
         bool removeConstraintLink(const hrp::BodyPtr m_robot, const std::string &name);
         bool removeConstraintLink(const hrp::BodyPtr m_robot, const std::string &name, std::map<std::string, hrp::dvector6> &xi_ref);
