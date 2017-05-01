@@ -611,6 +611,8 @@ namespace rats
       overwrite_refzmp_queue(overwrite_footstep_nodes_list);
       overwrite_footstep_nodes_list.clear();
     }
+    // modify footsteps based on diff_cp
+    if(modify_footsteps) modify_footsteps_for_recovery();
 
     if ( !solved ) {
       hrp::Vector3 rzmp;
@@ -679,6 +681,59 @@ namespace rats
     // world frame
     cur_fs.worldcoords.pos = prev_fs.worldcoords.pos + prev_fs.worldcoords.rot * cur_fs.worldcoords.pos;
   };
+
+  void gait_generator::modify_footsteps_for_recovery ()
+  {
+    if (isfinite(diff_cp(0)) && isfinite(diff_cp(1))) {
+      // calculate diff_cp
+      hrp::Vector3 tmp_diff_cp;
+      for (size_t i = 0; i < 2; i++) {
+        if (std::fabs(diff_cp(i)) > cp_check_margin[i]) {
+          is_emergency_walking[i] = true;
+          tmp_diff_cp(i) = diff_cp(i) - cp_check_margin[i] * diff_cp(i)/std::fabs(diff_cp(i));
+        } else {
+          is_emergency_walking[i] = false;
+        }
+      }
+      if (lcg.get_footstep_index() > 0 && lcg.get_footstep_index() < footstep_nodes_list.size()-2) {
+        static int not_emergency_cnt;
+        // calculate sum of preview_f
+        static double preview_f_sum;
+        if (lcg.get_lcg_count() == static_cast<size_t>(footstep_nodes_list[lcg.get_footstep_index()][0].step_time/dt * 1.0) - 1) {
+          preview_f_sum = preview_controller_ptr->get_preview_f(preview_controller_ptr->get_delay());
+          for (size_t i = preview_controller_ptr->get_delay()-1; i >= lcg.get_lcg_count()+1; i--) {
+            preview_f_sum += preview_controller_ptr->get_preview_f(i);
+          }
+        }
+        if (lcg.get_lcg_count() <= preview_controller_ptr->get_delay()) {
+          preview_f_sum += preview_controller_ptr->get_preview_f(lcg.get_lcg_count());
+        }
+        // calculate modified footstep position
+        double preview_db = 1/6.0 * dt * dt * dt + 1/2.0 * dt * dt * 1/std::sqrt(gravitational_acceleration / (cog(2) - refzmp(2)));
+        hrp::Vector3 d_footstep = -1/preview_f_sum * 1/preview_db * footstep_modification_gain * tmp_diff_cp;
+        d_footstep(2) = 0.0;
+        // overwrite footsteps
+        if (lcg.get_lcg_count() <= static_cast<size_t>(footstep_nodes_list[lcg.get_footstep_index()][0].step_time/dt * 1.0) - 1 &&
+            lcg.get_lcg_count() >= static_cast<size_t>(footstep_nodes_list[lcg.get_footstep_index()][0].step_time/dt * (default_double_support_ratio_after + margin_time_ratio)) - 1 &&
+            !(lcg.get_lcg_count() <= static_cast<size_t>(footstep_nodes_list[lcg.get_footstep_index()][0].step_time/dt * 0.5) - 1 && act_contact_states[0] && act_contact_states[1])) {
+          // stride limitation check
+          hrp::Vector3 orig_footstep_pos = footstep_nodes_list[get_overwritable_index()].front().worldcoords.pos;
+          for (size_t i = 0; i < 2; i++) {
+            if (is_emergency_walking[i]) footstep_nodes_list[get_overwritable_index()].front().worldcoords.pos(i) += d_footstep(i);
+          }
+          limit_stride(footstep_nodes_list[get_overwritable_index()].front(), footstep_nodes_list[get_overwritable_index()-1].front(), overwritable_stride_limitation);
+          d_footstep = footstep_nodes_list[get_overwritable_index()].front().worldcoords.pos - orig_footstep_pos;
+          for (size_t i = lcg.get_footstep_index()+1; i < footstep_nodes_list.size(); i++) {
+            footstep_nodes_list[i].front().worldcoords.pos += d_footstep;
+          }
+        }
+        overwrite_footstep_nodes_list.insert(overwrite_footstep_nodes_list.end(), footstep_nodes_list.begin()+lcg.get_footstep_index(), footstep_nodes_list.end());
+        // overwrite zmp
+        overwrite_refzmp_queue(overwrite_footstep_nodes_list);
+        overwrite_footstep_nodes_list.clear();
+      }
+    }
+  }
 
   /* generate vector of step_node from :go-pos params
    *  x, y and theta are simply divided by using stride params

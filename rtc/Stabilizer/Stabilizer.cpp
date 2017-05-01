@@ -71,6 +71,7 @@ Stabilizer::Stabilizer(RTC::Manager* manager)
     m_zmpOut("zmp", m_zmp),
     m_refCPOut("refCapturePoint", m_refCP),
     m_actCPOut("actCapturePoint", m_actCP),
+    m_diffCPOut("diffCapturePoint", m_diffCP),
     m_actContactStatesOut("actContactStates", m_actContactStates),
     m_COPInfoOut("COPInfo", m_COPInfo),
     m_emergencySignalOut("emergencySignal", m_emergencySignal),
@@ -133,6 +134,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   addOutPort("zmp", m_zmpOut);
   addOutPort("refCapturePoint", m_refCPOut);
   addOutPort("actCapturePoint", m_actCPOut);
+  addOutPort("diffCapturePoint", m_diffCPOut);
   addOutPort("actContactStates", m_actContactStatesOut);
   addOutPort("COPInfo", m_COPInfoOut);
   addOutPort("emergencySignal", m_emergencySignalOut);
@@ -381,6 +383,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   eefm_gravitational_acceleration = 9.80665; // [m/s^2]
   cop_check_margin = 20.0*1e-3; // [m]
   cp_check_margin.resize(4, 30*1e-3); // [m]
+  cp_offset = hrp::Vector3(0.0, 0.0, 0.0); // [m]
   tilt_margin.resize(2, 30 * M_PI / 180); // [rad]
   contact_decision_threshold = 50; // [N]
   eefm_use_force_difference_control = true;
@@ -653,6 +656,14 @@ RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
       m_actCP.data.z = rel_act_cp(2);
       m_actCP.tm = m_qRef.tm;
       m_actCPOut.write();
+      {
+        hrp::Vector3 tmp_diff_cp = ref_foot_origin_rot * (ref_cp - act_cp - cp_offset);
+        m_diffCP.data.x = tmp_diff_cp(0);
+        m_diffCP.data.y = tmp_diff_cp(1);
+        m_diffCP.data.z = tmp_diff_cp(2);
+        m_diffCP.tm = m_qRef.tm;
+        m_diffCPOut.write();
+      }
       m_actContactStates.tm = m_qRef.tm;
       m_actContactStatesOut.write();
       m_COPInfo.tm = m_qRef.tm;
@@ -1183,7 +1194,7 @@ void Stabilizer::getTargetParameters ()
     } else {
       ref_cogvel = (ref_cog - prev_ref_cog)/dt;
     }
-    prev_ref_foot_origin_rot = foot_origin_rot;
+    prev_ref_foot_origin_rot = ref_foot_origin_rot = foot_origin_rot;
     for (size_t i = 0; i < stikp.size(); i++) {
       stikp[i].target_ee_diff_p = foot_origin_rot.transpose() * (target_ee_p[i] - foot_origin_pos);
       stikp[i].target_ee_diff_r = foot_origin_rot.transpose() * target_ee_R[i];
@@ -1797,6 +1808,7 @@ void Stabilizer::getParameter(OpenHRP::StabilizerService::stParam& i_stp)
     i_stp.eefm_body_attitude_control_gain[i] = eefm_body_attitude_control_gain[i];
     i_stp.ref_capture_point[i] = ref_cp(i);
     i_stp.act_capture_point[i] = act_cp(i);
+    i_stp.cp_offset[i] = cp_offset(i);
   }
   i_stp.eefm_pos_time_const_support.length(stikp.size());
   i_stp.eefm_pos_damping_gain.length(stikp.size());
@@ -1991,6 +2003,7 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
     eefm_body_attitude_control_time_const[i] = i_stp.eefm_body_attitude_control_time_const[i];
     ref_cp(i) = i_stp.ref_capture_point[i];
     act_cp(i) = i_stp.act_capture_point[i];
+    cp_offset(i) = i_stp.cp_offset[i];
   }
   bool is_damping_parameter_ok = true;
   if ( i_stp.eefm_pos_damping_gain.length () == stikp.size() &&

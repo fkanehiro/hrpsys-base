@@ -10,6 +10,7 @@ module OpenHRP
   {
     typedef sequence<double, 3> DblSequence3;
     //typedef sequence<double, 4> DblSequence4;
+    typedef double DblArray2[2];
     typedef double DblArray3[3];
     typedef double DblArray4[4];
     typedef double DblArray5[5];
@@ -249,6 +250,14 @@ module OpenHRP
       StrideLimitationType stride_limitation_type;
       /// Leg margin between foot end effector position and foot edge (front, rear, outside, inside) [m]
       DblArray4 leg_margin;
+      /// Feedback gain when modifying footsteps based on Capture Point
+      double footstep_modification_gain;
+      /// Whether modify footsteps based on Capture Point
+      boolean modify_footsteps;
+      /// CP check margin when modifying footsteps (x, y) [m]
+      DblArray2 cp_check_margin;
+      /// Margin time ratio for footstep modification before landing [s]
+      double margin_time_ratio;
     };
 
     /**
