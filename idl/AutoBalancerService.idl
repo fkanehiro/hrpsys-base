@@ -12,6 +12,7 @@ module OpenHRP
     //typedef sequence<double, 4> DblSequence4;
     typedef double DblArray3[3];
     typedef double DblArray4[4];
+    typedef double DblArray5[5];
 
     /**
      * @struct Footstep
@@ -192,6 +193,8 @@ module OpenHRP
       double default_double_support_ratio_swing_after;
       /// Stride limitation of forward x[m], y[m], theta[deg], and backward x[m] for goPos
       sequence<double, 4> stride_parameter;
+      /// Stride limitation when generating footsteps with stride limitation type CIRCLE (forward, outside, theta, backward, inside) [m]
+      DblArray5 stride_limitation_for_circle_type;
       /// Default OrbitType
       OrbitType default_orbit_type;
       /// Time offset [s] for swing trajectory by delay_hoffarbib_trajectory_generator.
@@ -238,8 +241,8 @@ module OpenHRP
       long optional_go_pos_finalize_footstep_num;
       /// Offset for overwritable footstep index. Offset from current footstep index. Used in emergency_stop and velocity_mode.
       long overwritable_footstep_index_offset;
-      /// Stride limitation when overwriting footsteps (front, rear, outside, inside) [m]
-      DblArray4 overwritable_stride_limitation;
+      /// Stride limitation when overwriting footsteps (forward, outside, theta, backward, inside) [m]
+      DblArray5 overwritable_stride_limitation;
       /// Use stride limitation or not
       boolean use_stride_limitation;
       /// Stride limitation type
