@@ -2105,6 +2105,24 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
 
         @requires: hrpsys version greather than 315.2.0.
         @requires: ImpedanceController RTC to be activated on the robot's controller.
+        @change: From 315.2.0 onward, following arguments are dropped and can be set by
+                 self.seq_svc.setWrenches instead of this method.
+                 See an example at https://github.com/fkanehiro/hrpsys-base/pull/434/files#diff-6204f002204dd9ae80f203901f155fa9R44:
+
+                 - ref_force=[x, y, z] can be set by:
+
+                   self.seq_svc.setWrenches([0, 0, 0, 0, 0, 0,
+                                             0, 0, 0, 0, 0, 0,
+                                             0, 0, 0, 0, 0, 0,
+                                             x, y, z, 0, 0, 0,])
+
+                 - ref_moment=[x, y, z] can be set by:
+
+                   self.seq_svc.setWrenches([0, 0, 0, 0, 0, 0,
+                                             0, 0, 0, 0, 0, 0,
+                                             0, 0, 0, 0, 0, 0,
+                                             0, 0, 0, x, y, z,])
+
         @param arm: Name of the kinematic group (i.e. self.Groups[n][0]).
         @param kwargs: This varies depending on the version of hrpsys your robot's controller runs on
                        (which you can find by "self.hrpsys_version" command). For instance, if your
