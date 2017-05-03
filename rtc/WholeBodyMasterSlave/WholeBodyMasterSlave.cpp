@@ -169,7 +169,18 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onInitialize()
     m_htrfw.data.length(6);
     m_htlfw.data.length(6);
     loop = 0;
-//
+
+
+    q_interpolator = new interpolator(1, m_dt, interpolator::HOFFARBIB, 1);
+    q_interpolator->setName(std::string(m_profile.instance_name)+" q_interpolator");
+    q_interpolator_ratio = 0;
+    double tmp_ratio = 0.0;
+    q_interpolator->clear();
+    q_interpolator->set(&tmp_ratio);
+    tmp_ratio = 1.0;
+    q_interpolator->setGoal(&tmp_ratio, 3.0, true);
+
+
 //    // setting from conf file
 //    // GaitGenerator requires abc_leg_offset and abc_stride_parameter in robot conf file
 //    // setting leg_pos from conf file
@@ -236,7 +247,6 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onInitialize()
     }
 
     hsp = boost::shared_ptr<HumanSynchronizer>(new HumanSynchronizer());
-//    if(leg_pos.size()>=2){ hsp->init_wld_rp_rfeepos = leg_pos[0]; hsp->init_wld_rp_lfeepos = leg_pos[1]; }
 
     return RTC::RTC_OK;
 }
@@ -279,9 +289,9 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id)
     }
     if (m_zmpIn.isNew()) {
       m_zmpIn.read();
-//      input_zmp(0) = m_zmp.data.x;
-//      input_zmp(1) = m_zmp.data.y;
-//      input_zmp(2) = m_zmp.data.z;
+      input_ref_zmp(0) = m_zmp.data.x;
+      input_ref_zmp(1) = m_zmp.data.y;
+      input_ref_zmp(2) = m_zmp.data.z;
     }
     if (m_optionalDataIn.isNew()) {
         m_optionalDataIn.read();
@@ -298,18 +308,19 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id)
     if (m_htheadIn.isNew()){ m_htheadIn.read(); HumanSynchronizer::Pose3DToHRPPose3D(m_hthead.data,hsp->head_cam_pose);}
     if (m_actzmpIn.isNew()){m_actzmpIn.read(); }
 
-//    if(ikp.count("rarm"))ikp["rarm"].is_active = false;
-//    if(ikp.count("larm"))ikp["larm"].is_active = false;
-//    m_contactStates.data[contact_states_index_map["rleg"]] = hsp->is_rf_contact;
-//    m_contactStates.data[contact_states_index_map["lleg"]] = hsp->is_lf_contact;
-//
-//
-//    // Calculation
-//    Guard guard(m_mutex);
-//    hrp::Vector3 ref_basePos;
-//    hrp::Matrix33 ref_baseRot;
-//    hrp::Vector3 rel_ref_zmp; // ref zmp in base frame
+
     if ( is_legged_robot ) {
+
+
+      bool is_q_interpolator_empty = q_interpolator->isEmpty();
+      if (!is_q_interpolator_empty && hsp->isHumanSyncOn()) {
+        q_interpolator->get(&q_interpolator_ratio, true);
+      }
+//        else {
+//        q_interpolator_ratio = (control_mode == MODE_IDLE) ? 0.0 : 1.0;
+//      }
+
+
         hsp->baselinkpose.p = m_robot->rootLink()->p;
         hsp->baselinkpose.rpy = hrp::rpyFromRot(m_robot->rootLink()->R);
         if(!hsp->isHumanSyncOn()){
@@ -318,9 +329,7 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id)
           for ( unsigned int i = 0; i < m_robot->numJoints(); i++ ){
             m_robot->joint(i)->q = m_qRef.data[i];
           }
-
           m_robot->calcForwardKinematics();
-//          solveFullbodyIK();
         }
 
         processWholeBodyMasterSlave();
@@ -354,13 +363,17 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id)
 //        for(int i=0;i<3;i++) ref_zmp_invdyn2(i) = invdyn_zmp_filters2[i].passFilter(ref_zmp_invdyn2(i));
         updateInvDynStateBuffer(idsb2);
 
+//        ref_zmp = ref_zmp_invdyn;
 //        rel_ref_zmp = m_robot->rootLink()->R.transpose() * (ref_zmp - m_robot->rootLink()->p);
     }
     // Write Outport
     if ( m_qRef.data.length() != 0 ) { // initialized
       if (is_legged_robot) {
         for ( unsigned int i = 0; i < m_robot->numJoints(); i++ ){
-          m_qRef.data[i] = m_robot->joint(i)->q;
+//          m_qRef.data[i] = m_robot->joint(i)->q;
+          m_qRef.data[i] = q_interpolator_ratio * m_robot->joint(i)->q  + (1 - q_interpolator_ratio) * m_qRef.data[i];
+
+
         }
       }
       m_qOut.write();
@@ -456,7 +469,6 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id)
 }
 
 void WholeBodyMasterSlave::processWholeBodyMasterSlave(){
-//  fik->ratio_for_vel = transition_interpolator_ratio * leg_names_interpolator_ratio;
   fik->current_tm = m_qRef.tm;
   fik->ikp["rleg"].is_ik_enable = true;
   fik->ikp["lleg"].is_ik_enable = true;
@@ -503,8 +515,6 @@ void WholeBodyMasterSlave::processWholeBodyMasterSlave(){
   if(hsp->isHumanSyncOn()){
     solveFullbodyIKStrictCOM( hsp->rp_ref_out.getP("com"), hsp->rp_ref_out.getP("rf"), hsp->rp_ref_out.getP("lf"), hsp->rp_ref_out.getP("rh"), hsp->rp_ref_out.getP("lh"), hsp->cam_rpy_filtered );
     //outport用のデータ上書き
-//    ref_zmp = hsp->rp_ref_out.getP("zmp").p;
-//    ref_cog = hsp->rp_ref_out.getP("com").p;
     rel_ref_zmp = m_robot->rootLink()->R.transpose() * (hsp->rp_ref_out.getP("zmp").p - m_robot->rootLink()->p);
     if(m_optionalData.data.length() < 4*2){
       m_optionalData.data.length(4*2);//これいいのか？
@@ -513,7 +523,7 @@ void WholeBodyMasterSlave::processWholeBodyMasterSlave(){
     m_optionalData.data[contact_states_index_map["rleg"]] = hsp->is_rf_contact;
     m_optionalData.data[contact_states_index_map["lleg"]] = hsp->is_lf_contact;
   }else{
-    rel_ref_zmp = m_robot->rootLink()->R.transpose() * (hsp->rp_ref_out.getP("zmp").p - m_robot->rootLink()->p);
+    rel_ref_zmp = input_ref_zmp;
   }
 }
 //

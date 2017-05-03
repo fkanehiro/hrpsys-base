@@ -160,9 +160,13 @@ class WholeBodyMasterSlave
   std::map<std::string, size_t> contact_states_index_map;
   double m_dt;
   hrp::BodyPtr m_robot;
-  hrp::Vector3 input_zmp, input_basePos;
+  hrp::Vector3 input_ref_zmp, input_basePos;
   hrp::Matrix33 input_baseRot;
 
+  double q_interpolator_ratio;
+  interpolator *q_interpolator;
+
+  hrp::Vector3 ref_zmp;
   hrp::Vector3 rel_ref_zmp; // ref zmp in base frame
 
   unsigned int m_debugLevel;
