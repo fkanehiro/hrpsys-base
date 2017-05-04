@@ -402,11 +402,12 @@ class HrpsysConfigurator(object):
 #            connectPorts(self.sh.port("baseRpyOut"), self.abc.port("baseRpyIn"))
 #            connectPorts(self.sh.port("optionalDataOut"), self.abc.port("optionalData"))
             #### wbms
-            connectPorts(self.wbms.port("q"), self.abc.port("qRef"))
-            connectPorts(self.wbms.port("zmpOut"), self.abc.port("zmpIn"))
-            connectPorts(self.wbms.port("basePosOut"), self.abc.port("basePosIn"))
-            connectPorts(self.wbms.port("baseRpyOut"), self.abc.port("baseRpyIn"))
-            connectPorts(self.wbms.port("optionalDataOut"), self.abc.port("optionalData"))
+            if self.wbms:
+                connectPorts(self.wbms.port("q"), self.abc.port("qRef"))
+                connectPorts(self.wbms.port("zmpOut"), self.abc.port("zmpIn"))
+                connectPorts(self.wbms.port("basePosOut"), self.abc.port("basePosIn"))
+                connectPorts(self.wbms.port("baseRpyOut"), self.abc.port("baseRpyIn"))
+                connectPorts(self.wbms.port("optionalDataOut"), self.abc.port("optionalData"))
             
             connectPorts(self.abc.port("zmpOut"), self.st.port("zmpRef"))
             connectPorts(self.abc.port("baseRpyOut"), self.st.port("baseRpyIn"))
