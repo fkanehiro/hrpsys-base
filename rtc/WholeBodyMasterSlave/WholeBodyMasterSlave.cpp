@@ -63,25 +63,25 @@ WholeBodyMasterSlave::WholeBodyMasterSlave(RTC::Manager* manager)
       m_actzmpIn("actzmpIn", m_actzmp),
       m_htheadIn("htheadIn", m_hthead),
       // to ros bridge
-      m_htcom_dbgOut("htcom_dbgOut", m_htcom_dbg),
-      m_htrf_dbgOut("htrf_dbgOut", m_htrf_dbg),
-      m_htlf_dbgOut("htlf_dbgOut", m_htlf_dbg),
-      m_htrh_dbgOut("htrh_dbgOut", m_htrh_dbg),
-      m_htlh_dbgOut("htlh_dbgOut", m_htlh_dbg),
-      m_hthead_dbgOut("hthead_dbgOut", m_hthead_dbg),
-      m_htzmp_dbgOut("htzmp_dbgOut", m_htzmp_dbg),
-      m_htrfw_dbgOut("htrfw_dbgOut", m_htrfw_dbg),
-      m_htlfw_dbgOut("htlfw_dbgOut", m_htlfw_dbg),
-      m_rpcom_dbgOut("rpcom_dbgOut", m_rpcom_dbg),
-      m_rprf_dbgOut("rprf_dbgOut", m_rprf_dbg),
-      m_rplf_dbgOut("rplf_dbgOut", m_rplf_dbg),
-      m_rprh_dbgOut("rprh_dbgOut", m_rprh_dbg),
-      m_rplh_dbgOut("rplh_dbgOut", m_rplh_dbg),
-      m_rphead_dbgOut("rphead_dbgOut", m_rphead_dbg),
-      m_rpzmp_dbgOut("rpzmp_dbgOut", m_rpzmp_dbg),
-      m_rpdcp_dbgOut("rpdcp_dbgOut", m_rpdcp_dbg),
-      m_rpacp_dbgOut("rpacp_dbgOut", m_rpacp_dbg),
-      m_invdyn_dbgOut("invdyn_dbgOut", m_invdyn_dbg),
+      // m_htcom_dbgOut("htcom_dbgOut", m_htcom_dbg),
+      // m_htrf_dbgOut("htrf_dbgOut", m_htrf_dbg),
+      // m_htlf_dbgOut("htlf_dbgOut", m_htlf_dbg),
+      // m_htrh_dbgOut("htrh_dbgOut", m_htrh_dbg),
+      // m_htlh_dbgOut("htlh_dbgOut", m_htlh_dbg),
+      // m_hthead_dbgOut("hthead_dbgOut", m_hthead_dbg),
+      // m_htzmp_dbgOut("htzmp_dbgOut", m_htzmp_dbg),
+      // m_htrfw_dbgOut("htrfw_dbgOut", m_htrfw_dbg),
+      // m_htlfw_dbgOut("htlfw_dbgOut", m_htlfw_dbg),
+      // m_rpcom_dbgOut("rpcom_dbgOut", m_rpcom_dbg),
+      // m_rprf_dbgOut("rprf_dbgOut", m_rprf_dbg),
+      // m_rplf_dbgOut("rplf_dbgOut", m_rplf_dbg),
+      // m_rprh_dbgOut("rprh_dbgOut", m_rprh_dbg),
+      // m_rplh_dbgOut("rplh_dbgOut", m_rplh_dbg),
+      // m_rphead_dbgOut("rphead_dbgOut", m_rphead_dbg),
+      // m_rpzmp_dbgOut("rpzmp_dbgOut", m_rpzmp_dbg),
+      // m_rpdcp_dbgOut("rpdcp_dbgOut", m_rpdcp_dbg),
+      // m_rpacp_dbgOut("rpacp_dbgOut", m_rpacp_dbg),
+      // m_invdyn_dbgOut("invdyn_dbgOut", m_invdyn_dbg),
       m_WholeBodyMasterSlaveServicePort("WholeBodyMasterSlaveService"),
       m_robot(hrp::BodyPtr()),
       m_debugLevel(0)
@@ -121,25 +121,25 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onInitialize()
     addInPort("actzmpIn", m_actzmpIn);
     addInPort("htheadIn", m_htheadIn);
 
-    addOutPort("htcom_dbgOut", m_htcom_dbgOut);
-    addOutPort("htrf_dbgOut", m_htrf_dbgOut);
-    addOutPort("htlf_dbgOut", m_htlf_dbgOut);
-    addOutPort("htrh_dbgOut", m_htrh_dbgOut);
-    addOutPort("htlh_dbgOut", m_htlh_dbgOut);
-    addOutPort("hthead_dbgOut", m_hthead_dbgOut);
-    addOutPort("htzmp_dbgOut", m_htzmp_dbgOut);
-    addOutPort("htrfw_dbgOut", m_htrfw_dbgOut);
-    addOutPort("htlfw_dbgOut", m_htlfw_dbgOut);
-    addOutPort("rpcom_dbgOut", m_rpcom_dbgOut);
-    addOutPort("rprf_dbgOut", m_rprf_dbgOut);
-    addOutPort("rplf_dbgOut", m_rplf_dbgOut);
-    addOutPort("rprh_dbgOut", m_rprh_dbgOut);
-    addOutPort("rplh_dbgOut", m_rplh_dbgOut);
-    addOutPort("rphead_dbgOut", m_rphead_dbgOut);
-    addOutPort("rpzmp_dbgOut", m_rpzmp_dbgOut);
-    addOutPort("rpdcp_dbgOut", m_rpdcp_dbgOut);
-    addOutPort("rpacp_dbgOut", m_rpacp_dbgOut);
-    addOutPort("invdyn_dbgOut", m_invdyn_dbgOut);
+    // addOutPort("htcom_dbgOut", m_htcom_dbgOut);
+    // addOutPort("htrf_dbgOut", m_htrf_dbgOut);
+    // addOutPort("htlf_dbgOut", m_htlf_dbgOut);
+    // addOutPort("htrh_dbgOut", m_htrh_dbgOut);
+    // addOutPort("htlh_dbgOut", m_htlh_dbgOut);
+    // addOutPort("hthead_dbgOut", m_hthead_dbgOut);
+    // addOutPort("htzmp_dbgOut", m_htzmp_dbgOut);
+    // addOutPort("htrfw_dbgOut", m_htrfw_dbgOut);
+    // addOutPort("htlfw_dbgOut", m_htlfw_dbgOut);
+    // addOutPort("rpcom_dbgOut", m_rpcom_dbgOut);
+    // addOutPort("rprf_dbgOut", m_rprf_dbgOut);
+    // addOutPort("rplf_dbgOut", m_rplf_dbgOut);
+    // addOutPort("rprh_dbgOut", m_rprh_dbgOut);
+    // addOutPort("rplh_dbgOut", m_rplh_dbgOut);
+    // addOutPort("rphead_dbgOut", m_rphead_dbgOut);
+    // addOutPort("rpzmp_dbgOut", m_rpzmp_dbgOut);
+    // addOutPort("rpdcp_dbgOut", m_rpdcp_dbgOut);
+    // addOutPort("rpacp_dbgOut", m_rpacp_dbgOut);
+    // addOutPort("invdyn_dbgOut", m_invdyn_dbgOut);
 
     m_WholeBodyMasterSlaveServicePort.registerProvider("service0", "WholeBodyMasterSlaveService", m_service0);
   
@@ -269,11 +269,14 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onDeactivated(RTC::UniqueId ec_id)
 }
 
 //#define DEBUGP ((m_debugLevel==1 && loop%200==0) || m_debugLevel > 1 )
-//#define DEBUGP2 ((loop%200==0))
+#define DEBUGP ((loop%200==0))
 RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id)
 {
   // std::cerr << "WholeBodyMasterSlave::onExecute(" << ec_id << ")" << std::endl;
     // Read Inport
+ 
+
+
     if (m_qRefIn.isNew()) {
         m_qRefIn.read();
     }
@@ -332,7 +335,11 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id)
           m_robot->calcForwardKinematics();
         }
 
+
+
         processWholeBodyMasterSlave();
+
+
 
         /////// Inverse Dynamics /////////
         if(!idsb.is_initialized){
@@ -366,6 +373,13 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id)
 //        ref_zmp = ref_zmp_invdyn;
 //        rel_ref_zmp = m_robot->rootLink()->R.transpose() * (ref_zmp - m_robot->rootLink()->p);
     }
+
+
+
+
+
+
+
     // Write Outport
     if ( m_qRef.data.length() != 0 ) { // initialized
       if (is_legged_robot) {
@@ -394,7 +408,7 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id)
       m_zmp.data.x = rel_ref_zmp(0);
       m_zmp.data.y = rel_ref_zmp(1);
       m_zmp.data.z = rel_ref_zmp(2);
-      m_zmp.tm = m_qRef.tm;
+       m_zmp.tm = m_qRef.tm;
       // write
       m_basePosOut.write();
       m_baseRpyOut.write();
@@ -403,77 +417,87 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id)
     }
 
     //ishiguro dbg plot
-    m_htcom.tm = m_qRef.tm;
-    HumanSynchronizer::HRPPose3DToPose3D(hsp->hp_plot.getP("com"),m_htcom_dbg.data);
-    m_htcom_dbgOut.write();
-    m_htrf.tm = m_qRef.tm;
-    HumanSynchronizer::HRPPose3DToPose3D(hsp->hp_plot.getP("rf"),m_htrf_dbg.data);
-    m_htrf_dbgOut.write();
-    m_htlf.tm = m_qRef.tm;
-    HumanSynchronizer::HRPPose3DToPose3D(hsp->hp_plot.getP("lf"),m_htlf_dbg.data);
-    m_htlf_dbgOut.write();
-    m_htrh.tm = m_qRef.tm;
-    HumanSynchronizer::HRPPose3DToPose3D(hsp->hp_plot.getP("rh"),m_htrh_dbg.data);
-    m_htrh_dbgOut.write();
-    m_htlh.tm = m_qRef.tm;
-    HumanSynchronizer::HRPPose3DToPose3D(hsp->hp_plot.getP("lh"),m_htlh_dbg.data);
-    m_htlh_dbgOut.write();
-    m_hthead.tm = m_qRef.tm;
-    HumanSynchronizer::HRPPose3DToPose3D(hsp->hp_plot.getP("head"),m_hthead_dbg.data);
-    m_hthead_dbgOut.write();
-    m_htzmp.tm = m_qRef.tm;
-    HumanSynchronizer::Vector3ToPoint3D(hsp->rp_ref_out.getP("zmp").p,m_rpzmp_dbg.data);
-    m_htzmp_dbgOut.write();
-    m_htrfw.tm = m_qRef.tm;
-    m_htrfw_dbg.data.length(6);
-    HumanSynchronizer::Wrench6ToDoubleSeq(hsp->hp_plot.getw("rfw"),m_htrfw_dbg.data);
-    m_htrfw_dbgOut.write();
-    m_htlfw.tm = m_qRef.tm;
-    m_htlfw_dbg.data.length(6);
-    HumanSynchronizer::Wrench6ToDoubleSeq(hsp->hp_plot.getw("lfw"),m_htlfw_dbg.data);
-    m_htlfw_dbgOut.write();
-    m_rpcom_dbg.tm = m_qRef.tm;
-    HumanSynchronizer::HRPPose3DToPose3D(hsp->rp_ref_out.getP("com"),m_rpcom_dbg.data);
-    m_rpcom_dbgOut.write();
-    m_rprf_dbg.tm = m_qRef.tm;
-    HumanSynchronizer::HRPPose3DToPose3D(hsp->rp_ref_out.getP("rf"),m_rprf_dbg.data);
-    m_rprf_dbgOut.write();
-    m_rplf_dbg.tm = m_qRef.tm;
-    HumanSynchronizer::HRPPose3DToPose3D(hsp->rp_ref_out.getP("lf"),m_rplf_dbg.data);
-    m_rplf_dbgOut.write();
-    m_rprh_dbg.tm = m_qRef.tm;
-    HumanSynchronizer::HRPPose3DToPose3D(hsp->rp_ref_out.getP("rh"),m_rprh_dbg.data);
-    m_rprh_dbgOut.write();
-    m_rplh_dbg.tm = m_qRef.tm;
-    HumanSynchronizer::HRPPose3DToPose3D(hsp->rp_ref_out.getP("lh"),m_rplh_dbg.data);
-    m_rplh_dbgOut.write();
-    m_rphead_dbg.tm = m_qRef.tm;
-    HumanSynchronizer::HRPPose3DToPose3D(hsp->rp_ref_out.getP("head"),m_rphead_dbg.data);
-    m_rphead_dbgOut.write();
-    m_rpzmp_dbg.tm = m_qRef.tm;
-    HumanSynchronizer::Vector3ToPoint3D(hsp->rp_ref_out.getP("zmp").p,m_rpzmp_dbg.data);
-    m_rpzmp_dbgOut.write();
-    m_rpdcp_dbg.tm = m_qRef.tm;
-    HumanSynchronizer::Vector3ToPoint3D(hsp->cp_dec,m_rpdcp_dbg.data);
-    m_rpdcp_dbgOut.write();
-    m_rpacp_dbg.tm = m_qRef.tm;
-    HumanSynchronizer::Vector3ToPoint3D(hsp->cp_acc,m_rpacp_dbg.data);
-    m_rpacp_dbgOut.write();
-    m_invdyn_dbg.tm = m_qRef.tm;
-    m_invdyn_dbg.data.length(6);
-    HumanSynchronizer::Wrench6ToDoubleSeq(hsp->invdyn_ft,m_invdyn_dbg.data);
-    m_invdyn_dbgOut.write();
+    // m_htcom.tm = m_qRef.tm;
+    // HumanSynchronizer::HRPPose3DToPose3D(hsp->hp_plot.getP("com"),m_htcom_dbg.data);
+    // m_htcom_dbgOut.write();
+    // m_htrf.tm = m_qRef.tm;
+    // HumanSynchronizer::HRPPose3DToPose3D(hsp->hp_plot.getP("rf"),m_htrf_dbg.data);
+    // m_htrf_dbgOut.write();
+    // m_htlf.tm = m_qRef.tm;
+    // HumanSynchronizer::HRPPose3DToPose3D(hsp->hp_plot.getP("lf"),m_htlf_dbg.data);
+    // m_htlf_dbgOut.write();
+    // m_htrh.tm = m_qRef.tm;
+    // HumanSynchronizer::HRPPose3DToPose3D(hsp->hp_plot.getP("rh"),m_htrh_dbg.data);
+    // m_htrh_dbgOut.write();
+    // m_htlh.tm = m_qRef.tm;
+    // HumanSynchronizer::HRPPose3DToPose3D(hsp->hp_plot.getP("lh"),m_htlh_dbg.data);
+    // m_htlh_dbgOut.write();
+    // m_hthead.tm = m_qRef.tm;
+    // HumanSynchronizer::HRPPose3DToPose3D(hsp->hp_plot.getP("head"),m_hthead_dbg.data);
+    // m_hthead_dbgOut.write();
+    // m_htzmp.tm = m_qRef.tm;
+    // HumanSynchronizer::Vector3ToPoint3D(hsp->rp_ref_out.getP("zmp").p,m_rpzmp_dbg.data);
+    // m_htzmp_dbgOut.write();
+    // m_htrfw.tm = m_qRef.tm;
+    // m_htrfw_dbg.data.length(6);
+    // HumanSynchronizer::Wrench6ToDoubleSeq(hsp->hp_plot.getw("rfw"),m_htrfw_dbg.data);
+    // m_htrfw_dbgOut.write(); 
+    // m_htlfw.tm = m_qRef.tm;
+    // m_htlfw_dbg.data.length(6);
+    // HumanSynchronizer::Wrench6ToDoubleSeq(hsp->hp_plot.getw("lfw"),m_htlfw_dbg.data);
+    // m_htlfw_dbgOut.write();
+    // m_rpcom_dbg.tm = m_qRef.tm;
+    // HumanSynchronizer::HRPPose3DToPose3D(hsp->rp_ref_out.getP("com"),m_rpcom_dbg.data);
+    // m_rpcom_dbgOut.write();
+    // m_rprf_dbg.tm = m_qRef.tm;
+    // HumanSynchronizer::HRPPose3DToPose3D(hsp->rp_ref_out.getP("rf"),m_rprf_dbg.data);
+    // m_rprf_dbgOut.write();
+    // m_rplf_dbg.tm = m_qRef.tm;
+    // HumanSynchronizer::HRPPose3DToPose3D(hsp->rp_ref_out.getP("lf"),m_rplf_dbg.data);
+    // m_rplf_dbgOut.write();
+    // m_rprh_dbg.tm = m_qRef.tm;
+    // HumanSynchronizer::HRPPose3DToPose3D(hsp->rp_ref_out.getP("rh"),m_rprh_dbg.data);
+    // m_rprh_dbgOut.write();
+    // m_rplh_dbg.tm = m_qRef.tm;
+    // HumanSynchronizer::HRPPose3DToPose3D(hsp->rp_ref_out.getP("lh"),m_rplh_dbg.data);
+    // m_rplh_dbgOut.write();
+    // m_rphead_dbg.tm = m_qRef.tm;
+    // HumanSynchronizer::HRPPose3DToPose3D(hsp->rp_ref_out.getP("head"),m_rphead_dbg.data);
+    // m_rphead_dbgOut.write();
+    // m_rpzmp_dbg.tm = m_qRef.tm;
+    // HumanSynchronizer::Vector3ToPoint3D(hsp->rp_ref_out.getP("zmp").p,m_rpzmp_dbg.data);
+    // m_rpzmp_dbgOut.write();
+    // m_rpdcp_dbg.tm = m_qRef.tm;
+    // HumanSynchronizer::Vector3ToPoint3D(hsp->cp_dec,m_rpdcp_dbg.data);
+    // m_rpdcp_dbgOut.write();
+    // m_rpacp_dbg.tm = m_qRef.tm;
+    // HumanSynchronizer::Vector3ToPoint3D(hsp->cp_acc,m_rpacp_dbg.data);
+    // m_rpacp_dbgOut.write();
+    // m_invdyn_dbg.tm = m_qRef.tm;
+    // m_invdyn_dbg.data.length(6);
+    // HumanSynchronizer::Wrench6ToDoubleSeq(hsp->invdyn_ft,m_invdyn_dbg.data);
+    // m_invdyn_dbgOut.write();
+
+
+
 
     loop ++;
     return RTC::RTC_OK;
 }
 
 void WholeBodyMasterSlave::processWholeBodyMasterSlave(){
+
+// struct timeval t_calc_start, t_calc_end;
+// gettimeofday(&t_calc_start, NULL);
+
+
   fik->current_tm = m_qRef.tm;
   fik->ikp["rleg"].is_ik_enable = true;
   fik->ikp["lleg"].is_ik_enable = true;
-  fik->ikp["rarm"].is_ik_enable = true;
-  fik->ikp["larm"].is_ik_enable = true;
+  // fik->ikp["rarm"].is_ik_enable = true;
+  // fik->ikp["larm"].is_ik_enable = true;
+  fik->ikp["rarm"].is_ik_enable = false;
+  fik->ikp["larm"].is_ik_enable = false;
 
   if(hsp->startCountdownForHumanSync){
     std::cerr << "[" << m_profile.instance_name << "] Count Down for HumanSync ["<<hsp->getRemainingCountDown()<<"]\r";
@@ -506,22 +530,42 @@ void WholeBodyMasterSlave::processWholeBodyMasterSlave(){
     hsp->baselinkpose.p_offs = m_robot->rootLink()->p;
     hsp->baselinkpose.rpy_offs = hrp::rpyFromRot(m_robot->rootLink()->R);
   }
+// gettimeofday(&t_calc_end, NULL); 
+//  if(DEBUGP)cout<<"t1:"<<(double)(t_calc_end.tv_sec - t_calc_start.tv_sec) + (t_calc_end.tv_usec - t_calc_start.tv_usec)/1000000.0<<endl;
+//  t_calc_start = t_calc_end;
+
+
   hrp::Vector3 rsole_pos = fik->ikp["rleg"].target_link->p+ fik->ikp["rleg"].target_link->R * fik->ikp["rleg"].localPos;
   hrp::Vector3 lsole_pos = fik->ikp["lleg"].target_link->p+ fik->ikp["lleg"].target_link->R * fik->ikp["lleg"].localPos;
   hsp->H_cur = m_robot->calcCM()(2) - std::min((double)rsole_pos(2), (double)lsole_pos(2));
+
+
+
+
   hsp->update();//////HumanSynchronizerの主要処理
-  if(loop%100==0)hsp->rp_ref_out.print();
+if(DEBUGP)cout<<"update():"<<hsp->getUpdateTime()<<endl;
+ if(DEBUGP)hsp->rp_ref_out.print();
+
   m_robot->calcForwardKinematics();
   if(hsp->isHumanSyncOn()){
     solveFullbodyIKStrictCOM( hsp->rp_ref_out.getP("com"), hsp->rp_ref_out.getP("rf"), hsp->rp_ref_out.getP("lf"), hsp->rp_ref_out.getP("rh"), hsp->rp_ref_out.getP("lh"), hsp->cam_rpy_filtered );
     //outport用のデータ上書き
     rel_ref_zmp = m_robot->rootLink()->R.transpose() * (hsp->rp_ref_out.getP("zmp").p - m_robot->rootLink()->p);
+    rel_ref_zmp += hrp::Vector3(0.02, 0, 0);//debug
     if(m_optionalData.data.length() < 4*2){
       m_optionalData.data.length(4*2);//これいいのか？
       for(int i=0;i<4*2;i++)m_optionalData.data[i] = 0;
     }
     m_optionalData.data[contact_states_index_map["rleg"]] = hsp->is_rf_contact;
     m_optionalData.data[contact_states_index_map["lleg"]] = hsp->is_lf_contact;
+
+
+    if(DEBUGP){
+        cout<<"com:"<<hsp->rp_ref_out.getP("com").p.transpose()<<endl;
+        cout<<"rootp:"<<m_robot->rootLink()->p.transpose()<<endl;
+    }
+
+
   }else{
     rel_ref_zmp = input_ref_zmp;
   }

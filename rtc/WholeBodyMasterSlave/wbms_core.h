@@ -67,7 +67,7 @@ class BiquadIIRFilterVec{
     ~BiquadIIRFilterVec() {};
     void setParameter(const hrp::Vector3 fc_in, const double HZ){
      for(int i=0;i<3;i++){
-       filters[i].setParameterAsBiquad((double)fc_in(i), 0.5, HZ);
+         filters[i].setParameterAsBiquad((double)fc_in(i), 0.5, HZ);
       }
     };
     void setParameter(const double fc_in, const double HZ){
@@ -291,7 +291,7 @@ class HumanSynchronizer{
       tgt_pos_filters[1].setParameter(hrp::Vector3(1.0,1.0,1.2),HZ);//右足pos用
       tgt_pos_filters[2].setParameter(hrp::Vector3(1.0,1.0,1.2),HZ);//左足pos用
       calcacc_v_filters.setParameter(5,HZ);//加速度計算用
-      acc4zmp_v_filters.setParameter(2,HZ);//ZMP生成用ほぼこの値でいい
+      acc4zmp_v_filters.setParameter(1,HZ);//ZMP生成用ほぼこの値でいい
       cam_rpy_filter.setParameter(1,HZ);//カメラアングル
       com_in_filter.setParameter(1,HZ);
 
