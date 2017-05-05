@@ -301,13 +301,13 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id)
     }
     //for HumanSynchronizer
     if (m_htzmpIn.isNew()){	m_htzmpIn.read(); }
-    if (m_htrfwIn.isNew()){ m_htrfwIn.read(); HumanSynchronizer::DoubleSeqToWrench6(m_htrfw.data,hsp->hp_wld_raw.getw("rfw")); }
-    if (m_htlfwIn.isNew()){ m_htlfwIn.read(); HumanSynchronizer::DoubleSeqToWrench6(m_htlfw.data,hsp->hp_wld_raw.getw("lfw")); }
-    if (m_htcomIn.isNew()){ m_htcomIn.read(); HumanSynchronizer::Pose3DToHRPPose3D(m_htcom.data,hsp->hp_wld_raw.getP("com")); }
-    if (m_htrfIn.isNew()) { m_htrfIn.read();  HumanSynchronizer::Pose3DToHRPPose3D(m_htrf.data,hsp->hp_wld_raw.getP("rf")); }
-    if (m_htlfIn.isNew()) { m_htlfIn.read();  HumanSynchronizer::Pose3DToHRPPose3D(m_htlf.data,hsp->hp_wld_raw.getP("lf")); }
-    if (m_htrhIn.isNew()) { m_htrhIn.read();  HumanSynchronizer::Pose3DToHRPPose3D(m_htrh.data,hsp->hp_wld_raw.getP("rh"));}
-    if (m_htlhIn.isNew()) { m_htlhIn.read();  HumanSynchronizer::Pose3DToHRPPose3D(m_htlh.data,hsp->hp_wld_raw.getP("lh"));}
+    if (m_htrfwIn.isNew()){ m_htrfwIn.read(); HumanSynchronizer::DoubleSeqToWrench6(m_htrfw.data,hsp->hp_wld_raw.w[rfw]); }
+    if (m_htlfwIn.isNew()){ m_htlfwIn.read(); HumanSynchronizer::DoubleSeqToWrench6(m_htlfw.data,hsp->hp_wld_raw.w[lfw]); }
+    if (m_htcomIn.isNew()){ m_htcomIn.read(); HumanSynchronizer::Pose3DToHRPPose3D(m_htcom.data,hsp->hp_wld_raw.P[com]); }
+    if (m_htrfIn.isNew()) { m_htrfIn.read();  HumanSynchronizer::Pose3DToHRPPose3D(m_htrf.data,hsp->hp_wld_raw.P[rf]); }
+    if (m_htlfIn.isNew()) { m_htlfIn.read();  HumanSynchronizer::Pose3DToHRPPose3D(m_htlf.data,hsp->hp_wld_raw.P[lf]); }
+    if (m_htrhIn.isNew()) { m_htrhIn.read();  HumanSynchronizer::Pose3DToHRPPose3D(m_htrh.data,hsp->hp_wld_raw.P[rh]);}
+    if (m_htlhIn.isNew()) { m_htlhIn.read();  HumanSynchronizer::Pose3DToHRPPose3D(m_htlh.data,hsp->hp_wld_raw.P[lh]);}
     if (m_htheadIn.isNew()){ m_htheadIn.read(); HumanSynchronizer::Pose3DToHRPPose3D(m_hthead.data,hsp->head_cam_pose);}
     if (m_actzmpIn.isNew()){m_actzmpIn.read(); }
 
@@ -418,54 +418,54 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id)
 
     //ishiguro dbg plot
     // m_htcom.tm = m_qRef.tm;
-    // HumanSynchronizer::HRPPose3DToPose3D(hsp->hp_plot.getP("com"),m_htcom_dbg.data);
+    // HumanSynchronizer::HRPPose3DToPose3D(hsp->hp_plot.P[com],m_htcom_dbg.data);
     // m_htcom_dbgOut.write();
     // m_htrf.tm = m_qRef.tm;
-    // HumanSynchronizer::HRPPose3DToPose3D(hsp->hp_plot.getP("rf"),m_htrf_dbg.data);
+    // HumanSynchronizer::HRPPose3DToPose3D(hsp->hp_plot.P[rf],m_htrf_dbg.data);
     // m_htrf_dbgOut.write();
     // m_htlf.tm = m_qRef.tm;
-    // HumanSynchronizer::HRPPose3DToPose3D(hsp->hp_plot.getP("lf"),m_htlf_dbg.data);
+    // HumanSynchronizer::HRPPose3DToPose3D(hsp->hp_plot.P[lf],m_htlf_dbg.data);
     // m_htlf_dbgOut.write();
     // m_htrh.tm = m_qRef.tm;
-    // HumanSynchronizer::HRPPose3DToPose3D(hsp->hp_plot.getP("rh"),m_htrh_dbg.data);
+    // HumanSynchronizer::HRPPose3DToPose3D(hsp->hp_plot.P[rh],m_htrh_dbg.data);
     // m_htrh_dbgOut.write();
     // m_htlh.tm = m_qRef.tm;
-    // HumanSynchronizer::HRPPose3DToPose3D(hsp->hp_plot.getP("lh"),m_htlh_dbg.data);
+    // HumanSynchronizer::HRPPose3DToPose3D(hsp->hp_plot.P[lh],m_htlh_dbg.data);
     // m_htlh_dbgOut.write();
     // m_hthead.tm = m_qRef.tm;
     // HumanSynchronizer::HRPPose3DToPose3D(hsp->hp_plot.getP("head"),m_hthead_dbg.data);
     // m_hthead_dbgOut.write();
     // m_htzmp.tm = m_qRef.tm;
-    // HumanSynchronizer::Vector3ToPoint3D(hsp->rp_ref_out.getP("zmp").p,m_rpzmp_dbg.data);
+    // HumanSynchronizer::Vector3ToPoint3D(hsp->rp_ref_out.P[zmp].p,m_rpzmp_dbg.data);
     // m_htzmp_dbgOut.write();
     // m_htrfw.tm = m_qRef.tm;
     // m_htrfw_dbg.data.length(6);
-    // HumanSynchronizer::Wrench6ToDoubleSeq(hsp->hp_plot.getw("rfw"),m_htrfw_dbg.data);
+    // HumanSynchronizer::Wrench6ToDoubleSeq(hsp->hp_plot.w[rfw],m_htrfw_dbg.data);
     // m_htrfw_dbgOut.write(); 
     // m_htlfw.tm = m_qRef.tm;
     // m_htlfw_dbg.data.length(6);
-    // HumanSynchronizer::Wrench6ToDoubleSeq(hsp->hp_plot.getw("lfw"),m_htlfw_dbg.data);
+    // HumanSynchronizer::Wrench6ToDoubleSeq(hsp->hp_plot.w[lfw],m_htlfw_dbg.data);
     // m_htlfw_dbgOut.write();
     // m_rpcom_dbg.tm = m_qRef.tm;
-    // HumanSynchronizer::HRPPose3DToPose3D(hsp->rp_ref_out.getP("com"),m_rpcom_dbg.data);
+    // HumanSynchronizer::HRPPose3DToPose3D(hsp->rp_ref_out.P[com],m_rpcom_dbg.data);
     // m_rpcom_dbgOut.write();
     // m_rprf_dbg.tm = m_qRef.tm;
-    // HumanSynchronizer::HRPPose3DToPose3D(hsp->rp_ref_out.getP("rf"),m_rprf_dbg.data);
+    // HumanSynchronizer::HRPPose3DToPose3D(hsp->rp_ref_out.P[rf],m_rprf_dbg.data);
     // m_rprf_dbgOut.write();
     // m_rplf_dbg.tm = m_qRef.tm;
-    // HumanSynchronizer::HRPPose3DToPose3D(hsp->rp_ref_out.getP("lf"),m_rplf_dbg.data);
+    // HumanSynchronizer::HRPPose3DToPose3D(hsp->rp_ref_out.P[lf],m_rplf_dbg.data);
     // m_rplf_dbgOut.write();
     // m_rprh_dbg.tm = m_qRef.tm;
-    // HumanSynchronizer::HRPPose3DToPose3D(hsp->rp_ref_out.getP("rh"),m_rprh_dbg.data);
+    // HumanSynchronizer::HRPPose3DToPose3D(hsp->rp_ref_out.P[rh],m_rprh_dbg.data);
     // m_rprh_dbgOut.write();
     // m_rplh_dbg.tm = m_qRef.tm;
-    // HumanSynchronizer::HRPPose3DToPose3D(hsp->rp_ref_out.getP("lh"),m_rplh_dbg.data);
+    // HumanSynchronizer::HRPPose3DToPose3D(hsp->rp_ref_out.P[lh],m_rplh_dbg.data);
     // m_rplh_dbgOut.write();
     // m_rphead_dbg.tm = m_qRef.tm;
     // HumanSynchronizer::HRPPose3DToPose3D(hsp->rp_ref_out.getP("head"),m_rphead_dbg.data);
     // m_rphead_dbgOut.write();
     // m_rpzmp_dbg.tm = m_qRef.tm;
-    // HumanSynchronizer::Vector3ToPoint3D(hsp->rp_ref_out.getP("zmp").p,m_rpzmp_dbg.data);
+    // HumanSynchronizer::Vector3ToPoint3D(hsp->rp_ref_out.P[zmp].p,m_rpzmp_dbg.data);
     // m_rpzmp_dbgOut.write();
     // m_rpdcp_dbg.tm = m_qRef.tm;
     // HumanSynchronizer::Vector3ToPoint3D(hsp->cp_dec,m_rpdcp_dbg.data);
@@ -513,22 +513,23 @@ void WholeBodyMasterSlave::processWholeBodyMasterSlave(){
     hsp->setCurrentInputAsOffset(hsp->hp_wld_raw);
     hsp->calibInitHumanCOMFromZMP();
 
-    const std::string robot_l_names[4] = {"rleg","lleg","rarm","larm"}, human_l_names[4] = {"rf","lf","rh","lh"};
+    const std::string robot_l_names[4] = {"rleg","lleg","rarm","larm"};
+    const int human_l_names[4] = {rf,lf,rh,lh};
     for(int i=0;i<4;i++){
       if(fik->ikp.count(robot_l_names[i])){
-        hsp->rp_ref_out.getP(human_l_names[i]).p_offs = fik->ikp[robot_l_names[i]].target_link->p + fik->ikp[robot_l_names[i]].target_link->R * fik->ikp[robot_l_names[i]].localPos;
-        hsp->rp_ref_out.getP(human_l_names[i]).rpy_offs = hrp::rpyFromRot(fik->ikp[robot_l_names[i]].target_link->R * fik->ikp[robot_l_names[i]].localR);
-        hsp->rp_ref_out.getP(human_l_names[i]).p = hsp->rp_ref_out.getP(human_l_names[i]).p_offs;
-        hsp->rp_ref_out.getP(human_l_names[i]).rpy = hsp->rp_ref_out.getP(human_l_names[i]).rpy_offs;
+        hsp->rp_ref_out.P[human_l_names[i]].p_offs = fik->ikp[robot_l_names[i]].target_link->p + fik->ikp[robot_l_names[i]].target_link->R * fik->ikp[robot_l_names[i]].localPos;
+        hsp->rp_ref_out.P[human_l_names[i]].rpy_offs = hrp::rpyFromRot(fik->ikp[robot_l_names[i]].target_link->R * fik->ikp[robot_l_names[i]].localR);
+        hsp->rp_ref_out.P[human_l_names[i]].p = hsp->rp_ref_out.P[human_l_names[i]].p_offs;
+        hsp->rp_ref_out.P[human_l_names[i]].rpy = hsp->rp_ref_out.P[human_l_names[i]].rpy_offs;
       }
     }
-    //    hsp->rp_ref_out.getP("com").p_offs = m_robot->calcCM();
-    hsp->rp_ref_out.getP("com").p_offs(0) = (hsp->rp_ref_out.getP("rf").p_offs(0) + hsp->rp_ref_out.getP("lf").p_offs(0)) / 2;
-    hsp->rp_ref_out.getP("com").p_offs(1) = (hsp->rp_ref_out.getP("rf").p_offs(1) + hsp->rp_ref_out.getP("lf").p_offs(1)) / 2;
-    hsp->rp_ref_out.getP("com").p_offs(2) = m_robot->calcCM()(2);
-    //    hsp->rp_ref_out.getP("zmp").p_offs = ref_zmp;
-    hsp->pre_cont_rfpos = hsp->rp_ref_out.getP("rf").p_offs;
-    hsp->pre_cont_lfpos = hsp->rp_ref_out.getP("lf").p_offs;
+    //    hsp->rp_ref_out.P[com].p_offs = m_robot->calcCM();
+    hsp->rp_ref_out.P[com].p_offs(0) = (hsp->rp_ref_out.P[rf].p_offs(0) + hsp->rp_ref_out.P[lf].p_offs(0)) / 2;
+    hsp->rp_ref_out.P[com].p_offs(1) = (hsp->rp_ref_out.P[rf].p_offs(1) + hsp->rp_ref_out.P[lf].p_offs(1)) / 2;
+    hsp->rp_ref_out.P[com].p_offs(2) = m_robot->calcCM()(2);
+    //    hsp->rp_ref_out.P[zmp].p_offs = ref_zmp;
+    hsp->pre_cont_rfpos = hsp->rp_ref_out.P[rf].p_offs;
+    hsp->pre_cont_lfpos = hsp->rp_ref_out.P[lf].p_offs;
     hsp->baselinkpose.p_offs = m_robot->rootLink()->p;
     hsp->baselinkpose.rpy_offs = hrp::rpyFromRot(m_robot->rootLink()->R);
   }
@@ -547,10 +548,10 @@ void WholeBodyMasterSlave::processWholeBodyMasterSlave(){
 
   m_robot->calcForwardKinematics();
   if(hsp->isHumanSyncOn()){
-    solveFullbodyIKStrictCOM( hsp->rp_ref_out.getP("com"), hsp->rp_ref_out.getP("rf"), hsp->rp_ref_out.getP("lf"), hsp->rp_ref_out.getP("rh"), hsp->rp_ref_out.getP("lh"), hsp->cam_rpy_filtered );
+    solveFullbodyIKStrictCOM( hsp->rp_ref_out.P[com], hsp->rp_ref_out.P[rf], hsp->rp_ref_out.P[lf], hsp->rp_ref_out.P[rh], hsp->rp_ref_out.P[lh], hsp->cam_rpy_filtered );
     //outport用のデータ上書き
-    hsp->rp_ref_out.getP("zmp").p(2) = (hsp->rp_ref_out.getP("rf").p(2) + hsp->rp_ref_out.getP("lf").p(2))/2 - m_robot->rootLink()->p(2);//体幹相対ZMP高さ設定
-    rel_ref_zmp = m_robot->rootLink()->R.transpose() * (hsp->rp_ref_out.getP("zmp").p - m_robot->rootLink()->p);
+    hsp->rp_ref_out.P[zmp].p(2) = (hsp->rp_ref_out.P[rf].p(2) + hsp->rp_ref_out.P[lf].p(2))/2 - m_robot->rootLink()->p(2);//体幹相対ZMP高さ設定
+    rel_ref_zmp = m_robot->rootLink()->R.transpose() * (hsp->rp_ref_out.P[zmp].p - m_robot->rootLink()->p);
     if(m_optionalData.data.length() < 4*2){
       m_optionalData.data.length(4*2);//これいいのか？
       for(int i=0;i<4*2;i++)m_optionalData.data[i] = 0;
@@ -651,10 +652,10 @@ void WholeBodyMasterSlave::processWholeBodyMasterSlave(){
 //////  m_robot->calcForwardKinematics();
 //////  // additional COM fitting IK for HumanSynchronizer
 ////  if(hsp->isHumanSyncOn()){
-////    HRPPose3D com_mod = hsp->rp_ref_out.getP("com");
+////    HRPPose3D com_mod = hsp->rp_ref_out.P[com];
 ////    com_mod.p += torso_pos;
 ////    com_mod.rpy += torso_rot;
-////    solveFullbodyIKStrictCOM( com_mod, hsp->rp_ref_out.getP("rf"), hsp->rp_ref_out.getP("lf"), hsp->rp_ref_out.getP("rh"), hsp->rp_ref_out.getP("lh"), hsp->cam_rpy_filtered );
+////    solveFullbodyIKStrictCOM( com_mod, hsp->rp_ref_out.P[rf], hsp->rp_ref_out.P[lf], hsp->rp_ref_out.P[rh], hsp->rp_ref_out.P[lh], hsp->cam_rpy_filtered );
 ////  }
 ////}
 //
@@ -684,8 +685,8 @@ void WholeBodyMasterSlave::calcDynamicsFilterCompensation(const hrp::Vector3 zmp
 
 
 
-  fprintf(hsp->id_log,"p: %f %f ",hsp->rp_ref_out.getP("com").p(0),hsp->rp_ref_out.getP("com").p(1),hsp->rp_ref_out.getP("com").p(2));
-  fprintf(hsp->id_log,"rpy: %f %f ",hsp->rp_ref_out.getP("com").rpy(0),hsp->rp_ref_out.getP("com").rpy(1),hsp->rp_ref_out.getP("com").rpy(2));
+  fprintf(hsp->id_log,"p: %f %f ",hsp->rp_ref_out.P[com].p(0),hsp->rp_ref_out.P[com].p(1),hsp->rp_ref_out.P[com].p(2));
+  fprintf(hsp->id_log,"rpy: %f %f ",hsp->rp_ref_out.P[com].rpy(0),hsp->rp_ref_out.P[com].rpy(1),hsp->rp_ref_out.P[com].rpy(2));
   fprintf(hsp->id_log,"P: %f %f ",P(0),P(1),P(2));
   fprintf(hsp->id_log,"L: %f %f ",L(0),L(1),L(2));
 //  fprintf(hsp->id_log,"p_v: %f %f ",idsb.base_v(0),idsb.base_v(1),idsb.base_v(2));
@@ -695,10 +696,10 @@ void WholeBodyMasterSlave::calcDynamicsFilterCompensation(const hrp::Vector3 zmp
   fprintf(hsp->id_log,"\n");
 
   if(hsp->isHumanSyncOn()){
-    HRPPose3D com_mod = hsp->rp_ref_out.getP("com");
+    HRPPose3D com_mod = hsp->rp_ref_out.P[com];
 //    com_mod.p += torso_pos;
 //    com_mod.rpy += torso_rot;
-    solveFullbodyIKStrictCOM( com_mod, hsp->rp_ref_out.getP("rf"), hsp->rp_ref_out.getP("lf"), hsp->rp_ref_out.getP("rh"), hsp->rp_ref_out.getP("lh"), hsp->cam_rpy_filtered );
+    solveFullbodyIKStrictCOM( com_mod, hsp->rp_ref_out.P[rf], hsp->rp_ref_out.P[lf], hsp->rp_ref_out.P[rh], hsp->rp_ref_out.P[lh], hsp->cam_rpy_filtered );
   }
 }
 

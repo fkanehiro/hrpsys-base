@@ -47,6 +47,19 @@ using namespace RTC;
 class WholeBodyMasterSlave
   : public RTC::DataFlowComponentBase
 {
+
+
+
+
+    enum pose_tgt{ com, rf, lf, rh, lh, zmp, head, num_pose_tgt } p_id;
+    enum wrench_tgt{ rfw, lfw, num_wrench_tgt } w_id;
+    enum lr_direction{ L, R, LR} lr_direc;
+    enum xyz_direction{ X, Y, Z, XYZ} xyz_direc;
+    enum rpy_direction{ r, p, y, rpy} rpy_direc;
+    enum ft_direction{ fx, fy, fz, tx, ty, tz, ft_xyz} w_direc;
+
+
+
  public:
   WholeBodyMasterSlave(RTC::Manager* manager);
   virtual ~WholeBodyMasterSlave();

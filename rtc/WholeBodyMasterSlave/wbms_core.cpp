@@ -3,17 +3,17 @@
 void HumanSynchronizer::calcWorldZMP(const hrp::Vector3& rfpos, const hrp::Vector3& lfpos, const Wrench6& rfwin, const Wrench6& lfwin, hrp::Vector3& zmp_ans){
   hrp::Vector3 rfzmp,lfzmp;
   const double F_H_OFFSET = 0.03;//地面から6軸センサ原点への高さ
-  if( rfwin.f(2) > 1.0e-6 ){
-    rfzmp(0) = ( - rfwin.t(1) - rfwin.f(0) * F_H_OFFSET + rfwin.f(2) * 0 ) / rfwin.f(2) + rfpos(0);
-    rfzmp(1) = (   rfwin.t(0) - rfwin.f(1) * F_H_OFFSET + rfwin.f(2) * 0 ) / rfwin.f(2) + rfpos(1);
+  if( rfwin.w(fz) > 1.0e-6 ){
+    rfzmp(0) = ( - rfwin.w(ty) - rfwin.w(fx) * F_H_OFFSET + rfwin.w(fz) * 0 ) / rfwin.w(fz) + rfpos(0);
+    rfzmp(1) = (   rfwin.w(tx) - rfwin.w(fy) * F_H_OFFSET + rfwin.w(fz) * 0 ) / rfwin.w(fz) + rfpos(1);
   }
-  if( lfwin.f(2) > 1.0e-6 ){
-    lfzmp(0) = ( - lfwin.t(1) - lfwin.f(0) * F_H_OFFSET + lfwin.f(2) * 0 ) / lfwin.f(2) + lfpos(0);
-    lfzmp(1) = (   lfwin.t(0) - lfwin.f(1) * F_H_OFFSET + lfwin.f(2) * 0 ) / lfwin.f(2) + lfpos(1);
+  if( lfwin.w(fz) > 1.0e-6 ){
+    lfzmp(0) = ( - lfwin.w(ty) - lfwin.w(fx) * F_H_OFFSET + lfwin.w(fz) * 0 ) / lfwin.w(fz) + lfpos(0);
+    lfzmp(1) = (   lfwin.w(tx) - lfwin.w(fy) * F_H_OFFSET + lfwin.w(fz) * 0 ) / lfwin.w(fz) + lfpos(1);
   }
-  if( rfwin.f(2) > 1.0e-6 || lfwin.f(2) > 1.0e-6 ){
-    zmp_ans(0) = ( rfzmp(0)*rfwin.f(2) + lfzmp(0)*lfwin.f(2) ) / ( rfwin.f(2) + lfwin.f(2));
-    zmp_ans(1) = ( rfzmp(1)*rfwin.f(2) + lfzmp(1)*lfwin.f(2) ) / ( rfwin.f(2) + lfwin.f(2));
+  if( rfwin.w(fz) > 1.0e-6 || lfwin.w(fz) > 1.0e-6 ){
+    zmp_ans(0) = ( rfzmp(0)*rfwin.w(fz) + lfzmp(0)*lfwin.w(fz) ) / ( rfwin.w(fz) + lfwin.w(fz));
+    zmp_ans(1) = ( rfzmp(1)*rfwin.w(fz) + lfzmp(1)*lfwin.w(fz) ) / ( rfwin.w(fz) + lfwin.w(fz));
   }else{ zmp_ans(0) = 0; zmp_ans(1) = 0; }
   zmp_ans(2) = 0;
 }
@@ -114,10 +114,10 @@ void HumanSynchronizer::applyZMPCalcFromCOM(const hrp::Vector3& comin, hrp::Vect
 }
 void HumanSynchronizer::applyVelLimit(const HumanPose& in, HumanPose& out_old, HumanPose& out){
   std::string ns[5] = {"com","rf","lf","rh","lh"};
-  for(int i=0;i<5;i++){
-    hrp::Vector3 diff = in.getP(ns[i]).p  - out_old.getP(ns[i]).p;
+  for(int i=com;i<=lh;i++){
+    hrp::Vector3 diff = in.P[i].p  - out_old.P[i].p;
     for(int j=0;j<3;j++)LIMIT_MINMAX( diff(j), -MAXVEL*DT, MAXVEL*DT);
-    out.getP(ns[i]).p = out_old.getP(ns[i]).p + diff;
+    out.P[i].p = out_old.P[i].p + diff;
   }
   out_old = out;
 }
