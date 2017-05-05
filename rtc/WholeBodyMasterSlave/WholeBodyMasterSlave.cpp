@@ -514,8 +514,6 @@ void WholeBodyMasterSlave::processWholeBodyMasterSlave(){
     hsp->setCurrentInputAsOffset(hsp->hp_wld_raw);
     hsp->calibInitHumanCOMFromZMP();
 
-    hsp->rp_ref_out.getP("com").p_offs = m_robot->calcCM();
-//    hsp->rp_ref_out.getP("zmp").p_offs = ref_zmp;
     const std::string robot_l_names[4] = {"rleg","lleg","rarm","larm"}, human_l_names[4] = {"rf","lf","rh","lh"};
     for(int i=0;i<4;i++){
       if(fik->ikp.count(robot_l_names[i])){
@@ -525,11 +523,18 @@ void WholeBodyMasterSlave::processWholeBodyMasterSlave(){
         hsp->rp_ref_out.getP(human_l_names[i]).rpy = hsp->rp_ref_out.getP(human_l_names[i]).rpy_offs;
       }
     }
+    //    hsp->rp_ref_out.getP("com").p_offs = m_robot->calcCM();
+    hsp->rp_ref_out.getP("com").p_offs(0) = (hsp->rp_ref_out.getP("rf").p_offs(0) + hsp->rp_ref_out.getP("lf").p_offs(0)) / 2;
+    hsp->rp_ref_out.getP("com").p_offs(1) = (hsp->rp_ref_out.getP("rf").p_offs(1) + hsp->rp_ref_out.getP("lf").p_offs(1)) / 2;
+    hsp->rp_ref_out.getP("com").p_offs(2) = m_robot->calcCM()(2);
+    //    hsp->rp_ref_out.getP("zmp").p_offs = ref_zmp;
     hsp->pre_cont_rfpos = hsp->rp_ref_out.getP("rf").p_offs;
     hsp->pre_cont_lfpos = hsp->rp_ref_out.getP("lf").p_offs;
     hsp->baselinkpose.p_offs = m_robot->rootLink()->p;
     hsp->baselinkpose.rpy_offs = hrp::rpyFromRot(m_robot->rootLink()->R);
   }
+
+
 // gettimeofday(&t_calc_end, NULL); 
 //  if(DEBUGP)cout<<"t1:"<<(double)(t_calc_end.tv_sec - t_calc_start.tv_sec) + (t_calc_end.tv_usec - t_calc_start.tv_usec)/1000000.0<<endl;
 //  t_calc_start = t_calc_end;
@@ -551,7 +556,6 @@ if(DEBUGP)cout<<"update():"<<hsp->getUpdateTime()<<endl;
     solveFullbodyIKStrictCOM( hsp->rp_ref_out.getP("com"), hsp->rp_ref_out.getP("rf"), hsp->rp_ref_out.getP("lf"), hsp->rp_ref_out.getP("rh"), hsp->rp_ref_out.getP("lh"), hsp->cam_rpy_filtered );
     //outport用のデータ上書き
     rel_ref_zmp = m_robot->rootLink()->R.transpose() * (hsp->rp_ref_out.getP("zmp").p - m_robot->rootLink()->p);
-    rel_ref_zmp += hrp::Vector3(0.02, 0, 0);//debug
     if(m_optionalData.data.length() < 4*2){
       m_optionalData.data.length(4*2);//これいいのか？
       for(int i=0;i<4*2;i++)m_optionalData.data[i] = 0;
