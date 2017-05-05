@@ -406,7 +406,7 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id)
       m_baseRpy.tm = m_qRef.tm;
       // zmp
       m_zmp.data.x = rel_ref_zmp(0);
-      m_zmp.data.y = rel_ref_zmp(1);
+      m_zmp.data.y = rel_ref_zmp(1);//debug
       m_zmp.data.z = rel_ref_zmp(2);
        m_zmp.tm = m_qRef.tm;
       // write
@@ -553,19 +553,31 @@ if(DEBUGP)cout<<"update():"<<hsp->getUpdateTime()<<endl;
 
   m_robot->calcForwardKinematics();
   if(hsp->isHumanSyncOn()){
+
+
+      hsp->rp_ref_out.getP("com").p(0) = 0;
+      hsp->rp_ref_out.getP("rf").p(0) = 0;
+      hsp->rp_ref_out.getP("lf").p(0) = 0;
+      hsp->rp_ref_out.getP("zmp").p(0) = 0;
+
+
     solveFullbodyIKStrictCOM( hsp->rp_ref_out.getP("com"), hsp->rp_ref_out.getP("rf"), hsp->rp_ref_out.getP("lf"), hsp->rp_ref_out.getP("rh"), hsp->rp_ref_out.getP("lh"), hsp->cam_rpy_filtered );
     //outport用のデータ上書き
     rel_ref_zmp = m_robot->rootLink()->R.transpose() * (hsp->rp_ref_out.getP("zmp").p - m_robot->rootLink()->p);
+    rel_ref_zmp(2) = -0.97;//debug
     if(m_optionalData.data.length() < 4*2){
       m_optionalData.data.length(4*2);//これいいのか？
       for(int i=0;i<4*2;i++)m_optionalData.data[i] = 0;
     }
     m_optionalData.data[contact_states_index_map["rleg"]] = hsp->is_rf_contact;
     m_optionalData.data[contact_states_index_map["lleg"]] = hsp->is_lf_contact;
+    m_optionalData.data[contact_states_index_map["rleg"]+4] = 1;//これいる？
+    m_optionalData.data[contact_states_index_map["lleg"]+4] = 1;//
 
 
     if(DEBUGP){
         cout<<"com:"<<hsp->rp_ref_out.getP("com").p.transpose()<<endl;
+        cout<<"zmp:"<<hsp->rp_ref_out.getP("zmp").p.transpose()<<endl;
         cout<<"rootp:"<<m_robot->rootLink()->p.transpose()<<endl;
     }
 
