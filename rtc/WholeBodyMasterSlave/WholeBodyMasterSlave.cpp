@@ -490,7 +490,6 @@ void WholeBodyMasterSlave::processWholeBodyMasterSlave(){
 // struct timeval t_calc_start, t_calc_end;
 // gettimeofday(&t_calc_start, NULL);
 
-
   fik->current_tm = m_qRef.tm;
   fik->ikp["rleg"].is_ik_enable = true;
   fik->ikp["lleg"].is_ik_enable = true;
@@ -534,54 +533,30 @@ void WholeBodyMasterSlave::processWholeBodyMasterSlave(){
     hsp->baselinkpose.rpy_offs = hrp::rpyFromRot(m_robot->rootLink()->R);
   }
 
-
 // gettimeofday(&t_calc_end, NULL); 
 //  if(DEBUGP)cout<<"t1:"<<(double)(t_calc_end.tv_sec - t_calc_start.tv_sec) + (t_calc_end.tv_usec - t_calc_start.tv_usec)/1000000.0<<endl;
 //  t_calc_start = t_calc_end;
-
 
   hrp::Vector3 rsole_pos = fik->ikp["rleg"].target_link->p+ fik->ikp["rleg"].target_link->R * fik->ikp["rleg"].localPos;
   hrp::Vector3 lsole_pos = fik->ikp["lleg"].target_link->p+ fik->ikp["lleg"].target_link->R * fik->ikp["lleg"].localPos;
   hsp->H_cur = m_robot->calcCM()(2) - std::min((double)rsole_pos(2), (double)lsole_pos(2));
 
-
-
-
   hsp->update();//////HumanSynchronizerの主要処理
-if(DEBUGP)cout<<"update():"<<hsp->getUpdateTime()<<endl;
- if(DEBUGP)hsp->rp_ref_out.print();
+  if(DEBUGP)cout<<"update():"<<hsp->getUpdateTime()<<endl;
+  if(DEBUGP)hsp->rp_ref_out.print();
 
   m_robot->calcForwardKinematics();
   if(hsp->isHumanSyncOn()){
-
-
-      hsp->rp_ref_out.getP("com").p(0) = 0;
-      hsp->rp_ref_out.getP("rf").p(0) = 0;
-      hsp->rp_ref_out.getP("lf").p(0) = 0;
-      hsp->rp_ref_out.getP("zmp").p(0) = 0;
-
-
     solveFullbodyIKStrictCOM( hsp->rp_ref_out.getP("com"), hsp->rp_ref_out.getP("rf"), hsp->rp_ref_out.getP("lf"), hsp->rp_ref_out.getP("rh"), hsp->rp_ref_out.getP("lh"), hsp->cam_rpy_filtered );
     //outport用のデータ上書き
+    hsp->rp_ref_out.getP("zmp").p(2) = (hsp->rp_ref_out.getP("rf").p(2) + hsp->rp_ref_out.getP("lf").p(2))/2 - m_robot->rootLink()->p(2);//体幹相対ZMP高さ設定
     rel_ref_zmp = m_robot->rootLink()->R.transpose() * (hsp->rp_ref_out.getP("zmp").p - m_robot->rootLink()->p);
-    rel_ref_zmp(2) = -0.97;//debug
     if(m_optionalData.data.length() < 4*2){
       m_optionalData.data.length(4*2);//これいいのか？
       for(int i=0;i<4*2;i++)m_optionalData.data[i] = 0;
     }
     m_optionalData.data[contact_states_index_map["rleg"]] = hsp->is_rf_contact;
     m_optionalData.data[contact_states_index_map["lleg"]] = hsp->is_lf_contact;
-    m_optionalData.data[contact_states_index_map["rleg"]+4] = 1;//これいる？
-    m_optionalData.data[contact_states_index_map["lleg"]+4] = 1;//
-
-
-    if(DEBUGP){
-        cout<<"com:"<<hsp->rp_ref_out.getP("com").p.transpose()<<endl;
-        cout<<"zmp:"<<hsp->rp_ref_out.getP("zmp").p.transpose()<<endl;
-        cout<<"rootp:"<<m_robot->rootLink()->p.transpose()<<endl;
-    }
-
-
   }else{
     rel_ref_zmp = input_ref_zmp;
   }
