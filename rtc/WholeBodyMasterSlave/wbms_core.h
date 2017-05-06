@@ -47,26 +47,20 @@ extern "C" {
 #define DEBUG 0
 
 namespace myconst{
-//  const int X = 0, Y = 1, Z = 2, XYZ = 3;
-//  const int r = 0, p = 1, y = 2, rpy = 3;
-//  const int L = 0, R = 1, LR = 2;
-  const int MIN = 0, MAX = 1, MINMAX = 2;
 //  const double INFMIN = std::numeric_limits<double>::min(), INFMAX = std::numeric_limits<double>::max();
   const double INFMIN = - std::numeric_limits<double>::max(), INFMAX = std::numeric_limits<double>::max();
   const double D2R = M_PI/180.0;
 }
 using namespace myconst;
 
-
-//namespace wbms{
-//  enum pose_tgt{ com, rf, lf, rh, lh, zmp, head, num_pose_tgt } p_id;
-//  enum wrench_tgt{ rfw, lfw, num_wrench_tgt } w_id;
-//  enum lr_direction{ L, R, LR} lr_direc;
-//  enum xyz_direction{ X, Y, Z, XYZ} xyz_direc;
-//  enum rpy_direction{ r, p, y, rpy} rpy_direc;
-//  enum ft_direction{ fx, fy, fz, tx, ty, tz, ft_xyz} w_direc;
-//}
-//using namespace wbms;
+#define DEF_UTIL_CONST \
+    enum pose_tgt{ com, rf, lf, rh, lh, head, zmp, num_pose_tgt } p_id;\
+    enum wrench_tgt{ rfw, lfw, num_wrench_tgt } w_id;\
+    enum lr_direction{ L, R, LR} lr_direc;\
+    enum xyz_direction{ X, Y, Z, XYZ} xyz_direc;\
+    enum rpy_direction{ r, p, y, rpy} rpy_direc;\
+    enum ft_direction{ fx, fy, fz, tx, ty, tz, ft_xyz} w_direc;\
+    enum minmax_id{ MIN, MAX, MINMAX} mm_id;\
 
 class BiquadIIRFilterVec{
   private:
@@ -111,18 +105,7 @@ class Wrench6{
 };
 
 class HumanPose{
-
-
-
-
-    enum pose_tgt{ com, rf, lf, rh, lh, zmp, head, num_pose_tgt } p_id;
-    enum wrench_tgt{ rfw, lfw, num_wrench_tgt } w_id;
-    enum lr_direction{ L, R, LR} lr_direc;
-    enum xyz_direction{ X, Y, Z, XYZ} xyz_direc;
-    enum rpy_direction{ r, p, y, rpy} rpy_direc;
-    enum ft_direction{ fx, fy, fz, tx, ty, tz, ft_xyz} w_direc;
-
-
+    DEF_UTIL_CONST
   public:
     std::vector<HRPPose3D> P;
     std::vector<Wrench6> w;
@@ -146,38 +129,30 @@ class HumanPose{
 };
 
 class RobotConfig{
+    DEF_UTIL_CONST
   public:
-    std::map<std::string, std::vector<hrp::Vector3> > ee_rot_limit;
+    std::vector< std::vector<hrp::Vector3> > ee_rot_limit;
     RobotConfig(){
-      ee_rot_limit["com"].resize(MINMAX);
-      ee_rot_limit["com"][MIN] = hrp::Vector3(-30*D2R, -30*D2R, INFMIN);
-      ee_rot_limit["com"][MAX] = hrp::Vector3( 30*D2R,  30*D2R, INFMAX);
-      ee_rot_limit["rf"].resize(MINMAX);
-      ee_rot_limit["rf"][MIN] = hrp::Vector3(-30*D2R, -30*D2R, -20*D2R);
-      ee_rot_limit["rf"][MAX] = hrp::Vector3( 30*D2R,  30*D2R,   5*D2R);
-      ee_rot_limit["lf"].resize(MINMAX);
-      ee_rot_limit["lf"][MIN] = hrp::Vector3(-30*D2R, -30*D2R,  -5*D2R);
-      ee_rot_limit["lf"][MAX] = hrp::Vector3( 30*D2R,  30*D2R,  20*D2R);
-      ee_rot_limit["rh"].resize(MINMAX);
-      ee_rot_limit["rh"][MIN] = hrp::Vector3(-30*D2R, -30*D2R, -30*D2R);
-      ee_rot_limit["rh"][MAX] = hrp::Vector3( 30*D2R,  30*D2R,  30*D2R);
-      ee_rot_limit["lh"].resize(MINMAX);
-      ee_rot_limit["lh"][MIN] = hrp::Vector3(-30*D2R, -30*D2R, -30*D2R);
-      ee_rot_limit["lh"][MAX] = hrp::Vector3( 30*D2R,  30*D2R,  30*D2R);
+      std::vector<hrp::Vector3> init;
+      init.resize(MINMAX);
+      ee_rot_limit.resize(num_pose_tgt, init);
+      ee_rot_limit[com][MIN] = hrp::Vector3(-30*D2R, -30*D2R, INFMIN);
+      ee_rot_limit[com][MAX] = hrp::Vector3( 30*D2R,  30*D2R, INFMAX);
+      ee_rot_limit[rf][MIN] = hrp::Vector3(-30*D2R, -30*D2R, -20*D2R);
+      ee_rot_limit[rf][MAX] = hrp::Vector3( 30*D2R,  30*D2R,   5*D2R);
+      ee_rot_limit[lf][MIN] = hrp::Vector3(-30*D2R, -30*D2R,  -5*D2R);
+      ee_rot_limit[lf][MAX] = hrp::Vector3( 30*D2R,  30*D2R,  20*D2R);
+      ee_rot_limit[rh][MIN] = hrp::Vector3(-30*D2R, -30*D2R, -30*D2R);
+      ee_rot_limit[rh][MAX] = hrp::Vector3( 30*D2R,  30*D2R,  30*D2R);
+      ee_rot_limit[lh][MIN] = hrp::Vector3(-30*D2R, -30*D2R, -30*D2R);
+      ee_rot_limit[lh][MAX] = hrp::Vector3( 30*D2R,  30*D2R,  30*D2R);
+      ee_rot_limit[head][MIN] = hrp::Vector3(-30*D2R, -30*D2R, -30*D2R);
+      ee_rot_limit[head][MAX] = hrp::Vector3( 30*D2R,  30*D2R,  30*D2R);
     }
 };
 
 class HumanSynchronizer{
-
-
-    enum pose_tgt{ com, rf, lf, rh, lh, zmp, head, num_pose_tgt } p_id;
-    enum wrench_tgt{ rfw, lfw, num_wrench_tgt } w_id;
-    enum lr_direction{ L, R, LR} lr_direc;
-    enum xyz_direction{ X, Y, Z, XYZ} xyz_direc;
-    enum rpy_direction{ r, p, y, rpy} rpy_direc;
-    enum ft_direction{ fx, fy, fz, tx, ty, tz, ft_xyz} w_direc;
-
-
+    DEF_UTIL_CONST
   private:
     double FUP_TIME;
     int cur_rfup_level,cur_lfup_level;
@@ -299,7 +274,7 @@ class HumanSynchronizer{
       tgt_pos_filters[1].setParameter(hrp::Vector3(1.0,1.0,1.2),HZ);//右足pos用
       tgt_pos_filters[2].setParameter(hrp::Vector3(1.0,1.0,1.2),HZ);//左足pos用
       calcacc_v_filters.setParameter(5,HZ);//加速度計算用
-      acc4zmp_v_filters.setParameter(1,HZ);//ZMP生成用ほぼこの値でいい
+      acc4zmp_v_filters.setParameter(5,HZ);//ZMP生成用ほぼこの値でいい
       cam_rpy_filter.setParameter(1,HZ);//カメラアングル
       com_in_filter.setParameter(1,HZ);
 
@@ -400,13 +375,7 @@ class HumanSynchronizer{
       applyCOMToSupportRegionLimit        (rp_ref_out.P[rf].p, rp_ref_out.P[lf].p, rp_ref_out.P[com].p);
       setFootRotHorizontalIfGoLanding     (rp_ref_out_old, rp_ref_out);
 
-//      applyLPFilter                       (rp_ref_out);
-//      applyCOMToSupportRegionLimit        (rp_ref_out.P[rf].p, rp_ref_out.P[lf].p, rp_ref_out.P[com]);//もう一回？
-//      applyCOMStateLimitByCapturePoint    (rp_ref_out.P[com].p, rp_ref_out_old.P[com].p, com_vel_old, rp_ref_out.P[rf].p, rp_ref_out.P[lf].p, rp_ref_out.P[com].p);
-//      applyCOMToSupportRegionLimit        (rp_ref_out.P[rf].p, rp_ref_out.P[lf].p, rp_ref_out.P[com]);//もう一回？
-
       applyVelLimit                       (rp_ref_out, rp_old_ref_Vel, rp_ref_out);
-
 
       applyCOMToSupportRegionLimit        (rp_ref_out.P[rf].p, rp_ref_out.P[lf].p, com_CP_ref_old);//これやらないと支持領域の移動によって1ステップ前のCOM位置はもうはみ出てるかもしれないから
 
@@ -638,11 +607,11 @@ class HumanSynchronizer{
       LIMIT_MINMAX( tgt.P[rf].p(Z), tgt.P[rf].p_offs(Z), tgt.P[rf].p_offs(Z)+WBMSparam.swing_foot_max_height);
       LIMIT_MINMAX( tgt.P[lf].p(Z), tgt.P[lf].p_offs(Z), tgt.P[lf].p_offs(Z)+WBMSparam.swing_foot_max_height);
 
-      std::string ns[5] = {"com","rf","lf","rh","lh"};
-      for(int i=0;i<XYZ;i++){ LIMIT_MINMAX( tgt.P[com].rpy(i), rc.ee_rot_limit["com"][MIN](i), rc.ee_rot_limit["com"][MAX](i) ); }
+      for(int i=0;i<XYZ;i++){ LIMIT_MINMAX( tgt.P[com].rpy(i), rc.ee_rot_limit[com][MIN](i), rc.ee_rot_limit[com][MAX](i) ); }
       LIMIT_MINMAX( tgt.P[com].p(Z), tgt.P[com].p_offs(Z) - 0.15, tgt.P[com].p_offs(Z) + 0.03 );//COM高さ方向の制限
-      for(int i=1;i<5;i++){
-        for(int j=0;j<XYZ;j++){ LIMIT_MINMAX( tgt.P[i].rpy(j), rc.ee_rot_limit[ns[i]][MIN](j) + tgt.P[com].rpy(j), rc.ee_rot_limit[ns[i]][MAX](j) + tgt.P[com].rpy(j) ); }
+      const int ns[] = {rf,lf,rh,lh,head};
+      for(int i=0;i<sizeof(ns)/sizeof(int);i++){
+        for(int j=0;j<XYZ;j++){ LIMIT_MINMAX( tgt.P[ns[i]].rpy(j), rc.ee_rot_limit[ns[i]][MIN](j) + tgt.P[com].rpy(j), rc.ee_rot_limit[ns[i]][MAX](j) + tgt.P[com].rpy(j) ); }
       }
       if(!WBMSparam.use_head)head_cam_pose.rpy = hrp::Vector3::Zero();
       if(!isHumanSyncOn())head_cam_pose.rpy = hrp::Vector3::Zero();
@@ -689,26 +658,23 @@ class HumanSynchronizer{
       hrp::Vector2 com_vel_decel_ok,com_vel_accel_ok;
       com_vel_decel_ok = com_vel_accel_ok = com_vel_ans = com_vel;
 
-      //減速CP条件
-      hrp::Vector2 cp_dec_tmp = com_pos + com_vel * sqrt( H_cur / G );
-      hrp::Vector2 cp_dec_ragulated;
-      if(!isPointInHullOpenCV(cp_dec_tmp,hull_d)){
-        calcCrossPointOnHull(com_pos, cp_dec_tmp, hull_d, cp_dec_ragulated);
-        //calcNearestPointOnHull(cp, hull, cp_ragulated);
-        com_vel_decel_ok = (cp_dec_ragulated - com_pos) / sqrt( H_cur / G );
-      }
+      //減速CP条件(現在のCPを常に両足裏で頭打ち)
+//      hrp::Vector2 cp_dec_tmp = com_pos + com_vel * sqrt( H_cur / G );
+//      hrp::Vector2 cp_dec_ragulated;
+//      if(!isPointInHullOpenCV(cp_dec_tmp,hull_d)){
+//        calcCrossPointOnHull(com_pos, cp_dec_tmp, hull_d, cp_dec_ragulated);
+//        com_vel_decel_ok = (cp_dec_ragulated - com_pos) / sqrt( H_cur / G );
+//      }
 
-      //減速CP条件2
-//      hrp::Vector2 cp_dec_ref = com_forcp_ref + com_vel * sqrt( H_cur / G );
+      //減速CP条件2(指令のCPに対する現在発揮可能なCP)
       hrp::Vector2 cp_dec_ref = com_forcp_ref + com_vel_forcp_ref * sqrt( H_cur / G );
       hrp::Vector2 cp_dec_ref_ragulated = cp_dec_ref;
       if(!isPointInHullOpenCV(cp_dec_ref,hull_d)){
         calcCrossPointOnHull(com_pos, cp_dec_ref, hull_d, cp_dec_ref_ragulated);
-//        calcNearestPointOnHull(cp, hull, cp_ragulated);
       }
       com_vel_decel_ok = (cp_dec_ref_ragulated - com_pos) / sqrt( H_cur / G );
 
-//      //加速CP条件
+//      //加速CP条件(ACP使用)
 //      hrp::Vector2 cp_acc_tmp = com_pos - com_vel * sqrt( H_cur / G );
 //      hrp::Vector2 cp_acc_ragulated;
 //      if(!isPointInHullOpenCV(cp_acc_tmp,hull_a)){
@@ -716,17 +682,7 @@ class HumanSynchronizer{
 //         com_vel_accel_ok = (-cp_acc_ragulated + com_pos ) / sqrt( H_cur / G );
 //      }
 
-//      //加速CP条件2
-//      hrp::Vector2 com_acc = (com_vel - hrp::Vector2(com_vel_old(X),com_vel_old(Y))) / DT;
-//      hrp::Vector2 zmp_in = com_pos - com_acc / G * H_cur;
-//      hrp::Vector2 zmp_regulated;
-//      if(!isPointInHullOpenCV(zmp_in,hull_a)){
-//        calcCrossPointOnHull(com_pos, zmp_in, hull_a, zmp_regulated);
-//        hrp::Vector2 com_acc_regulated = (com_pos - zmp_regulated)*G/H_cur;
-//        com_vel_accel_ok = hrp::Vector2(com_vel_old(X),com_vel_old(Y)) + com_acc_regulated*DT;
-//      }
-
-      //加速CP条件2
+      //加速CP条件2(ZMP使用)
       static hrp::Vector2 com_vel_ans_old = com_vel;
       hrp::Vector2 com_acc = (com_vel - com_vel_ans_old) / DT;
       hrp::Vector2 zmp_in = com_pos - com_acc / G * H_cur;
@@ -738,14 +694,12 @@ class HumanSynchronizer{
       }
 
       //加速減速条件マージ
-      if(com_vel_decel_ok.norm() < com_vel_accel_ok.norm()){
+      if( com_vel_decel_ok.dot(com_vel) < com_vel_accel_ok.dot(com_vel)){//normじゃダメ？
         com_vel_ans = com_vel_decel_ok;
       }else{
         com_vel_ans = com_vel_accel_ok;
       }
-
       com_vel_ans_old = com_vel_ans;
-
     }
     void createSupportRegionByFootPos(const hrp::Vector3& rfin_abs, const hrp::Vector3& lfin_abs, const hrp::Vector4& rf_mgn, const hrp::Vector4& lf_mgn, std::vector<hrp::Vector2>& hull_ans){
       std::vector<hrp::Vector2> points;

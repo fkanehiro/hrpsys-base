@@ -43,22 +43,12 @@ using namespace RTC;
 //    return os;
 //}
 
+#define USE_DEBUG_PORT
 
 class WholeBodyMasterSlave
   : public RTC::DataFlowComponentBase
 {
-
-
-
-
-    enum pose_tgt{ com, rf, lf, rh, lh, zmp, head, num_pose_tgt } p_id;
-    enum wrench_tgt{ rfw, lfw, num_wrench_tgt } w_id;
-    enum lr_direction{ L, R, LR} lr_direc;
-    enum xyz_direction{ X, Y, Z, XYZ} xyz_direc;
-    enum rpy_direction{ r, p, y, rpy} rpy_direc;
-    enum ft_direction{ fx, fy, fz, tx, ty, tz, ft_xyz} w_direc;
-
-
+    DEF_UTIL_CONST
 
  public:
   WholeBodyMasterSlave(RTC::Manager* manager);
@@ -99,51 +89,53 @@ class WholeBodyMasterSlave
   InPort<TimedPose3D> m_htheadIn;
   TimedPoint3D m_htzmp;
   InPort<TimedPoint3D> m_htzmpIn;
-  TimedPoint3D m_actzmp;
-  InPort<TimedPoint3D> m_actzmpIn;
+//  TimedPoint3D m_actzmp;
+//  InPort<TimedPoint3D> m_actzmpIn;
   TimedDoubleSeq m_htrfw;
   InPort<TimedDoubleSeq> m_htrfwIn;
   TimedDoubleSeq m_htlfw;
   InPort<TimedDoubleSeq> m_htlfwIn;
 
-  // TimedPose3D m_htcom_dbg;
-  // OutPort<TimedPose3D> m_htcom_dbgOut;
-  // TimedPose3D m_htrf_dbg;
-  // OutPort<TimedPose3D> m_htrf_dbgOut;
-  // TimedPose3D m_htlf_dbg;
-  // OutPort<TimedPose3D> m_htlf_dbgOut;
-  // TimedPose3D m_htrh_dbg;
-  // OutPort<TimedPose3D> m_htrh_dbgOut;
-  // TimedPose3D m_htlh_dbg;
-  // OutPort<TimedPose3D> m_htlh_dbgOut;
-  // TimedPose3D m_hthead_dbg;
-  // OutPort<TimedPose3D> m_hthead_dbgOut;
-  // TimedPoint3D m_htzmp_dbg;
-  // OutPort<TimedPoint3D> m_htzmp_dbgOut;
-  // TimedDoubleSeq m_htrfw_dbg;
-  // OutPort<TimedDoubleSeq> m_htrfw_dbgOut;
-  // TimedDoubleSeq m_htlfw_dbg;
-  // OutPort<TimedDoubleSeq> m_htlfw_dbgOut;
-  // TimedPose3D m_rpcom_dbg;
-  // OutPort<TimedPose3D> m_rpcom_dbgOut;
-  // TimedPose3D m_rprf_dbg;
-  // OutPort<TimedPose3D> m_rprf_dbgOut;
-  // TimedPose3D m_rplf_dbg;
-  // OutPort<TimedPose3D> m_rplf_dbgOut;
-  // TimedPose3D m_rprh_dbg;
-  // OutPort<TimedPose3D> m_rprh_dbgOut;
-  // TimedPose3D m_rplh_dbg;
-  // OutPort<TimedPose3D> m_rplh_dbgOut;
-  // TimedPose3D m_rphead_dbg;
-  // OutPort<TimedPose3D> m_rphead_dbgOut;
-  // TimedPoint3D m_rpzmp_dbg;
-  // OutPort<TimedPoint3D> m_rpzmp_dbgOut;
-  // TimedPoint3D m_rpdcp_dbg;
-  // OutPort<TimedPoint3D> m_rpdcp_dbgOut;
-  // TimedPoint3D m_rpacp_dbg;
-  // OutPort<TimedPoint3D> m_rpacp_dbgOut;
-  // TimedDoubleSeq m_invdyn_dbg;
-  // OutPort<TimedDoubleSeq> m_invdyn_dbgOut;
+#ifdef USE_DEBUG_PORT
+   TimedPose3D m_htcom_dbg;
+   OutPort<TimedPose3D> m_htcom_dbgOut;
+   TimedPose3D m_htrf_dbg;
+   OutPort<TimedPose3D> m_htrf_dbgOut;
+   TimedPose3D m_htlf_dbg;
+   OutPort<TimedPose3D> m_htlf_dbgOut;
+   TimedPose3D m_htrh_dbg;
+   OutPort<TimedPose3D> m_htrh_dbgOut;
+   TimedPose3D m_htlh_dbg;
+   OutPort<TimedPose3D> m_htlh_dbgOut;
+   TimedPose3D m_hthead_dbg;
+   OutPort<TimedPose3D> m_hthead_dbgOut;
+   TimedPoint3D m_htzmp_dbg;
+   OutPort<TimedPoint3D> m_htzmp_dbgOut;
+   TimedDoubleSeq m_htrfw_dbg;
+   OutPort<TimedDoubleSeq> m_htrfw_dbgOut;
+   TimedDoubleSeq m_htlfw_dbg;
+   OutPort<TimedDoubleSeq> m_htlfw_dbgOut;
+   TimedPose3D m_rpcom_dbg;
+   OutPort<TimedPose3D> m_rpcom_dbgOut;
+   TimedPose3D m_rprf_dbg;
+   OutPort<TimedPose3D> m_rprf_dbgOut;
+   TimedPose3D m_rplf_dbg;
+   OutPort<TimedPose3D> m_rplf_dbgOut;
+   TimedPose3D m_rprh_dbg;
+   OutPort<TimedPose3D> m_rprh_dbgOut;
+   TimedPose3D m_rplh_dbg;
+   OutPort<TimedPose3D> m_rplh_dbgOut;
+   TimedPose3D m_rphead_dbg;
+   OutPort<TimedPose3D> m_rphead_dbgOut;
+   TimedPoint3D m_rpzmp_dbg;
+   OutPort<TimedPoint3D> m_rpzmp_dbgOut;
+   TimedPoint3D m_rpdcp_dbg;
+   OutPort<TimedPoint3D> m_rpdcp_dbgOut;
+   TimedPoint3D m_rpacp_dbg;
+   OutPort<TimedPoint3D> m_rpacp_dbgOut;
+   TimedDoubleSeq m_invdyn_dbg;
+   OutPort<TimedDoubleSeq> m_invdyn_dbgOut;
+#endif
 
   OutPort<TimedDoubleSeq> m_qOut;
   RTC::OutPort<RTC::TimedPoint3D> m_zmpOut;

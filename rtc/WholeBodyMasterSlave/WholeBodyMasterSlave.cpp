@@ -60,28 +60,31 @@ WholeBodyMasterSlave::WholeBodyMasterSlave(RTC::Manager* manager)
       m_htlfIn("htlfIn", m_htlf),
       m_htrhIn("htrhIn", m_htrh),
       m_htlhIn("htlhIn", m_htlh),
-      m_actzmpIn("actzmpIn", m_actzmp),
+//      m_actzmpIn("actzmpIn", m_actzmp),
       m_htheadIn("htheadIn", m_hthead),
+
+#ifdef USE_DEBUG_PORT
       // to ros bridge
-      // m_htcom_dbgOut("htcom_dbgOut", m_htcom_dbg),
-      // m_htrf_dbgOut("htrf_dbgOut", m_htrf_dbg),
-      // m_htlf_dbgOut("htlf_dbgOut", m_htlf_dbg),
-      // m_htrh_dbgOut("htrh_dbgOut", m_htrh_dbg),
-      // m_htlh_dbgOut("htlh_dbgOut", m_htlh_dbg),
-      // m_hthead_dbgOut("hthead_dbgOut", m_hthead_dbg),
-      // m_htzmp_dbgOut("htzmp_dbgOut", m_htzmp_dbg),
-      // m_htrfw_dbgOut("htrfw_dbgOut", m_htrfw_dbg),
-      // m_htlfw_dbgOut("htlfw_dbgOut", m_htlfw_dbg),
-      // m_rpcom_dbgOut("rpcom_dbgOut", m_rpcom_dbg),
-      // m_rprf_dbgOut("rprf_dbgOut", m_rprf_dbg),
-      // m_rplf_dbgOut("rplf_dbgOut", m_rplf_dbg),
-      // m_rprh_dbgOut("rprh_dbgOut", m_rprh_dbg),
-      // m_rplh_dbgOut("rplh_dbgOut", m_rplh_dbg),
-      // m_rphead_dbgOut("rphead_dbgOut", m_rphead_dbg),
-      // m_rpzmp_dbgOut("rpzmp_dbgOut", m_rpzmp_dbg),
-      // m_rpdcp_dbgOut("rpdcp_dbgOut", m_rpdcp_dbg),
-      // m_rpacp_dbgOut("rpacp_dbgOut", m_rpacp_dbg),
-      // m_invdyn_dbgOut("invdyn_dbgOut", m_invdyn_dbg),
+       m_htcom_dbgOut("htcom_dbgOut", m_htcom_dbg),
+       m_htrf_dbgOut("htrf_dbgOut", m_htrf_dbg),
+       m_htlf_dbgOut("htlf_dbgOut", m_htlf_dbg),
+       m_htrh_dbgOut("htrh_dbgOut", m_htrh_dbg),
+       m_htlh_dbgOut("htlh_dbgOut", m_htlh_dbg),
+       m_hthead_dbgOut("hthead_dbgOut", m_hthead_dbg),
+       m_htzmp_dbgOut("htzmp_dbgOut", m_htzmp_dbg),
+       m_htrfw_dbgOut("htrfw_dbgOut", m_htrfw_dbg),
+       m_htlfw_dbgOut("htlfw_dbgOut", m_htlfw_dbg),
+       m_rpcom_dbgOut("rpcom_dbgOut", m_rpcom_dbg),
+       m_rprf_dbgOut("rprf_dbgOut", m_rprf_dbg),
+       m_rplf_dbgOut("rplf_dbgOut", m_rplf_dbg),
+       m_rprh_dbgOut("rprh_dbgOut", m_rprh_dbg),
+       m_rplh_dbgOut("rplh_dbgOut", m_rplh_dbg),
+       m_rphead_dbgOut("rphead_dbgOut", m_rphead_dbg),
+       m_rpzmp_dbgOut("rpzmp_dbgOut", m_rpzmp_dbg),
+       m_rpdcp_dbgOut("rpdcp_dbgOut", m_rpdcp_dbg),
+       m_rpacp_dbgOut("rpacp_dbgOut", m_rpacp_dbg),
+       m_invdyn_dbgOut("invdyn_dbgOut", m_invdyn_dbg),
+#endif
       m_WholeBodyMasterSlaveServicePort("WholeBodyMasterSlaveService"),
       m_robot(hrp::BodyPtr()),
       m_debugLevel(0)
@@ -118,28 +121,30 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onInitialize()
     addInPort("htlfIn", m_htlfIn);
     addInPort("htrhIn", m_htrhIn);
     addInPort("htlhIn", m_htlhIn);
-    addInPort("actzmpIn", m_actzmpIn);
+//    addInPort("actzmpIn", m_actzmpIn);
     addInPort("htheadIn", m_htheadIn);
 
-    // addOutPort("htcom_dbgOut", m_htcom_dbgOut);
-    // addOutPort("htrf_dbgOut", m_htrf_dbgOut);
-    // addOutPort("htlf_dbgOut", m_htlf_dbgOut);
-    // addOutPort("htrh_dbgOut", m_htrh_dbgOut);
-    // addOutPort("htlh_dbgOut", m_htlh_dbgOut);
-    // addOutPort("hthead_dbgOut", m_hthead_dbgOut);
-    // addOutPort("htzmp_dbgOut", m_htzmp_dbgOut);
-    // addOutPort("htrfw_dbgOut", m_htrfw_dbgOut);
-    // addOutPort("htlfw_dbgOut", m_htlfw_dbgOut);
-    // addOutPort("rpcom_dbgOut", m_rpcom_dbgOut);
-    // addOutPort("rprf_dbgOut", m_rprf_dbgOut);
-    // addOutPort("rplf_dbgOut", m_rplf_dbgOut);
-    // addOutPort("rprh_dbgOut", m_rprh_dbgOut);
-    // addOutPort("rplh_dbgOut", m_rplh_dbgOut);
-    // addOutPort("rphead_dbgOut", m_rphead_dbgOut);
-    // addOutPort("rpzmp_dbgOut", m_rpzmp_dbgOut);
-    // addOutPort("rpdcp_dbgOut", m_rpdcp_dbgOut);
-    // addOutPort("rpacp_dbgOut", m_rpacp_dbgOut);
-    // addOutPort("invdyn_dbgOut", m_invdyn_dbgOut);
+#ifdef USE_DEBUG_PORT
+     addOutPort("htcom_dbgOut", m_htcom_dbgOut);
+     addOutPort("htrf_dbgOut", m_htrf_dbgOut);
+     addOutPort("htlf_dbgOut", m_htlf_dbgOut);
+     addOutPort("htrh_dbgOut", m_htrh_dbgOut);
+     addOutPort("htlh_dbgOut", m_htlh_dbgOut);
+     addOutPort("hthead_dbgOut", m_hthead_dbgOut);
+     addOutPort("htzmp_dbgOut", m_htzmp_dbgOut);
+     addOutPort("htrfw_dbgOut", m_htrfw_dbgOut);
+     addOutPort("htlfw_dbgOut", m_htlfw_dbgOut);
+     addOutPort("rpcom_dbgOut", m_rpcom_dbgOut);
+     addOutPort("rprf_dbgOut", m_rprf_dbgOut);
+     addOutPort("rplf_dbgOut", m_rplf_dbgOut);
+     addOutPort("rprh_dbgOut", m_rprh_dbgOut);
+     addOutPort("rplh_dbgOut", m_rplh_dbgOut);
+     addOutPort("rphead_dbgOut", m_rphead_dbgOut);
+     addOutPort("rpzmp_dbgOut", m_rpzmp_dbgOut);
+     addOutPort("rpdcp_dbgOut", m_rpdcp_dbgOut);
+     addOutPort("rpacp_dbgOut", m_rpacp_dbgOut);
+     addOutPort("invdyn_dbgOut", m_invdyn_dbgOut);
+#endif
 
     m_WholeBodyMasterSlaveServicePort.registerProvider("service0", "WholeBodyMasterSlaveService", m_service0);
   
@@ -309,7 +314,7 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id)
     if (m_htrhIn.isNew()) { m_htrhIn.read();  HumanSynchronizer::Pose3DToHRPPose3D(m_htrh.data,hsp->hp_wld_raw.P[rh]);}
     if (m_htlhIn.isNew()) { m_htlhIn.read();  HumanSynchronizer::Pose3DToHRPPose3D(m_htlh.data,hsp->hp_wld_raw.P[lh]);}
     if (m_htheadIn.isNew()){ m_htheadIn.read(); HumanSynchronizer::Pose3DToHRPPose3D(m_hthead.data,hsp->head_cam_pose);}
-    if (m_actzmpIn.isNew()){m_actzmpIn.read(); }
+//    if (m_actzmpIn.isNew()){m_actzmpIn.read(); }
 
 
     if ( is_legged_robot ) {
@@ -416,68 +421,69 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id)
       m_optionalDataOut.write();
     }
 
-    //ishiguro dbg plot
-    // m_htcom.tm = m_qRef.tm;
-    // HumanSynchronizer::HRPPose3DToPose3D(hsp->hp_plot.P[com],m_htcom_dbg.data);
-    // m_htcom_dbgOut.write();
-    // m_htrf.tm = m_qRef.tm;
-    // HumanSynchronizer::HRPPose3DToPose3D(hsp->hp_plot.P[rf],m_htrf_dbg.data);
-    // m_htrf_dbgOut.write();
-    // m_htlf.tm = m_qRef.tm;
-    // HumanSynchronizer::HRPPose3DToPose3D(hsp->hp_plot.P[lf],m_htlf_dbg.data);
-    // m_htlf_dbgOut.write();
-    // m_htrh.tm = m_qRef.tm;
-    // HumanSynchronizer::HRPPose3DToPose3D(hsp->hp_plot.P[rh],m_htrh_dbg.data);
-    // m_htrh_dbgOut.write();
-    // m_htlh.tm = m_qRef.tm;
-    // HumanSynchronizer::HRPPose3DToPose3D(hsp->hp_plot.P[lh],m_htlh_dbg.data);
-    // m_htlh_dbgOut.write();
-    // m_hthead.tm = m_qRef.tm;
-    // HumanSynchronizer::HRPPose3DToPose3D(hsp->hp_plot.getP("head"),m_hthead_dbg.data);
-    // m_hthead_dbgOut.write();
-    // m_htzmp.tm = m_qRef.tm;
-    // HumanSynchronizer::Vector3ToPoint3D(hsp->rp_ref_out.P[zmp].p,m_rpzmp_dbg.data);
-    // m_htzmp_dbgOut.write();
-    // m_htrfw.tm = m_qRef.tm;
-    // m_htrfw_dbg.data.length(6);
-    // HumanSynchronizer::Wrench6ToDoubleSeq(hsp->hp_plot.w[rfw],m_htrfw_dbg.data);
-    // m_htrfw_dbgOut.write(); 
-    // m_htlfw.tm = m_qRef.tm;
-    // m_htlfw_dbg.data.length(6);
-    // HumanSynchronizer::Wrench6ToDoubleSeq(hsp->hp_plot.w[lfw],m_htlfw_dbg.data);
-    // m_htlfw_dbgOut.write();
-    // m_rpcom_dbg.tm = m_qRef.tm;
-    // HumanSynchronizer::HRPPose3DToPose3D(hsp->rp_ref_out.P[com],m_rpcom_dbg.data);
-    // m_rpcom_dbgOut.write();
-    // m_rprf_dbg.tm = m_qRef.tm;
-    // HumanSynchronizer::HRPPose3DToPose3D(hsp->rp_ref_out.P[rf],m_rprf_dbg.data);
-    // m_rprf_dbgOut.write();
-    // m_rplf_dbg.tm = m_qRef.tm;
-    // HumanSynchronizer::HRPPose3DToPose3D(hsp->rp_ref_out.P[lf],m_rplf_dbg.data);
-    // m_rplf_dbgOut.write();
-    // m_rprh_dbg.tm = m_qRef.tm;
-    // HumanSynchronizer::HRPPose3DToPose3D(hsp->rp_ref_out.P[rh],m_rprh_dbg.data);
-    // m_rprh_dbgOut.write();
-    // m_rplh_dbg.tm = m_qRef.tm;
-    // HumanSynchronizer::HRPPose3DToPose3D(hsp->rp_ref_out.P[lh],m_rplh_dbg.data);
-    // m_rplh_dbgOut.write();
-    // m_rphead_dbg.tm = m_qRef.tm;
-    // HumanSynchronizer::HRPPose3DToPose3D(hsp->rp_ref_out.getP("head"),m_rphead_dbg.data);
-    // m_rphead_dbgOut.write();
-    // m_rpzmp_dbg.tm = m_qRef.tm;
-    // HumanSynchronizer::Vector3ToPoint3D(hsp->rp_ref_out.P[zmp].p,m_rpzmp_dbg.data);
-    // m_rpzmp_dbgOut.write();
-    // m_rpdcp_dbg.tm = m_qRef.tm;
-    // HumanSynchronizer::Vector3ToPoint3D(hsp->cp_dec,m_rpdcp_dbg.data);
-    // m_rpdcp_dbgOut.write();
-    // m_rpacp_dbg.tm = m_qRef.tm;
-    // HumanSynchronizer::Vector3ToPoint3D(hsp->cp_acc,m_rpacp_dbg.data);
-    // m_rpacp_dbgOut.write();
-    // m_invdyn_dbg.tm = m_qRef.tm;
-    // m_invdyn_dbg.data.length(6);
-    // HumanSynchronizer::Wrench6ToDoubleSeq(hsp->invdyn_ft,m_invdyn_dbg.data);
-    // m_invdyn_dbgOut.write();
-
+#ifdef USE_DEBUG_PORT
+    // dbg plot
+     m_htcom.tm = m_qRef.tm;
+     HumanSynchronizer::HRPPose3DToPose3D(hsp->hp_plot.P[com],m_htcom_dbg.data);
+     m_htcom_dbgOut.write();
+     m_htrf.tm = m_qRef.tm;
+     HumanSynchronizer::HRPPose3DToPose3D(hsp->hp_plot.P[rf],m_htrf_dbg.data);
+     m_htrf_dbgOut.write();
+     m_htlf.tm = m_qRef.tm;
+     HumanSynchronizer::HRPPose3DToPose3D(hsp->hp_plot.P[lf],m_htlf_dbg.data);
+     m_htlf_dbgOut.write();
+     m_htrh.tm = m_qRef.tm;
+     HumanSynchronizer::HRPPose3DToPose3D(hsp->hp_plot.P[rh],m_htrh_dbg.data);
+     m_htrh_dbgOut.write();
+     m_htlh.tm = m_qRef.tm;
+     HumanSynchronizer::HRPPose3DToPose3D(hsp->hp_plot.P[lh],m_htlh_dbg.data);
+     m_htlh_dbgOut.write();
+     m_hthead.tm = m_qRef.tm;
+     HumanSynchronizer::HRPPose3DToPose3D(hsp->hp_plot.P[head],m_hthead_dbg.data);
+     m_hthead_dbgOut.write();
+     m_htzmp.tm = m_qRef.tm;
+     HumanSynchronizer::Vector3ToPoint3D(hsp->rp_ref_out.P[zmp].p,m_rpzmp_dbg.data);
+     m_htzmp_dbgOut.write();
+     m_htrfw.tm = m_qRef.tm;
+     m_htrfw_dbg.data.length(6);
+     HumanSynchronizer::Wrench6ToDoubleSeq(hsp->hp_plot.w[rfw],m_htrfw_dbg.data);
+     m_htrfw_dbgOut.write();
+     m_htlfw.tm = m_qRef.tm;
+     m_htlfw_dbg.data.length(6);
+     HumanSynchronizer::Wrench6ToDoubleSeq(hsp->hp_plot.w[lfw],m_htlfw_dbg.data);
+     m_htlfw_dbgOut.write();
+     m_rpcom_dbg.tm = m_qRef.tm;
+     HumanSynchronizer::HRPPose3DToPose3D(hsp->rp_ref_out.P[com],m_rpcom_dbg.data);
+     m_rpcom_dbgOut.write();
+     m_rprf_dbg.tm = m_qRef.tm;
+     HumanSynchronizer::HRPPose3DToPose3D(hsp->rp_ref_out.P[rf],m_rprf_dbg.data);
+     m_rprf_dbgOut.write();
+     m_rplf_dbg.tm = m_qRef.tm;
+     HumanSynchronizer::HRPPose3DToPose3D(hsp->rp_ref_out.P[lf],m_rplf_dbg.data);
+     m_rplf_dbgOut.write();
+     m_rprh_dbg.tm = m_qRef.tm;
+     HumanSynchronizer::HRPPose3DToPose3D(hsp->rp_ref_out.P[rh],m_rprh_dbg.data);
+     m_rprh_dbgOut.write();
+     m_rplh_dbg.tm = m_qRef.tm;
+     HumanSynchronizer::HRPPose3DToPose3D(hsp->rp_ref_out.P[lh],m_rplh_dbg.data);
+     m_rplh_dbgOut.write();
+     m_rphead_dbg.tm = m_qRef.tm;
+     HumanSynchronizer::HRPPose3DToPose3D(hsp->rp_ref_out.P[head],m_rphead_dbg.data);
+     m_rphead_dbgOut.write();
+     m_rpzmp_dbg.tm = m_qRef.tm;
+     HumanSynchronizer::Vector3ToPoint3D(hsp->rp_ref_out.P[zmp].p,m_rpzmp_dbg.data);
+     m_rpzmp_dbgOut.write();
+     m_rpdcp_dbg.tm = m_qRef.tm;
+     HumanSynchronizer::Vector3ToPoint3D(hsp->cp_dec,m_rpdcp_dbg.data);
+     m_rpdcp_dbgOut.write();
+     m_rpacp_dbg.tm = m_qRef.tm;
+     HumanSynchronizer::Vector3ToPoint3D(hsp->cp_acc,m_rpacp_dbg.data);
+     m_rpacp_dbgOut.write();
+     m_invdyn_dbg.tm = m_qRef.tm;
+     m_invdyn_dbg.data.length(6);
+     HumanSynchronizer::Wrench6ToDoubleSeq(hsp->invdyn_ft,m_invdyn_dbg.data);
+     m_invdyn_dbgOut.write();
+#endif
 
 
 
@@ -550,7 +556,9 @@ void WholeBodyMasterSlave::processWholeBodyMasterSlave(){
   if(hsp->isHumanSyncOn()){
     solveFullbodyIKStrictCOM( hsp->rp_ref_out.P[com], hsp->rp_ref_out.P[rf], hsp->rp_ref_out.P[lf], hsp->rp_ref_out.P[rh], hsp->rp_ref_out.P[lh], hsp->cam_rpy_filtered );
     //outport用のデータ上書き
-    hsp->rp_ref_out.P[zmp].p(2) = (hsp->rp_ref_out.P[rf].p(2) + hsp->rp_ref_out.P[lf].p(2))/2 - m_robot->rootLink()->p(2);//体幹相対ZMP高さ設定
+    hsp->rp_ref_out.P[zmp].p(2) = (hsp->rp_ref_out.P[rf].p(2) + hsp->rp_ref_out.P[lf].p(2))/2;//体幹相対ZMP高さ設定
+
+
     rel_ref_zmp = m_robot->rootLink()->R.transpose() * (hsp->rp_ref_out.P[zmp].p - m_robot->rootLink()->p);
     if(m_optionalData.data.length() < 4*2){
       m_optionalData.data.length(4*2);//これいいのか？
