@@ -103,13 +103,9 @@ bool HumanSynchronizer::isPointInHullOpenCV(const hrp::Vector2& pt, const std::v
 }
 void HumanSynchronizer::applyZMPCalcFromCOM(const hrp::Vector3& comin, hrp::Vector3& zmpout){
   comacc = (comin - 2 * com_old + com_oldold)/(DT*DT);
-  const double MAXACC = 5;
-  LIMIT_MINMAX( comacc(0), -MAXACC, MAXACC);
-  LIMIT_MINMAX( comacc(1), -MAXACC, MAXACC);
   comacc = acc4zmp_v_filters.passFilter(comacc);
   zmpout(0) = comin(0)-(H_cur/G)*comacc(0);
   zmpout(1) = comin(1)-(H_cur/G)*comacc(1);
-//  if(DEBUG)fprintf(cz_log,"%f %f %f %f %f %f %f\n",(double)loop/HZ,comin(0),comin(1),rp_ref_out.getP("zmp").p(0),rp_ref_out.getP("zmp").p(1),zmpout(0),zmpout(1));
   com_oldold = com_old;
   com_old = comin;
 }

@@ -483,10 +483,8 @@ void WholeBodyMasterSlave::processWholeBodyMasterSlave(){
   fik->current_tm = m_qRef.tm;
   fik->ikp["rleg"].is_ik_enable = true;
   fik->ikp["lleg"].is_ik_enable = true;
-  // fik->ikp["rarm"].is_ik_enable = true;
-  // fik->ikp["larm"].is_ik_enable = true;
-  fik->ikp["rarm"].is_ik_enable = false;
-  fik->ikp["larm"].is_ik_enable = false;
+   fik->ikp["rarm"].is_ik_enable = true;
+   fik->ikp["larm"].is_ik_enable = true;
 
   if(hsp->startCountdownForHumanSync){
     std::cerr << "[" << m_profile.instance_name << "] Count Down for HumanSync ["<<hsp->getRemainingCountDown()<<"]\r";
@@ -554,7 +552,76 @@ void WholeBodyMasterSlave::processWholeBodyMasterSlave(){
     rel_ref_zmp = input_ref_zmp;
   }
 }
+
+//void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(const HRPPose3D& com_ref, const HRPPose3D& rf_ref, const HRPPose3D& lf_ref, const HRPPose3D& rh_ref, const HRPPose3D& lh_ref, const HRPPose3D& head_ref){
+//  int com_ik_loop=0;
+//  const int COM_IK_MAX_LOOP = 5;
+//  const double COM_IK_MAX_ERROR = 1e-4;
+//  m_robot->rootLink()->p = com_ref.p;//move base link at first
+//  m_robot->rootLink()->R = hrp::rotFromRpy(com_ref.rpy);//move base link at first
 //
+//  hrp::Vector3 tmp_com_err;
+//  const std::string names[4] = {"rleg","lleg","rarm","larm"};
+//  const HRPPose3D* refs[4] = {&rf_ref, &lf_ref, &rh_ref, &lh_ref};
+//  for(int i=0;i<4;i++){
+//    if(fik->ikp.count(names[i])){
+//      fik->ikp[names[i]].target_r0 = hrp::rotFromRpy(refs[i]->rpy);//convert End Effector pos into link origin pos
+//      fik->ikp[names[i]].target_p0 = refs[i]->p;
+//    }
+//  }
+//  if(m_robot->link("HEAD_JOINT0") != NULL)m_robot->joint(15)->q = head_ref.rpy(y);
+//  if(m_robot->link("HEAD_JOINT1") != NULL)m_robot->joint(16)->q = head_ref.rpy(p);
+//  //COM 収束ループ
+//  while(
+//      m_robot->calcForwardKinematics(),
+//      tmp_com_err = com_ref.p - m_robot->calcCM(),
+//      tmp_com_err.norm() > COM_IK_MAX_ERROR,
+//      com_ik_loop++)
+//  {
+//    m_robot->rootLink()->p += tmp_com_err;
+//    m_robot->calcForwardKinematics();
+//    for ( std::map<std::string, SimpleFullbodyInverseKinematicsSolver::IKparam>::iterator it = fik->ikp.begin(); it != fik->ikp.end(); it++ ) {
+//        if (it->second.is_ik_enable) fik->solveLimbIK (it->second, it->first, fik->ratio_for_vel, false);
+//    }
+//    if(com_ik_loop > COM_IK_MAX_LOOP){std::cerr << "COM constraint IK MAX loop [="<<COM_IK_MAX_LOOP<<"] exceeded!!" << std::endl; break; };
+//  }
+//  cout<<"COM_IK_MAX_LOOP:"<<com_ik_loop<<endl;
+//}
+
+void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(const HRPPose3D& com_ref, const HRPPose3D& rf_ref, const HRPPose3D& lf_ref, const HRPPose3D& rh_ref, const HRPPose3D& lh_ref, const HRPPose3D& head_ref){
+  int com_ik_loop=0;
+  const int COM_IK_MAX_LOOP = 5;
+  const double COM_IK_MAX_ERROR = 1e-4;
+  m_robot->rootLink()->p = com_ref.p;//move base link at first
+  m_robot->rootLink()->R = hrp::rotFromRpy(com_ref.rpy);//move base link at first
+
+  const std::string names[4] = {"rleg","lleg","rarm","larm"};
+  const HRPPose3D* refs[4] = {&rf_ref, &lf_ref, &rh_ref, &lh_ref};
+  for(int i=0;i<4;i++){
+    if(fik->ikp.count(names[i])){
+      fik->ikp[names[i]].target_r0 = hrp::rotFromRpy(refs[i]->rpy);//convert End Effector pos into link origin pos
+      fik->ikp[names[i]].target_p0 = refs[i]->p;
+    }
+  }
+  if(m_robot->link("HEAD_JOINT0") != NULL)m_robot->joint(15)->q = head_ref.rpy(y);
+  if(m_robot->link("HEAD_JOINT1") != NULL)m_robot->joint(16)->q = head_ref.rpy(p);
+  //COM 収束ループ
+  hrp::Vector3 tmp_com_err;
+  while( 1 ){
+    com_ik_loop++;
+    m_robot->calcForwardKinematics();
+    for ( std::map<std::string, SimpleFullbodyInverseKinematicsSolver::IKparam>::iterator it = fik->ikp.begin(); it != fik->ikp.end(); it++ ) {
+        if (it->second.is_ik_enable) fik->solveLimbIK (it->second, it->first, fik->ratio_for_vel, false);
+    }
+    tmp_com_err = com_ref.p - m_robot->calcCM();
+    cout<<"tmp_com_err:"<<tmp_com_err.norm()<<endl;
+    if(tmp_com_err.norm() < COM_IK_MAX_ERROR){ break; }
+    m_robot->rootLink()->p += tmp_com_err;
+    if(com_ik_loop >= COM_IK_MAX_LOOP){std::cerr << "COM constraint IK MAX loop [="<<COM_IK_MAX_LOOP<<"] exceeded!!" << std::endl; break; };
+  }
+  cout<<"COM_IK_MAX_LOOP:"<<com_ik_loop<<endl;
+}
+
 //
 //hrp::Vector3 torso_pos = hrp::Vector3::Zero();
 //hrp::Vector3 torso_rot = hrp::Vector3::Zero();
@@ -697,40 +764,6 @@ void WholeBodyMasterSlave::calcDynamicsFilterCompensation(const hrp::Vector3 zmp
 
 
 
-
-void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(const HRPPose3D& com_ref, const HRPPose3D& rf_ref, const HRPPose3D& lf_ref, const HRPPose3D& rh_ref, const HRPPose3D& lh_ref, const HRPPose3D& head_ref){
-  int com_ik_loop=0;
-  const int COM_IK_MAX_LOOP = 5;
-  const double COM_IK_MAX_ERROR = 1e-4;
-  m_robot->rootLink()->p = com_ref.p;//move base link at first
-  m_robot->rootLink()->R = hrp::rotFromRpy(com_ref.rpy);//move base link at first
-
-  hrp::Vector3 tmp_com_err;
-  const std::string names[4] = {"rleg","lleg","rarm","larm"};
-  const HRPPose3D* refs[4] = {&rf_ref, &lf_ref, &rh_ref, &lh_ref};
-  for(int i=0;i<4;i++){
-    if(fik->ikp.count(names[i])){
-      fik->ikp[names[i]].target_r0 = hrp::rotFromRpy(refs[i]->rpy);//convert End Effector pos into link origin pos
-      fik->ikp[names[i]].target_p0 = refs[i]->p;
-    }
-  }
-  if(m_robot->link("HEAD_JOINT0") != NULL)m_robot->joint(15)->q = head_ref.rpy(y);
-  if(m_robot->link("HEAD_JOINT1") != NULL)m_robot->joint(16)->q = head_ref.rpy(p);
-  //COM 収束ループ
-  while(
-      m_robot->calcForwardKinematics(),
-      tmp_com_err = com_ref.p - m_robot->calcCM(),
-      tmp_com_err.norm() > COM_IK_MAX_ERROR)
-  {
-    m_robot->rootLink()->p += tmp_com_err;
-    m_robot->calcForwardKinematics();
-    for ( std::map<std::string, SimpleFullbodyInverseKinematicsSolver::IKparam>::iterator it = fik->ikp.begin(); it != fik->ikp.end(); it++ ) {
-        if (it->second.is_ik_enable) fik->solveLimbIK (it->second, it->first, fik->ratio_for_vel, false);
-    }
-    if(com_ik_loop++ > COM_IK_MAX_LOOP){std::cerr << "COM constraint IK MAX loop [="<<COM_IK_MAX_LOOP<<"] exceeded!!" << std::endl; break; };
-  }
-//  cout<<"COM_IK_MAX_LOOP:"<<com_ik_loop<<endl;
-}
 
 bool WholeBodyMasterSlave::startCountDownForWholeBodyMasterSlave(const double sec)
 {

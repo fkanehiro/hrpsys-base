@@ -177,7 +177,7 @@ class HumanSynchronizer{
     hrp::Vector4 rf_safe_region,lf_safe_region;//前後左右の順
     RobotConfig rc;
     std::vector<hrp::Vector2> rflf_points;
-    std::vector<hrp::Vector2> hull_dcp,hull_acp;
+    std::vector<hrp::Vector2> hull_com,hull_dcp,hull_acp;
     std::vector<cv::Point2f> points,cvhull;
 
   public:
@@ -304,10 +304,11 @@ class HumanSynchronizer{
       rp_ref_out.clear();
 
       rflf_points.reserve(8);//あらかじめreserveして高速化
+      points.reserve(8);
+      hull_com.reserve(6);
       hull_dcp.reserve(6);
       hull_dcp.reserve(6);
       cvhull.reserve(6);
-      points.reserve(8);
 
 
       init_zmp_com_offset_interpolator = new interpolator(1, DT, interpolator::HOFFARBIB, 1);
@@ -616,7 +617,7 @@ class HumanSynchronizer{
       if(!isHumanSyncOn())tgt.P[head].rpy = hrp::Vector3::Zero();
     }
     bool applyCOMToSupportRegionLimit(const hrp::Vector3& rfin_abs, const hrp::Vector3& lfin_abs, hrp::Vector3& comin_abs){//boost::geometryがUbuntu12だとないから・・・
-      std::vector<hrp::Vector2> hull_com;
+      hull_com.clear();
       createSupportRegionByFootPos(rfin_abs, lfin_abs, rf_safe_region, lf_safe_region, hull_com);
       hrp::Vector2 cog(comin_abs(X),comin_abs(Y));
       if(!isPointInHullOpenCV(cog,hull_com)){ calcNearestPointOnHull(cog,hull_com,cog); }//外に出たら最近傍点に頭打ち
@@ -701,6 +702,7 @@ class HumanSynchronizer{
     }
     void createSupportRegionByFootPos(const hrp::Vector3& rfin_abs, const hrp::Vector3& lfin_abs, const hrp::Vector4& rf_mgn, const hrp::Vector4& lf_mgn, std::vector<hrp::Vector2>& hull_ans){
       rflf_points.clear();
+      hull_ans.clear();
       for(int i=0;i<2;i++){
         for(int j=2;j<4;j++){
           rflf_points.push_back(hrp::Vector2(rfin_abs(X) + rf_mgn(i),    rfin_abs(Y) + rf_mgn(j)));
