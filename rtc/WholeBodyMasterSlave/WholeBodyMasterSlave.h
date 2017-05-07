@@ -153,7 +153,7 @@ class WholeBodyMasterSlave
     hrp::Link* target_link;
     bool is_active, has_toe_joint;
   };
-  void solveFullbodyIKStrictCOM(const HRPPose3D& com_ref, const HRPPose3D& rf_ref, const HRPPose3D& lf_ref, const HRPPose3D& rh_ref, const HRPPose3D& lh_ref, const hrp::Vector3& head_ref);
+  void solveFullbodyIKStrictCOM(const HRPPose3D& com_ref, const HRPPose3D& rf_ref, const HRPPose3D& lf_ref, const HRPPose3D& rh_ref, const HRPPose3D& lh_ref, const HRPPose3D& head_ref);
   void processWholeBodyMasterSlave();
   void calcDynamicsFilterCompensation(const hrp::Vector3 zmp_lip, const hrp::Vector3 zmp_fullbody);
   bool isOptionalDataContact (const std::string& ee_name)

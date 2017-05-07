@@ -78,11 +78,12 @@ double HumanSynchronizer::calcNearestPointOnHull(const hrp::Vector2& tgt_pt, con
   return ans_nearest_dist;
 }
 void HumanSynchronizer::makeConvexHullOpenCV(const std::vector<hrp::Vector2>& pts, std::vector<hrp::Vector2>& hull_ans){
-  std::vector<cv::Point2f> points,hull;
-  for(int i=0;i<pts.size();i++){ points.push_back( cv::Point2f( pts[i](0), pts[i](1)) ); }
-  cv::convexHull(cv::Mat(points),hull,true);
+  points.clear();
+  cvhull.clear();
   hull_ans.clear();
-  for(int i=0;i<hull.size();i++){ hull_ans.push_back( hrp::Vector2( hull[i].x, hull[i].y ) );  }
+  for(int i=0;i<pts.size();i++){ points.push_back( cv::Point2f( pts[i](0), pts[i](1)) ); }
+  cv::convexHull(cv::Mat(points),cvhull,true);
+  for(int i=0;i<cvhull.size();i++){ hull_ans.push_back( hrp::Vector2( cvhull[i].x, cvhull[i].y ) );  }
 }
 //void HumanSynchronizer::makeConvexHullQHull(const std::vector<hrp::Vector2>& pts, std::vector<hrp::Vector2>& hull_ans){
 //  const int dim = 2;
@@ -96,7 +97,7 @@ void HumanSynchronizer::makeConvexHullOpenCV(const std::vector<hrp::Vector2>& pt
 //  //#define qh_ORIENTclock 1
 //}
 bool HumanSynchronizer::isPointInHullOpenCV(const hrp::Vector2& pt, const std::vector<hrp::Vector2>& hull){
-  std::vector<cv::Point2f> cvhull;
+  cvhull.clear();
   for(int i=0;i<hull.size();i++){ cvhull.push_back( cv::Point2f( hull[i](0), hull[i](1)) ); }
   return (cv::pointPolygonTest(cv::Mat(cvhull), cv::Point2f(pt(0),pt(1)), false) > 0);
 }
@@ -112,11 +113,12 @@ void HumanSynchronizer::applyZMPCalcFromCOM(const hrp::Vector3& comin, hrp::Vect
   com_oldold = com_old;
   com_old = comin;
 }
-void HumanSynchronizer::applyVelLimit(const HumanPose& in, HumanPose& out_old, HumanPose& out){
-  for(int i=com;i<=lh;i++){
-    hrp::Vector3 diff = in.P[i].p  - out_old.P[i].p;
-    for(int j=0;j<3;j++)LIMIT_MINMAX( diff(j), -MAXVEL*DT, MAXVEL*DT);
-    out.P[i].p = out_old.P[i].p + diff;
-  }
-  out_old = out;
-}
+//void HumanSynchronizer::applyVelLimit(const HumanPose& in, HumanPose& out_old, HumanPose& out){
+//  const int ns[] = {com,rf,lf,rh,lh,head}, num_ns = sizeof(ns)/sizeof(int);
+//  for(int i=0;i<num_ns;i++){
+//    hrp::Vector3 diff = in.P[i].p  - out_old.P[i].p;
+//    for(int j=0;j<3;j++)LIMIT_MINMAX( diff(j), -MAXVEL*DT, MAXVEL*DT);
+//    out.P[i].p = out_old.P[i].p + diff;
+//  }
+//  out_old = out;
+//}

@@ -251,7 +251,7 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onInitialize()
       is_legged_robot = false;
     }
 
-    hsp = boost::shared_ptr<HumanSynchronizer>(new HumanSynchronizer());
+    hsp = boost::shared_ptr<HumanSynchronizer>(new HumanSynchronizer(m_dt));
 
     return RTC::RTC_OK;
 }
@@ -279,8 +279,6 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id)
 {
   // std::cerr << "WholeBodyMasterSlave::onExecute(" << ec_id << ")" << std::endl;
     // Read Inport
- 
-
 
     if (m_qRefIn.isNew()) {
         m_qRefIn.read();
@@ -313,7 +311,7 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id)
     if (m_htlfIn.isNew()) { m_htlfIn.read();  HumanSynchronizer::Pose3DToHRPPose3D(m_htlf.data,hsp->hp_wld_raw.P[lf]); }
     if (m_htrhIn.isNew()) { m_htrhIn.read();  HumanSynchronizer::Pose3DToHRPPose3D(m_htrh.data,hsp->hp_wld_raw.P[rh]);}
     if (m_htlhIn.isNew()) { m_htlhIn.read();  HumanSynchronizer::Pose3DToHRPPose3D(m_htlh.data,hsp->hp_wld_raw.P[lh]);}
-    if (m_htheadIn.isNew()){ m_htheadIn.read(); HumanSynchronizer::Pose3DToHRPPose3D(m_hthead.data,hsp->head_cam_pose);}
+    if (m_htheadIn.isNew()){ m_htheadIn.read(); HumanSynchronizer::Pose3DToHRPPose3D(m_hthead.data,hsp->hp_wld_raw.P[head]);}
 //    if (m_actzmpIn.isNew()){m_actzmpIn.read(); }
 
 
@@ -328,8 +326,7 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id)
 //        q_interpolator_ratio = (control_mode == MODE_IDLE) ? 0.0 : 1.0;
 //      }
 
-
-        hsp->baselinkpose.p = m_robot->rootLink()->p;
+      hsp->baselinkpose.p = m_robot->rootLink()->p;
         hsp->baselinkpose.rpy = hrp::rpyFromRot(m_robot->rootLink()->R);
         if(!hsp->isHumanSyncOn()){
           m_robot->rootLink()->p = input_basePos;
@@ -340,11 +337,7 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id)
           m_robot->calcForwardKinematics();
         }
 
-
-
         processWholeBodyMasterSlave();
-
-
 
         /////// Inverse Dynamics /////////
         if(!idsb.is_initialized){
@@ -378,12 +371,6 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id)
 //        ref_zmp = ref_zmp_invdyn;
 //        rel_ref_zmp = m_robot->rootLink()->R.transpose() * (ref_zmp - m_robot->rootLink()->p);
     }
-
-
-
-
-
-
 
     // Write Outport
     if ( m_qRef.data.length() != 0 ) { // initialized
@@ -484,9 +471,6 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id)
      HumanSynchronizer::Wrench6ToDoubleSeq(hsp->invdyn_ft,m_invdyn_dbg.data);
      m_invdyn_dbgOut.write();
 #endif
-
-
-
     loop ++;
     return RTC::RTC_OK;
 }
@@ -554,7 +538,7 @@ void WholeBodyMasterSlave::processWholeBodyMasterSlave(){
 
   m_robot->calcForwardKinematics();
   if(hsp->isHumanSyncOn()){
-    solveFullbodyIKStrictCOM( hsp->rp_ref_out.P[com], hsp->rp_ref_out.P[rf], hsp->rp_ref_out.P[lf], hsp->rp_ref_out.P[rh], hsp->rp_ref_out.P[lh], hsp->cam_rpy_filtered );
+    solveFullbodyIKStrictCOM( hsp->rp_ref_out.P[com], hsp->rp_ref_out.P[rf], hsp->rp_ref_out.P[lf], hsp->rp_ref_out.P[rh], hsp->rp_ref_out.P[lh], hsp->rp_ref_out.P[head] );
     //outport用のデータ上書き
     hsp->rp_ref_out.P[zmp].p(2) = (hsp->rp_ref_out.P[rf].p(2) + hsp->rp_ref_out.P[lf].p(2))/2;//体幹相対ZMP高さ設定
 
@@ -707,16 +691,16 @@ void WholeBodyMasterSlave::calcDynamicsFilterCompensation(const hrp::Vector3 zmp
     HRPPose3D com_mod = hsp->rp_ref_out.P[com];
 //    com_mod.p += torso_pos;
 //    com_mod.rpy += torso_rot;
-    solveFullbodyIKStrictCOM( com_mod, hsp->rp_ref_out.P[rf], hsp->rp_ref_out.P[lf], hsp->rp_ref_out.P[rh], hsp->rp_ref_out.P[lh], hsp->cam_rpy_filtered );
+    solveFullbodyIKStrictCOM( com_mod, hsp->rp_ref_out.P[rf], hsp->rp_ref_out.P[lf], hsp->rp_ref_out.P[rh], hsp->rp_ref_out.P[lh], hsp->rp_ref_out.P[head]);
   }
 }
 
 
 
 
-void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(const HRPPose3D& com_ref, const HRPPose3D& rf_ref, const HRPPose3D& lf_ref, const HRPPose3D& rh_ref, const HRPPose3D& lh_ref, const hrp::Vector3& head_ref){
+void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(const HRPPose3D& com_ref, const HRPPose3D& rf_ref, const HRPPose3D& lf_ref, const HRPPose3D& rh_ref, const HRPPose3D& lh_ref, const HRPPose3D& head_ref){
   int com_ik_loop=0;
-  const int COM_IK_MAX_LOOP = 10;
+  const int COM_IK_MAX_LOOP = 5;
   const double COM_IK_MAX_ERROR = 1e-4;
   m_robot->rootLink()->p = com_ref.p;//move base link at first
   m_robot->rootLink()->R = hrp::rotFromRpy(com_ref.rpy);//move base link at first
@@ -730,8 +714,8 @@ void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(const HRPPose3D& com_ref, co
       fik->ikp[names[i]].target_p0 = refs[i]->p;
     }
   }
-  if(m_robot->link("HEAD_JOINT0") != NULL)m_robot->joint(15)->q = head_ref(2);
-  if(m_robot->link("HEAD_JOINT1") != NULL)m_robot->joint(16)->q = head_ref(1);
+  if(m_robot->link("HEAD_JOINT0") != NULL)m_robot->joint(15)->q = head_ref.rpy(y);
+  if(m_robot->link("HEAD_JOINT1") != NULL)m_robot->joint(16)->q = head_ref.rpy(p);
   //COM 収束ループ
   while(
       m_robot->calcForwardKinematics(),
@@ -754,6 +738,9 @@ bool WholeBodyMasterSlave::startCountDownForWholeBodyMasterSlave(const double se
     std::cerr << "[" << m_profile.instance_name << "] start Synchronization after "<<sec<<" [s]" << std::endl;
     hsp->countdown_sec = sec;
     hsp->startCountdownForHumanSync = true;
+    while (!hsp->isHumanSyncOn()){
+        usleep(1000);
+    }
     return true;
   }else{
     std::cerr << "[" << m_profile.instance_name << "] Count Down Time must be 0 < T < 30 [s]"<< std::endl;
