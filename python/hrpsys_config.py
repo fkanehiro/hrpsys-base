@@ -2194,6 +2194,14 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
         '''
         return self.seq_svc.clearJointAngles(gname)
 
+    def removeForceSensorOffsetRMFO(self, sensor_names=[]):
+        '''!@brief
+        remove force sensor offset by RemoveForceSensorOffset (RMFO) RTC.
+        @param sensor_names : list of sensor names to be calibrated. If not specified, all sensors are calibrated by default.
+        @return bool : true if set successfully, false otherwise
+        '''
+        return self.rmfo_svc.removeForceSensorOffset(sensor_names)
+
     # ##
     # ## initialize
     # ##
