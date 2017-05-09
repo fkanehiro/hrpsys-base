@@ -2109,19 +2109,15 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
                  self.seq_svc.setWrenches instead of this method.
                  See an example at https://github.com/fkanehiro/hrpsys-base/pull/434/files#diff-6204f002204dd9ae80f203901f155fa9R44:
 
-                 - ref_force=[x, y, z] can be set by:
+                 - ref_force[fx, fy, fz] (unit: N) and ref_moment[tx, ty, tz] (unit: Nm) can be set via self.seq_svc.setWrenches. For example:
 
                    self.seq_svc.setWrenches([0, 0, 0, 0, 0, 0,
+                                             fx, fy, fz, tx, ty, tz,
                                              0, 0, 0, 0, 0, 0,
-                                             0, 0, 0, 0, 0, 0,
-                                             x, y, z, 0, 0, 0,])
+                                             0, 0, 0, 0, 0, 0,])
 
-                 - ref_moment=[x, y, z] can be set by:
-
-                   self.seq_svc.setWrenches([0, 0, 0, 0, 0, 0,
-                                             0, 0, 0, 0, 0, 0,
-                                             0, 0, 0, 0, 0, 0,
-                                             0, 0, 0, x, y, z,])
+                   setWrenches takes 6 values per sensor, so the robot in the example above has 4 sensors where each line represents a sensor.
+                   See this link (https://github.com/fkanehiro/hrpsys-base/pull/434/files) for a concrete example.
 
         @param arm: Name of the kinematic group (i.e. self.Groups[n][0]).
         @param kwargs: This varies depending on the version of hrpsys your robot's controller runs on
