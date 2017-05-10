@@ -108,7 +108,7 @@ class RemoveForceSensorLinkOffset
   bool getForceMomentOffsetParam(const std::string& i_name_, OpenHRP::RemoveForceSensorLinkOffsetService::forcemomentOffsetParam& i_param_);
   bool loadForceMomentOffsetParams(const std::string& filename);
   bool dumpForceMomentOffsetParams(const std::string& filename);
-  bool removeForceSensorOffset (const ::OpenHRP::RemoveForceSensorLinkOffsetService::StrSequence& names);
+  bool removeForceSensorOffset (const ::OpenHRP::RemoveForceSensorLinkOffsetService::StrSequence& names, const double tm);
 
  protected:
   // Configuration variable declaration

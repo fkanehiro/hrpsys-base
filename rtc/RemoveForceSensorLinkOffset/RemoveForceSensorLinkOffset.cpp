@@ -42,7 +42,8 @@ RemoveForceSensorLinkOffset::RemoveForceSensorLinkOffset(RTC::Manager* manager)
     m_rpyIn("rpy", m_rpy),
     m_RemoveForceSensorLinkOffsetServicePort("RemoveForceSensorLinkOffsetService"),
     // </rtc-template>
-    m_debugLevel(0)
+    m_debugLevel(0),
+    max_sensor_offset_calib_counter(0)
 {
   m_service0.rmfsoff(this);
 }
@@ -329,7 +330,7 @@ bool RemoveForceSensorLinkOffset::dumpForceMomentOffsetParams(const std::string&
   return true;
 };
 
-bool RemoveForceSensorLinkOffset::removeForceSensorOffset (const ::OpenHRP::RemoveForceSensorLinkOffsetService::StrSequence& names)
+bool RemoveForceSensorLinkOffset::removeForceSensorOffset (const ::OpenHRP::RemoveForceSensorLinkOffsetService::StrSequence& names, const double tm)
 {
     std::cerr << "[" << m_profile.instance_name << "] removeForceSensorOffset..." << std::endl;
 
@@ -385,6 +386,7 @@ bool RemoveForceSensorLinkOffset::removeForceSensorOffset (const ::OpenHRP::Remo
             std::cerr << "moment = " << m_forcemoment_offset_param[valid_names[i]].off_moment.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "][Nm]"));
             std::cerr << std::endl;
         }
+        max_sensor_offset_calib_counter = static_cast<int>(tm/m_dt);
         for (size_t i = 0; i < valid_names.size(); i++) {
             m_forcemoment_offset_param[valid_names[i]].force_offset_sum = hrp::Vector3::Zero();
             m_forcemoment_offset_param[valid_names[i]].moment_offset_sum = hrp::Vector3::Zero();
@@ -398,7 +400,7 @@ bool RemoveForceSensorLinkOffset::removeForceSensorOffset (const ::OpenHRP::Remo
     //   Print output force and offset after calib
     {
         Guard guard(m_mutex);
-        std::cerr << "[" << m_profile.instance_name << "]   Calibrate done" << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "]   Calibrate done (calib time = " << tm << "[s])" << std::endl;
         for (size_t i = 0; i < valid_names.size(); i++) {
             std::cerr << "[" << m_profile.instance_name << "]     Calibrated offset [" << valid_names[i] << "], ";
             std::cerr << "force_offset = " << m_forcemoment_offset_param[valid_names[i]].force_offset.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "][N]")) << ", ";

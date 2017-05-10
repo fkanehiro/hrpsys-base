@@ -121,9 +121,9 @@ def demoDumpLoadForceMomentOffsetParams():
 def demoRemoveForceSensorOffsetRMFO():
     print >> sys.stderr, "4. remove force sensor offset"
     print >> sys.stderr, "  Test valid calibration"
-    ret = hcf.removeForceSensorOffsetRMFO() # all sensors by default
+    ret = hcf.removeForceSensorOffsetRMFO(tm=1.0) # all sensors by default
     print >> sys.stderr, "  Test invalid calibration"
-    ret = ret and not hcf.removeForceSensorOffsetRMFO(["testtest"]) # invalid sensor name
+    ret = ret and not hcf.removeForceSensorOffsetRMFO(["testtest"], 1.0) # invalid sensor name
     if ret:
         print >> sys.stderr, "    removeforcesensorlinkoffset => OK"
     assert(ret)

@@ -52,10 +52,11 @@ module OpenHRP
     boolean dumpForceMomentOffsetParams(in string filename);
 
     /**
-     * @brief remove offsets on sensor outputs form force/torque sensors. Sensor offsets (force_offset and moment_offset in ForceMomentOffsetParam) are calibrated. This function takes 8.0[s]. Please keep the robot static and make sure that robot's sensors do not contact with any objects.
+     * @brief remove offsets on sensor outputs form force/torque sensors. Sensor offsets (force_offset and moment_offset in ForceMomentOffsetParam) are calibrated. This function takes several time (for example 8.0[s]). Please keep the robot static and make sure that robot's sensors do not contact with any objects.
      * @param names is list of sensor names to be calibrated. If not specified, all sensors are calibrated by default.
+     * @param tm is calibration time[s].
      * @return true if set successfully, false otherwise
      */
-    boolean removeForceSensorOffset(in StrSequence names);
+    boolean removeForceSensorOffset(in StrSequence names, in double tm);
   };
 };
