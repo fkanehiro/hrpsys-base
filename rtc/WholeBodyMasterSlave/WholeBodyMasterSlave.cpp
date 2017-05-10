@@ -610,8 +610,8 @@ void WholeBodyMasterSlave::processWholeBodyMasterSlave(){
       m_optionalData.data.length(4*2);//これいいのか？
       for(int i=0;i<4*2;i++)m_optionalData.data[i] = 0;
     }
-    m_optionalData.data[contact_states_index_map["rleg"]] = hsp->is_rf_contact;
-    m_optionalData.data[contact_states_index_map["lleg"]] = hsp->is_lf_contact;
+    m_optionalData.data[contact_states_index_map["rleg"]] = m_optionalData.data[contact_states_index_map["rleg"]+4] = hsp->is_rf_contact;
+    m_optionalData.data[contact_states_index_map["lleg"]] = m_optionalData.data[contact_states_index_map["lleg"]+4] = hsp->is_lf_contact;
   }else{
     rel_ref_zmp = input_ref_zmp;
   }
