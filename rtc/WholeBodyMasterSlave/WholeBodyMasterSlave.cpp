@@ -277,6 +277,7 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onDeactivated(RTC::UniqueId ec_id)
 #define DEBUGP ((loop%200==0))
 RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id)
 {
+//  std::cerr << "[" << m_profile.instance_name<< "] onExecute(" << ec_id << ")" << std::endl;
     // Read Inport
     if (m_qRefIn.isNew()) {
         m_qRefIn.read();
@@ -526,7 +527,7 @@ void WholeBodyMasterSlave::processWholeBodyMasterSlave_Raw(){
   }
 
   m_robot->calcForwardKinematics();
-  if(DEBUGP){ printf("\x1b[31mmaster-mode:\x1b[39m"); raw_pose.print(); }
+  if(DEBUGP){ fprintf(stderr,"\x1b[31mmaster-mode:\x1b[39m"); raw_pose.print(); }
 
   if(hsp->isHumanSyncOn()){
     for(int i=0;i<num_pose_tgt;i++){

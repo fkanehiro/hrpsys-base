@@ -122,8 +122,8 @@ class HumanPose{
     }
     static void hp_printf(const HumanPose& in){
       const std::string cap[] = {"c","rf","lf","rh","lh","z","rw","lw"};
-      for(int i=com;i<=zmp;i++){ printf("\x1b[31m%s\x1b[39m%+05.2f %+05.2f %+05.2f ",cap[i].c_str(),in.P[i].p(X),in.P[i].p(Y),in.P[i].p(Z)); }
-      for(int i=rfw;i<lfw;i++){ printf("\x1b[31m%s\x1b[39m%+05.1f %+05.1f %+05.1f %+05.1f %+05.1f %+05.1f ",cap[i].c_str(),in.w[i].w(fx),in.w[i].w(fy),in.w[i].w(fz),in.w[i].w(tx),in.w[i].w(ty),in.w[i].w(tz)); }
+      for(int i=com;i<=zmp;i++){ fprintf(stderr,"\x1b[31m%s\x1b[39m%+05.2f %+05.2f %+05.2f ",cap[i].c_str(),in.P[i].p(X),in.P[i].p(Y),in.P[i].p(Z)); }
+      for(int i=rfw;i<lfw;i++){ fprintf(stderr,"\x1b[31m%s\x1b[39m%+05.1f %+05.1f %+05.1f %+05.1f %+05.1f %+05.1f ",cap[i].c_str(),in.w[i].w(fx),in.w[i].w(fy),in.w[i].w(fz),in.w[i].w(tx),in.w[i].w(ty),in.w[i].w(tz)); }
       printf("\n");
     }
     void print(){ hp_printf(*this); }
