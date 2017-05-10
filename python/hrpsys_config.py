@@ -1432,7 +1432,8 @@ class HrpsysConfigurator(object):
         @param gname str: Name of the joint group.
         @param pos list of float: In meter.
         @param rpy list of float: In radian.
-        @param tm float: Second to complete the command.
+        @param tm float: Second to complete the command. This only includes the time taken for execution
+                         (i.e. time for planning and other misc. processes are not considered).
         @param frame_name str: Name of the frame that this particular command
                            references to.
         @return bool: False if unreachable.
@@ -1468,7 +1469,8 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
         @param dr float: In radian.
         @param dp float: In radian.
         @param dw float: In radian.
-        @param tm float: Second to complete the command.
+        @param tm float: Second to complete the command. This only includes the time taken for execution
+                         (i.e. time for planning and other misc. processes are not considered).
         @param wait bool: If true, all other subsequent commands wait until
                           the movement commanded by this method call finishes.
         @return bool: False if unreachable.
@@ -1934,33 +1936,46 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
         Play motion pattern using a given trajectory that is represented by 
         a list of joint angles, rpy, zmp and time.
 
-        @param jointangles list of list of float: 
-                           The whole list represents a trajectory. Each element
-                           of the 1st degree in the list consists of the joint
-                           angles.
+        @type jointangles: [[float]]
+        @param jointangles: Sequence of the sets of joint angles in radian.
+                            The whole list represents a trajectory. Each element
+                            of the 1st degree in the list consists of the joint angles.
         @param rpy list of float: Orientation in rpy.
         @param zmp list of float: TODO: description
-        @param tm float: Time to complete the task.
+        @param tm float: Second to complete the command. This only includes the time taken for execution
+                         (i.e. time for planning and other misc. processes are not considered).
         @return bool:
         '''
         return self.seq_svc.playPattern(jointangles, rpy, zmp, tm)
 
     def playPatternOfGroup(self, gname, jointangles, tm):
         '''!@brief
-        Play motion pattern using a given trajectory that is represented by 
-        a list of joint angles.
+        Play motion pattern using a set of given trajectories that are represented by 
+        lists of joint angles. Each trajectory aims to run within the specified time (tm),
+        and there's no slow down between trajectories unless the next one is the last.
+
+        Example:
+            self.playPatternOfGroup('larm',
+                                    [[0.0, 0.0, -2.2689280275926285, 0.0, 0.0, 0.0],
+                                     [0.0, 0.0, -1.9198621771937625, 0.0, 0.0, 0.0],
+                                     [0.0, 0.0, -1.5707963, 0.0, 0.0, 0.0]],
+                                    [3, 3, 10])
 
         @param gname str: Name of the joint group.
-        @param jointangles list of list of float: 
-                           The whole list represents a trajectory. Each element
-                           of the 1st degree in the list consists of the joint
-                           angles. To illustrate:
+        @type jointangles: [[float]]
+        @param jointangles: Sequence of the sets of joint angles in radian.
+                            The whole list represents a trajectory. Each element
+                            of the 1st degree in the list consists of the joint
+                            angles. To illustrate:
 
-                           [[a0-0, a0-1,...,a0-n], # a)ngle. 1st path in trajectory
-                            [a1-0, a1-1,...,a1-n], # 2nd path in the trajectory.
-                            :
-                            [am-0, am-1,...,am-n]]  # mth path in the trajectory
-        @param tm float: Time to complete the task.
+                            [[a0-0, a0-1,...,a0-n], # a)ngle. 1st path in trajectory
+                             [a1-0, a1-1,...,a1-n], # 2nd path in the trajectory.
+                             :
+                             [am-0, am-1,...,am-n]]  # mth path in the trajectory
+        @type tm: [float]
+        @param tm float: Sequence of the time values to complete the task,
+                         each element of which corresponds to a set of jointangles
+                         in the same order.
         @return bool:
         '''
         return self.seq_svc.playPatternOfGroup(gname, jointangles, tm)
@@ -2053,6 +2068,8 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
         start impedance mode
 
         @type arm: str name of artm to be controlled, this must be initialized using setSelfGroups()
+        @param force_gain, moment_gain: multipliers to the eef offset position vel_p and orientation vel_r.
+                                        3-dimensional vector (then converted internally into a diagonal matrix).
         '''
         r, p = self.ic_svc.getImpedanceControllerParam(arm)
         if not r:
@@ -2082,6 +2099,31 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
         return self.ic_svc.stopImpedanceController(arm)
 
     def startImpedance(self, arm, **kwargs):
+        '''!@brief
+        Enable the ImpedanceController RT component. 
+        This method internally calls startImpedance-*, hrpsys version-specific method.
+
+        @requires: hrpsys version greather than 315.2.0.
+        @requires: ImpedanceController RTC to be activated on the robot's controller.
+        @change: From 315.2.0 onward, following arguments are dropped and can be set by
+                 self.seq_svc.setWrenches instead of this method.
+                 See an example at https://github.com/fkanehiro/hrpsys-base/pull/434/files#diff-6204f002204dd9ae80f203901f155fa9R44:
+
+                 - ref_force[fx, fy, fz] (unit: N) and ref_moment[tx, ty, tz] (unit: Nm) can be set via self.seq_svc.setWrenches. For example:
+
+                   self.seq_svc.setWrenches([0, 0, 0, 0, 0, 0,
+                                             fx, fy, fz, tx, ty, tz,
+                                             0, 0, 0, 0, 0, 0,
+                                             0, 0, 0, 0, 0, 0,])
+
+                   setWrenches takes 6 values per sensor, so the robot in the example above has 4 sensors where each line represents a sensor.
+                   See this link (https://github.com/fkanehiro/hrpsys-base/pull/434/files) for a concrete example.
+
+        @param arm: Name of the kinematic group (i.e. self.Groups[n][0]).
+        @param kwargs: This varies depending on the version of hrpsys your robot's controller runs on
+                       (which you can find by "self.hrpsys_version" command). For instance, if your
+                       hrpsys is 315.10.1, refer to "startImpedance_315_4" method.
+        '''
         if self.hrpsys_version and StrictVersion(self.hrpsys_version) < StrictVersion('315.2.0'):
             print(self.configurator_name + '\033[31mstartImpedance: Try to connect unsupported RTC' + str(self.hrpsys_version) + '\033[0m')
         else:
