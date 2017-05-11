@@ -13,6 +13,8 @@
 #include <hrpUtil/MatrixSolvers.h>
 #include <hrpModel/Sensor.h>
 
+typedef coil::Guard<coil::Mutex> Guard;
+
 // Module specification
 // <rtc-template block="module_spec">
 static const char* removeforcesensorlinkoffset_spec[] =
@@ -40,7 +42,8 @@ RemoveForceSensorLinkOffset::RemoveForceSensorLinkOffset(RTC::Manager* manager)
     m_rpyIn("rpy", m_rpy),
     m_RemoveForceSensorLinkOffsetServicePort("RemoveForceSensorLinkOffsetService"),
     // </rtc-template>
-    m_debugLevel(0)
+    m_debugLevel(0),
+    max_sensor_offset_calib_counter(0)
 {
   m_service0.rmfsoff(this);
 }
@@ -111,6 +114,7 @@ RTC::ReturnCode_t RemoveForceSensorLinkOffset::onInitialize()
     registerOutPort(std::string("off_"+s->name).c_str(), *m_forceOut[i]);
     m_forcemoment_offset_param.insert(std::pair<std::string, ForceMomentOffsetParam>(s->name, ForceMomentOffsetParam()));
   }
+  max_sensor_offset_calib_counter = static_cast<int>(8.0/m_dt); // 8.0[s] by default
   return RTC::RTC_OK;
 }
 
@@ -173,6 +177,7 @@ RTC::ReturnCode_t RemoveForceSensorLinkOffset::onExecute(RTC::UniqueId ec_id)
     //
     updateRootLinkPosRot(rpy);
     m_robot->calcForwardKinematics();
+    Guard guard(m_mutex);
     for (unsigned int i=0; i<m_forceIn.size(); i++){
       if ( m_force[i].data.length()==6 ) {
         std::string sensor_name = m_forceIn[i]->name();
@@ -187,20 +192,33 @@ RTC::ReturnCode_t RemoveForceSensorLinkOffset::onExecute(RTC::UniqueId ec_id)
         if ( sensor ) {
           // real force sensor
           hrp::Matrix33 sensorR = sensor->link->R * sensor->localR;
-          hrp::Vector3 mg = hrp::Vector3(0,0, m_forcemoment_offset_param[sensor_name].link_offset_mass * grav * -1);
+          ForceMomentOffsetParam& fmp = m_forcemoment_offset_param[sensor_name];
+          hrp::Vector3 mg = hrp::Vector3(0,0, fmp.link_offset_mass * grav * -1);
+          hrp::Vector3 cxmg = hrp::Vector3(sensorR * fmp.link_offset_centroid).cross(mg);
+          // Sensor offset calib
+          if (fmp.sensor_offset_calib_counter > 0) { // while calibrating
+              fmp.force_offset_sum += (data_p - sensorR.transpose() * mg);
+              fmp.moment_offset_sum += (data_r - sensorR.transpose() * cxmg);
+              fmp.sensor_offset_calib_counter--;
+              if (fmp.sensor_offset_calib_counter == 0) {
+                  fmp.force_offset = fmp.force_offset_sum/max_sensor_offset_calib_counter;
+                  fmp.moment_offset = fmp.moment_offset_sum/max_sensor_offset_calib_counter;
+                  sem_post(&(fmp.wait_sem));
+              }
+          }
           // force and moments which do not include offsets
-          hrp::Vector3 off_force = sensorR * (data_p - m_forcemoment_offset_param[sensor_name].force_offset) - mg;
-          hrp::Vector3 off_moment = sensorR * (data_r - m_forcemoment_offset_param[sensor_name].moment_offset) - hrp::Vector3(sensorR * m_forcemoment_offset_param[sensor->name].link_offset_centroid).cross(mg);
+          fmp.off_force = sensorR * (data_p - fmp.force_offset) - mg;
+          fmp.off_moment = sensorR * (data_r - fmp.moment_offset) - cxmg;
           // convert absolute force -> sensor local force
-          off_force = hrp::Vector3(sensorR.transpose() * off_force);
-          off_moment = hrp::Vector3(sensorR.transpose() * off_moment);
+          fmp.off_force = hrp::Vector3(sensorR.transpose() * fmp.off_force);
+          fmp.off_moment = hrp::Vector3(sensorR.transpose() * fmp.off_moment);
           for (size_t j = 0; j < 3; j++) {
-            m_force[i].data[j] = off_force(j);
-            m_force[i].data[3+j] = off_moment(j);
+            m_force[i].data[j] = fmp.off_force(j);
+            m_force[i].data[3+j] = fmp.off_moment(j);
           }
           if ( DEBUGP ) {
-            std::cerr << "[" << m_profile.instance_name << "]   off force = " << off_force.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << std::endl;
-            std::cerr << "[" << m_profile.instance_name << "]   off moment = " << off_moment.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << std::endl;
+            std::cerr << "[" << m_profile.instance_name << "]   off force = " << fmp.off_force.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << std::endl;
+            std::cerr << "[" << m_profile.instance_name << "]   off moment = " << fmp.off_moment.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << std::endl;
           }
         } else {
           std::cerr << "[" << m_profile.instance_name << "] unknwon force param " << sensor_name << std::endl;
@@ -311,6 +329,91 @@ bool RemoveForceSensorLinkOffset::dumpForceMomentOffsetParams(const std::string&
   }
   return true;
 };
+
+bool RemoveForceSensorLinkOffset::removeForceSensorOffset (const ::OpenHRP::RemoveForceSensorLinkOffsetService::StrSequence& names, const double tm)
+{
+    std::cerr << "[" << m_profile.instance_name << "] removeForceSensorOffset..." << std::endl;
+
+    // Check argument validity
+    std::vector<std::string> valid_names, invalid_names, calibrating_names;
+    bool is_valid_argument = true;
+    {
+        Guard guard(m_mutex);
+        if ( names.length() == 0 ) { // If no sensor names are specified, calibrate all sensors.
+            std::cerr << "[" << m_profile.instance_name << "]   No sensor names are specified, calibrate all sensors = [";
+            for ( std::map<std::string, ForceMomentOffsetParam>::iterator it = m_forcemoment_offset_param.begin(); it != m_forcemoment_offset_param.end(); it++ ) {
+                valid_names.push_back(it->first);
+                std::cerr << it->first << " ";
+            }
+            std::cerr << "]" << std::endl;
+        } else {
+            for (size_t i = 0; i < names.length(); i++) {
+                std::string name(names[i]);
+                if ( m_forcemoment_offset_param.find(name) != m_forcemoment_offset_param.end() ) {
+                    if ( m_forcemoment_offset_param[name].sensor_offset_calib_counter == 0 ) {
+                        valid_names.push_back(name);
+                    } else {
+                        calibrating_names.push_back(name);
+                        is_valid_argument = false;
+                    }
+                } else{
+                    invalid_names.push_back(name);
+                    is_valid_argument = false;
+                }
+            }
+        }
+    }
+    // Return if invalid or calibrating
+    if ( !is_valid_argument ) {
+        std::cerr << "[" << m_profile.instance_name << "]   Cannot start removeForceSensorOffset, invalid = [";
+        for (size_t i = 0; i < invalid_names.size(); i++) std::cerr << invalid_names[i] << " ";
+        std::cerr << "], calibrating = [";
+        for (size_t i = 0; i < calibrating_names.size(); i++) std::cerr << calibrating_names[i] << " ";
+        std::cerr << "]" << std::endl;
+        return false;
+    }
+
+    // Start calibration
+    //   Print output force before calib
+    std::cerr << "[" << m_profile.instance_name << "]   Calibrate sensor names = [";
+    for (size_t i = 0; i < valid_names.size(); i++) std::cerr << valid_names[i] << " ";
+    std::cerr << "]" << std::endl;
+    {
+        Guard guard(m_mutex);
+        for (size_t i = 0; i < valid_names.size(); i++) {
+            std::cerr << "[" << m_profile.instance_name << "]     Offset-removed force before calib [" << valid_names[i] << "], ";
+            std::cerr << "force = " << m_forcemoment_offset_param[valid_names[i]].off_force.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "][N]")) << ", ";
+            std::cerr << "moment = " << m_forcemoment_offset_param[valid_names[i]].off_moment.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "][Nm]"));
+            std::cerr << std::endl;
+        }
+        max_sensor_offset_calib_counter = static_cast<int>(tm/m_dt);
+        for (size_t i = 0; i < valid_names.size(); i++) {
+            m_forcemoment_offset_param[valid_names[i]].force_offset_sum = hrp::Vector3::Zero();
+            m_forcemoment_offset_param[valid_names[i]].moment_offset_sum = hrp::Vector3::Zero();
+            m_forcemoment_offset_param[valid_names[i]].sensor_offset_calib_counter = max_sensor_offset_calib_counter;
+        }
+    }
+    //   Wait
+    for (size_t i = 0; i < valid_names.size(); i++) {
+        sem_wait(&(m_forcemoment_offset_param[valid_names[i]].wait_sem));
+    }
+    //   Print output force and offset after calib
+    {
+        Guard guard(m_mutex);
+        std::cerr << "[" << m_profile.instance_name << "]   Calibrate done (calib time = " << tm << "[s])" << std::endl;
+        for (size_t i = 0; i < valid_names.size(); i++) {
+            std::cerr << "[" << m_profile.instance_name << "]     Calibrated offset [" << valid_names[i] << "], ";
+            std::cerr << "force_offset = " << m_forcemoment_offset_param[valid_names[i]].force_offset.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "][N]")) << ", ";
+            std::cerr << "moment_offset = " << m_forcemoment_offset_param[valid_names[i]].moment_offset.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "][Nm]")) << std::endl;
+            std::cerr << "[" << m_profile.instance_name << "]     Offset-removed force after calib [" << valid_names[i] << "], ";
+            std::cerr << "force = " << m_forcemoment_offset_param[valid_names[i]].off_force.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "][N]")) << ", ";
+            std::cerr << "moment = " << m_forcemoment_offset_param[valid_names[i]].off_moment.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "][Nm]"));
+            std::cerr << std::endl;
+        }
+    }
+    std::cerr << "[" << m_profile.instance_name << "] removeForceSensorOffset...done" << std::endl;
+    return true;
+}
 
 /*
 RTC::ReturnCode_t RemoveForceSensorLinkOffset::onAborting(RTC::UniqueId ec_id)

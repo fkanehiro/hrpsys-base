@@ -164,6 +164,7 @@ class Stabilizer
   RTC::TimedPoint3D m_zmp;
   RTC::TimedPoint3D m_refCP;
   RTC::TimedPoint3D m_actCP;
+  RTC::TimedPoint3D m_diffCP;
   RTC::TimedPoint3D m_basePos;
   RTC::TimedOrientation3D m_baseRpy;
   RTC::TimedBooleanSeq m_contactStates;
@@ -216,6 +217,7 @@ class Stabilizer
   RTC::OutPort<RTC::TimedPoint3D> m_zmpOut;
   RTC::OutPort<RTC::TimedPoint3D> m_refCPOut;
   RTC::OutPort<RTC::TimedPoint3D> m_actCPOut;
+  RTC::OutPort<RTC::TimedPoint3D> m_diffCPOut;
   RTC::OutPort<RTC::TimedBooleanSeq> m_actContactStatesOut;
   RTC::OutPort<RTC::TimedDoubleSeq> m_COPInfoOut;
   RTC::OutPort<RTC::TimedLong> m_emergencySignalOut;
@@ -292,13 +294,13 @@ class Stabilizer
   bool is_legged_robot, on_ground, is_emergency, is_seq_interpolating, reset_emergency_flag, eefm_use_force_difference_control, eefm_use_swing_damping, initial_cp_too_large_error, use_limb_stretch_avoidance;
   bool is_walking, is_estop_while_walking;
   hrp::Vector3 current_root_p, target_root_p;
-  hrp::Matrix33 current_root_R, target_root_R, prev_act_foot_origin_rot, prev_ref_foot_origin_rot, target_foot_origin_rot;
+  hrp::Matrix33 current_root_R, target_root_R, prev_act_foot_origin_rot, prev_ref_foot_origin_rot, target_foot_origin_rot, ref_foot_origin_rot;
   std::vector <hrp::Vector3> target_ee_p, rel_ee_pos, act_ee_p, projected_normal, act_force;
   std::vector <hrp::Matrix33> target_ee_R, rel_ee_rot, act_ee_R;
   std::vector<std::string> rel_ee_name;
   rats::coordinates target_foot_midcoords;
   hrp::Vector3 ref_zmp, ref_cog, ref_cp, ref_cogvel, rel_ref_cp, prev_ref_cog, prev_ref_zmp;
-  hrp::Vector3 act_zmp, act_cog, act_cogvel, act_cp, rel_act_zmp, rel_act_cp, prev_act_cog, act_base_rpy, current_base_rpy, current_base_pos, sbp_cog_offset;
+  hrp::Vector3 act_zmp, act_cog, act_cogvel, act_cp, rel_act_zmp, rel_act_cp, prev_act_cog, act_base_rpy, current_base_rpy, current_base_pos, sbp_cog_offset, cp_offset, diff_cp;
   hrp::Vector3 foot_origin_offset[2];
   std::vector<double> prev_act_force_z;
   double zmp_origin_off, transition_smooth_gain, d_pos_z_root, limb_stretch_avoidance_time_const, limb_stretch_avoidance_vlimit[2];
@@ -316,7 +318,8 @@ class Stabilizer
   double rdx, rdy, rx, ry;
   // EEFM ST
   double eefm_k1[2], eefm_k2[2], eefm_k3[2], eefm_zmp_delay_time_const[2], eefm_body_attitude_control_gain[2], eefm_body_attitude_control_time_const[2];
-  double eefm_pos_time_const_swing, eefm_pos_transition_time, eefm_pos_margin_time, eefm_gravitational_acceleration, eefm_ee_pos_error_p_gain, eefm_ee_rot_error_p_gain, eefm_swing_damping_force_thre, eefm_swing_damping_moment_thre;
+  double eefm_pos_time_const_swing, eefm_pos_transition_time, eefm_pos_margin_time, eefm_gravitational_acceleration;
+  std::vector<double> eefm_swing_damping_force_thre, eefm_swing_damping_moment_thre;
   hrp::Vector3 new_refzmp, rel_cog, ref_zmp_aux;
   hrp::Vector3 pos_ctrl;
   hrp::Vector3 ref_total_force, ref_total_moment;

@@ -176,9 +176,9 @@ module OpenHRP
       /// Use damping control for swing leg.
       boolean eefm_use_swing_damping;
       /// Swing damping control force threshold [N]
-      double eefm_swing_damping_force_thre;
+      DblArray3 eefm_swing_damping_force_thre;
       /// Swing damping control moment threshold [Nm]
-      double eefm_swing_damping_moment_thre;
+      DblArray3 eefm_swing_damping_moment_thre;
       /// Rotation damping gain for swing leg [Nm/(rad/s)] (r,p,y)
       DblArray3 eefm_swing_rot_damping_gain;
       /// Position damping gain for swing leg [N/(m/s)] (x,y,z)
@@ -208,6 +208,8 @@ module OpenHRP
       DblArray2 ref_capture_point;
       /// act_CP [m] (x,y) (foot_origin relative coordinate)
       DblArray2 act_capture_point;
+      /// CP_offset [m] (x,y) (foot_origin relative coordinate)
+      DblArray2 cp_offset;
       /// contact decision threshold [N]
       double contact_decision_threshold;
       /// Foot origin position offset

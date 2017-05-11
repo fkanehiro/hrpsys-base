@@ -26,6 +26,7 @@
 
 #include "RemoveForceSensorLinkOffsetService_impl.h"
 #include "../ImpedanceController/RatsMatrix.h"
+#include <semaphore.h>
 
 // Service implementation headers
 // <rtc-template block="service_impl_h">
@@ -107,6 +108,7 @@ class RemoveForceSensorLinkOffset
   bool getForceMomentOffsetParam(const std::string& i_name_, OpenHRP::RemoveForceSensorLinkOffsetService::forcemomentOffsetParam& i_param_);
   bool loadForceMomentOffsetParams(const std::string& filename);
   bool dumpForceMomentOffsetParams(const std::string& filename);
+  bool removeForceSensorOffset (const ::OpenHRP::RemoveForceSensorLinkOffsetService::StrSequence& names, const double tm);
 
  protected:
   // Configuration variable declaration
@@ -158,12 +160,22 @@ class RemoveForceSensorLinkOffset
  private:
   struct ForceMomentOffsetParam {
     hrp::Vector3 force_offset, moment_offset, link_offset_centroid;
+    hrp::Vector3 off_force, off_moment;
     double link_offset_mass;
+    // Members for sensor offset calib
+    hrp::Vector3 force_offset_sum, moment_offset_sum;
+    int sensor_offset_calib_counter;
+    sem_t wait_sem;
 
     ForceMomentOffsetParam ()
       : force_offset(hrp::Vector3::Zero()), moment_offset(hrp::Vector3::Zero()),
-        link_offset_centroid(hrp::Vector3::Zero()), link_offset_mass(0)
-    {};
+        off_force(hrp::Vector3::Zero()), off_moment(hrp::Vector3::Zero()),
+        link_offset_centroid(hrp::Vector3::Zero()), link_offset_mass(0),
+        force_offset_sum(hrp::Vector3::Zero()), moment_offset_sum(hrp::Vector3::Zero()),
+        sensor_offset_calib_counter(0), wait_sem()
+    {
+        sem_init(&wait_sem, 0, 0);
+    };
   };
   void updateRootLinkPosRot (const hrp::Vector3& rpy);
   void printForceMomentOffsetParam(const std::string& i_name_);
@@ -173,6 +185,8 @@ class RemoveForceSensorLinkOffset
   double m_dt;
   hrp::BodyPtr m_robot;
   unsigned int m_debugLevel;
+  int max_sensor_offset_calib_counter;
+  coil::Mutex m_mutex;
 };
 
 

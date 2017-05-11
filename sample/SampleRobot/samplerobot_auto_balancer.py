@@ -741,7 +741,7 @@ def demoGaitGeneratorChangeStrideLimitationType():
     orig_ggp = hcf.abc_svc.getGaitGeneratorParam()[1]
     ggp = hcf.abc_svc.getGaitGeneratorParam()[1]
     ggp.stride_limitation_type = OpenHRP.AutoBalancerService.CIRCLE
-    ggp.overwritable_stride_limitation = [0.15, 0.1, 0.25, 0.1]
+    ggp.stride_limitation_for_circle_type = [0.15, 0.25, 10, 0.1, 0.1]
     ggp.leg_margin = [182.0*1e-3, 72.0*1e-3, 71.12*1e-3, 71.12*1e-3]
     hcf.abc_svc.setGaitGeneratorParam(ggp)
     # gopos check 1

@@ -24,22 +24,20 @@ def initPose():
     initial_pose=[-0.000181,-0.614916,-0.000239,1.36542,-0.749643,0.000288,0.31129,-0.159481,-0.115399,-0.636277,0.0,0.0,0.0,-0.000181,-0.614916,-0.000239,1.36542,-0.749643,0.000288,0.31129,0.159481,0.115399,-0.636277,0.0,0.0,0.0,0.0,0.0,0.0]
     hcf.seq_svc.setJointAngles(initial_pose, 1.0)
     hcf.seq_svc.waitInterpolation()
+    hcf.startAutoBalancer();
 
 def demo():
     init()
     initPose()
-    print "Please execute 'demoStairUp()', 'demoStairDown()', 'demoStairUpDown()', and 'demoSlopeUpDown()'"
 
-def setupGaitGeneratorParam(use_rectangle=True):
+def setupGaitGeneratorParam(set_step_height=False):
     ggp = hcf.abc_svc.getGaitGeneratorParam()
     ggp[1].default_double_support_ratio = 0.3
     ggp[1].default_step_time = 1.2
+    if set_step_height:
+        ggp[1].default_step_height = 0.1
     #ggp[1].swing_trajectory_delay_time_offset = 0.2;
-    if use_rectangle:
-        ggp[1].default_orbit_type = OpenHRP.AutoBalancerService.RECTANGLE;
-    else:
-        ggp[1].default_orbit_type = OpenHRP.AutoBalancerService.STAIR;
-        #ggp[1].stair_trajectory_way_point_offset = [0.04,0,0];
+    ggp[1].default_orbit_type = OpenHRP.AutoBalancerService.STAIR;
     hcf.abc_svc.setGaitGeneratorParam(ggp[1])
 
 def stairWalk(stair_height = 0.1524):
@@ -47,25 +45,22 @@ def stairWalk(stair_height = 0.1524):
     floor_stride_x = 0.16
     init_step_x = 0
     init_step_z = 0
+    ret = []
+    setupGaitGeneratorParam()
     for step_idx in [1,2,3,4]:
-        setupGaitGeneratorParam(step_idx%2==1)
-        hcf.setFootSteps([OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([init_step_x, -0.09, init_step_z], [1,0,0,0], "rleg")]),
-                          OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([init_step_x+stair_stride_x, 0.09, init_step_z+stair_height], [1,0,0,0], "lleg")])])
-        hcf.abc_svc.waitFootSteps()
-        hcf.setFootSteps([OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([init_step_x+stair_stride_x, 0.09, init_step_z+stair_height], [1,0,0,0], "lleg")]),
-                          OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([init_step_x+stair_stride_x, -0.09, init_step_z+stair_height], [1,0,0,0], "rleg")])])
-        hcf.abc_svc.waitFootSteps()
-        hcf.setFootSteps([OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([init_step_x+stair_stride_x, 0.09, init_step_z+stair_height], [1,0,0,0], "lleg")]),
-                          OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([init_step_x+stair_stride_x+floor_stride_x, -0.09, init_step_z+stair_height], [1,0,0,0], "rleg")]),
-                          OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([init_step_x+stair_stride_x+floor_stride_x, 0.09, init_step_z+stair_height], [1,0,0,0], "lleg")])])
-        hcf.abc_svc.waitFootSteps()
+        ret = ret + [OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([init_step_x, -0.09, init_step_z], [1,0,0,0], "rleg")]),
+                     OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([init_step_x+stair_stride_x, 0.09, init_step_z+stair_height], [1,0,0,0], "lleg")]),
+                     OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([init_step_x+stair_stride_x, -0.09, init_step_z+stair_height], [1,0,0,0], "rleg")]),
+                     OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([init_step_x+stair_stride_x+floor_stride_x, 0.09, init_step_z+stair_height], [1,0,0,0], "lleg")])]
         init_step_x = init_step_x + stair_stride_x + floor_stride_x
         init_step_z = init_step_z + stair_height
+    hcf.setFootSteps(ret)
+    hcf.abc_svc.waitFootSteps()
 
 # sample for SampleRobot.TerrainFloor.SlopeUpDown.xml
 def demoSlopeUpDown():
     print "Start stlop up down"
-    setupGaitGeneratorParam()
+    setupGaitGeneratorParam(True)
     hcf.abc_svc.startAutoBalancer(["rleg", "lleg"]);
     fsList=[OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([0.8,-0.09,0.0], [1.0,0.0,2.775558e-17,0.0], "rleg")]),
             OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([1.0953,0.09,0.030712], [0.991445,0.0,-0.130526,0.0], "lleg")]),
@@ -92,26 +87,22 @@ def demoSlopeUpDown():
 # sample for SampleRobot.TerrainFloor.StairUp.xml
 def demoStairUp():
     print "Start stair up"
-    hcf.abc_svc.startAutoBalancer(["rleg", "lleg"]);
     stairWalk()
-    hcf.abc_svc.stopAutoBalancer();
 
 # sample for SampleRobot.TerrainFloor.StairDown.xml
 def demoStairDown():
     print "Start stair down"
-    hcf.abc_svc.startAutoBalancer(["rleg", "lleg"]);
+    hcf.abc_svc.goPos(0.05, 0.0, 0.0)
+    hcf.abc_svc.waitFootSteps()
     stairWalk(-0.1524)
-    hcf.abc_svc.stopAutoBalancer();
 
 def demoStairUpDown():
     print "Start stair up"
-    hcf.abc_svc.startAutoBalancer(["rleg", "lleg"]);
     stairWalk()
     hcf.abc_svc.goPos(0.05, 0.0, 0.0)
     hcf.abc_svc.waitFootSteps()
     print "Start stair down"
     stairWalk(-0.1524)
-    hcf.abc_svc.stopAutoBalancer();
 
 if __name__ == '__main__':
     demo()
