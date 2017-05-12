@@ -153,21 +153,13 @@ class WholeBodyMasterSlave
     hrp::Link* target_link;
     bool is_active, has_toe_joint;
   };
-  void solveFullbodyIKStrictCOM(const HRPPose3D& com_ref, const HRPPose3D& rf_ref, const HRPPose3D& lf_ref, const HRPPose3D& rh_ref, const HRPPose3D& lh_ref, const HRPPose3D& head_ref, hrp::Vector3& basepos_pre, hrp::dvector& q_pre);
-  void processWholeBodyMasterSlave();
-  void processWholeBodyMasterSlave_Raw();
-  void calcDynamicsFilterCompensation(const hrp::Vector3 zmp_lip, const hrp::Vector3 zmp_fullbody);
-  bool isOptionalDataContact (const std::string& ee_name)
-  {
-      return (std::fabs(m_optionalData.data[contact_states_index_map[ee_name]]-1.0)<0.1)?true:false;
-  };
   typedef boost::shared_ptr<SimpleFullbodyInverseKinematicsSolver> fikPtr;
-  fikPtr fik;
+  fikPtr fik, fik_rmc;
   std::map<std::string, size_t> contact_states_index_map;
   double m_dt;
-  hrp::BodyPtr m_robot;
-  hrp::Vector3 input_ref_zmp, input_basePos;
-  hrp::Matrix33 input_baseRot;
+  hrp::BodyPtr m_robot, m_robot_rmc;
+//  hrp::Vector3 input_ref_zmp, input_basePos;
+//  hrp::Matrix33 input_baseRot;
 
   double q_interpolator_ratio;
   interpolator *q_interpolator;
@@ -190,6 +182,13 @@ class WholeBodyMasterSlave
   hrp::dvector q_normal_ik;
 
   boost::shared_ptr<HumanSynchronizer> hsp;
+
+  void setupfik(fikPtr& fik_in, hrp::BodyPtr& robot_in, RTC::Properties& prop_in);
+  void solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr& robot_in, const HRPPose3D& com_ref, const HRPPose3D& rf_ref, const HRPPose3D& lf_ref, const HRPPose3D& rh_ref, const HRPPose3D& lh_ref, const HRPPose3D& head_ref, const std::string& debug_prefix="");
+  void processWholeBodyMasterSlave(fikPtr& fik_in, hrp::BodyPtr& robot_in);
+  void processWholeBodyMasterSlave_Raw(fikPtr& fik_in, hrp::BodyPtr& robot_in);
+  void processMomentumCompensation(fikPtr& fik_in, hrp::BodyPtr& robot_in);
+  bool isOptionalDataContact (const std::string& ee_name) { return (std::fabs(m_optionalData.data[contact_states_index_map[ee_name]]-1.0)<0.1)?true:false; };
 };
 
 extern "C"
