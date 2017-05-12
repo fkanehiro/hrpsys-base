@@ -44,6 +44,7 @@ module OpenHRP
         double set_com_height_fix_val;
         double swing_foot_height_offset;
         double swing_foot_max_height;
+        double upper_body_rmc_ratio;
         boolean use_hands;
         boolean use_head;
     };

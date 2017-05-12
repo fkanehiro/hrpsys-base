@@ -121,9 +121,9 @@ class HumanPose{
       for(std::vector<Wrench6>::iterator it = w.begin(); it != w.end(); it++){ it->clear(); }
     }
     static void hp_printf(const HumanPose& in){
-      const std::string cap[] = {"c","rf","lf","rh","lh","z","rw","lw"};
-      for(int i=com;i<=zmp;i++){ fprintf(stderr,"\x1b[31m%s\x1b[39m%+05.2f %+05.2f %+05.2f ",cap[i].c_str(),in.P[i].p(X),in.P[i].p(Y),in.P[i].p(Z)); }
-      for(int i=rfw;i<lfw;i++){ fprintf(stderr,"\x1b[31m%s\x1b[39m%+05.1f %+05.1f %+05.1f %+05.1f %+05.1f %+05.1f ",cap[i].c_str(),in.w[i].w(fx),in.w[i].w(fy),in.w[i].w(fz),in.w[i].w(tx),in.w[i].w(ty),in.w[i].w(tz)); }
+      const std::string pcap[] = {"c","rf","lf","rh","lh","hd","z"}, wcap[] = {"rw","lw"};
+      for(int i=0;i<num_pose_tgt;i++){ fprintf(stderr,"\x1b[31m%s\x1b[39m%+05.2f %+05.2f %+05.2f ",pcap[i].c_str(),in.P[i].p(X),in.P[i].p(Y),in.P[i].p(Z)); }
+//      for(int i=0;i<num_wrench_tgt;i++){ fprintf(stderr,"\x1b[31m%s\x1b[39m%+05.1f %+05.1f %+05.1f %+05.1f %+05.1f %+05.1f ",wcap[i].c_str(),in.w[i].w(fx),in.w[i].w(fy),in.w[i].w(fz),in.w[i].w(tx),in.w[i].w(ty),in.w[i].w(tz)); }
       printf("\n");
     }
     void print(){ hp_printf(*this); }
@@ -216,6 +216,7 @@ class HumanSynchronizer{
       double set_com_height_fix_val;
       double swing_foot_height_offset;
       double swing_foot_max_height;
+      double upper_body_rmc_ratio;
       bool use_rh,use_lh;
       bool use_head;
     };
@@ -272,7 +273,7 @@ class HumanSynchronizer{
       for(int i=0;i<tgt_rot_filters.size();i++)tgt_rot_filters[i].setParameter(1.0, HZ, BiquadIIRFilterVec::Q_NOOVERSHOOT);//四肢拘束点用(Rotation)
       tgt_pos_filters[0].setParameter(1.0, HZ, BiquadIIRFilterVec::Q_NOOVERSHOOT);//重心pos用
       tgt_rot_filters[0].setParameter(0.6, HZ, BiquadIIRFilterVec::Q_NOOVERSHOOT);//重心rot用
-      tgt_pos_filters[1].setParameter(hrp::Vector3(1.0,1.0,1.2), HZ, BiquadIIRFilterVec::Q_NOOVERSHOOT);//右足pos用
+      tgt_pos_filters[1].setParameter(hrp::Vector3(5.0,1.0,1.2), HZ, BiquadIIRFilterVec::Q_NOOVERSHOOT);//右足pos用
       tgt_pos_filters[2].setParameter(hrp::Vector3(1.0,1.0,1.2), HZ, BiquadIIRFilterVec::Q_NOOVERSHOOT);//左足pos用
       calcacc_v_filters.setParameter(5, HZ, BiquadIIRFilterVec::Q_BUTTERWORTH);//加速度計算用
       acc4zmp_v_filters.setParameter(5, HZ, BiquadIIRFilterVec::Q_BUTTERWORTH);//ZMP生成用ほぼこの値でいい
@@ -289,18 +290,17 @@ class HumanSynchronizer{
       lf_vert.push_back(hrp::Vector3(-0.10,0.08,0));
       lf_vert.push_back(hrp::Vector3(0.13,0.08,0));
 
-      WBMSparam.use_rh = WBMSparam.use_lh = true;
-      WBMSparam.use_head = true;
-//      WBMSparam.set_com_height_fix = true;
-      WBMSparam.set_com_height_fix = false;
-      WBMSparam.set_com_height_fix_val = 0.02;
+      WBMSparam.auto_swing_foot_landing_threshold = 0.02;
       WBMSparam.foot_vertical_vel_limit_coeff = 4.0;
       WBMSparam.human_com_height = 1.00;
-      WBMSparam.swing_foot_height_offset = 0.01;
-//      WBMSparam.swing_foot_max_height = 0.10;
-      WBMSparam.swing_foot_max_height = 0.5;
-      WBMSparam.auto_swing_foot_landing_threshold = 0.02;
       WBMSparam.is_doctor = true;
+      WBMSparam.set_com_height_fix = false;
+      WBMSparam.set_com_height_fix_val = 0.02;
+      WBMSparam.swing_foot_height_offset = 0.01;
+      WBMSparam.swing_foot_max_height = 0.5;
+      WBMSparam.upper_body_rmc_ratio = 0.5;
+      WBMSparam.use_rh = WBMSparam.use_lh = true;
+      WBMSparam.use_head = true;
 
       rp_ref_out_old.clear();
       rp_ref_out.clear();
@@ -362,6 +362,7 @@ class HumanSynchronizer{
       convertRelHumanPoseToRelRobotPose   (hp_swap_checked, rp_ref_out);
       hp_plot = rp_ref_out;
       if(loop==0)rp_ref_out_old = rp_ref_out;
+
 
       if(isHumanSyncOn() && WBMSparam.set_com_height_fix)rp_ref_out.P[com].p(Z) = rp_ref_out.P[com].p_offs(Z) + WBMSparam.set_com_height_fix_val;//膝曲げトルクで落ちるときの応急措置
       judgeFootLandOnCommand              (hp_wld_raw.w[rfw], hp_wld_raw.w[lfw], go_rf_landing, go_lf_landing);
@@ -471,8 +472,8 @@ class HumanSynchronizer{
       const int ns[] = {com,rf,lf,rh,lh,head}, num_ns = sizeof(ns)/sizeof(int);
       if(loop==0){
         cout<<"init LPF"<<endl;
-        for(int i=0;i<num_ns;i++){ tgt_pos_filters[ns[i]].init(tgt.P[ns[i]].p);   tgt_pos_filters[ns[i]].passFilter(tgt.P[ns[i]].p);  }
-        for(int i=0;i<num_ns;i++){ tgt_rot_filters[ns[i]].init(tgt.P[ns[i]].rpy); tgt_pos_filters[ns[i]].passFilter(tgt.P[ns[i]].rpy);}
+        for(int i=0;i<num_ns;i++){ tgt_pos_filters[ns[i]].init(tgt.P[ns[i]].p);  }// tgt_pos_filters[ns[i]].passFilter(tgt.P[ns[i]].p);  }
+        for(int i=0;i<num_ns;i++){ tgt_rot_filters[ns[i]].init(tgt.P[ns[i]].rpy); }//tgt_pos_filters[ns[i]].passFilter(tgt.P[ns[i]].rpy);}
       }
       for(int i=0;i<num_ns;i++){ tgt.P[ns[i]].p   = tgt_pos_filters[ns[i]].passFilter(tgt.P[ns[i]].p);  }
       for(int i=0;i<num_ns;i++){ tgt.P[ns[i]].rpy = tgt_rot_filters[ns[i]].passFilter(tgt.P[ns[i]].rpy);}
