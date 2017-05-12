@@ -406,6 +406,9 @@ class HumanSynchronizer{
       if(DEBUG)fprintf(cz_log,"lf: %f %f %f ",rp_ref_out.P[lf].p(X),rp_ref_out.P[lf].p(Y),rp_ref_out.P[lf].p(Z));
       if(DEBUG)fprintf(cz_log,"\n");
 
+
+
+      H_cur = rp_ref_out.P[com].p(Z) - std::min((double)rp_ref_out.P[rf].p(Z), (double)rp_ref_out.P[rf].p(Z));
       com_vel_old = (rp_ref_out.P[com].p - rp_ref_out_old.P[com].p)/DT;
       rp_ref_out_old = rp_ref_out;
       loop++;

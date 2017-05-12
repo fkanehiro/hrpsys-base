@@ -1,12 +1,3 @@
-// -*- C++ -*-
-/*!
- * @file  WholeBodyMasterSlave.h
- * @brief WholeBodyMasterSlave component
- * @date  $Date$
- *
- * $Id$
- */
-
 #ifndef WholeBodyMasterSlave_H
 #define WholeBodyMasterSlave_H
 
@@ -21,7 +12,7 @@
 #include <rtm/idl/ExtendedDataTypesSkel.h>
 #include <hrpModel/Body.h>
 #include "../ImpedanceController/JointPathEx.h"
-#include "../ImpedanceController/RatsMatrix.h"
+//#include "../ImpedanceController/RatsMatrix.h"
 // Service implementation headers
 // <rtc-template block="service_impl_h">
 #include "WholeBodyMasterSlaveService_impl.h"
@@ -158,36 +149,34 @@ class WholeBodyMasterSlave
   std::map<std::string, size_t> contact_states_index_map;
   double m_dt;
   hrp::BodyPtr m_robot, m_robot_rmc;
-//  hrp::Vector3 input_ref_zmp, input_basePos;
-//  hrp::Matrix33 input_baseRot;
+  std::vector< std::pair<fikPtr, hrp::BodyPtr> > ik_robot_list;
+  static const enum ik_robot_usage{ basic, rmc } iru;
 
   double q_interpolator_ratio;
   interpolator *q_interpolator;
 
-  hrp::Vector3 ref_zmp;
-  hrp::Vector3 rel_ref_zmp; // ref zmp in base frame
-
   unsigned int m_debugLevel;
-  bool is_legged_robot;// is_stop_mode, is_hand_fix_mode, is_hand_fix_initial;
-  int loop;
+  bool is_legged_robot;
+  unsigned int loop;
 
   hrp::InvDynStateBuffer idsb;
-  std::vector<IIRFilter> invdyn_zmp_filters;
+  BiquadIIRFilterVec invdyn_zmp_filters;
 
   hrp::InvDynStateBuffer idsb2;
-  std::vector<IIRFilter> invdyn_zmp_filters2;
+  BiquadIIRFilterVec invdyn_zmp_filters2;
 
-  hrp::Vector3 ref_zmp_invdyn2;
-
-  hrp::dvector q_normal_ik;
+  HumanPose raw_pose;
 
   boost::shared_ptr<HumanSynchronizer> hsp;
 
+
   void setupfik(fikPtr& fik_in, hrp::BodyPtr& robot_in, RTC::Properties& prop_in);
   void solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr& robot_in, const HRPPose3D& com_ref, const HRPPose3D& rf_ref, const HRPPose3D& lf_ref, const HRPPose3D& rh_ref, const HRPPose3D& lh_ref, const HRPPose3D& head_ref, const std::string& debug_prefix="");
+  void processTransition();
+  void preProcessForWholeBodyMasterSlave(fikPtr& fik_in, hrp::BodyPtr& robot_in);
   void processWholeBodyMasterSlave(fikPtr& fik_in, hrp::BodyPtr& robot_in);
   void processWholeBodyMasterSlave_Raw(fikPtr& fik_in, hrp::BodyPtr& robot_in);
-  void processMomentumCompensation(fikPtr& fik_in, hrp::BodyPtr& robot_in);
+  void processMomentumCompensation(fikPtr& fik_in, hrp::BodyPtr& robot_in, hrp::BodyPtr& robot_normal_in, const HumanPose& pose_ref);
   bool isOptionalDataContact (const std::string& ee_name) { return (std::fabs(m_optionalData.data[contact_states_index_map[ee_name]]-1.0)<0.1)?true:false; };
 };
 
