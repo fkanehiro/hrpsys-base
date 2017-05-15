@@ -159,6 +159,7 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onInitialize()
     m_qRef.data.length(m_robot->numJoints());
     m_htrfw.data.length(6);
     m_htlfw.data.length(6);
+    coil::stringTo(optionalDataLength, prop["seq_optional_data_dim"].c_str());
     loop = 0;
     q_interpolator = new interpolator(1, m_dt, interpolator::HOFFARBIB, 1);
     q_interpolator->setName(std::string(m_profile.instance_name)+" q_interpolator");
@@ -300,10 +301,12 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
         updateInvDynStateBuffer(idsb);
       }
 
-      if(hsp->isHumanSyncOn() && hsp->WBMSparam.is_doctor){//角運動量補償
-        processMomentumCompensation(fik_rmc, m_robot_rmc, m_robot, hsp->rp_ref_out);
-      }else{
-        processMomentumCompensation(fik_rmc, m_robot_rmc, m_robot, raw_pose);
+      if(hsp->isHumanSyncOn()){
+        if(hsp->WBMSparam.is_doctor){//角運動量補償
+          processMomentumCompensation(fik_rmc, m_robot_rmc, m_robot, hsp->rp_ref_out);
+        }else{
+          processMomentumCompensation(fik_rmc, m_robot_rmc, m_robot, raw_pose);
+        }
       }
 //      calcAccelerationsForInverseDynamics(m_robot, idsb2);
 //      calcWorldZMPFromInverseDynamics(m_robot, idsb2, ref_zmp_invdyn2);
@@ -312,7 +315,7 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
       if (hsp->isHumanSyncOn()){//OutPortデータセット
         //        ref_zmp = ref_zmp_invdyn;
         hrp::Vector3 ref_zmp = hsp->rp_ref_out.P[zmp].p;
-        //      hrp::BodyPtr m_robot_for_out = m_robot;
+//        hrp::BodyPtr m_robot_for_out = m_robot;
         hrp::BodyPtr m_robot_for_out = m_robot_rmc;
         // qRef
         for (int i = 0; i < m_qRef.data.length(); i++ ){ m_qRef.data[i] = q_interpolator_ratio * m_robot_for_out->joint(i)->q  + (1 - q_interpolator_ratio) * m_qRef.data[i]; }
@@ -334,9 +337,9 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
         m_zmp.data.z = rel_ref_zmp(2);
         m_zmp.tm = m_qRef.tm;
         // m_optionalData
-        if(m_optionalData.data.length() < 4*2){
-          m_optionalData.data.length(4*2);//TODO:これいいのか？
-          for(int i=0;i<4*2;i++)m_optionalData.data[i] = 0;
+        if(m_optionalData.data.length() < optionalDataLength){
+          m_optionalData.data.length(optionalDataLength);//TODO:これいいのか？
+          for(int i=0;i<optionalDataLength;i++)m_optionalData.data[i] = 0;
         }
         m_optionalData.data[contact_states_index_map["rleg"]] = m_optionalData.data[contact_states_index_map["rleg"]+4] = hsp->is_rf_contact;
         m_optionalData.data[contact_states_index_map["lleg"]] = m_optionalData.data[contact_states_index_map["lleg"]+4] = hsp->is_lf_contact;
@@ -505,6 +508,7 @@ void WholeBodyMasterSlave::processWholeBodyMasterSlave_Raw(fikPtr& fik_in, hrp::
 
 
 void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr& robot_in, const HRPPose3D& com_ref, const HRPPose3D& rf_ref, const HRPPose3D& lf_ref, const HRPPose3D& rh_ref, const HRPPose3D& lh_ref, const HRPPose3D& head_ref, const std::string& debug_prefix){
+
   int com_ik_loop=0;
   const int COM_IK_MAX_LOOP = 10;
   const double COM_IK_MAX_ERROR = 1e-5;//1e-4だと乱れる
@@ -523,18 +527,65 @@ void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr
   if(robot_in->link("HEAD_JOINT0") != NULL)robot_in->joint(15)->q = head_ref.rpy(y);
   if(robot_in->link("HEAD_JOINT1") != NULL)robot_in->joint(16)->q = head_ref.rpy(p);
   hrp::Vector3 tmp_com_err = hrp::Vector3::Zero();
-  while( 1 ){  //COM 収束ループ
-    com_ik_loop++;
-    robot_in->rootLink()->p += tmp_com_err;
-    robot_in->calcForwardKinematics();
-    for ( std::map<std::string, SimpleFullbodyInverseKinematicsSolver::IKparam>::iterator it = fik_in->ikp.begin(); it != fik_in->ikp.end(); it++ ) {
-        if (it->second.is_ik_enable) fik_in->solveLimbIK (it->second, it->first, fik_in->ratio_for_vel, false);
+
+
+
+  if(hsp->WBMSparam.use_manipulability_limit){
+    double min_manip_val = 1e9;
+    const double min_manip_th = 0.1;
+    while( 1 ){  //COM 収束ループ＋可操作度リミット
+      com_ik_loop++;
+      robot_in->rootLink()->p += tmp_com_err;
+      robot_in->calcForwardKinematics();
+      for ( std::map<std::string, SimpleFullbodyInverseKinematicsSolver::IKparam>::iterator it = fik_in->ikp.begin(); it != fik_in->ikp.end(); it++ ) {
+          if (it->second.is_ik_enable) fik_in->solveLimbIK (it->second, it->first, fik_in->ratio_for_vel, false);
+      }
+      tmp_com_err = com_ref.p - robot_in->calcCM();
+
+      const std::string names[4] = {"rleg","lleg","rarm","larm"};
+      const HRPPose3D* refs[4] = {&rf_ref, &lf_ref, &rh_ref, &lh_ref};
+      for(int i=0;i<4;i++){
+        hrp::dmatrix J;
+        fik_in->ikp[names[i]].manip->calcJacobian(J);
+        hrp::dmatrix manipulability_mat = J*J.transpose();
+        double manipulability = sqrt((J*J.transpose()).determinant());
+        //    Eigen::JacobiSVD< Eigen::Matrix<float, 3, 3> > svd(mm3, Eigen::ComputeFullU | Eigen::ComputeFullV);
+        Eigen::JacobiSVD< Eigen::MatrixXd > svd(J.block(0,0,3,J.cols()), Eigen::ComputeFullU | Eigen::ComputeFullV);
+
+        Eigen::MatrixXd::Index row,col;
+        min_manip_val = svd.singularValues().minCoeff(&row,&col);
+
+        hrp::Vector3 min_manip_direc = svd.matrixU().col(row);
+        //      std::cout << "singular values" << std::endl << svd.singularValues() << std::endl;
+        //      std::cout << "matrix U" << std::endl << svd.matrixU() << std::endl;
+        //      std::cout << "matrix V" << std::endl << svd.matrixV() << std::endl;
+        if(min_manip_direc.dot(fik_in->ikp[names[i]].target_p0 - robot_in->rootLink()->p) > 0){ min_manip_direc *= -1; }//向きみて反転
+
+        if(min_manip_val<min_manip_th){
+          std::cout << names[i]<<" min_manip_direc: " << min_manip_direc.transpose() << "min_manip_val " << min_manip_val << std::endl;
+          hrp::Vector3 cur_p = fik_in->ikp[names[i]].target_link->p+ fik_in->ikp[names[i]].target_link->R * fik_in->ikp[names[i]].localPos;
+          fik_in->ikp[names[i]].target_p0 = cur_p + min_manip_direc * 1.0 * (min_manip_th - min_manip_val);
+        }
+      }
+      if(tmp_com_err.norm() < COM_IK_MAX_ERROR && min_manip_val >= min_manip_th){ break; }
+      if(com_ik_loop >= COM_IK_MAX_LOOP){std::cerr << "COM constraint IK MAX loop [="<<COM_IK_MAX_LOOP<<"] exceeded!! @ "<<debug_prefix<< std::endl; break; };
+
     }
-    tmp_com_err = com_ref.p - robot_in->calcCM();
-    if(tmp_com_err.norm() < COM_IK_MAX_ERROR){ break; }
-    if(com_ik_loop >= COM_IK_MAX_LOOP){std::cerr << "COM constraint IK MAX loop [="<<COM_IK_MAX_LOOP<<"] exceeded!! @ "<<debug_prefix<< std::endl; break; };
+  }else{
+    while( 1 ){  //COM 収束ループ
+      com_ik_loop++;
+      robot_in->rootLink()->p += tmp_com_err;
+      robot_in->calcForwardKinematics();
+      for ( std::map<std::string, SimpleFullbodyInverseKinematicsSolver::IKparam>::iterator it = fik_in->ikp.begin(); it != fik_in->ikp.end(); it++ ) {
+          if (it->second.is_ik_enable) fik_in->solveLimbIK (it->second, it->first, fik_in->ratio_for_vel, false);
+      }
+      tmp_com_err = com_ref.p - robot_in->calcCM();
+      if(tmp_com_err.norm() < COM_IK_MAX_ERROR){ break; }
+      if(com_ik_loop >= COM_IK_MAX_LOOP){std::cerr << "COM constraint IK MAX loop [="<<COM_IK_MAX_LOOP<<"] exceeded!! @ "<<debug_prefix<< std::endl; break; };
+    }
   }
-  if(com_ik_loop != 1)cout<<"com_ik_loop:"<<com_ik_loop<<" @ "<<debug_prefix<<endl;
+
+  if(com_ik_loop != 1 && DEBUGP)cout<<"com_ik_loop:"<<com_ik_loop<<" @ "<<debug_prefix<<endl;
 }
 
 
@@ -593,6 +644,7 @@ bool WholeBodyMasterSlave::setWholeBodyMasterSlaveParam(const OpenHRP::WholeBody
   hsp->WBMSparam.upper_body_rmc_ratio = i_param.upper_body_rmc_ratio;
   hsp->WBMSparam.use_rh = hsp->WBMSparam.use_lh = i_param.use_hands;
   hsp->WBMSparam.use_head = i_param.use_head;
+  hsp->WBMSparam.use_manipulability_limit = i_param.use_manipulability_limit;
   return true;
 }
 
@@ -610,6 +662,7 @@ bool WholeBodyMasterSlave::getWholeBodyMasterSlaveParam(OpenHRP::WholeBodyMaster
   i_param.upper_body_rmc_ratio = hsp->WBMSparam.upper_body_rmc_ratio;
   i_param.use_hands = (hsp->WBMSparam.use_rh || hsp->WBMSparam.use_lh);
   i_param.use_head = hsp->WBMSparam.use_head;
+  i_param.use_manipulability_limit = hsp->WBMSparam.use_manipulability_limit;
   return true;
 }
 

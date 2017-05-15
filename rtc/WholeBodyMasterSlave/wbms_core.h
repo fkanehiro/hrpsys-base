@@ -219,6 +219,7 @@ class HumanSynchronizer{
       double upper_body_rmc_ratio;
       bool use_rh,use_lh;
       bool use_head;
+      bool use_manipulability_limit;
     };
     struct WBMSparameters WBMSparam;
 
@@ -301,6 +302,7 @@ class HumanSynchronizer{
       WBMSparam.upper_body_rmc_ratio = 0.5;
       WBMSparam.use_rh = WBMSparam.use_lh = true;
       WBMSparam.use_head = true;
+      WBMSparam.use_manipulability_limit = false;
 
       rp_ref_out_old.clear();
       rp_ref_out.clear();
@@ -573,8 +575,9 @@ class HumanSynchronizer{
       }
     }
     void applyEEWorkspaceLimit(HumanPose& tgt){
-//      const double MAX_FW = 0.25;
-      const double MAX_FW = 0.5;
+      const double MAX_FW = 0.25;
+//      const double MAX_FW = 0.5;
+//      const double MAX_FW = 1000000;//manipulability test
       const double FOOT_2_FOOT_COLLISION_MARGIIN = 0.16;
       if(!is_rf_contact && is_lf_contact){//右足浮遊時
         const hrp::Vector2 lf2rf_vec( tgt.P[rf].p(X)-pre_cont_lfpos(X), tgt.P[rf].p(Y)-pre_cont_lfpos(Y) );

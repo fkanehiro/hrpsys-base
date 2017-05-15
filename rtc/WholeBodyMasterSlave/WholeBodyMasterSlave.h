@@ -155,6 +155,7 @@ class WholeBodyMasterSlave
   double q_interpolator_ratio;
   interpolator *q_interpolator;
 
+  int optionalDataLength;
   unsigned int m_debugLevel;
   bool is_legged_robot;
   unsigned int loop;

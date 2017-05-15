@@ -47,6 +47,7 @@ module OpenHRP
         double upper_body_rmc_ratio;
         boolean use_hands;
         boolean use_head;
+        boolean use_manipulability_limit;
     };
     boolean startCountDownForWholeBodyMasterSlave(in double sec);
     boolean stopHumanSync();
