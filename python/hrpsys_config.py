@@ -1454,6 +1454,10 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
         '''!@brief
         Move the end-effector's location relative to its current pose.
 
+        Note that because of "relative" nature, the method waits for the commands
+        run previously to finish. Do not get confused with the "wait" argument,
+        which regulates all subsequent commands, not previous ones.
+
         For d*, distance arguments are in meter while rotations are in degree.
 
         Example usage: The following moves RARM_JOINT5 joint 0.1mm forward
