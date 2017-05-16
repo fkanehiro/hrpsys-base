@@ -81,9 +81,14 @@ public:
         size_t pos_ik_error_count, rot_ik_error_count;
         // Solve ik or not
         bool is_ik_enable;
+        // Name of parent link in limb
+        std::string parent_name;
+        // Limb length
+        double max_limb_length, limb_length_margin;
         IKparam ()
             : avoid_gain(0.001), reference_gain(0.01),
-              pos_ik_error_count(0), rot_ik_error_count(0)
+              pos_ik_error_count(0), rot_ik_error_count(0),
+              limb_length_margin(0.02)
         {
         };
     };
@@ -101,6 +106,9 @@ public:
     // For IK fail checking
     double pos_ik_thre, rot_ik_thre;
     struct RTC::Time current_tm;
+    // For limb stretch avoidance
+    double d_root_height, limb_stretch_avoidance_time_const, limb_stretch_avoidance_vlimit[2], m_dt;
+    bool use_limb_stretch_avoidance;
 
     SimpleFullbodyInverseKinematicsSolver (hrp::BodyPtr& _robot, const std::string& _print_str, const double _dt)
         : m_robot(_robot),
@@ -110,10 +118,13 @@ public:
           move_base_gain(0.8), ratio_for_vel(1.0),
           pos_ik_thre(0.5*1e-3), // [m]
           rot_ik_thre((1e-2)*M_PI/180.0), // [rad]
-          print_str(_print_str)
+          print_str(_print_str), m_dt(_dt),
+          use_limb_stretch_avoidance(false), limb_stretch_avoidance_time_const(1.5)
     {
         qorg.resize(m_robot->numJoints());
         qrefv.resize(m_robot->numJoints());
+        limb_stretch_avoidance_vlimit[0] = -1000 * 1e-3 * _dt; // lower limit
+        limb_stretch_avoidance_vlimit[1] = 50 * 1e-3 * _dt; // upper limit
     };
     ~SimpleFullbodyInverseKinematicsSolver () {};
 
@@ -159,6 +170,18 @@ public:
         dif_cog(2) = m_robot->rootLink()->p(2) - target_root_p(2);
         m_robot->rootLink()->p = m_robot->rootLink()->p + -1 * move_base_gain * dif_cog;
         m_robot->rootLink()->R = target_root_R;
+        // Avoid limb stretch
+        {
+          std::vector<hrp::Vector3> tmp_p;
+          std::vector<std::string> tmp_name;
+          for ( std::map<std::string, IKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
+            if (it->first.find("leg") != std::string::npos) {
+              tmp_p.push_back(it->second.target_p0);
+              tmp_name.push_back(it->first);
+            }
+          }
+          limbStretchAvoidanceControl(tmp_p, tmp_name);
+        }
         // Overwrite by ref joint angle
         for (size_t i = 0; i < overwrite_ref_ja_index_vec.size(); i++) {
             m_robot->joint(overwrite_ref_ja_index_vec[i])->q = qrefv[overwrite_ref_ja_index_vec[i]];
@@ -273,6 +296,39 @@ public:
         if (is_ik_limb_parameter_valid_length) {
             printIKparam(ee_vec);
         }
+    };
+    // Avoid limb stretch
+    void limbStretchAvoidanceControl (const std::vector<hrp::Vector3>& target_p, const std::vector<std::string>& target_name)
+    {
+      m_robot->calcForwardKinematics();
+      double tmp_d_root_height = 0.0, prev_d_root_height = d_root_height;
+      if (use_limb_stretch_avoidance) {
+        for (size_t i = 0; i < target_p.size(); i++) {
+          // Check whether inside limb length limitation
+          hrp::Link* parent_link = m_robot->link(ikp[target_name[i]].parent_name);
+          hrp::Vector3 rel_target_p = target_p[i] - parent_link->p; // position from parent to target link (world frame)
+          double limb_length_limitation = ikp[target_name[i]].max_limb_length - ikp[target_name[i]].limb_length_margin;
+          double tmp = limb_length_limitation * limb_length_limitation - rel_target_p(0) * rel_target_p(0) - rel_target_p(1) * rel_target_p(1);
+          if (rel_target_p.norm() > limb_length_limitation && tmp >= 0) {
+            tmp_d_root_height = std::min(tmp_d_root_height, rel_target_p(2) + std::sqrt(tmp));
+          }
+        }
+        // Change root link height depending on limb length
+        d_root_height = tmp_d_root_height == 0.0 ? (- 1/limb_stretch_avoidance_time_const * d_root_height * m_dt + d_root_height) : tmp_d_root_height;
+      } else {
+        d_root_height = - 1/limb_stretch_avoidance_time_const * d_root_height * m_dt + d_root_height;
+      }
+      d_root_height = vlimit(d_root_height, prev_d_root_height + limb_stretch_avoidance_vlimit[0], prev_d_root_height + limb_stretch_avoidance_vlimit[1]);
+      m_robot->rootLink()->p(2) += d_root_height;
+    };
+    double vlimit(const double value, const double llimit_value, const double ulimit_value)
+    {
+      if (value > ulimit_value) {
+        return ulimit_value;
+      } else if (value < llimit_value) {
+        return llimit_value;
+      }
+      return value;
     };
     // Set parameter
     void printParam () const
@@ -536,6 +592,8 @@ class AutoBalancer
   double m_dt;
   hrp::BodyPtr m_robot;
   coil::Mutex m_mutex;
+  double d_pos_z_root, limb_stretch_avoidance_time_const, limb_stretch_avoidance_vlimit[2];
+  bool use_limb_stretch_avoidance;
 
   double transition_interpolator_ratio, transition_time, zmp_transition_time, adjust_footstep_transition_time, leg_names_interpolator_ratio;
   interpolator *zmp_offset_interpolator;
