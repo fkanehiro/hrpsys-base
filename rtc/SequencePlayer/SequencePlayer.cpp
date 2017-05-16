@@ -52,6 +52,7 @@ SequencePlayer::SequencePlayer(RTC::Manager* manager)
       m_accRefOut("accRef", m_accRef),
       m_basePosOut("basePos", m_basePos),
       m_baseRpyOut("baseRpy", m_baseRpy),
+      m_wrenchesAllOut("wrenchesAll", m_wrenchesAll),
       m_optionalDataOut("optionalData", m_optionalData),
       m_SequencePlayerServicePort("SequencePlayerService"),
       // </rtc-template>
@@ -91,6 +92,7 @@ RTC::ReturnCode_t SequencePlayer::onInitialize()
     addOutPort("accRef", m_accRefOut);
     addOutPort("basePos", m_basePosOut);
     addOutPort("baseRpy", m_baseRpyOut);
+    addOutPort("wrenchesAll", m_wrenchesAllOut);
     addOutPort("optionalData", m_optionalDataOut);
   
     // Set service provider to Ports
@@ -153,6 +155,7 @@ RTC::ReturnCode_t SequencePlayer::onInitialize()
       m_wrenches[i].data.length(6);
       registerOutPort(std::string(fsensor_names[i]+"Ref").c_str(), *m_wrenchesOut[i]);
     }
+    m_wrenchesAll.data.length(nforce*6);
 
     if (prop.hasKey("seq_optional_data_dim")) {
       coil::stringTo(optional_data_dim, prop["seq_optional_data_dim"].c_str());
@@ -267,6 +270,9 @@ RTC::ReturnCode_t SequencePlayer::onExecute(RTC::UniqueId ec_id)
           m_wrenches[i].data[4] = wrenches[force_i++];
           m_wrenches[i].data[5] = wrenches[force_i++];
         }
+        for (size_t i = 0; i < m_wrenchesAll.data.length(); i++) {
+            m_wrenchesAll.data[i] = wrenches[i];
+        }
         m_qRef.tm = m_qInit.tm;
         m_qRefOut.write();
         m_tqRefOut.write();
@@ -278,6 +284,7 @@ RTC::ReturnCode_t SequencePlayer::onExecute(RTC::UniqueId ec_id)
         for (size_t i = 0; i < m_wrenchesOut.size(); i++) {
           m_wrenchesOut[i]->write();
         }
+        m_wrenchesAllOut.write();
 
         if (m_clearFlag){
             m_seq->clear(0.001);
