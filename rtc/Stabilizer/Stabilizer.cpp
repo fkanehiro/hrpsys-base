@@ -17,6 +17,14 @@
 #include <boost/lambda/lambda.hpp>
 
 typedef coil::Guard<coil::Mutex> Guard;
+
+#ifndef deg2rad
+#define deg2rad(x) ((x) * M_PI / 180.0)
+#endif
+#ifndef rad2deg
+#define rad2deg(rad) (rad * 180 / M_PI)
+#endif
+
 // Module specification
 // <rtc-template block="module_spec">
 static const char* stabilizer_spec[] =
@@ -339,7 +347,6 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
     eefm_body_attitude_control_gain[i] = 0.5;
     eefm_body_attitude_control_time_const[i] = 1e5;
   }
-#define deg2rad(x) ((x) * M_PI / 180.0)
   for (size_t i = 0; i < stikp.size(); i++) {
       STIKParam& ikp = stikp[i];
       hrp::Link* root = m_robot->link(ikp.target_name);
@@ -398,6 +405,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   limb_stretch_avoidance_time_const = 1.5;
   limb_stretch_avoidance_vlimit[0] = -100 * 1e-3 * dt; // lower limit
   limb_stretch_avoidance_vlimit[1] = 50 * 1e-3 * dt; // upper limit
+  root_rot_compensation_limit[0] = root_rot_compensation_limit[1] = deg2rad(90.0);
   detection_count_to_air = static_cast<int>(0.0 / dt);
 
   // parameters for RUNST
@@ -1401,8 +1409,11 @@ void Stabilizer::moveBasePosRotForBodyRPYControl ()
     // Body rpy control
     //   Basically Equation (1) and (2) in the paper [1]
     hrp::Vector3 ref_root_rpy = hrp::rpyFromRot(target_root_R);
+    bool is_root_rot_limit = false;
     for (size_t i = 0; i < 2; i++) {
         d_rpy[i] = transition_smooth_gain * (eefm_body_attitude_control_gain[i] * (ref_root_rpy(i) - act_base_rpy(i)) - 1/eefm_body_attitude_control_time_const[i] * d_rpy[i]) * dt + d_rpy[i];
+        d_rpy[i] = vlimit(d_rpy[i], -1 * root_rot_compensation_limit[i], root_rot_compensation_limit[i]);
+        is_root_rot_limit = is_root_rot_limit || (std::fabs(std::fabs(d_rpy[i]) - root_rot_compensation_limit[i] ) < 1e-5); // near the limit
     }
     rats::rotm3times(current_root_R, target_root_R, hrp::rotFromRpy(d_rpy[0], d_rpy[1], 0));
     m_robot->rootLink()->R = current_root_R;
@@ -1410,6 +1421,14 @@ void Stabilizer::moveBasePosRotForBodyRPYControl ()
     m_robot->calcForwardKinematics();
     current_base_rpy = hrp::rpyFromRot(m_robot->rootLink()->R);
     current_base_pos = m_robot->rootLink()->p;
+    if ( DEBUGP || (is_root_rot_limit && loop%200==0) ) {
+        std::cerr << "[" << m_profile.instance_name << "] Root rot control" << std::endl;
+        if (is_root_rot_limit) std::cerr << "[" << m_profile.instance_name << "]   Root rot limit reached!!" << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "]   ref = [" << rad2deg(ref_root_rpy(0)) << " " << rad2deg(ref_root_rpy(1)) << "], "
+                  << "act = [" << rad2deg(act_base_rpy(0)) << " " << rad2deg(act_base_rpy(1)) << "], "
+                  << "cur = [" << rad2deg(current_base_rpy(0)) << " " << rad2deg(current_base_rpy(1)) << "], "
+                  << "limit = [" << rad2deg(root_rot_compensation_limit[0]) << " " << rad2deg(root_rot_compensation_limit[1]) << "][deg]" << std::endl;
+    }
 };
 
 void Stabilizer::calcSwingSupportLimbGain ()
@@ -1629,10 +1648,10 @@ void Stabilizer::calcSwingEEModification ()
         stikp[i].prev_d_rpy_swing = stikp[i].d_rpy_swing;
     }
     if (DEBUGP) {
+        std::cerr << "[" << m_profile.instance_name << "] Swing foot control" << std::endl;
         for (size_t i = 0; i < stikp.size(); i++) {
             std::cerr << "[" << m_profile.instance_name << "]   "
-                      << "d_rpy_swing (" << stikp[i].ee_name << ")  = " << (stikp[i].d_rpy_swing / M_PI * 180.0).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[deg]" << std::endl;
-            std::cerr << "[" << m_profile.instance_name << "]   "
+                      << "d_rpy_swing (" << stikp[i].ee_name << ")  = " << (stikp[i].d_rpy_swing / M_PI * 180.0).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[deg], "
                       << "d_pos_swing (" << stikp[i].ee_name << ")  = " << (stikp[i].d_pos_swing * 1e3).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[mm]" << std::endl;
         }
     }
@@ -1940,6 +1959,7 @@ void Stabilizer::getParameter(OpenHRP::StabilizerService::stParam& i_stp)
   i_stp.detection_time_to_air = detection_count_to_air * dt;
   for (size_t i = 0; i < 2; i++) {
     i_stp.limb_stretch_avoidance_vlimit[i] = limb_stretch_avoidance_vlimit[i];
+    i_stp.root_rot_compensation_limit[i] = root_rot_compensation_limit[i];
   }
   for (size_t i = 0; i < stikp.size(); i++) {
       const rats::coordinates cur_ee = rats::coordinates(stikp.at(i).localp, stikp.at(i).localR);
@@ -2113,6 +2133,7 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
   limb_stretch_avoidance_time_const = i_stp.limb_stretch_avoidance_time_const;
   for (size_t i = 0; i < 2; i++) {
     limb_stretch_avoidance_vlimit[i] = i_stp.limb_stretch_avoidance_vlimit[i];
+    root_rot_compensation_limit[i] = i_stp.root_rot_compensation_limit[i];
   }
   detection_count_to_air = static_cast<int>(i_stp.detection_time_to_air / dt);
   if (control_mode == MODE_IDLE) {
@@ -2195,6 +2216,7 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
   std::cerr << "[" << m_profile.instance_name << "]  tilt_margin = [" << tilt_margin[0] << ", " << tilt_margin[1] << "] [rad]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]  contact_decision_threshold = " << contact_decision_threshold << "[N]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]  detection_time_to_air = " << detection_count_to_air * dt << "[s]" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]  root_rot_compensation_limit = [" << root_rot_compensation_limit[0] << " " << root_rot_compensation_limit[1] << "][rad]" << std::endl;
   // IK limb parameters
   std::cerr << "[" << m_profile.instance_name << "]  IK limb parameters" << std::endl;
   bool is_ik_limb_parameter_valid_length = true;
