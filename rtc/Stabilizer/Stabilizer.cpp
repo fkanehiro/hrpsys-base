@@ -1088,8 +1088,7 @@ void Stabilizer::getActualParameters ()
         }
         for (size_t i = 0; i < ee_name.size(); i++) {
             std::cerr << "[" << m_profile.instance_name << "]   "
-                      << "d_foot_pos (" << ee_name[i] << ")  = [" << stikp[i].d_foot_pos(0)*1e3 << " " << stikp[i].d_foot_pos(1)*1e3 << " " << stikp[i].d_foot_pos(2)*1e3 << "] [mm]" << std::endl;
-            std::cerr << "[" << m_profile.instance_name << "]   "
+                      << "d_foot_pos (" << ee_name[i] << ")  = [" << stikp[i].d_foot_pos(0)*1e3 << " " << stikp[i].d_foot_pos(1)*1e3 << " " << stikp[i].d_foot_pos(2)*1e3 << "] [mm], "
                       << "d_foot_rpy (" << ee_name[i] << ")  = [" << stikp[i].d_foot_rpy(0)*180.0/M_PI << " " << stikp[i].d_foot_rpy(1)*180.0/M_PI << " " << stikp[i].d_foot_rpy(2)*180.0/M_PI << "] [deg]" << std::endl;
         }
       }
@@ -2210,13 +2209,12 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
     std::cerr << "[" << m_profile.instance_name << "]   st_algorithm cannot be changed to [" << getStabilizerAlgorithmString(st_algorithm) << "] during MODE_AIR or MODE_ST." << std::endl;
   }
   std::cerr << "[" << m_profile.instance_name << "]   emergency_check_mode changed to [" << (emergency_check_mode == OpenHRP::StabilizerService::NO_CHECK?"NO_CHECK": (emergency_check_mode == OpenHRP::StabilizerService::COP?"COP":"CP") ) << "]" << std::endl;
-  std::cerr << "[" << m_profile.instance_name << "]  transition_time = " << transition_time << "[s]" << std::endl;
-  std::cerr << "[" << m_profile.instance_name << "]  cop_check_margin = " << cop_check_margin << "[m]" << std::endl;
-  std::cerr << "[" << m_profile.instance_name << "]  cp_check_margin = [" << cp_check_margin[0] << ", " << cp_check_margin[1] << ", " << cp_check_margin[2] << ", " << cp_check_margin[3] << "] [m]" << std::endl;
-  std::cerr << "[" << m_profile.instance_name << "]  tilt_margin = [" << tilt_margin[0] << ", " << tilt_margin[1] << "] [rad]" << std::endl;
-  std::cerr << "[" << m_profile.instance_name << "]  contact_decision_threshold = " << contact_decision_threshold << "[N]" << std::endl;
-  std::cerr << "[" << m_profile.instance_name << "]  detection_time_to_air = " << detection_count_to_air * dt << "[s]" << std::endl;
-  std::cerr << "[" << m_profile.instance_name << "]  root_rot_compensation_limit = [" << root_rot_compensation_limit[0] << " " << root_rot_compensation_limit[1] << "][rad]" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   transition_time = " << transition_time << "[s]" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   cop_check_margin = " << cop_check_margin << "[m], "
+            << "cp_check_margin = [" << cp_check_margin[0] << ", " << cp_check_margin[1] << ", " << cp_check_margin[2] << ", " << cp_check_margin[3] << "] [m], "
+            << "tilt_margin = [" << tilt_margin[0] << ", " << tilt_margin[1] << "] [rad]" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   contact_decision_threshold = " << contact_decision_threshold << "[N], detection_time_to_air = " << detection_count_to_air * dt << "[s]" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   root_rot_compensation_limit = [" << root_rot_compensation_limit[0] << " " << root_rot_compensation_limit[1] << "][rad]" << std::endl;
   // IK limb parameters
   std::cerr << "[" << m_profile.instance_name << "]  IK limb parameters" << std::endl;
   bool is_ik_limb_parameter_valid_length = true;
