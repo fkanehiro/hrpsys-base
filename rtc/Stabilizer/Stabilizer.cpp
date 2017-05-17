@@ -279,6 +279,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
       }
       ikp.avoid_gain = 0.001;
       ikp.reference_gain = 0.01;
+      ikp.ik_loop_count = 3;
       // For swing ee modification
       ikp.target_ee_diff_p = hrp::Vector3::Zero();
       ikp.target_ee_diff_r = hrp::Matrix33::Identity();
@@ -1485,7 +1486,11 @@ void Stabilizer::calcTPCC() {
       // solveIK
       //   IK target is link origin pos and rot, not ee pos and rot.
       //for (size_t jj = 0; jj < 5; jj++) {
-      for (size_t jj = 0; jj < 3; jj++) {
+      size_t max_ik_loop_count = 0;
+      for (size_t i = 0; i < stikp.size(); i++) {
+          if (max_ik_loop_count < stikp[i].ik_loop_count) max_ik_loop_count = stikp[i].ik_loop_count;
+      }
+      for (size_t jj = 0; jj < max_ik_loop_count; jj++) {
         hrp::Vector3 tmpcm = m_robot->calcCM();
         for (size_t i = 0; i < 2; i++) {
           m_robot->rootLink()->p(i) = m_robot->rootLink()->p(i) + 0.9 * (newcog(i) - tmpcm(i));
@@ -1599,7 +1604,7 @@ void Stabilizer::calcEEForceMomentControl() {
       // IK
       for (size_t i = 0; i < stikp.size(); i++) {
         if (is_ik_enable[i]) {
-          for (size_t jj = 0; jj < 3; jj++) {
+          for (size_t jj = 0; jj < stikp[i].ik_loop_count; jj++) {
             jpe_v[i]->calcInverseKinematics2Loop(tmpp[i], tmpR[i], 1.0, 0.001, 0.01, &qrefv, transition_smooth_gain,
                                                  //stikp[i].localCOPPos;
                                                  stikp[i].localp,
@@ -1991,6 +1996,7 @@ void Stabilizer::getParameter(OpenHRP::StabilizerService::stParam& i_stp)
       ilp.avoid_gain = stikp[i].avoid_gain;
       ilp.reference_gain = stikp[i].reference_gain;
       ilp.manipulability_limit = jpe_v[i]->getManipulabilityLimit();
+      ilp.ik_loop_count = stikp[i].ik_loop_count; // size_t -> unsigned short, value may change, but ik_loop_count is small value and value not change
   }
 };
 
@@ -2239,6 +2245,7 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
               stikp[i].avoid_gain = ilp.avoid_gain;
               stikp[i].reference_gain = ilp.reference_gain;
               jpe_v[i]->setManipulabilityLimit(ilp.manipulability_limit);
+              stikp[i].ik_loop_count = ilp.ik_loop_count; // unsigned short -> size_t, value not change
           }
       } else {
           std::cerr << "[" << m_profile.instance_name << "]   ik_optional_weight_vector invalid length! Cannot be set. (input = [";
@@ -2283,6 +2290,11 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
       std::cerr << "[" << m_profile.instance_name << "]   manipulability_limits = [";
       for (size_t i = 0; i < jpe_v.size(); i++) {
           std::cerr << jpe_v[i]->getManipulabilityLimit() << ", ";
+      }
+      std::cerr << "]" << std::endl;
+      std::cerr << "[" << m_profile.instance_name << "]   ik_loop_count = [";
+      for (size_t i = 0; i < stikp.size(); i++) {
+          std::cerr << stikp[i].ik_loop_count << ", ";
       }
       std::cerr << "]" << std::endl;
   }

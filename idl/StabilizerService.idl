@@ -79,6 +79,8 @@ module OpenHRP
         double reference_gain;
         /// Manipulability limit for inverse kinematics.
         double manipulability_limit;
+        /// IK loop count
+        unsigned short ik_loop_count;
     };
 
     /**
