@@ -448,6 +448,7 @@ void WholeBodyMasterSlave::preProcessForWholeBodyMasterSlave(fikPtr& fik_in, hrp
   hrp::Vector3 init_foot_mid_coord = (rsole_pos + lsole_pos) / 2;
   if( fabs((double)init_foot_mid_coord(Z)) > 1e-5 ){
     basePos_heightChecked(Z) -= init_foot_mid_coord(Z);
+    init_foot_mid_coord(Z) = 0;
     std::cerr<<"["<<m_profile.instance_name<<"] Input basePos height is invalid. Auto modify "<<m_basePos.data.z<<" -> "<<basePos_heightChecked(Z)<<endl;
   }
   for(int i=0;i<ik_robot_list.size();i++){//初期姿勢でBodyをFK
