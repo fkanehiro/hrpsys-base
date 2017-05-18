@@ -273,6 +273,7 @@ class Stabilizer
     hrp::Matrix33 target_ee_diff_r;
     // IK parameter
     double avoid_gain, reference_gain, max_limb_length, limb_length_margin;
+    size_t ik_loop_count;
   };
   enum cmode {MODE_IDLE, MODE_AIR, MODE_ST, MODE_SYNC_TO_IDLE, MODE_SYNC_TO_AIR} control_mode;
   // members
@@ -303,7 +304,7 @@ class Stabilizer
   hrp::Vector3 act_zmp, act_cog, act_cogvel, act_cp, rel_act_zmp, rel_act_cp, prev_act_cog, act_base_rpy, current_base_rpy, current_base_pos, sbp_cog_offset, cp_offset, diff_cp;
   hrp::Vector3 foot_origin_offset[2];
   std::vector<double> prev_act_force_z;
-  double zmp_origin_off, transition_smooth_gain, d_pos_z_root, limb_stretch_avoidance_time_const, limb_stretch_avoidance_vlimit[2];
+  double zmp_origin_off, transition_smooth_gain, d_pos_z_root, limb_stretch_avoidance_time_const, limb_stretch_avoidance_vlimit[2], root_rot_compensation_limit[2];
   boost::shared_ptr<FirstOrderLowPassFilter<hrp::Vector3> > act_cogvel_filter;
   OpenHRP::StabilizerService::STAlgorithm st_algorithm;
   SimpleZMPDistributor* szd;

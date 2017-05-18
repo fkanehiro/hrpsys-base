@@ -794,8 +794,7 @@ public:
         if (printp) {
             for (size_t i = 0; i < ee_num; i++) {
                 std::cerr << "[" << print_str << "]   "
-                          << "ref_force  [" << ee_name[i] << "] " << hrp::Vector3(ref_foot_force[i]).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[N]" << std::endl;
-                std::cerr << "[" << print_str << "]   "
+                          << "ref_force  [" << ee_name[i] << "] " << hrp::Vector3(ref_foot_force[i]).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[N], "
                           << "ref_moment [" << ee_name[i] << "] " << hrp::Vector3(ref_foot_moment[i]).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[Nm]" << std::endl;
             }
         }
@@ -880,7 +879,6 @@ public:
             }
         }
         if (printp) {
-            std::cerr << "]" << std::endl;
             std::cerr << "[" << print_str << "]   newWmat(diag) = [";
             for (size_t j = 0; j < ee_num; j++) {
                 for (size_t i = 0; i < 6; i++) {
@@ -908,8 +906,7 @@ public:
         if (printp) {
             for (size_t i = 0; i < ee_num; i++) {
                 std::cerr << "[" << print_str << "]   "
-                          << "new_ref_force  [" << ee_name[i] << "] " << hrp::Vector3(ref_foot_force[i]).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[N]" << std::endl;
-                std::cerr << "[" << print_str << "]   "
+                          << "new_ref_force  [" << ee_name[i] << "] " << hrp::Vector3(ref_foot_force[i]).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[N], "
                           << "new_ref_moment [" << ee_name[i] << "] " << hrp::Vector3(ref_foot_moment[i]).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[Nm]" << std::endl;
             }
         }
@@ -1031,20 +1028,17 @@ public:
                       << "total_wrench " << total_wrench.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[N][Nm]" << std::endl;
             for (size_t i = 0; i < ee_num; i++) {
                 std::cerr << "[" << print_str << "]   "
-                          << "ref_force  [" << ee_name[i] << "] " << hrp::Vector3(ref_foot_force[i]).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[N]" << std::endl;
-                std::cerr << "[" << print_str << "]   "
+                          << "ref_force  [" << ee_name[i] << "] " << hrp::Vector3(ref_foot_force[i]).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[N], "
                           << "ref_moment [" << ee_name[i] << "] " << hrp::Vector3(ref_foot_moment[i]).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[Nm]" << std::endl;
             }
             for (size_t i = 0; i < ee_num; i++) {
 #ifdef FORCE_MOMENT_DIFF_CONTROL
                 std::cerr << "[" << print_str << "]   "
-                          << "dif_ref_force  [" << ee_name[i] << "] " << hrp::Vector3(hrp::Vector3(ret(6*i), ret(6*i+1), ret(6*i+2))).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[N]" << std::endl;
-                std::cerr << "[" << print_str << "]   "
+                          << "dif_ref_force  [" << ee_name[i] << "] " << hrp::Vector3(hrp::Vector3(ret(6*i), ret(6*i+1), ret(6*i+2))).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[N], "
                           << "dif_ref_moment [" << ee_name[i] << "] " << hrp::Vector3(hrp::Vector3(ret(6*i+3), ret(6*i+4), ret(6*i+5))).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[Nm]" << std::endl;
 #else
                 std::cerr << "[" << print_str << "]   "
-                          << "dif_ref_force  [" << ee_name[i] << "] " << hrp::Vector3(hrp::Vector3(ret(6*i), ret(6*i+1), ret(6*i+2))-ref_foot_force[i]).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[N]" << std::endl;
-                std::cerr << "[" << print_str << "]   "
+                          << "dif_ref_force  [" << ee_name[i] << "] " << hrp::Vector3(hrp::Vector3(ret(6*i), ret(6*i+1), ret(6*i+2))-ref_foot_force[i]).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[N], "
                           << "dif_ref_moment [" << ee_name[i] << "] " << hrp::Vector3(hrp::Vector3(ret(6*i+3), ret(6*i+4), ret(6*i+5))-ref_foot_moment[i]).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[Nm]" << std::endl;
 #endif
             }
@@ -1061,8 +1055,7 @@ public:
         if (printp){
             for (size_t i = 0; i < ee_num; i++) {
                 std::cerr << "[" << print_str << "]   "
-                          << "new_ref_force  [" << ee_name[i] << "] " << hrp::Vector3(ref_foot_force[i]).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[N]" << std::endl;
-                std::cerr << "[" << print_str << "]   "
+                          << "new_ref_force  [" << ee_name[i] << "] " << hrp::Vector3(ref_foot_force[i]).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[N], "
                           << "new_ref_moment [" << ee_name[i] << "] " << hrp::Vector3(ref_foot_moment[i]).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[Nm]" << std::endl;
             }
         }
