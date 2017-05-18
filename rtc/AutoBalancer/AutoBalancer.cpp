@@ -172,6 +172,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
         coil::stringTo(ee_target, end_effectors_str[i*prop_num+1].c_str());
         coil::stringTo(ee_base, end_effectors_str[i*prop_num+2].c_str());
         ABCIKparam tp;
+        hrp::Link* root = m_robot->link(ee_target);
         for (size_t j = 0; j < 3; j++) {
           coil::stringTo(tp.localPos(j), end_effectors_str[i*prop_num+3+j].c_str());
         }
@@ -186,6 +187,12 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
         tmp_fikp.target_link = m_robot->link(ee_target);
         tmp_fikp.localPos = tp.localPos;
         tmp_fikp.localR = tp.localR;
+        tmp_fikp.max_limb_length = 0.0;
+        while (!root->isRoot()) {
+          tmp_fikp.max_limb_length += root->b.norm();
+          tmp_fikp.parent_name = root->name;
+          root = root->parent;
+        }
         fik->ikp.insert(std::pair<std::string, SimpleFullbodyInverseKinematicsSolver::IKparam>(ee_name, tmp_fikp));
         // Fix for toe joint
         //   Toe joint is defined as end-link joint in the case that end-effector link != force-sensor link
@@ -493,6 +500,7 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
         rel_ref_zmp = m_robot->rootLink()->R.transpose() * (ref_zmp - m_robot->rootLink()->p);
       } else {
         rel_ref_zmp = input_zmp;
+        fik->d_root_height = 0.0;
       }
       // Transition
       if (!is_transition_interpolator_empty) {
@@ -1710,6 +1718,15 @@ bool AutoBalancer::setAutoBalancerParam(const OpenHRP::AutoBalancerService::Auto
   fik->printParam();
   // IK limb parameters
   fik->setIKParam(ee_vec, i_param.ik_limb_parameters);
+  // Limb stretch avoidance
+  fik->use_limb_stretch_avoidance = i_param.use_limb_stretch_avoidance;
+  fik->limb_stretch_avoidance_time_const = i_param.limb_stretch_avoidance_time_const;
+  for (size_t i = 0; i < 2; i++) {
+    fik->limb_stretch_avoidance_vlimit[i] = i_param.limb_stretch_avoidance_vlimit[i];
+  }
+  for (size_t i = 0; i < fik->ikp.size(); i++) {
+    fik->ikp[ee_vec[i]].limb_length_margin = i_param.limb_length_margin[i];
+  }
   return true;
 };
 
@@ -1775,6 +1792,16 @@ bool AutoBalancer::getAutoBalancerParam(OpenHRP::AutoBalancerService::AutoBalanc
   i_param.rot_ik_thre = fik->rot_ik_thre;
   // IK limb parameters
   fik->getIKParam(ee_vec, i_param.ik_limb_parameters);
+  // Limb stretch avoidance
+  i_param.use_limb_stretch_avoidance = fik->use_limb_stretch_avoidance;
+  i_param.limb_stretch_avoidance_time_const = fik->limb_stretch_avoidance_time_const;
+  i_param.limb_length_margin.length(fik->ikp.size());
+  for (size_t i = 0; i < 2; i++) {
+    i_param.limb_stretch_avoidance_vlimit[i] = fik->limb_stretch_avoidance_vlimit[i];
+  }
+  for (size_t i = 0; i < ikp.size(); i++) {
+    i_param.limb_length_margin[i] = fik->ikp[ee_vec[i]].limb_length_margin;
+  }
   return true;
 };
 
