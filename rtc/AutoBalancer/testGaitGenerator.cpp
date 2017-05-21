@@ -17,6 +17,17 @@ protected:
     hrp::Vector3 cog;
     gait_generator* gg;
     bool use_gnuplot, is_small_zmp_error, is_small_zmp_diff, is_contact_states_swing_support_time_validity;
+    // previous values for walk pattern calculation
+    hrp::Vector3 prev_rfoot_pos, prev_lfoot_pos;
+    hrp::Vector3 min_rfoot_pos, min_lfoot_pos, max_rfoot_pos, max_lfoot_pos;
+    hrp::Vector3 prev_refzmp;
+    std::vector<bool> prev_contact_states;
+    std::vector<double> prev_swing_support_time;
+    // For plot
+    std::string fname;
+    FILE* fp;
+    std::string fname_sstime;
+    FILE* fp_sstime;
 private:
     // error check
     bool check_zmp_error (const hrp::Vector3& czmp, const hrp::Vector3& refzmp)
@@ -35,22 +46,8 @@ private:
         fprintf(gp, "%s\n unset multiplot\n", plot_str.c_str());
         fflush(gp);
     };
-    void plot_walk_pattern ()
+    void proc_one_walking_motion (size_t i)
     {
-        /* make step and dump */
-        size_t i = 0;
-        std::string fname("/tmp/plot.dat");
-        FILE* fp = fopen(fname.c_str(), "w");
-        std::string fname_sstime("/tmp/plot-sstime.dat");
-        FILE* fp_sstime = fopen(fname_sstime.c_str(), "w");
-        hrp::Vector3 prev_rfoot_pos, prev_lfoot_pos;
-        hrp::Vector3 min_rfoot_pos(1e10,1e10,1e10), min_lfoot_pos(1e10,1e10,1e10), max_rfoot_pos(-1e10,-1e10,-1e10), max_lfoot_pos(-1e10,-1e10,-1e10);
-        //
-        hrp::Vector3 prev_refzmp;
-        std::vector<std::string> tmp_string_vector;
-        std::vector<bool> prev_contact_states(2, true); // RLEG, LLEG
-        std::vector<double> prev_swing_support_time(2, 1e2); // RLEG, LLEG
-        while ( gg->proc_one_tick() ) {
             //std::cerr << gg->lcg.gp_count << std::endl;
             // if ( gg->lcg.gp_index == 4 && gg->lcg.gp_count == 100) {
             //   //std::cerr << gg->lcg.gp_index << std::endl;
@@ -76,7 +73,7 @@ private:
                 fprintf(fp, "%f ", cogpos);
             }
             // Foot pos
-            tmp_string_vector = boost::assign::list_of("rleg");
+            std::vector<std::string> tmp_string_vector = boost::assign::list_of("rleg");
             hrp::Vector3 rfoot_pos = (gg->get_support_leg_names() == tmp_string_vector) ? gg->get_support_leg_steps().front().worldcoords.pos : gg->get_swing_leg_steps().front().worldcoords.pos;
             for (size_t ii = 0; ii < 3; ii++) {
                 fprintf(fp, "%f ", rfoot_pos(ii));
@@ -181,11 +178,22 @@ private:
             prev_contact_states[1] = lleg_contact_states;
             prev_swing_support_time[0] = gg->get_current_swing_time(RLEG);
             prev_swing_support_time[1] = gg->get_current_swing_time(LLEG);
+    };
+
+    void plot_walk_pattern ()
+    {
+        /* make step and dump */
+        size_t i = 0;
+        while ( gg->proc_one_tick() ) {
+            proc_one_walking_motion(i);
             i++;
         }
-        fclose(fp);
-        fclose(fp_sstime);
 
+        plot_and_checkparam ();
+    };
+
+    void plot_and_checkparam ()
+    {
         /* plot */
         if (use_gnuplot) {
             size_t gpsize = 7;
@@ -374,13 +382,22 @@ private:
 
 public:
     std::vector<std::string> arg_strs;
-    testGaitGenerator() : use_gnuplot(true), is_small_zmp_error(true), is_small_zmp_diff(true), is_contact_states_swing_support_time_validity(true) {};
+    testGaitGenerator() : use_gnuplot(true), is_small_zmp_error(true), is_small_zmp_diff(true), is_contact_states_swing_support_time_validity(true),
+                          min_rfoot_pos(1e10,1e10,1e10), min_lfoot_pos(1e10,1e10,1e10), max_rfoot_pos(-1e10,-1e10,-1e10), max_lfoot_pos(-1e10,-1e10,-1e10),
+                          prev_contact_states(2, true), // RLEG, LLEG
+                          prev_swing_support_time(2, 1e2), // RLEG, LLEG
+                          fname("/tmp/plot.dat"), fp(fopen(fname.c_str(), "w")),
+                          fname_sstime("/tmp/plot-sstime.dat"), fp_sstime(fopen(fname_sstime.c_str(), "w"))
+    {};
+
     virtual ~testGaitGenerator()
     {
         if (gg != NULL) {
             delete gg;
             gg = NULL;
         }
+        fclose(fp);
+        fclose(fp_sstime);
     };
 
     void test0 ()
