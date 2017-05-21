@@ -38,6 +38,8 @@ protected:
     FILE* fp_thpos;
     std::string fname_sstime;
     FILE* fp_sstime;
+    std::string fname_ssmc;
+    FILE* fp_ssmc;
 private:
     // error check
     bool check_zmp_error (const hrp::Vector3& czmp, const hrp::Vector3& refzmp)
@@ -192,6 +194,20 @@ private:
                     (rleg_contact_states ? 1 : 0), (lleg_contact_states ? 1 : 0),
                     0.8*gg->get_current_toe_heel_ratio()+0.1); // scale+translation just for visualization
             fprintf(fp_sstime, "\n");
+
+            // swing support mid coords
+            fprintf(fp_ssmc, "%f ", i * dt);
+            coordinates tmp_ssmc;
+            gg->get_swing_support_mid_coords(tmp_ssmc);
+            for (size_t ii = 0; ii < 3; ii++) {
+                fprintf(fp_ssmc, "%f ", tmp_ssmc.pos(ii));
+            }
+            hrp::Vector3 tmp_ssmcr = hrp::rpyFromRot(tmp_ssmc.rot);
+            for (size_t ii = 0; ii < 3; ii++) {
+                fprintf(fp_ssmc, "%f ", tmp_ssmcr(ii));
+            }
+            fprintf(fp_ssmc, "\n");
+
             // Error checking
             is_small_zmp_error = check_zmp_error(gg->get_cart_zmp(), gg->get_refzmp()) && is_small_zmp_error;
             if (i>0) {
@@ -224,7 +240,7 @@ private:
     {
         /* plot */
         if (use_gnuplot) {
-            size_t gpsize = 7;
+            size_t gpsize = 9;
             FILE* gps[gpsize];
             for (size_t ii = 0; ii < gpsize;ii++) {
                 gps[ii] = popen("gnuplot", "w");
@@ -370,6 +386,36 @@ private:
                     << std::endl;
                 plot_and_save(gps[4], gtitle, oss.str());
             }
+            {
+                std::ostringstream oss("");
+                std::string gtitle("Swing_support_mid_coords_pos");
+                size_t tmp_start = 2;
+                oss << "set multiplot layout 3, 1 title '" << gtitle << "'" << std::endl;
+                std::string titles[3] = {"X", "Y", "Z"};
+                for (size_t ii = 0; ii < 3; ii++) {
+                    oss << "set xlabel 'Time [s]'" << std::endl;
+                    oss << "set ylabel 'Pos " << titles[ii] << "[m]'" << std::endl;
+                    oss << "plot "
+                        << "'" << fname_ssmc << "' using 1:" << (tmp_start+ii) << " with lines title ''"
+                        << std::endl;
+                }
+                plot_and_save(gps[7], gtitle, oss.str());
+            }
+            {
+                std::ostringstream oss("");
+                std::string gtitle("Swing_support_mid_coords_rot");
+                size_t tmp_start = 2;
+                oss << "set multiplot layout 3, 1 title '" << gtitle << "'" << std::endl;
+                std::string titles[3] = {"Roll", "Pitch", "Yaw"};
+                for (size_t ii = 0; ii < 3; ii++) {
+                    oss << "set xlabel 'Time [s]'" << std::endl;
+                    oss << "set ylabel 'Rot " << titles[ii] << "[rad]'" << std::endl;
+                    oss << "plot "
+                        << "'" << fname_ssmc << "' using 1:" << (tmp_start+ii+3) << " with lines title ''"
+                        << std::endl;
+                }
+                plot_and_save(gps[8], gtitle, oss.str());
+            }
             double tmp;
             std::cin >> tmp;
             for (size_t ii = 0; ii < gpsize; ii++) {
@@ -420,7 +466,8 @@ public:
                           fname_zoff("/tmp/plot-zoff.dat"), fp_zoff(fopen(fname_zoff.c_str(), "w")),
                           fname_fvel("/tmp/plot-fvel.dat"), fp_fvel(fopen(fname_fvel.c_str(), "w")),
                           fname_thpos("/tmp/plot-thpos.dat"), fp_thpos(fopen(fname_thpos.c_str(), "w")),
-                          fname_sstime("/tmp/plot-sstime.dat"), fp_sstime(fopen(fname_sstime.c_str(), "w"))
+                          fname_sstime("/tmp/plot-sstime.dat"), fp_sstime(fopen(fname_sstime.c_str(), "w")),
+                          fname_ssmc("/tmp/plot-ssmc.dat"), fp_ssmc(fopen(fname_ssmc.c_str(), "w"))
     {};
 
     virtual ~testGaitGenerator()
