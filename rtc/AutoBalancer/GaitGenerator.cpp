@@ -472,16 +472,72 @@ namespace rats
       return matching_flag;
   };
 
+  void leg_coords_generator::calc_swing_support_mid_coords ()
+  {
+      std::vector<coordinates> swg_src_coords, swg_dst_coords,sup_coords;
+      for (std::vector<step_node>::const_iterator it = swing_leg_src_steps.begin(); it != swing_leg_src_steps.end(); it++) {
+          if (it->l_r == RLEG or it->l_r == LLEG) swg_src_coords.push_back(it->worldcoords);
+      }
+      for (std::vector<step_node>::const_iterator it = swing_leg_dst_steps.begin(); it != swing_leg_dst_steps.end(); it++) {
+          if (it->l_r == RLEG or it->l_r == LLEG) swg_dst_coords.push_back(it->worldcoords);
+      }
+      for (std::vector<step_node>::const_iterator it = support_leg_steps.begin(); it != support_leg_steps.end(); it++) {
+          if (it->l_r == RLEG or it->l_r == LLEG) sup_coords.push_back(it->worldcoords);
+      }
+      coordinates tmp_swg_src_mid, tmp_swg_dst_mid, tmp_swg_mid, tmp_sup_mid;
+      if (swg_src_coords.size() > 0) multi_mid_coords(tmp_swg_src_mid, swg_src_coords);
+      if (swg_dst_coords.size() > 0) multi_mid_coords(tmp_swg_dst_mid, swg_dst_coords);
+      if (sup_coords.size() > 0) multi_mid_coords(tmp_sup_mid, sup_coords);
+      if (lcg_count == one_step_count) {
+          foot_midcoords_interpolator->clear();
+          double tmp[foot_midcoords_interpolator->dimension()];
+          for (size_t ii = 0; ii < 3; ii++) {
+              tmp[ii] = tmp_swg_src_mid.pos(ii);
+              tmp[ii+3] = 0;
+          }
+          foot_midcoords_interpolator->set(tmp);
+          // set dst
+          hrp::Matrix33 difrot(tmp_swg_src_mid.rot.transpose() * tmp_swg_dst_mid.rot);
+          hrp::Vector3 tmpr = hrp::rpyFromRot(difrot);
+          for (size_t ii = 0; ii < 3; ii++) {
+              tmp[ii] = tmp_swg_dst_mid.pos(ii);
+              tmp[ii+3] = tmpr(ii);
+          }
+          foot_midcoords_interpolator->setGoal(tmp, dt*one_step_count, true);
+          foot_midcoords_interpolator->sync();
+      } else {
+          double tmp[foot_midcoords_interpolator->dimension()];
+          hrp::Matrix33 difrot(tmp_swg_src_mid.rot.transpose() * tmp_swg_dst_mid.rot);
+          hrp::Vector3 tmpr = hrp::rpyFromRot(difrot);
+          for (size_t ii = 0; ii < 3; ii++) {
+              tmp[ii] = tmp_swg_dst_mid.pos(ii);
+              tmp[ii+3] = tmpr(ii);
+          }
+          foot_midcoords_interpolator->setGoal(tmp, dt*lcg_count, true);
+          foot_midcoords_interpolator->sync();
+      }
+      if (!foot_midcoords_interpolator->isEmpty()) {
+          double tmp[foot_midcoords_interpolator->dimension()];
+          foot_midcoords_interpolator->get(tmp, true);
+          hrp::Vector3 tmpr;
+          for (size_t ii = 0; ii < 3; ii++) {
+              tmp_swg_mid.pos(ii) = tmp[ii];
+              tmpr(ii) = tmp[ii+3];
+          }
+          tmp_swg_mid.rot = tmp_swg_src_mid.rot * hrp::rotFromRpy(tmpr);
+      } else {
+          tmp_swg_mid = tmp_swg_dst_mid;
+      }
+      mid_coords(swing_support_midcoords, static_cast<double>(sup_coords.size()) / (swg_src_coords.size() + sup_coords.size()), tmp_swg_mid, tmp_sup_mid);
+  };
+
   void leg_coords_generator::update_leg_steps (const std::vector< std::vector<step_node> >& fnsl, const double default_double_support_ratio_before, const double default_double_support_ratio_after, const toe_heel_type_checker& thtc)
   {
-    if (!foot_ratio_interpolator->isEmpty()) {
-        foot_ratio_interpolator->get(&foot_midcoords_ratio, true);
-    }
-
     // Get current swing coords, support coords, and support leg parameters
     calc_swing_support_params_from_footstep_nodes_list(fnsl);
     current_src_toe_heel_type = thtc.check_toe_heel_type_from_swing_support_coords(swing_leg_src_steps.front().worldcoords, support_leg_steps.front().worldcoords, toe_pos_offset_x, heel_pos_offset_x);
     current_dst_toe_heel_type = thtc.check_toe_heel_type_from_swing_support_coords(swing_leg_dst_steps.front().worldcoords, support_leg_steps.front().worldcoords, toe_pos_offset_x, heel_pos_offset_x);
+    calc_swing_support_mid_coords ();
 
     calc_ratio_from_double_support_ratio(default_double_support_ratio_before, default_double_support_ratio_after);
     swing_leg_steps.clear();
@@ -529,7 +585,6 @@ namespace rats
       default:
           break;
       }
-      reset_foot_ratio_interpolator();
     }
   };
 

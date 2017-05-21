@@ -682,7 +682,7 @@ namespace rats
       std::vector<step_node> support_leg_steps;
       // Swing leg coordinates is interpolated from swing_leg_src_coords to swing_leg_dst_coords during swing phase.
       std::vector<step_node> swing_leg_steps, swing_leg_src_steps, swing_leg_dst_steps;
-      double default_step_height, default_top_ratio, current_step_height, swing_ratio, foot_midcoords_ratio, dt, current_toe_angle, current_heel_angle;
+      double default_step_height, default_top_ratio, current_step_height, swing_ratio, dt, current_toe_angle, current_heel_angle;
       double time_offset, final_distance_weight, time_offset_xy2z;
       std::vector<double> current_swing_time;
       // Index for current footstep. footstep_index should be [0,footstep_node_list.size()]. Current footstep is footstep_node_list[footstep_index].
@@ -700,7 +700,8 @@ namespace rats
       cycloid_delay_kick_hoffarbib_trajectory_generator cdktg;
       cross_delay_hoffarbib_trajectory_generator crdtg;
       toe_heel_phase_counter thp;
-      interpolator* foot_ratio_interpolator;
+      interpolator* foot_midcoords_interpolator;
+      coordinates swing_support_midcoords;
       // Map for interpolator of each swing foot rot interpolation. In constructor, prepared for all limbs. In control loop, swing foot element is used.
       std::map<leg_type, interpolator*> swing_foot_rot_interpolator;
       // Parameters for toe-heel contact
@@ -725,18 +726,19 @@ namespace rats
       void cross_delay_midcoords (coordinates& ret, const coordinates& start,
                                   const coordinates& goal, const double height, leg_type lr);
       void calc_ratio_from_double_support_ratio (const double default_double_support_ratio_before, const double default_double_support_ratio_after);
+      void calc_swing_support_mid_coords ();
 #ifndef HAVE_MAIN
     public:
 #endif
       leg_coords_generator(const double _dt)
         : support_leg_steps(), swing_leg_steps(), swing_leg_src_steps(), swing_leg_dst_steps(),
-          default_step_height(0.05), default_top_ratio(0.5), current_step_height(0.0), swing_ratio(0), foot_midcoords_ratio(0), dt(_dt),
+          default_step_height(0.05), default_top_ratio(0.5), current_step_height(0.0), swing_ratio(0), dt(_dt),
           current_toe_angle(0), current_heel_angle(0),
           time_offset(0.35), final_distance_weight(1.0), time_offset_xy2z(0),
           footstep_index(0), lcg_count(0), default_orbit_type(CYCLOID),
           rdtg(), cdtg(),
           thp(),
-          foot_ratio_interpolator(NULL), swing_foot_rot_interpolator(), toe_heel_interpolator(NULL),
+          foot_midcoords_interpolator(NULL), swing_foot_rot_interpolator(), toe_heel_interpolator(NULL),
           toe_pos_offset_x(0.0), heel_pos_offset_x(0.0), toe_angle(0.0), heel_angle(0.0), foot_dif_rot_angle(0.0), use_toe_joint(false), use_toe_heel_auto_set(false),
           current_src_toe_heel_type(SOLE), current_dst_toe_heel_type(SOLE)
       {
@@ -746,7 +748,7 @@ namespace rats
         sdtg.set_dt(dt);
         cdktg.set_dt(dt);
         crdtg.set_dt(dt);
-        if (foot_ratio_interpolator == NULL) foot_ratio_interpolator = new interpolator(1, dt);
+        if (foot_midcoords_interpolator == NULL) foot_midcoords_interpolator = new interpolator(6, dt); // POS + RPY
         std::vector<leg_type> tmp_leg_types = boost::assign::list_of<leg_type>(RLEG)(LLEG)(RARM)(LARM);
          for (size_t i = 0; i < tmp_leg_types.size(); i++) {
              if ( swing_foot_rot_interpolator.find(tmp_leg_types[i]) == swing_foot_rot_interpolator.end() ) {
@@ -757,14 +759,14 @@ namespace rats
          }
         //if (foot_ratio_interpolator == NULL) foot_ratio_interpolator = new interpolator(1, dt, interpolator::LINEAR);
         if (toe_heel_interpolator == NULL) toe_heel_interpolator = new interpolator(1, dt);
-        foot_ratio_interpolator->setName("GaitGenerator foot_ratio_interpolator");
+        foot_midcoords_interpolator->setName("GaitGenerator foot_midcoords_interpolator");
         toe_heel_interpolator->setName("GaitGenerator toe_heel_interpolator");
       };
       ~leg_coords_generator()
       {
-        if (foot_ratio_interpolator != NULL) {
-            delete foot_ratio_interpolator;
-            foot_ratio_interpolator = NULL;
+        if (foot_midcoords_interpolator != NULL) {
+            delete foot_midcoords_interpolator;
+            foot_midcoords_interpolator = NULL;
         }
         for (std::map<leg_type, interpolator*>::iterator it = swing_foot_rot_interpolator.begin(); it != swing_foot_rot_interpolator.end(); it++) {
             if (it->second != NULL) {
@@ -888,28 +890,18 @@ namespace rats
         default:
             break;
         }
-        reset_foot_ratio_interpolator();
         current_src_toe_heel_type = current_dst_toe_heel_type = SOLE;
-      };
-      void reset_foot_ratio_interpolator ()
-      {
-        double tmp_ratio = 0.0;
-        foot_ratio_interpolator->clear();
-        foot_ratio_interpolator->set(&tmp_ratio);
-        tmp_ratio = 1.0;
-        //foot_ratio_interpolator->go(&tmp_ratio, dt*one_step_count, true);
-        foot_ratio_interpolator->setGoal(&tmp_ratio, dt*one_step_count, true);
-        foot_ratio_interpolator->sync();
       };
       void clear_interpolators ( ) {
         double tmpsw[3];
         for (std::map<leg_type, interpolator*>::iterator it = swing_foot_rot_interpolator.begin(); it != swing_foot_rot_interpolator.end(); it++) {
             while (!it->second->isEmpty()) it->second->get(tmpsw, true);
         }
-        double tmp;
-        while (!foot_ratio_interpolator->isEmpty()) {
-            foot_ratio_interpolator->get(&tmp, true);
+        double tmpfm[foot_midcoords_interpolator->dimension()];
+        while (!foot_midcoords_interpolator->isEmpty()) {
+            foot_midcoords_interpolator->get(tmpfm, true);
         }
+        double tmp;
         while (!toe_heel_interpolator->isEmpty()) {
             toe_heel_interpolator->get(&tmp, true);
         }
@@ -968,22 +960,7 @@ namespace rats
       double get_default_step_height () const { return default_step_height;};
       void get_swing_support_mid_coords(coordinates& ret) const
       {
-        std::vector<coordinates> swg_src_coords, swg_dst_coords,sup_coords;
-        for (std::vector<step_node>::const_iterator it = swing_leg_src_steps.begin(); it != swing_leg_src_steps.end(); it++) {
-            if (it->l_r == RLEG or it->l_r == LLEG) swg_src_coords.push_back(it->worldcoords);
-        }
-        for (std::vector<step_node>::const_iterator it = swing_leg_dst_steps.begin(); it != swing_leg_dst_steps.end(); it++) {
-            if (it->l_r == RLEG or it->l_r == LLEG) swg_dst_coords.push_back(it->worldcoords);
-        }
-        for (std::vector<step_node>::const_iterator it = support_leg_steps.begin(); it != support_leg_steps.end(); it++) {
-            if (it->l_r == RLEG or it->l_r == LLEG) sup_coords.push_back(it->worldcoords);
-        }
-        coordinates tmp_swg_src_mid, tmp_swg_dst_mid, tmp_swg_mid, tmp_sup_mid;
-        if (swg_src_coords.size() > 0) multi_mid_coords(tmp_swg_src_mid, swg_src_coords);
-        if (swg_dst_coords.size() > 0) multi_mid_coords(tmp_swg_dst_mid, swg_dst_coords);
-        mid_coords(tmp_swg_mid, foot_midcoords_ratio, tmp_swg_src_mid, tmp_swg_dst_mid);
-        if (sup_coords.size() > 0) multi_mid_coords(tmp_sup_mid, sup_coords);
-        mid_coords(ret, static_cast<double>(sup_coords.size()) / (swg_src_coords.size() + sup_coords.size()), tmp_swg_mid, tmp_sup_mid);
+        ret = swing_support_midcoords;
       };
       std::vector<leg_type> get_current_support_states () const
       {
