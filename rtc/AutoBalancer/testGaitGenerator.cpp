@@ -749,7 +749,7 @@ public:
 
     void test18 ()
     {
-        std::cerr << "test18 : Test goVelocity with changing velocity" << std::endl;
+        std::cerr << "test18 : Test goVelocity with changing velocity (translation and rotation)" << std::endl;
         /* initialize sample footstep_list */
         parse_params();
         gg->clear_footstep_nodes_list();
@@ -768,10 +768,14 @@ public:
         while ( gg->proc_one_tick() ) {
             proc_one_walking_motion(i);
             i++;
-            if ( i > static_cast<size_t>(gg->get_default_step_time()/dt)*3 && gg->get_overwrite_check_timing() ) {
+            if ( i > static_cast<size_t>(gg->get_default_step_time()/dt)*5 && gg->get_overwrite_check_timing() ) {
                 gg->finalize_velocity_mode();
+            } else if ( i > static_cast<size_t>(gg->get_default_step_time()/dt)*4 && gg->get_overwrite_check_timing() ) {
+                gg->set_velocity_param(0, 0, 0);
+            } else if ( i > static_cast<size_t>(gg->get_default_step_time()/dt)*3 && gg->get_overwrite_check_timing() ) {
+                gg->set_velocity_param(0, 0, 10);
             } else if ( i > static_cast<size_t>(gg->get_default_step_time()/dt)*2 && gg->get_overwrite_check_timing() ) {
-                gg->set_velocity_param(0.0, 0.0, 0);
+                gg->set_velocity_param(0, 0, 0);
             } else if ( i > static_cast<size_t>(gg->get_default_step_time()/dt) && gg->get_overwrite_check_timing() ) {
                 gg->set_velocity_param(0.1, 0.05, 0);
             }
@@ -895,7 +899,7 @@ void print_usage ()
     std::cerr << "  --test15 : Stair walk down" << std::endl;
     std::cerr << "  --test16 : Set foot steps with param (toe heel contact)" << std::endl;
     std::cerr << "  --test17 : Test goVelocity (dx = 0.1, dy = 0.05, dth = 10.0)" << std::endl;
-    std::cerr << "  --test18 : Test goVelocity with changing velocity" << std::endl;
+    std::cerr << "  --test18 : Test goVelocity with changing velocity (translation and rotation)" << std::endl;
 };
 
 int main(int argc, char* argv[])
