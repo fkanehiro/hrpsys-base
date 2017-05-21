@@ -222,21 +222,27 @@ namespace rats
     int support_len_before = one_step_count * _default_double_support_ratio_before;
     int support_len_after = one_step_count * _default_double_support_ratio_after;
     int current_swing_count = (one_step_count - lcg_count); // 0->one_step_count
+    // swing foot rot interpolator interpolates difference from src to dst.
     if (current_swing_count == support_len_before) {
         for (std::vector<step_node>::iterator it = swing_leg_src_steps.begin(); it != swing_leg_src_steps.end(); it++) {
             swing_foot_rot_interpolator[it->l_r]->clear();
-            swing_foot_rot_interpolator[it->l_r]->set(hrp::rpyFromRot(it->worldcoords.rot).data());
+            double tmp[3] = {};
+            swing_foot_rot_interpolator[it->l_r]->set(tmp);
         }
         int swing_len = one_step_count - support_len_before - support_len_after;
-        for (std::vector<step_node>::iterator it = swing_leg_dst_steps.begin(); it != swing_leg_dst_steps.end(); it++) {
-            swing_foot_rot_interpolator[it->l_r]->setGoal(hrp::rpyFromRot(it->worldcoords.rot).data(), dt * swing_len);
-            swing_foot_rot_interpolator[it->l_r]->sync();
+        for (size_t ii = 0; ii < swing_leg_dst_steps.size(); ii++) {
+            leg_type lt = swing_leg_dst_steps[ii].l_r;
+            swing_foot_rot_interpolator[lt]->setGoal(hrp::rpyFromRot(swing_leg_src_steps[ii].worldcoords.rot.transpose() * swing_leg_dst_steps[ii].worldcoords.rot).data(),
+                                                     dt * swing_len);
+            swing_foot_rot_interpolator[lt]->sync();
         }
     } else if ( (current_swing_count > support_len_before) && (current_swing_count < (one_step_count-support_len_after) ) ) {
         int tmp_len = (lcg_count - support_len_after);
-        for (std::vector<step_node>::iterator it = swing_leg_dst_steps.begin(); it != swing_leg_dst_steps.end(); it++) {
-            swing_foot_rot_interpolator[it->l_r]->setGoal(hrp::rpyFromRot(it->worldcoords.rot).data(), dt * tmp_len);
-            swing_foot_rot_interpolator[it->l_r]->sync();
+        for (size_t ii = 0; ii < swing_leg_dst_steps.size(); ii++) {
+            leg_type lt = swing_leg_dst_steps[ii].l_r;
+            swing_foot_rot_interpolator[lt]->setGoal(hrp::rpyFromRot(swing_leg_src_steps[ii].worldcoords.rot.transpose() * swing_leg_dst_steps[ii].worldcoords.rot).data(),
+                                                     dt * tmp_len);
+            swing_foot_rot_interpolator[lt]->sync();
         }
     }
     for (size_t ii = 0; ii < swing_leg_dst_steps.size(); ii++) {
@@ -245,9 +251,9 @@ namespace rats
             swing_foot_rot_interpolator[swing_leg_dst_steps[ii].l_r]->get(tmpv.data(), true);
         } else {
             if ( (current_swing_count < support_len_before) ) {
-                tmpv  = hrp::rpyFromRot(swing_leg_src_steps[ii].worldcoords.rot);
+                tmpv  = hrp::Vector3::Zero();
             } else if (current_swing_count >= (one_step_count-support_len_after)) {
-                tmpv  = hrp::rpyFromRot(swing_leg_dst_steps[ii].worldcoords.rot);
+                tmpv  = hrp::rpyFromRot(swing_leg_src_steps[ii].worldcoords.rot.transpose() * swing_leg_dst_steps[ii].worldcoords.rot);
             }
         }
         tmp_swing_foot_rot.insert(std::pair<leg_type, hrp::Vector3>(swing_leg_dst_steps[ii].l_r, tmpv));
@@ -269,7 +275,7 @@ namespace rats
          it1 != swing_leg_src_steps.end() && it2 != swing_leg_dst_steps.end();
          it1++, it2++) {
       coordinates ret;
-      ret.rot = hrp::rotFromRpy(tmp_swing_foot_rot[it2->l_r]);
+      ret.rot = it1->worldcoords.rot * hrp::rotFromRpy(tmp_swing_foot_rot[it2->l_r]);
       switch (default_orbit_type) {
       case SHUFFLING:
         ret.pos = swing_ratio*it1->worldcoords.pos + (1-swing_ratio)*it2->worldcoords.pos;
