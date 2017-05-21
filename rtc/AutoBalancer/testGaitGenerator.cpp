@@ -740,8 +740,40 @@ public:
         while ( gg->proc_one_tick() ) {
             proc_one_walking_motion(i);
             i++;
-            if ( i > 1*static_cast<size_t>(gg->get_default_step_time()/dt)) {
+            if ( i > static_cast<size_t>(gg->get_default_step_time()/dt) && gg->get_overwrite_check_timing() ) {
                 gg->finalize_velocity_mode();
+            }
+        }
+        plot_and_checkparam ();
+    };
+
+    void test18 ()
+    {
+        std::cerr << "test18 : Test goVelocity with changing velocity" << std::endl;
+        /* initialize sample footstep_list */
+        parse_params();
+        gg->clear_footstep_nodes_list();
+        gg->set_overwritable_footstep_index_offset(0);
+        gg->set_default_orbit_type(CYCLOIDDELAY);
+        gg->print_param();
+        step_node initial_support_leg_step = step_node(LLEG, coordinates(leg_pos[1]), 0, 0, 0, 0);
+        step_node initial_swing_leg_dst_step = step_node(RLEG, coordinates(leg_pos[0]), 0, 0, 0, 0);
+        coordinates fm_coords;
+        mid_coords(fm_coords, 0.5, initial_swing_leg_dst_step.worldcoords, initial_support_leg_step.worldcoords);
+        gg->initialize_velocity_mode(fm_coords, 0, 0, 0, boost::assign::list_of(RLEG));
+        gg->initialize_gait_parameter(cog, boost::assign::list_of(initial_support_leg_step), boost::assign::list_of(initial_swing_leg_dst_step));
+        while ( !gg->proc_one_tick() );
+        /* make step and dump */
+        size_t i = 0;
+        while ( gg->proc_one_tick() ) {
+            proc_one_walking_motion(i);
+            i++;
+            if ( i > static_cast<size_t>(gg->get_default_step_time()/dt)*3 && gg->get_overwrite_check_timing() ) {
+                gg->finalize_velocity_mode();
+            } else if ( i > static_cast<size_t>(gg->get_default_step_time()/dt)*2 && gg->get_overwrite_check_timing() ) {
+                gg->set_velocity_param(0.0, 0.0, 0);
+            } else if ( i > static_cast<size_t>(gg->get_default_step_time()/dt) && gg->get_overwrite_check_timing() ) {
+                gg->set_velocity_param(0.1, 0.05, 0);
             }
         }
         plot_and_checkparam ();
@@ -863,6 +895,7 @@ void print_usage ()
     std::cerr << "  --test15 : Stair walk down" << std::endl;
     std::cerr << "  --test16 : Set foot steps with param (toe heel contact)" << std::endl;
     std::cerr << "  --test17 : Test goVelocity (dx = 0.1, dy = 0.05, dth = 10.0)" << std::endl;
+    std::cerr << "  --test18 : Test goVelocity with changing velocity" << std::endl;
 };
 
 int main(int argc, char* argv[])
@@ -909,6 +942,8 @@ int main(int argc, char* argv[])
           tgg.test16();
       } else if (std::string(argv[1]) == "--test17") {
           tgg.test17();
+      } else if (std::string(argv[1]) == "--test18") {
+          tgg.test18();
       } else {
           print_usage();
           ret = 1;
