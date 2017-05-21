@@ -968,21 +968,22 @@ namespace rats
       double get_default_step_height () const { return default_step_height;};
       void get_swing_support_mid_coords(coordinates& ret) const
       {
-        std::vector<coordinates> swg_coords, sup_coords;
-        for (std::vector<step_node>::const_iterator it_src = swing_leg_src_steps.begin(), it_dst = swing_leg_dst_steps.begin();
-             it_src != swing_leg_src_steps.end() && it_dst != swing_leg_dst_steps.end();
-             it_src++, it_dst++) {
-            coordinates tmp;
-            mid_coords(tmp, foot_midcoords_ratio, it_src->worldcoords, it_dst->worldcoords);
-            if (it_src->l_r == RLEG or it_src->l_r == LLEG) swg_coords.push_back(tmp);
+        std::vector<coordinates> swg_src_coords, swg_dst_coords,sup_coords;
+        for (std::vector<step_node>::const_iterator it = swing_leg_src_steps.begin(); it != swing_leg_src_steps.end(); it++) {
+            if (it->l_r == RLEG or it->l_r == LLEG) swg_src_coords.push_back(it->worldcoords);
+        }
+        for (std::vector<step_node>::const_iterator it = swing_leg_dst_steps.begin(); it != swing_leg_dst_steps.end(); it++) {
+            if (it->l_r == RLEG or it->l_r == LLEG) swg_dst_coords.push_back(it->worldcoords);
         }
         for (std::vector<step_node>::const_iterator it = support_leg_steps.begin(); it != support_leg_steps.end(); it++) {
             if (it->l_r == RLEG or it->l_r == LLEG) sup_coords.push_back(it->worldcoords);
         }
-        coordinates tmp_swg_mid, tmp_sup_mid;
-        if (swg_coords.size() > 0) multi_mid_coords(tmp_swg_mid, swg_coords);
+        coordinates tmp_swg_src_mid, tmp_swg_dst_mid, tmp_swg_mid, tmp_sup_mid;
+        if (swg_src_coords.size() > 0) multi_mid_coords(tmp_swg_src_mid, swg_src_coords);
+        if (swg_dst_coords.size() > 0) multi_mid_coords(tmp_swg_dst_mid, swg_dst_coords);
+        mid_coords(tmp_swg_mid, foot_midcoords_ratio, tmp_swg_src_mid, tmp_swg_dst_mid);
         if (sup_coords.size() > 0) multi_mid_coords(tmp_sup_mid, sup_coords);
-        mid_coords(ret, static_cast<double>(sup_coords.size()) / (swg_coords.size() + sup_coords.size()), tmp_swg_mid, tmp_sup_mid);
+        mid_coords(ret, static_cast<double>(sup_coords.size()) / (swg_src_coords.size() + sup_coords.size()), tmp_swg_mid, tmp_sup_mid);
       };
       std::vector<leg_type> get_current_support_states () const
       {
