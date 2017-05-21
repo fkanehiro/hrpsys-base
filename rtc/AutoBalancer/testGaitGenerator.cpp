@@ -721,6 +721,32 @@ public:
         gen_and_plot_walk_pattern();
     };
 
+    void test17 ()
+    {
+        std::cerr << "test17 : Test goVelocity (dx = 0.1, dy = 0.05, dth = 10.0)" << std::endl;
+        /* initialize sample footstep_list */
+        parse_params();
+        gg->clear_footstep_nodes_list();
+        gg->print_param();
+        step_node initial_support_leg_step = step_node(LLEG, coordinates(leg_pos[1]), 0, 0, 0, 0);
+        step_node initial_swing_leg_dst_step = step_node(RLEG, coordinates(leg_pos[0]), 0, 0, 0, 0);
+        coordinates fm_coords;
+        mid_coords(fm_coords, 0.5, initial_swing_leg_dst_step.worldcoords, initial_support_leg_step.worldcoords);
+        gg->initialize_velocity_mode(fm_coords, 0.1, 0.05, 10.0, boost::assign::list_of(RLEG));
+        gg->initialize_gait_parameter(cog, boost::assign::list_of(initial_support_leg_step), boost::assign::list_of(initial_swing_leg_dst_step));
+        while ( !gg->proc_one_tick() );
+        /* make step and dump */
+        size_t i = 0;
+        while ( gg->proc_one_tick() ) {
+            proc_one_walking_motion(i);
+            i++;
+            if ( i > 1*static_cast<size_t>(gg->get_default_step_time()/dt)) {
+                gg->finalize_velocity_mode();
+            }
+        }
+        plot_and_checkparam ();
+    };
+
     void parse_params ()
     {
       for (unsigned int i = 0; i < arg_strs.size(); ++ i) {
@@ -836,6 +862,7 @@ void print_usage ()
     std::cerr << "  --test14 : kick walk" << std::endl;
     std::cerr << "  --test15 : Stair walk down" << std::endl;
     std::cerr << "  --test16 : Set foot steps with param (toe heel contact)" << std::endl;
+    std::cerr << "  --test17 : Test goVelocity (dx = 0.1, dy = 0.05, dth = 10.0)" << std::endl;
 };
 
 int main(int argc, char* argv[])
@@ -880,6 +907,8 @@ int main(int argc, char* argv[])
           tgg.test15();
       } else if (std::string(argv[1]) == "--test16") {
           tgg.test16();
+      } else if (std::string(argv[1]) == "--test17") {
+          tgg.test17();
       } else {
           print_usage();
           ret = 1;
