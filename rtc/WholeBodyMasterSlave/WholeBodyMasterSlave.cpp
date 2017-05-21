@@ -7,8 +7,8 @@
 #include <hrpUtil/MatrixSolvers.h>
 #include "hrpsys/util/Hrpsys.h"
 
-//typedef coil::Guard<coil::Mutex> Guard;
-//using namespace rats;
+#define DEBUGP (loop%200==0)
+#define DEBUGP_ONCE (loop==0)
 
 static const char* WholeBodyMasterSlave_spec[] =
     {
@@ -26,22 +26,18 @@ static const char* WholeBodyMasterSlave_spec[] =
         ""
     };
 
-WholeBodyMasterSlave::WholeBodyMasterSlave(RTC::Manager* manager)
-    : RTC::DataFlowComponentBase(manager),
-      // from sh
-      m_qRefIn("qRef", m_qRef),
+WholeBodyMasterSlave::WholeBodyMasterSlave(RTC::Manager* manager) : RTC::DataFlowComponentBase(manager),
+      m_qRefIn("qRef", m_qRef),// from sh
       m_zmpIn("zmpIn", m_zmp),
       m_basePosIn("basePosIn", m_basePos),
       m_baseRpyIn("baseRpyIn", m_baseRpy),
       m_optionalDataIn("optionalData", m_optionalData),
-      // to abc
-      m_qOut("q", m_qRef),
+      m_qOut("q", m_qRef),// to abc
       m_zmpOut("zmpOut", m_zmp),
       m_basePosOut("basePosOut", m_basePos),
       m_baseRpyOut("baseRpyOut", m_baseRpy),
       m_optionalDataOut("optionalDataOut", m_optionalData),
-      // from ros bridge
-      m_htzmpIn("htzmpIn", m_htzmp),
+      m_htzmpIn("htzmpIn", m_htzmp),// from ros bridge
       m_htrfwIn("htrfwIn", m_htrfw),
       m_htlfwIn("htlfwIn", m_htlfw),
       m_htcomIn("htcomIn", m_htcom),
@@ -51,10 +47,8 @@ WholeBodyMasterSlave::WholeBodyMasterSlave(RTC::Manager* manager)
       m_htlhIn("htlhIn", m_htlh),
 //      m_actzmpIn("actzmpIn", m_actzmp),
       m_htheadIn("htheadIn", m_hthead),
-
 #ifdef USE_DEBUG_PORT
-      // to ros bridge
-       m_htcom_dbgOut("htcom_dbgOut", m_htcom_dbg),
+       m_htcom_dbgOut("htcom_dbgOut", m_htcom_dbg),// to ros bridge
        m_htrf_dbgOut("htrf_dbgOut", m_htrf_dbg),
        m_htlf_dbgOut("htlf_dbgOut", m_htlf_dbg),
        m_htrh_dbgOut("htrh_dbgOut", m_htrh_dbg),
@@ -83,24 +77,20 @@ WholeBodyMasterSlave::WholeBodyMasterSlave(RTC::Manager* manager)
 
 WholeBodyMasterSlave::~WholeBodyMasterSlave(){}
 
-RTC::ReturnCode_t WholeBodyMasterSlave::onInitialize()
-{
+RTC::ReturnCode_t WholeBodyMasterSlave::onInitialize(){
     std::cerr << "[" << m_profile.instance_name << "] onInitialize()" << std::endl;
     bindParameter("debugLevel", m_debugLevel, "0");
-
-    addInPort("qRef", m_qRefIn);
+    addInPort("qRef", m_qRefIn);// from sh
     addInPort("zmpIn", m_zmpIn);
     addInPort("basePosIn", m_basePosIn);
     addInPort("baseRpyIn", m_baseRpyIn);
     addInPort("optionalData", m_optionalDataIn);
-
-    addOutPort("q", m_qOut);
+    addOutPort("q", m_qOut);// to abc
     addOutPort("zmpOut", m_zmpOut);
     addOutPort("basePosOut", m_basePosOut);
     addOutPort("baseRpyOut", m_baseRpyOut);
     addOutPort("optionalDataOut", m_optionalDataOut);
-
-    addInPort("htzmpIn", m_htzmpIn);
+    addInPort("htzmpIn", m_htzmpIn);// from ros bridge
     addInPort("htrfwIn", m_htrfwIn);
     addInPort("htlfwIn", m_htlfwIn);
     addInPort("htcomIn", m_htcomIn);
@@ -110,9 +100,8 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onInitialize()
     addInPort("htlhIn", m_htlhIn);
 //    addInPort("actzmpIn", m_actzmpIn);
     addInPort("htheadIn", m_htheadIn);
-
 #ifdef USE_DEBUG_PORT
-     addOutPort("htcom_dbgOut", m_htcom_dbgOut);
+     addOutPort("htcom_dbgOut", m_htcom_dbgOut);// to ros bridge
      addOutPort("htrf_dbgOut", m_htrf_dbgOut);
      addOutPort("htlf_dbgOut", m_htlf_dbgOut);
      addOutPort("htrh_dbgOut", m_htrh_dbgOut);
@@ -132,7 +121,6 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onInitialize()
      addOutPort("rpacp_dbgOut", m_rpacp_dbgOut);
      addOutPort("invdyn_dbgOut", m_invdyn_dbgOut);
 #endif
-
     m_WholeBodyMasterSlaveServicePort.registerProvider("service0", "WholeBodyMasterSlaveService", m_service0);
     addPort(m_WholeBodyMasterSlaveServicePort);
   
@@ -239,8 +227,6 @@ void WholeBodyMasterSlave::setupfik(fikPtr& fik_in, hrp::BodyPtr& robot_in, RTC:
   }
 }
 
-#define DEBUGP (loop%200==0)
-#define DEBUGP_ONCE (loop==0)
 RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
   if(DEBUGP_ONCE)std::cerr << "[" << m_profile.instance_name<< "] onExecute(" << ec_id << ")" << std::endl;
   // struct timeval t_calc_start, t_calc_end;
@@ -251,15 +237,15 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
     if (m_zmpIn.isNew()) { m_zmpIn.read(); }
     if (m_optionalDataIn.isNew()) { m_optionalDataIn.read(); }
     //for HumanSynchronizer
-    if (m_htrfwIn.isNew()){ m_htrfwIn.read(); HumanSynchronizer::DoubleSeqToWrench6(m_htrfw.data,hsp->hp_wld_raw.w[rfw]); }
-    if (m_htlfwIn.isNew()){ m_htlfwIn.read(); HumanSynchronizer::DoubleSeqToWrench6(m_htlfw.data,hsp->hp_wld_raw.w[lfw]); }
-    if (m_htcomIn.isNew()){ m_htcomIn.read(); HumanSynchronizer::Pose3DToHRPPose3D(m_htcom.data,hsp->hp_wld_raw.P[com]); }
-    if (m_htrfIn.isNew()) { m_htrfIn.read();  HumanSynchronizer::Pose3DToHRPPose3D(m_htrf.data,hsp->hp_wld_raw.P[rf]); }
-    if (m_htlfIn.isNew()) { m_htlfIn.read();  HumanSynchronizer::Pose3DToHRPPose3D(m_htlf.data,hsp->hp_wld_raw.P[lf]); }
-    if (m_htrhIn.isNew()) { m_htrhIn.read();  HumanSynchronizer::Pose3DToHRPPose3D(m_htrh.data,hsp->hp_wld_raw.P[rh]);}
-    if (m_htlhIn.isNew()) { m_htlhIn.read();  HumanSynchronizer::Pose3DToHRPPose3D(m_htlh.data,hsp->hp_wld_raw.P[lh]);}
-    if (m_htheadIn.isNew()){ m_htheadIn.read(); HumanSynchronizer::Pose3DToHRPPose3D(m_hthead.data,hsp->hp_wld_raw.P[head]);}
-    if (m_htzmpIn.isNew()){ m_htzmpIn.read();  HumanSynchronizer::Point3DToVector3(m_htzmp.data,hsp->hp_wld_raw.P[zmp].p); }
+    if (m_htrfwIn.isNew()){ m_htrfwIn.read(); HumanSynchronizer::DoubleSeqToVector6(m_htrfw.data,hsp->hp_wld_raw.tgt[rf].w); }
+    if (m_htlfwIn.isNew()){ m_htlfwIn.read(); HumanSynchronizer::DoubleSeqToVector6(m_htlfw.data,hsp->hp_wld_raw.tgt[lf].w); }
+    if (m_htcomIn.isNew()){ m_htcomIn.read(); HumanSynchronizer::Pose3DToWBMSPose3D(m_htcom.data,hsp->hp_wld_raw.tgt[com].abs); }
+    if (m_htrfIn.isNew()) { m_htrfIn.read();  HumanSynchronizer::Pose3DToWBMSPose3D(m_htrf.data,hsp->hp_wld_raw.tgt[rf].abs); }
+    if (m_htlfIn.isNew()) { m_htlfIn.read();  HumanSynchronizer::Pose3DToWBMSPose3D(m_htlf.data,hsp->hp_wld_raw.tgt[lf].abs); }
+    if (m_htrhIn.isNew()) { m_htrhIn.read();  HumanSynchronizer::Pose3DToWBMSPose3D(m_htrh.data,hsp->hp_wld_raw.tgt[rh].abs);}
+    if (m_htlhIn.isNew()) { m_htlhIn.read();  HumanSynchronizer::Pose3DToWBMSPose3D(m_htlh.data,hsp->hp_wld_raw.tgt[lh].abs);}
+    if (m_htheadIn.isNew()){ m_htheadIn.read(); HumanSynchronizer::Pose3DToWBMSPose3D(m_hthead.data,hsp->hp_wld_raw.tgt[head].abs);}
+    if (m_htzmpIn.isNew()){ m_htzmpIn.read();  HumanSynchronizer::Point3DToVector3(m_htzmp.data,hsp->hp_wld_raw.tgt[zmp].abs.p); }
 //    if (m_actzmpIn.isNew()){m_actzmpIn.read(); }
 
     if ( is_legged_robot ) {
@@ -314,7 +300,7 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
 
       if (hsp->isHumanSyncOn()){//OutPortデータセット
         //        ref_zmp = ref_zmp_invdyn;
-        hrp::Vector3 ref_zmp = hsp->rp_ref_out.P[zmp].p;
+        hrp::Vector3 ref_zmp = hsp->rp_ref_out.tgt[zmp].abs.p;
 //        hrp::BodyPtr m_robot_for_out = m_robot;
         hrp::BodyPtr m_robot_for_out = m_robot_rmc;
         // qRef
@@ -341,8 +327,8 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
           m_optionalData.data.length(optionalDataLength);//TODO:これいいのか？
           for(int i=0;i<optionalDataLength;i++)m_optionalData.data[i] = 0;
         }
-        m_optionalData.data[contact_states_index_map["rleg"]] = m_optionalData.data[contact_states_index_map["rleg"]+4] = hsp->is_rf_contact;
-        m_optionalData.data[contact_states_index_map["lleg"]] = m_optionalData.data[contact_states_index_map["lleg"]+4] = hsp->is_lf_contact;
+        m_optionalData.data[contact_states_index_map["rleg"]] = m_optionalData.data[contact_states_index_map["rleg"]+4] = hsp->rp_ref_out.tgt[rf].is_contact;
+        m_optionalData.data[contact_states_index_map["lleg"]] = m_optionalData.data[contact_states_index_map["lleg"]+4] = hsp->rp_ref_out.tgt[lf].is_contact;
       }
       if(DEBUGP_ONCE)std::cerr << "[" << m_profile.instance_name<< "] onExecute(" << ec_id << ")" << std::endl;
       hsp->baselinkpose.p = m_robot->rootLink()->p;
@@ -358,54 +344,54 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
 #ifdef USE_DEBUG_PORT
     // dbg plot
      m_htcom.tm = m_qRef.tm;
-     HumanSynchronizer::HRPPose3DToPose3D(hsp->hp_plot.P[com],m_htcom_dbg.data);
+     HumanSynchronizer::WBMSPose3DToPose3D(hsp->hp_plot.tgt[com].abs, m_htcom_dbg.data);
      m_htcom_dbgOut.write();
      m_htrf.tm = m_qRef.tm;
-     HumanSynchronizer::HRPPose3DToPose3D(hsp->hp_plot.P[rf],m_htrf_dbg.data);
+     HumanSynchronizer::WBMSPose3DToPose3D(hsp->hp_plot.tgt[rf].abs, m_htrf_dbg.data);
      m_htrf_dbgOut.write();
      m_htlf.tm = m_qRef.tm;
-     HumanSynchronizer::HRPPose3DToPose3D(hsp->hp_plot.P[lf],m_htlf_dbg.data);
+     HumanSynchronizer::WBMSPose3DToPose3D(hsp->hp_plot.tgt[lf].abs, m_htlf_dbg.data);
      m_htlf_dbgOut.write();
      m_htrh.tm = m_qRef.tm;
-     HumanSynchronizer::HRPPose3DToPose3D(hsp->hp_plot.P[rh],m_htrh_dbg.data);
+     HumanSynchronizer::WBMSPose3DToPose3D(hsp->hp_plot.tgt[rh].abs, m_htrh_dbg.data);
      m_htrh_dbgOut.write();
      m_htlh.tm = m_qRef.tm;
-     HumanSynchronizer::HRPPose3DToPose3D(hsp->hp_plot.P[lh],m_htlh_dbg.data);
+     HumanSynchronizer::WBMSPose3DToPose3D(hsp->hp_plot.tgt[lh].abs, m_htlh_dbg.data);
      m_htlh_dbgOut.write();
      m_hthead.tm = m_qRef.tm;
-     HumanSynchronizer::HRPPose3DToPose3D(hsp->hp_plot.P[head],m_hthead_dbg.data);
+     HumanSynchronizer::WBMSPose3DToPose3D(hsp->hp_plot.tgt[head].abs, m_hthead_dbg.data);
      m_hthead_dbgOut.write();
      m_htzmp.tm = m_qRef.tm;
-     HumanSynchronizer::Vector3ToPoint3D(hsp->rp_ref_out.P[zmp].p,m_rpzmp_dbg.data);
+     HumanSynchronizer::Vector3ToPoint3D(hsp->rp_ref_out.tgt[zmp].abs.p,m_rpzmp_dbg.data);
      m_htzmp_dbgOut.write();
      m_htrfw.tm = m_qRef.tm;
      m_htrfw_dbg.data.length(6);
-     HumanSynchronizer::Wrench6ToDoubleSeq(hsp->hp_plot.w[rfw],m_htrfw_dbg.data);
+     HumanSynchronizer::Vector6ToDoubleSeq(hsp->hp_plot.tgt[rf].w, m_htrfw_dbg.data);
      m_htrfw_dbgOut.write();
      m_htlfw.tm = m_qRef.tm;
      m_htlfw_dbg.data.length(6);
-     HumanSynchronizer::Wrench6ToDoubleSeq(hsp->hp_plot.w[lfw],m_htlfw_dbg.data);
+     HumanSynchronizer::Vector6ToDoubleSeq(hsp->hp_plot.tgt[lf].w, m_htlfw_dbg.data);
      m_htlfw_dbgOut.write();
      m_rpcom_dbg.tm = m_qRef.tm;
-     HumanSynchronizer::HRPPose3DToPose3D(hsp->rp_ref_out.P[com],m_rpcom_dbg.data);
+     HumanSynchronizer::WBMSPose3DToPose3D(hsp->rp_ref_out.tgt[com].abs, m_rpcom_dbg.data);
      m_rpcom_dbgOut.write();
      m_rprf_dbg.tm = m_qRef.tm;
-     HumanSynchronizer::HRPPose3DToPose3D(hsp->rp_ref_out.P[rf],m_rprf_dbg.data);
+     HumanSynchronizer::WBMSPose3DToPose3D(hsp->rp_ref_out.tgt[rf].abs, m_rprf_dbg.data);
      m_rprf_dbgOut.write();
      m_rplf_dbg.tm = m_qRef.tm;
-     HumanSynchronizer::HRPPose3DToPose3D(hsp->rp_ref_out.P[lf],m_rplf_dbg.data);
+     HumanSynchronizer::WBMSPose3DToPose3D(hsp->rp_ref_out.tgt[lf].abs, m_rplf_dbg.data);
      m_rplf_dbgOut.write();
      m_rprh_dbg.tm = m_qRef.tm;
-     HumanSynchronizer::HRPPose3DToPose3D(hsp->rp_ref_out.P[rh],m_rprh_dbg.data);
+     HumanSynchronizer::WBMSPose3DToPose3D(hsp->rp_ref_out.tgt[rh].abs, m_rprh_dbg.data);
      m_rprh_dbgOut.write();
      m_rplh_dbg.tm = m_qRef.tm;
-     HumanSynchronizer::HRPPose3DToPose3D(hsp->rp_ref_out.P[lh],m_rplh_dbg.data);
+     HumanSynchronizer::WBMSPose3DToPose3D(hsp->rp_ref_out.tgt[lh].abs, m_rplh_dbg.data);
      m_rplh_dbgOut.write();
      m_rphead_dbg.tm = m_qRef.tm;
-     HumanSynchronizer::HRPPose3DToPose3D(hsp->rp_ref_out.P[head],m_rphead_dbg.data);
+     HumanSynchronizer::WBMSPose3DToPose3D(hsp->rp_ref_out.tgt[head].abs, m_rphead_dbg.data);
      m_rphead_dbgOut.write();
      m_rpzmp_dbg.tm = m_qRef.tm;
-     HumanSynchronizer::Vector3ToPoint3D(hsp->rp_ref_out.P[zmp].p,m_rpzmp_dbg.data);
+     HumanSynchronizer::Vector3ToPoint3D(hsp->rp_ref_out.tgt[zmp].abs.p, m_rpzmp_dbg.data);
      m_rpzmp_dbgOut.write();
      m_rpdcp_dbg.tm = m_qRef.tm;
      HumanSynchronizer::Vector3ToPoint3D(hsp->cp_dec,m_rpdcp_dbg.data);
@@ -415,7 +401,7 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
      m_rpacp_dbgOut.write();
      m_invdyn_dbg.tm = m_qRef.tm;
      m_invdyn_dbg.data.length(6);
-     HumanSynchronizer::Wrench6ToDoubleSeq(hsp->invdyn_ft,m_invdyn_dbg.data);
+     HumanSynchronizer::Vector6ToDoubleSeq(hsp->invdyn_ft,m_invdyn_dbg.data);
      m_invdyn_dbgOut.write();
 #endif
      // gettimeofday(&t_calc_end, NULL);
@@ -459,25 +445,23 @@ void WholeBodyMasterSlave::preProcessForWholeBodyMasterSlave(fikPtr& fik_in, hrp
     ik_robot_list[i].first->setReferenceJointAngles();
   }
   hsp->setCurrentInputAsOffset(hsp->hp_wld_raw);//現在の入力を人間の初期姿勢としてセット
-  hsp->calibInitHumanCOMFromZMP();//今あんま使ってない
   const std::string robot_l_names[4] = {"rleg","lleg","rarm","larm"};
   const int human_l_names[4] = {rf,lf,rh,lh};
   for(int i=0;i<4;i++){//HumanSynchronizerの初期姿勢オフセットをセット
     if(fik_in->ikp.count(robot_l_names[i])){
-      hsp->rp_ref_out.P[human_l_names[i]].p_offs = fik_in->ikp[robot_l_names[i]].target_link->p + fik_in->ikp[robot_l_names[i]].target_link->R * fik_in->ikp[robot_l_names[i]].localPos;
-      hsp->rp_ref_out.P[human_l_names[i]].rpy_offs = hrp::rpyFromRot(fik_in->ikp[robot_l_names[i]].target_link->R * fik_in->ikp[robot_l_names[i]].localR);
-      hsp->rp_ref_out.P[human_l_names[i]].p = hsp->rp_ref_out.P[human_l_names[i]].p_offs;
-      hsp->rp_ref_out.P[human_l_names[i]].rpy = hsp->rp_ref_out.P[human_l_names[i]].rpy_offs;
+      hsp->rp_ref_out.tgt[human_l_names[i]].offs.p = fik_in->ikp[robot_l_names[i]].target_link->p + fik_in->ikp[robot_l_names[i]].target_link->R * fik_in->ikp[robot_l_names[i]].localPos;
+      hsp->rp_ref_out.tgt[human_l_names[i]].offs.rpy = hrp::rpyFromRot(fik_in->ikp[robot_l_names[i]].target_link->R * fik_in->ikp[robot_l_names[i]].localR);
+      hsp->rp_ref_out.tgt[human_l_names[i]].abs = hsp->rp_ref_out.tgt[human_l_names[i]].offs;
     }
   }
-  hsp->rp_ref_out.P[com].p_offs = robot_in->calcCM();
-  hsp->rp_ref_out.P[zmp].p_offs(X) = hsp->rp_ref_out.P[com].p_offs(X);
-  hsp->rp_ref_out.P[zmp].p_offs(Y) = hsp->rp_ref_out.P[com].p_offs(Y);
-  hsp->rp_ref_out.P[zmp].p_offs(Z) = init_foot_mid_coord(Z);
-  hsp->pre_cont_rfpos = hsp->rp_ref_out.P[rf].p_offs;
-  hsp->pre_cont_lfpos = hsp->rp_ref_out.P[lf].p_offs;
-  hsp->baselinkpose.p_offs = robot_in->rootLink()->p;
-  hsp->baselinkpose.rpy_offs = hrp::rpyFromRot(robot_in->rootLink()->R);
+  hsp->rp_ref_out.tgt[com].offs.p = robot_in->calcCM();
+  hsp->rp_ref_out.tgt[zmp].offs.p(X) = hsp->rp_ref_out.tgt[com].offs.p(X);
+  hsp->rp_ref_out.tgt[zmp].offs.p(Y) = hsp->rp_ref_out.tgt[com].offs.p(Y);
+  hsp->rp_ref_out.tgt[zmp].offs.p(Z) = init_foot_mid_coord(Z);
+  hsp->rp_ref_out.tgt[rf].cnt = hsp->rp_ref_out.tgt[rf].offs;
+  hsp->rp_ref_out.tgt[lf].cnt = hsp->rp_ref_out.tgt[lf].offs;
+  hsp->baselinkpose.p = robot_in->rootLink()->p;
+  hsp->baselinkpose.rpy = hrp::rpyFromRot(robot_in->rootLink()->R);
 }
 
 
@@ -485,7 +469,7 @@ void WholeBodyMasterSlave::processWholeBodyMasterSlave(fikPtr& fik_in, hrp::Body
   hsp->update();//////HumanSynchronizerの主要処理
   if(DEBUGP)cout<<"update():"<<hsp->getUpdateTime()<<endl;
   if(DEBUGP)hsp->rp_ref_out.print();
-  solveFullbodyIKStrictCOM(fik_in, robot_in, hsp->rp_ref_out.P[com], hsp->rp_ref_out.P[rf], hsp->rp_ref_out.P[lf], hsp->rp_ref_out.P[rh], hsp->rp_ref_out.P[lh], hsp->rp_ref_out.P[head],"processWholeBodyMasterSlave");
+  solveFullbodyIKStrictCOM(fik_in, robot_in, hsp->rp_ref_out.tgt[com].abs, hsp->rp_ref_out.tgt[rf].abs, hsp->rp_ref_out.tgt[lf].abs, hsp->rp_ref_out.tgt[rh].abs, hsp->rp_ref_out.tgt[lh].abs, hsp->rp_ref_out.tgt[head].abs,"processWholeBodyMasterSlave");
 }
 
 
@@ -496,19 +480,19 @@ void WholeBodyMasterSlave::processWholeBodyMasterSlave_Raw(fikPtr& fik_in, hrp::
     if(callnum == 0){
       pos_filters[i].setParameter(100.0, 1.0/m_dt, BiquadIIRFilterVec::Q_NOOVERSHOOT);
       rot_filters[i].setParameter(100.0, 1.0/m_dt, BiquadIIRFilterVec::Q_NOOVERSHOOT);
-      pos_filters[i].init(hsp->hp_wld_raw.P[i].p);
-      rot_filters[i].init(hsp->hp_wld_raw.P[i].rpy);
+      pos_filters[i].init(hsp->hp_wld_raw.tgt[i].abs.p);
+      rot_filters[i].init(hsp->hp_wld_raw.tgt[i].abs.rpy);
     }
-    raw_pose.P[i].p = pos_filters[i].passFilter(hsp->hp_wld_raw.P[i].p);
-    raw_pose.P[i].rpy = rot_filters[i].passFilter(hsp->hp_wld_raw.P[i].rpy);
+    raw_pose.tgt[i].abs.p = pos_filters[i].passFilter(hsp->hp_wld_raw.tgt[i].abs.p);
+    raw_pose.tgt[i].abs.rpy = rot_filters[i].passFilter(hsp->hp_wld_raw.tgt[i].abs.rpy);
   }
   callnum++;
   if(DEBUGP){ fprintf(stderr,"\x1b[31mmaster-mode:\x1b[39m"); raw_pose.print(); }
-  solveFullbodyIKStrictCOM(fik_in, robot_in, raw_pose.P[com], raw_pose.P[rf], raw_pose.P[lf], raw_pose.P[rh], raw_pose.P[lh], raw_pose.P[head],"processWholeBodyMasterSlave_Raw");
+  solveFullbodyIKStrictCOM(fik_in, robot_in, raw_pose.tgt[com].abs, raw_pose.tgt[rf].abs, raw_pose.tgt[lf].abs, raw_pose.tgt[rh].abs, raw_pose.tgt[lh].abs, raw_pose.tgt[head].abs,"processWholeBodyMasterSlave_Raw");
 }
 
 
-void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr& robot_in, const HRPPose3D& com_ref, const HRPPose3D& rf_ref, const HRPPose3D& lf_ref, const HRPPose3D& rh_ref, const HRPPose3D& lh_ref, const HRPPose3D& head_ref, const std::string& debug_prefix){
+void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr& robot_in, const WBMSPose3D& com_ref, const WBMSPose3D& rf_ref, const WBMSPose3D& lf_ref, const WBMSPose3D& rh_ref, const WBMSPose3D& lh_ref, const WBMSPose3D& head_ref, const std::string& debug_prefix){
 
   int com_ik_loop=0;
   const int COM_IK_MAX_LOOP = 10;
@@ -516,7 +500,7 @@ void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr
 //  robot_in->rootLink()->p = 0.01*com_ref.p + 0.99*robot_in->rootLink()->p;//ベースリンク位置が迷走するのを防ぐ？
   robot_in->rootLink()->R = hrp::rotFromRpy(com_ref.rpy);//move base link at first
   const std::string names[4] = {"rleg","lleg","rarm","larm"};
-  const HRPPose3D* refs[4] = {&rf_ref, &lf_ref, &rh_ref, &lh_ref};
+  const WBMSPose3D* refs[4] = {&rf_ref, &lf_ref, &rh_ref, &lh_ref};
   for(int i=0;i<4;i++){
     if(fik_in->ikp.count(names[i])){
       fik_in->ikp[names[i]].target_r0 = hrp::rotFromRpy(refs[i]->rpy);
@@ -544,7 +528,7 @@ void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr
       tmp_com_err = com_ref.p - robot_in->calcCM();
 
       const std::string names[4] = {"rleg","lleg","rarm","larm"};
-      const HRPPose3D* refs[4] = {&rf_ref, &lf_ref, &rh_ref, &lh_ref};
+      const WBMSPose3D* refs[4] = {&rf_ref, &lf_ref, &rh_ref, &lh_ref};
       for(int i=0;i<4;i++){
         hrp::dmatrix J;
         fik_in->ikp[names[i]].manip->calcJacobian(J);
@@ -606,9 +590,9 @@ void WholeBodyMasterSlave::processMomentumCompensation(fikPtr& fik_in, hrp::Body
     torso_rot_vel = - I_com.inverse() * L * hsp->WBMSparam.upper_body_rmc_ratio;
     torso_rot += torso_rot_vel * m_dt;
   }
-  HRPPose3D com_mod = pose_ref.P[com];
+  WBMSPose3D com_mod = pose_ref.tgt[com].abs;
   com_mod.rpy += torso_rot;
-  solveFullbodyIKStrictCOM(fik_in, robot_in, com_mod, pose_ref.P[rf], pose_ref.P[lf], pose_ref.P[rh], pose_ref.P[lh], pose_ref.P[head],"calcDynamicsFilterCompensation");
+  solveFullbodyIKStrictCOM(fik_in, robot_in, com_mod, pose_ref.tgt[rf].abs, pose_ref.tgt[lf].abs, pose_ref.tgt[rh].abs, pose_ref.tgt[lh].abs, pose_ref.tgt[head].abs,"calcDynamicsFilterCompensation");
 }
 
 
