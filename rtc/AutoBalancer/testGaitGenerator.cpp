@@ -22,7 +22,8 @@ protected:
     std::vector<std::string> all_limbs;
     hrp::Vector3 cog;
     gait_generator* gg;
-    bool use_gnuplot, is_small_zmp_error, is_small_zmp_diff, is_contact_states_swing_support_time_validity;
+    bool use_gnuplot, use_graph_append;
+    bool is_small_zmp_error, is_small_zmp_diff, is_contact_states_swing_support_time_validity;
     // previous values for walk pattern calculation
     hrp::Vector3 prev_rfoot_pos, prev_lfoot_pos, prev_rfoot_rpy, prev_lfoot_rpy;
     hrp::Vector3 min_rfoot_pos, min_lfoot_pos, max_rfoot_pos, max_lfoot_pos;
@@ -52,7 +53,9 @@ protected:
     std::string fname_ssmcvel;
     FILE* fp_ssmcvel;
 private:
+    ////
     // error check
+    ////
     bool check_zmp_error (const hrp::Vector3& czmp, const hrp::Vector3& refzmp)
     {
         return (czmp-refzmp).norm() < 50.0*1e-3; // [mm]
@@ -61,7 +64,12 @@ private:
     {
         return (prev_zmp - zmp).norm() < 20.0*1e-3; // [mm]
     }
+
+    ////
     // plot and pattern generation
+    ////
+
+    // Plot gnuplot graph and and save graphs to eps files
     void plot_and_save (FILE* gp, const std::string graph_fname, const std::string plot_str)
     {
         fprintf(gp, "%s\n unset multiplot\n", plot_str.c_str());
@@ -69,6 +77,9 @@ private:
         fprintf(gp, "%s\n unset multiplot\n", plot_str.c_str());
         fflush(gp);
     };
+
+    // Dump generated motion by proc_one_tick function.
+    // Calculate error checking and difference values
     void proc_one_walking_motion (size_t i)
     {
             //std::cerr << gg->lcg.gp_count << std::endl;
@@ -265,19 +276,8 @@ private:
             prev_swing_support_time[1] = gg->get_current_swing_time(LLEG);
     };
 
-    void plot_walk_pattern ()
-    {
-        /* make step and dump */
-        size_t i = 0;
-        while ( gg->proc_one_tick() ) {
-            proc_one_walking_motion(i);
-            i++;
-        }
-
-        plot_and_checkparam ();
-    };
-
-    void plot_and_checkparam ()
+    // Plot state values and print error check
+    void plot_and_print_errorcheck ()
     {
         /* plot */
         if (use_gnuplot) {
@@ -503,6 +503,16 @@ private:
                 }
                 plot_and_save(gps[11], gtitle, oss.str());
             }
+            //
+            if (use_graph_append) {
+                int ret = 0;
+                ret = system("bash -c 'for f in /tmp/*.eps; do convert -density 250x250 $f ${f//eps}jpg; done'");
+                ret = system("(cd /tmp; convert +append Swing_support_mid_coords_pos.jpg Swing_support_mid_coords_pos_vel.jpg Swing_support_mid_coords_rot.jpg Swing_support_mid_coords_rot_vel.jpg img1.jpg)");
+                ret = system("(cd /tmp/; convert +append Swing_support_pos.jpg Swing_support_pos_vel.jpg Swing_support_rot.jpg Swing_support_rot_vel.jpg img2.jpg)");
+                ret = system("(cd /tmp/; convert +append Swing_support_zmp_offset.jpg Swing_support_remain_time.jpg COG_and_ZMP.jpg Swing_support_pos_trajectory.jpg img3.jpg)");
+                ret = system("(cd /tmp/; convert -append img1.jpg img2.jpg img3.jpg testGaitGeneratorResults.jpg; rm -f /tmp/img[123].jpg /tmp/COG_and_ZMP.jpg /tmp/Swing_support*.jpg)");
+            }
+            //
             double tmp;
             std::cin >> tmp;
             for (size_t ii = 0; ii < gpsize; ii++) {
@@ -517,6 +527,7 @@ private:
         std::cerr << "  Contact states & swing support time validity : " << (is_contact_states_swing_support_time_validity?"true":"false") << std::endl;
     };
 
+    // Generate and plot walk pattern
     void gen_and_plot_walk_pattern(const step_node& initial_support_leg_step, const step_node& initial_swing_leg_dst_step)
     {
         parse_params();
@@ -524,8 +535,14 @@ private:
         gg->initialize_gait_parameter(cog, boost::assign::list_of(initial_support_leg_step), boost::assign::list_of(initial_swing_leg_dst_step));
         while ( !gg->proc_one_tick() );
         //gg->print_footstep_list();
-        plot_walk_pattern();
-    }
+        /* make step and dump */
+        size_t i = 0;
+        while ( gg->proc_one_tick() ) {
+            proc_one_walking_motion(i);
+            i++;
+        }
+        plot_and_print_errorcheck ();
+    };
 
     void gen_and_plot_walk_pattern()
     {
@@ -543,7 +560,7 @@ private:
 
 public:
     std::vector<std::string> arg_strs;
-    testGaitGenerator() : use_gnuplot(true), is_small_zmp_error(true), is_small_zmp_diff(true), is_contact_states_swing_support_time_validity(true),
+    testGaitGenerator() : use_gnuplot(true), use_graph_append(false), is_small_zmp_error(true), is_small_zmp_diff(true), is_contact_states_swing_support_time_validity(true),
                           min_rfoot_pos(1e10,1e10,1e10), min_lfoot_pos(1e10,1e10,1e10), max_rfoot_pos(-1e10,-1e10,-1e10), max_lfoot_pos(-1e10,-1e10,-1e10),
                           prev_contact_states(2, true), // RLEG, LLEG
                           prev_swing_support_time(2, 1e2), // RLEG, LLEG
@@ -921,7 +938,7 @@ public:
                 gg->finalize_velocity_mode();
             }
         }
-        plot_and_checkparam ();
+        plot_and_print_errorcheck ();
     };
 
     void test18 ()
@@ -957,7 +974,7 @@ public:
                 gg->set_velocity_param(0.1, 0.05, 0);
             }
         }
-        plot_and_checkparam ();
+        plot_and_print_errorcheck ();
     };
 
     void parse_params ()
@@ -1033,6 +1050,8 @@ public:
               if (++i < arg_strs.size()) gg->set_optional_go_pos_finalize_footstep_num(atoi(arg_strs[i].c_str()));
           } else if ( arg_strs[i]== "--use-gnuplot" ) {
               if (++i < arg_strs.size()) use_gnuplot = (arg_strs[i]=="true");
+          } else if ( arg_strs[i]== "--use-graph-append" ) {
+              if (++i < arg_strs.size()) use_graph_append = (arg_strs[i]=="true");
           }
       }   
     };
@@ -1060,8 +1079,8 @@ class testGaitGeneratorHRP2JSK : public testGaitGenerator
 
 void print_usage ()
 {
-    std::cerr << "Usage : testGaitGenerator [option]" << std::endl;
-    std::cerr << " [option] should be:" << std::endl;
+    std::cerr << "Usage : testGaitGenerator [test-name] [option]" << std::endl;
+    std::cerr << " [test-name] should be:" << std::endl;
     std::cerr << "  --test0 : Set foot steps" << std::endl;
     std::cerr << "  --test1 : Go pos x,y,th combination" << std::endl;
     std::cerr << "  --test2 : Go pos x" << std::endl;
@@ -1081,6 +1100,10 @@ void print_usage ()
     std::cerr << "  --test16 : Set foot steps with param (toe heel contact)" << std::endl;
     std::cerr << "  --test17 : Test goVelocity (dx = 0.1, dy = 0.05, dth = 10.0)" << std::endl;
     std::cerr << "  --test18 : Test goVelocity with changing velocity (translation and rotation)" << std::endl;
+    std::cerr << " [option] should be:" << std::endl;
+    std::cerr << "  --use-gnuplot : Use gnuplot and dump eps file to /tmp. (true/false, true by default)" << std::endl;
+    std::cerr << "  --use-graph-append : Append generated graph to /tmp/testGaitGenerator.jpg. (true/false, false by default)" << std::endl;
+    std::cerr << "  other options : for GaitGenerator" << std::endl;
 };
 
 int main(int argc, char* argv[])
