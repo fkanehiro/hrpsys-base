@@ -91,7 +91,7 @@ namespace rats
     }
   };
 
-  void mid_rot(hrp::Matrix33& mid_rot, const double p, const hrp::Matrix33& rot1, const hrp::Matrix33& rot2);
-  void mid_coords(coordinates& mid_coords, const double p, const coordinates& c1, const coordinates& c2);
+  void mid_rot(hrp::Matrix33& mid_rot, const double p, const hrp::Matrix33& rot1, const hrp::Matrix33& rot2, const double eps = 0.001);
+  void mid_coords(coordinates& mid_coords, const double p, const coordinates& c1, const coordinates& c2, const double eps = 0.001);
 };
 #endif /* RATSMATRIX_H */
