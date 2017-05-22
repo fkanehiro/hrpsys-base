@@ -7,6 +7,12 @@ using namespace rats;
 #include <coil/stringutil.h>
 
 #define eps_eq(a,b,epsilon) (std::fabs((a)-(b)) < (epsilon))
+#ifndef rad2deg
+#define rad2deg(rad) (rad * 180 / M_PI)
+#endif
+#ifndef deg2rad
+#define deg2rad(deg) (deg * M_PI / 180)
+#endif
 
 class testGaitGenerator
 {
@@ -18,9 +24,10 @@ protected:
     gait_generator* gg;
     bool use_gnuplot, is_small_zmp_error, is_small_zmp_diff, is_contact_states_swing_support_time_validity;
     // previous values for walk pattern calculation
-    hrp::Vector3 prev_rfoot_pos, prev_lfoot_pos;
+    hrp::Vector3 prev_rfoot_pos, prev_lfoot_pos, prev_rfoot_rpy, prev_lfoot_rpy;
     hrp::Vector3 min_rfoot_pos, min_lfoot_pos, max_rfoot_pos, max_lfoot_pos;
     hrp::Vector3 prev_refzmp;
+    coordinates prev_ssmc;
     std::vector<bool> prev_contact_states;
     std::vector<double> prev_swing_support_time;
     // For plot
@@ -32,14 +39,18 @@ protected:
     FILE* fp_frot;
     std::string fname_zoff;
     FILE* fp_zoff;
-    std::string fname_fvel;
-    FILE* fp_fvel;
+    std::string fname_fposvel;
+    FILE* fp_fposvel;
+    std::string fname_frotvel;
+    FILE* fp_frotvel;
     std::string fname_thpos;
     FILE* fp_thpos;
     std::string fname_sstime;
     FILE* fp_sstime;
     std::string fname_ssmc;
     FILE* fp_ssmc;
+    std::string fname_ssmcvel;
+    FILE* fp_ssmcvel;
 private:
     // error check
     bool check_zmp_error (const hrp::Vector3& czmp, const hrp::Vector3& refzmp)
@@ -108,18 +119,17 @@ private:
 
             // Foot rot
             fprintf(fp_frot, "%f ", i * dt);
-            hrp::Vector3 rpy;
             tmp_string_vector = boost::assign::list_of("rleg");
             hrp::Matrix33 rfoot_rot = (gg->get_support_leg_names() == tmp_string_vector) ? gg->get_support_leg_steps().front().worldcoords.rot : gg->get_swing_leg_steps().front().worldcoords.rot;
-            rpy = hrp::rpyFromRot(rfoot_rot);
+            hrp::Vector3 rfoot_rpy = hrp::rpyFromRot(rfoot_rot);
             for (size_t ii = 0; ii < 3; ii++) {
-                fprintf(fp_frot, "%f ", 180.0*rpy(ii)/M_PI);
+                fprintf(fp_frot, "%f ", rad2deg(rfoot_rpy(ii)));
             }
             tmp_string_vector = boost::assign::list_of("lleg");
             hrp::Matrix33 lfoot_rot = (gg->get_support_leg_names() == tmp_string_vector) ? gg->get_support_leg_steps().front().worldcoords.rot : gg->get_swing_leg_steps().front().worldcoords.rot;
-            rpy = hrp::rpyFromRot(lfoot_rot);
+            hrp::Vector3 lfoot_rpy = hrp::rpyFromRot(lfoot_rot);
             for (size_t ii = 0; ii < 3; ii++) {
-                fprintf(fp_frot, "%f ", 180.0*rpy(ii)/M_PI);
+                fprintf(fp_frot, "%f ", rad2deg(lfoot_rpy(ii)));
             }
             fprintf(fp_frot, "\n");
 
@@ -135,22 +145,38 @@ private:
             }
             fprintf(fp_zoff, "\n");
 
-            // Foot vel
-            fprintf(fp_fvel, "%f ", i * dt);
+            // Foot pos vel
+            fprintf(fp_fposvel, "%f ", i * dt);
             hrp::Vector3 tmpv;
             if ( i == 0 ) prev_rfoot_pos = rfoot_pos;
             tmpv = (rfoot_pos - prev_rfoot_pos)/dt;
             for (size_t ii = 0; ii < 3; ii++) {
-                fprintf(fp_fvel, "%f ", tmpv(ii));
+                fprintf(fp_fposvel, "%f ", tmpv(ii));
             }
             prev_rfoot_pos = rfoot_pos;
             if ( i == 0 ) prev_lfoot_pos = lfoot_pos;
             tmpv = (lfoot_pos - prev_lfoot_pos)/dt;
             for (size_t ii = 0; ii < 3; ii++) {
-                fprintf(fp_fvel, "%f ", tmpv(ii));
+                fprintf(fp_fposvel, "%f ", tmpv(ii));
             }
             prev_lfoot_pos = lfoot_pos;
-            fprintf(fp_fvel, "\n");
+            fprintf(fp_fposvel, "\n");
+
+            // Foot rot vel
+            fprintf(fp_frotvel, "%f ", i * dt);
+            if ( i == 0 ) prev_rfoot_rpy = rfoot_rpy;
+            tmpv = (rfoot_rpy - prev_rfoot_rpy)/dt;
+            for (size_t ii = 0; ii < 3; ii++) {
+                fprintf(fp_frotvel, "%f ", tmpv(ii));
+            }
+            prev_rfoot_rpy = rfoot_rpy;
+            if ( i == 0 ) prev_lfoot_rpy = lfoot_rpy;
+            tmpv = (lfoot_rpy - prev_lfoot_rpy)/dt;
+            for (size_t ii = 0; ii < 3; ii++) {
+                fprintf(fp_frotvel, "%f ", tmpv(ii));
+            }
+            prev_lfoot_rpy = lfoot_rpy;
+            fprintf(fp_frotvel, "\n");
 
             // Toe heel pos
             fprintf(fp_thpos, "%f ", i * dt);
@@ -204,9 +230,24 @@ private:
             }
             hrp::Vector3 tmp_ssmcr = hrp::rpyFromRot(tmp_ssmc.rot);
             for (size_t ii = 0; ii < 3; ii++) {
-                fprintf(fp_ssmc, "%f ", tmp_ssmcr(ii));
+                fprintf(fp_ssmc, "%f ", rad2deg(tmp_ssmcr(ii)));
             }
             fprintf(fp_ssmc, "\n");
+
+            // swing support mid coords vel
+            fprintf(fp_ssmcvel, "%f ", i * dt);
+            if ( i == 0 ) prev_ssmc = tmp_ssmc;
+            tmpv = (tmp_ssmc.pos - prev_ssmc.pos)/dt;
+            for (size_t ii = 0; ii < 3; ii++) {
+                fprintf(fp_ssmcvel, "%f ", tmpv(ii));
+            }
+            hrp::Vector3 prev_ssmcr = hrp::rpyFromRot(prev_ssmc.rot);
+            tmpv = (tmp_ssmcr - prev_ssmcr)/dt;
+            for (size_t ii = 0; ii < 3; ii++) {
+                fprintf(fp_ssmcvel, "%f ", tmpv(ii));
+            }
+            fprintf(fp_ssmcvel, "\n");
+            prev_ssmc = tmp_ssmc;
 
             // Error checking
             is_small_zmp_error = check_zmp_error(gg->get_cart_zmp(), gg->get_refzmp()) && is_small_zmp_error;
@@ -240,7 +281,7 @@ private:
     {
         /* plot */
         if (use_gnuplot) {
-            size_t gpsize = 9;
+            size_t gpsize = 12;
             FILE* gps[gpsize];
             for (size_t ii = 0; ii < gpsize;ii++) {
                 gps[ii] = popen("gnuplot", "w");
@@ -312,16 +353,32 @@ private:
             }
             {
                 std::ostringstream oss("");
-                std::string gtitle("Swing_support_vel");
+                std::string gtitle("Swing_support_pos_vel");
                 size_t tmp_start = 2;
                 oss << "set multiplot layout 3, 1 title '" << gtitle << "'" << std::endl;
                 std::string titles[3] = {"X", "Y", "Z"};
                 for (size_t ii = 0; ii < 3; ii++) {
                     oss << "set xlabel 'Time [s]'" << std::endl;
-                    oss << "set ylabel '" << titles[ii] << "[m]'" << std::endl;
+                    oss << "set ylabel '" << titles[ii] << "[m/s]'" << std::endl;
                     oss << "plot "
-                        << "'" << fname_fvel << "' using 1:" << (tmp_start+ii) << " with lines title 'rleg',"
-                        << "'" << fname_fvel << "' using 1:" << (tmp_start+3+ii) << " with lines title 'lleg'"
+                        << "'" << fname_fposvel << "' using 1:" << (tmp_start+ii) << " with lines title 'rleg',"
+                        << "'" << fname_fposvel << "' using 1:" << (tmp_start+3+ii) << " with lines title 'lleg'"
+                        << std::endl;
+                }
+                plot_and_save(gps[4], gtitle, oss.str());
+            }
+            {
+                std::ostringstream oss("");
+                std::string gtitle("Swing_support_rot_vel");
+                size_t tmp_start = 2;
+                oss << "set multiplot layout 3, 1 title '" << gtitle << "'" << std::endl;
+                std::string titles[3] = {"Roll", "Pitch", "Yaw"};
+                for (size_t ii = 0; ii < 3; ii++) {
+                    oss << "set xlabel 'Time [s]'" << std::endl;
+                    oss << "set ylabel '" << titles[ii] << "[deg/s]'" << std::endl;
+                    oss << "plot "
+                        << "'" << fname_frotvel << "' using 1:" << (tmp_start+ii) << " with lines title 'rleg',"
+                        << "'" << fname_frotvel << "' using 1:" << (tmp_start+3+ii) << " with lines title 'lleg'"
                         << std::endl;
                 }
                 plot_and_save(gps[5], gtitle, oss.str());
@@ -384,7 +441,7 @@ private:
                     << "'" << fname_sstime << "' using 1:" << 5 << " with lines title 'lleg contact states',"
                     << "'" << fname_sstime << "' using 1:" << 6 << " with lines title 'toe_heel_ratio*0.8+0.1'"
                     << std::endl;
-                plot_and_save(gps[4], gtitle, oss.str());
+                plot_and_save(gps[7], gtitle, oss.str());
             }
             {
                 std::ostringstream oss("");
@@ -399,7 +456,7 @@ private:
                         << "'" << fname_ssmc << "' using 1:" << (tmp_start+ii) << " with lines title ''"
                         << std::endl;
                 }
-                plot_and_save(gps[7], gtitle, oss.str());
+                plot_and_save(gps[8], gtitle, oss.str());
             }
             {
                 std::ostringstream oss("");
@@ -409,12 +466,42 @@ private:
                 std::string titles[3] = {"Roll", "Pitch", "Yaw"};
                 for (size_t ii = 0; ii < 3; ii++) {
                     oss << "set xlabel 'Time [s]'" << std::endl;
-                    oss << "set ylabel 'Rot " << titles[ii] << "[rad]'" << std::endl;
+                    oss << "set ylabel 'Rot " << titles[ii] << "[deg]'" << std::endl;
                     oss << "plot "
                         << "'" << fname_ssmc << "' using 1:" << (tmp_start+ii+3) << " with lines title ''"
                         << std::endl;
                 }
-                plot_and_save(gps[8], gtitle, oss.str());
+                plot_and_save(gps[9], gtitle, oss.str());
+            }
+            {
+                std::ostringstream oss("");
+                std::string gtitle("Swing_support_mid_coords_pos_vel");
+                size_t tmp_start = 2;
+                oss << "set multiplot layout 3, 1 title '" << gtitle << "'" << std::endl;
+                std::string titles[3] = {"X", "Y", "Z"};
+                for (size_t ii = 0; ii < 3; ii++) {
+                    oss << "set xlabel 'Time [s]'" << std::endl;
+                    oss << "set ylabel 'PosVel " << titles[ii] << "[m/s]'" << std::endl;
+                    oss << "plot "
+                        << "'" << fname_ssmcvel << "' using 1:" << (tmp_start+ii) << " with lines title ''"
+                        << std::endl;
+                }
+                plot_and_save(gps[10], gtitle, oss.str());
+            }
+            {
+                std::ostringstream oss("");
+                std::string gtitle("Swing_support_mid_coords_rot_vel");
+                size_t tmp_start = 2;
+                oss << "set multiplot layout 3, 1 title '" << gtitle << "'" << std::endl;
+                std::string titles[3] = {"Roll", "Pitch", "Yaw"};
+                for (size_t ii = 0; ii < 3; ii++) {
+                    oss << "set xlabel 'Time [s]'" << std::endl;
+                    oss << "set ylabel 'RotVel " << titles[ii] << "[deg/s]'" << std::endl;
+                    oss << "plot "
+                        << "'" << fname_ssmcvel << "' using 1:" << (tmp_start+ii+3) << " with lines title ''"
+                        << std::endl;
+                }
+                plot_and_save(gps[11], gtitle, oss.str());
             }
             double tmp;
             std::cin >> tmp;
@@ -425,9 +512,9 @@ private:
             }
         }
         std::cerr << "Checking" << std::endl;
-        std::cerr << "  ZMP error : " << is_small_zmp_error << std::endl;
-        std::cerr << "  ZMP diff : " << is_small_zmp_diff << std::endl;
-        std::cerr << "  Contact states & swing support time validity : " << is_contact_states_swing_support_time_validity << std::endl;
+        std::cerr << "  ZMP error : " << (is_small_zmp_error?"true":"false") << std::endl;
+        std::cerr << "  ZMP diff : " << (is_small_zmp_diff?"true":"false") << std::endl;
+        std::cerr << "  Contact states & swing support time validity : " << (is_contact_states_swing_support_time_validity?"true":"false") << std::endl;
     };
 
     void gen_and_plot_walk_pattern(const step_node& initial_support_leg_step, const step_node& initial_swing_leg_dst_step)
@@ -464,10 +551,12 @@ public:
                           fname_fpos("/tmp/plot-fpos.dat"), fp_fpos(fopen(fname_fpos.c_str(), "w")),
                           fname_frot("/tmp/plot-frot.dat"), fp_frot(fopen(fname_frot.c_str(), "w")),
                           fname_zoff("/tmp/plot-zoff.dat"), fp_zoff(fopen(fname_zoff.c_str(), "w")),
-                          fname_fvel("/tmp/plot-fvel.dat"), fp_fvel(fopen(fname_fvel.c_str(), "w")),
+                          fname_fposvel("/tmp/plot-fposvel.dat"), fp_fposvel(fopen(fname_fposvel.c_str(), "w")),
+                          fname_frotvel("/tmp/plot-frotvel.dat"), fp_frotvel(fopen(fname_frotvel.c_str(), "w")),
                           fname_thpos("/tmp/plot-thpos.dat"), fp_thpos(fopen(fname_thpos.c_str(), "w")),
                           fname_sstime("/tmp/plot-sstime.dat"), fp_sstime(fopen(fname_sstime.c_str(), "w")),
-                          fname_ssmc("/tmp/plot-ssmc.dat"), fp_ssmc(fopen(fname_ssmc.c_str(), "w"))
+                          fname_ssmc("/tmp/plot-ssmc.dat"), fp_ssmc(fopen(fname_ssmc.c_str(), "w")),
+                          fname_ssmcvel("/tmp/plot-ssmcvel.dat"), fp_ssmcvel(fopen(fname_ssmcvel.c_str(), "w"))
     {};
 
     virtual ~testGaitGenerator()
@@ -480,9 +569,12 @@ public:
         fclose(fp_fpos);
         fclose(fp_frot);
         fclose(fp_zoff);
-        fclose(fp_fvel);
+        fclose(fp_fposvel);
+        fclose(fp_frotvel);
         fclose(fp_thpos);
         fclose(fp_sstime);
+        fclose(fp_ssmc);
+        fclose(fp_ssmcvel);
     };
 
     void test0 ()
