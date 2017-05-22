@@ -16,7 +16,7 @@ namespace rats
                            const double ratio, const hrp::Vector3& start,
                            const hrp::Vector3& goal, const double height,
                            const double default_top_ratio = 0.5);
-    void multi_mid_coords (coordinates& mid_coords, const std::vector<coordinates>& cs);
+    void multi_mid_coords (coordinates& mid_coords, const std::vector<coordinates>& cs, const double eps = 0.001);
 
     enum orbit_type {SHUFFLING, CYCLOID, RECTANGLE, STAIR, CYCLOIDDELAY, CYCLOIDDELAYKICK, CROSS};
     enum leg_type {RLEG, LLEG, RARM, LARM, BOTH, ALL};

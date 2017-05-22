@@ -34,7 +34,7 @@ namespace rats
       u(2), v(2), 1;
     ret = dvm * cycloid_point + start + uz;
   };
-  void multi_mid_coords (coordinates& ret, const std::vector<coordinates>& cs)
+  void multi_mid_coords (coordinates& ret, const std::vector<coordinates>& cs, const double eps)
   {
       if (cs.size() == 1) {
           ret = cs.front();
@@ -43,10 +43,10 @@ namespace rats
           double ratio = (1.0 - 1.0 / cs.size());
           for (size_t i = 1; i < cs.size(); i++) {
               coordinates tmp;
-              mid_coords(tmp, ratio, cs.front(), cs.at(i));
+              mid_coords(tmp, ratio, cs.front(), cs.at(i), eps);
               tmp_mid_coords.push_back(tmp);
           }
-          multi_mid_coords(ret, tmp_mid_coords);
+          multi_mid_coords(ret, tmp_mid_coords, eps);
       }
       return;
   };
@@ -485,9 +485,10 @@ namespace rats
           if (it->l_r == RLEG or it->l_r == LLEG) sup_coords.push_back(it->worldcoords);
       }
       coordinates tmp_swg_src_mid, tmp_swg_dst_mid, tmp_swg_mid, tmp_sup_mid;
-      if (swg_src_coords.size() > 0) multi_mid_coords(tmp_swg_src_mid, swg_src_coords);
-      if (swg_dst_coords.size() > 0) multi_mid_coords(tmp_swg_dst_mid, swg_dst_coords);
-      if (sup_coords.size() > 0) multi_mid_coords(tmp_sup_mid, sup_coords);
+      const double rot_eps = 1e-5; // eps for mid_rot calculation
+      if (swg_src_coords.size() > 0) multi_mid_coords(tmp_swg_src_mid, swg_src_coords, rot_eps);
+      if (swg_dst_coords.size() > 0) multi_mid_coords(tmp_swg_dst_mid, swg_dst_coords, rot_eps);
+      if (sup_coords.size() > 0) multi_mid_coords(tmp_sup_mid, sup_coords, rot_eps);
       if (lcg_count == one_step_count) {
           foot_midcoords_interpolator->clear();
           double tmp[foot_midcoords_interpolator->dimension()];
@@ -528,7 +529,7 @@ namespace rats
       } else {
           tmp_swg_mid = tmp_swg_dst_mid;
       }
-      mid_coords(swing_support_midcoords, static_cast<double>(sup_coords.size()) / (swg_src_coords.size() + sup_coords.size()), tmp_swg_mid, tmp_sup_mid);
+      mid_coords(swing_support_midcoords, static_cast<double>(sup_coords.size()) / (swg_src_coords.size() + sup_coords.size()), tmp_swg_mid, tmp_sup_mid, rot_eps);
   };
 
   void leg_coords_generator::update_leg_steps (const std::vector< std::vector<step_node> >& fnsl, const double default_double_support_ratio_before, const double default_double_support_ratio_after, const toe_heel_type_checker& thtc)
