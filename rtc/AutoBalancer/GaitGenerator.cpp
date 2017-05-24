@@ -816,11 +816,13 @@ namespace rats
           for (size_t i = lcg.get_footstep_index()+1; i < footstep_nodes_list.size(); i++) {
             footstep_nodes_list[i].front().worldcoords.pos += d_footstep;
           }
+          if (is_emergency_walking[0] || is_emergency_walking[1]) {
+            overwrite_footstep_nodes_list.insert(overwrite_footstep_nodes_list.end(), footstep_nodes_list.begin()+lcg.get_footstep_index(), footstep_nodes_list.end());
+            // overwrite zmp
+            overwrite_refzmp_queue(overwrite_footstep_nodes_list);
+            overwrite_footstep_nodes_list.clear();
+          }
         }
-        overwrite_footstep_nodes_list.insert(overwrite_footstep_nodes_list.end(), footstep_nodes_list.begin()+lcg.get_footstep_index(), footstep_nodes_list.end());
-        // overwrite zmp
-        overwrite_refzmp_queue(overwrite_footstep_nodes_list);
-        overwrite_footstep_nodes_list.clear();
       }
     }
   }
