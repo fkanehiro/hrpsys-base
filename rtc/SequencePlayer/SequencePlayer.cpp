@@ -653,6 +653,7 @@ bool SequencePlayer::setTargetPose(const char* gname, const double *xyz, const d
         }
     }
 
+    if (!m_seq->resetJointGroup(gname, m_qInit.data.get_buffer())) return false; // reset sequencer
     bool ret = m_seq->playPatternOfGroup(gname, v_pos, v_tm, m_qInit.data.get_buffer(), v_pos.size()>0?indices.size():0);
 
     // clean up memory, need to improve
