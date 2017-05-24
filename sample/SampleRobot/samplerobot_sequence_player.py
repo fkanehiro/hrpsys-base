@@ -79,6 +79,7 @@ def checkJointAngles (var_doc):
         p = var_doc['pos']
     ret = checkArrayEquality(hcf.sh_svc.getCommand().jointRefs, p)
     print "  pos => ", ret
+    return ret
 
 def checkJointAnglesBetween(from_doc, to_doc):
     p0 =  from_doc if isinstance(from_doc, list) else from_doc['pos']
@@ -310,6 +311,22 @@ def demoSetJointAnglesSequenceOfGroup():
     time.sleep(3.5)
     hcf.seq_svc.clearJointAnglesOfGroup('larm')
     checkJointAnglesBetween(p1, p0)
+
+    #
+    print >> sys.stderr, "   check hrpys_config.py"
+    larm_pos_sequence = [map(lambda x: x * 180.0 / math.pi, larm_pos0),
+                         map(lambda x: x * 180.0 / math.pi, larm_pos1),
+                         map(lambda x: x * 180.0 / math.pi, larm_pos0)]
+    hcf.setJointAnglesSequenceOfGroup('larm', larm_pos_sequence, [1.0, 1.0, 5.0]);
+    hcf.waitInterpolationOfGroup('larm');
+    checkJointAngles(p0)
+
+    print >> sys.stderr, "   check hrpys_config.py do not brak pos_sequence"
+    hcf.setJointAnglesSequenceOfGroup('larm', larm_pos_sequence, [1.0, 1.0, 5.0]);
+    hcf.waitInterpolationOfGroup('larm');
+    checkJointAngles(p0)
+
+    # remove joint group
     hcf.seq_svc.removeJointGroup('larm')
 
 def demoSetJointAnglesSequenceFull():
