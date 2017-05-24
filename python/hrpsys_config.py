@@ -9,6 +9,7 @@ from hrpsys import *  # load ModelLoader
 from hrpsys import ImpedanceControllerService_idl
 from waitInput import waitInputConfirm
 
+import copy
 import socket
 import time
 import subprocess
@@ -1137,6 +1138,7 @@ class HrpsysConfigurator(object):
         @rtype bool
         @return False upon any problem during execution.
         '''
+        angless = copy.deepcopy(angless) # copy
         for angles in angless:
             for i in range(len(angles)):
                 angles[i] = angles[i] / 180.0 * math.pi
