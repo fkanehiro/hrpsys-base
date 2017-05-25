@@ -380,8 +380,8 @@ class HumanSynchronizer : UTIL_CONST {
       if( inside_vec_lf.dot(lf2zmp) / inside_vec_lf.norm() > WBMSparam.auto_swing_foot_landing_threshold ){ out.tgt[rf].go_contact = true; }
     }
     inline void limitEEWorkspace(HumanPose& out){
-      const double MAX_FW = 0.25;
-//      const double MAX_FW = 1000000;//manipulability test
+//      const double MAX_FW = 0.25;
+      const double MAX_FW = 1000000;//manipulability test
       const double FOOT_2_FOOT_COLLISION_MARGIIN = 0.16;
       if(!out.tgt[rf].is_contact && out.tgt[lf].is_contact){//右足浮遊時
         const hrp::Vector2 lf2rf_vec( out.tgt[rf].abs.p(X) - out.tgt[lf].cnt.p(X), out.tgt[rf].abs.p(Y) - out.tgt[lf].cnt.p(Y) );
