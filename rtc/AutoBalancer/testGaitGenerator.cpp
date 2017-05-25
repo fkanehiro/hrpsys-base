@@ -672,6 +672,7 @@ public:
         test_doc_string = "test5 : Set foot steps with Z change";
         /* initialize sample footstep_list */
         parse_params();
+        gg->set_default_orbit_type(CYCLOIDDELAY);
         std::vector< std::vector<step_node> > fnsl;
         fnsl.push_back(boost::assign::list_of(step_node("rleg", coordinates(hrp::Vector3(hrp::Vector3(0, 0, 0)+leg_pos[0])), gg->get_default_step_height(), gg->get_default_step_time(), gg->get_toe_angle(), gg->get_heel_angle())));
         fnsl.push_back(boost::assign::list_of(step_node("lleg", coordinates(hrp::Vector3(hrp::Vector3(0, 0, 0)+leg_pos[1])), gg->get_default_step_height(), gg->get_default_step_time(), gg->get_toe_angle(), gg->get_heel_angle())));
@@ -688,7 +689,11 @@ public:
         test_doc_string = "test6 : Go single step";
         parse_params();
         gg->clear_footstep_nodes_list();
-        gg->go_single_step_param_2_footstep_nodes_list(100*1e-3, 0, 0, 0, "rleg", coordinates(leg_pos[0]));
+        std::vector< std::vector<step_node> > fnsl;
+        fnsl.push_back(boost::assign::list_of(step_node("rleg", coordinates(hrp::Vector3(hrp::Vector3(0, 0, 0)+leg_pos[0])), gg->get_default_step_height(), gg->get_default_step_time(), gg->get_toe_angle(), gg->get_heel_angle())));
+        fnsl.push_back(boost::assign::list_of(step_node("lleg", coordinates(hrp::Vector3(hrp::Vector3(100*1e-3, 75*1e-3, 0)+leg_pos[1]), hrp::rotFromRpy(hrp::Vector3(deg2rad(5), deg2rad(-20), deg2rad(10)))),
+                                                        gg->get_default_step_height(), gg->get_default_step_time(), gg->get_toe_angle(), gg->get_heel_angle())));
+        gg->set_foot_steps_list(fnsl);
         gen_and_plot_walk_pattern();
     };
 
