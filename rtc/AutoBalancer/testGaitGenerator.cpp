@@ -32,6 +32,7 @@ protected:
     std::vector<bool> prev_contact_states;
     std::vector<double> prev_swing_support_time;
     // For plot
+    std::string test_doc_string;
     std::string fname_cogzmp;
     FILE* fp_cogzmp;
     std::string fname_fpos;
@@ -506,15 +507,20 @@ private:
             //
             if (use_graph_append) {
                 int ret = 0;
+                usleep(500000); // Wait for gnuplot plot finishing (0.5[s])
                 ret = system("bash -c 'for f in /tmp/*.eps; do convert -density 250x250 $f ${f//eps}jpg; done'");
                 ret = system("(cd /tmp; convert +append Swing_support_mid_coords_pos.jpg Swing_support_mid_coords_pos_vel.jpg Swing_support_mid_coords_rot.jpg Swing_support_mid_coords_rot_vel.jpg img1.jpg)");
                 ret = system("(cd /tmp/; convert +append Swing_support_pos.jpg Swing_support_pos_vel.jpg Swing_support_rot.jpg Swing_support_rot_vel.jpg img2.jpg)");
                 ret = system("(cd /tmp/; convert +append Swing_support_zmp_offset.jpg Swing_support_remain_time.jpg COG_and_ZMP.jpg Swing_support_pos_trajectory.jpg img3.jpg)");
-                ret = system("(cd /tmp/; convert -append img1.jpg img2.jpg img3.jpg testGaitGeneratorResults.jpg; rm -f /tmp/img[123].jpg /tmp/COG_and_ZMP.jpg /tmp/Swing_support*.jpg)");
+                std::string tmpstr = test_doc_string.substr(0, test_doc_string.find(":"));
+                for(size_t c = tmpstr.find_first_of(" "); c != std::string::npos; c = c = tmpstr.find_first_of(" ")){
+                    tmpstr.erase(c,1);
+                }
+                ret = system(std::string("(cd /tmp/; convert -append img1.jpg img2.jpg img3.jpg testGaitGeneratorResults_"+tmpstr+".jpg; rm -f /tmp/img[123].jpg /tmp/COG_and_ZMP.jpg /tmp/Swing_support*.jpg)").c_str());
+            } else {
+                double tmp;
+                std::cin >> tmp;
             }
-            //
-            double tmp;
-            std::cin >> tmp;
             for (size_t ii = 0; ii < gpsize; ii++) {
                 fprintf(gps[ii], "exit\n");
                 fflush(gps[ii]);
@@ -530,7 +536,7 @@ private:
     // Generate and plot walk pattern
     void gen_and_plot_walk_pattern(const step_node& initial_support_leg_step, const step_node& initial_swing_leg_dst_step)
     {
-        parse_params();
+        parse_params(false);
         gg->print_param();
         gg->initialize_gait_parameter(cog, boost::assign::list_of(initial_support_leg_step), boost::assign::list_of(initial_swing_leg_dst_step));
         while ( !gg->proc_one_tick() );
@@ -596,7 +602,7 @@ public:
 
     void test0 ()
     {
-        std::cerr << "test0 : Set foot steps" << std::endl;
+        test_doc_string = "test0 : Set foot steps";
         /* initialize sample footstep_list */
         parse_params();
         std::vector< std::vector<step_node> > fnsl;
@@ -611,7 +617,7 @@ public:
 
     void test1 ()
     {
-        std::cerr << "test1 : Go pos x,y,th combination" << std::endl;
+        test_doc_string = "test1 : Go pos x,y,th combination";
         /* initialize sample footstep_list */
         parse_params();
         gg->clear_footstep_nodes_list();
@@ -623,7 +629,7 @@ public:
 
     void test2 ()
     {
-        std::cerr << "test2 : Go pos x" << std::endl;
+        test_doc_string = "test2 : Go pos x";
         /* initialize sample footstep_list */
         parse_params();
         gg->clear_footstep_nodes_list();
@@ -635,7 +641,7 @@ public:
 
     void test3 ()
     {
-        std::cerr << "test3 : Go pos y" << std::endl;
+        test_doc_string = "test3 : Go pos y";
         /* initialize sample footstep_list */
         parse_params();
         gg->clear_footstep_nodes_list();
@@ -647,7 +653,7 @@ public:
 
     void test4 ()
     {
-        std::cerr << "test4 : Go pos th" << std::endl;
+        test_doc_string = "test4 : Go pos th";
         /* initialize sample footstep_list */
         parse_params();
         gg->clear_footstep_nodes_list();
@@ -659,7 +665,7 @@ public:
 
     void test5 ()
     {
-        std::cerr << "test5 : Set foot steps with Z change" << std::endl;
+        test_doc_string = "test5 : Set foot steps with Z change";
         /* initialize sample footstep_list */
         parse_params();
         std::vector< std::vector<step_node> > fnsl;
@@ -675,7 +681,7 @@ public:
 
     void test6 ()
     {
-        std::cerr << "test6 : Go single step" << std::endl;
+        test_doc_string = "test6 : Go single step";
         parse_params();
         gg->clear_footstep_nodes_list();
         gg->go_single_step_param_2_footstep_nodes_list(100*1e-3, 0, 0, 0, "rleg", coordinates(leg_pos[0]));
@@ -684,7 +690,7 @@ public:
 
     void test7 ()
     {
-        std::cerr << "test7 : Toe heel walk" << std::endl;
+        test_doc_string = "test7 : Toe heel walk";
         /* initialize sample footstep_list */
         parse_params();
         std::vector<hrp::Vector3> dzo;
@@ -710,7 +716,7 @@ public:
 
     void test8 ()
     {
-        std::cerr << "test8 : Toe heel walk on slope" << std::endl;
+        test_doc_string = "test8 : Toe heel walk on slope";
         /* initialize sample footstep_list */
         parse_params();
         std::vector<hrp::Vector3> dzo;
@@ -746,7 +752,7 @@ public:
 
     void test9 ()
     {
-        std::cerr << "test9 : Stair walk" << std::endl;
+        test_doc_string = "test9 : Stair walk";
         /* initialize sample footstep_list */
         parse_params();
         gg->clear_footstep_nodes_list();
@@ -767,7 +773,7 @@ public:
 
     void test10 ()
     {
-        std::cerr << "test10 : Stair walk + toe heel contact" << std::endl;
+        test_doc_string = "test10 : Stair walk + toe heel contact";
         /* initialize sample footstep_list */
         parse_params();
         gg->clear_footstep_nodes_list();
@@ -800,7 +806,7 @@ public:
 
     void test11 ()
     {
-        std::cerr << "test11 : Foot rot change" << std::endl;
+        test_doc_string = "test11 : Foot rot change";
         /* initialize sample footstep_list */
         parse_params();
         hrp::Matrix33 tmpr;
@@ -816,7 +822,7 @@ public:
 
     void test12 ()
     {
-        std::cerr << "test12 : Change step param in set foot steps" << std::endl;
+        test_doc_string = "test12 : Change step param in set foot steps";
         /* initialize sample footstep_list */
         parse_params();
         std::vector< std::vector<step_node> > fnsl;
@@ -833,7 +839,7 @@ public:
 
     void test13 ()
     {
-        std::cerr << "test13 : Arbitrary leg switching" << std::endl;
+        test_doc_string = "test13 : Arbitrary leg switching";
         /* initialize sample footstep_list */
         parse_params();
         std::vector< std::vector<step_node> > fnsl;
@@ -849,7 +855,7 @@ public:
 
         void test14 ()
     {
-        std::cerr << "test14 : kick walk" << std::endl;
+        test_doc_string = "test14 : kick walk";
         /* initialize sample footstep_list */
         parse_params();
         gg->clear_footstep_nodes_list();
@@ -862,7 +868,7 @@ public:
 
     void test15 ()
     {
-        std::cerr << "test15 : Stair walk down" << std::endl;
+        test_doc_string = "test15 : Stair walk down";
         /* initialize sample footstep_list */
         parse_params();
         gg->clear_footstep_nodes_list();
@@ -883,7 +889,7 @@ public:
 
     void test16 ()
     {
-        std::cerr << "test16 : Set foot steps with param (toe heel contact)" << std::endl;
+        test_doc_string = "test16 : Set foot steps with param (toe heel contact)";
         /* initialize sample footstep_list */
         parse_params();
         gg->clear_footstep_nodes_list();
@@ -917,7 +923,7 @@ public:
 
     void test17 ()
     {
-        std::cerr << "test17 : Test goVelocity (dx = 0.1, dy = 0.05, dth = 10.0)" << std::endl;
+        test_doc_string = "test17 : Test goVelocity (dx = 0.1, dy = 0.05, dth = 10.0)";
         /* initialize sample footstep_list */
         parse_params();
         gg->clear_footstep_nodes_list();
@@ -943,7 +949,7 @@ public:
 
     void test18 ()
     {
-        std::cerr << "test18 : Test goVelocity with changing velocity (translation and rotation)" << std::endl;
+        test_doc_string = "test18 : Test goVelocity with changing velocity (translation and rotation)";
         /* initialize sample footstep_list */
         parse_params();
         gg->clear_footstep_nodes_list();
@@ -977,8 +983,9 @@ public:
         plot_and_print_errorcheck ();
     };
 
-    void parse_params ()
+    void parse_params (bool is_print_doc_setring = true)
     {
+      if (is_print_doc_setring) std::cerr << test_doc_string << std::endl;
       for (unsigned int i = 0; i < arg_strs.size(); ++ i) {
           if ( arg_strs[i]== "--default-step-time" ) {
               if (++i < arg_strs.size()) gg->set_default_step_time(atof(arg_strs[i].c_str()));
