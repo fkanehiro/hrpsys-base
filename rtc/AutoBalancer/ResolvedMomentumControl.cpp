@@ -136,8 +136,8 @@ namespace rats
     }
 
     void RMController::rmControl(hrp::BodyPtr &m_robot, const hrp::Vector3 Pref, const hrp::Vector3 Lref,
-                                 const std::map<std::string, hrp::dvector6> xi_ref, const hrp::Vector3 ref_basePos,
-                                 const hrp::Matrix33 ref_baseRot, const double dt)
+                                 const std::map<std::string, hrp::dvector6> &xi_ref, const hrp::Vector3 ref_basePos,
+                                 const hrp::Matrix33 &ref_baseRot, const double dt)
 
     {
         const double EPS = 1e-6;
@@ -200,9 +200,9 @@ namespace rats
         hrp::dvector xi_b(6);
         {
             hrp::Vector3 root_v, root_omega;
-            root_v = (ref_basePos - m_robot->rootLink()->p) / dt;
+            root_v = (ref_basePos - m_robot->rootLink()->p);
             hrp::Matrix33 dR = m_robot->rootLink()->R.transpose() * ref_baseRot;
-            root_omega = hrp::omegaFromRot(dR) / dt;
+            root_omega = hrp::omegaFromRot(dR);
             xi_b << root_v, root_omega; // reference
         }
 
@@ -250,12 +250,12 @@ namespace rats
             }
         }
 
-        m_robot->rootLink()->p += xi_b.segment(0, 3) * dt;
+        m_robot->rootLink()->p += xi_b.segment(0, 3);
         hrp::Vector3 omega = xi_b.segment(3, 3);
-        if (omega.norm() > EPS) m_robot->rootLink()->R *= hrp::rodrigues(omega.normalized(), omega.norm() * dt);
+        if (omega.norm() > EPS) m_robot->rootLink()->R *= hrp::rodrigues(omega.normalized(), omega.norm());
 
         for (size_t i = 0; i < m_robot->numJoints(); ++i) {
-            m_robot->joint(i)->q += dq(i) * dt;
+            m_robot->joint(i)->q += dq(i);
         }
         m_robot->calcForwardKinematics();
     }

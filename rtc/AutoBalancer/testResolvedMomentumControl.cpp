@@ -83,15 +83,15 @@ private:
             }
             cur_basePos = m_robot->rootLink()->p;
             cur_baseRot = m_robot->rootLink()->R;
-            ref_basePos = cur_basePos + Pref / m_robot->totalMass() * dt;
+            ref_basePos = cur_basePos + Pref / m_robot->totalMass();
             ref_baseRot = cur_baseRot;
 
             // execute RMC
             rmc->rmControl(m_robot, Pref, Lref, xi_ref, ref_basePos, ref_baseRot, dt);
 
-            m_robot->rootLink()->v = (m_robot->rootLink()->p - cur_basePos) / dt;
+            m_robot->rootLink()->v = (m_robot->rootLink()->p - cur_basePos);
             hrp::Matrix33 dR = cur_baseRot.transpose() * m_robot->rootLink()->R;
-            m_robot->rootLink()->w = hrp::omegaFromRot(dR) / dt;
+            m_robot->rootLink()->w = hrp::omegaFromRot(dR);
 
             hrp::dvector tmpPL(6);
             tmpPL << Pref, Lref;
@@ -103,11 +103,11 @@ private:
             m_robot->calcTotalMomentumFromJacobian(P, L);
 
             for (size_t i = 0; i < m_robot->numJoints(); ++i) {
-                m_robot->joint(i)->dq = (m_robot->joint(i)->q - cur_q(i)) / dt;
+                m_robot->joint(i)->dq = (m_robot->joint(i)->q - cur_q(i));
             }
             for (std::map<std::string, hrp::dvector6>::iterator it = xi_ref.begin(); it != xi_ref.end(); ++it) {
-                xi[(*it).first].segment(0, 3) = (m_robot->link((*it).first)->p - p_constraint[(*it).first]) / dt;
-                xi[(*it).first].segment(3, 3) = hrp::omegaFromRot(R_constraint[(*it).first].transpose() * m_robot->link((*it).first)->R) / dt;
+                xi[(*it).first].segment(0, 3) = (m_robot->link((*it).first)->p - p_constraint[(*it).first]);
+                xi[(*it).first].segment(3, 3) = hrp::omegaFromRot(R_constraint[(*it).first].transpose() * m_robot->link((*it).first)->R);
             }
 
             fp << std::fixed;
@@ -147,6 +147,7 @@ private:
         {
             std::ostringstream oss("");
             std::string gtitle("P");
+            // oss << "set term wxt size 2560, 1600" << std::endl;
             oss << "set multiplot layout 3, 1 title '" << gtitle << "'" << std::endl;
             std::string titles[3] = {"X", "Y", "Z"};
             for (size_t ii = 0; ii < 3; ii++) {
@@ -164,6 +165,7 @@ private:
         {
             std::ostringstream oss("");
             std::string gtitle("L");
+            // oss << "set term wxt size 2560, 1600" << std::endl;
             oss << "set multiplot layout 3, 1 title '" << gtitle << "'" << std::endl;
             std::string titles[3] = {"X", "Y", "Z"};
             for (size_t ii = 0; ii < 3; ii++) {
@@ -214,6 +216,8 @@ private:
             // p
             std::ostringstream oss("");
             std::string gtitle("xi_p " + (*it).first);
+            // oss << "set term wxt size 2560, 1600" << std::endl;
+            oss << "set termoption noenhanced" << std::endl;
             oss << "set multiplot layout 3, 1 title '" << gtitle << "'" << std::endl;
             std::string titles[3] = {"X", "Y", "Z"};
             for (size_t ii = 0; ii < 3; ii++) {
@@ -231,6 +235,8 @@ private:
             oss.str("");
             oss.clear();
             gtitle = "xi_R " + (*it).first;
+            // oss << "set term wxt size 2560, 1600" << std::endl;
+            oss << "set termoption noenhanced" << std::endl;
             oss << "set multiplot layout 3, 1 title '" << gtitle << "'" << std::endl;
             // std::string titles[3] = {"X", "Y", "Z"};
             for (size_t ii = 0; ii < 3; ii++) {
@@ -284,7 +290,7 @@ public:
         std::cerr << "test0 : Control All Momentum with legs constraints" << std::endl;
         setResetPose();
 
-        double max_tm = 4.0;
+        double max_tm = 120.0;
         hrp::dvector6 Svec;
         Svec << 1, 1, 1, 1, 1, 1;
         rmc->setSelectionMatrix(Svec);
@@ -301,9 +307,9 @@ public:
             hrp::Vector3 calcPref(const hrp::BodyPtr m_robot, const double tm, const double max_tm)
             {
                 hrp::Vector3 Pref;
-                Pref(0) = 0.01 * sin(tm * M_PI / max_tm * 4);
-                Pref(1) = 0.01 * sin(tm * M_PI / max_tm * 4);
-                Pref(2) = 0.02 * sin(tm * M_PI / max_tm * 4);
+                Pref(0) = 0.00001 * sin(tm * M_PI / max_tm * 4);
+                Pref(1) = 0.00001 * sin(tm * M_PI / max_tm * 4);
+                Pref(2) = 0.00002 * sin(tm * M_PI / max_tm * 4);
                 Pref *= m_robot->totalMass();
                 return Pref;
             }
@@ -311,9 +317,9 @@ public:
             hrp::Vector3 calcLref(const hrp::BodyPtr m_robot, const double tm, const double max_tm)
             {
                 hrp::Vector3 Lref;
-                Lref(0) = 0.1 * sin(tm * M_PI / max_tm * 4);
-                Lref(1) = 0.1 * sin(tm * M_PI / max_tm * 4);
-                Lref(2) = 0.2 * sin(tm * M_PI / max_tm * 4);
+                Lref(0) = 0.0001 * sin(tm * M_PI / max_tm * 4);
+                Lref(1) = 0.0001 * sin(tm * M_PI / max_tm * 4);
+                Lref(2) = 0.0002 * sin(tm * M_PI / max_tm * 4);
                 return Lref;
             }
 
@@ -334,7 +340,7 @@ public:
         std::cerr << "test1 : Control all momentum with lleg and rarm constraint" << std::endl;
         setResetPose();
 
-        double max_tm = 4.0;
+        double max_tm = 120.0;
         hrp::dvector6 Svec;
         Svec << 1, 1, 1, 1, 1, 1;
         rmc->setSelectionMatrix(Svec);
@@ -351,9 +357,9 @@ public:
             hrp::Vector3 calcPref(const hrp::BodyPtr m_robot, const double tm, const double max_tm)
             {
                 hrp::Vector3 Pref;
-                Pref(0) = 0.01 * cos(tm * M_PI / max_tm * 4);
-                Pref(1) = 0.01 * sin(tm * M_PI / max_tm * 4);
-                Pref(2) = 0.02 * cos(tm * M_PI / max_tm * 4);
+                Pref(0) = 0.0001 * cos(tm * M_PI / max_tm * 4);
+                Pref(1) = 0.0001 * sin(tm * M_PI / max_tm * 4);
+                Pref(2) = 0.0002 * cos(tm * M_PI / max_tm * 4);
                 Pref *= m_robot->totalMass();
                 return Pref;
             }
@@ -361,9 +367,9 @@ public:
             hrp::Vector3 calcLref(const hrp::BodyPtr m_robot, const double tm, const double max_tm)
             {
                 hrp::Vector3 Lref;
-                Lref(0) = 0.1 * cos(tm * M_PI / max_tm * 4);
-                Lref(1) = 0.1 * sin(tm * M_PI / max_tm * 4);
-                Lref(2) = 0.2 * cos(tm * M_PI / max_tm * 4);
+                Lref(0) = 0.001 * cos(tm * M_PI / max_tm * 4);
+                Lref(1) = 0.001 * sin(tm * M_PI / max_tm * 4);
+                Lref(2) = 0.002 * cos(tm * M_PI / max_tm * 4);
                 return Lref;
             }
 
@@ -400,9 +406,9 @@ public:
             hrp::Vector3 calcPref(const hrp::BodyPtr m_robot, const double tm, const double max_tm)
             {
                 hrp::Vector3 Pref;
-                Pref(0) = 0.01 * cos(tm * M_PI / max_tm * 4);
-                Pref(1) = 0.01 * sin(tm * M_PI / max_tm * 4);
-                Pref(2) = 0.02 * cos(tm * M_PI / max_tm * 4);
+                Pref(0) = 0.0001 * cos(tm * M_PI / max_tm * 4);
+                Pref(1) = 0.0001 * sin(tm * M_PI / max_tm * 4);
+                Pref(2) = 0.0002 * cos(tm * M_PI / max_tm * 4);
                 Pref *= m_robot->totalMass();
                 return Pref;
             }
@@ -410,9 +416,9 @@ public:
             hrp::Vector3 calcLref(const hrp::BodyPtr m_robot, const double tm, const double max_tm)
             {
                 hrp::Vector3 Lref;
-                Lref(0) = 0.1 * cos(tm * M_PI / max_tm * 4);
-                Lref(1) = 0.1 * sin(tm * M_PI / max_tm * 4);
-                Lref(2) = 0.2 * cos(tm * M_PI / max_tm * 4);
+                Lref(0) = 0.001 * cos(tm * M_PI / max_tm * 4);
+                Lref(1) = 0.001 * sin(tm * M_PI / max_tm * 4);
+                Lref(2) = 0.002 * cos(tm * M_PI / max_tm * 4);
                 return Lref;
             }
 
@@ -449,9 +455,9 @@ public:
             hrp::Vector3 calcPref(const hrp::BodyPtr m_robot, const double tm, const double max_tm)
             {
                 hrp::Vector3 Pref;
-                Pref(0) = 0.01 * cos(tm * M_PI / max_tm * 4);
-                Pref(1) = 0.01 * sin(tm * M_PI / max_tm * 4);
-                Pref(2) = 0.02 * cos(tm * M_PI / max_tm * 4);
+                Pref(0) = 0.0001 * cos(tm * M_PI / max_tm * 4);
+                Pref(1) = 0.0001 * sin(tm * M_PI / max_tm * 4);
+                Pref(2) = 0.0002 * cos(tm * M_PI / max_tm * 4);
                 Pref *= m_robot->totalMass();
                 return Pref;
             }
@@ -459,9 +465,9 @@ public:
             hrp::Vector3 calcLref(const hrp::BodyPtr m_robot, const double tm, const double max_tm)
             {
                 hrp::Vector3 Lref;
-                Lref(0) = 0.1 * cos(tm * M_PI / max_tm * 4);
-                Lref(1) = 0.1 * sin(tm * M_PI / max_tm * 4);
-                Lref(2) = 0.2 * cos(tm * M_PI / max_tm * 4);
+                Lref(0) = 0.001 * cos(tm * M_PI / max_tm * 4);
+                Lref(1) = 0.001 * sin(tm * M_PI / max_tm * 4);
+                Lref(2) = 0.002 * cos(tm * M_PI / max_tm * 4);
                 return Lref;
             }
 
@@ -473,6 +479,56 @@ public:
         };
 
         calcRefParamTest3* calcRef = new calcRefParamTest3();
+        executeAndPlot(max_tm, calcRef);
+    }
+
+    void test4()
+    {
+        std::cerr << "test4 : Control All Momentum with Raising Legs" << std::endl;
+        setResetPose();
+
+        double max_tm = 4.0;
+        hrp::dvector6 Svec;
+        Svec << 1, 1, 1, 1, 1, 1;
+        rmc->setSelectionMatrix(Svec);
+        xi_ref[end_effectors["rleg"]] = hrp::dvector6::Zero(6, 1);
+        xi_ref[end_effectors["lleg"]] = hrp::dvector6::Zero(6, 1);
+
+        for (std::map<std::string, hrp::dvector6>::iterator it = xi_ref.begin(); it != xi_ref.end(); ++it) {
+            rmc->addConstraintLink(m_robot, (*it).first);
+        }
+
+        class calcRefParamTest4 : public calcReferenceParameter
+        {
+        public:
+            hrp::Vector3 calcPref(const hrp::BodyPtr m_robot, const double tm, const double max_tm)
+            {
+                hrp::Vector3 Pref;
+                Pref(0) = 0.0001 * cos(tm * M_PI / max_tm * 4);
+                Pref(1) = 0.0001 * sin(tm * M_PI / max_tm * 4);
+                Pref(2) = 0.0002 * cos(tm * M_PI / max_tm * 4);
+                Pref *= m_robot->totalMass();
+                return Pref;
+            }
+
+            hrp::Vector3 calcLref(const hrp::BodyPtr m_robot, const double tm, const double max_tm)
+            {
+                hrp::Vector3 Lref;
+                Lref(0) = 0.001 * cos(tm * M_PI / max_tm * 4);
+                Lref(1) = 0.001 * sin(tm * M_PI / max_tm * 4);
+                Lref(2) = 0.002 * cos(tm * M_PI / max_tm * 4);
+                return Lref;
+            }
+
+            hrp::dvector6 calcXiref(const hrp::BodyPtr m_robot, const std::string &constraint, const double tm, const double max_tm)
+            {
+                hrp::dvector6 xi_ref = hrp::dvector6::Zero();
+                xi_ref(2) = 0.001 * sin(tm * M_PI / max_tm * 4);
+                return xi_ref;
+            }
+        };
+
+        calcRefParamTest4* calcRef = new calcRefParamTest4();
         executeAndPlot(max_tm, calcRef);
     }
 
