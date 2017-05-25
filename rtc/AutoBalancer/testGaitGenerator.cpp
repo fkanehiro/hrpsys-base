@@ -392,6 +392,10 @@ private:
                 for (size_t ii = 0; ii < 3; ii++) {
                     min_v[ii] = std::min(min_rfoot_pos(ii), min_lfoot_pos(ii));
                     max_v[ii] = std::max(max_rfoot_pos(ii), max_lfoot_pos(ii));
+                    if (min_v[ii] == 0.0 && max_v[ii] == 0.0) {
+                        min_v[ii] = -0.1;
+                        max_v[ii] = 0.1;
+                    }
                     range[ii] = max_v[ii] - min_v[ii];
                     double mid = (max_v[ii]+min_v[ii])/2.0;
                     min_v[ii] = mid + range[ii] * 1.05 * -0.5;
