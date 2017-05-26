@@ -9,6 +9,7 @@ target_link_libraries(testPreviewController ${libs})
 
 add_executable(testGaitGenerator testGaitGenerator.cpp ../ImpedanceController/RatsMatrix.cpp PreviewController.cpp GaitGenerator.cpp ../SequencePlayer/interpolator.cpp)
 target_link_libraries(testGaitGenerator ${libs})
+set_target_properties(testGaitGenerator PROPERTIES COMPILE_DEFINITIONS "FOR_TESTGAITGENERATOR=1")
 
 add_executable(AutoBalancerComp AutoBalancerComp.cpp ${comp_sources})
 target_link_libraries(AutoBalancerComp ${libs})

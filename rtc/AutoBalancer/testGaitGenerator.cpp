@@ -106,6 +106,9 @@ protected:
     ValueDifferenceChecker< std::vector<hrp::Vector3> > footpos_diff_checker, footrot_diff_checker, footposvel_diff_checker, footrotvel_diff_checker, zmpoffset_diff_checker;
     //   Check errors between two values
     ValueErrorChecker zmp_error_checker, cogzmp_error_checker;
+    //   Step time list results
+    std::vector<double> step_time_list;
+    bool is_step_time_valid;
     // For plot
     std::string test_doc_string;
     std::string fname_cogzmp;
@@ -334,6 +337,11 @@ private:
             fprintf(fp_ssmcvel, "\n");
             fflush(fp_ssmcvel);
             prev_ssmc = tmp_ssmc;
+
+            // footstep_node change
+            if (gg->get_lcg_count() == 0) {
+                step_time_list.push_back(gg->get_one_step_count()*dt);
+            }
 
             // Error checking
             {
@@ -646,6 +654,7 @@ private:
         std::cerr << "  SwingSupportFootMidRotVel diff : " << (ssmcrotvel_diff_checker.isSmallDiff()?"true":"false") << ", max_diff : " << rad2deg(ssmcrotvel_diff_checker.getMaxValue()) << "[deg/s], thre : " << rad2deg(ssmcrotvel_diff_checker.getDiffThre()) << "[deg/s]" <<std::endl;
         std::cerr << "  ZMPOffset diff : " << (zmpoffset_diff_checker.isSmallDiff()?"true":"false") << ", max_diff : " << zmpoffset_diff_checker.getMaxValue()*1e3 << "[mm/s], thre : " << zmpoffset_diff_checker.getDiffThre()*1e3 << "[mm/s]" <<std::endl;
         std::cerr << "  Contact states & swing support time validity : " << (is_contact_states_swing_support_time_validity?"true":"false") << std::endl;
+        std::cerr << "  Step time validity : " << (is_step_time_valid?"true":"false") << std::endl;
     };
 
     void check_start_values ()
@@ -660,6 +669,15 @@ private:
         // Check if start/end COG(xy) is sufficiently close to REFZMP(xy).
         std::vector<size_t> neglect_index = boost::assign::list_of(2);
         cogzmp_error_checker.checkValueError(gg->get_cog(), gg->get_refzmp(), neglect_index);
+        // Check step times
+        std::vector< std::vector<step_node> > fsl;
+        gg->get_footstep_nodes_list(fsl);
+        is_step_time_valid = step_time_list.size() == fsl.size();
+        if (is_step_time_valid) {
+            for (size_t i = 0; i < step_time_list.size(); i++) {
+                is_step_time_valid = (std::fabs(step_time_list[i]-fsl[i][0].step_time) < 1e-5) && is_step_time_valid;
+            }
+        }
     };
 
     // Generate and plot walk pattern
@@ -1219,6 +1237,7 @@ public:
             && zmpoffset_diff_checker.isSmallDiff()
             && footposvel_diff_checker.isSmallDiff() && footrotvel_diff_checker.isSmallDiff()
             && zmp_error_checker.isSmallError() && cogzmp_error_checker.isSmallError()
+            && is_step_time_valid
             && is_contact_states_swing_support_time_validity;
     };
 };

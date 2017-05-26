@@ -10,6 +10,10 @@
 #include <boost/lambda/lambda.hpp>
 #include <boost/shared_ptr.hpp>
 
+#ifdef FOR_TESTGAITGENERATOR
+#warning "Compile for testGaitGenerator"
+#endif // FOR_TESTGAITGENERATOR
+
 namespace rats
 {
     void cycloid_midpoint (hrp::Vector3& ret,
@@ -995,6 +999,9 @@ namespace rats
               return no_using_toe_heel_ratio;
           }
       };
+#ifdef FOR_TESTGAITGENERATOR
+      size_t get_one_step_count() const { return one_step_count; };
+#endif // FOR_TESTGAITGENERATOR
     };
 
   class gait_generator
@@ -1514,6 +1521,13 @@ namespace rats
         std::vector<leg_type> tmp = lcg.get_current_support_states();
         return std::find(tmp.begin(), tmp.end(), lt) != tmp.end();
     };
+#ifdef FOR_TESTGAITGENERATOR
+    size_t get_one_step_count() const { return lcg.get_one_step_count(); };
+    void get_footstep_nodes_list (std::vector< std::vector<step_node> > & fsl) const
+    {
+        fsl = footstep_nodes_list;
+    };
+#endif // FOR_TESTGAITGENERATOR
     void print_param (const std::string& print_str = "") const
     {
         double stride_fwd_x, stride_y, stride_th, stride_bwd_x;
