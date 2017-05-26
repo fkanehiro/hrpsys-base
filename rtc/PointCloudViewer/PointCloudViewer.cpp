@@ -131,17 +131,14 @@ RTC::ReturnCode_t PointCloudViewer::onExecute(RTC::UniqueId ec_id)
     // currently only support PointXYZ and PointXYZRGB
     if (is_color_points) { 
         pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB>);
-        cloud->is_dense = m_cloud.is_dense;
+        cloud->is_dense = m_cloud.is_dense; // need to handle pointcloud which has invalid points (is_dense = false)
+        cloud->points.resize(m_cloud.width*m_cloud.height);
         float *src = reinterpret_cast<float*>(m_cloud.data.get_buffer());
-        for (unsigned int i = 0; i< (m_cloud.width * m_cloud.height); i++) {
-            pcl::PointXYZRGB tmp_point;
-            tmp_point.x = src[0];
-            tmp_point.y = src[1];
-            tmp_point.z = src[2];
-            if (m_cloud.is_dense || (pcl::isFinite(tmp_point) && !std::isnan(src[3]))) { // check validity of point
-                tmp_point.rgb = src[3]; // use float rgb union
-                cloud->push_back(tmp_point);
-            }
+        for (unsigned int i = 0; i< cloud->points.size(); i++) {
+            cloud->points[i].x = src[0];
+            cloud->points[i].y = src[1];
+            cloud->points[i].z = src[2];
+            cloud->points[i].rgb = src[3]; // use float rgb union
             src += 4;
         }
         if (!m_viewer.wasStopped()){
