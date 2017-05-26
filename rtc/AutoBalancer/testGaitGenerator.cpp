@@ -59,6 +59,30 @@ template<> double ValueDifferenceChecker< std::vector<hrp::Vector3> >::calcDiff 
     return tmp;
 };
 
+// Error checker between two input values
+// isSmallError is true, error is correct.
+class ValueErrorChecker
+{
+    double error_thre, max_value_error;
+    bool is_small_error;
+public:
+    ValueErrorChecker (double _thre) : error_thre (_thre), max_value_error(0), is_small_error(true)
+    {
+    };
+    ~ValueErrorChecker () {};
+    void checkValueError (const hrp::Vector3& p0, const hrp::Vector3& p1, std::vector<size_t> neglect_index = std::vector<size_t>())
+    {
+        hrp::Vector3 errorv(p0-p1);
+        for (size_t i = 0; i < neglect_index.size(); i++) errorv(neglect_index[i]) = 0.0;
+        double error = errorv.norm();
+        if (error > max_value_error) max_value_error = error;
+        is_small_error = (error < error_thre) && is_small_error;
+    };
+    double getMaxValue () const { return max_value_error; };
+    double getErrorThre () const { return error_thre; };
+    bool isSmallError () const { return is_small_error; };
+};
+
 class testGaitGenerator
 {
 protected:
@@ -68,7 +92,6 @@ protected:
     hrp::Vector3 cog;
     gait_generator* gg;
     bool use_gnuplot, use_graph_append;
-    bool is_small_zmp_error, is_contact_states_swing_support_time_validity;
     // previous values for walk pattern calculation
     hrp::Vector3 prev_rfoot_pos, prev_lfoot_pos, prev_rfoot_rpy, prev_lfoot_rpy;
     hrp::Vector3 min_rfoot_pos, min_lfoot_pos, max_rfoot_pos, max_lfoot_pos;
@@ -77,8 +100,12 @@ protected:
     std::vector<bool> prev_contact_states;
     std::vector<double> prev_swing_support_time;
     // Value checker
+    bool is_contact_states_swing_support_time_validity;
+    //   Check difference of value
     ValueDifferenceChecker< hrp::Vector3 > refzmp_diff_checker, cartzmp_diff_checker, cog_diff_checker, ssmcpos_diff_checker, ssmcrot_diff_checker, ssmcposvel_diff_checker, ssmcrotvel_diff_checker;
     ValueDifferenceChecker< std::vector<hrp::Vector3> > footpos_diff_checker, footrot_diff_checker, footposvel_diff_checker, footrotvel_diff_checker, zmpoffset_diff_checker;
+    //   Check errors between two values
+    ValueErrorChecker zmp_error_checker, cogzmp_error_checker;
     // For plot
     std::string test_doc_string;
     std::string fname_cogzmp;
@@ -102,14 +129,6 @@ protected:
     std::string fname_ssmcvel;
     FILE* fp_ssmcvel;
 private:
-    ////
-    // error check
-    ////
-    bool check_zmp_error (const hrp::Vector3& czmp, const hrp::Vector3& refzmp)
-    {
-        return (czmp-refzmp).norm() < 50.0*1e-3; // [mm]
-    }
-
     ////
     // plot and pattern generation
     ////
@@ -319,7 +338,7 @@ private:
             // Error checking
             {
                 // Check error between RefZMP and CartZMP. If too large error, PreviewControl tracking is not enough.
-                is_small_zmp_error = check_zmp_error(gg->get_cart_zmp(), gg->get_refzmp()) && is_small_zmp_error;
+                zmp_error_checker.checkValueError(gg->get_cart_zmp(), gg->get_refzmp());
                 // Check too large differences (discontinuity)
                 //   COG and ZMP
                 hrp::Vector3 tmp(gg->get_refzmp());
@@ -612,7 +631,8 @@ private:
             }
         }
         std::cerr << "Checking" << std::endl;
-        std::cerr << "  ZMP error : " << (is_small_zmp_error?"true":"false") << std::endl;
+        std::cerr << "  ZMP error : " << (zmp_error_checker.isSmallError()?"true":"false") << ", max_error : " << zmp_error_checker.getMaxValue()*1e3 << "[mm], thre : " << zmp_error_checker.getErrorThre()*1e3 << "[mm]" << std::endl;
+        std::cerr << "  COGZMP error : " << (cogzmp_error_checker.isSmallError()?"true":"false") << ", max_error : " << cogzmp_error_checker.getMaxValue()*1e3 << "[mm], thre : " << cogzmp_error_checker.getErrorThre()*1e3 << "[mm]" << std::endl;
         std::cerr << "  RefZMP diff : " << (refzmp_diff_checker.isSmallDiff()?"true":"false") << ", max_diff : " << refzmp_diff_checker.getMaxValue()*1e3 << "[mm], thre : " << refzmp_diff_checker.getDiffThre()*1e3 << "[mm]" << std::endl;
         std::cerr << "  CartZMP diff : " << (cartzmp_diff_checker.isSmallDiff()?"true":"false") << ", max_diff : " << cartzmp_diff_checker.getMaxValue()*1e3 << "[mm], thre : " << cartzmp_diff_checker.getDiffThre()*1e3 << "[mm]" << std::endl;
         std::cerr << "  COG diff : " << (cog_diff_checker.isSmallDiff()?"true":"false") << ", max_diff : " << cog_diff_checker.getMaxValue()*1e3 << "[mm], thre : " << cog_diff_checker.getDiffThre()*1e3 << "[mm]" <<std::endl;
@@ -628,6 +648,20 @@ private:
         std::cerr << "  Contact states & swing support time validity : " << (is_contact_states_swing_support_time_validity?"true":"false") << std::endl;
     };
 
+    void check_start_values ()
+    {
+        // Check if start/end COG(xy) is sufficiently close to REFZMP(xy).
+        std::vector<size_t> neglect_index = boost::assign::list_of(2);
+        cogzmp_error_checker.checkValueError(gg->get_cog(), gg->get_refzmp(), neglect_index);
+    };
+
+    void check_end_values ()
+    {
+        // Check if start/end COG(xy) is sufficiently close to REFZMP(xy).
+        std::vector<size_t> neglect_index = boost::assign::list_of(2);
+        cogzmp_error_checker.checkValueError(gg->get_cog(), gg->get_refzmp(), neglect_index);
+    };
+
     // Generate and plot walk pattern
     void gen_and_plot_walk_pattern(const step_node& initial_support_leg_step, const step_node& initial_swing_leg_dst_step)
     {
@@ -637,11 +671,13 @@ private:
         while ( !gg->proc_one_tick() );
         //gg->print_footstep_list();
         /* make step and dump */
+        check_start_values();
         size_t i = 0;
         while ( gg->proc_one_tick() ) {
             proc_one_walking_motion(i);
             i++;
         }
+        check_end_values();
         plot_and_print_errorcheck ();
     };
 
@@ -661,13 +697,14 @@ private:
 
 public:
     std::vector<std::string> arg_strs;
-    testGaitGenerator(double _dt) : dt(_dt), use_gnuplot(true), use_graph_append(false), is_small_zmp_error(true), is_contact_states_swing_support_time_validity(true),
+    testGaitGenerator(double _dt) : dt(_dt), use_gnuplot(true), use_graph_append(false), is_contact_states_swing_support_time_validity(true),
                                     refzmp_diff_checker(20.0*1e-3), cartzmp_diff_checker(20.0*1e-3), cog_diff_checker(10.0*1e-3), // [mm]
                                     ssmcpos_diff_checker(10.0*1e-3), ssmcrot_diff_checker(deg2rad(0.1)),
                                     ssmcposvel_diff_checker(10.0*1e-3), ssmcrotvel_diff_checker(deg2rad(1)),
                                     footpos_diff_checker(10.0*1e-3), footrot_diff_checker(deg2rad(1)),
                                     footposvel_diff_checker(40*1e-3), footrotvel_diff_checker(deg2rad(15)),
                                     zmpoffset_diff_checker(20.0*1e-3),
+                                    zmp_error_checker(50*1e-3), cogzmp_error_checker(1.5*1e-3),
                                     min_rfoot_pos(1e10,1e10,1e10), min_lfoot_pos(1e10,1e10,1e10), max_rfoot_pos(-1e10,-1e10,-1e10), max_lfoot_pos(-1e10,-1e10,-1e10),
                                     prev_contact_states(2, true), // RLEG, LLEG
                                     prev_swing_support_time(2, 1e2), // RLEG, LLEG
@@ -1042,6 +1079,7 @@ public:
         gg->initialize_gait_parameter(cog, boost::assign::list_of(initial_support_leg_step), boost::assign::list_of(initial_swing_leg_dst_step));
         while ( !gg->proc_one_tick() );
         /* make step and dump */
+        check_start_values();
         size_t i = 0;
         while ( gg->proc_one_tick() ) {
             proc_one_walking_motion(i);
@@ -1050,6 +1088,7 @@ public:
                 gg->finalize_velocity_mode();
             }
         }
+        check_end_values();
         plot_and_print_errorcheck ();
     };
 
@@ -1070,6 +1109,7 @@ public:
         gg->initialize_gait_parameter(cog, boost::assign::list_of(initial_support_leg_step), boost::assign::list_of(initial_swing_leg_dst_step));
         while ( !gg->proc_one_tick() );
         /* make step and dump */
+        check_start_values();
         size_t i = 0;
         while ( gg->proc_one_tick() ) {
             proc_one_walking_motion(i);
@@ -1086,6 +1126,7 @@ public:
                 gg->set_velocity_param(0.1, 0.05, 0);
             }
         }
+        check_end_values();
         plot_and_print_errorcheck ();
     };
 
@@ -1171,12 +1212,13 @@ public:
 
     bool check_all_results ()
     {
-        return is_small_zmp_error && refzmp_diff_checker.isSmallDiff() && cartzmp_diff_checker.isSmallDiff() && cog_diff_checker.isSmallDiff()
+        return refzmp_diff_checker.isSmallDiff() && cartzmp_diff_checker.isSmallDiff() && cog_diff_checker.isSmallDiff()
             && ssmcpos_diff_checker.isSmallDiff() && ssmcrot_diff_checker.isSmallDiff()
             && ssmcposvel_diff_checker.isSmallDiff() && ssmcrotvel_diff_checker.isSmallDiff()
             && footpos_diff_checker.isSmallDiff() && footrot_diff_checker.isSmallDiff()
             && zmpoffset_diff_checker.isSmallDiff()
             && footposvel_diff_checker.isSmallDiff() && footrotvel_diff_checker.isSmallDiff()
+            && zmp_error_checker.isSmallError() && cogzmp_error_checker.isSmallError()
             && is_contact_states_swing_support_time_validity;
     };
 };
