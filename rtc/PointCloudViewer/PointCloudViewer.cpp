@@ -133,16 +133,17 @@ RTC::ReturnCode_t PointCloudViewer::onExecute(RTC::UniqueId ec_id)
         pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB>);
         cloud->is_dense = m_cloud.is_dense;
         float *src = reinterpret_cast<float*>(m_cloud.data.get_buffer());
-        for (unsigned int i = 0; i< (m_cloud.width * m_cloud.height); i++){
+        for (unsigned int i = 0; i< (m_cloud.width * m_cloud.height); i++) {
             pcl::PointXYZRGB tmp_point;
             tmp_point.x = src[0];
             tmp_point.y = src[1];
             tmp_point.z = src[2];
-            uint32_t rgb = *reinterpret_cast<uint32_t*>(&(src[3])); // http://docs.pointclouds.org/1.7.2/a01059.html#a1678cfbe6e832aa61ec0de773cab15ae
-            tmp_point.r = (uint8_t)((rgb >> 16) & 0x0000ff);
-            tmp_point.g = (uint8_t)((rgb >> 8) & 0x0000ff);
-            tmp_point.b = (uint8_t)((rgb) & 0x0000ff);
-            if (m_cloud.is_dense || (pcl::isFinite(tmp_point) && !std::isnan(rgb))) { // check validity of point
+            if (m_cloud.is_dense || (pcl::isFinite(tmp_point) && !std::isnan(src[3]))) { // check validity of point
+                // http://docs.pointclouds.org/1.7.2/a01059.html#a1678cfbe6e832aa61ec0de773cab15ae
+                uint32_t rgb = *reinterpret_cast<uint32_t*>(&(src[3]));
+                tmp_point.r = (uint8_t)((rgb >> 16) & 0x0000ff);
+                tmp_point.g = (uint8_t)((rgb >> 8) & 0x0000ff);
+                tmp_point.b = (uint8_t)((rgb) & 0x0000ff);
                 cloud->push_back(tmp_point);
             }
             src += 4;
