@@ -14,6 +14,51 @@ using namespace rats;
 #define deg2rad(deg) (deg * M_PI / 180)
 #endif
 
+// Difference checker to observe too large discontinuous values
+// isSmallDiff is true, calculation is correct and continuous.
+template<class T> class ValueDifferenceChecker
+{
+    T prev_value;
+    double diff_thre, max_value_diff;
+    bool is_small_diff, is_initialized;
+    double calcDiff (T& value) const { return 0; };
+public:
+    ValueDifferenceChecker (double _diff_thre) : diff_thre (_diff_thre), max_value_diff(0), is_small_diff(true), is_initialized(false)
+    {
+    };
+    ~ValueDifferenceChecker () {};
+    void checkValueDiff (T& value)
+    {
+        // Initialize prev value
+        if (!is_initialized) {
+            prev_value = value;
+            is_initialized = true;
+        }
+        // Calc diff and update
+        double diff = calcDiff(value);
+        if (diff > max_value_diff) max_value_diff = diff;
+        is_small_diff = (diff < diff_thre) && is_small_diff;
+        prev_value = value;
+    };
+    double getMaxValue () const { return max_value_diff; };
+    double getDiffThre () const { return diff_thre; };
+    bool isSmallDiff () const { return is_small_diff; };
+};
+
+template<> double ValueDifferenceChecker<hrp::Vector3>::calcDiff (hrp::Vector3& value) const
+{
+    return (value - prev_value).norm();
+};
+
+template<> double ValueDifferenceChecker< std::vector<hrp::Vector3> >::calcDiff (std::vector<hrp::Vector3>& value) const
+{
+    double tmp = 0;
+    for (size_t i = 0; i < value.size(); i++) {
+        tmp += (value[i] - prev_value[i]).norm();
+    }
+    return tmp;
+};
+
 class testGaitGenerator
 {
 protected:
@@ -23,7 +68,7 @@ protected:
     hrp::Vector3 cog;
     gait_generator* gg;
     bool use_gnuplot, use_graph_append;
-    bool is_small_zmp_error, is_small_zmp_diff, is_contact_states_swing_support_time_validity;
+    bool is_small_zmp_error, is_contact_states_swing_support_time_validity;
     // previous values for walk pattern calculation
     hrp::Vector3 prev_rfoot_pos, prev_lfoot_pos, prev_rfoot_rpy, prev_lfoot_rpy;
     hrp::Vector3 min_rfoot_pos, min_lfoot_pos, max_rfoot_pos, max_lfoot_pos;
@@ -31,6 +76,9 @@ protected:
     coordinates prev_ssmc;
     std::vector<bool> prev_contact_states;
     std::vector<double> prev_swing_support_time;
+    // Value checker
+    ValueDifferenceChecker< hrp::Vector3 > refzmp_diff_checker, cartzmp_diff_checker, cog_diff_checker, ssmcpos_diff_checker, ssmcrot_diff_checker, ssmcposvel_diff_checker, ssmcrotvel_diff_checker;
+    ValueDifferenceChecker< std::vector<hrp::Vector3> > footpos_diff_checker, footrot_diff_checker, footposvel_diff_checker, footrotvel_diff_checker, zmpoffset_diff_checker;
     // For plot
     std::string test_doc_string;
     std::string fname_cogzmp;
@@ -60,10 +108,6 @@ private:
     bool check_zmp_error (const hrp::Vector3& czmp, const hrp::Vector3& refzmp)
     {
         return (czmp-refzmp).norm() < 50.0*1e-3; // [mm]
-    }
-    bool check_zmp_diff (const hrp::Vector3& prev_zmp, const hrp::Vector3& zmp)
-    {
-        return (prev_zmp - zmp).norm() < 20.0*1e-3; // [mm]
     }
 
     ////
@@ -148,28 +192,29 @@ private:
             // ZMP offsets
             fprintf(fp_zoff, "%f ", i * dt);
             tmp_string_vector = boost::assign::list_of("rleg");
+            hrp::Vector3 rfoot_zmp_offset = (gg->get_support_leg_names() == tmp_string_vector) ? gg->get_support_foot_zmp_offsets().front() : gg->get_swing_foot_zmp_offsets().front();
             for (size_t ii = 0; ii < 3; ii++) {
-                fprintf(fp_zoff, "%f ", (gg->get_support_leg_names() == tmp_string_vector) ? gg->get_support_foot_zmp_offsets().front()(ii) : gg->get_swing_foot_zmp_offsets().front()(ii));
+                fprintf(fp_zoff, "%f ", rfoot_zmp_offset(ii));
             }
             tmp_string_vector = boost::assign::list_of("lleg");
+            hrp::Vector3 lfoot_zmp_offset = (gg->get_support_leg_names() == tmp_string_vector) ? gg->get_support_foot_zmp_offsets().front() : gg->get_swing_foot_zmp_offsets().front();
             for (size_t ii = 0; ii < 3; ii++) {
-                fprintf(fp_zoff, "%f ", (gg->get_support_leg_names() == tmp_string_vector) ? gg->get_support_foot_zmp_offsets().front()(ii) : gg->get_swing_foot_zmp_offsets().front()(ii));
+                fprintf(fp_zoff, "%f ", lfoot_zmp_offset(ii));
             }
             fprintf(fp_zoff, "\n");
 
             // Foot pos vel
             fprintf(fp_fposvel, "%f ", i * dt);
-            hrp::Vector3 tmpv;
             if ( i == 0 ) prev_rfoot_pos = rfoot_pos;
-            tmpv = (rfoot_pos - prev_rfoot_pos)/dt;
+            hrp::Vector3 rfootpos_vel = (rfoot_pos - prev_rfoot_pos)/dt;
             for (size_t ii = 0; ii < 3; ii++) {
-                fprintf(fp_fposvel, "%f ", tmpv(ii));
+                fprintf(fp_fposvel, "%f ", rfootpos_vel(ii));
             }
             prev_rfoot_pos = rfoot_pos;
             if ( i == 0 ) prev_lfoot_pos = lfoot_pos;
-            tmpv = (lfoot_pos - prev_lfoot_pos)/dt;
+            hrp::Vector3 lfootpos_vel = (lfoot_pos - prev_lfoot_pos)/dt;
             for (size_t ii = 0; ii < 3; ii++) {
-                fprintf(fp_fposvel, "%f ", tmpv(ii));
+                fprintf(fp_fposvel, "%f ", lfootpos_vel(ii));
             }
             prev_lfoot_pos = lfoot_pos;
             fprintf(fp_fposvel, "\n");
@@ -177,15 +222,15 @@ private:
             // Foot rot vel
             fprintf(fp_frotvel, "%f ", i * dt);
             if ( i == 0 ) prev_rfoot_rpy = rfoot_rpy;
-            tmpv = (rfoot_rpy - prev_rfoot_rpy)/dt;
+            hrp::Vector3 rfootrot_vel = (rfoot_rpy - prev_rfoot_rpy)/dt;
             for (size_t ii = 0; ii < 3; ii++) {
-                fprintf(fp_frotvel, "%f ", tmpv(ii));
+                fprintf(fp_frotvel, "%f ", rfootrot_vel(ii));
             }
             prev_rfoot_rpy = rfoot_rpy;
             if ( i == 0 ) prev_lfoot_rpy = lfoot_rpy;
-            tmpv = (lfoot_rpy - prev_lfoot_rpy)/dt;
+            hrp::Vector3 lfootrot_vel = (lfoot_rpy - prev_lfoot_rpy)/dt;
             for (size_t ii = 0; ii < 3; ii++) {
-                fprintf(fp_frotvel, "%f ", tmpv(ii));
+                fprintf(fp_frotvel, "%f ", lfootrot_vel(ii));
             }
             prev_lfoot_rpy = lfoot_rpy;
             fprintf(fp_frotvel, "\n");
@@ -249,22 +294,46 @@ private:
             // swing support mid coords vel
             fprintf(fp_ssmcvel, "%f ", i * dt);
             if ( i == 0 ) prev_ssmc = tmp_ssmc;
-            tmpv = (tmp_ssmc.pos - prev_ssmc.pos)/dt;
+            hrp::Vector3 tmp_ssmcpos_vel = (tmp_ssmc.pos - prev_ssmc.pos)/dt;
             for (size_t ii = 0; ii < 3; ii++) {
-                fprintf(fp_ssmcvel, "%f ", tmpv(ii));
+                fprintf(fp_ssmcvel, "%f ", tmp_ssmcpos_vel(ii));
             }
             hrp::Vector3 prev_ssmcr = hrp::rpyFromRot(prev_ssmc.rot);
-            tmpv = (tmp_ssmcr - prev_ssmcr)/dt;
+            hrp::Vector3 tmp_ssmcrot_vel = (tmp_ssmcr - prev_ssmcr)/dt;
             for (size_t ii = 0; ii < 3; ii++) {
-                fprintf(fp_ssmcvel, "%f ", tmpv(ii));
+                fprintf(fp_ssmcvel, "%f ", tmp_ssmcrot_vel(ii));
             }
             fprintf(fp_ssmcvel, "\n");
             prev_ssmc = tmp_ssmc;
 
             // Error checking
-            is_small_zmp_error = check_zmp_error(gg->get_cart_zmp(), gg->get_refzmp()) && is_small_zmp_error;
-            if (i>0) {
-                is_small_zmp_diff = check_zmp_diff(prev_refzmp, gg->get_refzmp()) && is_small_zmp_diff;
+            {
+                // Check error between RefZMP and CartZMP. If too large error, PreviewControl tracking is not enough.
+                is_small_zmp_error = check_zmp_error(gg->get_cart_zmp(), gg->get_refzmp()) && is_small_zmp_error;
+                // COG and ZMP
+                hrp::Vector3 tmp(gg->get_refzmp());
+                refzmp_diff_checker.checkValueDiff(tmp);
+                tmp = gg->get_cart_zmp();
+                cartzmp_diff_checker.checkValueDiff(tmp);
+                tmp = gg->get_cog();
+                cog_diff_checker.checkValueDiff(tmp);
+                // Foot pos and rot
+                std::vector<hrp::Vector3> tmpvec = boost::assign::list_of(rfoot_pos)(lfoot_pos);
+                footpos_diff_checker.checkValueDiff(tmpvec);
+                tmpvec = boost::assign::list_of(rfoot_rpy)(lfoot_rpy);
+                footrot_diff_checker.checkValueDiff(tmpvec);
+                tmpvec = boost::assign::list_of(rfootpos_vel)(lfootpos_vel);
+                footposvel_diff_checker.checkValueDiff(tmpvec);
+                tmpvec = boost::assign::list_of(rfootrot_vel)(lfootrot_vel);
+                footrotvel_diff_checker.checkValueDiff(tmpvec);
+                // Swing support mid coorsd
+                ssmcpos_diff_checker.checkValueDiff(tmp_ssmc.pos);
+                ssmcrot_diff_checker.checkValueDiff(tmp_ssmcr);
+                ssmcposvel_diff_checker.checkValueDiff(tmp_ssmcpos_vel);
+                ssmcrotvel_diff_checker.checkValueDiff(tmp_ssmcrot_vel);
+                // ZMP offset
+                tmpvec = boost::assign::list_of(rfoot_zmp_offset)(lfoot_zmp_offset);
+                zmpoffset_diff_checker.checkValueDiff(tmpvec);
             }
             //   If contact states are not change, prev_swing_support_time is not dt, otherwise prev_swing_support_time is dt.
             is_contact_states_swing_support_time_validity = is_contact_states_swing_support_time_validity &&
@@ -533,7 +602,18 @@ private:
         }
         std::cerr << "Checking" << std::endl;
         std::cerr << "  ZMP error : " << (is_small_zmp_error?"true":"false") << std::endl;
-        std::cerr << "  ZMP diff : " << (is_small_zmp_diff?"true":"false") << std::endl;
+        std::cerr << "  RefZMP diff : " << (refzmp_diff_checker.isSmallDiff()?"true":"false") << ", max_diff : " << refzmp_diff_checker.getMaxValue()*1e3 << "[mm], thre : " << refzmp_diff_checker.getDiffThre()*1e3 << "[mm]" << std::endl;
+        std::cerr << "  CartZMP diff : " << (cartzmp_diff_checker.isSmallDiff()?"true":"false") << ", max_diff : " << cartzmp_diff_checker.getMaxValue()*1e3 << "[mm], thre : " << cartzmp_diff_checker.getDiffThre()*1e3 << "[mm]" << std::endl;
+        std::cerr << "  COG diff : " << (cog_diff_checker.isSmallDiff()?"true":"false") << ", max_diff : " << cog_diff_checker.getMaxValue()*1e3 << "[mm], thre : " << cog_diff_checker.getDiffThre()*1e3 << "[mm]" <<std::endl;
+        std::cerr << "  FootPos diff : " << (footpos_diff_checker.isSmallDiff()?"true":"false") << ", max_diff : " << footpos_diff_checker.getMaxValue()*1e3 << "[mm], thre : " << footpos_diff_checker.getDiffThre()*1e3 << "[mm]" <<std::endl;
+        std::cerr << "  FootRot diff : " << (footrot_diff_checker.isSmallDiff()?"true":"false") << ", max_diff : " << rad2deg(footrot_diff_checker.getMaxValue()) << "[deg], thre : " << rad2deg(footrot_diff_checker.getDiffThre()) << "[deg]" <<std::endl;
+        std::cerr << "  FootPosVel diff : " << (footposvel_diff_checker.isSmallDiff()?"true":"false") << ", max_diff : " << footposvel_diff_checker.getMaxValue()*1e3 << "[mm/s], thre : " << footposvel_diff_checker.getDiffThre()*1e3 << "[mm/s]" <<std::endl;
+        std::cerr << "  FootRotVel diff : " << (footrotvel_diff_checker.isSmallDiff()?"true":"false") << ", max_diff : " << rad2deg(footrotvel_diff_checker.getMaxValue()) << "[deg/s], thre : " << rad2deg(footrotvel_diff_checker.getDiffThre()) << "[deg/s]" <<std::endl;
+        std::cerr << "  SwingSupportFootMidPos diff : " << (ssmcpos_diff_checker.isSmallDiff()?"true":"false") << ", max_diff : " << ssmcpos_diff_checker.getMaxValue()*1e3 << "[mm], thre : " << ssmcpos_diff_checker.getDiffThre()*1e3 << "[mm]" <<std::endl;
+        std::cerr << "  SwingSupportFootMidRot diff : " << (ssmcrot_diff_checker.isSmallDiff()?"true":"false") << ", max_diff : " << rad2deg(ssmcrot_diff_checker.getMaxValue()) << "[deg], thre : " << rad2deg(ssmcrot_diff_checker.getDiffThre()) << "[deg]" <<std::endl;
+        std::cerr << "  SwingSupportFootMidPosVel diff : " << (ssmcposvel_diff_checker.isSmallDiff()?"true":"false") << ", max_diff : " << ssmcposvel_diff_checker.getMaxValue()*1e3 << "[mm/s], thre : " << ssmcposvel_diff_checker.getDiffThre()*1e3 << "[mm/s]" <<std::endl;
+        std::cerr << "  SwingSupportFootMidRotVel diff : " << (ssmcrotvel_diff_checker.isSmallDiff()?"true":"false") << ", max_diff : " << rad2deg(ssmcrotvel_diff_checker.getMaxValue()) << "[deg/s], thre : " << rad2deg(ssmcrotvel_diff_checker.getDiffThre()) << "[deg/s]" <<std::endl;
+        std::cerr << "  ZMPOffset diff : " << (zmpoffset_diff_checker.isSmallDiff()?"true":"false") << ", max_diff : " << zmpoffset_diff_checker.getMaxValue()*1e3 << "[mm/s], thre : " << zmpoffset_diff_checker.getDiffThre()*1e3 << "[mm/s]" <<std::endl;
         std::cerr << "  Contact states & swing support time validity : " << (is_contact_states_swing_support_time_validity?"true":"false") << std::endl;
     };
 
@@ -570,20 +650,26 @@ private:
 
 public:
     std::vector<std::string> arg_strs;
-    testGaitGenerator() : use_gnuplot(true), use_graph_append(false), is_small_zmp_error(true), is_small_zmp_diff(true), is_contact_states_swing_support_time_validity(true),
-                          min_rfoot_pos(1e10,1e10,1e10), min_lfoot_pos(1e10,1e10,1e10), max_rfoot_pos(-1e10,-1e10,-1e10), max_lfoot_pos(-1e10,-1e10,-1e10),
-                          prev_contact_states(2, true), // RLEG, LLEG
-                          prev_swing_support_time(2, 1e2), // RLEG, LLEG
-                          fname_cogzmp("/tmp/plot-cogzmp.dat"), fp_cogzmp(fopen(fname_cogzmp.c_str(), "w")),
-                          fname_fpos("/tmp/plot-fpos.dat"), fp_fpos(fopen(fname_fpos.c_str(), "w")),
-                          fname_frot("/tmp/plot-frot.dat"), fp_frot(fopen(fname_frot.c_str(), "w")),
-                          fname_zoff("/tmp/plot-zoff.dat"), fp_zoff(fopen(fname_zoff.c_str(), "w")),
-                          fname_fposvel("/tmp/plot-fposvel.dat"), fp_fposvel(fopen(fname_fposvel.c_str(), "w")),
-                          fname_frotvel("/tmp/plot-frotvel.dat"), fp_frotvel(fopen(fname_frotvel.c_str(), "w")),
-                          fname_thpos("/tmp/plot-thpos.dat"), fp_thpos(fopen(fname_thpos.c_str(), "w")),
-                          fname_sstime("/tmp/plot-sstime.dat"), fp_sstime(fopen(fname_sstime.c_str(), "w")),
-                          fname_ssmc("/tmp/plot-ssmc.dat"), fp_ssmc(fopen(fname_ssmc.c_str(), "w")),
-                          fname_ssmcvel("/tmp/plot-ssmcvel.dat"), fp_ssmcvel(fopen(fname_ssmcvel.c_str(), "w"))
+    testGaitGenerator(double _dt) : dt(_dt), use_gnuplot(true), use_graph_append(false), is_small_zmp_error(true), is_contact_states_swing_support_time_validity(true),
+                                    refzmp_diff_checker(20.0*1e-3), cartzmp_diff_checker(20.0*1e-3), cog_diff_checker(10.0*1e-3), // [mm]
+                                    ssmcpos_diff_checker(10.0*1e-3), ssmcrot_diff_checker(deg2rad(0.1)),
+                                    ssmcposvel_diff_checker(10.0*1e-3), ssmcrotvel_diff_checker(deg2rad(1)),
+                                    footpos_diff_checker(10.0*1e-3), footrot_diff_checker(deg2rad(1)),
+                                    footposvel_diff_checker(40*1e-3), footrotvel_diff_checker(deg2rad(15)),
+                                    zmpoffset_diff_checker(20.0*1e-3),
+                                    min_rfoot_pos(1e10,1e10,1e10), min_lfoot_pos(1e10,1e10,1e10), max_rfoot_pos(-1e10,-1e10,-1e10), max_lfoot_pos(-1e10,-1e10,-1e10),
+                                    prev_contact_states(2, true), // RLEG, LLEG
+                                    prev_swing_support_time(2, 1e2), // RLEG, LLEG
+                                    fname_cogzmp("/tmp/plot-cogzmp.dat"), fp_cogzmp(fopen(fname_cogzmp.c_str(), "w")),
+                                    fname_fpos("/tmp/plot-fpos.dat"), fp_fpos(fopen(fname_fpos.c_str(), "w")),
+                                    fname_frot("/tmp/plot-frot.dat"), fp_frot(fopen(fname_frot.c_str(), "w")),
+                                    fname_zoff("/tmp/plot-zoff.dat"), fp_zoff(fopen(fname_zoff.c_str(), "w")),
+                                    fname_fposvel("/tmp/plot-fposvel.dat"), fp_fposvel(fopen(fname_fposvel.c_str(), "w")),
+                                    fname_frotvel("/tmp/plot-frotvel.dat"), fp_frotvel(fopen(fname_frotvel.c_str(), "w")),
+                                    fname_thpos("/tmp/plot-thpos.dat"), fp_thpos(fopen(fname_thpos.c_str(), "w")),
+                                    fname_sstime("/tmp/plot-sstime.dat"), fp_sstime(fopen(fname_sstime.c_str(), "w")),
+                                    fname_ssmc("/tmp/plot-ssmc.dat"), fp_ssmc(fopen(fname_ssmc.c_str(), "w")),
+                                    fname_ssmcvel("/tmp/plot-ssmcvel.dat"), fp_ssmcvel(fopen(fname_ssmcvel.c_str(), "w"))
     {};
 
     virtual ~testGaitGenerator()
@@ -1074,16 +1160,21 @@ public:
 
     bool check_all_results ()
     {
-        return is_small_zmp_error && is_small_zmp_diff && is_contact_states_swing_support_time_validity;
+        return is_small_zmp_error && refzmp_diff_checker.isSmallDiff() && cartzmp_diff_checker.isSmallDiff() && cog_diff_checker.isSmallDiff()
+            && ssmcpos_diff_checker.isSmallDiff() && ssmcrot_diff_checker.isSmallDiff()
+            && ssmcposvel_diff_checker.isSmallDiff() && ssmcrotvel_diff_checker.isSmallDiff()
+            && footpos_diff_checker.isSmallDiff() && footrot_diff_checker.isSmallDiff()
+            && zmpoffset_diff_checker.isSmallDiff()
+            && footposvel_diff_checker.isSmallDiff() && footrotvel_diff_checker.isSmallDiff()
+            && is_contact_states_swing_support_time_validity;
     };
 };
 
 class testGaitGeneratorHRP2JSK : public testGaitGenerator
 {
  public:
-    testGaitGeneratorHRP2JSK ()
+    testGaitGeneratorHRP2JSK () : testGaitGenerator(0.004)
         {
-            dt = 0.004;
             cog = 1e-3*hrp::Vector3(6.785, 1.54359, 806.831);
             leg_pos.push_back(hrp::Vector3(0,1e-3*-105,0)); /* rleg */
             leg_pos.push_back(hrp::Vector3(0,1e-3* 105,0)); /* lleg */
