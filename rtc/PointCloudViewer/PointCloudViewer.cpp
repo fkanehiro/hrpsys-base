@@ -142,7 +142,7 @@ RTC::ReturnCode_t PointCloudViewer::onExecute(RTC::UniqueId ec_id)
             tmp_point.r = (uint8_t)((rgb >> 16) & 0x0000ff);
             tmp_point.g = (uint8_t)((rgb >> 8) & 0x0000ff);
             tmp_point.b = (uint8_t)((rgb) & 0x0000ff);
-            if (m_cloud.is_dense || rgb != 0) { // rgb == 0 means invalid point
+            if (m_cloud.is_dense || (pcl::isFinite(tmp_point) && !std::isnan(rgb))) { // check validity of point
                 cloud->push_back(tmp_point);
             }
             src += 4;
