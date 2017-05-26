@@ -139,11 +139,7 @@ RTC::ReturnCode_t PointCloudViewer::onExecute(RTC::UniqueId ec_id)
             tmp_point.y = src[1];
             tmp_point.z = src[2];
             if (m_cloud.is_dense || (pcl::isFinite(tmp_point) && !std::isnan(src[3]))) { // check validity of point
-                // http://docs.pointclouds.org/1.7.2/a01059.html#a1678cfbe6e832aa61ec0de773cab15ae
-                uint32_t rgb = *reinterpret_cast<uint32_t*>(&(src[3]));
-                tmp_point.r = (uint8_t)((rgb >> 16) & 0x0000ff);
-                tmp_point.g = (uint8_t)((rgb >> 8) & 0x0000ff);
-                tmp_point.b = (uint8_t)((rgb) & 0x0000ff);
+                tmp_point.rgb = src[3]; // use float rgb union
                 cloud->push_back(tmp_point);
             }
             src += 4;
