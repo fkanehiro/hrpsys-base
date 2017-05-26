@@ -99,6 +99,7 @@ protected:
     coordinates prev_ssmc;
     std::vector<bool> prev_contact_states;
     std::vector<double> prev_swing_support_time;
+    double min_toe_heel_dif_angle, max_toe_heel_dif_angle, min_zmp_offset_x, max_zmp_offset_x;
     // Value checker
     bool is_contact_states_swing_support_time_validity;
     //   Check difference of value
@@ -107,8 +108,8 @@ protected:
     //   Check errors between two values
     ValueErrorChecker zmp_error_checker, cogzmp_error_checker;
     //   Step time list results
-    std::vector<double> step_time_list;
-    bool is_step_time_valid;
+    std::vector<double> step_time_list, min_toe_heel_dif_angle_list, max_toe_heel_dif_angle_list, min_zmp_offset_x_list, max_zmp_offset_x_list;
+    bool is_step_time_valid, is_toe_heel_dif_angle_valid, is_toe_heel_zmp_offset_x_valid;
     // For plot
     std::string test_doc_string;
     std::string fname_cogzmp;
@@ -228,6 +229,11 @@ private:
             }
             fprintf(fp_zoff, "\n");
             fflush(fp_zoff);
+            double tmpzoff;
+            if (gg->get_support_leg_names()[0] == "lleg") tmpzoff = rfoot_zmp_offset(0);
+            else tmpzoff = lfoot_zmp_offset(0);
+            min_zmp_offset_x = std::min(min_zmp_offset_x, tmpzoff);
+            max_zmp_offset_x = std::max(max_zmp_offset_x, tmpzoff);
 
             // Foot pos vel
             fprintf(fp_fposvel, "%f ", i * dt);
@@ -338,9 +344,24 @@ private:
             fflush(fp_ssmcvel);
             prev_ssmc = tmp_ssmc;
 
+            // Toe heel angle
+            double tmp_toe_heel_dif_angle = gg->get_toe_heel_dif_angle();
+            min_toe_heel_dif_angle = std::min(min_toe_heel_dif_angle, tmp_toe_heel_dif_angle);
+            max_toe_heel_dif_angle = std::max(max_toe_heel_dif_angle, tmp_toe_heel_dif_angle);
+
             // footstep_node change
             if (gg->get_lcg_count() == 0) {
                 step_time_list.push_back(gg->get_one_step_count()*dt);
+                min_toe_heel_dif_angle_list.push_back(min_toe_heel_dif_angle);
+                max_toe_heel_dif_angle_list.push_back(max_toe_heel_dif_angle);
+                min_toe_heel_dif_angle = 1e10;
+                max_toe_heel_dif_angle = -1e10;
+                if ( !eps_eq(min_zmp_offset_x, gg->get_default_zmp_offsets()[0](0), 1e-5) ) min_zmp_offset_x_list.push_back(min_zmp_offset_x);
+                else min_zmp_offset_x_list.push_back(0.0);
+                if ( !eps_eq(max_zmp_offset_x, gg->get_default_zmp_offsets()[0](0), 1e-5) ) max_zmp_offset_x_list.push_back(max_zmp_offset_x);
+                else max_zmp_offset_x_list.push_back(0.0);
+                min_zmp_offset_x = 1e10;
+                max_zmp_offset_x = -1e10;
             }
 
             // Error checking
@@ -655,6 +676,8 @@ private:
         std::cerr << "  ZMPOffset diff : " << (zmpoffset_diff_checker.isSmallDiff()?"true":"false") << ", max_diff : " << zmpoffset_diff_checker.getMaxValue()*1e3 << "[mm/s], thre : " << zmpoffset_diff_checker.getDiffThre()*1e3 << "[mm/s]" <<std::endl;
         std::cerr << "  Contact states & swing support time validity : " << (is_contact_states_swing_support_time_validity?"true":"false") << std::endl;
         std::cerr << "  Step time validity : " << (is_step_time_valid?"true":"false") << std::endl;
+        std::cerr << "  ToeHeel angle validity : " << (is_toe_heel_dif_angle_valid?"true":"false") << std::endl;
+        std::cerr << "  ToeHeel+ZMPoffset validity : " << (is_toe_heel_zmp_offset_x_valid?"true":"false") << std::endl;
     };
 
     void check_start_values ()
@@ -669,14 +692,54 @@ private:
         // Check if start/end COG(xy) is sufficiently close to REFZMP(xy).
         std::vector<size_t> neglect_index = boost::assign::list_of(2);
         cogzmp_error_checker.checkValueError(gg->get_cog(), gg->get_refzmp(), neglect_index);
-        // Check step times
+        // Check step times by comparing calculated step time vs input footsteps step times
         std::vector< std::vector<step_node> > fsl;
         gg->get_footstep_nodes_list(fsl);
         is_step_time_valid = step_time_list.size() == fsl.size();
         if (is_step_time_valid) {
             for (size_t i = 0; i < step_time_list.size(); i++) {
-                is_step_time_valid = (std::fabs(step_time_list[i]-fsl[i][0].step_time) < 1e-5) && is_step_time_valid;
+                is_step_time_valid = eps_eq(step_time_list[i], fsl[i][0].step_time, 1e-5) && is_step_time_valid;
             }
+        }
+        // Check toe heel angle by comparing calculated toe heel angle (min/max = heel/toe) vs input footsteps toe heel angles
+        is_toe_heel_dif_angle_valid = (min_toe_heel_dif_angle_list.size() == fsl.size()) && (max_toe_heel_dif_angle_list.size() == fsl.size());
+        if (is_toe_heel_dif_angle_valid) {
+            if (gg->get_use_toe_heel_auto_set()) {
+                // TODO : not implemented yet
+            } else {
+                //for (size_t i = 0; i < min_toe_heel_dif_angle_list.size(); i++) {
+                for (size_t i = 1; i < min_toe_heel_dif_angle_list.size(); i++) {
+                    // std::cerr << "[" << min_toe_heel_dif_angle_list[i] << " " << max_toe_heel_dif_angle_list[i] << " "
+                    //           << -fsl[i][0].heel_angle << " " << fsl[i][0].toe_angle << "]" << std::endl;
+                    is_toe_heel_dif_angle_valid = eps_eq(min_toe_heel_dif_angle_list[i], (-fsl[i][0].heel_angle), 1e-5)
+                        && eps_eq(max_toe_heel_dif_angle_list[i], fsl[i][0].toe_angle, 1e-5)
+                        && is_toe_heel_dif_angle_valid;
+                }
+            }
+        }
+        // Check validity of toe heel + zmp offset
+        //   If use_toe_heel_transition is true, use/not-use of toe/heel angle corresponds to use/not-use zmp transition of toe/heel.
+        is_toe_heel_zmp_offset_x_valid = (min_zmp_offset_x_list.size() == fsl.size()) && (max_zmp_offset_x_list.size() == fsl.size());
+        if (gg->get_use_toe_heel_transition()) {
+            for (size_t i = 0; i < min_zmp_offset_x_list.size(); i++) {
+                // std::cerr << "[" << min_zmp_offset_x_list[i] << " " << max_zmp_offset_x_list[i] << " " << gg->get_toe_zmp_offset_x() << " " << gg->get_heel_zmp_offset_x() << "]" << std::endl;
+                bool heel_valid = true;
+                if ( !eps_eq(min_toe_heel_dif_angle_list[i], 0.0, 1e-5) ) { // If use heel, zmp offset should be same as heel zmp offset
+                    heel_valid = eps_eq(min_zmp_offset_x_list[i], gg->get_heel_zmp_offset_x(), 1e-5);
+                } else { // If not use heel, zmp offset should not be same as heel zmp offset
+                    heel_valid = !eps_eq(min_zmp_offset_x_list[i], gg->get_heel_zmp_offset_x(), 1e-5);
+                }
+                bool toe_valid = true;
+                if ( !eps_eq(max_toe_heel_dif_angle_list[i], 0.0, 1e-5) ) { // If use toe, zmp offset should be same as toe zmp offset
+                    toe_valid = eps_eq(max_zmp_offset_x_list[i], gg->get_toe_zmp_offset_x(), 1e-5);
+                } else { // If not use toe, zmp offset should not be same as toe zmp offset
+                    toe_valid = !eps_eq(max_zmp_offset_x_list[i], gg->get_toe_zmp_offset_x(), 1e-5);
+                }
+                // std::cerr << heel_valid << " " << toe_valid << std::endl;
+                is_toe_heel_zmp_offset_x_valid = heel_valid && toe_valid && is_toe_heel_zmp_offset_x_valid;
+            }
+        } else {
+            // TODO
         }
     };
 
@@ -724,6 +787,7 @@ public:
                                     zmpoffset_diff_checker(20.0*1e-3),
                                     zmp_error_checker(50*1e-3), cogzmp_error_checker(1.5*1e-3),
                                     min_rfoot_pos(1e10,1e10,1e10), min_lfoot_pos(1e10,1e10,1e10), max_rfoot_pos(-1e10,-1e10,-1e10), max_lfoot_pos(-1e10,-1e10,-1e10),
+                                    min_toe_heel_dif_angle(1e10), max_toe_heel_dif_angle(-1e10), min_zmp_offset_x(1e10), max_zmp_offset_x(-1e10),
                                     prev_contact_states(2, true), // RLEG, LLEG
                                     prev_swing_support_time(2, 1e2), // RLEG, LLEG
                                     fname_cogzmp("/tmp/plot-cogzmp.dat"), fp_cogzmp(fopen(fname_cogzmp.c_str(), "w")),
@@ -1237,7 +1301,7 @@ public:
             && zmpoffset_diff_checker.isSmallDiff()
             && footposvel_diff_checker.isSmallDiff() && footrotvel_diff_checker.isSmallDiff()
             && zmp_error_checker.isSmallError() && cogzmp_error_checker.isSmallError()
-            && is_step_time_valid
+            && is_step_time_valid && is_toe_heel_dif_angle_valid && is_toe_heel_zmp_offset_x_valid
             && is_contact_states_swing_support_time_validity;
     };
 };

@@ -411,6 +411,7 @@ namespace rats
       }
       foot_dif_rot_angle = (dif_angle > 0.0 ? deg2rad(dif_angle) : 0.0);
       if (use_toe_joint && dif_angle > 0.0) dif_angle = 0.0;
+      toe_heel_dif_angle = dif_angle;
       Eigen::AngleAxis<double> tmpr(deg2rad(dif_angle), hrp::Vector3::UnitY());
       rotm3times(new_coords.rot, org_coords.rot, tmpr.toRotationMatrix());
       new_coords.pos = org_coords.pos + org_coords.rot * ee_local_pivot_pos - new_coords.rot * ee_local_pivot_pos;

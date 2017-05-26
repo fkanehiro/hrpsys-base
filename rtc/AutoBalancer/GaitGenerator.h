@@ -386,6 +386,9 @@ namespace rats
               zmp_weight_map = boost::assign::map_list_of<leg_type, double>(RLEG, zmp_weight_output[0])(LLEG, zmp_weight_output[1])(RARM, zmp_weight_output[2])(LARM, zmp_weight_output[3]);
           }
       };
+#ifdef FOR_TESTGAITGENERATOR
+    std::vector<hrp::Vector3> get_default_zmp_offsets() const { return default_zmp_offsets; };
+#endif // FOR_TESTGAITGENERATOR
     };
 
     class delay_hoffarbib_trajectory_generator
@@ -710,7 +713,7 @@ namespace rats
       std::map<leg_type, interpolator*> swing_foot_rot_interpolator;
       // Parameters for toe-heel contact
       interpolator* toe_heel_interpolator;
-      double toe_pos_offset_x, heel_pos_offset_x, toe_angle, heel_angle, foot_dif_rot_angle;
+      double toe_pos_offset_x, heel_pos_offset_x, toe_angle, heel_angle, foot_dif_rot_angle, toe_heel_dif_angle;
       bool use_toe_joint, use_toe_heel_auto_set;
       toe_heel_type current_src_toe_heel_type, current_dst_toe_heel_type;
       void calc_current_swing_foot_rot (std::map<leg_type, hrp::Vector3>& tmp_swing_foot_rot, const double _default_double_support_ratio_before, const double _default_double_support_ratio_after);
@@ -743,7 +746,7 @@ namespace rats
           rdtg(), cdtg(),
           thp(),
           foot_midcoords_interpolator(NULL), swing_foot_rot_interpolator(), toe_heel_interpolator(NULL),
-          toe_pos_offset_x(0.0), heel_pos_offset_x(0.0), toe_angle(0.0), heel_angle(0.0), foot_dif_rot_angle(0.0), use_toe_joint(false), use_toe_heel_auto_set(false),
+          toe_pos_offset_x(0.0), heel_pos_offset_x(0.0), toe_angle(0.0), heel_angle(0.0), foot_dif_rot_angle(0.0), toe_heel_dif_angle(0.0), use_toe_joint(false), use_toe_heel_auto_set(false),
           current_src_toe_heel_type(SOLE), current_dst_toe_heel_type(SOLE)
       {
         support_leg_types = boost::assign::list_of<leg_type>(RLEG);
@@ -1001,6 +1004,7 @@ namespace rats
       };
 #ifdef FOR_TESTGAITGENERATOR
       size_t get_one_step_count() const { return one_step_count; };
+      double get_toe_heel_dif_angle() const { return toe_heel_dif_angle; };
 #endif // FOR_TESTGAITGENERATOR
     };
 
@@ -1527,6 +1531,8 @@ namespace rats
     {
         fsl = footstep_nodes_list;
     };
+    double get_toe_heel_dif_angle () const { return lcg.get_toe_heel_dif_angle(); };
+    std::vector<hrp::Vector3> get_default_zmp_offsets() const { return rg.get_default_zmp_offsets(); };
 #endif // FOR_TESTGAITGENERATOR
     void print_param (const std::string& print_str = "") const
     {
