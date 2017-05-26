@@ -154,6 +154,7 @@ private:
                 fprintf(fp_cogzmp, "%f ", cogpos);
             }
             fprintf(fp_cogzmp, "\n");
+            fflush(fp_cogzmp);
 
             // Foot pos
             fprintf(fp_fpos, "%f ", i * dt);
@@ -172,6 +173,7 @@ private:
                 max_lfoot_pos(ii) = std::max(max_lfoot_pos(ii), lfoot_pos(ii));
             }
             fprintf(fp_fpos, "\n");
+            fflush(fp_fpos);
 
             // Foot rot
             fprintf(fp_frot, "%f ", i * dt);
@@ -188,6 +190,7 @@ private:
                 fprintf(fp_frot, "%f ", rad2deg(lfoot_rpy(ii)));
             }
             fprintf(fp_frot, "\n");
+            fflush(fp_frot);
 
             // ZMP offsets
             fprintf(fp_zoff, "%f ", i * dt);
@@ -202,6 +205,7 @@ private:
                 fprintf(fp_zoff, "%f ", lfoot_zmp_offset(ii));
             }
             fprintf(fp_zoff, "\n");
+            fflush(fp_zoff);
 
             // Foot pos vel
             fprintf(fp_fposvel, "%f ", i * dt);
@@ -218,6 +222,7 @@ private:
             }
             prev_lfoot_pos = lfoot_pos;
             fprintf(fp_fposvel, "\n");
+            fflush(fp_fposvel);
 
             // Foot rot vel
             fprintf(fp_frotvel, "%f ", i * dt);
@@ -234,6 +239,7 @@ private:
             }
             prev_lfoot_rpy = lfoot_rpy;
             fprintf(fp_frotvel, "\n");
+            fflush(fp_frotvel);
 
             // Toe heel pos
             fprintf(fp_thpos, "%f ", i * dt);
@@ -263,6 +269,7 @@ private:
                 max_lfoot_pos(ii) = std::max(max_lfoot_pos(ii), tmppos(ii));
             }
             fprintf(fp_thpos, "\n");
+            fflush(fp_thpos);
 
             // Swing time
             fprintf(fp_sstime, "%f ", i * dt);
@@ -277,6 +284,7 @@ private:
                     (rleg_contact_states ? 1 : 0), (lleg_contact_states ? 1 : 0),
                     0.8*gg->get_current_toe_heel_ratio()+0.1); // scale+translation just for visualization
             fprintf(fp_sstime, "\n");
+            fflush(fp_sstime);
 
             // swing support mid coords
             fprintf(fp_ssmc, "%f ", i * dt);
@@ -290,6 +298,7 @@ private:
                 fprintf(fp_ssmc, "%f ", rad2deg(tmp_ssmcr(ii)));
             }
             fprintf(fp_ssmc, "\n");
+            fflush(fp_ssmc);
 
             // swing support mid coords vel
             fprintf(fp_ssmcvel, "%f ", i * dt);
@@ -304,20 +313,22 @@ private:
                 fprintf(fp_ssmcvel, "%f ", tmp_ssmcrot_vel(ii));
             }
             fprintf(fp_ssmcvel, "\n");
+            fflush(fp_ssmcvel);
             prev_ssmc = tmp_ssmc;
 
             // Error checking
             {
                 // Check error between RefZMP and CartZMP. If too large error, PreviewControl tracking is not enough.
                 is_small_zmp_error = check_zmp_error(gg->get_cart_zmp(), gg->get_refzmp()) && is_small_zmp_error;
-                // COG and ZMP
+                // Check too large differences (discontinuity)
+                //   COG and ZMP
                 hrp::Vector3 tmp(gg->get_refzmp());
                 refzmp_diff_checker.checkValueDiff(tmp);
                 tmp = gg->get_cart_zmp();
                 cartzmp_diff_checker.checkValueDiff(tmp);
                 tmp = gg->get_cog();
                 cog_diff_checker.checkValueDiff(tmp);
-                // Foot pos and rot
+                //   Foot pos and rot
                 std::vector<hrp::Vector3> tmpvec = boost::assign::list_of(rfoot_pos)(lfoot_pos);
                 footpos_diff_checker.checkValueDiff(tmpvec);
                 tmpvec = boost::assign::list_of(rfoot_rpy)(lfoot_rpy);
@@ -326,12 +337,12 @@ private:
                 footposvel_diff_checker.checkValueDiff(tmpvec);
                 tmpvec = boost::assign::list_of(rfootrot_vel)(lfootrot_vel);
                 footrotvel_diff_checker.checkValueDiff(tmpvec);
-                // Swing support mid coorsd
+                //   Swing support mid coorsd
                 ssmcpos_diff_checker.checkValueDiff(tmp_ssmc.pos);
                 ssmcrot_diff_checker.checkValueDiff(tmp_ssmcr);
                 ssmcposvel_diff_checker.checkValueDiff(tmp_ssmcpos_vel);
                 ssmcrotvel_diff_checker.checkValueDiff(tmp_ssmcrot_vel);
-                // ZMP offset
+                //   ZMP offset
                 tmpvec = boost::assign::list_of(rfoot_zmp_offset)(lfoot_zmp_offset);
                 zmpoffset_diff_checker.checkValueDiff(tmpvec);
             }
