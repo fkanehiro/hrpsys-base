@@ -1,7 +1,21 @@
 /* -*- coding:utf-8-unix; mode:c++; -*- */
 
 #include "GaitGenerator.h"
-/* samples */
+/*!
+ * @file  testGaitGenerator.cpp
+ * @brief Test of gait generator
+ * @date  $Date$
+ *
+ * $Id$
+ * TODO
+ *   Support test of quad walking
+ *   Support test of foot_dif_angle
+ *   Support footstep modification using capture point feedback
+ *   Support TODO in check_end_values
+ *   Supprot other robots and dt
+ */
+
+
 using namespace rats;
 #include <cstdio>
 #include <coil/stringutil.h>
@@ -107,7 +121,7 @@ protected:
     ValueDifferenceChecker< std::vector<hrp::Vector3> > footpos_diff_checker, footrot_diff_checker, footposvel_diff_checker, footrotvel_diff_checker, zmpoffset_diff_checker;
     //   Check errors between two values
     ValueErrorChecker zmp_error_checker, cogzmp_error_checker;
-    //   Step time list results
+    //   Results of list of step time, toe/heel angle, and zmp offset
     std::vector<double> step_time_list, min_toe_heel_dif_angle_list, max_toe_heel_dif_angle_list, min_zmp_offset_x_list, max_zmp_offset_x_list;
     bool is_step_time_valid, is_toe_heel_dif_angle_valid, is_toe_heel_zmp_offset_x_valid;
     // For plot
@@ -659,7 +673,11 @@ private:
                 pclose(gps[ii]);
             }
         }
-        std::cerr << "Checking" << std::endl;
+        std::string tmpstr = test_doc_string.substr(0, test_doc_string.find(":"));
+        for(size_t c = tmpstr.find_first_of(" "); c != std::string::npos; c = c = tmpstr.find_first_of(" ")){
+            tmpstr.erase(c,1);
+        }
+        std::cerr << "Checking of " << tmpstr << " : all results = " << (check_all_results()?"true":"false") << std::endl;
         std::cerr << "  ZMP error : " << (zmp_error_checker.isSmallError()?"true":"false") << ", max_error : " << zmp_error_checker.getMaxValue()*1e3 << "[mm], thre : " << zmp_error_checker.getErrorThre()*1e3 << "[mm]" << std::endl;
         std::cerr << "  COGZMP error : " << (cogzmp_error_checker.isSmallError()?"true":"false") << ", max_error : " << cogzmp_error_checker.getMaxValue()*1e3 << "[mm], thre : " << cogzmp_error_checker.getErrorThre()*1e3 << "[mm]" << std::endl;
         std::cerr << "  RefZMP diff : " << (refzmp_diff_checker.isSmallDiff()?"true":"false") << ", max_diff : " << refzmp_diff_checker.getMaxValue()*1e3 << "[mm], thre : " << refzmp_diff_checker.getDiffThre()*1e3 << "[mm]" << std::endl;
@@ -739,7 +757,7 @@ private:
                 is_toe_heel_zmp_offset_x_valid = heel_valid && toe_valid && is_toe_heel_zmp_offset_x_valid;
             }
         } else {
-            // TODO
+            // TODO : not implemented yet
         }
     };
 
@@ -1292,7 +1310,7 @@ public:
       }   
     };
 
-    bool check_all_results ()
+    bool check_all_results () const
     {
         return refzmp_diff_checker.isSmallDiff() && cartzmp_diff_checker.isSmallDiff() && cog_diff_checker.isSmallDiff()
             && ssmcpos_diff_checker.isSmallDiff() && ssmcrot_diff_checker.isSmallDiff()
