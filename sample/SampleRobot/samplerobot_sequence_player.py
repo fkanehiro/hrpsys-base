@@ -96,6 +96,7 @@ def checkJointAngles (var_doc, eps=1e-7):
         p = var_doc['pos']
     ret = checkArrayEquality(hcf.sh_svc.getCommand().jointRefs, p, eps)
     print "  pos => ", ret
+    assert(ret is True)
 
 def checkJointAnglesBetween(from_doc, to_doc, eps=1e-7):
     p0 =  from_doc if isinstance(from_doc, list) else from_doc['pos']
