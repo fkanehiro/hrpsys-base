@@ -2246,7 +2246,7 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
         '''
         if StrictVersion(self.seq_version) < StrictVersion('315.5.0'):
             raise RuntimeError('clearJointAnglesOfGroup is not available with your software version ' + self.seq_version)
-        return self.seq_svc.clearJointAngles(gname)
+        return self.seq_svc.clearJointAnglesOfGroup(gname)
 
     def removeForceSensorOffsetRMFO(self, sensor_names=[], tm=8.0):
         '''!@brief
