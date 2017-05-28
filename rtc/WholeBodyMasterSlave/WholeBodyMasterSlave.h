@@ -46,7 +46,9 @@ class WholeBodyMasterSlave : public RTC::DataFlowComponentBase, UTIL_CONST {
     virtual RTC::ReturnCode_t onDeactivated(RTC::UniqueId ec_id);
     virtual RTC::ReturnCode_t onExecute(RTC::UniqueId ec_id);
     bool startCountDownForWholeBodyMasterSlave(const double sec);
-    bool stopHumanSync();
+    bool startWholeBodyMasterSlave();
+    bool pauseWholeBodyMasterSlave();
+    bool stopWholeBodyMasterSlave();
     bool setWholeBodyMasterSlaveParam(const OpenHRP::WholeBodyMasterSlaveService::WholeBodyMasterSlaveParam& i_param);
     bool getWholeBodyMasterSlaveParam(OpenHRP::WholeBodyMasterSlaveService::WholeBodyMasterSlaveParam& i_param);
 
@@ -148,8 +150,8 @@ class WholeBodyMasterSlave : public RTC::DataFlowComponentBase, UTIL_CONST {
   std::vector< std::pair<fikPtr, hrp::BodyPtr> > ik_robot_list;
   static const enum ik_robot_usage{ basic, rmc } iru;
 
-  double q_interpolator_ratio;
-  interpolator *q_interpolator;
+  double transition_interpolator_ratio;
+  interpolator *transition_interpolator;
 
   int optionalDataLength;
   unsigned int m_debugLevel;
@@ -166,8 +168,11 @@ class WholeBodyMasterSlave : public RTC::DataFlowComponentBase, UTIL_CONST {
 
   boost::shared_ptr<HumanSynchronizer> hsp;
 
+  enum { MODE_IDLE, MODE_COUNTDOWN, MODE_SYNC_TO_WBMS, MODE_WBMS, MODE_PAUSE, MODE_SYNC_TO_IDLE} mode, previous_mode;
+  inline bool isRunning(){ return (mode==MODE_SYNC_TO_WBMS) || (mode==MODE_WBMS) || (mode==MODE_PAUSE) || (mode==MODE_SYNC_TO_IDLE) ;}
 
   void setupfik(fikPtr& fik_in, hrp::BodyPtr& robot_in, RTC::Properties& prop_in);
+  void calcManipulabilityJointLimit(fikPtr& fik_in, hrp::BodyPtr& robot_in);
   void solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr& robot_in, const WBMSPose3D& com_ref, const WBMSPose3D& rf_ref, const WBMSPose3D& lf_ref, const WBMSPose3D& rh_ref, const WBMSPose3D& lh_ref, const WBMSPose3D& head_ref, const std::string& debug_prefix="");
   void processTransition();
   void preProcessForWholeBodyMasterSlave(fikPtr& fik_in, hrp::BodyPtr& robot_in);

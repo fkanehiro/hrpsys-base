@@ -19,9 +19,19 @@ CORBA::Boolean WholeBodyMasterSlaveService_impl::startCountDownForWholeBodyMaste
     return m_wholebodymasterslave->startCountDownForWholeBodyMasterSlave(sec);
 };
 
-CORBA::Boolean WholeBodyMasterSlaveService_impl::stopHumanSync()
+CORBA::Boolean WholeBodyMasterSlaveService_impl::startWholeBodyMasterSlave()
 {
-    return m_wholebodymasterslave->stopHumanSync();
+    return m_wholebodymasterslave->startWholeBodyMasterSlave();
+};
+
+CORBA::Boolean WholeBodyMasterSlaveService_impl::pauseWholeBodyMasterSlave()
+{
+    return m_wholebodymasterslave->pauseWholeBodyMasterSlave();
+};
+
+CORBA::Boolean WholeBodyMasterSlaveService_impl::stopWholeBodyMasterSlave()
+{
+    return m_wholebodymasterslave->stopWholeBodyMasterSlave();
 };
 
 void WholeBodyMasterSlaveService_impl::setWholeBodyMasterSlaveParam(const OpenHRP::WholeBodyMasterSlaveService::WholeBodyMasterSlaveParam& i_param)

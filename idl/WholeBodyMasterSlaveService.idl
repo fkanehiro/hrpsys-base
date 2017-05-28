@@ -50,7 +50,9 @@ module OpenHRP
         boolean use_manipulability_limit;
     };
     boolean startCountDownForWholeBodyMasterSlave(in double sec);
-    boolean stopHumanSync();
+    boolean startWholeBodyMasterSlave();
+    boolean pauseWholeBodyMasterSlave();
+    boolean stopWholeBodyMasterSlave();
     void setWholeBodyMasterSlaveParam(in WholeBodyMasterSlaveParam i_param);
     void getWholeBodyMasterSlaveParam(out WholeBodyMasterSlaveParam i_param);
   };

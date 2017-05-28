@@ -46,6 +46,7 @@ class UTIL_CONST{
     enum { r, p, y, rpy };
     enum { fx, fy, fz, tx, ty, tz, ft_xyz };
     enum { MIN, MAX, MINMAX };
+//    enum { MODE_IDLE, MODE_COUNTDOWN, MODE_SYNC_TO_WBMS, MODE_WBMS, MODE_PAUSE, MODE_SYNC_TO_IDLE};
     double G, D2R, INFMIN,INFMAX;
     UTIL_CONST() :
       G(9.80665),
@@ -131,7 +132,6 @@ class RobotConfig : UTIL_CONST {
 
 class HumanSynchronizer : UTIL_CONST {
   private:
-    bool HumanSyncOn;
     double CNT_F_TH, h2r_ratio, tgt_h2r_ratio, HZ, DT;
     struct timeval t_calc_start, t_calc_end;
     BiquadIIRFilterVec calcacc_v_filters, acc4zmp_v_filters, com_in_filter;
@@ -142,12 +142,11 @@ class HumanSynchronizer : UTIL_CONST {
     std::vector<cv::Point2f> points,cvhull;
     RobotConfig rc;
     HumanPose rp_ref_out_old, hp_swap_checked;
-  public:
-    bool startCountdownForHumanSync, ht_first_call;//, is_ee_contact[FH][LR], go_ee_contact[FH][LR];
     unsigned int loop;
+  public:
     double countdown_sec;
     double H_cur;
-    HumanPose hp_wld_raw, hp_plot, rp_ref_out;
+    HumanPose hp_wld_raw, hp_plot, rp_ref_out, rp_ref_vel_old;
     FILE *sr_log, *cz_log, *id_log;
     WBMSPose3D baselinkpose;
     WBMSPose3D ee_contact_pose[4];
@@ -170,15 +169,19 @@ class HumanSynchronizer : UTIL_CONST {
       bool use_manipulability_limit;
     };
     struct WBMSparameters WBMSparam;
+//    enum { MODE_IDLE, MODE_COUNTDOWN, MODE_SYNC_TO_WBMS, MODE_WBMS, MODE_PAUSE, MODE_SYNC_TO_IDLE} mode, previous_mode;
+//    int mode, previous_mode;
+//    inline bool isRunning(){ return (mode==MODE_SYNC_TO_WBMS) || (mode==MODE_WBMS) || (mode==MODE_PAUSE) || (mode==MODE_SYNC_TO_IDLE) ;}
+    bool is_initial_loop;
 
     HumanSynchronizer(const double& dt){
       tgt_h2r_ratio = h2r_ratio = 0.96;//human 1.1m vs jaxon 1.06m
       DT = dt;
       HZ = (int)(1.0/DT);
       CNT_F_TH = 20.0;
-      HumanSyncOn = false;
-      ht_first_call = true;
-      startCountdownForHumanSync = false;
+//      HumanSyncOn = false;
+//      ht_first_call = true;
+//      startCountdownForHumanSync = false;
       countdown_sec = 5.0;
       loop = 0;
       //////////  hrp::Vector は初期化必要  ///////////
@@ -193,8 +196,8 @@ class HumanSynchronizer : UTIL_CONST {
       for(int i=0;i<tgt_rot_filters.size();i++)tgt_rot_filters[i].setParameter(1.0, HZ, BiquadIIRFilterVec::Q_NOOVERSHOOT);//四肢拘束点用(Rotation)
       tgt_pos_filters[com].setParameter(1.0, HZ, BiquadIIRFilterVec::Q_NOOVERSHOOT);//重心pos用
       tgt_rot_filters[com].setParameter(0.6, HZ, BiquadIIRFilterVec::Q_NOOVERSHOOT);//重心rot用
-      tgt_pos_filters[rf].setParameter(hrp::Vector3(1.0,1.0,1.2), HZ, BiquadIIRFilterVec::Q_NOOVERSHOOT);//右足pos用
-      tgt_pos_filters[lf].setParameter(hrp::Vector3(1.0,1.0,1.2), HZ, BiquadIIRFilterVec::Q_NOOVERSHOOT);//左足pos用
+      tgt_pos_filters[rf].setParameter(hrp::Vector3(1.0,1.0,1.0), HZ, BiquadIIRFilterVec::Q_NOOVERSHOOT);//右足pos用
+      tgt_pos_filters[lf].setParameter(hrp::Vector3(1.0,1.0,1.0), HZ, BiquadIIRFilterVec::Q_NOOVERSHOOT);//左足pos用
       calcacc_v_filters.setParameter(5, HZ, BiquadIIRFilterVec::Q_BUTTERWORTH);//加速度計算用
       acc4zmp_v_filters.setParameter(5, HZ, BiquadIIRFilterVec::Q_BUTTERWORTH);//ZMP生成用ほぼこの値でいい
       com_in_filter.setParameter(1, HZ);
@@ -223,6 +226,7 @@ class HumanSynchronizer : UTIL_CONST {
       WBMSparam.use_manipulability_limit = false;
       rp_ref_out_old.clear();
       rp_ref_out.clear();
+      rp_ref_vel_old.clear();
       rflf_points.reserve(8);//あらかじめreserveして高速化
       points.reserve(8);
       hull_com.reserve(6);
@@ -234,6 +238,8 @@ class HumanSynchronizer : UTIL_CONST {
         cz_log = fopen("/home/ishiguro/HumanSync_com_zmp.log","w+");
         id_log = fopen("/home/ishiguro/HumanSync_invdyn.log","w+");
       }
+//      previous_mode = mode = MODE_IDLE;
+      is_initial_loop = true;
       cout<<"HumanSynchronizer constructed"<<endl;
     }
     ~HumanSynchronizer(){
@@ -243,7 +249,7 @@ class HumanSynchronizer : UTIL_CONST {
       cout<<"HumanSynchronizer destructed"<<endl;
     }
     inline double getRemainingCountDown() const { return countdown_sec; }
-    inline bool isHumanSyncOn() const { return HumanSyncOn; }
+//    inline bool isHumanSyncOn() const { return HumanSyncOn; }
     inline double getUpdateTime() const { return (double)(t_calc_end.tv_sec - t_calc_start.tv_sec) + (t_calc_end.tv_usec - t_calc_start.tv_usec)/1.0e6; }
     inline void setTargetHumanToRobotRatio(const double tgt_h2r_r_in){ tgt_h2r_ratio = tgt_h2r_r_in; }
     inline void setCurrentInputAsOffset(HumanPose& tgt){
@@ -253,29 +259,36 @@ class HumanSynchronizer : UTIL_CONST {
         tgt.tgt[i].offs.rpy =  tgt.tgt[i].abs.rpy;
       }
     }
-    inline void updateCountDown(){
-      if(countdown_sec>0.0){
-        countdown_sec -= DT;
-      }else if(countdown_sec <= 0){
-        HumanSyncOn = true;
-        startCountdownForHumanSync = false;
-      }
-    }
+//    inline void updateCountDown(){
+//      if(countdown_sec>0.0){
+//        countdown_sec -= DT;
+//      }else if(countdown_sec <= 0){
+////        HumanSyncOn = true;
+////        startCountdownForHumanSync = false;
+////        mode = MODE_SYNC_TO_WBMS;
+//        cout<<"updateCountDown Finish"<<endl;
+//        is_initial_loop = true;
+//      }
+//    }
     inline void update(){//////////  メインループ  ////////////
       gettimeofday(&t_calc_start, NULL);
+      if(loop!=0){is_initial_loop = false;}
       updateParams                        ();
       autoLRSwapCheck                     (hp_wld_raw,hp_swap_checked);//入力の左右反転を常にチェック(＝手足の交差は不可能)
       convertRelHumanPoseToRelRobotPose   (hp_swap_checked, rp_ref_out);
       hp_plot = rp_ref_out;
-      if(loop==0){
+      if(is_initial_loop){
         for(int i=0, l[LR]={rf,lf}; i<LR; i++){
           rp_ref_out.tgt[l[i]].is_contact = true;
 //          rp_ref_out.tgt[l[i]].go_contact = true;
           rp_ref_out.tgt[l[i]].cnt = rp_ref_out.tgt[l[i]].abs;
         }
         rp_ref_out_old = rp_ref_out;
+        rp_ref_vel_old = rp_ref_out;
       }
-      if(isHumanSyncOn() && WBMSparam.set_com_height_fix)rp_ref_out.tgt[com].abs.p(Z) = rp_ref_out.tgt[com].offs.p(Z) + WBMSparam.set_com_height_fix_val;//膝曲げトルクで落ちるときの応急措置
+      applyVelLimit                       (rp_ref_vel_old, rp_ref_out);
+      rp_ref_vel_old = rp_ref_out;
+      if(WBMSparam.set_com_height_fix)rp_ref_out.tgt[com].abs.p(Z) = rp_ref_out.tgt[com].offs.p(Z) + WBMSparam.set_com_height_fix_val;//膝曲げトルクで落ちるときの応急措置
       judgeFootLandOnCommandByFootForce   (hp_wld_raw);//人体足裏反力から各足の接地指令を生成
       lockSwingFootIfZMPOutOfSupportFoot  (rp_ref_out_old, rp_ref_out);//
       limitEEWorkspace                    (rp_ref_out);
@@ -305,6 +318,7 @@ class HumanSynchronizer : UTIL_CONST {
       H_cur = rp_ref_out.tgt[com].abs.p(Z) - std::min((double)rp_ref_out.tgt[rf].abs.p(Z), (double)rp_ref_out.tgt[rf].abs.p(Z));
       com_vel_old = (rp_ref_out.tgt[com].abs.p - rp_ref_out_old.tgt[com].abs.p)/DT;
       rp_ref_out_old = rp_ref_out;
+//      previous_mode = mode;
       loop++;
       gettimeofday(&t_calc_end, NULL);
     }
@@ -361,7 +375,7 @@ class HumanSynchronizer : UTIL_CONST {
       }
     }
     inline void applyLPFilter(HumanPose& tgt){
-      if(loop==0){
+      if(is_initial_loop){
         for(int i=0, l[6]={com,rf,lf,rh,lh,head}; i<6; i++){
           tgt_pos_filters[l[i]].init(tgt.tgt[l[i]].abs.p);
           tgt_rot_filters[l[i]].init(tgt.tgt[l[i]].abs.rpy);
@@ -426,7 +440,7 @@ class HumanSynchronizer : UTIL_CONST {
         for(int j=0;j<XYZ;j++){ LIMIT_MINMAX( out.tgt[l[i]].abs.rpy(j), rc.ee_rot_limit[l[i]][MIN](j) + out.tgt[com].abs.rpy(j), rc.ee_rot_limit[l[i]][MAX](j) + out.tgt[com].abs.rpy(j) ); }
       }
       if(!WBMSparam.use_head)out.tgt[head].abs.rpy = hrp::Vector3::Zero();
-      if(!isHumanSyncOn())out.tgt[head].abs.rpy = hrp::Vector3::Zero();
+//      if(mode!=MODE_WBMS)out.tgt[head].abs.rpy = hrp::Vector3::Zero();//頭は動かしてない時は0
     }
     inline void setFootContactPoseByGoContact(HumanPose& out){
       for(int i=0, l[LR]={rf,lf}; i<LR; i++){
@@ -499,7 +513,7 @@ class HumanSynchronizer : UTIL_CONST {
     }
     inline bool applyCOMStateLimitByCapturePoint(const hrp::Vector3& com_in, const hrp::Vector3& rfin_abs, const hrp::Vector3& lfin_abs, hrp::Vector3& com_ans_old, hrp::Vector3& com_ans){
       com_ans = com_in;
-      if (loop==0)com_ans_old = com_in;
+      if (is_initial_loop)com_ans_old = com_in;
       hrp::Vector3 com_vel = (com_in - com_ans_old)/DT;
       hull_dcp.clear();
       hull_acp.clear();
@@ -692,15 +706,14 @@ class HumanSynchronizer : UTIL_CONST {
       com_oldold = com_old;
       com_old = comin;
     }
-    //void applyVelLimit(const HumanPose& in, HumanPose& out_old, HumanPose& out){
-    //  const int ns[] = {com,rf,lf,rh,lh,head}, num_ns = sizeof(ns)/sizeof(int);
-    //  for(int i=0;i<num_ns;i++){
-    //    hrp::Vector3 diff = in.tgt[i].abs.p  - out_old.tgt[i].abs.p;
-    //    for(int j=0;j<3;j++)LIMIT_MINMAX( diff(j), -MAXVEL*DT, MAXVEL*DT);
-    //    out.tgt[i].abs.p = out_old.tgt[i].abs.p + diff;
-    //  }
-    //  out_old = out;
-    //}
+    inline void applyVelLimit(const HumanPose& out_old, HumanPose& out){
+      const double EE_MAX_VEL = 2.0;// m/s
+      for(int i=0, l[6]={com,rf,lf,rh,lh,head}; i<6; i++){
+        hrp::Vector3 diff = out.tgt[i].abs.p  - out_old.tgt[i].abs.p;
+        for(int j=0;j<3;j++)LIMIT_MINMAX( diff(j), -EE_MAX_VEL*DT, EE_MAX_VEL*DT);
+        out.tgt[i].abs.p = out_old.tgt[i].abs.p + diff;
+      }
+    }
 };
 
 #endif // HUMANMASTERSLAVE_H
