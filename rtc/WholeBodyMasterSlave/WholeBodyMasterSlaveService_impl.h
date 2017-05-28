@@ -17,8 +17,9 @@ public:
   virtual ~WholeBodyMasterSlaveService_impl();
   CORBA::Boolean startCountDownForWholeBodyMasterSlave(const CORBA::Double sec);
   CORBA::Boolean startWholeBodyMasterSlave();
-  CORBA::Boolean pauseWholeBodyMasterSlave();
   CORBA::Boolean stopWholeBodyMasterSlave();
+  CORBA::Boolean pauseWholeBodyMasterSlave();
+  CORBA::Boolean resumeWholeBodyMasterSlave();
   void setWholeBodyMasterSlaveParam(const OpenHRP::WholeBodyMasterSlaveService::WholeBodyMasterSlaveParam& i_param);
   void getWholeBodyMasterSlaveParam(OpenHRP::WholeBodyMasterSlaveService::WholeBodyMasterSlaveParam_out i_param);
   //

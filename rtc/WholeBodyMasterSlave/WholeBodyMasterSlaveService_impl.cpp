@@ -24,14 +24,19 @@ CORBA::Boolean WholeBodyMasterSlaveService_impl::startWholeBodyMasterSlave()
     return m_wholebodymasterslave->startWholeBodyMasterSlave();
 };
 
+CORBA::Boolean WholeBodyMasterSlaveService_impl::stopWholeBodyMasterSlave()
+{
+    return m_wholebodymasterslave->stopWholeBodyMasterSlave();
+};
+
 CORBA::Boolean WholeBodyMasterSlaveService_impl::pauseWholeBodyMasterSlave()
 {
     return m_wholebodymasterslave->pauseWholeBodyMasterSlave();
 };
 
-CORBA::Boolean WholeBodyMasterSlaveService_impl::stopWholeBodyMasterSlave()
+CORBA::Boolean WholeBodyMasterSlaveService_impl::resumeWholeBodyMasterSlave()
 {
-    return m_wholebodymasterslave->stopWholeBodyMasterSlave();
+    return m_wholebodymasterslave->resumeWholeBodyMasterSlave();
 };
 
 void WholeBodyMasterSlaveService_impl::setWholeBodyMasterSlaveParam(const OpenHRP::WholeBodyMasterSlaveService::WholeBodyMasterSlaveParam& i_param)

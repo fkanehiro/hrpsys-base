@@ -47,8 +47,9 @@ class WholeBodyMasterSlave : public RTC::DataFlowComponentBase, UTIL_CONST {
     virtual RTC::ReturnCode_t onExecute(RTC::UniqueId ec_id);
     bool startCountDownForWholeBodyMasterSlave(const double sec);
     bool startWholeBodyMasterSlave();
-    bool pauseWholeBodyMasterSlave();
     bool stopWholeBodyMasterSlave();
+    bool pauseWholeBodyMasterSlave();
+    bool resumeWholeBodyMasterSlave();
     bool setWholeBodyMasterSlaveParam(const OpenHRP::WholeBodyMasterSlaveService::WholeBodyMasterSlaveParam& i_param);
     bool getWholeBodyMasterSlaveParam(OpenHRP::WholeBodyMasterSlaveService::WholeBodyMasterSlaveParam& i_param);
 
@@ -168,7 +169,7 @@ class WholeBodyMasterSlave : public RTC::DataFlowComponentBase, UTIL_CONST {
 
   boost::shared_ptr<HumanSynchronizer> hsp;
 
-  enum { MODE_IDLE, MODE_COUNTDOWN, MODE_SYNC_TO_WBMS, MODE_WBMS, MODE_PAUSE, MODE_SYNC_TO_IDLE} mode, previous_mode;
+  enum { MODE_IDLE,/* MODE_COUNTDOWN,*/ MODE_SYNC_TO_WBMS, MODE_WBMS, MODE_PAUSE, MODE_SYNC_TO_IDLE} mode, previous_mode;
   inline bool isRunning(){ return (mode==MODE_SYNC_TO_WBMS) || (mode==MODE_WBMS) || (mode==MODE_PAUSE) || (mode==MODE_SYNC_TO_IDLE) ;}
 
   void setupfik(fikPtr& fik_in, hrp::BodyPtr& robot_in, RTC::Properties& prop_in);

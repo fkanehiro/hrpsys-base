@@ -46,7 +46,6 @@ class UTIL_CONST{
     enum { r, p, y, rpy };
     enum { fx, fy, fz, tx, ty, tz, ft_xyz };
     enum { MIN, MAX, MINMAX };
-//    enum { MODE_IDLE, MODE_COUNTDOWN, MODE_SYNC_TO_WBMS, MODE_WBMS, MODE_PAUSE, MODE_SYNC_TO_IDLE};
     double G, D2R, INFMIN,INFMAX;
     UTIL_CONST() :
       G(9.80665),

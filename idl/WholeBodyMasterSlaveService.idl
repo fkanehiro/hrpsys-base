@@ -51,8 +51,9 @@ module OpenHRP
     };
     boolean startCountDownForWholeBodyMasterSlave(in double sec);
     boolean startWholeBodyMasterSlave();
-    boolean pauseWholeBodyMasterSlave();
     boolean stopWholeBodyMasterSlave();
+    boolean pauseWholeBodyMasterSlave();
+    boolean resumeWholeBodyMasterSlave();
     void setWholeBodyMasterSlaveParam(in WholeBodyMasterSlaveParam i_param);
     void getWholeBodyMasterSlaveParam(out WholeBodyMasterSlaveParam i_param);
   };

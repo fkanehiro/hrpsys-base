@@ -231,23 +231,25 @@ void WholeBodyMasterSlave::setupfik(fikPtr& fik_in, hrp::BodyPtr& robot_in, RTC:
 
 RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
   if(DEBUGP_ONCE)std::cerr << "[" << m_profile.instance_name<< "] onExecute(" << ec_id << ")" << std::endl;
-  // struct timeval t_calc_start, t_calc_end;
-  // gettimeofday(&t_calc_start, NULL);
+   struct timeval t_calc_start, t_calc_end;
+   gettimeofday(&t_calc_start, NULL);
     if (m_qRefIn.isNew()) { m_qRefIn.read(); }
     if (m_basePosIn.isNew()) { m_basePosIn.read(); }
     if (m_baseRpyIn.isNew()) { m_baseRpyIn.read(); }
     if (m_zmpIn.isNew()) { m_zmpIn.read(); }
     if (m_optionalDataIn.isNew()) { m_optionalDataIn.read(); }
     //for HumanSynchronizer
-    if (m_htrfwIn.isNew()){ m_htrfwIn.read(); HumanSynchronizer::DoubleSeqToVector6(m_htrfw.data,hsp->hp_wld_raw.tgt[rf].w); }
-    if (m_htlfwIn.isNew()){ m_htlfwIn.read(); HumanSynchronizer::DoubleSeqToVector6(m_htlfw.data,hsp->hp_wld_raw.tgt[lf].w); }
-    if (m_htcomIn.isNew()){ m_htcomIn.read(); HumanSynchronizer::Pose3DToWBMSPose3D(m_htcom.data,hsp->hp_wld_raw.tgt[com].abs); }
-    if (m_htrfIn.isNew()) { m_htrfIn.read();  HumanSynchronizer::Pose3DToWBMSPose3D(m_htrf.data,hsp->hp_wld_raw.tgt[rf].abs); }
-    if (m_htlfIn.isNew()) { m_htlfIn.read();  HumanSynchronizer::Pose3DToWBMSPose3D(m_htlf.data,hsp->hp_wld_raw.tgt[lf].abs); }
-    if (m_htrhIn.isNew()) { m_htrhIn.read();  HumanSynchronizer::Pose3DToWBMSPose3D(m_htrh.data,hsp->hp_wld_raw.tgt[rh].abs);}
-    if (m_htlhIn.isNew()) { m_htlhIn.read();  HumanSynchronizer::Pose3DToWBMSPose3D(m_htlh.data,hsp->hp_wld_raw.tgt[lh].abs);}
-    if (m_htheadIn.isNew()){ m_htheadIn.read(); HumanSynchronizer::Pose3DToWBMSPose3D(m_hthead.data,hsp->hp_wld_raw.tgt[head].abs);}
-    if (m_htzmpIn.isNew()){ m_htzmpIn.read();  HumanSynchronizer::Point3DToVector3(m_htzmp.data,hsp->hp_wld_raw.tgt[zmp].abs.p); }
+    if(mode!=MODE_PAUSE){
+      if (m_htrfwIn.isNew()){ m_htrfwIn.read(); HumanSynchronizer::DoubleSeqToVector6(m_htrfw.data,hsp->hp_wld_raw.tgt[rf].w); }
+      if (m_htlfwIn.isNew()){ m_htlfwIn.read(); HumanSynchronizer::DoubleSeqToVector6(m_htlfw.data,hsp->hp_wld_raw.tgt[lf].w); }
+      if (m_htcomIn.isNew()){ m_htcomIn.read(); HumanSynchronizer::Pose3DToWBMSPose3D(m_htcom.data,hsp->hp_wld_raw.tgt[com].abs); }
+      if (m_htrfIn.isNew()) { m_htrfIn.read();  HumanSynchronizer::Pose3DToWBMSPose3D(m_htrf.data,hsp->hp_wld_raw.tgt[rf].abs); }
+      if (m_htlfIn.isNew()) { m_htlfIn.read();  HumanSynchronizer::Pose3DToWBMSPose3D(m_htlf.data,hsp->hp_wld_raw.tgt[lf].abs); }
+      if (m_htrhIn.isNew()) { m_htrhIn.read();  HumanSynchronizer::Pose3DToWBMSPose3D(m_htrh.data,hsp->hp_wld_raw.tgt[rh].abs);}
+      if (m_htlhIn.isNew()) { m_htlhIn.read();  HumanSynchronizer::Pose3DToWBMSPose3D(m_htlh.data,hsp->hp_wld_raw.tgt[lh].abs);}
+      if (m_htheadIn.isNew()){ m_htheadIn.read(); HumanSynchronizer::Pose3DToWBMSPose3D(m_hthead.data,hsp->hp_wld_raw.tgt[head].abs);}
+      if (m_htzmpIn.isNew()){ m_htzmpIn.read();  HumanSynchronizer::Point3DToVector3(m_htzmp.data,hsp->hp_wld_raw.tgt[zmp].abs.p); }
+    }
 //    if (m_actzmpIn.isNew()){m_actzmpIn.read(); }
 
     if ( is_legged_robot ) {
@@ -406,24 +408,18 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
      HumanSynchronizer::Vector6ToDoubleSeq(hsp->invdyn_ft,m_invdyn_dbg.data);
      m_invdyn_dbgOut.write();
 #endif
-     // gettimeofday(&t_calc_end, NULL);
-     //  if(DEBUGP)cout<<"t1:"<<(double)(t_calc_end.tv_sec - t_calc_start.tv_sec) + (t_calc_end.tv_usec - t_calc_start.tv_usec)/1000000.0<<endl;
-     //  t_calc_start = t_calc_end;
+    gettimeofday(&t_calc_end, NULL);
+    if(DEBUGP)cout<<"t1:"<<(double)(t_calc_end.tv_sec - t_calc_start.tv_sec) + (t_calc_end.tv_usec - t_calc_start.tv_usec)/1000000.0<<endl;
+    t_calc_start = t_calc_end;
     loop ++;
     return RTC::RTC_OK;
 }
 
 
 void WholeBodyMasterSlave::processTransition(){
-//  cout<<"hsp->mode"<<hsp->mode<<endl;
   switch(mode){
-    case MODE_COUNTDOWN:
-      std::cerr << "[" << m_profile.instance_name << "] Count Down for HumanSync ["<<hsp->getRemainingCountDown()<<"]\r";
-//      hsp->updateCountDown();
-      break;
 
-    case MODE_SYNC_TO_WBMS:
-//      if(previous_mode == MODE_COUNTDOWN){ double tmp = 1.0; transition_interpolator->setGoal(&tmp, 3.0, true); }
+    case MODE_SYNC_TO_WBMS://
       if(previous_mode == MODE_IDLE){ double tmp = 1.0; transition_interpolator->setGoal(&tmp, 3.0, true); }
       if (!transition_interpolator->isEmpty() ){
         transition_interpolator->get(&transition_interpolator_ratio, true);
@@ -433,7 +429,7 @@ void WholeBodyMasterSlave::processTransition(){
       break;
 
     case MODE_SYNC_TO_IDLE:
-      if(previous_mode == MODE_WBMS){ double tmp = 0.0; transition_interpolator->setGoal(&tmp, 3.0, true); }
+      if(previous_mode == MODE_WBMS || previous_mode == MODE_PAUSE){ double tmp = 0.0; transition_interpolator->setGoal(&tmp, 3.0, true); }
       if (!transition_interpolator->isEmpty()) {
         transition_interpolator->get(&transition_interpolator_ratio, true);
       }else{
@@ -747,6 +743,13 @@ bool WholeBodyMasterSlave::startWholeBodyMasterSlave(){
 bool WholeBodyMasterSlave::pauseWholeBodyMasterSlave(){
   std::cerr << "[" << m_profile.instance_name << "] pauseWholeBodyMasterSlave" << std::endl;
   mode = MODE_PAUSE;
+  return true;
+}
+
+
+bool WholeBodyMasterSlave::resumeWholeBodyMasterSlave(){
+  std::cerr << "[" << m_profile.instance_name << "] pauseWholeBodyMasterSlave" << std::endl;
+  mode = MODE_WBMS;
   return true;
 }
 
