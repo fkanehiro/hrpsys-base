@@ -57,8 +57,8 @@ void* call_beep (void* args)
   }
   // Loop
   bool prev_beep_start=false;
+  int prev_beep_length = 1000;
   while (1) {
-    usleep(static_cast<size_t>(1000000*m_dt));
     // Get beepCommand from buffer
     pthread_mutex_lock( &beep_mutex );
     BeepData bd = beep_command_buffer.front();
@@ -71,11 +71,16 @@ void* call_beep (void* args)
 //     }
     // Beep
     if (bd._beep_start) {
+      usleep(std::max(static_cast<int>(prev_beep_length*1000),0));
       start_beep(bd._beep_freq, bd._beep_length);
     } else if (prev_beep_start) { // If !beep_start and prev_beep_start, stop_beep just once.
+      usleep(static_cast<size_t>(1000000*m_dt));
       stop_beep();
+    } else {
+      usleep(static_cast<size_t>(1000000*m_dt));
     }
     prev_beep_start = bd._beep_start;
+    prev_beep_length = bd._beep_length;
   }
   quit_beep();
 }
