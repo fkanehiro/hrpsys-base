@@ -1054,7 +1054,7 @@ namespace rats
     bool solved;
     double leg_margin[4], stride_limitation_for_circle_type[5], overwritable_stride_limitation[5], footstep_modification_gain, cp_check_margin[2], margin_time_ratio;
     bool use_stride_limitation, is_emergency_walking[2], modify_footsteps;
-    hrp::Vector3 diff_cp;
+    hrp::Vector3 diff_cp, modified_d_footstep;
     std::vector<bool> act_contact_states;
     stride_limitation_type default_stride_limitation_type;
 
@@ -1103,7 +1103,7 @@ namespace rats
                     const double _stride_fwd_x, const double _stride_y, const double _stride_theta, const double _stride_bwd_x)
         : footstep_nodes_list(), overwrite_footstep_nodes_list(), rg(_dt), lcg(_dt),
         footstep_param(_leg_pos, _stride_fwd_x, _stride_y, _stride_theta, _stride_bwd_x),
-        vel_param(), offset_vel_param(), thtc(), cog(hrp::Vector3::Zero()), refzmp(hrp::Vector3::Zero()), prev_que_rzmp(hrp::Vector3::Zero()), diff_cp(hrp::Vector3::Zero()),
+        vel_param(), offset_vel_param(), thtc(), cog(hrp::Vector3::Zero()), refzmp(hrp::Vector3::Zero()), prev_que_rzmp(hrp::Vector3::Zero()), diff_cp(hrp::Vector3::Zero()), modified_d_footstep(hrp::Vector3::Zero()),
         dt(_dt), all_limbs(_all_limbs), default_step_time(1.0), default_double_support_ratio_before(0.1), default_double_support_ratio_after(0.1), default_double_support_static_ratio_before(0.0), default_double_support_static_ratio_after(0.0), default_double_support_ratio_swing_before(0.1), default_double_support_ratio_swing_after(0.1), gravitational_acceleration(DEFAULT_GRAVITATIONAL_ACCELERATION),
         finalize_count(0), optional_go_pos_finalize_footstep_num(0), overwrite_footstep_index(0), overwritable_footstep_index_offset(1),
         velocity_mode_flg(VEL_IDLING), emergency_flg(IDLING), margin_time_ratio(0.01), footstep_modification_gain(5e-6),
