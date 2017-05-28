@@ -816,11 +816,13 @@ namespace rats
           for (size_t i = lcg.get_footstep_index()+1; i < footstep_nodes_list.size(); i++) {
             footstep_nodes_list[i].front().worldcoords.pos += d_footstep;
           }
+          if (is_emergency_walking[0] || is_emergency_walking[1]) {
+            overwrite_footstep_nodes_list.insert(overwrite_footstep_nodes_list.end(), footstep_nodes_list.begin()+lcg.get_footstep_index(), footstep_nodes_list.end());
+            // overwrite zmp
+            overwrite_refzmp_queue(overwrite_footstep_nodes_list);
+            overwrite_footstep_nodes_list.clear();
+          }
         }
-        overwrite_footstep_nodes_list.insert(overwrite_footstep_nodes_list.end(), footstep_nodes_list.begin()+lcg.get_footstep_index(), footstep_nodes_list.end());
-        // overwrite zmp
-        overwrite_refzmp_queue(overwrite_footstep_nodes_list);
-        overwrite_footstep_nodes_list.clear();
       }
     }
   }
@@ -1070,12 +1072,6 @@ namespace rats
     /* Update refzmp_generator */
     /*   Remove refzmp after idx for allocation of new refzmp by push_refzmp_from_footstep_nodes */
     rg.remove_refzmp_cur_list_over_length(idx);
-    /*   Remove refzmp in preview contoroller queue */
-    if (overwritable_footstep_index_offset == 0) {
-        preview_controller_ptr->remove_preview_queue(); // Remove all queue
-    } else {
-        preview_controller_ptr->remove_preview_queue(lcg.get_lcg_count()); // Remove queue except current footstep. ZMP queue for current footstep remains
-    }
     /*   reset index and counter */
     rg.set_indices(idx);
     if (overwritable_footstep_index_offset == 0) {
@@ -1103,14 +1099,27 @@ namespace rats
             }
         }
     }
+    /* Overwrite refzmp index in preview contoroller queue */
+    size_t queue_size = preview_controller_ptr->get_preview_queue_size();
+    size_t overwrite_idx;
+    if (overwritable_footstep_index_offset == 0) {
+      overwrite_idx = 0; // Overwrite all queue
+    } else {
+      overwrite_idx = lcg.get_lcg_count(); // Overwrite queue except current footstep
+    }
     /* fill preview controller queue by new refzmp */
     hrp::Vector3 rzmp;
-    while ( !solved ) {
-      std::vector<hrp::Vector3> sfzos;
-      bool refzmp_exist_p = rg.get_current_refzmp(rzmp, sfzos, default_double_support_ratio_before, default_double_support_ratio_after, default_double_support_static_ratio_before, default_double_support_static_ratio_after);
-      solved = preview_controller_ptr->update(refzmp, cog, swing_foot_zmp_offsets, rzmp, sfzos, refzmp_exist_p);
+    bool refzmp_exist_p;
+    std::vector<hrp::Vector3> sfzos;
+    for (size_t i = overwrite_idx; i < queue_size - 1; i++) {
+      refzmp_exist_p = rg.get_current_refzmp(rzmp, sfzos, default_double_support_ratio_before, default_double_support_ratio_after, default_double_support_static_ratio_before, default_double_support_static_ratio_after);
+      preview_controller_ptr->set_preview_queue(rzmp, sfzos, i+1);
       rg.update_refzmp(footstep_nodes_list);
+      sfzos.clear();
     }
+    refzmp_exist_p = rg.get_current_refzmp(rzmp, sfzos, default_double_support_ratio_before, default_double_support_ratio_after, default_double_support_static_ratio_before, default_double_support_static_ratio_after);
+    solved = preview_controller_ptr->update(refzmp, cog, swing_foot_zmp_offsets, rzmp, sfzos, refzmp_exist_p);
+    rg.update_refzmp(footstep_nodes_list);
   };
 
   const std::vector<leg_type> gait_generator::calc_counter_leg_types_from_footstep_nodes(const std::vector<step_node>& fns, std::vector<std::string> _all_limbs) const {
