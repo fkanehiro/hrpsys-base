@@ -1067,6 +1067,11 @@ class HrpsysConfigurator(object):
               been thrown by hrpsys so that there's no way to catch on this python client. 
               Worthwhile opening an enhancement ticket at designated issue tracker.
         \endverbatim
+        @attention: You should not mix using setJointAngles and some other
+                    methods that takes kinematics group as an arg, such as
+                    setTargetPose, clearOfGroup etc., which interpolates by the
+                    specified group while setJointAngles does so for the full
+                    body. See more at https://github.com/tork-a/rtmros_nextage/issues/332#issuecomment-303735640
         @param angles list of float: In degree.
         @param tm float: Time to complete.
         @rtype bool
