@@ -43,10 +43,10 @@ namespace rats
     ret_dif_rot = self_rot * hrp::Vector3(rats::matrix_log(hrp::Matrix33(self_rot.transpose() * target_rot)));
   }
 
-  void mid_rot(hrp::Matrix33& mid_rot, const double p, const hrp::Matrix33& rot1, const hrp::Matrix33& rot2) {
+  void mid_rot(hrp::Matrix33& mid_rot, const double p, const hrp::Matrix33& rot1, const hrp::Matrix33& rot2, const double eps) {
     hrp::Matrix33 r(rot1.transpose() * rot2);
     hrp::Vector3 omega(matrix_log(r));
-    if (eps_eq(omega.norm(),0.0)) { // c1.rot and c2.rot are same
+    if (eps_eq(omega.norm(),0.0, eps)) { // c1.rot and c2.rot are same
       mid_rot = rot1;
     } else {
       hrp::calcRodrigues(r, omega.normalized(), omega.norm()*p);
@@ -55,9 +55,9 @@ namespace rats
     }
   };
 
-  void mid_coords(coordinates& mid_coords, const double p, const coordinates& c1, const coordinates& c2) {
+  void mid_coords(coordinates& mid_coords, const double p, const coordinates& c1, const coordinates& c2, const double eps) {
     mid_coords.pos = (1 - p) * c1.pos + p * c2.pos;
-    mid_rot(mid_coords.rot, p, c1.rot, c2.rot);
+    mid_rot(mid_coords.rot, p, c1.rot, c2.rot, eps);
   };
 
 }

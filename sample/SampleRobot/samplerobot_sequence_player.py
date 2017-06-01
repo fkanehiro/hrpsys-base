@@ -20,6 +20,7 @@ def init ():
     hcf = HrpsysConfigurator()
     hcf.init ("SampleRobot(Robot)0", "$(PROJECT_DIR)/../model/sample1.wrl")
     hcf.connectLoggerPort(hcf.sh, 'optionalDataOut') # Just for checking
+    hcf.connectLoggerPort(hcf.el, 'servoStateOut') # Just for checking
     global reset_pose_doc, move_base_pose_doc, doc
     # doc for patterns.
     #  torque and wrenches are non-realistic values, just for testing.
@@ -64,26 +65,43 @@ def checkArrayEquality (arr1, arr2, eps=1e-7):
 def checkArrayBetween (arr1, arr2, arr3, eps=1e-7):
     return all(map(lambda x,y,z : (z-y)*(x-y) <= eps, arr1, arr2, arr3))
 
+def clearLogForCheckParameter(log_length=1):
+    hcf.setMaxLogLength(log_length)
+    hcf.clearLog()
+
 def saveLogForCheckParameter(log_fname="/tmp/test-samplerobot-sequence-player-check-param"):
-    hcf.setMaxLogLength(1);hcf.clearLog();time.sleep(0.1);hcf.saveLog(log_fname)
+    clearLogForCheckParameter(log_length=1)
+    time.sleep(0.1);hcf.saveLog(log_fname)
 
 def checkParameterFromLog(port_name, log_fname="/tmp/test-samplerobot-sequence-player-check-param", save_log=True, rtc_name="sh"):
     if save_log:
         saveLogForCheckParameter(log_fname)
     return map(float, open(log_fname+"."+rtc_name+"_"+port_name, "r").readline().split(" ")[1:-1])
 
-def checkJointAngles (var_doc):
+def checkServoStateFromLog(log_fname="/tmp/test-samplerobot-sequence-player-check-param"):
+    hcf.saveLog(log_fname)
+    ret = True
+    fp = open(log_fname+'.el_servoStateOut', "r")
+    for l in fp:
+        for s in map(int, l.split()[1:-1]):
+            if s != 7:
+                print l
+                ret = False
+    return ret
+
+def checkJointAngles (var_doc, eps=1e-7):
     if isinstance(var_doc, list):
         p = var_doc
     else:
         p = var_doc['pos']
-    ret = checkArrayEquality(hcf.sh_svc.getCommand().jointRefs, p)
+    ret = checkArrayEquality(hcf.sh_svc.getCommand().jointRefs, p, eps)
     print "  pos => ", ret
+    assert(ret is True)
 
-def checkJointAnglesBetween(from_doc, to_doc):
+def checkJointAnglesBetween(from_doc, to_doc, eps=1e-7):
     p0 =  from_doc if isinstance(from_doc, list) else from_doc['pos']
     p1 =    to_doc if isinstance(  to_doc, list) else   to_doc['pos']
-    ret = checkArrayBetween(p0, hcf.sh_svc.getCommand().jointRefs, p1)
+    ret = checkArrayBetween(p0, hcf.sh_svc.getCommand().jointRefs, p1, eps)
     print "  pos => ", ret
     assert(ret is True)
 
@@ -272,11 +290,25 @@ def demoSetJointAnglesOfGroup():
     # check clear
     if StrictVersion(hrpsys_version) < StrictVersion('315.5.0'):
         return
-    print >> sys.stderr, "   check clear"
+    print >> sys.stderr, "   check clear (clearJointAnglesOfGroup)"
     hcf.seq_svc.setJointAnglesOfGroup('larm', larm_pos0, 5.0);
     time.sleep(2.5)
     hcf.seq_svc.clearJointAnglesOfGroup('larm')
     checkJointAnglesBetween(p1, p0)
+
+    hcf.seq_svc.setJointAnglesOfGroup('larm', larm_pos1, 5.0);
+    hcf.seq_svc.waitInterpolationOfGroup('larm')
+    checkJointAngles(p1)
+
+    print >> sys.stderr, "   check clear clearOfGroup"
+    hcf.seq_svc.setJointAnglesOfGroup('larm', larm_pos0, 5.0);
+    time.sleep(2.5)
+    hcf.seq_svc.clearOfGroup('larm', 0.0)
+    checkJointAnglesBetween(p1, p0)
+
+    hcf.seq_svc.setJointAnglesOfGroup('larm', larm_pos1, 5.0);
+    hcf.seq_svc.waitInterpolationOfGroup('larm')
+    checkJointAngles(p1)
 
 def demoSetJointAnglesSequenceOfGroup():
     print >> sys.stderr, "9. setJointAnglesOfGroup"
@@ -379,6 +411,62 @@ def demoSetJointAnglesSequenceFull():
     hcf.seq_svc.clearJointAngles()
     checkJointAnglesBetween(reset_pose_doc,move_base_pose_doc)
 
+def demoSetTargetPose():
+    # reset wait position
+    hcf.seq_svc.setBasePos([0.000000, 0.000000, 0.723500], 1.0);
+    hcf.seq_svc.setBaseRpy([0.000000, 0.000000, 0.000000], 1.0);
+    print >> sys.stderr, "11. setTargetPose"
+    hcf.seq_svc.addJointGroup('larm', ['LARM_SHOULDER_P', 'LARM_SHOULDER_R', 'LARM_SHOULDER_Y', 'LARM_ELBOW', 'LARM_WRIST_Y', 'LARM_WRIST_P', 'LARM_WRIST_R'])
+    larm_pos0 = [-0.000111, 0.31129, -0.159481, -1.57079, -0.636277, 0.0, 0.0]
+    larm_pos1 = [-0.000111, 0.31129, -0.159481, -0.785395, -0.636277, 0.0, 0.0]
+    hcf.seq_svc.setJointAngles(reset_pose_doc['pos'], 1.0);
+    hcf.seq_svc.waitInterpolation();
+    hcf.seq_svc.setJointAnglesOfGroup('larm', larm_pos0, 1.0);
+    hcf.seq_svc.waitInterpolationOfGroup('larm');
+    pos0 = hcf.getCurrentPosition('LARM_WRIST_R:WAIST')
+    rpy0 = hcf.getCurrentRPY('LARM_WRIST_R:WAIST')
+    p0 = list(reset_pose_doc['pos']) # copy
+    for i in range(len(larm_pos0)):
+        p0[i+19] = larm_pos0[i]
+    checkJointAngles(p0)
+
+    hcf.seq_svc.setJointAnglesOfGroup('larm', larm_pos1, 1.0);
+    hcf.seq_svc.waitInterpolationOfGroup('larm');
+    pos1 = hcf.getCurrentPosition('LARM_WRIST_R:WAIST')
+    rpy1 = hcf.getCurrentRPY('LARM_WRIST_R:WAIST')
+    p1 = list(reset_pose_doc['pos']) # copy
+    for i in range(len(larm_pos1)):
+        p1[i+19] = larm_pos1[i]
+    checkJointAngles(p1)
+
+    print >> sys.stderr, "   check setTargetPose"
+    hcf.seq_svc.setTargetPose('larm:WAIST', pos0, rpy0, 2.0)
+    hcf.seq_svc.waitInterpolationOfGroup('larm');
+    print map(lambda x,y : abs(x-y), hcf.sh_svc.getCommand().jointRefs, p0)
+    checkJointAngles(p0, 0.01)
+
+    clearLogForCheckParameter(5000)
+    hcf.seq_svc.setTargetPose('larm:WAIST', pos1, rpy1, 2.0)
+    hcf.seq_svc.waitInterpolationOfGroup('larm');
+    print map(lambda x,y : abs(x-y), hcf.sh_svc.getCommand().jointRefs, p1)
+    checkJointAngles(p1, 0.01)
+    assert(checkServoStateFromLog() is True)
+
+    print >> sys.stderr, "   check clear clearOfGroup"
+    hcf.seq_svc.setTargetPose('larm:WAIST', pos0, rpy0, 2.0)
+    time.sleep(0.5)
+    hcf.seq_svc.clearOfGroup('larm', 0.0)
+    checkJointAnglesBetween(p0, p1, 0.01)
+
+    clearLogForCheckParameter(5000)
+    hcf.seq_svc.setTargetPose('larm:WAIST', pos1, rpy1, 2.0)
+    hcf.seq_svc.waitInterpolationOfGroup('larm')
+    print map(lambda x,y : abs(x-y), hcf.sh_svc.getCommand().jointRefs, p1)
+    checkJointAngles(p1, 0.1)
+    assert(checkServoStateFromLog() is True)
+    hcf.seq_svc.removeJointGroup('larm')
+    hcf.seq_svc.setJointAngles(reset_pose_doc['pos'], 1.0);
+    hcf.seq_svc.waitInterpolation();
 
 def demo():
     init()
@@ -395,6 +483,8 @@ def demo():
     if StrictVersion(hrpsys_version) >= StrictVersion('315.5.0'):
         demoSetJointAnglesSequenceOfGroup()
         demoSetJointAnglesSequenceFull()
+    if StrictVersion(hrpsys_version) >= StrictVersion('315.5.0'):
+        demoSetTargetPose()
 
 if __name__ == '__main__':
     demo()

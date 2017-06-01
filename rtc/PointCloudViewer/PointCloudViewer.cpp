@@ -12,6 +12,7 @@
 #include <pcl/filters/voxel_grid.h>
 #include "PointCloudViewer.h"
 #include "hrpsys/idl/pointcloud.hh"
+#include <string>
 
 // Module specification
 // <rtc-template block="module_spec">
@@ -119,18 +120,43 @@ RTC::ReturnCode_t PointCloudViewer::onExecute(RTC::UniqueId ec_id)
   if (m_cloudIn.isNew()){
     m_cloudIn.read();
 
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
-    cloud->points.resize(m_cloud.width*m_cloud.height);
-    float *src = (float *)m_cloud.data.get_buffer();
-    for (unsigned int i=0; i<cloud->points.size(); i++){
-      cloud->points[i].x = src[0];
-      cloud->points[i].y = src[1];
-      cloud->points[i].z = src[2];
-      src += 4;
+    bool is_color_points = false;
+    for (int i = 0; i < m_cloud.fields.length(); i++) {
+        std::string tmp_name(m_cloud.fields[i].name);
+        if (tmp_name.find("r") != std::string::npos || tmp_name.find("g") != std::string::npos || tmp_name.find("b") != std::string::npos) {
+            is_color_points = true; // color pointcloud should have rgb field 
+        }
     }
 
-    if (!m_viewer.wasStopped()){
-        m_viewer.showCloud(cloud);
+    // currently only support PointXYZ and PointXYZRGB
+    if (is_color_points) { 
+        pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB>);
+        cloud->is_dense = m_cloud.is_dense; // need to handle pointcloud which has invalid points (is_dense = false)
+        cloud->points.resize(m_cloud.width*m_cloud.height);
+        float *src = reinterpret_cast<float*>(m_cloud.data.get_buffer());
+        for (unsigned int i = 0; i< cloud->points.size(); i++) {
+            cloud->points[i].x = src[0];
+            cloud->points[i].y = src[1];
+            cloud->points[i].z = src[2];
+            cloud->points[i].rgb = src[3]; // use float rgb union
+            src += 4;
+        }
+        if (!m_viewer.wasStopped()){
+            m_viewer.showCloud(cloud);
+        }
+    } else {
+        pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
+        cloud->points.resize(m_cloud.width*m_cloud.height);
+        float *src = (float *)m_cloud.data.get_buffer();
+        for (unsigned int i=0; i<cloud->points.size(); i++){
+            cloud->points[i].x = src[0];
+            cloud->points[i].y = src[1];
+            cloud->points[i].z = src[2];
+            src += 4;
+        }
+        if (!m_viewer.wasStopped()){
+            m_viewer.showCloud(cloud);
+        }        
     }
   }
 

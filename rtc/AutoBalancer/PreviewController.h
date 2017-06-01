@@ -166,6 +166,19 @@ namespace rats
         pz.clear();
         qdata.clear();
     };
+    void set_preview_queue(const hrp::Vector3& pr, const std::vector<hrp::Vector3>& q, const size_t idx)
+    {
+      Eigen::Matrix<double, 2, 1> tmpv;
+      tmpv(0,0) = pr(0);
+      tmpv(1,0) = pr(1);
+      p[idx] = tmpv;
+      pz[idx] = pr(2);
+      qdata[idx] = q;
+    };
+    size_t get_preview_queue_size()
+    {
+      return p.size();
+    };
     void print_all_queue ()
     {
       std::cerr << "(list ";
@@ -263,6 +276,14 @@ namespace rats
     void remove_preview_queue()
     {
       preview_controller.remove_preview_queue();
+    };
+    void set_preview_queue(const hrp::Vector3& pr, const std::vector<hrp::Vector3>& qdata, const size_t idx)
+    {
+      preview_controller.set_preview_queue(pr, qdata, idx);
+    }
+    size_t get_preview_queue_size()
+    {
+      return preview_controller.get_preview_queue_size();
     };
     void print_all_queue ()
     {

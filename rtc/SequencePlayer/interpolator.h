@@ -59,7 +59,7 @@ public:
   //   If remain_t <= 0, do nothing.
   void interpolate(double& remain_t_);
   double deltaT() const { return dt; }
-  double dimension() const { return dim; }
+  int dimension() const { return dim; }
   void setName (const std::string& _name) { name = _name; };
 private:
   // Current interpolation mode
