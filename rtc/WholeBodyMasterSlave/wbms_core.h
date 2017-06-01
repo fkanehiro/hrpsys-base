@@ -40,6 +40,7 @@ extern "C" {
 #define LIMIT_MIN(x,min) (x= ( x<min ? min:x ))
 #define LIMIT_MAX(x,max) (x= ( x<max ? x:max ))
 #define LIMIT_MINMAX(x,min,max) ((x= (x<min  ? min : x<max ? x : max)))
+#define SGN(x) ((x)>=0 ? 1 : -1)
 
 class UTIL_CONST{
   public:
@@ -57,9 +58,6 @@ class UTIL_CONST{
       INFMIN( - std::numeric_limits<double>::max()),
       INFMAX( + std::numeric_limits<double>::max())
     {};
-//    static bool LIMIT_MIN(double& x, const double min){ if(x<min){x=min; return true;}else{return false;} }
-//    static bool LIMIT_MAX(double& x, const double max){ if(x>max){x=max; return true;}else{return false;} }
-//    static bool LIMIT_MINMAX(double& x, const double min, const double max){ assert( min <=  max); if(x<min){x=min; return true;} else if(x>max){x=max; return true;} else{return false;} }
 };
 
 class BiquadIIRFilterVec : UTIL_CONST {
@@ -75,20 +73,6 @@ class BiquadIIRFilterVec : UTIL_CONST {
     hrp::Vector3 passFilter(const hrp::Vector3& input){ for(int i=0;i<XYZ;i++){ ans(i) = filters[i].passFilter((double)input(i)); } return ans; }
     void reset(const hrp::Vector3& initial_input){ for(int i=0;i<XYZ;i++){ filters[i].reset((double)initial_input(i));} }
 };
-
-//class PDFilter{
-//  public:
-//    PDFilter(){};
-//    ~PDFilter(){};
-//    void setParameter(const double& pgain, const double& dgain, const double& HZ){
-//
-//    }
-//    void passFilter(){
-//
-//    }
-//};
-
-
 
 class WBMSPose3D{
   public:
@@ -116,13 +100,13 @@ class HumanPose : UTIL_CONST {
     void clear(){
       for(std::vector<PoseTGT>::iterator it = tgt.begin(); it != tgt.end(); it++){ it->clear(); }
     }
-    static void hp_printf(const HumanPose& in){
+    static void hp_printf(const HumanPose& in) {
       const std::string pcatgt[] = {"c","rf","lf","rh","lh","hd","z"}, wcatgt[] = {"rw","lw"};
       for(int i=0;i<num_pose_tgt;i++){ fprintf(stderr,"\x1b[31m%s\x1b[39m%+05.2f %+05.2f %+05.2f ",pcatgt[i].c_str(),in.tgt[i].abs.p(X),in.tgt[i].abs.p(Y),in.tgt[i].abs.p(Z)); }
 //      for(int i=0;i<num_wrench_tgt;i++){ fprintf(stderr,"\x1b[31m%s\x1b[39m%+05.1f %+05.1f %+05.1f %+05.1f %+05.1f %+05.1f ",wcatgt[i].c_str(),in.w[i](fx),in.w[i](fy),in.w[i](fz),in.w[i](tx),in.w[i](ty),in.w[i](tz)); }
       printf("\n");
     }
-    void print(){ hp_printf(*this); }
+    void print() const { hp_printf(*this); }
 };
 
 class RobotConfig : UTIL_CONST {
@@ -168,7 +152,7 @@ class WBMSCore : UTIL_CONST {
     FILE *sr_log, *cz_log, *id_log;
     WBMSPose3D baselinkpose;
     WBMSPose3D ee_contact_pose[4];
-    hrp::Vector3 com_vel_old, cp_dec, cp_acc;
+    hrp::Vector3 com_vel_old,rh_vel_old, cp_dec, cp_acc;
     std::vector<hrp::Vector3> rf_vert,lf_vert;
     hrp::Vector2 com_forcp_ref,com_vel_forcp_ref;
     hrp::dvector6 invdyn_ft;
@@ -210,6 +194,7 @@ class WBMSCore : UTIL_CONST {
       com_old = com_oldold = comacc = hrp::Vector3::Zero();
       r_zmp_raw = hrp::Vector3::Zero();
       com_vel_old = hrp::Vector3::Zero();
+      rh_vel_old = hrp::Vector3::Zero();
       cp_dec = cp_acc = hrp::Vector3::Zero();
       invdyn_ft = hrp::dvector6::Zero();
       tgt_pos_filters.resize(num_pose_tgt);
@@ -218,7 +203,7 @@ class WBMSCore : UTIL_CONST {
       for(int i=0;i<tgt_rot_filters.size();i++)tgt_rot_filters[i].setParameter(1.0, HZ, BiquadIIRFilterVec::Q_NOOVERSHOOT);//四肢拘束点用(Rotation)
       tgt_pos_filters[com].setParameter(1.0, HZ, BiquadIIRFilterVec::Q_NOOVERSHOOT);//重心pos用
       tgt_rot_filters[com].setParameter(0.6, HZ, BiquadIIRFilterVec::Q_NOOVERSHOOT);//重心rot用
-      tgt_pos_filters[rf].setParameter(hrp::Vector3(1.0,1.0,1.0), HZ, BiquadIIRFilterVec::Q_NOOVERSHOOT);//右足pos用
+      tgt_pos_filters[rf].setParameter(hrp::Vector3(10.0,10.0,10.0), HZ, BiquadIIRFilterVec::Q_NOOVERSHOOT);//右足pos用
       tgt_pos_filters[lf].setParameter(hrp::Vector3(1.0,1.0,1.0), HZ, BiquadIIRFilterVec::Q_NOOVERSHOOT);//左足pos用
       calcacc_v_filters.setParameter(5, HZ, BiquadIIRFilterVec::Q_BUTTERWORTH);//加速度計算用
       acc4zmp_v_filters.setParameter(5, HZ, BiquadIIRFilterVec::Q_BUTTERWORTH);//ZMP生成用ほぼこの値でいい
@@ -327,6 +312,7 @@ class WBMSCore : UTIL_CONST {
 
       H_cur = rp_ref_out.tgt[com].abs.p(Z) - std::min((double)rp_ref_out.tgt[rf].abs.p(Z), (double)rp_ref_out.tgt[rf].abs.p(Z));
       com_vel_old = (rp_ref_out.tgt[com].abs.p - rp_ref_out_old.tgt[com].abs.p)/DT;
+      rh_vel_old = (rp_ref_out.tgt[rh].abs.p - rp_ref_out_old.tgt[rh].abs.p)/DT;
       rp_ref_out_old = rp_ref_out;
 //      previous_mode = mode;
       loop++;
@@ -384,17 +370,63 @@ class WBMSCore : UTIL_CONST {
         else if (!in.tgt[l[i]].is_contact && in.tgt[l[i]].w(fz)>CNT_F_TH+30){in.tgt[l[i]].is_contact = true;}//足浮いた状態から下げる
       }
     }
+//    void applyLPFilter(HumanPose& tgt){
+//      if(is_initial_loop){
+//        for(int i=0, l[6]={com,rf,lf,rh,lh,head}; i<6; i++){
+//          tgt_pos_filters[l[i]].reset(tgt.tgt[l[i]].abs.p);
+//          tgt_rot_filters[l[i]].reset(tgt.tgt[l[i]].abs.rpy);
+//        }
+//      }
+//      for(int i=0, l[6]={com,rf,lf,rh,lh,head}; i<6; i++){
+//        tgt.tgt[l[i]].abs.p   = tgt_pos_filters[l[i]].passFilter(tgt.tgt[l[i]].abs.p);
+//        tgt.tgt[l[i]].abs.rpy = tgt_rot_filters[l[i]].passFilter(tgt.tgt[l[i]].abs.rpy);
+//      }
+//    }
     void applyLPFilter(HumanPose& tgt){
       if(is_initial_loop){
-        for(int i=0, l[6]={com,rf,lf,rh,lh,head}; i<6; i++){
+        for(int i=0, l[1]={com}; i<1; i++){
           tgt_pos_filters[l[i]].reset(tgt.tgt[l[i]].abs.p);
           tgt_rot_filters[l[i]].reset(tgt.tgt[l[i]].abs.rpy);
         }
       }
-      for(int i=0, l[6]={com,rf,lf,rh,lh,head}; i<6; i++){
+      for(int i=0, l[1]={com}; i<1; i++){
         tgt.tgt[l[i]].abs.p   = tgt_pos_filters[l[i]].passFilter(tgt.tgt[l[i]].abs.p);
         tgt.tgt[l[i]].abs.rpy = tgt_rot_filters[l[i]].passFilter(tgt.tgt[l[i]].abs.rpy);
       }
+//      for(int i=0, l[1]={com}; i<1; i++){
+//        calcVelAccSafeTrajectory_val(rp_ref_out_old.tgt[l[i]].abs.p, (rp_ref_out.tgt[l[i]].abs.p - rp_ref_out_old.tgt[l[i]].abs.p)/DT, tgt.tgt[l[i]].abs.p, 1.0, 1.0, tgt.tgt[l[i]].abs.p);
+//        calcVelAccSafeTrajectory_val(rp_ref_out_old.tgt[l[i]].abs.rpy, (rp_ref_out.tgt[l[i]].abs.rpy - rp_ref_out_old.tgt[l[i]].abs.rpy)/DT, tgt.tgt[l[i]].abs.rpy, 1.0, 1.0, tgt.tgt[l[i]].abs.rpy);
+//      }
+      for(int i=0, l[5]={rf,lf,rh,lh,head}; i<5; i++){
+        calcVelAccSafeTrajectory(rp_ref_out_old.tgt[l[i]].abs.p, (rp_ref_out.tgt[l[i]].abs.p - rp_ref_out_old.tgt[l[i]].abs.p)/DT, tgt.tgt[l[i]].abs.p, 1.0, 1.0, tgt.tgt[l[i]].abs.p);
+        calcVelAccSafeTrajectory(rp_ref_out_old.tgt[l[i]].abs.rpy, (rp_ref_out.tgt[l[i]].abs.rpy - rp_ref_out_old.tgt[l[i]].abs.rpy)/DT, tgt.tgt[l[i]].abs.rpy, 1.0, 1.0, tgt.tgt[l[i]].abs.rpy);
+      }
+    }
+    void calcVelAccSafeTrajectory(const hrp::Vector3& pos_cur, const hrp::Vector3& vel_cur, const hrp::Vector3& pos_tgt, const double& max_acc, const double& max_vel, hrp::Vector3& pos_ans){
+      hrp::Vector3 direc( SGN(pos_tgt(X)-pos_cur(X)), SGN(pos_tgt(Y)-pos_cur(Y)), SGN(pos_tgt(Z)-pos_cur(Z)));
+      hrp::Vector3 vel_ans = vel_cur + direc * max_acc * DT;
+      for(int i=0;i<XYZ;i++){
+        double stop_safe_vel = sqrt( 2 * max_acc * fabs(pos_tgt(i) - pos_cur(i)) );
+        if( direc(i) > 0 ){
+          if(vel_ans(i) > stop_safe_vel){ vel_ans(i) = stop_safe_vel; }
+        }else{
+          if(vel_ans(i) < - stop_safe_vel){ vel_ans(i) = - stop_safe_vel; }
+        }
+      }
+      pos_ans = pos_cur + vel_ans * DT;
+    }
+    void calcVelAccSafeTrajectory_val(const hrp::Vector3& pos_cur, const hrp::Vector3& vel_cur, const hrp::Vector3& pos_tgt, const double& max_acc, const double& max_vel, hrp::Vector3& pos_ans){
+      hrp::Vector3 direc( SGN(pos_tgt(X)-pos_cur(X)), SGN(pos_tgt(Y)-pos_cur(Y)), SGN(pos_tgt(Z)-pos_cur(Z)));
+      hrp::Vector3 vel_ans = vel_cur + (pos_tgt-pos_cur) * 10 * max_acc * DT;
+      for(int i=0;i<XYZ;i++){
+        double stop_safe_vel = sqrt( 2 * (pos_tgt-pos_cur).norm() * 10 * max_acc * fabs(pos_tgt(i) - pos_cur(i)) );
+        if( direc(i) > 0 ){
+          if(vel_ans(i) > stop_safe_vel){ vel_ans(i) = stop_safe_vel; }
+        }else{
+          if(vel_ans(i) < - stop_safe_vel){ vel_ans(i) = - stop_safe_vel; }
+        }
+      }
+      pos_ans = pos_cur + vel_ans * DT;
     }
     void lockSwingFootIfZMPOutOfSupportFoot(const HumanPose& old, HumanPose& out){
       hrp::Vector2 inside_vec_rf(0,1),inside_vec_lf(0,-1);
