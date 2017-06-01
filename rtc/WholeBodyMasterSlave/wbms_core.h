@@ -282,16 +282,18 @@ class WBMSCore : UTIL_CONST {
         rp_ref_out_old = rp_ref_out;
         rp_ref_vel_old = rp_ref_out;
       }
-      applyVelLimit                       (rp_ref_vel_old, rp_ref_out);
+//      applyVelLimit                       (rp_ref_vel_old, rp_ref_out);
       rp_ref_vel_old = rp_ref_out;
       if(WBMSparam.set_com_height_fix)rp_ref_out.tgt[com].abs.p(Z) = rp_ref_out.tgt[com].offs.p(Z) + WBMSparam.set_com_height_fix_val;//膝曲げトルクで落ちるときの応急措置
       judgeFootLandOnCommandByFootForce   (hp_wld_raw);//人体足裏反力から各足の接地指令を生成
       lockSwingFootIfZMPOutOfSupportFoot  (rp_ref_out_old, rp_ref_out);//
       limitEEWorkspace                    (rp_ref_out);
-      limitManipulability                  (rp_ref_out);
+//      limitManipulability                 (rp_ref_out);
       setFootContactPoseByGoContact       (rp_ref_out);
       applyCOMToSupportRegionLimit        (rp_ref_out.tgt[rf].abs.p, rp_ref_out.tgt[lf].abs.p, rp_ref_out.tgt[com].abs.p);
       setFootRotHorizontalIfGoLanding     (rp_ref_out);
+
+      limitManipulability                 (rp_ref_out);
 
       applyCOMToSupportRegionLimit        (rp_ref_out.tgt[rf].abs.p, rp_ref_out.tgt[lf].abs.p, com_CP_ref_old);//これやらないと支持領域の移動によって1ステップ前のCOM位置はもうはみ出てるかもしれないから
 
@@ -485,15 +487,23 @@ class WBMSCore : UTIL_CONST {
 //      if(mode!=MODE_WBMS)out.tgt[head].abs.rpy = hrp::Vector3::Zero();//頭は動かしてない時は0
     }
     void limitManipulability(HumanPose& out){
+      const std::string robot_l_names[4] = {"rleg","lleg","rarm","larm"};
+      const int human_l_names[4] = {rf,lf,rh,lh};
+      for(int i=0;i<4;i++){
+        if(fik->ikp.count(robot_l_names[i])){
+          fik->ikp[robot_l_names[i]].target_r0 = hrp::rotFromRpy(out.tgt[human_l_names[i]].abs.rpy);
+          fik->ikp[robot_l_names[i]].target_p0 = out.tgt[human_l_names[i]].abs.p;
+        }
+      }
+      for ( std::map<std::string, SimpleFullbodyInverseKinematicsSolver::IKparam>::iterator it = fik->ikp.begin(); it != fik->ikp.end(); it++ ) {
+          if (it->second.is_ik_enable) fik->solveLimbIK (it->second, it->first, fik->ratio_for_vel, false);
+      }
+      for(int i=0;i<4;i++){
+        if(fik->ikp.count(robot_l_names[i])){
+          out.tgt[human_l_names[i]].abs.p = fik->ikp[robot_l_names[i]].target_link->p + fik->ikp[robot_l_names[i]].target_link->R * fik->ikp[robot_l_names[i]].localPos;
+        }
+      }
 
-
-//      fik->ikp["rleg"].target_r0 = hrp::rotFromRpy(out.tgt[rf].abs.rpy);
-//      fik->ikp["rleg"].target_p0 = out.tgt[rf].abs.p;
-//
-//      for ( std::map<std::string, SimpleFullbodyInverseKinematicsSolver::IKparam>::iterator it = fik->ikp.begin(); it != fik->ikp.end(); it++ ) {
-//          if (it->second.is_ik_enable) fik->solveLimbIK (it->second, it->first, fik->ratio_for_vel, false);
-//      }
-//
 //      hrp::dmatrix J,Jinv,Jnull;
 //      fik->ikp["rleg"].manip->calcJacobian(J);
 //      fik->ikp["rleg"].manip->calcJacobianInverseNullspace(J, Jinv, Jnull);
@@ -529,6 +539,7 @@ class WBMSCore : UTIL_CONST {
 //      ref_ee_vel_mod = ref_ee_vel_h + ref_ee_vel_v;
 //      out.tgt[rf].abs.p = rp_ref_out_old.tgt[rf].abs.p + ref_ee_vel_mod * DT;
 
+//      fik->revertRobotStateToCurrent();
 
     }
     void setFootContactPoseByGoContact(HumanPose& out){

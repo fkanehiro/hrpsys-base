@@ -144,12 +144,12 @@ class WholeBodyMasterSlave : public RTC::DataFlowComponentBase, UTIL_CONST {
     bool is_active, has_toe_joint;
   };
   typedef boost::shared_ptr<SimpleFullbodyInverseKinematicsSolver> fikPtr;
-  fikPtr fik, fik_rmc;
+  fikPtr fik, fik_rmc, fik_ml;
+  hrp::BodyPtr m_robot, m_robot_rmc, m_robot_ml;
+  std::vector<fikPtr> fik_list;
+  std::vector<hrp::BodyPtr> body_list;
   std::map<std::string, size_t> contact_states_index_map;
   double m_dt;
-  hrp::BodyPtr m_robot, m_robot_rmc;
-  std::vector< std::pair<fikPtr, hrp::BodyPtr> > ik_robot_list;
-  static const enum ik_robot_usage{ basic, rmc } iru;
 
   double transition_interpolator_ratio;
   interpolator *transition_interpolator;
@@ -185,7 +185,7 @@ class WholeBodyMasterSlave : public RTC::DataFlowComponentBase, UTIL_CONST {
   void processMomentumCompensation(fikPtr& fik_in, hrp::BodyPtr& robot_in, hrp::BodyPtr& robot_normal_in, const HumanPose& pose_ref);
   bool isOptionalDataContact (const std::string& ee_name) { return (std::fabs(m_optionalData.data[contact_states_index_map[ee_name]]-1.0)<0.1)?true:false; };
 
-  void calcVelAccSafeTrajectory(const hrp::Vector3& pos_cur, const hrp::Vector3& vel_cur, const hrp::Vector3& pos_tgt, const double& max_acc, const double& max_vel, hrp::Vector3& pos_ans);
+  void calcVelAccSafeTrajectory(const hrp::Vector3& pos_cur, const hrp::Vector3& vel_cur, const hrp::Vector3& pos_tgt, const hrp::Vector3& max_acc, const double& max_vel, hrp::Vector3& pos_ans);
 };
 
 extern "C"
