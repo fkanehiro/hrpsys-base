@@ -51,10 +51,12 @@ class UTIL_CONST{
     enum { r, p, y, rpy };
     enum { fx, fy, fz, tx, ty, tz, ft_xyz };
     enum { MIN, MAX, MINMAX };
-    double G, D2R, INFMIN,INFMAX;
+    double G, D2R, INFMIN, INFMAX, Q_BUTTERWORTH, Q_NOOVERSHOOT;
     UTIL_CONST() :
       G(9.80665),
       D2R( M_PI/180.0),
+      Q_BUTTERWORTH(0.707106781),
+      Q_NOOVERSHOOT(0.5),
       INFMIN( - std::numeric_limits<double>::max()),
       INFMAX( + std::numeric_limits<double>::max())
     {};
@@ -65,11 +67,11 @@ class BiquadIIRFilterVec : UTIL_CONST {
     IIRFilter filters[XYZ];
     hrp::Vector3 ans;
   public:
-    static const double Q_BUTTERWORTH = 0.707106781, Q_NOOVERSHOOT = 0.5;
-    BiquadIIRFilterVec(){}
+    BiquadIIRFilterVec()
+    {}
     ~BiquadIIRFilterVec(){}
-    void setParameter(const hrp::Vector3& fc_in, const double& HZ, const double& Q = Q_BUTTERWORTH){ for(int i=0;i<XYZ;i++){ filters[i].setParameterAsBiquad((double)fc_in(i), Q, HZ); } }
-    void setParameter(const double& fc_in, const double& HZ, const double& Q = Q_BUTTERWORTH){ setParameter(hrp::Vector3(fc_in,fc_in,fc_in), HZ, Q); }//overload
+    void setParameter(const hrp::Vector3& fc_in, const double& HZ, const double& Q = 0.5){ for(int i=0;i<XYZ;i++){ filters[i].setParameterAsBiquad((double)fc_in(i), Q, HZ); } }
+    void setParameter(const double& fc_in, const double& HZ, const double& Q = 0.5){ setParameter(hrp::Vector3(fc_in,fc_in,fc_in), HZ, Q); }//overload
     hrp::Vector3 passFilter(const hrp::Vector3& input){ for(int i=0;i<XYZ;i++){ ans(i) = filters[i].passFilter((double)input(i)); } return ans; }
     void reset(const hrp::Vector3& initial_input){ for(int i=0;i<XYZ;i++){ filters[i].reset((double)initial_input(i));} }
 };
@@ -199,14 +201,14 @@ class WBMSCore : UTIL_CONST {
       invdyn_ft = hrp::dvector6::Zero();
       tgt_pos_filters.resize(num_pose_tgt);
       tgt_rot_filters.resize(num_pose_tgt);
-      for(int i=0;i<tgt_pos_filters.size();i++)tgt_pos_filters[i].setParameter(1.0, HZ, BiquadIIRFilterVec::Q_NOOVERSHOOT);//四肢拘束点用(position)
-      for(int i=0;i<tgt_rot_filters.size();i++)tgt_rot_filters[i].setParameter(1.0, HZ, BiquadIIRFilterVec::Q_NOOVERSHOOT);//四肢拘束点用(Rotation)
-      tgt_pos_filters[com].setParameter(1.0, HZ, BiquadIIRFilterVec::Q_NOOVERSHOOT);//重心pos用
-      tgt_rot_filters[com].setParameter(0.6, HZ, BiquadIIRFilterVec::Q_NOOVERSHOOT);//重心rot用
-      tgt_pos_filters[rf].setParameter(hrp::Vector3(10.0,10.0,10.0), HZ, BiquadIIRFilterVec::Q_NOOVERSHOOT);//右足pos用
-      tgt_pos_filters[lf].setParameter(hrp::Vector3(1.0,1.0,1.0), HZ, BiquadIIRFilterVec::Q_NOOVERSHOOT);//左足pos用
-      calcacc_v_filters.setParameter(5, HZ, BiquadIIRFilterVec::Q_BUTTERWORTH);//加速度計算用
-      acc4zmp_v_filters.setParameter(5, HZ, BiquadIIRFilterVec::Q_BUTTERWORTH);//ZMP生成用ほぼこの値でいい
+      for(int i=0;i<tgt_pos_filters.size();i++)tgt_pos_filters[i].setParameter(1.0, HZ, Q_NOOVERSHOOT);//四肢拘束点用(position)
+      for(int i=0;i<tgt_rot_filters.size();i++)tgt_rot_filters[i].setParameter(1.0, HZ, Q_NOOVERSHOOT);//四肢拘束点用(Rotation)
+      tgt_pos_filters[com].setParameter(1.0, HZ, Q_NOOVERSHOOT);//重心pos用
+      tgt_rot_filters[com].setParameter(0.6, HZ, Q_NOOVERSHOOT);//重心rot用
+      tgt_pos_filters[rf].setParameter(hrp::Vector3(10.0,10.0,10.0), HZ, Q_NOOVERSHOOT);//右足pos用
+      tgt_pos_filters[lf].setParameter(hrp::Vector3(1.0,1.0,1.0), HZ, Q_NOOVERSHOOT);//左足pos用
+      calcacc_v_filters.setParameter(5, HZ, Q_BUTTERWORTH);//加速度計算用
+      acc4zmp_v_filters.setParameter(5, HZ, Q_BUTTERWORTH);//ZMP生成用ほぼこの値でいい
       com_in_filter.setParameter(1, HZ);
       rf_safe_region = hrp::Vector4(0.02, -0.01,  0.02,  0.01);
       lf_safe_region = hrp::Vector4(0.02, -0.01, -0.01, -0.02);
