@@ -181,8 +181,8 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onInitialize(){
     }
     hsp = boost::shared_ptr<WBMSCore>(new WBMSCore(m_dt));
 
-    invdyn_zmp_filters.setParameter(25, 1/m_dt, BiquadIIRFilterVec::Q_BUTTERWORTH);
-    invdyn_zmp_filters2.setParameter(25, 1/m_dt, BiquadIIRFilterVec::Q_BUTTERWORTH);
+    invdyn_zmp_filters.setParameter(25, 1/m_dt, invdyn_zmp_filters.Q_BUTTERWORTH);
+    invdyn_zmp_filters2.setParameter(25, 1/m_dt, invdyn_zmp_filters2.Q_BUTTERWORTH);
 
     mode = previous_mode = MODE_IDLE;
 
