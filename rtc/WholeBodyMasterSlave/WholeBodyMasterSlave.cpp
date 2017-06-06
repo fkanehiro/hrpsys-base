@@ -26,6 +26,17 @@ static const char* WholeBodyMasterSlave_spec[] =
         ""
     };
 
+//static std::ostream& operator<<(std::ostream& os, const struct RTC::Time &tm)
+//{
+//    int pre = os.precision();
+//    os.setf(std::ios::fixed);
+//    os << std::setprecision(6)
+//       << (tm.sec + tm.nsec/1e9)
+//       << std::setprecision(pre);
+//    os.unsetf(std::ios::fixed);
+//    return os;
+//}
+
 WholeBodyMasterSlave::WholeBodyMasterSlave(RTC::Manager* manager) : RTC::DataFlowComponentBase(manager),
       m_qRefIn("qRef", m_qRef),// from sh
       m_zmpIn("zmpIn", m_zmp),
@@ -288,6 +299,7 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
         m_robot_ml->rootLink()->R = m_robot_rmc->rootLink()->R;
         hsp->fik = fik_ml;
         hsp->m_robot = m_robot_ml;
+        calcManipulability(fik_rmc, m_robot_rmc);
 
         if(hsp->WBMSparam.is_doctor){
           processWholeBodyMasterSlave(fik, m_robot, hsp->rp_ref_out);//安全制限つきマスタ・スレーブ
@@ -495,10 +507,10 @@ void WholeBodyMasterSlave::processWholeBodyMasterSlave(fikPtr& fik_in, hrp::Body
   WBMSPose3D rh_checked = pose_ref.tgt[rh].abs;
   WBMSPose3D lh_checked = pose_ref.tgt[lh].abs;
 
-  static hrp::Vector3 target_v_old[4];
-  if(hsp->WBMSparam.use_manipulability_limit){
-    calcManipulabilityJointLimit(fik_in, robot_in, target_v_old, rf_checked, lf_checked, rh_checked, lh_checked);
-  }
+//  static hrp::Vector3 target_v_old[4];
+//  if(hsp->WBMSparam.use_manipulability_limit){
+//    calcManipulabilityJointLimit(fik_in, robot_in, target_v_old, rf_checked, lf_checked, rh_checked, lh_checked);
+//  }
   solveFullbodyIKStrictCOM(fik_in, robot_in, pose_ref.tgt[com].abs, rf_checked, lf_checked, rh_checked, lh_checked, pose_ref.tgt[head].abs,"processWholeBodyMasterSlave");
 }
 
@@ -522,20 +534,27 @@ void WholeBodyMasterSlave::processWholeBodyMasterSlave_Raw(fikPtr& fik_in, hrp::
 }
 
 
-//void WholeBodyMasterSlave::calcVelAccSafeTrajectory(const hrp::Vector3& pos_cur, const hrp::Vector3& vel_cur, const hrp::Vector3& pos_tgt, const hrp::Vector3& max_acc, const double& max_vel, hrp::Vector3& pos_ans){
-//  hrp::Vector3 direc( SGN(pos_tgt(X)-pos_cur(X)), SGN(pos_tgt(Y)-pos_cur(Y)), SGN(pos_tgt(Z)-pos_cur(Z)));
-//  hrp::Vector3 vel_ans;
-//  for(int i=0;i<XYZ;i++){vel_ans(i) = vel_cur(i) + direc(i) * max_acc(i) * m_dt;}
-//  for(int i=0;i<XYZ;i++){
-//    double stop_safe_vel = sqrt( 2 * max_acc(i) * fabs(pos_tgt(i) - pos_cur(i)) );
-//    if( direc(i) > 0 ){
-//      if(vel_ans(i) > stop_safe_vel){ vel_ans(i) = stop_safe_vel; }
-//    }else{
-//      if(vel_ans(i) < - stop_safe_vel){ vel_ans(i) = - stop_safe_vel; }
-//    }
-//  }
-//  pos_ans = pos_cur + vel_ans * m_dt;
-//}
+void WholeBodyMasterSlave::calcManipulability(fikPtr& fik_in, hrp::BodyPtr& robot_in){
+  const std::string names[4] = {"rleg","lleg","rarm","larm"};
+  hrp::dmatrix J,Jinv,Jnull;
+  for(int l=0; l<4; l++){
+    fik_in->ikp[names[l]].manip->calcJacobian(J);
+    fik_in->ikp[names[l]].manip->calcJacobianInverseNullspace(J, Jinv, Jnull);
+    Eigen::JacobiSVD< Eigen::MatrixXd > svd(J.block(0,0,3,J.cols()), Eigen::ComputeFullU | Eigen::ComputeFullV);
+//    Eigen::MatrixXd::Index row,col;
+//    hsp->cur_manip_val[l] = svd.singularValues().minCoeff(&row,&col);
+//    hsp->min_manip_direc[l] = svd.matrixU().col(row);// unit vector
+    hsp->manip_mat[l] = svd.matrixU();
+    for(int i=0;i<3;i++){
+      hsp->manip_sv[l](i) = svd.singularValues()(i);
+//      hsp->manip_mat[l].col(i) *= svd.singularValues()(i);
+//      hsp->cur_manip_val[l][i] = svd.singularValues()(i);
+//      hsp->manip_direc[l][i] = svd.matrixU().col(i);// unit vector
+    }
+//    dbg((hsp->manip_sv[l]).transpose());
+//    if(hsp->manip_direc[l].dot(fik_in->ikp[names[l]].target_p0 - robot_in->rootLink()->p) < 0){ hsp->manip_direc[l] *= -1; }//向きみて反転(常に外側正)
+  }
+}
 
 //これ超計算重い
 void WholeBodyMasterSlave::calcManipulabilityJointLimit(fikPtr& fik_in, hrp::BodyPtr& robot_in, hrp::Vector3 target_v_old[], WBMSPose3D& rf_ref, WBMSPose3D& lf_ref, WBMSPose3D& rh_ref, WBMSPose3D& lh_ref){
@@ -713,9 +732,9 @@ void WholeBodyMasterSlave::processMomentumCompensation(fikPtr& fik_in, hrp::Body
   static hrp::Vector3 target_v_old[4];
   if(hsp->WBMSparam.use_manipulability_limit){
     struct timeval t_calc_start, t_calc_end;
-    if(TIMECALC)gettimeofday(&t_calc_start, NULL);
-    calcManipulabilityJointLimit(fik_in, robot_in, target_v_old, rf_checked, lf_checked, rh_checked, lh_checked);
-    if(TIMECALC){gettimeofday(&t_calc_end, NULL); if(DEBUGP)cout<<"calcManipulabilityJointLimit:"<<(double)(t_calc_end.tv_sec - t_calc_start.tv_sec) + (t_calc_end.tv_usec - t_calc_start.tv_usec)/1.0e6<<endl; t_calc_start = t_calc_end;}
+//    if(TIMECALC)gettimeofday(&t_calc_start, NULL);
+//    calcManipulabilityJointLimit(fik_in, robot_in, target_v_old, rf_checked, lf_checked, rh_checked, lh_checked);
+//    if(TIMECALC){gettimeofday(&t_calc_end, NULL); if(DEBUGP)cout<<"calcManipulabilityJointLimit:"<<(double)(t_calc_end.tv_sec - t_calc_start.tv_sec) + (t_calc_end.tv_usec - t_calc_start.tv_usec)/1.0e6<<endl; t_calc_start = t_calc_end;}
   }
   solveFullbodyIKStrictCOM(fik_in, robot_in, com_mod, rf_checked, lf_checked, rh_checked, lh_checked, pose_ref.tgt[head].abs,"calcDynamicsFilterCompensation");
 }

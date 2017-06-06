@@ -22,18 +22,6 @@
 
 using namespace RTC;
 
-//static std::ostream& operator<<(std::ostream& os, const struct RTC::Time &tm)
-//{
-//    int pre = os.precision();
-//    os.setf(std::ios::fixed);
-//    os << std::setprecision(6)
-//       << (tm.sec + tm.nsec/1e9)
-//       << std::setprecision(pre);
-//    os.unsetf(std::ios::fixed);
-//    return os;
-//}
-
-
 #define USE_DEBUG_PORT
 
 enum mode_enum{ MODE_IDLE, MODE_SYNC_TO_WBMS, MODE_WBMS, MODE_PAUSE, MODE_SYNC_TO_IDLE};
@@ -211,6 +199,7 @@ class WholeBodyMasterSlave : public RTC::DataFlowComponentBase, UTIL_CONST {
 //  enum mode_enum{ MODE_IDLE, MODE_SYNC_TO_WBMS, MODE_WBMS, MODE_PAUSE, MODE_SYNC_TO_IDLE};
 
   void setupfik(fikPtr& fik_in, hrp::BodyPtr& robot_in, RTC::Properties& prop_in);
+  void calcManipulability(fikPtr& fik_in, hrp::BodyPtr& robot_in);
   void calcManipulabilityJointLimit(fikPtr& fik_in, hrp::BodyPtr& robot_in, hrp::Vector3 target_v_old[], WBMSPose3D& rf_ref, WBMSPose3D& lf_ref, WBMSPose3D& rh_ref, WBMSPose3D& lh_ref);
   void calcManipulabilityJointLimitForWBMS(fikPtr& fik_in, hrp::BodyPtr& robot_in);
   void solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr& robot_in, const WBMSPose3D& com_ref, const WBMSPose3D& rf_ref, const WBMSPose3D& lf_ref, const WBMSPose3D& rh_ref, const WBMSPose3D& lh_ref, const WBMSPose3D& head_ref, const std::string& debug_prefix="");

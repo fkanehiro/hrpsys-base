@@ -172,13 +172,14 @@ class WBMSCore : UTIL_CONST {
       bool use_manipulability_limit;
     };
     struct WBMSparameters WBMSparam;
-    hrp::Vector3 cur_min_manip_direc;
-    double cur_manip_val;
 
     typedef boost::shared_ptr<SimpleFullbodyInverseKinematicsSolver> fikPtr;
     fikPtr fik;
     hrp::BodyPtr m_robot;
-
+    double cur_manip_val[4][3];
+    hrp::Vector3 manip_direc[4][3];
+    hrp::Matrix33 manip_mat[4];
+    hrp::Vector3 manip_sv[4];
 
     WBMSCore(const double& dt){
       tgt_h2r_ratio = h2r_ratio = 0.96;//human 1.1m vs jaxon 1.06m
@@ -226,7 +227,7 @@ class WBMSCore : UTIL_CONST {
       WBMSparam.upper_body_rmc_ratio = 0.5;
       WBMSparam.use_rh = WBMSparam.use_lh = true;
       WBMSparam.use_head = true;
-      WBMSparam.use_manipulability_limit = false;
+      WBMSparam.use_manipulability_limit = true;
       rp_ref_out_old.clear();
       rp_ref_out.clear();
       rp_ref_vel_old.clear();
@@ -306,7 +307,8 @@ class WBMSCore : UTIL_CONST {
       applyCOMToSupportRegionLimit        (rp_ref_out.tgt[rf].abs.p, rp_ref_out.tgt[lf].abs.p, rp_ref_out.tgt[com].abs.p);
       setFootRotHorizontalIfGoLanding     (rp_ref_out);
 
-      limitManipulability                 (rp_ref_out);
+
+      if(WBMSparam.use_manipulability_limit){limitManipulability                 (rp_ref_out);}
 
       applyCOMToSupportRegionLimit        (rp_ref_out.tgt[rf].abs.p, rp_ref_out.tgt[lf].abs.p, com_CP_ref_old);//これやらないと支持領域の移動によって1ステップ前のCOM位置はもうはみ出てるかもしれないから
 
@@ -396,13 +398,12 @@ class WBMSCore : UTIL_CONST {
         tgt.tgt[l[i]].abs.p   = tgt_pos_filters[l[i]].passFilter(tgt.tgt[l[i]].abs.p);
         tgt.tgt[l[i]].abs.rpy = tgt_rot_filters[l[i]].passFilter(tgt.tgt[l[i]].abs.rpy);
       }
-//      for(int i=0, l[1]={com}; i<1; i++){
-//        calcVelAccSafeTrajectory_val(rp_ref_out_old.tgt[l[i]].abs.p, (rp_ref_out.tgt[l[i]].abs.p - rp_ref_out_old.tgt[l[i]].abs.p)/DT, tgt.tgt[l[i]].abs.p, 1.0, 1.0, tgt.tgt[l[i]].abs.p);
-//        calcVelAccSafeTrajectory_val(rp_ref_out_old.tgt[l[i]].abs.rpy, (rp_ref_out.tgt[l[i]].abs.rpy - rp_ref_out_old.tgt[l[i]].abs.rpy)/DT, tgt.tgt[l[i]].abs.rpy, 1.0, 1.0, tgt.tgt[l[i]].abs.rpy);
-//      }
-      for(int i=0, l[5]={rf,lf,rh,lh,head}; i<5; i++){
-//        calcVelAccSafeTrajectory(rp_ref_out_old.tgt[l[i]].abs.p, (rp_ref_out.tgt[l[i]].abs.p - rp_ref_out_old.tgt[l[i]].abs.p)/DT, tgt.tgt[l[i]].abs.p, 1.0, 1.0, tgt.tgt[l[i]].abs.p);
-//        calcVelAccSafeTrajectory(rp_ref_out_old.tgt[l[i]].abs.rpy, (rp_ref_out.tgt[l[i]].abs.rpy - rp_ref_out_old.tgt[l[i]].abs.rpy)/DT, tgt.tgt[l[i]].abs.rpy, 1.0, 1.0, tgt.tgt[l[i]].abs.rpy);
+//      cout<<"calcVelAccSafeTrajectoryVecML"<<endl;
+      for(int i=0, l[4]={rf,lf,rh,lh}; i<4; i++){
+        calcVelAccSafeTrajectoryVecML(rp_ref_out_old.tgt[l[i]].abs.p, (rp_ref_out.tgt[l[i]].abs.p - rp_ref_out_old.tgt[l[i]].abs.p)/DT, tgt.tgt[l[i]].abs.p, manip_mat[i], manip_sv[i], tgt.tgt[l[i]].abs.p);
+        calcVelAccSafeTrajectoryVec(rp_ref_out_old.tgt[l[i]].abs.rpy, (rp_ref_out.tgt[l[i]].abs.rpy - rp_ref_out_old.tgt[l[i]].abs.rpy)/DT, tgt.tgt[l[i]].abs.rpy, 1.0, 1.0, tgt.tgt[l[i]].abs.rpy);
+      }
+      for(int i=0, l[1]={head}; i<1; i++){
         calcVelAccSafeTrajectoryVec(rp_ref_out_old.tgt[l[i]].abs.p, (rp_ref_out.tgt[l[i]].abs.p - rp_ref_out_old.tgt[l[i]].abs.p)/DT, tgt.tgt[l[i]].abs.p, 1.0, 1.0, tgt.tgt[l[i]].abs.p);
         calcVelAccSafeTrajectoryVec(rp_ref_out_old.tgt[l[i]].abs.rpy, (rp_ref_out.tgt[l[i]].abs.rpy - rp_ref_out_old.tgt[l[i]].abs.rpy)/DT, tgt.tgt[l[i]].abs.rpy, 1.0, 1.0, tgt.tgt[l[i]].abs.rpy);
       }
@@ -421,24 +422,33 @@ class WBMSCore : UTIL_CONST {
         pos_ans = pos_tgt;
       }
     }
+    void calcVelAccSafeTrajectoryVecML(const hrp::Vector3& pos_cur, const hrp::Vector3& vel_cur, const hrp::Vector3& pos_tgt, const hrp::Matrix33& max_acc_mat, const hrp::Vector3& max_acc_sv, hrp::Vector3& pos_ans){
+      if((pos_tgt - pos_cur).norm() > 1.0e-6){
+        hrp::Vector3 direc = (pos_tgt - pos_cur).normalized();
+        double acc_val = 1.0;
+        hrp::Vector3 ref_acc = direc*acc_val;
+        hrp::Vector3 mod_acc = max_acc_mat * max_acc_sv.asDiagonal() * max_acc_mat.transpose() * ref_acc;
+//        cout<<"ref_acc "<<ref_acc.transpose()<<" mod_acc "<<mod_acc.transpose()<<endl;
+//        dbg(max_acc_mat);
+//        dbg(max_acc_sv.transpose());
+//        dbg((max_acc_mat.transpose() * ref_acc).transpose());
+//        dbg((max_acc_sv.asDiagonal() * max_acc_mat.transpose() * ref_acc).transpose());
+        double stop_safe_vel_scalar = sqrt( 2 * fabs(mod_acc.dot(direc)) * (pos_tgt - pos_cur).norm() );
+        hrp::Vector3 vel_ans = vel_cur + mod_acc * DT;
+        if(vel_ans.dot(direc) > stop_safe_vel_scalar){
+//          vel_ans = vel_ans.normalized() * stop_safe_vel_scalar;
+          vel_ans = vel_ans * stop_safe_vel_scalar / vel_ans.dot(direc);
+        }
+        pos_ans = pos_cur + vel_ans * DT;
+      }else{
+        pos_ans = pos_tgt;
+      }
+    }
     void calcVelAccSafeTrajectory(const hrp::Vector3& pos_cur, const hrp::Vector3& vel_cur, const hrp::Vector3& pos_tgt, const double& max_acc, const double& max_vel, hrp::Vector3& pos_ans){
       hrp::Vector3 direc( SGN(pos_tgt(X)-pos_cur(X)), SGN(pos_tgt(Y)-pos_cur(Y)), SGN(pos_tgt(Z)-pos_cur(Z)));
       hrp::Vector3 vel_ans = vel_cur + direc * max_acc * DT;
       for(int i=0;i<XYZ;i++){
         double stop_safe_vel = sqrt( 2 * max_acc * fabs(pos_tgt(i) - pos_cur(i)) );
-        if( direc(i) > 0 ){
-          if(vel_ans(i) > stop_safe_vel){ vel_ans(i) = stop_safe_vel; }
-        }else{
-          if(vel_ans(i) < - stop_safe_vel){ vel_ans(i) = - stop_safe_vel; }
-        }
-      }
-      pos_ans = pos_cur + vel_ans * DT;
-    }
-    void calcVelAccSafeTrajectory_val(const hrp::Vector3& pos_cur, const hrp::Vector3& vel_cur, const hrp::Vector3& pos_tgt, const double& max_acc, const double& max_vel, hrp::Vector3& pos_ans){
-      hrp::Vector3 direc( SGN(pos_tgt(X)-pos_cur(X)), SGN(pos_tgt(Y)-pos_cur(Y)), SGN(pos_tgt(Z)-pos_cur(Z)));
-      hrp::Vector3 vel_ans = vel_cur + (pos_tgt-pos_cur) * 10 * max_acc * DT;
-      for(int i=0;i<XYZ;i++){
-        double stop_safe_vel = sqrt( 2 * (pos_tgt-pos_cur).norm() * 10 * max_acc * fabs(pos_tgt(i) - pos_cur(i)) );
         if( direc(i) > 0 ){
           if(vel_ans(i) > stop_safe_vel){ vel_ans(i) = stop_safe_vel; }
         }else{
@@ -570,7 +580,6 @@ class WBMSCore : UTIL_CONST {
           out.tgt[human_l_names[i]].abs.p = fik->ikp[robot_l_names[i]].target_link->p + fik->ikp[robot_l_names[i]].target_link->R * fik->ikp[robot_l_names[i]].localPos;
         }
       }
-
     }
     void setFootContactPoseByGoContact(HumanPose& out){
       for(int i=0, l[LR]={rf,lf}; i<LR; i++){
