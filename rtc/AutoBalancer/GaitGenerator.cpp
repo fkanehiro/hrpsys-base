@@ -671,6 +671,7 @@ namespace rats
         for (size_t i = 0; i < cv.size(); i++) {
             std::vector<step_node> tmp_fsn;
             for (size_t j = 0; j < cv.at(i).size(); j++) {
+                cv.at(i).at(j).worldcoords.pos += modified_d_footstep;
                 tmp_fsn.push_back(step_node(cv.at(i).at(j).l_r, cv.at(i).at(j).worldcoords,
                                             lcg.get_default_step_height(), default_step_time, lcg.get_toe_angle(), lcg.get_heel_angle()));
             }
@@ -786,7 +787,6 @@ namespace rats
         }
       }
       if (lcg.get_footstep_index() > 0 && lcg.get_footstep_index() < footstep_nodes_list.size()-2) {
-        static int not_emergency_cnt;
         // calculate sum of preview_f
         static double preview_f_sum;
         if (lcg.get_lcg_count() == static_cast<size_t>(footstep_nodes_list[lcg.get_footstep_index()][0].step_time/dt * 1.0) - 1) {
@@ -794,6 +794,7 @@ namespace rats
           for (size_t i = preview_controller_ptr->get_delay()-1; i >= lcg.get_lcg_count()+1; i--) {
             preview_f_sum += preview_controller_ptr->get_preview_f(i);
           }
+          modified_d_footstep = hrp::Vector3::Zero();
         }
         if (lcg.get_lcg_count() <= preview_controller_ptr->get_delay()) {
           preview_f_sum += preview_controller_ptr->get_preview_f(lcg.get_lcg_count());
@@ -821,8 +822,11 @@ namespace rats
             // overwrite zmp
             overwrite_refzmp_queue(overwrite_footstep_nodes_list);
             overwrite_footstep_nodes_list.clear();
+            modified_d_footstep += d_footstep;
           }
         }
+      } else {
+        modified_d_footstep = hrp::Vector3::Zero();
       }
     }
   }
