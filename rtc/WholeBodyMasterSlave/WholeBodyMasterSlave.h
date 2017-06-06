@@ -36,6 +36,37 @@ using namespace RTC;
 
 #define USE_DEBUG_PORT
 
+enum mode_enum{ MODE_IDLE, MODE_SYNC_TO_WBMS, MODE_WBMS, MODE_PAUSE, MODE_SYNC_TO_IDLE};
+
+class ControlMode{
+  private:
+    mode_enum current_mode, previous_mode, requested_mode;
+  public:
+    ControlMode(){ current_mode = previous_mode = requested_mode = MODE_IDLE;}
+    ~ControlMode(){}
+    bool setModeRequest(mode_enum in){
+      switch(in){
+        case MODE_SYNC_TO_WBMS:
+          if(current_mode == MODE_IDLE){ requested_mode = MODE_SYNC_TO_WBMS; return true; }else{ return false; }
+        case MODE_WBMS:
+          if(current_mode == MODE_SYNC_TO_WBMS || current_mode == MODE_PAUSE ){ requested_mode = MODE_WBMS; return true; }else{ return false; }
+        case MODE_PAUSE:
+          if(current_mode == MODE_WBMS){ requested_mode = MODE_PAUSE; return true; }else{ return false; }
+        case MODE_SYNC_TO_IDLE:
+          if(current_mode == MODE_WBMS || current_mode == MODE_PAUSE ){ requested_mode = MODE_SYNC_TO_IDLE; return true; }else{ return false; }
+        case MODE_IDLE:
+          if(current_mode == MODE_SYNC_TO_IDLE ){ requested_mode = MODE_IDLE; return true; }else{ return false; }
+        default:
+          return false;
+      }
+    }
+    void update(){ previous_mode = current_mode; current_mode = requested_mode; }
+    mode_enum now(){ return current_mode; }
+    mode_enum pre(){ return previous_mode; }
+    bool isRunning(){ return (current_mode==MODE_SYNC_TO_WBMS) || (current_mode==MODE_WBMS) || (current_mode==MODE_PAUSE) || (current_mode==MODE_SYNC_TO_IDLE) ;}
+    bool isInitialize(){ return (previous_mode==MODE_IDLE) && (current_mode==MODE_SYNC_TO_WBMS) ;}
+};
+
 class WholeBodyMasterSlave : public RTC::DataFlowComponentBase, UTIL_CONST {
   public:
     WholeBodyMasterSlave(RTC::Manager* manager);
@@ -171,8 +202,13 @@ class WholeBodyMasterSlave : public RTC::DataFlowComponentBase, UTIL_CONST {
 
   boost::shared_ptr<WBMSCore> hsp;
 
-  enum { MODE_IDLE,/* MODE_COUNTDOWN,*/ MODE_SYNC_TO_WBMS, MODE_WBMS, MODE_PAUSE, MODE_SYNC_TO_IDLE} mode, previous_mode;
-  bool isRunning(){ return (mode==MODE_SYNC_TO_WBMS) || (mode==MODE_WBMS) || (mode==MODE_PAUSE) || (mode==MODE_SYNC_TO_IDLE) ;}
+  hrp::Vector3 torso_rot_rmc;
+  ControlMode mode;
+
+//  enum { MODE_IDLE, MODE_SYNC_TO_WBMS, MODE_WBMS, MODE_PAUSE, MODE_SYNC_TO_IDLE} mode, previous_mode;
+//  bool isRunning(){ return (mode==MODE_SYNC_TO_WBMS) || (mode==MODE_WBMS) || (mode==MODE_PAUSE) || (mode==MODE_SYNC_TO_IDLE) ;}
+//  bool isInitialize(){ return (previous_mode==MODE_IDLE) && (mode==MODE_SYNC_TO_WBMS) ;}
+//  enum mode_enum{ MODE_IDLE, MODE_SYNC_TO_WBMS, MODE_WBMS, MODE_PAUSE, MODE_SYNC_TO_IDLE};
 
   void setupfik(fikPtr& fik_in, hrp::BodyPtr& robot_in, RTC::Properties& prop_in);
   void calcManipulabilityJointLimit(fikPtr& fik_in, hrp::BodyPtr& robot_in, hrp::Vector3 target_v_old[], WBMSPose3D& rf_ref, WBMSPose3D& lf_ref, WBMSPose3D& rh_ref, WBMSPose3D& lh_ref);
@@ -185,8 +221,13 @@ class WholeBodyMasterSlave : public RTC::DataFlowComponentBase, UTIL_CONST {
   void processMomentumCompensation(fikPtr& fik_in, hrp::BodyPtr& robot_in, hrp::BodyPtr& robot_normal_in, const HumanPose& pose_ref);
   bool isOptionalDataContact (const std::string& ee_name) { return (std::fabs(m_optionalData.data[contact_states_index_map[ee_name]]-1.0)<0.1)?true:false; };
 
-  void calcVelAccSafeTrajectory(const hrp::Vector3& pos_cur, const hrp::Vector3& vel_cur, const hrp::Vector3& pos_tgt, const hrp::Vector3& max_acc, const double& max_vel, hrp::Vector3& pos_ans);
+//  void calcVelAccSafeTrajectory(const hrp::Vector3& pos_cur, const hrp::Vector3& vel_cur, const hrp::Vector3& pos_tgt, const hrp::Vector3& max_acc, const double& max_vel, hrp::Vector3& pos_ans);
 };
+
+
+
+
+
 
 extern "C"
 {

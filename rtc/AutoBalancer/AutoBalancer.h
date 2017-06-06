@@ -373,6 +373,12 @@ public:
       }
       std::cerr << "]" << std::endl;
     };
+    hrp::Vector3 getEEPos(const std::string& limb_name){
+      return ikp[limb_name].target_link->p + ikp[limb_name].target_link->R * ikp[limb_name].localPos;
+    }
+    hrp::Matrix33 getEERot(const std::string& limb_name){
+      return ikp[limb_name].target_link->R * ikp[limb_name].localR;
+    }
 };
 
 class AutoBalancer

@@ -36,7 +36,7 @@ extern "C" {
 #endif
 
 #define DEBUG 0
-
+#define dbg(var) std::cout<<#var"= "<<(var)<<std::endl
 #define LIMIT_MIN(x,min) (x= ( x<min ? min:x ))
 #define LIMIT_MAX(x,max) (x= ( x<max ? x:max ))
 #define LIMIT_MINMAX(x,min,max) ((x= (x<min  ? min : x<max ? x : max)))
@@ -67,8 +67,7 @@ class BiquadIIRFilterVec : UTIL_CONST {
     IIRFilter filters[XYZ];
     hrp::Vector3 ans;
   public:
-    BiquadIIRFilterVec()
-    {}
+    BiquadIIRFilterVec(){}
     ~BiquadIIRFilterVec(){}
     void setParameter(const hrp::Vector3& fc_in, const double& HZ, const double& Q = 0.5){ for(int i=0;i<XYZ;i++){ filters[i].setParameterAsBiquad((double)fc_in(i), Q, HZ); } }
     void setParameter(const double& fc_in, const double& HZ, const double& Q = 0.5){ setParameter(hrp::Vector3(fc_in,fc_in,fc_in), HZ, Q); }//overload
@@ -147,8 +146,8 @@ class WBMSCore : UTIL_CONST {
     RobotConfig rc;
     HumanPose rp_ref_out_old, hp_swap_checked;
     unsigned int loop;
+    bool is_initial_loop;
   public:
-    double countdown_sec;
     double H_cur;
     HumanPose hp_wld_raw, hp_plot, rp_ref_out, rp_ref_vel_old;
     FILE *sr_log, *cz_log, *id_log;
@@ -173,7 +172,6 @@ class WBMSCore : UTIL_CONST {
       bool use_manipulability_limit;
     };
     struct WBMSparameters WBMSparam;
-    bool is_initial_loop;
     hrp::Vector3 cur_min_manip_direc;
     double cur_manip_val;
 
@@ -187,10 +185,6 @@ class WBMSCore : UTIL_CONST {
       DT = dt;
       HZ = (int)(1.0/DT);
       CNT_F_TH = 20.0;
-//      HumanSyncOn = false;
-//      ht_first_call = true;
-//      startCountdownForHumanSync = false;
-      countdown_sec = 5.0;
       loop = 0;
       //////////  hrp::Vector は初期化必要  ///////////
       com_old = com_oldold = comacc = hrp::Vector3::Zero();
@@ -247,45 +241,62 @@ class WBMSCore : UTIL_CONST {
         cz_log = fopen("/home/ishiguro/HumanSync_com_zmp.log","w+");
         id_log = fopen("/home/ishiguro/HumanSync_invdyn.log","w+");
       }
-//      previous_mode = mode = MODE_IDLE;
       is_initial_loop = true;
-      cout<<"HumanSynchronizer constructed"<<endl;
+      cout<<"WBMSCore constructed"<<endl;
     }
     ~WBMSCore(){
       if(DEBUG)fclose(sr_log);
       if(DEBUG)fclose(cz_log);
       if(DEBUG)fclose(id_log);
-      cout<<"HumanSynchronizer destructed"<<endl;
+      cout<<"WBMSCore destructed"<<endl;
     }
-    double getRemainingCountDown() const { return countdown_sec; }
-//    bool isHumanSyncOn() const { return HumanSyncOn; }
     double getUpdateTime() const { return (double)(t_calc_end.tv_sec - t_calc_start.tv_sec) + (t_calc_end.tv_usec - t_calc_start.tv_usec)/1.0e6; }
-    void setTargetHumanToRobotRatio(const double tgt_h2r_r_in){ tgt_h2r_ratio = tgt_h2r_r_in; }
-    void setCurrentInputAsOffset(HumanPose& tgt){
+    void initializeHumanPoseFromCurrentInput(){
       std::string ns[7] = {"com","rf","lf","rh","lh","zmp","head"};
       for(int i=0;i<7;i++){
-        tgt.tgt[i].offs.p   =  tgt.tgt[i].abs.p;
-        tgt.tgt[i].offs.rpy =  tgt.tgt[i].abs.rpy;
+        hp_wld_raw.tgt[i].offs.p   =  hp_wld_raw.tgt[i].abs.p;
+        hp_wld_raw.tgt[i].offs.rpy =  hp_wld_raw.tgt[i].abs.rpy;
       }
+    }
+    void initializeRobotPoseFromHRPBody(fikPtr& fik_in, hrp::BodyPtr& robot_in){
+      const std::string robot_l_names[4] = {"rleg","lleg","rarm","larm"};
+      const int human_l_names[4] = {rf,lf,rh,lh};
+      for(int i=0;i<4;i++){//HumanSynchronizerの初期姿勢オフセットをセット
+        if(fik_in->ikp.count(robot_l_names[i])){
+          rp_ref_out.tgt[human_l_names[i]].offs.p = fik_in->getEEPos(robot_l_names[i]);
+          rp_ref_out.tgt[human_l_names[i]].offs.rpy = hrp::rpyFromRot(fik_in->getEERot(robot_l_names[i]));
+          rp_ref_out.tgt[human_l_names[i]].abs = rp_ref_out.tgt[human_l_names[i]].offs;
+        }
+      }
+      rp_ref_out.tgt[com].offs.p = robot_in->calcCM();
+      rp_ref_out.tgt[com].offs.rpy = hrp::rpyFromRot(robot_in->rootLink()->R);
+      rp_ref_out.tgt[zmp].offs.p(X) = rp_ref_out.tgt[com].offs.p(X);
+      rp_ref_out.tgt[zmp].offs.p(Y) = rp_ref_out.tgt[com].offs.p(Y);
+      rp_ref_out.tgt[zmp].offs.p(Z) = (fik_in->getEEPos("rleg")(Z)+fik_in->getEEPos("lleg")(Z))/2;
+      rp_ref_out.tgt[rf].cnt = rp_ref_out.tgt[rf].offs;
+      rp_ref_out.tgt[lf].cnt = rp_ref_out.tgt[lf].offs;
+      baselinkpose.p = robot_in->rootLink()->p;
+      baselinkpose.rpy = hrp::rpyFromRot(robot_in->rootLink()->R);
+      for(int i=0, l[LR]={rf,lf}; i<LR; i++){
+        rp_ref_out.tgt[l[i]].is_contact = true;
+//        rp_ref_out.tgt[l[i]].cnt = rp_ref_out.tgt[l[i]].abs;
+      }
+    }
+    void initializeRequest(fikPtr& fik_in, hrp::BodyPtr& robot_in){
+      loop = 0;
+      is_initial_loop = true;
+      initializeHumanPoseFromCurrentInput();
+      initializeRobotPoseFromHRPBody(fik_in, robot_in);
+      rp_ref_out_old = rp_ref_vel_old = rp_ref_out;
     }
     void update(){//////////  メインループ  ////////////
       gettimeofday(&t_calc_start, NULL);
-      if(loop!=0){is_initial_loop = false;}
+//      if(is_initial_loop){ initialize(); }
       updateParams                        ();
       autoLRSwapCheck                     (hp_wld_raw,hp_swap_checked);//入力の左右反転を常にチェック(＝手足の交差は不可能)
       convertRelHumanPoseToRelRobotPose   (hp_swap_checked, rp_ref_out);
       hp_plot = rp_ref_out;
-      if(is_initial_loop){
-        for(int i=0, l[LR]={rf,lf}; i<LR; i++){
-          rp_ref_out.tgt[l[i]].is_contact = true;
-//          rp_ref_out.tgt[l[i]].go_contact = true;
-          rp_ref_out.tgt[l[i]].cnt = rp_ref_out.tgt[l[i]].abs;
-        }
-        rp_ref_out_old = rp_ref_out;
-        rp_ref_vel_old = rp_ref_out;
-      }
-//      applyVelLimit                       (rp_ref_vel_old, rp_ref_out);
-      rp_ref_vel_old = rp_ref_out;
+//      applyVelLimit                       (rp_ref_vel_old, rp_ref_out); rp_ref_vel_old = rp_ref_out;
       if(WBMSparam.set_com_height_fix)rp_ref_out.tgt[com].abs.p(Z) = rp_ref_out.tgt[com].offs.p(Z) + WBMSparam.set_com_height_fix_val;//膝曲げトルクで落ちるときの応急措置
       judgeFootLandOnCommandByFootForce   (hp_wld_raw);//人体足裏反力から各足の接地指令を生成
       lockSwingFootIfZMPOutOfSupportFoot  (rp_ref_out_old, rp_ref_out);//
@@ -318,8 +329,8 @@ class WBMSCore : UTIL_CONST {
       com_vel_old = (rp_ref_out.tgt[com].abs.p - rp_ref_out_old.tgt[com].abs.p)/DT;
       rh_vel_old = (rp_ref_out.tgt[rh].abs.p - rp_ref_out_old.tgt[rh].abs.p)/DT;
       rp_ref_out_old = rp_ref_out;
-//      previous_mode = mode;
       loop++;
+      is_initial_loop = false;
       gettimeofday(&t_calc_end, NULL);
     }
     static void Vector3ToVector2(const hrp::Vector3& in, hrp::Vector2& out){ out(X) = in(X); out(Y) = in(Y);}
@@ -374,18 +385,6 @@ class WBMSCore : UTIL_CONST {
         else if (!in.tgt[l[i]].is_contact && in.tgt[l[i]].w(fz)>CNT_F_TH+30){in.tgt[l[i]].is_contact = true;}//足浮いた状態から下げる
       }
     }
-//    void applyLPFilter(HumanPose& tgt){
-//      if(is_initial_loop){
-//        for(int i=0, l[6]={com,rf,lf,rh,lh,head}; i<6; i++){
-//          tgt_pos_filters[l[i]].reset(tgt.tgt[l[i]].abs.p);
-//          tgt_rot_filters[l[i]].reset(tgt.tgt[l[i]].abs.rpy);
-//        }
-//      }
-//      for(int i=0, l[6]={com,rf,lf,rh,lh,head}; i<6; i++){
-//        tgt.tgt[l[i]].abs.p   = tgt_pos_filters[l[i]].passFilter(tgt.tgt[l[i]].abs.p);
-//        tgt.tgt[l[i]].abs.rpy = tgt_rot_filters[l[i]].passFilter(tgt.tgt[l[i]].abs.rpy);
-//      }
-//    }
     void applyLPFilter(HumanPose& tgt){
       if(is_initial_loop){
         for(int i=0, l[1]={com}; i<1; i++){
@@ -402,8 +401,24 @@ class WBMSCore : UTIL_CONST {
 //        calcVelAccSafeTrajectory_val(rp_ref_out_old.tgt[l[i]].abs.rpy, (rp_ref_out.tgt[l[i]].abs.rpy - rp_ref_out_old.tgt[l[i]].abs.rpy)/DT, tgt.tgt[l[i]].abs.rpy, 1.0, 1.0, tgt.tgt[l[i]].abs.rpy);
 //      }
       for(int i=0, l[5]={rf,lf,rh,lh,head}; i<5; i++){
-        calcVelAccSafeTrajectory(rp_ref_out_old.tgt[l[i]].abs.p, (rp_ref_out.tgt[l[i]].abs.p - rp_ref_out_old.tgt[l[i]].abs.p)/DT, tgt.tgt[l[i]].abs.p, 1.0, 1.0, tgt.tgt[l[i]].abs.p);
-        calcVelAccSafeTrajectory(rp_ref_out_old.tgt[l[i]].abs.rpy, (rp_ref_out.tgt[l[i]].abs.rpy - rp_ref_out_old.tgt[l[i]].abs.rpy)/DT, tgt.tgt[l[i]].abs.rpy, 1.0, 1.0, tgt.tgt[l[i]].abs.rpy);
+//        calcVelAccSafeTrajectory(rp_ref_out_old.tgt[l[i]].abs.p, (rp_ref_out.tgt[l[i]].abs.p - rp_ref_out_old.tgt[l[i]].abs.p)/DT, tgt.tgt[l[i]].abs.p, 1.0, 1.0, tgt.tgt[l[i]].abs.p);
+//        calcVelAccSafeTrajectory(rp_ref_out_old.tgt[l[i]].abs.rpy, (rp_ref_out.tgt[l[i]].abs.rpy - rp_ref_out_old.tgt[l[i]].abs.rpy)/DT, tgt.tgt[l[i]].abs.rpy, 1.0, 1.0, tgt.tgt[l[i]].abs.rpy);
+        calcVelAccSafeTrajectoryVec(rp_ref_out_old.tgt[l[i]].abs.p, (rp_ref_out.tgt[l[i]].abs.p - rp_ref_out_old.tgt[l[i]].abs.p)/DT, tgt.tgt[l[i]].abs.p, 1.0, 1.0, tgt.tgt[l[i]].abs.p);
+        calcVelAccSafeTrajectoryVec(rp_ref_out_old.tgt[l[i]].abs.rpy, (rp_ref_out.tgt[l[i]].abs.rpy - rp_ref_out_old.tgt[l[i]].abs.rpy)/DT, tgt.tgt[l[i]].abs.rpy, 1.0, 1.0, tgt.tgt[l[i]].abs.rpy);
+      }
+    }
+    void calcVelAccSafeTrajectoryVec(const hrp::Vector3& pos_cur, const hrp::Vector3& vel_cur, const hrp::Vector3& pos_tgt, const double& max_acc, const double& max_vel, hrp::Vector3& pos_ans){
+      if((pos_tgt - pos_cur).norm() > 1.0e-6){
+        hrp::Vector3 direc = (pos_tgt - pos_cur).normalized();
+        double stop_safe_vel_scalar = sqrt( 2 * max_acc * (pos_tgt - pos_cur).norm() );
+        hrp::Vector3 vel_ans = vel_cur + direc * max_acc * DT;
+        if(vel_ans.dot(direc) > stop_safe_vel_scalar){
+//          vel_ans = vel_ans.normalized() * stop_safe_vel_scalar;
+          vel_ans = vel_ans * stop_safe_vel_scalar / vel_ans.dot(direc);
+        }
+        pos_ans = pos_cur + vel_ans * DT;
+      }else{
+        pos_ans = pos_tgt;
       }
     }
     void calcVelAccSafeTrajectory(const hrp::Vector3& pos_cur, const hrp::Vector3& vel_cur, const hrp::Vector3& pos_tgt, const double& max_acc, const double& max_vel, hrp::Vector3& pos_ans){
@@ -440,25 +455,75 @@ class WBMSCore : UTIL_CONST {
       if( inside_vec_lf.dot(lf2zmp) / inside_vec_lf.norm() > WBMSparam.auto_swing_foot_landing_threshold ){ out.tgt[rf].go_contact = true; }
     }
     void limitEEWorkspace(HumanPose& out){
-//      const double MAX_FW = 0.25;
-      const double MAX_FW = 1000000;//manipulability test
+      const double MAX_FW = 0.25;
+//      const double MAX_FW = 1000000;//manipulability test
       const double FOOT_2_FOOT_COLLISION_MARGIIN = 0.16;
-      if(!out.tgt[rf].is_contact && out.tgt[lf].is_contact){//右足浮遊時
-        const hrp::Vector2 lf2rf_vec( out.tgt[rf].abs.p(X) - out.tgt[lf].cnt.p(X), out.tgt[rf].abs.p(Y) - out.tgt[lf].cnt.p(Y) );
-        if(lf2rf_vec.norm() > MAX_FW){
-          out.tgt[rf].abs.p(X) = (lf2rf_vec.normalized())(X) * MAX_FW + out.tgt[lf].cnt.p(X);
-          out.tgt[rf].abs.p(Y) = (lf2rf_vec.normalized())(Y) * MAX_FW + out.tgt[lf].cnt.p(Y);
+//      if(!out.tgt[rf].is_contact && out.tgt[lf].is_contact){//右足浮遊時
+//        const hrp::Vector2 lf2rf_vec( out.tgt[rf].abs.p(X) - out.tgt[lf].cnt.p(X), out.tgt[rf].abs.p(Y) - out.tgt[lf].cnt.p(Y) );
+//        if(lf2rf_vec.norm() > MAX_FW){
+//          out.tgt[rf].abs.p(X) = (lf2rf_vec.normalized())(X) * MAX_FW + out.tgt[lf].cnt.p(X);
+//          out.tgt[rf].abs.p(Y) = (lf2rf_vec.normalized())(Y) * MAX_FW + out.tgt[lf].cnt.p(Y);
+//        }
+//        LIMIT_MAX(out.tgt[rf].abs.p(Y), out.tgt[lf].cnt.p(Y) - FOOT_2_FOOT_COLLISION_MARGIIN);
+//      }
+//      else if(out.tgt[rf].is_contact && !out.tgt[lf].is_contact){//左足浮遊時
+//        const hrp::Vector2 rf2lf_vec( out.tgt[lf].abs.p(X) - out.tgt[rf].cnt.p(X), out.tgt[lf].abs.p(Y) - out.tgt[rf].cnt.p(Y) );
+//        if(rf2lf_vec.norm() > MAX_FW){
+//          out.tgt[lf].abs.p(X) = (rf2lf_vec.normalized())(X) * MAX_FW + out.tgt[rf].cnt.p(X);
+//          out.tgt[lf].abs.p(Y) = (rf2lf_vec.normalized())(Y) * MAX_FW + out.tgt[rf].cnt.p(Y);
+//        }
+//        LIMIT_MIN(out.tgt[lf].abs.p(Y), out.tgt[rf].cnt.p(Y) + FOOT_2_FOOT_COLLISION_MARGIIN);
+//      }
+
+
+      for(int i=0, spl[LR]={rf,lf}, swl[LR]={lf,rf}; i<LR; i++){
+        PoseTGT& support_leg = out.tgt[spl[i]];
+        PoseTGT& swing_leg = out.tgt[swl[i]];
+        hrp::Vector2 inside_vec_baserel = ( spl[i]==rf ? hrp::Vector2(0,+1) : hrp::Vector2(0,-1) );
+
+        hrp::Vector2 sp2sw_vec( swing_leg.abs.p(X) - support_leg.cnt.p(X), swing_leg.abs.p(Y) - support_leg.cnt.p(Y) );
+        if(swing_leg.go_contact && sp2sw_vec.norm() > MAX_FW){ sp2sw_vec = sp2sw_vec.normalized() * MAX_FW; }//着地時に足を広げすぎないよう制限
+        Eigen::Matrix2d base_rot;
+        base_rot = Eigen::Rotation2Dd(baselinkpose.rpy(y));
+        hrp::Vector2 sp2sw_vec_baserel = base_rot.transpose() * sp2sw_vec;
+        if( sp2sw_vec_baserel.dot(inside_vec_baserel) < FOOT_2_FOOT_COLLISION_MARGIIN){
+          sp2sw_vec_baserel += inside_vec_baserel * (FOOT_2_FOOT_COLLISION_MARGIIN - sp2sw_vec_baserel.dot(inside_vec_baserel));
         }
-        LIMIT_MAX(out.tgt[rf].abs.p(Y), out.tgt[lf].cnt.p(Y) - FOOT_2_FOOT_COLLISION_MARGIIN);
+        sp2sw_vec = base_rot * sp2sw_vec_baserel;
+        swing_leg.abs.p(X) = sp2sw_vec(X) + support_leg.cnt.p(X);
+        swing_leg.abs.p(Y) = sp2sw_vec(Y) + support_leg.cnt.p(Y);
       }
-      else if(out.tgt[rf].is_contact && !out.tgt[lf].is_contact){//左足浮遊時
-        const hrp::Vector2 rf2lf_vec( out.tgt[lf].abs.p(X) - out.tgt[rf].cnt.p(X), out.tgt[lf].abs.p(Y) - out.tgt[rf].cnt.p(Y) );
-        if(rf2lf_vec.norm() > MAX_FW){
-          out.tgt[lf].abs.p(X) = (rf2lf_vec.normalized())(X) * MAX_FW + out.tgt[rf].cnt.p(X);
-          out.tgt[lf].abs.p(Y) = (rf2lf_vec.normalized())(Y) * MAX_FW + out.tgt[rf].cnt.p(Y);
-        }
-        LIMIT_MIN(out.tgt[lf].abs.p(Y), out.tgt[rf].cnt.p(Y) + FOOT_2_FOOT_COLLISION_MARGIIN);
-      }
+
+
+
+//      if(!out.tgt[rf].is_contact && out.tgt[lf].is_contact){//右足浮遊時
+//        PoseTGT& support_leg = out.tgt[lf];
+//        PoseTGT& swing_leg = out.tgt[rf];
+//        hrp::Vector2 inside_vec_baserel(0, -1);
+//
+//        hrp::Vector2 sp2sw_vec( swing_leg.abs.p(X) - support_leg.cnt.p(X), swing_leg.abs.p(Y) - support_leg.cnt.p(Y) );
+//        if(swing_leg.go_contact && sp2sw_vec.norm() > MAX_FW){ sp2sw_vec = sp2sw_vec.normalized() * MAX_FW; }//着地時に足を広げすぎないよう制限
+//        Eigen::Matrix2d base_rot;
+//        base_rot = Eigen::Rotation2Dd(baselinkpose.rpy(y));
+//        hrp::Vector2 sp2sw_vec_baserel = base_rot.transpose() * sp2sw_vec;
+//
+//        if( sp2sw_vec_baserel.dot(inside_vec_baserel) < FOOT_2_FOOT_COLLISION_MARGIIN){
+//          sp2sw_vec_baserel += inside_vec_baserel * (FOOT_2_FOOT_COLLISION_MARGIIN - sp2sw_vec_baserel.dot(inside_vec_baserel));
+//        }
+//        sp2sw_vec = base_rot * sp2sw_vec_baserel;
+//        swing_leg.abs.p(X) = sp2sw_vec(X) + support_leg.cnt.p(X);
+//        swing_leg.abs.p(Y) = sp2sw_vec(Y) + support_leg.cnt.p(Y);
+//      }
+//      else if(!out.tgt[lf].is_contact && out.tgt[lf].go_contact && out.tgt[rf].is_contact){//左足浮遊時
+//        const hrp::Vector2 rf2lf_vec( out.tgt[lf].abs.p(X) - out.tgt[rf].cnt.p(X), out.tgt[lf].abs.p(Y) - out.tgt[rf].cnt.p(Y) );
+//        if(rf2lf_vec.norm() > MAX_FW){
+//          out.tgt[lf].abs.p(X) = (rf2lf_vec.normalized())(X) * MAX_FW + out.tgt[rf].cnt.p(X);
+//          out.tgt[lf].abs.p(Y) = (rf2lf_vec.normalized())(Y) * MAX_FW + out.tgt[rf].cnt.p(Y);
+//        }
+//        LIMIT_MIN(out.tgt[lf].abs.p(Y), out.tgt[rf].cnt.p(Y) + FOOT_2_FOOT_COLLISION_MARGIIN);
+//      }
+
+
 //      hrp::Vector3 init_base2rh = out.tgt[rh].offs.p - baselinkpose.p_offs;
 //      hrp::Vector3 init_base2lh = out.tgt[lh].offs.p - baselinkpose.p_offs;
 //      hrp::Matrix33 init_base2rh_R = hrp::rotFromRpy(baselinkpose.rpy_offs).transpose() * hrp::rotFromRpy(out.tgt[rh].offs.rpy);
@@ -505,43 +570,6 @@ class WBMSCore : UTIL_CONST {
           out.tgt[human_l_names[i]].abs.p = fik->ikp[robot_l_names[i]].target_link->p + fik->ikp[robot_l_names[i]].target_link->R * fik->ikp[robot_l_names[i]].localPos;
         }
       }
-
-//      hrp::dmatrix J,Jinv,Jnull;
-//      fik->ikp["rleg"].manip->calcJacobian(J);
-//      fik->ikp["rleg"].manip->calcJacobianInverseNullspace(J, Jinv, Jnull);
-//
-//      hrp::dmatrix manipulability_mat = J*J.transpose();
-//      double manipulability = sqrt((J*J.transpose()).determinant());
-//      Eigen::JacobiSVD< Eigen::MatrixXd > svd(J.block(0,0,3,J.cols()), Eigen::ComputeFullU | Eigen::ComputeFullV);
-//      Eigen::MatrixXd::Index row,col;
-//      cur_manip_val = svd.singularValues().minCoeff(&row,&col);
-//      cur_min_manip_direc = svd.matrixU().col(row);// unit vector
-//      if(cur_min_manip_direc.dot(fik->ikp["rleg"].target_p0 - m_robot->rootLink()->p) < 0){ cur_min_manip_direc *= -1; }//向きみて反転(常に外側正)
-
-//      static hrp::Vector3 old_ref;
-//
-//      hrp::Vector3 ref_ee_vel = (out.tgt[rf].abs.p - rp_ref_out_old.tgt[rf].abs.p) / DT;
-//      hrp::Vector3 ref_ee_vel_mod = ref_ee_vel;
-//      hrp::Vector3 ref_ee_vel_v = (ref_ee_vel.dot(cur_min_manip_direc)) * cur_min_manip_direc;
-//      hrp::Vector3 ref_ee_vel_h = ref_ee_vel - ref_ee_vel_v;
-//      double min_manip_th = 0.1;
-//      double penalty = (cur_manip_val - min_manip_th) * 10;
-//      LIMIT_MINMAX(penalty, -1.0, 1.0);//
-//      double max_dec_vel = 1.0;
-//      max_dec_vel *= penalty;
-//      cout<<"cur_manip_val"<<cur_manip_val<<endl;
-//      cout<<"penalty"<<penalty<<endl;
-//      if(ref_ee_vel_v.norm() > max_dec_vel){
-//        ref_ee_vel_v = ref_ee_vel_v.normalized() * max_dec_vel;
-//      }
-////      cout<<"ref_ee_vel_v"<<ref_ee_vel_v.transpose()<<endl;
-////      if(cur_manip_val<min_manip_th){
-////        ref_ee_vel_v = - cur_min_manip_direc * (min_manip_th - cur_manip_val) * 5;
-////      }
-//      ref_ee_vel_mod = ref_ee_vel_h + ref_ee_vel_v;
-//      out.tgt[rf].abs.p = rp_ref_out_old.tgt[rf].abs.p + ref_ee_vel_mod * DT;
-
-//      fik->revertRobotStateToCurrent();
 
     }
     void setFootContactPoseByGoContact(HumanPose& out){
