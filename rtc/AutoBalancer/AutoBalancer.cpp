@@ -1049,7 +1049,7 @@ void AutoBalancer::solveFullbodyIK ()
       it->second.target_r0 = ikp[it->first].target_r0;
   }
   fik->ratio_for_vel = transition_interpolator_ratio * leg_names_interpolator_ratio;
-  fik->current_tm = m_qRef.tm;
+//  fik->current_tm = m_qRef.tm;
   for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
       fik->ikp[it->first].is_ik_enable = it->second.is_active;
   }
