@@ -39,17 +39,6 @@
 
 using namespace RTC;
 
-static std::ostream& operator<<(std::ostream& os, const struct RTC::Time &tm)
-{
-    int pre = os.precision();
-    os.setf(std::ios::fixed);
-    os << std::setprecision(6)
-       << (tm.sec + tm.nsec/1e9)
-       << std::setprecision(pre);
-    os.unsetf(std::ios::fixed);
-    return os;
-}
-
 class AutoBalancer
   : public RTC::DataFlowComponentBase
 {
