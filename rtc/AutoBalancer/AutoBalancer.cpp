@@ -40,6 +40,17 @@ static const char* autobalancer_spec[] =
     };
 // </rtc-template>
 
+static std::ostream& operator<<(std::ostream& os, const struct RTC::Time &tm)
+{
+    int pre = os.precision();
+    os.setf(std::ios::fixed);
+    os << std::setprecision(6)
+       << (tm.sec + tm.nsec/1e9)
+       << std::setprecision(pre);
+    os.unsetf(std::ios::fixed);
+    return os;
+}
+
 AutoBalancer::AutoBalancer(RTC::Manager* manager)
     : RTC::DataFlowComponentBase(manager),
       // <rtc-template block="initializer">
@@ -1049,7 +1060,7 @@ void AutoBalancer::solveFullbodyIK ()
       it->second.target_r0 = ikp[it->first].target_r0;
   }
   fik->ratio_for_vel = transition_interpolator_ratio * leg_names_interpolator_ratio;
-  fik->current_tm = m_qRef.tm;
+//  fik->current_tm = m_qRef.tm;
   for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
       fik->ikp[it->first].is_ik_enable = it->second.is_active;
   }
