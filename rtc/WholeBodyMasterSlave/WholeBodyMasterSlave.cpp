@@ -195,6 +195,7 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onInitialize(){
     invdyn_zmp_filters.setParameter(25, 1/m_dt, Q_BUTTERWORTH);
     invdyn_zmp_filters2.setParameter(25, 1/m_dt, Q_BUTTERWORTH);
 
+    std::cerr << "[" << m_profile.instance_name << "] onInitialize() OK" << std::endl;
     return RTC::RTC_OK;
 }
 
@@ -283,18 +284,16 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
 
 
       for(int i=0; i<fik_list.size(); i++){
-        fik_list[i]->current_tm = m_qRef.tm;
         fik_list[i]->ikp["rleg"].is_ik_enable = true;
         fik_list[i]->ikp["lleg"].is_ik_enable = true;
-        fik_list[i]->ikp["rarm"].is_ik_enable = hsp->WBMSparam.use_rh;
-        fik_list[i]->ikp["larm"].is_ik_enable = hsp->WBMSparam.use_lh;
+        if(fik_list[i]->ikp.count("rarm"))fik_list[i]->ikp["rarm"].is_ik_enable = hsp->WBMSparam.use_rh;
+        if(fik_list[i]->ikp.count("larm"))fik_list[i]->ikp["larm"].is_ik_enable = hsp->WBMSparam.use_lh;
       }
 
       if (mode.isRunning()) {
         if(mode.isInitialize()){
           preProcessForWholeBodyMasterSlave(fik, m_robot);
         }
-
         m_robot_ml->rootLink()->p = m_robot_rmc->rootLink()->p;
         m_robot_ml->rootLink()->R = m_robot_rmc->rootLink()->R;
         hsp->fik = fik_ml;
@@ -307,7 +306,6 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
           processWholeBodyMasterSlave_Raw(fik, m_robot, raw_pose);//生マスタ・スレーブ
         }
 
-
         if(DEBUGP && TIMECALC){clock_gettime(CLOCK_REALTIME, &endT); std::cout << (double)(endT.tv_sec - startT.tv_sec + (endT.tv_nsec - startT.tv_nsec) * 1e-9) << " @ processWholeBodyMasterSlave" << std::endl;  clock_gettime(CLOCK_REALTIME, &startT);}
 
         //逆動力学初期化
@@ -315,7 +313,6 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
           idsb.setInitState(m_robot, m_dt);
           idsb2.setInitState(m_robot, m_dt);
         }
-
         //逆動力学
         calcAccelerationsForInverseDynamics(m_robot, idsb);
         hrp::Vector3 ref_zmp_invdyn;
@@ -361,8 +358,8 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
           m_optionalData.data.length(optionalDataLength);//TODO:これいいのか？
           for(int i=0;i<optionalDataLength;i++)m_optionalData.data[i] = 0;
         }
-        m_optionalData.data[contact_states_index_map["rleg"]] = m_optionalData.data[contact_states_index_map["rleg"]+4] = hsp->rp_ref_out.tgt[rf].is_contact;
-        m_optionalData.data[contact_states_index_map["lleg"]] = m_optionalData.data[contact_states_index_map["lleg"]+4] = hsp->rp_ref_out.tgt[lf].is_contact;
+        m_optionalData.data[contact_states_index_map["rleg"]] = m_optionalData.data[optionalDataLength/2 + contact_states_index_map["rleg"]] = hsp->rp_ref_out.tgt[rf].is_contact;
+        m_optionalData.data[contact_states_index_map["lleg"]] = m_optionalData.data[optionalDataLength/2 + contact_states_index_map["lleg"]] = hsp->rp_ref_out.tgt[lf].is_contact;
       }
       hsp->baselinkpose.p = m_robot->rootLink()->p;
       hsp->baselinkpose.rpy = hrp::rpyFromRot(m_robot->rootLink()->R);
@@ -538,21 +535,23 @@ void WholeBodyMasterSlave::calcManipulability(fikPtr& fik_in, hrp::BodyPtr& robo
   const std::string names[4] = {"rleg","lleg","rarm","larm"};
   hrp::dmatrix J,Jinv,Jnull;
   for(int l=0; l<4; l++){
-    fik_in->ikp[names[l]].manip->calcJacobian(J);
-    fik_in->ikp[names[l]].manip->calcJacobianInverseNullspace(J, Jinv, Jnull);
-    Eigen::JacobiSVD< Eigen::MatrixXd > svd(J.block(0,0,3,J.cols()), Eigen::ComputeFullU | Eigen::ComputeFullV);
-//    Eigen::MatrixXd::Index row,col;
-//    hsp->cur_manip_val[l] = svd.singularValues().minCoeff(&row,&col);
-//    hsp->min_manip_direc[l] = svd.matrixU().col(row);// unit vector
-    hsp->manip_mat[l] = svd.matrixU();
-    for(int i=0;i<3;i++){
-      hsp->manip_sv[l](i) = svd.singularValues()(i);
-//      hsp->manip_mat[l].col(i) *= svd.singularValues()(i);
-//      hsp->cur_manip_val[l][i] = svd.singularValues()(i);
-//      hsp->manip_direc[l][i] = svd.matrixU().col(i);// unit vector
+    if(fik_in->ikp.count(names[l])){
+      fik_in->ikp[names[l]].manip->calcJacobian(J);
+      fik_in->ikp[names[l]].manip->calcJacobianInverseNullspace(J, Jinv, Jnull);
+      Eigen::JacobiSVD< Eigen::MatrixXd > svd(J.block(0,0,3,J.cols()), Eigen::ComputeFullU | Eigen::ComputeFullV);
+  //    Eigen::MatrixXd::Index row,col;
+  //    hsp->cur_manip_val[l] = svd.singularValues().minCoeff(&row,&col);
+  //    hsp->min_manip_direc[l] = svd.matrixU().col(row);// unit vector
+      hsp->manip_mat[l] = svd.matrixU();
+      for(int i=0;i<3;i++){
+        hsp->manip_sv[l](i) = svd.singularValues()(i);
+  //      hsp->manip_mat[l].col(i) *= svd.singularValues()(i);
+  //      hsp->cur_manip_val[l][i] = svd.singularValues()(i);
+  //      hsp->manip_direc[l][i] = svd.matrixU().col(i);// unit vector
+      }
+  //    dbg((hsp->manip_sv[l]).transpose());
+  //    if(hsp->manip_direc[l].dot(fik_in->ikp[names[l]].target_p0 - robot_in->rootLink()->p) < 0){ hsp->manip_direc[l] *= -1; }//向きみて反転(常に外側正)
     }
-//    dbg((hsp->manip_sv[l]).transpose());
-//    if(hsp->manip_direc[l].dot(fik_in->ikp[names[l]].target_p0 - robot_in->rootLink()->p) < 0){ hsp->manip_direc[l] *= -1; }//向きみて反転(常に外側正)
   }
 }
 
