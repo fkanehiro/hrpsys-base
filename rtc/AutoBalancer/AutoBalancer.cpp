@@ -1636,6 +1636,12 @@ bool AutoBalancer::setAutoBalancerParam(const OpenHRP::AutoBalancerService::Auto
     case OpenHRP::AutoBalancerService::MODE_REF_FORCE:
         use_force = MODE_REF_FORCE;
         break;
+    case OpenHRP::AutoBalancerService::MODE_REF_FORCE_WITH_FOOT:
+        use_force = MODE_REF_FORCE_WITH_FOOT;
+        break;
+    case OpenHRP::AutoBalancerService::MODE_REF_FORCE_RFU_EXT_MOMENT:
+        use_force = MODE_REF_FORCE_RFU_EXT_MOMENT;
+        break;
     default:
         break;
     }
@@ -1713,7 +1719,7 @@ bool AutoBalancer::setAutoBalancerParam(const OpenHRP::AutoBalancerService::Auto
   }
   std::cerr << std::endl;
   delete[] default_zmp_offsets_array;
-  std::cerr << "[" << m_profile.instance_name << "]   use_force_mode = " << use_force << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   use_force_mode = " << getUseForceModeString() << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   graspless_manip_mode = " << graspless_manip_mode << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   graspless_manip_arm = " << graspless_manip_arm << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   graspless_manip_p_gain = " << graspless_manip_p_gain.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << std::endl;
@@ -1760,6 +1766,8 @@ bool AutoBalancer::getAutoBalancerParam(OpenHRP::AutoBalancerService::AutoBalanc
   switch(use_force) {
   case MODE_NO_FORCE: i_param.use_force_mode = OpenHRP::AutoBalancerService::MODE_NO_FORCE; break;
   case MODE_REF_FORCE: i_param.use_force_mode = OpenHRP::AutoBalancerService::MODE_REF_FORCE; break;
+  case MODE_REF_FORCE_WITH_FOOT: i_param.use_force_mode = OpenHRP::AutoBalancerService::MODE_REF_FORCE_WITH_FOOT; break;
+  case MODE_REF_FORCE_RFU_EXT_MOMENT: i_param.use_force_mode = OpenHRP::AutoBalancerService::MODE_REF_FORCE_RFU_EXT_MOMENT; break;
   default: break;
   }
   i_param.graspless_manip_mode = graspless_manip_mode;
@@ -1965,16 +1973,12 @@ void AutoBalancer::static_balance_point_proc_one(hrp::Vector3& tmp_input_sbp, co
 {
   hrp::Vector3 target_sbp = hrp::Vector3(0, 0, 0);
   hrp::Vector3 tmpcog = m_robot->calcCM();
-  switch ( use_force ) {
-  case MODE_REF_FORCE:
+  if ( use_force == MODE_NO_FORCE ) {
+    tmp_input_sbp = tmpcog + sbp_cog_offset;
+  } else {
     calc_static_balance_point_from_forces(target_sbp, tmpcog, ref_com_height, ref_forces);
     tmp_input_sbp = target_sbp - sbp_offset;
     sbp_cog_offset = tmp_input_sbp - tmpcog;
-    break;
-  case MODE_NO_FORCE:
-    tmp_input_sbp = tmpcog + sbp_cog_offset;
-    break;
-  default: break;
   }
 };
 
@@ -2085,6 +2089,22 @@ bool AutoBalancer::calc_inital_support_legs(const double& y, std::vector<coordin
     start_ref_coords.pos = (ikp["rleg"].target_p0+ikp["lleg"].target_p0)*0.5;
     mid_rot(start_ref_coords.rot, 0.5, ikp["rleg"].target_r0, ikp["lleg"].target_r0);
     return true;
+};
+
+std::string AutoBalancer::getUseForceModeString ()
+{
+    switch (use_force) {
+    case OpenHRP::AutoBalancerService::MODE_NO_FORCE:
+        return "MODE_NO_FORCE";
+    case OpenHRP::AutoBalancerService::MODE_REF_FORCE:
+        return "MODE_REF_FORCE";
+    case OpenHRP::AutoBalancerService::MODE_REF_FORCE_WITH_FOOT:
+        return "MODE_REF_FORCE_WITH_FOOT";
+    case OpenHRP::AutoBalancerService::MODE_REF_FORCE_RFU_EXT_MOMENT:
+        return "MODE_REF_FORCE_RFU_EXT_MOMENT";
+    default:
+        return "";
+    }
 };
 
 //

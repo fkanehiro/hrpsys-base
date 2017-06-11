@@ -234,6 +234,7 @@ class AutoBalancer
       return (std::fabs(m_optionalData.data[contact_states_index_map[ee_name]]-1.0)<0.1)?true:false;
   };
   bool calc_inital_support_legs(const double& y, std::vector<rats::coordinates>& initial_support_legs_coords, std::vector<rats::leg_type>& initial_support_legs, rats::coordinates& start_ref_coords);
+  std::string getUseForceModeString ();
 
   // for gg
   typedef boost::shared_ptr<rats::gait_generator> ggPtr;
@@ -269,7 +270,7 @@ class AutoBalancer
 
   // static balance point offsetting
   hrp::Vector3 sbp_offset, sbp_cog_offset;
-  enum {MODE_NO_FORCE, MODE_REF_FORCE} use_force;
+  enum {MODE_NO_FORCE, MODE_REF_FORCE, MODE_REF_FORCE_WITH_FOOT, MODE_REF_FORCE_RFU_EXT_MOMENT} use_force;
   std::vector<hrp::Vector3> ref_forces;
 
   unsigned int m_debugLevel;

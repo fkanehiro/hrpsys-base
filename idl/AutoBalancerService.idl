@@ -129,8 +129,14 @@ module OpenHRP
      * @brief Mode of use_force
      */
     enum UseForceMode {
+      /// Mode in which robot's COG is not changed according to force/moment values
       MODE_NO_FORCE,
-      MODE_REF_FORCE
+      /// Mode in which robot's COG is changed according to sensors' force/moment values
+      MODE_REF_FORCE,
+      /// Mode in which robot's COG is changed according to sensors' force/moment values for hands and feet (and root-link)
+      MODE_REF_FORCE_WITH_FOOT,
+      /// Mode in which robot's COG is changed according to sensors' force/moment values using ReferenceForceUpdater's ext moment
+      MODE_REF_FORCE_RFU_EXT_MOMENT
     };
 
     /**
