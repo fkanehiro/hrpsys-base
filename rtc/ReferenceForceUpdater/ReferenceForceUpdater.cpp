@@ -58,6 +58,8 @@ ReferenceForceUpdater::ReferenceForceUpdater(RTC::Manager* manager)
     m_basePosIn("basePosIn", m_basePos),
     m_baseRpyIn("baseRpyIn", m_baseRpy),
     m_rpyIn("rpy", m_rpy),
+    m_diffFootOriginExtMomentIn("diffFootOriginExtMoment", m_diffFootOriginExtMoment),
+    m_refFootOriginExtMomentOut("refFootOriginExtMoment", m_refFootOriginExtMoment),
     m_ReferenceForceUpdaterServicePort("ReferenceForceUpdaterService"),
     // </rtc-template>
     m_robot(hrp::BodyPtr()),
@@ -89,6 +91,9 @@ RTC::ReturnCode_t ReferenceForceUpdater::onInitialize()
   addInPort("basePosIn", m_basePosIn);
   addInPort("baseRpyIn",m_baseRpyIn);
   addInPort("rpy",m_rpyIn);
+  addInPort("diffFootOriginExtMoment", m_diffFootOriginExtMomentIn);
+
+  addOutPort("refFootOriginExtMoment", m_refFootOriginExtMomentOut);
 
   // Set service provider to Ports
   m_ReferenceForceUpdaterServicePort.registerProvider("service0", "ReferenceForceUpdaterService", m_ReferenceForceUpdaterService);
@@ -215,6 +220,22 @@ RTC::ReturnCode_t ReferenceForceUpdater::onInitialize()
       std::cerr << "[" << m_profile.instance_name << "]   localPos = " << eet.localPos.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[m]" << std::endl;
       std::cerr << "[" << m_profile.instance_name << "]   localR = " << eet.localR.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", "\n", "    [", "]")) << std::endl;
     }
+    // For FootOriginExtMoment
+    {
+        std::string ee_name = "footoriginextmoment";
+        ReferenceForceUpdaterParam rfu_param;
+        rfu_param.update_count = round((1/rfu_param.update_freq)/m_dt);
+        m_RFUParam.insert(std::pair<std::string, ReferenceForceUpdaterParam>(ee_name, rfu_param));
+        ee_trans eet;
+        eet.localPos = hrp::Vector3::Zero();
+        eet.localR = hrp::Matrix33::Identity();
+        eet.target_name = "";
+        ee_map.insert(std::pair<std::string, ee_trans>(ee_name , eet));
+        ee_index_map.insert(std::pair<std::string, size_t>(ee_name, ref_force.size()));
+        ref_force.push_back(hrp::Vector3::Zero());
+        ref_force_interpolator.insert(std::pair<std::string, interpolator*>(ee_name, new interpolator(3, m_dt, interpolator::LINEAR)));
+        transition_interpolator.insert(std::pair<std::string, interpolator*>(ee_name, new interpolator(1, m_dt)));
+    }
   }
 
   // check if the dof of m_robot match the number of joint in m_robot
@@ -299,6 +320,9 @@ RTC::ReturnCode_t ReferenceForceUpdater::onExecute(RTC::UniqueId ec_id)
   if (m_rpyIn.isNew()) {
     m_rpyIn.read();
   }
+  if (m_diffFootOriginExtMomentIn.isNew()) {
+      m_diffFootOriginExtMomentIn.read();
+  }
   if (m_qRefIn.isNew()) {
     m_qRefIn.read();
   }
@@ -328,7 +352,9 @@ RTC::ReturnCode_t ReferenceForceUpdater::onExecute(RTC::UniqueId ec_id)
         std::string arm = itr->first;
         size_t arm_idx = ee_index_map[arm];
         if ( m_RFUParam[arm].is_active ) all_arm_is_not_active = false;
-        else for (unsigned int j=0; j<3; j++ ) ref_force[arm_idx](j) = m_ref_force_in[arm_idx].data[j];
+        else if ( !isFootOriginExtMoment(arm) ) {
+            for (unsigned int j=0; j<3; j++ ) ref_force[arm_idx](j) = m_ref_force_in[arm_idx].data[j];
+        }
       }
       //determin ref_force_out from ref_force_in
       if ( all_arm_is_not_active ) {
@@ -404,6 +430,29 @@ RTC::ReturnCode_t ReferenceForceUpdater::onExecute(RTC::UniqueId ec_id)
       size_t arm_idx = ee_index_map[arm];
       double interpolation_time = 0;
       bool is_active = m_RFUParam[arm].is_active;
+      if ( isFootOriginExtMoment(arm) ) {
+      if ( is_active && loop % m_RFUParam[arm].update_count == 0 ) {
+        hrp::Vector3 foot_origin_pos;
+        hrp::Matrix33 foot_origin_rot;
+        calcFootOriginCoords(foot_origin_pos, foot_origin_rot);
+        hrp::Vector3 df = foot_origin_rot * (-1 * hrp::Vector3(m_diffFootOriginExtMoment.data.x, m_diffFootOriginExtMoment.data.y, m_diffFootOriginExtMoment.data.z)); // diff = ref - act;
+        if (!itr->second.is_hold_value)
+            ref_force[arm_idx] = ref_force[arm_idx] + (m_RFUParam[arm].p_gain * transition_interpolator_ratio[arm_idx]) * df;
+        interpolation_time = (1/m_RFUParam[arm].update_freq) * m_RFUParam[arm].update_time_ratio;
+        if ( ref_force_interpolator[arm]->isEmpty() ) {
+            ref_force_interpolator[arm]->setGoal(ref_force[arm_idx].data(), interpolation_time, true);
+        }
+        hrp::Vector3 tmp_moment = foot_origin_rot.transpose() * ref_force[arm_idx];
+        m_refFootOriginExtMoment.data.x = tmp_moment(0);
+        m_refFootOriginExtMoment.data.y = tmp_moment(1);
+        m_refFootOriginExtMoment.data.z = tmp_moment(2);
+        if ( DEBUGP ) {
+          std::cerr << "[" << m_profile.instance_name << "] Updating reference force" << std::endl;
+          std::cerr << "[" << m_profile.instance_name << "]   diff foot origin ext moment = " << df.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[Nm], interpolation_time = " << interpolation_time << "[s]" << std::endl;
+          std::cerr << "[" << m_profile.instance_name << "]   new foot origin ext moment = " << ref_force[arm_idx].format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[Nm]" << std::endl;
+        }
+      }
+      } else {
       if ( is_active && loop % m_RFUParam[arm].update_count == 0 ) {
         hrp::Link* target_link = m_robot->link(ee_map[arm].target_name);
         hrp::Vector3 abs_motion_dir, tmp_act_force, df;
@@ -452,6 +501,7 @@ RTC::ReturnCode_t ReferenceForceUpdater::onExecute(RTC::UniqueId ec_id)
           std::cerr << "[" << m_profile.instance_name << "]   df = " << df.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << std::endl;
         }
       }
+      }
       if (!ref_force_interpolator[arm]->isEmpty()) {
         ref_force_interpolator[arm]->get(ref_force[arm_idx].data(), true);
       }
@@ -469,8 +519,35 @@ RTC::ReturnCode_t ReferenceForceUpdater::onExecute(RTC::UniqueId ec_id)
     m_ref_force_out[i].tm = m_ref_force_in[i].tm;
     m_ref_forceOut[i]->write();
   }
+  m_refFootOriginExtMoment.tm = m_qRef.tm;
+  m_refFootOriginExtMomentOut.write();
 
   return RTC::RTC_OK;
+}
+
+void ReferenceForceUpdater::calcFootOriginCoords (hrp::Vector3& foot_origin_pos, hrp::Matrix33& foot_origin_rot)
+{
+  rats::coordinates leg_c[2], tmpc;
+  hrp::Vector3 ez = hrp::Vector3::UnitZ();
+  hrp::Vector3 ex = hrp::Vector3::UnitX();
+  size_t i = 0;
+  for (std::map<std::string, ee_trans>::iterator itr = ee_map.begin(); itr != ee_map.end(); itr++ ) {
+      if (itr->first.find("leg") == std::string::npos) continue;
+      hrp::Link* target = m_robot->sensor<hrp::ForceSensor>(itr->second.sensor_name)->link;
+      leg_c[i].pos = target->p;
+      hrp::Vector3 xv1(target->R * ex);
+      xv1(2)=0.0;
+      xv1.normalize();
+      hrp::Vector3 yv1(ez.cross(xv1));
+      leg_c[i].rot(0,0) = xv1(0); leg_c[i].rot(1,0) = xv1(1); leg_c[i].rot(2,0) = xv1(2);
+      leg_c[i].rot(0,1) = yv1(0); leg_c[i].rot(1,1) = yv1(1); leg_c[i].rot(2,1) = yv1(2);
+      leg_c[i].rot(0,2) = ez(0); leg_c[i].rot(1,2) = ez(1); leg_c[i].rot(2,2) = ez(2);
+      i++;
+  }
+  // Only double support is assumed
+  rats::mid_coords(tmpc, 0.5, leg_c[0], leg_c[1]);
+  foot_origin_pos = tmpc.pos;
+  foot_origin_rot = tmpc.rot;
 }
 
 /*
@@ -507,7 +584,6 @@ RTC::ReturnCode_t ReferenceForceUpdater::onRateChanged(RTC::UniqueId ec_id)
   return RTC::RTC_OK;
 }
 */
-
 
 bool ReferenceForceUpdater::setReferenceForceUpdaterParam(const std::string& i_name_, const OpenHRP::ReferenceForceUpdaterService::ReferenceForceUpdaterParam& i_param)
 {
@@ -597,7 +673,12 @@ bool ReferenceForceUpdater::startReferenceForceUpdater(const std::string& i_name
       m_RFUParam[i_name_].is_active = true;
       double tmpstart = 0.0, tmpgoal = 1.0;
       size_t arm_idx = ee_index_map[i_name_];
-      hrp::Vector3 currentRefForce( m_ref_force_in[arm_idx].data[0], m_ref_force_in[arm_idx].data[1], m_ref_force_in[arm_idx].data[2] );
+      hrp::Vector3 currentRefForce;
+      if ( isFootOriginExtMoment(std::string(i_name_)) ) {
+          currentRefForce = hrp::Vector3 (m_diffFootOriginExtMoment.data.x, m_diffFootOriginExtMoment.data.y, m_diffFootOriginExtMoment.data.z);
+      } else {
+          currentRefForce = hrp::Vector3( m_ref_force_in[arm_idx].data[0], m_ref_force_in[arm_idx].data[1], m_ref_force_in[arm_idx].data[2] );
+      }
       ref_force_interpolator[i_name_]->set(currentRefForce.data());
       transition_interpolator[i_name_]->set(&tmpstart);
       transition_interpolator[i_name_]->setGoal(&tmpgoal, 1.0, true);
