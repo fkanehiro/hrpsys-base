@@ -959,6 +959,10 @@ void AutoBalancer::calculateOutputRefForces ()
     double mg = m_robot->totalMass() * gg->get_gravitational_acceleration();
     m_force[0].data[2] = alpha * mg;
     m_force[1].data[2] = (1-alpha) * mg;
+    if ( use_force == MODE_REF_FORCE_WITH_FOOT || use_force == MODE_REF_FORCE_RFU_EXT_MOMENT ) { // TODO : use other use_force mode. This should be depends on Stabilizer distribution mode.
+        distributeReferenceZMPToWrenches (ref_zmp);
+    }
+    prev_ref_zmp = ref_zmp;
 };
 
 hrp::Vector3 AutoBalancer::calcFootMidPosUsingZMPWeightMap ()
@@ -1125,6 +1129,7 @@ void AutoBalancer::startABCparam(const OpenHRP::AutoBalancerService::StrSequence
   transition_interpolator->set(&tmp_ratio);
   tmp_ratio = 1.0;
   transition_interpolator->setGoal(&tmp_ratio, transition_time, true);
+  prev_ref_zmp = ref_zmp;
   for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
     it->second.is_active = false;
   }
@@ -2110,6 +2115,121 @@ bool AutoBalancer::calc_inital_support_legs(const double& y, std::vector<coordin
     start_ref_coords.pos = (ikp["rleg"].target_p0+ikp["lleg"].target_p0)*0.5;
     mid_rot(start_ref_coords.rot, 0.5, ikp["rleg"].target_r0, ikp["lleg"].target_r0);
     return true;
+};
+
+// TODO : Use same code as ZMPDistributor.h
+// Solve A * x = b => x = W A^T (A W A^T)-1 b
+// => x = W^{1/2} Pinv(A W^{1/2}) b
+// Copied from ZMPDistributor.h
+void calcWeightedLinearEquation(hrp::dvector& ret, const hrp::dmatrix& A, const hrp::dmatrix& W, const hrp::dvector& b)
+{
+    hrp::dmatrix W2 = hrp::dmatrix::Zero(W.rows(), W.cols());
+    for (size_t i = 0; i < W.rows(); i++) W2(i,i) = std::sqrt(W(i,i));
+    hrp::dmatrix Aw = A*W2;
+    hrp::dmatrix Aw_inv = hrp::dmatrix::Zero(A.cols(), A.rows());
+    hrp::calcPseudoInverse(Aw, Aw_inv);
+    ret = W2 * Aw_inv * b;
+    //ret = W2 * Aw.colPivHouseholderQr().solve(b);
+};
+
+void AutoBalancer::distributeReferenceZMPToWrenches (const hrp::Vector3& _ref_zmp)
+{
+    // apply inverse system
+    // TODO : fix 0.055 (zmp delay)
+    hrp::Vector3 tmp_ref_zmp = _ref_zmp + 0.055 * (_ref_zmp - prev_ref_zmp) / m_dt;
+
+    std::vector<hrp::Vector3> cop_pos;
+    std::vector<double> limb_gains;
+    for (size_t i = 0 ; i < leg_names.size(); i++) {
+        ABCIKparam& tmpikp = ikp[leg_names[i]];
+        cop_pos.push_back(tmpikp.target_p0 + tmpikp.target_r0 * tmpikp.localR * default_zmp_offsets[i]);
+        limb_gains.push_back(m_contactStates.data[contact_states_index_map[leg_names[i]]] ? 1.0 : 0.0);
+    }
+    size_t ee_num = leg_names.size();
+    size_t state_dim = 6*ee_num;
+    size_t total_wrench_dim = 5;
+    // size_t total_fz = m_robot->totalMass() * gg->get_gravitational_acceleration();
+    size_t total_fz = m_ref_force[0].data[2]+m_ref_force[1].data[2];
+    //size_t total_wrench_dim = 3;
+    hrp::dmatrix Wmat = hrp::dmatrix::Identity(state_dim/2, state_dim/2);
+    hrp::dmatrix Gmat = hrp::dmatrix::Zero(total_wrench_dim, state_dim/2);
+    // Set Gmat
+    //   Fill Fz
+    for (size_t j = 0; j < ee_num; j++) {
+        if (total_wrench_dim == 3) {
+            Gmat(0,3*j+2) = 1.0;
+        } else {
+            for (size_t k = 0; k < 3; k++) Gmat(k,3*j+k) = 1.0;
+        }
+    }
+    //   Fill Nx and Ny
+    for (size_t i = 0; i < total_wrench_dim; i++) {
+        for (size_t j = 0; j < ee_num; j++) {
+            if ( i == total_wrench_dim-2 ) { // Nx
+                Gmat(i,3*j+1) = -(cop_pos[j](2) - tmp_ref_zmp(2));
+                Gmat(i,3*j+2) = (cop_pos[j](1) - tmp_ref_zmp(1));
+            } else if ( i == total_wrench_dim-1 ) { // Ny
+                Gmat(i,3*j) = (cop_pos[j](2) - tmp_ref_zmp(2));
+                Gmat(i,3*j+2) = -(cop_pos[j](0) - tmp_ref_zmp(0));
+            }
+        }
+    }
+    // Set Wmat
+    for (size_t j = 0; j < ee_num; j++) {
+        for (size_t i = 0; i < 3; i++) {
+            if (ee_num == 2)
+                Wmat(i+j*3, i+j*3) = Wmat(i+j*3, i+j*3) * limb_gains[j] * (i==2? 1.0 : 0.01);
+            else
+                Wmat(i+j*3, i+j*3) = Wmat(i+j*3, i+j*3) * limb_gains[j];
+        }
+    }
+    // Ret is wrench around cop_pos
+    //   f_cop = f_ee
+    //   n_ee = (cop_pos - ee_pos) x f_cop + n_cop
+    hrp::dvector ret(state_dim/2);
+    hrp::dvector total_wrench = hrp::dvector::Zero(total_wrench_dim);
+    total_wrench(total_wrench_dim-5) = m_ref_force[0].data[0]+m_ref_force[1].data[0];
+    total_wrench(total_wrench_dim-4) = m_ref_force[0].data[1]+m_ref_force[1].data[1];
+    total_wrench(total_wrench_dim-3) = total_fz;
+    calcWeightedLinearEquation(ret, Gmat, Wmat, total_wrench);
+    if (DEBUGP) {
+        std::cerr << "[" << m_profile.instance_name << "] distributeReferenceZMPToWrenches" << std::endl;
+    }
+    for (size_t i = 0 ; i < leg_names.size(); i++) {
+        size_t fidx = contact_states_index_map[leg_names[i]];
+        ABCIKparam& tmpikp = ikp[leg_names[i]];
+        hrp::Vector3 f_ee(ret(3*i), ret(3*i+1), ret(3*i+2));
+        //hrp::Vector3 tmp_ee_pos = tmpikp.target_p0 + tmpikp.target_r0 * tmpikp.localPos;
+        hrp::Vector3 tmp_ee_pos = tmpikp.target_p0;
+        hrp::Vector3 n_ee = (cop_pos[i]-tmp_ee_pos).cross(f_ee); // n_cop = 0
+        m_force[fidx].data[0] = f_ee(0);
+        m_force[fidx].data[1] = f_ee(1);
+        m_force[fidx].data[2] = f_ee(2);
+        m_force[fidx].data[3] = n_ee(0);
+        m_force[fidx].data[4] = n_ee(1);
+        m_force[fidx].data[5] = n_ee(2);
+        if (DEBUGP) {
+            std::cerr << "[" << m_profile.instance_name << "]   "
+                      << "ref_force  [" << leg_names[i] << "] " << f_ee.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[N], "
+                      << "ref_moment [" << leg_names[i] << "] " << n_ee.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[Nm]" << std::endl;
+        }
+    }
+    if (DEBUGP) {
+        std::cerr << "[" << m_profile.instance_name << "]   Gmat = " << Gmat.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[N,Nm]" << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "]   total_wrench = " << total_wrench.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[N,Nm]" << std::endl;
+        hrp::dvector tmp(total_wrench.size());
+        tmp = Gmat*ret;
+        std::cerr << "[" << m_profile.instance_name << "]   Gmat*ret = " << tmp.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[N,Nm]" << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "]   (Gmat*ret-total_wrench) = " << (tmp-total_wrench).format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[N,Nm]" << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "]   ret = " << ret.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << "[N,Nm]" << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "]   Wmat(diag) = [";
+        for (size_t j = 0; j < ee_num; j++) {
+            for (size_t i = 0; i < 3; i++) {
+                std::cerr << Wmat(i+j*3, i+j*3) << " ";
+            }
+        }
+        std::cerr << "]" << std::endl;
+    }
 };
 
 std::string AutoBalancer::getUseForceModeString ()
