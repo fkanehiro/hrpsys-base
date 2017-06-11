@@ -436,7 +436,8 @@ RTC::ReturnCode_t ReferenceForceUpdater::onExecute(RTC::UniqueId ec_id)
           inner_product = df.dot(abs_motion_dir);
           if ( ! (inner_product < 0 && ref_force[arm_idx].dot(abs_motion_dir) < 0.0) ) {
             hrp::Vector3 in_f = ee_rot * internal_force;
-            ref_force[arm_idx] = ref_force[arm_idx].dot(abs_motion_dir) * abs_motion_dir + in_f + (m_RFUParam[arm].p_gain * inner_product * transition_interpolator_ratio[arm_idx]) * abs_motion_dir;
+            if (!itr->second.is_hold_value)
+                ref_force[arm_idx] = ref_force[arm_idx].dot(abs_motion_dir) * abs_motion_dir + in_f + (m_RFUParam[arm].p_gain * inner_product * transition_interpolator_ratio[arm_idx]) * abs_motion_dir;
             interpolation_time = (1/m_RFUParam[arm].update_freq) * m_RFUParam[arm].update_time_ratio;
             if ( ref_force_interpolator[arm]->isEmpty() ) {
               ref_force_interpolator[arm]->setGoal(ref_force[arm_idx].data(), interpolation_time, true);
@@ -551,13 +552,14 @@ bool ReferenceForceUpdater::setReferenceForceUpdaterParam(const std::string& i_n
   m_RFUParam[arm].p_gain = i_param.p_gain;
   m_RFUParam[arm].d_gain = i_param.d_gain;
   m_RFUParam[arm].i_gain = i_param.i_gain;
+  m_RFUParam[arm].is_hold_value = i_param.is_hold_value;
   for (size_t i = 0; i < 3; i++ ) m_RFUParam[arm].motion_dir(i) = i_param.motion_dir[i];
 
   // Print values
   std::cerr << "[" << m_profile.instance_name << "]   p_gain = " << m_RFUParam[arm].p_gain << ", d_gain = " << m_RFUParam[arm].d_gain << ", i_gain = " << m_RFUParam[arm].i_gain << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   update_freq = " << m_RFUParam[arm].update_freq << "[Hz], update_time_ratio = " << m_RFUParam[arm].update_time_ratio << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   motion_dir = " << m_RFUParam[arm].motion_dir.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << std::endl;
-  std::cerr << "[" << m_profile.instance_name << "]   frame = " << m_RFUParam[arm].frame << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   frame = " << m_RFUParam[arm].frame << ", is_hold_value = " << (m_RFUParam[arm].is_hold_value?"true":"false") << std::endl;
   return true;
 };
 

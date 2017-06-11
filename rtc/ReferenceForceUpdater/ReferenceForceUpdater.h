@@ -177,7 +177,7 @@ class ReferenceForceUpdater
     hrp::Vector3 motion_dir;
     std::string frame;
     int update_count;
-    bool is_active, is_stopping;
+    bool is_active, is_stopping, is_hold_value;
     ReferenceForceUpdaterParam () {
       //params defined in idl
       motion_dir = hrp::Vector3::UnitZ();
@@ -190,6 +190,7 @@ class ReferenceForceUpdater
       //additional params (not defined in idl)
       is_active = false;
       is_stopping = false;
+      is_hold_value = false;
     };
   };
   std::map<std::string, hrp::VirtualForceSensorParam> m_vfs;

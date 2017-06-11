@@ -29,6 +29,8 @@ module OpenHRP
           double d_gain;
           /// I gain
           double i_gain;
+          /// Hold current value or not. If is_hold_value is true, do not update value, otherwise, update value.
+          boolean is_hold_value;
       };
 
       /**
