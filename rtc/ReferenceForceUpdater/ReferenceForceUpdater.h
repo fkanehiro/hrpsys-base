@@ -107,6 +107,7 @@ class ReferenceForceUpdater
   bool getReferenceForceUpdaterParam(const std::string& i_name_, OpenHRP::ReferenceForceUpdaterService::ReferenceForceUpdaterParam_out i_param);
   bool startReferenceForceUpdater(const std::string& i_name_);
   bool stopReferenceForceUpdater(const std::string& i_name_);
+  inline bool eps_eq(const double a, const double b, const double eps = 1e-3) { return std::fabs((a)-(b)) <= eps; };
 
  protected:
   // Configuration variable declaration

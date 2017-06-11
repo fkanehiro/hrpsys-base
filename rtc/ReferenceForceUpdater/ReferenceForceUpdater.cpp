@@ -503,24 +503,43 @@ bool ReferenceForceUpdater::setReferenceForceUpdaterParam(const std::string& i_n
     std::cerr << "[" << m_profile.instance_name << "] Could not found reference force updater param [" << i_name_ << "]" << std::endl;
     return false;
   }
-  if ( m_RFUParam[arm].is_active ) {
-    std::cerr << "[" << m_profile.instance_name << "] Could not set parameters because rfu [" << i_name_ << "] is active" << std::endl;
-    return false;
-  }
   if ( std::string(i_param.frame) != "local" && std::string(i_param.frame) != "world" ) {
     std::cerr << "[" << m_profile.instance_name << "] \"frame\" parameter must be local/world. could not set \"" << std::string(i_param.frame) << "\"" <<std::endl;
     return false;
   }
+  // Parameters which cannot be changed when active
+  if ( m_RFUParam[arm].is_active ) { // When active, check parameter changing, and if changed, do not change the value.
+      if ( !eps_eq(m_RFUParam[arm].update_freq, i_param.update_freq) ) {
+          std::cerr << "[" << m_profile.instance_name << "] Could not set update_freq because rfu [" << i_name_ << "] is active (current = " << m_RFUParam[arm].update_freq << ", new = " << i_param.update_freq << ")" << std::endl;
+          return false;
+      } else {
+          m_RFUParam[arm].update_freq = i_param.update_freq;
+      }
+      if ( !eps_eq(m_RFUParam[arm].update_time_ratio, i_param.update_time_ratio) ) {
+          std::cerr << "[" << m_profile.instance_name << "] Could not set update_time_ratio because rfu [" << i_name_ << "] is active (current = " << m_RFUParam[arm].update_time_ratio << ", new = " << i_param.update_time_ratio << ")" << std::endl;
+          return false;
+      } else {
+          m_RFUParam[arm].update_time_ratio = i_param.update_time_ratio;
+      }
+      if ( m_RFUParam[arm].frame != std::string(i_param.frame) ) {
+          std::cerr << "[" << m_profile.instance_name << "] Could not set frame because rfu [" << i_name_ << "] is active (current = " << m_RFUParam[arm].frame << ", new = " << i_param.frame << ")" << std::endl;
+          return false;
+      } else {
+          m_RFUParam[arm].frame = i_param.frame;
+      }
+  } else { // When not active, update parameters
+      m_RFUParam[arm].update_freq = i_param.update_freq;
+      m_RFUParam[arm].update_time_ratio = i_param.update_time_ratio;
+      m_RFUParam[arm].update_count=round((1/m_RFUParam[arm].update_freq)/m_dt);
+      m_RFUParam[arm].frame=std::string(i_param.frame);
+  }
+  // Parameters which can be changed regardless of active/inactive
   m_RFUParam[arm].p_gain = i_param.p_gain;
   m_RFUParam[arm].d_gain = i_param.d_gain;
   m_RFUParam[arm].i_gain = i_param.i_gain;
-  m_RFUParam[arm].update_freq = i_param.update_freq;
-  m_RFUParam[arm].update_time_ratio = i_param.update_time_ratio;
-  m_RFUParam[arm].update_count=round((1/m_RFUParam[arm].update_freq)/m_dt);
-  m_RFUParam[arm].frame=std::string(i_param.frame);
-
   for (size_t i = 0; i < 3; i++ ) m_RFUParam[arm].motion_dir(i) = i_param.motion_dir[i];
 
+  // Print values
   std::cerr << "[" << m_profile.instance_name << "]   p_gain = " << m_RFUParam[arm].p_gain << ", d_gain = " << m_RFUParam[arm].d_gain << ", i_gain = " << m_RFUParam[arm].i_gain << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   update_freq = " << m_RFUParam[arm].update_freq << "[Hz], update_time_ratio = " << m_RFUParam[arm].update_time_ratio << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   motion_dir = " << m_RFUParam[arm].motion_dir.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << std::endl;
