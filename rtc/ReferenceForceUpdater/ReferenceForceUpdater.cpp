@@ -339,7 +339,7 @@ RTC::ReturnCode_t ReferenceForceUpdater::onExecute(RTC::UniqueId ec_id)
       if ( ! transition_interpolator_isEmpty ) {
         transition_interpolator[arm]->get(&transition_interpolator_ratio[arm_idx], true);
         if ( transition_interpolator[arm]->isEmpty() && m_RFUParam[arm].is_active && m_RFUParam[arm].is_stopping ) {
-          std::cerr << "[" << m_profile.instance_name << "] [" << m_qRef.tm << "] ReferenceForceUpdater active => inactive." << std::endl;
+          std::cerr << "[" << m_profile.instance_name << "] [" << m_qRef.tm << "] ReferenceForceUpdater [" << arm << "] active => inactive." << std::endl;
           m_RFUParam[arm].is_active = false;
           m_RFUParam[arm].is_stopping = false;
         }
@@ -497,7 +497,7 @@ void ReferenceForceUpdater::updateRefFootOriginExtMoment (const std::string& arm
     m_refFootOriginExtMoment.data.y = tmp_moment(1);
     m_refFootOriginExtMoment.data.z = tmp_moment(2);
     if ( DEBUGP ) {
-        std::cerr << "[" << m_profile.instance_name << "] Updating reference force" << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "] Updating reference moment [" << arm << "]" << std::endl;
         std::cerr << "[" << m_profile.instance_name << "]   diff foot origin ext moment = " << df.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[Nm], interpolation_time = " << interpolation_time << "[s]" << std::endl;
         std::cerr << "[" << m_profile.instance_name << "]   new foot origin ext moment = " << ref_force[arm_idx].format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[Nm]" << std::endl;
     }
@@ -548,11 +548,11 @@ void ReferenceForceUpdater::updateRefForces (const std::string& arm)
         }
     }
     if ( DEBUGP ) {
-        std::cerr << "[" << m_profile.instance_name << "] Updating reference force" << std::endl;
-        std::cerr << "[" << m_profile.instance_name << "]   inner_product = " << inner_product << ", ref_force = " << ref_force[arm_idx].dot(abs_motion_dir) << ", interpolation_time = " << interpolation_time << "[s]" << std::endl;
-        std::cerr << "[" << m_profile.instance_name << "]   new ref_force = " << ref_force[arm_idx].format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << std::endl;
-        std::cerr << "[" << m_profile.instance_name << "]   act_force = " << tmp_act_force.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << std::endl;
-        std::cerr << "[" << m_profile.instance_name << "]   df = " << df.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "] Updating reference force [" << arm << "]" << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "]   inner_product = " << inner_product << "[N], ref_force = " << ref_force[arm_idx].dot(abs_motion_dir) << "[N], interpolation_time = " << interpolation_time << "[s]" << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "]   new ref_force = " << ref_force[arm_idx].format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[N]" << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "]   act_force = " << tmp_act_force.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[N]" << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "]   df = " << df.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[N]" << std::endl;
     }
 };
 
