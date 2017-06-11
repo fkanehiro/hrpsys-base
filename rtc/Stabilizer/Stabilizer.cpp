@@ -80,6 +80,7 @@ Stabilizer::Stabilizer(RTC::Manager* manager)
     m_refCPOut("refCapturePoint", m_refCP),
     m_actCPOut("actCapturePoint", m_actCP),
     m_diffCPOut("diffCapturePoint", m_diffCP),
+    m_diffFootOriginExtMomentOut("diffFootOriginExtMoment", m_diffFootOriginExtMoment),
     m_actContactStatesOut("actContactStates", m_actContactStates),
     m_COPInfoOut("COPInfo", m_COPInfo),
     m_emergencySignalOut("emergencySignal", m_emergencySignal),
@@ -143,6 +144,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
   addOutPort("refCapturePoint", m_refCPOut);
   addOutPort("actCapturePoint", m_actCPOut);
   addOutPort("diffCapturePoint", m_diffCPOut);
+  addOutPort("diffStaticBalancePointOffset", m_diffFootOriginExtMomentOut);
   addOutPort("actContactStates", m_actContactStatesOut);
   addOutPort("COPInfo", m_COPInfoOut);
   addOutPort("emergencySignal", m_emergencySignalOut);
@@ -675,6 +677,11 @@ RTC::ReturnCode_t Stabilizer::onExecute(RTC::UniqueId ec_id)
         m_diffCP.tm = m_qRef.tm;
         m_diffCPOut.write();
       }
+      m_diffFootOriginExtMoment.data.x = diff_foot_origin_ext_moment(0);
+      m_diffFootOriginExtMoment.data.y = diff_foot_origin_ext_moment(1);
+      m_diffFootOriginExtMoment.data.z = diff_foot_origin_ext_moment(2);
+      m_diffFootOriginExtMoment.tm = m_qRef.tm;
+      m_diffFootOriginExtMomentOut.write();
       m_actContactStates.tm = m_qRef.tm;
       m_actContactStatesOut.write();
       m_COPInfo.tm = m_qRef.tm;
@@ -1101,6 +1108,7 @@ void Stabilizer::getActualParameters ()
       //                                    fz[i], f_zctrl[i], eefm_pos_damping_gain, eefm_pos_time_const);
       //   f_zctrl[i] = vlimit(f_zctrl[i], -0.05, 0.05);
       // }
+      calcDiffFootOriginExtMoment ();
     }
   } // st_algorithm == OpenHRP::StabilizerService::EEFM
 
@@ -1219,9 +1227,9 @@ void Stabilizer::getTargetParameters ()
       stikp[i].target_ee_diff_r = foot_origin_rot.transpose() * target_ee_R[i];
       ref_force[i] = foot_origin_rot.transpose() * ref_force[i];
       ref_moment[i] = foot_origin_rot.transpose() * ref_moment[i];
-      ref_total_force = foot_origin_rot.transpose() * ref_total_force;
-      ref_total_moment = foot_origin_rot.transpose() * ref_total_moment;
     }
+    ref_total_force = foot_origin_rot.transpose() * ref_total_force;
+    ref_total_moment = foot_origin_rot.transpose() * ref_total_moment;
     target_foot_origin_rot = foot_origin_rot;
     // capture point
     ref_cp = ref_cog + ref_cogvel / std::sqrt(eefm_gravitational_acceleration / (ref_cog - ref_zmp)(2));
@@ -1718,6 +1726,40 @@ hrp::Vector3 Stabilizer::calcDampingControl (const hrp::Vector3& tau_d, const hr
                                              const hrp::Vector3& DD, const hrp::Vector3& TT)
 {
   return ((tau_d - tau).cwiseQuotient(DD) - prev_d.cwiseQuotient(TT)) * dt + prev_d;
+};
+
+void Stabilizer::calcDiffFootOriginExtMoment ()
+{
+    // calc reference ext moment around foot origin pos
+    // static const double grav = 9.80665; /* [m/s^2] */
+    double mg = total_mass * eefm_gravitational_acceleration;
+    hrp::Vector3 ref_env_force = hrp::Vector3::Zero();
+    for (size_t ii = 0; ii < stikp.size(); ii++) {
+        if (std::string(stikp[ii].ee_name).find("leg") != std::string::npos) { // TODO
+            ref_env_force += hrp::Vector3(m_ref_wrenches[ii].data[0], m_ref_wrenches[ii].data[1], m_ref_wrenches[ii].data[2]);
+        }
+    }
+    hrp::Vector3 ref_ext_moment = hrp::Vector3(ref_env_force(1) * ref_zmp(2) - ref_env_force(2) * ref_zmp(1) + mg * ref_cog(1),
+                                               -(ref_env_force(0) * ref_zmp(2) - ref_env_force(2) * ref_zmp(0) + mg * ref_cog(0)),
+                                               0);
+    // calc act ext moment around foot origin pos
+    hrp::Vector3 act_env_force = hrp::Vector3::Zero();
+    for (size_t ii = 0; ii < stikp.size(); ii++) {
+        if (std::string(stikp[ii].ee_name).find("leg") != std::string::npos) { // TODO
+            act_env_force += hrp::Vector3(m_wrenches[ii].data[0], m_wrenches[ii].data[1], m_wrenches[ii].data[2]);
+        }
+    }
+    hrp::Vector3 act_ext_moment = hrp::Vector3(act_env_force(1) * act_zmp(2) - act_env_force(2) * act_zmp(1) + mg * act_cog(1),
+                                               -(act_env_force(0) * act_zmp(2) - act_env_force(2) * act_zmp(0) + mg * act_cog(0)),
+                                               0);
+    if (DEBUGP) {
+        std::cerr << "[" << m_profile.instance_name << "] DiffStaticBalancePointOffset" << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "]   "
+                  << "ref_ext_moment = " << ref_ext_moment.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[mm], "
+                  << "act_ext_moment = " << act_ext_moment.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[mm]" << std::endl;
+    }
+    // Calc diff
+    diff_foot_origin_ext_moment = ref_ext_moment - act_ext_moment;
 };
 
 /*
