@@ -108,6 +108,8 @@ class ReferenceForceUpdater
   bool startReferenceForceUpdater(const std::string& i_name_);
   bool stopReferenceForceUpdater(const std::string& i_name_);
   void calcFootOriginCoords (hrp::Vector3& foot_origin_pos, hrp::Matrix33& foot_origin_rot);
+  void updateRefFootOriginExtMoment (const std::string& arm);
+  void updateRefForces (const std::string& arm);
   bool isFootOriginExtMoment (const std::string& str) const { return str == "footoriginextmoment"; };
   inline bool eps_eq(const double a, const double b, const double eps = 1e-3) { return std::fabs((a)-(b)) <= eps; };
 
