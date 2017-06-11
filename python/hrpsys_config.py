@@ -403,6 +403,9 @@ class HrpsysConfigurator(object):
             connectPorts(self.st.port("emergencySignal"), self.abc.port("emergencySignal"))
             connectPorts(self.st.port("diffCapturePoint"), self.abc.port("diffCapturePoint"))
             connectPorts(self.st.port("actContactStates"), self.abc.port("actContactStates"))
+            if self.rfu:
+                connectPorts(self.st.port("diffFootOriginExtMoment"), self.rfu.port("diffFootOriginExtMoment"))
+                connectPorts(self.rfu.port("refFootOriginExtMoment"), self.abc.port("refFootOriginExtMoment"))
 
         # ref force moment connection
         for sen in self.getForceSensorNames():
