@@ -141,6 +141,8 @@ class AutoBalancer
   InPort<TimedPoint3D> m_diffCPIn;
   TimedBooleanSeq m_actContactStates;
   InPort<TimedBooleanSeq> m_actContactStatesIn;
+  TimedPoint3D m_refFootOriginExtMoment;
+  InPort<TimedPoint3D> m_refFootOriginExtMomentIn;
   // for debug
   TimedPoint3D m_cog;
   
@@ -252,7 +254,7 @@ class AutoBalancer
   std::vector<std::string> sensor_names, leg_names, ee_vec;
   hrp::Vector3 target_root_p;
   hrp::Matrix33 target_root_R;
-  rats::coordinates fix_leg_coords;
+  rats::coordinates fix_leg_coords, fix_leg_coords2;
   std::vector<hrp::Vector3> default_zmp_offsets;
   double m_dt;
   hrp::BodyPtr m_robot;

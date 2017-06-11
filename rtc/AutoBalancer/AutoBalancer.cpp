@@ -61,6 +61,7 @@ AutoBalancer::AutoBalancer(RTC::Manager* manager)
       m_optionalDataIn("optionalData", m_optionalData),
       m_emergencySignalIn("emergencySignal", m_emergencySignal),
       m_diffCPIn("diffCapturePoint", m_diffCP),
+      m_refFootOriginExtMomentIn("refFootOriginExtMoment", m_refFootOriginExtMoment),
       m_actContactStatesIn("actContactStates", m_actContactStates),
       m_qOut("q", m_qRef),
       m_zmpOut("zmpOut", m_zmp),
@@ -105,6 +106,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     addInPort("emergencySignal", m_emergencySignalIn);
     addInPort("diffCapturePoint", m_diffCPIn);
     addInPort("actContactStates", m_actContactStatesIn);
+    addInPort("refFootOriginExtMoment", m_refFootOriginExtMomentIn);
 
     // Set OutPort buffer
     addOutPort("q", m_qOut);
@@ -465,6 +467,9 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
       m_diffCPIn.read();
       gg->set_diff_cp(hrp::Vector3(m_diffCP.data.x, m_diffCP.data.y, m_diffCP.data.z));
     }
+    if (m_refFootOriginExtMomentIn.isNew()) {
+      m_refFootOriginExtMomentIn.read();
+    }
     if (m_actContactStatesIn.isNew()) {
       m_actContactStatesIn.read();
       std::vector<bool> tmp_contacts(m_actContactStates.data.length());
@@ -675,6 +680,7 @@ void AutoBalancer::getTargetParameters()
     }
     // TODO : see explanation in this function
     fixLegToCoords2(tmp_fix_coords);
+    fix_leg_coords2 = tmp_fix_coords;
 
     // Get output parameters and target EE coords
     target_root_p = m_robot->rootLink()->p;
@@ -1987,9 +1993,16 @@ void AutoBalancer::calc_static_balance_point_from_forces(hrp::Vector3& sb_point,
   hrp::Vector3 denom, nume;
   /* sb_point[m] = nume[kg * m/s^2 * m] / denom[kg * m/s^2] */
   double mass = m_robot->totalMass();
+  double mg = mass * gg->get_gravitational_acceleration();
+  hrp::Vector3 total_sensor_ref_force = hrp::Vector3::Zero();
+  for (size_t i = 0; i < tmp_forces.size(); i++) {
+      total_sensor_ref_force += tmp_forces[i];
+  }
+  hrp::Vector3 total_nosensor_ref_force = mg * hrp::Vector3::UnitZ() - total_sensor_ref_force; // total ref force at the point without sensors, such as torso
+  hrp::Vector3 tmp_ext_moment = fix_leg_coords2.pos.cross(total_nosensor_ref_force) + fix_leg_coords2.rot * hrp::Vector3(m_refFootOriginExtMoment.data.x, m_refFootOriginExtMoment.data.y, m_refFootOriginExtMoment.data.z);
   for (size_t j = 0; j < 2; j++) {
-    nume(j) = mass * gg->get_gravitational_acceleration() * tmpcog(j);
-    denom(j) = mass * gg->get_gravitational_acceleration();
+    nume(j) = mg * tmpcog(j);
+    denom(j) = mg;
     for (size_t i = 0; i < sensor_names.size(); i++) {
       if ( sensor_names[i].find("hsensor") != std::string::npos || sensor_names[i].find("asensor") != std::string::npos ) { // tempolary to get arm force coords
           hrp::Link* parentlink;
@@ -2004,6 +2017,14 @@ void AutoBalancer::calc_static_balance_point_from_forces(hrp::Vector3& sb_point,
               }
           }
       }
+    }
+    if ( use_force == MODE_REF_FORCE_WITH_FOOT ) {
+        hrp::Vector3 fpos(m_robot->rootLink()->p);
+        nume(j) += ( (fpos(2) - ref_com_height) * total_nosensor_ref_force(j) - fpos(j) * total_nosensor_ref_force(2) );
+        denom(j) -= total_nosensor_ref_force(2);
+    } else if ( use_force == MODE_REF_FORCE_RFU_EXT_MOMENT ) {
+        nume(j) += (j==0 ? tmp_ext_moment(1):-tmp_ext_moment(0));
+        denom(j) -= total_nosensor_ref_force(2);
     }
     sb_point(j) = nume(j) / denom(j);
   }
