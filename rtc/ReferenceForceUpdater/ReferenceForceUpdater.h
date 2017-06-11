@@ -107,6 +107,11 @@ class ReferenceForceUpdater
   bool getReferenceForceUpdaterParam(const std::string& i_name_, OpenHRP::ReferenceForceUpdaterService::ReferenceForceUpdaterParam_out i_param);
   bool startReferenceForceUpdater(const std::string& i_name_);
   bool stopReferenceForceUpdater(const std::string& i_name_);
+  void calcFootOriginCoords (hrp::Vector3& foot_origin_pos, hrp::Matrix33& foot_origin_rot);
+  void updateRefFootOriginExtMoment (const std::string& arm);
+  void updateRefForces (const std::string& arm);
+  bool isFootOriginExtMoment (const std::string& str) const { return str == "footoriginextmoment"; };
+  inline bool eps_eq(const double a, const double b, const double eps = 1e-3) { return std::fabs((a)-(b)) <= eps; };
 
  protected:
   // Configuration variable declaration
@@ -128,6 +133,8 @@ class ReferenceForceUpdater
   std::vector<InPort<TimedDoubleSeq> *> m_ref_forceIn;
   TimedOrientation3D m_rpy;
   InPort<TimedOrientation3D> m_rpyIn;
+  TimedPoint3D m_diffFootOriginExtMoment;
+  InPort<TimedPoint3D> m_diffFootOriginExtMomentIn;
 
   // </rtc-template>
 
@@ -135,6 +142,8 @@ class ReferenceForceUpdater
   // <rtc-template block="outport_declare">
   std::vector<TimedDoubleSeq> m_ref_force_out;
   std::vector<OutPort<TimedDoubleSeq> *> m_ref_forceOut;
+  TimedPoint3D m_refFootOriginExtMoment;
+  OutPort<TimedPoint3D> m_refFootOriginExtMomentOut;
 
   // </rtc-template>
 
@@ -176,7 +185,7 @@ class ReferenceForceUpdater
     hrp::Vector3 motion_dir;
     std::string frame;
     int update_count;
-    bool is_active, is_stopping;
+    bool is_active, is_stopping, is_hold_value;
     ReferenceForceUpdaterParam () {
       //params defined in idl
       motion_dir = hrp::Vector3::UnitZ();
@@ -189,6 +198,7 @@ class ReferenceForceUpdater
       //additional params (not defined in idl)
       is_active = false;
       is_stopping = false;
+      is_hold_value = false;
     };
   };
   std::map<std::string, hrp::VirtualForceSensorParam> m_vfs;

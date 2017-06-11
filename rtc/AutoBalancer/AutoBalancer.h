@@ -114,6 +114,7 @@ class AutoBalancer
   bool getRemainingFootstepSequence(OpenHRP::AutoBalancerService::FootstepSequence_out o_footstep, CORBA::Long& o_current_fs_idx);
   bool getGoPosFootstepsSequence(const double& x, const double& y, const double& th, OpenHRP::AutoBalancerService::FootstepsSequence_out o_footstep);
   bool releaseEmergencyStop();
+  void distributeReferenceZMPToWrenches (const hrp::Vector3& _ref_zmp);
 
  protected:
   // Configuration variable declaration
@@ -141,6 +142,8 @@ class AutoBalancer
   InPort<TimedPoint3D> m_diffCPIn;
   TimedBooleanSeq m_actContactStates;
   InPort<TimedBooleanSeq> m_actContactStatesIn;
+  TimedPoint3D m_refFootOriginExtMoment;
+  InPort<TimedPoint3D> m_refFootOriginExtMomentIn;
   // for debug
   TimedPoint3D m_cog;
   
@@ -234,6 +237,7 @@ class AutoBalancer
       return (std::fabs(m_optionalData.data[contact_states_index_map[ee_name]]-1.0)<0.1)?true:false;
   };
   bool calc_inital_support_legs(const double& y, std::vector<rats::coordinates>& initial_support_legs_coords, std::vector<rats::leg_type>& initial_support_legs, rats::coordinates& start_ref_coords);
+  std::string getUseForceModeString ();
 
   // for gg
   typedef boost::shared_ptr<rats::gait_generator> ggPtr;
@@ -242,7 +246,7 @@ class AutoBalancer
   // for abc
   typedef boost::shared_ptr<SimpleFullbodyInverseKinematicsSolver> fikPtr;
   fikPtr fik;
-  hrp::Vector3 ref_cog, ref_zmp, prev_imu_sensor_pos, prev_imu_sensor_vel, hand_fix_initial_offset;
+  hrp::Vector3 ref_cog, ref_zmp, prev_ref_zmp, prev_imu_sensor_pos, prev_imu_sensor_vel, hand_fix_initial_offset;
   enum {BIPED, TROT, PACE, CRAWL, GALLOP} gait_type;
   enum {MODE_IDLE, MODE_ABC, MODE_SYNC_TO_IDLE, MODE_SYNC_TO_ABC} control_mode;
   std::map<std::string, ABCIKparam> ikp;
@@ -251,7 +255,7 @@ class AutoBalancer
   std::vector<std::string> sensor_names, leg_names, ee_vec;
   hrp::Vector3 target_root_p;
   hrp::Matrix33 target_root_R;
-  rats::coordinates fix_leg_coords;
+  rats::coordinates fix_leg_coords, fix_leg_coords2;
   std::vector<hrp::Vector3> default_zmp_offsets;
   double m_dt;
   hrp::BodyPtr m_robot;
@@ -269,7 +273,7 @@ class AutoBalancer
 
   // static balance point offsetting
   hrp::Vector3 sbp_offset, sbp_cog_offset;
-  enum {MODE_NO_FORCE, MODE_REF_FORCE} use_force;
+  enum {MODE_NO_FORCE, MODE_REF_FORCE, MODE_REF_FORCE_WITH_FOOT, MODE_REF_FORCE_RFU_EXT_MOMENT} use_force;
   std::vector<hrp::Vector3> ref_forces;
 
   unsigned int m_debugLevel;

@@ -51,6 +51,15 @@ def demoSetParameter():
     stp_org.is_ik_enable=[True]*4
     hcf.st_svc.setParameter(stp_org)
 
+def defJointGroups ():
+    rleg_6dof_group = ['rleg', ['RLEG_HIP_R', 'RLEG_HIP_P', 'RLEG_HIP_Y', 'RLEG_KNEE', 'RLEG_ANKLE_P', 'RLEG_ANKLE_R']]
+    lleg_6dof_group = ['lleg', ['LLEG_HIP_R', 'LLEG_HIP_P', 'LLEG_HIP_Y', 'LLEG_KNEE', 'LLEG_ANKLE_P', 'LLEG_ANKLE_R']]
+    torso_group = ['torso', ['WAIST_P', 'WAIST_R', 'CHEST']]
+    head_group = ['head', []]
+    rarm_group = ['rarm', ['RARM_SHOULDER_P', 'RARM_SHOULDER_R', 'RARM_SHOULDER_Y', 'RARM_ELBOW', 'RARM_WRIST_Y', 'RARM_WRIST_P', 'RARM_WRIST_R']]
+    larm_group = ['larm', ['LARM_SHOULDER_P', 'LARM_SHOULDER_R', 'LARM_SHOULDER_Y', 'LARM_ELBOW', 'LARM_WRIST_Y', 'LARM_WRIST_P', 'LARM_WRIST_R']]
+    return [rleg_6dof_group, lleg_6dof_group, torso_group, head_group, rarm_group, larm_group]
+
 def init ():
     global hcf, initial_pose, dualarm_via_pose, dualarm_reach_pose, dualarm_liftup_pose, singlearm_via_pose, singlearm_reach_pose, singlearm_liftup_pose, dualarm_push_pose
     hcf = HrpsysConfigurator()
@@ -80,6 +89,7 @@ def init ():
     icp.D_r = 1e5
     hcf.ic_svc.setImpedanceControllerParam("rarm", icp)
     hcf.ic_svc.setImpedanceControllerParam("larm", icp)
+    hcf.Groups = defJointGroups()
     hcf.startDefaultUnstableControllers(['rarm', 'larm'], ["rleg", "lleg", "rarm", "larm"])
     HRPSYS_DIR=check_output(['pkg-config', 'hrpsys-base', '--variable=prefix']).rstrip()
     hcf.rmfo_svc.loadForceMomentOffsetParams(HRPSYS_DIR+'/share/hrpsys/samples/SampleRobot/ForceSensorOffset_SampleRobot.txt')
