@@ -183,6 +183,20 @@ RTC::ReturnCode_t ReferenceForceUpdater::onInitialize()
       }
       eet.localR = Eigen::AngleAxis<double>(tmpv[3], hrp::Vector3(tmpv[0], tmpv[1], tmpv[2])).toRotationMatrix(); // rotation in VRML is represented by axis + angle
       eet.target_name = ee_target;
+      {
+          bool is_ee_exists = false;
+          for (size_t j = 0; j < nforce; j++) {
+              hrp::Sensor* sensor = m_robot->sensor(hrp::Sensor::FORCE, j);
+              hrp::Link* alink = m_robot->link(ee_target);
+              while (alink != NULL && alink->name != ee_base && !is_ee_exists) {
+                  if ( alink->name == sensor->link->name ) {
+                      is_ee_exists = true;
+                      eet.sensor_name = sensor->name;
+                  }
+                  alink = alink->parent;
+              }
+          }
+      }
       ee_map.insert(std::pair<std::string, ee_trans>(ee_name , eet));
 
       ReferenceForceUpdaterParam rfu_param;
@@ -197,7 +211,7 @@ RTC::ReturnCode_t ReferenceForceUpdater::onInitialize()
       ref_force_interpolator.insert(std::pair<std::string, interpolator*>(ee_name, new interpolator(3, m_dt, interpolator::LINEAR)));
       if (( ee_name != "lleg" ) && ( ee_name != "rleg" )) transition_interpolator.insert(std::pair<std::string, interpolator*>(ee_name, new interpolator(1, m_dt)));
       std::cerr << "[" << m_profile.instance_name << "] End Effector [" << ee_name << "]" << ee_target << " " << ee_base << std::endl;
-      std::cerr << "[" << m_profile.instance_name << "]   target = " << ee_target << ", base = " << ee_base << std::endl;
+      std::cerr << "[" << m_profile.instance_name << "]   target = " << ee_target << ", base = " << ee_base << ", sensor_name = " << eet.sensor_name << std::endl;
       std::cerr << "[" << m_profile.instance_name << "]   localPos = " << eet.localPos.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[m]" << std::endl;
       std::cerr << "[" << m_profile.instance_name << "]   localR = " << eet.localR.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", "\n", "    [", "]")) << std::endl;
     }
