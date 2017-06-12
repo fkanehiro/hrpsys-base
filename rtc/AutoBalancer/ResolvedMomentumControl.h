@@ -28,17 +28,7 @@ namespace rats
         hrp::dmatrix MHpinv;
         hrp::dmatrix r;
         hrp::dvector dq;
-        // hrp::dvector dq_shared;
     };
-
-    template<class T>
-    void printVector(const std::vector<T> &v)
-    {
-        for (int i = 0; i < v.size(); ++i) {
-            std::cout << v[i] << " ";
-        }
-        std::cout << std::endl;
-    }
 
     class RMController
     {
@@ -47,14 +37,14 @@ namespace rats
         std::map<std::string, ConstraintValue> constraints_;
         std::vector<size_t> free_id_; // initialize to 0 ~ numjoints-1
     public:
-        void setSelectionMatrix(const hrp::dvector6 Svec);
+        void setSelectionMatrix(const hrp::dvector6 &Svec);
         hrp::dvector6 getSelectionVector() { return hrp::dvector::Ones(s_.rows()).transpose() * s_; }
         bool addConstraintLink(const hrp::BodyPtr m_robot, const std::string &name);
         bool removeConstraintLink(const hrp::BodyPtr m_robot, const std::string &name);
         bool removeConstraintLink(const hrp::BodyPtr m_robot, const std::string &name, std::map<std::string, hrp::dvector6> &xi_ref);
-        void calcConstraintMatrix(const hrp::Vector3 root_p, const hrp::dmatrix Jpl);
-        void rmControl(hrp::BodyPtr &m_robot, const hrp::Vector3 Pref, const hrp::Vector3 Lref,
-                       const std::map<std::string, hrp::dvector6> &xi_ref, const hrp::Vector3 ref_basePos,
+        void calcConstraintMatrix(const hrp::Vector3 &root_p, const hrp::dmatrix &Jpl);
+        void rmControl(hrp::BodyPtr &m_robot, const hrp::Vector3 &Pref, const hrp::Vector3 &Lref,
+                       const std::map<std::string, hrp::dvector6> &xi_ref, const hrp::Vector3 &ref_basePos,
                        const hrp::Matrix33 &ref_baseRot, const double dt);
         RMController(const hrp::BodyPtr m_robot)
         {
@@ -62,7 +52,7 @@ namespace rats
                 free_id_.push_back(i);
             }
         };
-        RMController(const hrp::BodyPtr m_robot, const hrp::dvector6 Svec)
+        RMController(const hrp::BodyPtr m_robot, const hrp::dvector6 &Svec)
         {
             for (size_t i = 0; i < m_robot->numJoints(); ++i) {
                 free_id_.push_back(i);

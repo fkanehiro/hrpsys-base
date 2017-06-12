@@ -3,7 +3,7 @@
 
 namespace rats
 {
-    void RMController::setSelectionMatrix(const hrp::dvector6 Svec)
+    void RMController::setSelectionMatrix(const hrp::dvector6 &Svec)
     {
         const size_t num_selects = (Svec.array() != 0).count();
         s_ = hrp::dmatrix::Zero(num_selects, 6);
@@ -110,7 +110,7 @@ namespace rats
         return false;
     }
 
-    void RMController::calcConstraintMatrix(const hrp::Vector3 root_p, const hrp::dmatrix Jpl)
+    void RMController::calcConstraintMatrix(const hrp::Vector3 &root_p, const hrp::dmatrix &Jpl)
     {
         for (std::map<std::string, ConstraintValue>::iterator it = constraints_.begin(); it != constraints_.end(); ++it) {
             hrp::dmatrix jointpath_jacobian = (*it).second.joint_path->Jacobian();
@@ -135,8 +135,8 @@ namespace rats
         }
     }
 
-    void RMController::rmControl(hrp::BodyPtr &m_robot, const hrp::Vector3 Pref, const hrp::Vector3 Lref,
-                                 const std::map<std::string, hrp::dvector6> &xi_ref, const hrp::Vector3 ref_basePos,
+    void RMController::rmControl(hrp::BodyPtr &m_robot, const hrp::Vector3 &Pref, const hrp::Vector3 &Lref,
+                                 const std::map<std::string, hrp::dvector6> &xi_ref, const hrp::Vector3 &ref_basePos,
                                  const hrp::Matrix33 &ref_baseRot, const double dt)
 
     {
@@ -166,7 +166,7 @@ namespace rats
             // set reference velocity of constraint joints
             for (size_t i = 0, j = 0; i < (*it).second.num_joints; ++i) {
                 if ((*it).second.joint_id[i].second == unique) {
-                    (*it).second.dq(j++) = m_robot->joint((*it).second.joint_id[i].first)->dq; // reference
+                    (*it).second.dq(j++) = m_robot->joint((*it).second.joint_id[i].first)->dq * dt;
                 }
             }
 
@@ -194,7 +194,7 @@ namespace rats
         // Step4
         hrp::dvector dq_free(free_dof);
         for (size_t i = 0; i < free_dof; ++i) {
-            dq_free(i) = m_robot->joint(free_id_[i])->dq; // reference
+            dq_free(i) = 0;
         }
 
         hrp::dvector xi_b(6);
@@ -250,11 +250,13 @@ namespace rats
             }
         }
 
+        // update robot states
         m_robot->rootLink()->p += xi_b.segment(0, 3);
         hrp::Vector3 omega = xi_b.segment(3, 3);
         if (omega.norm() > EPS) m_robot->rootLink()->R *= hrp::rodrigues(omega.normalized(), omega.norm());
 
         for (size_t i = 0; i < m_robot->numJoints(); ++i) {
+            m_robot->joint(i)->dq = dq(i) / dt;
             m_robot->joint(i)->q += dq(i);
         }
         m_robot->calcForwardKinematics();
