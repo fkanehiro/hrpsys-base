@@ -965,7 +965,7 @@ class HrpsysConfigurator(object):
             print(self.configurator_name + "Exitting.... " + robotname)
             exit(1)
 
-        print(self.configurator_name + "findComps -> RobotHardware : %s isActive? = %s " % (self.rh,  self.rh.isActive()))
+        print(self.configurator_name + "findComps -> %s : %s isActive? = %s " % (self.rh.name(), self.rh,  self.rh.isActive()))
 
     def checkSimulationMode(self):
         '''!@brief
