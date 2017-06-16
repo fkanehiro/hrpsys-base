@@ -23,12 +23,17 @@ def vector_equal_eps (vec1, vec2, eps=1e-5):
         return False
 
 def init ():
-    global hcf, init_pose, col_safe_pose, col_fail_pose, hrpsys_version
+    global hcf, init_pose, col_safe_pose, col_fail_pose, hrpsys_version, fout, curr_loop
+
+    fout = open('result.txt', 'w')
+    fout.write('Condition\tLoop\tComp Time\tRecov Time\tLoop for check\n')
+
     hcf = HrpsysConfigurator()
     hcf.getRTCList = hcf.getRTCListUnstable
     hcf.init ("HiroNX(Robot)0")
 
-    hcf.co_svc.setCollisionLoop(3)
+    curr_loop = 1
+    hcf.co_svc.setCollisionLoop(curr_loop)
 
     init_pose = [0]*29
     # col_safe_pose = [0.0,-0.349066,0.0,0.820305,-0.471239,0.0,0.523599,0.0,0.0,-1.74533,0.15708,-0.113446,0.0,0.0,-0.349066,0.0,0.820305,-0.471239,0.0,0.523599,0.0,0.0,-1.74533,-0.15708,-0.113446,0.0,0.0,0.0,0.0]
@@ -59,9 +64,13 @@ def printCollisionState(cs):
     print >> sys.stderr, "Safe Posture: %s" % cs.safe_posture
     print >> sys.stderr, "Recover time: %f" % cs.recover_time
     print >> sys.stderr, "Loop for check: %d" % cs.loop_for_check
-    print >> sys.stderr, cs.angle
-    print >> sys.stderr, cs.collide
-    print >> sys.stderr, cs.lines
+    # print >> sys.stderr, cs.angle
+    # print >> sys.stderr, cs.collide
+    # print >> sys.stderr, cs.lines
+
+def outputCollisionState(cs, condition):
+	s = "%.1f\t\t\t%d\t\t%f\t%f\t%d\n" % (condition, curr_loop, cs.computation_time, cs.recover_time, cs.loop_for_check)
+	fout.write(s)
 
 # demo functions
 def demoCollisionCheckSafe ():
@@ -76,7 +85,7 @@ def demoCollisionCheckSafe ():
     assert(counter != 20)
     cs = hcf.co_svc.getCollisionStatus()[1]
     if cs.safe_posture:
-        printCollisionState(cs)
+        outputCollisionState(cs, 1)
         print >> sys.stderr, "  => Safe pose"
     assert(cs.safe_posture is True)
 
@@ -86,14 +95,14 @@ def demoCollisionCheckFail ():
     hcf.waitInterpolation();
     cs = hcf.co_svc.getCollisionStatus()[1]
     if not cs.safe_posture:
-        printCollisionState(cs)
+        outputCollisionState(cs, 2.0)
         print >> sys.stderr, "  => Successfully stop fail pose"
     assert((not cs.safe_posture) is True)
     hcf.seq_svc.setJointAngles(col_safe_pose, 3.0);
     hcf.waitInterpolation();
     cs=hcf.co_svc.getCollisionStatus()[1]
     if cs.safe_posture:
-        printCollisionState(cs)
+        outputCollisionState(cs, 2.1)
         print >> sys.stderr, "  => Successfully return to safe pose"
     assert(cs.safe_posture is True)
 
@@ -104,7 +113,7 @@ def demoCollisionCheckFailWithSetTolerance ():
     hcf.waitInterpolation();
     cs = hcf.co_svc.getCollisionStatus()[1]
     if not cs.safe_posture:
-        printCollisionState(cs)
+        outputCollisionState(cs, 3.0)
         print >> sys.stderr, "  => Successfully stop fail pose (0.1[m] tolerance)"
     assert((not cs.safe_posture) is True)
     hcf.co_svc.setTolerance("all", 0.0); # [m]
@@ -112,7 +121,7 @@ def demoCollisionCheckFailWithSetTolerance ():
     hcf.waitInterpolation();
     cs = hcf.co_svc.getCollisionStatus()[1]
     if cs.safe_posture:
-        printCollisionState(cs)
+        outputCollisionState(cs, 3.1)
         print >> sys.stderr, "  => Successfully return to safe pose"
     assert(cs.safe_posture is True)
 
@@ -151,6 +160,20 @@ def demo_co_loop():
         demoCollisionCheckFailWithSetTolerance()
         demoCollisionDisableEnable()
 
+def demo_loop_change():
+    init()
+    for i in range(2, 30):
+    	global curr_loop
+    	curr_loop = i
+    	hcf.co_svc.setCollisionLoop(curr_loop)
+        demoCollisionCheckSafe()
+        demoCollisionCheckFail()
+        demoCollisionCheckFailWithSetTolerance()
+        demoCollisionDisableEnable()
+
+    fout.close()
+
 if __name__ == '__main__':
     # demo()
-    demo_co_loop()
+    # demo_co_loop()
+    demo_loop_change()
