@@ -35,9 +35,7 @@ using namespace RTC;
 /**
    \brief RT component which resize an input image
  */
-class RotateImage
-  : public RTC::DataFlowComponentBase
-{
+class RotateImage : public RTC::DataFlowComponentBase {
  public:
   /**
      \brief Constructor
@@ -97,11 +95,10 @@ class RotateImage
   // no corresponding operation exists in OpenRTm-aist-0.2.0
   // virtual RTC::ReturnCode_t onRateChanged(RTC::UniqueId ec_id);
 
-
  protected:
   // Configuration variable declaration
   // <rtc-template block="config_declare">
-  
+
   // </rtc-template>
 
   Img::TimedCameraImage m_original;
@@ -109,7 +106,7 @@ class RotateImage
   // DataInPort declaration
   // <rtc-template block="inport_declare">
   InPort<Img::TimedCameraImage> m_originalIn;
-  
+
   // </rtc-template>
 
   Img::TimedCameraImage m_rotated;
@@ -117,22 +114,22 @@ class RotateImage
   // DataOutPort declaration
   // <rtc-template block="outport_declare">
   OutPort<Img::TimedCameraImage> m_rotatedOut;
-  
+
   // </rtc-template>
 
   // CORBA Port declaration
   // <rtc-template block="corbaport_declare">
-  
+
   // </rtc-template>
 
   // Service declaration
   // <rtc-template block="service_declare">
-  
+
   // </rtc-template>
 
   // Consumer declaration
   // <rtc-template block="consumer_declare">
-  
+
   // </rtc-template>
 
  private:
@@ -141,10 +138,8 @@ class RotateImage
   int dummy;
 };
 
-
-extern "C"
-{
-  void RotateImageInit(RTC::Manager* manager);
+extern "C" {
+void RotateImageInit(RTC::Manager* manager);
 };
 
-#endif // ROTATE_IMAGE_H
+#endif  // ROTATE_IMAGE_H

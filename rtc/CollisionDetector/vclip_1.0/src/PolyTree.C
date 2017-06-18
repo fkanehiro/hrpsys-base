@@ -33,8 +33,6 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-
-
 #include <stdio.h>
 #include <iostream>
 #include <stdlib.h>
@@ -60,7 +58,7 @@ using namespace Vclip;
 extern "C" {
 #include "qhull/qhull_a.h"
 }
-//char qh_version[] = "vclip 1.0";
+// char qh_version[] = "vclip 1.0";
 #endif
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -68,7 +66,6 @@ extern "C" {
 ///////////////////////////////////////////////////////////////////////////////
 
 #define LONG_STR_SZ 1000  // for reading lines from files, etc.
-
 
 ///////////////////////////////////////////////////////////////////////////////
 //  globals
@@ -81,70 +78,51 @@ extern "C" {
 // simultaneously!
 char edgeName[2 * VF_NAME_SZ];  // space for 2 Vertex names, :, and \0.
 
-
 ///////////////////////////////////////////////////////////////////////////////
 //  low level Polyhedron support
 ///////////////////////////////////////////////////////////////////////////////
 
 // Output a Plane
-ostream& Plane::print(ostream &os) const
-{
+ostream &Plane::print(ostream &os) const {
   int oldFlags;
 
   oldFlags = os.setf(ios::showpos);
-  os << normal_.x << " x " << normal_.y << " y  "
-     << normal_.z << " z " << offset_ << " >= 0";
+  os << normal_.x << " x " << normal_.y << " y  " << normal_.z << " z "
+     << offset_ << " >= 0";
   os.flags((std::_Ios_Fmtflags)oldFlags);
   return os;
 }
 
+const char *Vertex::name() const { return name_; }
 
-const char *Vertex::name() const 
-{
-  return name_;
-}
+const char *Face::name() const { return name_; }
 
-
-const char *Face::name() const 
-{
-  return name_;
-}
-
-
-const char *Edge::name() const 
-{
+const char *Edge::name() const {
   sprintf(edgeName, "%s:%s", tail->name(), head->name());
   return edgeName;
 }
 
-
-ostream& VertConeNode::print(ostream &os) const 
-{
+ostream &VertConeNode::print(ostream &os) const {
   return os << setw(16) << (nbr ? nbr->name() : "?") << "]  " << *plane;
 }
 
-
-ostream& FaceConeNode::print(ostream &os) const 
-{
+ostream &FaceConeNode::print(ostream &os) const {
   return os << setw(16) << (nbr ? nbr->name() : "?") << "]  " << *plane;
 }
-
-
 
 ///////////////////////////////////////////////////////////////////////////////
 //  class Polyhedron
 ///////////////////////////////////////////////////////////////////////////////
-
 
 // This is called when the vertex sequence (tail, head) is encountered
 // in Face f's boundary walk.  Either a new edge is created and added
 // to the edgeList, or the previously existing one from head to tail
 // is updated.
 
-void Polyhedron::processEdge(Face *f, Vertex *tail, Vertex *head)
-{
+void Polyhedron::processEdge(Face *f, Vertex *tail, Vertex *head) {
   list<VertConeNode>::iterator vci;
-  list<FaceConeNode>::iterator fci;;
+  list<FaceConeNode>::iterator fci;
+  ;
   VertConeNode vcn;
   FaceConeNode fcn;
 
@@ -198,11 +176,9 @@ void Polyhedron::processEdge(Face *f, Vertex *tail, Vertex *head)
   f->cone.push_back(fcn);
 }
 
-
 // No checking done, but numVerts better be at least 3!
-void Polyhedron::addFace(const char *name, 
-			 vector<Vertex *> &verts, int clockwise)
-{
+void Polyhedron::addFace(const char *name, vector<Vertex *> &verts,
+                         int clockwise) {
   int i;
   Face f0, *f;
   vector<Vertex *>::iterator vi;
@@ -225,13 +201,12 @@ void Polyhedron::addFace(const char *name,
 
   // build edges around face
   if (clockwise) {
-    for (vi = verts.end()-1; vi != verts.begin(); --vi)
-      processEdge(f, *vi, *(vi-1));
+    for (vi = verts.end() - 1; vi != verts.begin(); --vi)
+      processEdge(f, *vi, *(vi - 1));
     processEdge(f, verts.front(), verts.back());  // close the loop
-  }
-  else {
-    for (vi = verts.begin(); vi != verts.end()-1; ++vi)
-      processEdge(f, *vi, *(vi+1));
+  } else {
+    for (vi = verts.begin(); vi != verts.end() - 1; ++vi)
+      processEdge(f, *vi, *(vi + 1));
     processEdge(f, verts.back(), verts.front());  // close the loop
   }
 
@@ -242,20 +217,18 @@ void Polyhedron::addFace(const char *name,
     last->ccw = &*cni;
     cni->idx = i++;
   }
-}  
+}
 
-
-ostream& Polyhedron::print(ostream &os) const
-{
+ostream &Polyhedron::print(ostream &os) const {
   const Vertex *v;
   const Edge *e;
   const Face *f;
   list<VertConeNode>::const_iterator vcni;
   list<FaceConeNode>::const_iterator fcni;
   list<Vertex>::const_iterator vi;
-  list<Edge  >::const_iterator ei;
-  list<Face  >::const_iterator fi;
-  //typename faces_.const_iterator fi;
+  list<Edge>::const_iterator ei;
+  list<Face>::const_iterator fi;
+  // typename faces_.const_iterator fi;
 
   os << verts_.size() << " verts :  ";
   FOR_EACH(verts_, vi) os << vi->name() << " ";
@@ -271,30 +244,27 @@ ostream& Polyhedron::print(ostream &os) const
 
   FOR_EACH(verts_, vi) {
     v = &*vi;
-    os << "vertex " << v->name() << " "  << v->coords_ << "   "
-       << v->cone.size() << " neighbors" << endl;
+    os << "vertex " << v->name() << " " << v->coords_ << "   " << v->cone.size()
+       << " neighbors" << endl;
     FOR_EACH(v->cone, vcni) os << *vcni << endl;
     os << endl;
   }
 
   FOR_EACH(edges_, ei) {
     e = &*ei;
-    os << "edge " << e->name() << " " <<  e->dir << endl;
-    os << "tail: " << setw(16) << e->tail->name() << "]  " 
-       << e->tplane << endl;
-    os << "head: " << setw(16) << e->head->name() << "]  " 
-       << e->hplane << endl;
-    os << "left: " << setw(16) << e->left->name() << "]  " 
-       << e->lplane << endl;
-    os << "rght: " << setw(16) << e->right->name() << "]  " 
-       << e->rplane << endl;
+    os << "edge " << e->name() << " " << e->dir << endl;
+    os << "tail: " << setw(16) << e->tail->name() << "]  " << e->tplane << endl;
+    os << "head: " << setw(16) << e->head->name() << "]  " << e->hplane << endl;
+    os << "left: " << setw(16) << e->left->name() << "]  " << e->lplane << endl;
+    os << "rght: " << setw(16) << e->right->name() << "]  " << e->rplane
+       << endl;
     os << endl;
   }
 
   FOR_EACH(faces_, fi) {
     f = &*fi;
-    os << "face " << f->name() << " " << f->plane << "   "
-       << f->sides << " neighbors" << endl;
+    os << "face " << f->name() << " " << f->plane << "   " << f->sides
+       << " neighbors" << endl;
     FOR_EACH(f->cone, fcni) os << *fcni << endl;
     os << endl;
   }
@@ -303,35 +273,34 @@ ostream& Polyhedron::print(ostream &os) const
 }
 
 #if INVENTOR
-SoShapeKit *Polyhedron::buildInvModel() const
-{
+SoShapeKit *Polyhedron::buildInvModel() const {
   int i, vertCounter;
   int numVerts, numEdges, numFaces;
   const Vertex *v;
   const Edge *e;
   list<Vertex>::const_iterator vi;
-  list<Face  >::const_iterator fi;
+  list<Face>::const_iterator fi;
   list<FaceConeNode>::const_iterator cni;
   SbVec3f sbv;
   // map:  Vertex *  -->  int, (we cast Vertex * to int for default hasher)
-  //static hash_map<int, int> vertIndices(1000);
-  static map<int, int> vertIndices(1000);  
-  
+  // static hash_map<int, int> vertIndices(1000);
+  static map<int, int> vertIndices(1000);
+
   numVerts = verts_.size();
   numEdges = edges_.size();
   numFaces = faces_.size();
 
   SoShapeKit *kit = new SoShapeKit;
 
-  SoShapeHints *shapeHints= (SoShapeHints *) kit->getPart("shapeHints", TRUE);
+  SoShapeHints *shapeHints = (SoShapeHints *)kit->getPart("shapeHints", TRUE);
   shapeHints->vertexOrdering.setValue(SoShapeHints::COUNTERCLOCKWISE);
   shapeHints->shapeType.setValue(SoShapeHints::SOLID);
   shapeHints->faceType.setValue(SoShapeHints::CONVEX);
   // set 20 degree crease angle, see Inventor manual, p. 132
-  shapeHints->creaseAngle.setValue(20.0 * M_PI/180); 
+  shapeHints->creaseAngle.setValue(20.0 * M_PI / 180);
 
-  SoCoordinate3 *vertCoords = 
-    (SoCoordinate3 *) kit->getPart("coordinate3", TRUE);
+  SoCoordinate3 *vertCoords =
+      (SoCoordinate3 *)kit->getPart("coordinate3", TRUE);
   vertCoords->point.setNum(numVerts);
 
   vertIndices.erase(vertIndices.begin(), vertIndices.end());
@@ -339,7 +308,7 @@ SoShapeKit *Polyhedron::buildInvModel() const
   FOR_EACH(verts_, vi) {
     vi->coords_.toSbVec3f(sbv);
     vertCoords->point.set1Value(vertCounter, sbv);
-    vertIndices.insert(pair<const int, int>((int) &*vi, vertCounter++));
+    vertIndices.insert(pair<const int, int>((int)&*vi, vertCounter++));
   }
 
   SoIndexedFaceSet *indexedFaces = new SoIndexedFaceSet;
@@ -349,8 +318,7 @@ SoShapeKit *Polyhedron::buildInvModel() const
     FOR_EACH(fi->cone, cni) {
       e = cni->nbr;
       v = (e->left == &*fi) ? e->tail : e->head;
-      indexedFaces->coordIndex.
-	set1Value(i++, vertIndices.find((int) v)->second);
+      indexedFaces->coordIndex.set1Value(i++, vertIndices.find((int)v)->second);
     }
     indexedFaces->coordIndex.set1Value(i++, -1);
   }
@@ -365,21 +333,18 @@ SoShapeKit *Polyhedron::buildInvModel() const
 //  class PolyTree
 ///////////////////////////////////////////////////////////////////////////////
 
-
 // constructor
-PolyTree::PolyTree()
-{
-  //poly_.set(NULL);
-  Tpr_ = Trp_ = Se3::ID; 
+PolyTree::PolyTree() {
+  // poly_.set(NULL);
+  Tpr_ = Trp_ = Se3::ID;
   Xpr_ = Xrp_ = MatX::ID;
   vol_ = 0.0;
   mov1_ = mov2_ = pov_ = Vect3::ZERO;
 }
 
 // copy constructor
-PolyTree::PolyTree(const PolyTree &orig)
-{
-  list< Handle<PolyTree> >::const_iterator compi;
+PolyTree::PolyTree(const PolyTree &orig) {
+  list<Handle<PolyTree> >::const_iterator compi;
 
   poly_ = orig.poly_;
   vol_ = orig.vol_;
@@ -400,16 +365,14 @@ PolyTree::PolyTree(const PolyTree &orig)
     components.push_back(h);
   }
   h.set(NULL);
-}    
-  
-    
+}
+
 // Premultiply the Tpr_ field of a PolyTree by T, and recompute Trp_,
 // Xpr_, and Xrp_ based on the new value.  Then repeat, recursively
 // descending the PolyTree.  This routine sacrifices efficiency for
 // accuracy, since these calculations should be performed only once.
-void PolyTree::xform(const Se3 &T)
-{
-  list< Handle<PolyTree> >::iterator compi;
+void PolyTree::xform(const Se3 &T) {
+  list<Handle<PolyTree> >::iterator compi;
 
   Tpr_.premult(T);
   Tpr_.rot().normalize();
@@ -418,43 +381,38 @@ void PolyTree::xform(const Se3 &T)
   Xpr_.set(Tpr_);
   Xrp_.set(Trp_);
 
-  FOR_EACH(components, compi) (*compi)->xform(T);
+  FOR_EACH(components, compi)(*compi)->xform(T);
 }
 
-
-
-void PolyTree::printRecur(ostream &os, int level) const
-{
-  list< Handle<PolyTree> >::const_iterator compi;
+void PolyTree::printRecur(ostream &os, int level) const {
+  list<Handle<PolyTree> >::const_iterator compi;
 
   os << setw(level * 4) << " " << Tpr_ << "  " << name << endl;
 
-  FOR_EACH(components, compi) (*compi)->printRecur(os, level+1);
+  FOR_EACH(components, compi)(*compi)->printRecur(os, level + 1);
 }
 
-
 // Compute total number of nodes of the PolyTree rooted at this
-int PolyTree::numNodes() const
-{
+int PolyTree::numNodes() const {
   int i;
-  list< Handle<PolyTree> >::const_iterator compi;
+  list<Handle<PolyTree> >::const_iterator compi;
 
-  if (components.empty()) return 1;
+  if (components.empty())
+    return 1;
   else {
     i = 1;
     FOR_EACH(components, compi) i += (*compi)->numNodes();
     return i;
   }
 }
-    
 
 // Compute total number of leaves of the PolyTree rooted at this
-int PolyTree::numLeaves() const
-{
+int PolyTree::numLeaves() const {
   int i;
-  list< Handle<PolyTree> >::const_iterator compi;
+  list<Handle<PolyTree> >::const_iterator compi;
 
-  if (components.empty()) return 1;
+  if (components.empty())
+    return 1;
   else {
     i = 0;
     FOR_EACH(components, compi) i += (*compi)->numLeaves();
@@ -462,45 +420,40 @@ int PolyTree::numLeaves() const
   }
 }
 
-
-ostream& PolyTree::print(ostream &os) const
-{
+ostream &PolyTree::print(ostream &os) const {
   os << "polytree " << name << endl;
   if (!components.empty())
-    os << "compound:  " << components.size() << " children, " << numLeaves() 
+    os << "compound:  " << components.size() << " children, " << numLeaves()
        << " leaves, " << numNodes() << " total nodes" << endl;
-  else os << "atomic" << endl;
-  os << "volume            " << vol_  << endl;
+  else
+    os << "atomic" << endl;
+  os << "volume            " << vol_ << endl;
   os << "1st moment of vol " << mov1_ << endl;
   os << "2nd moment of vol " << mov2_ << endl;
-  os << "product of vol    " << pov_  << endl;
-  os << "radius            " << rad_  << endl;
+  os << "product of vol    " << pov_ << endl;
+  os << "radius            " << rad_ << endl;
 
   if (!components.empty()) {
     printRecur(os, 0);
     os << endl;
-  }
-  else {
+  } else {
     os << &*poly_ << flush;
   }
   return os;
 }
 
-    
-
 #if INVENTOR
-// returns either an SoShapeKit (for atomic Poly) 
+// returns either an SoShapeKit (for atomic Poly)
 // or an SoSeparator (for a nontrivial tree)
 
-SoNode *PolyTree::buildInvModel() const
-{
+SoNode *PolyTree::buildInvModel() const {
   SoNode *node;
   SoTransform *xform;
   SoSeparator *root;
-  list< Handle<PolyTree> >::const_iterator compi;
+  list<Handle<PolyTree> >::const_iterator compi;
   Se3 T;
 
-  if (components.empty()) return poly_->buildInvModel();    // atomic poly
+  if (components.empty()) return poly_->buildInvModel();  // atomic poly
 
   root = new SoSeparator;
 
@@ -510,20 +463,19 @@ SoNode *PolyTree::buildInvModel() const
     T.toSoTransform(xform);
     node = (*compi)->buildInvModel();
     if (node->getTypeId() == SoShapeKit::getClassTypeId())
-      ((SoShapeKit *) node)->setPart("transform", xform);
-    else ((SoSeparator *) node)->insertChild(xform, 0);
+      ((SoShapeKit *)node)->setPart("transform", xform);
+    else
+      ((SoSeparator *)node)->insertChild(xform, 0);
     root->addChild(node);
   }
-  
+
   return root;
 }
 #endif
 
-
 // Check convexity of Polyhedron and verify Euler formula.  Return 1
 // on problem.
-int Polyhedron::check() const
-{
+int Polyhedron::check() const {
   int error;
   int nv, ne, nf;
   const Edge *e, *e1, *e2;
@@ -543,11 +495,9 @@ int Polyhedron::check() const
     if ((dp = Vect3::dot(e->dir, v)) >= 0) {
       error = 1;
       cerr << "\anonconvex edge:  "
-	   << " tail=" << e->tail->name_
-	   << " head=" << e->head->name_
-	   << " left=" << e->left->name_
-	   << " rght=" << e->right->name_
-	   << " angle=" << asin(-dp) << endl;
+           << " tail=" << e->tail->name_ << " head=" << e->head->name_
+           << " left=" << e->left->name_ << " rght=" << e->right->name_
+           << " angle=" << asin(-dp) << endl;
     }
   }
 
@@ -555,19 +505,18 @@ int Polyhedron::check() const
   FOR_EACH(faces_, fi) {
     f = &*fi;
     FOR_EACH(f->cone, cni) {
-      e1 = (Edge *) cni->nbr;
-      e2 = (Edge *) cni->ccw->nbr;
+      e1 = (Edge *)cni->nbr;
+      e2 = (Edge *)cni->ccw->nbr;
       v.cross(e1->dir, e2->dir);
       if ((e1->tail == e2->tail || e1->head == e2->head)) v.negate();
       if ((dp = Vect3::dot(f->plane.normal(), v)) <= 0) {
-	error = 1;
-	cerr << "\anonconvex face:  " << f->name_
-	     << "  vertex=" << (e1->left == f ? e1->head : e1->tail)->name_
-	     << "  angle=" << asin(-dp) << endl;
+        error = 1;
+        cerr << "\anonconvex face:  " << f->name_
+             << "  vertex=" << (e1->left == f ? e1->head : e1->tail)->name_
+             << "  angle=" << asin(-dp) << endl;
       }
     }
   }
-
 
   // Check if Euler formula (#V - #E + #F - 2 = 0) is satisfied
   nv = verts_.size();
@@ -576,7 +525,7 @@ int Polyhedron::check() const
   if (nv - ne + nf - 2) {
     error = 1;
     cout << "\apolyhedral Euler formula failure: "
-	 << "nv=" << nv << " ne=" << ne << " nf=" << nf << endl;
+         << "nv=" << nv << " ne=" << ne << " nf=" << nf << endl;
   }
 
   return error;
@@ -587,11 +536,10 @@ int Polyhedron::check() const
 // Use this to determine and build the Edges and Faces lists.  If a
 // Vertex does not lie on the convex hull, it will be removed
 // from the Vertex list.
-int Polyhedron::buildHull()
-{
+int Polyhedron::buildHull() {
   int nf, nv, npts, idx, i;
   Vertex *v;
-  //List<Vertex> origVerts;
+  // List<Vertex> origVerts;
   Vect3 xcoords;
 
   boolT ismalloc;
@@ -602,20 +550,19 @@ int Polyhedron::buildHull()
   setT *vertices;
   coordT *qhullData, *qhd;
   list<Vertex>::iterator vi, vi0;
-  char options [200];
+  char options[200];
   char name[LONG_STR_SZ];
 
   static vector<Vertex *> facelist(MAX_VERTS_PER_FACE);
 #define MAX_VERTS_PER_HULL 1000  // initial size; exceeding it breaks nothing
-  static vector<coordT> array      (MAX_VERTS_PER_HULL * 3);
+  static vector<coordT> array(MAX_VERTS_PER_HULL * 3);
   static vector<Vertex *> hullVerts(MAX_VERTS_PER_HULL);
-  static vector<int> vertUsed      (MAX_VERTS_PER_HULL);
+  static vector<int> vertUsed(MAX_VERTS_PER_HULL);
 #undef MAX_VERTS_PER_HULL
 
-  //cout << "invoking qhull...   " << flush;
+  // cout << "invoking qhull...   " << flush;
 
   npts = verts_.size();
-
 
   if (npts > (int)hullVerts.capacity()) {
     array.reserve(3 * npts);
@@ -623,8 +570,6 @@ int Polyhedron::buildHull()
     vertUsed.reserve(npts);
   }
   qhullData = &array.front();
-    
-
 
   // build array of vertex coordinates
   i = 0;
@@ -635,7 +580,7 @@ int Polyhedron::buildHull()
     *qhd++ = v->coords_.x.toDouble();
     *qhd++ = v->coords_.y.toDouble();
     *qhd++ = v->coords_.z.toDouble();
-#else	 
+#else
     *qhd++ = v->coords_.x;
     *qhd++ = v->coords_.y;
     *qhd++ = v->coords_.z;
@@ -645,14 +590,14 @@ int Polyhedron::buildHull()
     i++;
   }
 
-  ismalloc= False; 	// True if qh_freeqhull should 'free(qhullData)'
-  qh_init_A (stdin, stdout, stderr, 0, NULL);
-  exitcode= setjmp (qh errexit);
+  ismalloc = False;  // True if qh_freeqhull should 'free(qhullData)'
+  qh_init_A(stdin, stdout, stderr, 0, NULL);
+  exitcode = setjmp(qh errexit);
   if (exitcode) goto error;
   sprintf(options, "qhull Qx i s Tcv C-0");
-  //sprintf(options, "qhull A0.9999 i s Tcv C-0");
-  qh_initflags (options);
-  qh_init_B (qhullData, npts, 3, ismalloc);
+  // sprintf(options, "qhull A0.9999 i s Tcv C-0");
+  qh_initflags(options);
+  qh_init_B(qhullData, npts, 3, ismalloc);
   qh_qhull();
   qh_check_output();
 
@@ -661,20 +606,21 @@ int Polyhedron::buildHull()
   nf = 0;
   FORALLfacets {
     sprintf(name, "f%d", nf++);
-    vertices= qh_facet3vertex (facet);
+    vertices = qh_facet3vertex(facet);
     facelist.clear();
     FOREACHvertex_(vertices) {
       idx = qh_pointid(vertex->point);
       vertUsed[idx] = 1;
       facelist.push_back(hullVerts[idx]);
     }
-    addFace(name, facelist, 1); // qhull generates a clockwise list
+    addFace(name, facelist, 1);  // qhull generates a clockwise list
     qh_settempfree(&vertices);
   }
 
   // strip out unused vertices, count remaining ones
   for (vi = verts_.begin(), i = 0; vi != verts_.end(); i++)
-    if (vertUsed[i]) vi++;
+    if (vertUsed[i])
+      vi++;
     else {
       vi0 = vi;
       vi++;
@@ -682,11 +628,11 @@ int Polyhedron::buildHull()
     }
   nv = verts_.size();
 
-  //cout << nf << " faces, " << nv << " vertices " << endl;
+  // cout << nf << " faces, " << nv << " vertices " << endl;
 
-  qh NOerrexit= True;
-  qh_freeqhull (!qh_ALL);
-  qh_memfreeshort (&curlong, &totlong);
+  qh NOerrexit = True;
+  qh_freeqhull(!qh_ALL);
+  qh_memfreeshort(&curlong, &totlong);
 
   return 0;
 
@@ -694,17 +640,15 @@ error:
   cerr << "error building convex hull of Polyhedron \a" << endl;
   cerr << "exitcode: " << exitcode << endl;
 
-  qh NOerrexit= True;
-  qh_freeqhull (!qh_ALL);
-  qh_memfreeshort (&curlong, &totlong);
+  qh NOerrexit = True;
+  qh_freeqhull(!qh_ALL);
+  qh_memfreeshort(&curlong, &totlong);
 
   return 1;
-
 }
 #else
 // QHULL not available - crash and burn
-int Polyhedron::buildHull()
-{
+int Polyhedron::buildHull() {
   cerr << "fatal error:" << endl;
   cerr << "attempt to compute convex hull of vertex set\n "
        << "but no QHULL library linked" << endl;
@@ -713,23 +657,19 @@ int Polyhedron::buildHull()
 }
 #endif
 
-
-
 // Compute the convex hull of a PolyTree's children (non-recursive)
 // using Qhull.  Set poly field to point to this new Polyhedron.  Return
 // 0 if no problems, and 1 on error.
 
-int PolyTree::buildHull()
-{
+int PolyTree::buildHull() {
   int nv;
   const PolyTree *comp;
-  list< Handle<PolyTree> >::const_iterator compi;
+  list<Handle<PolyTree> >::const_iterator compi;
   list<Vertex>::const_iterator cvi;
   list<Vertex>::iterator vi;
   Vect3 xcoords;
 
   setPoly(new Polyhedron);
-
 
   FOR_EACH(components, compi) {
     comp = &**compi;
@@ -752,16 +692,15 @@ int PolyTree::buildHull()
 // Properties," Brian Mirtich, journal of graphics tools, volume 1,
 // number 2, 1996.
 
-void PolyTree::compVolInts()
-{
+void PolyTree::compVolInts() {
   Mat3 M, Rt;
 
   int a, b, c;
   const PolyTree *comp;
-  //Vertex *vert;
+  // Vertex *vert;
   Edge *e;
   const Face *f;
-  list< Handle<PolyTree> >::const_iterator compi;
+  list<Handle<PolyTree> >::const_iterator compi;
   list<Face>::const_iterator fi;
   list<Vertex>::const_iterator vi;
   list<FaceConeNode>::const_iterator cni;
@@ -780,7 +719,7 @@ void PolyTree::compVolInts()
   vol_ = 0.0;
   mov1_ = mov2_ = pov_ = Vect3::ZERO;
 
-  if (!components.empty()) { // compound PolyTree
+  if (!components.empty()) {  // compound PolyTree
     FOR_EACH(components, compi) {
       comp = &**compi;
       X.mult(Xrp_, comp->Xpr_);  // X = xform:  comp poly -> this poly
@@ -795,84 +734,80 @@ void PolyTree::compVolInts()
       M.postmult(Rt);
       mov2_.add(M.diag());
       mov2_.add(Vect3(X.trans().x * (2 * h.x + w.x),
-		     X.trans().y * (2 * h.y + w.y),
-		     X.trans().z * (2 * h.z + w.z)));
+                      X.trans().y * (2 * h.y + w.y),
+                      X.trans().z * (2 * h.z + w.z)));
       pov_.add(M.sym());
       pov_.add(Vect3(h.y * X.trans().z + X.trans().y * (h.z + w.z),
-		    h.z * X.trans().x + X.trans().z * (h.x + w.x),
-		    h.x * X.trans().y + X.trans().x * (h.y + w.y)));
+                     h.z * X.trans().x + X.trans().z * (h.x + w.x),
+                     h.x * X.trans().y + X.trans().x * (h.y + w.y)));
     }
   }
 
-  else { // atomic PolyTree
-
+  else {  // atomic PolyTree
 
     FOR_EACH(poly_->faces_, fi) {
       f = &*fi;
 
       // compute projection direction
-      v.set(fabs(f->plane.normal().x),
-	    fabs(f->plane.normal().y),
-	    fabs(f->plane.normal().z));
-      c = (v.x >= v.y) ? ((v.x >= v.z) ? 0 : 2) 
-                       : ((v.y >= v.z) ? 1 : 2);
+      v.set(fabs(f->plane.normal().x), fabs(f->plane.normal().y),
+            fabs(f->plane.normal().z));
+      c = (v.x >= v.y) ? ((v.x >= v.z) ? 0 : 2) : ((v.y >= v.z) ? 1 : 2);
       a = (c + 1) % 3;
       b = (c + 2) % 3;
 
       I = Ia = Ib = Iaa = Iab = Ibb = Iaaa = Iaab = Iabb = Ibbb = 0.0;
 
       /* walk around face */
-  
-      FOR_EACH(f->cone, cni) {
-	e = (Edge *) cni->nbr;
-	if (e->left == f) {  // CCW edge
-	  a0 = e->tail->coords_[a];
-	  b0 = e->tail->coords_[b];
-	  a1 = e->head->coords_[a];
-	  b1 = e->head->coords_[b];
-	}
-	else {  // CW edge
-	  a0 = e->head->coords_[a];
-	  b0 = e->head->coords_[b];
-	  a1 = e->tail->coords_[a];
-	  b1 = e->tail->coords_[b];
-	}
 
-	da = a1 - a0;
-	db = b1 - b0;
-	a0_2 = a0 * a0;
-	a0_3 = a0_2 * a0;
-	a0_4 = a0_3 * a0;
-	b0_2 = b0 * b0;
-	b0_3 = b0_2 * b0;
-	b0_4 = b0_3 * b0;
-	a1_2 = a1 * a1;
-	a1_3 = a1_2 * a1;
-	b1_2 = b1 * b1;
-	b1_3 = b1_2 * b1;
-	C0 = a1 + a0;
-	Ca = a1*C0 + a0_2;
-	Caa = a1*Ca + a0_3;
-	Caaa = a1*Caa + a0_4;
-	Cb = b1*(b1 + b0) + b0_2;
-	Cbb = b1*Cb + b0_3;
-	Cbbb = b1*Cbb + b0_4;
-	Cab = 3*a1_2 + 2*a1*a0 + a0_2;
-	Kab = a1_2 + 2*a1*a0 + 3*a0_2;
-	Caab = a0*Cab + 4*a1_3;
-	Kaab = a1*Kab + 4*a0_3;
-	Cabb = 4*b1_3 + 3*b1_2*b0 + 2*b1*b0_2 + b0_3;
-	Kabb = b1_3 + 2*b1_2*b0 + 3*b1*b0_2 + 4*b0_3;
-	I += db*C0;
-	Ia += db*Ca;
-	Iaa += db*Caa;
-	Iaaa += db*Caaa;
-	Ib += da*Cb;
-	Ibb += da*Cbb;
-	Ibbb += da*Cbbb;
-	Iab += db*(b1*Cab + b0*Kab);
-	Iaab += db*(b1*Caab + b0*Kaab);
-	Iabb += da*(a1*Cabb + a0*Kabb);
+      FOR_EACH(f->cone, cni) {
+        e = (Edge *)cni->nbr;
+        if (e->left == f) {  // CCW edge
+          a0 = e->tail->coords_[a];
+          b0 = e->tail->coords_[b];
+          a1 = e->head->coords_[a];
+          b1 = e->head->coords_[b];
+        } else {  // CW edge
+          a0 = e->head->coords_[a];
+          b0 = e->head->coords_[b];
+          a1 = e->tail->coords_[a];
+          b1 = e->tail->coords_[b];
+        }
+
+        da = a1 - a0;
+        db = b1 - b0;
+        a0_2 = a0 * a0;
+        a0_3 = a0_2 * a0;
+        a0_4 = a0_3 * a0;
+        b0_2 = b0 * b0;
+        b0_3 = b0_2 * b0;
+        b0_4 = b0_3 * b0;
+        a1_2 = a1 * a1;
+        a1_3 = a1_2 * a1;
+        b1_2 = b1 * b1;
+        b1_3 = b1_2 * b1;
+        C0 = a1 + a0;
+        Ca = a1 * C0 + a0_2;
+        Caa = a1 * Ca + a0_3;
+        Caaa = a1 * Caa + a0_4;
+        Cb = b1 * (b1 + b0) + b0_2;
+        Cbb = b1 * Cb + b0_3;
+        Cbbb = b1 * Cbb + b0_4;
+        Cab = 3 * a1_2 + 2 * a1 * a0 + a0_2;
+        Kab = a1_2 + 2 * a1 * a0 + 3 * a0_2;
+        Caab = a0 * Cab + 4 * a1_3;
+        Kaab = a1 * Kab + 4 * a0_3;
+        Cabb = 4 * b1_3 + 3 * b1_2 * b0 + 2 * b1 * b0_2 + b0_3;
+        Kabb = b1_3 + 2 * b1_2 * b0 + 3 * b1 * b0_2 + 4 * b0_3;
+        I += db * C0;
+        Ia += db * Ca;
+        Iaa += db * Caa;
+        Iaaa += db * Caaa;
+        Ib += da * Cb;
+        Ibb += da * Cbb;
+        Ibbb += da * Cbbb;
+        Iab += db * (b1 * Cab + b0 * Kab);
+        Iaab += db * (b1 * Caab + b0 * Kaab);
+        Iabb += da * (a1 * Cabb + a0 * Kabb);
       }
 
       I /= 2.0;
@@ -886,51 +821,55 @@ void PolyTree::compVolInts()
       Iaab /= 60.0;
       Iabb /= -60.0;
 
-      d =  f->plane.offset();
+      d = f->plane.offset();
       v = f->plane.normal();
       na = v[a];
       nb = v[b];
       nc = v[c];
       inv = 1.0 / nc;
 
-      if (a == 0)      vol_ += inv * na * Ia;
-      else if (b == 0) vol_ += inv * nb * Ib;
-      else             vol_ -= ((d*I + na*Ia + nb*Ib)/nc);
+      if (a == 0)
+        vol_ += inv * na * Ia;
+      else if (b == 0)
+        vol_ += inv * nb * Ib;
+      else
+        vol_ -= ((d * I + na * Ia + nb * Ib) / nc);
 
 #define SQR(x) ((x) * (x))
 #define CUBE(x) ((x) * (x) * (x))
 
-      Icc = (SQR(na)*Iaa + 2*na*nb*Iab + SQR(nb)*Ibb
-	     + d*(2*(na*Ia + nb*Ib) + d*I)) * SQR(inv);
+      Icc = (SQR(na) * Iaa + 2 * na * nb * Iab + SQR(nb) * Ibb +
+             d * (2 * (na * Ia + nb * Ib) + d * I)) *
+            SQR(inv);
       mov1_[a] += inv * na * Iaa;
       mov1_[b] += inv * nb * Ibb;
       mov1_[c] += Icc;
-      
-      Iccc = -(CUBE(na)*Iaaa + 3*SQR(na)*nb*Iaab 
-	       + 3*na*SQR(nb)*Iabb + CUBE(nb)*Ibbb
-	       + 3*(SQR(na)*Iaa + 2*na*nb*Iab + SQR(nb)*Ibb)*d
-	       + d*d*(3*(na*Ia + nb*Ib) + d*I)) * CUBE(inv);
+
+      Iccc = -(CUBE(na) * Iaaa + 3 * SQR(na) * nb * Iaab +
+               3 * na * SQR(nb) * Iabb + CUBE(nb) * Ibbb +
+               3 * (SQR(na) * Iaa + 2 * na * nb * Iab + SQR(nb) * Ibb) * d +
+               d * d * (3 * (na * Ia + nb * Ib) + d * I)) *
+             CUBE(inv);
       mov2_[a] += inv * na * Iaaa;
       mov2_[b] += inv * nb * Ibbb;
       mov2_[c] += Iccc;
-      
-      Ibbc = -(d*Ibb + na*Iabb + nb*Ibbb) * inv;
-      Icca = (SQR(na)*Iaaa + 2*na*nb*Iaab + SQR(nb)*Iabb
-	      + d*(2*(na*Iaa + nb*Iab) + d*Ia)) * SQR(inv);
+
+      Ibbc = -(d * Ibb + na * Iabb + nb * Ibbb) * inv;
+      Icca = (SQR(na) * Iaaa + 2 * na * nb * Iaab + SQR(nb) * Iabb +
+              d * (2 * (na * Iaa + nb * Iab) + d * Ia)) *
+             SQR(inv);
       pov_[c] += inv * na * Iaab;
       pov_[a] += inv * nb * Ibbc;
       pov_[b] += Icca;
 
 #undef SQR
 #undef CUBE
-
     }
 
     mov1_.scale(0.5);
-    mov2_.scale(1.0/3.0);
+    mov2_.scale(1.0 / 3.0);
     pov_.scale(0.5);
   }
-
 
   // Compute radius, defined as the maximum distance of any vertex on
   // the PolyTree's convex hull  from the center of volume.
@@ -943,9 +882,6 @@ void PolyTree::compVolInts()
   rad_ = sqrt(rad_);
 }
 
-
-
-
 ///////////////////////////////////////////////////////////////////////////////
 //  PolyTreeLibrary
 ///////////////////////////////////////////////////////////////////////////////
@@ -956,49 +892,44 @@ void PolyTree::compVolInts()
 // using the create() method below.  The lookup methods return NULL if
 // a suitable PolyTree is not found in the library.
 
-const PolyTree *PolyTreeLibrary::lookup(const char *name) const
-{
-  list< Handle<PolyTree> >::const_iterator libi;
+const PolyTree *PolyTreeLibrary::lookup(const char *name) const {
+  list<Handle<PolyTree> >::const_iterator libi;
 
-  FOR_EACH(lib, libi) 
-    if (!strcmp((*libi)->name, name)) break;
+  FOR_EACH(lib, libi)
+  if (!strcmp((*libi)->name, name)) break;
   return libi == lib.end() ? NULL : &**libi;
 }
 
-
-const PolyTree *PolyTreeLibrary::lookup(int i) const
-{
-  list< Handle<PolyTree> >::const_iterator libi;
+const PolyTree *PolyTreeLibrary::lookup(int i) const {
+  list<Handle<PolyTree> >::const_iterator libi;
 
   if (i < 0 || i >= (int)lib.size()) return NULL;
-  for (libi = lib.begin(); i-- > 0; ++libi);
+  for (libi = lib.begin(); i-- > 0; ++libi)
+    ;
   return &**libi;
 }
 
-
 ///////////////////////////////////////////////////////////////////////////////
-//  default geometry readers 
+//  default geometry readers
 ///////////////////////////////////////////////////////////////////////////////
 
 // Read and return a Polyhedron; return NULL on error.  This reads in
 // the verts, edges, and faces for a Polyhedron, links features
 // together, and builds the Voronoi structure.
 
-Polyhedron *readPolyhedron(istream &is)
-{
+Polyhedron *readPolyhedron(istream &is) {
   char c, next;
   int vertCounter, faceCounter, i;
   Vertex *v;
   Polyhedron *p;
   list<Vertex>::iterator vi;
   list<Vertex>::const_iterator cvi;
-  char s[LONG_STR_SZ]; 
+  char s[LONG_STR_SZ];
   Vect3 coords;
   VertFaceName vertName, faceName;
   static vector<Vertex *> facelist(MAX_VERTS_PER_FACE);
-  //static hash_map<int, Vertex *> indexedVerts(1000); // map:  int -> Vertex *
-  static map<int, Vertex *> indexedVerts; // map:  int -> Vertex *
-
+  // static hash_map<int, Vertex *> indexedVerts(1000); // map:  int -> Vertex *
+  static map<int, Vertex *> indexedVerts;  // map:  int -> Vertex *
 
   indexedVerts.clear();
 
@@ -1013,9 +944,10 @@ Polyhedron *readPolyhedron(istream &is)
       is >> s;
       break;
     }
-    if (next == '+' || next == '-' || isdigit(next)) 
+    if (next == '+' || next == '-' || isdigit(next))
       sprintf(vertName, "v%d", vertCounter);
-    else is >> vertName;
+    else
+      is >> vertName;
     is >> coords;
     v = p->addVertex(vertName, coords);
     indexedVerts.insert(pair<const int, Vertex *>(vertCounter++, v));
@@ -1028,50 +960,48 @@ Polyhedron *readPolyhedron(istream &is)
     if (*faceName == '*') break;
     if (*faceName == '-') sprintf(faceName, "f%d", faceCounter++);
 
-    is.get(s, LONG_STR_SZ, '\n'); is.get(c);  // read line & ending '\n'
-    istringstream line(s);                       // create input stream
+    is.get(s, LONG_STR_SZ, '\n');
+    is.get(c);              // read line & ending '\n'
+    istringstream line(s);  // create input stream
     facelist.clear();
     while (1) {
       if ((line >> vertName).fail()) break;
       if (isdigit(*vertName)) {
-	i = atoi(vertName);
-	if (i < 0 || i >= vertCounter) {
-	  cerr << "no vertex " << i << " on Polyhedron\a" << endl;
-	  goto error;
-	}
-	facelist.push_back(indexedVerts.find(i)->second);
-      }
-      else {
-        //hash_map<int, Vertex *>::const_iterator hmi;
+        i = atoi(vertName);
+        if (i < 0 || i >= vertCounter) {
+          cerr << "no vertex " << i << " on Polyhedron\a" << endl;
+          goto error;
+        }
+        facelist.push_back(indexedVerts.find(i)->second);
+      } else {
+        // hash_map<int, Vertex *>::const_iterator hmi;
         map<int, Vertex *>::const_iterator hmi;
-	FOR_EACH(indexedVerts, hmi)
-	  if (!strcmp(hmi->second->name(), vertName)) break;
-	if (hmi == indexedVerts.end()) {
-	  cerr << "no vertex " << vertName << " on Polyhedron\a" << endl;
-	  goto error;
-	}
-	facelist.push_back(hmi->second);
+        FOR_EACH(indexedVerts, hmi)
+        if (!strcmp(hmi->second->name(), vertName)) break;
+        if (hmi == indexedVerts.end()) {
+          cerr << "no vertex " << vertName << " on Polyhedron\a" << endl;
+          goto error;
+        }
+        facelist.push_back(hmi->second);
       }
     }
     p->addFace(faceName, facelist);
   }
-  if (p->faces().empty()) p->buildHull(); // no faces given - build convex hull
+  if (p->faces().empty()) p->buildHull();  // no faces given - build convex hull
 
   p->check();  // check for a properly constructed Polyhedron
 
   return p;
-  
+
 error:
   delete p;
   return NULL;
 }
 
-
 // Read and return an atomic PolyTree, or NULL on error.  Volume
 // properties are automatically computed.
 
-PolyTree *readAtomicPolyTree(istream &is)
-{
+PolyTree *readAtomicPolyTree(istream &is) {
   Polyhedron *p;
   PolyTree *ptree;
 
@@ -1082,12 +1012,10 @@ PolyTree *readAtomicPolyTree(istream &is)
   return ptree;
 }
 
-
 // Read in a compound PolyTree.  Return NULL on error.  Volume
 // properties are also computed.
 
-PolyTree *readCompoundPolyTree(istream &is, const PolyTreeLibrary &library)
-{
+PolyTree *readCompoundPolyTree(istream &is, const PolyTreeLibrary &library) {
   char c;
   PolyTree *pt, *comp;
   Se3 T;
@@ -1123,8 +1051,6 @@ error:
   return NULL;
 }
 
-
-
 // Read in an entire PolyTree specification file, appending all
 // PolyTrees that are read onto library.  When compound PolyTrees,
 // references may be made to any PolyTrees that preceded it in the
@@ -1134,8 +1060,7 @@ error:
 // compound description, Everything from a '#' to the end of line is
 // interpreted as comment.
 
-int loadPolyTreeFile(const char *fname, PolyTreeLibrary &library)
-{
+int loadPolyTreeFile(const char *fname, PolyTreeLibrary &library) {
   PolyTree *pt;
   int n;
   char token[200], name[PTREE_NAME_SZ];
@@ -1145,7 +1070,6 @@ int loadPolyTreeFile(const char *fname, PolyTreeLibrary &library)
 
   n = 0;
   while (!(ifs >> token).fail()) {
-
     if (*token == '#') {
       ifs.get(token, 200, '\n');  // eat comment
       continue;
@@ -1158,11 +1082,11 @@ int loadPolyTreeFile(const char *fname, PolyTreeLibrary &library)
 
     ifs >> name;
     if (library.lookup(name))
-      cerr << "warning: PolyTree " <<name<< " already in library \a" << endl;
-    
-    pt = (!strcmp(token, "compound")) ? 
-      readCompoundPolyTree(ifs, library) : readAtomicPolyTree(ifs);
-	
+      cerr << "warning: PolyTree " << name << " already in library \a" << endl;
+
+    pt = (!strcmp(token, "compound")) ? readCompoundPolyTree(ifs, library)
+                                      : readAtomicPolyTree(ifs);
+
     if (pt) {
       strcpy(pt->name, name);
       library.add(pt);
@@ -1172,6 +1096,3 @@ int loadPolyTreeFile(const char *fname, PolyTreeLibrary &library)
 
   return n;
 }
-      
-
-

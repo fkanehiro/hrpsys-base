@@ -12,49 +12,33 @@
 
 // Module specification
 // <rtc-template block="module_spec">
-static const char* videocapture_spec[] =
-  {
-    "implementation_id", "VideoCapture",
-    "type_name",         "VideoCapture",
-    "description",       "video capture component",
-    "version",           HRPSYS_PACKAGE_VERSION,
-    "vendor",            "JSK",
-    "category",          "example",
-    "activity_type",     "DataFlowComponent",
-    "max_instance",      "10",
-    "language",          "C++",
-    "lang_type",         "compile",
+static const char *videocapture_spec[] = {
+    "implementation_id", "VideoCapture", "type_name", "VideoCapture",
+    "description", "video capture component", "version", HRPSYS_PACKAGE_VERSION,
+    "vendor", "JSK", "category", "example", "activity_type",
+    "DataFlowComponent", "max_instance", "10", "language", "C++", "lang_type",
+    "compile",
     // Configuration variables
-    "conf.default.initialMode", "continuous",
-    "conf.default.devIds", "0",
-    "conf.default.width", "640",
-    "conf.default.height", "480",
+    "conf.default.initialMode", "continuous", "conf.default.devIds", "0",
+    "conf.default.width", "640", "conf.default.height", "480",
     "conf.default.frameRate", "1",
 
-    ""
-  };
+    ""};
 // </rtc-template>
 
-VideoCapture::VideoCapture(RTC::Manager* manager)
-  : RTC::DataFlowComponentBase(manager),
-    // <rtc-template block="initializer">
-    m_MultiCameraImagesOut ("MultiCameraImages", m_MultiCameraImages),
-    m_CameraImageOut ("CameraImage", m_CameraImage),
-    m_CameraCaptureServicePort("CameraCaptureService"),
-    m_CameraCaptureService(this),
-    // </rtc-template>
-    m_mode(CONTINUOUS)
-{
-}
+VideoCapture::VideoCapture(RTC::Manager *manager)
+    : RTC::DataFlowComponentBase(manager),
+      // <rtc-template block="initializer">
+      m_MultiCameraImagesOut("MultiCameraImages", m_MultiCameraImages),
+      m_CameraImageOut("CameraImage", m_CameraImage),
+      m_CameraCaptureServicePort("CameraCaptureService"),
+      m_CameraCaptureService(this),
+      // </rtc-template>
+      m_mode(CONTINUOUS) {}
 
-VideoCapture::~VideoCapture()
-{
-}
+VideoCapture::~VideoCapture() {}
 
-
-
-RTC::ReturnCode_t VideoCapture::onInitialize()
-{
+RTC::ReturnCode_t VideoCapture::onInitialize() {
   std::cout << m_profile.instance_name << ": onInitialize()" << std::endl;
 
   // <rtc-template block="bind_config">
@@ -64,7 +48,7 @@ RTC::ReturnCode_t VideoCapture::onInitialize()
   bindParameter("width", m_width, "640");
   bindParameter("height", m_height, "480");
   bindParameter("frameRate", m_frameRate, "1");
-  
+
   // </rtc-template>
 
   // Registration: InPort/OutPort/Service
@@ -72,26 +56,25 @@ RTC::ReturnCode_t VideoCapture::onInitialize()
   // Set InPort buffers
 
   // Set OutPort buffer
-  if (m_devIds.size() == 1){
-    addOutPort ("CameraImage", m_CameraImageOut);
-  }else{
-    addOutPort ("MultiCameraImages", m_MultiCameraImagesOut);
+  if (m_devIds.size() == 1) {
+    addOutPort("CameraImage", m_CameraImageOut);
+  } else {
+    addOutPort("MultiCameraImages", m_MultiCameraImagesOut);
   }
-  
+
   // Set service provider to Ports
-  m_CameraCaptureServicePort.registerProvider("service0", "CameraCaptureService", m_CameraCaptureService);
-  
+  m_CameraCaptureServicePort.registerProvider(
+      "service0", "CameraCaptureService", m_CameraCaptureService);
+
   // Set service consumers to Ports
-  
+
   // Set CORBA Service Ports
   addPort(m_CameraCaptureServicePort);
-  
+
   // </rtc-template>
 
   return RTC::RTC_OK;
 }
-
-
 
 /*
 RTC::ReturnCode_t VideoCapture::onFinalize()
@@ -100,8 +83,7 @@ RTC::ReturnCode_t VideoCapture::onFinalize()
 }
 */
 
-RTC::ReturnCode_t VideoCapture::onStartup(RTC::UniqueId ec_id)
-{
+RTC::ReturnCode_t VideoCapture::onStartup(RTC::UniqueId ec_id) {
   return RTC::RTC_OK;
 }
 
@@ -112,72 +94,73 @@ RTC::ReturnCode_t VideoCapture::onShutdown(RTC::UniqueId ec_id)
 }
 */
 
-RTC::ReturnCode_t VideoCapture::onActivated(RTC::UniqueId ec_id)
-{
-  std::cout << m_profile.instance_name<< ": onActivated(" << ec_id << ")" << std::endl;
+RTC::ReturnCode_t VideoCapture::onActivated(RTC::UniqueId ec_id) {
+  std::cout << m_profile.instance_name << ": onActivated(" << ec_id << ")"
+            << std::endl;
   m_tOld = (double)(coil::gettimeofday());
-  if (m_initialMode == "continuous"){
+  if (m_initialMode == "continuous") {
     m_mode = CONTINUOUS;
-  }else{
+  } else {
     m_mode = SLEEP;
   }
 
-  if (m_devIds.size() == 1){
+  if (m_devIds.size() == 1) {
     std::cout << "** devId:" << m_devIds[0] << std::endl;
-    v4l_capture *cam = new v4l_capture ();
+    v4l_capture *cam = new v4l_capture();
     if (cam->init(m_width, m_height, m_devIds[0]) != 0) return RTC::RTC_ERROR;
-    m_cameras.push_back (cam);
+    m_cameras.push_back(cam);
     m_CameraImage.data.image.format = Img::CF_RGB;
-    m_CameraImage.data.image.width = cam->getWidth ();
-    m_CameraImage.data.image.height = cam->getHeight ();
-    m_CameraImage.data.image.raw_data.length (cam->getWidth () * cam->getHeight () * 3);
-  }else{
-    m_MultiCameraImages.data.image_seq.length (m_devIds.size ());
+    m_CameraImage.data.image.width = cam->getWidth();
+    m_CameraImage.data.image.height = cam->getHeight();
+    m_CameraImage.data.image.raw_data.length(cam->getWidth() *
+                                             cam->getHeight() * 3);
+  } else {
+    m_MultiCameraImages.data.image_seq.length(m_devIds.size());
     m_MultiCameraImages.data.camera_set_id = 0;
-    for (unsigned int i = 0; i < m_devIds.size (); i++)
-      {
-	std::cout << "** devId:" << m_devIds[i] << std::endl;
-	v4l_capture *cam = new v4l_capture ();
-	cam->init(m_width, m_height, m_devIds[i]);
-	m_cameras.push_back (cam);
-	m_MultiCameraImages.data.image_seq[i].image.format = Img::CF_RGB;
-	m_MultiCameraImages.data.image_seq[i].image.width = cam->getWidth ();
-	m_MultiCameraImages.data.image_seq[i].image.height = cam->getHeight ();
-	m_MultiCameraImages.data.image_seq[i].image.raw_data.length (cam->getWidth () * cam->getHeight () * 3);
-      }
+    for (unsigned int i = 0; i < m_devIds.size(); i++) {
+      std::cout << "** devId:" << m_devIds[i] << std::endl;
+      v4l_capture *cam = new v4l_capture();
+      cam->init(m_width, m_height, m_devIds[i]);
+      m_cameras.push_back(cam);
+      m_MultiCameraImages.data.image_seq[i].image.format = Img::CF_RGB;
+      m_MultiCameraImages.data.image_seq[i].image.width = cam->getWidth();
+      m_MultiCameraImages.data.image_seq[i].image.height = cam->getHeight();
+      m_MultiCameraImages.data.image_seq[i].image.raw_data.length(
+          cam->getWidth() * cam->getHeight() * 3);
+    }
   }
 
   return RTC::RTC_OK;
 }
 
-RTC::ReturnCode_t VideoCapture::onDeactivated(RTC::UniqueId ec_id)
-{
-  std::cout << m_profile.instance_name<< ": onDeactivated(" << ec_id << ")" << std::endl;
-  for (unsigned int i=0; i< m_cameras.size(); i++){
-      delete m_cameras[i];
-  } 
+RTC::ReturnCode_t VideoCapture::onDeactivated(RTC::UniqueId ec_id) {
+  std::cout << m_profile.instance_name << ": onDeactivated(" << ec_id << ")"
+            << std::endl;
+  for (unsigned int i = 0; i < m_cameras.size(); i++) {
+    delete m_cameras[i];
+  }
   m_cameras.clear();
   return RTC::RTC_OK;
 }
 
-RTC::ReturnCode_t VideoCapture::onExecute(RTC::UniqueId ec_id)
-{
-  //std::cout << m_profile.instance_name<< ": onExecute(" << ec_id << ")" << std::endl;
+RTC::ReturnCode_t VideoCapture::onExecute(RTC::UniqueId ec_id) {
+  // std::cout << m_profile.instance_name<< ": onExecute(" << ec_id << ")" <<
+  // std::endl;
   capture();
 
   double tNew = (double)(coil::gettimeofday());
   double dt = (double)(tNew - m_tOld);
-  if (dt > 1.0/m_frameRate){
+  if (dt > 1.0 / m_frameRate) {
     m_tOld = tNew;
-  }else{
+  } else {
     return RTC::RTC_OK;
   }
 
   if (m_mode == SLEEP) return RTC::RTC_OK;
 
-  if (m_cameras.size() == 1){
+  if (m_cameras.size() == 1) {
     m_CameraImageOut.write();
-  }else{
+  } else {
     m_MultiCameraImagesOut.write();
   }
 
@@ -186,22 +169,22 @@ RTC::ReturnCode_t VideoCapture::onExecute(RTC::UniqueId ec_id)
   return RTC::RTC_OK;
 }
 
-void VideoCapture::capture()
-{
-  if (m_cameras.size() == 1){
+void VideoCapture::capture() {
+  if (m_cameras.size() == 1) {
     m_CameraImage.error_code = 0;
     uchar *imgFrom = m_cameras[0]->capture();
     memcpy(m_CameraImage.data.image.raw_data.get_buffer(), imgFrom,
-	   m_CameraImage.data.image.raw_data.length() * sizeof(uchar));
+           m_CameraImage.data.image.raw_data.length() * sizeof(uchar));
     return;
-  }else{
+  } else {
     m_MultiCameraImages.error_code = 0;
-    for (unsigned int i = 0; i < m_cameras.size (); i++)
-      {
-	uchar *imgFrom = m_cameras[i]->capture();
-	memcpy (m_MultiCameraImages.data.image_seq[i].image.raw_data.get_buffer(), imgFrom,
-		m_MultiCameraImages.data.image_seq[i].image.raw_data.length() * sizeof (uchar));
-      }
+    for (unsigned int i = 0; i < m_cameras.size(); i++) {
+      uchar *imgFrom = m_cameras[i]->capture();
+      memcpy(m_MultiCameraImages.data.image_seq[i].image.raw_data.get_buffer(),
+             imgFrom,
+             m_MultiCameraImages.data.image_seq[i].image.raw_data.length() *
+                 sizeof(uchar));
+    }
   }
 }
 
@@ -240,33 +223,16 @@ RTC::ReturnCode_t VideoCapture::onRateChanged(RTC::UniqueId ec_id)
 }
 */
 
-void VideoCapture::take_one_frame()
-{
-  m_mode = ONESHOT;
+void VideoCapture::take_one_frame() { m_mode = ONESHOT; }
+
+void VideoCapture::start_continuous() { m_mode = CONTINUOUS; }
+
+void VideoCapture::stop_continuous() { m_mode = SLEEP; }
+
+extern "C" {
+void VideoCaptureInit(RTC::Manager *manager) {
+  RTC::Properties profile(videocapture_spec);
+  manager->registerFactory(profile, RTC::Create<VideoCapture>,
+                           RTC::Delete<VideoCapture>);
 }
-
-void VideoCapture::start_continuous()
-{
-  m_mode = CONTINUOUS;
-}
-
-void VideoCapture::stop_continuous()
-{
-  m_mode = SLEEP;
-}
-
-
-extern "C"
-{
-
-  void VideoCaptureInit(RTC::Manager* manager)
-  {
-    RTC::Properties profile(videocapture_spec);
-    manager->registerFactory(profile,
-                             RTC::Create<VideoCapture>,
-                             RTC::Delete<VideoCapture>);
-  }
-
 };
-
-

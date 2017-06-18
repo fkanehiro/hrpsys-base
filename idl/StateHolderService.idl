@@ -2,10 +2,8 @@
  * @file StateHolderService.idl
  * @brief Services for the state holder interface
  */
-module OpenHRP
-{
-  interface StateHolderService
-  {
+module OpenHRP {
+  interface StateHolderService {
     typedef sequence<double> DblSequence;
 
     /**
@@ -16,10 +14,10 @@ module OpenHRP
     /**
        @brief reference joint angles and transfrom of the base link
      */
-    struct Command{
-      DblSequence jointRefs;     ///< reference joint angles[rad]
-      DblSequence baseTransform; ///< reference transform of the base link
-      DblSequence zmp;           ///< reference zmp[m] w.r.t. the base link
+    struct Command {
+      DblSequence jointRefs;      ///< reference joint angles[rad]
+      DblSequence baseTransform;  ///< reference transform of the base link
+      DblSequence zmp;            ///< reference zmp[m] w.r.t. the base link
     };
 
     /**

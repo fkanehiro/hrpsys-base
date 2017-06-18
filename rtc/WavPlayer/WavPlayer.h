@@ -32,11 +32,10 @@
 using namespace RTC;
 
 /**
-   \brief RT component that do nothing and don't have ports. This component is used to create an execution context
+   \brief RT component that do nothing and don't have ports. This component is
+   used to create an execution context
  */
-class WavPlayer
-  : public RTC::DataFlowComponentBase
-{
+class WavPlayer : public RTC::DataFlowComponentBase {
  public:
   /**
      \brief Constructor
@@ -96,11 +95,10 @@ class WavPlayer
   // no corresponding operation exists in OpenRTm-aist-0.2.0
   // virtual RTC::ReturnCode_t onRateChanged(RTC::UniqueId ec_id);
 
-
  protected:
   // Configuration variable declaration
   // <rtc-template block="config_declare">
-  
+
   // </rtc-template>
 
   // DataInPort declaration
@@ -110,13 +108,13 @@ class WavPlayer
 
   // DataOutPort declaration
   // <rtc-template block="outport_declare">
-  
+
   // </rtc-template>
 
   // CORBA Port declaration
   // <rtc-template block="corbaport_declare">
   RTC::CorbaPort m_WavPlayerServicePort;
-  
+
   // </rtc-template>
 
   // Service declaration
@@ -127,17 +125,15 @@ class WavPlayer
 
   // Consumer declaration
   // <rtc-template block="consumer_declare">
-  
+
   // </rtc-template>
 
  private:
   int dummy;
 };
 
-
-extern "C"
-{
-  void WavPlayerInit(RTC::Manager* manager);
+extern "C" {
+void WavPlayerInit(RTC::Manager* manager);
 };
 
-#endif // WAV_PLAYER_H
+#endif  // WAV_PLAYER_H

@@ -9,8 +9,7 @@
 // Read in the PolyTree file, generate an inventor model of its final
 // PolyTree, write the model to standard output
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
   SoNode *model;
   PolyTreeLibrary polyTreeLibrary;
 
@@ -27,8 +26,7 @@ int main(int argc, char **argv)
   // last PolyTree read in is at position 0 in the library
   model = polyTreeLibrary.lookup(0)->buildInvModel();
 
-
-  SoWriteAction wa;  // default output stream is cout
+  SoWriteAction wa;                  // default output stream is cout
   wa.getOutput()->setBinary(FALSE);  // write out in ascii format
   wa.getOutput()->setFloatPrecision(9);
   wa.apply(model);

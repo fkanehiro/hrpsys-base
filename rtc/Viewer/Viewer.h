@@ -37,11 +37,10 @@ class RTCGLbody;
 using namespace RTC;
 
 /**
-   \brief sample RT component which has one data input port and one data output port
+   \brief sample RT component which has one data input port and one data output
+   port
  */
-class Viewer
-  : public RTC::DataFlowComponentBase
-{
+class Viewer : public RTC::DataFlowComponentBase {
  public:
   /**
      \brief Constructor
@@ -101,54 +100,50 @@ class Viewer
   // no corresponding operation exists in OpenRTm-aist-0.2.0
   // virtual RTC::ReturnCode_t onRateChanged(RTC::UniqueId ec_id);
 
-
  protected:
   // Configuration variable declaration
   // <rtc-template block="config_declare">
-  
+
   // </rtc-template>
 
   // DataInPort declaration
   // <rtc-template block="inport_declare">
   OpenHRP::SceneState m_sceneState;
   InPort<OpenHRP::SceneState> m_sceneStateIn;
-  
+
   // </rtc-template>
 
   // DataOutPort declaration
   // <rtc-template block="outport_declare">
-  
+
   // </rtc-template>
 
   // CORBA Port declaration
   // <rtc-template block="corbaport_declare">
-  
+
   // </rtc-template>
 
   // Service declaration
   // <rtc-template block="service_declare">
-  
+
   // </rtc-template>
 
   // Consumer declaration
   // <rtc-template block="consumer_declare">
 
-  
   // </rtc-template>
 
  private:
   GLscene m_scene;
-  std::map<std::string, RTCGLbody *> m_bodies;
+  std::map<std::string, RTCGLbody*> m_bodies;
   std::string m_project;
   LogManager<OpenHRP::SceneState> m_log;
   SDLwindow m_window;
   int dummy;
 };
 
-
-extern "C"
-{
-  void ViewerInit(RTC::Manager* manager);
+extern "C" {
+void ViewerInit(RTC::Manager* manager);
 };
 
-#endif // VIEWER_H
+#endif  // VIEWER_H

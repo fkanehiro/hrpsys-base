@@ -7,26 +7,25 @@
 class SampleComponent;
 
 class SampleComponent_impl
-	: public virtual POA_OpenHRP::SampleComponentService,
-	  public virtual PortableServer::RefCountServantBase
-{
-public:
-	/**
-	   \brief constructor
-	*/
-	SampleComponent_impl();
+    : public virtual POA_OpenHRP::SampleComponentService,
+      public virtual PortableServer::RefCountServantBase {
+ public:
+  /**
+     \brief constructor
+  */
+  SampleComponent_impl();
 
-	/**
-	   \brief destructor
-	*/
-	virtual ~SampleComponent_impl();
+  /**
+     \brief destructor
+  */
+  virtual ~SampleComponent_impl();
 
-	void echo(const char *msg);
+  void echo(const char *msg);
 
-	void sample(SampleComponent *i_sample);
+  void sample(SampleComponent *i_sample);
 
-private:
-	SampleComponent *m_sample;
+ private:
+  SampleComponent *m_sample;
 };
 
 #endif

@@ -25,7 +25,7 @@
 #include "GLscene.h"
 #include "hrpsys/util/SDLUtil.h"
 #include "hrpsys/util/LogManager.h"
-#endif // USE_HRPSYSUTIL
+#endif  // USE_HRPSYSUTIL
 #include "TimedPosture.h"
 #include "interpolator.h"
 
@@ -46,17 +46,16 @@
 using namespace RTC;
 
 /**
-   \brief sample RT component which has one data input port and one data output port
+   \brief sample RT component which has one data input port and one data output
+   port
  */
-class CollisionDetector
-  : public RTC::DataFlowComponentBase
-{
+class CollisionDetector : public RTC::DataFlowComponentBase {
  public:
   /**
      \brief Constructor
      \param manager pointer to the Manager
   */
-  CollisionDetector(RTC::Manager* manager);
+  CollisionDetector(RTC::Manager *manager);
   /**
      \brief Destructor
   */
@@ -111,7 +110,8 @@ class CollisionDetector
   // virtual RTC::ReturnCode_t onRateChanged(RTC::UniqueId ec_id);
 
   bool setTolerance(const char *i_link_pair_name, double i_tolerance);
-  bool getCollisionStatus(OpenHRP::CollisionDetectorService::CollisionState &state);
+  bool getCollisionStatus(
+      OpenHRP::CollisionDetectorService::CollisionState &state);
 
   bool checkIsSafeTransition(void);
   bool enable(void);
@@ -120,7 +120,7 @@ class CollisionDetector
  protected:
   // Configuration variable declaration
   // <rtc-template block="config_declare">
-  
+
   // </rtc-template>
 
   // DataInPort declaration
@@ -131,7 +131,7 @@ class CollisionDetector
   InPort<TimedDoubleSeq> m_qCurrentIn;
   OpenHRP::TimedLongSeqSeq m_servoState;
   InPort<OpenHRP::TimedLongSeqSeq> m_servoStateIn;
-  
+
   // </rtc-template>
 
   // DataOutPort declaration
@@ -140,45 +140,47 @@ class CollisionDetector
   OutPort<TimedDoubleSeq> m_qOut;
   TimedLongSeq m_beepCommand;
   OutPort<TimedLongSeq> m_beepCommandOut;
-  
+
   // </rtc-template>
 
   // CORBA Port declaration
   // <rtc-template block="corbaport_declare">
   RTC::CorbaPort m_CollisionDetectorServicePort;
-  
+
   // </rtc-template>
 
   // Service declaration
   // <rtc-template block="service_declare">
   CollisionDetectorService_impl m_service0;
-  
+
   // </rtc-template>
 
   // Consumer declaration
   // <rtc-template block="consumer_declare">
 
-  
   // </rtc-template>
   void setupVClipModel(hrp::BodyPtr i_body);
   void setupVClipModel(hrp::Link *i_link);
 
  private:
   class CollisionLinkPair {
-  public:
-      CollisionLinkPair(VclipLinkPairPtr i_pair) : point0(hrp::Vector3(0,0,0)), point1(hrp::Vector3(0,0,0)), distance(0) {
-          pair = i_pair;
-      }
-      VclipLinkPairPtr pair;
-      hrp::Vector3 point0, point1;
-      double distance;
+   public:
+    CollisionLinkPair(VclipLinkPairPtr i_pair)
+        : point0(hrp::Vector3(0, 0, 0)),
+          point1(hrp::Vector3(0, 0, 0)),
+          distance(0) {
+      pair = i_pair;
+    }
+    VclipLinkPairPtr pair;
+    hrp::Vector3 point0, point1;
+    double distance;
   };
 #ifdef USE_HRPSYSUTIL
   CollisionDetectorComponent::GLscene m_scene;
-  LogManager<TimedPosture> m_log; 
+  LogManager<TimedPosture> m_log;
   SDLwindow m_window;
   GLbody *m_glbody;
-#endif // USE_HRPSYSUTIL
+#endif  // USE_HRPSYSUTIL
   std::vector<Vclip::Polyhedron *> m_VclipLinks;
   std::vector<int> m_curr_collision_mask, m_init_collision_mask;
   bool m_use_limb_collision;
@@ -192,7 +194,7 @@ class CollisionDetector
   //
   double *m_recover_jointdata, *m_lastsafe_jointdata;
   bool *m_link_collision;
-  interpolator* m_interpolator;
+  interpolator *m_interpolator;
   double i_dt;
   int default_recover_time;
   unsigned int m_debugLevel;
@@ -201,7 +203,8 @@ class CollisionDetector
   bool m_have_safe_posture;
   OpenHRP::CollisionDetectorService::CollisionState m_state;
   BeepClient bc;
-  // Since this RTC is stable RTC, we support both direct beeping from this RTC and beepring through BeeperRTC.
+  // Since this RTC is stable RTC, we support both direct beeping from this RTC
+  // and beepring through BeeperRTC.
   // If m_beepCommand is connected to BeeperRTC, is_beep_port_connected is true.
   bool is_beep_port_connected;
   int dummy;
@@ -209,11 +212,10 @@ class CollisionDetector
 
 #ifndef USE_HRPSYSUTIL
 hrp::Link *hrplinkFactory();
-#endif // USE_HRPSYSUTIL
+#endif  // USE_HRPSYSUTIL
 
-extern "C"
-{
-  void CollisionDetectorInit(RTC::Manager* manager);
+extern "C" {
+void CollisionDetectorInit(RTC::Manager *manager);
 };
 
-#endif // COLLISION_DETECTOR_H
+#endif  // COLLISION_DETECTOR_H

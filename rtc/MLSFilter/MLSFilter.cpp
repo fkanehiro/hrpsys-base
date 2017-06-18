@@ -15,48 +15,33 @@
 
 // Module specification
 // <rtc-template block="module_spec">
-static const char* spec[] =
-  {
-    "implementation_id", "MLSFilter",
-    "type_name",         "MLSFilter",
-    "description",       "Moving Least Squares Filter",
-    "version",           HRPSYS_PACKAGE_VERSION,
-    "vendor",            "AIST",
-    "category",          "example",
-    "activity_type",     "DataFlowComponent",
-    "max_instance",      "10",
-    "language",          "C++",
-    "lang_type",         "compile",
+static const char* spec[] = {
+    "implementation_id", "MLSFilter", "type_name", "MLSFilter", "description",
+    "Moving Least Squares Filter", "version", HRPSYS_PACKAGE_VERSION, "vendor",
+    "AIST", "category", "example", "activity_type", "DataFlowComponent",
+    "max_instance", "10", "language", "C++", "lang_type", "compile",
     // Configuration variables
     "conf.default.radius", "0.03",
 
-    ""
-  };
+    ""};
 // </rtc-template>
 
 MLSFilter::MLSFilter(RTC::Manager* manager)
-  : RTC::DataFlowComponentBase(manager),
-    // <rtc-template block="initializer">
-    m_originalIn("original", m_original),
-    m_filteredOut("filtered", m_filtered),
-    // </rtc-template>
-    dummy(0)
-{
-}
+    : RTC::DataFlowComponentBase(manager),
+      // <rtc-template block="initializer">
+      m_originalIn("original", m_original),
+      m_filteredOut("filtered", m_filtered),
+      // </rtc-template>
+      dummy(0) {}
 
-MLSFilter::~MLSFilter()
-{
-}
+MLSFilter::~MLSFilter() {}
 
-
-
-RTC::ReturnCode_t MLSFilter::onInitialize()
-{
-  //std::cout << m_profile.instance_name << ": onInitialize()" << std::endl;
+RTC::ReturnCode_t MLSFilter::onInitialize() {
+  // std::cout << m_profile.instance_name << ": onInitialize()" << std::endl;
   // <rtc-template block="bind_config">
   // Bind variables and configuration variable
   bindParameter("radius", m_radius, "0.03");
-  
+
   // </rtc-template>
 
   // Registration: InPort/OutPort/Service
@@ -66,13 +51,13 @@ RTC::ReturnCode_t MLSFilter::onInitialize()
 
   // Set OutPort buffer
   addOutPort("filteredOut", m_filteredOut);
-  
+
   // Set service provider to Ports
-  
+
   // Set service consumers to Ports
-  
+
   // Set CORBA Service Ports
-  
+
   // </rtc-template>
 
   RTC::Properties& prop = getProperties();
@@ -99,8 +84,6 @@ RTC::ReturnCode_t MLSFilter::onInitialize()
   return RTC::RTC_OK;
 }
 
-
-
 /*
 RTC::ReturnCode_t MLSFilter::onFinalize()
 {
@@ -122,53 +105,56 @@ RTC::ReturnCode_t MLSFilter::onShutdown(RTC::UniqueId ec_id)
 }
 */
 
-RTC::ReturnCode_t MLSFilter::onActivated(RTC::UniqueId ec_id)
-{
-  std::cout << m_profile.instance_name<< ": onActivated(" << ec_id << ")" << std::endl;
+RTC::ReturnCode_t MLSFilter::onActivated(RTC::UniqueId ec_id) {
+  std::cout << m_profile.instance_name << ": onActivated(" << ec_id << ")"
+            << std::endl;
   return RTC::RTC_OK;
 }
 
-RTC::ReturnCode_t MLSFilter::onDeactivated(RTC::UniqueId ec_id)
-{
-  std::cout << m_profile.instance_name<< ": onDeactivated(" << ec_id << ")" << std::endl;
+RTC::ReturnCode_t MLSFilter::onDeactivated(RTC::UniqueId ec_id) {
+  std::cout << m_profile.instance_name << ": onDeactivated(" << ec_id << ")"
+            << std::endl;
   return RTC::RTC_OK;
 }
 
-RTC::ReturnCode_t MLSFilter::onExecute(RTC::UniqueId ec_id)
-{
-  //std::cout << m_profile.instance_name<< ": onExecute(" << ec_id << ")" << std::endl;
+RTC::ReturnCode_t MLSFilter::onExecute(RTC::UniqueId ec_id) {
+  // std::cout << m_profile.instance_name<< ": onExecute(" << ec_id << ")" <<
+  // std::endl;
 
-  if (m_originalIn.isNew()){
+  if (m_originalIn.isNew()) {
     m_originalIn.read();
 
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered (new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(
+        new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered(
+        new pcl::PointCloud<pcl::PointXYZ>);
 
     // RTM -> PCL
-    cloud->points.resize(m_original.width*m_original.height);
-    float *src = (float *)m_original.data.get_buffer();
-    for (unsigned int i=0; i<cloud->points.size(); i++){
+    cloud->points.resize(m_original.width * m_original.height);
+    float* src = (float*)m_original.data.get_buffer();
+    for (unsigned int i = 0; i < cloud->points.size(); i++) {
       cloud->points[i].x = src[0];
       cloud->points[i].y = src[1];
       cloud->points[i].z = src[2];
       src += 4;
     }
-    
-    // PCL Processing 
-    pcl::search::KdTree<pcl::PointXYZ>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZ>);
+
+    // PCL Processing
+    pcl::search::KdTree<pcl::PointXYZ>::Ptr tree(
+        new pcl::search::KdTree<pcl::PointXYZ>);
     pcl::MovingLeastSquares<pcl::PointXYZ, pcl::PointXYZ> mls;
-    mls.setInputCloud (cloud);
-    mls.setPolynomialFit (true);
-    mls.setSearchMethod (tree);
-    mls.setSearchRadius (m_radius);
-    mls.process (*cloud_filtered);
+    mls.setInputCloud(cloud);
+    mls.setPolynomialFit(true);
+    mls.setSearchMethod(tree);
+    mls.setSearchRadius(m_radius);
+    mls.process(*cloud_filtered);
 
     // PCL -> RTM
     m_filtered.width = cloud_filtered->points.size();
-    m_filtered.row_step = m_filtered.point_step*m_filtered.width;
-    m_filtered.data.length(m_filtered.height*m_filtered.row_step);
-    float *dst = (float *)m_filtered.data.get_buffer();
-    for (unsigned int i=0; i<cloud_filtered->points.size(); i++){
+    m_filtered.row_step = m_filtered.point_step * m_filtered.width;
+    m_filtered.data.length(m_filtered.height * m_filtered.row_step);
+    float* dst = (float*)m_filtered.data.get_buffer();
+    for (unsigned int i = 0; i < cloud_filtered->points.size(); i++) {
       dst[0] = cloud_filtered->points[i].x;
       dst[1] = cloud_filtered->points[i].y;
       dst[2] = cloud_filtered->points[i].z;
@@ -215,19 +201,10 @@ RTC::ReturnCode_t MLSFilter::onRateChanged(RTC::UniqueId ec_id)
 }
 */
 
-
-
-extern "C"
-{
-
-  void MLSFilterInit(RTC::Manager* manager)
-  {
-    RTC::Properties profile(spec);
-    manager->registerFactory(profile,
-                             RTC::Create<MLSFilter>,
-                             RTC::Delete<MLSFilter>);
-  }
-
+extern "C" {
+void MLSFilterInit(RTC::Manager* manager) {
+  RTC::Properties profile(spec);
+  manager->registerFactory(profile, RTC::Create<MLSFilter>,
+                           RTC::Delete<MLSFilter>);
+}
 };
-
-

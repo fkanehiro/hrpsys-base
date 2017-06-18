@@ -34,11 +34,10 @@
 using namespace RTC;
 
 /**
-   \brief sample RT component which has one data input port and one data output port
+   \brief sample RT component which has one data input port and one data output
+   port
  */
-class GraspController
-  : public RTC::DataFlowComponentBase
-{
+class GraspController : public RTC::DataFlowComponentBase {
  public:
   /**
      \brief Constructor
@@ -56,7 +55,7 @@ class GraspController
 
   // The finalize action (on ALIVE->END transition)
   // formaer rtc_exiting_entry()
-  //virtual RTC::ReturnCode_t onFinalize();
+  // virtual RTC::ReturnCode_t onFinalize();
 
   // The startup action when ExecutionContext startup
   // former rtc_starting_entry()
@@ -98,13 +97,13 @@ class GraspController
   // no corresponding operation exists in OpenRTm-aist-0.2.0
   // virtual RTC::ReturnCode_t onRateChanged(RTC::UniqueId ec_id);
 
-  bool startGrasp(const char *name, double target_error);
-  bool stopGrasp(const char *name);
+  bool startGrasp(const char* name, double target_error);
+  bool stopGrasp(const char* name);
 
  protected:
   // Configuration variable declaration
   // <rtc-template block="config_declare">
-  
+
   // </rtc-template>
 
   TimedDoubleSeq m_qRef;
@@ -116,35 +115,35 @@ class GraspController
   InPort<TimedDoubleSeq> m_qRefIn;
   InPort<TimedDoubleSeq> m_qCurrentIn;
   InPort<TimedDoubleSeq> m_qIn;
-  
+
   // </rtc-template>
 
   // DataOutPort declaration
   // <rtc-template block="outport_declare">
   OutPort<TimedDoubleSeq> m_qOut;
-  
+
   // </rtc-template>
 
   // CORBA Port declaration
   // <rtc-template block="corbaport_declare">
   RTC::CorbaPort m_GraspControllerServicePort;
-  
+
   // </rtc-template>
 
   // Service declaration
   // <rtc-template block="service_declare">
   GraspControllerService_impl m_service0;
-  
+
   // </rtc-template>
 
   // Consumer declaration
   // <rtc-template block="consumer_declare">
-  
+
   // </rtc-template>
 
  private:
   struct GraspJoint {
-    int  id;
+    int id;
     double dir;
   };
   struct GraspParam {
@@ -152,17 +151,15 @@ class GraspController
     double target_error;
     std::vector<GraspJoint> joints;
   };
-  std::map<std::string, GraspParam > m_grasp_param;
+  std::map<std::string, GraspParam> m_grasp_param;
   hrp::BodyPtr m_robot;
   double m_dt;
   unsigned int m_debugLevel;
   int dummy;
 };
 
-
-extern "C"
-{
-  void GraspControllerInit(RTC::Manager* manager);
+extern "C" {
+void GraspControllerInit(RTC::Manager* manager);
 };
 
-#endif // SOFT_ERROR_LIMITER_H
+#endif  // SOFT_ERROR_LIMITER_H

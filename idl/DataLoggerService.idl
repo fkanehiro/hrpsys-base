@@ -2,12 +2,10 @@
  * @file DataLoggerService.idl
  * @brief Services for the data logger interface
  */
-module OpenHRP
-{
-  interface DataLoggerService
-  {
+module OpenHRP {
+  interface DataLoggerService {
     /**
-     * @brief add a data input port 
+     * @brief add a data input port
      * @param type data type of the port
      * @param name name of the port
      * @return true if the port is added successfully, false otherwise
@@ -15,11 +13,12 @@ module OpenHRP
     boolean add(in string type, in string name);
 
     /**
-     * @brief save data 
-     * @param basename basename of log files. Names of input data ports are used as file extensions
+     * @brief save data
+     * @param basename basename of log files. Names of input data ports are used
+     * as file extensions
      * @return true if log files are saved successfully, false otherwise
      */
-    boolean save(in string basename); 
+    boolean save(in string basename);
 
     /**
      * @brief clear data

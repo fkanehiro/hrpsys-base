@@ -16,12 +16,11 @@ class GLbody;
 void mulTrans(const double i_m1[16], const double i_m2[16], double o_m[16]);
 void loadCube(GLshape *shape, double x, double y, double z);
 void loadShapeFromBodyInfo(GLbody *body, OpenHRP::BodyInfo_var i_binfo,
-                           GLshape *(*shapeFactory)()=NULL);
+                           GLshape *(*shapeFactory)() = NULL);
 void loadShapeFromSceneInfo(GLlink *link, OpenHRP::SceneInfo_var i_sinfo,
-                            GLshape *(*shapeFactory)()=NULL);
-void loadShapeFromLinkInfo(GLlink *link, 
-                           const OpenHRP::LinkInfo &i_li, 
+                            GLshape *(*shapeFactory)() = NULL);
+void loadShapeFromLinkInfo(GLlink *link, const OpenHRP::LinkInfo &i_li,
                            OpenHRP::ShapeSetInfo_ptr i_ssinfo,
-                           GLshape *(*shapeFactory)()=NULL);
+                           GLshape *(*shapeFactory)() = NULL);
 
 #endif

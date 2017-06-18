@@ -32,11 +32,10 @@
 using namespace RTC;
 
 /**
-   \brief sample RT component which has one data input port and one data output port
+   \brief sample RT component which has one data input port and one data output
+   port
  */
-class NullComponent
-  : public RTC::DataFlowComponentBase
-{
+class NullComponent : public RTC::DataFlowComponentBase {
  public:
   /**
      \brief Constructor
@@ -96,11 +95,10 @@ class NullComponent
   // no corresponding operation exists in OpenRTm-aist-0.2.0
   // virtual RTC::ReturnCode_t onRateChanged(RTC::UniqueId ec_id);
 
-
  protected:
   // Configuration variable declaration
   // <rtc-template block="config_declare">
-  
+
   // </rtc-template>
 
   TimedDouble m_data;
@@ -108,30 +106,30 @@ class NullComponent
   // DataInPort declaration
   // <rtc-template block="inport_declare">
   InPort<TimedDouble> m_dataIn;
-  
+
   // </rtc-template>
 
   // DataOutPort declaration
   // <rtc-template block="outport_declare">
   OutPort<TimedDouble> m_dataOut;
-  
+
   // </rtc-template>
 
   // CORBA Port declaration
   // <rtc-template block="corbaport_declare">
-  
+
   // </rtc-template>
 
   // Service declaration
   // <rtc-template block="service_declare">
   RTC::CorbaPort m_NullServicePort;
-  
+
   // </rtc-template>
 
   // Consumer declaration
   // <rtc-template block="consumer_declare">
   NullService_impl m_NullService;
-  
+
   // </rtc-template>
 
  private:
@@ -141,10 +139,8 @@ class NullComponent
   double confdouble;
 };
 
-
-extern "C"
-{
-  void NullComponentInit(RTC::Manager* manager);
+extern "C" {
+void NullComponentInit(RTC::Manager* manager);
 };
 
-#endif // NULL_COMPONENT_H
+#endif  // NULL_COMPONENT_H

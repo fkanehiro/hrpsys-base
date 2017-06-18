@@ -35,17 +35,16 @@
 using namespace RTC;
 
 /**
-   \brief RT component that do nothing and don't have ports. This component is used to create an execution context
+   \brief RT component that do nothing and don't have ports. This component is
+   used to create an execution context
  */
-class StateHolder
-  : public RTC::DataFlowComponentBase
-{
+class StateHolder : public RTC::DataFlowComponentBase {
  public:
   /**
      \brief Constructor
      \param manager pointer to the Manager
   */
-  StateHolder(RTC::Manager* manager);
+  StateHolder(RTC::Manager *manager);
   /**
      \brief Destructor
   */
@@ -100,13 +99,14 @@ class StateHolder
   // virtual RTC::ReturnCode_t onRateChanged(RTC::UniqueId ec_id);
 
   void goActual();
-  void getCommand(StateHolderService::Command &com);  
+  void getCommand(StateHolderService::Command &com);
 
   void wait(CORBA::Double tm);
+
  protected:
   // Configuration variable declaration
   // <rtc-template block="config_declare">
-  
+
   // </rtc-template>
   TimedDoubleSeq m_currentQ;
   InPort<TimedDoubleSeq> m_currentQIn;
@@ -121,7 +121,7 @@ class StateHolder
 
   // DataInPort declaration
   // <rtc-template block="inport_declare">
-  
+
   // </rtc-template>
 
   // DataOutPort declaration
@@ -156,13 +156,13 @@ class StateHolder
   // Service declaration
   // <rtc-template block="service_declare">
   StateHolderService_impl m_service0;
-  TimeKeeperService_impl m_service1;  
+  TimeKeeperService_impl m_service1;
 
   // </rtc-template>
 
   // Consumer declaration
   // <rtc-template block="consumer_declare">
-  
+
   // </rtc-template>
 
  private:
@@ -173,10 +173,8 @@ class StateHolder
   int dummy;
 };
 
-
-extern "C"
-{
-  void StateHolderInit(RTC::Manager* manager);
+extern "C" {
+void StateHolderInit(RTC::Manager *manager);
 };
 
-#endif // NULL_COMPONENT_H
+#endif  // NULL_COMPONENT_H

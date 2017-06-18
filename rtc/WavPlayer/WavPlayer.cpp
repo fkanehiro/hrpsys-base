@@ -11,66 +11,50 @@
 
 // Module specification
 // <rtc-template block="module_spec">
-static const char* wavplayer_spec[] =
-  {
-    "implementation_id", "WavPlayer",
-    "type_name",         "WavPlayer",
-    "description",       "wave file player",
-    "version",           HRPSYS_PACKAGE_VERSION,
-    "vendor",            "AIST",
-    "category",          "example",
-    "activity_type",     "DataFlowComponent",
-    "max_instance",      "10",
-    "language",          "C++",
-    "lang_type",         "compile",
+static const char* wavplayer_spec[] = {
+    "implementation_id", "WavPlayer", "type_name", "WavPlayer", "description",
+    "wave file player", "version", HRPSYS_PACKAGE_VERSION, "vendor", "AIST",
+    "category", "example", "activity_type", "DataFlowComponent", "max_instance",
+    "10", "language", "C++", "lang_type", "compile",
     // Configuration variables
 
-    ""
-  };
+    ""};
 // </rtc-template>
 
 WavPlayer::WavPlayer(RTC::Manager* manager)
-  : RTC::DataFlowComponentBase(manager),
-    // <rtc-template block="initializer">
-    m_WavPlayerServicePort("WavPlayerService"),
-    // </rtc-template>
-	dummy(0)
-{
-}
+    : RTC::DataFlowComponentBase(manager),
+      // <rtc-template block="initializer">
+      m_WavPlayerServicePort("WavPlayerService"),
+      // </rtc-template>
+      dummy(0) {}
 
-WavPlayer::~WavPlayer()
-{
-}
+WavPlayer::~WavPlayer() {}
 
-
-
-RTC::ReturnCode_t WavPlayer::onInitialize()
-{
+RTC::ReturnCode_t WavPlayer::onInitialize() {
   // Registration: InPort/OutPort/Service
   // <rtc-template block="registration">
   // Set InPort buffers
-  
+
   // Set OutPort buffer
-  
+
   // Set service provider to Ports
-  m_WavPlayerServicePort.registerProvider("service0", "WavPlayerService", m_service0);
-  
+  m_WavPlayerServicePort.registerProvider("service0", "WavPlayerService",
+                                          m_service0);
+
   // Set service consumers to Ports
-  
+
   // Set CORBA Service Ports
   addPort(m_WavPlayerServicePort);
-  
+
   // </rtc-template>
 
   // <rtc-template block="bind_config">
   // Bind variables and configuration variable
-  
+
   // </rtc-template>
 
   return RTC::RTC_OK;
 }
-
-
 
 /*
 RTC::ReturnCode_t WavPlayer::onFinalize()
@@ -149,19 +133,10 @@ RTC::ReturnCode_t WavPlayer::onRateChanged(RTC::UniqueId ec_id)
 }
 */
 
-
-
-extern "C"
-{
-
-  void WavPlayerInit(RTC::Manager* manager)
-  {
-    RTC::Properties profile(wavplayer_spec);
-    manager->registerFactory(profile,
-                             RTC::Create<WavPlayer>,
-                             RTC::Delete<WavPlayer>);
-  }
-
+extern "C" {
+void WavPlayerInit(RTC::Manager* manager) {
+  RTC::Properties profile(wavplayer_spec);
+  manager->registerFactory(profile, RTC::Create<WavPlayer>,
+                           RTC::Delete<WavPlayer>);
+}
 };
-
-

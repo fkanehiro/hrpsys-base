@@ -4,16 +4,16 @@
 #include <boost/python.hpp>
 #include "hrpsys/util/GLshape.h"
 
-class PyShape : public GLshape
-{
-public:
-    PyObject *getRelPosition();
-    void setRelPosition(PyObject *v);
-    PyObject *getRelRotation();
-    void setRelRotation(PyObject *v);
-    PyObject *getDiffuseColor();
-    void setDiffuseColor(PyObject *v);
-private:
+class PyShape : public GLshape {
+ public:
+  PyObject *getRelPosition();
+  void setRelPosition(PyObject *v);
+  PyObject *getRelRotation();
+  void setRelRotation(PyObject *v);
+  PyObject *getDiffuseColor();
+  void setDiffuseColor(PyObject *v);
+
+ private:
 };
 
 GLshape *createPyShape();

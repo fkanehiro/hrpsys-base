@@ -7,25 +7,25 @@
 class CaptureController;
 
 class CameraCaptureService_impl
-	: public virtual POA_Img::CameraCaptureService,
-	  public virtual PortableServer::RefCountServantBase
-{
-public:
-	/**
-	   \brief constructor
-	*/
-	CameraCaptureService_impl(CaptureController *cc);
+    : public virtual POA_Img::CameraCaptureService,
+      public virtual PortableServer::RefCountServantBase {
+ public:
+  /**
+     \brief constructor
+  */
+  CameraCaptureService_impl(CaptureController *cc);
 
-	/**
-	   \brief destructor
-	*/
-	virtual ~CameraCaptureService_impl();
+  /**
+     \brief destructor
+  */
+  virtual ~CameraCaptureService_impl();
 
-    void take_one_frame();
-    void start_continuous();
-    void stop_continuous();
-private:
-	CaptureController *m_cc;
+  void take_one_frame();
+  void start_continuous();
+  void stop_continuous();
+
+ private:
+  CaptureController *m_cc;
 };
 
 #endif

@@ -36,16 +36,14 @@
 
 using namespace RTC;
 
-class ImpedanceController
-  : public RTC::DataFlowComponentBase
-{
+class ImpedanceController : public RTC::DataFlowComponentBase {
  public:
   ImpedanceController(RTC::Manager* manager);
   virtual ~ImpedanceController();
 
   // The initialize action (on CREATED->ALIVE transition)
   // formaer rtc_init_entry()
- virtual RTC::ReturnCode_t onInitialize();
+  virtual RTC::ReturnCode_t onInitialize();
 
   // The finalize action (on ALIVE->END transition)
   // formaer rtc_exiting_entry()
@@ -95,14 +93,18 @@ class ImpedanceController
   bool startImpedanceControllerNoWait(const std::string& i_name_);
   bool stopImpedanceController(const std::string& i_name_);
   bool stopImpedanceControllerNoWait(const std::string& i_name_);
-  bool setImpedanceControllerParam(const std::string& i_name_, OpenHRP::ImpedanceControllerService::impedanceParam i_param_);
-  bool getImpedanceControllerParam(const std::string& i_name_, OpenHRP::ImpedanceControllerService::impedanceParam& i_param_);
+  bool setImpedanceControllerParam(
+      const std::string& i_name_,
+      OpenHRP::ImpedanceControllerService::impedanceParam i_param_);
+  bool getImpedanceControllerParam(
+      const std::string& i_name_,
+      OpenHRP::ImpedanceControllerService::impedanceParam& i_param_);
   void waitImpedanceControllerTransition(std::string i_name_);
 
  protected:
   // Configuration variable declaration
   // <rtc-template block="config_declare">
-  
+
   // </rtc-template>
 
   // DataInPort declaration
@@ -116,19 +118,19 @@ class ImpedanceController
   TimedOrientation3D m_baseRpy;
   InPort<TimedOrientation3D> m_baseRpyIn;
   std::vector<TimedDoubleSeq> m_force;
-  std::vector<InPort<TimedDoubleSeq> *> m_forceIn;
+  std::vector<InPort<TimedDoubleSeq>*> m_forceIn;
   std::vector<TimedDoubleSeq> m_ref_force;
-  std::vector<InPort<TimedDoubleSeq> *> m_ref_forceIn;
+  std::vector<InPort<TimedDoubleSeq>*> m_ref_forceIn;
   TimedOrientation3D m_rpy;
   InPort<TimedOrientation3D> m_rpyIn;
-  
+
   // </rtc-template>
 
   // DataOutPort declaration
   // <rtc-template block="outport_declare">
   TimedDoubleSeq m_q;
   OutPort<TimedDoubleSeq> m_qOut;
-  
+
   // </rtc-template>
 
   // CORBA Port declaration
@@ -145,25 +147,30 @@ class ImpedanceController
 
   // Consumer declaration
   // <rtc-template block="consumer_declare">
-  
+
   // </rtc-template>
 
  private:
-
   struct ImpedanceParam : public ImpedanceOutputGenerator {
     std::string sensor_name;
     hrp::Vector3 ref_force, ref_moment;
     double sr_gain, avoid_gain, reference_gain, manipulability_limit;
-    int transition_count; // negative value when initing and positive value when deleting
+    int transition_count;  // negative value when initing and positive value
+                           // when deleting
     hrp::dvector transition_joint_q;
     hrp::JointPathExPtr manip;
     bool is_active;
 
-    ImpedanceParam ()
-      : ImpedanceOutputGenerator(),
-        ref_force(hrp::Vector3::Zero()), ref_moment(hrp::Vector3::Zero()),
-        sr_gain(1.0), avoid_gain(0.001), reference_gain(0.01), manipulability_limit(0.1), transition_count(0), is_active(false)
-    {};
+    ImpedanceParam()
+        : ImpedanceOutputGenerator(),
+          ref_force(hrp::Vector3::Zero()),
+          ref_moment(hrp::Vector3::Zero()),
+          sr_gain(1.0),
+          avoid_gain(0.001),
+          reference_gain(0.01),
+          manipulability_limit(0.1),
+          transition_count(0),
+          is_active(false){};
   };
   struct ee_trans {
     std::string target_name;
@@ -171,16 +178,19 @@ class ImpedanceController
     hrp::Matrix33 localR;
   };
 
-  void copyImpedanceParam (OpenHRP::ImpedanceControllerService::impedanceParam& i_param_, const ImpedanceParam& param);
-  void updateRootLinkPosRot (TimedOrientation3D tmprpy);
-  void getTargetParameters ();
-  void calcImpedanceControl ();
+  void copyImpedanceParam(
+      OpenHRP::ImpedanceControllerService::impedanceParam& i_param_,
+      const ImpedanceParam& param);
+  void updateRootLinkPosRot(TimedOrientation3D tmprpy);
+  void getTargetParameters();
+  void calcImpedanceControl();
   void calcForceMoment();
 
   std::map<std::string, ImpedanceParam> m_impedance_param;
   std::map<std::string, ee_trans> ee_map;
   std::map<std::string, hrp::VirtualForceSensorParam> m_vfs;
-  std::map<std::string, hrp::Vector3> abs_forces, abs_moments, abs_ref_forces, abs_ref_moments;
+  std::map<std::string, hrp::Vector3> abs_forces, abs_moments, abs_ref_forces,
+      abs_ref_moments;
   double m_dt;
   hrp::BodyPtr m_robot;
   coil::Mutex m_mutex;
@@ -191,10 +201,8 @@ class ImpedanceController
   bool use_sh_base_pos_rpy;
 };
 
-
-extern "C"
-{
-  void ImpedanceControllerInit(RTC::Manager* manager);
+extern "C" {
+void ImpedanceControllerInit(RTC::Manager* manager);
 };
 
-#endif // IMPEDANCE_H
+#endif  // IMPEDANCE_H

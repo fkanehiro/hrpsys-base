@@ -2,10 +2,8 @@
  * @file ThermoLimiterService.idl
  * @brief Services for the thermolimitter interface
  */
-module OpenHRP
-{
-  interface ThermoLimiterService
-  {
+module OpenHRP {
+  interface ThermoLimiterService {
     /**
      * @struct tlParam
      * @brief ThermoLimiter Parameters.
@@ -30,4 +28,3 @@ module OpenHRP
     boolean setParameter(in tlParam i_param);
   };
 };
-

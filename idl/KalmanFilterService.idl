@@ -2,18 +2,13 @@
  * @file KalmanFilterService.idl
  * @brief Services for the kalman filter interface
  */
-module OpenHRP
-{
-  interface KalmanFilterService
-  {
+module OpenHRP {
+  interface KalmanFilterService {
     /**
      * @enum KFAlgorithm
      * @brief Algorithm for KalmanFilter
      */
-    enum KFAlgorithm {
-        RPYKalmanFilter,
-        QuaternionExtendedKalmanFilter
-    };
+    enum KFAlgorithm { RPYKalmanFilter, QuaternionExtendedKalmanFilter };
 
     typedef double DblArray3[3];
 
@@ -21,8 +16,7 @@ module OpenHRP
      * @struct KalmanFilterParam
      * @brief KalmanFilter Parameters.
      */
-    struct KalmanFilterParam
-    {
+    struct KalmanFilterParam {
       // RPYKalmanFilter
       double Q_angle;
       double Q_rate;

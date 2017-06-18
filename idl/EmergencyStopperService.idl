@@ -1,16 +1,13 @@
 #ifndef __EMERGENCYSTOPPER_SERVICE_IDL__
 #define __EMERGENCYSTOPPER_SERVICE_IDL__
 
-module OpenHRP
-{
-  interface EmergencyStopperService
-  {
+module OpenHRP {
+  interface EmergencyStopperService {
     /**
      * @struct EmergencyStopperParam
      * @brief Parameters for EmergencyStopper.
      */
-    struct EmergencyStopperParam
-    {
+    struct EmergencyStopperParam {
       /// Sync time for releasing [s]
       double default_recover_time;
       /// Sync time for retrieve motion [s]

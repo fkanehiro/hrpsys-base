@@ -5,28 +5,34 @@
 
 #define ABS(x) (((x) < 0) ? (-(x)) : (x))
 
-int main (int argc, char* argv[]) {
+int main(int argc, char* argv[]) {
   double ke = 2.0, kd = 20.0, tc = 0.05, dt = 0.005;
   const int test_num = 2;
-  MotorTorqueController *controller[test_num];
+  MotorTorqueController* controller[test_num];
   TwoDofController::TwoDofControllerParam tdc_param;
-  tdc_param.ke = ke; tdc_param.tc = tc; tdc_param.dt = dt;
+  tdc_param.ke = ke;
+  tdc_param.tc = tc;
+  tdc_param.dt = dt;
   controller[0] = new MotorTorqueController("hoge", tdc_param);
   TwoDofControllerPDModel::TwoDofControllerPDModelParam tdc_pdmodel_param;
-  tdc_pdmodel_param.ke = ke; tdc_pdmodel_param.kd = kd; tdc_pdmodel_param.tc = tc; tdc_pdmodel_param.dt = dt;
+  tdc_pdmodel_param.ke = ke;
+  tdc_pdmodel_param.kd = kd;
+  tdc_pdmodel_param.tc = tc;
+  tdc_pdmodel_param.dt = dt;
   controller[1] = new MotorTorqueController("hoge", tdc_pdmodel_param);
-  double q[test_num], dq[test_num], q_ref[test_num], tau[test_num], dqref[test_num], ddqref[test_num];
+  double q[test_num], dq[test_num], q_ref[test_num], tau[test_num],
+      dqref[test_num], ddqref[test_num];
   double tau_d = 10.0, limit = 90.0, pgain = 1.0, dgain = 0.01;
   bool activate_flag[test_num], stop_flag[test_num];
 
   // initialize
-  for (int i = 0; i < test_num; i++){
+  for (int i = 0; i < test_num; i++) {
     q[i] = dq[i] = q_ref[i] = tau[i] = dqref[i] = ddqref[i] = 0;
     activate_flag[i] = stop_flag[i] = false;
   }
 
   double time = 0;
-  while ( true ) {
+  while (true) {
     for (int i = 0; i < test_num; i++) {
       controller[i]->setReferenceTorque(tau_d);
 
@@ -38,7 +44,8 @@ int main (int argc, char* argv[]) {
 
       // execute controller
       tau[i] = -ke * q[i] + kd * (ddqref[i] / dt);
-      dqref[i] = controller[i]->execute(tau[i], limit); // execute returns dqRef = sum(dq)
+      dqref[i] = controller[i]->execute(
+          tau[i], limit);  // execute returns dqRef = sum(dq)
       ddqref[i] = dqref[i] - q[i];
 
       // joint simulation
@@ -56,7 +63,9 @@ int main (int argc, char* argv[]) {
         return 0;
       }
     }
-    std::cout << time << " " << q[0] << " " << dqref[0] << " " << tau[0] << " " << q[1] << " " << dqref[1] << " " << tau[1] << " " << tau_d << std::endl;
+    std::cout << time << " " << q[0] << " " << dqref[0] << " " << tau[0] << " "
+              << q[1] << " " << dqref[1] << " " << tau[1] << " " << tau_d
+              << std::endl;
     time += dt;
   }
   return 0;

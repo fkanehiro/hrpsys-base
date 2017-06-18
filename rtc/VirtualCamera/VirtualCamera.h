@@ -21,7 +21,7 @@
 #include <rtm/DataInPort.h>
 #include <rtm/DataOutPort.h>
 #include <rtm/idl/BasicDataTypeSkel.h>
-//Open CV headder
+// Open CV headder
 #include <cv.h>
 #include <highgui.h>
 //
@@ -44,17 +44,16 @@ class RTCGLbody;
 using namespace RTC;
 
 /**
-   \brief sample RT component which has one data input port and one data output port
+   \brief sample RT component which has one data input port and one data output
+   port
  */
-class VirtualCamera
-  : public RTC::DataFlowComponentBase
-{
+class VirtualCamera : public RTC::DataFlowComponentBase {
  public:
   /**
      \brief Constructor
      \param manager pointer to the Manager
   */
-  VirtualCamera(RTC::Manager* manager);
+  VirtualCamera(RTC::Manager *manager);
   /**
      \brief Destructor
   */
@@ -108,11 +107,10 @@ class VirtualCamera
   // no corresponding operation exists in OpenRTm-aist-0.2.0
   // virtual RTC::ReturnCode_t onRateChanged(RTC::UniqueId ec_id);
 
-
  protected:
   // Configuration variable declaration
   // <rtc-template block="config_declare">
-  
+
   // </rtc-template>
 
   OpenHRP::SceneState m_sceneState;
@@ -126,11 +124,11 @@ class VirtualCamera
   InPort<RTC::TimedPoint3D> m_basePosIn;
   InPort<RTC::TimedOrientation3D> m_baseRpyIn;
   InPort<RTC::TimedDoubleSeq> m_qIn;
-  
+
   // </rtc-template>
 
   Img::TimedCameraImage m_image;
-  RangeData m_range;  
+  RangeData m_range;
   PointCloudTypes::PointCloud m_cloud;
   TimedPose3D m_poseSensor;
 
@@ -140,27 +138,27 @@ class VirtualCamera
   OutPort<RangeData> m_rangeOut;
   OutPort<PointCloudTypes::PointCloud> m_cloudOut;
   OutPort<TimedPose3D> m_poseSensorOut;
-  
+
   // </rtc-template>
 
   // CORBA Port declaration
   // <rtc-template block="corbaport_declare">
-  
+
   // </rtc-template>
 
   // Service declaration
   // <rtc-template block="service_declare">
-  
+
   // </rtc-template>
 
   // Consumer declaration
   // <rtc-template block="consumer_declare">
-  
+
   // </rtc-template>
 
  private:
-  void setupRangeData();  
-  void setupPointCloud();  
+  void setupRangeData();
+  void setupPointCloud();
   GLscene m_scene;
   LogManager<OpenHRP::SceneState> m_log;
   SDLwindow m_window;
@@ -179,10 +177,8 @@ class VirtualCamera
   int dummy;
 };
 
-
-extern "C"
-{
-  void VirtualCameraInit(RTC::Manager* manager);
+extern "C" {
+void VirtualCameraInit(RTC::Manager *manager);
 };
 
-#endif // VIRTUAL_CAMERA_H
+#endif  // VIRTUAL_CAMERA_H

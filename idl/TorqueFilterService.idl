@@ -1,10 +1,8 @@
 #ifndef __TORQUE_FILTER_SERVICE_IDL__
 #define __TORQUE_FILTER_SERVICE_IDL__
 
-module OpenHRP
-{
-  interface TorqueFilterService
-  {
+module OpenHRP {
+  interface TorqueFilterService {
     void dummy(in string msg);
   };
 };

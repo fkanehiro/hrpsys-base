@@ -19,7 +19,7 @@
 #include <rtm/DataOutPort.h>
 #include <rtm/idl/BasicDataTypeSkel.h>
 #include <rtm/idl/InterfaceDataTypes.hh>
-//Open CV headder
+// Open CV headder
 #include <cv.h>
 #include <highgui.h>
 #include "hrpsys/idl/OGMap3DService.hh"
@@ -40,17 +40,16 @@ class CMapSceneNode;
 using namespace RTC;
 
 /**
-   \brief sample RT component which has one data input port and one data output port
+   \brief sample RT component which has one data input port and one data output
+   port
  */
-class OGMap3DViewer
-  : public RTC::DataFlowComponentBase
-{
+class OGMap3DViewer : public RTC::DataFlowComponentBase {
  public:
   /**
      \brief Constructor
      \param manager pointer to the Manager
   */
-  OGMap3DViewer(RTC::Manager* manager);
+  OGMap3DViewer(RTC::Manager *manager);
   /**
      \brief Destructor
   */
@@ -104,11 +103,10 @@ class OGMap3DViewer
   // no corresponding operation exists in OpenRTm-aist-0.2.0
   // virtual RTC::ReturnCode_t onRateChanged(RTC::UniqueId ec_id);
 
-
  protected:
   // Configuration variable declaration
   // <rtc-template block="config_declare">
-  
+
   // </rtc-template>
 
   OGMapCells m_cells;
@@ -121,29 +119,29 @@ class OGMap3DViewer
   InPort<TimedDoubleSeq> m_qIn;
   InPort<TimedPoint3D> m_pIn;
   InPort<TimedOrientation3D> m_rpyIn;
-  
+
   // </rtc-template>
 
   // DataOutPort declaration
   // <rtc-template block="outport_declare">
-  
+
   // </rtc-template>
 
   // CORBA Port declaration
   // <rtc-template block="corbaport_declare">
   RTC::CorbaPort m_OGMap3DServicePort;
   RTC::CorbaConsumer<OpenHRP::OGMap3DService> m_OGMap3DService;
-  
+
   // </rtc-template>
 
   // Service declaration
   // <rtc-template block="service_declare">
-  
+
   // </rtc-template>
 
   // Consumer declaration
   // <rtc-template block="consumer_declare">
-  
+
   // </rtc-template>
 
  private:
@@ -161,10 +159,8 @@ class OGMap3DViewer
   IplImage *m_cvImage;
 };
 
-
-extern "C"
-{
-  void OGMap3DViewerInit(RTC::Manager* manager);
+extern "C" {
+void OGMap3DViewerInit(RTC::Manager *manager);
 };
 
-#endif // OGMAP3DVIEWER_H
+#endif  // OGMAP3DVIEWER_H

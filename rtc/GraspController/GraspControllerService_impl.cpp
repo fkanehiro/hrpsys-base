@@ -3,25 +3,19 @@
 #include "GraspControllerService_impl.h"
 #include "GraspController.h"
 
-GraspControllerService_impl::GraspControllerService_impl()
-{
+GraspControllerService_impl::GraspControllerService_impl() {}
+
+GraspControllerService_impl::~GraspControllerService_impl() {}
+
+bool GraspControllerService_impl::startGrasp(const char *name,
+                                             double target_error) {
+  return m_grasp->startGrasp(name, target_error);
 }
 
-GraspControllerService_impl::~GraspControllerService_impl()
-{
+bool GraspControllerService_impl::stopGrasp(const char *name) {
+  return m_grasp->stopGrasp(name);
 }
 
-bool GraspControllerService_impl::startGrasp(const char *name, double target_error)
-{
-	return m_grasp->startGrasp(name, target_error);
+void GraspControllerService_impl::grasp(GraspController *i_grasp) {
+  m_grasp = i_grasp;
 }
-
-bool GraspControllerService_impl::stopGrasp(const char *name)
-{
-	return m_grasp->stopGrasp(name);
-}
-
-void GraspControllerService_impl::grasp(GraspController *i_grasp)
-{
-	m_grasp = i_grasp;
-} 

@@ -2,10 +2,8 @@
  * @file WavPlayerService.idl
  * @brief Services for the wav player interface
  */
-module OpenHRP
-{
-  interface WavPlayerService
-  {
+module OpenHRP {
+  interface WavPlayerService {
     /**
      * @brief play a wav file and return when it finishes
      * @param wavfile path of the wav file

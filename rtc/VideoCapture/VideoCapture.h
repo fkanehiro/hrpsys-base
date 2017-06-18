@@ -34,11 +34,10 @@
 using namespace RTC;
 
 /**
-   \brief sample RT component which has one data input port and one data output port
+   \brief sample RT component which has one data input port and one data output
+   port
  */
-class VideoCapture
-  : public RTC::DataFlowComponentBase
-{
+class VideoCapture : public RTC::DataFlowComponentBase {
  public:
   /**
      \brief Constructor
@@ -98,7 +97,7 @@ class VideoCapture
   // no corresponding operation exists in OpenRTm-aist-0.2.0
   // virtual RTC::ReturnCode_t onRateChanged(RTC::UniqueId ec_id);
 
-    void capture();
+  void capture();
   void take_one_frame();
   void start_continuous();
   void stop_continuous();
@@ -106,12 +105,12 @@ class VideoCapture
  protected:
   // Configuration variable declaration
   // <rtc-template block="config_declare">
-  
+
   // </rtc-template>
 
   // DataInPort declaration
   // <rtc-template block="inport_declare">
-  
+
   // </rtc-template>
 
   // DataOutPort declaration
@@ -120,40 +119,38 @@ class VideoCapture
   OutPort<Img::TimedMultiCameraImage> m_MultiCameraImagesOut;
   Img::TimedCameraImage m_CameraImage;
   OutPort<Img::TimedCameraImage> m_CameraImageOut;
-  
+
   // </rtc-template>
 
   // CORBA Port declaration
   // <rtc-template block="corbaport_declare">
-  
+
   // </rtc-template>
 
   // Service declaration
   // <rtc-template block="service_declare">
   RTC::CorbaPort m_CameraCaptureServicePort;
-  
+
   // </rtc-template>
 
   // Consumer declaration
   // <rtc-template block="consumer_declare">
   CameraCaptureService_impl m_CameraCaptureService;
-  
+
   // </rtc-template>
 
  private:
-  typedef enum {SLEEP, ONESHOT, CONTINUOUS} mode;
+  typedef enum { SLEEP, ONESHOT, CONTINUOUS } mode;
   mode m_mode;
   std::string m_initialMode;
   std::vector<int> m_devIds;
-  std::vector < v4l_capture * > m_cameras;
+  std::vector<v4l_capture*> m_cameras;
   int m_width, m_height, m_frameRate;
   double m_tOld;
 };
 
-
-extern "C"
-{
-  void VideoCaptureInit(RTC::Manager* manager);
+extern "C" {
+void VideoCaptureInit(RTC::Manager* manager);
 };
 
-#endif // VIDEO_CAPTURE_H
+#endif  // VIDEO_CAPTURE_H

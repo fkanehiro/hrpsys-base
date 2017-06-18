@@ -1,29 +1,25 @@
 #include "ExtendedDataTypes.idl"
 
-module OpenHRP
-{
-  struct RobotState
-  {
+module OpenHRP {
+  struct RobotState {
     string name;
     RTC::Pose3D basePose;
     sequence<double> q;
   };
 
   typedef sequence<RobotState> RobotStateSeq;
-  struct SceneState
-  {
+  struct SceneState {
     double time;
     RobotStateSeq states;
   };
 
-  struct TimedLongSeqSeq
-  {
+  struct TimedLongSeqSeq {
     RTC::Time tm;
     sequence<sequence<long> > data;
   };
 
-
-  // Additional data type definisions disscussed in [openrtm-users 02915] mailing list.
+  // Additional data type definisions disscussed in [openrtm-users 02915]
+  // mailing list.
   // These should be commited in ExtendedDataTypes.idl
 
   //------------------------------------------------------------
@@ -34,8 +30,7 @@ module OpenHRP
    * @struct Quaternion
    * @brief Orientation x, y, z, and w.
    */
-  struct Quaternion
-  {
+  struct Quaternion {
     double x;
     double y;
     double z;
@@ -46,8 +41,7 @@ module OpenHRP
    * @struct Wrench
    * @brief Force[N] and Torque[Nm].
    */
-  struct Wrench
-  {
+  struct Wrench {
     RTC::Vector3D force;
     RTC::Vector3D torque;
   };
@@ -56,8 +50,7 @@ module OpenHRP
    * @struct SpatialVelocity
    * @brief AngularVelocity[rad/s] and velocity[m/s].
    */
-  struct SpatialVelocity
-  {
+  struct SpatialVelocity {
     RTC::AngularVelocity3D omega;
     RTC::Velocity3D vel;
   };
@@ -66,20 +59,17 @@ module OpenHRP
   // Timed data types
   //------------------------------------------------------------
 
-  struct TimedQuaternion
-  {
+  struct TimedQuaternion {
     RTC::Time tm;
     Quaternion data;
   };
 
-  struct TimedWrench
-  {
+  struct TimedWrench {
     RTC::Time tm;
     Wrench data;
   };
 
-  struct TimedSpatialVelocity
-  {
+  struct TimedSpatialVelocity {
     RTC::Time tm;
     SpatialVelocity data;
   };

@@ -2,24 +2,21 @@
 /*!
  * @file AccelerationFilterComp.cpp
  * @brief Standalone component
- * @date $Date$ 
+ * @date $Date$
  *
- * $Id$ 
+ * $Id$
  */
 #include <rtm/Manager.h>
 #include <iostream>
 #include <string>
 #include "AccelerationFilter.h"
 
-
-void MyModuleInit(RTC::Manager* manager)
-{
+void MyModuleInit(RTC::Manager* manager) {
   AccelerationFilterInit(manager);
   RTC::RtcBase* comp;
 
   // Create a component
   comp = manager->createComponent("AccelerationFilter");
-
 
   // Example
   // The following procedure is examples how handle RT-Components.
@@ -27,7 +24,8 @@ void MyModuleInit(RTC::Manager* manager)
 
   // Get the component's object reference
   //  RTC::RTObject_var rtobj;
-  //  rtobj = RTC::RTObject::_narrow(manager->getPOA()->servant_to_reference(comp));
+  //  rtobj =
+  //  RTC::RTObject::_narrow(manager->getPOA()->servant_to_reference(comp));
 
   // Get the port list of the component
   // PortServiceList* portlist;
@@ -35,14 +33,14 @@ void MyModuleInit(RTC::Manager* manager)
 
   // getting port profiles
   // std::cout << "Number of Ports: ";
-  // std::cout << portlist->length() << std::endl << std::endl; 
+  // std::cout << portlist->length() << std::endl << std::endl;
   // for (CORBA::ULong i(0), n(portlist->length()); i < n; ++i)
   //   {
   //     Port_ptr port;
   //     port = (*portlist)[i];
   //     std::cout << "Port" << i << " (name): ";
   //     std::cout << port->get_port_profile()->name << std::endl;
-  //    
+  //
   //     RTC::PortInterfaceProfileList iflist;
   //     iflist = port->get_port_profile()->interfaces;
   //     std::cout << "---interfaces---" << std::endl;
@@ -64,8 +62,7 @@ void MyModuleInit(RTC::Manager* manager)
   return;
 }
 
-int main (int argc, char** argv)
-{
+int main(int argc, char** argv) {
   RTC::Manager* manager;
   manager = RTC::Manager::init(argc, argv);
 
@@ -88,4 +85,3 @@ int main (int argc, char** argv)
 
   return 0;
 }
-

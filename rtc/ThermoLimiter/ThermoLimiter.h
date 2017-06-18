@@ -39,11 +39,10 @@
 using namespace RTC;
 
 /**
-   \brief sample RT component which has one data input port and one data output port
+   \brief sample RT component which has one data input port and one data output
+   port
  */
-class ThermoLimiter
-  : public RTC::DataFlowComponentBase
-{
+class ThermoLimiter : public RTC::DataFlowComponentBase {
  public:
   /**
      \brief Constructor
@@ -105,44 +104,43 @@ class ThermoLimiter
   bool setParameter(const OpenHRP::ThermoLimiterService::tlParam& i_tlp);
   bool getParameter(OpenHRP::ThermoLimiterService::tlParam& i_tlp);
 
-
  protected:
   // Configuration variable declaration
   // <rtc-template block="config_declare">
-  
+
   // </rtc-template>
   TimedDoubleSeq m_tempIn;
   TimedDoubleSeq m_tauMaxOut;
   TimedLongSeq m_beepCommandOut;
-  
+
   // DataInPort declaration
   // <rtc-template block="inport_declare">
   InPort<TimedDoubleSeq> m_tempInIn;
-  
+
   // </rtc-template>
 
   // DataOutPort declaration
   // <rtc-template block="outport_declare">
   OutPort<TimedDoubleSeq> m_tauMaxOutOut;
   OutPort<TimedLongSeq> m_beepCommandOutOut;
-  
+
   // </rtc-template>
 
   // CORBA Port declaration
   // <rtc-template block="corbaport_declare">
-  
+
   // </rtc-template>
 
   // Service declaration
   // <rtc-template block="service_declare">
   RTC::CorbaPort m_ThermoLimiterServicePort;
-  
+
   // </rtc-template>
 
   // Consumer declaration
   // <rtc-template block="consumer_declare">
   ThermoLimiterService_impl m_ThermoLimiterService;
-  
+
   // </rtc-template>
 
  private:
@@ -156,16 +154,15 @@ class ThermoLimiter
   coil::Mutex m_mutex;
   BeepClient bc;
 
-  void calcMaxTorqueFromTemperature(hrp::dvector &tauMax);
-  double calcEmergencyRatio(RTC::TimedDoubleSeq &current, hrp::dvector &max, double alarmRatio, std::string &prefix);
+  void calcMaxTorqueFromTemperature(hrp::dvector& tauMax);
+  double calcEmergencyRatio(RTC::TimedDoubleSeq& current, hrp::dvector& max,
+                            double alarmRatio, std::string& prefix);
   void callBeep(double ratio, double alarmRatio);
   bool isDebug(int cycle = 200);
 };
 
-
-extern "C"
-{
-  void ThermoLimiterInit(RTC::Manager* manager);
+extern "C" {
+void ThermoLimiterInit(RTC::Manager* manager);
 };
 
-#endif // NULL_COMPONENT_H
+#endif  // NULL_COMPONENT_H

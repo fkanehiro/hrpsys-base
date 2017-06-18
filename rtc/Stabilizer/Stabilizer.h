@@ -38,12 +38,11 @@
 // </rtc-template>
 
 /**
-   \brief sample RT component which has one data input port and one data output port
+   \brief sample RT component which has one data input port and one data output
+   port
  */
 
-class Stabilizer
-  : public RTC::DataFlowComponentBase
-{
+class Stabilizer : public RTC::DataFlowComponentBase {
  public:
   /**
      \brief Constructor
@@ -105,57 +104,73 @@ class Stabilizer
 
   void startStabilizer(void);
   void stopStabilizer(void);
-  void getCurrentParameters ();
-  void getActualParameters ();
-  void getTargetParameters ();
-  void calcFootOriginCoords (hrp::Vector3& foot_origin_pos, hrp::Matrix33& foot_origin_rot);
-  void sync_2_st ();
+  void getCurrentParameters();
+  void getActualParameters();
+  void getTargetParameters();
+  void calcFootOriginCoords(hrp::Vector3& foot_origin_pos,
+                            hrp::Matrix33& foot_origin_rot);
+  void sync_2_st();
   void sync_2_idle();
   bool calcZMP(hrp::Vector3& ret_zmp, const double zmp_z);
   void calcStateForEmergencySignal();
   void calcRUNST();
-  void moveBasePosRotForBodyRPYControl ();
+  void moveBasePosRotForBodyRPYControl();
   void calcSwingSupportLimbGain();
   void calcTPCC();
   void calcEEForceMomentControl();
-  void calcSwingEEModification ();
-  void limbStretchAvoidanceControl (const std::vector<hrp::Vector3>& ee_p, const std::vector<hrp::Matrix33>& ee_R);
+  void calcSwingEEModification();
+  void limbStretchAvoidanceControl(const std::vector<hrp::Vector3>& ee_p,
+                                   const std::vector<hrp::Matrix33>& ee_R);
   void getParameter(OpenHRP::StabilizerService::stParam& i_stp);
   void setParameter(const OpenHRP::StabilizerService::stParam& i_stp);
-  void setBoolSequenceParam (std::vector<bool>& st_bool_values, const OpenHRP::StabilizerService::BoolSequence& output_bool_values, const std::string& prop_name);
-  void setBoolSequenceParamWithCheckContact (std::vector<bool>& st_bool_values, const OpenHRP::StabilizerService::BoolSequence& output_bool_values, const std::string& prop_name);
-  std::string getStabilizerAlgorithmString (OpenHRP::StabilizerService::STAlgorithm _st_algorithm);
+  void setBoolSequenceParam(
+      std::vector<bool>& st_bool_values,
+      const OpenHRP::StabilizerService::BoolSequence& output_bool_values,
+      const std::string& prop_name);
+  void setBoolSequenceParamWithCheckContact(
+      std::vector<bool>& st_bool_values,
+      const OpenHRP::StabilizerService::BoolSequence& output_bool_values,
+      const std::string& prop_name);
+  std::string getStabilizerAlgorithmString(
+      OpenHRP::StabilizerService::STAlgorithm _st_algorithm);
   void waitSTTransition();
   // funcitons for calc final torque output
-  void calcContactMatrix (hrp::dmatrix& tm, const std::vector<hrp::Vector3>& contact_p);
-  void calcTorque ();
-  void fixLegToCoords (const std::string& leg, const rats::coordinates& coords);
-  void getFootmidCoords (rats::coordinates& ret);
-  double calcDampingControl (const double tau_d, const double tau, const double prev_d,
-                             const double DD, const double TT);
-  hrp::Vector3 calcDampingControl (const hrp::Vector3& prev_d, const hrp::Vector3& TT);
-  double calcDampingControl (const double prev_d, const double TT);
-  hrp::Vector3 calcDampingControl (const hrp::Vector3& tau_d, const hrp::Vector3& tau, const hrp::Vector3& prev_d,
-                                   const hrp::Vector3& DD, const hrp::Vector3& TT);
+  void calcContactMatrix(hrp::dmatrix& tm,
+                         const std::vector<hrp::Vector3>& contact_p);
+  void calcTorque();
+  void fixLegToCoords(const std::string& leg, const rats::coordinates& coords);
+  void getFootmidCoords(rats::coordinates& ret);
+  double calcDampingControl(const double tau_d, const double tau,
+                            const double prev_d, const double DD,
+                            const double TT);
+  hrp::Vector3 calcDampingControl(const hrp::Vector3& prev_d,
+                                  const hrp::Vector3& TT);
+  double calcDampingControl(const double prev_d, const double TT);
+  hrp::Vector3 calcDampingControl(const hrp::Vector3& tau_d,
+                                  const hrp::Vector3& tau,
+                                  const hrp::Vector3& prev_d,
+                                  const hrp::Vector3& DD,
+                                  const hrp::Vector3& TT);
   double vlimit(double value, double llimit_value, double ulimit_value);
-  hrp::Vector3 vlimit(const hrp::Vector3& value, double llimit_value, double ulimit_value);
-  hrp::Vector3 vlimit(const hrp::Vector3& value, const hrp::Vector3& limit_value);
-  hrp::Vector3 vlimit(const hrp::Vector3& value, const hrp::Vector3& llimit_value, const hrp::Vector3& ulimit_value);
+  hrp::Vector3 vlimit(const hrp::Vector3& value, double llimit_value,
+                      double ulimit_value);
+  hrp::Vector3 vlimit(const hrp::Vector3& value,
+                      const hrp::Vector3& limit_value);
+  hrp::Vector3 vlimit(const hrp::Vector3& value,
+                      const hrp::Vector3& llimit_value,
+                      const hrp::Vector3& ulimit_value);
 
-  inline bool isContact (const size_t idx) // 0 = right, 1 = left
+  inline bool isContact(const size_t idx)  // 0 = right, 1 = left
   {
     return (prev_act_force_z[idx] > 25.0);
   };
-  inline int calcMaxTransitionCount ()
-  {
-      return (transition_time / dt);
-  };
-  void calcDiffFootOriginExtMoment ();
+  inline int calcMaxTransitionCount() { return (transition_time / dt); };
+  void calcDiffFootOriginExtMoment();
 
  protected:
   // Configuration variable declaration
   // <rtc-template block="config_declare">
-  
+
   // </rtc-template>
   RTC::TimedDoubleSeq m_qCurrent;
   RTC::TimedDoubleSeq m_qRef;
@@ -180,7 +195,8 @@ class Stabilizer
   RTC::TimedBoolean m_walkingStates;
   RTC::TimedPoint3D m_sbpCogOffset;
   // for debug ouput
-  RTC::TimedPoint3D m_originRefZmp, m_originRefCog, m_originRefCogVel, m_originNewZmp;
+  RTC::TimedPoint3D m_originRefZmp, m_originRefCog, m_originRefCogVel,
+      m_originNewZmp;
   RTC::TimedPoint3D m_originActZmp, m_originActCog, m_originActCogVel;
   RTC::TimedOrientation3D m_actBaseRpy;
   RTC::TimedPoint3D m_currentBasePos;
@@ -188,7 +204,7 @@ class Stabilizer
   RTC::TimedDoubleSeq m_allRefWrench;
   RTC::TimedDoubleSeq m_allEEComp;
   RTC::TimedDoubleSeq m_debugData;
-  
+
   // DataInPort declaration
   // <rtc-template block="inport_declare">
   RTC::InPort<RTC::TimedDoubleSeq> m_qCurrentIn;
@@ -200,16 +216,16 @@ class Stabilizer
   RTC::InPort<RTC::TimedBooleanSeq> m_contactStatesIn;
   RTC::InPort<RTC::TimedDoubleSeq> m_toeheelRatioIn;
   RTC::InPort<RTC::TimedDoubleSeq> m_controlSwingSupportTimeIn;
-  std::vector<RTC::InPort<RTC::TimedPoint3D> *> m_limbCOPOffsetIn;
+  std::vector<RTC::InPort<RTC::TimedPoint3D>*> m_limbCOPOffsetIn;
   RTC::InPort<RTC::TimedDoubleSeq> m_qRefSeqIn;
   RTC::InPort<RTC::TimedBoolean> m_walkingStatesIn;
   RTC::InPort<RTC::TimedPoint3D> m_sbpCogOffsetIn;
 
   std::vector<RTC::TimedDoubleSeq> m_wrenches;
-  std::vector<RTC::InPort<RTC::TimedDoubleSeq> *> m_wrenchesIn;
+  std::vector<RTC::InPort<RTC::TimedDoubleSeq>*> m_wrenchesIn;
   std::vector<RTC::TimedDoubleSeq> m_ref_wrenches;
-  std::vector<RTC::InPort<RTC::TimedDoubleSeq> *> m_ref_wrenchesIn;
-  
+  std::vector<RTC::InPort<RTC::TimedDoubleSeq>*> m_ref_wrenchesIn;
+
   // </rtc-template>
 
   // DataOutPort declaration
@@ -225,60 +241,77 @@ class Stabilizer
   RTC::OutPort<RTC::TimedDoubleSeq> m_COPInfoOut;
   RTC::OutPort<RTC::TimedLong> m_emergencySignalOut;
   // for debug output
-  RTC::OutPort<RTC::TimedPoint3D> m_originRefZmpOut, m_originRefCogOut, m_originRefCogVelOut, m_originNewZmpOut;
-  RTC::OutPort<RTC::TimedPoint3D> m_originActZmpOut, m_originActCogOut, m_originActCogVelOut;
+  RTC::OutPort<RTC::TimedPoint3D> m_originRefZmpOut, m_originRefCogOut,
+      m_originRefCogVelOut, m_originNewZmpOut;
+  RTC::OutPort<RTC::TimedPoint3D> m_originActZmpOut, m_originActCogOut,
+      m_originActCogVelOut;
   RTC::OutPort<RTC::TimedOrientation3D> m_actBaseRpyOut;
   RTC::OutPort<RTC::TimedPoint3D> m_currentBasePosOut;
   RTC::OutPort<RTC::TimedOrientation3D> m_currentBaseRpyOut;
   RTC::OutPort<RTC::TimedDoubleSeq> m_allRefWrenchOut;
   RTC::OutPort<RTC::TimedDoubleSeq> m_allEECompOut;
   RTC::OutPort<RTC::TimedDoubleSeq> m_debugDataOut;
-  
+
   // </rtc-template>
 
   // CORBA Port declaration
   // <rtc-template block="corbaport_declare">
-  
+
   // </rtc-template>
 
   // Service declaration
   // <rtc-template block="service_declare">
   RTC::CorbaPort m_StabilizerServicePort;
-  
+
   // </rtc-template>
 
   // Consumer declaration
   // <rtc-template block="consumer_declare">
   StabilizerService_impl m_service0;
-  
+
   // </rtc-template>
 
  private:
   // Stabilizer Parameters
   struct STIKParam {
-    std::string target_name; // Name of end link
-    std::string ee_name; // Name of ee (e.g., rleg, lleg, ...)
-    std::string sensor_name; // Name of force sensor in the limb
-    std::string parent_name; // Name of parent ling in the limb
-    hrp::Vector3 localp; // Position of ee in end link frame (^{l}p_e = R_l^T (p_e - p_l))
-    hrp::Vector3 localCOPPos; // Position offset of reference COP in end link frame (^{l}p_{cop} = R_l^T (p_{cop} - p_l) - ^{l}p_e)
-    hrp::Matrix33 localR; // Rotation of ee in end link frame (^{l}R_e = R_l^T R_e)
+    std::string target_name;  // Name of end link
+    std::string ee_name;      // Name of ee (e.g., rleg, lleg, ...)
+    std::string sensor_name;  // Name of force sensor in the limb
+    std::string parent_name;  // Name of parent ling in the limb
+    hrp::Vector3 localp;  // Position of ee in end link frame (^{l}p_e = R_l^T
+                          // (p_e - p_l))
+    hrp::Vector3 localCOPPos;  // Position offset of reference COP in end link
+                               // frame (^{l}p_{cop} = R_l^T (p_{cop} - p_l) -
+                               // ^{l}p_e)
+    hrp::Matrix33
+        localR;  // Rotation of ee in end link frame (^{l}R_e = R_l^T R_e)
     // For eefm
     hrp::Vector3 d_foot_pos, d_foot_rpy, ee_d_foot_rpy;
-    hrp::Vector3 eefm_pos_damping_gain, eefm_pos_time_const_support, eefm_rot_damping_gain, eefm_rot_time_const, eefm_swing_rot_spring_gain, eefm_swing_pos_spring_gain, eefm_swing_rot_time_const, eefm_swing_pos_time_const, eefm_ee_moment_limit;
+    hrp::Vector3 eefm_pos_damping_gain, eefm_pos_time_const_support,
+        eefm_rot_damping_gain, eefm_rot_time_const, eefm_swing_rot_spring_gain,
+        eefm_swing_pos_spring_gain, eefm_swing_rot_time_const,
+        eefm_swing_pos_time_const, eefm_ee_moment_limit;
     double eefm_pos_compensation_limit, eefm_rot_compensation_limit;
     hrp::Vector3 ref_force, ref_moment;
     hrp::dvector6 eefm_ee_forcemoment_distribution_weight;
     double swing_support_gain, support_time;
     // For swing ee modification
-    boost::shared_ptr<FirstOrderLowPassFilter<hrp::Vector3> > target_ee_diff_p_filter, target_ee_diff_r_filter;
-    hrp::Vector3 target_ee_diff_p, d_pos_swing, d_rpy_swing, prev_d_pos_swing, prev_d_rpy_swing;
+    boost::shared_ptr<FirstOrderLowPassFilter<hrp::Vector3> >
+        target_ee_diff_p_filter, target_ee_diff_r_filter;
+    hrp::Vector3 target_ee_diff_p, d_pos_swing, d_rpy_swing, prev_d_pos_swing,
+        prev_d_rpy_swing;
     hrp::Matrix33 target_ee_diff_r;
     // IK parameter
     double avoid_gain, reference_gain, max_limb_length, limb_length_margin;
     size_t ik_loop_count;
   };
-  enum cmode {MODE_IDLE, MODE_AIR, MODE_ST, MODE_SYNC_TO_IDLE, MODE_SYNC_TO_AIR} control_mode;
+  enum cmode {
+    MODE_IDLE,
+    MODE_AIR,
+    MODE_ST,
+    MODE_SYNC_TO_IDLE,
+    MODE_SYNC_TO_AIR
+  } control_mode;
   // members
   std::map<std::string, hrp::VirtualForceSensorParam> m_vfs;
   std::vector<hrp::JointPathExPtr> jpe_v;
@@ -288,26 +321,38 @@ class Stabilizer
   hrp::dvector transition_joint_q, qorg, qrefv;
   std::vector<STIKParam> stikp;
   std::map<std::string, size_t> contact_states_index_map;
-  std::vector<bool> ref_contact_states, prev_ref_contact_states, act_contact_states, is_ik_enable, is_feedback_control_enable, is_zmp_calc_enable;
+  std::vector<bool> ref_contact_states, prev_ref_contact_states,
+      act_contact_states, is_ik_enable, is_feedback_control_enable,
+      is_zmp_calc_enable;
   std::vector<double> toeheel_ratio;
   double dt;
   int transition_count, loop;
   int m_is_falling_counter;
   std::vector<int> m_will_fall_counter;
   int is_air_counter, detection_count_to_air;
-  bool is_legged_robot, on_ground, is_emergency, is_seq_interpolating, reset_emergency_flag, eefm_use_force_difference_control, eefm_use_swing_damping, initial_cp_too_large_error, use_limb_stretch_avoidance;
+  bool is_legged_robot, on_ground, is_emergency, is_seq_interpolating,
+      reset_emergency_flag, eefm_use_force_difference_control,
+      eefm_use_swing_damping, initial_cp_too_large_error,
+      use_limb_stretch_avoidance;
   bool is_walking, is_estop_while_walking;
   hrp::Vector3 current_root_p, target_root_p;
-  hrp::Matrix33 current_root_R, target_root_R, prev_act_foot_origin_rot, prev_ref_foot_origin_rot, target_foot_origin_rot, ref_foot_origin_rot;
-  std::vector <hrp::Vector3> target_ee_p, rel_ee_pos, act_ee_p, projected_normal, act_force, ref_force, ref_moment;
-  std::vector <hrp::Matrix33> target_ee_R, rel_ee_rot, act_ee_R;
+  hrp::Matrix33 current_root_R, target_root_R, prev_act_foot_origin_rot,
+      prev_ref_foot_origin_rot, target_foot_origin_rot, ref_foot_origin_rot;
+  std::vector<hrp::Vector3> target_ee_p, rel_ee_pos, act_ee_p, projected_normal,
+      act_force, ref_force, ref_moment;
+  std::vector<hrp::Matrix33> target_ee_R, rel_ee_rot, act_ee_R;
   std::vector<std::string> rel_ee_name;
   rats::coordinates target_foot_midcoords;
-  hrp::Vector3 ref_zmp, ref_cog, ref_cp, ref_cogvel, rel_ref_cp, prev_ref_cog, prev_ref_zmp;
-  hrp::Vector3 act_zmp, act_cog, act_cogvel, act_cp, rel_act_zmp, rel_act_cp, prev_act_cog, act_base_rpy, current_base_rpy, current_base_pos, sbp_cog_offset, cp_offset, diff_cp;
+  hrp::Vector3 ref_zmp, ref_cog, ref_cp, ref_cogvel, rel_ref_cp, prev_ref_cog,
+      prev_ref_zmp;
+  hrp::Vector3 act_zmp, act_cog, act_cogvel, act_cp, rel_act_zmp, rel_act_cp,
+      prev_act_cog, act_base_rpy, current_base_rpy, current_base_pos,
+      sbp_cog_offset, cp_offset, diff_cp;
   hrp::Vector3 foot_origin_offset[2];
   std::vector<double> prev_act_force_z;
-  double zmp_origin_off, transition_smooth_gain, d_pos_z_root, limb_stretch_avoidance_time_const, limb_stretch_avoidance_vlimit[2], root_rot_compensation_limit[2];
+  double zmp_origin_off, transition_smooth_gain, d_pos_z_root,
+      limb_stretch_avoidance_time_const, limb_stretch_avoidance_vlimit[2],
+      root_rot_compensation_limit[2];
   boost::shared_ptr<FirstOrderLowPassFilter<hrp::Vector3> > act_cogvel_filter;
   OpenHRP::StabilizerService::STAlgorithm st_algorithm;
   SimpleZMPDistributor* szd;
@@ -316,27 +361,30 @@ class Stabilizer
   // RUN ST
   TwoDofController m_tau_x[2], m_tau_y[2], m_f_z;
   hrp::Vector3 pdr;
-  double m_torque_k[2], m_torque_d[2]; // 3D-LIP parameters (0: x, 1: y)
+  double m_torque_k[2], m_torque_d[2];  // 3D-LIP parameters (0: x, 1: y)
   double pangx_ref, pangy_ref, pangx, pangy;
   double k_run_b[2], d_run_b[2];
   double rdx, rdy, rx, ry;
   // EEFM ST
-  double eefm_k1[2], eefm_k2[2], eefm_k3[2], eefm_zmp_delay_time_const[2], eefm_body_attitude_control_gain[2], eefm_body_attitude_control_time_const[2];
-  double eefm_pos_time_const_swing, eefm_pos_transition_time, eefm_pos_margin_time, eefm_gravitational_acceleration;
-  std::vector<double> eefm_swing_damping_force_thre, eefm_swing_damping_moment_thre;
+  double eefm_k1[2], eefm_k2[2], eefm_k3[2], eefm_zmp_delay_time_const[2],
+      eefm_body_attitude_control_gain[2],
+      eefm_body_attitude_control_time_const[2];
+  double eefm_pos_time_const_swing, eefm_pos_transition_time,
+      eefm_pos_margin_time, eefm_gravitational_acceleration;
+  std::vector<double> eefm_swing_damping_force_thre,
+      eefm_swing_damping_moment_thre;
   hrp::Vector3 new_refzmp, rel_cog, ref_zmp_aux, diff_foot_origin_ext_moment;
   hrp::Vector3 pos_ctrl;
   hrp::Vector3 ref_total_force, ref_total_moment;
   hrp::Vector3 eefm_swing_pos_damping_gain, eefm_swing_rot_damping_gain;
-  double total_mass, transition_time, cop_check_margin, contact_decision_threshold;
+  double total_mass, transition_time, cop_check_margin,
+      contact_decision_threshold;
   std::vector<double> cp_check_margin, tilt_margin;
   OpenHRP::StabilizerService::EmergencyCheckMode emergency_check_mode;
 };
 
-
-extern "C"
-{
-  void StabilizerInit(RTC::Manager* manager);
+extern "C" {
+void StabilizerInit(RTC::Manager* manager);
 };
 
-#endif // STABILIZER_COMPONENT_H
+#endif  // STABILIZER_COMPONENT_H

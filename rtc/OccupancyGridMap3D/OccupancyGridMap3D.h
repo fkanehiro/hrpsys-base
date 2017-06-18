@@ -20,10 +20,9 @@
 #include <rtm/DataOutPort.h>
 #include <rtm/idl/BasicDataTypeSkel.h>
 
-namespace octomap{
-    class OcTree;
+namespace octomap {
+class OcTree;
 };
-
 
 // Service implementation headers
 // <rtc-template block="service_impl_h">
@@ -40,11 +39,10 @@ namespace octomap{
 using namespace RTC;
 
 /**
-   \brief sample RT component which has one data input port and one data output port
+   \brief sample RT component which has one data input port and one data output
+   port
  */
-class OccupancyGridMap3D
-  : public RTC::DataFlowComponentBase
-{
+class OccupancyGridMap3D : public RTC::DataFlowComponentBase {
  public:
   /**
      \brief Constructor
@@ -105,20 +103,20 @@ class OccupancyGridMap3D
   // virtual RTC::ReturnCode_t onRateChanged(RTC::UniqueId ec_id);
 
   OpenHRP::OGMap3D* getOGMap3D(const OpenHRP::AABB& region);
-  void save(const char *filename);
+  void save(const char* filename);
   void clear();
 
  protected:
   // Configuration variable declaration
   // <rtc-template block="config_declare">
-  
+
   // </rtc-template>
 
   PointCloudTypes::PointCloud m_cloud;
   TimedPose3D m_pose;
   TimedPoint3D m_sensorPos;
   TimedLong m_update;
-  RangeData m_range;  
+  RangeData m_range;
 
   // DataInPort declaration
   // <rtc-template block="inport_declare">
@@ -127,7 +125,7 @@ class OccupancyGridMap3D
   InPort<TimedPose3D> m_poseIn;
   InPort<TimedPoint3D> m_sensorPosIn;
   InPort<TimedLong> m_updateIn;
-  
+
   // </rtc-template>
 
   TimedLong m_updateSignal;
@@ -135,24 +133,24 @@ class OccupancyGridMap3D
   // DataOutPort declaration
   // <rtc-template block="outport_declare">
   OutPort<TimedLong> m_updateOut;
-  
+
   // </rtc-template>
 
   // CORBA Port declaration
   // <rtc-template block="corbaport_declare">
   RTC::CorbaPort m_OGMap3DServicePort;
-  
+
   // </rtc-template>
 
   // Service declaration
   // <rtc-template block="service_declare">
   OGMap3DService_impl m_service0;
-  
+
   // </rtc-template>
 
   // Consumer declaration
   // <rtc-template block="consumer_declare">
-  
+
   // </rtc-template>
 
  private:
@@ -166,10 +164,8 @@ class OccupancyGridMap3D
   int dummy;
 };
 
-
-extern "C"
-{
-  void OccupancyGridMap3DInit(RTC::Manager* manager);
+extern "C" {
+void OccupancyGridMap3DInit(RTC::Manager* manager);
 };
 
-#endif // NULL_COMPONENT_H
+#endif  // NULL_COMPONENT_H

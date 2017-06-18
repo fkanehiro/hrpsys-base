@@ -4,23 +4,22 @@
 
 #include "hrpsys/idl/NullService.hh"
 
-class NullService_impl
-	: public virtual POA_OpenHRP::NullService,
-	  public virtual PortableServer::RefCountServantBase
-{
-public:
-	/**
-	   \brief constructor
-	*/
-	NullService_impl();
+class NullService_impl : public virtual POA_OpenHRP::NullService,
+                         public virtual PortableServer::RefCountServantBase {
+ public:
+  /**
+     \brief constructor
+  */
+  NullService_impl();
 
-	/**
-	   \brief destructor
-	*/
-	virtual ~NullService_impl();
+  /**
+     \brief destructor
+  */
+  virtual ~NullService_impl();
 
-	void echo(const char *msg);
-private:
+  void echo(const char *msg);
+
+ private:
 };
 
 #endif

@@ -8,10 +8,9 @@ using namespace OpenHRP;
 
 class DataLogger;
 class DataLoggerService_impl
-  : public virtual POA_OpenHRP::DataLoggerService,
-    public virtual PortableServer::RefCountServantBase
-{
-public:
+    : public virtual POA_OpenHRP::DataLoggerService,
+      public virtual PortableServer::RefCountServantBase {
+ public:
   DataLoggerService_impl();
   virtual ~DataLoggerService_impl();
 
@@ -21,7 +20,8 @@ public:
   CORBA::Boolean save(const char *basename);
   CORBA::Boolean clear();
   void maxLength(CORBA::ULong len);
-private:
+
+ private:
   DataLogger *m_logger;
 };
 

@@ -32,11 +32,10 @@
 using namespace RTC;
 
 /**
-   \brief sample RT component which has one data input port and one data output port
+   \brief sample RT component which has one data input port and one data output
+   port
  */
-class RangeNoiseMixer
-  : public RTC::DataFlowComponentBase
-{
+class RangeNoiseMixer : public RTC::DataFlowComponentBase {
  public:
   /**
      \brief Constructor
@@ -96,40 +95,39 @@ class RangeNoiseMixer
   // no corresponding operation exists in OpenRTm-aist-0.2.0
   // virtual RTC::ReturnCode_t onRateChanged(RTC::UniqueId ec_id);
 
-
  protected:
   // Configuration variable declaration
   // <rtc-template block="config_declare">
-  
+
   // </rtc-template>
 
-  RangeData m_range;  
+  RangeData m_range;
 
   // DataInPort declaration
   // <rtc-template block="inport_declare">
   InPort<RangeData> m_rangeIn;
-  
+
   // </rtc-template>
 
   // DataOutPort declaration
   // <rtc-template block="outport_declare">
   OutPort<RangeData> m_rangeOut;
-  
+
   // </rtc-template>
 
   // CORBA Port declaration
   // <rtc-template block="corbaport_declare">
-  
+
   // </rtc-template>
 
   // Service declaration
   // <rtc-template block="service_declare">
-  
+
   // </rtc-template>
 
   // Consumer declaration
   // <rtc-template block="consumer_declare">
-  
+
   // </rtc-template>
 
  private:
@@ -137,10 +135,8 @@ class RangeNoiseMixer
   int dummy;
 };
 
-
-extern "C"
-{
-  void RangeNoiseMixerInit(RTC::Manager* manager);
+extern "C" {
+void RangeNoiseMixerInit(RTC::Manager* manager);
 };
 
-#endif // RANGE_NOISE_MIXER_H
+#endif  // RANGE_NOISE_MIXER_H
