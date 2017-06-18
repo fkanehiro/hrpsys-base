@@ -11,6 +11,13 @@ notifications:
   # TEST_TYPE:
   #        1 : Check if this PR works with current downstream package
   #        2 : Check if this PR works with 315.1.10
+addons:
+  apt:
+    sources:
+    - ubuntu-toolchain-r-test
+    - llvm-toolchain-precise-3.7
+    packages:
+    - clang-format-3.7
 env:
   global:
     - secure: "ESSo9YL0lUB0nnlFIL1vV7zpOyZjgTign4IZR735laiylPjOLKW4BkP9JxT5alA9ip72qbpDKI192Ed3sSkWjjQxhM+/HIjtyOy5/F6U5wfvxWudorJeF4zCy4OBD7Bp9JWqucAkRmd5Qe3Djaih69rAK31IFeNhQ2Ebz6RWVGk="
