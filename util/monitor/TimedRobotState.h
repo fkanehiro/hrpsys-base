@@ -4,12 +4,10 @@
 #include "hrpsys/idl/RobotHardwareService.hh"
 #include "hrpsys/idl/StateHolderService.hh"
 
-typedef struct
-{
-    double time;
-    OpenHRP::StateHolderService::Command command;
-    OpenHRP::RobotHardwareService::RobotState state;
+typedef struct {
+  double time;
+  OpenHRP::StateHolderService::Command command;
+  OpenHRP::RobotHardwareService::RobotState state;
 } TimedRobotState;
 
 #endif
-

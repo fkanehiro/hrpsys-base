@@ -6,11 +6,9 @@
 
 class OccupancyGridMap3D;
 
-class OGMap3DService_impl
-  : public virtual POA_OpenHRP::OGMap3DService,
-    public virtual PortableServer::RefCountServantBase
-{
-public:
+class OGMap3DService_impl : public virtual POA_OpenHRP::OGMap3DService,
+                            public virtual PortableServer::RefCountServantBase {
+ public:
   /**
      \brief constructor
   */
@@ -21,11 +19,11 @@ public:
   */
   virtual ~OGMap3DService_impl();
 
-  OpenHRP::OGMap3D* getOGMap3D(const OpenHRP::AABB& region);
+  OpenHRP::OGMap3D *getOGMap3D(const OpenHRP::AABB &region);
   void save(const char *filename);
   void clear();
 
-private:
+ private:
   OccupancyGridMap3D *m_comp;
 };
 

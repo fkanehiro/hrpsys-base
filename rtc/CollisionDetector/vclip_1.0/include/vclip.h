@@ -33,8 +33,6 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-
-
 #ifndef VCLIP_H
 #define VCLIP_H
 
@@ -54,9 +52,8 @@ namespace Vclip {
 // constants
 ///////////////////////////////////////////////////////////////////////////////
 
-
-#define VF_NAME_SZ  15   // max # of chars in a Face or Vertex name (incl. \0)
-#define PTREE_NAME_SZ 80 // max # of chars in a PolyTree name (including \0)
+#define VF_NAME_SZ 15     // max # of chars in a Face or Vertex name (incl. \0)
+#define PTREE_NAME_SZ 80  // max # of chars in a PolyTree name (including \0)
 
 typedef char VertFaceName[VF_NAME_SZ];
 
@@ -65,47 +62,50 @@ typedef char VertFaceName[VF_NAME_SZ];
 // limit at runtime won't break anything.
 #define MAX_VERTS_PER_FACE 100
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // data structures
 ///////////////////////////////////////////////////////////////////////////////
 
-template<class T>
+template <class T>
 class Handle {
   T *ptr;
-public:
-  void set(T *p) {ptr = p;}
-  Handle() {ptr = NULL;}
-  Handle(T *p) {set(p);}
-  ~Handle() {delete ptr;}
-  T* operator->() {return ptr;}
-  T& operator*() {return *ptr;}
-  const T* operator->() const {return ptr;}
-  const T& operator*() const {return *ptr;}
+
+ public:
+  void set(T *p) { ptr = p; }
+  Handle() { ptr = NULL; }
+  Handle(T *p) { set(p); }
+  ~Handle() { delete ptr; }
+  T *operator->() { return ptr; }
+  T &operator*() { return *ptr; }
+  const T *operator->() const { return ptr; }
+  const T &operator*() const { return *ptr; }
 };
 
-
-template<class T>
+template <class T>
 class ShareHandle {
   T *ptr;
-public:
-  void set(T *p) {ptr = p; p->handleCount++;}
-  ShareHandle() {ptr = NULL;}
-  ShareHandle(T *p) {set(p);}
-  ShareHandle(const ShareHandle &orig) {set(orig.ptr);}
-  ~ShareHandle() {if (ptr && --ptr->handleCount == 0) delete ptr;}
+
+ public:
+  void set(T *p) {
+    ptr = p;
+    p->handleCount++;
+  }
+  ShareHandle() { ptr = NULL; }
+  ShareHandle(T *p) { set(p); }
+  ShareHandle(const ShareHandle &orig) { set(orig.ptr); }
+  ~ShareHandle() {
+    if (ptr && --ptr->handleCount == 0) delete ptr;
+  }
   ShareHandle &operator=(const ShareHandle &orig) {
     if (ptr && --ptr->handleCount == 0) delete ptr;
     set(orig.ptr);
     return *this;
   };
-  T *operator->() {return ptr;}
-  T &operator*() {return *ptr;}
-  const T* operator->() const {return ptr;}
-  const T& operator*() const {return *ptr;}
+  T *operator->() { return ptr; }
+  T &operator*() { return *ptr; }
+  const T *operator->() const { return ptr; }
+  const T &operator*() const { return *ptr; }
 };
-
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // Extensions to SGI's standard library
@@ -118,13 +118,12 @@ public:
 //   ...
 //   num = otherNum;  // error!
 //   ...
-// } 
+// }
 
-#ifndef FOR_EACH 
+#ifndef FOR_EACH
 #define FOR_EACH(list, iterator) \
-  for(iterator = (list).begin(); iterator != (list).end(); ++iterator)
+  for (iterator = (list).begin(); iterator != (list).end(); ++iterator)
 #endif
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // typedef VclipPose
@@ -145,7 +144,7 @@ public:
 // Xr1r2 passed to PolyTree::vclip().
 
 // define as 1 for MatX pose representation and 0 for Se3 pose
-// representation.  
+// representation.
 #define VCLIP_MATRIX_POSE 0
 
 #if VCLIP_MATRIX_POSE
@@ -154,112 +153,96 @@ typedef MatX VclipPose;
 typedef Se3 VclipPose;
 #endif
 
-
 // used in V-Clip to cache transforme geometry
 struct XformedGeom {
   const class Feature *feat;
-  Vect3 coords;  
+  Vect3 coords;
   Vect3 tail;
   Vect3 head;
   Vect3 seg;
 };
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // class Plane
 ///////////////////////////////////////////////////////////////////////////////
 
-
 class Plane {
-
-  Vect3 normal_;   // plane = { p | < p , normal_ > + offset_ = 0 }
+  Vect3 normal_;  // plane = { p | < p , normal_ > + offset_ = 0 }
   Real offset_;
 
-public:
+ public:
+  const Vect3 &normal() const { return normal_; }
+  const Real &offset() const { return offset_; }
 
-  const Vect3 &normal() const {return normal_;}
-  const Real  &offset() const {return offset_;}
-
-  void set(const Vect3 &normal, const Vect3 &thruPoint)
-    {normal_ = normal; offset_ = - Vect3::dot(thruPoint, normal);}
+  void set(const Vect3 &normal, const Vect3 &thruPoint) {
+    normal_ = normal;
+    offset_ = -Vect3::dot(thruPoint, normal);
+  }
 
   // Compute signed distance from point to plane; assumes unit length normal_
-  Real dist(const Vect3 &point) const 
-    {return Vect3::dot(normal_, point) + offset_;}
+  Real dist(const Vect3 &point) const {
+    return Vect3::dot(normal_, point) + offset_;
+  }
 
-  ostream& print(ostream &os) const;
+  ostream &print(ostream &os) const;
 };
-
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // struct VertConeNode & FaceConeNode
 ///////////////////////////////////////////////////////////////////////////////
 
-
-struct VertConeNode
-{
+struct VertConeNode {
   const Plane *plane;
-  class Edge *nbr;     // neighboring edge when plane violated
+  class Edge *nbr;  // neighboring edge when plane violated
 
-  ostream& print(ostream &os) const;
-
+  ostream &print(ostream &os) const;
 };
 
-
-struct FaceConeNode
-{
+struct FaceConeNode {
   const Plane *plane;
-  const class Edge *nbr;     // neighboring edge when plane violated
+  const class Edge *nbr;  // neighboring edge when plane violated
 
   const FaceConeNode *ccw, *cw;
   int idx;  // ranges from 0 to n-1, where n = number of edges on face
 
-  ostream& print(ostream &os) const;
-
+  ostream &print(ostream &os) const;
 };
-
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // class Feature
 ///////////////////////////////////////////////////////////////////////////////
 
 class Feature {
+ public:
+  enum Type { VERTEX, EDGE, FACE };
 
-public:
-  enum Type {VERTEX, EDGE, FACE};
-
-protected:
+ protected:
   Type type_;
 
-public:
-  Type type() const {return type_;}
+ public:
+  Type type() const { return type_; }
   virtual const char *name() const = 0;
 };
-
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // closest feature pairs and hash table
 ///////////////////////////////////////////////////////////////////////////////
 
-struct PolyTreePair
-{
+struct PolyTreePair {
   const class PolyTree *first, *second;
 };
 
-inline int operator==(const PolyTreePair &ptree1, const PolyTreePair &ptree2)
-{return ptree1.first == ptree2.first && ptree1.second == ptree2.second;}
+inline int operator==(const PolyTreePair &ptree1, const PolyTreePair &ptree2) {
+  return ptree1.first == ptree2.first && ptree1.second == ptree2.second;
+}
 
-inline int operator<(const PolyTreePair &ptree1, const PolyTreePair &ptree2)
-{return ptree1 < ptree2;}
+inline int operator<(const PolyTreePair &ptree1, const PolyTreePair &ptree2) {
+  return ptree1 < ptree2;
+}
 
-
-struct FeaturePair
-{
-  const Feature  *first, *second;
-  FeaturePair() {first = second = NULL;}
+struct FeaturePair {
+  const Feature *first, *second;
+  FeaturePair() { first = second = NULL; }
 };
 
 #if 0
@@ -271,17 +254,13 @@ struct PolyTreePairHasher : unary_function<PolyTreePair, size_t> {
 };
 #endif
 
-typedef
-std::map<PolyTreePair, FeaturePair>
-ClosestFeaturesHT;
+typedef std::map<PolyTreePair, FeaturePair> ClosestFeaturesHT;
 
 ///////////////////////////////////////////////////////////////////////////////
 // class Vertex
 ///////////////////////////////////////////////////////////////////////////////
 
-
-class Vertex : private Feature
-{
+class Vertex : private Feature {
   friend class Polyhedron;
   friend class PolyTree;
 
@@ -289,22 +268,17 @@ class Vertex : private Feature
   list<VertConeNode> cone;
   VertFaceName name_;
 
-public:
-  Vertex() {type_ = VERTEX;}
+ public:
+  Vertex() { type_ = VERTEX; }
   const char *name() const;
-  const Vect3 &coords() const {return coords_;}
-
+  const Vect3 &coords() const { return coords_; }
 };
-
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // class Edge
 ///////////////////////////////////////////////////////////////////////////////
 
-
-class Edge : private Feature
-{
+class Edge : private Feature {
   friend class Polyhedron;
   friend class PolyTree;
 
@@ -314,111 +288,98 @@ class Edge : private Feature
   Vect3 dir;
   Plane tplane, hplane, lplane, rplane;
 
-  Edge() {type_ = EDGE;}
+  Edge() { type_ = EDGE; }
 
-public:
+ public:
   const char *name() const;
-
 };
-
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // class Face
 ///////////////////////////////////////////////////////////////////////////////
 
-
-class Face : private Feature
-{
+class Face : private Feature {
   friend class Polyhedron;
   friend class PolyTree;
 
-  int sides;     // number of edges around boundary
+  int sides;  // number of edges around boundary
   Plane plane;
   list<FaceConeNode> cone;
   VertFaceName name_;
 
-  Face() {type_ = FACE;}
+  Face() { type_ = FACE; }
 
-public:
+ public:
   const char *name() const;
-
 };
-
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // class Polyhedron
 ///////////////////////////////////////////////////////////////////////////////
 
-
-class Polyhedron
-{
+class Polyhedron {
   friend class PolyTree;
   friend class ShareHandle<Polyhedron>;
 
   int handleCount;  // number of PolyTrees pointing to thie Polyhedron
 
   list<Vertex> verts_;
-  list<Edge  > edges_;
-  list<Face  > faces_;
+  list<Edge> edges_;
+  list<Face> faces_;
 
   void processEdge(Face *f, Vertex *tail, Vertex *head);
 
-  static int vertVertTest(const Feature *&v1, const Feature *&v2, 
-			  XformedGeom &xv1, XformedGeom &xv2,
-			  const VclipPose &X12, const VclipPose &X21,
-			  Vect3 &cp1, Vect3 &cp2, Real &dist);
+  static int vertVertTest(const Feature *&v1, const Feature *&v2,
+                          XformedGeom &xv1, XformedGeom &xv2,
+                          const VclipPose &X12, const VclipPose &X21,
+                          Vect3 &cp1, Vect3 &cp2, Real &dist);
 
   static int vertFaceTest(const Feature *&v, const Feature *&f, XformedGeom &xv,
-			  const VclipPose &Xvf, const list<Face> &allFaces,
-			  Vect3 &cpv, Vect3 &cpf, Real &dist);
+                          const VclipPose &Xvf, const list<Face> &allFaces,
+                          Vect3 &cpv, Vect3 &cpf, Real &dist);
 
-  static int vertEdgeTest(const Feature *&v, const Feature *&e, 
-			  XformedGeom &xv, XformedGeom &xe,
-			  const VclipPose &Xve, const VclipPose &Xev,
-			  Vect3 &cpv, Vect3 &cpe, Real &dist);
+  static int vertEdgeTest(const Feature *&v, const Feature *&e, XformedGeom &xv,
+                          XformedGeom &xe, const VclipPose &Xve,
+                          const VclipPose &Xev, Vect3 &cpv, Vect3 &cpe,
+                          Real &dist);
 
   static int edgeEdgeSubtest(const Feature *&e, XformedGeom &xe, Vect3 &cp);
 
-  static int edgeEdgeTest(const Feature *&e1, const Feature *&e2, 
-			  XformedGeom &xe1, XformedGeom &xe2,
-			  const VclipPose &X12, const VclipPose &X21,
-			  Vect3 &cp1, Vect3 &cp2, Real &dist);
+  static int edgeEdgeTest(const Feature *&e1, const Feature *&e2,
+                          XformedGeom &xe1, XformedGeom &xe2,
+                          const VclipPose &X12, const VclipPose &X21,
+                          Vect3 &cp1, Vect3 &cp2, Real &dist);
 
-  static int edgeFaceTest(const Feature *&e, const Feature *&f, 
-			  XformedGeom &xe, const VclipPose &Xef, 
-			  Vect3 &cpe, Vect3 &cpf, Real &dist);
+  static int edgeFaceTest(const Feature *&e, const Feature *&f, XformedGeom &xe,
+                          const VclipPose &Xef, Vect3 &cpe, Vect3 &cpf,
+                          Real &dist);
 
-  public: static Real vclip(const Polyhedron *const poly1,
-		    const Polyhedron *const poly2, 
-		    const VclipPose &X12, const VclipPose &X21, 
-		    const Feature *&feat1, const Feature *&feat2,
-		    Vect3 &cp1, Vect3 &cp2, int oneStep = 0);
+ public:
+  static Real vclip(const Polyhedron *const poly1,
+                    const Polyhedron *const poly2, const VclipPose &X12,
+                    const VclipPose &X21, const Feature *&feat1,
+                    const Feature *&feat2, Vect3 &cp1, Vect3 &cp2,
+                    int oneStep = 0);
 
 #if INVENTOR
   SoShapeKit *buildInvModel() const;
 #endif
 
-public:
-
-  Polyhedron() {handleCount = 0;}
+ public:
+  Polyhedron() { handleCount = 0; }
 
   // construction
   inline Vertex *addVertex(const char *name, const Vect3 &coords);
-  void addFace(const char *name, 
-			   vector<Vertex *> &verts, int clockwise = 0);
+  void addFace(const char *name, vector<Vertex *> &verts, int clockwise = 0);
   int buildHull();
   int check() const;
 
   // examination
-  ostream& print(ostream &os) const;
-  const list<Vertex> &verts() const {return verts_;}
-  const list<Edge  > &edges() const {return edges_;}
-  const list<Face  > &faces() const {return faces_;}
+  ostream &print(ostream &os) const;
+  const list<Vertex> &verts() const { return verts_; }
+  const list<Edge> &edges() const { return edges_; }
+  const list<Face> &faces() const { return faces_; }
 };
-
-
 
 ///////////////////////////////////////////////////////////////////////////////
 //  class PolyTree
@@ -448,24 +409,21 @@ public:
 // replication approach saves time because the Tpm's can be
 // precomputed.
 
-class PolyTree 
-{
-
+class PolyTree {
   friend class PolyTreeLibrary;
 
   // Pointer to a Polyhedron.  For an atomic PolyTree, this is the
   // geometry of the PolyTree itself; for a compound PolyTree, this is
   // the geometry of the convex hull.
-  ShareHandle<Polyhedron> poly_;   
+  ShareHandle<Polyhedron> poly_;
 
   // Volume integrals, relative to this PolyTree's reference frame
-  Real vol_;   // volume:                                vol    = int(dV)
-  Vect3 mov1_; // 1st moment of volume:                  mov1.x = int(x dV)
-  Vect3 mov2_; // undiagonalized 2nd moment of volume:   mov2.x = int(x^2 dV)
-  Vect3 pov_;  // product of volume:                     pov.x  = int(yz dV)
+  Real vol_;    // volume:                                vol    = int(dV)
+  Vect3 mov1_;  // 1st moment of volume:                  mov1.x = int(x dV)
+  Vect3 mov2_;  // undiagonalized 2nd moment of volume:   mov2.x = int(x^2 dV)
+  Vect3 pov_;   // product of volume:                     pov.x  = int(yz dV)
 
-  Real rad_;   // "radius" of PolyTree, relative to center of volume
-
+  Real rad_;  // "radius" of PolyTree, relative to center of volume
 
   // An entire PolyTree shares a common reference frame (r).  Tpr_ and
   // Trp_ are the transformations between each PolyTree's local frame
@@ -483,142 +441,137 @@ class PolyTree
   Se3 Tpr_, Trp_;
   MatX Xpr_, Xrp_;
 
-  list< Handle<PolyTree> > components;  // children in convex decomp'n, if any
+  list<Handle<PolyTree> > components;  // children in convex decomp'n, if any
 
-public:
+ public:
   char name[PTREE_NAME_SZ];
-  
-private:
 
+ private:
   void printRecur(ostream &os, int level) const;
 
   // copy constructor (perform a deep copy of this)
   PolyTree(const PolyTree &orig);
 
-public:
-
+ public:
   PolyTree();
 
   // construction
-  void setPoly(Polyhedron *p) {poly_ = ShareHandle<Polyhedron>(p);}
-  void addComponent(PolyTree *comp)
-    {Handle<PolyTree> h(comp); components.push_back(h); h.set(NULL);}
+  void setPoly(Polyhedron *p) { poly_ = ShareHandle<Polyhedron>(p); }
+  void addComponent(PolyTree *comp) {
+    Handle<PolyTree> h(comp);
+    components.push_back(h);
+    h.set(NULL);
+  }
   int buildHull();
   void xform(const Se3 &T);
 
   // examination
-  const Polyhedron  *poly() const {return &*poly_;}
+  const Polyhedron *poly() const { return &*poly_; }
   int numNodes() const;
   int numLeaves() const;
-  ostream& print(ostream &os) const;
-  const Se3   &Tpr()  const {return Tpr_;}
+  ostream &print(ostream &os) const;
+  const Se3 &Tpr() const { return Tpr_; }
 #if INVENTOR
   SoNode *buildInvModel() const;
 #endif
 
   // volume integrals
   void compVolInts();
-  const Real  &vol()  const {return vol_;}
-  const Vect3 &mov1() const {return mov1_;}
-  const Vect3 &mov2() const {return mov2_;}
-  const Vect3 &pov()  const {return pov_;}
-  const Real  &rad()  const {return rad_;}
+  const Real &vol() const { return vol_; }
+  const Vect3 &mov1() const { return mov1_; }
+  const Vect3 &mov2() const { return mov2_; }
+  const Vect3 &pov() const { return pov_; }
+  const Real &rad() const { return rad_; }
 
   // V-Clip
-private:
-  static Real vclip_(
-		     const PolyTree *const ptree1, const PolyTree *const ptree2,
-		     const VclipPose &Xr1r2, const VclipPose &Xr2r1,
-		     ClosestFeaturesHT &ht,
-		     Vect3 &cp1, Vect3 &cp2);
-public:
+ private:
+  static Real vclip_(const PolyTree *const ptree1, const PolyTree *const ptree2,
+                     const VclipPose &Xr1r2, const VclipPose &Xr2r1,
+                     ClosestFeaturesHT &ht, Vect3 &cp1, Vect3 &cp2);
 
+ public:
   // Application callpoint for V-Clip.  Xr1r2 is the transformation
   // from the reference frame of ptree1 to the reference frame of
   // ptree2.  Cp1 and cp2 are also returned in these frames.
-  inline static Real vclip(const PolyTree *const ptree1, 
-			   const PolyTree *const ptree2,
-			   const VclipPose &Xr1r2, 
-			   ClosestFeaturesHT &ht,
-			   Vect3 &cp1, Vect3 &cp2)
-    {
-      VclipPose Xr2r1;
-      Xr2r1.invert(Xr1r2);
-      return vclip_(ptree1, ptree2, Xr1r2, Xr2r1, ht, cp1, cp2);
-    }
+  inline static Real vclip(const PolyTree *const ptree1,
+                           const PolyTree *const ptree2, const VclipPose &Xr1r2,
+                           ClosestFeaturesHT &ht, Vect3 &cp1, Vect3 &cp2) {
+    VclipPose Xr2r1;
+    Xr2r1.invert(Xr1r2);
+    return vclip_(ptree1, ptree2, Xr1r2, Xr2r1, ht, cp1, cp2);
+  }
 
   // V-Clip does not return closest features to the caller.  If they're
   // needed, this function returns the most recent feature pair for the
   // given PolyTrees, or NULL is no hash table entry can be found.
-  static void vclipFeatures(
-			    const PolyTree *const ptree1, 
-			    const PolyTree *const ptree2,
-			    ClosestFeaturesHT &ht,
-			    const Feature *&feat1, const Feature *&feat2);
+  static void vclipFeatures(const PolyTree *const ptree1,
+                            const PolyTree *const ptree2, ClosestFeaturesHT &ht,
+                            const Feature *&feat1, const Feature *&feat2);
 };
-
-
 
 ///////////////////////////////////////////////////////////////////////////////
 //  class PolyTreeLibrary
 ///////////////////////////////////////////////////////////////////////////////
 
+class PolyTreeLibrary {
+  list<Handle<PolyTree> > lib;
 
-class PolyTreeLibrary
-{
-  list< Handle<PolyTree> > lib;
+ public:
+  void clear() { lib.clear(); }      // clear out the library
+  int size() { return lib.size(); }  // return # of entries in lib
 
-public:
-
-  void clear() {lib.clear();}                      // clear out the library
-  int size() {return lib.size();}                  // return # of entries in lib
-
-  void add(PolyTree *pt)                           // add PolyTree to library
-    {Handle<PolyTree> h(pt); lib.push_front(h); h.set(NULL);}
+  void add(PolyTree *pt)  // add PolyTree to library
+  {
+    Handle<PolyTree> h(pt);
+    lib.push_front(h);
+    h.set(NULL);
+  }
 
   const PolyTree *lookup(const char *name) const;  // lookup by name
   const PolyTree *lookup(int i) const;             // lookup by index
-  
-  PolyTree *create(const char *name) const         // instantiate by name
-    {const PolyTree *pt; return (pt = lookup(name)) ? new PolyTree(*pt) : NULL;}
 
-  PolyTree *create(int i) const                    // instantiate by index
-    {const PolyTree *pt; return (pt = lookup(i)) ? new PolyTree(*pt) : NULL;}
+  PolyTree *create(const char *name) const  // instantiate by name
+  {
+    const PolyTree *pt;
+    return (pt = lookup(name)) ? new PolyTree(*pt) : NULL;
+  }
+
+  PolyTree *create(int i) const  // instantiate by index
+  {
+    const PolyTree *pt;
+    return (pt = lookup(i)) ? new PolyTree(*pt) : NULL;
+  }
 };
-  
 
 ///////////////////////////////////////////////////////////////////////////////
 //  stream operators
 ///////////////////////////////////////////////////////////////////////////////
 
-
-inline ostream &operator<<(ostream &os, const Plane &p) {return p.print(os);}
-inline ostream &operator<<(ostream &os, const VertConeNode &vcn) 
-  {return vcn.print(os);}
-inline ostream &operator<<(ostream &os, const FaceConeNode &fcn) 
-  {return fcn.print(os);}
-inline ostream &operator<<(ostream &os, const Polyhedron *poly)
-  {return poly->print(os);}
-inline ostream &operator<<(ostream &os, const PolyTree *pt) 
-  {return pt->print(os);}
-
-
+inline ostream &operator<<(ostream &os, const Plane &p) { return p.print(os); }
+inline ostream &operator<<(ostream &os, const VertConeNode &vcn) {
+  return vcn.print(os);
+}
+inline ostream &operator<<(ostream &os, const FaceConeNode &fcn) {
+  return fcn.print(os);
+}
+inline ostream &operator<<(ostream &os, const Polyhedron *poly) {
+  return poly->print(os);
+}
+inline ostream &operator<<(ostream &os, const PolyTree *pt) {
+  return pt->print(os);
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 //  inline methods
 ///////////////////////////////////////////////////////////////////////////////
 
-
-Vertex *Polyhedron::addVertex(const char *name, const Vect3 &coords)
-{
+Vertex *Polyhedron::addVertex(const char *name, const Vect3 &coords) {
   Vertex v;
   v.coords_ = coords;
   strcpy(v.name_, name);
   verts_.push_back(v);
   return &verts_.back();
 }
-
-
 
 ///////////////////////////////////////////////////////////////////////////////
 //  default goemetry readers

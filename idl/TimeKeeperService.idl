@@ -2,10 +2,8 @@
  * @file TimeKeeperService.idl
  * @brief Services for the time keeper interface
  */
-module OpenHRP
-{
-  interface TimeKeeperService
-  {
+module OpenHRP {
+  interface TimeKeeperService {
     /**
        @brief wait for \em tm [s]
        @param tm time to sleep[s]

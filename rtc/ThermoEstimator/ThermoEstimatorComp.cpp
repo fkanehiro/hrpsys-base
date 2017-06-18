@@ -12,15 +12,12 @@
 #include <string>
 #include "ThermoEstimator.h"
 
-
-void MyModuleInit(RTC::Manager* manager)
-{
+void MyModuleInit(RTC::Manager* manager) {
   ThermoEstimatorInit(manager);
   RTC::RtcBase* comp;
 
   // Create a component
   comp = manager->createComponent("ThermoEstimator");
-
 
   // Example
   // The following procedure is examples how handle RT-Components.
@@ -36,19 +33,17 @@ void MyModuleInit(RTC::Manager* manager)
 
   // getting port profiles
   std::cout << "Number of Ports: ";
-  std::cout << portlist->length() << std::endl << std::endl; 
-  for (CORBA::ULong i(0), n(portlist->length()); i < n; ++i)
-  {
+  std::cout << portlist->length() << std::endl << std::endl;
+  for (CORBA::ULong i(0), n(portlist->length()); i < n; ++i) {
     PortService_ptr port;
     port = (*portlist)[i];
     std::cout << "Port" << i << " (name): ";
     std::cout << port->get_port_profile()->name << std::endl;
-   
+
     RTC::PortInterfaceProfileList iflist;
     iflist = port->get_port_profile()->interfaces;
     std::cout << "---interfaces---" << std::endl;
-    for (CORBA::ULong i(0), n(iflist.length()); i < n; ++i)
-    {
+    for (CORBA::ULong i(0), n(iflist.length()); i < n; ++i) {
       std::cout << "I/F name: ";
       std::cout << iflist[i].instance_name << std::endl;
       std::cout << "I/F type: ";
@@ -65,8 +60,7 @@ void MyModuleInit(RTC::Manager* manager)
   return;
 }
 
-int main (int argc, char** argv)
-{
+int main(int argc, char** argv) {
   RTC::Manager* manager;
   manager = RTC::Manager::init(argc, argv);
 

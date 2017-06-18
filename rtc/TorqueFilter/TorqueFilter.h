@@ -38,11 +38,10 @@
 using namespace RTC;
 
 /**
-   \brief sample RT component which has one data input port and one data output port
+   \brief sample RT component which has one data input port and one data output
+   port
  */
-class TorqueFilter
-  : public RTC::DataFlowComponentBase
-{
+class TorqueFilter : public RTC::DataFlowComponentBase {
  public:
   /**
      \brief Constructor
@@ -102,11 +101,10 @@ class TorqueFilter
   // no corresponding operation exists in OpenRTm-aist-0.2.0
   // virtual RTC::ReturnCode_t onRateChanged(RTC::UniqueId ec_id);
 
-
  protected:
   // Configuration variable declaration
   // <rtc-template block="config_declare">
-  
+
   // </rtc-template>
   TimedDoubleSeq m_qCurrent;
   TimedDoubleSeq m_tauIn;
@@ -116,34 +114,33 @@ class TorqueFilter
   // <rtc-template block="inport_declare">
   InPort<TimedDoubleSeq> m_qCurrentIn;
   InPort<TimedDoubleSeq> m_tauInIn;
-  
+
   // </rtc-template>
 
   // DataOutPort declaration
   // <rtc-template block="outport_declare">
   OutPort<TimedDoubleSeq> m_tauOutOut;
-  
+
   // </rtc-template>
 
   // CORBA Port declaration
   // <rtc-template block="corbaport_declare">
-  
+
   // </rtc-template>
 
   // Service declaration
   // <rtc-template block="service_declare">
-  //RTC::CorbaPort m_TorqueFilterServicePort;
-  
+  // RTC::CorbaPort m_TorqueFilterServicePort;
+
   // </rtc-template>
 
   // Consumer declaration
   // <rtc-template block="consumer_declare">
-  //TorqueFilterService_impl m_TorqueFilterService;
-  
+  // TorqueFilterService_impl m_TorqueFilterService;
+
   // </rtc-template>
 
  private:
-
   double m_dt;
   hrp::BodyPtr m_robot;
   unsigned int m_debugLevel;
@@ -152,10 +149,8 @@ class TorqueFilter
   bool m_is_gravity_compensation;
 };
 
-
-extern "C"
-{
-  void TorqueFilterInit(RTC::Manager* manager);
+extern "C" {
+void TorqueFilterInit(RTC::Manager* manager);
 };
 
-#endif // TORQUE_FILTER_H
+#endif  // TORQUE_FILTER_H

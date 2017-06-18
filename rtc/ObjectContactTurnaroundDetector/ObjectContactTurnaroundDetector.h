@@ -35,16 +35,14 @@
 
 using namespace RTC;
 
-class ObjectContactTurnaroundDetector
-  : public RTC::DataFlowComponentBase
-{
+class ObjectContactTurnaroundDetector : public RTC::DataFlowComponentBase {
  public:
   ObjectContactTurnaroundDetector(RTC::Manager* manager);
   virtual ~ObjectContactTurnaroundDetector();
 
   // The initialize action (on CREATED->ALIVE transition)
   // formaer rtc_init_entry()
- virtual RTC::ReturnCode_t onInitialize();
+  virtual RTC::ReturnCode_t onInitialize();
 
   // The finalize action (on ALIVE->END transition)
   // formaer rtc_exiting_entry()
@@ -90,16 +88,30 @@ class ObjectContactTurnaroundDetector
   // no corresponding operation exists in OpenRTm-aist-0.2.0
   // virtual RTC::ReturnCode_t onRateChanged(RTC::UniqueId ec_id);
 
-  void startObjectContactTurnaroundDetection(const double i_ref_diff_wrench, const double i_max_time, const OpenHRP::ObjectContactTurnaroundDetectorService::StrSequence& i_ee_names);
-  OpenHRP::ObjectContactTurnaroundDetectorService::DetectorMode checkObjectContactTurnaroundDetection();
-  bool setObjectContactTurnaroundDetectorParam(const OpenHRP::ObjectContactTurnaroundDetectorService::objectContactTurnaroundDetectorParam &i_param_);
-  bool getObjectContactTurnaroundDetectorParam(OpenHRP::ObjectContactTurnaroundDetectorService::objectContactTurnaroundDetectorParam& i_param_);
-  bool getObjectForcesMoments(OpenHRP::ObjectContactTurnaroundDetectorService::Dbl3Sequence_out o_forces, OpenHRP::ObjectContactTurnaroundDetectorService::Dbl3Sequence_out o_moments, OpenHRP::ObjectContactTurnaroundDetectorService::DblSequence3_out o_3dofwrench);
+  void startObjectContactTurnaroundDetection(
+      const double i_ref_diff_wrench, const double i_max_time,
+      const OpenHRP::ObjectContactTurnaroundDetectorService::StrSequence&
+          i_ee_names);
+  OpenHRP::ObjectContactTurnaroundDetectorService::DetectorMode
+  checkObjectContactTurnaroundDetection();
+  bool setObjectContactTurnaroundDetectorParam(
+      const OpenHRP::ObjectContactTurnaroundDetectorService::
+          objectContactTurnaroundDetectorParam& i_param_);
+  bool getObjectContactTurnaroundDetectorParam(
+      OpenHRP::ObjectContactTurnaroundDetectorService::
+          objectContactTurnaroundDetectorParam& i_param_);
+  bool getObjectForcesMoments(
+      OpenHRP::ObjectContactTurnaroundDetectorService::Dbl3Sequence_out
+          o_forces,
+      OpenHRP::ObjectContactTurnaroundDetectorService::Dbl3Sequence_out
+          o_moments,
+      OpenHRP::ObjectContactTurnaroundDetectorService::DblSequence3_out
+          o_3dofwrench);
 
  protected:
   // Configuration variable declaration
   // <rtc-template block="config_declare">
-  
+
   // </rtc-template>
 
   // DataInPort declaration
@@ -107,17 +119,17 @@ class ObjectContactTurnaroundDetector
   TimedDoubleSeq m_qCurrent;
   InPort<TimedDoubleSeq> m_qCurrentIn;
   std::vector<TimedDoubleSeq> m_force;
-  std::vector<InPort<TimedDoubleSeq> *> m_forceIn;
+  std::vector<InPort<TimedDoubleSeq>*> m_forceIn;
   TimedOrientation3D m_rpy;
   InPort<TimedOrientation3D> m_rpyIn;
-  
+
   // </rtc-template>
 
   // DataOutPort declaration
   // <rtc-template block="outport_declare">
   TimedDoubleSeq m_otdData;
   OutPort<TimedDoubleSeq> m_otdDataOut;
-  
+
   // </rtc-template>
 
   // CORBA Port declaration
@@ -134,23 +146,23 @@ class ObjectContactTurnaroundDetector
 
   // Consumer declaration
   // <rtc-template block="consumer_declare">
-  
+
   // </rtc-template>
 
  private:
-
   struct ee_trans {
     std::string target_name, sensor_name;
     hrp::Vector3 localPos;
     hrp::Matrix33 localR;
   };
 
-  void updateRootLinkPosRot (TimedOrientation3D tmprpy);
-  void calcFootMidCoords (hrp::Vector3& new_foot_mid_pos, hrp::Matrix33& new_foot_mid_rot);
+  void updateRootLinkPosRot(TimedOrientation3D tmprpy);
+  void calcFootMidCoords(hrp::Vector3& new_foot_mid_pos,
+                         hrp::Matrix33& new_foot_mid_rot);
   void calcObjectContactTurnaroundDetectorState();
 
   std::map<std::string, ee_trans> ee_map;
-  boost::shared_ptr<ObjectContactTurnaroundDetectorBase > otd;
+  boost::shared_ptr<ObjectContactTurnaroundDetectorBase> otd;
   std::vector<std::string> otd_sensor_names;
   hrp::Vector3 otd_axis;
   double m_dt;
@@ -161,10 +173,8 @@ class ObjectContactTurnaroundDetector
   int loop;
 };
 
-
-extern "C"
-{
-  void ObjectContactTurnaroundDetectorInit(RTC::Manager* manager);
+extern "C" {
+void ObjectContactTurnaroundDetectorInit(RTC::Manager* manager);
 };
 
-#endif // OBJECTCONTACTTURNAROUNDDETECTOR_H
+#endif  // OBJECTCONTACTTURNAROUNDDETECTOR_H

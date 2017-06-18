@@ -31,11 +31,10 @@
 using namespace RTC;
 
 /**
-   \brief sample RT component which has one data input port and one data output port
+   \brief sample RT component which has one data input port and one data output
+   port
  */
-class HGcontroller
-  : public RTC::DataFlowComponentBase
-{
+class HGcontroller : public RTC::DataFlowComponentBase {
  public:
   /**
      \brief Constructor
@@ -95,11 +94,10 @@ class HGcontroller
   // no corresponding operation exists in OpenRTm-aist-0.2.0
   // virtual RTC::ReturnCode_t onRateChanged(RTC::UniqueId ec_id);
 
-
  protected:
   // Configuration variable declaration
   // <rtc-template block="config_declare">
-  
+
   // </rtc-template>
 
   TimedDoubleSeq m_q;
@@ -107,7 +105,7 @@ class HGcontroller
   // DataInPort declaration
   // <rtc-template block="inport_declare">
   InPort<TimedDoubleSeq> m_qIn;
-  
+
   // </rtc-template>
 
   TimedDoubleSeq m_dq, m_ddq;
@@ -117,22 +115,22 @@ class HGcontroller
   OutPort<TimedDoubleSeq> m_qOut;
   OutPort<TimedDoubleSeq> m_dqOut;
   OutPort<TimedDoubleSeq> m_ddqOut;
-  
+
   // </rtc-template>
 
   // CORBA Port declaration
   // <rtc-template block="corbaport_declare">
-  
+
   // </rtc-template>
 
   // Service declaration
   // <rtc-template block="service_declare">
-  
+
   // </rtc-template>
 
   // Consumer declaration
   // <rtc-template block="consumer_declare">
-  
+
   // </rtc-template>
 
  private:
@@ -141,10 +139,8 @@ class HGcontroller
   int dummy;
 };
 
-
-extern "C"
-{
-  void HGcontrollerInit(RTC::Manager* manager);
+extern "C" {
+void HGcontrollerInit(RTC::Manager* manager);
 };
 
-#endif // HG_CONTROLLER_H
+#endif  // HG_CONTROLLER_H

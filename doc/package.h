@@ -3,14 +3,17 @@
 
 \section intro_hrpsys Overview
 
-"hrpsys": Basic RT components and utilities to control robots using <a href=http://www.openrtm.org>%OpenRTM</a>. 
+"hrpsys": Basic RT components and utilities to control robots using <a
+href=http://www.openrtm.org>%OpenRTM</a>.
 Some notable features:
 
 <ul>
   <li>Real-time capable utilizing OS feature</li>
   <li>Rich interface for kinematic operation</li>
-    <li>Manipulator operation by the pose of end-effector (EEF linear interpolation)</li>
-    <li>Manipulation by passing the set of joint angles (joint angle interpolation)</li>
+    <li>Manipulator operation by the pose of end-effector (EEF linear
+interpolation)</li>
+    <li>Manipulation by passing the set of joint angles (joint angle
+interpolation)</li>
     <li>2 interpolation options; linear / minimum jerk</li>
     <li>Preemptive kinematic operation (canceleable and modifyable)</li>
     <li>Preemption can be disabled</li>
@@ -21,19 +24,28 @@ Some notable features:
     <li>Self interference detection plugin</li>
     <li>Servo module hand plugin</li>
   <li>Proven operational history</li>
-    <li>Development has been active over years at institutes such as the original developer <a href = "http://aist.go.jp/">AIST</a> (National Institute of Advanced Industrial Science and Technology in Japan), <a href = "http://jsk.t.u-tokyo.ac.jp/">JSK Lab at U-Tokyo</a>.</li>
+    <li>Development has been active over years at institutes such as the
+original developer <a href = "http://aist.go.jp/">AIST</a> (National Institute
+of Advanced Industrial Science and Technology in Japan), <a href =
+"http://jsk.t.u-tokyo.ac.jp/">JSK Lab at U-Tokyo</a>.</li>
     <li>Dozens of thousands of operational time</li>
     <li>Number of robots are running atop</li>
       <li>Include 4 DRC contender robots</li>
-      <li>See the incomplete list of the hrpsys-based robots <a href = "http://wiki.ros.org/hrpsys">here</a></li>
-  <li>Active development status; 73 commits during month of June 2015 made by 5 authors</li>
+      <li>See the incomplete list of the hrpsys-based robots <a href =
+"http://wiki.ros.org/hrpsys">here</a></li>
+  <li>Active development status; 73 commits during month of June 2015 made by 5
+authors</li>
 </ul>
 
 \section requirements System requirements
 
-<a href=http://www.ubuntu.com>ubuntu</a> 12.04LTS and 14.04LTS are supported. <br>
-<a href=http://www.openrtp.jp/openhrp3>%OpenHRP</a> version 3.1.5 or later is required.<br>
-To use python scripts to create RT components, connect ports and get/set properties, <a href=http://www.openrtm.org>OpenRTM-aist-python</a> is also required.<br>
+<a href=http://www.ubuntu.com>ubuntu</a> 12.04LTS and 14.04LTS are supported.
+<br>
+<a href=http://www.openrtp.jp/openhrp3>%OpenHRP</a> version 3.1.5 or later is
+required.<br>
+To use python scripts to create RT components, connect ports and get/set
+properties, <a href=http://www.openrtm.org>OpenRTM-aist-python</a> is also
+required.<br>
 
 \section contents Contents of the package
 
@@ -41,7 +53,8 @@ To use python scripts to create RT components, connect ports and get/set propert
   <li>\ref hrpsys_config.py "hrpsys python helper library"<br>
   This library helps working on hrpsys manager and plugins.</li>
   <li>\ref rtm.py "rtm python helper library"<br>
-  This library helps to create/delete and activate/deactivate RT components and connect/disconnect ports.</li>
+  This library helps to create/delete and activate/deactivate RT components and
+connect/disconnect ports.</li>
   <li>Basic RT components</li>
   <ul>
     <li>\ref AccelerationChecker</li>
@@ -140,16 +153,25 @@ To use python scripts to create RT components, connect ports and get/set propert
     <li>\ref python_binding "Python bindings"
   </ul>
   <li>\ref iob.h "IO library"<br>
-  IO library provides a standard access method to the robot hardware. A library in this package just provides its dummy implementation. To control your robot with this package, you need to implement the IO library for your robot.</li>
+  IO library provides a standard access method to the robot hardware. A library
+in this package just provides its dummy implementation. To control your robot
+with this package, you need to implement the IO library for your robot.</li>
   <li>Execution Context<br>
-  This execution context executes RT components in real-time cooperating with the IO library. <a href=http://www.dh.aist.go.jp/jp/research/humanoid/ART-Linux/>ART-Linux</a> or Preemptive Kernel of Linux can be used as a real-time OS.
+  This execution context executes RT components in real-time cooperating with
+the IO library. <a
+href=http://www.dh.aist.go.jp/jp/research/humanoid/ART-Linux/>ART-Linux</a> or
+Preemptive Kernel of Linux can be used as a real-time OS.
   </li>
   <li>Eclipse plugin<br>
-  This plugin extends GrxUI(Graphical User Interface of OpenHRP3) and enables to monitor the robot status on GrxUI communicating with RT components \ref RobotHardware and \ref StateHolder.</li>
+  This plugin extends GrxUI(Graphical User Interface of OpenHRP3) and enables to
+monitor the robot status on GrxUI communicating with RT components \ref
+RobotHardware and \ref StateHolder.</li>
 </ul>
 
 \section how_to_monitor How to monitor my robot?
 
-In order to monitor your robot using GrxUI, you need to implement IO library for your robot. Please develop a library which has interface defined in \ref iob.h and replace pre-installed libhrpIo.so with it.
+In order to monitor your robot using GrxUI, you need to implement IO library for
+your robot. Please develop a library which has interface defined in \ref iob.h
+and replace pre-installed libhrpIo.so with it.
 
 */

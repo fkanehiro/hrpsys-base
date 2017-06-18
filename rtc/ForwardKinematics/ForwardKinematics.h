@@ -33,18 +33,17 @@
 
 // </rtc-template>
 
-namespace hrp{
-    class Link;
+namespace hrp {
+class Link;
 }
 
 using namespace RTC;
 
 /**
-   \brief sample RT component which has one data input port and one data output port
+   \brief sample RT component which has one data input port and one data output
+   port
  */
-class ForwardKinematics
-  : public RTC::DataFlowComponentBase
-{
+class ForwardKinematics : public RTC::DataFlowComponentBase {
  public:
   /**
      \brief Constructor
@@ -104,15 +103,22 @@ class ForwardKinematics
   // no corresponding operation exists in OpenRTm-aist-0.2.0
   // virtual RTC::ReturnCode_t onRateChanged(RTC::UniqueId ec_id);
 
-  ::CORBA::Boolean getReferencePose(const char* linkname, RTC::TimedDoubleSeq_out pose, const char* frame_name);
-  ::CORBA::Boolean getCurrentPose(const char* linkname, RTC::TimedDoubleSeq_out pose, const char* frame_name);
-  ::CORBA::Boolean getRelativeCurrentPosition(const char* linknameFrom, const char *linknameTo, const OpenHRP::ForwardKinematicsService::position target, OpenHRP::ForwardKinematicsService::position result);
+  ::CORBA::Boolean getReferencePose(const char* linkname,
+                                    RTC::TimedDoubleSeq_out pose,
+                                    const char* frame_name);
+  ::CORBA::Boolean getCurrentPose(const char* linkname,
+                                  RTC::TimedDoubleSeq_out pose,
+                                  const char* frame_name);
+  ::CORBA::Boolean getRelativeCurrentPosition(
+      const char* linknameFrom, const char* linknameTo,
+      const OpenHRP::ForwardKinematicsService::position target,
+      OpenHRP::ForwardKinematicsService::position result);
   ::CORBA::Boolean selectBaseLink(const char* linkname);
-  
+
  protected:
   // Configuration variable declaration
   // <rtc-template block="config_declare">
-  
+
   // </rtc-template>
 
   TimedDoubleSeq m_q;
@@ -128,29 +134,29 @@ class ForwardKinematics
   InPort<TimedDoubleSeq> m_qRefIn;
   InPort<TimedPoint3D> m_basePosRefIn;
   InPort<TimedOrientation3D> m_baseRpyRefIn;
-  
+
   // </rtc-template>
 
   // DataOutPort declaration
   // <rtc-template block="outport_declare">
-  
+
   // </rtc-template>
 
   // CORBA Port declaration
   // <rtc-template block="corbaport_declare">
   RTC::CorbaPort m_ForwardKinematicsServicePort;
-  
+
   // </rtc-template>
 
   // Service declaration
   // <rtc-template block="service_declare">
   ForwardKinematicsService_impl m_service0;
-  
+
   // </rtc-template>
 
   // Consumer declaration
   // <rtc-template block="consumer_declare">
-  
+
   // </rtc-template>
 
  private:
@@ -162,10 +168,8 @@ class ForwardKinematics
   std::string m_sensorAttachedLinkName;
 };
 
-
-extern "C"
-{
-  void ForwardKinematicsInit(RTC::Manager* manager);
+extern "C" {
+void ForwardKinematicsInit(RTC::Manager* manager);
 };
 
-#endif // NULL_COMPONENT_H
+#endif  // NULL_COMPONENT_H

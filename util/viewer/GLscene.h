@@ -7,14 +7,14 @@
 
 class LogManagerBase;
 
-class GLscene : public GLsceneBase
-{
-public:
-    GLscene(LogManagerBase *i_log);
-    ~GLscene();
-private:
-    void updateScene();
-    void drawAdditionalLines();
+class GLscene : public GLsceneBase {
+ public:
+  GLscene(LogManagerBase *i_log);
+  ~GLscene();
+
+ private:
+  void updateScene();
+  void drawAdditionalLines();
 };
 
 #endif

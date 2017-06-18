@@ -32,11 +32,10 @@
 using namespace RTC;
 
 /**
-   \brief sample RT component which has one data input port and one data output port
+   \brief sample RT component which has one data input port and one data output
+   port
  */
-class SampleComponent
-  : public RTC::DataFlowComponentBase
-{
+class SampleComponent : public RTC::DataFlowComponentBase {
  public:
   /**
      \brief Constructor
@@ -101,40 +100,40 @@ class SampleComponent
  protected:
   // Configuration variable declaration
   // <rtc-template block="config_declare">
-  
+
   // </rtc-template>
 
   // DataInPort declaration
   // <rtc-template block="inport_declare">
   TimedDoubleSeq m_qCurrent;
   InPort<TimedDoubleSeq> m_qCurrentIn;
-  
+
   // </rtc-template>
 
   // DataOutPort declaration
   // <rtc-template block="outport_declare">
   TimedDoubleSeq m_q;
   OutPort<TimedDoubleSeq> m_qOut;
-  
+
   // </rtc-template>
 
   // CORBA Port declaration
   // <rtc-template block="corbaport_declare">
-  
+
   // </rtc-template>
 
   // Service declaration
   // <rtc-template block="service_declare">
   RTC::CorbaPort m_SampleComponentPort;
-  
+
   // </rtc-template>
 
   // Consumer declaration
   // <rtc-template block="consumer_declare">
   SampleComponent_impl m_service0;
-  
+
   // </rtc-template>
-    
+
  private:
   int loop;
   double offset;
@@ -142,10 +141,8 @@ class SampleComponent
   int dummy;
 };
 
-
-extern "C"
-{
-  void SampleComponentInit(RTC::Manager* manager);
+extern "C" {
+void SampleComponentInit(RTC::Manager* manager);
 };
 
-#endif // NULL_COMPONENT_H
+#endif  // NULL_COMPONENT_H

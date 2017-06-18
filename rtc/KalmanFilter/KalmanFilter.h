@@ -38,12 +38,11 @@
 using namespace RTC;
 
 /**
-   \brief sample RT component which has one data input port and one data output port
+   \brief sample RT component which has one data input port and one data output
+   port
 */
-class KalmanFilter
-  : public RTC::DataFlowComponentBase
-{
-public:
+class KalmanFilter : public RTC::DataFlowComponentBase {
+ public:
   /**
      \brief Constructor
      \param manager pointer to the Manager
@@ -101,14 +100,16 @@ public:
   // The action that is invoked when execution context's rate is changed
   // no corresponding operation exists in OpenRTm-aist-0.2.0
   // virtual RTC::ReturnCode_t onRateChanged(RTC::UniqueId ec_id);
-  bool setKalmanFilterParam(const OpenHRP::KalmanFilterService::KalmanFilterParam& i_param);
-  bool getKalmanFilterParam(OpenHRP::KalmanFilterService::KalmanFilterParam& i_param);
+  bool setKalmanFilterParam(
+      const OpenHRP::KalmanFilterService::KalmanFilterParam& i_param);
+  bool getKalmanFilterParam(
+      OpenHRP::KalmanFilterService::KalmanFilterParam& i_param);
   bool resetKalmanFilterState();
 
-protected:
+ protected:
   // Configuration variable declaration
   // <rtc-template block="config_declare">
-  
+
   // </rtc-template>
 
   TimedAngularVelocity3D m_rate;
@@ -124,8 +125,8 @@ protected:
   InPort<TimedAngularVelocity3D> m_rateIn;
   InPort<TimedAcceleration3D> m_accIn;
   InPort<TimedAcceleration3D> m_accRefIn;
-  InPort<TimedAngularVelocity3D> m_rpyIn; // for dummy usage
-  
+  InPort<TimedAngularVelocity3D> m_rpyIn;  // for dummy usage
+
   // </rtc-template>
 
   // DataOutPort declaration
@@ -136,27 +137,27 @@ protected:
   RTC::InPort<RTC::TimedDoubleSeq> m_qCurrentIn;
   RTC::TimedOrientation3D m_baseRpyCurrent;
   RTC::OutPort<RTC::TimedOrientation3D> m_baseRpyCurrentOut;
-  
+
   // </rtc-template>
 
   // CORBA Port declaration
   // <rtc-template block="corbaport_declare">
-  
+
   // </rtc-template>
 
   // Service declaration
   // <rtc-template block="service_declare">
   RTC::CorbaPort m_KalmanFilterServicePort;
-  
+
   // </rtc-template>
 
   // Consumer declaration
   // <rtc-template block="consumer_declare">
   KalmanFilterService_impl m_service0;
-  
+
   // </rtc-template>
 
-private:
+ private:
   double m_dt;
   RPYKalmanFilter rpy_kf;
   EKFilter ekf_filter;
@@ -168,10 +169,8 @@ private:
   OpenHRP::KalmanFilterService::KFAlgorithm kf_algorithm;
 };
 
-
-extern "C"
-{
-  void KalmanFilterInit(RTC::Manager* manager);
+extern "C" {
+void KalmanFilterInit(RTC::Manager* manager);
 };
 
-#endif // NULL_COMPONENT_H
+#endif  // NULL_COMPONENT_H

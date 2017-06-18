@@ -6,17 +6,19 @@
 
 class LogManagerBase;
 
-class GLscene : public GLsceneBase
-{
-public:
-    GLscene(LogManagerBase *i_log) : GLsceneBase(i_log), m_showCoMonFloor(false) {}
-    void setCollisionCheckPairs(const std::vector<hrp::ColdetLinkPairPtr> &i_pairs);
-    void showCoMonFloor(bool flag);
-private:
-    void updateScene();
-    void showStatus();
-    void drawAdditionalLines();
-    std::vector<hrp::ColdetLinkPairPtr> m_pairs;
-    bool m_showCoMonFloor;
+class GLscene : public GLsceneBase {
+ public:
+  GLscene(LogManagerBase *i_log)
+      : GLsceneBase(i_log), m_showCoMonFloor(false) {}
+  void setCollisionCheckPairs(
+      const std::vector<hrp::ColdetLinkPairPtr> &i_pairs);
+  void showCoMonFloor(bool flag);
+
+ private:
+  void updateScene();
+  void showStatus();
+  void drawAdditionalLines();
+  std::vector<hrp::ColdetLinkPairPtr> m_pairs;
+  bool m_showCoMonFloor;
 };
 #endif

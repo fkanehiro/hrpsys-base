@@ -27,85 +27,65 @@
 #define HPANEDUI_H
 #include <Vk/VkComponent.h>
 
-
 //---- Start editable code block: headers and declarations
 
-
 //---- End editable code block: headers and declarations
-
 
 // Externally defined classes referenced by this class:
 
 class SoXtExaminerViewer;
 
+class HpanedUI : public VkComponent {
+ public:
+  HpanedUI(const char *, Widget);
+  HpanedUI(const char *);
+  ~HpanedUI();
+  void create(Widget);
+  const char *className();
 
-class HpanedUI : public VkComponent
-{ 
+  //---- Start editable code block: Hpaned public
 
-  public:
+  //---- End editable code block: Hpaned public
 
-    HpanedUI ( const char *, Widget );
-    HpanedUI ( const char * );
-    ~HpanedUI();
-    void create ( Widget );
-    const char *  className();
+ protected:
+  // Classes created by this class
 
-    //---- Start editable code block: Hpaned public
+  class SoXtExaminerViewer *_viewer;
 
+  // Widgets created by this class
 
+  Widget _autoToggle;
+  Widget _bulletinBoard;
+  Widget _hpaned;
+  Widget _scale;
+  Widget _speedScale;
 
-    //---- End editable code block: Hpaned public
+  // These virtual functions are called from the private callbacks (below)
+  // Intended to be overriden in derived classes to define actions
 
+  virtual void autoToggleCB(Widget, XtPointer);
+  virtual void speedScaleCB(Widget, XtPointer);
 
-  protected:
+  //---- Start editable code block: Hpaned protected
 
+  //---- End editable code block: Hpaned protected
 
-    // Classes created by this class
+ private:
+  // Array of default resources
 
-    class SoXtExaminerViewer *_viewer;
+  static String _defaultHpanedUIResources[];
 
-    // Widgets created by this class
+  // Callbacks to interface with Motif
 
-    Widget  _autoToggle;
-    Widget  _bulletinBoard;
-    Widget  _hpaned;
-    Widget  _scale;
-    Widget  _speedScale;
+  static void autoToggleCBCallback(Widget, XtPointer, XtPointer);
+  static void speedScaleCBCallback(Widget, XtPointer, XtPointer);
 
+  //---- Start editable code block: Hpaned private
 
-    // These virtual functions are called from the private callbacks (below)
-    // Intended to be overriden in derived classes to define actions
-
-    virtual void autoToggleCB ( Widget, XtPointer );
-    virtual void speedScaleCB ( Widget, XtPointer );
-
-    //---- Start editable code block: Hpaned protected
-
-
-    //---- End editable code block: Hpaned protected
-
-
-  private: 
-
-    // Array of default resources
-
-    static String      _defaultHpanedUIResources[];
-
-
-    // Callbacks to interface with Motif
-
-    static void autoToggleCBCallback ( Widget, XtPointer, XtPointer );
-    static void speedScaleCBCallback ( Widget, XtPointer, XtPointer );
-
-    //---- Start editable code block: Hpaned private
-
-
-    //---- End editable code block: Hpaned private
+  //---- End editable code block: Hpaned private
 };
 //---- Start editable code block: End of generated code
-
 
 //---- End editable code block: End of generated code
 
 #endif
-

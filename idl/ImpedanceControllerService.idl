@@ -2,11 +2,8 @@
  * @file ImpedanceControllerService.idl
  * @brief Services for the impedance controller interface
  */
-module OpenHRP
-{
-  
-  interface ImpedanceControllerService
-  {
+module OpenHRP {
+  interface ImpedanceControllerService {
     typedef sequence<double, 3> DblSequence3;
     typedef double DblArray3[3];
     typedef sequence<double> DblSequence;
@@ -17,10 +14,7 @@ module OpenHRP
      * @enum ControllerMode
      * @brief Mode of controller
      */
-    enum ControllerMode {
-      MODE_IDLE,
-      MODE_IMP
-    };
+    enum ControllerMode { MODE_IDLE, MODE_IMP };
 
     /**
      * @struct impedanceParam
@@ -61,28 +55,32 @@ module OpenHRP
 
     /**
      * @brief start impedance controller with waiting for transition.
-     * @param name impedance controller param's name, which basically corresponds to force sensor name
+     * @param name impedance controller param's name, which basically
+     * corresponds to force sensor name
      * @return true if set successfully, false otherwise
      */
     boolean startImpedanceController(in string name);
 
     /**
      * @brief start impedance controller without waiting for transition.
-     * @param name impedance controller param's name, which basically corresponds to force sensor name
+     * @param name impedance controller param's name, which basically
+     * corresponds to force sensor name
      * @return true if set successfully, false otherwise
      */
     boolean startImpedanceControllerNoWait(in string name);
 
     /**
      * @brief stop impedance controller with waiting for transition.
-     * @param name impedance controller param's name, which basically corresponds to force sensor name
+     * @param name impedance controller param's name, which basically
+     * corresponds to force sensor name
      * @return true if set successfully, false otherwise
      */
     boolean stopImpedanceController(in string name);
 
     /**
      * @brief stop impedance controller without waiting for transition.
-     * @param name impedance controller param's name, which basically corresponds to force sensor name
+     * @param name impedance controller param's name, which basically
+     * corresponds to force sensor name
      * @return true if set successfully, false otherwise
      */
     boolean stopImpedanceControllerNoWait(in string name);
@@ -90,22 +88,27 @@ module OpenHRP
     /**
      * @brief set impedance parameters.
      * @param i_param input new impedance parameters
-     * @param name impedance controller param's name, which basically corresponds to force sensor name
+     * @param name impedance controller param's name, which basically
+     * corresponds to force sensor name
      * @return true if set successfully, false otherwise
      */
-    boolean setImpedanceControllerParam(in string name, in impedanceParam i_param);
+    boolean setImpedanceControllerParam(in string name,
+                                        in impedanceParam i_param);
 
     /**
      * @brief get impedance parameters.
      * @param i_param ouput impedance parameters
-     * @param name impedance controller param's name, which basically corresponds to force sensor name
+     * @param name impedance controller param's name, which basically
+     * corresponds to force sensor name
      * @return true if set successfully, false otherwise
      */
-    boolean getImpedanceControllerParam(in string name, out impedanceParam i_param);
+    boolean getImpedanceControllerParam(in string name,
+                                        out impedanceParam i_param);
 
     /**
      * @brief wait for impedance controller mode transition.
-     * @param name impedance controller param's name, which basically corresponds to force sensor name
+     * @param name impedance controller param's name, which basically
+     * corresponds to force sensor name
      */
     void waitImpedanceControllerTransition(in string name);
   };

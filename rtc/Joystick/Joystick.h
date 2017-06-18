@@ -41,9 +41,7 @@ using namespace RTC;
  * @brief Access a joystick control device.
  *
  */
-class Joystick
-  : public RTC::DataFlowComponentBase
-{
+class Joystick : public RTC::DataFlowComponentBase {
  public:
   /*!
    * @brief constructor
@@ -57,23 +55,23 @@ class Joystick
   virtual ~Joystick();
 
   // <rtc-template block="public_attribute">
-  
+
   // </rtc-template>
 
   // <rtc-template block="public_operation">
-  
+
   // </rtc-template>
 
   /***
    *
    * The initialize action (on CREATED->ALIVE transition)
-   * formaer rtc_init_entry() 
+   * formaer rtc_init_entry()
    *
    * @return RTC::ReturnCode_t
-   * 
-   * 
+   *
+   *
    */
-   virtual RTC::ReturnCode_t onInitialize();
+  virtual RTC::ReturnCode_t onInitialize();
 
   /***
    *
@@ -81,8 +79,8 @@ class Joystick
    * formaer rtc_exiting_entry()
    *
    * @return RTC::ReturnCode_t
-   * 
-   * 
+   *
+   *
    */
   // virtual RTC::ReturnCode_t onFinalize();
 
@@ -94,8 +92,8 @@ class Joystick
    * @param ec_id target ExecutionContext Id
    *
    * @return RTC::ReturnCode_t
-   * 
-   * 
+   *
+   *
    */
   // virtual RTC::ReturnCode_t onStartup(RTC::UniqueId ec_id);
 
@@ -107,8 +105,8 @@ class Joystick
    * @param ec_id target ExecutionContext Id
    *
    * @return RTC::ReturnCode_t
-   * 
-   * 
+   *
+   *
    */
   // virtual RTC::ReturnCode_t onShutdown(RTC::UniqueId ec_id);
 
@@ -120,8 +118,8 @@ class Joystick
    * @param ec_id target ExecutionContext Id
    *
    * @return RTC::ReturnCode_t
-   * 
-   * 
+   *
+   *
    */
   virtual RTC::ReturnCode_t onActivated(RTC::UniqueId ec_id);
 
@@ -133,8 +131,8 @@ class Joystick
    * @param ec_id target ExecutionContext Id
    *
    * @return RTC::ReturnCode_t
-   * 
-   * 
+   *
+   *
    */
   virtual RTC::ReturnCode_t onDeactivated(RTC::UniqueId ec_id);
 
@@ -146,8 +144,8 @@ class Joystick
    * @param ec_id target ExecutionContext Id
    *
    * @return RTC::ReturnCode_t
-   * 
-   * 
+   *
+   *
    */
   virtual RTC::ReturnCode_t onExecute(RTC::UniqueId ec_id);
 
@@ -159,8 +157,8 @@ class Joystick
    * @param ec_id target ExecutionContext Id
    *
    * @return RTC::ReturnCode_t
-   * 
-   * 
+   *
+   *
    */
   // virtual RTC::ReturnCode_t onAborting(RTC::UniqueId ec_id);
 
@@ -172,8 +170,8 @@ class Joystick
    * @param ec_id target ExecutionContext Id
    *
    * @return RTC::ReturnCode_t
-   * 
-   * 
+   *
+   *
    */
   // virtual RTC::ReturnCode_t onError(RTC::UniqueId ec_id);
 
@@ -185,11 +183,11 @@ class Joystick
    * @param ec_id target ExecutionContext Id
    *
    * @return RTC::ReturnCode_t
-   * 
-   * 
+   *
+   *
    */
   // virtual RTC::ReturnCode_t onReset(RTC::UniqueId ec_id);
-  
+
   /***
    *
    * The state update action that is invoked after onExecute() action
@@ -198,8 +196,8 @@ class Joystick
    * @param ec_id target ExecutionContext Id
    *
    * @return RTC::ReturnCode_t
-   * 
-   * 
+   *
+   *
    */
   // virtual RTC::ReturnCode_t onStateUpdate(RTC::UniqueId ec_id);
 
@@ -211,26 +209,24 @@ class Joystick
    * @param ec_id target ExecutionContext Id
    *
    * @return RTC::ReturnCode_t
-   * 
-   * 
+   *
+   *
    */
   // virtual RTC::ReturnCode_t onRateChanged(RTC::UniqueId ec_id);
 
-
  protected:
   // <rtc-template block="protected_attribute">
-  
+
   // </rtc-template>
 
   // <rtc-template block="protected_operation">
-  
+
   // </rtc-template>
 
   // DataInPort declaration
   // <rtc-template block="inport_declare">
-  
-  // </rtc-template>
 
+  // </rtc-template>
 
   // DataOutPort declaration
   // <rtc-template block="outport_declare">
@@ -251,42 +247,40 @@ class Joystick
    * - Semantics: True if a button is pressed, false otherwise.
    */
   OutPort<TimedBooleanSeq> m_buttonsOut;
-  
+
   // </rtc-template>
 
   // CORBA Port declaration
   // <rtc-template block="corbaport_declare">
-  
+
   // </rtc-template>
 
   // Service declaration
   // <rtc-template block="service_declare">
-  
+
   // </rtc-template>
 
   // Consumer declaration
   // <rtc-template block="consumer_declare">
-  
+
   // </rtc-template>
 
  private:
   // <rtc-template block="private_attribute">
-  
+
   // </rtc-template>
 
   // <rtc-template block="private_operation">
-  
+
   // </rtc-template>
 
-  joystick *m_js; 
+  joystick* m_js;
   std::string m_device;
   unsigned int m_debugLevel;
 };
 
-
-extern "C"
-{
-  DLL_EXPORT void JoystickInit(RTC::Manager* manager);
+extern "C" {
+DLL_EXPORT void JoystickInit(RTC::Manager* manager);
 };
 
-#endif // JOYSTICK_H
+#endif  // JOYSTICK_H

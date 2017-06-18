@@ -32,11 +32,10 @@
 using namespace RTC;
 
 /**
-   \brief sample RT component which has one data input port and one data output port
+   \brief sample RT component which has one data input port and one data output
+   port
  */
-class CaptureController
-  : public RTC::DataFlowComponentBase
-{
+class CaptureController : public RTC::DataFlowComponentBase {
  public:
   /**
      \brief Constructor
@@ -103,7 +102,7 @@ class CaptureController
  protected:
   // Configuration variable declaration
   // <rtc-template block="config_declare">
-  
+
   // </rtc-template>
 
   Img::TimedCameraImage m_image;
@@ -111,34 +110,34 @@ class CaptureController
   // DataInPort declaration
   // <rtc-template block="inport_declare">
   InPort<Img::TimedCameraImage> m_imageIn;
-  
+
   // </rtc-template>
 
   // DataOutPort declaration
   // <rtc-template block="outport_declare">
   OutPort<Img::TimedCameraImage> m_imageOut;
-  
+
   // </rtc-template>
 
   // CORBA Port declaration
   // <rtc-template block="corbaport_declare">
-  
+
   // </rtc-template>
 
   // Service declaration
   // <rtc-template block="service_declare">
   RTC::CorbaPort m_CameraCaptureServicePort;
-  
+
   // </rtc-template>
 
   // Consumer declaration
   // <rtc-template block="consumer_declare">
   CameraCaptureService_impl m_CameraCaptureService;
-  
+
   // </rtc-template>
 
  private:
-  typedef enum {SLEEP, ONESHOT, CONTINUOUS} mode;
+  typedef enum { SLEEP, ONESHOT, CONTINUOUS } mode;
   mode m_mode;
   int m_frameRate;
   double m_tOld;
@@ -146,10 +145,8 @@ class CaptureController
   int dummy;
 };
 
-
-extern "C"
-{
-  void CaptureControllerInit(RTC::Manager* manager);
+extern "C" {
+void CaptureControllerInit(RTC::Manager* manager);
 };
 
-#endif // CAPTURE_CONTROLLER_H
+#endif  // CAPTURE_CONTROLLER_H

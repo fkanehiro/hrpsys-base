@@ -6,17 +6,16 @@
 
 class LogManagerBase;
 
-namespace CollisionDetectorComponent{
+namespace CollisionDetectorComponent {
 
-class GLscene : public GLsceneBase
-{
-public:
-    GLscene(LogManagerBase *i_log) : GLsceneBase(i_log) {}
-private:
-    void drawAdditionalLines();
-    void updateScene();
-    void showStatus();
+class GLscene : public GLsceneBase {
+ public:
+  GLscene(LogManagerBase *i_log) : GLsceneBase(i_log) {}
+
+ private:
+  void drawAdditionalLines();
+  void updateScene();
+  void showStatus();
 };
-
 };
 #endif

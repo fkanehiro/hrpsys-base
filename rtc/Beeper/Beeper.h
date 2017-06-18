@@ -32,11 +32,10 @@
 using namespace RTC;
 
 /**
-   \brief sample RT component which has one data input port and one data output port
+   \brief sample RT component which has one data input port and one data output
+   port
  */
-class Beeper
-  : public RTC::DataFlowComponentBase
-{
+class Beeper : public RTC::DataFlowComponentBase {
  public:
   /**
      \brief Constructor
@@ -99,34 +98,34 @@ class Beeper
  protected:
   // Configuration variable declaration
   // <rtc-template block="config_declare">
-  
+
   // </rtc-template>
   TimedLongSeq m_beepCommand;
 
   // DataInPort declaration
   // <rtc-template block="inport_declare">
   InPort<TimedLongSeq> m_beepCommandIn;
-  
+
   // </rtc-template>
 
   // DataOutPort declaration
   // <rtc-template block="outport_declare">
-  
+
   // </rtc-template>
 
   // CORBA Port declaration
   // <rtc-template block="corbaport_declare">
-  
+
   // </rtc-template>
 
   // Service declaration
   // <rtc-template block="service_declare">
-  
+
   // </rtc-template>
 
   // Consumer declaration
   // <rtc-template block="consumer_declare">
-  
+
   // </rtc-template>
 
  private:
@@ -135,10 +134,8 @@ class Beeper
   pthread_t beep_thread;
 };
 
-
-extern "C"
-{
-  void BeeperInit(RTC::Manager* manager);
+extern "C" {
+void BeeperInit(RTC::Manager* manager);
 };
 
-#endif // BEEPER_H
+#endif  // BEEPER_H

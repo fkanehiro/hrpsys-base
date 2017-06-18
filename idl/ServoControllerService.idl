@@ -2,15 +2,15 @@
  * @file ServoControllerService.idl
  * @brief Services for the robot hardware interface
  */
-module OpenHRP
-{
-  interface ServoControllerService
-  {
+module OpenHRP {
+  interface ServoControllerService {
     typedef sequence<short> iSequence;
     typedef sequence<double> dSequence;
 
     /**
-     * @brief Interpolate just one joint angle specified by \em id using duration \em tm. Function returns without waiting for interpolation to finish
+     * @brief Interpolate just one joint angle specified by \em id using
+     * duration \em tm. Function returns without waiting for interpolation to
+     * finish
      * @param id joint id
      * @param jv joint angle
      * @param tm duration
@@ -19,7 +19,9 @@ module OpenHRP
     boolean setJointAngle(in short id, in double jv, in double tm);
 
     /**
-     * @brief Interpolate all joint angles on servo moters using duration specified by \em tm. Returns without waiting for whole sequence to be sent to robot.
+     * @brief Interpolate all joint angles on servo moters using duration
+     * specified by \em tm. Returns without waiting for whole sequence to be
+     * sent to robot.
      * @param jvs sequence of joint angles
      * @param tm duration
      * @return true joint angles are set successfully, false otherwise
@@ -27,7 +29,8 @@ module OpenHRP
     boolean setJointAngles(in dSequence jvs, in double tm);
 
     /**
-     * @brief Obttain just one joint angle specified by \em id. Function returns without waiting for interpolation to finish
+     * @brief Obttain just one joint angle specified by \em id. Function returns
+     * without waiting for interpolation to finish
      * @param id joint id
      * @param jv joint angle
      * @return true if get successuflly, false otherwise
@@ -35,7 +38,8 @@ module OpenHRP
     boolean getJointAngle(in short id, out double jv);
 
     /**
-     * @brief Interpolate all joint angles on servo moters. Returns without waiting for whole sequence to be sent to robot.
+     * @brief Interpolate all joint angles on servo moters. Returns without
+     * waiting for whole sequence to be sent to robot.
      * @param jvs sequence of joint angles
      * @return true joint angles are get successfully, false otherwise
      */
@@ -57,16 +61,19 @@ module OpenHRP
     boolean removeJointGroup(in string gname);
 
     /**
-     * @brief Interpolate joint angles in a group  using duration specified by \em tm. Returns without waiting for whole sequence to be sent to robot.
+     * @brief Interpolate joint angles in a group  using duration specified by
+     * \em tm. Returns without waiting for whole sequence to be sent to robot.
      * @param gname name of the joint group
      * @param jvs sequence of joint angles
      * @param tm duration
      * @return true joint angles are set successfully, false otherwise
      */
-    boolean setJointAnglesOfGroup(in string gname, in dSequence jvs, in double tm);
+    boolean setJointAnglesOfGroup(in string gname, in dSequence jvs,
+                                  in double tm);
 
     /**
-     * @brief Interpolate just one joint max torque specified by \em id. Function returns without waiting for interpolation to finish
+     * @brief Interpolate just one joint max torque specified by \em id.
+     * Function returns without waiting for interpolation to finish
      * @param id joint id
      * @param percentage servo maxTorque(1~100[%])
      * @return true if set successuflly, false otherwise

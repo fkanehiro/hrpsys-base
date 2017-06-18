@@ -36,16 +36,14 @@
 
 using namespace RTC;
 
-class PDcontroller
-  : public RTC::DataFlowComponentBase
-{
+class PDcontroller : public RTC::DataFlowComponentBase {
  public:
   PDcontroller(RTC::Manager* manager);
   ~PDcontroller();
 
   // The initialize action (on CREATED->ALIVE transition)
-  // formaer rtc_init_entry() 
- virtual RTC::ReturnCode_t onInitialize();
+  // formaer rtc_init_entry()
+  virtual RTC::ReturnCode_t onInitialize();
 
   // The finalize action (on ALIVE->END transition)
   // formaer rtc_exiting_entry()
@@ -82,7 +80,7 @@ class PDcontroller
   // The reset action that is invoked resetting
   // This is same but different the former rtc_init_entry()
   // virtual RTC::ReturnCode_t onReset(RTC::UniqueId ec_id);
-  
+
   // The state update action that is invoked after onExecute() action
   // no corresponding operation exists in OpenRTm-aist-0.2.0
   // virtual RTC::ReturnCode_t onStateUpdate(RTC::UniqueId ec_id);
@@ -94,7 +92,7 @@ class PDcontroller
  protected:
   // Configuration variable declaration
   // <rtc-template block="config_declare">
-  
+
   // </rtc-template>
 
   // DataInPort declaration
@@ -103,38 +101,38 @@ class PDcontroller
   InPort<TimedDoubleSeq> m_angleIn;
   TimedDoubleSeq m_angleRef;
   InPort<TimedDoubleSeq> m_angleRefIn;
-  
+
   // </rtc-template>
 
   // DataOutPort declaration
   // <rtc-template block="outport_declare">
   TimedDoubleSeq m_torque;
   OutPort<TimedDoubleSeq> m_torqueOut;
-  
+
   // </rtc-template>
 
   // CORBA Port declaration
   // <rtc-template block="corbaport_declare">
-  
+
   // </rtc-template>
 
   // Service declaration
   // <rtc-template block="service_declare">
-  
+
   // </rtc-template>
 
   // Consumer declaration
   // <rtc-template block="consumer_declare">
-  
+
   // </rtc-template>
 
  private:
   void readGainFile();
   hrp::BodyPtr m_robot;
-  double dt;     // sampling time of pd control
-  double ref_dt; // sampling time of renference angles
-  int step;      // current interpolation step
-  int nstep;     // the number of steps to interpolate references
+  double dt;      // sampling time of pd control
+  double ref_dt;  // sampling time of renference angles
+  int step;       // current interpolation step
+  int nstep;      // the number of steps to interpolate references
   std::ifstream gain;
   std::string gain_fname;
   hrp::dvector qold, qold_ref, Pgain, Dgain, tlimit_ratio;
@@ -143,9 +141,8 @@ class PDcontroller
   int dummy;
 };
 
-extern "C"
-{
-   void PDcontrollerInit(RTC::Manager* manager);
+extern "C" {
+void PDcontrollerInit(RTC::Manager* manager);
 };
 
-#endif // PDcontroller_H
+#endif  // PDcontroller_H

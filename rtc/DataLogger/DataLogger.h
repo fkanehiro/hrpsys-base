@@ -37,33 +37,32 @@
 
 using namespace RTC;
 
-#define DEFAULT_MAX_LOG_LENGTH (200*20)
+#define DEFAULT_MAX_LOG_LENGTH (200 * 20)
 
-class LoggerPortBase
-{
-public:
-    LoggerPortBase() : m_maxLength(DEFAULT_MAX_LOG_LENGTH) {}
-    virtual const char *name() = 0;
-    virtual void clear() = 0;
-    virtual void dumpLog(std::ostream& os, unsigned int precision = 0) = 0;
-    virtual void log() = 0;
-    void maxLength(unsigned int len) { m_maxLength = len; }
-protected:
-    unsigned int m_maxLength;
+class LoggerPortBase {
+ public:
+  LoggerPortBase() : m_maxLength(DEFAULT_MAX_LOG_LENGTH) {}
+  virtual const char *name() = 0;
+  virtual void clear() = 0;
+  virtual void dumpLog(std::ostream &os, unsigned int precision = 0) = 0;
+  virtual void log() = 0;
+  void maxLength(unsigned int len) { m_maxLength = len; }
+
+ protected:
+  unsigned int m_maxLength;
 };
 
 /**
-   \brief sample RT component which has one data input port and one data output port
+   \brief sample RT component which has one data input port and one data output
+   port
  */
-class DataLogger
-  : public RTC::DataFlowComponentBase
-{
+class DataLogger : public RTC::DataFlowComponentBase {
  public:
   /**
      \brief Constructor
      \param manager pointer to the Manager
   */
-  DataLogger(RTC::Manager* manager);
+  DataLogger(RTC::Manager *manager);
   /**
      \brief Destructor
   */
@@ -128,7 +127,7 @@ class DataLogger
  protected:
   // Configuration variable declaration
   // <rtc-template block="config_declare">
-  
+
   // </rtc-template>
 
   TimedLong m_emergencySignal;
@@ -136,29 +135,29 @@ class DataLogger
   // DataInPort declaration
   // <rtc-template block="inport_declare">
   InPort<TimedLong> m_emergencySignalIn;
-  
+
   // </rtc-template>
 
   // DataOutPort declaration
   // <rtc-template block="outport_declare">
-  
+
   // </rtc-template>
 
   // CORBA Port declaration
   // <rtc-template block="corbaport_declare">
   RTC::CorbaPort m_DataLoggerServicePort;
-  
+
   // </rtc-template>
 
   // Service declaration
   // <rtc-template block="service_declare">
   DataLoggerService_impl m_service0;
-  
+
   // </rtc-template>
 
   // Consumer declaration
   // <rtc-template block="consumer_declare">
-  
+
   // </rtc-template>
 
  private:
@@ -168,10 +167,8 @@ class DataLogger
   int dummy;
 };
 
-
-extern "C"
-{
-  void DataLoggerInit(RTC::Manager* manager);
+extern "C" {
+void DataLoggerInit(RTC::Manager *manager);
 };
 
-#endif // DATA_LOGGER_H
+#endif  // DATA_LOGGER_H

@@ -32,11 +32,10 @@
 using namespace RTC;
 
 /**
-   \brief sample RT component which has one data input port and one data output port
+   \brief sample RT component which has one data input port and one data output
+   port
  */
-class JpegDecoder
-  : public RTC::DataFlowComponentBase
-{
+class JpegDecoder : public RTC::DataFlowComponentBase {
  public:
   /**
      \brief Constructor
@@ -96,11 +95,10 @@ class JpegDecoder
   // no corresponding operation exists in OpenRTm-aist-0.2.0
   // virtual RTC::ReturnCode_t onRateChanged(RTC::UniqueId ec_id);
 
-
  protected:
   // Configuration variable declaration
   // <rtc-template block="config_declare">
-  
+
   // </rtc-template>
 
   Img::TimedCameraImage m_encoded;
@@ -108,7 +106,7 @@ class JpegDecoder
   // DataInPort declaration
   // <rtc-template block="inport_declare">
   InPort<Img::TimedCameraImage> m_encodedIn;
-  
+
   // </rtc-template>
 
   Img::TimedCameraImage m_decoded;
@@ -116,32 +114,30 @@ class JpegDecoder
   // DataOutPort declaration
   // <rtc-template block="outport_declare">
   OutPort<Img::TimedCameraImage> m_decodedOut;
-  
+
   // </rtc-template>
 
   // CORBA Port declaration
   // <rtc-template block="corbaport_declare">
-  
+
   // </rtc-template>
 
   // Service declaration
   // <rtc-template block="service_declare">
-  
+
   // </rtc-template>
 
   // Consumer declaration
   // <rtc-template block="consumer_declare">
-  
+
   // </rtc-template>
 
  private:
   int dummy;
 };
 
-
-extern "C"
-{
-  void JpegDecoderInit(RTC::Manager* manager);
+extern "C" {
+void JpegDecoderInit(RTC::Manager* manager);
 };
 
-#endif // JPEG_DECODER_H
+#endif  // JPEG_DECODER_H

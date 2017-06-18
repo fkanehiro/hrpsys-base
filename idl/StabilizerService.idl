@@ -4,10 +4,8 @@
  */
 #include "AutoBalancerService.idl"
 
-module OpenHRP
-{
-  interface StabilizerService
-  {
+module OpenHRP {
+  interface StabilizerService {
     typedef double DblArray2[2];
     typedef double DblArray3[3];
     typedef double DblArray4[4];
@@ -17,13 +15,7 @@ module OpenHRP
      * @enum STAlgorithm
      * @brief Algorithm of Stabilizer
      */
-    enum STAlgorithm {
-      TPCC,
-      EEFM,
-      EEFMQP,
-      EEFMQPCOP,
-      EEFMQPCOP2
-    };
+    enum STAlgorithm { TPCC, EEFM, EEFMQP, EEFMQPCOP, EEFMQPCOP2 };
 
     /**
      * @enum ControllerMode
@@ -41,19 +33,14 @@ module OpenHRP
      * @enum EmergencyCheckMode
      * @brief Mode of emergency checking
      */
-    enum EmergencyCheckMode {
-      NO_CHECK,
-      COP,
-      CP,
-      TILT
-    };
+    enum EmergencyCheckMode { NO_CHECK, COP, CP, TILT };
 
     /**
      * @enum TwoDimensionVertex
      * @brief 2D vertex of a support polygon [m]
      */
     struct TwoDimensionVertex {
-        DblArray2 pos;
+      DblArray2 pos;
     };
 
     /**
@@ -61,7 +48,7 @@ module OpenHRP
      * @brief Vertices of a support polygon at the end effector
      */
     struct SupportPolygonVertices {
-        sequence<TwoDimensionVertex> vertices;
+      sequence<TwoDimensionVertex> vertices;
     };
 
     /**
@@ -69,18 +56,18 @@ module OpenHRP
      * @brief IKLimbParameters
      */
     struct IKLimbParameters {
-        /// Joint weight for Inverse Kinematics calculation.
-        sequence<double> ik_optional_weight_vector;
-        /// SR-inverse gain for inverse kinematics.
-        double sr_gain;
-        /// Avoid joint limit gain for inverse kinematics.
-        double avoid_gain;
-        /// Reference joint angles tracking gain for inverse kinematics.
-        double reference_gain;
-        /// Manipulability limit for inverse kinematics.
-        double manipulability_limit;
-        /// IK loop count
-        unsigned short ik_loop_count;
+      /// Joint weight for Inverse Kinematics calculation.
+      sequence<double> ik_optional_weight_vector;
+      /// SR-inverse gain for inverse kinematics.
+      double sr_gain;
+      /// Avoid joint limit gain for inverse kinematics.
+      double avoid_gain;
+      /// Reference joint angles tracking gain for inverse kinematics.
+      double reference_gain;
+      /// Manipulability limit for inverse kinematics.
+      double manipulability_limit;
+      /// IK loop count
+      unsigned short ik_loop_count;
     };
 
     /**
@@ -115,23 +102,29 @@ module OpenHRP
       DblArray2 eefm_k3;
       /// Time constant for stabilizer ZMP delay [s] (x,y)
       DblArray2 eefm_zmp_delay_time_const;
-      /// Auxiliary input for ZMP position [m] (x,y). This is used for delay model identification
+      /// Auxiliary input for ZMP position [m] (x,y). This is used for delay
+      /// model identification
       DblArray2 eefm_ref_zmp_aux;
-      /// Sequence of all end-effector rotation damping gain [Nm/(rad/s)] (r,p,y).
+      /// Sequence of all end-effector rotation damping gain [Nm/(rad/s)]
+      /// (r,p,y).
       sequence<sequence<double, 3> > eefm_rot_damping_gain;
-      /// Sequence of all end-effector rotation damping time constant [s] (r,p,y).
+      /// Sequence of all end-effector rotation damping time constant [s]
+      /// (r,p,y).
       sequence<sequence<double, 3> > eefm_rot_time_const;
       /// Sequence of all end-effector position damping gain [N/(m/s)] (x,y,z).
       sequence<sequence<double, 3> > eefm_pos_damping_gain;
-      /// Sequence of all end-effector position damping time constant for double support phase [s] (x,y,z).
+      /// Sequence of all end-effector position damping time constant for double
+      /// support phase [s] (x,y,z).
       sequence<sequence<double, 3> > eefm_pos_time_const_support;
       /// Sequence of all swing leg end-effector rotation spring gain (r,p,y).
       sequence<sequence<double, 3> > eefm_swing_rot_spring_gain;
-      /// Sequence of all swing leg end-effector rotation spring time constant [s] (r,p,y).
+      /// Sequence of all swing leg end-effector rotation spring time constant
+      /// [s] (r,p,y).
       sequence<sequence<double, 3> > eefm_swing_rot_time_const;
       /// Sequence of all swing leg end-effector position spring gain (x,y,z).
       sequence<sequence<double, 3> > eefm_swing_pos_spring_gain;
-      /// Sequence of all swing leg end-effector position spring time constant [s] (x,y,z).
+      /// Sequence of all swing leg end-effector position spring time constant
+      /// [s] (x,y,z).
       sequence<sequence<double, 3> > eefm_swing_pos_time_const;
       /// Sequence of all end-effector end-effector-frame moment limit [Nm]
       sequence<sequence<double, 3> > eefm_ee_moment_limit;
@@ -139,19 +132,26 @@ module OpenHRP
       sequence<double> eefm_pos_compensation_limit;
       /// Sequence of all end-effector rot compensation limit [rad]
       sequence<double> eefm_rot_compensation_limit;
-      /// End-effector position damping time constant for single support phase [s].
+      /// End-effector position damping time constant for single support phase
+      /// [s].
       double eefm_pos_time_const_swing;
-      /// Transition time for single=>double support phase gain interpolation [s].
+      /// Transition time for single=>double support phase gain interpolation
+      /// [s].
       double eefm_pos_transition_time;
-      /// Margin for transition time for single=>double support phase gain interpolation [s].
+      /// Margin for transition time for single=>double support phase gain
+      /// interpolation [s].
       double eefm_pos_margin_time;
-      /// Inside foot margine [m]. Distance between foot end effector position and foot inside edge.
+      /// Inside foot margine [m]. Distance between foot end effector position
+      /// and foot inside edge.
       double eefm_leg_inside_margin;
-      /// Outside foot margine [m]. Distance between foot end effector position and foot outside edge.
+      /// Outside foot margine [m]. Distance between foot end effector position
+      /// and foot outside edge.
       double eefm_leg_outside_margin;
-      /// Front foot margine [m]. Distance between foot end effector position and foot front edge.
+      /// Front foot margine [m]. Distance between foot end effector position
+      /// and foot front edge.
       double eefm_leg_front_margin;
-      /// Rear foot margine [m]. Distance between foot end effector position and foot rear edge.
+      /// Rear foot margine [m]. Distance between foot end effector position and
+      /// foot rear edge.
       double eefm_leg_rear_margin;
       /// Body attitude control gain [rad/s] (roll, pitch) for EEFM.
       DblArray2 eefm_body_attitude_control_gain;
@@ -161,7 +161,8 @@ module OpenHRP
       double eefm_cogvel_cutoff_freq;
       /// Blending parameter [0, 1] for wrench distribution
       double eefm_wrench_alpha_blending;
-      /// Cutoff frequency of LPF in calculation of force moment distribution alpha ratio parameter [Hz]
+      /// Cutoff frequency of LPF in calculation of force moment distribution
+      /// alpha ratio parameter [Hz]
       double eefm_alpha_cutoff_freq;
       /// Gravitational acceleration [m/s^2] used in ST calculation
       double eefm_gravitational_acceleration;
@@ -172,8 +173,9 @@ module OpenHRP
       /// Pos rot error cutoff freq [Hz]
       double eefm_ee_error_cutoff_freq;
       /// Sequence of vertices for all end effectors
-      sequence< SupportPolygonVertices > eefm_support_polygon_vertices_sequence;
-      /// Use force difference control or each limb force control. True by default.
+      sequence<SupportPolygonVertices> eefm_support_polygon_vertices_sequence;
+      /// Use force difference control or each limb force control. True by
+      /// default.
       boolean eefm_use_force_difference_control;
       /// Use damping control for swing leg.
       boolean eefm_use_swing_damping;
@@ -194,17 +196,21 @@ module OpenHRP
       ControllerMode controller_mode;
       /// Transition time [s] for start and stop Stabilizer
       double transition_time;
-      /// Bool sequence for all end effectors whether the end effector is used for limb IK.
+      /// Bool sequence for all end effectors whether the end effector is used
+      /// for limb IK.
       BoolSequence is_ik_enable;
-      /// Bool sequence for all end effectors whether the end effector is used for feedback control (currently damping control).
+      /// Bool sequence for all end effectors whether the end effector is used
+      /// for feedback control (currently damping control).
       BoolSequence is_feedback_control_enable;
-      /// Bool sequence for all end effectors whether the end effector is used for zmp calculation.
+      /// Bool sequence for all end effectors whether the end effector is used
+      /// for zmp calculation.
       BoolSequence is_zmp_calc_enable;
       /// COP margin [m] from edges for COP checking
       double cop_check_margin;
       /// CP margin [m] (front, rear, inside, outside)
       DblArray4 cp_check_margin;
-      /// tilt margin [rad] (single support phase, double support phase) from reference floor
+      /// tilt margin [rad] (single support phase, double support phase) from
+      /// reference floor
       DblArray2 tilt_margin;
       /// ref_CP [m] (x,y) (foot_origin relative coordinate)
       DblArray2 ref_capture_point;
@@ -215,7 +221,7 @@ module OpenHRP
       /// contact decision threshold [N]
       double contact_decision_threshold;
       /// Foot origin position offset
-      sequence< sequence<double, 3> > foot_origin_offset;
+      sequence<sequence<double, 3> > foot_origin_offset;
       /// Emergency signal checking mode
       EmergencyCheckMode emergency_check_mode;
       sequence<AutoBalancerService::Footstep> end_effector_list;
@@ -227,7 +233,8 @@ module OpenHRP
       boolean use_limb_stretch_avoidance;
       /// Limb stretch avoidance time constant [s]
       double limb_stretch_avoidance_time_const;
-      /// Root link height change limitation for avoiding limb stretch [m/s] (lower, upper)
+      /// Root link height change limitation for avoiding limb stretch [m/s]
+      /// (lower, upper)
       DblArray2 limb_stretch_avoidance_vlimit;
       /// Sequence of limb length margin from max limb length [m]
       sequence<double> limb_length_margin;
@@ -267,4 +274,3 @@ module OpenHRP
     boolean dummy();
   };
 };
-

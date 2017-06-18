@@ -38,11 +38,10 @@
 using namespace RTC;
 
 /**
-   \brief sample RT component which has one data input port and one data output port
+   \brief sample RT component which has one data input port and one data output
+   port
  */
-class VirtualForceSensor
-  : public RTC::DataFlowComponentBase
-{
+class VirtualForceSensor : public RTC::DataFlowComponentBase {
  public:
   /**
      \brief Constructor
@@ -107,46 +106,46 @@ class VirtualForceSensor
  protected:
   // Configuration variable declaration
   // <rtc-template block="config_declare">
-  
+
   // </rtc-template>
   // TimedDoubleSeq m_qRef;
   TimedDoubleSeq m_qCurrent;
   TimedDoubleSeq m_tauIn;
-  
+
   // DataInPort declaration
   // <rtc-template block="inport_declare">
   InPort<TimedDoubleSeq> m_qCurrentIn;
   InPort<TimedDoubleSeq> m_tauInIn;
-  
+
   // </rtc-template>
 
   // DataOutPort declaration
   // <rtc-template block="outport_declare">
   std::vector<TimedDoubleSeq> m_force;
-  std::vector<OutPort<TimedDoubleSeq> *> m_forceOut;
-  
+  std::vector<OutPort<TimedDoubleSeq>*> m_forceOut;
+
   // </rtc-template>
 
   // DataOutPort declaration
   // <rtc-template block="outport_declare">
-  
+
   // </rtc-template>
 
   // CORBA Port declaration
   // <rtc-template block="corbaport_declare">
-  
+
   // </rtc-template>
 
   // Service declaration
   // <rtc-template block="service_declare">
   RTC::CorbaPort m_VirtualForceSensorServicePort;
-  
+
   // </rtc-template>
 
   // Consumer declaration
   // <rtc-template block="consumer_declare">
   VirtualForceSensorService_impl m_service0;
-  
+
   // </rtc-template>
 
  private:
@@ -163,14 +162,11 @@ class VirtualForceSensor
   hrp::BodyPtr m_robot;
   unsigned int m_debugLevel;
 
-  bool calcRawVirtualForce(std::string sensorName, hrp::dvector &outputForce);
-  
+  bool calcRawVirtualForce(std::string sensorName, hrp::dvector& outputForce);
 };
 
-
-extern "C"
-{
-  void VirtualForceSensorInit(RTC::Manager* manager);
+extern "C" {
+void VirtualForceSensorInit(RTC::Manager* manager);
 };
 
-#endif // VIRTUAL_FORCE_SENSOR_H
+#endif  // VIRTUAL_FORCE_SENSOR_H

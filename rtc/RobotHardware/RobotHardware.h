@@ -39,17 +39,16 @@ using namespace RTC;
 class robot;
 
 /**
-   \brief RT component that do nothing and don't have ports. This component is used to create an execution context
+   \brief RT component that do nothing and don't have ports. This component is
+   used to create an execution context
  */
-class RobotHardware
-  : public RTC::DataFlowComponentBase
-{
+class RobotHardware : public RTC::DataFlowComponentBase {
  public:
   /**
      \brief Constructor
      \param manager pointer to the Manager
   */
-  RobotHardware(RTC::Manager* manager);
+  RobotHardware(RTC::Manager *manager);
   /**
      \brief Destructor
   */
@@ -104,16 +103,16 @@ class RobotHardware
   // virtual RTC::ReturnCode_t onRateChanged(RTC::UniqueId ec_id);
 
   virtual inline void getTimeNow(Time &tm) {
-      coil::TimeValue coiltm(coil::gettimeofday());
-      tm.sec  = coiltm.sec();
-      tm.nsec = coiltm.usec() * 1000;
+    coil::TimeValue coiltm(coil::gettimeofday());
+    tm.sec = coiltm.sec();
+    tm.nsec = coiltm.usec() * 1000;
   };
 
  protected:
   // Configuration variable declaration
   // <rtc-template block="config_declare">
-  int m_isDemoMode;  
-  
+  int m_isDemoMode;
+
   // </rtc-template>
 
   // DataInPort declaration
@@ -134,7 +133,7 @@ class RobotHardware
   */
   TimedDoubleSeq m_tauRef;
   InPort<TimedDoubleSeq> m_tauRefIn;
-  
+
   // </rtc-template>
 
   /**
@@ -154,11 +153,13 @@ class RobotHardware
   */
   TimedDoubleSeq m_ctau;
   /**
-     \brief vector of actual acceleration (vector length = number of acceleration sensors)
+     \brief vector of actual acceleration (vector length = number of
+     acceleration sensors)
   */
   std::vector<TimedAcceleration3D> m_acc;
   /**
-     \brief vector of actual angular velocity (vector length = number of rate sensors)
+     \brief vector of actual angular velocity (vector length = number of rate
+     sensors)
   */
   std::vector<TimedAngularVelocity3D> m_rate;
   /**
@@ -186,30 +187,29 @@ class RobotHardware
   // CORBA Port declaration
   // <rtc-template block="corbaport_declare">
   RTC::CorbaPort m_RobotHardwareServicePort;
-  
+
   // </rtc-template>
 
   // Service declaration
   // <rtc-template block="service_declare">
   RobotHardwareService_impl m_service0;
-  
+
   // </rtc-template>
 
   // Consumer declaration
   // <rtc-template block="consumer_declare">
-  
+
   // </rtc-template>
 
   robot *robot_ptr(void) { return m_robot.get(); };
+
  private:
   int dummy;
   boost::shared_ptr<robot> m_robot;
 };
 
-
-extern "C"
-{
-  void RobotHardwareInit(RTC::Manager* manager);
+extern "C" {
+void RobotHardwareInit(RTC::Manager *manager);
 };
 
-#endif // ROBOT_HARDWARE_H
+#endif  // ROBOT_HARDWARE_H

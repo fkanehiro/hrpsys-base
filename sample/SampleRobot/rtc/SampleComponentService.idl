@@ -1,10 +1,8 @@
 #ifndef __SAMPLE_COMPONENT_SERVICE_IDL__
 #define __SAMPLE_COMPONENT_SERVICE_IDL__
 
-module OpenHRP
-{
-  interface SampleComponentService
-  {
+module OpenHRP {
+  interface SampleComponentService {
     void echo(in string msg);
   };
 };

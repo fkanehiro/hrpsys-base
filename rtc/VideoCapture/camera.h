@@ -1,5 +1,6 @@
 
-/* Most of capture.cpp and capture.h are copied from http://jsk-enshu.svn.sourceforge.net/viewvc/jsk-enshu/trunk/keisanki/2009/ */
+/* Most of capture.cpp and capture.h are copied from
+ * http://jsk-enshu.svn.sourceforge.net/viewvc/jsk-enshu/trunk/keisanki/2009/ */
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
 #include <linux/videodev2.h>
@@ -8,8 +9,7 @@
 #include <sys/ioctl.h>
 
 /* v4l2 capture class */
-class v4l_capture
-{
+class v4l_capture {
   typedef struct _buffer {
     void *start;
     size_t length;
@@ -28,13 +28,14 @@ class v4l_capture
   void uninit_mmap();
   void close_device();
   void read_frame(void);
-  void write_img(uchar * ret);
+  void write_img(uchar *ret);
   bool init_all(size_t _width, size_t _height, unsigned int _devId);
+
  public:
   v4l_capture();
   ~v4l_capture();
-  uchar *capture ();
-  int getHeight ();
-  int getWidth ();
-  int init (size_t _width, size_t _height, unsigned int devId);
+  uchar *capture();
+  int getHeight();
+  int getWidth();
+  int init(size_t _width, size_t _height, unsigned int devId);
 };

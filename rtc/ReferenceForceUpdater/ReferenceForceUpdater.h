@@ -39,11 +39,10 @@
 using namespace RTC;
 
 /**
-   \brief sample RT component which has one data input port and one data output port
+   \brief sample RT component which has one data input port and one data output
+   port
  */
-class ReferenceForceUpdater
-  : public RTC::DataFlowComponentBase
-{
+class ReferenceForceUpdater : public RTC::DataFlowComponentBase {
  public:
   /**
      \brief Constructor
@@ -103,20 +102,31 @@ class ReferenceForceUpdater
   // no corresponding operation exists in OpenRTm-aist-0.2.0
   // virtual RTC::ReturnCode_t onRateChanged(RTC::UniqueId ec_id);
 
-  bool setReferenceForceUpdaterParam(const std::string& i_name_, const OpenHRP::ReferenceForceUpdaterService::ReferenceForceUpdaterParam& i_param);
-  bool getReferenceForceUpdaterParam(const std::string& i_name_, OpenHRP::ReferenceForceUpdaterService::ReferenceForceUpdaterParam_out i_param);
+  bool setReferenceForceUpdaterParam(
+      const std::string& i_name_,
+      const OpenHRP::ReferenceForceUpdaterService::ReferenceForceUpdaterParam&
+          i_param);
+  bool getReferenceForceUpdaterParam(
+      const std::string& i_name_,
+      OpenHRP::ReferenceForceUpdaterService::ReferenceForceUpdaterParam_out
+          i_param);
   bool startReferenceForceUpdater(const std::string& i_name_);
   bool stopReferenceForceUpdater(const std::string& i_name_);
-  void calcFootOriginCoords (hrp::Vector3& foot_origin_pos, hrp::Matrix33& foot_origin_rot);
-  void updateRefFootOriginExtMoment (const std::string& arm);
-  void updateRefForces (const std::string& arm);
-  bool isFootOriginExtMoment (const std::string& str) const { return str == "footoriginextmoment"; };
-  inline bool eps_eq(const double a, const double b, const double eps = 1e-3) { return std::fabs((a)-(b)) <= eps; };
+  void calcFootOriginCoords(hrp::Vector3& foot_origin_pos,
+                            hrp::Matrix33& foot_origin_rot);
+  void updateRefFootOriginExtMoment(const std::string& arm);
+  void updateRefForces(const std::string& arm);
+  bool isFootOriginExtMoment(const std::string& str) const {
+    return str == "footoriginextmoment";
+  };
+  inline bool eps_eq(const double a, const double b, const double eps = 1e-3) {
+    return std::fabs((a) - (b)) <= eps;
+  };
 
  protected:
   // Configuration variable declaration
   // <rtc-template block="config_declare">
-  
+
   // </rtc-template>
 
   // DataInPort declaration
@@ -128,9 +138,9 @@ class ReferenceForceUpdater
   TimedOrientation3D m_baseRpy;
   InPort<TimedOrientation3D> m_baseRpyIn;
   std::vector<TimedDoubleSeq> m_force;
-  std::vector<InPort<TimedDoubleSeq> *> m_forceIn;
+  std::vector<InPort<TimedDoubleSeq>*> m_forceIn;
   std::vector<TimedDoubleSeq> m_ref_force_in;
-  std::vector<InPort<TimedDoubleSeq> *> m_ref_forceIn;
+  std::vector<InPort<TimedDoubleSeq>*> m_ref_forceIn;
   TimedOrientation3D m_rpy;
   InPort<TimedOrientation3D> m_rpyIn;
   TimedPoint3D m_diffFootOriginExtMoment;
@@ -141,7 +151,7 @@ class ReferenceForceUpdater
   // DataOutPort declaration
   // <rtc-template block="outport_declare">
   std::vector<TimedDoubleSeq> m_ref_force_out;
-  std::vector<OutPort<TimedDoubleSeq> *> m_ref_forceOut;
+  std::vector<OutPort<TimedDoubleSeq>*> m_ref_forceOut;
   TimedPoint3D m_refFootOriginExtMoment;
   OutPort<TimedPoint3D> m_refFootOriginExtMomentOut;
 
@@ -149,19 +159,19 @@ class ReferenceForceUpdater
 
   // CORBA Port declaration
   // <rtc-template block="corbaport_declare">
-  
+
   // </rtc-template>
 
   // Service declaration
   // <rtc-template block="service_declare">
   RTC::CorbaPort m_ReferenceForceUpdaterServicePort;
-  
+
   // </rtc-template>
 
   // Consumer declaration
   // <rtc-template block="consumer_declare">
   ReferenceForceUpdaterService_impl m_ReferenceForceUpdaterService;
-  
+
   // </rtc-template>
 
  private:
@@ -186,16 +196,16 @@ class ReferenceForceUpdater
     std::string frame;
     int update_count;
     bool is_active, is_stopping, is_hold_value;
-    ReferenceForceUpdaterParam () {
-      //params defined in idl
+    ReferenceForceUpdaterParam() {
+      // params defined in idl
       motion_dir = hrp::Vector3::UnitZ();
-      frame="local";
-      update_freq = 50; // Hz
+      frame = "local";
+      update_freq = 50;  // Hz
       update_time_ratio = 0.5;
       p_gain = 0.02;
       d_gain = 0;
       i_gain = 0;
-      //additional params (not defined in idl)
+      // additional params (not defined in idl)
       is_active = false;
       is_stopping = false;
       is_hold_value = false;
@@ -214,13 +224,11 @@ class ReferenceForceUpdater
   std::map<std::string, interpolator*> transition_interpolator;
   std::vector<double> transition_interpolator_ratio;
   bool use_sh_base_pos_rpy;
-  int loop;//counter in onExecute
+  int loop;  // counter in onExecute
 };
 
-
-extern "C"
-{
-  void ReferenceForceUpdaterInit(RTC::Manager* manager);
+extern "C" {
+void ReferenceForceUpdaterInit(RTC::Manager* manager);
 };
 
-#endif // REFERENCEFORCEUPDATOR_COMPONENT_H
+#endif  // REFERENCEFORCEUPDATOR_COMPONENT_H

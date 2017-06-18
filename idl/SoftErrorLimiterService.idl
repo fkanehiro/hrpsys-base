@@ -2,10 +2,8 @@
  * @file SoftErrorLimiterService.idl
  * @brief Services for the robot hardware interface
  */
-module OpenHRP
-{
-  interface SoftErrorLimiterService
-  {
+module OpenHRP {
+  interface SoftErrorLimiterService {
     /**
      * @brief set the maximum joint servo error angle
      * @param name joint name, part name or "all"

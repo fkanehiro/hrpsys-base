@@ -5,14 +5,12 @@
 
 class LogManagerBase;
 
-class GLscene : public GLsceneBase
-{
-public:
-    GLscene(LogManagerBase *i_log) : GLsceneBase(i_log) {}
-private:
-    void updateScene();
-    void showStatus();
+class GLscene : public GLsceneBase {
+ public:
+  GLscene(LogManagerBase *i_log) : GLsceneBase(i_log) {}
+
+ private:
+  void updateScene();
+  void showStatus();
 };
 #endif
-
-

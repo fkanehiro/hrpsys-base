@@ -6,8 +6,7 @@
 // Read in the PolyTree file specified on the command line;
 // print out the generated PolyTree models.
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
   int i;
   PolyTreeLibrary polyTreeLibrary;
 
@@ -19,7 +18,7 @@ int main(int argc, char **argv)
   loadPolyTreeFile(argv[1], polyTreeLibrary);
 
   // print out all PolyTrees in library
-  for (i = 0; i < polyTreeLibrary.size(); i++) 
+  for (i = 0; i < polyTreeLibrary.size(); i++)
     cout << "\n\n" << polyTreeLibrary.lookup(i) << endl;
 
   return 0;

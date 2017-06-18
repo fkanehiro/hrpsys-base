@@ -36,17 +36,16 @@ using namespace RTC;
 class ServoSerial;
 
 /**
-   \brief sample RT component which has one data input port and one data output port
+   \brief sample RT component which has one data input port and one data output
+   port
  */
-class ServoController
-  : public RTC::DataFlowComponentBase
-{
+class ServoController : public RTC::DataFlowComponentBase {
  public:
   /**
      \brief Constructor
      \param manager pointer to the Manager
   */
-  ServoController(RTC::Manager* manager);
+  ServoController(RTC::Manager *manager);
   /**
      \brief Destructor
   */
@@ -101,12 +100,16 @@ class ServoController
   // virtual RTC::ReturnCode_t onRateChanged(RTC::UniqueId ec_id);
 
   bool setJointAngle(short id, double angle, double tm);
-  bool setJointAngles(const OpenHRP::ServoControllerService::dSequence angles, double tm);
+  bool setJointAngles(const OpenHRP::ServoControllerService::dSequence angles,
+                      double tm);
   bool getJointAngle(short id, double &angle);
   bool getJointAngles(OpenHRP::ServoControllerService::dSequence_out &angles);
-  bool addJointGroup(const char *gname, const ::OpenHRP::ServoControllerService::iSequence ids);
+  bool addJointGroup(const char *gname,
+                     const ::OpenHRP::ServoControllerService::iSequence ids);
   bool removeJointGroup(const char *gname);
-  bool setJointAnglesOfGroup(const char *gname, const ::OpenHRP::ServoControllerService::dSequence angles, double tm);
+  bool setJointAnglesOfGroup(
+      const char *gname,
+      const ::OpenHRP::ServoControllerService::dSequence angles, double tm);
   bool setMaxTorque(short id, short percentage);
   bool setReset(short id);
   bool getDuration(short id, double &duration);
@@ -121,34 +124,34 @@ class ServoController
  protected:
   // Configuration variable declaration
   // <rtc-template block="config_declare">
-  
+
   // </rtc-template>
 
   // DataInPort declaration
   // <rtc-template block="inport_declare">
-  
+
   // </rtc-template>
 
   // DataOutPort declaration
   // <rtc-template block="outport_declare">
-  
+
   // </rtc-template>
 
   // CORBA Port declaration
   // <rtc-template block="corbaport_declare">
-  
+
   // </rtc-template>
 
   // Service declaration
   // <rtc-template block="service_declare">
   RTC::CorbaPort m_ServoControllerServicePort;
-  
+
   // </rtc-template>
 
   // Consumer declaration
   // <rtc-template block="consumer_declare">
   ServoControllerService_impl m_service0;
-  
+
   // </rtc-template>
 
  private:
@@ -156,13 +159,11 @@ class ServoController
   std::vector<int> servo_id;
   std::vector<double> servo_offset;
   std::vector<double> servo_dir;
-  ServoSerial* serial;
+  ServoSerial *serial;
 };
 
-
-extern "C"
-{
-  void ServoControllerInit(RTC::Manager* manager);
+extern "C" {
+void ServoControllerInit(RTC::Manager *manager);
 };
 
-#endif // SERVO_CONTROLLER_H
+#endif  // SERVO_CONTROLLER_H

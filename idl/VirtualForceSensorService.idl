@@ -6,11 +6,8 @@
 #ifndef __SENSOR_CALIBRATOR_SERVICE_IDL__
 #define __SENSOR_CALIBRATOR_SERVICE_IDL__
 
-module OpenHRP
-{
-  
-  interface VirtualForceSensorService
-  {
+module OpenHRP {
+  interface VirtualForceSensorService {
     /**
      * @brief set virtual force sensor offset.
      * @param sensroName is target virtual force sensor name

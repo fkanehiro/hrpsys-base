@@ -33,11 +33,10 @@
 using namespace RTC;
 
 /**
-   \brief sample RT component which has one data input port and one data output port
+   \brief sample RT component which has one data input port and one data output
+   port
  */
-class Joystick2Velocity2D
-  : public RTC::DataFlowComponentBase
-{
+class Joystick2Velocity2D : public RTC::DataFlowComponentBase {
  public:
   /**
      \brief Constructor
@@ -97,11 +96,10 @@ class Joystick2Velocity2D
   // no corresponding operation exists in OpenRTm-aist-0.2.0
   // virtual RTC::ReturnCode_t onRateChanged(RTC::UniqueId ec_id);
 
-
  protected:
   // Configuration variable declaration
   // <rtc-template block="config_declare">
-  
+
   // </rtc-template>
 
   TimedFloatSeq m_axes;
@@ -109,7 +107,7 @@ class Joystick2Velocity2D
   // DataInPort declaration
   // <rtc-template block="inport_declare">
   InPort<TimedFloatSeq> m_axesIn;
-  
+
   // </rtc-template>
 
   TimedVelocity2D m_vel;
@@ -117,22 +115,22 @@ class Joystick2Velocity2D
   // DataOutPort declaration
   // <rtc-template block="outport_declare">
   OutPort<TimedVelocity2D> m_velOut;
-  
+
   // </rtc-template>
 
   // CORBA Port declaration
   // <rtc-template block="corbaport_declare">
-  
+
   // </rtc-template>
 
   // Service declaration
   // <rtc-template block="service_declare">
-  
+
   // </rtc-template>
 
   // Consumer declaration
   // <rtc-template block="consumer_declare">
-  
+
   // </rtc-template>
 
  private:
@@ -142,10 +140,8 @@ class Joystick2Velocity2D
   std::vector<double> m_neutrals;
 };
 
-
-extern "C"
-{
-  void Joystick2Velocity2DInit(RTC::Manager* manager);
+extern "C" {
+void Joystick2Velocity2DInit(RTC::Manager* manager);
 };
 
-#endif // JOYSTICK2VELOCITY_H
+#endif  // JOYSTICK2VELOCITY_H
