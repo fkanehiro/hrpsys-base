@@ -345,7 +345,7 @@ namespace rats
                                                      const std::vector<step_node>& _support_leg_steps,
                                                      const std::vector<step_node>& _swing_leg_steps);
         void push_refzmp_from_footstep_nodes_for_single (const std::vector<step_node>& fns, const std::vector<step_node>& _support_leg_steps, const toe_heel_types& tht);
-      void update_refzmp (const std::vector< std::vector<step_node> >& fnsl);
+      void update_refzmp ();
       // setter
       void set_indices (const size_t idx) { refzmp_index = idx; };
       void set_refzmp_count(const size_t _refzmp_count) { refzmp_count = _refzmp_count; };

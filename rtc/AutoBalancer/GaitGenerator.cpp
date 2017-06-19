@@ -204,7 +204,7 @@ namespace rats
     }
   };
 
-  void refzmp_generator::update_refzmp (const std::vector< std::vector<step_node> >& fnsl)
+  void refzmp_generator::update_refzmp ()
   {
     if ( 1 <= refzmp_count ) {
       refzmp_count--;
@@ -720,7 +720,7 @@ namespace rats
       solved = preview_controller_ptr->update(refzmp, cog, swing_foot_zmp_offsets, rzmp, sfzos, (refzmp_exist_p || finalize_count < preview_controller_ptr->get_delay()-default_step_time/dt));
     }
 
-    rg.update_refzmp(footstep_nodes_list);
+    rg.update_refzmp();
     // { // debug
     //   double cart_zmp[3];
     //   preview_controller_ptr->get_cart_zmp(cart_zmp);
@@ -1118,12 +1118,12 @@ namespace rats
     for (size_t i = overwrite_idx; i < queue_size - 1; i++) {
       refzmp_exist_p = rg.get_current_refzmp(rzmp, sfzos, default_double_support_ratio_before, default_double_support_ratio_after, default_double_support_static_ratio_before, default_double_support_static_ratio_after);
       preview_controller_ptr->set_preview_queue(rzmp, sfzos, i+1);
-      rg.update_refzmp(footstep_nodes_list);
+      rg.update_refzmp();
       sfzos.clear();
     }
     refzmp_exist_p = rg.get_current_refzmp(rzmp, sfzos, default_double_support_ratio_before, default_double_support_ratio_after, default_double_support_static_ratio_before, default_double_support_static_ratio_after);
     solved = preview_controller_ptr->update(refzmp, cog, swing_foot_zmp_offsets, rzmp, sfzos, refzmp_exist_p);
-    rg.update_refzmp(footstep_nodes_list);
+    rg.update_refzmp();
   };
 
   const std::vector<leg_type> gait_generator::calc_counter_leg_types_from_footstep_nodes(const std::vector<step_node>& fns, std::vector<std::string> _all_limbs) const {
