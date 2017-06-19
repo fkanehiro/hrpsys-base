@@ -210,8 +210,13 @@ namespace rats
       refzmp_count--;
     } else {
       refzmp_index++;
-      refzmp_count = one_step_count = step_count_list[refzmp_index];
-      thp.set_one_step_count(one_step_count);
+      // Check length of step_count_list and refzmp_index
+      //   The case if !(refzmp_index <= step_count_list.size()-1) is finalizing of gait_generator.
+      //   If finalizing, this can be neglected.
+      if (refzmp_index <= step_count_list.size()-1) {
+          refzmp_count = one_step_count = step_count_list[refzmp_index];
+          thp.set_one_step_count(one_step_count);
+      }
       //std::cerr << "fs " << fs_index << "/" << fnl.size() << " rf " << refzmp_index << "/" << refzmp_cur_list.size() << " flg " << std::endl;
     }
   };
