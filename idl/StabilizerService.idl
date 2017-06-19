@@ -235,6 +235,8 @@ module OpenHRP
       double detection_time_to_air;
       /// Limit of compensation for difference between ref-act root rot [rad].
       DblArray2 root_rot_compensation_limit;
+      /// Whether truncate zmp according to foot support polygon or not
+      boolean use_zmp_truncation;
     };
 
     /**
