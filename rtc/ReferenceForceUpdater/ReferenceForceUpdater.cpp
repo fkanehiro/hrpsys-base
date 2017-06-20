@@ -348,12 +348,17 @@ RTC::ReturnCode_t ReferenceForceUpdater::onExecute(RTC::UniqueId ec_id)
     // If RFU is not active
     {
       bool all_arm_is_not_active = true;
+      const hrp::Vector3 default_ref_foot_origin_ext_moment = hrp::Vector3::Zero();
       for (std::map<std::string, ReferenceForceUpdaterParam>::iterator itr = m_RFUParam.begin(); itr != m_RFUParam.end(); itr++ ) {
         std::string arm = itr->first;
         size_t arm_idx = ee_index_map[arm];
         if ( m_RFUParam[arm].is_active ) all_arm_is_not_active = false;
-        else if ( !isFootOriginExtMoment(arm) ) {
-            for (unsigned int j=0; j<3; j++ ) ref_force[arm_idx](j) = m_ref_force_in[arm_idx].data[j];
+        else {
+            if ( !isFootOriginExtMoment(arm) ) {
+                for (unsigned int j=0; j<3; j++ ) ref_force[arm_idx](j) = m_ref_force_in[arm_idx].data[j];
+            } else {
+                for (unsigned int j=0; j<3; j++ ) ref_force[arm_idx](j) = default_ref_foot_origin_ext_moment(j);
+            }
         }
       }
       //determin ref_force_out from ref_force_in
@@ -365,6 +370,11 @@ RTC::ReturnCode_t ReferenceForceUpdater::onExecute(RTC::UniqueId ec_id)
           m_ref_force_out[i].tm = m_ref_force_in[i].tm;
           m_ref_forceOut[i]->write();
         }
+        m_refFootOriginExtMoment.data.x = default_ref_foot_origin_ext_moment(0);
+        m_refFootOriginExtMoment.data.y = default_ref_foot_origin_ext_moment(1);
+        m_refFootOriginExtMoment.data.z = default_ref_foot_origin_ext_moment(2);
+        m_refFootOriginExtMoment.tm = m_qRef.tm;
+        m_refFootOriginExtMomentOut.write();
         return RTC::RTC_OK;
       }
     }
