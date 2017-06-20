@@ -1765,14 +1765,17 @@ void Stabilizer::calcDiffFootOriginExtMoment ()
     hrp::Vector3 act_ext_moment = hrp::Vector3(act_env_force(1) * act_zmp(2) - act_env_force(2) * act_zmp(1) + mg * act_cog(1),
                                                -(act_env_force(0) * act_zmp(2) - act_env_force(2) * act_zmp(0) + mg * act_cog(0)),
                                                0);
+    // Do not calculate actual value if in the air, because of invalid act_zmp.
+    if ( !on_ground ) act_ext_moment = ref_ext_moment;
+    // Calc diff
+    diff_foot_origin_ext_moment = ref_ext_moment - act_ext_moment;
     if (DEBUGP) {
         std::cerr << "[" << m_profile.instance_name << "] DiffStaticBalancePointOffset" << std::endl;
         std::cerr << "[" << m_profile.instance_name << "]   "
                   << "ref_ext_moment = " << ref_ext_moment.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[mm], "
-                  << "act_ext_moment = " << act_ext_moment.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[mm]" << std::endl;
+                  << "act_ext_moment = " << act_ext_moment.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[mm], "
+                  << "diff ext_moment = " << diff_foot_origin_ext_moment.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[mm]" << std::endl;
     }
-    // Calc diff
-    diff_foot_origin_ext_moment = ref_ext_moment - act_ext_moment;
 };
 
 /*
