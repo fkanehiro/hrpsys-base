@@ -431,6 +431,8 @@ RTC::ReturnCode_t ReferenceForceUpdater::onExecute(RTC::UniqueId ec_id)
         rats::rotm3times(m_robot->rootLink()->R, tmpR, m_robot->rootLink()->R);
         m_robot->calcForwardKinematics();
       }
+      hrp::Vector3 foot_origin_pos;
+      calcFootOriginCoords(foot_origin_pos, foot_origin_rot);
     }
 
     for (std::map<std::string, ReferenceForceUpdaterParam>::iterator itr = m_RFUParam.begin(); itr != m_RFUParam.end(); itr++ ) {
@@ -457,6 +459,12 @@ RTC::ReturnCode_t ReferenceForceUpdater::onExecute(RTC::UniqueId ec_id)
     m_ref_force_out[i].tm = m_ref_force_in[i].tm;
     m_ref_forceOut[i]->write();
   }
+  // FootOriginExtMoment
+  size_t idx = ee_index_map["footoriginextmoment"];
+  hrp::Vector3 tmp_moment = (foot_origin_rot.transpose() * ref_force[idx]) * transition_interpolator_ratio[idx];
+  m_refFootOriginExtMoment.data.x = tmp_moment(0);
+  m_refFootOriginExtMoment.data.y = tmp_moment(1);
+  m_refFootOriginExtMoment.data.z = tmp_moment(2);
   m_refFootOriginExtMoment.tm = m_qRef.tm;
   m_refFootOriginExtMomentOut.write();
 
@@ -492,9 +500,6 @@ void ReferenceForceUpdater::updateRefFootOriginExtMoment (const std::string& arm
 {
     double interpolation_time = 0;
     size_t arm_idx = ee_index_map[arm];
-    hrp::Vector3 foot_origin_pos;
-    hrp::Matrix33 foot_origin_rot;
-    calcFootOriginCoords(foot_origin_pos, foot_origin_rot);
     hrp::Vector3 df = foot_origin_rot * (-1 * hrp::Vector3(m_diffFootOriginExtMoment.data.x, m_diffFootOriginExtMoment.data.y, m_diffFootOriginExtMoment.data.z)); // diff = ref - act;
     if (!m_RFUParam[arm].is_hold_value)
         ref_force[arm_idx] = ref_force[arm_idx] + (m_RFUParam[arm].p_gain * transition_interpolator_ratio[arm_idx]) * df;
@@ -502,10 +507,6 @@ void ReferenceForceUpdater::updateRefFootOriginExtMoment (const std::string& arm
     if ( ref_force_interpolator[arm]->isEmpty() ) {
         ref_force_interpolator[arm]->setGoal(ref_force[arm_idx].data(), interpolation_time, true);
     }
-    hrp::Vector3 tmp_moment = foot_origin_rot.transpose() * ref_force[arm_idx];
-    m_refFootOriginExtMoment.data.x = tmp_moment(0);
-    m_refFootOriginExtMoment.data.y = tmp_moment(1);
-    m_refFootOriginExtMoment.data.z = tmp_moment(2);
     if ( DEBUGP ) {
         std::cerr << "[" << m_profile.instance_name << "] Updating reference moment [" << arm << "]" << std::endl;
         std::cerr << "[" << m_profile.instance_name << "]   diff foot origin ext moment = " << df.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[Nm], interpolation_time = " << interpolation_time << "[s]" << std::endl;

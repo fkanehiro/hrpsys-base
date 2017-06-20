@@ -213,6 +213,7 @@ class ReferenceForceUpdater
   std::map<std::string, interpolator*> ref_force_interpolator;
   std::map<std::string, interpolator*> transition_interpolator;
   std::vector<double> transition_interpolator_ratio;
+  hrp::Matrix33 foot_origin_rot;
   bool use_sh_base_pos_rpy;
   int loop;//counter in onExecute
 };
