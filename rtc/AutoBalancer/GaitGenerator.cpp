@@ -1002,12 +1002,12 @@ namespace rats
       dy  = std::max(-1 * footstep_param.stride_y     / default_step_time, std::min(footstep_param.stride_y     / default_step_time, dy ));
       /* inside step limitation */
       if (use_inside_step_limitation) {
-        if (cur_vel_param.velocity_y > 0) {
+        if (dy > 0) {
             if (std::count_if(sup_fns.begin(), sup_fns.end(), (&boost::lambda::_1->* &step_node::l_r == LLEG || &boost::lambda::_1->* &step_node::l_r == LARM)) > 0) dy *= 0.5;
         } else {
             if (std::count_if(sup_fns.begin(), sup_fns.end(), (&boost::lambda::_1->* &step_node::l_r == RLEG || &boost::lambda::_1->* &step_node::l_r == RARM)) > 0) dy *= 0.5;
         }
-        if (cur_vel_param.velocity_theta > 0) {
+        if (dth > 0) {
             if (std::count_if(sup_fns.begin(), sup_fns.end(), (&boost::lambda::_1->* &step_node::l_r == LLEG || &boost::lambda::_1->* &step_node::l_r == LARM)) > 0) dth *= 0.5;
         } else {
             if (std::count_if(sup_fns.begin(), sup_fns.end(), (&boost::lambda::_1->* &step_node::l_r == RLEG || &boost::lambda::_1->* &step_node::l_r == RARM)) > 0) dth *= 0.5;
