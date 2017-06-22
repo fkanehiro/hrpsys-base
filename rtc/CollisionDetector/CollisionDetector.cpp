@@ -23,6 +23,10 @@
 
 #include "CollisionDetector.h"
 
+extern "C" {
+#include <qhull/qhull_a.h>
+}
+
 #define deg2rad(x)	((x)*M_PI/180)
 #define rad2deg(x)      ((x)*180/M_PI)
 
@@ -179,7 +183,7 @@ RTC::ReturnCode_t CollisionDetector::onInitialize()
 				prop["collision_model"] == "" ) { // set convex hull as default
 			convertToConvexHull(m_robot);
 		}
-		setupVClipModel(m_robot);
+		setupFCLModel(m_robot);
 
 		if ( prop["collision_pair"] != "" ) {
 			std::cerr << "[" << m_profile.instance_name << "] prop[collision_pair] ->" << prop["collision_pair"] << std::endl;
@@ -207,8 +211,8 @@ RTC::ReturnCode_t CollisionDetector::onInitialize()
 					continue;
 				}
 				std::cerr << "[" << m_profile.instance_name << "] check collisions between " << m_robot->link(name1)->name << " and " <<  m_robot->link(name2)->name << std::endl;
-				m_pair[tmp] = new CollisionLinkPair(new VclipLinkPair(m_robot->link(name1), m_VclipLinks[m_robot->link(name1)->index],
-					m_robot->link(name2), m_VclipLinks[m_robot->link(name2)->index], 0));
+				m_pair[tmp] = new CollisionLinkPair(new FCLLinkPair(m_robot->link(name1), m_FCLModels[m_robot->link(name1)->index],
+					m_robot->link(name2), m_FCLModels[m_robot->link(name2)->index], 0));
 			}
 		}
 
@@ -239,7 +243,7 @@ RTC::ReturnCode_t CollisionDetector::onInitialize()
 						std::cerr << "[" << m_profile.instance_name << "] CollisionDetector will not control " << m_robot->joint(i)->name << std::endl;
 					}
 				}
-			}else{
+			} else{
 				std::cerr << "[" << m_profile.instance_name << "] ERROR size of collision_mask is differ from robot joint number .. " << mask_str.size()  << ", " << m_robot->numJoints() << std::endl;
 			}
 		}
@@ -432,7 +436,7 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
 			it = m_pair.begin();
 			for (unsigned int i = 0; it != m_pair.end(); i++, it++){
 				CollisionLinkPair* c = it->second;
-				VclipLinkPairPtr p = c->pair;
+				FCLLinkPairPtr p = c->pair;
 				tp.lines.push_back(std::make_pair(c->point0, c->point1));
 				if ( c->distance <= c->pair->getTolerance() ) {
 					m_safe_posture = false;
@@ -716,16 +720,6 @@ bool CollisionDetector::getCollisionStatus(OpenHRP::CollisionDetectorService::Co
 	return true;
 }
 
-void CollisionDetector::setupVClipModel(hrp::BodyPtr i_body)
-{
-	m_VclipLinks.resize(i_body->numLinks());
-	//std::cerr << i_body->numLinks() << std::endl;
-	for (unsigned int i=0; i<i_body->numLinks(); i++) {
-		assert(i_body->link(i)->index == i);
-		setupVClipModel(i_body->link(i));
-	}
-}
-
 bool CollisionDetector::checkIsSafeTransition(void)
 {
 	for ( unsigned int i = 0; i < m_q.data.length(); i++ ) {
@@ -756,7 +750,7 @@ bool CollisionDetector::enable(void)
 	std::map<std::string, CollisionLinkPair *>::iterator it = m_pair.begin();
 	for (unsigned int i = 0; it != m_pair.end(); it++, i++){
 		CollisionLinkPair* c = it->second;
-		VclipLinkPairPtr p = c->pair;
+		FCLLinkPairPtr p = c->pair;
 		c->distance = c->pair->computeDistance(c->point0.data(), c->point1.data());
 		if ( c->distance <= c->pair->getTolerance() ) {
 			hrp::JointPathPtr jointPath = m_robot->getJointPath(p->link(0),p->link(1));
@@ -783,6 +777,16 @@ bool CollisionDetector::disable(void)
 	std::cerr << "[" << m_profile.instance_name << "] CollisionDetector is successfully disabled." << std::endl;
 	m_enable = false;
 	return true;
+}
+
+void CollisionDetector::setupFCLModel(hrp::BodyPtr i_body)
+{
+	m_FCLModels.resize(i_body->numLinks());
+	//std::cerr << i_body->numLinks() << std::endl;
+	for (unsigned int i=0; i<i_body->numLinks(); i++) {
+		assert(i_body->link(i)->index == i);
+		setupFCLModel(i_body->link(i));
+	}
 }
 
 void CollisionDetector::setupFCLModel(hrp::Link *i_link)
