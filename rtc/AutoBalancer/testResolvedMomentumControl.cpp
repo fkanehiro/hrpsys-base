@@ -63,6 +63,7 @@ private:
         hrp::Vector3 Pref, Lref, cur_basePos, ref_basePos, P, L, CM;
         hrp::Matrix33 cur_baseRot, ref_baseRot;
         hrp::dvector cur_q(m_robot->numJoints());
+        hrp::dvector dq_ref(m_robot->numJoints());
         std::map<std::string, hrp::Vector3> p_constraint;
         std::map<std::string, hrp::Matrix33> R_constraint;
         std::map<std::string, hrp::dvector6> xi;
@@ -86,15 +87,17 @@ private:
             ref_basePos = cur_basePos + Pref / m_robot->totalMass();
             ref_baseRot = cur_baseRot;
 
+            dq_ref = hrp::dvector::Zero(m_robot->numJoints());
             // execute RMC
-            rmc->rmControl(m_robot, Pref, Lref, xi_ref, ref_basePos, ref_baseRot, dt);
+            rmc->rmControl(m_robot, Pref, Lref, xi_ref, ref_basePos, ref_baseRot, dq_ref, dt);
 
-            m_robot->rootLink()->v = (m_robot->rootLink()->p - cur_basePos);
+            m_robot->rootLink()->v = (m_robot->rootLink()->p - cur_basePos) / dt;
             hrp::Matrix33 dR = cur_baseRot.transpose() * m_robot->rootLink()->R;
-            m_robot->rootLink()->w = hrp::omegaFromRot(dR);
+            m_robot->rootLink()->w = hrp::omegaFromRot(dR) / dt;
 
             hrp::dvector tmpPL(6);
             tmpPL << Pref, Lref;
+            tmpPL /= dt;
             tmpPL = tmpPL.cwiseProduct(rmc->getSelectionVector());
             Pref = tmpPL.segment(0, 3);
             Lref = tmpPL.segment(3, 3);
@@ -103,7 +106,7 @@ private:
             m_robot->calcTotalMomentumFromJacobian(P, L);
 
             for (size_t i = 0; i < m_robot->numJoints(); ++i) {
-                m_robot->joint(i)->dq = (m_robot->joint(i)->q - cur_q(i));
+                m_robot->joint(i)->dq = (m_robot->joint(i)->q - cur_q(i)) / dt;
             }
             for (std::map<std::string, hrp::dvector6>::iterator it = xi_ref.begin(); it != xi_ref.end(); ++it) {
                 xi[(*it).first].segment(0, 3) = (m_robot->link((*it).first)->p - p_constraint[(*it).first]);
@@ -290,12 +293,12 @@ public:
         std::cerr << "test0 : Control All Momentum with legs constraints" << std::endl;
         setResetPose();
 
-        double max_tm = 120.0;
+        double max_tm = 4.0;
         hrp::dvector6 Svec;
         Svec << 1, 1, 1, 1, 1, 1;
         rmc->setSelectionMatrix(Svec);
-        xi_ref[end_effectors["rleg"]] = hrp::dvector6::Zero(6, 1);
-        xi_ref[end_effectors["lleg"]] = hrp::dvector6::Zero(6, 1);
+        xi_ref[end_effectors["rleg"]] = hrp::dvector6::Zero();
+        xi_ref[end_effectors["lleg"]] = hrp::dvector6::Zero();
 
         for (std::map<std::string, hrp::dvector6>::iterator it = xi_ref.begin(); it != xi_ref.end(); ++it) {
             rmc->addConstraintLink(m_robot, (*it).first);
@@ -307,9 +310,9 @@ public:
             hrp::Vector3 calcPref(const hrp::BodyPtr m_robot, const double tm, const double max_tm)
             {
                 hrp::Vector3 Pref;
-                Pref(0) = 0.00001 * sin(tm * M_PI / max_tm * 4);
-                Pref(1) = 0.00001 * sin(tm * M_PI / max_tm * 4);
-                Pref(2) = 0.00002 * sin(tm * M_PI / max_tm * 4);
+                Pref(0) = 0.0001 * sin(tm * M_PI / max_tm * 4);
+                Pref(1) = 0.0001 * sin(tm * M_PI / max_tm * 4);
+                Pref(2) = 0.0002 * sin(tm * M_PI / max_tm * 4);
                 Pref *= m_robot->totalMass();
                 return Pref;
             }
@@ -326,7 +329,6 @@ public:
             hrp::dvector6 calcXiref(const hrp::BodyPtr m_robot, const std::string &constraint, const double tm, const double max_tm)
             {
                 hrp::dvector6 xi_ref = hrp::dvector6::Zero();
-                // xi_ref(2) = 0.00 * sin(tm * M_PI / max_tm * 4);
                 return xi_ref;
             }
         };
@@ -340,12 +342,12 @@ public:
         std::cerr << "test1 : Control all momentum with lleg and rarm constraint" << std::endl;
         setResetPose();
 
-        double max_tm = 120.0;
+        double max_tm = 4.0;
         hrp::dvector6 Svec;
         Svec << 1, 1, 1, 1, 1, 1;
         rmc->setSelectionMatrix(Svec);
-        xi_ref[end_effectors["lleg"]] = hrp::dvector6::Zero(6, 1);
-        xi_ref[end_effectors["rarm"]] = hrp::dvector6::Zero(6, 1);
+        xi_ref[end_effectors["lleg"]] = hrp::dvector6::Zero();
+        xi_ref[end_effectors["rarm"]] = hrp::dvector6::Zero();
 
         for (std::map<std::string, hrp::dvector6>::iterator it = xi_ref.begin(); it != xi_ref.end(); ++it) {
             rmc->addConstraintLink(m_robot, (*it).first);
@@ -393,8 +395,8 @@ public:
         hrp::dvector6 Svec;
         Svec << 1, 1, 1, 1, 1, 1;
         rmc->setSelectionMatrix(Svec);
-        xi_ref[end_effectors["rarm"]] = hrp::dvector6::Zero(6, 1);
-        xi_ref[end_effectors["larm"]] = hrp::dvector6::Zero(6, 1);
+        xi_ref[end_effectors["rarm"]] = hrp::dvector6::Zero();
+        xi_ref[end_effectors["larm"]] = hrp::dvector6::Zero();
 
         for (std::map<std::string, hrp::dvector6>::iterator it = xi_ref.begin(); it != xi_ref.end(); ++it) {
             rmc->addConstraintLink(m_robot, (*it).first);
@@ -442,8 +444,8 @@ public:
         hrp::dvector6 Svec;
         Svec << 0, 0, 0, 1, 0, 1;
         rmc->setSelectionMatrix(Svec);
-        xi_ref[end_effectors["rleg"]] = hrp::dvector6::Zero(6, 1);
-        xi_ref[end_effectors["lleg"]] = hrp::dvector6::Zero(6, 1);
+        xi_ref[end_effectors["rleg"]] = hrp::dvector6::Zero();
+        xi_ref[end_effectors["lleg"]] = hrp::dvector6::Zero();
 
         for (std::map<std::string, hrp::dvector6>::iterator it = xi_ref.begin(); it != xi_ref.end(); ++it) {
             rmc->addConstraintLink(m_robot, (*it).first);
@@ -491,8 +493,8 @@ public:
         hrp::dvector6 Svec;
         Svec << 1, 1, 1, 1, 1, 1;
         rmc->setSelectionMatrix(Svec);
-        xi_ref[end_effectors["rleg"]] = hrp::dvector6::Zero(6, 1);
-        xi_ref[end_effectors["lleg"]] = hrp::dvector6::Zero(6, 1);
+        xi_ref[end_effectors["rleg"]] = hrp::dvector6::Zero();
+        xi_ref[end_effectors["lleg"]] = hrp::dvector6::Zero();
 
         for (std::map<std::string, hrp::dvector6>::iterator it = xi_ref.begin(); it != xi_ref.end(); ++it) {
             rmc->addConstraintLink(m_robot, (*it).first);
@@ -609,6 +611,8 @@ int main(int argc, char* argv[])
           trmc.test2();
       } else if (std::string(argv[1]) == "--test3") {
           trmc.test3();
+      } else if (std::string(argv[1]) == "--test4") {
+          trmc.test4();
       } else {
           print_usage();
           ret = 1;
