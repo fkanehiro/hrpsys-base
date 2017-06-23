@@ -116,6 +116,10 @@ class AutoBalancer
   bool getGoPosFootstepsSequence(const double& x, const double& y, const double& th, OpenHRP::AutoBalancerService::FootstepsSequence_out o_footstep);
   bool releaseEmergencyStop();
   void distributeReferenceZMPToWrenches (const hrp::Vector3& _ref_zmp);
+  bool setRMCSelectionMatrix(const OpenHRP::AutoBalancerService::DblArray6 Svec);
+  bool setRMCSelectionMatrix(const hrp::dvector6& Svec);
+  bool addRMCConstraintLink(const ::OpenHRP::AutoBalancerService::StrSequence& link_names);
+  bool removeRMCConstraintLink(const ::OpenHRP::AutoBalancerService::StrSequence& link_names);
 
  protected:
   // Configuration variable declaration
@@ -241,14 +245,12 @@ class AutoBalancer
   };
   bool calc_inital_support_legs(const double& y, std::vector<rats::coordinates>& initial_support_legs_coords, std::vector<rats::leg_type>& initial_support_legs, rats::coordinates& start_ref_coords);
   std::string getUseForceModeString ();
+  std::string getIKTypeString ();
 
   // for gg
   typedef boost::shared_ptr<rats::gait_generator> ggPtr;
   ggPtr gg;
   bool gg_is_walking, gg_solved;
-  // for rmc
-  typedef boost::shared_ptr<rats::RMController> rmcPtr;
-  rmcPtr rmc;
   // for abc
   typedef boost::shared_ptr<SimpleFullbodyInverseKinematicsSolver> fikPtr;
   fikPtr fik;
@@ -281,6 +283,7 @@ class AutoBalancer
   hrp::Vector3 sbp_offset, sbp_cog_offset;
   enum {MODE_NO_FORCE, MODE_REF_FORCE, MODE_REF_FORCE_WITH_FOOT, MODE_REF_FORCE_RFU_EXT_MOMENT} use_force;
   std::vector<hrp::Vector3> ref_forces;
+  enum {MODE_IK, MODE_RMC} ik_type;
 
   unsigned int m_debugLevel;
   bool is_legged_robot, is_stop_mode, is_hand_fix_mode, is_hand_fix_initial;
