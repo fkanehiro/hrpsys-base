@@ -45,7 +45,7 @@ namespace rats
         void calcConstraintMatrix(const hrp::Vector3 &root_p, const hrp::dmatrix &Jpl);
         void rmControl(hrp::BodyPtr &m_robot, const hrp::Vector3 &Pref, const hrp::Vector3 &Lref,
                        const std::map<std::string, hrp::dvector6> &xi_ref, const hrp::Vector3 &ref_basePos,
-                       const hrp::Matrix33 &ref_baseRot, const double dt);
+                       const hrp::Matrix33 &ref_baseRot, const hrp::dvector &dq_ref, const double dt);
         RMController(const hrp::BodyPtr m_robot)
         {
             for (size_t i = 0; i < m_robot->numJoints(); ++i) {

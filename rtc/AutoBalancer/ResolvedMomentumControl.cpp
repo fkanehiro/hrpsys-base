@@ -137,7 +137,7 @@ namespace rats
 
     void RMController::rmControl(hrp::BodyPtr &m_robot, const hrp::Vector3 &Pref, const hrp::Vector3 &Lref,
                                  const std::map<std::string, hrp::dvector6> &xi_ref, const hrp::Vector3 &ref_basePos,
-                                 const hrp::Matrix33 &ref_baseRot, const double dt)
+                                 const hrp::Matrix33 &ref_baseRot, const hrp::dvector &dq_ref, const double dt)
 
     {
         const double EPS = 1e-6;
@@ -166,7 +166,7 @@ namespace rats
             // set reference velocity of constraint joints
             for (size_t i = 0, j = 0; i < (*it).second.num_joints; ++i) {
                 if ((*it).second.joint_id[i].second == unique) {
-                    (*it).second.dq(j++) = m_robot->joint((*it).second.joint_id[i].first)->dq * dt;
+                    (*it).second.dq(j++) = dq_ref((*it).second.joint_id[i].first);
                 }
             }
 
@@ -194,7 +194,7 @@ namespace rats
         // Step4
         hrp::dvector dq_free(free_dof);
         for (size_t i = 0; i < free_dof; ++i) {
-            dq_free(i) = 0;
+            dq_free(i) = dq_ref(free_id_[i]); // reference joint velocity
         }
 
         hrp::dvector xi_b(6);
