@@ -28,13 +28,13 @@ set_target_properties(CollisionDetector PROPERTIES PREFIX "")
 
 add_executable(CollisionDetectorComp CollisionDetectorComp.cpp ${comp_sources})
 if (USE_HRPSYSUTIL)
-  target_link_libraries(CollisionDetectorComp hrpsysUtil ${QHULL_LIBRARIES} ${fcl_LIBRARIES})
+  target_link_libraries(CollisionDetectorComp hrpsysUtil ${QHULL_LIBRARIES} ${fcl_LIBRARIES} boost_system)
 else ()
-  target_link_libraries(CollisionDetectorComp ${QHULL_LIBRARIES} ${libs} ${fcl_LIBRARIES})
+  target_link_libraries(CollisionDetectorComp ${QHULL_LIBRARIES} ${libs} ${fcl_LIBRARIES} boost_system)
 endif()
 
 add_executable(SetupCollisionPair SetupCollisionPair.cpp)
-target_link_libraries(SetupCollisionPair CollisionDetector ${OPENHRP_LIBRARIES} ${QHULL_LIBRARIES})
+target_link_libraries(SetupCollisionPair CollisionDetector ${OPENHRP_LIBRARIES} ${QHULL_LIBRARIES} boost_system)
 
 if (USE_HRPSYSUTIL)
   add_executable(CollisionDetectorViewer CollisionDetectorViewer.cpp GLscene.cpp)
