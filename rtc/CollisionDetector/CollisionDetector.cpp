@@ -23,6 +23,12 @@
 
 #include "CollisionDetector.h"
 
+#ifdef USE_FCL
+extern "C" { // for setupFCLModel
+#include <qhull/qhull_a.h>
+}
+#endif
+
 #define deg2rad(x)	((x)*M_PI/180)
 #define rad2deg(x)      ((x)*180/M_PI)
 
@@ -74,6 +80,7 @@ CollisionDetector::CollisionDetector(RTC::Manager* manager)
 #endif // USE_HRPSYSUTIL
       m_use_limb_collision(false),
       m_use_viewer(false),
+      m_collision_library(COLLISION_LIBRARY_VCLIP),
       m_robot(hrp::BodyPtr()),
       m_loop_for_check(0),
       m_collision_loop(1),
@@ -146,6 +153,9 @@ RTC::ReturnCode_t CollisionDetector::onInitialize()
     if ( prop["collision_viewer"] == "true" ) {
 	m_use_viewer = true;
     }
+    if ( prop["collision_library"] == "fcl" ) {
+        m_collision_library = COLLISION_LIBRARY_FCL;
+    }
 #ifdef USE_HRPSYSUTIL
     m_glbody = new GLbody();
     m_robot = hrp::BodyPtr(m_glbody);
@@ -179,7 +189,18 @@ RTC::ReturnCode_t CollisionDetector::onInitialize()
                 prop["collision_model"] == "" ) { // set convex hull as default
         convertToConvexHull(m_robot);
     }
-    setupVClipModel(m_robot);
+    std::cerr << "[" << m_profile.instance_name << "] using " << m_collision_library << " collision detector" << std::endl;
+    switch (  m_collision_library ) {
+#ifdef USE_FCL
+        case COLLISION_LIBRARY_FCL:
+            setupFCLModel(m_robot);
+            break;
+#endif // USE_FCL
+        case COLLISION_LIBRARY_VCLIP:
+        default:
+            setupVClipModel(m_robot);        
+            break;
+    }
 
     if ( prop["collision_pair"] != "" ) {
 	std::cerr << "[" << m_profile.instance_name << "] prop[collision_pair] ->" << prop["collision_pair"] << std::endl;
@@ -206,9 +227,21 @@ RTC::ReturnCode_t CollisionDetector::onInitialize()
 		std::cerr << std::endl;
                 continue;
             }
-	    std::cerr << "[" << m_profile.instance_name << "] check collisions between " << m_robot->link(name1)->name << " and " <<  m_robot->link(name2)->name << std::endl;
-	    m_pair[tmp] = new CollisionLinkPair(new VclipLinkPair(m_robot->link(name1), m_VclipLinks[m_robot->link(name1)->index],
-                                                                  m_robot->link(name2), m_VclipLinks[m_robot->link(name2)->index], 0));
+            switch (  m_collision_library ) {
+#ifdef USE_FCL
+                case COLLISION_LIBRARY_FCL:
+                    std::cerr << "[" << m_profile.instance_name << "] FCL: check collisions between " << m_robot->link(name1)->name << " and " <<  m_robot->link(name2)->name << std::endl;
+                    m_pair[tmp] = new CollisionLinkPair(new FCLLinkPair(m_robot->link(name1), m_FCLLinks[m_robot->link(name1)->index],
+                                                                        m_robot->link(name2), m_FCLLinks[m_robot->link(name2)->index], 0));
+                    break;
+#endif // USE_FCL
+                case COLLISION_LIBRARY_VCLIP:
+                    std::cerr << "[" << m_profile.instance_name << "] Vclip: check collisions between " << m_robot->link(name1)->name << " and " <<  m_robot->link(name2)->name << std::endl;
+                default:
+                    m_pair[tmp] = new CollisionLinkPair(new VclipLinkPair(m_robot->link(name1), m_VclipLinks[m_robot->link(name1)->index],
+                                                                          m_robot->link(name2), m_VclipLinks[m_robot->link(name2)->index], 0));
+                    break;
+            }
 	}
     }
 
@@ -723,6 +756,18 @@ void CollisionDetector::setupVClipModel(hrp::BodyPtr i_body)
     }
 }
 
+#ifdef USE_FCL
+void CollisionDetector::setupFCLModel(hrp::BodyPtr i_body)
+{
+    m_FCLLinks.resize(i_body->numLinks());
+    //std::cerr << i_body->numLinks() << std::endl;
+    for (unsigned int i=0; i<i_body->numLinks(); i++) {
+        assert(i_body->link(i)->index == i);
+        setupFCLModel(i_body->link(i));
+    }
+}
+#endif // USE_FCL
+
 bool CollisionDetector::checkIsSafeTransition(void)
 {
     for ( unsigned int i = 0; i < m_q.data.length(); i++ ) {
@@ -799,6 +844,100 @@ void CollisionDetector::setupVClipModel(hrp::Link *i_link)
             i_link->name.c_str(), n, (int)(i_vclip_model->verts().size()));
     m_VclipLinks[i_link->index] = i_vclip_model;
 }
+
+#ifdef USE_FCL
+void CollisionDetector::setupFCLModel(hrp::Link *i_link)
+{
+    std::vector<fcl::Vec3f> fcl_vertices;
+    std::vector<fcl::Triangle> fcl_triangles;
+
+#define USE_QHULL 1
+#if USE_QHULL
+    std::vector<coordT> points;
+    for (int i = 0; i < i_link->coldetModel->getNumVertices(); i++ ) {
+        float v1, v2, v3;
+        i_link->coldetModel->getVertex(i, v1, v2, v3);
+        points.push_back(v1);
+        points.push_back(v2);
+        points.push_back(v3);
+    }
+
+    char qhull_attr[] = "qhull Qt Tc C-0.001";
+    //char qhull_attr[] = "qhull Qt Tc";
+    int ret = qh_new_qhull (3, points.size()/3, &points[0], 0, qhull_attr, NULL, stderr);
+    if (ret == 0) {
+        qh_triangulate();
+        //qh_vertexneighbors();
+        //fprintf(stderr, "[FCL] face %d -> %d / vert %d -> %d\n",
+        //points.size()/9, qh num_facets,
+        //points.size()/3, qh num_vertices);
+
+        int vertexIndex = 0;
+        int numVertices = qh num_vertices;
+        int numTriangles = qh num_facets;
+        int index[points.size()/3];
+        {
+            vertexT *vertex, **vertexp;
+            FORALLvertices {
+                int p = qh_pointid(vertex->point);
+                index[p] = vertexIndex;
+                vertexIndex++;
+                fcl::Vec3f v(points[p*3+0], points[p*3+1], points[p*3+2]);
+                fcl_vertices.push_back(v);
+            }
+        }
+        {
+            facetT *facet;
+            vertexT *vertex, **vertexp;
+            FORALLfacets {
+                int j = 0, p[3];
+                setT *vertices = qh_facet3vertex (facet);
+                FOREACHvertex_(vertices) {
+                    if(j < 3) {
+                        p[j] = index[qh_pointid(vertex->point)];
+                    } else {
+                        fprintf(stderr, "extra vertex %d\n",j);
+                    }
+                    j++;
+                }
+                qh_settempfree(&vertices);
+                fcl::Triangle tri(p[0], p[1], p[2]);
+                fcl_triangles.push_back(tri);
+            }
+        }
+        qh_freeqhull(!qh_ALL);
+        int curlong, totlong;    // memory remaining after qh_memfreeshort
+        qh_memfreeshort (&curlong, &totlong);    // free short memory and memory allocator
+        fprintf(stderr, "[FCL] build finished, qhull mesh of %s, %d -> %d (%d)\n",
+                i_link->name.c_str(), (int)(points.size())/3, (int)(fcl_triangles.size()), numTriangles);
+    } else {
+        fprintf(stderr, "[FCL] can not build qhull mesh of %s\n", i_link->name.c_str());
+    }
+#else
+    for (int i = 0; i < i_link->coldetModel->getNumVertices(); i ++ ) {
+        float v1, v2, v3;
+        i_link->coldetModel->getVertex(i, v1, v2, v3);
+        fcl::Vec3f p(v1, v2, v3);
+        fcl_vertices.push_back(p);
+    }
+    for (int i = 0; i < i_link->coldetModel->getNumTriangles(); i ++ ) {
+        int i1, i2, i3;
+        i_link->coldetModel->getTriangle(i, i1, i2, i3);
+        fcl::Triangle tri(i1, i2, i3);
+        fcl_triangles.push_back(tri);
+    }
+#endif
+
+    FCLModel *fcl_model = new FCLModel();
+    fcl_model->bv_splitter.reset(new fcl::BVSplitter<FCLCollisionModel>(fcl::SPLIT_METHOD_BV_CENTER));
+
+    fcl_model->beginModel();
+    fcl_model->addSubModel(fcl_vertices, fcl_triangles);
+    fcl_model->endModel();
+
+    m_FCLLinks[i_link->index] = fcl_model;
+}
+#endif // USE_FCL
 
 #ifndef USE_HRPSYSUTIL
 hrp::Link *hrplinkFactory()
