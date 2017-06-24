@@ -46,5 +46,12 @@ module OpenHRP
         sequence<Line>            lines;
     };
     boolean getCollisionStatus(out CollisionState cs);
+
+    /**
+     * @brief set collision loop for collision detector
+     * @param loop for loop integer
+     * @return true if set successfully, false otherwise
+     */
+    boolean setCollisionLoop(in short loop);
   };
 };
