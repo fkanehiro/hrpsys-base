@@ -29,10 +29,14 @@
 #include "TimedPosture.h"
 #include "interpolator.h"
 
-// #include "VclipLinkPair.h"
-#include "FCLLinkPair.h"
 #include "CollisionDetectorService_impl.h"
 #include "../SoftErrorLimiter/beep.h"
+
+#ifdef USE_FCL
+#include "FCLLinkPair.h"
+#else
+#include "VclipLinkPair.h"
+#endif
 
 // Service implementation headers
 // <rtc-template block="service_impl_h">
@@ -164,16 +168,28 @@ protected:
 	// </rtc-template>
 	// void setupVClipModel(hrp::BodyPtr i_body);
 	// void setupVClipModel(hrp::Link *i_link);
+#ifdef USE_FCL
 	void setupFCLModel(hrp::BodyPtr i_body);
 	void setupFCLModel(hrp::Link *i_link);
+#else
+	void setupVClipModel(hrp::BodyPtr i_body);
+	void setupVClipModel(hrp::Link *i_link);
+#endif
 
 private:
 	class CollisionLinkPair {
 	public:
+#ifdef USE_FCL
 		CollisionLinkPair(FCLLinkPairPtr i_pair) : point0(hrp::Vector3(0,0,0)), point1(hrp::Vector3(0,0,0)), distance(0) {
 			pair = i_pair;
 		}
 		FCLLinkPairPtr pair;
+#else
+		CollisionLinkPair(VclipLinkPairPtr i_pair) : point0(hrp::Vector3(0,0,0)), point1(hrp::Vector3(0,0,0)), distance(0) {
+			pair = i_pair;
+		}
+		VclipLinkPairPtr pair;
+#endif
 		hrp::Vector3 point0, point1;
 		double distance;
 	};
@@ -183,7 +199,12 @@ private:
 	SDLwindow m_window;
 	GLbody *m_glbody;
 #endif // USE_HRPSYSUTIL
+
+#ifdef USE_FCL
 	std::vector<FCLModel *> m_FCLModels;
+#else
+	std::vector<Vclip::Polyhedron *> m_VclipLinks;
+#endif
 	std::vector<int> m_curr_collision_mask, m_init_collision_mask;
 	bool m_use_limb_collision;
 	bool m_use_viewer;

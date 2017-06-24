@@ -183,7 +183,13 @@ RTC::ReturnCode_t CollisionDetector::onInitialize()
 				prop["collision_model"] == "" ) { // set convex hull as default
 			convertToConvexHull(m_robot);
 		}
+#ifdef USE_FCL
+		std::cerr << "[" << m_profile.instance_name << "] using FCL collision detector" << std::endl;
 		setupFCLModel(m_robot);
+#else
+		std::cerr << "[" << m_profile.instance_name << "] using vclip collision detector" << std::endl;
+		setupVClipModel(m_robot);
+#endif
 
 		if ( prop["collision_pair"] != "" ) {
 			std::cerr << "[" << m_profile.instance_name << "] prop[collision_pair] ->" << prop["collision_pair"] << std::endl;
@@ -211,8 +217,12 @@ RTC::ReturnCode_t CollisionDetector::onInitialize()
 					continue;
 				}
 				std::cerr << "[" << m_profile.instance_name << "] check collisions between " << m_robot->link(name1)->name << " and " <<  m_robot->link(name2)->name << std::endl;
+#ifdef USE_FCL
 				m_pair[tmp] = new CollisionLinkPair(new FCLLinkPair(m_robot->link(name1), m_FCLModels[m_robot->link(name1)->index],
 					m_robot->link(name2), m_FCLModels[m_robot->link(name2)->index], 0));
+#else
+				m_pair[tmp] = new CollisionLinkPair(new VclipLinkPair(m_robot->link(name1), m_VclipLinks[m_robot->link(name1)->index], m_robot->link(name2), m_VclipLinks[m_robot->link(name2)->index], 0));
+#endif
 			}
 		}
 
@@ -436,7 +446,11 @@ RTC::ReturnCode_t CollisionDetector::onExecute(RTC::UniqueId ec_id)
 			it = m_pair.begin();
 			for (unsigned int i = 0; it != m_pair.end(); i++, it++){
 				CollisionLinkPair* c = it->second;
+#ifdef USE_FCL
 				FCLLinkPairPtr p = c->pair;
+#else
+				VclipLinkPairPtr p = c->pair;
+#endif
 				tp.lines.push_back(std::make_pair(c->point0, c->point1));
 				if ( c->distance <= c->pair->getTolerance() ) {
 					m_safe_posture = false;
@@ -750,7 +764,11 @@ bool CollisionDetector::enable(void)
 	std::map<std::string, CollisionLinkPair *>::iterator it = m_pair.begin();
 	for (unsigned int i = 0; it != m_pair.end(); it++, i++){
 		CollisionLinkPair* c = it->second;
+#ifdef USE_FCL
 		FCLLinkPairPtr p = c->pair;
+#else
+		VclipLinkPairPtr p = c->pair;
+#endif
 		c->distance = c->pair->computeDistance(c->point0.data(), c->point1.data());
 		if ( c->distance <= c->pair->getTolerance() ) {
 			hrp::JointPathPtr jointPath = m_robot->getJointPath(p->link(0),p->link(1));
@@ -779,6 +797,7 @@ bool CollisionDetector::disable(void)
 	return true;
 }
 
+#ifdef USE_FCL
 void CollisionDetector::setupFCLModel(hrp::BodyPtr i_body)
 {
 	m_FCLModels.resize(i_body->numLinks());
@@ -880,6 +899,33 @@ void CollisionDetector::setupFCLModel(hrp::Link *i_link)
 
 	m_FCLModels[i_link->index] = fcl_model;
 }
+#else
+void CollisionDetector::setupVClipModel(hrp::BodyPtr i_body)
+{
+	m_VclipLinks.resize(i_body->numLinks());
+	//std::cerr << i_body->numLinks() << std::endl;
+	for (unsigned int i=0; i<i_body->numLinks(); i++) {
+		assert(i_body->link(i)->index == i);
+		setupVClipModel(i_body->link(i));
+	}
+}
+
+void CollisionDetector::setupVClipModel(hrp::Link *i_link)
+{
+	Vclip::Polyhedron* i_vclip_model = new Vclip::Polyhedron();
+	int n = i_link->coldetModel->getNumVertices();
+	float v[3];
+	Vclip::VertFaceName vertName;
+	for (int i = 0; i < n; i ++ ) {
+		i_link->coldetModel->getVertex(i, v[0], v[1], v[2]);
+		sprintf(vertName, "v%d", i);
+		i_vclip_model->addVertex(vertName, Vclip::Vect3(v[0], v[1], v[2]));
+	}
+	i_vclip_model->buildHull();
+	i_vclip_model->check();
+	m_VclipLinks[i_link->index] = i_vclip_model;
+}
+#endif
 
 #ifndef USE_HRPSYSUTIL
 hrp::Link *hrplinkFactory()

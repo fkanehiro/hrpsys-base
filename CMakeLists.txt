@@ -16,6 +16,8 @@ option(ENABLE_INSTALL_RPATH "Enable RPATH setting for installed binary files" OF
 
 set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+set(USE_FCL TRUE)
+# set(USE_FCL FALSE)
 
 # commands
 if(UNIX)
