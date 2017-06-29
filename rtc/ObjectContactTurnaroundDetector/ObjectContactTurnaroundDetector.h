@@ -147,6 +147,7 @@ class ObjectContactTurnaroundDetector
 
   void updateRootLinkPosRot (TimedOrientation3D tmprpy);
   void calcFootMidCoords (hrp::Vector3& new_foot_mid_pos, hrp::Matrix33& new_foot_mid_rot);
+  void calcFootOriginCoords (hrp::Vector3& foot_origin_pos, hrp::Matrix33& foot_origin_rot);
   void calcObjectContactTurnaroundDetectorState();
 
   std::map<std::string, ee_trans> ee_map;
