@@ -2010,19 +2010,14 @@ void AutoBalancer::calc_static_balance_point_from_forces(hrp::Vector3& sb_point,
   for (size_t j = 0; j < 2; j++) {
     nume(j) = mg * tmpcog(j);
     denom(j) = mg;
-    for (size_t i = 0; i < sensor_names.size(); i++) {
-      if ( sensor_names[i].find("hsensor") != std::string::npos || sensor_names[i].find("asensor") != std::string::npos ) { // tempolary to get arm force coords
-          hrp::Link* parentlink;
-          hrp::ForceSensor* sensor = m_robot->sensor<hrp::ForceSensor>(sensor_names[i]);
-          if (sensor) parentlink = sensor->link;
-          else parentlink = m_vfs[sensor_names[i]].link;
-          for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
-              if (it->second.target_link->name == parentlink->name) {
-                  hrp::Vector3 fpos = parentlink->p + parentlink->R * it->second.localPos;
-                  nume(j) += ( (fpos(2) - ref_com_height) * tmp_forces[i](j) - fpos(j) * tmp_forces[i](2) );
-                  denom(j) -= tmp_forces[i](2);
-              }
-          }
+    for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
+      // Check leg_names. leg_names is assumed to be support limb for locomotion, cannot be used for manipulation. If it->first is not included in leg_names, use it for manipulation and static balance point calculation.
+      if (std::find(leg_names.begin(), leg_names.end(), it->first) == leg_names.end()) {
+        size_t idx = contact_states_index_map[it->first];
+        // Force applied point is assumed as end effector
+        hrp::Vector3 fpos = it->second.target_link->p + it->second.target_link->R * it->second.localPos;
+        nume(j) += ( (fpos(2) - ref_com_height) * tmp_forces[idx](j) - fpos(j) * tmp_forces[idx](2) );
+        denom(j) -= tmp_forces[idx](2);
       }
     }
     if ( use_force == MODE_REF_FORCE_WITH_FOOT ) {
