@@ -110,6 +110,8 @@ class ObjectContactTurnaroundDetector
   std::vector<InPort<TimedDoubleSeq> *> m_forceIn;
   TimedOrientation3D m_rpy;
   InPort<TimedOrientation3D> m_rpyIn;
+  TimedBooleanSeq m_contactStates;
+  InPort<TimedBooleanSeq> m_contactStatesIn;
   
   // </rtc-template>
 
@@ -143,6 +145,7 @@ class ObjectContactTurnaroundDetector
     std::string target_name, sensor_name;
     hrp::Vector3 localPos;
     hrp::Matrix33 localR;
+    size_t index;
   };
 
   void updateRootLinkPosRot (TimedOrientation3D tmprpy);

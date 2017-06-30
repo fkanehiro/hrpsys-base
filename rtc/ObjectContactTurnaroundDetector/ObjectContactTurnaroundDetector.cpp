@@ -43,6 +43,7 @@ ObjectContactTurnaroundDetector::ObjectContactTurnaroundDetector(RTC::Manager* m
       // <rtc-template block="initializer">
       m_qCurrentIn("qCurrent", m_qCurrent),
       m_rpyIn("rpy", m_rpy),
+      m_contactStatesIn("contactStates", m_contactStates),
       m_otdDataOut("otdData", m_otdData),
       m_ObjectContactTurnaroundDetectorServicePort("ObjectContactTurnaroundDetectorService"),
       // </rtc-template>
@@ -68,6 +69,7 @@ RTC::ReturnCode_t ObjectContactTurnaroundDetector::onInitialize()
     // Set InPort buffers
     addInPort("qCurrent", m_qCurrentIn);
     addInPort("rpy", m_rpyIn);
+    addInPort("contactStates", m_contactStatesIn);
 
     // Set OutPort buffer
     addOutPort("otdData", m_otdDataOut);
@@ -156,6 +158,7 @@ RTC::ReturnCode_t ObjectContactTurnaroundDetector::onInitialize()
             }
             eet.localR = Eigen::AngleAxis<double>(tmpv[3], hrp::Vector3(tmpv[0], tmpv[1], tmpv[2])).toRotationMatrix(); // rotation in VRML is represented by axis + angle
             eet.target_name = ee_target;
+            eet.index = i;
             ee_map.insert(std::pair<std::string, ee_trans>(ee_name , eet));
             base_name_map.insert(std::pair<std::string, std::string>(ee_name, ee_base));
             std::cerr << "[" << m_profile.instance_name << "] End Effector [" << ee_name << "]" << ee_target << " " << ee_base << std::endl;
@@ -163,6 +166,7 @@ RTC::ReturnCode_t ObjectContactTurnaroundDetector::onInitialize()
             std::cerr << "[" << m_profile.instance_name << "]   localPos = " << eet.localPos.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[m]" << std::endl;
             std::cerr << "[" << m_profile.instance_name << "]   localR = " << eet.localR.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", "\n", "    [", "]")) << std::endl;
         }
+        m_contactStates.data.length(num);
     }
 
     // initialize sensor_names
@@ -263,6 +267,9 @@ RTC::ReturnCode_t ObjectContactTurnaroundDetector::onExecute(RTC::UniqueId ec_id
       m_qCurrentIn.read();
       m_otdData.tm = m_qCurrent.tm;
     }
+    if (m_contactStatesIn.isNew()) {
+      m_contactStatesIn.read();
+    }
     if ( m_qCurrent.data.length() ==  m_robot->numJoints() &&
          ee_map.find("rleg") != ee_map.end() && ee_map.find("lleg") != ee_map.end() ) { // if legged robot
         Guard guard(m_mutex);
@@ -326,7 +333,11 @@ void ObjectContactTurnaroundDetector::calcFootOriginCoords (hrp::Vector3& foot_o
   std::vector<rats::coordinates> leg_c_v;
   hrp::Vector3 ez = hrp::Vector3::UnitZ();
   hrp::Vector3 ex = hrp::Vector3::UnitX();
-  std::vector<std::string> leg_names = boost::assign::list_of("rleg")("lleg");
+  std::vector<std::string> leg_names;
+  for ( std::map<std::string, ee_trans>::iterator it = ee_map.begin(); it != ee_map.end(); it++ ) {
+      // If rleg or lleg, and if reference contact states is true
+      if (it->first.find("leg") != std::string::npos && m_contactStates.data[it->second.index]) leg_names.push_back(it->first);
+  }
   for (size_t i = 0; i < leg_names.size(); i++) {
     hrp::Link* target_link = m_robot->link(ee_map[leg_names[i]].target_name);
     rats::coordinates leg_c(hrp::Vector3(target_link->p + target_link->R * ee_map[leg_names[i]].localPos), hrp::Matrix33(target_link->R * ee_map[leg_names[i]].localR));
@@ -339,10 +350,15 @@ void ObjectContactTurnaroundDetector::calcFootOriginCoords (hrp::Vector3& foot_o
     leg_c.rot(0,2) = ez(0); leg_c.rot(1,2) = ez(1); leg_c.rot(2,2) = ez(2);
     leg_c_v.push_back(leg_c);
   }
-  rats::coordinates tmpc;
-  rats::mid_coords(tmpc, 0.5, leg_c_v[0], leg_c_v[1]);
-  foot_origin_pos = tmpc.pos;
-  foot_origin_rot = tmpc.rot;
+  if (leg_names.size() == 2) {
+    rats::coordinates tmpc;
+    rats::mid_coords(tmpc, 0.5, leg_c_v[0], leg_c_v[1]);
+    foot_origin_pos = tmpc.pos;
+    foot_origin_rot = tmpc.rot;
+  } else { // size = 1
+    foot_origin_pos = leg_c_v[0].pos;
+    foot_origin_rot = leg_c_v[0].rot;
+  }
 }
 
 void ObjectContactTurnaroundDetector::calcObjectContactTurnaroundDetectorState()
