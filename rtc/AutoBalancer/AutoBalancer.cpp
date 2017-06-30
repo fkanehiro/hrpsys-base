@@ -945,20 +945,22 @@ void AutoBalancer::updateTargetCoordsForHandFixMode (coordinates& tmp_fix_coords
 void AutoBalancer::calculateOutputRefForces ()
 {
     // TODO : need to be updated for multicontact and other walking
-    std::vector<hrp::Vector3> ee_pos;
-    for (size_t i = 0 ; i < leg_names.size(); i++) {
-        ABCIKparam& tmpikp = ikp[leg_names[i]];
-        ee_pos.push_back(tmpikp.target_p0 + tmpikp.target_r0 * default_zmp_offsets[i]);
+    if (leg_names.size() == 2) {
+        std::vector<hrp::Vector3> ee_pos;
+        for (size_t i = 0 ; i < leg_names.size(); i++) {
+            ABCIKparam& tmpikp = ikp[leg_names[i]];
+            ee_pos.push_back(tmpikp.target_p0 + tmpikp.target_r0 * default_zmp_offsets[i]);
+        }
+        double alpha = (ref_zmp - ee_pos[1]).norm() / ((ee_pos[0] - ref_zmp).norm() + (ee_pos[1] - ref_zmp).norm());
+        if (alpha>1.0) alpha = 1.0;
+        if (alpha<0.0) alpha = 0.0;
+        if (DEBUGP) {
+            std::cerr << "[" << m_profile.instance_name << "] alpha:" << alpha << std::endl;
+        }
+        double mg = m_robot->totalMass() * gg->get_gravitational_acceleration();
+        m_force[0].data[2] = alpha * mg;
+        m_force[1].data[2] = (1-alpha) * mg;
     }
-    double alpha = (ref_zmp - ee_pos[1]).norm() / ((ee_pos[0] - ref_zmp).norm() + (ee_pos[1] - ref_zmp).norm());
-    if (alpha>1.0) alpha = 1.0;
-    if (alpha<0.0) alpha = 0.0;
-    if (DEBUGP) {
-        std::cerr << "[" << m_profile.instance_name << "] alpha:" << alpha << std::endl;
-    }
-    double mg = m_robot->totalMass() * gg->get_gravitational_acceleration();
-    m_force[0].data[2] = alpha * mg;
-    m_force[1].data[2] = (1-alpha) * mg;
     if ( use_force == MODE_REF_FORCE_WITH_FOOT || use_force == MODE_REF_FORCE_RFU_EXT_MOMENT ) { // TODO : use other use_force mode. This should be depends on Stabilizer distribution mode.
         distributeReferenceZMPToWrenches (ref_zmp);
     }
