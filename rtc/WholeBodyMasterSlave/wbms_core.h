@@ -117,8 +117,10 @@ class RobotConfig : UTIL_CONST {
       std::vector<hrp::Vector3> init;
       init.resize(MINMAX);
       ee_rot_limit.resize(num_pose_tgt, init);
-      ee_rot_limit[com][MIN] = hrp::Vector3(-30*D2R, -30*D2R, INFMIN);
-      ee_rot_limit[com][MAX] = hrp::Vector3( 30*D2R,  30*D2R, INFMAX);
+//      ee_rot_limit[com][MIN] = hrp::Vector3(-10*D2R, -10*D2R, INFMIN);
+//      ee_rot_limit[com][MAX] = hrp::Vector3( 10*D2R,  10*D2R, INFMAX);
+      ee_rot_limit[com][MIN] = hrp::Vector3(-10*D2R, -10*D2R, -30*D2R);
+      ee_rot_limit[com][MAX] = hrp::Vector3( 10*D2R,  10*D2R, 30*D2R);
       ee_rot_limit[rf][MIN] = hrp::Vector3(-30*D2R, -30*D2R, -20*D2R);
       ee_rot_limit[rf][MAX] = hrp::Vector3( 30*D2R,  30*D2R,   5*D2R);
       ee_rot_limit[lf][MIN] = hrp::Vector3(-30*D2R, -30*D2R,  -5*D2R);
@@ -127,8 +129,8 @@ class RobotConfig : UTIL_CONST {
       ee_rot_limit[rh][MAX] = hrp::Vector3( 30*D2R,  30*D2R,  30*D2R);
       ee_rot_limit[lh][MIN] = hrp::Vector3(-30*D2R, -30*D2R, -30*D2R);
       ee_rot_limit[lh][MAX] = hrp::Vector3( 30*D2R,  30*D2R,  30*D2R);
-      ee_rot_limit[head][MIN] = hrp::Vector3( 0*D2R, -10*D2R, -40*D2R);
-      ee_rot_limit[head][MAX] = hrp::Vector3( 0*D2R,  20*D2R,  40*D2R);
+      ee_rot_limit[head][MIN] = hrp::Vector3( 0*D2R, -20*D2R, -40*D2R);
+      ee_rot_limit[head][MAX] = hrp::Vector3( 0*D2R,  30*D2R,  40*D2R);
     }
 };
 
@@ -224,7 +226,8 @@ class WBMSCore : UTIL_CONST {
       WBMSparam.set_com_height_fix_val = 0.02;
       WBMSparam.swing_foot_height_offset = 0.01;
       WBMSparam.swing_foot_max_height = 0.5;
-      WBMSparam.upper_body_rmc_ratio = 0.5;
+//      WBMSparam.upper_body_rmc_ratio = 0.5;
+      WBMSparam.upper_body_rmc_ratio = 0.0;
       WBMSparam.use_rh = WBMSparam.use_lh = true;
       WBMSparam.use_head = true;
       WBMSparam.use_manipulability_limit = true;
