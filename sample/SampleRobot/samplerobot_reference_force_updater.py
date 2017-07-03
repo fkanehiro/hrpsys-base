@@ -38,10 +38,12 @@ def demoGetReferecenForceUpdateParam ():
 
 def demoSetReferecenForceUpdateParam ():
     print >> sys.stderr, "2. setParam"
+    print >> sys.stderr, "  Valid limb access"
     for limb_name in ['rarm', 'larm']:
         [ret, rfup] = hcf.rfu_svc.getReferenceForceUpdaterParam(limb_name)
         ret = hcf.rfu_svc.setReferenceForceUpdaterParam(limb_name, rfup)
         assert(ret)
+    print >> sys.stderr, "  Invalid limb access"
     ret = hcf.rfu_svc.setReferenceForceUpdaterParam('rarm2', rfup) # Invalid name
     assert(not ret)
     print >> sys.stderr, "  =>OK"
@@ -114,21 +116,26 @@ def demoSetReferecenForceUpdateParamWhileActive ():
     assert(not ret)
     print >> sys.stderr, " 4.3 Check setParam which can be changed while active"
     [ret, rfup] = hcf.rfu_svc.getReferenceForceUpdaterParam('rarm')
-    rfup.motion_dir=[0,0,-1]
+    rfup.motion_dir = tmp_value = [0,0,-1]
     ret = hcf.rfu_svc.setReferenceForceUpdaterParam('rarm', rfup)
-    assert(ret)
-    rfup.p_gain = rfup.p_gain*0.1
+    print >> sys.stderr, "   motion_dir ..."
+    assert(ret and (map (lambda x,y : abs(x-y)<1e-5, hcf.rfu_svc.getReferenceForceUpdaterParam('rarm')[1].motion_dir, tmp_value)))
+    rfup.p_gain = tmp_value = rfup.p_gain*0.1
     ret = hcf.rfu_svc.setReferenceForceUpdaterParam('rarm', rfup)
-    assert(ret)
-    rfup.d_gain = rfup.d_gain*0.1
+    print >> sys.stderr, "   p_gain ..."
+    assert(ret and (abs(hcf.rfu_svc.getReferenceForceUpdaterParam('rarm')[1].p_gain-tmp_value) < 1e-5))
+    rfup.d_gain = tmp_value = rfup.d_gain*0.1
     ret = hcf.rfu_svc.setReferenceForceUpdaterParam('rarm', rfup)
-    assert(ret)
+    print >> sys.stderr, "   d_gain ..."
+    assert(ret and (abs(hcf.rfu_svc.getReferenceForceUpdaterParam('rarm')[1].d_gain-tmp_value) < 1e-5))
     rfup.i_gain = rfup.i_gain*0.1
     ret = hcf.rfu_svc.setReferenceForceUpdaterParam('rarm', rfup)
-    assert(ret)
-    rfup.is_hold_value = not rfup.is_hold_value
+    print >> sys.stderr, "   i_gain ..."
+    assert(ret and (abs(hcf.rfu_svc.getReferenceForceUpdaterParam('rarm')[1].i_gain-tmp_value) < 1e-5))
+    rfup.is_hold_value = tmp_value = not rfup.is_hold_value
     ret = hcf.rfu_svc.setReferenceForceUpdaterParam('rarm', rfup)
-    assert(ret)
+    print >> sys.stderr, "   is_hold_value ..."
+    assert(ret and hcf.rfu_svc.getReferenceForceUpdaterParam('rarm')[1].is_hold_value == tmp_value)
     print >> sys.stderr, " 4.4 Stop"
     hcf.rfu_svc.stopReferenceForceUpdater('rarm')
     hcf.rfu_svc.setReferenceForceUpdaterParam('rarm', rfup_org)
