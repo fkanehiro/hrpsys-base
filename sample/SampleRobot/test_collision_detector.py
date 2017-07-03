@@ -23,10 +23,18 @@ def vector_equal_eps (vec1, vec2, eps=1e-5):
         return False
 
 def init ():
-    global hcf, init_pose, col_safe_pose, col_fail_pose, hrpsys_version
+    global hcf, init_pose, col_safe_pose, col_fail_pose, hrpsys_version, fout, curr_loop
+
+    fout = open('result.txt', 'w')
+    fout.write('Condition\tLoop\tComp Time\tRecov Time\tLoop for check\n')
+
     hcf = HrpsysConfigurator()
     hcf.getRTCList = hcf.getRTCListUnstable
     hcf.init ("HiroNX(Robot)0")
+
+    curr_loop = 1
+    hcf.co_svc.setCollisionLoop(curr_loop)
+
     init_pose = [0]*29
     # col_safe_pose = [0.0,-0.349066,0.0,0.820305,-0.471239,0.0,0.523599,0.0,0.0,-1.74533,0.15708,-0.113446,0.0,0.0,-0.349066,0.0,0.820305,-0.471239,0.0,0.523599,0.0,0.0,-1.74533,-0.15708,-0.113446,0.0,0.0,0.0,0.0]
     # col_fail_pose = [0.0,-0.349066,0.0,0.820305,-0.471239,0.0,0.845363,0.03992,0.250074,-1.32816,0.167513,0.016204,0.0,0.0,-0.349066,0.0,0.820305,-0.471239,0.0,0.523599,0.0,0.0,-1.74533,-0.15708,-0.113446,0.0,0.0,0.0,0.0]
@@ -47,7 +55,22 @@ def init ():
         -0.10807458370637157, 0.9688350378358652, 0.0, 
         0.0, 0.0, 0.0]
     hrpsys_version = hcf.co.ref.get_component_profile().version
-    print >> sys.stderr, "hrpsys_version = %s"%hrpsys_version
+    print >> sys.stderr, "hrpsys_version = %s" % hrpsys_version
+
+def printCollisionState(cs):
+    print >> sys.stderr, "Collision State:\n"
+    print >> sys.stderr, "Time: %f" % cs.time
+    print >> sys.stderr, "Computation time: %f" % cs.computation_time
+    print >> sys.stderr, "Safe Posture: %s" % cs.safe_posture
+    print >> sys.stderr, "Recover time: %f" % cs.recover_time
+    print >> sys.stderr, "Loop for check: %d" % cs.loop_for_check
+    # print >> sys.stderr, cs.angle
+    # print >> sys.stderr, cs.collide
+    # print >> sys.stderr, cs.lines
+
+def outputCollisionState(cs, condition):
+	s = "%.1f\t\t\t%d\t\t%f\t%f\t%d\n" % (condition, curr_loop, cs.computation_time, cs.recover_time, cs.loop_for_check)
+	fout.write(s)
 
 # demo functions
 def demoCollisionCheckSafe ():
@@ -60,8 +83,9 @@ def demoCollisionCheckSafe ():
         counter = counter + 1
         # print >> sys.stderr, counter
     assert(counter != 20)
-    cs=hcf.co_svc.getCollisionStatus()[1]
+    cs = hcf.co_svc.getCollisionStatus()[1]
     if cs.safe_posture:
+        outputCollisionState(cs, 1)
         print >> sys.stderr, "  => Safe pose"
     assert(cs.safe_posture is True)
 
@@ -69,14 +93,16 @@ def demoCollisionCheckFail ():
     print >> sys.stderr, "2. CollisionCheck in fail pose"
     hcf.seq_svc.setJointAngles(col_fail_pose, 3.0);
     hcf.waitInterpolation();
-    cs=hcf.co_svc.getCollisionStatus()[1]
+    cs = hcf.co_svc.getCollisionStatus()[1]
     if not cs.safe_posture:
+        outputCollisionState(cs, 2.0)
         print >> sys.stderr, "  => Successfully stop fail pose"
     assert((not cs.safe_posture) is True)
     hcf.seq_svc.setJointAngles(col_safe_pose, 3.0);
     hcf.waitInterpolation();
     cs=hcf.co_svc.getCollisionStatus()[1]
     if cs.safe_posture:
+        outputCollisionState(cs, 2.1)
         print >> sys.stderr, "  => Successfully return to safe pose"
     assert(cs.safe_posture is True)
 
@@ -85,15 +111,17 @@ def demoCollisionCheckFailWithSetTolerance ():
     hcf.co_svc.setTolerance("all", 0.1); # [m]
     hcf.seq_svc.setJointAngles(col_fail_pose, 1.0);
     hcf.waitInterpolation();
-    cs=hcf.co_svc.getCollisionStatus()[1]
+    cs = hcf.co_svc.getCollisionStatus()[1]
     if not cs.safe_posture:
+        outputCollisionState(cs, 3.0)
         print >> sys.stderr, "  => Successfully stop fail pose (0.1[m] tolerance)"
     assert((not cs.safe_posture) is True)
     hcf.co_svc.setTolerance("all", 0.0); # [m]
     hcf.seq_svc.setJointAngles(col_safe_pose, 3.0);
     hcf.waitInterpolation();
-    cs=hcf.co_svc.getCollisionStatus()[1]
+    cs = hcf.co_svc.getCollisionStatus()[1]
     if cs.safe_posture:
+        outputCollisionState(cs, 3.1)
         print >> sys.stderr, "  => Successfully return to safe pose"
     assert(cs.safe_posture is True)
 
@@ -115,45 +143,6 @@ def demoCollisionDisableEnable ():
     hcf.seq_svc.setJointAngles(col_safe_pose, 1.0);
     hcf.waitInterpolation();
 
-def demoCollisionMask ():
-    if hcf.abc_svc != None:
-        print >> sys.stderr, "5. Collision mask test"
-        hcf.co_svc.setTolerance("all", 0); # [m]
-        hcf.startAutoBalancer()
-        print >> sys.stderr, "  5.1 Collision mask among legs : Check RLEG_ANKLE_R - LLEG_ANKLE_R"
-        print >> sys.stderr, "      Desired behavior : Robot stops when legs collision."
-        hcf.setFootSteps([OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([0,-0.09,0],[1,0,0,0],"rleg")]),
-                          OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([0,0.0,0],[1,0,0,0],"lleg")])])
-        hcf.abc_svc.waitFootSteps();
-        hcf.setFootSteps([OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([0,-0.09,0],[1,0,0,0],"rleg")]),
-                          OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([0,0.09,0],[1,0,0,0],"lleg")])])
-        hcf.abc_svc.waitFootSteps();
-        print >> sys.stderr, "  => Successfully mask works. Legs joints stops when collision."
-        print >> sys.stderr, "  5.2 Collision mask between leg and arm : Check RLEG_HIP_R and RARM_WRIST*"
-        print >> sys.stderr, "      Desired behavior : Leg joints moves and arm joints stops when collision."
-        hcf.seq_svc.setJointAngles(col_safe_pose, 1.0);
-        hcf.waitInterpolation();
-        hcf.abc_svc.goVelocity(0,0,0);
-        hcf.seq_svc.setJointAngles(col_fail_pose, 1.0);
-        hcf.waitInterpolation();
-        hcf.seq_svc.setJointAngles(col_safe_pose, 3.0);
-        hcf.waitInterpolation();
-        hcf.abc_svc.goStop();
-        print >> sys.stderr, "  => Successfully mask works. Arm joints stops and leg joints moves."
-        print >> sys.stderr, "  5.3 Collision mask between leg and arm : Check RLEG_HIP_R and RARM_WRIST* and RLEG_ANKLE_R and LLEG_ANKLE_R (combination of 5.1 and 5.2)"
-        print >> sys.stderr, "      Desired behavior : First, arm stops and legs moves."
-        hcf.seq_svc.setJointAngles(col_safe_pose, 1.0);
-        hcf.waitInterpolation();
-        print >> sys.stderr, "      Desired behavior : Next, arm keeps stopping and legs stops."
-        hcf.setFootSteps([OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([0,-0.09,0],[1,0,0,0],"rleg")]),
-                          OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([0,0.0,0],[1,0,0,0],"lleg")])])
-        hcf.abc_svc.waitFootSteps();
-        hcf.setFootSteps([OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([0,-0.09,0],[1,0,0,0],"rleg")]),
-                          OpenHRP.AutoBalancerService.Footsteps([OpenHRP.AutoBalancerService.Footstep([0,0.09,0],[1,0,0,0],"lleg")])])
-        hcf.abc_svc.waitFootSteps();
-        print >> sys.stderr, "  => Successfully mask works with combined situation."
-        hcf.stopAutoBalancer()
-
 def demo():
     init()
     demoCollisionCheckSafe()
@@ -171,5 +160,20 @@ def demo_co_loop():
         demoCollisionCheckFailWithSetTolerance()
         demoCollisionDisableEnable()
 
+def demo_loop_change():
+    init()
+    for i in range(2, 30):
+    	global curr_loop
+    	curr_loop = i
+    	hcf.co_svc.setCollisionLoop(curr_loop)
+        demoCollisionCheckSafe()
+        demoCollisionCheckFail()
+        demoCollisionCheckFailWithSetTolerance()
+        demoCollisionDisableEnable()
+
+    fout.close()
+
 if __name__ == '__main__':
-    demo()
+    # demo()
+    # demo_co_loop()
+    demo_loop_change()
