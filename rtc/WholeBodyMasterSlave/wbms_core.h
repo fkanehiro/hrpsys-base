@@ -125,10 +125,14 @@ class RobotConfig : UTIL_CONST {
       ee_rot_limit[rf][MAX] = hrp::Vector3( 30*D2R,  30*D2R,   5*D2R);
       ee_rot_limit[lf][MIN] = hrp::Vector3(-30*D2R, -30*D2R,  -5*D2R);
       ee_rot_limit[lf][MAX] = hrp::Vector3( 30*D2R,  30*D2R,  20*D2R);
-      ee_rot_limit[rh][MIN] = hrp::Vector3(-30*D2R, -30*D2R, -30*D2R);
-      ee_rot_limit[rh][MAX] = hrp::Vector3( 30*D2R,  30*D2R,  30*D2R);
-      ee_rot_limit[lh][MIN] = hrp::Vector3(-30*D2R, -30*D2R, -30*D2R);
-      ee_rot_limit[lh][MAX] = hrp::Vector3( 30*D2R,  30*D2R,  30*D2R);
+//      ee_rot_limit[rh][MIN] = hrp::Vector3(-30*D2R, -30*D2R, -30*D2R);
+//      ee_rot_limit[rh][MAX] = hrp::Vector3( 30*D2R,  30*D2R,  30*D2R);
+//      ee_rot_limit[lh][MIN] = hrp::Vector3(-30*D2R, -30*D2R, -30*D2R);
+//      ee_rot_limit[lh][MAX] = hrp::Vector3( 30*D2R,  30*D2R,  30*D2R);
+      ee_rot_limit[rh][MIN] = hrp::Vector3(INFMIN, INFMIN, INFMIN);
+      ee_rot_limit[rh][MAX] = hrp::Vector3(INFMAX, INFMAX, INFMAX);
+      ee_rot_limit[lh][MIN] = hrp::Vector3(INFMIN, INFMIN, INFMIN);
+      ee_rot_limit[lh][MAX] = hrp::Vector3(INFMAX, INFMAX, INFMAX);
       ee_rot_limit[head][MIN] = hrp::Vector3( 0*D2R, -20*D2R, -40*D2R);
       ee_rot_limit[head][MAX] = hrp::Vector3( 0*D2R,  30*D2R,  40*D2R);
     }
@@ -154,7 +158,7 @@ class WBMSCore : UTIL_CONST {
     HumanPose hp_wld_raw, hp_plot, rp_ref_out, rp_ref_vel_old;
     FILE *sr_log, *cz_log, *id_log;
     WBMSPose3D baselinkpose;
-    WBMSPose3D ee_contact_pose[4];
+//    WBMSPose3D ee_contact_pose[4];
     hrp::Vector3 com_vel_old,rh_vel_old, cp_dec, cp_acc;
     std::vector<hrp::Vector3> rf_vert,lf_vert;
     hrp::Vector2 com_forcp_ref,com_vel_forcp_ref;
@@ -598,6 +602,17 @@ class WBMSCore : UTIL_CONST {
 //      }
       LIMIT_MINMAX( out.tgt[rf].abs.p(Z), out.tgt[rf].offs.p(Z), out.tgt[rf].offs.p(Z)+WBMSparam.swing_foot_max_height);
       LIMIT_MINMAX( out.tgt[lf].abs.p(Z), out.tgt[lf].offs.p(Z), out.tgt[lf].offs.p(Z)+WBMSparam.swing_foot_max_height);
+
+      for(int i=0, l[2]={rh,lh}; i<2; i++){
+        LIMIT_MIN(out.tgt[l[i]].abs.p(X), baselinkpose.p(X));
+        LIMIT_MAX(out.tgt[l[i]].abs.p(Z), baselinkpose.p(Z) + 0.4);
+        hrp::Vector2 horizontal_dist(out.tgt[l[i]].abs.p(X) - baselinkpose.p(X), out.tgt[l[i]].abs.p(Y) - baselinkpose.p(Y));
+        if(horizontal_dist.norm() < 0.5){
+          horizontal_dist = 0.5 * horizontal_dist.normalized();
+        }
+        out.tgt[l[i]].abs.p(X) = baselinkpose.p(X) + horizontal_dist(X);
+        out.tgt[l[i]].abs.p(Y) = baselinkpose.p(Y) + horizontal_dist(Y);
+      }
 
       for(int i=0;i<XYZ;i++){ LIMIT_MINMAX( out.tgt[com].abs.rpy(i), rc.ee_rot_limit[com][MIN](i), rc.ee_rot_limit[com][MAX](i) ); }
       LIMIT_MINMAX( out.tgt[com].abs.p(Z), out.tgt[com].offs.p(Z) - 0.15, out.tgt[com].offs.p(Z) + 0.03 );//COM高さ方向の制限
