@@ -19,6 +19,7 @@ public:
     CORBA::Boolean enableCollisionDetection();
     CORBA::Boolean disableCollisionDetection();
     CORBA::Boolean setTolerance(const char *i_link_pair_name, CORBA::Double d_tolerance);
+    CORBA::Boolean setCollisionLoop(CORBA::Short loop);
     CORBA::Boolean getCollisionStatus(OpenHRP::CollisionDetectorService::CollisionState_out state);
     void collision(CollisionDetector *i_collision);
     //

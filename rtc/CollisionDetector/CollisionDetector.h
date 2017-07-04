@@ -111,6 +111,7 @@ class CollisionDetector
   // virtual RTC::ReturnCode_t onRateChanged(RTC::UniqueId ec_id);
 
   bool setTolerance(const char *i_link_pair_name, double i_tolerance);
+  bool setCollisionLoop(int input_loop);
   bool getCollisionStatus(OpenHRP::CollisionDetectorService::CollisionState &state);
 
   bool checkIsSafeTransition(void);
