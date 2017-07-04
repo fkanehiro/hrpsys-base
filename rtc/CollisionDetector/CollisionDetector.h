@@ -168,9 +168,9 @@ class CollisionDetector
   class CollisionLinkPair {
   public:
       CollisionLinkPair(VclipLinkPairPtr i_pair) : point0(hrp::Vector3(0,0,0)), point1(hrp::Vector3(0,0,0)), distance(0) {
-          pair = i_pair;
+          pair = static_cast<boost::intrusive_ptr<CollisionLibraryLinkPair> >(i_pair);
       }
-      VclipLinkPairPtr pair;
+      boost::intrusive_ptr<CollisionLibraryLinkPair> pair;
       hrp::Vector3 point0, point1;
       double distance;
   };
