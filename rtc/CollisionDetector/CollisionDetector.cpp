@@ -795,6 +795,8 @@ void CollisionDetector::setupVClipModel(hrp::Link *i_link)
     }
     i_vclip_model->buildHull();
     i_vclip_model->check();
+    fprintf(stderr, "[Vclip] build finished, vcliip mesh of %s, %d -> %d\n",
+            i_link->name.c_str(), n, (int)(i_vclip_model->verts().size()));
     m_VclipLinks[i_link->index] = i_vclip_model;
 }
 
