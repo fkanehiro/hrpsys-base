@@ -932,13 +932,59 @@ void CollisionDetector::setupFCLModel(hrp::Link *i_link)
         fcl_triangles.push_back(tri);
     }
 #endif
+    FCLModel *fcl_model;
+    switch (  m_collision_library ) {
+      case COLLISION_LIBRARY_FCL_CONVEX:
+        {
+#ifdef USE_FCL_MESH
+        std::cerr << "COLLISION_LIBRARY_FCL_CONVEX is not supported" << std::endl;
+#else
+        // https://groups.google.com/forum/#!topic/moveit-users/PgnyOPup_Zs
+        int num_planes = fcl_triangles.size();
+        int num_points = fcl_vertices.size();
+        fcl::Vec3f* normals = new fcl::Vec3f[num_planes];
+        fcl::FCL_REAL* distances = new fcl::FCL_REAL[num_planes];
+        fcl::Vec3f* vertices = new fcl::Vec3f[num_points];
+        int* indices = new int[num_planes*4];
+        for (int i = 0; i < fcl_vertices.size(); i ++ ) {
+            vertices[i].setValue(fcl_vertices[i][0],fcl_vertices[i][1],fcl_vertices[i][2]);
+        }
+        for (int i = 0; i < num_planes; i ++ ) {
+            // copy from lib/util/GLlink.cpp
+            int i0 = fcl_triangles[i][0], i1 = fcl_triangles[i][1], i2 = fcl_triangles[i][2];
+            fcl::Vec3f p0 = fcl_vertices[i0], p1 = fcl_vertices[i1], p2 = fcl_vertices[i2];
+            fcl::Vec3f n = ((p1 - p0).cross(p2 - p0)).normalize();
+            normals[i].setValue(n[0],n[1],n[2]);
+            distances[i] = normals[i].dot(p0); // distance
+            indices[i*4+0] = 3; // number of points for next triangle
+            indices[i*4+1] = i0;
+            indices[i*4+2] = i1;
+            indices[i*4+3] = i2;
+        }
+        std::cerr << "[FCL] build FCLModel of " << i_link->name << " with COLLISION_LIBRARY_FCL_CONVEX" << std::endl;
+        fcl_model = new FCLModel(new ConvexFixed (normals,
+                                                  distances,
+                                                  num_planes,
+                                                  vertices,
+                                                  num_points,
+                                                  indices));
+        }
+#endif
+        break;
+      case COLLISION_LIBRARY_FCL_MESH:
+#ifdef USE_FCL_MESH
+        std::cerr << "[FCL] build FCLModel of " << i_link->name << " with COLLISION_LIBRARY_FCL_MESH" << std::endl;
+        fcl_model = new FCLModel();
+        fcl_model->bv_splitter.reset(new fcl::BVSplitter<FCLCollisionModel>(fcl::SPLIT_METHOD_BV_CENTER));
 
-    FCLModel *fcl_model = new FCLModel();
-    fcl_model->bv_splitter.reset(new fcl::BVSplitter<FCLCollisionModel>(fcl::SPLIT_METHOD_BV_CENTER));
-
-    fcl_model->beginModel();
-    fcl_model->addSubModel(fcl_vertices, fcl_triangles);
-    fcl_model->endModel();
+        fcl_model->beginModel();
+        fcl_model->addSubModel(fcl_vertices, fcl_triangles);
+        fcl_model->endModel();
+#else
+        std::cerr << "COLLISION_LIBRARY_FCL_MESH is not supported" << std::endl;
+#endif
+        break;
+    }
 
     m_FCLLinks[i_link->index] = fcl_model;
 }

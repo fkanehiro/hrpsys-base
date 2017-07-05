@@ -1,6 +1,15 @@
 #include "FCLLinkPair.h"
 
 #ifdef USE_FCL
+// FIX https://github.com/flexible-collision-library/fcl/pull/74
+// https://stackoverflow.com/questions/5894940/calling-the-constructor-of-the-base-class-after-some-other-instructions-in-c
+int Convex_PR_74(int num_points_, ConvexFixed& this_)
+{
+   this_.num_points = num_points_;
+   return num_points_;
+}
+//public:
+
 FCLLinkPair::FCLLinkPair(hrp::Link* link0, FCLModel *fcl_model0,
                          hrp::Link* link1, FCLModel *fcl_model1, double tolerance)
 {
@@ -49,7 +58,15 @@ double FCLLinkPair::computeDistance(double *q1, double *q2)
     fcl::DistanceRequest request(enable_nearest_points);
     fcl::DistanceResult local_result;
 
-    double len = fcl::distance(model1, pose1, model2, pose2, request, local_result);
+    double len;
+#ifdef USE_FCL_MESH
+    // mesh
+    len = fcl::distance(model1, pose1, model2, pose2, request, local_result);
+#else
+    // convex
+    fcl::CollisionObject geom1 (*model1, pose1);
+    fcl::CollisionObject geom2 (*model2, pose2);
+    len = fcl::distance(&geom1, &geom2, request, local_result);
 
     q1[0] = local_result.nearest_points[0][0];
     q1[1] = local_result.nearest_points[0][1];
@@ -58,8 +75,7 @@ double FCLLinkPair::computeDistance(double *q1, double *q2)
     q2[1] = local_result.nearest_points[1][1];
     q2[2] = local_result.nearest_points[1][2];
 
-#if 0
-    // may not need to transform points
+    // convex need to transform points
     fcl::Vec3f iq1(local_result.nearest_points[0][0], local_result.nearest_points[0][1], local_result.nearest_points[0][2]);
     fcl::Vec3f iq2(local_result.nearest_points[1][0], local_result.nearest_points[1][1], local_result.nearest_points[1][2]);
 
@@ -67,11 +83,10 @@ double FCLLinkPair::computeDistance(double *q1, double *q2)
     fcl::Vec3f oq2 = pose2.transform(iq2);
     q1[0] = oq1[0]; q1[1] = oq1[1]; q1[2] = oq1[2];
     q2[0] = oq2[0]; q2[1] = oq2[1]; q2[2] = oq2[2];
-    std::cerr << "FCLCollision: compute: " << len << "/" << local_result.min_distance << " ";
-    std::cerr << q1[0] << " " << q1[1] << " " << q1[2] << " / ";
-    std::cerr << q2[0] << " " << q2[1] << " " << q2[2] << std::endl;
+    //std::cerr << "FCLCollision: compute: " << len << "/" << local_result.min_distance << " ";
+    //std::cerr << q1[0] << " " << q1[1] << " " << q1[2] << " / ";
+    //std::cerr << q2[0] << " " << q2[1] << " " << q2[2] << std::endl;
 #endif
-
     return local_result.min_distance;
 }
 #endif // USE_FCL
