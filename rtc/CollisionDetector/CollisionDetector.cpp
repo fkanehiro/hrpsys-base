@@ -153,8 +153,11 @@ RTC::ReturnCode_t CollisionDetector::onInitialize()
     if ( prop["collision_viewer"] == "true" ) {
 	m_use_viewer = true;
     }
-    if ( prop["collision_library"] == "fcl" ) {
-        m_collision_library = COLLISION_LIBRARY_FCL;
+    if ( prop["collision_library"] == "fcl" ||
+         prop["collision_library"] == "fcl_convex" ) {
+        m_collision_library = COLLISION_LIBRARY_FCL_CONVEX;
+    } else if ( prop["collision_library"] == "fcl_mesh" ) {
+        m_collision_library = COLLISION_LIBRARY_FCL_MESH;
     }
 #ifdef USE_HRPSYSUTIL
     m_glbody = new GLbody();
@@ -192,7 +195,8 @@ RTC::ReturnCode_t CollisionDetector::onInitialize()
     std::cerr << "[" << m_profile.instance_name << "] using " << m_collision_library << " collision detector" << std::endl;
     switch (  m_collision_library ) {
 #ifdef USE_FCL
-        case COLLISION_LIBRARY_FCL:
+        case COLLISION_LIBRARY_FCL_CONVEX:
+        case COLLISION_LIBRARY_FCL_MESH:
             setupFCLModel(m_robot);
             break;
 #endif // USE_FCL
@@ -229,7 +233,8 @@ RTC::ReturnCode_t CollisionDetector::onInitialize()
             }
             switch (  m_collision_library ) {
 #ifdef USE_FCL
-                case COLLISION_LIBRARY_FCL:
+                case COLLISION_LIBRARY_FCL_CONVEX:
+                case COLLISION_LIBRARY_FCL_MESH:
                     std::cerr << "[" << m_profile.instance_name << "] FCL: check collisions between " << m_robot->link(name1)->name << " and " <<  m_robot->link(name2)->name << std::endl;
                     m_pair[tmp] = new CollisionLinkPair(new FCLLinkPair(m_robot->link(name1), m_FCLLinks[m_robot->link(name1)->index],
                                                                         m_robot->link(name2), m_FCLLinks[m_robot->link(name2)->index], 0));

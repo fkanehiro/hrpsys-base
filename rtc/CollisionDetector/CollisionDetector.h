@@ -199,7 +199,7 @@ class CollisionDetector
   std::vector<int> m_curr_collision_mask, m_init_collision_mask;
   bool m_use_limb_collision;
   bool m_use_viewer;
-  enum COLLISION_LIBRARY_TYPE {COLLISION_LIBRARY_VCLIP, COLLISION_LIBRARY_FCL};
+  enum COLLISION_LIBRARY_TYPE {COLLISION_LIBRARY_VCLIP, COLLISION_LIBRARY_FCL_CONVEX, COLLISION_LIBRARY_FCL_MESH};
   COLLISION_LIBRARY_TYPE m_collision_library;
   hrp::BodyPtr m_robot;
   std::map<std::string, CollisionLinkPair *> m_pair;
