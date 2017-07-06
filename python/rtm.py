@@ -615,6 +615,10 @@ def classFromString(fullname):
 def cdr2data(cdr, classname):
     return cdrUnmarshal(any.to_any(classFromString(classname)).typecode(), cdr, True)
 
+
+
+connector_list = []
+
 ##
 # \brief write data to a data port	
 # \param port reference of data port
@@ -625,14 +629,38 @@ def cdr2data(cdr, classname):
 # the connection must be disconnected by a user
 #
 def writeDataPort(port, data, tm=1.0, disconnect=True):
-    nv1 = SDOPackage.NameValue("dataport.interface_type", any.to_any("corba_cdr"))
-    nv2 = SDOPackage.NameValue("dataport.dataflow_type", any.to_any("Push"))
-    nv3 = SDOPackage.NameValue("dataport.subscription_type", any.to_any("flush"))
-    con_prof = RTC.ConnectorProfile("connector0", "", [port], [nv1, nv2, nv3])
-    ret, prof = port.connect(con_prof)
-    if ret != RTC.RTC_OK:
-        print("failed to connect")
-        return None
+    global connector_list, orb
+    
+    connector_name = "writeDataPort"
+    
+    
+    
+    prof = None
+    
+    for p in connector_list:
+        if p["port"]._is_equivalent(port):
+            if port.get_connector_profile(p["prof"].connector_id).name == connector_name:
+                prof = p["prof"]
+            else:
+                connector_list.remove(p)
+                
+            
+
+
+    if prof is None:      
+        nv1 = SDOPackage.NameValue("dataport.interface_type", any.to_any("corba_cdr"))
+        nv2 = SDOPackage.NameValue("dataport.dataflow_type", any.to_any("Push"))
+        nv3 = SDOPackage.NameValue("dataport.subscription_type", any.to_any("flush"))
+        con_prof = RTC.ConnectorProfile(connector_name, "", [port], [nv1, nv2, nv3])
+        
+        ret, prof = port.connect(con_prof)
+        
+        if ret != RTC.RTC_OK:
+            print("failed to connect")
+            return None
+        connector_list.append({"port":port,"prof":prof})
+        
+        
     for p in prof.properties:
         if p.name == 'dataport.corba_cdr.inport_ior':
             ior = any.from_any(p.value)
@@ -644,9 +672,14 @@ def writeDataPort(port, data, tm=1.0, disconnect=True):
             if disconnect:
                 time.sleep(tm)
                 port.disconnect(prof.connector_id)
+                for p in connector_list:
+                    if prof.connector_id == p["prof"].connector_id:
+                        connector_list.remove(p)
             else:
                 return prof.connector_id
     return None
+
+
 
 ##
 # \brief read data from a data port	
@@ -654,23 +687,45 @@ def writeDataPort(port, data, tm=1.0, disconnect=True):
 # \param timeout timeout[s] 
 # \return data
 #
-def readDataPort(port, timeout=1.0):
+def readDataPort(port, timeout=1.0, disconnect=True):
+    global connector_list, orb
+
+    
+    connector_name = "readDataPort"
+    prof = None
+    for p in connector_list:
+        if p["port"]._is_equivalent(port):
+            if port.get_connector_profile(p["prof"].connector_id).name == connector_name:
+                prof = p["prof"]
+            else:
+                connector_list.remove(p)
+                
+            
+
+    
+    
+
     pprof = port.get_port_profile()
     for prop in pprof.properties:
         if prop.name == "dataport.data_type":
             classname = any.from_any(prop.value)
-        if prop.name == "dataport.data_value":
-            return any._to_tc_value(prop.value)[1]
-    nv1 = SDOPackage.NameValue("dataport.interface_type", any.to_any("corba_cdr"))
-    nv2 = SDOPackage.NameValue("dataport.dataflow_type", any.to_any("Pull"))
-    nv3 = SDOPackage.NameValue("dataport.subscription_type", any.to_any("flush"))
-    con_prof = RTC.ConnectorProfile("connector0", "", [port], [nv1, nv2, nv3])
-    ret, prof = port.connect(con_prof)
-    if ret != RTC.RTC_OK:
-        print("failed to connect")
-        return None
+    
+    if prof is None:     
+        
+        nv1 = SDOPackage.NameValue("dataport.interface_type", any.to_any("corba_cdr"))
+        nv2 = SDOPackage.NameValue("dataport.dataflow_type", any.to_any("Pull"))
+        nv3 = SDOPackage.NameValue("dataport.subscription_type", any.to_any("flush"))
+        con_prof = RTC.ConnectorProfile(connector_name, "", [port], [nv1, nv2, nv3])
+        
+        ret, prof = port.connect(con_prof)
+        
+        if ret != RTC.RTC_OK:
+            print("failed to connect")
+            return None
+        
+        connector_list.append({"port":port,"prof":prof})
+    
     for p in prof.properties:
-        # print(p.name)
         if p.name == 'dataport.corba_cdr.outport_ior':
             ior = any.from_any(p.value)
             obj = orb.string_to_object(ior)
@@ -680,7 +735,12 @@ def readDataPort(port, timeout=1.0):
                 try:
                     ret, data = outport.get()
                     if ret == OpenRTM.PORT_OK:
-                        port.disconnect(prof.connector_id)
+                        if disconnect:
+                            port.disconnect(prof.connector_id)
+                            for p in connector_list:
+                                if prof.connector_id == p["prof"].connector_id:
+                                    connector_list.remove(p)
+                        
                         tokens = classname.split(':')
                         if len(tokens) == 3:  # for 1.1?
                             classname = tokens[1].replace('/', '.')
@@ -689,10 +749,19 @@ def readDataPort(port, timeout=1.0):
                     pass
                 time.sleep(0.1)
                 tm = tm + 0.1
+                
 
-    port.disconnect(prof.connector_id)
+        
     return None
 
+##
+# \brief 
+#
+def delete_all_connector_list():
+    global connector_list
+    for port in connector_list:
+        port["port"].disconnect(port["prof"].connector_id)
+    del connector_list[:]
 
 ##
 # \brief get a service of RT component
