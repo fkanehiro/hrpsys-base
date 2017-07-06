@@ -757,7 +757,7 @@ def readDataPort(port, timeout=1.0, disconnect=True):
 ##
 # \brief 
 #
-def delete_all_connector_list():
+def deleteAllConnector():
     global connector_list
     for port in connector_list:
         port["port"].disconnect(port["prof"].connector_id)
