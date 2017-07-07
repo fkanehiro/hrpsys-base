@@ -968,8 +968,8 @@ void CollisionDetector::setupFCLModel(hrp::Link *i_link)
                                                   vertices,
                                                   num_points,
                                                   indices));
-        }
 #endif
+        }
         break;
       case COLLISION_LIBRARY_FCL_MESH:
 #ifdef USE_FCL_MESH
