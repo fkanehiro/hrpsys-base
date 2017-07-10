@@ -4,6 +4,7 @@ set -x
 
 function error {
     travis_time_end 31
+    mkdir -p ${HOME}/.ros/test_results || echo "OK"
     find ${HOME}/.ros/test_results -type f -exec echo "=== {} ===" \; -exec\
  cat {} \;
     for file in ${HOME}/.ros/log/rostest-*; do echo "=== $file ==="; cat \$\
