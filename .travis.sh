@@ -292,6 +292,11 @@ case $TEST_PACKAGE in
             cat hrpsys/Makefile.hrpsys-base
             # use git repository, instead of svn due to googlecode shoutdown
             git clone http://github.com/fkanehiro/hrpsys-base --depth 1 -b 315.1.9 ../build_isolated/hrpsys/build/hrpsys-base-source
+            if [ "${ROS_DISTRO}" != "hydro" ]; then
+                # tmp fix to build old hrpsys
+                sudo ln -s /usr/lib/x86_64-linux-gnu/libboost_thread.so /usr/lib/x86_64-linux-gnu/libboost_thread-mt.so
+                sudo ln -s /usr/lib/x86_64-linux-gnu/libboost_system.so /usr/lib/x86_64-linux-gnu/libboost_system-mt.so
+            fi
             # we use latest hrpsys_ocnfig.py for this case, so do not install them
             sed -i -e 's/\(add_subdirectory(python)\)/#\1/' ../build_isolated/hrpsys/build/hrpsys-base-source/CMakeLists.txt
             sed -i -e 's/\(add_subdirectory(test)\)/#\1/' ../build_isolated/hrpsys/build/hrpsys-base-source/CMakeLists.txt
@@ -359,24 +364,26 @@ case $TEST_PACKAGE in
         rospack profile
 
 
-        # https://github.com/fkanehiro/openhrp3/issues/46
-        ls -al /opt/ros/${ROS_DISTRO}/share/openhrp3/share/OpenHRP-3.1/sample/controller/SampleController || echo "ok"
-        sudo mkdir -p /opt/ros/${ROS_DISTRO}/share/openhrp3/share/OpenHRP-3.1/sample/controller/SampleController/etc/ || echo "ok"
-        sudo wget https://raw.githubusercontent.com/fkanehiro/openhrp3/master/sample/controller/SampleController/etc/Sample.pos -O /opt/ros/${ROS_DISTRO}/share/openhrp3/share/OpenHRP-3.1/sample/controller/SampleController/etc/Sample.pos || echo "ok"
-        sudo wget https://raw.githubusercontent.com/fkanehiro/openhrp3/master/sample/controller/SampleController/etc/Sample.vel -O /opt/ros/${ROS_DISTRO}/share/openhrp3/share/OpenHRP-3.1/sample/controller/SampleController/etc/Sample.vel || echo "ok"
-        # https://github.com/start-jsk/rtmros_hironx/issues/287
-        if [ -e /opt/ros/${ROS_DISTRO}/share/hironx_ros_bridge/test/test_hironx_ros_bridge.py ]; then
-            sudo sed -i "s@test_tf_and_controller@_test_tf_and_controller@" /opt/ros/${ROS_DISTRO}/share/hironx_ros_bridge/test/test_hironx_ros_bridge.py
-        fi
-        #https://github.com/start-jsk/rtmros_hironx/pull/358
-        if [ -e /opt/ros/${ROS_DISTRO}/lib/python2.7/dist-packages/hironx_ros_bridge/hironx_client.py ]; then
-            sudo wget https://raw.githubusercontent.com/k-okada/rtmros_hironx/stop_unfinished_battle/hironx_ros_bridge/src/hironx_ros_bridge/hironx_client.py -O /opt/ros/${ROS_DISTRO}/lib/python2.7/dist-packages/hironx_ros_bridge/hironx_client.py
-        fi
-        #https://github.com/start-jsk/rtmros_common/commit/51ec26b899f09304705fe0528a068e57b061b9b7
-        #https://github.com/start-jsk/rtmros_common/pull/880
-        #https://github.com/start-jsk/rtmros_common/pull/879
-        if [ -e /opt/ros/${ROS_DISTRO}/share/hrpsys_ros_bridge/test/test-samplerobot.test ]; then
-            sudo wget https://raw.githubusercontent.com/start-jsk/rtmros_common/1.3.1/hrpsys_ros_bridge/test/test-samplerobot.test -O /opt/ros/${ROS_DISTRO}/share/hrpsys_ros_bridge/test/test-samplerobot.test
+        if [ "${ROS_DISTRO}" == "hydro" ]; then
+            # https://github.com/fkanehiro/openhrp3/issues/46
+            ls -al /opt/ros/${ROS_DISTRO}/share/openhrp3/share/OpenHRP-3.1/sample/controller/SampleController || echo "ok"
+            sudo mkdir -p /opt/ros/${ROS_DISTRO}/share/openhrp3/share/OpenHRP-3.1/sample/controller/SampleController/etc/ || echo "ok"
+            sudo wget https://raw.githubusercontent.com/fkanehiro/openhrp3/master/sample/controller/SampleController/etc/Sample.pos -O /opt/ros/${ROS_DISTRO}/share/openhrp3/share/OpenHRP-3.1/sample/controller/SampleController/etc/Sample.pos || echo "ok"
+            sudo wget https://raw.githubusercontent.com/fkanehiro/openhrp3/master/sample/controller/SampleController/etc/Sample.vel -O /opt/ros/${ROS_DISTRO}/share/openhrp3/share/OpenHRP-3.1/sample/controller/SampleController/etc/Sample.vel || echo "ok"
+            # https://github.com/start-jsk/rtmros_hironx/issues/287
+            if [ -e /opt/ros/${ROS_DISTRO}/share/hironx_ros_bridge/test/test_hironx_ros_bridge.py ]; then
+                sudo sed -i "s@test_tf_and_controller@_test_tf_and_controller@" /opt/ros/${ROS_DISTRO}/share/hironx_ros_bridge/test/test_hironx_ros_bridge.py
+            fi
+            #https://github.com/start-jsk/rtmros_hironx/pull/358
+            if [ -e /opt/ros/${ROS_DISTRO}/lib/python2.7/dist-packages/hironx_ros_bridge/hironx_client.py ]; then
+                sudo wget https://raw.githubusercontent.com/k-okada/rtmros_hironx/stop_unfinished_battle/hironx_ros_bridge/src/hironx_ros_bridge/hironx_client.py -O /opt/ros/${ROS_DISTRO}/lib/python2.7/dist-packages/hironx_ros_bridge/hironx_client.py
+            fi
+            #https://github.com/start-jsk/rtmros_common/commit/51ec26b899f09304705fe0528a068e57b061b9b7
+            #https://github.com/start-jsk/rtmros_common/pull/880
+            #https://github.com/start-jsk/rtmros_common/pull/879
+            if [ -e /opt/ros/${ROS_DISTRO}/share/hrpsys_ros_bridge/test/test-samplerobot.test ]; then
+                sudo wget https://raw.githubusercontent.com/start-jsk/rtmros_common/1.3.1/hrpsys_ros_bridge/test/test-samplerobot.test -O /opt/ros/${ROS_DISTRO}/share/hrpsys_ros_bridge/test/test-samplerobot.test
+            fi
         fi
         travis_time_end
 
