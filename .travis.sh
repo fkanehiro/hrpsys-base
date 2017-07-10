@@ -33,6 +33,9 @@ function travis_time_end {
     set -x
 }
 
+apt-get update -qq
+apt-get install -qq -y wget sudo git sed
+
 travis_time_start mongo_hack
 
 # MongoDB hack
