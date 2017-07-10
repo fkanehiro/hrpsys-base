@@ -34,9 +34,11 @@ function travis_time_end {
     set -x
 }
 
-apt-get update -qq
-apt-get install -qq -y wget sudo git sed
-apt-get install -qq -y software-properties-common # apt-add-repository
+apt-get update -q=5
+apt-get install -q=5 -y wget sudo git sed
+apt-get install -q=5 -y software-properties-common # apt-add-repository
+apt-get install -q=5 -y lsb-release
+lsb_release -a
 
 travis_time_start mongo_hack
 
