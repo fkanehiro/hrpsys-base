@@ -40,6 +40,7 @@ apt-get install -q=5 -y software-properties-common # apt-add-repository
 apt-get install -q=5 -y lsb-release
 lsb_release -a
 echo $ROS_DISTRO
+echo $DISTRO
 
 travis_time_start mongo_hack
 
@@ -55,7 +56,7 @@ travis_time_start setup_ros
 export CI_SOURCE_PATH=$(pwd)
 export REPOSITORY_NAME=${PWD##*/}
 echo "Testing branch $TRAVIS_BRANCH of $REPOSITORY_NAME"
-sudo sh -c 'echo "deb http://packages.ros.org/ros-shadow-fixed/ubuntu precise main" > /etc/apt/sources.list.d/ros-latest.list'
+sudo -E sh -c 'echo "deb http://packages.ros.org/ros-shadow-fixed/ubuntu ${DISTRO} main" > /etc/apt/sources.list.d/ros-latest.list'
 wget http://packages.ros.org/ros.key -O - | sudo apt-key add -
 sudo apt-get update -qq
 
