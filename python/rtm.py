@@ -600,11 +600,18 @@ def data2cdr(data):
 #
 def classFromString(fullname):
     component_path = fullname.split('.')
-    package_path = component_path[:-1]
-    package_name = ".".join(package_path)
-    class_name = component_path[-1]
-    __import__(str(package_name))
-    return getattr(sys.modules[package_name], class_name)
+    package_name = component_path[0]
+    component_path = component_path[1:]
+    attr = None
+    while component_path:
+        class_name = component_path[0]
+        component_path = component_path[1:]
+        if attr:
+            attr = getattr(attr, class_name)
+        else:
+            __import__(str(package_name))
+            attr = getattr(sys.modules[package_name], class_name)
+    return attr
 
 ##
 # \brief convert data from CDR format
