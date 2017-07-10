@@ -1,11 +1,7 @@
 cache: apt
-language:
-  - cpp
-  - python
-python:
-  - "2.7"
-compiler:
-  - gcc
+language: generic
+sudo: required
+dist: trusty
 notifications:
   slack: jsk-robotics:Av7tc8wj3IWkLYvlTzHE7x2g
   # TEST_TYPE:
@@ -36,7 +32,12 @@ env:
     - TEST_TYPE=work_with_315_1_10    TEST_PACKAGE=hrpsys-ros-bridge
     - TEST_TYPE=work_with_downstream  TEST_PACKAGE=hironx-ros-bridge
     - TEST_TYPE=work_with_315_1_10    TEST_PACKAGE=hironx-ros-bridge
-script: source .travis.sh
+script:
+  - export DISTRO=trusty
+  - export DOCKER_IMAGE=ubuntu:$DISTRO
+  - export CI_SOURCE_PATH=$(pwd)
+  - docker images
+  - docker run -it -v $HOME:$HOME -e CI_SOURCE_PATH -e HOME -e ROS_DISTRO -e ROS_LOG_DIR -e TEST_TYPE -e TEST_PACKAGE -e USE_SRC_OPENHRP3 -e COMILE_OPTION -t $DOCKER_IMAGE bash -c 'cd $CI_SOURCE_PATH; source .travis.sh'
 after_success:
   - set +x
   - export GIT_COMMITTER_NAME=$GIT_NAME
