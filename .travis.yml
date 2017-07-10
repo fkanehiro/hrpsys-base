@@ -79,7 +79,7 @@ matrix:
   - env: ROS_DISTRO=kinetic TEST_TYPE=work_with_downstream  TEST_PACKAGE=hironx-ros-bridge
   - env: ROS_DISTRO=kinetic TEST_TYPE=work_with_315_1_10    TEST_PACKAGE=hironx-ros-bridge
 script:
-  - case $ROS_DISTRO in "hydro") DISTRO=precise;; "indigo") DISTRO=trusty;; "kinetic") DISTRO=xenial;; esac;
+  - case $ROS_DISTRO in "hydro") export DISTRO=precise;; "indigo") export DISTRO=trusty;; "kinetic") export DISTRO=xenial;; esac;
   - export DOCKER_IMAGE=ubuntu:$DISTRO
   - export CI_SOURCE_PATH=$(pwd)
   - docker images
