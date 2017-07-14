@@ -944,7 +944,7 @@ public:
         gg->set_heel_zmp_offset_x(-105*1e-3);
         gg->set_toe_pos_offset_x(137*1e-3);
         gg->set_heel_pos_offset_x(-105*1e-3);
-        gg->set_stride_parameters(0.2,0.1,20,0.2);
+        gg->set_stride_parameters(0.2,0.1,20,0.2,0.1*0.5,20*0.5);
         gg->set_use_toe_heel_auto_set(true);
         gg->set_toe_angle(30);
         gg->set_heel_angle(10);
@@ -1334,7 +1334,7 @@ class testGaitGeneratorHRP2JSK : public testGaitGenerator
             leg_pos.push_back(hrp::Vector3(0,1e-3* 105,0)); /* lleg */
             all_limbs.push_back("rleg");
             all_limbs.push_back("lleg");
-            gg = new gait_generator(dt, leg_pos, all_limbs, 1e-3*150, 1e-3*50, 10, 1e-3*50);
+            gg = new gait_generator(dt, leg_pos, all_limbs, 1e-3*150, 1e-3*50, 10, 1e-3*50, 1e-3*50*0.5, 10*0.5);
         };
 };
 
