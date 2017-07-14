@@ -1230,6 +1230,40 @@ public:
         plot_and_print_errorcheck ();
     };
 
+    void test19 ()
+    {
+        test_doc_string = "test19 : Change stride parameter (translate)";
+        /* initialize sample footstep_list */
+        parse_params();
+        std::vector<hrp::Vector3> dzo;
+        dzo.push_back(hrp::Vector3(20*1e-3,-30*1e-3,0));
+        dzo.push_back(hrp::Vector3(20*1e-3,30*1e-3,0));
+        gg->set_default_zmp_offsets(dzo);
+        gg->set_stride_parameters(0.25,0.15,25,0.25,0.1,10);
+        gg->clear_footstep_nodes_list();
+        coordinates start_ref_coords;
+        mid_coords(start_ref_coords, 0.5, coordinates(leg_pos[1]), coordinates(leg_pos[0]));
+        gg->go_pos_param_2_footstep_nodes_list(600*1e-3, -300*1e-3, 0, boost::assign::list_of(coordinates(leg_pos[1])), start_ref_coords, boost::assign::list_of(LLEG));
+        gen_and_plot_walk_pattern();
+    };
+
+    void test20 ()
+    {
+        test_doc_string = "test20 : Change stride parameter (translate+rotate)";
+        /* initialize sample footstep_list */
+        parse_params();
+        std::vector<hrp::Vector3> dzo;
+        dzo.push_back(hrp::Vector3(20*1e-3,-30*1e-3,0));
+        dzo.push_back(hrp::Vector3(20*1e-3,30*1e-3,0));
+        gg->set_default_zmp_offsets(dzo);
+        gg->set_stride_parameters(0.25,0.15,25,0.25,0.1,10);
+        gg->clear_footstep_nodes_list();
+        coordinates start_ref_coords;
+        mid_coords(start_ref_coords, 0.5, coordinates(leg_pos[1]), coordinates(leg_pos[0]));
+        gg->go_pos_param_2_footstep_nodes_list(400*1e-3, -200*1e-3, -55, boost::assign::list_of(coordinates(leg_pos[1])), start_ref_coords, boost::assign::list_of(LLEG));
+        gen_and_plot_walk_pattern();
+    };
+
     void parse_params (bool is_print_doc_setring = true)
     {
       if (is_print_doc_setring) std::cerr << test_doc_string << std::endl;
@@ -1361,6 +1395,8 @@ void print_usage ()
     std::cerr << "  --test16 : Set foot steps with param (toe heel contact)" << std::endl;
     std::cerr << "  --test17 : Test goVelocity (dx = 0.1, dy = 0.05, dth = 10.0)" << std::endl;
     std::cerr << "  --test18 : Test goVelocity with changing velocity (translation and rotation)" << std::endl;
+    std::cerr << "  --test19 : Change stride parameter (translate)" << std::endl;
+    std::cerr << "  --test20 : Change stride parameter (translate+rotate)" << std::endl;
     std::cerr << " [option] should be:" << std::endl;
     std::cerr << "  --use-gnuplot : Use gnuplot and dump eps file to /tmp. (true/false, true by default)" << std::endl;
     std::cerr << "  --use-graph-append : Append generated graph to /tmp/testGaitGenerator.jpg. (true/false, false by default)" << std::endl;
@@ -1413,6 +1449,10 @@ int main(int argc, char* argv[])
           tgg.test17();
       } else if (std::string(argv[1]) == "--test18") {
           tgg.test18();
+      } else if (std::string(argv[1]) == "--test19") {
+          tgg.test19();
+      } else if (std::string(argv[1]) == "--test20") {
+          tgg.test20();
       } else {
           print_usage();
           ret = 1;
