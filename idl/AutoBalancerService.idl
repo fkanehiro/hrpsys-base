@@ -198,7 +198,7 @@ module OpenHRP
       double default_double_support_ratio_swing_before;
       /// Ratio of double support period after swing. Ratio is included in (0, 1).
       double default_double_support_ratio_swing_after;
-      /// Stride limitation of forward x[m], y[m], theta[deg], and backward x[m] for goPos
+      /// Stride limitation of forward x[m], outside y[m], outside theta[deg], backward x[m], inside y[m], inside theta[deg] for goPos and goVelocity
       sequence<double, 6> stride_parameter;
       /// Stride limitation when generating footsteps with stride limitation type CIRCLE (forward, outside, theta, backward, inside) [m]
       DblArray5 stride_limitation_for_circle_type;

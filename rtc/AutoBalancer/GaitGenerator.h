@@ -71,11 +71,11 @@ namespace rats
     struct footstep_parameter
     {
         /* translate pos is translate position of a leg from default foot_midcoords
-         *   vector -> (list rleg-pos[mm] lleg-pos[mm] )
+         *   vector -> (list rleg-pos[m] lleg-pos[m] )
          */
         std::vector<hrp::Vector3> leg_default_translate_pos;
-        /* stride params indicate max stride ( [mm], [mm], [deg] ) */
-        double stride_fwd_x, stride_outside_y, stride_outside_theta, stride_bwd_x, stride_inside_y, stride_inside_theta;
+        /* stride params indicate max stride */
+        double stride_fwd_x/*[m]*/, stride_outside_y/*[m]*/, stride_outside_theta/*[deg]*/, stride_bwd_x/*[m]*/, stride_inside_y/*[m]*/, stride_inside_theta/*[deg]*/;
         footstep_parameter (const std::vector<hrp::Vector3>& _leg_pos,
                             const double _stride_fwd_x, const double _stride_outside_y, const double _stride_outside_theta,
                             const double _stride_bwd_x, const double _stride_inside_y, const double _stride_inside_theta)
