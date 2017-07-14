@@ -993,13 +993,13 @@ namespace rats
     dth = cur_vel_param.velocity_theta + offset_vel_param.velocity_theta;
     /* velocity limitation by stride parameters <- this should be based on footstep candidates */
     if (default_stride_limitation_type == SQUARE) {
-      dth = std::max(-1 * footstep_param.stride_theta / default_step_time, std::min(footstep_param.stride_theta / default_step_time, dth));
+      dth = std::max(-1 * footstep_param.stride_outside_theta / default_step_time, std::min(footstep_param.stride_outside_theta / default_step_time, dth));
     } else if (default_stride_limitation_type == CIRCLE) {
       dth = std::max(-1 * stride_limitation_for_circle_type[2] / default_step_time, std::min(stride_limitation_for_circle_type[2] / default_step_time, dth));
     }
     if (default_stride_limitation_type == SQUARE) {
       dx  = std::max(-1 * footstep_param.stride_bwd_x / default_step_time, std::min(footstep_param.stride_fwd_x / default_step_time, dx ));
-      dy  = std::max(-1 * footstep_param.stride_y     / default_step_time, std::min(footstep_param.stride_y     / default_step_time, dy ));
+      dy  = std::max(-1 * footstep_param.stride_outside_y     / default_step_time, std::min(footstep_param.stride_outside_y     / default_step_time, dy ));
       /* inside step limitation */
       if (use_inside_step_limitation) {
         if (dy > 0) {

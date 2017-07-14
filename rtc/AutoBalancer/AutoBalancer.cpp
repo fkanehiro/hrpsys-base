@@ -279,15 +279,15 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
 
     // setting stride limitations from conf file
     double stride_fwd_x_limit = 0.15;
-    double stride_y_limit = 0.05;
-    double stride_th_limit = 10;
+    double stride_outside_y_limit = 0.05;
+    double stride_outside_th_limit = 10;
     double stride_bwd_x_limit = 0.05;
-    std::cerr << "[" << m_profile.instance_name << "] abc_stride_parameter : " << stride_fwd_x_limit << "[m], " << stride_y_limit << "[m], " << stride_th_limit << "[deg], " << stride_bwd_x_limit << "[m]" << std::endl;
+    std::cerr << "[" << m_profile.instance_name << "] abc_stride_parameter : " << stride_fwd_x_limit << "[m], " << stride_outside_y_limit << "[m], " << stride_outside_th_limit << "[deg], " << stride_bwd_x_limit << "[m]" << std::endl;
     if (default_zmp_offsets.size() == 0) {
       for (size_t i = 0; i < ikp.size(); i++) default_zmp_offsets.push_back(hrp::Vector3::Zero());
     }
     if (leg_offset_str.size() > 0) {
-      gg = ggPtr(new rats::gait_generator(m_dt, leg_pos, leg_names, stride_fwd_x_limit/*[m]*/, stride_y_limit/*[m]*/, stride_th_limit/*[deg]*/, stride_bwd_x_limit/*[m]*/));
+      gg = ggPtr(new rats::gait_generator(m_dt, leg_pos, leg_names, stride_fwd_x_limit/*[m]*/, stride_outside_y_limit/*[m]*/, stride_outside_th_limit/*[deg]*/, stride_bwd_x_limit/*[m]*/));
       gg->set_default_zmp_offsets(default_zmp_offsets);
     }
     gg_is_walking = gg_solved = false;
