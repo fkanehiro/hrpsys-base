@@ -991,29 +991,43 @@ namespace rats
     ref_coords.pos += ref_coords.rot * tmpv;
     double dx = cur_vel_param.velocity_x + offset_vel_param.velocity_x, dy = cur_vel_param.velocity_y + offset_vel_param.velocity_y;
     dth = cur_vel_param.velocity_theta + offset_vel_param.velocity_theta;
+    //std::cerr << "Before limit dx " << dx << " dy " << dy << " dth " << dth << std::endl;
     /* velocity limitation by stride parameters <- this should be based on footstep candidates */
     if (default_stride_limitation_type == SQUARE) {
-      dth = std::max(-1 * footstep_param.stride_theta / default_step_time, std::min(footstep_param.stride_theta / default_step_time, dth));
+      dth = std::max(-1 * footstep_param.stride_outside_theta / default_step_time, std::min(footstep_param.stride_outside_theta / default_step_time, dth));
     } else if (default_stride_limitation_type == CIRCLE) {
       dth = std::max(-1 * stride_limitation_for_circle_type[2] / default_step_time, std::min(stride_limitation_for_circle_type[2] / default_step_time, dth));
     }
     if (default_stride_limitation_type == SQUARE) {
       dx  = std::max(-1 * footstep_param.stride_bwd_x / default_step_time, std::min(footstep_param.stride_fwd_x / default_step_time, dx ));
-      dy  = std::max(-1 * footstep_param.stride_y     / default_step_time, std::min(footstep_param.stride_y     / default_step_time, dy ));
+      dy  = std::max(-1 * footstep_param.stride_outside_y     / default_step_time, std::min(footstep_param.stride_outside_y     / default_step_time, dy ));
       /* inside step limitation */
       if (use_inside_step_limitation) {
         if (dy > 0) {
-            if (std::count_if(sup_fns.begin(), sup_fns.end(), (&boost::lambda::_1->* &step_node::l_r == LLEG || &boost::lambda::_1->* &step_node::l_r == LARM)) > 0) dy *= 0.5;
+            // If dy>0 (== leftward step) and LLEG/LARM support, do inside limitation
+            if (std::count_if(sup_fns.begin(), sup_fns.end(), (&boost::lambda::_1->* &step_node::l_r == LLEG || &boost::lambda::_1->* &step_node::l_r == LARM)) > 0) {
+                dy  = std::min(footstep_param.stride_inside_y     / default_step_time, dy);
+            }
         } else {
-            if (std::count_if(sup_fns.begin(), sup_fns.end(), (&boost::lambda::_1->* &step_node::l_r == RLEG || &boost::lambda::_1->* &step_node::l_r == RARM)) > 0) dy *= 0.5;
+            // If dy<=0 (== rightward step) and RLEG/RARM support, do inside limitation
+            if (std::count_if(sup_fns.begin(), sup_fns.end(), (&boost::lambda::_1->* &step_node::l_r == RLEG || &boost::lambda::_1->* &step_node::l_r == RARM)) > 0) {
+                dy  = std::max(-1 * footstep_param.stride_inside_y     / default_step_time, dy);
+            }
         }
         if (dth > 0) {
-            if (std::count_if(sup_fns.begin(), sup_fns.end(), (&boost::lambda::_1->* &step_node::l_r == LLEG || &boost::lambda::_1->* &step_node::l_r == LARM)) > 0) dth *= 0.5;
+            // If dth>0 (== leftward turn step) and LLEG/LARM support, do inside limitation
+            if (std::count_if(sup_fns.begin(), sup_fns.end(), (&boost::lambda::_1->* &step_node::l_r == LLEG || &boost::lambda::_1->* &step_node::l_r == LARM)) > 0) {
+                dth = std::min(footstep_param.stride_inside_theta / default_step_time, dth);
+            }
         } else {
-            if (std::count_if(sup_fns.begin(), sup_fns.end(), (&boost::lambda::_1->* &step_node::l_r == RLEG || &boost::lambda::_1->* &step_node::l_r == RARM)) > 0) dth *= 0.5;
+            // If dth<=0 (== rightward turn step) and RLEG/RARM support, do inside limitation
+            if (std::count_if(sup_fns.begin(), sup_fns.end(), (&boost::lambda::_1->* &step_node::l_r == RLEG || &boost::lambda::_1->* &step_node::l_r == RARM)) > 0) {
+                dth = std::max(-1 * footstep_param.stride_inside_theta / default_step_time, dth);
+            }
         }
       }
     }
+    //std::cerr << "After Limit dx " << dx << " dy " << dy << " dth " << dth << std::endl;
     trans = hrp::Vector3(dx * default_step_time, dy * default_step_time, 0);
     dth = deg2rad(dth * default_step_time);
   };
