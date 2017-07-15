@@ -27,7 +27,7 @@ def init ():
     half_sitting_pose = [-0.000158,-0.570987,-0.000232,1.26437,-0.692521,0.000277,0.31129,-0.159481,-0.115399,-0.636277,0.0,0.0,0.0,-0.000158,-0.570987,-0.000232,1.26437,-0.692521,0.000277,0.31129,0.159481,0.115399,-0.636277,0.0,0.0,0.0,0.0,0.0,0.0]
     hrpsys_version = hcf.seq.ref.get_component_profile().version
     print("hrpsys_version = %s"%hrpsys_version)
-    if StrictVersion(hrpsys_version) >= StrictVersion('315.5.0'):
+    if StrictVersion(hrpsys_version) >= StrictVersion('315.2.4'):
         hcf.seq_svc.setJointAngles(initial_pose, 2.0)
         hcf.seq_svc.waitInterpolation()
         # Remove offset
@@ -434,7 +434,7 @@ def demo():
     OPENHRP3_DIR=check_output(['pkg-config', 'openhrp3.1', '--variable=prefix']).rstrip()
     if os.path.exists(OPENHRP3_DIR+"/share/OpenHRP-3.1/sample/model/sample1_bush.wrl"):
         init()
-        if StrictVersion(hrpsys_version) >= StrictVersion('315.5.0'):
+        if StrictVersion(hrpsys_version) >= StrictVersion('315.2.4'):
             demoGetParameter()
             demoSetParameter()
             demoSTLoadPattern()
