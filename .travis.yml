@@ -1,6 +1,6 @@
 cache: apt
 language:
-  - cpp
+  - c++
   - python
 python:
   - "2.7"

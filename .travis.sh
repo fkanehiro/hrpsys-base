@@ -45,8 +45,6 @@ travis_time_end
 travis_time_start setup_ros
 
 export CI_SOURCE_PATH=$(pwd)
-# tmp fix for Trusty: https://github.com/travis-ci/travis-ci/issues/5326
-export PATH=$(echo $PATH | tr ':' "\n" | sed '/\/opt\/python/d' | tr "\n" ":" | sed "s|::|:|g")
 export REPOSITORY_NAME=${PWD##*/}
 echo "Testing branch $TRAVIS_BRANCH of $REPOSITORY_NAME"
 sudo sh -c 'echo "deb http://packages.ros.org/ros-shadow-fixed/ubuntu trusty main" > /etc/apt/sources.list.d/ros-latest.list'
