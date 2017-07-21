@@ -210,6 +210,10 @@ module OpenHRP
       double swing_trajectory_final_distance_weight;
       /// Way point offset 3D vector [m] for stair_delay_hoffarbib_trajectory_generator.
       DblArray3 stair_trajectory_way_point_offset;
+      /// Start way point offset 3D vector [m] for cross_delay_hoffarbib_trajectory_generator.
+      DblArray3 cross_trajectory_start_way_point_offset;
+      /// Goal way point offset 3D vector [m] for cross_delay_hoffarbib_trajectory_generator.
+      DblArray3 cross_trajectory_goal_way_point_offset;
       /// Kick point offset 3D vector [m] for cycloid_delay_kick_hoffarbib_trajectory_generator.
       DblArray3 cycloid_delay_kick_point_offset;
       /// Time offset between Z convergence to antecedent path and XY convergence. [swing time]=[Z convergence time]=[XY convergence time]-[swing_trajectory_xy_time_offset]. 0 by default, this means Z convergence time and XY convergence time are same.
