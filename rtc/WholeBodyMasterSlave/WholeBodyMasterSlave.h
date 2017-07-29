@@ -163,8 +163,8 @@ class WholeBodyMasterSlave : public RTC::DataFlowComponentBase, UTIL_CONST {
     bool is_active, has_toe_joint;
   };
   typedef boost::shared_ptr<SimpleFullbodyInverseKinematicsSolver> fikPtr;
-  fikPtr fik, fik_rmc, fik_ml;
-  hrp::BodyPtr m_robot, m_robot_rmc, m_robot_ml;
+  fikPtr fik, fik_rmc, fik_ml, fik_vsafe;
+  hrp::BodyPtr m_robot, m_robot_rmc, m_robot_ml, m_robot_vsafe;
   std::vector<fikPtr> fik_list;
   std::vector<hrp::BodyPtr> body_list;
   std::map<std::string, size_t> contact_states_index_map;
