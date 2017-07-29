@@ -55,7 +55,7 @@ public:
 
 class SimpleZMPDistributor
 {
-    FootSupportPolygon fs;
+    FootSupportPolygon fs, fs_mgn;
     double leg_inside_margin, leg_outside_margin, leg_front_margin, leg_rear_margin, wrench_alpha_blending;
     boost::shared_ptr<FirstOrderLowPassFilter<double> > alpha_filter;
 public:
@@ -239,6 +239,30 @@ public:
         // }
         set_vertices(vec);
     };
+    // Set vertices only for cp_check_margin for now
+    void set_vertices_from_margin_params (const std::vector<double>& margin)
+    {
+      std::vector<std::vector<Eigen::Vector2d> > vec;
+      // RLEG
+      {
+        std::vector<Eigen::Vector2d> tvec;
+        tvec.push_back(Eigen::Vector2d(leg_front_margin - margin[0], leg_inside_margin - margin[2]));
+        tvec.push_back(Eigen::Vector2d(leg_front_margin - margin[0], -1*(leg_outside_margin - margin[3])));
+        tvec.push_back(Eigen::Vector2d(-1*(leg_rear_margin - margin[1]), -1*(leg_outside_margin - margin[3])));
+        tvec.push_back(Eigen::Vector2d(-1*(leg_rear_margin - margin[1]), leg_inside_margin - margin[2]));
+        vec.push_back(tvec);
+      }
+      // LLEG
+      {
+        std::vector<Eigen::Vector2d> tvec;
+        tvec.push_back(Eigen::Vector2d(leg_front_margin - margin[0], leg_inside_margin - margin[3]));
+        tvec.push_back(Eigen::Vector2d(leg_front_margin - margin[0], -1*(leg_outside_margin - margin[2])));
+        tvec.push_back(Eigen::Vector2d(-1*(leg_rear_margin - margin[1]), -1*(leg_outside_margin - margin[2])));
+        tvec.push_back(Eigen::Vector2d(-1*(leg_rear_margin - margin[1]), leg_inside_margin - margin[3]));
+        vec.push_back(tvec);
+      }
+      fs_mgn.set_vertices(vec);
+    };
     // getter
     double get_wrench_alpha_blending () { return wrench_alpha_blending; };
     double get_leg_front_margin () { return leg_front_margin; };
@@ -247,6 +271,7 @@ public:
     double get_leg_outside_margin () { return leg_outside_margin; };
     double get_alpha_cutoff_freq () { return alpha_filter->getCutOffFreq(); };
     void get_vertices (std::vector<std::vector<Eigen::Vector2d> >& vs) { fs.get_vertices(vs); };
+    void get_margined_vertices (std::vector<std::vector<Eigen::Vector2d> >& vs) { fs_mgn.get_vertices(vs); };
     //
     double calcAlpha (const hrp::Vector3& tmprefzmp,
                       const std::vector<hrp::Vector3>& ee_pos,
