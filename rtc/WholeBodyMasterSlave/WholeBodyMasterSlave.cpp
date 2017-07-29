@@ -323,11 +323,13 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
         if(DEBUGP && TIMECALC){clock_gettime(CLOCK_REALTIME, &endT); std::cout << (double)(endT.tv_sec - startT.tv_sec + (endT.tv_nsec - startT.tv_nsec) * 1e-9) << " @ calcWorldZMPFromInverseDynamics" << std::endl;  clock_gettime(CLOCK_REALTIME, &startT);}
 
         //角運動量補償
-        if(hsp->WBMSparam.is_doctor){
-          processMomentumCompensation(fik_rmc, m_robot_rmc, m_robot, hsp->rp_ref_out);
-        }else{
-          processMomentumCompensation(fik_rmc, m_robot_rmc, m_robot, raw_pose);
-        }
+//        if(hsp->WBMSparam.is_doctor){
+//          processMomentumCompensation(fik_rmc, m_robot_rmc, m_robot, hsp->rp_ref_out);
+//        }else{
+//          processMomentumCompensation(fik_rmc, m_robot_rmc, m_robot, raw_pose);
+//        }
+
+        processBBAccelarationFilter(m_robot, m_robot_rmc);
 
         if(DEBUGP && TIMECALC){clock_gettime(CLOCK_REALTIME, &endT); std::cout << (double)(endT.tv_sec - startT.tv_sec + (endT.tv_nsec - startT.tv_nsec) * 1e-9) << " @ processMomentumCompensation" << std::endl;  clock_gettime(CLOCK_REALTIME, &startT);}
 
@@ -738,6 +740,145 @@ void WholeBodyMasterSlave::processMomentumCompensation(fikPtr& fik_in, hrp::Body
   solveFullbodyIKStrictCOM(fik_in, robot_in, com_mod, rf_checked, lf_checked, rh_checked, lh_checked, pose_ref.tgt[head].abs,"calcDynamicsFilterCompensation");
 }
 
+
+void WholeBodyMasterSlave::processBBAccelarationFilter(hrp::BodyPtr& robot_in, hrp::BodyPtr& robot_out){
+  static bool first = true;
+  static hrp::dvector qdd, qd_ref, qd_ans, qd_old, q_ref, q_old, q_oldold, t_goal;
+  if(first){
+    qd_ref.resize(robot_in->numJoints());
+    qd_ans.resize(robot_in->numJoints());
+    qdd.resize(robot_in->numJoints());
+    qd_old.resize(robot_in->numJoints());
+    for(int i=0; i < robot_in->numJoints(); i++) qd_old(i) = 0;
+    qd_ans = qd_ref = qdd = qd_old;
+    q_ref.resize(robot_in->numJoints());
+    q_old.resize(robot_in->numJoints());
+    q_oldold.resize(robot_in->numJoints());
+    t_goal.resize(robot_in->numJoints());
+  }
+  for(int i=0; i < robot_in->numJoints(); i++){
+    q_ref(i) = robot_in->joint(i)->q;
+  }
+  if(first){
+    q_oldold = q_old = q_ref;
+  }
+  qd_ref = (q_ref - q_old) / m_dt;
+  qd_old = (q_old - q_oldold) / m_dt;
+  qdd = (q_ref - 2 * q_old + q_oldold) / (m_dt * m_dt);
+
+  const double max_acc = 1;
+  double arrowed_ratio = 1;
+//  for(int i=0; i < robot_in->numJoints(); i++){
+//    if(fabs(qd_ref(i)) > 1e-6){
+//      int direc = (q_ref(i) - q_old(i)) > 0 ? 1 : -1;
+//      double stop_safe_vel_scalar = sqrt( 2 * max_acc * fabs(q_ref(i) - q_old(i)) );
+//  //      double stop_safe_vel = direc * stop_safe_vel_scalar;
+//  //      double vel_ans = qd_old(i) + direc * max_acc * m_dt;
+//
+//      if(direc>0){
+//        if(qd_old(i) > stop_safe_vel_scalar){
+//          qd_ans(i) = qd_old(i) - max_acc * m_dt;
+//        }else{
+//          qd_ans(i) = qd_old(i) + max_acc * m_dt;
+//        }
+//      }else{
+//        if(qd_old(i) < -stop_safe_vel_scalar){
+//          qd_ans(i) = qd_old(i) + max_acc * m_dt;
+//        }else{
+//          qd_ans(i) = qd_old(i) - max_acc * m_dt;
+//        }
+//      }
+////      double ratio = qd_ans(i) / qd_ref(i);
+////      if(ratio < arrowed_ratio)arrowed_ratio = ratio;
+//    }
+//  }
+//  double t_worst = 0;
+//  for(int i=0; i < robot_in->numJoints(); i++){
+//    t_goal(i) = 0;
+//    if(fabs(qd_ref(i)) > 1e-6){
+//      double q_stop = q_old(i) + SGN(qd_old(i))*(qd_old(i)*qd_old(i))/max_acc;
+//      if( (q_ref(i) - q_stop) > 0 ){
+//        qd_ans(i) = qd_old(i) + max_acc * m_dt;
+//
+//        if(qd_old(i)>0){
+//          double t0 = fabs(qd_old(i)) / max_acc;
+//          double t1 = sqrt(max_acc * fabs(q_stop - q_ref(i)));
+//          t_goal(i) = t0 + t1;
+//        }else{
+//          double q_0 = q_old(i) - SGN(qd_old(i)) * ( qd_old(i) * qd_old(i) ) / (2 * max_acc);
+//          double t_all = sqrt(max_acc * fabs(q_ref(i) - q_0));
+//          double t_cur = fabs(qd_old(i)) / max_acc;
+//          t_goal(i) = t_all - t_cur;
+//        }
+//
+//      }else{
+//        qd_ans(i) = qd_old(i) - max_acc * m_dt;
+//
+//        if(qd_old(i)>0){
+//          double t0 = fabs(qd_old(i)) / max_acc;
+//          double t1 = sqrt(max_acc * fabs(q_stop - q_ref(i)));
+//          t_goal(i) = t0 + t1;
+//        }else{
+//          double q_0 = q_old(i) - SGN(qd_old(i)) * ( qd_old(i) * qd_old(i) ) / (2 * max_acc);
+//          double t_all = sqrt(max_acc * fabs(q_ref(i) - q_0));
+//          double t_cur = fabs(qd_old(i)) / max_acc;
+//          t_goal(i) = t_all - t_cur;
+//        }
+//
+//      }
+//    }
+//    if(t_goal(i) > t_worst) t_worst = t_goal(i);
+//  }
+//  for(int i=0; i < robot_in->numJoints(); i++){
+//    if(t_worst != 0.0){
+//      qd_ans(i) *= t_goal(i) / t_worst;
+//    }
+//  }
+  double t_worst = 0;
+  for(int i=0; i < robot_in->numJoints(); i++){
+    t_goal(i) = 0;
+    if(fabs(qd_ref(i)) > 1e-6){
+
+      double q_stop = q_old(i) + SGN(qd_old(i))*(qd_old(i)*qd_old(i))/max_acc;
+
+      qd_ans(i) = qd_old(i) + SGN(q_ref(i) - q_stop) * max_acc * m_dt;
+
+      if(SGN(q_ref(i) - q_stop) * SGN(qd_old(i)) < 0){
+        double t0 = fabs(qd_old(i)) / max_acc;
+        double t1 = sqrt( fabs(q_stop - q_ref(i)) / max_acc);
+        t_goal(i) = t0 + t1;
+      }
+      if(SGN(q_ref(i) - q_stop) * SGN(qd_old(i)) > 0){
+        double q_0 = q_old(i) - SGN(qd_old(i)) * ( qd_old(i) * qd_old(i) ) / (2 * max_acc);
+        double t_all = sqrt( fabs(q_ref(i) - q_0) / max_acc);
+        double t_cur = fabs(qd_old(i)) / max_acc;
+        t_goal(i) = t_all - t_cur;
+      }
+    }
+    if(t_goal(i) > t_worst) t_worst = t_goal(i);
+  }
+  for(int i=0; i < robot_in->numJoints(); i++){
+    if(t_worst != 0.0){
+      qd_ans(i) *= t_goal(i) / t_worst;
+    }
+  }
+
+
+//  std::cout << "arrowed_ratio "<<arrowed_ratio<<std::endl;
+
+  for(int i=0; i < robot_in->numJoints(); i++){
+    robot_out->joint(i)->q = q_old(i) + qd_ans(i) * m_dt;
+  }
+
+  q_oldold = q_old;
+  for(int i=0; i < robot_in->numJoints(); i++){
+    q_old(i) = robot_out->joint(i)->q;
+  }
+
+
+
+  first = false;
+}
 
 bool WholeBodyMasterSlave::startCountDownForWholeBodyMasterSlave(const double sec){//遅い
   if(sec >= 0.0 && sec <= 30.0){

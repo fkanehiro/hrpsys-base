@@ -208,6 +208,7 @@ class WholeBodyMasterSlave : public RTC::DataFlowComponentBase, UTIL_CONST {
   void processWholeBodyMasterSlave(fikPtr& fik_in, hrp::BodyPtr& robot_in, const HumanPose& pose_ref);
   void processWholeBodyMasterSlave_Raw(fikPtr& fik_in, hrp::BodyPtr& robot_in, HumanPose& pose_ref);
   void processMomentumCompensation(fikPtr& fik_in, hrp::BodyPtr& robot_in, hrp::BodyPtr& robot_normal_in, const HumanPose& pose_ref);
+  void processBBAccelarationFilter(hrp::BodyPtr& robot_in, hrp::BodyPtr& robot_out);
   bool isOptionalDataContact (const std::string& ee_name) { return (std::fabs(m_optionalData.data[contact_states_index_map[ee_name]]-1.0)<0.1)?true:false; };
 
 //  void calcVelAccSafeTrajectory(const hrp::Vector3& pos_cur, const hrp::Vector3& vel_cur, const hrp::Vector3& pos_tgt, const hrp::Vector3& max_acc, const double& max_vel, hrp::Vector3& pos_ans);
