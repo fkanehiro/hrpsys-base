@@ -78,13 +78,6 @@ public:
     {
         return leg_pos(0) <= (-1 * leg_rear_margin + margin);
     };
-    inline bool is_cp_inside_foot (const hrp::Vector3& cp, const leg_type support_leg, const double margin = 0.0, const double offset = 0.0)
-    {
-        if (support_leg == RLEG) return (cp(1) <= (leg_inside_margin - margin)) && (cp(1) >= (-1 * leg_outside_margin + margin)) && (cp(0) <= (leg_front_margin - margin)) && (cp(0) >= (-1 * leg_rear_margin + margin));
-        else if (support_leg == LLEG) return (cp(1) >= (-1 * leg_inside_margin + margin)) && (cp(1) <= (leg_outside_margin - margin)) && (cp(0) <= (leg_front_margin - margin)) && (cp(0) >= (-1 * leg_rear_margin + margin));
-        else if (support_leg == BOTH) return (cp(1) <= (leg_outside_margin + offset - margin)) && (cp(1) >= (-1 * (leg_outside_margin + offset) + margin)) && (cp(0) <= (leg_front_margin - margin)) && (cp(0) >= (-1 * leg_rear_margin + margin));
-        else return true;
-    };
     inline bool is_inside_support_polygon (Eigen::Vector2d& p, const std::vector<hrp::Vector3>& ee_pos, const std::vector <hrp::Matrix33>& ee_rot, const std::vector<std::string>& ee_name, const leg_type& support_leg, const std::vector<double>& tmp_margin = std::vector<double>(), const hrp::Vector3& offset = hrp::Vector3(0.0, 0.0, 0.0), bool calc_nearest_point = false)
     {
       // vector size zero check
