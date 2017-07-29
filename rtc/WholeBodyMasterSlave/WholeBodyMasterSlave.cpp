@@ -329,13 +329,45 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
 //          processMomentumCompensation(fik_rmc, m_robot_rmc, m_robot, raw_pose);
 //        }
 
-        processBBAccelarationFilter(m_robot, m_robot_rmc);
+//        processBBAccelarationFilter(m_robot, m_robot_rmc);
 
         if(DEBUGP && TIMECALC){clock_gettime(CLOCK_REALTIME, &endT); std::cout << (double)(endT.tv_sec - startT.tv_sec + (endT.tv_nsec - startT.tv_nsec) * 1e-9) << " @ processMomentumCompensation" << std::endl;  clock_gettime(CLOCK_REALTIME, &startT);}
 
+        hsp->over_vel_feedback = 1.0;
+        static hrp::dvector q_old,qd;
+        if(mode.isInitialize()){
+          q_old.resize(m_robot->numJoints());
+          qd.resize(m_robot->numJoints());
+          for (int i=0;i<m_robot->numJoints();i++) q_old(i) = m_robot->joint(i)->q;
+        }
+        for (int i=0;i<m_robot->numJoints();i++){
+          double tmp;
+//          qd(i) = (m_robot->joint(i)->q - q_old(i))/m_dt;
+          qd = idsb.dq;
+          if(fabs(qd(i)) > 3.0){
+            tmp = 3.0 / fabs(qd(i));
+            if(tmp < hsp->over_vel_feedback){
+              hsp->over_vel_feedback = tmp;
+            }
+          }
+        }
+        for (int i=0;i<m_robot->numJoints();i++){
+
+//          m_robot->joint(i)->q = hsp->over_vel_feedback * qd(i) * m_dt + q_old(i);
+          m_robot->joint(i)->q = hsp->over_vel_feedback * idsb.dq(i) * m_dt + idsb.q_oldold(i);
+//          LIMIT_MINMAX(m_robot->joint(i)->q, m_robot->joint(i)->llimit+0.01, m_robot->joint(i)->ulimit-0.01);
+          q_old(i) = m_robot->joint(i)->q;
+        }
+        m_robot->rootLink()->p = hsp->over_vel_feedback * idsb.base_v * m_dt + idsb.base_p_old;
+//        dbg(hsp->over_vel_feedback);
+
+
+
+
         //OutPortデータセット
         hrp::Vector3 ref_zmp = hsp->rp_ref_out.tgt[zmp].abs.p;
-        hrp::BodyPtr m_robot_for_out = m_robot_rmc;
+//        hrp::BodyPtr m_robot_for_out = m_robot_rmc;
+        hrp::BodyPtr m_robot_for_out = m_robot;
         // qRef
         for (int i = 0; i < m_qRef.data.length(); i++ ){ m_qRef.data[i] = transition_interpolator_ratio * m_robot_for_out->joint(i)->q  + (1 - transition_interpolator_ratio) * m_qRef.data[i]; }
         // basePos
@@ -533,6 +565,29 @@ void WholeBodyMasterSlave::processWholeBodyMasterSlave_Raw(fikPtr& fik_in, hrp::
 }
 
 
+//void WholeBodyMasterSlave::calcManipulability(fikPtr& fik_in, hrp::BodyPtr& robot_in){
+//  const std::string names[4] = {"rleg","lleg","rarm","larm"};
+//  hrp::dmatrix J,Jinv,Jnull;
+//  for(int l=0; l<4; l++){
+//    if(fik_in->ikp.count(names[l])){
+//      fik_in->ikp[names[l]].manip->calcJacobian(J);
+//      fik_in->ikp[names[l]].manip->calcJacobianInverseNullspace(J, Jinv, Jnull);
+//      Eigen::JacobiSVD< Eigen::MatrixXd > svd(J.block(0,0,3,J.cols()), Eigen::ComputeFullU | Eigen::ComputeFullV);
+//  //    Eigen::MatrixXd::Index row,col;
+//  //    hsp->cur_manip_val[l] = svd.singularValues().minCoeff(&row,&col);
+//  //    hsp->min_manip_direc[l] = svd.matrixU().col(row);// unit vector
+//      hsp->manip_mat[l] = svd.matrixU();
+//      for(int i=0;i<3;i++){
+//        hsp->manip_sv[l](i) = svd.singularValues()(i);
+//  //      hsp->manip_mat[l].col(i) *= svd.singularValues()(i);
+//  //      hsp->cur_manip_val[l][i] = svd.singularValues()(i);
+//  //      hsp->manip_direc[l][i] = svd.matrixU().col(i);// unit vector
+//      }
+//  //    dbg((hsp->manip_sv[l]).transpose());
+//  //    if(hsp->manip_direc[l].dot(fik_in->ikp[names[l]].target_p0 - robot_in->rootLink()->p) < 0){ hsp->manip_direc[l] *= -1; }//向きみて反転(常に外側正)
+//    }
+//  }
+//}
 void WholeBodyMasterSlave::calcManipulability(fikPtr& fik_in, hrp::BodyPtr& robot_in){
   const std::string names[4] = {"rleg","lleg","rarm","larm"};
   hrp::dmatrix J,Jinv,Jnull;
@@ -541,18 +596,13 @@ void WholeBodyMasterSlave::calcManipulability(fikPtr& fik_in, hrp::BodyPtr& robo
       fik_in->ikp[names[l]].manip->calcJacobian(J);
       fik_in->ikp[names[l]].manip->calcJacobianInverseNullspace(J, Jinv, Jnull);
       Eigen::JacobiSVD< Eigen::MatrixXd > svd(J.block(0,0,3,J.cols()), Eigen::ComputeFullU | Eigen::ComputeFullV);
-  //    Eigen::MatrixXd::Index row,col;
-  //    hsp->cur_manip_val[l] = svd.singularValues().minCoeff(&row,&col);
-  //    hsp->min_manip_direc[l] = svd.matrixU().col(row);// unit vector
+      Eigen::JacobiSVD< Eigen::MatrixXd > svd_rot(J.block(3,0,3,J.cols()), Eigen::ComputeFullU | Eigen::ComputeFullV);
       hsp->manip_mat[l] = svd.matrixU();
+      hsp->manip_mat_rot[l] = svd_rot.matrixU();
       for(int i=0;i<3;i++){
         hsp->manip_sv[l](i) = svd.singularValues()(i);
-  //      hsp->manip_mat[l].col(i) *= svd.singularValues()(i);
-  //      hsp->cur_manip_val[l][i] = svd.singularValues()(i);
-  //      hsp->manip_direc[l][i] = svd.matrixU().col(i);// unit vector
+        hsp->manip_sv_rot[l](i) = svd_rot.singularValues()(i);
       }
-  //    dbg((hsp->manip_sv[l]).transpose());
-  //    if(hsp->manip_direc[l].dot(fik_in->ikp[names[l]].target_p0 - robot_in->rootLink()->p) < 0){ hsp->manip_direc[l] *= -1; }//向きみて反転(常に外側正)
     }
   }
 }
@@ -766,80 +816,14 @@ void WholeBodyMasterSlave::processBBAccelarationFilter(hrp::BodyPtr& robot_in, h
   qd_old = (q_old - q_oldold) / m_dt;
   qdd = (q_ref - 2 * q_old + q_oldold) / (m_dt * m_dt);
 
-  const double max_acc = 1;
-  double arrowed_ratio = 1;
-//  for(int i=0; i < robot_in->numJoints(); i++){
-//    if(fabs(qd_ref(i)) > 1e-6){
-//      int direc = (q_ref(i) - q_old(i)) > 0 ? 1 : -1;
-//      double stop_safe_vel_scalar = sqrt( 2 * max_acc * fabs(q_ref(i) - q_old(i)) );
-//  //      double stop_safe_vel = direc * stop_safe_vel_scalar;
-//  //      double vel_ans = qd_old(i) + direc * max_acc * m_dt;
-//
-//      if(direc>0){
-//        if(qd_old(i) > stop_safe_vel_scalar){
-//          qd_ans(i) = qd_old(i) - max_acc * m_dt;
-//        }else{
-//          qd_ans(i) = qd_old(i) + max_acc * m_dt;
-//        }
-//      }else{
-//        if(qd_old(i) < -stop_safe_vel_scalar){
-//          qd_ans(i) = qd_old(i) + max_acc * m_dt;
-//        }else{
-//          qd_ans(i) = qd_old(i) - max_acc * m_dt;
-//        }
-//      }
-////      double ratio = qd_ans(i) / qd_ref(i);
-////      if(ratio < arrowed_ratio)arrowed_ratio = ratio;
-//    }
-//  }
-//  double t_worst = 0;
-//  for(int i=0; i < robot_in->numJoints(); i++){
-//    t_goal(i) = 0;
-//    if(fabs(qd_ref(i)) > 1e-6){
-//      double q_stop = q_old(i) + SGN(qd_old(i))*(qd_old(i)*qd_old(i))/max_acc;
-//      if( (q_ref(i) - q_stop) > 0 ){
-//        qd_ans(i) = qd_old(i) + max_acc * m_dt;
-//
-//        if(qd_old(i)>0){
-//          double t0 = fabs(qd_old(i)) / max_acc;
-//          double t1 = sqrt(max_acc * fabs(q_stop - q_ref(i)));
-//          t_goal(i) = t0 + t1;
-//        }else{
-//          double q_0 = q_old(i) - SGN(qd_old(i)) * ( qd_old(i) * qd_old(i) ) / (2 * max_acc);
-//          double t_all = sqrt(max_acc * fabs(q_ref(i) - q_0));
-//          double t_cur = fabs(qd_old(i)) / max_acc;
-//          t_goal(i) = t_all - t_cur;
-//        }
-//
-//      }else{
-//        qd_ans(i) = qd_old(i) - max_acc * m_dt;
-//
-//        if(qd_old(i)>0){
-//          double t0 = fabs(qd_old(i)) / max_acc;
-//          double t1 = sqrt(max_acc * fabs(q_stop - q_ref(i)));
-//          t_goal(i) = t0 + t1;
-//        }else{
-//          double q_0 = q_old(i) - SGN(qd_old(i)) * ( qd_old(i) * qd_old(i) ) / (2 * max_acc);
-//          double t_all = sqrt(max_acc * fabs(q_ref(i) - q_0));
-//          double t_cur = fabs(qd_old(i)) / max_acc;
-//          t_goal(i) = t_all - t_cur;
-//        }
-//
-//      }
-//    }
-//    if(t_goal(i) > t_worst) t_worst = t_goal(i);
-//  }
-//  for(int i=0; i < robot_in->numJoints(); i++){
-//    if(t_worst != 0.0){
-//      qd_ans(i) *= t_goal(i) / t_worst;
-//    }
-//  }
+  const double max_acc = 3;
+
   double t_worst = 0;
   for(int i=0; i < robot_in->numJoints(); i++){
     t_goal(i) = 0;
     if(fabs(qd_ref(i)) > 1e-6){
 
-      double q_stop = q_old(i) + SGN(qd_old(i))*(qd_old(i)*qd_old(i))/max_acc;
+      double q_stop = q_old(i) + SGN(qd_old(i)) * ( qd_old(i)*qd_old(i) ) / ( 2 * max_acc ) * 1.01;
 
       qd_ans(i) = qd_old(i) + SGN(q_ref(i) - q_stop) * max_acc * m_dt;
 
@@ -847,38 +831,136 @@ void WholeBodyMasterSlave::processBBAccelarationFilter(hrp::BodyPtr& robot_in, h
         double t0 = fabs(qd_old(i)) / max_acc;
         double t1 = sqrt( fabs(q_stop - q_ref(i)) / max_acc);
         t_goal(i) = t0 + t1;
+        if(i==15)fprintf(hsp->id_log,"%f %f %f %f %f 0 0 %d\n", q_ref(i), q_old(i), t_goal(i), t0, t1, 1);
       }
       if(SGN(q_ref(i) - q_stop) * SGN(qd_old(i)) > 0){
         double q_0 = q_old(i) - SGN(qd_old(i)) * ( qd_old(i) * qd_old(i) ) / (2 * max_acc);
-        double t_all = sqrt( fabs(q_ref(i) - q_0) / max_acc);
+        double t_all = sqrt( fabs(q_ref(i) - q_0) / max_acc) * 2;
         double t_cur = fabs(qd_old(i)) / max_acc;
         t_goal(i) = t_all - t_cur;
+        if(i==15)fprintf(hsp->id_log,"%f %f %f 0 0 %f %f %d\n", q_ref(i), q_old(i), t_goal(i), t_all, t_cur, 2);
       }
+
+    }else{
+      if(i==15)fprintf(hsp->id_log,"%f %f 0 0 0 0 0 %d\n", q_ref(i), q_old(i), 0);
     }
     if(t_goal(i) > t_worst) t_worst = t_goal(i);
+
   }
   for(int i=0; i < robot_in->numJoints(); i++){
     if(t_worst != 0.0){
-      qd_ans(i) *= t_goal(i) / t_worst;
+//      qd_ans(i) *= t_goal(i) / t_worst;
     }
   }
-
-
-//  std::cout << "arrowed_ratio "<<arrowed_ratio<<std::endl;
-
-  for(int i=0; i < robot_in->numJoints(); i++){
+  for(int i=12; i < robot_in->numJoints(); i++){
     robot_out->joint(i)->q = q_old(i) + qd_ans(i) * m_dt;
   }
-
+  for(int i=0; i < 12; i++){
+    robot_out->joint(i)->q = robot_in->joint(i)->q;
+  }
   q_oldold = q_old;
-  for(int i=0; i < robot_in->numJoints(); i++){
+  for(int i=12; i < robot_in->numJoints(); i++){
     q_old(i) = robot_out->joint(i)->q;
   }
-
-
-
+  robot_out->rootLink()->p = robot_in->rootLink()->p;
+  robot_out->rootLink()->R = robot_in->rootLink()->R;
   first = false;
 }
+
+//void WholeBodyMasterSlave::processBBAccelarationFilter(hrp::BodyPtr& robot_in, hrp::BodyPtr& robot_out){
+//  static bool first = true;
+//  static hrp::dvector qdd, qd_ref, qd_ans, qd_old, q_ref, q_old, q_oldold, t_goal;
+//  if(first){
+//    qd_ref.resize(robot_in->numJoints());
+//    qd_ans.resize(robot_in->numJoints());
+//    qdd.resize(robot_in->numJoints());
+//    qd_old.resize(robot_in->numJoints());
+//    for(int i=0; i < robot_in->numJoints(); i++) qd_old(i) = 0;
+//    qd_ans = qd_ref = qdd = qd_old;
+//    q_ref.resize(robot_in->numJoints());
+//    q_old.resize(robot_in->numJoints());
+//    q_oldold.resize(robot_in->numJoints());
+//    t_goal.resize(robot_in->numJoints());
+//  }
+//  for(int i=0; i < robot_in->numJoints(); i++){
+//    q_ref(i) = robot_in->joint(i)->q;
+//  }
+//  if(first){
+//    q_oldold = q_old = q_ref;
+//  }
+//
+//
+//  static interpolator *ip;
+//  if(first){
+//    ip = new interpolator(robot_in->numJoints(), m_dt, interpolator::HOFFARBIB, 1);
+//    ip->setName(std::string(m_profile.instance_name)+" ip");
+//    ip->clear();
+//    ip->set(q_ref.data());
+//  }
+//  ip->setGoal(q_ref.data(), 0.3, true);
+//
+//  qd_ref = (q_ref - q_old) / m_dt;
+//  qd_old = (q_old - q_oldold) / m_dt;
+//  qdd = (q_ref - 2 * q_old + q_oldold) / (m_dt * m_dt);
+//
+////  const double max_acc = 3;
+////
+////  double t_worst = 0;
+////  for(int i=0; i < robot_in->numJoints(); i++){
+////    t_goal(i) = 0;
+////    if(fabs(qd_ref(i)) > 1e-6){
+////
+////      double q_stop = q_old(i) + SGN(qd_old(i)) * ( qd_old(i)*qd_old(i) ) / ( 2 * max_acc ) * 1.01;
+////
+////      qd_ans(i) = qd_old(i) + SGN(q_ref(i) - q_stop) * max_acc * m_dt;
+////
+////      if(SGN(q_ref(i) - q_stop) * SGN(qd_old(i)) < 0){
+////        double t0 = fabs(qd_old(i)) / max_acc;
+////        double t1 = sqrt( fabs(q_stop - q_ref(i)) / max_acc);
+////        t_goal(i) = t0 + t1;
+////        if(i==15)fprintf(hsp->id_log,"%f %f %f %f %f 0 0 %d\n", q_ref(i), q_old(i), t_goal(i), t0, t1, 1);
+////      }
+////      if(SGN(q_ref(i) - q_stop) * SGN(qd_old(i)) > 0){
+////        double q_0 = q_old(i) - SGN(qd_old(i)) * ( qd_old(i) * qd_old(i) ) / (2 * max_acc);
+////        double t_all = sqrt( fabs(q_ref(i) - q_0) / max_acc) * 2;
+////        double t_cur = fabs(qd_old(i)) / max_acc;
+////        t_goal(i) = t_all - t_cur;
+////        if(i==15)fprintf(hsp->id_log,"%f %f %f 0 0 %f %f %d\n", q_ref(i), q_old(i), t_goal(i), t_all, t_cur, 2);
+////      }
+////
+////    }else{
+////      if(i==15)fprintf(hsp->id_log,"%f %f 0 0 0 0 0 %d\n", q_ref(i), q_old(i), 0);
+////    }
+////    if(t_goal(i) > t_worst) t_worst = t_goal(i);
+////
+////  }
+//
+//  double q_ans[robot_in->numJoints()];
+//  if (!ip->isEmpty() ){
+//    ip->get(q_ans, true);
+//  }
+////  for(int i=0; i < robot_in->numJoints(); i++){
+////    if(t_worst != 0.0){
+////      qd_ans(i) *= t_goal(i) / t_worst;
+////    }
+////    fprintf(hsp->id_log,"%f ", t_goal(i));
+////  }
+////  fprintf(hsp->id_log,"\n");
+//
+//
+////  std::cout << "arrowed_ratio "<<arrowed_ratio<<std::endl;
+//
+//  for(int i=0; i < robot_in->numJoints(); i++){
+//    robot_out->joint(i)->q = q_ans[i];
+//  }
+//
+//  robot_out->rootLink()->p = robot_in->rootLink()->p;
+//  robot_out->rootLink()->R = robot_in->rootLink()->R;
+//
+//  first = false;
+//}
+
+
 
 bool WholeBodyMasterSlave::startCountDownForWholeBodyMasterSlave(const double sec){//遅い
   if(sec >= 0.0 && sec <= 30.0){
