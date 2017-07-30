@@ -35,7 +35,7 @@ extern "C" {
 }
 #endif
 
-#define DEBUG 1
+#define DEBUG 0
 #define dbg(var) std::cout<<#var"= "<<(var)<<std::endl
 #define LIMIT_MIN(x,min) (x= ( x<min ? min:x ))
 #define LIMIT_MAX(x,max) (x= ( x<max ? x:max ))
@@ -186,7 +186,7 @@ class WBMSCore : UTIL_CONST {
     hrp::Vector3 manip_sv_rot[4];
 
     hrp::Vector2 cp_acc_old;
-    WBMSPose3D ee_pose_old[4];
+//    WBMSPose3D ee_pose_old[4];
 
     WBMSCore(const double& dt){
       tgt_h2r_ratio = h2r_ratio = 0.96;//human 1.1m vs jaxon 1.06m
@@ -275,7 +275,7 @@ class WBMSCore : UTIL_CONST {
           rp_ref_out.tgt[human_l_names[i]].offs.p = fik_in->getEEPos(robot_l_names[i]);
           rp_ref_out.tgt[human_l_names[i]].offs.rpy = hrp::rpyFromRot(fik_in->getEERot(robot_l_names[i]));
           rp_ref_out.tgt[human_l_names[i]].abs = rp_ref_out.tgt[human_l_names[i]].offs;
-          ee_pose_old[i] = rp_ref_out.tgt[human_l_names[i]].abs;
+//          ee_pose_old[i] = rp_ref_out.tgt[human_l_names[i]].abs;
         }
       }
       rp_ref_out.tgt[com].offs.p = robot_in->calcCM();
@@ -403,14 +403,14 @@ class WBMSCore : UTIL_CONST {
       for(int i=0, l[4]={rf,lf,rh,lh}; i<4; i++){
 //        calcVelAccSafeTrajectoryVec(fik_act->getEEPos(robot_l_names[i]), (fik_act->getEEPos(robot_l_names[i]) - ee_pose_old[i].p)/DT, tgt.tgt[l[i]].abs.p, 3.0, 1.0, tgt.tgt[l[i]].abs.p);//何故かダメ
 //        calcVelAccSafeTrajectoryVec(hrp::rpyFromRot(fik_act->getEERot(robot_l_names[i])), (hrp::rpyFromRot(fik_act->getEERot(robot_l_names[i])) - ee_pose_old[i].rpy)/DT, tgt.tgt[l[i]].abs.rpy, 3.0, 1.0, tgt.tgt[l[i]].abs.rpy);
-        calcVelAccSafeTrajectoryVec(fik_act->getEEPos(robot_l_names[i]), (rp_ref_out.tgt[l[i]].abs.p - rp_ref_out_old.tgt[l[i]].abs.p)/DT, tgt.tgt[l[i]].abs.p, 3.0, 1.0, tgt.tgt[l[i]].abs.p);
-        calcVelAccSafeTrajectoryVec(hrp::rpyFromRot(fik_act->getEERot(robot_l_names[i])), (rp_ref_out.tgt[l[i]].abs.rpy - rp_ref_out_old.tgt[l[i]].abs.rpy)/DT, tgt.tgt[l[i]].abs.rpy, 3.0, 1.0, tgt.tgt[l[i]].abs.rpy);
-        ee_pose_old[i].p = fik_act->getEEPos(robot_l_names[i]);
-        ee_pose_old[i].rpy = hrp::rpyFromRot(fik_act->getEERot(robot_l_names[i]));
+//        calcVelAccSafeTrajectoryVec(fik_act->getEEPos(robot_l_names[i]), (rp_ref_out.tgt[l[i]].abs.p - rp_ref_out_old.tgt[l[i]].abs.p)/DT, tgt.tgt[l[i]].abs.p, 3.0, 1.0, tgt.tgt[l[i]].abs.p);
+//        calcVelAccSafeTrajectoryVec(hrp::rpyFromRot(fik_act->getEERot(robot_l_names[i])), (rp_ref_out.tgt[l[i]].abs.rpy - rp_ref_out_old.tgt[l[i]].abs.rpy)/DT, tgt.tgt[l[i]].abs.rpy, 3.0, 1.0, tgt.tgt[l[i]].abs.rpy);
+//        ee_pose_old[i].p = fik_act->getEEPos(robot_l_names[i]);
+//        ee_pose_old[i].rpy = hrp::rpyFromRot(fik_act->getEERot(robot_l_names[i]));
       }
       for(int i=0, l[1]={head}; i<1; i++){
-        calcVelAccSafeTrajectoryVec(rp_ref_out_old.tgt[l[i]].abs.p, (rp_ref_out.tgt[l[i]].abs.p - rp_ref_out_old.tgt[l[i]].abs.p)/DT, tgt.tgt[l[i]].abs.p, 2.0, 1.0, tgt.tgt[l[i]].abs.p);
-        calcVelAccSafeTrajectoryVec(rp_ref_out_old.tgt[l[i]].abs.rpy, (rp_ref_out.tgt[l[i]].abs.rpy - rp_ref_out_old.tgt[l[i]].abs.rpy)/DT, tgt.tgt[l[i]].abs.rpy, 2.0, 1.0, tgt.tgt[l[i]].abs.rpy);
+//        calcVelAccSafeTrajectoryVec(rp_ref_out_old.tgt[l[i]].abs.p, (rp_ref_out.tgt[l[i]].abs.p - rp_ref_out_old.tgt[l[i]].abs.p)/DT, tgt.tgt[l[i]].abs.p, 2.0, 1.0, tgt.tgt[l[i]].abs.p);
+//        calcVelAccSafeTrajectoryVec(rp_ref_out_old.tgt[l[i]].abs.rpy, (rp_ref_out.tgt[l[i]].abs.rpy - rp_ref_out_old.tgt[l[i]].abs.rpy)/DT, tgt.tgt[l[i]].abs.rpy, 2.0, 1.0, tgt.tgt[l[i]].abs.rpy);
       }
     }
     void applyLPFilter_post(HumanPose& tgt){
@@ -427,17 +427,34 @@ class WBMSCore : UTIL_CONST {
     }
     void calcVelAccSafeTrajectoryVec(const hrp::Vector3& pos_cur, const hrp::Vector3& vel_cur, const hrp::Vector3& pos_tgt, const double& max_acc, const double& max_vel, hrp::Vector3& pos_ans){
       if((pos_tgt - pos_cur).norm() > 1.0e-6){
-        hrp::Vector3 direc = (pos_tgt - pos_cur).normalized();
-        double stop_safe_vel_scalar = sqrt( 2 * max_acc * (pos_tgt - pos_cur).norm() );
-        hrp::Vector3 vel_ans = vel_cur + direc * max_acc * DT;
-        if(vel_ans.dot(direc) > stop_safe_vel_scalar){
-          vel_ans = vel_ans * stop_safe_vel_scalar / vel_ans.dot(direc);
+
+        for(int i=0;i<3;i++){
+          double stop_safe_vel = SGN(pos_tgt(i) - pos_cur(i)) * sqrt( 2 * max_acc * fabs(pos_tgt(i) - pos_cur(i)) );
+          double vel_ans;
+          if(vel_cur(i) > stop_safe_vel){
+            vel_ans = vel_cur(i) - max_acc * DT;
+          }else{
+            vel_ans = vel_cur(i) + max_acc * DT;
+          }
+          pos_ans(i) = pos_cur(i) + vel_ans * DT;
         }
-        pos_ans = pos_cur + vel_ans * DT;
       }else{
         pos_ans = pos_tgt;
       }
     }
+//    void calcVelAccSafeTrajectoryVec(const hrp::Vector3& pos_cur, const hrp::Vector3& vel_cur, const hrp::Vector3& pos_tgt, const double& max_acc, const double& max_vel, hrp::Vector3& pos_ans){
+//      if((pos_tgt - pos_cur).norm() > 1.0e-6){
+//        hrp::Vector3 direc = (pos_tgt - pos_cur).normalized();
+//        double stop_safe_vel_scalar = sqrt( 2 * max_acc * (pos_tgt - pos_cur).norm() );
+//        hrp::Vector3 vel_ans = vel_cur + direc * max_acc * DT;
+//        if(vel_ans.dot(direc) > stop_safe_vel_scalar){
+//          vel_ans = vel_ans * stop_safe_vel_scalar / vel_ans.dot(direc);
+//        }
+//        pos_ans = pos_cur + vel_ans * DT;
+//      }else{
+//        pos_ans = pos_tgt;
+//      }
+//    }
 //    void calcVelAccSafeTrajectoryVec(const hrp::Vector3& pos_cur, const hrp::Vector3& vel_cur, const hrp::Vector3& pos_tgt, const double& max_acc, const double& max_vel, hrp::Vector3& pos_ans){
 //      if((pos_tgt - pos_cur).norm() < 1.0e-6 && vel_cur.norm() < 1.0e-6){
 //        pos_ans = pos_tgt;
