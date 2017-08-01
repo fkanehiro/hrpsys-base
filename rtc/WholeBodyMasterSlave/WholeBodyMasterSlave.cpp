@@ -587,17 +587,14 @@ void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr
   if(fik_in->ikp.count("rarm") && fik_in->ikp.count("larm")){
     hrp::Vector3 base2rh = robot_in->rootLink()->R.transpose() * (fik_in->ikp["rarm"].target_p0 - robot_in->rootLink()->p);
     hrp::Vector3 base2lh = robot_in->rootLink()->R.transpose() * (fik_in->ikp["larm"].target_p0 - robot_in->rootLink()->p);
-    hrp::Vector3 base2ch = (base2rh + base2lh) / 2;
     if( robot_in->link("CHEST_JOINT0") != NULL){
       robot_in->link("CHEST_JOINT0")->q = (base2lh(Z) - base2rh(Z)) * (10 * D2R / 1.0);
       LIMIT_MINMAX(robot_in->link("CHEST_JOINT0")->q, robot_in->link("CHEST_JOINT0")->llimit, robot_in->link("CHEST_JOINT0")->ulimit);
     }
     if(robot_in->link("CHEST_JOINT2") != NULL){
       robot_in->link("CHEST_JOINT2")->q = (base2rh(X) - base2lh(X)) * (60 * D2R / 1.0);
-//      hrp::Vector2 base2ch2d = hrp::Vector2(base2ch(X),base2ch(Y));
-//      hrp::Vector2 nx = hrp::Vector2(1,0);
-//      robot_in->link("CHEST_JOINT2")->q = SGN(WBMSCore::hrpVector2Cross(base2ch2d,nx)) * base2ch2d.dot(nx) / base2ch2d.norm();
-      LIMIT_MINMAX(robot_in->link("CHEST_JOINT2")->q, robot_in->link("CHEST_JOINT2")->llimit, robot_in->link("CHEST_JOINT2")->ulimit);
+//      LIMIT_MINMAX(robot_in->link("CHEST_JOINT2")->q, robot_in->link("CHEST_JOINT2")->llimit, robot_in->link("CHEST_JOINT2")->ulimit);
+      LIMIT_MINMAX(robot_in->link("CHEST_JOINT2")->q, robot_in->link("CHEST_JOINT2")->llimit, 10);//左肩ロール故障につき
     }
   }
   hrp::Vector3 tmp_com_err = hrp::Vector3::Zero();
