@@ -231,7 +231,6 @@ class WBMSCore : UTIL_CONST {
       WBMSparam.set_com_height_fix_val = 0.02;
       WBMSparam.swing_foot_height_offset = 0.01;
       WBMSparam.swing_foot_max_height = 0.5;
-//      WBMSparam.upper_body_rmc_ratio = 0.5;
       WBMSparam.upper_body_rmc_ratio = 0.0;
       WBMSparam.use_rh = WBMSparam.use_lh = true;
       WBMSparam.use_head = true;
@@ -304,7 +303,6 @@ class WBMSCore : UTIL_CONST {
       autoLRSwapCheck                     (hp_wld_raw,hp_swap_checked);//入力の左右反転を常にチェック(＝手足の交差は不可能)
       convertRelHumanPoseToRelRobotPose   (hp_swap_checked, rp_ref_out);
       hp_plot = rp_ref_out;
-//      applyVelLimit                       (rp_ref_vel_old, rp_ref_out); rp_ref_vel_old = rp_ref_out;
       if(WBMSparam.set_com_height_fix)rp_ref_out.tgt[com].abs.p(Z) = rp_ref_out.tgt[com].offs.p(Z) + WBMSparam.set_com_height_fix_val;//膝曲げトルクで落ちるときの応急措置
       judgeFootLandOnCommandByFootForce   (hp_wld_raw);//人体足裏反力から各足の接地指令を生成
       lockSwingFootIfZMPOutOfSupportFoot  (rp_ref_out_old, rp_ref_out);//
@@ -405,8 +403,6 @@ class WBMSCore : UTIL_CONST {
 //        calcVelAccSafeTrajectoryVec(hrp::rpyFromRot(fik_act->getEERot(robot_l_names[i])), (hrp::rpyFromRot(fik_act->getEERot(robot_l_names[i])) - ee_pose_old[i].rpy)/DT, tgt.tgt[l[i]].abs.rpy, 3.0, 1.0, tgt.tgt[l[i]].abs.rpy);
 //        calcVelAccSafeTrajectoryVec(fik_act->getEEPos(robot_l_names[i]), (rp_ref_out.tgt[l[i]].abs.p - rp_ref_out_old.tgt[l[i]].abs.p)/DT, tgt.tgt[l[i]].abs.p, 3.0, 1.0, tgt.tgt[l[i]].abs.p);
 //        calcVelAccSafeTrajectoryVec(hrp::rpyFromRot(fik_act->getEERot(robot_l_names[i])), (rp_ref_out.tgt[l[i]].abs.rpy - rp_ref_out_old.tgt[l[i]].abs.rpy)/DT, tgt.tgt[l[i]].abs.rpy, 3.0, 1.0, tgt.tgt[l[i]].abs.rpy);
-//        ee_pose_old[i].p = fik_act->getEEPos(robot_l_names[i]);
-//        ee_pose_old[i].rpy = hrp::rpyFromRot(fik_act->getEERot(robot_l_names[i]));
       }
       for(int i=0, l[1]={head}; i<1; i++){
 //        calcVelAccSafeTrajectoryVec(rp_ref_out_old.tgt[l[i]].abs.p, (rp_ref_out.tgt[l[i]].abs.p - rp_ref_out_old.tgt[l[i]].abs.p)/DT, tgt.tgt[l[i]].abs.p, 2.0, 1.0, tgt.tgt[l[i]].abs.p);
@@ -427,7 +423,6 @@ class WBMSCore : UTIL_CONST {
     }
     void calcVelAccSafeTrajectoryVec(const hrp::Vector3& pos_cur, const hrp::Vector3& vel_cur, const hrp::Vector3& pos_tgt, const double& max_acc, const double& max_vel, hrp::Vector3& pos_ans){
       if((pos_tgt - pos_cur).norm() > 1.0e-6){
-
         for(int i=0;i<3;i++){
           double stop_safe_vel = SGN(pos_tgt(i) - pos_cur(i)) * sqrt( 2 * max_acc * fabs(pos_tgt(i) - pos_cur(i)) );
           double vel_ans;
@@ -442,19 +437,6 @@ class WBMSCore : UTIL_CONST {
         pos_ans = pos_tgt;
       }
     }
-//    void calcVelAccSafeTrajectoryVec(const hrp::Vector3& pos_cur, const hrp::Vector3& vel_cur, const hrp::Vector3& pos_tgt, const double& max_acc, const double& max_vel, hrp::Vector3& pos_ans){
-//      if((pos_tgt - pos_cur).norm() > 1.0e-6){
-//        hrp::Vector3 direc = (pos_tgt - pos_cur).normalized();
-//        double stop_safe_vel_scalar = sqrt( 2 * max_acc * (pos_tgt - pos_cur).norm() );
-//        hrp::Vector3 vel_ans = vel_cur + direc * max_acc * DT;
-//        if(vel_ans.dot(direc) > stop_safe_vel_scalar){
-//          vel_ans = vel_ans * stop_safe_vel_scalar / vel_ans.dot(direc);
-//        }
-//        pos_ans = pos_cur + vel_ans * DT;
-//      }else{
-//        pos_ans = pos_tgt;
-//      }
-//    }
 //    void calcVelAccSafeTrajectoryVec(const hrp::Vector3& pos_cur, const hrp::Vector3& vel_cur, const hrp::Vector3& pos_tgt, const double& max_acc, const double& max_vel, hrp::Vector3& pos_ans){
 //      if((pos_tgt - pos_cur).norm() < 1.0e-6 && vel_cur.norm() < 1.0e-6){
 //        pos_ans = pos_tgt;
@@ -531,8 +513,8 @@ class WBMSCore : UTIL_CONST {
       LIMIT_MINMAX( out.tgt[lf].abs.p(Z), out.tgt[lf].offs.p(Z), out.tgt[lf].offs.p(Z)+WBMSparam.swing_foot_max_height);
 
       for(int i=0, l[2]={rh,lh}; i<2; i++){
-        LIMIT_MIN(out.tgt[l[i]].abs.p(X), baselinkpose.p(X));
-        LIMIT_MAX(out.tgt[l[i]].abs.p(Z), baselinkpose.p(Z) + 0.4);
+//        LIMIT_MIN(out.tgt[l[i]].abs.p(X), baselinkpose.p(X));
+//        LIMIT_MAX(out.tgt[l[i]].abs.p(Z), baselinkpose.p(Z) + 0.4);
         hrp::Vector2 horizontal_dist(out.tgt[l[i]].abs.p(X) - baselinkpose.p(X), out.tgt[l[i]].abs.p(Y) - baselinkpose.p(Y));
         if(horizontal_dist.norm() < 0.5){
           horizontal_dist = 0.5 * horizontal_dist.normalized();
@@ -540,7 +522,6 @@ class WBMSCore : UTIL_CONST {
         out.tgt[l[i]].abs.p(X) = baselinkpose.p(X) + horizontal_dist(X);
         out.tgt[l[i]].abs.p(Y) = baselinkpose.p(Y) + horizontal_dist(Y);
       }
-
       for(int i=0;i<XYZ;i++){ LIMIT_MINMAX( out.tgt[com].abs.rpy(i), rc.ee_rot_limit[com][MIN](i), rc.ee_rot_limit[com][MAX](i) ); }
       LIMIT_MINMAX( out.tgt[com].abs.p(Z), out.tgt[com].offs.p(Z) - 0.15, out.tgt[com].offs.p(Z) + 0.03 );//COM高さ方向の制限
       for(int i=0, l[5]={rf,lf,rh,lh,head}; i<5; i++){

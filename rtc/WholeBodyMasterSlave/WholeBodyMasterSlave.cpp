@@ -495,6 +495,8 @@ void WholeBodyMasterSlave::preProcessForWholeBodyMasterSlave(fikPtr& fik_in, hrp
     body_list[i]->rootLink()->p = basePos_heightChecked;
     body_list[i]->rootLink()->R = hrp::rotFromRpy(m_baseRpy.data.r, m_baseRpy.data.p, m_baseRpy.data.y);
     for ( int j = 0; j < body_list[i]->numJoints(); j++ ){ body_list[i]->joint(j)->q = m_qRef.data[j]; }
+    if( body_list[i]->link("RARM_JOINT2") != NULL) body_list[i]->link("RARM_JOINT2")->ulimit = -30 * D2R;//脇の干渉回避のため
+    if( body_list[i]->link("LARM_JOINT2") != NULL) body_list[i]->link("LARM_JOINT2")->llimit = 30 * D2R;
     body_list[i]->calcForwardKinematics();
     fik_list[i]->setReferenceJointAngles();
     for(int l=0;l<4;l++){//targetを初期化
@@ -580,8 +582,24 @@ void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr
   }
 //  fik_in->storeCurrentParameters();
 //  fik_in->setReferenceJointAngles();//これ入れると腕ブワーなる
-  if(robot_in->link("HEAD_JOINT0") != NULL)robot_in->joint(15)->q = head_ref.rpy(y);
-  if(robot_in->link("HEAD_JOINT1") != NULL)robot_in->joint(16)->q = head_ref.rpy(p);
+  if( robot_in->link("HEAD_JOINT0") != NULL) robot_in->link("HEAD_JOINT0")->q = head_ref.rpy(y);
+  if( robot_in->link("HEAD_JOINT1") != NULL) robot_in->link("HEAD_JOINT1")->q = head_ref.rpy(p);
+  if(fik_in->ikp.count("rarm") && fik_in->ikp.count("larm")){
+    hrp::Vector3 base2rh = robot_in->rootLink()->R.transpose() * (fik_in->ikp["rarm"].target_p0 - robot_in->rootLink()->p);
+    hrp::Vector3 base2lh = robot_in->rootLink()->R.transpose() * (fik_in->ikp["larm"].target_p0 - robot_in->rootLink()->p);
+    hrp::Vector3 base2ch = (base2rh + base2lh) / 2;
+    if( robot_in->link("CHEST_JOINT0") != NULL){
+      robot_in->link("CHEST_JOINT0")->q = (base2lh(Z) - base2rh(Z)) * (10 * D2R / 1.0);
+      LIMIT_MINMAX(robot_in->link("CHEST_JOINT0")->q, robot_in->link("CHEST_JOINT0")->llimit, robot_in->link("CHEST_JOINT0")->ulimit);
+    }
+    if(robot_in->link("CHEST_JOINT2") != NULL){
+      robot_in->link("CHEST_JOINT2")->q = (base2rh(X) - base2lh(X)) * (60 * D2R / 1.0);
+//      hrp::Vector2 base2ch2d = hrp::Vector2(base2ch(X),base2ch(Y));
+//      hrp::Vector2 nx = hrp::Vector2(1,0);
+//      robot_in->link("CHEST_JOINT2")->q = SGN(WBMSCore::hrpVector2Cross(base2ch2d,nx)) * base2ch2d.dot(nx) / base2ch2d.norm();
+      LIMIT_MINMAX(robot_in->link("CHEST_JOINT2")->q, robot_in->link("CHEST_JOINT2")->llimit, robot_in->link("CHEST_JOINT2")->ulimit);
+    }
+  }
   hrp::Vector3 tmp_com_err = hrp::Vector3::Zero();
   while( 1 ){  //COM 収束ループ
     com_ik_loop++;
@@ -637,13 +655,14 @@ void WholeBodyMasterSlave::processHOFFARBIBFilter(hrp::BodyPtr& robot_in, hrp::B
   for(int i=0;i<3;i++){ goal_q[robot_in->numJoints()+i] = robot_in->rootLink()->p(i); }
   for(int i=0;i<3;i++){for(int j=0;j<3;j++){ goal_q[robot_in->numJoints() + 3 + 3*i + j] = robot_in->rootLink()->R(i,j); }}
 
-  double goal_time = 0.001;
+  double goal_time = 0.0;
+  const double min_goal_time_offset = 0.1;
   const double avg_q_vel = 1.0;
   for(int i=0;i<robot_in->numJoints();i++){
     double tmp_time = (robot_in->joint(i)->q - robot_out->joint(i)->q) / avg_q_vel;
     if(tmp_time > goal_time){ goal_time = tmp_time; }
   }
-  q_ip->setGoal(goal_q, goal_time, true);
+  q_ip->setGoal(goal_q, goal_time + min_goal_time_offset, true);
 
   double ans_q[q_ip_dim];
   if (!q_ip->isEmpty() ){  q_ip->get(ans_q, true); }
