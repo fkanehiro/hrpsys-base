@@ -144,6 +144,8 @@ class AutoBalancer
   InPort<TimedBooleanSeq> m_actContactStatesIn;
   TimedPoint3D m_refFootOriginExtMoment;
   InPort<TimedPoint3D> m_refFootOriginExtMomentIn;
+  TimedBoolean m_refFootOriginExtMomentIsHoldValue;
+  InPort<TimedBoolean> m_refFootOriginExtMomentIsHoldValueIn;
   // for debug
   TimedPoint3D m_cog;
   

@@ -62,6 +62,7 @@ AutoBalancer::AutoBalancer(RTC::Manager* manager)
       m_emergencySignalIn("emergencySignal", m_emergencySignal),
       m_diffCPIn("diffCapturePoint", m_diffCP),
       m_refFootOriginExtMomentIn("refFootOriginExtMoment", m_refFootOriginExtMoment),
+      m_refFootOriginExtMomentIsHoldValueIn("refFootOriginExtMomentIsHoldValue", m_refFootOriginExtMomentIsHoldValue),
       m_actContactStatesIn("actContactStates", m_actContactStates),
       m_qOut("q", m_qRef),
       m_zmpOut("zmpOut", m_zmp),
@@ -107,6 +108,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     addInPort("diffCapturePoint", m_diffCPIn);
     addInPort("actContactStates", m_actContactStatesIn);
     addInPort("refFootOriginExtMoment", m_refFootOriginExtMomentIn);
+    addInPort("refFootOriginExtMomentIsHoldValue", m_refFootOriginExtMomentIsHoldValueIn);
 
     // Set OutPort buffer
     addOutPort("q", m_qOut);
@@ -475,6 +477,9 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
     }
     if (m_refFootOriginExtMomentIn.isNew()) {
       m_refFootOriginExtMomentIn.read();
+    }
+    if (m_refFootOriginExtMomentIsHoldValueIn.isNew()) {
+      m_refFootOriginExtMomentIsHoldValueIn.read();
     }
     if (m_actContactStatesIn.isNew()) {
       m_actContactStatesIn.read();
@@ -2037,6 +2042,15 @@ void AutoBalancer::calc_static_balance_point_from_forces(hrp::Vector3& sb_point,
   }
   hrp::Vector3 total_nosensor_ref_force = mg * hrp::Vector3::UnitZ() - total_sensor_ref_force; // total ref force at the point without sensors, such as torso
   hrp::Vector3 tmp_ext_moment = fix_leg_coords2.pos.cross(total_nosensor_ref_force) + fix_leg_coords2.rot * hrp::Vector3(m_refFootOriginExtMoment.data.x, m_refFootOriginExtMoment.data.y, m_refFootOriginExtMoment.data.z);
+  // For MODE_REF_FORCE_RFU_EXT_MOMENT, store previous root position to calculate influence from tmp_ext_moment while walking (basically, root link moves while walking).
+  //   Calculate values via fix_leg_coords2 relative/world values.
+  static hrp::Vector3 prev_additional_force_applied_pos = fix_leg_coords2.rot.transpose() * (additional_force_applied_link->p-fix_leg_coords2.pos);
+  //   If not is_hold_value (not hold value), update prev_additional_force_applied_pos
+  if ( !m_refFootOriginExtMomentIsHoldValue.data ) {
+      prev_additional_force_applied_pos = fix_leg_coords2.rot.transpose() * (additional_force_applied_link->p-fix_leg_coords2.pos);
+  }
+  hrp::Vector3 tmp_prev_additional_force_applied_pos = fix_leg_coords2.rot * prev_additional_force_applied_pos + fix_leg_coords2.pos;
+  // Calculate SBP
   for (size_t j = 0; j < 2; j++) {
     nume(j) = mg * tmpcog(j);
     denom(j) = mg;
@@ -2055,7 +2069,8 @@ void AutoBalancer::calc_static_balance_point_from_forces(hrp::Vector3& sb_point,
         nume(j) += ( (fpos(2) - ref_com_height) * total_nosensor_ref_force(j) - fpos(j) * total_nosensor_ref_force(2) );
         denom(j) -= total_nosensor_ref_force(2);
     } else if ( use_force == MODE_REF_FORCE_RFU_EXT_MOMENT ) {
-        nume(j) += (j==0 ? tmp_ext_moment(1):-tmp_ext_moment(0));
+        //nume(j) += (j==0 ? tmp_ext_moment(1):-tmp_ext_moment(0));
+        nume(j) += (tmp_prev_additional_force_applied_pos(j)-additional_force_applied_link->p(j))*total_nosensor_ref_force(2) + (j==0 ? tmp_ext_moment(1):-tmp_ext_moment(0));
         denom(j) -= total_nosensor_ref_force(2);
     }
     sb_point(j) = nume(j) / denom(j);

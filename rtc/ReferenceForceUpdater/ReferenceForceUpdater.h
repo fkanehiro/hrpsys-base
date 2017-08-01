@@ -144,6 +144,8 @@ class ReferenceForceUpdater
   std::vector<OutPort<TimedDoubleSeq> *> m_ref_forceOut;
   TimedPoint3D m_refFootOriginExtMoment;
   OutPort<TimedPoint3D> m_refFootOriginExtMomentOut;
+  TimedBoolean m_refFootOriginExtMomentIsHoldValue;
+  OutPort<TimedBoolean> m_refFootOriginExtMomentIsHoldValueOut;
 
   // </rtc-template>
 
