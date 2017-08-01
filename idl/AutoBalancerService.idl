@@ -327,6 +327,10 @@ module OpenHRP
       DblArray2 limb_stretch_avoidance_vlimit;
       /// Sequence of limb length margin from max limb length [m]
       sequence<double> limb_length_margin;
+      /// Name of additional force applied link for MODE_REF_FORCE_WITH_FOOT for MODE_REF_FORCE_RFU_EXT_MOMENT. Additional force is applied to the point without force sensors, such as torso.
+      string additional_force_applied_link_name;
+      /// Link local offset[m] of force applied point for MODE_REF_FORCE_WITH_FOOT. This is local value in the link frame specified by "additional_force_applied_link_name". Zero by default.
+      DblArray3 additional_force_applied_point_offset;
     };
 
     /**

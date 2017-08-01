@@ -144,6 +144,8 @@ class AutoBalancer
   InPort<TimedBooleanSeq> m_actContactStatesIn;
   TimedPoint3D m_refFootOriginExtMoment;
   InPort<TimedPoint3D> m_refFootOriginExtMomentIn;
+  TimedBoolean m_refFootOriginExtMomentIsHoldValue;
+  InPort<TimedBoolean> m_refFootOriginExtMomentIsHoldValueIn;
   // for debug
   TimedPoint3D m_cog;
   
@@ -286,6 +288,10 @@ class AutoBalancer
 
   hrp::InvDynStateBuffer idsb;
   std::vector<IIRFilter> invdyn_zmp_filters;
+
+  // Used for ref force balancing.
+  hrp::Link* additional_force_applied_link;
+  hrp::Vector3 additional_force_applied_point_offset;
 };
 
 

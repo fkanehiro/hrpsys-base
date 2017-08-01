@@ -60,6 +60,7 @@ ReferenceForceUpdater::ReferenceForceUpdater(RTC::Manager* manager)
     m_rpyIn("rpy", m_rpy),
     m_diffFootOriginExtMomentIn("diffFootOriginExtMoment", m_diffFootOriginExtMoment),
     m_refFootOriginExtMomentOut("refFootOriginExtMoment", m_refFootOriginExtMoment),
+    m_refFootOriginExtMomentIsHoldValueOut("refFootOriginExtMomentIsHoldValue", m_refFootOriginExtMomentIsHoldValue),
     m_ReferenceForceUpdaterServicePort("ReferenceForceUpdaterService"),
     // </rtc-template>
     m_robot(hrp::BodyPtr()),
@@ -94,6 +95,7 @@ RTC::ReturnCode_t ReferenceForceUpdater::onInitialize()
   addInPort("diffFootOriginExtMoment", m_diffFootOriginExtMomentIn);
 
   addOutPort("refFootOriginExtMoment", m_refFootOriginExtMomentOut);
+  addOutPort("refFootOriginExtMomentIsHoldValue", m_refFootOriginExtMomentIsHoldValueOut);
 
   // Set service provider to Ports
   m_ReferenceForceUpdaterServicePort.registerProvider("service0", "ReferenceForceUpdaterService", m_ReferenceForceUpdaterService);
@@ -375,6 +377,9 @@ RTC::ReturnCode_t ReferenceForceUpdater::onExecute(RTC::UniqueId ec_id)
         m_refFootOriginExtMoment.data.z = default_ref_foot_origin_ext_moment(2);
         m_refFootOriginExtMoment.tm = m_qRef.tm;
         m_refFootOriginExtMomentOut.write();
+        m_refFootOriginExtMomentIsHoldValue.tm = m_qRef.tm;
+        m_refFootOriginExtMomentIsHoldValue.data = m_RFUParam["footoriginextmoment"].is_hold_value;
+        m_refFootOriginExtMomentIsHoldValueOut.write();
         return RTC::RTC_OK;
       }
     }
