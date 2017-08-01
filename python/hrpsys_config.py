@@ -426,6 +426,12 @@ class HrpsysConfigurator(object):
             connectPorts(self.st.port("emergencySignal"), self.abc.port("emergencySignal"))
             connectPorts(self.st.port("diffCapturePoint"), self.abc.port("diffCapturePoint"))
             connectPorts(self.st.port("actContactStates"), self.abc.port("actContactStates"))
+            if self.rfu:
+                connectPorts(self.st.port("diffFootOriginExtMoment"), self.rfu.port("diffFootOriginExtMoment"))
+                connectPorts(self.rfu.port("refFootOriginExtMoment"), self.abc.port("refFootOriginExtMoment"))
+                connectPorts(self.rfu.port("refFootOriginExtMomentIsHoldValue"), self.abc.port("refFootOriginExtMomentIsHoldValue"))
+            if self.octd:
+                connectPorts(self.abc.port("contactStates"), self.octd.port("contactStates"))
 
         # ref force moment connection
         for sen in self.getForceSensorNames():
@@ -1009,7 +1015,7 @@ class HrpsysConfigurator(object):
             print(self.configurator_name + "Exitting.... " + robotname)
             exit(1)
 
-        print(self.configurator_name + "findComps -> RobotHardware : %s isActive? = %s " % (self.rh,  self.rh.isActive()))
+        print(self.configurator_name + "findComps -> %s : %s isActive? = %s " % (self.rh.name(), self.rh,  self.rh.isActive()))
 
     def checkSimulationMode(self):
         '''!@brief

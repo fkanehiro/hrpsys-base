@@ -484,7 +484,7 @@ void WholeBodyMasterSlave::preProcessForWholeBodyMasterSlave(fikPtr& fik_in, hrp
   robot_in->rootLink()->p = basePos_heightChecked;
   for ( int i = 0; i < robot_in->numJoints(); i++ ){ robot_in->joint(i)->q = m_qRef.data[i]; }
   robot_in->calcForwardKinematics();
-  hrp::Vector3 init_foot_mid_coord = (fik_in->getEEPos("rleg") + fik_in->getEEPos("lleg")) / 2;
+  hrp::Vector3 init_foot_mid_coord = (fik_in->getEndEffectorPos("rleg") + fik_in->getEndEffectorPos("lleg")) / 2;
   if( fabs((double)init_foot_mid_coord(Z)) > 1e-5 ){
     basePos_heightChecked(Z) -= init_foot_mid_coord(Z);
     init_foot_mid_coord(Z) = 0;
@@ -501,8 +501,8 @@ void WholeBodyMasterSlave::preProcessForWholeBodyMasterSlave(fikPtr& fik_in, hrp
     fik_list[i]->setReferenceJointAngles();
     for(int l=0;l<4;l++){//targetを初期化
       if(fik_list[i]->ikp.count(robot_l_names[l])){
-        fik_list[i]->ikp[robot_l_names[l]].target_p0 = fik_list[i]->getEEPos(robot_l_names[l]);
-        fik_list[i]->ikp[robot_l_names[l]].target_r0 = fik_list[i]->getEERot(robot_l_names[l]);
+        fik_list[i]->ikp[robot_l_names[l]].target_p0 = fik_list[i]->getEndEffectorPos(robot_l_names[l]);
+        fik_list[i]->ikp[robot_l_names[l]].target_r0 = fik_list[i]->getEndEffectorRot(robot_l_names[l]);
       }
     }
   }

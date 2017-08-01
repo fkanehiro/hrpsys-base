@@ -271,8 +271,8 @@ class WBMSCore : UTIL_CONST {
       const int human_l_names[4] = {rf,lf,rh,lh};
       for(int i=0;i<4;i++){//HumanSynchronizerの初期姿勢オフセットをセット
         if(fik_in->ikp.count(robot_l_names[i])){
-          rp_ref_out.tgt[human_l_names[i]].offs.p = fik_in->getEEPos(robot_l_names[i]);
-          rp_ref_out.tgt[human_l_names[i]].offs.rpy = hrp::rpyFromRot(fik_in->getEERot(robot_l_names[i]));
+          rp_ref_out.tgt[human_l_names[i]].offs.p = fik_in->getEndEffectorPos(robot_l_names[i]);
+          rp_ref_out.tgt[human_l_names[i]].offs.rpy = hrp::rpyFromRot(fik_in->getEndEffectorRot(robot_l_names[i]));
           rp_ref_out.tgt[human_l_names[i]].abs = rp_ref_out.tgt[human_l_names[i]].offs;
 //          ee_pose_old[i] = rp_ref_out.tgt[human_l_names[i]].abs;
         }
@@ -281,7 +281,7 @@ class WBMSCore : UTIL_CONST {
       rp_ref_out.tgt[com].offs.rpy = hrp::rpyFromRot(robot_in->rootLink()->R);
       rp_ref_out.tgt[zmp].offs.p(X) = rp_ref_out.tgt[com].offs.p(X);
       rp_ref_out.tgt[zmp].offs.p(Y) = rp_ref_out.tgt[com].offs.p(Y);
-      rp_ref_out.tgt[zmp].offs.p(Z) = (fik_in->getEEPos("rleg")(Z)+fik_in->getEEPos("lleg")(Z))/2;
+      rp_ref_out.tgt[zmp].offs.p(Z) = (fik_in->getEndEffectorPos("rleg")(Z)+fik_in->getEndEffectorPos("lleg")(Z))/2;
       rp_ref_out.tgt[rf].cnt = rp_ref_out.tgt[rf].offs;
       rp_ref_out.tgt[lf].cnt = rp_ref_out.tgt[lf].offs;
       baselinkpose.p = robot_in->rootLink()->p;
@@ -399,10 +399,10 @@ class WBMSCore : UTIL_CONST {
     void applyLPFilter_pre(HumanPose& tgt){
       const std::string robot_l_names[4] = {"rleg","lleg","rarm","larm"};
       for(int i=0, l[4]={rf,lf,rh,lh}; i<4; i++){
-//        calcVelAccSafeTrajectoryVec(fik_act->getEEPos(robot_l_names[i]), (fik_act->getEEPos(robot_l_names[i]) - ee_pose_old[i].p)/DT, tgt.tgt[l[i]].abs.p, 3.0, 1.0, tgt.tgt[l[i]].abs.p);//何故かダメ
-//        calcVelAccSafeTrajectoryVec(hrp::rpyFromRot(fik_act->getEERot(robot_l_names[i])), (hrp::rpyFromRot(fik_act->getEERot(robot_l_names[i])) - ee_pose_old[i].rpy)/DT, tgt.tgt[l[i]].abs.rpy, 3.0, 1.0, tgt.tgt[l[i]].abs.rpy);
-//        calcVelAccSafeTrajectoryVec(fik_act->getEEPos(robot_l_names[i]), (rp_ref_out.tgt[l[i]].abs.p - rp_ref_out_old.tgt[l[i]].abs.p)/DT, tgt.tgt[l[i]].abs.p, 3.0, 1.0, tgt.tgt[l[i]].abs.p);
-//        calcVelAccSafeTrajectoryVec(hrp::rpyFromRot(fik_act->getEERot(robot_l_names[i])), (rp_ref_out.tgt[l[i]].abs.rpy - rp_ref_out_old.tgt[l[i]].abs.rpy)/DT, tgt.tgt[l[i]].abs.rpy, 3.0, 1.0, tgt.tgt[l[i]].abs.rpy);
+//        calcVelAccSafeTrajectoryVec(fik_act->getEndEffectorPos(robot_l_names[i]), (fik_act->getEndEffectorPos(robot_l_names[i]) - ee_pose_old[i].p)/DT, tgt.tgt[l[i]].abs.p, 3.0, 1.0, tgt.tgt[l[i]].abs.p);//何故かダメ
+//        calcVelAccSafeTrajectoryVec(hrp::rpyFromRot(fik_act->getEndEffectorRot(robot_l_names[i])), (hrp::rpyFromRot(fik_act->getEndEffectorRot(robot_l_names[i])) - ee_pose_old[i].rpy)/DT, tgt.tgt[l[i]].abs.rpy, 3.0, 1.0, tgt.tgt[l[i]].abs.rpy);
+//        calcVelAccSafeTrajectoryVec(fik_act->getEndEffectorPos(robot_l_names[i]), (rp_ref_out.tgt[l[i]].abs.p - rp_ref_out_old.tgt[l[i]].abs.p)/DT, tgt.tgt[l[i]].abs.p, 3.0, 1.0, tgt.tgt[l[i]].abs.p);
+//        calcVelAccSafeTrajectoryVec(hrp::rpyFromRot(fik_act->getEndEffectorRot(robot_l_names[i])), (rp_ref_out.tgt[l[i]].abs.rpy - rp_ref_out_old.tgt[l[i]].abs.rpy)/DT, tgt.tgt[l[i]].abs.rpy, 3.0, 1.0, tgt.tgt[l[i]].abs.rpy);
       }
       for(int i=0, l[1]={head}; i<1; i++){
 //        calcVelAccSafeTrajectoryVec(rp_ref_out_old.tgt[l[i]].abs.p, (rp_ref_out.tgt[l[i]].abs.p - rp_ref_out_old.tgt[l[i]].abs.p)/DT, tgt.tgt[l[i]].abs.p, 2.0, 1.0, tgt.tgt[l[i]].abs.p);
@@ -547,8 +547,8 @@ class WBMSCore : UTIL_CONST {
       }
       for(int i=0;i<4;i++){
         if(fik_ml->ikp.count(robot_l_names[i])){
-          out.tgt[human_l_names[i]].abs.p = fik_ml->getEEPos(robot_l_names[i]);
-          out.tgt[human_l_names[i]].abs.rpy = hrp::rpyFromRot(fik_ml->getEERot(robot_l_names[i]));
+          out.tgt[human_l_names[i]].abs.p = fik_ml->getEndEffectorPos(robot_l_names[i]);
+          out.tgt[human_l_names[i]].abs.rpy = hrp::rpyFromRot(fik_ml->getEndEffectorRot(robot_l_names[i]));
         }
       }
     }

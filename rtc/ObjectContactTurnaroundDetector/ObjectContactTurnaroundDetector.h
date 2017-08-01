@@ -110,6 +110,8 @@ class ObjectContactTurnaroundDetector
   std::vector<InPort<TimedDoubleSeq> *> m_forceIn;
   TimedOrientation3D m_rpy;
   InPort<TimedOrientation3D> m_rpyIn;
+  TimedBooleanSeq m_contactStates;
+  InPort<TimedBooleanSeq> m_contactStatesIn;
   
   // </rtc-template>
 
@@ -143,10 +145,12 @@ class ObjectContactTurnaroundDetector
     std::string target_name, sensor_name;
     hrp::Vector3 localPos;
     hrp::Matrix33 localR;
+    size_t index;
   };
 
   void updateRootLinkPosRot (TimedOrientation3D tmprpy);
   void calcFootMidCoords (hrp::Vector3& new_foot_mid_pos, hrp::Matrix33& new_foot_mid_rot);
+  void calcFootOriginCoords (hrp::Vector3& foot_origin_pos, hrp::Matrix33& foot_origin_rot);
   void calcObjectContactTurnaroundDetectorState();
 
   std::map<std::string, ee_trans> ee_map;

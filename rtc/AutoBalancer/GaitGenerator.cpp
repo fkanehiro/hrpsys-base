@@ -204,14 +204,19 @@ namespace rats
     }
   };
 
-  void refzmp_generator::update_refzmp (const std::vector< std::vector<step_node> >& fnsl)
+  void refzmp_generator::update_refzmp ()
   {
     if ( 1 <= refzmp_count ) {
       refzmp_count--;
     } else {
       refzmp_index++;
-      refzmp_count = one_step_count = step_count_list[refzmp_index];
-      thp.set_one_step_count(one_step_count);
+      // Check length of step_count_list and refzmp_index
+      //   The case if !(refzmp_index <= step_count_list.size()-1) is finalizing of gait_generator.
+      //   If finalizing, this can be neglected.
+      if (refzmp_index <= step_count_list.size()-1) {
+          refzmp_count = one_step_count = step_count_list[refzmp_index];
+          thp.set_one_step_count(one_step_count);
+      }
       //std::cerr << "fs " << fs_index << "/" << fnl.size() << " rf " << refzmp_index << "/" << refzmp_cur_list.size() << " flg " << std::endl;
     }
   };
@@ -671,6 +676,7 @@ namespace rats
         for (size_t i = 0; i < cv.size(); i++) {
             std::vector<step_node> tmp_fsn;
             for (size_t j = 0; j < cv.at(i).size(); j++) {
+                cv.at(i).at(j).worldcoords.pos += modified_d_footstep;
                 tmp_fsn.push_back(step_node(cv.at(i).at(j).l_r, cv.at(i).at(j).worldcoords,
                                             lcg.get_default_step_height(), default_step_time, lcg.get_toe_angle(), lcg.get_heel_angle()));
             }
@@ -719,7 +725,7 @@ namespace rats
       solved = preview_controller_ptr->update(refzmp, cog, swing_foot_zmp_offsets, rzmp, sfzos, (refzmp_exist_p || finalize_count < preview_controller_ptr->get_delay()-default_step_time/dt));
     }
 
-    rg.update_refzmp(footstep_nodes_list);
+    rg.update_refzmp();
     // { // debug
     //   double cart_zmp[3];
     //   preview_controller_ptr->get_cart_zmp(cart_zmp);
@@ -786,7 +792,6 @@ namespace rats
         }
       }
       if (lcg.get_footstep_index() > 0 && lcg.get_footstep_index() < footstep_nodes_list.size()-2) {
-        static int not_emergency_cnt;
         // calculate sum of preview_f
         static double preview_f_sum;
         if (lcg.get_lcg_count() == static_cast<size_t>(footstep_nodes_list[lcg.get_footstep_index()][0].step_time/dt * 1.0) - 1) {
@@ -794,6 +799,7 @@ namespace rats
           for (size_t i = preview_controller_ptr->get_delay()-1; i >= lcg.get_lcg_count()+1; i--) {
             preview_f_sum += preview_controller_ptr->get_preview_f(i);
           }
+          modified_d_footstep = hrp::Vector3::Zero();
         }
         if (lcg.get_lcg_count() <= preview_controller_ptr->get_delay()) {
           preview_f_sum += preview_controller_ptr->get_preview_f(lcg.get_lcg_count());
@@ -821,8 +827,11 @@ namespace rats
             // overwrite zmp
             overwrite_refzmp_queue(overwrite_footstep_nodes_list);
             overwrite_footstep_nodes_list.clear();
+            modified_d_footstep += d_footstep;
           }
         }
+      } else {
+        modified_d_footstep = hrp::Vector3::Zero();
       }
     }
   }
@@ -982,29 +991,43 @@ namespace rats
     ref_coords.pos += ref_coords.rot * tmpv;
     double dx = cur_vel_param.velocity_x + offset_vel_param.velocity_x, dy = cur_vel_param.velocity_y + offset_vel_param.velocity_y;
     dth = cur_vel_param.velocity_theta + offset_vel_param.velocity_theta;
+    //std::cerr << "Before limit dx " << dx << " dy " << dy << " dth " << dth << std::endl;
     /* velocity limitation by stride parameters <- this should be based on footstep candidates */
     if (default_stride_limitation_type == SQUARE) {
-      dth = std::max(-1 * footstep_param.stride_theta / default_step_time, std::min(footstep_param.stride_theta / default_step_time, dth));
+      dth = std::max(-1 * footstep_param.stride_outside_theta / default_step_time, std::min(footstep_param.stride_outside_theta / default_step_time, dth));
     } else if (default_stride_limitation_type == CIRCLE) {
       dth = std::max(-1 * stride_limitation_for_circle_type[2] / default_step_time, std::min(stride_limitation_for_circle_type[2] / default_step_time, dth));
     }
     if (default_stride_limitation_type == SQUARE) {
       dx  = std::max(-1 * footstep_param.stride_bwd_x / default_step_time, std::min(footstep_param.stride_fwd_x / default_step_time, dx ));
-      dy  = std::max(-1 * footstep_param.stride_y     / default_step_time, std::min(footstep_param.stride_y     / default_step_time, dy ));
+      dy  = std::max(-1 * footstep_param.stride_outside_y     / default_step_time, std::min(footstep_param.stride_outside_y     / default_step_time, dy ));
       /* inside step limitation */
       if (use_inside_step_limitation) {
-        if (cur_vel_param.velocity_y > 0) {
-            if (std::count_if(sup_fns.begin(), sup_fns.end(), (&boost::lambda::_1->* &step_node::l_r == LLEG || &boost::lambda::_1->* &step_node::l_r == LARM)) > 0) dy *= 0.5;
+        if (dy > 0) {
+            // If dy>0 (== leftward step) and LLEG/LARM support, do inside limitation
+            if (std::count_if(sup_fns.begin(), sup_fns.end(), (&boost::lambda::_1->* &step_node::l_r == LLEG || &boost::lambda::_1->* &step_node::l_r == LARM)) > 0) {
+                dy  = std::min(footstep_param.stride_inside_y     / default_step_time, dy);
+            }
         } else {
-            if (std::count_if(sup_fns.begin(), sup_fns.end(), (&boost::lambda::_1->* &step_node::l_r == RLEG || &boost::lambda::_1->* &step_node::l_r == RARM)) > 0) dy *= 0.5;
+            // If dy<=0 (== rightward step) and RLEG/RARM support, do inside limitation
+            if (std::count_if(sup_fns.begin(), sup_fns.end(), (&boost::lambda::_1->* &step_node::l_r == RLEG || &boost::lambda::_1->* &step_node::l_r == RARM)) > 0) {
+                dy  = std::max(-1 * footstep_param.stride_inside_y     / default_step_time, dy);
+            }
         }
-        if (cur_vel_param.velocity_theta > 0) {
-            if (std::count_if(sup_fns.begin(), sup_fns.end(), (&boost::lambda::_1->* &step_node::l_r == LLEG || &boost::lambda::_1->* &step_node::l_r == LARM)) > 0) dth *= 0.5;
+        if (dth > 0) {
+            // If dth>0 (== leftward turn step) and LLEG/LARM support, do inside limitation
+            if (std::count_if(sup_fns.begin(), sup_fns.end(), (&boost::lambda::_1->* &step_node::l_r == LLEG || &boost::lambda::_1->* &step_node::l_r == LARM)) > 0) {
+                dth = std::min(footstep_param.stride_inside_theta / default_step_time, dth);
+            }
         } else {
-            if (std::count_if(sup_fns.begin(), sup_fns.end(), (&boost::lambda::_1->* &step_node::l_r == RLEG || &boost::lambda::_1->* &step_node::l_r == RARM)) > 0) dth *= 0.5;
+            // If dth<=0 (== rightward turn step) and RLEG/RARM support, do inside limitation
+            if (std::count_if(sup_fns.begin(), sup_fns.end(), (&boost::lambda::_1->* &step_node::l_r == RLEG || &boost::lambda::_1->* &step_node::l_r == RARM)) > 0) {
+                dth = std::max(-1 * footstep_param.stride_inside_theta / default_step_time, dth);
+            }
         }
       }
     }
+    //std::cerr << "After Limit dx " << dx << " dy " << dy << " dth " << dth << std::endl;
     trans = hrp::Vector3(dx * default_step_time, dy * default_step_time, 0);
     dth = deg2rad(dth * default_step_time);
   };
@@ -1114,12 +1137,12 @@ namespace rats
     for (size_t i = overwrite_idx; i < queue_size - 1; i++) {
       refzmp_exist_p = rg.get_current_refzmp(rzmp, sfzos, default_double_support_ratio_before, default_double_support_ratio_after, default_double_support_static_ratio_before, default_double_support_static_ratio_after);
       preview_controller_ptr->set_preview_queue(rzmp, sfzos, i+1);
-      rg.update_refzmp(footstep_nodes_list);
+      rg.update_refzmp();
       sfzos.clear();
     }
     refzmp_exist_p = rg.get_current_refzmp(rzmp, sfzos, default_double_support_ratio_before, default_double_support_ratio_after, default_double_support_static_ratio_before, default_double_support_static_ratio_after);
     solved = preview_controller_ptr->update(refzmp, cog, swing_foot_zmp_offsets, rzmp, sfzos, refzmp_exist_p);
-    rg.update_refzmp(footstep_nodes_list);
+    rg.update_refzmp();
   };
 
   const std::vector<leg_type> gait_generator::calc_counter_leg_types_from_footstep_nodes(const std::vector<step_node>& fns, std::vector<std::string> _all_limbs) const {

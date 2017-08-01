@@ -699,6 +699,14 @@ bool CollisionDetector::setTolerance(const char *i_link_pair_name, double i_tole
     return true;
 }
 
+bool CollisionDetector::setCollisionLoop(int input_loop) {
+    if (input_loop > 0) {
+        m_collision_loop = input_loop;
+        return true;
+    }
+    return false;
+}
+
 bool CollisionDetector::getCollisionStatus(OpenHRP::CollisionDetectorService::CollisionState &state)
 {
     state = m_state;
@@ -787,6 +795,8 @@ void CollisionDetector::setupVClipModel(hrp::Link *i_link)
     }
     i_vclip_model->buildHull();
     i_vclip_model->check();
+    fprintf(stderr, "[Vclip] build finished, vcliip mesh of %s, %d -> %d\n",
+            i_link->name.c_str(), n, (int)(i_vclip_model->verts().size()));
     m_VclipLinks[i_link->index] = i_vclip_model;
 }
 

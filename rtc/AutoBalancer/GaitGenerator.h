@@ -71,15 +71,17 @@ namespace rats
     struct footstep_parameter
     {
         /* translate pos is translate position of a leg from default foot_midcoords
-         *   vector -> (list rleg-pos[mm] lleg-pos[mm] )
+         *   vector -> (list rleg-pos[m] lleg-pos[m] )
          */
         std::vector<hrp::Vector3> leg_default_translate_pos;
-        /* stride params indicate max stride ( [mm], [mm], [deg] ) */
-        double stride_fwd_x, stride_y, stride_theta, stride_bwd_x;
+        /* stride params indicate max stride */
+        double stride_fwd_x/*[m]*/, stride_outside_y/*[m]*/, stride_outside_theta/*[deg]*/, stride_bwd_x/*[m]*/, stride_inside_y/*[m]*/, stride_inside_theta/*[deg]*/;
         footstep_parameter (const std::vector<hrp::Vector3>& _leg_pos,
-                            const double _stride_fwd_x, const double _stride_y, const double _stride_theta, const double _stride_bwd_x)
+                            const double _stride_fwd_x, const double _stride_outside_y, const double _stride_outside_theta,
+                            const double _stride_bwd_x, const double _stride_inside_y, const double _stride_inside_theta)
             : leg_default_translate_pos(_leg_pos),
-              stride_fwd_x(_stride_fwd_x), stride_y(_stride_y), stride_theta(_stride_theta), stride_bwd_x(_stride_bwd_x)  {};
+              stride_fwd_x(_stride_fwd_x), stride_outside_y(_stride_outside_y), stride_outside_theta(_stride_outside_theta),
+              stride_bwd_x(_stride_bwd_x), stride_inside_y(_stride_inside_y), stride_inside_theta(_stride_inside_theta) {};
     };
 
     /* velocity parameter for velocity mode */
@@ -345,7 +347,7 @@ namespace rats
                                                      const std::vector<step_node>& _support_leg_steps,
                                                      const std::vector<step_node>& _swing_leg_steps);
         void push_refzmp_from_footstep_nodes_for_single (const std::vector<step_node>& fns, const std::vector<step_node>& _support_leg_steps, const toe_heel_types& tht);
-      void update_refzmp (const std::vector< std::vector<step_node> >& fnsl);
+      void update_refzmp ();
       // setter
       void set_indices (const size_t idx) { refzmp_index = idx; };
       void set_refzmp_count(const size_t _refzmp_count) { refzmp_count = _refzmp_count; };
@@ -443,6 +445,15 @@ namespace rats
       };
       void get_trajectory_point (hrp::Vector3& ret, const hrp::Vector3& start, const hrp::Vector3& goal, const double height)
       {
+        if ( current_count <= double_support_count_before ) { // first double support phase
+          pos = start;
+          vel = hrp::Vector3::Zero();
+          acc = hrp::Vector3::Zero();
+        } else if ( current_count >= one_step_count - double_support_count_after ) { // last double support phase
+          pos = goal;
+          vel = hrp::Vector3::Zero();
+          acc = hrp::Vector3::Zero();
+        }
         if ( double_support_count_before <= current_count && current_count < one_step_count - double_support_count_after ) { // swing phase
           size_t swing_remain_count = one_step_count - current_count - double_support_count_after;
           size_t swing_one_step_count = one_step_count - double_support_count_before - double_support_count_after;
@@ -470,14 +481,6 @@ namespace rats
           } else {
             pos(2) = goal(2);
           }
-        } else if ( current_count < double_support_count_before ) { // first double support phase
-          pos = start;
-          vel = hrp::Vector3::Zero();
-          acc = hrp::Vector3::Zero();
-        } else { // last double support phase
-          pos = goal;
-          vel = hrp::Vector3::Zero();
-          acc = hrp::Vector3::Zero();
         }
         ret = pos;
         current_count++;
@@ -1054,7 +1057,7 @@ namespace rats
     bool solved;
     double leg_margin[4], stride_limitation_for_circle_type[5], overwritable_stride_limitation[5], footstep_modification_gain, cp_check_margin[2], margin_time_ratio;
     bool use_stride_limitation, is_emergency_walking[2], modify_footsteps;
-    hrp::Vector3 diff_cp;
+    hrp::Vector3 diff_cp, modified_d_footstep;
     std::vector<bool> act_contact_states;
     stride_limitation_type default_stride_limitation_type;
 
@@ -1100,10 +1103,11 @@ namespace rats
     gait_generator (double _dt,
                     /* arguments for footstep_parameter */
                     const std::vector<hrp::Vector3>& _leg_pos, std::vector<std::string> _all_limbs,
-                    const double _stride_fwd_x, const double _stride_y, const double _stride_theta, const double _stride_bwd_x)
+                    const double _stride_fwd_x, const double _stride_outside_y, const double _stride_outside_theta,
+                    const double _stride_bwd_x, const double _stride_inside_y, const double _stride_inside_theta)
         : footstep_nodes_list(), overwrite_footstep_nodes_list(), rg(_dt), lcg(_dt),
-        footstep_param(_leg_pos, _stride_fwd_x, _stride_y, _stride_theta, _stride_bwd_x),
-        vel_param(), offset_vel_param(), thtc(), cog(hrp::Vector3::Zero()), refzmp(hrp::Vector3::Zero()), prev_que_rzmp(hrp::Vector3::Zero()), diff_cp(hrp::Vector3::Zero()),
+        footstep_param(_leg_pos, _stride_fwd_x, _stride_outside_y, _stride_outside_theta, _stride_bwd_x, _stride_inside_y, _stride_inside_theta),
+        vel_param(), offset_vel_param(), thtc(), cog(hrp::Vector3::Zero()), refzmp(hrp::Vector3::Zero()), prev_que_rzmp(hrp::Vector3::Zero()), diff_cp(hrp::Vector3::Zero()), modified_d_footstep(hrp::Vector3::Zero()),
         dt(_dt), all_limbs(_all_limbs), default_step_time(1.0), default_double_support_ratio_before(0.1), default_double_support_ratio_after(0.1), default_double_support_static_ratio_before(0.0), default_double_support_static_ratio_after(0.0), default_double_support_ratio_swing_before(0.1), default_double_support_ratio_swing_after(0.1), gravitational_acceleration(DEFAULT_GRAVITATIONAL_ACCELERATION),
         finalize_count(0), optional_go_pos_finalize_footstep_num(0), overwrite_footstep_index(0), overwritable_footstep_index_offset(1),
         velocity_mode_flg(VEL_IDLING), emergency_flg(IDLING), margin_time_ratio(0.01), footstep_modification_gain(5e-6),
@@ -1223,12 +1227,15 @@ namespace rats
     {
       offset_vel_param.set(vel_x, vel_y, vel_theta);
     };
-    void set_stride_parameters (const double _stride_fwd_x, const double _stride_y, const double _stride_theta, const double _stride_bwd_x)
+    void set_stride_parameters (const double _stride_fwd_x, const double _stride_outside_y, const double _stride_outside_theta,
+                                const double _stride_bwd_x, const double _stride_inside_y, const double _stride_inside_theta)
     {
       footstep_param.stride_fwd_x = _stride_fwd_x;
-      footstep_param.stride_y = _stride_y;
-      footstep_param.stride_theta = _stride_theta;
+      footstep_param.stride_outside_y = _stride_outside_y;
+      footstep_param.stride_outside_theta = _stride_outside_theta;
       footstep_param.stride_bwd_x = _stride_bwd_x;
+      footstep_param.stride_inside_y = _stride_inside_y;
+      footstep_param.stride_inside_theta = _stride_inside_theta;
     };
     void set_use_inside_step_limitation(const bool uu) { use_inside_step_limitation = uu; };
     void set_default_orbit_type (const orbit_type type) { lcg.set_default_orbit_type(type); };
@@ -1420,12 +1427,15 @@ namespace rats
       return tmp;
     };
     void get_swing_support_mid_coords(coordinates& ret) const { lcg.get_swing_support_mid_coords(ret); };
-    void get_stride_parameters (double& _stride_fwd_x, double& _stride_y, double& _stride_theta, double& _stride_bwd_x) const
+    void get_stride_parameters (double& _stride_fwd_x, double& _stride_outside_y, double& _stride_outside_theta,
+                                double& _stride_bwd_x, double& _stride_inside_y, double& _stride_inside_theta) const
     {
       _stride_fwd_x = footstep_param.stride_fwd_x;
-      _stride_y = footstep_param.stride_y;
-      _stride_theta = footstep_param.stride_theta;
+      _stride_outside_y = footstep_param.stride_outside_y;
+      _stride_outside_theta = footstep_param.stride_outside_theta;
       _stride_bwd_x = footstep_param.stride_bwd_x;
+      _stride_inside_y = footstep_param.stride_inside_y;
+      _stride_inside_theta = footstep_param.stride_inside_theta;
     };
     size_t get_footstep_index() const { return lcg.get_footstep_index(); };
     size_t get_lcg_count() const { return lcg.get_lcg_count(); };
@@ -1536,9 +1546,10 @@ namespace rats
 #endif // FOR_TESTGAITGENERATOR
     void print_param (const std::string& print_str = "") const
     {
-        double stride_fwd_x, stride_y, stride_th, stride_bwd_x;
-        get_stride_parameters(stride_fwd_x, stride_y, stride_th, stride_bwd_x);
-        std::cerr << "[" << print_str << "]   stride_parameter = " << stride_fwd_x << "[m], " << stride_y << "[m], " << stride_th << "[deg], " << stride_bwd_x << "[m]" << std::endl;
+        double stride_fwd_x, stride_outside_y, stride_outside_th, stride_bwd_x, stride_inside_y, stride_inside_th;
+        get_stride_parameters(stride_fwd_x, stride_outside_y, stride_outside_th, stride_bwd_x, stride_inside_y, stride_inside_th);
+        std::cerr << "[" << print_str << "]   stride_parameter = " << stride_fwd_x << "[m], " << stride_outside_y << "[m], " << stride_outside_th << "[deg], "
+                  << stride_bwd_x << "[m], " << stride_inside_y << "[m], " << stride_inside_th << "[deg]" << std::endl;
         std::cerr << "[" << print_str << "]   leg_default_translate_pos = ";
         for (size_t i = 0; i < footstep_param.leg_default_translate_pos.size(); i++) {
             std::cerr << footstep_param.leg_default_translate_pos[i].format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]"));

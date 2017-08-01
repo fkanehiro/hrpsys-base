@@ -129,8 +129,14 @@ module OpenHRP
      * @brief Mode of use_force
      */
     enum UseForceMode {
+      /// Mode in which robot's COG is not changed according to force/moment values
       MODE_NO_FORCE,
-      MODE_REF_FORCE
+      /// Mode in which robot's COG is changed according to sensors' force/moment values
+      MODE_REF_FORCE,
+      /// Mode in which robot's COG is changed according to sensors' force/moment values for hands and feet (and root-link)
+      MODE_REF_FORCE_WITH_FOOT,
+      /// Mode in which robot's COG is changed according to sensors' force/moment values using ReferenceForceUpdater's ext moment
+      MODE_REF_FORCE_RFU_EXT_MOMENT
     };
 
     /**
@@ -192,8 +198,8 @@ module OpenHRP
       double default_double_support_ratio_swing_before;
       /// Ratio of double support period after swing. Ratio is included in (0, 1).
       double default_double_support_ratio_swing_after;
-      /// Stride limitation of forward x[m], y[m], theta[deg], and backward x[m] for goPos
-      sequence<double, 4> stride_parameter;
+      /// Stride limitation of forward x[m], outside y[m], outside theta[deg], backward x[m], inside y[m], inside theta[deg] for goPos and goVelocity
+      sequence<double, 6> stride_parameter;
       /// Stride limitation when generating footsteps with stride limitation type CIRCLE (forward, outside, theta, backward, inside) [m]
       DblArray5 stride_limitation_for_circle_type;
       /// Default OrbitType
@@ -321,6 +327,10 @@ module OpenHRP
       DblArray2 limb_stretch_avoidance_vlimit;
       /// Sequence of limb length margin from max limb length [m]
       sequence<double> limb_length_margin;
+      /// Name of additional force applied link for MODE_REF_FORCE_WITH_FOOT for MODE_REF_FORCE_RFU_EXT_MOMENT. Additional force is applied to the point without force sensors, such as torso.
+      string additional_force_applied_link_name;
+      /// Link local offset[m] of force applied point for MODE_REF_FORCE_WITH_FOOT. This is local value in the link frame specified by "additional_force_applied_link_name". Zero by default.
+      DblArray3 additional_force_applied_point_offset;
     };
 
     /**
