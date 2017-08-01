@@ -381,6 +381,7 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
         root = root->parent;
       }
       ikp.limb_length_margin = 0.13;
+      ikp.support_time = 0.0;
   }
   eefm_swing_rot_damping_gain = hrp::Vector3(20*5, 20*5, 1e5);
   eefm_swing_pos_damping_gain = hrp::Vector3(33600, 33600, 7000);
@@ -1466,6 +1467,8 @@ void Stabilizer::calcSwingSupportLimbGain ()
         STIKParam& ikp = stikp[i];
         if (ref_contact_states[i]) { // Support
             ikp.support_time += dt;
+            // Limit too large support time increment. Max time is 3600.0[s] = 1[h], this assumes that robot's one step time is smaller than 1[h].
+            ikp.support_time = std::min(3600.0, ikp.support_time);
             if (ikp.support_time > eefm_pos_transition_time) {
                 ikp.swing_support_gain = (m_controlSwingSupportTime.data[i] / eefm_pos_transition_time);
             } else {
@@ -1486,6 +1489,8 @@ void Stabilizer::calcSwingSupportLimbGain ()
         for (size_t i = 0; i < stikp.size(); i++) std::cerr << m_controlSwingSupportTime.data[i] << " ";
         std::cerr << "], toeheel_ratio = [";
         for (size_t i = 0; i < stikp.size(); i++) std::cerr << toeheel_ratio[i] << " ";
+        std::cerr << "], support_time = [";
+        for (size_t i = 0; i < stikp.size(); i++) std::cerr << stikp[i].support_time << " ";
         std::cerr << "]" << std::endl;
     }
 }
