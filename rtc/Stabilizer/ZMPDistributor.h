@@ -1129,7 +1129,7 @@ public:
     Eigen::Vector2d v1 = target - b;
     Eigen::Vector2d v2 = a - b;
     double v2_norm = v2.norm();
-    if ( v2_norm = 0 ) {
+    if ( v2_norm == 0 ) {
         ret = a;
         return LEFT;
     } else {
