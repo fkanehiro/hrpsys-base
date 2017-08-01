@@ -286,6 +286,10 @@ class AutoBalancer
 
   hrp::InvDynStateBuffer idsb;
   std::vector<IIRFilter> invdyn_zmp_filters;
+
+  // Used for ref force balancing.
+  hrp::Link* additional_force_applied_link;
+  hrp::Vector3 additional_force_applied_point_offset;
 };
 
 

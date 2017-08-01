@@ -375,6 +375,9 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     if (sen == NULL) {
         std::cerr << "[" << m_profile.instance_name << "] WARNING! This robot model has no GyroSensor named 'gyrometer'! " << std::endl;
     }
+
+    additional_force_applied_link = m_robot->rootLink();
+    additional_force_applied_point_offset = hrp::Vector3::Zero();
     return RTC::RTC_OK;
 }
 
@@ -1729,6 +1732,20 @@ bool AutoBalancer::setAutoBalancerParam(const OpenHRP::AutoBalancerService::Auto
   } else if (i_param.default_gait_type == OpenHRP::AutoBalancerService::GALLOP) {
       gait_type = GALLOP;
   }
+  // Ref force balancing
+  std::cerr << "[" << m_profile.instance_name << "] Ref force balancing" << std::endl;
+  if ( use_force == MODE_REF_FORCE_WITH_FOOT && control_mode != MODE_IDLE ) {
+      std::cerr << "[" << m_profile.instance_name << "]   additional_force_applied_point_offset and additional_force_applied_link_name cannot be updated during MODE_REF_FORCE_WITH_FOOT and non-MODE_IDLE"<< std::endl;
+  } else if ( !m_robot->link(std::string(i_param.additional_force_applied_link_name)) ) {
+      std::cerr << "[" << m_profile.instance_name << "]   Invalid link name for additional_force_applied_link_name = " << i_param.additional_force_applied_link_name << std::endl;
+  } else {
+      additional_force_applied_link = m_robot->link(std::string(i_param.additional_force_applied_link_name));
+      for (size_t i = 0; i < 3; i++) {
+          additional_force_applied_point_offset(i) = i_param.additional_force_applied_point_offset[i];
+      }
+      std::cerr << "[" << m_profile.instance_name << "]   Link name for additional_force_applied_link_name = " << additional_force_applied_link->name << ", additional_force_applied_point_offset = " << additional_force_applied_point_offset.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[m]" << std::endl;
+  }
+
   for (std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++) {
       std::cerr << "[" << m_profile.instance_name << "] End Effector [" << it->first << "]" << std::endl;
       std::cerr << "[" << m_profile.instance_name << "]   localpos = " << it->second.localPos.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[m]" << std::endl;
@@ -1842,6 +1859,10 @@ bool AutoBalancer::getAutoBalancerParam(OpenHRP::AutoBalancerService::AutoBalanc
   }
   for (size_t i = 0; i < ikp.size(); i++) {
     i_param.limb_length_margin[i] = fik->ikp[ee_vec[i]].limb_length_margin;
+  }
+  i_param.additional_force_applied_link_name = additional_force_applied_link->name.c_str();
+  for (size_t i = 0; i < 3; i++) {
+      i_param.additional_force_applied_point_offset[i] = additional_force_applied_point_offset(i);
   }
   return true;
 };
@@ -2030,7 +2051,7 @@ void AutoBalancer::calc_static_balance_point_from_forces(hrp::Vector3& sb_point,
       }
     }
     if ( use_force == MODE_REF_FORCE_WITH_FOOT ) {
-        hrp::Vector3 fpos(m_robot->rootLink()->p);
+        hrp::Vector3 fpos(additional_force_applied_link->p+additional_force_applied_point_offset);
         nume(j) += ( (fpos(2) - ref_com_height) * total_nosensor_ref_force(j) - fpos(j) * total_nosensor_ref_force(2) );
         denom(j) -= total_nosensor_ref_force(2);
     } else if ( use_force == MODE_REF_FORCE_RFU_EXT_MOMENT ) {
