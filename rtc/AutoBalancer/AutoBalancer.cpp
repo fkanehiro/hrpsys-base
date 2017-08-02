@@ -241,7 +241,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
         m_contactStates.data[contact_states_index_map["larm"]] = false;
       }
       m_controlSwingSupportTime.data.length(num);
-      for (size_t i = 0; i < num; i++) m_controlSwingSupportTime.data[i] = 0.0;
+      for (size_t i = 0; i < num; i++) m_controlSwingSupportTime.data[i] = 1.0;
       for (size_t i = 0; i < num; i++) m_toeheelRatio.data[i] = rats::no_using_toe_heel_ratio;
     }
     std::vector<hrp::Vector3> leg_pos;
