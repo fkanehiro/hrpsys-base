@@ -16,6 +16,7 @@ class ObjectContactTurnaroundDetectorBase
  private:
     boost::shared_ptr<FirstOrderLowPassFilter<double> > wrench_filter;
     boost::shared_ptr<FirstOrderLowPassFilter<double> > dwrench_filter;
+    boost::shared_ptr<FirstOrderLowPassFilter<double> > friction_coeff_wrench_filter;
     hrp::Vector3 axis, moment_center;
     double prev_wrench, dt;
     double detect_ratio_thre, start_ratio_thre, ref_dwrench, max_time, current_time, current_wrench;
@@ -35,6 +36,7 @@ class ObjectContactTurnaroundDetectorBase
         double default_cutoff_freq = 1; // [Hz]
         wrench_filter = boost::shared_ptr<FirstOrderLowPassFilter<double> >(new FirstOrderLowPassFilter<double>(default_cutoff_freq, _dt, 0));
         dwrench_filter = boost::shared_ptr<FirstOrderLowPassFilter<double> >(new FirstOrderLowPassFilter<double>(default_cutoff_freq, _dt, 0));
+        friction_coeff_wrench_filter = boost::shared_ptr<FirstOrderLowPassFilter<double> >(new FirstOrderLowPassFilter<double>(default_cutoff_freq, _dt, 0));
     };
     ~ObjectContactTurnaroundDetectorBase () {};
     void startDetection (const double _ref_diff_wrench, const double _max_time)
@@ -47,45 +49,53 @@ class ObjectContactTurnaroundDetectorBase
                   << ", detect_thre = " << detect_ratio_thre * ref_dwrench << ", start_thre = " << start_ratio_thre * ref_dwrench << "), max_time = " << max_time << "[s]" << std::endl;
         pmode = MODE_IDLE;
     };
-    double calcTotalForce (const std::vector<hrp::Vector3>& fmv)
+    hrp::Vector3 calcTotalForce (const std::vector<hrp::Vector3>& fmv)
     {
         hrp::Vector3 tmpv = hrp::Vector3::Zero();
         for (size_t i = 0; i < fmv.size(); i++) {
             tmpv += fmv[i];
         }
-        return axis.dot(tmpv);
+        return tmpv;
     };
-    double calcTotalMoment (const std::vector<hrp::Vector3>& fmv, const std::vector<hrp::Vector3>& hposv)
+    hrp::Vector3 calcTotalMoment (const std::vector<hrp::Vector3>& fmv, const std::vector<hrp::Vector3>& hposv)
     {
         hrp::Vector3 tmpv = hrp::Vector3::Zero();
         for (size_t i = 0; i < fmv.size(); i++) {
             tmpv += (hposv[i]-moment_center).cross(fmv[i]);
         }
-        return axis.dot(tmpv);
+        return tmpv;
     };
     bool checkDetection (const std::vector<hrp::Vector3>& fmv, const std::vector<hrp::Vector3>& hposv)
     {
         switch(dtw) {
         case TOTAL_FORCE:
-            checkDetection(calcTotalForce(fmv));
-            break;
+            {
+                hrp::Vector3 total_force = calcTotalForce(fmv);
+                checkDetection(axis.dot(total_force), total_force(2));
+                break;
+            }
         case TOTAL_MOMENT:
-            checkDetection(calcTotalMoment(fmv, hposv));
+            {
+                hrp::Vector3 total_moment = calcTotalMoment(fmv, hposv);
+                checkDetection(axis.dot(total_moment), 0.0);
+            }
             break;
         default:
             break;
         };
     };
-    bool checkDetection (const double wrench_value)
+    bool checkDetection (const double wrench_value, const double friction_coeff_wrench_value)
     {
         if (is_dwr_changed) {
           wrench_filter->reset(wrench_value);
           dwrench_filter->reset(0);
+          friction_coeff_wrench_filter->reset(friction_coeff_wrench_value);
           is_dwr_changed = false;
         }
         current_wrench = wrench_value;
         double tmp_wr = wrench_filter->passFilter(wrench_value);
         double tmp_dwr = dwrench_filter->passFilter((tmp_wr-prev_wrench)/dt);
+        friction_coeff_wrench_filter->passFilter(friction_coeff_wrench_value);
         prev_wrench = tmp_wr;
         switch (pmode) {
         case MODE_IDLE:
@@ -131,7 +141,7 @@ class ObjectContactTurnaroundDetectorBase
     void printParams () const
     {
         std::cerr << "[" << print_str << "]   ObjectContactTurnaroundDetectorBase params (" << (dtw==TOTAL_FORCE?"TOTAL_FORCE":"TOTAL_MOMENT") << ")" << std::endl;
-        std::cerr << "[" << print_str << "]    wrench_cutoff_freq = " << wrench_filter->getCutOffFreq() << "[Hz], dwrench_cutoff_freq = " << dwrench_filter->getCutOffFreq() << "[Hz]" << std::endl;
+        std::cerr << "[" << print_str << "]    wrench_cutoff_freq = " << wrench_filter->getCutOffFreq() << "[Hz], dwrench_cutoff_freq = " << dwrench_filter->getCutOffFreq() << "[Hz], friction_coeff_wrench_freq = " << friction_coeff_wrench_filter->getCutOffFreq() << "[Hz]" << std::endl;
         std::cerr << "[" << print_str << "]    detect_ratio_thre = " << detect_ratio_thre << ", start_ratio_thre = " << start_ratio_thre
                   << ", start_time_thre = " << start_count_thre*dt << "[s], detect_time_thre = " << detect_count_thre*dt << "[s]" << std::endl;
         std::cerr << "[" << print_str << "]    axis = [" << axis(0) << ", " << axis(1) << ", " << axis(2)
@@ -140,6 +150,7 @@ class ObjectContactTurnaroundDetectorBase
     void setPrintStr (const std::string& str) { print_str = str; };
     void setWrenchCutoffFreq (const double a) { wrench_filter->setCutOffFreq(a); };
     void setDwrenchCutoffFreq (const double a) { dwrench_filter->setCutOffFreq(a); };
+    void setFrictionCoeffWrenchCutoffFreq (const double a) { friction_coeff_wrench_filter->setCutOffFreq(a); };
     void setDetectRatioThre (const double a) { detect_ratio_thre = a; };
     void setStartRatioThre (const double a) { start_ratio_thre = a; };
     void setDetectTimeThre (const double a) { detect_count_thre = round(a/dt); };
@@ -155,6 +166,7 @@ class ObjectContactTurnaroundDetectorBase
     };
     double getWrenchCutoffFreq () const { return wrench_filter->getCutOffFreq(); };
     double getDwrenchCutoffFreq () const { return dwrench_filter->getCutOffFreq(); };
+    double getFrictionCoeffWrenchCutoffFreq () const { return friction_coeff_wrench_filter->getCutOffFreq(); };
     double getDetectRatioThre () const { return detect_ratio_thre; };
     double getStartRatioThre () const { return start_ratio_thre; };
     double getDetectTimeThre () const { return detect_count_thre*dt; };
@@ -164,6 +176,7 @@ class ObjectContactTurnaroundDetectorBase
     detector_total_wrench getDetectorTotalWrench () const { return dtw; };
     double getFilteredWrench () const { return wrench_filter->getCurrentValue(); };
     double getFilteredDwrench () const { return dwrench_filter->getCurrentValue(); };
+    double getFilteredFrictionCoeffWrench () const { return friction_coeff_wrench_filter->getCurrentValue(); };
     double getRawWrench () const { return current_wrench; };
 };
 #endif // OBJECTCONTACTTURNAROUNDDETECTORBASE_H

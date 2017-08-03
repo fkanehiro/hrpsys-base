@@ -492,7 +492,7 @@ bool ObjectContactTurnaroundDetector::getObjectContactTurnaroundDetectorParam(Op
     return true;
 }
 
-bool ObjectContactTurnaroundDetector::getObjectForcesMoments(OpenHRP::ObjectContactTurnaroundDetectorService::Dbl3Sequence_out o_forces, OpenHRP::ObjectContactTurnaroundDetectorService::Dbl3Sequence_out o_moments, OpenHRP::ObjectContactTurnaroundDetectorService::DblSequence3_out o_3dofwrench)
+bool ObjectContactTurnaroundDetector::getObjectForcesMoments(OpenHRP::ObjectContactTurnaroundDetectorService::Dbl3Sequence_out o_forces, OpenHRP::ObjectContactTurnaroundDetectorService::Dbl3Sequence_out o_moments, OpenHRP::ObjectContactTurnaroundDetectorService::DblSequence3_out o_3dofwrench, double& o_fric_coeff_wrench)
 {
     std::cerr << "[" << m_profile.instance_name << "] getObjectForcesMoments" << std::endl;
     if (otd_sensor_names.size() == 0) return false;
@@ -513,6 +513,7 @@ bool ObjectContactTurnaroundDetector::getObjectForcesMoments(OpenHRP::ObjectCont
     o_3dofwrench = new OpenHRP::ObjectContactTurnaroundDetectorService::DblSequence3 ();
     o_3dofwrench->length(3);
     for (size_t i = 0; i < 3; i++) (*o_3dofwrench)[i] = tmpv(i);
+    o_fric_coeff_wrench = otd->getFilteredFrictionCoeffWrench();
     return true;
 }
 

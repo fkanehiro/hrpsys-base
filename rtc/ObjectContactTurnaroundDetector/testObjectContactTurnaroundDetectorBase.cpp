@@ -29,7 +29,7 @@ protected:
         double detect_time;
         bool detected = false;
         for (size_t i = 0; i < time_vec.size();i++) {
-            bool tmp_detected = otd.checkDetection(force_vec[i]);
+            bool tmp_detected = otd.checkDetection(force_vec[i], 0.0);
             if (tmp_detected && !detected) {
                 detect_time = time_vec[i];
                 detected = true;
