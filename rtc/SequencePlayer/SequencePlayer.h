@@ -192,8 +192,9 @@ class SequencePlayer
   double m_error_pos, m_error_rot;
   short m_iteration;
   std::string m_fixedLink;
-  hrp::Vector3 m_fixedP;
-  hrp::Matrix33 m_fixedR;
+  hrp::Vector3 m_offsetP, m_fixedP;
+  hrp::Matrix33 m_offsetR, m_fixedR;
+  double m_timeToStartPlaying;
   int dummy;
 };
 

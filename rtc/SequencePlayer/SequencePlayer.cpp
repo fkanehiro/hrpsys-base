@@ -264,12 +264,20 @@ RTC::ReturnCode_t SequencePlayer::onExecute(RTC::UniqueId ec_id)
             }
             m_robot->rootLink()->R = hrp::rotFromRpy(rpy[0], rpy[1], rpy[2]);
             m_robot->calcForwardKinematics();
-            hrp::Link *fixed = m_robot->link(m_fixedLink);
             hrp::Link *root = m_robot->rootLink();
-            hrp::Matrix33 fixed2rootR = fixed->R.transpose()*root->R;
-            hrp::Vector3 fixed2rootP = fixed->R.transpose()*(root->p - fixed->p);
-            hrp::Matrix33 rootR = m_fixedR*fixed2rootR;
-            hrp::Vector3 rootP = m_fixedR*fixed2rootP + m_fixedP;
+            hrp::Vector3 rootP;
+            hrp::Matrix33 rootR;
+            if (m_timeToStartPlaying > 0){
+                m_timeToStartPlaying -= dt;
+                hrp::Link *fixed = m_robot->link(m_fixedLink);
+                hrp::Matrix33 fixed2rootR = fixed->R.transpose()*root->R;
+                hrp::Vector3 fixed2rootP = fixed->R.transpose()*(root->p - fixed->p);
+                rootR = m_fixedR*fixed2rootR;
+                rootP = m_fixedR*fixed2rootP + m_fixedP;
+            }else{
+                rootR = m_offsetR*m_robot->rootLink()->R;
+                rootP = m_offsetR*m_robot->rootLink()->p + m_offsetP;
+            }
             hrp::Vector3 rootRpy = hrp::rpyFromRot(rootR);
             pos[0] = rootP[0];
             pos[1] = rootP[1];
@@ -702,12 +710,38 @@ void SequencePlayer::loadPattern(const char *basename, double tm)
             if (!l) {
                 std::cerr << __PRETTY_FUNCTION__ << "can't find a fixed link("
                           << m_fixedLink << ")" << std::endl;
-                m_fixedLink = "";
+                m_fixedLink = ""; 
                 return;
             }
             m_robot->calcForwardKinematics(); // this is not called by setinitialstate()
             m_fixedP = l->p;
             m_fixedR = l->R;
+
+            std::string pos = std::string(basename)+".pos";
+            std::string wst = std::string(basename)+".waist";
+            std::ifstream ifspos(pos.c_str());
+            std::ifstream ifswst(wst.c_str());
+            if (!ifspos.is_open() || !ifswst.is_open()){
+                std::cerr << __PRETTY_FUNCTION__ << "can't open " << pos << " or "
+                          << wst << ")" << std::endl;
+                m_fixedLink = ""; 
+                return;
+            }
+            double time;
+            ifspos >> time;
+            for (int i=0; i<m_robot->numJoints(); i++){
+                ifspos >> m_robot->joint(i)->q; 
+            }
+            ifswst >> time;
+            for (int i=0; i<3; i++) ifswst >> m_robot->rootLink()->p[i];
+            hrp::Vector3 rpy;
+            for (int i=0; i<3; i++) ifswst >> rpy[i];
+            m_robot->rootLink()->R = hrp::rotFromRpy(rpy);
+            m_robot->calcForwardKinematics();
+
+            m_offsetR = m_fixedR*l->R.transpose();
+            m_offsetP = m_fixedP - m_offsetR*l->p;
+            m_timeToStartPlaying = tm;
         }
         m_seq->loadPattern(basename, tm);
     }
