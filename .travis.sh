@@ -34,10 +34,12 @@ function travis_time_end {
     set -x
 }
 
+export DEBIAN_FRONTEND=noninteractive
 apt-get update -q=5
 apt-get install -q=5 -y wget sudo git sed
 apt-get install -q=5 -y software-properties-common # apt-add-repository
 apt-get install -q=5 -y lsb-release
+apt-get install -q=5 -y tzdata
 lsb_release -a
 echo $ROS_DISTRO
 echo $DISTRO
