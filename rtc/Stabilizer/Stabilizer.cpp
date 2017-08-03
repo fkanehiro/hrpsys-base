@@ -2146,7 +2146,6 @@ void Stabilizer::setParameter(const OpenHRP::StabilizerService::stParam& i_stp)
   szd->set_leg_outside_margin(i_stp.eefm_leg_outside_margin);
   szd->set_leg_front_margin(i_stp.eefm_leg_front_margin);
   szd->set_leg_rear_margin(i_stp.eefm_leg_rear_margin);
-  szd->set_vertices_from_margin_params();
 
   if (i_stp.eefm_support_polygon_vertices_sequence.length() != stikp.size()) {
       std::cerr << "[" << m_profile.instance_name << "]   eefm_support_polygon_vertices_sequence cannot be set. Length " << i_stp.eefm_support_polygon_vertices_sequence.length() << " != " << stikp.size() << std::endl;

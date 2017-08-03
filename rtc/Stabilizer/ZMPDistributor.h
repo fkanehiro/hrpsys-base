@@ -35,6 +35,7 @@ public:
     {
         return foot_vertices[foot_idx][vtx_idx];
     };
+    size_t get_size_of_vertices (const size_t idx) {return foot_vertices[idx].size(); };
     void set_vertices (const std::vector<std::vector<Eigen::Vector2d> >& vs) { foot_vertices = vs; };
     void get_vertices (std::vector<std::vector<Eigen::Vector2d> >& vs) { vs = foot_vertices; };
     void print_vertices (const std::string& str)
@@ -577,6 +578,7 @@ public:
 #ifdef USE_QPOASES
     void solveForceMomentQPOASES (std::vector<hrp::dvector>& fret,
                                   const size_t state_dim,
+                                  const std::vector<size_t>& state_dim_one,
                                   const size_t ee_num,
                                   const hrp::dmatrix& Hmat,
                                   const hrp::dvector& gvec)
@@ -607,10 +609,9 @@ public:
         example.init( H,g,lb,ub, nWSR,0 );
         real_t* xOpt = new real_t[state_dim];
         example.getPrimalSolution( xOpt );
-        size_t state_dim_one = state_dim / ee_num;
         for (size_t fidx = 0; fidx < ee_num; fidx++) {
-            for (size_t i = 0; i < state_dim_one; i++) {
-                fret[fidx](i) = xOpt[i+state_dim_one*fidx];
+            for (size_t i = 0; i < state_dim_one[fidx]; i++) {
+                fret[fidx](i) = xOpt[i+state_dim_one[fidx]*fidx];
             }
         }
         delete[] H;
@@ -648,10 +649,19 @@ public:
         total_fm(0) = total_fz;
         total_fm(1) = 0;
         total_fm(2) = 0;
-        size_t state_dim = 4*ee_num, state_dim_one = 4; // TODO
+        std::vector<size_t> state_dim_one(ee_num);
+        size_t state_dim = 0;
+        for (size_t i = 0; i < state_dim_one.size(); i++){
+          state_dim_one[i] = fs.get_size_of_vertices(i);
+          state_dim += state_dim_one[i];
+        }
         //
-        std::vector<hrp::dvector> ff(ee_num, hrp::dvector(state_dim_one));
-        std::vector<hrp::dmatrix> mm(ee_num, hrp::dmatrix(3, state_dim_one));
+        std::vector<hrp::dvector> ff(ee_num);
+        std::vector<hrp::dmatrix> mm(ee_num);
+        for (size_t i = 0; i < ee_num; i++){
+          ff[i] = hrp::dvector(state_dim_one[i]);
+          mm[i] = hrp::dmatrix(3, state_dim_one[i]);
+        }
         //
         hrp::dmatrix Hmat = hrp::dmatrix::Zero(state_dim,state_dim);
         hrp::dvector gvec = hrp::dvector::Zero(state_dim);
@@ -662,8 +672,8 @@ public:
             fz_alpha_vector[i] = (fz_alpha_vector[i] < alpha_thre) ? 1/alpha_thre : 1/fz_alpha_vector[i];
         }
         for (size_t j = 0; j < fz_alpha_vector.size(); j++) {
-            for (size_t i = 0; i < state_dim_one; i++) {
-                Hmat(i+j*state_dim_one,i+j*state_dim_one) = norm_weight * fz_alpha_vector[j];
+            for (size_t i = 0; i < state_dim_one[j]; i++) {
+                Hmat(i+j*state_dim_one[j],i+j*state_dim_one[j]) = norm_weight * fz_alpha_vector[j];
             }
         }
         hrp::dmatrix Gmat(3,state_dim);
@@ -671,13 +681,13 @@ public:
             Gmat(0,i) = 1.0;
         }
         for (size_t fidx = 0; fidx < ee_num; fidx++) {
-            for (size_t i = 0; i < state_dim_one; i++) {
+            for (size_t i = 0; i < state_dim_one[fidx]; i++) {
                 hrp::Vector3 fpos = ee_rot[fidx]*hrp::Vector3(fs.get_foot_vertex(fidx,i)(0), fs.get_foot_vertex(fidx,i)(1), 0) + ee_pos[fidx];
                 mm[fidx](0,i) = 1.0;
                 mm[fidx](1,i) = -(fpos(1)-cop_pos[fidx](1));
                 mm[fidx](2,i) = (fpos(0)-cop_pos[fidx](0));
-                Gmat(1,i+state_dim_one*fidx) = -(fpos(1)-new_refzmp(1));
-                Gmat(2,i+state_dim_one*fidx) = (fpos(0)-new_refzmp(0));
+                Gmat(1,i+state_dim_one[fidx]*fidx) = -(fpos(1)-new_refzmp(1));
+                Gmat(2,i+state_dim_one[fidx]*fidx) = (fpos(0)-new_refzmp(0));
             }
             //std::cerr << "fpos " << fpos[0] << " " << fpos[1] << std::endl;
         }
@@ -693,8 +703,8 @@ public:
             hrp::dmatrix KW = hrp::dmatrix::Zero(ee_num, ee_num);
             hrp::dvector reff(ee_num);
             for (size_t j = 0; j < ee_num; j++) {
-                for (size_t i = 0; i < state_dim_one; i++) {
-                    Kmat(j,i+j*state_dim_one) = 1.0;
+                for (size_t i = 0; i < state_dim_one[j]; i++) {
+                    Kmat(j,i+j*state_dim_one[j]) = 1.0;
                 }
                 reff(j) = ref_foot_force[j](2);// total_fz/2.0;
                 KW(j,j) = ref_force_weight;
@@ -707,10 +717,10 @@ public:
             hrp::dmatrix CW = hrp::dmatrix::Zero(ee_num*2,ee_num*2);
             hrp::Vector3 fpos;
             for (size_t j = 0; j < ee_num; j++) {
-                for (size_t i = 0; i < state_dim_one; i++) {
+                for (size_t i = 0; i < state_dim_one[j]; i++) {
                     fpos = ee_rot[j]*hrp::Vector3(fs.get_foot_vertex(j,i)(0), fs.get_foot_vertex(j,i)(1), 0) + ee_pos[j];
-                    Cmat(j*2,  i+j*state_dim_one) = fpos(0) - cop_pos[j](0);
-                    Cmat(j*2+1,i+j*state_dim_one) = fpos(1) - cop_pos[j](1);
+                    Cmat(j*2,  i+j*state_dim_one[j]) = fpos(0) - cop_pos[j](0);
+                    Cmat(j*2+1,i+j*state_dim_one[j]) = fpos(1) - cop_pos[j](1);
                 }
                 CW(j*2,j*2) = CW(j*2+1,j*2+1) = cop_weight;
             }
@@ -718,7 +728,7 @@ public:
         }
         // std::cerr << "H " << Hmat << std::endl;
         // std::cerr << "g " << gvec << std::endl;
-        solveForceMomentQPOASES(ff, state_dim, ee_num, Hmat, gvec);
+        solveForceMomentQPOASES(ff, state_dim, state_dim_one, ee_num, Hmat, gvec);
         hrp::dvector tmpv(3);
         for (size_t fidx = 0; fidx < ee_num; fidx++) {
             tmpv = mm[fidx] * ff[fidx];
