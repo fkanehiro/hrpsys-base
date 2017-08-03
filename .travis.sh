@@ -291,7 +291,8 @@ case $TEST_PACKAGE in
             sed -i "s@touch installed@@" hrpsys/Makefile.hrpsys-base
             cat hrpsys/Makefile.hrpsys-base
             # use git repository, instead of svn due to googlecode shoutdown
-            git clone http://github.com/fkanehiro/hrpsys-base --depth 1 -b 315.1.9 ../build_isolated/hrpsys/build/hrpsys-base-source
+            git clone http://github.com/fkanehiro/hrpsys-base ../build_isolated/hrpsys/build/hrpsys-base-source
+            (cd ../build_isolated/hrpsys/build/hrpsys-base-source; git checkout 315.1.9)
             if [ "${ROS_DISTRO}" != "hydro" ]; then
                 # tmp fix to build old hrpsys
                 sudo ln -s /usr/lib/x86_64-linux-gnu/libboost_thread.so /usr/lib/x86_64-linux-gnu/libboost_thread-mt.so
