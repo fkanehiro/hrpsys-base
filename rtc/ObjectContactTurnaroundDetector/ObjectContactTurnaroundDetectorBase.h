@@ -12,7 +12,7 @@ class ObjectContactTurnaroundDetectorBase
 {
  public:
     typedef enum {MODE_IDLE, MODE_STARTED, MODE_DETECTED, MODE_MAX_TIME} process_mode;
-    typedef enum {TOTAL_FORCE, TOTAL_MOMENT} detector_total_wrench;
+    typedef enum {TOTAL_FORCE, TOTAL_MOMENT, TOTAL_MOMENT2} detector_total_wrench;
  private:
     boost::shared_ptr<FirstOrderLowPassFilter<double> > wrench_filter;
     boost::shared_ptr<FirstOrderLowPassFilter<double> > dwrench_filter;
@@ -49,34 +49,50 @@ class ObjectContactTurnaroundDetectorBase
                   << ", detect_thre = " << detect_ratio_thre * ref_dwrench << ", start_thre = " << start_ratio_thre * ref_dwrench << "), max_time = " << max_time << "[s]" << std::endl;
         pmode = MODE_IDLE;
     };
-    hrp::Vector3 calcTotalForce (const std::vector<hrp::Vector3>& fmv)
+    hrp::Vector3 calcTotalForce (const std::vector<hrp::Vector3>& forces)
     {
         hrp::Vector3 tmpv = hrp::Vector3::Zero();
-        for (size_t i = 0; i < fmv.size(); i++) {
-            tmpv += fmv[i];
+        for (size_t i = 0; i < forces.size(); i++) {
+            tmpv += forces[i];
         }
         return tmpv;
     };
-    hrp::Vector3 calcTotalMoment (const std::vector<hrp::Vector3>& fmv, const std::vector<hrp::Vector3>& hposv)
+    hrp::Vector3 calcTotalMoment (const std::vector<hrp::Vector3>& forces, const std::vector<hrp::Vector3>& hposv)
     {
         hrp::Vector3 tmpv = hrp::Vector3::Zero();
-        for (size_t i = 0; i < fmv.size(); i++) {
-            tmpv += (hposv[i]-moment_center).cross(fmv[i]);
+        for (size_t i = 0; i < forces.size(); i++) {
+            tmpv += (hposv[i]-moment_center).cross(forces[i]);
         }
         return tmpv;
     };
-    bool checkDetection (const std::vector<hrp::Vector3>& fmv, const std::vector<hrp::Vector3>& hposv)
+    hrp::Vector3 calcTotalMoment2 (const std::vector<hrp::Vector3>& forces, const std::vector<hrp::Vector3>& moments, const std::vector<hrp::Vector3>& hposv)
+    {
+        hrp::Vector3 tmpv = hrp::Vector3::Zero();
+        for (size_t i = 0; i < forces.size(); i++) {
+            tmpv += (hposv[i]-moment_center).cross(forces[i]) + moments[i];
+        }
+        return tmpv;
+    };
+    bool checkDetection (const std::vector<hrp::Vector3>& forces,
+                         const std::vector<hrp::Vector3>& moments,
+                         const std::vector<hrp::Vector3>& hposv)
     {
         switch(dtw) {
         case TOTAL_FORCE:
             {
-                hrp::Vector3 total_force = calcTotalForce(fmv);
+                hrp::Vector3 total_force = calcTotalForce(forces);
                 checkDetection(axis.dot(total_force), total_force(2));
                 break;
             }
         case TOTAL_MOMENT:
             {
-                hrp::Vector3 total_moment = calcTotalMoment(fmv, hposv);
+                hrp::Vector3 total_moment = calcTotalMoment(forces, hposv);
+                checkDetection(axis.dot(total_moment), 0.0);
+            }
+            break;
+        case TOTAL_MOMENT2:
+            {
+                hrp::Vector3 total_moment = calcTotalMoment2(forces, moments, hposv);
                 checkDetection(axis.dot(total_moment), 0.0);
             }
             break;
@@ -140,7 +156,7 @@ class ObjectContactTurnaroundDetectorBase
     process_mode getMode () const { return pmode; };
     void printParams () const
     {
-        std::cerr << "[" << print_str << "]   ObjectContactTurnaroundDetectorBase params (" << (dtw==TOTAL_FORCE?"TOTAL_FORCE":"TOTAL_MOMENT") << ")" << std::endl;
+        std::cerr << "[" << print_str << "]   ObjectContactTurnaroundDetectorBase params (" << (dtw==TOTAL_FORCE?"TOTAL_FORCE": (dtw==TOTAL_MOMENT?"TOTAL_MOMENT":"TOTAL_MOMENT2") ) << ")" << std::endl;
         std::cerr << "[" << print_str << "]    wrench_cutoff_freq = " << wrench_filter->getCutOffFreq() << "[Hz], dwrench_cutoff_freq = " << dwrench_filter->getCutOffFreq() << "[Hz], friction_coeff_wrench_freq = " << friction_coeff_wrench_filter->getCutOffFreq() << "[Hz]" << std::endl;
         std::cerr << "[" << print_str << "]    detect_ratio_thre = " << detect_ratio_thre << ", start_ratio_thre = " << start_ratio_thre
                   << ", start_time_thre = " << start_count_thre*dt << "[s], detect_time_thre = " << detect_count_thre*dt << "[s]" << std::endl;

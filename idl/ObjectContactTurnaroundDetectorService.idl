@@ -28,8 +28,12 @@ module OpenHRP
      * @brief Flag for whether total force or total moment is checked.
      */
     enum DetectorTotalWrench {
+        /// Check resultant force
         TOTAL_FORCE,
-        TOTAL_MOMENT
+        /// Check resultant moment using force measurements
+        TOTAL_MOMENT,
+        /// Check resultant moment using force and moment measurements
+        TOTAL_MOMENT2
     };
 
     /**
