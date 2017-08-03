@@ -32,9 +32,9 @@ CORBA::Boolean ObjectContactTurnaroundDetectorService_impl::getObjectContactTurn
   return m_otd->getObjectContactTurnaroundDetectorParam(i_param_);
 }
 
-CORBA::Boolean ObjectContactTurnaroundDetectorService_impl::getObjectForcesMoments(OpenHRP::ObjectContactTurnaroundDetectorService::Dbl3Sequence_out o_forces, OpenHRP::ObjectContactTurnaroundDetectorService::Dbl3Sequence_out o_moments, OpenHRP::ObjectContactTurnaroundDetectorService::DblSequence3_out o_3dofwrench)
+CORBA::Boolean ObjectContactTurnaroundDetectorService_impl::getObjectForcesMoments(OpenHRP::ObjectContactTurnaroundDetectorService::Dbl3Sequence_out o_forces, OpenHRP::ObjectContactTurnaroundDetectorService::Dbl3Sequence_out o_moments, OpenHRP::ObjectContactTurnaroundDetectorService::DblSequence3_out o_3dofwrench, CORBA::Double& o_fric_coeff_wrench)
 {
-  return m_otd->getObjectForcesMoments(o_forces, o_moments, o_3dofwrench);
+  return m_otd->getObjectForcesMoments(o_forces, o_moments, o_3dofwrench, o_fric_coeff_wrench);
 }
 
 void ObjectContactTurnaroundDetectorService_impl::otd(ObjectContactTurnaroundDetector *i_otd)

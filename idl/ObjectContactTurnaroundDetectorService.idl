@@ -28,8 +28,12 @@ module OpenHRP
      * @brief Flag for whether total force or total moment is checked.
      */
     enum DetectorTotalWrench {
+        /// Check resultant force
         TOTAL_FORCE,
-        TOTAL_MOMENT
+        /// Check resultant moment using force measurements
+        TOTAL_MOMENT,
+        /// Check resultant moment using force and moment measurements
+        TOTAL_MOMENT2
     };
 
     /**
@@ -86,9 +90,9 @@ module OpenHRP
 
     /**
      * @brief get Current force and moment for object
-     * @param i_param output force and moment
+     * @param o_forces and o_moments are list of forces[N] and moments[Nm] at end-effectors. o_3dofwrench is resultant force[N] or wrench[Nm]. o_fric_coeff_wrench is firction coefficient wrench[N or Nm].
      * @return true if set successfully, false otherwise
      */
-    boolean getObjectForcesMoments(out Dbl3Sequence o_forces, out Dbl3Sequence o_moments, out DblSequence3 o_3dofwrench);
+    boolean getObjectForcesMoments(out Dbl3Sequence o_forces, out Dbl3Sequence o_moments, out DblSequence3 o_3dofwrench, out double o_fric_coeff_wrench);
   };
 };

@@ -1452,9 +1452,11 @@ void Stabilizer::calcSwingSupportLimbGain ()
     for (size_t i = 0; i < stikp.size(); i++) {
         STIKParam& ikp = stikp[i];
         if (ref_contact_states[i]) { // Support
-            ikp.support_time += dt;
             // Limit too large support time increment. Max time is 3600.0[s] = 1[h], this assumes that robot's one step time is smaller than 1[h].
-            ikp.support_time = std::min(3600.0, ikp.support_time);
+            ikp.support_time = std::min(3600.0, ikp.support_time+dt);
+            // In some PC, does not work because the first line is optimized out.
+            // ikp.support_time += dt;
+            // ikp.support_time = std::min(3600.0, ikp.support_time);
             if (ikp.support_time > eefm_pos_transition_time) {
                 ikp.swing_support_gain = (m_controlSwingSupportTime.data[i] / eefm_pos_transition_time);
             } else {

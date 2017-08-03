@@ -173,14 +173,16 @@ def objectTurnaroundDetection(max_time = 4.0, max_ref_force = 9.8*6.0, limbs=["r
     while flg:
         tmpflg = hcf.octd_svc.checkObjectContactTurnaroundDetection()
         #print rtm.readDataPort(hcf.rmfo.port("off_rhsensor")).data, rtm.readDataPort(hcf.rmfo.port("off_lhsensor")).data
-        print "  flag = ", tmpflg, ", forces = ", hcf.octd_svc.getObjectForcesMoments()[1][0], ", moments = ", hcf.octd_svc.getObjectForcesMoments()[2][0]
+        [ret, fv, mv, total, fric_w] = hcf.octd_svc.getObjectForcesMoments()
+        print "  flag = ", tmpflg, ", forces = ", fv, ", moments = ", mv, ", total = ", total, ", fric_w = ", fric_w
         flg = (tmpflg == OpenHRP.ObjectContactTurnaroundDetectorService.MODE_DETECTOR_IDLE) or (tmpflg == OpenHRP.ObjectContactTurnaroundDetectorService.MODE_STARTED)
         time.sleep(0.5)
-    print "  flag = ", tmpflg, ", forces = ", hcf.octd_svc.getObjectForcesMoments()[1][0], ", moments = ", hcf.octd_svc.getObjectForcesMoments()[2][0]
+    [ret, fv, mv, total, fric_w] = hcf.octd_svc.getObjectForcesMoments()
+    print "  flag = ", tmpflg, ", forces = ", fv, ", moments = ", mv, ", total = ", total, ", fric_w = ", fric_w
     if limbs==['rarm']:
-        hcf.seq_svc.setWrenches([0]*18+hcf.octd_svc.getObjectForcesMoments()[1][0]+hcf.octd_svc.getObjectForcesMoments()[2][0], 2.0)
+        hcf.seq_svc.setWrenches([0]*18+fv[0]+mv[0], 2.0)
     else:
-        hcf.seq_svc.setWrenches([0]*12+hcf.octd_svc.getObjectForcesMoments()[1][0]+hcf.octd_svc.getObjectForcesMoments()[2][0]+hcf.octd_svc.getObjectForcesMoments()[1][1]+hcf.octd_svc.getObjectForcesMoments()[2][1], 2.0)
+        hcf.seq_svc.setWrenches([0]*12+fv[1]+mv[1]+fv[0]+mv[0], 2.0)
     hcf.waitInterpolation()
 
 def demoWalk ():
