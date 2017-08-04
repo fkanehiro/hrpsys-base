@@ -83,7 +83,7 @@ script:
   - export DOCKER_IMAGE=ubuntu:$DISTRO
   - export CI_SOURCE_PATH=$(pwd)
   - docker images
-  - docker run -v $HOME:$HOME -e CI_SOURCE_PATH -e HOME -e DISTRO -e ROS_DISTRO -e ROS_LOG_DIR -e TEST_TYPE -e TEST_PACKAGE -e USE_SRC_OPENHRP3 -e COMILE_OPTION -t $DOCKER_IMAGE bash -c 'cd $CI_SOURCE_PATH; source .travis.sh'
+  - docker run -v $HOME:$HOME -e CI_SOURCE_PATH -e HOME -e DISTRO -e ROS_DISTRO -e ROS_LOG_DIR -e TEST_TYPE -e TEST_PACKAGE -e USE_SRC_OPENHRP3 -e COMILE_OPTION $DOCKER_IMAGE bash -c 'cd $CI_SOURCE_PATH; source .travis.sh'
 after_success:
   - set +x
   - export GIT_COMMITTER_NAME=$GIT_NAME
