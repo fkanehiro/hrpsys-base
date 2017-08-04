@@ -191,6 +191,10 @@ class SequencePlayer
   coil::Mutex m_mutex;
   double m_error_pos, m_error_rot;
   short m_iteration;
+  std::string m_fixedLink;
+  hrp::Vector3 m_offsetP, m_fixedP;
+  hrp::Matrix33 m_offsetR, m_fixedR;
+  double m_timeToStartPlaying;
   int dummy;
 };
 
