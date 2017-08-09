@@ -168,6 +168,7 @@ class RobotHardware
   std::vector<TimedDoubleSeq> m_force;
   OpenHRP::TimedLongSeqSeq m_servoState;
   TimedLong m_emergencySignal;
+  OpenHRP::RobotHardwareService::TimedRobotState2 m_rstate2;
 
   // DataOutPort declaration
   // <rtc-template block="outport_declare">
@@ -180,6 +181,7 @@ class RobotHardware
   std::vector<OutPort<TimedDoubleSeq> *> m_forceOut;
   OutPort<OpenHRP::TimedLongSeqSeq> m_servoStateOut;
   OutPort<TimedLong> m_emergencySignalOut;
+  OutPort<OpenHRP::RobotHardwareService::TimedRobotState2> m_rstate2Out;
 
   // </rtc-template>
 
@@ -202,6 +204,8 @@ class RobotHardware
 
   robot *robot_ptr(void) { return m_robot.get(); };
  private:
+  void getStatus2(OpenHRP::RobotHardwareService::RobotState2 &rstate2);
+
   int dummy;
   boost::shared_ptr<robot> m_robot;
 };

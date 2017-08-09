@@ -55,6 +55,7 @@ RobotHardware::RobotHardware(RTC::Manager* manager)
     m_ctauOut("ctau", m_ctau),
     m_servoStateOut("servoState", m_servoState),
     m_emergencySignalOut("emergencySignal", m_emergencySignal),
+    m_rstate2Out("rstate2", m_rstate2),
     m_RobotHardwareServicePort("RobotHardwareService"),
     // </rtc-template>
 	dummy(0)
@@ -81,6 +82,7 @@ RTC::ReturnCode_t RobotHardware::onInitialize()
   addOutPort("ctau", m_ctauOut);
   addOutPort("servoState", m_servoStateOut);
   addOutPort("emergencySignal", m_emergencySignalOut);
+  addOutPort("rstate2", m_rstate2Out);
 
   // Set service provider to Ports
     m_RobotHardwareServicePort.registerProvider("service0", "RobotHardwareService", m_service0);
@@ -316,6 +318,9 @@ RTC::ReturnCode_t RobotHardware::onExecute(RTC::UniqueId ec_id)
       m_robot->readExtraServoState(i, (int *)(m_servoState.data[i].get_buffer()+1));
   }
   m_servoState.tm = tm;
+
+  getStatus2(m_rstate2.data);
+  m_rstate2.tm = tm;
   
   m_robot->oneStep();
 
@@ -333,8 +338,84 @@ RTC::ReturnCode_t RobotHardware::onExecute(RTC::UniqueId ec_id)
   for (unsigned int i=0; i<m_forceOut.size(); i++){
       m_forceOut[i]->write();
   }
+  m_rstate2Out.write();
 
   return RTC::RTC_OK;
+}
+
+template<class T>
+void getStatus(boost::shared_ptr<robot> robot, T rstate)
+{
+  rstate.angle.length(robot->numJoints());
+  robot->readJointAngles(rstate.angle.get_buffer());
+
+  rstate.command.length(robot->numJoints());
+  robot->readJointCommands(rstate.command.get_buffer());
+
+  rstate.torque.length(robot->numJoints());
+  if (!robot->readJointTorques(rstate.torque.get_buffer())){
+    for (unsigned int i=0; i<rstate.torque.length(); i++){
+      rstate.torque[i] = 0.0;
+    }
+  }
+
+  rstate.servoState.length(robot->numJoints());
+  int v, status;
+  for(unsigned int i=0; i < rstate.servoState.length(); ++i){
+    size_t len = robot->lengthOfExtraServoState(i)+1;
+    rstate.servoState[i].length(len);
+    status = 0;
+    v = robot->readCalibState(i);
+    status |= v<< OpenHRP::RobotHardwareService::CALIB_STATE_SHIFT;
+    v = robot->readPowerState(i);
+    status |= v<< OpenHRP::RobotHardwareService::POWER_STATE_SHIFT;
+    v = robot->readServoState(i);
+    status |= v<< OpenHRP::RobotHardwareService::SERVO_STATE_SHIFT;
+    v = robot->readServoAlarm(i);
+    status |= v<< OpenHRP::RobotHardwareService::SERVO_ALARM_SHIFT;
+    v = robot->readDriverTemperature(i);
+    status |= v<< OpenHRP::RobotHardwareService::DRIVER_TEMP_SHIFT;
+    rstate.servoState[i][0] = status;
+    robot->readExtraServoState(i, (int *)(rstate.servoState[i].get_buffer()+1));
+  }
+
+  rstate.rateGyro.length(robot->numSensors(Sensor::RATE_GYRO));
+  for (unsigned int i=0; i<rstate.rateGyro.length(); i++){
+    rstate.rateGyro[i].length(3);
+    robot->readGyroSensor(i, rstate.rateGyro[i].get_buffer());
+  }
+
+  rstate.accel.length(robot->numSensors(Sensor::ACCELERATION));
+  for (unsigned int i=0; i<rstate.accel.length(); i++){
+    rstate.accel[i].length(3);
+    robot->readAccelerometer(i, rstate.accel[i].get_buffer());
+  }
+
+  rstate.force.length(robot->numSensors(Sensor::FORCE));
+  for (unsigned int i=0; i<rstate.force.length(); i++){
+    rstate.force[i].length(6);
+    robot->readForceSensor(i, rstate.force[i].get_buffer());
+  }
+
+  robot->readPowerStatus(rstate.voltage, rstate.current);
+}
+ 
+void RobotHardware::getStatus2(OpenHRP::RobotHardwareService::RobotState2 &rstate2)
+{
+  getStatus(m_robot, rstate2);
+#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 2
+  rstate2.batteries.length(m_robot->numBatteries());
+  for(unsigned int i=0; i<rstate2.batteries.length(); i++){
+      m_robot->readBatteryState(i, 
+                                rstate2.batteries[i].voltage,
+                                rstate2.batteries[i].current,
+                                rstate2.batteries[i].soc);
+  }
+  rstate2.temperature.length(m_robot->numThermometers());
+  for (unsigned int i=0; i<rstate2.temperature.length(); i++){
+      m_robot->readThermometer(i, rstate2.temperature[i]);
+  }
+#endif
 }
 
 /*
