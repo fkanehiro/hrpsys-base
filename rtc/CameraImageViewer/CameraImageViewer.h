@@ -18,6 +18,7 @@
 #include <rtm/DataInPort.h>
 #include <rtm/DataOutPort.h>
 #include <rtm/idl/BasicDataTypeSkel.h>
+#include <rtm/idl/InterfaceDataTypesSkel.h>
 #include <cv.h>
 #include <highgui.h>
 
@@ -106,10 +107,12 @@ class CameraImageViewer
   // </rtc-template>
 
   Img::TimedCameraImage m_image;
+  CameraImage m_imageOld;
 
   // DataInPort declaration
   // <rtc-template block="inport_declare">
   InPort<Img::TimedCameraImage> m_imageIn;
+  InPort<CameraImage> m_imageOldIn;
   
   // </rtc-template>
 
