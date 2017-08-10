@@ -4,6 +4,7 @@ set -x
 
 function error {
     travis_time_end 31
+    mkdir -p ${HOME}/.ros/test_results || echo "OK"
     find ${HOME}/.ros/test_results -type f -exec echo "=== {} ===" \; -exec\
  cat {} \;
     for file in ${HOME}/.ros/log/rostest-*; do echo "=== $file ==="; cat \$\
@@ -33,6 +34,16 @@ function travis_time_end {
     set -x
 }
 
+export DEBIAN_FRONTEND=noninteractive
+apt-get update -q=5
+apt-get install -q=5 -y wget sudo git sed
+apt-get install -q=5 -y software-properties-common # apt-add-repository
+apt-get install -q=5 -y lsb-release
+apt-get install -q=5 -y tzdata
+lsb_release -a
+echo $ROS_DISTRO
+echo $DISTRO
+
 travis_time_start mongo_hack
 
 # MongoDB hack
@@ -47,7 +58,7 @@ travis_time_start setup_ros
 export CI_SOURCE_PATH=$(pwd)
 export REPOSITORY_NAME=${PWD##*/}
 echo "Testing branch $TRAVIS_BRANCH of $REPOSITORY_NAME"
-sudo sh -c 'echo "deb http://packages.ros.org/ros-shadow-fixed/ubuntu precise main" > /etc/apt/sources.list.d/ros-latest.list'
+sudo -E sh -c 'echo "deb http://packages.ros.org/ros-shadow-fixed/ubuntu ${DISTRO} main" > /etc/apt/sources.list.d/ros-latest.list'
 wget http://packages.ros.org/ros.key -O - | sudo apt-key add -
 sudo apt-get update -qq
 
@@ -68,7 +79,7 @@ case $TEST_PACKAGE in
                 #http://askubuntu.com/questions/204510/how-to-install-python-2-5-4
                 sudo apt-add-repository -y ppa:fkrull/deadsnakes
                 sudo apt-get update -qq
-                sudo apt-get install -qq -y python2.5 python3.4
+                sudo apt-get install -qq -y python2.5 python2.7 python3.4
 
                 travis_time_end
                 travis_time_start  check_python
@@ -102,8 +113,8 @@ case $TEST_PACKAGE in
             stable_rtc)
                 travis_time_start  install_openrtm
 
-                sudo apt-get install -qq -y omniidl diffstat wget ros-hydro-openrtm-aist
-                source /opt/ros/hydro/setup.bash
+                sudo apt-get install -qq -y omniidl diffstat wget ros-${ROS_DISTRO}-openrtm-aist
+                source /opt/ros/${ROS_DISTRO}/setup.bash
                 ## check stableRTCList
                 sed -i 's@^from@#from@g' python/hrpsys_config.py
                 sed -i 's@^import@#import@' python/hrpsys_config.py
@@ -121,8 +132,8 @@ case $TEST_PACKAGE in
                 mkdir stable_idl
                 for idl_file in SequencePlayerService.idl StateHolderService.idl ForwardKinematicsService.idl CollisionDetectorService.idl SoftErrorLimiterService.idl DataLoggerService.idl   ExecutionProfileService.idl HRPDataTypes.idl RobotHardwareService.idl ; do
                     wget https://github.com/fkanehiro/hrpsys-base/raw/315.1.9/idl/${idl_file} -O stable_idl/${idl_file}
-                    omniidl -bcxx -I/opt/ros/hydro/include/openrtm-1.1/rtm/idl/                      idl/${idl_file}
-                    omniidl -bcxx -I/opt/ros/hydro/include/openrtm-1.1/rtm/idl/ -C stable_idl stable_idl/${idl_file}
+                    omniidl -bcxx -I/opt/ros/${ROS_DISTRO}/include/openrtm-1.1/rtm/idl/                      idl/${idl_file}
+                    omniidl -bcxx -I/opt/ros/${ROS_DISTRO}/include/openrtm-1.1/rtm/idl/ -C stable_idl stable_idl/${idl_file}
                     sk_file=$(basename ${idl_file} .idl)SK.cc
                     cat ${sk_file}
                     cat stable_idl/${sk_file}
@@ -142,10 +153,10 @@ case $TEST_PACKAGE in
                 travis_time_end
                 travis_time_start  install_openhrp3
 
-                sudo apt-get install -qq -y ros-hydro-openhrp3
-                source /opt/ros/hydro/setup.bash
+                sudo apt-get install -qq -y ros-${ROS_DISTRO}-openhrp3
+                source /opt/ros/${ROS_DISTRO}/setup.bash
                 if [ "$USE_SRC_OPENHRP3" == true ] ; then
-                    sudo dpkg -r --force-depends ros-hydro-openhrp3
+                    sudo dpkg -r --force-depends ros-${ROS_DISTRO}-openhrp3
                     mkdir -p ~/build_openhrp3
                     cd ~/build_openhrp3
                     git clone http://github.com/fkanehiro/openhrp3
@@ -179,13 +190,13 @@ case $TEST_PACKAGE in
         travis_time_start  install_$TEST_PACKAGE
 
         pkg=$TEST_PACKAGE
-        sudo apt-get install -qq -y python-wstool ros-hydro-catkin ros-hydro-mk ros-hydro-rostest ros-hydro-rtmbuild ros-hydro-roslint > /dev/null
+        sudo apt-get install -qq -y python-wstool ros-${ROS_DISTRO}-catkin ros-${ROS_DISTRO}-mk ros-${ROS_DISTRO}-rostest ros-${ROS_DISTRO}-rtmbuild ros-${ROS_DISTRO}-roslint > /dev/null
 
-        sudo apt-get install -qq -y ros-hydro-pcl-ros ros-hydro-moveit-commander ros-hydro-rqt-robot-dashboard > /dev/null
+        sudo apt-get install -qq -y ros-${ROS_DISTRO}-pcl-ros ros-${ROS_DISTRO}-moveit-commander ros-${ROS_DISTRO}-rqt-robot-dashboard > /dev/null
 
-        sudo apt-get install -qq -y ros-hydro-$pkg
+        sudo apt-get install -qq -y ros-${ROS_DISTRO}-$pkg
 
-        source /opt/ros/hydro/setup.bash
+        source /opt/ros/${ROS_DISTRO}/setup.bash
 
         travis_time_end
         travis_time_start  setup_catkin_ws
@@ -216,9 +227,9 @@ case $TEST_PACKAGE in
 
             travis_time_start  compile_and_install_downstream
 
-            sudo dpkg -r --force-depends ros-hydro-hrpsys
+            sudo dpkg -r --force-depends ros-${ROS_DISTRO}-hrpsys
 
-            catkin_make_isolated --install -j1 -l1
+            catkin_make_isolated --install
             # you need to pretend this is catkin package since you only have hrpsys in catkin_ws
             export ROS_PACKAGE_PATH=`pwd`/install_isolated/share:`pwd`/install_isolated/stacks:$ROS_PACKAGE_PATH
             source install_isolated/setup.bash
@@ -239,8 +250,8 @@ case $TEST_PACKAGE in
             wstool set rtmros_hironx http://github.com/start-jsk/rtmros_hironx --git -y
             wstool set rtmros_nextage http://github.com/tork-a/rtmros_nextage --git -y
             wstool update
-            sudo apt-get install -qq -y ros-hydro-urdf
-            sudo dpkg -r --force-depends ros-hydro-hrpsys
+            sudo apt-get install -qq -y ros-${ROS_DISTRO}-urdf
+            sudo dpkg -r --force-depends ros-${ROS_DISTRO}-hrpsys
             export ROS_LANG_DISABLE=genlisp
 
             cd ..
@@ -260,7 +271,7 @@ case $TEST_PACKAGE in
             travis_time_end
             travis_time_start  compile_new_version
 
-            catkin_make_isolated -j1 -l1 --install --only-pkg-with-deps `echo $pkg | sed s/-/_/g` | grep -v '^-- \(Up-to-date\|Installing\):' | grep -v 'Generating \(Python\|C++\) code from' | grep -v '^Compiling .*.py ...$' | uniq
+            catkin_make_isolated --install --only-pkg-with-deps `echo $pkg | sed s/-/_/g` | grep -v '^-- \(Up-to-date\|Installing\):' | grep -v 'Generating \(Python\|C++\) code from' | grep -v '^Compiling .*.py ...$' | uniq
             rm -fr ./install_isolated/hrpsys/share/hrpsys ./install_isolated/hrpsys/lib/pkgconfig/hrpsys.pc
             source install_isolated/setup.bash
 
@@ -276,13 +287,19 @@ case $TEST_PACKAGE in
             #
             sed -i "1imacro(dummy_macro)\nmessage(\"dummy(\${ARGN})\")\nendmacro()" hrpsys/catkin.cmake
             sed -i "s@install(DIRECTORY test share@dummy_macro(DIRECTORY test share@" hrpsys/catkin.cmake
-            sed -i "s@find_package(catkin REQUIRED COMPONENTS rostest mk openrtm_aist openhrp3)@find_package(catkin REQUIRED COMPONENTS rostest mk)\nset(openrtm_aist_PREFIX /opt/ros/hydro/)\nset(openhrp3_PREFIX /opt/ros/hydro/)@"  hrpsys/catkin.cmake
+            sed -i "s@find_package(catkin REQUIRED COMPONENTS rostest mk openrtm_aist openhrp3)@find_package(catkin REQUIRED COMPONENTS rostest mk)\nset(openrtm_aist_PREFIX /opt/ros/${ROS_DISTRO}/)\nset(openhrp3_PREFIX /opt/ros/${ROS_DISTRO}/)@"  hrpsys/catkin.cmake
             cat hrpsys/catkin.cmake
             sed -i "s@NUM_OF_CPUS = \$(shell grep -c '^processor' /proc/cpuinfo)@NUM_OF_CPUS = 2@" hrpsys/Makefile.hrpsys-base
             sed -i "s@touch installed@@" hrpsys/Makefile.hrpsys-base
             cat hrpsys/Makefile.hrpsys-base
             # use git repository, instead of svn due to googlecode shoutdown
-            git clone http://github.com/fkanehiro/hrpsys-base --depth 1 -b 315.1.9 ../build_isolated/hrpsys/build/hrpsys-base-source
+            git clone http://github.com/fkanehiro/hrpsys-base ../build_isolated/hrpsys/build/hrpsys-base-source
+            (cd ../build_isolated/hrpsys/build/hrpsys-base-source; git checkout 315.1.9)
+            if [ "${ROS_DISTRO}" != "hydro" ]; then
+                # tmp fix to build old hrpsys
+                sudo ln -s /usr/lib/x86_64-linux-gnu/libboost_thread.so /usr/lib/x86_64-linux-gnu/libboost_thread-mt.so
+                sudo ln -s /usr/lib/x86_64-linux-gnu/libboost_system.so /usr/lib/x86_64-linux-gnu/libboost_system-mt.so
+            fi
             # we use latest hrpsys_ocnfig.py for this case, so do not install them
             sed -i -e 's/\(add_subdirectory(python)\)/#\1/' ../build_isolated/hrpsys/build/hrpsys-base-source/CMakeLists.txt
             sed -i -e 's/\(add_subdirectory(test)\)/#\1/' ../build_isolated/hrpsys/build/hrpsys-base-source/CMakeLists.txt
@@ -311,7 +328,7 @@ case $TEST_PACKAGE in
             trap 0 ERR
             need_compile=1
             while [ $need_compile != 0 ]; do
-                catkin_make_isolated -j1 -l1 --merge
+                catkin_make_isolated --merge
                 need_compile=$?
             done
             trap error ERR
@@ -322,7 +339,7 @@ case $TEST_PACKAGE in
             trap 0 ERR
             need_compile=1
             while [ $need_compile != 0 ]; do
-                catkin_make_isolated -j1 -l1 --install | grep -v '^-- \(Up-to-date\|Installing\):'
+                catkin_make_isolated --install | grep -v '^-- \(Up-to-date\|Installing\):'
                 need_compile=${PIPESTATUS[0]}
             done
             trap error ERR
@@ -350,24 +367,26 @@ case $TEST_PACKAGE in
         rospack profile
 
 
-        # https://github.com/fkanehiro/openhrp3/issues/46
-        ls -al /opt/ros/hydro/share/openhrp3/share/OpenHRP-3.1/sample/controller/SampleController || echo "ok"
-        sudo mkdir -p /opt/ros/hydro/share/openhrp3/share/OpenHRP-3.1/sample/controller/SampleController/etc/ || echo "ok"
-        sudo wget https://raw.githubusercontent.com/fkanehiro/openhrp3/master/sample/controller/SampleController/etc/Sample.pos -O /opt/ros/hydro/share/openhrp3/share/OpenHRP-3.1/sample/controller/SampleController/etc/Sample.pos || echo "ok"
-        sudo wget https://raw.githubusercontent.com/fkanehiro/openhrp3/master/sample/controller/SampleController/etc/Sample.vel -O /opt/ros/hydro/share/openhrp3/share/OpenHRP-3.1/sample/controller/SampleController/etc/Sample.vel || echo "ok"
-        # https://github.com/start-jsk/rtmros_hironx/issues/287
-        if [ -e /opt/ros/hydro/share/hironx_ros_bridge/test/test_hironx_ros_bridge.py ]; then
-            sudo sed -i "s@test_tf_and_controller@_test_tf_and_controller@" /opt/ros/hydro/share/hironx_ros_bridge/test/test_hironx_ros_bridge.py
-        fi
-        #https://github.com/start-jsk/rtmros_hironx/pull/358
-        if [ -e /opt/ros/hydro/lib/python2.7/dist-packages/hironx_ros_bridge/hironx_client.py ]; then
-            sudo wget https://raw.githubusercontent.com/k-okada/rtmros_hironx/stop_unfinished_battle/hironx_ros_bridge/src/hironx_ros_bridge/hironx_client.py -O /opt/ros/hydro/lib/python2.7/dist-packages/hironx_ros_bridge/hironx_client.py
-        fi
-        #https://github.com/start-jsk/rtmros_common/commit/51ec26b899f09304705fe0528a068e57b061b9b7
-        #https://github.com/start-jsk/rtmros_common/pull/880
-        #https://github.com/start-jsk/rtmros_common/pull/879
-        if [ -e /opt/ros/hydro/share/hrpsys_ros_bridge/test/test-samplerobot.test ]; then
-            sudo wget https://raw.githubusercontent.com/start-jsk/rtmros_common/1.3.1/hrpsys_ros_bridge/test/test-samplerobot.test -O /opt/ros/hydro/share/hrpsys_ros_bridge/test/test-samplerobot.test
+        if [ "${ROS_DISTRO}" == "hydro" ]; then
+            # https://github.com/fkanehiro/openhrp3/issues/46
+            ls -al /opt/ros/${ROS_DISTRO}/share/openhrp3/share/OpenHRP-3.1/sample/controller/SampleController || echo "ok"
+            sudo mkdir -p /opt/ros/${ROS_DISTRO}/share/openhrp3/share/OpenHRP-3.1/sample/controller/SampleController/etc/ || echo "ok"
+            sudo wget https://raw.githubusercontent.com/fkanehiro/openhrp3/master/sample/controller/SampleController/etc/Sample.pos -O /opt/ros/${ROS_DISTRO}/share/openhrp3/share/OpenHRP-3.1/sample/controller/SampleController/etc/Sample.pos || echo "ok"
+            sudo wget https://raw.githubusercontent.com/fkanehiro/openhrp3/master/sample/controller/SampleController/etc/Sample.vel -O /opt/ros/${ROS_DISTRO}/share/openhrp3/share/OpenHRP-3.1/sample/controller/SampleController/etc/Sample.vel || echo "ok"
+            # https://github.com/start-jsk/rtmros_hironx/issues/287
+            if [ -e /opt/ros/${ROS_DISTRO}/share/hironx_ros_bridge/test/test_hironx_ros_bridge.py ]; then
+                sudo sed -i "s@test_tf_and_controller@_test_tf_and_controller@" /opt/ros/${ROS_DISTRO}/share/hironx_ros_bridge/test/test_hironx_ros_bridge.py
+            fi
+            #https://github.com/start-jsk/rtmros_hironx/pull/358
+            if [ -e /opt/ros/${ROS_DISTRO}/lib/python2.7/dist-packages/hironx_ros_bridge/hironx_client.py ]; then
+                sudo wget https://raw.githubusercontent.com/k-okada/rtmros_hironx/stop_unfinished_battle/hironx_ros_bridge/src/hironx_ros_bridge/hironx_client.py -O /opt/ros/${ROS_DISTRO}/lib/python2.7/dist-packages/hironx_ros_bridge/hironx_client.py
+            fi
+            #https://github.com/start-jsk/rtmros_common/commit/51ec26b899f09304705fe0528a068e57b061b9b7
+            #https://github.com/start-jsk/rtmros_common/pull/880
+            #https://github.com/start-jsk/rtmros_common/pull/879
+            if [ -e /opt/ros/${ROS_DISTRO}/share/hrpsys_ros_bridge/test/test-samplerobot.test ]; then
+                sudo wget https://raw.githubusercontent.com/start-jsk/rtmros_common/1.3.1/hrpsys_ros_bridge/test/test-samplerobot.test -O /opt/ros/${ROS_DISTRO}/share/hrpsys_ros_bridge/test/test-samplerobot.test
+            fi
         fi
         travis_time_end
 
