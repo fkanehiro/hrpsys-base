@@ -9,6 +9,7 @@
 
 #include "hrpsys/util/Hrpsys.h"
 #include "hrpsys/idl/pointcloud.hh"
+#include "hrpsys/idl/RobotHardwareService.hh"
 #include "DataLogger.h"
 
 
@@ -119,6 +120,28 @@ std::ostream& operator<<(std::ostream& os, const _CORBA_Unbounded_Sequence<T > &
   return os;
 }
 
+std::ostream& operator<<(std::ostream& os, const OpenHRP::RobotHardwareService::DblSequence6 & data)
+{
+  for (unsigned int j=0; j<data.length(); j++){
+    os << data[j] << " ";
+  }
+  return os;
+}
+
+std::ostream& operator<<(std::ostream& os, const OpenHRP::RobotHardwareService::DblSequence3 & data)
+{
+  for (unsigned int j=0; j<data.length(); j++){
+    os << data[j] << " ";
+  }
+  return os;
+}
+
+std::ostream& operator<<(std::ostream& os, const OpenHRP::RobotHardwareService::BatteryState & data)
+{
+  os << data.voltage << " " << data.current << " " << data.soc << " ";
+  return os;
+}
+
 template <class T>
 void printData(std::ostream& os, const T& data, unsigned int precision = 0)
 {
@@ -127,6 +150,28 @@ void printData(std::ostream& os, const T& data, unsigned int precision = 0)
         os << data[j] << " ";
     }
     LOG_UNSET_PRECISION(os);
+}
+
+void printData(std::ostream& os, double data, unsigned int precision = 0)
+{
+    LOG_SET_PRECISION(os);
+    os << data << " ";
+    LOG_UNSET_PRECISION(os);
+}
+
+void printData(std::ostream& os, const OpenHRP::RobotHardwareService::RobotState2& data, unsigned int precision = 0)
+{
+  printData(os, data.angle, precision);
+  printData(os, data.command, precision);
+  printData(os, data.torque, precision);
+  printData(os, data.servoState, precision);
+  printData(os, data.force, precision);
+  printData(os, data.rateGyro, precision);
+  printData(os, data.accel, precision);
+  printData(os, data.batteries, precision);
+  printData(os, data.voltage, precision);
+  printData(os, data.current, precision);
+  printData(os, data.temperature, precision);
 }
 
 template <class T>
@@ -185,7 +230,6 @@ public:
         }
     }
 };
-
 
 DataLogger::DataLogger(RTC::Manager* manager)
   : RTC::DataFlowComponentBase(manager),
@@ -424,6 +468,13 @@ bool DataLogger::add(const char *i_type, const char *i_name)
           resumeLogging();
           return false;
       }
+  }else if (strcmp(i_type, "TimedRobotState2")==0){
+    LoggerPort<OpenHRP::RobotHardwareService::TimedRobotState2> *lp = new LoggerPort<OpenHRP::RobotHardwareService::TimedRobotState2>(i_name);
+    new_port = lp;
+    if (!addInPort(i_name, lp->port())) {
+        resumeLogging();
+        return false;
+    }
   }else{
       std::cout << "DataLogger: unsupported data type(" << i_type << ")"
                 << std::endl;

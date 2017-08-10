@@ -2,6 +2,9 @@
  * @file RobotHardwareService.idl
  * @brief Services for the robot hardware interface
  */
+
+#include "BasicDataType.idl"
+
 module OpenHRP
 {
   interface RobotHardwareService
@@ -205,5 +208,10 @@ module OpenHRP
      */
     void getStatus2(out RobotState2 rs);
 
+    struct TimedRobotState2
+    {
+      RTC::Time tm;
+      RobotState2 data;
+    };
   };
 };
