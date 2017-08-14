@@ -344,7 +344,7 @@ RTC::ReturnCode_t RobotHardware::onExecute(RTC::UniqueId ec_id)
 }
 
 template<class T>
-void getStatus(boost::shared_ptr<robot> robot, T rstate)
+void getStatus(boost::shared_ptr<robot> robot, T& rstate)
 {
   rstate.angle.length(robot->numJoints());
   robot->readJointAngles(rstate.angle.get_buffer());
