@@ -35,6 +35,10 @@ extern "C" {
 }
 #endif
 
+//#include "../AutoBalancer/AutoBalancer.h"
+#include "FullBodyIK.h"
+#define USE_NEW_FIK
+
 #define DEBUG 0
 #define dbg(var) std::cout<<#var"= "<<(var)<<std::endl
 #define LIMIT_MIN(x,min) (x= ( x<min ? min:x ))
@@ -132,7 +136,6 @@ class RobotConfig : UTIL_CONST {
     }
 };
 
-#include "../AutoBalancer/AutoBalancer.h"
 class WBMSCore : UTIL_CONST {
   private:
     double CNT_F_TH, h2r_ratio, tgt_h2r_ratio, HZ, DT;
@@ -173,7 +176,7 @@ class WBMSCore : UTIL_CONST {
     };
     struct WBMSparameters WBMSparam;
 
-    typedef boost::shared_ptr<SimpleFullbodyInverseKinematicsSolver> fikPtr;
+    typedef boost::shared_ptr<FullbodyInverseKinematicsSolver> fikPtr;
     fikPtr fik_ml;
     hrp::BodyPtr m_robot_ml;
     fikPtr fik_act;
@@ -542,7 +545,7 @@ class WBMSCore : UTIL_CONST {
           fik_ml->ikp[robot_l_names[i]].target_p0 = out.tgt[human_l_names[i]].abs.p;
         }
       }
-      for ( std::map<std::string, SimpleFullbodyInverseKinematicsSolver::IKparam>::iterator it = fik_ml->ikp.begin(); it != fik_ml->ikp.end(); it++ ) {
+      for ( std::map<std::string, FullbodyInverseKinematicsSolver::IKparam>::iterator it = fik_ml->ikp.begin(); it != fik_ml->ikp.end(); it++ ) {
           if (it->second.is_ik_enable) fik_ml->solveLimbIK (it->second, it->first, fik_ml->ratio_for_vel, false);
       }
       for(int i=0;i<4;i++){

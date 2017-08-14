@@ -18,7 +18,7 @@
 #include "interpolator.h"
 #include "../TorqueFilter/IIRFilter.h"
 #include "wbms_core.h"
-#include "../AutoBalancer/AutoBalancer.h"
+//#include "../AutoBalancer/AutoBalancer.h"
 
 using namespace RTC;
 
@@ -162,7 +162,8 @@ class WholeBodyMasterSlave : public RTC::DataFlowComponentBase, UTIL_CONST {
     hrp::Link* target_link;
     bool is_active, has_toe_joint;
   };
-  typedef boost::shared_ptr<SimpleFullbodyInverseKinematicsSolver> fikPtr;
+//  typedef boost::shared_ptr<SimpleFullbodyInverseKinematicsSolver> fikPtr;
+  typedef boost::shared_ptr<FullbodyInverseKinematicsSolver> fikPtr;
   fikPtr fik, fik_rmc, fik_ml, fik_vsafe;
   hrp::BodyPtr m_robot, m_robot_rmc, m_robot_ml, m_robot_vsafe;
   std::vector<fikPtr> fik_list;

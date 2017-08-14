@@ -183,10 +183,10 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onInitialize(){
     q_ip->setName(std::string(m_profile.instance_name)+" q_ip");
     q_ip->clear();
     // Generate FIK
-    fik = fikPtr(new SimpleFullbodyInverseKinematicsSolver(m_robot, std::string(m_profile.instance_name), m_dt));
-    fik_rmc = fikPtr(new SimpleFullbodyInverseKinematicsSolver(m_robot_rmc, std::string(m_profile.instance_name), m_dt));
-    fik_ml = fikPtr(new SimpleFullbodyInverseKinematicsSolver(m_robot_ml, std::string(m_profile.instance_name), m_dt));
-    fik_vsafe = fikPtr(new SimpleFullbodyInverseKinematicsSolver(m_robot_vsafe, std::string(m_profile.instance_name), m_dt));
+    fik = fikPtr(new FullbodyInverseKinematicsSolver(m_robot, std::string(m_profile.instance_name), m_dt));
+    fik_rmc = fikPtr(new FullbodyInverseKinematicsSolver(m_robot_rmc, std::string(m_profile.instance_name), m_dt));
+    fik_ml = fikPtr(new FullbodyInverseKinematicsSolver(m_robot_ml, std::string(m_profile.instance_name), m_dt));
+    fik_vsafe = fikPtr(new FullbodyInverseKinematicsSolver(m_robot_vsafe, std::string(m_profile.instance_name), m_dt));
     fik_list.push_back(fik);
     fik_list.push_back(fik_rmc);
     fik_list.push_back(fik_ml);
@@ -222,6 +222,9 @@ void WholeBodyMasterSlave::setupfik(fikPtr& fik_in, hrp::BodyPtr& robot_in, RTC:
       coil::stringTo(ee_name, end_effectors_str[i*prop_num].c_str());
       coil::stringTo(ee_target, end_effectors_str[i*prop_num+1].c_str());
       coil::stringTo(ee_base, end_effectors_str[i*prop_num+2].c_str());
+#ifdef USE_NEW_FIK
+      ee_base = "WAIST";//CHESTも使う実験
+#endif
       ABCIKparam tp;
       for (size_t j = 0; j < XYZ; j++) {
           coil::stringTo(tp.localPos(j), end_effectors_str[i*prop_num+3+j].c_str());
@@ -544,7 +547,7 @@ void WholeBodyMasterSlave::processWholeBodyMasterSlave_Raw(fikPtr& fik_in, hrp::
   }
   callnum++;
   if(DEBUGP){ fprintf(stderr,"\x1b[31mmaster-mode:\x1b[39m"); pose_ref.print(); }
-  solveFullbodyIKStrictCOM(fik_in, robot_in, pose_ref.tgt[com].abs, pose_ref.tgt[rf].abs, pose_ref.tgt[lf].abs, pose_ref.tgt[rh].abs, pose_ref.tgt[lh].abs, pose_ref.tgt[head].abs,"processWholeBodyMasterSlave_Raw");
+//  solveFullbodyIKStrictCOM(fik_in, robot_in, pose_ref.tgt[com].abs, pose_ref.tgt[rf].abs, pose_ref.tgt[lf].abs, pose_ref.tgt[rh].abs, pose_ref.tgt[lh].abs, pose_ref.tgt[head].abs,"processWholeBodyMasterSlave_Raw");
 }
 
 void WholeBodyMasterSlave::calcManipulability(fikPtr& fik_in, hrp::BodyPtr& robot_in){
@@ -566,6 +569,62 @@ void WholeBodyMasterSlave::calcManipulability(fikPtr& fik_in, hrp::BodyPtr& robo
   }
 }
 
+#ifdef USE_NEW_FIK
+void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr& robot_in, const WBMSPose3D& com_ref, const WBMSPose3D& rf_ref, const WBMSPose3D& lf_ref, const WBMSPose3D& rh_ref, const WBMSPose3D& lh_ref, const WBMSPose3D& head_ref, const std::string& debug_prefix){
+  int com_ik_loop=0;
+  const int COM_IK_MAX_LOOP = 3;
+  const double COM_IK_MAX_ERROR = 1e-3;
+  const std::string names[4] = {"rleg","lleg","rarm","larm"};
+  const WBMSPose3D* refs[4] = {&rf_ref, &lf_ref, &rh_ref, &lh_ref};
+  fik_in->target_com_p0 = com_ref.p;
+  fik_in->target_com_r0 = hrp::rotFromRpy(com_ref.rpy);//つまりbaseのrpyとして処理される
+  for(int i=0;i<4;i++){
+    if(fik_in->ikp.count(names[i])){
+      fik_in->ikp[names[i]].target_p0 = refs[i]->p;
+      fik_in->ikp[names[i]].target_r0 = hrp::rotFromRpy(refs[i]->rpy);
+    }
+  }
+
+  //確かに毎回少しreset poseに引き戻すとこじれないが・・・
+  hrp::dvector reset_pose(33);
+  reset_pose <<
+      0.0,0.0,-0.349066,0.698132,-0.349066,0.0,
+      0.0,0.0,-0.349066,0.698132,-0.349066,0.0,
+      0.0,0.0,0.0, 0.0,0.0,
+      0.0,0.698132,-0.349066,-0.087266,-1.39626,0.0,0.0,-0.349066,
+      0.0,0.698132,0.349066,0.087266,-1.39626,0.0,0.0,-0.349066;
+  for(int i=0;i<33;i++){
+    robot_in->joint(i)->q = robot_in->joint(i)->q * 0.999 + reset_pose(i) * 0.001;
+  }
+
+
+  if( robot_in->link("HEAD_JOINT0") != NULL) robot_in->link("HEAD_JOINT0")->q = head_ref.rpy(y);
+  if( robot_in->link("HEAD_JOINT1") != NULL) robot_in->link("HEAD_JOINT1")->q = head_ref.rpy(p);
+  struct timespec startT, endT;
+  clock_gettime(CLOCK_REALTIME, &startT);
+  while( 1 ){  //COM 収束ループ
+    com_ik_loop++;
+    robot_in->calcForwardKinematics();
+    fik_in->solveIK();
+    hrp::Vector3 com_p_err = com_ref.p - robot_in->calcCM();
+    hrp::Vector3 rf_p_err = rf_ref.p - fik_in->getEndEffectorPos("rleg");
+    hrp::Vector3 lf_p_err = lf_ref.p - fik_in->getEndEffectorPos("lleg");
+    hrp::Vector3 rh_p_err = rh_ref.p - fik_in->getEndEffectorPos("rarm");
+    hrp::Vector3 lh_p_err = lh_ref.p - fik_in->getEndEffectorPos("larm");
+    if(
+        com_p_err.norm() < COM_IK_MAX_ERROR &&
+        rf_p_err.norm() < 1e-3 &&
+        lf_p_err.norm() < 1e-3 &&
+        rh_p_err.norm() < 1e-2 &&
+        lh_p_err.norm() < 1e-2){ break; }
+    if(com_ik_loop >= COM_IK_MAX_LOOP){std::cerr << "COM constraint IK MAX loop [="<<COM_IK_MAX_LOOP<<"] exceeded!! @ "<<debug_prefix<< std::endl; break; };
+  }
+  if(DEBUGP && TIMECALC){clock_gettime(CLOCK_REALTIME, &endT); std::cout << (double)(endT.tv_sec - startT.tv_sec + (endT.tv_nsec - startT.tv_nsec) * 1e-9) << " @ solveIK loop" << std::endl;  clock_gettime(CLOCK_REALTIME, &startT);}
+
+  if(com_ik_loop != 1 && DEBUGP)cout<<"com_ik_loop:"<<com_ik_loop<<" @ "<<debug_prefix<<endl;
+}
+#else
+//旧ver
 void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr& robot_in, const WBMSPose3D& com_ref, const WBMSPose3D& rf_ref, const WBMSPose3D& lf_ref, const WBMSPose3D& rh_ref, const WBMSPose3D& lh_ref, const WBMSPose3D& head_ref, const std::string& debug_prefix){
   int com_ik_loop=0;
   const int COM_IK_MAX_LOOP = 10;
@@ -593,24 +652,28 @@ void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr
     }
     if(robot_in->link("CHEST_JOINT2") != NULL){
       robot_in->link("CHEST_JOINT2")->q = (base2rh(X) - base2lh(X)) * (60 * D2R / 1.0);
-//      LIMIT_MINMAX(robot_in->link("CHEST_JOINT2")->q, robot_in->link("CHEST_JOINT2")->llimit, robot_in->link("CHEST_JOINT2")->ulimit);
-      LIMIT_MINMAX(robot_in->link("CHEST_JOINT2")->q, robot_in->link("CHEST_JOINT2")->llimit, 10);//左肩ロール故障につき
+      LIMIT_MINMAX(robot_in->link("CHEST_JOINT2")->q, robot_in->link("CHEST_JOINT2")->llimit, robot_in->link("CHEST_JOINT2")->ulimit);
     }
   }
   hrp::Vector3 tmp_com_err = hrp::Vector3::Zero();
+  struct timespec startT, endT;
   while( 1 ){  //COM 収束ループ
     com_ik_loop++;
     robot_in->rootLink()->p += tmp_com_err;
     robot_in->calcForwardKinematics();
+    clock_gettime(CLOCK_REALTIME, &startT);
     for ( std::map<std::string, SimpleFullbodyInverseKinematicsSolver::IKparam>::iterator it = fik_in->ikp.begin(); it != fik_in->ikp.end(); it++ ) {
         if (it->second.is_ik_enable) fik_in->solveLimbIK (it->second, it->first, fik_in->ratio_for_vel, false);
     }
+    if(DEBUGP && TIMECALC){clock_gettime(CLOCK_REALTIME, &endT); std::cout << (double)(endT.tv_sec - startT.tv_sec + (endT.tv_nsec - startT.tv_nsec) * 1e-9) << " @ solveLimbIK x 4" << std::endl;  clock_gettime(CLOCK_REALTIME, &startT);}
     tmp_com_err = com_ref.p - robot_in->calcCM();
     if(tmp_com_err.norm() < COM_IK_MAX_ERROR){ break; }
     if(com_ik_loop >= COM_IK_MAX_LOOP){std::cerr << "COM constraint IK MAX loop [="<<COM_IK_MAX_LOOP<<"] exceeded!! @ "<<debug_prefix<< std::endl; break; };
   }
   if(com_ik_loop != 1 && DEBUGP)cout<<"com_ik_loop:"<<com_ik_loop<<" @ "<<debug_prefix<<endl;
 }
+#endif
+
 
 
 void WholeBodyMasterSlave::processMomentumCompensation(fikPtr& fik_in, hrp::BodyPtr& robot_in, hrp::BodyPtr& robot_normal_in, const HumanPose& pose_ref){
