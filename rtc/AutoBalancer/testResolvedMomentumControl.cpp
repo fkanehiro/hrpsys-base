@@ -7,6 +7,8 @@
 #include <cmath>
 #include <fstream>
 #include <iostream>
+#include <unistd.h>
+#include <csignal>
 // #include <boost/filesystem.hpp>
 
 inline double deg2rad (double deg) { return deg * M_PI / 180.0; }
@@ -32,10 +34,21 @@ protected:
         }
         nameServer = nameServer.substr(0, comPos);
         RTC::CorbaNaming naming(rtcManager.getORB(), nameServer.c_str());
-        if (!loadBodyFromModelLoader(m_robot, file_path,
-                                     CosNaming::NamingContext::_duplicate(naming.getRootContext()))) {
-            std::cerr << "Failed to load model"  << std::endl;
-            std::cerr << "Please check if openhrp-model-loader is running"  << std::endl;
+        pid_t pid = fork();
+        if (pid == 0) {
+            execlp("openhrp-model-loader", "openhrp-model-loader", NULL);
+        } else if (pid > 0) {
+            sleep(1);
+            if (!loadBodyFromModelLoader(m_robot, file_path,
+                                         CosNaming::NamingContext::_duplicate(naming.getRootContext()))) {
+                std::cerr << "Failed to load model"  << std::endl;
+                std::cerr << "Please check if openhrp-model-loader is running"  << std::endl;
+                kill(pid, SIGINT);
+                exit(1);
+            }
+            kill(pid, SIGINT);
+        } else {
+            std::cerr << "fork failed" << std::endl;
             exit(1);
         }
     }
@@ -127,6 +140,9 @@ private:
                << " " << L(1)
                << " " << Lref(2)
                << " " << L(2);
+            // fp << " " << CM(0)
+            //    << " " << CM(1)
+            //    << " " << CM(2);
             // for (size_t i = 0; i < m_robot->numJoints(); ++i) {
             //     fp << " " << m_robot->joint(i)->dq;
             // }
@@ -138,6 +154,8 @@ private:
             }
             fp << "\n";
         }
+
+        delete calcRef;
 
         if (use_gnuplot) {
             size_t gpsize = 2 + xi_ref.size() * 2; // P, L, xi_p, xi_R
@@ -195,7 +213,8 @@ private:
             //         << "'" << fname << "' using 1:" << (start + 1) << " with lines title 'Y',"
             //         << "'" << fname << "' using 1:" << (start + 2) << " with lines title 'Z'"
             //         << std::endl;
-            //     plot_and_save(gps[2], gtitle, oss.str());
+            //     plot_and_save(gps[gp_count++], gtitle, oss.str());
+            //     start += 3;
             // }
 
             // dq
@@ -212,7 +231,8 @@ private:
             //     }
             //     oss << "'" << fname << "' using 1:" << (start + i) << " with lines title '" << m_robot->joint(i)->name << "'";
             //     oss << std::endl;
-            //     plot_and_save(gps[2], gtitle, oss.str());
+            //     plot_and_save(gps[gp_count++], gtitle, oss.str());
+            //     start += m_robot->numJoints();
             // }
 
             // xi
@@ -267,7 +287,6 @@ private:
         for (std::map<std::string, hrp::dvector6>::iterator it = xi_ref.begin(); it != xi_ref.end(); ++it) {
             rmc->removeConstraintLink(m_robot, (*it).first, xi_ref);
         }
-        delete calcRef;
     }
 
     void setEndeffectorConstraint(std::string &limb)
