@@ -139,133 +139,135 @@ private:
             fp << "\n";
         }
 
-        size_t gpsize = 2 + xi_ref.size() * 2; // P, L, xi_p, xi_R
-        size_t gp_count = 0;
-        size_t start = 2;
-        FILE* gps[gpsize];
-        for (size_t ii = 0; ii < gpsize; ii++) {
-            gps[ii] = popen("gnuplot", "w");
-        }
-        // P
-        {
-            std::ostringstream oss("");
-            std::string gtitle("P");
-            // oss << "set term wxt size 2560, 1600" << std::endl;
-            oss << "set multiplot layout 3, 1 title '" << gtitle << "'" << std::endl;
-            std::string titles[3] = {"X", "Y", "Z"};
-            for (size_t ii = 0; ii < 3; ii++) {
-                oss << "set xlabel 'Time [s]'" << std::endl;
-                oss << "set ylabel '" << titles[ii] << "[Ns]'" << std::endl;
-                oss << "plot "
-                    << "'" << fname << "' using 1:" << (start + ii * 2) << " with points ps 0.2 title 'Pref',"
-                    << "'" << fname << "' using 1:" << (start + ii * 2 + 1) << " with points ps 0.2 title 'P'"
-                    << std::endl;
+        if (use_gnuplot) {
+            size_t gpsize = 2 + xi_ref.size() * 2; // P, L, xi_p, xi_R
+            size_t gp_count = 0;
+            size_t start = 2;
+            FILE* gps[gpsize];
+            for (size_t ii = 0; ii < gpsize; ii++) {
+                gps[ii] = popen("gnuplot", "w");
             }
-            plot_and_save(gps[gp_count++], gtitle, oss.str());
-            start += 6;
-        }
-        // L
-        {
-            std::ostringstream oss("");
-            std::string gtitle("L");
-            // oss << "set term wxt size 2560, 1600" << std::endl;
-            oss << "set multiplot layout 3, 1 title '" << gtitle << "'" << std::endl;
-            std::string titles[3] = {"X", "Y", "Z"};
-            for (size_t ii = 0; ii < 3; ii++) {
-                oss << "set xlabel 'Time [s]'" << std::endl;
-                oss << "set ylabel '" << titles[ii] << "[mNs]'" << std::endl;
-                oss << "plot "
-                    << "'" << fname << "' using 1:" << (start + ii * 2) << " with points ps 0.2 title 'Lref',"
-                    << "'" << fname << "' using 1:" << (start + ii * 2 + 1) << " with points ps 0.2 title 'L'"
-                    << std::endl;
+            // P
+            {
+                std::ostringstream oss("");
+                std::string gtitle("P");
+                // oss << "set term wxt size 2560, 1600" << std::endl;
+                oss << "set multiplot layout 3, 1 title '" << gtitle << "'" << std::endl;
+                std::string titles[3] = {"X", "Y", "Z"};
+                for (size_t ii = 0; ii < 3; ii++) {
+                    oss << "set xlabel 'Time [s]'" << std::endl;
+                    oss << "set ylabel '" << titles[ii] << "[Ns]'" << std::endl;
+                    oss << "plot "
+                        << "'" << fname << "' using 1:" << (start + ii * 2) << " with points ps 0.2 title 'Pref',"
+                        << "'" << fname << "' using 1:" << (start + ii * 2 + 1) << " with points ps 0.2 title 'P'"
+                        << std::endl;
+                }
+                plot_and_save(gps[gp_count++], gtitle, oss.str());
+                start += 6;
             }
-            plot_and_save(gps[gp_count++], gtitle, oss.str());
-            start += 6;
-        }
-        // // CoM
-        // {
-        //     std::ostringstream oss("");
-        //     std::string gtitle("CoM");
-        //     oss << "set multiplot layout 1, 1 title '" << gtitle << "'" << std::endl;
-        //     oss << "set xlabel 'Time [s]'" << std::endl;
-        //     oss << "set ylabel '" << "Position [m]'" << std::endl;
-        //     oss << "plot "
-        //         << "'" << fname << "' using 1:" << (start) << " with lines title 'X',"
-        //         << "'" << fname << "' using 1:" << (start + 1) << " with lines title 'Y',"
-        //         << "'" << fname << "' using 1:" << (start + 2) << " with lines title 'Z'"
-        //         << std::endl;
-        //     plot_and_save(gps[2], gtitle, oss.str());
-        // }
+            // L
+            {
+                std::ostringstream oss("");
+                std::string gtitle("L");
+                // oss << "set term wxt size 2560, 1600" << std::endl;
+                oss << "set multiplot layout 3, 1 title '" << gtitle << "'" << std::endl;
+                std::string titles[3] = {"X", "Y", "Z"};
+                for (size_t ii = 0; ii < 3; ii++) {
+                    oss << "set xlabel 'Time [s]'" << std::endl;
+                    oss << "set ylabel '" << titles[ii] << "[mNs]'" << std::endl;
+                    oss << "plot "
+                        << "'" << fname << "' using 1:" << (start + ii * 2) << " with points ps 0.2 title 'Lref',"
+                        << "'" << fname << "' using 1:" << (start + ii * 2 + 1) << " with points ps 0.2 title 'L'"
+                        << std::endl;
+                }
+                plot_and_save(gps[gp_count++], gtitle, oss.str());
+                start += 6;
+            }
+            // // CoM
+            // {
+            //     std::ostringstream oss("");
+            //     std::string gtitle("CoM");
+            //     oss << "set multiplot layout 1, 1 title '" << gtitle << "'" << std::endl;
+            //     oss << "set xlabel 'Time [s]'" << std::endl;
+            //     oss << "set ylabel '" << "Position [m]'" << std::endl;
+            //     oss << "plot "
+            //         << "'" << fname << "' using 1:" << (start) << " with lines title 'X',"
+            //         << "'" << fname << "' using 1:" << (start + 1) << " with lines title 'Y',"
+            //         << "'" << fname << "' using 1:" << (start + 2) << " with lines title 'Z'"
+            //         << std::endl;
+            //     plot_and_save(gps[2], gtitle, oss.str());
+            // }
 
-        // dq
-        // {
-        //     std::ostringstream oss("");
-        //     std::string gtitle("dq");
-        //     oss << "set multiplot layout 1, 1 title '" << gtitle << "'" << std::endl;
-        //     oss << "set xlabel 'Time [s]'" << std::endl;
-        //     oss << "set ylabel '" << "[rad / s]'" << std::endl;
-        //     oss << "plot ";
-        //     size_t i;
-        //     for (i = 0; i < m_robot->numJoints() - 1; ++i) {
-        //         oss << "'" << fname << "' using 1:" << (start + i) << " with lines title '" << m_robot->joint(i)->name << "',";
-        //     }
-        //     oss << "'" << fname << "' using 1:" << (start + i) << " with lines title '" << m_robot->joint(i)->name << "'";
-        //     oss << std::endl;
-        //     plot_and_save(gps[2], gtitle, oss.str());
-        // }
+            // dq
+            // {
+            //     std::ostringstream oss("");
+            //     std::string gtitle("dq");
+            //     oss << "set multiplot layout 1, 1 title '" << gtitle << "'" << std::endl;
+            //     oss << "set xlabel 'Time [s]'" << std::endl;
+            //     oss << "set ylabel '" << "[rad / s]'" << std::endl;
+            //     oss << "plot ";
+            //     size_t i;
+            //     for (i = 0; i < m_robot->numJoints() - 1; ++i) {
+            //         oss << "'" << fname << "' using 1:" << (start + i) << " with lines title '" << m_robot->joint(i)->name << "',";
+            //     }
+            //     oss << "'" << fname << "' using 1:" << (start + i) << " with lines title '" << m_robot->joint(i)->name << "'";
+            //     oss << std::endl;
+            //     plot_and_save(gps[2], gtitle, oss.str());
+            // }
 
-        // xi
-        for (std::map<std::string, hrp::dvector6>::iterator it = xi_ref.begin(); it != xi_ref.end(); ++it) {
-            // p
-            std::ostringstream oss("");
-            std::string gtitle("xi_p " + (*it).first);
-            // oss << "set term wxt size 2560, 1600" << std::endl;
-            oss << "set termoption noenhanced" << std::endl;
-            oss << "set multiplot layout 3, 1 title '" << gtitle << "'" << std::endl;
-            std::string titles[3] = {"X", "Y", "Z"};
-            for (size_t ii = 0; ii < 3; ii++) {
-                oss << "set xlabel 'Time [s]'" << std::endl;
-                oss << "set ylabel '" << titles[ii] << "[m/s]'" << std::endl;
-                oss << "plot "
-                    << "'" << fname << "' using 1:" << (start + ii * 2) << " with points ps 0.2 title 'xi_p ref',"
-                    << "'" << fname << "' using 1:" << (start + ii * 2 + 1) << " with points ps 0.2 title 'xi_p'"
-                    << std::endl;
-            }
-            plot_and_save(gps[gp_count++], gtitle, oss.str());
-            start += 6;
+            // xi
+            for (std::map<std::string, hrp::dvector6>::iterator it = xi_ref.begin(); it != xi_ref.end(); ++it) {
+                // p
+                std::ostringstream oss("");
+                std::string gtitle("xi_p " + (*it).first);
+                // oss << "set term wxt size 2560, 1600" << std::endl;
+                oss << "set termoption noenhanced" << std::endl;
+                oss << "set multiplot layout 3, 1 title '" << gtitle << "'" << std::endl;
+                std::string titles[3] = {"X", "Y", "Z"};
+                for (size_t ii = 0; ii < 3; ii++) {
+                    oss << "set xlabel 'Time [s]'" << std::endl;
+                    oss << "set ylabel '" << titles[ii] << "[m/s]'" << std::endl;
+                    oss << "plot "
+                        << "'" << fname << "' using 1:" << (start + ii * 2) << " with points ps 0.2 title 'xi_p ref',"
+                        << "'" << fname << "' using 1:" << (start + ii * 2 + 1) << " with points ps 0.2 title 'xi_p'"
+                        << std::endl;
+                }
+                plot_and_save(gps[gp_count++], gtitle, oss.str());
+                start += 6;
 
-            // R
-            oss.str("");
-            oss.clear();
-            gtitle = "xi_R " + (*it).first;
-            // oss << "set term wxt size 2560, 1600" << std::endl;
-            oss << "set termoption noenhanced" << std::endl;
-            oss << "set multiplot layout 3, 1 title '" << gtitle << "'" << std::endl;
-            // std::string titles[3] = {"X", "Y", "Z"};
-            for (size_t ii = 0; ii < 3; ii++) {
-                oss << "set xlabel 'Time [s]'" << std::endl;
-                oss << "set ylabel '" << titles[ii] << "[rad/s]'" << std::endl;
-                oss << "plot "
-                    << "'" << fname << "' using 1:" << (start + ii * 2) << " with points ps 0.2 title 'xi_R ref',"
-                    << "'" << fname << "' using 1:" << (start + ii * 2 + 1) << " with points ps 0.2 title 'xi_R'"
-                    << std::endl;
+                // R
+                oss.str("");
+                oss.clear();
+                gtitle = "xi_R " + (*it).first;
+                // oss << "set term wxt size 2560, 1600" << std::endl;
+                oss << "set termoption noenhanced" << std::endl;
+                oss << "set multiplot layout 3, 1 title '" << gtitle << "'" << std::endl;
+                // std::string titles[3] = {"X", "Y", "Z"};
+                for (size_t ii = 0; ii < 3; ii++) {
+                    oss << "set xlabel 'Time [s]'" << std::endl;
+                    oss << "set ylabel '" << titles[ii] << "[rad/s]'" << std::endl;
+                    oss << "plot "
+                        << "'" << fname << "' using 1:" << (start + ii * 2) << " with points ps 0.2 title 'xi_R ref',"
+                        << "'" << fname << "' using 1:" << (start + ii * 2 + 1) << " with points ps 0.2 title 'xi_R'"
+                        << std::endl;
+                }
+                plot_and_save(gps[gp_count++], gtitle, oss.str());
+                start += 6;
             }
-            plot_and_save(gps[gp_count++], gtitle, oss.str());
-            start += 6;
+
+            double tmp;
+            std::cin >> tmp;
+            for (size_t ii = 0; ii < gpsize; ii++) {
+                fprintf(gps[ii], "exit\n");
+                fflush(gps[ii]);
+                pclose(gps[ii]);
+            }
         }
 
         for (std::map<std::string, hrp::dvector6>::iterator it = xi_ref.begin(); it != xi_ref.end(); ++it) {
             rmc->removeConstraintLink(m_robot, (*it).first, xi_ref);
         }
         delete calcRef;
-
-        double tmp;
-        std::cin >> tmp;
-        for (size_t ii = 0; ii < gpsize; ii++) {
-            fprintf(gps[ii], "exit\n");
-            fflush(gps[ii]);
-            pclose(gps[ii]);
-        }
     }
 
     void setEndeffectorConstraint(std::string &limb)
@@ -536,9 +538,9 @@ public:
 
     void parseParams()
     {
-        for (int i = 0; i < arg_strs.size(); ++ i) {
+        for (int i = 0; i < arg_strs.size(); ++i) {
             if ( arg_strs[i]== "--use-gnuplot" ) {
-                if (++i < arg_strs.size()) use_gnuplot = (arg_strs[i]=="true");
+                if (i++ < arg_strs.size()) use_gnuplot = (arg_strs[i]=="true");
             }
         }
     }
@@ -593,6 +595,7 @@ void print_usage ()
     std::cerr << "  --test1 : Control All Momentum with lleg and rarm constraint" << std::endl;
     std::cerr << "  --test2 : Control All Momentum with arms constraints" << std::endl;
     std::cerr << "  --test3 : Control pitch and yaw axis angular momentum with leg constraints" << std::endl;
+    std::cerr << "  --test4 : Control All Momentum with Raising Legs" << std::endl;
 }
 
 int main(int argc, char* argv[])
@@ -600,9 +603,10 @@ int main(int argc, char* argv[])
   int ret = 0;
   if (argc >= 2) {
       testResolvedMomentumControlSampleRobot trmc;
-      for (int i = 1; i < argc; ++ i) {
+      for (int i = 2; i < argc; ++i) {
           trmc.arg_strs.push_back(std::string(argv[i]));
       }
+      trmc.parseParams();
       if (std::string(argv[1]) == "--test0") {
           trmc.test0();
       } else if (std::string(argv[1]) == "--test1") {
