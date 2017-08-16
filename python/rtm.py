@@ -79,6 +79,13 @@ class RTcomponent:
         return self.setConfiguration([[name, value]])
 
     ##
+    # \brief get name-value list of the default configuration set
+    # \param self this object
+    # \return name-value list of the default configuration set
+    def getProperties(self):
+        return getConfiguration(self.ref)
+
+    ##
     # \brief get value of the property in the default configuration set
     # \param self this object
     # \param name name of the property
@@ -837,6 +844,23 @@ def setConfiguration(rtc, nvlist):
             ret = False
     cfg.activate_configuration_set('default')
     return ret
+
+##
+# \brief get default configuration set
+# \param rtc IOR of RT component
+# \return default configuration set
+#
+def getConfiguration(rtc):
+    cfg = rtc.get_configuration()
+    cfgsets = cfg.get_configuration_sets()
+    if len(cfgsets) == 0:
+        print("configuration set is not found")
+        return None
+    ret = {}
+    for nv in cfgsets[0].configuration_data:
+        ret[nv.name] = any.from_any(nv.value)
+    return ret
+    
 
 ##
 # \brief narrow ior
