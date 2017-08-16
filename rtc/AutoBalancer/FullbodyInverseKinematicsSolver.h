@@ -1,6 +1,7 @@
 #ifndef FULLBODYIK_H
 #define FULLBODYIK_H
 
+#include <float.h>
 #include <hrpModel/Body.h>
 #include <hrpUtil/MatrixSolvers.h>
 #include "../ImpedanceController/JointPathEx.h"
@@ -129,7 +130,7 @@ class FullbodyInverseKinematicsSolver : public SimpleFullbodyInverseKinematicsSo
       static int count;
 
       dq_all = J_all_inv * dp_ee_all; // dq = pseudoInverse(J) * v
-      if(count % 1000 == 0){
+      if(count % 2000 == 0){
         std::cout<<"solveIK"<<std::endl;
         std::cout<<"eevel_all\n"<<dp_ee_all<<std::endl;
         std::cout<<std::setprecision(2) << "J=\n"<<J_all<<std::setprecision(6)<<std::endl;
