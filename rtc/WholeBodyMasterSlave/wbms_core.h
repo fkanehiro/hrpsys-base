@@ -36,7 +36,7 @@ extern "C" {
 #endif
 
 //#include "../AutoBalancer/AutoBalancer.h"
-#include "FullBodyIK.h"
+#include "../AutoBalancer/FullbodyInverseKinematicsSolver.h"
 #define USE_NEW_FIK
 
 #define DEBUG 0

@@ -222,9 +222,6 @@ void WholeBodyMasterSlave::setupfik(fikPtr& fik_in, hrp::BodyPtr& robot_in, RTC:
       coil::stringTo(ee_name, end_effectors_str[i*prop_num].c_str());
       coil::stringTo(ee_target, end_effectors_str[i*prop_num+1].c_str());
       coil::stringTo(ee_base, end_effectors_str[i*prop_num+2].c_str());
-#ifdef USE_NEW_FIK
-      ee_base = "WAIST";//CHESTも使う実験
-#endif
       ABCIKparam tp;
       for (size_t j = 0; j < XYZ; j++) {
           coil::stringTo(tp.localPos(j), end_effectors_str[i*prop_num+3+j].c_str());
@@ -311,6 +308,9 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
           hsp->m_robot_ml = m_robot_ml;
           hsp->fik_act = fik_vsafe;
           hsp->m_robot_act = m_robot_vsafe;
+          //逆動力学初期化
+          idsb.setInitState(m_robot, m_dt);
+          idsb2.setInitState(m_robot, m_dt);
         }
         calcManipulability(fik_rmc, m_robot_rmc);
 
@@ -322,17 +322,12 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
 
         if(DEBUGP && TIMECALC){clock_gettime(CLOCK_REALTIME, &endT); std::cout << (double)(endT.tv_sec - startT.tv_sec + (endT.tv_nsec - startT.tv_nsec) * 1e-9) << " @ processWholeBodyMasterSlave" << std::endl;  clock_gettime(CLOCK_REALTIME, &startT);}
 
-        //逆動力学初期化
-        if(mode.isInitialize()){
-          idsb.setInitState(m_robot, m_dt);
-          idsb2.setInitState(m_robot, m_dt);
-        }
         //逆動力学
-        calcAccelerationsForInverseDynamics(m_robot, idsb);
-        hrp::Vector3 ref_zmp_invdyn;
-        calcWorldZMPFromInverseDynamics(m_robot, idsb, ref_zmp_invdyn);
-        ref_zmp_invdyn = invdyn_zmp_filters.passFilter(ref_zmp_invdyn);
-        updateInvDynStateBuffer(idsb);
+//        calcAccelerationsForInverseDynamics(m_robot, idsb);
+//        hrp::Vector3 ref_zmp_invdyn;
+//        calcWorldZMPFromInverseDynamics(m_robot, idsb, ref_zmp_invdyn);
+//        ref_zmp_invdyn = invdyn_zmp_filters.passFilter(ref_zmp_invdyn);
+//        updateInvDynStateBuffer(idsb);
 
         if(DEBUGP && TIMECALC){clock_gettime(CLOCK_REALTIME, &endT); std::cout << (double)(endT.tv_sec - startT.tv_sec + (endT.tv_nsec - startT.tv_nsec) * 1e-9) << " @ calcWorldZMPFromInverseDynamics" << std::endl;  clock_gettime(CLOCK_REALTIME, &startT);}
 
@@ -585,6 +580,74 @@ void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr
     }
   }
 
+  fik_in->ik_tgt_list.clear();
+  IKConstraintParam tmp;
+
+  tmp.target_link_name = "WAIST";
+  tmp.localPos = hrp::Vector3::Zero();
+  tmp.localR = hrp::Matrix33::Identity();
+  tmp.target_p0 = hrp::Vector3::Zero();// will be ignored by selection_vec
+  tmp.target_r0 = hrp::rotFromRpy(com_ref.rpy);
+  tmp.selection_vec << 0,0,0,1,1,1;
+  tmp.weight_vec << 1,1,1,1,1,1;
+  fik_in->ik_tgt_list.push_back(tmp);
+
+  tmp.target_link_name = "RLEG_JOINT5";
+  tmp.localPos = fik_in->ikp["rleg"].localPos;
+  tmp.localR = fik_in->ikp["rleg"].localR;
+  tmp.target_p0 = rf_ref.p;
+  tmp.target_r0 = hrp::rotFromRpy(rf_ref.rpy);
+  tmp.selection_vec << 1,1,1,1,1,1;
+  tmp.weight_vec << 1,1,3,1,1,1;
+  fik_in->ik_tgt_list.push_back(tmp);
+
+  tmp.target_link_name = "LLEG_JOINT5";
+  tmp.localPos = fik_in->ikp["lleg"].localPos;
+  tmp.localR = fik_in->ikp["lleg"].localR;
+  tmp.target_p0 = lf_ref.p;
+  tmp.target_r0 = hrp::rotFromRpy(lf_ref.rpy);
+  tmp.selection_vec << 1,1,1,1,1,1;
+  tmp.weight_vec << 1,1,3,1,1,1;
+  fik_in->ik_tgt_list.push_back(tmp);
+
+  tmp.target_link_name = "RARM_JOINT7";
+  tmp.localPos = fik_in->ikp["rarm"].localPos;
+  tmp.localR = fik_in->ikp["rarm"].localR;
+  tmp.target_p0 = rh_ref.p;
+  tmp.target_r0 = hrp::rotFromRpy(rh_ref.rpy);
+  tmp.selection_vec << 1,1,1,1,1,1;
+  tmp.weight_vec << 1,1,1,1,1,1;
+  fik_in->ik_tgt_list.push_back(tmp);
+
+  tmp.target_link_name = "LARM_JOINT7";
+  tmp.localPos = fik_in->ikp["larm"].localPos;
+  tmp.localR = fik_in->ikp["larm"].localR;
+  tmp.target_p0 = lh_ref.p;
+  tmp.target_r0 = hrp::rotFromRpy(lh_ref.rpy);
+  tmp.selection_vec << 1,1,1,1,1,1;
+  tmp.weight_vec << 1,1,1,1,1,1;
+  fik_in->ik_tgt_list.push_back(tmp);
+
+  tmp.target_link_name = "COM";
+  tmp.localPos = hrp::Vector3::Zero();
+  tmp.localR = hrp::Matrix33::Identity();
+  tmp.target_p0 = com_ref.p;// COM height will not be constraint
+  tmp.target_r0 = hrp::Matrix33::Identity();//reference angular momentum
+//  tmp.selection_vec << 1,1,0,1,1,1;
+  tmp.selection_vec << 1,1,0,1,1,0;
+  tmp.weight_vec << 3,3,1,1,1,1;
+  fik_in->ik_tgt_list.push_back(tmp);
+
+  fik_in->optional_weight_vector(robot_in->link("CHEST_JOINT0")->jointId) = 0.1;
+  fik_in->optional_weight_vector(robot_in->link("CHEST_JOINT1")->jointId) = 0.1;
+  fik_in->optional_weight_vector(robot_in->link("CHEST_JOINT2")->jointId) = 0.1;
+  fik_in->optional_weight_vector.tail(6) = hrp::dvector6::Ones() * 0.01;
+
+  hrp::Vector3 base_p_old = robot_in->rootLink()->p;
+  hrp::Matrix33 base_R_old = robot_in->rootLink()->R;
+  hrp::dvector q_old(robot_in->numJoints());
+  fik_in->cur_P = fik_in->cur_L = hrp::Vector3::Zero();
+
   //確かに毎回少しreset poseに引き戻すとこじれないが・・・
   hrp::dvector reset_pose(33);
   reset_pose <<
@@ -596,16 +659,27 @@ void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr
   for(int i=0;i<33;i++){
     robot_in->joint(i)->q = robot_in->joint(i)->q * 0.999 + reset_pose(i) * 0.001;
   }
-
+  robot_in->rootLink()->p = robot_in->rootLink()->p * 0.999 + hrp::Vector3(0,0,1.1) * 0.001;
+  robot_in->rootLink()->R = robot_in->rootLink()->R * 0.999 + hrp::Matrix33::Identity() * 0.001;
 
   if( robot_in->link("HEAD_JOINT0") != NULL) robot_in->link("HEAD_JOINT0")->q = head_ref.rpy(y);
   if( robot_in->link("HEAD_JOINT1") != NULL) robot_in->link("HEAD_JOINT1")->q = head_ref.rpy(p);
   struct timespec startT, endT;
   clock_gettime(CLOCK_REALTIME, &startT);
+  for(int i=0;i<robot_in->numJoints();i++){ q_old(i) = robot_in->joint(i)->q; }
   while( 1 ){  //COM 収束ループ
     com_ik_loop++;
-    robot_in->calcForwardKinematics();
-    fik_in->solveIK();
+
+//    robot_in->calcForwardKinematics();
+    fik_in->solveFullbodyIK(hrp::Vector3::Zero(), false);
+
+    //check ang moment
+    robot_in->rootLink()->v = (robot_in->rootLink()->p - base_p_old)/ m_dt;
+    robot_in->rootLink()->w = base_R_old * fik_in->omegaFromRotEx(base_R_old.transpose() * robot_in->rootLink()->R) / m_dt;
+    for(int i=0;i<m_robot->numJoints();i++){ robot_in->joint(i)->dq = (robot_in->joint(i)->q - q_old(i)) / m_dt; }
+    robot_in->calcForwardKinematics(true,false);
+    robot_in->calcTotalMomentum(fik_in->cur_P, fik_in->cur_L);
+
     hrp::Vector3 com_p_err = com_ref.p - robot_in->calcCM();
     hrp::Vector3 rf_p_err = rf_ref.p - fik_in->getEndEffectorPos("rleg");
     hrp::Vector3 lf_p_err = lf_ref.p - fik_in->getEndEffectorPos("lleg");
@@ -617,7 +691,7 @@ void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr
         lf_p_err.norm() < 1e-3 &&
         rh_p_err.norm() < 1e-2 &&
         lh_p_err.norm() < 1e-2){ break; }
-    if(com_ik_loop >= COM_IK_MAX_LOOP){std::cerr << "COM constraint IK MAX loop [="<<COM_IK_MAX_LOOP<<"] exceeded!! @ "<<debug_prefix<< std::endl; break; };
+    if(com_ik_loop >= COM_IK_MAX_LOOP){if(DEBUGP){std::cerr << "COM constraint IK MAX loop [="<<COM_IK_MAX_LOOP<<"] exceeded!! @ "<<debug_prefix<< std::endl;} break; };
   }
   if(DEBUGP && TIMECALC){clock_gettime(CLOCK_REALTIME, &endT); std::cout << (double)(endT.tv_sec - startT.tv_sec + (endT.tv_nsec - startT.tv_nsec) * 1e-9) << " @ solveIK loop" << std::endl;  clock_gettime(CLOCK_REALTIME, &startT);}
 
@@ -717,7 +791,8 @@ void WholeBodyMasterSlave::processHOFFARBIBFilter(hrp::BodyPtr& robot_in, hrp::B
 
   double goal_time = 0.0;
   const double min_goal_time_offset = 0.1;
-  const double avg_q_vel = 1.0;
+//  const double avg_q_vel = 1.0;
+  const double avg_q_vel = 2.0;
   for(int i=0;i<robot_in->numJoints();i++){
     double tmp_time = (robot_in->joint(i)->q - robot_out->joint(i)->q) / avg_q_vel;
     if(tmp_time > goal_time){ goal_time = tmp_time; }
