@@ -37,13 +37,13 @@ static const char* WholeBodyMasterSlave_spec[] =
 //    return os;
 //}
 
-void* callMemberFunc(void *obj){
-  std::cerr<<"[FullbodyInverseKinematicsSolverMT] callMemberFunc"<<std::endl;
-  FullbodyInverseKinematicsSolverMT* myClass = reinterpret_cast<FullbodyInverseKinematicsSolverMT*>(obj);
-  myClass->ik_loop();
-  std::cerr<<"[FullbodyInverseKinematicsSolverMT] callMemberFunc finished"<<std::endl;
-  return NULL;
-}
+//void* callMemberFunc(void *obj){
+//  std::cerr<<"[FullbodyInverseKinematicsSolverMT] callMemberFunc"<<std::endl;
+//  FullbodyInverseKinematicsSolverMT* myClass = reinterpret_cast<FullbodyInverseKinematicsSolverMT*>(obj);
+//  myClass->ik_loop();
+//  std::cerr<<"[FullbodyInverseKinematicsSolverMT] callMemberFunc finished"<<std::endl;
+//  return NULL;
+//}
 
 WholeBodyMasterSlave::WholeBodyMasterSlave(RTC::Manager* manager) : RTC::DataFlowComponentBase(manager),
       m_qRefIn("qRef", m_qRef),// from sh
@@ -280,7 +280,6 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
     }
 
     if ( is_legged_robot ) {
-
       processTransition();
       mode.update();
       if(DEBUGP)dbg(mode.now());
@@ -361,6 +360,7 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
       hsp->baselinkpose.p = m_robot->rootLink()->p;
       hsp->baselinkpose.rpy = hrp::rpyFromRot(m_robot->rootLink()->R);
     }
+
     // write
     m_qOut.write();
     m_basePosOut.write();
@@ -478,8 +478,8 @@ void WholeBodyMasterSlave::preProcessForWholeBodyMasterSlave(fikPtr& fik_in, hrp
     body_list[i]->rootLink()->p = basePos_heightChecked;
     body_list[i]->rootLink()->R = hrp::rotFromRpy(m_baseRpy.data.r, m_baseRpy.data.p, m_baseRpy.data.y);
     for ( int j = 0; j < body_list[i]->numJoints(); j++ ){ body_list[i]->joint(j)->q = m_qRef.data[j]; }
-    if( body_list[i]->link("RARM_JOINT2") != NULL) body_list[i]->link("RARM_JOINT2")->ulimit = -30 * D2R;//脇の干渉回避のため
-    if( body_list[i]->link("LARM_JOINT2") != NULL) body_list[i]->link("LARM_JOINT2")->llimit = 30 * D2R;
+    if( body_list[i]->link("RARM_JOINT2") != NULL) body_list[i]->link("RARM_JOINT2")->ulimit = -40 * D2R;//脇の干渉回避のため
+    if( body_list[i]->link("LARM_JOINT2") != NULL) body_list[i]->link("LARM_JOINT2")->llimit = 40 * D2R;
     body_list[i]->calcForwardKinematics();
   }
   for(int i=0;i<fik_list.size();i++){//初期姿勢でBodyをFK
@@ -505,13 +505,7 @@ void WholeBodyMasterSlave::processWholeBodyMasterSlave(fikPtr& fik_in, hrp::Body
   hsp->update();//////HumanSynchronizerの主要処理
   if(DEBUGP)cout<<"update():"<<hsp->getUpdateTime()<<endl;
   if(DEBUGP)pose_ref.print();
-//  WBMSPose3D rf_checked = pose_ref.tgt[rf].abs;
-//  WBMSPose3D lf_checked = pose_ref.tgt[lf].abs;
-//  WBMSPose3D rh_checked = pose_ref.tgt[rh].abs;
-//  WBMSPose3D lh_checked = pose_ref.tgt[lh].abs;
-//  solveFullbodyIKStrictCOM(fik_in, robot_in, pose_ref.tgt[com].abs, rf_checked, lf_checked, rh_checked, lh_checked, pose_ref.tgt[head].abs,"processWholeBodyMasterSlave");
-//  solveFullbodyIKStrictCOM(fik_in, robot_in, pose_ref.tgt[com].abs, pose_ref.tgt[rf].abs, pose_ref.tgt[lf].abs, pose_ref.tgt[rh].abs, pose_ref.tgt[lh].abs, pose_ref.tgt[head].abs,"processWholeBodyMasterSlave");
-  solveFullbodyIKStrictCOM(fik_in, robot_in, hsp->rp_ref_out.tgt[com].abs, pose_ref.tgt[rf].abs, pose_ref.tgt[lf].abs, pose_ref.tgt[rh].abs, pose_ref.tgt[lh].abs, pose_ref.tgt[head].abs,"processWholeBodyMasterSlave");
+  solveFullbodyIKStrictCOM(fik_in, robot_in, pose_ref.tgt[com].abs, pose_ref.tgt[rf].abs, pose_ref.tgt[lf].abs, pose_ref.tgt[rh].abs, pose_ref.tgt[lh].abs, pose_ref.tgt[head].abs,"processWholeBodyMasterSlave");
 }
 
 
@@ -557,7 +551,6 @@ void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr
   std::vector<IKConstraintParam> ik_tgt_list;
   IKConstraintParam tmp;
 
-  std::cerr <<"solveFullbodyIKStrictCOM "<<std::endl;
   tmp.target_link_name = "WAIST";
   tmp.localPos = hrp::Vector3::Zero();
   tmp.localR = hrp::Matrix33::Identity();
@@ -610,7 +603,7 @@ void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr
   tmp.target_r = hrp::Matrix33::Identity();//reference angular momentum
   tmp.selection_vec << 1,1,1,0,0,0; // COM pos + Ang Momentum
 //  tmp.selection_vec << 1,1,1,1,1,0; // COM pos + Ang Momentum
-  tmp.weight_vec << 3,3,1,0.1,0.1,0.1;
+  tmp.weight_vec << 3,3,3,0.1,0.1,0.1;
   ik_tgt_list.push_back(tmp);
 
   tmp.target_link_name = "HEAD_JOINT1";
@@ -619,23 +612,21 @@ void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr
   tmp.weight_vec << 1,1,1,1,1,1;
   ik_tgt_list.push_back(tmp);
 
-  std::cerr <<"com_ref.p "<<com_ref.p.transpose()<<std::endl;
-//  for ( int i=0; i<ik_tgt_list.size(); i++ ) {
-//    std::cerr <<"target_p_pre "<<ik_tgt_list[i].target_p.transpose()<<std::endl;
-//  }
-
-  fik_in->optional_weight_vector(robot_in->link("CHEST_JOINT0")->jointId) = 0.01;
-  fik_in->optional_weight_vector(robot_in->link("CHEST_JOINT1")->jointId) = 0.01;
-  fik_in->optional_weight_vector(robot_in->link("CHEST_JOINT2")->jointId) = 0.01;
-//  fik_in->optional_weight_vector.tail(3).fill(0.01);
+  fik_in->optional_weight_vector(robot_in->link("CHEST_JOINT0")->jointId) = 0.1;
+  fik_in->optional_weight_vector(robot_in->link("CHEST_JOINT1")->jointId) = 0.1;
+  fik_in->optional_weight_vector(robot_in->link("CHEST_JOINT2")->jointId) = 0.1;
+  fik_in->optional_weight_vector.tail(6).fill(0.01);
   fik_in->reference_q.head(robot_in->numJoints()) <<
       0.0,0.0,-0.349066,0.698132,-0.349066,0.0,
       0.0,0.0,-0.349066,0.698132,-0.349066,0.0,
       0.0,0.0,0.0, 0.0,0.0,
-      0.0,0.698132,-0.349066,-0.087266,-1.39626,0.0,0.0,-0.349066,
-      0.0,0.698132,0.349066,0.087266,-1.39626,0.0,0.0,-0.349066;
+      0.0,0.698132,-0.349066 ,-0.087266,-1.39626,0.0,0.0,-0.349066,
+      0.0,0.698132,0.349066 ,0.087266,-1.39626,0.0,0.0,-0.349066;
   fik_in->reference_q.tail(6) << 0.0,0.0,1.1, 0.0,0.0,0.0;
-  fik_in->reference_gain.fill(0.01);
+  fik_in->reference_gain.fill(0.001);
+//  fik_in->reference_gain(robot_in->link("RARM_JOINT2")->jointId) = 0.1;
+//  fik_in->reference_gain(robot_in->link("LARM_JOINT2")->jointId) = 0.1;
+  fik_in->reference_gain.tail(6) << 0.0,0.0,0.0, 0.001,0.001,0.001;
 
   struct timespec startT, endT;
   int loop_result = 0;
@@ -643,7 +634,6 @@ void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr
   clock_gettime(CLOCK_REALTIME, &startT);
   loop_result = fik_in->solveFullbodyIKLoopMT(ik_tgt_list, IK_MAX_LOOP);
   if(DEBUGP && TIMECALC){clock_gettime(CLOCK_REALTIME, &endT); std::cout << (double)(endT.tv_sec - startT.tv_sec + (endT.tv_nsec - startT.tv_nsec) * 1e-9) << " @ solveIK"<<loop_result<<"loop" << std::endl;  clock_gettime(CLOCK_REALTIME, &startT);}
-  std::cerr <<"solveFullbodyIKStrictCOM fin"<<std::endl;
 }
 #else
 //旧ver
@@ -708,7 +698,7 @@ void WholeBodyMasterSlave::processHOFFARBIBFilter(hrp::BodyPtr& robot_in, hrp::B
 //  const double avg_q_vel = 1.0;
   const double avg_q_vel = 2.0;
   for(int i=0;i<robot_in->numJoints();i++){
-    double tmp_time = (robot_in->joint(i)->q - robot_out->joint(i)->q) / avg_q_vel;
+    double tmp_time = fabs(robot_in->joint(i)->q - robot_out->joint(i)->q) / avg_q_vel;
     if(tmp_time > goal_time){ goal_time = tmp_time; }
   }
   q_ip->setGoal(goal_q, goal_time + min_goal_time_offset, true);

@@ -256,11 +256,10 @@ class WBMSCore : UTIL_CONST {
           rp_ref_out.tgt[human_l_names[i]].offs.p = fik_in->getEndEffectorPos(robot_l_names[i]);
           rp_ref_out.tgt[human_l_names[i]].offs.rpy = hrp::rpyFromRot(fik_in->getEndEffectorRot(robot_l_names[i]));
           rp_ref_out.tgt[human_l_names[i]].abs = rp_ref_out.tgt[human_l_names[i]].offs;
-//          ee_pose_old[i] = rp_ref_out.tgt[human_l_names[i]].abs;
         }
       }
       rp_ref_out.tgt[com].offs.p = robot_in->calcCM();
-//      std::cerr <<"init com "<<robot_in->calcCM().transpose()<<std::endl;
+      com_CP_ref_old = rp_ref_out.tgt[com].offs.p;
       rp_ref_out.tgt[com].offs.rpy = hrp::rpyFromRot(robot_in->rootLink()->R);
       rp_ref_out.tgt[zmp].offs.p(X) = rp_ref_out.tgt[com].offs.p(X);
       rp_ref_out.tgt[zmp].offs.p(Y) = rp_ref_out.tgt[com].offs.p(Y);
@@ -272,8 +271,7 @@ class WBMSCore : UTIL_CONST {
       for(int i=0, l[LR]={rf,lf}; i<LR; i++){
         rp_ref_out.tgt[l[i]].is_contact = true;
       }
-//      std::cerr <<"init com2 "<<rp_ref_out.tgt[com].offs.p.transpose()<<std::endl;
-//      std::cerr <<"init com2 "<<rp_ref_out.tgt[com].abs.p.transpose()<<std::endl;
+      H_cur = rp_ref_out.tgt[com].offs.p(Z) - std::min((double)rp_ref_out.tgt[rf].offs.p(Z), (double)rp_ref_out.tgt[rf].offs.p(Z));
     }
     void initializeRequest(fikPtr& fik_in, hrp::BodyPtr& robot_in){
       loop = 0;
@@ -299,7 +297,6 @@ class WBMSCore : UTIL_CONST {
 
       limitManipulability                 (rp_ref_out);
 
-//      std::cerr <<"out com "<<rp_ref_out.tgt[com].abs.p.transpose()<<std::endl;
       applyCOMToSupportRegionLimit        (rp_ref_out.tgt[rf].abs.p, rp_ref_out.tgt[lf].abs.p, com_CP_ref_old);//これやらないと支持領域の移動によって1ステップ前のCOM位置はもうはみ出てるかもしれないから
 
       Vector3ToVector2(rp_ref_out.tgt[com].abs.p,com_forcp_ref);
@@ -307,21 +304,17 @@ class WBMSCore : UTIL_CONST {
       com_vel_forcp_ref = (com_forcp_ref - com_forcp_ref_old)/DT;
       com_forcp_ref_old = com_forcp_ref;
 
-//      std::cerr <<"out com "<<rp_ref_out.tgt[com].abs.p.transpose()<<std::endl;
-
       applyLPFilter_pre                       (rp_ref_out);
       applyCOMStateLimitByCapturePoint    (rp_ref_out.tgt[com].abs.p, rp_ref_out.tgt[rf].abs.p, rp_ref_out.tgt[lf].abs.p, com_CP_ref_old, rp_ref_out.tgt[com].abs.p);
       applyCOMToSupportRegionLimit        (rp_ref_out.tgt[rf].abs.p, rp_ref_out.tgt[lf].abs.p, rp_ref_out.tgt[com].abs.p);
       applyLPFilter_post                       (rp_ref_out);
 
-//      std::cerr <<"out com "<<rp_ref_out.tgt[com].abs.p.transpose()<<std::endl;
       r_zmp_raw = rp_ref_out.tgt[zmp].abs.p;
       applyZMPCalcFromCOM                 (rp_ref_out.tgt[com].abs.p, rp_ref_out.tgt[zmp].abs.p);
       if(DEBUG){
         fprintf(cz_log,"com_ans_zmp: %f %f ",rp_ref_out.tgt[zmp].abs.p(X),rp_ref_out.tgt[zmp].abs.p(Y));
         fprintf(cz_log,"\n");
       }
-//      std::cerr <<"out com "<<rp_ref_out.tgt[com].abs.p.transpose()<<std::endl;
       overwriteFootZFromFootLandOnCommand (rp_ref_out);
       modifyFootRotAndXYForContact        (rp_ref_out);
 
@@ -329,7 +322,6 @@ class WBMSCore : UTIL_CONST {
       com_vel_old = (rp_ref_out.tgt[com].abs.p - rp_ref_out_old.tgt[com].abs.p)/DT;
       rh_vel_old = (rp_ref_out.tgt[rh].abs.p - rp_ref_out_old.tgt[rh].abs.p)/DT;
       rp_ref_out_old = rp_ref_out;
-//      std::cerr <<"out com "<<rp_ref_out.tgt[com].abs.p.transpose()<<std::endl;
       loop++;
       is_initial_loop = false;
       gettimeofday(&t_calc_end, NULL);
@@ -644,7 +636,6 @@ class WBMSCore : UTIL_CONST {
     void regulateCOMVelocityByCapturePointVec(const hrp::Vector2& com_pos, const hrp::Vector2& com_vel, const std::vector<hrp::Vector2>& hull_d, const std::vector<hrp::Vector2>& hull_a, hrp::Vector2& com_vel_ans){
       hrp::Vector2 com_vel_decel_ok,com_vel_accel_ok;
       com_vel_decel_ok = com_vel_accel_ok = com_vel_ans = com_vel;
-
       //減速CP条件(現在のCPを常に両足裏で頭打ち)
       hrp::Vector2 cp_dec_tmp = com_pos + com_vel * sqrt( H_cur / G );
       hrp::Vector2 cp_dec_ragulated;

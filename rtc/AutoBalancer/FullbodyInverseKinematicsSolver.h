@@ -115,6 +115,7 @@ class FullbodyInverseKinematicsSolver : public SimpleFullbodyInverseKinematicsSo
       for(int i=0;i<J_DOF;i++){ _robot->joint(i)->q = _robot->joint(i)->q * (1-reference_gain(i)) + reference_q(i) * reference_gain(i); }
       _robot->rootLink()->p = _robot->rootLink()->p.cwiseProduct(hrp::Vector3::Ones()-reference_gain.segment(J_DOF,3)) + reference_q.segment(J_DOF,3).cwiseProduct(reference_gain.segment(J_DOF,3));
       _robot->rootLink()->R = hrp::rotFromRpy( hrp::rpyFromRot(_robot->rootLink()->R).cwiseProduct(hrp::Vector3::Ones()-reference_gain.segment(J_DOF+3,3)) + reference_q.segment(J_DOF+3,3).cwiseProduct(reference_gain.segment(J_DOF+3,3)));
+      for(int i=0;i<J_DOF;i++){ LIMIT_MINMAX(_robot->joint(i)->q, _robot->joint(i)->llimit, _robot->joint(i)->ulimit); }
       _robot->calcForwardKinematics();
       //ヤコビアンと各ベクトル生成
       for ( int i=0; i<_ik_tgt_list.size(); i++ ) {
@@ -152,6 +153,8 @@ class FullbodyInverseKinematicsSolver : public SimpleFullbodyInverseKinematicsSo
         }
         else{ std::cerr<<"Unknown Link Target !!"<<std::endl; continue; } //不明なリンク指定
         //全体の中に配置
+        if(vel_p_ref.norm()>0.1){vel_p_ref = vel_p_ref.normalized() * 0.1;}
+        if(vel_r_ref.norm()>0.1){vel_r_ref = vel_r_ref.normalized() * 0.1;}
         dp_ee_all.segment(WS_DOF*i,WS_DOF) << vel_p_ref, vel_r_ref;
         weight_vec_all.segment(WS_DOF*i, WS_DOF) = _ik_tgt_list[i].weight_vec;
         selection_vec_all.segment(WS_DOF*i, WS_DOF) = _ik_tgt_list[i].selection_vec;
@@ -181,18 +184,7 @@ class FullbodyInverseKinematicsSolver : public SimpleFullbodyInverseKinematicsSo
       const double LAMBDA = 1.0;
       // check validity
       hrp::Matrix33 base_R_ans = hrp::hat(dq_all.segment(J_DOF+3,3) * LAMBDA).exp() * _robot->rootLink()->R;
-      if(!base_R_ans.isUnitary()){
-        std::cerr <<"ERROR base_R_ans is not Unitary" << std::endl;
-        std::cerr <<"base_R_ans\n"<<base_R_ans << std::endl;
-        std::cerr <<"_robot->rootLink()->R\n"<<_robot->rootLink()->R << std::endl;
-        std::cerr <<"dq_all "<<dq_all.transpose() << std::endl;
-        std::cerr <<"dp_ee_all "<<dp_ee_all.transpose() << std::endl;
-        for ( int i=0; i<_ik_tgt_list.size(); i++ ) {
-          std::cerr <<"target_p "<<_ik_tgt_list[i].target_p.transpose()<<std::endl;
-          std::cerr <<"target_link_ptr->p "<<_robot->link(_ik_tgt_list[i].target_link_name)->p.transpose()<<std::endl;
-        }
-        return;
-      }
+      if(!base_R_ans.isUnitary()){ std::cerr <<"ERROR base_R_ans is not Unitary" << std::endl; return; }
       for(int i=0;i<dq_all.rows();i++){ if( isnan(dq_all(i)) || isinf(dq_all(i)) ){ std::cerr <<"ERROR nan/inf is found" << std::endl; return;} }
 
       //関節角+ベース位置姿勢更新
@@ -249,7 +241,8 @@ class FullbodyInverseKinematicsSolver : public SimpleFullbodyInverseKinematicsSo
 
       const double manipulability_limit = 0.001;
       const double sr_gain = 1.0;
-      const double manipulability_gain = 0.001;
+//      const double manipulability_gain = 0.001;
+      const double manipulability_gain = 1;
 
       double manipulability = sqrt((_J*_J.transpose()).determinant());
       double k = 0;
@@ -276,9 +269,6 @@ class FullbodyInverseKinematicsSolver : public SimpleFullbodyInverseKinematicsSo
         }
     }
 };
-
-
-void* callMemberFunc(void *obj);
 
 
 class FullbodyInverseKinematicsSolverMT : public FullbodyInverseKinematicsSolver{
@@ -313,15 +303,14 @@ class FullbodyInverseKinematicsSolverMT : public FullbodyInverseKinematicsSolver
         for(int i=0;i<J_DOF;i++){ m_robot_copy->joint(i)->q = m_robot->joint(i)->q; }
         m_robot_copy->rootLink()->p = m_robot->rootLink()->p;
         m_robot_copy->rootLink()->R = m_robot->rootLink()->R;
+        if( m_robot_copy->link("RARM_JOINT2") != NULL) m_robot_copy->link("RARM_JOINT2")->ulimit = deg2rad(-40);//脇の干渉回避のため
+        if( m_robot_copy->link("LARM_JOINT2") != NULL) m_robot_copy->link("LARM_JOINT2")->llimit = deg2rad(40);
         pthread_mutex_init( &ik_body_mutex, NULL );
       }
-
       for(int i=0;i<J_DOF;i++){ m_robot->joint(i)->q = m_robot_copy->joint(i)->q; }
       m_robot->rootLink()->p = m_robot_copy->rootLink()->p;
       m_robot->rootLink()->R = m_robot_copy->rootLink()->R;
       int result = cur_ik_loop;
-
-//      std::vector<IKConstraintParam> ik_tgt_list_tmp = _ik_tgt_list;
 
       if(pthread_mutex_lock( &ik_body_mutex ) != 0){std::cerr<<"[FullbodyInverseKinematicsSolverMT] pthread_mutex_lock err "<<std::endl;}
 
@@ -332,17 +321,10 @@ class FullbodyInverseKinematicsSolverMT : public FullbodyInverseKinematicsSolver
 
         cur_ik_loop = 0;
         ik_tgt_list = _ik_tgt_list;// "="で代入するとnanが入る！？->そんなことはない
-//        ik_tgt_list = ik_tgt_list_tmp;
-//        ik_tgt_list.resize(_ik_tgt_list.size());
-//        std::copy(_ik_tgt_list.begin(), _ik_tgt_list.end(), ik_tgt_list.begin());
-
-//        for ( int i=0; i<_ik_tgt_list.size(); i++ ) {
-//          std::cerr <<"target_p_pre "<<ik_tgt_list[i].target_p.transpose()<<std::endl;
-//        }
         ik_thread_ik_required = true;
       if(pthread_mutex_unlock( &ik_body_mutex ) != 0){std::cerr<<"[FullbodyInverseKinematicsSolverMT] pthread_mutex_unlock err "<<std::endl;}
       if(is_first){
-        pthread_create(&ik_thread, NULL, callMemberFunc, this);
+        pthread_create(&ik_thread, NULL, launchThread, this);
         is_first = false;
       }
 
@@ -354,7 +336,6 @@ class FullbodyInverseKinematicsSolverMT : public FullbodyInverseKinematicsSolver
         usleep(0);//これ無いとmutex解放しない？
         if(pthread_mutex_lock( &ik_body_mutex ) != 0){std::cerr<<"[FullbodyInverseKinematicsSolverMT] pthread_mutex_lock2 err "<<std::endl;}
           if(ik_thread_ik_required){
-//            std::cerr<<"[FullbodyInverseKinematicsSolverMT] solveFullbodyIK in thread"<<std::endl;
             solveFullbodyIK(m_robot_copy, ik_tgt_list);
             //check ang moment
 //            m_robot_copy->rootLink()->v = (m_robot_copy->rootLink()->p - base_p_old)/ m_dt;
@@ -369,6 +350,10 @@ class FullbodyInverseKinematicsSolverMT : public FullbodyInverseKinematicsSolver
         if(ik_thread_kill){break;}
       }
       std::cerr<<"[FullbodyInverseKinematicsSolverMT] end of thread"<<std::endl;
+    }
+    static void* launchThread(void *pParam) {
+      reinterpret_cast<FullbodyInverseKinematicsSolverMT*>(pParam)->ik_loop();
+      return NULL;
     }
 };
 
