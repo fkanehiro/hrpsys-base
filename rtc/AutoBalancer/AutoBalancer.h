@@ -29,7 +29,7 @@
 #include "interpolator.h"
 #include "../TorqueFilter/IIRFilter.h"
 #include "SimpleFullbodyInverseKinematicsSolver.h"
-#include "FullbodyInverseKinematicsSolver.h"
+//#include "FullbodyInverseKinematicsSolver.h"
 
 // </rtc-template>
 
@@ -247,7 +247,8 @@ class AutoBalancer
   ggPtr gg;
   bool gg_is_walking, gg_solved;
   // for abc
-  typedef boost::shared_ptr<FullbodyInverseKinematicsSolver> fikPtr;
+//  typedef boost::shared_ptr<FullbodyInverseKinematicsSolver> fikPtr;
+  typedef boost::shared_ptr<SimpleFullbodyInverseKinematicsSolver> fikPtr;
   fikPtr fik;
   hrp::Vector3 ref_cog, ref_zmp, prev_ref_zmp, prev_imu_sensor_pos, prev_imu_sensor_vel, hand_fix_initial_offset;
   enum {BIPED, TROT, PACE, CRAWL, GALLOP} gait_type;

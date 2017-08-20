@@ -173,7 +173,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     leg_names.push_back("lleg");
 
     // Generate FIK
-    fik = fikPtr(new FullbodyInverseKinematicsSolver(m_robot, std::string(m_profile.instance_name), m_dt));
+    fik = fikPtr(new SimpleFullbodyInverseKinematicsSolver(m_robot, std::string(m_profile.instance_name), m_dt));
 
     // setting from conf file
     // rleg,TARGET_LINK,BASE_LINK
@@ -197,7 +197,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
         }
         tp.localR = Eigen::AngleAxis<double>(tmpv[3], hrp::Vector3(tmpv[0], tmpv[1], tmpv[2])).toRotationMatrix(); // rotation in VRML is represented by axis + angle
         // FIK param
-        FullbodyInverseKinematicsSolver::IKparam tmp_fikp;
+        SimpleFullbodyInverseKinematicsSolver::IKparam tmp_fikp;
         tmp_fikp.manip = hrp::JointPathExPtr(new hrp::JointPathEx(m_robot, m_robot->link(ee_base), m_robot->link(ee_target), m_dt, false, std::string(m_profile.instance_name)));
         tmp_fikp.target_link = m_robot->link(ee_target);
         tmp_fikp.localPos = tp.localPos;
@@ -208,7 +208,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
           tmp_fikp.parent_name = root->name;
           root = root->parent;
         }
-        fik->ikp.insert(std::pair<std::string, FullbodyInverseKinematicsSolver::IKparam>(ee_name, tmp_fikp));
+        fik->ikp.insert(std::pair<std::string, SimpleFullbodyInverseKinematicsSolver::IKparam>(ee_name, tmp_fikp));
         // Fix for toe joint
         //   Toe joint is defined as end-link joint in the case that end-effector link != force-sensor link
         //   Without toe joints, "end-effector link == force-sensor link" is assumed.
@@ -1073,30 +1073,8 @@ void AutoBalancer::fixLegToCoords2 (coordinates& tmp_fix_coords)
     fixLegToCoords(tmp_fix_coords.pos, tmp_fix_coords.rot);
 }
 
-//void AutoBalancer::solveFullbodyIK ()
-//{
-//  // Set ik target params
-//  fik->target_root_p = target_root_p;
-//  fik->target_root_R = target_root_R;
-//  for ( std::map<std::string, FullbodyInverseKinematicsSolver::IKparam>::iterator it = fik->ikp.begin(); it != fik->ikp.end(); it++ ) {
-//      it->second.target_p0 = ikp[it->first].target_p0;
-//      it->second.target_r0 = ikp[it->first].target_r0;
-//  }
-//  fik->ratio_for_vel = transition_interpolator_ratio * leg_names_interpolator_ratio;
-////  fik->current_tm = m_qRef.tm;
-//  for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
-//      fik->ikp[it->first].is_ik_enable = it->second.is_active;
-//  }
-//  // Revert
-//  fik->revertRobotStateToCurrent();
-//  // TODO : SBP calculation is outside of solve ik?
-//  hrp::Vector3 tmp_input_sbp = hrp::Vector3(0,0,0);
-//  static_balance_point_proc_one(tmp_input_sbp, ref_zmp(2));
-//  hrp::Vector3 dif_cog = tmp_input_sbp - ref_cog;
-//  // Solve IK
-//  fik->solveFullbodyIK (dif_cog, transition_interpolator->isEmpty());
-//}
-
+//#define USE_NEW_IK
+#ifdef USE_NEW_IK
 void AutoBalancer::solveFullbodyIK ()
 {
   const int IK_MAX_LOOP = 3;
@@ -1106,17 +1084,17 @@ void AutoBalancer::solveFullbodyIK ()
   tmp.target_link_name = "WAIST";
   tmp.localPos = hrp::Vector3::Zero();
   tmp.localR = hrp::Matrix33::Identity();
-  tmp.target_p0 = target_root_p;// will be ignored by selection_vec
-  tmp.target_r0 = target_root_R;
-  tmp.selection_vec << 0,0,0,1,1,1;
+  tmp.target_p = target_root_p;// will be ignored by selection_vec
+  tmp.target_r = target_root_R;
+  tmp.selection_vec << 0,0,0,1,1,0;
   tmp.weight_vec << 1,1,1,1,1,1;
   fik->ik_tgt_list.push_back(tmp);
 
   tmp.target_link_name = "RLEG_JOINT5";
   tmp.localPos = ikp["rleg"].localPos;
   tmp.localR = ikp["rleg"].localR;
-  tmp.target_p0 = ikp["rleg"].target_p0;
-  tmp.target_r0 = ikp["rleg"].target_r0;
+  tmp.target_p = ikp["rleg"].target_p0;
+  tmp.target_r = ikp["rleg"].target_r0;
   tmp.selection_vec << 1,1,1,1,1,1;
   tmp.weight_vec << 1,1,3,1,1,1;
   fik->ik_tgt_list.push_back(tmp);
@@ -1124,8 +1102,8 @@ void AutoBalancer::solveFullbodyIK ()
   tmp.target_link_name = "LLEG_JOINT5";
   tmp.localPos = ikp["lleg"].localPos;
   tmp.localR = ikp["lleg"].localR;
-  tmp.target_p0 = ikp["lleg"].target_p0;
-  tmp.target_r0 = ikp["lleg"].target_r0;
+  tmp.target_p = ikp["lleg"].target_p0;
+  tmp.target_r = ikp["lleg"].target_r0;
   tmp.selection_vec << 1,1,1,1,1,1;
   tmp.weight_vec << 1,1,3,1,1,1;
   fik->ik_tgt_list.push_back(tmp);
@@ -1133,8 +1111,8 @@ void AutoBalancer::solveFullbodyIK ()
   tmp.target_link_name = "RARM_JOINT7";
   tmp.localPos = ikp["rarm"].localPos;
   tmp.localR = ikp["rarm"].localR;
-  tmp.target_p0 = ikp["rarm"].target_p0;
-  tmp.target_r0 = ikp["rarm"].target_r0;
+  tmp.target_p = ikp["rarm"].target_p0;
+  tmp.target_r = ikp["rarm"].target_r0;
   tmp.selection_vec << 1,1,1,1,1,1;
   tmp.weight_vec << 1,1,1,1,1,1;
   fik->ik_tgt_list.push_back(tmp);
@@ -1142,8 +1120,8 @@ void AutoBalancer::solveFullbodyIK ()
   tmp.target_link_name = "LARM_JOINT7";
   tmp.localPos = ikp["larm"].localPos;
   tmp.localR = ikp["larm"].localR;
-  tmp.target_p0 = ikp["larm"].target_p0;
-  tmp.target_r0 = ikp["larm"].target_r0;
+  tmp.target_p = ikp["larm"].target_p0;
+  tmp.target_r = ikp["larm"].target_r0;
   tmp.selection_vec << 1,1,1,1,1,1;
   tmp.weight_vec << 1,1,1,1,1,1;
   fik->ik_tgt_list.push_back(tmp);
@@ -1151,17 +1129,16 @@ void AutoBalancer::solveFullbodyIK ()
   tmp.target_link_name = "COM";
   tmp.localPos = hrp::Vector3::Zero();
   tmp.localR = hrp::Matrix33::Identity();
-  tmp.target_p0 = ref_cog;// COM height will not be constraint
-  tmp.target_r0 = hrp::Matrix33::Identity();//reference angular momentum
-  tmp.selection_vec << 1,1,1,1,1,0; // COM pos + Ang Momentum
-//  tmp.selection_vec << 1,1,0,0,0,0;
-  tmp.weight_vec << 3,3,1,1,1,1;
+  tmp.target_p = ref_cog;// COM height will not be constraint
+  tmp.target_r = hrp::Matrix33::Identity();//reference angular momentum
+  tmp.selection_vec << 1,1,1,1,1,1; // COM pos + Ang Momentum
+  tmp.weight_vec << 3,3,1,0.1,0.1,0.1;
   fik->ik_tgt_list.push_back(tmp);
 
   fik->optional_weight_vector(m_robot->link("CHEST_JOINT0")->jointId) = 0.1;
   fik->optional_weight_vector(m_robot->link("CHEST_JOINT1")->jointId) = 0.1;
   fik->optional_weight_vector(m_robot->link("CHEST_JOINT2")->jointId) = 0.1;
-  fik->optional_weight_vector.tail(6) = hrp::dvector6::Ones() * 0.01;// 1 rad vs 1 m は不公平だから・・・
+//  fik->optional_weight_vector.tail(6) = hrp::dvector6::Ones() * 0.1;// 1 rad : 0.1 m くらいに調整
 
   hrp::Vector3 base_p_old = m_robot->rootLink()->p;
   hrp::Matrix33 base_R_old = m_robot->rootLink()->R;
@@ -1189,8 +1166,7 @@ void AutoBalancer::solveFullbodyIK ()
         lf_p_err.norm() < 1e-3 &&
         rh_p_err.norm() < 1e-2 &&
         lh_p_err.norm() < 1e-2){ break; }
-    l++;
-    if(l >= IK_MAX_LOOP){if(DEBUGP){std::cerr << "COM constraint IK MAX loop [="<<IK_MAX_LOOP<<"] exceeded!! "<< std::endl;} break; };
+    if(l == IK_MAX_LOOP-1){if(loop%100 == 0){std::cerr << "COM constraint IK MAX loop [="<<IK_MAX_LOOP<<"] exceeded!! "<< std::endl;} break; };
   }
 //  fik->ratio_for_vel = transition_interpolator_ratio * leg_names_interpolator_ratio;
 //  for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
@@ -1199,6 +1175,32 @@ void AutoBalancer::solveFullbodyIK ()
   // Revert
 //  fik->revertRobotStateToCurrent();
 }
+#else
+void AutoBalancer::solveFullbodyIK ()
+{
+  // Set ik target params
+  fik->target_root_p = target_root_p;
+  fik->target_root_R = target_root_R;
+  for ( std::map<std::string, SimpleFullbodyInverseKinematicsSolver::IKparam>::iterator it = fik->ikp.begin(); it != fik->ikp.end(); it++ ) {
+      it->second.target_p0 = ikp[it->first].target_p0;
+      it->second.target_r0 = ikp[it->first].target_r0;
+  }
+  fik->ratio_for_vel = transition_interpolator_ratio * leg_names_interpolator_ratio;
+//  fik->current_tm = m_qRef.tm;
+  for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
+      fik->ikp[it->first].is_ik_enable = it->second.is_active;
+  }
+  // Revert
+  fik->revertRobotStateToCurrent();
+  // TODO : SBP calculation is outside of solve ik?
+  hrp::Vector3 tmp_input_sbp = hrp::Vector3(0,0,0);
+  static_balance_point_proc_one(tmp_input_sbp, ref_zmp(2));
+  hrp::Vector3 dif_cog = tmp_input_sbp - ref_cog;
+  // Solve IK
+  fik->solveFullbodyIK (dif_cog, transition_interpolator->isEmpty());
+}
+#endif
+
 
 
 /*

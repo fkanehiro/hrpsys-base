@@ -114,28 +114,6 @@ class HumanPose : UTIL_CONST {
     void print() const { hp_printf(*this); }
 };
 
-class RobotConfig : UTIL_CONST {
-  public:
-    std::vector< std::vector<hrp::Vector3> > ee_rot_limit;
-    RobotConfig(){
-      std::vector<hrp::Vector3> init;
-      init.resize(MINMAX);
-      ee_rot_limit.resize(num_pose_tgt, init);
-      ee_rot_limit[com][MIN] = hrp::Vector3(-10*D2R, -10*D2R, -30*D2R);
-      ee_rot_limit[com][MAX] = hrp::Vector3( 10*D2R,  10*D2R, 30*D2R);
-      ee_rot_limit[rf][MIN] = hrp::Vector3(-30*D2R, -30*D2R, -20*D2R);
-      ee_rot_limit[rf][MAX] = hrp::Vector3( 30*D2R,  30*D2R,   5*D2R);
-      ee_rot_limit[lf][MIN] = hrp::Vector3(-30*D2R, -30*D2R,  -5*D2R);
-      ee_rot_limit[lf][MAX] = hrp::Vector3( 30*D2R,  30*D2R,  20*D2R);
-      ee_rot_limit[rh][MIN] = hrp::Vector3(INFMIN, INFMIN, INFMIN);
-      ee_rot_limit[rh][MAX] = hrp::Vector3(INFMAX, INFMAX, INFMAX);
-      ee_rot_limit[lh][MIN] = hrp::Vector3(INFMIN, INFMIN, INFMIN);
-      ee_rot_limit[lh][MAX] = hrp::Vector3(INFMAX, INFMAX, INFMAX);
-      ee_rot_limit[head][MIN] = hrp::Vector3( 0*D2R, -20*D2R, -35*D2R);
-      ee_rot_limit[head][MAX] = hrp::Vector3( 0*D2R,  30*D2R,  35*D2R);
-    }
-};
-
 class WBMSCore : UTIL_CONST {
   private:
     double CNT_F_TH, h2r_ratio, tgt_h2r_ratio, HZ, DT;
@@ -146,7 +124,7 @@ class WBMSCore : UTIL_CONST {
     std::vector<hrp::Vector2> rflf_points, hull_com, hull_dcp, hull_acp;
     std::vector<BiquadIIRFilterVec> tgt_pos_filters,tgt_rot_filters;
     std::vector<cv::Point2f> points,cvhull;
-    RobotConfig rc;
+//    RobotConfig rc;
     HumanPose rp_ref_out_old, hp_swap_checked;
     unsigned int loop;
     bool is_initial_loop;
@@ -176,10 +154,10 @@ class WBMSCore : UTIL_CONST {
     };
     struct WBMSparameters WBMSparam;
 
-    typedef boost::shared_ptr<FullbodyInverseKinematicsSolver> fikPtr;
+    typedef boost::shared_ptr<FullbodyInverseKinematicsSolverMT> fikPtr;
     fikPtr fik_ml;
     hrp::BodyPtr m_robot_ml;
-    fikPtr fik_act;
+//    fikPtr fik_act;
     hrp::BodyPtr m_robot_act;
     double cur_manip_val[4][3];
     hrp::Vector3 manip_direc[4][3];
@@ -193,6 +171,7 @@ class WBMSCore : UTIL_CONST {
 
     WBMSCore(const double& dt){
       tgt_h2r_ratio = h2r_ratio = 0.96;//human 1.1m vs jaxon 1.06m
+//      tgt_h2r_ratio = h2r_ratio = 1.0;
       DT = dt;
       HZ = (int)(1.0/DT);
       CNT_F_TH = 20.0;
@@ -281,6 +260,7 @@ class WBMSCore : UTIL_CONST {
         }
       }
       rp_ref_out.tgt[com].offs.p = robot_in->calcCM();
+//      std::cerr <<"init com "<<robot_in->calcCM().transpose()<<std::endl;
       rp_ref_out.tgt[com].offs.rpy = hrp::rpyFromRot(robot_in->rootLink()->R);
       rp_ref_out.tgt[zmp].offs.p(X) = rp_ref_out.tgt[com].offs.p(X);
       rp_ref_out.tgt[zmp].offs.p(Y) = rp_ref_out.tgt[com].offs.p(Y);
@@ -292,6 +272,8 @@ class WBMSCore : UTIL_CONST {
       for(int i=0, l[LR]={rf,lf}; i<LR; i++){
         rp_ref_out.tgt[l[i]].is_contact = true;
       }
+//      std::cerr <<"init com2 "<<rp_ref_out.tgt[com].offs.p.transpose()<<std::endl;
+//      std::cerr <<"init com2 "<<rp_ref_out.tgt[com].abs.p.transpose()<<std::endl;
     }
     void initializeRequest(fikPtr& fik_in, hrp::BodyPtr& robot_in){
       loop = 0;
@@ -317,6 +299,7 @@ class WBMSCore : UTIL_CONST {
 
       limitManipulability                 (rp_ref_out);
 
+//      std::cerr <<"out com "<<rp_ref_out.tgt[com].abs.p.transpose()<<std::endl;
       applyCOMToSupportRegionLimit        (rp_ref_out.tgt[rf].abs.p, rp_ref_out.tgt[lf].abs.p, com_CP_ref_old);//これやらないと支持領域の移動によって1ステップ前のCOM位置はもうはみ出てるかもしれないから
 
       Vector3ToVector2(rp_ref_out.tgt[com].abs.p,com_forcp_ref);
@@ -324,18 +307,21 @@ class WBMSCore : UTIL_CONST {
       com_vel_forcp_ref = (com_forcp_ref - com_forcp_ref_old)/DT;
       com_forcp_ref_old = com_forcp_ref;
 
+//      std::cerr <<"out com "<<rp_ref_out.tgt[com].abs.p.transpose()<<std::endl;
 
       applyLPFilter_pre                       (rp_ref_out);
       applyCOMStateLimitByCapturePoint    (rp_ref_out.tgt[com].abs.p, rp_ref_out.tgt[rf].abs.p, rp_ref_out.tgt[lf].abs.p, com_CP_ref_old, rp_ref_out.tgt[com].abs.p);
       applyCOMToSupportRegionLimit        (rp_ref_out.tgt[rf].abs.p, rp_ref_out.tgt[lf].abs.p, rp_ref_out.tgt[com].abs.p);
       applyLPFilter_post                       (rp_ref_out);
 
+//      std::cerr <<"out com "<<rp_ref_out.tgt[com].abs.p.transpose()<<std::endl;
       r_zmp_raw = rp_ref_out.tgt[zmp].abs.p;
       applyZMPCalcFromCOM                 (rp_ref_out.tgt[com].abs.p, rp_ref_out.tgt[zmp].abs.p);
       if(DEBUG){
         fprintf(cz_log,"com_ans_zmp: %f %f ",rp_ref_out.tgt[zmp].abs.p(X),rp_ref_out.tgt[zmp].abs.p(Y));
         fprintf(cz_log,"\n");
       }
+//      std::cerr <<"out com "<<rp_ref_out.tgt[com].abs.p.transpose()<<std::endl;
       overwriteFootZFromFootLandOnCommand (rp_ref_out);
       modifyFootRotAndXYForContact        (rp_ref_out);
 
@@ -343,6 +329,7 @@ class WBMSCore : UTIL_CONST {
       com_vel_old = (rp_ref_out.tgt[com].abs.p - rp_ref_out_old.tgt[com].abs.p)/DT;
       rh_vel_old = (rp_ref_out.tgt[rh].abs.p - rp_ref_out_old.tgt[rh].abs.p)/DT;
       rp_ref_out_old = rp_ref_out;
+//      std::cerr <<"out com "<<rp_ref_out.tgt[com].abs.p.transpose()<<std::endl;
       loop++;
       is_initial_loop = false;
       gettimeofday(&t_calc_end, NULL);
@@ -525,11 +512,11 @@ class WBMSCore : UTIL_CONST {
         out.tgt[l[i]].abs.p(X) = baselinkpose.p(X) + horizontal_dist(X);
         out.tgt[l[i]].abs.p(Y) = baselinkpose.p(Y) + horizontal_dist(Y);
       }
-      for(int i=0;i<XYZ;i++){ LIMIT_MINMAX( out.tgt[com].abs.rpy(i), rc.ee_rot_limit[com][MIN](i), rc.ee_rot_limit[com][MAX](i) ); }
       LIMIT_MINMAX( out.tgt[com].abs.p(Z), out.tgt[com].offs.p(Z) - 0.15, out.tgt[com].offs.p(Z) + 0.03 );//COM高さ方向の制限
-      for(int i=0, l[5]={rf,lf,rh,lh,head}; i<5; i++){
-        for(int j=0;j<XYZ;j++){ LIMIT_MINMAX( out.tgt[l[i]].abs.rpy(j), rc.ee_rot_limit[l[i]][MIN](j) + out.tgt[com].abs.rpy(j), rc.ee_rot_limit[l[i]][MAX](j) + out.tgt[com].abs.rpy(j) ); }
-      }
+//      for(int i=0;i<XYZ;i++){ LIMIT_MINMAX( out.tgt[com].abs.rpy(i), rc.ee_rot_limit[com][MIN](i), rc.ee_rot_limit[com][MAX](i) ); }
+//      for(int i=0, l[5]={rf,lf,rh,lh,head}; i<5; i++){
+//        for(int j=0;j<XYZ;j++){ LIMIT_MINMAX( out.tgt[l[i]].abs.rpy(j), rc.ee_rot_limit[l[i]][MIN](j) + out.tgt[com].abs.rpy(j), rc.ee_rot_limit[l[i]][MAX](j) + out.tgt[com].abs.rpy(j) ); }
+//      }
       if(!WBMSparam.use_head)out.tgt[head].abs.rpy = hrp::Vector3::Zero();
     }
     void limitManipulability(HumanPose& out){
@@ -545,7 +532,7 @@ class WBMSCore : UTIL_CONST {
           fik_ml->ikp[robot_l_names[i]].target_p0 = out.tgt[human_l_names[i]].abs.p;
         }
       }
-      for ( std::map<std::string, FullbodyInverseKinematicsSolver::IKparam>::iterator it = fik_ml->ikp.begin(); it != fik_ml->ikp.end(); it++ ) {
+      for ( std::map<std::string, FullbodyInverseKinematicsSolverMT::IKparam>::iterator it = fik_ml->ikp.begin(); it != fik_ml->ikp.end(); it++ ) {
           if (it->second.is_ik_enable) fik_ml->solveLimbIK (it->second, it->first, fik_ml->ratio_for_vel, false);
       }
       for(int i=0;i<4;i++){
