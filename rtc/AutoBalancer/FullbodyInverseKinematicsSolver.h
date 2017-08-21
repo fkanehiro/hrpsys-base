@@ -16,10 +16,8 @@
 class IKConstraintParam {
   public:
     std::string target_link_name;
-    // IK target EE coords
-    hrp::Vector3 target_p;
-    hrp::Matrix33 target_r;
-    // EE offset, EE link
+    hrp::Vector3 targetPos;
+    hrp::Matrix33 targetR;
     hrp::Vector3 localPos;
     hrp::Matrix33 localR;
     hrp::dvector6 weight_vec;
@@ -27,8 +25,8 @@ class IKConstraintParam {
     double pos_precision, rot_precision;
 
     IKConstraintParam ()
-      :target_p(hrp::Vector3::Zero()),
-       target_r(hrp::Matrix33::Identity()),
+      :targetPos(hrp::Vector3::Zero()),
+       targetR(hrp::Matrix33::Identity()),
        localPos(hrp::Vector3::Zero()),
        localR(hrp::Matrix33::Identity()),
        weight_vec(hrp::dvector6::Ones()),
@@ -86,15 +84,15 @@ class FullbodyInverseKinematicsSolver : public SimpleFullbodyInverseKinematicsSo
       for ( int i=0; i<_ik_tgt_list.size(); i++ ) {
         hrp::Link* target_link_ptr = m_robot->link(_ik_tgt_list[i].target_link_name);
         if(target_link_ptr){
-          hrp::Vector3 pos_err = _ik_tgt_list[i].target_p - (target_link_ptr->p + target_link_ptr->R * _ik_tgt_list[i].localPos);
-          hrp::Vector3 rot_err = omegaFromRotEx(_ik_tgt_list[i].target_r.transpose() * target_link_ptr->R * _ik_tgt_list[i].localR);
+          hrp::Vector3 pos_err = _ik_tgt_list[i].targetPos - (target_link_ptr->p + target_link_ptr->R * _ik_tgt_list[i].localPos);
+          hrp::Vector3 rot_err = omegaFromRotEx(_ik_tgt_list[i].targetR.transpose() * target_link_ptr->R * _ik_tgt_list[i].localR);
           for(int j=0;j<3;j++){
             if(pos_err(j) > _ik_tgt_list[i].pos_precision && _ik_tgt_list[i].selection_vec(j) != 0){return false;}
             if(rot_err(j) > _ik_tgt_list[i].rot_precision && _ik_tgt_list[i].selection_vec(j+3) != 0){return false;}
           }
         }
         else if(!target_link_ptr && _ik_tgt_list[i].target_link_name == "COM"){  // COM
-          hrp::Vector3 pos_err = _ik_tgt_list[i].target_p - (m_robot->calcCM() + _ik_tgt_list[i].localR * _ik_tgt_list[i].localPos);
+          hrp::Vector3 pos_err = _ik_tgt_list[i].targetPos - (m_robot->calcCM() + _ik_tgt_list[i].localR * _ik_tgt_list[i].localPos);
 //            robot_in->calcTotalMomentum(fik_in->cur_P, fik_in->cur_L);
 //            hrp::Vector3 rot_err = omegaFromRotEx(ik_tgt_list[i].target_r.transpose() * ik_tgt_list[i].localR * target_link_ptr->R);
           for(int j=0;j<3;j++){
@@ -120,8 +118,8 @@ class FullbodyInverseKinematicsSolver : public SimpleFullbodyInverseKinematicsSo
       //ヤコビアンと各ベクトル生成
       for ( int i=0; i<_ik_tgt_list.size(); i++ ) {
         hrp::Link* target_link_ptr = _robot->link(_ik_tgt_list[i].target_link_name);
-        hrp::Matrix33 ref_link_origin_R(_ik_tgt_list[i].target_r * _ik_tgt_list[i].localR.transpose()); //拘束ポイントの位置姿勢->リンク原点の位置姿勢
-        hrp::Vector3 ref_link_origin_p(_ik_tgt_list[i].target_p - ref_link_origin_R * _ik_tgt_list[i].localPos);
+        hrp::Matrix33 ref_link_origin_R(_ik_tgt_list[i].targetR * _ik_tgt_list[i].localR.transpose()); //拘束ポイントの位置姿勢->リンク原点の位置姿勢
+        hrp::Vector3 ref_link_origin_p(_ik_tgt_list[i].targetPos - ref_link_origin_R * _ik_tgt_list[i].localPos);
         hrp::dmatrix J_part = hrp::dmatrix::Zero(WS_DOF, ALL_DOF); //全身to一拘束点へのヤコビアン
         hrp::Vector3 vel_p_ref, vel_r_ref; //velと言いつつ実際は差分
         //ベースリンク，通常リンク，重心で場合分け
@@ -177,8 +175,11 @@ class FullbodyInverseKinematicsSolver : public SimpleFullbodyInverseKinematicsSo
         std::cout<<std::setprecision(2) << "J=\n"<<J_all<<std::setprecision(6)<<std::endl;
         std::cout<<std::setprecision(2) << "J_all_inv=\n"<<J_all_inv<<std::setprecision(6)<<std::endl;
         std::cout<<std::setprecision(2) << "selection_matrix=\n"<<selection_matrix<<std::setprecision(6)<<std::endl;
-        std::cout<<"eevel_all\n"<<dp_ee_all<<std::endl;
-        std::cout<<"dq_all\n"<<dq_all<<std::endl;
+        std::cout<<"eevel_all\n"<<dp_ee_all.transpose()<<std::endl;
+        std::cout<<"dq_all\n"<<dq_all.transpose()<<std::endl;
+        std::cout<<"q_ans_all\n";
+        for(int i=0;i<_robot->numJoints();i++)std::cerr<<_robot->joint(i)->q<<" ";
+        std::cout<<std::endl;
       }
 
       const double LAMBDA = 1.0;
