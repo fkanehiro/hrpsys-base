@@ -169,13 +169,15 @@ class WholeBodyMasterSlave : public RTC::DataFlowComponentBase, UTIL_CONST {
   hrp::BodyPtr m_robot, m_robot_ml, m_robot_vsafe;
   std::vector<fikPtr> fik_list;
   std::vector<hrp::BodyPtr> body_list;
+  std::map<std::string, IKConstraintParam> eename_ikcp_map;
   std::map<std::string, size_t> contact_states_index_map;
   double m_dt;
 
   double transition_interpolator_ratio;
   interpolator *transition_interpolator;
-  int q_ip_dim;
+  int ROBOT_ALL_DOF;
   interpolator *q_ip;
+  hrp::dvector init_sync_state;
 
   int optionalDataLength;
   unsigned int m_debugLevel;

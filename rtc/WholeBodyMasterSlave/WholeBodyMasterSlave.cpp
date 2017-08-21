@@ -174,8 +174,8 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onInitialize(){
     transition_interpolator->set(&tmp_ratio);
     tmp_ratio = 1.0;
     transition_interpolator->setGoal(&tmp_ratio, 3.0, true);
-    q_ip_dim = m_robot->numJoints() + 3 + 3*3;// joints + base_p + base_R
-    q_ip = new interpolator(q_ip_dim, m_dt, interpolator::HOFFARBIB, 1);
+    ROBOT_ALL_DOF = m_robot->numJoints() + 3 + 3;// joints + base_p + base_rpy
+    q_ip = new interpolator(ROBOT_ALL_DOF, m_dt, interpolator::HOFFARBIB, 1);
     q_ip->setName(std::string(m_profile.instance_name)+" q_ip");
     q_ip->clear();
     // Generate FIK
@@ -252,6 +252,12 @@ void WholeBodyMasterSlave::setupfik(fikPtr& fik_in, hrp::BodyPtr& robot_in, RTC:
       std::cerr << "[" << m_profile.instance_name << "]   offset_pos = " << tp.localPos.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[m]" << std::endl;
       std::cerr << "[" << m_profile.instance_name << "]   has_toe_joint = " << (tp.has_toe_joint?"true":"false") << std::endl;
       contact_states_index_map.insert(std::pair<std::string, size_t>(ee_name, i));////TODO:要移動?
+
+      eename_ikcp_map[ee_name].target_link_name = ee_target;
+      for (size_t j = 0; j < XYZ; j++){ coil::stringTo(eename_ikcp_map[ee_name].localPos(j), end_effectors_str[i*prop_num+3+j].c_str()); }
+      double tmp[4];
+      for (int j = 0; j < 4; j++ ){ coil::stringTo(tmp[j], end_effectors_str[i*prop_num+6+j].c_str()); }
+      eename_ikcp_map[ee_name].localR = Eigen::AngleAxis<double>(tmp[3], hrp::Vector3(tmp[0], tmp[1], tmp[2])).toRotationMatrix();
     }
   }
 }
@@ -327,6 +333,7 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
         processHOFFARBIBFilter(m_robot, m_robot_vsafe);
 
         const hrp::BodyPtr m_robot_for_out = m_robot_vsafe;
+//        const hrp::BodyPtr m_robot_for_out = m_robot;
 
         //OutPortデータセット
         hrp::Vector3 ref_zmp = hsp->rp_ref_out.tgt[zmp].abs.p;
@@ -492,11 +499,11 @@ void WholeBodyMasterSlave::preProcessForWholeBodyMasterSlave(fikPtr& fik_in, hrp
     }
   }
   q_ip->clear();
-  double init_q[q_ip_dim];
-  for(int i=0;i<robot_in->numJoints();i++){ init_q[i] = robot_in->joint(i)->q; }
-  for(int i=0;i<3;i++){ init_q[robot_in->numJoints()+i] = robot_in->rootLink()->p(i); }
-  for(int i=0;i<3;i++){for(int j=0;j<3;j++){ init_q[robot_in->numJoints() + 3 + 3*i + j] = robot_in->rootLink()->R(i,j); }}
-  q_ip->set(init_q);
+  init_sync_state.resize(ROBOT_ALL_DOF);
+  for(int i=0;i<robot_in->numJoints();i++){ init_sync_state(i) = robot_in->joint(i)->q; }
+  init_sync_state.bottomRows(6).topRows(3) = robot_in->rootLink()->p;
+  init_sync_state.bottomRows(6).bottomRows(3) = hrp::rpyFromRot(robot_in->rootLink()->R);
+  q_ip->set(init_sync_state.data());
   hsp->initializeRequest(fik_in, robot_in);
 }
 
@@ -560,41 +567,41 @@ void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr
   tmp.weight_vec << 1,1,1,1,1,1;
   ik_tgt_list.push_back(tmp);
 
-  tmp.target_link_name = "RLEG_JOINT5";
-  tmp.localPos = fik_in->ikp["rleg"].localPos;
-  tmp.localR = fik_in->ikp["rleg"].localR;
+  tmp.target_link_name = eename_ikcp_map["rleg"].target_link_name;
+  tmp.localPos = eename_ikcp_map["rleg"].localPos;
+  tmp.localR = eename_ikcp_map["rleg"].localR;
   tmp.target_p = rf_ref.p;
   tmp.target_r = hrp::rotFromRpy(rf_ref.rpy);
   tmp.selection_vec << 1,1,1,1,1,1;
   tmp.weight_vec << 1,1,1,1,1,1;
   ik_tgt_list.push_back(tmp);
 
-  tmp.target_link_name = "LLEG_JOINT5";
-  tmp.localPos = fik_in->ikp["lleg"].localPos;
-  tmp.localR = fik_in->ikp["lleg"].localR;
+  tmp.target_link_name = eename_ikcp_map["lleg"].target_link_name;
+  tmp.localPos = eename_ikcp_map["lleg"].localPos;
+  tmp.localR = eename_ikcp_map["lleg"].localR;
   tmp.target_p = lf_ref.p;
   tmp.target_r = hrp::rotFromRpy(lf_ref.rpy);
   tmp.selection_vec << 1,1,1,1,1,1;
   tmp.weight_vec << 1,1,1,1,1,1;
   ik_tgt_list.push_back(tmp);
 
-  tmp.target_link_name = "RARM_JOINT7";
-  tmp.localPos = fik_in->ikp["rarm"].localPos;
-  tmp.localR = fik_in->ikp["rarm"].localR;
-  tmp.target_p = rh_ref.p;
-  tmp.target_r = hrp::rotFromRpy(rh_ref.rpy);
-  tmp.selection_vec << 1,1,1,1,1,1;
-  tmp.weight_vec << 1,1,1,1,1,1;
-  ik_tgt_list.push_back(tmp);
-
-  tmp.target_link_name = "LARM_JOINT7";
-  tmp.localPos = fik_in->ikp["larm"].localPos;
-  tmp.localR = fik_in->ikp["larm"].localR;
-  tmp.target_p = lh_ref.p;
-  tmp.target_r = hrp::rotFromRpy(lh_ref.rpy);
-  tmp.selection_vec << 1,1,1,1,1,1;
-  tmp.weight_vec << 1,1,1,1,1,1;
-  ik_tgt_list.push_back(tmp);
+//  tmp.target_link_name = eename_ikcp_map["rarm"].target_link_name;
+//  tmp.localPos = eename_ikcp_map["rarm"].localPos;
+//  tmp.localR = eename_ikcp_map["rarm"].localR;
+//  tmp.target_p = rh_ref.p;
+//  tmp.target_r = hrp::rotFromRpy(rh_ref.rpy);
+//  tmp.selection_vec << 1,1,1,1,1,1;
+//  tmp.weight_vec << 1,1,1,1,1,1;
+//  ik_tgt_list.push_back(tmp);
+//
+//  tmp.target_link_name = eename_ikcp_map["larm"].target_link_name;
+//  tmp.localPos = eename_ikcp_map["larm"].localPos;
+//  tmp.localR = eename_ikcp_map["larm"].localR;
+//  tmp.target_p = lh_ref.p;
+//  tmp.target_r = hrp::rotFromRpy(lh_ref.rpy);
+//  tmp.selection_vec << 1,1,1,1,1,1;
+//  tmp.weight_vec << 1,1,1,1,1,1;
+//  ik_tgt_list.push_back(tmp);
 
   tmp.target_link_name = "COM";
   tmp.localPos = hrp::Vector3::Zero();
@@ -606,27 +613,28 @@ void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr
   tmp.weight_vec << 3,3,3,0.1,0.1,0.1;
   ik_tgt_list.push_back(tmp);
 
-  tmp.target_link_name = "HEAD_JOINT1";
-  tmp.target_r = hrp::rotFromRpy(head_ref.rpy);
-  tmp.selection_vec << 0,0,0,0,1,1;
-  tmp.weight_vec << 1,1,1,1,1,1;
-  ik_tgt_list.push_back(tmp);
+//  tmp.target_link_name = "HEAD_JOINT1";
+//  tmp.target_link_name = "HEAD_P";
+//  tmp.target_r = hrp::rotFromRpy(head_ref.rpy);
+//  tmp.selection_vec << 0,0,0,0,1,1;
+//  tmp.weight_vec << 1,1,1,1,1,1;
+//  ik_tgt_list.push_back(tmp);
 
-  fik_in->optional_weight_vector(robot_in->link("CHEST_JOINT0")->jointId) = 0.1;
-  fik_in->optional_weight_vector(robot_in->link("CHEST_JOINT1")->jointId) = 0.1;
-  fik_in->optional_weight_vector(robot_in->link("CHEST_JOINT2")->jointId) = 0.1;
+//  fik_in->optional_weight_vector(robot_in->link("CHEST_JOINT0")->jointId) = 0.1;
+//  fik_in->optional_weight_vector(robot_in->link("CHEST_JOINT1")->jointId) = 0.1;
+//  fik_in->optional_weight_vector(robot_in->link("CHEST_JOINT2")->jointId) = 0.1;
   fik_in->optional_weight_vector.tail(6).fill(0.01);
-  fik_in->reference_q.head(robot_in->numJoints()) <<
-      0.0,0.0,-0.349066,0.698132,-0.349066,0.0,
-      0.0,0.0,-0.349066,0.698132,-0.349066,0.0,
-      0.0,0.0,0.0, 0.0,0.0,
-      0.0,0.698132,-0.349066 ,-0.087266,-1.39626,0.0,0.0,-0.349066,
-      0.0,0.698132,0.349066 ,0.087266,-1.39626,0.0,0.0,-0.349066;
-  fik_in->reference_q.tail(6) << 0.0,0.0,1.1, 0.0,0.0,0.0;
-  fik_in->reference_gain.fill(0.001);
+//  fik_in->reference_q.head(robot_in->numJoints()) <<
+//      0.0,0.0,-0.349066,0.698132,-0.349066,0.0,
+//      0.0,0.0,-0.349066,0.698132,-0.349066,0.0,
+//      0.0,0.0,0.0, 0.0,0.0,
+//      0.0,0.698132,-0.349066 ,-0.087266,-1.39626,0.0,0.0,-0.349066,
+//      0.0,0.698132,0.349066 ,0.087266,-1.39626,0.0,0.0,-0.349066;
+//  fik_in->reference_q.tail(6) << 0.0,0.0,1.1, 0.0,0.0,0.0;
+//  fik_in->reference_gain.fill(0.001);
 //  fik_in->reference_gain(robot_in->link("RARM_JOINT2")->jointId) = 0.1;
 //  fik_in->reference_gain(robot_in->link("LARM_JOINT2")->jointId) = 0.1;
-  fik_in->reference_gain.tail(6) << 0.0,0.0,0.0, 0.001,0.001,0.001;
+//  fik_in->reference_gain.tail(6) << 0.0,0.0,0.0, 0.001,0.001,0.001;
 
   struct timespec startT, endT;
   int loop_result = 0;
@@ -688,26 +696,27 @@ void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr
 
 
 void WholeBodyMasterSlave::processHOFFARBIBFilter(hrp::BodyPtr& robot_in, hrp::BodyPtr& robot_out){
-  double goal_q[q_ip_dim];
-  for(int i=0;i<robot_in->numJoints();i++){ goal_q[i] = robot_in->joint(i)->q; }
-  for(int i=0;i<3;i++){ goal_q[robot_in->numJoints()+i] = robot_in->rootLink()->p(i); }
-  for(int i=0;i<3;i++){for(int j=0;j<3;j++){ goal_q[robot_in->numJoints() + 3 + 3*i + j] = robot_in->rootLink()->R(i,j); }}
+  hrp::dvector goal_state(ROBOT_ALL_DOF);
+  for(int i=0;i<robot_in->numJoints();i++){ goal_state(i) = robot_in->joint(i)->q; }
+  goal_state.bottomRows(6).topRows(3) = robot_in->rootLink()->p;
+  goal_state.bottomRows(6).bottomRows(3) = hrp::rpyFromRot(robot_in->rootLink()->R);
 
   double goal_time = 0.0;
   const double min_goal_time_offset = 0.1;
-//  const double avg_q_vel = 1.0;
-  const double avg_q_vel = 2.0;
+  const double avg_q_vel = 1.0;
+//  const double avg_q_vel = 2.0;
   for(int i=0;i<robot_in->numJoints();i++){
     double tmp_time = fabs(robot_in->joint(i)->q - robot_out->joint(i)->q) / avg_q_vel;
     if(tmp_time > goal_time){ goal_time = tmp_time; }
   }
-  q_ip->setGoal(goal_q, goal_time + min_goal_time_offset, true);
-
-  double ans_q[q_ip_dim];
-  if (!q_ip->isEmpty() ){  q_ip->get(ans_q, true); }
-  for(int i=0;i<robot_out->numJoints();i++){ robot_out->joint(i)->q = ans_q[i]; }
-  for(int i=0;i<3;i++){ robot_out->rootLink()->p(i) = ans_q[robot_out->numJoints()+i]; }
-  for(int i=0;i<3;i++){for(int j=0;j<3;j++){ robot_out->rootLink()->R(i,j) = ans_q[robot_out->numJoints() + 3 + 3*i + j]; }}
+  q_ip->setGoal(goal_state.data(), goal_time + min_goal_time_offset, true);
+  hrp::dvector ans_state(ROBOT_ALL_DOF);
+  double tmp[ROBOT_ALL_DOF];
+  if (!q_ip->isEmpty() ){  q_ip->get(tmp, true);}
+  ans_state.Map(tmp, ROBOT_ALL_DOF);
+  for(int i=0;i<robot_out->numJoints();i++){ robot_out->joint(i)->q = ans_state(i); }
+  robot_in->rootLink()->p = ans_state.bottomRows(6).topRows(3);
+  robot_in->rootLink()->R = hrp::rotFromRpy(ans_state.bottomRows(6).bottomRows(3));
 }
 
 

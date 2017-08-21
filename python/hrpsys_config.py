@@ -403,7 +403,7 @@ class HrpsysConfigurator(object):
 #            connectPorts(self.sh.port("optionalDataOut"), self.abc.port("optionalData"))
             #### wbms
             if self.wbms:
-                connectPorts(self.wbms.port("q"), self.abc.port("qRef"))
+                connectPorts(self.wbms.port("q"), self.ic.port("qRef"))
                 connectPorts(self.wbms.port("zmpOut"), self.abc.port("zmpIn"))
                 connectPorts(self.wbms.port("basePosOut"), self.abc.port("basePosIn"))
                 connectPorts(self.wbms.port("baseRpyOut"), self.abc.port("baseRpyIn"))
@@ -771,8 +771,8 @@ class HrpsysConfigurator(object):
             ['octd', "ObjectContactTurnaroundDetector"],
             ['es', "EmergencyStopper"],
             ['rfu', "ReferenceForceUpdater"],
-            ['ic', "ImpedanceController"],
             ['wbms', "WholeBodyMasterSlave"],
+            ['ic', "ImpedanceController"],
             ['abc', "AutoBalancer"],
             ['st', "Stabilizer"],
             ['co', "CollisionDetector"],
@@ -790,8 +790,8 @@ class HrpsysConfigurator(object):
         '''!@brief
         Get list of controller list that need to control joint angles
         '''
-        controller_list = [self.es, self.ic, self.gc, self.abc, self.st, self.co,
-                           self.tc, self.hes, self.el]
+#        controller_list = [self.es, self.ic, self.gc, self.abc, self.st, self.co, self.tc, self.hes, self.el]
+        controller_list = [self.es, self.wbms, self.ic, self.gc, self.abc, self.st, self.co, self.tc, self.hes, self.el]
         return filter(lambda c: c != None, controller_list)  # only return existing controllers
 
     def getRTCInstanceList(self, verbose=True):
