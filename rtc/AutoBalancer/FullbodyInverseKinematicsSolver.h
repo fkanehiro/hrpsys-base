@@ -17,7 +17,7 @@ class IKConstraintParam {
   public:
     std::string target_link_name;
     hrp::Vector3 targetPos;
-    hrp::Matrix33 targetR;
+    hrp::Vector3 targetRpy;
     hrp::Vector3 localPos;
     hrp::Matrix33 localR;
     hrp::dvector6 weight_vec;
@@ -26,7 +26,7 @@ class IKConstraintParam {
 
     IKConstraintParam ()
       :targetPos(hrp::Vector3::Zero()),
-       targetR(hrp::Matrix33::Identity()),
+       targetRpy(hrp::Vector3::Zero()),
        localPos(hrp::Vector3::Zero()),
        localR(hrp::Matrix33::Identity()),
        weight_vec(hrp::dvector6::Ones()),
@@ -85,7 +85,7 @@ class FullbodyInverseKinematicsSolver : public SimpleFullbodyInverseKinematicsSo
         hrp::Link* target_link_ptr = m_robot->link(_ik_tgt_list[i].target_link_name);
         if(target_link_ptr){
           hrp::Vector3 pos_err = _ik_tgt_list[i].targetPos - (target_link_ptr->p + target_link_ptr->R * _ik_tgt_list[i].localPos);
-          hrp::Vector3 rot_err = omegaFromRotEx(_ik_tgt_list[i].targetR.transpose() * target_link_ptr->R * _ik_tgt_list[i].localR);
+          hrp::Vector3 rot_err = omegaFromRotEx(hrp::rotFromRpy(_ik_tgt_list[i].targetRpy).transpose() * target_link_ptr->R * _ik_tgt_list[i].localR);
           for(int j=0;j<3;j++){
             if(pos_err(j) > _ik_tgt_list[i].pos_precision && _ik_tgt_list[i].selection_vec(j) != 0){return false;}
             if(rot_err(j) > _ik_tgt_list[i].rot_precision && _ik_tgt_list[i].selection_vec(j+3) != 0){return false;}
@@ -118,7 +118,7 @@ class FullbodyInverseKinematicsSolver : public SimpleFullbodyInverseKinematicsSo
       //ヤコビアンと各ベクトル生成
       for ( int i=0; i<_ik_tgt_list.size(); i++ ) {
         hrp::Link* target_link_ptr = _robot->link(_ik_tgt_list[i].target_link_name);
-        hrp::Matrix33 ref_link_origin_R(_ik_tgt_list[i].targetR * _ik_tgt_list[i].localR.transpose()); //拘束ポイントの位置姿勢->リンク原点の位置姿勢
+        hrp::Matrix33 ref_link_origin_R(hrp::rotFromRpy(_ik_tgt_list[i].targetRpy) * _ik_tgt_list[i].localR.transpose()); //拘束ポイントの位置姿勢->リンク原点の位置姿勢
         hrp::Vector3 ref_link_origin_p(_ik_tgt_list[i].targetPos - ref_link_origin_R * _ik_tgt_list[i].localPos);
         hrp::dmatrix J_part = hrp::dmatrix::Zero(WS_DOF, ALL_DOF); //全身to一拘束点へのヤコビアン
         hrp::Vector3 vel_p_ref, vel_r_ref; //velと言いつつ実際は差分
@@ -144,15 +144,16 @@ class FullbodyInverseKinematicsSolver : public SimpleFullbodyInverseKinematicsSo
         }
         else if(!target_link_ptr && _ik_tgt_list[i].target_link_name == "COM"){ //重心限定
           vel_p_ref = ref_link_origin_p - _robot->calcCM();
-          vel_r_ref = (omegaFromRotEx(ref_link_origin_R) - (cur_L - _robot->rootLink()->p.cross(cur_P))) * m_dt;// COMのrotはAngulerMomentumとして扱う
+//          vel_r_ref = (omegaFromRotEx(ref_link_origin_R) - (cur_L - _robot->rootLink()->p.cross(cur_P))) * m_dt;// COMのrotはAngulerMomentumとして扱う
+          vel_r_ref = _ik_tgt_list[i].targetRpy;// COMのrotはAngulerMomentumとして扱う
           _robot->calcCMJacobian(NULL, J_com);//デフォで右端に3x6のbase->COMのヤコビアンが付いてくる
           _robot->calcAngularMomentumJacobian(NULL, J_am);//すでにrootlink周りの角運動量ヤコビアンが返ってくる？
           J_part << J_com, J_am;
         }
         else{ std::cerr<<"Unknown Link Target !!"<<std::endl; continue; } //不明なリンク指定
         //全体の中に配置
-        if(vel_p_ref.norm()>0.1){vel_p_ref = vel_p_ref.normalized() * 0.1;}
-        if(vel_r_ref.norm()>0.1){vel_r_ref = vel_r_ref.normalized() * 0.1;}
+//        if(vel_p_ref.norm()>0.1){vel_p_ref = vel_p_ref.normalized() * 0.1;}
+//        if(vel_r_ref.norm()>0.1){vel_r_ref = vel_r_ref.normalized() * 0.1;}
         dp_ee_all.segment(WS_DOF*i,WS_DOF) << vel_p_ref, vel_r_ref;
         weight_vec_all.segment(WS_DOF*i, WS_DOF) = _ik_tgt_list[i].weight_vec;
         selection_vec_all.segment(WS_DOF*i, WS_DOF) = _ik_tgt_list[i].selection_vec;

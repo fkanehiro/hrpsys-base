@@ -554,7 +554,7 @@ void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr
   tmp.localPos = hrp::Vector3::Zero();
   tmp.localR = hrp::Matrix33::Identity();
   tmp.targetPos = robot_in->rootLink()->p;// will be ignored by selection_vec
-  tmp.targetR = hrp::rotFromRpy(com_ref.rpy);// ベースリンクの回転をフリーにはしないほうがいい(omegaの積分誤差で暴れる)
+  tmp.targetRpy = com_ref.rpy;// ベースリンクの回転をフリーにはしないほうがいい(omegaの積分誤差で暴れる)
   tmp.selection_vec << 0,0,0,1,1,1;
   tmp.weight_vec << 1,1,1,1,1,1;
   ik_tgt_list.push_back(tmp);
@@ -563,7 +563,7 @@ void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr
   tmp.localPos = eename_ikcp_map["rleg"].localPos;
   tmp.localR = eename_ikcp_map["rleg"].localR;
   tmp.targetPos = rf_ref.p;
-  tmp.targetR = hrp::rotFromRpy(rf_ref.rpy);
+  tmp.targetRpy = rf_ref.rpy;
   tmp.selection_vec << 1,1,1,1,1,1;
   tmp.weight_vec << 1,1,1,1,1,1;
   ik_tgt_list.push_back(tmp);
@@ -572,7 +572,7 @@ void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr
   tmp.localPos = eename_ikcp_map["lleg"].localPos;
   tmp.localR = eename_ikcp_map["lleg"].localR;
   tmp.targetPos = lf_ref.p;
-  tmp.targetR = hrp::rotFromRpy(lf_ref.rpy);
+  tmp.targetRpy = lf_ref.rpy;
   tmp.selection_vec << 1,1,1,1,1,1;
   tmp.weight_vec << 1,1,1,1,1,1;
   ik_tgt_list.push_back(tmp);
@@ -581,7 +581,7 @@ void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr
   tmp.localPos = eename_ikcp_map["rarm"].localPos;
   tmp.localR = eename_ikcp_map["rarm"].localR;
   tmp.targetPos = rh_ref.p;
-  tmp.targetR = hrp::rotFromRpy(rh_ref.rpy);
+  tmp.targetRpy = rh_ref.rpy;
   tmp.selection_vec << 1,1,1,1,1,1;
   tmp.weight_vec << 1,1,1,1,1,1;
   ik_tgt_list.push_back(tmp);
@@ -590,7 +590,7 @@ void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr
   tmp.localPos = eename_ikcp_map["larm"].localPos;
   tmp.localR = eename_ikcp_map["larm"].localR;
   tmp.targetPos = lh_ref.p;
-  tmp.targetR = hrp::rotFromRpy(lh_ref.rpy);
+  tmp.targetRpy = lh_ref.rpy;
   tmp.selection_vec << 1,1,1,1,1,1;
   tmp.weight_vec << 1,1,1,1,1,1;
   ik_tgt_list.push_back(tmp);
@@ -599,7 +599,7 @@ void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr
   tmp.localPos = hrp::Vector3::Zero();
   tmp.localR = hrp::Matrix33::Identity();
   tmp.targetPos = com_ref.p;// COM height will not be constraint
-  tmp.targetR = hrp::Matrix33::Identity();//reference angular momentum
+  tmp.targetRpy = hrp::Vector3::Zero();//reference angular momentum
   tmp.selection_vec << 1,1,1,0,0,0; // COM pos + Ang Momentum
 //  tmp.selection_vec << 1,1,1,1,1,0; // COM pos + Ang Momentum
   tmp.weight_vec << 3,3,3,0.1,0.1,0.1;
@@ -608,7 +608,7 @@ void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr
   if(robot_in->link("HEAD_JOINT1") != NULL){
     tmp.target_link_name = "HEAD_JOINT1";
     tmp.target_link_name = "HEAD_P";
-    tmp.targetR = hrp::rotFromRpy(head_ref.rpy);
+    tmp.targetRpy = head_ref.rpy;
     tmp.selection_vec << 0,0,0,0,1,1;
     tmp.weight_vec << 1,1,1,1,1,1;
     ik_tgt_list.push_back(tmp);
@@ -643,7 +643,7 @@ void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr
   for(int i=0;i<4;i++){
     if(fik_in->ikp.count(names[i])){
       fik_in->ikp[names[i]].targetPos = refs[i]->p;
-      fik_in->ikp[names[i]].targetR = hrp::rotFromRpy(refs[i]->rpy);
+      fik_in->ikp[names[i]].targetRpy = hrp::rotFromRpy(refs[i]->rpy);
     }
   }
 //  fik_in->storeCurrentParameters();
