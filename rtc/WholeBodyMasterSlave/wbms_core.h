@@ -494,12 +494,13 @@ class WBMSCore : UTIL_CONST {
       LIMIT_MINMAX( out.tgt[rf].abs.p(Z), out.tgt[rf].offs.p(Z), out.tgt[rf].offs.p(Z)+WBMSparam.swing_foot_max_height);
       LIMIT_MINMAX( out.tgt[lf].abs.p(Z), out.tgt[lf].offs.p(Z), out.tgt[lf].offs.p(Z)+WBMSparam.swing_foot_max_height);
 
+      const double base2hand_min = 0.4;
       for(int i=0, l[2]={rh,lh}; i<2; i++){
 //        LIMIT_MIN(out.tgt[l[i]].abs.p(X), baselinkpose.p(X));
 //        LIMIT_MAX(out.tgt[l[i]].abs.p(Z), baselinkpose.p(Z) + 0.4);
         hrp::Vector2 horizontal_dist(out.tgt[l[i]].abs.p(X) - baselinkpose.p(X), out.tgt[l[i]].abs.p(Y) - baselinkpose.p(Y));
-        if(horizontal_dist.norm() < 0.5){
-          horizontal_dist = 0.5 * horizontal_dist.normalized();
+        if(horizontal_dist.norm() < base2hand_min){
+          horizontal_dist = base2hand_min * horizontal_dist.normalized();
         }
         out.tgt[l[i]].abs.p(X) = baselinkpose.p(X) + horizontal_dist(X);
         out.tgt[l[i]].abs.p(Y) = baselinkpose.p(Y) + horizontal_dist(Y);

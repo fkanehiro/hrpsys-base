@@ -690,7 +690,7 @@ void WholeBodyMasterSlave::processHOFFARBIBFilter(hrp::BodyPtr& robot_in, hrp::B
 
   double goal_time = 0.0;
   const double min_goal_time_offset = 0.1;
-  const double avg_q_vel = 1.0;
+  const double avg_q_vel = 0.5;
 //  const double avg_q_vel = 2.0;
   for(int i=0;i<robot_in->numJoints();i++){
     double tmp_time = fabs(robot_in->joint(i)->q - robot_out->joint(i)->q) / avg_q_vel;
