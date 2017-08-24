@@ -53,6 +53,7 @@ RTC::ReturnCode_t CameraImageSaver::onInitialize()
   //std::cout << m_profile.instance_name << ": onInitialize()" << std::endl;
   // <rtc-template block="bind_config">
   // Bind variables and configuration variable
+  bindParameter("basename", m_basename, "image");
   
   // </rtc-template>
 
