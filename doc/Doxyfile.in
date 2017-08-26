@@ -474,6 +474,7 @@ INPUT		      =  @CMAKE_CURRENT_SOURCE_DIR@/package.h \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/AverageFilter \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/Beeper \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/CameraImageViewer \
+		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/CameraImageSaver \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/CaptureController \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/CollisionDetector \
 		      @CMAKE_CURRENT_SOURCE_DIR@/../rtc/DataLogger \
