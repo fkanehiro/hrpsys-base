@@ -187,8 +187,7 @@ class WholeBodyMasterSlave : public RTC::DataFlowComponentBase, UTIL_CONST {
   hrp::InvDynStateBuffer idsb;
   BiquadIIRFilterVec invdyn_zmp_filters;
 
-  hrp::InvDynStateBuffer idsb2;
-  BiquadIIRFilterVec invdyn_zmp_filters2;
+  BiquadIIRFilterVec final_ref_zmp_filter;
 
   IIRFilter ref_ee_vel_v_filter;
 

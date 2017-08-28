@@ -5,13 +5,14 @@
 #include <hrpModel/Body.h>
 #include <hrpUtil/MatrixSolvers.h>
 #include "../ImpedanceController/JointPathEx.h"
-#include "SimpleFullbodyInverseKinematicsSolver.h"
 #include <unsupported/Eigen/MatrixFunctions>
+#include "SimpleFullbodyInverseKinematicsSolver.h"
 
 #define LIMIT_MINMAX(x,min,max) ((x= (x<min  ? min : x<max ? x : max)))
-#define deg2rad(x)((x)*M_PI/180)
+#define deg2rad(x) ((x)*M_PI/180)
 #define rad2deg(rad) (rad * 180 / M_PI)
 #define eps_eq(a, b, c)  (fabs((a)-(b)) <= c)
+#define dbg(var) std::cout<<#var"= "<<(var)<<std::endl
 
 class IKConstraintParam {
   public:
@@ -76,9 +77,6 @@ class FullbodyInverseKinematicsSolver : public SimpleFullbodyInverseKinematicsSo
         if(checkIKConvergence(_ik_tgt_list)){ break; }
       }
       return loop;
-    }
-    void solveFullbodyIK (const hrp::Vector3& _dif_cog, const bool _is_transition){
-      SimpleFullbodyInverseKinematicsSolver::solveFullbodyIK (_dif_cog, _is_transition);
     }
     bool checkIKConvergence(const std::vector<IKConstraintParam>& _ik_tgt_list){
       for ( int i=0; i<_ik_tgt_list.size(); i++ ) {
@@ -163,9 +161,13 @@ class FullbodyInverseKinematicsSolver : public SimpleFullbodyInverseKinematicsSo
       hrp::dmatrix selection_matrix = hrp::dmatrix::Zero(selection_vec_all.sum(), WS_DOF*_ik_tgt_list.size());
       for(int i=0, j=0; i<selection_vec_all.rows(); i++){ if(selection_vec_all(i) == 1){ selection_matrix(j, i) = 1.0; j++; } }
 
-      weight_vec_all /= weight_vec_all.maxCoeff();
+//      weight_vec_all /= weight_vec_all.maxCoeff();
       J_all = selection_matrix * J_all;
-      dp_ee_all = selection_matrix * weight_vec_all.asDiagonal() * dp_ee_all;
+      dp_ee_all = selection_matrix * dp_ee_all;
+      weight_vec_all = selection_matrix * weight_vec_all;
+//      J_all *= selection_matrix;
+//      dp_ee_all *= selection_matrix;
+//      weight_vec_all *= selection_matrix;
 
 //      hrp::calcPseudoInverse(J_all,J_all_inv,1.0e-3);//超遅い1[ms]とか
       calcJacobianInverseNullspace_copy(_robot, J_all, J_all_inv);
@@ -178,6 +180,7 @@ class FullbodyInverseKinematicsSolver : public SimpleFullbodyInverseKinematicsSo
         std::cout<<std::setprecision(2) << "selection_matrix=\n"<<selection_matrix<<std::setprecision(6)<<std::endl;
         std::cout<<"eevel_all\n"<<dp_ee_all.transpose()<<std::endl;
         std::cout<<"dq_all\n"<<dq_all.transpose()<<std::endl;
+        std::cout<<"weight_vec_all\n"<<weight_vec_all.transpose()<<std::endl;
         std::cout<<"q_ans_all\n";
         for(int i=0;i<_robot->numJoints();i++)std::cerr<<_robot->joint(i)->q<<" ";
         std::cout<<std::endl;
@@ -196,6 +199,7 @@ class FullbodyInverseKinematicsSolver : public SimpleFullbodyInverseKinematicsSo
       }
       _robot->rootLink()->p += dq_all.segment(J_DOF,3) * LAMBDA/* * m_dt*/;//vel計算する時からm_dt使ってないから使わなくていい
       _robot->rootLink()->R = base_R_ans;
+      _robot->calcForwardKinematics();
     }
 
 
@@ -241,20 +245,26 @@ class FullbodyInverseKinematicsSolver : public SimpleFullbodyInverseKinematicsSo
         w(j, j) = optional_weight_vector[j];
       }
 
-      const double manipulability_limit = 0.001;
+      const double manipulability_limit = 0.0001;
       const double sr_gain = 1.0;
 //      const double manipulability_gain = 0.001;
       const double manipulability_gain = 1;
 
       double manipulability = sqrt((_J*_J.transpose()).determinant());
+//      static int count;
+//      if(count++ % 10000 == 0){
+//        std::cout<<"manipulability "<<manipulability<<std::endl;
+//      }
       double k = 0;
       if ( manipulability < manipulability_limit ) {
         k = manipulability_gain * pow((1 - ( manipulability / manipulability_limit )), 2);
       }
-      hrp::calcSRInverse(_J, _Jinv, sr_gain * k, w);
+//      hrp::calcSRInverse(_J, _Jinv, sr_gain * k, w);
+      calcSRInverse_new(_J, _Jinv, sr_gain * k, weight_vec_all, w);
       //        Jnull = ( hrp::dmatrix::Identity(n, n) - _Jinv * _J);
       return true;
     }
+
     hrp::Vector3 omegaFromRotEx(const hrp::Matrix33& r) {//copy from JointPathEx.cpp
         using ::std::numeric_limits;
         double alpha = (r(0,0) + r(1,1) + r(2,2) - 1.0) / 2.0;
@@ -269,6 +279,20 @@ class FullbodyInverseKinematicsSolver : public SimpleFullbodyInverseKinematicsSo
             double k = -0.5 * th / s;
             return hrp::Vector3( (r(1,2) - r(2,1)) * k, (r(2,0) - r(0,2)) * k, (r(0,1) - r(1,0)) * k );
         }
+    }
+
+    void calcSRInverse_new(const hrp::dmatrix& _a, hrp::dmatrix &_a_sr, double _sr_ratio, hrp::dvector& _ee_w, hrp::dmatrix _w) {
+        const int c = _a.rows(); // 6*x
+        const int n = _a.cols(); // n = all joint dof
+        if ( _w.cols() != n || _w.rows() != n ) {
+            _w = hrp::dmatrix::Identity(n, n);
+        }
+        hrp::dmatrix at = _a.transpose();
+        hrp::dmatrix a1(c, c);
+        hrp::dmatrix eew_mat = _ee_w.cwiseInverse().asDiagonal();
+        a1 = (_a * _w * at +  _sr_ratio * eew_mat).inverse();
+//        a1 = (_a * _w * at +  _sr_ratio *  hrp::dmatrix::Identity(c,c)).inverse();
+        _a_sr  = _w * at * a1;
     }
 };
 
@@ -302,34 +326,40 @@ class FullbodyInverseKinematicsSolverMT : public FullbodyInverseKinematicsSolver
     };
     int solveFullbodyIKLoopMT (const std::vector<IKConstraintParam>& _ik_tgt_list, const int _max_iteration) {
       if(is_first){
-        for(int i=0;i<J_DOF;i++){ m_robot_copy->joint(i)->q = m_robot->joint(i)->q; }
+        for(int i=0;i<J_DOF;i++){
+          m_robot_copy->joint(i)->q = m_robot->joint(i)->q;
+          m_robot_copy->joint(i)->ulimit = m_robot->joint(i)->ulimit;
+          m_robot_copy->joint(i)->llimit = m_robot->joint(i)->llimit;
+        }
         m_robot_copy->rootLink()->p = m_robot->rootLink()->p;
         m_robot_copy->rootLink()->R = m_robot->rootLink()->R;
-        if( m_robot_copy->link("RARM_JOINT2") != NULL) m_robot_copy->link("RARM_JOINT2")->ulimit = deg2rad(-40);//脇の干渉回避のため
-        if( m_robot_copy->link("LARM_JOINT2") != NULL) m_robot_copy->link("LARM_JOINT2")->llimit = deg2rad(40);
         pthread_mutex_init( &ik_body_mutex, NULL );
+        pthread_create(&ik_thread, NULL, launchThread, this);
+        is_first = false;
       }
-      for(int i=0;i<J_DOF;i++){ m_robot->joint(i)->q = m_robot_copy->joint(i)->q; }
+      for(int i=0;i<J_DOF;i++){
+        m_robot->joint(i)->q = m_robot_copy->joint(i)->q;
+      }
       m_robot->rootLink()->p = m_robot_copy->rootLink()->p;
       m_robot->rootLink()->R = m_robot_copy->rootLink()->R;
+      m_robot->calcForwardKinematics();
       int result = cur_ik_loop;
 
       if(pthread_mutex_lock( &ik_body_mutex ) != 0){std::cerr<<"[FullbodyInverseKinematicsSolverMT] pthread_mutex_lock err "<<std::endl;}
 
-//        base_p_old = m_robot_copy->rootLink()->p;
-//        base_R_old = m_robot_copy->rootLink()->R;
-//        q_old.resize(J_DOF);
-//        for(int i=0;i<J_DOF;i++){ q_old(i) = m_robot_copy->joint(i)->q; }
+        base_p_old = m_robot_copy->rootLink()->p;
+        base_R_old = m_robot_copy->rootLink()->R;
+        q_old.resize(J_DOF);
+        for(int i=0;i<J_DOF;i++){ q_old(i) = m_robot_copy->joint(i)->q; }
 
         cur_ik_loop = 0;
         ik_tgt_list = _ik_tgt_list;// "="で代入するとnanが入る！？->そんなことはない
         ik_thread_ik_required = true;
       if(pthread_mutex_unlock( &ik_body_mutex ) != 0){std::cerr<<"[FullbodyInverseKinematicsSolverMT] pthread_mutex_unlock err "<<std::endl;}
-      if(is_first){
-        pthread_create(&ik_thread, NULL, launchThread, this);
-        is_first = false;
-      }
-
+//      if(is_first){
+//        pthread_create(&ik_thread, NULL, launchThread, this);
+//        is_first = false;
+//      }
       return result;
     }
     void ik_loop(){
@@ -340,11 +370,11 @@ class FullbodyInverseKinematicsSolverMT : public FullbodyInverseKinematicsSolver
           if(ik_thread_ik_required){
             solveFullbodyIK(m_robot_copy, ik_tgt_list);
             //check ang moment
-//            m_robot_copy->rootLink()->v = (m_robot_copy->rootLink()->p - base_p_old)/ m_dt;
-//            m_robot_copy->rootLink()->w = base_R_old * omegaFromRotEx(base_R_old.transpose() * m_robot_copy->rootLink()->R) / m_dt;
-//            for(int i=0;i<J_DOF;i++){ m_robot_copy->joint(i)->dq = (m_robot_copy->joint(i)->q - q_old(i)) / m_dt; }
-//            m_robot_copy->calcForwardKinematics(true,false);
-//            m_robot_copy->calcTotalMomentum(cur_P, cur_L);
+            m_robot_copy->rootLink()->v = (m_robot_copy->rootLink()->p - base_p_old)/ m_dt;
+            m_robot_copy->rootLink()->w = base_R_old * omegaFromRotEx(base_R_old.transpose() * m_robot_copy->rootLink()->R) / m_dt;
+            for(int i=0;i<J_DOF;i++){ m_robot_copy->joint(i)->dq = (m_robot_copy->joint(i)->q - q_old(i)) / m_dt; }
+            m_robot_copy->calcForwardKinematics(true,false);
+            m_robot_copy->calcTotalMomentum(cur_P, cur_L);
             cur_ik_loop++;
             if(cur_ik_loop > 10000){std::cerr<<"[FullbodyInverseKinematicsSolverMT] thread time out"<<std::endl;break;}//異常終了でスレッドが残ってしまった時にタイムアウト終了
           }
