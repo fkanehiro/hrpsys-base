@@ -167,7 +167,7 @@ void interpolator::setGoal(const double *newg, const double *newv, double time,
         a1[i]=v[i];
         a2[i]=(-3*x[i] + 3*gx[i] - 2*v[i]*target_t - gv[i]*target_t) / (target_t*target_t);
         a3[i]=( 2*x[i] - 2*gx[i] +   v[i]*target_t + gv[i]*target_t) / (target_t*target_t*target_t);
-        a4[i]=a[5]=0;
+        a4[i]=a5[i]=0;
         break;
         }
     }
