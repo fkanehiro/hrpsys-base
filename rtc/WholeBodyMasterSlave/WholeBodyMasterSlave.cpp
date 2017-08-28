@@ -192,7 +192,7 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onInitialize(){
     hsp = boost::shared_ptr<WBMSCore>(new WBMSCore(m_dt));
 
     invdyn_zmp_filters.setParameter(25, 1/m_dt, Q_BUTTERWORTH);
-    final_ref_zmp_filter.setParameter(25, 1/m_dt, Q_BUTTERWORTH);
+    final_ref_zmp_filter.setParameter(5, 1/m_dt, Q_BUTTERWORTH);
 
     std::cerr << "[" << m_profile.instance_name << "] onInitialize() OK" << std::endl;
     return RTC::RTC_OK;
@@ -336,6 +336,7 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
         static hrp::Vector3 com_old_old = com_old;
         hrp::Vector3 com_acc = (com - 2*com_old + com_old_old)/(m_dt*m_dt);
         hrp::Vector3 ref_zmp; ref_zmp << com.head(XY)-(com(Z)/G)*com_acc.head(XY), 0;
+        if(mode.isInitialize()){ final_ref_zmp_filter.reset(ref_zmp); }
         ref_zmp = final_ref_zmp_filter.passFilter(ref_zmp);
         com_old_old = com_old;
         com_old = com;
@@ -368,6 +369,9 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
           m_optionalData.data.length(optionalDataLength);//TODO:これいいのか？
           for(int i=0;i<optionalDataLength;i++)m_optionalData.data[i] = 0;
         }
+//        m_optionalData.data[contact_states_index_map["rleg"]] = m_optionalData.data[optionalDataLength/2 + contact_states_index_map["rleg"]] = hsp->rp_ref_out.tgt[rf].is_contact;
+//        m_optionalData.data[contact_states_index_map["lleg"]] = m_optionalData.data[optionalDataLength/2 + contact_states_index_map["lleg"]] = hsp->rp_ref_out.tgt[lf].is_contact;
+        bool rf_is_contact =
         m_optionalData.data[contact_states_index_map["rleg"]] = m_optionalData.data[optionalDataLength/2 + contact_states_index_map["rleg"]] = hsp->rp_ref_out.tgt[rf].is_contact;
         m_optionalData.data[contact_states_index_map["lleg"]] = m_optionalData.data[optionalDataLength/2 + contact_states_index_map["lleg"]] = hsp->rp_ref_out.tgt[lf].is_contact;
       }
@@ -711,7 +715,7 @@ void WholeBodyMasterSlave::processHOFFARBIBFilter(hrp::BodyPtr& robot_in, hrp::B
   const double min_goal_time_offset = 0.1;
 //  const double avg_q_vel = 0.5;
 //  const double avg_q_vel = 1.0;
-  const double avg_q_vel = 2.0;
+  const double avg_q_vel = 1.5;
   for(int i=0;i<robot_in->numJoints();i++){
     double tmp_time = fabs(robot_in->joint(i)->q - robot_out->joint(i)->q) / avg_q_vel;
     if(tmp_time > goal_time){ goal_time = tmp_time; }
