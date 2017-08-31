@@ -163,7 +163,7 @@ class WBMSCore : UTIL_CONST {
         hrp::Vector3 com, zmp;
     }act_rs;
 
-    typedef boost::shared_ptr<FullbodyInverseKinematicsSolverMT> fikPtr;
+    typedef boost::shared_ptr<FullbodyInverseKinematicsSolver> fikPtr;
     fikPtr fik_ml;
     hrp::BodyPtr m_robot_ml;
 //    fikPtr fik_act;
@@ -319,7 +319,7 @@ class WBMSCore : UTIL_CONST {
       overwriteFootZFromFootLandOnCommand (rp_ref_out);
       setFootRotHorizontalIfGoLanding     (rp_ref_out);
 
-      limitManipulability                 (rp_ref_out);
+//      limitManipulability                 (rp_ref_out);
 
       applyCOMToSupportRegionLimit        (rp_ref_out.tgt[rf].abs.p, rp_ref_out.tgt[lf].abs.p, com_CP_ref_old);//これやらないと支持領域の移動によって1ステップ前のCOM位置はもうはみ出てるかもしれないから
 
@@ -541,7 +541,7 @@ class WBMSCore : UTIL_CONST {
       }
       const int pre_ik_loop = 2;
       for(int i=0;i<pre_ik_loop;i++){
-        for ( std::map<std::string, FullbodyInverseKinematicsSolverMT::IKparam>::iterator it = fik_ml->ikp.begin(); it != fik_ml->ikp.end(); it++ ) {
+        for ( std::map<std::string, FullbodyInverseKinematicsSolver::IKparam>::iterator it = fik_ml->ikp.begin(); it != fik_ml->ikp.end(); it++ ) {
             if (it->second.is_ik_enable) fik_ml->solveLimbIK (it->second, it->first, fik_ml->ratio_for_vel, false);
         }
       }

@@ -22,7 +22,7 @@
 
 using namespace RTC;
 
-#define USE_DEBUG_PORT
+//#define USE_DEBUG_PORT
 
 enum mode_enum{ MODE_IDLE, MODE_SYNC_TO_WBMS, MODE_WBMS, MODE_PAUSE, MODE_SYNC_TO_IDLE};
 
@@ -164,7 +164,7 @@ class WholeBodyMasterSlave : public RTC::DataFlowComponentBase, UTIL_CONST {
   };
 //  typedef boost::shared_ptr<SimpleFullbodyInverseKinematicsSolver> fikPtr;
 //  typedef boost::shared_ptr<FullbodyInverseKinematicsSolver> fikPtr;
-  typedef boost::shared_ptr<FullbodyInverseKinematicsSolverMT> fikPtr;
+  typedef boost::shared_ptr<FullbodyInverseKinematicsSolver> fikPtr;
   fikPtr fik, fik_ml;
   hrp::BodyPtr m_robot, m_robot_ml, m_robot_vsafe;
   std::vector<fikPtr> fik_list;

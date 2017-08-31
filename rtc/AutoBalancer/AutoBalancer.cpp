@@ -1084,8 +1084,7 @@ void AutoBalancer::solveFullbodyIK ()
   tmp.localR = hrp::Matrix33::Identity();
   tmp.targetPos = target_root_p;// will be ignored by selection_vec
   tmp.targetRpy = hrp::rpyFromRot(target_root_R);// ベースリンクの回転をフリーにはしないほうがいい(omegaの積分誤差で暴れる)
-  tmp.selection_vec << 0,0,0,1,1,1;
-  tmp.weight_vec << 1,1,1,1,1,1;
+  tmp.weight_vec << 0,0,0,1,1,1;
   ik_tgt_list.push_back(tmp);
 
   tmp.target_link_name = ikp["rleg"].target_link->name;
@@ -1093,8 +1092,7 @@ void AutoBalancer::solveFullbodyIK ()
   tmp.localR = ikp["rleg"].localR;
   tmp.targetPos = ikp["rleg"].target_p0;
   tmp.targetRpy = hrp::rpyFromRot(ikp["rleg"].target_r0);
-  tmp.selection_vec << 1,1,1,1,1,1;
-  tmp.weight_vec << 1,1,1,1,1,1;
+  tmp.weight_vec << 1,1,3,3,3,1;
   ik_tgt_list.push_back(tmp);
 
   tmp.target_link_name = ikp["lleg"].target_link->name;
@@ -1102,8 +1100,7 @@ void AutoBalancer::solveFullbodyIK ()
   tmp.localR = ikp["lleg"].localR;
   tmp.targetPos = ikp["lleg"].target_p0;
   tmp.targetRpy = hrp::rpyFromRot(ikp["lleg"].target_r0);
-  tmp.selection_vec << 1,1,1,1,1,1;
-  tmp.weight_vec << 1,1,1,1,1,1;
+  tmp.weight_vec << 1,1,3,3,3,1;
   ik_tgt_list.push_back(tmp);
 
 //  tmp.target_link_name = ikp["rarm"].target_link->name;
@@ -1111,7 +1108,6 @@ void AutoBalancer::solveFullbodyIK ()
 //  tmp.localR = ikp["rarm"].localR;
 //  tmp.targetPos = ikp["rarm"].target_p0;
 //  tmp.targetRpy = hrp::rpyFromRot(ikp["rarm"].target_r0);
-//  tmp.selection_vec << 1,1,1,1,1,1;
 //  tmp.weight_vec << 1,1,1,1,1,1;
 //  ik_tgt_list.push_back(tmp);
 //
@@ -1120,7 +1116,6 @@ void AutoBalancer::solveFullbodyIK ()
 //  tmp.localR = ikp["larm"].localR;
 //  tmp.targetPos = ikp["larm"].target_p0;
 //  tmp.targetRpy = hrp::rpyFromRot(ikp["larm"].target_r0);
-//  tmp.selection_vec << 1,1,1,1,1,1;
 //  tmp.weight_vec << 1,1,1,1,1,1;
 //  ik_tgt_list.push_back(tmp);
 
@@ -1130,13 +1125,8 @@ void AutoBalancer::solveFullbodyIK ()
   tmp.targetPos = ref_cog;// COM height will not be constraint
   tmp.targetRpy = hrp::Vector3(0, 0, 0);//reference angular momentum
 //  tmp.targetRpy = hrp::Vector3(0, 10, 0);//reference angular momentum
-  tmp.selection_vec << 1,1,1,1,1,1; // COM pos + Ang Momentum
-  tmp.weight_vec << 1,1,1,1,1,1;
+  tmp.weight_vec << 3,3,1,0.01,0.01,0.01;
   ik_tgt_list.push_back(tmp);
-
-//  fik->optional_weight_vector(m_robot->link("CHEST_JOINT0")->jointId) = 0.1;
-//  fik->optional_weight_vector(m_robot->link("CHEST_JOINT1")->jointId) = 0.1;
-//  fik->optional_weight_vector(m_robot->link("CHEST_JOINT2")->jointId) = 0.1;
 
   if( m_robot->link("RARM_JOINT2") != NULL) m_robot->link("RARM_JOINT2")->ulimit = deg2rad(-40);//脇の干渉回避のため
   if( m_robot->link("LARM_JOINT2") != NULL) m_robot->link("LARM_JOINT2")->llimit = deg2rad(40);
@@ -1144,9 +1134,8 @@ void AutoBalancer::solveFullbodyIK ()
 //  fik_in->reference_gain.fill(0.001);
 //  fik_in->reference_gain.tail(6) << 0.0,0.0,0.0, 0.001,0.001,0.001;
 
-  struct timespec startT, endT;
   int loop_result = 0;
-  const int IK_MAX_LOOP = 3;
+  const int IK_MAX_LOOP = 1;
   loop_result = fik->solveFullbodyIKLoop(ik_tgt_list, IK_MAX_LOOP);
 }
 

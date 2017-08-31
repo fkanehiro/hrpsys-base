@@ -173,8 +173,8 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onInitialize(){
     q_ip->setName(std::string(m_profile.instance_name)+" q_ip");
     q_ip->clear();
     // Generate FIK
-    fik = fikPtr(new FullbodyInverseKinematicsSolverMT(m_robot, std::string(m_profile.instance_name), m_dt));
-    fik_ml = fikPtr(new FullbodyInverseKinematicsSolverMT(m_robot_ml, std::string(m_profile.instance_name), m_dt));
+    fik = fikPtr(new FullbodyInverseKinematicsSolver(m_robot, std::string(m_profile.instance_name), m_dt));
+    fik_ml = fikPtr(new FullbodyInverseKinematicsSolver(m_robot_ml, std::string(m_profile.instance_name), m_dt));
     fik_list.push_back(fik);
     fik_list.push_back(fik_ml);
     body_list.push_back(m_robot);
@@ -574,8 +574,7 @@ void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr
   tmp.localR = hrp::Matrix33::Identity();
   tmp.targetPos = robot_in->rootLink()->p;// will be ignored by selection_vec
   tmp.targetRpy = com_ref.rpy;// ベースリンクの回転をフリーにはしないほうがいい(omegaの積分誤差で暴れる)
-  tmp.selection_vec << 0,0,0,1,1,1;
-  tmp.weight_vec << 1,1,1,1,1,1;
+  tmp.weight_vec << 0,0,0,1,1,1;
   ik_tgt_list.push_back(tmp);
 
   tmp.target_link_name = eename_ikcp_map["rleg"].target_link_name;
@@ -583,9 +582,7 @@ void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr
   tmp.localR = eename_ikcp_map["rleg"].localR;
   tmp.targetPos = rf_ref.p;
   tmp.targetRpy = rf_ref.rpy;
-  tmp.selection_vec << 1,1,1,1,1,1;
-  tmp.weight_vec << 1,1,3,1,1,1;
-//  tmp.weight_vec << 1,1,1,1,1,1;
+  tmp.weight_vec << 1,1,5,1,1,1;
   ik_tgt_list.push_back(tmp);
 
   tmp.target_link_name = eename_ikcp_map["lleg"].target_link_name;
@@ -593,9 +590,7 @@ void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr
   tmp.localR = eename_ikcp_map["lleg"].localR;
   tmp.targetPos = lf_ref.p;
   tmp.targetRpy = lf_ref.rpy;
-  tmp.selection_vec << 1,1,1,1,1,1;
-  tmp.weight_vec << 1,1,3,1,1,1;
-//  tmp.weight_vec << 1,1,1,1,1,1;
+  tmp.weight_vec << 1,1,5,1,1,1;
   ik_tgt_list.push_back(tmp);
 
   tmp.target_link_name = eename_ikcp_map["rarm"].target_link_name;
@@ -603,8 +598,7 @@ void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr
   tmp.localR = eename_ikcp_map["rarm"].localR;
   tmp.targetPos = rh_ref.p;
   tmp.targetRpy = rh_ref.rpy;
-  tmp.selection_vec << 1,1,1,1,1,1;
-  tmp.weight_vec << 1,1,1,1,1,1;
+  tmp.weight_vec = hrp::dvector6::Constant(0.5);
   ik_tgt_list.push_back(tmp);
 
   tmp.target_link_name = eename_ikcp_map["larm"].target_link_name;
@@ -612,8 +606,7 @@ void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr
   tmp.localR = eename_ikcp_map["larm"].localR;
   tmp.targetPos = lh_ref.p;
   tmp.targetRpy = lh_ref.rpy;
-  tmp.selection_vec << 1,1,1,1,1,1;
-  tmp.weight_vec << 1,1,1,1,1,1;
+  tmp.weight_vec = hrp::dvector6::Constant(0.5);
   ik_tgt_list.push_back(tmp);
 
   tmp.target_link_name = "COM";
@@ -621,17 +614,14 @@ void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr
   tmp.localR = hrp::Matrix33::Identity();
   tmp.targetPos = com_ref.p;// COM height will not be constraint
   tmp.targetRpy = hrp::Vector3::Zero();//reference angular momentum
-//  tmp.selection_vec << 1,1,1,0,0,0; // COM pos + Ang Momentum
-  tmp.selection_vec << 1,1,1,0,0,0; // COM pos + Ang Momentum
-  tmp.weight_vec << 3,3,0.5,1e-4,1e-4,1e-4;
+  tmp.weight_vec << 100,100,0.5,1e-3,1e-3,1e-3;
 //  tmp.weight_vec << 1,1,1,1,1,1;
   ik_tgt_list.push_back(tmp);
 
   if(robot_in->link("HEAD_JOINT1") != NULL){
     tmp.target_link_name = "HEAD_JOINT1";
     tmp.targetRpy = head_ref.rpy;
-    tmp.selection_vec << 0,0,0,0,1,1;
-    tmp.weight_vec << 1,1,1,1,1,1;
+    tmp.weight_vec << 0,0,0,0,1e-1,1e-1;
     ik_tgt_list.push_back(tmp);
   }
 
@@ -639,18 +629,18 @@ void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr
 //  fik_in->optional_weight_vector(robot_in->link("CHEST_JOINT1")->jointId) = 0.1;
 //  fik_in->optional_weight_vector(robot_in->link("CHEST_JOINT2")->jointId) = 0.1;
 //  fik_in->optional_weight_vector.tail(6).fill(0.01);
-  if( robot_in->link("RARM_JOINT2") != NULL) robot_in->link("RARM_JOINT2")->ulimit = deg2rad(-30);//脇の干渉回避のため
-  if( robot_in->link("LARM_JOINT2") != NULL) robot_in->link("LARM_JOINT2")->llimit = deg2rad(30);
+  if( robot_in->link("RARM_JOINT2") != NULL) robot_in->link("RARM_JOINT2")->ulimit = deg2rad(-40);//脇の干渉回避のため
+  if( robot_in->link("LARM_JOINT2") != NULL) robot_in->link("LARM_JOINT2")->llimit = deg2rad(40);
 
   fik_in->reference_q = init_sync_state;
-//  fik_in->reference_gain.fill(0.001);
-//  fik_in->reference_gain.tail(6) << 0.0,0.0,0.0, 0.001,0.001,0.001;
+  fik_in->reference_gain.fill(0.001);
+  fik_in->reference_gain.tail(6) << 0.0,0.0,0.0, 0.001,0.001,0.001;
 
   struct timespec startT, endT;
   int loop_result = 0;
-  const int IK_MAX_LOOP = 3;
+  const int IK_MAX_LOOP = 1;
   clock_gettime(CLOCK_REALTIME, &startT);
-  loop_result = fik_in->solveFullbodyIKLoopMT(ik_tgt_list, IK_MAX_LOOP);
+  loop_result = fik_in->solveFullbodyIKLoop(ik_tgt_list, IK_MAX_LOOP);
   if(DEBUGP && TIMECALC){clock_gettime(CLOCK_REALTIME, &endT); std::cout << (double)(endT.tv_sec - startT.tv_sec + (endT.tv_nsec - startT.tv_nsec) * 1e-9) << " @ solveIK"<<loop_result<<"loop" << std::endl;  clock_gettime(CLOCK_REALTIME, &startT);}
 }
 #else

@@ -22,7 +22,6 @@ class IKConstraintParam {
     hrp::Vector3 localPos;
     hrp::Matrix33 localR;
     hrp::dvector6 weight_vec;
-    hrp::ivector selection_vec;
     double pos_precision, rot_precision;
 
     IKConstraintParam ()
@@ -31,7 +30,6 @@ class IKConstraintParam {
        localPos(hrp::Vector3::Zero()),
        localR(hrp::Matrix33::Identity()),
        weight_vec(hrp::dvector6::Ones()),
-       selection_vec(hrp::ivector::Ones(6)),
        pos_precision(1e-3), rot_precision(1e-2)
     {};
 };
@@ -41,7 +39,6 @@ class FullbodyInverseKinematicsSolver : public SimpleFullbodyInverseKinematicsSo
   protected:
     hrp::dmatrix J_all, J_all_inv, J_com, J_am;
     hrp::dvector dq_all, dp_ee_all, weight_vec_all;
-    hrp::ivector selection_vec_all;
     int WS_DOF, BASE_DOF, J_DOF, ALL_DOF;
     hrp::Vector3 cur_P,cur_L;
 
@@ -85,8 +82,8 @@ class FullbodyInverseKinematicsSolver : public SimpleFullbodyInverseKinematicsSo
           hrp::Vector3 pos_err = _ik_tgt_list[i].targetPos - (target_link_ptr->p + target_link_ptr->R * _ik_tgt_list[i].localPos);
           hrp::Vector3 rot_err = omegaFromRotEx(hrp::rotFromRpy(_ik_tgt_list[i].targetRpy).transpose() * target_link_ptr->R * _ik_tgt_list[i].localR);
           for(int j=0;j<3;j++){
-            if(pos_err(j) > _ik_tgt_list[i].pos_precision && _ik_tgt_list[i].selection_vec(j) != 0){return false;}
-            if(rot_err(j) > _ik_tgt_list[i].rot_precision && _ik_tgt_list[i].selection_vec(j+3) != 0){return false;}
+            if(pos_err(j) > _ik_tgt_list[i].pos_precision && _ik_tgt_list[i].weight_vec(j) > 0){return false;}
+            if(rot_err(j) > _ik_tgt_list[i].rot_precision && _ik_tgt_list[i].weight_vec(j+3) > 0){return false;}
           }
         }
         else if(!target_link_ptr && _ik_tgt_list[i].target_link_name == "COM"){  // COM
@@ -94,7 +91,7 @@ class FullbodyInverseKinematicsSolver : public SimpleFullbodyInverseKinematicsSo
 //            robot_in->calcTotalMomentum(fik_in->cur_P, fik_in->cur_L);
 //            hrp::Vector3 rot_err = omegaFromRotEx(ik_tgt_list[i].target_r.transpose() * ik_tgt_list[i].localR * target_link_ptr->R);
           for(int j=0;j<3;j++){
-            if(pos_err(j) > _ik_tgt_list[i].pos_precision && _ik_tgt_list[i].selection_vec(j) != 0){return false;}
+            if(pos_err(j) > _ik_tgt_list[i].pos_precision && _ik_tgt_list[i].weight_vec(j) > 0){return false;}
 //              if(rot_err(j) > ik_tgt_list[i].rot_precision && ik_tgt_list[i].selection_vec(j+3) != 0){return false;}
           }
         }
@@ -105,7 +102,6 @@ class FullbodyInverseKinematicsSolver : public SimpleFullbodyInverseKinematicsSo
       J_all = hrp::dmatrix::Zero(WS_DOF*_ik_tgt_list.size(), ALL_DOF);
       dq_all.fill(0);
       dp_ee_all = hrp::dvector::Zero(WS_DOF*_ik_tgt_list.size());
-      selection_vec_all = hrp::ivector::Zero(WS_DOF*_ik_tgt_list.size());
       weight_vec_all = hrp::dvector::Ones(WS_DOF*_ik_tgt_list.size());
       //リファレンスに微少量戻す
       for(int i=0;i<J_DOF;i++){ _robot->joint(i)->q = _robot->joint(i)->q * (1-reference_gain(i)) + reference_q(i) * reference_gain(i); }
@@ -150,37 +146,37 @@ class FullbodyInverseKinematicsSolver : public SimpleFullbodyInverseKinematicsSo
         }
         else{ std::cerr<<"Unknown Link Target !!"<<std::endl; continue; } //不明なリンク指定
         //全体の中に配置
-//        if(vel_p_ref.norm()>0.1){vel_p_ref = vel_p_ref.normalized() * 0.1;}
-//        if(vel_r_ref.norm()>0.1){vel_r_ref = vel_r_ref.normalized() * 0.1;}
+        if(vel_p_ref.norm()>0.1){vel_p_ref = vel_p_ref.normalized() * 0.1;}
+        if(vel_r_ref.norm()>0.1){vel_r_ref = vel_r_ref.normalized() * 0.1;}
         dp_ee_all.segment(WS_DOF*i,WS_DOF) << vel_p_ref, vel_r_ref;
         weight_vec_all.segment(WS_DOF*i, WS_DOF) = _ik_tgt_list[i].weight_vec;
-        selection_vec_all.segment(WS_DOF*i, WS_DOF) = _ik_tgt_list[i].selection_vec;
         J_all.middleRows(WS_DOF*i, WS_DOF) = J_part;
       }
 
-      hrp::dmatrix selection_matrix = hrp::dmatrix::Zero(selection_vec_all.sum(), WS_DOF*_ik_tgt_list.size());
-      for(int i=0, j=0; i<selection_vec_all.rows(); i++){ if(selection_vec_all(i) == 1){ selection_matrix(j, i) = 1.0; j++; } }
+      hrp::dmatrix selection_matrix = hrp::dmatrix::Zero((weight_vec_all.array()>0.0).count(), WS_DOF*_ik_tgt_list.size());
+      for(int i=0, j=0; i<weight_vec_all.rows(); i++){ if(weight_vec_all(i) > 0.0){ selection_matrix(j, i) = 1.0; j++; } }
 
 //      weight_vec_all /= weight_vec_all.maxCoeff();
       J_all = selection_matrix * J_all;
       dp_ee_all = selection_matrix * dp_ee_all;
       weight_vec_all = selection_matrix * weight_vec_all;
-//      J_all *= selection_matrix;
-//      dp_ee_all *= selection_matrix;
-//      weight_vec_all *= selection_matrix;
 
-//      hrp::calcPseudoInverse(J_all,J_all_inv,1.0e-3);//超遅い1[ms]とか
-      calcJacobianInverseNullspace_copy(_robot, J_all, J_all_inv);
+      const double lambda = 0.001;
+      hrp::dmatrix H = J_all.transpose() * weight_vec_all.asDiagonal() * J_all + lambda * hrp::dmatrix::Identity(J_all.cols(), J_all.cols());
+      hrp::dvector g = J_all.transpose() * weight_vec_all.asDiagonal() * dp_ee_all;
 
-      dq_all = J_all_inv * dp_ee_all; // dq = pseudoInverse(J) * v
+      dq_all = H.inverse() * g;
+
       static int count;
       if(count++ % 10000 == 0){
         std::cout<<std::setprecision(2) << "J=\n"<<J_all<<std::setprecision(6)<<std::endl;
         std::cout<<std::setprecision(2) << "J_all_inv=\n"<<J_all_inv<<std::setprecision(6)<<std::endl;
-        std::cout<<std::setprecision(2) << "selection_matrix=\n"<<selection_matrix<<std::setprecision(6)<<std::endl;
-        std::cout<<"eevel_all\n"<<dp_ee_all.transpose()<<std::endl;
-        std::cout<<"dq_all\n"<<dq_all.transpose()<<std::endl;
-        std::cout<<"weight_vec_all\n"<<weight_vec_all.transpose()<<std::endl;
+        dbg(selection_matrix);
+        dbg(H);
+        dbg(g.transpose());
+        dbg(dp_ee_all.transpose());
+        dbg(dq_all.transpose());
+        dbg(weight_vec_all.transpose());
         std::cout<<"q_ans_all\n";
         for(int i=0;i<_robot->numJoints();i++)std::cerr<<_robot->joint(i)->q<<" ";
         std::cout<<std::endl;
@@ -201,6 +197,106 @@ class FullbodyInverseKinematicsSolver : public SimpleFullbodyInverseKinematicsSo
       _robot->rootLink()->R = base_R_ans;
       _robot->calcForwardKinematics();
     }
+//    void solveFullbodyIK(hrp::BodyPtr& _robot, const std::vector<IKConstraintParam>& _ik_tgt_list){
+//      J_all = hrp::dmatrix::Zero(WS_DOF*_ik_tgt_list.size(), ALL_DOF);
+//      dq_all.fill(0);
+//      dp_ee_all = hrp::dvector::Zero(WS_DOF*_ik_tgt_list.size());
+//      selection_vec_all = hrp::ivector::Zero(WS_DOF*_ik_tgt_list.size());
+//      weight_vec_all = hrp::dvector::Ones(WS_DOF*_ik_tgt_list.size());
+//      //リファレンスに微少量戻す
+//      for(int i=0;i<J_DOF;i++){ _robot->joint(i)->q = _robot->joint(i)->q * (1-reference_gain(i)) + reference_q(i) * reference_gain(i); }
+//      _robot->rootLink()->p = _robot->rootLink()->p.cwiseProduct(hrp::Vector3::Ones()-reference_gain.segment(J_DOF,3)) + reference_q.segment(J_DOF,3).cwiseProduct(reference_gain.segment(J_DOF,3));
+//      _robot->rootLink()->R = hrp::rotFromRpy( hrp::rpyFromRot(_robot->rootLink()->R).cwiseProduct(hrp::Vector3::Ones()-reference_gain.segment(J_DOF+3,3)) + reference_q.segment(J_DOF+3,3).cwiseProduct(reference_gain.segment(J_DOF+3,3)));
+//      for(int i=0;i<J_DOF;i++){ LIMIT_MINMAX(_robot->joint(i)->q, _robot->joint(i)->llimit, _robot->joint(i)->ulimit); }
+//      _robot->calcForwardKinematics();
+//      //ヤコビアンと各ベクトル生成
+//      for ( int i=0; i<_ik_tgt_list.size(); i++ ) {
+//        hrp::Link* target_link_ptr = _robot->link(_ik_tgt_list[i].target_link_name);
+//        hrp::Matrix33 ref_link_origin_R(hrp::rotFromRpy(_ik_tgt_list[i].targetRpy) * _ik_tgt_list[i].localR.transpose()); //拘束ポイントの位置姿勢->リンク原点の位置姿勢
+//        hrp::Vector3 ref_link_origin_p(_ik_tgt_list[i].targetPos - ref_link_origin_R * _ik_tgt_list[i].localPos);
+//        hrp::dmatrix J_part = hrp::dmatrix::Zero(WS_DOF, ALL_DOF); //全身to一拘束点へのヤコビアン
+//        hrp::Vector3 vel_p_ref, vel_r_ref; //velと言いつつ実際は差分
+//        //ベースリンク，通常リンク，重心で場合分け
+//        if(target_link_ptr){//ベースリンク，通常リンク共通
+//          vel_p_ref = ref_link_origin_p - target_link_ptr->p;
+//          vel_r_ref = target_link_ptr->R * omegaFromRotEx(target_link_ptr->R.transpose() * ref_link_origin_R);
+//
+//          if(target_link_ptr == _robot->rootLink()){ //ベース限定
+//            J_part.rightCols(WS_DOF) = hrp::dmatrix::Identity(WS_DOF, WS_DOF);
+//          }
+//          else{ //通常リンク限定
+//            hrp::JointPathEx tgt_jpath(_robot, _robot->rootLink(), target_link_ptr, m_dt, false, "");
+//            hrp::dmatrix J_jpath;
+//            tgt_jpath.calcJacobian(J_jpath);
+//            for(int id_in_jpath=0; id_in_jpath<tgt_jpath.numJoints(); id_in_jpath++){ //ジョイントパスのJaxobianを全身用に並び替え
+//              int id_in_body = tgt_jpath.joint(id_in_jpath)->jointId; //全身でのjoint番号
+//              J_part.col(id_in_body) = J_jpath.col(id_in_jpath);
+//            }
+//            J_part.rightCols(BASE_DOF) = hrp::dmatrix::Identity( WS_DOF,  BASE_DOF );
+//            J_part.rightCols(BASE_DOF).topRightCorner(3,3) = hrp::hat(target_link_ptr->p - _robot->rootLink()->p);
+//          }
+//        }
+//        else if(!target_link_ptr && _ik_tgt_list[i].target_link_name == "COM"){ //重心限定
+//          vel_p_ref = ref_link_origin_p - _robot->calcCM();
+////          vel_r_ref = (omegaFromRotEx(ref_link_origin_R) - (cur_L - _robot->rootLink()->p.cross(cur_P))) * m_dt;// COMのrotはAngulerMomentumとして扱う
+//          vel_r_ref = _ik_tgt_list[i].targetRpy;// COMのrotはAngulerMomentumとして扱う
+//          _robot->calcCMJacobian(NULL, J_com);//デフォで右端に3x6のbase->COMのヤコビアンが付いてくる
+//          _robot->calcAngularMomentumJacobian(NULL, J_am);//すでにrootlink周りの角運動量ヤコビアンが返ってくる？
+//          J_part << J_com, J_am;
+//        }
+//        else{ std::cerr<<"Unknown Link Target !!"<<std::endl; continue; } //不明なリンク指定
+//        //全体の中に配置
+////        if(vel_p_ref.norm()>0.1){vel_p_ref = vel_p_ref.normalized() * 0.1;}
+////        if(vel_r_ref.norm()>0.1){vel_r_ref = vel_r_ref.normalized() * 0.1;}
+//        dp_ee_all.segment(WS_DOF*i,WS_DOF) << vel_p_ref, vel_r_ref;
+//        weight_vec_all.segment(WS_DOF*i, WS_DOF) = _ik_tgt_list[i].weight_vec;
+//        selection_vec_all.segment(WS_DOF*i, WS_DOF) = _ik_tgt_list[i].selection_vec;
+//        J_all.middleRows(WS_DOF*i, WS_DOF) = J_part;
+//      }
+//
+//      hrp::dmatrix selection_matrix = hrp::dmatrix::Zero(selection_vec_all.sum(), WS_DOF*_ik_tgt_list.size());
+//      for(int i=0, j=0; i<selection_vec_all.rows(); i++){ if(selection_vec_all(i) == 1){ selection_matrix(j, i) = 1.0; j++; } }
+//
+////      weight_vec_all /= weight_vec_all.maxCoeff();
+//      J_all = selection_matrix * J_all;
+//      dp_ee_all = selection_matrix * dp_ee_all;
+//      weight_vec_all = selection_matrix * weight_vec_all;
+////      J_all *= selection_matrix;
+////      dp_ee_all *= selection_matrix;
+////      weight_vec_all *= selection_matrix;
+//
+////      hrp::calcPseudoInverse(J_all,J_all_inv,1.0e-3);//超遅い1[ms]とか
+//      calcJacobianInverseNullspace_copy(_robot, J_all, J_all_inv);
+//
+//      dq_all = J_all_inv * dp_ee_all; // dq = pseudoInverse(J) * v
+//      static int count;
+//      if(count++ % 10000 == 0){
+//        std::cout<<std::setprecision(2) << "J=\n"<<J_all<<std::setprecision(6)<<std::endl;
+//        std::cout<<std::setprecision(2) << "J_all_inv=\n"<<J_all_inv<<std::setprecision(6)<<std::endl;
+//        std::cout<<std::setprecision(2) << "selection_matrix=\n"<<selection_matrix<<std::setprecision(6)<<std::endl;
+//        std::cout<<"eevel_all\n"<<dp_ee_all.transpose()<<std::endl;
+//        std::cout<<"dq_all\n"<<dq_all.transpose()<<std::endl;
+//        std::cout<<"weight_vec_all\n"<<weight_vec_all.transpose()<<std::endl;
+//        std::cout<<"q_ans_all\n";
+//        for(int i=0;i<_robot->numJoints();i++)std::cerr<<_robot->joint(i)->q<<" ";
+//        std::cout<<std::endl;
+//      }
+//
+//      const double LAMBDA = 1.0;
+//      // check validity
+//      hrp::Matrix33 base_R_ans = hrp::hat(dq_all.segment(J_DOF+3,3) * LAMBDA).exp() * _robot->rootLink()->R;
+//      if(!base_R_ans.isUnitary()){ std::cerr <<"ERROR base_R_ans is not Unitary" << std::endl; return; }
+//      for(int i=0;i<dq_all.rows();i++){ if( isnan(dq_all(i)) || isinf(dq_all(i)) ){ std::cerr <<"ERROR nan/inf is found" << std::endl; return;} }
+//
+//      //関節角+ベース位置姿勢更新
+//      for(int i=0;i<J_DOF;i++){
+//        _robot->joint(i)->q += dq_all(i) * LAMBDA/* * m_dt*/;
+//        LIMIT_MINMAX(_robot->joint(i)->q, _robot->joint(i)->llimit, _robot->joint(i)->ulimit);
+//      }
+//      _robot->rootLink()->p += dq_all.segment(J_DOF,3) * LAMBDA/* * m_dt*/;//vel計算する時からm_dt使ってないから使わなくていい
+//      _robot->rootLink()->R = base_R_ans;
+//      _robot->calcForwardKinematics();
+//    }
 
 
     bool calcJacobianInverseNullspace_copy(hrp::BodyPtr _robot, hrp::dmatrix &_J, hrp::dmatrix &_Jinv) {
