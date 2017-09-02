@@ -27,36 +27,36 @@ using namespace RTC;
 enum mode_enum{ MODE_IDLE, MODE_SYNC_TO_WBMS, MODE_WBMS, MODE_PAUSE, MODE_SYNC_TO_IDLE};
 
 class ControlMode{
-  private:
-    mode_enum current_mode, previous_mode, requested_mode;
-  public:
-    ControlMode(){ current_mode = previous_mode = requested_mode = MODE_IDLE;}
-    ~ControlMode(){}
-    bool setModeRequest(mode_enum in){
-      switch(in){
-        case MODE_SYNC_TO_WBMS:
-          if(current_mode == MODE_IDLE){ requested_mode = MODE_SYNC_TO_WBMS; return true; }else{ return false; }
-        case MODE_WBMS:
-          if(current_mode == MODE_SYNC_TO_WBMS || current_mode == MODE_PAUSE ){ requested_mode = MODE_WBMS; return true; }else{ return false; }
-        case MODE_PAUSE:
-          if(current_mode == MODE_WBMS){ requested_mode = MODE_PAUSE; return true; }else{ return false; }
-        case MODE_SYNC_TO_IDLE:
-          if(current_mode == MODE_WBMS || current_mode == MODE_PAUSE ){ requested_mode = MODE_SYNC_TO_IDLE; return true; }else{ return false; }
-        case MODE_IDLE:
-          if(current_mode == MODE_SYNC_TO_IDLE ){ requested_mode = MODE_IDLE; return true; }else{ return false; }
-        default:
-          return false;
-      }
-    }
-    void update(){ previous_mode = current_mode; current_mode = requested_mode; }
-    mode_enum now(){ return current_mode; }
-    mode_enum pre(){ return previous_mode; }
-    bool isRunning(){ return (current_mode==MODE_SYNC_TO_WBMS) || (current_mode==MODE_WBMS) || (current_mode==MODE_PAUSE) || (current_mode==MODE_SYNC_TO_IDLE) ;}
-    bool isInitialize(){ return (previous_mode==MODE_IDLE) && (current_mode==MODE_SYNC_TO_WBMS) ;}
+    private:
+        mode_enum current_mode, previous_mode, requested_mode;
+    public:
+        ControlMode(){ current_mode = previous_mode = requested_mode = MODE_IDLE;}
+        ~ControlMode(){}
+        bool setModeRequest(mode_enum in){
+            switch(in){
+                case MODE_SYNC_TO_WBMS:
+                    if(current_mode == MODE_IDLE){ requested_mode = MODE_SYNC_TO_WBMS; return true; }else{ return false; }
+                case MODE_WBMS:
+                    if(current_mode == MODE_SYNC_TO_WBMS || current_mode == MODE_PAUSE ){ requested_mode = MODE_WBMS; return true; }else{ return false; }
+                case MODE_PAUSE:
+                    if(current_mode == MODE_WBMS){ requested_mode = MODE_PAUSE; return true; }else{ return false; }
+                case MODE_SYNC_TO_IDLE:
+                    if(current_mode == MODE_WBMS || current_mode == MODE_PAUSE ){ requested_mode = MODE_SYNC_TO_IDLE; return true; }else{ return false; }
+                case MODE_IDLE:
+                    if(current_mode == MODE_SYNC_TO_IDLE ){ requested_mode = MODE_IDLE; return true; }else{ return false; }
+                default:
+                    return false;
+            }
+        }
+        void update(){ previous_mode = current_mode; current_mode = requested_mode; }
+        mode_enum now(){ return current_mode; }
+        mode_enum pre(){ return previous_mode; }
+        bool isRunning(){ return (current_mode==MODE_SYNC_TO_WBMS) || (current_mode==MODE_WBMS) || (current_mode==MODE_PAUSE) || (current_mode==MODE_SYNC_TO_IDLE) ;}
+        bool isInitialize(){ return (previous_mode==MODE_IDLE) && (current_mode==MODE_SYNC_TO_WBMS) ;}
 };
 
 class WholeBodyMasterSlave : public RTC::DataFlowComponentBase, UTIL_CONST {
-  public:
+    public:
     WholeBodyMasterSlave(RTC::Manager* manager);
     virtual ~WholeBodyMasterSlave();
     virtual RTC::ReturnCode_t onInitialize();
@@ -72,7 +72,7 @@ class WholeBodyMasterSlave : public RTC::DataFlowComponentBase, UTIL_CONST {
     bool setWholeBodyMasterSlaveParam(const OpenHRP::WholeBodyMasterSlaveService::WholeBodyMasterSlaveParam& i_param);
     bool getWholeBodyMasterSlaveParam(OpenHRP::WholeBodyMasterSlaveService::WholeBodyMasterSlaveParam& i_param);
 
-  protected:
+    protected:
     TimedDoubleSeq m_qRef;
     InPort<TimedDoubleSeq> m_qRefIn;
     TimedPoint3D m_basePos;
@@ -155,68 +155,68 @@ class WholeBodyMasterSlave : public RTC::DataFlowComponentBase, UTIL_CONST {
 
     WholeBodyMasterSlaveService_impl m_service0;
 
- private:
-  struct ABCIKparam {
-    hrp::Vector3 target_p0, localPos, adjust_interpolation_target_p0, adjust_interpolation_org_p0;
-    hrp::Matrix33 target_r0, localR, adjust_interpolation_target_r0, adjust_interpolation_org_r0;
-    hrp::Link* target_link;
-    bool is_active, has_toe_joint;
-  };
-//  typedef boost::shared_ptr<SimpleFullbodyInverseKinematicsSolver> fikPtr;
-//  typedef boost::shared_ptr<FullbodyInverseKinematicsSolver> fikPtr;
-  typedef boost::shared_ptr<FullbodyInverseKinematicsSolver> fikPtr;
-  fikPtr fik, fik_ml;
-  hrp::BodyPtr m_robot, m_robot_ml, m_robot_vsafe;
-  std::vector<fikPtr> fik_list;
-  std::vector<hrp::BodyPtr> body_list;
-  std::map<std::string, IKConstraintParam> eename_ikcp_map;
-  std::map<std::string, size_t> contact_states_index_map;
-  double m_dt;
+    private:
+    struct ABCIKparam {
+        hrp::Vector3 target_p0, localPos, adjust_interpolation_target_p0, adjust_interpolation_org_p0;
+        hrp::Matrix33 target_r0, localR, adjust_interpolation_target_r0, adjust_interpolation_org_r0;
+        hrp::Link* target_link;
+        bool is_active, has_toe_joint;
+    };
+    //  typedef boost::shared_ptr<SimpleFullbodyInverseKinematicsSolver> fikPtr;
+    //  typedef boost::shared_ptr<FullbodyInverseKinematicsSolver> fikPtr;
+    typedef boost::shared_ptr<FullbodyInverseKinematicsSolver> fikPtr;
+    fikPtr fik, fik_ml;
+    hrp::BodyPtr m_robot, m_robot_ml, m_robot_vsafe;
+    std::vector<fikPtr> fik_list;
+    std::vector<hrp::BodyPtr> body_list;
+    std::map<std::string, IKConstraint> eename_ikcp_map;
+    std::map<std::string, size_t> contact_states_index_map;
+    double m_dt;
 
-  double transition_interpolator_ratio;
-  interpolator *transition_interpolator;
-  int ROBOT_ALL_DOF;
-  interpolator *q_ip;
-  hrp::dvector init_sync_state;
+    double transition_interpolator_ratio;
+    interpolator *transition_interpolator;
+    int ROBOT_ALL_DOF;
+    interpolator *q_ip;
+    hrp::dvector init_sync_state;
 
-  int optionalDataLength;
-  unsigned int m_debugLevel;
-  bool is_legged_robot;
-  unsigned int loop;
+    int optionalDataLength;
+    unsigned int m_debugLevel;
+    bool is_legged_robot;
+    unsigned int loop;
 
-  hrp::InvDynStateBuffer idsb;
-  BiquadIIRFilterVec invdyn_zmp_filters;
+    hrp::InvDynStateBuffer idsb;
+    BiquadIIRFilterVec invdyn_zmp_filters;
 
-  BiquadIIRFilterVec final_ref_zmp_filter;
+    BiquadIIRFilterVec final_ref_zmp_filter;
 
-  IIRFilter ref_ee_vel_v_filter;
+    IIRFilter ref_ee_vel_v_filter;
 
-  HumanPose raw_pose;
+    HumanPose raw_pose;
 
-  boost::shared_ptr<WBMSCore> hsp;
+    boost::shared_ptr<WBMSCore> hsp;
 
-  hrp::Vector3 torso_rot_rmc;
-  ControlMode mode;
+    hrp::Vector3 torso_rot_rmc;
+    ControlMode mode;
 
-//  enum { MODE_IDLE, MODE_SYNC_TO_WBMS, MODE_WBMS, MODE_PAUSE, MODE_SYNC_TO_IDLE} mode, previous_mode;
-//  bool isRunning(){ return (mode==MODE_SYNC_TO_WBMS) || (mode==MODE_WBMS) || (mode==MODE_PAUSE) || (mode==MODE_SYNC_TO_IDLE) ;}
-//  bool isInitialize(){ return (previous_mode==MODE_IDLE) && (mode==MODE_SYNC_TO_WBMS) ;}
-//  enum mode_enum{ MODE_IDLE, MODE_SYNC_TO_WBMS, MODE_WBMS, MODE_PAUSE, MODE_SYNC_TO_IDLE};
+    //  enum { MODE_IDLE, MODE_SYNC_TO_WBMS, MODE_WBMS, MODE_PAUSE, MODE_SYNC_TO_IDLE} mode, previous_mode;
+    //  bool isRunning(){ return (mode==MODE_SYNC_TO_WBMS) || (mode==MODE_WBMS) || (mode==MODE_PAUSE) || (mode==MODE_SYNC_TO_IDLE) ;}
+    //  bool isInitialize(){ return (previous_mode==MODE_IDLE) && (mode==MODE_SYNC_TO_WBMS) ;}
+    //  enum mode_enum{ MODE_IDLE, MODE_SYNC_TO_WBMS, MODE_WBMS, MODE_PAUSE, MODE_SYNC_TO_IDLE};
 
-  void setupfik(fikPtr& fik_in, hrp::BodyPtr& robot_in, RTC::Properties& prop_in);
-  void calcManipulability(fikPtr& fik_in, hrp::BodyPtr& robot_in);
-  void calcManipulabilityJointLimit(fikPtr& fik_in, hrp::BodyPtr& robot_in, hrp::Vector3 target_v_old[], WBMSPose3D& rf_ref, WBMSPose3D& lf_ref, WBMSPose3D& rh_ref, WBMSPose3D& lh_ref);
-  void calcManipulabilityJointLimitForWBMS(fikPtr& fik_in, hrp::BodyPtr& robot_in);
-  void solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr& robot_in, const WBMSPose3D& com_ref, const WBMSPose3D& rf_ref, const WBMSPose3D& lf_ref, const WBMSPose3D& rh_ref, const WBMSPose3D& lh_ref, const WBMSPose3D& head_ref, const std::string& debug_prefix="");
-  void processTransition();
-  void preProcessForWholeBodyMasterSlave(fikPtr& fik_in, hrp::BodyPtr& robot_in);
-  void processWholeBodyMasterSlave(fikPtr& fik_in, hrp::BodyPtr& robot_in, const HumanPose& pose_ref);
-  void processWholeBodyMasterSlave_Raw(fikPtr& fik_in, hrp::BodyPtr& robot_in, HumanPose& pose_ref);
-  void processMomentumCompensation(fikPtr& fik_in, hrp::BodyPtr& robot_in, hrp::BodyPtr& robot_normal_in, const HumanPose& pose_ref);
-  void processHOFFARBIBFilter(hrp::BodyPtr& robot_in, hrp::BodyPtr& robot_out);
-  bool isOptionalDataContact (const std::string& ee_name) { return (std::fabs(m_optionalData.data[contact_states_index_map[ee_name]]-1.0)<0.1)?true:false; };
+    void setupfik(fikPtr& fik_in, hrp::BodyPtr& robot_in, RTC::Properties& prop_in);
+    void calcManipulability(fikPtr& fik_in, hrp::BodyPtr& robot_in);
+    void calcManipulabilityJointLimit(fikPtr& fik_in, hrp::BodyPtr& robot_in, hrp::Vector3 target_v_old[], WBMSPose3D& rf_ref, WBMSPose3D& lf_ref, WBMSPose3D& rh_ref, WBMSPose3D& lh_ref);
+    void calcManipulabilityJointLimitForWBMS(fikPtr& fik_in, hrp::BodyPtr& robot_in);
+    void solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr& robot_in, const WBMSPose3D& com_ref, const WBMSPose3D& rf_ref, const WBMSPose3D& lf_ref, const WBMSPose3D& rh_ref, const WBMSPose3D& lh_ref, const WBMSPose3D& head_ref, const std::string& debug_prefix="");
+    void processTransition();
+    void preProcessForWholeBodyMasterSlave(fikPtr& fik_in, hrp::BodyPtr& robot_in);
+    void processWholeBodyMasterSlave(fikPtr& fik_in, hrp::BodyPtr& robot_in, const HumanPose& pose_ref);
+    void processWholeBodyMasterSlave_Raw(fikPtr& fik_in, hrp::BodyPtr& robot_in, HumanPose& pose_ref);
+    void processMomentumCompensation(fikPtr& fik_in, hrp::BodyPtr& robot_in, hrp::BodyPtr& robot_normal_in, const HumanPose& pose_ref);
+    void processHOFFARBIBFilter(hrp::BodyPtr& robot_in, hrp::BodyPtr& robot_out);
+    bool isOptionalDataContact (const std::string& ee_name) { return (std::fabs(m_optionalData.data[contact_states_index_map[ee_name]]-1.0)<0.1)?true:false; };
 
-//  void calcVelAccSafeTrajectory(const hrp::Vector3& pos_cur, const hrp::Vector3& vel_cur, const hrp::Vector3& pos_tgt, const hrp::Vector3& max_acc, const double& max_vel, hrp::Vector3& pos_ans);
+    //  void calcVelAccSafeTrajectory(const hrp::Vector3& pos_cur, const hrp::Vector3& vel_cur, const hrp::Vector3& pos_tgt, const hrp::Vector3& max_acc, const double& max_vel, hrp::Vector3& pos_ans);
 };
 
 
@@ -226,7 +226,7 @@ class WholeBodyMasterSlave : public RTC::DataFlowComponentBase, UTIL_CONST {
 
 extern "C"
 {
-  void WholeBodyMasterSlaveInit(RTC::Manager* manager);
+    void WholeBodyMasterSlaveInit(RTC::Manager* manager);
 };
 
 #endif // WholeBodyMasterSlave_H
