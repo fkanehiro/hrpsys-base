@@ -1132,7 +1132,7 @@ void AutoBalancer::solveFullbodyIK ()
         //  tmp.targetRpy = hrp::Vector3(0, 10, 0);//reference angular momentum
         tmp.constraint_weight << 3,3,1,0.01,0.01,0.01;
         ik_tgt_list.push_back(tmp);
-    }{
+    }
 
   if( m_robot->link("RARM_JOINT2") != NULL) m_robot->link("RARM_JOINT2")->ulimit = deg2rad(-40);//脇の干渉回避のため
   if( m_robot->link("LARM_JOINT2") != NULL) m_robot->link("LARM_JOINT2")->llimit = deg2rad(40);

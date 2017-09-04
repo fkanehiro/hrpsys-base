@@ -371,13 +371,8 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
                 m_optionalData.data.length(optionalDataLength);//TODO:これいいのか？
                 for(int i=0;i<optionalDataLength;i++)m_optionalData.data[i] = 0;
             }
-            //        m_optionalData.data[contact_states_index_map["rleg"]] = m_optionalData.data[optionalDataLength/2 + contact_states_index_map["rleg"]] = hsp->rp_ref_out.tgt[rf].is_contact;
-            //        m_optionalData.data[contact_states_index_map["lleg"]] = m_optionalData.data[optionalDataLength/2 + contact_states_index_map["lleg"]] = hsp->rp_ref_out.tgt[lf].is_contact;
-            //        bool rf_is_contact =
             m_optionalData.data[contact_states_index_map["rleg"]] = m_optionalData.data[optionalDataLength/2 + contact_states_index_map["rleg"]] = hsp->rp_ref_out.tgt[rf].is_contact;
             m_optionalData.data[contact_states_index_map["lleg"]] = m_optionalData.data[optionalDataLength/2 + contact_states_index_map["lleg"]] = hsp->rp_ref_out.tgt[lf].is_contact;
-            dbg(hsp->rp_ref_out.tgt[rf].is_contact);
-            dbg(hsp->rp_ref_out.tgt[lf].is_contact);
         }
         hsp->baselinkpose.p = m_robot->rootLink()->p;
         hsp->baselinkpose.rpy = hrp::rpyFromRot(m_robot->rootLink()->R);
