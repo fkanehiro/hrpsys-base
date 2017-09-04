@@ -184,6 +184,8 @@ class WholeBodyMasterSlave : public RTC::DataFlowComponentBase, UTIL_CONST {
     bool is_legged_robot;
     unsigned int loop;
 
+    double avg_q_vel;
+
     hrp::InvDynStateBuffer idsb;
     BiquadIIRFilterVec invdyn_zmp_filters;
 

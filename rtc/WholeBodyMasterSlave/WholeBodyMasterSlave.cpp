@@ -194,6 +194,8 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onInitialize(){
     invdyn_zmp_filters.setParameter(25, 1/m_dt, Q_BUTTERWORTH);
     final_ref_zmp_filter.setParameter(5, 1/m_dt, Q_BUTTERWORTH);
 
+    avg_q_vel = 1.5;
+
     std::cerr << "[" << m_profile.instance_name << "] onInitialize() OK" << std::endl;
     return RTC::RTC_OK;
 }
@@ -374,6 +376,8 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
             //        bool rf_is_contact =
             m_optionalData.data[contact_states_index_map["rleg"]] = m_optionalData.data[optionalDataLength/2 + contact_states_index_map["rleg"]] = hsp->rp_ref_out.tgt[rf].is_contact;
             m_optionalData.data[contact_states_index_map["lleg"]] = m_optionalData.data[optionalDataLength/2 + contact_states_index_map["lleg"]] = hsp->rp_ref_out.tgt[lf].is_contact;
+            dbg(hsp->rp_ref_out.tgt[rf].is_contact);
+            dbg(hsp->rp_ref_out.tgt[lf].is_contact);
         }
         hsp->baselinkpose.p = m_robot->rootLink()->p;
         hsp->baselinkpose.rpy = hrp::rpyFromRot(m_robot->rootLink()->R);
@@ -658,7 +662,7 @@ void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr
     fik_in->q_ref_pullback_gain.tail(6) << 0.0,0.0,0.0, 0.001,0.001,0.001;
 
     struct timespec startT, endT;
-    const int IK_MAX_LOOP = 3;
+    const int IK_MAX_LOOP = 2;
     clock_gettime(CLOCK_REALTIME, &startT);
     int loop_result = fik_in->solveFullbodyIKLoop(m_robot, ikc_list, IK_MAX_LOOP);
     if(loop%100==0){clock_gettime(CLOCK_REALTIME, &endT); std::cout << (endT.tv_sec - startT.tv_sec + (endT.tv_nsec - startT.tv_nsec) * 1e-9) << " @ solveIK"<<loop_result<<"loop" << std::endl;}
@@ -725,7 +729,7 @@ void WholeBodyMasterSlave::processHOFFARBIBFilter(hrp::BodyPtr& robot_in, hrp::B
     const double min_goal_time_offset = 0.1;
     //  const double avg_q_vel = 0.5;
     //  const double avg_q_vel = 1.0;
-    const double avg_q_vel = 1.5;
+//    const double avg_q_vel = 1.5;
     for(int i=0;i<robot_in->numJoints();i++){
         double tmp_time = fabs(robot_in->joint(i)->q - robot_out->joint(i)->q) / avg_q_vel;
         if(tmp_time > goal_time){ goal_time = tmp_time; }
@@ -786,11 +790,14 @@ bool WholeBodyMasterSlave::pauseWholeBodyMasterSlave(){
 
 bool WholeBodyMasterSlave::resumeWholeBodyMasterSlave(){
     if(mode.now() == MODE_PAUSE){
-        std::cerr << "[" << m_profile.instance_name << "] pauseWholeBodyMasterSlave" << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "] resumeWholeBodyMasterSlave" << std::endl;
         mode.setModeRequest(MODE_WBMS);
+        avg_q_vel /= 5;
+        sleep(5);
+        avg_q_vel *= 5;
         return true;
     }else{
-        std::cerr << "[" << m_profile.instance_name << "] Invalid context to pauseWholeBodyMasterSlave" << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "] Invalid context to resumeWholeBodyMasterSlave" << std::endl;
         return false;
     }
 }
