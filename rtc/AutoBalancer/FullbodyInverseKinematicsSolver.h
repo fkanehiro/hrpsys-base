@@ -76,22 +76,22 @@ class FullbodyInverseKinematicsSolver : public SimpleFullbodyInverseKinematicsSo
             return loop;
         }
         bool checkIKConvergence(const hrp::BodyPtr _robot, const std::vector<IKConstraint>& _ikc_list){
-//            if(dq_all.norm() < deg2rad(0.1)){ return true; }
+            //            if(dq_all.norm() < deg2rad(0.1)){ return true; }
             for ( int i=0; i<_ikc_list.size(); i++ ) {
                 hrp::Link* link_tgt_ptr = _robot->link(_ikc_list[i].target_link_name);
                 hrp::Vector3 pos_err, rot_err;
                 if(link_tgt_ptr){
                     pos_err = _ikc_list[i].targetPos - (link_tgt_ptr->p + link_tgt_ptr->R * _ikc_list[i].localPos);
-//                    rot_err = omegaFromRotEx(hrp::rotFromRpy(_ikc_list[i].targetRpy).transpose() * link_tgt_ptr->R * _ikc_list[i].localR);
+                    //                    rot_err = omegaFromRotEx(hrp::rotFromRpy(_ikc_list[i].targetRpy).transpose() * link_tgt_ptr->R * _ikc_list[i].localR);
                     rats::difference_rotation(rot_err, (link_tgt_ptr->R * _ikc_list[i].localR), hrp::rotFromRpy(_ikc_list[i].targetRpy));
-//                    rot_err = omegaFromRotEx(hrp::rotFromRpy(_ikc_list[i].targetRpy).transpose() * link_tgt_ptr->R * _ikc_list[i].localR.transpose());
-//                    dr_part = link_tgt_ptr->R * omegaFromRotEx(link_tgt_ptr->R.transpose() * R_origin_ref);
+                    //                    rot_err = omegaFromRotEx(hrp::rotFromRpy(_ikc_list[i].targetRpy).transpose() * link_tgt_ptr->R * _ikc_list[i].localR.transpose());
+                    //                    dr_part = link_tgt_ptr->R * omegaFromRotEx(link_tgt_ptr->R.transpose() * R_origin_ref);
                 }
                 else if(!link_tgt_ptr && _ikc_list[i].target_link_name == "COM"){  // COM
                     pos_err = _ikc_list[i].targetPos - (_robot->calcCM() + _ikc_list[i].localR * _ikc_list[i].localPos);
                     rot_err = _ikc_list[i].targetRpy - (cur_momentum_L - _robot->rootLink()->p.cross(cur_momentum_P));
                 }
-//                dbg(i); dbg(pos_err.transpose()); dbg(rot_err.transpose());
+                //                dbg(i); dbg(pos_err.transpose()); dbg(rot_err.transpose());
                 for(int j=0;j<3;j++){
                     if(fabs(pos_err(j)) > _ikc_list[i].pos_precision && _ikc_list[i].constraint_weight.head(3)(j) > 0){return false;}
                     if(fabs(rot_err(j)) > _ikc_list[i].rot_precision && _ikc_list[i].constraint_weight.tail(3)(j) > 0){return false;}
@@ -120,22 +120,17 @@ class FullbodyInverseKinematicsSolver : public SimpleFullbodyInverseKinematicsSo
                 if(link_tgt_ptr){//ベースリンク，通常リンク共通
                     dp_part = p_origin_ref - link_tgt_ptr->p;
                     dr_part = link_tgt_ptr->R * omegaFromRotEx(link_tgt_ptr->R.transpose() * R_origin_ref);
-//                    dr_part = link_tgt_ptr->R * matrix_logEx(link_tgt_ptr->R.transpose() * R_origin_ref);
+                    //                    dr_part = link_tgt_ptr->R * matrix_logEx(link_tgt_ptr->R.transpose() * R_origin_ref);
 
-                    if(link_tgt_ptr == _robot->rootLink()){ //ベース限定
-                        J_part.rightCols(WS_DOF) = hrp::dmatrix::Identity(WS_DOF, WS_DOF);
+                    hrp::JointPathEx tgt_jpath(_robot, _robot->rootLink(), link_tgt_ptr, m_dt, false, "");
+                    hrp::dmatrix J_jpath;
+                    tgt_jpath.calcJacobian(J_jpath);
+                    for(int id_in_jpath=0; id_in_jpath<tgt_jpath.numJoints(); id_in_jpath++){ //ジョイントパスのJaxobianを全身用に並び替え
+                        int id_in_body = tgt_jpath.joint(id_in_jpath)->jointId; //全身でのjoint番号
+                        J_part.col(id_in_body) = J_jpath.col(id_in_jpath);
                     }
-                    else{ //通常リンク限定
-                        hrp::JointPathEx tgt_jpath(_robot, _robot->rootLink(), link_tgt_ptr, m_dt, false, "");
-                        hrp::dmatrix J_jpath;
-                        tgt_jpath.calcJacobian(J_jpath);
-                        for(int id_in_jpath=0; id_in_jpath<tgt_jpath.numJoints(); id_in_jpath++){ //ジョイントパスのJaxobianを全身用に並び替え
-                            int id_in_body = tgt_jpath.joint(id_in_jpath)->jointId; //全身でのjoint番号
-                            J_part.col(id_in_body) = J_jpath.col(id_in_jpath);
-                        }
-                        J_part.rightCols(BASE_DOF) = hrp::dmatrix::Identity( WS_DOF,  BASE_DOF );
-                        J_part.rightCols(BASE_DOF).topRightCorner(3,3) = hrp::hat(link_tgt_ptr->p - _robot->rootLink()->p);
-                    }
+                    J_part.rightCols(BASE_DOF) = hrp::dmatrix::Identity( WS_DOF,  BASE_DOF );
+                    J_part.rightCols(BASE_DOF).topRightCorner(3,3) = hrp::hat(link_tgt_ptr->p - _robot->rootLink()->p);
                 }
                 else if(!link_tgt_ptr && _ikc_list[i].target_link_name == "COM"){ //重心限定
                     dp_part = p_origin_ref - _robot->calcCM();
@@ -158,8 +153,8 @@ class FullbodyInverseKinematicsSolver : public SimpleFullbodyInverseKinematicsSo
             weight_all = selection_mat * weight_all;
 
             const double wn_const = 1e-6;
-            hrp::dmatrix Wn = (err_all.transpose() * weight_all.asDiagonal() * err_all + wn_const) * hrp::dmatrix::Identity(ALL_DOF, ALL_DOF);
-            Wn *= 0.01;
+            const double auto_lambda_gain = 0.01;
+            hrp::dmatrix Wn = (static_cast<double>(err_all.transpose() * weight_all.asDiagonal() * err_all) * auto_lambda_gain + wn_const) * hrp::dmatrix::Identity(ALL_DOF, ALL_DOF);
             hrp::dmatrix H = J_all.transpose() * weight_all.asDiagonal() * J_all + Wn;
             hrp::dvector g = J_all.transpose() * weight_all.asDiagonal() * err_all;
 
@@ -202,6 +197,38 @@ class FullbodyInverseKinematicsSolver : public SimpleFullbodyInverseKinematicsSo
 
             _robot->rootLink()->R = R_base_ans;
             _robot->calcForwardKinematics();
+        }
+
+        void calcJacobianAndErrorVector_BaseLink(hrp::BodyPtr _robot, const IKConstraint& _ikc, hrp::dmatrix _J_part, hrp::dvector6 _d_part){
+            hrp::Link* link_tgt_ptr = _robot->link(_ikc.target_link_name);
+            const hrp::Matrix33 R_origin_ref = hrp::rotFromRpy(_ikc.targetRpy) * _ikc.localR.transpose(); //拘束ポイントの位置姿勢->リンク原点の位置姿勢
+            const hrp::Vector3 p_origin_ref = _ikc.targetPos - R_origin_ref * _ikc.localPos;
+            _d_part.head(3) = p_origin_ref - link_tgt_ptr->p;
+            _d_part.tail(3) = link_tgt_ptr->R * omegaFromRotEx(link_tgt_ptr->R.transpose() * R_origin_ref);
+            hrp::JointPathEx tgt_jpath(_robot, _robot->rootLink(), link_tgt_ptr, m_dt, false, "");
+            tgt_jpath.calcJacobian(_J_part);
+            for(int id_in_jpath=0; id_in_jpath<tgt_jpath.numJoints(); id_in_jpath++){ //ジョイントパスのJaxobianを全身用に並び替え
+                int id_in_body = tgt_jpath.joint(id_in_jpath)->jointId; //全身でのjoint番号
+                _J_part.col(id_in_body) = _J_part.col(id_in_jpath);
+            }
+            _J_part.rightCols(BASE_DOF) = hrp::dmatrix::Identity( WS_DOF,  BASE_DOF );
+            _J_part.rightCols(BASE_DOF).topRightCorner(3,3) = hrp::hat(link_tgt_ptr->p - _robot->rootLink()->p);
+        }
+
+        void calcJacobianAndErrorVector_NormalLink(hrp::BodyPtr _robot, const IKConstraint& _ikc, hrp::dmatrix _J_part, hrp::dvector6 _d_part){
+            hrp::Link* link_tgt_ptr = _robot->link(_ikc.target_link_name);
+            const hrp::Matrix33 R_origin_ref = hrp::rotFromRpy(_ikc.targetRpy) * _ikc.localR.transpose(); //拘束ポイントの位置姿勢->リンク原点の位置姿勢
+            const hrp::Vector3 p_origin_ref = _ikc.targetPos - R_origin_ref * _ikc.localPos;
+            _d_part.head(3) = p_origin_ref - link_tgt_ptr->p;
+            _d_part.tail(3) = link_tgt_ptr->R * omegaFromRotEx(link_tgt_ptr->R.transpose() * R_origin_ref);
+            hrp::JointPathEx tgt_jpath(_robot, _robot->rootLink(), link_tgt_ptr, m_dt, false, "");
+            tgt_jpath.calcJacobian(_J_part);
+            for(int id_in_jpath=0; id_in_jpath<tgt_jpath.numJoints(); id_in_jpath++){ //ジョイントパスのJaxobianを全身用に並び替え
+                int id_in_body = tgt_jpath.joint(id_in_jpath)->jointId; //全身でのjoint番号
+                _J_part.col(id_in_body) = _J_part.col(id_in_jpath);
+            }
+            _J_part.rightCols(BASE_DOF) = hrp::dmatrix::Identity( WS_DOF,  BASE_DOF );
+            _J_part.rightCols(BASE_DOF).topRightCorner(3,3) = hrp::hat(link_tgt_ptr->p - _robot->rootLink()->p);
         }
 
     protected:
