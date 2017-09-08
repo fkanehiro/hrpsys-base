@@ -496,6 +496,7 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
     hrp::Vector3 ref_basePos;
     hrp::Matrix33 ref_baseRot;
     hrp::Vector3 rel_ref_zmp; // ref zmp in base frame
+
     if ( is_legged_robot ) {
       // For parameters
       fik->storeCurrentParameters();
@@ -1076,6 +1077,9 @@ void AutoBalancer::fixLegToCoords2 (coordinates& tmp_fix_coords)
 
 void AutoBalancer::solveFullbodyIK ()
 {
+    static hrp::dvector q_old = hrp::getQAll(m_robot);
+    static hrp::Vector3 base_p_old = m_robot->rootLink()->p;
+    static hrp::Matrix33 base_R_old = m_robot->rootLink()->R;
     std::vector<IKConstraint> ik_tgt_list;
     {
         IKConstraint tmp;
@@ -1137,12 +1141,24 @@ void AutoBalancer::solveFullbodyIK ()
   if( m_robot->link("RARM_JOINT2") != NULL) m_robot->link("RARM_JOINT2")->ulimit = deg2rad(-40);//脇の干渉回避のため
   if( m_robot->link("LARM_JOINT2") != NULL) m_robot->link("LARM_JOINT2")->llimit = deg2rad(40);
 
-//  fik_in->reference_gain.fill(0.001);
-//  fik_in->reference_gain.tail(6) << 0.0,0.0,0.0, 0.001,0.001,0.001;
+  fik->dq_weight_all(m_robot->link("CHEST_JOINT0")->jointId) = 0.1;
+  fik->dq_weight_all(m_robot->link("CHEST_JOINT1")->jointId) = 0.1;
+  fik->dq_weight_all(m_robot->link("CHEST_JOINT2")->jointId) = 0.1;
+
+  for(int i=0;i<m_robot->numJoints();i++) fik->q_ref(i) = m_qRef.data[i];
+  fik->q_ref_pullback_gain.head(m_robot->numJoints()).fill(0.001);
+
+  hrp::setQAll(m_robot, q_old);
+  m_robot->rootLink()->p = base_p_old;
+  m_robot->rootLink()->R = base_R_old;
 
   int loop_result = 0;
   const int IK_MAX_LOOP = 2;//2回は必須な気がする・・・
   loop_result = fik->solveFullbodyIKLoop(m_robot, ik_tgt_list, IK_MAX_LOOP);
+
+  q_old = hrp::getQAll(m_robot);
+  base_p_old = m_robot->rootLink()->p;
+  base_R_old = m_robot->rootLink()->R;
 }
 
 

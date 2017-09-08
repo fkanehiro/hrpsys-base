@@ -1,5 +1,5 @@
-#ifndef HUMANMASTERSLAVE_H
-#define HUMANMASTERSLAVE_H
+#ifndef WBMS_CORE_H
+#define WBMS_CORE_H
 #include <rtm/idl/BasicDataType.hh>
 #include <rtm/idl/ExtendedDataTypes.hh>
 #include <rtm/Manager.h>
@@ -914,4 +914,4 @@ class WBMSCore : UTIL_CONST {
         }
 };
 
-#endif // HUMANMASTERSLAVE_H
+#endif // WBMS_CORE_H
