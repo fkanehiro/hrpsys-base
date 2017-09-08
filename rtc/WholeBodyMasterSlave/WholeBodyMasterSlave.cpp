@@ -194,7 +194,7 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onInitialize(){
     invdyn_zmp_filters.setParameter(25, 1/m_dt, Q_BUTTERWORTH);
     final_ref_zmp_filter.setParameter(5, 1/m_dt, Q_BUTTERWORTH);
 
-    avg_q_vel = 2;
+    avg_q_vel = 4;
 
     std::cerr << "[" << m_profile.instance_name << "] onInitialize() OK" << std::endl;
     return RTC::RTC_OK;
@@ -639,7 +639,7 @@ void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr
         tmp.localR = hrp::Matrix33::Identity();
         tmp.targetPos = com_ref.p;// COM height will not be constraint
         tmp.targetRpy = hrp::Vector3::Zero();//reference angular momentum
-        if(fik_in->cur_momentum_around_COM.norm() > 1){
+        if(fik_in->cur_momentum_around_COM.norm() > 1e9){
             tmp.constraint_weight << 10,10,1,1e-5,1e-5,1e-10;
             tmp.rot_precision = 100;//angular momentum precision
         }else{
@@ -729,7 +729,7 @@ void WholeBodyMasterSlave::processHOFFARBIBFilter(hrp::BodyPtr& robot_in, hrp::B
     goal_state.bottomRows(6).bottomRows(3) = hrp::rpyFromRot(robot_in->rootLink()->R);
 
     double goal_time = 0.0;
-    const double min_goal_time_offset = 0.1;
+    const double min_goal_time_offset = 0.01;
     //  const double avg_q_vel = 0.5;
     //  const double avg_q_vel = 1.0;
 //    const double avg_q_vel = 1.5;
@@ -738,10 +738,9 @@ void WholeBodyMasterSlave::processHOFFARBIBFilter(hrp::BodyPtr& robot_in, hrp::B
 //    if (!q_ip->isEmpty() ){  q_ip->get(tmp_x, tmp_v, false);}
     for(int i=0;i<robot_in->numJoints();i++){
         double tmp_time = fabs(robot_in->joint(i)->q - robot_out->joint(i)->q) / avg_q_vel;
-        tmp_time += fabs(tmp_v(i))/8; //加速度8
+        tmp_time += fabs(tmp_v(i))/16; //加速度8
         if(tmp_time > goal_time){ goal_time = tmp_time; }
     }
-    dbg(tmp_v.transpose());
     q_ip->setGoal(goal_state.data(), goal_time + min_goal_time_offset, true);
     hrp::dvector ans_state(ROBOT_ALL_DOF);
     double tmp[ROBOT_ALL_DOF];
