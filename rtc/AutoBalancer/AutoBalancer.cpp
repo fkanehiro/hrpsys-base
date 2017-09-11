@@ -1134,7 +1134,9 @@ void AutoBalancer::solveFullbodyIK ()
         tmp.targetPos = ref_cog;// COM height will not be constraint
         tmp.targetRpy = hrp::Vector3(0, 0, 0);//reference angular momentum
         //  tmp.targetRpy = hrp::Vector3(0, 10, 0);//reference angular momentum
-        tmp.constraint_weight << 3,3,1,0.01,0.01,0.01;
+        tmp.constraint_weight << 3,3,1,1e-6,1e-6,1e-6;
+//        tmp.constraint_weight << 3,3,1,0,0,0;
+        tmp.rot_precision = 1e-1;//angular momentum precision
         ik_tgt_list.push_back(tmp);
     }
 
@@ -1153,7 +1155,7 @@ void AutoBalancer::solveFullbodyIK ()
   m_robot->rootLink()->R = base_R_old;
 
   int loop_result = 0;
-  const int IK_MAX_LOOP = 2;//2回は必須な気がする・・・
+  const int IK_MAX_LOOP = 1;
   loop_result = fik->solveFullbodyIKLoop(m_robot, ik_tgt_list, IK_MAX_LOOP);
 
   q_old = hrp::getQAll(m_robot);

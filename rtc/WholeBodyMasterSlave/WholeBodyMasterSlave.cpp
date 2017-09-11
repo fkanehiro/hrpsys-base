@@ -639,12 +639,13 @@ void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr
         tmp.localR = hrp::Matrix33::Identity();
         tmp.targetPos = com_ref.p;// COM height will not be constraint
         tmp.targetRpy = hrp::Vector3::Zero();//reference angular momentum
-        if(fik_in->cur_momentum_around_COM.norm() > 1e9){
-            tmp.constraint_weight << 10,10,1,1e-5,1e-5,1e-10;
-            tmp.rot_precision = 100;//angular momentum precision
-        }else{
-            tmp.constraint_weight << 10,10,1,0,0,0;
-        }
+        tmp.constraint_weight << 10,10,1,1e-6,1e-6,1e-6;
+//        if(fik_in->cur_momentum_around_COM.norm() > 1e9){
+//            tmp.constraint_weight << 10,10,1,1e-5,1e-5,1e-10;
+//            tmp.rot_precision = 100;//angular momentum precision
+//        }else{
+//            tmp.constraint_weight << 10,10,1,0,0,0;
+//        }
         ikc_list.push_back(tmp);
     }
 
@@ -661,8 +662,8 @@ void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr
     }
 
     fik_in->q_ref = init_sync_state;
-    fik_in->q_ref_pullback_gain.fill(0.001);
-    fik_in->q_ref_pullback_gain.tail(6) << 0.0,0.0,0.0, 0.001,0.001,0.001;
+//    fik_in->q_ref_pullback_gain.fill(0.001);
+//    fik_in->q_ref_pullback_gain.tail(6) << 0.0,0.0,0.0, 0.001,0.001,0.001;
 
     struct timespec startT, endT;
     const int IK_MAX_LOOP = 2;
@@ -729,7 +730,8 @@ void WholeBodyMasterSlave::processHOFFARBIBFilter(hrp::BodyPtr& robot_in, hrp::B
     goal_state.bottomRows(6).bottomRows(3) = hrp::rpyFromRot(robot_in->rootLink()->R);
 
     double goal_time = 0.0;
-    const double min_goal_time_offset = 0.01;
+//    const double min_goal_time_offset = 0.01;
+    const double min_goal_time_offset = 0.05;
     //  const double avg_q_vel = 0.5;
     //  const double avg_q_vel = 1.0;
 //    const double avg_q_vel = 1.5;

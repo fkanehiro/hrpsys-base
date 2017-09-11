@@ -389,7 +389,7 @@ class WBMSCore : UTIL_CONST {
         }
         void convertRelHumanPoseToRelRobotPose(const HumanPose& in, HumanPose& out){//結局初期指定からの移動量(=Rel)で計算をしてゆく
             //      out = in;//ダメゼッタイ
-            for(int i=0, l[5]={com,rf,lf,rh,lh}; i<5; i++){
+            for(int i=0, l[6]={com,rf,lf,rh,lh,head}; i<6; i++){
                 out.tgt[l[i]].abs.p   =  h2r_ratio * (in.tgt[l[i]].abs.p - in.tgt[l[i]].offs.p)   + out.tgt[l[i]].offs.p;
                 out.tgt[l[i]].abs.rpy =  hrp::rpyFromRot( hrp::rotFromRpy(in.tgt[l[i]].abs.rpy) * hrp::rotFromRpy(in.tgt[l[i]].offs.rpy).transpose() * hrp::rotFromRpy(out.tgt[l[i]].offs.rpy) );
             }
@@ -397,7 +397,6 @@ class WBMSCore : UTIL_CONST {
                 out.tgt[l[i]].w = in.tgt[l[i]].w;
                 out.tgt[l[i]].go_contact = in.tgt[l[i]].go_contact;
             }
-            out.tgt[head].abs = in.tgt[head].abs;
             out.tgt[zmp].abs = in.tgt[zmp].abs;//最近使わない
         }
         void judgeFootLandOnCommandByFootForce(HumanPose& in){

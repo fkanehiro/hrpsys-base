@@ -190,7 +190,7 @@ class FullbodyInverseKinematicsSolver : public SimpleFullbodyInverseKinematicsSo
             }
 
             const double wn_const = 1e-6;
-            const double auto_lambda_gain = 0.01;
+            const double auto_lambda_gain = 1;
             hrp::dmatrix Wn = (static_cast<double>(err_all.transpose() * constraint_weight_all.asDiagonal() * err_all) * auto_lambda_gain + wn_const) * hrp::dmatrix::Identity(ALL_DOF, ALL_DOF);
             hrp::dvector dq_weight_all_inv = dq_weight_all_jlim.array().inverse();//重み小でdq小にするため
             Wn = dq_weight_all_inv.asDiagonal() * Wn;
