@@ -640,6 +640,7 @@ void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr
         tmp.targetPos = com_ref.p;// COM height will not be constraint
         tmp.targetRpy = hrp::Vector3::Zero();//reference angular momentum
         tmp.constraint_weight << 10,10,1,1e-6,1e-6,1e-6;
+//        tmp.constraint_weight << 10,10,1,0,0,0;
 //        if(fik_in->cur_momentum_around_COM.norm() > 1e9){
 //            tmp.constraint_weight << 10,10,1,1e-5,1e-5,1e-10;
 //            tmp.rot_precision = 100;//angular momentum precision
@@ -662,7 +663,8 @@ void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr
     }
 
     fik_in->q_ref = init_sync_state;
-//    fik_in->q_ref_pullback_gain.fill(0.001);
+//    fik_in->q_ref_pullback_gain.fill(0.005);
+    fik_in->dq_ref_pullback.fill(deg2rad(0.1));
 //    fik_in->q_ref_pullback_gain.tail(6) << 0.0,0.0,0.0, 0.001,0.001,0.001;
 
     struct timespec startT, endT;

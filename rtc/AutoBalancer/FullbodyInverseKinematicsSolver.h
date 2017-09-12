@@ -48,7 +48,7 @@ class FullbodyInverseKinematicsSolver : public SimpleFullbodyInverseKinematicsSo
         const int WS_DOF, BASE_DOF, J_DOF, ALL_DOF;
     public:
         hrp::dvector dq_weight_all;
-        hrp::dvector q_ref, q_ref_pullback_gain;
+        hrp::dvector q_ref, q_ref_pullback_gain, dq_ref_pullback;
         hrp::Vector3 cur_momentum_around_COM;
         FullbodyInverseKinematicsSolver (hrp::BodyPtr _robot, const std::string& _print_str, const double _dt)
         : SimpleFullbodyInverseKinematicsSolver(_robot,_print_str, _dt),
@@ -57,7 +57,7 @@ class FullbodyInverseKinematicsSolver : public SimpleFullbodyInverseKinematicsSo
           J_DOF(_robot->numJoints()),
           ALL_DOF(J_DOF+BASE_DOF) {
             dq_weight_all = hrp::dvector::Ones(ALL_DOF);
-            dq_all = q_ref = q_ref_pullback_gain = hrp::dvector::Zero(ALL_DOF);
+            dq_all = q_ref = q_ref_pullback_gain = dq_ref_pullback = hrp::dvector::Zero(ALL_DOF);
             cur_momentum_around_COM = hrp::Vector3::Zero();
             avoid_weight_gain = hrp::dvector::Constant(ALL_DOF, 1e12);
         };
@@ -112,9 +112,14 @@ class FullbodyInverseKinematicsSolver : public SimpleFullbodyInverseKinematicsSo
             err_all = hrp::dvector::Zero(WS_DOF*_ikc_list.size());
             constraint_weight_all = hrp::dvector::Ones(WS_DOF*_ikc_list.size());
             //リファレンスに微少量戻す
-            for(int i=0;i<J_DOF;i++){ _robot->joint(i)->q = _robot->joint(i)->q * ( 1 - q_ref_pullback_gain(i)) + q_ref(i) * q_ref_pullback_gain(i); }
-            _robot->rootLink()->p = _robot->rootLink()->p.cwiseProduct( hrp::Vector3::Ones() - q_ref_pullback_gain.segment(J_DOF, 3) ) + q_ref.segment(J_DOF, 3).cwiseProduct( q_ref_pullback_gain.segment(J_DOF, 3) );
-            _robot->rootLink()->R = hrp::rotFromRpy( hrp::rpyFromRot(_robot->rootLink()->R).cwiseProduct(hrp::Vector3::Ones()-q_ref_pullback_gain.segment(J_DOF+3,3)) + q_ref.segment(J_DOF+3,3).cwiseProduct(q_ref_pullback_gain.segment(J_DOF+3,3)));
+//            for(int i=0;i<J_DOF;i++){ _robot->joint(i)->q = _robot->joint(i)->q * ( 1 - q_ref_pullback_gain(i)) + q_ref(i) * q_ref_pullback_gain(i); }
+            for(int i=0;i<J_DOF;i++){
+                double diff = q_ref(i) - _robot->joint(i)->q;
+                LIMIT_MINMAX(diff, -dq_ref_pullback(i), dq_ref_pullback(i));
+                _robot->joint(i)->q += diff;
+            }
+//            _robot->rootLink()->p = _robot->rootLink()->p.cwiseProduct( hrp::Vector3::Ones() - q_ref_pullback_gain.segment(J_DOF, 3) ) + q_ref.segment(J_DOF, 3).cwiseProduct( q_ref_pullback_gain.segment(J_DOF, 3) );
+//            _robot->rootLink()->R = hrp::rotFromRpy( hrp::rpyFromRot(_robot->rootLink()->R).cwiseProduct(hrp::Vector3::Ones()-q_ref_pullback_gain.segment(J_DOF+3,3)) + q_ref.segment(J_DOF+3,3).cwiseProduct(q_ref_pullback_gain.segment(J_DOF+3,3)));
             for(int i=0;i<J_DOF;i++){ LIMIT_MINMAX(_robot->joint(i)->q, _robot->joint(i)->llimit, _robot->joint(i)->ulimit); }
             _robot->calcForwardKinematics();
             //ヤコビアンと各ベクトル生成
