@@ -227,7 +227,7 @@ class WBMSCore : UTIL_CONST {
             WBMSparam.is_doctor = true;
             WBMSparam.set_com_height_fix = false;
             WBMSparam.set_com_height_fix_val = 0.02;
-            WBMSparam.swing_foot_height_offset = 0.01;
+            WBMSparam.swing_foot_height_offset = 0.02;
             WBMSparam.swing_foot_max_height = 0.5;
             WBMSparam.upper_body_rmc_ratio = 0.0;
             WBMSparam.use_rh = WBMSparam.use_lh = true;
@@ -319,6 +319,14 @@ class WBMSCore : UTIL_CONST {
 
             overwriteFootZFromFootLandOnCommand (rp_ref_out);
             setFootRotHorizontalIfGoLanding     (rp_ref_out);
+
+            for(int i=0, l[2]={rf,lf}; i<2; i++){
+                double fheight = rp_ref_out_old.tgt[l[i]].abs.p(Z) - rp_ref_out_old.tgt[l[i]].offs.p(Z);
+                double horizontal_max_vel = 0 + fheight * 20;
+                for(int j=0;j<XY;j++)LIMIT_MINMAX( rp_ref_out.tgt[l[i]].abs.p(j), rp_ref_out_old.tgt[l[i]].abs.p(j)-horizontal_max_vel*DT, rp_ref_out_old.tgt[l[i]].abs.p(j)+horizontal_max_vel*DT);
+                double vertical_max_vel = 0 + fheight * 10;
+                LIMIT_MIN( rp_ref_out.tgt[l[i]].abs.p(Z), rp_ref_out_old.tgt[l[i]].abs.p(Z)-vertical_max_vel*DT);
+            }
 
             //      limitManipulability                 (rp_ref_out);
 
