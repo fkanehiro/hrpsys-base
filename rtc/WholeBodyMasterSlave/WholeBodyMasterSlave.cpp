@@ -663,8 +663,8 @@ void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr
     }
 
     fik_in->q_ref = init_sync_state;
-//    fik_in->q_ref_pullback_gain.fill(0.005);
-    fik_in->dq_ref_pullback.fill(deg2rad(0.1));
+    fik_in->q_ref_pullback_gain.fill(0.005);
+//    fik_in->dq_ref_pullback.fill(deg2rad(0.1));
 //    fik_in->q_ref_pullback_gain.tail(6) << 0.0,0.0,0.0, 0.001,0.001,0.001;
 
     struct timespec startT, endT;

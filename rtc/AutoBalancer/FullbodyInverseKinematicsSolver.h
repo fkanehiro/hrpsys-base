@@ -112,7 +112,7 @@ class FullbodyInverseKinematicsSolver : public SimpleFullbodyInverseKinematicsSo
             err_all = hrp::dvector::Zero(WS_DOF*_ikc_list.size());
             constraint_weight_all = hrp::dvector::Ones(WS_DOF*_ikc_list.size());
             //リファレンスに微少量戻す
-//            for(int i=0;i<J_DOF;i++){ _robot->joint(i)->q = _robot->joint(i)->q * ( 1 - q_ref_pullback_gain(i)) + q_ref(i) * q_ref_pullback_gain(i); }
+            for(int i=0;i<J_DOF;i++){ _robot->joint(i)->q = _robot->joint(i)->q * ( 1 - q_ref_pullback_gain(i)) + q_ref(i) * q_ref_pullback_gain(i); }
             for(int i=0;i<J_DOF;i++){
                 double diff = q_ref(i) - _robot->joint(i)->q;
                 LIMIT_MINMAX(diff, -dq_ref_pullback(i), dq_ref_pullback(i));
