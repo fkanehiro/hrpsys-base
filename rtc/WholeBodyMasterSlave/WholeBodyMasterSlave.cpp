@@ -194,7 +194,7 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onInitialize(){
     invdyn_zmp_filters.setParameter(25, 1/m_dt, Q_BUTTERWORTH);
     final_ref_zmp_filter.setParameter(5, 1/m_dt, Q_BUTTERWORTH);
 
-    avg_q_vel = 3;
+    avg_q_vel = 4;
 
     std::cerr << "[" << m_profile.instance_name << "] onInitialize() OK" << std::endl;
     return RTC::RTC_OK;
@@ -495,8 +495,6 @@ void WholeBodyMasterSlave::preProcessForWholeBodyMasterSlave(fikPtr& fik_in, hrp
         body_list[i]->rootLink()->p = basePos_heightChecked;
         body_list[i]->rootLink()->R = hrp::rotFromRpy(m_baseRpy.data.r, m_baseRpy.data.p, m_baseRpy.data.y);
         for ( int j = 0; j < body_list[i]->numJoints(); j++ ){ body_list[i]->joint(j)->q = m_qRef.data[j]; }
-//        if( body_list[i]->link("RARM_JOINT2") != NULL) body_list[i]->link("RARM_JOINT2")->ulimit = -40 * D2R;//脇の干渉回避のため
-//        if( body_list[i]->link("LARM_JOINT2") != NULL) body_list[i]->link("LARM_JOINT2")->llimit = 40 * D2R;
         body_list[i]->calcForwardKinematics();
     }
     for(int i=0;i<fik_list.size();i++){//初期姿勢でBodyをFK
@@ -663,8 +661,12 @@ void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr
     }
 
     fik_in->q_ref = init_sync_state;
-    fik_in->q_ref_pullback_gain.fill(0.005);
-//    fik_in->dq_ref_pullback.fill(deg2rad(0.1));
+
+    fik_in->q_ref_pullback_gain.fill(0.001);
+//    fik_in->dq_ref_pullback.fill(deg2rad(0.01));
+    fik_in->q_ref_pullback_gain.segment(6+6+3+2, 8*2).fill(0.01);//腕だけ
+//    fik_in->dq_ref_pullback.segment(6+6+3+2, 8*2).fill(deg2rad(0.1));//腕だけ
+
 //    fik_in->q_ref_pullback_gain.tail(6) << 0.0,0.0,0.0, 0.001,0.001,0.001;
 
     struct timespec startT, endT;
@@ -733,7 +735,7 @@ void WholeBodyMasterSlave::processHOFFARBIBFilter(hrp::BodyPtr& robot_in, hrp::B
 
     double goal_time = 0.0;
 //    const double min_goal_time_offset = 0.01;
-    const double min_goal_time_offset = 0.05;
+    const double min_goal_time_offset = 0.1;
     //  const double avg_q_vel = 0.5;
     //  const double avg_q_vel = 1.0;
 //    const double avg_q_vel = 1.5;
@@ -742,7 +744,8 @@ void WholeBodyMasterSlave::processHOFFARBIBFilter(hrp::BodyPtr& robot_in, hrp::B
 //    if (!q_ip->isEmpty() ){  q_ip->get(tmp_x, tmp_v, false);}
     for(int i=0;i<robot_in->numJoints();i++){
         double tmp_time = fabs(robot_in->joint(i)->q - robot_out->joint(i)->q) / avg_q_vel;
-        tmp_time += fabs(tmp_v(i))/16; //加速度8
+        LIMIT_MIN(tmp_time, fabs(tmp_v(i))/16);
+//        tmp_time += fabs(tmp_v(i))/16; //加速度8
         if(tmp_time > goal_time){ goal_time = tmp_time; }
     }
     q_ip->setGoal(goal_state.data(), goal_time + min_goal_time_offset, true);
