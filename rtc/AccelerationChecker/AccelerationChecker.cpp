@@ -155,8 +155,10 @@ RTC::ReturnCode_t AccelerationChecker::onExecute(RTC::UniqueId ec_id)
         if (servo && fabs(ddq) > m_thd){
             time_t now = time(NULL);
             struct tm *tm_now = localtime(&now);
+            char *datetime = asctime(tm_now);
+            datetime[strlen(datetime)-1] = '\0'; 
             std::cout << "[" 
-                      << asctime(tm_now)
+                      << datetime
                       << "] Warning: too big joint acceleration for "
                       << i << "th joint(" << ddq << "[rad/m^2])" << std::endl;
         }
