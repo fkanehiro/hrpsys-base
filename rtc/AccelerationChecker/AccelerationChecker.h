@@ -17,6 +17,7 @@
 #include <rtm/DataInPort.h>
 #include <rtm/DataOutPort.h>
 #include <rtm/idl/BasicDataTypeSkel.h>
+#include <hrpsys/idl/HRPDataTypes.hh>
 
 // Service implementation headers
 // <rtc-template block="service_impl_h">
@@ -103,10 +104,12 @@ class AccelerationChecker
   // </rtc-template>
 
   TimedDoubleSeq m_q;
+  OpenHRP::TimedLongSeqSeq m_servoState;
 
   // DataInPort declaration
   // <rtc-template block="inport_declare">
   InPort<TimedDoubleSeq> m_qIn;
+  InPort<OpenHRP::TimedLongSeqSeq> m_servoStateIn;
   
   // </rtc-template>
 
