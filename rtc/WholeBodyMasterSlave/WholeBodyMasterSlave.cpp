@@ -634,13 +634,39 @@ void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr
         tmp.rot_precision = deg2rad(1);
         ikc_list.push_back(tmp);
     }
+    if(hsp->rp_ref_out.tgt[rf].is_contact){
+        sccp->avoid_priority.head(12).head(6).fill(4);
+    }else{
+        sccp->avoid_priority.head(12).head(6).fill(3);
+    }
+    if(hsp->rp_ref_out.tgt[lf].is_contact){
+        sccp->avoid_priority.head(12).tail(6).fill(4);
+    }else{
+        sccp->avoid_priority.head(12).tail(6).fill(3);
+    }
     for(int i=0;i<sccp->collision_info_list.size();i++){
         IKConstraint tmp;
-        tmp.localPos = sccp->collision_info_list[i].cp1_local;
-        tmp.target_link_name = m_robot->joint(sccp->collision_info_list[i].id1)->name;
-        tmp.targetPos = sccp->collision_info_list[i].cp0_wld + (sccp->collision_info_list[i].cp1_wld - sccp->collision_info_list[i].cp0_wld).normalized() * (sccp->collision_info_list[i].dist_safe + 1e-3);
         tmp.constraint_weight << 1,1,1,0,0,0;
-        ikc_list.push_back(tmp);
+        if(sccp->avoid_priority(sccp->collision_info_list[i].id0) > sccp->avoid_priority(sccp->collision_info_list[i].id1)){
+            tmp.localPos = sccp->collision_info_list[i].cp1_local;
+            tmp.target_link_name = m_robot->joint(sccp->collision_info_list[i].id1)->name;
+            tmp.targetPos = sccp->collision_info_list[i].cp0_wld + (sccp->collision_info_list[i].cp1_wld - sccp->collision_info_list[i].cp0_wld).normalized() * (sccp->collision_info_list[i].dist_safe + 1e-3);
+            ikc_list.push_back(tmp);
+        }else if(sccp->avoid_priority(sccp->collision_info_list[i].id0) < sccp->avoid_priority(sccp->collision_info_list[i].id1)){
+            tmp.localPos = sccp->collision_info_list[i].cp0_local;
+            tmp.target_link_name = m_robot->joint(sccp->collision_info_list[i].id0)->name;
+            tmp.targetPos = sccp->collision_info_list[i].cp1_wld + (sccp->collision_info_list[i].cp0_wld - sccp->collision_info_list[i].cp1_wld).normalized() * (sccp->collision_info_list[i].dist_safe + 1e-3);
+            ikc_list.push_back(tmp);
+        }else{
+            tmp.localPos = sccp->collision_info_list[i].cp1_local;
+            tmp.target_link_name = m_robot->joint(sccp->collision_info_list[i].id1)->name;
+            tmp.targetPos = sccp->collision_info_list[i].cp0_wld + (sccp->collision_info_list[i].cp1_wld - sccp->collision_info_list[i].cp0_wld).normalized() * (sccp->collision_info_list[i].dist_safe + 1e-3);
+            ikc_list.push_back(tmp);
+            tmp.localPos = sccp->collision_info_list[i].cp0_local;
+            tmp.target_link_name = m_robot->joint(sccp->collision_info_list[i].id0)->name;
+            tmp.targetPos = sccp->collision_info_list[i].cp1_wld + (sccp->collision_info_list[i].cp0_wld - sccp->collision_info_list[i].cp1_wld).normalized() * (sccp->collision_info_list[i].dist_safe + 1e-3);
+            ikc_list.push_back(tmp);
+        }
     }
 
 

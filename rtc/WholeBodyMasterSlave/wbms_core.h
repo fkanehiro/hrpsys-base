@@ -233,6 +233,7 @@ class CapsuleCollisionChecker {
         std::vector<Capsule> capsule_list_local, capsule_list_wld;
         std::vector<CollisionInfo> collision_info_list;
         Eigen::MatrixXi check_pair_mat;
+        hrp::ivector avoid_priority;
         CapsuleCollisionChecker(hrp::BodyPtr robot):
             m_robot(robot){
             capsule_list_local.resize(m_robot->numJoints());
@@ -269,6 +270,14 @@ class CapsuleCollisionChecker {
                     if(m_robot->joint(me)->name.find("CHEST_JOINT") != std::string::npos && m_robot->joint(you)->name.find("ARM_JOINT2") != std::string::npos) check_pair_mat(me, you) = 0;
                 }
             }
+            avoid_priority = hrp::ivector::Zero(m_robot->numJoints());
+
+            for(int i=0;i<m_robot->numJoints();i++){
+                if(m_robot->joint(i)->name.find("ARM_JOINT") != std::string::npos) avoid_priority(i) = 1;
+                if(m_robot->joint(i)->name.find("CHEST_JOINT") != std::string::npos) avoid_priority(i) = 2;
+                if(m_robot->joint(i)->name.find("LEG_JOINT") != std::string::npos) avoid_priority(i) = 3;
+            }
+
         }
         ~CapsuleCollisionChecker(){cerr<<"CapsuleCollisionChecker destructed"<<endl;}
         void update(){
