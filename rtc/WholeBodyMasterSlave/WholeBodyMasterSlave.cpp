@@ -196,7 +196,7 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onInitialize(){
 
     avg_q_vel = 4;
 
-    sccp = boost::shared_ptr<SphereCollisionChecker>(new SphereCollisionChecker(m_robot));
+    sccp = boost::shared_ptr<CapsuleCollisionChecker>(new CapsuleCollisionChecker(m_robot));
 
     std::cerr << "[" << m_profile.instance_name << "] onInitialize() OK" << std::endl;
     return RTC::RTC_OK;
