@@ -196,6 +196,7 @@ class WholeBodyMasterSlave : public RTC::DataFlowComponentBase, UTIL_CONST {
     HumanPose raw_pose;
 
     boost::shared_ptr<WBMSCore> hsp;
+    boost::shared_ptr<SphereCollisionChecker> sccp;
 
     hrp::Vector3 torso_rot_rmc;
     ControlMode mode;
