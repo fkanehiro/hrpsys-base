@@ -237,7 +237,7 @@ class SphereCollisionChecker {
         SphereCollisionChecker(hrp::BodyPtr robot):
             m_robot(robot){
             capsule_list_local.resize(m_robot->numJoints());
-            capsule_list_local[m_robot->link("RLEG_JOINT2")->jointId] = Capsule(hrp::Vector3(0,-0.07,0), hrp::Vector3(0,-0.07,-0.5), 0.13);
+            capsule_list_local[m_robot->link("RLEG_JOINT2")->jointId] = Capsule(hrp::Vector3(0,-0.07,0), hrp::Vector3(0,-0.07,-0.5), 0.1);
             capsule_list_local[m_robot->link("LLEG_JOINT2")->jointId] = Capsule(hrp::Vector3(0,0.07,0), hrp::Vector3(0,0.07,-0.5), 0.13);
             capsule_list_local[m_robot->link("CHEST_JOINT2")->jointId] = Capsule(hrp::Vector3(-0.1,0,-0.2), hrp::Vector3(-0.1,0,0.3), 0.3);
             capsule_list_local[m_robot->link("RARM_JOINT4")->jointId] = Capsule(hrp::Vector3(0,0,0), m_robot->link("RARM_JOINT4")->child->b, 0.1);

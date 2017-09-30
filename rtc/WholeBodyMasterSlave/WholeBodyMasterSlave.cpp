@@ -612,7 +612,6 @@ void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr
         tmp.targetPos = rh_ref.p;
         tmp.targetRpy = rh_ref.rpy;
         tmp.constraint_weight = hrp::dvector6::Constant(0.1);
-        tmp.constraint_weight << 1,1,1,0,0,0;
         tmp.pos_precision = 3e-3;
         tmp.rot_precision = deg2rad(3);
         ikc_list.push_back(tmp);
@@ -643,16 +642,6 @@ void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr
         tmp.constraint_weight << 1,1,1,0,0,0;
         ikc_list.push_back(tmp);
     }
-//    for(int i=0;i<sccp->collision_pair.size();i++){
-//        const hrp::Sphere& base = sccp->sphere_list[sccp->collision_pair[i].first];
-//        const hrp::Sphere& move = sccp->sphere_list[sccp->collision_pair[i].second];
-//        IKConstraint tmp;
-//        tmp.localPos = move.local_pos;
-//        tmp.target_link_name = m_robot->joint(sccp->collision_pair[i].second)->name;
-//        tmp.targetPos = base.cur_pos + (move.cur_pos - base.cur_pos).normalized() * (move.r + base.r + 1e-3);
-//        tmp.constraint_weight << 1,1,1,0,0,0;
-//        ikc_list.push_back(tmp);
-//    }
 
 
     {

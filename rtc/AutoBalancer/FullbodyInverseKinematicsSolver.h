@@ -119,26 +119,23 @@ class FullbodyInverseKinematicsSolver : public SimpleFullbodyInverseKinematicsSo
 //                LIMIT_MINMAX(diff, -dq_ref_pullback(i), dq_ref_pullback(i));
                 _robot->joint(i)->q += diff;
             }
-//            _robot->rootLink()->p = _robot->rootLink()->p.cwiseProduct( hrp::Vector3::Ones() - q_ref_pullback_gain.segment(J_DOF, 3) ) + q_ref.segment(J_DOF, 3).cwiseProduct( q_ref_pullback_gain.segment(J_DOF, 3) );
-//            _robot->rootLink()->R = hrp::rotFromRpy( hrp::rpyFromRot(_robot->rootLink()->R).cwiseProduct(hrp::Vector3::Ones()-q_ref_pullback_gain.segment(J_DOF+3,3)) + q_ref.segment(J_DOF+3,3).cwiseProduct(q_ref_pullback_gain.segment(J_DOF+3,3)));
             for(int i=0;i<J_DOF;i++){ LIMIT_MINMAX(_robot->joint(i)->q, _robot->joint(i)->llimit, _robot->joint(i)->ulimit); }
             _robot->calcForwardKinematics();
             //ヤコビアンと各ベクトル生成
             for ( int i=0; i<_ikc_list.size(); i++ ) {
                 hrp::Link* link_tgt_ptr = _robot->link(_ikc_list[i].target_link_name);
-                const hrp::Matrix33 R_origin_ref = hrp::rotFromRpy(_ikc_list[i].targetRpy) * _ikc_list[i].localR.transpose(); //拘束ポイントの位置姿勢->リンク原点の位置姿勢
-                const hrp::Vector3 p_origin_ref = _ikc_list[i].targetPos - R_origin_ref * _ikc_list[i].localPos;
                 hrp::dmatrix J_part = hrp::dmatrix::Zero(WS_DOF, ALL_DOF); //全身to一拘束点へのヤコビアン
                 hrp::Vector3 dp_part, dr_part; //差分
                 //ベースリンク，通常リンク，重心で場合分け
                 if(link_tgt_ptr){//ベースリンク，通常リンク共通
-                    dp_part = p_origin_ref - link_tgt_ptr->p;
-                    dr_part = link_tgt_ptr->R * omegaFromRotEx(link_tgt_ptr->R.transpose() * R_origin_ref);
+                    hrp::Vector3 tgt_cur_pos = link_tgt_ptr->p + link_tgt_ptr->R * _ikc_list[i].localPos;
+                    hrp::Matrix33 tgt_cur_rot = link_tgt_ptr->R * _ikc_list[i].localR;
+                    dp_part =  _ikc_list[i].targetPos - tgt_cur_pos;
+                    dr_part = tgt_cur_rot * omegaFromRotEx(tgt_cur_rot.transpose() * hrp::rotFromRpy(_ikc_list[i].targetRpy));
                     //                    dr_part = link_tgt_ptr->R * matrix_logEx(link_tgt_ptr->R.transpose() * R_origin_ref);
-
                     hrp::JointPathEx tgt_jpath(_robot, _robot->rootLink(), link_tgt_ptr, m_dt, false, "");
                     hrp::dmatrix J_jpath;
-                    tgt_jpath.calcJacobian(J_jpath);
+                    tgt_jpath.calcJacobian(J_jpath, _ikc_list[i].localPos);
                     for(int id_in_jpath=0; id_in_jpath<tgt_jpath.numJoints(); id_in_jpath++){ //ジョイントパスのJaxobianを全身用に並び替え
                         int id_in_body = tgt_jpath.joint(id_in_jpath)->jointId; //全身でのjoint番号
                         J_part.col(id_in_body) = J_jpath.col(id_in_jpath);
@@ -147,7 +144,7 @@ class FullbodyInverseKinematicsSolver : public SimpleFullbodyInverseKinematicsSo
                     J_part.rightCols(BASE_DOF).topRightCorner(3,3) = hrp::hat(link_tgt_ptr->p - _robot->rootLink()->p);
                 }
                 else if(!link_tgt_ptr && _ikc_list[i].target_link_name == "COM"){ //重心限定
-                    dp_part = p_origin_ref - _robot->calcCM();
+                    dp_part = _ikc_list[i].targetPos - _robot->calcCM();
                     dr_part = (_ikc_list[i].targetRpy - cur_momentum_around_COM) * m_dt;// COMのrotはAngulerMomentumとして扱う&差分なのでdtかける
                     _robot->calcCMJacobian(NULL, J_com);//デフォで右端に3x6のbase->COMのヤコビアンが付いてくる
                     _robot->calcAngularMomentumJacobian(NULL, J_am);//すでにrootlink周りの角運動量ヤコビアンが返ってくる？
@@ -158,14 +155,12 @@ class FullbodyInverseKinematicsSolver : public SimpleFullbodyInverseKinematicsSo
                 constraint_weight_all.segment(WS_DOF*i, WS_DOF) = _ikc_list[i].constraint_weight;
                 J_all.middleRows(WS_DOF*i, WS_DOF) = J_part;
             }
-
             hrp::dmatrix selection_mat = hrp::dmatrix::Zero((constraint_weight_all.array()>0.0).count(), WS_DOF*_ikc_list.size());
             for(int i=0, j=0; i<constraint_weight_all.rows(); i++){ if(constraint_weight_all(i) > 0.0){ selection_mat(j, i) = 1.0; j++; } }
 
             J_all = selection_mat * J_all;
             err_all = selection_mat * err_all;
             constraint_weight_all = selection_mat * constraint_weight_all;
-
 
             hrp::dvector dq_weight_all_jlim = dq_weight_all;
             for ( int j = 0; j < _robot->numJoints() ; j++ ) {
@@ -244,37 +239,37 @@ class FullbodyInverseKinematicsSolver : public SimpleFullbodyInverseKinematicsSo
             _robot->calcForwardKinematics();
         }
 
-        void calcJacobianAndErrorVector_BaseLink(hrp::BodyPtr _robot, const IKConstraint& _ikc, hrp::dmatrix _J_part, hrp::dvector6 _d_part){
-            hrp::Link* link_tgt_ptr = _robot->link(_ikc.target_link_name);
-            const hrp::Matrix33 R_origin_ref = hrp::rotFromRpy(_ikc.targetRpy) * _ikc.localR.transpose(); //拘束ポイントの位置姿勢->リンク原点の位置姿勢
-            const hrp::Vector3 p_origin_ref = _ikc.targetPos - R_origin_ref * _ikc.localPos;
-            _d_part.head(3) = p_origin_ref - link_tgt_ptr->p;
-            _d_part.tail(3) = link_tgt_ptr->R * omegaFromRotEx(link_tgt_ptr->R.transpose() * R_origin_ref);
-            hrp::JointPathEx tgt_jpath(_robot, _robot->rootLink(), link_tgt_ptr, m_dt, false, "");
-            tgt_jpath.calcJacobian(_J_part);
-            for(int id_in_jpath=0; id_in_jpath<tgt_jpath.numJoints(); id_in_jpath++){ //ジョイントパスのJaxobianを全身用に並び替え
-                int id_in_body = tgt_jpath.joint(id_in_jpath)->jointId; //全身でのjoint番号
-                _J_part.col(id_in_body) = _J_part.col(id_in_jpath);
-            }
-            _J_part.rightCols(BASE_DOF) = hrp::dmatrix::Identity( WS_DOF,  BASE_DOF );
-            _J_part.rightCols(BASE_DOF).topRightCorner(3,3) = hrp::hat(link_tgt_ptr->p - _robot->rootLink()->p);
-        }
-
-        void calcJacobianAndErrorVector_NormalLink(hrp::BodyPtr _robot, const IKConstraint& _ikc, hrp::dmatrix _J_part, hrp::dvector6 _d_part){
-            hrp::Link* link_tgt_ptr = _robot->link(_ikc.target_link_name);
-            const hrp::Matrix33 R_origin_ref = hrp::rotFromRpy(_ikc.targetRpy) * _ikc.localR.transpose(); //拘束ポイントの位置姿勢->リンク原点の位置姿勢
-            const hrp::Vector3 p_origin_ref = _ikc.targetPos - R_origin_ref * _ikc.localPos;
-            _d_part.head(3) = p_origin_ref - link_tgt_ptr->p;
-            _d_part.tail(3) = link_tgt_ptr->R * omegaFromRotEx(link_tgt_ptr->R.transpose() * R_origin_ref);
-            hrp::JointPathEx tgt_jpath(_robot, _robot->rootLink(), link_tgt_ptr, m_dt, false, "");
-            tgt_jpath.calcJacobian(_J_part);
-            for(int id_in_jpath=0; id_in_jpath<tgt_jpath.numJoints(); id_in_jpath++){ //ジョイントパスのJaxobianを全身用に並び替え
-                int id_in_body = tgt_jpath.joint(id_in_jpath)->jointId; //全身でのjoint番号
-                _J_part.col(id_in_body) = _J_part.col(id_in_jpath);
-            }
-            _J_part.rightCols(BASE_DOF) = hrp::dmatrix::Identity( WS_DOF,  BASE_DOF );
-            _J_part.rightCols(BASE_DOF).topRightCorner(3,3) = hrp::hat(link_tgt_ptr->p - _robot->rootLink()->p);
-        }
+//        void calcJacobianAndErrorVector_BaseLink(hrp::BodyPtr _robot, const IKConstraint& _ikc, hrp::dmatrix _J_part, hrp::dvector6 _d_part){
+//            hrp::Link* link_tgt_ptr = _robot->link(_ikc.target_link_name);
+//            const hrp::Matrix33 R_origin_ref = hrp::rotFromRpy(_ikc.targetRpy) * _ikc.localR.transpose(); //拘束ポイントの位置姿勢->リンク原点の位置姿勢
+//            const hrp::Vector3 p_origin_ref = _ikc.targetPos - R_origin_ref * _ikc.localPos;
+//            _d_part.head(3) = p_origin_ref - link_tgt_ptr->p;
+//            _d_part.tail(3) = link_tgt_ptr->R * omegaFromRotEx(link_tgt_ptr->R.transpose() * R_origin_ref);
+//            hrp::JointPathEx tgt_jpath(_robot, _robot->rootLink(), link_tgt_ptr, m_dt, false, "");
+//            tgt_jpath.calcJacobian(_J_part);
+//            for(int id_in_jpath=0; id_in_jpath<tgt_jpath.numJoints(); id_in_jpath++){ //ジョイントパスのJaxobianを全身用に並び替え
+//                int id_in_body = tgt_jpath.joint(id_in_jpath)->jointId; //全身でのjoint番号
+//                _J_part.col(id_in_body) = _J_part.col(id_in_jpath);
+//            }
+//            _J_part.rightCols(BASE_DOF) = hrp::dmatrix::Identity( WS_DOF,  BASE_DOF );
+//            _J_part.rightCols(BASE_DOF).topRightCorner(3,3) = hrp::hat(link_tgt_ptr->p - _robot->rootLink()->p);
+//        }
+//
+//        void calcJacobianAndErrorVector_NormalLink(hrp::BodyPtr _robot, const IKConstraint& _ikc, hrp::dmatrix _J_part, hrp::dvector6 _d_part){
+//            hrp::Link* link_tgt_ptr = _robot->link(_ikc.target_link_name);
+//            const hrp::Matrix33 R_origin_ref = hrp::rotFromRpy(_ikc.targetRpy) * _ikc.localR.transpose(); //拘束ポイントの位置姿勢->リンク原点の位置姿勢
+//            const hrp::Vector3 p_origin_ref = _ikc.targetPos - R_origin_ref * _ikc.localPos;
+//            _d_part.head(3) = p_origin_ref - link_tgt_ptr->p;
+//            _d_part.tail(3) = link_tgt_ptr->R * omegaFromRotEx(link_tgt_ptr->R.transpose() * R_origin_ref);
+//            hrp::JointPathEx tgt_jpath(_robot, _robot->rootLink(), link_tgt_ptr, m_dt, false, "");
+//            tgt_jpath.calcJacobian(_J_part);
+//            for(int id_in_jpath=0; id_in_jpath<tgt_jpath.numJoints(); id_in_jpath++){ //ジョイントパスのJaxobianを全身用に並び替え
+//                int id_in_body = tgt_jpath.joint(id_in_jpath)->jointId; //全身でのjoint番号
+//                _J_part.col(id_in_body) = _J_part.col(id_in_jpath);
+//            }
+//            _J_part.rightCols(BASE_DOF) = hrp::dmatrix::Identity( WS_DOF,  BASE_DOF );
+//            _J_part.rightCols(BASE_DOF).topRightCorner(3,3) = hrp::hat(link_tgt_ptr->p - _robot->rootLink()->p);
+//        }
 
     protected:
 //        bool calcJacobianInverseNullspace_copy(hrp::BodyPtr _robot, hrp::dmatrix &_J, hrp::dmatrix &_Jinv) {
