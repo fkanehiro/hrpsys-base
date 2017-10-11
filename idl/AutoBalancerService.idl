@@ -331,6 +331,8 @@ module OpenHRP
       string additional_force_applied_link_name;
       /// Link local offset[m] of force applied point for MODE_REF_FORCE_WITH_FOOT. This is local value in the link frame specified by "additional_force_applied_link_name". Zero by default.
       DblArray3 additional_force_applied_point_offset;
+      /// switch SimpleFullbodyIK to FullbodyIK
+      boolean use_fullbody_ik;
     };
 
     /**
