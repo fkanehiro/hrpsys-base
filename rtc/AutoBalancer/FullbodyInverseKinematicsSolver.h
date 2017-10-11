@@ -225,6 +225,12 @@ class FullbodyInverseKinematicsSolver : public SimpleFullbodyInverseKinematicsSo
             _robot->rootLink()->R = R_base_ans;
             _robot->calcForwardKinematics();
         }
+        void revertRobotStateToCurrentAll (){
+            hrp::setQAll(m_robot, qorg);
+            m_robot->rootLink()->p = current_root_p;
+            m_robot->rootLink()->R = current_root_R;
+            m_robot->calcForwardKinematics();
+        };
 
     protected:
         hrp::Vector3 omegaFromRotEx(const hrp::Matrix33& r) {//copy from JointPathEx.cpp

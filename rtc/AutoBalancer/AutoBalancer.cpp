@@ -1080,9 +1080,6 @@ void AutoBalancer::fixLegToCoords2 (coordinates& tmp_fix_coords)
 
 void AutoBalancer::solveFullbodyIK ()
 {
-    static hrp::dvector q_old = hrp::getQAll(m_robot);
-    static hrp::Vector3 base_p_old = m_robot->rootLink()->p;
-    static hrp::Matrix33 base_R_old = m_robot->rootLink()->R;
     std::vector<IKConstraint> ik_tgt_list;
     {
         IKConstraint tmp;
@@ -1153,17 +1150,11 @@ void AutoBalancer::solveFullbodyIK ()
   for(int i=0;i<m_robot->numJoints();i++) fik->q_ref(i) = m_qRef.data[i];
   fik->q_ref_pullback_gain.head(m_robot->numJoints()).fill(0.001);
 
-  hrp::setQAll(m_robot, q_old);
-  m_robot->rootLink()->p = base_p_old;
-  m_robot->rootLink()->R = base_R_old;
+  fik->revertRobotStateToCurrentAll();
 
   int loop_result = 0;
   const int IK_MAX_LOOP = 1;
   loop_result = fik->solveFullbodyIKLoop(m_robot, ik_tgt_list, IK_MAX_LOOP);
-
-  q_old = hrp::getQAll(m_robot);
-  base_p_old = m_robot->rootLink()->p;
-  base_R_old = m_robot->rootLink()->R;
 }
 
 void AutoBalancer::solveSimpleFullbodyIK ()
@@ -1881,7 +1872,12 @@ bool AutoBalancer::setAutoBalancerParam(const OpenHRP::AutoBalancerService::Auto
   for (size_t i = 0; i < fik->ikp.size(); i++) {
     fik->ikp[ee_vec[i]].limb_length_margin = i_param.limb_length_margin[i];
   }
-  use_new_ik_method = i_param.use_fullbody_ik;
+  if (!gg_is_walking) {
+    use_new_ik_method = i_param.use_fullbody_ik;
+    std::cerr << "[" << m_profile.instance_name << "]   use_new_ik_method = " << use_new_ik_method << std::endl;
+  } else {
+    std::cerr << "[" << m_profile.instance_name << "]   use_new_ik_method cannot be set in (gg_is_walking = true). Current use_new_ik_method is " << (use_new_ik_method?"true":"false") << std::endl;
+  }
   return true;
 };
 

@@ -11,7 +11,7 @@
 //   Algorithm : Limb IK + move base
 class SimpleFullbodyInverseKinematicsSolver
 {
-private:
+protected:
     // Robot model for IK
     hrp::BodyPtr m_robot;
     // Org (current) joint angles before IK
