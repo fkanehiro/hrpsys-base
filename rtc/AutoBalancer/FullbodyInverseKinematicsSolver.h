@@ -136,7 +136,7 @@ class FullbodyInverseKinematicsSolver : public SimpleFullbodyInverseKinematicsSo
                     hrp::JointPathEx tgt_jpath(_robot, _robot->rootLink(), link_tgt_ptr, m_dt, false, "");
                     hrp::dmatrix J_jpath;
                     tgt_jpath.calcJacobian(J_jpath, _ikc_list[i].localPos);
-                    for(int id_in_jpath=0; id_in_jpath<tgt_jpath.numJoints(); id_in_jpath++){ //ジョイントパスのJaxobianを全身用に並び替え
+                    for(int id_in_jpath=0; id_in_jpath<tgt_jpath.numJoints(); id_in_jpath++){ //ジョイントパスのJacobianを全身用に並び替え
                         int id_in_body = tgt_jpath.joint(id_in_jpath)->jointId; //全身でのjoint番号
                         J_part.col(id_in_body) = J_jpath.col(id_in_jpath);
                     }
@@ -151,6 +151,9 @@ class FullbodyInverseKinematicsSolver : public SimpleFullbodyInverseKinematicsSo
                     J_part << J_com, J_am;
                 }
                 else{ std::cerr<<"Unknown Link Target !!"<<std::endl; continue; } //不明なリンク指定
+                if(dp_part.norm()>0.01){
+                    dp_part = dp_part.normalized() * 0.01;
+                }
                 err_all.segment(WS_DOF*i,WS_DOF) << dp_part, dr_part;
                 constraint_weight_all.segment(WS_DOF*i, WS_DOF) = _ikc_list[i].constraint_weight;
                 J_all.middleRows(WS_DOF*i, WS_DOF) = J_part;
@@ -163,32 +166,32 @@ class FullbodyInverseKinematicsSolver : public SimpleFullbodyInverseKinematicsSo
             constraint_weight_all = selection_mat * constraint_weight_all;
 
             hrp::dvector dq_weight_all_jlim = dq_weight_all;
-            for ( int j = 0; j < _robot->numJoints() ; j++ ) {
-                double jang = _robot->joint(j)->q;
-                double jmax = _robot->joint(j)->ulimit;
-                double jmin = _robot->joint(j)->llimit;
-                double e = deg2rad(1);
-                if ( eps_eq(jang, jmax,e) && eps_eq(jang, jmin,e) ) {
-                } else if ( eps_eq(jang, jmax,e) ) {
-                    jang = jmax - e;
-                } else if ( eps_eq(jang, jmin,e) ) {
-                    jang = jmin + e;
-                }
-                double r;
-                if ( eps_eq(jang, jmax,e) && eps_eq(jang, jmin,e) ) {
-                    r = DBL_MAX;
-                } else {
-                    r = fabs( (pow((jmax - jmin),2) * (( 2 * jang) - jmax - jmin)) /
-                            (4 * pow((jmax - jang),2) * pow((jang - jmin),2)) );
-                    if (isnan(r)) r = 0;
-                }
-                if (( r - avoid_weight_gain(j) ) >= 0 ) {
-                    dq_weight_all_jlim(j) *= ( 1.0 / ( 1.0 + r) );
-                } else {//リミットから離れるときは解放
-                    dq_weight_all_jlim(j) *= 1.0;
-                }
-                avoid_weight_gain(j) = r;
-            }
+//            for ( int j = 0; j < _robot->numJoints() ; j++ ) {
+//                double jang = _robot->joint(j)->q;
+//                double jmax = _robot->joint(j)->ulimit;
+//                double jmin = _robot->joint(j)->llimit;
+//                double e = deg2rad(1);
+//                if ( eps_eq(jang, jmax,e) && eps_eq(jang, jmin,e) ) {
+//                } else if ( eps_eq(jang, jmax,e) ) {
+//                    jang = jmax - e;
+//                } else if ( eps_eq(jang, jmin,e) ) {
+//                    jang = jmin + e;
+//                }
+//                double r;
+//                if ( eps_eq(jang, jmax,e) && eps_eq(jang, jmin,e) ) {
+//                    r = DBL_MAX;
+//                } else {
+//                    r = fabs( (pow((jmax - jmin),2) * (( 2 * jang) - jmax - jmin)) /
+//                            (4 * pow((jmax - jang),2) * pow((jang - jmin),2)) );
+//                    if (isnan(r)) r = 0;
+//                }
+//                if (( r - avoid_weight_gain(j) ) >= 0 ) {
+//                    dq_weight_all_jlim(j) *= ( 1.0 / ( 1.0 + r) );
+//                } else {//リミットから離れるときは解放
+//                    dq_weight_all_jlim(j) *= 1.0;
+//                }
+//                avoid_weight_gain(j) = r;
+//            }
 
             const double wn_const = 1e-6;
             const double auto_lambda_gain = 1;

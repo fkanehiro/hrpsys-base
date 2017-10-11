@@ -646,26 +646,43 @@ void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr
     }
     for(int i=0;i<sccp->collision_info_list.size();i++){
         IKConstraint tmp;
-        tmp.constraint_weight << 1,1,1,0,0,0;
+//        tmp.constraint_weight << 1,1,1,0,0,0;
+        tmp.constraint_weight << 3,3,3,0,0,0;
+//        double val_w = (sccp->collision_info_list[i].dist_safe - sccp->collision_info_list[i].dist_cur)*1e3;
+//        LIMIT_MAX(val_w, 3);
+//        tmp.constraint_weight << val_w,val_w,val_w,0,0,0;
+//        double margin = 1e-3;
+        double margin = 1e-3;
         if(sccp->avoid_priority(sccp->collision_info_list[i].id0) > sccp->avoid_priority(sccp->collision_info_list[i].id1)){
             tmp.localPos = sccp->collision_info_list[i].cp1_local;
             tmp.target_link_name = m_robot->joint(sccp->collision_info_list[i].id1)->name;
-            tmp.targetPos = sccp->collision_info_list[i].cp0_wld + (sccp->collision_info_list[i].cp1_wld - sccp->collision_info_list[i].cp0_wld).normalized() * (sccp->collision_info_list[i].dist_safe + 1e-3);
+            tmp.targetPos = sccp->collision_info_list[i].cp0_wld + (sccp->collision_info_list[i].cp1_wld - sccp->collision_info_list[i].cp0_wld).normalized() * (sccp->collision_info_list[i].dist_safe + margin);
             ikc_list.push_back(tmp);
         }else if(sccp->avoid_priority(sccp->collision_info_list[i].id0) < sccp->avoid_priority(sccp->collision_info_list[i].id1)){
             tmp.localPos = sccp->collision_info_list[i].cp0_local;
             tmp.target_link_name = m_robot->joint(sccp->collision_info_list[i].id0)->name;
-            tmp.targetPos = sccp->collision_info_list[i].cp1_wld + (sccp->collision_info_list[i].cp0_wld - sccp->collision_info_list[i].cp1_wld).normalized() * (sccp->collision_info_list[i].dist_safe + 1e-3);
+            tmp.targetPos = sccp->collision_info_list[i].cp1_wld + (sccp->collision_info_list[i].cp0_wld - sccp->collision_info_list[i].cp1_wld).normalized() * (sccp->collision_info_list[i].dist_safe + margin);
             ikc_list.push_back(tmp);
         }else{
             tmp.localPos = sccp->collision_info_list[i].cp1_local;
             tmp.target_link_name = m_robot->joint(sccp->collision_info_list[i].id1)->name;
-            tmp.targetPos = sccp->collision_info_list[i].cp0_wld + (sccp->collision_info_list[i].cp1_wld - sccp->collision_info_list[i].cp0_wld).normalized() * (sccp->collision_info_list[i].dist_safe + 1e-3);
+            tmp.targetPos = sccp->collision_info_list[i].cp0_wld + (sccp->collision_info_list[i].cp1_wld - sccp->collision_info_list[i].cp0_wld).normalized() * (sccp->collision_info_list[i].dist_safe + margin);
             ikc_list.push_back(tmp);
             tmp.localPos = sccp->collision_info_list[i].cp0_local;
             tmp.target_link_name = m_robot->joint(sccp->collision_info_list[i].id0)->name;
-            tmp.targetPos = sccp->collision_info_list[i].cp1_wld + (sccp->collision_info_list[i].cp0_wld - sccp->collision_info_list[i].cp1_wld).normalized() * (sccp->collision_info_list[i].dist_safe + 1e-3);
+            tmp.targetPos = sccp->collision_info_list[i].cp1_wld + (sccp->collision_info_list[i].cp0_wld - sccp->collision_info_list[i].cp1_wld).normalized() * (sccp->collision_info_list[i].dist_safe + margin);
             ikc_list.push_back(tmp);
+        }
+        ikc_list[3].constraint_weight =  hrp::dvector6::Constant(1e-4);
+        ikc_list[4].constraint_weight =  hrp::dvector6::Constant(1e-4);
+    }
+
+    if(loop%20==0){
+        if(sccp->collision_info_list.size()>0){
+            std::cout<<"pair:"<<std::endl;
+            for(int i=0;i<sccp->collision_info_list.size();i++){
+                std::cout<<m_robot->joint(sccp->collision_info_list[i].id0)->name<<" "<<m_robot->joint(sccp->collision_info_list[i].id1)->name<<endl;
+            }
         }
     }
 
@@ -677,8 +694,8 @@ void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr
         tmp.localR = hrp::Matrix33::Identity();
         tmp.targetPos = com_ref.p;// COM height will not be constraint
         tmp.targetRpy = hrp::Vector3::Zero();//reference angular momentum
-        tmp.constraint_weight << 10,10,1,1e-6,1e-6,1e-6;
-//        tmp.constraint_weight << 10,10,1,0,0,0;
+//        tmp.constraint_weight << 10,10,1,1e-6,1e-6,1e-6;
+        tmp.constraint_weight << 10,10,1,0,0,0;
 //        if(fik_in->cur_momentum_around_COM.norm() > 1e9){
 //            tmp.constraint_weight << 10,10,1,1e-5,1e-5,1e-10;
 //            tmp.rot_precision = 100;//angular momentum precision
@@ -691,8 +708,8 @@ void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr
     fik_in->dq_weight_all(robot_in->link("CHEST_JOINT0")->jointId) = 0.1;
     fik_in->dq_weight_all(robot_in->link("CHEST_JOINT1")->jointId) = 0.1;
     fik_in->dq_weight_all(robot_in->link("CHEST_JOINT2")->jointId) = 0.1;
-//    if( robot_in->link("RARM_JOINT2") != NULL) robot_in->link("RARM_JOINT2")->ulimit = deg2rad(-40);//脇内側の干渉回避
-//    if( robot_in->link("LARM_JOINT2") != NULL) robot_in->link("LARM_JOINT2")->llimit = deg2rad(40);
+    if( robot_in->link("RARM_JOINT2") != NULL) robot_in->link("RARM_JOINT2")->ulimit = deg2rad(-30);//脇内側の干渉回避
+    if( robot_in->link("LARM_JOINT2") != NULL) robot_in->link("LARM_JOINT2")->llimit = deg2rad(30);
 //    if( robot_in->link("RARM_JOINT2") != NULL) robot_in->link("RARM_JOINT2")->llimit = deg2rad(-140);//肩外側の干渉回避
 //    if( robot_in->link("LARM_JOINT2") != NULL) robot_in->link("LARM_JOINT2")->ulimit = deg2rad(140);
 

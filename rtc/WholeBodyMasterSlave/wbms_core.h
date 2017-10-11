@@ -133,27 +133,6 @@ namespace hrp{
     };
 }
 
-class Capsule{
-    public:
-        hrp::Vector3 p0, p1;
-        double r;
-        Capsule(const hrp::Vector3 _p0 = hrp::Vector3::Zero(), const hrp::Vector3 _p1 = hrp::Vector3::Zero(), const double _r = 0){
-            p0 = _p0; p1 = _p1; r = _r;
-        }
-};
-
-class CollisionInfo{
-    public:
-        int id0, id1;
-        hrp::Vector3 cp0_local, cp1_local, cp0_wld, cp1_wld;
-        double dist_safe, dist_cur;
-        CollisionInfo(const int _id0 = 0, const int _id1 = 0,
-                const hrp::Vector3 _cp0_local = hrp::Vector3::Zero(), const hrp::Vector3 _cp1_local = hrp::Vector3::Zero(),
-                const hrp::Vector3 _cp0_wld = hrp::Vector3::Zero(), const hrp::Vector3 _cp1_wld = hrp::Vector3::Zero(),
-                const double _dist_safe = 0, const double _dist_cur = 0){
-            id0 = _id0; id1 = _id1; cp0_local = _cp0_local; cp1_local = _cp1_local;  cp0_wld = _cp0_wld; cp1_wld = _cp1_wld; dist_safe = _dist_safe; dist_cur = _dist_cur;
-        }
-};
 
 inline double SegSegDist2(const Point& u0, const Point& u, const Point& v0, const Point& v, Point& cp0, Point& cp1){
     Point    w = u0 - v0;
@@ -214,8 +193,8 @@ inline double SegSegDist2(const Point& u0, const Point& u, const Point& v0, cons
         }
     }
     // finally do the division to get sc and tc
-    sc = (fabsf(sN) < EPS ? 0.0f : sN / sD);
-    tc = (fabsf(tN) < EPS ? 0.0f : tN / tD);
+    sc = (fabs(sN) < EPS ? 0.0 : sN / sD);
+    tc = (fabs(tN) < EPS ? 0.0 : tN / tD);
 
     cp0 = u0 + sc * u;
     cp1 = v0 + tc * v;
@@ -226,33 +205,77 @@ inline double SegSegDist2(const Point& u0, const Point& u, const Point& v0, cons
     return dP.Magnitude();   // return the closest distance
 }
 
+class Capsule{
+    public:
+        hrp::Vector3 p0, p1;
+        double r;
+        Capsule(const hrp::Vector3 _p0 = hrp::Vector3::Zero(), const hrp::Vector3 _p1 = hrp::Vector3::Zero(), const double _r = 0){
+            p0 = _p0; p1 = _p1; r = _r;
+        }
+};
+
+class CollisionInfo{
+    public:
+        int id0, id1;
+        hrp::Vector3 cp0_local, cp1_local, cp0_wld, cp1_wld;
+        double dist_safe, dist_cur;
+        CollisionInfo(const int _id0 = 0, const int _id1 = 0,
+                const hrp::Vector3 _cp0_local = hrp::Vector3::Zero(), const hrp::Vector3 _cp1_local = hrp::Vector3::Zero(),
+                const hrp::Vector3 _cp0_wld = hrp::Vector3::Zero(), const hrp::Vector3 _cp1_wld = hrp::Vector3::Zero(),
+                const double _dist_safe = 0, const double _dist_cur = 0){
+            id0 = _id0; id1 = _id1; cp0_local = _cp0_local; cp1_local = _cp1_local;  cp0_wld = _cp0_wld; cp1_wld = _cp1_wld; dist_safe = _dist_safe; dist_cur = _dist_cur;
+        }
+};
+
+typedef std::vector<Capsule> CapsuleArray;
+
 class CapsuleCollisionChecker {
     private:
         const hrp::BodyPtr m_robot;
+        std::vector<CapsuleArray> capsule_array_list_local, capsule_array_list_wld;
     public:
-        std::vector<Capsule> capsule_list_local, capsule_list_wld;
         std::vector<CollisionInfo> collision_info_list;
         Eigen::MatrixXi check_pair_mat;
         hrp::ivector avoid_priority;
+        bool hasStr(const std::string& str, const std::string key){ return str.find(key) != std::string::npos; }
         CapsuleCollisionChecker(hrp::BodyPtr robot):
             m_robot(robot){
-            capsule_list_local.resize(m_robot->numJoints());
+            capsule_array_list_local.resize(m_robot->numJoints());
             for(int i=0; i<m_robot->numJoints(); i++){
-                if(m_robot->joint(i)->child){
-                    double r = 0.0;
-                    if(m_robot->joint(i)->name.find("LEG_JOINT") != std::string::npos ){ r = 0.09; }
-                    else if(m_robot->joint(i)->name.find("ARM_JOINT") != std::string::npos ){ r = 0.075; }
-                    else if(m_robot->joint(i)->name.find("CHEST_JOINT") != std::string::npos ){ r = 0.25; }
-                    if(m_robot->joint(i)->child->b.norm() < 0.1) r = 0;
-                    capsule_list_local[i] = Capsule(hrp::Vector3(0,0,0), m_robot->joint(i)->child->b, r);
+                if(hasStr(m_robot->joint(i)->name,"LEG_JOINT0")){
+                    capsule_array_list_local[i].push_back(Capsule(hrp::Vector3(0,0,0), m_robot->joint(i)->child->b, 0.099));
+                }
+                if(hasStr(m_robot->joint(i)->name,"LLEG_JOINT2")){
+                    capsule_array_list_local[i].push_back(Capsule(hrp::Vector3(0,0,0), m_robot->joint(i)->child->b, 0.095));
+                    capsule_array_list_local[i].push_back(Capsule(hrp::Vector3(0,0.05,0), m_robot->joint(i)->child->b, 0.095));
+                }
+                if(hasStr(m_robot->joint(i)->name,"RLEG_JOINT2")){
+                    capsule_array_list_local[i].push_back(Capsule(hrp::Vector3(0,0,0), m_robot->joint(i)->child->b, 0.095));
+                    capsule_array_list_local[i].push_back(Capsule(hrp::Vector3(0,-0.05,0), m_robot->joint(i)->child->b, 0.095));
+                }
+                if(hasStr(m_robot->joint(i)->name,"LEG_JOINT3")){
+                    capsule_array_list_local[i].push_back(Capsule(hrp::Vector3(0.05,0,0), m_robot->joint(i)->child->b, 0.095));
+                }
+                if(hasStr(m_robot->joint(i)->name,"ARM_JOINT2") || hasStr(m_robot->joint(i)->name,"ARM_JOINT3") || hasStr(m_robot->joint(i)->name,"ARM_JOINT4") || hasStr(m_robot->joint(i)->name,"ARM_JOINT5") || hasStr(m_robot->joint(i)->name,"ARM_JOINT6")){
+                    capsule_array_list_local[i].push_back(Capsule(hrp::Vector3(0,0,0), m_robot->joint(i)->child->b, 0.09));
+                }
+                if(hasStr(m_robot->joint(i)->name,"ARM_JOINT7")){
+                    capsule_array_list_local[i].push_back(Capsule(hrp::Vector3(0,0,0), hrp::Vector3(0,0,-0.25), 0.1));
+                }
+                if(hasStr(m_robot->joint(i)->name,"CHEST_JOINT1") || hasStr(m_robot->joint(i)->name,"CHEST_JOINT2")){
+                    capsule_array_list_local[i].push_back(Capsule(hrp::Vector3(0,0,0), m_robot->joint(i)->child->b, 0.2));
+                    capsule_array_list_local[i].push_back(Capsule(hrp::Vector3(-0.1,0,0), m_robot->joint(i)->child->b + hrp::Vector3(-0.1,0,0), 0.2));
+                    capsule_array_list_local[i].push_back(Capsule(hrp::Vector3(-0.2,0,0), m_robot->joint(i)->child->b + hrp::Vector3(-0.2,0,0), 0.2));
                 }
             };
 
             for(int i=0; i<m_robot->numJoints(); i++){
-                std::cout<<m_robot->joint(i)->name<<" capsule: "<<capsule_list_local[i].p0.transpose()<<" - "<<capsule_list_local[i].p1.transpose()<<" r: "<<capsule_list_local[i].r<<std::endl;
+                for(int j=0; j<capsule_array_list_local[i].size(); j++){
+                    std::cout<<m_robot->joint(i)->name<<" capsule["<<j<<"] "<<capsule_array_list_local[i][j].p0.transpose()<<" - "<<capsule_array_list_local[i][j].p1.transpose()<<" r: "<<capsule_array_list_local[i][j].r<<std::endl;
+                }
             }
-            capsule_list_wld = capsule_list_local;
-            check_pair_mat = Eigen::MatrixXi::Ones(capsule_list_wld.size(),capsule_list_wld.size());
+            capsule_array_list_wld = capsule_array_list_local;
+            check_pair_mat = Eigen::MatrixXi::Ones(capsule_array_list_wld.size(),capsule_array_list_wld.size());
             for(int me=0;me<m_robot->numJoints();me++){
                 for(int you=me; you<m_robot->numJoints();you++){
                     if(me == you) check_pair_mat(me, you) = 0;
@@ -282,8 +305,10 @@ class CapsuleCollisionChecker {
         ~CapsuleCollisionChecker(){cerr<<"CapsuleCollisionChecker destructed"<<endl;}
         void update(){
             for(int i=0;i<m_robot->numJoints();i++){
-                capsule_list_wld[i].p0 = m_robot->joint(i)->p + m_robot->joint(i)->R * capsule_list_local[i].p0;
-                capsule_list_wld[i].p1 = m_robot->joint(i)->p + m_robot->joint(i)->R * capsule_list_local[i].p1;
+                for(int j=0;j<capsule_array_list_wld[i].size();j++){
+                capsule_array_list_wld[i][j].p0 = m_robot->joint(i)->p + m_robot->joint(i)->R * capsule_array_list_local[i][j].p0;
+                capsule_array_list_wld[i][j].p1 = m_robot->joint(i)->p + m_robot->joint(i)->R * capsule_array_list_local[i][j].p1;
+                }
             };
         }
         Point Vec3ToPoint(const hrp::Vector3& in){ return Point(in(0),in(1),in(2)); }
@@ -292,74 +317,45 @@ class CapsuleCollisionChecker {
             collision_info_list.clear();
             for(int me=0;me<m_robot->numJoints();me++){
                 for(int you=me; you<m_robot->numJoints();you++){
-//                    if(you == me) continue; //自分自身はスルー
-//                    if(m_robot->link(me)->parent == m_robot->link(you) || m_robot->link(you)->parent == m_robot->link(me) ) continue; //接続されたリンク同士は無視
-//                    if(std::count(ignore_list[me].begin(), ignore_list[me].end(), you)) continue;
-                    if(capsule_list_wld[me].r > 0 && capsule_list_wld[you].r > 0 && check_pair_mat(me,you)){
-                        Point cp0_ans, cp1_ans;
-                        double dist_ans = SegSegDist2(Vec3ToPoint(capsule_list_wld[me].p0), Vec3ToPoint(capsule_list_wld[me].p1-capsule_list_wld[me].p0),
-                                Vec3ToPoint(capsule_list_wld[you].p0), Vec3ToPoint(capsule_list_wld[you].p1-capsule_list_wld[you].p0), cp0_ans, cp1_ans);
-                        double dist_safe = capsule_list_wld[me].r + capsule_list_wld[you].r;
-                        if (dist_ans < dist_safe){
-                            hrp::Vector3 cp0_wld_tmp = hrp::Vector3(cp0_ans.x,cp0_ans.y,cp0_ans.z);
-                            hrp::Vector3 cp1_wld_tmp = hrp::Vector3(cp1_ans.x,cp1_ans.y,cp1_ans.z);
-                            collision_info_list.push_back(CollisionInfo(me, you,
-                                    m_robot->joint(me)->R.transpose() * (cp0_wld_tmp - m_robot->joint(me)->p), m_robot->joint(you)->R.transpose() * (cp1_wld_tmp - m_robot->joint(you)->p),
-                                    cp0_wld_tmp, cp1_wld_tmp, dist_safe, dist_ans));
+
+                    for(int mec=0;mec<capsule_array_list_wld[me].size();mec++){
+                        for(int youc=0;youc<capsule_array_list_wld[you].size();youc++){
+                            if(capsule_array_list_wld[me][mec].r > 0 && capsule_array_list_wld[you][youc].r > 0 && check_pair_mat(me,you)){
+                                Point cp0_ans, cp1_ans;
+                                double dist_ans = SegSegDist2(Vec3ToPoint(capsule_array_list_wld[me][mec].p0), Vec3ToPoint(capsule_array_list_wld[me][mec].p1-capsule_array_list_wld[me][mec].p0),
+                                        Vec3ToPoint(capsule_array_list_wld[you][youc].p0), Vec3ToPoint(capsule_array_list_wld[you][youc].p1-capsule_array_list_wld[you][youc].p0), cp0_ans, cp1_ans);
+                                double dist_safe = capsule_array_list_wld[me][mec].r + capsule_array_list_wld[you][youc].r;
+                                if (dist_ans < dist_safe){
+                                    hrp::Vector3 cp0_wld_tmp = hrp::Vector3(cp0_ans.x,cp0_ans.y,cp0_ans.z);
+                                    hrp::Vector3 cp1_wld_tmp = hrp::Vector3(cp1_ans.x,cp1_ans.y,cp1_ans.z);
+                                    collision_info_list.push_back(CollisionInfo(me, you,
+                                            m_robot->joint(me)->R.transpose() * (cp0_wld_tmp - m_robot->joint(me)->p), m_robot->joint(you)->R.transpose() * (cp1_wld_tmp - m_robot->joint(you)->p),
+                                            cp0_wld_tmp, cp1_wld_tmp, dist_safe, dist_ans));
+                                }
+                            }
                         }
                     }
+
                 }
             };
-            std::cout<<"pair:"<<std::endl;
-            for(int i=0;i<collision_info_list.size();i++){
-                std::cout<<m_robot->joint(collision_info_list[i].id0)->name<<" "<<m_robot->joint(collision_info_list[i].id1)->name<<endl;
-            }
+            return (collision_info_list.size() > 0 );
         }
-};
-
-//class CapsuleCollisionChecker {
-//    private:
-//        const hrp::BodyPtr m_robot;
-//    public:
-//        std::vector<hrp::Sphere> sphere_list;
-//        std::vector<std::pair<int, int> > collision_pair;
-//        CapsuleCollisionChecker(hrp::BodyPtr robot):
-//            m_robot(robot){
-//            sphere_list.resize(m_robot->numJoints());
-//            sphere_list[m_robot->link("RLEG_JOINT0")->jointId] = hrp::Sphere(hrp::Vector3(0,0,0), 0.1);
-//            sphere_list[m_robot->link("RARM_JOINT7")->jointId] = hrp::Sphere(hrp::Vector3(0,0,0), 0.1);
-//            sphere_list[m_robot->link("CHEST_JOINT2")->jointId] = hrp::Sphere(hrp::Vector3(0,0,0), 0.4);
-//            sphere_list[m_robot->link("RARM_JOINT4")->jointId] = hrp::Sphere(hrp::Vector3(0,0,0), 0.1);
-//            sphere_list[m_robot->link("RARM_JOINT7")->jointId] = hrp::Sphere(hrp::Vector3(0,0,0), 0.1);
-//            sphere_list[m_robot->link("LARM_JOINT4")->jointId] = hrp::Sphere(hrp::Vector3(0,0,0), 0.1);
-//            sphere_list[m_robot->link("LARM_JOINT7")->jointId] = hrp::Sphere(hrp::Vector3(0,0,0), 0.1);
-//
-//        }
-//        ~SphereCollisionChecker(){cerr<<"SphereCollisionChecker destructed"<<endl;}
-//        void update(){
-//            for(int i=0;i<m_robot->numJoints();i++){
-//                sphere_list[i].cur_pos = m_robot->joint(i)->p + m_robot->joint(i)->R * sphere_list[i].local_pos;
-//            };
-//        }
-//        bool checkCollision(){
-//            collision_pair.clear();
-//            for(int me=0;me<m_robot->numJoints()-1;me++){
-//                for(int you=me+1; you<m_robot->numJoints();you++){
-//                    if(m_robot->link(me)->parent == m_robot->link(you) || m_robot->link(you)->parent == m_robot->link(me) ) continue; //接続されたリンク同士は無視
-//
-//                    if(sphere_list[me].r > 0 && sphere_list[you].r > 0){
-//                        if((sphere_list[me].cur_pos - sphere_list[you].cur_pos).norm() < sphere_list[me].r + sphere_list[you].r){
-//                            collision_pair.push_back(std::make_pair(me,you));
-//                        }
-//                    }
+//        bool checkCapsuleArray2CapsuleArray(const Capsule){
+//            if(capsule_array_list_wld[me].r > 0 && capsule_array_list_wld[you].r > 0 && check_pair_mat(me,you)){
+//                Point cp0_ans, cp1_ans;
+//                double dist_ans = SegSegDist2(Vec3ToPoint(capsule_array_list_wld[me].p0), Vec3ToPoint(capsule_array_list_wld[me].p1-capsule_array_list_wld[me].p0),
+//                        Vec3ToPoint(capsule_array_list_wld[you].p0), Vec3ToPoint(capsule_array_list_wld[you].p1-capsule_array_list_wld[you].p0), cp0_ans, cp1_ans);
+//                double dist_safe = capsule_array_list_wld[me].r + capsule_array_list_wld[you].r;
+//                if (dist_ans < dist_safe){
+//                    hrp::Vector3 cp0_wld_tmp = hrp::Vector3(cp0_ans.x,cp0_ans.y,cp0_ans.z);
+//                    hrp::Vector3 cp1_wld_tmp = hrp::Vector3(cp1_ans.x,cp1_ans.y,cp1_ans.z);
+//                    collision_info_list.push_back(CollisionInfo(me, you,
+//                            m_robot->joint(me)->R.transpose() * (cp0_wld_tmp - m_robot->joint(me)->p), m_robot->joint(you)->R.transpose() * (cp1_wld_tmp - m_robot->joint(you)->p),
+//                            cp0_wld_tmp, cp1_wld_tmp, dist_safe, dist_ans));
 //                }
-//            };
-//            std::cout<<"pair:"<<std::endl;
-//            for(int i=0;i<collision_pair.size();i++){
-//                std::cout<<m_robot->joint(collision_pair[i].first)->name<<" "<<m_robot->joint(collision_pair[i].second)->name<<endl;
 //            }
 //        }
-//};
+};
 
 class WBMSCore : UTIL_CONST {
     private:
@@ -759,7 +755,7 @@ class WBMSCore : UTIL_CONST {
             LIMIT_MINMAX( out.tgt[lf].abs.p(Z), out.tgt[lf].offs.p(Z), out.tgt[lf].offs.p(Z)+WBMSparam.swing_foot_max_height);
 
 //            const double base2hand_min = 0.4;
-            const double base2hand_min = 0.3;
+            const double base2hand_min = 0.0;
             for(int i=0, l[2]={rh,lh}; i<2; i++){
                 //        LIMIT_MIN(out.tgt[l[i]].abs.p(X), baselinkpose.p(X));
                 //        LIMIT_MAX(out.tgt[l[i]].abs.p(Z), baselinkpose.p(Z) + 0.4);
