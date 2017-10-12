@@ -751,8 +751,8 @@ class WBMSCore : UTIL_CONST {
                 swing_leg.abs.p(X) = sp2sw_vec(X) + support_leg.cnt.p(X);
                 swing_leg.abs.p(Y) = sp2sw_vec(Y) + support_leg.cnt.p(Y);
             }
-            LIMIT_MINMAX( out.tgt[rf].abs.p(Z), out.tgt[rf].offs.p(Z), out.tgt[rf].offs.p(Z)+WBMSparam.swing_foot_max_height);
-            LIMIT_MINMAX( out.tgt[lf].abs.p(Z), out.tgt[lf].offs.p(Z), out.tgt[lf].offs.p(Z)+WBMSparam.swing_foot_max_height);
+//            LIMIT_MINMAX( out.tgt[rf].abs.p(Z), out.tgt[rf].offs.p(Z), out.tgt[rf].offs.p(Z)+WBMSparam.swing_foot_max_height);
+//            LIMIT_MINMAX( out.tgt[lf].abs.p(Z), out.tgt[lf].offs.p(Z), out.tgt[lf].offs.p(Z)+WBMSparam.swing_foot_max_height);
 
 //            const double base2hand_min = 0.4;
             const double base2hand_min = 0.0;
