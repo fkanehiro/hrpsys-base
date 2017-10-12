@@ -33,7 +33,8 @@ namespace RTC
 #else
         : RTC_exp::PeriodicExecutionContext(),
 #endif 
-          m_priority(49)
+          m_priority(49),
+          m_thread_pending (false)
     {
         resetProfile();
         rtclog.setName("hrpEC");
