@@ -112,11 +112,10 @@ class FullbodyInverseKinematicsSolver : public SimpleFullbodyInverseKinematicsSo
             err_all = hrp::dvector::Zero(WS_DOF*_ikc_list.size());
             constraint_weight_all = hrp::dvector::Ones(WS_DOF*_ikc_list.size());
             //リファレンスに微少量戻す
-//            for(int i=0;i<J_DOF;i++){ _robot->joint(i)->q = _robot->joint(i)->q * ( 1 - q_ref_pullback_gain(i)) + q_ref(i) * q_ref_pullback_gain(i); }
             for(int i=0;i<J_DOF;i++){
                 double diff = q_ref(i) - _robot->joint(i)->q;
                 diff *= q_ref_pullback_gain(i);
-//                LIMIT_MINMAX(diff, -dq_ref_pullback(i), dq_ref_pullback(i));
+                LIMIT_MINMAX(diff, -dq_ref_pullback(i), dq_ref_pullback(i));
                 _robot->joint(i)->q += diff;
             }
             for(int i=0;i<J_DOF;i++){ LIMIT_MINMAX(_robot->joint(i)->q, _robot->joint(i)->llimit, _robot->joint(i)->ulimit); }
@@ -166,32 +165,32 @@ class FullbodyInverseKinematicsSolver : public SimpleFullbodyInverseKinematicsSo
             constraint_weight_all = selection_mat * constraint_weight_all;
 
             hrp::dvector dq_weight_all_jlim = dq_weight_all;
-//            for ( int j = 0; j < _robot->numJoints() ; j++ ) {
-//                double jang = _robot->joint(j)->q;
-//                double jmax = _robot->joint(j)->ulimit;
-//                double jmin = _robot->joint(j)->llimit;
-//                double e = deg2rad(1);
-//                if ( eps_eq(jang, jmax,e) && eps_eq(jang, jmin,e) ) {
-//                } else if ( eps_eq(jang, jmax,e) ) {
-//                    jang = jmax - e;
-//                } else if ( eps_eq(jang, jmin,e) ) {
-//                    jang = jmin + e;
-//                }
-//                double r;
-//                if ( eps_eq(jang, jmax,e) && eps_eq(jang, jmin,e) ) {
-//                    r = DBL_MAX;
-//                } else {
-//                    r = fabs( (pow((jmax - jmin),2) * (( 2 * jang) - jmax - jmin)) /
-//                            (4 * pow((jmax - jang),2) * pow((jang - jmin),2)) );
-//                    if (isnan(r)) r = 0;
-//                }
-//                if (( r - avoid_weight_gain(j) ) >= 0 ) {
-//                    dq_weight_all_jlim(j) *= ( 1.0 / ( 1.0 + r) );
-//                } else {//リミットから離れるときは解放
-//                    dq_weight_all_jlim(j) *= 1.0;
-//                }
-//                avoid_weight_gain(j) = r;
-//            }
+            for ( int j = 0; j < _robot->numJoints() ; j++ ) {
+                double jang = _robot->joint(j)->q;
+                double jmax = _robot->joint(j)->ulimit;
+                double jmin = _robot->joint(j)->llimit;
+                double e = deg2rad(1);
+                if ( eps_eq(jang, jmax,e) && eps_eq(jang, jmin,e) ) {
+                } else if ( eps_eq(jang, jmax,e) ) {
+                    jang = jmax - e;
+                } else if ( eps_eq(jang, jmin,e) ) {
+                    jang = jmin + e;
+                }
+                double r;
+                if ( eps_eq(jang, jmax,e) && eps_eq(jang, jmin,e) ) {
+                    r = DBL_MAX;
+                } else {
+                    r = fabs( (pow((jmax - jmin),2) * (( 2 * jang) - jmax - jmin)) /
+                            (4 * pow((jmax - jang),2) * pow((jang - jmin),2)) );
+                    if (isnan(r)) r = 0;
+                }
+                if (( r - avoid_weight_gain(j) ) >= 0 ) {
+                    dq_weight_all_jlim(j) *= ( 1.0 / ( 1.0 + r) );
+                } else {//リミットから離れるときは解放
+                    dq_weight_all_jlim(j) *= 1.0;
+                }
+                avoid_weight_gain(j) = r;
+            }
 
             const double wn_const = 1e-6;
             const double auto_lambda_gain = 1;
