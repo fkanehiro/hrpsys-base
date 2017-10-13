@@ -11,8 +11,16 @@ namespace RTC
 {
     hrpExecutionContext::~hrpExecutionContext()
     {
+        if (m_thread_pending)
+            abort ();
     }
     int hrpExecutionContext::svc(void)
+    {
+        int ret = svc_wrapped ();
+        m_thread_pending = false;
+        return ret;
+    }
+    int hrpExecutionContext::svc_wrapped(void)
     {
         if (open_iob() == FALSE){
             std::cerr << "open_iob: failed to open" << std::endl;
@@ -189,6 +197,12 @@ namespace RTC
             }
         }
         throw OpenHRP::ExecutionProfileService::ExecutionProfileServiceException("no such component");
+    }
+
+    void hrpExecutionContext::activate ()
+    {
+        m_thread_pending = true;
+        PeriodicExecutionContext::activate ();
     }
 
     void hrpExecutionContext::resetProfile()

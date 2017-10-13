@@ -35,6 +35,7 @@ namespace RTC
 #ifdef OPENRTM_VERSION_TRUNK
     virtual void tick(){}
 #endif
+    void activate ();
 
     OpenHRP::ExecutionProfileService::Profile *getProfile();
     OpenHRP::ExecutionProfileService::ComponentProfile getComponentProfile(RTC::LightweightRTObject_ptr obj);
@@ -64,10 +65,13 @@ namespace RTC
       }
       fprintf(stderr, "[ms]\n");
     };
+    int svc_wrapped (void);
+
     OpenHRP::ExecutionProfileService::Profile m_profile;
     struct timeval m_tv;
     int m_priority;
     std::vector<std::string> rtc_names;
+    volatile bool m_thread_pending;
   };
 };
 
