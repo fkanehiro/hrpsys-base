@@ -35,7 +35,7 @@ namespace RTC
 #ifdef OPENRTM_VERSION_TRUNK
     virtual void tick(){}
 #endif
-    void activate () override;
+    void activate ();
 
     OpenHRP::ExecutionProfileService::Profile *getProfile();
     OpenHRP::ExecutionProfileService::ComponentProfile getComponentProfile(RTC::LightweightRTObject_ptr obj);
