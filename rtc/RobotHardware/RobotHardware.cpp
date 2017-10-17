@@ -37,6 +37,7 @@ static const char* robothardware_spec[] =
     "conf.default.fzLimitRatio", "2.0",
     "conf.default.servoErrorLimit", ",",
     "conf.default.jointAccelerationLimit", "0",
+    "conf.default.servoOnDelay", "0",
 
     ""
   };
@@ -179,6 +180,7 @@ RTC::ReturnCode_t RobotHardware::onInitialize()
   bindParameter("servoErrorLimit", m_robot->m_servoErrorLimit, ",");
   bindParameter("fzLimitRatio", m_robot->m_fzLimitRatio, "2");
   bindParameter("jointAccelerationLimit", m_robot->m_accLimit, "0");
+  bindParameter("servoOnDelay", m_robot->m_servoOnDelay, "0");
 
   // </rtc-template>
 
