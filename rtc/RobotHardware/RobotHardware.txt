@@ -62,6 +62,7 @@ N/A
 <tr><td>isDemoMode</td><td>int</td><td></td><td>1:demo mode, 0:otherwise. When the robot is in demo mode, joint servo error limits and force limits are not checked.</td></tr>
 <tr><td>servoErrorLimit</td><td>std::vector<double></td><td>[rad]</td><td>joint servo error limits. If any servo error exceeds its limit, all joint servos are turned off. When 0 is set, servo error is not checked</td></tr>
 <tr><td>fzLimitRatio</td><td>double<double></td><td></td><td>force limit. If force in Z direction exceeds this limit, all joint servos are turned off. The limit is given by a ratio to weight of the robot.
+<tr><td>servoOnDelay</td><td>double</td><td>[s]</td><td>delay inserted between servo on commands
 </td></tr>
 </table>
 
