@@ -186,6 +186,8 @@ class ReferenceForceUpdater
     double d_gain;
     // I gain
     double i_gain;
+    // Transition time[s]
+    double transition_time;
     // Motion direction to update reference force
     hrp::Vector3 motion_dir;
     std::string frame;
@@ -200,6 +202,7 @@ class ReferenceForceUpdater
       p_gain = 0.02;
       d_gain = 0;
       i_gain = 0;
+      transition_time = 1.0;
       //additional params (not defined in idl)
       is_active = false;
       is_stopping = false;
