@@ -276,6 +276,7 @@ public:
     double m_fzLimitRatio;
     double m_maxZmpError;
     double m_accLimit;
+    double m_servoOnDelay;
 
     bool readDigitalInput(char *o_din);
     int lengthDigitalInput();

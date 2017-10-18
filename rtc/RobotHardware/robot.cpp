@@ -19,7 +19,7 @@
 using namespace hrp;
 
 
-robot::robot(double dt) : m_fzLimitRatio(0), m_maxZmpError(DEFAULT_MAX_ZMP_ERROR), m_accLimit(0), m_calibRequested(false), m_pdgainsFilename("PDgains.sav"), m_reportedEmergency(true), m_dt(dt), m_enable_poweroff_check(false)
+robot::robot(double dt) : m_fzLimitRatio(0), m_maxZmpError(DEFAULT_MAX_ZMP_ERROR), m_accLimit(0), m_calibRequested(false), m_pdgainsFilename("PDgains.sav"), m_reportedEmergency(true), m_dt(dt), m_enable_poweroff_check(false),m_servoOnDelay(0)
 {
     sem_init(&wait_sem, 0, 0);
     m_rLegForceSensorId = m_lLegForceSensorId = -1;
@@ -304,6 +304,7 @@ bool robot::servo(const char *jname, bool turnon)
         bool ret = true;
         for (unsigned int i=0; i<numJoints(); i++){
             ret = ret && servo(i, turnon);
+            if (turnon) usleep(m_servoOnDelay*1e6);
         }
         m_reportedEmergency = false;
         return ret;
