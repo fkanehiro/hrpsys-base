@@ -681,7 +681,7 @@ bool ReferenceForceUpdater::getReferenceForceUpdaterParam(const std::string& i_n
   return true;
 };
 
-bool ReferenceForceUpdater::startReferenceForceUpdater(const std::string& i_name_)
+bool ReferenceForceUpdater::startReferenceForceUpdaterNoWait(const std::string& i_name_)
 {
   std::cerr << "[" << m_profile.instance_name << "] startReferenceForceUpdater [" << i_name_ << "]" << std::endl;
   {
@@ -709,12 +709,10 @@ bool ReferenceForceUpdater::startReferenceForceUpdater(const std::string& i_name
       return false;
     }
   }
-  while (!transition_interpolator[i_name_]->isEmpty()) usleep(1000);
-  usleep(1000);
   return true;
 };
 
-bool ReferenceForceUpdater::stopReferenceForceUpdater(const std::string& i_name_)
+bool ReferenceForceUpdater::stopReferenceForceUpdaterNoWait(const std::string& i_name_)
 {
   std::cerr << "[" << m_profile.instance_name << "] stopReferenceForceUpdater [" << i_name_ << "]" << std::endl;
   {
@@ -731,9 +729,27 @@ bool ReferenceForceUpdater::stopReferenceForceUpdater(const std::string& i_name_
     transition_interpolator[i_name_]->setGoal(&tmpgoal, 1.0, true);
     m_RFUParam[i_name_].is_stopping = true;
   }
-  while (!transition_interpolator[i_name_]->isEmpty()) usleep(1000);
-  usleep(1000);
   return true;
+};
+
+bool ReferenceForceUpdater::startReferenceForceUpdater(const std::string& i_name_)
+{
+    bool ret = startReferenceForceUpdaterNoWait(i_name_);
+    waitReferenceForceUpdaterTransition(i_name_);
+    return ret;
+};
+
+bool ReferenceForceUpdater::stopReferenceForceUpdater(const std::string& i_name_)
+{
+    bool ret = stopReferenceForceUpdaterNoWait(i_name_);
+    waitReferenceForceUpdaterTransition(i_name_);
+    return ret;
+};
+
+void ReferenceForceUpdater::waitReferenceForceUpdaterTransition(const std::string& i_name_)
+{
+    while (!transition_interpolator[i_name_]->isEmpty()) usleep(1000);
+    usleep(1000);
 };
 
 extern "C"

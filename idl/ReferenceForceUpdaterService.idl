@@ -58,5 +58,22 @@ module OpenHRP
        * @return true if set successfully, false otherwise
        */
       boolean stopReferenceForceUpdater(in string name);
+
+      /**
+       * @brief Start ReferenceForceUpdater and function return immediately
+       * @return true if set successfully, false otherwise
+       */
+      boolean startReferenceForceUpdaterNoWait(in string name);
+
+      /**
+       * @brief Stop ReferenceForceUpdater and function return immediately
+       * @return true if set successfully, false otherwise
+       */
+      boolean stopReferenceForceUpdaterNoWait(in string name);
+
+      /**
+       * @brief Wait for ReferenceForceUpdater mode transition.
+       */
+      void waitReferenceForceUpdaterTransition(in string name);
   };
 };
