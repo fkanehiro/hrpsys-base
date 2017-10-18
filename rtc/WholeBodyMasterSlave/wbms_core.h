@@ -283,7 +283,8 @@ class CapsuleCollisionChecker {
                     if(m_robot->joint(me)->name.find("LLEG_JOINT") != std::string::npos && m_robot->joint(you)->name.find("LLEG_JOINT") != std::string::npos) check_pair_mat(me, you) = 0;
                     if(m_robot->joint(me)->name.find("RARM_JOINT") != std::string::npos && m_robot->joint(you)->name.find("RARM_JOINT") != std::string::npos) check_pair_mat(me, you) = 0;
                     if(m_robot->joint(me)->name.find("LARM_JOINT") != std::string::npos && m_robot->joint(you)->name.find("LARM_JOINT") != std::string::npos) check_pair_mat(me, you) = 0;
-                    if(m_robot->link(me)->parent == m_robot->link(you) || m_robot->link(you)->parent == m_robot->link(me)) check_pair_mat(me, you) = 0;
+//                    if(m_robot->link(me)->parent == m_robot->link(you) || m_robot->link(you)->parent == m_robot->link(me)) check_pair_mat(me, you) = 0;//実機とシミュで挙動違う？
+                    if(m_robot->joint(me)->parent == m_robot->joint(you) || m_robot->joint(you)->parent == m_robot->joint(me)) check_pair_mat(me, you) = 0;
 
                     if(m_robot->joint(me)->name.find("LEG_JOINT0") != std::string::npos && m_robot->joint(you)->name.find("CHEST_JOINT") != std::string::npos) check_pair_mat(me, you) = 0;
                     if(m_robot->joint(me)->name.find("LEG_JOINT1") != std::string::npos && m_robot->joint(you)->name.find("CHEST_JOINT") != std::string::npos) check_pair_mat(me, you) = 0;
@@ -293,6 +294,7 @@ class CapsuleCollisionChecker {
                     if(m_robot->joint(me)->name.find("CHEST_JOINT") != std::string::npos && m_robot->joint(you)->name.find("ARM_JOINT2") != std::string::npos) check_pair_mat(me, you) = 0;
                 }
             }
+            dbgn(check_pair_mat);
             avoid_priority = hrp::ivector::Zero(m_robot->numJoints());
 
             for(int i=0;i<m_robot->numJoints();i++){

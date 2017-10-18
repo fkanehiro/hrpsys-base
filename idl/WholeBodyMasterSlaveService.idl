@@ -14,23 +14,6 @@ module OpenHRP
     typedef double DblArray4[4];
     typedef sequence<string> StrSequence;
 
-//    /**
-//     * @enum IKLimbParameters
-//     * @brief IKLimbParameters
-//     */
-//    struct IKLimbParameters {
-//        /// Joint weight for Inverse Kinematics calculation.
-//        sequence<double> ik_optional_weight_vector;
-//        /// SR-inverse gain for inverse kinematics.
-//        double sr_gain;
-//        /// Avoid joint limit gain for inverse kinematics.
-//        double avoid_gain;
-//        /// Reference joint angles tracking gain for inverse kinematics.
-//        double reference_gain;
-//        /// Manipulability limit for inverse kinematics.
-//        double manipulability_limit;
-//    };
-
     /**
      * HumanSync
      */

@@ -144,8 +144,8 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onInitialize(){
     nameServer = nameServer.substr(0, comPos);
     RTC::CorbaNaming naming(rtcManager.getORB(), nameServer.c_str());
     m_robot = hrp::BodyPtr(new hrp::Body());
-    m_robot_ml = hrp::BodyPtr(new hrp::Body());
-    m_robot_vsafe = hrp::BodyPtr(new hrp::Body());
+//    m_robot_ml = hrp::BodyPtr(new hrp::Body());
+//    m_robot_vsafe = hrp::BodyPtr(new hrp::Body());
     if (!loadBodyFromModelLoader(m_robot, prop["model"].c_str(), CosNaming::NamingContext::_duplicate(naming.getRootContext()) )){
         std::cerr << "[" << m_profile.instance_name << "] failed to load model[" << prop["model"] << "]" << std::endl;
         return RTC::RTC_ERROR;
@@ -260,7 +260,7 @@ void WholeBodyMasterSlave::setupfik(fikPtr& fik_in, hrp::BodyPtr& robot_in, RTC:
     }
 }
 
-#define TIMECALC 1
+#define TIMECALC 0
 RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
     if(DEBUGP_ONCE)std::cerr << "[" << m_profile.instance_name<< "] onExecute(" << ec_id << ")" << std::endl;
     struct timeval t_calc_start, t_calc_end;
@@ -286,7 +286,7 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
     if ( is_legged_robot ) {
         processTransition();
         mode.update();
-        if(DEBUGP)dbg(mode.now());
+//        if(DEBUGP)dbg(mode.now());
         struct timespec startT, endT;
         clock_gettime(CLOCK_REALTIME, &startT);
 
@@ -326,8 +326,6 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
             //        updateInvDynStateBuffer(idsb);
 
             if(DEBUGP && TIMECALC){clock_gettime(CLOCK_REALTIME, &endT); std::cout << (double)(endT.tv_sec - startT.tv_sec + (endT.tv_nsec - startT.tv_nsec) * 1e-9) << " @ calcWorldZMPFromInverseDynamics" << std::endl;  clock_gettime(CLOCK_REALTIME, &startT);}
-
-            sccp->checkCollision();
 
             processHOFFARBIBFilter(m_robot, m_robot_vsafe);
 
@@ -644,6 +642,9 @@ void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr
     }else{
         sccp->avoid_priority.head(12).tail(6).fill(3);
     }
+
+//    sccp->checkCollision();
+
     for(int i=0;i<sccp->collision_info_list.size();i++){
         IKConstraint tmp;
         double val_w = (sccp->collision_info_list[i].dist_safe - sccp->collision_info_list[i].dist_cur)*1e2;
@@ -693,7 +694,7 @@ void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr
         tmp.targetPos = com_ref.p;// COM height will not be constraint
         tmp.targetRpy = hrp::Vector3::Zero();//reference angular momentum
 //        tmp.constraint_weight << 10,10,1,1e-6,1e-6,1e-6;
-        tmp.constraint_weight << 10,10,1,0,0,0;
+        tmp.constraint_weight << 10,10,0.001,0,0,0;
 //        if(fik_in->cur_momentum_around_COM.norm() > 1e9){
 //            tmp.constraint_weight << 10,10,1,1e-5,1e-5,1e-10;
 //            tmp.rot_precision = 100;//angular momentum precision
@@ -703,11 +704,15 @@ void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr
         ikc_list.push_back(tmp);
     }
 
-    fik_in->dq_weight_all(robot_in->link("CHEST_JOINT0")->jointId) = 0.1;
-    fik_in->dq_weight_all(robot_in->link("CHEST_JOINT1")->jointId) = 0.1;
-    fik_in->dq_weight_all(robot_in->link("CHEST_JOINT2")->jointId) = 0.1;
+    if( robot_in->link("CHEST_JOINT0") != NULL) fik_in->dq_weight_all(robot_in->link("CHEST_JOINT0")->jointId) = 0.1;//JAXON
+    if( robot_in->link("CHEST_JOINT1") != NULL) fik_in->dq_weight_all(robot_in->link("CHEST_JOINT1")->jointId) = 0.1;
+    if( robot_in->link("CHEST_JOINT2") != NULL) fik_in->dq_weight_all(robot_in->link("CHEST_JOINT2")->jointId) = 0.1;
+    if( robot_in->link("CHEST_Y") != NULL) fik_in->dq_weight_all(robot_in->link("CHEST_Y")->jointId) = 0.1;//K
+    if( robot_in->link("CHEST_P") != NULL) fik_in->dq_weight_all(robot_in->link("CHEST_P")->jointId) = 0.1;
 //    if( robot_in->link("RARM_JOINT2") != NULL) robot_in->link("RARM_JOINT2")->ulimit = deg2rad(-30);//脇内側の干渉回避
 //    if( robot_in->link("LARM_JOINT2") != NULL) robot_in->link("LARM_JOINT2")->llimit = deg2rad(30);
+    if( m_robot->link("RLEG_JOINT3") != NULL) m_robot->link("RLEG_JOINT3")->llimit = deg2rad(10);//膝伸びきり防止のため
+    if( m_robot->link("LLEG_JOINT3") != NULL) m_robot->link("LLEG_JOINT3")->llimit = deg2rad(10);
 
     for(int i=0;i<robot_in->numJoints();i++){
         LIMIT_MINMAX(robot_in->joint(i)->q, robot_in->joint(i)->llimit, robot_in->joint(i)->ulimit);
