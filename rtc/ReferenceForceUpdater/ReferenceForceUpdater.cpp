@@ -651,11 +651,12 @@ bool ReferenceForceUpdater::setReferenceForceUpdaterParam(const std::string& i_n
   m_RFUParam[arm].d_gain = i_param.d_gain;
   m_RFUParam[arm].i_gain = i_param.i_gain;
   m_RFUParam[arm].is_hold_value = i_param.is_hold_value;
+  m_RFUParam[arm].transition_time = i_param.transition_time;
   for (size_t i = 0; i < 3; i++ ) m_RFUParam[arm].motion_dir(i) = i_param.motion_dir[i];
 
   // Print values
   std::cerr << "[" << m_profile.instance_name << "]   p_gain = " << m_RFUParam[arm].p_gain << ", d_gain = " << m_RFUParam[arm].d_gain << ", i_gain = " << m_RFUParam[arm].i_gain << std::endl;
-  std::cerr << "[" << m_profile.instance_name << "]   update_freq = " << m_RFUParam[arm].update_freq << "[Hz], update_time_ratio = " << m_RFUParam[arm].update_time_ratio << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   update_freq = " << m_RFUParam[arm].update_freq << "[Hz], update_time_ratio = " << m_RFUParam[arm].update_time_ratio << ", transition_time = " << m_RFUParam[arm].transition_time << "[s]" << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   motion_dir = " << m_RFUParam[arm].motion_dir.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   frame = " << m_RFUParam[arm].frame << ", is_hold_value = " << (m_RFUParam[arm].is_hold_value?"true":"false") << std::endl;
   return true;
@@ -677,11 +678,12 @@ bool ReferenceForceUpdater::getReferenceForceUpdaterParam(const std::string& i_n
   i_param->update_time_ratio = m_RFUParam[arm].update_time_ratio;
   i_param->frame = m_RFUParam[arm].frame.c_str();
   i_param->is_hold_value = m_RFUParam[arm].is_hold_value;
+  i_param->transition_time = m_RFUParam[arm].transition_time;
   for (size_t i = 0; i < 3; i++ ) i_param->motion_dir[i] = m_RFUParam[arm].motion_dir(i);
   return true;
 };
 
-bool ReferenceForceUpdater::startReferenceForceUpdater(const std::string& i_name_)
+bool ReferenceForceUpdater::startReferenceForceUpdaterNoWait(const std::string& i_name_)
 {
   std::cerr << "[" << m_profile.instance_name << "] startReferenceForceUpdater [" << i_name_ << "]" << std::endl;
   {
@@ -704,17 +706,15 @@ bool ReferenceForceUpdater::startReferenceForceUpdater(const std::string& i_name
       }
       ref_force_interpolator[i_name_]->set(currentRefForce.data());
       transition_interpolator[i_name_]->set(&tmpstart);
-      transition_interpolator[i_name_]->setGoal(&tmpgoal, 1.0, true);
+      transition_interpolator[i_name_]->setGoal(&tmpgoal, m_RFUParam[i_name_].transition_time, true);
     } else {
       return false;
     }
   }
-  while (!transition_interpolator[i_name_]->isEmpty()) usleep(1000);
-  usleep(1000);
   return true;
 };
 
-bool ReferenceForceUpdater::stopReferenceForceUpdater(const std::string& i_name_)
+bool ReferenceForceUpdater::stopReferenceForceUpdaterNoWait(const std::string& i_name_)
 {
   std::cerr << "[" << m_profile.instance_name << "] stopReferenceForceUpdater [" << i_name_ << "]" << std::endl;
   {
@@ -728,12 +728,30 @@ bool ReferenceForceUpdater::stopReferenceForceUpdater(const std::string& i_name_
     }
     double tmpstart = 1.0, tmpgoal = 0.0;
     transition_interpolator[i_name_]->set(&tmpstart);
-    transition_interpolator[i_name_]->setGoal(&tmpgoal, 1.0, true);
+    transition_interpolator[i_name_]->setGoal(&tmpgoal, m_RFUParam[i_name_].transition_time, true);
     m_RFUParam[i_name_].is_stopping = true;
   }
-  while (!transition_interpolator[i_name_]->isEmpty()) usleep(1000);
-  usleep(1000);
   return true;
+};
+
+bool ReferenceForceUpdater::startReferenceForceUpdater(const std::string& i_name_)
+{
+    bool ret = startReferenceForceUpdaterNoWait(i_name_);
+    waitReferenceForceUpdaterTransition(i_name_);
+    return ret;
+};
+
+bool ReferenceForceUpdater::stopReferenceForceUpdater(const std::string& i_name_)
+{
+    bool ret = stopReferenceForceUpdaterNoWait(i_name_);
+    waitReferenceForceUpdaterTransition(i_name_);
+    return ret;
+};
+
+void ReferenceForceUpdater::waitReferenceForceUpdaterTransition(const std::string& i_name_)
+{
+    while (!transition_interpolator[i_name_]->isEmpty()) usleep(1000);
+    usleep(1000);
 };
 
 extern "C"

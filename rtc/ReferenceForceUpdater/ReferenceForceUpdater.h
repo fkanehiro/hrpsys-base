@@ -107,6 +107,9 @@ class ReferenceForceUpdater
   bool getReferenceForceUpdaterParam(const std::string& i_name_, OpenHRP::ReferenceForceUpdaterService::ReferenceForceUpdaterParam_out i_param);
   bool startReferenceForceUpdater(const std::string& i_name_);
   bool stopReferenceForceUpdater(const std::string& i_name_);
+  bool startReferenceForceUpdaterNoWait(const std::string& i_name_);
+  bool stopReferenceForceUpdaterNoWait(const std::string& i_name_);
+  void waitReferenceForceUpdaterTransition(const std::string& i_name_);
   void calcFootOriginCoords (hrp::Vector3& foot_origin_pos, hrp::Matrix33& foot_origin_rot);
   void updateRefFootOriginExtMoment (const std::string& arm);
   void updateRefForces (const std::string& arm);
@@ -183,6 +186,8 @@ class ReferenceForceUpdater
     double d_gain;
     // I gain
     double i_gain;
+    // Transition time[s]
+    double transition_time;
     // Motion direction to update reference force
     hrp::Vector3 motion_dir;
     std::string frame;
@@ -197,6 +202,7 @@ class ReferenceForceUpdater
       p_gain = 0.02;
       d_gain = 0;
       i_gain = 0;
+      transition_time = 1.0;
       //additional params (not defined in idl)
       is_active = false;
       is_stopping = false;

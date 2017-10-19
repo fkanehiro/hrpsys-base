@@ -33,6 +33,22 @@ CORBA::Boolean ReferenceForceUpdaterService_impl::stopReferenceForceUpdater(cons
     return m_rfu->stopReferenceForceUpdater(std::string(i_name_));
 };
 
+CORBA::Boolean ReferenceForceUpdaterService_impl::startReferenceForceUpdaterNoWait(const char *i_name_)
+{
+    return m_rfu->startReferenceForceUpdaterNoWait(std::string(i_name_));
+};
+
+CORBA::Boolean ReferenceForceUpdaterService_impl::stopReferenceForceUpdaterNoWait(const char *i_name_)
+{
+    return m_rfu->stopReferenceForceUpdaterNoWait(std::string(i_name_));
+};
+
+void ReferenceForceUpdaterService_impl::waitReferenceForceUpdaterTransition(const char* i_name_)
+{
+    return m_rfu->waitReferenceForceUpdaterTransition(std::string(i_name_));
+};
+
+
 void ReferenceForceUpdaterService_impl::rfu(ReferenceForceUpdater *i_rfu)
 {
     m_rfu = i_rfu;

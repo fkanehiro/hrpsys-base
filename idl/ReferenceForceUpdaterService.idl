@@ -31,6 +31,8 @@ module OpenHRP
           double i_gain;
           /// Hold current value or not. If is_hold_value is true, do not update value, otherwise, update value.
           boolean is_hold_value;
+          /// Transition time[s]
+          double transition_time;
       };
 
       /**
@@ -58,5 +60,22 @@ module OpenHRP
        * @return true if set successfully, false otherwise
        */
       boolean stopReferenceForceUpdater(in string name);
+
+      /**
+       * @brief Start ReferenceForceUpdater and function return immediately
+       * @return true if set successfully, false otherwise
+       */
+      boolean startReferenceForceUpdaterNoWait(in string name);
+
+      /**
+       * @brief Stop ReferenceForceUpdater and function return immediately
+       * @return true if set successfully, false otherwise
+       */
+      boolean stopReferenceForceUpdaterNoWait(in string name);
+
+      /**
+       * @brief Wait for ReferenceForceUpdater mode transition.
+       */
+      void waitReferenceForceUpdaterTransition(in string name);
   };
 };
