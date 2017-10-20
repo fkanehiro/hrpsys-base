@@ -174,7 +174,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
 
     // Generate FIK
     fik = fikPtr(new FullbodyInverseKinematicsSolver(m_robot, std::string(m_profile.instance_name), m_dt));
-    use_new_ik_method = false;
+    ik_mode = OpenHRP::AutoBalancerService::SIMPLE;
 
     // setting from conf file
     // rleg,TARGET_LINK,BASE_LINK
@@ -508,11 +508,16 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
         transition_interpolator_ratio = (control_mode == MODE_IDLE) ? 0.0 : 1.0;
       }
       if (control_mode != MODE_IDLE ) {
-        if(use_new_ik_method){
-          solveFullbodyIK();
-        }else{
-          solveSimpleFullbodyIK();
-        }
+          switch(ik_mode){
+              case OpenHRP::AutoBalancerService::SIMPLE:
+                  solveSimpleFullbodyIK();
+                  break;
+              case OpenHRP::AutoBalancerService::FULLBODY:
+                  solveFullbodyIK();
+                  break;
+              default:
+                  break;
+          }
 //        /////// Inverse Dynamics /////////
 //        if(!idsb.is_initialized){
 //          idsb.setInitState(m_robot, m_dt);
@@ -1134,14 +1139,14 @@ void AutoBalancer::solveFullbodyIK ()
         tmp.targetPos = ref_cog;// COM height will not be constraint
         tmp.targetRpy = hrp::Vector3(0, 0, 0);//reference angular momentum
         //  tmp.targetRpy = hrp::Vector3(0, 10, 0);//reference angular momentum
-        tmp.constraint_weight << 3,3,1,1e-6,1e-6,1e-6;// consider angular momentum
+        tmp.constraint_weight << 3,3,1e-6,1e-6,1e-6,1e-6;// consider angular momentum
 //        tmp.constraint_weight << 3,3,1,0,0,0;// not consider angular momentum
         tmp.rot_precision = 1e-1;//angular momentum precision
         ik_tgt_list.push_back(tmp);
     }
-//  // avoid elbow-chect collision
-//  if( m_robot->link("RARM_JOINT2") != NULL) m_robot->link("RARM_JOINT2")->ulimit = deg2rad(-40);
-//  if( m_robot->link("LARM_JOINT2") != NULL) m_robot->link("LARM_JOINT2")->llimit = deg2rad(40);
+    // knee stretch protection
+    if(m_robot->link("RLEG_JOINT3") != NULL) m_robot->link("RLEG_JOINT3")->llimit = deg2rad(10);
+    if(m_robot->link("LLEG_JOINT3") != NULL) m_robot->link("LLEG_JOINT3")->llimit = deg2rad(10);
 //  // reduce chest joint move
 //  fik->dq_weight_all(m_robot->link("CHEST_JOINT0")->jointId) = 0.1;
 //  fik->dq_weight_all(m_robot->link("CHEST_JOINT1")->jointId) = 0.1;
@@ -1872,11 +1877,11 @@ bool AutoBalancer::setAutoBalancerParam(const OpenHRP::AutoBalancerService::Auto
   for (size_t i = 0; i < fik->ikp.size(); i++) {
     fik->ikp[ee_vec[i]].limb_length_margin = i_param.limb_length_margin[i];
   }
-  if (!gg_is_walking) {
-    use_new_ik_method = i_param.use_fullbody_ik;
-    std::cerr << "[" << m_profile.instance_name << "]   use_new_ik_method = " << use_new_ik_method << std::endl;
+  if (control_mode == MODE_IDLE) {
+    ik_mode = i_param.ik_mode;
+    std::cerr << "[" << m_profile.instance_name << "]   ik_mode = " << ik_mode << std::endl;
   } else {
-    std::cerr << "[" << m_profile.instance_name << "]   use_new_ik_method cannot be set in (gg_is_walking = true). Current use_new_ik_method is " << (use_new_ik_method?"true":"false") << std::endl;
+    std::cerr << "[" << m_profile.instance_name << "]   ik_mode cannot be set in (control_mode != MODE_IDLE). Current ik_mode is " << ik_mode << std::endl;
   }
   return true;
 };
@@ -1959,7 +1964,7 @@ bool AutoBalancer::getAutoBalancerParam(OpenHRP::AutoBalancerService::AutoBalanc
   for (size_t i = 0; i < 3; i++) {
       i_param.additional_force_applied_point_offset[i] = additional_force_applied_point_offset(i);
   }
-  i_param.use_fullbody_ik = use_new_ik_method;
+  i_param.ik_mode = ik_mode;
   return true;
 };
 

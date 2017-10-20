@@ -250,7 +250,7 @@ class AutoBalancer
   // for abc
   typedef boost::shared_ptr<FullbodyInverseKinematicsSolver> fikPtr;
   fikPtr fik;
-  bool use_new_ik_method;
+  OpenHRP::AutoBalancerService::IKMode ik_mode;
   hrp::Vector3 ref_cog, ref_zmp, prev_ref_zmp, prev_imu_sensor_pos, prev_imu_sensor_vel, hand_fix_initial_offset;
   enum {BIPED, TROT, PACE, CRAWL, GALLOP} gait_type;
   enum {MODE_IDLE, MODE_ABC, MODE_SYNC_TO_IDLE, MODE_SYNC_TO_ABC} control_mode;
