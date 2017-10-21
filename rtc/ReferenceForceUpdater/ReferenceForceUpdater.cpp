@@ -472,6 +472,9 @@ RTC::ReturnCode_t ReferenceForceUpdater::onExecute(RTC::UniqueId ec_id)
   m_refFootOriginExtMoment.data.z = tmp_moment(2);
   m_refFootOriginExtMoment.tm = m_qRef.tm;
   m_refFootOriginExtMomentOut.write();
+  m_refFootOriginExtMomentIsHoldValue.tm = m_qRef.tm;
+  m_refFootOriginExtMomentIsHoldValue.data = m_RFUParam["footoriginextmoment"].is_hold_value;
+  m_refFootOriginExtMomentIsHoldValueOut.write();
 
   return RTC::RTC_OK;
 }
