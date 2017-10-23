@@ -2,6 +2,84 @@
 Changelog for package hrpsys
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+315.15.0 (2017-10-22)
+---------------------
+
+Stable RTCs
+=============
+* SequencePlayer
+  * Fix bug in CUBICSPLINE mode (`#1201 <https://github.com/fkanehiro/hrpsys-base/issues/1201>`_)
+    * fix bug in CUBICSOLINE mode a[5] -> a5[i]
+  * Remove offset while playing patterns (`#1191 <https://github.com/fkanehiro/hrpsys-base/issues/1191>`_)
+    * enable to generate continuous motion from motion patterns
+    * enable to fix a link while playing patterns
+* RobotHardware/DataLogger
+  * Add data port for TimedRobotState2 `#1195 <https://github.com/fkanehiro/hrpsys-base/issues/1195>`_ from fkanehiro/add_rstate2_port
+    * add an output data port for TimedRobotState2
+* RobotHardware
+  * Add servo on delay (`#1210 <https://github.com/fkanehiro/hrpsys-base/issues/1210>`_)
+    * [RobotHardware] add document on servoOnDelay
+    * [RobotHardware] add servoOnDelay configuration variable
+  * Fix bug in getStatus() (`#1197 <https://github.com/fkanehiro/hrpsys-base/issues/1197>`_)
+    * [RobotHardware] fix a bug in getStatus()
+* DataLogger
+  * Add logSplitter (`#1198 <https://github.com/fkanehiro/hrpsys-base/issues/1198>`_)
+    * add logSplitter
+* rtm.py (`#1199 <https://github.com/fkanehiro/hrpsys-base/issues/1199>`_)
+  * [rtm.py] add RTcomponent.getProperties()
+* hrpEC
+  * Add missing initialization (`#1209 <https://github.com/fkanehiro/hrpsys-base/issues/1209>`_)
+    * Add missing initialization
+  * Detect use-after-free of hrpExecutionContext (`#1208 <https://github.com/fkanehiro/hrpsys-base/issues/1208>`_)
+    * Remove C++11 dependency from previous commit
+    * Detect use-after-free of hrpExecutionContext
+* Travis (travis.sh, travis.yaml)
+  * Update travis to run hydro/indigo/kinetic (`#1194 <https://github.com/fkanehiro/hrpsys-base/issues/1194>`_)
+    * .travis.sh: remove -j1 -l1 to speed up compile
+    * Update .travis.yml
+    * run docker without -it
+    * disable DEBIAN_FRONTEND, install tzdata before other package https://askubuntu.com/questions/909277/avoiding-user-interaction-with-tzdata-when-installing-certbot-in-a-docker-contai
+    * .travis.sh: old git does not support -b with tag name
+    * export DISTRO
+    * skip hydro specific patches
+    * use DISTRO
+    * use ROS_DISTRO instead of hydro
+    * show lsb_release
+    * .travis.yml: add hydro/indigo/kinetic: test on .travis.yml
+    * apt-get install python2.7
+    * install apt-get software-properties-common
+    * mkdir tet_results
+    * install git,wget,sudo,sed
+    * use docker to run test
+
+Unstable RTCs
+=============
+
+* ReferenceForceUpdater
+  * Add is_hold_value flag writing (`#1213 <https://github.com/fkanehiro/hrpsys-base/issues/1213>`_)
+    * [rtc/ReferenceForceUpdater/ReferenceForceUpdater.cpp] Add missing writing of is_hold_value flag
+  * Update rfu functions (`#1212 <https://github.com/fkanehiro/hrpsys-base/issues/1212>`_)
+    * [idl/ReferenceForceUpdaterService.idl, rtc/ReferenceForceUpdater] Enable to set transition time for RFU
+    * [idl/ReferenceForceUpdaterService.idl, rtc/ReferenceForceUpdater] Add no-wait version functions
+* AccelerationChecker (`#1205 <https://github.com/fkanehiro/hrpsys-base/issues/1205>`_)
+  * remove a newline
+  * check joint command acceleration only when servo is on
+* AutoBalancer (`#1203 <https://github.com/fkanehiro/hrpsys-base/issues/1203>`_)
+  * [rtc/AutoBalancer/AutoBalancer.cpp] Update for MODE_REF_FORCE_RFU_EXT_MOMENT. Separate MODE_REF_FORCE_RFU_EXT_MOMENT from other UseForceMode.
+* CameraImageSaver : Add new component (`#1200 <https://github.com/fkanehiro/hrpsys-base/issues/1200>`_)
+  * add bindParameter()
+  * add a new component, CameraImageSaver
+* CameraImageViewer : Support RTC::CameraImage (`#1196 <https://github.com/fkanehiro/hrpsys-base/issues/1196>`_)
+  * [CameraImageViewer] support RTC::CameraImage
+* Stabilizer
+  * Update calculation of foot origin ext moment (`#1203 <https://github.com/fkanehiro/hrpsys-base/issues/1203>`_)
+    * [rtc/Stabilizer/Stabilizer.*] Update calculation of diff_foot_origin_ext_moment not to use ZMP and to use foot moment
+    * [rtc/Stabilizer/Stabilizer.cpp] Move calculation of actual foot origin coords. This is expected not to change the program behavior.
+  * Update travis to run hydro/indigo/kinetic (`#1194 <https://github.com/fkanehiro/hrpsys-base/issues/1194>`_)
+    * sample/SampleRobot/samplerobot_stabilizer.py: on hrpsys < 315.5.0 this outputs huge error log message
+
+* Contributors: Fumio KANEHIRO, Jun Inoue, Kei Okada, Shunichi Nozawa, Yasuhiro Ishiguro
+
 315.14.0 (2017-08-04)
 ---------------------
 
