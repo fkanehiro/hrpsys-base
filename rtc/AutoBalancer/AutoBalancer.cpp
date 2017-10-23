@@ -1143,9 +1143,11 @@ void AutoBalancer::solveFullbodyIK ()
   if( m_robot->link("RARM_JOINT2") != NULL) m_robot->link("RARM_JOINT2")->ulimit = deg2rad(-40);//脇の干渉回避のため
   if( m_robot->link("LARM_JOINT2") != NULL) m_robot->link("LARM_JOINT2")->llimit = deg2rad(40);
 
-  fik->dq_weight_all(m_robot->link("CHEST_JOINT0")->jointId) = 0.1;
-  fik->dq_weight_all(m_robot->link("CHEST_JOINT1")->jointId) = 0.1;
-  fik->dq_weight_all(m_robot->link("CHEST_JOINT2")->jointId) = 0.1;
+  if( m_robot->link("CHEST_JOINT0") != NULL) fik->dq_weight_all(m_robot->link("CHEST_JOINT0")->jointId) = 0.1;
+  if( m_robot->link("CHEST_JOINT1") != NULL) fik->dq_weight_all(m_robot->link("CHEST_JOINT1")->jointId) = 0.1;
+  if( m_robot->link("CHEST_JOINT2") != NULL) fik->dq_weight_all(m_robot->link("CHEST_JOINT2")->jointId) = 0.1;
+  if( m_robot->link("CHEST_Y") != NULL) fik->dq_weight_all(m_robot->link("CHEST_Y")->jointId) = 0.1;
+  if( m_robot->link("CHEST_P") != NULL) fik->dq_weight_all(m_robot->link("CHEST_Y")->jointId) = 0.1;
 
   for(int i=0;i<m_robot->numJoints();i++) fik->q_ref(i) = m_qRef.data[i];
   fik->q_ref_pullback_gain.head(m_robot->numJoints()).fill(0.001);
