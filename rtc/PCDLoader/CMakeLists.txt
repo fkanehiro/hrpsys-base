@@ -3,7 +3,7 @@ link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
 set(comp_sources PCDLoader.cpp)
-set(libs hrpsysBaseStub ${PCL_LIBRARIES})
+set(libs hrpsysBaseStub ${PCL_COMMON_LIBRARIES} pcl_io)
 add_library(PCDLoader SHARED ${comp_sources})
 target_link_libraries(PCDLoader ${libs})
 set_target_properties(PCDLoader PROPERTIES PREFIX "")
