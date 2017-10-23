@@ -1122,6 +1122,7 @@ class HrpsysConfigurator(object):
         @param tm sequential list of time in float: Time to complete, In Second
         @rtype bool
         @return False upon any problem during execution.
+        @since 315.5.0
         '''
         for angles in angless:
             for i in range(len(angles)):
@@ -1138,10 +1139,11 @@ class HrpsysConfigurator(object):
               Worthwhile opening an enhancement ticket at designated issue tracker.
         \endverbatim
         @param gname str: Name of the joint group.
-        @param sequential list of angles in float: In rad
+        @param sequential list of angles in float: In rad. Eg. [[0.0, 0.1,,,0.9], [1.0, 1.1,,,1.9]]
         @param tm sequential list of time in float: Time to complete, In Second
         @rtype bool
         @return False upon any problem during execution.
+        @since 315.5.0
         '''
         for angles in angless:
             for i in range(len(angles)):
@@ -2234,7 +2236,10 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
         Cancels the commanded sequence of joint angle, by overwriting the command by the values of instant the method was invoked.
         Note that this only cancels the queue once. Icoming commands after this method is called will be processed as usual.
         @return bool
+        @since 315.5.0
         '''
+        if StrictVersion(self.seq_version) < StrictVersion('315.5.0'):
+            raise RuntimeError('clearJointAngles is not available with your software version ' + self.seq_version)
         return self.seq_svc.clearJointAngles()
 
     def clearJointAnglesOfGroup(self, gname):
@@ -2243,8 +2248,11 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
         Note that this only cancels the queue once. Icoming commands after this method is called will be processed as usual.
         @param gname: Name of the joint group.
         @return bool
+        @since 315.5.0
         '''
-        return self.seq_svc.clearJointAngles(gname)
+        if StrictVersion(self.seq_version) < StrictVersion('315.5.0'):
+            raise RuntimeError('clearJointAnglesOfGroup is not available with your software version ' + self.seq_version)
+        return self.seq_svc.clearJointAnglesOfGroup(gname)
 
     def removeForceSensorOffsetRMFO(self, sensor_names=[], tm=8.0):
         '''!@brief
