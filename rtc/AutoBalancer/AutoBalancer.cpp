@@ -1147,6 +1147,8 @@ void AutoBalancer::solveFullbodyIK ()
     // knee stretch protection
     if(m_robot->link("RLEG_JOINT3") != NULL) m_robot->link("RLEG_JOINT3")->llimit = deg2rad(10);
     if(m_robot->link("LLEG_JOINT3") != NULL) m_robot->link("LLEG_JOINT3")->llimit = deg2rad(10);
+    if(m_robot->link("R_KNEE_P") != NULL) m_robot->link("R_KNEE_P")->llimit = deg2rad(10);
+    if(m_robot->link("L_KNEE_P") != NULL) m_robot->link("L_KNEE_P")->llimit = deg2rad(10);
 //  // reduce chest joint move
 //  fik->dq_weight_all(m_robot->link("CHEST_JOINT0")->jointId) = 0.1;
 //  fik->dq_weight_all(m_robot->link("CHEST_JOINT1")->jointId) = 0.1;
