@@ -7,6 +7,7 @@
 #include "../ImpedanceController/JointPathEx.h"
 #include <unsupported/Eigen/MatrixFunctions>
 #include "SimpleFullbodyInverseKinematicsSolver.h"
+#include "../TorqueFilter/IIRFilter.h"
 
 //tips
 #define LIMIT_MINMAX(x,min,max) ((x= (x<min  ? min : x<max ? x : max)))
@@ -45,10 +46,11 @@ class FullbodyInverseKinematicsSolver : public SimpleFullbodyInverseKinematicsSo
         hrp::dmatrix J_all, J_all_inv, J_com, J_am;
         hrp::dvector dq_all, err_all, constraint_weight_all, avoid_weight_gain;
         const int WS_DOF, BASE_DOF, J_DOF, ALL_DOF;
+        std::vector<IIRFilter> am_filters;
     public:
         hrp::dvector dq_weight_all;
         hrp::dvector q_ref, q_ref_pullback_gain;
-        hrp::Vector3 cur_momentum_around_COM;
+        hrp::Vector3 cur_momentum_around_COM, cur_momentum_around_COM_filtered;
         FullbodyInverseKinematicsSolver (hrp::BodyPtr _robot, const std::string& _print_str, const double _dt)
         : SimpleFullbodyInverseKinematicsSolver(_robot,_print_str, _dt),
           WS_DOF(6),
@@ -57,8 +59,13 @@ class FullbodyInverseKinematicsSolver : public SimpleFullbodyInverseKinematicsSo
           ALL_DOF(J_DOF+BASE_DOF) {
             dq_weight_all = hrp::dvector::Ones(ALL_DOF);
             dq_all = q_ref = q_ref_pullback_gain = hrp::dvector::Zero(ALL_DOF);
-            cur_momentum_around_COM = hrp::Vector3::Zero();
+            cur_momentum_around_COM = cur_momentum_around_COM_filtered = hrp::Vector3::Zero();
             avoid_weight_gain = hrp::dvector::Constant(ALL_DOF, 1e12);
+            am_filters.resize(3);
+            for(int i=0;i<3;i++){
+              am_filters[i].setParameterAsBiquad(10, 1/std::sqrt(2), 1.0/m_dt);
+              am_filters[i].reset();
+            }
         };
         ~FullbodyInverseKinematicsSolver () {};
         bool checkIKConvergence(const hrp::BodyPtr _robot, const std::vector<IKConstraint>& _ikc_list){
@@ -98,6 +105,9 @@ class FullbodyInverseKinematicsSolver : public SimpleFullbodyInverseKinematicsSo
                     hrp::Vector3 tmp_P, tmp_L;
                     _robot->calcTotalMomentum(tmp_P, tmp_L);
                     cur_momentum_around_COM = tmp_L - _robot->calcCM().cross(tmp_P);
+                    for(int i=0; i<3; i++){
+                        cur_momentum_around_COM_filtered(i) = am_filters[i].passFilter(cur_momentum_around_COM(i));
+                    }
                     loop++;
                     if(checkIKConvergence(_robot, _ikc_list)){ break; }
                 }
@@ -141,9 +151,10 @@ class FullbodyInverseKinematicsSolver : public SimpleFullbodyInverseKinematicsSo
                     }
                     else if(!link_tgt_ptr && _ikc_list[i].target_link_name == "COM"){ //重心限定
                         dp_part = _ikc_list[i].targetPos - _robot->calcCM();
-                        dr_part = (_ikc_list[i].targetRpy - cur_momentum_around_COM) * m_dt;// COMのrotはAngulerMomentumとして扱う&差分なのでdtかける
+//                        dr_part = (_ikc_list[i].targetRpy - cur_momentum_around_COM) * m_dt;// COMのrotはAngulerMomentumとして扱う&差分なのでdtかける
+                        dr_part = (_ikc_list[i].targetRpy - cur_momentum_around_COM_filtered) * m_dt;// COMのrotはAngulerMomentumとして扱う&差分なのでdtかける
                         _robot->calcCMJacobian(NULL, J_com);//デフォで右端に3x6のbase->COMのヤコビアンが付いてくる
-                        _robot->calcAngularMomentumJacobian(NULL, J_am);//すでにrootlink周りの角運動量ヤコビアンが返ってくる？
+                        _robot->calcAngularMomentumJacobian(NULL, J_am);//world座標系での角運動量を生成するヤコビアン(なので本当はCOM周りには使えない)
                         J_part << J_com, J_am;
                     }
                     else{ std::cerr<<"Unknown Link Target !!"<<std::endl; continue; } //不明なリンク指定

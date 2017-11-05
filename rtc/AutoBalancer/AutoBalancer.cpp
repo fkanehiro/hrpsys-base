@@ -1140,8 +1140,8 @@ void AutoBalancer::solveFullbodyIK ()
         tmp.targetRpy = hrp::Vector3(0, 0, 0);//reference angular momentum
         //  tmp.targetRpy = hrp::Vector3(0, 10, 0);//reference angular momentum
         tmp.constraint_weight << 3,3,1e-6,1e-6,1e-6,1e-6;// consider angular momentum
-//        tmp.constraint_weight << 3,3,1,0,0,0;// not consider angular momentum
-        tmp.rot_precision = 1e-1;//angular momentum precision
+        if(transition_interpolator_ratio < 1.0) tmp.constraint_weight.tail(3).fill(0);// disable angular momentum control in transition
+//        tmp.rot_precision = 1e-1;//angular momentum precision
         ik_tgt_list.push_back(tmp);
     }
     // knee stretch protection
