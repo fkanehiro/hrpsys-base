@@ -194,7 +194,7 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onInitialize(){
     invdyn_zmp_filters.setParameter(25, 1/m_dt, Q_BUTTERWORTH);
     final_ref_zmp_filter.setParameter(5, 1/m_dt, Q_BUTTERWORTH);
 
-    avg_q_vel = 4;
+    avg_q_vel = 1;
 
     sccp = boost::shared_ptr<CapsuleCollisionChecker>(new CapsuleCollisionChecker(m_robot));
 
@@ -589,7 +589,8 @@ void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr
             tmp.constraint_weight = hrp::dvector6::Constant(0.1);
         }
         ikc_list.push_back(tmp);
-    }{
+    }
+    {
         IKConstraint tmp;
         tmp.target_link_name = eename_ikcp_map["lleg"].target_link_name;
         tmp.localPos = eename_ikcp_map["lleg"].localPos;
@@ -602,12 +603,18 @@ void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr
             tmp.constraint_weight = hrp::dvector6::Constant(0.1);
         }
         ikc_list.push_back(tmp);
-    }{
+    }
+    const double dist = 0.65;
+    {
         IKConstraint tmp;
         tmp.target_link_name = eename_ikcp_map["rarm"].target_link_name;
         tmp.localPos = eename_ikcp_map["rarm"].localPos;
         tmp.localR = eename_ikcp_map["rarm"].localR;
-        tmp.targetPos = rh_ref.p;
+        if((rh_ref.p-lh_ref.p).norm()<dist){
+            tmp.targetPos = (rh_ref.p+lh_ref.p)/2 + (rh_ref.p-lh_ref.p).normalized()*dist/2;
+        }else{
+            tmp.targetPos = rh_ref.p;
+        }
         tmp.targetRpy = rh_ref.rpy;
         tmp.constraint_weight = hrp::dvector6::Constant(0.1);
         tmp.pos_precision = 3e-3;
@@ -618,7 +625,11 @@ void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr
         tmp.target_link_name = eename_ikcp_map["larm"].target_link_name;
         tmp.localPos = eename_ikcp_map["larm"].localPos;
         tmp.localR = eename_ikcp_map["larm"].localR;
-        tmp.targetPos = lh_ref.p;
+        if((rh_ref.p-lh_ref.p).norm()<dist){
+            tmp.targetPos = (rh_ref.p+lh_ref.p)/2 + (lh_ref.p-rh_ref.p).normalized()*dist/2;
+        }else{
+            tmp.targetPos = lh_ref.p;
+        }
         tmp.targetRpy = lh_ref.rpy;
         tmp.constraint_weight = hrp::dvector6::Constant(0.1);
         tmp.pos_precision = 3e-3;
@@ -713,6 +724,22 @@ void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr
 //    if( robot_in->link("LARM_JOINT2") != NULL) robot_in->link("LARM_JOINT2")->llimit = deg2rad(30);
     if( m_robot->link("RLEG_JOINT3") != NULL) m_robot->link("RLEG_JOINT3")->llimit = deg2rad(10);//膝伸びきり防止のため
     if( m_robot->link("LLEG_JOINT3") != NULL) m_robot->link("LLEG_JOINT3")->llimit = deg2rad(10);
+    if( m_robot->link("R_KNEE_P") != NULL) m_robot->link("R_KNEE_P")->llimit = deg2rad(15);//K
+    if( m_robot->link("L_KNEE_P") != NULL) m_robot->link("L_KNEE_P")->llimit = deg2rad(15);
+    if( m_robot->link("R_WRIST_R") != NULL) m_robot->link("R_WRIST_P")->llimit = deg2rad(-40);
+    if( m_robot->link("L_WRIST_R") != NULL) m_robot->link("L_WRIST_P")->llimit = deg2rad(-40);
+    if( m_robot->link("R_WRIST_R") != NULL) m_robot->link("R_WRIST_P")->ulimit = deg2rad(40);
+    if( m_robot->link("L_WRIST_R") != NULL) m_robot->link("L_WRIST_P")->ulimit = deg2rad(40);
+    if( m_robot->link("R_WRIST_P") != NULL) m_robot->link("R_WRIST_P")->llimit = deg2rad(-40);
+    if( m_robot->link("L_WRIST_P") != NULL) m_robot->link("L_WRIST_P")->llimit = deg2rad(-40);
+    if( m_robot->link("R_WRIST_P") != NULL) m_robot->link("R_WRIST_P")->ulimit = deg2rad(20);
+    if( m_robot->link("L_WRIST_P") != NULL) m_robot->link("L_WRIST_P")->ulimit = deg2rad(20);
+
+
+    if( m_robot->link("CHEST_Y") != NULL) m_robot->link("CHEST_Y")->llimit = deg2rad(-20);
+    if( m_robot->link("CHEST_Y") != NULL) m_robot->link("CHEST_Y")->ulimit = deg2rad(20);
+    if( m_robot->link("CHEST_P") != NULL) m_robot->link("CHEST_P")->llimit = deg2rad(0);
+    if( m_robot->link("CHEST_P") != NULL) m_robot->link("CHEST_P")->ulimit = deg2rad(30);
 
     for(int i=0;i<robot_in->numJoints();i++){
         LIMIT_MINMAX(robot_in->joint(i)->q, robot_in->joint(i)->llimit, robot_in->joint(i)->ulimit);
