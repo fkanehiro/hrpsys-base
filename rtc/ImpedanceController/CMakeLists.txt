@@ -1,5 +1,5 @@
 set(comp_sources ImpedanceController.cpp ImpedanceControllerService_impl.cpp JointPathEx.cpp RatsMatrix.cpp ImpedanceOutputGenerator.h ../TorqueFilter/IIRFilter.cpp)
-set(libs hrpModel-3.1 hrpCollision-3.1 hrpUtil-3.1 hrpsysBaseStub)
+set(libs hrpModel-${OPENHRP_LIBRARY_VERSION} hrpCollision-${OPENHRP_LIBRARY_VERSION} hrpUtil-${OPENHRP_LIBRARY_VERSION} hrpsysBaseStub)
 add_library(ImpedanceController SHARED ${comp_sources})
 target_link_libraries(ImpedanceController ${libs})
 set_target_properties(ImpedanceController PROPERTIES PREFIX "")

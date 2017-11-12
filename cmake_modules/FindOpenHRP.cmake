@@ -6,12 +6,25 @@ execute_process(
   RESULT_VARIABLE RESULT
   OUTPUT_STRIP_TRAILING_WHITESPACE)
 
+execute_process(
+  COMMAND pkg-config --modversion openhrp3.2
+  OUTPUT_VARIABLE OPENHRP_VERSION
+  RESULT_VARIABLE RESULT
+  OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+STRING(REGEX REPLACE "^([0-9]+)\\.[0-9]+\\.[0-9]+" "\\1" OPENHRP_VERSION_MAJOR "${OPENHRP_VERSION}")
+STRING(REGEX REPLACE "^[0-9]+\\.([0-9])+\\.[0-9]+" "\\1" OPENHRP_VERSION_MINOR "${OPENHRP_VERSION}")
+STRING(REGEX REPLACE "^[0-9]+\\.[0-9]+\\.([0-9]+)" "\\1" OPENHRP_VERSION_PATCH "${OPENHRP_VERSION}")
+
 if(NOT RESULT EQUAL 0)
   set(OPENHRP_FOUND FALSE)
+else()
+  set(OPENHRP_LIBRARY_VERSION "${OPENHRP_VERSION_MAJOR}.${OPENHRP_VERSION_MINOR}")
+  message(STATUS "Try to use latest openhrp version = ${OPENHRP_LIBRARY_VERSION}")
 endif()
 
 execute_process(
-  COMMAND pkg-config --variable=prefix openhrp3.1
+  COMMAND pkg-config --variable=prefix openhrp${OPENHRP_LIBRARY_VERSION}
   OUTPUT_VARIABLE OPENHRP_DIR
   RESULT_VARIABLE RESULT
   OUTPUT_STRIP_TRAILING_WHITESPACE)
@@ -21,7 +34,7 @@ if(NOT RESULT EQUAL 0)
 endif()
 
 execute_process(
-  COMMAND pkg-config --cflags openhrp3.1
+  COMMAND pkg-config --cflags openhrp${OPENHRP_LIBRARY_VERSION}
   OUTPUT_VARIABLE OPENHRP_CXX_FLAGS
   RESULT_VARIABLE RESULT
   OUTPUT_STRIP_TRAILING_WHITESPACE)
@@ -33,7 +46,7 @@ else()
 endif()
 
 execute_process(
-  COMMAND pkg-config --cflags-only-I openhrp3.1
+  COMMAND pkg-config --cflags-only-I openhrp${OPENHRP_LIBRARY_VERSION}
   OUTPUT_VARIABLE OPENHRP_INCLUDE_DIRS
   RESULT_VARIABLE RESULT
   OUTPUT_STRIP_TRAILING_WHITESPACE)
@@ -45,7 +58,7 @@ else()
 endif()
 
 execute_process(
-  COMMAND pkg-config --libs openhrp3.1
+  COMMAND pkg-config --libs openhrp${OPENHRP_LIBRARY_VERSION}
   OUTPUT_VARIABLE OPENHRP_LIBRARIES
   RESULT_VARIABLE RESULT
   OUTPUT_STRIP_TRAILING_WHITESPACE)
@@ -65,7 +78,7 @@ if(NOT OPENHRP_FOUND)
 endif()
 
 execute_process(
-  COMMAND pkg-config --variable=idl_dir openhrp3.1
+  COMMAND pkg-config --variable=idl_dir openhrp${OPENHRP_LIBRARY_VERSION}
   OUTPUT_VARIABLE OPENHRP_IDL_DIR
   RESULT_VARIABLE RESULT
   OUTPUT_STRIP_TRAILING_WHITESPACE)

@@ -790,12 +790,12 @@ class HrpsysConfigurator(object):
         return ret
 
     # private method to replace $(PROJECT_DIR)
-    # PROJECT_DIR=(OpenHRP3  installed directory)/share/OpenHRP-3.1/sample/project
+    # PROJECT_DIR=(OpenHRP3  installed directory)/share/OpenHRP-3.2/sample/project
     # see http://www.openrtp.jp/openhrp3/3.1.0.beta/jp/install_ubuntu.html
     def parseUrl(self, url):
         if '$(PROJECT_DIR)' in url:
-            path = subprocess.Popen(['pkg-config', 'openhrp3.1', '--variable=prefix'], stdout=subprocess.PIPE).communicate()[0].rstrip()
-            path = os.path.join(path, 'share/OpenHRP-3.1/sample/project')
+            path = subprocess.Popen(['pkg-config', 'openhrp3.2', '--variable=prefix'], stdout=subprocess.PIPE).communicate()[0].rstrip()
+            path = os.path.join(path, 'share/OpenHRP-3.2/sample/project')
             url = url.replace('$(PROJECT_DIR)', path)
         return url
 

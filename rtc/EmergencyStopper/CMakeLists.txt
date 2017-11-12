@@ -1,6 +1,6 @@
 set(seq_dir ${PROJECT_SOURCE_DIR}/rtc/SequencePlayer)
 set(comp_sources ${seq_dir}/interpolator.cpp EmergencyStopper.cpp EmergencyStopperService_impl.cpp ../SoftErrorLimiter/beep.cpp)
-set(libs hrpModel-3.1 hrpUtil-3.1 hrpsysBaseStub)
+set(libs hrpModel-${OPENHRP_LIBRARY_VERSION} hrpUtil-${OPENHRP_LIBRARY_VERSION} hrpsysBaseStub)
 include_directories(${seq_dir})
 add_library(EmergencyStopper SHARED ${comp_sources})
 target_link_libraries(EmergencyStopper ${libs})

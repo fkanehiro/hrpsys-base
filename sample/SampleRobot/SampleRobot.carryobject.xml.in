@@ -13,7 +13,7 @@
    <property name="connection" value="PDcontroller0.torque:SampleRobot(Robot)0.tauRef"/>
    <property name="connection" value="SampleRobot(Robot)0.q:PDcontroller0.angle"/>
   </item>
-  <item class="com.generalrobotix.ui.item.GrxModelItem" name="sample1_bush" url="@OPENHRP_DIR@/share/openhrp3/share/OpenHRP-3.1/sample/model/sample1_bush.wrl">
+  <item class="com.generalrobotix.ui.item.GrxModelItem" name="sample1_bush" url="@OPENHRP_DIR@/share/openhrp3/share/OpenHRP-@OPENHRP_LIBRARY_VERSION@/sample/model/sample1_bush.wrl">
    <property name="rtcName" value="SampleRobot(Robot)0"/>
    <property name="inport" value="tauRef:JOINT_TORQUE"/>
    <property name="outport" value="q:JOINT_VALUE"/>
@@ -143,7 +143,7 @@
    <property name="PDcontroller0.period" value="0.002"/>
    <property name="PDcontroller0.factory" value="PDcontroller"/>
   </item>
-  <item class="com.generalrobotix.ui.item.GrxModelItem" name="longfloor" url="@OPENHRP_DIR@/share/openhrp3/share/OpenHRP-3.1/sample/model/longfloor.wrl">
+  <item class="com.generalrobotix.ui.item.GrxModelItem" name="longfloor" url="@OPENHRP_DIR@/share/openhrp3/share/OpenHRP-@OPENHRP_LIBRARY_VERSION@/sample/model/longfloor.wrl">
    <property name="rtcName" value="longfloor(Robot)0"/>
    <property name="inport" value="tauRef:JOINT_TORQUE"/>
    <property name="outport" value="q:JOINT_VALUE"/>
@@ -178,7 +178,7 @@
    <property name="PDcontroller0.period" value="0.002"/>
    <property name="PDcontroller0.factory" value="PDcontroller"/>
   </item>
-  <item class="com.generalrobotix.ui.item.GrxModelItem" name="table.wrl,-1.1,0.8,-0.15,1,0,0,1" url="@OPENHRP_DIR@/share/openhrp3/share/OpenHRP-3.1/sample/model/house/table.wrl">
+  <item class="com.generalrobotix.ui.item.GrxModelItem" name="table.wrl,-1.1,0.8,-0.15,1,0,0,1" url="@OPENHRP_DIR@/share/openhrp3/share/OpenHRP-@OPENHRP_LIBRARY_VERSION@/sample/model/house/table.wrl">
    <property name="rtcName" value="(Robot)0"/>
    <property name="inport" value="tauRef:JOINT_TORQUE"/>
    <property name="outport" value="q:JOINT_VALUE"/>

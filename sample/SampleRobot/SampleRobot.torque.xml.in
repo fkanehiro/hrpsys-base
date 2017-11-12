@@ -13,7 +13,7 @@
    <property name="connection" value="PDcontroller0.torque:SampleRobot(Robot)0.tauRef"/>
    <property name="connection" value="SampleRobot(Robot)0.q:PDcontroller0.angle"/>
   </item>
-  <item class="com.generalrobotix.ui.item.GrxModelItem" name="sample1_bush" url="@OPENHRP_DIR@/share/OpenHRP-3.1/sample/model/sample1_bush.wrl">
+  <item class="com.generalrobotix.ui.item.GrxModelItem" name="sample1_bush" url="@OPENHRP_DIR@/share/OpenHRP-@OPENHRP_LIBRARY_VERSION@/sample/model/sample1_bush.wrl">
    <property name="rtcName" value="SampleRobot(Robot)0"/>
    <property name="inport" value="tauRef:JOINT_TORQUE"/>
    <property name="outport" value="q:JOINT_VALUE"/>
@@ -143,7 +143,7 @@
    <property name="PDcontroller0.period" value="@CONTROLLER_TIME@"/>
    <property name="PDcontroller0.factory" value="PDcontroller"/>
   </item>
-  <item class="com.generalrobotix.ui.item.GrxModelItem" name="floor5" url="@OPENHRP_DIR@/share/OpenHRP-3.1/sample/model/floor5.wrl">
+  <item class="com.generalrobotix.ui.item.GrxModelItem" name="floor5" url="@OPENHRP_DIR@/share/OpenHRP-@OPENHRP_LIBRARY_VERSION@/sample/model/floor5.wrl">
    <property name="rtcName" value="floor(Robot)0"/>
    <property name="inport" value="tauRef:JOINT_TORQUE"/>
    <property name="outport" value="q:JOINT_VALUE"/>
@@ -178,7 +178,7 @@
    <property name="PDcontroller0.period" value="@CONTROLLER_TIME@"/>
    <property name="PDcontroller0.factory" value="PDcontroller"/>
   </item>
-  <item class="com.generalrobotix.ui.item.GrxModelItem" name="box.wrl,0" url="@OPENHRP_DIR@/share/OpenHRP-3.1/sample/model/box.wrl">
+  <item class="com.generalrobotix.ui.item.GrxModelItem" name="box.wrl,0" url="@OPENHRP_DIR@/share/OpenHRP-@OPENHRP_LIBRARY_VERSION@/sample/model/box.wrl">
    <property name="rtcName" value="box(Robot)0"/>
    <property name="inport" value="tauRef:JOINT_TORQUE"/>
    <property name="outport" value="q:JOINT_VALUE"/>
