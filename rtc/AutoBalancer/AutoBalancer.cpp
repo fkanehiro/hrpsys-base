@@ -1093,7 +1093,9 @@ void AutoBalancer::solveFullbodyIK ()
         tmp.localR = hrp::Matrix33::Identity();
         tmp.targetPos = target_root_p;// will be ignored by selection_vec
         tmp.targetRpy = hrp::rpyFromRot(target_root_R);
-        tmp.constraint_weight << 0,0,0,1,1,1;// don't let base rot free (numerical error problem)
+//        tmp.constraint_weight << 0,0,0,1,1,1;
+        tmp.constraint_weight << 0,0,0,1e-6,1e-6,1e-6;// don't let base rot free (numerical error problem) 最小1e-6?
+        if(transition_interpolator_ratio < 1.0) tmp.constraint_weight << 0,0,0,1,1,1;//transition中に回転フリーは危ない
         ik_tgt_list.push_back(tmp);
     }{
         IKConstraint tmp;
@@ -1139,7 +1141,8 @@ void AutoBalancer::solveFullbodyIK ()
         tmp.targetPos = ref_cog;// COM height will not be constraint
         tmp.targetRpy = hrp::Vector3(0, 0, 0);//reference angular momentum
         //  tmp.targetRpy = hrp::Vector3(0, 10, 0);//reference angular momentum
-        tmp.constraint_weight << 3,3,1e-6,1e-6,1e-6,1e-6;// consider angular momentum
+        tmp.constraint_weight << 3,3,1e-6,1,1,1;// consider angular momentum (JAXON)
+//        tmp.constraint_weight << 3,3,1e-6,1,1,0;// consider angular momentum (CHIDORI)
         if(transition_interpolator_ratio < 1.0) tmp.constraint_weight.tail(3).fill(0);// disable angular momentum control in transition
 //        tmp.rot_precision = 1e-1;//angular momentum precision
         ik_tgt_list.push_back(tmp);
@@ -1153,10 +1156,11 @@ void AutoBalancer::solveFullbodyIK ()
 //  fik->dq_weight_all(m_robot->link("CHEST_JOINT0")->jointId) = 0.1;
 //  fik->dq_weight_all(m_robot->link("CHEST_JOINT1")->jointId) = 0.1;
 //  fik->dq_weight_all(m_robot->link("CHEST_JOINT2")->jointId) = 0.1;
+    fik->dq_weight_all.tail(3).fill(1e-2);//ベースリンク回転変位の重みは1e-1以上は暴れる？(JAXON)
   // set desired natural pose and pullback gain
   for(int i=0;i<m_robot->numJoints();i++) fik->q_ref(i) = m_qRef.data[i];
-  fik->q_ref_pullback_gain.head(m_robot->numJoints()).fill(0.001);
-
+  fik->q_ref_pullback_gain.head(m_robot->numJoints()).fill(1e-3);//JAXON
+//    fik->q_ref_pullback_gain.head(m_robot->numJoints()).fill(0);//CHIDORI
   fik->revertRobotStateToCurrentAll();
 
   int loop_result = 0;

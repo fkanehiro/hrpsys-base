@@ -89,6 +89,7 @@ class FullbodyInverseKinematicsSolver : public SimpleFullbodyInverseKinematicsSo
             return true;
         }
         int solveFullbodyIKLoop (hrp::BodyPtr _robot, const std::vector<IKConstraint>& _ikc_list, const int _max_iteration) {
+//#define OPENHRP_PACKAGE_VERSION_320
             #ifdef OPENHRP_PACKAGE_VERSION_320
                 hrp::Vector3 base_p_old = _robot->rootLink()->p;
                 hrp::Matrix33 base_R_old = _robot->rootLink()->R;
@@ -103,8 +104,9 @@ class FullbodyInverseKinematicsSolver : public SimpleFullbodyInverseKinematicsSo
                     for(int i=0;i<J_DOF;i++){ _robot->joint(i)->dq = (_robot->joint(i)->q - q_old(i)) / m_dt; }
                     _robot->calcForwardKinematics(true,false);
                     hrp::Vector3 tmp_P, tmp_L;
-                    _robot->calcTotalMomentum(tmp_P, tmp_L);
+                    _robot->calcTotalMomentum(tmp_P, tmp_L);//calcTotalMomentumは漸化的にWorld周りの並進＋回転運動量を出す
                     cur_momentum_around_COM = tmp_L - _robot->calcCM().cross(tmp_P);
+//                    _robot->calcTotalMomentumFromJacobian(tmp_P, cur_momentum_around_COM);//calcTotalMomentumFromJacobianは重心ヤコビアンと重心周り角運動量ヤコビアンを用いて重心周りの並進＋回転運動量を出す
                     for(int i=0; i<3; i++){
                         cur_momentum_around_COM_filtered(i) = am_filters[i].passFilter(cur_momentum_around_COM(i));
                     }
@@ -238,7 +240,19 @@ class FullbodyInverseKinematicsSolver : public SimpleFullbodyInverseKinematicsSo
                     LIMIT_MINMAX(_robot->joint(i)->q, _robot->joint(i)->llimit, _robot->joint(i)->ulimit);
                 }
                 _robot->rootLink()->p += dq_all.segment(J_DOF,3);
-                _robot->rootLink()->R = R_base_ans;
+//                _robot->rootLink()->R = R_base_ans;
+
+                for(int i=0;i<2;i++){
+                    if(hrp::rpyFromRot(_robot->rootLink()->R)(i) < deg2rad(-10) && dq_all.tail(6).tail(3)(i) < 0){
+                        dq_all.tail(6).tail(3)(i) = 0;
+                    }
+                    if(hrp::rpyFromRot(_robot->rootLink()->R)(i) > deg2rad(10) && dq_all.tail(6).tail(3)(i) > 0){
+                        dq_all.tail(6).tail(3)(i) = 0;
+                    }
+                }
+                _robot->rootLink()->R = hrp::rotFromRpy((hrp::rpyFromRot(_robot->rootLink()->R) + dq_all.tail(6).tail(3)));
+
+
                 _robot->calcForwardKinematics();
             #else
                 std::cerr<<"solveFullbodyIKOnce() needs OPENHRP_PACKAGE_VERSION_320 !!!"<<std::endl;
