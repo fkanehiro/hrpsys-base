@@ -270,7 +270,12 @@ RTC::ReturnCode_t ObjectContactTurnaroundDetector::onExecute(RTC::UniqueId ec_id
     if (m_contactStatesIn.isNew()) {
       m_contactStatesIn.read();
     }
+    bool is_contact = false;
+    for (size_t i = 0; i < m_contactStates.data.length(); i++) {
+      if (m_contactStates.data[i]) is_contact = true;
+    }
     if ( m_qCurrent.data.length() ==  m_robot->numJoints() &&
+         is_contact && // one or more limbs are in contact
          ee_map.find("rleg") != ee_map.end() && ee_map.find("lleg") != ee_map.end() ) { // if legged robot
         Guard guard(m_mutex);
         calcObjectContactTurnaroundDetectorState();
