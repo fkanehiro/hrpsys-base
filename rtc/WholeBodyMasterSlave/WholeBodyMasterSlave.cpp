@@ -726,10 +726,10 @@ void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr
     if( m_robot->link("LLEG_JOINT3") != NULL) m_robot->link("LLEG_JOINT3")->llimit = deg2rad(10);
     if( m_robot->link("R_KNEE_P") != NULL) m_robot->link("R_KNEE_P")->llimit = deg2rad(15);//K
     if( m_robot->link("L_KNEE_P") != NULL) m_robot->link("L_KNEE_P")->llimit = deg2rad(15);
-    if( m_robot->link("R_WRIST_R") != NULL) m_robot->link("R_WRIST_P")->llimit = deg2rad(-40);
-    if( m_robot->link("L_WRIST_R") != NULL) m_robot->link("L_WRIST_P")->llimit = deg2rad(-40);
-    if( m_robot->link("R_WRIST_R") != NULL) m_robot->link("R_WRIST_P")->ulimit = deg2rad(40);
-    if( m_robot->link("L_WRIST_R") != NULL) m_robot->link("L_WRIST_P")->ulimit = deg2rad(40);
+    if( m_robot->link("R_WRIST_R") != NULL) m_robot->link("R_WRIST_R")->llimit = deg2rad(-40);
+    if( m_robot->link("L_WRIST_R") != NULL) m_robot->link("L_WRIST_R")->llimit = deg2rad(-40);
+    if( m_robot->link("R_WRIST_R") != NULL) m_robot->link("R_WRIST_R")->ulimit = deg2rad(40);
+    if( m_robot->link("L_WRIST_R") != NULL) m_robot->link("L_WRIST_R")->ulimit = deg2rad(40);
     if( m_robot->link("R_WRIST_P") != NULL) m_robot->link("R_WRIST_P")->llimit = deg2rad(-40);
     if( m_robot->link("L_WRIST_P") != NULL) m_robot->link("L_WRIST_P")->llimit = deg2rad(-40);
     if( m_robot->link("R_WRIST_P") != NULL) m_robot->link("R_WRIST_P")->ulimit = deg2rad(20);
