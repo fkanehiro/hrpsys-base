@@ -1142,7 +1142,7 @@ void AutoBalancer::solveFullbodyIK ()
         tmp.targetRpy = hrp::Vector3(0, 0, 0);//reference angular momentum
         //  tmp.targetRpy = hrp::Vector3(0, 10, 0);//reference angular momentum
         tmp.constraint_weight << 3,3,1e-6,1,1,1;// consider angular momentum (JAXON)
-//        tmp.constraint_weight << 3,3,1e-6,1,1,0;// consider angular momentum (CHIDORI)
+//        tmp.constraint_weight << 3,3,1e-3,1e-5,1e-5,1e-5;// consider angular momentum (CHIDORI)
         if(transition_interpolator_ratio < 1.0) tmp.constraint_weight.tail(3).fill(0);// disable angular momentum control in transition
 //        tmp.rot_precision = 1e-1;//angular momentum precision
         ik_tgt_list.push_back(tmp);
@@ -1153,14 +1153,15 @@ void AutoBalancer::solveFullbodyIK ()
     if(m_robot->link("R_KNEE_P") != NULL) m_robot->link("R_KNEE_P")->llimit = deg2rad(10);
     if(m_robot->link("L_KNEE_P") != NULL) m_robot->link("L_KNEE_P")->llimit = deg2rad(10);
 //  // reduce chest joint move
-//  fik->dq_weight_all(m_robot->link("CHEST_JOINT0")->jointId) = 0.1;
-//  fik->dq_weight_all(m_robot->link("CHEST_JOINT1")->jointId) = 0.1;
-//  fik->dq_weight_all(m_robot->link("CHEST_JOINT2")->jointId) = 0.1;
-    fik->dq_weight_all.tail(3).fill(1e-2);//ベースリンク回転変位の重みは1e-1以上は暴れる？(JAXON)
+//    if(m_robot->link("CHEST_JOINT0") != NULL) fik->dq_weight_all(m_robot->link("CHEST_JOINT0")->jointId) = 10;
+//    if(m_robot->link("CHEST_JOINT1") != NULL) fik->dq_weight_all(m_robot->link("CHEST_JOINT1")->jointId) = 10;
+//    if(m_robot->link("CHEST_JOINT2") != NULL) fik->dq_weight_all(m_robot->link("CHEST_JOINT2")->jointId) = 10;
+    fik->dq_weight_all.tail(3).fill(1e1);//ベースリンク回転変位の重みは1e1以下は暴れる？
+    if(fik->q_ref_constraint_weight.rows()>12+21)fik->q_ref_constraint_weight.segment(12,21).fill(1e-6);//上半身関節角のq_refへの緩い拘束(JAXON)
+    fik->rootlink_rpy_llimit << deg2rad(-10), deg2rad(-10), -DBL_MAX;
+    fik->rootlink_rpy_ulimit << deg2rad(10), deg2rad(10), DBL_MAX;
   // set desired natural pose and pullback gain
   for(int i=0;i<m_robot->numJoints();i++) fik->q_ref(i) = m_qRef.data[i];
-  fik->q_ref_pullback_gain.head(m_robot->numJoints()).fill(1e-3);//JAXON
-//    fik->q_ref_pullback_gain.head(m_robot->numJoints()).fill(0);//CHIDORI
   fik->revertRobotStateToCurrentAll();
 
   int loop_result = 0;
