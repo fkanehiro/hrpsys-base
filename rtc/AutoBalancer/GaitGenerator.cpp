@@ -1137,6 +1137,10 @@ namespace rats
     for (size_t i = overwrite_idx; i < queue_size - 1; i++) {
       refzmp_exist_p = rg.get_current_refzmp(rzmp, sfzos, default_double_support_ratio_before, default_double_support_ratio_after, default_double_support_static_ratio_before, default_double_support_static_ratio_after);
       preview_controller_ptr->set_preview_queue(rzmp, sfzos, i+1);
+      if (refzmp_exist_p) {
+        prev_que_rzmp = rzmp;
+        prev_que_sfzos = sfzos;
+      }
       rg.update_refzmp();
       sfzos.clear();
     }
