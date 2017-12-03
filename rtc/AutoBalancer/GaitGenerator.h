@@ -654,11 +654,15 @@ namespace rats
     {
     private:
       leg_type swing_leg;
+      hrp::Vector3 start_way_point_offset, goal_way_point_offset;
     public:
-      cross_delay_hoffarbib_trajectory_generator () : delay_hoffarbib_trajectory_generator(), way_point_offset(hrp::Vector3(0.04, 0.15, 0.0)) {};
+      cross_delay_hoffarbib_trajectory_generator () : delay_hoffarbib_trajectory_generator(), start_way_point_offset(hrp::Vector3(0.04, 0.15, 0.0)), goal_way_point_offset(hrp::Vector3(0.04, 0.15, 0.0)) {};
       ~cross_delay_hoffarbib_trajectory_generator () {};
       void set_swing_leg (leg_type _lr) { swing_leg = _lr; };
-      hrp::Vector3 way_point_offset;
+      void set_cross_trajectory_start_way_point_offset (const hrp::Vector3 _offset) { start_way_point_offset = _offset; };
+      hrp::Vector3 get_cross_trajectory_start_way_point_offset() const { return start_way_point_offset; };
+      void set_cross_trajectory_goal_way_point_offset (const hrp::Vector3 _offset) { goal_way_point_offset = _offset; };
+      hrp::Vector3 get_cross_trajectory_goal_way_point_offset() const { return goal_way_point_offset; };
       double calc_antecedent_path (const hrp::Vector3& start, const hrp::Vector3& goal, const double height)
       {
         std::vector<hrp::Vector3> path;
@@ -667,11 +671,11 @@ namespace rats
         diff_vec(2) = 0.0; // projection on horizontal plane
         path.push_back(start);
         if ( swing_leg == LLEG ) { // swing_leg is left
-            path.push_back(hrp::Vector3(start+-1*way_point_offset(0)*diff_vec.normalized()+hrp::Vector3(0,way_point_offset(1),way_point_offset(2)+max_height-start(2))));
-            path.push_back(hrp::Vector3(goal+way_point_offset(0)*diff_vec.normalized()+hrp::Vector3(0,way_point_offset(1),way_point_offset(2)+max_height-goal(2))));
+            path.push_back(hrp::Vector3(start+-1*start_way_point_offset(0)*diff_vec.normalized()+hrp::Vector3(0,start_way_point_offset(1),start_way_point_offset(2)+max_height-start(2))));
+            path.push_back(hrp::Vector3(goal+goal_way_point_offset(0)*diff_vec.normalized()+hrp::Vector3(0,goal_way_point_offset(1),goal_way_point_offset(2)+max_height-goal(2))));
         } else { // swing_leg is right
-            path.push_back(hrp::Vector3(start+-1*way_point_offset(0)*diff_vec.normalized()+hrp::Vector3(0,-way_point_offset(1),way_point_offset(2)+max_height-start(2))));
-            path.push_back(hrp::Vector3(goal+way_point_offset(0)*diff_vec.normalized()+hrp::Vector3(0,-way_point_offset(1),way_point_offset(2)+max_height-goal(2))));
+            path.push_back(hrp::Vector3(start+-1*start_way_point_offset(0)*diff_vec.normalized()+hrp::Vector3(0,-start_way_point_offset(1),start_way_point_offset(2)+max_height-start(2))));
+            path.push_back(hrp::Vector3(goal+goal_way_point_offset(0)*diff_vec.normalized()+hrp::Vector3(0,-goal_way_point_offset(1),goal_way_point_offset(2)+max_height-goal(2))));
         }
         if (height > 30 * 1e-3) {
           path.push_back(hrp::Vector3(goal(0), goal(1), 30*1e-3+goal(2)));
@@ -814,6 +818,8 @@ namespace rats
         time_offset_xy2z = _tmp;
       };
       void set_stair_trajectory_way_point_offset (const hrp::Vector3 _offset) { sdtg.set_stair_trajectory_way_point_offset(_offset); };
+      void set_cross_trajectory_start_way_point_offset (const hrp::Vector3 _offset) { crdtg.set_cross_trajectory_start_way_point_offset(_offset); };
+      void set_cross_trajectory_goal_way_point_offset (const hrp::Vector3 _offset) { crdtg.set_cross_trajectory_goal_way_point_offset(_offset); };
       void set_cycloid_delay_kick_point_offset (const hrp::Vector3 _offset) { cdktg.set_cycloid_delay_kick_point_offset(_offset); };
       void set_toe_pos_offset_x (const double _offx) { toe_pos_offset_x = _offx; };
       void set_heel_pos_offset_x (const double _offx) { heel_pos_offset_x = _offx; };
@@ -988,6 +994,8 @@ namespace rats
       double get_swing_trajectory_final_distance_weight () const { return final_distance_weight; };
       double get_swing_trajectory_time_offset_xy2z () const { return time_offset_xy2z; };
       hrp::Vector3 get_stair_trajectory_way_point_offset () const { return sdtg.get_stair_trajectory_way_point_offset(); };
+      hrp::Vector3 get_cross_trajectory_start_way_point_offset () const { return crdtg.get_cross_trajectory_start_way_point_offset(); };
+      hrp::Vector3 get_cross_trajectory_goal_way_point_offset () const { return crdtg.get_cross_trajectory_goal_way_point_offset(); };
       hrp::Vector3 get_cycloid_delay_kick_point_offset () const { return cdktg.get_cycloid_delay_kick_point_offset() ; };
       double get_toe_pos_offset_x () const { return toe_pos_offset_x; };
       double get_heel_pos_offset_x () const { return heel_pos_offset_x; };
@@ -1243,6 +1251,8 @@ namespace rats
     void set_swing_trajectory_final_distance_weight (const double _final_distance_weight) { lcg.set_swing_trajectory_final_distance_weight(_final_distance_weight); };
     void set_swing_trajectory_time_offset_xy2z (const double _tmp) { lcg.set_swing_trajectory_time_offset_xy2z(_tmp); };
     void set_stair_trajectory_way_point_offset (const hrp::Vector3 _offset) { lcg.set_stair_trajectory_way_point_offset(_offset); };
+    void set_cross_trajectory_start_way_point_offset (const hrp::Vector3 _offset) { lcg.set_cross_trajectory_start_way_point_offset(_offset); };
+    void set_cross_trajectory_goal_way_point_offset (const hrp::Vector3 _offset) { lcg.set_cross_trajectory_goal_way_point_offset(_offset); };
     void set_cycloid_delay_kick_point_offset (const hrp::Vector3 _offset) { lcg.set_cycloid_delay_kick_point_offset(_offset); };
     void set_gravitational_acceleration (const double ga) { gravitational_acceleration = ga; };
     void set_toe_pos_offset_x (const double _offx) { lcg.set_toe_pos_offset_x(_offx); };
@@ -1469,6 +1479,8 @@ namespace rats
     double get_swing_trajectory_final_distance_weight () const { return lcg.get_swing_trajectory_final_distance_weight(); };
     double get_swing_trajectory_time_offset_xy2z () const { return lcg.get_swing_trajectory_time_offset_xy2z(); };
     hrp::Vector3 get_stair_trajectory_way_point_offset () const { return lcg.get_stair_trajectory_way_point_offset(); };
+    hrp::Vector3 get_cross_trajectory_start_way_point_offset () const { return lcg.get_cross_trajectory_start_way_point_offset(); };
+    hrp::Vector3 get_cross_trajectory_goal_way_point_offset () const { return lcg.get_cross_trajectory_goal_way_point_offset(); };
     hrp::Vector3 get_cycloid_delay_kick_point_offset () const { return lcg.get_cycloid_delay_kick_point_offset(); };
     double get_gravitational_acceleration () const { return gravitational_acceleration; } ;
     double get_toe_pos_offset_x () const { return lcg.get_toe_pos_offset_x(); };
