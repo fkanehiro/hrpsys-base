@@ -198,10 +198,7 @@ RTC::ReturnCode_t PCDLoader::onExecute(RTC::UniqueId ec_id)
           ptr[0] = cloud->points[i].x;
           ptr[1] = cloud->points[i].y;
           ptr[2] = cloud->points[i].z;
-          unsigned char *rgb = (unsigned char *)(ptr+3);
-          rgb[0] = cloud->points[i].r;
-          rgb[1] = cloud->points[i].g;
-          rgb[2] = cloud->points[i].b;
+          ptr[3] = cloud->points[i].rgb;
           ptr += 4;
       }
   }else{
