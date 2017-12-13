@@ -28,6 +28,8 @@ static const char* spec[] =
     "language",          "C++",
     "lang_type",         "compile",
     // Configuration variables
+    "conf.default.path",  "",
+    "conf.default.fields","XYZ",
 
     ""
   };
@@ -53,6 +55,8 @@ RTC::ReturnCode_t PCDLoader::onInitialize()
   //std::cout << m_profile.instance_name << ": onInitialize()" << std::endl;
   // <rtc-template block="bind_config">
   // Bind variables and configuration variable
+  bindParameter("path", m_path, "");
+  bindParameter("fields", m_fields, "XYZ");
   
   // </rtc-template>
 
@@ -114,15 +118,16 @@ RTC::ReturnCode_t PCDLoader::onDeactivated(RTC::UniqueId ec_id)
 RTC::ReturnCode_t PCDLoader::onExecute(RTC::UniqueId ec_id)
 {
   //std::cout << m_profile.instance_name<< ": onExecute(" << ec_id << ")" << std::endl;
-  std::cerr << "PCD filename and fields: " << std::flush;
-  std::string filename, fields="XYZ";
-  std::cin >> filename >> fields;
+  if (m_path == ""){
+    std::cerr << "PCD filename: " << std::flush;
+    std::cin >> m_path;
+  }
   
   pcl::PCDReader reader;
 
-  if (fields=="XYZ"){
+  if (m_fields=="XYZ"){
       pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
-      reader.read (filename, *cloud);
+      reader.read (m_path, *cloud);
       int npoint = cloud->points.size();
 
       m_cloud.type = "xyz";
@@ -154,9 +159,9 @@ RTC::ReturnCode_t PCDLoader::onExecute(RTC::UniqueId ec_id)
           ptr[2] = cloud->points[i].z;
           ptr += 4;
       }
-  }else if(fields=="XYZRGB"){
+  }else if(m_fields=="XYZRGB"){
       pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
-      reader.read (filename, *cloud);
+      reader.read (m_path, *cloud);
       int npoint = cloud->points.size();
 
       m_cloud.type = "xyzrgb";
@@ -202,10 +207,11 @@ RTC::ReturnCode_t PCDLoader::onExecute(RTC::UniqueId ec_id)
           ptr += 4;
       }
   }else{
-      std::cerr << "fields[" << fields << "] is not supported" << std::endl;
+      std::cerr << "fields[" << m_fields << "] is not supported" << std::endl;
   }
 
   m_cloudOut.write();
+  m_path = "";
 
   return RTC::RTC_OK;
 }
