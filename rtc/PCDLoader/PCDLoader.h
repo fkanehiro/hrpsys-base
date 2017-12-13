@@ -132,6 +132,7 @@ class PCDLoader
   // </rtc-template>
 
  private:
+  std::string m_path, m_fields;
   int dummy;
 };
 
