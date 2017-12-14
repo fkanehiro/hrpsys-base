@@ -130,6 +130,7 @@ RTC::ReturnCode_t PCDLoader::onExecute(RTC::UniqueId ec_id)
       if (reader.read (m_path, *cloud)){
           std::cerr << m_profile.instance_name << ": failed to load("
                     << m_path << ")" << std::endl;
+          m_path = "";
           return RTC::RTC_OK;
       }
       int npoint = cloud->points.size();
@@ -168,6 +169,7 @@ RTC::ReturnCode_t PCDLoader::onExecute(RTC::UniqueId ec_id)
       if (reader.read (m_path, *cloud)){
           std::cerr << m_profile.instance_name << ": failed to load("
                     << m_path << ")" << std::endl;
+          m_path = "";
           return RTC::RTC_OK;
       }          
       int npoint = cloud->points.size();
