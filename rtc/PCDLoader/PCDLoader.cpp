@@ -127,7 +127,11 @@ RTC::ReturnCode_t PCDLoader::onExecute(RTC::UniqueId ec_id)
 
   if (m_fields=="XYZ"){
       pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
-      reader.read (m_path, *cloud);
+      if (reader.read (m_path, *cloud)){
+          std::cerr << m_profile.instance_name << ": failed to load("
+                    << m_path << ")" << std::endl;
+          return RTC::RTC_OK;
+      }
       int npoint = cloud->points.size();
 
       m_cloud.type = "xyz";
@@ -161,7 +165,11 @@ RTC::ReturnCode_t PCDLoader::onExecute(RTC::UniqueId ec_id)
       }
   }else if(m_fields=="XYZRGB"){
       pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
-      reader.read (m_path, *cloud);
+      if (reader.read (m_path, *cloud)){
+          std::cerr << m_profile.instance_name << ": failed to load("
+                    << m_path << ")" << std::endl;
+          return RTC::RTC_OK;
+      }          
       int npoint = cloud->points.size();
 
       m_cloud.type = "xyzrgb";
