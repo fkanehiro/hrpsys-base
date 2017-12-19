@@ -172,7 +172,10 @@ void OpenNIGrabber::grabberCallbackPointCloudRGBA(const pcl::PointCloud<pcl::Poi
         dst_cloud[0] =  cloud->points[i].x;
         dst_cloud[1] = -cloud->points[i].y;
         dst_cloud[2] = -cloud->points[i].z;
-        dst_cloud[3] =  cloud->points[i].rgb;
+        unsigned char *rgb = (unsigned char *)(dst_cloud+3);
+        rgb[0] = cloud->points[i].r;
+        rgb[1] = cloud->points[i].g;
+        rgb[2] = cloud->points[i].b;
         dst_cloud += 4;
     }
     m_cloudOut.write();
