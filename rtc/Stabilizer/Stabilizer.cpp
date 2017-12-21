@@ -1646,24 +1646,20 @@ void Stabilizer::calcEEForceMomentControl() {
 //        }
 //      }
 
-      hrp::Vector3 sample_com_angular_dw;
+      ////////// sample fly wheel control ///////////
+      static hrp::Vector3 com_am_tmp = hrp::Vector3::Zero(),  com_am_lpf = hrp::Vector3::Zero();//角運動量とそのローパスフィルタ版
+      hrp::Vector3 com_dam;//角運動量変化分
       hrp::Vector3 zmp_diff = act_zmp - ref_zmp;
       if(zmp_diff.norm() > 0.2){ zmp_diff = zmp_diff.normalized() * 0.2; }
-      else if(zmp_diff.norm() < 0.03){ zmp_diff = hrp::Vector3::Zero(); }
-      sample_com_angular_dw(0) = -zmp_diff(1) * m_robot->totalMass() * 9.8;
-      sample_com_angular_dw(1) = +zmp_diff(0) * m_robot->totalMass() * 9.8;
-      sample_com_angular_dw(2) = 0;
-      static hrp::Vector3 sample_com_angular_momentum = hrp::Vector3::Zero();
-      sample_com_angular_momentum += sample_com_angular_dw * dt;
-
-      static hrp::Vector3 sample_com_angular_momentum_lpf = hrp::Vector3::Zero();
-      sample_com_angular_momentum_lpf = sample_com_angular_momentum_lpf * 0.99 + sample_com_angular_momentum * 0.01;
-      hrp::Vector3 sample_com_angular_momentum_hpf = sample_com_angular_momentum - sample_com_angular_momentum_lpf;
-
-//      dbg(sample_com_angular_momentum_hpf.transpose());
-//      dbg(ref_cog_wld.transpose());
-
-      solveFullbodyIK(m_robot->rootLink()->p, m_robot->rootLink()->R, tmpp, tmpR, ref_cog_wld, sample_com_angular_momentum_hpf);
+      else if(zmp_diff.norm() < 0.05){ zmp_diff.fill(0); com_am_tmp *= 0.99;}
+      com_dam(0) = -zmp_diff(1) * m_robot->totalMass() * 9.8;
+      com_dam(1) = +zmp_diff(0) * m_robot->totalMass() * 9.8;
+      com_dam(2) = 0;
+      com_am_tmp += com_dam * dt;
+      if(com_am_tmp.norm() > 10){ com_am_tmp = com_am_tmp.normalized() * 10; }//最大発揮角運動量を頭打ち
+      com_am_lpf = com_am_lpf * 0.999 + com_am_tmp * 0.001;
+      hrp::Vector3 com_am_hpf = com_am_tmp - com_am_lpf;//最終的に使う角運動量はハイパスフィルタをかけたもの
+      solveFullbodyIK(m_robot->rootLink()->p, m_robot->rootLink()->R, tmpp, tmpR, ref_cog_wld, com_am_hpf);
 }
 
 // Swing ee compensation.
@@ -1809,7 +1805,7 @@ void Stabilizer::solveFullbodyIK(
         tmp.localR = hrp::Matrix33::Identity();
         tmp.targetPos = base_pos;// will be ignored by selection_vec
         tmp.targetRpy = hrp::rpyFromRot(base_rot);
-//        tmp.constraint_weight << 0,0,0,1e-6,1e-6,1e-6;// don't let base rot free (numerical error problem) 最小1e-6?
+    //        tmp.constraint_weight << 0,0,0,1e-6,1e-6,1e-6;// don't let base rot free (numerical error problem) 最小1e-6?
         tmp.constraint_weight << 0,0,0,1,1,1;// フライホイール動作時にベースリンクの回転拘束きついと腕にしわ寄せが行って暴れやすい
         if(control_mode != MODE_ST) tmp.constraint_weight << 0,0,0,1,1,1;//transition中に回転フリーは危ない
         ik_tgt_list.push_back(tmp);
@@ -1841,24 +1837,28 @@ void Stabilizer::solveFullbodyIK(
     if(m_robot->link("LLEG_JOINT3") != NULL) m_robot->link("LLEG_JOINT3")->llimit = deg2rad(10);
     if(m_robot->link("R_KNEE_P") != NULL) m_robot->link("R_KNEE_P")->llimit = deg2rad(10);
     if(m_robot->link("L_KNEE_P") != NULL) m_robot->link("L_KNEE_P")->llimit = deg2rad(10);
-//  // reduce chest joint move
-//    if(m_robot->link("CHEST_JOINT0") != NULL) fik->dq_weight_all(m_robot->link("CHEST_JOINT0")->jointId) = 10;
-//    if(m_robot->link("CHEST_JOINT1") != NULL) fik->dq_weight_all(m_robot->link("CHEST_JOINT1")->jointId) = 10;
-//    if(m_robot->link("CHEST_JOINT2") != NULL) fik->dq_weight_all(m_robot->link("CHEST_JOINT2")->jointId) = 10;
+    // weight setting
+    for(int i=0;i<m_robot->numLinks();i++){
+        if(m_robot->link(i)->name.find("ARM_JOINT") != std::string::npos){
+            fik->dq_weight_all(m_robot->link(i)->jointId) = 10;
+            fik->q_ref_constraint_weight(m_robot->link(i)->jointId) = 1e-5;
+        }
+        else if(m_robot->link(i)->name.find("CHEST_JOINT") != std::string::npos){
+            fik->q_ref_constraint_weight(m_robot->link(i)->jointId) = 1e-6;
+        }
+        else if(m_robot->link(i)->name.find("HEAD_JOINT") != std::string::npos){
+            fik->q_ref_constraint_weight(m_robot->link(i)->jointId) = 1e-6;
+        }
+    }
     fik->dq_weight_all.tail(3).fill(1e1);//ベースリンク回転変位の重みは1e1以下は暴れる？
-    if(fik->q_ref_constraint_weight.rows()>12+21)fik->q_ref_constraint_weight.segment(12,21).fill(1e-7);//上半身関節角のq_refへの緩い拘束(JAXON)
+    fik->q_ref = qrefv;
 
-//    fik->rootlink_rpy_llimit << deg2rad(-10), deg2rad(-10), -DBL_MAX;
-//    fik->rootlink_rpy_ulimit << deg2rad(10), deg2rad(10), DBL_MAX;
-  // set desired natural pose and pullback gain
-  for(int i=0;i<m_robot->numJoints();i++) fik->q_ref(i) = m_qRef.data[i];
+    int loop_result = 0;
+    const int IK_MAX_LOOP = 1;
+    loop_result = fik->solveFullbodyIKLoop(m_robot, ik_tgt_list, IK_MAX_LOOP);
 
-  int loop_result = 0;
-  const int IK_MAX_LOOP = 1;
-  loop_result = fik->solveFullbodyIKLoop(m_robot, ik_tgt_list, IK_MAX_LOOP);
-
-  root_p = m_robot->rootLink()->p;
-  root_R = m_robot->rootLink()->R;
+    root_p = m_robot->rootLink()->p;
+    root_R = m_robot->rootLink()->R;
 }
 
 
