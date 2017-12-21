@@ -81,6 +81,7 @@ if ("${OPENHRP_VERSION}" VERSION_GREATER "3.1.9")
   message(STATUS "enable OpenHRP3 3.2")
   add_definitions(-DOPENHRP_PACKAGE_VERSION_320)
 endif()
+add_definitions(-DOPENHRP_PACKAGE_VERSION_320) ### cheat ##
 
 if(ENABLE_INSTALL_RPATH)
   set(CMAKE_INSTALL_RPATH "$ORIGIN/../lib:$ORIGIN/../../../lib:${OPENHRP_LIBRARY_DIRS}")

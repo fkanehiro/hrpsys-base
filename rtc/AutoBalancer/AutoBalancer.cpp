@@ -1157,7 +1157,7 @@ void AutoBalancer::solveFullbodyIK ()
 //    if(m_robot->link("CHEST_JOINT1") != NULL) fik->dq_weight_all(m_robot->link("CHEST_JOINT1")->jointId) = 10;
 //    if(m_robot->link("CHEST_JOINT2") != NULL) fik->dq_weight_all(m_robot->link("CHEST_JOINT2")->jointId) = 10;
     fik->dq_weight_all.tail(3).fill(1e1);//ベースリンク回転変位の重みは1e1以下は暴れる？
-    if(fik->q_ref_constraint_weight.rows()>12+21)fik->q_ref_constraint_weight.segment(12,21).fill(1e-6);//上半身関節角のq_refへの緩い拘束(JAXON)
+    if(fik->q_ref_constraint_weight.rows()>12+21)fik->q_ref_constraint_weight.segment(12,21).fill(1e-7);//上半身関節角のq_refへの緩い拘束(JAXON)
     fik->rootlink_rpy_llimit << deg2rad(-10), deg2rad(-10), -DBL_MAX;
     fik->rootlink_rpy_ulimit << deg2rad(10), deg2rad(10), DBL_MAX;
   // set desired natural pose and pullback gain

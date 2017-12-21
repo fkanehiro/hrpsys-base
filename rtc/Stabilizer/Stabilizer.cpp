@@ -334,6 +334,8 @@ RTC::ReturnCode_t Stabilizer::onInitialize()
       }
   }
 
+  // Generate FIK
+  fik = fikPtr(new FullbodyInverseKinematicsSolver(m_robot, std::string(m_profile.instance_name), dt));
 
   // parameters for TPCC
   act_zmp = hrp::Vector3::Zero();
@@ -1195,7 +1197,7 @@ void Stabilizer::getTargetParameters ()
     prev_ref_zmp = ref_zmp;
     ref_zmp = tmp_ref_zmp;
   }
-  ref_cog = m_robot->calcCM();
+  ref_cog_wld = ref_cog = m_robot->calcCM();
   ref_total_force = hrp::Vector3::Zero();
   ref_total_moment = hrp::Vector3::Zero(); // Total moment around reference ZMP tmp
   ref_total_foot_origin_moment = hrp::Vector3::Zero();
@@ -1633,16 +1635,35 @@ void Stabilizer::calcEEForceMomentControl() {
       limbStretchAvoidanceControl(tmpp ,tmpR);
 
       // IK
-      for (size_t i = 0; i < stikp.size(); i++) {
-        if (is_ik_enable[i]) {
-          for (size_t jj = 0; jj < stikp[i].ik_loop_count; jj++) {
-            jpe_v[i]->calcInverseKinematics2Loop(tmpp[i], tmpR[i], 1.0, 0.001, 0.01, &qrefv, transition_smooth_gain,
-                                                 //stikp[i].localCOPPos;
-                                                 stikp[i].localp,
-                                                 stikp[i].localR);
-          }
-        }
-      }
+//      for (size_t i = 0; i < stikp.size(); i++) {
+//        if (is_ik_enable[i]) {
+//          for (size_t jj = 0; jj < stikp[i].ik_loop_count; jj++) {
+//            jpe_v[i]->calcInverseKinematics2Loop(tmpp[i], tmpR[i], 1.0, 0.001, 0.01, &qrefv, transition_smooth_gain,
+//                                                 //stikp[i].localCOPPos;
+//                                                 stikp[i].localp,
+//                                                 stikp[i].localR);
+//          }
+//        }
+//      }
+
+      hrp::Vector3 sample_com_angular_dw;
+      hrp::Vector3 zmp_diff = act_zmp - ref_zmp;
+      if(zmp_diff.norm() > 0.2){ zmp_diff = zmp_diff.normalized() * 0.2; }
+      else if(zmp_diff.norm() < 0.03){ zmp_diff = hrp::Vector3::Zero(); }
+      sample_com_angular_dw(0) = -zmp_diff(1) * m_robot->totalMass() * 9.8;
+      sample_com_angular_dw(1) = +zmp_diff(0) * m_robot->totalMass() * 9.8;
+      sample_com_angular_dw(2) = 0;
+      static hrp::Vector3 sample_com_angular_momentum = hrp::Vector3::Zero();
+      sample_com_angular_momentum += sample_com_angular_dw * dt;
+
+      static hrp::Vector3 sample_com_angular_momentum_lpf = hrp::Vector3::Zero();
+      sample_com_angular_momentum_lpf = sample_com_angular_momentum_lpf * 0.99 + sample_com_angular_momentum * 0.01;
+      hrp::Vector3 sample_com_angular_momentum_hpf = sample_com_angular_momentum - sample_com_angular_momentum_lpf;
+
+//      dbg(sample_com_angular_momentum_hpf.transpose());
+//      dbg(ref_cog_wld.transpose());
+
+      solveFullbodyIK(m_robot->rootLink()->p, m_robot->rootLink()->R, tmpp, tmpR, ref_cog_wld, sample_com_angular_momentum_hpf);
 }
 
 // Swing ee compensation.
@@ -1767,6 +1788,79 @@ void Stabilizer::calcDiffFootOriginExtMoment ()
                   << "diff ext_moment = " << diff_foot_origin_ext_moment.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[mm]" << std::endl;
     }
 };
+
+void Stabilizer::solveFullbodyIK(
+        const hrp::Vector3& base_pos, const hrp::Matrix33& base_rot,
+        const std::vector<hrp::Vector3>& ee_pos, const std::vector<hrp::Matrix33>& ee_rot,
+        const hrp::Vector3& com_pos, const hrp::Vector3& com_am){
+
+    static hrp::Vector3 root_p = m_robot->rootLink()->p;
+    static hrp::Matrix33 root_R = m_robot->rootLink()->R;
+
+    m_robot->rootLink()->p = root_p;
+    m_robot->rootLink()->R = root_R;
+    setQAll(m_robot, qorg);
+
+    std::vector<IKConstraint> ik_tgt_list;
+    {
+        IKConstraint tmp;
+        tmp.target_link_name = "WAIST";
+        tmp.localPos = hrp::Vector3::Zero();
+        tmp.localR = hrp::Matrix33::Identity();
+        tmp.targetPos = base_pos;// will be ignored by selection_vec
+        tmp.targetRpy = hrp::rpyFromRot(base_rot);
+//        tmp.constraint_weight << 0,0,0,1e-6,1e-6,1e-6;// don't let base rot free (numerical error problem) 最小1e-6?
+        tmp.constraint_weight << 0,0,0,1,1,1;// フライホイール動作時にベースリンクの回転拘束きついと腕にしわ寄せが行って暴れやすい
+        if(control_mode != MODE_ST) tmp.constraint_weight << 0,0,0,1,1,1;//transition中に回転フリーは危ない
+        ik_tgt_list.push_back(tmp);
+    }
+    for (size_t i = 0; i < stikp.size(); i++) {
+      if (is_ik_enable[i]) {
+          IKConstraint tmp;
+          tmp.target_link_name = stikp[i].target_name;
+          tmp.localPos = stikp[i].localp;
+          tmp.localR = stikp[i].localR;
+          tmp.targetPos = ee_pos[i];
+          tmp.targetRpy = hrp::rpyFromRot(ee_rot[i]);
+          tmp.constraint_weight << 1,1,1,1,1,1;
+          ik_tgt_list.push_back(tmp);
+      }
+    }{
+        IKConstraint tmp;
+        tmp.target_link_name = "COM";
+        tmp.localPos = hrp::Vector3::Zero();
+        tmp.localR = hrp::Matrix33::Identity();
+        tmp.targetPos = com_pos;// COM height will not be constraint
+        tmp.targetRpy = com_am;//reference angular momentum
+        tmp.constraint_weight << 1,1,1,0.1,0.1,0.1;// consider angular momentum (JAXON)
+        if(control_mode != MODE_ST) tmp.constraint_weight.tail(3).fill(0);// disable angular momentum control in transition
+        ik_tgt_list.push_back(tmp);
+    }
+    // knee stretch protection
+    if(m_robot->link("RLEG_JOINT3") != NULL) m_robot->link("RLEG_JOINT3")->llimit = deg2rad(10);
+    if(m_robot->link("LLEG_JOINT3") != NULL) m_robot->link("LLEG_JOINT3")->llimit = deg2rad(10);
+    if(m_robot->link("R_KNEE_P") != NULL) m_robot->link("R_KNEE_P")->llimit = deg2rad(10);
+    if(m_robot->link("L_KNEE_P") != NULL) m_robot->link("L_KNEE_P")->llimit = deg2rad(10);
+//  // reduce chest joint move
+//    if(m_robot->link("CHEST_JOINT0") != NULL) fik->dq_weight_all(m_robot->link("CHEST_JOINT0")->jointId) = 10;
+//    if(m_robot->link("CHEST_JOINT1") != NULL) fik->dq_weight_all(m_robot->link("CHEST_JOINT1")->jointId) = 10;
+//    if(m_robot->link("CHEST_JOINT2") != NULL) fik->dq_weight_all(m_robot->link("CHEST_JOINT2")->jointId) = 10;
+    fik->dq_weight_all.tail(3).fill(1e1);//ベースリンク回転変位の重みは1e1以下は暴れる？
+    if(fik->q_ref_constraint_weight.rows()>12+21)fik->q_ref_constraint_weight.segment(12,21).fill(1e-7);//上半身関節角のq_refへの緩い拘束(JAXON)
+
+//    fik->rootlink_rpy_llimit << deg2rad(-10), deg2rad(-10), -DBL_MAX;
+//    fik->rootlink_rpy_ulimit << deg2rad(10), deg2rad(10), DBL_MAX;
+  // set desired natural pose and pullback gain
+  for(int i=0;i<m_robot->numJoints();i++) fik->q_ref(i) = m_qRef.data[i];
+
+  int loop_result = 0;
+  const int IK_MAX_LOOP = 1;
+  loop_result = fik->solveFullbodyIKLoop(m_robot, ik_tgt_list, IK_MAX_LOOP);
+
+  root_p = m_robot->rootLink()->p;
+  root_R = m_robot->rootLink()->R;
+}
+
 
 /*
 RTC::ReturnCode_t Stabilizer::onAborting(RTC::UniqueId ec_id)
