@@ -286,14 +286,18 @@ RTC::ReturnCode_t SoftErrorLimiter::onExecute(RTC::UniqueId ec_id)
                     << "] velocity limit over " << m_robot->joint(i)->name << "(" << i << "), qvel=" << qvel
                     << ", lvlimit =" << lvlimit
                     << ", uvlimit =" << uvlimit
-                    << ", servo_state = " <<  ( servo_state[i] ? "ON" : "OFF") << std::endl;
+                    << ", servo_state = " <<  ( servo_state[i] ? "ON" : "OFF");
         }
+        double limited;
         // fix joint angle
         if ( lvlimit > qvel ) {
-            total_lower_limit = std::max(prev_angle[i] + lvlimit * dt, total_lower_limit);
+            limited = total_lower_limit = std::max(prev_angle[i] + lvlimit * dt, total_lower_limit);
         }
         if ( uvlimit < qvel ) {
-            total_upper_limit = std::min(prev_angle[i] + uvlimit * dt, total_upper_limit);
+            limited = total_upper_limit = std::min(prev_angle[i] + uvlimit * dt, total_upper_limit);
+        }
+        if (loop % debug_print_freq == 0 || debug_print_velocity_first ) {
+            std::cerr << ", q(limited) = " << limited << std::endl;
         }
         velocity_limit_error = true;
       }
@@ -317,14 +321,18 @@ RTC::ReturnCode_t SoftErrorLimiter::onExecute(RTC::UniqueId ec_id)
                     << ", llimit =" << llimit
                     << ", ulimit =" << ulimit
                     << ", servo_state = " <<  ( servo_state[i] ? "ON" : "OFF")
-                    << ", prev_angle = " << prev_angle[i] << std::endl;
+                    << ", prev_angle = " << prev_angle[i];
         }
+        double limited;
         // fix joint angle
         if ( llimit > m_qRef.data[i] && prev_angle[i] > m_qRef.data[i] ) { // ref < llimit and prev < ref -> OK
-            total_lower_limit = std::max(llimit, total_lower_limit);
+            limited = total_lower_limit = std::max(llimit, total_lower_limit);
         }
         if ( ulimit < m_qRef.data[i] && prev_angle[i] < m_qRef.data[i] ) { // ulimit < ref and ref < prev -> OK
-            total_upper_limit = std::min(ulimit, total_upper_limit);
+            limited = total_upper_limit = std::min(ulimit, total_upper_limit);
+        }
+        if (loop % debug_print_freq == 0 || debug_print_position_first ) {
+            std::cerr << ", q(limited) = " << limited << std::endl;
         }
         m_servoState.data[i][0] |= (0x200 << OpenHRP::RobotHardwareService::SERVO_ALARM_SHIFT);
         position_limit_error = true;
@@ -346,13 +354,14 @@ RTC::ReturnCode_t SoftErrorLimiter::onExecute(RTC::UniqueId ec_id)
                     << ", Error=" << error << " > " << limit << " (limit)"
                     << ", servo_state = " <<  ( 1 ? "ON" : "OFF");
         }
+        double limited;
         if ( error > limit ) {
-            total_upper_limit = std::min(m_qCurrent.data[i] + limit, total_upper_limit);
+            limited = total_upper_limit = std::min(m_qCurrent.data[i] + limit, total_upper_limit);
         } else {
-            total_lower_limit = std::max(m_qCurrent.data[i] - limit, total_lower_limit);
+            limited = total_lower_limit = std::max(m_qCurrent.data[i] - limit, total_lower_limit);
         }
         if (loop % debug_print_freq == 0 || debug_print_error_first ) {
-          std::cerr << ", q=" << m_qRef.data[i] << std::endl;
+          std::cerr << ", q(limited) = " << limited << std::endl;
         }
         m_servoState.data[i][0] |= (0x040 << OpenHRP::RobotHardwareService::SERVO_ALARM_SHIFT);
         soft_limit_error = true;
