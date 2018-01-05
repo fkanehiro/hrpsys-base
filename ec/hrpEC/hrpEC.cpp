@@ -34,7 +34,7 @@ namespace RTC
         : RTC_exp::PeriodicExecutionContext(),
 #endif 
           m_priority(49),
-          m_cpu(0),
+          m_cpu(-1),
           m_thread_pending (false)
     {
         resetProfile();
@@ -78,12 +78,14 @@ namespace RTC
             }
         }
 
-        cpu_set_t cpu_set;
-        CPU_ZERO(&cpu_set);
-        CPU_SET(m_cpu, &cpu_set);
-        int result = sched_setaffinity(0, sizeof(cpu_set_t), &cpu_set);
-        if (result != 0) {
-            perror("sched_setaffinity():");
+        if (m_cpu>=0){
+            cpu_set_t cpu_set;
+            CPU_ZERO(&cpu_set);
+            CPU_SET(m_cpu, &cpu_set);
+            int result = sched_setaffinity(0, sizeof(cpu_set_t), &cpu_set);
+            if (result != 0) {
+                perror("sched_setaffinity():");
+            }
         }
 #endif
         /* Pre-fault our stack */
