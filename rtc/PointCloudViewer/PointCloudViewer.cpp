@@ -138,7 +138,10 @@ RTC::ReturnCode_t PointCloudViewer::onExecute(RTC::UniqueId ec_id)
             cloud->points[i].x = src[0];
             cloud->points[i].y = src[1];
             cloud->points[i].z = src[2];
-            cloud->points[i].rgb = src[3]; // use float rgb union
+            unsigned char *rgb = (unsigned char *)(src+3);
+            cloud->points[i].r = rgb[0];
+            cloud->points[i].g = rgb[1];
+            cloud->points[i].b = rgb[2];
             src += 4;
         }
         if (!m_viewer.wasStopped()){
