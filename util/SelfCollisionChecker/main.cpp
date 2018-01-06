@@ -56,6 +56,7 @@ int main(int argc, char *argv[])
     std::ifstream ifs(argv[2]);
     double tm, q[robot->numJoints()];
 
+    int ret = 0;
     ifs >> tm;
     while (!ifs.eof()){
         for (unsigned int i=0; i<robot->numJoints(); i++){
@@ -65,6 +66,7 @@ int main(int argc, char *argv[])
         for (unsigned int i=0; i<pairs.size(); i++){
             std::cout << tm << " " << pairs[i].first << ":" << pairs[i].second
                       << std::endl;
+            ret = 3;
         }
         if (useOLV){
             wstate.time = tm;
@@ -74,5 +76,5 @@ int main(int argc, char *argv[])
         ifs >> tm;
     }
 
-    return 0;
+    return ret;
 }
