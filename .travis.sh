@@ -77,9 +77,9 @@ case $TEST_PACKAGE in
                 travis_time_start  install_python
 
                 #http://askubuntu.com/questions/204510/how-to-install-python-2-5-4
-                sudo apt-add-repository -y ppa:fkrull/deadsnakes
+                sudo apt-add-repository -y ppa:deadsnakes
                 sudo apt-get update -qq
-                sudo apt-get install -qq -y python2.5 python2.7 python3.4
+                sudo apt-get install -qq -y --force-yes python2.5 python2.7 python3.4
 
                 travis_time_end
                 travis_time_start  check_python
