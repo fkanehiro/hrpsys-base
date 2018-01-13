@@ -110,6 +110,21 @@ CORBA::Boolean AutoBalancerService_impl::releaseEmergencyStop()
     return m_autobalancer->releaseEmergencyStop();
 };
 
+CORBA::Boolean AutoBalancerService_impl::setRMCSelectionMatrix(const OpenHRP::AutoBalancerService::DblArray6 Svec)
+{
+    return m_autobalancer->setRMCSelectionMatrix(Svec);
+};
+
+CORBA::Boolean AutoBalancerService_impl::addRMCConstraintLink(const OpenHRP::AutoBalancerService::StrSequence& link_names)
+{
+    return m_autobalancer->addRMCConstraintLink(link_names);
+};
+
+CORBA::Boolean AutoBalancerService_impl::removeRMCConstraintLink(const OpenHRP::AutoBalancerService::StrSequence& link_names)
+{
+    return m_autobalancer->removeRMCConstraintLink(link_names);
+};
+
 void AutoBalancerService_impl::autobalancer(AutoBalancer *i_autobalancer)
 {
   m_autobalancer = i_autobalancer;

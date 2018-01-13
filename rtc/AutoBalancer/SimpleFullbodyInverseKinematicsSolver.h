@@ -64,7 +64,10 @@ public:
     // For limb stretch avoidance
     double d_root_height, limb_stretch_avoidance_time_const, limb_stretch_avoidance_vlimit[2], m_dt;
     bool use_limb_stretch_avoidance;
-
+    // For RMC
+    typedef boost::shared_ptr<rats::RMController> rmcPtr;
+    rmcPtr rmc;
+    std::map<std::string, hrp::dvector6> xi_ref;
     SimpleFullbodyInverseKinematicsSolver (hrp::BodyPtr& _robot, const std::string& _print_str, const double _dt)
         : m_robot(_robot),
           ik_error_debug_print_freq(static_cast<int>(0.2/_dt)), // once per 0.2 [s]
@@ -80,6 +83,9 @@ public:
         qrefv.resize(m_robot->numJoints());
         limb_stretch_avoidance_vlimit[0] = -1000 * 1e-3 * _dt; // lower limit
         limb_stretch_avoidance_vlimit[1] = 50 * 1e-3 * _dt; // upper limit
+        hrp::dvector6 Svec;
+        Svec << 1, 1, 1, 0, 0, 0;
+        rmc = rmcPtr(new rats::RMController(m_robot, Svec));
     };
     ~SimpleFullbodyInverseKinematicsSolver () {};
 
@@ -274,6 +280,48 @@ public:
       d_root_height = vlimit(d_root_height, prev_d_root_height + limb_stretch_avoidance_vlimit[0], prev_d_root_height + limb_stretch_avoidance_vlimit[1]);
       m_robot->rootLink()->p(2) += d_root_height;
     };
+    // Solve RMC
+    void solveRMC (const hrp::Vector3& _dif_cog, const bool is_transition)
+    {
+      hrp::Vector3 dif_cog(ratio_for_vel*_dif_cog);
+      dif_cog(2) = m_robot->rootLink()->p(2) - target_root_p(2);
+      hrp::Vector3 ref_basePos = m_robot->rootLink()->p + -1 * move_base_gain * dif_cog;
+      hrp::Matrix33 ref_baseRot = target_root_R;
+      hrp::Vector3 Pref = m_robot->totalMass() * -dif_cog;
+      hrp::Vector3 Lref = hrp::Vector3::Zero();
+      hrp::dvector tmp_refdq = hrp::dvector::Zero(m_robot->numJoints());
+
+      for ( std::map<std::string, IKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
+        hrp::Vector3 target_link_p = it->second.target_p0 - it->second.target_r0 * it->second.localR.transpose() * it->second.localPos;
+        hrp::Matrix33 xi_ref_R((it->second.target_link->R * it->second.localR).transpose() * it->second.target_r0);
+        xi_ref[it->second.target_link->name].segment(0, 3) = ratio_for_vel * (target_link_p - it->second.target_link->p);
+        xi_ref[it->second.target_link->name].segment(3, 3) = ratio_for_vel * hrp::omegaFromRot(xi_ref_R);
+      }
+
+      // Set ref joint velocity
+      for (size_t i = 0; i < overwrite_ref_ja_index_vec.size(); i++) {
+        tmp_refdq(i) = qrefv[overwrite_ref_ja_index_vec[i]] - m_robot->joint(overwrite_ref_ja_index_vec[i])->q;
+      }
+
+      // Solve RMC
+      rmc->rmControl(m_robot, Pref, Lref, xi_ref, ref_basePos, ref_baseRot, tmp_refdq, m_dt);
+
+      for ( std::map<std::string, IKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
+        checkIKTracking(it->second, it->first, is_transition);
+      }
+    };
+    bool setRMCSelectionMatrix(const hrp::dvector6& Svec)
+    {
+        rmc->setSelectionMatrix(Svec);
+    };
+    bool addRMCConstraintLink(const string& link_name)
+    {
+        return rmc->addConstraintLink(m_robot, link_name);
+    }
+    bool removeRMCConstraintLink(const string& link_name)
+    {
+        return rmc->removeConstraintLink(m_robot, link_name, xi_ref);
+    }
     double vlimit(const double value, const double llimit_value, const double ulimit_value)
     {
       if (value > ulimit_value) {

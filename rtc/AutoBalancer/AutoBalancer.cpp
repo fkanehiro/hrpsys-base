@@ -209,6 +209,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
           root = root->parent;
         }
         fik->ikp.insert(std::pair<std::string, SimpleFullbodyInverseKinematicsSolver::IKparam>(ee_name, tmp_fikp));
+        fik->addRMCConstraintLink(ee_target);
         // Fix for toe joint
         //   Toe joint is defined as end-link joint in the case that end-effector link != force-sensor link
         //   Without toe joints, "end-effector link == force-sensor link" is assumed.
@@ -356,6 +357,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     sbp_cog_offset = hrp::Vector3(0,0,0);
     //use_force = MODE_NO_FORCE;
     use_force = MODE_REF_FORCE;
+    ik_type = MODE_IK;
 
     if (ikp.find("rleg") != ikp.end() && ikp.find("lleg") != ikp.end()) {
       is_legged_robot = true;
@@ -1093,8 +1095,12 @@ void AutoBalancer::solveFullbodyIK ()
   hrp::Vector3 tmp_input_sbp = hrp::Vector3(0,0,0);
   static_balance_point_proc_one(tmp_input_sbp, ref_zmp(2));
   hrp::Vector3 dif_cog = tmp_input_sbp - ref_cog;
-  // Solve IK
-  fik->solveFullbodyIK (dif_cog, transition_interpolator->isEmpty());
+
+  if (ik_type == MODE_IK) {
+      fik->solveFullbodyIK (dif_cog, transition_interpolator->isEmpty());
+  } else {
+      fik->solveRMC (dif_cog, transition_interpolator->isEmpty());
+  }
 }
 
 
@@ -1329,6 +1335,36 @@ bool AutoBalancer::releaseEmergencyStop ()
       is_stop_mode = false;
   }
   return true;
+}
+
+bool AutoBalancer::setRMCSelectionMatrix(const OpenHRP::AutoBalancerService::DblArray6 Svec)
+{
+  hrp::dvector6 tmp_svec;
+  for (size_t i = 0; i < 6; ++i) {
+   tmp_svec(i) = Svec[i];
+  }
+  setRMCSelectionMatrix(tmp_svec);
+}
+
+bool AutoBalancer::setRMCSelectionMatrix(const hrp::dvector6& Svec)
+{
+  fik->setRMCSelectionMatrix(Svec);
+}
+
+bool AutoBalancer::addRMCConstraintLink(const ::OpenHRP::AutoBalancerService::StrSequence& link_names)
+{
+  for (size_t i = 0; i < link_names.length(); i++) {
+    std::string name(link_names[i]);
+    fik->addRMCConstraintLink(name);
+  }
+}
+
+bool AutoBalancer::removeRMCConstraintLink(const ::OpenHRP::AutoBalancerService::StrSequence& link_names)
+{
+  for (size_t i = 0; i < link_names.length(); i++) {
+    std::string name(link_names[i]);
+    fik->removeRMCConstraintLink(name);
+  }
 }
 
 bool AutoBalancer::setFootSteps(const OpenHRP::AutoBalancerService::FootstepsSequence& fss, CORBA::Long overwrite_fs_idx)
@@ -1675,8 +1711,19 @@ bool AutoBalancer::setAutoBalancerParam(const OpenHRP::AutoBalancerService::Auto
     default:
         break;
     }
+    switch (i_param.default_ik_type) {
+    case OpenHRP::AutoBalancerService::MODE_IK:
+        ik_type = MODE_IK;
+        break;
+    case OpenHRP::AutoBalancerService::MODE_RMC:
+        ik_type = MODE_RMC;
+        break;
+    defalut:
+        break;
+    }
   } else {
       std::cerr << "[" << m_profile.instance_name << "]   use_force_mode cannot be changed to [" << i_param.use_force_mode << "] during MODE_ABC, MODE_SYNC_TO_IDLE or MODE_SYNC_TO_ABC." << std::endl;
+      std::cerr << "[" << m_profile.instance_name << "]   ik_type cannot be changed to [" << i_param.default_ik_type << "] during MODE_ABC, MODE_SYNC_TO_IDLE or MODE_SYNC_TO_ABC." << std::endl;
   }
   graspless_manip_mode = i_param.graspless_manip_mode;
   graspless_manip_arm = std::string(i_param.graspless_manip_arm);
@@ -1764,6 +1811,7 @@ bool AutoBalancer::setAutoBalancerParam(const OpenHRP::AutoBalancerService::Auto
   std::cerr << std::endl;
   delete[] default_zmp_offsets_array;
   std::cerr << "[" << m_profile.instance_name << "]   use_force_mode = " << getUseForceModeString() << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   ik_type = " << getIKTypeString() << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   graspless_manip_mode = " << graspless_manip_mode << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   graspless_manip_arm = " << graspless_manip_arm << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   graspless_manip_p_gain = " << graspless_manip_p_gain.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << std::endl;
@@ -1813,6 +1861,10 @@ bool AutoBalancer::getAutoBalancerParam(OpenHRP::AutoBalancerService::AutoBalanc
   case MODE_REF_FORCE_WITH_FOOT: i_param.use_force_mode = OpenHRP::AutoBalancerService::MODE_REF_FORCE_WITH_FOOT; break;
   case MODE_REF_FORCE_RFU_EXT_MOMENT: i_param.use_force_mode = OpenHRP::AutoBalancerService::MODE_REF_FORCE_RFU_EXT_MOMENT; break;
   default: break;
+  }
+  switch(ik_type) {
+  case MODE_IK: i_param.default_ik_type = OpenHRP::AutoBalancerService::MODE_IK; break;
+  case MODE_RMC: i_param.default_ik_type = OpenHRP::AutoBalancerService::MODE_RMC; break;
   }
   i_param.graspless_manip_mode = graspless_manip_mode;
   i_param.graspless_manip_arm = graspless_manip_arm.c_str();
@@ -2288,6 +2340,18 @@ std::string AutoBalancer::getUseForceModeString ()
         return "MODE_REF_FORCE_WITH_FOOT";
     case OpenHRP::AutoBalancerService::MODE_REF_FORCE_RFU_EXT_MOMENT:
         return "MODE_REF_FORCE_RFU_EXT_MOMENT";
+    default:
+        return "";
+    }
+};
+
+std::string AutoBalancer::getIKTypeString ()
+{
+    switch (ik_type) {
+    case OpenHRP::AutoBalancerService::MODE_IK:
+        return "MODE_IK";
+    case OpenHRP::AutoBalancerService::MODE_RMC:
+        return "MODE_RMC";
     default:
         return "";
     }
