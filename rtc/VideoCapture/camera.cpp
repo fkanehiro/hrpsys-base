@@ -73,13 +73,14 @@ bool v4l_capture::open_device(void)
   return true;
 }
 
-void v4l_capture::close_device(void)
+bool v4l_capture::close_device(void)
 {
   if (close(fd) == -1) {
     perror("close");
-    exit(EXIT_FAILURE);
+    return false;
   }
   fd = -1;
+  return true;
 }
 
 void v4l_capture::write_img(uchar* ret)
@@ -111,7 +112,7 @@ void v4l_capture::write_img(uchar* ret)
   }
 }
 
-void v4l_capture::read_frame(void)
+bool v4l_capture::read_frame(void)
 {
   struct v4l2_buffer buf;
 
@@ -122,17 +123,19 @@ void v4l_capture::read_frame(void)
 
   if (ioctl(fd, VIDIOC_DQBUF, &buf) == -1) {
     perror("VIDIOC_DQBUF");
-    exit(EXIT_FAILURE);
+    return false;
   }
   assert(buf.index < n_buffers);
 
   if (ioctl(fd, VIDIOC_QBUF, &buf) == -1) {
     perror("VIDIOC_QBUF");
-    exit(EXIT_FAILURE);
+    return false;
   }
+
+  return true;
 }
 
-void v4l_capture::init_mmap(void)
+bool v4l_capture::init_mmap(void)
 {
   struct v4l2_requestbuffers req;
 
@@ -144,19 +147,19 @@ void v4l_capture::init_mmap(void)
 
   if (ioctl(fd, VIDIOC_REQBUFS, &req) == -1) {
     perror("VIDIOC_REQBUFS");
-    exit(EXIT_FAILURE);
+    return false;
   }
 
   if (req.count < 2) {
     fprintf(stderr, "Insufficient buffer memory on %s\n", dev_name.c_str());
-    exit(EXIT_FAILURE);
+    return false;
   }
 
   buffers = (buffer*)calloc(req.count, sizeof(*buffers));
 
   if (!buffers) {
     fprintf(stderr, "Out of memory\n");
-    exit(EXIT_FAILURE);
+    return false;
   }
 
   for (n_buffers = 0; n_buffers < req.count; ++n_buffers) {
@@ -170,7 +173,7 @@ void v4l_capture::init_mmap(void)
 
     if (ioctl(fd, VIDIOC_QUERYBUF, &buf) == -1) {
       perror("VIDIOC_QUERYBUF");
-      exit(EXIT_FAILURE);
+      return false;
     }
 
     buffers[n_buffers].length = buf.length;
@@ -182,24 +185,26 @@ void v4l_capture::init_mmap(void)
 
     if (buffers[n_buffers].start == MAP_FAILED) {
       perror("mmap");
-      exit(EXIT_FAILURE);
+      return false;
     }
   }
+  return true;
 }
 
-void v4l_capture::uninit_mmap(void)
+bool v4l_capture::uninit_mmap(void)
 {
   unsigned int i;
 
   for (i = 0; i < n_buffers; ++i) {
     if (munmap(buffers[i].start, buffers[i].length) == -1) {
       perror("munmap");
-      exit(EXIT_FAILURE);
+      return false;
     }
   }
+  return true;
 }
 
-void v4l_capture::init_device(void)
+bool v4l_capture::init_device(void)
 {
   struct v4l2_capability cap;
   struct v4l2_format fmt;
@@ -209,7 +214,7 @@ void v4l_capture::init_device(void)
       fprintf(stderr, "%s is no V4L2 device\n", dev_name.c_str());
     }
     perror("VIDIOC_QUERYCAP");
-    exit(EXIT_FAILURE);
+    return false;
   }
 
   fprintf(stderr, "video capabilities\n");
@@ -258,7 +263,7 @@ void v4l_capture::init_device(void)
 
     if (!(cap.capabilities & V4L2_CAP_VIDEO_CAPTURE)) {
       fprintf(stderr, "%s is no video capture device\n", dev_name.c_str());
-	exit(EXIT_FAILURE);
+      return false;
     }
 
     memset (&(fmt), 0, sizeof (fmt));
@@ -271,10 +276,11 @@ void v4l_capture::init_device(void)
 
     if (ioctl(fd, VIDIOC_S_FMT, &fmt) == -1) {
         perror("VIDIOC_S_FMT");
-        exit(EXIT_FAILURE);
+        return false;
     }
 
     init_mmap();
+    return true;
 }
 
 void v4l_capture::uninit_device(void)
@@ -312,7 +318,7 @@ bool v4l_capture::start_capturing(void)
     return true;
 }
 
-void v4l_capture::stop_capturing(void)
+bool v4l_capture::stop_capturing(void)
 {
     enum v4l2_buf_type type;
 
@@ -320,7 +326,7 @@ void v4l_capture::stop_capturing(void)
 
     if (ioctl(fd, VIDIOC_STREAMOFF, &type) == -1) {
 	perror("VIDIOC_STREAMOFF");
-	exit(EXIT_FAILURE);
+        return false;
     }
-
+    return true;
 }
