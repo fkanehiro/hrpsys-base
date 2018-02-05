@@ -157,6 +157,17 @@ class RTcomponent:
         return False
 
     ##
+    # \brief reset this component
+    # \param self this object
+    # \param ec execution context used to reset this component
+    # \return True if reseted successfully, False otherwise
+    def reset(self, ec=None, timeout=3.0):
+        if self.getLifeCycleState(ec) != RTC.ERROR_STATE:
+            return True
+        if ec == None:
+            ec = self.ec
+        return ec.reset_component(self.ref) == RTC.RTC_OK
+    ##
     # \brief get life cycle state of the main execution context
     # \param self this object
     # \param ec execution context from which life cycle state is obtained
