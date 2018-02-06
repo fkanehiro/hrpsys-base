@@ -32,7 +32,7 @@ v4l_capture::init(size_t _width, size_t _height, unsigned int devId)
 uchar *
 v4l_capture::capture ()
 {
-  write_img(frame.data);
+  if (!write_img(frame.data)) return NULL;
   return frame.data;
 }
 
@@ -83,9 +83,9 @@ bool v4l_capture::close_device(void)
   return true;
 }
 
-void v4l_capture::write_img(uchar* ret)
+bool v4l_capture::write_img(uchar* ret)
 {
-  read_frame();
+  if (!read_frame()) return false;
 
   for (int i = 0; i < width * height; i += 2) {
     int y, r, g, b;
@@ -110,6 +110,8 @@ void v4l_capture::write_img(uchar* ret)
     ret[(i + 1) * 3 + 1] = (unsigned char) (std::min(std::max(g, 0), 255));
     ret[(i + 1) * 3 + 2] = (unsigned char) (std::min(std::max(b, 0), 255));
   }
+
+  return true;
 }
 
 bool v4l_capture::read_frame(void)
