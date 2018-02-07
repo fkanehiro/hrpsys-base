@@ -98,7 +98,7 @@ class VideoCapture
   // no corresponding operation exists in OpenRTm-aist-0.2.0
   // virtual RTC::ReturnCode_t onRateChanged(RTC::UniqueId ec_id);
 
-    void capture();
+  bool capture();
   void take_one_frame();
   void start_continuous();
   void stop_continuous();
@@ -148,6 +148,7 @@ class VideoCapture
   std::vector < v4l_capture * > m_cameras;
   int m_width, m_height, m_frameRate;
   double m_tOld;
+  bool m_needToReactivate;
 };
 
 

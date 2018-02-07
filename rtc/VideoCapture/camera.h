@@ -28,7 +28,7 @@ class v4l_capture
   bool uninit_mmap();
   bool close_device();
   bool read_frame(void);
-  void write_img(uchar * ret);
+  bool write_img(uchar * ret);
   bool init_all(size_t _width, size_t _height, unsigned int _devId);
  public:
   v4l_capture();
