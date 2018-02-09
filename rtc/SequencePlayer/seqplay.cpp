@@ -773,13 +773,21 @@ bool seqplay::setJointAnglesSequenceOfGroup(const char *gname, std::vector<const
 		return false;
 	}
 	int len = i->indices.size();
-	double x[len], v[len];
+	// playPatternOfGroup
 	double q[m_dof], dq[m_dof];
-	i->inter->get(q, dq, false);
-	i->inter->set(q, dq);
+	interpolators[Q]->get(q, dq, false); // fill all q,dq data
+	std::map<std::string, groupInterpolator *>::iterator it;
+	for (it=groupInterpolators.begin(); it!=groupInterpolators.end(); it++){
+		groupInterpolator *gi = it->second;
+		if (gi)	gi->get(q, dq, false);
+	}
+	// extract currnet limb data
+	double x[len], v[len];
 	i->extract(x, q);
 	i->extract(v, dq);
+	// override currnet goal
 	i->inter->clear();
+	i->inter->go(x,v,interpolators[Q]->deltaT());
     const double *q_curr=NULL;
     for (unsigned int j=0; j<pos.size(); j++){
         q_curr = pos[j];
@@ -808,12 +816,14 @@ bool seqplay::setJointAnglesSequenceOfGroup(const char *gname, std::vector<const
 			for (int k = 0; k < len; k++) { v[k] = 0.0; }
 		}
 		if (i->state == groupInterpolator::created){
+			double q[m_dof], dq[m_dof];
 			interpolators[Q]->get(q, dq, false);
 			std::map<std::string, groupInterpolator *>::iterator it;
 			for (it=groupInterpolators.begin(); it!=groupInterpolators.end(); it++){
 				groupInterpolator *gi = it->second;
 				if (gi)	gi->get(q, dq, false);
 			}
+			double x[i->indices.size()], v[i->indices.size()];
 			i->extract(x, q);
 			i->extract(v, dq);
 			i->inter->go(x,v,interpolators[Q]->deltaT());
