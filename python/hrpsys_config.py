@@ -2244,7 +2244,7 @@ dr=0, dp=0, dw=0, tm=10, wait=True):
         @param gname: Name of the joint group.
         @return bool
         '''
-        return self.seq_svc.clearJointAngles(gname)
+        return self.seq_svc.clearJointAnglesOfGroup(gname)
 
     def removeForceSensorOffsetRMFO(self, sensor_names=[], tm=8.0):
         '''!@brief
