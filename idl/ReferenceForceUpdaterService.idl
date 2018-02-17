@@ -33,6 +33,8 @@ module OpenHRP
           boolean is_hold_value;
           /// Transition time[s]
           double transition_time;
+          /// Cutoff frequency for actual force value [Hz]
+          double cutoff_freq;
       };
 
       /**

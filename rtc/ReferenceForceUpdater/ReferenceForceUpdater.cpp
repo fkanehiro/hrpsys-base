@@ -172,6 +172,7 @@ RTC::ReturnCode_t ReferenceForceUpdater::onInitialize()
   // setting from conf file
   // rleg,TARGET_LINK,BASE_LINK,x,y,z,rx,ry,rz,rth #<=pos + rot (axis+angle)
   coil::vstring end_effectors_str = coil::split(prop["end_effectors"], ",");
+  double default_cutoff_freq = 1e8; // Default cutoff freq for force measurements [Hz]. High freq == no filtering by default.
   if (end_effectors_str.size() > 0) {
     size_t prop_num = 10;
     size_t num = end_effectors_str.size()/prop_num;
@@ -209,6 +210,7 @@ RTC::ReturnCode_t ReferenceForceUpdater::onInitialize()
       ReferenceForceUpdaterParam rfu_param;
       //set rfu param
       rfu_param.update_count = round((1/rfu_param.update_freq)/m_dt);
+      rfu_param.act_force_filter = boost::shared_ptr<FirstOrderLowPassFilter<hrp::Vector3> >(new FirstOrderLowPassFilter<hrp::Vector3>(default_cutoff_freq, m_dt, hrp::Vector3::Zero()));
       if (( ee_name != "rleg" ) && ( ee_name != "lleg" ))
         m_RFUParam.insert(std::pair<std::string, ReferenceForceUpdaterParam>(ee_name , rfu_param));
 
@@ -228,6 +230,7 @@ RTC::ReturnCode_t ReferenceForceUpdater::onInitialize()
         std::string ee_name = "footoriginextmoment";
         ReferenceForceUpdaterParam rfu_param;
         rfu_param.update_count = round((1/rfu_param.update_freq)/m_dt);
+        rfu_param.act_force_filter = boost::shared_ptr<FirstOrderLowPassFilter<hrp::Vector3> >(new FirstOrderLowPassFilter<hrp::Vector3>(default_cutoff_freq, m_dt, hrp::Vector3::Zero()));
         m_RFUParam.insert(std::pair<std::string, ReferenceForceUpdaterParam>(ee_name, rfu_param));
         ee_trans eet;
         eet.localPos = hrp::Vector3::Zero();
@@ -358,6 +361,9 @@ RTC::ReturnCode_t ReferenceForceUpdater::onExecute(RTC::UniqueId ec_id)
     for (unsigned int i=0; i<m_force.size(); i++ ){
         hrp::Sensor* sensor = m_robot->sensor(hrp::Sensor::FORCE, i);
         act_force[i] = (sensor->link->R * sensor->localR) * hrp::Vector3(m_force[i].data[0], m_force[i].data[1], m_force[i].data[2]);
+        for (std::map<std::string, ReferenceForceUpdaterParam>::iterator itr = m_RFUParam.begin(); itr != m_RFUParam.end(); itr++ ) {
+            if (ee_index_map[itr->first] == i) itr->second.act_force_filter->passFilter(act_force[i]);
+        }
     }
 
     // If RFU is not active
@@ -560,7 +566,7 @@ void ReferenceForceUpdater::updateRefForces (const std::string& arm)
         abs_motion_dir = current_foot_mid_rot * m_RFUParam[arm].motion_dir;
     }
     // Calc abs force diff
-    df = act_force[arm_idx] - ref_force[arm_idx];
+    df = m_RFUParam[arm].act_force_filter->getCurrentValue() - ref_force[arm_idx];
     double inner_product = 0;
     if ( ! std::fabs((abs_motion_dir.norm() - 0.0)) < 1e-5 ) {
         abs_motion_dir.normalize();
@@ -579,7 +585,7 @@ void ReferenceForceUpdater::updateRefForces (const std::string& arm)
         std::cerr << "[" << m_profile.instance_name << "] Updating reference force [" << arm << "]" << std::endl;
         std::cerr << "[" << m_profile.instance_name << "]   inner_product = " << inner_product << "[N], ref_force = " << ref_force[arm_idx].dot(abs_motion_dir) << "[N], interpolation_time = " << interpolation_time << "[s]" << std::endl;
         std::cerr << "[" << m_profile.instance_name << "]   new ref_force = " << ref_force[arm_idx].format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[N]" << std::endl;
-        std::cerr << "[" << m_profile.instance_name << "]   act_force = " << act_force[arm_idx].format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[N]" << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "]   filtered act_force = " << m_RFUParam[arm].act_force_filter->getCurrentValue().format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[N]" << std::endl;
         std::cerr << "[" << m_profile.instance_name << "]   df = " << df.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[N]" << std::endl;
     }
 };
@@ -664,11 +670,12 @@ bool ReferenceForceUpdater::setReferenceForceUpdaterParam(const std::string& i_n
   m_RFUParam[arm].i_gain = i_param.i_gain;
   m_RFUParam[arm].is_hold_value = i_param.is_hold_value;
   m_RFUParam[arm].transition_time = i_param.transition_time;
+  m_RFUParam[arm].act_force_filter->setCutOffFreq(i_param.cutoff_freq);
   for (size_t i = 0; i < 3; i++ ) m_RFUParam[arm].motion_dir(i) = i_param.motion_dir[i];
 
   // Print values
   std::cerr << "[" << m_profile.instance_name << "]   p_gain = " << m_RFUParam[arm].p_gain << ", d_gain = " << m_RFUParam[arm].d_gain << ", i_gain = " << m_RFUParam[arm].i_gain << std::endl;
-  std::cerr << "[" << m_profile.instance_name << "]   update_freq = " << m_RFUParam[arm].update_freq << "[Hz], update_time_ratio = " << m_RFUParam[arm].update_time_ratio << ", transition_time = " << m_RFUParam[arm].transition_time << "[s]" << std::endl;
+  std::cerr << "[" << m_profile.instance_name << "]   update_freq = " << m_RFUParam[arm].update_freq << "[Hz], update_time_ratio = " << m_RFUParam[arm].update_time_ratio << ", transition_time = " << m_RFUParam[arm].transition_time << "[s], cutoff_freq = " << m_RFUParam[arm].act_force_filter->getCutOffFreq() << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   motion_dir = " << m_RFUParam[arm].motion_dir.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << std::endl;
   std::cerr << "[" << m_profile.instance_name << "]   frame = " << m_RFUParam[arm].frame << ", is_hold_value = " << (m_RFUParam[arm].is_hold_value?"true":"false") << std::endl;
   return true;
@@ -691,6 +698,7 @@ bool ReferenceForceUpdater::getReferenceForceUpdaterParam(const std::string& i_n
   i_param->frame = m_RFUParam[arm].frame.c_str();
   i_param->is_hold_value = m_RFUParam[arm].is_hold_value;
   i_param->transition_time = m_RFUParam[arm].transition_time;
+  i_param->cutoff_freq = m_RFUParam[arm].act_force_filter->getCutOffFreq();
   for (size_t i = 0; i < 3; i++ ) i_param->motion_dir[i] = m_RFUParam[arm].motion_dir(i);
   return true;
 };

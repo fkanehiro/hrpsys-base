@@ -23,6 +23,9 @@
 #include "../ImpedanceController/JointPathEx.h"
 #include "../ImpedanceController/RatsMatrix.h"
 #include "../SequencePlayer/interpolator.h"
+#include "../TorqueFilter/IIRFilter.h"
+#include <boost/shared_ptr.hpp>
+
 // #include "ImpedanceOutputGenerator.h"
 // #include "ObjectTurnaroundDetector.h"
 // Service implementation headers
@@ -194,6 +197,7 @@ class ReferenceForceUpdater
     std::string frame;
     int update_count;
     bool is_active, is_stopping, is_hold_value;
+    boost::shared_ptr<FirstOrderLowPassFilter<hrp::Vector3> > act_force_filter;
     ReferenceForceUpdaterParam () {
       //params defined in idl
       motion_dir = hrp::Vector3::UnitZ();
