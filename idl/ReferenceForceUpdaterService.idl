@@ -7,6 +7,7 @@ module OpenHRP
   interface ReferenceForceUpdaterService
   {
       typedef sequence<double, 3> DblSequence3;
+      typedef sequence<string> StrSequence;
 
       /**
        * @struct ReferenceForceUpdaterParam
@@ -79,5 +80,12 @@ module OpenHRP
        * @brief Wait for ReferenceForceUpdater mode transition.
        */
       void waitReferenceForceUpdaterTransition(in string name);
+
+      /**
+       * @brief Get supported name sequence of ReferenceForceUpdater
+       * @param o_param is supported name sequence
+       * @return true if set successfully, false otherwise
+       */
+      boolean getSupportedReferenceForceUpdaterNameSequence(out StrSequence o_names);
   };
 };

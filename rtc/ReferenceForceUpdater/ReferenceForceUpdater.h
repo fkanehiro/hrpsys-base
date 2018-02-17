@@ -113,6 +113,7 @@ class ReferenceForceUpdater
   bool startReferenceForceUpdaterNoWait(const std::string& i_name_);
   bool stopReferenceForceUpdaterNoWait(const std::string& i_name_);
   void waitReferenceForceUpdaterTransition(const std::string& i_name_);
+  bool getSupportedReferenceForceUpdaterNameSequence(OpenHRP::ReferenceForceUpdaterService::StrSequence_out o_names);
   void getTargetParameters ();
   void calcFootOriginCoords (hrp::Vector3& foot_origin_pos, hrp::Matrix33& foot_origin_rot);
   void updateRefFootOriginExtMoment (const std::string& arm);

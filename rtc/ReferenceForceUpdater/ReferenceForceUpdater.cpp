@@ -763,6 +763,19 @@ void ReferenceForceUpdater::waitReferenceForceUpdaterTransition(const std::strin
     usleep(1000);
 };
 
+bool ReferenceForceUpdater::getSupportedReferenceForceUpdaterNameSequence(OpenHRP::ReferenceForceUpdaterService::StrSequence_out o_names)
+{
+  std::cerr << "[" << m_profile.instance_name << "] getSupportedReferenceForceUpdaterNameSequence" << std::endl;
+  Guard guard(m_mutex);
+  o_names->length(m_RFUParam.size());
+  size_t i = 0;
+  for (std::map<std::string, ReferenceForceUpdaterParam>::iterator itr = m_RFUParam.begin(); itr != m_RFUParam.end(); itr++ ) {
+      o_names[i] = itr->first.c_str();
+      i++;
+  }
+  return true;
+};
+
 extern "C"
 {
 

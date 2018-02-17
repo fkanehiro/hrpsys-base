@@ -49,6 +49,13 @@ void ReferenceForceUpdaterService_impl::waitReferenceForceUpdaterTransition(cons
 };
 
 
+CORBA::Boolean ReferenceForceUpdaterService_impl::getSupportedReferenceForceUpdaterNameSequence(OpenHRP::ReferenceForceUpdaterService::StrSequence_out o_names)
+{
+    o_names = new OpenHRP::ReferenceForceUpdaterService::StrSequence();
+    return m_rfu->getSupportedReferenceForceUpdaterNameSequence(o_names);
+};
+
+
 void ReferenceForceUpdaterService_impl::rfu(ReferenceForceUpdater *i_rfu)
 {
     m_rfu = i_rfu;
