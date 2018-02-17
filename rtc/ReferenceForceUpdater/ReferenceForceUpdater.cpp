@@ -214,6 +214,7 @@ RTC::ReturnCode_t ReferenceForceUpdater::onInitialize()
 
       ee_index_map.insert(std::pair<std::string, size_t>(ee_name, i));
       ref_force.push_back(hrp::Vector3::Zero());
+      act_force.push_back(hrp::Vector3::Zero());
       //ref_force_interpolator.insert(std::pair<std::string, interpolator*>(ee_name, new interpolator(3, m_dt)));
       ref_force_interpolator.insert(std::pair<std::string, interpolator*>(ee_name, new interpolator(3, m_dt, interpolator::LINEAR)));
       if (( ee_name != "lleg" ) && ( ee_name != "rleg" )) transition_interpolator.insert(std::pair<std::string, interpolator*>(ee_name, new interpolator(1, m_dt)));
@@ -235,6 +236,7 @@ RTC::ReturnCode_t ReferenceForceUpdater::onInitialize()
         ee_map.insert(std::pair<std::string, ee_trans>(ee_name , eet));
         ee_index_map.insert(std::pair<std::string, size_t>(ee_name, ref_force.size()));
         ref_force.push_back(hrp::Vector3::Zero());
+        act_force.push_back(hrp::Vector3::Zero());
         ref_force_interpolator.insert(std::pair<std::string, interpolator*>(ee_name, new interpolator(3, m_dt, interpolator::LINEAR)));
         transition_interpolator.insert(std::pair<std::string, interpolator*>(ee_name, new interpolator(1, m_dt)));
     }
@@ -347,6 +349,17 @@ RTC::ReturnCode_t ReferenceForceUpdater::onExecute(RTC::UniqueId ec_id)
         }
       }
     }
+
+    // Get and set reference (target) parameters
+    getTargetParameters();
+
+    // Get force sensor values
+    //   Force sensor's force value is absolute in reference frame
+    for (unsigned int i=0; i<m_force.size(); i++ ){
+        hrp::Sensor* sensor = m_robot->sensor(hrp::Sensor::FORCE, i);
+        act_force[i] = (sensor->link->R * sensor->localR) * hrp::Vector3(m_force[i].data[0], m_force[i].data[1], m_force[i].data[2]);
+    }
+
     // If RFU is not active
     {
       bool all_arm_is_not_active = true;
@@ -385,7 +398,6 @@ RTC::ReturnCode_t ReferenceForceUpdater::onExecute(RTC::UniqueId ec_id)
     }
 
     // If RFU is active
-    getTargetParameters();
 
     // Update reference force
     for (std::map<std::string, ReferenceForceUpdaterParam>::iterator itr = m_RFUParam.begin(); itr != m_RFUParam.end(); itr++ ) {
@@ -547,10 +559,8 @@ void ReferenceForceUpdater::updateRefForces (const std::string& arm)
         rats::mid_rot(current_foot_mid_rot, 0.5, foot_rot[0], foot_rot[1]);
         abs_motion_dir = current_foot_mid_rot * m_RFUParam[arm].motion_dir;
     }
-    hrp::Sensor* sensor = m_robot->sensor(hrp::Sensor::FORCE, arm_idx);
-    hrp::Vector3 tmp_act_force = (sensor->link->R * sensor->localR) * hrp::Vector3(m_force[arm_idx].data[0], m_force[arm_idx].data[1], m_force[arm_idx].data[2]); // Absolute in reference frame
     // Calc abs force diff
-    df = tmp_act_force - ref_force[arm_idx];
+    df = act_force[arm_idx] - ref_force[arm_idx];
     double inner_product = 0;
     if ( ! std::fabs((abs_motion_dir.norm() - 0.0)) < 1e-5 ) {
         abs_motion_dir.normalize();
@@ -569,7 +579,7 @@ void ReferenceForceUpdater::updateRefForces (const std::string& arm)
         std::cerr << "[" << m_profile.instance_name << "] Updating reference force [" << arm << "]" << std::endl;
         std::cerr << "[" << m_profile.instance_name << "]   inner_product = " << inner_product << "[N], ref_force = " << ref_force[arm_idx].dot(abs_motion_dir) << "[N], interpolation_time = " << interpolation_time << "[s]" << std::endl;
         std::cerr << "[" << m_profile.instance_name << "]   new ref_force = " << ref_force[arm_idx].format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[N]" << std::endl;
-        std::cerr << "[" << m_profile.instance_name << "]   act_force = " << tmp_act_force.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[N]" << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "]   act_force = " << act_force[arm_idx].format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[N]" << std::endl;
         std::cerr << "[" << m_profile.instance_name << "]   df = " << df.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[N]" << std::endl;
     }
 };
