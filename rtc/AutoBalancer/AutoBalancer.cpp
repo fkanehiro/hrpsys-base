@@ -2024,21 +2024,21 @@ void AutoBalancer::static_balance_point_proc_one(hrp::Vector3& tmp_input_sbp, co
   if ( use_force == MODE_NO_FORCE ) {
     tmp_input_sbp = tmpcog + sbp_cog_offset;
   } else {
-    calc_static_balance_point_from_forces(target_sbp, tmpcog, ref_com_height, ref_forces);
+    calc_static_balance_point_from_forces(target_sbp, tmpcog, ref_com_height);
     tmp_input_sbp = target_sbp - sbp_offset;
     sbp_cog_offset = tmp_input_sbp - tmpcog;
   }
 };
 
-void AutoBalancer::calc_static_balance_point_from_forces(hrp::Vector3& sb_point, const hrp::Vector3& tmpcog, const double ref_com_height, std::vector<hrp::Vector3>& tmp_forces)
+void AutoBalancer::calc_static_balance_point_from_forces(hrp::Vector3& sb_point, const hrp::Vector3& tmpcog, const double ref_com_height)
 {
   hrp::Vector3 denom, nume;
   /* sb_point[m] = nume[kg * m/s^2 * m] / denom[kg * m/s^2] */
   double mass = m_robot->totalMass();
   double mg = mass * gg->get_gravitational_acceleration();
   hrp::Vector3 total_sensor_ref_force = hrp::Vector3::Zero();
-  for (size_t i = 0; i < tmp_forces.size(); i++) {
-      total_sensor_ref_force += tmp_forces[i];
+  for (size_t i = 0; i < ref_forces.size(); i++) {
+      total_sensor_ref_force += ref_forces[i];
   }
   hrp::Vector3 total_nosensor_ref_force = mg * hrp::Vector3::UnitZ() - total_sensor_ref_force; // total ref force at the point without sensors, such as torso
   hrp::Vector3 tmp_ext_moment = fix_leg_coords2.pos.cross(total_nosensor_ref_force) + fix_leg_coords2.rot * hrp::Vector3(m_refFootOriginExtMoment.data.x, m_refFootOriginExtMoment.data.y, m_refFootOriginExtMoment.data.z);
@@ -2065,8 +2065,8 @@ void AutoBalancer::calc_static_balance_point_from_forces(hrp::Vector3& sb_point,
                 size_t idx = contact_states_index_map[it->first];
                 // Force applied point is assumed as end effector
                 hrp::Vector3 fpos = it->second.target_link->p + it->second.target_link->R * it->second.localPos;
-                nume(j) += ( (fpos(2) - ref_com_height) * tmp_forces[idx](j) - fpos(j) * tmp_forces[idx](2) );
-                denom(j) -= tmp_forces[idx](2);
+                nume(j) += ( (fpos(2) - ref_com_height) * ref_forces[idx](j) - fpos(j) * ref_forces[idx](2) );
+                denom(j) -= ref_forces[idx](2);
             }
         }
         if ( use_force == MODE_REF_FORCE_WITH_FOOT ) {
