@@ -333,6 +333,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
         registerInPort(std::string("ref_"+sensor_names[i]).c_str(), *m_ref_forceIn[i]);
         std::cerr << "[" << m_profile.instance_name << "]   name = " << std::string("ref_"+sensor_names[i]) << std::endl;
         ref_forces.push_back(hrp::Vector3(0,0,0));
+        ref_moments.push_back(hrp::Vector3(0,0,0));
     }
     // set force port
     for (unsigned int i=0; i<nforce; i++){
@@ -913,6 +914,7 @@ void AutoBalancer::rotateRefForcesForFixCoords (coordinates& tmp_fix_coords)
       //ref_forces[i] = eeR * hrp::Vector3(m_ref_force[i].data[0], m_ref_force[i].data[1], m_ref_force[i].data[2]);
       // world frame
       ref_forces[i] = tmp_fix_coords.rot * hrp::Vector3(m_ref_force[i].data[0], m_ref_force[i].data[1], m_ref_force[i].data[2]);
+      ref_moments[i] = tmp_fix_coords.rot * hrp::Vector3(m_ref_force[i].data[3], m_ref_force[i].data[4], m_ref_force[i].data[5]);
     }
     sbp_offset = tmp_fix_coords.rot * hrp::Vector3(sbp_offset);
 };
@@ -2066,6 +2068,7 @@ void AutoBalancer::calc_static_balance_point_from_forces(hrp::Vector3& sb_point,
                 // Force applied point is assumed as end effector
                 hrp::Vector3 fpos = it->second.target_link->p + it->second.target_link->R * it->second.localPos;
                 nume(j) += ( (fpos(2) - ref_com_height) * ref_forces[idx](j) - fpos(j) * ref_forces[idx](2) );
+                nume(j) += (j==0 ? ref_moments[idx](1):-ref_moments[idx](0));
                 denom(j) -= ref_forces[idx](2);
             }
         }
