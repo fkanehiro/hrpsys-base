@@ -172,7 +172,6 @@ RTC::ReturnCode_t ReferenceForceUpdater::onInitialize()
   // setting from conf file
   // rleg,TARGET_LINK,BASE_LINK,x,y,z,rx,ry,rz,rth #<=pos + rot (axis+angle)
   coil::vstring end_effectors_str = coil::split(prop["end_effectors"], ",");
-  double default_cutoff_freq = 1e8; // Default cutoff freq for force measurements [Hz]. High freq == no filtering by default.
   if (end_effectors_str.size() > 0) {
     size_t prop_num = 10;
     size_t num = end_effectors_str.size()/prop_num;
@@ -207,12 +206,8 @@ RTC::ReturnCode_t ReferenceForceUpdater::onInitialize()
       }
       ee_map.insert(std::pair<std::string, ee_trans>(ee_name , eet));
 
-      ReferenceForceUpdaterParam rfu_param;
-      //set rfu param
-      rfu_param.update_count = round((1/rfu_param.update_freq)/m_dt);
-      rfu_param.act_force_filter = boost::shared_ptr<FirstOrderLowPassFilter<hrp::Vector3> >(new FirstOrderLowPassFilter<hrp::Vector3>(default_cutoff_freq, m_dt, hrp::Vector3::Zero()));
       if (( ee_name != "rleg" ) && ( ee_name != "lleg" ))
-        m_RFUParam.insert(std::pair<std::string, ReferenceForceUpdaterParam>(ee_name , rfu_param));
+        m_RFUParam.insert(std::pair<std::string, ReferenceForceUpdaterParam>(ee_name , ReferenceForceUpdaterParam(m_dt)));
 
       ee_index_map.insert(std::pair<std::string, size_t>(ee_name, i));
       ref_force.push_back(hrp::Vector3::Zero());
@@ -228,10 +223,7 @@ RTC::ReturnCode_t ReferenceForceUpdater::onInitialize()
     // For FootOriginExtMoment
     {
         std::string ee_name = "footoriginextmoment";
-        ReferenceForceUpdaterParam rfu_param;
-        rfu_param.update_count = round((1/rfu_param.update_freq)/m_dt);
-        rfu_param.act_force_filter = boost::shared_ptr<FirstOrderLowPassFilter<hrp::Vector3> >(new FirstOrderLowPassFilter<hrp::Vector3>(default_cutoff_freq, m_dt, hrp::Vector3::Zero()));
-        m_RFUParam.insert(std::pair<std::string, ReferenceForceUpdaterParam>(ee_name, rfu_param));
+        m_RFUParam.insert(std::pair<std::string, ReferenceForceUpdaterParam>(ee_name, ReferenceForceUpdaterParam(m_dt)));
         ee_trans eet;
         eet.localPos = hrp::Vector3::Zero();
         eet.localR = hrp::Matrix33::Identity();
@@ -674,10 +666,7 @@ bool ReferenceForceUpdater::setReferenceForceUpdaterParam(const std::string& i_n
   for (size_t i = 0; i < 3; i++ ) m_RFUParam[arm].motion_dir(i) = i_param.motion_dir[i];
 
   // Print values
-  std::cerr << "[" << m_profile.instance_name << "]   p_gain = " << m_RFUParam[arm].p_gain << ", d_gain = " << m_RFUParam[arm].d_gain << ", i_gain = " << m_RFUParam[arm].i_gain << std::endl;
-  std::cerr << "[" << m_profile.instance_name << "]   update_freq = " << m_RFUParam[arm].update_freq << "[Hz], update_time_ratio = " << m_RFUParam[arm].update_time_ratio << ", transition_time = " << m_RFUParam[arm].transition_time << "[s], cutoff_freq = " << m_RFUParam[arm].act_force_filter->getCutOffFreq() << std::endl;
-  std::cerr << "[" << m_profile.instance_name << "]   motion_dir = " << m_RFUParam[arm].motion_dir.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << std::endl;
-  std::cerr << "[" << m_profile.instance_name << "]   frame = " << m_RFUParam[arm].frame << ", is_hold_value = " << (m_RFUParam[arm].is_hold_value?"true":"false") << std::endl;
+  m_RFUParam[arm].printParam(std::string(m_profile.instance_name));
   return true;
 };
 

@@ -198,7 +198,14 @@ class ReferenceForceUpdater
     int update_count;
     bool is_active, is_stopping, is_hold_value;
     boost::shared_ptr<FirstOrderLowPassFilter<hrp::Vector3> > act_force_filter;
-    ReferenceForceUpdaterParam () {
+    void printParam (const std::string print_str)
+    {
+        std::cerr << "[" << print_str << "]   p_gain = " << p_gain << ", d_gain = " << d_gain << ", i_gain = " << i_gain << std::endl;
+        std::cerr << "[" << print_str << "]   update_freq = " << update_freq << "[Hz], update_time_ratio = " << update_time_ratio << ", transition_time = " << transition_time << "[s], cutoff_freq = " << act_force_filter->getCutOffFreq() << "[Hz]" << std::endl;
+        std::cerr << "[" << print_str << "]   motion_dir = " << motion_dir.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << std::endl;
+        std::cerr << "[" << print_str << "]   frame = " << frame << ", is_hold_value = " << (is_hold_value?"true":"false") << std::endl;
+    }
+    void initializeParam () {
       //params defined in idl
       motion_dir = hrp::Vector3::UnitZ();
       frame="local";
@@ -212,6 +219,15 @@ class ReferenceForceUpdater
       is_active = false;
       is_stopping = false;
       is_hold_value = false;
+    };
+    ReferenceForceUpdaterParam () {
+      initializeParam();
+    };
+    ReferenceForceUpdaterParam (const double _dt) {
+      initializeParam();
+      update_count = round((1/update_freq)/_dt);
+      double default_cutoff_freq = 1e8;
+      act_force_filter = boost::shared_ptr<FirstOrderLowPassFilter<hrp::Vector3> >(new FirstOrderLowPassFilter<hrp::Vector3>(default_cutoff_freq, _dt, hrp::Vector3::Zero()));
     };
   };
   std::map<std::string, hrp::VirtualForceSensorParam> m_vfs;
