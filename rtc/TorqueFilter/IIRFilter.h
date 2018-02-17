@@ -107,12 +107,12 @@ public:
     ~FirstOrderLowPassFilter()
     {
     };
-    T passFilter (T value)
+    T passFilter (const T& value)
     {
         prev_value = 1.0/(1+const_param) * prev_value + const_param/(1+const_param) * value;
         return prev_value;
     };
-    void reset (T value) { prev_value = value; };
+    void reset (const T& value) { prev_value = value; };
     void setCutOffFreq (const double f)
     {
         cutoff_freq = f;
