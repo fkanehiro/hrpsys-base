@@ -20,7 +20,8 @@ class ObjectContactTurnaroundDetectorBase
     hrp::Vector3 axis, moment_center;
     hrp::dvector6 constraint_conversion_matrix1, constraint_conversion_matrix2;
     double prev_wrench, dt;
-    double detect_ratio_thre, start_ratio_thre, ref_dwrench, max_time, current_time, current_wrench;
+    double detect_ratio_thre, start_ratio_thre, ref_dwrench, max_time, current_time;
+    double raw_wrench;
     size_t count;
     // detect_count_thre*dt and start_ratio_thre*dt are threshould for time.
     //   detect_count_thre*dt : Threshould for time [s] after the first object contact turnaround detection (Wait detect_time_thre [s] after first object contact turnaround detection).
@@ -137,7 +138,7 @@ class ObjectContactTurnaroundDetectorBase
           friction_coeff_wrench_filter->reset(friction_coeff_wrench_value);
           is_filter_reset = false;
         }
-        current_wrench = wrench_value;
+        raw_wrench = wrench_value;
         double tmp_wr = wrench_filter->passFilter(wrench_value);
         double tmp_dwr = dwrench_filter->passFilter((tmp_wr-prev_wrench)/dt);
         friction_coeff_wrench_filter->passFilter(friction_coeff_wrench_value);
@@ -246,7 +247,7 @@ class ObjectContactTurnaroundDetectorBase
     double getFilteredWrench () const { return wrench_filter->getCurrentValue(); };
     double getFilteredDwrench () const { return dwrench_filter->getCurrentValue(); };
     double getFilteredFrictionCoeffWrench () const { return friction_coeff_wrench_filter->getCurrentValue(); };
-    double getRawWrench () const { return current_wrench; };
+    double getRawWrench () const { return raw_wrench; };
     bool getIsHoldValues () const { return is_hold_values; };
 };
 #endif // OBJECTCONTACTTURNAROUNDDETECTORBASE_H
