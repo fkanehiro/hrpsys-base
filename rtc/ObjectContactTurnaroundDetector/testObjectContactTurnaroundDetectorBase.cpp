@@ -58,20 +58,82 @@ protected:
     };
 public:
     std::vector<std::string> arg_strs;
-    testObjectContactTurnaroundDetectorBase (const double _dt = 0.004) : dt(_dt), octd(_dt), use_gnuplot(true) {};
+    testObjectContactTurnaroundDetectorBase (const double _dt = 0.004) : dt(_dt), octd(_dt), use_gnuplot(true)
+    {
+        octd.setWrenchCutoffFreq(5.0);
+        octd.setDwrenchCutoffFreq(5.0);
+        octd.setFrictionCoeffWrenchCutoffFreq(5.0);
+    };
     void test0 ()
     {
-        std::cerr << "test0 : Set" << std::endl;
-        double tm = 0.0, total_tm = 2.0, df = 10;
+        std::cerr << "test0 : Increasing->saturation" << std::endl;
+        double tm = 0.0, total_tm = 4.0, df = 10;
         std::vector<double> time_vec, force_vec;
         for (size_t i = 0; i < static_cast<size_t>(total_tm/dt);i++) {
             time_vec.push_back(tm);
-            if (i*dt < total_tm*0.2) {
+            if (i*dt < total_tm*0.1) {
                 force_vec.push_back(0);
-            } else if (i*dt > total_tm*0.8) {
-                force_vec.push_back(df*total_tm*(0.8-0.2));
+            } else if (i*dt > total_tm*0.4) {
+                force_vec.push_back(df*total_tm*(0.4-0.1));
             } else {
-                force_vec.push_back(df*(i*dt-total_tm*0.2));
+                force_vec.push_back(df*(i*dt-total_tm*0.1));
+            }
+            tm += dt;
+        }
+        octd.startDetection(df, total_tm);
+        gen_pattern_and_plot (force_vec, time_vec);
+    };
+    void test1 ()
+    {
+        std::cerr << "test1 : Increasing->decreasing" << std::endl;
+        double tm = 0.0, total_tm = 4.0, df = 10;
+        std::vector<double> time_vec, force_vec;
+        for (size_t i = 0; i < static_cast<size_t>(total_tm/dt);i++) {
+            time_vec.push_back(tm);
+            if (i*dt < total_tm*0.1) {
+                force_vec.push_back(0);
+            } else if (i*dt > total_tm*0.4) {
+                force_vec.push_back(-2*df*(i*dt-total_tm*0.4) + df*total_tm*(0.4-0.1));
+            } else {
+                force_vec.push_back(df*(i*dt-total_tm*0.1));
+            }
+            tm += dt;
+        }
+        octd.startDetection(df, total_tm);
+        gen_pattern_and_plot (force_vec, time_vec);
+    };
+    void test2 ()
+    {
+        std::cerr << "test2 : Deacreasing->saturation" << std::endl;
+        double tm = 0.0, total_tm = 4.0, df = -10;
+        std::vector<double> time_vec, force_vec;
+        for (size_t i = 0; i < static_cast<size_t>(total_tm/dt);i++) {
+            time_vec.push_back(tm);
+            if (i*dt < total_tm*0.1) {
+                force_vec.push_back(0);
+            } else if (i*dt > total_tm*0.4) {
+                force_vec.push_back(df*total_tm*(0.4-0.1));
+            } else {
+                force_vec.push_back(df*(i*dt-total_tm*0.1));
+            }
+            tm += dt;
+        }
+        octd.startDetection(df, total_tm);
+        gen_pattern_and_plot (force_vec, time_vec);
+    };
+    void test3 ()
+    {
+        std::cerr << "test3 : Decreasing->increasing" << std::endl;
+        double tm = 0.0, total_tm = 4.0, df = -10;
+        std::vector<double> time_vec, force_vec;
+        for (size_t i = 0; i < static_cast<size_t>(total_tm/dt);i++) {
+            time_vec.push_back(tm);
+            if (i*dt < total_tm*0.1) {
+                force_vec.push_back(0);
+            } else if (i*dt > total_tm*0.4) {
+                force_vec.push_back(-2*df*(i*dt-total_tm*0.4) + df*total_tm*(0.4-0.1));
+            } else {
+                force_vec.push_back(df*(i*dt-total_tm*0.1));
             }
             tm += dt;
         }
@@ -92,7 +154,10 @@ void print_usage ()
 {
     std::cerr << "Usage : testObjectContactTurnaroundDetectorBase [option]" << std::endl;
     std::cerr << " [option] should be:" << std::endl;
-    std::cerr << "  --test0 : Set ref force" << std::endl;
+    std::cerr << "  --test0 : Increasing->saturation" << std::endl;
+    std::cerr << "  --test1 : Increasing->decreasing" << std::endl;
+    std::cerr << "  --test2 : Decreasing->saturation" << std::endl;
+    std::cerr << "  --test3 : Decreasing->increasing" << std::endl;
     // std::cerr << "  --test1 : Move pos and rot" << std::endl;
 };
 
@@ -106,6 +171,12 @@ int main(int argc, char* argv[])
         }
         if (std::string(argv[1]) == "--test0") {
             toctd.test0();
+        } else if (std::string(argv[1]) == "--test1") {
+            toctd.test1();
+        } else if (std::string(argv[1]) == "--test2") {
+            toctd.test2();
+        } else if (std::string(argv[1]) == "--test3") {
+            toctd.test3();
         // } else if (std::string(argv[1]) == "--test1") {
         //     tiog.test1();
         } else {
