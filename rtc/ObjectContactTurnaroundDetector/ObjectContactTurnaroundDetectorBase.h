@@ -154,7 +154,6 @@ class ObjectContactTurnaroundDetectorBase
         double phi1 = constraint_conversion_matrix1.dot(tmp_rwr);
         double phi2 = constraint_conversion_matrix2.dot(tmp_rwr);
         double dphi1 = constraint_conversion_matrix1.dot(tmp_rdwr);
-        raw_wrench = phi1;
         if (is_filter_reset) {
             filtered_wrench_with_hold = phi1;
             filtered_friction_coeff_wrench_with_hold = phi2;
@@ -165,6 +164,11 @@ class ObjectContactTurnaroundDetectorBase
             filtered_wrench_with_hold = phi1;
             filtered_friction_coeff_wrench_with_hold = phi2;
         }
+        // For logger, just used as buffer
+        raw_wrench = constraint_conversion_matrix1.dot(resultant_wrench);
+        wrench_filter->reset(phi1);
+        dwrench_filter->reset(dphi1);
+        // Update process mode and return
         return updateProcessModeFromDwrench(dphi1);
     };
     bool updateProcessModeFromDwrench (const double tmp_dwr)
@@ -212,7 +216,6 @@ class ObjectContactTurnaroundDetectorBase
         return isDetected();
     };
     bool isDetected () const { return (pmode == MODE_DETECTED); };
-    process_mode getMode () const { return pmode; };
     void printParams () const
     {
         std::string tmpstr;
@@ -275,7 +278,16 @@ class ObjectContactTurnaroundDetectorBase
     double getFilteredWrench () const { return wrench_filter->getCurrentValue(); };
     double getFilteredDwrench () const { return dwrench_filter->getCurrentValue(); };
     double getFilteredFrictionCoeffWrench () const { return friction_coeff_wrench_filter->getCurrentValue(); };
-    double getRawWrench () const { return raw_wrench; };
+    process_mode getMode () const { return pmode; };
+    hrp::dvector getDataForLogger () const
+    {
+        hrp::dvector ret(4);
+        ret(0) = static_cast<double>(getMode());
+        ret(1) = raw_wrench;
+        ret(2) = getFilteredWrench();
+        ret(3) = getFilteredDwrench();
+        return ret;
+    };
     bool getIsHoldValues () const { return is_hold_values; };
     // For values with hold
     double getFilteredWrenchWithHold () const { return filtered_wrench_with_hold; };

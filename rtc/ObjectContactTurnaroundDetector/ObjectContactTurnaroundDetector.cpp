@@ -405,10 +405,10 @@ void ObjectContactTurnaroundDetector::calcObjectContactTurnaroundDetectorState()
     }
     octd->checkDetection(octd_forces, octd_moments, octd_hposv);
     // octdData
-    m_octdData.data[0] = static_cast<double>(octd->getMode());
-    m_octdData.data[1] = octd->getRawWrench();
-    m_octdData.data[2] = octd->getFilteredWrench();
-    m_octdData.data[3] = octd->getFilteredDwrench();
+    hrp::dvector log_data = octd->getDataForLogger();
+    for (size_t i = 0; i < log_data.size(); i++) {
+        m_octdData.data[i] = log_data(i);
+    }
 };
 
 //
