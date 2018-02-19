@@ -235,6 +235,21 @@ RTC::ReturnCode_t ReferenceForceUpdater::onInitialize()
         ref_force_interpolator.insert(std::pair<std::string, interpolator*>(ee_name, new interpolator(3, m_dt, interpolator::LINEAR)));
         transition_interpolator.insert(std::pair<std::string, interpolator*>(ee_name, new interpolator(1, m_dt)));
     }
+    // For ObjExtMoment0
+    {
+        std::string ee_name = "objextmoment0";
+        m_RFUParam.insert(std::pair<std::string, ReferenceForceUpdaterParam>(ee_name, ReferenceForceUpdaterParam(m_dt)));
+        ee_trans eet;
+        eet.localPos = hrp::Vector3::Zero();
+        eet.localR = hrp::Matrix33::Identity();
+        eet.target_name = "";
+        ee_map.insert(std::pair<std::string, ee_trans>(ee_name , eet));
+        ee_index_map.insert(std::pair<std::string, size_t>(ee_name, ref_force.size()));
+        ref_force.push_back(hrp::Vector3::Zero());
+        act_force.push_back(hrp::Vector3::Zero());
+        ref_force_interpolator.insert(std::pair<std::string, interpolator*>(ee_name, new interpolator(3, m_dt, interpolator::LINEAR)));
+        transition_interpolator.insert(std::pair<std::string, interpolator*>(ee_name, new interpolator(1, m_dt)));
+    }
   }
 
   // check if the dof of m_robot match the number of joint in m_robot
@@ -367,10 +382,12 @@ RTC::ReturnCode_t ReferenceForceUpdater::onExecute(RTC::UniqueId ec_id)
         size_t arm_idx = ee_index_map[arm];
         if ( m_RFUParam[arm].is_active ) all_arm_is_not_active = false;
         else {
-            if ( !isFootOriginExtMoment(arm) ) {
-                for (unsigned int j=0; j<3; j++ ) ref_force[arm_idx](j) = m_ref_force_in[arm_idx].data[j];
-            } else {
+            if ( isFootOriginExtMoment(arm) ) {
                 for (unsigned int j=0; j<3; j++ ) ref_force[arm_idx](j) = default_ref_foot_origin_ext_moment(j);
+            } else if ( isObjExtMoment0(arm) ) {
+                for (unsigned int j=0; j<3; j++ ) ref_force[arm_idx](j) = 0;
+            } else {
+                for (unsigned int j=0; j<3; j++ ) ref_force[arm_idx](j) = m_ref_force_in[arm_idx].data[j];
             }
         }
       }
@@ -402,6 +419,7 @@ RTC::ReturnCode_t ReferenceForceUpdater::onExecute(RTC::UniqueId ec_id)
       std::string arm = itr->first;
       if ( m_RFUParam[arm].is_active && loop % m_RFUParam[arm].update_count == 0 ) {
           if ( isFootOriginExtMoment(arm) ) updateRefFootOriginExtMoment(arm);
+          else if ( isObjExtMoment0(arm) ) updateRefObjExtMoment0(arm);
           else updateRefForces(arm);
       }
       if (!ref_force_interpolator[arm]->isEmpty()) {
@@ -415,12 +433,25 @@ RTC::ReturnCode_t ReferenceForceUpdater::onExecute(RTC::UniqueId ec_id)
     for (unsigned int j=0; j<6; j++ ) {
       m_ref_force_out[i].data[j] = m_ref_force_in[i].data[j];
     }
-    for (unsigned int j=0; j<3; j++ ) {
-      m_ref_force_out[i].data[j] = ref_force[i](j) * transition_interpolator_ratio[i] + m_ref_force_in[i].data[j] * (1-transition_interpolator_ratio[i]);
+    if (m_RFUParam["objextmoment0"].is_active) { // TODO:tempolary
+        size_t idx = ee_index_map["objextmoment0"];
+        for (unsigned int j=0; j<3; j++ ) {
+            m_ref_force_out[i].data[j] = m_ref_force_in[i].data[j];
+            if (ee_index_map["rarm"] == i) {
+                m_ref_force_out[i].data[j] += ref_force[idx](j) * transition_interpolator_ratio[idx];
+            } else if (ee_index_map["larm"] == i) {
+                m_ref_force_out[i].data[j] -= ref_force[idx](j) * transition_interpolator_ratio[idx];
+            }
+        }
+    } else {
+        for (unsigned int j=0; j<3; j++ ) {
+            m_ref_force_out[i].data[j] = ref_force[i](j) * transition_interpolator_ratio[i] + m_ref_force_in[i].data[j] * (1-transition_interpolator_ratio[i]);
+        }
     }
     m_ref_force_out[i].tm = m_ref_force_in[i].tm;
     m_ref_forceOut[i]->write();
   }
+
   // FootOriginExtMoment
   size_t idx = ee_index_map["footoriginextmoment"];
   hrp::Vector3 tmp_moment = (foot_origin_rot.transpose() * ref_force[idx]) * transition_interpolator_ratio[idx];
@@ -530,6 +561,49 @@ void ReferenceForceUpdater::updateRefFootOriginExtMoment (const std::string& arm
         std::cerr << "[" << m_profile.instance_name << "] Updating reference moment [" << arm << "]" << std::endl;
         std::cerr << "[" << m_profile.instance_name << "]   diff foot origin ext moment = " << df.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[Nm], interpolation_time = " << interpolation_time << "[s]" << std::endl;
         std::cerr << "[" << m_profile.instance_name << "]   new foot origin ext moment = " << ref_force[arm_idx].format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[Nm]" << std::endl;
+    }
+};
+
+void ReferenceForceUpdater::updateRefObjExtMoment0 (const std::string& arm)
+{
+    size_t arm_idx = ee_index_map[arm];
+    size_t rarm_idx = ee_index_map["rarm"];
+    size_t larm_idx = ee_index_map["larm"];
+    hrp::Vector3 input_rarm_ref_force = hrp::Vector3(m_ref_force_in[rarm_idx].data[0], m_ref_force_in[rarm_idx].data[1], m_ref_force_in[rarm_idx].data[2]);
+    hrp::Vector3 input_larm_ref_force = hrp::Vector3(m_ref_force_in[larm_idx].data[0], m_ref_force_in[larm_idx].data[1], m_ref_force_in[larm_idx].data[2]);
+    hrp::Vector3 current_rarm_ref_force = input_rarm_ref_force + ref_force[arm_idx];
+    hrp::Vector3 current_larm_ref_force = input_larm_ref_force - ref_force[arm_idx];
+    //
+    hrp::Vector3 df = hrp::Vector3::Zero();
+    hrp::Vector3 diff_rarm_force = (act_force[rarm_idx] - current_rarm_ref_force);
+    if (diff_rarm_force(2) > 0) { // r > a, tarinai
+        df(2) += diff_rarm_force(2);
+    }
+    hrp::Vector3 diff_larm_force = (act_force[larm_idx] - current_larm_ref_force);
+    if (diff_larm_force(2) > 0) { // r > a, tarinai
+        df(2) -= diff_larm_force(2);
+    }
+    if (!m_RFUParam[arm].is_hold_value) {
+        ref_force[arm_idx] += hrp::Vector3(0,0,((m_RFUParam[arm].p_gain * transition_interpolator_ratio[arm_idx]) * df)(2));
+    }
+    double interpolation_time = (1/m_RFUParam[arm].update_freq) * m_RFUParam[arm].update_time_ratio;
+    if ( ref_force_interpolator[arm]->isEmpty() ) {
+        ref_force_interpolator[arm]->setGoal(ref_force[arm_idx].data(), interpolation_time, true);
+    }
+    if ( DEBUGP ) {
+        std::cerr << "[" << m_profile.instance_name << "] Updating reference res moment [" << arm << "]" << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "]   df " << df.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[Nm], interpolation_time = " << interpolation_time << "[s]" << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "]   buffer = " << ref_force[arm_idx].format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[Nm]" << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "]   diff_rarm_force  = " << diff_rarm_force.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]"))
+                  << ", act_rarm_force  = " << act_force[rarm_idx].format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]"))
+                  << ", ref_rarm_force  = " << current_rarm_ref_force.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]"))
+                  << ", input_rarm_ref_force  = " << input_rarm_ref_force.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]"))
+                  << "[N]" << std::endl;
+        std::cerr << "[" << m_profile.instance_name << "]   diff_larm_force  = " << diff_larm_force.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]"))
+                  << ", act_larm_force  = " << act_force[larm_idx].format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]"))
+                  << ", ref_larm_force  = " << current_larm_ref_force.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]"))
+                  << ", input_larm_ref_force  = " << input_larm_ref_force.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]"))
+                  << "[N]" << std::endl;
     }
 };
 
@@ -710,6 +784,8 @@ bool ReferenceForceUpdater::startReferenceForceUpdaterNoWait(const std::string& 
       hrp::Vector3 currentRefForce;
       if ( isFootOriginExtMoment(std::string(i_name_)) ) {
           currentRefForce = hrp::Vector3 (m_diffFootOriginExtMoment.data.x, m_diffFootOriginExtMoment.data.y, m_diffFootOriginExtMoment.data.z);
+      } else if ( isObjExtMoment0(std::string(i_name_)) ) {
+          currentRefForce = hrp::Vector3::Zero();
       } else {
           currentRefForce = hrp::Vector3( m_ref_force_in[arm_idx].data[0], m_ref_force_in[arm_idx].data[1], m_ref_force_in[arm_idx].data[2] );
       }
