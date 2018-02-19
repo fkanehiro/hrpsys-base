@@ -375,6 +375,11 @@ RTC::ReturnCode_t ReferenceForceUpdater::onExecute(RTC::UniqueId ec_id)
             if (ee_index_map[itr->first] == i) itr->second.act_force_filter->passFilter(act_force);
         }
     }
+    //   DiffFootOriginExtMoment value is absolute in reference frame
+    {
+        hrp::Vector3 df = foot_origin_rot * (-1 * hrp::Vector3(m_diffFootOriginExtMoment.data.x, m_diffFootOriginExtMoment.data.y, m_diffFootOriginExtMoment.data.z)); // diff = ref - act;
+        m_RFUParam["footoriginextmoment"].act_force_filter->passFilter(df);
+    }
 
     // If RFU is not active
     {
@@ -553,7 +558,7 @@ void ReferenceForceUpdater::updateRefFootOriginExtMoment (const std::string& arm
 {
     double interpolation_time = 0;
     size_t arm_idx = ee_index_map[arm];
-    hrp::Vector3 df = foot_origin_rot * (-1 * hrp::Vector3(m_diffFootOriginExtMoment.data.x, m_diffFootOriginExtMoment.data.y, m_diffFootOriginExtMoment.data.z)); // diff = ref - act;
+    hrp::Vector3 df = m_RFUParam[arm].act_force_filter->getCurrentValue();
     if (!m_RFUParam[arm].is_hold_value)
         ref_force[arm_idx] = ref_force[arm_idx] + (m_RFUParam[arm].p_gain * transition_interpolator_ratio[arm_idx]) * df;
     interpolation_time = (1/m_RFUParam[arm].update_freq) * m_RFUParam[arm].update_time_ratio;
