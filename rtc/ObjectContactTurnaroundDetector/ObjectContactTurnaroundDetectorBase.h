@@ -230,7 +230,8 @@ class ObjectContactTurnaroundDetectorBase
             tmpstr = "";break;
         }
         std::cerr << "[" << print_str << "]   ObjectContactTurnaroundDetectorBase params (" << tmpstr << ")" << std::endl;
-        std::cerr << "[" << print_str << "]    wrench_cutoff_freq = " << wrench_filter->getCutOffFreq() << "[Hz], dwrench_cutoff_freq = " << dwrench_filter->getCutOffFreq() << "[Hz], friction_coeff_wrench_freq = " << friction_coeff_wrench_filter->getCutOffFreq() << "[Hz]" << std::endl;
+        std::cerr << "[" << print_str << "]    wrench_cutoff_freq = " << wrench_filter->getCutOffFreq() << "[Hz], dwrench_cutoff_freq = " << dwrench_filter->getCutOffFreq() << "[Hz], friction_coeff_wrench_freq = " << friction_coeff_wrench_filter->getCutOffFreq()
+                  << "[Hz], resultant_wrench_cutoff_freq = " << resultant_wrench_filter->getCutOffFreq() << "[Hz], resultant_dwrench_cutoff_freq = " << resultant_dwrench_filter->getCutOffFreq() << "[Hz]" << std::endl;
         std::cerr << "[" << print_str << "]    detect_ratio_thre = " << detect_ratio_thre << ", start_ratio_thre = " << start_ratio_thre
                   << ", start_time_thre = " << start_count_thre*dt << "[s], detect_time_thre = " << detect_count_thre*dt << "[s]" << std::endl;
         std::cerr << "[" << print_str << "]    axis = [" << axis(0) << ", " << axis(1) << ", " << axis(2)
@@ -241,9 +242,22 @@ class ObjectContactTurnaroundDetectorBase
     };
     // Setter
     void setPrintStr (const std::string& str) { print_str = str; };
-    void setWrenchCutoffFreq (const double a) { wrench_filter->setCutOffFreq(a); };
-    void setDwrenchCutoffFreq (const double a) { dwrench_filter->setCutOffFreq(a); };
-    void setFrictionCoeffWrenchCutoffFreq (const double a) { friction_coeff_wrench_filter->setCutOffFreq(a); };
+    void setWrenchCutoffFreq (const double a)
+    {
+        // All filters for wrench related values have the same cutoff freq.
+        wrench_filter->setCutOffFreq(a);
+        friction_coeff_wrench_filter->setCutOffFreq(a);
+        resultant_wrench_filter->setCutOffFreq(a);
+    };
+    void setDwrenchCutoffFreq (const double a)
+    {
+        // All filters for dwrench related values have the same cutoff freq.
+        dwrench_filter->setCutOffFreq(a);
+        resultant_dwrench_filter->setCutOffFreq(a);
+    };
+    // void setWrenchCutoffFreq (const double a) { wrench_filter->setCutOffFreq(a); };
+    // void setDwrenchCutoffFreq (const double a) { dwrench_filter->setCutOffFreq(a); };
+    // void setFrictionCoeffWrenchCutoffFreq (const double a) { friction_coeff_wrench_filter->setCutOffFreq(a); };
     void setDetectRatioThre (const double a) { detect_ratio_thre = a; };
     void setStartRatioThre (const double a) { start_ratio_thre = a; };
     void setDetectTimeThre (const double a) { detect_count_thre = round(a/dt); };
@@ -263,7 +277,7 @@ class ObjectContactTurnaroundDetectorBase
     // Getter
     double getWrenchCutoffFreq () const { return wrench_filter->getCutOffFreq(); };
     double getDwrenchCutoffFreq () const { return dwrench_filter->getCutOffFreq(); };
-    double getFrictionCoeffWrenchCutoffFreq () const { return friction_coeff_wrench_filter->getCutOffFreq(); };
+    //double getFrictionCoeffWrenchCutoffFreq () const { return friction_coeff_wrench_filter->getCutOffFreq(); };
     double getDetectRatioThre () const { return detect_ratio_thre; };
     double getStartRatioThre () const { return start_ratio_thre; };
     double getDetectTimeThre () const { return detect_count_thre*dt; };

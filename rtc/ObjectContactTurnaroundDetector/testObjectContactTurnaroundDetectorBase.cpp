@@ -62,7 +62,7 @@ public:
     {
         octd.setWrenchCutoffFreq(5.0);
         octd.setDwrenchCutoffFreq(5.0);
-        octd.setFrictionCoeffWrenchCutoffFreq(5.0);
+        //octd.setFrictionCoeffWrenchCutoffFreq(5.0);
     };
     void test0 ()
     {
