@@ -79,6 +79,8 @@ module OpenHRP
       double max_time;
       /// Threshould for time [s] to move to MODE_OTHER_DETECTED after the first MODE_DETECTED, that is, do not check contact change other than detected element.
       double other_detect_time_thre;
+      /// Threshould for forgetting while MODE_STARTED (until MODE_DETECTED).
+      double forgetting_ratio_thre;
     };
 
     /**

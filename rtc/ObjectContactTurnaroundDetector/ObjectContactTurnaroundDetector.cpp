@@ -498,6 +498,7 @@ bool ObjectContactTurnaroundDetector::setObjectContactTurnaroundDetectorParam(co
     octd->setDetectTimeThre(i_param_.detect_time_thre);
     octd->setStartTimeThre(i_param_.start_time_thre);
     octd->setOtherDetectTimeThre(i_param_.other_detect_time_thre);
+    octd->setForgettingRatioThre(i_param_.forgetting_ratio_thre);
     hrp::Vector3 tmp;
     for (size_t i = 0; i < 3; i++) tmp(i) = i_param_.axis[i];
     octd->setAxis(tmp);
@@ -569,6 +570,8 @@ bool ObjectContactTurnaroundDetector::getObjectContactTurnaroundDetectorParam(Op
     i_param_.start_ratio_thre = octd->getStartRatioThre();
     i_param_.detect_time_thre = octd->getDetectTimeThre();
     i_param_.start_time_thre = octd->getStartTimeThre();
+    i_param_.other_detect_time_thre = octd->getOtherDetectTimeThre();
+    i_param_.forgetting_ratio_thre = octd->getForgettingRatioThre();
     hrp::Vector3 tmp = octd->getAxis();
     for (size_t i = 0; i < 3; i++) i_param_.axis[i] = tmp(i);
     tmp = octd->getMomentCenter();
@@ -615,7 +618,6 @@ bool ObjectContactTurnaroundDetector::getObjectContactTurnaroundDetectorParam(Op
     for (size_t i = 0; i < octd_sensor_names.size(); i++) {
         i_param_.limbs[i] = getEENameFromSensorName(octd_sensor_names[i]).c_str();
     }
-    i_param_.other_detect_time_thre = octd->getOtherDetectTimeThre();
     return true;
 }
 

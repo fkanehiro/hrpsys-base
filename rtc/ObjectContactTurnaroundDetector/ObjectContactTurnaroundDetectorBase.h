@@ -23,7 +23,7 @@ class ObjectContactTurnaroundDetectorBase
     std::vector<hrp::dvector6> constraint_conversion_matrix1, constraint_conversion_matrix2;
     hrp::dvector6 filtered_resultant_wrench_with_hold;
     double dt;
-    double detect_ratio_thre, start_ratio_thre, max_time, current_time;
+    double detect_ratio_thre, start_ratio_thre, forgetting_ratio_thre, max_time, current_time;
     // detect_count_thre*dt, start_ratio_thre*dt, and other_detect_count_thre*dt are threshould for time.
     //   detect_count_thre*dt : Threshould for time [s] after the first object contact turnaround detection (Wait detect_time_thre [s] after first object contact turnaround detection).
     //   start_count_thre*dt  : Threshould for time [s] after the first starting detection (Wait start_time_thre [s] after first start detection).
@@ -39,7 +39,8 @@ class ObjectContactTurnaroundDetectorBase
  public:
     ObjectContactTurnaroundDetectorBase (const double _dt) : axis(-1*hrp::Vector3::UnitZ()), moment_center(hrp::Vector3::Zero()),
                                                              constraint_conversion_matrix1(std::vector<hrp::dvector6>(1, hrp::dvector6::Zero())), constraint_conversion_matrix2(std::vector<hrp::dvector6>(1, hrp::dvector6::Zero())), filtered_resultant_wrench_with_hold(hrp::dvector6::Zero()),
-                                                             dt(_dt), detect_ratio_thre(0.01), start_ratio_thre(0.5), max_time(0.0), current_time(0.0),
+                                                             dt(_dt), detect_ratio_thre(0.01), start_ratio_thre(0.5), forgetting_ratio_thre(1e3), // Too large threshold for forgetting ratio. Forgetting ratio is disabled by default.
+                                                             max_time(0.0), current_time(0.0),
                                                              detect_count_thre(5), start_count_thre(5), other_detect_count_thre(round(detect_count_thre*1.5)), dtw(TOTAL_FORCE),
                                                              is_filter_reset(false), is_hold_values(false), is_other_constraint_detected(false),
                                                              ref_dwrench(std::vector<double>(1, 0.0)), raw_wrench(std::vector<double>(1, 0.0)), filtered_wrench_with_hold(std::vector<double>(1, 0.0)), filtered_friction_coeff_wrench_with_hold(std::vector<double>(1, 0.0)),
@@ -244,7 +245,10 @@ class ObjectContactTurnaroundDetectorBase
                             std::cerr << "[" << print_str << "] Object Turnaround Detected [idx=" << i << "]. (time = " << current_time << "[s], " << detect_count_thre*dt << "[s] after the first detection)" << std::endl;
                         }
                     } else {
-                        /* count--; */
+                        if ( ((ref_dwrench[i] > 0.0) ? (tmp_dwrench[i] > ref_dwrench[i]*forgetting_ratio_thre) : (tmp_dwrench[i] < ref_dwrench[i]*forgetting_ratio_thre)) &&
+                             (count[i] > 0) ) {
+                            count[i]--;
+                        }
                     }
                     break;
                 case MODE_DETECTED:
@@ -298,7 +302,7 @@ class ObjectContactTurnaroundDetectorBase
         std::cerr << "[" << print_str << "]   ObjectContactTurnaroundDetectorBase params (" << tmpstr << ")" << std::endl;
         std::cerr << "[" << print_str << "]    wrench_cutoff_freq = " << wrench_filter->getCutOffFreq() << "[Hz], dwrench_cutoff_freq = " << dwrench_filter->getCutOffFreq() << "[Hz], friction_coeff_wrench_freq = " << friction_coeff_wrench_filter->getCutOffFreq()
                   << "[Hz], resultant_wrench_cutoff_freq = " << resultant_wrench_filter->getCutOffFreq() << "[Hz], resultant_dwrench_cutoff_freq = " << resultant_dwrench_filter->getCutOffFreq() << "[Hz]" << std::endl;
-        std::cerr << "[" << print_str << "]    detect_ratio_thre = " << detect_ratio_thre << ", start_ratio_thre = " << start_ratio_thre
+        std::cerr << "[" << print_str << "]    detect_ratio_thre = " << detect_ratio_thre << ", start_ratio_thre = " << start_ratio_thre << ", forgetting_ratio_thre = " << forgetting_ratio_thre
                   << ", start_time_thre = " << start_count_thre*dt << "[s], detect_time_thre = " << detect_count_thre*dt << "[s], other_detect_time_thre = " << other_detect_count_thre*dt << std::endl;
         std::cerr << "[" << print_str << "]    axis = [" << axis(0) << ", " << axis(1) << ", " << axis(2)
                   << "], moment_center = " << moment_center(0) << ", " << moment_center(1) << ", " << moment_center(2) << "][m]" << std::endl;
@@ -339,6 +343,7 @@ class ObjectContactTurnaroundDetectorBase
     void setDetectTimeThre (const double a) { detect_count_thre = round(a/dt); };
     void setStartTimeThre (const double a) { start_count_thre = round(a/dt); };
     void setOtherDetectTimeThre (const double a) { other_detect_count_thre = round(a/dt); };
+    void setForgettingRatioThre (const double a) { forgetting_ratio_thre = a; };
     void setAxis (const hrp::Vector3& a) { axis = a; };
     void setMomentCenter (const hrp::Vector3& a) { moment_center = a; };
     void setConstraintConversionMatricesRefDwrench (const std::vector<hrp::dvector6>& ccm1, const std::vector<hrp::dvector6>& ccm2, const std::vector<double>& refdw)
@@ -366,6 +371,7 @@ class ObjectContactTurnaroundDetectorBase
     double getDetectTimeThre () const { return detect_count_thre*dt; };
     double getStartTimeThre () const { return start_count_thre*dt; };
     double getOtherDetectTimeThre () const { return other_detect_count_thre*dt; };
+    double getForgettingRatioThre () const { return forgetting_ratio_thre; };
     hrp::Vector3 getAxis () const { return axis; };
     hrp::Vector3 getMomentCenter () const { return moment_center; };
     void getConstraintConversionMatricesRefDwrench (std::vector<hrp::dvector6>& ccm1, std::vector<hrp::dvector6>& ccm2, std::vector<double>& refdw) const
