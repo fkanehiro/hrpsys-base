@@ -921,6 +921,8 @@ class HrpsysConfigurator(object):
         if self.rfu != None:
             for sen in filter(lambda x: x.type == "Force", self.sensors):
                 self.connectLoggerPort(self.rfu, "ref_"+sen.name+"Out")
+        if self.octd != None:
+            self.connectLoggerPort(self.octd, "octdData")
         self.log_svc.clear()
         ## parallel running log process (outside from rtcd) for saving logs by emergency signal
         if self.log and (self.log_use_owned_ec or not isinstance(self.log.owned_ecs[0], OpenRTM._objref_ExtTrigExecutionContextService)):
