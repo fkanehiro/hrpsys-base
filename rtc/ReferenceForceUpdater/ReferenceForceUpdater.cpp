@@ -239,6 +239,12 @@ RTC::ReturnCode_t ReferenceForceUpdater::onInitialize()
     {
         std::string ee_name = "objextmoment0";
         m_RFUParam.insert(std::pair<std::string, ReferenceForceUpdaterParam>(ee_name, ReferenceForceUpdaterParam(m_dt)));
+        // Initial param
+        m_RFUParam[ee_name].update_freq = 1/m_dt; // [Hz], update in every control loop
+        m_RFUParam[ee_name].update_count = 1; // update in every control loop, round((1/rfu_param.update_freq)/m_dt)
+        m_RFUParam[ee_name].update_time_ratio = 1.0;
+        m_RFUParam[ee_name].act_force_filter->setCutOffFreq(20.0); // [Hz]
+        // other param
         ee_trans eet;
         eet.localPos = hrp::Vector3::Zero();
         eet.localR = hrp::Matrix33::Identity();

@@ -204,7 +204,7 @@ class ReferenceForceUpdater
     void printParam (const std::string print_str)
     {
         std::cerr << "[" << print_str << "]   p_gain = " << p_gain << ", d_gain = " << d_gain << ", i_gain = " << i_gain << std::endl;
-        std::cerr << "[" << print_str << "]   update_freq = " << update_freq << "[Hz], update_time_ratio = " << update_time_ratio << ", transition_time = " << transition_time << "[s], cutoff_freq = " << act_force_filter->getCutOffFreq() << "[Hz]" << std::endl;
+        std::cerr << "[" << print_str << "]   update_freq = " << update_freq << "[Hz], update_count = " << update_count << ", update_time_ratio = " << update_time_ratio << ", transition_time = " << transition_time << "[s], cutoff_freq = " << act_force_filter->getCutOffFreq() << "[Hz]" << std::endl;
         std::cerr << "[" << print_str << "]   motion_dir = " << motion_dir.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << std::endl;
         std::cerr << "[" << print_str << "]   frame = " << frame << ", is_hold_value = " << (is_hold_value?"true":"false") << std::endl;
     }
