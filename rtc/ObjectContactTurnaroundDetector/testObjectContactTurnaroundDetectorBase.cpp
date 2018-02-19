@@ -18,23 +18,23 @@ class testObjectContactTurnaroundDetectorBase
 {
 protected:
     double dt; /* [s] */
-    ObjectContactTurnaroundDetectorBase otd;
+    ObjectContactTurnaroundDetectorBase octd;
     bool use_gnuplot;
     void gen_pattern_and_plot (const std::vector<double>& force_vec,
                                const std::vector<double>& time_vec)
     {
         parse_params();
-        std::string fname("/tmp/plot-otd.dat");
+        std::string fname("/tmp/plot-octd.dat");
         FILE* fp = fopen(fname.c_str(), "w");
         double detect_time;
         bool detected = false;
         for (size_t i = 0; i < time_vec.size();i++) {
-            bool tmp_detected = otd.checkDetection(force_vec[i], 0.0);
+            bool tmp_detected = octd.checkDetection(force_vec[i], 0.0);
             if (tmp_detected && !detected) {
                 detect_time = time_vec[i];
                 detected = true;
             }
-            fprintf(fp, "%f %f %f %f\n", time_vec[i], force_vec[i], otd.getFilteredWrench(), otd.getFilteredDwrench(), detected);
+            fprintf(fp, "%f %f %f %f\n", time_vec[i], force_vec[i], octd.getFilteredWrench(), octd.getFilteredDwrench(), detected);
         }
         fclose(fp);
         if (use_gnuplot) {
@@ -46,10 +46,10 @@ protected:
             fprintf(gp, "set xlabel 'Time [s]'\n");
             fprintf(gp, "set ylabel 'Wrench'\n");
             fprintf(gp, "set arrow from %f,%f to %f,%f\n", detect_time, force_vec.front(), detect_time, force_vec.back());
-            fprintf(gp, "plot '/tmp/plot-otd.dat' using 1:2 with lines title 'Wrench' lw 4, '/tmp/plot-otd.dat' using 1:3 with lines title 'FilteredWrench' lw 4\n");
+            fprintf(gp, "plot '/tmp/plot-octd.dat' using 1:2 with lines title 'Wrench' lw 4, '/tmp/plot-octd.dat' using 1:3 with lines title 'FilteredWrench' lw 4\n");
             fprintf(gp, "set xlabel 'Time [s]'\n");
             fprintf(gp, "set ylabel 'Dwrench'\n");
-            fprintf(gp, "plot '/tmp/plot-otd.dat' using 1:4 with lines title 'Dwrench' lw 4\n");
+            fprintf(gp, "plot '/tmp/plot-octd.dat' using 1:4 with lines title 'Dwrench' lw 4\n");
             fflush(gp);
             double tmp;
             std::cin >> tmp;
@@ -58,7 +58,7 @@ protected:
     };
 public:
     std::vector<std::string> arg_strs;
-    testObjectContactTurnaroundDetectorBase (const double _dt = 0.004) : dt(_dt), otd(_dt), use_gnuplot(true) {};
+    testObjectContactTurnaroundDetectorBase (const double _dt = 0.004) : dt(_dt), octd(_dt), use_gnuplot(true) {};
     void test0 ()
     {
         std::cerr << "test0 : Set" << std::endl;
@@ -75,7 +75,7 @@ public:
             }
             tm += dt;
         }
-        otd.startDetection(df, total_tm);
+        octd.startDetection(df, total_tm);
         gen_pattern_and_plot (force_vec, time_vec);
     };
     void parse_params ()
@@ -100,12 +100,12 @@ int main(int argc, char* argv[])
 {
     int ret = 0;
     if (argc >= 2) {
-        testObjectContactTurnaroundDetectorBase totd;
+        testObjectContactTurnaroundDetectorBase toctd;
         for (int i = 1; i < argc; ++ i) {
-            totd.arg_strs.push_back(std::string(argv[i]));
+            toctd.arg_strs.push_back(std::string(argv[i]));
         }
         if (std::string(argv[1]) == "--test0") {
-            totd.test0();
+            toctd.test0();
         // } else if (std::string(argv[1]) == "--test1") {
         //     tiog.test1();
         } else {

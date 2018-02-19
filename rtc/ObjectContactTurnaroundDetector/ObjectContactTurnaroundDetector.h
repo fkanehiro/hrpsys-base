@@ -117,8 +117,8 @@ class ObjectContactTurnaroundDetector
 
   // DataOutPort declaration
   // <rtc-template block="outport_declare">
-  TimedDoubleSeq m_otdData;
-  OutPort<TimedDoubleSeq> m_otdDataOut;
+  TimedDoubleSeq m_octdData;
+  OutPort<TimedDoubleSeq> m_octdDataOut;
   
   // </rtc-template>
 
@@ -154,9 +154,9 @@ class ObjectContactTurnaroundDetector
   void calcObjectContactTurnaroundDetectorState();
 
   std::map<std::string, ee_trans> ee_map;
-  boost::shared_ptr<ObjectContactTurnaroundDetectorBase > otd;
-  std::vector<std::string> otd_sensor_names;
-  hrp::Vector3 otd_axis;
+  boost::shared_ptr<ObjectContactTurnaroundDetectorBase > octd;
+  std::vector<std::string> octd_sensor_names;
+  hrp::Vector3 octd_axis;
   double m_dt;
   hrp::BodyPtr m_robot;
   coil::Mutex m_mutex;
