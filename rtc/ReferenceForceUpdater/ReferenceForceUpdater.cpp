@@ -211,7 +211,6 @@ RTC::ReturnCode_t ReferenceForceUpdater::onInitialize()
 
       ee_index_map.insert(std::pair<std::string, size_t>(ee_name, i));
       ref_force.push_back(hrp::Vector3::Zero());
-      act_force.push_back(hrp::Vector3::Zero());
       //ref_force_interpolator.insert(std::pair<std::string, interpolator*>(ee_name, new interpolator(3, m_dt)));
       ref_force_interpolator.insert(std::pair<std::string, interpolator*>(ee_name, new interpolator(3, m_dt, interpolator::LINEAR)));
       if (( ee_name != "lleg" ) && ( ee_name != "rleg" )) transition_interpolator.insert(std::pair<std::string, interpolator*>(ee_name, new interpolator(1, m_dt)));
@@ -231,7 +230,6 @@ RTC::ReturnCode_t ReferenceForceUpdater::onInitialize()
         ee_map.insert(std::pair<std::string, ee_trans>(ee_name , eet));
         ee_index_map.insert(std::pair<std::string, size_t>(ee_name, ref_force.size()));
         ref_force.push_back(hrp::Vector3::Zero());
-        act_force.push_back(hrp::Vector3::Zero());
         ref_force_interpolator.insert(std::pair<std::string, interpolator*>(ee_name, new interpolator(3, m_dt, interpolator::LINEAR)));
         transition_interpolator.insert(std::pair<std::string, interpolator*>(ee_name, new interpolator(1, m_dt)));
     }
@@ -252,7 +250,6 @@ RTC::ReturnCode_t ReferenceForceUpdater::onInitialize()
         ee_map.insert(std::pair<std::string, ee_trans>(ee_name , eet));
         ee_index_map.insert(std::pair<std::string, size_t>(ee_name, ref_force.size()));
         ref_force.push_back(hrp::Vector3::Zero());
-        act_force.push_back(hrp::Vector3::Zero());
         ref_force_interpolator.insert(std::pair<std::string, interpolator*>(ee_name, new interpolator(3, m_dt, interpolator::LINEAR)));
         transition_interpolator.insert(std::pair<std::string, interpolator*>(ee_name, new interpolator(1, m_dt)));
     }
@@ -373,9 +370,9 @@ RTC::ReturnCode_t ReferenceForceUpdater::onExecute(RTC::UniqueId ec_id)
     //   Force sensor's force value is absolute in reference frame
     for (unsigned int i=0; i<m_force.size(); i++ ){
         hrp::Sensor* sensor = m_robot->sensor(hrp::Sensor::FORCE, i);
-        act_force[i] = (sensor->link->R * sensor->localR) * hrp::Vector3(m_force[i].data[0], m_force[i].data[1], m_force[i].data[2]);
+        hrp::Vector3 act_force = (sensor->link->R * sensor->localR) * hrp::Vector3(m_force[i].data[0], m_force[i].data[1], m_force[i].data[2]);
         for (std::map<std::string, ReferenceForceUpdaterParam>::iterator itr = m_RFUParam.begin(); itr != m_RFUParam.end(); itr++ ) {
-            if (ee_index_map[itr->first] == i) itr->second.act_force_filter->passFilter(act_force[i]);
+            if (ee_index_map[itr->first] == i) itr->second.act_force_filter->passFilter(act_force);
         }
     }
 
@@ -581,11 +578,11 @@ void ReferenceForceUpdater::updateRefObjExtMoment0 (const std::string& arm)
     hrp::Vector3 current_larm_ref_force = input_larm_ref_force - ref_force[arm_idx];
     //
     hrp::Vector3 df = hrp::Vector3::Zero();
-    hrp::Vector3 diff_rarm_force = (act_force[rarm_idx] - current_rarm_ref_force);
+    hrp::Vector3 diff_rarm_force = (m_RFUParam["rarm"].act_force_filter->getCurrentValue() - current_rarm_ref_force);
     if (diff_rarm_force(2) > 0) { // r > a, tarinai
         df(2) += diff_rarm_force(2);
     }
-    hrp::Vector3 diff_larm_force = (act_force[larm_idx] - current_larm_ref_force);
+    hrp::Vector3 diff_larm_force = (m_RFUParam["larm"].act_force_filter->getCurrentValue() - current_larm_ref_force);
     if (diff_larm_force(2) > 0) { // r > a, tarinai
         df(2) -= diff_larm_force(2);
     }
@@ -601,12 +598,12 @@ void ReferenceForceUpdater::updateRefObjExtMoment0 (const std::string& arm)
         std::cerr << "[" << m_profile.instance_name << "]   df " << df.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[Nm], interpolation_time = " << interpolation_time << "[s]" << std::endl;
         std::cerr << "[" << m_profile.instance_name << "]   buffer = " << ref_force[arm_idx].format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[Nm]" << std::endl;
         std::cerr << "[" << m_profile.instance_name << "]   diff_rarm_force  = " << diff_rarm_force.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]"))
-                  << ", act_rarm_force  = " << act_force[rarm_idx].format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]"))
+                  << ", act_rarm_force  = " << m_RFUParam["rarm"].act_force_filter->getCurrentValue().format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]"))
                   << ", ref_rarm_force  = " << current_rarm_ref_force.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]"))
                   << ", input_rarm_ref_force  = " << input_rarm_ref_force.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]"))
                   << "[N]" << std::endl;
         std::cerr << "[" << m_profile.instance_name << "]   diff_larm_force  = " << diff_larm_force.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]"))
-                  << ", act_larm_force  = " << act_force[larm_idx].format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]"))
+                  << ", act_larm_force  = " << m_RFUParam["larm"].act_force_filter->getCurrentValue().format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]"))
                   << ", ref_larm_force  = " << current_larm_ref_force.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]"))
                   << ", input_larm_ref_force  = " << input_larm_ref_force.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]"))
                   << "[N]" << std::endl;

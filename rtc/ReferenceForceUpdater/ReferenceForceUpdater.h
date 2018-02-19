@@ -241,7 +241,7 @@ class ReferenceForceUpdater
   std::map<std::string, ee_trans> ee_map;
   std::map<std::string, size_t> ee_index_map;
   std::map<std::string, ReferenceForceUpdaterParam> m_RFUParam;
-  std::vector<hrp::Vector3> ref_force, act_force;
+  std::vector<hrp::Vector3> ref_force;
   std::map<std::string, interpolator*> ref_force_interpolator;
   std::map<std::string, interpolator*> transition_interpolator;
   std::vector<double> transition_interpolator_ratio;
