@@ -56,80 +56,64 @@ class ObjectContactTurnaroundDetectorBase
                   << ", detect_thre = " << detect_ratio_thre * ref_dwrench << ", start_thre = " << start_ratio_thre * ref_dwrench << "), max_time = " << max_time << "[s]" << std::endl;
         pmode = MODE_IDLE;
     };
-    hrp::Vector3 calcTotalForce (const std::vector<hrp::Vector3>& forces)
-    {
-        hrp::Vector3 tmpv = hrp::Vector3::Zero();
-        for (size_t i = 0; i < forces.size(); i++) {
-            tmpv += forces[i];
-        }
-        return tmpv;
-    };
-    hrp::Vector3 calcTotalMoment (const std::vector<hrp::Vector3>& forces, const std::vector<hrp::Vector3>& hposv)
-    {
-        hrp::Vector3 tmpv = hrp::Vector3::Zero();
-        for (size_t i = 0; i < forces.size(); i++) {
-            tmpv += (hposv[i]-moment_center).cross(forces[i]);
-        }
-        return tmpv;
-    };
-    hrp::Vector3 calcTotalMoment2 (const std::vector<hrp::Vector3>& forces, const std::vector<hrp::Vector3>& moments, const std::vector<hrp::Vector3>& hposv)
-    {
-        hrp::Vector3 tmpv = hrp::Vector3::Zero();
-        for (size_t i = 0; i < forces.size(); i++) {
-            tmpv += (hposv[i]-moment_center).cross(forces[i]) + moments[i];
-        }
-        return tmpv;
-    };
-    hrp::dvector6 calcTotalWrench (const std::vector<hrp::Vector3>& forces, const std::vector<hrp::Vector3>& moments, const std::vector<hrp::Vector3>& hposv)
+    void calcTotalForceMoment (hrp::Vector3& total_force, hrp::Vector3& total_moment1, hrp::Vector3& total_moment2,
+                               const std::vector<hrp::Vector3>& forces, const std::vector<hrp::Vector3>& moments, const std::vector<hrp::Vector3>& hposv)
     {
         // Total wrench around the origin
-        hrp::Vector3 tmpf = hrp::Vector3::Zero();
-        hrp::Vector3 tmpn = hrp::Vector3::Zero();
+        total_force = total_moment1 = total_moment2 = hrp::Vector3::Zero();
         for (size_t i = 0; i < forces.size(); i++) {
-            tmpf += forces[i];
-            tmpn += hposv[i].cross(forces[i]) + moments[i];
+            total_force += forces[i];
+            total_moment1 += hposv[i].cross(forces[i]);
+            total_moment2 += moments[i];
         }
-        hrp::dvector6 ret;
-        for (size_t i = 0; i < 3; i++) {
-            ret(i) = tmpf(i);
-            ret(i+3) = tmpn(i);
-        }
-        return ret;
     };
     bool checkDetection (const std::vector<hrp::Vector3>& forces,
                          const std::vector<hrp::Vector3>& moments,
                          const std::vector<hrp::Vector3>& hposv)
     {
+        // Calculate total force and moments
+        //   forces, moments, hposv : Force, moment, position for all EE : f_i, n_i, p_i
+        //   total_force : F = \sum_i f_i
+        //   total_moment1 : M1 = \sum_i p_i \times f_i = \sum_i p_i \times f_i - p_c \times F
+        //   total_moment2 : M2 = \sum_i n_i
+        hrp::Vector3 total_force, total_moment1, total_moment2;
+        calcTotalForceMoment(total_force, total_moment1, total_moment2, forces, moments, hposv);
+        // Calculate generalized force/moment values and check detection
+        bool ret = false;
         switch(dtw) {
         case TOTAL_FORCE:
             {
-                hrp::Vector3 total_force = calcTotalForce(forces);
-                checkDetection(axis.dot(total_force), total_force(2));
+                ret = checkDetection(axis.dot(total_force), total_force(2));
                 break;
             }
         case TOTAL_MOMENT:
             {
-                hrp::Vector3 total_moment = calcTotalMoment(forces, hposv);
-                checkDetection(axis.dot(total_moment), 0.0);
+                // \sum_i (p_i - p_c) \times f_i = M1 - p_c \times F
+                ret = checkDetection(axis.dot(total_moment1 - moment_center.cross(total_force)), 0.0);
             }
             break;
         case TOTAL_MOMENT2:
             {
-                hrp::Vector3 total_moment = calcTotalMoment2(forces, moments, hposv);
-                checkDetection(axis.dot(total_moment), 0.0);
+                // \sum_i (p_i - p_c) \times f_i + n_i = M1 + M2 - p_c \times F
+                ret = checkDetection(axis.dot(total_moment1 + total_moment2 - moment_center.cross(total_force)), 0.0);
             }
             break;
         case GENERALIZED_WRENCH:
             {
-                hrp::dvector6 resultant_OR_wrench = calcTotalWrench(forces, moments, hposv);
+                hrp::dvector6 resultant_OR_wrench;
+                for (size_t i = 0; i < 3; i++) {
+                    resultant_OR_wrench(i) = total_force(i);
+                    resultant_OR_wrench(i+3) = total_moment1(i) + total_moment2(i);
+                }
                 double phi1 = constraint_conversion_matrix1.dot(resultant_OR_wrench);
                 double phi2 = constraint_conversion_matrix2.dot(resultant_OR_wrench);
-                checkDetection(phi1, phi2);
+                ret = checkDetection(phi1, phi2);
             };
             break;
         default:
             break;
         };
+        return ret;
     };
     bool checkDetection (const double wrench_value, const double friction_coeff_wrench_value)
     {
@@ -152,6 +136,10 @@ class ObjectContactTurnaroundDetectorBase
             filtered_wrench_with_hold = wrench_filter->getCurrentValue();
             filtered_friction_coeff_wrench_with_hold = friction_coeff_wrench_filter->getCurrentValue();
         }
+        return updateProcessModeFromDwrench(tmp_dwr);
+    };
+    bool updateProcessModeFromDwrench (const double tmp_dwr)
+    {
         // Checking of wrench profile turn around
         //   Sign of ref_dwrench and tmp_dwr shuold be same
         //   Supprot both ref_dwrench > 0 case and ref_dwrench < 0 case
