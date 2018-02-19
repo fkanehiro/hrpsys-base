@@ -17,8 +17,10 @@ class ObjectContactTurnaroundDetectorBase
     boost::shared_ptr<FirstOrderLowPassFilter<double> > wrench_filter;
     boost::shared_ptr<FirstOrderLowPassFilter<double> > dwrench_filter;
     boost::shared_ptr<FirstOrderLowPassFilter<double> > friction_coeff_wrench_filter;
+    boost::shared_ptr<FirstOrderLowPassFilter<hrp::dvector6> > resultant_wrench_filter;
+    boost::shared_ptr<FirstOrderLowPassFilter<hrp::dvector6> > resultant_dwrench_filter;
     hrp::Vector3 axis, moment_center;
-    hrp::dvector6 constraint_conversion_matrix1, constraint_conversion_matrix2;
+    hrp::dvector6 constraint_conversion_matrix1, constraint_conversion_matrix2, raw_resultant_wrench;
     double dt;
     double detect_ratio_thre, start_ratio_thre, ref_dwrench, max_time, current_time;
     double raw_wrench, filtered_wrench_with_hold, filtered_friction_coeff_wrench_with_hold;
@@ -41,6 +43,8 @@ class ObjectContactTurnaroundDetectorBase
         wrench_filter = boost::shared_ptr<FirstOrderLowPassFilter<double> >(new FirstOrderLowPassFilter<double>(default_cutoff_freq, _dt, 0));
         dwrench_filter = boost::shared_ptr<FirstOrderLowPassFilter<double> >(new FirstOrderLowPassFilter<double>(default_cutoff_freq, _dt, 0));
         friction_coeff_wrench_filter = boost::shared_ptr<FirstOrderLowPassFilter<double> >(new FirstOrderLowPassFilter<double>(default_cutoff_freq, _dt, 0));
+        resultant_wrench_filter = boost::shared_ptr<FirstOrderLowPassFilter<hrp::dvector6> >(new FirstOrderLowPassFilter<hrp::dvector6>(default_cutoff_freq, _dt, hrp::dvector6::Zero()));
+        resultant_dwrench_filter = boost::shared_ptr<FirstOrderLowPassFilter<hrp::dvector6> >(new FirstOrderLowPassFilter<hrp::dvector6>(default_cutoff_freq, _dt, hrp::dvector6::Zero()));
         filtered_wrench_with_hold = wrench_filter->getCurrentValue();
         filtered_friction_coeff_wrench_with_hold = friction_coeff_wrench_filter->getCurrentValue();
     };
@@ -105,9 +109,7 @@ class ObjectContactTurnaroundDetectorBase
                     resultant_OR_wrench(i) = total_force(i);
                     resultant_OR_wrench(i+3) = total_moment1(i) + total_moment2(i);
                 }
-                double phi1 = constraint_conversion_matrix1.dot(resultant_OR_wrench);
-                double phi2 = constraint_conversion_matrix2.dot(resultant_OR_wrench);
-                ret = checkDetection(phi1, phi2);
+                ret = checkDetection(resultant_OR_wrench);
             };
             break;
         default:
@@ -137,6 +139,33 @@ class ObjectContactTurnaroundDetectorBase
             filtered_friction_coeff_wrench_with_hold = friction_coeff_wrench_filter->getCurrentValue();
         }
         return updateProcessModeFromDwrench(tmp_dwr);
+    };
+    bool checkDetection (const hrp::dvector6& resultant_wrench)
+    {
+        if (is_filter_reset) {
+          std::cerr << "[" << print_str << "] Object Turnaround Detection Reset Values. (resultant_wrench = " << resultant_wrench.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << ")" << std::endl;
+          resultant_wrench_filter->reset(resultant_wrench);
+          resultant_dwrench_filter->reset(hrp::dvector6::Zero());
+        }
+        raw_resultant_wrench = resultant_wrench;
+        hrp::dvector6 prev_resultant_wrench = resultant_wrench_filter->getCurrentValue();
+        hrp::dvector6 tmp_rwr = resultant_wrench_filter->passFilter(resultant_wrench);
+        hrp::dvector6 tmp_rdwr = resultant_dwrench_filter->passFilter((tmp_rwr - prev_resultant_wrench)/dt);
+        double phi1 = constraint_conversion_matrix1.dot(tmp_rwr);
+        double phi2 = constraint_conversion_matrix2.dot(tmp_rwr);
+        double dphi1 = constraint_conversion_matrix1.dot(tmp_rdwr);
+        raw_wrench = phi1;
+        if (is_filter_reset) {
+            filtered_wrench_with_hold = phi1;
+            filtered_friction_coeff_wrench_with_hold = phi2;
+            is_filter_reset = false;
+        }
+        // Hold values : is_hold_values is true and previously "detected", hold values. Otherwise, update values.
+        if ( !(is_hold_values && isDetected()) ) {
+            filtered_wrench_with_hold = phi1;
+            filtered_friction_coeff_wrench_with_hold = phi2;
+        }
+        return updateProcessModeFromDwrench(dphi1);
     };
     bool updateProcessModeFromDwrench (const double tmp_dwr)
     {
@@ -209,6 +238,7 @@ class ObjectContactTurnaroundDetectorBase
                   << ", constraint_conversion_matrix2 = " << constraint_conversion_matrix2.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << std::endl;
         std::cerr << "[" << print_str << "]    is_hold_values = " << (is_hold_values?"true":"false") << std::endl;
     };
+    // Setter
     void setPrintStr (const std::string& str) { print_str = str; };
     void setWrenchCutoffFreq (const double a) { wrench_filter->setCutOffFreq(a); };
     void setDwrenchCutoffFreq (const double a) { dwrench_filter->setCutOffFreq(a); };
@@ -229,6 +259,7 @@ class ObjectContactTurnaroundDetectorBase
         dtw = _dtw;
     };
     void setIsHoldValues (const bool a) { is_hold_values = a; };
+    // Getter
     double getWrenchCutoffFreq () const { return wrench_filter->getCutOffFreq(); };
     double getDwrenchCutoffFreq () const { return dwrench_filter->getCutOffFreq(); };
     double getFrictionCoeffWrenchCutoffFreq () const { return friction_coeff_wrench_filter->getCutOffFreq(); };
