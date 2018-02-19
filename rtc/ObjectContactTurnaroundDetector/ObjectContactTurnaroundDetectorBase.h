@@ -19,7 +19,7 @@ class ObjectContactTurnaroundDetectorBase
     boost::shared_ptr<FirstOrderLowPassFilter<double> > friction_coeff_wrench_filter;
     hrp::Vector3 axis, moment_center;
     hrp::dvector6 constraint_conversion_matrix1, constraint_conversion_matrix2;
-    double prev_wrench, dt;
+    double dt;
     double detect_ratio_thre, start_ratio_thre, ref_dwrench, max_time, current_time;
     double raw_wrench, filtered_wrench_with_hold, filtered_friction_coeff_wrench_with_hold;
     size_t count;
@@ -34,7 +34,7 @@ class ObjectContactTurnaroundDetectorBase
  public:
     ObjectContactTurnaroundDetectorBase (const double _dt) : axis(-1*hrp::Vector3::UnitZ()), moment_center(hrp::Vector3::Zero()),
                                                              constraint_conversion_matrix1(hrp::dvector6::Zero()), constraint_conversion_matrix2(hrp::dvector6::Zero()),
-                                                             prev_wrench(0.0), dt(_dt), detect_ratio_thre(0.01), start_ratio_thre(0.5),
+                                                             dt(_dt), detect_ratio_thre(0.01), start_ratio_thre(0.5),
                                                              count(0), detect_count_thre(5), start_count_thre(5), pmode(MODE_IDLE), dtw(TOTAL_FORCE), is_filter_reset(false), is_hold_values(false)
     {
         double default_cutoff_freq = 1; // [Hz]
@@ -127,10 +127,10 @@ class ObjectContactTurnaroundDetectorBase
           is_filter_reset = false;
         }
         raw_wrench = wrench_value;
+        double prev_wrench = wrench_filter->getCurrentValue();
         double tmp_wr = wrench_filter->passFilter(wrench_value);
         double tmp_dwr = dwrench_filter->passFilter((tmp_wr-prev_wrench)/dt);
         friction_coeff_wrench_filter->passFilter(friction_coeff_wrench_value);
-        prev_wrench = tmp_wr;
         // Hold values : is_hold_values is true and previously "detected", hold values. Otherwise, update values.
         if ( !(is_hold_values && isDetected()) ) {
             filtered_wrench_with_hold = wrench_filter->getCurrentValue();
