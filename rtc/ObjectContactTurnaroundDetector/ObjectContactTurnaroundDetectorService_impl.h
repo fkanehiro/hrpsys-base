@@ -21,6 +21,7 @@ public:
   CORBA::Boolean setObjectContactTurnaroundDetectorParam(const OpenHRP::ObjectContactTurnaroundDetectorService::objectContactTurnaroundDetectorParam &i_param_);
   CORBA::Boolean getObjectContactTurnaroundDetectorParam(OpenHRP::ObjectContactTurnaroundDetectorService::objectContactTurnaroundDetectorParam& i_param_);
   CORBA::Boolean getObjectForcesMoments(OpenHRP::ObjectContactTurnaroundDetectorService::Dbl3Sequence_out o_forces, OpenHRP::ObjectContactTurnaroundDetectorService::Dbl3Sequence_out o_moments, OpenHRP::ObjectContactTurnaroundDetectorService::DblSequence3_out o_3dofwrench, CORBA::Double& o_fric_coeff_wrench);
+  CORBA::Boolean getObjectGeneralizedConstraintWrenches(CORBA::Double& o_generalized_constraint_wrench1, CORBA::Double& o_generalized_constraint_wrench2);
 
   //
   void octd(ObjectContactTurnaroundDetector *i_octd);

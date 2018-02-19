@@ -476,6 +476,11 @@ bool ObjectContactTurnaroundDetector::setObjectContactTurnaroundDetectorParam(co
     octd->setAxis(tmp);
     for (size_t i = 0; i < 3; i++) tmp(i) = i_param_.moment_center[i];
     octd->setMomentCenter(tmp);
+    hrp::dvector6 tmpccm;
+    for (size_t i = 0; i < 6; i++) tmpccm(i) = i_param_.constraint_conversion_matrix1[i];
+    octd->setConstraintConversionMatrix1(tmpccm);
+    for (size_t i = 0; i < 6; i++) tmpccm(i) = i_param_.constraint_conversion_matrix2[i];
+    octd->setConstraintConversionMatrix2(tmpccm);
     ObjectContactTurnaroundDetectorBase::detector_total_wrench dtw;
     switch (i_param_.detector_total_wrench) {
     case OpenHRP::ObjectContactTurnaroundDetectorService::TOTAL_FORCE:
@@ -486,6 +491,9 @@ bool ObjectContactTurnaroundDetector::setObjectContactTurnaroundDetectorParam(co
         break;
     case OpenHRP::ObjectContactTurnaroundDetectorService::TOTAL_MOMENT2:
         dtw = ObjectContactTurnaroundDetectorBase::TOTAL_MOMENT2;
+        break;
+    case OpenHRP::ObjectContactTurnaroundDetectorService::GENERALIZED_WRENCH:
+        dtw = ObjectContactTurnaroundDetectorBase::GENERALIZED_WRENCH;
         break;
     default:
         break;
@@ -508,6 +516,10 @@ bool ObjectContactTurnaroundDetector::getObjectContactTurnaroundDetectorParam(Op
     for (size_t i = 0; i < 3; i++) i_param_.axis[i] = tmp(i);
     tmp = octd->getMomentCenter();
     for (size_t i = 0; i < 3; i++) i_param_.moment_center[i] = tmp(i);
+    hrp::dvector6 tmpccm = octd->getConstraintConversionMatrix1();
+    for (size_t i = 0; i < 6; i++) i_param_.constraint_conversion_matrix1[i] = tmpccm(i);
+    tmpccm = octd->getConstraintConversionMatrix2();
+    for (size_t i = 0; i < 6; i++) i_param_.constraint_conversion_matrix2[i] = tmpccm(i);
     OpenHRP::ObjectContactTurnaroundDetectorService::DetectorTotalWrench dtw;
     switch (octd->getDetectorTotalWrench()) {
     case ObjectContactTurnaroundDetectorBase::TOTAL_FORCE:
@@ -518,6 +530,9 @@ bool ObjectContactTurnaroundDetector::getObjectContactTurnaroundDetectorParam(Op
         break;
     case ObjectContactTurnaroundDetectorBase::TOTAL_MOMENT2:
         dtw = OpenHRP::ObjectContactTurnaroundDetectorService::TOTAL_MOMENT2;
+        break;
+    case ObjectContactTurnaroundDetectorBase::GENERALIZED_WRENCH:
+        dtw = OpenHRP::ObjectContactTurnaroundDetectorService::GENERALIZED_WRENCH;
         break;
     default:
         break;
@@ -548,6 +563,13 @@ bool ObjectContactTurnaroundDetector::getObjectForcesMoments(OpenHRP::ObjectCont
     o_3dofwrench->length(3);
     for (size_t i = 0; i < 3; i++) (*o_3dofwrench)[i] = tmpv(i);
     o_fric_coeff_wrench = octd->getFilteredFrictionCoeffWrench();
+    return true;
+}
+
+bool ObjectContactTurnaroundDetector::getObjectGeneralizedConstraintWrenches(double& o_generalized_constraint_wrench1, double& o_generalized_constraint_wrench2)
+{
+    o_generalized_constraint_wrench1 = octd->getFilteredWrench();
+    o_generalized_constraint_wrench2 = octd->getFilteredFrictionCoeffWrench();
     return true;
 }
 

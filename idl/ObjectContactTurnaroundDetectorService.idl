@@ -9,6 +9,7 @@ module OpenHRP
   {
     typedef sequence<double, 3> DblSequence3;
     typedef double DblArray3[3];
+    typedef double DblArray6[6];
     typedef sequence<string> StrSequence;
     typedef sequence<sequence<double, 3> > Dbl3Sequence;
 
@@ -33,7 +34,9 @@ module OpenHRP
         /// Check resultant moment using force measurements
         TOTAL_MOMENT,
         /// Check resultant moment using force and moment measurements
-        TOTAL_MOMENT2
+        TOTAL_MOMENT2,
+        /// Check generalized wrench
+        GENERALIZED_WRENCH
     };
 
     /**
@@ -59,6 +62,10 @@ module OpenHRP
       DblArray3 moment_center;
       /// Current flag for whether total force or total moment is checked.
       DetectorTotalWrench detector_total_wrench;
+      /// Constraint conversion matrix 1 (1 x 6 matrix) : not for friction coefficient
+      DblArray6 constraint_conversion_matrix1;
+      /// Constraint conversion matrix 2 (1 x 6 matrix) : for friction coefficient
+      DblArray6 constraint_conversion_matrix2;
     };
 
     /**
@@ -94,5 +101,12 @@ module OpenHRP
      * @return true if set successfully, false otherwise
      */
     boolean getObjectForcesMoments(out Dbl3Sequence o_forces, out Dbl3Sequence o_moments, out DblSequence3 o_3dofwrench, out double o_fric_coeff_wrench);
+
+    /**
+     * @brief get Current generalized constraint wrench1 and wrench2
+     * @param o_generalized_wrench1 is generalized constraint wrench1 (not for friction coefficient) and o_generalized_wrench2 is generalized constraint wrench2 (for friction coefficient).
+     * @return true if set successfully, false otherwise
+     */
+    boolean getObjectGeneralizedConstraintWrenches(out double o_generalized_constraint_wrench1, out double o_generalized_constraint_wrench2);
   };
 };

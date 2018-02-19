@@ -37,6 +37,11 @@ CORBA::Boolean ObjectContactTurnaroundDetectorService_impl::getObjectForcesMomen
   return m_octd->getObjectForcesMoments(o_forces, o_moments, o_3dofwrench, o_fric_coeff_wrench);
 }
 
+CORBA::Boolean ObjectContactTurnaroundDetectorService_impl::getObjectGeneralizedConstraintWrenches(CORBA::Double& o_generalized_constraint_wrench1, CORBA::Double& o_generalized_constraint_wrench2)
+{
+  return m_octd->getObjectGeneralizedConstraintWrenches(o_generalized_constraint_wrench1, o_generalized_constraint_wrench2);
+}
+
 void ObjectContactTurnaroundDetectorService_impl::octd(ObjectContactTurnaroundDetector *i_octd)
 {
   m_octd = i_octd;
