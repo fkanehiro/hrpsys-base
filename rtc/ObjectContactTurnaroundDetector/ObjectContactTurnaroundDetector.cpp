@@ -386,21 +386,24 @@ void ObjectContactTurnaroundDetector::calcObjectContactTurnaroundDetectorState()
     for (unsigned int i=0; i<m_forceIn.size(); i++) {
         std::string sensor_name = m_forceIn[i]->name();
         if ( find(octd_sensor_names.begin(), octd_sensor_names.end(), sensor_name) != octd_sensor_names.end() ) {
-            hrp::ForceSensor* sensor = m_robot->sensor<hrp::ForceSensor>(sensor_name);
-            hrp::Vector3 data_p(m_force[i].data[0], m_force[i].data[1], m_force[i].data[2]);
-            hrp::Vector3 data_r(m_force[i].data[3], m_force[i].data[4], m_force[i].data[5]);
-            hrp::Matrix33 sensorR = sensor->link->R * sensor->localR;
-            octd_forces.push_back(fmrotT*(sensorR*data_p));
-            octd_moments.push_back(fmrotT*(sensorR*data_r));
-            hrp::Vector3 eePos;
+            hrp::Vector3 ee_pos; // End Effector Position
             for ( std::map<std::string, ee_trans>::iterator it = ee_map.begin(); it != ee_map.end(); it++ ) {
                 if ( it->second.sensor_name == sensor_name ) {
                     ee_trans& eet = it->second;
                     hrp::Link* target_link = m_robot->link(eet.target_name);
-                    eePos = fmrotT * (target_link->p + target_link->R * eet.localPos - fmpos);
+                    ee_pos = target_link->p + target_link->R * eet.localPos;
                 }
             }
-            octd_hposv.push_back(eePos);
+            hrp::ForceSensor* sensor = m_robot->sensor<hrp::ForceSensor>(sensor_name);
+            hrp::Matrix33 sensor_rot = sensor->link->R * sensor->localR;
+            hrp::Vector3 sensor_pos(sensor->link->R * sensor->localPos + sensor->link->p);
+            hrp::Vector3 sensor_force(sensor_rot*hrp::Vector3(m_force[i].data[0], m_force[i].data[1], m_force[i].data[2]));
+            hrp::Vector3 sensor_moment(sensor_rot*hrp::Vector3(m_force[i].data[3], m_force[i].data[4], m_force[i].data[5]));
+            hrp::Vector3 ee_moment( (sensor_pos - ee_pos).cross(sensor_force) + sensor_moment);
+            // Change to FootOriginCoords relative values
+            octd_hposv.push_back(fmrotT*(ee_pos - fmpos)); // Change to FootOriginCoords relative hand pos
+            octd_forces.push_back(fmrotT*(sensor_force)); // Change to FootOriginCoords relative ee force, and sensor force = ee force
+            octd_moments.push_back(fmrotT*(ee_moment)); // Change to FootOriginCoords relative ee force
         }
     }
     octd->checkDetection(octd_forces, octd_moments, octd_hposv);
