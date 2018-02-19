@@ -547,7 +547,7 @@ bool ObjectContactTurnaroundDetector::getObjectForcesMoments(OpenHRP::ObjectCont
 {
     std::cerr << "[" << m_profile.instance_name << "] getObjectForcesMoments" << std::endl;
     if (octd_sensor_names.size() == 0) return false;
-    hrp::Vector3 tmpv = octd->getAxis() * octd->getFilteredWrench();
+    hrp::Vector3 tmpv = octd->getAxis() * octd->getFilteredWrenchWithHold();
     o_forces = new OpenHRP::ObjectContactTurnaroundDetectorService::Dbl3Sequence ();
     o_moments = new OpenHRP::ObjectContactTurnaroundDetectorService::Dbl3Sequence ();
     o_forces->length(octd_sensor_names.size());
@@ -564,14 +564,14 @@ bool ObjectContactTurnaroundDetector::getObjectForcesMoments(OpenHRP::ObjectCont
     o_3dofwrench = new OpenHRP::ObjectContactTurnaroundDetectorService::DblSequence3 ();
     o_3dofwrench->length(3);
     for (size_t i = 0; i < 3; i++) (*o_3dofwrench)[i] = tmpv(i);
-    o_fric_coeff_wrench = octd->getFilteredFrictionCoeffWrench();
+    o_fric_coeff_wrench = octd->getFilteredFrictionCoeffWrenchWithHold();
     return true;
 }
 
 bool ObjectContactTurnaroundDetector::getObjectGeneralizedConstraintWrenches(double& o_generalized_constraint_wrench1, double& o_generalized_constraint_wrench2)
 {
-    o_generalized_constraint_wrench1 = octd->getFilteredWrench();
-    o_generalized_constraint_wrench2 = octd->getFilteredFrictionCoeffWrench();
+    o_generalized_constraint_wrench1 = octd->getFilteredWrenchWithHold();
+    o_generalized_constraint_wrench2 = octd->getFilteredFrictionCoeffWrenchWithHold();
     return true;
 }
 
