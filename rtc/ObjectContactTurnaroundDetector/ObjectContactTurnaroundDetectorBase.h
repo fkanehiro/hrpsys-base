@@ -20,7 +20,7 @@ class ObjectContactTurnaroundDetectorBase
     boost::shared_ptr<FirstOrderLowPassFilter<hrp::dvector6> > resultant_wrench_filter;
     boost::shared_ptr<FirstOrderLowPassFilter<hrp::dvector6> > resultant_dwrench_filter;
     hrp::Vector3 axis, moment_center;
-    hrp::dvector6 constraint_conversion_matrix1, constraint_conversion_matrix2, raw_resultant_wrench;
+    hrp::dvector6 constraint_conversion_matrix1, constraint_conversion_matrix2;
     double dt;
     double detect_ratio_thre, start_ratio_thre, ref_dwrench, max_time, current_time;
     double raw_wrench, filtered_wrench_with_hold, filtered_friction_coeff_wrench_with_hold;
@@ -117,43 +117,42 @@ class ObjectContactTurnaroundDetectorBase
         };
         return ret;
     };
-    bool checkDetection (const double wrench_value, const double friction_coeff_wrench_value)
+    bool checkDetection (const double raw_wrench_value, const double raw_friction_coeff_wrench_value)
     {
         if (is_filter_reset) {
-          std::cerr << "[" << print_str << "] Object Turnaround Detection Reset Values. (wrench_value = " << wrench_value << ", friction_coeff_wrench_value = " << friction_coeff_wrench_value << ")" << std::endl;
-          wrench_filter->reset(wrench_value);
+          std::cerr << "[" << print_str << "] Object Turnaround Detection Reset Values. (raw_wrench_value = " << raw_wrench_value << ", raw_friction_coeff_wrench_value = " << raw_friction_coeff_wrench_value << ")" << std::endl;
+          wrench_filter->reset(raw_wrench_value);
           dwrench_filter->reset(0);
-          friction_coeff_wrench_filter->reset(friction_coeff_wrench_value);
+          friction_coeff_wrench_filter->reset(raw_friction_coeff_wrench_value);
           filtered_wrench_with_hold = wrench_filter->getCurrentValue();
           filtered_friction_coeff_wrench_with_hold = friction_coeff_wrench_filter->getCurrentValue();
           is_filter_reset = false;
         }
-        raw_wrench = wrench_value;
-        double prev_wrench = wrench_filter->getCurrentValue();
-        double tmp_wr = wrench_filter->passFilter(wrench_value);
-        double tmp_dwr = dwrench_filter->passFilter((tmp_wr-prev_wrench)/dt);
-        friction_coeff_wrench_filter->passFilter(friction_coeff_wrench_value);
+        raw_wrench = raw_wrench_value;
+        double prev_filtered_wrench = wrench_filter->getCurrentValue();
+        double filtered_wrench = wrench_filter->passFilter(raw_wrench_value);
+        double filtered_dwrench = dwrench_filter->passFilter((filtered_wrench-prev_filtered_wrench)/dt);
+        friction_coeff_wrench_filter->passFilter(raw_friction_coeff_wrench_value);
         // Hold values : is_hold_values is true and previously "detected", hold values. Otherwise, update values.
         if ( !(is_hold_values && isDetected()) ) {
             filtered_wrench_with_hold = wrench_filter->getCurrentValue();
             filtered_friction_coeff_wrench_with_hold = friction_coeff_wrench_filter->getCurrentValue();
         }
-        return updateProcessModeFromDwrench(tmp_dwr);
+        return updateProcessModeFromDwrench(filtered_dwrench);
     };
-    bool checkDetection (const hrp::dvector6& resultant_wrench)
+    bool checkDetection (const hrp::dvector6& raw_resultant_wrench_value)
     {
         if (is_filter_reset) {
-          std::cerr << "[" << print_str << "] Object Turnaround Detection Reset Values. (resultant_wrench = " << resultant_wrench.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << ")" << std::endl;
-          resultant_wrench_filter->reset(resultant_wrench);
+          std::cerr << "[" << print_str << "] Object Turnaround Detection Reset Values. (raw_resultant_wrench_value = " << raw_resultant_wrench_value.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << ")" << std::endl;
+          resultant_wrench_filter->reset(raw_resultant_wrench_value);
           resultant_dwrench_filter->reset(hrp::dvector6::Zero());
         }
-        raw_resultant_wrench = resultant_wrench;
-        hrp::dvector6 prev_resultant_wrench = resultant_wrench_filter->getCurrentValue();
-        hrp::dvector6 tmp_rwr = resultant_wrench_filter->passFilter(resultant_wrench);
-        hrp::dvector6 tmp_rdwr = resultant_dwrench_filter->passFilter((tmp_rwr - prev_resultant_wrench)/dt);
-        double phi1 = constraint_conversion_matrix1.dot(tmp_rwr);
-        double phi2 = constraint_conversion_matrix2.dot(tmp_rwr);
-        double dphi1 = constraint_conversion_matrix1.dot(tmp_rdwr);
+        hrp::dvector6 prev_filtered_resultant_wrench = resultant_wrench_filter->getCurrentValue();
+        hrp::dvector6 filtered_resultant_wrench = resultant_wrench_filter->passFilter(raw_resultant_wrench_value);
+        hrp::dvector6 filtered_resultant_dwrench = resultant_dwrench_filter->passFilter((filtered_resultant_wrench - prev_filtered_resultant_wrench)/dt);
+        double phi1 = constraint_conversion_matrix1.dot(filtered_resultant_wrench);
+        double phi2 = constraint_conversion_matrix2.dot(filtered_resultant_wrench);
+        double dphi1 = constraint_conversion_matrix1.dot(filtered_resultant_dwrench);
         if (is_filter_reset) {
             filtered_wrench_with_hold = phi1;
             filtered_friction_coeff_wrench_with_hold = phi2;
@@ -165,20 +164,20 @@ class ObjectContactTurnaroundDetectorBase
             filtered_friction_coeff_wrench_with_hold = phi2;
         }
         // For logger, just used as buffer
-        raw_wrench = constraint_conversion_matrix1.dot(resultant_wrench);
+        raw_wrench = constraint_conversion_matrix1.dot(raw_resultant_wrench_value);
         wrench_filter->reset(phi1);
         dwrench_filter->reset(dphi1);
         // Update process mode and return
         return updateProcessModeFromDwrench(dphi1);
     };
-    bool updateProcessModeFromDwrench (const double tmp_dwr)
+    bool updateProcessModeFromDwrench (const double tmp_dwrench)
     {
         // Checking of wrench profile turn around
-        //   Sign of ref_dwrench and tmp_dwr shuold be same
+        //   Sign of ref_dwrench and tmp_dwrench shuold be same
         //   Supprot both ref_dwrench > 0 case and ref_dwrench < 0 case
         switch (pmode) {
         case MODE_IDLE:
-            if ( (ref_dwrench > 0.0) ? (tmp_dwr > ref_dwrench*start_ratio_thre) : (tmp_dwr < ref_dwrench*start_ratio_thre) ) {
+            if ( (ref_dwrench > 0.0) ? (tmp_dwrench > ref_dwrench*start_ratio_thre) : (tmp_dwrench < ref_dwrench*start_ratio_thre) ) {
                 count++;
                 if (count > start_count_thre) {
                     pmode = MODE_STARTED;
@@ -190,7 +189,7 @@ class ObjectContactTurnaroundDetectorBase
             }
             break;
         case MODE_STARTED:
-            if ( (ref_dwrench > 0.0) ? (tmp_dwr < ref_dwrench*detect_ratio_thre) : (tmp_dwr > ref_dwrench*detect_ratio_thre) ) {
+            if ( (ref_dwrench > 0.0) ? (tmp_dwrench < ref_dwrench*detect_ratio_thre) : (tmp_dwrench > ref_dwrench*detect_ratio_thre) ) {
                 count++;
                 if (count > detect_count_thre) {
                     pmode = MODE_DETECTED;
@@ -199,7 +198,6 @@ class ObjectContactTurnaroundDetectorBase
             } else {
                 /* count--; */
             }
-            //std::cerr << "[" << print_str << "] " << tmp_wr << " " << tmp_dwr << " " << count << std::endl;
             break;
         case MODE_DETECTED:
             break;
