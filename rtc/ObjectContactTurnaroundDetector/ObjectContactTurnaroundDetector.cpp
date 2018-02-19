@@ -406,6 +406,7 @@ void ObjectContactTurnaroundDetector::calcObjectContactTurnaroundDetectorState()
     octd->checkDetection(octd_forces, octd_moments, octd_hposv);
     // octdData
     hrp::dvector log_data = octd->getDataForLogger();
+    if (m_octdData.data.length() != log_data.size()) m_octdData.data.length(log_data.size());
     for (size_t i = 0; i < log_data.size(); i++) {
         m_octdData.data[i] = log_data(i);
     }
@@ -438,10 +439,16 @@ void ObjectContactTurnaroundDetector::startObjectContactTurnaroundDetection(cons
     }
 }
 
-OpenHRP::ObjectContactTurnaroundDetectorService::DetectorMode ObjectContactTurnaroundDetector::checkObjectContactTurnaroundDetection()
+bool ObjectContactTurnaroundDetector::startObjectContactTurnaroundDetectionForGeneralizedWrench ()
+{
+    Guard guard(m_mutex);
+    octd->startDetectionForGeneralizedWrench();
+}
+
+OpenHRP::ObjectContactTurnaroundDetectorService::DetectorMode ObjectContactTurnaroundDetector::checkObjectContactTurnaroundDetectionCommon(const size_t index)
 {
     OpenHRP::ObjectContactTurnaroundDetectorService::DetectorMode tmpmode;
-    switch (octd->getMode()) {
+    switch (octd->getMode(index)) {
     case ObjectContactTurnaroundDetectorBase::MODE_IDLE:
         tmpmode = ObjectContactTurnaroundDetectorService::MODE_DETECTOR_IDLE;
         break;
@@ -454,11 +461,30 @@ OpenHRP::ObjectContactTurnaroundDetectorService::DetectorMode ObjectContactTurna
     case ObjectContactTurnaroundDetectorBase::MODE_MAX_TIME:
         tmpmode = ObjectContactTurnaroundDetectorService::MODE_MAX_TIME;
         break;
+    case ObjectContactTurnaroundDetectorBase::MODE_OTHER_DETECTED:
+        tmpmode = ObjectContactTurnaroundDetectorService::MODE_OTHER_DETECTED;
+        break;
     default:
         tmpmode = ObjectContactTurnaroundDetectorService::MODE_DETECTOR_IDLE;
         break;
     }
     return tmpmode;
+}
+
+OpenHRP::ObjectContactTurnaroundDetectorService::DetectorMode ObjectContactTurnaroundDetector::checkObjectContactTurnaroundDetection()
+{
+    Guard guard(m_mutex);
+    return checkObjectContactTurnaroundDetectionCommon(0);
+}
+
+bool ObjectContactTurnaroundDetector::checkObjectContactTurnaroundDetectionForGeneralizedWrench(OpenHRP::ObjectContactTurnaroundDetectorService::DetectorModeSequence_out o_dms)
+{
+    Guard guard(m_mutex);
+    o_dms->length(octd->getDetectGeneralizedWrenchDim());
+    for (size_t i = 0; i < octd->getDetectGeneralizedWrenchDim(); i++) {
+        o_dms[i] = checkObjectContactTurnaroundDetectionCommon(i);
+    }
+    return true;
 }
 
 bool ObjectContactTurnaroundDetector::setObjectContactTurnaroundDetectorParam(const OpenHRP::ObjectContactTurnaroundDetectorService::objectContactTurnaroundDetectorParam &i_param_)
@@ -471,16 +497,12 @@ bool ObjectContactTurnaroundDetector::setObjectContactTurnaroundDetectorParam(co
     octd->setStartRatioThre(i_param_.start_ratio_thre);
     octd->setDetectTimeThre(i_param_.detect_time_thre);
     octd->setStartTimeThre(i_param_.start_time_thre);
+    octd->setOtherDetectTimeThre(i_param_.other_detect_time_thre);
     hrp::Vector3 tmp;
     for (size_t i = 0; i < 3; i++) tmp(i) = i_param_.axis[i];
     octd->setAxis(tmp);
     for (size_t i = 0; i < 3; i++) tmp(i) = i_param_.moment_center[i];
     octd->setMomentCenter(tmp);
-    hrp::dvector6 tmpccm;
-    for (size_t i = 0; i < 6; i++) tmpccm(i) = i_param_.constraint_conversion_matrix1[i];
-    octd->setConstraintConversionMatrix1(tmpccm);
-    for (size_t i = 0; i < 6; i++) tmpccm(i) = i_param_.constraint_conversion_matrix2[i];
-    octd->setConstraintConversionMatrix2(tmpccm);
     ObjectContactTurnaroundDetectorBase::detector_total_wrench dtw;
     switch (i_param_.detector_total_wrench) {
     case OpenHRP::ObjectContactTurnaroundDetectorService::TOTAL_FORCE:
@@ -500,7 +522,41 @@ bool ObjectContactTurnaroundDetector::setObjectContactTurnaroundDetectorParam(co
     }
     octd->setDetectorTotalWrench(dtw);
     octd->setIsHoldValues(i_param_.is_hold_values);
+    // For GENERALIZED_WRENCH mode
+    if ( (i_param_.constraint_conversion_matrix1.length() % 6 == 0) &&
+         (i_param_.constraint_conversion_matrix1.length() == i_param_.constraint_conversion_matrix2.length()) &&
+         (i_param_.constraint_conversion_matrix1.length() == i_param_.ref_dphi1.length()*6) ) {
+        size_t row_dim = i_param_.constraint_conversion_matrix1.length()/6;
+        std::vector<hrp::dvector6> tmpccm1(row_dim, hrp::dvector6::Zero());
+        for (size_t i = 0; i < row_dim; i++) {
+            for (size_t j = 0; j < 6; j++) {
+                tmpccm1[i](j) = i_param_.constraint_conversion_matrix1[i*6+j];
+            }
+        }
+        std::vector<hrp::dvector6> tmpccm2(row_dim, hrp::dvector6::Zero());
+        for (size_t i = 0; i < row_dim; i++) {
+            for (size_t j = 0; j < 6; j++) {
+                tmpccm2[i](j) = i_param_.constraint_conversion_matrix2[i*6+j];
+            }
+        }
+        std::vector<double> tmp_ref_dphi1;
+        for (size_t i = 0; i < i_param_.ref_dphi1.length(); i++) tmp_ref_dphi1.push_back(i_param_.ref_dphi1[i]);
+        octd->setConstraintConversionMatricesRefDwrench(tmpccm1, tmpccm2, tmp_ref_dphi1);
+    } else {
+        std::cerr << "[" << m_profile.instance_name << "]   Invalid constraint_conversion_matrix size (ccm1 = "
+                  << i_param_.constraint_conversion_matrix1.length() << ", ccm2 = " << i_param_.constraint_conversion_matrix2.length() << ", ref_dw = " << i_param_.ref_dphi1.length() << ")" << std::endl;
+        return false;
+    }
+    octd->setMaxTime(i_param_.max_time);
+    octd_sensor_names.clear();
+    for (size_t i = 0; i < i_param_.limbs.length(); i++) {
+        octd_sensor_names.push_back(ee_map[std::string(i_param_.limbs[i])].sensor_name);
+    }
+    // Print
     octd->printParams();
+    std::cerr << "[" << m_profile.instance_name << "]    sensor_names = [";
+    for (size_t i = 0; i < octd_sensor_names.size(); i++) std::cerr << getEENameFromSensorName(octd_sensor_names[i]) << " ";
+    std::cerr << "]" << std::endl;
     return true;
 };
 
@@ -517,10 +573,6 @@ bool ObjectContactTurnaroundDetector::getObjectContactTurnaroundDetectorParam(Op
     for (size_t i = 0; i < 3; i++) i_param_.axis[i] = tmp(i);
     tmp = octd->getMomentCenter();
     for (size_t i = 0; i < 3; i++) i_param_.moment_center[i] = tmp(i);
-    hrp::dvector6 tmpccm = octd->getConstraintConversionMatrix1();
-    for (size_t i = 0; i < 6; i++) i_param_.constraint_conversion_matrix1[i] = tmpccm(i);
-    tmpccm = octd->getConstraintConversionMatrix2();
-    for (size_t i = 0; i < 6; i++) i_param_.constraint_conversion_matrix2[i] = tmpccm(i);
     OpenHRP::ObjectContactTurnaroundDetectorService::DetectorTotalWrench dtw;
     switch (octd->getDetectorTotalWrench()) {
     case ObjectContactTurnaroundDetectorBase::TOTAL_FORCE:
@@ -540,6 +592,30 @@ bool ObjectContactTurnaroundDetector::getObjectContactTurnaroundDetectorParam(Op
     }
     i_param_.detector_total_wrench = dtw;
     i_param_.is_hold_values = octd->getIsHoldValues();
+    // For GENERALIZED_WRENCH mode
+    std::vector<hrp::dvector6> tmpccm1, tmpccm2;
+    std::vector<double> tmp_ref_dphi1;
+    octd->getConstraintConversionMatricesRefDwrench(tmpccm1, tmpccm2, tmp_ref_dphi1);
+    i_param_.constraint_conversion_matrix1.length(tmpccm1.size()*6);
+    for (size_t i = 0; i < tmpccm1.size(); i++) {
+        for (size_t j = 0; j < 6; j++) {
+            i_param_.constraint_conversion_matrix1[i*6+j] = tmpccm1[i](j);
+        }
+    }
+    i_param_.constraint_conversion_matrix2.length(tmpccm2.size()*6);
+    for (size_t i = 0; i < tmpccm2.size(); i++) {
+        for (size_t j = 0; j < 6; j++) {
+            i_param_.constraint_conversion_matrix2[i*6+j] = tmpccm2[i](j);
+        }
+    }
+    i_param_.ref_dphi1.length(tmp_ref_dphi1.size());
+    for (size_t i = 0; i < tmp_ref_dphi1.size(); i++) i_param_.ref_dphi1[i] = tmp_ref_dphi1[i];
+    i_param_.max_time = octd->getMaxTime();
+    i_param_.limbs.length(octd_sensor_names.size());
+    for (size_t i = 0; i < octd_sensor_names.size(); i++) {
+        i_param_.limbs[i] = getEENameFromSensorName(octd_sensor_names[i]).c_str();
+    }
+    i_param_.other_detect_time_thre = octd->getOtherDetectTimeThre();
     return true;
 }
 
@@ -547,7 +623,7 @@ bool ObjectContactTurnaroundDetector::getObjectForcesMoments(OpenHRP::ObjectCont
 {
     std::cerr << "[" << m_profile.instance_name << "] getObjectForcesMoments" << std::endl;
     if (octd_sensor_names.size() == 0) return false;
-    hrp::Vector3 tmpv = octd->getAxis() * octd->getFilteredWrenchWithHold();
+    hrp::Vector3 tmpv = octd->getAxis() * octd->getFilteredWrenchWithHold()[0];
     o_forces = new OpenHRP::ObjectContactTurnaroundDetectorService::Dbl3Sequence ();
     o_moments = new OpenHRP::ObjectContactTurnaroundDetectorService::Dbl3Sequence ();
     o_forces->length(octd_sensor_names.size());
@@ -564,16 +640,20 @@ bool ObjectContactTurnaroundDetector::getObjectForcesMoments(OpenHRP::ObjectCont
     o_3dofwrench = new OpenHRP::ObjectContactTurnaroundDetectorService::DblSequence3 ();
     o_3dofwrench->length(3);
     for (size_t i = 0; i < 3; i++) (*o_3dofwrench)[i] = tmpv(i);
-    o_fric_coeff_wrench = octd->getFilteredFrictionCoeffWrenchWithHold();
+    o_fric_coeff_wrench = octd->getFilteredFrictionCoeffWrenchWithHold()[0];
     return true;
 }
 
 bool ObjectContactTurnaroundDetector::getObjectGeneralizedConstraintWrenches(OpenHRP::ObjectContactTurnaroundDetectorService::objectGeneralizedConstraintWrenchesParam& o_param)
 {
-    o_param.generalized_constraint_wrench1 = octd->getFilteredWrenchWithHold();
-    o_param.generalized_constraint_wrench2 = octd->getFilteredFrictionCoeffWrenchWithHold();
-    hrp::dvector6 tmp = octd->getFilteredResultantWrenchWithHold();
-    for (size_t i = 0; i < 6; i++) o_param.resultant_wrench[i] = tmp(i);
+    std::vector<double> tmp1 = octd->getFilteredWrenchWithHold();
+    o_param.generalized_constraint_wrench1.length(tmp1.size());
+    for (size_t i = 0; i < tmp1.size(); i++) o_param.generalized_constraint_wrench1[i] = tmp1[i];
+    std::vector<double> tmp2 = octd->getFilteredFrictionCoeffWrenchWithHold();
+    o_param.generalized_constraint_wrench2.length(tmp2.size());
+    for (size_t i = 0; i < tmp2.size(); i++) o_param.generalized_constraint_wrench2[i] = tmp2[i];
+    hrp::dvector6 tmpr = octd->getFilteredResultantWrenchWithHold();
+    for (size_t i = 0; i < 6; i++) o_param.resultant_wrench[i] = tmpr(i);
     return true;
 }
 

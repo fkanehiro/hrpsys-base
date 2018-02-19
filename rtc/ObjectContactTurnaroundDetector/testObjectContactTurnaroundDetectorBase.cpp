@@ -175,8 +175,13 @@ public:
         double total_tm = 4.0, start_tm = total_tm*0.1, turnaround_tm = total_tm*0.4, start_resultant_force = 0.0, turnaround_resultant_force = -40.0, dphi;
         dphi = std::fabs(gen_forces_moments_for_saturation(total_tm, start_tm, turnaround_tm, start_resultant_force, turnaround_resultant_force));
         octd.setDetectorTotalWrench(ObjectContactTurnaroundDetectorBase::GENERALIZED_WRENCH);
-        octd.setConstraintConversionMatrix1(get_ccm1_by_index(2));
-        octd.startDetection( get_a_coeff_by_index(dphi, octd.getConstraintConversionMatrix1(), hrp::Vector3::UnitZ()), total_tm);
+        std::vector<hrp::dvector6> ccm1(1, get_ccm1_by_index(2));
+        double ref_dwrench = get_a_coeff_by_index(dphi, ccm1[0], hrp::Vector3::UnitZ());
+        octd.setConstraintConversionMatricesRefDwrench(ccm1,
+                                                       std::vector<hrp::dvector6>(1, hrp::dvector6::Zero()),
+                                                       std::vector<double>(1, ref_dwrench));
+        octd.setMaxTime(total_tm);
+        octd.startDetectionForGeneralizedWrench();
         gen_pattern_and_plot ();
     };
     void test5 ()
@@ -185,8 +190,13 @@ public:
         double total_tm = 4.0, start_tm = total_tm*0.1, turnaround_tm = total_tm*0.4, start_resultant_force = 0.0, turnaround_resultant_force = -40.0, dphi;
         dphi = std::fabs(gen_forces_moments_for_saturation(total_tm, start_tm, turnaround_tm, start_resultant_force, turnaround_resultant_force, hrp::Vector3::UnitX()));
         octd.setDetectorTotalWrench(ObjectContactTurnaroundDetectorBase::GENERALIZED_WRENCH);
-        octd.setConstraintConversionMatrix1(get_ccm1_by_index(0));
-        octd.startDetection( get_a_coeff_by_index(dphi, octd.getConstraintConversionMatrix1(), hrp::Vector3::UnitX()), total_tm);
+        std::vector<hrp::dvector6> ccm1(1, get_ccm1_by_index(0));
+        double ref_dwrench = get_a_coeff_by_index(dphi, ccm1[0], hrp::Vector3::UnitX());
+        octd.setConstraintConversionMatricesRefDwrench(ccm1,
+                                                       std::vector<hrp::dvector6>(1, hrp::dvector6::Zero()),
+                                                       std::vector<double>(1, ref_dwrench));
+        octd.setMaxTime(total_tm);
+        octd.startDetectionForGeneralizedWrench();
         gen_pattern_and_plot ();
     };
     void test6 ()
@@ -195,8 +205,13 @@ public:
         double total_tm = 4.0, start_tm = total_tm*0.1, turnaround_tm = total_tm*0.4, start_resultant_force = 0.0, turnaround_resultant_force = 40.0, dphi;
         dphi = std::fabs(gen_forces_moments_for_saturation(total_tm, start_tm, turnaround_tm, start_resultant_force, turnaround_resultant_force, hrp::Vector3::UnitX()));
         octd.setDetectorTotalWrench(ObjectContactTurnaroundDetectorBase::GENERALIZED_WRENCH);
-        octd.setConstraintConversionMatrix1(get_ccm1_by_index(0, false));
-        octd.startDetection( get_a_coeff_by_index(dphi, octd.getConstraintConversionMatrix1(), -1*hrp::Vector3::UnitX()), total_tm);
+        std::vector<hrp::dvector6> ccm1(1, get_ccm1_by_index(0, false));
+        double ref_dwrench = get_a_coeff_by_index(dphi, ccm1[0], -1*hrp::Vector3::UnitX());
+        octd.setConstraintConversionMatricesRefDwrench(ccm1,
+                                                       std::vector<hrp::dvector6>(1, hrp::dvector6::Zero()),
+                                                       std::vector<double>(1, ref_dwrench));
+        octd.setMaxTime(total_tm);
+        octd.startDetectionForGeneralizedWrench();
         gen_pattern_and_plot ();
     };
     void test7 ()
@@ -205,10 +220,14 @@ public:
         double total_tm = 4.0, start_tm = total_tm*0.1, turnaround_tm = total_tm*0.4, start_resultant_force = 0.0, turnaround_resultant_force = -40.0, dphi;
         dphi = std::fabs(gen_forces_moments_for_saturation(total_tm, start_tm, turnaround_tm, start_resultant_force, turnaround_resultant_force));
         octd.setDetectorTotalWrench(ObjectContactTurnaroundDetectorBase::GENERALIZED_WRENCH);
-        hrp::dvector6 ccm1(hrp::dvector6::Zero());
-        ccm1(2) = 0.9; ccm1(4) = 1.0;
-        octd.setConstraintConversionMatrix1(ccm1);
-        octd.startDetection( get_a_coeff_by_index(dphi, octd.getConstraintConversionMatrix1(), hrp::Vector3::UnitZ()) , total_tm);
+        std::vector<hrp::dvector6> ccm1(1, hrp::dvector6::Zero());
+        ccm1[0](2) = 0.9; ccm1[0](4) = 1.0;
+        double ref_dwrench = get_a_coeff_by_index(dphi, ccm1[0], hrp::Vector3::UnitZ());
+        octd.setConstraintConversionMatricesRefDwrench(ccm1,
+                                                       std::vector<hrp::dvector6>(1, hrp::dvector6::Zero()),
+                                                       std::vector<double>(1, ref_dwrench));
+        octd.setMaxTime(total_tm);
+        octd.startDetectionForGeneralizedWrench();
         gen_pattern_and_plot ();
     };
     bool check_detection_time_validity (const double time_thre = 1.0) // [s]

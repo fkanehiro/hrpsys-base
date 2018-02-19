@@ -26,10 +26,10 @@ CORBA::Boolean ObjectContactTurnaroundDetectorService_impl::setObjectContactTurn
   return m_octd->setObjectContactTurnaroundDetectorParam(i_param_);
 }
 
-CORBA::Boolean ObjectContactTurnaroundDetectorService_impl::getObjectContactTurnaroundDetectorParam(OpenHRP::ObjectContactTurnaroundDetectorService::objectContactTurnaroundDetectorParam& i_param_)
+CORBA::Boolean ObjectContactTurnaroundDetectorService_impl::getObjectContactTurnaroundDetectorParam(OpenHRP::ObjectContactTurnaroundDetectorService::objectContactTurnaroundDetectorParam_out i_param_)
 {
-  i_param_ = OpenHRP::ObjectContactTurnaroundDetectorService::objectContactTurnaroundDetectorParam();
-  return m_octd->getObjectContactTurnaroundDetectorParam(i_param_);
+  i_param_ = new OpenHRP::ObjectContactTurnaroundDetectorService::objectContactTurnaroundDetectorParam();
+  return m_octd->getObjectContactTurnaroundDetectorParam(*i_param_);
 }
 
 CORBA::Boolean ObjectContactTurnaroundDetectorService_impl::getObjectForcesMoments(OpenHRP::ObjectContactTurnaroundDetectorService::Dbl3Sequence_out o_forces, OpenHRP::ObjectContactTurnaroundDetectorService::Dbl3Sequence_out o_moments, OpenHRP::ObjectContactTurnaroundDetectorService::DblSequence3_out o_3dofwrench, CORBA::Double& o_fric_coeff_wrench)
@@ -37,9 +37,21 @@ CORBA::Boolean ObjectContactTurnaroundDetectorService_impl::getObjectForcesMomen
   return m_octd->getObjectForcesMoments(o_forces, o_moments, o_3dofwrench, o_fric_coeff_wrench);
 }
 
-CORBA::Boolean ObjectContactTurnaroundDetectorService_impl::getObjectGeneralizedConstraintWrenches(OpenHRP::ObjectContactTurnaroundDetectorService::objectGeneralizedConstraintWrenchesParam& o_param)
+CORBA::Boolean ObjectContactTurnaroundDetectorService_impl::checkObjectContactTurnaroundDetectionForGeneralizedWrench(OpenHRP::ObjectContactTurnaroundDetectorService::DetectorModeSequence_out o_dms)
 {
-  return m_octd->getObjectGeneralizedConstraintWrenches(o_param);
+    o_dms = new OpenHRP::ObjectContactTurnaroundDetectorService::DetectorModeSequence();
+    return m_octd->checkObjectContactTurnaroundDetectionForGeneralizedWrench(o_dms);
+}
+
+CORBA::Boolean ObjectContactTurnaroundDetectorService_impl::startObjectContactTurnaroundDetectionForGeneralizedWrench()
+{
+    return m_octd->startObjectContactTurnaroundDetectionForGeneralizedWrench();
+}
+
+CORBA::Boolean ObjectContactTurnaroundDetectorService_impl::getObjectGeneralizedConstraintWrenches(OpenHRP::ObjectContactTurnaroundDetectorService::objectGeneralizedConstraintWrenchesParam_out o_param)
+{
+  o_param = new OpenHRP::ObjectContactTurnaroundDetectorService::objectGeneralizedConstraintWrenchesParam();
+  return m_octd->getObjectGeneralizedConstraintWrenches(*o_param);
 }
 
 void ObjectContactTurnaroundDetectorService_impl::octd(ObjectContactTurnaroundDetector *i_octd)
