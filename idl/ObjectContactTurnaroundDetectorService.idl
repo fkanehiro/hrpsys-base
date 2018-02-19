@@ -66,6 +66,8 @@ module OpenHRP
       DblArray6 constraint_conversion_matrix1;
       /// Constraint conversion matrix 2 (1 x 6 matrix) : for friction coefficient
       DblArray6 constraint_conversion_matrix2;
+      /// Hold values which can be obtained from idl functions when turnaround is detected. False by default (for backward compatibility).
+      boolean is_hold_values;
     };
 
     /**

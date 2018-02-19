@@ -499,6 +499,7 @@ bool ObjectContactTurnaroundDetector::setObjectContactTurnaroundDetectorParam(co
         break;
     }
     octd->setDetectorTotalWrench(dtw);
+    octd->setIsHoldValues(i_param_.is_hold_values);
     octd->printParams();
     return true;
 };
@@ -538,6 +539,7 @@ bool ObjectContactTurnaroundDetector::getObjectContactTurnaroundDetectorParam(Op
         break;
     }
     i_param_.detector_total_wrench = dtw;
+    i_param_.is_hold_values = octd->getIsHoldValues();
     return true;
 }
 

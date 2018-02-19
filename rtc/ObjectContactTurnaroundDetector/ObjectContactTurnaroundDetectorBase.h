@@ -29,12 +29,12 @@ class ObjectContactTurnaroundDetectorBase
     process_mode pmode;
     detector_total_wrench dtw;
     std::string print_str;
-    bool is_filter_reset;
+    bool is_filter_reset, is_hold_values;
  public:
     ObjectContactTurnaroundDetectorBase (const double _dt) : axis(-1*hrp::Vector3::UnitZ()), moment_center(hrp::Vector3::Zero()),
                                                              constraint_conversion_matrix1(hrp::dvector6::Zero()), constraint_conversion_matrix2(hrp::dvector6::Zero()),
                                                              prev_wrench(0.0), dt(_dt), detect_ratio_thre(0.01), start_ratio_thre(0.5),
-      count(0), detect_count_thre(5), start_count_thre(5), pmode(MODE_IDLE), dtw(TOTAL_FORCE), is_filter_reset(false)
+                                                             count(0), detect_count_thre(5), start_count_thre(5), pmode(MODE_IDLE), dtw(TOTAL_FORCE), is_filter_reset(false), is_hold_values(false)
     {
         double default_cutoff_freq = 1; // [Hz]
         wrench_filter = boost::shared_ptr<FirstOrderLowPassFilter<double> >(new FirstOrderLowPassFilter<double>(default_cutoff_freq, _dt, 0));
@@ -209,6 +209,7 @@ class ObjectContactTurnaroundDetectorBase
                   << "], moment_center = " << moment_center(0) << ", " << moment_center(1) << ", " << moment_center(2) << "][m]" << std::endl;
         std::cerr << "[" << print_str << "]    constraint_conversion_matrix1 = " << constraint_conversion_matrix1.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]"))
                   << ", constraint_conversion_matrix2 = " << constraint_conversion_matrix2.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "[", "]")) << std::endl;
+        std::cerr << "[" << print_str << "]    is_hold_values = " << (is_hold_values?"true":"false") << std::endl;
     };
     void setPrintStr (const std::string& str) { print_str = str; };
     void setWrenchCutoffFreq (const double a) { wrench_filter->setCutOffFreq(a); };
@@ -229,6 +230,7 @@ class ObjectContactTurnaroundDetectorBase
         }
         dtw = _dtw;
     };
+    void setIsHoldValues (const bool a) { is_hold_values = a; };
     double getWrenchCutoffFreq () const { return wrench_filter->getCutOffFreq(); };
     double getDwrenchCutoffFreq () const { return dwrench_filter->getCutOffFreq(); };
     double getFrictionCoeffWrenchCutoffFreq () const { return friction_coeff_wrench_filter->getCutOffFreq(); };
@@ -245,5 +247,6 @@ class ObjectContactTurnaroundDetectorBase
     double getFilteredDwrench () const { return dwrench_filter->getCurrentValue(); };
     double getFilteredFrictionCoeffWrench () const { return friction_coeff_wrench_filter->getCurrentValue(); };
     double getRawWrench () const { return current_wrench; };
+    bool getIsHoldValues () const { return is_hold_values; };
 };
 #endif // OBJECTCONTACTTURNAROUNDDETECTORBASE_H
