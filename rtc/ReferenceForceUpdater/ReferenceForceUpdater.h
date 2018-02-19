@@ -119,8 +119,6 @@ class ReferenceForceUpdater
   void updateRefFootOriginExtMoment (const std::string& arm);
   void updateRefObjExtMoment0 (const std::string& arm);
   void updateRefForces (const std::string& arm);
-  bool isFootOriginExtMoment (const std::string& str) const { return str == "footoriginextmoment"; };
-  bool isObjExtMoment0 (const std::string& str) const { return str == "objextmoment0"; };
   inline bool eps_eq(const double a, const double b, const double eps = 1e-3) { return std::fabs((a)-(b)) <= eps; };
 
  protected:
@@ -248,6 +246,7 @@ class ReferenceForceUpdater
   hrp::Matrix33 foot_origin_rot;
   bool use_sh_base_pos_rpy;
   int loop;//counter in onExecute
+  const std::string footoriginextmoment_name, objextmoment0_name;
 };
 
 
