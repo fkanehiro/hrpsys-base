@@ -71,6 +71,19 @@ module OpenHRP
     };
 
     /**
+     * @struct objectGeneralizedConstraintWrenchesParam
+     * @brief for getObjectGeneralizedConstraintWrenches argument
+     */
+    struct objectGeneralizedConstraintWrenchesParam {
+      /// Filtered generalized constraint wrench1 (not for friction coefficient).
+      double generalized_constraint_wrench1;
+      /// Filtered generalized constraint wrench2 (for friction coefficient).
+      double generalized_constraint_wrench2;
+      /// Filtered resultant wrench.
+      DblArray6 resultant_wrench;
+    };
+
+    /**
      * @brief Start ObjectContactTurnaroundDetector.
      * @param ref_diff_wrench is force or moment value.
      * @param max_time is max time [s].
@@ -105,10 +118,10 @@ module OpenHRP
     boolean getObjectForcesMoments(out Dbl3Sequence o_forces, out Dbl3Sequence o_moments, out DblSequence3 o_3dofwrench, out double o_fric_coeff_wrench);
 
     /**
-     * @brief get Current generalized constraint wrench1 and wrench2
-     * @param o_generalized_wrench1 is generalized constraint wrench1 (not for friction coefficient) and o_generalized_wrench2 is generalized constraint wrench2 (for friction coefficient).
+     * @brief get Current generalized constraint wrenches
+     * @param o_param output parameters
      * @return true if set successfully, false otherwise
      */
-    boolean getObjectGeneralizedConstraintWrenches(out double o_generalized_constraint_wrench1, out double o_generalized_constraint_wrench2);
+    boolean getObjectGeneralizedConstraintWrenches(out objectGeneralizedConstraintWrenchesParam o_param);
   };
 };

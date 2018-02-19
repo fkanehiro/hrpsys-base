@@ -20,7 +20,7 @@ class ObjectContactTurnaroundDetectorBase
     boost::shared_ptr<FirstOrderLowPassFilter<hrp::dvector6> > resultant_wrench_filter;
     boost::shared_ptr<FirstOrderLowPassFilter<hrp::dvector6> > resultant_dwrench_filter;
     hrp::Vector3 axis, moment_center;
-    hrp::dvector6 constraint_conversion_matrix1, constraint_conversion_matrix2;
+    hrp::dvector6 constraint_conversion_matrix1, constraint_conversion_matrix2, filtered_resultant_wrench_with_hold;
     double dt;
     double detect_ratio_thre, start_ratio_thre, ref_dwrench, max_time, current_time;
     double raw_wrench, filtered_wrench_with_hold, filtered_friction_coeff_wrench_with_hold;
@@ -35,7 +35,7 @@ class ObjectContactTurnaroundDetectorBase
     bool is_filter_reset, is_hold_values;
  public:
     ObjectContactTurnaroundDetectorBase (const double _dt) : axis(-1*hrp::Vector3::UnitZ()), moment_center(hrp::Vector3::Zero()),
-                                                             constraint_conversion_matrix1(hrp::dvector6::Zero()), constraint_conversion_matrix2(hrp::dvector6::Zero()),
+                                                             constraint_conversion_matrix1(hrp::dvector6::Zero()), constraint_conversion_matrix2(hrp::dvector6::Zero()), filtered_resultant_wrench_with_hold(hrp::dvector6::Zero()),
                                                              dt(_dt), detect_ratio_thre(0.01), start_ratio_thre(0.5),
                                                              count(0), detect_count_thre(5), start_count_thre(5), pmode(MODE_IDLE), dtw(TOTAL_FORCE), is_filter_reset(false), is_hold_values(false)
     {
@@ -156,12 +156,14 @@ class ObjectContactTurnaroundDetectorBase
         if (is_filter_reset) {
             filtered_wrench_with_hold = phi1;
             filtered_friction_coeff_wrench_with_hold = phi2;
+            filtered_resultant_wrench_with_hold = filtered_resultant_wrench;
             is_filter_reset = false;
         }
         // Hold values : is_hold_values is true and previously "detected", hold values. Otherwise, update values.
         if ( !(is_hold_values && isDetected()) ) {
             filtered_wrench_with_hold = phi1;
             filtered_friction_coeff_wrench_with_hold = phi2;
+            filtered_resultant_wrench_with_hold = filtered_resultant_wrench;
         }
         // For logger, just used as buffer
         raw_wrench = constraint_conversion_matrix1.dot(raw_resultant_wrench_value);
@@ -304,5 +306,6 @@ class ObjectContactTurnaroundDetectorBase
     // For values with hold
     double getFilteredWrenchWithHold () const { return filtered_wrench_with_hold; };
     double getFilteredFrictionCoeffWrenchWithHold () const { return filtered_friction_coeff_wrench_with_hold; };
+    hrp::dvector6 getFilteredResultantWrenchWithHold () const { return filtered_resultant_wrench_with_hold; };
 };
 #endif // OBJECTCONTACTTURNAROUNDDETECTORBASE_H

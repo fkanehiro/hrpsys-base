@@ -568,10 +568,12 @@ bool ObjectContactTurnaroundDetector::getObjectForcesMoments(OpenHRP::ObjectCont
     return true;
 }
 
-bool ObjectContactTurnaroundDetector::getObjectGeneralizedConstraintWrenches(double& o_generalized_constraint_wrench1, double& o_generalized_constraint_wrench2)
+bool ObjectContactTurnaroundDetector::getObjectGeneralizedConstraintWrenches(OpenHRP::ObjectContactTurnaroundDetectorService::objectGeneralizedConstraintWrenchesParam& o_param)
 {
-    o_generalized_constraint_wrench1 = octd->getFilteredWrenchWithHold();
-    o_generalized_constraint_wrench2 = octd->getFilteredFrictionCoeffWrenchWithHold();
+    o_param.generalized_constraint_wrench1 = octd->getFilteredWrenchWithHold();
+    o_param.generalized_constraint_wrench2 = octd->getFilteredFrictionCoeffWrenchWithHold();
+    hrp::dvector6 tmp = octd->getFilteredResultantWrenchWithHold();
+    for (size_t i = 0; i < 6; i++) o_param.resultant_wrench[i] = tmp(i);
     return true;
 }
 
