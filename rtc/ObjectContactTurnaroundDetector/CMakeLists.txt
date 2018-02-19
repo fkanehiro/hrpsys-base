@@ -11,6 +11,15 @@ target_link_libraries(testObjectContactTurnaroundDetectorBase ${libs})
 
 set(target ObjectContactTurnaroundDetector ObjectContactTurnaroundDetectorComp testObjectContactTurnaroundDetectorBase)
 
+add_test(testObjectContactTurnaroundDetectorBase0 testObjectContactTurnaroundDetectorBase --test0 --use-gnuplot false)
+add_test(testObjectContactTurnaroundDetectorBase1 testObjectContactTurnaroundDetectorBase --test1 --use-gnuplot false)
+add_test(testObjectContactTurnaroundDetectorBase2 testObjectContactTurnaroundDetectorBase --test2 --use-gnuplot false)
+add_test(testObjectContactTurnaroundDetectorBase3 testObjectContactTurnaroundDetectorBase --test3 --use-gnuplot false)
+add_test(testObjectContactTurnaroundDetectorBase4 testObjectContactTurnaroundDetectorBase --test4 --use-gnuplot false)
+add_test(testObjectContactTurnaroundDetectorBase5 testObjectContactTurnaroundDetectorBase --test5 --use-gnuplot false)
+add_test(testObjectContactTurnaroundDetectorBase6 testObjectContactTurnaroundDetectorBase --test6 --use-gnuplot false)
+add_test(testObjectContactTurnaroundDetectorBase7 testObjectContactTurnaroundDetectorBase --test7 --use-gnuplot false)
+
 install(TARGETS ${target}
   RUNTIME DESTINATION bin
   LIBRARY DESTINATION lib

@@ -117,8 +117,8 @@ class ReferenceForceUpdater
   void getTargetParameters ();
   void calcFootOriginCoords (hrp::Vector3& foot_origin_pos, hrp::Matrix33& foot_origin_rot);
   void updateRefFootOriginExtMoment (const std::string& arm);
+  void updateRefObjExtMoment0 (const std::string& arm);
   void updateRefForces (const std::string& arm);
-  bool isFootOriginExtMoment (const std::string& str) const { return str == "footoriginextmoment"; };
   inline bool eps_eq(const double a, const double b, const double eps = 1e-3) { return std::fabs((a)-(b)) <= eps; };
 
  protected:
@@ -202,7 +202,7 @@ class ReferenceForceUpdater
     void printParam (const std::string print_str)
     {
         std::cerr << "[" << print_str << "]   p_gain = " << p_gain << ", d_gain = " << d_gain << ", i_gain = " << i_gain << std::endl;
-        std::cerr << "[" << print_str << "]   update_freq = " << update_freq << "[Hz], update_time_ratio = " << update_time_ratio << ", transition_time = " << transition_time << "[s], cutoff_freq = " << act_force_filter->getCutOffFreq() << "[Hz]" << std::endl;
+        std::cerr << "[" << print_str << "]   update_freq = " << update_freq << "[Hz], update_count = " << update_count << ", update_time_ratio = " << update_time_ratio << ", transition_time = " << transition_time << "[s], cutoff_freq = " << act_force_filter->getCutOffFreq() << "[Hz]" << std::endl;
         std::cerr << "[" << print_str << "]   motion_dir = " << motion_dir.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << std::endl;
         std::cerr << "[" << print_str << "]   frame = " << frame << ", is_hold_value = " << (is_hold_value?"true":"false") << std::endl;
     }
@@ -239,13 +239,14 @@ class ReferenceForceUpdater
   std::map<std::string, ee_trans> ee_map;
   std::map<std::string, size_t> ee_index_map;
   std::map<std::string, ReferenceForceUpdaterParam> m_RFUParam;
-  std::vector<hrp::Vector3> ref_force, act_force;
+  std::vector<hrp::Vector3> ref_force;
   std::map<std::string, interpolator*> ref_force_interpolator;
   std::map<std::string, interpolator*> transition_interpolator;
   std::vector<double> transition_interpolator_ratio;
   hrp::Matrix33 foot_origin_rot;
   bool use_sh_base_pos_rpy;
   int loop;//counter in onExecute
+  const std::string footoriginextmoment_name, objextmoment0_name;
 };
 
 
