@@ -29,12 +29,12 @@ class ObjectContactTurnaroundDetectorBase
     process_mode pmode;
     detector_total_wrench dtw;
     std::string print_str;
-    bool is_dwr_changed;
+    bool is_filter_reset;
  public:
     ObjectContactTurnaroundDetectorBase (const double _dt) : axis(-1*hrp::Vector3::UnitZ()), moment_center(hrp::Vector3::Zero()),
                                                              constraint_conversion_matrix1(hrp::dvector6::Zero()), constraint_conversion_matrix2(hrp::dvector6::Zero()),
                                                              prev_wrench(0.0), dt(_dt), detect_ratio_thre(0.01), start_ratio_thre(0.5),
-      count(0), detect_count_thre(5), start_count_thre(5), pmode(MODE_IDLE), dtw(TOTAL_FORCE), is_dwr_changed(false)
+      count(0), detect_count_thre(5), start_count_thre(5), pmode(MODE_IDLE), dtw(TOTAL_FORCE), is_filter_reset(false)
     {
         double default_cutoff_freq = 1; // [Hz]
         wrench_filter = boost::shared_ptr<FirstOrderLowPassFilter<double> >(new FirstOrderLowPassFilter<double>(default_cutoff_freq, _dt, 0));
@@ -48,6 +48,7 @@ class ObjectContactTurnaroundDetectorBase
         max_time = _max_time;
         current_time = 0;
         count = 0;
+        is_filter_reset = true;
         std::cerr << "[" << print_str << "] Start Object Turnaround Detection (ref_dwrench = " << ref_dwrench
                   << ", detect_thre = " << detect_ratio_thre * ref_dwrench << ", start_thre = " << start_ratio_thre * ref_dwrench << "), max_time = " << max_time << "[s]" << std::endl;
         pmode = MODE_IDLE;
@@ -129,11 +130,12 @@ class ObjectContactTurnaroundDetectorBase
     };
     bool checkDetection (const double wrench_value, const double friction_coeff_wrench_value)
     {
-        if (is_dwr_changed) {
+        if (is_filter_reset) {
+          std::cerr << "[" << print_str << "] Object Turnaround Detection Reset Values. (wrench_value = " << wrench_value << ", friction_coeff_wrench_value = " << friction_coeff_wrench_value << ")" << std::endl;
           wrench_filter->reset(wrench_value);
           dwrench_filter->reset(0);
           friction_coeff_wrench_filter->reset(friction_coeff_wrench_value);
-          is_dwr_changed = false;
+          is_filter_reset = false;
         }
         current_wrench = wrench_value;
         double tmp_wr = wrench_filter->passFilter(wrench_value);
@@ -223,7 +225,7 @@ class ObjectContactTurnaroundDetectorBase
     void setDetectorTotalWrench (const detector_total_wrench _dtw)
     {
         if (_dtw != dtw) {
-          is_dwr_changed = true;
+          is_filter_reset = true;
         }
         dtw = _dtw;
     };
