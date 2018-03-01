@@ -242,13 +242,16 @@ class FullbodyInverseKinematicsSolver : public SimpleFullbodyInverseKinematicsSo
                     if(hrp::rpyFromRot(_robot->rootLink()->R)(i) < rootlink_rpy_llimit(i) && dq_all.tail(6).tail(3)(i) < 0) dq_all.tail(6).tail(3)(i) = 0;
                     if(hrp::rpyFromRot(_robot->rootLink()->R)(i) > rootlink_rpy_ulimit(i) && dq_all.tail(6).tail(3)(i) > 0) dq_all.tail(6).tail(3)(i) = 0;
                 }
-                hrp::Matrix33 eWx = hrp::hat(dq_all.tail(6).tail(3)).exp();
-                hrp::Matrix33 R_base_ans = eWx * _robot->rootLink()->R;
-                Eigen::Quaternion<double> quat(R_base_ans);
-                R_base_ans = quat.normalized().toRotationMatrix(); // normalize rot mat via Quaternion
-                if(!R_base_ans.isUnitary()){ std::cerr <<"ERROR R_base_ans is not Unitary" << std::endl; return; }
-                R_base_ans = hrp::rotFromRpy((hrp::rpyFromRot(R_base_ans).cwiseMax(rootlink_rpy_llimit)).cwiseMin(rootlink_rpy_ulimit));// check rpy minmax
-                _robot->rootLink()->R = R_base_ans;
+
+
+                hrp::Matrix33 dR;
+                hrp::Vector3 omega = dq_all.tail(6).tail(3);
+                hrp::calcRodrigues(dR, omega.normalized(), omega.norm());
+                if(!(_robot->rootLink()->R * dR).isUnitary()){
+                    std::cerr <<"ERROR R_base_ans is not Unitary" << std::endl; return;
+                }else{
+                    _robot->rootLink()->R = _robot->rootLink()->R * dR;
+                }
                 _robot->calcForwardKinematics();
             #else
                 std::cerr<<"solveFullbodyIKOnce() needs OPENHRP_PACKAGE_VERSION_320 !!!"<<std::endl;
