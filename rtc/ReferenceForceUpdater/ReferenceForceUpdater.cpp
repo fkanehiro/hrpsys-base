@@ -838,14 +838,14 @@ bool ReferenceForceUpdater::stopReferenceForceUpdaterNoWait(const std::string& i
 bool ReferenceForceUpdater::startReferenceForceUpdater(const std::string& i_name_)
 {
     bool ret = startReferenceForceUpdaterNoWait(i_name_);
-    waitReferenceForceUpdaterTransition(i_name_);
+    if (ret) waitReferenceForceUpdaterTransition(i_name_);
     return ret;
 };
 
 bool ReferenceForceUpdater::stopReferenceForceUpdater(const std::string& i_name_)
 {
     bool ret = stopReferenceForceUpdaterNoWait(i_name_);
-    waitReferenceForceUpdaterTransition(i_name_);
+    if (ret) waitReferenceForceUpdaterTransition(i_name_);
     return ret;
 };
 
@@ -880,5 +880,3 @@ extern "C"
   }
 
 };
-
-
