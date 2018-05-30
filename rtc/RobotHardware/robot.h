@@ -276,6 +276,20 @@ public:
      */
     bool setServoErrorLimit(const char *i_jname, double i_limit);
 
+    /**
+       \brief set joint inertia
+       \param i_jname joint name
+       \param i_mn joint inertia
+       \return true if set successfully, false otherwise
+     */
+    bool setJointInertia(const char *i_jname, double i_mn);
+
+    /**
+       \brief set joint inertias
+       \param i_mns array of joint inertia
+     */
+    void setJointInertias(const double *i_mn);
+
     void setProperty(const char *key, const char *value);
     bool addJointGroup(const char *gname, const std::vector<std::string>& jnames);
     std::vector<double> m_servoErrorLimit;  

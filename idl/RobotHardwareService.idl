@@ -208,10 +208,27 @@ module OpenHRP
      */
     void getStatus2(out RobotState2 rs);
 
+    /**
+     * @brief RobotState2 with timestamp
+     */
     struct TimedRobotState2
     {
       RTC::Time tm;
       RobotState2 data;
     };
+
+    /**
+     * @brief set joint inertia
+     * @param name joint name
+     * @param mn joint inertia
+     * @return true if set successfully, false otherwise
+     */
+    boolean setJointInertia(in string name, in double mn);
+
+    /**
+     * @biref set joint inertias
+     * @param mns array of joint inertia
+     */
+    void setJointInertias(in DblSequence mns);
   };
 };

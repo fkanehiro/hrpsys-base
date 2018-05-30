@@ -580,6 +580,16 @@ int write_command_accelerations(const double *accs)
     return FALSE;
 }
 
+int write_joint_inertia(int id, double mn)
+{
+    return FALSE;
+}
+
+int write_joint_inertias(const double *mns)
+{
+    return FALSE;
+}
+
 int number_of_batteries()
 {
     return 1;

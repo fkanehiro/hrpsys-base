@@ -596,6 +596,22 @@ extern "C"{
      int write_command_accelerations(const double *vels);
 
     /**
+     * @brief write joint inertia
+     * @param id	joint id
+     * @param mn	joint inertia
+     * @return		TRUE or E_ID
+     */
+    int write_joint_inertia(int id, double mn);
+
+    /**
+     * @brief write joint inertias
+     * @param mns	array of joint inertia
+     * @retval TRUE this function is supported
+     * @retval FALSE otherwise
+     */
+     int write_joint_inertias(const double *mns);
+
+    /**
      * @brief get the number of batteries
      * @return the number of batteries
      */

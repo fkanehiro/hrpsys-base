@@ -702,6 +702,15 @@ CORBA::Long RobotHardwareServicePort::lengthDigitalOutput() {
 CORBA::Boolean RobotHardwareServicePort::readDigitalOutput(::OpenHRP::RobotHardwareService::OctSequence_out dout) {
     return false;
 }
+
+CORBA::Boolean RobotHardwareServicePort::setJointInertia(const char* name, ::CORBA::Double mn)
+{
+    return true;
+}
+
+void RobotHardwareServicePort::setJointInertias(const ::OpenHRP::RobotHardwareService::DblSequence& mns)
+{
+}
 //
 void RobotHardwareServicePort::setRobot(BodyRTC *i_robot) { m_robot = i_robot; }
 

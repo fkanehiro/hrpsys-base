@@ -841,3 +841,16 @@ int robot::numThermometers()
     return 0;
 #endif
 }
+
+bool robot::setJointInertia(const char *jname, double mn)
+{
+    Link *l = link(jname);
+    if (!l) return false;
+    int jid = l->jointId;
+    return write_joint_inertia(jid, mn);
+}
+
+void robot::setJointInertias(const double *mns)
+{
+    write_joint_inertias(mns);
+}

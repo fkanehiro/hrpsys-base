@@ -43,6 +43,8 @@ public:
     CORBA::Boolean writeDigitalOutputWithMask(const ::OpenHRP::RobotHardwareService::OctSequence& dout, const ::OpenHRP::RobotHardwareService::OctSequence& mask);
     CORBA::Long lengthDigitalOutput();
     CORBA::Boolean readDigitalOutput(::OpenHRP::RobotHardwareService::OctSequence_out dout);
+    CORBA::Boolean setJointInertia(const char* name, ::CORBA::Double mn);
+    void setJointInertias(const ::OpenHRP::RobotHardwareService::DblSequence& mns);
     void setRobot(BodyRTC *i_robot);
 private:
     BodyRTC *m_robot;
