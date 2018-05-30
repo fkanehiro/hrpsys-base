@@ -863,3 +863,18 @@ int robot::readPDControllerTorques(double *o_torques)
     return 0;
 #endif
 }
+
+void robot::enableDisturbanceObserver()
+{
+    write_disturbance_observer(ON);
+}
+
+void robot::disableDisturbanceObserver()
+{
+    write_disturbance_observer(OFF);
+}
+
+void robot::setDisturbanceObserverGain(double gain)
+{
+    write_disturbance_observer_gain(gain);
+}

@@ -297,6 +297,22 @@ public:
      */
     void setJointInertias(const double *i_mn);
 
+    /**
+       \brief enable disturbance observer
+    */
+    void enableDisturbanceObserver();
+
+    /**
+       \brief disable disturbance observer
+    */
+    void disableDisturbanceObserver();
+
+    /**
+       \brief set disturbance observer gain
+       \param gain disturbance observer gain
+    */
+    void setDisturbanceObserverGain(double gain);
+
     void setProperty(const char *key, const char *value);
     bool addJointGroup(const char *gname, const std::vector<std::string>& jnames);
     std::vector<double> m_servoErrorLimit;  

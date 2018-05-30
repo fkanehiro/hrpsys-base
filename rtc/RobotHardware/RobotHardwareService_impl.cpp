@@ -184,3 +184,19 @@ void RobotHardwareService_impl::setJointInertias(const ::OpenHRP::RobotHardwareS
 {
     m_robot->setJointInertias(mns.get_buffer());
 }
+
+
+void RobotHardwareService_impl::enableDisturbanceObserver()
+{
+    m_robot->enableDisturbanceObserver();
+}
+
+void RobotHardwareService_impl::disableDisturbanceObserver()
+{
+    m_robot->disableDisturbanceObserver();
+}
+
+void RobotHardwareService_impl::setDisturbanceObserverGain(::CORBA::Double gain)
+{
+    m_robot->setDisturbanceObserverGain(gain);
+}

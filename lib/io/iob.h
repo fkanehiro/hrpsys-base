@@ -620,6 +620,20 @@ extern "C"{
     int read_pd_controller_torques(double *torques);
 
     /**
+     * @brief turn on/off disturbance observer
+     * @param com 	ON/OFF
+     * @return		TRUE if this function is supported, FALSE otherwise
+     */
+    int write_disturbance_observer(int com);
+
+    /**
+     * @brief write disturbance observer gain
+     * @param gain	disturbance observer gain
+     * @return		TRUE if this function is supported, FALSE otherwise
+     */
+    int write_disturbance_observer_gain(double gain);
+
+    /**
      * @brief get the number of batteries
      * @return the number of batteries
      */

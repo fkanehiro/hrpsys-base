@@ -35,6 +35,9 @@ public:
     CORBA::Boolean readDigitalOutput(::OpenHRP::RobotHardwareService::OctSequence_out dout);
     CORBA::Boolean setJointInertia(const char* name, ::CORBA::Double mn);
     void setJointInertias(const ::OpenHRP::RobotHardwareService::DblSequence& mns);
+    void enableDisturbanceObserver();
+    void disableDisturbanceObserver();
+    void setDisturbanceObserverGain(::CORBA::Double gain);
     //
     void setRobot(boost::shared_ptr<robot>& i_robot) { m_robot = i_robot; }
 private:

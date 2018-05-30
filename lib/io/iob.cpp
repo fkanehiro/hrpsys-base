@@ -595,6 +595,16 @@ int read_pd_controller_torques(double *torques)
     return FALSE;
 }
 
+int write_disturbance_observer(int com)
+{
+    return FALSE;
+}
+
+int write_disturbance_observer_gain(double gain)
+{
+    return FALSE;
+}
+
 int number_of_batteries()
 {
     return 1;
