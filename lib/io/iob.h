@@ -612,6 +612,14 @@ extern "C"{
      int write_joint_inertias(const double *mns);
 
     /**
+     * @brief read pd controller torques [Nm]
+     * @param torques array of pd controller torque [Nm]
+     * @retval TRUE this function is supported
+     * @retval FALSE otherwise
+     */
+    int read_pd_controller_torques(double *torques);
+
+    /**
      * @brief get the number of batteries
      * @return the number of batteries
      */

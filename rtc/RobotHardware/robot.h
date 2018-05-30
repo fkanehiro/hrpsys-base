@@ -227,6 +227,13 @@ public:
     void writeAccelerationCommands(const double *i_commands);
 
     /**
+       \brief read array of all pd controller torques[Nm]
+       \param o_torques array of all pd controller torques
+       \param TRUE if read successfully, FALSE otherwise
+     */
+    int readPDControllerTorques(double *o_torques);
+
+    /**
        \brief get length of extra servo states
        \param id joint id
        \return length of extra servo states

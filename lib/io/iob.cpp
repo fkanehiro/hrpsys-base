@@ -590,6 +590,11 @@ int write_joint_inertias(const double *mns)
     return FALSE;
 }
 
+int read_pd_controller_torques(double *torques)
+{
+    return FALSE;
+}
+
 int number_of_batteries()
 {
     return 1;

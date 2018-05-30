@@ -854,3 +854,12 @@ void robot::setJointInertias(const double *mns)
 {
     write_joint_inertias(mns);
 }
+
+int robot::readPDControllerTorques(double *o_torques)
+{
+#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 2
+    return read_pd_controller_torques(o_torques);
+#else
+    return 0;
+#endif
+}
