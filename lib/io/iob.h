@@ -582,18 +582,18 @@ extern "C"{
     /**
      * @brief write command angular acceleration[rad/s^2]
      * @param id	joint id
-     * @param vel	angular acceleration [rad/s^2]
+     * @param acc	angular acceleration [rad/s^2]
      * @return		TRUE or E_ID
      */
-    int write_command_acceleration(int id, double vel);
+    int write_command_acceleration(int id, double acc);
 
     /**
      * @brief write command angular accelerations[rad/s^2]
-     * @param vels	array of angular acceleration [rad/s^2]
+     * @param accs	array of angular acceleration [rad/s^2]
      * @retval TRUE this function is supported
      * @retval FALSE otherwise
      */
-     int write_command_accelerations(const double *vels);
+     int write_command_accelerations(const double *accs);
 
     /**
      * @brief write joint inertia
