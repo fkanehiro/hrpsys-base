@@ -243,6 +243,7 @@ module OpenHRP
 
     /**
      * @brief set disturbance observer gain
+     * @param gain disturbance observer gain
      */
     void setDisturbanceObserverGain(in double gain);
   };
