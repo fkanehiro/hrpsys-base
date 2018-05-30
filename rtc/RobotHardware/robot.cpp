@@ -484,6 +484,13 @@ void robot::writeVelocityCommands(const double *i_commands)
     write_command_velocities(i_commands);
 }
 
+void robot::writeAccelerationCommands(const double *i_commands)
+{
+#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 2
+    write_command_accelerations(i_commands);
+#endif
+}
+
 void robot::readPowerStatus(double &o_voltage, double &o_current)
 {
     read_power(&o_voltage, &o_current);

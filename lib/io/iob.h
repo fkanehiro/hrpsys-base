@@ -580,6 +580,22 @@ extern "C"{
 #if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 2
     //@{
     /**
+     * @brief write command angular acceleration[rad/s^2]
+     * @param id	joint id
+     * @param vel	angular acceleration [rad/s^2]
+     * @return		TRUE or E_ID
+     */
+    int write_command_acceleration(int id, double vel);
+
+    /**
+     * @brief write command angular accelerations[rad/s^2]
+     * @param vels	array of angular acceleration [rad/s^2]
+     * @retval TRUE this function is supported
+     * @retval FALSE otherwise
+     */
+     int write_command_accelerations(const double *vels);
+
+    /**
      * @brief get the number of batteries
      * @return the number of batteries
      */

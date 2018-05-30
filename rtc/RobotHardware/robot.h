@@ -221,6 +221,12 @@ public:
     void writeVelocityCommands(const double *i_commands);
 
     /**
+       \brief write array of reference accelerations of joint servo
+       \param i_commands array of reference accelerations of joint servo[rad/s]
+     */
+    void writeAccelerationCommands(const double *i_commands);
+
+    /**
        \brief get length of extra servo states
        \param id joint id
        \return length of extra servo states

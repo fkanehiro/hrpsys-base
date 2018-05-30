@@ -49,6 +49,7 @@ RobotHardware::RobotHardware(RTC::Manager* manager)
     m_isDemoMode(0),
     m_qRefIn("qRef", m_qRef),
     m_dqRefIn("dqRef", m_dqRef),
+    m_ddqRefIn("ddqRef", m_ddqRef),
     m_tauRefIn("tauRef", m_tauRef),
     m_qOut("q", m_q),
     m_dqOut("dq", m_dq),
@@ -75,6 +76,7 @@ RTC::ReturnCode_t RobotHardware::onInitialize()
   
   addInPort("qRef", m_qRefIn);
   addInPort("dqRef", m_dqRefIn);
+  addInPort("ddqRef", m_ddqRefIn);
   addInPort("tauRef", m_tauRefIn);
 
   addOutPort("q", m_qOut);
@@ -138,6 +140,7 @@ RTC::ReturnCode_t RobotHardware::onInitialize()
   m_servoState.data.length(m_robot->numJoints());
   m_qRef.data.length(m_robot->numJoints());
   m_dqRef.data.length(m_robot->numJoints());
+  m_ddqRef.data.length(m_robot->numJoints());
   m_tauRef.data.length(m_robot->numJoints());
 
   int ngyro = m_robot->numSensors(Sensor::RATE_GYRO);
@@ -262,6 +265,12 @@ RTC::ReturnCode_t RobotHardware::onExecute(RTC::UniqueId ec_id)
       //std::cout << "RobotHardware: dqRef[21] = " << m_dqRef.data[21] << std::endl;
       // output to iob
       m_robot->writeVelocityCommands(m_dqRef.data.get_buffer());
+  }
+  if (m_ddqRefIn.isNew()){
+      m_ddqRefIn.read();
+      //std::cout << "RobotHardware: dqRef[21] = " << m_dqRef.data[21] << std::endl;
+      // output to iob
+      m_robot->writeAccelerationCommands(m_ddqRef.data.get_buffer());
   }
   if (m_tauRefIn.isNew()){
       m_tauRefIn.read();

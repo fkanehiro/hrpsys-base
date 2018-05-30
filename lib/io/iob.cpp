@@ -570,6 +570,16 @@ int read_power(double *voltage, double *current)
 }
 
 #if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 2
+int write_command_acceleration(int id, double acc)
+{
+    return FALSE;
+}
+
+int write_command_accelerations(const double *accs)
+{
+    return FALSE;
+}
+
 int number_of_batteries()
 {
     return 1;

@@ -130,6 +130,11 @@ class RobotHardware
   TimedDoubleSeq m_dqRef;
   InPort<TimedDoubleSeq> m_dqRefIn;
   /**
+     \brief array of reference accelerations of joint with jointId
+  */
+  TimedDoubleSeq m_ddqRef;
+  InPort<TimedDoubleSeq> m_ddqRefIn;
+  /**
      \brief array of reference torques of joint with jointId
   */
   TimedDoubleSeq m_tauRef;
