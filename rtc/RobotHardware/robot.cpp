@@ -866,15 +866,21 @@ int robot::readPDControllerTorques(double *o_torques)
 
 void robot::enableDisturbanceObserver()
 {
+#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 2
     write_disturbance_observer(ON);
+#endif
 }
 
 void robot::disableDisturbanceObserver()
 {
+#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 2
     write_disturbance_observer(OFF);
+#endif
 }
 
 void robot::setDisturbanceObserverGain(double gain)
 {
+#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 2
     write_disturbance_observer_gain(gain);
+#endif
 }
