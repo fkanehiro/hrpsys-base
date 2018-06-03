@@ -844,15 +844,21 @@ int robot::numThermometers()
 
 bool robot::setJointInertia(const char *jname, double mn)
 {
+#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 2
     Link *l = link(jname);
     if (!l) return false;
     int jid = l->jointId;
     return write_joint_inertia(jid, mn);
+#else
+    return false;
+#endif
 }
 
 void robot::setJointInertias(const double *mns)
 {
+#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 2
     write_joint_inertias(mns);
+#endif    
 }
 
 int robot::readPDControllerTorques(double *o_torques)
