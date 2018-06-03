@@ -570,6 +570,41 @@ int read_power(double *voltage, double *current)
 }
 
 #if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 2
+int write_command_acceleration(int id, double acc)
+{
+    return FALSE;
+}
+
+int write_command_accelerations(const double *accs)
+{
+    return FALSE;
+}
+
+int write_joint_inertia(int id, double mn)
+{
+    return FALSE;
+}
+
+int write_joint_inertias(const double *mns)
+{
+    return FALSE;
+}
+
+int read_pd_controller_torques(double *torques)
+{
+    return FALSE;
+}
+
+int write_disturbance_observer(int com)
+{
+    return FALSE;
+}
+
+int write_disturbance_observer_gain(double gain)
+{
+    return FALSE;
+}
+
 int number_of_batteries()
 {
     return 1;

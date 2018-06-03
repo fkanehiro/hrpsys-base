@@ -580,6 +580,60 @@ extern "C"{
 #if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 2
     //@{
     /**
+     * @brief write command angular acceleration[rad/s^2]
+     * @param id	joint id
+     * @param acc	angular acceleration [rad/s^2]
+     * @return		TRUE or E_ID
+     */
+    int write_command_acceleration(int id, double acc);
+
+    /**
+     * @brief write command angular accelerations[rad/s^2]
+     * @param accs	array of angular acceleration [rad/s^2]
+     * @retval TRUE this function is supported
+     * @retval FALSE otherwise
+     */
+     int write_command_accelerations(const double *accs);
+
+    /**
+     * @brief write joint inertia
+     * @param id	joint id
+     * @param mn	joint inertia
+     * @return		TRUE or E_ID
+     */
+    int write_joint_inertia(int id, double mn);
+
+    /**
+     * @brief write joint inertias
+     * @param mns	array of joint inertia
+     * @retval TRUE this function is supported
+     * @retval FALSE otherwise
+     */
+     int write_joint_inertias(const double *mns);
+
+    /**
+     * @brief read pd controller torques [Nm]
+     * @param torques array of pd controller torque [Nm]
+     * @retval TRUE this function is supported
+     * @retval FALSE otherwise
+     */
+    int read_pd_controller_torques(double *torques);
+
+    /**
+     * @brief turn on/off disturbance observer
+     * @param com 	ON/OFF
+     * @return		TRUE if this function is supported, FALSE otherwise
+     */
+    int write_disturbance_observer(int com);
+
+    /**
+     * @brief write disturbance observer gain
+     * @param gain	disturbance observer gain
+     * @return		TRUE if this function is supported, FALSE otherwise
+     */
+    int write_disturbance_observer_gain(double gain);
+
+    /**
      * @brief get the number of batteries
      * @return the number of batteries
      */

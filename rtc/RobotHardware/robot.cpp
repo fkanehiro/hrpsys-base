@@ -484,6 +484,13 @@ void robot::writeVelocityCommands(const double *i_commands)
     write_command_velocities(i_commands);
 }
 
+void robot::writeAccelerationCommands(const double *i_commands)
+{
+#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 2
+    write_command_accelerations(i_commands);
+#endif
+}
+
 void robot::readPowerStatus(double &o_voltage, double &o_current)
 {
     read_power(&o_voltage, &o_current);
@@ -832,5 +839,48 @@ int robot::numThermometers()
     return number_of_thermometers();
 #else
     return 0;
+#endif
+}
+
+bool robot::setJointInertia(const char *jname, double mn)
+{
+    Link *l = link(jname);
+    if (!l) return false;
+    int jid = l->jointId;
+    return write_joint_inertia(jid, mn);
+}
+
+void robot::setJointInertias(const double *mns)
+{
+    write_joint_inertias(mns);
+}
+
+int robot::readPDControllerTorques(double *o_torques)
+{
+#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 2
+    return read_pd_controller_torques(o_torques);
+#else
+    return 0;
+#endif
+}
+
+void robot::enableDisturbanceObserver()
+{
+#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 2
+    write_disturbance_observer(ON);
+#endif
+}
+
+void robot::disableDisturbanceObserver()
+{
+#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 2
+    write_disturbance_observer(OFF);
+#endif
+}
+
+void robot::setDisturbanceObserverGain(double gain)
+{
+#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 2
+    write_disturbance_observer_gain(gain);
 #endif
 }

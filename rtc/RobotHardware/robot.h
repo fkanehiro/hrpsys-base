@@ -221,6 +221,19 @@ public:
     void writeVelocityCommands(const double *i_commands);
 
     /**
+       \brief write array of reference accelerations of joint servo
+       \param i_commands array of reference accelerations of joint servo[rad/s]
+     */
+    void writeAccelerationCommands(const double *i_commands);
+
+    /**
+       \brief read array of all pd controller torques[Nm]
+       \param o_torques array of all pd controller torques
+       \param TRUE if read successfully, FALSE otherwise
+     */
+    int readPDControllerTorques(double *o_torques);
+
+    /**
        \brief get length of extra servo states
        \param id joint id
        \return length of extra servo states
@@ -269,6 +282,36 @@ public:
        \return true if set successfully, false otherwise 
      */
     bool setServoErrorLimit(const char *i_jname, double i_limit);
+
+    /**
+       \brief set joint inertia
+       \param i_jname joint name
+       \param i_mn joint inertia
+       \return true if set successfully, false otherwise
+     */
+    bool setJointInertia(const char *i_jname, double i_mn);
+
+    /**
+       \brief set joint inertias
+       \param i_mns array of joint inertia
+     */
+    void setJointInertias(const double *i_mn);
+
+    /**
+       \brief enable disturbance observer
+    */
+    void enableDisturbanceObserver();
+
+    /**
+       \brief disable disturbance observer
+    */
+    void disableDisturbanceObserver();
+
+    /**
+       \brief set disturbance observer gain
+       \param gain disturbance observer gain
+    */
+    void setDisturbanceObserverGain(double gain);
 
     void setProperty(const char *key, const char *value);
     bool addJointGroup(const char *gname, const std::vector<std::string>& jnames);

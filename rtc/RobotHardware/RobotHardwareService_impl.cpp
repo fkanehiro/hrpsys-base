@@ -174,3 +174,29 @@ CORBA::Boolean RobotHardwareService_impl::readDigitalOutput(::OpenHRP::RobotHard
     dout->length(lengthDigitalOutput());
     return m_robot->readDigitalOutput((char *)(dout->get_buffer()));
 }
+
+CORBA::Boolean RobotHardwareService_impl::setJointInertia(const char* name, ::CORBA::Double mn)
+{
+    m_robot->setJointInertia(name, mn);
+}
+
+void RobotHardwareService_impl::setJointInertias(const ::OpenHRP::RobotHardwareService::DblSequence& mns)
+{
+    m_robot->setJointInertias(mns.get_buffer());
+}
+
+
+void RobotHardwareService_impl::enableDisturbanceObserver()
+{
+    m_robot->enableDisturbanceObserver();
+}
+
+void RobotHardwareService_impl::disableDisturbanceObserver()
+{
+    m_robot->disableDisturbanceObserver();
+}
+
+void RobotHardwareService_impl::setDisturbanceObserverGain(::CORBA::Double gain)
+{
+    m_robot->setDisturbanceObserverGain(gain);
+}
