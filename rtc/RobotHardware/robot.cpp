@@ -118,19 +118,40 @@ bool robot::loadGain()
     }
 
     double dummy;
-    for (unsigned int i=0; i<numJoints(); i++){
-        strm >> default_pgain[i];
-        strm >> dummy;
-        strm >> default_dgain[i];
-        strm >> dummy;
-        strm >> default_tqpgain[i];
-        strm >> dummy;
-        strm >> default_tqdgain[i];
+    for (unsigned int i=0; i<numJoints(); i++) {
+        std::string str;
+        if(std::getline(strm, str)) {
+            if(!str.empty()) {
+                std::istringstream sstrm(str);
+                sstrm >> default_pgain[i];
+                sstrm >> dummy;
+                sstrm >> default_dgain[i];
+                sstrm >> dummy;
+                if(sstrm.eof()) {
+                    default_tqpgain[i] = default_tqdgain[i] = 0.0;
+                } else {
+                    sstrm >> default_tqpgain[i];
+                    sstrm >> dummy;
+                    sstrm >> default_tqdgain[i];
+                }
+            } else {
+                std::cerr << "[RobotHardware] error: exist empty line in gain file" << std::endl;
+            }
+        } else {
+            std::cerr << "[RobotHardware] error: size of gains does not match size of joints" << std::endl;
+            break;
+        }
     }
     strm.close();
     // Print loaded gain
     std::cerr << "[RobotHardware] loadGain" << std::endl;
-    for (unsigned int i=0; i<numJoints(); i++) {                                                                                                                                               std::cerr << "[RobotHardware]   " << joint(i)->name << ", pgain = " << default_pgain[i] << ", dgain = " << default_dgain[i] << std::endl;
+    for (unsigned int i=0; i<numJoints(); i++) {
+        std::cerr << "[RobotHardware]   " << joint(i)->name
+                  << ", pgain = " << default_pgain[i]
+                  << ", dgain = " << default_dgain[i]
+                  << ", tqpgain = " << default_tqpgain[i]
+                  << ", tqdgain = " << default_tqdgain[i]
+                  << std::endl;
     }
     return true;
 }
