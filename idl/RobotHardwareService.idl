@@ -67,8 +67,6 @@ module OpenHRP
 
     enum SwitchStatus {SWITCH_ON, SWITCH_OFF};
 
-    enum JointControlMode {POSITION, POSITION_TORQUE};
-
     /**
      * @brief turn on/off power supply for motor driver
      * @param name joint name, part name or "all"
@@ -95,20 +93,11 @@ module OpenHRP
     void setServoGainPercentage(in string name, in double percentage);
 
     /**
-     * @brief set the parcentage to the default servo gain
-     * @param name joint name, part name or "all"
-     * @param percentage to joint servo gain[0-100]
-     */
-    void setServoTorqueGainPercentage(in string name, in double percentage);
-
-    /**
      * @brief set the maximum joint servo error angle
      * @param name joint name, part name or "all"
      * @param limit the maximum joint servo error angle[rad]
      */
     void setServoErrorLimit(in string name, in double limit);
-
-    void setJointControlMode(in string jname, in JointControlMode jcm);
 
     /**
      * @brief remove offsets on sensor outputs form gyro sensors and accelerometers. This function takes 10[s]. Please keep the robot static.
@@ -257,5 +246,21 @@ module OpenHRP
      * @param gain disturbance observer gain
      */
     void setDisturbanceObserverGain(in double gain);
+
+    /**
+     * @brief set the parcentage to the default servo gain
+     * @param name joint name, part name or "all"
+     * @param percentage to joint servo gain[0-100]
+     */
+    void setServoTorqueGainPercentage(in string name, in double percentage);
+
+    enum JointControlMode {POSITION, POSITION_TORQUE};
+    /**
+     * @brief set joint control mode
+     * @param jname joint name, part name or "all"
+     * @param jcm   joint control mode
+     */
+    void setJointControlMode(in string jname, in JointControlMode jcm);
+
   };
 };
