@@ -295,26 +295,6 @@ int write_dgain(int id, double gain)
     return FALSE;
 }
 
-int read_torque_pgain(int id, double *gain)
-{
-    return FALSE;
-}
-
-int write_torque_pgain(int id, double gain)
-{
-    return FALSE;
-}
-
-int read_torque_dgain(int id, double *gain)
-{
-    return FALSE;
-}
-
-int write_torque_dgain(int id, double gain)
-{
-    return FALSE;
-}
-
 int read_force_sensor(int id, double *forces)
 {
     for (int i=0; i<6; i++){
@@ -643,6 +623,25 @@ int number_of_thermometers()
     return 0;
 }
 
+int read_torque_pgain(int id, double *gain)
+{
+    return FALSE;
+}
+
+int write_torque_pgain(int id, double gain)
+{
+    return FALSE;
+}
+
+int read_torque_dgain(int id, double *gain)
+{
+    return FALSE;
+}
+
+int write_torque_dgain(int id, double gain)
+{
+    return FALSE;
+}
 #endif
 
 int read_driver_temperature(int id, unsigned char *v)
