@@ -210,8 +210,17 @@ void RobotHardwareService_impl::setJointControlMode(const char *jname, OpenHRP::
 {
     joint_control_mode mode;
     switch(jcm){
+    case OpenHRP::RobotHardwareService::FREE:
+        mode = JCM_FREE;
+        break;
     case OpenHRP::RobotHardwareService::POSITION:
         mode = JCM_POSITION;
+        break;
+    case OpenHRP::RobotHardwareService::TORQUE:
+        mode = JCM_TORQUE;
+        break;
+    case OpenHRP::RobotHardwareService::VELOCITY:
+        mode = JCM_VELOCITY;
         break;
     case OpenHRP::RobotHardwareService::POSITION_TORQUE:
         mode = JCM_POSITION_TORQUE;

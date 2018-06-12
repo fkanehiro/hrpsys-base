@@ -254,7 +254,7 @@ module OpenHRP
      */
     void setServoTorqueGainPercentage(in string name, in double percentage);
 
-    enum JointControlMode {POSITION, POSITION_TORQUE};
+    enum JointControlMode {FREE, POSITION, TORQUE, VELOCITY, POSITION_TORQUE};
     /**
      * @brief set joint control mode
      * @param jname joint name, part name or "all"
