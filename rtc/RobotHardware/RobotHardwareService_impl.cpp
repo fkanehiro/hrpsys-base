@@ -222,9 +222,11 @@ void RobotHardwareService_impl::setJointControlMode(const char *jname, OpenHRP::
     case OpenHRP::RobotHardwareService::VELOCITY:
         mode = JCM_VELOCITY;
         break;
+#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 4
     case OpenHRP::RobotHardwareService::POSITION_TORQUE:
         mode = JCM_POSITION_TORQUE;
         break;
+#endif
     default:
         return;
     }

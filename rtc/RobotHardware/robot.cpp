@@ -313,7 +313,7 @@ void robot::gain_control(int i)
         new_tqdgain = (tqdgain[i]-old_tqdgain[i])*gain_counter[i]/GAIN_COUNT + old_tqdgain[i];
         write_pgain(i, new_pgain);
         write_dgain(i, new_dgain);
-#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 2
+#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 4
         write_torque_pgain(i, new_tqpgain);
         write_torque_dgain(i, new_tqdgain);
 #endif
@@ -379,7 +379,7 @@ bool robot::servo(int jid, bool turnon)
     write_dgain(jid, 0);
     old_pgain[jid] = 0;
     old_dgain[jid] = 0;
-#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 2
+#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 4
     write_torque_pgain(jid, 0);
     write_torque_dgain(jid, 0);
 #endif
@@ -435,7 +435,7 @@ bool robot::power(int jid, bool turnon)
             for (unsigned int i=0; i<numJoints(); i++) {
                 write_pgain(i, 0);
                 write_dgain(i, 0);
-#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 2
+#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 4
                 write_torque_pgain(i, 0);
                 write_torque_dgain(i, 0);
 #endif
@@ -449,7 +449,7 @@ bool robot::power(int jid, bool turnon)
         if (com == OFF) {
             write_pgain(jid, 0);
             write_dgain(jid, 0);
-#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 2
+#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 4
             write_torque_pgain(jid, 0);
             write_torque_dgain(jid, 0);
 #endif
@@ -542,7 +542,7 @@ void robot::writeVelocityCommands(const double *i_commands)
 
 void robot::writeAccelerationCommands(const double *i_commands)
 {
-#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 2
+#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 3
     write_command_accelerations(i_commands);
 #endif
 }
@@ -720,7 +720,7 @@ bool robot::setServoGainPercentage(const char *i_jname, double i_percentage)
             pgain[i] = default_pgain[i] * i_percentage/100.0;
             if (!read_dgain(i, &old_dgain[i])) old_dgain[i] = dgain[i];
             dgain[i] = default_dgain[i] * i_percentage/100.0;
-#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 2
+#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 4
             if (!read_torque_pgain(i, &old_tqpgain[i])) old_tqpgain[i] = tqpgain[i];
             if (!read_torque_dgain(i, &old_tqdgain[i])) old_tqdgain[i] = tqdgain[i];
 #endif
@@ -732,7 +732,7 @@ bool robot::setServoGainPercentage(const char *i_jname, double i_percentage)
         pgain[l->jointId] = default_pgain[l->jointId] * i_percentage/100.0;
         if (!read_dgain(l->jointId, &old_dgain[l->jointId])) old_dgain[l->jointId] = dgain[l->jointId];
         dgain[l->jointId] = default_dgain[l->jointId] * i_percentage/100.0;
-#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 2
+#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 4
         if (!read_torque_pgain(l->jointId, &old_tqpgain[l->jointId])) old_tqpgain[l->jointId] = tqpgain[l->jointId];
         if (!read_torque_dgain(l->jointId, &old_tqdgain[l->jointId])) old_tqdgain[l->jointId] = tqdgain[l->jointId];
 #endif
@@ -747,7 +747,7 @@ bool robot::setServoGainPercentage(const char *i_jname, double i_percentage)
             pgain[jgroup[i]] = default_pgain[jgroup[i]] * i_percentage/100.0;
             if (!read_dgain(jgroup[i], &old_dgain[jgroup[i]])) old_dgain[jgroup[i]] = dgain[jgroup[i]];
             dgain[jgroup[i]] = default_dgain[jgroup[i]] * i_percentage/100.0;
-#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 2
+#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 4
             if (!read_torque_pgain(jgroup[i], &old_tqpgain[jgroup[i]])) old_tqpgain[jgroup[i]] = tqpgain[jgroup[i]];
             if (!read_torque_dgain(jgroup[i], &old_tqdgain[jgroup[i]])) old_tqdgain[jgroup[i]] = tqdgain[jgroup[i]];
 #endif
@@ -767,7 +767,7 @@ bool robot::setServoTorqueGainPercentage(const char *i_jname, double i_percentag
     Link *l = NULL;
     if (strcmp(i_jname, "all") == 0 || strcmp(i_jname, "ALL") == 0){
         for (int i=0; i<numJoints(); i++){
-#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 2
+#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 4
             if (!read_torque_pgain(i, &old_tqpgain[i])) old_tqpgain[i] = tqpgain[i];
             tqpgain[i] = default_tqpgain[i] * i_percentage/100.0;
             if (!read_torque_dgain(i, &old_tqdgain[i])) old_tqdgain[i] = tqdgain[i];
@@ -779,7 +779,7 @@ bool robot::setServoTorqueGainPercentage(const char *i_jname, double i_percentag
         }
         std::cerr << "[RobotHardware] setServoTorqueGainPercentage " << i_percentage << "[%] for all joints" << std::endl;
     }else if ((l = link(i_jname))){
-#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 2
+#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 4
         if (!read_torque_pgain(l->jointId, &old_tqpgain[l->jointId])) old_tqpgain[l->jointId] = tqpgain[l->jointId];
         tqpgain[l->jointId] = default_tqpgain[l->jointId] * i_percentage/100.0;
         if (!read_torque_dgain(l->jointId, &old_tqdgain[l->jointId])) old_tqdgain[l->jointId] = tqdgain[l->jointId];
@@ -794,7 +794,7 @@ bool robot::setServoTorqueGainPercentage(const char *i_jname, double i_percentag
         const std::vector<int> jgroup = m_jointGroups[i_jname];
         if (jgroup.size()==0) return false;
         for (unsigned int i=0; i<jgroup.size(); i++){
-#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 2
+#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 4
             if (!read_torque_pgain(jgroup[i], &old_tqpgain[jgroup[i]])) old_tqpgain[jgroup[i]] = tqpgain[jgroup[i]];
             tqpgain[jgroup[i]] = default_tqpgain[jgroup[i]] * i_percentage/100.0;
             if (!read_torque_dgain(jgroup[i], &old_tqdgain[jgroup[i]])) old_tqdgain[jgroup[i]] = tqdgain[jgroup[i]];
@@ -963,7 +963,7 @@ int robot::numThermometers()
 
 bool robot::setJointInertia(const char *jname, double mn)
 {
-#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 2
+#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 3
     Link *l = link(jname);
     if (!l) return false;
     int jid = l->jointId;
@@ -975,14 +975,14 @@ bool robot::setJointInertia(const char *jname, double mn)
 
 void robot::setJointInertias(const double *mns)
 {
-#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 2
+#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 3
     write_joint_inertias(mns);
-#endif    
+#endif
 }
 
 int robot::readPDControllerTorques(double *o_torques)
 {
-#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 2
+#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 3
     return read_pd_controller_torques(o_torques);
 #else
     return 0;
@@ -991,21 +991,21 @@ int robot::readPDControllerTorques(double *o_torques)
 
 void robot::enableDisturbanceObserver()
 {
-#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 2
+#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 3
     write_disturbance_observer(ON);
 #endif
 }
 
 void robot::disableDisturbanceObserver()
 {
-#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 2
+#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 3
     write_disturbance_observer(OFF);
 #endif
 }
 
 void robot::setDisturbanceObserverGain(double gain)
 {
-#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 2
+#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 3
     write_disturbance_observer_gain(gain);
 #endif
 }
