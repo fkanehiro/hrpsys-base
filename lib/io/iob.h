@@ -63,6 +63,9 @@ extern "C"{
         JCM_POSITION, 	///< position control
         JCM_TORQUE,	///< torque control
         JCM_VELOCITY,   ///< velocity control
+#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 4
+        JCM_POSITION_TORQUE,  ///< position and torque control
+#endif
         JCM_NUM 
     } joint_control_mode;
 
@@ -225,7 +228,7 @@ extern "C"{
      * @retval FALSE otherwise
      */
     int read_servo_alarm(int id, int *a);
-    
+
     /**
      * @brief read joint control mode
      * @param id 	joint id
@@ -578,6 +581,39 @@ extern "C"{
     //@}
 
 #if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 2
+    /**
+     * @name IOB VERSION 2
+     */
+    //@{
+    /**
+     * @brief get the number of batteries
+     * @return the number of batteries
+     */
+    int number_of_batteries();
+
+    /**
+     * @brief		read status of battery source this is new API since 315.4.0
+     * @param id	battery id
+     * @param v		voltage[V]
+     * @param a		current[A]
+     * @param b		remaining battery level[%]
+     * @return		TRUE or FALSE
+     */
+    int read_battery(int id, double *v, double *a, double *b);
+
+    /**
+     * @brief get the number of thermometers
+     * @return the number of thermometers
+     */
+    int number_of_thermometers();
+
+    //@}
+#endif
+
+#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 3
+    /**
+     * @name IOB VERSION 3
+     */
     //@{
     /**
      * @brief write command angular acceleration[rad/s^2]
@@ -632,28 +668,45 @@ extern "C"{
      * @return		TRUE if this function is supported, FALSE otherwise
      */
     int write_disturbance_observer_gain(double gain);
+    //@}
+#endif
+
+#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 4
+    /**
+     * @name IOB VERSION 4
+     */
+    //@{
+    /**
+     * @brief read P gain[Nm/Nm]
+     * @param id	joint id
+     * @param gain	P gain[Nm/Nm]
+     * @return		TRUE or E_ID
+     */
+    int read_torque_pgain(int id, double *gain);
 
     /**
-     * @brief get the number of batteries
-     * @return the number of batteries
+     * @brief write P gain[Nm/Nm]
+     * @param id	joint id
+     * @param gain	P gain[Nm/Nm]
+     * @return		TRUE or E_ID
      */
-    int number_of_batteries();
+    int write_torque_pgain(int id, double gain);
 
     /**
-     * @brief		read status of battery source this is new API since 315.4.0
-     * @param id	battery id
-     * @param v		voltage[V]
-     * @param a		current[A]
-     * @param b		remaining battery level[%]
-     * @return		TRUE or FALSE
+     * @brief read D gain[Nm/(Nm/s)]
+     * @param id	joint id
+     * @param gain	D gain[Nm/(Nm/s)]
+     * @return		TRUE or E_ID
      */
-    int read_battery(int id, double *v, double *a, double *b);
+    int read_torque_dgain(int id, double *gain);
 
     /**
-     * @brief get the number of thermometers
-     * @return the number of thermometers
+     * @brief write D gain[Nm/(Nm/s)]
+     * @param id	joint id
+     * @param gain	D gain[Nm/(Nm/s)]
+     * @return		TRUE or E_ID
      */
-    int number_of_thermometers();
+    int write_torque_dgain(int id, double gain);
 
     //@}
 #endif

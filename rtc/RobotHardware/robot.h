@@ -4,6 +4,7 @@
 #include <boost/array.hpp>
 #include <semaphore.h>
 #include <hrpModel/Body.h>
+#include "hrpsys/io/iob.h"
 
 /**
    \brief 
@@ -276,6 +277,14 @@ public:
     bool setServoGainPercentage(const char *i_jname, double i_percentage);
 
     /**
+       \brief set the parcentage to the default servo torque gain
+       \param name joint name, part name or "all"
+       \param percentage to joint servo gain[0-100]
+       \return true if set successfully, false otherwise
+     */
+    bool setServoTorqueGainPercentage(const char *i_jname, double i_percentage);
+
+    /**
        \brief set servo error limit value for specific joint or joint group
        \param i_jname joint name or joint group name
        \param i_limit new limit value[rad]
@@ -339,6 +348,14 @@ public:
        \return the number of thermometers
     */
     int numThermometers();
+
+    /**
+       \brief set control mode of joint
+       \param name joint name, part name or "all"
+       \param mode control mode name
+       \return true if set successfully, false otherwise 
+     */
+    bool setJointControlMode(const char *i_jname, joint_control_mode mode);
 private:
     /**
        \brief calibrate inertia sensor for one sampling period
@@ -372,6 +389,8 @@ private:
 
     std::vector<double> pgain, old_pgain, default_pgain;
     std::vector<double> dgain, old_dgain, default_dgain;
+    std::vector<double> tqpgain, old_tqpgain, default_tqpgain;
+    std::vector<double> tqdgain, old_tqdgain, default_tqdgain;
 
     int m_lLegForceSensorId, m_rLegForceSensorId;
     std::map<std::string, std::vector<int> > m_jointGroups;

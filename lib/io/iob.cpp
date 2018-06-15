@@ -570,6 +570,26 @@ int read_power(double *voltage, double *current)
 }
 
 #if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 2
+int number_of_batteries()
+{
+    return 1;
+}
+
+int read_battery(int id, double *voltage, double *current, double *soc)
+{
+    *voltage = ((double)random()-RAND_MAX/2)/(RAND_MAX/2)*1+48;
+    *current = ((double)random()-RAND_MAX/2)/(RAND_MAX/2)*0.5+1;
+    *soc = ((double)random()-RAND_MAX/2)/(RAND_MAX/2)*0.5+50;
+    return TRUE;
+}
+
+int number_of_thermometers()
+{
+    return 0;
+}
+#endif
+
+#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 3
 int write_command_acceleration(int id, double acc)
 {
     return FALSE;
@@ -604,25 +624,28 @@ int write_disturbance_observer_gain(double gain)
 {
     return FALSE;
 }
+#endif
 
-int number_of_batteries()
+#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 4
+int read_torque_pgain(int id, double *gain)
 {
-    return 1;
+    return FALSE;
 }
 
-int read_battery(int id, double *voltage, double *current, double *soc)
+int write_torque_pgain(int id, double gain)
 {
-    *voltage = ((double)random()-RAND_MAX/2)/(RAND_MAX/2)*1+48;
-    *current = ((double)random()-RAND_MAX/2)/(RAND_MAX/2)*0.5+1;
-    *soc = ((double)random()-RAND_MAX/2)/(RAND_MAX/2)*0.5+50;
-    return TRUE;
+    return FALSE;
 }
 
-int number_of_thermometers()
+int read_torque_dgain(int id, double *gain)
 {
-    return 0;
+    return FALSE;
 }
 
+int write_torque_dgain(int id, double gain)
+{
+    return FALSE;
+}
 #endif
 
 int read_driver_temperature(int id, unsigned char *v)

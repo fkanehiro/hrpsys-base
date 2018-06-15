@@ -246,5 +246,21 @@ module OpenHRP
      * @param gain disturbance observer gain
      */
     void setDisturbanceObserverGain(in double gain);
+
+    /**
+     * @brief set the parcentage to the default servo gain
+     * @param name joint name, part name or "all"
+     * @param percentage to joint servo gain[0-100]
+     */
+    void setServoTorqueGainPercentage(in string name, in double percentage);
+
+    enum JointControlMode {FREE, POSITION, TORQUE, VELOCITY, POSITION_TORQUE};
+    /**
+     * @brief set joint control mode
+     * @param jname joint name, part name or "all"
+     * @param jcm   joint control mode
+     */
+    void setJointControlMode(in string jname, in JointControlMode jcm);
+
   };
 };

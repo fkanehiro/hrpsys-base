@@ -193,7 +193,7 @@ endif()
 
 option(ROBOT_IOB_VERSION "Supported robot IOB version (lib/io/iob.h)")
 if("${ROBOT_IOB_VERSION}" STREQUAL "OFF")
-  set(ROBOT_IOB_VERSION 2)
+  set(ROBOT_IOB_VERSION 4)
 endif()
 add_definitions(-DROBOT_IOB_VERSION=${ROBOT_IOB_VERSION})
 message(STATUS "compile iob with -DROBOT_IOB_VERSION=${ROBOT_IOB_VERSION}")
