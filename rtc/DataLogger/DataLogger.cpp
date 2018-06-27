@@ -83,6 +83,13 @@ void printData(std::ostream& os, const RTC::Point3D& data, unsigned int precisio
     LOG_UNSET_PRECISION(os);
 }
 
+void printData(std::ostream& os, const RTC::Vector3D& data, unsigned int precision = 0)
+{
+    LOG_SET_PRECISION(os);
+    os << data.x << " " << data.y << " " << data.z << " ";
+    LOG_UNSET_PRECISION(os);
+}
+
 void printData(std::ostream& os, const RTC::Orientation3D& data, unsigned int precision = 0)
 {
     LOG_SET_PRECISION(os);
@@ -421,6 +428,13 @@ bool DataLogger::add(const char *i_type, const char *i_name)
       }
   }else if (strcmp(i_type, "TimedPoint3D")==0){
       LoggerPort<TimedPoint3D> *lp = new LoggerPort<TimedPoint3D>(i_name);
+      new_port = lp;
+      if (!addInPort(i_name, lp->port())) {
+          resumeLogging();
+          return false;
+      }
+  }else if (strcmp(i_type, "TimedVector3D")==0){
+      LoggerPort<TimedVector3D> *lp = new LoggerPort<TimedVector3D>(i_name);
       new_port = lp;
       if (!addInPort(i_name, lp->port())) {
           resumeLogging();
