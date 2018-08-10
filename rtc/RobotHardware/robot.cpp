@@ -117,31 +117,56 @@ bool robot::loadGain()
         return false;
     }
 
-    double dummy;
-    for (unsigned int i=0; i<numJoints(); i++) {
+    for (int i = 0; i < numJoints(); i++) {
         std::string str;
-        if(std::getline(strm, str)) {
-            if(!str.empty()) {
-                std::istringstream sstrm(str);
-                sstrm >> default_pgain[i];
-                sstrm >> dummy;
-                sstrm >> default_dgain[i];
-                sstrm >> dummy;
-                if(sstrm.eof()) {
-                    default_tqpgain[i] = default_tqdgain[i] = 0.0;
-                } else {
-                    sstrm >> default_tqpgain[i];
-                    sstrm >> dummy;
-                    sstrm >> default_tqdgain[i];
-                }
-            } else {
-                std::cerr << "[RobotHardware] error: exist empty line in gain file" << std::endl;
+        bool getlinep;
+        while ((getlinep = !!(std::getline(strm, str)))) {
+            if (str.empty())   {
+                // std::cerr << "[RobotHardware] : loadGain : skip emptiy line" << std::endl;
+                continue;
             }
-        } else {
-            std::cerr << "[RobotHardware] error: size of gains does not match size of joints" << std::endl;
+            if (str[0] == '#') {
+                // std::cerr << "[RobotHardware] : loadGain : skip # started line" << std::endl;
+                continue;
+            }
+            double tmp;
+            std::istringstream sstrm(str);
+            sstrm >> tmp;
+            default_pgain[i] = tmp;
+            if(sstrm.eof()) break;
+
+            sstrm >> tmp; // dummy
+            if(sstrm.eof()) break;
+
+            sstrm >> tmp;
+            default_dgain[i] = tmp;
+            if(sstrm.eof()) break;
+
+            sstrm >> tmp; // dummy
+            if(sstrm.eof()) break;
+
+            sstrm >> tmp;
+            default_tqpgain[i] = tmp;
+            if(sstrm.eof()) break;
+
+            sstrm >> tmp; // dummy
+            if(sstrm.eof()) break;
+
+            sstrm >> tmp;
+            default_tqdgain[i] = tmp;
+
+            break;
+        }
+        if(!getlinep) {
+            if (i < numJoints()) {
+                std::cerr << "[RobotHardware] loadGain error: size of gains reading from file ("
+                          << m_pdgainsFilename
+                          << ") does not match size of joints" << std::endl;
+            }
             break;
         }
     }
+
     strm.close();
     // Print loaded gain
     std::cerr << "[RobotHardware] loadGain" << std::endl;
