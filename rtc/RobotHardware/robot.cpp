@@ -373,7 +373,7 @@ bool robot::servo(const char *jname, bool turnon)
             ret = ret && servo(i, turnon);
             if (turnon) usleep(m_servoOnDelay*1e6);
         }
-        m_reportedEmergency = false;
+        if (turnon) m_reportedEmergency = false;
         return ret;
     }else if ((l = link(jname))){
         return servo(l->jointId, turnon);
@@ -704,14 +704,15 @@ bool robot::checkEmergency(emg_reason &o_reason, int &o_id)
         if (!read_servo_alarm(i, &alarm)) continue;
         if (alarm & SS_EMERGENCY) {
             if (!m_reportedEmergency) {
+                std::cerr << time_string() << ": emergency is detected: joint = " << i << std::endl;
                 m_reportedEmergency = true;
                 o_reason = EMG_SERVO_ALARM;
                 o_id = i;
+                return true;
             }
-            return true;
         }
     }
-    m_reportedEmergency = false;
+
     // Power state check
     if (m_enable_poweroff_check) {
       int pstate, sstate;
@@ -727,7 +728,6 @@ bool robot::checkEmergency(emg_reason &o_reason, int &o_id)
           return true;
         }
       }
-      m_reportedEmergency = false;
     }
     return false;
 }
