@@ -13,6 +13,7 @@
 #include <rtm/idl/BasicDataType.hh>
 #include <rtm/idl/ExtendedDataTypes.hh>
 #include "hrpsys/idl/HRPDataTypes.hh"
+#include "hrpsys/idl/RobotHardwareService.hh"
 #include <rtm/Manager.h>
 #include <rtm/DataFlowComponentBase.h>
 #include <rtm/CorbaPort.h>
