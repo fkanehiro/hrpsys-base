@@ -81,7 +81,7 @@ ostream& Vect3::print(ostream &os) const
 {
   int oldFlags = os.setf(ios::showpos);
   os << '(' << x << ' ' << y << ' ' << z << ')';
-  os.flags((std::_Ios_Fmtflags)oldFlags);
+  os.flags((std::ios_base::fmtflags)oldFlags);
   return os;
 }
 
@@ -143,7 +143,7 @@ ostream& Mat3::print(ostream &os) const
   os << '[' << xx << ' ' << xy << ' ' << xz << ']' << endl;
   os << '[' << yx << ' ' << yy << ' ' << yz << ']' << endl;
   os << '[' << zx << ' ' << zy << ' ' << zz << ']' << endl;
-  os.flags((std::_Ios_Fmtflags)oldFlags);
+  os.flags((std::ios_base::fmtflags)oldFlags);
   return os;
 }
 
@@ -473,7 +473,7 @@ ostream& Quat::print(ostream &os) const
 {
   int oldFlags = os.setf(ios::showpos);
   os << '(' << s_ << ' ' << x_ << ' ' << y_ << ' ' << z_ << ')';
-  os.flags((std::_Ios_Fmtflags)oldFlags);
+  os.flags((std::ios_base::fmtflags)oldFlags);
   return os;
 }
 
