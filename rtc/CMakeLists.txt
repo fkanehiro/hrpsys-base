@@ -72,7 +72,6 @@ if (OCTOMAP_FOUND)
   add_subdirectory(OccupancyGridMap3D)
 endif()
 
-find_package(PCL)
 if (NOT "${PCL_LIBRARIES}" STREQUAL "")
   list(REMOVE_ITEM PCL_LIBRARIES "vtkproj4")
 endif()
