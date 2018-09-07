@@ -18,6 +18,7 @@ import re
 rootnc = None
 nshost = None
 nsport = None
+mgrport = None
 
 ##
 # \brief wrapper class of RT component
@@ -311,7 +312,7 @@ def unbindObject(name, kind):
 # \brief initialize ORB 
 #
 def initCORBA():
-    global rootnc, orb, nshost, nsport
+    global rootnc, orb, nshost, nsport, mgrport
 
     # from omniorb's document
     # When CORBA::ORB_init() is called, the value for each configuration
@@ -329,6 +330,15 @@ def initCORBA():
             nshost = socket.gethostname()
         if not nsport:
             nsport = 15005
+
+    try:
+        n = sys.argv.index('-RTCManagerPort')
+        mgrport = int(sys.argv[n + 1])
+        print("\033[34m[rtm.py]-RTCManagerPort set as " + str(mgrport) + "\033[0m")
+    except:
+        if not mgrport:
+            mgrport = 2810 # default
+            print("\033[34m[rtm.py] No RTCManagerPort option set, use " + str(mgrport) + "\033[0m")
 
     print("configuration ORB with %s:%s"%(nshost, nsport))
     os.environ['ORBInitRef'] = 'NameService=corbaloc:iiop:%s:%s/NameService' % \
@@ -420,10 +430,9 @@ def findRTCmanager(hostname=None, rnc=None):
         return mgr
 
     def getManagerDirectly(hostname, mgr=None):
-        global orb
-        mgrport = int(nsport) + 1 # RTC manager port is set as name server port + 1 traditionally
+        global orb, mgrport
         corbaloc = "corbaloc:iiop:" + hostname + ":" + str(mgrport) + "/manager"
-        print("\033[34m[rtm.py] tring to findRTCManager on port" + str(mgrport) + "\033[0m")
+        print("\033[34m[rtm.py] trying to findRTCManager on port" + str(mgrport) + "\033[0m")
         try:
             obj = orb.string_to_object(corbaloc)
             mgr = RTCmanager(obj._narrow(RTM.Manager))
