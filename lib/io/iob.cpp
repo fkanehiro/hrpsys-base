@@ -27,8 +27,6 @@ static long g_period_ns=5000000;
 #define CHECK_ATTITUDE_SENSOR_ID(id) if ((id) < 0 || (id) >= number_of_attitude_sensors()) return E_ID
 
 #if (defined __APPLE__)
-typedef int clockid_t;
-#define CLOCK_MONOTONIC 0
 #include <mach/mach_time.h>  
 int clock_gettime(clockid_t clk_id, struct timespec *tp)
 {

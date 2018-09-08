@@ -58,7 +58,11 @@ using namespace Vclip;
 
 #if QHULL
 extern "C" {
+#if (defined __APPLE__)
+#include <pcl/surface/qhull.h>
+#else
 #include "qhull/qhull_a.h"
+#endif
 }
 //char qh_version[] = "vclip 1.0";
 #endif
@@ -94,7 +98,7 @@ ostream& Plane::print(ostream &os) const
   oldFlags = os.setf(ios::showpos);
   os << normal_.x << " x " << normal_.y << " y  "
      << normal_.z << " z " << offset_ << " >= 0";
-  os.flags((std::_Ios_Fmtflags)oldFlags);
+  os.flags((std::ios_base::fmtflags)oldFlags);
   return os;
 }
 
