@@ -87,12 +87,12 @@ public:
     bool postOneStep();
     bool names2ids(const std::vector<std::string> &i_names, std::vector<int> &o_ids);
     std::vector<int> getJointGroup(const char* gname) {return  m_jointGroups[gname]; }
-    int addJointGroup(const char* gname, const std::vector<int>jids) { m_jointGroups[gname] = jids; }
+    int addJointGroup(const char* gname, const std::vector<int>jids) { m_jointGroups[gname] = jids; return 0;}
 
     // API to be compatible with robot.h
-    bool power(int jid, bool turnon) {power_status[jid] = turnon?OpenHRP::RobotHardwareService::SWITCH_ON:OpenHRP::RobotHardwareService::SWITCH_OFF; }
+    bool power(int jid, bool turnon) {power_status[jid] = turnon?OpenHRP::RobotHardwareService::SWITCH_ON:OpenHRP::RobotHardwareService::SWITCH_OFF; return true; }
     bool servo(const char *jname, bool turnon);
-    bool servo(int jid, bool turnon) {servo_status[jid] = turnon?OpenHRP::RobotHardwareService::SWITCH_ON:OpenHRP::RobotHardwareService::SWITCH_OFF; }
+    bool servo(int jid, bool turnon) {servo_status[jid] = turnon?OpenHRP::RobotHardwareService::SWITCH_ON:OpenHRP::RobotHardwareService::SWITCH_OFF; return true; }
     bool power(const char *jname, bool turnon);
 
     //void removeForceSensorOffset();
@@ -136,7 +136,7 @@ public:
     int lengthDigitalOutput();
     bool readDigitalOutput(char *o_dout);
 
-    bool resetPosition() { m_resetPosition = true; }
+    bool resetPosition() { m_resetPosition = true; return true; }
     //
     BodyRTC::emg_reason m_emergencyReason;
     int m_emergencyId;

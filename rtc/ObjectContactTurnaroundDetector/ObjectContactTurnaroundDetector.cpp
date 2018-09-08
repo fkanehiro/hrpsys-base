@@ -446,6 +446,7 @@ bool ObjectContactTurnaroundDetector::startObjectContactTurnaroundDetectionForGe
 {
     Guard guard(m_mutex);
     octd->startDetectionForGeneralizedWrench();
+    return true;
 }
 
 OpenHRP::ObjectContactTurnaroundDetectorService::DetectorMode ObjectContactTurnaroundDetector::checkObjectContactTurnaroundDetectionCommon(const size_t index)

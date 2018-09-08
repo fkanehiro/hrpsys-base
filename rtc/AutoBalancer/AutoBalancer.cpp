@@ -1348,7 +1348,7 @@ bool AutoBalancer::setFootSteps(const OpenHRP::AutoBalancerService::FootstepsSeq
           spss[i].sps[j].heel_angle = ((!gg_is_walking && i==0) ? 0.0 : gg->get_heel_angle());
       }
   }
-  setFootStepsWithParam(fss, spss, overwrite_fs_idx);
+  return setFootStepsWithParam(fss, spss, overwrite_fs_idx);
 }
 
 bool AutoBalancer::setFootStepsWithParam(const OpenHRP::AutoBalancerService::FootstepsSequence& fss, const OpenHRP::AutoBalancerService::StepParamsSequence& spss, CORBA::Long overwrite_fs_idx)
@@ -1982,6 +1982,7 @@ bool AutoBalancer::getRemainingFootstepSequence(OpenHRP::AutoBalancerService::Fo
             copyRatscoords2Footstep(o_footstep[i], fsnl[i].front().worldcoords);
         }
     }
+    return true;
 };
 
 bool AutoBalancer::getGoPosFootstepsSequence(const double& x, const double& y, const double& th, OpenHRP::AutoBalancerService::FootstepsSequence_out o_footstep)

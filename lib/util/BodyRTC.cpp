@@ -79,6 +79,7 @@ RTC::ReturnCode_t BodyRTC::setup(){
     }
     m_emergencyReason = EMG_NONE; // clear
     m_emergencyId = -1;
+    return RTC::RTC_OK;
 }
 
 void parsePortConfig(const std::string &config, 
@@ -562,6 +563,7 @@ bool BodyRTC::preOneStep() {
             m_lastServoOn_R = rootLink()->attitude();
         }
     }
+    return true;
 }
 
 bool BodyRTC::postOneStep() {
@@ -654,11 +656,11 @@ void RobotHardwareServicePort::getStatus2(OpenHRP::RobotHardwareService::RobotSt
 }
 
 CORBA::Boolean RobotHardwareServicePort::power(const char* jname, OpenHRP::RobotHardwareService::SwitchStatus turnon) {
-    m_robot->power(jname, turnon == OpenHRP::RobotHardwareService::SWITCH_ON);
+    return m_robot->power(jname, turnon == OpenHRP::RobotHardwareService::SWITCH_ON);
 }
 
 CORBA::Boolean RobotHardwareServicePort::servo(const char* jname, OpenHRP::RobotHardwareService::SwitchStatus turnon) {
-    m_robot->servo(jname, turnon == OpenHRP::RobotHardwareService::SWITCH_ON);
+    return m_robot->servo(jname, turnon == OpenHRP::RobotHardwareService::SWITCH_ON);
 }
 void RobotHardwareServicePort::setServoGainPercentage(const char *jname, double limit) {
 }

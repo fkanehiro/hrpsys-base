@@ -20,6 +20,7 @@ std::ostream& operator<<(std::ostream& out, hrp::dmatrix &a) {
         }
         out << std::endl;
     }
+    return out;
 }
 
 std::ostream& operator<<(std::ostream& out, hrp::dvector &a) {
@@ -29,6 +30,7 @@ std::ostream& operator<<(std::ostream& out, hrp::dvector &a) {
         out << std::setw(7) << std::setiosflags(std::ios::fixed) << std::setprecision(4) << a(i) << " ";
     }
     out << std::endl;
+    return out;
 }
 
 //#define DEBUG true
@@ -59,6 +61,7 @@ int hrp::calcSRInverse(const dmatrix& _a, dmatrix &_a_sr, double _sr_ratio, dmat
 
     _a_sr  = _w * at * a1;
     //if (DEBUG) { dmatrix ii = _a * _a_sr; std::cerr << "    i :" << std::endl << ii; }
+    return 0;
 }
 
 // overwrite hrplib/hrpUtil/Eigen3d.cpp
