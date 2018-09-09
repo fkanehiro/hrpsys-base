@@ -24,10 +24,10 @@ namespace hrp {
                                     const hrp::Vector3& localPos = hrp::Vector3::Zero(), const hrp::Matrix33& localR = hrp::Matrix33::Identity());
     bool calcInverseKinematics2(const Vector3& end_p, const Matrix33& end_R, const double avoid_gain = 0.0, const double reference_gain = 0.0, const dvector* reference_q = NULL);
     double getSRGain() { return sr_gain; }
-    bool setSRGain(double g) { sr_gain = g; }
+    bool setSRGain(double g) { sr_gain = g; return true; }
     double getManipulabilityLimit() { return manipulability_limit; }
-    bool setManipulabilityLimit(double l) { manipulability_limit = l; }
-    bool setManipulabilityGain(double l) { manipulability_gain = l; }
+    bool setManipulabilityLimit(double l) { manipulability_limit = l; return true; }
+    bool setManipulabilityGain(double l) { manipulability_gain = l; return true; }
     void setMaxIKError(double epos, double erot);
     void setMaxIKError(double e);
     void setMaxIKIteration(int iter);

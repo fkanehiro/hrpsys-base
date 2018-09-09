@@ -133,6 +133,7 @@ namespace rats
                 ratio_sum += toe_heel_phase_ratio[i];
                 toe_heel_phase_count[i] = static_cast<size_t>(one_step_count * ratio_sum);
             }
+            return true;
         };
     public:
         toe_heel_phase_counter () : one_step_count(0)
@@ -538,7 +539,7 @@ namespace rats
         }
         // if illegal tmp-ratio
         if (current_length < 0) return point_vec.front();
-        else point_vec.back();
+        else return point_vec.back();
       };
     };
 
