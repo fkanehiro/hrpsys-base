@@ -14,10 +14,10 @@
 #include <rtm/Manager.h>
 #include <rtm/DataFlowComponentBase.h>
 #include <rtm/CorbaPort.h>
+#include <hrpsys/idl/HRPDataTypes.hh>
 #include <rtm/DataInPort.h>
 #include <rtm/DataOutPort.h>
 #include <rtm/idl/BasicDataTypeSkel.h>
-#include <hrpsys/idl/HRPDataTypes.hh>
 
 // Service implementation headers
 // <rtc-template block="service_impl_h">
