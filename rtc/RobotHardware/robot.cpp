@@ -135,21 +135,18 @@ bool robot::loadGain()
             default_pgain[i] = tmp;
             if(sstrm.eof()) break;
 
-            sstrm >> tmp; // dummy
+            sstrm >> tmp; // I gain
             if(sstrm.eof()) break;
 
             sstrm >> tmp;
             default_dgain[i] = tmp;
             if(sstrm.eof()) break;
 
-            sstrm >> tmp; // dummy
-            if(sstrm.eof()) break;
-
             sstrm >> tmp;
             default_tqpgain[i] = tmp;
             if(sstrm.eof()) break;
 
-            sstrm >> tmp; // dummy
+            sstrm >> tmp; // I gain for torque
             if(sstrm.eof()) break;
 
             sstrm >> tmp;
