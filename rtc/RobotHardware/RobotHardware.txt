@@ -73,7 +73,31 @@ N/A
 <tr><td>model</td><td>std::string</td><td></td><td>URL of a VRML model</td></tr>
 <tr><td>sensor_id.right_leg_force_sensor</td><td>unsigned int</td><td></td><td>ID of a force/torque sensor whose Z force is checked to detect emergency</td></tr>
 <tr><td>sensor_id.leg_leg_force_sensor</td><td>unsigned int</td><td></td><td>ID of a force/torque sensor whose Z force is checked to detect emergency</td></tr>
+<tr><td>pdgains.file_name</td><td>string</td><td></td><td>Settings of controller gain for low level hardware. default value: "Pdgains.sav"</td></tr>
 </table>
 
+\subsection gainfile How to write a PDgain file
+
+@par
+A line should have maximum 6 numbers.
+The first is P gain, the second is I gain, the 3rd is D gain,
+the 4th is torque P gain, the 5th is torque I gain, and the 6th is torque D gain.
+@par
+A line which is blank line and starts with '#' is ignored.
+@par
+Example of gain file:
+@code
+# gain settings
+# p_gain i_gain d_gain torque p_gain torque i_gain torque d_gain
+# arm
+100 0 10
+100 0 10
+
+10 0 1
+10 0 1
+
+1000 100 10 2000 200 20
+
+@endcode
 
  */
