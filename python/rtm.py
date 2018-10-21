@@ -313,7 +313,7 @@ def unbindObject(name, kind):
 #
 def initCORBA():
     global rootnc, orb, nshost, nsport, mgrport
-    mgrhost = "" # will be unused
+    mgrhost = None # will be unused
 
     # from omniorb's document
     # When CORBA::ORB_init() is called, the value for each configuration
@@ -331,21 +331,28 @@ def initCORBA():
     mc = OpenRTM_aist.ManagerConfig();
     mc.parseArgs(rtm_argv)
 
-    try:
-        nshost, nsport = mc._argprop.getProperty("corba.nameservers").split(":")
-    except:  # default
-        nshost = socket.gethostname()
-        nsport = 15005
-        print("\033[34m[rtm.py] No corba.nameservers set, use " + nshost + ":" + str(nsport) + "\033[0m")
+    if nshost != None or nsport != None: # nshost and nsport can be set via other script like "import rtm; rtm.nshost=XXX"
+        print("\033[34m[rtm.py] nshost or nsport already set as " + str(nshost) + ":" + str(nsport) + "\033[0m")
+    else:
+        try:
+            nshost, nsport = mc._argprop.getProperty("corba.nameservers").split(":")
+        except:
+            nshost = socket.gethostname()
+            nsport = 15005  # default
+            print("\033[34m[rtm.py] No corba.nameservers set, use " + nshost + ":" + str(nsport) + "\033[0m")
 
-    try:
-        mgrhost, mgrport = mc._argprop.getProperty("corba.master_manager").split(":")
-    except:  # default
-        mgrport = 2810
-        print("\033[34m[rtm.py] No corba.master_manager set, use " + nshost + ":" + str(mgrport) + "\033[0m")
+    if mgrhost != None or mgrport != None: # 
+        print("\033[34m[rtm.py] mgrhost or mgrport already set as " + str(mgrhost) + ":" + str(mgrport) + "\033[0m")
+    else:
+        try:
+            mgrhost, mgrport = mc._argprop.getProperty("corba.master_manager").split(":")
+        except:
+            mgrhost = socket.gethostname()
+            mgrport = 2810  # default
+            print("\033[34m[rtm.py] No corba.master_manager set, use " + mgrhost + ":" + str(mgrport) + "\033[0m")
 
     print("\033[34m[rtm.py] configuration ORB with %s:%s\033[0m"%(nshost, nsport))
-    print("\033[34m[rtm.py] configuration RTCManager with %s:%s\033[0m"%(nshost, mgrport))
+    print("\033[34m[rtm.py] configuration RTCManager with %s:%s\033[0m"%(mgrhost, mgrport))
     os.environ['ORBInitRef'] = 'NameService=corbaloc:iiop:%s:%s/NameService' % \
                                (nshost, nsport)
 
