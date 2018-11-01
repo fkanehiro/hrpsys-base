@@ -423,7 +423,7 @@ def findRTCmanager(hostname=None, rnc=None):
         global orb
         mgrport = int(nsport) + 1 # RTC manager port is set as name server port + 1 traditionally
         corbaloc = "corbaloc:iiop:" + hostname + ":" + str(mgrport) + "/manager"
-        print("\033[34m[rtm.py] tring to findRTCManager on port" + str(mgrport) + "\033[0m")
+        print("\033[34m[rtm.py] trying to findRTCManager on port" + str(mgrport) + "\033[0m")
         try:
             obj = orb.string_to_object(corbaloc)
             mgr = RTCmanager(obj._narrow(RTM.Manager))
