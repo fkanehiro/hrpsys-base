@@ -55,9 +55,11 @@ public:
   void setGoal(const double *gx, const double *gv, double time,
                bool online=true);
   void setGoal(const double *gx, double time, bool online=true);
-  // Interpolate value and push value to queue (q, dq, ddq).
+  // Interpolate value and push value to queue (q, dq, ddq) if push_q is true.
   //   If remain_t <= 0, do nothing.
-  void interpolate(double& remain_t_);
+  void interpolate(double& remain_t_, bool push_q=true);
+  // Interpolate previous value and without pushing to queue
+  void interpolate_prev_value();
   double deltaT() const { return dt; }
   double dimension() const { return dim; }
   void setName (const std::string& _name) { name = _name; };

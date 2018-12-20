@@ -170,7 +170,12 @@ void interpolator::setGoal(const double *newg, const double *newv, double time,
     if (online) remain_t = time; // interpolation will start
 }
 
-void interpolator::interpolate(double& remain_t_)
+void interpolator::interpolate_prev_value() {
+    remain_t += dt;
+    interpolate(remain_t, false);
+}
+
+void interpolator::interpolate(double& remain_t_, bool push_q)
 {
     if (remain_t_ <= 0) return;
 
@@ -192,7 +197,9 @@ void interpolator::interpolate(double& remain_t_)
             break;
         }
     }
-    push(x, v, a);
+    if (push_q){
+        push(x, v, a);
+    }
     remain_t_ = tm;
 }
 
