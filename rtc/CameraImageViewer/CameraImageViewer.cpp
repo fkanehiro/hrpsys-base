@@ -154,11 +154,16 @@ RTC::ReturnCode_t CameraImageViewer::onExecute(RTC::UniqueId ec_id)
         case Img::CF_RGB:
         {
             // RGB -> BGR
-            char *dst = m_cvImage->imageData;
-            for (unsigned int i=0; i<m_image.data.image.raw_data.length(); i+=3){
-                dst[i  ] = m_image.data.image.raw_data[i+2]; 
-                dst[i+1] = m_image.data.image.raw_data[i+1]; 
-                dst[i+2] = m_image.data.image.raw_data[i  ]; 
+            unsigned char *src = m_image.data.image.raw_data.get_buffer();
+            char *dst;
+            for (int i=0; i<m_cvImage->height; i++){
+              for (int j=0; j<m_cvImage->width; j++){
+                  dst = m_cvImage->imageData + m_cvImage->widthStep*i + j*3;
+                  dst[0] = src[2];
+                  dst[1] = src[1];
+                  dst[2] = src[0];
+                  src += 3;
+              }
             }
             break;
         }
