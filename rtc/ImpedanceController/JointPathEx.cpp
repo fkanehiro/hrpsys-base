@@ -235,7 +235,8 @@ bool JointPathEx::calcJacobianInverseNullspace(dmatrix &J, dmatrix &Jinv, dmatri
 }
 
 bool JointPathEx::calcInverseKinematics2Loop(const Vector3& dp, const Vector3& omega,
-                                             const double LAMBDA, const double avoid_gain, const double reference_gain, const hrp::dvector* reference_q) {
+                                             const double LAMBDA, const double avoid_gain, const double reference_gain, const hrp::dvector* reference_q,
+                                             const Vector3& localPos) {
     const int n = numJoints();
 
     if ( DEBUG ) {
@@ -260,7 +261,7 @@ bool JointPathEx::calcInverseKinematics2Loop(const Vector3& dp, const Vector3& o
     if (ij_workspace_dim > 0) {
         v << dp, omega, dvector::Zero(ij_workspace_dim);
         hrp::dmatrix ee_J = dmatrix::Zero(ee_workspace_dim, n);
-        calcJacobian(ee_J);
+        calcJacobian(ee_J, localPos);
         hrp::dmatrix ij_J = dmatrix::Zero(ij_workspace_dim, n);
         for (size_t i = 0; i < ij_workspace_dim; i++) {
             std::pair<size_t, size_t>& pair = interlocking_joint_pair_indices[i];
@@ -270,7 +271,7 @@ bool JointPathEx::calcInverseKinematics2Loop(const Vector3& dp, const Vector3& o
         J << ee_J, ij_J;
     } else {
         v << dp, omega;
-        calcJacobian(J);
+        calcJacobian(J, localPos);
     }
     calcJacobianInverseNullspace(J, Jinv, Jnull);
     dq = Jinv * v; // dq = pseudoInverse(J) * v
@@ -467,7 +468,7 @@ bool JointPathEx::calcInverseKinematics2Loop(const Vector3& end_effector_p, cons
     hrp::Vector3 vel_r(endLink()->R * matrix_logEx(endLink()->R.transpose() * target_link_R));
     vel_p *= vel_gain;
     vel_r *= vel_gain;
-    return calcInverseKinematics2Loop(vel_p, vel_r, LAMBDA, avoid_gain, reference_gain, reference_q);
+    return calcInverseKinematics2Loop(vel_p, vel_r, LAMBDA, avoid_gain, reference_gain, reference_q, localPos);
 }
 
 bool JointPathEx::calcInverseKinematics2(const Vector3& end_p, const Matrix33& end_R,
