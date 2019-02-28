@@ -637,7 +637,7 @@ bool SequencePlayer::setTargetPose(const char* gname, const double *xyz, const d
     }
     manip->setMaxIKError(m_error_pos,m_error_rot);
     manip->setMaxIKIteration(m_iteration);
-    std::cerr << "[setTargetPose] Solveing IK with frame" << frame_name << ", Error " << m_error_pos << m_error_rot << ", Iteration " << m_iteration << std::endl;
+    std::cerr << "[setTargetPose] Solveing IK with frame" << (frame_name? frame_name:"none_frame") << ", Error " << m_error_pos << m_error_rot << ", Iteration " << m_iteration << std::endl;
     std::cerr << "                Start " << start_p << start_R<< std::endl;
     std::cerr << "                End   " << end_p << end_R<< std::endl;
 
