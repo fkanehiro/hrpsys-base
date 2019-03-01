@@ -425,6 +425,8 @@ def demoSetTargetPose():
     hcf.seq_svc.waitInterpolationOfGroup('larm');
     pos0 = hcf.getCurrentPosition('LARM_WRIST_R:WAIST')
     rpy0 = hcf.getCurrentRPY('LARM_WRIST_R:WAIST')
+    pos0_world = hcf.getCurrentPosition('LARM_WRIST_R')
+    rpy0_world = hcf.getCurrentRPY('LARM_WRIST_R')
     p0 = list(reset_pose_doc['pos']) # copy
     for i in range(len(larm_pos0)):
         p0[i+19] = larm_pos0[i]
@@ -434,6 +436,8 @@ def demoSetTargetPose():
     hcf.seq_svc.waitInterpolationOfGroup('larm');
     pos1 = hcf.getCurrentPosition('LARM_WRIST_R:WAIST')
     rpy1 = hcf.getCurrentRPY('LARM_WRIST_R:WAIST')
+    pos1_world = hcf.getCurrentPosition('LARM_WRIST_R')
+    rpy1_world = hcf.getCurrentRPY('LARM_WRIST_R')
     p1 = list(reset_pose_doc['pos']) # copy
     for i in range(len(larm_pos1)):
         p1[i+19] = larm_pos1[i]
@@ -447,6 +451,22 @@ def demoSetTargetPose():
 
     clearLogForCheckParameter(5000)
     hcf.seq_svc.setTargetPose('larm:WAIST', pos1, rpy1, 2.0)
+    hcf.seq_svc.waitInterpolationOfGroup('larm');
+    print map(lambda x,y : abs(x-y), hcf.sh_svc.getCommand().jointRefs, p1)
+    checkJointAngles(p1, 0.01)
+    assert(checkServoStateFromLog() is True)
+
+    hcf.seq_svc.setJointAnglesOfGroup('larm', larm_pos1, 1.0);
+    hcf.seq_svc.waitInterpolationOfGroup('larm');
+
+    print >> sys.stderr, "   check setTargetPose without giving reference frame"
+    hcf.seq_svc.setTargetPose('larm', pos0_world, rpy0_world, 2.0)
+    hcf.seq_svc.waitInterpolationOfGroup('larm');
+    print map(lambda x,y : abs(x-y), hcf.sh_svc.getCommand().jointRefs, p0)
+    checkJointAngles(p0, 0.01)
+
+    clearLogForCheckParameter(5000)
+    hcf.seq_svc.setTargetPose('larm', pos1_world, rpy1_world, 2.0)
     hcf.seq_svc.waitInterpolationOfGroup('larm');
     print map(lambda x,y : abs(x-y), hcf.sh_svc.getCommand().jointRefs, p1)
     checkJointAngles(p1, 0.01)
