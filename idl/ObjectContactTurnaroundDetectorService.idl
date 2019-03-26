@@ -9,8 +9,10 @@ module OpenHRP
   {
     typedef sequence<double, 3> DblSequence3;
     typedef double DblArray3[3];
+    typedef double DblArray6[6];
     typedef sequence<string> StrSequence;
     typedef sequence<sequence<double, 3> > Dbl3Sequence;
+    typedef sequence<double> DblSequence;
 
     /**
      * @enum DetectorMode
@@ -20,16 +22,24 @@ module OpenHRP
         MODE_DETECTOR_IDLE,
         MODE_STARTED,
         MODE_DETECTED,
-        MODE_MAX_TIME
+        MODE_MAX_TIME,
+        MODE_OTHER_DETECTED
     };
+    typedef sequence<DetectorMode> DetectorModeSequence;
 
     /**
      * @enum DetectorTotalWrench
      * @brief Flag for whether total force or total moment is checked.
      */
     enum DetectorTotalWrench {
+        /// Check resultant force
         TOTAL_FORCE,
-        TOTAL_MOMENT
+        /// Check resultant moment using force measurements
+        TOTAL_MOMENT,
+        /// Check resultant moment using force and moment measurements
+        TOTAL_MOMENT2,
+        /// Check generalized wrench
+        GENERALIZED_WRENCH
     };
 
     /**
@@ -55,6 +65,35 @@ module OpenHRP
       DblArray3 moment_center;
       /// Current flag for whether total force or total moment is checked.
       DetectorTotalWrench detector_total_wrench;
+      /// Constraint conversion matrix 1 (Nx6 vector <= N x 6 matrix) : not for friction coefficient
+      DblSequence constraint_conversion_matrix1;
+      /// Constraint conversion matrix 2 (Nx6 vector <= N x 6 matrix) : for friction coefficient
+      DblSequence constraint_conversion_matrix2;
+      /// Hold values which can be obtained from idl functions when turnaround is detected. False by default (for backward compatibility).
+      boolean is_hold_values;
+      /// Reference velocity of wrenches (reference velocity of phi1). Used for GENERALIZED_WRENCH
+      DblSequence ref_dphi1;
+      /// List of end effector names. Used for GENERALIZED_WRENCH
+      StrSequence limbs;
+      /// Max time. Used for GENERALIZED_WRENCH
+      double max_time;
+      /// Threshould for time [s] to move to MODE_OTHER_DETECTED after the first MODE_DETECTED, that is, do not check contact change other than detected element.
+      double other_detect_time_thre;
+      /// Threshould for forgetting while MODE_STARTED (until MODE_DETECTED).
+      double forgetting_ratio_thre;
+    };
+
+    /**
+     * @struct objectGeneralizedConstraintWrenchesParam
+     * @brief for getObjectGeneralizedConstraintWrenches argument
+     */
+    struct objectGeneralizedConstraintWrenchesParam {
+      /// Filtered generalized constraint wrench1 (not for friction coefficient).
+      DblSequence generalized_constraint_wrench1;
+      /// Filtered generalized constraint wrench2 (for friction coefficient).
+      DblSequence generalized_constraint_wrench2;
+      /// Filtered resultant wrench.
+      DblArray6 resultant_wrench;
     };
 
     /**
@@ -86,9 +125,26 @@ module OpenHRP
 
     /**
      * @brief get Current force and moment for object
-     * @param i_param output force and moment
+     * @param o_forces and o_moments are list of forces[N] and moments[Nm] at end-effectors. o_3dofwrench is resultant force[N] or wrench[Nm]. o_fric_coeff_wrench is firction coefficient wrench[N or Nm].
      * @return true if set successfully, false otherwise
      */
-    boolean getObjectForcesMoments(out Dbl3Sequence o_forces, out Dbl3Sequence o_moments, out DblSequence3 o_3dofwrench);
+    boolean getObjectForcesMoments(out Dbl3Sequence o_forces, out Dbl3Sequence o_moments, out DblSequence3 o_3dofwrench, out double o_fric_coeff_wrench);
+
+    /**
+     * @brief Check ObjectContactTurnaroundDetector for GeneralizedWrench mode.
+     */
+    boolean checkObjectContactTurnaroundDetectionForGeneralizedWrench(out DetectorModeSequence o_dms);
+
+    /**
+     * @brief Start ObjectContactTurnaroundDetector for GeneralizedWrench mode.
+     */
+    boolean startObjectContactTurnaroundDetectionForGeneralizedWrench();
+
+    /**
+     * @brief get Current generalized constraint wrenches for Generalized Wrench mode.
+     * @param o_param output parameters
+     * @return true if set successfully, false otherwise
+     */
+    boolean getObjectGeneralizedConstraintWrenches(out objectGeneralizedConstraintWrenchesParam o_param);
   };
 };

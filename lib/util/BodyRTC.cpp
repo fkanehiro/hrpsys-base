@@ -79,6 +79,7 @@ RTC::ReturnCode_t BodyRTC::setup(){
     }
     m_emergencyReason = EMG_NONE; // clear
     m_emergencyId = -1;
+    return RTC::RTC_OK;
 }
 
 void parsePortConfig(const std::string &config, 
@@ -562,6 +563,7 @@ bool BodyRTC::preOneStep() {
             m_lastServoOn_R = rootLink()->attitude();
         }
     }
+    return true;
 }
 
 bool BodyRTC::postOneStep() {
@@ -654,16 +656,20 @@ void RobotHardwareServicePort::getStatus2(OpenHRP::RobotHardwareService::RobotSt
 }
 
 CORBA::Boolean RobotHardwareServicePort::power(const char* jname, OpenHRP::RobotHardwareService::SwitchStatus turnon) {
-    m_robot->power(jname, turnon == OpenHRP::RobotHardwareService::SWITCH_ON);
+    return m_robot->power(jname, turnon == OpenHRP::RobotHardwareService::SWITCH_ON);
 }
 
 CORBA::Boolean RobotHardwareServicePort::servo(const char* jname, OpenHRP::RobotHardwareService::SwitchStatus turnon) {
-    m_robot->servo(jname, turnon == OpenHRP::RobotHardwareService::SWITCH_ON);
+    return m_robot->servo(jname, turnon == OpenHRP::RobotHardwareService::SWITCH_ON);
 }
 void RobotHardwareServicePort::setServoGainPercentage(const char *jname, double limit) {
 }
+void RobotHardwareServicePort::setServoTorqueGainPercentage(const char *jname, double limit) {
+}
 void RobotHardwareServicePort::setServoErrorLimit(const char *jname, double limit) {
     m_robot->setServoErrorLimit(jname, limit);
+}
+void RobotHardwareServicePort::setJointControlMode(const char *jname, OpenHRP::RobotHardwareService::JointControlMode jcm){
 }
 void RobotHardwareServicePort::calibrateInertiaSensor() {
 }
@@ -702,6 +708,18 @@ CORBA::Long RobotHardwareServicePort::lengthDigitalOutput() {
 CORBA::Boolean RobotHardwareServicePort::readDigitalOutput(::OpenHRP::RobotHardwareService::OctSequence_out dout) {
     return false;
 }
+
+CORBA::Boolean RobotHardwareServicePort::setJointInertia(const char* name, ::CORBA::Double mn)
+{
+    return true;
+}
+
+void RobotHardwareServicePort::setJointInertias(const ::OpenHRP::RobotHardwareService::DblSequence& mns)
+{
+}
+void RobotHardwareServicePort::enableDisturbanceObserver(){}
+void RobotHardwareServicePort::disableDisturbanceObserver(){}
+void RobotHardwareServicePort::setDisturbanceObserverGain(::CORBA::Double gain){}
 //
 void RobotHardwareServicePort::setRobot(BodyRTC *i_robot) { m_robot = i_robot; }
 

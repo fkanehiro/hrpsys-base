@@ -27,6 +27,10 @@ public:
     CORBA::Boolean getReferenceForceUpdaterParam(const char *i_name_, OpenHRP::ReferenceForceUpdaterService::ReferenceForceUpdaterParam_out i_param);
     CORBA::Boolean startReferenceForceUpdater(const char *i_name_);
     CORBA::Boolean stopReferenceForceUpdater(const char *i_name_);
+    CORBA::Boolean startReferenceForceUpdaterNoWait(const char *i_name_);
+    CORBA::Boolean stopReferenceForceUpdaterNoWait(const char *i_name_);
+    void waitReferenceForceUpdaterTransition(const char* i_name_);
+    CORBA::Boolean getSupportedReferenceForceUpdaterNameSequence(OpenHRP::ReferenceForceUpdaterService::StrSequence_out o_names);
 
     void rfu(ReferenceForceUpdater *i_rfu);
 private:

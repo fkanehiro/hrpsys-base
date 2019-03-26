@@ -34,6 +34,7 @@ CameraImageViewer::CameraImageViewer(RTC::Manager* manager)
     : RTC::DataFlowComponentBase(manager),
       // <rtc-template block="initializer">
       m_imageIn("imageIn", m_image),
+      m_imageOldIn("imageOldIn", m_imageOld),
       // </rtc-template>
       m_cvImage(NULL),
       dummy(0)
@@ -59,6 +60,7 @@ RTC::ReturnCode_t CameraImageViewer::onInitialize()
     // <rtc-template block="registration">
     // Set InPort buffers
     addInPort("imageIn", m_imageIn);
+    addInPort("imageOldIn", m_imageOldIn);
 
     // Set OutPort buffer
   
@@ -152,11 +154,16 @@ RTC::ReturnCode_t CameraImageViewer::onExecute(RTC::UniqueId ec_id)
         case Img::CF_RGB:
         {
             // RGB -> BGR
-            char *dst = m_cvImage->imageData;
-            for (unsigned int i=0; i<m_image.data.image.raw_data.length(); i+=3){
-                dst[i  ] = m_image.data.image.raw_data[i+2]; 
-                dst[i+1] = m_image.data.image.raw_data[i+1]; 
-                dst[i+2] = m_image.data.image.raw_data[i  ]; 
+            unsigned char *src = m_image.data.image.raw_data.get_buffer();
+            char *dst;
+            for (int i=0; i<m_cvImage->height; i++){
+              for (int j=0; j<m_cvImage->width; j++){
+                  dst = m_cvImage->imageData + m_cvImage->widthStep*i + j*3;
+                  dst[0] = src[2];
+                  dst[1] = src[1];
+                  dst[2] = src[0];
+                  src += 3;
+              }
             }
             break;
         }
@@ -180,6 +187,44 @@ RTC::ReturnCode_t CameraImageViewer::onExecute(RTC::UniqueId ec_id)
         default:
             break;
         }
+    }
+
+    if (m_imageOldIn.isNew()){
+        do {
+            m_imageOldIn.read();
+        }while(m_imageOldIn.isNew());
+        if (m_cvImage && (m_imageOld.width != m_cvImage->width 
+                          || m_imageOld.height != m_cvImage->height)){
+            cvReleaseImage(&m_cvImage);
+            m_cvImage = NULL;
+        }
+        int bytes = m_imageOld.bpp/8;
+        if (!bytes){
+            bytes = m_imageOld.pixels.length()/(m_imageOld.width*m_imageOld.height);
+        }
+        if (!m_cvImage){
+            m_cvImage = cvCreateImage(cvSize(m_imageOld.width,
+                                             m_imageOld.height),
+                                      IPL_DEPTH_8U, bytes);
+        }
+        switch(bytes){
+        case 1:
+            memcpy(m_cvImage->imageData, 
+                   m_imageOld.pixels.get_buffer(),
+                   m_imageOld.pixels.length());
+            break;
+        case 3:
+            // RGB -> BGR
+            char *dst = m_cvImage->imageData;
+            for (unsigned int i=0; i<m_imageOld.pixels.length(); i+=3){
+                dst[i  ] = m_imageOld.pixels[i+2]; 
+                dst[i+1] = m_imageOld.pixels[i+1]; 
+                dst[i+2] = m_imageOld.pixels[i  ]; 
+            }
+            break;
+        }
+    }
+    if (m_cvImage){
         cvShowImage("Image",m_cvImage);
         cvWaitKey(10);
     }

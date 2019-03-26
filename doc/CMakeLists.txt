@@ -3,6 +3,7 @@ set(input_files package.h utilities.h
 		      ../python/rtm.py
 		      ../rtc/ApproximateVoxelGridFilter/ApproximateVoxelGridFilter.txt
 		      ../rtc/CameraImageViewer/CameraImageViewer.txt
+		      ../rtc/CameraImageSaver/CameraImageSaver.txt
 		      ../rtc/DataLogger/DataLogger.txt
 		      ../rtc/ForwardKinematics/ForwardKinematics.txt
 		      ../rtc/HGcontroller/HGcontroller.txt

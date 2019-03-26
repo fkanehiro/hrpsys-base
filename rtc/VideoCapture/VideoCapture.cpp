@@ -43,7 +43,8 @@ VideoCapture::VideoCapture(RTC::Manager* manager)
     m_CameraCaptureServicePort("CameraCaptureService"),
     m_CameraCaptureService(this),
     // </rtc-template>
-    m_mode(CONTINUOUS)
+    m_mode(CONTINUOUS),
+    m_needToReactivate(false)
 {
 }
 
@@ -163,7 +164,17 @@ RTC::ReturnCode_t VideoCapture::onDeactivated(RTC::UniqueId ec_id)
 RTC::ReturnCode_t VideoCapture::onExecute(RTC::UniqueId ec_id)
 {
   //std::cout << m_profile.instance_name<< ": onExecute(" << ec_id << ")" << std::endl;
-  capture();
+  if (m_needToReactivate){
+    if (onActivated(ec_id) == RTC::RTC_OK){
+      m_needToReactivate = false;
+    }
+  }
+  if (!capture()){
+    std::cerr << m_profile.instance_name << ": failed to capture." << std::endl;
+    onDeactivated(ec_id);
+    m_needToReactivate = true;
+    return RTC::RTC_OK;
+  }
 
   double tNew = (double)(coil::gettimeofday());
   double dt = (double)(tNew - m_tOld);
@@ -186,23 +197,25 @@ RTC::ReturnCode_t VideoCapture::onExecute(RTC::UniqueId ec_id)
   return RTC::RTC_OK;
 }
 
-void VideoCapture::capture()
+bool VideoCapture::capture()
 {
   if (m_cameras.size() == 1){
     m_CameraImage.error_code = 0;
     uchar *imgFrom = m_cameras[0]->capture();
+    if (!imgFrom) return false;
     memcpy(m_CameraImage.data.image.raw_data.get_buffer(), imgFrom,
 	   m_CameraImage.data.image.raw_data.length() * sizeof(uchar));
-    return;
   }else{
     m_MultiCameraImages.error_code = 0;
     for (unsigned int i = 0; i < m_cameras.size (); i++)
       {
 	uchar *imgFrom = m_cameras[i]->capture();
+        if (!imgFrom) return false;
 	memcpy (m_MultiCameraImages.data.image_seq[i].image.raw_data.get_buffer(), imgFrom,
 		m_MultiCameraImages.data.image_seq[i].image.raw_data.length() * sizeof (uchar));
       }
   }
+  return true;
 }
 
 /*

@@ -77,6 +77,8 @@ extern "C" {
         for ( unsigned int i = 0; i < m_robot->numJoints(); i++ ) {
             ja[i] = m_robot->joint(i)->q;
         }
+
+        return 0;
     }
 
     int _calcInverseKinematics2Loop (double* _vel_p, double* _vel_r)

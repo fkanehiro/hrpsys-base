@@ -94,7 +94,10 @@ class ObjectContactTurnaroundDetector
   OpenHRP::ObjectContactTurnaroundDetectorService::DetectorMode checkObjectContactTurnaroundDetection();
   bool setObjectContactTurnaroundDetectorParam(const OpenHRP::ObjectContactTurnaroundDetectorService::objectContactTurnaroundDetectorParam &i_param_);
   bool getObjectContactTurnaroundDetectorParam(OpenHRP::ObjectContactTurnaroundDetectorService::objectContactTurnaroundDetectorParam& i_param_);
-  bool getObjectForcesMoments(OpenHRP::ObjectContactTurnaroundDetectorService::Dbl3Sequence_out o_forces, OpenHRP::ObjectContactTurnaroundDetectorService::Dbl3Sequence_out o_moments, OpenHRP::ObjectContactTurnaroundDetectorService::DblSequence3_out o_3dofwrench);
+  bool getObjectForcesMoments(OpenHRP::ObjectContactTurnaroundDetectorService::Dbl3Sequence_out o_forces, OpenHRP::ObjectContactTurnaroundDetectorService::Dbl3Sequence_out o_moments, OpenHRP::ObjectContactTurnaroundDetectorService::DblSequence3_out o_3dofwrench, double& o_fric_coeff_wrench);
+  bool checkObjectContactTurnaroundDetectionForGeneralizedWrench(OpenHRP::ObjectContactTurnaroundDetectorService::DetectorModeSequence_out o_dms);
+  bool startObjectContactTurnaroundDetectionForGeneralizedWrench();
+  bool getObjectGeneralizedConstraintWrenches(OpenHRP::ObjectContactTurnaroundDetectorService::objectGeneralizedConstraintWrenchesParam& o_param);
 
  protected:
   // Configuration variable declaration
@@ -117,8 +120,8 @@ class ObjectContactTurnaroundDetector
 
   // DataOutPort declaration
   // <rtc-template block="outport_declare">
-  TimedDoubleSeq m_otdData;
-  OutPort<TimedDoubleSeq> m_otdDataOut;
+  TimedDoubleSeq m_octdData;
+  OutPort<TimedDoubleSeq> m_octdDataOut;
   
   // </rtc-template>
 
@@ -152,11 +155,18 @@ class ObjectContactTurnaroundDetector
   void calcFootMidCoords (hrp::Vector3& new_foot_mid_pos, hrp::Matrix33& new_foot_mid_rot);
   void calcFootOriginCoords (hrp::Vector3& foot_origin_pos, hrp::Matrix33& foot_origin_rot);
   void calcObjectContactTurnaroundDetectorState();
+  OpenHRP::ObjectContactTurnaroundDetectorService::DetectorMode checkObjectContactTurnaroundDetectionCommon(const size_t index);
+  std::string getEENameFromSensorName (const std::string& sensor_name)
+  {
+      std::string tmp_ee_name("");
+      for (std::map<std::string, ee_trans>::const_iterator it = ee_map.begin(); it != ee_map.end(); it++) if (it->second.sensor_name == sensor_name) tmp_ee_name = it->first;
+      return tmp_ee_name;
+  };
 
   std::map<std::string, ee_trans> ee_map;
-  boost::shared_ptr<ObjectContactTurnaroundDetectorBase > otd;
-  std::vector<std::string> otd_sensor_names;
-  hrp::Vector3 otd_axis;
+  boost::shared_ptr<ObjectContactTurnaroundDetectorBase > octd;
+  std::vector<std::string> octd_sensor_names;
+  hrp::Vector3 octd_axis;
   double m_dt;
   hrp::BodyPtr m_robot;
   coil::Mutex m_mutex;

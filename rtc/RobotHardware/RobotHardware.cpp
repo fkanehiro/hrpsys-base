@@ -37,6 +37,7 @@ static const char* robothardware_spec[] =
     "conf.default.fzLimitRatio", "2.0",
     "conf.default.servoErrorLimit", ",",
     "conf.default.jointAccelerationLimit", "0",
+    "conf.default.servoOnDelay", "0",
 
     ""
   };
@@ -48,13 +49,16 @@ RobotHardware::RobotHardware(RTC::Manager* manager)
     m_isDemoMode(0),
     m_qRefIn("qRef", m_qRef),
     m_dqRefIn("dqRef", m_dqRef),
+    m_ddqRefIn("ddqRef", m_ddqRef),
     m_tauRefIn("tauRef", m_tauRef),
     m_qOut("q", m_q),
     m_dqOut("dq", m_dq),
     m_tauOut("tau", m_tau),
     m_ctauOut("ctau", m_ctau),
+    m_pdtauOut("pdtau", m_pdtau),
     m_servoStateOut("servoState", m_servoState),
     m_emergencySignalOut("emergencySignal", m_emergencySignal),
+    m_rstate2Out("rstate2", m_rstate2),
     m_RobotHardwareServicePort("RobotHardwareService"),
     // </rtc-template>
 	dummy(0)
@@ -73,14 +77,17 @@ RTC::ReturnCode_t RobotHardware::onInitialize()
   
   addInPort("qRef", m_qRefIn);
   addInPort("dqRef", m_dqRefIn);
+  addInPort("ddqRef", m_ddqRefIn);
   addInPort("tauRef", m_tauRefIn);
 
   addOutPort("q", m_qOut);
   addOutPort("dq", m_dqOut);
   addOutPort("tau", m_tauOut);
   addOutPort("ctau", m_ctauOut);
+  addOutPort("pdtau", m_pdtauOut);
   addOutPort("servoState", m_servoStateOut);
   addOutPort("emergencySignal", m_emergencySignalOut);
+  addOutPort("rstate2", m_rstate2Out);
 
   // Set service provider to Ports
     m_RobotHardwareServicePort.registerProvider("service0", "RobotHardwareService", m_service0);
@@ -132,9 +139,11 @@ RTC::ReturnCode_t RobotHardware::onInitialize()
   m_dq.data.length(m_robot->numJoints());
   m_tau.data.length(m_robot->numJoints());
   m_ctau.data.length(m_robot->numJoints());
+  m_pdtau.data.length(m_robot->numJoints());
   m_servoState.data.length(m_robot->numJoints());
   m_qRef.data.length(m_robot->numJoints());
   m_dqRef.data.length(m_robot->numJoints());
+  m_ddqRef.data.length(m_robot->numJoints());
   m_tauRef.data.length(m_robot->numJoints());
 
   int ngyro = m_robot->numSensors(Sensor::RATE_GYRO);
@@ -177,6 +186,7 @@ RTC::ReturnCode_t RobotHardware::onInitialize()
   bindParameter("servoErrorLimit", m_robot->m_servoErrorLimit, ",");
   bindParameter("fzLimitRatio", m_robot->m_fzLimitRatio, "2");
   bindParameter("jointAccelerationLimit", m_robot->m_accLimit, "0");
+  bindParameter("servoOnDelay", m_robot->m_servoOnDelay, "0");
 
   // </rtc-template>
 
@@ -259,6 +269,12 @@ RTC::ReturnCode_t RobotHardware::onExecute(RTC::UniqueId ec_id)
       // output to iob
       m_robot->writeVelocityCommands(m_dqRef.data.get_buffer());
   }
+  if (m_ddqRefIn.isNew()){
+      m_ddqRefIn.read();
+      //std::cout << "RobotHardware: dqRef[21] = " << m_dqRef.data[21] << std::endl;
+      // output to iob
+      m_robot->writeAccelerationCommands(m_ddqRef.data.get_buffer());
+  }
   if (m_tauRefIn.isNew()){
       m_tauRefIn.read();
       //std::cout << "RobotHardware: tauRef[21] = " << m_tauRef.data[21] << std::endl;
@@ -275,6 +291,8 @@ RTC::ReturnCode_t RobotHardware::onExecute(RTC::UniqueId ec_id)
   m_tau.tm = tm;
   m_robot->readJointCommandTorques(m_ctau.data.get_buffer());
   m_ctau.tm = tm;
+  m_robot->readPDControllerTorques(m_pdtau.data.get_buffer());
+  m_pdtau.tm = tm;
   for (unsigned int i=0; i<m_rate.size(); i++){
       double rate[3];
       m_robot->readGyroSensor(i, rate);
@@ -316,6 +334,9 @@ RTC::ReturnCode_t RobotHardware::onExecute(RTC::UniqueId ec_id)
       m_robot->readExtraServoState(i, (int *)(m_servoState.data[i].get_buffer()+1));
   }
   m_servoState.tm = tm;
+
+  getStatus2(m_rstate2.data);
+  m_rstate2.tm = tm;
   
   m_robot->oneStep();
 
@@ -323,6 +344,7 @@ RTC::ReturnCode_t RobotHardware::onExecute(RTC::UniqueId ec_id)
   m_dqOut.write();
   m_tauOut.write();
   m_ctauOut.write();
+  m_pdtauOut.write();
   m_servoStateOut.write();
   for (unsigned int i=0; i<m_rateOut.size(); i++){
       m_rateOut[i]->write();
@@ -333,8 +355,84 @@ RTC::ReturnCode_t RobotHardware::onExecute(RTC::UniqueId ec_id)
   for (unsigned int i=0; i<m_forceOut.size(); i++){
       m_forceOut[i]->write();
   }
+  m_rstate2Out.write();
 
   return RTC::RTC_OK;
+}
+
+template<class T>
+void getStatus(boost::shared_ptr<robot> robot, T& rstate)
+{
+  rstate.angle.length(robot->numJoints());
+  robot->readJointAngles(rstate.angle.get_buffer());
+
+  rstate.command.length(robot->numJoints());
+  robot->readJointCommands(rstate.command.get_buffer());
+
+  rstate.torque.length(robot->numJoints());
+  if (!robot->readJointTorques(rstate.torque.get_buffer())){
+    for (unsigned int i=0; i<rstate.torque.length(); i++){
+      rstate.torque[i] = 0.0;
+    }
+  }
+
+  rstate.servoState.length(robot->numJoints());
+  int v, status;
+  for(unsigned int i=0; i < rstate.servoState.length(); ++i){
+    size_t len = robot->lengthOfExtraServoState(i)+1;
+    rstate.servoState[i].length(len);
+    status = 0;
+    v = robot->readCalibState(i);
+    status |= v<< OpenHRP::RobotHardwareService::CALIB_STATE_SHIFT;
+    v = robot->readPowerState(i);
+    status |= v<< OpenHRP::RobotHardwareService::POWER_STATE_SHIFT;
+    v = robot->readServoState(i);
+    status |= v<< OpenHRP::RobotHardwareService::SERVO_STATE_SHIFT;
+    v = robot->readServoAlarm(i);
+    status |= v<< OpenHRP::RobotHardwareService::SERVO_ALARM_SHIFT;
+    v = robot->readDriverTemperature(i);
+    status |= v<< OpenHRP::RobotHardwareService::DRIVER_TEMP_SHIFT;
+    rstate.servoState[i][0] = status;
+    robot->readExtraServoState(i, (int *)(rstate.servoState[i].get_buffer()+1));
+  }
+
+  rstate.rateGyro.length(robot->numSensors(Sensor::RATE_GYRO));
+  for (unsigned int i=0; i<rstate.rateGyro.length(); i++){
+    rstate.rateGyro[i].length(3);
+    robot->readGyroSensor(i, rstate.rateGyro[i].get_buffer());
+  }
+
+  rstate.accel.length(robot->numSensors(Sensor::ACCELERATION));
+  for (unsigned int i=0; i<rstate.accel.length(); i++){
+    rstate.accel[i].length(3);
+    robot->readAccelerometer(i, rstate.accel[i].get_buffer());
+  }
+
+  rstate.force.length(robot->numSensors(Sensor::FORCE));
+  for (unsigned int i=0; i<rstate.force.length(); i++){
+    rstate.force[i].length(6);
+    robot->readForceSensor(i, rstate.force[i].get_buffer());
+  }
+
+  robot->readPowerStatus(rstate.voltage, rstate.current);
+}
+ 
+void RobotHardware::getStatus2(OpenHRP::RobotHardwareService::RobotState2 &rstate2)
+{
+  getStatus(m_robot, rstate2);
+#if defined(ROBOT_IOB_VERSION) && ROBOT_IOB_VERSION >= 2
+  rstate2.batteries.length(m_robot->numBatteries());
+  for(unsigned int i=0; i<rstate2.batteries.length(); i++){
+      m_robot->readBatteryState(i, 
+                                rstate2.batteries[i].voltage,
+                                rstate2.batteries[i].current,
+                                rstate2.batteries[i].soc);
+  }
+  rstate2.temperature.length(m_robot->numThermometers());
+  for (unsigned int i=0; i<rstate2.temperature.length(); i++){
+      m_robot->readThermometer(i, rstate2.temperature[i]);
+  }
+#endif
 }
 
 /*

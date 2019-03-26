@@ -30,6 +30,7 @@ set(idl_files
   AccelerationFilterService.idl
   ObjectContactTurnaroundDetectorService.idl
   WholeBodyMasterSlaveService.idl
+  PCDLoaderService.idl
   )
 
 set(openhrp_idl_files

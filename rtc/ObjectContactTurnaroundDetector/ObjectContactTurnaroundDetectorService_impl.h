@@ -19,13 +19,16 @@ public:
   void startObjectContactTurnaroundDetection(const CORBA::Double i_ref_diff_wrench, const CORBA::Double i_max_time, const OpenHRP::ObjectContactTurnaroundDetectorService::StrSequence& i_ee_names);
   OpenHRP::ObjectContactTurnaroundDetectorService::DetectorMode checkObjectContactTurnaroundDetection();
   CORBA::Boolean setObjectContactTurnaroundDetectorParam(const OpenHRP::ObjectContactTurnaroundDetectorService::objectContactTurnaroundDetectorParam &i_param_);
-  CORBA::Boolean getObjectContactTurnaroundDetectorParam(OpenHRP::ObjectContactTurnaroundDetectorService::objectContactTurnaroundDetectorParam& i_param_);
-  CORBA::Boolean getObjectForcesMoments(OpenHRP::ObjectContactTurnaroundDetectorService::Dbl3Sequence_out o_forces, OpenHRP::ObjectContactTurnaroundDetectorService::Dbl3Sequence_out o_moments, OpenHRP::ObjectContactTurnaroundDetectorService::DblSequence3_out o_3dofwrench);
+  CORBA::Boolean getObjectContactTurnaroundDetectorParam(OpenHRP::ObjectContactTurnaroundDetectorService::objectContactTurnaroundDetectorParam_out i_param_);
+  CORBA::Boolean getObjectForcesMoments(OpenHRP::ObjectContactTurnaroundDetectorService::Dbl3Sequence_out o_forces, OpenHRP::ObjectContactTurnaroundDetectorService::Dbl3Sequence_out o_moments, OpenHRP::ObjectContactTurnaroundDetectorService::DblSequence3_out o_3dofwrench, CORBA::Double& o_fric_coeff_wrench);
+  CORBA::Boolean checkObjectContactTurnaroundDetectionForGeneralizedWrench(OpenHRP::ObjectContactTurnaroundDetectorService::DetectorModeSequence_out o_dms);
+  CORBA::Boolean startObjectContactTurnaroundDetectionForGeneralizedWrench();
+  CORBA::Boolean getObjectGeneralizedConstraintWrenches(OpenHRP::ObjectContactTurnaroundDetectorService::objectGeneralizedConstraintWrenchesParam_out o_param);
 
   //
-  void otd(ObjectContactTurnaroundDetector *i_otd);
+  void octd(ObjectContactTurnaroundDetector *i_octd);
 private:
-  ObjectContactTurnaroundDetector *m_otd;
+  ObjectContactTurnaroundDetector *m_octd;
 };
 
 #endif // OBJECTCONTACTTURNAROUNDDETECTORSERVICESVC_IMPL_H

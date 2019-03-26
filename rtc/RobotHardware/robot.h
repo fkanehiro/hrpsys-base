@@ -4,6 +4,7 @@
 #include <boost/array.hpp>
 #include <semaphore.h>
 #include <hrpModel/Body.h>
+#include "hrpsys/io/iob.h"
 
 /**
    \brief 
@@ -221,6 +222,19 @@ public:
     void writeVelocityCommands(const double *i_commands);
 
     /**
+       \brief write array of reference accelerations of joint servo
+       \param i_commands array of reference accelerations of joint servo[rad/s]
+     */
+    void writeAccelerationCommands(const double *i_commands);
+
+    /**
+       \brief read array of all pd controller torques[Nm]
+       \param o_torques array of all pd controller torques
+       \param TRUE if read successfully, FALSE otherwise
+     */
+    int readPDControllerTorques(double *o_torques);
+
+    /**
        \brief get length of extra servo states
        \param id joint id
        \return length of extra servo states
@@ -263,6 +277,14 @@ public:
     bool setServoGainPercentage(const char *i_jname, double i_percentage);
 
     /**
+       \brief set the parcentage to the default servo torque gain
+       \param name joint name, part name or "all"
+       \param percentage to joint servo gain[0-100]
+       \return true if set successfully, false otherwise
+     */
+    bool setServoTorqueGainPercentage(const char *i_jname, double i_percentage);
+
+    /**
        \brief set servo error limit value for specific joint or joint group
        \param i_jname joint name or joint group name
        \param i_limit new limit value[rad]
@@ -270,12 +292,43 @@ public:
      */
     bool setServoErrorLimit(const char *i_jname, double i_limit);
 
+    /**
+       \brief set joint inertia
+       \param i_jname joint name
+       \param i_mn joint inertia
+       \return true if set successfully, false otherwise
+     */
+    bool setJointInertia(const char *i_jname, double i_mn);
+
+    /**
+       \brief set joint inertias
+       \param i_mns array of joint inertia
+     */
+    void setJointInertias(const double *i_mn);
+
+    /**
+       \brief enable disturbance observer
+    */
+    void enableDisturbanceObserver();
+
+    /**
+       \brief disable disturbance observer
+    */
+    void disableDisturbanceObserver();
+
+    /**
+       \brief set disturbance observer gain
+       \param gain disturbance observer gain
+    */
+    void setDisturbanceObserverGain(double gain);
+
     void setProperty(const char *key, const char *value);
     bool addJointGroup(const char *gname, const std::vector<std::string>& jnames);
     std::vector<double> m_servoErrorLimit;  
     double m_fzLimitRatio;
     double m_maxZmpError;
     double m_accLimit;
+    double m_servoOnDelay;
 
     bool readDigitalInput(char *o_din);
     int lengthDigitalInput();
@@ -295,6 +348,14 @@ public:
        \return the number of thermometers
     */
     int numThermometers();
+
+    /**
+       \brief set control mode of joint
+       \param name joint name, part name or "all"
+       \param mode control mode name
+       \return true if set successfully, false otherwise 
+     */
+    bool setJointControlMode(const char *i_jname, joint_control_mode mode);
 private:
     /**
        \brief calibrate inertia sensor for one sampling period
@@ -328,6 +389,8 @@ private:
 
     std::vector<double> pgain, old_pgain, default_pgain;
     std::vector<double> dgain, old_dgain, default_dgain;
+    std::vector<double> tqpgain, old_tqpgain, default_tqpgain;
+    std::vector<double> tqdgain, old_tqdgain, default_tqdgain;
 
     int m_lLegForceSensorId, m_rLegForceSensorId;
     std::map<std::string, std::vector<int> > m_jointGroups;

@@ -172,7 +172,10 @@ void OpenNIGrabber::grabberCallbackPointCloudRGBA(const pcl::PointCloud<pcl::Poi
         dst_cloud[0] =  cloud->points[i].x;
         dst_cloud[1] = -cloud->points[i].y;
         dst_cloud[2] = -cloud->points[i].z;
-        dst_cloud[3] =  cloud->points[i].rgb;
+        unsigned char *rgb = (unsigned char *)(dst_cloud+3);
+        rgb[0] = cloud->points[i].r;
+        rgb[1] = cloud->points[i].g;
+        rgb[2] = cloud->points[i].b;
         dst_cloud += 4;
     }
     m_cloudOut.write();
@@ -255,7 +258,7 @@ RTC::ReturnCode_t OpenNIGrabber::onActivated(RTC::UniqueId ec_id)
           m_cloud.fields[2].count = 4;
           m_cloud.is_bigendian = false;
           m_cloud.point_step = 16;
-          m_cloud.is_dense = true;
+          m_cloud.is_dense = false;
           boost::function<void (const pcl::PointCloud<pcl::PointXYZ>::ConstPtr&)> f = boost::bind(&OpenNIGrabber::grabberCallbackPointCloud, this, _1);
           m_interface->registerCallback(f);
       }else if(m_outputPointCloudRGBA){
@@ -287,7 +290,7 @@ RTC::ReturnCode_t OpenNIGrabber::onActivated(RTC::UniqueId ec_id)
           m_cloud.fields[5].count = 1;
           m_cloud.is_bigendian = false;
           m_cloud.point_step = 16;
-          m_cloud.is_dense = true;
+          m_cloud.is_dense = false;
           boost::function<void (const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr&)> f = boost::bind(&OpenNIGrabber::grabberCallbackPointCloudRGBA, this, _1);
           m_interface->registerCallback(f);
       }

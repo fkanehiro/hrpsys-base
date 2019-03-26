@@ -32,7 +32,9 @@ public:
     CORBA::Boolean power(const char* jname, OpenHRP::RobotHardwareService::SwitchStatus ss);
     CORBA::Boolean servo(const char* jname, OpenHRP::RobotHardwareService::SwitchStatus ss);
     void setServoGainPercentage(const char *jname, double limit);
+    void setServoTorqueGainPercentage(const char *jname, double limit);
     void setServoErrorLimit(const char *jname, double limit);
+    void setJointControlMode(const char *jname, OpenHRP::RobotHardwareService::JointControlMode jcm);
     void calibrateInertiaSensor();
     void removeForceSensorOffset();
     void initializeJointAngle(const char* name, const char* option);
@@ -43,6 +45,11 @@ public:
     CORBA::Boolean writeDigitalOutputWithMask(const ::OpenHRP::RobotHardwareService::OctSequence& dout, const ::OpenHRP::RobotHardwareService::OctSequence& mask);
     CORBA::Long lengthDigitalOutput();
     CORBA::Boolean readDigitalOutput(::OpenHRP::RobotHardwareService::OctSequence_out dout);
+    CORBA::Boolean setJointInertia(const char* name, ::CORBA::Double mn);
+    void setJointInertias(const ::OpenHRP::RobotHardwareService::DblSequence& mns);
+    void enableDisturbanceObserver();
+    void disableDisturbanceObserver();
+    void setDisturbanceObserverGain(::CORBA::Double gain);
     void setRobot(BodyRTC *i_robot);
 private:
     BodyRTC *m_robot;
@@ -80,12 +87,12 @@ public:
     bool postOneStep();
     bool names2ids(const std::vector<std::string> &i_names, std::vector<int> &o_ids);
     std::vector<int> getJointGroup(const char* gname) {return  m_jointGroups[gname]; }
-    int addJointGroup(const char* gname, const std::vector<int>jids) { m_jointGroups[gname] = jids; }
+    int addJointGroup(const char* gname, const std::vector<int>jids) { m_jointGroups[gname] = jids; return 0;}
 
     // API to be compatible with robot.h
-    bool power(int jid, bool turnon) {power_status[jid] = turnon?OpenHRP::RobotHardwareService::SWITCH_ON:OpenHRP::RobotHardwareService::SWITCH_OFF; }
+    bool power(int jid, bool turnon) {power_status[jid] = turnon?OpenHRP::RobotHardwareService::SWITCH_ON:OpenHRP::RobotHardwareService::SWITCH_OFF; return true; }
     bool servo(const char *jname, bool turnon);
-    bool servo(int jid, bool turnon) {servo_status[jid] = turnon?OpenHRP::RobotHardwareService::SWITCH_ON:OpenHRP::RobotHardwareService::SWITCH_OFF; }
+    bool servo(int jid, bool turnon) {servo_status[jid] = turnon?OpenHRP::RobotHardwareService::SWITCH_ON:OpenHRP::RobotHardwareService::SWITCH_OFF; return true; }
     bool power(const char *jname, bool turnon);
 
     //void removeForceSensorOffset();
@@ -129,7 +136,7 @@ public:
     int lengthDigitalOutput();
     bool readDigitalOutput(char *o_dout);
 
-    bool resetPosition() { m_resetPosition = true; }
+    bool resetPosition() { m_resetPosition = true; return true; }
     //
     BodyRTC::emg_reason m_emergencyReason;
     int m_emergencyId;

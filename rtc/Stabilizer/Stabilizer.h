@@ -264,7 +264,7 @@ class Stabilizer
     hrp::Vector3 localCOPPos; // Position offset of reference COP in end link frame (^{l}p_{cop} = R_l^T (p_{cop} - p_l) - ^{l}p_e)
     hrp::Matrix33 localR; // Rotation of ee in end link frame (^{l}R_e = R_l^T R_e)
     // For eefm
-    hrp::Vector3 d_foot_pos, d_foot_rpy, ee_d_foot_rpy;
+    hrp::Vector3 d_foot_pos, ee_d_foot_pos, d_foot_rpy, ee_d_foot_rpy;
     hrp::Vector3 eefm_pos_damping_gain, eefm_pos_time_const_support, eefm_rot_damping_gain, eefm_rot_time_const, eefm_swing_rot_spring_gain, eefm_swing_pos_spring_gain, eefm_swing_rot_time_const, eefm_swing_pos_time_const, eefm_ee_moment_limit;
     double eefm_pos_compensation_limit, eefm_rot_compensation_limit;
     hrp::Vector3 ref_force, ref_moment;
@@ -311,6 +311,7 @@ class Stabilizer
   boost::shared_ptr<FirstOrderLowPassFilter<hrp::Vector3> > act_cogvel_filter;
   OpenHRP::StabilizerService::STAlgorithm st_algorithm;
   SimpleZMPDistributor* szd;
+  std::vector<std::vector<Eigen::Vector2d> > support_polygon_vetices, margined_support_polygon_vetices;
   // TPCC
   double k_tpcc_p[2], k_tpcc_x[2], d_rpy[2], k_brot_p[2], k_brot_tc[2];
   // RUN ST
@@ -327,6 +328,8 @@ class Stabilizer
   hrp::Vector3 new_refzmp, rel_cog, ref_zmp_aux, diff_foot_origin_ext_moment;
   hrp::Vector3 pos_ctrl;
   hrp::Vector3 ref_total_force, ref_total_moment;
+  // Total foot moment around the foot origin coords (relative to foot origin coords)
+  hrp::Vector3 ref_total_foot_origin_moment, act_total_foot_origin_moment;
   hrp::Vector3 eefm_swing_pos_damping_gain, eefm_swing_rot_damping_gain;
   double total_mass, transition_time, cop_check_margin, contact_decision_threshold;
   std::vector<double> cp_check_margin, tilt_margin;

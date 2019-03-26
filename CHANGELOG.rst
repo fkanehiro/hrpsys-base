@@ -2,6 +2,253 @@
 Changelog for package hrpsys
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+315.15.0 (2017-10-22)
+---------------------
+
+Stable RTCs
+=============
+* SequencePlayer
+  * Fix bug in CUBICSPLINE mode (`#1201 <https://github.com/fkanehiro/hrpsys-base/issues/1201>`_)
+    * fix bug in CUBICSOLINE mode a[5] -> a5[i]
+  * Remove offset while playing patterns (`#1191 <https://github.com/fkanehiro/hrpsys-base/issues/1191>`_)
+    * enable to generate continuous motion from motion patterns
+    * enable to fix a link while playing patterns
+* RobotHardware/DataLogger
+  * Add data port for TimedRobotState2 `#1195 <https://github.com/fkanehiro/hrpsys-base/issues/1195>`_ from fkanehiro/add_rstate2_port
+    * add an output data port for TimedRobotState2
+* RobotHardware
+  * Add servo on delay (`#1210 <https://github.com/fkanehiro/hrpsys-base/issues/1210>`_)
+    * [RobotHardware] add document on servoOnDelay
+    * [RobotHardware] add servoOnDelay configuration variable
+  * Fix bug in getStatus() (`#1197 <https://github.com/fkanehiro/hrpsys-base/issues/1197>`_)
+    * [RobotHardware] fix a bug in getStatus()
+* DataLogger
+  * Add logSplitter (`#1198 <https://github.com/fkanehiro/hrpsys-base/issues/1198>`_)
+    * add logSplitter
+* rtm.py (`#1199 <https://github.com/fkanehiro/hrpsys-base/issues/1199>`_)
+  * [rtm.py] add RTcomponent.getProperties()
+* hrpEC
+  * Add missing initialization (`#1209 <https://github.com/fkanehiro/hrpsys-base/issues/1209>`_)
+    * Add missing initialization
+  * Detect use-after-free of hrpExecutionContext (`#1208 <https://github.com/fkanehiro/hrpsys-base/issues/1208>`_)
+    * Remove C++11 dependency from previous commit
+    * Detect use-after-free of hrpExecutionContext
+* Travis (travis.sh, travis.yaml)
+  * Update travis to run hydro/indigo/kinetic (`#1194 <https://github.com/fkanehiro/hrpsys-base/issues/1194>`_)
+    * .travis.sh: remove -j1 -l1 to speed up compile
+    * Update .travis.yml
+    * run docker without -it
+    * disable DEBIAN_FRONTEND, install tzdata before other package https://askubuntu.com/questions/909277/avoiding-user-interaction-with-tzdata-when-installing-certbot-in-a-docker-contai
+    * .travis.sh: old git does not support -b with tag name
+    * export DISTRO
+    * skip hydro specific patches
+    * use DISTRO
+    * use ROS_DISTRO instead of hydro
+    * show lsb_release
+    * .travis.yml: add hydro/indigo/kinetic: test on .travis.yml
+    * apt-get install python2.7
+    * install apt-get software-properties-common
+    * mkdir tet_results
+    * install git,wget,sudo,sed
+    * use docker to run test
+
+Unstable RTCs
+=============
+
+* ReferenceForceUpdater
+  * Add is_hold_value flag writing (`#1213 <https://github.com/fkanehiro/hrpsys-base/issues/1213>`_)
+    * [rtc/ReferenceForceUpdater/ReferenceForceUpdater.cpp] Add missing writing of is_hold_value flag
+  * Update rfu functions (`#1212 <https://github.com/fkanehiro/hrpsys-base/issues/1212>`_)
+    * [idl/ReferenceForceUpdaterService.idl, rtc/ReferenceForceUpdater] Enable to set transition time for RFU
+    * [idl/ReferenceForceUpdaterService.idl, rtc/ReferenceForceUpdater] Add no-wait version functions
+* AccelerationChecker (`#1205 <https://github.com/fkanehiro/hrpsys-base/issues/1205>`_)
+  * remove a newline
+  * check joint command acceleration only when servo is on
+* AutoBalancer (`#1203 <https://github.com/fkanehiro/hrpsys-base/issues/1203>`_)
+  * [rtc/AutoBalancer/AutoBalancer.cpp] Update for MODE_REF_FORCE_RFU_EXT_MOMENT. Separate MODE_REF_FORCE_RFU_EXT_MOMENT from other UseForceMode.
+* CameraImageSaver : Add new component (`#1200 <https://github.com/fkanehiro/hrpsys-base/issues/1200>`_)
+  * add bindParameter()
+  * add a new component, CameraImageSaver
+* CameraImageViewer : Support RTC::CameraImage (`#1196 <https://github.com/fkanehiro/hrpsys-base/issues/1196>`_)
+  * [CameraImageViewer] support RTC::CameraImage
+* Stabilizer
+  * Update calculation of foot origin ext moment (`#1203 <https://github.com/fkanehiro/hrpsys-base/issues/1203>`_)
+    * [rtc/Stabilizer/Stabilizer.*] Update calculation of diff_foot_origin_ext_moment not to use ZMP and to use foot moment
+    * [rtc/Stabilizer/Stabilizer.cpp] Move calculation of actual foot origin coords. This is expected not to change the program behavior.
+  * Update travis to run hydro/indigo/kinetic (`#1194 <https://github.com/fkanehiro/hrpsys-base/issues/1194>`_)
+    * sample/SampleRobot/samplerobot_stabilizer.py: on hrpsys < 315.5.0 this outputs huge error log message
+
+* Contributors: Fumio KANEHIRO, Jun Inoue, Kei Okada, Shunichi Nozawa, Yasuhiro Ishiguro
+
+315.14.0 (2017-08-04)
+---------------------
+
+Stable RTCs
+=============
+
+* .gitignore (`#1186 <https://github.com/fkanehiro/hrpsys-base/issues/1186>`_)
+  * [.gitignore] add qpoases directory
+
+* CMakeLists
+  * Update for compile definitions (`#1179 <https://github.com/fkanehiro/hrpsys-base/issues/1179>`_)
+    * CMakeLists.txt : add " for string REGREX whoen OPENHRP_DEFINITIONS is not set
+  * Update compile flags (`#1177 <https://github.com/fkanehiro/hrpsys-base/issues/1177>`_)
+    * CMakeLists.txt : remove -O2 from OPENHRP_DEFINITIONS
+
+* CollisionDetector
+  * Update debug message (`#1178 <https://github.com/fkanehiro/hrpsys-base/issues/1178>`_)
+    * CollisionDetector.cpp: setupVclipModel() : display size of vclip model verts
+  * Add service (`#1174 <https://github.com/fkanehiro/hrpsys-base/issues/1174>`_)
+    * add service for collision loop
+
+* rtm.py
+  * Fix (`#1183 <https://github.com/fkanehiro/hrpsys-base/issues/1183>`_)
+    * fix classFromString()
+  * Update behavior (`#1181 <https://github.com/fkanehiro/hrpsys-base/issues/1181>`_)
+    * 関数名を変更
+    * readDataPort、writeDataPort関数で毎回コネクタを生成しないようにする
+
+* SequencePlayer
+  * Update sample checking (`#1143 <https://github.com/fkanehiro/hrpsys-base/issues/1143>`_)
+    * [sample/SampleRobot/samplerobot_sequence_player.py] Check return value of checkJointAngles of SequencePlayer sample.
+  * Update for clearOfGroups (`#1141 <https://github.com/fkanehiro/hrpsys-base/issues/1141>`_)
+    * SequencePlayer.cpp: (setTargetPose) send resetJointGroup to m_seq before call playPatternOfGroup
+    * add test code to check clearOfGroups work when setTargetPose is called
+  * Fix bug of return value (`#1139 <https://github.com/fkanehiro/hrpsys-base/issues/1139>`_)
+    * [rtc/SequencePlayer/interpolator.h] Fix bug of return value type of interpolator dimension.
+
+* hrpsys_config.py
+  * Update debug message (`#1153 <https://github.com/fkanehiro/hrpsys-base/issues/1153>`_)
+    * hrpsys_config.py: display findComps -> (rtcname)
+  * Update documentation (`#1135 <https://github.com/fkanehiro/hrpsys-base/issues/1135>`_)
+    * [py][doc] Clarify setTargetPoseRelative's wait behavior (addresses `#1121 <https://github.com/fkanehiro/hrpsys-base/issues/1121>`_).
+      `wait` argument is to regulate the commands previously run before `setTargetPoseRelative`, but there are users who thought it stops subsequent commands.
+      This change hopefully clarifies the difference.
+
+Unstable RTCs
+=============
+* PointCloudViewer
+  * Update checking (`#1145 <https://github.com/fkanehiro/hrpsys-base/issues/1145>`_)
+    * [PointCloudViewer] Validity check seems not to be needed when is_dense param is correctly set
+    * [PointCloudViewer] Use union rgb member in PointXYZRGB
+    * [PointCloudViewer] Fix point validity check, isnan should take floating value
+    * [PointCloudViewer] Fix validity check of color points
+  * Support coloring (`#1144 <https://github.com/fkanehiro/hrpsys-base/issues/1144>`_)
+    * [PointCloudViewer] Support color pointcloud view
+
+* Beeper (`#1143 <https://github.com/fkanehiro/hrpsys-base/issues/1143>`_)
+  * [rtc/Beeper/Beeper.cpp] Update sleep time of beep. Do not access beep device during previous beep command is executed.
+
+* GraspController (`#1160 <https://github.com/fkanehiro/hrpsys-base/issues/1160>`_)
+  * [rtc/GraspController] Add [] for grasp controller instance name and add more information about parsing of joint group setting
+
+* For fullbody manipulation : AutoBalancer, Stabilizer, ObjectContactTurnaroundDetector, ReferenceForceUpdater
+  * Fix bug of initialization (`#1160 <https://github.com/fkanehiro/hrpsys-base/issues/1160>`_)
+    * [rtc/ReferenceForceUpdater] Update to use interpolated results.
+    * [rtc/ReferenceForceUpdater] Output default value for refFootOriginExtMoment if is_active is false.
+    * [rtc/Stabilizer] Do not calculate actual foot_origin_ext_moment if in the air, because of invalid act_zmp.
+  * Update for fullbody manip (`#1192 <https://github.com/fkanehiro/hrpsys-base/issues/1192>`_)
+    * [idl/ObjectContactTurnaroundDetectorService.idl, rtc/ObjectContactTurnaroundDetector] Add TOTAL_MOMENT2 to use end-effector moments
+    * [idl/ObjectContactTurnaroundDetectorService.idl, rtc/ObjectContactTurnaroundDetector, sample/SampleRobot/samplerobot_carry_object.py] Add friction coefficient wrench. Update samples to print it.
+    * [rtc/AutoBalancer/AutoBalancer.cpp] Set 1.0 as default value for swingsupport time
+    * [rtc/Stabilizer/Stabilizer.cpp] Update increment of support_time. In some PC, previous version does not work because of optimized out.
+  * Update for single-leg support (`#1180 <https://github.com/fkanehiro/hrpsys-base/issues/1180>`_)
+    * [rtc/AutoBalancer] Support foot contact manipulation in static balance point calculation
+    * [python/hrpsys_config.py, rtc/ObjectContactTurnaroundDetector] Use reference contact states in object contact turnaround detector foot origin coords calculation
+    * [rtc/Stabilizer/ZMPDistributor.h] Add check for ee size. Currently, two feet contact is supported.
+    * [rtc/AutoBalancer] Check leg_names length for biped force distribution
+    * [rtc/ObjectContactTurnaroundDetector] Use footorigincoords calculation in OCTD
+  * Support fullbody manipulation (`#1151 <https://github.com/fkanehiro/hrpsys-base/issues/1151>`_)
+    * [rtc/ReferenceForceUpdater] Add arm name printing to add more information in debug print
+    * [sample/SampleRobot/samplerobot_carry_object.py] Add Joint Groups setting for startDefaultUnstableControllers
+    * [sample/SampleRobot/samplerobot_reference_force_updater.py] Update rfu sample (argument update checking and FootOriginExtMoment)
+    * [python/hrpsys_config.py] Connect FootOriginExtMoment ports for fullbody contact manipulation
+    * [rtc/AutoBalancer] Add distibution of zmp to ref force/moment.
+    * [rtc/AutoBalancer] Input ext moment around the foot origin pos and update static balance point calculation for foot force and ext moment.
+    * [idl/AutoBalancerService.idl,rtc/AutoBalancer] Add MODE_REF_FORCE_RFU_EXT_MOMENT and MODE_REF_FORCE_WITH_FOOT of UseForceMode for fullbody contact manipulation.
+    * [rtc/ReferenceForceUpdater] Separate functions for update ref forces / ext moment.
+    * [rtc/ReferenceForceUpdater] Add update for ext moment around the foot origin pos.
+    * [idl/ReferenceForceUpdaterService.idl, rtc/ReferenceForceUpdater] Add is_hold_value to choose holding current value or not. If is_hold_value is true, do not update value, otherwise, update value.
+    * [rtc/ReferenceForceUpdater] Add sensor name for eet param.
+    * [rtc/ReferenceForceUpdater] Enable to set some RFU parameters while active. Separate parameters which can be changed or not while active.
+    * [rtc/Stabilizer] Add calculation of ext moment around the foot origin position for fullbody manipulation.
+    * [rt/Stabilizer] Update for st target values considering foot origin coords
+
+* ReferenceForceUpdater : Fix bug of get/set value (`#1173 <https://github.com/fkanehiro/hrpsys-base/issues/1173>`_)
+  * [rtc/ReferenceForceUpdater/ReferenceForceUpdater.cpp] Fix bug in get value for is_hold_value flag
+  * [sample/SampleRobot/samplerobot_reference_force_updater.py] Add check for value setting and add comments
+
+* Stabilizer
+  * Support n-sided polygon (`#1189 <https://github.com/fkanehiro/hrpsys-base/issues/1189>`_)
+    * [idl/StabilizerService.idl] add comment about the order of eefm_support_polygon_vertices_sequence
+    * [Stabilizer.cpp, Stabilizer.cpp] add vertices with margin for fall detection
+    * [ZMPDistributor.h] remove unused function
+    * [ZMPDistributor.h] fix bug on calcProjectedPoint
+    * [Stabilizer.*, ZMPDistributor.h] calculate convex hull from n-sided polygon's vertices
+  * Fix bug of initialization (`#1190 <https://github.com/fkanehiro/hrpsys-base/issues/1190>`_)
+    * [rtc/Stabilizer/Stabilizer.cpp] Fix bug of support_time. Initialize support_time and limit max support_time (too large support_time). Add debug print.
+  * Support ZMP truncate (`#1158 <https://github.com/fkanehiro/hrpsys-base/issues/1158>`_)
+    * [idl/StabilizerService.idl, rtc/Stabilizer/Stabilizer.cpp,Stabilizer.h,ZMPDistributor.h] add option of zmp truncation
+    * [rtc/Stabilizer/ZMPDistributor.h] Add func to calculate nearest point of foot support polygon
+
+* AutoBalancer
+  * Update ref force balancing (`#1188 <https://github.com/fkanehiro/hrpsys-base/issues/1188>`_)
+    * [idl/AutoBalancerService.idl,python/hrpsys_config.py,rtc/AutoBalancer,rtc/ReferenceForceUpdater] Support walking while MODE_REF_FORCE_RFU_EXT_MOMENT by using is_hold_value flag and move base offset
+    * [idl/AutoBalancerService.idl, rtc/AutoBalancer] Add parameters to specify link name and offset point for additional force, such as torso.
+  * Update footstep limitation (`#1185 <https://github.com/fkanehiro/hrpsys-base/issues/1185>`_)
+    * [rtc/AutoBalancer/GaitGenerator.h, idl/AutoBalancerService.idl] Update documentations. Add new explanations and fix incorrect explanations.
+    * [rtc/AutoBalancer/testGaitGenerator.cpp] Add sample functions for stride limitation
+    * [rtc/AutoBalancer/GaitGenerator.cpp] Use inside limitation in footstep calculation.
+    * [idl/AutoBalancerService.idl, rtc/AutoBalancer] Enable to set stride_inside_y and stride_inside_th as stride_parameter
+    * [rtc/AutoBalancer/AutoBalancer.cpp, Gaitgenerator] Rename stride_y and stride_theta -> stride_outside_y and stride_outside_theta
+  * Fix bug of limiting (`#1162 <https://github.com/fkanehiro/hrpsys-base/issues/1162>`_)
+    * [rtc/AutoBalancer/GaitGenerator, sample/SampleRobot/samplerobot_auto_balancer.py] Fix foot step limitation in case of offset vel is specified. Fix testing code.
+  * Fix bug of initialization (`#1157 <https://github.com/fkanehiro/hrpsys-base/issues/1157>`_)
+    * [rtc/AutoBalancer/GaitGenerator.h] set state at first double support phase and last double support phase to modify bug of no double support walk without reducing swing count.
+  * Fix bug of GaitGenerator memory access (`#1159 <https://github.com/fkanehiro/hrpsys-base/issues/1159>`_)
+    * [rtc/AutoBalancer/GaitGenerator] Fix invalid access for step_count_list (https://github.com/fkanehiro/hrpsys-base/issues/1154)
+    * [rtc/AutoBalancer/GaitGenerator] Remove unused argument in update_refzmp.
+  * Separate simplefullbodyiksolver (`#1150 <https://github.com/fkanehiro/hrpsys-base/issues/1150>`_)
+    * move operator<< overload into .cpp
+    * separate into SimpleFullbodyInverseKinematicsSolver.h
+  * Support footstep modification in goVelocity (`#1147 <https://github.com/fkanehiro/hrpsys-base/issues/1147>`_)
+    * [GaitGenerator.*] support goVelocity in modifying footsteps
+    * [GaitGenerator.cpp] remove unused variable
+  * Update preview queue in GaitGenerator (`#1140 <https://github.com/fkanehiro/hrpsys-base/issues/1140>`_)
+    * [GaitGenerator.cpp] overwrite refzmp queue only when is_emergency_walking
+    * [GaitGenerator.cpp, PreviewController.h] overwrite preview queue without clearing queue
+  * Update testing and plotting of GaitGenerator (`#1143 <https://github.com/fkanehiro/hrpsys-base/issues/1143>`_)
+    * [rtc/AutoBalancer/testGaitGenerator.cpp] Update comments and print message. Add TODO memo.
+    * [rtc/AutoBalancer/testGaitGenerator.cpp, GaitGenerator.*] Add check for toe heel angle and zmp offset transigion. Use eps_eq instead of calling fabs directly.
+    * [rtc/AutoBalancer/CMakeLists.txt, GaitGenerator.h, testGaitGenerator.cpp] Add check for step times.
+    * [rtc/AutoBalancer/testGaitGenerator.cpp] Add error checker class and add start/end error check between COGxy and REFZMPxy
+    * [rtc/AutoBalancer/CMakeLists.txt] Enable test6 checking in make test
+    * [rtc/AutoBalancer/testGaitGenerator.cpp] Update comment and use fflush to confirm file writing.
+    * [rtc/AutoBalancer/testGaitGenerator.cpp] Add value discontinuous checking for state values.
+    * [rtc/AutoBalancer/testGaitGenerator.cpp] Update test for single step and z change (test6, test5) to remove discontinuous results.
+    * [rtc/AutoBalancer/testGaitGenerator.cpp] Fix empty range of gnuplotting (force set range).
+    * [rtc/AutoBalancer/testGaitGenerator.cpp] Add test_doc_string, add test name to file name, and use sleep for use-graph-append.
+  * Fix bug of discontinuous trajectory (`#1139 <https://github.com/fkanehiro/hrpsys-base/issues/1139>`_)
+    * [rtc/AutoBalancer/testGaitGenerator.cpp] Update comments and documentation. Add appepnding of graphs.
+    * [rtc/AutoBalancer/CMakeLists.txt] Call tests for test17 and test18 in 'make test' (govelocity tests)
+    * [rtc/AutoBalancer/GaitGenerator.*] Update rot eps for mid_coords functions.
+    * [rtc/ImpedanceController/RatsMatrix.*] Add eps argument for mid_rot and mid_coords
+    * [rtc/AutoBalancer/testGaitGenerator.cpp] Increase velocity plotting
+    * [rtc/AutoBalancer/GaitGenerator.*] Enable to update the target value of foot midcoords (for example, foot step modification for updown and rotation). This bug is originally reported by @kyawawa.
+    * [rtc/AutoBalancer/GaitGenerator.cpp] Interpolate difference from src to dst in swing_foot_rot_interpolator
+    * [rtc/AutoBalancer/GaitGenerator.h] Calculate dst and src swing coordinates midcoords for all limbs at first.
+    * [rtc/AutoBalancer/testGaitGenerator.cpp] Add plot for swing support mid coords
+    * [rtc/AutoBalancer/testGaitGenerator.cpp] Separate plot files. This will not change behavior.
+    * [rtc/AutoBalancer/testGaitGenerator.cpp] Add argument for default-double-support-ratio-swing-[after/before]
+    * [rtc/AutoBalancer/testGaitGenerator.cpp] Add rotation velocity change for test18 govelocity test
+    * [rtc/AutoBalancer/GaitGenerator.*] Enable to update the target value of swing foot rot (for example, foot step modification for rotation)
+    * [rtc/AutoBalancer/testGaitGenerator.cpp] Add test for changing govelocity velocities
+    * [rtc/AutoBalancer/testGaitGenerator.cpp] Add test for goVelocity mode.
+    * [rtc/AutoBalancer/testGaitGenerator.cpp] Separate plot and walk pattern generation parts as functions. This will not change the program behavior.
+
+
+* Contributors: Fumio KANEHIRO, Iori Kumagai, Isaac I.Y. Saito, Juntaro Tamura, Kei Okada, Nobuhiko Miyamoto, Noriaki Takasugi, Shunichi Nozawa, Yuta Kojio, Yasuhiro Ishiguro, Yisha
+
 315.13.0 (2017-05-19)
 ---------------------
 

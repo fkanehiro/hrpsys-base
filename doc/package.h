@@ -50,8 +50,10 @@ To use python scripts to create RT components, connect ports and get/set propert
     <li>\ref AverageFilter</li>
     <li>\ref Beeper</li>
     <li>\ref CameraImageViewer</li>
+    <li>\ref CameraImageSaver</li>
     <li>\ref CaptureController</li>
     <li>\ref CollisionDetector</li>
+    <li>\ref ColorExtractor</li>
     <li>\ref DataLogger</li>
     <li>\ref ExtractCameraImage</li>
     <li>\ref ForwardKinematics</li>

@@ -23,6 +23,9 @@
 #include "../ImpedanceController/JointPathEx.h"
 #include "../ImpedanceController/RatsMatrix.h"
 #include "../SequencePlayer/interpolator.h"
+#include "../TorqueFilter/IIRFilter.h"
+#include <boost/shared_ptr.hpp>
+
 // #include "ImpedanceOutputGenerator.h"
 // #include "ObjectTurnaroundDetector.h"
 // Service implementation headers
@@ -107,10 +110,15 @@ class ReferenceForceUpdater
   bool getReferenceForceUpdaterParam(const std::string& i_name_, OpenHRP::ReferenceForceUpdaterService::ReferenceForceUpdaterParam_out i_param);
   bool startReferenceForceUpdater(const std::string& i_name_);
   bool stopReferenceForceUpdater(const std::string& i_name_);
+  bool startReferenceForceUpdaterNoWait(const std::string& i_name_);
+  bool stopReferenceForceUpdaterNoWait(const std::string& i_name_);
+  void waitReferenceForceUpdaterTransition(const std::string& i_name_);
+  bool getSupportedReferenceForceUpdaterNameSequence(OpenHRP::ReferenceForceUpdaterService::StrSequence_out o_names);
+  void getTargetParameters ();
   void calcFootOriginCoords (hrp::Vector3& foot_origin_pos, hrp::Matrix33& foot_origin_rot);
   void updateRefFootOriginExtMoment (const std::string& arm);
+  void updateRefObjExtMoment0 (const std::string& arm);
   void updateRefForces (const std::string& arm);
-  bool isFootOriginExtMoment (const std::string& str) const { return str == "footoriginextmoment"; };
   inline bool eps_eq(const double a, const double b, const double eps = 1e-3) { return std::fabs((a)-(b)) <= eps; };
 
  protected:
@@ -183,12 +191,22 @@ class ReferenceForceUpdater
     double d_gain;
     // I gain
     double i_gain;
+    // Transition time[s]
+    double transition_time;
     // Motion direction to update reference force
     hrp::Vector3 motion_dir;
     std::string frame;
     int update_count;
     bool is_active, is_stopping, is_hold_value;
-    ReferenceForceUpdaterParam () {
+    boost::shared_ptr<FirstOrderLowPassFilter<hrp::Vector3> > act_force_filter;
+    void printParam (const std::string print_str)
+    {
+        std::cerr << "[" << print_str << "]   p_gain = " << p_gain << ", d_gain = " << d_gain << ", i_gain = " << i_gain << std::endl;
+        std::cerr << "[" << print_str << "]   update_freq = " << update_freq << "[Hz], update_count = " << update_count << ", update_time_ratio = " << update_time_ratio << ", transition_time = " << transition_time << "[s], cutoff_freq = " << act_force_filter->getCutOffFreq() << "[Hz]" << std::endl;
+        std::cerr << "[" << print_str << "]   motion_dir = " << motion_dir.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << std::endl;
+        std::cerr << "[" << print_str << "]   frame = " << frame << ", is_hold_value = " << (is_hold_value?"true":"false") << std::endl;
+    }
+    void initializeParam () {
       //params defined in idl
       motion_dir = hrp::Vector3::UnitZ();
       frame="local";
@@ -197,10 +215,20 @@ class ReferenceForceUpdater
       p_gain = 0.02;
       d_gain = 0;
       i_gain = 0;
+      transition_time = 1.0;
       //additional params (not defined in idl)
       is_active = false;
       is_stopping = false;
       is_hold_value = false;
+    };
+    ReferenceForceUpdaterParam () {
+      initializeParam();
+    };
+    ReferenceForceUpdaterParam (const double _dt) {
+      initializeParam();
+      update_count = round((1/update_freq)/_dt);
+      double default_cutoff_freq = 1e8;
+      act_force_filter = boost::shared_ptr<FirstOrderLowPassFilter<hrp::Vector3> >(new FirstOrderLowPassFilter<hrp::Vector3>(default_cutoff_freq, _dt, hrp::Vector3::Zero()));
     };
   };
   std::map<std::string, hrp::VirtualForceSensorParam> m_vfs;
@@ -218,6 +246,7 @@ class ReferenceForceUpdater
   hrp::Matrix33 foot_origin_rot;
   bool use_sh_base_pos_rpy;
   int loop;//counter in onExecute
+  const std::string footoriginextmoment_name, objextmoment0_name;
 };
 
 

@@ -533,7 +533,7 @@ void ImpedanceController::calcForceMoment ()
           hrp::Matrix33 sensorR;
           hrp::Vector3 sensorPos, eePos;
           if ( sensor ) {
-            // real force sensore
+            // real force sensor
             sensorR = sensor->link->R * sensor->localR;
             sensorPos = sensor->link->p + sensorR * sensor->localPos;
           } else if ( m_vfs.find(sensor_name) !=  m_vfs.end()) {

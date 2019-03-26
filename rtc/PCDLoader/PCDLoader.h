@@ -12,12 +12,17 @@
 
 #include <rtm/idl/BasicDataType.hh>
 #include "hrpsys/idl/pointcloud.hh"
+#include "hrpsys/idl/PCDLoaderService.hh"
 #include <rtm/Manager.h>
 #include <rtm/DataFlowComponentBase.h>
 #include <rtm/CorbaPort.h>
 #include <rtm/DataInPort.h>
 #include <rtm/DataOutPort.h>
 #include <rtm/idl/BasicDataTypeSkel.h>
+#include <pcl/io/pcd_io.h>
+#include <boost/unordered_map.hpp>
+#include <hrpUtil/Eigen3d.h>
+#include "PCDLoaderService_impl.h"
 
 // Service implementation headers
 // <rtc-template block="service_impl_h">
@@ -95,34 +100,42 @@ class PCDLoader
   // The action that is invoked when execution context's rate is changed
   // no corresponding operation exists in OpenRTm-aist-0.2.0
   // virtual RTC::ReturnCode_t onRateChanged(RTC::UniqueId ec_id);
-
-
- protected:
+  
+    bool load(const std::string& filename, const std::string& label);
+    
+protected:
   // Configuration variable declaration
   // <rtc-template block="config_declare">
   
   // </rtc-template>
-
+    
   PointCloudTypes::PointCloud m_cloud;
-
+  OpenHRP::PCDOffsetSeq m_offset;
+  RTC::TimedBoolean m_isOutput;
+  
   // DataInPort declaration
   // <rtc-template block="inport_declare">
   
+  InPort<OpenHRP::PCDOffsetSeq> m_offsetIn;
+  
   // </rtc-template>
-
+  
   // DataOutPort declaration
   // <rtc-template block="outport_declare">
   OutPort<PointCloudTypes::PointCloud> m_cloudOut;
+  OutPort<RTC::TimedBoolean> m_isOutputOut;
   
   // </rtc-template>
 
   // CORBA Port declaration
   // <rtc-template block="corbaport_declare">
+  RTC::CorbaPort m_PCDLoaderServicePort;
   
   // </rtc-template>
 
   // Service declaration
   // <rtc-template block="service_declare">
+  PCDLoaderService_impl m_service0;
   
   // </rtc-template>
 
@@ -131,8 +144,19 @@ class PCDLoader
   
   // </rtc-template>
 
+  void setCloudXYZ(PointCloudTypes::PointCloud& cloud, const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_raw);
+  
+  void setCloudXYZRGB(PointCloudTypes::PointCloud& cloud, const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_raw);
+  
+  void updateOffsetToCloudXYZ(void);
+  
+  void updateOffsetToCloudXYZRGB(void);
+  
  private:
+  std::string m_path, m_fields;
   int dummy;
+  boost::unordered_map<std::string, pcl::PointCloud<pcl::PointXYZ>::Ptr> m_clouds_xyz;
+  boost::unordered_map<std::string, pcl::PointCloud<pcl::PointXYZRGB>::Ptr> m_clouds_xyzrgb;
 };
 
 

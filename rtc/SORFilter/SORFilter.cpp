@@ -143,6 +143,12 @@ RTC::ReturnCode_t SORFilter::onExecute(RTC::UniqueId ec_id)
   if (m_originalIn.isNew()){
     m_originalIn.read();
 
+    if (!m_original.data.length()){
+        m_filtered.width = m_filtered.row_step = 0;
+        m_filtered.data.length(0);
+        return RTC::RTC_OK;
+    }
+
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered (new pcl::PointCloud<pcl::PointXYZ>);
 

@@ -7,6 +7,7 @@ module OpenHRP
   interface ReferenceForceUpdaterService
   {
       typedef sequence<double, 3> DblSequence3;
+      typedef sequence<string> StrSequence;
 
       /**
        * @struct ReferenceForceUpdaterParam
@@ -31,6 +32,10 @@ module OpenHRP
           double i_gain;
           /// Hold current value or not. If is_hold_value is true, do not update value, otherwise, update value.
           boolean is_hold_value;
+          /// Transition time[s]
+          double transition_time;
+          /// Cutoff frequency for actual force value [Hz]
+          double cutoff_freq;
       };
 
       /**
@@ -58,5 +63,29 @@ module OpenHRP
        * @return true if set successfully, false otherwise
        */
       boolean stopReferenceForceUpdater(in string name);
+
+      /**
+       * @brief Start ReferenceForceUpdater and function return immediately
+       * @return true if set successfully, false otherwise
+       */
+      boolean startReferenceForceUpdaterNoWait(in string name);
+
+      /**
+       * @brief Stop ReferenceForceUpdater and function return immediately
+       * @return true if set successfully, false otherwise
+       */
+      boolean stopReferenceForceUpdaterNoWait(in string name);
+
+      /**
+       * @brief Wait for ReferenceForceUpdater mode transition.
+       */
+      void waitReferenceForceUpdaterTransition(in string name);
+
+      /**
+       * @brief Get supported name sequence of ReferenceForceUpdater
+       * @param o_param is supported name sequence
+       * @return true if set successfully, false otherwise
+       */
+      boolean getSupportedReferenceForceUpdaterNameSequence(out StrSequence o_names);
   };
 };

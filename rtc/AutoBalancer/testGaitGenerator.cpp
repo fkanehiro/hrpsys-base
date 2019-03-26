@@ -193,17 +193,17 @@ private:
             fprintf(fp_cogzmp, "\n");
             fflush(fp_cogzmp);
 
+#define VEC1(s) std::vector<std::string> (1, s)
+
             // Foot pos
             fprintf(fp_fpos, "%f ", i * dt);
-            std::vector<std::string> tmp_string_vector = boost::assign::list_of("rleg");
-            hrp::Vector3 rfoot_pos = (gg->get_support_leg_names() == tmp_string_vector) ? gg->get_support_leg_steps().front().worldcoords.pos : gg->get_swing_leg_steps().front().worldcoords.pos;
+            hrp::Vector3 rfoot_pos = (gg->get_support_leg_names() == VEC1 ("rleg")) ? gg->get_support_leg_steps().front().worldcoords.pos : gg->get_swing_leg_steps().front().worldcoords.pos;
             for (size_t ii = 0; ii < 3; ii++) {
                 fprintf(fp_fpos, "%f ", rfoot_pos(ii));
                 min_rfoot_pos(ii) = std::min(min_rfoot_pos(ii), rfoot_pos(ii));
                 max_rfoot_pos(ii) = std::max(max_rfoot_pos(ii), rfoot_pos(ii));
             }
-            tmp_string_vector = boost::assign::list_of("lleg");
-            hrp::Vector3 lfoot_pos = (gg->get_support_leg_names() == tmp_string_vector) ? gg->get_support_leg_steps().front().worldcoords.pos : gg->get_swing_leg_steps().front().worldcoords.pos;
+            hrp::Vector3 lfoot_pos = (gg->get_support_leg_names() == VEC1("lleg")) ? gg->get_support_leg_steps().front().worldcoords.pos : gg->get_swing_leg_steps().front().worldcoords.pos;
             for (size_t ii = 0; ii < 3; ii++) {
                 fprintf(fp_fpos, "%f ", lfoot_pos(ii));
                 min_lfoot_pos(ii) = std::min(min_lfoot_pos(ii), lfoot_pos(ii));
@@ -214,14 +214,12 @@ private:
 
             // Foot rot
             fprintf(fp_frot, "%f ", i * dt);
-            tmp_string_vector = boost::assign::list_of("rleg");
-            hrp::Matrix33 rfoot_rot = (gg->get_support_leg_names() == tmp_string_vector) ? gg->get_support_leg_steps().front().worldcoords.rot : gg->get_swing_leg_steps().front().worldcoords.rot;
+    hrp::Matrix33 rfoot_rot = (gg->get_support_leg_names() == VEC1("rleg")) ? gg->get_support_leg_steps().front().worldcoords.rot : gg->get_swing_leg_steps().front().worldcoords.rot;
             hrp::Vector3 rfoot_rpy = hrp::rpyFromRot(rfoot_rot);
             for (size_t ii = 0; ii < 3; ii++) {
                 fprintf(fp_frot, "%f ", rad2deg(rfoot_rpy(ii)));
             }
-            tmp_string_vector = boost::assign::list_of("lleg");
-            hrp::Matrix33 lfoot_rot = (gg->get_support_leg_names() == tmp_string_vector) ? gg->get_support_leg_steps().front().worldcoords.rot : gg->get_swing_leg_steps().front().worldcoords.rot;
+    hrp::Matrix33 lfoot_rot = (gg->get_support_leg_names() == VEC1("lleg")) ? gg->get_support_leg_steps().front().worldcoords.rot : gg->get_swing_leg_steps().front().worldcoords.rot;
             hrp::Vector3 lfoot_rpy = hrp::rpyFromRot(lfoot_rot);
             for (size_t ii = 0; ii < 3; ii++) {
                 fprintf(fp_frot, "%f ", rad2deg(lfoot_rpy(ii)));
@@ -231,13 +229,11 @@ private:
 
             // ZMP offsets
             fprintf(fp_zoff, "%f ", i * dt);
-            tmp_string_vector = boost::assign::list_of("rleg");
-            hrp::Vector3 rfoot_zmp_offset = (gg->get_support_leg_names() == tmp_string_vector) ? gg->get_support_foot_zmp_offsets().front() : gg->get_swing_foot_zmp_offsets().front();
+    hrp::Vector3 rfoot_zmp_offset = (gg->get_support_leg_names() == VEC1("rleg")) ? gg->get_support_foot_zmp_offsets().front() : gg->get_swing_foot_zmp_offsets().front();
             for (size_t ii = 0; ii < 3; ii++) {
                 fprintf(fp_zoff, "%f ", rfoot_zmp_offset(ii));
             }
-            tmp_string_vector = boost::assign::list_of("lleg");
-            hrp::Vector3 lfoot_zmp_offset = (gg->get_support_leg_names() == tmp_string_vector) ? gg->get_support_foot_zmp_offsets().front() : gg->get_swing_foot_zmp_offsets().front();
+    hrp::Vector3 lfoot_zmp_offset = (gg->get_support_leg_names() == VEC1("lleg")) ? gg->get_support_foot_zmp_offsets().front() : gg->get_swing_foot_zmp_offsets().front();
             for (size_t ii = 0; ii < 3; ii++) {
                 fprintf(fp_zoff, "%f ", lfoot_zmp_offset(ii));
             }
@@ -248,6 +244,8 @@ private:
             else tmpzoff = lfoot_zmp_offset(0);
             min_zmp_offset_x = std::min(min_zmp_offset_x, tmpzoff);
             max_zmp_offset_x = std::max(max_zmp_offset_x, tmpzoff);
+
+#undef VEC1
 
             // Foot pos vel
             fprintf(fp_fposvel, "%f ", i * dt);
@@ -393,11 +391,11 @@ private:
                 //   Foot pos and rot
                 std::vector<hrp::Vector3> tmpvec = boost::assign::list_of(rfoot_pos)(lfoot_pos);
                 footpos_diff_checker.checkValueDiff(tmpvec);
-                tmpvec = boost::assign::list_of(rfoot_rpy)(lfoot_rpy);
+                tmpvec = boost::assign::list_of(rfoot_rpy)(lfoot_rpy).convert_to_container < std::vector<hrp::Vector3> > ();
                 footrot_diff_checker.checkValueDiff(tmpvec);
-                tmpvec = boost::assign::list_of(rfootpos_vel)(lfootpos_vel);
+                tmpvec = boost::assign::list_of(rfootpos_vel)(lfootpos_vel).convert_to_container < std::vector<hrp::Vector3> > ();
                 footposvel_diff_checker.checkValueDiff(tmpvec);
-                tmpvec = boost::assign::list_of(rfootrot_vel)(lfootrot_vel);
+                tmpvec = boost::assign::list_of(rfootrot_vel)(lfootrot_vel).convert_to_container < std::vector<hrp::Vector3> > ();
                 footrotvel_diff_checker.checkValueDiff(tmpvec);
                 //   Swing support mid coorsd
                 ssmcpos_diff_checker.checkValueDiff(tmp_ssmc.pos);
@@ -405,7 +403,7 @@ private:
                 ssmcposvel_diff_checker.checkValueDiff(tmp_ssmcpos_vel);
                 ssmcrotvel_diff_checker.checkValueDiff(tmp_ssmcrot_vel);
                 //   ZMP offset
-                tmpvec = boost::assign::list_of(rfoot_zmp_offset)(lfoot_zmp_offset);
+                tmpvec = boost::assign::list_of(rfoot_zmp_offset)(lfoot_zmp_offset).convert_to_container < std::vector<hrp::Vector3> > ();
                 zmpoffset_diff_checker.checkValueDiff(tmpvec);
             }
             //   If contact states are not change, prev_swing_support_time is not dt, otherwise prev_swing_support_time is dt.

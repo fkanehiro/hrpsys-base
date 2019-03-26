@@ -33,7 +33,9 @@ namespace RTC
 #else
         : RTC_exp::PeriodicExecutionContext(),
 #endif 
-          m_priority(49)
+          m_priority(49),
+          m_cpu(-1),
+          m_thread_pending (false)
     {
         resetProfile();
         rtclog.setName("hrpEC");
@@ -42,6 +44,7 @@ namespace RTC
         // Priority
         getProperty(prop, "exec_cxt.periodic.priority", m_priority);
         getProperty(prop, "exec_cxt.periodic.rtpreempt.priority", m_priority);
+        getProperty(prop, "exec_cxt.periodic.cpu_affinity", m_cpu);
         RTC_DEBUG(("Priority: %d", m_priority));
     }
 
@@ -72,6 +75,16 @@ namespace RTC
             /* Lock memory */
             if(mlockall(MCL_CURRENT|MCL_FUTURE) == -1) {
                 perror("mlockall failed");
+            }
+        }
+
+        if (m_cpu>=0){
+            cpu_set_t cpu_set;
+            CPU_ZERO(&cpu_set);
+            CPU_SET(m_cpu, &cpu_set);
+            int result = sched_setaffinity(0, sizeof(cpu_set_t), &cpu_set);
+            if (result != 0) {
+                perror("sched_setaffinity():");
             }
         }
 #endif

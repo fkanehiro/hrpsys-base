@@ -9,6 +9,10 @@
 
 #include "RangeDataViewer.h"
 
+#if __cplusplus >= 201103L
+using std::isinf;
+#endif
+
 // Module specification
 // <rtc-template block="module_spec">
 static const char* cameraimageviewercomponent_spec[] =

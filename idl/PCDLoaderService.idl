@@ -1,0 +1,28 @@
+/**
+ * @file PCDLoaderService.idl
+ * @brief Services for the pcd loader interface
+ */
+#include "ExtendedDataTypes.idl"
+
+module OpenHRP
+{
+    struct PCDOffset
+    {
+        string label;
+        RTC::Pose3D data;
+        RTC::Point3D center;
+    };
+    
+    typedef sequence<PCDOffset> PCDOffsetSeq;
+    
+    interface PCDLoaderService
+    {
+        /** 
+            @brief load pcd file
+            @param filename file name of pcd
+            @param label in order to select pcd when multiple pcds are loaded
+            @return true if loaded successfully, false otherwise
+        */
+        boolean load(in string filename, in string label);
+    };
+};
