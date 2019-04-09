@@ -1213,11 +1213,14 @@ void Stabilizer::getTargetParameters ()
     ref_force[i] = hrp::Vector3(m_ref_wrenches[i].data[0], m_ref_wrenches[i].data[1], m_ref_wrenches[i].data[2]);
     ref_moment[i] = hrp::Vector3(m_ref_wrenches[i].data[3], m_ref_wrenches[i].data[4], m_ref_wrenches[i].data[5]);
     ref_total_force += ref_force[i];
+#ifdef FORCE_MOMENT_DIFF_CONTROL
     // Force/moment diff control
     ref_total_moment += (target_ee_p[i]-ref_zmp).cross(ref_force[i]);
+#else
     // Force/moment control
-    // ref_total_moment += (target_ee_p[i]-ref_zmp).cross(hrp::Vector3(m_ref_wrenches[i].data[0], m_ref_wrenches[i].data[1], m_ref_wrenches[i].data[2]))
-    //     + hrp::Vector3(m_ref_wrenches[i].data[3], m_ref_wrenches[i].data[4], m_ref_wrenches[i].data[5]);
+    ref_total_moment += (target_ee_p[i]-ref_zmp).cross(hrp::Vector3(m_ref_wrenches[i].data[0], m_ref_wrenches[i].data[1], m_ref_wrenches[i].data[2]))
+        + hrp::Vector3(m_ref_wrenches[i].data[3], m_ref_wrenches[i].data[4], m_ref_wrenches[i].data[5]);
+#endif
     if (is_feedback_control_enable[i]) {
         ref_total_foot_origin_moment += (target_ee_p[i]-foot_origin_pos).cross(ref_force[i]) + ref_moment[i];
     }
