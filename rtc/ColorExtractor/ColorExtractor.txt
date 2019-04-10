@@ -1,0 +1,53 @@
+/**
+
+\page ColorExtractor
+
+\section introduction Overview
+
+This component extracts pixels in the given RGB region and computes centroid of them.
+
+<table>
+<tr><th>implementation_id</th><td>ColorExtractor</td></tr>
+<tr><th>category</th><td>example</td></tr>
+</table>
+
+\section dataports Data Ports
+
+\subsection inports Input Ports
+
+<table>
+<tr><th>port name</th><th>data type</th><th>unit</th><th>description</th></tr>
+<tr><td>original</td><td>Img::TimedCameraImage</td><td></td><td>source image</td></tr>
+</table>
+
+\subsection outports Output Ports
+
+<table>
+<tr><th>port name</th><th>data type</th><th>unit</th><th>description</th></tr>
+<tr><td>result</td><td>Img::TimedCameraImage</td><td></td><td>result image. The centroid of extracted pixels is shown by a circle.</td></tr>
+<tr><td>pos</td><td>RTC::TimedPoint2D</td><td></td><td>The centroid of extracted pixels.</td></tr>
+</table>
+
+\section serviceports Service Ports
+
+\subsection provider Service Providers
+
+N/A
+
+\subsection consumer Service Consumers
+
+N/A
+
+\section configuration Configuration Variables
+
+<table>
+<tr><th>name</th><th>type</th><th>unit</th><th>default value</th><th>description</th></tr>
+<tr><td>minPixels</td><td>int</td><td></td><td>0</td><td>the minimum pixels to get an output</td></tr>
+<tr><td>rgbRegion</td><td>std::vector<int></td><td></td><td>0,0,0,0,0,0</td><td>A region of RGB to extract. R_min, G_min, B_min, R_max, G_max and B_max</td></tr>
+</table>
+
+\section conf Configuration File
+
+N/A
+
+ */
