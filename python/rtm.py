@@ -18,6 +18,8 @@ import re
 rootnc = None
 nshost = None
 nsport = None
+mgrhost = None
+mgrport = None
 
 ##
 # \brief wrapper class of RT component
@@ -311,7 +313,7 @@ def unbindObject(name, kind):
 # \brief initialize ORB 
 #
 def initCORBA():
-    global rootnc, orb, nshost, nsport
+    global rootnc, orb, nshost, nsport, mgrhost, mgrport
 
     # from omniorb's document
     # When CORBA::ORB_init() is called, the value for each configuration
@@ -320,17 +322,55 @@ def initCORBA():
     #  Environment variables
     # so init_CORBA will follow this order
     # first check command line argument
-    try:
-        n = sys.argv.index('-ORBInitRef')
-        (nshost, nsport) = re.match(
-            'NameService=corbaloc:iiop:(\w+):(\d+)/NameService', sys.argv[n + 1]).group(1, 2)
-    except:
-        if not nshost:
-            nshost = socket.gethostname()
-        if not nsport:
-            nsport = 15005
 
-    print("configuration ORB with %s:%s"%(nshost, nsport))
+    rtm_argv = [sys.argv[0]]    # extract rtm related args only
+    for i in range(len(sys.argv)):
+        if sys.argv[i] == '-o':
+            rtm_argv.extend(['-o', sys.argv[i+1]])
+
+    mc = OpenRTM_aist.ManagerConfig();
+    mc.parseArgs(rtm_argv)
+
+    if nshost != None: # these values can be set via other script like "import rtm; rtm.nshost=XXX"
+        print("\033[34m[rtm.py] nshost already set as " + str(nshost) + "\033[0m")
+    else:
+        try:
+            nshost = mc._argprop.getProperty("corba.nameservers").split(":")[0]
+            if not nshost:
+                raise
+        except:
+            nshost = socket.gethostname() # default
+            print("\033[34m[rtm.py] Failed to parse corba.nameservers, use " + str(nshost) + " as nshost \033[0m")
+
+    if nsport != None:
+        print("\033[34m[rtm.py] nsport already set as " + str(nsport) + "\033[0m")
+    else:
+        try:
+            nsport = int(mc._argprop.getProperty("corba.nameservers").split(":")[1])
+            if not nsport:
+                raise
+        except:
+            nsport = 15005  # default
+            print("\033[34m[rtm.py] Failed to parse corba.nameservers, use " + str(nsport) + " as nsport \033[0m")
+
+    if mgrhost != None: 
+        print("\033[34m[rtm.py] mgrhost already set as " + str(mgrhost) + "\033[0m")
+    else:
+        mgrhost = nshost
+
+    if mgrport != None: 
+        print("\033[34m[rtm.py] mgrport already set as " + str(mgrport) + "\033[0m")
+    else:
+        try:
+            mgrport = int(mc._argprop.getProperty("corba.master_manager").split(":")[1])
+            if not mgrport:
+                raise
+        except:
+            mgrport = 2810  # default
+            print("\033[34m[rtm.py] Failed to parse corba.master_manager, use " + str(mgrport) + "\033[0m")
+
+    print("\033[34m[rtm.py] configuration ORB with %s:%s\033[0m"%(nshost, nsport))
+    print("\033[34m[rtm.py] configuration RTCManager with %s:%s\033[0m"%(mgrhost, mgrport))
     os.environ['ORBInitRef'] = 'NameService=corbaloc:iiop:%s:%s/NameService' % \
                                (nshost, nsport)
 
@@ -420,8 +460,7 @@ def findRTCmanager(hostname=None, rnc=None):
         return mgr
 
     def getManagerDirectly(hostname, mgr=None):
-        global orb
-        mgrport = int(nsport) + 1 # RTC manager port is set as name server port + 1 traditionally
+        global orb, mgrport
         corbaloc = "corbaloc:iiop:" + hostname + ":" + str(mgrport) + "/manager"
         print("\033[34m[rtm.py] trying to findRTCManager on port" + str(mgrport) + "\033[0m")
         try:
