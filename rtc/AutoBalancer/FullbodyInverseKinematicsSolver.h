@@ -200,7 +200,7 @@ class FullbodyInverseKinematicsSolver : public SimpleFullbodyInverseKinematicsSo
             hrp::dmatrix H = J_all.transpose() * constraint_weight_all.asDiagonal() * J_all + Wn;
             hrp::dvector g = J_all.transpose() * constraint_weight_all.asDiagonal() * err_all;
 
-            dq_all = H.inverse() * g;
+            dq_all = H.ldlt().solve(g);
 
             static int count;
             if(count++ % 10000 == 0){

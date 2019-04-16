@@ -577,9 +577,12 @@ void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr
         tmp.target_link_name = "WAIST";
         tmp.localPos = hrp::Vector3::Zero();
         tmp.localR = hrp::Matrix33::Identity();
-        tmp.targetPos = robot_in->rootLink()->p;// will be ignored by selection_vec
-        tmp.targetRpy = com_ref.rpy;// ベースリンクの回転をフリーにはしないほうがいい(omegaの積分誤差で暴れる)
-        tmp.constraint_weight << 0,0,0,1,1,1;
+//        tmp.targetPos = robot_in->rootLink()->p;// will be ignored by selection_vec
+//        tmp.targetRpy = com_ref.rpy;// ベースリンクの回転をフリーにはしないほうがいい(omegaの積分誤差で暴れる)
+//        tmp.constraint_weight << 0,0,0,1,1,1;
+        tmp.targetPos << m_basePos.data.x,m_basePos.data.y,m_basePos.data.z;// will be ignored by selection_vec
+        tmp.targetRpy << m_baseRpy.data.r,m_baseRpy.data.p,m_baseRpy.data.y;// ベースリンクの回転をフリーにはしないほうがいい(omegaの積分誤差で暴れる)
+        tmp.constraint_weight << 1,1,1,1,1,1;
         tmp.rot_precision = deg2rad(3);
         ikc_list.push_back(tmp);
     }
@@ -654,19 +657,19 @@ void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr
         tmp.rot_precision = deg2rad(3);
         ikc_list.push_back(tmp);
     }if(robot_in->link("HEAD_JOINT1") != NULL){
-      IKConstraint tmp;
-      tmp.target_link_name = "HEAD_JOINT1";
-      tmp.targetRpy = head_ref.rpy;
-      tmp.constraint_weight << 0,0,0,0,0.1,0.1;
-      tmp.rot_precision = deg2rad(1);
-      ikc_list.push_back(tmp);
+        IKConstraint tmp;
+        tmp.target_link_name = "HEAD_JOINT1";
+        tmp.targetRpy = head_ref.rpy;
+        tmp.constraint_weight << 0,0,0,0,0.1,0.1;
+        tmp.rot_precision = deg2rad(1);
+        ikc_list.push_back(tmp);
     }if(robot_in->link("HEAD_P") != NULL){
-      IKConstraint tmp;
-      tmp.target_link_name = "HEAD_P";
-      tmp.targetRpy = head_ref.rpy;
-      tmp.constraint_weight << 0,0,0,0,0.1,0.1;
-      tmp.rot_precision = deg2rad(1);
-      ikc_list.push_back(tmp);
+        IKConstraint tmp;
+        tmp.target_link_name = "HEAD_P";
+        tmp.targetRpy = head_ref.rpy;
+        tmp.constraint_weight << 0,0,0,0,0.1,0.1;
+        tmp.rot_precision = deg2rad(1);
+        ikc_list.push_back(tmp);
     }
     if(hsp->rp_ref_out.tgt[rf].is_contact){
         sccp->avoid_priority.head(12).head(6).fill(4);
@@ -771,6 +774,21 @@ void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr
     }
 
     fik_in->q_ref = init_sync_state;
+
+
+    std::string tmp[] = {"R_CROTCH_R","R_CROTCH_P","R_CROTCH_Y","R_KNEE_P","R_ANKLE_R","R_ANKLE_P","L_CROTCH_R","L_CROTCH_P","L_CROTCH_Y","L_KNEE_P","L_ANKLE_R","L_ANKLE_P"};
+    const std::vector<std::string> list(tmp, tmp+12);
+    for(int i=0; i<list.size(); i++){
+      if( robot_in->link(list[i]) != NULL){
+        int j=robot_in->link(list[i])->jointId;
+        fik_in->dq_weight_all(j) = 1e-5;
+        robot_in->joint(j)->q = m_qRef.data[j];
+        fik_in->q_ref(j) = m_qRef.data[j];
+      }
+    }
+    robot_in->rootLink()->p << m_basePos.data.x,m_basePos.data.y,m_basePos.data.z;// will be ignored by selection_vec
+    robot_in->rootLink()->R = hrp::rotFromRpy(hrp::Vector3(m_baseRpy.data.r,m_baseRpy.data.p,m_baseRpy.data.y));// ベースリンクの回転をフリーにはしないほうがいい(omegaの積分誤差で暴れる)
+
 
 //    fik_in->q_ref_pullback_gain.segment(6+6+3+2, 8*2).fill(0.01);//腕だけ
 //    fik_in->dq_ref_pullback.segment(6+6+3+2, 8*2).fill(deg2rad(0.1));//腕だけ
