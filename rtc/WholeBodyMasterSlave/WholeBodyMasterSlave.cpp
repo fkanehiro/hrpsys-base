@@ -347,9 +347,15 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
             hsp->act_rs.com = com;
             hsp->act_rs.zmp = ref_zmp;
 
+            const std::string tmp[] = {"R_CROTCH_R","R_CROTCH_P","R_CROTCH_Y","R_KNEE_P","R_ANKLE_R","R_ANKLE_P","L_CROTCH_R","L_CROTCH_P","L_CROTCH_Y","L_KNEE_P","L_ANKLE_R","L_ANKLE_P",};
+            const std::vector<std::string> lower(tmp, tmp+12);
             // qRef
             for (int i = 0; i < m_qRef.data.length(); i++ ){
+              if(m_robot->joint(i)->name == "L_HAND" || m_robot->joint(i)->name == "R_HAND"){}// pass through hand
+              else if(hsp->WBMSparam.disable_lower && std::find(lower.begin(), lower.end(), m_robot->joint(i)->name) != lower.end()){}// pass through lower limbs
+              else{
                 m_qRef.data[i] = transition_interpolator_ratio * m_robot_for_out->joint(i)->q  + (1 - transition_interpolator_ratio) * m_qRef.data[i];
+              }
             }
             // basePos
             m_basePos.data.x = transition_interpolator_ratio * m_robot_for_out->rootLink()->p(0) + (1 - transition_interpolator_ratio) * m_basePos.data.x;
@@ -566,7 +572,7 @@ void WholeBodyMasterSlave::calcManipulability(fikPtr& fik_in, hrp::BodyPtr& robo
 #ifdef USE_NEW_FIK
 void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr& robot_in, const WBMSPose3D& com_ref, const WBMSPose3D& rf_ref, const WBMSPose3D& lf_ref, const WBMSPose3D& rh_ref, const WBMSPose3D& lh_ref, const WBMSPose3D& head_ref, const std::string& debug_prefix){
     std::vector<IKConstraint> ikc_list;
-    {
+    if(!hsp->WBMSparam.disable_lower){
         IKConstraint tmp;
         tmp.target_link_name = "WAIST";
         tmp.localPos = hrp::Vector3::Zero();
@@ -576,7 +582,19 @@ void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr
         tmp.constraint_weight << 0,0,0,1,1,1;
         tmp.rot_precision = deg2rad(3);
         ikc_list.push_back(tmp);
-    }{
+    }
+    if(hsp->WBMSparam.disable_lower){
+      IKConstraint tmp;
+      tmp.target_link_name = "WAIST";
+      tmp.localPos = hrp::Vector3::Zero();
+      tmp.localR = hrp::Matrix33::Identity();
+      tmp.targetPos << m_basePos.data.x, m_basePos.data.y, m_basePos.data.z;// will be ignored by selection_vec
+      tmp.targetRpy << m_baseRpy.data.r, m_baseRpy.data.p, m_baseRpy.data.y;// ベースリンクの回転をフリーにはしないほうがいい(omegaの積分誤差で暴れる)
+      tmp.constraint_weight << 1,1,1,1,1,1;
+      tmp.rot_precision = deg2rad(3);
+      ikc_list.push_back(tmp);
+    }
+    if(!hsp->WBMSparam.disable_lower){
         IKConstraint tmp;
         tmp.target_link_name = eename_ikcp_map["rleg"].target_link_name;
         tmp.localPos = eename_ikcp_map["rleg"].localPos;
@@ -590,7 +608,7 @@ void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr
         }
         ikc_list.push_back(tmp);
     }
-    {
+    if(!hsp->WBMSparam.disable_lower){
         IKConstraint tmp;
         tmp.target_link_name = eename_ikcp_map["lleg"].target_link_name;
         tmp.localPos = eename_ikcp_map["lleg"].localPos;
@@ -604,7 +622,7 @@ void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr
         }
         ikc_list.push_back(tmp);
     }
-    const double dist = 0.65;
+    const double dist = 0.0;
     {
         IKConstraint tmp;
         tmp.target_link_name = eename_ikcp_map["rarm"].target_link_name;
@@ -616,7 +634,7 @@ void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr
             tmp.targetPos = rh_ref.p;
         }
         tmp.targetRpy = rh_ref.rpy;
-        tmp.constraint_weight = hrp::dvector6::Constant(0.1);
+        tmp.constraint_weight = hrp::dvector6::Constant(0.5);
         tmp.pos_precision = 3e-3;
         tmp.rot_precision = deg2rad(3);
         ikc_list.push_back(tmp);
@@ -631,17 +649,24 @@ void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr
             tmp.targetPos = lh_ref.p;
         }
         tmp.targetRpy = lh_ref.rpy;
-        tmp.constraint_weight = hrp::dvector6::Constant(0.1);
+        tmp.constraint_weight = hrp::dvector6::Constant(0.5);
         tmp.pos_precision = 3e-3;
         tmp.rot_precision = deg2rad(3);
         ikc_list.push_back(tmp);
     }if(robot_in->link("HEAD_JOINT1") != NULL){
-        IKConstraint tmp;
-        tmp.target_link_name = "HEAD_JOINT1";
-        tmp.targetRpy = head_ref.rpy;
-        tmp.constraint_weight << 0,0,0,0,0.1,0.1;
-        tmp.rot_precision = deg2rad(1);
-        ikc_list.push_back(tmp);
+      IKConstraint tmp;
+      tmp.target_link_name = "HEAD_JOINT1";
+      tmp.targetRpy = head_ref.rpy;
+      tmp.constraint_weight << 0,0,0,0,0.1,0.1;
+      tmp.rot_precision = deg2rad(1);
+      ikc_list.push_back(tmp);
+    }if(robot_in->link("HEAD_P") != NULL){
+      IKConstraint tmp;
+      tmp.target_link_name = "HEAD_P";
+      tmp.targetRpy = head_ref.rpy;
+      tmp.constraint_weight << 0,0,0,0,0.1,0.1;
+      tmp.rot_precision = deg2rad(1);
+      ikc_list.push_back(tmp);
     }
     if(hsp->rp_ref_out.tgt[rf].is_contact){
         sccp->avoid_priority.head(12).head(6).fill(4);
@@ -697,7 +722,7 @@ void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr
     }
 
 
-    {
+    if(!hsp->WBMSparam.disable_lower){
         IKConstraint tmp;
         tmp.target_link_name = "COM";
         tmp.localPos = hrp::Vector3::Zero();
@@ -739,7 +764,7 @@ void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr
     if( m_robot->link("CHEST_Y") != NULL) m_robot->link("CHEST_Y")->llimit = deg2rad(-20);
     if( m_robot->link("CHEST_Y") != NULL) m_robot->link("CHEST_Y")->ulimit = deg2rad(20);
     if( m_robot->link("CHEST_P") != NULL) m_robot->link("CHEST_P")->llimit = deg2rad(0);
-    if( m_robot->link("CHEST_P") != NULL) m_robot->link("CHEST_P")->ulimit = deg2rad(30);
+    if( m_robot->link("CHEST_P") != NULL) m_robot->link("CHEST_P")->ulimit = deg2rad(60);
 
     for(int i=0;i<robot_in->numJoints();i++){
         LIMIT_MINMAX(robot_in->joint(i)->q, robot_in->joint(i)->llimit, robot_in->joint(i)->ulimit);
@@ -930,6 +955,11 @@ bool WholeBodyMasterSlave::setWholeBodyMasterSlaveParam(const OpenHRP::WholeBody
     hsp->WBMSparam.use_rh = hsp->WBMSparam.use_lh = i_param.use_hands;
     hsp->WBMSparam.use_head = i_param.use_head;
     hsp->WBMSparam.use_manipulability_limit = i_param.use_manipulability_limit;
+    if(mode.now() == MODE_IDLE){
+      hsp->WBMSparam.disable_lower = i_param.disable_lower;
+    }else{
+      std::cerr << "[" << m_profile.instance_name << "] disable_lower can be changed in MODE_IDLE" << std::endl;
+    }
     return true;
 }
 
@@ -948,6 +978,7 @@ bool WholeBodyMasterSlave::getWholeBodyMasterSlaveParam(OpenHRP::WholeBodyMaster
     i_param.use_hands = (hsp->WBMSparam.use_rh || hsp->WBMSparam.use_lh);
     i_param.use_head = hsp->WBMSparam.use_head;
     i_param.use_manipulability_limit = hsp->WBMSparam.use_manipulability_limit;
+    i_param.disable_lower = hsp->WBMSparam.disable_lower;
     return true;
 }
 

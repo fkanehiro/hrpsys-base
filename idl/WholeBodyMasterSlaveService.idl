@@ -31,6 +31,7 @@ module OpenHRP
         boolean use_hands;
         boolean use_head;
         boolean use_manipulability_limit;
+        boolean disable_lower;
     };
     boolean startCountDownForWholeBodyMasterSlave(in double sec);
     boolean startWholeBodyMasterSlave();

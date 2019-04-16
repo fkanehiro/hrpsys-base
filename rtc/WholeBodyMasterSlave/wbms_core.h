@@ -398,6 +398,7 @@ class WBMSCore : UTIL_CONST {
                 bool use_rh,use_lh;
                 bool use_head;
                 bool use_manipulability_limit;
+                bool disable_lower;
         };
         struct WBMSparameters WBMSparam;
         struct ActualRobotState {
@@ -473,6 +474,7 @@ class WBMSCore : UTIL_CONST {
             WBMSparam.use_rh = WBMSparam.use_lh = true;
             WBMSparam.use_head = true;
             WBMSparam.use_manipulability_limit = true;
+            WBMSparam.disable_lower = true;
             rp_ref_out_old.clear();
             rp_ref_out.clear();
             rp_ref_vel_old.clear();
