@@ -124,19 +124,19 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     addOutPort("cogOut", m_cogOut);
     addOutPort("walkingStates", m_walkingStatesOut);
     addOutPort("sbpCogOffset", m_sbpCogOffsetOut);
-
+  
     // Set service provider to Ports
     m_AutoBalancerServicePort.registerProvider("service0", "AutoBalancerService", m_service0);
-
+  
     // Set service consumers to Ports
-
+  
     // Set CORBA Service Ports
     addPort(m_AutoBalancerServicePort);
-
+  
     // </rtc-template>
     // <rtc-template block="bind_config">
     // Bind variables and configuration variable
-
+  
     // </rtc-template>
 
     RTC::Properties& prop =  getProperties();
@@ -173,8 +173,7 @@ RTC::ReturnCode_t AutoBalancer::onInitialize()
     leg_names.push_back("lleg");
 
     // Generate FIK
-//    fik = fikPtr(new SimpleFullbodyInverseKinematicsSolver(m_robot, std::string(m_profile.instance_name), m_dt));
-    fik = fikPtr(new FullbodyInverseKinematicsSolver(m_robot, std::string(m_profile.instance_name), m_dt));
+    fik = fikPtr(new SimpleFullbodyInverseKinematicsSolver(m_robot, std::string(m_profile.instance_name), m_dt));
 
     // setting from conf file
     // rleg,TARGET_LINK,BASE_LINK
@@ -413,7 +412,7 @@ RTC::ReturnCode_t AutoBalancer::onFinalize()
 RTC::ReturnCode_t AutoBalancer::onActivated(RTC::UniqueId ec_id)
 {
     std::cerr << "[" << m_profile.instance_name<< "] onActivated(" << ec_id << ")" << std::endl;
-
+    
     return RTC::RTC_OK;
 }
 
@@ -497,7 +496,6 @@ RTC::ReturnCode_t AutoBalancer::onExecute(RTC::UniqueId ec_id)
     hrp::Vector3 ref_basePos;
     hrp::Matrix33 ref_baseRot;
     hrp::Vector3 rel_ref_zmp; // ref zmp in base frame
-
     if ( is_legged_robot ) {
       // For parameters
       fik->storeCurrentParameters();
@@ -1079,119 +1077,27 @@ void AutoBalancer::fixLegToCoords2 (coordinates& tmp_fix_coords)
 
 void AutoBalancer::solveFullbodyIK ()
 {
-    static hrp::dvector q_old = hrp::getQAll(m_robot);
-    static hrp::Vector3 base_p_old = m_robot->rootLink()->p;
-    static hrp::Matrix33 base_R_old = m_robot->rootLink()->R;
-    std::vector<IKConstraint> ik_tgt_list;
-    {
-        IKConstraint tmp;
-        tmp.target_link_name = "WAIST";
-        tmp.localPos = hrp::Vector3::Zero();
-        tmp.localR = hrp::Matrix33::Identity();
-        tmp.targetPos = target_root_p;// will be ignored by selection_vec
-        tmp.targetRpy = hrp::rpyFromRot(target_root_R);// ベースリンクの回転をフリーにはしないほうがいい(omegaの積分誤差で暴れる)
-        tmp.constraint_weight << 0,0,0,1,1,1;
-        ik_tgt_list.push_back(tmp);
-    }{
-        IKConstraint tmp;
-        tmp.target_link_name = ikp["rleg"].target_link->name;
-        tmp.localPos = ikp["rleg"].localPos;
-        tmp.localR = ikp["rleg"].localR;
-        tmp.targetPos = ikp["rleg"].target_p0;
-        tmp.targetRpy = hrp::rpyFromRot(ikp["rleg"].target_r0);
-        tmp.constraint_weight << 1,1,3,3,3,1;
-        ik_tgt_list.push_back(tmp);
-    }{
-        IKConstraint tmp;
-        tmp.target_link_name = ikp["lleg"].target_link->name;
-        tmp.localPos = ikp["lleg"].localPos;
-        tmp.localR = ikp["lleg"].localR;
-        tmp.targetPos = ikp["lleg"].target_p0;
-        tmp.targetRpy = hrp::rpyFromRot(ikp["lleg"].target_r0);
-        tmp.constraint_weight << 1,1,3,3,3,1;
-        ik_tgt_list.push_back(tmp);
-    }{
-//        IKConstraint tmp;
-//        tmp.target_link_name = ikp["rarm"].target_link->name;
-//        tmp.localPos = ikp["rarm"].localPos;
-//        tmp.localR = ikp["rarm"].localR;
-//        tmp.targetPos = ikp["rarm"].target_p0;
-//        tmp.targetRpy = hrp::rpyFromRot(ikp["rarm"].target_r0);
-//        tmp.constraint_weight << 1,1,1,1,1,1;
-//        ik_tgt_list.push_back(tmp);
-    }{
-//        IKConstraint tmp;
-//        tmp.target_link_name = ikp["larm"].target_link->name;
-//        tmp.localPos = ikp["larm"].localPos;
-//        tmp.localR = ikp["larm"].localR;
-//        tmp.targetPos = ikp["larm"].target_p0;
-//        tmp.targetRpy = hrp::rpyFromRot(ikp["larm"].target_r0);
-//        tmp.constraint_weight << 1,1,1,1,1,1;
-//        ik_tgt_list.push_back(tmp);
-    }{
-        IKConstraint tmp;
-        tmp.target_link_name = "COM";
-        tmp.localPos = hrp::Vector3::Zero();
-        tmp.localR = hrp::Matrix33::Identity();
-        tmp.targetPos = ref_cog;// COM height will not be constraint
-        tmp.targetRpy = hrp::Vector3(0, 0, 0);//reference angular momentum
-        //  tmp.targetRpy = hrp::Vector3(0, 10, 0);//reference angular momentum
-        tmp.constraint_weight << 3,3,1,1e-6,1e-6,1e-6;
-//        tmp.constraint_weight << 3,3,1,0,0,0;
-        tmp.rot_precision = 1e-1;//angular momentum precision
-        ik_tgt_list.push_back(tmp);
-    }
-
-  if( m_robot->link("RARM_JOINT2") != NULL) m_robot->link("RARM_JOINT2")->ulimit = deg2rad(-40);//脇の干渉回避のため
-  if( m_robot->link("LARM_JOINT2") != NULL) m_robot->link("LARM_JOINT2")->llimit = deg2rad(40);
-
-  if( m_robot->link("CHEST_JOINT0") != NULL) fik->dq_weight_all(m_robot->link("CHEST_JOINT0")->jointId) = 0.1;
-  if( m_robot->link("CHEST_JOINT1") != NULL) fik->dq_weight_all(m_robot->link("CHEST_JOINT1")->jointId) = 0.1;
-  if( m_robot->link("CHEST_JOINT2") != NULL) fik->dq_weight_all(m_robot->link("CHEST_JOINT2")->jointId) = 0.1;
-  if( m_robot->link("CHEST_Y") != NULL) fik->dq_weight_all(m_robot->link("CHEST_Y")->jointId) = 0.1;
-  if( m_robot->link("CHEST_P") != NULL) fik->dq_weight_all(m_robot->link("CHEST_Y")->jointId) = 0.1;
-
-  for(int i=0;i<m_robot->numJoints();i++) fik->q_ref(i) = m_qRef.data[i];
-  fik->q_ref_pullback_gain.head(m_robot->numJoints()).fill(0.001);
-
-  hrp::setQAll(m_robot, q_old);
-  m_robot->rootLink()->p = base_p_old;
-  m_robot->rootLink()->R = base_R_old;
-
-  int loop_result = 0;
-  const int IK_MAX_LOOP = 1;
-  loop_result = fik->solveFullbodyIKLoop(m_robot, ik_tgt_list, IK_MAX_LOOP);
-
-  q_old = hrp::getQAll(m_robot);
-  base_p_old = m_robot->rootLink()->p;
-  base_R_old = m_robot->rootLink()->R;
+  // Set ik target params
+  fik->target_root_p = target_root_p;
+  fik->target_root_R = target_root_R;
+  for ( std::map<std::string, SimpleFullbodyInverseKinematicsSolver::IKparam>::iterator it = fik->ikp.begin(); it != fik->ikp.end(); it++ ) {
+      it->second.target_p0 = ikp[it->first].target_p0;
+      it->second.target_r0 = ikp[it->first].target_r0;
+  }
+  fik->ratio_for_vel = transition_interpolator_ratio * leg_names_interpolator_ratio;
+//  fik->current_tm = m_qRef.tm;
+  for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
+      fik->ikp[it->first].is_ik_enable = it->second.is_active;
+  }
+  // Revert
+  fik->revertRobotStateToCurrent();
+  // TODO : SBP calculation is outside of solve ik?
+  hrp::Vector3 tmp_input_sbp = hrp::Vector3(0,0,0);
+  static_balance_point_proc_one(tmp_input_sbp, ref_zmp(2));
+  hrp::Vector3 dif_cog = tmp_input_sbp - ref_cog;
+  // Solve IK
+  fik->solveFullbodyIK (dif_cog, transition_interpolator->isEmpty());
 }
-
-
-//void AutoBalancer::solveFullbodyIK ()
-//{
-//  // Set ik target params
-//  fik->target_root_p = target_root_p;
-//  fik->target_root_R = target_root_R;
-//  for ( std::map<std::string, SimpleFullbodyInverseKinematicsSolver::IKparam>::iterator it = fik->ikp.begin(); it != fik->ikp.end(); it++ ) {
-//      it->second.target_p0 = ikp[it->first].target_p0;
-//      it->second.target_r0 = ikp[it->first].target_r0;
-//  }
-//  fik->ratio_for_vel = transition_interpolator_ratio * leg_names_interpolator_ratio;
-////  fik->current_tm = m_qRef.tm;
-//  for ( std::map<std::string, ABCIKparam>::iterator it = ikp.begin(); it != ikp.end(); it++ ) {
-//      fik->ikp[it->first].is_ik_enable = it->second.is_active;
-//  }
-//  // Revert
-//  fik->revertRobotStateToCurrent();
-//  // TODO : SBP calculation is outside of solve ik?
-//  hrp::Vector3 tmp_input_sbp = hrp::Vector3(0,0,0);
-//  static_balance_point_proc_one(tmp_input_sbp, ref_zmp(2));
-//  hrp::Vector3 dif_cog = tmp_input_sbp - ref_cog;
-//  // Solve IK
-//  fik->solveFullbodyIK (dif_cog, transition_interpolator->isEmpty());
-//}
-
 
 
 /*
@@ -1609,7 +1515,7 @@ bool AutoBalancer::setGaitGeneratorParam(const OpenHRP::AutoBalancerService::Gai
   gg->set_swing_trajectory_final_distance_weight(i_param.swing_trajectory_final_distance_weight);
   gg->set_swing_trajectory_time_offset_xy2z(i_param.swing_trajectory_time_offset_xy2z);
   gg->set_stair_trajectory_way_point_offset(hrp::Vector3(i_param.stair_trajectory_way_point_offset[0], i_param.stair_trajectory_way_point_offset[1], i_param.stair_trajectory_way_point_offset[2]));
-  gg->set_cycloid_delay_kick_point_offset(hrp::Vector3(i_param.cycloid_delay_kick_point_offset[0], i_param.cycloid_delay_kick_point_offset[1], i_param.cycloid_delay_kick_point_offset[2]));
+  gg->set_cycloid_delay_kick_point_offset(hrp::Vector3(i_param.cycloid_delay_kick_point_offset[0], i_param.cycloid_delay_kick_point_offset[1], i_param.cycloid_delay_kick_point_offset[2]));  
   gg->set_gravitational_acceleration(i_param.gravitational_acceleration);
   gg->set_toe_angle(i_param.toe_angle);
   gg->set_heel_angle(i_param.heel_angle);
@@ -2022,11 +1928,11 @@ bool AutoBalancer::adjustFootSteps(const OpenHRP::AutoBalancerService::Footstep&
       //   Input : ee coords
       //   Output : link coords
       memcpy(eepos.data(), rfootstep.pos, sizeof(double)*3);
-      eerot = (Eigen::Quaternion<double>(rfootstep.rot[0], rfootstep.rot[1], rfootstep.rot[2], rfootstep.rot[3])).normalized().toRotationMatrix(); // rtc:
+      eerot = (Eigen::Quaternion<double>(rfootstep.rot[0], rfootstep.rot[1], rfootstep.rot[2], rfootstep.rot[3])).normalized().toRotationMatrix(); // rtc: 
       ikp["rleg"].adjust_interpolation_target_r0 = eerot;
       ikp["rleg"].adjust_interpolation_target_p0 = eepos;
       memcpy(eepos.data(), lfootstep.pos, sizeof(double)*3);
-      eerot = (Eigen::Quaternion<double>(lfootstep.rot[0], lfootstep.rot[1], lfootstep.rot[2], lfootstep.rot[3])).normalized().toRotationMatrix(); // rtc:
+      eerot = (Eigen::Quaternion<double>(lfootstep.rot[0], lfootstep.rot[1], lfootstep.rot[2], lfootstep.rot[3])).normalized().toRotationMatrix(); // rtc: 
       ikp["lleg"].adjust_interpolation_target_r0 = eerot;
       ikp["lleg"].adjust_interpolation_target_p0 = eepos;
       mid_coords(target_mid_coords, 0.5,
