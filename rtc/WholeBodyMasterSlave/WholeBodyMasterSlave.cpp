@@ -351,8 +351,7 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
             const std::vector<std::string> lower(tmp, tmp+12);
             // qRef
             for (int i = 0; i < m_qRef.data.length(); i++ ){
-              if(m_robot->joint(i)->name == "L_HAND" || m_robot->joint(i)->name == "R_HAND"){}// pass through hand
-              else if(hsp->WBMSparam.disable_lower && std::find(lower.begin(), lower.end(), m_robot->joint(i)->name) != lower.end()){}// pass through lower limbs
+              if(hsp->WBMSparam.disable_lower && std::find(lower.begin(), lower.end(), m_robot->joint(i)->name) != lower.end()){}// pass through lower limbs
               else{
                 m_qRef.data[i] = transition_interpolator_ratio * m_robot_for_out->joint(i)->q  + (1 - transition_interpolator_ratio) * m_qRef.data[i];
               }
@@ -869,10 +868,12 @@ void WholeBodyMasterSlave::processHOFFARBIBFilter(hrp::BodyPtr& robot_in, hrp::B
     static hrp::dvector tmp_v = hrp::dvector::Zero(ROBOT_ALL_DOF);
 //    if (!q_ip->isEmpty() ){  q_ip->get(tmp_x, tmp_v, false);}
     for(int i=0;i<robot_in->numJoints();i++){
-        double tmp_time = fabs(robot_in->joint(i)->q - robot_out->joint(i)->q) / avg_q_vel;
-        LIMIT_MIN(tmp_time, fabs(tmp_v(i))/16);
-//        tmp_time += fabs(tmp_v(i))/16; //加速度8
-        if(tmp_time > goal_time){ goal_time = tmp_time; }
+        if(robot_in->joint(i)->name != "L_HAND" && robot_in->joint(i)->name != "R_HAND" ){ //KHI demo
+          double tmp_time = fabs(robot_in->joint(i)->q - robot_out->joint(i)->q) / avg_q_vel;
+          LIMIT_MIN(tmp_time, fabs(tmp_v(i))/16);
+  //        tmp_time += fabs(tmp_v(i))/16; //加速度8
+          if(tmp_time > goal_time){ goal_time = tmp_time; }
+        }
     }
     q_ip->setGoal(goal_state.data(), goal_time + min_goal_time_offset, true);
     hrp::dvector ans_state(ROBOT_ALL_DOF);
@@ -882,7 +883,27 @@ void WholeBodyMasterSlave::processHOFFARBIBFilter(hrp::BodyPtr& robot_in, hrp::B
     if (!q_ip->isEmpty() ){  q_ip->get(tmp, tmpv, true);}
     tmp_v = Eigen::Map<hrp::dvector>(tmpv, ROBOT_ALL_DOF);
     ans_state = Eigen::Map<hrp::dvector>(tmp, ROBOT_ALL_DOF);
-    for(int i=0;i<robot_out->numJoints();i++){ robot_out->joint(i)->q = ans_state(i); }
+    for(int i=0;i<robot_out->numJoints();i++){
+      if(robot_in->joint(i)->name != "L_HAND" && robot_in->joint(i)->name != "R_HAND" ){ //KHI demo
+        robot_out->joint(i)->q = ans_state(i);
+      }
+    }
+
+
+
+    //// KHI demo
+    const double hand_max_vel = 180.0/0.4 /180.0*M_PI;// 0.4sec for 180deg
+    std::map<std::string, double> joy_inputs;// 0 ~ 1
+    joy_inputs["L_HAND"] = m_htlfw.data[0];// tmp substitute
+    joy_inputs["R_HAND"] = m_htrfw.data[0];// tmp substitute
+    for(std::map<std::string, double>::iterator it = joy_inputs.begin(); it!=joy_inputs.end(); it++){
+      LIMIT_MINMAX(it->second, 0.0, 1.0);
+      double tgt_hand_q = (-29.0 + (124.0-(-29.0))*it->second ) /180.0*M_PI;
+      const double q_old = robot_out->link(it->first)->q;
+      LIMIT_MINMAX(tgt_hand_q, q_old - hand_max_vel*m_dt, q_old + hand_max_vel*m_dt);
+      robot_out->link(it->first)->q = tgt_hand_q;
+    }
+
     robot_out->rootLink()->p = ans_state.bottomRows(6).topRows(3);
     robot_out->rootLink()->R = hrp::rotFromRpy(ans_state.bottomRows(6).bottomRows(3));
     robot_out->calcForwardKinematics();
