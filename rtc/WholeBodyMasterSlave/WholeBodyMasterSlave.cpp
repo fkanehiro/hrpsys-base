@@ -2,10 +2,10 @@
 #include <hrpModel/Link.h>
 #include <hrpModel/Sensor.h>
 #include <hrpModel/ModelLoaderUtil.h>
-#include "WholeBodyMasterSlave.h"
 #include <hrpModel/JointPath.h>
 #include <hrpUtil/MatrixSolvers.h>
 #include "hrpsys/util/Hrpsys.h"
+#include "WholeBodyMasterSlave.h"
 
 #define DEBUGP (loop%200==0)
 #define DEBUGP_ONCE (loop==0)
@@ -56,7 +56,6 @@ WholeBodyMasterSlave::WholeBodyMasterSlave(RTC::Manager* manager) : RTC::DataFlo
         m_htlfIn("htlfIn", m_htlf),
         m_htrhIn("htrhIn", m_htrh),
         m_htlhIn("htlhIn", m_htlh),
-        //      m_actzmpIn("actzmpIn", m_actzmp),
         m_htheadIn("htheadIn", m_hthead),
 #ifdef USE_DEBUG_PORT
         m_htcom_dbgOut("htcom_dbgOut", m_htcom_dbg),// to ros bridge
@@ -109,7 +108,6 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onInitialize(){
     addInPort("htlfIn", m_htlfIn);
     addInPort("htrhIn", m_htrhIn);
     addInPort("htlhIn", m_htlhIn);
-    //    addInPort("actzmpIn", m_actzmpIn);
     addInPort("htheadIn", m_htheadIn);
 #ifdef USE_DEBUG_PORT
     addOutPort("htcom_dbgOut", m_htcom_dbgOut);// to ros bridge
@@ -144,18 +142,13 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onInitialize(){
     nameServer = nameServer.substr(0, comPos);
     RTC::CorbaNaming naming(rtcManager.getORB(), nameServer.c_str());
     m_robot = hrp::BodyPtr(new hrp::Body());
-//    m_robot_ml = hrp::BodyPtr(new hrp::Body());
-//    m_robot_vsafe = hrp::BodyPtr(new hrp::Body());
     if (!loadBodyFromModelLoader(m_robot, prop["model"].c_str(), CosNaming::NamingContext::_duplicate(naming.getRootContext()) )){
         std::cerr << "[" << m_profile.instance_name << "] failed to load model[" << prop["model"] << "]" << std::endl;
         return RTC::RTC_ERROR;
     }
-    m_robot_ml = hrp::BodyPtr(new hrp::Body(*m_robot)); //copy
-    m_robot_vsafe = hrp::BodyPtr(new hrp::Body(*m_robot)); //copy
+    m_robot_vsafe = hrp::BodyPtr(new hrp::Body(*m_robot)); //copy from m_robot
     // allocate memory for outPorts
     m_qRef.data.length(m_robot->numJoints());
-    m_htrfw.data.length(6);
-    m_htlfw.data.length(6);
     coil::stringTo(optionalDataLength, prop["seq_optional_data_dim"].c_str());
     loop = 0;
     transition_interpolator = new interpolator(1, m_dt, interpolator::HOFFARBIB, 1);
@@ -174,22 +167,12 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onInitialize(){
     q_ip->clear();
     // Generate FIK
     fik = fikPtr(new FullbodyInverseKinematicsSolver(m_robot, std::string(m_profile.instance_name), m_dt));
-    fik_ml = fikPtr(new FullbodyInverseKinematicsSolver(m_robot_ml, std::string(m_profile.instance_name), m_dt));
-    fik_list.push_back(fik);
-    fik_list.push_back(fik_ml);
     body_list.push_back(m_robot);
-    body_list.push_back(m_robot_ml);
     body_list.push_back(m_robot_vsafe);
 
     setupfik(fik, m_robot, prop);
-    setupfik(fik_ml, m_robot_ml, prop);
 
-    if (fik->ikp.find("rleg") != fik->ikp.end() && fik->ikp.find("lleg") != fik->ikp.end()) {
-        is_legged_robot = true;
-    } else {
-        is_legged_robot = false;
-    }
-    hsp = boost::shared_ptr<WBMSCore>(new WBMSCore(m_dt));
+    wbms = boost::shared_ptr<WBMSCore>(new WBMSCore(m_dt));
 
     invdyn_zmp_filters.setParameter(25, 1/m_dt, Q_BUTTERWORTH);
     final_ref_zmp_filter.setParameter(5, 1/m_dt, Q_BUTTERWORTH);
@@ -206,58 +189,35 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onFinalize(){
     return RTC::RTC_OK;
 }
 
-void WholeBodyMasterSlave::setupfik(fikPtr& fik_in, hrp::BodyPtr& robot_in, RTC::Properties& prop_in){
-    coil::vstring end_effectors_str = coil::split(prop_in["end_effectors"], ",");
+RTC::ReturnCode_t WholeBodyMasterSlave::setupfik(fikPtr& fik_in, hrp::BodyPtr& robot_in, RTC::Properties& prop_in){
+    coil::vstring ee_conf_all = coil::split(prop_in["end_effectors"], ",");
     size_t prop_num = 10;
-    if (end_effectors_str.size() > 0) {
-        size_t num = end_effectors_str.size()/prop_num;
-        for (size_t i = 0; i < num; i++) {
-            std::string ee_name, ee_target, ee_base;
-            coil::stringTo(ee_name, end_effectors_str[i*prop_num].c_str());
-            coil::stringTo(ee_target, end_effectors_str[i*prop_num+1].c_str());
-            coil::stringTo(ee_base, end_effectors_str[i*prop_num+2].c_str());
-            ABCIKparam tp;
-            for (size_t j = 0; j < XYZ; j++) {
-                coil::stringTo(tp.localPos(j), end_effectors_str[i*prop_num+3+j].c_str());
+    if (ee_conf_all.size() > 0) {
+        size_t ee_num = ee_conf_all.size()/prop_num;
+        for (size_t i = 0; i < ee_num; i++) {
+            std::string ee_name, target_link_name, base_name; // e.g. rleg, RLEG_JOINT5, WAIST
+            coil::stringTo(ee_name, ee_conf_all[i*prop_num].c_str());
+            coil::stringTo(target_link_name, ee_conf_all[i*prop_num+1].c_str());
+            coil::stringTo(base_name, ee_conf_all[i*prop_num+2].c_str());
+            ee_name_ikcp_map[ee_name].target_link_name = target_link_name;
+            for (size_t j = 0; j < XYZ; j++){ coil::stringTo(ee_name_ikcp_map[ee_name].localPos(j), ee_conf_all[i*prop_num+3+j].c_str()); }
+            double tmp_aa[4];
+            for (int j = 0; j < 4; j++ ){ coil::stringTo(tmp_aa[j], ee_conf_all[i*prop_num+6+j].c_str()); }
+            ee_name_ikcp_map[ee_name].localR = Eigen::AngleAxis<double>(tmp_aa[3], hrp::Vector3(tmp_aa[0], tmp_aa[1], tmp_aa[2])).toRotationMatrix(); // rotation in VRML is represented by axis + angle
+            if(robot_in->link(target_link_name)){
+              RTCOUT << "End Effector [" << ee_name << "]" << std::endl;
+              RTCOUT << "   target_link_name = " << ee_name_ikcp_map[ee_name].target_link_name << ", base = " << base_name << std::endl;
+              RTCOUT << "   offset_pos = " << ee_name_ikcp_map[ee_name].localPos.transpose() << "[m]" << std::endl;
+              RTCOUT << "   has_toe_joint = " << "fix to false now" << std::endl;
+            }else{
+              RTCOUT << "Target link [" << target_link_name << "] not found !" << std::endl;
+              return RTC::RTC_ERROR;
             }
-            double tmpv[4];
-            for (int j = 0; j < 4; j++ ) {
-                coil::stringTo(tmpv[j], end_effectors_str[i*prop_num+6+j].c_str());
-            }
-            tp.localR = Eigen::AngleAxis<double>(tmpv[3], hrp::Vector3(tmpv[0], tmpv[1], tmpv[2])).toRotationMatrix(); // rotation in VRML is represented by axis + angle
-            // FIK param
-            SimpleFullbodyInverseKinematicsSolver::IKparam tmp_fikp;
-            tmp_fikp.manip = hrp::JointPathExPtr(new hrp::JointPathEx(robot_in, robot_in->link(ee_base), robot_in->link(ee_target), m_dt, false, std::string(m_profile.instance_name)));
-            tmp_fikp.target_link = robot_in->link(ee_target);
-            tmp_fikp.localPos = tp.localPos;
-            tmp_fikp.localR = tp.localR;
-            fik_in->ikp.insert(std::pair<std::string, SimpleFullbodyInverseKinematicsSolver::IKparam>(ee_name, tmp_fikp));
-            // Fix for toe joint
-            //   Toe joint is defined as end-link joint in the case that end-effector link != force-sensor link
-            //   Without toe joints, "end-effector link == force-sensor link" is assumed.
-            //   With toe joints, "end-effector link != force-sensor link" is assumed.
-            if (robot_in->link(ee_target)->sensors.size() == 0) { // If end-effector link has no force sensor
-                std::vector<double> optw(fik_in->ikp[ee_name].manip->numJoints(), 1.0);
-                optw.back() = 0.0; // Set weight = 0 for toe joint by default
-                fik_in->ikp[ee_name].manip->setOptionalWeightVector(optw);
-                tp.has_toe_joint = true;
-            } else {
-                tp.has_toe_joint = false;
-            }
-            tp.target_link = robot_in->link(ee_target);
-            std::cerr << "[" << m_profile.instance_name << "] End Effector [" << ee_name << "]" << std::endl;
-            std::cerr << "[" << m_profile.instance_name << "]   target = " << fik_in->ikp[ee_name].target_link->name << ", base = " << ee_base << std::endl;
-            std::cerr << "[" << m_profile.instance_name << "]   offset_pos = " << tp.localPos.format(Eigen::IOFormat(Eigen::StreamPrecision, 0, ", ", ", ", "", "", "    [", "]")) << "[m]" << std::endl;
-            std::cerr << "[" << m_profile.instance_name << "]   has_toe_joint = " << (tp.has_toe_joint?"true":"false") << std::endl;
-            contact_states_index_map.insert(std::pair<std::string, size_t>(ee_name, i));////TODO:要移動?
-
-            eename_ikcp_map[ee_name].target_link_name = ee_target;
-            for (size_t j = 0; j < XYZ; j++){ coil::stringTo(eename_ikcp_map[ee_name].localPos(j), end_effectors_str[i*prop_num+3+j].c_str()); }
-            double tmp[4];
-            for (int j = 0; j < 4; j++ ){ coil::stringTo(tmp[j], end_effectors_str[i*prop_num+6+j].c_str()); }
-            eename_ikcp_map[ee_name].localR = Eigen::AngleAxis<double>(tmp[3], hrp::Vector3(tmp[0], tmp[1], tmp[2])).toRotationMatrix();
+            contact_states_index_map.insert(std::pair<std::string, size_t>(ee_name, i));////TODO:要移動? //used for check optional data order
         }
     }
+    is_legged_robot = (ee_name_ikcp_map.find("rleg") != ee_name_ikcp_map.end() && ee_name_ikcp_map.find("lleg") != ee_name_ikcp_map.end());
+    return RTC::RTC_OK;
 }
 
 #define TIMECALC 0
@@ -272,23 +232,23 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
     if (m_optionalDataIn.isNew()) { m_optionalDataIn.read(); }
     //for HumanSynchronizer
     if(mode.now()!=MODE_PAUSE){
-        if (m_htrfwIn.isNew()){ m_htrfwIn.read(); WBMSCore::DoubleSeqToVector6(m_htrfw.data,hsp->hp_wld_raw.tgt[rf].w); }
-        if (m_htlfwIn.isNew()){ m_htlfwIn.read(); WBMSCore::DoubleSeqToVector6(m_htlfw.data,hsp->hp_wld_raw.tgt[lf].w); }
-        if (m_htcomIn.isNew()){ m_htcomIn.read(); WBMSCore::Pose3DToWBMSPose3D(m_htcom.data,hsp->hp_wld_raw.tgt[com].abs); }
-        if (m_htrfIn.isNew()) { m_htrfIn.read();  WBMSCore::Pose3DToWBMSPose3D(m_htrf.data,hsp->hp_wld_raw.tgt[rf].abs); }
-        if (m_htlfIn.isNew()) { m_htlfIn.read();  WBMSCore::Pose3DToWBMSPose3D(m_htlf.data,hsp->hp_wld_raw.tgt[lf].abs); }
-        if (m_htrhIn.isNew()) { m_htrhIn.read();  WBMSCore::Pose3DToWBMSPose3D(m_htrh.data,hsp->hp_wld_raw.tgt[rh].abs);}
-        if (m_htlhIn.isNew()) { m_htlhIn.read();  WBMSCore::Pose3DToWBMSPose3D(m_htlh.data,hsp->hp_wld_raw.tgt[lh].abs);}
-        if (m_htheadIn.isNew()){ m_htheadIn.read(); WBMSCore::Pose3DToWBMSPose3D(m_hthead.data,hsp->hp_wld_raw.tgt[head].abs);}
-        if (m_htzmpIn.isNew()){ m_htzmpIn.read();  WBMSCore::Point3DToVector3(m_htzmp.data,hsp->hp_wld_raw.tgt[zmp].abs.p); }
+        if (m_htrfwIn.isNew()){ m_htrfwIn.read(); WBMSCore::WrenchToVector6(m_htrfw.data,wbms->hp_wld_raw.tgt[rf].w); }
+        if (m_htlfwIn.isNew()){ m_htlfwIn.read(); WBMSCore::WrenchToVector6(m_htlfw.data,wbms->hp_wld_raw.tgt[lf].w); }
+        if (m_htcomIn.isNew()){ m_htcomIn.read(); WBMSCore::Pose3DToWBMSPose3D(m_htcom.data,wbms->hp_wld_raw.tgt[com].abs); }
+        if (m_htrfIn.isNew()) { m_htrfIn.read();  WBMSCore::Pose3DToWBMSPose3D(m_htrf.data,wbms->hp_wld_raw.tgt[rf].abs); }
+        if (m_htlfIn.isNew()) { m_htlfIn.read();  WBMSCore::Pose3DToWBMSPose3D(m_htlf.data,wbms->hp_wld_raw.tgt[lf].abs); }
+        if (m_htrhIn.isNew()) { m_htrhIn.read();  WBMSCore::Pose3DToWBMSPose3D(m_htrh.data,wbms->hp_wld_raw.tgt[rh].abs);}
+        if (m_htlhIn.isNew()) { m_htlhIn.read();  WBMSCore::Pose3DToWBMSPose3D(m_htlh.data,wbms->hp_wld_raw.tgt[lh].abs);}
+        if (m_htheadIn.isNew()){ m_htheadIn.read(); WBMSCore::Pose3DToWBMSPose3D(m_hthead.data,wbms->hp_wld_raw.tgt[head].abs);}
+        if (m_htzmpIn.isNew()){ m_htzmpIn.read();  WBMSCore::Point3DToVector3(m_htzmp.data,wbms->hp_wld_raw.tgt[zmp].abs.p); }
     }
 
     //khi
-    if(m_htlfw.data[1] == 1 && m_htrfw.data[1] == 1 && mode.now() == MODE_IDLE){
+    if(m_htlfw.data.force.y == 1 && m_htrfw.data.force.y == 1 && mode.now() == MODE_IDLE){
         std::cerr<<"button call"<<std::endl;
         startWholeBodyMasterSlave();
         std::cerr<<"button call end"<<std::endl;
-    }else if(m_htlfw.data[1] == 1 && m_htrfw.data[1] == 1 && mode.now() == MODE_WBMS){
+    }else if(m_htlfw.data.force.y == 1 && m_htrfw.data.force.y == 1 && mode.now() == MODE_WBMS){
         stopWholeBodyMasterSlave();
     }
     
@@ -301,29 +261,13 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
 
         if(DEBUGP && TIMECALC){clock_gettime(CLOCK_REALTIME, &endT); std::cout << (double)(endT.tv_sec - startT.tv_sec + (endT.tv_nsec - startT.tv_nsec) * 1e-9) << " @ processTransition" << std::endl;  clock_gettime(CLOCK_REALTIME, &startT);}
 
-        for(int i=0; i<fik_list.size(); i++){
-            fik_list[i]->ikp["rleg"].is_ik_enable = true;
-            fik_list[i]->ikp["lleg"].is_ik_enable = true;
-            if(fik_list[i]->ikp.count("rarm"))fik_list[i]->ikp["rarm"].is_ik_enable = hsp->WBMSparam.use_rh;
-            if(fik_list[i]->ikp.count("larm"))fik_list[i]->ikp["larm"].is_ik_enable = hsp->WBMSparam.use_lh;
-        }
-
         if (mode.isRunning()) {
             if(mode.isInitialize()){
                 preProcessForWholeBodyMasterSlave(fik, m_robot);
-                hsp->fik_ml = fik_ml;
-                hsp->m_robot_ml = m_robot_ml;
-                //          hsp->fik_act = fik_vsafe;
-                hsp->m_robot_act = m_robot_vsafe;
-                //逆動力学初期化
-                idsb.setInitState(m_robot, m_dt);
+                idsb.setInitState(m_robot, m_dt);//逆動力学初期化
             }
 
-            if(hsp->WBMSparam.is_doctor){
-                processWholeBodyMasterSlave(fik, m_robot, hsp->rp_ref_out);//安全制限つきマスタ・スレーブ
-            }else{
-                processWholeBodyMasterSlave_Raw(fik, m_robot, raw_pose);//生マスタ・スレーブ
-            }
+            processWholeBodyMasterSlave(fik, m_robot, wbms->rp_ref_out);//安全制限つきマスタ・スレーブ
 
             if(DEBUGP && TIMECALC){clock_gettime(CLOCK_REALTIME, &endT); std::cout << (double)(endT.tv_sec - startT.tv_sec + (endT.tv_nsec - startT.tv_nsec) * 1e-9) << " @ processWholeBodyMasterSlave" << std::endl;  clock_gettime(CLOCK_REALTIME, &startT);}
 
@@ -338,13 +282,7 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
 
             processHOFFARBIBFilter(m_robot, m_robot_vsafe);
 
-            const hrp::BodyPtr m_robot_for_out = m_robot_vsafe;
-            //        const hrp::BodyPtr m_robot_for_out = m_robot;
-
-            //OutPortデータセット
-            //        hrp::Vector3 ref_zmp = hsp->rp_ref_out.tgt[zmp].abs.p;
-
-            hrp::Vector3 com = m_robot_for_out->calcCM();
+            hrp::Vector3 com = m_robot_vsafe->calcCM();
             static hrp::Vector3 com_old = com;
             static hrp::Vector3 com_old_old = com_old;
             hrp::Vector3 com_acc = (com - 2*com_old + com_old_old)/(m_dt*m_dt);
@@ -353,31 +291,31 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
             ref_zmp = final_ref_zmp_filter.passFilter(ref_zmp);
             com_old_old = com_old;
             com_old = com;
-            hsp->act_rs.com = com;
-            hsp->act_rs.zmp = ref_zmp;
+            wbms->act_rs.com = com;
+            wbms->act_rs.zmp = ref_zmp;
 
             const std::string tmp[] = {"R_CROTCH_R","R_CROTCH_P","R_CROTCH_Y","R_KNEE_P","R_ANKLE_R","R_ANKLE_P","L_CROTCH_R","L_CROTCH_P","L_CROTCH_Y","L_KNEE_P","L_ANKLE_R","L_ANKLE_P",};
             const std::vector<std::string> lower(tmp, tmp+12);
             // qRef
             for (int i = 0; i < m_qRef.data.length(); i++ ){
-              if(hsp->WBMSparam.disable_lower && std::find(lower.begin(), lower.end(), m_robot->joint(i)->name) != lower.end()){}// pass through lower limbs
+              if(!wbms->wp.use_lower && std::find(lower.begin(), lower.end(), m_robot->joint(i)->name) != lower.end()){}// pass through lower limbs
               else{
-                m_qRef.data[i] = transition_interpolator_ratio * m_robot_for_out->joint(i)->q  + (1 - transition_interpolator_ratio) * m_qRef.data[i];
+                m_qRef.data[i] = transition_interpolator_ratio * m_robot_vsafe->joint(i)->q  + (1 - transition_interpolator_ratio) * m_qRef.data[i];
               }
             }
             // basePos
-            m_basePos.data.x = transition_interpolator_ratio * m_robot_for_out->rootLink()->p(0) + (1 - transition_interpolator_ratio) * m_basePos.data.x;
-            m_basePos.data.y = transition_interpolator_ratio * m_robot_for_out->rootLink()->p(1) + (1 - transition_interpolator_ratio) * m_basePos.data.y;
-            m_basePos.data.z = transition_interpolator_ratio * m_robot_for_out->rootLink()->p(2) + (1 - transition_interpolator_ratio) * m_basePos.data.z;
+            m_basePos.data.x = transition_interpolator_ratio * m_robot_vsafe->rootLink()->p(0) + (1 - transition_interpolator_ratio) * m_basePos.data.x;
+            m_basePos.data.y = transition_interpolator_ratio * m_robot_vsafe->rootLink()->p(1) + (1 - transition_interpolator_ratio) * m_basePos.data.y;
+            m_basePos.data.z = transition_interpolator_ratio * m_robot_vsafe->rootLink()->p(2) + (1 - transition_interpolator_ratio) * m_basePos.data.z;
             m_basePos.tm = m_qRef.tm;
             // baseRpy
-            hrp::Vector3 baseRpy = hrp::rpyFromRot(m_robot_for_out->rootLink()->R);
+            hrp::Vector3 baseRpy = hrp::rpyFromRot(m_robot_vsafe->rootLink()->R);
             m_baseRpy.data.r = transition_interpolator_ratio * baseRpy(0) + (1 - transition_interpolator_ratio) * m_baseRpy.data.r;
             m_baseRpy.data.p = transition_interpolator_ratio * baseRpy(1) + (1 - transition_interpolator_ratio) * m_baseRpy.data.p;
             m_baseRpy.data.y = transition_interpolator_ratio * baseRpy(2) + (1 - transition_interpolator_ratio) * m_baseRpy.data.y;
             m_baseRpy.tm = m_qRef.tm;
             // zmp
-            hrp::Vector3 rel_ref_zmp = m_robot_for_out->rootLink()->R.transpose() * (ref_zmp - m_robot_for_out->rootLink()->p);
+            hrp::Vector3 rel_ref_zmp = m_robot_vsafe->rootLink()->R.transpose() * (ref_zmp - m_robot_vsafe->rootLink()->p);
             m_zmp.data.x = transition_interpolator_ratio * rel_ref_zmp(0) + (1 - transition_interpolator_ratio) * m_zmp.data.x;
             m_zmp.data.y = transition_interpolator_ratio * rel_ref_zmp(1) + (1 - transition_interpolator_ratio) * m_zmp.data.y;
             m_zmp.data.z = transition_interpolator_ratio * rel_ref_zmp(2) + (1 - transition_interpolator_ratio) * m_zmp.data.z;
@@ -387,11 +325,11 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
                 m_optionalData.data.length(optionalDataLength);//TODO:これいいのか？
                 for(int i=0;i<optionalDataLength;i++)m_optionalData.data[i] = 0;
             }
-            m_optionalData.data[contact_states_index_map["rleg"]] = m_optionalData.data[optionalDataLength/2 + contact_states_index_map["rleg"]] = hsp->rp_ref_out.tgt[rf].is_contact;
-            m_optionalData.data[contact_states_index_map["lleg"]] = m_optionalData.data[optionalDataLength/2 + contact_states_index_map["lleg"]] = hsp->rp_ref_out.tgt[lf].is_contact;
+            m_optionalData.data[contact_states_index_map["rleg"]] = m_optionalData.data[optionalDataLength/2 + contact_states_index_map["rleg"]] = wbms->rp_ref_out.tgt[rf].is_contact;
+            m_optionalData.data[contact_states_index_map["lleg"]] = m_optionalData.data[optionalDataLength/2 + contact_states_index_map["lleg"]] = wbms->rp_ref_out.tgt[lf].is_contact;
         }
-        hsp->baselinkpose.p = m_robot->rootLink()->p;
-        hsp->baselinkpose.rpy = hrp::rpyFromRot(m_robot->rootLink()->R);
+        wbms->baselinkpose.p = m_robot->rootLink()->p;
+        wbms->baselinkpose.rpy = hrp::rpyFromRot(m_robot->rootLink()->R);
     }
 
     // write
@@ -404,64 +342,64 @@ RTC::ReturnCode_t WholeBodyMasterSlave::onExecute(RTC::UniqueId ec_id){
 #ifdef USE_DEBUG_PORT
     // dbg plot
     m_htcom_dbg.tm = m_qRef.tm;
-    WBMSCore::WBMSPose3DToPose3D(hsp->hp_plot.tgt[com].abs, m_htcom_dbg.data);
+    WBMSCore::WBMSPose3DToPose3D(wbms->hp_plot.tgt[com].abs, m_htcom_dbg.data);
     m_htcom_dbgOut.write();
     m_htrf_dbg.tm = m_qRef.tm;
-    WBMSCore::WBMSPose3DToPose3D(hsp->hp_plot.tgt[rf].abs, m_htrf_dbg.data);
+    WBMSCore::WBMSPose3DToPose3D(wbms->hp_plot.tgt[rf].abs, m_htrf_dbg.data);
     m_htrf_dbgOut.write();
     m_htlf_dbg.tm = m_qRef.tm;
-    WBMSCore::WBMSPose3DToPose3D(hsp->hp_plot.tgt[lf].abs, m_htlf_dbg.data);
+    WBMSCore::WBMSPose3DToPose3D(wbms->hp_plot.tgt[lf].abs, m_htlf_dbg.data);
     m_htlf_dbgOut.write();
     m_htrh_dbg.tm = m_qRef.tm;
-    WBMSCore::WBMSPose3DToPose3D(hsp->hp_plot.tgt[rh].abs, m_htrh_dbg.data);
+    WBMSCore::WBMSPose3DToPose3D(wbms->hp_plot.tgt[rh].abs, m_htrh_dbg.data);
     m_htrh_dbgOut.write();
     m_htlh_dbg.tm = m_qRef.tm;
-    WBMSCore::WBMSPose3DToPose3D(hsp->hp_plot.tgt[lh].abs, m_htlh_dbg.data);
+    WBMSCore::WBMSPose3DToPose3D(wbms->hp_plot.tgt[lh].abs, m_htlh_dbg.data);
     m_htlh_dbgOut.write();
     m_hthead_dbg.tm = m_qRef.tm;
-    WBMSCore::WBMSPose3DToPose3D(hsp->hp_plot.tgt[head].abs, m_hthead_dbg.data);
+    WBMSCore::WBMSPose3DToPose3D(wbms->hp_plot.tgt[head].abs, m_hthead_dbg.data);
     m_hthead_dbgOut.write();
     m_htzmp_dbg.tm = m_qRef.tm;
-    WBMSCore::Vector3ToPoint3D(hsp->rp_ref_out.tgt[zmp].abs.p,m_rpzmp_dbg.data);
+    WBMSCore::Vector3ToPoint3D(wbms->rp_ref_out.tgt[zmp].abs.p,m_rpzmp_dbg.data);
     m_htzmp_dbgOut.write();
     m_htrfw_dbg.tm = m_qRef.tm;
     m_htrfw_dbg.data.length(6);
-    WBMSCore::Vector6ToDoubleSeq(hsp->hp_plot.tgt[rf].w, m_htrfw_dbg.data);
+    WBMSCore::Vector6ToDoubleSeq(wbms->hp_plot.tgt[rf].w, m_htrfw_dbg.data);
     m_htrfw_dbgOut.write();
     m_htlfw_dbg.tm = m_qRef.tm;
     m_htlfw_dbg.data.length(6);
-    WBMSCore::Vector6ToDoubleSeq(hsp->hp_plot.tgt[lf].w, m_htlfw_dbg.data);
+    WBMSCore::Vector6ToDoubleSeq(wbms->hp_plot.tgt[lf].w, m_htlfw_dbg.data);
     m_htlfw_dbgOut.write();
     m_rpcom_dbg.tm = m_qRef.tm;
-    WBMSCore::WBMSPose3DToPose3D(hsp->rp_ref_out.tgt[com].abs, m_rpcom_dbg.data);
+    WBMSCore::WBMSPose3DToPose3D(wbms->rp_ref_out.tgt[com].abs, m_rpcom_dbg.data);
     m_rpcom_dbgOut.write();
     m_rprf_dbg.tm = m_qRef.tm;
-    WBMSCore::WBMSPose3DToPose3D(hsp->rp_ref_out.tgt[rf].abs, m_rprf_dbg.data);
+    WBMSCore::WBMSPose3DToPose3D(wbms->rp_ref_out.tgt[rf].abs, m_rprf_dbg.data);
     m_rprf_dbgOut.write();
     m_rplf_dbg.tm = m_qRef.tm;
-    WBMSCore::WBMSPose3DToPose3D(hsp->rp_ref_out.tgt[lf].abs, m_rplf_dbg.data);
+    WBMSCore::WBMSPose3DToPose3D(wbms->rp_ref_out.tgt[lf].abs, m_rplf_dbg.data);
     m_rplf_dbgOut.write();
     m_rprh_dbg.tm = m_qRef.tm;
-    WBMSCore::WBMSPose3DToPose3D(hsp->rp_ref_out.tgt[rh].abs, m_rprh_dbg.data);
+    WBMSCore::WBMSPose3DToPose3D(wbms->rp_ref_out.tgt[rh].abs, m_rprh_dbg.data);
     m_rprh_dbgOut.write();
     m_rplh_dbg.tm = m_qRef.tm;
-    WBMSCore::WBMSPose3DToPose3D(hsp->rp_ref_out.tgt[lh].abs, m_rplh_dbg.data);
+    WBMSCore::WBMSPose3DToPose3D(wbms->rp_ref_out.tgt[lh].abs, m_rplh_dbg.data);
     m_rplh_dbgOut.write();
     m_rphead_dbg.tm = m_qRef.tm;
-    WBMSCore::WBMSPose3DToPose3D(hsp->rp_ref_out.tgt[head].abs, m_rphead_dbg.data);
+    WBMSCore::WBMSPose3DToPose3D(wbms->rp_ref_out.tgt[head].abs, m_rphead_dbg.data);
     m_rphead_dbgOut.write();
     m_rpzmp_dbg.tm = m_qRef.tm;
-    WBMSCore::Vector3ToPoint3D(hsp->rp_ref_out.tgt[zmp].abs.p, m_rpzmp_dbg.data);
+    WBMSCore::Vector3ToPoint3D(wbms->rp_ref_out.tgt[zmp].abs.p, m_rpzmp_dbg.data);
     m_rpzmp_dbgOut.write();
     m_rpdcp_dbg.tm = m_qRef.tm;
-    WBMSCore::Vector3ToPoint3D(hsp->cp_dec,m_rpdcp_dbg.data);
+    WBMSCore::Vector3ToPoint3D(wbms->cp_dec,m_rpdcp_dbg.data);
     m_rpdcp_dbgOut.write();
     m_rpacp_dbg.tm = m_qRef.tm;
-    WBMSCore::Vector3ToPoint3D(hsp->cp_acc,m_rpacp_dbg.data);
+    WBMSCore::Vector3ToPoint3D(wbms->cp_acc,m_rpacp_dbg.data);
     m_rpacp_dbgOut.write();
     m_invdyn_dbg.tm = m_qRef.tm;
     m_invdyn_dbg.data.length(6);
-    WBMSCore::Vector6ToDoubleSeq(hsp->invdyn_ft,m_invdyn_dbg.data);
+    WBMSCore::Vector6ToDoubleSeq(wbms->invdyn_ft,m_invdyn_dbg.data);
     m_invdyn_dbgOut.write();
 #endif
 if(TIMECALC){gettimeofday(&t_calc_end, NULL); if(DEBUGP)cout<<"t_last:"<<(double)(t_calc_end.tv_sec - t_calc_start.tv_sec) + (t_calc_end.tv_usec - t_calc_start.tv_usec)/1.0e6<<endl; t_calc_start = t_calc_end;}
@@ -499,12 +437,15 @@ void WholeBodyMasterSlave::preProcessForWholeBodyMasterSlave(fikPtr& fik_in, hrp
     robot_in->rootLink()->p = basePos_heightChecked;
     for ( int i = 0; i < robot_in->numJoints(); i++ ){ robot_in->joint(i)->q = m_qRef.data[i]; }
     robot_in->calcForwardKinematics();
-    hrp::Vector3 init_foot_mid_coord = (fik_in->getEndEffectorPos("rleg") + fik_in->getEndEffectorPos("lleg")) / 2;
-    if( fabs((double)init_foot_mid_coord(Z)) > 1e-5 ){
-        basePos_heightChecked(Z) -= init_foot_mid_coord(Z);
-        init_foot_mid_coord(Z) = 0;
-        std::cerr<<"["<<m_profile.instance_name<<"] Input basePos height is invalid. Auto modify "<<m_basePos.data.z<<" -> "<<basePos_heightChecked(Z)<<endl;
-    }
+
+    //TODO
+//    hrp::Vector3 init_foot_mid_coord = (fik_in->getEndEffectorPos("rleg") + fik_in->getEndEffectorPos("lleg")) / 2;
+//    if( fabs((double)init_foot_mid_coord(Z)) > 1e-5 ){
+//        basePos_heightChecked(Z) -= init_foot_mid_coord(Z);
+//        init_foot_mid_coord(Z) = 0;
+//        std::cerr<<"["<<m_profile.instance_name<<"] Input basePos height is invalid. Auto modify "<<m_basePos.data.z<<" -> "<<basePos_heightChecked(Z)<<endl;
+//    }
+
     const std::string robot_l_names[4] = {"rleg","lleg","rarm","larm"};
 
     for(int i=0;i<body_list.size();i++){//初期姿勢でBodyをFK
@@ -513,74 +454,36 @@ void WholeBodyMasterSlave::preProcessForWholeBodyMasterSlave(fikPtr& fik_in, hrp
         for ( int j = 0; j < body_list[i]->numJoints(); j++ ){ body_list[i]->joint(j)->q = m_qRef.data[j]; }
         body_list[i]->calcForwardKinematics();
     }
-    for(int i=0;i<fik_list.size();i++){//初期姿勢でBodyをFK
-        fik_list[i]->setReferenceJointAngles();
-        for(int l=0;l<4;l++){//targetを初期化
-            if(fik_list[i]->ikp.count(robot_l_names[l])){
-                fik_list[i]->ikp[robot_l_names[l]].target_p0 = fik_list[i]->getEndEffectorPos(robot_l_names[l]);
-                fik_list[i]->ikp[robot_l_names[l]].target_r0 = fik_list[i]->getEndEffectorRot(robot_l_names[l]);
-            }
-        }
-    }
+
+    fik->q_ref << hrp::getQAll(robot_in), robot_in->rootLink()->p, hrp::rpyFromRot(robot_in->rootLink()->R);    //これいらない？
+
+
+//    fik->setReferenceJointAngles();
+//    for(int l=0;l<4;l++){//targetを初期化
+//        if(fik_list[i]->ikp.count(robot_l_names[l])){
+//            fik_list[i]->ikp[robot_l_names[l]].target_p0 = fik_list[i]->getEndEffectorPos(robot_l_names[l]);
+//            fik_list[i]->ikp[robot_l_names[l]].target_r0 = fik_list[i]->getEndEffectorRot(robot_l_names[l]);
+//        }
+//    }
 //    q_ip->clear();//clearは2回目以降しないほうがいい
     init_sync_state.resize(ROBOT_ALL_DOF);
-    init_sync_state.head(robot_in->numJoints()) = hrp::getQAll(robot_in);
-    init_sync_state.tail(6).head(3) = robot_in->rootLink()->p;
-    init_sync_state.tail(6).tail(3) = hrp::rpyFromRot(robot_in->rootLink()->R);
+    init_sync_state << hrp::getQAll(robot_in), robot_in->rootLink()->p, hrp::rpyFromRot(robot_in->rootLink()->R);
     q_ip->set(init_sync_state.data());
-    hsp->initializeRequest(fik_in, robot_in);
+    wbms->initializeRequest(robot_in, ee_name_ikcp_map);
 }
 
 
 void WholeBodyMasterSlave::processWholeBodyMasterSlave(fikPtr& fik_in, hrp::BodyPtr& robot_in, const HumanPose& pose_ref){
-    hsp->update();//////HumanSynchronizerの主要処理
-    if(DEBUGP)cout<<"update():"<<hsp->getUpdateTime()<<endl;
+    wbms->update();//////HumanSynchronizerの主要処理
+    if(DEBUGP)cout<<"update():"<<wbms->getUpdateTime()<<endl;
     if(DEBUGP)pose_ref.print();
-    solveFullbodyIKStrictCOM(fik_in, robot_in, pose_ref.tgt[com].abs, pose_ref.tgt[rf].abs, pose_ref.tgt[lf].abs, pose_ref.tgt[rh].abs, pose_ref.tgt[lh].abs, pose_ref.tgt[head].abs,"processWholeBodyMasterSlave");
+    solveFullbodyIK(fik_in, robot_in, pose_ref.tgt[com].abs, pose_ref.tgt[rf].abs, pose_ref.tgt[lf].abs, pose_ref.tgt[rh].abs, pose_ref.tgt[lh].abs, pose_ref.tgt[head].abs,"processWholeBodyMasterSlave");
 }
 
 
-void WholeBodyMasterSlave::processWholeBodyMasterSlave_Raw(fikPtr& fik_in, hrp::BodyPtr& robot_in, HumanPose& pose_ref){
-    static BiquadIIRFilterVec pos_filters[num_pose_tgt], rot_filters[num_pose_tgt];
-    static unsigned int callnum;
-    for(int i=0;i<num_pose_tgt;i++){
-        if(callnum == 0){
-            pos_filters[i].setParameter(100.0, 1.0/m_dt, Q_NOOVERSHOOT);
-            rot_filters[i].setParameter(100.0, 1.0/m_dt, Q_NOOVERSHOOT);
-            pos_filters[i].reset(hsp->hp_wld_raw.tgt[i].abs.p);
-            rot_filters[i].reset(hsp->hp_wld_raw.tgt[i].abs.rpy);
-        }
-        pose_ref.tgt[i].abs.p = pos_filters[i].passFilter(hsp->hp_wld_raw.tgt[i].abs.p);
-        pose_ref.tgt[i].abs.rpy = rot_filters[i].passFilter(hsp->hp_wld_raw.tgt[i].abs.rpy);
-    }
-    callnum++;
-    if(DEBUGP){ fprintf(stderr,"\x1b[31mmaster-mode:\x1b[39m"); pose_ref.print(); }
-    //  solveFullbodyIKStrictCOM(fik_in, robot_in, pose_ref.tgt[com].abs, pose_ref.tgt[rf].abs, pose_ref.tgt[lf].abs, pose_ref.tgt[rh].abs, pose_ref.tgt[lh].abs, pose_ref.tgt[head].abs,"processWholeBodyMasterSlave_Raw");
-}
-
-void WholeBodyMasterSlave::calcManipulability(fikPtr& fik_in, hrp::BodyPtr& robot_in){
-    const std::string names[4] = {"rleg","lleg","rarm","larm"};
-    hrp::dmatrix J,Jinv,Jnull;
-    for(int l=0; l<4; l++){
-        if(fik_in->ikp.count(names[l])){
-            fik_in->ikp[names[l]].manip->calcJacobian(J);
-            fik_in->ikp[names[l]].manip->calcJacobianInverseNullspace(J, Jinv, Jnull);
-            Eigen::JacobiSVD< Eigen::MatrixXd > svd(J.block(0,0,3,J.cols()), Eigen::ComputeFullU | Eigen::ComputeFullV);
-            Eigen::JacobiSVD< Eigen::MatrixXd > svd_rot(J.block(3,0,3,J.cols()), Eigen::ComputeFullU | Eigen::ComputeFullV);
-            hsp->manip_mat[l] = svd.matrixU();
-            hsp->manip_mat_rot[l] = svd_rot.matrixU();
-            for(int i=0;i<3;i++){
-                hsp->manip_sv[l](i) = svd.singularValues()(i);
-                hsp->manip_sv_rot[l](i) = svd_rot.singularValues()(i);
-            }
-        }
-    }
-}
-
-#ifdef USE_NEW_FIK
-void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr& robot_in, const WBMSPose3D& com_ref, const WBMSPose3D& rf_ref, const WBMSPose3D& lf_ref, const WBMSPose3D& rh_ref, const WBMSPose3D& lh_ref, const WBMSPose3D& head_ref, const std::string& debug_prefix){
+void WholeBodyMasterSlave::solveFullbodyIK(fikPtr& fik_in, hrp::BodyPtr& robot_in, const WBMSPose3D& com_ref, const WBMSPose3D& rf_ref, const WBMSPose3D& lf_ref, const WBMSPose3D& rh_ref, const WBMSPose3D& lh_ref, const WBMSPose3D& head_ref, const std::string& debug_prefix){
     std::vector<IKConstraint> ikc_list;
-    if(!hsp->WBMSparam.disable_lower){
+    if(wbms->wp.use_lower){
         IKConstraint tmp;
         tmp.target_link_name = "WAIST";
         tmp.localPos = hrp::Vector3::Zero();
@@ -594,7 +497,7 @@ void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr
         tmp.rot_precision = deg2rad(3);
         ikc_list.push_back(tmp);
     }
-    if(hsp->WBMSparam.disable_lower){
+    if(!wbms->wp.use_lower){
       IKConstraint tmp;
       tmp.target_link_name = "WAIST";
       tmp.localPos = hrp::Vector3::Zero();
@@ -605,28 +508,28 @@ void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr
       tmp.rot_precision = deg2rad(3);
       ikc_list.push_back(tmp);
     }
-    if(!hsp->WBMSparam.disable_lower){
+    if(wbms->wp.use_lower){
         IKConstraint tmp;
-        tmp.target_link_name = eename_ikcp_map["rleg"].target_link_name;
-        tmp.localPos = eename_ikcp_map["rleg"].localPos;
-        tmp.localR = eename_ikcp_map["rleg"].localR;
+        tmp.target_link_name = ee_name_ikcp_map["rleg"].target_link_name;
+        tmp.localPos = ee_name_ikcp_map["rleg"].localPos;
+        tmp.localR = ee_name_ikcp_map["rleg"].localR;
         tmp.targetPos = rf_ref.p;
         tmp.targetRpy = rf_ref.rpy;
-        if(hsp->rp_ref_out.tgt[rf].is_contact){
+        if(wbms->rp_ref_out.tgt[rf].is_contact){
             tmp.constraint_weight = hrp::dvector6::Constant(10);
         }else{
             tmp.constraint_weight = hrp::dvector6::Constant(0.1);
         }
         ikc_list.push_back(tmp);
     }
-    if(!hsp->WBMSparam.disable_lower){
+    if(wbms->wp.use_lower){
         IKConstraint tmp;
-        tmp.target_link_name = eename_ikcp_map["lleg"].target_link_name;
-        tmp.localPos = eename_ikcp_map["lleg"].localPos;
-        tmp.localR = eename_ikcp_map["lleg"].localR;
+        tmp.target_link_name = ee_name_ikcp_map["lleg"].target_link_name;
+        tmp.localPos = ee_name_ikcp_map["lleg"].localPos;
+        tmp.localR = ee_name_ikcp_map["lleg"].localR;
         tmp.targetPos = lf_ref.p;
         tmp.targetRpy = lf_ref.rpy;
-        if(hsp->rp_ref_out.tgt[lf].is_contact){
+        if(wbms->rp_ref_out.tgt[lf].is_contact){
             tmp.constraint_weight = hrp::dvector6::Constant(10);
         }else{
             tmp.constraint_weight = hrp::dvector6::Constant(0.1);
@@ -636,9 +539,9 @@ void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr
     const double dist = 0.0;
     {
         IKConstraint tmp;
-        tmp.target_link_name = eename_ikcp_map["rarm"].target_link_name;
-        tmp.localPos = eename_ikcp_map["rarm"].localPos;
-        tmp.localR = eename_ikcp_map["rarm"].localR;
+        tmp.target_link_name = ee_name_ikcp_map["rarm"].target_link_name;
+        tmp.localPos = ee_name_ikcp_map["rarm"].localPos;
+        tmp.localR = ee_name_ikcp_map["rarm"].localR;
         if((rh_ref.p-lh_ref.p).norm()<dist){
             tmp.targetPos = (rh_ref.p+lh_ref.p)/2 + (rh_ref.p-lh_ref.p).normalized()*dist/2;
         }else{
@@ -651,9 +554,9 @@ void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr
         ikc_list.push_back(tmp);
     }{
         IKConstraint tmp;
-        tmp.target_link_name = eename_ikcp_map["larm"].target_link_name;
-        tmp.localPos = eename_ikcp_map["larm"].localPos;
-        tmp.localR = eename_ikcp_map["larm"].localR;
+        tmp.target_link_name = ee_name_ikcp_map["larm"].target_link_name;
+        tmp.localPos = ee_name_ikcp_map["larm"].localPos;
+        tmp.localR = ee_name_ikcp_map["larm"].localR;
         if((rh_ref.p-lh_ref.p).norm()<dist){
             tmp.targetPos = (rh_ref.p+lh_ref.p)/2 + (lh_ref.p-rh_ref.p).normalized()*dist/2;
         }else{
@@ -680,12 +583,12 @@ void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr
     //     tmp.rot_precision = deg2rad(1);
     //     ikc_list.push_back(tmp);
     // }
-    if(hsp->rp_ref_out.tgt[rf].is_contact){
+    if(wbms->rp_ref_out.tgt[rf].is_contact){
         sccp->avoid_priority.head(12).head(6).fill(4);
     }else{
         sccp->avoid_priority.head(12).head(6).fill(3);
     }
-    if(hsp->rp_ref_out.tgt[lf].is_contact){
+    if(wbms->rp_ref_out.tgt[lf].is_contact){
         sccp->avoid_priority.head(12).tail(6).fill(4);
     }else{
         sccp->avoid_priority.head(12).tail(6).fill(3);
@@ -734,7 +637,7 @@ void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr
     }
 
 
-    if(!hsp->WBMSparam.disable_lower){
+    if(wbms->wp.use_lower){
         IKConstraint tmp;
         tmp.target_link_name = "COM";
         tmp.localPos = hrp::Vector3::Zero();
@@ -805,9 +708,8 @@ void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr
 
 
 //    fik_in->q_ref_pullback_gain.segment(6+6+3+2, 8*2).fill(0.01);//腕だけ
-//    fik_in->dq_ref_pullback.segment(6+6+3+2, 8*2).fill(deg2rad(0.1));//腕だけ
-    fik_in->q_ref_pullback_gain.fill(1);
-    fik_in->dq_ref_pullback.fill(deg2rad(1)*m_dt);
+//    fik_in->dq_ref_pullback.segment(6+6+3+2, 8*2).fill(deg2rad(WBMSparam0.1));//腕だけ
+//    fik_in->q_ref_constraint_weight.fill(1);
 
     struct timespec startT, endT;
     const int IK_MAX_LOOP = 2;
@@ -815,57 +717,6 @@ void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr
     int loop_result = fik_in->solveFullbodyIKLoop(robot_in, ikc_list, IK_MAX_LOOP);
     if(loop%100==0){clock_gettime(CLOCK_REALTIME, &endT); std::cout << (endT.tv_sec - startT.tv_sec + (endT.tv_nsec - startT.tv_nsec) * 1e-9) << " @ solveIK"<<loop_result<<"loop" << std::endl;}
 }
-#else
-//旧ver
-void WholeBodyMasterSlave::solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr& robot_in, const WBMSPose3D& com_ref, const WBMSPose3D& rf_ref, const WBMSPose3D& lf_ref, const WBMSPose3D& rh_ref, const WBMSPose3D& lh_ref, const WBMSPose3D& head_ref, const std::string& debug_prefix){
-    int com_ik_loop=0;
-    const int COM_IK_MAX_LOOP = 10;
-    const double COM_IK_MAX_ERROR = 1e-5;//1e-4だと乱れる
-    const std::string names[4] = {"rleg","lleg","rarm","larm"};
-    const WBMSPose3D* refs[4] = {&rf_ref, &lf_ref, &rh_ref, &lh_ref};
-    //  robot_in->rootLink()->p = 0.01*com_ref.p + 0.99*robot_in->rootLink()->p;//ベースリンク位置が迷走するのを防ぐ？
-    robot_in->rootLink()->R = hrp::rotFromRpy(com_ref.rpy);//move base link at first
-    for(int i=0;i<4;i++){
-        if(fik_in->ikp.count(names[i])){
-            fik_in->ikp[names[i]].targetPos = refs[i]->p;
-            fik_in->ikp[names[i]].targetRpy = hrp::rotFromRpy(refs[i]->rpy);
-        }
-    }
-    //  fik_in->storeCurrentParameters();
-    //  fik_in->setReferenceJointAngles();//これ入れると腕ブワーなる
-    if( robot_in->link("HEAD_JOINT0") != NULL) robot_in->link("HEAD_JOINT0")->q = head_ref.rpy(y);
-    if( robot_in->link("HEAD_JOINT1") != NULL) robot_in->link("HEAD_JOINT1")->q = head_ref.rpy(p);
-    if(fik_in->ikp.count("rarm") && fik_in->ikp.count("larm")){
-        hrp::Vector3 base2rh = robot_in->rootLink()->R.transpose() * (fik_in->ikp["rarm"].targetPos - robot_in->rootLink()->p);
-        hrp::Vector3 base2lh = robot_in->rootLink()->R.transpose() * (fik_in->ikp["larm"].targetPos - robot_in->rootLink()->p);
-        if( robot_in->link("CHEST_JOINT0") != NULL){
-            robot_in->link("CHEST_JOINT0")->q = (base2lh(Z) - base2rh(Z)) * (10 * D2R / 1.0);
-            LIMIT_MINMAX(robot_in->link("CHEST_JOINT0")->q, robot_in->link("CHEST_JOINT0")->llimit, robot_in->link("CHEST_JOINT0")->ulimit);
-        }
-        if(robot_in->link("CHEST_JOINT2") != NULL){
-            robot_in->link("CHEST_JOINT2")->q = (base2rh(X) - base2lh(X)) * (60 * D2R / 1.0);
-            LIMIT_MINMAX(robot_in->link("CHEST_JOINT2")->q, robot_in->link("CHEST_JOINT2")->llimit, robot_in->link("CHEST_JOINT2")->ulimit);
-        }
-    }
-    hrp::Vector3 tmp_com_err = hrp::Vector3::Zero();
-    struct timespec startT, endT;
-    while( 1 ){  //COM 収束ループ
-        com_ik_loop++;
-        robot_in->rootLink()->p += tmp_com_err;
-        robot_in->calcForwardKinematics();
-        clock_gettime(CLOCK_REALTIME, &startT);
-        for ( std::map<std::string, SimpleFullbodyInverseKinematicsSolver::IKparam>::iterator it = fik_in->ikp.begin(); it != fik_in->ikp.end(); it++ ) {
-            if (it->second.is_ik_enable) fik_in->solveLimbIK (it->second, it->first, fik_in->ratio_for_vel, false);
-        }
-        if(DEBUGP && TIMECALC){clock_gettime(CLOCK_REALTIME, &endT); std::cout << (double)(endT.tv_sec - startT.tv_sec + (endT.tv_nsec - startT.tv_nsec) * 1e-9) << " @ solveLimbIK x 4" << std::endl;  clock_gettime(CLOCK_REALTIME, &startT);}
-        tmp_com_err = com_ref.p - robot_in->calcCM();
-        if(tmp_com_err.norm() < COM_IK_MAX_ERROR){ break; }
-        if(com_ik_loop >= COM_IK_MAX_LOOP){std::cerr << "COM constraint IK MAX loop [="<<COM_IK_MAX_LOOP<<"] exceeded!! @ "<<debug_prefix<< std::endl; break; };
-    }
-    if(com_ik_loop != 1 && DEBUGP)cout<<"com_ik_loop:"<<com_ik_loop<<" @ "<<debug_prefix<<endl;
-}
-#endif
-
 
 void WholeBodyMasterSlave::processHOFFARBIBFilter(hrp::BodyPtr& robot_in, hrp::BodyPtr& robot_out){
     hrp::dvector goal_state(ROBOT_ALL_DOF);
@@ -909,36 +760,21 @@ void WholeBodyMasterSlave::processHOFFARBIBFilter(hrp::BodyPtr& robot_in, hrp::B
     //// KHI demo
     const double hand_max_vel = 180.0/0.4 /180.0*M_PI;// 0.4sec for 180deg
     std::map<std::string, double> joy_inputs;// 0 ~ 1
-    joy_inputs["L_HAND"] = m_htlfw.data[0];// tmp substitute
-    joy_inputs["R_HAND"] = m_htrfw.data[0];// tmp substitute
+    joy_inputs["L_HAND"] = m_htlfw.data.force.x;// tmp substitute
+    joy_inputs["R_HAND"] = m_htrfw.data.force.x;// tmp substitute
     for(std::map<std::string, double>::iterator it = joy_inputs.begin(); it!=joy_inputs.end(); it++){
-      LIMIT_MINMAX(it->second, 0.0, 1.0);
-      double tgt_hand_q = (-29.0 + (124.0-(-29.0))*it->second ) /180.0*M_PI;
-      const double q_old = robot_out->link(it->first)->q;
-      LIMIT_MINMAX(tgt_hand_q, q_old - hand_max_vel*m_dt, q_old + hand_max_vel*m_dt);
-      robot_out->link(it->first)->q = tgt_hand_q;
+      if(robot_out->link(it->first) != NULL){
+          LIMIT_MINMAX(it->second, 0.0, 1.0);
+          double tgt_hand_q = (-29.0 + (124.0-(-29.0))*it->second ) /180.0*M_PI;
+          const double q_old = robot_out->link(it->first)->q;
+          LIMIT_MINMAX(tgt_hand_q, q_old - hand_max_vel*m_dt, q_old + hand_max_vel*m_dt);
+          robot_out->link(it->first)->q = tgt_hand_q;
+      }
     }
 
     robot_out->rootLink()->p = ans_state.bottomRows(6).topRows(3);
     robot_out->rootLink()->R = hrp::rotFromRpy(ans_state.bottomRows(6).bottomRows(3));
     robot_out->calcForwardKinematics();
-}
-
-
-bool WholeBodyMasterSlave::startCountDownForWholeBodyMasterSlave(const double sec){//遅い
-    if(sec >= 0.0 && sec <= 30.0){
-        std::cerr << "[" << m_profile.instance_name << "] start Synchronization after "<<sec<<" [s]" << std::endl;
-        double remained_usec = sec * 10e6;
-        while (remained_usec > 0){
-            usleep(2000);
-            remained_usec -= 2000;
-        }
-        startWholeBodyMasterSlave();
-        return true;
-    }else{
-        std::cerr << "[" << m_profile.instance_name << "] Count Down Time must be 0 < T < 30 [s]"<< std::endl;
-        return false;
-    }
 }
 
 
@@ -997,22 +833,20 @@ bool WholeBodyMasterSlave::stopWholeBodyMasterSlave(){
 
 bool WholeBodyMasterSlave::setWholeBodyMasterSlaveParam(const OpenHRP::WholeBodyMasterSlaveService::WholeBodyMasterSlaveParam& i_param){
     std::cerr << "[" << m_profile.instance_name << "] setWholeBodyMasterSlaveParam" << std::endl;
-    hsp->WBMSparam.auto_swing_foot_landing_threshold = i_param.auto_swing_foot_landing_threshold;
-    hsp->WBMSparam.foot_vertical_vel_limit_coeff = i_param.foot_vertical_vel_limit_coeff;
-    hsp->WBMSparam.human_com_height = i_param.human_com_height;
-    hsp->WBMSparam.is_doctor = i_param.is_doctor;
-    hsp->WBMSparam.set_com_height_fix = i_param.set_com_height_fix;
-    hsp->WBMSparam.set_com_height_fix_val = i_param.set_com_height_fix_val;
-    hsp->WBMSparam.swing_foot_height_offset = i_param.swing_foot_height_offset;
-    hsp->WBMSparam.swing_foot_max_height = i_param.swing_foot_max_height;
-    hsp->WBMSparam.upper_body_rmc_ratio = i_param.upper_body_rmc_ratio;
-    hsp->WBMSparam.use_rh = hsp->WBMSparam.use_lh = i_param.use_hands;
-    hsp->WBMSparam.use_head = i_param.use_head;
-    hsp->WBMSparam.use_manipulability_limit = i_param.use_manipulability_limit;
+    wbms->wp.auto_swing_foot_landing_threshold = i_param.auto_swing_foot_landing_threshold;
+    wbms->wp.foot_vertical_vel_limit_coeff = i_param.foot_vertical_vel_limit_coeff;
+    wbms->wp.human_com_height = i_param.human_com_height;
+    wbms->wp.set_com_height_fix = i_param.set_com_height_fix;
+    wbms->wp.set_com_height_fix_val = i_param.set_com_height_fix_val;
+    wbms->wp.swing_foot_height_offset = i_param.swing_foot_height_offset;
+    wbms->wp.swing_foot_max_height = i_param.swing_foot_max_height;
+    wbms->wp.upper_body_rmc_ratio = i_param.upper_body_rmc_ratio;
     if(mode.now() == MODE_IDLE){
-      hsp->WBMSparam.disable_lower = i_param.disable_lower;
+        wbms->wp.use_head = i_param.use_head;
+        wbms->wp.use_upper = i_param.use_upper;
+        wbms->wp.use_lower = i_param.use_lower;
     }else{
-      std::cerr << "[" << m_profile.instance_name << "] disable_lower can be changed in MODE_IDLE" << std::endl;
+      RTCOUT << "use_head, use_upper, use_lower can be changed in MODE_IDLE" << std::endl;
     }
     return true;
 }
@@ -1020,19 +854,17 @@ bool WholeBodyMasterSlave::setWholeBodyMasterSlaveParam(const OpenHRP::WholeBody
 
 bool WholeBodyMasterSlave::getWholeBodyMasterSlaveParam(OpenHRP::WholeBodyMasterSlaveService::WholeBodyMasterSlaveParam& i_param){
     std::cerr << "[" << m_profile.instance_name << "] getWholeBodyMasterSlaveParam" << std::endl;
-    i_param.auto_swing_foot_landing_threshold = hsp->WBMSparam.auto_swing_foot_landing_threshold;
-    i_param.foot_vertical_vel_limit_coeff = hsp->WBMSparam.foot_vertical_vel_limit_coeff;
-    i_param.human_com_height = hsp->WBMSparam.human_com_height;
-    i_param.is_doctor = hsp->WBMSparam.is_doctor;
-    i_param.set_com_height_fix = hsp->WBMSparam.set_com_height_fix;
-    i_param.set_com_height_fix_val = hsp->WBMSparam.set_com_height_fix_val;
-    i_param.swing_foot_height_offset = hsp->WBMSparam.swing_foot_height_offset;
-    i_param.swing_foot_max_height = hsp->WBMSparam.swing_foot_max_height;
-    i_param.upper_body_rmc_ratio = hsp->WBMSparam.upper_body_rmc_ratio;
-    i_param.use_hands = (hsp->WBMSparam.use_rh || hsp->WBMSparam.use_lh);
-    i_param.use_head = hsp->WBMSparam.use_head;
-    i_param.use_manipulability_limit = hsp->WBMSparam.use_manipulability_limit;
-    i_param.disable_lower = hsp->WBMSparam.disable_lower;
+    i_param.auto_swing_foot_landing_threshold = wbms->wp.auto_swing_foot_landing_threshold;
+    i_param.foot_vertical_vel_limit_coeff = wbms->wp.foot_vertical_vel_limit_coeff;
+    i_param.human_com_height = wbms->wp.human_com_height;
+    i_param.set_com_height_fix = wbms->wp.set_com_height_fix;
+    i_param.set_com_height_fix_val = wbms->wp.set_com_height_fix_val;
+    i_param.swing_foot_height_offset = wbms->wp.swing_foot_height_offset;
+    i_param.swing_foot_max_height = wbms->wp.swing_foot_max_height;
+    i_param.upper_body_rmc_ratio = wbms->wp.upper_body_rmc_ratio;
+    i_param.use_head = wbms->wp.use_head;
+    i_param.use_upper = wbms->wp.use_upper;
+    i_param.use_lower = wbms->wp.use_lower;
     return true;
 }
 

@@ -14,11 +14,6 @@ void WholeBodyMasterSlaveService_impl::wholebodymasterslave(WholeBodyMasterSlave
   m_wholebodymasterslave = i_wholebodymasterslave;
 }
 
-CORBA::Boolean WholeBodyMasterSlaveService_impl::startCountDownForWholeBodyMasterSlave(CORBA::Double sec)
-{
-    return m_wholebodymasterslave->startCountDownForWholeBodyMasterSlave(sec);
-};
-
 CORBA::Boolean WholeBodyMasterSlaveService_impl::startWholeBodyMasterSlave()
 {
     return m_wholebodymasterslave->startWholeBodyMasterSlave();

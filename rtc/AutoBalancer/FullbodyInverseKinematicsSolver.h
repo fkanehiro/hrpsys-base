@@ -5,9 +5,9 @@
 #include <hrpModel/Body.h>
 #include <hrpUtil/MatrixSolvers.h>
 #include "../ImpedanceController/JointPathEx.h"
-#include <unsupported/Eigen/MatrixFunctions>
-#include "SimpleFullbodyInverseKinematicsSolver.h"
+#include "../ImpedanceController/RatsMatrix.h"
 #include "../TorqueFilter/IIRFilter.h"
+#include <unsupported/Eigen/MatrixFunctions>
 
 //tips
 #define LIMIT_MINMAX(x,min,max) ((x= (x<min  ? min : x<max ? x : max)))
@@ -39,20 +39,23 @@ class IKConstraint {
          localR(hrp::Matrix33::Identity()),
          constraint_weight(hrp::dvector6::Ones()),
          pos_precision(1e-4), rot_precision(deg2rad(0.1)){}
+        hrp::Vector3 getCurrentTargetPos(hrp::BodyPtr _robot){ return _robot->link(target_link_name)->p + _robot->link(target_link_name)->R * localPos; }
+        hrp::Matrix33 getCurrentTargetRot(hrp::BodyPtr _robot){ return _robot->link(target_link_name)->R * localR; }
 };
 
 
-class FullbodyInverseKinematicsSolver : public SimpleFullbodyInverseKinematicsSolver{
+class FullbodyInverseKinematicsSolver{
     protected:
         hrp::dmatrix J_all, J_all_inv, J_com, J_am;
         hrp::dvector dq_all, err_all, constraint_weight_all, jlim_avoid_weight_old;
         const int WS_DOF, BASE_DOF, J_DOF, ALL_DOF;
         std::vector<IIRFilter> am_filters;
+        const double m_dt;
     public:
         hrp::dvector dq_weight_all, q_ref, q_ref_max_dq, q_ref_constraint_weight;
         hrp::Vector3 cur_momentum_around_COM, cur_momentum_around_COM_filtered, rootlink_rpy_llimit, rootlink_rpy_ulimit;
-        FullbodyInverseKinematicsSolver (hrp::BodyPtr _robot, const std::string& _print_str, const double _dt)
-        : SimpleFullbodyInverseKinematicsSolver(_robot,_print_str, _dt),
+        FullbodyInverseKinematicsSolver (hrp::BodyPtr _robot, const std::string& _print_str, const double _dt):
+          m_dt(_dt),
           WS_DOF(6),
           BASE_DOF(6),
           J_DOF(_robot->numJoints()),
@@ -61,7 +64,6 @@ class FullbodyInverseKinematicsSolver : public SimpleFullbodyInverseKinematicsSo
             dq_all = q_ref = q_ref_constraint_weight = hrp::dvector::Zero(ALL_DOF);
             q_ref_max_dq = hrp::dvector::Constant(ALL_DOF, 1e-2);
             cur_momentum_around_COM = cur_momentum_around_COM_filtered = hrp::Vector3::Zero();
-//            jlim_avoid_weight_old = hrp::dvector::Constant(ALL_DOF, 1e12);
             jlim_avoid_weight_old = hrp::dvector::Constant(ALL_DOF, 0);
             rootlink_rpy_llimit = hrp::Vector3::Constant(-DBL_MAX);
             rootlink_rpy_ulimit = hrp::Vector3::Constant(DBL_MAX);
@@ -166,7 +168,7 @@ class FullbodyInverseKinematicsSolver : public SimpleFullbodyInverseKinematicsSo
                     }
                 }
 
-                // set desired joint pose constraint into Jacobian
+                // set desired joint angle constraint into Jacobian
                 for(int qid=0; qid<ALL_DOF; qid++){
                     if(q_ref_constraint_weight(qid) > 0.0){
                         J_all.row(cur_cid_all)(qid) = 1;
@@ -210,26 +212,32 @@ class FullbodyInverseKinematicsSolver : public SimpleFullbodyInverseKinematicsSo
                 Wn = dq_weight_all_final.asDiagonal() * Wn;
                 hrp::dmatrix H = J_all.transpose() * constraint_weight_all.asDiagonal() * J_all + Wn;
                 hrp::dvector g = J_all.transpose() * constraint_weight_all.asDiagonal() * err_all;
-//                dq_all = H.inverse() * g; // slow
-                dq_all = H.ldlt().solve(g);
+                dq_all = H.ldlt().solve(g); // dq_all = H.inverse() * g; is slow
 
-    //            // debug print
-    //            static int count;
-    //            if(count++ % 10000 == 0){
-    //                std::cout<<std::setprecision(2) << "J=\n"<<J_all<<std::setprecision(6)<<std::endl;
-    //                std::cout<<std::setprecision(2) << "J_all_inv=\n"<<J_all_inv<<std::setprecision(6)<<std::endl;
-    //                dbgn(selection_mat);
-    //                dbgn(H);
-    //                dbg(Wn(0,0));
-    //                dbg(g.transpose());
-    //                dbg(err_all.transpose());
-    //                dbg(dq_all.transpose());
-    //                dbg(constraint_weight_all.transpose());
-    //                dbg(dq_weight_all_inv.transpose());
-    //                std::cout<<"q_ans_all\n";
-    //                for(int i=0;i<_robot->numJoints();i++)std::cerr<<_robot->joint(i)->q<<" ";
-    //                std::cout<<std::endl;
-    //            }
+                // rtconf localhost:15005/wbms.rtc set debugLevel 1 とかにしたい
+                // debug print
+                static int count;
+                if(count++ % 10000 == 0){
+                    std::cout<<std::setprecision(2) << "J=\n"<<J_all<<std::setprecision(6)<<std::endl;
+                    std::cout<<std::setprecision(2) << "J_all_inv=\n"<<J_all_inv<<std::setprecision(6)<<std::endl;
+//                    dbgn(selection_mat);
+                    dbgn(H);
+//                    dbg(Wn(0,0));
+                    dbg(g.transpose());
+                    dbg(err_all.transpose());
+                    dbg(dq_all.transpose());
+                    dbg(constraint_weight_all.transpose());
+//                    dbg(dq_weight_all_inv.transpose());
+                    std::cout<<"q_ans_all\n";
+                    for(int i=0;i<_robot->numJoints();i++)std::cerr<<_robot->joint(i)->q<<" ";
+
+                    for(int i=0;i<_ikc_list.size();i++){
+                        dbg(_ikc_list[i].target_link_name);
+                        dbg(_ikc_list[i].targetPos.transpose());
+                        dbg(_ikc_list[i].targetRpy.transpose());
+                    }
+                    std::cout<<std::endl;
+                }
 
                 // update joint angles
                 for(int i=0;i<dq_all.rows();i++){ if( isnan(dq_all(i)) || isinf(dq_all(i)) ){ std::cerr <<"ERROR nan/inf is found" << std::endl; return;} }
@@ -259,12 +267,12 @@ class FullbodyInverseKinematicsSolver : public SimpleFullbodyInverseKinematicsSo
                 std::cerr<<"solveFullbodyIKOnce() needs OPENHRP_PACKAGE_VERSION_320 !!!"<<std::endl;
             #endif
         }
-        void revertRobotStateToCurrentAll (){
-            hrp::setQAll(m_robot, qorg);
-            m_robot->rootLink()->p = current_root_p;
-            m_robot->rootLink()->R = current_root_R;
-            m_robot->calcForwardKinematics();
-        };
+//        void revertRobotStateToCurrentAll (){
+//            hrp::setQAll(m_robot, qorg);
+//            m_robot->rootLink()->p = current_root_p;
+//            m_robot->rootLink()->R = current_root_R;
+//            m_robot->calcForwardKinematics();
+//        };
 
     protected:
         hrp::Vector3 omegaFromRotEx(const hrp::Matrix33& r) {//copy from JointPathEx.cpp
@@ -283,97 +291,6 @@ class FullbodyInverseKinematicsSolver : public SimpleFullbodyInverseKinematicsSo
             }
         }
 };
-
-
-// // multi-thread IK (answer will delay for 1 control loop)
-//class FullbodyInverseKinematicsSolverMT : public FullbodyInverseKinematicsSolver{
-//    protected:
-//        hrp::BodyPtr _robot_copy;
-//        pthread_t ik_thread;
-//        pthread_mutex_t ik_body_mutex;  // Mutex
-//        int cur_ik_loop;
-//        std::vector<IKConstraint> ikc_list;
-//        bool is_first;
-//        bool ik_thread_kill;
-//        bool ik_thread_ik_required;
-//        hrp::Vector3 base_p_old;
-//        hrp::Matrix33 base_R_old;
-//        hrp::dvector q_old;
-//    public:
-//        FullbodyInverseKinematicsSolverMT (hrp::BodyPtr& _robot, const std::string& _print_str, const double _dt) : FullbodyInverseKinematicsSolver(_robot,_print_str, _dt) {
-//            _robot_copy = hrp::BodyPtr(new hrp::Body(*_robot));
-//            cur_ik_loop = 0;
-//            is_first = true;
-//            ik_thread_kill = false;
-//            ik_thread_ik_required = false;
-//        };
-//        ~FullbodyInverseKinematicsSolverMT () {
-//            pthread_cancel(ik_thread);
-//            ik_thread_kill = true;
-//            pthread_join(ik_thread, NULL );
-//            std::cerr<<"[FullbodyInverseKinematicsSolverMT] thread killed successfully"<<std::endl;
-//        };
-//        int solveFullbodyIKLoopMT (hrp::BodyPtr _robot, const std::vector<IKConstraint>& _ikc_list, const int _max_iteration) {
-//            if(is_first){
-//                for(int i=0;i<J_DOF;i++){
-//                    _robot_copy->joint(i)->q = _robot->joint(i)->q;
-//                    _robot_copy->joint(i)->ulimit = _robot->joint(i)->ulimit;
-//                    _robot_copy->joint(i)->llimit = _robot->joint(i)->llimit;
-//                }
-//                _robot_copy->rootLink()->p = _robot->rootLink()->p;
-//                _robot_copy->rootLink()->R = _robot->rootLink()->R;
-//                pthread_mutex_init( &ik_body_mutex, NULL );
-//                pthread_create(&ik_thread, NULL, launchThread, this);
-//                is_first = false;
-//            }
-//            for(int i=0;i<J_DOF;i++){
-//                _robot->joint(i)->q = _robot_copy->joint(i)->q;
-//            }
-//            _robot->rootLink()->p = _robot_copy->rootLink()->p;
-//            _robot->rootLink()->R = _robot_copy->rootLink()->R;
-//            _robot->calcForwardKinematics();
-//            int result = cur_ik_loop;
-//
-//            if(pthread_mutex_lock( &ik_body_mutex ) != 0){std::cerr<<"[FullbodyInverseKinematicsSolverMT] pthread_mutex_lock err "<<std::endl;}
-//
-//            base_p_old = _robot_copy->rootLink()->p;
-//            base_R_old = _robot_copy->rootLink()->R;
-//            q_old.resize(J_DOF);
-//            for(int i=0;i<J_DOF;i++){ q_old(i) = _robot_copy->joint(i)->q; }
-//
-//            cur_ik_loop = 0;
-//            ikc_list = _ikc_list;
-//            ik_thread_ik_required = true;
-//            if(pthread_mutex_unlock( &ik_body_mutex ) != 0){std::cerr<<"[FullbodyInverseKinematicsSolverMT] pthread_mutex_unlock err "<<std::endl;}
-//            return result;
-//        }
-//        void ik_loop(){
-//            std::cerr<<"[FullbodyInverseKinematicsSolverMT] start thread"<<std::endl;
-//            while(1){
-//                usleep(0);//これ無いとmutex解放しない？
-//                if(pthread_mutex_lock( &ik_body_mutex ) != 0){std::cerr<<"[FullbodyInverseKinematicsSolverMT] pthread_mutex_lock2 err "<<std::endl;}
-//                if(ik_thread_ik_required){
-//                    solveFullbodyIK(_robot_copy, ikc_list);
-//                    //check ang moment
-//                    _robot_copy->rootLink()->v = (_robot_copy->rootLink()->p - base_p_old)/ m_dt;
-//                    _robot_copy->rootLink()->w = base_R_old * omegaFromRotEx(base_R_old.transpose() * _robot_copy->rootLink()->R) / m_dt;
-//                    for(int i=0;i<J_DOF;i++){ _robot_copy->joint(i)->dq = (_robot_copy->joint(i)->q - q_old(i)) / m_dt; }
-//                    _robot_copy->calcForwardKinematics(true,false);
-////                    _robot_copy->calcTotalMomentum(cur_momentum_P, cur_momentum_L);
-//                    cur_ik_loop++;
-//                    if(cur_ik_loop > 10000){std::cerr<<"[FullbodyInverseKinematicsSolverMT] thread time out"<<std::endl;break;}//異常終了でスレッドが残ってしまった時にタイムアウト終了
-//                }
-//                if(pthread_mutex_unlock( &ik_body_mutex ) != 0){std::cerr<<"[FullbodyInverseKinematicsSolverMT] pthread_mutex_unlock2 err "<<std::endl;}
-//                if(ik_thread_kill){break;}
-//            }
-//            std::cerr<<"[FullbodyInverseKinematicsSolverMT] end of thread"<<std::endl;
-//        }
-//        static void* launchThread(void *pParam) {
-//            reinterpret_cast<FullbodyInverseKinematicsSolverMT*>(pParam)->ik_loop();
-//            return NULL;
-//        }
-//};
-
 
 #endif //  FULLBODYIK_H
 

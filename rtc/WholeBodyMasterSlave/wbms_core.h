@@ -36,7 +36,6 @@ extern "C" {
 }
 #endif
 
-//#include "../AutoBalancer/AutoBalancer.h"
 #include "../AutoBalancer/FullbodyInverseKinematicsSolver.h"
 #define USE_NEW_FIK
 
@@ -47,6 +46,7 @@ extern "C" {
 #define LIMIT_MAX(x,max) (x= ( x<max ? x:max ))
 #define LIMIT_MINMAX(x,min,max) ((x= (x<min  ? min : x<max ? x : max)))
 #define SGN(x) ((x)>=0 ? 1 : -1)
+#define RTCOUT std::cerr << "[" << m_profile.instance_name << "] "
 
 class UTIL_CONST{
     public:
@@ -74,7 +74,6 @@ class BiquadIIRFilterVec : UTIL_CONST {
         IIRFilter filters[XYZ];
         hrp::Vector3 ans;
     public:
-        EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         BiquadIIRFilterVec(){}
         ~BiquadIIRFilterVec(){}
         void setParameter(const hrp::Vector3& fc_in, const double& HZ, const double& Q = 0.5){ for(int i=0;i<XYZ;i++){ filters[i].setParameterAsBiquad((double)fc_in(i), Q, HZ); } }
@@ -85,7 +84,6 @@ class BiquadIIRFilterVec : UTIL_CONST {
 
 class WBMSPose3D{
     public:
-        EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         hrp::Vector3 p,rpy;
         WBMSPose3D(){ clear(); }
         ~WBMSPose3D(){}
@@ -94,7 +92,6 @@ class WBMSPose3D{
 
 class PoseTGT{
     public:
-        EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         WBMSPose3D abs, offs, cnt;
         hrp::dvector6 w;
         bool is_contact, go_contact;
@@ -131,6 +128,15 @@ namespace hrp{
                 r = r_in;
             };
     };
+//    class Wrench{
+//        public:
+//            hrp::Vector3 f, t;
+//            Wrench(const hrp::Vector3 f_in = hrp::Vector3::Zero(), const hrp::Vector3 t_in = hrp::Vector3::Zero()){
+//              f = f_in;
+//              t = t_in;
+//            }
+//            Wrench operator+(const Wrench& a, const Wrench& b){ return Wrench(a.f+b.f, a.t+b.t); }
+//    };
 }
 
 
@@ -389,27 +395,20 @@ class WBMSCore : UTIL_CONST {
                 double auto_swing_foot_landing_threshold;
                 double foot_vertical_vel_limit_coeff;
                 double human_com_height;
-                bool is_doctor;
                 bool set_com_height_fix;
                 double set_com_height_fix_val;
                 double swing_foot_height_offset;
                 double swing_foot_max_height;
                 double upper_body_rmc_ratio;
-                bool use_rh,use_lh;
                 bool use_head;
-                bool use_manipulability_limit;
-                bool disable_lower;
+                bool use_upper;
+                bool use_lower;
         };
-        struct WBMSparameters WBMSparam;
+        struct WBMSparameters wp;
         struct ActualRobotState {
                 hrp::Vector3 com, zmp;
         }act_rs;
 
-        typedef boost::shared_ptr<FullbodyInverseKinematicsSolver> fikPtr;
-        fikPtr fik_ml;
-        hrp::BodyPtr m_robot_ml;
-        //    fikPtr fik_act;
-        hrp::BodyPtr m_robot_act;
         double cur_manip_val[4][3];
         hrp::Vector3 manip_direc[4][3];
         hrp::Matrix33 manip_mat[4];
@@ -462,19 +461,17 @@ class WBMSCore : UTIL_CONST {
             cp_force_go_contact[L] = false;
 
             //      WBMSparam.auto_swing_foot_landing_threshold = 0.02;
-            WBMSparam.auto_swing_foot_landing_threshold = 0.04;
-            WBMSparam.foot_vertical_vel_limit_coeff = 4.0;
-            WBMSparam.human_com_height = 1.00;
-            WBMSparam.is_doctor = true;
-            WBMSparam.set_com_height_fix = false;
-            WBMSparam.set_com_height_fix_val = 0.02;
-            WBMSparam.swing_foot_height_offset = 0.02;
-            WBMSparam.swing_foot_max_height = 0.5;
-            WBMSparam.upper_body_rmc_ratio = 0.0;
-            WBMSparam.use_rh = WBMSparam.use_lh = true;
-            WBMSparam.use_head = true;
-            WBMSparam.use_manipulability_limit = true;
-            WBMSparam.disable_lower = true;
+            wp.auto_swing_foot_landing_threshold = 0.04;
+            wp.foot_vertical_vel_limit_coeff = 4.0;
+            wp.human_com_height = 1.00;
+            wp.set_com_height_fix = false;
+            wp.set_com_height_fix_val = 0.02;
+            wp.swing_foot_height_offset = 0.02;
+            wp.swing_foot_max_height = 0.5;
+            wp.upper_body_rmc_ratio = 0.0;
+            wp.use_head = true;
+            wp.use_upper = true;
+            wp.use_lower = true;
             rp_ref_out_old.clear();
             rp_ref_out.clear();
             rp_ref_vel_old.clear();
@@ -513,13 +510,13 @@ class WBMSCore : UTIL_CONST {
                 hp_wld_raw.tgt[i].offs.rpy =  hp_wld_raw.tgt[i].abs.rpy;
             }
         }
-        void initializeRobotPoseFromHRPBody(fikPtr& fik_in, hrp::BodyPtr& robot_in){
+        void initializeRobotPoseFromHRPBody(const hrp::BodyPtr robot_in, std::map<std::string, IKConstraint>& ee_name_ikcp_map_in){
             const std::string robot_l_names[4] = {"rleg","lleg","rarm","larm"};
             const int human_l_names[4] = {rf,lf,rh,lh};
             for(int i=0;i<4;i++){//HumanSynchronizerの初期姿勢オフセットをセット
-                if(fik_in->ikp.count(robot_l_names[i])){
-                    rp_ref_out.tgt[human_l_names[i]].offs.p = fik_in->getEndEffectorPos(robot_l_names[i]);
-                    rp_ref_out.tgt[human_l_names[i]].offs.rpy = hrp::rpyFromRot(fik_in->getEndEffectorRot(robot_l_names[i]));
+                if(ee_name_ikcp_map_in.count(robot_l_names[i])){
+                    rp_ref_out.tgt[human_l_names[i]].offs.p = ee_name_ikcp_map_in[robot_l_names[i]].getCurrentTargetPos(robot_in);//          fik_in->getEndEffectorPos(robot_l_names[i]);
+                    rp_ref_out.tgt[human_l_names[i]].offs.rpy = hrp::rpyFromRot(ee_name_ikcp_map_in[robot_l_names[i]].getCurrentTargetRot(robot_in));
                     rp_ref_out.tgt[human_l_names[i]].abs = rp_ref_out.tgt[human_l_names[i]].offs;
                 }
             }
@@ -528,7 +525,7 @@ class WBMSCore : UTIL_CONST {
             rp_ref_out.tgt[com].offs.rpy = hrp::rpyFromRot(robot_in->rootLink()->R);
             rp_ref_out.tgt[zmp].offs.p(X) = rp_ref_out.tgt[com].offs.p(X);
             rp_ref_out.tgt[zmp].offs.p(Y) = rp_ref_out.tgt[com].offs.p(Y);
-            rp_ref_out.tgt[zmp].offs.p(Z) = (fik_in->getEndEffectorPos("rleg")(Z)+fik_in->getEndEffectorPos("lleg")(Z))/2;
+            rp_ref_out.tgt[zmp].offs.p(Z) = (rp_ref_out.tgt[rf].offs.p(Z) + rp_ref_out.tgt[lf].offs.p(Z)) / 2;
             rp_ref_out.tgt[rf].cnt = rp_ref_out.tgt[rf].offs;
             rp_ref_out.tgt[lf].cnt = rp_ref_out.tgt[lf].offs;
             baselinkpose.p = robot_in->rootLink()->p;
@@ -538,11 +535,11 @@ class WBMSCore : UTIL_CONST {
             }
             H_cur = rp_ref_out.tgt[com].offs.p(Z) - std::min((double)rp_ref_out.tgt[rf].offs.p(Z), (double)rp_ref_out.tgt[rf].offs.p(Z));
         }
-        void initializeRequest(fikPtr& fik_in, hrp::BodyPtr& robot_in){
+        void initializeRequest(hrp::BodyPtr robot_in, std::map<std::string, IKConstraint>& ee_name_ikcp_map_in){
             loop = 0;
             is_initial_loop = true;
             initializeHumanPoseFromCurrentInput();
-            initializeRobotPoseFromHRPBody(fik_in, robot_in);
+            initializeRobotPoseFromHRPBody(robot_in, ee_name_ikcp_map_in);
             rp_ref_out_old = rp_ref_vel_old = rp_ref_out;
         }
         void update(){//////////  メインループ  ////////////
@@ -551,7 +548,7 @@ class WBMSCore : UTIL_CONST {
             autoLRSwapCheck                     (hp_wld_raw,hp_swap_checked);//入力の左右反転を常にチェック(＝手足の交差は不可能)
             convertRelHumanPoseToRelRobotPose   (hp_swap_checked, rp_ref_out);
             hp_plot = rp_ref_out;
-            if(WBMSparam.set_com_height_fix)rp_ref_out.tgt[com].abs.p(Z) = rp_ref_out.tgt[com].offs.p(Z) + WBMSparam.set_com_height_fix_val;//膝曲げトルクで落ちるときの応急措置
+            if(wp.set_com_height_fix)rp_ref_out.tgt[com].abs.p(Z) = rp_ref_out.tgt[com].offs.p(Z) + wp.set_com_height_fix_val;//膝曲げトルクで落ちるときの応急措置
             judgeFootLandOnCommandByFootForce   (hp_wld_raw);//人体足裏反力から各足の接地指令を生成
             lockSwingFootIfZMPOutOfSupportFoot  (rp_ref_out_old, rp_ref_out);//
             limitEEWorkspace                    (rp_ref_out);
@@ -570,11 +567,10 @@ class WBMSCore : UTIL_CONST {
                 LIMIT_MIN( rp_ref_out.tgt[l[i]].abs.p(Z), rp_ref_out_old.tgt[l[i]].abs.p(Z)-vertical_max_vel*DT);
             }
 
-            //      limitManipulability                 (rp_ref_out);
-
             applyCOMToSupportRegionLimit        (rp_ref_out.tgt[rf].abs.p, rp_ref_out.tgt[lf].abs.p, com_CP_ref_old);//これやらないと支持領域の移動によって1ステップ前のCOM位置はもうはみ出てるかもしれないから
 
-            Vector3ToVector2(rp_ref_out.tgt[com].abs.p,com_forcp_ref);
+            com_forcp_ref = rp_ref_out.tgt[com].abs.p.head(XY);
+//            Vector3ToVector2(rp_ref_out.tgt[com].abs.p,com_forcp_ref);
             static hrp::Vector2 com_forcp_ref_old;
             com_vel_forcp_ref = (com_forcp_ref - com_forcp_ref_old)/DT;
             com_forcp_ref_old = com_forcp_ref;
@@ -604,23 +600,30 @@ class WBMSCore : UTIL_CONST {
             is_initial_loop = false;
             gettimeofday(&t_calc_end, NULL);
         }
-        static void Vector3ToVector2(const hrp::Vector3& in, hrp::Vector2& out){ out(X) = in(X); out(Y) = in(Y);}
-        static void Vector2ToVector3(const hrp::Vector2& in, hrp::Vector3& out){ out(X) = in(X); out(Y) = in(Y);}
-        static void Point3DToVector3(const RTC::Point3D& in, hrp::Vector3& out){ out(X) = in.x; out(Y) = in.y; out(Z) = in.z;}
-        static void Oriantation3DToVector3(const RTC::Orientation3D& in, hrp::Vector3& out){ out(X) = in.r; out(Y) = in.p; out(Z) = in.y;}
+        static void Point3DToVector3(const RTC::Point3D& in, hrp::Vector3& out){ out << in.x, in.y, in.z;}
+        static void Oriantation3DToVector3(const RTC::Orientation3D& in, hrp::Vector3& out){ out << in.r, in.p, in.y;}
         static void Vector3ToPoint3D(const hrp::Vector3& in, RTC::Point3D& out){ out.x = in(X); out.y = in(Y); out.z = in(Z);}
         static void Vector3ToOriantation3D(const hrp::Vector3& in, RTC::Orientation3D& out){ out.r = in(X); out.p = in(Y); out.y = in(Z);}
-        static void Pose3DToWBMSPose3D(const RTC::Pose3D& in, WBMSPose3D& out){ Point3DToVector3(in.position,out.p); Oriantation3DToVector3(in.orientation,out.rpy); }
-        static void WBMSPose3DToPose3D(const WBMSPose3D& in, RTC::Pose3D& out){ Vector3ToPoint3D(in.p,out.position); Vector3ToOriantation3D(in.rpy,out.orientation); }
-        static void DoubleSeqToVector6(const RTC::TimedDoubleSeq::_data_seq& in, hrp::dvector6& out){
-            if(in.length() == 6){out(fx)=in[0]; out(fy)=in[1]; out(fz)=in[2]; out(tz)=in[3]; out(ty)=in[4]; out(tz)=in[5];
-            }else{ std::cerr<<"[WARN] HumanPose::hrp::dvector6 DoubleSeqTohrp::dvector6() invalid data length"<<std::endl; out = hrp::dvector6::Zero(); }
+        static void Pose3DToWBMSPose3D(const RTC::Pose3D& in, WBMSPose3D& out){ Point3DToVector3(in.position, out.p); Oriantation3DToVector3(in.orientation, out.rpy); }
+        static void WBMSPose3DToPose3D(const WBMSPose3D& in, RTC::Pose3D& out){ Vector3ToPoint3D(in.p, out.position); Vector3ToOriantation3D(in.rpy, out.orientation); }
+//        static void DoubleSeqToVector6(const RTC::TimedDoubleSeq::_data_seq& in, hrp::dvector6& out){
+//            if(in.length() == 6){out(fx)=in[0]; out(fy)=in[1]; out(fz)=in[2]; out(tz)=in[3]; out(ty)=in[4]; out(tz)=in[5];
+//            }else{ std::cerr<<"[WARN] HumanPose::hrp::dvector6 DoubleSeqTohrp::dvector6() invalid data length"<<std::endl; out = hrp::dvector6::Zero(); }
+//        }
+//        static void Vector6ToDoubleSeq(const hrp::dvector6& in, RTC::TimedDoubleSeq::_data_seq& out){
+//            if(out.length() == 6){out[0]=in(fx); out[1]=in(fy); out[2]=in(fz); out[3]=in(tx); out[4]=in(ty); out[5]=in(tz);
+//            }else{ std::cerr<<"[WARN] HumanPose::hrp::dvector6 DoubleSeqTohrp::dvector6() invalid data length"<<std::endl; }
+//        }
+        static void WrenchToVector6(const OpenHRP::Wrench& in, hrp::dvector6& out){
+          out.head(3) << in.force.x, in.force.y, in.force.z;
+          out.tail(3) << in.torque.x, in.torque.y, in.torque.z;
         }
-        static void Vector6ToDoubleSeq(const hrp::dvector6& in, RTC::TimedDoubleSeq::_data_seq& out){
-            if(out.length() == 6){out[0]=in(fx); out[1]=in(fy); out[2]=in(fz); out[3]=in(tx); out[4]=in(ty); out[5]=in(tz);
-            }else{ std::cerr<<"[WARN] HumanPose::hrp::dvector6 DoubleSeqTohrp::dvector6() invalid data length"<<std::endl; }
+        static void Vector6ToWrench(const hrp::dvector6& in, OpenHRP::Wrench& out){
+            out.force.x = in(0);            out.force.y = in(1);            out.force.z = in(2);
+            out.torque.x = in(3);            out.torque.y = in(4);            out.torque.z = in(5);
         }
         static double hrpVector2Cross(const hrp::Vector2& a, const hrp::Vector2& b){ return a(X)*b(Y)-a(Y)*b(X); }
+
 
     private:
         void updateParams(){
@@ -730,8 +733,8 @@ class WBMSCore : UTIL_CONST {
             //      hrp::Vector2 lf2zmp = hrp::Vector2(old.tgt[zmp].abs.p(X),old.tgt[zmp].abs.p(Y)) - hrp::Vector2(old.tgt[lf].abs.p(X),old.tgt[lf].abs.p(Y));
             hrp::Vector2 rf2zmp = act_rs.zmp.head(XY) - old.tgt[rf].abs.p.head(XY);
             hrp::Vector2 lf2zmp = act_rs.zmp.head(XY) - old.tgt[lf].abs.p.head(XY);
-            if( inside_vec_rf.dot(rf2zmp) / inside_vec_rf.norm() > WBMSparam.auto_swing_foot_landing_threshold ){ out.tgt[lf].go_contact = true; }
-            if( inside_vec_lf.dot(lf2zmp) / inside_vec_lf.norm() > WBMSparam.auto_swing_foot_landing_threshold ){ out.tgt[rf].go_contact = true; }
+            if( inside_vec_rf.dot(rf2zmp) / inside_vec_rf.norm() > wp.auto_swing_foot_landing_threshold ){ out.tgt[lf].go_contact = true; }
+            if( inside_vec_lf.dot(lf2zmp) / inside_vec_lf.norm() > wp.auto_swing_foot_landing_threshold ){ out.tgt[rf].go_contact = true; }
         }
         void limitEEWorkspace(HumanPose& out){
             const double MAX_FW = 0.25;
@@ -775,33 +778,7 @@ class WBMSCore : UTIL_CONST {
             //      for(int i=0, l[5]={rf,lf,rh,lh,head}; i<5; i++){
             //        for(int j=0;j<XYZ;j++){ LIMIT_MINMAX( out.tgt[l[i]].abs.rpy(j), rc.ee_rot_limit[l[i]][MIN](j) + out.tgt[com].abs.rpy(j), rc.ee_rot_limit[l[i]][MAX](j) + out.tgt[com].abs.rpy(j) ); }
             //      }
-            if(!WBMSparam.use_head)out.tgt[head].abs.rpy = hrp::Vector3::Zero();
-        }
-        void limitManipulability(HumanPose& out){
-            const std::string robot_l_names[4] = {"rleg","lleg","rarm","larm"};
-            const int human_l_names[4] = {rf,lf,rh,lh};
-            m_robot_ml->rootLink()->p = m_robot_act->rootLink()->p;
-            m_robot_ml->rootLink()->R = m_robot_act->rootLink()->R;
-            //      for (int i=0;i<m_robot_ml->numJoints();i++){ m_robot_ml->joint(i)->q = m_robot_act->joint(i)->q; }
-            m_robot_ml->calcForwardKinematics();
-            for(int i=0;i<4;i++){
-                if(fik_ml->ikp.count(robot_l_names[i])){
-                    fik_ml->ikp[robot_l_names[i]].target_r0 = hrp::rotFromRpy(out.tgt[human_l_names[i]].abs.rpy);
-                    fik_ml->ikp[robot_l_names[i]].target_p0 = out.tgt[human_l_names[i]].abs.p;
-                }
-            }
-            const int pre_ik_loop = 2;
-            for(int i=0;i<pre_ik_loop;i++){
-                for ( std::map<std::string, FullbodyInverseKinematicsSolver::IKparam>::iterator it = fik_ml->ikp.begin(); it != fik_ml->ikp.end(); it++ ) {
-                    if (it->second.is_ik_enable) fik_ml->solveLimbIK (it->second, it->first, fik_ml->ratio_for_vel, false);
-                }
-            }
-            for(int i=0;i<4;i++){
-                if(fik_ml->ikp.count(robot_l_names[i])){
-                    out.tgt[human_l_names[i]].abs.p = fik_ml->getEndEffectorPos(robot_l_names[i]);
-                    out.tgt[human_l_names[i]].abs.rpy = hrp::rpyFromRot(fik_ml->getEndEffectorRot(robot_l_names[i]));
-                }
-            }
+            if(!wp.use_head)out.tgt[head].abs.rpy = hrp::Vector3::Zero();
         }
         void setFootContactPoseByGoContact(HumanPose& out){
             for(int i=0, l[LR]={rf,lf}; i<LR; i++){
@@ -827,7 +804,7 @@ class WBMSCore : UTIL_CONST {
                 if(out.tgt[l[i]].go_contact || cp_force_go_contact[i]){
                     out.tgt[l[i]].abs.p(Z) = out.tgt[l[i]].offs.p(Z);
                 }else{
-                    LIMIT_MIN( out.tgt[l[i]].abs.p(Z), out.tgt[l[i]].offs.p(Z)+WBMSparam.swing_foot_height_offset);
+                    LIMIT_MIN( out.tgt[l[i]].abs.p(Z), out.tgt[l[i]].offs.p(Z)+wp.swing_foot_height_offset);
                 }
                 const double contact_threshold = 0.005;
                 out.tgt[l[i]].is_contact = ((out.tgt[l[i]].abs.p(Z)-out.tgt[l[i]].offs.p(Z)) <= contact_threshold);
@@ -890,8 +867,10 @@ class WBMSCore : UTIL_CONST {
             com_ans(X) = com_ans_old(X) + com_vel_ans_2d(X) * DT;
             com_ans(Y) = com_ans_old(Y) + com_vel_ans_2d(Y) * DT;
             com_ans_old = com_ans;
-            Vector2ToVector3(hrp::Vector2(com_ans(X),com_ans(Y)) + com_vel_ans_2d * sqrt( H_cur / G ), cp_dec);
-            Vector2ToVector3(hrp::Vector2(com_ans(X),com_ans(Y)) - com_vel_ans_2d * sqrt( H_cur / G ), cp_acc);
+//            Vector2ToVector3(hrp::Vector2(com_ans(X),com_ans(Y)) + com_vel_ans_2d * sqrt( H_cur / G ), cp_dec);
+//            Vector2ToVector3(hrp::Vector2(com_ans(X),com_ans(Y)) - com_vel_ans_2d * sqrt( H_cur / G ), cp_acc);
+            cp_dec.head(2) = hrp::Vector2(com_ans(X),com_ans(Y)) + com_vel_ans_2d * sqrt( H_cur / G );
+            cp_acc.head(2) = hrp::Vector2(com_ans(X),com_ans(Y)) - com_vel_ans_2d * sqrt( H_cur / G );
             if(DEBUG){
                 fprintf(cz_log,"com_ans: %f %f ",com_ans(X),com_ans(Y));
                 fprintf(cz_log,"com_ans_cp_d: %f %f ",cp_dec(X),cp_dec(Y));
@@ -919,7 +898,7 @@ class WBMSCore : UTIL_CONST {
             if(com_vel(Y)>0 ){ rf_landing_delay = 0; }
             if(com_vel(Y)<0 ){ lf_landing_delay = 0; }
             double foot_landing_delay = std::max(rf_landing_delay, lf_landing_delay);
-            //      const double foot_landing_delay = 0;//debug
+            //      const double foot_landing_delay =0;//debug
             //減速CP条件(現在のCPを常に両足裏で頭打ち)
 
             //      hrp::Vector2 inside_vec_rf(0,1),inside_vec_lf(0,-1);//TODO implement

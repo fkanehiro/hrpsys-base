@@ -11,16 +11,14 @@
 #include <rtm/idl/BasicDataTypeSkel.h>
 #include <rtm/idl/ExtendedDataTypesSkel.h>
 #include <hrpModel/Body.h>
-#include "../ImpedanceController/JointPathEx.h"
+//#include "../ImpedanceController/JointPathEx.h"
 // Service implementation headers
-// <rtc-template block="service_impl_h">
 #include "WholeBodyMasterSlaveService_impl.h"
 #include "interpolator.h"
-#include "../TorqueFilter/IIRFilter.h"
+//#include "../TorqueFilter/IIRFilter.h"
 #include "wbms_core.h"
-//#include "../AutoBalancer/AutoBalancer.h"
 
-using namespace RTC;
+//using namespace RTC;
 
 //#define USE_DEBUG_PORT
 
@@ -64,7 +62,6 @@ class WholeBodyMasterSlave : public RTC::DataFlowComponentBase, UTIL_CONST {
     virtual RTC::ReturnCode_t onActivated(RTC::UniqueId ec_id);
     virtual RTC::ReturnCode_t onDeactivated(RTC::UniqueId ec_id);
     virtual RTC::ReturnCode_t onExecute(RTC::UniqueId ec_id);
-    bool startCountDownForWholeBodyMasterSlave(const double sec);
     bool startWholeBodyMasterSlave();
     bool stopWholeBodyMasterSlave();
     bool pauseWholeBodyMasterSlave();
@@ -73,103 +70,92 @@ class WholeBodyMasterSlave : public RTC::DataFlowComponentBase, UTIL_CONST {
     bool getWholeBodyMasterSlaveParam(OpenHRP::WholeBodyMasterSlaveService::WholeBodyMasterSlaveParam& i_param);
 
     protected:
-    TimedDoubleSeq m_qRef;
-    InPort<TimedDoubleSeq> m_qRefIn;
-    TimedPoint3D m_basePos;
-    InPort<TimedPoint3D> m_basePosIn;
-    TimedOrientation3D m_baseRpy;
-    InPort<TimedOrientation3D> m_baseRpyIn;
-    TimedPoint3D m_zmp;
-    InPort<TimedPoint3D> m_zmpIn;
-    TimedDoubleSeq m_optionalData;
-    InPort<TimedDoubleSeq> m_optionalDataIn;
+    RTC::TimedDoubleSeq m_qRef;
+    RTC::InPort<RTC::TimedDoubleSeq> m_qRefIn;
+    RTC::TimedPoint3D m_basePos;
+    RTC::InPort<RTC::TimedPoint3D> m_basePosIn;
+    RTC::TimedOrientation3D m_baseRpy;
+    RTC::InPort<RTC::TimedOrientation3D> m_baseRpyIn;
+    RTC::TimedPoint3D m_zmp;
+    RTC::InPort<RTC::TimedPoint3D> m_zmpIn;
+    RTC::TimedDoubleSeq m_optionalData;
+    RTC::InPort<RTC::TimedDoubleSeq> m_optionalDataIn;
 
-    TimedPose3D m_htcom;
-    InPort<TimedPose3D> m_htcomIn;
-    TimedPose3D m_htrf;
-    InPort<TimedPose3D> m_htrfIn;
-    TimedPose3D m_htlf;
-    InPort<TimedPose3D> m_htlfIn;
-    TimedPose3D m_htrh;
-    InPort<TimedPose3D> m_htrhIn;
-    TimedPose3D m_htlh;
-    InPort<TimedPose3D> m_htlhIn;
-    TimedPose3D m_hthead;
-    InPort<TimedPose3D> m_htheadIn;
-    TimedPoint3D m_htzmp;
-    InPort<TimedPoint3D> m_htzmpIn;
-    //  TimedPoint3D m_actzmp;
-    //  InPort<TimedPoint3D> m_actzmpIn;
-    TimedDoubleSeq m_htrfw;
-    InPort<TimedDoubleSeq> m_htrfwIn;
-    TimedDoubleSeq m_htlfw;
-    InPort<TimedDoubleSeq> m_htlfwIn;
+    RTC::TimedPose3D m_htcom;
+    RTC::InPort<RTC::TimedPose3D> m_htcomIn;
+    RTC::TimedPose3D m_htrf;
+    RTC::InPort<RTC::TimedPose3D> m_htrfIn;
+    RTC::TimedPose3D m_htlf;
+    RTC::InPort<RTC::TimedPose3D> m_htlfIn;
+    RTC::TimedPose3D m_htrh;
+    RTC::InPort<RTC::TimedPose3D> m_htrhIn;
+    RTC::TimedPose3D m_htlh;
+    RTC::InPort<RTC::TimedPose3D> m_htlhIn;
+    RTC::TimedPose3D m_hthead;
+    RTC::InPort<RTC::TimedPose3D> m_htheadIn;
+    RTC::TimedPoint3D m_htzmp;
+    RTC::InPort<RTC::TimedPoint3D> m_htzmpIn;
+    OpenHRP::TimedWrench m_htrfw;
+    RTC::InPort<OpenHRP::TimedWrench> m_htrfwIn;
+    OpenHRP::TimedWrench m_htlfw;
+    RTC::InPort<OpenHRP::TimedWrench> m_htlfwIn;
 
 #ifdef USE_DEBUG_PORT
     TimedPose3D m_htcom_dbg;
-    OutPort<TimedPose3D> m_htcom_dbgOut;
+    RTC::OutPort<RTC::TimedPose3D> m_htcom_dbgOut;
     TimedPose3D m_htrf_dbg;
-    OutPort<TimedPose3D> m_htrf_dbgOut;
+    RTC::OutPort<RTC::TimedPose3D> m_htrf_dbgOut;
     TimedPose3D m_htlf_dbg;
-    OutPort<TimedPose3D> m_htlf_dbgOut;
+    RTC::OutPort<RTC::TimedPose3D> m_htlf_dbgOut;
     TimedPose3D m_htrh_dbg;
-    OutPort<TimedPose3D> m_htrh_dbgOut;
+    RTC::OutPort<RTC::TimedPose3D> m_htrh_dbgOut;
     TimedPose3D m_htlh_dbg;
-    OutPort<TimedPose3D> m_htlh_dbgOut;
+    RTC::OutPort<RTC::TimedPose3D> m_htlh_dbgOut;
     TimedPose3D m_hthead_dbg;
-    OutPort<TimedPose3D> m_hthead_dbgOut;
+    RTC::OutPort<RTC::TimedPose3D> m_hthead_dbgOut;
     TimedPoint3D m_htzmp_dbg;
-    OutPort<TimedPoint3D> m_htzmp_dbgOut;
+    RTC::OutPort<RTC::TimedPoint3D> m_htzmp_dbgOut;
     TimedDoubleSeq m_htrfw_dbg;
-    OutPort<TimedDoubleSeq> m_htrfw_dbgOut;
+    RTC::OutPort<RTC::TimedDoubleSeq> m_htrfw_dbgOut;
     TimedDoubleSeq m_htlfw_dbg;
-    OutPort<TimedDoubleSeq> m_htlfw_dbgOut;
+    RTC::OutPort<RTC::TimedDoubleSeq> m_htlfw_dbgOut;
     TimedPose3D m_rpcom_dbg;
-    OutPort<TimedPose3D> m_rpcom_dbgOut;
+    RTC::OutPort<RTC::TimedPose3D> m_rpcom_dbgOut;
     TimedPose3D m_rprf_dbg;
-    OutPort<TimedPose3D> m_rprf_dbgOut;
+    RTC::OutPort<RTC::TimedPose3D> m_rprf_dbgOut;
     TimedPose3D m_rplf_dbg;
-    OutPort<TimedPose3D> m_rplf_dbgOut;
+    RTC::OutPort<RTC::TimedPose3D> m_rplf_dbgOut;
     TimedPose3D m_rprh_dbg;
-    OutPort<TimedPose3D> m_rprh_dbgOut;
+    RTC::OutPort<RTC::TimedPose3D> m_rprh_dbgOut;
     TimedPose3D m_rplh_dbg;
-    OutPort<TimedPose3D> m_rplh_dbgOut;
+    RTC::OutPort<RTC::TimedPose3D> m_rplh_dbgOut;
     TimedPose3D m_rphead_dbg;
-    OutPort<TimedPose3D> m_rphead_dbgOut;
+    RTC::OutPort<RTC::TimedPose3D> m_rphead_dbgOut;
     TimedPoint3D m_rpzmp_dbg;
-    OutPort<TimedPoint3D> m_rpzmp_dbgOut;
+    RTC::OutPort<RTC::TimedPoint3D> m_rpzmp_dbgOut;
     TimedPoint3D m_rpdcp_dbg;
-    OutPort<TimedPoint3D> m_rpdcp_dbgOut;
+    RTC::OutPort<RTC::TimedPoint3D> m_rpdcp_dbgOut;
     TimedPoint3D m_rpacp_dbg;
-    OutPort<TimedPoint3D> m_rpacp_dbgOut;
+    RTC::OutPort<RTC::TimedPoint3D> m_rpacp_dbgOut;
     TimedDoubleSeq m_invdyn_dbg;
-    OutPort<TimedDoubleSeq> m_invdyn_dbgOut;
+    RTC::OutPort<RTC::TimedDoubleSeq> m_invdyn_dbgOut;
 #endif
 
-    OutPort<TimedDoubleSeq> m_qOut;
+    RTC::OutPort<RTC::TimedDoubleSeq> m_qOut;
     RTC::OutPort<RTC::TimedPoint3D> m_zmpOut;
-    OutPort<TimedPoint3D> m_basePosOut;
-    OutPort<TimedOrientation3D> m_baseRpyOut;
-    OutPort<TimedDoubleSeq> m_optionalDataOut;
+    RTC::OutPort<RTC::TimedPoint3D> m_basePosOut;
+    RTC::OutPort<RTC::TimedOrientation3D> m_baseRpyOut;
+    RTC::OutPort<RTC::TimedDoubleSeq> m_optionalDataOut;
     RTC::CorbaPort m_WholeBodyMasterSlaveServicePort;
 
     WholeBodyMasterSlaveService_impl m_service0;
 
     private:
-    struct ABCIKparam {
-        hrp::Vector3 target_p0, localPos, adjust_interpolation_target_p0, adjust_interpolation_org_p0;
-        hrp::Matrix33 target_r0, localR, adjust_interpolation_target_r0, adjust_interpolation_org_r0;
-        hrp::Link* target_link;
-        bool is_active, has_toe_joint;
-    };
-    //  typedef boost::shared_ptr<SimpleFullbodyInverseKinematicsSolver> fikPtr;
-    //  typedef boost::shared_ptr<FullbodyInverseKinematicsSolver> fikPtr;
     typedef boost::shared_ptr<FullbodyInverseKinematicsSolver> fikPtr;
-    fikPtr fik, fik_ml;
-    hrp::BodyPtr m_robot, m_robot_ml, m_robot_vsafe;
-    std::vector<fikPtr> fik_list;
+    fikPtr fik;
+    hrp::BodyPtr m_robot, m_robot_vsafe;
     std::vector<hrp::BodyPtr> body_list;
-    std::map<std::string, IKConstraint> eename_ikcp_map;
+    std::map<std::string, IKConstraint> ee_name_ikcp_map;
     std::map<std::string, size_t> contact_states_index_map;
     double m_dt;
 
@@ -195,31 +181,23 @@ class WholeBodyMasterSlave : public RTC::DataFlowComponentBase, UTIL_CONST {
 
     HumanPose raw_pose;
 
-    boost::shared_ptr<WBMSCore> hsp;
+    boost::shared_ptr<WBMSCore> wbms;
     boost::shared_ptr<CapsuleCollisionChecker> sccp;
 
     hrp::Vector3 torso_rot_rmc;
     ControlMode mode;
 
-    //  enum { MODE_IDLE, MODE_SYNC_TO_WBMS, MODE_WBMS, MODE_PAUSE, MODE_SYNC_TO_IDLE} mode, previous_mode;
-    //  bool isRunning(){ return (mode==MODE_SYNC_TO_WBMS) || (mode==MODE_WBMS) || (mode==MODE_PAUSE) || (mode==MODE_SYNC_TO_IDLE) ;}
-    //  bool isInitialize(){ return (previous_mode==MODE_IDLE) && (mode==MODE_SYNC_TO_WBMS) ;}
-    //  enum mode_enum{ MODE_IDLE, MODE_SYNC_TO_WBMS, MODE_WBMS, MODE_PAUSE, MODE_SYNC_TO_IDLE};
-
-    void setupfik(fikPtr& fik_in, hrp::BodyPtr& robot_in, RTC::Properties& prop_in);
+    RTC::ReturnCode_t setupfik(fikPtr& fik_in, hrp::BodyPtr& robot_in, RTC::Properties& prop_in);
     void calcManipulability(fikPtr& fik_in, hrp::BodyPtr& robot_in);
     void calcManipulabilityJointLimit(fikPtr& fik_in, hrp::BodyPtr& robot_in, hrp::Vector3 target_v_old[], WBMSPose3D& rf_ref, WBMSPose3D& lf_ref, WBMSPose3D& rh_ref, WBMSPose3D& lh_ref);
     void calcManipulabilityJointLimitForWBMS(fikPtr& fik_in, hrp::BodyPtr& robot_in);
-    void solveFullbodyIKStrictCOM(fikPtr& fik_in, hrp::BodyPtr& robot_in, const WBMSPose3D& com_ref, const WBMSPose3D& rf_ref, const WBMSPose3D& lf_ref, const WBMSPose3D& rh_ref, const WBMSPose3D& lh_ref, const WBMSPose3D& head_ref, const std::string& debug_prefix="");
+    void solveFullbodyIK(fikPtr& fik_in, hrp::BodyPtr& robot_in, const WBMSPose3D& com_ref, const WBMSPose3D& rf_ref, const WBMSPose3D& lf_ref, const WBMSPose3D& rh_ref, const WBMSPose3D& lh_ref, const WBMSPose3D& head_ref, const std::string& debug_prefix="");
     void processTransition();
     void preProcessForWholeBodyMasterSlave(fikPtr& fik_in, hrp::BodyPtr& robot_in);
     void processWholeBodyMasterSlave(fikPtr& fik_in, hrp::BodyPtr& robot_in, const HumanPose& pose_ref);
-    void processWholeBodyMasterSlave_Raw(fikPtr& fik_in, hrp::BodyPtr& robot_in, HumanPose& pose_ref);
     void processMomentumCompensation(fikPtr& fik_in, hrp::BodyPtr& robot_in, hrp::BodyPtr& robot_normal_in, const HumanPose& pose_ref);
     void processHOFFARBIBFilter(hrp::BodyPtr& robot_in, hrp::BodyPtr& robot_out);
     bool isOptionalDataContact (const std::string& ee_name) { return (std::fabs(m_optionalData.data[contact_states_index_map[ee_name]]-1.0)<0.1)?true:false; };
-
-    //  void calcVelAccSafeTrajectory(const hrp::Vector3& pos_cur, const hrp::Vector3& vel_cur, const hrp::Vector3& pos_tgt, const hrp::Vector3& max_acc, const double& max_vel, hrp::Vector3& pos_ans);
 };
 
 
