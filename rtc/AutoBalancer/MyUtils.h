@@ -46,15 +46,20 @@ class WBMSPose3D{
         void clear(){ p = rpy = hrp::Vector3::Zero(); }
 };
 
+
 namespace hrp{
     class Pose3{
         public:
-            Pose3(const hrp::dvector6& in){ data = in; }
-            Pose3(const hrp::Vector3& _p, const hrp::Vector3& _rpy){ data << _p, _rpy; }
-            Pose3(const double& X, const double& Y, const double& Z, const double& r, const double& p, const double& y){ data << X,Y,Z,r,p,y; }
-            hrp::dvector6 data;
-            hrp::dvector6::SegmentReturnType p(){ return data.head(3); }
-            hrp::dvector6::SegmentReturnType rpy(){ return data.tail(3); }
+            hrp::Vector3 p;
+            hrp::Matrix33 R;
+            Pose3(const double& _X, const double& _Y, const double& _Z, const double& _r, const double& _p, const double& _y){ p << _X,_Y,_Z; R = hrp::rotFromRpy(_r,_p,_y); }
+            Pose3(const hrp::dvector6& _xyz_rpy){ p = _xyz_rpy.head(3); R = hrp::rotFromRpy(_xyz_rpy.tail(3)); }
+            Pose3(const hrp::Vector3& _xyz, const hrp::Vector3& _rpy){ p = _xyz; R = hrp::rotFromRpy(_rpy); }
+            Pose3(const hrp::Vector3& _xyz, const hrp::Matrix33& _R){ p = _xyz; R = _R; }
+            hrp::Vector3 rpy() const{ return hrp::rpyFromRot(R); }
+            hrp::dvector6 to_dvector6() const{ return (hrp::dvector6() << p, hrp::rpyFromRot(R)).finished(); }
+//            hrp::dvector6::SegmentReturnType p(){ return data.head(3); }
+//            hrp::dvector6::SegmentReturnType rpy(){ return data.tail(3); }
     };
 
     inline hrp::Vector3         to_Vector3      (const RTC::Point3D& in)        { return hrp::Vector3(in.x, in.y, in.z); }
@@ -67,19 +72,16 @@ namespace hrp{
     inline RTC::Point3D         to_Point3D      (const hrp::Vector3& in)        { return (RTC::Point3D){in(X),in(Y),in(Z)}; }
     inline RTC::Orientation3D   to_Orientation3D(const hrp::Vector3& in)        { return (RTC::Orientation3D){in(X),in(Y),in(Z)}; }
     inline RTC::Pose3D          to_Pose3D       (const hrp::dvector6& in)       { return (RTC::Pose3D){in(X),in(Y),in(Z),in(r),in(p),in(y)}; }
-    inline RTC::Pose3D          to_Pose3D       (const hrp::Pose3& in)          { return (RTC::Pose3D){in.data(X),in.data(Y),in.data(Z),in.data(r),in.data(p),in.data(y)}; }
+    inline RTC::Pose3D          to_Pose3D       (const hrp::Pose3& in)          { return (RTC::Pose3D){in.p(X),in.p(Y),in.p(Z),in.rpy()(r),in.rpy()(p),in.rpy()(y)}; }
     inline OpenHRP::Wrench      to_Wrench       (const hrp::dvector6& in)       { return (OpenHRP::Wrench){in(X),in(Y),in(Z),in(r),in(p),in(y)}; }
     inline RTC::TimedDoubleSeq::_data_seq  to_DoubleSeq(const hrp::dvector& in) { RTC::TimedDoubleSeq::_data_seq out(in.size()); hrp::dvector::Map(out.get_buffer(), in.size()) = in; return out; }
 
-    inline hrp::dvector getQAll         (const hrp::BodyPtr _robot)                     { hrp::dvector tmp(_robot->numJoints()); for(int i=0;i<_robot->numJoints();i++){ tmp(i) = _robot->joint(i)->q; } return tmp; }
-    inline void         setQAll         (hrp::BodyPtr _robot, const hrp::dvector& in)   { assert(in.size() <= _robot->numJoints()); for(int i=0;i<_robot->numJoints();i++){ _robot->joint(i)->q = in(i); } }
+    inline hrp::dvector getQAll         (const hrp::BodyPtr _robot){ hrp::dvector tmp(_robot->numJoints()); for(int i=0;i<_robot->numJoints();i++){ tmp(i) = _robot->joint(i)->q; } return tmp; }
+    inline void         setQAll         (hrp::BodyPtr       _robot, const hrp::dvector& in){ assert(in.size() <= _robot->numJoints()); for(int i=0;i<_robot->numJoints();i++){ _robot->joint(i)->q = in(i); } }
     inline hrp::dvector getRobotStateVec(const hrp::BodyPtr _robot){ return (hrp::dvector(_robot->numJoints()+6) << getQAll(_robot), _robot->rootLink()->p, hrp::rpyFromRot(_robot->rootLink()->R)).finished(); }
-    inline void         setRobotStateVec(hrp::BodyPtr _robot, const hrp::dvector& _q_bpos_brpy){
-                                                                                        assert(_q_bpos_brpy.size() == _robot->numJoints()+6); for(int i=0;i<_robot->numJoints();i++){ _robot->joint(i)->q = _q_bpos_brpy(i); }; _robot->rootLink()->p = _q_bpos_brpy.tail(6).head(3); _robot->rootLink()->R = hrp::rotFromRpy(_q_bpos_brpy.tail(6).tail(3)); }
-    inline void         setRobotStateVec(hrp::BodyPtr _robot, const hrp::dvector& _q, const hrp::Vector3& _bpos, const hrp::Vector3& _brpy){
-                                                                                            assert(_q.size() == _robot->numJoints()); for(int i=0;i<_robot->numJoints();i++){ _robot->joint(i)->q = _q(i); }; _robot->rootLink()->p = _bpos; _robot->rootLink()->R = hrp::rotFromRpy(_brpy); }
-    inline void         setRobotStateVec(hrp::BodyPtr _robot, const hrp::dvector& _q, const hrp::Vector3& _bpos, const hrp::Matrix33& _bR){
-                                                                                        assert(_q.size() == _robot->numJoints()); for(int i=0;i<_robot->numJoints();i++){ _robot->joint(i)->q = _q(i); }; _robot->rootLink()->p = _bpos; _robot->rootLink()->R = _bR; }
+    inline void         setRobotStateVec(hrp::BodyPtr       _robot, const hrp::dvector& _q_bpos_brpy){ assert(_q_bpos_brpy.size() == _robot->numJoints()+6); for(int i=0;i<_robot->numJoints();i++){ _robot->joint(i)->q = _q_bpos_brpy(i); }; _robot->rootLink()->p = _q_bpos_brpy.tail(6).head(3); _robot->rootLink()->R = hrp::rotFromRpy(_q_bpos_brpy.tail(6).tail(3)); }
+    inline void         setRobotStateVec(hrp::BodyPtr       _robot, const hrp::dvector& _q, const hrp::Vector3& _bpos, const hrp::Vector3& _brpy){ assert(_q.size() == _robot->numJoints()); for(int i=0;i<_robot->numJoints();i++){ _robot->joint(i)->q = _q(i); }; _robot->rootLink()->p = _bpos; _robot->rootLink()->R = hrp::rotFromRpy(_brpy); }
+    inline void         setRobotStateVec(hrp::BodyPtr       _robot, const hrp::dvector& _q, const hrp::Vector3& _bpos, const hrp::Matrix33& _bR){ assert(_q.size() == _robot->numJoints()); for(int i=0;i<_robot->numJoints();i++){ _robot->joint(i)->q = _q(i); }; _robot->rootLink()->p = _bpos; _robot->rootLink()->R = _bR; }
 
     inline hrp::Vector3 omegaFromRotEx(const hrp::Matrix33& r) {//copy from JointPathEx.cpp
         using ::std::numeric_limits;
@@ -101,6 +103,14 @@ namespace hrp{
     inline void WBMSPose3DToPose3D(const WBMSPose3D& in, RTC::Pose3D& out){ hrp::to_Point3D(in.p); hrp::to_Orientation3D(in.rpy); }
     inline double hrpVector2Cross(const hrp::Vector2& a, const hrp::Vector2& b){ return a(X)*b(Y)-a(Y)*b(X); }
 
+}
+
+
+inline std::ostream& operator<<(std::ostream& os, hrp::Pose3& in){
+    os << "p = " << in.p.transpose() << std::endl;
+    os << "R =\n" << in.R << std::endl;
+    os << "(rpy) = " << hrp::rpyFromRot(in.R).transpose() << std::endl;
+    return os;
 }
 
 #endif //  MYUTILS_H

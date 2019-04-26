@@ -117,7 +117,7 @@ class FullbodyInverseKinematicsSolver{
         }
         void solveFullbodyIKOnce(const std::vector<IKConstraint>& _ikc_list){
             #ifdef OPENHRP_PACKAGE_VERSION_320
-                // count all constraint DOF and allocate Jacobian and vectors
+                // count all valid constraint DOF and allocate Jacobian and vectors
                 int C_DOF = 0; // constraint DOF
                 for (int i=0;i<_ikc_list.size();i++){ C_DOF += (_ikc_list[i].constraint_weight.array()>0.0).count(); }
                 C_DOF += (q_ref_constraint_weight.array()>0.0).count();
@@ -136,7 +136,6 @@ class FullbodyInverseKinematicsSolver{
                         hrp::Matrix33 tgt_cur_rot = link_tgt_ptr->R * _ikc_list[i].localR;
                         dp_part.head(3) =  _ikc_list[i].targetPos - tgt_cur_pos;
                         dp_part.tail(3) = tgt_cur_rot * hrp::omegaFromRotEx(tgt_cur_rot.transpose() * hrp::rotFromRpy(_ikc_list[i].targetRpy));
-//                        hrp::JointPathEx tgt_jpath(m_robot, m_robot->rootLink(), link_tgt_ptr, m_dt, false, "");
                         hrp::JointPath tgt_jpath(m_robot->rootLink(), link_tgt_ptr);
                         hrp::dmatrix J_jpath;
                         tgt_jpath.calcJacobian(J_jpath, _ikc_list[i].localPos);
@@ -155,6 +154,9 @@ class FullbodyInverseKinematicsSolver{
                     for(int cid=0; cid<WS_DOF; cid++){
                         if(_ikc_list[i].constraint_weight(cid) > 0.0){
                             J_all.row(cur_cid_all) = J_part.row(cid);
+
+                            LIMIT_MINMAX(dp_part(cid), -0.1,0.1);
+
                             err_all(cur_cid_all) = dp_part(cid);
                             constraint_weight_all(cur_cid_all) = _ikc_list[i].constraint_weight(cid);
                             cur_cid_all++;
@@ -248,26 +250,24 @@ class FullbodyInverseKinematicsSolver{
                     if(hrp::rpyFromRot(m_robot->rootLink()->R)(i) > rootlink_rpy_ulimit(i) && dq_all.tail(6).tail(3)(i) > 0) dq_all.tail(6).tail(3)(i) = 0;
                 }
 
-
                 hrp::Matrix33 dR;
                 hrp::Vector3 omega = dq_all.tail(6).tail(3);
                 hrp::calcRodrigues(dR, omega.normalized(), omega.norm());
-                if(!(m_robot->rootLink()->R * dR).isUnitary()){
-                    std::cerr <<"ERROR R_base_ans is not Unitary" << std::endl; return;
+                hrp::Matrix33 R_base_ans = m_robot->rootLink()->R * dR;
+                if(!R_base_ans.isUnitary()){
+                    std::cerr <<"[FullbodyIK] WARN R_base_ans is not Unitary, normalize via Quaternion" << std::endl;
+                    Eigen::Quaternion<double> quat(R_base_ans);
+                    quat.normalize();
+                    R_base_ans = quat.toRotationMatrix();
+                    return;
                 }else{
-                    m_robot->rootLink()->R = m_robot->rootLink()->R * dR;
+                    m_robot->rootLink()->R = R_base_ans;
                 }
                 m_robot->calcForwardKinematics();
             #else
                 std::cerr<<"solveFullbodyIKOnce() needs OPENHRP_PACKAGE_VERSION_320 !!!"<<std::endl;
             #endif
         }
-//        void revertRobotStateToCurrentAll (){
-//            hrp::setQAll(m_robot, qorg);
-//            mm_robot->rootLink()->p = current_root_p;
-//            mm_robot->rootLink()->R = current_root_R;
-//            mm_robot->calcForwardKinematics();
-//        };
 };
 
 #endif //  FULLBODYIK_H

@@ -513,7 +513,7 @@ void WholeBodyMasterSlave::solveFullbodyIK(const WBMSPose3D& com_ref, const WBMS
             tmp.targetPos = rh_ref.p;
         }
         tmp.targetRpy = rh_ref.rpy;
-        tmp.constraint_weight = hrp::dvector6::Constant(0.5);
+        tmp.constraint_weight = hrp::dvector6::Constant(0.1);
         tmp.pos_precision = 3e-3;
         tmp.rot_precision = deg2rad(3);
         ikc_list.push_back(tmp);
@@ -528,7 +528,7 @@ void WholeBodyMasterSlave::solveFullbodyIK(const WBMSPose3D& com_ref, const WBMS
             tmp.targetPos = lh_ref.p;
         }
         tmp.targetRpy = lh_ref.rpy;
-        tmp.constraint_weight = hrp::dvector6::Constant(0.5);
+        tmp.constraint_weight = hrp::dvector6::Constant(0.1);
         tmp.pos_precision = 3e-3;
         tmp.rot_precision = deg2rad(3);
         ikc_list.push_back(tmp);
